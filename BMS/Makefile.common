@@ -40,6 +40,15 @@ LIB_DIR		= $(HALLD_HOME)/lib/$(OSNAME)
 BIN_DIR		= $(HALLD_HOME)/bin/$(OSNAME)
 DEP_DIR		= .depends/$(OSNAME)
 
+# Sometimes, one wants to build executables by linking to the common
+# area libraries, but putting the executables in a local or private
+# directory. This is handled by defining the HALLD_MY environment
+# variable to point to the top level directory where the output should
+# go. If HALLD_MY is not set, then everything defaults to HALLD_HOME.
+ifdef HALLD_MY
+	BIN_DIR		= $(HALLD_MY)/bin/$(OSNAME)
+endif
+
 FFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
 CFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
 CXXFLAGS += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
