@@ -19,6 +19,8 @@ class DFactory_CDCClusters:public DFactory{
 	public:
 		DFactory_CDCClusters(DEvent *event):DFactory(event, "CDCClusters", sizeof(CDCCluster_t)){};
 		~DFactory_CDCClusters(){};
+		derror_t Print(void);
+
 	
 	private:
 		derror_t evnt(int eventnumber);		///< Called every event.

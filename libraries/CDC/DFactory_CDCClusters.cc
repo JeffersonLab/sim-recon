@@ -76,4 +76,49 @@ derror_t DFactory_CDCClusters::evnt(int eventnumber)
 	return NOERROR;
 }
 
+//------------
+// Print
+//------------
+derror_t DFactory_CDCClusters::Print(void)
+{
+	// Ensure our Get method has been called so _data is up to date
+	Get();
+	if(!_data)return NOERROR;
+	if(_data->nrows<=0)return NOERROR; // don't print anything if we have no data!
+
+	cout<<name<<endl;
+	cout<<"---------------------------------------"<<endl;
+	cout<<"row: radius(cm): phim(rad):   dE(MeV):   t(ns):"<<endl;
+	cout<<endl;
+	
+	CDCCluster_t *cdccluster = (CDCCluster_t*)_data->first();
+	for(int i=0; i<_data->nrows; i++, cdccluster++){
+		char str[80];
+		memset(str,' ',80);
+		str[79] = 0;
+
+		char num[32];
+		sprintf(num, "%d", i);
+		strncpy(&str[3-strlen(num)], num, strlen(num));
+
+		CDCHit_t **cdchit = cdccluster->hits;
+		for(int j=0;j<cdccluster->nhits; j++, cdchit++){
+			if(j!=0){
+				memset(str,' ',80);
+				str[79] = 0;
+			}
+			sprintf(num, "%3.1f", (*cdchit)->radius);
+			strncpy(&str[15-strlen(num)], num, strlen(num));
+			sprintf(num, "%1.3f", (*cdchit)->phim);
+			strncpy(&str[26-strlen(num)], num, strlen(num));
+			sprintf(num, "%2.3f", (*cdchit)->dE);
+			strncpy(&str[37-strlen(num)], num, strlen(num));
+			sprintf(num, "%4.0f", (*cdchit)->t);
+			strncpy(&str[46-strlen(num)], num, strlen(num));
+			cout<<str<<endl;
+		}
+	}
+	cout<<endl;
+}
+
 
