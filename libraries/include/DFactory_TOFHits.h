@@ -8,10 +8,12 @@
 #include "DFactory.h"
 
 typedef struct{
+	float x;
 	float y;
 	float dE;
 	float t;
-	int end; ///< 0=left 1=right
+	int orientation;	///< 0=vertical  1=horizontal
+	int end;				///< 0=left/top 1=right/bottom
 }TOFHit_t;
 
 class DFactory_TOFHits:public DFactory{
