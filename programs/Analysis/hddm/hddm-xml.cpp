@@ -39,7 +39,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <rpc/xdr.h>
+#include <rpc/rpc.h>
 #include <string.h>
 #include <unistd.h>
 
