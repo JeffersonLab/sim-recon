@@ -63,6 +63,20 @@ void usage()
         << endl;
 }
 
+int getline(char* buf, int lenbuf, FILE* stream)
+{
+   int count = 0;
+   for (count = 0; count < lenbuf-1;)
+   {
+      int c = fgetc(stream);
+      if (c == EOF) break;
+      buf[count++] = c;
+      if (c == '\n') break;
+   }
+   buf[count] = 0;
+   return count;
+}
+
 /* write a string to xml output stream, either stdout or a file */
 
 void writeXML(const char* s)
@@ -279,7 +293,7 @@ int main(int argC, char* argV[])
    ofs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
    char xmlHeader[1000];
    char* line = new char[1000];
-   if (fscanf(ifp,"%999[^\n]",line) == 1 && fscanf(ifp,"\n") == 0)
+   if (getline(line,1000,ifp))
    {
       if (strstr(line,"<?xml") != 0)
       {
@@ -290,7 +304,7 @@ int main(int argC, char* argV[])
       else if (strstr(line,"<HDDM") == line)
       {
          strncpy(xmlHeader,line,999);
-         ofs << line << endl;
+         ofs << line;
       }
       else
       {
@@ -304,9 +318,9 @@ int main(int argC, char* argV[])
       cerr << "hddm-xml: Error reading from input stream " << hddmFile << endl;
       exit(1);
    }
-   while (fscanf(ifp,"%999[^\n]",line) == 1 && fscanf(ifp,"\n") == 0)
+   while (getline(line,1000,ifp))
    {
-      ofs << line << endl;
+      ofs << line;
       if (strstr(line,"</HDDM>") != 0)
       {
          break;
@@ -347,7 +361,6 @@ int main(int argC, char* argV[])
   
    writeXML("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
    writeXML(xmlHeader);
-   writeXML("\n");
 
    XDR* xdrs = new XDR;
    xdrstdio_create(xdrs,ifp,XDR_DECODE);

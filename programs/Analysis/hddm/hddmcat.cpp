@@ -31,6 +31,20 @@ void usage()
         << endl;
 }
 
+int getline(char* buf, int lenbuf, FILE* stream)
+{
+   int count = 0;
+   for (count = 0; count < lenbuf-1;)
+   {
+      int c = fgetc(stream);
+      if (c == EOF) break;
+      buf[count++] = c;
+      if (c == '\n') break;
+   }
+   buf[count] = 0;
+   return count;
+}
+
 int main(int argC, char* argV[])
 {
    char *xFilename = 0;
@@ -76,7 +90,7 @@ int main(int argC, char* argV[])
    struct stringArray* head = new struct stringArray;
    struct stringArray* h = head;
    h->line = new char[1000];
-   if (fscanf(ifp,"%999[^\n]",h->line) == 1 && fscanf(ifp,"\n") == 0)
+   if (getline(h->line,1000,ifp))
    {
       if (strstr(h->line,"<?xml") != 0)
       {
@@ -86,7 +100,7 @@ int main(int argC, char* argV[])
       }
       else if (strstr(h->line,"<HDDM") == h->line)
       {
-         cout << h->line << endl;
+         cout << h->line;
       }
       else
       {
@@ -102,9 +116,9 @@ int main(int argC, char* argV[])
    }
    h = h->next = new struct stringArray;
    h->line = new char[1000];
-   while (fscanf(ifp,"%999[^\n]",h->line) == 1 && fscanf(ifp,"\n") == 0)
+   while (getline(h->line,1000,ifp))
    {
-      cout << h->line << endl;
+      cout << h->line;
       if (strstr(h->line,"</HDDM>") != 0)
       {
 	 h->next = 0;
@@ -137,7 +151,7 @@ int main(int argC, char* argV[])
       }
       h = head;
       char* line = new char[1000];
-      if (fscanf(ifp,"%999[^\n]",line) == 1 && fscanf(ifp,"\n") == 0)
+      if (getline(line,1000,ifp))
       {
          if (strstr(line,"<?xml") != 0)
          {
@@ -162,7 +176,7 @@ int main(int argC, char* argV[])
               << endl;
          exit(1);
       }
-      while (fscanf(ifp,"%999[^\n]",line) == 1 && fscanf(ifp,"\n") == 0)
+      while (getline(line,1000,ifp))
       {
          if (h == 0 || strstr(line,h->line) != line)
          {
