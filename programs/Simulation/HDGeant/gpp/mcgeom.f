@@ -7,7 +7,10 @@
 * objects to Geant.  The match is not perfect, and some decisions have
 * to be made in this file about what Geant wants to see.  All information
 * from the mcfast .db files are made available here, and one can use or
-* not use it, as appropriate.  The only check made by gpp during the
+* not use it, as appropriate.  To replace the MCFast description with
+* your own, you should comment
+
+* The only check made by gpp during the
 * conversion from mcfast is that the parameter list from the mcfast db
 * matches the one in the common blocks below.  If not, it complains and
 * quits.  Otherwise it assumes that the subroutine below is correct and

@@ -1,0 +1,22 @@
+C This is the control file for the GEANT simulation
+C Parameters defined in this file control the kind
+C and extent of simulation that is performed.  The
+C full list of options is given in section base-40
+C of the GEANT manual
+
+KINE 1 1.0 8. 45. 0. 0. 0.
+
+CUTS 1e-4 1e-4
+
+SWIT 0 0 0 0 0 0 0 0 0 0
+
+RNDM 2
+
+CKOV 1
+LABS 1
+
+TRIG 100
+
+RUNG 9999
+
+END

@@ -15,6 +15,9 @@
  * Updated:
  *
  * Comments:
+ * > Richard Jones, July 5 2001
+ *	This package has been superseded by the hdds-geant translator
+ *	that interfaces Geant3 to the HDDS xml geometry database.
  */
 
 #include <fstream.h>
@@ -24,11 +27,13 @@
 #define _REENTRANT 1
 #include <string.h>
 
+ifstream fdbase;
 ifstream fsource;
 ofstream fdest;
 
 int thisLine;
 char thisFile[100];
+char sourceFile[] = "mcgeom.f";
 
 class TemplateItem;
 class TemplateList;
@@ -58,6 +63,7 @@ public:
    TemplateItem(char *name, char *number);
    ~TemplateItem();
    void Append(TemplateAtom *atom);
+   void Delete(char *name);
    TemplateAtom *Find(char *name);
    TemplateAtom *First() { return firstAtom; }
    TemplateItem *Next() { return fNext; }
@@ -70,6 +76,7 @@ public:
    TemplateList();
    ~TemplateList();
    void Append(TemplateItem *item);
+   void Delete(char *name);
    TemplateItem *Find(char *name);
    TemplateItem *First() { return firstItem; }
 };
@@ -142,6 +149,21 @@ void TemplateItem::Append(TemplateAtom *atom)
    p->fNext = atom;
 }
 
+void TemplateItem::Delete(char *name)
+{
+   TemplateAtom **p = &firstAtom;
+   while (*p != NULL) {
+      if (strcasecmp((*p)->fName,name) == 0) break;
+      p = &(*p)->fNext;
+   }
+   if (*p) {
+      TemplateAtom *old = *p;
+      *p = (*p)->fNext;
+      old->fNext = 0;
+      delete old;
+   }
+}
+
 TemplateAtom *TemplateItem::Find(char *name)
 {
    TemplateAtom *p=firstAtom;
@@ -173,6 +195,21 @@ void TemplateList::Append(TemplateItem *item)
       p = p->fNext;
    }
    p->fNext = item;
+}
+
+void TemplateList::Delete(char *name)
+{
+   TemplateItem **p = &firstItem;
+   while (*p != NULL) {
+      if (strcasecmp((*p)->fName,name) == 0) break;
+      p = &(*p)->fNext;
+   }
+   if (*p) {
+      TemplateItem *old = *p;
+      *p = (*p)->fNext;
+      old->fNext = 0;
+      delete old;
+   }
 }
 
 TemplateItem *TemplateList::Find(char *name)
@@ -353,10 +390,68 @@ int preProcessLine(char *line, ifstream &fin)
    }
 }
 
+void pruneTemplates()
+{
+   fsource.open(sourceFile);
+   if (!fsource) {
+      cerr << "gpp error: unable to open input source file ";
+      cerr << sourceFile << endl;
+      exit(1);
+   }
+   char line[250];
+   char token[250];
+   TemplateItem *item = 0;
+   while (!fsource.eof()) {
+      fsource.getline(line,250);
+      strcpy(token,line);
+      strtok(token," ");
+      if (strcasecmp(token,"      subroutine") == 0) {
+         item = table.Find(strtok(NULL," ")+4);
+      }
+      else if (strcasecmp(token,"      character*40") == 0) {
+         if (item) {
+            item->Delete(strtok(NULL," "));
+         }
+      }
+      else if (strcasecmp(token,"      real") == 0) {
+         if (item) {
+            item->Delete(strtok(NULL," "));
+         }
+      }
+      else if (strcasecmp(token,"      integer") == 0) {
+         if (item) {
+            item->Delete(strtok(NULL," "));
+         }
+      }
+      else if (strcasecmp(token,"      call") == 0) {
+         char *maker = strtok(NULL," ");
+         maker[strlen(maker)-3] = 0;
+         item = table.Find(maker);
+         if (item) {
+            TemplateAtom *atom = item->First();
+            while (atom != NULL) {
+               if ((strcasecmp(atom->fType,"child") != 0) &&
+                   (strcasecmp(atom->fType,"parent") != 0)) break;
+               atom = atom->Next();
+            }
+            if (atom == 0) {
+               table.Delete(item->fName);
+            }
+         }
+      }
+      else if (strcasecmp(line,"      end") == 0) {
+         item = 0;
+      }
+   }
+   fsource.close();
+}
+
 void postProcessFile()
 {
    TemplateItem *item=table.First();
    while (item) {
+      cerr << ">> Make function for object " << item->fName;
+      cerr << " not found, dummy subroutine inserted." << endl;
       fdest << "      " << "end" << endl << endl;
       fdest << "      " << "subroutine make" << item->fName << endl;
       TemplateAtom *a=item->First();
@@ -412,14 +507,15 @@ int main(int argc, char** argv)
 {
    for (int arg=1; arg<argc; arg++) {
       strncpy(thisFile,argv[arg],100);
-      fsource.open(thisFile), thisLine=0;
-      if (!fsource) {
-         cerr << "gpp error: unable to open input file ";
+      fdbase.open(thisFile), thisLine=0;
+      if (!fdbase) {
+         cerr << "gpp error: unable to open input db file ";
          cerr << argv[arg] << endl;
          exit(1);
       }
-      preProcessFile(fsource);
-      fsource.close();
+      preProcessFile(fdbase);
+      fdbase.close();
+      pruneTemplates();
       postProcessFile();
       fdest.close();
    }
