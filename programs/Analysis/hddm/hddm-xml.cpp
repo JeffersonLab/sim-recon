@@ -265,10 +265,8 @@ int main(int argC, char* argV[])
       cerr << "hddm-xml: Error opening input stream " << hddmFile << endl;
       exit(1);
    }
-   int pid;
-   sscanf(getenv("$$"),"%d",&pid);
    char tmpFile[30];
-   sprintf(tmpFile,"tmp%d",pid);
+   sprintf(tmpFile,"tmp%d",getpid());
    ofstream ofs(tmpFile);
    if (! ofs.is_open())
    {

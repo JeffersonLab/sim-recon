@@ -414,10 +414,8 @@ int main(int argC, char* argV[])
 
       char* text = line;
 
-      int pid;
-      sscanf(getenv("$$"),"%d",&pid);
       char tmpFile[30];
-      sprintf(tmpFile,"tmp%d",pid);
+      sprintf(tmpFile,"tmp%d",getpid());
       ofstream ofs(tmpFile);
       if (! ofs.is_open())
       {
