@@ -50,20 +50,31 @@ ifeq ($(OStype),OSF1)
 	LOPTS = -g -non_shared -fpe4
 	GLIBS 	:= -L/r5d1/applications/gcc3/lib/gcc-lib/alphaev5-dec-osf4.0f/ -lg2c -L/r5d1/applications/gcc3/lib/gcc-lib/alphaev5-dec-osf4.0f/3.3/ -lgcc
 endif
+ifeq ($(OStype),SunOS)
+	CC	:= cc
+	CPP	:= CC
+	F77	:= f77
+	NETLIB	:= 
+	STATIC	:=
+	XLIBS	:= -L/usr/lib -lXm -lSM -lICE -lXt -lX11 -lm 
+	COPTS	:= -g $(SWITCHES)
+	FOPTS	:= -g $(SWITCHES)
+	LOPTS	:= -g
+	GLIBS	:=
+endif
 
 HDDS = ../hdds
 HDDM = ../hddm
 
 ifeq ($(OStype),OSF1)
-AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o \
-       gelhad/gtgama.o gelhad/caspim.o gelhad/caspip.o gpairg.o \
-       hddsGeant3.o goptimize.o cobrems.o vunit.o gsrotm.o fint.o gthion.o
+ 	MISC_FIXES := vunit.o gsrotm.o fint.o gthion.o
 else
+	MISC_FIXES :=
+endif
+
 AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o \
        gelhad/gtgama.o gelhad/caspim.o gelhad/caspip.o gpairg.o \
        hddsGeant3.o goptimize.o cobrems.o
-endif
-
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
        hitLGD.o bintree.o hitutil.o memcheck.o timel.o trapfpe.o
@@ -73,18 +84,19 @@ GELHAD = gelhad/libgelhad.a
 
 CERNLIB = $(CERN_ROOT)/bin/cernlib
 
-hdgeant++: gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXFIXED)
-	$(CERN_ROOT)/bin/gxint -v $(CERN_LEVEL) -g 321 -m -d Motif \
-	-o $@ gxint.o uginit.o uglast.o \
-	$(AUXF) $(AUXC) $(GXFIXED) $(STATIC) \
-	-Lgelhad -lgelhad $(XLIBS) $(GLIBS) \
-	-- $(LINUXEXPORTDYNAMIC)
+hdgeant++: gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXFIXED) \
+           $(MISC_FIXES)
+	$(F77) -o $@ gxint.o uginit.o uglast.o \
+	   $(AUXF) $(AUXC) $(GXFIXED) $(STATIC) \
+	   -Lgelhad -lgelhad $(XLIBS) $(GLIBS) \
+	   `cernlib -v $(CERN_LEVEL) geant321 pawlib graflib/Motif packlib mathlib`
+	   -- $(LINUXEXPORTDYNAMIC)
 
-hdgeant: hdgeant.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC)
+hdgeant: hdgeant.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(MISC_FIXES)
 	$(F77) $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(LINUXSTATIC) \
-	 hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC) -Lgelhad -lgelhad \
-	`$(CERNLIB) geant321 mathlib graflib grafX11` \
-	$(NETLIB) $(XLIBS)
+	  hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC) -Lgelhad -lgelhad \
+	  `$(CERNLIB) geant321 mathlib graflib grafX11` \
+	   $(NETLIB) $(XLIBS)
 
 install: hdgeant hdgeant++
 	cp $^ $(HALLD_HOME)/bin/$(OStype)

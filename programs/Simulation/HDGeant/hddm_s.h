@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <rpc/rpc.h>
 #include <string.h>
+#include <strings.h>
 #include <particleType.h>
 
 #define MALLOC(N,S) malloc(N)
@@ -79,7 +80,7 @@ typedef struct {
 } s_Product_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Product_t in[1];
 } s_Products_t;
 #endif /* s_Product_t */
@@ -104,7 +105,7 @@ typedef struct {
 } s_Vertex_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Vertex_t in[1];
 } s_Vertices_t;
 #endif /* s_Vertex_t */
@@ -121,7 +122,7 @@ typedef struct {
 } s_Reaction_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Reaction_t in[1];
 } s_Reactions_t;
 #endif /* s_Reaction_t */
@@ -135,7 +136,7 @@ typedef struct {
 } s_Band_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Band_t in[1];
 } s_Bands_t;
 #endif /* s_Band_t */
@@ -149,7 +150,7 @@ typedef struct {
 } s_CathodeCyl_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_CathodeCyl_t in[1];
 } s_CathodeCyls_t;
 #endif /* s_CathodeCyl_t */
@@ -163,7 +164,7 @@ typedef struct {
 } s_Hit_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Hit_t in[1];
 } s_Hits_t;
 #endif /* s_Hit_t */
@@ -181,7 +182,7 @@ typedef struct {
 } s_CdcPoint_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_CdcPoint_t in[1];
 } s_CdcPoints_t;
 #endif /* s_CdcPoint_t */
@@ -196,7 +197,7 @@ typedef struct {
 } s_Straw_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Straw_t in[1];
 } s_Straws_t;
 #endif /* s_Straw_t */
@@ -210,7 +211,7 @@ typedef struct {
 } s_Ring_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Ring_t in[1];
 } s_Rings_t;
 #endif /* s_Ring_t */
@@ -232,7 +233,7 @@ typedef struct {
 } s_Strip_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Strip_t in[1];
 } s_Strips_t;
 #endif /* s_Strip_t */
@@ -247,7 +248,7 @@ typedef struct {
 } s_CathodePlane_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_CathodePlane_t in[1];
 } s_CathodePlanes_t;
 #endif /* s_CathodePlane_t */
@@ -265,7 +266,7 @@ typedef struct {
 } s_FdcPoint_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_FdcPoint_t in[1];
 } s_FdcPoints_t;
 #endif /* s_FdcPoint_t */
@@ -280,7 +281,7 @@ typedef struct {
 } s_Wire_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Wire_t in[1];
 } s_Wires_t;
 #endif /* s_Wire_t */
@@ -295,7 +296,7 @@ typedef struct {
 } s_AnodePlane_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_AnodePlane_t in[1];
 } s_AnodePlanes_t;
 #endif /* s_AnodePlane_t */
@@ -311,7 +312,7 @@ typedef struct {
 } s_Chamber_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Chamber_t in[1];
 } s_Chambers_t;
 #endif /* s_Chamber_t */
@@ -333,7 +334,7 @@ typedef struct {
 } s_Paddle_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Paddle_t in[1];
 } s_Paddles_t;
 #endif /* s_Paddle_t */
@@ -351,7 +352,7 @@ typedef struct {
 } s_StartPoint_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_StartPoint_t in[1];
 } s_StartPoints_t;
 #endif /* s_StartPoint_t */
@@ -374,7 +375,7 @@ typedef struct {
 } s_Shower_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Shower_t in[1];
 } s_Showers_t;
 #endif /* s_Shower_t */
@@ -405,7 +406,7 @@ typedef struct {
 } s_Module_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Module_t in[1];
 } s_Modules_t;
 #endif /* s_Module_t */
@@ -422,7 +423,7 @@ typedef struct {
 } s_BarrelShower_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_BarrelShower_t in[1];
 } s_BarrelShowers_t;
 #endif /* s_BarrelShower_t */
@@ -445,7 +446,7 @@ typedef struct {
 } s_Flash_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Flash_t in[1];
 } s_Flashes_t;
 #endif /* s_Flash_t */
@@ -459,7 +460,7 @@ typedef struct {
 } s_Section_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Section_t in[1];
 } s_Sections_t;
 #endif /* s_Section_t */
@@ -498,7 +499,7 @@ typedef struct {
 } s_Slab_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Slab_t in[1];
 } s_Slabs_t;
 #endif /* s_Slab_t */
@@ -514,7 +515,7 @@ typedef struct {
 } s_TofPoint_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_TofPoint_t in[1];
 } s_TofPoints_t;
 #endif /* s_TofPoint_t */
@@ -537,7 +538,7 @@ typedef struct {
 } s_Column_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Column_t in[1];
 } s_Columns_t;
 #endif /* s_Column_t */
@@ -551,7 +552,7 @@ typedef struct {
 } s_Row_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_Row_t in[1];
 } s_Rows_t;
 #endif /* s_Row_t */
@@ -568,7 +569,7 @@ typedef struct {
 } s_ForwardShower_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_ForwardShower_t in[1];
 } s_ForwardShowers_t;
 #endif /* s_ForwardShower_t */
@@ -607,7 +608,7 @@ typedef struct {
 } s_PhysicsEvent_t;
 
 typedef struct {
-   int mult;
+   unsigned int mult;
    s_PhysicsEvent_t in[1];
 } s_PhysicsEvents_t;
 #endif /* s_PhysicsEvent_t */
@@ -716,12 +717,16 @@ s_Columns_t* make_s_Columns(int n);
 
 s_ForwardShowers_t* make_s_ForwardShowers(int n);
 
+#ifdef __cplusplus
+}
+#endif
+
 #ifndef s_DocumentString
 #define s_DocumentString
 
 extern char HDDM_s_DocumentString[];
 
-#ifdef _Tru64
+#ifdef INLINE_PREPEND_UNDERSCORES
 #define inline __inline
 #endif
 
@@ -732,7 +737,7 @@ extern char HDDM_s_DocumentString[];
 #define HDDM_STREAM_OUTPUT -92
 
 struct popNode_s {
-   void* (*unpacker)();
+   void* (*unpacker)(XDR*, struct popNode_s*);
    int inParent;
    int popListLength;
    struct popNode_s* popList[99];
@@ -748,6 +753,10 @@ typedef struct {
 } s_iostream_t;
 
 #endif /* HDDM_STREAM_INPUT */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 s_HDDM_t* read_s_HDDM(s_iostream_t* fp);
 

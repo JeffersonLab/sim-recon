@@ -22,7 +22,7 @@
 s_HDDM_t* make_s_HDDM()
 {
    int size = sizeof(s_HDDM_t);
-   s_HDDM_t* p = CALLOC(size,"s_HDDM_t");
+   s_HDDM_t* p = (s_HDDM_t*)CALLOC(size,"s_HDDM_t");
    return p;
 }
 
@@ -30,7 +30,7 @@ s_PhysicsEvents_t* make_s_PhysicsEvents(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_PhysicsEvents_t) + rep * sizeof(s_PhysicsEvent_t);
-   s_PhysicsEvents_t* p = CALLOC(size,"s_PhysicsEvents_t");
+   s_PhysicsEvents_t* p = (s_PhysicsEvents_t*)CALLOC(size,"s_PhysicsEvents_t");
    return p;
 }
 
@@ -38,35 +38,35 @@ s_Reactions_t* make_s_Reactions(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Reactions_t) + rep * sizeof(s_Reaction_t);
-   s_Reactions_t* p = CALLOC(size,"s_Reactions_t");
+   s_Reactions_t* p = (s_Reactions_t*)CALLOC(size,"s_Reactions_t");
    return p;
 }
 
 s_Beam_t* make_s_Beam()
 {
    int size = sizeof(s_Beam_t);
-   s_Beam_t* p = CALLOC(size,"s_Beam_t");
+   s_Beam_t* p = (s_Beam_t*)CALLOC(size,"s_Beam_t");
    return p;
 }
 
 s_Momentum_t* make_s_Momentum()
 {
    int size = sizeof(s_Momentum_t);
-   s_Momentum_t* p = CALLOC(size,"s_Momentum_t");
+   s_Momentum_t* p = (s_Momentum_t*)CALLOC(size,"s_Momentum_t");
    return p;
 }
 
 s_Properties_t* make_s_Properties()
 {
    int size = sizeof(s_Properties_t);
-   s_Properties_t* p = CALLOC(size,"s_Properties_t");
+   s_Properties_t* p = (s_Properties_t*)CALLOC(size,"s_Properties_t");
    return p;
 }
 
 s_Target_t* make_s_Target()
 {
    int size = sizeof(s_Target_t);
-   s_Target_t* p = CALLOC(size,"s_Target_t");
+   s_Target_t* p = (s_Target_t*)CALLOC(size,"s_Target_t");
    return p;
 }
 
@@ -74,7 +74,7 @@ s_Vertices_t* make_s_Vertices(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Vertices_t) + rep * sizeof(s_Vertex_t);
-   s_Vertices_t* p = CALLOC(size,"s_Vertices_t");
+   s_Vertices_t* p = (s_Vertices_t*)CALLOC(size,"s_Vertices_t");
    return p;
 }
 
@@ -82,28 +82,28 @@ s_Products_t* make_s_Products(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Products_t) + rep * sizeof(s_Product_t);
-   s_Products_t* p = CALLOC(size,"s_Products_t");
+   s_Products_t* p = (s_Products_t*)CALLOC(size,"s_Products_t");
    return p;
 }
 
 s_Origin_t* make_s_Origin()
 {
    int size = sizeof(s_Origin_t);
-   s_Origin_t* p = CALLOC(size,"s_Origin_t");
+   s_Origin_t* p = (s_Origin_t*)CALLOC(size,"s_Origin_t");
    return p;
 }
 
 s_HitView_t* make_s_HitView()
 {
    int size = sizeof(s_HitView_t);
-   s_HitView_t* p = CALLOC(size,"s_HitView_t");
+   s_HitView_t* p = (s_HitView_t*)CALLOC(size,"s_HitView_t");
    return p;
 }
 
 s_CentralDC_t* make_s_CentralDC()
 {
    int size = sizeof(s_CentralDC_t);
-   s_CentralDC_t* p = CALLOC(size,"s_CentralDC_t");
+   s_CentralDC_t* p = (s_CentralDC_t*)CALLOC(size,"s_CentralDC_t");
    return p;
 }
 
@@ -111,7 +111,7 @@ s_CathodeCyls_t* make_s_CathodeCyls(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_CathodeCyls_t) + rep * sizeof(s_CathodeCyl_t);
-   s_CathodeCyls_t* p = CALLOC(size,"s_CathodeCyls_t");
+   s_CathodeCyls_t* p = (s_CathodeCyls_t*)CALLOC(size,"s_CathodeCyls_t");
    return p;
 }
 
@@ -119,7 +119,7 @@ s_Bands_t* make_s_Bands(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Bands_t) + rep * sizeof(s_Band_t);
-   s_Bands_t* p = CALLOC(size,"s_Bands_t");
+   s_Bands_t* p = (s_Bands_t*)CALLOC(size,"s_Bands_t");
    return p;
 }
 
@@ -127,7 +127,7 @@ s_Rings_t* make_s_Rings(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Rings_t) + rep * sizeof(s_Ring_t);
-   s_Rings_t* p = CALLOC(size,"s_Rings_t");
+   s_Rings_t* p = (s_Rings_t*)CALLOC(size,"s_Rings_t");
    return p;
 }
 
@@ -135,7 +135,7 @@ s_Straws_t* make_s_Straws(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Straws_t) + rep * sizeof(s_Straw_t);
-   s_Straws_t* p = CALLOC(size,"s_Straws_t");
+   s_Straws_t* p = (s_Straws_t*)CALLOC(size,"s_Straws_t");
    return p;
 }
 
@@ -143,7 +143,7 @@ s_Hits_t* make_s_Hits(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Hits_t) + rep * sizeof(s_Hit_t);
-   s_Hits_t* p = CALLOC(size,"s_Hits_t");
+   s_Hits_t* p = (s_Hits_t*)CALLOC(size,"s_Hits_t");
    return p;
 }
 
@@ -151,14 +151,14 @@ s_CdcPoints_t* make_s_CdcPoints(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_CdcPoints_t) + rep * sizeof(s_CdcPoint_t);
-   s_CdcPoints_t* p = CALLOC(size,"s_CdcPoints_t");
+   s_CdcPoints_t* p = (s_CdcPoints_t*)CALLOC(size,"s_CdcPoints_t");
    return p;
 }
 
 s_ForwardDC_t* make_s_ForwardDC()
 {
    int size = sizeof(s_ForwardDC_t);
-   s_ForwardDC_t* p = CALLOC(size,"s_ForwardDC_t");
+   s_ForwardDC_t* p = (s_ForwardDC_t*)CALLOC(size,"s_ForwardDC_t");
    return p;
 }
 
@@ -166,7 +166,7 @@ s_Chambers_t* make_s_Chambers(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Chambers_t) + rep * sizeof(s_Chamber_t);
-   s_Chambers_t* p = CALLOC(size,"s_Chambers_t");
+   s_Chambers_t* p = (s_Chambers_t*)CALLOC(size,"s_Chambers_t");
    return p;
 }
 
@@ -174,7 +174,7 @@ s_CathodePlanes_t* make_s_CathodePlanes(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_CathodePlanes_t) + rep * sizeof(s_CathodePlane_t);
-   s_CathodePlanes_t* p = CALLOC(size,"s_CathodePlanes_t");
+   s_CathodePlanes_t* p = (s_CathodePlanes_t*)CALLOC(size,"s_CathodePlanes_t");
    return p;
 }
 
@@ -182,7 +182,7 @@ s_Strips_t* make_s_Strips(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Strips_t) + rep * sizeof(s_Strip_t);
-   s_Strips_t* p = CALLOC(size,"s_Strips_t");
+   s_Strips_t* p = (s_Strips_t*)CALLOC(size,"s_Strips_t");
    return p;
 }
 
@@ -190,7 +190,7 @@ s_AnodePlanes_t* make_s_AnodePlanes(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_AnodePlanes_t) + rep * sizeof(s_AnodePlane_t);
-   s_AnodePlanes_t* p = CALLOC(size,"s_AnodePlanes_t");
+   s_AnodePlanes_t* p = (s_AnodePlanes_t*)CALLOC(size,"s_AnodePlanes_t");
    return p;
 }
 
@@ -198,7 +198,7 @@ s_Wires_t* make_s_Wires(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Wires_t) + rep * sizeof(s_Wire_t);
-   s_Wires_t* p = CALLOC(size,"s_Wires_t");
+   s_Wires_t* p = (s_Wires_t*)CALLOC(size,"s_Wires_t");
    return p;
 }
 
@@ -206,14 +206,14 @@ s_FdcPoints_t* make_s_FdcPoints(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_FdcPoints_t) + rep * sizeof(s_FdcPoint_t);
-   s_FdcPoints_t* p = CALLOC(size,"s_FdcPoints_t");
+   s_FdcPoints_t* p = (s_FdcPoints_t*)CALLOC(size,"s_FdcPoints_t");
    return p;
 }
 
 s_StartCntr_t* make_s_StartCntr()
 {
    int size = sizeof(s_StartCntr_t);
-   s_StartCntr_t* p = CALLOC(size,"s_StartCntr_t");
+   s_StartCntr_t* p = (s_StartCntr_t*)CALLOC(size,"s_StartCntr_t");
    return p;
 }
 
@@ -221,7 +221,7 @@ s_Paddles_t* make_s_Paddles(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Paddles_t) + rep * sizeof(s_Paddle_t);
-   s_Paddles_t* p = CALLOC(size,"s_Paddles_t");
+   s_Paddles_t* p = (s_Paddles_t*)CALLOC(size,"s_Paddles_t");
    return p;
 }
 
@@ -229,14 +229,14 @@ s_StartPoints_t* make_s_StartPoints(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_StartPoints_t) + rep * sizeof(s_StartPoint_t);
-   s_StartPoints_t* p = CALLOC(size,"s_StartPoints_t");
+   s_StartPoints_t* p = (s_StartPoints_t*)CALLOC(size,"s_StartPoints_t");
    return p;
 }
 
 s_BarrelEMcal_t* make_s_BarrelEMcal()
 {
    int size = sizeof(s_BarrelEMcal_t);
-   s_BarrelEMcal_t* p = CALLOC(size,"s_BarrelEMcal_t");
+   s_BarrelEMcal_t* p = (s_BarrelEMcal_t*)CALLOC(size,"s_BarrelEMcal_t");
    return p;
 }
 
@@ -244,14 +244,14 @@ s_Modules_t* make_s_Modules(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Modules_t) + rep * sizeof(s_Module_t);
-   s_Modules_t* p = CALLOC(size,"s_Modules_t");
+   s_Modules_t* p = (s_Modules_t*)CALLOC(size,"s_Modules_t");
    return p;
 }
 
 s_Upstream_t* make_s_Upstream()
 {
    int size = sizeof(s_Upstream_t);
-   s_Upstream_t* p = CALLOC(size,"s_Upstream_t");
+   s_Upstream_t* p = (s_Upstream_t*)CALLOC(size,"s_Upstream_t");
    return p;
 }
 
@@ -259,14 +259,14 @@ s_Showers_t* make_s_Showers(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Showers_t) + rep * sizeof(s_Shower_t);
-   s_Showers_t* p = CALLOC(size,"s_Showers_t");
+   s_Showers_t* p = (s_Showers_t*)CALLOC(size,"s_Showers_t");
    return p;
 }
 
 s_Downstream_t* make_s_Downstream()
 {
    int size = sizeof(s_Downstream_t);
-   s_Downstream_t* p = CALLOC(size,"s_Downstream_t");
+   s_Downstream_t* p = (s_Downstream_t*)CALLOC(size,"s_Downstream_t");
    return p;
 }
 
@@ -274,14 +274,14 @@ s_BarrelShowers_t* make_s_BarrelShowers(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_BarrelShowers_t) + rep * sizeof(s_BarrelShower_t);
-   s_BarrelShowers_t* p = CALLOC(size,"s_BarrelShowers_t");
+   s_BarrelShowers_t* p = (s_BarrelShowers_t*)CALLOC(size,"s_BarrelShowers_t");
    return p;
 }
 
 s_Cerenkov_t* make_s_Cerenkov()
 {
    int size = sizeof(s_Cerenkov_t);
-   s_Cerenkov_t* p = CALLOC(size,"s_Cerenkov_t");
+   s_Cerenkov_t* p = (s_Cerenkov_t*)CALLOC(size,"s_Cerenkov_t");
    return p;
 }
 
@@ -289,7 +289,7 @@ s_Sections_t* make_s_Sections(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Sections_t) + rep * sizeof(s_Section_t);
-   s_Sections_t* p = CALLOC(size,"s_Sections_t");
+   s_Sections_t* p = (s_Sections_t*)CALLOC(size,"s_Sections_t");
    return p;
 }
 
@@ -297,14 +297,14 @@ s_Flashes_t* make_s_Flashes(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Flashes_t) + rep * sizeof(s_Flash_t);
-   s_Flashes_t* p = CALLOC(size,"s_Flashes_t");
+   s_Flashes_t* p = (s_Flashes_t*)CALLOC(size,"s_Flashes_t");
    return p;
 }
 
 s_ForwardTOF_t* make_s_ForwardTOF()
 {
    int size = sizeof(s_ForwardTOF_t);
-   s_ForwardTOF_t* p = CALLOC(size,"s_ForwardTOF_t");
+   s_ForwardTOF_t* p = (s_ForwardTOF_t*)CALLOC(size,"s_ForwardTOF_t");
    return p;
 }
 
@@ -312,21 +312,21 @@ s_Slabs_t* make_s_Slabs(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Slabs_t) + rep * sizeof(s_Slab_t);
-   s_Slabs_t* p = CALLOC(size,"s_Slabs_t");
+   s_Slabs_t* p = (s_Slabs_t*)CALLOC(size,"s_Slabs_t");
    return p;
 }
 
 s_Left_t* make_s_Left()
 {
    int size = sizeof(s_Left_t);
-   s_Left_t* p = CALLOC(size,"s_Left_t");
+   s_Left_t* p = (s_Left_t*)CALLOC(size,"s_Left_t");
    return p;
 }
 
 s_Right_t* make_s_Right()
 {
    int size = sizeof(s_Right_t);
-   s_Right_t* p = CALLOC(size,"s_Right_t");
+   s_Right_t* p = (s_Right_t*)CALLOC(size,"s_Right_t");
    return p;
 }
 
@@ -334,14 +334,14 @@ s_TofPoints_t* make_s_TofPoints(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_TofPoints_t) + rep * sizeof(s_TofPoint_t);
-   s_TofPoints_t* p = CALLOC(size,"s_TofPoints_t");
+   s_TofPoints_t* p = (s_TofPoints_t*)CALLOC(size,"s_TofPoints_t");
    return p;
 }
 
 s_ForwardEMcal_t* make_s_ForwardEMcal()
 {
    int size = sizeof(s_ForwardEMcal_t);
-   s_ForwardEMcal_t* p = CALLOC(size,"s_ForwardEMcal_t");
+   s_ForwardEMcal_t* p = (s_ForwardEMcal_t*)CALLOC(size,"s_ForwardEMcal_t");
    return p;
 }
 
@@ -349,7 +349,7 @@ s_Rows_t* make_s_Rows(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Rows_t) + rep * sizeof(s_Row_t);
-   s_Rows_t* p = CALLOC(size,"s_Rows_t");
+   s_Rows_t* p = (s_Rows_t*)CALLOC(size,"s_Rows_t");
    return p;
 }
 
@@ -357,7 +357,7 @@ s_Columns_t* make_s_Columns(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_Columns_t) + rep * sizeof(s_Column_t);
-   s_Columns_t* p = CALLOC(size,"s_Columns_t");
+   s_Columns_t* p = (s_Columns_t*)CALLOC(size,"s_Columns_t");
    return p;
 }
 
@@ -365,7 +365,7 @@ s_ForwardShowers_t* make_s_ForwardShowers(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
    int size = sizeof(s_ForwardShowers_t) + rep * sizeof(s_ForwardShower_t);
-   s_ForwardShowers_t* p = CALLOC(size,"s_ForwardShowers_t");
+   s_ForwardShowers_t* p = (s_ForwardShowers_t*)CALLOC(size,"s_ForwardShowers_t");
    return p;
 }
 
@@ -509,7 +509,7 @@ static s_PhysicsEvents_t* unpack_s_PhysicsEvents(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_PhysicsEvents(mult);
       this1->mult = mult;
@@ -552,7 +552,7 @@ static s_Reactions_t* unpack_s_Reactions(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Reactions(mult);
       this1->mult = mult;
@@ -713,7 +713,7 @@ static s_Vertices_t* unpack_s_Vertices(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Vertices(mult);
       this1->mult = mult;
@@ -754,7 +754,7 @@ static s_Products_t* unpack_s_Products(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Products(mult);
       this1->mult = mult;
@@ -892,7 +892,7 @@ static s_CathodeCyls_t* unpack_s_CathodeCyls(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_CathodeCyls(mult);
       this1->mult = mult;
@@ -934,7 +934,7 @@ static s_Bands_t* unpack_s_Bands(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Bands(mult);
       this1->mult = mult;
@@ -960,7 +960,7 @@ static s_Rings_t* unpack_s_Rings(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Rings(mult);
       this1->mult = mult;
@@ -1002,7 +1002,7 @@ static s_Straws_t* unpack_s_Straws(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Straws(mult);
       this1->mult = mult;
@@ -1044,7 +1044,7 @@ static s_Hits_t* unpack_s_Hits(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Hits(mult);
       this1->mult = mult;
@@ -1070,7 +1070,7 @@ static s_CdcPoints_t* unpack_s_CdcPoints(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_CdcPoints(mult);
       this1->mult = mult;
@@ -1136,7 +1136,7 @@ static s_Chambers_t* unpack_s_Chambers(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Chambers(mult);
       this1->mult = mult;
@@ -1179,7 +1179,7 @@ static s_CathodePlanes_t* unpack_s_CathodePlanes(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_CathodePlanes(mult);
       this1->mult = mult;
@@ -1222,7 +1222,7 @@ static s_Strips_t* unpack_s_Strips(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Strips(mult);
       this1->mult = mult;
@@ -1247,7 +1247,7 @@ static s_AnodePlanes_t* unpack_s_AnodePlanes(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_AnodePlanes(mult);
       this1->mult = mult;
@@ -1290,7 +1290,7 @@ static s_Wires_t* unpack_s_Wires(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Wires(mult);
       this1->mult = mult;
@@ -1332,7 +1332,7 @@ static s_FdcPoints_t* unpack_s_FdcPoints(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_FdcPoints(mult);
       this1->mult = mult;
@@ -1398,7 +1398,7 @@ static s_Paddles_t* unpack_s_Paddles(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Paddles(mult);
       this1->mult = mult;
@@ -1440,7 +1440,7 @@ static s_StartPoints_t* unpack_s_StartPoints(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_StartPoints(mult);
       this1->mult = mult;
@@ -1506,7 +1506,7 @@ static s_Modules_t* unpack_s_Modules(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Modules(mult);
       this1->mult = mult;
@@ -1584,7 +1584,7 @@ static s_Showers_t* unpack_s_Showers(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Showers(mult);
       this1->mult = mult;
@@ -1646,7 +1646,7 @@ static s_BarrelShowers_t* unpack_s_BarrelShowers(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_BarrelShowers(mult);
       this1->mult = mult;
@@ -1711,7 +1711,7 @@ static s_Sections_t* unpack_s_Sections(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Sections(mult);
       this1->mult = mult;
@@ -1753,7 +1753,7 @@ static s_Flashes_t* unpack_s_Flashes(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Flashes(mult);
       this1->mult = mult;
@@ -1815,7 +1815,7 @@ static s_Slabs_t* unpack_s_Slabs(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Slabs(mult);
       this1->mult = mult;
@@ -1929,7 +1929,7 @@ static s_TofPoints_t* unpack_s_TofPoints(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_TofPoints(mult);
       this1->mult = mult;
@@ -1993,7 +1993,7 @@ static s_Rows_t* unpack_s_Rows(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Rows(mult);
       this1->mult = mult;
@@ -2035,7 +2035,7 @@ static s_Columns_t* unpack_s_Columns(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_Columns(mult);
       this1->mult = mult;
@@ -2077,7 +2077,7 @@ static s_ForwardShowers_t* unpack_s_ForwardShowers(XDR* xdrs, popNode* pop)
    {
       int start = xdr_getpos(xdrs);
       int m;
-      int mult;
+      unsigned int mult;
       xdr_u_int(xdrs,&mult);
       this1 = make_s_ForwardShowers(mult);
       this1->mult = mult;
@@ -3700,9 +3700,9 @@ int flush_s_HDDM(s_HDDM_t* this1,s_iostream_t* fp)
    }
    else if (fp == 0)
    {
-      XDR* xdrs = malloc(sizeof(XDR));
+      XDR* xdrs = (XDR*)malloc(sizeof(XDR));
       int max_buffer_size = 1000000;
-      char* dump = malloc(max_buffer_size);
+      char* dump = (char*)malloc(max_buffer_size);
       xdrmem_create(xdrs,dump,max_buffer_size,XDR_ENCODE);
       pack_s_HDDM(xdrs,this1);
       xdr_destroy(xdrs);
@@ -3771,7 +3771,7 @@ static popNode* matches(char* b, char* c)
    {
       if ((clevel == blevel) && (strcmp(ctag,btag) == 0))
       {
-         popNode* this1 = malloc(sizeof(popNode));
+         popNode* this1 = (popNode*)malloc(sizeof(popNode));
          int len = index(c+1,'\n') - c;
          if (strncmp(c,b,len) != 0)
          {
@@ -3779,187 +3779,187 @@ static popNode* matches(char* b, char* c)
          }
          if (strcmp(btag,"HDDM") == 0)
          {
-            this1->unpacker = (void*) unpack_s_HDDM;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_HDDM;
          }
          else if (strcmp(btag,"physicsEvent") == 0)
          {
-            this1->unpacker = (void*) unpack_s_PhysicsEvents;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_PhysicsEvents;
          }
          else if (strcmp(btag,"reaction") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Reactions;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Reactions;
          }
          else if (strcmp(btag,"beam") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Beam;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Beam;
          }
          else if (strcmp(btag,"momentum") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Momentum;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Momentum;
          }
          else if (strcmp(btag,"properties") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Properties;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Properties;
          }
          else if (strcmp(btag,"target") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Target;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Target;
          }
          else if (strcmp(btag,"vertex") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Vertices;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Vertices;
          }
          else if (strcmp(btag,"product") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Products;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Products;
          }
          else if (strcmp(btag,"origin") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Origin;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Origin;
          }
          else if (strcmp(btag,"hitView") == 0)
          {
-            this1->unpacker = (void*) unpack_s_HitView;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_HitView;
          }
          else if (strcmp(btag,"centralDC") == 0)
          {
-            this1->unpacker = (void*) unpack_s_CentralDC;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_CentralDC;
          }
          else if (strcmp(btag,"cathodeCyl") == 0)
          {
-            this1->unpacker = (void*) unpack_s_CathodeCyls;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_CathodeCyls;
          }
          else if (strcmp(btag,"band") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Bands;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Bands;
          }
          else if (strcmp(btag,"ring") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Rings;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Rings;
          }
          else if (strcmp(btag,"straw") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Straws;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Straws;
          }
          else if (strcmp(btag,"hit") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Hits;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Hits;
          }
          else if (strcmp(btag,"cdcPoint") == 0)
          {
-            this1->unpacker = (void*) unpack_s_CdcPoints;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_CdcPoints;
          }
          else if (strcmp(btag,"forwardDC") == 0)
          {
-            this1->unpacker = (void*) unpack_s_ForwardDC;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_ForwardDC;
          }
          else if (strcmp(btag,"chamber") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Chambers;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Chambers;
          }
          else if (strcmp(btag,"cathodePlane") == 0)
          {
-            this1->unpacker = (void*) unpack_s_CathodePlanes;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_CathodePlanes;
          }
          else if (strcmp(btag,"strip") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Strips;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Strips;
          }
          else if (strcmp(btag,"anodePlane") == 0)
          {
-            this1->unpacker = (void*) unpack_s_AnodePlanes;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_AnodePlanes;
          }
          else if (strcmp(btag,"wire") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Wires;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Wires;
          }
          else if (strcmp(btag,"fdcPoint") == 0)
          {
-            this1->unpacker = (void*) unpack_s_FdcPoints;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_FdcPoints;
          }
          else if (strcmp(btag,"startCntr") == 0)
          {
-            this1->unpacker = (void*) unpack_s_StartCntr;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_StartCntr;
          }
          else if (strcmp(btag,"paddle") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Paddles;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Paddles;
          }
          else if (strcmp(btag,"startPoint") == 0)
          {
-            this1->unpacker = (void*) unpack_s_StartPoints;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_StartPoints;
          }
          else if (strcmp(btag,"barrelEMcal") == 0)
          {
-            this1->unpacker = (void*) unpack_s_BarrelEMcal;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_BarrelEMcal;
          }
          else if (strcmp(btag,"module") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Modules;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Modules;
          }
          else if (strcmp(btag,"upstream") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Upstream;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Upstream;
          }
          else if (strcmp(btag,"shower") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Showers;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Showers;
          }
          else if (strcmp(btag,"downstream") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Downstream;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Downstream;
          }
          else if (strcmp(btag,"barrelShower") == 0)
          {
-            this1->unpacker = (void*) unpack_s_BarrelShowers;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_BarrelShowers;
          }
          else if (strcmp(btag,"Cerenkov") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Cerenkov;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Cerenkov;
          }
          else if (strcmp(btag,"section") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Sections;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Sections;
          }
          else if (strcmp(btag,"flash") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Flashes;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Flashes;
          }
          else if (strcmp(btag,"forwardTOF") == 0)
          {
-            this1->unpacker = (void*) unpack_s_ForwardTOF;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_ForwardTOF;
          }
          else if (strcmp(btag,"slab") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Slabs;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Slabs;
          }
          else if (strcmp(btag,"left") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Left;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Left;
          }
          else if (strcmp(btag,"right") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Right;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Right;
          }
          else if (strcmp(btag,"tofPoint") == 0)
          {
-            this1->unpacker = (void*) unpack_s_TofPoints;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_TofPoints;
          }
          else if (strcmp(btag,"forwardEMcal") == 0)
          {
-            this1->unpacker = (void*) unpack_s_ForwardEMcal;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_ForwardEMcal;
          }
          else if (strcmp(btag,"row") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Rows;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Rows;
          }
          else if (strcmp(btag,"column") == 0)
          {
-            this1->unpacker = (void*) unpack_s_Columns;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Columns;
          }
          else if (strcmp(btag,"forwardShower") == 0)
          {
-            this1->unpacker = (void*) unpack_s_ForwardShowers;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_ForwardShowers;
          }
          else
          {
@@ -3995,7 +3995,7 @@ static popNode* matches(char* b, char* c)
 
 s_iostream_t* open_s_HDDM(char* filename)
 {
-   s_iostream_t* fp = malloc(sizeof(s_iostream_t));
+   s_iostream_t* fp = (s_iostream_t*)malloc(sizeof(s_iostream_t));
    char* p;
    char* head;
    if (filename)
@@ -4012,7 +4012,7 @@ s_iostream_t* open_s_HDDM(char* filename)
       return 0;
    }
    fp->iomode = HDDM_STREAM_INPUT;
-   head = malloc(1000000);
+   head = (char*)malloc(1000000);
    *head = 0;
    for (p = head;
         strstr(head,"</HDDM>") == 0;
@@ -4036,9 +4036,9 @@ s_iostream_t* open_s_HDDM(char* filename)
       fprintf(stderr,"  Please recompile.\n");
       exit(9);
    }
-   fp->filename = malloc(strlen(filename) + 1);
+   fp->filename = (char*)malloc(strlen(filename) + 1);
    strcpy(fp->filename,filename);
-   fp->xdrs = malloc(sizeof(XDR));
+   fp->xdrs = (XDR*)malloc(sizeof(XDR));
    xdrstdio_create(fp->xdrs,fp->fd,XDR_DECODE);
    return fp;
 }
@@ -4047,7 +4047,7 @@ s_iostream_t* init_s_HDDM(char* filename)
 {
    int len;
    char* head;
-   s_iostream_t* fp = malloc(sizeof(s_iostream_t));
+   s_iostream_t* fp = (s_iostream_t*)malloc(sizeof(s_iostream_t));
    if (filename)
    {
       fp->fd = fopen(filename,"w");
@@ -4063,7 +4063,7 @@ s_iostream_t* init_s_HDDM(char* filename)
    }
    fp->iomode = HDDM_STREAM_OUTPUT;
    len = strlen(HDDM_s_DocumentString);
-   head = malloc(len+1);
+   head = (char*)malloc(len+1);
    strcpy(head,HDDM_s_DocumentString);
    if (fwrite(head,1,len,fp->fd) != len)
    {
@@ -4072,10 +4072,10 @@ s_iostream_t* init_s_HDDM(char* filename)
       fprintf(stderr,"output file %s\n",filename);
       exit(9);
    }
-   fp->filename = malloc(strlen(filename) + 1);
+   fp->filename = (char*)malloc(strlen(filename) + 1);
    strcpy(fp->filename,filename);
    fp->popTop = 0;
-   fp->xdrs = malloc(sizeof(XDR));
+   fp->xdrs = (XDR*)malloc(sizeof(XDR));
    xdrstdio_create(fp->xdrs,fp->fd,XDR_ENCODE);
    free(head);
    return fp;
