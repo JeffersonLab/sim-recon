@@ -84,7 +84,7 @@ class DContainer{
 			if(idx<0 || idx>=nrows)return NOERROR;
 			if(idx>=0 && idx<nrows-1){
 				char *ptr = (char*)*container_ptr;
-				memcpy(ptr+rowsize*idx, ptr+rowsize*(idx+1), rowsize);
+				memmove(ptr+rowsize*idx, ptr+rowsize*(idx+1), rowsize*(nrows-idx-1));
 			}
 			nrows--;
 		}
