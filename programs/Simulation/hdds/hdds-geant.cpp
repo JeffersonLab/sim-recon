@@ -274,7 +274,7 @@ void fortranGetfunc(DOM_Element& el, char* ident)
 
    if (tableLength > 0)
    {
-      cout  << "      integer istart(" << Refsys::fVolumes << ")" << endl;
+      cout  << "      integer i,istart(" << Refsys::fVolumes << ")" << endl;
 
       for (int i = 0; i < Refsys::fVolumes;)
       {
