@@ -64,9 +64,9 @@ derror_t DEvent::PrintFactories(int sparsify)
 
 	cout<<endl;
 	cout<<"Registered factories: ("<<factories->nrows<<" total)"<<endl;
-	cout<<"----------------------"<<endl;
-	cout<<"Name:            nrows: rowsize: maxrows:"<<endl;
 	cout<<endl;
+	cout<<"Name:            nrows: rowsize: maxrows:"<<endl;
+	cout<<"---------------- ------ -------- --------"<<endl;
 
 	DFactory **factory = (DFactory**)*(factories->container_ptr);
 	for(int i=0; i<factories->nrows; i++, factory++){
@@ -94,7 +94,6 @@ derror_t DEvent::PrintFactories(int sparsify)
 		//cout<<"0x"<<hex<<(unsigned long)*factory<<dec<<endl;
 	}
 	
-	cout<<"----------------------"<<endl;
 	cout<<endl;
 
 	return NOERROR;
