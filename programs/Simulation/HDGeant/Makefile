@@ -39,8 +39,13 @@ endif
 HDDS = ../hdds
 HDDM = ../hddm
 
+ifeq ($(OStype),OSF1)
 AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o gdstep.o guxcs.o \
-       hddsGeant3.o goptimize.o cobrems.o
+       hddsGeant3.o goptimize.o cobrems.o vunit.o gsrotm.o fint.o gthion.o
+else
+AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o gdstep.o guxcs.o \
+       hddsGeant3.o goptimize.o cobrems.o 
+endif
 
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
