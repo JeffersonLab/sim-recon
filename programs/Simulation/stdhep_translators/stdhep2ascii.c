@@ -322,6 +322,7 @@ int getCharge(int PDGpid){
   case -Lambda:
     charge =0;
   default:
+    break;
   }
 
   return charge;  
