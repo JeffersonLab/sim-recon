@@ -53,14 +53,17 @@
 
   <pcon name="CERE" material="CerenkovGas" comment="Cerenkov counter volume"
 		    parameters="cerenkovCntr_pars">
-    <polyplane Rio_Z="20.0  95.0   0.0" />
-    <polyplane Rio_Z="20.0  95.0  50.0" />
-    <polyplane Rio_Z="20.0 105.0  50.1" />
-    <polyplane Rio_Z="20.0 105.0  90.0" />
+    <polyplane Rio_Z="5.0  65.0   0.0" />
+    <polyplane Rio_Z="5.0  95.0  80.0" />
+    <polyplane Rio_Z="5.0 250.0 120.0" />
+    <polyplane Rio_Z="5.0 250.0 140.0" />
   </pcon>
 
   <composition name="CerenkovCntr">
-    <posXYZ volume="CERE" X_Y_Z="0.0  0.0  455.0" />
+<!-->
+    Origin of CerenkovCntr is center of upstream end.
+>>-->
+    <posXYZ volume="CERE" X_Y_Z="0.0  0.0  0.0" />
   </composition>
 
 </section>

@@ -19,14 +19,14 @@
 
   <parameters name="barrelEMcal_pars" type="mcfast">
     <real_array name="rmin"	comment="upstream, downstream end inner radius"
- 				values="   65.0      65.0  "
+ 				values="   65.0      65.0"
 				unit="cm" 	/>
     <real_array name="rmax"	comment="upstream, downstream end outer radius"
-                                values="   90.0      90.0  "
+                                values="   90.0      90.0"
 				unit="cm" 	/>
-    <real       name="z0"	value="217.5"	comment="z coord. of midplane"
+    <real       name="z0"	value="210.0"	comment="z coord. of midplane"
 				unit="cm"	/>
-    <real       name="zlen"	value="405.0"	comment="length of counters"
+    <real       name="zlen"	value="390.0"	comment="length of counters"
 				unit="cm"	/>
     <reference  name="material"	value="leadScint" />
     <reference  name="active"	value="leadScint" />
@@ -51,9 +51,9 @@
     <int	name="type"	value="1"	/>
   </mcfast>
 
-  <tubs name="BCAL" Rio_Z="65.0  90.0  405.0" unit_length="cm" material="Air"
+  <tubs name="BCAL" Rio_Z="65.0  90.0  390.0" unit_length="cm" material="Air"
 	parameters="barrelEMcal_pars"	comment="barrel EMcal mother"       />
-  <tubs name="BCAM" Rio_Z="65.0  90.0  405.0" profile="0   7.5" 
+  <tubs name="BCAM" Rio_Z="65.0  90.0  390.0" profile="0   7.5" 
 		    unit_length="cm"	      unit_angle="deg"
 	material="leadScint" 		comment="barrel calorimeter module" />
 
@@ -64,8 +64,10 @@
   </composition>
 
   <composition name="BarrelEMcal">
-    <posXYZ volume="barrelEMcal" X_Y_Z="0.0 0.0 217.5">
-    </posXYZ>
+<!-->
+     Origin of BarrelEMcal is center of upstream end.
+>>-->
+    <posXYZ volume="barrelEMcal" X_Y_Z="0.0 0.0 195.0" />
   </composition>
 
 </section>

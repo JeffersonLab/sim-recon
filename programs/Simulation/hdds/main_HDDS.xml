@@ -49,23 +49,32 @@
     <string name="geom_id" value="CENTRAL" />
   </mcfast>
 
-  <box name="HALL" X_Y_Z="1000. 1000. 20000." material="Air"
+  <box name="HALL" X_Y_Z="1000. 1000. 4000." material="Air"
        				comment="master volume for description" />
 
-  <composition name="fieldVolume" envelope="LASS">
-    <posXYZ volume="Target">		</posXYZ>
-    <posXYZ volume="CentralDC">		</posXYZ>
-    <posXYZ volume="ForwardDC"> 	</posXYZ>
-    <posXYZ volume="StartCntr"> 	</posXYZ>
-    <posXYZ volume="BarrelEMcal">	</posXYZ>
-    <posXYZ volume="CerenkovCntr">	</posXYZ>
+  <composition name="barrelPackage" envelope="LASS">
+    <posXYZ volume="Solenoid" />
+    <posXYZ volume="CentralDC" X_Y_Z="0.0 0.0 17.0" />
+    <posXYZ volume="ForwardDC" X_Y_Z="0.0 0.0 224.0" />
+    <posXYZ volume="StartCntr" X_Y_Z="0.0 0.0 35.0" />
+    <posXYZ volume="BarrelEMcal" X_Y_Z="0.0 0.0 15.0" />
+  </composition>
+
+  <composition name="forwardPackage">
+    <posXYZ volume="CerenkovCntr" X_Y_Z="0.0 0.0 410.0" />
+    <posXYZ volume="ForwardTOF" X_Y_Z="0.0 0.0 565.0" />
+    <posXYZ volume="ForwardEMcal" X_Y_Z="0.0 0.0 575.0" />
+  </composition>
+
+  <composition name="fieldVolume">
+    <posXYZ volume="barrelPackage" />
+    <posXYZ volume="forwardPackage" />
+    <posXYZ volume="Target" X_Y_Z="0.0 0.0 50.0" />
   </composition>
 
   <composition name="everything" envelope="HALL">
-    <posXYZ volume="BeamLine">		</posXYZ>
-    <posXYZ volume="fieldVolume">	</posXYZ>
-    <posXYZ volume="ForwardTOF">	</posXYZ>
-    <posXYZ volume="ForwardEMcal">	</posXYZ>
+    <posXYZ volume="BeamLine" X_Y_Z="0.0 0.0 -1500." />
+    <posXYZ volume="fieldVolume" />
   </composition>
 
 </section>

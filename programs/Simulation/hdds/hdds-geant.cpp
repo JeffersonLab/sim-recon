@@ -38,6 +38,14 @@
 #include <stdio.h>
 #include <math.h>
 
+double fieldStrength[] =
+{
+   0.0,	  // zero field regions
+   0.0,   // inhomogenous field regions (unused)
+   22.4,  // mapped field regions: solenoid (kG, approximate)
+   2.0    // uniform field regions: sweep magnets (kG)
+};
+
 void usage()
 {
     cerr << "\nUsage:\n"
@@ -51,11 +59,10 @@ class Refsys
 {
  public:
    DOM_Element fMother;		// current mother volume element
+   int fMagField;		// flag indicating magnetic field
    double fOrigin[3];		// x,y,z coordinate of volume origin (cm)
    double fRmatrix[3][3];	// rotation matrix (daughter -> mother)
-   double fMagField;		// rough magnitude of magnetic field
-   int fRotation;		// incremented for each unique Rmatrix
-   int fIdentifiers;		// length of identifier tag list
+   int fRotation;		// unique Rmatrix flag
 
    static char* fIdentifierList; // list of identifier strings (space-sep)
    static int fVolumes;		// total number of volumes to far
@@ -67,13 +74,21 @@ class Refsys
       int step;
    };
    struct VolIdent fIdentifier[999];	// identifier tag list 
+   int fIdentifiers;			// length of identifier tag list
 
    Refsys();				// empty constructor
    Refsys(const Refsys& src);		// copy constructor
    Refsys& operator=(Refsys& src);	// copy operator
-   Refsys& reset();			// reset Id list, Origin, Rmatrix
+   Refsys& reset();			// reset origin, Rmatrix
+   Refsys& reset(const Refsys& ref);	// reset origin, Rmatrix to ref
    Refsys& shift(const double vector[3]); // translate origin
+   Refsys& shift(const Refsys& ref);	  // copy origin from ref
+   Refsys& shift(const Refsys& ref,
+                 const double vector[3]); // translate origin in ref frame
    Refsys& rotate(const double omega[3]); // rotate by vector omega (radians)
+   Refsys& rotate(const Refsys& ref);	  // copy Rmatrix from ref
+   Refsys& rotate(const Refsys& ref,
+                  const double omega[3]); // rotate by omega in ref frame
 
    int createMaterial(DOM_Element& el);	// generate code for materials
    int createSolid(DOM_Element& el);	// generate code for solids
@@ -201,12 +216,12 @@ void fortranGetfunc(DOM_Element& el, char* ident)
       {
          int i0 = i;
          char str[16];
-         sprintf(str, "%4d", start[i]);
+         sprintf(str, "%5d", start[i]);
          cout << "     + " << str;
          for (i++; i <= Refsys::fVolumes; i++)
          {
             if (i == (i0 + 10)) break;
-            sprintf(str, ",%4d", start[i]);
+            sprintf(str, ",%5d", start[i]);
             cout << str;
          }
          if (i > Refsys::fVolumes)
@@ -224,12 +239,12 @@ void fortranGetfunc(DOM_Element& el, char* ident)
       {
          int i0 = i;
          char str[16];
-         sprintf(str, "%4d", table[i]);
+         sprintf(str, "%5d", table[i]);
          cout << "     + " << str;
          for (i++; i < tableLength; i++)
          {
             if (i == (i0 + 10)) break;
-            sprintf(str, ",%4d", table[i]);
+            sprintf(str, ",%5d", table[i]);
             cout << str;
          }
          if (i == tableLength)
@@ -435,33 +450,25 @@ Refsys::Refsys()			// empty constructor
 
 Refsys::Refsys(const Refsys& src)	// copy constructor
 {
-   int i;
+   reset(src);
    fMother = src.fMother;
-   for (i = 0; i < 3; i++)
-   {
-      fOrigin[i] = src.fOrigin[i];
-      fRmatrix[i][0] = src.fRmatrix[i][0];
-      fRmatrix[i][1] = src.fRmatrix[i][1];
-      fRmatrix[i][2] = src.fRmatrix[i][2];
-   }
    fRotation = src.fRotation;
    fMagField = src.fMagField;
    fIdentifiers = src.fIdentifiers;
-   for (i = 0; i < fIdentifiers; i++)
+   for (int i = 0; i < fIdentifiers; i++)
    {
       fIdentifier[i] = src.fIdentifier[i];
    }
 } 
 
-Refsys& Refsys::operator=(Refsys& src)	   // copy operator (deep sematics)
+Refsys& Refsys::operator=(Refsys& src)	// copy operator (deep sematics)
 {
    Refsys* dst = new Refsys(src);
    return *dst;
 }
 
-Refsys& Refsys::reset()			// reset Id list, Origin, Rmatrix
+Refsys& Refsys::reset()			// reset Origin, Rmatrix to null
 {
-   fIdentifiers = 0;
    fOrigin[0] = fOrigin[1] = fOrigin[2] = 0;
    fRmatrix[0][0] = fRmatrix[1][1] = fRmatrix[2][2] = 1;
    fRmatrix[0][1] = fRmatrix[1][0] = fRmatrix[1][2] =
@@ -470,12 +477,44 @@ Refsys& Refsys::reset()			// reset Id list, Origin, Rmatrix
    return *this;
 }
 
+Refsys& Refsys::reset(const Refsys& ref) // reset Origin, Rmatrix to ref
+{
+   for (int i = 0; i < 3; i++)
+   {
+      fOrigin[i] = ref.fOrigin[i];
+      fRmatrix[i][0] = ref.fRmatrix[i][0];
+      fRmatrix[i][1] = ref.fRmatrix[i][1];
+      fRmatrix[i][2] = ref.fRmatrix[i][2];
+   }
+   fRotation = ref.fRotation;
+   return *this;
+}
+
 Refsys& Refsys::shift(const double vector[3])     // translate origin
 {
-   fOrigin[0] += vector[0];
-   fOrigin[1] += vector[1];
-   fOrigin[2] += vector[2];
+   for (int i = 0; i < 3; i++)
+   {
+      fOrigin[i] += fRmatrix[i][0] * vector[0] +
+                    fRmatrix[i][1] * vector[1] +
+                    fRmatrix[i][2] * vector[2];
+   }
    return *this;
+}
+
+Refsys& Refsys::shift(const Refsys& ref)      // copy origin from ref
+{
+   fOrigin[0] = ref.fOrigin[0];
+   fOrigin[1] = ref.fOrigin[1];
+   fOrigin[2] = ref.fOrigin[2];
+   return *this;
+}
+
+Refsys& Refsys::shift(const Refsys& ref,
+                      const double vector[3]) // translate origin in ref frame
+{
+   Refsys myRef(ref);
+   myRef.shift(vector);
+   return shift(myRef);
 }
 
 Refsys& Refsys::rotate(const double omega[3]) // rotate by vector omega (rad)
@@ -493,21 +532,41 @@ Refsys& Refsys::rotate(const double omega[3]) // rotate by vector omega (rad)
       {
          double x[3];
          double xx[3];
-         x[0] = cosz * fRmatrix[0][i] - sinz * fRmatrix[1][i];
-         x[1] = sinz * fRmatrix[0][i] + cosz * fRmatrix[1][i];
-         x[2] = fRmatrix[2][i];
-         xx[2] = cosy * x[2] - siny * x[0];
-         xx[0] = siny * x[2] + cosy * x[0];
+         x[0] = fRmatrix[i][0] * cosz + fRmatrix[i][1] * sinz;
+         x[1] = fRmatrix[i][1] * cosz - fRmatrix[i][0] * sinz;
+         x[2] = fRmatrix[i][2];
+         xx[0] = x[0] * cosy - x[2] * siny;
          xx[1] = x[1];
-         fRmatrix[1][i] = cosx * xx[1] - sinz * xx[2];
-         fRmatrix[2][i] = sinx * xx[1] + cosz * xx[2];
-         fRmatrix[0][i] = xx[0];
+         xx[2] = x[2] * cosy + x[0] * siny;
+         fRmatrix[i][0] = xx[0];
+         fRmatrix[i][1] = xx[1] * cosx + xx[2] * sinx;
+         fRmatrix[i][2] = xx[2] * cosx - xx[1] * sinx;
       }
 
-      fRotation = ++(Refsys::fRotations);
+      fRotation = -1;
    }
 
    return *this;
+}
+
+Refsys& Refsys::rotate(const Refsys& ref)      // copy Rmatrix from ref
+{
+   for (int i = 0; i < 3; i++)
+   {
+      fRmatrix[i][0] = ref.fRmatrix[i][0];
+      fRmatrix[i][1] = ref.fRmatrix[i][1];
+      fRmatrix[i][2] = ref.fRmatrix[i][2];
+   }
+   fRotation = ref.fRotation;
+   return *this;
+}
+
+Refsys& Refsys::rotate(const Refsys& ref,
+                       const double omega[3])  // rotate by omega in ref frame
+{
+   Refsys myRef(ref);
+   myRef.rotate(omega);
+   return rotate(myRef);
 }
 
 int Refsys::createMaterial(DOM_Element& el)
@@ -770,7 +829,6 @@ int Refsys::createSolid(DOM_Element& el)
    DOMString shapeS = el.getTagName();
    DOMString nameS = el.getAttribute("name");
    DOMString materialS = el.getAttribute("material");
-   char* shapeStr = shapeS.transcode();
    char* nameStr = nameS.transcode();
    char* matStr = materialS.transcode();
 
@@ -797,12 +855,12 @@ int Refsys::createSolid(DOM_Element& el)
         << "      natmed = \'" << nameStr << " " << matStr << "\'" << endl
         << "      nmat = " << imate << endl
         << "      isvol = " << (sensiS.equals("true") ? 1 : 0) << endl
-        << "      ifield = " << ((fMagField == 0) ? 0 : 2) << endl
-        << "      fieldm = " << fMagField << endl
+        << "      ifield = " << fMagField << endl
+        << "      fieldm = " << fieldStrength[fMagField] << endl
         << "      tmaxfd = " << ((fMagField == 0) ? 0 : 1.0) << endl
         << "      stemax = 0" << endl
         << "      deemax = 0" << endl
-        << "      epsil = 0" << endl
+        << "      epsil = 1e-3" << endl
         << "      stmin = 0" << endl
         << "      nwbuf = 0" << endl
         << "      call gstmed(itmed,natmed,nmat,isvol,ifield,fieldm,tmaxfd,"
@@ -816,6 +874,7 @@ int Refsys::createSolid(DOM_Element& el)
    int npar = 0;
    if (shapeS.equals("box"))
    {
+      shapeS = "BOX ";
       double xl, yl, zl;
       char* xyzStr = el.getAttribute("X_Y_Z").transcode();
       sscanf(xyzStr, "%lf %lf %lf", &xl, &yl, &zl);
@@ -828,6 +887,7 @@ int Refsys::createSolid(DOM_Element& el)
    }
    else if (shapeS.equals("tubs"))
    {
+      shapeS = "TUBS";
       double ri, ro, zl, phi0, dphi;
       char* riozStr = el.getAttribute("Rio_Z").transcode();
       sscanf(riozStr, "%lf %lf %lf", &ri, &ro, &zl);
@@ -844,12 +904,13 @@ int Refsys::createSolid(DOM_Element& el)
       par[4] = (phi0 + dphi) * todeg;
       if (dphi == 360)
       {
-         strcpy(shapeStr, "tube");
+         shapeS = "TUBE";
          npar = 3;
       }
    }
    else if (shapeS.equals("trd"))
    {
+      shapeS = "TRAP";
       double xm, ym, xp, yp, zl;
       char* xyzStr = el.getAttribute("Xmp_Ymp_Z").transcode();
       sscanf(xyzStr, "%lf %lf %lf %lf %lf", &xm, &xp, &ym, &yp, &zl);
@@ -859,9 +920,6 @@ int Refsys::createSolid(DOM_Element& el)
       sscanf(incStr, "%lf %lf", &alph_xz, &alph_yz);
       delete [] incStr;
 
-      delete shapeStr;
-      shapeStr = new char[5];
-      strcpy(shapeStr, "trap");
       npar = 11;
       double x = tan(alph_xz * M_PI/180);
       double y = tan(alph_yz * M_PI/180);
@@ -880,6 +938,7 @@ int Refsys::createSolid(DOM_Element& el)
    }
    else if (shapeS.equals("pcon"))
    {
+      shapeS = "PCON";
       double phi0, dphi;
       char* profStr = el.getAttribute("profile").transcode();
       sscanf(profStr, "%lf %lf", &phi0, &dphi);
@@ -898,13 +957,14 @@ int Refsys::createSolid(DOM_Element& el)
          char* riozStr = elem.getAttribute("Rio_Z").transcode();
          sscanf(riozStr, "%lf %lf %lf", &ri, &ro, &zl);
          delete [] riozStr;
-         par[npar++] = zl/2 * tocm;
+         par[npar++] = zl * tocm;
          par[npar++] = ri * tocm;
          par[npar++] = ro * tocm;
       }
    }
    else if (shapeS.equals("cons"))
    {
+      shapeS = "CONS";
       double rim, rip, rom, rop, zl;
       char* riozStr = el.getAttribute("Rio1_Rio2_Z").transcode();
       sscanf(riozStr, "%lf %lf %lf %lf %lf", &rim, &rom, &rip, &rop, &zl);
@@ -924,12 +984,13 @@ int Refsys::createSolid(DOM_Element& el)
       par[6] = (phi0 + dphi) * todeg;
       if (dphi == 360)
       {
-         strcpy(shapeStr, "cone");
+         shapeS = "CONE";
          npar = 5;
       }
    }
    else
    {
+      char* shapeStr = shapeS.transcode();
       cerr << "hdds-geant error: volume " << nameStr
            << " should be one of the valid shapes, not " << shapeStr << endl;
       exit(1);
@@ -942,6 +1003,7 @@ int Refsys::createSolid(DOM_Element& el)
       exit(1);
    }
 
+   char* shapeStr = shapeS.transcode();
    cout << endl
         << "      chname = \'" << nameStr << "\'" << endl
         << "      chshap = \'" << shapeStr << "\'" << endl
@@ -966,17 +1028,25 @@ int Refsys::createSolid(DOM_Element& el)
 
 int Refsys::createRotation()
 {
-   int irot = fRotation;
+   if (fRotation < 0)
+   {
+      fRotation = ++fRotations;
+   }
+   else
+   {
+      return fRotation;
+   }
+
    cout << endl
-        << "      irot = " << irot << endl;
+        << "      irot = " << fRotation << endl;
 
    for (int i = 0; i < 3; i++)
    {
       double theta, phi;
-      double r = sqrt(fRmatrix[i][0] * fRmatrix[i][0]
-                    + fRmatrix[i][1] * fRmatrix[i][1]);
-      theta = atan2(r, fRmatrix[i][2]) * 180/M_PI;
-      phi = atan2(fRmatrix[i][1], fRmatrix[i][0]);
+      double r = sqrt(fRmatrix[0][i] * fRmatrix[0][i]
+                    + fRmatrix[1][i] * fRmatrix[1][i]);
+      theta = atan2(r, fRmatrix[2][i]) * 180/M_PI;
+      phi = atan2(fRmatrix[1][i], fRmatrix[0][i]) * 180/M_PI;
       cout << "      theta" << i + 1 << " = " << theta << endl
            << "      phi" << i + 1 << " = " << phi << endl;
    }
@@ -985,7 +1055,7 @@ int Refsys::createRotation()
         << "call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)"
         << endl;
 
-   return irot;
+   return fRotation;
 }
 
 int Refsys::createDivision(char* divStr,
@@ -994,14 +1064,19 @@ int Refsys::createDivision(char* divStr,
                            double start,
                            double step)
 {
-   assert (fMother != 0);
+   divStr[0] = toupper(divStr[0]);
+   divStr[1] = toupper(divStr[1]);
+   divStr[2] = toupper(divStr[2]);
+   divStr[3] = toupper(divStr[3]);
 
+   assert (fMother != 0);
    char* motherStr = fMother.getAttribute("name").transcode();
+
    cout << endl
         << "      chname = \'" << divStr << "\'" << endl
         << "      chmoth = \'" << motherStr << "\'" << endl
         << "      ndiv = " << ncopy << endl
-        << "      iaxis = 2" << endl
+        << "      iaxis = " << iaxis << endl
         << "      step = " <<step << endl
         << "      c0 = " << (start - step/2) << endl
         << "      numed = 0" << endl
@@ -1051,7 +1126,11 @@ int Refsys::createVolume(DOM_Element& el)
    char* nameStr = nameS.transcode();
    if (nameS.equals("fieldVolume"))
    {
-      myRef.fMagField = 2.0;
+      myRef.fMagField = 2;
+   }
+   else if (nameS.equals("sweepMagnet"))
+   {
+      myRef.fMagField = 3;
    }
 
    DOM_Element env;
@@ -1074,6 +1153,7 @@ int Refsys::createVolume(DOM_Element& el)
       }
       env.setAttribute("contains",nameS);
       icopy = myRef.createVolume(env);
+      myRef.fIdentifiers = 0;
       myRef.fMother = env;
       myRef.reset();
    }
@@ -1125,12 +1205,6 @@ int Refsys::createVolume(DOM_Element& el)
          angle[0] *= torad;
          angle[1] *= torad;
          angle[2] *= torad;
-         drs.rotate(angle);
-         int irot = drs.fRotation;
-         if (irot != myRef.fRotation)
-         {
-            irot = drs.createRotation();
-         }
 
          DOM_Node ident;
          for (ident = cont.getFirstChild(); 
@@ -1179,6 +1253,7 @@ int Refsys::createVolume(DOM_Element& el)
             origin[1] *= tocm;
             origin[2] *= tocm;
             drs.shift(origin);
+            drs.rotate(angle);
             drs.createVolume(targEl);
          }
          else if (comdS.equals("posRPhiZ"))
@@ -1198,17 +1273,13 @@ int Refsys::createVolume(DOM_Element& el)
             origin[0] = r * cos(phi) - s * sin(phi);
             origin[1] = r * sin(phi) + s * cos(phi);
             origin[2] = z;
-            drs.shift(origin);
-
             DOMString implrotS = contEl.getAttribute("impliedRot");
             if (implrotS.equals("true") && (phi != 0))
             {
-               angle[0] = 0;
-               angle[1] = 0;
-               angle[2] = phi;
-               drs.rotate(angle);
-               irot = drs.createRotation();
+               angle[2] += phi;
             }
+            drs.shift(origin);
+            drs.rotate(angle);
             drs.createVolume(targEl);
          }
          else if (comdS.equals("mposPhi"))
@@ -1259,44 +1330,45 @@ int Refsys::createVolume(DOM_Element& el)
             {
                containerS = el.getAttribute("divides");
             }
+            DOMString rotS = contEl.getAttribute("rot");
             DOMString implrotS = contEl.getAttribute("impliedRot");
             if ((nSiblings == 1) &&
                 (containerS.equals("pcon") ||
                  containerS.equals("cons") ||
                  containerS.equals("tubs")) &&
-                implrotS.equals("true"))
+                rotS.equals("0 0 0") && implrotS.equals("true"))
             {
                static int phiDivisions = 0xd00;
                char* divStr = new char[5];
-               sprintf(divStr, "S%3.3x", ++phiDivisions);
+               sprintf(divStr, "s%3.3x", ++phiDivisions);
                phi0 *= 180/M_PI;
                dphi *= 180/M_PI;
                int iaxis = 2;
                drs.createDivision(divStr, ncopy, iaxis, phi0, dphi);
                targEl.setAttribute("divides", containerS);
-               drs.fOrigin[0] = r;
-               drs.fOrigin[1] = s;
-               drs.fOrigin[2] = z;
+               origin[0] = r;
+               origin[1] = s;
+               origin[2] = z;
+               drs.reset();
+               drs.shift(origin);
+               drs.rotate(angle);
                drs.createVolume(targEl);
             }
             else
             {
-               origin[0] = drs.fOrigin[0];
-               origin[1] = drs.fOrigin[1];
-               drs.fOrigin[2] += z;
+               Refsys drs0(drs);
+               drs.rotate(angle);
                for (int inst = 0; inst < ncopy; inst++)
                {
                   double phi = phi0 + inst * dphi;
-                  drs.fOrigin[0] = origin[0] + r * cos(phi) - s * sin(phi);
-                  drs.fOrigin[1] = origin[1] + r * sin(phi) + s * cos(phi);
-
+                  origin[0] = r * cos(phi) - s * sin(phi);
+                  origin[1] = r * sin(phi) + s * cos(phi);
+                  origin[2] = z;
+                  drs.shift(drs0, origin);
                   if (implrotS.equals("true"))
                   {
-                     angle[0] = 0;
-                     angle[1] = 0;
-                     angle[2] = ((inst == 0) ? phi0 : dphi);
-                     drs.rotate(angle);
-                     irot = drs.createRotation();
+                     angle[2] += ((inst == 0) ? phi0 : dphi);
+                     drs.rotate(drs0, angle);
                   }
                   drs.createVolume(targEl);
                }
@@ -1342,32 +1414,38 @@ int Refsys::createVolume(DOM_Element& el)
             {
                containerS = el.getAttribute("divides");
             }
+            DOMString rotS = contEl.getAttribute("rot");
             if ((nSiblings == 1) &&
                 (containerS.equals("pcon") ||
                  containerS.equals("cons") ||
-                 containerS.equals("tubs")))
+                 containerS.equals("tubs")) &&
+                rotS.equals("0 0 0"))
             {
                static int rDivisions = 0xd00;
                char* divStr = new char[5];
-               sprintf(divStr, "R%3.3x", ++rDivisions);
+               sprintf(divStr, "r%3.3x", ++rDivisions);
                int iaxis = 1;
                drs.createDivision(divStr, ncopy, iaxis, r0, dr);
                targEl.setAttribute("divides", containerS);
-               drs.fOrigin[0] = r0 * cos(phi) - s * sin(phi);
-               drs.fOrigin[1] = r0 * sin(phi) + s * cos(phi);
-               drs.fOrigin[2] = z;
+               origin[0] = r0 * cos(phi) - s * sin(phi);
+               origin[1] = r0 * sin(phi) + s * cos(phi);
+               origin[2] = z;
+               drs.reset();
+               drs.shift(origin);
+               drs.rotate(angle);
                drs.createVolume(targEl);
             }
             else
             {
-               origin[0] = drs.fOrigin[0];
-               origin[1] = drs.fOrigin[1];
-               drs.fOrigin[2] += z;
+               Refsys drs0(drs);
+               drs.rotate(angle);
                for (int inst = 0; inst < ncopy; inst++)
                {
                   double r = r0 + inst * dr;
-                  drs.fOrigin[0] = origin[0] + r * cos(phi) - s * sin(phi);
-                  drs.fOrigin[1] = origin[1] + r * sin(phi) + s * cos(phi);
+                  origin[0] = r * cos(phi) - s * sin(phi);
+                  origin[1] = r * sin(phi) + s * cos(phi);
+                  origin[2] = z;
+                  drs.shift(drs0, origin);
                   drs.createVolume(targEl);
                }
             }
@@ -1412,29 +1490,36 @@ int Refsys::createVolume(DOM_Element& el)
             {
                containerS = el.getAttribute("divides");
             }
-            if ((nSiblings == 1) && containerS.equals("box"))
+            DOMString rotS = contEl.getAttribute("rot");
+            if ((nSiblings == 1) && 
+                containerS.equals("box") &&
+                rotS.equals("0 0 0"))
             {
                static int xDivisions = 0xd00;
                char* divStr = new char[5];
-               sprintf(divStr, "X%3.3x", ++xDivisions);
+               sprintf(divStr, "x%3.3x", ++xDivisions);
                int iaxis = 1;
                drs.createDivision(divStr, ncopy, iaxis, x0, dx);
                targEl.setAttribute("divides", containerS);
-               drs.fOrigin[0] = 0;
-               drs.fOrigin[1] = y + s;
-               drs.fOrigin[2] = z;
+               origin[0] = 0;
+               origin[1] = y + s;
+               origin[2] = z;
+               drs.reset();
+               drs.shift(origin);
+               drs.rotate(angle);
                drs.createVolume(targEl);
             }
             else
             {
-               origin[0] = drs.fOrigin[0];
-               origin[1] = drs.fOrigin[1];
-               drs.fOrigin[2] += z;
+               Refsys drs0(drs);
+               drs.rotate(angle);
                for (int inst = 0; inst < ncopy; inst++)
                {
                   double x = x0 + inst * dx;
-                  drs.fOrigin[0] = origin[0] + x;
-                  drs.fOrigin[1] = origin[1] + y + s;
+                  origin[0] = x;
+                  origin[1] = y + s;
+                  origin[2] = z;
+                  drs.shift(drs0, origin);
                   drs.createVolume(targEl);
                }
             }
@@ -1479,30 +1564,37 @@ int Refsys::createVolume(DOM_Element& el)
             {
                containerS = el.getAttribute("divides");
             }
-            if ((nSiblings == 1) && containerS.equals("box"))
+            DOMString rotS = contEl.getAttribute("rot");
+            if ((nSiblings == 1) && 
+                containerS.equals("box") &&
+                rotS.equals("0 0 0"))
             {
                static int yDivisions = 0xd00;
                char* divStr = new char[5];
-               sprintf(divStr, "Y%3.3x", ++yDivisions);
+               sprintf(divStr, "y%3.3x", ++yDivisions);
                int iaxis = 2;
                drs.createDivision(divStr, ncopy, iaxis, y0, dy);
                targEl.setAttribute("divides", containerS);
-               drs.fOrigin[0] = x + s;
-               drs.fOrigin[1] = 0;
-               drs.fOrigin[2] = z;
+               origin[0] = x + s;
+               origin[1] = 0;
+               origin[2] = z;
+               drs.reset();
+               drs.shift(origin);
+               drs.rotate(angle);
                drs.createVolume(targEl);
             }
             else
             {
-               origin[0] = drs.fOrigin[0];
-               origin[1] = drs.fOrigin[1];
-               drs.fOrigin[2] += z;
+               Refsys drs0(drs);
+               drs.rotate(angle);
                for (int inst = 0; inst < ncopy; inst++)
                {
                   double y = y0 + inst * dy;
                   double phi = atan2(y,x);
-                  drs.fOrigin[0] = origin[0] + x;
-                  drs.fOrigin[1] = origin[1] + y;
+                  origin[0] = x;
+                  origin[1] = y;
+                  origin[2] = z;
+                  drs.shift(drs0, origin);
                   drs.createVolume(targEl);
                }
             }
@@ -1559,30 +1651,38 @@ int Refsys::createVolume(DOM_Element& el)
             {
                containerS = el.getAttribute("divides");
             }
-            if ((nSiblings == 1) && (containerS != 0))
+            DOMString rotS = contEl.getAttribute("rot");
+            if ((nSiblings == 1) &&
+                (containerS != 0) &&
+                rotS.equals("0 0 0"))
             {
                static int zDivisions = 0xd00;
                char* divStr = new char[5];
-               sprintf(divStr, "Z%3.3x", ++zDivisions);
+               sprintf(divStr, "z%3.3x", ++zDivisions);
                int iaxis = 3;
                drs.createDivision(divStr, ncopy, iaxis, z0, dz);
                targEl.setAttribute("divides", containerS);
                double phi = atan2(y,x);
-               drs.fOrigin[0] = x - s * sin(phi);
-               drs.fOrigin[1] = y + s * cos(phi);
-               drs.fOrigin[2] = 0;
+               origin[0] = x - s * sin(phi);
+               origin[1] = y + s * cos(phi);
+               origin[2] = 0;
+               drs.reset();
+               drs.shift(origin);
+               drs.rotate(angle);
                drs.createVolume(targEl);
             }
             else
             {
+               Refsys drs0(drs);
+               drs.rotate(angle);
                double phi = atan2(y,x);
                origin[0] = x - s * sin(phi);
                origin[1] = y + s * cos(phi);
-               drs.shift(origin);
                for (int inst = 0; inst < ncopy; inst++)
                {
                   double z = z0 + inst * dz;
-                  drs.fOrigin[2] = z;
+                  origin[2] = z;
+                  drs.shift(drs0, origin);
                   drs.createVolume(targEl);
                }
             }
@@ -1629,7 +1729,7 @@ int Refsys::createVolume(DOM_Element& el)
               << "      x = " << myRef.fOrigin[0] << endl
               << "      y = " << myRef.fOrigin[1] << endl
               << "      z = " << myRef.fOrigin[2] << endl
-              << "      irot = " << myRef.fRotation << endl
+              << "      irot = " << myRef.createRotation() << endl
               << "      chonly = \'ONLY\'" << endl
               << "      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)"
               << endl;

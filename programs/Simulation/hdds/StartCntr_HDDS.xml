@@ -76,7 +76,7 @@
     <int	name="num_cathode"  value="0"		 />
     <reference  name="material"	    value="Scintillator" />
     <real_array name="thick_boun"   comment="inner outer upstream downstream
-		window thicknesses" values=" 0.20  0.05    0.20     0.20 "
+		window thicknesses" values=" 0.20  0.05    0.20     0.20"
 				    unit="cm"	/>
     <reference_vector name="mat_boun">
       <reference_data value="Mylar" comment="inner window material"  />
@@ -128,7 +128,11 @@
 	parameters="startCntr_pars"	comment="start counter mother" />
 
   <composition name="StartCntr">
-    <posXYZ volume="VRTX" X_Y_Z="0.0  0.0  80.0"> </posXYZ>
+<!-->
+    Origin of StartCntr is center of the cylinder at the upstream limit
+    of the sensitive region.
+>>-->
+    <posXYZ volume="VRTX" X_Y_Z="0.0  0.0  45.0" />
   </composition>
 
 </section>

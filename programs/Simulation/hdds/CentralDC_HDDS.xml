@@ -14,7 +14,7 @@
          version     = "1.0"
          date        = "Mon Apr 15, 2001"
          author      = "R.T. Jones"
-         top_volume  = "CDC "
+         top_volume  = "CDC"
          DTD_version = "v1">
 
   <parameters name="centralDC_pars" type="mcfast">
@@ -32,7 +32,7 @@
     <int	name="num_cathode"  value="1"	/>
     <reference  name="material"	    value="chamberGas" />
     <real_array name="thick_boun"   comment="inner outer upstream downstream
-		window thicknesses" values=" 0.20  0.40    2.00     2.00 "
+		window thicknesses" values="0.20  0.40    2.00     2.00"
 				    unit="cm"	/>
     <reference_vector name="mat_boun">
       <reference_data value="Mylar"    comment="inner window material"     />
@@ -114,7 +114,7 @@
     <int	name="num_cathode"  value="0"		 />
     <reference  name="material"	    value="Scintillator" />
     <real_array name="thick_boun"   comment="inner outer upstream downstream
-		window thicknesses" values=" 0.20  0.05    0.20     0.20 "
+		window thicknesses" values="0.20  0.05    0.20     0.20"
 				    unit="cm"	/>
     <reference_vector name="mat_boun">
       <reference_data value="Mylar" comment="inner window material"  />
@@ -532,9 +532,9 @@
     </mcfast>
   </mcfast>
 
-  <tubs name="STRA" Rio_Z="0.00  0.95  200.0" material="chamberGas" />
-  <tubs name="STRW" Rio_Z="0.90  0.95  200.0" material="Aluminum" />
-  <tubs name="WIRE" Rio_Z="0.00  0.05  200.0" material="Tungsten" />
+  <tubs name="STRA" Rio_Z="0.000  0.478  200.0" material="chamberGas" />
+  <tubs name="STRW" Rio_Z="0.472  0.478  200.0" material="Aluminum" />
+  <tubs name="WIRE" Rio_Z="0.000  0.025  200.0" material="Tungsten" />
 
   <tubs name="DC1"  Rio_Z="15.0  17.0  200.0" material="Air"
 					 parameters="centralDClayer_pars" />
@@ -588,159 +588,184 @@
 
   <composition name="CDClayer_1" envelope="DC1">
     <mposPhi volume="STRA" ncopy="100" R_Z="16.0 0.0" unit_length="cm">
+      <ring value="1" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_2" envelope="DC2">
     <mposPhi volume="STRA" ncopy="113" R_Z="18.0 0.0" unit_length="cm">
+      <ring value="2" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_3" envelope="DC3">
-    <mposPhi volume="STRA" ncopy="126" R_Z="20.0 0.0" unit_length="cm"
-			   rot="-6.0  0.0  0.0" impliedRot="true">
+    <mposPhi volume="STRA" ncopy="126" R_Z="20.0.0 0.0" unit_length="cm"
+                                       rot="-0.581 0 0" unit_angle="deg">
+      <ring value="3" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_4" envelope="DC4">
-    <mposPhi volume="STRA" ncopy="139" R_Z="22.0 0.0" unit_length="cm"
-			   rot="-6.0  0.0  0.0" impliedRot="true">
+    <mposPhi volume="STRA" ncopy="139" R_Z="22.0.0 0.0" unit_length="cm"
+                                       rot="-0.655 0 0" unit_angle="deg">
+      <ring value="4" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_5" envelope="DC5">
     <mposPhi volume="STRA" ncopy="152" R_Z="24.0 0.0" unit_length="cm">
+      <ring value="5" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_6" envelope="DC6">
     <mposPhi volume="STRA" ncopy="165" R_Z="26.0 0.0" unit_length="cm">
+      <ring value="6" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_7" envelope="DC7">
     <mposPhi volume="STRA" ncopy="178" R_Z="28.0 0.0" unit_length="cm">
+      <ring value="7" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_8" envelope="DC8">
-    <mposPhi volume="STRA" ncopy="191" R_Z="30.0 0.0" unit_length="cm"
-			   rot=" 6.0  0.0  0.0" impliedRot="true">
+    <mposPhi volume="STRA" ncopy="191" R_Z="30.0.0 0.0" unit_length="cm"
+                                       rot="0.894 0 0" unit_angle="deg">
+      <ring value="8" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_9" envelope="DC9">
-    <mposPhi volume="STRA" ncopy="204" R_Z="32.0 0.0" unit_length="cm"
-			   rot=" 6.0  0.0  0.0" impliedRot="true">
+    <mposPhi volume="STRA" ncopy="204" R_Z="32.0.0 0.0" unit_length="cm"
+                                       rot="0.953 0 0" unit_angle="deg">
+      <ring value="9" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_10" envelope="DC10">
     <mposPhi volume="STRA" ncopy="217" R_Z="34.0 0.0" unit_length="cm">
+      <ring value="10" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_11" envelope="DC11">
     <mposPhi volume="STRA" ncopy="230" R_Z="36.0 0.0" unit_length="cm">
+      <ring value="11" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_12" envelope="DC12">
     <mposPhi volume="STRA" ncopy="243" R_Z="38.0 0.0" unit_length="cm">
+      <ring value="12" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_13" envelope="DC13">
-    <mposPhi volume="STRA" ncopy="256" R_Z="40.0 0.0" unit_length="cm"
-			   rot="-6.0  0.0  0.0" impliedRot="true">
+    <mposPhi volume="STRA" ncopy="256" R_Z="40.0.0 0.0" unit_length="cm"
+                                       rot="-1.192 0 0" unit_angle="deg">
+      <ring value="13" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_14" envelope="DC14">
-    <mposPhi volume="STRA" ncopy="269" R_Z="42.0 0.0" unit_length="cm"
-			   rot="-6.0  0.0  0.0" impliedRot="true">
+    <mposPhi volume="STRA" ncopy="269" R_Z="42.0.0 0.0" unit_length="cm"
+                                       rot="-1.251 0 0" unit_angle="deg">
+      <ring value="14" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_15" envelope="DC15">
     <mposPhi volume="STRA" ncopy="282" R_Z="44.0 0.0" unit_length="cm">
+      <ring value="15" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_16" envelope="DC16">
     <mposPhi volume="STRA" ncopy="295" R_Z="46.0 0.0" unit_length="cm">
+      <ring value="16" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_17" envelope="DC17">
     <mposPhi volume="STRA" ncopy="308" R_Z="48.0 0.0" unit_length="cm">
+      <ring value="17" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_18" envelope="DC18">
-    <mposPhi volume="STRA" ncopy="321" R_Z="50.0 0.0" unit_length="cm"
-			   rot=" 6.0  0.0  0.0" impliedRot="true">
+    <mposPhi volume="STRA" ncopy="321" R_Z="50.0.0 0.0" unit_length="cm"
+                                       rot="1.489 0 0" unit_angle="deg">
+      <ring value="18" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_19" envelope="DC19">
-    <mposPhi volume="STRA" ncopy="334" R_Z="52.0 0.0" unit_length="cm"
-			   rot=" 6.0  0.0  0.0" impliedRot="true">
+    <mposPhi volume="STRA" ncopy="334" R_Z="52.0.0 0.0" unit_length="cm"
+                                       rot="1.746 0 0" unit_angle="deg">
+      <ring value="19" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_20" envelope="DC20">
     <mposPhi volume="STRA" ncopy="347" R_Z="54.0 0.0" unit_length="cm">
+      <ring value="20" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_21" envelope="DC21">
     <mposPhi volume="STRA" ncopy="360" R_Z="56.0 0.0" unit_length="cm">
+      <ring value="21" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_22" envelope="DC22">
     <mposPhi volume="STRA" ncopy="373" R_Z="58.0 0.0" unit_length="cm">
+      <ring value="22" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
 
-  <tubs name="CDC " Rio_Z="15.0   60.0   200.0" material="Air"
+  <tubs name="CDC" Rio_Z="15.0   60.0   200.0" material="Air"
 	parameters="centralDC_pars"	comment="CDC mother volume"          />
   <tubs name="CSTI" Rio_Z="15.00  15.05  200.0" material="Mylar"
 	parameters="centralDCstrips_pars" comment="CDC inner cathode strips" />
   <tubs name="CSTO" Rio_Z="58.95  59.00  200.0" material="Mylar"
 	parameters="centralDCstrips_pars" comment="CDC outer cathode strips" />
 
-  <composition name="centralDC" envelope="CDC ">
-    <posXYZ volume="CSTI"> </posXYZ>
-    <posXYZ volume="CDClayer_1">  <ring value=" 1" /> </posXYZ>
-    <posXYZ volume="CDClayer_2">  <ring value=" 2" /> </posXYZ>
-    <posXYZ volume="CDClayer_3">  <ring value=" 3" /> </posXYZ>
-    <posXYZ volume="CDClayer_4">  <ring value=" 4" /> </posXYZ>
-    <posXYZ volume="CDClayer_5">  <ring value=" 5" /> </posXYZ>
-    <posXYZ volume="CDClayer_6">  <ring value=" 6" /> </posXYZ>
-    <posXYZ volume="CDClayer_7">  <ring value=" 7" /> </posXYZ>
-    <posXYZ volume="CDClayer_8">  <ring value=" 8" /> </posXYZ>
-    <posXYZ volume="CDClayer_9">  <ring value=" 9" /> </posXYZ>
-    <posXYZ volume="CDClayer_10"> <ring value="10" /> </posXYZ>
-    <posXYZ volume="CDClayer_11"> <ring value="11" /> </posXYZ>
-    <posXYZ volume="CDClayer_12"> <ring value="12" /> </posXYZ>
-    <posXYZ volume="CDClayer_13"> <ring value="13" /> </posXYZ>
-    <posXYZ volume="CDClayer_14"> <ring value="14" /> </posXYZ>
-    <posXYZ volume="CDClayer_15"> <ring value="15" /> </posXYZ>
-    <posXYZ volume="CDClayer_16"> <ring value="16" /> </posXYZ>
-    <posXYZ volume="CDClayer_17"> <ring value="17" /> </posXYZ>
-    <posXYZ volume="CDClayer_18"> <ring value="18" /> </posXYZ>
-    <posXYZ volume="CDClayer_19"> <ring value="19" /> </posXYZ>
-    <posXYZ volume="CDClayer_20"> <ring value="20" /> </posXYZ>
-    <posXYZ volume="CDClayer_21"> <ring value="21" /> </posXYZ>
-    <posXYZ volume="CDClayer_22"> <ring value="22" /> </posXYZ>
-    <posXYZ volume="CSTO"> </posXYZ>
+  <composition name="centralDC" envelope="CDC">
+    <posXYZ volume="CSTI" />
+    <posXYZ volume="CDClayer_1" />
+    <posXYZ volume="CDClayer_2" />
+    <posXYZ volume="CDClayer_3" />
+    <posXYZ volume="CDClayer_4" />
+    <posXYZ volume="CDClayer_5" />
+    <posXYZ volume="CDClayer_6" />
+    <posXYZ volume="CDClayer_7" />
+    <posXYZ volume="CDClayer_8" />
+    <posXYZ volume="CDClayer_9" />
+    <posXYZ volume="CDClayer_10" />
+    <posXYZ volume="CDClayer_11" />
+    <posXYZ volume="CDClayer_12" />
+    <posXYZ volume="CDClayer_13" />
+    <posXYZ volume="CDClayer_14" />
+    <posXYZ volume="CDClayer_15" />
+    <posXYZ volume="CDClayer_16" />
+    <posXYZ volume="CDClayer_17" />
+    <posXYZ volume="CDClayer_18" />
+    <posXYZ volume="CDClayer_19" />
+    <posXYZ volume="CDClayer_20" />
+    <posXYZ volume="CDClayer_21" />
+    <posXYZ volume="CDClayer_22" />
+    <posXYZ volume="CSTO" />
   </composition>
 
   <composition name="CentralDC">
-    <posXYZ volume="centralDC" X_Y_Z="0.0  0.0  117.0" > </posXYZ>
+<!-->
+    Origin of CentralDC is center of upstream end.
+>>-->
+    <posXYZ volume="centralDC" X_Y_Z="0.0  0.0  100.0" />
   </composition>
 
 </section>

@@ -41,9 +41,18 @@
   </mcfast>
 
   <box name="FTOF" X_Y_Z="250.  250.  2.54" material="Scintillator" />
+  <box name="FTOH" X_Y_Z=" 12.   12.  2.54" material="Scintillator" />
+
+  <composition name="forwardTOF">
+    <posXYZ volume="FTOF" />
+    <posXYZ volume="FTOH" />
+  </composition>
 
   <composition name="ForwardTOF">
-    <posXYZ volume="FTOF" X_Y_Z="0.0  0.0  566.2"> </posXYZ>
+<!-->
+    Origin of ForwardTOF is center of entrance plane of detector
+>>-->
+    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0  1.27" />
   </composition>
 
 </section>

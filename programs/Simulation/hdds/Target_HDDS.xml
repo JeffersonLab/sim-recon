@@ -20,11 +20,11 @@
   <parameters name="targetTube_pars" type="mcfast">
     <real name="rmin" value="0.00"  unit="cm" comment="inner radius" />
     <real name="rmax" value="2.50"  unit="cm" comment="outer radius" />
-    <real name="z0"   value="225.0" unit="cm" comment="from origin"  />
-    <real name="zlen" value="450.0" unit="cm" comment="through the FCAL" />
+    <real name="z0"   value="275.0" unit="cm" comment="from origin"  />
+    <real name="zlen" value="550.0" unit="cm" comment="through the CERE" />
     <reference name="mat_fill" value="Vacuum"  comment="what fills the pipe" />
     <real_array name="bndrthk" comment="innner outer upstream downstream
-           wall thicknesses" values="    0.00   0.05   0.00      0.00   "
+           wall thicknesses" values="0.00   0.05   0.00      0.00"
                              unit="cm" />
     <reference_vector name="matrbnd"    comment="window materials"   >
       <reference_data value="Vacuum"    comment="inner wall??"      />
@@ -45,7 +45,7 @@
                            unit="cm" />
     <reference name="mat_fill" value="LiqHydrogen" comment="target material" />
     <real_array name="bndrthk" comment="cylinder upstream downstream
-           wall thicknesses"   values="   0.03     0.02      0.02   "
+           wall thicknesses"   values="0.03     0.02      0.02"
                                unit="cm" />
     <reference_vector name="matrbnd"   comment="target vessel materials">
       <reference_data value="Aluminum" comment="cylinder wall"     />
@@ -77,9 +77,9 @@
     <posXYZ volume="DWTV" X_Y_Z="0. 0. +14.99"> </posXYZ>
   </composition>
 
-  <tubs name="TARG" Rio_Z="0.00 2.50 450.0" material="Vacuum"
+  <tubs name="TARG" Rio_Z="0.00 2.50 550.0" material="Vacuum"
 	parameters="targetTube_pars" 	comment="target tube mother volume" />
-  <tubs name="CYLW" Rio_Z="2.45 2.50 450.0" material="Beryllium"
+  <tubs name="CYLW" Rio_Z="2.45 2.50 550.0" material="Beryllium"
 					comment="cylindrical wall of tube"  />
   <tubs name="UWIT" Rio_Z="0.00 2.45 0.050" material="Kapton"
 					comment="upstream window of tube"   />
@@ -88,13 +88,17 @@
  
   <composition name="BerylliumPipe" envelope="TARG">
     <posXYZ volume="CYLW">			 </posXYZ>
-    <posXYZ volume="UWIT" X_Y_Z="0. 0. -225.95"> </posXYZ>
-    <posXYZ volume="DWIT" X_Y_Z="0. 0. +225.95"> </posXYZ>
-    <posXYZ volume="TGTV" X_Y_Z="0. 0. -160.00"> </posXYZ>
+    <posXYZ volume="UWIT" X_Y_Z="0. 0. -274.95"> </posXYZ>
+    <posXYZ volume="DWIT" X_Y_Z="0. 0. +274.95"> </posXYZ>
+    <posXYZ volume="TGTV" X_Y_Z="0. 0. -210.00"> </posXYZ>
   </composition>
 
   <composition name="Target">
-    <posXYZ volume="BerylliumPipe" X_Y_Z="0. 0. 225.0"> </posXYZ>
+<!-->
+    Origin of Target is the center of the entrance window to the
+    liquid hydrogen target - not the start of the vacuum vessel.
+>>-->
+    <posXYZ volume="BerylliumPipe" X_Y_Z="0. 0. 225.0" />
   </composition>
 
 </section>
