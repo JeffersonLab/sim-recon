@@ -67,15 +67,21 @@ derror_t DFactory_CDCClusters::CopyFromMCCheatCodes(void)
 						float phim = straws->in[k].phim;
 						s_Hits_t *hits = straws->in[k].hits;
 						s_CdcPoints_t *cdcPoints = straws->in[k].cdcPoints;
-						if(hits){
+						if(hits && cdcPoints){
 							
 							for(int m=0;m<hits->mult;m++){
+								
+								// It seems there is only 1 CdcPoint even though
+								// there may be a couple of hits. We therefore
+								// need to use the track number from the first
+								// (only) CdcPoint
+								int track = cdcPoints->in[0].track;
 								
 								// Loop over existing clusters to see if this track
 								// already exists
 								int clusterindex=-1;
 								for(int n=0;n<ntracks;n++){
-									if(tracknumber[n] == cdcPoints->in[m].track){
+									if(tracknumber[n] == track){
 										clusterindex = n;
 										break;
 									}
@@ -85,7 +91,7 @@ derror_t DFactory_CDCClusters::CopyFromMCCheatCodes(void)
 								if(clusterindex<0){
 									CDCCluster_t *cdccluster = (CDCCluster_t*)_data->Add();
 									cdccluster->nhits = 0;
-									tracknumber[ntracks] = cdcPoints->in[m].track;
+									tracknumber[ntracks] = track;
 									clusterindex = ntracks++;
 								}
 								
