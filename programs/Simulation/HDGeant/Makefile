@@ -60,7 +60,7 @@ AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o \
 else
 AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o \
        gelhad/gtgama.o gelhad/caspim.o gelhad/caspip.o gpairg.o \
-       hddsGeant3.o goptimize.o cobrems.o cgtstr.o gdcgob.o
+       hddsGeant3.o goptimize.o cobrems.o
 endif
 
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
