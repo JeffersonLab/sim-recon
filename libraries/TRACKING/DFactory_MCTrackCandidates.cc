@@ -13,6 +13,8 @@ DFactory_MCTrackCandidates::DFactory_MCTrackCandidates(DEvent *event):DFactory(e
 	// Initialize Nlines Nellipse;
 	Narchits = 0;
 	Ncircles = 0;
+	Nmarkers = 0;
+	markers = NULL;
 	
 	// set limits for plot. This represents the space where the center 
 	// of the circle can be. It can be (and often is) outside of the
@@ -35,8 +37,10 @@ DFactory_MCTrackCandidates::DFactory_MCTrackCandidates(DEvent *event):DFactory(e
 	flip_x_axis = 0;
 	
 	// Create slope and intercept density histos
-	slope_density = new TH1F("slope","slope", 2000,-0.2,0.2);
-	offset_density = new TH1F("intercept","intercept", 2000, -10.0,10.0);
+	slope_density = new TH1F("slope","slope", 1000,-0.05,0.05);
+	slope_density_histos[0] = new TH1F(*slope_density);
+	offset_density = new TH1F("intercept","z intercept", 2100, -100.0,2000.0);
+	offset_density_histos[0] = new TH1F(*offset_density);
 }
 
 //------------------------------------------------------------------
@@ -47,6 +51,7 @@ DFactory_MCTrackCandidates::~DFactory_MCTrackCandidates()
 	for(int i=0; i<Ndensity_histos; i++)delete density_histos[i];
 	delete slope_density;
 	delete offset_density;
+	if(Nmarkers)delete markers;
 }
 
 //------------------------------------------------------------------
@@ -58,8 +63,10 @@ derror_t DFactory_MCTrackCandidates::evnt(int eventnumber)
 	// the archit objects array
 	DContainer *mccheathits = event->Get("MCCheatHits");
 	MCCheatHit_t *mccheathit = (MCCheatHit_t*)mccheathits->first();
-	for(Narchits=0;Narchits<mccheathits->nrows;Narchits++, mccheathit++){
+	Narchits = 0;
+	for(int i=0;i<mccheathits->nrows;i++, mccheathit++){
 	
+		if(mccheathit->system!=1 && mccheathit->system!=2)continue;
 		float x = mccheathit->r*cos(mccheathit->phi);
 		float y = mccheathit->r*sin(mccheathit->phi);
 		
@@ -72,7 +79,8 @@ derror_t DFactory_MCTrackCandidates::evnt(int eventnumber)
 		// for other event viewers)
 		if(flip_x_axis)x = -x;
 		
-		archit[Narchits].SetXYZ(x,y,mccheathit->z);
+		archit[Narchits].track = mccheathit->track;
+		archit[Narchits++].SetXYZ(x,y,mccheathit->z);
 	}
 	
 	// Find circle patterns first. (The results are left in circles[])
@@ -344,12 +352,17 @@ derror_t DFactory_MCTrackCandidates::FillSlopeIntDensityHistos(void)
 	
 	slope_density->Reset();
 	offset_density->Reset();
+	for(int i=0;i<Ndensity_histos;i++){
+		slope_density_histos[i]->Reset();
+		offset_density_histos[i]->Reset();
+	}
 	for(int j=0;j<Ncircles;j++){
 		float phi[100], z[100];
 		int Nhits = 0;
 		DArcHit *a = archit;
 		float x0 = circles[j].GetX1();
 		float y0 = circles[j].GetY1();
+		float phi0 = atan2(-y0, -x0);
 		for(int i=0;i<Narchits;i++ ,a++){
 			
 			float d = a->DistToLine(x0,y0);
@@ -365,12 +378,74 @@ derror_t DFactory_MCTrackCandidates::FillSlopeIntDensityHistos(void)
 				float b = phi[i] - m*z[i];
 				if(!finite(m) || !finite(b))continue;
 				slope_density->Fill(m);
-				offset_density->Fill(b);
+				offset_density->Fill((phi0-b)/m);
+				if(j<Ndensity_histos){
+					slope_density_histos[j]->Fill(m);
+					offset_density_histos[j]->Fill((phi0-b)/m);
+				}
 			}
 		}
-		break;
 	}
 	
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// DrawPhiZPoints
+//------------------------------------------------------------------
+derror_t DFactory_MCTrackCandidates::DrawPhiZPoints(void)
+{
+	/// This is for debugging/development only.
+	///
+	/// Draw markers on the current canvas. The coordinates
+	/// are the phi value on the Y-axis and the z value of the
+	/// hit on the X-axis. The value of phi is relative to the
+	/// focus. All hits passing within masksize of a focus are
+	/// plotted in a corresponding to the focus. A single hit
+	/// can thus be plotted more than once, but will necessarily
+	/// show up in different places on the plot for the different
+	/// foci because phi will be different.
+	///
+	/// The idea here is that points who are really from the same
+	/// track will fall on a line. This just helps visualize
+	/// this for development. (The program patfind uses this).
+	
+	// Since this is just for debugging, we can take the overhead of 
+	// allocating and deleting every time we're called
+	if(Nmarkers)delete markers;
+	markers=NULL;
+	Nmarkers = 0;
+	markers = new TMarker[200];
+	
+	int colors[] = {kRed,kBlue,kMagenta,kGreen,kBlack};
+	for(int j=0;j<Ncircles;j++){
+		DArcHit *a = archit;
+		float x0 = circles[j].GetX1();
+		float y0 = circles[j].GetY1();
+		float phi0 = atan2(-y0, -x0);
+		if(phi0<0.0)phi0 += 2.0*M_PI;
+		for(int i=0;i<Narchits;i++ ,a++){
+			
+			float d = a->DistToLine(x0,y0);
+			if(d > masksize)continue;
+			
+			float phi = atan2(a->yhit-y0, a->xhit-x0);
+			float z = a->zhit;
+			
+			if(phi<0.0)phi += 2.0*M_PI;
+			float delta_phi = phi-phi0;
+			
+			markers[Nmarkers].SetX(z);
+			markers[Nmarkers].SetY(delta_phi);
+			markers[Nmarkers].SetMarkerColor(colors[j%Ncircles]);
+			markers[Nmarkers].SetMarkerStyle(20+j);
+			markers[Nmarkers].Draw();
+
+			if(Nmarkers++>=200)break;
+		}
+		if(Nmarkers>=200)break;
+	}
+
 	return NOERROR;
 }
 
@@ -389,6 +464,10 @@ derror_t DFactory_MCTrackCandidates::SetNumDensityHistograms(int N)
 	/// a lot of memory (about 1/4 to 1/2 MB per histogram).
 	/// The default value is set to 1 when the object is instantiated.
 	/// The value of N here can be from 1 to 8.
+	///
+	/// Note also that this affects the number of slope_density
+	/// and offset density histos also. Those are 1-D histos though
+	/// so they do not take up us much space
 
 	// Make sure N is in range
 	if(N<1 || N>8){
@@ -400,16 +479,23 @@ derror_t DFactory_MCTrackCandidates::SetNumDensityHistograms(int N)
 	}
 
 	// If we're reducing the number of histos, delete the extras
-	for(int i=N+1;i<=Ndensity_histos;i++)delete density_histos[i-1];
+	for(int i=N+1;i<=Ndensity_histos;i++){
+		delete density_histos[i-1];
+		delete slope_density_histos[i-1];
+		delete offset_density_histos[i-1];
+	}
 	
 	// If we're increasing the number of histos, instantiate them
-	for(int i=Ndensity_histos;i<N;i++)density_histos[i] = new TH2F(*density);
+	for(int i=Ndensity_histos;i<N;i++){
+		density_histos[i] = new TH2F(*density);
+		slope_density_histos[i] = new TH1F(*slope_density);
+		offset_density_histos[i] = new TH1F(*offset_density);
+	}
 	
 	Ndensity_histos = N;
 
 	return NOERROR;
 }
-
 
 //------------------------------------------------------------------
 // GetDensityHistogram
@@ -422,6 +508,32 @@ TH2F* DFactory_MCTrackCandidates::GetDensityHistogram(int n)
 	if(n<0 || n>=Ndensity_histos)return NULL;
 
 	return density_histos[n];
+}
+
+//------------------------------------------------------------------
+// GetSlopeDensityHistogram
+//------------------------------------------------------------------
+TH1F* DFactory_MCTrackCandidates::GetSlopeDensityHistogram(int n)
+{
+	/// Return a pointer to 1-D slope density histogram n where n is value from
+	/// 0 to 1 less than the last call to SetNumDensityHistograms().
+	
+	if(n<0 || n>=Ndensity_histos)return NULL;
+
+	return slope_density_histos[n];
+}
+
+//------------------------------------------------------------------
+// GetOffsetDensityHistogram
+//------------------------------------------------------------------
+TH1F* DFactory_MCTrackCandidates::GetOffsetDensityHistogram(int n)
+{
+	/// Return a pointer to 1-D z-offset density histogram n where n is value from
+	/// 0 to 1 less than the last call to SetNumDensityHistograms().
+	
+	if(n<0 || n>=Ndensity_histos)return NULL;
+
+	return offset_density_histos[n];
 }
 
 //------------
