@@ -2,6 +2,11 @@
 * $Id$
 *
 * $Log$
+* Revision 1.13  2004/01/14 16:34:48  brash
+* Fixed bug in gustep.F regarding placement of certain assignment statements with
+* respect to certain #ifdef statements.  Should work now with BACKGROUND_* defines
+* turned either on or off.  (EJB)
+*
 * Revision 1.12  2004/01/14 16:28:10  brash
 * Updates in order to analyze different readout modules of the barrel calorimeter.  (EJB)
 *
@@ -116,8 +121,6 @@
       real xin(4),xout(4),pin(5),pout(5),dEsum
       save xin,xout,pin,pout,dEsum
 
-      startchar=cnames(NLEVEL)
-
 #ifdef BACKGROUND_PROFILING
       integer det
       real vertx(3),tofgx,ubuf(99),xint(3,999)
@@ -130,7 +133,8 @@
       external hexist   
       integer id1, id2, id3
 #endif
-      
+
+      startchar=cnames(NLEVEL)      
 #ifdef BACKGROUND_PROFILING
 ********************************************************************************
 *   The following defines an ntuple containing information on particle type  
