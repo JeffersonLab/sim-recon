@@ -8,7 +8,6 @@
 
 #include <iostream>
 using namespace std;
-#include <fstream>
 
 #include <assert.h>
 #include <stdlib.h>
@@ -51,33 +50,33 @@ int main(int argC, char* argV[])
    }
 
    char* hddmFile;
-   istream* ifs;
+   FILE* ifp;
    if (argInd == argC)
    {
       hddmFile = new char[1];
       *hddmFile = 0;
-      ifs = &cin;
+      ifp = stdin;
    }
    else if (argInd < argC)
    {
       hddmFile = argV[argInd++];
-      ifs = new ifstream(hddmFile);
-      if (! ((ifstream*)ifs)->is_open())
-      {
-         cerr << "hddmcat: Error opening input stream " << hddmFile << endl;
-         exit(1);
-      }
+      ifp = fopen(hddmFile,"r");
    }
    else
    {
       usage();
       return 1;
    }
+   if (!ifp)
+   {
+      cerr << "hddmcat: Error opening input stream " << hddmFile << endl;
+      exit(1);
+   }
 
    struct stringArray* head = new struct stringArray;
    struct stringArray* h = head;
    h->line = new char[1000];
-   if (ifs->getline(h->line,999))
+   if (fscanf(ifp,"%999[^\n]",h->line) == 1 && fscanf(ifp,"\n") == 0)
    {
       if (strstr(h->line,"<?xml") != 0)
       {
@@ -103,7 +102,7 @@ int main(int argC, char* argV[])
    }
    h = h->next = new struct stringArray;
    h->line = new char[1000];
-   while (ifs->getline(h->line,999))
+   while (fscanf(ifp,"%999[^\n]",h->line) == 1 && fscanf(ifp,"\n") == 0)
    {
       cout << h->line << endl;
       if (strstr(h->line,"</HDDM>") != 0)
@@ -115,30 +114,30 @@ int main(int argC, char* argV[])
       h->line = new char[1000];
    }
 
-   const int bufferSize = 1000000;
+   const int bufferSize = 65536;
    char buffer[bufferSize];
    int count;
-   while (ifs->read(buffer,bufferSize), count = ifs->gcount())
+   while (count = fread(buffer,sizeof(char),bufferSize,ifp))
    {
       cout.write(buffer,count);
    }
-   if (ifs != &cin)
+   if (ifp != stdin)
    {
-      delete ifs;
+      fclose(ifp);
    }
 
    while (argInd < argC)
    {
       hddmFile = argV[argInd++];
-      ifs = new ifstream(hddmFile);
-      if (! ((ifstream*)ifs)->is_open())
+      ifp = fopen(hddmFile,"r");
+      if (!ifp)
       {
          cerr << "hddmcat: Error opening input stream " << hddmFile << endl;
          exit(1);
       }
       h = head;
       char* line = new char[1000];
-      if (ifs->getline(line,999))
+      if (fscanf(ifp,"%999[^\n]",line) == 1 && fscanf(ifp,"\n") == 0)
       {
          if (strstr(line,"<?xml") != 0)
          {
@@ -159,10 +158,11 @@ int main(int argC, char* argV[])
       }
       else
       {
-         cerr << "hddmcat: Error reading from input stream " << hddmFile << endl;
+         cerr << "hddmcat: Error reading from input stream " << hddmFile
+              << endl;
          exit(1);
       }
-      while (ifs->getline(line,999))
+      while (fscanf(ifp,"%999[^\n]",line) == 1 && fscanf(ifp,"\n") == 0)
       {
          if (h == 0 || strstr(line,h->line) != line)
          {
@@ -177,10 +177,10 @@ int main(int argC, char* argV[])
          h = h->next;
       }
 
-      while (ifs->read(buffer,bufferSize), count=ifs->gcount())
+      while (count = fread(buffer,sizeof(char),bufferSize,ifp))
       {
          cout.write(buffer,count);
       }
-      delete ifs;
+      fclose(ifp);
    }
 }

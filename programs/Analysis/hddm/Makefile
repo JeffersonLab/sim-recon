@@ -15,7 +15,7 @@ ifeq ($(OStype),OSF1)
 	CPP	:= /usr/bin/g++ -g -DBASENAME_USE_BUILTIN
 endif
 ifeq ($(OStype),SunOS)
-	CPP	:= CC -DBASENAME_IN_LIBGEN
+	CPP	:= CC -g -DBASENAME_IN_LIBGEN
 	LIBXDR  := -lnsl
 endif
 
