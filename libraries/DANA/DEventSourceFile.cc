@@ -32,14 +32,14 @@ DEventSourceFile::~DEventSourceFile()
 //----------------
 // Open
 //----------------
-derror_t DEventSourceFile::Open(void)
+derror_t DEventSourceFile::Open(char *source)
 {
 	/// Implementation of DEventSource virtual function
 	/// Support only HDDM formatted files for now.
-	if(fin)close_s_HDDM(fin);
-	//fin = open_s_HDDM(filename);
+	Close();
+	fin = open_s_HDDM(source);
 	
-	return NOERROR;
+	return fin==NULL ? ERROR_OPENING_EVENT_SOURCE:NOERROR;
 }
 
 //----------------
@@ -62,8 +62,8 @@ derror_t DEventSourceFile::GetEvent(void)
 {
 	/// Implementation of DEventSource virtual function
 	/// Support only HDDM formatted files for now.
-	if(hddm)flush_s_HDDM(hddm, fin);
-	hddm = read_s_HDDM(fin);
+	//if(hddm)flush_s_HDDM(hddm, fin);
+	//hddm = read_s_HDDM(fin);
 
 	return NOERROR;
 }
