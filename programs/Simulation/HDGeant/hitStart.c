@@ -55,8 +55,8 @@ void hitStartCntr (float xin[4], float xout[4],
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
-   transformCoord(x,"global",xlocal,"VRTX");
-   transformCoord(xHat,"local",xvrtx,"VRTX");
+   transformCoord(x,"global",xlocal,"local");
+   transformCoord(xHat,"local",xvrtx,"global");
    dx[0] = xin[0] - xout[0];
    dx[1] = xin[1] - xout[1];
    dx[2] = xin[2] - xout[2];

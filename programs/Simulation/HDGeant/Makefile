@@ -2,6 +2,18 @@ OStype = $(shell uname)
 ARCHtype = $(shell uname -m)
 BINDIR = ../bin.$(OStype)
 
+#--------------------------------------------------------------------
+# The symbol SPECIAL is used to active any of the following switches
+# to enable custom versions of the simulation program.
+#NTUPLE_OPTIONS = -DBACKGROUND_STUDIES
+#NTUPLE_OPTIONS = -DBACKGROUND_PROFILING
+NTUPLE_OPTIONS = -DWERNERS_VTX_NTUPLE
+# Enable the following line to turn off writing out hddm data 
+IO_OPTIONS = -DDISABLE_OUTPUT
+#--------------------------------------------------------------------
+
+SWITCHES = $(IO_OPTIONS) $(NTUPLE_OPTIONS)
+
 ifeq ($(OStype),Linux)
 	ifeq ($(ARCHtype),alpha)
 		CC	:= gcc
@@ -9,8 +21,8 @@ ifeq ($(OStype),Linux)
 		F77	:= g77
 		NETLIB := -lnsl
 		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
-		COPTS = -g
-		FOPTS = -g -Wno-globals
+		COPTS = -g $(SWITCHES)
+		FOPTS = -g -Wno-globals $(SWITCHES)
 		GLIBS 	:= -L/usr/lib/gcc-lib/alpha-redhat-linux/egcs-2.91.66/ -lg2c 
 	else
 		CC	:= gcc
@@ -18,8 +30,8 @@ ifeq ($(OStype),Linux)
 		F77	:= g77
 		NETLIB := -lnsl
 		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl -lpthread
-		COPTS = -g
-		FOPTS = -g -Wno-globals
+		COPTS = -g $(SWITCHES)
+		FOPTS = -g -Wno-globals $(SWITCHES)
 		GLIBS	:= 
 		LINUXEXPORTDYNAMIC = -Wl,-export-dynamic
 		LINUXSTATIC = -Wl,-Bstatic
@@ -32,8 +44,8 @@ ifeq ($(OStype),OSF1)
 	NETLIB := 
 	STATIC	:=
 	XLIBS  := -L/usr/lib -lXm -lSM -lICE -lXt -lX11 -lm -lPW -ldnet_stub
-	COPTS = -g -D_Tru64
-	FOPTS = -g -fpe4
+	COPTS = -g -D_Tru64 $(SWITCHES)
+	FOPTS = -g -fpe4 $(SWITCHES)
 	LOPTS = -g -non_shared -fpe4
 	GLIBS 	:= -L/r5d1/applications/gcc3/lib/gcc-lib/alphaev5-dec-osf4.0f/ -lg2c -L/r5d1/applications/gcc3/lib/gcc-lib/alphaev5-dec-osf4.0f/3.3/ -lgcc
 endif
@@ -48,7 +60,7 @@ AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o \
 else
 AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o \
        gelhad/gtgama.o gelhad/caspim.o gelhad/caspip.o gpairg.o \
-       hddsGeant3.o goptimize.o cobrems.o 
+       hddsGeant3.o goptimize.o cobrems.o cgtstr.o gdcgob.o
 endif
 
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \

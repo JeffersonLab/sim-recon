@@ -747,7 +747,7 @@ typedef struct {
 
 s_HDDM_t* read_s_HDDM(s_iostream_t* fp);
 
-int flush_s_HDDM(s_HDDM_t* this,s_iostream_t* fp);
+int flush_s_HDDM(s_HDDM_t* this1,s_iostream_t* fp);
 
 s_iostream_t* open_s_HDDM(char* filename);
 
