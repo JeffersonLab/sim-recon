@@ -33,7 +33,7 @@ static float BCAL_Rmax = 90.0;
 static float BCAL_Zlen = 390.0;
 static float BCAL_Zmid = 195.0;
 static float FCAL_Zlen = 45.0;
-static float FCAL_Zmid = 645.1;
+static float FCAL_Zmid = 575.0 + 45.0;
 static float FCAL_Rmin = 2.0;
 static float FCAL_Rmax = 122.0;
 static float CDC_Rmin = 15.0;
@@ -42,7 +42,7 @@ static float CDC_Zlen = 200.0;
 static float CDC_Zmid = 117.0;
 static float TOF_width = 250.0;
 static float TOF_Rmin = 6.0;
-static float TOF_Zmid = 619.87;
+static float TOF_Zmid = 565.0 + 1.27;
 static float TOF_Zlen = 2.54;
 static float FDC_Rmin = 3.5;
 static float FDC_Rmax = 60.0;
@@ -84,6 +84,7 @@ derror_t MyProcessor::brun(int runnumber)
 	if(Bfield)delete Bfield;
 	Bfield = new DMagneticFieldMap(41,251);
 	Bfield->readMap();
+	//Bfield = new DMagneticFieldMap(-2.0);
 
 	return NOERROR;
 }
@@ -165,6 +166,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 		if(track!=mccheathit->track){
 			DQuickFit **fit = (DQuickFit**)fits->Add();
 			*fit = new DQuickFit();
+			(*fit)->SetMagneticFieldMap(Bfield);
 		}
 		
 		// DQuickFit assumes a constant B-field so only give it
@@ -194,7 +196,6 @@ derror_t MyProcessor::evnt(int eventnumber)
 			qf->FitTrack();
 			DrawTrack(qf, colors[(i+1)%ncolors]);
 			DrawHelicalTrack(qf, kBlack);
-			cout<<__FILE__<<":"<<__LINE__<<endl;
 			qf->Print();
 			ConvertToFront(qf->x0, qf->y0, 0, X, Y);
 			float dX = X-x_center;
@@ -229,7 +230,7 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 	float y = qf->y0;
 	float z = qf->z_vertex;
 	float r = sqrt(x*x + y*y);
-	float dphidz = -qf->q*tan(qf->theta)/r;
+	float dphidz = qf->q*tan(qf->theta)/r;
 	float phi0 = atan2(-qf->y0, -qf->x0);
 	float X,Y;
 
@@ -242,16 +243,16 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 		y = qf->y0 + r*sin(phi);
 		
 		float R = sqrt(x*x + y*y);
-		if(R>=(BCAL_Rmin+10.0))break;
+		//if(R>=(BCAL_Rmin+10.0))break;
 		
 		ConvertToSide(x,y,Z,X,Y);
 		line_side->SetNextPoint(X,Y);
 		ConvertToTop(x,y,Z,X,Y);
 		line_top->SetNextPoint(X,Y);
 	}
-	line_side->SetLineColor(color+100);
+	line_side->SetLineColor(color);
 	line_side->Draw();
-	line_top->SetLineColor(color+100);
+	line_top->SetLineColor(color);
 	line_top->Draw();
 	lines[Nlines++] = line_side;
 	lines[Nlines++] = line_top;
@@ -270,9 +271,11 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 	TVector3 mom;
 	mom.SetMagThetaPhi(qf->p, qf->theta, qf->phi);
 	DMagneticFieldStepper *stepper = new DMagneticFieldStepper(Bfield, qf->q, &pos, &mom);
+	stepper->SetStepSize(0.1);
 
 	TPolyLine *line_top = new TPolyLine();
 	TPolyLine *line_side = new TPolyLine();
+	TPolyLine *line_beam = new TPolyLine();
 	qf->Print();
 	for(int i=0;i<500;i++){
 	
@@ -282,7 +285,7 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 		float z = pos.z();
 		float X,Y;
 	
-		if(z>=620.0)break;
+		if(z>=620.0 || z<-10.0)break;
 		float R = sqrt(x*x + y*y);
 		//if(R>=(BCAL_Rmin+10.0))break;
 		
@@ -290,16 +293,22 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 		line_side->SetNextPoint(X,Y);
 		ConvertToTop(x,y,z,X,Y);
 		line_top->SetNextPoint(X,Y);
+		ConvertToFront(x, y, 0, X, Y);
+		line_beam->SetNextPoint(X,Y);
+		
+		TVector3 B = stepper->GetBField();
 	}
 	delete stepper;
-	qf->Print();
 	
 	line_side->SetLineColor(color+100);
 	line_side->Draw();
 	line_top->SetLineColor(color+100);
 	line_top->Draw();
+	line_beam->SetLineColor(color+100);
+	line_beam->Draw();
 	lines[Nlines++] = line_side;
 	lines[Nlines++] = line_top;
+	lines[Nlines++] = line_beam;
 
 	return NOERROR;
 }
