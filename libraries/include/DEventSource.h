@@ -11,6 +11,8 @@
 #ifndef _DEVENT_SOURCE_H_
 #define _DEVENT_SOURCE_H_
 
+#include <time.h>
+
 #include "derror.h"
 
 class DEventSource
