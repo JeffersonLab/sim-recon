@@ -17,9 +17,10 @@ static int qsort_cdc(const void* arg1, const void* arg2);
 //------------------------------------------------------------------
 derror_t DCDC::evnt(int eventnumber)
 {
+#if 0	
 	// Convert CDC hits to simpler format
 	copy_to_cdchits();
-	
+
 	// Allocate memory for cdc_tracks. (there can't be more tracks than hits)
 	hddm->cdc_tracks = make_s_Cdc_tracks(hddm->cdc_trackhits->mult);
 	
@@ -47,6 +48,7 @@ derror_t DCDC::evnt(int eventnumber)
 			cdctrack->track = cdc_trackhits->in[j-1].track;
 		}
 	}
+#endif
 
 	return NOERROR;
 }
@@ -56,6 +58,7 @@ derror_t DCDC::evnt(int eventnumber)
 //------------------------------------------------------------------
 derror_t DCDC::copy_to_cdchits(void)
 {
+#if 0
 	/// Copy from from s_CdcPoints_t to s_Cdc_trackhits_t
 	
 	// We need to allocate memory for the s_Cdc_trackhits_t, but
@@ -109,10 +112,12 @@ derror_t DCDC::copy_to_cdchits(void)
 	
 	// Sort by track number, then z-position (ascending for both)
 	qsort(hddm->cdc_trackhits->in, Ntrackhits, sizeof(s_Cdc_trackhit_t), qsort_cdc);
+#endif
 
 	return NOERROR;
 }
 
+#if 0
 //------------------------------------------------------------------
 // qsort_cdc_trackhits
 //------------------------------------------------------------------
@@ -299,3 +304,5 @@ derror_t DCDC::firstguess_curtis(s_Cdc_trackhit_t *hits, int Npoints
 
 	return NOERROR;
 }
+
+#endif
