@@ -18,6 +18,9 @@
 #include<stdlun.h>
 #include<stdcnt.h>
 
+#define TRUE 1
+#define FALSE 0
+
 /*
  * #include <stdlib.h> See it below.
  */
@@ -76,6 +79,7 @@ int StdHepXdrEnd(int istream);
  *********************************/
 int PrintUsage(char *processName);
 int getFromAscii(FILE *fp,int nparts,mc_part_t *P);
+int getFromGampFile(FILE *fp,int *nparts,mc_part_t *P);
 int fill_hepevt(int nparts, mc_part_t *parts);
 int  pdgID(Particle_t p);
 
@@ -92,6 +96,7 @@ int main(int argc,char **argv)
   char *argptr;
   int i,ntries=0,ret,gotANevent,written=0;
   int ilbl=1,istream=0,nparts=0;/*I guessed at istream */ 
+  int read_gamp_file=FALSE;
   char *outputfile ="default.evt";
   char *title ="The HallD MCfast";
   char inputfile[40];
@@ -116,6 +121,9 @@ int main(int argc,char **argv)
 	  case 'n':
           nparts=atoi(++argptr);
           break;
+	case 'g':
+	  read_gamp_file=TRUE;
+	  break;
         case 'N':
           ntries=atoi(++argptr);
           break;
@@ -159,7 +167,10 @@ int main(int argc,char **argv)
      */
       
     /* Read asci event. */
-    gotANevent=getFromAscii(inputfp,nparts,parts);
+    if(read_gamp_file)
+      gotANevent=getFromGampFile(inputfp,&nparts,parts);
+    else
+      gotANevent=getFromAscii(inputfp,nparts,parts);
     while(gotANevent>0){  /* I have an event! */
       if( gotANevent==-2){
 	fprintf(stderr,"Broken input file.\n");
@@ -170,7 +181,10 @@ int main(int argc,char **argv)
       
       /* write to stdhep file */
       ret=StdHepXdrWrite(ilbl,istream);
-      gotANevent=getFromAscii(inputfp,nparts,parts);
+      if(read_gamp_file)
+	gotANevent=getFromGampFile(inputfp,&nparts,parts);
+      else
+	gotANevent=getFromAscii(inputfp,nparts,parts);
       if(!(++written %100))
 	fprintf(stderr,"McFast events Written: %d\r",written);
       if(written == ntries)
@@ -187,6 +201,80 @@ int main(int argc,char **argv)
 
    } /* end of else /* good start */
 } /* end of main */
+
+
+
+
+/*********************
+ *
+ *   getEvent
+ *
+ *******************/
+
+int getFromGampFile(FILE *fp,int *nparts, mc_part_t *P)
+{
+  char line[2056];
+  char *token;
+  static int nread=0;
+  int i;
+  Particle_t genr8id;
+  double mass;
+
+  /* get the event header info */
+  
+  if(fgets(line,sizeof(line),fp)!=NULL){
+    if(Debug>1)
+      fprintf(stderr,"header: %s\n",line);
+    nread++;
+    token=strtok(line," ");/* nparts + beam */
+    *nparts = atoi(token);
+
+    /* skip the beam */
+    fgets(line,sizeof(line),fp);
+    (*nparts)--;
+    if(Debug>1)
+      fprintf(stderr," beam: %s\n",line);
+    /* get the particle information */
+    for(i=0;i<*nparts;i++){ 
+      if(fgets(line,sizeof(line),fp)!=NULL){
+	if(Debug>1)
+	  fprintf(stderr,"part[%d]: %s\n",i,line);
+
+        token=strtok(line," ");
+        genr8id = atoi(token); 
+	P[i].pid= pdgID(genr8id);
+	P[i].statusCode=1;
+
+        token=strtok(NULL," "); /* the charge */
+        token=strtok(NULL," ");
+        P[i].p.space.x = atof(token);
+        token=strtok(NULL," ");
+        P[i].p.space.y = atof(token);
+        token=strtok(NULL," ");
+        P[i].p.space.z = atof(token);
+        token=strtok(NULL," ");
+        P[i].p.t = atof(token);
+        mass = sqrt( P[i].p.t *  P[i].p.t - (P[i].p.space.x * P[i].p.space.x +
+					     P[i].p.space.y * P[i].p.space.y +
+					     P[i].p.space.z * P[i].p.space.z));
+					     
+	P[i].mass = mass;
+	if(Debug>1) 
+          fprintf(stderr,"\tThe four momentum is %lf %lf %lf %lf \n",
+                  P[i].p.space.x,P[i].p.space.y,P[i].p.space.z,P[i].p.t);
+        if(Debug>1) 
+          fprintf(stderr,"\tThe  mass is %lf\n",P[i].mass);
+	
+      } else return -2;
+
+      
+    }/* end of nparts */
+    if(Debug>1) 
+       fprintf(stderr,"It's a good event.\n");
+    return 1;/* it looks like a good event */
+  } else return -1;/* there are no more events */  
+}
+
 
 /*********************
  *
@@ -445,6 +533,7 @@ int PrintUsage(char *processName)
   fprintf(stderr,"\t-o<name> The output  file.\n");
   fprintf(stderr,"\t-N<#> The number output events. (N <= NasciiEvents)\n");
   fprintf(stderr,"\t-n<#> The number particles per event.\n");
+  fprintf(stderr,"\t-g Read gamp event format\n");
   fprintf(stderr,"\t-h Print this help message\n\n");
 }
 

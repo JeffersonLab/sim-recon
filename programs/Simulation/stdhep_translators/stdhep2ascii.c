@@ -85,8 +85,9 @@ int StdHepXdrEnd(int istream);
 int PrintUsage(char *processName);
 int fill_mc_parts(mc_evt_t *mc_evt);
 int write_mc_parts(FILE *fp, mc_evt_t *mc_evt);
+int write_gamp_parts(FILE *fp, mc_evt_t *mc_evt,int beamE);
 int getCharge(int PDGpid);
-
+int  gampID(int id);
 
 /****************
  * main()
@@ -100,6 +101,7 @@ int main(int argc,char **argv)
   char *argptr;
   int i,ntries=0,ret,gotANevent,written=0;
   int ilbl=1,istream=0,nparts=0;/*I guessed at istream */ 
+  int kludge_beam =-1;
   char *evtfile ="default.evt";
   char outputfile[40];
   FILE *outputfp=stdout;
@@ -122,6 +124,10 @@ int main(int argc,char **argv)
           break;
 	  case 'n':
           nparts=atoi(++argptr);
+          break;
+	  case 'g':
+          kludge_beam=atoi(++argptr);
+	  fprintf(stderr,"Writing gamp format kludge beam of %d\n",kludge_beam);
           break;
         case 'N':
           ntries=atoi(++argptr);
@@ -171,7 +177,10 @@ int main(int argc,char **argv)
 	exit(-1); 
       }
       fill_mc_parts(&mc_evt);
-      write_mc_parts(outputfp,&mc_evt);
+      if(kludge_beam>0)
+	write_gamp_parts(outputfp,&mc_evt,kludge_beam);
+      else
+	write_mc_parts(outputfp,&mc_evt);
       if(!(++written %100))
 	fprintf(stderr,"McFast events Read: %d\r",written);  
     }
@@ -219,6 +228,33 @@ int fill_mc_parts(mc_evt_t *mc_evt){
   }
   return 1;
 }
+
+
+/********************
+ * write_gamp_parts
+ *******************/
+int write_gamp_parts(FILE *fp, mc_evt_t *mc_evt, int photon_beam){
+  int i;
+  /*
+   * Write the number of particles (including the beam)
+   */
+  fprintf(fp,"%d \n", mc_evt->nparts+1);
+  /*
+   * Write particle info (id charge p.x p.y p.z p.t)
+   */
+  /* kludged beam */
+  fprintf(fp,"1 0 0 0 %d %d \n", photon_beam,photon_beam);
+  /* now write out nparts */
+  for(i=0;i<mc_evt->nparts;i++){ 
+    fprintf(fp,"%d %d %lf %lf %lf %lf \n",
+	    gampID(mc_evt->part[i].pid),getCharge( mc_evt->part[i].pid),
+	    mc_evt->part[i].p.space.x,
+	    mc_evt->part[i].p.space.y,
+	    mc_evt->part[i].p.space.z,
+	    mc_evt->part[i].p.t);
+  }
+}
+
 /********************
  * write_mc_parts
  *******************/
@@ -290,6 +326,136 @@ int getCharge(int PDGpid){
   return charge;  
 
 }
+/********************
+ * gampID(int pdgID)
+ * The convention is that
+ * followed in StdHep 4.02
+ *******************/
+int  gampID(int id){
+  Particle_t p=Unknown;
+  switch (id) {
+  case 0:
+    p=Unknown;
+    break;
+  case 22:
+    p=Gamma;
+    break;
+  case -11:
+    p=Positron;
+    break;
+  case 11:
+    p=Electron;
+    break;
+  case 12:
+    p=Neutrino;
+    break;
+  case -13:
+    p=MuonPlus;
+    break;
+  case 13:
+    p=MuonMinus;
+    break;
+  case 111:
+    p=Pi0;
+    break;
+  case 211:
+    p=PiPlus;
+    break;
+  case -211:
+    p=PiMinus;
+    break;
+  case 130:
+    p=KLong;
+    break;
+  case 321:
+    p=KPlus;
+    break;
+  case -321:
+    p=KMinus;
+    break;
+  case 2112:
+    p=Neutron;
+    break;
+  case 2212:
+    p=Proton;
+    break;
+  case -2212:
+    p=AntiProton;
+    break;
+  case 310:
+    p=KShort;
+    break;
+  case 221:
+    p=Eta;
+    break;
+  case 3122:
+    p=Lambda;
+    break;
+  case 3222:
+    p=SigmaPlus;
+    break;
+  case 3212:
+    p=Sigma0;
+    break;
+  case 3112:
+    p=SigmaMinus;
+    break;
+  case 3322:
+    p=Xi0;
+  case 3312:
+    p=XiMinus;
+    break;
+  case 3334:
+    p=OmegaMinus;
+    break;
+  case -2112:
+    p=AntiNeutron;
+    break;
+  case -3122:
+    p=AntiLambda;
+    break;
+  case -3112:
+    p=AntiSigmaMinus;
+    break;
+  case -3212:
+    p=AntiSigma0;
+    break;
+  case -3222:
+    p=AntiSigmaPlus;
+    break;
+  case -3322:
+    p=AntiXi0;
+    break;
+  case -3312:
+    p=AntiXiPlus;
+    break;
+  case -3334:
+    p=AntiOmegaPlus;
+    break;
+  case 113:
+    p=Rho0;
+    break;  
+  case 213:
+    p=RhoPlus;
+    break;
+  case -213:
+    p=RhoMinus;
+    break;
+  case 223:
+    p=omega;
+    break;
+  case 331:
+    p=EtaPrime;
+    break;
+  case 333:
+    p=phiMeson;
+    break;
+  default:
+    p=Unknown;
+    break;
+  }
+  return((int)p);
+}
 
 
 
@@ -304,6 +470,7 @@ int PrintUsage(char *processName)
   fprintf(stderr,"\t-o<name> The output ascii file(default is stdout).\n");
   fprintf(stderr,"\t-N<#> The number mcfast events.\n");
   fprintf(stderr,"\t-n<#> The number particles per event.\n");
+  fprintf(stderr,"\t-g<beamE> Write gamp output w/ kludged photon beam.\n");
   fprintf(stderr,"\t-h Print this help message\n\n");
 }
 
