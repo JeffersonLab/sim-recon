@@ -54,4 +54,6 @@ env:
 	@echo DEP_DIR	= $(DEP_DIR)
 	@echo DEPS		= $(DEPS)
 	@echo TMP		= $(TMP)
+	@echo PACKAGES = $(PACKAGES)
+	@echo PACKAGE_MAKEFILES = $(PACKAGE_MAKEFILES)
 
