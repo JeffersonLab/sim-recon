@@ -57,7 +57,7 @@ GXFIXED = gxcs.o gxphys.o
 
 hdgeant++:	gxint.o uginit.o uglast.o $(AUXF) $(AUXC) $(GXFIXED)
 	$(CERN_ROOT)/bin/gxint -g 321 -m -d Motif -o $@ $^ $(STATIC) \
-	-Lgelhad -lgelhad $(XLIBS) $(GLIBS)
+	-Lgelhad -lgelhad $(XLIBS) $(GLIBS) -- -Wl,-export-dynamic
 
 hdgeant:	hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC)
 	$(F77) $(LOPTS) -o $@ -I$(CERN_ROOT)/include -Wl,-Bstatic $^ \

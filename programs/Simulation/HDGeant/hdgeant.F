@@ -19,10 +19,7 @@ C---- Initialization of GEANT
       call UGINIT
 
 C---- Simulation
-      call HROPEN(50,'RZfile','geant.hbook','N',65536,istat)
-        call GRUN
-        call HROUT(0,icycle,' ')
-      call HREND('RZfile')
+      call GRUN
 
 C---- Termination ----
       CALL UGLAST

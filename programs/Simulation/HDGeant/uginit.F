@@ -2,6 +2,12 @@
 * $Id$
 *
 * $Log$
+* Revision 1.9  2002/07/10 19:53:08  jonesrt
+* - moved open/close of hbook file from hdgeant.f to uginit.F/uglast.F so that
+*   it gets called from hdgeant++ [rtj]
+* - fixed Makefile to make hdgeant++ export its symbols to dynamic COMIS
+*   functions [rtj]
+*
 * Revision 1.8  2002/07/10 14:57:18  jonesrt
 * - fixed wierd problem with g77 compiler that wanted to interpret "slash star"
 *   in a fortran comment line as a comment indicator a-la-c (complained about
@@ -186,6 +192,10 @@ C..geant..
 *
       call HDDSgeant3
       call Goptimize
+*
+*             Open the HBOOK file for output
+*
+      call HROPEN(50,'RZfile','geant.hbook','N',65536,istat)
 *
 *             Initialize GEANT tracking structures
 *
