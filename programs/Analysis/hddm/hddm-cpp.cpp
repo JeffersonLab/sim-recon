@@ -241,17 +241,20 @@ void writeHeader(DOMElement* el)
 		char cRef[256];
 		strcpy(cRef,&ctypeRef[2]);
 		cRef[strlen(cRef)-2] = 0;
-		hFile << "//------------- "<<ctypeRef<<" --------------"<<endl
-            << endl << "class "<<ctypeRef<<":public DContainer"<<endl
+		char cpptypeRef[256];
+		strcpy(cpptypeRef,ctypeRef);
+		cpptypeRef[strlen(cpptypeRef)-1] = 'c';
+		hFile << "//------------- "<<cpptypeRef<<" --------------"<<endl
+            << endl << "class "<<cpptypeRef<<":public DContainer"<<endl
 		      << "{" << endl
 				<< "	public:"<<endl
-            << "		"<<ctypeRef<<"(void)"
-				<< ":DContainer((void**)&"<<cDef<<", sizeof("<<ctypeDef<<"), \""<<ctypeDef<<"\"){}" << endl
+            << "		"<<cpptypeRef<<"(void)"
+				<< ":DContainer((void**)&"<<cDef<<", sizeof("<<ctypeDef<<"), \""<<cDef<<"\"){}" << endl
             << "   	" << ctypeDef << " *"<<cDef<<";" << endl
             << "};"<< endl
 				<< "//-------------------------------------------"<<endl;
-		sprintf(containerList,"%s\n	%s %s;",containerList,ctypeRef, cRef);
-		sprintf(constructorCalls,"%s\n	hddm->%s 	= new %s();", constructorCalls, cRef, ctypeRef);
+		sprintf(containerList,"%s\n	%s *%s;",containerList,cpptypeRef, cRef);
+		sprintf(constructorCalls,"%s\n	hddm->%s 	= new %s();", constructorCalls, cRef, cpptypeRef);
 		sprintf(destructorCalls,"%s\n	delete hddm->%s;", destructorCalls, cRef);
       delete [] ctypeRef;
    }
@@ -507,10 +510,15 @@ int main(int argC, char* argV[])
 			<< " */"						<< endl
 			<< endl;
 
+   hFile << "#include \""<<hname<<"\"" 		<< endl
+			<< "#include \"DContainer.h\"" 		<< endl
+			<< endl
+			<< "#ifndef _HDDM_HPP_"<<endl
+			<< "#define _HDDM_HPP_"<<endl;
+
    constructGroup(rootEl);
 	
-   hFile << "#include \""<<hname<<"\"" 		<< endl
-			<< endl
+	hFile	<< endl
 			<< endl
 			<< "//----------------------------------------------------------------------------"<<endl
 			<< "//------------------------------- hddm_containers_t -------------------------------"<<endl
@@ -524,6 +532,8 @@ int main(int argC, char* argV[])
 			<< "// in HDDM/hddm_containers.cc"<<endl
 			<< "derror_t init_hddm_containers("<<classPrefix<<"_hddm_containers_t *hddm);"<<endl
 			<< "derror_t delete_hddm_containers("<<classPrefix<<"_hddm_containers_t *hddm);"<<endl
+			<< endl
+			<< "#endif // _HDDM_HPP_"<<endl
 			<< endl;
 
    cFile << "#include \"" << hppname << "\"" 			<< endl
