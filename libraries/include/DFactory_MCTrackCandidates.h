@@ -13,6 +13,8 @@
 #include "DFactory.h"
 #include "DArcHit.h"
 
+class DQuickFit;
+
 
 typedef struct{
 	int Nhits;
@@ -20,6 +22,9 @@ typedef struct{
 	float x0,y0;		///< center of circle
 	float z_vertex;	///< z coordinate of vertex
 	float dphidz;		///< dphi/dz in radians per cm
+	float q;				///< electric charge 
+	float p, p_trans;	///< total and transverse momenta in GeV/c
+	float phi, theta;	///< theta and phi in radians
 }MCTrackCandidate_t;
 
 class DFactory_MCTrackCandidates:public DFactory{
@@ -89,11 +94,13 @@ class DFactory_MCTrackCandidates:public DFactory{
 		inline int GetNarchits(void){return Narchits;}
 		inline TEllipse* GetCircles(void){return circles;}
 		inline int GetNcircles(void){return Ncircles;}
+		inline int GetNqfit(void){return Nqfit;}
 		derror_t SetNumDensityHistograms(int N);
 		inline int GetNumDensityHistograms(void){return Ndensity_histos;}
 		TH2F* GetDensityHistogram(int n);
 		TH1F* GetSlopeDensityHistogram(int n);
 		TH1F* GetOffsetDensityHistogram(int n);
+		DQuickFit* GetQFit(int n);
 
 		float circle_max;		///< max distance of focal point (circle center) from beamline
 		float bins_per_cm;	///< bins per cm in one dimension for density histo
@@ -118,6 +125,11 @@ class DFactory_MCTrackCandidates:public DFactory{
 		int Ndensity_histos;			///< number of valid pointers in density_histos[]
 		TH1F *slope_density_histos[8];
 		TH1F *offset_density_histos[8];
+		
+		DQuickFit *qfit[32];
+		int Nqfit;
+		
+		derror_t ThereCanBeOnlyOne(int trk1, int trk2); ///< Aaaah!! the quickening!!!
 
 		derror_t evnt(int eventnumber);	///< Called every event.
 		
