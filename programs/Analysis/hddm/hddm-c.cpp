@@ -55,6 +55,8 @@
  *    document tags must be a non-colliding set (see matching rules).
  */
 
+#define MAX_POPLIST_LENGTH 99
+
 #include "hddm-c.hpp"
 
 #include <assert.h>
@@ -629,7 +631,7 @@ void constructUnpackers()
    }
 }
  
-/* Generate c functions to read from binary stream into c-structures */
+/* Generate c function to read from binary stream into c-structures */
 
 void constructReadFunc(DOMElement* topEl)
 {
@@ -639,35 +641,6 @@ void constructReadFunc(DOMElement* topEl)
    strncpy(topT,topType,500);
    char* term = rindex(topT,'_');
    *term = 0;
-
-#define MAX_POPLIST_LENGTH 99
-
-   hFile 								<< endl
-	 << "#ifndef HDDM_STREAM_INPUT"					<< endl
-	 << "#define HDDM_STREAM_INPUT -91"				<< endl
-	 << "#define HDDM_STREAM_OUTPUT -92"				<< endl
-           								<< endl
-	 << "struct popNode_s {"					<< endl
-         << "   void* (*unpacker)(XDR*, struct popNode_s*);"		<< endl
-         << "   int inParent;"						<< endl
-         << "   int popListLength;"					<< endl
-         << "   struct popNode_s* popList[" << MAX_POPLIST_LENGTH << "];"
-									<< endl
-         << "};"							<< endl
-         << "typedef struct popNode_s popNode;"				<< endl
-                                                                	<< endl
-	 << "typedef struct {"						<< endl
-	 << "   FILE* fd;"						<< endl
-	 << "   int iomode;"						<< endl
-	 << "   char* filename;"					<< endl
-         << "   XDR* xdrs;"						<< endl
-	 << "   popNode* popTop;"					<< endl
-	 << "} " << classPrefix << "_iostream_t;"			<< endl
-									<< endl
-	 << "#endif /* HDDM_STREAM_INPUT */"				<< endl;
-
-   constructUnpackers();
-
    hFile								<< endl
 	 << topType << "* read_" << topT
 	 << "(" << classPrefix << "_iostream_t* fp" << ");"		<< endl;
@@ -1512,6 +1485,7 @@ int main(int argC, char* argV[])
 	 << "#include <stdio.h>" 				<< endl
 	 << "#include <rpc/rpc.h>" 				<< endl
 	 << "#include <string.h>"				<< endl
+	 << "#include <strings.h>"				<< endl
 	 << "#include <particleType.h>"				<< endl
 								<< endl
 	 << "#define MALLOC(N,S) malloc(N)"			<< endl
@@ -1526,8 +1500,11 @@ int main(int argC, char* argV[])
 	 << "#ifdef __cplusplus"				<< endl
 	 << "extern \"C\" {"					<< endl
 	 << "#endif"						<< endl;
-
    constructMakeFuncs();
+   hFile							<< endl
+	 << "#ifdef __cplusplus"				<< endl
+	 << "}"							<< endl
+	 << "#endif"						<< endl;
 
    hFile 							<< endl
 	 << "#ifndef " << classPrefix << "_DocumentString" 	<< endl
@@ -1548,12 +1525,41 @@ int main(int argC, char* argV[])
    constructDocument(rootEl);
    cFile << ";"							<< endl;
 
+   hFile 							<< endl
+	 << "#ifndef HDDM_STREAM_INPUT"				<< endl
+	 << "#define HDDM_STREAM_INPUT -91"			<< endl
+	 << "#define HDDM_STREAM_OUTPUT -92"			<< endl
+           							<< endl
+	 << "struct popNode_s {"				<< endl
+         << "   void* (*unpacker)(XDR*, struct popNode_s*);"	<< endl
+         << "   int inParent;"					<< endl
+         << "   int popListLength;"				<< endl
+         << "   struct popNode_s* popList["
+         << MAX_POPLIST_LENGTH << "];"				<< endl
+         << "};"						<< endl
+         << "typedef struct popNode_s popNode;"			<< endl
+                                                                << endl
+	 << "typedef struct {"					<< endl
+	 << "   FILE* fd;"					<< endl
+	 << "   int iomode;"					<< endl
+	 << "   char* filename;"				<< endl
+         << "   XDR* xdrs;"					<< endl
+	 << "   popNode* popTop;"				<< endl
+	 << "} " << classPrefix << "_iostream_t;"		<< endl
+								<< endl
+	 << "#endif /* HDDM_STREAM_INPUT */"			<< endl;
+
+   constructUnpackers();
+
+   hFile							<< endl
+	 << "#ifdef __cplusplus"				<< endl
+	 << "extern \"C\" {"					<< endl
+	 << "#endif"						<< endl;
    constructReadFunc(rootEl);
    constructFlushFunc(rootEl);
    constructOpenFunc(rootEl);
    constructInitFunc(rootEl);
    constructCloseFunc(rootEl);
-
    hFile							<< endl
 	 << "#ifdef __cplusplus"				<< endl
 	 << "}"							<< endl

@@ -46,7 +46,7 @@ hddmcat: hddmcat.cpp
 test: hddm-c hddm-xml test.xml
 	./hddm-c test.xml
 	$(CPP) -I../include -I$(XERCESCROOT)/include -o testhddm \
-		testhddm.cpp hddm_v.c
+		testhddm.cpp hddm_v.c $(LIBXDR)
 	./testhddm
 	hddm-xml test.hddm
 
