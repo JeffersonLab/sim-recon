@@ -67,8 +67,50 @@ derror_t DEventSourceFile::GetEvent(void)
 	hddm_s = read_s_HDDM(fin);
 	if(!hddm_s)return NO_MORE_EVENTS_IN_SOURCE;
 	
-	// Convert historic hddm format to hddm_banks_t
-	// <needs to be implemented>
+	//----- Convert historic hddm format to hddm_banks_t -----
+
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(PE){
+		for(int i=0; i<PE->mult; i++){
+
+			s_Rings_t *rings=NULL;
+			s_HitView_t *HV = PE->in[i].hitView;
+			if(PE->in[i].hitView)
+				if(PE->in[i].hitView->centralDC)
+					rings = PE->in[i].hitView->centralDC->rings;
+			if(rings){
+				for(int j=0;j<rings->mult;j++){
+					float radius = rings->in[j].radius;
+					s_Straws_t *straws = rings->in[j].straws;
+					if(straws){
+						for(int k=0;k<straws->mult;k++){
+							float phim = straws->in[k].phim;
+							s_CdcPoints_t *cdcPoints = straws->in[k].cdcPoints;
+							if(cdcPoints){						
+								for(int m=0;m<cdcPoints->mult;m++){
+									float	r = cdcPoints->in[m].r;
+									float phi = cdcPoints->in[m].phi;
+									float z = cdcPoints->in[m].z;
+									
+									hddm->CDChits->nrows++;
+									hddm->CDChits->Grow();
+									CDChit_t *CDChit = &hddm->CDChits->CDChit[hddm->CDChits->nrows-1];
+									
+									CDChit->pos.SetXYZ(r*cos(phi), r*sin(phi), z);
+									CDChit->t = 0.0;
+									CDChit->track = cdcPoints->in[m].track;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 	
 	return NOERROR;
 }
+
+
+
