@@ -885,8 +885,8 @@ void constructFlushFunc(DOMElement* el)
 	 << "      xdrmem_create(xdrs,dump,max_buffer_size,XDR_ENCODE);"
 	 							<< endl
 	 << "      pack_" << topT << "(xdrs,this1);"		<< endl
-	 << "      xdr_destroy(fp->xdrs);"			<< endl
-	 << "      free(fp->xdrs);"				<< endl
+	 << "      xdr_destroy(xdrs);"				<< endl
+	 << "      free(xdrs);"					<< endl
 	 << "      free(dump);"					<< endl
 	 << "      return 0;"					<< endl
          << "   }"						<< endl
