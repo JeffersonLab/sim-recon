@@ -35,8 +35,8 @@ DEventSource::DEventSource(int narg, char *argv[])
 	prate_last_events = 0;
 	prate_last_rate = 0.0;
 	
-	hddm = new hddm_containers_t;
-	init_hddm_containers_t(hddm);
+	hddm = new s_hddm_containers_t;
+	init_hddm_containers(hddm);
 }
 
 //----------------
@@ -69,7 +69,7 @@ derror_t DEventSource::NextEvent(void)
 	
 	// Set number of rows in all containers to zero
 	DContainer **containers = (DContainer**)hddm;
-	int Ncontainers = sizeof(hddm_containers_t)/sizeof(DContainer*);
+	int Ncontainers = sizeof(s_hddm_containers_t)/sizeof(DContainer*);
 	for(int i=0;i<Ncontainers;i++ ,containers++){
 		if((*containers)->flags & DContainer::PERSISTANT)continue;
 		(*containers)->nrows=0;

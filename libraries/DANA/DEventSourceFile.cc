@@ -67,13 +67,29 @@ derror_t DEventSourceFile::GetEvent(void)
 	hddm_s = read_s_HDDM(fin);
 	if(!hddm_s)return NO_MORE_EVENTS_IN_SOURCE;
 	
+	// Fill in hddm_containers pointers to classic hddm tree
+	// (Number of rows in all containers should now be zero (set in DEventSource.cc))
+	
+	
+	
 	//----- Convert historic hddm format to hddm_containers_t -----
+	// centralDC
+	// forwardDC
+	// startCntr
+	// barrelEMcal
+	// Cerenkov
+	// forwardTOF
+	// forwardEMcal
 
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(PE){
+		hddm->PhysicsEvents->Set(PE->mult, (void**)&PE->in);
 		for(int i=0; i<PE->mult; i++){
+		
+			
 
+			// ------------ CdcPoints, Hits --------------
 			s_Rings_t *rings=NULL;
 			s_HitView_t *HV = PE->in[i].hitView;
 			if(PE->in[i].hitView)
@@ -86,21 +102,16 @@ derror_t DEventSourceFile::GetEvent(void)
 					if(straws){
 						for(int k=0;k<straws->mult;k++){
 							float phim = straws->in[k].phim;
+							
+							//----- CDC "Hits"
+							s_Hits_t *hits = straws->in[k].hits;
+							if(hits){
+
+							}							
+							//----- CDC "Points"
 							s_CdcPoints_t *cdcPoints = straws->in[k].cdcPoints;
-							if(cdcPoints){						
-								for(int m=0;m<cdcPoints->mult;m++){
-									float	r = cdcPoints->in[m].r;
-									float phi = cdcPoints->in[m].phi;
-									float z = cdcPoints->in[m].z;
-									
-									hddm->CDChits->nrows++;
-									hddm->CDChits->Grow();
-									CDChit_t *CDChit = &hddm->CDChits->CDChit[hddm->CDChits->nrows-1];
-									
-									CDChit->pos.SetXYZ(r*cos(phi), r*sin(phi), z);
-									CDChit->t = 0.0;
-									CDChit->track = cdcPoints->in[m].track;
-								}
+							if(cdcPoints){
+
 							}
 						}
 					}
