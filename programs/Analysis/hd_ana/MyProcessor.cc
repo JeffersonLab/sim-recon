@@ -32,7 +32,9 @@ derror_t MyProcessor::brun(int runnumber)
 //------------------------------------------------------------------
 derror_t MyProcessor::evnt(int eventnumber)
 {
-	cout<<__FILE__<<":"<<__LINE__<<endl;
+	//cout<<__FILE__<<":"<<__LINE__<<endl;
+	event_loop->PrintRate();
+
 	return NOERROR;
 }
 
