@@ -77,6 +77,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 	
 	// Print event separator
 	cout<<"================================================================"<<endl;
+	cout<<"Event: "<<eventnumber<<endl;
 
 	// We want to print info about all factories results, even if we aren't
 	// printing the actual data. Hence we must call every factory's Get() method.
@@ -93,12 +94,23 @@ derror_t MyProcessor::evnt(int eventnumber)
 	
 	// Wait for user input if pausing
 	if(PAUSE_BETWEEN_EVENTS && !event_is_boring){
-		char c;
 		cerr.flush();
-		cout<<endl<<"< Hit return for the next event (type Q to quit) >";
+		cout<<endl<<"< Hit return for the next event (P=prev. Q=quit) >";
 		cout.flush();
-		while(!scanf("%c",&c)){cout<<"c="<<(int)c<<endl;usleep(100000);}
-		if(c=='q' || c=='Q')event_loop->Quit();
+		char c = getchar(); // see note in hd_dump.cc:main()
+		if(c=='\n')cout<<ansi_up(1);
+		cout<<endl;
+		switch(toupper(c)){
+			case 'Q':
+				event_loop->Quit();
+				break;
+			case 'P':
+				event_loop->GotoEvent(eventnumber-1);
+				break;
+			case 'N':
+				break;
+		}
+
 		cout<<ansi_up(1)<<"\r                                                     \r";
 		cout.flush();
 	}
