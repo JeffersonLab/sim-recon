@@ -9,6 +9,18 @@ using namespace std;
 //-----------------------
 // DMagneticFieldStepper
 //-----------------------
+DMagneticFieldStepper::DMagneticFieldStepper(DMagneticFieldMap *map)
+{
+	bfield = map;
+	q = 1.0;
+	start_pos = pos = TVector3(0.0,0.0,0.0);
+	start_mom = mom = TVector3(0.0,0.0,1.0);
+	stepsize = 10.0; // in cm
+}
+
+//-----------------------
+// DMagneticFieldStepper
+//-----------------------
 DMagneticFieldStepper::DMagneticFieldStepper(DMagneticFieldMap *map, double q, TVector3 *x, TVector3 *p)
 {
 	bfield = map;
@@ -79,7 +91,7 @@ derror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	
 	// Get B-field
 	float hbarc = 197.326;
-	D3Vector_t tmp = bfield->getQuick(pos.x()/2.54, pos.y()/2.54, (66.0-30.0*2.54+pos.z())/2.54);
+	D3Vector_t tmp = bfield->getQuick(pos.x()/2.54, pos.y()/2.54, (-66.0+pos.z())/2.54);
 	TVector3 B(tmp.x/hbarc, tmp.y/hbarc, tmp.z/hbarc);
 	//TVector3 B(0.0, 0.0, -2.0/hbarc);
 
@@ -138,24 +150,4 @@ derror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	return NOERROR;
 }
 
-//-----------------------
-// Dist
-//-----------------------
-TVector3 DMagneticFieldStepper::Closest(TVector3 *v)
-{
-	/// This method not yet implemented
-
-	return TVector3();
-}
-
-//-----------------------
-// DMagneticFieldStepper
-//-----------------------
-double DMagneticFieldStepper::Dist(TVector3 *v)
-{
-	/// This method not yet implemented
-
-	return 0.0;
-}
-	
 
