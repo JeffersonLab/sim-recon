@@ -951,7 +951,7 @@ int Refsys::createSolid(DOM_Element& el)
         << "      isvol = " << (sensiS.equals("true") ? 1 : 0) << endl
         << "      ifield = " << fMagField << endl
         << "      fieldm = " << fieldStrength[fMagField] << endl
-        << "      tmaxfd = " << ((fMagField == 0) ? 0 : 10) << endl
+        << "      tmaxfd = " << ((fMagField == 0) ? 0 : 1) << endl
         << "      stemax = 0" << endl
         << "      deemax = 0" << endl
         << "      epsil = 1e-3" << endl
@@ -1235,7 +1235,7 @@ int Refsys::createVolume(DOM_Element& el)
    }
    else if (nameS.equals("sweepMagnet"))
    {
-      myRef.fMagField = 3;
+      myRef.fMagField = 2;
    }
 
    DOM_Element env;
