@@ -10,6 +10,7 @@
 
 #include "DEventSource.h"
 #include "derror.h"
+#include "hddm_s.h"
 
 class DEventSourceFile:DEventSource
 {
@@ -21,7 +22,8 @@ class DEventSourceFile:DEventSource
 		derror_t Close(void);		///< Close the current event source.
 		derror_t GetEvent(void);	///< Copy event from ET system into buffer.
 		
-		ifstream *fin;
+		s_iostream_t *fin;
+		s_HDDM_t *hddm;
 };
 
 #endif //_DEVENT_SOURCEHDDM_H_
