@@ -261,15 +261,15 @@
 				unit="cm"	/>
     <int	name="num_anode"    value="23"	comment="anode layers" />
     <int	name="num_cathode"  value="0"	/>
-    <reference  name="material"	    value="chamberGas" />
+    <reference  name="material"	    value="GASMX" />
     <real_array name="thick_boun"   comment="inner outer upstream downstream
 		window thicknesses" values="0.20  0.50    0.90     0.60"
 				    unit="cm"	/>
     <reference_vector name="mat_boun">
-      <reference_data value="CarbonFiber"    comment="inner window material"     />
-      <reference_data value="CarbonFiber"    comment="outer window material"     />
-      <reference_data value="Aluminum" comment="upstream end plate matl"   />
-      <reference_data value="Aluminum" comment="downstream end plate matl" />
+      <reference_data value="CFIB" comment="inner window material"     />
+      <reference_data value="CFIB" comment="outer window material"     />
+      <reference_data value="ALUM" comment="upstream end plate matl"   />
+      <reference_data value="ALUM" comment="downstream end plate matl" />
     </reference_vector>
   </parameters>
 
@@ -315,7 +315,7 @@
 				unit="cm"	/>
     <real	name="zlen"	value="200.0"	comment="length of drum"
 				unit="cm"	/>
-    <reference 	name="material" value="Aluminum" comment="straw tube mockup" />
+    <reference 	name="material" value="ALUM" comment="straw tube mockup" />
   </parameters>
 
   <mcfast model="Drift" template="db/drift.db" parameters="centralDC_pars">
@@ -328,10 +328,10 @@
 		window thicknesses" values="0.20  0.50    0.90     0.60"
 				    unit="cm"	/>
     <reference_vector name="mat_boun">
-      <reference_data value="CarbonFiber" comment="inner window material"  />
-      <reference_data value="CarbonFiber" comment="outer window material"  />
-      <reference_data value="Aluminum" comment="upstream window matl"   />
-      <reference_data value="Aluminum" comment="downstream window matl" />
+      <reference_data value="CFIB" comment="inner window material"  />
+      <reference_data value="CFIB" comment="outer window material"  />
+      <reference_data value="ALUM" comment="upstream window matl"   />
+      <reference_data value="ALUM" comment="downstream window matl" />
     </reference_vector>
 
     <mcfast model="LayerDRFAno" template="db/drift_layer.db"
