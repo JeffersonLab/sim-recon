@@ -15,7 +15,7 @@ AUXS = hddsGeant3.o goptimize.o \
 GXFIXED = gxcs.o gxphys.o
 
 hdgeant++.x:	gxint.o uginit.o uglast.o $(AUXS) $(GXFIXED)
-	gxint -g 321 -m -d Motif -o $@ $^
+	$(CERN_ROOT)/bin/gxint -g 321 -m -d Motif -o $@ $^
 
 hdgeant.x:	hdgeant.F uginit.F uglast.F $(AUXS)
 	f77 $(FOPTS) -o $@ -I$(CERN_ROOT)/include $^ \
