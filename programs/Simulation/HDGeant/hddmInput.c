@@ -13,7 +13,21 @@
  * Richard Jones
  * University of Connecticut
  * July 13, 2001
+ *
+ * Usage Notes:
+ * 1)	Most Monte Carlo generators do not care where the vertex is placed
+ *	inside the target, and specify only the final-state particles'
+ *	momenta.  In this case the vertex position has to be randomized by
+ *	the simulation within the beam/target overlap volume.  If the vertex
+ *	position from the generator is (0,0,0) then the simulation vertex is
+ *	generated uniformly inside the cylinder specified by TARGET_LENGTH,
+ *	BEAM_DIAMETER, and TARGET_CENTER defined below.
  */
+
+#define TARGET_LENGTH 30
+#define BEAM_DIAMETER 0.5
+#define TARGET_CENTER 65
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -90,33 +104,27 @@ int loadInput ()
          s_Products_t* prods;
          int prodCount, ip;
          s_Vertex_t* vert = &verts->in[iv];
-
-#define TARGET_LENGTH 30
-#define BEAM_DIAMETER 0.5
-#define TARGET_CENTER 65
-
-#ifdef USE_MC_VERTEX
          v[0] = vert->origin->vx;
          v[1] = vert->origin->vy;
          v[2] = vert->origin->vz;
-#else
-         v[0] = 1;
-         v[1] = 1;
-         v[2] = TARGET_CENTER;
-         while (v[0]*v[0] + v[1]*v[1] > 0.25)
+         if ((v[0] == 0) && (v[1] == 0) && (v[2] == 0))
          {
-            int len = 3;
-            grndm_(v,&len);
-            v[0] -= 0.5;
-            v[1] -= 0.5;
-            v[2] -= 0.5;
+            v[0] = 1;
+            v[1] = 1;
+            v[2] = TARGET_CENTER;
+            while (v[0]*v[0] + v[1]*v[1] > 0.25)
+            {
+               int len = 3;
+               grndm_(v,&len);
+               v[0] -= 0.5;
+               v[1] -= 0.5;
+               v[2] -= 0.5;
+            }
+            v[0] *= BEAM_DIAMETER;
+            v[1] *= BEAM_DIAMETER;
+            v[2] *= TARGET_LENGTH;
+            v[2] += TARGET_CENTER;
          }
-         v[0] *= BEAM_DIAMETER;
-         v[1] *= BEAM_DIAMETER;
-         v[2] *= TARGET_LENGTH;
-         v[2] += TARGET_CENTER;
-#endif
- 
          gsvert_(v, &ntbeam, &nttarg, &ubuf, &nubuf, &nvtx);
          prods = vert->products;
          prodCount = prods->mult;
