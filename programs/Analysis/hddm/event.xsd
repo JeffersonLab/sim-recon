@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" standalone="no" ?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://www.gluex.org/hddm" xmlns:hddm="http://www.gluex.org/hddm">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://www.gluex.org/hddm" xmlns="http://www.gluex.org/hddm" xmlns:hddm="http://www.gluex.org/hddm">
 
   <xs:simpleType name="int">
     <xs:restriction base="xs:int"/>
@@ -152,22 +152,6 @@
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="band">
-    <xs:complexType>
-      <xs:attribute name="phim" type="hddm:float" use="required"/>
-      <xs:attribute name="z" type="hddm:float" use="required"/>
-    </xs:complexType>
-  </xs:element>
-
-  <xs:element name="cathodeCyl">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element maxOccurs="unbounded" ref="hddm:band"/>
-      </xs:sequence>
-      <xs:attribute name="radius" type="hddm:float" use="required"/>
-    </xs:complexType>
-  </xs:element>
-
   <xs:element name="hit">
     <xs:complexType>
       <xs:attribute name="t" type="hddm:float" use="required"/>
@@ -182,6 +166,7 @@
       <xs:attribute name="phi" type="hddm:float" use="required"/>
       <xs:attribute name="dradius" type="hddm:float" use="required"/>
       <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
       <xs:attribute name="dEdx" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
@@ -208,7 +193,6 @@
   <xs:element name="centralDC">
     <xs:complexType>
       <xs:sequence>
-        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:cathodeCyl"/>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:ring"/>
       </xs:sequence>
     </xs:complexType>
@@ -237,6 +221,7 @@
       <xs:attribute name="y" type="hddm:float" use="required"/>
       <xs:attribute name="dradius" type="hddm:float" use="required"/>
       <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
       <xs:attribute name="dEdx" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
@@ -296,6 +281,7 @@
       <xs:attribute name="r" type="hddm:float" use="required"/>
       <xs:attribute name="phi" type="hddm:float" use="required"/>
       <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
       <xs:attribute name="dEdx" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
@@ -347,8 +333,10 @@
       <xs:attribute name="t" type="hddm:float" use="required"/>
       <xs:attribute name="z" type="hddm:float" use="required"/>
       <xs:attribute name="phi" type="hddm:float" use="required"/>
+      <xs:attribute name="r" type="hddm:float" use="required"/>
       <xs:attribute name="E" type="hddm:float" use="required"/>
       <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -377,10 +365,26 @@
     </xs:complexType>
   </xs:element>
 
+  <xs:element name="cerenkovPoint">
+    <xs:complexType>
+      <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="z" type="hddm:float" use="required"/>
+      <xs:attribute name="x" type="hddm:float" use="required"/>
+      <xs:attribute name="y" type="hddm:float" use="required"/>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
+      <xs:attribute name="px" type="hddm:float" use="required"/>
+      <xs:attribute name="py" type="hddm:float" use="required"/>
+      <xs:attribute name="pz" type="hddm:float" use="required"/>
+      <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
   <xs:element name="Cerenkov">
     <xs:complexType>
       <xs:sequence>
         <xs:element maxOccurs="unbounded" ref="hddm:section"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:cerenkovPoint"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -401,7 +405,7 @@
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="slab">
+  <xs:element name="hcounter">
     <xs:complexType>
       <xs:sequence>
         <xs:element minOccurs="0" ref="hddm:left"/>
@@ -411,19 +415,48 @@
     </xs:complexType>
   </xs:element>
 
+  <xs:element name="top">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="hddm:hit"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="bottom">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="hddm:hit"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="vcounter">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="hddm:top"/>
+        <xs:element minOccurs="0" ref="hddm:bottom"/>
+      </xs:sequence>
+      <xs:attribute name="x" type="hddm:float" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
   <xs:element name="tofPoint">
     <xs:complexType>
       <xs:attribute name="t" type="hddm:float" use="required"/>
       <xs:attribute name="x" type="hddm:float" use="required"/>
       <xs:attribute name="y" type="hddm:float" use="required"/>
+      <xs:attribute name="z" type="hddm:float" use="required"/>
       <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
     </xs:complexType>
   </xs:element>
 
   <xs:element name="forwardTOF">
     <xs:complexType>
       <xs:sequence>
-        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:slab"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:hcounter"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:vcounter"/>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:tofPoint"/>
       </xs:sequence>
     </xs:complexType>
@@ -452,8 +485,10 @@
       <xs:attribute name="t" type="hddm:float" use="required"/>
       <xs:attribute name="x" type="hddm:float" use="required"/>
       <xs:attribute name="y" type="hddm:float" use="required"/>
+      <xs:attribute name="z" type="hddm:float" use="required"/>
       <xs:attribute name="E" type="hddm:float" use="required"/>
       <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
     </xs:complexType>
   </xs:element>
 

@@ -2,6 +2,7 @@
 <xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                xmlns:xs="http://www.w3.org/2001/XMLSchema"
                xmlns:hddm="http://www.gluex.org/hddm"
+               xmlns="http://www.gluex.org/hddm"
                version="1.0">
 <xsl:output method="xml" version="1.0" encoding="iso-8859-1" indent="no"/>
 
