@@ -22,6 +22,8 @@
 #include <stdlun.h>
 #include <stdcnt.h>
 
+int runNo=-9000;
+
 /*
  * #include <stdlib.h> See it below.
  */
@@ -234,15 +236,15 @@ int fill_mc_part(int i, s_Vertices_t* vs, int v)
 int fill_mc_parts(s_HDDM_t* mc_evt)
 {
   int i;
-  int runNo=-9000;
-  s_PhysicsEvent_t* pe = make_s_PhysicsEvent();
+  s_PhysicsEvents_t* pes = make_s_PhysicsEvents(1);
   s_Reactions_t* rs = make_s_Reactions(1);
   s_Vertices_t* vs = make_s_Vertices(10);
-  mc_evt->physicsEvent = pe;
-  pe->reactions = rs;
+  mc_evt->physicsEvents = pes;
+  pes->in[0].reactions = rs;
   rs->in[0].vertices = vs;
-  vs->mult = 1;
+  pes->mult = 1;
   rs->mult = 1;
+  vs->mult = 1;
   for (i = 0; i < hepevt_.nhep; i++)
   {
     if (hepevt_.jmohep[i][0] == 0)
@@ -250,8 +252,8 @@ int fill_mc_parts(s_HDDM_t* mc_evt)
       fill_mc_part(i,vs,0);
     }
   }
-  pe->runNo = runNo;
-  pe->eventNo = hepevt_.nevhep;
+  pes->in[0].runNo = runNo;
+  pes->in[0].eventNo = hepevt_.nevhep;
   return 1;
 }
 
@@ -261,7 +263,8 @@ int PrintUsage(char *processName)
   fprintf(stderr,"%s usage: [switches]   \n",processName);
   fprintf(stderr,"\t-i<name> input stdhep evt file (no default)\n");
   fprintf(stderr,"\t-o<name> output hddm file (default is stdhep.hddm)\n");
-  fprintf(stderr,"\t-N<#> number stdhep events to process (default is all)\n");
+  fprintf(stderr,"\t-N<#> number stdhep events to process (default is 0)\n");
+  fprintf(stderr,"\t-r<#> run number saved in events (default is -9000)\n");
   fprintf(stderr,"\t-h Print this help message\n\n");
 }
 
@@ -297,6 +300,9 @@ int main(int argc,char **argv)
           break;
 	case 'i':
 	  evtfile= ++argptr;
+          break;
+	case 'r':
+	  runNo= atoi(++argptr);
           break;
 	case 'h':
           PrintUsage(argv[0]);
