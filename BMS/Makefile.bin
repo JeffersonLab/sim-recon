@@ -18,23 +18,19 @@ ifdef DEBUG
 	LD_FLAGS	+= -g -pg
 endif
 
-# Some things (like GEANT) may need to link objects directly rather
-# than using a library. Add "USE_OBJECTS := 1" to local Makefile
-ifdef USE_OBJECTS
-	OBJ_DIR = obj/$(OSNAME)
-	OUTPUT_OPTION = -o $(OBJ_DIR)/$@
-	VPATH = $(OBJ_DIR)
-	MISC_LIBS += $(addprefix $(OBJ_DIR)/,$(OBJS))
-else
-	MODULES = $(MODULE_NAME)
-	VPATH = $(LIB_DIR)
-	MISC_LIBS += -l$(MODULE_NAME)$(DEBUG_SUFFIX)
-endif
+MAIN_FILES = $(shell grep -l " main" $(CSRC) $(CXXSRC))
+MAIN_FILES += $(shell grep -l -i "      PROGRAM " $(FSRC))
+EXE_NAMES = $(addsuffix $(DEBUG_SUFFIX),$(basename $(MAIN_FILES)))
+MAIN_OBJS =  $(addsuffix .o,$(EXE_NAMES))
 
+# Redefine OBJS to include debug suffixes
+DOBJS = $(addsuffix $(DEBUG_SUFFIX).o,$(basename $(OBJS)))
+NON_MAIN_OBJS = $(filter-out $(MAIN_OBJS),$(DOBJS))
 
-ifndef EXE_NAME
-	EXE_NAME = $(MODULE_NAME)$(DEBUG_SUFFIX)
-endif
+OBJ_DIR = obj/$(OSNAME)
+OUTPUT_OPTION = -o $(OBJ_DIR)/$@
+VPATH = $(OBJ_DIR):$(BIN_DIR)
+MISC_LIBS += $(addprefix $(OBJ_DIR)/,$(NON_MAIN_OBJS))
 
 
 LIB_DIRS = $(LIB_DIR)
@@ -47,55 +43,59 @@ BINARY = $(BIN_DIR)/$(EXE_NAME)
 
 .PHONY:  mkbindir
 
-all: mklib mkbin
+all: mkobjdir mkbindir $(EXE_NAMES)
 
-mklib: mklibdir $(LIBNAME)($(OBJS))
-ifeq ($(OSNAME),Darwin)
-	ranlib $(LIBNAME)
-endif
-
-mkbin: mkbindir $(BINARY)
-
-$(BINARY): $(LD_LIBS)
+$(EXE_NAMES): $(LD_LIBS) $(DOBJS)
 	$(LD) $(LD_FLAGS) $(LD_DIRS) \
-		$(LD_LIBS) $(MYSQL_LIBS) $(MISC_LIBS) \
-		-o $@
+		$(LD_LIBS) $(MYSQL_LIBS) $(MISC_LIBS) $(OBJ_DIR)/$@.o \
+		-o $(BIN_DIR)/$@
 
-mkobj: mkobjdir $(OBJS)
+# Rules to make DEBUG objects from source
+%_d.o : %.cpp
+	$(CXX) -c $(CXXFLAGS) $< $(OUTPUT_OPTION)
+%_d.o : %.cc
+	$(CXX) -c $(CXXFLAGS) $< $(OUTPUT_OPTION)
+%_d.o : %.cxx
+	$(CXX) -c $(CXXFLAGS) $< $(OUTPUT_OPTION)
+%_d.o : %.c
+	$(CC) -c $(CFLAGS) $< $(OUTPUT_OPTION)
+%_d.o : %.F
+	$(FC) -c $(FFLAGS) $< $(OUTPUT_OPTION)
+
 
 mkbindir:
 	@mkdir -p $(BIN_DIR)
-
-mklibdir:
-	@mkdir -p $(LIB_DIR)
 
 mkobjdir:
 	@mkdir -p $(OBJ_DIR)
 
 clean:
-	rm -rf $(LIBNAME) $(OBJ_DIR) *.bak *~ core last.kumac*  #*# 
+	rm -rf $(LIBNAME) $(OBJ_DIR) *.o $(EXE_NAMES) *.bak *~ core last.kumac*  #*# 
 
 env:
-	@echo FC			= $(FC)
-	@echo CC			= $(CC)
-	@echo CXX		= $(CXX)
-	@echo FFLAGS	= $(FFLAGS)
-	@echo CFLAGS	= $(CFLAGS)
-	@echo CXXFLAGS	= $(CXXFLAGS)
-	@echo FSRC		= $(FSRC)
-	@echo CSRC		= $(CSRC)
-	@echo CXXSRC	= $(CXXSRC)
-	@echo LIBS		= $(LIBS)
-	@echo OSNAME	= $(OSNAME)
-	@echo OBJS		= $(OBJS)
-	@echo LIBNAME	= $(LIBNAME)
-	@echo DEPS		= $(DEPS)
-	@echo EXENAME	= $(EXENAME)
-	@echo LD_LIBS  = $(LD_LIBS)
-	@echo MISC_LIBS= $(MISC_LIBS)
-	@echo ROOTLIBS = $(ROOTLIBS)
-	@echo VPATH		= $(VPATH)
-	@echo MODULE_NAME = $(MODULE_NAME)
-	@echo MODULES   = $(MODULES)
+	@echo FC			     = $(FC)
+	@echo CC			     = $(CC)
+	@echo CXX		     = $(CXX)
+	@echo FFLAGS	     = $(FFLAGS)
+	@echo CFLAGS	     = $(CFLAGS)
+	@echo CXXFLAGS	     = $(CXXFLAGS)
+	@echo FSRC		     = $(FSRC)
+	@echo CSRC		     = $(CSRC)
+	@echo CXXSRC	     = $(CXXSRC)
+	@echo LIBS		     = $(LIBS)
+	@echo OSNAME	     = $(OSNAME)
+	@echo OBJS		     = $(OBJS)
+	@echo LIBNAME	     = $(LIBNAME)
+	@echo DEPS		     = $(DEPS)
+	@echo EXENAME	     = $(EXENAME)
+	@echo LD_LIBS       = $(LD_LIBS)
+	@echo MISC_LIBS     = $(MISC_LIBS)
+	@echo ROOTLIBS      = $(ROOTLIBS)
+	@echo VPATH		     = $(VPATH)
+	@echo MODULE_NAME   = $(MODULE_NAME)
+	@echo MODULES       = $(MODULES)
+	@echo MAIN_FILES    = "$(MAIN_FILES)"
+	@echo MAIN_OBJS     = $(MAIN_OBJS)
+	@echo NON_MAIN_OBJS = $(NON_MAIN_OBJS)
 
 

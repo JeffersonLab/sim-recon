@@ -6,24 +6,37 @@
 # Things common to both library and executable builds live in Makefile.common
 include $(HALLD_HOME)/src/BMS/Makefile.common
 
+.PHONY: mkdirs
 
+VPATH = $(DEP_DIR)
 
-.PHONY: mklibdir
-
-
-# First rule makes sure directories exist for output files
-all: mklibdir $(LIBNAME)($(OBJS))
+# First rule. Make sure directories and dependancy files exist
+all: mkdirs $(DEPS) $(LIBNAME)($(OBJS))
 ifeq ($(OSNAME),Darwin)
 	ranlib $(LIBNAME)
 endif
 
-$(LIBNAME)($(OBJS)): 
+# Rules to make DEPENDS files from source
+%.d : %.cpp
+	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
+%.d : %.cc
+	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
+%.d : %.cxx
+	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
+%.d : %.c
+	@$(CC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CFLAGS) $< > $(DEP_DIR)/$@
+%.d : %.F
+	@$(FC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(FFLAGS) $< > $(DEP_DIR)/$@
 
-mklibdir:
+# Include all dependancy files
+-include $(foreach s,$(DEPS),$(DEP_DIR)/$s)
+
+mkdirs:
 	@mkdir -p $(LIB_DIR)
+	@mkdir -p $(DEP_DIR)
 
 clean:
-	rm -f $(LIBNAME) *.bak *~ core last.kumac*  #*# 
+	rm -rf $(LIBNAME) .depends *.bak *~ core last.kumac*  #*# 
 
 
 env:
@@ -40,5 +53,7 @@ env:
 	@echo OSNAME	= $(OSNAME)
 	@echo OBJS		= $(OBJS)
 	@echo LIBNAME	= $(LIBNAME)
+	@echo DEP_DIR	= $(DEP_DIR)
 	@echo DEPS		= $(DEPS)
+	@echo TMP		= $(TMP)
 

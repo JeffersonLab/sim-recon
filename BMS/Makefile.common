@@ -29,23 +29,26 @@ endif
 
 LIB_DIR		= $(HALLD_HOME)/lib/$(OSNAME)
 BIN_DIR		= $(HALLD_HOME)/bin/$(OSNAME)
+DEP_DIR		= .depends/$(OSNAME)
 
-FFLAGS   += -I. -I$(HALLD_HOME)/src/include
-CFLAGS   += -I. -I$(HALLD_HOME)/src/include
-CXXFLAGS += -I. -I$(HALLD_HOME)/src/include
+FFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
+CFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
+CXXFLAGS += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
 
 
 # Include user specified package makefiles
 BMS_PATH = $(HALLD_HOME)/src/BMS
 PACKAGE_MAKEFILES = $(foreach name,$(subst :, ,$(PACKAGES)),$(BMS_PATH)/Makefile.$(name))
 
+ifdef PACKAGES
 include $(PACKAGE_MAKEFILES)
+endif
 
 FSRC		= $(wildcard *.F *.f)
 CSRC		= $(wildcard *.c)
 CXXSRC	= $(wildcard *.cc *.cpp *.cxx)
-OBJS =  $(addsuffix .o,$(basename $(FSRC) $(CSRC) $(CXXSRC)))
-DEPS = $(foreach dfile,$(OBJS:.o=.d),depends/$(OSNAME)/$(dfile))
+OBJS		= $(addsuffix .o,$(basename $(FSRC) $(CSRC) $(CXXSRC)))
+DEPS		= $(OBJS:.o=.d)
 
 ifdef ONLINE
 	CFLAGS += -DONLINE
@@ -63,4 +66,8 @@ endif
 
 MODULE_NAME = $(shell basename $(shell pwd))
 LIBNAME = $(LIB_DIR)/lib$(MODULE_NAME)$(DEBUG_SUFFIX).a
+
+# Include platform specific definitions
+# (the - at the front means don't error if the file doesn't exist)
+-include $(HALLD_HOME)/src/BMS/Makefile.$(OSNAME)
 

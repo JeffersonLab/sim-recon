@@ -1,0 +1,46 @@
+#
+#
+# $Header$
+#
+# This makefile is to allow linking from actual object files rather
+# than objects stored in a library.
+#
+
+# Things common to both library and executable builds live in Makefile.common
+include $(HALLD_HOME)/src/BMS/Makefile.common
+
+
+.PHONY: mklibdir
+
+OBJ_DIR = obj/$(OSNAME)
+OUTPUT_OPTION = -o $(OBJ_DIR)/$@
+VPATH = $(OBJ_DIR)
+
+# First rule makes sure directories exist for output files
+all: mkobjdir $(OBJS)
+
+$(OBJS): 
+
+mkobjdir:
+	@mkdir -p $(OBJ_DIR)
+
+clean:
+	rm -f $(OBJ_DIR) *.bak *~ core last.kumac*  #*# 
+
+
+env:
+	@echo FC			= $(FC)
+	@echo CC			= $(CC)
+	@echo CXX		= $(CXX)
+	@echo FFLAGS	= $(FFLAGS)
+	@echo CFLAGS	= $(CFLAGS)
+	@echo CXXFLAGS	= $(CXXFLAGS)
+	@echo FSRC		= $(FSRC)
+	@echo CSRC		= $(CSRC)
+	@echo CXXSRC	= $(CXXSRC)
+	@echo LIBS		= $(LIBS)
+	@echo OSNAME	= $(OSNAME)
+	@echo OBJS		= $(OBJS)
+	@echo LIBNAME	= $(LIBNAME)
+	@echo DEPS		= $(DEPS)
+
