@@ -24,7 +24,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 {
 	fLayout = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY);
 
-	emcanvas = new TRootEmbeddedCanvas("Main Canvas",this,w, h-100, kSunkenFrame, GetWhitePixel());
+	emcanvas = new TRootEmbeddedCanvas("Main Canvas",this,w, w/2, kSunkenFrame, GetWhitePixel());
 	emcanvas->SetScrolling(TGCanvas::kCanvasNoScroll);
 	AddFrame(emcanvas, fLayout);
 	
