@@ -297,13 +297,26 @@ void processTemplateFile(const DOMElement* const targetEl,
                  << "is missing from HDDS" << endl;
             exit(3);
          }
+	 const XString unitAttS("unit");
+         const XString unitS = el->getAttribute(X(unitAttS));
+         float fconvert=
+         /* standard unit for length in MCfast is cm */
+            (unitS.equals("m"))? 100
+          : (unitS.equals("cm"))? 1
+          : (unitS.equals("mm"))? 0.1
+         /* standard unit for angles in MCfast is radians */
+          : (unitS.equals("rad"))? 1
+          : (unitS.equals("mrad"))? 0.001
+          : (unitS.equals("deg"))? M_PI/180
+          : 1;
          const char* fltstr = strtok((char*)S(valueS)," ");
-         modelTable[model].db << " " << fltstr;
+         float flt=atof(fltstr);
+         modelTable[model].db << " " << showpoint << atof(fltstr)*fconvert;
          for (int i=1; i < dim; i++)
          {
             if (fltstr = strtok(0," "))
             {
-               modelTable[model].db << " " << fltstr;
+               modelTable[model].db << " " << atof(fltstr)*fconvert;
             }
             else
             {
