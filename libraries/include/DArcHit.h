@@ -41,7 +41,8 @@ class DArcHit{
 		float m, b;
 		int orientation;
 		int used;
-		int track;
+		int track;		///< track number from cheat code
+		int ihit;		///< index of hits in MCCheatHits factory
 };
 
 
