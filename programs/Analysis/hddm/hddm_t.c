@@ -60,17 +60,16 @@ t_HDDM_t* make_t_HDDM()
    return p;
 }
 
-char HDDM_t_DocumentString[] = "
-<HDDM class=\"t\" version=\"1.0\">
-  <forwardTOF>
-    <slab y=\"float\" repeat=\"*\">
-      <side end=\"int\" repeat=\"*\">
-        <hit t=\"float\" dE=\"float\" repeat=\"*\" />
-      </side>
-    </slab>
-  </forwardTOF>
-</HDDM>
-";
+char HDDM_t_DocumentString[] = 
+"<HDDM class=\"t\" version=\"1.0\">\n"
+"  <forwardTOF>\n"
+"    <slab y=\"float\" repeat=\"*\">\n"
+"      <side end=\"int\" repeat=\"*\">\n"
+"        <hit t=\"float\" dE=\"float\" repeat=\"*\" />\n"
+"      </side>\n"
+"    </slab>\n"
+"  </forwardTOF>\n"
+"</HDDM>\n";
 
 int* sp;
 int* dp;
