@@ -5,6 +5,7 @@
 //
 
 #include <iostream>
+#include <iomanip>
 using namespace std;
 
 #include "DEventSourceFile.h"
@@ -64,6 +65,7 @@ derror_t DEventSourceFile::GetEvent(void)
 	/// Support only HDDM formatted files for now.
 	if(hddm)flush_s_HDDM(hddm, fin);
 	hddm = read_s_HDDM(fin);
-
+	if(!hddm)return NO_MORE_EVENTS_IN_SOURCE;
+	
 	return NOERROR;
 }
