@@ -1,20 +1,18 @@
 // $Id$
 
 #include "DEvent.h"
-#include "DFactory_TRACKINGHits.h"
-#include "DFactory_MCCheatHits.h"
-#include "DFactory_MCTrackCandidates.h"
-#include "DFactory_MCThrown.h"
-#include "DFactory_MCReconstructed.h"
+#include "DFactory_DMCCheatHit.h"
+#include "DFactory_DMCTrackCandidate.h"
+#include "DFactory_DMCThrown.h"
+#include "DFactory_DMCReconstructed.h"
 
 derror_t TRACKING_init(DEvent *event)
 {
 	/// Create and register TRACKING data factories
-	event->AddFactory(new DFactory_TRACKINGHits(event));
-	event->AddFactory(new DFactory_MCCheatHits(event));
-	event->AddFactory(new DFactory_MCTrackCandidates(event));
-	event->AddFactory(new DFactory_MCThrown(event));
-	event->AddFactory(new DFactory_MCReconstructed(event));
+	event->AddFactory(new DFactory_DMCCheatHit());
+	event->AddFactory(new DFactory_DMCTrackCandidate());
+	event->AddFactory(new DFactory_DMCThrown());
+	event->AddFactory(new DFactory_DMCReconstructed());
 
 	return NOERROR;
 }

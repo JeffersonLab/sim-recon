@@ -1,9 +1,15 @@
 
+#include <unistd.h>
+#include <pthread.h>
 #include <TGApplication.h>
 
 #include "hdview.h"
 #include "hdv_mainframe.h"
 #include "MyProcessor.h"
+
+void* EventUpdateThread(void *arg);
+int DONE = 0;
+int GO = 1;
 
 TCanvas *maincanvas=NULL;
 DEventLoop *eventloop=NULL;
@@ -29,14 +35,37 @@ int main(int narg, char *argv[])
 	myproc = new MyProcessor();
 	eventloop->AddProcessor(myproc);
 	eventloop->Init();
+	
+	// create a thread to auto-advance events
+	pthread_t thr;
+	pthread_create(&thr, NULL,EventUpdateThread, NULL);
 
 	// Hand control to ROOT event loop
 	app.Run();
+	
+	DONE=1;
+	void *retval;
+	pthread_join(thr, &retval);
 	
 	// Close out event loop
 	eventloop->Fini();
 
 	return 0;
+}
+
+//-------------------
+// EventUpdateThread
+//-------------------
+void* EventUpdateThread(void *arg)
+{
+	int Niterations = 0;
+	while(!DONE){
+		sleep(1);
+		
+		if(GO)hdv_getevent();
+	}
+	
+	pthread_exit(NULL);
 }
 
 //-------------------

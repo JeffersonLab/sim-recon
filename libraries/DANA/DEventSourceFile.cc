@@ -18,9 +18,8 @@ DEventSourceFile::DEventSourceFile(int narg, char *argv[]):DEventSource(narg,arg
 	/// Constructor for DEventSourceFile object
 	fin = NULL;
 	hddm_s = NULL;
-	event_buff = new DContainer(NULL, sizeof(event_buffer_t), "event buffer");
 	max_event_buff = 10;
-	current_event_index = event_buff->nrows - 1; // yes, this sill always be -1
+	current_event_index = -1;
 }
 
 //----------------
@@ -30,7 +29,6 @@ DEventSourceFile::~DEventSourceFile()
 {
 	if(hddm_s)flush_s_HDDM(hddm_s, fin);
 	if(fin)close_s_HDDM(fin);
-	delete event_buff;
 }
 
 //----------------
@@ -75,9 +73,9 @@ derror_t DEventSourceFile::GetEvent(void)
 	// Then call GotoEvent instead to use the values already in
 	// memory. The value of current_event_index will be updated
 	// in RecordEventNumber() below.
-	if(current_event_index != event_buff->nrows - 1){
-		event_buffer_t *e = (event_buffer_t*)event_buff->index(current_event_index+1);
-		return GotoEvent(e->event);
+	if(current_event_index != event_buff.size() - 1){
+		const event_buffer_t &e = event_buff[current_event_index+1];
+		return GotoEvent(e.event);
 	}
 
 	// Note: the data is freed ala flush_s_HDDM in RecordEventNumber() below
@@ -92,13 +90,13 @@ derror_t DEventSourceFile::GetEvent(void)
 //----------------
 derror_t DEventSourceFile::GotoEvent(int eventno)
 {
-	event_buffer_t *e = (event_buffer_t*)event_buff->first();
-	for(int i=0; i<event_buff->nrows; i++, e++){
-		if(e->event == eventno){
+	vector<event_buffer_t>::iterator iter = event_buff.begin();
+	for(; iter!=event_buff.end(); iter++){
+		if((*iter).event == eventno){
 			
 			// Note: The value of current_event_index will be updated
 			// in RecordEventNumber() below.
-			hddm_s = e->hddm_s;
+			hddm_s = (*iter).hddm_s;
 			
 			return NOERROR;
 		}
@@ -116,10 +114,10 @@ derror_t DEventSourceFile::SetEventBufferSize(int Nevents)
 
 	// If we're reducing the number of events, delete oldest
 	// records until we're within the new limit
-	while(max_event_buff<event_buff->nrows){
-		event_buffer_t *e = (event_buffer_t*)event_buff->first();
-		flush_s_HDDM(e->hddm_s, 0);
-		event_buff->Delete(0);
+	while(max_event_buff<event_buff.size()){
+		event_buffer_t &e = event_buff[0];
+		flush_s_HDDM(e.hddm_s, 0);
+		event_buff.erase(event_buff.begin(),event_buff.begin());
 	}
 
 	return NOERROR;
@@ -145,27 +143,28 @@ derror_t DEventSourceFile::RecordEventNumber(int eventno)
 	/// method which corrsponds to the event number passed here.
 	
 	// Make sure we don't add an event twice
-	event_buffer_t *e = (event_buffer_t*)event_buff->first();
-	for(int i=0; i<event_buff->nrows; i++, e++){
-		if(e->event == eventno){
+	vector<event_buffer_t>::iterator iter = event_buff.begin();
+	for(int i=0; iter!=event_buff.end(); i++, iter++){
+		if((*iter).event == eventno){
 			current_event_index = i;
 			return NOERROR;
 		}
 	}
 	
 	// Add this event to list
-	e = (event_buffer_t*)event_buff->Add();
-	e->event = eventno;
-	e->hddm_s = hddm_s;
+	event_buffer_t e;
+	e.event = eventno;
+	e.hddm_s = hddm_s;
+	event_buff.push_back(e);
 
 	// If we're over the limit, then delete an event
-	if(event_buff->nrows > max_event_buff){
-		e = (event_buffer_t*)event_buff->first();
-		flush_s_HDDM(e->hddm_s, 0);
-		event_buff->Delete(0);
+	if(event_buff.size() > max_event_buff){
+		event_buffer_t &e = event_buff[0];
+		flush_s_HDDM(e.hddm_s, 0);
+		event_buff.erase(event_buff.begin());
 	}
 	
-	current_event_index = event_buff->nrows - 1;
+	current_event_index = event_buff.size() - 1;
 
 	return NOERROR;
 }

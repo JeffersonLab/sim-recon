@@ -8,7 +8,6 @@
 using namespace std;
 
 #include "DEventSource.h"
-#include "DContainer.h"
 
 //----------------
 // Constructor

@@ -13,16 +13,12 @@ using namespace std;
 #include "MyProcessor.h"
 #include "hddm_s.h"
 
-#include "DFactory_CDCHits.h"
-#include "DFactory_CDCClusters.h"
-#include "DFactory_FCALHits.h"
 
 int PAUSE_BETWEEN_EVENTS = 1;
 int SKIP_BORING_EVENTS = 0;
 int PRINT_ALL=0;
 
-int Ntoprint = 0;
-char *toprint[1024];
+vector<string> toprint;
 
 #define ansi_escape		((char)0x1b)
 #define ansi_bold 		ansi_escape<<"[1m"
@@ -43,17 +39,14 @@ derror_t MyProcessor::evnt(int eventnumber)
 {
 	// If int PRINT_ALL is set then add EVERYTHING.
 	if(PRINT_ALL){
-		DContainer *factoryNames = event_loop->GetFactoryNames();
-		char **name = (char**)factoryNames->first();
-		Ntoprint = 0; // Clear any data specified by -D so it doesn't print twice
-		for(int i=0; i<factoryNames->nrows; i++, name++){
-			cout<<"Adding to print list : "<<*name<<endl;
-			toprint[Ntoprint++] = *name;
+		toprint = eventLoop->GetFactoryNames();
+		for(int i=0; i<toprint.size(); i++){
+			string name = toprint[i];
+			cout<<"Adding to print list : "<<name<<endl;
 		}
 
 		PRINT_ALL = 0; // clear PRINT_ALL flag so we don't re-add all factories
 		SKIP_BORING_EVENTS = 0; // with PRINT_ALL, nothing is boring!
-		delete factoryNames;
 	}
 
 	// If we're skipping boring events (events with no rows for any of
@@ -61,10 +54,10 @@ derror_t MyProcessor::evnt(int eventnumber)
 	// "boring".
 	int event_is_boring = 1;
 	if(SKIP_BORING_EVENTS){
-		for(int i=0;i<Ntoprint;i++){
-			DContainer *c = event_loop->Get(toprint[i]);
-			if(c){
-				if(c->nrows>0){
+		for(int i=0;i<toprint.size();i++){
+			DFactory_base *factory = eventLoop->GetFactory(toprint[i]);
+			if(factory){
+				if(factory->GetNrows()>0){
 					event_is_boring=0;
 					break;
 				}
@@ -80,16 +73,12 @@ derror_t MyProcessor::evnt(int eventnumber)
 	cout<<"Event: "<<eventnumber<<endl;
 
 	// We want to print info about all factories results, even if we aren't
-	// printing the actual data. Hence we must call every factory's Get() method.
-	DContainer *factoryNames = event_loop->GetFactoryNames();
-	char **name = (char**)factoryNames->first();
-	for(int i=0; i<factoryNames->nrows; i++, name++)event_loop->Get(*name);
-	delete factoryNames;	
-	event_loop->PrintFactories(1); // print sparsified factory info
+	// printing the actual data.
+	eventLoop->PrintFactories(1);
 	
 	// Print data for all specified factories
-	for(int i=0;i<Ntoprint;i++){
-		event_loop->Print(toprint[i]);
+	for(int i=0;i<toprint.size();i++){
+		eventLoop->Print(toprint[i]);
 	}
 	
 	// Wait for user input if pausing
@@ -102,10 +91,10 @@ derror_t MyProcessor::evnt(int eventnumber)
 		cout<<endl;
 		switch(toupper(c)){
 			case 'Q':
-				event_loop->Quit();
+				eventLoop->Quit();
 				break;
 			case 'P':
-				event_loop->GotoEvent(eventnumber-1);
+				eventLoop->GotoEvent(eventnumber-1);
 				break;
 			case 'N':
 				break;

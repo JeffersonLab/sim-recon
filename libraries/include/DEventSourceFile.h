@@ -8,8 +8,11 @@
 #ifndef _DEVENT_SOURCEHDDM_H_
 #define _DEVENT_SOURCEHDDM_H_
 
+#include <vector>
+#include <string>
+using namespace std;
+
 #include "DEventSource.h"
-#include "DContainer.h"
 #include "derror.h"
 #include "hddm_s.h"
 
@@ -33,7 +36,7 @@ class DEventSourceFile:public DEventSource
 			int event;
 			s_HDDM_t *hddm_s;
 		}event_buffer_t;
-		DContainer *event_buff;
+		vector<event_buffer_t> event_buff;
 		int max_event_buff;
 		int current_event_index;
 };

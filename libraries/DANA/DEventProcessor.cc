@@ -16,14 +16,13 @@ DEventProcessor::DEventProcessor(void)
 {
 	/// Constructor for DEventProcessor object 
 	
-	event_loop = NULL; // This will be set by the event loop object (if used)
+	eventLoop = NULL; // This will be set by the event loop object (if used)
 	init_called = 0;
 	brun_called = 0;
 	evnt_called = 0;
 	erun_called = 0;
 	fini_called = 0;
 	brun_runnumber = -1; // ensure brun is called
-	_data = NULL;
 }
 
 //----------------

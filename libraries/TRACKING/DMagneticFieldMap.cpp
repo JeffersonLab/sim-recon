@@ -39,6 +39,8 @@ using std::cerr;
 using std::ifstream;
 using std::endl;
 
+#include <math.h>
+
 
 //------------------------------------------------------------------
 // NOTE:

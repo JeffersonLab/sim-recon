@@ -40,8 +40,6 @@ class DTrackFit:public DQuickFit,DMagneticFieldStepper
 
 		double Dist(TVector3 *v);
 	
-	private:
-		DContainer *distances;
 };
 
 

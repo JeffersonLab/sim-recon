@@ -37,12 +37,12 @@ class DEventLoop:public DEvent{
 
 		derror_t AddProcessor(DEventProcessor *processor);
 		derror_t Init(void);
-		derror_t GotoEvent(int eventno){goto_event = eventno;}
+		void GotoEvent(int eventno){goto_event = eventno;}
 		derror_t OneEvent(void);
 		derror_t Fini(void);
 		derror_t Run(void);
 		derror_t Run(DEventProcessor *proc);
-		derror_t Quit(void){quit=1;};
+		void Quit(void){quit=1;};
 		float GetRate(void);
 		derror_t PrintRate(void);
 		

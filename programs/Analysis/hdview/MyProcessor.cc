@@ -257,7 +257,7 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 
 	TPolyLine *line_top = new TPolyLine();
 	TPolyLine *line_side = new TPolyLine();
-	qf->Print();
+	//qf->Print();
 	float Z=z;
 	for(int i=0; i<500; i++){
 		float delta_z = Z-qf->z_vertex;
@@ -313,7 +313,7 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 	TPolyLine *line_top = new TPolyLine();
 	TPolyLine *line_side = new TPolyLine();
 	TPolyLine *line_beam = new TPolyLine();
-	qf->Print();
+	//qf->Print();
 	for(int i=0;i<500;i++){
 	
 		stepper->Step(&pos);

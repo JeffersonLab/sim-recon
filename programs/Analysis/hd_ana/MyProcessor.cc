@@ -10,9 +10,8 @@ using namespace std;
 #include "MyProcessor.h"
 #include "hddm_s.h"
 
-#include "DFactory_CDCHits.h"
-#include "DFactory_CDCClusters.h"
-#include "DFactory_FCALHits.h"
+#include "DCDCHit.h"
+#include "DFCALHit.h"
 
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
@@ -20,7 +19,7 @@ using namespace std;
 derror_t MyProcessor::init(void)
 {
 	// Print list of factories
-	event_loop->PrintFactories();
+	eventLoop->PrintFactories();
 
 	// open ROOT file
 	ROOTfile = new TFile("hd_ana.root","RECREATE","Produced by hd_ana");
@@ -39,24 +38,25 @@ derror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 derror_t MyProcessor::evnt(int eventnumber)
 {
+	vector<DCDCHit*> cdchits;
+	vector<DFCALHit*> fcalhits;
+	eventLoop->Get(cdchits);
+	eventLoop->Get(fcalhits);
 	
-	DContainer *cdchits = event_loop->Get("CDCHits");
-	DContainer *fcalhits = event_loop->Get("FCALHits");
-	
-	CDCHit_t *cdchit = (CDCHit_t*)cdchits->first();
-	for(int i=0;i<cdchits->nrows;i++, cdchit++){
+	for(int i=0;i<cdchits.size();i++){
+		DCDCHit *cdchit = cdchits[i];
 		float x = cdchit->radius*cos(cdchit->phim);
 		float y = cdchit->radius*sin(cdchit->phim);
 		cdc_y_vs_x->Fill(y,x);
 	}
 
-	FCALHit_t *fcalhit = (FCALHit_t*)fcalhits->first();
-	for(int i=0;i<fcalhits->nrows;i++, fcalhit++){
+	for(int i=0;i<fcalhits.size();i++){
+		DFCALHit *fcalhit = fcalhits[i];
 		fcal_y_vs_x->Fill(fcalhit->y,fcalhit->x);
 		fcalhitE->Fill(fcalhit->E);
 	}
 	
-	event_loop->PrintRate();
+	eventLoop->PrintRate();
 
 	return NOERROR;
 }

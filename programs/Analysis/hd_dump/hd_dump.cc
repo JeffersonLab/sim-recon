@@ -4,6 +4,9 @@
 // hd_ana.cc
 //
 
+#include <iostream>
+using namespace std;
+
 #include <termios.h>
 
 #include "MyProcessor.h"
@@ -56,7 +59,7 @@ void ParseCommandLineArguments(int &narg, char *argv[])
 				Usage();
 				break;
 			case 'D':
-				toprint[Ntoprint++] = strdup(&argv[i][2]);
+				toprint.push_back(&argv[i][2]);
 				break;
 			case 'p':
 				PAUSE_BETWEEN_EVENTS = 0;

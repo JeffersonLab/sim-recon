@@ -22,7 +22,7 @@ class hdv_mainframe:public TGMainFrame {
 		void SetEvent(int id);
 
 	private:
-		TGTextButton *quit, *next;
+		TGTextButton *quit, *next, *pause, *go;
 		TGLayoutHints *fLayout;
 		TRootEmbeddedCanvas *emcanvas;
 

@@ -7,6 +7,8 @@
 #include <iostream>
 using namespace std;
 
+#include <math.h>
+
 #include "DQuickFit.h"
 #include "DMagneticFieldMap.h"
 
@@ -16,6 +18,14 @@ static float *CHISQV=NULL;
 static int qsort_chisqv(const void* arg1, const void* arg2);
 static int qsort_int(const void* arg1, const void* arg2);
 static int qsort_points_by_z(const void* arg1, const void* arg2);
+
+// The following is for sorting hits (TVector3*) by z
+class TVector3LessThanZ{
+	public:
+		bool operator()(TVector3* const &a, TVector3* const &b) const {
+			return a->z() < b->z();
+		}
+};
 
 //-----------------
 // DQuickFit
@@ -27,8 +37,6 @@ DQuickFit::DQuickFit()
 	chisq_source = NOFIT;
 	bfield = NULL;
 
-	hits = new DContainer(NULL, sizeof(TVector3*), "hits");
-	chisqv = new DContainer(NULL, sizeof(float), "chisqv");
 }
 
 //-----------------
@@ -36,13 +44,11 @@ DQuickFit::DQuickFit()
 //-----------------
 DQuickFit::~DQuickFit()
 {
-
-	TVector3 **h = (TVector3**)hits->first();
-	for(int i=0;i<hits->nrows;i++, h++){
-		delete (*h);
+	for(int i=0;i<hits.size();i++){
+		delete hits[i];
 	}
-	delete hits;
-	delete chisqv;
+	hits.clear();
+	chisqv.clear();
 }
 
 //-----------------
@@ -53,7 +59,7 @@ derror_t DQuickFit::AddHit(float r, float phi, float z)
 	/// Add a hit to the list of hits using cyclindrical coordinates
 	/// phi should be specified in radians. For 2D hits, the
 	/// value of z will be ignored.
-	*(TVector3**)hits->Add() = new TVector3(r*cos(phi), r*sin(phi), z);
+	hits.push_back(new TVector3(r*cos(phi), r*sin(phi), z));
 
 	return NOERROR;
 }
@@ -68,9 +74,8 @@ derror_t DQuickFit::AddHits(int N, TVector3 *v)
 	/// so it is safe to delete the objects after calling AddHits()
 	/// For 2D hits, the value of z will be ignored.
 
-	TVector3 *my_v = v;
-	for(int i=0; i<N; i++, my_v++){
-		*(TVector3**)hits->Add() = new TVector3(*my_v);
+	for(int i=0; i<N; i++, v++){
+		hits.push_back(new TVector3(*v));
 	}
 
 	return NOERROR;
@@ -84,11 +89,11 @@ derror_t DQuickFit::PruneHit(int idx)
 	/// Remove the hit specified by idx from the list
 	/// of hits. The value of idx can be anywhere from
 	/// 0 to GetNhits()-1.
+	if(idx<0 || idx>=hits.size())return VALUE_OUT_OF_RANGE;
 
-	TVector3 *v = *(TVector3**)hits->index(idx);
-	delete v;	
-	hits->Delete(idx);
-	chisqv->Delete(idx);
+	delete hits[idx];
+	hits.erase(hits.begin() + idx);
+	if(chisqv.size()>idx)chisqv.erase(chisqv.begin() + idx);
 
 	return NOERROR;
 }
@@ -106,7 +111,7 @@ derror_t DQuickFit::PruneHits(float chisq_limit)
 	///	\f$ r_i = \sqrt{(x_i-x_0)^2 + (y_i-y_0)^2} \f$ <br>
 	///	\f$ \chi_i^2 = (r_i-r_0)^2 \f$ <br>
 
-	if(hits->nrows != chisqv->nrows){
+	if(hits.size() != chisqv.size()){
 		cerr<<__FILE__<<":"<<__LINE__<<" hits and chisqv do not have the same number of rows!"<<endl;
 		cerr<<"Call FitCircle() or FitTrack() method first!"<<endl;
 
@@ -115,14 +120,14 @@ derror_t DQuickFit::PruneHits(float chisq_limit)
 	
 	// Loop over these backwards to make it easier to
 	// handle the deletes
-	float *c = (float*)chisqv->last();
-	for(int i=hits->nrows-1; i>=0; i--, c--){
-		if(*c > chisq_limit)PruneHit(i);
+	for(int i=chisqv.size()-1; i>=0; i--){
+		if(chisqv[i] > chisq_limit)PruneHit(i);
 	}
 	
 	return NOERROR;
 }
 
+#if 0
 //-----------------
 // PruneWorst
 //-----------------
@@ -131,7 +136,7 @@ derror_t DQuickFit::PruneWorst(int n)
 	/// Remove the hit which contributes the most to the chi-squared
 	/// (See PruneHit() for more).
 
-	if(hits->nrows != chisqv->nrows){
+	if(hits.size() != chisqv.size()){
 		cerr<<__FILE__<<":"<<__LINE__<<" hits and chisqv do not have the same number of rows!"<<endl;
 		cerr<<"Call FitCircle() or FitTrack() method first!"<<endl;
 
@@ -139,8 +144,8 @@ derror_t DQuickFit::PruneWorst(int n)
 	}
 	
 	// Create an index that we can sort according to the chisq vector
-	int *index = new int[chisqv->nrows];
-	for(int i=0;i<chisqv->nrows;i++)index[i] = i;
+	int *index = new int[chisqv.size()];
+	for(int i=0;i<chisqv.size();i++)index[i] = i;
 	
 	// qsort works on the array you want sorted (index). We
 	// must give it access to the chisq vector so it can use
@@ -170,6 +175,7 @@ derror_t DQuickFit::PruneWorst(int n)
 	
 	return NOERROR;
 }
+#endif
 
 //-----------------
 // PruneOutliers
@@ -185,20 +191,20 @@ derror_t DQuickFit::PruneOutlier(void)
 	/// hit whose furthest from the mean.
 	
 	float X=0, Y=0;
-	TVector3 **v = (TVector3**)hits->first();
-	for(int i=0;i<hits->nrows;i++ ,v++){
-		X += (*v)->x();
-		Y += (*v)->y();
+	for(int i=0;i<hits.size();i++){
+		TVector3 *v = hits[i];
+		X += v->x();
+		Y += v->y();
 	}
-	X /= (float)hits->nrows;
-	Y /= (float)hits->nrows;
+	X /= (float)hits.size();
+	Y /= (float)hits.size();
 	
 	float max =0.0;
 	int idx = -1;
-	v = (TVector3**)hits->first();
-	for(int i=0;i<hits->nrows;i++ ,v++){
-		float x = (*v)->x()-X;
-		float y = (*v)->y()-Y;
+	for(int i=0;i<hits.size();i++){
+		TVector3 *v = hits[i];
+		float x = v->x()-X;
+		float y = v->y()-Y;
 		float dist_sq = x*x + y*y; // we don't need to take sqrt just to find max
 		if(dist_sq>max){
 			max = dist_sq;
@@ -259,9 +265,8 @@ derror_t DQuickFit::PrintChiSqVector(void)
 	cout<<"Chisq vector from DQuickFit:"<<endl;
 	cout<<"----------------------------"<<endl;
 
-	float *mychisq = (float*)chisqv->first();
-	for(int i=0;i<chisqv->nrows;i++, mychisq++){
-		cout<<i<<"  "<<*mychisq<<endl;
+	for(int i=0;i<chisqv.size();i++){
+		cout<<i<<"  "<<chisqv[i]<<endl;
 	}
 	cout<<"Total: "<<chisq<<endl<<endl;
 
@@ -285,12 +290,11 @@ derror_t DQuickFit::CopyToFitParms(FitParms_t *fit)
 	fit->phi = phi;
 	fit->theta = theta;
 	fit->chisq = chisq;
-	float *c = (float*)chisqv->first();
 	fit->nhits = 0;
-	for(int i=0; i<chisqv->nrows; i++, c++){
+	for(int i=0; i<chisqv.size(); i++){
 		if(i>=MAX_CHISQV_HITS)break;
 		
-		fit->chisqv[fit->nhits++] = *c;
+		fit->chisqv[fit->nhits++] = chisqv[i];
 	}
 
 	return NOERROR;
@@ -331,10 +335,10 @@ derror_t DQuickFit::FitCircle(void)
 	// Loop over hits to calculate alpha, beta, gamma, and delta
 	// if a magnetic field map was given, use it to find average Z B-field
 	float Bz = 0.0;
-	TVector3 **v= (TVector3**)hits->first();
-	for(int i=0;i<hits->nrows;i++, v++){
-		float x=(*v)->x();
-		float y=(*v)->y();
+	for(int i=0;i<hits.size();i++){
+		TVector3 *v = hits[i];
+		float x=v->x();
+		float y=v->y();
 		alpha += x*x;
 		beta += y*y;
 		gamma += x*y;
@@ -343,7 +347,7 @@ derror_t DQuickFit::FitCircle(void)
 		
 		if(bfield){
 			D3Vector_t tmp;
-			tmp = bfield->getQuick((*v)->x()/2.54, (*v)->y()/2.54, 26.0+(*v)->z()/2.54);
+			tmp = bfield->getQuick(v->x()/2.54, v->y()/2.54, 26.0+v->z()/2.54);
 			Bz += tmp.z;
 		}
 	}
@@ -356,7 +360,7 @@ derror_t DQuickFit::FitCircle(void)
 	// Also assume a singly charged track (i.e. q=+/-1)
 	// The sign of the charge will be determined below.
 	Bz_avg=-2.0; 
-	if(bfield)Bz_avg = Bz/(float)hits->nrows;
+	if(bfield)Bz_avg = Bz/(float)hits.size();
 	//Bz_avg *= 0.593; // The 0.5931 is empirical fudge factor
 	q = +1.0;
 	float r0 = sqrt(x0*x0 + y0*y0);
@@ -369,16 +373,16 @@ derror_t DQuickFit::FitCircle(void)
 	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
 	
 	// Calculate the chisq
-	chisqv->nrows = 0;
-	v= (TVector3**)hits->first();
+	chisqv.clear();
 	chisq = 0.0;
-	for(int i=0;i<hits->nrows;i++, v++){
-		float *c = (float*)chisqv->Add();
-		float x = (*v)->x() - x0;
-		float y = (*v)->y() - y0;
-		*c = sqrt(x*x + y*y) - r0;
-		*c *= *c;
-		chisq+=*c;
+	for(int i=0;i<hits.size();i++){
+		TVector3 *v = hits[i];
+		float x = v->x() - x0;
+		float y = v->y() - y0;
+		float c = sqrt(x*x + y*y) - r0;
+		c *= c;
+		chisqv.push_back(c);
+		chisq+=c;
 	}
 	chisq_source = CIRCLE;
 
@@ -394,7 +398,7 @@ derror_t DQuickFit::FitTrack(void)
 	/// vertex z position.
 
 	// Points must be in order of increasing Z
-	qsort(hits->first(), hits->nrows, sizeof(TVector3*), qsort_points_by_z);
+	sort(hits.begin(), hits.end(), TVector3LessThanZ());
 
 	// Fit to circle to get circle's center
 	FitCircle();
@@ -411,18 +415,18 @@ derror_t DQuickFit::FitTrack(void)
 	// between succesive points and keep a running sum. We do this in
 	// the first loop were we find the mean z and phi values. The regression
 	// formulae are calculated in the second loop.
-	TVector3 **v1 = (TVector3**)hits->first();
-	float *phiv = new float[hits->nrows]; // enough overhead in calculating this to justify memory allocation
+	float *phiv = new float[hits.size()]; // enough overhead in calculating this to justify memory allocation
 	float z_mean=0.0, phi_mean=0.0;
 	float x_last = -x0;
 	float y_last = -y0;
 	float r0 = sqrt(x0*x0 + y0*y0);
 	float r_last = r0;
 	float phi_last = 0.0;
-	for(int i=0;i<hits->nrows;i++, v1++){
+	for(int i=0;i<hits.size();i++){
+		TVector3 *v1 = hits[i];
 		// calculate phi via cross product
-		float x = (*v1)->x() - x0;
-		float y = (*v1)->y() - y0;
+		float x = v1->x() - x0;
+		float y = v1->y() - y0;
 		float r = sqrt(x*x + y*y);
 		float sin_dphi = (x*y_last - x_last*y)/r/r_last;
 		float dphi = asin(sin_dphi);
@@ -434,17 +438,17 @@ derror_t DQuickFit::FitTrack(void)
 		phi_last = phiv[i];
 
 		// calculate means
-		z_mean += (*v1)->z();
+		z_mean += v1->z();
 		phi_mean += phiv[i];
 	}
-	z_mean /= (float)hits->nrows;
-	phi_mean /= (float)hits->nrows;
+	z_mean /= (float)hits.size();
+	phi_mean /= (float)hits.size();
 
 	// Linear regression for z/phi relation
-	v1 = (TVector3**)hits->first();
 	float Sxx=0.0, Syy=0.0, Sxy=0.0;
-	for(int i=0;i<hits->nrows;i++, v1++){
-		float deltaZ = (*v1)->z() - z_mean;
+	for(int i=0;i<hits.size();i++){
+		TVector3 *v1 = hits[i];
+		float deltaZ = v1->z() - z_mean;
 		float deltaPhi = phiv[i] - phi_mean;
 		Syy += deltaZ*deltaZ;
 		Sxx += deltaPhi*deltaPhi;

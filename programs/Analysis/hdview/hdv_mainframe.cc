@@ -17,6 +17,8 @@ using namespace std;
 TGeoVolume *MOTHER = NULL;
 TGeoCombiTrans *MotherRotTrans = NULL;
 
+extern int GO;
+
 //-------------------
 // Constructor
 //-------------------
@@ -32,10 +34,14 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	AddFrame(buttonframe, fLayout);
 
 	next	= new TGTextButton(this,	"&Next", 2);
+	pause	= new TGTextButton(this,	"&Pause", 3);
+	go	= new TGTextButton(this,		"&Go", 4);
 	quit	= new TGTextButton(this,	"&Quit", 1);
 	quit->SetCommand(".q");
 	
-	buttonframe->AddFrame(next, fLayout);
+	//buttonframe->AddFrame(next, fLayout);
+	buttonframe->AddFrame(go, fLayout);
+	buttonframe->AddFrame(pause, fLayout);
 	buttonframe->AddFrame(quit, fLayout);
 	
 	MapSubwindows();
@@ -66,6 +72,12 @@ Bool_t hdv_mainframe::ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2)
 					switch(parm1){
 						case 2: //Next
 							err = hdv_getevent();
+							break;
+						case 3: //Pause
+							GO = 0;
+							break;
+						case 4: //Go
+							GO = 1;
 							break;
 					}
 					break;

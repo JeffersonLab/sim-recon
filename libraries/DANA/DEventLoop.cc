@@ -8,6 +8,7 @@
 using namespace std;
 
 #include "DEventLoop.h"
+#include "DEventProcessor.h"
 #include "DEventSourceET.h"
 #include "DEventSourceFile.h"
 
@@ -92,7 +93,7 @@ derror_t DEventLoop::Init(void)
 	TRACKING_init(this);
 	
 	// Set the event_loop field for all processors
-	for(int i=0;i<Nprocessors;i++)processors[i]->event_loop = this;
+	for(int i=0;i<Nprocessors;i++)processors[i]->eventLoop = this;
 	
 	// Call init Processors
 	for(int i=0;i<Nprocessors;i++)processors[i]->init();
@@ -115,7 +116,7 @@ derror_t DEventLoop::OneEvent(void)
 	derror_t err;
 	if(goto_event>=0){
 		err = source->GotoEvent(goto_event);
-		if(!err)eventnumber = goto_event - 1; // eventnumber is incremented below
+		if(!err)_eventnumber = goto_event - 1; // eventnumber is incremented below
 		goto_event = -1;
 	}else{
 		err = source->NextEvent();
@@ -129,7 +130,7 @@ derror_t DEventLoop::OneEvent(void)
 			break;
 		case EVENT_NOT_IN_MEMORY:
 			cout<<endl<<"Event not in memory"<<endl;
-			eventnumber--;
+			_eventnumber--;
 			break;
 		default:
 			break;
@@ -137,19 +138,19 @@ derror_t DEventLoop::OneEvent(void)
 	if(err != NOERROR && err !=EVENT_NOT_IN_MEMORY)return err;
 	
 	// Copy pointer to hddm_s to our object (from DEvent inheritance)
-	hddm_s = source->hddm_s;
+	_hddm_s = source->hddm_s;
 	
 	// Need to extract the event number and run number here.
 	//runnumber = 1;
-	eventnumber++;
+	_eventnumber++;
 	
 	// Call Event Processors
 	DEventProcessor **p = processors;
 	for(int i=0;i<Nprocessors;i++, p++){
-		(*p)->hddm_s = hddm_s;
+		(*p)->hddm_s = hddm_s();
 
 		// Call brun routine if run number has changed or it's not been called
-		if(runnumber!=(*p)->GetBRUN_RunNumber()){
+		if(_runnumber!=(*p)->GetBRUN_RunNumber()){
 			if((*p)->brun_was_called() && !(*p)->erun_was_called()){
 				(*p)->erun();
 				(*p)->Set_erun_called();
@@ -157,14 +158,14 @@ derror_t DEventLoop::OneEvent(void)
 			(*p)->Clear_brun_called();
 		}
 		if(!(*p)->brun_was_called()){
-			(*p)->brun(runnumber);
+			(*p)->brun(_runnumber);
 			(*p)->Set_brun_called();
 			(*p)->Clear_erun_called();
-			(*p)->SetBRUN_RunNumber(runnumber);
+			(*p)->SetBRUN_RunNumber(_runnumber);
 		}
 
 		// Call the event routine
-		derror_t err = (*p)->evnt(eventnumber);
+		derror_t err = (*p)->evnt(_eventnumber);
 
 		// More will need to be done to truly filter out the event.
 		// for now, this just provides a means to not completely process
@@ -175,7 +176,7 @@ derror_t DEventLoop::OneEvent(void)
 	// In order for the source to jump to an event via GotoEvent(),
 	// it needs to know the event number which may only be obtained
 	// after parsing the data.
-	source->RecordEventNumber(eventnumber);
+	source->RecordEventNumber(_eventnumber);
 		
 	return NOERROR;
 }

@@ -46,9 +46,12 @@
 #ifndef _DQUICK_FIT_H_
 #define _DQUICK_FIT_H_
 
+#include <vector>
+using namespace std;
+
 #include <TVector3.h>
 
-#include "DContainer.h"
+#include "derror.h"
 #include "fit_utils.h"
 
 class DMagneticFieldMap;
@@ -59,7 +62,7 @@ class DQuickFit{
 		~DQuickFit();
 
 		inline derror_t AddHit(TVector3 *v){return AddHits(1,v);};
-		inline derror_t AddHit(float r, float phi){AddHit(r, phi, 0.0);};
+		inline derror_t AddHit(float myr, float myphi){return AddHit(myr, myphi, 0.0);};
 		derror_t AddHit(float r, float phi, float z);
 		derror_t AddHits(int N, TVector3 *v);		
 		derror_t PruneHit(int idx);
@@ -69,9 +72,9 @@ class DQuickFit{
 		derror_t PruneOutliers(int n);
 		derror_t FitCircle(void);
 		derror_t FitTrack(void);
-		inline TVector3** GetHits(){return (TVector3**)hits->container_ptr;};
-		inline int* GetChiSqVector(){return (int*)chisqv->container_ptr;};
-		inline int GetNhits(){return hits->nrows;};
+		inline const vector<TVector3*> GetHits(){return hits;};
+		inline const vector<float> GetChiSqVector(){return chisqv;};
+		inline int GetNhits(){return hits.size();};
 		derror_t PrintChiSqVector(void);
 		derror_t CopyToFitParms(FitParms_t *fit);
 		derror_t Print(void);
@@ -93,8 +96,8 @@ class DQuickFit{
 		ChiSqSourceType_t chisq_source;
 
 	protected:
-		DContainer *hits;
-		DContainer *chisqv;
+		vector<TVector3*> hits;
+		vector<float> chisqv;
 		DMagneticFieldMap *bfield; ///< pointer to magnetic field map
 		float Bz_avg;
 };
