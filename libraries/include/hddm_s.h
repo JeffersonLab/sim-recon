@@ -597,6 +597,19 @@ typedef struct {
 } s_HitView_t;
 #endif /* s_HitView_t */
 
+#ifndef SAW_s_ClusterView_t
+#define SAW_s_ClusterView_t
+
+typedef struct {
+   s_CdcPoints_t*       cdcPoints;
+   s_FdcPoints_t*       fdcPoints;
+   s_StartPoints_t*     startPoints;
+   s_BarrelShowers_t*   barrelShowers;
+   s_TofPoints_t*       tofPoints;
+   s_ForwardShowers_t*  forwardShowers;
+} s_ClusterView_t;
+#endif /* s_ClusterView_t */
+
 #ifndef SAW_s_PhysicsEvent_t
 #define SAW_s_PhysicsEvent_t
 
@@ -605,6 +618,7 @@ typedef struct {
    int                  runNo;
    s_Reactions_t*       reactions;
    s_HitView_t*         hitView;
+   s_ClusterView_t*     clusterView;
 } s_PhysicsEvent_t;
 
 typedef struct {
@@ -716,6 +730,8 @@ s_Rows_t* make_s_Rows(int n);
 s_Columns_t* make_s_Columns(int n);
 
 s_ForwardShowers_t* make_s_ForwardShowers(int n);
+
+s_ClusterView_t* make_s_ClusterView();
 
 #ifdef __cplusplus
 }
