@@ -10,6 +10,7 @@
 typedef struct{
 	float r,phi,z;	///< coordinates of hit in cm and rad
 	int track;		///< Track number
+	int primary;	///< primary track=1    not primary track=0
 	int system;		///< 1=CDC 2=FDC 3=BCAL 4=TOF 5=Cherenkov 6=FCAL 7=UPV
 }MCCheatHit_t;
 
