@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE HDDS SYSTEM "HDDS_1.0.dtd" [
 
   <!ENTITY Material_s SYSTEM "Material_HDDS.xml">
@@ -15,7 +15,10 @@
 
 ]>
 
-<HDDS DTD_version="v1">
+<HDDS specification="v1.0"
+      xmlns="http://www.gluex.org/hdds"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.gluex.org/hdds HDDS-1_0.xsd">
 
 <!-- Include materials -->
      &Material_s;
@@ -39,10 +42,10 @@
 -->
 <section name        = "HallD"
          version     = "1.0"
-         date        = "Mon Apr 15, 2001"
+         date        = "2001-04-15"
          author      = "R.T. Jones"
          top_volume  = "HALL"
-         DTD_version = "v1">
+         specification = "v1.0">
 
   <box name="SITE" X_Y_Z="5000. 5000. 5000." material="Air"
        				comment="master volume for description" />

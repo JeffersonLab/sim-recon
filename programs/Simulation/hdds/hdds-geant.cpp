@@ -85,23 +85,36 @@
  *  support for them in hdds-geant.
  */
 
-#include <util/PlatformUtils.hpp>
-#include <sax/SAXException.hpp>
-#include <sax/SAXParseException.hpp>
-#include <parsers/DOMParser.hpp>
-#include <dom/DOM_DOMException.hpp>
-#include <dom/DOM_NamedNodeMap.hpp>
-#include <dom/DOMString.hpp>
+/*
+ * FIX_XERCES_getElementById_BUG does a store/load cycle at parsing time
+ * to fully instantiate entity references on the document tree.
+ * See xerces-c++ bug 12800 at http://nagoya.apache.org
+ */
+#define FIX_XERCES_getElementById_BUG true
+
+#define _GNU_SOURCE true
+
+#include <xercesc/util/PlatformUtils.hpp>
+#include <xercesc/util/XMLString.hpp>
+#include <xercesc/util/XMLStringTokenizer.hpp>
+#include <xercesc/sax/SAXParseException.hpp>
+#include <xercesc/parsers/XercesDOMParser.hpp>
+#include <xercesc/framework/LocalFileFormatTarget.hpp>
+#include <xercesc/dom/DOM.hpp>
 
 #include "hdds-geant.hpp"
 
+#include <string.h>
 #include <assert.h>
 #include <fstream.h>
-#include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <math.h>
+
+#define X(XString) XString.unicodeForm()
+#define S(XString) XString.localForm()
+
 
 double fieldStrength[] =
 {
@@ -123,7 +136,7 @@ void usage()
 class Refsys
 {
  public:
-   DOM_Element fMother;		// current mother volume element
+   DOMElement* fMother;		// current mother volume element
    int fMagField;		// flag indicating magnetic field
    double fOrigin[3];		// x,y,z coordinate of volume origin (cm)
    double fRmatrix[3][3];	// rotation matrix (daughter -> mother)
@@ -134,7 +147,7 @@ class Refsys
 
    struct VolIdent
    {
-      DOMString fieldS;	
+      XString fieldS;	
       int value;
       int step;
    };
@@ -155,15 +168,15 @@ class Refsys
    Refsys& rotate(const Refsys& ref,
                   const double omega[3]); // rotate by omega in ref frame
 
-   int createMaterial(DOM_Element& el);	// generate code for materials
-   int createSolid(DOM_Element& el);	// generate code for solids
+   int createMaterial(DOMElement* el);	// generate code for materials
+   int createSolid(DOMElement* el);	// generate code for solids
    int createRotation();		// generate code for rotations
    int createDivision(char* divStr,
                       int ncopy,
                       int iaxis,
                       double start,
                       double step);	// generate code for divisions
-   int createVolume(DOM_Element& el);	// generate code for placement
+   int createVolume(DOMElement* el);	// generate code for placement
 
 private:
    static int fRotations;	// non-trivial rotations defined so far
@@ -212,7 +225,7 @@ void fortranTrailer()
    cout << "      end"						<< endl;
 }
 
-void fortranGetfunc(DOM_Element& el, char* ident)
+void fortranGetfunc(DOMElement* el, char* ident)
 {
    int* start = new int[Refsys::fVolumes + 1];
    int* table = new int[999999];
@@ -221,41 +234,38 @@ void fortranGetfunc(DOM_Element& el, char* ident)
    char funcName[40];
    sprintf(funcName, "get%s", ident);
    funcName[3] = toupper(funcName[3]);
-
-   DOM_NodeList alltagsList = el.getOwnerDocument().getElementsByTagName("*");
-   for (int itag = 0; itag < alltagsList.getLength(); itag++)
+   XString identS(ident);
+   XString wildS("*");
+   DOMNodeList* alltagsList = el->getOwnerDocument()
+                                ->getElementsByTagName(X(wildS));
+   for (int itag = 0; itag < alltagsList->getLength(); itag++)
    {
-      DOM_Node node = alltagsList.item(itag);
-      DOM_Element elem = (DOM_Element&) node;
-      DOMString icopyS = elem.getAttribute("Geant3icopy");
-      DOMString ivoluS = elem.getAttribute("Geant3ivolu");
+      DOMNode* node = alltagsList->item(itag);
+      DOMElement* elem = (DOMElement*) node;
+      XString icopyAttS("Geant3icopy");
+      XString ivoluAttS("Geant3ivolu");
+      XString icopyS(elem->getAttribute(X(icopyAttS)));
+      XString ivoluS(elem->getAttribute(X(ivoluAttS)));
       if (ivoluS != 0)
       {
-         char* ivoluStr = ivoluS.transcode();
-         char* icopyStr = icopyS.transcode();
-         int ivolu = atoi(ivoluStr);
-         int icopy = atoi(icopyStr);
-         delete [] icopyStr;
-         delete [] ivoluStr;
-         DOMString idlistS = elem.getAttribute(ident);
+         int ivolu = atoi(S(ivoluS));
+         int icopy = atoi(S(icopyS));
+         XString idlistS(elem->getAttribute(X(identS)));
          if (idlistS != 0)
          {
-            char* idlistStr = idlistS.transcode();
+            XString spaceS(" ");
+            XMLStringTokenizer picker(X(idlistS),X(spaceS));
             start[ivolu] = tableLength + 1;
-            char* idStr;
-            char* save_ptr;
-            for (idStr = strtok_r(idlistStr, " ", &save_ptr);
-                 (idStr != 0) && (strlen(idStr) > 0);
-                 idStr = strtok_r(NULL, " ", &save_ptr))
+            XString idS;
+            for (idS = picker.nextToken(); idS != 0; idS = picker.nextToken())
             {
-               table[tableLength++] = atoi(idStr);
+               table[tableLength++] = atoi(S(idS));
                --icopy;
             }
             for (; icopy > 0; --icopy)
             {
                table[tableLength++] = 0;
             }
-            delete [] idlistStr;
          }
          else
          {
@@ -377,8 +387,9 @@ int main(int argC, char* argV[])
    }
    catch (const XMLException& toCatch)
    {
+      XString message(toCatch.getMessage());
       cerr << "hdds-geant: Error during initialization! :\n"
-           << StrX(toCatch.getMessage()) << endl;
+           << S(message) << endl;
       return 1;
    }
 
@@ -393,7 +404,7 @@ int main(int argC, char* argV[])
       return 2;
    }
 
-   const char*  xmlFile = 0;
+   const char* xmlFile = 0;
    bool geantOutput = true;
    int argInd;
    for (argInd = 1; argInd < argC; argInd++)
@@ -415,55 +426,36 @@ int main(int argC, char* argV[])
    }
    xmlFile = argV[argInd];
 
-   DOMParser parser;
-   parser.setValidationScheme(DOMParser::Val_Auto);
-   parser.setCreateEntityReferenceNodes(false);
-   parser.setDoNamespaces(false);
-
-   MyOwnErrorHandler errorHandler;
-   parser.setErrorHandler(&errorHandler);
-
-   try
+#if defined OLD_STYLE_XERCES_PARSER
+   DOMDocument* document = parseInputDocument(xmlFile);
+#else
+   DOMDocument* document = buildDOMDocument(xmlFile);
+#endif
+   if (document == 0)
    {
-      parser.parse(xmlFile);
-   }
-   catch (const XMLException& toCatch)
-   {
-      cerr << "\nhdds-geant: Error during parsing: '" << xmlFile << "'\n"
-           << "Exception message is:  \n"
-           << StrX(toCatch.getMessage()) << "\n" << endl;
-      return -1;
-   }
-   catch (const DOM_DOMException& toCatch)
-   {
-      cerr << "\nhdds-geant: Error during parsing: '" << xmlFile << "'\n"
-           << "Exception message is:  \n"
-           << toCatch.msg.transcode() << "\n" << endl;
-      XMLPlatformUtils::Terminate();
-      return 4;
-   }
-   catch (...)
-   {
-      cerr << "\nhdds-geant: Unexpected exception during parsing: '"
-           << xmlFile << "'\n";
-      XMLPlatformUtils::Terminate();
-      return 4;
+      cerr << "hdds-geant : Error parsing HDDS document, "
+           << "cannot continue" << endl;
+      return 1;
    }
 
-   if (errorHandler.getSawErrors())
-   {
-      cerr << "\nErrors occured, no output available\n" << endl;
+   DOMNode* docEl;
+   try {
+      docEl = document->getDocumentElement();
+   }
+   catch (DOMException& e) {
+      XString msgS(e.msg);
+      cerr << "Woops " << S(msgS) << endl;
+      return 1;
    }
 
-   DOM_Document document = parser.getDocument();
-   DOM_Element rootEl = document.getElementById("everything");
+   XString everythingS("everything");
+   DOMElement* rootEl = document->getElementById(X(everythingS));
    if (rootEl == 0)
    {
       cerr << "hdds-geant : Error scanning HDDS document, " << endl
            << "  no element named \"eveything\" found" << endl;
       return 1;
    }
-
 
    if (geantOutput)
    {
@@ -489,6 +481,123 @@ int main(int argC, char* argV[])
    return 0;
 }
 
+/* Parser implemented using the old-style XercesDOMParser interface
+ * based on the example code in $XERCESCROOT/samples/DOMPrint
+ */
+DOMDocument* parseInputDocument(const char* xmlFile)
+{
+   XercesDOMParser* parser = new XercesDOMParser;
+   parser->setValidationScheme(XercesDOMParser::Val_Auto);
+   parser->setCreateEntityReferenceNodes(false);
+   parser->setValidationSchemaFullChecking(true);
+   parser->setDoNamespaces(true);
+   parser->setDoSchema(true);
+
+   MyOwnErrorHandler errorHandler;
+   parser->setErrorHandler(&errorHandler);
+
+   try
+   {
+      parser->parse(xmlFile);
+   }
+   catch (const XMLException& toCatch)
+   {
+      XString message(toCatch.getMessage());
+      cerr << "\nhdds-geant: Error during parsing: '" << xmlFile << "'\n"
+           << "Exception message is:  \n"
+           << S(message) << "\n" << endl;
+      return 0;
+   }
+   catch (const DOMException& toCatch)
+   {
+      XString message(toCatch.msg);
+      cerr << "\nhdds-geant: Error during parsing: '" << xmlFile << "'\n"
+           << "Exception message is:  \n"
+           << S(message) << "\n" << endl;
+      XMLPlatformUtils::Terminate();
+      return 0;
+   }
+   catch (...)
+   {
+      cerr << "\nhdds-geant: Unexpected exception during parsing: '"
+           << xmlFile << "'\n";
+      XMLPlatformUtils::Terminate();
+      return 0;
+   }
+
+   if (errorHandler.getSawErrors())
+   {
+      cerr << "\nErrors occured, no output available\n" << endl;
+      return 0;
+   }
+
+   return parser->getDocument();
+}
+
+/* Parser implemented using the w3c standard DOMBuilder interface
+ * based on the example code in $XERCESCROOT/samples/DOMCount
+ */
+DOMDocument* buildDOMDocument(const char* xmlFile)
+{
+   XString lsS("LS");
+   DOMImplementation *impl = DOMImplementationRegistry::getDOMImplementation(X(lsS));
+   DOMBuilder* parser = ((DOMImplementationLS*)impl)->createDOMBuilder(DOMImplementationLS::MODE_SYNCHRONOUS, 0);
+   DOMWriter* writer = ((DOMImplementationLS*)impl)->createDOMWriter();
+   XString tmpFileS(".tmp-");
+   XString suffix(basename(xmlFile));
+   tmpFileS += suffix;
+
+   parser->setFeature(XMLUni::fgDOMValidation, true);
+   parser->setFeature(XMLUni::fgDOMNamespaces, true);
+   parser->setFeature(XMLUni::fgDOMDatatypeNormalization, true);
+   parser->setFeature(XMLUni::fgDOMEntities, false);
+   parser->setFeature(XMLUni::fgXercesSchemaFullChecking, true);
+   parser->setFeature(XMLUni::fgXercesSchema, true);
+
+   MyDOMErrorHandler* errHandler = new MyDOMErrorHandler();
+   parser->setErrorHandler(errHandler);
+
+   DOMDocument* doc = 0;
+
+   try {
+      parser->resetDocumentPool();
+      doc = parser->parseURI(xmlFile);
+#if defined FIX_XERCES_getElementById_BUG
+      LocalFileFormatTarget* lfft = new LocalFileFormatTarget(X(tmpFileS));
+      writer->writeNode(lfft,*(doc->getDocumentElement()));
+      delete lfft;
+      parser->resetDocumentPool();
+      doc = parser->parseURI(X(tmpFileS));
+#endif
+   }
+   catch (const XMLException& toCatch) {
+      XString message(toCatch.getMessage());
+      cout << "Exception message is: \n"
+           << S(message) << "\n";
+      return 0;
+   }
+   catch (const DOMException& toCatch) {
+      XString message(toCatch.msg);
+      cout << "Exception message is: \n"
+           << S(message) << "\n";
+      return 0;
+   }
+   catch (...) {
+      cout << "Unexpected Exception \n" ;
+      return 0;
+   }
+
+   if (errHandler->getSawErrors())
+   {
+      cerr << "\nErrors occured, no output available\n" << endl;
+      return 0;
+   }
+
+   XString badAttS("CDSI");
+   DOMElement* targ = doc->getElementById(X(badAttS));
+   return doc;
+}
+
 
 MyOwnErrorHandler::MyOwnErrorHandler() : 
    fSawErrors(false)
@@ -504,32 +613,76 @@ MyOwnErrorHandler::~MyOwnErrorHandler()
 void MyOwnErrorHandler::error(const SAXParseException& e)
 {
    fSawErrors = true;
-   cerr << "\nhdds-geant: Error at file " << StrX(e.getSystemId())
+   XString systemId(e.getSystemId());
+   XString message(e.getMessage());
+   cerr << "\nhdds-geant: Error at file " << S(systemId)
         << ", line " << e.getLineNumber()
         << ", char " << e.getColumnNumber()
-        << "\n  Message: " << StrX(e.getMessage()) << endl;
+        << "\n  Message: " << S(message) << endl;
 }
 
 void MyOwnErrorHandler::fatalError(const SAXParseException& e)
 {
    fSawErrors = true;
-   cerr << "\nhdds-geant: Fatal Error at file " << StrX(e.getSystemId())
+   XString systemId(e.getSystemId());
+   XString message(e.getMessage());
+   cerr << "\nhdds-geant: Fatal Error at file " << S(systemId)
         << ", line " << e.getLineNumber()
         << ", char " << e.getColumnNumber()
-        << "\n  Message: " << StrX(e.getMessage()) << endl;
+        << "\n  Message: " << S(message) << endl;
 }
 
 void MyOwnErrorHandler::warning(const SAXParseException& e)
 {
-   cerr << "\nhdds-geant: Warning at file " << StrX(e.getSystemId())
+   XString systemId(e.getSystemId());
+   XString message(e.getMessage());
+   cerr << "\nhdds-geant: Warning at file " << S(systemId)
         << ", line " << e.getLineNumber()
         << ", char " << e.getColumnNumber()
-        << "\n  Message: " << StrX(e.getMessage()) << endl;
+        << "\n  Message: " << S(message) << endl;
 }
 
 void MyOwnErrorHandler::resetErrors()
 {
 }
+
+MyDOMErrorHandler::MyDOMErrorHandler() :
+
+    fSawErrors(false)
+{
+}
+
+MyDOMErrorHandler::~MyDOMErrorHandler()
+{
+}
+
+//  MyDOMHandlers: Overrides of the DOM ErrorHandler interface
+
+bool MyDOMErrorHandler::handleError(const DOMError& domError)
+{
+   fSawErrors = true;
+   if (domError.getSeverity() == DOMError::DOM_SEVERITY_WARNING)
+      cerr << "\nWarning at file ";
+   else if (domError.getSeverity() == DOMError::DOM_SEVERITY_ERROR)
+       cerr << "\nError at file ";
+   else
+       cerr << "\nFatal Error at file ";
+
+   cerr << XString(domError.getLocation()->getURI()).localForm()
+        << ", line " << domError.getLocation()->getLineNumber()
+        << ", char " << domError.getLocation()->getColumnNumber()
+        << "\n  Message: " << XString(domError.getMessage()).localForm()
+       	<< endl;
+
+   return true;
+}
+
+void MyDOMErrorHandler::resetErrors()
+{
+   fSawErrors = false;
+}
+
+
 
 int Refsys::fVolumes = 0;
 int Refsys::fRotations = 0;
@@ -663,122 +816,126 @@ Refsys& Refsys::rotate(const Refsys& ref,
    return rotate(myRef);
 }
 
-int Refsys::createMaterial(DOM_Element& el)
+int Refsys::createMaterial(DOMElement* el)
 {
    static int imateCount = 0;
    int imate = ++imateCount;
    char imateStr[30];
    sprintf(imateStr, "%d", imate);
-   el.setAttribute("Geant3imate", imateStr);
+   XString imateAttS("Geant3imate");
+   XString imateS(imateStr);
+   el->setAttribute(X(imateAttS),X(imateS));
 
-   DOMString tagS = el.getTagName();
-   DOMString matS = el.getAttribute("name");
-   char* matStr = matS.transcode();
-   char* paramStr;
-   char* valueStr;
+   XString tagS(el->getTagName());
+   XString nameAttS("name");
+   XString matS(el->getAttribute(X(nameAttS)));
 
-   paramStr = el.getAttribute("a").transcode();
-   double a = atof(paramStr);
-   delete [] paramStr;
+   XString aAttS("a");
+   XString aS(el->getAttribute(X(aAttS)));
+   double a = atof(S(aS));
 
-   paramStr = el.getAttribute("z").transcode();
-   double z = atof(paramStr);
-   delete [] paramStr;
+   XString zAttS("z");
+   XString zS(el->getAttribute(X(zAttS)));
+   double z = atof(S(zS));
 
    double dens = -1;
    double radl = -1;
    double absl = -1;
-   DOM_NodeList paramList = el.getElementsByTagName("real");
-   for (int ip = 0; ip < paramList.getLength(); ip++)
+   XString realAttS("real");
+   DOMNodeList* paramList = el->getElementsByTagName(X(realAttS));
+   for (int ip = 0; ip < paramList->getLength(); ip++)
    {
-      DOM_Node node = paramList.item(ip);
-      DOM_Element elem = (DOM_Element&) node;
-      DOMString paramS = elem.getAttribute("name");
-      DOMString valueS = elem.getAttribute("value");
-      char* valueStr = valueS.transcode();
+      DOMNode* node = paramList->item(ip);
+      DOMElement* elem = (DOMElement*) node;
+      XString paramAttS("name");
+      XString valueAttS("value");
+      XString paramS(elem->getAttribute(X(paramAttS)));
+      XString valueS(elem->getAttribute(X(valueAttS)));
       if (paramS.equals("density"))
       {
-         dens = atof(valueStr);
+         dens = atof(S(valueS));
       }
       else if (paramS.equals("radlen"))
       {
-         radl = atof(valueStr);
+         radl = atof(S(valueS));
       }
       else if (paramS.equals("abslen"))
       {
-         absl = atof(valueStr);
+         absl = atof(S(valueS));
       }
-      delete [] valueStr;
    }
 
    int nList = 0;
    int iList[999];
    double wList[999];
-   DOM_Document document = el.getOwnerDocument();
-   DOM_NodeList compList = el.getElementsByTagName("addmaterial");
-   for (int ic = 0; ic < compList.getLength(); ic++)
+   DOMDocument* document = el->getOwnerDocument();
+   XString addmaterialTagS("addmaterial");
+   DOMNodeList* compList = el->getElementsByTagName(X(addmaterialTagS));
+   for (int ic = 0; ic < compList->getLength(); ic++)
    {
-      DOM_Node node = compList.item(ic);
-      DOM_Element elem = (DOM_Element&) node;
-      DOMString compS = elem.getAttribute("material");
-      DOM_Element compEl = document.getElementById(compS);
-      DOMString cS;
-      if ( (cS = compEl.getAttribute("Geant3imate")) != 0)
+      DOMNode* node = compList->item(ic);
+      DOMElement* elem = (DOMElement*) node;
+      XString compAttS("material");
+      XString compS(elem->getAttribute(X(compAttS)));
+      DOMElement* compEl = document->getElementById(X(compS));
+      XString imateAttS("Geant3imate");
+      XString cS(compEl->getAttribute(X(imateAttS)));
+      if (cS != 0)
       {
-         char* cStr = cS.transcode();
-         iList[nList] = atoi(cStr);
-         delete [] cStr;
+         iList[nList] = atoi(S(cS));
       }
       else
       {
          iList[nList] = createMaterial(compEl);
       }
 
-      DOM_NodeList atomList = elem.getElementsByTagName("natoms");
-      DOM_NodeList fracList = elem.getElementsByTagName("fractionmass");
-      if (atomList.getLength() == 1)
+      XString natomsTagS("natoms");
+      XString frmassTagS("fractionmass");
+      DOMNodeList* atomList = elem->getElementsByTagName(X(natomsTagS));
+      DOMNodeList* fracList = elem->getElementsByTagName(X(frmassTagS));
+      if (atomList->getLength() == 1)
       {
-         DOMString typeS = compEl.getTagName();
+         XString typeS(compEl->getTagName());
          if (! typeS.equals("element"))
          {
-            cerr << "hdds-geant: error processing composite " << matStr << endl
+            cerr << "hdds-geant: error processing composite " << S(matS) << endl
                  << "natoms can only be specified for elements." << endl;
             exit(1);
          }
          else if (dens < 0)
          {
-            char* tagStr = tagS.transcode();
-            cerr << "hdds-geant error: " << tagStr << " " << matStr
+            cerr << "hdds-geant error: " << S(tagS) << " " << S(matS)
                  << " is missing a density specification." << endl;
             exit(1);
          }
-         DOM_Node node = atomList.item(0);
-         DOM_Element elem = (DOM_Element&) node;
-         char* nStr = elem.getAttribute("n").transcode();
-         wList[nList] = atoi(nStr);
-         delete [] nStr;
+         DOMNode* node = atomList->item(0);
+         DOMElement* elem = (DOMElement*) node;
+         XString nAttS("n");
+         XString nS(elem->getAttribute(X(nAttS)));
+         wList[nList] = atoi(S(nS));
       }
-      else if (fracList.getLength() == 1)
+      else if (fracList->getLength() == 1)
       {
-         DOM_Node node = fracList.item(0);
-         DOM_Element elem = (DOM_Element&) node;
-         char* fStr = elem.getAttribute("fraction").transcode();
-         wList[nList] = atof(fStr);
-         delete [] fStr;
+         DOMNode* node = fracList->item(0);
+         DOMElement* elem = (DOMElement*) node;
+         XString fractionAttS("fraction");
+         XString fS(elem->getAttribute(X(fractionAttS)));
+         wList[nList] = atof(S(fS));
 
          double rho = 0;
-         DOM_NodeList propList = compEl.getElementsByTagName("real");
-         for (int ip = 0; ip < propList.getLength(); ip++)
+         XString realTagS("real");
+         DOMNodeList* propList = compEl->getElementsByTagName(X(realTagS));
+         for (int ip = 0; ip < propList->getLength(); ip++)
          {
-            DOM_Node pnode = propList.item(ip);
-            DOM_Element pelem = (DOM_Element&) pnode;
-            DOMString pS = pelem.getAttribute("name");
-            DOMString vS = pelem.getAttribute("value");
+            DOMNode* pnode = propList->item(ip);
+            DOMElement* pelem = (DOMElement*) pnode;
+            XString pAttS("name");
+            XString vAttS("value");
+            XString pS(pelem->getAttribute(X(pAttS)));
+            XString vS(pelem->getAttribute(X(vAttS)));
             if (pS.equals("density"))
             {
-               char* vStr = vS.transcode();
-               rho = atof(vStr);
-               delete [] vStr;
+               rho = atof(S(vS));
             }
          }
          assert (rho > 0);
@@ -789,8 +946,7 @@ int Refsys::createMaterial(DOM_Element& el)
       }
       else
       {
-         char* tagStr = tagS.transcode();
-         cerr << "hdds-geant error: " << tagStr << " " << matStr
+         cerr << "hdds-geant error: " << S(tagS) << " " << S(matS)
               << " is missing some proportion data." << endl;
          exit(1);
       }
@@ -801,8 +957,7 @@ int Refsys::createMaterial(DOM_Element& el)
    {
       if (dens < 0)
       {
-         char* tagStr = tagS.transcode();
-         cerr << "hdds-geant error: " << tagStr << " " << matStr
+         cerr << "hdds-geant error: " << S(tagS) << " " << S(matS)
               << " is missing a density specification." << endl;
          exit(1);
       }
@@ -810,7 +965,7 @@ int Refsys::createMaterial(DOM_Element& el)
       {
          cout << endl
               << "      imate = " << imate << endl
-              << "      namate = \'" << matStr << "\'" << endl
+              << "      namate = \'" << S(matS) << "\'" << endl
               << "      a = " << a << endl
               << "      z = " << z << endl
               << "      dens = " << dens << endl
@@ -823,7 +978,7 @@ int Refsys::createMaterial(DOM_Element& el)
       {
          cout << endl
               << "      imate = " << imate << endl
-              << "      chnama = \'" << matStr << "\'" << endl
+              << "      chnama = \'" << S(matS) << "\'" << endl
               << "      a = " << a << endl
               << "      z = " << z << endl
               << "      dens = " << dens << endl
@@ -843,7 +998,7 @@ int Refsys::createMaterial(DOM_Element& el)
       }
       cout << endl
            << "      imate = " << imate << endl
-           << "      namate = \'" << matStr << "\'" << endl;
+           << "      namate = \'" << S(matS) << "\'" << endl;
       for (int im = 0; im < nList; im++)
       {
          cout << "      wmat(" << im + 1 << ") = " << wList[im] << endl
@@ -856,28 +1011,29 @@ int Refsys::createMaterial(DOM_Element& el)
            << "      call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)"
            << endl;
    }
-
    
    if (dens < 0)
    {
       char densStr[30];
       sprintf(densStr, "%f", -1/(dens + 0.999999));
-      DOM_Element densEl = document.createElement("real");
-      densEl.setAttribute("name", "density");
-      densEl.setAttribute("value", densStr);
-      el.appendChild(densEl);
+      XString realTagS("real");
+      XString nameAttS("name");
+      XString valueAttS("value");
+      XString nameS("density");
+      XString valueS(densStr);
+      DOMElement* densEl = document->createElement(X(realTagS));
+      densEl->setAttribute(X(nameAttS),X(nameS));
+      densEl->setAttribute(X(valueAttS),X(valueS));
+      el->appendChild(densEl);
    }
 
-   delete [] matStr;
    return imate;
 }
 
-void getConversions(DOM_Element& el, double& tocm, double& todeg)
+void getConversions(DOMElement* el, double& tocm, double& todeg)
 {
-   DOMString unitS;
-   char* unitStr;
-
-   unitS = el.getAttribute("unit_length");
+   XString unitAttS("unit_length");
+   XString unitS(el->getAttribute(X(unitAttS)));
    if (unitS.equals("mm"))
    {
       tocm = 0.1;
@@ -892,14 +1048,14 @@ void getConversions(DOM_Element& el, double& tocm, double& todeg)
    }
    else
    {
-      unitStr = unitS.transcode();
-      char* tagStr = el.getTagName().transcode();
-      cerr << "hdds-geant error: unknown length unit " << unitStr
-           << " on tag " << tagStr << endl;
+      XString tagS(el->getTagName());
+      cerr << "hdds-geant error: unknown length unit " << S(unitS)
+           << " on tag " << S(tagS) << endl;
       exit(1);
    }
 
-   unitS = el.getAttribute("unit_angle");
+   XString unaAttS("unit_angle");
+   unitS = el->getAttribute(X(unaAttS));
    if (unitS.equals("deg"))
    {
       todeg = 1.0;
@@ -910,31 +1066,28 @@ void getConversions(DOM_Element& el, double& tocm, double& todeg)
    }
    else
    {
-      unitStr = unitS.transcode();
-      char* tagStr = el.getTagName().transcode();
-      cerr << "hdds-geant error: unknown angle unit " << unitStr
-           << " on volume " << tagStr << endl;
+      XString tagS(el->getTagName());
+      cerr << "hdds-geant error: unknown angle unit " << S(unitS)
+           << " on volume " << S(tagS) << endl;
       exit(1);
    }
 }
 
-int Refsys::createSolid(DOM_Element& el)
+int Refsys::createSolid(DOMElement* el)
 {
-   DOMString shapeS = el.getTagName();
-   DOMString nameS = el.getAttribute("name");
-   DOMString materialS = el.getAttribute("material");
-   char* nameStr = nameS.transcode();
-   char* matStr = materialS.transcode();
+   XString nameTagS("name");
+   XString matAttS("material");
+   XString nameS(el->getAttribute(X(nameTagS)));
+   XString matS(el->getAttribute(X(matAttS)));
 
    int imate;
-   DOM_Document document = el.getOwnerDocument();
-   DOM_Element matEl = document.getElementById(materialS);
-   DOMString imateS = matEl.getAttribute("Geant3imate");
+   DOMDocument* document = el->getOwnerDocument();
+   DOMElement* matEl = document->getElementById(X(matS));
+   XString imateAttS("Geant3imate");
+   XString imateS(matEl->getAttribute(X(imateAttS)));
    if (imateS != 0)
    {
-      char* imateStr = imateS.transcode();
-      imate = atoi(imateStr);
-      delete [] imateStr;
+      imate = atoi(S(imateS));
    }
    else
    {
@@ -943,10 +1096,11 @@ int Refsys::createSolid(DOM_Element& el)
    
    static int itmedCount = 0;
    int itmed = ++itmedCount;
-   DOMString sensiS = el.getAttribute("sensitive");
+   XString sensiAttS("sensitive");
+   XString sensiS(el->getAttribute(X(sensiAttS)));
    cout << endl
         << "      itmed = " << itmed << endl
-        << "      natmed = \'" << nameStr << " " << matStr << "\'" << endl
+        << "      natmed = \'" << S(nameS) << " " << S(matS) << "\'" << endl
         << "      nmat = " << imate << endl
         << "      isvol = " << (sensiS.equals("true") ? 1 : 0) << endl
         << "      ifield = " << ((fMagField == 0) ? 0 : 2) << endl
@@ -966,13 +1120,14 @@ int Refsys::createSolid(DOM_Element& el)
 
    double par[99];
    int npar = 0;
+   XString shapeS(el->getTagName());
    if (shapeS.equals("box"))
    {
       shapeS = "BOX ";
       double xl, yl, zl;
-      char* xyzStr = el.getAttribute("X_Y_Z").transcode();
-      sscanf(xyzStr, "%lf %lf %lf", &xl, &yl, &zl);
-      delete [] xyzStr;
+      XString xyzAttS("X_Y_Z");
+      XString xyzS(el->getAttribute(X(xyzAttS)));
+      sscanf(S(xyzS), "%lf %lf %lf", &xl, &yl, &zl);
 
       npar = 3;
       par[0] = xl/2 * tocm;
@@ -983,12 +1138,12 @@ int Refsys::createSolid(DOM_Element& el)
    {
       shapeS = "TUBS";
       double ri, ro, zl, phi0, dphi;
-      char* riozStr = el.getAttribute("Rio_Z").transcode();
-      sscanf(riozStr, "%lf %lf %lf", &ri, &ro, &zl);
-      delete [] riozStr;
-      char* profStr = el.getAttribute("profile").transcode();
-      sscanf(profStr, "%lf %lf", &phi0, &dphi);
-      delete [] profStr;
+      XString riozAttS("Rio_Z");
+      XString riozS(el->getAttribute(X(riozAttS)));
+      sscanf(S(riozS), "%lf %lf %lf", &ri, &ro, &zl);
+      XString profAttS("profile");
+      XString profS(el->getAttribute(X(profAttS)));
+      sscanf(S(profS), "%lf %lf", &phi0, &dphi);
 
       npar = 5;
       par[0] = ri * tocm;
@@ -1006,13 +1161,13 @@ int Refsys::createSolid(DOM_Element& el)
    {
       shapeS = "TRAP";
       double xm, ym, xp, yp, zl;
-      char* xyzStr = el.getAttribute("Xmp_Ymp_Z").transcode();
-      sscanf(xyzStr, "%lf %lf %lf %lf %lf", &xm, &xp, &ym, &yp, &zl);
-      delete [] xyzStr;
+      XString xyzAttS("Xmp_Ymp_Z");
+      XString xyzS(el->getAttribute(X(xyzAttS)));
+      sscanf(S(xyzS), "%lf %lf %lf %lf %lf", &xm, &xp, &ym, &yp, &zl);
       double alph_xz, alph_yz;
-      char* incStr = el.getAttribute("inclination").transcode();
-      sscanf(incStr, "%lf %lf", &alph_xz, &alph_yz);
-      delete [] incStr;
+      XString incAttS("inclination");
+      XString incS(el->getAttribute(X(incAttS)));
+      sscanf(S(incS), "%lf %lf", &alph_xz, &alph_yz);
 
       npar = 11;
       double x = tan(alph_xz * M_PI/180);
@@ -1034,23 +1189,24 @@ int Refsys::createSolid(DOM_Element& el)
    {
       shapeS = "PCON";
       double phi0, dphi;
-      char* profStr = el.getAttribute("profile").transcode();
-      sscanf(profStr, "%lf %lf", &phi0, &dphi);
-      DOM_NodeList planeList = el.getElementsByTagName("polyplane");
-      delete [] profStr;
+      XString profAttS("profile");
+      XString profS(el->getAttribute(X(profAttS)));
+      sscanf(S(profS), "%lf %lf", &phi0, &dphi);
+      XString planeTagS("polyplane");
+      DOMNodeList* planeList = el->getElementsByTagName(X(planeTagS));
 
       npar = 3;
       par[0] = phi0 * todeg;
       par[1] = dphi * todeg;
-      par[2] = planeList.getLength();
-      for (int p = 0; p < planeList.getLength(); p++)
+      par[2] = planeList->getLength();
+      for (int p = 0; p < planeList->getLength(); p++)
       {
          double ri, ro, zl;
-         DOM_Node node = planeList.item(p);
-         DOM_Element elem = (DOM_Element&) node;
-         char* riozStr = elem.getAttribute("Rio_Z").transcode();
-         sscanf(riozStr, "%lf %lf %lf", &ri, &ro, &zl);
-         delete [] riozStr;
+         DOMNode* node = planeList->item(p);
+         DOMElement* elem = (DOMElement*) node;
+         XString riozAttS("Rio_Z");
+         XString riozS(elem->getAttribute(X(riozAttS)));
+         sscanf(S(riozS), "%lf %lf %lf", &ri, &ro, &zl);
          par[npar++] = zl * tocm;
          par[npar++] = ri * tocm;
          par[npar++] = ro * tocm;
@@ -1060,13 +1216,13 @@ int Refsys::createSolid(DOM_Element& el)
    {
       shapeS = "CONS";
       double rim, rip, rom, rop, zl;
-      char* riozStr = el.getAttribute("Rio1_Rio2_Z").transcode();
-      sscanf(riozStr, "%lf %lf %lf %lf %lf", &rim, &rom, &rip, &rop, &zl);
-      delete [] riozStr;
+      XString riozAttS("Rio1_Rio2_Z");
+      XString riozS(el->getAttribute(X(riozAttS)));
+      sscanf(S(riozS), "%lf %lf %lf %lf %lf", &rim, &rom, &rip, &rop, &zl);
       double phi0, dphi;
-      char* profStr = el.getAttribute("profile").transcode();
-      sscanf(profStr, "%lf %lf", &phi0, &dphi);
-      delete [] profStr;
+      XString profAttS("profile");
+      XString profS(el->getAttribute(X(profAttS)));
+      sscanf(S(profS), "%lf %lf", &phi0, &dphi);
 
       npar = 7;
       par[0] = zl/2 * tocm;
@@ -1084,23 +1240,21 @@ int Refsys::createSolid(DOM_Element& el)
    }
    else
    {
-      char* shapeStr = shapeS.transcode();
-      cerr << "hdds-geant error: volume " << nameStr
-           << " should be one of the valid shapes, not " << shapeStr << endl;
+      cerr << "hdds-geant error: volume " << S(nameS)
+           << " should be one of the valid shapes, not " << S(shapeS) << endl;
       exit(1);
    }
 
-   if (strlen(nameStr) > 4)
+   if (nameS.stringLen() > 4)
    {
-      cerr << "hdds-geant error: volume name " << nameStr
+      cerr << "hdds-geant error: volume name " << S(nameS)
            << " should be no more than 4 characters long." << endl;
       exit(1);
    }
 
-   char* shapeStr = shapeS.transcode();
    cout << endl
-        << "      chname = \'" << nameStr << "\'" << endl
-        << "      chshap = \'" << shapeStr << "\'" << endl
+        << "      chname = \'" << S(nameS) << "\'" << endl
+        << "      chshap = \'" << S(shapeS) << "\'" << endl
         << "      nmed = " << itmed << endl
         << "      npar = " << npar << endl;
    for (int ipar = 0; ipar < npar; ipar++)
@@ -1109,15 +1263,16 @@ int Refsys::createSolid(DOM_Element& el)
    }
    cout << "      call gsvolu(chname,chshap,nmed,par,npar,ivolu)" << endl;
 
-   delete [] shapeStr;
-   delete [] nameStr;
-   delete [] matStr;
 
    char ivoluStr[10];
    int ivolu = ++Refsys::fVolumes;
    sprintf(ivoluStr, "%d", ivolu);
-   el.setAttribute("Geant3ivolu", ivoluStr);  
-   el.setAttribute("Geant3icopy", "0");  
+   XString ivoluAttS("Geant3ivolu");
+   XString icopyAttS("Geant3icopy");
+   XString ivoluS(ivoluStr);
+   XString icopyS("0");
+   el->setAttribute(X(ivoluAttS),X(ivoluS));  
+   el->setAttribute(X(icopyAttS),X(icopyS));  
 
 /* consistency check #1: require Geant's volume index to match mine
  * 
@@ -1175,11 +1330,13 @@ int Refsys::createDivision(char* divStr,
    divStr[3] = toupper(divStr[3]);
 
    assert (fMother != 0);
-   char* motherStr = fMother.getAttribute("name").transcode();
+
+   XString nameAttS("name");
+   XString motherS(fMother->getAttribute(X(nameAttS)));
 
    cout << endl
         << "      chname = \'" << divStr << "\'" << endl
-        << "      chmoth = \'" << motherStr << "\'" << endl
+        << "      chmoth = \'" << S(motherS) << "\'" << endl
         << "      ndiv = " << ncopy << endl
         << "      iaxis = " << iaxis << endl
         << "      step = " << step << endl
@@ -1188,26 +1345,32 @@ int Refsys::createDivision(char* divStr,
         << "      ndvmax = 0" << endl
         << "      call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)"
         << endl;
-   delete [] motherStr;
 
    char attStr[30];
-   DOM_Document document = fMother.getOwnerDocument();
-   DOM_Element divEl = document.createElement("Geant3division");
-   divEl.setAttribute("name", divStr);
-   divEl.setAttribute("volume", motherStr);
+   DOMDocument* document = fMother->getOwnerDocument();
+   XString divTagS("Geant3division");
+   DOMElement* divEl = document->createElement(X(divTagS));
+   XString divS(divStr);
+   XString voluAttS("volume");
+   divEl->setAttribute(X(nameAttS),X(divS));
+   divEl->setAttribute(X(voluAttS),X(motherS));
+   XString ivoluAttS("Geant3ivolu");
    sprintf(attStr, "%d", ++Refsys::fVolumes);
-   divEl.setAttribute("Geant3ivolu", attStr);  
+   XString ivoluS(attStr);
+   divEl->setAttribute(X(ivoluAttS),X(ivoluS));  
+   XString icopyAttS("Geant3icopy");
    sprintf(attStr, "%d", ncopy);
-   divEl.setAttribute("Geant3icopy", attStr);  
-   fMother.appendChild(divEl);
+   XString icopyS(attStr);
+   divEl->setAttribute(X(icopyAttS),X(icopyS));  
+   fMother->appendChild(divEl);
    fMother = divEl;
 
    for (int id = 0; id < fIdentifiers; id++)
    {
-      DOMString fieldS = fIdentifier[id].fieldS;
+      XString fieldS(fIdentifier[id].fieldS);
       int value = fIdentifier[id].value;
       int step = fIdentifier[id].step;
-      DOMString idlistS;
+      XString idlistS;
       for (int ic = 0; ic < ncopy; ic++)
       {
          char str[30];
@@ -1215,48 +1378,49 @@ int Refsys::createDivision(char* divStr,
          idlistS += str;
          value += step;
       }
-      divEl.setAttribute(fieldS, idlistS);
+      divEl->setAttribute(X(fieldS),X(idlistS));
    }
    fIdentifiers = 0;
    return ncopy;
 }
 
-int Refsys::createVolume(DOM_Element& el)
+int Refsys::createVolume(DOMElement* el)
 {
    int icopy = 0;
 
    Refsys myRef(*this);
-   DOMString tagS = el.getTagName();
-   DOMString nameS = el.getAttribute("name");
-   char* nameStr = nameS.transcode();
+   XString tagS(el->getTagName());
+   XString nameAttS("name");
+   XString nameS(el->getAttribute(X(nameAttS)));
    if (nameS.equals("fieldVolume"))
    {
       myRef.fMagField = 2;
    }
-   else if (strstr(nameStr,"Magnet"))
+   else if (strstr(S(nameS),"Magnet"))
    {
       myRef.fMagField = 3;
    }
 
-   DOM_Element env;
-   DOM_Document document = el.getOwnerDocument();
-   DOMString envS = el.getAttribute("envelope");
+   DOMElement* env;
+   DOMDocument* document = el->getOwnerDocument();
+   XString envAttS("envelope");
+   XString envS(el->getAttribute(X(envAttS)));
    if (envS != 0)
    {
-      env = document.getElementById(envS);
-      DOMString containS = env.getAttribute("contains");
+      env = document->getElementById(X(envS));
+      XString contAttS("contains");
+      XString containS(env->getAttribute(X(contAttS)));
       if (containS.equals(nameS))
       {
          return myRef.createVolume(env);
       }
       else if (containS != 0)
       {
-         char* envStr = envS.transcode();
-         cerr << "hdds-geant error: re-use of shape " << envStr
+         cerr << "hdds-geant error: re-use of shape " << S(envS)
               << " is not allowed by Geant3." << endl;
          exit(1);
       }
-      env.setAttribute("contains",nameS);
+      env->setAttribute(X(contAttS),X(nameS));
       icopy = myRef.createVolume(env);
       myRef.fIdentifiers = 0;
       myRef.fMother = env;
@@ -1267,43 +1431,43 @@ int Refsys::createVolume(DOM_Element& el)
        tagS.equals("subtraction") ||
        tagS.equals("union"))
    {
-      char* tagStr = tagS.transcode();
-      cerr << "hdds-geant error: boolean " << tagStr
+      cerr << "hdds-geant error: boolean " << S(tagS)
            << " operator is not supported by Geant3." << endl;
       exit(1);
    }
    else if (tagS.equals("composition"))
    {
-      DOM_Node cont;
+      DOMNode* cont;
       int nSiblings = 0;
-      for (cont = el.getFirstChild(); 
+      for (cont = el->getFirstChild(); 
            cont != 0;
-           cont = cont.getNextSibling())
+           cont = cont->getNextSibling())
       {
-         if (cont.getNodeType() == ELEMENT_NODE)
+         if (cont->getNodeType() == DOMNode::ELEMENT_NODE)
          {
             ++nSiblings;
          }
       }
 
-      for (cont = el.getFirstChild(); 
+      for (cont = el->getFirstChild(); 
            cont != 0;
-           cont = cont.getNextSibling())
+           cont = cont->getNextSibling())
       {
-         if (cont.getNodeType() != ELEMENT_NODE)
+         if (cont->getNodeType() != DOMNode::ELEMENT_NODE)
          {
             continue;
          }
-         DOM_Element contEl = (DOM_Element&) cont;
-         DOMString comdS = contEl.getTagName();
-         DOMString targS = contEl.getAttribute("volume");
-         DOM_Element targEl = document.getElementById(targS);
+         DOMElement* contEl = (DOMElement*) cont;
+         XString comdS(contEl->getTagName());
+         XString voluAttS("volume");
+         XString targS(contEl->getAttribute(X(voluAttS)));
+         DOMElement* targEl = document->getElementById(X(targS));
 
          Refsys drs(myRef);
          double origin[3], angle[3];
-         char* rotStr = contEl.getAttribute("rot").transcode();
-         sscanf(rotStr, "%lf %lf %lf", &angle[0], &angle[1], &angle[2]);
-         delete [] rotStr;
+         XString rotAttS("rot");
+         XString rotS(contEl->getAttribute(X(rotAttS)));
+         sscanf(S(rotS), "%lf %lf %lf", &angle[0], &angle[1], &angle[2]);
          double tocm, todeg;
          getConversions(contEl, tocm, todeg);
          double torad = todeg * M_PI/180;
@@ -1314,49 +1478,49 @@ int Refsys::createVolume(DOM_Element& el)
                            (angle[1] == 0) &&
                            (angle[2] == 0) ;
 
-         DOM_Node ident;
-         for (ident = cont.getFirstChild(); 
+         DOMNode* ident;
+         for (ident = cont->getFirstChild(); 
               ident != 0;
-              ident = ident.getNextSibling())
+              ident = ident->getNextSibling())
          {
-            if (ident.getNodeType() != ELEMENT_NODE)
+            if (ident->getNodeType() != DOMNode::ELEMENT_NODE)
             {
                continue;
             }
             int id = drs.fIdentifiers++;
-            DOM_Element identEl = (DOM_Element&) ident;
-            drs.fIdentifier[id].fieldS = identEl.getAttribute("field");
-            char* fieldStr = identEl.getAttribute("field").transcode();
-            char* valueStr = identEl.getAttribute("value").transcode();
-            char* stepStr = identEl.getAttribute("step").transcode();
-            drs.fIdentifier[id].value = atoi(valueStr);
-            drs.fIdentifier[id].step = atoi(stepStr);
+            DOMElement* identEl = (DOMElement*) ident;
+            XString fieldAttS("field");
+            XString valueAttS("value");
+            XString stepAttS("step");
+            XString fieldS(identEl->getAttribute(X(fieldAttS)));
+            XString valueS(identEl->getAttribute(X(valueAttS)));
+            XString stepS(identEl->getAttribute(X(stepAttS)));
+            drs.fIdentifier[id].fieldS = fieldS;
+            drs.fIdentifier[id].value = atoi(S(valueS));
+            drs.fIdentifier[id].step = atoi(S(stepS));
             if (fIdentifierList == 0)
             {
                fIdentifierList = new char[32];
                fIdentifierList[0] = 0;
-               strncpy(fIdentifierList, fieldStr, 30);
+               strncpy(fIdentifierList, S(fieldS), 30);
             }
-            else if (strstr(fIdentifierList, fieldStr) == 0)
+            else if (strstr(fIdentifierList, S(fieldS)) == 0)
             {
                int len = strlen(fIdentifierList);
                char* newList = new char[len + 32];
                strcpy(newList, fIdentifierList);
                strcat(newList, " ");
-               strncat(newList, fieldStr, 30);
+               strncat(newList, S(fieldS), 30);
                delete [] fIdentifierList;
                fIdentifierList = newList;
             }
-            delete [] fieldStr;
-            delete [] valueStr;
-            delete [] stepStr;
          }
 
          if (comdS.equals("posXYZ"))
          {
-            char* xyzStr = contEl.getAttribute("X_Y_Z").transcode();
-            sscanf(xyzStr, "%lf %lf %lf", &origin[0], &origin[1], &origin[2]);
-            delete [] xyzStr;
+            XString xyzAttS("X_Y_Z");
+            XString xyzS(contEl->getAttribute(X(xyzAttS)));
+            sscanf(S(xyzS), "%lf %lf %lf", &origin[0], &origin[1], &origin[2]);
             origin[0] *= tocm;
             origin[1] *= tocm;
             origin[2] *= tocm;
@@ -1367,13 +1531,13 @@ int Refsys::createVolume(DOM_Element& el)
          else if (comdS.equals("posRPhiZ"))
          {
             double r, phi, z;
-            char* rphizStr = contEl.getAttribute("R_Phi_Z").transcode();
-            sscanf(rphizStr, "%lf %lf %lf", &r, &phi, &z);
-            delete [] rphizStr;
+            XString rphizAttS("R_Phi_Z");
+            XString rphizS(contEl->getAttribute(X(rphizAttS)));
+            sscanf(S(rphizS), "%lf %lf %lf", &r, &phi, &z);
             double s;
-            char* sStr = contEl.getAttribute("S").transcode();
-            s = atof(sStr);
-            delete [] sStr;
+            XString sAttS("S");
+            XString sS(contEl->getAttribute(X(sAttS)));
+            s = atof(S(sS));
             phi *= torad;
             r *= tocm;
             z *= tocm;
@@ -1381,7 +1545,8 @@ int Refsys::createVolume(DOM_Element& el)
             origin[0] = r * cos(phi) - s * sin(phi);
             origin[1] = r * sin(phi) + s * cos(phi);
             origin[2] = z;
-            DOMString implrotS = contEl.getAttribute("impliedRot");
+            XString irotAttS("impliedRot");
+            XString implrotS(contEl->getAttribute(X(irotAttS)));
             if (implrotS.equals("true") && (phi != 0))
             {
                angle[2] += phi;
@@ -1392,26 +1557,25 @@ int Refsys::createVolume(DOM_Element& el)
          }
          else if (comdS.equals("mposPhi"))
          {
-            char* ncopyStr = contEl.getAttribute("ncopy").transcode();
-            int ncopy = atoi(ncopyStr);
-            delete ncopyStr;
+            XString ncopyAttS("ncopy");
+            XString ncopyS(contEl->getAttribute(X(ncopyAttS)));
+            int ncopy = atoi(S(ncopyS));
             if (ncopy <= 0)
             {
-               cerr << "hdds-geant error: volume " << nameStr
+               cerr << "hdds-geant error: volume " << S(nameS)
                     << " is positioned with " << ncopy << " copies!" << endl;
                exit(1);
             }
 
             double phi0, dphi;
-            char* phiStr = contEl.getAttribute("Phi0").transcode();
-            phi0 = atof(phiStr) * torad;
-            delete [] phiStr;
-            DOMString phiS = contEl.getAttribute("dPhi");
-            if (phiS != 0)
+            XString phi0AttS("Phi0");
+            XString phi0S(contEl->getAttribute(X(phi0AttS)));
+            phi0 = atof(S(phi0S)) * torad;
+            XString dphiAttS("dPhi");
+            XString dphiS(contEl->getAttribute(X(dphiAttS)));
+            if (dphiS != 0)
             {
-               char* phiStr = phiS.transcode();
-               dphi = atof(phiStr) * torad;
-               delete [] phiStr;
+               dphi = atof(S(dphiS)) * torad;
             }
             else
             {
@@ -1419,62 +1583,69 @@ int Refsys::createVolume(DOM_Element& el)
             }
 
             double r, s, z;
-            char* rzStr = contEl.getAttribute("R_Z").transcode();
-            sscanf(rzStr, "%lf %lf", &r, &z);
-            delete [] rzStr;
-            char* sStr = contEl.getAttribute("S").transcode();
-            s = atof(sStr);
-            delete [] sStr;
+            XString rzAttS("R_Z");
+            XString rzS(contEl->getAttribute(X(rzAttS)));
+            sscanf(S(rzS), "%lf %lf", &r, &z);
+            XString sAttS("S");
+            XString sS(contEl->getAttribute(X(sAttS)));
+            s = atof(S(sS));
             r *= tocm;
             z *= tocm;
             s *= tocm;
 
-            DOMString containerS;
+            XString containerS;
             if (env != 0)
             {
-               containerS = env.getTagName();
+               containerS = env->getTagName();
             }
             else
             {
-               containerS = el.getAttribute("divides");
+               XString divAttS("divides");
+               containerS = el->getAttribute(X(divAttS));
             }
-            DOMString implrotS = contEl.getAttribute("impliedRot");
+            XString irotAttS("impliedRot");
+            XString implrotS(contEl->getAttribute(X(irotAttS)));
             if (noRotation && (nSiblings == 1) &&
                 (containerS.equals("pcon") ||
                  containerS.equals("cons") ||
                  containerS.equals("tubs")) &&
-                implrotS.equals("true"))
+                 implrotS.equals("true"))
             {
                static int phiDivisions = 0xd00;
                char* divStr = new char[5];
                sprintf(divStr, "s%3.3x", ++phiDivisions);
                phi0 *= 180/M_PI;
                dphi *= 180/M_PI;
-               DOM_Element targEnv(targEl);
-               DOMString targEnvS = targEl.getAttribute("envelope");
+               XString envAttS("envelope");
+               XString targEnvS(targEl->getAttribute(X(envAttS)));
+               DOMElement* targEnv;
                if (targEnvS != 0)
                {
-                  targEnv = document.getElementById(targEnvS);
+                  targEnv = document->getElementById(X(targEnvS));
                }
-               DOMString profS = targEnv.getAttribute("profile");
+               else
+               {
+                  targEnv = targEl;
+               }
+               XString profAttS("profile");
+               XString profS(targEnv->getAttribute(X(profAttS)));
                if ((r == 0) && (profS != 0))
                {
                   double phi1, dphi1;
-                  char* profStr = profS.transcode();
-                  sscanf(profStr, "%lf %lf", &phi1, &dphi1);
-                  delete [] profStr;
+                  sscanf(S(profS), "%lf %lf", &phi1, &dphi1);
                   getConversions(targEnv, tocm, todeg);
                   double phiShift = phi1 + dphi1/2;
                   phi0 += phiShift * todeg;
                   phi1 -= phiShift;
-                  profStr = new char[80];
-                  sprintf(profStr, "%lf %lf", phi1, dphi1);
-                  targEnv.setAttribute("profile",profStr);
-                  delete [] profStr;
+                  char pStr[80];
+                  sprintf(pStr, "%lf %lf", phi1, dphi1);
+                  XString pS(pStr);
+                  targEnv->setAttribute(X(profAttS),X(pS));
                }
                int iaxis = 2;
                drs.createDivision(divStr, ncopy, iaxis, phi0 - dphi/2, dphi);
-               targEl.setAttribute("divides", containerS);
+               XString divAttS("divides");
+               targEl->setAttribute(X(divAttS),X(containerS));
                origin[0] = r;
                origin[1] = s;
                origin[2] = z;
@@ -1504,43 +1675,44 @@ int Refsys::createVolume(DOM_Element& el)
          }
          else if (comdS.equals("mposR"))
          {
-            char* ncopyStr = contEl.getAttribute("ncopy").transcode();
-            int ncopy = atoi(ncopyStr);
-            delete ncopyStr;
+            XString ncopyAttS("ncopy");
+            XString ncopyS(contEl->getAttribute(X(ncopyAttS)));
+            int ncopy = atoi(S(ncopyS));
             if (ncopy <= 0)
             {
-               cerr << "hdds-geant error: volume " << nameStr
+               cerr << "hdds-geant error: volume " << S(nameS)
                     << " is positioned with " << ncopy << " copies!" << endl;
                exit(1);
             }
 
             double r0, dr;
-            char* rStr = contEl.getAttribute("R0").transcode();
-            r0 = atof(rStr) * tocm;
-            delete [] rStr;
-            rStr = contEl.getAttribute("dR").transcode();
-            dr = atof(rStr) * tocm;
-            delete [] rStr;
+            XString r0AttS("R0");
+            XString r0S(contEl->getAttribute(X(r0AttS)));
+            r0 = atof(S(r0S)) * tocm;
+            XString drAttS("dR");
+            XString drS(contEl->getAttribute(X(drAttS)));
+            dr = atof(S(drS)) * tocm;
 
             double phi, z, s;
-            char* zphiStr = contEl.getAttribute("Z_Phi").transcode();
-            sscanf(zphiStr, "%lf %lf", &z, &phi);
-            delete [] zphiStr;
-            char* sStr = contEl.getAttribute("S").transcode();
-            s = atof(sStr);
-            delete [] sStr;
+            XString zphiAttS("Z_Phi");
+            XString zphiS(contEl->getAttribute(X(zphiAttS)));
+            sscanf(S(zphiS), "%lf %lf", &z, &phi);
+            XString sAttS("S");
+            XString sS(contEl->getAttribute(X(sAttS)));
+            s = atof(S(sS));
             phi *= torad;
             z *= tocm;
             s *= tocm;
 
-            DOMString containerS;
+            XString containerS;
             if (env != 0)
             {
-               containerS = env.getTagName();
+               containerS = env->getTagName();
             }
             else
             {
-               containerS = el.getAttribute("divides");
+               XString divAttS("divides");
+               containerS = el->getAttribute(X(divAttS));
             }
             if (noRotation && (nSiblings == 1) &&
                 (containerS.equals("pcon") ||
@@ -1552,7 +1724,8 @@ int Refsys::createVolume(DOM_Element& el)
                sprintf(divStr, "r%3.3x", ++rDivisions);
                int iaxis = 1;
                drs.createDivision(divStr, ncopy, iaxis, r0 - dr/2, dr);
-               targEl.setAttribute("divides", containerS);
+               XString divAttS("divides");
+               targEl->setAttribute(X(divAttS),X(containerS));
                origin[0] = r0 * cos(phi) - s * sin(phi);
                origin[1] = r0 * sin(phi) + s * cos(phi);
                origin[2] = z;
@@ -1578,43 +1751,44 @@ int Refsys::createVolume(DOM_Element& el)
          }
          else if (comdS.equals("mposX"))
          {
-            char* ncopyStr = contEl.getAttribute("ncopy").transcode();
-            int ncopy = atoi(ncopyStr);
-            delete ncopyStr;
+            XString ncopyAttS("ncopy");
+            XString ncopyS(contEl->getAttribute(X(ncopyAttS)));
+            int ncopy = atoi(S(ncopyS));
             if (ncopy <= 0)
             {
-               cerr << "hdds-geant error: volume " << nameStr
+               cerr << "hdds-geant error: volume " << S(nameS)
                     << " is positioned with " << ncopy << " copies!" << endl;
                exit(1);
             }
 
             double x0, dx;
-            char* xStr = contEl.getAttribute("X0").transcode();
-            x0 = atof(xStr) * tocm;
-            delete [] xStr;
-            xStr = contEl.getAttribute("dX").transcode();
-            dx = atof(xStr) * tocm;
-            delete [] xStr;
+            XString x0AttS("X0");
+            XString x0S(contEl->getAttribute(X(x0AttS)));
+            x0 = atof(S(x0S)) * tocm;
+            XString dxAttS("dX");
+            XString dxS(contEl->getAttribute(X(dxAttS)));
+            dx = atof(S(dxS)) * tocm;
 
             double y, z, s;
-            char* yzStr = contEl.getAttribute("Y_Z").transcode();
-            sscanf(yzStr, "%lf %lf", &y, &z);
-            delete [] yzStr;
-            char* sStr = contEl.getAttribute("S").transcode();
-            s = atof(sStr);
-            delete [] sStr;
+            XString yzAttS("Y_Z");
+            XString yzS(contEl->getAttribute(X(yzAttS)));
+            sscanf(S(yzS), "%lf %lf", &y, &z);
+            XString sAttS("S");
+            XString sS(contEl->getAttribute(X(sAttS)));
+            s = atof(S(sS));
             y *= tocm;
             z *= tocm;
             s *= tocm;
 
-            DOMString containerS;
+            XString containerS;
             if (env != 0)
             {
-               containerS = env.getTagName();
+               containerS = env->getTagName();
             }
             else
             {
-               containerS = el.getAttribute("divides");
+               XString divAttS("divides");
+               containerS = el->getAttribute(X(divAttS));
             }
             if (noRotation && (nSiblings == 1) && 
                 containerS.equals("box"))
@@ -1624,7 +1798,8 @@ int Refsys::createVolume(DOM_Element& el)
                sprintf(divStr, "x%3.3x", ++xDivisions);
                int iaxis = 1;
                drs.createDivision(divStr, ncopy, iaxis, x0 - dx/2, dx);
-               targEl.setAttribute("divides", containerS);
+               XString divAttS("divides");
+               targEl->setAttribute(X(divAttS),X(containerS));
                origin[0] = 0;
                origin[1] = y + s;
                origin[2] = z;
@@ -1650,43 +1825,44 @@ int Refsys::createVolume(DOM_Element& el)
          }
          else if (comdS.equals("mposY"))
          {
-            char* ncopyStr = contEl.getAttribute("ncopy").transcode();
-            int ncopy = atoi(ncopyStr);
-            delete ncopyStr;
+            XString ncopyAttS("ncopy");
+            XString ncopyS(contEl->getAttribute(X(ncopyAttS)));
+            int ncopy = atoi(S(ncopyS));
             if (ncopy <= 0)
             {
-               cerr << "hdds-geant error: volume " << nameStr
+               cerr << "hdds-geant error: volume " << S(nameS)
                     << " is positioned with " << ncopy << " copies!" << endl;
                exit(1);
             }
 
             double y0, dy;
-            char* yStr = contEl.getAttribute("Y0").transcode();
-            y0 = atof(yStr) * tocm;
-            delete [] yStr;
-            yStr = contEl.getAttribute("dY").transcode();
-            dy = atof(yStr) * tocm;
-            delete [] yStr;
+            XString y0AttS("Y0");
+            XString y0S(contEl->getAttribute(X(y0AttS)));
+            y0 = atof(S(y0S)) * tocm;
+            XString dyAttS("dY");
+            XString dyS(contEl->getAttribute(X(dyAttS)));
+            dy = atof(S(dyS)) * tocm;
 
             double x, z, s;
-            char* xzStr = contEl.getAttribute("Z_X").transcode();
-            sscanf(xzStr, "%lf %lf", &x, &z);
-            delete [] xzStr;
-            char* sStr = contEl.getAttribute("S").transcode();
-            s = atof(sStr);
-            delete [] sStr;
+            XString zxAttS("Z_X");
+            XString zxS(contEl->getAttribute(X(zxAttS)));
+            sscanf(S(zxS), "%lf %lf", &z, &x);
+            XString sAttS("S");
+            XString sS(contEl->getAttribute(X(sAttS)));
+            s = atof(S(sS));
             x *= tocm;
             z *= tocm;
             s *= tocm;
 
-            DOMString containerS;
+            XString containerS;
             if (env != 0)
             {
-               containerS = env.getTagName();
+               containerS = env->getTagName();
             }
             else
             {
-               containerS = el.getAttribute("divides");
+               XString divAttS("divides");
+               containerS = el->getAttribute(X(divAttS));
             }
             if (noRotation && (nSiblings == 1) && 
                 containerS.equals("box"))
@@ -1696,7 +1872,8 @@ int Refsys::createVolume(DOM_Element& el)
                sprintf(divStr, "y%3.3x", ++yDivisions);
                int iaxis = 2;
                drs.createDivision(divStr, ncopy, iaxis, y0 - dy/2, dy);
-               targEl.setAttribute("divides", containerS);
+               XString divAttS("divides");
+               targEl->setAttribute(X(divAttS),X(containerS));
                origin[0] = x + s;
                origin[1] = 0;
                origin[2] = z;
@@ -1723,55 +1900,56 @@ int Refsys::createVolume(DOM_Element& el)
          }
          else if (comdS.equals("mposZ"))
          {
-            char* ncopyStr = contEl.getAttribute("ncopy").transcode();
-            int ncopy = atoi(ncopyStr);
-            delete ncopyStr;
+            XString ncopyAttS("ncopy");
+            XString ncopyS(contEl->getAttribute(X(ncopyAttS)));
+            int ncopy = atoi(S(ncopyS));
             if (ncopy <= 0)
             {
-               cerr << "hdds-geant error: volume " << nameStr
+               cerr << "hdds-geant error: volume " << S(nameS)
                     << " is positioned with " << ncopy << " copies!" << endl;
                exit(1);
             }
 
             double z0, dz;
-            char* zStr = contEl.getAttribute("Z0").transcode();
-            z0 = atof(zStr) * tocm;
-            delete [] zStr;
-            zStr = contEl.getAttribute("dZ").transcode();
-            dz = atof(zStr) * tocm;
-            delete [] zStr;
+            XString z0AttS("Z0");
+            XString z0S(contEl->getAttribute(X(z0AttS)));
+            z0 = atof(S(z0S)) * tocm;
+            XString dzAttS("dZ");
+            XString dzS(contEl->getAttribute(X(dzAttS)));
+            dz = atof(S(dzS)) * tocm;
 
             double x, y, s;
-            char* xyStr = contEl.getAttribute("X_Y").transcode();
-            if (strlen(xyStr) > 0)
+            XString xyAttS("X_Y");
+            XString xyS(contEl->getAttribute(X(xyAttS)));
+            if (xyS.stringLen() > 0)
             {
-               sscanf(xyStr, "%lf %lf", &x, &y);
-               delete [] xyStr;
+               sscanf(S(xyS), "%lf %lf", &x, &y);
             }
             else
             {
                double r, phi;
-               char* rphiStr = contEl.getAttribute("R_Phi").transcode();
-               sscanf(rphiStr, "%lf %lf", &r, &phi);
+               XString rphiAttS("R_Phi");
+               XString rphiS(contEl->getAttribute(X(rphiAttS)));
+               sscanf(S(rphiS), "%lf %lf", &r, &phi);
                x = r * cos(phi * torad);
                y = r * sin(phi * torad);
-               delete [] rphiStr;
             }
-            char* sStr = contEl.getAttribute("S").transcode();
-            s = atof(sStr);
-            delete [] sStr;
+            XString sAttS("S");
+            XString sS(contEl->getAttribute(X(sAttS)));
+            s = atof(S(sS));
             x *= tocm;
             y *= tocm;
             s *= tocm;
 
-            DOMString containerS;
+            XString containerS;
             if (env != 0)
             {
-               containerS = env.getTagName();
+               containerS = env->getTagName();
             }
             else
             {
-               containerS = el.getAttribute("divides");
+               XString divAttS("divides");
+               containerS = el->getAttribute(X(divAttS));
             }
             if (noRotation && (nSiblings == 1) &&
                 (containerS != 0))
@@ -1781,7 +1959,8 @@ int Refsys::createVolume(DOM_Element& el)
                sprintf(divStr, "z%3.3x", ++zDivisions);
                int iaxis = 3;
                drs.createDivision(divStr, ncopy, iaxis, z0 - dz/2, dz);
-               targEl.setAttribute("divides", containerS);
+               XString divAttS("divides");
+               targEl->setAttribute(X(divAttS),X(containerS));
                double phi = atan2(y,x);
                origin[0] = x - s * sin(phi);
                origin[1] = y + s * cos(phi);
@@ -1809,9 +1988,8 @@ int Refsys::createVolume(DOM_Element& el)
          }
          else
          {
-            char* comdStr = comdS.transcode();
-            cerr << "hdds-geant error: composition of volume " << nameStr
-                 << " contains unknown tag " << comdStr << endl;
+            cerr << "hdds-geant error: composition of volume " << S(nameS)
+                 << " contains unknown tag " << S(comdS) << endl;
             exit(1);
          }
       }
@@ -1826,12 +2004,11 @@ int Refsys::createVolume(DOM_Element& el)
    }
    else
    {
-      DOMString icopyS = el.getAttribute("Geant3icopy");
+      XString icopyAttS("Geant3icopy");
+      XString icopyS(el->getAttribute(X(icopyAttS)));
       if (icopyS != 0)
       {
-         char* icopyStr = icopyS.transcode();
-         icopy = atoi(icopyStr);
-         delete [] icopyStr;
+         icopy = atoi(S(icopyS));
       }
       else
       {
@@ -1841,12 +2018,13 @@ int Refsys::createVolume(DOM_Element& el)
 
       if (myRef.fMother != 0)
       {
-         char* motherStr = myRef.fMother.getAttribute("name").transcode();
+         XString nameAttS("name");
+         XString motherS(myRef.fMother->getAttribute(X(nameAttS)));
          int irot = myRef.createRotation();
          cout << endl
-              << "      chname = \'" << nameStr << "\'" << endl
+              << "      chname = \'" << S(nameS) << "\'" << endl
               << "      nr = " << ++icopy << endl
-              << "      chmoth = \'" << motherStr << "\'" << endl
+              << "      chmoth = \'" << S(motherS) << "\'" << endl
               << "      x = " << myRef.fOrigin[0] << endl
               << "      y = " << myRef.fOrigin[1] << endl
               << "      z = " << myRef.fOrigin[2] << endl
@@ -1854,45 +2032,147 @@ int Refsys::createVolume(DOM_Element& el)
               << "      chonly = \'ONLY\'" << endl
               << "      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)"
               << endl;
-         delete [] motherStr;
       }
 
       char icopyStr[30];
       sprintf(icopyStr, "%d", icopy);
-      el.setAttribute("Geant3icopy", icopyStr);
+      XString copyS(icopyStr);
+      XString copyAttS("Geant3icopy");
+      el->setAttribute(X(copyAttS),X(copyS));
       for (int id = 0; id < myRef.fIdentifiers; id++)
       {
-         DOMString fieldS = myRef.fIdentifier[id].fieldS;
-         DOMString idlistS = el.getAttribute(fieldS);
-         char* idlistStr = idlistS.transcode();
+         XString fieldS(myRef.fIdentifier[id].fieldS);
+         XString idlistS(el->getAttribute(X(fieldS)));
+         XString spaceS(" ");
+         XMLStringTokenizer picker(X(idlistS),X(spaceS));
          int count = icopy;
-         char* save_ptr;
-         for (char* idStr = strtok_r(idlistStr, " ", &save_ptr);
-              (idStr != 0) && (strlen(idStr) > 0);
-              idStr = strtok_r(NULL, " ", &save_ptr))
+         XString idS;
+         for (idS = picker.nextToken(); idS != 0; idS = picker.nextToken())
          {
             count--;
          }
-         delete [] idlistStr;
+         XString mylistS(idlistS);
          for ( ; count > 1; --count)
          {
-            idlistS += "0 ";
+            mylistS += "0 ";
          }
          char str[30];
          sprintf(str, "%d ", myRef.fIdentifier[id].value);
-         if (idlistS == 0)
-         {
-            idlistS = str;
-         }
-         else
-         {
-            idlistS += str;
-         }
-         el.setAttribute(fieldS, idlistS);
+         mylistS += str;
+         el->setAttribute(X(fieldS),X(mylistS));
          myRef.fIdentifier[id].value += myRef.fIdentifier[id].step;
       }
    }
-
-   delete [] nameStr;
    return icopy;
+}
+
+XString::XString(void)
+{
+   fUnicodeForm = XMLString::transcode("");
+   fLocalForm = XMLString::replicate("");
+}
+
+XString::XString(const XMLCh* const x)
+{
+   if (x) {
+      fUnicodeForm = XMLString::replicate(x);
+      fLocalForm = XMLString::transcode(x);
+   }
+   else {
+      fUnicodeForm = XMLString::transcode("");
+      fLocalForm = XMLString::replicate("");
+   }
+}
+
+XString::XString(const char* const s)
+{
+   if (s) {
+      fUnicodeForm = XMLString::transcode(s);
+      fLocalForm = XMLString::replicate(s);
+   }
+   else {
+      fUnicodeForm = XMLString::transcode("");
+      fLocalForm = XMLString::replicate("");
+   }
+}
+
+XString::XString(const XString& X)
+{
+   if (X.fUnicodeForm) {
+      fUnicodeForm = XMLString::replicate(X.fUnicodeForm);
+      fLocalForm = XMLString::transcode(X.fUnicodeForm);
+   }
+   else {
+      fUnicodeForm = XMLString::transcode("");
+      fLocalForm = XMLString::replicate("");
+   }
+}
+
+XString::~XString()
+{
+   XMLString::release(&fUnicodeForm);
+   XMLString::release(&fLocalForm);
+}
+
+const char* XString::localForm() const
+{
+   return fLocalForm;
+}
+
+const XMLCh* XString::unicodeForm() const
+{
+   return fUnicodeForm;
+}
+
+bool XString::equals(const XString& X) const
+{
+   return XMLString::equals(fUnicodeForm,X.fUnicodeForm);
+}
+
+bool XString::equals(const char* const s) const
+{
+   return XMLString::equals(fLocalForm,s);
+}
+
+bool XString::equals(const XMLCh* const x) const
+{
+   return XMLString::equals(fUnicodeForm,x);
+}
+
+int XString::stringLen() const
+{
+   return XMLString::stringLen(fUnicodeForm);
+}
+
+bool XString::operator==(const int len) const
+{
+   return (stringLen() == len);
+}
+
+bool XString::operator!=(const int len) const
+{
+   return (stringLen() != len);
+}
+
+XString& XString::operator=(const XString& X)
+{
+   XMLString::release(&fUnicodeForm);
+   XMLString::release(&fLocalForm);
+   fUnicodeForm = XMLString::replicate(X.fUnicodeForm);
+   fLocalForm = XMLString::transcode(X.fUnicodeForm);
+   return *this;
+}
+
+XString& XString::operator+=(const XString& X)
+{
+   int len = stringLen() + X.stringLen();
+   XMLCh* sum = new XMLCh[len+1];
+   XMLString::copyString(sum,fUnicodeForm);
+   XMLString::catString(sum,X.fUnicodeForm);
+   XMLString::release(&fUnicodeForm);
+   XMLString::release(&fLocalForm);
+   fUnicodeForm = XMLString::replicate(sum);
+   fLocalForm = XMLString::transcode(sum);
+   delete [] sum;
+   return *this;
 }

@@ -1,21 +1,23 @@
-<!--
-<?xml version="1.0"?>
-<!DOCTYPE HDDS SYSTEM "HDDS_1.0.dtd">
+<?xml version="1.0" encoding="UTF-8"?>
+<!--DOCTYPE HDDS SYSTEM "HDDS_1.0.dtd">
 
   Hall D Geometry Data Base: Start counter
   *****************************************
 
      version 1.0: Initial version	-rtj
  
-<HDDS>
-						-->
+<HDDS specification="v1.0"
+      xmlns="http://www.gluex.org/hdds"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.gluex.org/hdds HDDS-1_0.xsd">
+-->
 
 <section name        = "StartCntr"
          version     = "1.0"
-         date        = "Mon Apr 15, 2001"
+         date        = "2001-04-15"
          author      = "R.T. Jones"
          top_volume  = "VRTX"
-         DTD_version = "v1">
+         specification = "v1.0">
 
 
 <!-- Origin of StartCntr is center of the cylinder at the upstream limit

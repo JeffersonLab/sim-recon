@@ -1,21 +1,23 @@
-<!--
-<?xml version="1.0"?>
-<!DOCTYPE HDDS SYSTEM "HDDS_1.0.dtd">
+<?xml version="1.0" encoding="UTF-8"?>
+<!--DOCTYPE HDDS SYSTEM "HDDS_1.0.dtd">
 
   Hall D Geometry Data Base: Central DC
   *************************************
 
      version 1.0: Initial version	-rtj
  
-<HDDS>
-						-->
+<HDDS specification="v1.0"
+      xmlns="http://www.gluex.org/hdds"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.gluex.org/hdds HDDS-1_0.xsd">
+-->
 
 <section name        = "CentralDC"
          version     = "1.01"
-         date        = "Mon Dec 17, 2001"
+         date        = "2001-04-15"
          author      = "R.T. Jones"
          top_volume  = "CDC"
-         DTD_version = "v1">
+         specification = "v1.0">
 
 <!-- Origin of CentralDC is center of upstream end.  -->
 
@@ -341,7 +343,8 @@
     <int	name="nstrips"	value="1"	comment="strip count"	  />
     <int	name="n_phi_segm" value="1"	comment="phi segmentation" />
     <int	name="ID_anode"	value="1"	comment="on anode layer"  />
-    <int	name="cell_offset" value="0.0"	comment="starting cell"   />
+    <real	name="cell_offset" value="0.0"	comment="starting cell"
+				unit="cm"	/>
     <real	name="eff_hit"	value="0.96"	comment="hit efficientcy"
 				unit="cm"	/>
     <real	name="resa"	value="0.05"	comment="z resolution"

@@ -1,7 +1,9 @@
-#include <sax/ErrorHandler.hpp>
+#include <xercesc/util/XercesDefs.hpp>
+#include <xercesc/sax/ErrorHandler.hpp>
 #include <iostream.h>
 
-class SAXParseException;
+XERCES_CPP_NAMESPACE_USE
+
 
 /* a simple error handler deriviative to install on parser */
 
@@ -26,23 +28,53 @@ private :
    bool    fSawErrors;     // flag to record that an error occurred
 };
 
-
-/*  a simple class for translation between XMLCh data to local coding */
-
-class StrX
+class MyDOMErrorHandler : public DOMErrorHandler
 {
-public :
-   StrX(const XMLCh* const toTranscode);
-   ~StrX();
+public:
+   MyDOMErrorHandler();
+   ~MyDOMErrorHandler();
 
-   const char* localForm() const;
+   bool getSawErrors() const;
+   bool handleError(const DOMError& domError);
+   void resetErrors();
 
 private :
-    char* fLocalForm;		// string in local coding, eg. ASCII
+    MyDOMErrorHandler(const MyDOMErrorHandler&);
+    void operator=(const MyDOMErrorHandler&);
+    bool fSawErrors;
 };
 
+inline bool MyDOMErrorHandler::getSawErrors() const
+{
+       return fSawErrors;
+}
 
-#define ELEMENT_NODE 1
+/*  a simple class for translation between XMLCh strings and local coding */
+
+class XString
+{
+public :
+   XString(void);
+   XString(const XMLCh* const x);
+   XString(const char* const s);
+   XString(const XString& X);
+   ~XString();
+
+   const char* localForm() const;
+   const XMLCh* unicodeForm() const;
+   bool equals(const XString& X) const;
+   bool equals(const char* const s) const;
+   bool equals(const XMLCh* const x) const;
+   int stringLen() const;
+   bool operator==(const int len) const;
+   bool operator!=(const int len) const;
+   XString& operator=(const XString& X);
+   XString& operator+=(const XString& X);
+
+private :
+    XMLCh* fUnicodeForm;	// string in XMLCh coding, eg. Unicode
+    char* fLocalForm;		// string in local coding, eg. ASCII
+};
 
 
 inline bool MyOwnErrorHandler::getSawErrors() const
@@ -50,24 +82,11 @@ inline bool MyOwnErrorHandler::getSawErrors() const
    return fSawErrors;
 }
 
-inline StrX::StrX(const XMLCh* const toTranscode)
-{
-   fLocalForm = XMLString::transcode(toTranscode);
-}
-
-inline StrX::~StrX()
-{
-   delete [] fLocalForm;
-}
-
-inline const char* StrX::localForm() const
-{
-   return fLocalForm;
-}
-
-inline ostream& operator<<(ostream& target, const StrX& toDump)
+inline ostream& operator<<(ostream& target, const XString& toDump)
 {
    target << toDump.localForm();
    return target;
 }
 
+DOMDocument* parseInputDocument(const char* file);
+DOMDocument* buildDOMDocument(const char* file);

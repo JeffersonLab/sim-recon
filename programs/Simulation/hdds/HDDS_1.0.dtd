@@ -27,9 +27,9 @@
       o section     : definition of a section (main division of the detector)
 
   o The DTD provides a main version id. This corresponds to a constraint
-    (named DTD_version). All "materials", "sections" and the overall "HDDS"
-    element must individually specify in their attributes a matching DTD_version
-    value. (eg. DTD_version="v4")
+    (named specification). All "materials", "sections" and the overall "HDDS"
+    element must individually specify in their attributes a matching
+    specification value, eg. specification="v4.3".
 
   o General rule for angle definition for all XML statements:
 
@@ -787,11 +787,14 @@
 
 
 
-<!ENTITY % DTD_constraint 'DTD_version ( v1 ) #REQUIRED'>
+<!ENTITY % constraint 'specification ( v1.0 ) #REQUIRED'>
 
 <!ELEMENT  HDDS     ( materials | section )+>
 <!ATTLIST  HDDS
-           %DTD_constraint;>
+           xmlns		CDATA	#IMPLIED
+           xmlns:xsi		CDATA	#IMPLIED
+           xsi:schemaLocation	CDATA	#IMPLIED
+           %constraint;>
 
 
 <!ELEMENT  section  ( box | trd | tubs | cons | pcon | 
@@ -806,7 +809,7 @@
            date       CDATA  #REQUIRED
            author     CDATA  #REQUIRED
            top_volume IDREF  #REQUIRED
-           %DTD_constraint;>
+           %constraint;>
            
 <!ENTITY % units 'unit_length  ( cm  | mm  | m )    "cm"
                   unit_angle   ( deg | mrad ) "deg"'>
@@ -1115,7 +1118,7 @@ identifiers with corresponding field names.
            version      CDATA   #REQUIRED
            date         CDATA   #REQUIRED
            author       CDATA   #REQUIRED
-           %DTD_constraint;>
+           %constraint;>
 
 <!ELEMENT  element  ( %any_parameter; )*>
 <!ATTLIST  element 

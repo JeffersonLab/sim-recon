@@ -1,4 +1,4 @@
-#include <sax/ErrorHandler.hpp>
+#include <xercesc/sax/ErrorHandler.hpp>
 #include <iostream.h>
 
 class SAXParseException;
@@ -40,9 +40,6 @@ public :
 private :
     char* fLocalForm;		// string in local coding, eg. ASCII
 };
-
-
-#define ELEMENT_NODE 1
 
 
 /* class for holding a parameter list */

@@ -5,12 +5,23 @@
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
+&nbsp;<br>
+&nbsp;<br>
+<table align=center width=90%><tr><td>
+
+<p align=center>
+<font size=+1>
+<u>Hall D Internal Note</u>
+</font>
+</p>
+
+<h1 align=center>HDDS - Hall D Detector Specification </h1>
+
 <P ALIGN=CENTER>
-<FONT SIZE=+3>
-<B>HDDS</B> - Hall D Detector Specification <BR>
-</FONT><FONT SIZE=+1>
-Version 1.0 (draft) <BR>
+<FONT SIZE=+1>
+Version 1.1 (draft) <BR>
 April 16, 2001 <BR>
+updated, September 4, 2003<BR>
 Richard T. Jones <BR>
 </FONT>
 </P>
@@ -66,7 +77,7 @@ XML Detector Description Workshop</A>.
 A first draft of the geometry specification for Hall D is now in place.
 The document is spread across everal files, one for each subsystem.  All
 of the files have been checked for well-formedness and validated against
-the dtd.  The following are available for browsing, but are
+the schema.  The following are available for browsing, but are
 still very much under development.  The best way to look at these files
 is with a XML-enabled browser like IE5.  Netscape 6 can parse XML but for
 some reason it does not display the contents like IE does.
@@ -74,32 +85,33 @@ some reason it does not display the contents like IE does.
 <UL>
  <LI><A HREF="HDDS_1.0.dtd">HDDS_1.0.dtd</A>
    - xml document type definition (dtd) file</LI>
- <LI><A HREF="draft/main_HDDS.xml">main_HDDS.xml</A>
+ <LI><A HREF="HDDS-1_0.xsd">HDDS-1_0.xsd</A>
+   - xml hdds schema, supersedes HDDS_1.0.dtd</LI>
+ <LI><A HREF="main_HDDS.xml">main_HDDS.xml</A>
    - top-level detector spec file
- <LI><A HREF="draft/Material_HDDS.xml">Material_HDDS.xml</A>
+ <LI><A HREF="Material_HDDS.xml">Material_HDDS.xml</A>
    - materials spec file
- <LI><A HREF="draft/BeamLine_HDDS.xml">Beamline_HDDS.xml</A>
+ <LI><A HREF="BeamLine_HDDS.xml">Beamline_HDDS.xml</A>
    - beam line spec file
- <LI><A HREF="draft/Solenoid_HDDS.xml">Solenoid_HDDS.xml</A>
+ <LI><A HREF="Solenoid_HDDS.xml">Solenoid_HDDS.xml</A>
    - solenoid magnet spec file
- <LI><A HREF="draft/Target_HDDS.xml">Target_HDDS.xml</A>
+ <LI><A HREF="Target_HDDS.xml">Target_HDDS.xml</A>
    - target spec file
- <LI><A HREF="draft/StartCntr_HDDS.xml">StartCntr_HDDS.xml</A>
+ <LI><A HREF="StartCntr_HDDS.xml">StartCntr_HDDS.xml</A>
    - start counter spec file
- <LI><A HREF="draft/BarrelEMcal_HDDS.xml">BarrelEMcal_HDDS.xml</A>
+ <LI><A HREF="BarrelEMcal_HDDS.xml">BarrelEMcal_HDDS.xml</A>
    - barrel EM calorimeter spec file
- <LI><A HREF="draft/ForwardEMcal_HDDS.xml">ForwardEMcal_HDDS.xml</A>
+ <LI><A HREF="ForwardEMcal_HDDS.xml">ForwardEMcal_HDDS.xml</A>
    - forward calorimeter spec file
- <LI><A HREF="draft/CentralDC_HDDS.xml">CentralDC_HDDS.xml</A>
+ <LI><A HREF="CentralDC_HDDS.xml">CentralDC_HDDS.xml</A>
    - central drift chamber spec file
- <LI><A HREF="draft/ForwardDC_HDDS.xml">ForwardDC_HDDS.xml</A>
+ <LI><A HREF="ForwardDC_HDDS.xml">ForwardDC_HDDS.xml</A>
    - forward drift chambers spec file
- <LI><A HREF="draft/CerenkovCntr_HDDS.xml">CerenkovCntr_HDDS.xml</A>
+ <LI><A HREF="CerenkovCntr_HDDS.xml">CerenkovCntr_HDDS.xml</A>
    - Cerenkov counter spec file
- <LI><A HREF="draft/BarrelTOF_HDDS.xml">BarrelTOF_HDDS.xml</A>
-   - barrel time-of-flight spec file
- <LI><A HREF="draft/ForwardTOF_HDDS.xml">ForwardTOF_HDDS.xml</A>
+ <LI><A HREF="ForwardTOF_HDDS.xml">ForwardTOF_HDDS.xml</A>
    - forward time-of-flight spec file
+</UL>
 </UL>
 </P>
 
@@ -107,11 +119,12 @@ some reason it does not display the contents like IE does.
 <center>
 This material is based upon work supported by the National Science Foundation under Grant No. 0072416.
 </center>
-<hr>
+<!--hr>
 <i><font size=-1>
 This page is maintained by
 <a href="mailto:richard.t.jones@uconn.edu">richard.t.jones@uconn.edu"</a>
-</font></i>
+</font></i-->
 
+</td></tr></table>
 </BODY>
 </HTML>

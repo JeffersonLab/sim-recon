@@ -1,5 +1,3 @@
-DOM = $(BUILDS)/xerces-c
-
 CC = /usr/bin/g++ -g -D_REENTRANT
 
 XML_SOURCE = BarrelEMcal_HDDS.xml BeamLine_HDDS.xml CentralDC_HDDS.xml\
@@ -20,12 +18,12 @@ hddsGeant3.f: hdds-geant $(XML_SOURCE)
 	cp $@ $(BUILDS)/HDGeant
 
 hdds-geant: hdds-geant.cpp hdds-geant.hpp
-	$(CC) -I$(DOM)/include -o $@ hdds-geant.cpp \
-	-L$(DOM)/lib -lxerces-c1_5
+	$(CC) -I$(XERCESCROOT)/include -o $@ hdds-geant.cpp \
+	-L$(XERCESCROOT)/lib -lxerces-c
 
 hdds-mcfast: hdds-mcfast.cpp hdds-mcfast.hpp
-	$(CC) -I$(DOM)/include -o $@ hdds-mcfast.cpp \
-	-L$(DOM)/lib -lxerces-c1_5
+	$(CC) -I$(XERCESCROOT)/include -o $@ hdds-mcfast.cpp \
+	-L$(XERCESCROOT)/lib -lxerces-c
 
 clean:
 	/bin/rm -f *.o core *.depend
