@@ -44,7 +44,9 @@
          top_volume  = "HALL"
          DTD_version = "v1">
 
-  <box name="HALL" X_Y_Z="1000. 1000. 4000." material="Air"
+  <box name="SITE" X_Y_Z="5000. 5000. 5000." material="Air"
+       				comment="master volume for description" />
+  <box name="HALL" X_Y_Z="1700. 1500. 3000." material="Air"
        				comment="master volume for description" />
 
   <composition name="barrelPackage" envelope="LASS">
@@ -67,9 +69,13 @@
     <posXYZ volume="Target" X_Y_Z="0.0 0.0 50.0" />
   </composition>
 
-  <composition name="everything" envelope="HALL">
-    <posXYZ volume="BeamLine" X_Y_Z="0.0 0.0 -1500." />
-    <posXYZ volume="fieldVolume" />
+  <composition name="experimentalHall" envelope="HALL">
+    <posXYZ volume="fieldVolume" X_Y_Z="150.0 -350.0 -500.0" />
+  </composition>
+
+  <composition name="everything" envelope="SITE">
+    <posXYZ volume="BeamLine" X_Y_Z="0.0 0.0 -2100." />
+    <posXYZ volume="experimentalHall" X_Y_Z="-150. 350. 500." />
   </composition>
 
   <mcfast model="detector" template="db/detector.db">
