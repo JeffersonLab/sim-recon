@@ -21,6 +21,7 @@ using namespace std;
 #include "DFactory_MCCheatHits.h"
 #include "DQuickFit.h"
 #include "DMagneticFieldStepper.h"
+#include "DFactory_MCTrackCandidates.h"
 
 extern TCanvas *maincanvas;
 //extern DEventLoop *eventloop;
@@ -113,6 +114,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 
 	// Get MCCheatHits
 	DContainer *mccheathits = event_loop->Get("MCCheatHits");
+	event_loop->Get("MCTrackCandidates");
 	
 	// Loop over hits creating markers for all 3 views
 	// Also, add hits to DQuickFit objects along the way
@@ -177,32 +179,15 @@ derror_t MyProcessor::evnt(int eventnumber)
 		track = mccheathit->track;
 	}
 	
-	// Do a fit to the points and draw circles
-	float x_center, y_center, X, Y;
-	ConvertToFront(0, 0, 0, x_center, y_center);
+	// Do a fit to the points
 	DQuickFit **fit = (DQuickFit**)fits->first();
 	for(int i=0;i<fits->nrows;i++, fit++){
 		DQuickFit *qf = *fit;
-		while(qf->GetNhits()>1){
-			qf->FitCircle();
-			//qf->PrintChiSqVector();
-			break;
-			if(qf->chisq/(float)qf->GetNhits() <1.0)break;
-			//qf->PruneWorst(1);
-			qf->PruneOutlier();
-		}
-	
-		if(qf->GetNhits()>1){
+		if(qf->GetNhits()>=4){
 			qf->FitTrack();
-			DrawTrack(qf, colors[(i+1)%ncolors]);
-			DrawHelicalTrack(qf, kBlack);
-			qf->Print();
-			ConvertToFront(qf->x0, qf->y0, 0, X, Y);
-			float dX = X-x_center;
-			float dY = Y-y_center;
-			float r = sqrt(dX*dX + dY*dY);
-			circles[Ncircles++] = new TEllipse(X,Y,r,r);
-			if(Ncircles>=MAX_CIRCLES)break;
+			//DrawTrack(qf, colors[(i+1)%ncolors]);
+			//DrawHelicalTrack(qf, kBlack);
+			//qf->Print();
 		}
 	}
 
@@ -211,6 +196,14 @@ derror_t MyProcessor::evnt(int eventnumber)
 	for(int i=0;i<fits->nrows;i++, fit++)delete (*fit);
 	delete fits;
 	
+	// Draw all "found" tracks
+	DFactory_MCTrackCandidates *mctcfactory = (DFactory_MCTrackCandidates*)event_loop->GetFactory("MCTrackCandidates");
+	int Nqfit = mctcfactory->GetNqfit();
+	for(int i=0; i<Nqfit; i++){
+		DQuickFit *qf = mctcfactory->GetQFit(i);
+		DrawHelicalTrack(qf,kBlack);
+	}
+
 	// Draw all markers and update canvas
 	for(int i=0;i<NhitMarkers;i++)hitMarkers[i]->Draw();
 	for(int i=0;i<Ncircles;i++)circles[i]->Draw();
@@ -236,7 +229,8 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 
 	TPolyLine *line_top = new TPolyLine();
 	TPolyLine *line_side = new TPolyLine();
-	for(float Z=z; Z<620.0; Z+=10.0){
+	float Z=z;
+	for(int i=0; i<500; i++){
 		float delta_z = Z-qf->z_vertex;
 		float phi = phi0 + delta_z*dphidz;
 		x = qf->x0 + r*cos(phi);
@@ -249,6 +243,9 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 		line_side->SetNextPoint(X,Y);
 		ConvertToTop(x,y,Z,X,Y);
 		line_top->SetNextPoint(X,Y);
+		
+		Z+=10.0;
+		if(Z>620.0)break;
 	}
 	line_side->SetLineColor(color);
 	line_side->Draw();
@@ -256,6 +253,17 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 	line_top->Draw();
 	lines[Nlines++] = line_side;
 	lines[Nlines++] = line_top;
+	
+	// Draw circle on front view
+	if(Ncircles<MAX_CIRCLES){
+		float x_center, y_center, X, Y;
+		ConvertToFront(0, 0, 0, x_center, y_center);
+		ConvertToFront(qf->x0, qf->y0, 0, X, Y);
+		float dX = X-x_center;
+		float dY = Y-y_center;
+		float r = sqrt(dX*dX + dY*dY);
+		circles[Ncircles++] = new TEllipse(X,Y,r,r);
+	}
 
 	return NOERROR;
 }
@@ -330,7 +338,7 @@ derror_t MyProcessor::ConvertToTop(float x, float y, float z, float &X, float &Y
 derror_t MyProcessor::ConvertToSide(float x, float y, float z, float &X, float &Y)
 {
 	X = z/400.0 - 2.0;
-	Y = y/400.0 - 0.5;
+	Y = -y/400.0 - 0.5;
 
 	return NOERROR;
 }
@@ -341,7 +349,7 @@ derror_t MyProcessor::ConvertToSide(float x, float y, float z, float &X, float &
 derror_t MyProcessor::ConvertToFront(float x, float y, float z, float &X, float &Y)
 {
 	X = x/100.0 + 1.0;
-	Y = y/100.0 + 0.0;
+	Y = -y/100.0 + 0.0;
 
 	return NOERROR;
 }
