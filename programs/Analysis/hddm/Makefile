@@ -16,6 +16,10 @@ endif
 
 all:	xml-hddm hddm-xml hddm-c
 
+install: hddm-c xml-hddm hddm-xml hddm-c xml-xml hddm-schema schema-hddm hddmcat
+	cp hddm-schema schema-hddm xml-xml $(HALLD_HOME)/bin
+	cp hddm-c hddm-xml xml-hddm hddmcat $(HALLD_HOME)/bin/$(OStype)
+
 xml-hddm: xml-hddm.cpp XString.o XParsers.o
 	$(CPP) -I../include -I$(XERCESCROOT)/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c \

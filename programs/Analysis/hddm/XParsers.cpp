@@ -30,8 +30,21 @@
 #define _GNU_SOURCE true
 #endif
 
-#ifdef BASENAME_IN_LIBGEN // basename defined here in OSX. (Linux uses string.h) 
+#ifdef BASENAME_IN_LIBGEN // basename defined here in OSX. (Linux uses string.h)
 #include <libgen.h>
+#elif defined _Tru64
+#undef basename
+#define basename _RC_basename
+static char * basename(const char *f)
+{ const char *base;
+
+  for(base = f; *f; f++)
+  { if (*f == '/')
+      base = f+1;
+  }
+
+  return (char *)base;
+}
 #endif
 
 #include <xercesc/sax/SAXParseException.hpp>
@@ -50,21 +63,6 @@
 
 #define X(XString) XString.unicodeForm()
 #define S(XString) XString.localForm()
-
-#ifdef _Tru64
-#undef basename
-#define basename _RC_basename
-static char * basename(const char *f)
-{ const char *base;
-
-  for(base = f; *f; f++)
-  { if (*f == '/')
-      base = f+1;
-  }
-
-  return (char *)base;
-}
-#endif
 
 DOMDocument* parseInputDocument(const char* xmlFile, bool keep)
 {

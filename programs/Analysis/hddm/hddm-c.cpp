@@ -472,12 +472,14 @@ void constructUnpackers()
 								<< endl
             << "{"						<< endl
             << "   " << tagType << "* this1 = 0;"		<< endl
-            << "   int start;"					<< endl
             << "   unsigned int size;"				<< endl
-	    << "   if(!xdr_u_int(xdrs,&size))return NULL;"	<< endl
-	    << "   start = xdr_getpos(xdrs);"			<< endl
-            << "   if (size > 0)"				<< endl
-            << "   {"						<< endl;
+	    << "   if (! xdr_u_int(xdrs,&size))"		<< endl
+            << "   {"						<< endl
+	    << "       return 0;"				<< endl
+            << "   }"						<< endl
+            << "   else if (size > 0)"				<< endl
+            << "   {"						<< endl
+            << "      int start = xdr_getpos(xdrs);"		<< endl;
 
       if (rep > 1)
       {
@@ -600,8 +602,8 @@ void constructUnpackers()
                << "         }"						<< endl;
       }
       cFile << "      }"						<< endl
+            << "      xdr_setpos(xdrs,start+size);"			<< endl
             << "   }"							<< endl
-            << "   xdr_setpos(xdrs,start+size);"			<< endl
             << "   return this1;"					<< endl
             << "}"							<< endl;
    }
@@ -649,6 +651,7 @@ void constructReadFunc(DOMElement* topEl)
    hFile								<< endl
 	 << topType << "* read_" << topT
 	 << "(" << classPrefix << "_iostream_t* fp" << ");"		<< endl;
+
    cFile								<< endl
 	 << topType << "* read_" << topT
 	 << "(" << classPrefix << "_iostream_t* fp" << ")"		<< endl
@@ -869,6 +872,7 @@ void constructFlushFunc(DOMElement* el)
    hFile 							<< endl
 	 << "int flush_" << topT << "(" << topType << "* this1,"
 	 << classPrefix << "_iostream_t* fp" << ");"		<< endl;
+
    cFile 							<< endl
 	 << "int flush_" << topT << "(" << topType << "* this1,"
 	 << classPrefix << "_iostream_t* fp" << ")"		<< endl
@@ -1196,12 +1200,7 @@ void constructCloseFunc(DOMElement* el)
    *term = 0;
    hFile							<< endl
 	 << "void close_" << tagT << "("
-	 << classPrefix << "_iostream_t* fp);"			<< endl
-	 <<							   endl
-	 << "#ifdef __cplusplus"				<< endl
-	 << "}"							<< endl
-	 << "#endif"						<< endl	
-	 <<							   endl;
+	 << classPrefix << "_iostream_t* fp);"			<< endl;
 
    cFile							<< endl
          << "void popaway(popNode* p)"				<< endl
@@ -1466,16 +1465,17 @@ int main(int argC, char* argV[])
 								<< endl
 	 << "#define MALLOC(N,S) malloc(N)"			<< endl
 	 << "#define CALLOC(N,S) calloc(N,1)"			<< endl
-	 << "#define FREE(P) free(P)"				<< endl
-	 << 							   endl
-	 << "#ifdef __cplusplus"				<< endl
-	 << "extern \"C\" {"					<< endl
-	 << "#endif"						<< endl;
-
+	 << "#define FREE(P) free(P)"				<< endl;
 
    cFile << "#include \"" << hname << "\"" 			<< endl;
 
    constructGroup(rootEl);
+
+   hFile							<< endl
+	 << "#ifdef __cplusplus"				<< endl
+	 << "extern \"C\" {"					<< endl
+	 << "#endif"						<< endl;
+
    constructMakeFuncs();
 
    hFile 							<< endl
@@ -1502,6 +1502,11 @@ int main(int argC, char* argV[])
    constructOpenFunc(rootEl);
    constructInitFunc(rootEl);
    constructCloseFunc(rootEl);
+
+   hFile							<< endl
+	 << "#ifdef __cplusplus"				<< endl
+	 << "}"							<< endl
+	 << "#endif"						<< endl;
 
    XMLPlatformUtils::Terminate();
    return 0;
