@@ -18,7 +18,7 @@ FLIB=	-lfor -lFutil -lUfor
 
 CERNLIB=                -lpacklib -lmathlib -lkernlib 
 
-INCLUDE= -I. -I../include -Iinc -DFUNCPROTO
+INCLUDE= -I.  -Iinc  -I../include -DFUNCPROTO
 
 
 #VPATH:=$(LIBDIR):$(CERNLIBDIR):$(VPATH)
