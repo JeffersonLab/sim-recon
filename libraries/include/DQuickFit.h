@@ -51,6 +51,7 @@
 #include "DContainer.h"
 #include "fit_utils.h"
 
+class DMagneticFieldMap;
 
 class DQuickFit{
 	public:
@@ -74,6 +75,8 @@ class DQuickFit{
 		derror_t PrintChiSqVector(void);
 		derror_t CopyToFitParms(FitParms_t *fit);
 		derror_t Print(void);
+		inline void SetMagneticFieldMap(DMagneticFieldMap *map){bfield=map;};
+
 
 		enum ChiSqSourceType_t{
 			NOFIT,
@@ -92,6 +95,8 @@ class DQuickFit{
 	protected:
 		DContainer *hits;
 		DContainer *chisqv;
+		DMagneticFieldMap *bfield; ///< pointer to magnetic field map
+		float Bz_avg;
 };
 
 derror_t qfit_circle(TVector3 *points, int Npoints
