@@ -20,6 +20,7 @@ class DMagneticFieldStepper
 {
 	public:
 
+		DMagneticFieldStepper(DMagneticFieldMap *map);
 		DMagneticFieldStepper(DMagneticFieldMap *map, double q, TVector3 *x, TVector3 *p);
 		~DMagneticFieldStepper();
 	
@@ -27,8 +28,6 @@ class DMagneticFieldStepper
 		derror_t SetMagneticFieldMap(DMagneticFieldMap *map);
 		derror_t SetStepSize(double step);
 		derror_t Step(TVector3 *newpos);
-		TVector3 Closest(TVector3 *v);
-		double Dist(TVector3 *v);
 	
 	private:
 		DMagneticFieldMap *bfield; ///< pointer to magnetic field map
