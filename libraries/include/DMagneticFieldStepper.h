@@ -28,6 +28,7 @@ class DMagneticFieldStepper
 		derror_t SetMagneticFieldMap(DMagneticFieldMap *map);
 		derror_t SetStepSize(double step);
 		derror_t Step(TVector3 *newpos);
+		TVector3 GetBField(void);
 	
 	private:
 		DMagneticFieldMap *bfield; ///< pointer to magnetic field map
