@@ -32,7 +32,7 @@ hddsMCfast.db: hdds-mcfast $(XML_SOURCE)
 	rm db
 	cp $@ $(BUILDS)/HDFast/HDFast.db
 
-hddsGeant3.f: hdds-geant $(XML_SOURCE)
+hddsGeant3.F: hdds-geant $(XML_SOURCE)
 	./hdds-geant main_HDDS.xml >$@
 	cp $@ $(BUILDS)/HDGeant
 
