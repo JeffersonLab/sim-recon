@@ -15,8 +15,8 @@ using namespace std;
 DEventSourceFile::DEventSourceFile(int narg, char *argv[]):DEventSource(narg,argv)
 {
 	/// Constructor for DEventSourceFile object
-
 	fin = NULL;
+	hddm = NULL;
 	
 }
 
@@ -25,7 +25,8 @@ DEventSourceFile::DEventSourceFile(int narg, char *argv[]):DEventSource(narg,arg
 //----------------
 DEventSourceFile::~DEventSourceFile()
 {
-
+	if(hddm)flush_s_HDDM(hddm, fin);
+	if(fin)close_s_HDDM(fin);
 }
 
 //----------------
@@ -34,6 +35,10 @@ DEventSourceFile::~DEventSourceFile()
 derror_t DEventSourceFile::Open(void)
 {
 	/// Implementation of DEventSource virtual function
+	/// Support only HDDM formatted files for now.
+	if(fin)close_s_HDDM(fin);
+	//fin = open_s_HDDM(filename);
+	
 	return NOERROR;
 }
 
@@ -43,6 +48,10 @@ derror_t DEventSourceFile::Open(void)
 derror_t DEventSourceFile::Close(void)
 {
 	/// Implementation of DEventSource virtual function
+	/// Support only HDDM formatted files for now.
+	if(fin)close_s_HDDM(fin);
+	fin = NULL;
+	
 	return NOERROR;
 }
 
@@ -52,6 +61,9 @@ derror_t DEventSourceFile::Close(void)
 derror_t DEventSourceFile::GetEvent(void)
 {
 	/// Implementation of DEventSource virtual function
+	/// Support only HDDM formatted files for now.
+	if(hddm)flush_s_HDDM(hddm, fin);
+	hddm = read_s_HDDM(fin);
 
 	return NOERROR;
 }
