@@ -36,6 +36,18 @@ ifndef CXX
 CXX	= g++
 endif
 
+# Only the GNU compiler seems to support the -MM option right now.
+# hence, we define separate compilers for creating the gmake rules
+ifndef DFC
+DFC		= g77
+endif
+ifndef DCC
+DCC		= gcc
+endif
+ifndef DCXX
+DCXX	= g++
+endif
+
 LIB_DIR		= $(HALLD_HOME)/lib/$(OSNAME)
 BIN_DIR		= $(HALLD_HOME)/bin/$(OSNAME)
 DEP_DIR		= .depends/$(OSNAME)
@@ -79,6 +91,10 @@ ifdef DEBUG
 	FFLAGS   += -g -pg
 	CFLAGS	+= -g -pg
 	CXXFLAGS	+= -g -pg
+else
+	FFLAGS   += -O2
+	CFLAGS	+= -O2
+	CXXFLAGS	+= -O2
 endif
 
 
