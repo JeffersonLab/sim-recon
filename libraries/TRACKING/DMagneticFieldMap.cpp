@@ -147,7 +147,6 @@ void DMagneticFieldMap::readMap(ifstream &in)
 
   while (!in.eof())
   {
-
     if (countZ >= zDim)
     {
       countZ = 0;
@@ -159,7 +158,7 @@ void DMagneticFieldMap::readMap(ifstream &in)
       //     << endl;
       return;
     }
-
+    
     if (DEBUG)
       printf("%d:%d: ", countR, countZ);
     
@@ -239,28 +238,42 @@ void DMagneticFieldMap::getInds(const double &r, const double &z, int ind[2],
   printf("(baseR, baseZ)(rho, zeta): (%d, %d)(%f, %f)\n", 
          baseR, baseZ, rho, zeta);
 */
+
 }
 
+//---------------------------------------------------------------
+// These are the getQuick methods.  They will fetch the nearest 
+// entry in the data structure.
+//---------------------------------------------------------------
 
+D3Vector_t DMagneticFieldMap::getQuick(double r, double z)
+{
+  int ind;
+  D3Vector_t vec;
+  int inds [2];
+  double rho, zeta;
 
+  getInds(r, z, inds, rho, zeta);
 
+  ind = serialize(inds[0], inds[1]);
+  vec.x = map[ind];
+  vec.y = map[ind + 1];
+  vec.z = map[ind + 2];
 
+  return vec;
+}
+
+D3Vector_t DMagneticFieldMap::getQuick(double x, double y, double z)
+{
+  double r;
+
+  r = sqrt(x*x + y*y);
+  return getQuick(r, z);
+}
+
+D3Vector_t DMagneticFieldMap::getQuick(const D3Vector_t &vec)
+{
+  return getQuick(vec.x, vec.y, vec.z);
+}
 
 #endif
-
-    
-
-
-
-
-
-  
-
-
-
-
-
-  
-
-
-

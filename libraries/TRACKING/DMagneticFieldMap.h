@@ -69,11 +69,26 @@ class DMagneticFieldMap
 
     /*! defgroup g1 getMagVec */
     //@{
-    /*! These are overloads of the getMagVec method */
-    D3Vector_t    getMagVec(const D3Vector_t *vec);
+    /*! 
+     * These methods will perform a trilinear interpolation on the 
+     * data in the map.  
+     * */
+    D3Vector_t    getMagVec(const D3Vector_t &vec);
     D3Vector_t    getMagVec(double x, double y, double z);
     D3Vector_t    getMagVec(double r, double z);
     //@}
+
+    /*! defgroup g2 getQuick */
+    //@{
+    /*!
+     * These methods will get the nearst index to to the requested position.
+     * This can also be described as 0th order interpolation.
+     */
+    D3Vector_t    getQuick(const D3Vector_t &vec);
+    D3Vector_t    getQuick(double x, double y, double z);
+    D3Vector_t    getQuick(double r, double z);
+    //@}
+    
 
     /*! Set the Debug state.
      * @param val - state to set
