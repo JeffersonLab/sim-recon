@@ -38,6 +38,12 @@
 s_iostream* thisInputStream = 0;
 s_HDDM_t* thisInputEvent = 0;
 
+void gsvert_(float v[3], int* ntbeam, int* nttarg,
+             float ubuf[], int* nubuf, int* nvtx);
+void gskine_(float p[3], Particle_t* kind, int* nvtx, 
+             float ubuf[], int* nubuf, int* ntrk);
+void grndm_(float v[], int* len);
+
 int openInput (char* filename)
 {
    thisInputStream = open_s_HDDM(filename);
@@ -46,7 +52,7 @@ int openInput (char* filename)
 
 int skipInput (int count)
 {
-   int* buff = malloc(1000000);
+   int* buff = (int*) malloc(1000000);
    while (thisInputStream && (count > 0))
    {
       int ret = fread(buff, sizeof(int), 1, thisInputStream->fd);

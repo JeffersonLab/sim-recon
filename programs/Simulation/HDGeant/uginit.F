@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.3  2001/07/19 23:25:51  jonesrt
+* numerous new files as I develop the prototype hits libraries -rtj
+*
 * Revision 1.2  2001/07/15 07:31:38  jonesrt
 * HDGeant now supportskinematic input from Monte Carlo generators
 * via the routines in hddmInput.c  -rtj
@@ -30,11 +33,13 @@
 *
       integer iskip
       integer infile(20)
-      common /inputFile/ iskip,infile
+      integer outfile(20)
+      common /inputFile/ iskip,infile,outfile
       data iskip/0/
       data infile/20*0/
-      integer openInput, skipInput
-      external openInput, skipInput
+      data outfile/20*0/
+      integer openInput, skipInput, openOutput
+      external openInput, skipInput, openOutput
 *
 *     -----------------------------------------------------------------
 *
@@ -72,8 +77,9 @@ C..geant..
 *
       OPEN(UNIT=4,FILE='control.in',STATUS='UNKNOWN')
       CALL FFSET('LINP',4)
-      call ffkey('file',infile,20,'MIXED')
+      call ffkey('infile',infile,20,'MIXED')
       call ffkey('skip',iskip,1,'INTEGER')
+      call ffkey('outfile',outfile,20,'MIXED')
       CALL GFFGO
 *
 *             Open the input stream
@@ -91,6 +97,18 @@ C..geant..
         if (nevent .eq. 0) then
           nevent = 999999999
         endif
+      endif
+*
+*             Open the output stream
+*
+      if (outfile(1) .eq. 0) then
+        call UCTOH('hdgeant.hddm',outfile,4,12)
+      endif
+      ifail = openOutput(outfile)
+      if (ifail .ne. 0) then
+        write(lout,9010) outfile
+ 9010   format('GUKINE ERROR - Could not open output stream ',20a4)
+        stop
       endif
 *
 *             Initialize graphics package

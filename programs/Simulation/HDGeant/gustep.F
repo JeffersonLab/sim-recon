@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.4  2001/07/19 23:25:49  jonesrt
+* numerous new files as I develop the prototype hits libraries -rtj
+*
 * Revision 1.3  2001/07/17 22:38:40  jonesrt
 * Adding hits registry in gustep -rtj
 *
@@ -45,7 +48,7 @@
       equivalence (NAMES(1),cnames(1))
       real rnd(100)
 
-      real xin(4),xout(4),pin(4),pout(4),dEsum
+      real xin(4),xout(4),pin(5),pout(5),dEsum
       save xin,xout,pin,pout,dEsum
 
       CALL GDEBUG
@@ -85,10 +88,11 @@
         xin(2) = VECT(2)
         xin(3) = VECT(3)
         xin(4) = TOFG
-        pin(1) = VECT(4)*VECT(7)
-        pin(2) = VECT(5)*VECT(7)
-        pin(3) = VECT(6)*VECT(7)
+        pin(1) = VECT(4)
+        pin(2) = VECT(5)
+        pin(3) = VECT(6)
         pin(4) = GETOT
+        pin(5) = VECT(7)
         dEsum = 0
         return
       elseif (INWVOL.eq.2) then
@@ -96,10 +100,11 @@
         xout(2) = VECT(2)
         xout(3) = VECT(3)
         xout(4) = TOFG
-        pout(1) = VECT(4)*VECT(7)
-        pout(2) = VECT(5)*VECT(7)
-        pout(3) = VECT(6)*VECT(7)
+        pout(1) = VECT(4)
+        pout(2) = VECT(5)
+        pout(3) = VECT(6)
         pout(4) = GETOT
+        pout(5) = VECT(7)
         dEsum = dEsum + DESTEP
       else
         dEsum = dEsum + DESTEP
@@ -108,18 +113,25 @@
 
 * At end of track segment in sensitive medium: register hit
 
-      if (cnames(NLEVEL).eq.'BCAM') then	! barrel calorimeter
-      elseif (cnames(NLEVEL).eq.'CSTI') then	! CDC inner cathode strips
-      elseif (cnames(NLEVEL).eq.'CSTO') then	! CDC outer cathode strips
-      elseif (cnames(NLEVEL).eq.'STRA') then	! CDC drift straw
-      elseif (cnames(NLEVEL).eq.'STRA') then	! CDC drift straw
-      elseif (cnames(NLEVEL).eq.'CGAS') then	! Cerenkov counter
-      elseif (cnames(NLEVEL).eq.'CGAS') then	! Cerenkov counter
-      elseif (cnames(NLEVEL).eq.'FDCA') then	! FDC anode drift cell
-      elseif (cnames(NLEVEL).eq.'FDCC') then	! FDC cathode strip
-      elseif (cnames(NLEVEL).eq.'LGBL') then	! forward calorimeter
-      elseif (cnames(NLEVEL).eq.'FTOF') then	! forward TOF counter
-      elseif (cnames(NLEVEL).eq.'VRTX') then	! start counter
+      if (CHARGE.ne.0) then
+        if (cnames(NLEVEL).eq.'VRTX') then		! start counter
+          call hitStartCntr(xin,xout,pin,pout,dEsum,ITRA)
+        elseif ((cnames(NLEVEL).eq.'CSTI').or.		! CDC inner strips
+     +          (cnames(NLEVEL).eq.'CSTO').or.		! CDC outer strips
+     +          (cnames(NLEVEL).eq.'STRA')) then	! CDC drift straw
+          call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA)
+        elseif ((cnames(NLEVEL).eq.'FDCA').or.		! FDC anode drift cell
+     +          (cnames(NLEVEL).eq.'FDCC')) then	! FDC cathode strip
+          call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA)
+        elseif (cnames(NLEVEL).eq.'CGAS') then		! Cerenkov counter
+          call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA)
+        elseif (cnames(NLEVEL).eq.'BCAM') then		! barrel calorimeter
+          call hitBarrelEMcal(xin,xout,pin,pout,dEsum,ITRA)
+        elseif (cnames(NLEVEL).eq.'FTOF') then		! forward TOF counter
+          call hitForwardTOF(xin,xout,pin,pout,dEsum,ITRA)
+        elseif (cnames(NLEVEL).eq.'LGBL') then		! forward calorimeter
+          call hitForwardEMcal(xin,xout,pin,pout,dEsum,ITRA)
+        endif
       endif
 
       END
