@@ -447,12 +447,12 @@ void constructReadFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
       cFile << tagType << "* unpack_" << tagT
             << "(" << classPrefix << "_iostream* fp)"		<< endl
             << "{"						<< endl
-            << "   int sect = fp->sect;"			<< endl
+            << "   int sect = fp->sect++;"			<< endl
+            << "   int level = fp->modelLevel[sect];"		<< endl
             << "   int size = *(fp->sp++);"			<< endl
             << "   " << tagType << "* his = 0;"			<< endl
             << "   if (size > 0)"				<< endl
-            << "   {"						<< endl
-            << "      int level = fp->modelLevel[sect];"	<< endl;
+            << "   {"						<< endl;
 
       if (repFlag)
       {
@@ -463,43 +463,35 @@ void constructReadFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
                << "      for (rep = 0; rep < repeats; rep++ )"	<< endl
                << "      {"					<< endl
                << "         int* dp = (int*) &his->in[rep];"	<< endl
-               << "         void** pp = (void**) dp;"		<< endl;
-         for (int w = 0; w < wcount; w++)
-         {
-            cFile << "         *(dp++) = *(fp->sp++);"		<< endl;
-         }
-         cFile << "         fp->sect = sect;"			<< endl
-               << "         while "
-               << "(fp->modelLevel[++fp->sect] > level)"	<< endl
-               << "         {"					<< endl
-               << "            void* (*unpacker)() = "
-               << "fp->unpacker[fp->sect];"			<< endl
-               << "            int offset = "
-               << "fp->ptrOffset[fp->sect];"			<< endl
-               << "            pp[offset] = (*unpacker)(fp);"	<< endl
-               << "         }"					<< endl
-               << "      }"					<< endl;
+               << "         fp->sect = sect + 1;"		<< endl;
       }
       else
       {
-         cFile << "      int* dp = (int*) his;"			<< endl
-               << "      void** pp = (void**) dp;"		<< endl
-               << "      his = make_" << tagT << "();"		<< endl;
-         for (int w = 0; w < wcount; w++)
-         {
-            cFile << "      *(dp++) = *(fp->sp++);"		<< endl;
-         }
-         cFile << "      while "
-               << "(fp->modelLevel[++fp->sect] > level)"	<< endl
+         cFile << "      his = make_" << tagT << "();"		<< endl
                << "      {"					<< endl
-               << "         void* (*unpacker)() = "
-               << "fp->unpacker[fp->sect];"			<< endl
-               << "         int offset = "
-               << "fp->ptrOffset[fp->sect];"			<< endl
-               << "         pp[offset] = (*unpacker)(fp);"	<< endl
-               << "      }"					<< endl;
+               << "         int* dp = (int*) his;"		<< endl;
+     }
+      for (int w = 0; w < wcount; w++)
+      {
+         cFile << "         *(dp++) = *(fp->sp++);"		<< endl;
       }
-      cFile << "   }"						<< endl
+      cFile << "         while "
+            << "(fp->modelLevel[fp->sect] > level)"		<< endl
+            << "         {"					<< endl
+            << "            void** pp = (void**) dp;"		<< endl
+            << "            void* (*unpacker)() = "
+            << "fp->unpacker[fp->sect];"			<< endl
+            << "            int offset = "
+            << "fp->ptrOffset[fp->sect];"			<< endl
+            << "            pp[offset] = (*unpacker)(fp);"	<< endl
+            << "         }"					<< endl
+            << "      }"					<< endl
+            << "   }"						<< endl
+            << "   else"					<< endl
+            << "   {"						<< endl
+            << "      while "
+            << "(fp->modelLevel[++fp->sect] > level) {}"	<< endl
+            << "   }"						<< endl
             << "   return his;"					<< endl
             << "}"						<< endl;
       delete [] containerType;
@@ -655,21 +647,32 @@ void constructFlushFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
 	 << "int flush_" << topT << "(" << topType << "* p,"
 	 << classPrefix << "_iostream* fp" << ")"		<< endl
 	 << "{"							<< endl
-	 << "   int ret = 0;"					<< endl
-	 << "   int* buff = malloc(1000000);"			<< endl
-	 << "   fp->dp = buff;"					<< endl
-	 << "   fp->sp = (int*) p;"				<< endl
-								<< endl
-	 << "   if (p != 0)"					<< endl
-	 << "   {"						<< endl
-	 << "      pack_" << topT << "((" << topType
-	 << "*) (fp->sp++), fp);"					<< endl
+	 << "   int ret;"					<< endl
+         << "   if (p == 0)"					<< endl
+         << "   {"						<< endl
+	 << "      ret = 0;"					<< endl
+         << "   }"						<< endl
+         << "   else"						<< endl
+         << "   {"						<< endl
+	 << "      int* buff = malloc(1000000);"		<< endl
+         << "      " << classPrefix << "_iostream ffp;"		<< endl
+         << "      ffp.dp = buff;"				<< endl
+	 << "      pack_" << topT << "(p,&ffp);"		<< endl
+	 << "      if (fp == 0)"				<< endl
+         << "      {"						<< endl
+         << "         ret = 0;"					<< endl
+         << "      }"						<< endl
+         << "      else if (fp->iomode == HDDM_STREAM_OUTPUT)"	<< endl
+	 << "      {"						<< endl
+	 << "         ret = fwrite"
+         << "(buff,sizeof(int),*buff+1,fp->fd);"		<< endl
+	 << "      }"						<< endl
+	 << "      else"					<< endl
+	 << "      {"						<< endl
+         << "         ret = -1;"				<< endl
+	 << "      }"						<< endl
+	 << "      free(buff);"					<< endl
 	 << "   }"						<< endl
-	 << "   if (fp && (fp->iomode == HDDM_STREAM_OUTPUT))"	<< endl
-	 << "   {"						<< endl
-	 << "      ret = fwrite(buff,sizeof(int),*buff+1,fp->fd);" << endl
-	 << "   }"						<< endl
-	 << "   free(buff);"					<< endl
 	 << "   return ret;"					<< endl
 	 << "}"							<< endl;
    delete [] topType;
@@ -712,11 +715,11 @@ void writeMatcher(ofstream& cFile)
 	 << "{"							<< endl
 	 << "   char ctag[500];"				<< endl
 	 << "   char dtag[500];"				<< endl
+	 << "   int ptrSeqNo = 0;"				<< endl
 	 << "   int clevel, dlevel;"				<< endl
 	 << "   dlevel = getTag(d,dtag);"			<< endl
 	 << "   while ((clevel = getTag(c,ctag)) == dlevel)"	<< endl
 	 << "   {"						<< endl
-	 << "      int ptrSeqNo = 0;"				<< endl
 	 << "      if "
 	 << "((clevel == dlevel) && (strcmp(ctag,dtag) == 0))"	<< endl
 	 << "      {"						<< endl
@@ -764,8 +767,8 @@ void writeMatcher(ofstream& cFile)
             << "         {"					<< endl
 	    << "            fp->unpacker[fp->sections] = "
 	    << "(void*) unpack_" << tagT << ";"			<< endl
-	    << "            fp->ptrOffset[fp->sections] = " << wcount
-	    << " + ptrSeqNo*sizeof(int*)/sizeof(int);"		<< endl
+	    << "            fp->ptrOffset[fp->sections] = "
+	    << "ptrSeqNo;"					<< endl
             << "            ++fp->sections;"			<< endl
             << "         }"					<< endl;
    }
