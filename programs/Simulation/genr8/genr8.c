@@ -790,7 +790,7 @@ int setChildrenMass(struct particleMC_t *Isobar)
 
 int setMass(struct particleMC_t *Isobar)
 {
-  double n,height,thresH2,lowtail,hightail;
+  double n,height,thresH2,lowtail,hightail,hcut,lcut;
 
     if(Isobar->width > 0){
  
@@ -808,7 +808,14 @@ int setMass(struct particleMC_t *Isobar)
       hightail = (Isobar->parent->mass) - thresH2 ;
       
       */
-      
+      /* cut off the tails */
+      hcut= Isobar->mass + 4.0*Isobar->width ;
+      lcut= Isobar->mass - 4.0*Isobar->width ;
+      if(hightail> hcut)
+	hightail=hcut;
+      if(lowtail < lcut)
+	lowtail= lcut;
+
 
       do{
 	n=randm(0.0,0.9999);
@@ -821,7 +828,7 @@ int setMass(struct particleMC_t *Isobar)
       /*
 	fprintf(stderr,"bookmass is %lf: low: %lf high: %lf bwmass: %lf\n",
 	Isobar->bookmass, lowtail,hightail,Isobar->mass);    
-	*/
+      */
     }
 }
 /********************
