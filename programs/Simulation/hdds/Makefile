@@ -16,7 +16,7 @@ ifeq ($(OStype),Darwin)
 endif
 
 ifndef BUILDS
- BUILDS = $(HALLD_HOME)/src/programs/Simulation/HDFast
+ BUILDS = $(HALLD_HOME)/src/programs/Simulation
 endif
 
 XML_SOURCE = BarrelEMcal_HDDS.xml BeamLine_HDDS.xml CentralDC_HDDS.xml\
