@@ -209,8 +209,8 @@ private:
 
 void rootMacroHeader()
 {
-  cout << "void hdgeant()" 					<< endl
-       << "{"                                                  << endl
+  cout << "void hddsroot()" << endl
+       << "{" << endl
        << "//" << endl
        << "//  This file has been generated automatically via the " << endl
        << "//  utility hdds-root directly from main_HDDS.xml " << endl
@@ -220,7 +220,7 @@ void rootMacroHeader()
        << "TGeoRotation *rot;" << endl
        << "TGeoNode *Node, *Node1;" << endl
        << " " << endl
-       << "TGeoManager *detector = new TGeoManager(\"hdgeant\",\"hdgeant.C\");" << endl
+       << "TGeoManager *detector = new TGeoManager(\"hddsroot\",\"hddsroot.C\");" << endl
        << " " << endl
        << " " << endl
        << "//-----------List of Materials and Mixtures--------------" << endl
