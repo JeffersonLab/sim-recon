@@ -74,10 +74,11 @@
 
   <composition name="experimentalHall" envelope="HALL">
     <posXYZ volume="fieldVolume" X_Y_Z="150.0 -350.0 -500.0" />
+    <posXYZ volume="beamPipe" X_Y_Z="0.0 0.0 0.0" />
   </composition>
 
   <composition name="everything" envelope="SITE">
-    <posXYZ volume="BeamLine" X_Y_Z="0.0 0.0 -2100." />
+    <posXYZ volume="collimatorPackage" X_Y_Z="0.0 0.0 -2050." />
     <posXYZ volume="experimentalHall" X_Y_Z="-150. 350. 500." />
   </composition>
 

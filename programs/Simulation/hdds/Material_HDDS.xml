@@ -83,6 +83,9 @@
 
   <element name="Boron10" symbol="B10" z="5" a="10.0" />
   <element name="Boron11" symbol="B11" z="5" a="11.0" />
+  <element name="Boron" symbol="B" z="5" a="10.8">
+	<real name="density"	value="2.34"	unit="cgm"	/>
+  </element>
 
   <element name="Carbon" symbol="C" z="6" a="12.011">
 	<real name="density"	value="2.2650"	unit="cgm"	/>
@@ -501,12 +504,6 @@
 	<real name="dedx"	value="0.0"	unit="MeVcgm"	/>
   </element>
 
-  <composite name="Boron">
-	<addmaterial material="Boron10"> <natoms n="2"	/> </addmaterial>
-	<addmaterial material="Boron11"> <natoms n="8"	/> </addmaterial>
-	<real name="density"	value="2.34"	unit="cgm"	/>
-  </composite>
-
   <composite name="Scintillator">
 	<addmaterial material="Carbon">   <natoms n="9"	/> </addmaterial>
 	<addmaterial material="Hydrogen"> <natoms n="10" /></addmaterial>
@@ -751,6 +748,47 @@
 		<fractionmass	fraction="1.00"	/>
  	</addmaterial>
 	<real name="density"	value="0.001214"	unit="cgm" />
+  </composite>
+
+  <composite name="BoronNitride"> 
+	<addmaterial material="Boron">
+		<natoms n="1"/>
+	</addmaterial>
+	<addmaterial material="Nitrogen">
+		<natoms n="1"/>
+	</addmaterial>
+        <real name="density"	value="1.9"	unit="cgm"/>
+  </composite>
+
+  <composite name="Concrete">
+	<addmaterial material="Hydrogen">
+		<fractionmass	fraction="0.004"/>
+ 	</addmaterial>
+	<addmaterial material="Oxygen">
+		<fractionmass	fraction="0.509"/>
+ 	</addmaterial>
+	<addmaterial material="Aluminum">
+		<fractionmass	fraction="0.034"/>
+ 	</addmaterial>
+        <addmaterial material="Calcium">
+                <fractionmass   fraction="0.070"/>
+        </addmaterial>
+        <addmaterial material="Silicon">
+                <fractionmass   fraction="0.345"/>
+        </addmaterial>
+        <addmaterial material="Iron">
+                <fractionmass   fraction="0.038"/>
+        </addmaterial>
+        <real name="density"	value="2.35"	unit="cgm" />
+  </composite>
+
+  <composite name="SoftTungsten">
+	<addmaterial material="Tungsten">
+		<fractionmass	fraction="0.95"	/>
+ 	</addmaterial>
+	<addmaterial material="Copper">
+		<fractionmass	fraction="0.05"	/>
+ 	</addmaterial>
   </composite>
 
 </materials>

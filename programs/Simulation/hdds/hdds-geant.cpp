@@ -140,6 +140,7 @@ class Refsys
    DOMElement* fMother;		// current mother volume element
    int fMagField;		// flag indicating magnetic field
    double fOrigin[3];		// x,y,z coordinate of volume origin (cm)
+   double fPhiOffset;		// azimuthal angle of volume origin (deg)
    double fRmatrix[3][3];	// rotation matrix (daughter -> mother)
    int fRotation;		// unique Rmatrix flag
 
@@ -594,8 +595,6 @@ DOMDocument* buildDOMDocument(const char* xmlFile)
       return 0;
    }
 
-   XString badAttS("CDSI");
-   DOMElement* targ = doc->getElementById(X(badAttS));
    return doc;
 }
 
@@ -693,6 +692,7 @@ Refsys::Refsys()			// empty constructor
 {
    fMother = 0;
    fMagField = 0;
+   fPhiOffset = 0;
    fIdentifiers = 0;
    this->reset();
 }
@@ -702,6 +702,7 @@ Refsys::Refsys(const Refsys& src)	// copy constructor
    reset(src);
    fMother = src.fMother;
    fMagField = src.fMagField;
+   fPhiOffset = src.fPhiOffset;
    fIdentifiers = src.fIdentifiers;
    for (int i = 0; i < fIdentifiers; i++)
    {
@@ -715,7 +716,7 @@ Refsys& Refsys::operator=(Refsys& src)	// copy operator (deep sematics)
    return *dst;
 }
 
-Refsys& Refsys::reset()			// reset Origin, Rmatrix to null
+Refsys& Refsys::reset()			// reset origin, Rmatrix to null
 {
    fOrigin[0] = fOrigin[1] = fOrigin[2] = 0;
    fRmatrix[0][0] = fRmatrix[1][1] = fRmatrix[2][2] = 1;
@@ -725,7 +726,7 @@ Refsys& Refsys::reset()			// reset Origin, Rmatrix to null
    return *this;
 }
 
-Refsys& Refsys::reset(const Refsys& ref) // reset Origin, Rmatrix to ref
+Refsys& Refsys::reset(const Refsys& ref) // reset origin, Rmatrix to ref
 {
    for (int i = 0; i < 3; i++)
    {
@@ -738,7 +739,7 @@ Refsys& Refsys::reset(const Refsys& ref) // reset Origin, Rmatrix to ref
    return *this;
 }
 
-Refsys& Refsys::shift(const double vector[3])     // translate origin
+Refsys& Refsys::shift(const double vector[3])  // translate origin
 {
    for (int i = 0; i < 3; i++)
    {
@@ -767,7 +768,7 @@ Refsys& Refsys::shift(const Refsys& ref,
 
 Refsys& Refsys::rotate(const double omega[3]) // rotate by vector omega (rad)
 {
-   if ( (omega[0] != 0.0) || (omega[1] != 0.0) || (omega[2] != 0.0) )
+   if ( (omega[0] != 0) || (omega[1] != 0) || (omega[2] != 0) )
    {
       double cosx = cos(omega[0]);
       double sinx = sin(omega[0]);
@@ -1402,7 +1403,7 @@ int Refsys::createVolume(DOMElement* el)
       myRef.fMagField = 3;
    }
 
-   DOMElement* env;
+   DOMElement* env = 0;
    DOMDocument* document = el->getOwnerDocument();
    XString envAttS("envelope");
    XString envS(el->getAttribute(X(envAttS)));
@@ -1635,13 +1636,9 @@ int Refsys::createVolume(DOMElement* el)
                   double phi1, dphi1;
                   sscanf(S(profS), "%lf %lf", &phi1, &dphi1);
                   getConversions(targEnv, tocm, todeg);
-                  double phiShift = phi1 + dphi1/2;
-                  phi0 += phiShift * todeg;
-                  phi1 -= phiShift;
-                  char pStr[80];
-                  sprintf(pStr, "%lf %lf", phi1, dphi1);
-                  XString pS(pStr);
-                  targEnv->setAttribute(X(profAttS),X(pS));
+                  double phiOffset = (phi1 + dphi1/2) * todeg;
+		  drs.fPhiOffset = phiOffset * (M_PI/180);
+                  phi0 += phiOffset;
                }
                int iaxis = 2;
                drs.createDivision(divStr, ncopy, iaxis, phi0 - dphi/2, dphi);
@@ -1932,8 +1929,9 @@ int Refsys::createVolume(DOMElement* el)
                XString rphiAttS("R_Phi");
                XString rphiS(contEl->getAttribute(X(rphiAttS)));
                sscanf(S(rphiS), "%lf %lf", &r, &phi);
-               x = r * cos(phi * torad);
-               y = r * sin(phi * torad);
+	       phi *= torad;
+               x = r * cos(phi);
+               y = r * sin(phi);
             }
             XString sAttS("S");
             XString sS(contEl->getAttribute(X(sAttS)));
@@ -2013,6 +2011,23 @@ int Refsys::createVolume(DOMElement* el)
       }
       else
       {
+         XString profAttS("profile");
+         XString profS(el->getAttribute(X(profAttS)));
+         if (profS != 0)
+         {
+            double phi0, dphi;
+	    double tocm, todeg;
+            sscanf(S(profS), "%lf %lf", &phi0, &dphi);
+            getConversions(el, tocm, todeg);
+	    if ( (myRef.fOrigin[0] == 0) && (myRef.fOrigin[1] == 0) )
+	    {
+               phi0 -= myRef.fPhiOffset*(180/M_PI)/todeg;
+	    }
+            char pStr[80];
+            sprintf(pStr, "%lf %lf", phi0, dphi);
+            XString pS(pStr);
+            el->setAttribute(X(profAttS),X(pS));
+	 }
          myRef.createSolid(el);
          icopy = 0;
       }
