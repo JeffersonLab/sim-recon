@@ -351,6 +351,10 @@ derror_t DQuickFit::FitCircle(void)
 	float hbarc = 197.326;
 	p_trans = q*B*r0/hbarc; // are these the right units?
 	phi = atan2(y0,x0) - M_PI_2;
+	if(p_trans<0.0){
+		p_trans = -p_trans;
+		phi += M_PI;
+	}
 	if(phi<0)phi+=2.0*M_PI;
 	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
 	
