@@ -42,8 +42,12 @@ endif
 libgelhad.a:	caspim.o caspip.o gamate.o gelboost.o gelh_outp.o \
 		gelh_last.o gelh_vrfy.o geltwobod.o gheishp.o begran.o \
 		ghstopp.o gmmate.o gpgheip.o gphad.o gpsig.o grmate.o gtgama.o \
-		labframe.o recoilframe.o sigmagamma.o sigmag.o
+		labframe.o recoilframe.o sigmagamma.o sigmag.o symlink
 	$(AR) rv $@ $?
+
+symlink:
+	rm -f gelhad
+	ln -s . gelhad
 
 .F.o:
 	$(F77) -c -o $@ $(FOPTS) -I$(CERN_ROOT)/include -Ighcdes -I. \
