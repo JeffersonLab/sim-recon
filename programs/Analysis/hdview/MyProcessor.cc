@@ -98,10 +98,10 @@ derror_t MyProcessor::evnt(int eventnumber)
 		switch(mccheathit->system){
 			case 1:	break;		// CDC
 			case 2:	break;		// FDC
-			case 3:	continue;		// BCAL
-			case 4:	continue;		// TOF
+			case 3:	break;		// BCAL
+			case 4:	break;		// TOF
 			case 5:	break;		// Cherenkov
-			case 6:	continue;		// FCAL
+			case 6:	break;		// FCAL
 			case 7:	break;		// UPV
 			default: continue;
 		}
@@ -119,6 +119,12 @@ derror_t MyProcessor::evnt(int eventnumber)
 
 		int color = colors[mccheathit->track%ncolors];
 		float size = 0.5;
+		switch(mccheathit->system){
+			case 6:	// FCAL
+				cout<<__FILE__<<":"<<__LINE__<<" FCAL z="<<z<<" X/Y="<<X<<"/"<<Y<<endl;
+			case 3:	// BCAL
+				size=1.0;
+		}
 		top->SetMarkerColor(color);
 		top->SetMarkerSize(size);
 		side->SetMarkerColor(color);
@@ -135,7 +141,12 @@ derror_t MyProcessor::evnt(int eventnumber)
 			DQuickFit **fit = (DQuickFit**)fits->Add();
 			*fit = new DQuickFit();
 		}
-		(*(DQuickFit**)fits->last())->AddHit(mccheathit->r, mccheathit->phi, mccheathit->z);
+		
+		// DQuickFit assumes a constant B-field so only give it
+		// CDC and FDC hits.
+		if(mccheathit->system==1 || mccheathit->system==2){
+			(*(DQuickFit**)fits->last())->AddHit(mccheathit->r, mccheathit->phi, mccheathit->z);
+		}
 		track = mccheathit->track;
 	}
 	
@@ -148,6 +159,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 		while(qf->GetNhits()>1){
 			qf->FitCircle();
 			//qf->PrintChiSqVector();
+			break;
 			if(qf->chisq/(float)qf->GetNhits() <1.0)break;
 			//qf->PruneWorst(1);
 			qf->PruneOutlier();
@@ -197,20 +209,23 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 
 	TPolyLine *line_top = new TPolyLine();
 	TPolyLine *line_side = new TPolyLine();
-	for(float Z=z; Z<z+500.0; Z+=10.0){
+	for(float Z=z; Z<620.0; Z+=10.0){
 		float delta_z = Z-qf->z_vertex;
 		float phi = phi0 + delta_z*dphidz;
 		x = qf->x0 + r*cos(phi);
 		y = qf->y0 + r*sin(phi);
+		
+		float R = sqrt(x*x + y*y);
+		if(R>=(BCAL_Rmin+10.0))break;
 		
 		ConvertToSide(x,y,Z,X,Y);
 		line_side->SetNextPoint(X,Y);
 		ConvertToTop(x,y,Z,X,Y);
 		line_top->SetNextPoint(X,Y);
 	}
-	line_side->SetLineColor(color);
+	line_side->SetLineColor(color+100);
 	line_side->Draw();
-	line_top->SetLineColor(color);
+	line_top->SetLineColor(color+100);
 	line_top->Draw();
 	lines[Nlines++] = line_side;
 	lines[Nlines++] = line_top;
