@@ -463,17 +463,17 @@ char HDDM_s_DocumentString[] =
 
 static s_HDDM_t* unpack_s_HDDM(XDR* xdrs, popNode* pop)
 {
-   s_HDDM_t* this = 0;
+   s_HDDM_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_HDDM();
+      this1 = make_s_HDDM();
       {
          int p;
-         void* (*ptr) = (void**) &this->physicsEvents;
+         void* (*ptr) = (void**) &this1->physicsEvents;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -492,29 +492,29 @@ static s_HDDM_t* unpack_s_HDDM(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_PhysicsEvents_t* unpack_s_PhysicsEvents(XDR* xdrs, popNode* pop)
 {
-   s_PhysicsEvents_t* this = 0;
+   s_PhysicsEvents_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_PhysicsEvents(mult);
-      this->mult = mult;
+      this1 = make_s_PhysicsEvents(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].reactions;
-         xdr_int(xdrs,&this->in[m].eventNo);
-         xdr_int(xdrs,&this->in[m].runNo);
+         void* (*ptr) = (void**) &this1->in[m].reactions;
+         xdr_int(xdrs,&this1->in[m].eventNo);
+         xdr_int(xdrs,&this1->in[m].runNo);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -533,29 +533,29 @@ static s_PhysicsEvents_t* unpack_s_PhysicsEvents(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Reactions_t* unpack_s_Reactions(XDR* xdrs, popNode* pop)
 {
-   s_Reactions_t* this = 0;
+   s_Reactions_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Reactions(mult);
-      this->mult = mult;
+      this1 = make_s_Reactions(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].beam;
-         xdr_int(xdrs,&this->in[m].type);
-         xdr_float(xdrs,&this->in[m].weight);
+         void* (*ptr) = (void**) &this1->in[m].beam;
+         xdr_int(xdrs,&this1->in[m].type);
+         xdr_float(xdrs,&this1->in[m].weight);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -574,23 +574,23 @@ static s_Reactions_t* unpack_s_Reactions(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Beam_t* unpack_s_Beam(XDR* xdrs, popNode* pop)
 {
-   s_Beam_t* this = 0;
+   s_Beam_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_Beam();
+      this1 = make_s_Beam();
       {
          int p;
-         void* (*ptr) = (void**) &this->momentum;
-         xdr_int(xdrs,(int*)&this->type);
+         void* (*ptr) = (void**) &this1->momentum;
+         xdr_int(xdrs,(int*)&this1->type);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -609,63 +609,63 @@ static s_Beam_t* unpack_s_Beam(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Momentum_t* unpack_s_Momentum(XDR* xdrs, popNode* pop)
 {
-   s_Momentum_t* this = 0;
+   s_Momentum_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_Momentum();
+      this1 = make_s_Momentum();
       {
-         xdr_float(xdrs,&this->E);
-         xdr_float(xdrs,&this->px);
-         xdr_float(xdrs,&this->py);
-         xdr_float(xdrs,&this->pz);
+         xdr_float(xdrs,&this1->E);
+         xdr_float(xdrs,&this1->px);
+         xdr_float(xdrs,&this1->py);
+         xdr_float(xdrs,&this1->pz);
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Properties_t* unpack_s_Properties(XDR* xdrs, popNode* pop)
 {
-   s_Properties_t* this = 0;
+   s_Properties_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_Properties();
+      this1 = make_s_Properties();
       {
-         xdr_int(xdrs,&this->charge);
-         xdr_float(xdrs,&this->mass);
+         xdr_int(xdrs,&this1->charge);
+         xdr_float(xdrs,&this1->mass);
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Target_t* unpack_s_Target(XDR* xdrs, popNode* pop)
 {
-   s_Target_t* this = 0;
+   s_Target_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_Target();
+      this1 = make_s_Target();
       {
          int p;
-         void* (*ptr) = (void**) &this->momentum;
-         xdr_int(xdrs,(int*)&this->type);
+         void* (*ptr) = (void**) &this1->momentum;
+         xdr_int(xdrs,(int*)&this1->type);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -684,27 +684,27 @@ static s_Target_t* unpack_s_Target(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Vertices_t* unpack_s_Vertices(XDR* xdrs, popNode* pop)
 {
-   s_Vertices_t* this = 0;
+   s_Vertices_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Vertices(mult);
-      this->mult = mult;
+      this1 = make_s_Vertices(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].products;
+         void* (*ptr) = (void**) &this1->in[m].products;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -723,29 +723,29 @@ static s_Vertices_t* unpack_s_Vertices(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Products_t* unpack_s_Products(XDR* xdrs, popNode* pop)
 {
-   s_Products_t* this = 0;
+   s_Products_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Products(mult);
-      this->mult = mult;
+      this1 = make_s_Products(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].momentum;
-         xdr_int(xdrs,&this->in[m].decayVertex);
-         xdr_int(xdrs,(int*)&this->in[m].type);
+         void* (*ptr) = (void**) &this1->in[m].momentum;
+         xdr_int(xdrs,&this1->in[m].decayVertex);
+         xdr_int(xdrs,(int*)&this1->in[m].type);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -764,43 +764,43 @@ static s_Products_t* unpack_s_Products(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Origin_t* unpack_s_Origin(XDR* xdrs, popNode* pop)
 {
-   s_Origin_t* this = 0;
+   s_Origin_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_Origin();
+      this1 = make_s_Origin();
       {
-         xdr_float(xdrs,&this->t);
-         xdr_float(xdrs,&this->vx);
-         xdr_float(xdrs,&this->vy);
-         xdr_float(xdrs,&this->vz);
+         xdr_float(xdrs,&this1->t);
+         xdr_float(xdrs,&this1->vx);
+         xdr_float(xdrs,&this1->vy);
+         xdr_float(xdrs,&this1->vz);
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_HitView_t* unpack_s_HitView(XDR* xdrs, popNode* pop)
 {
-   s_HitView_t* this = 0;
+   s_HitView_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_HitView();
+      this1 = make_s_HitView();
       {
          int p;
-         void* (*ptr) = (void**) &this->centralDC;
+         void* (*ptr) = (void**) &this1->centralDC;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -819,22 +819,22 @@ static s_HitView_t* unpack_s_HitView(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_CentralDC_t* unpack_s_CentralDC(XDR* xdrs, popNode* pop)
 {
-   s_CentralDC_t* this = 0;
+   s_CentralDC_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_CentralDC();
+      this1 = make_s_CentralDC();
       {
          int p;
-         void* (*ptr) = (void**) &this->cathodeCyls;
+         void* (*ptr) = (void**) &this1->cathodeCyls;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -853,28 +853,28 @@ static s_CentralDC_t* unpack_s_CentralDC(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_CathodeCyls_t* unpack_s_CathodeCyls(XDR* xdrs, popNode* pop)
 {
-   s_CathodeCyls_t* this = 0;
+   s_CathodeCyls_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_CathodeCyls(mult);
-      this->mult = mult;
+      this1 = make_s_CathodeCyls(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].bands;
-         xdr_float(xdrs,&this->in[m].radius);
+         void* (*ptr) = (void**) &this1->in[m].bands;
+         xdr_float(xdrs,&this1->in[m].radius);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -893,52 +893,52 @@ static s_CathodeCyls_t* unpack_s_CathodeCyls(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Bands_t* unpack_s_Bands(XDR* xdrs, popNode* pop)
 {
-   s_Bands_t* this = 0;
+   s_Bands_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Bands(mult);
-      this->mult = mult;
+      this1 = make_s_Bands(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
-         xdr_float(xdrs,&this->in[m].phim);
-         xdr_float(xdrs,&this->in[m].z);
+         xdr_float(xdrs,&this1->in[m].phim);
+         xdr_float(xdrs,&this1->in[m].z);
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Rings_t* unpack_s_Rings(XDR* xdrs, popNode* pop)
 {
-   s_Rings_t* this = 0;
+   s_Rings_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Rings(mult);
-      this->mult = mult;
+      this1 = make_s_Rings(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].straws;
-         xdr_float(xdrs,&this->in[m].radius);
+         void* (*ptr) = (void**) &this1->in[m].straws;
+         xdr_float(xdrs,&this1->in[m].radius);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -957,28 +957,28 @@ static s_Rings_t* unpack_s_Rings(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Straws_t* unpack_s_Straws(XDR* xdrs, popNode* pop)
 {
-   s_Straws_t* this = 0;
+   s_Straws_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Straws(mult);
-      this->mult = mult;
+      this1 = make_s_Straws(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].hits;
-         xdr_float(xdrs,&this->in[m].phim);
+         void* (*ptr) = (void**) &this1->in[m].hits;
+         xdr_float(xdrs,&this1->in[m].phim);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -997,74 +997,74 @@ static s_Straws_t* unpack_s_Straws(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Hits_t* unpack_s_Hits(XDR* xdrs, popNode* pop)
 {
-   s_Hits_t* this = 0;
+   s_Hits_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Hits(mult);
-      this->mult = mult;
+      this1 = make_s_Hits(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
-         xdr_float(xdrs,&this->in[m].dE);
-         xdr_float(xdrs,&this->in[m].t);
+         xdr_float(xdrs,&this1->in[m].dE);
+         xdr_float(xdrs,&this1->in[m].t);
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_CdcPoints_t* unpack_s_CdcPoints(XDR* xdrs, popNode* pop)
 {
-   s_CdcPoints_t* this = 0;
+   s_CdcPoints_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_CdcPoints(mult);
-      this->mult = mult;
+      this1 = make_s_CdcPoints(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
-         xdr_float(xdrs,&this->in[m].dEdx);
-         xdr_float(xdrs,&this->in[m].dradius);
-         xdr_float(xdrs,&this->in[m].phi);
-         xdr_float(xdrs,&this->in[m].r);
-         xdr_int(xdrs,&this->in[m].track);
-         xdr_float(xdrs,&this->in[m].z);
+         xdr_float(xdrs,&this1->in[m].dEdx);
+         xdr_float(xdrs,&this1->in[m].dradius);
+         xdr_float(xdrs,&this1->in[m].phi);
+         xdr_float(xdrs,&this1->in[m].r);
+         xdr_int(xdrs,&this1->in[m].track);
+         xdr_float(xdrs,&this1->in[m].z);
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_ForwardDC_t* unpack_s_ForwardDC(XDR* xdrs, popNode* pop)
 {
-   s_ForwardDC_t* this = 0;
+   s_ForwardDC_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_ForwardDC();
+      this1 = make_s_ForwardDC();
       {
          int p;
-         void* (*ptr) = (void**) &this->chambers;
+         void* (*ptr) = (void**) &this1->chambers;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1083,29 +1083,29 @@ static s_ForwardDC_t* unpack_s_ForwardDC(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Chambers_t* unpack_s_Chambers(XDR* xdrs, popNode* pop)
 {
-   s_Chambers_t* this = 0;
+   s_Chambers_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Chambers(mult);
-      this->mult = mult;
+      this1 = make_s_Chambers(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].cathodePlanes;
-         xdr_int(xdrs,&this->in[m].layer);
-         xdr_int(xdrs,&this->in[m].module);
+         void* (*ptr) = (void**) &this1->in[m].cathodePlanes;
+         xdr_int(xdrs,&this1->in[m].layer);
+         xdr_int(xdrs,&this1->in[m].module);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1124,29 +1124,29 @@ static s_Chambers_t* unpack_s_Chambers(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_CathodePlanes_t* unpack_s_CathodePlanes(XDR* xdrs, popNode* pop)
 {
-   s_CathodePlanes_t* this = 0;
+   s_CathodePlanes_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_CathodePlanes(mult);
-      this->mult = mult;
+      this1 = make_s_CathodePlanes(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].strips;
-         xdr_float(xdrs,&this->in[m].tau);
-         xdr_float(xdrs,&this->in[m].z);
+         void* (*ptr) = (void**) &this1->in[m].strips;
+         xdr_float(xdrs,&this1->in[m].tau);
+         xdr_float(xdrs,&this1->in[m].z);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1165,52 +1165,52 @@ static s_CathodePlanes_t* unpack_s_CathodePlanes(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Strips_t* unpack_s_Strips(XDR* xdrs, popNode* pop)
 {
-   s_Strips_t* this = 0;
+   s_Strips_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Strips(mult);
-      this->mult = mult;
+      this1 = make_s_Strips(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
-         xdr_float(xdrs,&this->in[m].u);
+         xdr_float(xdrs,&this1->in[m].u);
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_AnodePlanes_t* unpack_s_AnodePlanes(XDR* xdrs, popNode* pop)
 {
-   s_AnodePlanes_t* this = 0;
+   s_AnodePlanes_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_AnodePlanes(mult);
-      this->mult = mult;
+      this1 = make_s_AnodePlanes(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].wires;
-         xdr_float(xdrs,&this->in[m].tau);
-         xdr_float(xdrs,&this->in[m].z);
+         void* (*ptr) = (void**) &this1->in[m].wires;
+         xdr_float(xdrs,&this1->in[m].tau);
+         xdr_float(xdrs,&this1->in[m].z);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1229,28 +1229,28 @@ static s_AnodePlanes_t* unpack_s_AnodePlanes(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Wires_t* unpack_s_Wires(XDR* xdrs, popNode* pop)
 {
-   s_Wires_t* this = 0;
+   s_Wires_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Wires(mult);
-      this->mult = mult;
+      this1 = make_s_Wires(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].hits;
-         xdr_float(xdrs,&this->in[m].u);
+         void* (*ptr) = (void**) &this1->in[m].hits;
+         xdr_float(xdrs,&this1->in[m].u);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1269,50 +1269,50 @@ static s_Wires_t* unpack_s_Wires(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_FdcPoints_t* unpack_s_FdcPoints(XDR* xdrs, popNode* pop)
 {
-   s_FdcPoints_t* this = 0;
+   s_FdcPoints_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_FdcPoints(mult);
-      this->mult = mult;
+      this1 = make_s_FdcPoints(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
-         xdr_float(xdrs,&this->in[m].dEdx);
-         xdr_float(xdrs,&this->in[m].dradius);
-         xdr_int(xdrs,&this->in[m].track);
-         xdr_float(xdrs,&this->in[m].x);
-         xdr_float(xdrs,&this->in[m].y);
-         xdr_float(xdrs,&this->in[m].z);
+         xdr_float(xdrs,&this1->in[m].dEdx);
+         xdr_float(xdrs,&this1->in[m].dradius);
+         xdr_int(xdrs,&this1->in[m].track);
+         xdr_float(xdrs,&this1->in[m].x);
+         xdr_float(xdrs,&this1->in[m].y);
+         xdr_float(xdrs,&this1->in[m].z);
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_StartCntr_t* unpack_s_StartCntr(XDR* xdrs, popNode* pop)
 {
-   s_StartCntr_t* this = 0;
+   s_StartCntr_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_StartCntr();
+      this1 = make_s_StartCntr();
       {
          int p;
-         void* (*ptr) = (void**) &this->paddles;
+         void* (*ptr) = (void**) &this1->paddles;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1331,28 +1331,28 @@ static s_StartCntr_t* unpack_s_StartCntr(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Paddles_t* unpack_s_Paddles(XDR* xdrs, popNode* pop)
 {
-   s_Paddles_t* this = 0;
+   s_Paddles_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Paddles(mult);
-      this->mult = mult;
+      this1 = make_s_Paddles(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].hits;
-         xdr_float(xdrs,&this->in[m].phim);
+         void* (*ptr) = (void**) &this1->in[m].hits;
+         xdr_float(xdrs,&this1->in[m].phim);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1371,50 +1371,50 @@ static s_Paddles_t* unpack_s_Paddles(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_StartPoints_t* unpack_s_StartPoints(XDR* xdrs, popNode* pop)
 {
-   s_StartPoints_t* this = 0;
+   s_StartPoints_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_StartPoints(mult);
-      this->mult = mult;
+      this1 = make_s_StartPoints(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
-         xdr_float(xdrs,&this->in[m].dEdx);
-         xdr_float(xdrs,&this->in[m].phi);
-         xdr_float(xdrs,&this->in[m].r);
-         xdr_float(xdrs,&this->in[m].t);
-         xdr_int(xdrs,&this->in[m].track);
-         xdr_float(xdrs,&this->in[m].z);
+         xdr_float(xdrs,&this1->in[m].dEdx);
+         xdr_float(xdrs,&this1->in[m].phi);
+         xdr_float(xdrs,&this1->in[m].r);
+         xdr_float(xdrs,&this1->in[m].t);
+         xdr_int(xdrs,&this1->in[m].track);
+         xdr_float(xdrs,&this1->in[m].z);
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_BarrelEMcal_t* unpack_s_BarrelEMcal(XDR* xdrs, popNode* pop)
 {
-   s_BarrelEMcal_t* this = 0;
+   s_BarrelEMcal_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_BarrelEMcal();
+      this1 = make_s_BarrelEMcal();
       {
          int p;
-         void* (*ptr) = (void**) &this->modules;
+         void* (*ptr) = (void**) &this1->modules;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1433,28 +1433,28 @@ static s_BarrelEMcal_t* unpack_s_BarrelEMcal(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Modules_t* unpack_s_Modules(XDR* xdrs, popNode* pop)
 {
-   s_Modules_t* this = 0;
+   s_Modules_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Modules(mult);
-      this->mult = mult;
+      this1 = make_s_Modules(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].upstream;
-         xdr_float(xdrs,&this->in[m].phim);
+         void* (*ptr) = (void**) &this1->in[m].upstream;
+         xdr_float(xdrs,&this1->in[m].phim);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1473,22 +1473,22 @@ static s_Modules_t* unpack_s_Modules(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Upstream_t* unpack_s_Upstream(XDR* xdrs, popNode* pop)
 {
-   s_Upstream_t* this = 0;
+   s_Upstream_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_Upstream();
+      this1 = make_s_Upstream();
       {
          int p;
-         void* (*ptr) = (void**) &this->showers;
+         void* (*ptr) = (void**) &this1->showers;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1507,46 +1507,46 @@ static s_Upstream_t* unpack_s_Upstream(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Showers_t* unpack_s_Showers(XDR* xdrs, popNode* pop)
 {
-   s_Showers_t* this = 0;
+   s_Showers_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Showers(mult);
-      this->mult = mult;
+      this1 = make_s_Showers(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
-         xdr_float(xdrs,&this->in[m].E);
-         xdr_float(xdrs,&this->in[m].t);
+         xdr_float(xdrs,&this1->in[m].E);
+         xdr_float(xdrs,&this1->in[m].t);
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Downstream_t* unpack_s_Downstream(XDR* xdrs, popNode* pop)
 {
-   s_Downstream_t* this = 0;
+   s_Downstream_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_Downstream();
+      this1 = make_s_Downstream();
       {
          int p;
-         void* (*ptr) = (void**) &this->showers;
+         void* (*ptr) = (void**) &this1->showers;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1565,49 +1565,49 @@ static s_Downstream_t* unpack_s_Downstream(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_BarrelShowers_t* unpack_s_BarrelShowers(XDR* xdrs, popNode* pop)
 {
-   s_BarrelShowers_t* this = 0;
+   s_BarrelShowers_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_BarrelShowers(mult);
-      this->mult = mult;
+      this1 = make_s_BarrelShowers(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
-         xdr_float(xdrs,&this->in[m].E);
-         xdr_float(xdrs,&this->in[m].phi);
-         xdr_float(xdrs,&this->in[m].t);
-         xdr_int(xdrs,&this->in[m].track);
-         xdr_float(xdrs,&this->in[m].z);
+         xdr_float(xdrs,&this1->in[m].E);
+         xdr_float(xdrs,&this1->in[m].phi);
+         xdr_float(xdrs,&this1->in[m].t);
+         xdr_int(xdrs,&this1->in[m].track);
+         xdr_float(xdrs,&this1->in[m].z);
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Cerenkov_t* unpack_s_Cerenkov(XDR* xdrs, popNode* pop)
 {
-   s_Cerenkov_t* this = 0;
+   s_Cerenkov_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_Cerenkov();
+      this1 = make_s_Cerenkov();
       {
          int p;
-         void* (*ptr) = (void**) &this->sections;
+         void* (*ptr) = (void**) &this1->sections;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1626,28 +1626,28 @@ static s_Cerenkov_t* unpack_s_Cerenkov(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Sections_t* unpack_s_Sections(XDR* xdrs, popNode* pop)
 {
-   s_Sections_t* this = 0;
+   s_Sections_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Sections(mult);
-      this->mult = mult;
+      this1 = make_s_Sections(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].flashes;
-         xdr_float(xdrs,&this->in[m].phim);
+         void* (*ptr) = (void**) &this1->in[m].flashes;
+         xdr_float(xdrs,&this1->in[m].phim);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1666,46 +1666,46 @@ static s_Sections_t* unpack_s_Sections(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Flashes_t* unpack_s_Flashes(XDR* xdrs, popNode* pop)
 {
-   s_Flashes_t* this = 0;
+   s_Flashes_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Flashes(mult);
-      this->mult = mult;
+      this1 = make_s_Flashes(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
-         xdr_float(xdrs,&this->in[m].pe);
-         xdr_float(xdrs,&this->in[m].t);
+         xdr_float(xdrs,&this1->in[m].pe);
+         xdr_float(xdrs,&this1->in[m].t);
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_ForwardTOF_t* unpack_s_ForwardTOF(XDR* xdrs, popNode* pop)
 {
-   s_ForwardTOF_t* this = 0;
+   s_ForwardTOF_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_ForwardTOF();
+      this1 = make_s_ForwardTOF();
       {
          int p;
-         void* (*ptr) = (void**) &this->slabs;
+         void* (*ptr) = (void**) &this1->slabs;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1724,28 +1724,28 @@ static s_ForwardTOF_t* unpack_s_ForwardTOF(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Slabs_t* unpack_s_Slabs(XDR* xdrs, popNode* pop)
 {
-   s_Slabs_t* this = 0;
+   s_Slabs_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Slabs(mult);
-      this->mult = mult;
+      this1 = make_s_Slabs(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].left;
-         xdr_float(xdrs,&this->in[m].y);
+         void* (*ptr) = (void**) &this1->in[m].left;
+         xdr_float(xdrs,&this1->in[m].y);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1764,22 +1764,22 @@ static s_Slabs_t* unpack_s_Slabs(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Left_t* unpack_s_Left(XDR* xdrs, popNode* pop)
 {
-   s_Left_t* this = 0;
+   s_Left_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_Left();
+      this1 = make_s_Left();
       {
          int p;
-         void* (*ptr) = (void**) &this->hits;
+         void* (*ptr) = (void**) &this1->hits;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1798,22 +1798,22 @@ static s_Left_t* unpack_s_Left(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Right_t* unpack_s_Right(XDR* xdrs, popNode* pop)
 {
-   s_Right_t* this = 0;
+   s_Right_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_Right();
+      this1 = make_s_Right();
       {
          int p;
-         void* (*ptr) = (void**) &this->hits;
+         void* (*ptr) = (void**) &this1->hits;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1832,48 +1832,48 @@ static s_Right_t* unpack_s_Right(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_TofPoints_t* unpack_s_TofPoints(XDR* xdrs, popNode* pop)
 {
-   s_TofPoints_t* this = 0;
+   s_TofPoints_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_TofPoints(mult);
-      this->mult = mult;
+      this1 = make_s_TofPoints(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
-         xdr_float(xdrs,&this->in[m].t);
-         xdr_int(xdrs,&this->in[m].track);
-         xdr_float(xdrs,&this->in[m].x);
-         xdr_float(xdrs,&this->in[m].y);
+         xdr_float(xdrs,&this1->in[m].t);
+         xdr_int(xdrs,&this1->in[m].track);
+         xdr_float(xdrs,&this1->in[m].x);
+         xdr_float(xdrs,&this1->in[m].y);
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_ForwardEMcal_t* unpack_s_ForwardEMcal(XDR* xdrs, popNode* pop)
 {
-   s_ForwardEMcal_t* this = 0;
+   s_ForwardEMcal_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
-      this = make_s_ForwardEMcal();
+      this1 = make_s_ForwardEMcal();
       {
          int p;
-         void* (*ptr) = (void**) &this->rows;
+         void* (*ptr) = (void**) &this1->rows;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1892,28 +1892,28 @@ static s_ForwardEMcal_t* unpack_s_ForwardEMcal(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Rows_t* unpack_s_Rows(XDR* xdrs, popNode* pop)
 {
-   s_Rows_t* this = 0;
+   s_Rows_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Rows(mult);
-      this->mult = mult;
+      this1 = make_s_Rows(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].columns;
-         xdr_float(xdrs,&this->in[m].y);
+         void* (*ptr) = (void**) &this1->in[m].columns;
+         xdr_float(xdrs,&this1->in[m].y);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1932,28 +1932,28 @@ static s_Rows_t* unpack_s_Rows(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_Columns_t* unpack_s_Columns(XDR* xdrs, popNode* pop)
 {
-   s_Columns_t* this = 0;
+   s_Columns_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_Columns(mult);
-      this->mult = mult;
+      this1 = make_s_Columns(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this->in[m].showers;
-         xdr_float(xdrs,&this->in[m].x);
+         void* (*ptr) = (void**) &this1->in[m].showers;
+         xdr_float(xdrs,&this1->in[m].x);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1972,34 +1972,34 @@ static s_Columns_t* unpack_s_Columns(XDR* xdrs, popNode* pop)
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 static s_ForwardShowers_t* unpack_s_ForwardShowers(XDR* xdrs, popNode* pop)
 {
-   s_ForwardShowers_t* this = 0;
+   s_ForwardShowers_t* this1 = 0;
    int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
+   if(!xdr_u_int(xdrs,&size))return NULL;
    start = xdr_getpos(xdrs);
    if (size > 0)
    {
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
-      this = make_s_ForwardShowers(mult);
-      this->mult = mult;
+      this1 = make_s_ForwardShowers(mult);
+      this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
-         xdr_float(xdrs,&this->in[m].E);
-         xdr_float(xdrs,&this->in[m].t);
-         xdr_int(xdrs,&this->in[m].track);
-         xdr_float(xdrs,&this->in[m].x);
-         xdr_float(xdrs,&this->in[m].y);
+         xdr_float(xdrs,&this1->in[m].E);
+         xdr_float(xdrs,&this1->in[m].t);
+         xdr_int(xdrs,&this1->in[m].track);
+         xdr_float(xdrs,&this1->in[m].x);
+         xdr_float(xdrs,&this1->in[m].y);
       }
    }
    xdr_setpos(xdrs,start+size);
-   return this;
+   return this1;
 }
 
 s_HDDM_t* read_s_HDDM(s_iostream_t* fp)
@@ -2007,54 +2007,54 @@ s_HDDM_t* read_s_HDDM(s_iostream_t* fp)
    return unpack_s_HDDM(fp->xdrs,fp->popTop);
 }
 
-static int pack_s_HDDM(XDR* xdrs, s_HDDM_t* this);
-static int pack_s_PhysicsEvents(XDR* xdrs, s_PhysicsEvents_t* this);
-static int pack_s_Reactions(XDR* xdrs, s_Reactions_t* this);
-static int pack_s_Beam(XDR* xdrs, s_Beam_t* this);
-static int pack_s_Momentum(XDR* xdrs, s_Momentum_t* this);
-static int pack_s_Properties(XDR* xdrs, s_Properties_t* this);
-static int pack_s_Target(XDR* xdrs, s_Target_t* this);
-static int pack_s_Vertices(XDR* xdrs, s_Vertices_t* this);
-static int pack_s_Products(XDR* xdrs, s_Products_t* this);
-static int pack_s_Origin(XDR* xdrs, s_Origin_t* this);
-static int pack_s_HitView(XDR* xdrs, s_HitView_t* this);
-static int pack_s_CentralDC(XDR* xdrs, s_CentralDC_t* this);
-static int pack_s_CathodeCyls(XDR* xdrs, s_CathodeCyls_t* this);
-static int pack_s_Bands(XDR* xdrs, s_Bands_t* this);
-static int pack_s_Rings(XDR* xdrs, s_Rings_t* this);
-static int pack_s_Straws(XDR* xdrs, s_Straws_t* this);
-static int pack_s_Hits(XDR* xdrs, s_Hits_t* this);
-static int pack_s_CdcPoints(XDR* xdrs, s_CdcPoints_t* this);
-static int pack_s_ForwardDC(XDR* xdrs, s_ForwardDC_t* this);
-static int pack_s_Chambers(XDR* xdrs, s_Chambers_t* this);
-static int pack_s_CathodePlanes(XDR* xdrs, s_CathodePlanes_t* this);
-static int pack_s_Strips(XDR* xdrs, s_Strips_t* this);
-static int pack_s_AnodePlanes(XDR* xdrs, s_AnodePlanes_t* this);
-static int pack_s_Wires(XDR* xdrs, s_Wires_t* this);
-static int pack_s_FdcPoints(XDR* xdrs, s_FdcPoints_t* this);
-static int pack_s_StartCntr(XDR* xdrs, s_StartCntr_t* this);
-static int pack_s_Paddles(XDR* xdrs, s_Paddles_t* this);
-static int pack_s_StartPoints(XDR* xdrs, s_StartPoints_t* this);
-static int pack_s_BarrelEMcal(XDR* xdrs, s_BarrelEMcal_t* this);
-static int pack_s_Modules(XDR* xdrs, s_Modules_t* this);
-static int pack_s_Upstream(XDR* xdrs, s_Upstream_t* this);
-static int pack_s_Showers(XDR* xdrs, s_Showers_t* this);
-static int pack_s_Downstream(XDR* xdrs, s_Downstream_t* this);
-static int pack_s_BarrelShowers(XDR* xdrs, s_BarrelShowers_t* this);
-static int pack_s_Cerenkov(XDR* xdrs, s_Cerenkov_t* this);
-static int pack_s_Sections(XDR* xdrs, s_Sections_t* this);
-static int pack_s_Flashes(XDR* xdrs, s_Flashes_t* this);
-static int pack_s_ForwardTOF(XDR* xdrs, s_ForwardTOF_t* this);
-static int pack_s_Slabs(XDR* xdrs, s_Slabs_t* this);
-static int pack_s_Left(XDR* xdrs, s_Left_t* this);
-static int pack_s_Right(XDR* xdrs, s_Right_t* this);
-static int pack_s_TofPoints(XDR* xdrs, s_TofPoints_t* this);
-static int pack_s_ForwardEMcal(XDR* xdrs, s_ForwardEMcal_t* this);
-static int pack_s_Rows(XDR* xdrs, s_Rows_t* this);
-static int pack_s_Columns(XDR* xdrs, s_Columns_t* this);
-static int pack_s_ForwardShowers(XDR* xdrs, s_ForwardShowers_t* this);
+static int pack_s_HDDM(XDR* xdrs, s_HDDM_t* this1);
+static int pack_s_PhysicsEvents(XDR* xdrs, s_PhysicsEvents_t* this1);
+static int pack_s_Reactions(XDR* xdrs, s_Reactions_t* this1);
+static int pack_s_Beam(XDR* xdrs, s_Beam_t* this1);
+static int pack_s_Momentum(XDR* xdrs, s_Momentum_t* this1);
+static int pack_s_Properties(XDR* xdrs, s_Properties_t* this1);
+static int pack_s_Target(XDR* xdrs, s_Target_t* this1);
+static int pack_s_Vertices(XDR* xdrs, s_Vertices_t* this1);
+static int pack_s_Products(XDR* xdrs, s_Products_t* this1);
+static int pack_s_Origin(XDR* xdrs, s_Origin_t* this1);
+static int pack_s_HitView(XDR* xdrs, s_HitView_t* this1);
+static int pack_s_CentralDC(XDR* xdrs, s_CentralDC_t* this1);
+static int pack_s_CathodeCyls(XDR* xdrs, s_CathodeCyls_t* this1);
+static int pack_s_Bands(XDR* xdrs, s_Bands_t* this1);
+static int pack_s_Rings(XDR* xdrs, s_Rings_t* this1);
+static int pack_s_Straws(XDR* xdrs, s_Straws_t* this1);
+static int pack_s_Hits(XDR* xdrs, s_Hits_t* this1);
+static int pack_s_CdcPoints(XDR* xdrs, s_CdcPoints_t* this1);
+static int pack_s_ForwardDC(XDR* xdrs, s_ForwardDC_t* this1);
+static int pack_s_Chambers(XDR* xdrs, s_Chambers_t* this1);
+static int pack_s_CathodePlanes(XDR* xdrs, s_CathodePlanes_t* this1);
+static int pack_s_Strips(XDR* xdrs, s_Strips_t* this1);
+static int pack_s_AnodePlanes(XDR* xdrs, s_AnodePlanes_t* this1);
+static int pack_s_Wires(XDR* xdrs, s_Wires_t* this1);
+static int pack_s_FdcPoints(XDR* xdrs, s_FdcPoints_t* this1);
+static int pack_s_StartCntr(XDR* xdrs, s_StartCntr_t* this1);
+static int pack_s_Paddles(XDR* xdrs, s_Paddles_t* this1);
+static int pack_s_StartPoints(XDR* xdrs, s_StartPoints_t* this1);
+static int pack_s_BarrelEMcal(XDR* xdrs, s_BarrelEMcal_t* this1);
+static int pack_s_Modules(XDR* xdrs, s_Modules_t* this1);
+static int pack_s_Upstream(XDR* xdrs, s_Upstream_t* this1);
+static int pack_s_Showers(XDR* xdrs, s_Showers_t* this1);
+static int pack_s_Downstream(XDR* xdrs, s_Downstream_t* this1);
+static int pack_s_BarrelShowers(XDR* xdrs, s_BarrelShowers_t* this1);
+static int pack_s_Cerenkov(XDR* xdrs, s_Cerenkov_t* this1);
+static int pack_s_Sections(XDR* xdrs, s_Sections_t* this1);
+static int pack_s_Flashes(XDR* xdrs, s_Flashes_t* this1);
+static int pack_s_ForwardTOF(XDR* xdrs, s_ForwardTOF_t* this1);
+static int pack_s_Slabs(XDR* xdrs, s_Slabs_t* this1);
+static int pack_s_Left(XDR* xdrs, s_Left_t* this1);
+static int pack_s_Right(XDR* xdrs, s_Right_t* this1);
+static int pack_s_TofPoints(XDR* xdrs, s_TofPoints_t* this1);
+static int pack_s_ForwardEMcal(XDR* xdrs, s_ForwardEMcal_t* this1);
+static int pack_s_Rows(XDR* xdrs, s_Rows_t* this1);
+static int pack_s_Columns(XDR* xdrs, s_Columns_t* this1);
+static int pack_s_ForwardShowers(XDR* xdrs, s_ForwardShowers_t* this1);
 
-static int pack_s_HDDM(XDR* xdrs, s_HDDM_t* this)
+static int pack_s_HDDM(XDR* xdrs, s_HDDM_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2064,9 +2064,9 @@ static int pack_s_HDDM(XDR* xdrs, s_HDDM_t* this)
    start = xdr_getpos(xdrs);
 
    {
-      if (this->physicsEvents)
+      if (this1->physicsEvents)
       {
-         pack_s_PhysicsEvents(xdrs,this->physicsEvents);
+         pack_s_PhysicsEvents(xdrs,this1->physicsEvents);
       }
       else
       {
@@ -2074,7 +2074,7 @@ static int pack_s_HDDM(XDR* xdrs, s_HDDM_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2083,7 +2083,7 @@ static int pack_s_HDDM(XDR* xdrs, s_HDDM_t* this)
    return size;
 }
 
-static int pack_s_PhysicsEvents(XDR* xdrs, s_PhysicsEvents_t* this)
+static int pack_s_PhysicsEvents(XDR* xdrs, s_PhysicsEvents_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2092,23 +2092,23 @@ static int pack_s_PhysicsEvents(XDR* xdrs, s_PhysicsEvents_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_int(xdrs,&this->in[m].eventNo);
-      xdr_int(xdrs,&this->in[m].runNo);
-      if (this->in[m].reactions)
+      xdr_int(xdrs,&this1->in[m].eventNo);
+      xdr_int(xdrs,&this1->in[m].runNo);
+      if (this1->in[m].reactions)
       {
-         pack_s_Reactions(xdrs,this->in[m].reactions);
+         pack_s_Reactions(xdrs,this1->in[m].reactions);
       }
       else
       {
          int zero=0;
          xdr_int(xdrs,&zero);
       }
-      if (this->in[m].hitView)
+      if (this1->in[m].hitView)
       {
-         pack_s_HitView(xdrs,this->in[m].hitView);
+         pack_s_HitView(xdrs,this1->in[m].hitView);
       }
       else
       {
@@ -2116,7 +2116,7 @@ static int pack_s_PhysicsEvents(XDR* xdrs, s_PhysicsEvents_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2125,7 +2125,7 @@ static int pack_s_PhysicsEvents(XDR* xdrs, s_PhysicsEvents_t* this)
    return size;
 }
 
-static int pack_s_Reactions(XDR* xdrs, s_Reactions_t* this)
+static int pack_s_Reactions(XDR* xdrs, s_Reactions_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2134,32 +2134,32 @@ static int pack_s_Reactions(XDR* xdrs, s_Reactions_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_int(xdrs,&this->in[m].type);
-      xdr_float(xdrs,&this->in[m].weight);
-      if (this->in[m].beam)
+      xdr_int(xdrs,&this1->in[m].type);
+      xdr_float(xdrs,&this1->in[m].weight);
+      if (this1->in[m].beam)
       {
-         pack_s_Beam(xdrs,this->in[m].beam);
+         pack_s_Beam(xdrs,this1->in[m].beam);
       }
       else
       {
          int zero=0;
          xdr_int(xdrs,&zero);
       }
-      if (this->in[m].target)
+      if (this1->in[m].target)
       {
-         pack_s_Target(xdrs,this->in[m].target);
+         pack_s_Target(xdrs,this1->in[m].target);
       }
       else
       {
          int zero=0;
          xdr_int(xdrs,&zero);
       }
-      if (this->in[m].vertices)
+      if (this1->in[m].vertices)
       {
-         pack_s_Vertices(xdrs,this->in[m].vertices);
+         pack_s_Vertices(xdrs,this1->in[m].vertices);
       }
       else
       {
@@ -2167,7 +2167,7 @@ static int pack_s_Reactions(XDR* xdrs, s_Reactions_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2176,46 +2176,7 @@ static int pack_s_Reactions(XDR* xdrs, s_Reactions_t* this)
    return size;
 }
 
-static int pack_s_Beam(XDR* xdrs, s_Beam_t* this)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   {
-      xdr_int(xdrs,(int*)&this->type);
-      if (this->momentum)
-      {
-         pack_s_Momentum(xdrs,this->momentum);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->properties)
-      {
-         pack_s_Properties(xdrs,this->properties);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-   }
-   FREE(this);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_Momentum(XDR* xdrs, s_Momentum_t* this)
+static int pack_s_Beam(XDR* xdrs, s_Beam_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2225,12 +2186,27 @@ static int pack_s_Momentum(XDR* xdrs, s_Momentum_t* this)
    start = xdr_getpos(xdrs);
 
    {
-      xdr_float(xdrs,&this->E);
-      xdr_float(xdrs,&this->px);
-      xdr_float(xdrs,&this->py);
-      xdr_float(xdrs,&this->pz);
+      xdr_int(xdrs,(int*)&this1->type);
+      if (this1->momentum)
+      {
+         pack_s_Momentum(xdrs,this1->momentum);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->properties)
+      {
+         pack_s_Properties(xdrs,this1->properties);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2239,7 +2215,7 @@ static int pack_s_Momentum(XDR* xdrs, s_Momentum_t* this)
    return size;
 }
 
-static int pack_s_Properties(XDR* xdrs, s_Properties_t* this)
+static int pack_s_Momentum(XDR* xdrs, s_Momentum_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2249,10 +2225,12 @@ static int pack_s_Properties(XDR* xdrs, s_Properties_t* this)
    start = xdr_getpos(xdrs);
 
    {
-      xdr_int(xdrs,&this->charge);
-      xdr_float(xdrs,&this->mass);
+      xdr_float(xdrs,&this1->E);
+      xdr_float(xdrs,&this1->px);
+      xdr_float(xdrs,&this1->py);
+      xdr_float(xdrs,&this1->pz);
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2261,7 +2239,7 @@ static int pack_s_Properties(XDR* xdrs, s_Properties_t* this)
    return size;
 }
 
-static int pack_s_Target(XDR* xdrs, s_Target_t* this)
+static int pack_s_Properties(XDR* xdrs, s_Properties_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2271,27 +2249,10 @@ static int pack_s_Target(XDR* xdrs, s_Target_t* this)
    start = xdr_getpos(xdrs);
 
    {
-      xdr_int(xdrs,(int*)&this->type);
-      if (this->momentum)
-      {
-         pack_s_Momentum(xdrs,this->momentum);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->properties)
-      {
-         pack_s_Properties(xdrs,this->properties);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
+      xdr_int(xdrs,&this1->charge);
+      xdr_float(xdrs,&this1->mass);
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2300,89 +2261,7 @@ static int pack_s_Target(XDR* xdrs, s_Target_t* this)
    return size;
 }
 
-static int pack_s_Vertices(XDR* xdrs, s_Vertices_t* this)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
-   {
-      if (this->in[m].products)
-      {
-         pack_s_Products(xdrs,this->in[m].products);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->in[m].origin)
-      {
-         pack_s_Origin(xdrs,this->in[m].origin);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-   }
-   FREE(this);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_Products(XDR* xdrs, s_Products_t* this)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
-   {
-      xdr_int(xdrs,&this->in[m].decayVertex);
-      xdr_int(xdrs,(int*)&this->in[m].type);
-      if (this->in[m].momentum)
-      {
-         pack_s_Momentum(xdrs,this->in[m].momentum);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->in[m].properties)
-      {
-         pack_s_Properties(xdrs,this->in[m].properties);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-   }
-   FREE(this);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_Origin(XDR* xdrs, s_Origin_t* this)
+static int pack_s_Target(XDR* xdrs, s_Target_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2392,12 +2271,27 @@ static int pack_s_Origin(XDR* xdrs, s_Origin_t* this)
    start = xdr_getpos(xdrs);
 
    {
-      xdr_float(xdrs,&this->t);
-      xdr_float(xdrs,&this->vx);
-      xdr_float(xdrs,&this->vy);
-      xdr_float(xdrs,&this->vz);
+      xdr_int(xdrs,(int*)&this1->type);
+      if (this1->momentum)
+      {
+         pack_s_Momentum(xdrs,this1->momentum);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->properties)
+      {
+         pack_s_Properties(xdrs,this1->properties);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2406,7 +2300,89 @@ static int pack_s_Origin(XDR* xdrs, s_Origin_t* this)
    return size;
 }
 
-static int pack_s_HitView(XDR* xdrs, s_HitView_t* this)
+static int pack_s_Vertices(XDR* xdrs, s_Vertices_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      if (this1->in[m].products)
+      {
+         pack_s_Products(xdrs,this1->in[m].products);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->in[m].origin)
+      {
+         pack_s_Origin(xdrs,this1->in[m].origin);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_Products(XDR* xdrs, s_Products_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_int(xdrs,&this1->in[m].decayVertex);
+      xdr_int(xdrs,(int*)&this1->in[m].type);
+      if (this1->in[m].momentum)
+      {
+         pack_s_Momentum(xdrs,this1->in[m].momentum);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->in[m].properties)
+      {
+         pack_s_Properties(xdrs,this1->in[m].properties);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_Origin(XDR* xdrs, s_Origin_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2416,71 +2392,12 @@ static int pack_s_HitView(XDR* xdrs, s_HitView_t* this)
    start = xdr_getpos(xdrs);
 
    {
-      if (this->centralDC)
-      {
-         pack_s_CentralDC(xdrs,this->centralDC);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->forwardDC)
-      {
-         pack_s_ForwardDC(xdrs,this->forwardDC);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->startCntr)
-      {
-         pack_s_StartCntr(xdrs,this->startCntr);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->barrelEMcal)
-      {
-         pack_s_BarrelEMcal(xdrs,this->barrelEMcal);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->Cerenkov)
-      {
-         pack_s_Cerenkov(xdrs,this->Cerenkov);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->forwardTOF)
-      {
-         pack_s_ForwardTOF(xdrs,this->forwardTOF);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->forwardEMcal)
-      {
-         pack_s_ForwardEMcal(xdrs,this->forwardEMcal);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
+      xdr_float(xdrs,&this1->t);
+      xdr_float(xdrs,&this1->vx);
+      xdr_float(xdrs,&this1->vy);
+      xdr_float(xdrs,&this1->vz);
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2489,7 +2406,7 @@ static int pack_s_HitView(XDR* xdrs, s_HitView_t* this)
    return size;
 }
 
-static int pack_s_CentralDC(XDR* xdrs, s_CentralDC_t* this)
+static int pack_s_HitView(XDR* xdrs, s_HitView_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2499,106 +2416,63 @@ static int pack_s_CentralDC(XDR* xdrs, s_CentralDC_t* this)
    start = xdr_getpos(xdrs);
 
    {
-      if (this->cathodeCyls)
+      if (this1->centralDC)
       {
-         pack_s_CathodeCyls(xdrs,this->cathodeCyls);
+         pack_s_CentralDC(xdrs,this1->centralDC);
       }
       else
       {
          int zero=0;
          xdr_int(xdrs,&zero);
       }
-      if (this->rings)
+      if (this1->forwardDC)
       {
-         pack_s_Rings(xdrs,this->rings);
+         pack_s_ForwardDC(xdrs,this1->forwardDC);
       }
       else
       {
          int zero=0;
          xdr_int(xdrs,&zero);
       }
-   }
-   FREE(this);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_CathodeCyls(XDR* xdrs, s_CathodeCyls_t* this)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
-   {
-      xdr_float(xdrs,&this->in[m].radius);
-      if (this->in[m].bands)
+      if (this1->startCntr)
       {
-         pack_s_Bands(xdrs,this->in[m].bands);
+         pack_s_StartCntr(xdrs,this1->startCntr);
       }
       else
       {
          int zero=0;
          xdr_int(xdrs,&zero);
       }
-   }
-   FREE(this);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_Bands(XDR* xdrs, s_Bands_t* this)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
-   {
-      xdr_float(xdrs,&this->in[m].phim);
-      xdr_float(xdrs,&this->in[m].z);
-   }
-   FREE(this);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_Rings(XDR* xdrs, s_Rings_t* this)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
-   {
-      xdr_float(xdrs,&this->in[m].radius);
-      if (this->in[m].straws)
+      if (this1->barrelEMcal)
       {
-         pack_s_Straws(xdrs,this->in[m].straws);
+         pack_s_BarrelEMcal(xdrs,this1->barrelEMcal);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->Cerenkov)
+      {
+         pack_s_Cerenkov(xdrs,this1->Cerenkov);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->forwardTOF)
+      {
+         pack_s_ForwardTOF(xdrs,this1->forwardTOF);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->forwardEMcal)
+      {
+         pack_s_ForwardEMcal(xdrs,this1->forwardEMcal);
       }
       else
       {
@@ -2606,7 +2480,7 @@ static int pack_s_Rings(XDR* xdrs, s_Rings_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2615,100 +2489,7 @@ static int pack_s_Rings(XDR* xdrs, s_Rings_t* this)
    return size;
 }
 
-static int pack_s_Straws(XDR* xdrs, s_Straws_t* this)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
-   {
-      xdr_float(xdrs,&this->in[m].phim);
-      if (this->in[m].hits)
-      {
-         pack_s_Hits(xdrs,this->in[m].hits);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->in[m].cdcPoints)
-      {
-         pack_s_CdcPoints(xdrs,this->in[m].cdcPoints);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-   }
-   FREE(this);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_Hits(XDR* xdrs, s_Hits_t* this)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
-   {
-      xdr_float(xdrs,&this->in[m].dE);
-      xdr_float(xdrs,&this->in[m].t);
-   }
-   FREE(this);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_CdcPoints(XDR* xdrs, s_CdcPoints_t* this)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
-   {
-      xdr_float(xdrs,&this->in[m].dEdx);
-      xdr_float(xdrs,&this->in[m].dradius);
-      xdr_float(xdrs,&this->in[m].phi);
-      xdr_float(xdrs,&this->in[m].r);
-      xdr_int(xdrs,&this->in[m].track);
-      xdr_float(xdrs,&this->in[m].z);
-   }
-   FREE(this);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_ForwardDC(XDR* xdrs, s_ForwardDC_t* this)
+static int pack_s_CentralDC(XDR* xdrs, s_CentralDC_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2718,9 +2499,18 @@ static int pack_s_ForwardDC(XDR* xdrs, s_ForwardDC_t* this)
    start = xdr_getpos(xdrs);
 
    {
-      if (this->chambers)
+      if (this1->cathodeCyls)
       {
-         pack_s_Chambers(xdrs,this->chambers);
+         pack_s_CathodeCyls(xdrs,this1->cathodeCyls);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->rings)
+      {
+         pack_s_Rings(xdrs,this1->rings);
       }
       else
       {
@@ -2728,7 +2518,7 @@ static int pack_s_ForwardDC(XDR* xdrs, s_ForwardDC_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2737,7 +2527,7 @@ static int pack_s_ForwardDC(XDR* xdrs, s_ForwardDC_t* this)
    return size;
 }
 
-static int pack_s_Chambers(XDR* xdrs, s_Chambers_t* this)
+static int pack_s_CathodeCyls(XDR* xdrs, s_CathodeCyls_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2746,23 +2536,13 @@ static int pack_s_Chambers(XDR* xdrs, s_Chambers_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_int(xdrs,&this->in[m].layer);
-      xdr_int(xdrs,&this->in[m].module);
-      if (this->in[m].cathodePlanes)
+      xdr_float(xdrs,&this1->in[m].radius);
+      if (this1->in[m].bands)
       {
-         pack_s_CathodePlanes(xdrs,this->in[m].cathodePlanes);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->in[m].anodePlanes)
-      {
-         pack_s_AnodePlanes(xdrs,this->in[m].anodePlanes);
+         pack_s_Bands(xdrs,this1->in[m].bands);
       }
       else
       {
@@ -2770,7 +2550,7 @@ static int pack_s_Chambers(XDR* xdrs, s_Chambers_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2779,7 +2559,7 @@ static int pack_s_Chambers(XDR* xdrs, s_Chambers_t* this)
    return size;
 }
 
-static int pack_s_CathodePlanes(XDR* xdrs, s_CathodePlanes_t* this)
+static int pack_s_Bands(XDR* xdrs, s_Bands_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2788,22 +2568,13 @@ static int pack_s_CathodePlanes(XDR* xdrs, s_CathodePlanes_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].tau);
-      xdr_float(xdrs,&this->in[m].z);
-      if (this->in[m].strips)
-      {
-         pack_s_Strips(xdrs,this->in[m].strips);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
+      xdr_float(xdrs,&this1->in[m].phim);
+      xdr_float(xdrs,&this1->in[m].z);
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2812,7 +2583,7 @@ static int pack_s_CathodePlanes(XDR* xdrs, s_CathodePlanes_t* this)
    return size;
 }
 
-static int pack_s_Strips(XDR* xdrs, s_Strips_t* this)
+static int pack_s_Rings(XDR* xdrs, s_Rings_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2821,12 +2592,21 @@ static int pack_s_Strips(XDR* xdrs, s_Strips_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].u);
+      xdr_float(xdrs,&this1->in[m].radius);
+      if (this1->in[m].straws)
+      {
+         pack_s_Straws(xdrs,this1->in[m].straws);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2835,7 +2615,7 @@ static int pack_s_Strips(XDR* xdrs, s_Strips_t* this)
    return size;
 }
 
-static int pack_s_AnodePlanes(XDR* xdrs, s_AnodePlanes_t* this)
+static int pack_s_Straws(XDR* xdrs, s_Straws_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2844,14 +2624,22 @@ static int pack_s_AnodePlanes(XDR* xdrs, s_AnodePlanes_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].tau);
-      xdr_float(xdrs,&this->in[m].z);
-      if (this->in[m].wires)
+      xdr_float(xdrs,&this1->in[m].phim);
+      if (this1->in[m].hits)
       {
-         pack_s_Wires(xdrs,this->in[m].wires);
+         pack_s_Hits(xdrs,this1->in[m].hits);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->in[m].cdcPoints)
+      {
+         pack_s_CdcPoints(xdrs,this1->in[m].cdcPoints);
       }
       else
       {
@@ -2859,7 +2647,7 @@ static int pack_s_AnodePlanes(XDR* xdrs, s_AnodePlanes_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2868,7 +2656,7 @@ static int pack_s_AnodePlanes(XDR* xdrs, s_AnodePlanes_t* this)
    return size;
 }
 
-static int pack_s_Wires(XDR* xdrs, s_Wires_t* this)
+static int pack_s_Hits(XDR* xdrs, s_Hits_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2877,30 +2665,13 @@ static int pack_s_Wires(XDR* xdrs, s_Wires_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].u);
-      if (this->in[m].hits)
-      {
-         pack_s_Hits(xdrs,this->in[m].hits);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->in[m].fdcPoints)
-      {
-         pack_s_FdcPoints(xdrs,this->in[m].fdcPoints);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
+      xdr_float(xdrs,&this1->in[m].dE);
+      xdr_float(xdrs,&this1->in[m].t);
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2909,7 +2680,7 @@ static int pack_s_Wires(XDR* xdrs, s_Wires_t* this)
    return size;
 }
 
-static int pack_s_FdcPoints(XDR* xdrs, s_FdcPoints_t* this)
+static int pack_s_CdcPoints(XDR* xdrs, s_CdcPoints_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2918,17 +2689,17 @@ static int pack_s_FdcPoints(XDR* xdrs, s_FdcPoints_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].dEdx);
-      xdr_float(xdrs,&this->in[m].dradius);
-      xdr_int(xdrs,&this->in[m].track);
-      xdr_float(xdrs,&this->in[m].x);
-      xdr_float(xdrs,&this->in[m].y);
-      xdr_float(xdrs,&this->in[m].z);
+      xdr_float(xdrs,&this1->in[m].dEdx);
+      xdr_float(xdrs,&this1->in[m].dradius);
+      xdr_float(xdrs,&this1->in[m].phi);
+      xdr_float(xdrs,&this1->in[m].r);
+      xdr_int(xdrs,&this1->in[m].track);
+      xdr_float(xdrs,&this1->in[m].z);
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2937,7 +2708,7 @@ static int pack_s_FdcPoints(XDR* xdrs, s_FdcPoints_t* this)
    return size;
 }
 
-static int pack_s_StartCntr(XDR* xdrs, s_StartCntr_t* this)
+static int pack_s_ForwardDC(XDR* xdrs, s_ForwardDC_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2947,18 +2718,9 @@ static int pack_s_StartCntr(XDR* xdrs, s_StartCntr_t* this)
    start = xdr_getpos(xdrs);
 
    {
-      if (this->paddles)
+      if (this1->chambers)
       {
-         pack_s_Paddles(xdrs,this->paddles);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->startPoints)
-      {
-         pack_s_StartPoints(xdrs,this->startPoints);
+         pack_s_Chambers(xdrs,this1->chambers);
       }
       else
       {
@@ -2966,7 +2728,7 @@ static int pack_s_StartCntr(XDR* xdrs, s_StartCntr_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -2975,7 +2737,7 @@ static int pack_s_StartCntr(XDR* xdrs, s_StartCntr_t* this)
    return size;
 }
 
-static int pack_s_Paddles(XDR* xdrs, s_Paddles_t* this)
+static int pack_s_Chambers(XDR* xdrs, s_Chambers_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -2984,13 +2746,23 @@ static int pack_s_Paddles(XDR* xdrs, s_Paddles_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].phim);
-      if (this->in[m].hits)
+      xdr_int(xdrs,&this1->in[m].layer);
+      xdr_int(xdrs,&this1->in[m].module);
+      if (this1->in[m].cathodePlanes)
       {
-         pack_s_Hits(xdrs,this->in[m].hits);
+         pack_s_CathodePlanes(xdrs,this1->in[m].cathodePlanes);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->in[m].anodePlanes)
+      {
+         pack_s_AnodePlanes(xdrs,this1->in[m].anodePlanes);
       }
       else
       {
@@ -2998,7 +2770,7 @@ static int pack_s_Paddles(XDR* xdrs, s_Paddles_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3007,7 +2779,7 @@ static int pack_s_Paddles(XDR* xdrs, s_Paddles_t* this)
    return size;
 }
 
-static int pack_s_StartPoints(XDR* xdrs, s_StartPoints_t* this)
+static int pack_s_CathodePlanes(XDR* xdrs, s_CathodePlanes_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3016,17 +2788,22 @@ static int pack_s_StartPoints(XDR* xdrs, s_StartPoints_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].dEdx);
-      xdr_float(xdrs,&this->in[m].phi);
-      xdr_float(xdrs,&this->in[m].r);
-      xdr_float(xdrs,&this->in[m].t);
-      xdr_int(xdrs,&this->in[m].track);
-      xdr_float(xdrs,&this->in[m].z);
+      xdr_float(xdrs,&this1->in[m].tau);
+      xdr_float(xdrs,&this1->in[m].z);
+      if (this1->in[m].strips)
+      {
+         pack_s_Strips(xdrs,this1->in[m].strips);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3035,7 +2812,7 @@ static int pack_s_StartPoints(XDR* xdrs, s_StartPoints_t* this)
    return size;
 }
 
-static int pack_s_BarrelEMcal(XDR* xdrs, s_BarrelEMcal_t* this)
+static int pack_s_Strips(XDR* xdrs, s_Strips_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3044,27 +2821,12 @@ static int pack_s_BarrelEMcal(XDR* xdrs, s_BarrelEMcal_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      if (this->modules)
-      {
-         pack_s_Modules(xdrs,this->modules);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->barrelShowers)
-      {
-         pack_s_BarrelShowers(xdrs,this->barrelShowers);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
+      xdr_float(xdrs,&this1->in[m].u);
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3073,7 +2835,7 @@ static int pack_s_BarrelEMcal(XDR* xdrs, s_BarrelEMcal_t* this)
    return size;
 }
 
-static int pack_s_Modules(XDR* xdrs, s_Modules_t* this)
+static int pack_s_AnodePlanes(XDR* xdrs, s_AnodePlanes_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3082,22 +2844,14 @@ static int pack_s_Modules(XDR* xdrs, s_Modules_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].phim);
-      if (this->in[m].upstream)
+      xdr_float(xdrs,&this1->in[m].tau);
+      xdr_float(xdrs,&this1->in[m].z);
+      if (this1->in[m].wires)
       {
-         pack_s_Upstream(xdrs,this->in[m].upstream);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->in[m].downstream)
-      {
-         pack_s_Downstream(xdrs,this->in[m].downstream);
+         pack_s_Wires(xdrs,this1->in[m].wires);
       }
       else
       {
@@ -3105,7 +2859,7 @@ static int pack_s_Modules(XDR* xdrs, s_Modules_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3114,7 +2868,7 @@ static int pack_s_Modules(XDR* xdrs, s_Modules_t* this)
    return size;
 }
 
-static int pack_s_Upstream(XDR* xdrs, s_Upstream_t* this)
+static int pack_s_Wires(XDR* xdrs, s_Wires_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3123,10 +2877,22 @@ static int pack_s_Upstream(XDR* xdrs, s_Upstream_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      if (this->showers)
+      xdr_float(xdrs,&this1->in[m].u);
+      if (this1->in[m].hits)
       {
-         pack_s_Showers(xdrs,this->showers);
+         pack_s_Hits(xdrs,this1->in[m].hits);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->in[m].fdcPoints)
+      {
+         pack_s_FdcPoints(xdrs,this1->in[m].fdcPoints);
       }
       else
       {
@@ -3134,7 +2900,7 @@ static int pack_s_Upstream(XDR* xdrs, s_Upstream_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3143,7 +2909,7 @@ static int pack_s_Upstream(XDR* xdrs, s_Upstream_t* this)
    return size;
 }
 
-static int pack_s_Showers(XDR* xdrs, s_Showers_t* this)
+static int pack_s_FdcPoints(XDR* xdrs, s_FdcPoints_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3152,13 +2918,17 @@ static int pack_s_Showers(XDR* xdrs, s_Showers_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].E);
-      xdr_float(xdrs,&this->in[m].t);
+      xdr_float(xdrs,&this1->in[m].dEdx);
+      xdr_float(xdrs,&this1->in[m].dradius);
+      xdr_int(xdrs,&this1->in[m].track);
+      xdr_float(xdrs,&this1->in[m].x);
+      xdr_float(xdrs,&this1->in[m].y);
+      xdr_float(xdrs,&this1->in[m].z);
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3167,63 +2937,7 @@ static int pack_s_Showers(XDR* xdrs, s_Showers_t* this)
    return size;
 }
 
-static int pack_s_Downstream(XDR* xdrs, s_Downstream_t* this)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   {
-      if (this->showers)
-      {
-         pack_s_Showers(xdrs,this->showers);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-   }
-   FREE(this);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_BarrelShowers(XDR* xdrs, s_BarrelShowers_t* this)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
-   {
-      xdr_float(xdrs,&this->in[m].E);
-      xdr_float(xdrs,&this->in[m].phi);
-      xdr_float(xdrs,&this->in[m].t);
-      xdr_int(xdrs,&this->in[m].track);
-      xdr_float(xdrs,&this->in[m].z);
-   }
-   FREE(this);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_Cerenkov(XDR* xdrs, s_Cerenkov_t* this)
+static int pack_s_StartCntr(XDR* xdrs, s_StartCntr_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3233,9 +2947,18 @@ static int pack_s_Cerenkov(XDR* xdrs, s_Cerenkov_t* this)
    start = xdr_getpos(xdrs);
 
    {
-      if (this->sections)
+      if (this1->paddles)
       {
-         pack_s_Sections(xdrs,this->sections);
+         pack_s_Paddles(xdrs,this1->paddles);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->startPoints)
+      {
+         pack_s_StartPoints(xdrs,this1->startPoints);
       }
       else
       {
@@ -3243,7 +2966,7 @@ static int pack_s_Cerenkov(XDR* xdrs, s_Cerenkov_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3252,7 +2975,7 @@ static int pack_s_Cerenkov(XDR* xdrs, s_Cerenkov_t* this)
    return size;
 }
 
-static int pack_s_Sections(XDR* xdrs, s_Sections_t* this)
+static int pack_s_Paddles(XDR* xdrs, s_Paddles_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3261,13 +2984,13 @@ static int pack_s_Sections(XDR* xdrs, s_Sections_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].phim);
-      if (this->in[m].flashes)
+      xdr_float(xdrs,&this1->in[m].phim);
+      if (this1->in[m].hits)
       {
-         pack_s_Flashes(xdrs,this->in[m].flashes);
+         pack_s_Hits(xdrs,this1->in[m].hits);
       }
       else
       {
@@ -3275,7 +2998,7 @@ static int pack_s_Sections(XDR* xdrs, s_Sections_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3284,7 +3007,7 @@ static int pack_s_Sections(XDR* xdrs, s_Sections_t* this)
    return size;
 }
 
-static int pack_s_Flashes(XDR* xdrs, s_Flashes_t* this)
+static int pack_s_StartPoints(XDR* xdrs, s_StartPoints_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3293,13 +3016,17 @@ static int pack_s_Flashes(XDR* xdrs, s_Flashes_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].pe);
-      xdr_float(xdrs,&this->in[m].t);
+      xdr_float(xdrs,&this1->in[m].dEdx);
+      xdr_float(xdrs,&this1->in[m].phi);
+      xdr_float(xdrs,&this1->in[m].r);
+      xdr_float(xdrs,&this1->in[m].t);
+      xdr_int(xdrs,&this1->in[m].track);
+      xdr_float(xdrs,&this1->in[m].z);
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3308,86 +3035,7 @@ static int pack_s_Flashes(XDR* xdrs, s_Flashes_t* this)
    return size;
 }
 
-static int pack_s_ForwardTOF(XDR* xdrs, s_ForwardTOF_t* this)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   {
-      if (this->slabs)
-      {
-         pack_s_Slabs(xdrs,this->slabs);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->tofPoints)
-      {
-         pack_s_TofPoints(xdrs,this->tofPoints);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-   }
-   FREE(this);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_Slabs(XDR* xdrs, s_Slabs_t* this)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
-   {
-      xdr_float(xdrs,&this->in[m].y);
-      if (this->in[m].left)
-      {
-         pack_s_Left(xdrs,this->in[m].left);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->in[m].right)
-      {
-         pack_s_Right(xdrs,this->in[m].right);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-   }
-   FREE(this);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_Left(XDR* xdrs, s_Left_t* this)
+static int pack_s_BarrelEMcal(XDR* xdrs, s_BarrelEMcal_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3397,9 +3045,18 @@ static int pack_s_Left(XDR* xdrs, s_Left_t* this)
    start = xdr_getpos(xdrs);
 
    {
-      if (this->hits)
+      if (this1->modules)
       {
-         pack_s_Hits(xdrs,this->hits);
+         pack_s_Modules(xdrs,this1->modules);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->barrelShowers)
+      {
+         pack_s_BarrelShowers(xdrs,this1->barrelShowers);
       }
       else
       {
@@ -3407,7 +3064,7 @@ static int pack_s_Left(XDR* xdrs, s_Left_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3416,7 +3073,48 @@ static int pack_s_Left(XDR* xdrs, s_Left_t* this)
    return size;
 }
 
-static int pack_s_Right(XDR* xdrs, s_Right_t* this)
+static int pack_s_Modules(XDR* xdrs, s_Modules_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].phim);
+      if (this1->in[m].upstream)
+      {
+         pack_s_Upstream(xdrs,this1->in[m].upstream);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->in[m].downstream)
+      {
+         pack_s_Downstream(xdrs,this1->in[m].downstream);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_Upstream(XDR* xdrs, s_Upstream_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3426,9 +3124,9 @@ static int pack_s_Right(XDR* xdrs, s_Right_t* this)
    start = xdr_getpos(xdrs);
 
    {
-      if (this->hits)
+      if (this1->showers)
       {
-         pack_s_Hits(xdrs,this->hits);
+         pack_s_Showers(xdrs,this1->showers);
       }
       else
       {
@@ -3436,7 +3134,7 @@ static int pack_s_Right(XDR* xdrs, s_Right_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3445,7 +3143,7 @@ static int pack_s_Right(XDR* xdrs, s_Right_t* this)
    return size;
 }
 
-static int pack_s_TofPoints(XDR* xdrs, s_TofPoints_t* this)
+static int pack_s_Showers(XDR* xdrs, s_Showers_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3454,15 +3152,13 @@ static int pack_s_TofPoints(XDR* xdrs, s_TofPoints_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].t);
-      xdr_int(xdrs,&this->in[m].track);
-      xdr_float(xdrs,&this->in[m].x);
-      xdr_float(xdrs,&this->in[m].y);
+      xdr_float(xdrs,&this1->in[m].E);
+      xdr_float(xdrs,&this1->in[m].t);
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3471,7 +3167,7 @@ static int pack_s_TofPoints(XDR* xdrs, s_TofPoints_t* this)
    return size;
 }
 
-static int pack_s_ForwardEMcal(XDR* xdrs, s_ForwardEMcal_t* this)
+static int pack_s_Downstream(XDR* xdrs, s_Downstream_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3481,18 +3177,9 @@ static int pack_s_ForwardEMcal(XDR* xdrs, s_ForwardEMcal_t* this)
    start = xdr_getpos(xdrs);
 
    {
-      if (this->rows)
+      if (this1->showers)
       {
-         pack_s_Rows(xdrs,this->rows);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this->forwardShowers)
-      {
-         pack_s_ForwardShowers(xdrs,this->forwardShowers);
+         pack_s_Showers(xdrs,this1->showers);
       }
       else
       {
@@ -3500,7 +3187,7 @@ static int pack_s_ForwardEMcal(XDR* xdrs, s_ForwardEMcal_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3509,7 +3196,7 @@ static int pack_s_ForwardEMcal(XDR* xdrs, s_ForwardEMcal_t* this)
    return size;
 }
 
-static int pack_s_Rows(XDR* xdrs, s_Rows_t* this)
+static int pack_s_BarrelShowers(XDR* xdrs, s_BarrelShowers_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3518,21 +3205,16 @@ static int pack_s_Rows(XDR* xdrs, s_Rows_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].y);
-      if (this->in[m].columns)
-      {
-         pack_s_Columns(xdrs,this->in[m].columns);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
+      xdr_float(xdrs,&this1->in[m].E);
+      xdr_float(xdrs,&this1->in[m].phi);
+      xdr_float(xdrs,&this1->in[m].t);
+      xdr_int(xdrs,&this1->in[m].track);
+      xdr_float(xdrs,&this1->in[m].z);
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3541,7 +3223,7 @@ static int pack_s_Rows(XDR* xdrs, s_Rows_t* this)
    return size;
 }
 
-static int pack_s_Columns(XDR* xdrs, s_Columns_t* this)
+static int pack_s_Cerenkov(XDR* xdrs, s_Cerenkov_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3550,13 +3232,10 @@ static int pack_s_Columns(XDR* xdrs, s_Columns_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].x);
-      if (this->in[m].showers)
+      if (this1->sections)
       {
-         pack_s_Showers(xdrs,this->in[m].showers);
+         pack_s_Sections(xdrs,this1->sections);
       }
       else
       {
@@ -3564,7 +3243,7 @@ static int pack_s_Columns(XDR* xdrs, s_Columns_t* this)
          xdr_int(xdrs,&zero);
       }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3573,7 +3252,7 @@ static int pack_s_Columns(XDR* xdrs, s_Columns_t* this)
    return size;
 }
 
-static int pack_s_ForwardShowers(XDR* xdrs, s_ForwardShowers_t* this)
+static int pack_s_Sections(XDR* xdrs, s_Sections_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3582,16 +3261,21 @@ static int pack_s_ForwardShowers(XDR* xdrs, s_ForwardShowers_t* this)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
-   xdr_u_int(xdrs,&this->mult);
-   for (m = 0; m < this->mult; m++)
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this->in[m].E);
-      xdr_float(xdrs,&this->in[m].t);
-      xdr_int(xdrs,&this->in[m].track);
-      xdr_float(xdrs,&this->in[m].x);
-      xdr_float(xdrs,&this->in[m].y);
+      xdr_float(xdrs,&this1->in[m].phim);
+      if (this1->in[m].flashes)
+      {
+         pack_s_Flashes(xdrs,this1->in[m].flashes);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
    }
-   FREE(this);
+   FREE(this1);
    end = xdr_getpos(xdrs);
    xdr_setpos(xdrs,base);
    size = end-start;
@@ -3600,9 +3284,325 @@ static int pack_s_ForwardShowers(XDR* xdrs, s_ForwardShowers_t* this)
    return size;
 }
 
-int flush_s_HDDM(s_HDDM_t* this,s_iostream_t* fp)
+static int pack_s_Flashes(XDR* xdrs, s_Flashes_t* this1)
 {
-   if (this == 0)
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].pe);
+      xdr_float(xdrs,&this1->in[m].t);
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_ForwardTOF(XDR* xdrs, s_ForwardTOF_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   {
+      if (this1->slabs)
+      {
+         pack_s_Slabs(xdrs,this1->slabs);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->tofPoints)
+      {
+         pack_s_TofPoints(xdrs,this1->tofPoints);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_Slabs(XDR* xdrs, s_Slabs_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].y);
+      if (this1->in[m].left)
+      {
+         pack_s_Left(xdrs,this1->in[m].left);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->in[m].right)
+      {
+         pack_s_Right(xdrs,this1->in[m].right);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_Left(XDR* xdrs, s_Left_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   {
+      if (this1->hits)
+      {
+         pack_s_Hits(xdrs,this1->hits);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_Right(XDR* xdrs, s_Right_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   {
+      if (this1->hits)
+      {
+         pack_s_Hits(xdrs,this1->hits);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_TofPoints(XDR* xdrs, s_TofPoints_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].t);
+      xdr_int(xdrs,&this1->in[m].track);
+      xdr_float(xdrs,&this1->in[m].x);
+      xdr_float(xdrs,&this1->in[m].y);
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_ForwardEMcal(XDR* xdrs, s_ForwardEMcal_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   {
+      if (this1->rows)
+      {
+         pack_s_Rows(xdrs,this1->rows);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->forwardShowers)
+      {
+         pack_s_ForwardShowers(xdrs,this1->forwardShowers);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_Rows(XDR* xdrs, s_Rows_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].y);
+      if (this1->in[m].columns)
+      {
+         pack_s_Columns(xdrs,this1->in[m].columns);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_Columns(XDR* xdrs, s_Columns_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].x);
+      if (this1->in[m].showers)
+      {
+         pack_s_Showers(xdrs,this1->in[m].showers);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_ForwardShowers(XDR* xdrs, s_ForwardShowers_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].E);
+      xdr_float(xdrs,&this1->in[m].t);
+      xdr_int(xdrs,&this1->in[m].track);
+      xdr_float(xdrs,&this1->in[m].x);
+      xdr_float(xdrs,&this1->in[m].y);
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+int flush_s_HDDM(s_HDDM_t* this1,s_iostream_t* fp)
+{
+   if (this1 == 0)
    {
       return 0;
    }
@@ -3612,15 +3612,15 @@ int flush_s_HDDM(s_HDDM_t* this,s_iostream_t* fp)
       int max_buffer_size = 1000000;
       char* dump = malloc(max_buffer_size);
       xdrmem_create(xdrs,dump,max_buffer_size,XDR_ENCODE);
-      pack_s_HDDM(xdrs,this);
-      xdr_destroy(fp->xdrs);
-      free(fp->xdrs);
+      pack_s_HDDM(xdrs,this1);
+      xdr_destroy(xdrs);
+      free(xdrs);
       free(dump);
       return 0;
    }
    else if (fp->iomode == HDDM_STREAM_OUTPUT)
    {
-      pack_s_HDDM(fp->xdrs,this);
+      pack_s_HDDM(fp->xdrs,this1);
       return 0;
    }
 }
@@ -3679,7 +3679,7 @@ static popNode* matches(char* b, char* c)
    {
       if ((clevel == blevel) && (strcmp(ctag,btag) == 0))
       {
-         popNode* this = malloc(sizeof(popNode));
+         popNode* this1 = malloc(sizeof(popNode));
          int len = index(c+1,'\n') - c;
          if (strncmp(c,b,len) != 0)
          {
@@ -3687,200 +3687,200 @@ static popNode* matches(char* b, char* c)
          }
          if (strcmp(btag,"HDDM") == 0)
          {
-            this->unpacker = (void*) unpack_s_HDDM;
+            this1->unpacker = (void*) unpack_s_HDDM;
          }
          else if (strcmp(btag,"physicsEvent") == 0)
          {
-            this->unpacker = (void*) unpack_s_PhysicsEvents;
+            this1->unpacker = (void*) unpack_s_PhysicsEvents;
          }
          else if (strcmp(btag,"reaction") == 0)
          {
-            this->unpacker = (void*) unpack_s_Reactions;
+            this1->unpacker = (void*) unpack_s_Reactions;
          }
          else if (strcmp(btag,"beam") == 0)
          {
-            this->unpacker = (void*) unpack_s_Beam;
+            this1->unpacker = (void*) unpack_s_Beam;
          }
          else if (strcmp(btag,"momentum") == 0)
          {
-            this->unpacker = (void*) unpack_s_Momentum;
+            this1->unpacker = (void*) unpack_s_Momentum;
          }
          else if (strcmp(btag,"properties") == 0)
          {
-            this->unpacker = (void*) unpack_s_Properties;
+            this1->unpacker = (void*) unpack_s_Properties;
          }
          else if (strcmp(btag,"target") == 0)
          {
-            this->unpacker = (void*) unpack_s_Target;
+            this1->unpacker = (void*) unpack_s_Target;
          }
          else if (strcmp(btag,"vertex") == 0)
          {
-            this->unpacker = (void*) unpack_s_Vertices;
+            this1->unpacker = (void*) unpack_s_Vertices;
          }
          else if (strcmp(btag,"product") == 0)
          {
-            this->unpacker = (void*) unpack_s_Products;
+            this1->unpacker = (void*) unpack_s_Products;
          }
          else if (strcmp(btag,"origin") == 0)
          {
-            this->unpacker = (void*) unpack_s_Origin;
+            this1->unpacker = (void*) unpack_s_Origin;
          }
          else if (strcmp(btag,"hitView") == 0)
          {
-            this->unpacker = (void*) unpack_s_HitView;
+            this1->unpacker = (void*) unpack_s_HitView;
          }
          else if (strcmp(btag,"centralDC") == 0)
          {
-            this->unpacker = (void*) unpack_s_CentralDC;
+            this1->unpacker = (void*) unpack_s_CentralDC;
          }
          else if (strcmp(btag,"cathodeCyl") == 0)
          {
-            this->unpacker = (void*) unpack_s_CathodeCyls;
+            this1->unpacker = (void*) unpack_s_CathodeCyls;
          }
          else if (strcmp(btag,"band") == 0)
          {
-            this->unpacker = (void*) unpack_s_Bands;
+            this1->unpacker = (void*) unpack_s_Bands;
          }
          else if (strcmp(btag,"ring") == 0)
          {
-            this->unpacker = (void*) unpack_s_Rings;
+            this1->unpacker = (void*) unpack_s_Rings;
          }
          else if (strcmp(btag,"straw") == 0)
          {
-            this->unpacker = (void*) unpack_s_Straws;
+            this1->unpacker = (void*) unpack_s_Straws;
          }
          else if (strcmp(btag,"hit") == 0)
          {
-            this->unpacker = (void*) unpack_s_Hits;
+            this1->unpacker = (void*) unpack_s_Hits;
          }
          else if (strcmp(btag,"cdcPoint") == 0)
          {
-            this->unpacker = (void*) unpack_s_CdcPoints;
+            this1->unpacker = (void*) unpack_s_CdcPoints;
          }
          else if (strcmp(btag,"forwardDC") == 0)
          {
-            this->unpacker = (void*) unpack_s_ForwardDC;
+            this1->unpacker = (void*) unpack_s_ForwardDC;
          }
          else if (strcmp(btag,"chamber") == 0)
          {
-            this->unpacker = (void*) unpack_s_Chambers;
+            this1->unpacker = (void*) unpack_s_Chambers;
          }
          else if (strcmp(btag,"cathodePlane") == 0)
          {
-            this->unpacker = (void*) unpack_s_CathodePlanes;
+            this1->unpacker = (void*) unpack_s_CathodePlanes;
          }
          else if (strcmp(btag,"strip") == 0)
          {
-            this->unpacker = (void*) unpack_s_Strips;
+            this1->unpacker = (void*) unpack_s_Strips;
          }
          else if (strcmp(btag,"anodePlane") == 0)
          {
-            this->unpacker = (void*) unpack_s_AnodePlanes;
+            this1->unpacker = (void*) unpack_s_AnodePlanes;
          }
          else if (strcmp(btag,"wire") == 0)
          {
-            this->unpacker = (void*) unpack_s_Wires;
+            this1->unpacker = (void*) unpack_s_Wires;
          }
          else if (strcmp(btag,"fdcPoint") == 0)
          {
-            this->unpacker = (void*) unpack_s_FdcPoints;
+            this1->unpacker = (void*) unpack_s_FdcPoints;
          }
          else if (strcmp(btag,"startCntr") == 0)
          {
-            this->unpacker = (void*) unpack_s_StartCntr;
+            this1->unpacker = (void*) unpack_s_StartCntr;
          }
          else if (strcmp(btag,"paddle") == 0)
          {
-            this->unpacker = (void*) unpack_s_Paddles;
+            this1->unpacker = (void*) unpack_s_Paddles;
          }
          else if (strcmp(btag,"startPoint") == 0)
          {
-            this->unpacker = (void*) unpack_s_StartPoints;
+            this1->unpacker = (void*) unpack_s_StartPoints;
          }
          else if (strcmp(btag,"barrelEMcal") == 0)
          {
-            this->unpacker = (void*) unpack_s_BarrelEMcal;
+            this1->unpacker = (void*) unpack_s_BarrelEMcal;
          }
          else if (strcmp(btag,"module") == 0)
          {
-            this->unpacker = (void*) unpack_s_Modules;
+            this1->unpacker = (void*) unpack_s_Modules;
          }
          else if (strcmp(btag,"upstream") == 0)
          {
-            this->unpacker = (void*) unpack_s_Upstream;
+            this1->unpacker = (void*) unpack_s_Upstream;
          }
          else if (strcmp(btag,"shower") == 0)
          {
-            this->unpacker = (void*) unpack_s_Showers;
+            this1->unpacker = (void*) unpack_s_Showers;
          }
          else if (strcmp(btag,"downstream") == 0)
          {
-            this->unpacker = (void*) unpack_s_Downstream;
+            this1->unpacker = (void*) unpack_s_Downstream;
          }
          else if (strcmp(btag,"barrelShower") == 0)
          {
-            this->unpacker = (void*) unpack_s_BarrelShowers;
+            this1->unpacker = (void*) unpack_s_BarrelShowers;
          }
          else if (strcmp(btag,"Cerenkov") == 0)
          {
-            this->unpacker = (void*) unpack_s_Cerenkov;
+            this1->unpacker = (void*) unpack_s_Cerenkov;
          }
          else if (strcmp(btag,"section") == 0)
          {
-            this->unpacker = (void*) unpack_s_Sections;
+            this1->unpacker = (void*) unpack_s_Sections;
          }
          else if (strcmp(btag,"flash") == 0)
          {
-            this->unpacker = (void*) unpack_s_Flashes;
+            this1->unpacker = (void*) unpack_s_Flashes;
          }
          else if (strcmp(btag,"forwardTOF") == 0)
          {
-            this->unpacker = (void*) unpack_s_ForwardTOF;
+            this1->unpacker = (void*) unpack_s_ForwardTOF;
          }
          else if (strcmp(btag,"slab") == 0)
          {
-            this->unpacker = (void*) unpack_s_Slabs;
+            this1->unpacker = (void*) unpack_s_Slabs;
          }
          else if (strcmp(btag,"left") == 0)
          {
-            this->unpacker = (void*) unpack_s_Left;
+            this1->unpacker = (void*) unpack_s_Left;
          }
          else if (strcmp(btag,"right") == 0)
          {
-            this->unpacker = (void*) unpack_s_Right;
+            this1->unpacker = (void*) unpack_s_Right;
          }
          else if (strcmp(btag,"tofPoint") == 0)
          {
-            this->unpacker = (void*) unpack_s_TofPoints;
+            this1->unpacker = (void*) unpack_s_TofPoints;
          }
          else if (strcmp(btag,"forwardEMcal") == 0)
          {
-            this->unpacker = (void*) unpack_s_ForwardEMcal;
+            this1->unpacker = (void*) unpack_s_ForwardEMcal;
          }
          else if (strcmp(btag,"row") == 0)
          {
-            this->unpacker = (void*) unpack_s_Rows;
+            this1->unpacker = (void*) unpack_s_Rows;
          }
          else if (strcmp(btag,"column") == 0)
          {
-            this->unpacker = (void*) unpack_s_Columns;
+            this1->unpacker = (void*) unpack_s_Columns;
          }
          else if (strcmp(btag,"forwardShower") == 0)
          {
-            this->unpacker = (void*) unpack_s_ForwardShowers;
+            this1->unpacker = (void*) unpack_s_ForwardShowers;
          }
          else
          {
             collide(btag);
          }
-         this->inParent = ptrSeqNo;
-         this->popListLength = 0;
+         this1->inParent = ptrSeqNo;
+         this1->popListLength = 0;
          c = index(c+1,'\n');
          b = index(b+1,'\n');
          while (getTag(b,btag) > blevel)
          {
-            this->popList[this->popListLength++] = matches(b,c);
-            if (this->popListLength > 99)
+            this1->popList[this1->popListLength++] = matches(b,c);
+            if (this1->popListLength > 99)
             {
                fprintf(stderr,"hddm error - posList overflow.\n");
                fprintf(stderr,"Increase MAX_POPLIST_LENGTH and recompile.\n");
@@ -3889,7 +3889,7 @@ static popNode* matches(char* b, char* c)
             b = getEndTag(b,btag);
             b = index(b+1,'\n');
          }
-         return this;
+         return this1;
       }
       else
       {
