@@ -436,7 +436,7 @@ main(int argc,char **argv)
     initBeam4.space.y= beam.p.space.y; initBeam4.space.z= beam.p.space.z;
     sqrt_s = sqrt( SQ(beam.mass) +SQ(target.mass) + 2.0*beam.p.t * target.p.t);
     /*MassHighBW = sqrt_s - recoil.mass; */
-    MassHighBW = sqrt_s;
+    MassHighBW = sqrt_s; /* see do loop below */
 
   v4[0]= beam.p;
   v4[1]= target.p;
@@ -485,7 +485,7 @@ main(int argc,char **argv)
 	exit(-1); 
       }
     /*
-     * Now do it for Y
+     * Now do loop it for Y
      */
     if(!(Y->width<0)) 
       do{/*use BreitWigner--phasespace distribution */
@@ -508,13 +508,13 @@ main(int argc,char **argv)
 	exit(-1); 
       }
     }while(sqrt_s < X->mass + Y->mass);
-
-    xmass=rawthresh(X);
-    ymass=rawthresh(Y);
     /*
-     * fprintf(stderr," xmass= %lf ymass= %lf  X->mass= %lf Y->mass= %lf\n",
-     * xmass,ymass, X->mass , Y->mass);
-    */
+      xmass=rawthresh(X);
+      ymass=rawthresh(Y);
+      *
+      * fprintf(stderr," xmass= %lf ymass= %lf  X->mass= %lf Y->mass= %lf\n",
+      * xmass,ymass, X->mass , Y->mass);
+      */
     xmass = X->mass;
     ymass = Y->mass;
 
@@ -528,54 +528,26 @@ main(int argc,char **argv)
       t_max = -( SQ( (SQ(beam.mass) -SQ(xmass) -SQ(target.mass) +SQ(ymass))/(2.0*sqrt_s))
 		 -SQ(v3mag(&(beam.p.space)) + X_momentum ));
       /* 
-       *fprintf(stderr,"beam.mass= %lf xmass= %lf target.mass=%lf ymass= %lf sqrt_s= %lf beam.p= %lf X->p= %lf  X_momentum= %lf\n",beam.mass,xmass,target.mass,ymass,sqrt_s,v3mag(&(beam.p.space)),v3mag(&(X->p.space)), X_momentum);
+       *fprintf(stderr,
+       "beam.mass= %lf xmass= %lf target.mass=%lf ymass= %lf sqrt_s= %lf beam.p= %lf X->p= %lf  X_momentum= %lf\n",
+       beam.mass,xmass,target.mass,ymass,sqrt_s,
+       v3mag(&(beam.p.space)),v3mag(&(X->p.space)), X_momentum);
        */
 
       /*fprintf(stderr,"t_min: %lf t_max: %lf\n", t_min,t_max);
-       *
-       * t_max=10.0;
-       * t_min=0.0;
-       */
+       */ 
     } else{ /* it's some baryon pseudo t process */
        
     t_min=0.4;
     t_max=10.0;
-    /*
-    t_max =  2.0*((X_energy*
-                  energy(beam.mass,&(beam.p.space))) +
-                  SQ(X_momentum)) -SQ(X->mass) -SQ(beam.mass); 
-    t_min =  2.0*((energy(X->mass,&(X->p.space))*
-                  energy(beam.mass,&(beam.p.space))) -
-                  SQ(X_momentum)) -SQ(X->mass) -SQ(beam.mass); 
-   
-    t_min = t_min>0? t_min:0.1;
-    */
-    }
-
-    /*   E852 limits
-	 t_max = SQ( CMmomentum(2.0*CMenergy, rawthresh(X), RECOIL));
-	 t_max=5.0;
-	 t_min=0.0;
-	 
-	 expt_max = exp(-slope * t_max);
-	 expt_min = exp(-slope * t_min);
-     
-
-   t_min = -( SQ( (SQ(beam.mass) -SQ(xmass) -SQ(target.mass) +SQ(ymass))/(2.0*sqrt_s))
-	      -SQ(v3mag(&(beam.p.space)) - v3mag(&(X->p.space))));
-   t_max = -( SQ( (SQ(beam.mass) -SQ(xmass) -SQ(target.mass) +SQ(ymass))/(2.0*sqrt_s))
-	      -SQ(v3mag(&(beam.p.space)) + v3mag(&(X->p.space))));
-   t_min = t_min>0? t_min:0.1;
-   */
-  
-  
-
-  
-   
+    t_min = -( SQ( (SQ(beam.mass) -SQ(xmass) -SQ(target.mass) +SQ(ymass))/(2.0*sqrt_s))
+	       -SQ(v3mag(&(beam.p.space)) - X_momentum ));
+    t_max = -( SQ( (SQ(beam.mass) -SQ(xmass) -SQ(target.mass) +SQ(ymass))/(2.0*sqrt_s))
+	       -SQ(v3mag(&(beam.p.space)) + X_momentum ));
+    
+    }     
     expt_max = exp(-slope * t_max);
     expt_min = exp(-slope * t_min);
-
-   
 
     do{
      
@@ -803,12 +775,12 @@ int setMass(struct particleMC_t *Isobar)
 	Isobar == (Isobar->parent)->child[0] ? /* is the 1st child me? */
 	rawthresh((Isobar->parent)->child[1]) : /* if true */
 	rawthresh((Isobar->parent)->child[0]) ;/* if false */
- 
-      hightail = ((Isobar->parent)->mass);
       /*
+      hightail = ((Isobar->parent)->mass);
+      */
       hightail = (Isobar->parent->mass) - thresH2 ;
       
-      */
+      
       /* cut off the tails */
       hcut= Isobar->mass + 4.0*Isobar->width ;
       lcut= Isobar->mass - 4.0*Isobar->width ;
