@@ -2,6 +2,10 @@
 * $Id$
 *
 * $Log$
+* Revision 1.5  2001/08/02 15:54:18  jonesrt
+* added a check to uginit to verify that the random number generator has been
+* correctly initialized with valid seeds (or sequency number 1..215 !!!) -rtj
+*
 * Revision 1.4  2001/08/02 03:08:05  jonesrt
 * Now the BEAM data card is supported, with correct generation of
 * coherent bremsstrahlung radiation. -rtj
@@ -89,6 +93,15 @@ C..geant..
       call ffkey('outfile',outfile,20,'MIXED')
       call ffkey('beam',beamE0,3,'REAL')
       CALL GFFGO
+*
+*             Verify that the random number seeds are OK
+*
+      call GRNDMQ(iseed1,iseed2,0,'G')
+      if ((iseed1.eq.0).and.(iseed2.eq.0)) then
+        write(LOUT,980) 'UGINIT error: '
+980     format(a14,'initial random number generator seeds are 0!')
+        stop 'cannot continue without good random numbers'
+      endif
 *
 *             Open the input stream
 *
