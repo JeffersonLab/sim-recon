@@ -68,6 +68,16 @@ class DContainer{
 			}
 			return NOERROR;
 		}
+		
+		inline void* Add(void){return Add(1);}
+		
+		void* Add(int N){
+			nrows+=N;
+			Grow();
+			char *ptr = (char*)*container_ptr;
+			ptr += rowsize*(nrows-N);
+			return (void*)ptr;
+		}
 };
 
 #endif // _DCONTAINER_H_
