@@ -60,7 +60,14 @@ DMagneticFieldMap::DMagneticFieldMap(int rDim, int zDim)
   this->rMax = 0.0;
   this->zMin = 0.0;
   this->zMax = 0.0;
+  this->constBz =-999.0;
   DEBUG = false;
+}
+
+DMagneticFieldMap::DMagneticFieldMap(const float Bz)
+{
+	// Used if the user just wants a constant magnetic field
+	this->constBz = Bz;
 }
 
 DMagneticFieldMap::~DMagneticFieldMap()
@@ -274,6 +281,13 @@ D3Vector_t DMagneticFieldMap::getQuick(double r, double z)
   D3Vector_t vec;
   int inds [2];
   double rho, zeta;
+  
+  if(constBz>-100.0){
+  	// homogeneous magnetic field
+	vec.x = vec.y = 0;
+	vec.z = constBz;
+	return vec;
+  }
 
   getInds(r, z, inds, rho, zeta);
 
