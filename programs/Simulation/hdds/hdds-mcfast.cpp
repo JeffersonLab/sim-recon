@@ -299,6 +299,26 @@ void processTemplateFile(const DOMElement* const targetEl,
          }
 	 const XString unitAttS("unit");
          const XString unitS = el->getAttribute(X(unitAttS));
+         float rho=1e-30;
+         DOMElement* densEl;
+         const XString realS("real");
+         const XString densAttS("density");
+         if (densEl = targetTable.lookup(targetEl,realS,densAttS))
+         {
+	    const XString uS = densEl->getAttribute(X(unitAttS));
+            if (! uS.equals("g/cm^3"))
+            {
+               cerr << "hdds-mcfast: density parameter found with"
+                    << " incorrect units " << S(uS) << endl;
+               exit(3);
+            }
+	    const XString valAttS("value");
+            const XString rhoS = densEl->getAttribute(X(valAttS));
+            if (rhoS != 0)
+            {
+               rho=atof(S(rhoS))+1e-30;
+            }
+         }
          float fconvert=
          /* standard unit for length in MCfast is cm */
             (unitS.equals("m"))? 100
@@ -308,7 +328,30 @@ void processTemplateFile(const DOMElement* const targetEl,
           : (unitS.equals("rad"))? 1
           : (unitS.equals("mrad"))? 0.001
           : (unitS.equals("deg"))? M_PI/180
-          : 1;
+         /* standard unit for energy in MCfast is GeV */
+          : (unitS.equals("MeV"))? 0.001
+          : (unitS.equals("GeV"))? 1
+         /* standard unit for density in MCfast is g/cm^3 */
+          : (unitS.equals("g/cm^3"))? 1
+         /* standard unit for interaction lengths in MCfast is cm */
+          : (unitS.equals("g/cm^2"))? 1/rho
+         /* standard unit for dE/dx in MCfast is GeV/cm */
+          : (unitS.equals("MeV/g/cm^2"))? 0.001*rho
+          : (unitS.equals("MeV/cm"))? 0.001
+          : (unitS.equals("GeV/cm"))? 1
+         /* standard unit for magnetic field in MCfast is Tesla */
+          : (unitS.equals("Tesla"))? 1
+         /* fractions are always unit-normalized */
+          : (unitS.equals("percent"))? 0.01
+          : (unitS.equals("none") || unitS == 0)? 1
+         /* any other dimensions are not valid at this point */
+          : 0;
+         if (fconvert == 0)
+         {
+            cerr << "hdds-mcfast: Parameter \"" << var << "\""
+                 << " has unrecognized units " << S(unitS) << endl;
+            exit(3);
+         }
          const char* fltstr = strtok((char*)S(valueS)," ");
          float flt=atof(fltstr);
          modelTable[model].db << " " << showpoint << atof(fltstr)*fconvert;
@@ -1040,6 +1083,7 @@ float makeTargetTable::set_density(DOMElement* const targetEl)
    const XString valueAttS("value");
    const XString realS("real");
    const XString densityS("density");
+   const XString unitAttS("unit");
    DOMElement* densityEl = lookup(targetEl,realS,densityS);
    if (densityEl == 0)
    {
@@ -1084,9 +1128,19 @@ float makeTargetTable::set_density(DOMElement* const targetEl)
       densityEl = targetEl->getOwnerDocument()->createElement(X(realS));
       densityEl->setAttribute(X(nameAttS),X(densityS));
       densityEl->setAttribute(X(valueAttS),X(rhoS));
+      const XString unitS("g/cm^3");
+      densityEl->setAttribute(X(unitAttS),X(unitS));
       targetEl->appendChild(densityEl);
    }
    const XString resultS = densityEl->getAttribute(X(valueAttS));
+   const XString unitS = densityEl->getAttribute(X(unitAttS));
+   if (! unitS.equals("g/cm^3"))
+   {
+      cerr << "makeTargetTable::set_density - "
+           << "unsupported density units " << S(unitS)
+           << " found in materials specification" << endl;
+      exit(2);
+   }
    return atof(S(resultS));
 }
 
@@ -1095,6 +1149,7 @@ float makeTargetTable::set_radlen(DOMElement* const targetEl)
    const XString nameAttS("name");
    const XString valueAttS("value");
    const XString realS("real");
+   const XString unitAttS("unit");
    const XString radlenS("radlen");
    DOMElement* radlenEl = lookup(targetEl,realS,radlenS);
    if (radlenEl == 0)
@@ -1102,7 +1157,6 @@ float makeTargetTable::set_radlen(DOMElement* const targetEl)
       const XString addmatS("addmaterial");
       DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
       int matCount = matList->getLength();
-      float rho = set_density(targetEl);
       float adbmal_sum=0;
       float wgt_sum=0;
       for (int m=0; m < matCount; m++)
@@ -1112,7 +1166,6 @@ float makeTargetTable::set_radlen(DOMElement* const targetEl)
          const XString refS = matEl->getAttribute(X(materialS));
          DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
          float lambda_m = set_radlen(refEl);
-         float rho_m = set_density(refEl);
          float wgt_m=0;
          const XString natomsS("natoms");
          DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
@@ -1133,7 +1186,7 @@ float makeTargetTable::set_radlen(DOMElement* const targetEl)
             const XString fracS = fractionEl->getAttribute(X(fractionAttS));
             wgt_m = atof(S(fracS));
          }
-         adbmal_sum += (wgt_m/lambda_m)*(rho/rho_m);
+         adbmal_sum += wgt_m/lambda_m;
          wgt_sum += wgt_m;
       }
       char lambdaStr[20];
@@ -1142,9 +1195,19 @@ float makeTargetTable::set_radlen(DOMElement* const targetEl)
       radlenEl = targetEl->getOwnerDocument()->createElement(X(realS));
       radlenEl->setAttribute(X(nameAttS),X(radlenS));
       radlenEl->setAttribute(X(valueAttS),X(lambdaS));
+      const XString unitS("g/cm^2");
+      radlenEl->setAttribute(X(unitAttS),X(unitS));
       targetEl->appendChild(radlenEl);
    }
    const XString resultS = radlenEl->getAttribute(X(valueAttS));
+   const XString unitS = radlenEl->getAttribute(X(unitAttS));
+   if (! unitS.equals("g/cm^2"))
+   {
+      cerr << "makeTargetTable::set_radlen - "
+           << "unsupported radlen units " << S(unitS)
+           << " found in materials specification" << endl;
+      exit(2);
+   }
    return atof(S(resultS));
 }
 
@@ -1154,13 +1217,13 @@ float makeTargetTable::set_collen(DOMElement* const targetEl)
    const XString valueAttS("value");
    const XString realS("real");
    const XString collenS("collen");
+   const XString unitAttS("unit");
    DOMElement* collenEl = lookup(targetEl,realS,collenS);
    if (collenEl == 0)
    {
       const XString addmatS("addmaterial");
       DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
       int matCount = matList->getLength();
-      float rho = set_density(targetEl);
       float adbmal_sum=0;
       float wgt_sum=0;
       for (int m=0; m < matCount; m++)
@@ -1170,7 +1233,6 @@ float makeTargetTable::set_collen(DOMElement* const targetEl)
          const XString refS = matEl->getAttribute(X(materialS));
          DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
          float lambda_m = set_collen(refEl);
-         float rho_m = set_density(refEl);
          float wgt_m=0;
          const XString natomsS("natoms");
          DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
@@ -1191,7 +1253,7 @@ float makeTargetTable::set_collen(DOMElement* const targetEl)
             const XString fracS = fractionEl->getAttribute(X(fractionAttS));
             wgt_m = atof(S(fracS));
          }
-         adbmal_sum += (wgt_m/lambda_m)*(rho/rho_m);
+         adbmal_sum += (wgt_m/lambda_m);
          wgt_sum += wgt_m;
       }
       char lambdaStr[20];
@@ -1200,9 +1262,19 @@ float makeTargetTable::set_collen(DOMElement* const targetEl)
       collenEl = targetEl->getOwnerDocument()->createElement(X(realS));
       collenEl->setAttribute(X(nameAttS),X(collenS));
       collenEl->setAttribute(X(valueAttS),X(lambdaS));
+      const XString unitS("g/cm^2");
+      collenEl->setAttribute(X(unitAttS),X(unitS));
       targetEl->appendChild(collenEl);
    }
    const XString resultS = collenEl->getAttribute(X(valueAttS));
+   const XString unitS = collenEl->getAttribute(X(unitAttS));
+   if (! unitS.equals("g/cm^2"))
+   {
+      cerr << "makeTargetTable::set_collen - "
+           << "unsupported collen units " << S(unitS)
+           << " found in materials specification" << endl;
+      exit(2);
+   }
    return atof(S(resultS));
 }
 
@@ -1212,13 +1284,13 @@ float makeTargetTable::set_abslen(DOMElement* const targetEl)
    const XString valueAttS("value");
    const XString realS("real");
    const XString abslenS("abslen");
+   const XString unitAttS("unit");
    DOMElement* abslenEl = lookup(targetEl,realS,abslenS);
    if (abslenEl == 0)
    {
       const XString addmatS("addmaterial");
       DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
       int matCount = matList->getLength();
-      float rho = set_density(targetEl);
       float adbmal_sum=0;
       float wgt_sum=0;
       for (int m=0; m < matCount; m++)
@@ -1228,7 +1300,6 @@ float makeTargetTable::set_abslen(DOMElement* const targetEl)
          const XString refS = matEl->getAttribute(X(materialS));
          DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
          float lambda_m = set_abslen(refEl);
-         float rho_m = set_density(refEl);
          float wgt_m=0;
          const XString natomsS("natoms");
          DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
@@ -1249,7 +1320,7 @@ float makeTargetTable::set_abslen(DOMElement* const targetEl)
             const XString fracS = fractionEl->getAttribute(X(fractionAttS));
             wgt_m = atof(S(fracS));
          }
-         adbmal_sum += (wgt_m/lambda_m)*(rho/rho_m);
+         adbmal_sum += wgt_m/lambda_m;
          wgt_sum += wgt_m;
       }
       char lambdaStr[20];
@@ -1258,9 +1329,19 @@ float makeTargetTable::set_abslen(DOMElement* const targetEl)
       abslenEl = targetEl->getOwnerDocument()->createElement(X(realS));
       abslenEl->setAttribute(X(nameAttS),X(abslenS));
       abslenEl->setAttribute(X(valueAttS),X(lambdaS));
+      const XString unitS("g/cm^2");
+      abslenEl->setAttribute(X(unitAttS),X(unitS));
       targetEl->appendChild(abslenEl);
    }
    const XString resultS = abslenEl->getAttribute(X(valueAttS));
+   const XString unitS = abslenEl->getAttribute(X(unitAttS));
+   if (! unitS.equals("g/cm^2"))
+   {
+      cerr << "makeTargetTable::set_abslen - "
+           << "unsupported abslen units " << S(unitS)
+           << " found in materials specification" << endl;
+      exit(2);
+   }
    return atof(S(resultS));
 }
 
@@ -1270,13 +1351,13 @@ float makeTargetTable::set_dedx(DOMElement* const targetEl)
    const XString valueAttS("value");
    const XString realS("real");
    const XString dedxS("dedx");
+   const XString unitAttS("unit");
    DOMElement* dedxEl = lookup(targetEl,realS,dedxS);
    if (dedxEl == 0)
    {
       const XString addmatS("addmaterial");
       DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
       int matCount = matList->getLength();
-      float rho = set_density(targetEl);
       float dedx_sum=0;
       float wgt_sum=0;
       for (int m=0; m < matCount; m++)
@@ -1286,7 +1367,6 @@ float makeTargetTable::set_dedx(DOMElement* const targetEl)
          const XString refS = matEl->getAttribute(X(materialS));
          DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
          float dedx_m = set_dedx(refEl);
-         float rho_m = set_density(refEl);
          float wgt_m=0;
          const XString natomsS("natoms");
          DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
@@ -1307,7 +1387,7 @@ float makeTargetTable::set_dedx(DOMElement* const targetEl)
             const XString fracS = fractionEl->getAttribute(X(fractionAttS));
             wgt_m = atof(S(fracS));
          }
-         dedx_sum += (wgt_m*dedx_m)*(rho/rho_m);
+         dedx_sum += wgt_m*dedx_m;
          wgt_sum += wgt_m;
       }
       char dedxStr[20];
@@ -1316,9 +1396,19 @@ float makeTargetTable::set_dedx(DOMElement* const targetEl)
       dedxEl = targetEl->getOwnerDocument()->createElement(X(realS));
       dedxEl->setAttribute(X(nameAttS),X(dedxS));
       dedxEl->setAttribute(X(valueAttS),X(dedxStrS));
+      const XString unitS("MeV/g/cm^2");
+      dedxEl->setAttribute(X(unitAttS),X(unitS));
       targetEl->appendChild(dedxEl);
    }
    const XString resultS = dedxEl->getAttribute(X(valueAttS));
+   const XString unitS = dedxEl->getAttribute(X(unitAttS));
+   if (! unitS.equals("MeV/g/cm^2"))
+   {
+      cerr << "makeTargetTable::set_dedx - "
+           << "unsupported dedx units " << S(unitS)
+           << " found in materials specification" << endl;
+      exit(2);
+   }
    return atof(S(resultS));
 }
 

@@ -74,7 +74,7 @@
             radlen      : radiation length           (g/cm^2)
             collen      : nuclear collision length   (g/cm^2)
             abslen      : nuclear interaction length (g/cm^2)
-            dedx        : minimum-ionization dE/dx   (MeV.cm^2/g)
+            dedx        : minimum-ionization dE/dx   (MeV/g/cm^2)
 
 1.2) Sections
 ==============
@@ -790,14 +790,14 @@
 
 
 <xs:simpleType name="angleUnit">
-  <xs:restriction base="xs:NMTOKEN">
+  <xs:restriction base="xs:token">
     <xs:enumeration value="deg"/>
     <xs:enumeration value="mrad"/>
   </xs:restriction>
 </xs:simpleType>
 
 <xs:simpleType name="lengthUnit">
-  <xs:restriction base="xs:NMTOKEN">
+  <xs:restriction base="xs:token">
     <xs:enumeration value="cm"/>
     <xs:enumeration value="mm"/>
     <xs:enumeration value="m"/>
@@ -805,7 +805,7 @@
 </xs:simpleType>
 
 <xs:simpleType name="anyUnit">
-  <xs:restriction base="xs:NMTOKEN">
+  <xs:restriction base="xs:token">
     <xs:enumeration value="m"/>
     <xs:enumeration value="cm"/>
     <xs:enumeration value="mm"/>
@@ -814,30 +814,32 @@
     <xs:enumeration value="mrad"/>
     <xs:enumeration value="MeV"/>
     <xs:enumeration value="GeV"/>
-    <xs:enumeration value="MeVcgm"/>
-    <xs:enumeration value="cgm"/>
-    <xs:enumeration value="T"/>
+    <xs:enumeration value="g/cm^3"/>
+    <xs:enumeration value="g/cm^2"/>
+    <xs:enumeration value="MeV/g/cm^2"/>
+    <xs:enumeration value="Tesla"/>
+    <xs:enumeration value="kG"/>
     <xs:enumeration value="percent"/>
     <xs:enumeration value="none"/>
   </xs:restriction>
 </xs:simpleType>
 
 <xs:simpleType name="originWhere">
-  <xs:restriction base="xs:NMTOKEN">
+  <xs:restriction base="xs:token">
     <xs:enumeration value="atStart"/>
     <xs:enumeration value="atCenter"/>
   </xs:restriction>
 </xs:simpleType>
 
 <xs:simpleType name="trueFalse">
-  <xs:restriction base="xs:NMTOKEN">
+  <xs:restriction base="xs:token">
     <xs:enumeration value="true"/>
     <xs:enumeration value="false"/>
   </xs:restriction>
 </xs:simpleType>
 
 <xs:simpleType name="indexType">
-  <xs:restriction base="xs:NMTOKEN">
+  <xs:restriction base="xs:token">
     <xs:enumeration value="layer"/>
     <xs:enumeration value="ring"/>
     <xs:enumeration value="sector"/>
@@ -866,7 +868,7 @@
 
     <xs:attribute name="specification" use="required">
       <xs:simpleType>
-        <xs:restriction base="xs:NMTOKEN">
+        <xs:restriction base="xs:token">
           <xs:enumeration value="v1.0"/>
         </xs:restriction>
       </xs:simpleType>
@@ -963,7 +965,7 @@
   <xs:complexType>
     <xs:attribute name="field" default="cell">
       <xs:simpleType>
-        <xs:restriction base="xs:NMTOKEN">
+        <xs:restriction base="xs:token">
           <xs:enumeration value="cell"/>
         </xs:restriction>
       </xs:simpleType>
@@ -977,7 +979,7 @@
   <xs:complexType>
     <xs:attribute name="field" default="column">
       <xs:simpleType>
-        <xs:restriction base="xs:NMTOKEN">
+        <xs:restriction base="xs:token">
           <xs:enumeration value="column"/>
         </xs:restriction>
       </xs:simpleType>
@@ -1066,7 +1068,7 @@
 
     <xs:attribute name="a" use="required" type="xs:float"/>
     <xs:attribute name="name" use="required" type="xs:ID"/>
-    <xs:attribute name="symbol" type="xs:NMTOKEN"/>
+    <xs:attribute name="symbol" type="xs:token"/>
     <xs:attribute name="z" use="required" type="xs:float"/>
   </xs:complexType>
 </xs:element>
@@ -1088,7 +1090,7 @@
 <xs:element name="int">
   <xs:complexType>
     <xs:attribute name="comment" type="xs:string"/>
-    <xs:attribute name="name" type="xs:NMTOKEN"/>
+    <xs:attribute name="name" type="xs:token"/>
     <xs:attribute name="value" use="required" type="xs:integer"/>
   </xs:complexType>
 </xs:element>
@@ -1096,7 +1098,7 @@
 <xs:element name="int_array">
   <xs:complexType>
     <xs:attribute name="comment" type="xs:string"/>
-    <xs:attribute name="name" type="xs:NMTOKEN"/>
+    <xs:attribute name="name" type="xs:token"/>
     <xs:attribute name="values" use="required" type="integerList"/>
   </xs:complexType>
 </xs:element>
@@ -1117,7 +1119,7 @@
   <xs:complexType>
     <xs:attribute name="field" default="layer">
       <xs:simpleType>
-        <xs:restriction base="xs:NMTOKEN">
+        <xs:restriction base="xs:token">
           <xs:enumeration value="layer"/>
         </xs:restriction>
       </xs:simpleType>
@@ -1136,7 +1138,7 @@
 
     <xs:attribute name="specification" use="required">
       <xs:simpleType>
-        <xs:restriction base="xs:NMTOKEN">
+        <xs:restriction base="xs:token">
           <xs:enumeration value="v1.0"/>
         </xs:restriction>
       </xs:simpleType>
@@ -1163,7 +1165,7 @@
       <xs:element ref="mcfast" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
 
-    <xs:attribute name="model" use="required" type="xs:NMTOKEN"/>
+    <xs:attribute name="model" use="required" type="xs:token"/>
     <xs:attribute name="parameters" type="xs:IDREF"/>
     <xs:attribute name="template" use="required" type="xs:anyURI"/>
   </xs:complexType>
@@ -1173,7 +1175,7 @@
   <xs:complexType>
     <xs:attribute name="field" default="module">
       <xs:simpleType>
-        <xs:restriction base="xs:NMTOKEN">
+        <xs:restriction base="xs:token">
           <xs:enumeration value="module"/>
         </xs:restriction>
       </xs:simpleType>
@@ -1395,7 +1397,7 @@
     </xs:choice>
 
     <xs:attribute name="name" use="required" type="xs:ID"/>
-    <xs:attribute name="type" use="required" type="xs:NMTOKEN"/>
+    <xs:attribute name="type" use="required" type="xs:token"/>
   </xs:complexType>
 </xs:element>
 
@@ -1418,7 +1420,7 @@
     </xs:attribute>
     <xs:attribute name="sensitive" default="false">
       <xs:simpleType>
-        <xs:restriction base="xs:NMTOKEN">
+        <xs:restriction base="xs:token">
           <xs:enumeration value="true"/>
           <xs:enumeration value="false"/>
         </xs:restriction>
@@ -1433,7 +1435,7 @@
   <xs:complexType>
     <xs:attribute name="field" default="plane">
       <xs:simpleType>
-        <xs:restriction base="xs:NMTOKEN">
+        <xs:restriction base="xs:token">
           <xs:enumeration value="plane"/>
         </xs:restriction>
       </xs:simpleType>
@@ -1523,7 +1525,7 @@
 <xs:element name="real">
   <xs:complexType>
     <xs:attribute name="comment" type="xs:string"/>
-    <xs:attribute name="name" type="xs:NMTOKEN"/>
+    <xs:attribute name="name" type="xs:token"/>
     <xs:attribute name="unit" use="required" type="anyUnit"/>
     <xs:attribute name="value" use="required" type="xs:float"/>
   </xs:complexType>
@@ -1532,7 +1534,7 @@
 <xs:element name="real_array">
   <xs:complexType>
     <xs:attribute name="comment" type="xs:string"/>
-    <xs:attribute name="name" type="xs:NMTOKEN"/>
+    <xs:attribute name="name" type="xs:token"/>
     <xs:attribute name="unit" use="required" type="anyUnit"/>
     <xs:attribute name="values" use="required" type="floatList"/>
   </xs:complexType>
@@ -1541,7 +1543,7 @@
 <xs:element name="reference">
   <xs:complexType>
     <xs:attribute name="comment" type="xs:string"/>
-    <xs:attribute name="name" type="xs:NMTOKEN"/>
+    <xs:attribute name="name" type="xs:token"/>
     <xs:attribute name="value" use="required" type="xs:IDREF"/>
   </xs:complexType>
 </xs:element>
@@ -1560,7 +1562,7 @@
     </xs:sequence>
 
     <xs:attribute name="comment" type="xs:string"/>
-    <xs:attribute name="name" type="xs:NMTOKEN"/>
+    <xs:attribute name="name" type="xs:token"/>
   </xs:complexType>
 </xs:element>
 
@@ -1568,7 +1570,7 @@
   <xs:complexType>
     <xs:attribute name="field" default="ring">
       <xs:simpleType>
-        <xs:restriction base="xs:NMTOKEN">
+        <xs:restriction base="xs:token">
           <xs:enumeration value="ring"/>
         </xs:restriction>
       </xs:simpleType>
@@ -1582,7 +1584,7 @@
   <xs:complexType>
     <xs:attribute name="field" default="row">
       <xs:simpleType>
-        <xs:restriction base="xs:NMTOKEN">
+        <xs:restriction base="xs:token">
           <xs:enumeration value="row"/>
         </xs:restriction>
       </xs:simpleType>
@@ -1613,14 +1615,14 @@
 
     <xs:attribute name="specification" use="required">
       <xs:simpleType>
-        <xs:restriction base="xs:NMTOKEN">
+        <xs:restriction base="xs:token">
           <xs:enumeration value="v1.0"/>
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
     <xs:attribute name="author" use="required" type="xs:string"/>
     <xs:attribute name="date" use="required" type="xs:date"/>
-    <xs:attribute name="name" use="required" type="xs:NMTOKEN"/>
+    <xs:attribute name="name" use="required" type="xs:token"/>
     <xs:attribute name="top_volume" use="required" type="xs:IDREF"/>
     <xs:attribute name="version" use="required" type="xs:string"/>
   </xs:complexType>
@@ -1630,7 +1632,7 @@
   <xs:complexType>
     <xs:attribute name="field" default="sector">
       <xs:simpleType>
-        <xs:restriction base="xs:NMTOKEN">
+        <xs:restriction base="xs:token">
           <xs:enumeration value="sector"/>
         </xs:restriction>
       </xs:simpleType>
@@ -1682,7 +1684,7 @@
 <xs:element name="string">
   <xs:complexType>
     <xs:attribute name="comment" type="xs:string"/>
-    <xs:attribute name="name" type="xs:NMTOKEN"/>
+    <xs:attribute name="name" type="xs:token"/>
     <xs:attribute name="value" use="required" type="xs:string"/>
   </xs:complexType>
 </xs:element>
@@ -1701,7 +1703,7 @@
     </xs:sequence>
 
     <xs:attribute name="comment" type="xs:string"/>
-    <xs:attribute name="name" type="xs:NMTOKEN"/>
+    <xs:attribute name="name" type="xs:token"/>
   </xs:complexType>
 </xs:element>
 

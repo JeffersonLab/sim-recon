@@ -46,7 +46,7 @@
   <parameters name="solenoid_pars" type="mcfast">
     <string name="name" value="LASS"   comment="name of magnetic volume" />
     <real name="bfield" value="2.240"  comment="max magnetic field"
-                        unit="T"   />
+                        unit="Tesla"   />
     <real name="rmin"   value="0.000"  comment="inner limits of field"
                         unit="cm" />
     <real name="rmax"   value="95.000" comment="outer limits of field"

@@ -71,7 +71,7 @@
             radlen      : radiation length           (g/cm^2)
             collen      : nuclear collision length   (g/cm^2)
             abslen      : nuclear interaction length (g/cm^2)
-            dedx        : minimum-ionization dE/dx   (MeV.cm^2/g)
+            dedx        : minimum-ionization dE/dx   (MeV/g/cm^2)
 
 1.2) Sections
 ==============
@@ -986,8 +986,10 @@ identifiers with corresponding field names.
            value       CDATA            #REQUIRED
            unit        ( m | cm | mm | 
                          deg | rad | mrad |
-                         MeV | GeV | MeVcgm | cgm |
-                         T | percent | none )  #REQUIRED>
+                         MeV | GeV |
+                         gcm3 | gcm2 | MeVgcm2 |
+                         Tesla | kG |
+                         percent | none )  #REQUIRED>
 
 <!ELEMENT  string EMPTY>
 <!ATTLIST  string 
