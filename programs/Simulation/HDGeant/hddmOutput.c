@@ -20,7 +20,7 @@
 #include <hddm_s.h>
 #include <hddmOutput.h>
 
-s_iostream* thisOutputStream = 0;
+s_iostream_t* thisOutputStream = 0;
 s_HDDM_t* thisOutputEvent = 0;
 extern s_HDDM_t* thisInputEvent;
 

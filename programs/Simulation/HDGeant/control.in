@@ -20,7 +20,7 @@ C (or if no FILE card is given) then processing will
 C stop at the end of the input file.
 
 TRIG 1000
-C INFILE 'rhop.hddm'
+INFILE 'rhop.hddm'
 BEAM 12.0 9.0 
 RUNG 9999
 

@@ -35,7 +35,7 @@
 #include <hddm_s.h>
 #include <geant3.h>
 
-s_iostream* thisInputStream = 0;
+s_iostream_t* thisInputStream = 0;
 s_HDDM_t* thisInputEvent = 0;
 
 int openInput (char* filename)
