@@ -69,7 +69,7 @@
  *       (3) uniform field (helices along local z-axis)
  *  My solution is as follows.  By default, I assume case 0.  For all
  *  contents of a composition named "fieldVolume" I assign case 2.  For
- *  all contents of a composition named "sweepMagnet" I assign case 3.
+ *  all contents of a composition named "*Magnet*" I assign case 3.
  *  For the magnitude of the field, I simply store a constant field value
  *  (kG) for each case, and rely on the GUFLD user routine in Geant3 to
  *  handle the actual field values at tracking time.
@@ -949,7 +949,7 @@ int Refsys::createSolid(DOM_Element& el)
         << "      natmed = \'" << nameStr << " " << matStr << "\'" << endl
         << "      nmat = " << imate << endl
         << "      isvol = " << (sensiS.equals("true") ? 1 : 0) << endl
-        << "      ifield = " << fMagField << endl
+        << "      ifield = " << ((fMagField == 0) ? 0 : 2) << endl
         << "      fieldm = " << fieldStrength[fMagField] << endl
         << "      tmaxfd = " << ((fMagField == 0) ? 0 : 1) << endl
         << "      stemax = 0" << endl
@@ -1233,9 +1233,9 @@ int Refsys::createVolume(DOM_Element& el)
    {
       myRef.fMagField = 2;
    }
-   else if (nameS.equals("sweepMagnet"))
+   else if (strstr(nameStr,"Magnet"))
    {
-      myRef.fMagField = 2;
+      myRef.fMagField = 3;
    }
 
    DOM_Element env;
