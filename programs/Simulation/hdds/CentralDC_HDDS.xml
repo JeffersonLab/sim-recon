@@ -27,10 +27,10 @@
          specification = "v1.0">
 
 <!-- Origin of CentralDC is center of upstream end.  It should be at
-117 cm to be consistent with mcfast  Curtis -->
+17 cm to be consistent with mcfast  Curtis -->
 
   <composition name="CentralDC">
-    <posXYZ volume="centralDC" X_Y_Z="0.0  0.0  117.0" />
+    <posXYZ volume="centralDC" X_Y_Z="0.0  0.0  100.0" />
   </composition>
 
   <composition name="centralDC" envelope="CDC">
