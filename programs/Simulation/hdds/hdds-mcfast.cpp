@@ -127,7 +127,9 @@ void processTemplateFile(const DOMElement* const targetEl,
       {
          continue;
       }
-      const char* token = strtok(line," ");
+      char token[250];
+      istringstream sline(line);
+      sline >> token;
       if (strcasecmp(token,"end") == 0)
       {
          if (processingTarget)
@@ -145,11 +147,15 @@ void processTemplateFile(const DOMElement* const targetEl,
       }
       else if (strcasecmp(token,"include") == 0)
       {
-         processTemplateFile(targetEl,strtok(0," "));
+         char templFile[250];
+         sline >> templFile;
+         processTemplateFile(targetEl,templFile);
       }
       else if (strcasecmp(token,"template") == 0)
       {
-         processingTarget = new XString(strtok(0,", ("));
+         char tgt[250];
+         sline >> tgt;
+         processingTarget = new XString(strtok(tgt,", ("));
          const char* maxcount = strtok(0,")");
          int dim = (maxcount == 0) ? 0 : atoi(maxcount);
          if (dim == 0)
@@ -177,7 +183,8 @@ void processTemplateFile(const DOMElement* const targetEl,
       }
       else if (strcasecmp(token,"make") == 0)
       {
-         const char* tgt = strtok(0," ");
+         char tgt[250];
+         sline >> tgt;
          int m;
          for (m=0; m < modelTableLen; m++)
          {
@@ -206,7 +213,9 @@ void processTemplateFile(const DOMElement* const targetEl,
       }
       else if (strcasecmp(token,"int") == 0)
       {
-         const char* var = strtok(0,", (");
+         char tgt[250];
+         sline >> tgt;
+         const char* var = strtok(tgt,", (");
          const char* arg = strtok(0,")");
          int dim = (arg == 0) ? 0 : atoi(arg);
          const DOMElement* el;
@@ -254,7 +263,9 @@ void processTemplateFile(const DOMElement* const targetEl,
       }
       else if (strcasecmp(token,"real") == 0)
       {
-         const char* var = strtok(0,", (");
+         char tgt[250];
+         sline >> tgt;
+         const char* var = strtok(tgt,", (");
          const char* arg = strtok(0,")");
          int dim = (arg == 0) ? 0 : atoi(arg);
          const DOMElement* el;
@@ -302,7 +313,9 @@ void processTemplateFile(const DOMElement* const targetEl,
       }
       else if (strcasecmp(token,"char") == 0)
       {
-         const char* var = strtok(0,", (");
+         char tgt[250];
+         sline >> tgt;
+         const char* var = strtok(tgt,", (");
          const char* arg = strtok(0,")");
          int dim = (arg == 0) ? 0 : atoi(arg);
          const DOMElement* el;
@@ -374,7 +387,9 @@ void processTemplateFile(const DOMElement* const targetEl,
       }
       else if (strcasecmp(token,"material") == 0)
       {
-         const char* var = strtok(0,", (");
+         char tgt[250];
+         sline >> tgt;
+         const char* var = strtok(tgt,", (");
          const char* arg = strtok(0,")");
          int dim = (arg == 0) ? 0 : atoi(arg);
          const DOMElement* el;
