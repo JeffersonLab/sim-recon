@@ -16,6 +16,9 @@
 class DEventProcessor
 {
 	public:
+		DEventProcessor(void);
+		~DEventProcessor();
+	
 		virtual derror_t init(void);					///< Called once at program start.
 		virtual derror_t brun(int runnumber);		///< Called everytime a new run number is detected.
 		virtual derror_t evnt(int eventnumber);	///< Called every event.
