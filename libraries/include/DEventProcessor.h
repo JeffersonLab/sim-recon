@@ -11,6 +11,9 @@
 #ifndef _DEVENT_PROCESSOR_H_
 #define _DEVENT_PROCESSOR_H_
 
+class DEventProcessor;
+
+#include "DEventLoop.h"
 #include "derror.h"
 
 class DEventProcessor
@@ -24,6 +27,8 @@ class DEventProcessor
 		virtual derror_t evnt(int eventnumber);	///< Called every event.
 		virtual derror_t erun(void);					///< Called everytime run number changes, provided brun has been called.
 		virtual derror_t fini(void);					///< Called after last event of last event source has been processed.
+
+		DEventLoop *event_loop;
 };
 
 #endif //_DEVENT_PROCESSOR_H_
