@@ -18,6 +18,7 @@ static int qsort_cdchit(const void* arg1, const void* arg2);
 derror_t DCDC::evnt(int eventnumber)
 {
 
+#if 0
 	// Sort CDC hits by track, then z
 	qsort(hddm->CDChits->CDChit, hddm->CDChits->nrows, sizeof(CDChit_t), qsort_cdchit);
 		
@@ -47,9 +48,12 @@ derror_t DCDC::evnt(int eventnumber)
 		}
 	}
 
+#endif
+
 	return NOERROR;
 }
 
+#if 0
 //------------------------------------------------------------------
 // qsort_cdc_trackhits
 //------------------------------------------------------------------
@@ -240,3 +244,5 @@ derror_t DCDC::firstguess_curtis(s_Cdc_trackhit_t *hits, int Npoints
 }
 
 #endif
+#endif
+
