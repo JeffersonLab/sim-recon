@@ -4,6 +4,8 @@
 // hd_ana.cc
 //
 
+#include <termios.h>
+
 #include "MyProcessor.h"
 #include "DEventLoop.h"
 
@@ -24,6 +26,15 @@ int main(int narg, char *argv[])
 
 	// Instantiate an event loop object
 	DEventLoop eventloop(narg, argv);
+
+	// This monkey shines is needed to get getchar() to return single
+	// characters without waiting for the user to hit return
+	struct termios t;
+	tcgetattr(fileno(stdin), &t);
+	t.c_lflag &= (~ICANON);
+	//t.c_cc[VMIN] = 1;
+	tcsetattr(fileno(stdin), TCSANOW, &t);
+
 
 	// Run though all events, calling our event processor's methods
 	eventloop.Run(&myproc);
