@@ -1,35 +1,43 @@
 database mcfast 0000
 include db/detector.db
-make detector "AMEZON" "CENTRAL"
+make detector "GLUEX" "CENTRAL"
 include db/materials.db
-make Material "Hydrogen" 1.00797 1 0.0708 61.28 50.8 43.3 4.045
-make Material "Deuterium" 2.01 1 0.162 122.4 54.7 45.7 2.052
-make Material "Helium" 4.0026 2 0.125 94.32 65.1 49.9 1.937
+make Material "Hydrogen" 1.00797 1 0.0000838 61.28 50.8 43.3 4.045
+make Material "LiqHydrogen" 1.00797 1 0.0708 61.28 50.8 43.3 4.045
+make Material "Deuterium" 2.01 1 0.000167 122.4 54.7 45.7 2.052
+make Material "LiqDeuterium" 2.01 1 0.169 122.4 54.7 45.7 2.052
+make Material "Helium" 4.0026 2 0.000166 94.32 65.1 49.9 1.937
+make Material "LiqHelium" 4.0026 2 0.125 94.32 65.1 49.9 1.937
 make Material "Lithium" 6.9410 3 0.534 82.76 73.4 54.6 1.639
 make Material "Beryllium" 9.0122 4 1.8480 65.19 75.2 55.8 1.594
 make Material "Carbon" 12.011 6 2.2650 42.70 86.3 60.2 1.745
-make Material "Nitrogen" 14.0067 7 0.808 37.99 87.8 61.4 1.825
-make Material "Oxygen" 15.9995 8 0.00143 34.24 91.0 63.2 1.801
-make Material "Fluorine" 18.9984 9 1.1080 32.93 95.3 65.5 1.675
-make Material "Neon" 20.179 10 1.2070 28.94 96.6 66.1 1.724
+make Material "Nitrogen" 14.0067 7 0.00116 37.99 87.8 61.4 1.825
+make Material "LiqNitrogen" 14.0067 7 0.8073 37.99 87.8 61.4 1.825
+make Material "Oxygen" 15.9995 8 0.00133 34.24 91.0 63.2 1.801
+make Material "LiqOxygen" 15.9995 8 1.141 34.24 91.0 63.2 1.801
+make Material "Fluorine" 18.9984 9 0.00158 32.93 95.3 65.5 1.675
+make Material "LiqFluorine" 18.9984 9 1.507 32.93 95.3 65.5 1.675
+make Material "Neon" 20.179 10 0.000830 28.94 96.6 66.1 1.724
+make Material "LiqNeon" 20.179 10 1.204 28.94 96.6 66.1 1.724
 make Material "Aluminum" 26.9815 13 2.700 24.01 106.4 70.6 1.615
 make Material "Silicon" 28.086 14 2.33 21.82 106.0 70.6 1.664
-make Material "Argon" 39.948 18 0.001639 19.55 117.2 76.4 1.519
+make Material "Argon" 39.948 18 0.00166 19.55 117.2 76.4 1.519
+make Material "LiqArgon" 39.948 18 1.396 19.55 117.2 76.4 1.519
 make Material "Titanium" 47.90 22 4.53 16.17 124.9 79.9 1.476
 make Material "Iron" 55.847 26 7.87 13.84 131.9 82.8 1.451
 make Material "Copper" 63.546 29 8.96 12.86 134.9 85.6 1.403
 make Material "Germanium" 72.59 32 5.3230 12.25 140.5 88.3 1.371
 make Material "Tin" 118.69 50 7.31 8.82 163 100.2 1.264
-make Material "Xenon" 131.30 54 3.057 8.48 169 102.8 1.255
+make Material "Xenon" 131.30 54 0.00546 8.48 169 102.8 1.255
+make Material "LiqXenon" 131.30 54 2.953 8.48 169 102.8 1.255
 make Material "Tungsten" 183.85 74 19.3 6.76 185 110.3 1.145
 make Material "Lead" 207.2 82 11.35 6.37 194 116.2 1.123
 make Material "Uranium" 238.03 92 18.950 6.00 199 117.0 1.082
-make Material "Vacuum" 0 0 0.0 1.0e30 1.0e30 1.0e30 0.0
-include db/mixtures.db
-make Mixture "Boron" 2 "Boron10" "Boron11" "-" "-" "-" 
+make Material "Vacuum" 0 0 0.0 1.0 1.0 1.0 0.0
 make Material "Scintillator"   1.032 43.72 81.9 58.5 1.936
 make Material "Air"   0.001214 36.66 90.0 62.0 1.815
 make Material "CO2"   0.001977 36.2 89.7 62.4 1.819
+include db/mixtures.db
 make Mixture "ArCO2" 2 "Argon" "CO2" "-" "-" "-" 
 make Mixture "Bakelite" 3 "Carbon" "Hydrogen" "Oxygen" "-" "-" 
 make Material "Nylon"   1.14 36.7 81.5 58.5 1.974
@@ -47,14 +55,17 @@ make Material "Freon"   .003929 32.93 95.3 65.5 1.675
 make Mixture "chamberGas" 3 "Argon" "Ethane" "Freon" "-" "-" 
 make Mixture "chamberMix" 4 "Argon" "Ethane" "Freon" "Aluminum" "-" 
 make Mixture "leadScint" 2 "Scintillator" "Lead" "-" "-" "-" 
-make Mixture "leadGlassSF3" 5 "Lead" "Silicon" "Potassium" "Sodium" "Sodium" 
+make Mixture "leadGlassSF3" 5 "Lead" "Silicon" "Potassium" "Sodium" "Oxygen" 
 make Mixture "CerenkovGas" 1 "Nitrogen" "-" "-" "-" "-" 
+make Mixture "BoronNitride" 2 "Boron" "Nitrogen" "-" "-" "-" 
+make Mixture "Concrete" 6 "Hydrogen" "Oxygen" "Aluminum" "Calcium" "Silicon" "Iron" 
+make Mixture "SoftTungsten" 2 "Tungsten" "Copper" "-" "-" "-" 
 include db/solenoid.db
-make Solenoid "LASS" 2.240 0.000 95.000 210.0 420.0 "Air"  0.000 2.000   0.000    0.000 "Vacuum" "Iron" "Iron" "Iron"
+make Solenoid "LASS" 2.240 0.000 95.000 210.0 420.0 "Air" 0.000 2.000 0.000 0.000 "Vacuum" "Iron" "Iron" "Iron"
 include db/beampipe.db
-make BPipe "beam" 0.00 2.50 225.0 450.0 "Vacuum"     0.00   0.05   0.00      0.00    "Vacuum" "Beryllium" "Vacuum" "Vacuum"
+make BPipe "beam" 0.00 2.50 275.0 550.0 "Vacuum" 0.00 0.05 0.00 0.00 "Vacuum" "Beryllium" "Vacuum" "Vacuum"
 include db/beamvrtx.db
-make BeamVrtx 0.   0.   65. 0.30 0.30 15.
+make BeamVrtx 0. 0. 65. 0.30 0.30 15.
 include db/drift_layer.db
 make LayerDRFAno 1 1 5.0 90.0 1.0 25 -1 1 0. -0.10 0. 0.96 0.96 0.04 0.00 0.00
 make LayerDRFAno 1 2 5.1 90.0 1.0 25 -1 1 0. 0.0 0. 0.96 0.96 0.04 0.00 0.00
@@ -64,29 +75,29 @@ make OffsetDRFAno 1 1 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
 make OffsetDRFAno 1 2 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
 make OffsetDRFAno 1 3 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
 include db/drift.db
-make Drift 1 "VTX" 3 0 4.95 5.65 80.0 90.0 "Scintillator"  0.20  0.05    0.20     0.20  "Mylar" "Mylar" "Mylar" "Mylar"
-make LayerDRFAno 2 1 16.0 200.0 1.0 100 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 2 18.0 200.0 1.0 113 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 3 20.0 200.0 1.0 126 -1 0 0. 0.104 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 4 22.0 200.0 1.0 139 -1 0 0. 0.104 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 5 24.0 200.0 1.0 152 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 6 26.0 200.0 1.0 165 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 7 28.0 200.0 1.0 178 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 8 30.0 200.0 1.0 191 -1 0 0. -.104 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 9 32.0 200.0 1.0 204 -1 0 0. -.104 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 10 34.0 200.0 1.0 217 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 11 36.0 200.0 1.0 230 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 12 38.0 200.0 1.0 243 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 13 40.0 200.0 1.0 256 -1 0 0. 0.104 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 14 42.0 200.0 1.0 269 -1 0 0. 0.104 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 15 44.0 200.0 1.0 282 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 46 50.0 200.0 1.0 295 -1 2 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 17 48.0 200.0 1.0 308 -1 2 0. -.104 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 18 50.0 200.0 1.0 321 -1 2 0. -.104 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 19 52.0 200.0 1.0 334 -1 2 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 20 54.0 200.0 1.0 347 -1 2 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 21 56.0 200.0 1.0 360 -1 2 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
-make LayerDRFAno 2 22 58.0 200.0 1.0 373 -1 2 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
+make Drift 1 "VTX" 3 0 4.95 5.65 80.0 90.0 "Scintillator" 0.20 0.05 0.20 0.20 "Mylar" "Mylar" "Mylar" "Mylar"
+make LayerDRFAno 2 1 16.049 200.0 1.6 63 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 2 17.831 200.0 1.6 70 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 3 19.613 200.0 1.6 77 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 4 21.395 200.0 1.6 84 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 5 23.178 200.0 1.6 91 -1 0 0. 0.105 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 6 24.960 200.0 1.6 98 -1 0 0. 0.105 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 7 26.742 200.0 1.6 105 -1 0 0. -0.105 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 8 28.524 200.0 1.6 112 -1 0 0. -.105 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 9 33.107 200.0 1.6 130 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 10 34.890 200.0 1.6 137 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 11 36.672 200.0 1.6 144 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 12 38.455 200.0 1.6 151 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 13 40.237 200.0 1.6 158 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 14 42.019 200.0 1.6 165 -1 0 0. 0.105 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 15 43.802 200.0 1.6 172 -1 0 0. 0.105 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 16 45.584 200.0 1.6 179 -1 0 0. -0.105 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 17 47.367 200.0 1.6 186 -1 0 0. -0.105 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 18 51.186 200.0 1.6 201 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 19 52.969 200.0 1.6 208 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 20 54.751 200.0 1.6 215 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 21 56.534 200.0 1.6 222 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
+make LayerDRFAno 2 22 58.316 200.0 1.6 229 -1 0 0. 0.0 0. 0.96 0.96 0.02 0.00 0.00
 make OffsetDRFAno 2 1 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
 make OffsetDRFAno 2 2 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
 make OffsetDRFAno 2 3 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
@@ -109,184 +120,180 @@ make OffsetDRFAno 2 19 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
 make OffsetDRFAno 2 20 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
 make OffsetDRFAno 2 21 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
 make OffsetDRFAno 2 22 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-include db/drift_cathode.db
-make LayerDRFCatho 2 1 0.1 200.0 200 6 1 0.0 0.96 0.05 0.05 0.05
-make LayerDRFCatho 2 2 0.1 200.0 200 6 1 0.0 0.96 0.05 0.05 0.05
 include db/absorber.db
-make Absorber "SHIT01" "TUBE" 41 21.00  21.00 21.04  21.04 117.0 200.0 "Aluminum"
-make Absorber "SHIT03" "TUBE" 41 25.00  25.00 25.04  25.04 117.0 200.0 "Aluminum"
-make Absorber "SHIT05" "TUBE" 41 29.00  29.00 29.04  29.04 117.0 200.0 "Aluminum"
-make Absorber "SHIT07" "TUBE" 41 31.00  31.00 31.04  31.04 117.0 200.0 "Aluminum"
-make Absorber "SHIT09" "TUBE" 41 35.00  35.00 35.04  35.04 117.0 200.0 "Aluminum"
-make Absorber "SHIT11" "TUBE" 41 37.00  37.00 37.04  37.04 117.0 200.0 "Aluminum"
-make Absorber "SHIT13" "TUBE" 41 41.00  41.00 41.04  41.04 117.0 200.0 "Aluminum"
-make Absorber "SHIT15" "TUBE" 41 45.00  45.00 45.04  45.04 117.0 200.0 "Aluminum"
-make Absorber "SHIT17" "TUBE" 41 49.00  49.00 49.04  49.04 117.0 200.0 "Aluminum"
-make Absorber "SHIT19" "TUBE" 41 53.00  53.00 53.04  53.04 117.0 200.0 "Aluminum"
-make Absorber "SHIT21" "TUBE" 41 57.00  57.00 57.04  57.04 117.0 200.0 "Aluminum"
-make Drift 2 "CDC" 3 0 15.0 60.0 117.0 200.0 "Scintillator"  0.20  0.05    0.20     0.20  "Mylar" "Mylar" "Mylar" "Mylar"
+make Absorber "SHIT01" "TUBE" 41 21.00 21.00 21.04 21.04 117.0 200.0 "Aluminum"
+make Absorber "SHIT03" "TUBE" 41 25.00 25.00 25.04 25.04 117.0 200.0 "Aluminum"
+make Absorber "SHIT05" "TUBE" 41 29.00 29.00 29.04 29.04 117.0 200.0 "Aluminum"
+make Absorber "SHIT07" "TUBE" 41 31.00 31.00 31.04 31.04 117.0 200.0 "Aluminum"
+make Absorber "SHIT09" "TUBE" 41 35.00 35.00 35.04 35.04 117.0 200.0 "Aluminum"
+make Absorber "SHIT11" "TUBE" 41 37.00 37.00 37.04 37.04 117.0 200.0 "Aluminum"
+make Absorber "SHIT13" "TUBE" 41 41.00 41.00 41.04 41.04 117.0 200.0 "Aluminum"
+make Absorber "SHIT15" "TUBE" 41 45.00 45.00 45.04 45.04 117.0 200.0 "Aluminum"
+make Absorber "SHIT17" "TUBE" 41 49.00 49.00 49.04 49.04 117.0 200.0 "Aluminum"
+make Absorber "SHIT19" "TUBE" 41 53.00 53.00 53.04 53.04 117.0 200.0 "Aluminum"
+make Absorber "SHIT21" "TUBE" 41 57.00 57.00 57.04 57.04 117.0 200.0 "Aluminum"
+make Drift 2 "CDC" 22 0 15.0 60.0 117.0 200.0 "Scintillator" 0.20 0.50 1.10 1.10 "CarbonFiber" "CarbonFiber" "Aluminum" "Aluminum"
 include db/sidisk_wedge.db
 make Wedge "ALL" 1 1 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
 include db/sidisk_layer.db
 make LayerSiDi 1 1 "chamberGas" 1 -2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 1 2 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 1 2 "chamberGas" 1  0.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 1 2 "chamberGas" 1 0.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 1 3 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 1 3 "chamberGas" 1  2.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 1 3 "chamberGas" 1 2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 1 4 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 1 4 "Mylar" 1 -2.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 1 5 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 1 5 "Mylar" 1 -1.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 1 6 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make Wedge "ALL" 1 6 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
 make LayerSiDi 1 6 "Mylar" 1 -0.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 1 7 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 1 7 "Mylar" 1  0.5 0.008 3.50 60.0 0 360 360 3
+make Wedge "ALL" 1 7 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make LayerSiDi 1 7 "Mylar" 1 0.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 1 8 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
-make LayerSiDi 1 8 "Mylar" 1  1.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 1 8 "Mylar" 1 1.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 1 9 1 119 0.00 0.00 1.0 -120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 1 9 "Mylar" 1  2.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 1 9 "Mylar" 1 2.5 0.008 3.50 60.0 0 360 360 3
 include db/sidisk.db
 make SiDisk 1 "FDC1" 9 227.0
 make Wedge "ALL" 2 1 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
 make LayerSiDi 2 1 "chamberGas" 1 -2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 2 2 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 2 2 "chamberGas" 1  0.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 2 2 "chamberGas" 1 0.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 2 3 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 2 3 "chamberGas" 1  2.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 2 3 "chamberGas" 1 2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 2 4 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 2 4 "Mylar" 1 -2.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 2 5 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 2 5 "Mylar" 1 -1.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 2 6 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make Wedge "ALL" 2 6 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
 make LayerSiDi 2 6 "Mylar" 1 -0.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 2 7 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 2 7 "Mylar" 1  0.5 0.008 3.50 60.0 0 360 360 3
+make Wedge "ALL" 2 7 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make LayerSiDi 2 7 "Mylar" 1 0.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 2 8 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
-make LayerSiDi 2 8 "Mylar" 1  1.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 2 8 "Mylar" 1 1.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 2 9 1 119 0.00 0.00 1.0 -120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 2 9 "Mylar" 1  2.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 2 9 "Mylar" 1 2.5 0.008 3.50 60.0 0 360 360 3
 make SiDisk 2 "FDC2" 9 233.0
 make Wedge "ALL" 3 1 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
 make LayerSiDi 3 1 "chamberGas" 1 -2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 3 2 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 3 2 "chamberGas" 1  0.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 3 2 "chamberGas" 1 0.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 3 3 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 3 3 "chamberGas" 1  2.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 3 3 "chamberGas" 1 2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 3 4 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 3 4 "Mylar" 1 -2.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 3 5 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 3 5 "Mylar" 1 -1.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 3 6 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make Wedge "ALL" 3 6 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
 make LayerSiDi 3 6 "Mylar" 1 -0.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 3 7 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 3 7 "Mylar" 1  0.5 0.008 3.50 60.0 0 360 360 3
+make Wedge "ALL" 3 7 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make LayerSiDi 3 7 "Mylar" 1 0.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 3 8 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
-make LayerSiDi 3 8 "Mylar" 1  1.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 3 8 "Mylar" 1 1.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 3 9 1 119 0.00 0.00 1.0 -120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 3 9 "Mylar" 1  2.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 3 9 "Mylar" 1 2.5 0.008 3.50 60.0 0 360 360 3
 make SiDisk 3 "FDC3" 9 279.0
 make Wedge "ALL" 4 1 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
 make LayerSiDi 4 1 "chamberGas" 1 -2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 4 2 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 4 2 "chamberGas" 1  0.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 4 2 "chamberGas" 1 0.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 4 3 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 4 3 "chamberGas" 1  2.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 4 3 "chamberGas" 1 2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 4 4 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 4 4 "Mylar" 1 -2.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 4 5 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 4 5 "Mylar" 1 -1.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 4 6 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make Wedge "ALL" 4 6 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
 make LayerSiDi 4 6 "Mylar" 1 -0.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 4 7 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 4 7 "Mylar" 1  0.5 0.008 3.50 60.0 0 360 360 3
+make Wedge "ALL" 4 7 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make LayerSiDi 4 7 "Mylar" 1 0.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 4 8 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
-make LayerSiDi 4 8 "Mylar" 1  1.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 4 8 "Mylar" 1 1.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 4 9 1 119 0.00 0.00 1.0 -120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 4 9 "Mylar" 1  2.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 4 9 "Mylar" 1 2.5 0.008 3.50 60.0 0 360 360 3
 make SiDisk 4 "FDC4" 9 285.0
 make Wedge "ALL" 5 1 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
 make LayerSiDi 5 1 "chamberGas" 1 -2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 5 2 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 5 2 "chamberGas" 1  0.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 5 2 "chamberGas" 1 0.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 5 3 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 5 3 "chamberGas" 1  2.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 5 3 "chamberGas" 1 2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 5 4 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 5 4 "Mylar" 1 -2.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 5 5 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 5 5 "Mylar" 1 -1.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 5 6 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make Wedge "ALL" 5 6 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
 make LayerSiDi 5 6 "Mylar" 1 -0.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 5 7 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 5 7 "Mylar" 1  0.5 0.008 3.50 60.0 0 360 360 3
+make Wedge "ALL" 5 7 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make LayerSiDi 5 7 "Mylar" 1 0.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 5 8 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
-make LayerSiDi 5 8 "Mylar" 1  1.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 5 8 "Mylar" 1 1.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 5 9 1 119 0.00 0.00 1.0 -120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 5 9 "Mylar" 1  2.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 5 9 "Mylar" 1 2.5 0.008 3.50 60.0 0 360 360 3
 make SiDisk 5 "FDC5" 9 335.0
 make Wedge "ALL" 6 1 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
 make LayerSiDi 6 1 "chamberGas" 1 -2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 6 2 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 6 2 "chamberGas" 1  0.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 6 2 "chamberGas" 1 0.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 6 3 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 6 3 "chamberGas" 1  2.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 6 3 "chamberGas" 1 2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 6 4 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 6 4 "Mylar" 1 -2.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 6 5 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 6 5 "Mylar" 1 -1.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 6 6 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make Wedge "ALL" 6 6 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
 make LayerSiDi 6 6 "Mylar" 1 -0.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 6 7 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 6 7 "Mylar" 1  0.5 0.008 3.50 60.0 0 360 360 3
+make Wedge "ALL" 6 7 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make LayerSiDi 6 7 "Mylar" 1 0.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 6 8 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
-make LayerSiDi 6 8 "Mylar" 1  1.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 6 8 "Mylar" 1 1.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 6 9 1 119 0.00 0.00 1.0 -120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 6 9 "Mylar" 1  2.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 6 9 "Mylar" 1 2.5 0.008 3.50 60.0 0 360 360 3
 make SiDisk 6 "FDC6" 9 341.0
 make Wedge "ALL" 7 1 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
 make LayerSiDi 7 1 "chamberGas" 1 -2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 7 2 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 7 2 "chamberGas" 1  0.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 7 2 "chamberGas" 1 0.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 7 3 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 7 3 "chamberGas" 1  2.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 7 3 "chamberGas" 1 2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 7 4 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 7 4 "Mylar" 1 -2.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 7 5 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 7 5 "Mylar" 1 -1.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 7 6 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make Wedge "ALL" 7 6 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
 make LayerSiDi 7 6 "Mylar" 1 -0.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 7 7 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 7 7 "Mylar" 1  0.5 0.008 3.50 60.0 0 360 360 3
+make Wedge "ALL" 7 7 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make LayerSiDi 7 7 "Mylar" 1 0.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 7 8 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
-make LayerSiDi 7 8 "Mylar" 1  1.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 7 8 "Mylar" 1 1.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 7 9 1 119 0.00 0.00 1.0 -120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 7 9 "Mylar" 1  2.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 7 9 "Mylar" 1 2.5 0.008 3.50 60.0 0 360 360 3
 make SiDisk 7 "FDC7" 9 391.0
 make Wedge "ALL" 8 1 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
 make LayerSiDi 8 1 "chamberGas" 1 -2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 8 2 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 8 2 "chamberGas" 1  0.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 8 2 "chamberGas" 1 0.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 8 3 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
-make LayerSiDi 8 3 "chamberGas" 1  2.0 2.00 3.50 60.0 0 360 360 3
+make LayerSiDi 8 3 "chamberGas" 1 2.0 2.00 3.50 60.0 0 360 360 3
 make Wedge "ALL" 8 4 1 119 0.00 0.00 1.0 60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 8 4 "Mylar" 1 -2.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 8 5 1 119 0.00 0.00 1.0 -60.0 0.96 0.015 0.00 0.00
 make LayerSiDi 8 5 "Mylar" 1 -1.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 8 6 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make Wedge "ALL" 8 6 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
 make LayerSiDi 8 6 "Mylar" 1 -0.5 0.008 3.50 60.0 0 360 360 3
-make Wedge "ALL" 8 7 1 119 0.00 0.00 1.0 120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 8 7 "Mylar" 1  0.5 0.008 3.50 60.0 0 360 360 3
+make Wedge "ALL" 8 7 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
+make LayerSiDi 8 7 "Mylar" 1 0.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 8 8 1 119 0.00 0.00 1.0 0.0 0.96 0.015 0.00 0.00
-make LayerSiDi 8 8 "Mylar" 1  1.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 8 8 "Mylar" 1 1.5 0.008 3.50 60.0 0 360 360 3
 make Wedge "ALL" 8 9 1 119 0.00 0.00 1.0 -120.0 0.96 0.015 0.00 0.00
-make LayerSiDi 8 9 "Mylar" 1  2.5 0.008 3.50 60.0 0 360 360 3
+make LayerSiDi 8 9 "Mylar" 1 2.5 0.008 3.50 60.0 0 360 360 3
 make SiDisk 8 "FDC8" 9 397.0
-make Absorber "SHL7" "TUBE" 41 60.0  60.0 61.0  61.0 230.0 12.0 "Aluminum"
-make Absorber "SHL8" "TUBE" 41 60.0  60.0 61.0  61.0 282.0 12.0 "Aluminum"
-make Absorber "SHL9" "TUBE" 41 60.0  60.0 61.0  61.0 338.0 12.0 "Aluminum"
-make Absorber "SHL10" "TUBE" 41 60.0  60.0 61.0  61.0 394.0 12.0 "Aluminum"
+make Absorber "SHL7" "TUBE" 41 60.0 60.0 61.0 61.0 230.0 12.0 "Aluminum"
+make Absorber "SHL8" "TUBE" 41 60.0 60.0 61.0 61.0 282.0 12.0 "Aluminum"
+make Absorber "SHL9" "TUBE" 41 60.0 60.0 61.0 61.0 338.0 12.0 "Aluminum"
+make Absorber "SHL10" "TUBE" 41 60.0 60.0 61.0 61.0 394.0 12.0 "Aluminum"
 include db/absorberbox.db
-make Absorberbox "Cerenkov" "BOX" 2 -95.0  95.0 -95.0  95.0 -6.0  6.0 -6.0  6.0 420.5 1.0 "Scintillator"
-make Absorber "CTOF" "TUBE" 41 60.0  60.0 61.0  61.0 217.5 405.0 "Aluminum"
-make Absorberbox "FTOF" "BOX" 42 -125.0 125.0 -125.0 125.0 -6.0  6.0 -6.0  6.0 566.27 2.54 "Scintillator"
+make Absorberbox "Cerenkov" "BOX" 2 -95.0 95.0 -95.0 95.0 -6.0 6.0 -6.0 6.0 420.5 1.0 "Scintillator"
+make Absorberbox "FTOF" "BOX" 42 -125.0 125.0 -125.0 125.0 -6.0 6.0 -6.0 6.0 566.27 2.54 "Scintillator"
 include db/emcal.db
-make EMCal "BCAL" "TUBE" 1    65.0      65.0      90.0      90.0   217.5 405.0 "leadScint" "leadScint" 48 1 0.06 0.01 0.30 0.03 4.0 1
+make EMCal "BCAL" "TUBE" 1 65.0 65.0 90.0 90.0 210.0 390.0 "leadScint" "leadScint" 48 1 0.06 0.01 0.30 0.03 4.0 1
