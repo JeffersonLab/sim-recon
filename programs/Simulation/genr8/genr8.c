@@ -618,7 +618,7 @@ l2:	  imassc=setChildrenMass(Y->child[i]);
     if(lfevents-->0){
       lfmax = lf >lfmax ? lf : lfmax; /* find the largest value */
       if( (lfevents % 10) == 0 )
-	fprintf(stderr,"Calculating Lorentz Factor: %d \n",lfevents);
+	fprintf(stderr,"Calculating Lorentz Factor: %d \r",lfevents);
     }
     else{
      
