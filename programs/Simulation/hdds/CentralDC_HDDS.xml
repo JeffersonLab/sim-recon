@@ -15,6 +15,9 @@
      version 1.3: Fix typos in CDC. Previously the gas volume was
                   filled with scintillator in mcfast!.
 
+                  Changed resolution from 200 micron to 150 micron in
+                  the CDC.
+
 <HDDS specification="v1.0"
       xmlns="http://www.gluex.org/hdds"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -288,7 +291,7 @@
 				unit="cm"	/>
     <real	name="eff_dedx"	value="0.96"	comment="dE/dx efficiency"
 				unit="cm"	/>
-    <real	name="siga"	value="0.02"	comment="xy resolution"
+    <real	name="siga"	value="0.015"	comment="xy resolution"
 				unit="cm"	/>
     <real	name="sigb"	value="0.00"	comment="?? resolution"
 				unit="cm"	/>
