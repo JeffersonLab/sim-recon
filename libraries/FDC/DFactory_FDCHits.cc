@@ -122,11 +122,13 @@ derror_t DFactory_FDCHits::Print(void)
 		strncpy(&str[38-strlen(num)], num, strlen(num));
 		sprintf(num, "%2.3f", fdchit->u);
 		strncpy(&str[46-strlen(num)], num, strlen(num));
-		sprintf(num, "%1.3f", fdchit->dE*1000.0);
-		strncpy(&str[56-strlen(num)], num, strlen(num));
-		sprintf(num, "%4.0f", fdchit->t);
-		strncpy(&str[65-strlen(num)], num, strlen(num));
-		sprintf(num, "%s", fdchit->type ? "anode":"cathode");
+		if(!fdchit->type){
+			sprintf(num, "%1.3f", fdchit->dE*1000.0);
+			strncpy(&str[56-strlen(num)], num, strlen(num));
+			sprintf(num, "%4.0f", fdchit->t);
+			strncpy(&str[65-strlen(num)], num, strlen(num));
+		}
+		sprintf(num, "%s", fdchit->type ? "cathode":"anode");
 		strncpy(&str[73-strlen(num)], num, strlen(num));
 
 		cout<<str<<endl;
