@@ -1,22 +1,18 @@
 /*
- * hittree.c - library for managing binary tree of hits pointers
- *
- *	This is a part of the hits package for the
- *	HDGeant simulation program for Hall D.
+ * bintree.c - library for managing binary tree of hits pointers
  *
  *	version 1.0 	-Richard Jones July 16, 2001
  */
 
 #include <stdlib.h>
+#include <bintree.h>
 
-#include <hittree.h>
-
-void** getTwig(hitTree_t** tree, int mark)
+void** getTwig(binTree_t** tree, int mark)
 {
-   hitTree_t* node = *tree;
+   binTree_t* node = *tree;
    if (node == 0)
    {
-      node = *tree = malloc(sizeof(hitTree_t));
+      node = *tree = malloc(sizeof(binTree_t));
       node->mark = mark;
       node->left = 0;
       node->right = 0;
@@ -37,9 +33,9 @@ void** getTwig(hitTree_t** tree, int mark)
    }
 }
 
-void* pickTwig(hitTree_t** tree)
+void* pickTwig(binTree_t** tree)
 {
-   hitTree_t* node = *tree;
+   binTree_t* node = *tree;
    if (node == 0)
    {
       return 0;

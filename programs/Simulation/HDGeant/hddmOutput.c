@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <hddm_s.h>
+#include <hddmOutput.h>
 
 s_iostream* thisOutputStream = 0;
 s_HDDM_t* thisOutputEvent = 0;
@@ -37,6 +37,7 @@ int flushOutput ()
       flush_s_HDDM(thisOutputEvent, thisOutputStream);
       thisOutputEvent = 0;
    }
+   checkpoint();
    return 0;
 }
 
@@ -56,7 +57,24 @@ int loadOutput ()
    {
       flush_s_HDDM(thisOutputEvent, 0);
    }
+
    thisOutputEvent = getInput();
+   if (thisOutputEvent == 0)
+   {
+      static int eventNo = 0;
+      thisOutputEvent = make_s_HDDM();
+      thisOutputEvent->physicsEvent = make_s_PhysicsEvent();
+      thisOutputEvent->physicsEvent->hitView = make_s_HitView();
+      thisOutputEvent->physicsEvent->eventNo = ++eventNo;
+   }
+   thisOutputEvent->physicsEvent->hitView->centralDC    = pickCentralDC();
+   thisOutputEvent->physicsEvent->hitView->forwardDC    = pickForwardDC();
+   thisOutputEvent->physicsEvent->hitView->startCntr    = pickStartCntr();
+   thisOutputEvent->physicsEvent->hitView->barrelEMcal  = pickBarrelEMcal();
+   thisOutputEvent->physicsEvent->hitView->Cerenkov     = pickCerenkov();
+   thisOutputEvent->physicsEvent->hitView->forwardTOF   = pickForwardTOF();
+   thisOutputEvent->physicsEvent->hitView->forwardEMcal = pickForwardEMcal();
+   return 0;
 }
 
 /* entry points from Fortran */

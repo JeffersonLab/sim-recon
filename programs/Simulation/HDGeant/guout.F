@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.2  2001/07/24 05:37:16  jonesrt
+* First working prototype of hits package -rtj
+*
 * Revision 1.1  2001/07/10 18:05:46  jonesrt
 * imported several of the gu*.F user subroutines for Hall D customization -rtj
 *
@@ -24,12 +27,7 @@ C.
 #include "geant321/gcomis.inc"
 C.    ------------------------------------------------------------------
 C.
-#if defined(CERNLIB_COMIS)
-      IF(JUOUT.NE.0)THEN
-         CALL CSJCAL(JUOUT,0,X,X,X,X,X,X,X,X,X,X)
-         GO TO 99
-      ENDIF
-#endif
 *
-  99  END
-C
+      call loadOutput();
+      call flushOutput();
+      END

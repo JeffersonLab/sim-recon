@@ -11,41 +11,34 @@
 #include <stdio.h>
 
 #include <hddm_s.h>
-#include <hittree.h>
+#include <geant3.h>
+#include <bintree.h>
 
+#define BLOCK_WIDTH	4.0
+#define THRESH_MEV	150.
 #define TWO_HIT_RESOL   75.
 #define MAX_HITS        10
 
-hitTree_t* forwardEMcalTree = 0;
+binTree_t* forwardEMcalTree = 0;
+static int blockCount = 0;
+static int showerCount = 0;
+
+
+/* register hits during tracking (from gustep) */
 
 void hitForwardEMcal (float xin[4], float xout[4],
                       float pin[5], float pout[5], float dEsum, int track)
 {
    float x[3], t;
-   float dx[3], dr;
-   float dEdx;
    float xlocal[3];
-   const int one = 1;
 
    if (dEsum == 0) return;              /* only seen if it deposits energy */
 
-   gmtod_(x,xlocal,&one);
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
-   dx[0] = xin[0] - xout[0];
-   dx[1] = xin[1] - xout[1];
-   dx[2] = xin[2] - xout[2];
-   dr = sqrt(dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
-   if (dr > 1e-3)
-   {
-      dEdx = dEsum/dr;
-   }
-   else
-   {
-      dEdx = 0;
-   }
+   getlocalcoord_(x,xlocal,"FCAL",4);
 
    /* post the hit to the hits tree, mark block as hit */
    {
@@ -53,19 +46,22 @@ void hitForwardEMcal (float xin[4], float xout[4],
       s_Showers_t* shots;
       int row = getrow_();
       int column = getcolumn_();
+      float xcol = (floor(xlocal[0]/BLOCK_WIDTH) + 0.5)*BLOCK_WIDTH;
+      float yrow = (floor(xlocal[1]/BLOCK_WIDTH) + 0.5)*BLOCK_WIDTH;
       int mark = (row << 16) + column;
       void** twig = getTwig(&forwardEMcalTree, mark);
-      if (twig == 0)
+      if (*twig == 0)
       {
          s_ForwardEMcal_t* cal = *twig = make_s_ForwardEMcal();
          cal->rows = make_s_Rows(1);
          cal->rows->mult = 1;
-         cal->rows->in[0].row = row;
+         cal->rows->in[0].y = yrow;
          cal->rows->in[0].columns = make_s_Columns(1);
          cal->rows->in[0].columns->mult = 1;
-         cal->rows->in[0].columns->in[0].col = column;
+         cal->rows->in[0].columns->in[0].x = xcol;
          cal->rows->in[0].columns->in[0].showers =
          shots = make_s_Showers(MAX_HITS);
+         blockCount++;
       }
       else
       {
@@ -106,7 +102,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
       s_ForwardShowers_t* showers;
       int mark = (track << 24);
       void** twig = getTwig(&forwardEMcalTree, mark);
-      if (twig == 0)
+      if (*twig == 0)
       {
          s_ForwardEMcal_t* cal = *twig = make_s_ForwardEMcal();
          cal->forwardShowers = showers = make_s_ForwardShowers(1);
@@ -115,9 +111,11 @@ void hitForwardEMcal (float xin[4], float xout[4],
          showers->in[0].y = x[1];
          showers->in[0].E = dEsum;
          showers->mult = 1;
+         showerCount++;
       }
       else
       {
+         showers = ((s_ForwardEMcal_t*) *twig)->forwardShowers;
          showers->in[0].x = (showers->in[0].x * showers->in[0].E + x[0]*dEsum)
                           / (showers->in[0].E + dEsum);
          showers->in[0].y = (showers->in[0].y * showers->in[0].E + x[1]*dEsum)
@@ -134,4 +132,84 @@ void hitforwardemcal_(float* xin, float* xout,
                       float* pin, float* pout, float* dEsum, int* track)
 {
    hitForwardEMcal(xin,xout,pin,pout,*dEsum,*track);
+}
+
+
+/* pick and package the hits for shipping */
+
+s_ForwardEMcal_t* pickForwardEMcal ()
+{
+   s_ForwardEMcal_t* box;
+   s_ForwardEMcal_t* item;
+
+   if ((blockCount == 0) && (showerCount == 0))
+   {
+      return 0;
+   }
+
+   box = make_s_ForwardEMcal();
+   box->rows = make_s_Rows(blockCount);
+   box->forwardShowers = make_s_ForwardShowers(showerCount);
+   while (item = (s_ForwardEMcal_t*) pickTwig(&forwardEMcalTree))
+   {
+      if (item->rows)
+      {
+         float E = item->rows->in[0].columns->in[0].showers->in[0].E;
+         float y = item->rows->in[0].y;
+         int m = box->rows->mult;
+         if (m == 0)
+         {
+            box->rows->in[m] = item->rows->in[0];
+            box->rows->in[m].columns = make_s_Columns(blockCount);
+            box->rows->mult++;
+         }
+         else if (y > box->rows->in[m-1].y + 0.5)
+         {
+            if (box->rows->in[m-1].columns->mult == 0)
+            {
+               FREE(box->rows->in[--m].columns);
+               box->rows->mult--;
+            }
+            box->rows->in[m] = item->rows->in[0];
+            box->rows->in[m].columns = make_s_Columns(blockCount);
+            box->rows->mult++;
+         }
+         else
+         {
+            m--;
+         }
+         if (E > THRESH_MEV/1000)
+         {
+            int mm = box->rows->in[m].columns->mult++;
+            box->rows->in[m].columns->in[mm] = 
+                                      item->rows->in[0].columns->in[0];
+         }
+         else
+         {
+            FREE(item->rows->in[0].columns->in[0].showers);
+         }
+         FREE(item->rows->in[0].columns);
+         FREE(item->rows);
+      }
+      else if (item->forwardShowers)
+      {
+         int m = box->forwardShowers->mult++;
+         box->forwardShowers->in[m] = item->forwardShowers->in[0];
+         FREE(item->forwardShowers);
+      }
+      FREE(item);
+   }
+
+   /* Reduce the last <row>...</row> if empty */
+   {
+      int m = box->rows->mult;
+      if ((m > 0) && box->rows->in[m-1].columns->mult == 0)
+      {
+         FREE(box->rows->in[--m].columns);
+         box->rows->mult--;
+      }
+   }
+
+   blockCount = showerCount = 0;
+   return box;
 }

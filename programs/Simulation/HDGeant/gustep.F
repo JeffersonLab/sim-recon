@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.5  2001/07/24 05:37:16  jonesrt
+* First working prototype of hits package -rtj
+*
 * Revision 1.4  2001/07/19 23:25:49  jonesrt
 * numerous new files as I develop the prototype hits libraries -rtj
 *
@@ -34,10 +37,13 @@
 *                                                                      *
 ************************************************************************
 *
+#include "geant321/gckine.inc"
 #include "geant321/gcking.inc"
 #include "geant321/gcomis.inc"
 #include "geant321/gcvolu.inc"
+#include "geant321/gctmed.inc"
 #include "geant321/gctrak.inc"
+#include "geant321/gcflag.inc"
 *
 *     -----------------------------------------------------------------
 *
@@ -95,7 +101,7 @@
         pin(5) = VECT(7)
         dEsum = 0
         return
-      elseif (INWVOL.eq.2) then
+      elseif ((ISTOP.ne.0).or.(INWVOL.eq.2)) then
         xout(1) = VECT(1)
         xout(2) = VECT(2)
         xout(3) = VECT(3)

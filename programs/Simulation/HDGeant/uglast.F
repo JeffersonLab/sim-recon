@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.2  2001/07/24 05:37:19  jonesrt
+* First working prototype of hits package -rtj
+*
 * Revision 1.1  2001/07/08 06:24:35  jonesrt
 * First release of the Geant3 geometry package for Hall D based on hdds.  -rtj
 *
@@ -23,17 +26,12 @@
 *
 *     -----------------------------------------------------------------
 *
-#if defined(CERNLIB_COMIS)
-      IF(JULAST.NE.0)THEN
-         CALL CSJCAL(JULAST,0,X,X,X,X,X,X,X,X,X,X)
-         GO TO 99
-      ENDIF
-#endif
       CALL GLAST
 *
 *             Close HIGZ
 *
       CALL IGEND
 *
-  99  END
+      call closeOutput()
+      END
  

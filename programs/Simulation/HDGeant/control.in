@@ -19,14 +19,15 @@ C file is exhausted before the TRIG count expires
 C (or if no FILE card is given) then processing will
 C stop at the end of the input file.
 
-TRIG 100
+TRIG 10000
 FILE 'test.hddm'
-SKIP 100
+CSKIP 100
 RUNG 9999
 
 KINE 1 1.0 8. 45. 0. 0. 0.
+SCAP 0 0 65
 
-RNDM 2
+RNDM 17
 
 CUTS 1e-4 1e-4
 

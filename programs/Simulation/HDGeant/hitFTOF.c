@@ -11,16 +11,23 @@
 #include <stdio.h>
 
 #include <hddm_s.h>
-#include <hittree.h>
+#include <geant3.h>
+#include <bintree.h>
 
-#define MAX_HITS        10
 #define Y0		-125.
-#define TWO_HIT_RESOL   25.
 #define SLAB_WIDTH	5.0
+#define HALF_LENGTH	125
 #define ATTEN_LENGTH	150
 #define C_EFFECTIVE	15
+#define TWO_HIT_RESOL   25.
+#define MAX_HITS        10
 
-hitTree_t* forwardTOFTree = 0;
+binTree_t* forwardTOFTree = 0;
+static int slabCount = 0;
+static int pointCount = 0;
+
+
+/* register hits during tracking (from gustep) */
 
 void hitForwardTOF (float xin[4], float xout[4],
                     float pin[5], float pout[5], float dEsum, int track)
@@ -29,15 +36,14 @@ void hitForwardTOF (float xin[4], float xout[4],
    float dx[3], dr;
    float dEdx;
    float xlocal[3];
-   const int one = 1;
 
    if (dEsum == 0) return;              /* only seen if it deposits energy */
 
-   gmtod_(x,xlocal,&one);
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
+   getlocalcoord_(x,xlocal,"local",5);
    dx[0] = xin[0] - xout[0];
    dx[1] = xin[1] - xout[1];
    dx[2] = xin[2] - xout[2];
@@ -56,20 +62,25 @@ void hitForwardTOF (float xin[4], float xout[4],
       int nhit;
       s_Hits_t* leftHits;
       s_Hits_t* rightHits;
-      float tleft  = t - (xlocal[0]/C_EFFECTIVE);
-      float tright = t + (xlocal[0]/C_EFFECTIVE);
-      float dEleft  = dEsum * exp(+xlocal[0]/ATTEN_LENGTH);
-      float dEright = dEsum * exp(-xlocal[0]/ATTEN_LENGTH);
+      float dxleft = HALF_LENGTH - xlocal[0];
+      float dxright = HALF_LENGTH + xlocal[0];
+      float tleft  = t + dxleft/C_EFFECTIVE;
+      float tright = t + dxright/C_EFFECTIVE;
+      float dEleft  = dEsum * exp(-dxleft/ATTEN_LENGTH);
+      float dEright = dEsum * exp(-dxright/ATTEN_LENGTH);
       int slab = (xlocal[1] - Y0)/SLAB_WIDTH +1;
       void** twig = getTwig(&forwardTOFTree, slab);
-      if (twig == 0)
+      if (*twig == 0)
       {
          s_ForwardTOF_t* tof = *twig = make_s_ForwardTOF();
          tof->slabs = make_s_Slabs(1);
          tof->slabs->mult = 1;
          tof->slabs->in[0].y = (slab -1)*SLAB_WIDTH + Y0;
+         tof->slabs->in[0].left = make_s_Left();
          tof->slabs->in[0].left->hits = leftHits = make_s_Hits(MAX_HITS);
+         tof->slabs->in[0].right = make_s_Right();
          tof->slabs->in[0].right->hits = rightHits = make_s_Hits(MAX_HITS);
+         slabCount++;
       }
       else
       {
@@ -115,13 +126,16 @@ void hitForwardTOF (float xin[4], float xout[4],
    {
       int mark = (track << 16);
       void** twig = getTwig(&forwardTOFTree, mark);
-      if (twig == 0)
+      if (*twig == 0)
       {
          s_ForwardTOF_t* tof = *twig = make_s_ForwardTOF();
          s_TofPoints_t* points = make_s_TofPoints(1);
+         tof->tofPoints = points;
          points->in[0].x = x[0];
          points->in[0].y = x[1];
+         points->in[0].t = t;
          points->mult = 1;
+         pointCount++;
       }
    }
 }
@@ -132,4 +146,40 @@ void hitforwardtof_ (float* xin, float* xout,
                      float* pin, float* pout, float* dEsum, int* track)
 {
    hitForwardTOF(xin,xout,pin,pout,*dEsum,*track);
+}
+
+
+/* pick and package the hits for shipping */
+
+s_ForwardTOF_t* pickForwardTOF ()
+{
+   s_ForwardTOF_t* box;
+   s_ForwardTOF_t* item;
+
+   if ((slabCount == 0) && (pointCount == 0))
+   {
+      return 0;
+   }
+
+   box = make_s_ForwardTOF();
+   box->slabs = make_s_Slabs(slabCount);
+   box->tofPoints = make_s_TofPoints(pointCount);
+   while (item = (s_ForwardTOF_t*) pickTwig(&forwardTOFTree))
+   {
+      if (item->slabs)
+      {
+         int m = box->slabs->mult++;
+         box->slabs->in[m] = item->slabs->in[0];
+         FREE(item->slabs);
+      }
+      else if (item->tofPoints)
+      {
+         int m = box->tofPoints->mult++;
+         box->tofPoints->in[m] = item->tofPoints->in[0];
+         FREE(item->tofPoints);
+      }
+      FREE(item);
+   }
+   slabCount = pointCount = 0;
+   return box;
 }

@@ -11,15 +11,22 @@
 #include <stdio.h>
 
 #include <hddm_s.h>
-#include <hittree.h>
+#include <geant3.h>
+#include <bintree.h>
 
 #define U0		-60.
 #define WIRE_SPACING 	1.0
 #define STRIP_SPACING	1.0
-#define TWO_HIT_RESOL	25.
+#define TWO_HIT_RESOL	250.
 #define MAX_HITS 	10
 
-hitTree_t* forwardDCTree = 0;
+binTree_t* forwardDCTree = 0;
+static int stripCount = 0;
+static int wireCount = 0;
+static int pointCount = 0;
+
+
+/* register hits during tracking (from gustep) */
 
 void hitForwardDC (float xin[4], float xout[4],
                    float pin[5], float pout[5], float dEsum, int track)
@@ -28,15 +35,14 @@ void hitForwardDC (float xin[4], float xout[4],
    float dx[3], dr;
    float dEdx;
    float xlocal[3];
-   const int one = 1;
 
    if (dEsum == 0) return;              /* only seen if it deposits energy */
 
-   gmtod_(x,xlocal,&one);
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
+   getlocalcoord_(x,xlocal,"local",5);
    dx[0] = xin[0] - xout[0];
    dx[1] = xin[1] - xout[1];
    dx[2] = xin[2] - xout[2];
@@ -64,13 +70,13 @@ void hitForwardDC (float xin[4], float xout[4],
       {
          int mark = (module << 24) + (player << 20) + (iwire << 8);
          void** twig = getTwig(&forwardDCTree, mark);
-         if (twig == 0)
+         if (*twig == 0)
          {
             s_ForwardDC_t* fdc = *twig = make_s_ForwardDC();
             fdc->chambers = make_s_Chambers(1);
             fdc->chambers->mult = 1;
             fdc->chambers->in[0].module = module;
-            fdc->chambers->in[0].layer = player;
+            fdc->chambers->in[0].layer = layer;
             fdc->chambers->in[0].cathodePlanes = make_s_CathodePlanes(1);
             fdc->chambers->in[0].cathodePlanes->mult = 1;
             fdc->chambers->in[0].cathodePlanes->in[0].z = x[2];
@@ -81,6 +87,7 @@ void hitForwardDC (float xin[4], float xout[4],
                                                                     xlocal[0];
             fdc->chambers->in[0].cathodePlanes->in[0].strips->in[0].hits =
             hits = make_s_Hits(MAX_HITS);
+            stripCount++;
          }
          else
          {
@@ -92,13 +99,13 @@ void hitForwardDC (float xin[4], float xout[4],
       {
          int mark = (module << 24) + (player << 20) + (iwire << 8);
          void** twig = getTwig(&forwardDCTree, mark);
-         if (twig == 0)
+         if (*twig == 0)
          {
             s_ForwardDC_t* fdc = *twig = make_s_ForwardDC();
             fdc->chambers = make_s_Chambers(1);
             fdc->chambers->mult = 1;
             fdc->chambers->in[0].module = module;
-            fdc->chambers->in[0].layer = player;
+            fdc->chambers->in[0].layer = layer;
             fdc->chambers->in[0].anodePlanes = make_s_AnodePlanes(1);
             fdc->chambers->in[0].anodePlanes->mult = 1;
             fdc->chambers->in[0].anodePlanes->in[0].z = x[2];
@@ -108,6 +115,7 @@ void hitForwardDC (float xin[4], float xout[4],
             fdc->chambers->in[0].anodePlanes->in[0].wires->in[0].u = xlocal[0];
             fdc->chambers->in[0].anodePlanes->in[0].wires->in[0].hits =
             hits = make_s_Hits(MAX_HITS);
+            wireCount++;
          }
          else
          {
@@ -147,14 +155,14 @@ void hitForwardDC (float xin[4], float xout[4],
          s_FdcPoints_t* points;
          int mark = (module << 24) + (player << 20) + (iwire << 8) + track;
          void** twig = getTwig(&forwardDCTree, mark);
-         if (twig == 0)
+         if (*twig == 0)
          {
             s_ForwardDC_t* fdc = *twig = make_s_ForwardDC();
             s_FdcPoints_t* points = make_s_FdcPoints(1);
             fdc->chambers = make_s_Chambers(1);
             fdc->chambers->mult = 1;
             fdc->chambers->in[0].module = module;
-            fdc->chambers->in[0].layer = player;
+            fdc->chambers->in[0].layer = layer;
             fdc->chambers->in[0].anodePlanes = make_s_AnodePlanes(1);
             fdc->chambers->in[0].anodePlanes->mult = 1;
             fdc->chambers->in[0].anodePlanes->in[0].z = x[2];
@@ -171,6 +179,7 @@ void hitForwardDC (float xin[4], float xout[4],
                                        - (iwire - 0.5)*WIRE_SPACING);
             points->in[0].dEdx = dEdx;
             points->mult++;
+            pointCount++;
          }
       }
    }
@@ -182,4 +191,117 @@ void hitforwarddc_(float* xin, float* xout,
                    float* pin, float* pout, float* dEsum, int* track)
 {
    hitForwardDC(xin,xout,pin,pout,*dEsum,*track);
+}
+
+
+/* pick and package the hits for shipping */
+
+s_ForwardDC_t* pickForwardDC ()
+{
+   s_ForwardDC_t* box;
+   s_ForwardDC_t* item;
+
+   if ((stripCount == 0) && (wireCount == 0) && (pointCount == 0))
+   {
+      return 0;
+   }
+
+   box = make_s_ForwardDC();
+   box->chambers = make_s_Chambers(32);
+   while (item = (s_ForwardDC_t*) pickTwig(&forwardDCTree))
+   {
+      int module = item->chambers->in[0].module;
+      int layer = item->chambers->in[0].layer;
+      int m = box->chambers->mult;
+      if ((m == 0) || (module > box->chambers->in[m-1].module)
+                   || (layer  > box->chambers->in[m-1].layer))
+      {
+         box->chambers->in[m] = item->chambers->in[0];
+         box->chambers->in[m].cathodePlanes = make_s_CathodePlanes(32);
+         box->chambers->in[m].anodePlanes = make_s_AnodePlanes(32);
+         box->chambers->mult++;
+      }
+      else
+      {
+         m--;
+      }
+      if (item->chambers->in[0].cathodePlanes)
+      {
+         float z = item->chambers->in[0].cathodePlanes->in[0].z;
+         int mm = box->chambers->in[m].cathodePlanes->mult;
+         if ((mm == 0) ||
+             (z > box->chambers->in[m].cathodePlanes->in[mm-1].z + 0.5))
+         {
+            box->chambers->in[m].cathodePlanes->in[mm] =
+                           item->chambers->in[0].cathodePlanes->in[0];
+            box->chambers->in[m].cathodePlanes->in[mm].strips =
+                           make_s_Strips(stripCount);
+            box->chambers->in[m].cathodePlanes->mult++;
+         }
+         else
+         {
+            mm--;
+         }
+         {
+            int mmm = box->chambers->in[m].cathodePlanes->in[mm].strips->mult++;
+            box->chambers->in[m].cathodePlanes->in[mm].strips->in[mmm] =
+                     item->chambers->in[0].cathodePlanes->in[0].strips->in[0];
+         }
+         FREE(item->chambers->in[0].cathodePlanes->in[0].strips);
+         FREE(item->chambers->in[0].cathodePlanes);
+      }
+      else if (item->chambers->in[0].anodePlanes)
+      {
+         float z = item->chambers->in[0].anodePlanes->in[0].z;
+         int mm = box->chambers->in[m].anodePlanes->mult;
+         if ((mm == 0) ||
+             (z > box->chambers->in[m].anodePlanes->in[mm-1].z + 0.5))
+         {
+            box->chambers->in[m].anodePlanes->in[mm] =
+                           item->chambers->in[0].anodePlanes->in[0];
+            box->chambers->in[m].anodePlanes->in[mm].wires =
+                           make_s_Wires(wireCount);
+            box->chambers->in[m].anodePlanes->mult++;
+         }
+         else
+         {
+            mm--;
+         }
+         {
+            int mmm = box->chambers->in[m].anodePlanes->in[mm].wires->mult;
+            if ((mmm == 0) || item->chambers->in[0].anodePlanes->in[0].wires
+                                                          ->in[0].hits)
+            {
+               box->chambers->in[m].anodePlanes->in[mm].wires->in[mmm] =
+                     item->chambers->in[0].anodePlanes->in[0].wires->in[0];
+               box->chambers->in[m].anodePlanes->in[mm].wires->mult++;
+            }
+            else if (item->chambers->in[0].anodePlanes->in[0].wires
+                                                          ->in[0].fdcPoints)
+            {
+               int mmmm;
+               if (box->chambers->in[m].anodePlanes->in[mm].wires
+                                                  ->in[mmm-1].fdcPoints == 0)
+               {
+                  box->chambers->in[m].anodePlanes->in[mm].wires
+                     ->in[mmm-1].fdcPoints = make_s_FdcPoints(pointCount);
+               }
+               mmmm = box->chambers->in[m].anodePlanes->in[mm].wires
+                                               ->in[mmm-1].fdcPoints->mult++;
+               box->chambers->in[m].anodePlanes->in[mm].wires
+                   ->in[mmm-1].fdcPoints->in[mmmm] =
+                     item->chambers->in[0].anodePlanes
+                         ->in[0].wires->in[0].fdcPoints->in[0];
+               FREE(item->chambers->in[0].anodePlanes->in[0].wires
+                                  ->in[0].fdcPoints);
+            }
+         }
+         FREE(item->chambers->in[0].anodePlanes->in[0].wires);
+         FREE(item->chambers->in[0].anodePlanes);
+      }
+      FREE(item->chambers);
+      FREE(item);
+   }
+   stripCount = wireCount = pointCount = 0;
+   return box;
 }

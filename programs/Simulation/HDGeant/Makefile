@@ -13,7 +13,7 @@ HDDM = ../hddm
 AUXS = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o gdstep.o guxcs.o \
        hddsGeant3.o goptimize.o hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
-       hitLGD.o hittree.o
+       hitLGD.o bintree.o memcheck.o
 
 GXFIXED = gxcs.o gxphys.o
 
@@ -35,7 +35,7 @@ hdgeant:	hdgeant.F uginit.F uglast.F $(AUXS)
 .c.o:
 	gcc $(COPTS) -I. -I../include -c -o $@ $^
 
-hddmInput.c: hddm_s.h
+hddmInput.c: hddm_s.c
 
 .cpp.o:
 	g++ $(COPTS) -I. -I../include -c -o $@ $^
@@ -43,10 +43,7 @@ hddmInput.c: hddm_s.h
 hddsGeant3.f:
 	$(HDDS)/hdds-geant $(HDDS)/main_HDDS.xml >hddsGeant3.f
 
-hddm_s.c: hddm_s.h
-	$(HDDM)/hddm-c $(HDDM)/event.xml
-
-hddm_s.h:
+hddm_s.c:
 	$(HDDM)/hddm-c $(HDDM)/event.xml
 
 clean:

@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.2  2001/07/24 05:37:16  jonesrt
+* First working prototype of hits package -rtj
+*
 * Revision 1.1  2001/07/10 18:05:45  jonesrt
 * imported several of the gu*.F user subroutines for Hall D customization -rtj
 *
@@ -23,12 +26,20 @@ C.    *    ==>Called by : GHELIX,GRKUTA                                *
 C.    *                                                                *
 C.    ******************************************************************
 C.
+#include <geant321/gctmed.inc>
+C.
       DIMENSION X(3),F(3)
 C.
 C.    ------------------------------------------------------------------
 C.
       F(1)=0.
       F(2)=0.
-      F(3)=0.
+      if (X(3).lt.0) then
+        F(3)=FIELDM * (100/(100-X(3)))**3
+      elseif (X(3).lt.400) then
+        F(3)=FIELDM
+      else
+        F(3)=FIELDM * (100/(X(3)-300))**3
+      endif
 C
       END

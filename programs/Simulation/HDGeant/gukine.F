@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.3  2001/07/24 05:37:16  jonesrt
+* First working prototype of hits package -rtj
+*
 * Revision 1.2  2001/07/15 07:31:37  jonesrt
 * HDGeant now supportskinematic input from Monte Carlo generators
 * via the routines in hddmInput.c  -rtj
@@ -34,14 +37,6 @@
       DIMENSION RNDM(2)
 *
 *     -----------------------------------------------------------------
-*
-#if defined(CERNLIB_COMIS)
-      IF(JUKINE.NE.0)THEN
-         CALL CSJCAL(JUKINE,0,X,X,X,X,X,X,X,X,X,X)
-         GO TO 99
-      ENDIF
-#endif
-
 *
 *              Try input from MonteCarlo generator first
 *

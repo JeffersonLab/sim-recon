@@ -11,13 +11,20 @@
 #include <stdio.h>
 
 #include <hddm_s.h>
-#include <hittree.h>
+#include <geant3.h>
+#include <bintree.h>
 
 #define Z0		-100.
-#define TWO_HIT_RESOL	25.
+#define TWO_HIT_RESOL	250.
 #define MAX_HITS 	10
 
-hitTree_t* centralDCTree = 0;
+binTree_t* centralDCTree = 0;
+static int strawCount = 0;
+static int bandCount = 0;
+static int pointCount = 0;
+
+
+/* register hits during tracking (from gustep) */
 
 void hitCentralDC (float xin[4], float xout[4],
                    float pin[5], float pout[5], float dEsum, int track)
@@ -26,15 +33,17 @@ void hitCentralDC (float xin[4], float xout[4],
    float dx[3], dr;
    float dEdx;
    float xlocal[3];
-   const int one = 1;
+   float xcdc[3];
 
    if (dEsum == 0) return;              /* only seen if it deposits energy */
 
-   gmtod_(x,xlocal,&one);
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
+   getlocalcoord_(x,xlocal,"local",5);
+   getlocalcoord_(x,xcdc,"CDC ",4);
+
    dx[0] = xin[0] - xout[0];
    dx[1] = xin[1] - xout[1];
    dx[2] = xin[2] - xout[2];
@@ -57,23 +66,23 @@ void hitCentralDC (float xin[4], float xout[4],
       int ring = getring_();
       int count = getcount_();
       int sector = getsector_();
+      float phim = (sector - 0.5) * (2*M_PI/count);
       if (layer == 0)		/* in a straw */
       {
          int mark = (ring << 20) + (sector << 8);
          void** twig = getTwig(&centralDCTree, mark);
-         if (twig == 0)
+         if (*twig == 0)
          {
-            float phim = (sector - 0.5) * (2*M_PI/count);
             s_CentralDC_t* cdc = *twig = make_s_CentralDC();
             cdc->rings = make_s_Rings(1);
             cdc->rings->mult = 1;
-            cdc->rings->in[0].radius =
-                        sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
+            cdc->rings->in[0].radius = sqrt(xcdc[0]*xcdc[0] + xcdc[1]*xcdc[1]);
             cdc->rings->in[0].straws = make_s_Straws(1);
             cdc->rings->in[0].straws->mult = 1;
             cdc->rings->in[0].straws->in[0].phim = phim;
             cdc->rings->in[0].straws->in[0].hits =
             hits = make_s_Hits(MAX_HITS);
+            strawCount++;
          }
          else
          {
@@ -83,10 +92,10 @@ void hitCentralDC (float xin[4], float xout[4],
       }
       else			/* in one of the z-readout (band) layers */
       {
-         float phi = atan2(xlocal[1],xlocal[0]);
+         float phi = atan2(xcdc[1],xcdc[0]);
          int mark = (layer << 28) + (sector << 20) + (cell << 8);
          void** twig = getTwig(&centralDCTree, mark);
-         if (twig == 0)
+         if (*twig == 0)
          {
             s_CentralDC_t* cdc = *twig = make_s_CentralDC();
             cdc->cathodeCyls = make_s_CathodeCyls(1);
@@ -95,10 +104,11 @@ void hitCentralDC (float xin[4], float xout[4],
                               sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
             cdc->cathodeCyls->in[0].bands = make_s_Bands(1);
             cdc->cathodeCyls->in[0].bands->mult = 1;
-            cdc->cathodeCyls->in[0].bands->in[0].sector = sector;
-            cdc->cathodeCyls->in[0].bands->in[0].z = xlocal[2];
+            cdc->cathodeCyls->in[0].bands->in[0].phim = phim;
+            cdc->cathodeCyls->in[0].bands->in[0].z = xcdc[2];
             cdc->cathodeCyls->in[0].bands->in[0].hits =
             hits = make_s_Hits(MAX_HITS);
+            bandCount++;
          }
          else
          {
@@ -136,10 +146,9 @@ void hitCentralDC (float xin[4], float xout[4],
 
       if (layer == 0)
       {
-         float phim = (sector - 0.5) * (2*M_PI/count);
          int mark = (ring << 20) + (sector << 8) + track;
          void** twig = getTwig(&centralDCTree, mark);
-         if (twig == 0)
+         if (*twig == 0)
          {
             s_CentralDC_t* cdc = *twig = make_s_CentralDC();
             s_CdcPoints_t* points = make_s_CdcPoints(1);
@@ -156,6 +165,7 @@ void hitCentralDC (float xin[4], float xout[4],
                                          xlocal[1]*xlocal[1]);
             points->in[0].dEdx = dEdx;
             points->mult = 1;
+            pointCount++;
          }
       }
    }
@@ -167,4 +177,89 @@ void hitcentraldc_(float* xin, float* xout,
                    float* pin, float* pout, float* dEsum, int* track)
 {
    hitCentralDC(xin,xout,pin,pout,*dEsum,*track);
+}
+
+
+/* pick and package the hits for shipping */
+
+s_CentralDC_t* pickCentralDC ()
+{
+   s_CentralDC_t* box;
+   s_CentralDC_t* item;
+
+   if ((strawCount == 0) && (bandCount == 0) && (pointCount == 0))
+   {
+      return 0;
+   }
+
+   box = make_s_CentralDC();
+   box->cathodeCyls = make_s_CathodeCyls(5);
+   box->rings = make_s_Rings(32);
+   while (item = (s_CentralDC_t*) pickTwig(&centralDCTree))
+   {
+      if (item->cathodeCyls)
+      {
+         float r = item->cathodeCyls->in[0].radius;
+         int m = box->cathodeCyls->mult;
+         if ((m == 0) || (r > box->cathodeCyls->in[m-1].radius + 0.5))
+         {
+            box->cathodeCyls->in[m] = item->cathodeCyls->in[0];
+            box->cathodeCyls->in[m].bands = make_s_Bands(bandCount);
+            box->cathodeCyls->mult++;
+         }
+         else
+         {
+            m--;
+         }
+         {
+            int mm = box->cathodeCyls->in[m].bands->mult++;
+            box->cathodeCyls->in[m].bands->in[mm] =
+                         item->cathodeCyls->in[0].bands->in[0];
+         }
+         FREE(item->cathodeCyls->in[0].bands);
+         FREE(item->cathodeCyls);
+      }
+      else if (item->rings)
+      {
+         float r = item->rings->in[0].radius;
+         int m = box->rings->mult;
+         if ((m == 0) || (r > box->rings->in[m-1].radius + 0.5))
+         {
+            box->rings->in[m] = item->rings->in[0];
+            box->rings->in[m].straws = make_s_Straws(strawCount);
+            box->rings->mult++;
+         }
+         else
+         {
+            m--;
+         }
+         {
+            int mm = box->rings->in[m].straws->mult;
+            if ((mm == 0) || item->rings->in[0].straws->in[0].hits)
+            {
+               box->rings->in[m].straws->in[mm] =
+                                          item->rings->in[0].straws->in[0];
+               box->rings->in[m].straws->mult++;
+            }
+            else if (item->rings->in[0].straws->in[0].cdcPoints)
+            {
+               int mmm;
+               if (box->rings->in[m].straws->in[mm-1].cdcPoints == 0)
+               {
+                  box->rings->in[m].straws->in[mm-1].cdcPoints =
+                                            make_s_CdcPoints(pointCount);
+               }
+               mmm = box->rings->in[m].straws->in[mm-1].cdcPoints->mult++;
+               box->rings->in[m].straws->in[mm-1].cdcPoints->in[mmm] =
+                        item->rings->in[0].straws->in[0].cdcPoints->in[0];
+               FREE(item->rings->in[0].straws->in[0].cdcPoints);
+            }
+         }
+         FREE(item->rings->in[0].straws);
+         FREE(item->rings);
+      }
+      FREE(item);
+   }
+   strawCount = bandCount = pointCount = 0;
+   return box;
 }
