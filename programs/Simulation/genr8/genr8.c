@@ -26,7 +26,7 @@
 #include <disData.h>
 #include <dataIO.h>
 
-#include <kinematics.h>
+#include <genkin.h>
 #include <particleType.h>
 #include <ntypes.h>
 
@@ -1054,9 +1054,8 @@ int WriteItape(struct particleMC_t *CM, vector4_t *beam)
 
   nparticles=0;
   fillEsr(CM->child[0],&nparticles,esrp);
-  /*
   fillEsr(CM->child[1],&nparticles,esrp);
-  */
+ 
 
   Buffer->runNo= runNo;
   Buffer->spillNo =0;
@@ -1068,8 +1067,8 @@ int WriteItape(struct particleMC_t *CM, vector4_t *beam)
   for(i=0;i<nparticles;i++)
     esr->p[i] = esrp[i]; 
   esr->beam = *beam;
-  esr->miss=CM->child[1]->p;
-
+  /*  esr->miss=CM->child[1]->p;
+   */
   data_saveGroups(Buffer,1,&group);
   data_clean(Buffer);
   data_write(fileno(NewItape),Buffer);
