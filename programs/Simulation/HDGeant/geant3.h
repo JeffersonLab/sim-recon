@@ -1,8 +1,14 @@
-void gsvert_(float v[3], int* ntbeam, int* nttarg,
+void gsvert_(float vert[3], int* ntbeam, int* nttarg,
              float ubuf[], int* nubuf, int* nvtx);
 
-void gskine_(float p[3], Particle_t* kind, int* nvtx, 
-             float ubuf[], int* nubuf, int* ntrk);
+void gfvert_(int* nvtx, float vert[3], int* ntbeam, int* nttarg,
+             float* tofg, float ubuf[], int* nubuf);
+
+void gskine_(float plab[3], Particle_t* ipart, int* nv, 
+             float ubuf[], int* nubuf, int* nt);
+
+void gfkine_(int* itra, float vert[3], float pvert[3], Particle_t* ipart,
+             int* nvert, float ubuf[], int* nubuf);
 
 void grndm_(float v[], int* len);
 

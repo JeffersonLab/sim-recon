@@ -7,6 +7,7 @@
  *	skipInput(count) - skip next <count> events on open input file
  *      nextInput() - advance to next event on open input stream
  *      loadInput() - push current input event to Geant kine structures
+ *      storeInput() - pop current input event from Geant kine structures
  *	closeInput() - close currently open input stream
  *
  * Richard Jones
@@ -145,6 +146,70 @@ int loadInput ()
          }
       }
    }
+   return 0;
+}
+
+int storeInput (int runNo, int eventNo, int ntracks)
+{
+   s_PhysicsEvent_t* pe;
+   s_Reactions_t* rs;
+   s_Vertices_t* vs;
+   s_Origin_t* or;
+   s_Products_t* ps;
+   int nvtx, ntbeam, nttarg, itra, nubuf;
+   float vert[3], plab[3], tofg, ubuf[10];
+   Particle_t kind;
+
+   if (thisInputEvent)
+   {
+      flush_s_HDDM(thisInputEvent, 0);
+   }
+   thisInputEvent = make_s_HDDM();
+   thisInputEvent->physicsEvent = pe = make_s_PhysicsEvent();
+   pe->reactions = rs = make_s_Reactions(1);
+   rs->mult = 1;
+   rs->in[0].vertices = vs = make_s_Vertices(99);
+   vs->mult = 0;
+   for (itra = 1; itra <= ntracks; itra++)
+   {
+      gfkine_(&itra,vert,plab,&kind,&nvtx,ubuf,&nubuf);
+      if (nvtx < 1)
+      {
+         return 1;
+      }
+      else
+      {
+         vs->mult = (nvtx < vs->mult)? vs->mult : nvtx;
+      }
+      gfvert_(&nvtx,vert,&ntbeam,&nttarg,&tofg,ubuf,&nubuf);
+      or = vs->in[nvtx-1].origin;
+      ps = vs->in[nvtx-1].products;
+      if (or == 0)
+      {
+         or = make_s_Origin();
+         vs->in[nvtx-1].origin = or;
+         or->vx = vert[0];
+         or->vy = vert[1];
+         or->vz = vert[2];
+         or->t = tofg;
+      }
+      if (ps == 0)
+      {
+         ps = make_s_Products(ntracks);
+         vs->in[nvtx-1].products = ps;
+         ps->mult = 0;
+      }
+      ps->in[ps->mult].type = kind;
+      ps->in[ps->mult].momentum = make_s_Momentum();
+      ps->in[ps->mult].momentum->px = plab[0];
+      ps->in[ps->mult].momentum->py = plab[1];
+      ps->in[ps->mult].momentum->pz = plab[2];
+      ps->in[ps->mult].momentum->E  = plab[3];
+      ps->mult++;
+   }
+   pe->runNo = runNo;
+   pe->eventNo = eventNo;
+   return 0;
 }
 
 int closeInput ()
@@ -179,6 +244,11 @@ int nextinput_ ()
 int loadinput_ ()
 {
    return loadInput();
+}
+
+int storeinput_ (int* runNo, int* eventNo, int* ntracks)
+{
+   return storeInput(*runNo,*eventNo,*ntracks);
 }
 
 int closeinput_ ()

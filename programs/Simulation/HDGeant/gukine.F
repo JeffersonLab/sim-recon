@@ -2,6 +2,15 @@
 * $Id$
 *
 * $Log$
+* Revision 1.6  2001/10/29 17:39:23  jonesrt
+* - added mc truth info to output event for internal track/photon generators
+* - added special code for background studies, selected by the conditional
+*   #define BACKGROUND_STUDIES   (in gustep.F)
+* - added conditional code to disable normal event output for bg studies, using
+*   #define DISABLE_OUTPUT    (in guout.F)
+* Both of the above defines are disabled in the distribution code by default.
+* -rtj-
+*
 * Revision 1.5  2001/08/02 03:08:05  jonesrt
 * Now the BEAM data card is supported, with correct generation of
 * coherent bremsstrahlung radiation. -rtj
@@ -147,6 +156,7 @@
          VERTEX(3) = CollimPos
          call GSVERT(VERTEX,0,0,0,0,NVERT)
          call GSKINE(PLAB,1,NVERT,0,0,NT)
+         call storeInput(IDRUN,IDEVT,NT);
 *
 *              If all else fails, do automatic single-track generation
 *
@@ -172,6 +182,8 @@
 
          CALL GSVERT(VERTEX,0,0,0,0,NVERT)
          CALL GSKINE(PLAB,IK,NVERT,0,0,NT)
+
+         call storeInput(IDRUN,IDEVT,NT);
 
       endif
 *

@@ -2,6 +2,15 @@
 * $Id$
 *
 * $Log$
+* Revision 1.3  2001/10/29 17:39:23  jonesrt
+* - added mc truth info to output event for internal track/photon generators
+* - added special code for background studies, selected by the conditional
+*   #define BACKGROUND_STUDIES   (in gustep.F)
+* - added conditional code to disable normal event output for bg studies, using
+*   #define DISABLE_OUTPUT    (in guout.F)
+* Both of the above defines are disabled in the distribution code by default.
+* -rtj-
+*
 * Revision 1.2  2001/07/24 05:37:16  jonesrt
 * First working prototype of hits package -rtj
 *
@@ -28,6 +37,11 @@ C.
 C.    ------------------------------------------------------------------
 C.
 *
+* #define DISABLE_OUTPUT 1
+
+#ifndef DISABLE_OUTPUT
       call loadOutput();
       call flushOutput();
+#endif
+
       END

@@ -2,7 +2,7 @@
       real q,hq
       integer ispace,hspace
       parameter (ispace=2000000)
-      parameter (hspace=50000)
+      parameter (hspace=5000000)
       common /gcbank/ q(ispace)
       common /pawc/ hq(hspace)
       real secmax
@@ -19,7 +19,7 @@ C---- Initialization of GEANT
       call UGINIT
 
 C---- Simulation
-      call HROPEN(50,'RZfile','geant.hbook','N',1024,istat)
+      call HROPEN(50,'RZfile','geant.hbook','N',65536,istat)
         call GRUN
         call HROUT(0,icycle,' ')
       call HREND('RZfile')

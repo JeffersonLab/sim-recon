@@ -2,6 +2,15 @@
 * $Id$
 *
 * $Log$
+* Revision 1.7  2001/10/29 17:39:23  jonesrt
+* - added mc truth info to output event for internal track/photon generators
+* - added special code for background studies, selected by the conditional
+*   #define BACKGROUND_STUDIES   (in gustep.F)
+* - added conditional code to disable normal event output for bg studies, using
+*   #define DISABLE_OUTPUT    (in guout.F)
+* Both of the above defines are disabled in the distribution code by default.
+* -rtj-
+*
 * Revision 1.6  2001/07/27 21:04:09  jonesrt
 * With this release, HDGeant version 1.0 is now in beta.  -rtj
 *
@@ -15,7 +24,7 @@
 * Adding hits registry in gustep -rtj
 *
 * Revision 1.2  2001/07/15 07:31:37  jonesrt
-* HDGeant now supportskinematic input from Monte Carlo generators
+* HDGeant now supports kinematic input from Monte Carlo generators
 * via the routines in hddmInput.c  -rtj
 *
 * Revision 1.1  2001/07/10 18:05:47  jonesrt
@@ -50,6 +59,20 @@
 *
 *     -----------------------------------------------------------------
 *
+
+* #define BACKGROUND_STUDIES 1
+
+#ifdef BACKGROUND_STUDIES
+      integer type
+      real xv(4),Etot
+      common /bgNtuple/type,xv,Etot
+      character*80 bgntdef
+      parameter (bgntdef='type:I,xv(4):R,Etot:R')
+      integer bgnt
+      parameter (bgnt=10)
+      logical HEXIST
+      external HEXIST
+#endif
 
 #define TOP_CERENKOV_EFFICIENCY 0.25
 
@@ -92,6 +115,38 @@
         DESTEP = GEKIN
         ISTOP = 1
       endif
+
+#ifdef BACKGROUND_STUDIES
+      if (.not.HEXIST(bgnt)) then
+        call HBNT(bgnt,'background particles','')
+        call HBNAME(bgnt,'tracks',type,bgntdef)
+      endif
+      if (INWVOL.eq.1) then
+        z = VECT(3)
+        r = sqrt(VECT(1)**2 + VECT(2)**2)
+        if (cnames(NLEVEL).eq.'COL1') then
+          ISTOP = 1
+          return
+        elseif ((cnames(NLEVEL).eq.'UWIT' .and. abs(z-0.02).lt.0.1)
+     +    .or.  (cnames(NLEVEL).eq.'VRTX' .and. abs(r-4.95).lt.0.1)
+     +    .or.  (cnames(NLEVEL).eq.'CDCI' .and. abs(r-15.0).lt.0.1)
+     +    .or.  (cnames(NLEVEL).eq.'DC12' .and. abs(r-37.0).lt.0.1)
+     +    .or.  (cnames(NLEVEL).eq.'CDCO' .and. abs(r-59.0).lt.0.1)
+     +    .or.  (cnames(NLEVEL).eq.'BCAL' .and. abs(r-65.0).lt.0.1)
+     +    .or.  (cnames(NLEVEL).eq.'FDC ' .and. abs(z-224.).lt.1.0)
+     +    .or.  (cnames(NLEVEL).eq.'CERE' .and. abs(z-410.).lt.1.0)
+     +    .or.  (cnames(NLEVEL).eq.'FCAL' .and. abs(z-575.).lt.1.0))
+     +  then
+          xv(1) = VECT(1)
+          xv(2) = VECT(2)
+          xv(3) = VECT(3)
+          xv(4) = r
+          type = IPART
+          Etot = GETOT
+          call HFNT(bgnt)
+        endif
+      endif
+#endif
 
 * If not a sensitive volume then exit here
 

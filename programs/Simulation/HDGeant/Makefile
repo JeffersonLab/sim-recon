@@ -40,10 +40,10 @@ HDDS = ../hdds
 HDDM = ../hddm
 
 ifeq ($(OStype),OSF1)
-AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o gdstep.o guxcs.o \
+AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o \
        hddsGeant3.o goptimize.o cobrems.o vunit.o gsrotm.o fint.o gthion.o
 else
-AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o gdstep.o guxcs.o \
+AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o \
        hddsGeant3.o goptimize.o cobrems.o 
 endif
 
@@ -54,12 +54,13 @@ AUXC = hddmInput.o hddmOutput.o hddm_s.o \
 GXFIXED = gxcs.o gxphys.o
 
 hdgeant++:	gxint.o uginit.o uglast.o $(AUXF) $(AUXC) $(GXFIXED)
-	$(CERN_ROOT)/bin/gxint -g 321 -m -d Motif -o $@ $^ $(STATIC) $(XLIBS) $(GLIBS)
+	$(CERN_ROOT)/bin/gxint -g 321 -m -d Motif -o $@ $^ $(STATIC) \
+	 $(XLIBS) $(GLIBS)
 
 hdgeant:	hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC)
-	$(F77) $(LOPTS) -o $@ -I$(CERN_ROOT)/include $^ \
-	    -L${CERN_ROOT}/lib -lgeant321\
-	    -lpawlib -lgraflib -lgrafX11 -lpacklib -lmathlib \
+	$(F77) $(LOPTS) -o $@ -I$(CERN_ROOT)/include -Wl,-Bstatic $^ \
+	    -L${CERN_ROOT}/lib -lgeant321 -lmathlib \
+	    -lgraflib -lgrafX11 -lpacklib \
 	    $(NETLIB) $(XLIBS) 
 
 .F.o:
