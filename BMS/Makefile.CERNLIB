@@ -1,0 +1,8 @@
+
+FFLAGS += -I$(CERN)/$(CERN_LEVEL)/include
+CFLAGS += -I$(CERN)/$(CERN_LEVEL)/include
+CXXFLAGS += -I$(CERN)/$(CERN_LEVEL)/include
+CERNLIBS = $(shell cernlib geant321 pawlib graflib grafX11 packlib mathlib kernlib)
+CERNLIBS += -L$(CERN)/$(CERN_LEVEL)/lib -lpythia6205 -lherwig -lpdflib804
+
+MISC_LIBS += $(CERNLIBS)

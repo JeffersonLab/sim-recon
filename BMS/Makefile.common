@@ -1,0 +1,66 @@
+#
+#
+# $Header$
+#
+
+#
+# This is a generic makefile used to build all the source in the
+# current directory (anything with a .c, .cc, .cxx, .cpp or .F 
+# suffix) into a library. This file is actually included by another
+# file which implements the actual rule. The idea is that a given
+# directory will contain source that represents a library,
+# in which case Makefile.lib is included, or an executable,
+# in which case Makefile.bin is included.
+# 
+
+ifndef OSNAME
+OSNAME = $(shell uname)
+endif
+
+ifndef FC
+FC		= g77
+endif
+ifndef CC
+CC		= gcc
+endif
+ifndef CXX
+CXX	= g++
+endif
+
+LIB_DIR		= $(HALLD_HOME)/lib/$(OSNAME)
+BIN_DIR		= $(HALLD_HOME)/bin/$(OSNAME)
+
+FFLAGS   += -I. -I$(HALLD_HOME)/src/include
+CFLAGS   += -I. -I$(HALLD_HOME)/src/include
+CXXFLAGS += -I. -I$(HALLD_HOME)/src/include
+
+
+# Include user specified package makefiles
+BMS_PATH = $(HALLD_HOME)/src/BMS
+PACKAGE_MAKEFILES = $(foreach name,$(subst :, ,$(PACKAGES)),$(BMS_PATH)/Makefile.$(name))
+
+include $(PACKAGE_MAKEFILES)
+
+FSRC		= $(wildcard *.F *.f)
+CSRC		= $(wildcard *.c)
+CXXSRC	= $(wildcard *.cc *.cpp *.cxx)
+OBJS =  $(addsuffix .o,$(basename $(FSRC) $(CSRC) $(CXXSRC)))
+DEPS = $(foreach dfile,$(OBJS:.o=.d),depends/$(OSNAME)/$(dfile))
+
+ifdef ONLINE
+	CFLAGS += -DONLINE
+	CXXFLAGS += -DONLINE
+	LIBS += -let -lposix4 -lpthread
+endif
+
+ifdef DEBUG
+	DEBUG_SUFFIX = _d
+	FFLAGS   += -g -pg
+	CFLAGS	+= -g -pg
+	CXXFLAGS	+= -g -pg
+endif
+
+
+MODULE_NAME = $(shell basename $(shell pwd))
+LIBNAME = $(LIB_DIR)/lib$(MODULE_NAME)$(DEBUG_SUFFIX).a
+
