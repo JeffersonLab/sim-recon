@@ -336,7 +336,7 @@ void writeHeader(DOMElement* el)
    {
       char* ctypeRef = listStructType(S(tagS));
       hFile << endl << "typedef struct {" << endl
-            << "   int mult;" << endl
+            << "   unsigned int mult;" << endl
             << "   " << ctypeDef << " in[1];" << endl
             << "} " << ctypeRef << ";" << endl;
       delete [] ctypeRef;
@@ -488,7 +488,7 @@ void constructUnpackers()
       if (rep > 1)
       {
          cFile << "      int m;"				<< endl
-               << "      int mult;"				<< endl
+               << "      unsigned int mult;"			<< endl
 	       << "      xdr_u_int(xdrs,&mult);"		<< endl
                << "      this1 = make_" << tagT << "(mult);"	<< endl
                << "      this1->mult = mult;"			<< endl
