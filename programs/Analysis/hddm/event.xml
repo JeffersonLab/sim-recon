@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!DOCTYPE HDDM [
+
+ <!ENTITY ReactionModel SYSTEM "reaction.xml">
+ <!ENTITY HitsModel SYSTEM "hits.xml">
+
+]>
+
+<HDDM class="s" version="1.0">
+   <physicsEvent eventNo="int" runNo="int">
+      &ReactionModel;
+      &HitsModel;
+   </physicsEvent>
+</HDDM>

@@ -1,0 +1,13 @@
+<!-- ?xml version="1.0"? -->
+
+<HDDM class="a" version="1.0">
+  <physicsEvent eventNo="int" runNo="int">
+    <forwardTOF>
+      <slab y="float" repeat="*">
+        <side end="int" repeat="*">
+          <hit t="float" dE="float" repeat="*" />
+        </side>
+      </slab>
+    </forwardTOF>
+  <physicsEvent/>
+</HDDM>

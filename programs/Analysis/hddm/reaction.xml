@@ -1,0 +1,17 @@
+<reaction type="int" weight="float" repeat="*">
+   <beam type="Particle_t">
+      <momentum px="float" py="float" pz="float" E="float" />
+      <properties charge="int" mass="float" />
+   </beam>
+   <target type="Particle_t">
+      <momentum px="float" py="float" pz="float" E="float" />
+      <properties charge="int" mass="float" />
+   </target>
+   <vertex repeat="*">
+      <product type="Particle_t" decayVertex="int" repeat="*">
+         <momentum px="float" py="float" pz="float" E="float" />
+         <properties charge="int" mass="float" />
+      </product>
+      <origin vx="float" vy="float" vz="float" t="float" />
+   </vertex>
+</reaction>

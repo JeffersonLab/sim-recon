@@ -1,0 +1,9 @@
+<HDDM version="1.0" class="t">
+  <forwardTOF>
+	<slab y="float" repeat="*">
+		<side end="int" repeat="*">
+			<hit t="float" dE="float" repeat="*" />
+		</side>
+	</slab>
+  </forwardTOF>
+</HDDM>

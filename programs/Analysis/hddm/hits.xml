@@ -1,0 +1,61 @@
+<hitView version="1.0">
+   <barrelDC>
+      <cathodeCyl radius="float" repeat="*">
+         <strip sector="int" z="float" repeat="*">
+            <hit t="float" dE="float" repeat="*" />
+         </strip>
+      </cathodeCyl>
+      <ring radius="float" repeat="*">
+         <straw phim="float" repeat="*">
+            <hit t="float" dE="float" repeat="*" />
+            <point z="float" dEdx="float" phi="float"
+                             dradius="float" repeat="*" />
+         </straw>
+      </ring>
+   </barrelDC>
+
+   <forwardDC>
+      <package pack="int" repeat="*">
+         <chamber module="int" repeat="*">
+            <cathodePlane layer="int" u="float" repeat="*">
+               <hit t="float" dE="float" repeat="*"/>
+               <cross v="float" z="float" tau="float" repeat="*" />
+            </cathodePlane>
+         </chamber>
+      </package>
+   </forwardDC>
+
+   <startCntr>
+      <sector sector="float" repeat="*">
+         <hit t="float" dE="float" repeat="*" />
+      </sector>
+   </startCntr>
+
+   <barrelCal>
+      <module sector="float" repeat="*">
+         <flash t="float" pe="float" repeat="*" />
+      </module>
+   </barrelCal>
+      
+   <Cerenkov>
+      <module sector="float" repeat="*">
+         <flash t="float" pe="float" repeat="*" />
+      </module>
+   </Cerenkov>
+
+   <forwardTOF>
+      <slab y="float" repeat="*">
+         <side end="int" repeat="*">
+            <hit t="float" dE="float" repeat="*" />
+         </side>
+      </slab>
+   </forwardTOF>
+
+   <forwardEMcal>
+      <row row="int" repeat="*">
+         <column col="int" repeat="*">
+            <flash t="float" pe="float" repeat="*" />
+         </column>
+      </row>
+   </forwardEMcal>
+</hitView>
