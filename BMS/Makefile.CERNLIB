@@ -6,3 +6,8 @@ CERNLIBS = $(shell cernlib geant321 pawlib graflib grafX11 packlib mathlib kernl
 CERNLIBS += -L$(CERN)/$(CERN_LEVEL)/lib -lpythia6205 -lherwig -lpdflib804 -lg2c
 
 MISC_LIBS += $(CERNLIBS)
+
+ifeq "$(OSNAME)" "Darwin"
+  MISC_LIBS += -lcompat /usr/lib/libgcc.a
+endif
+
