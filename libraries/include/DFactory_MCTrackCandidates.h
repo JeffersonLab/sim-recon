@@ -78,10 +78,11 @@ class DFactory_MCTrackCandidates:public DFactory{
 		derror_t FindCirclesHitSub(void);
 		derror_t FindCirclesMaskSub(void);
 		derror_t FindCirclesInt(void);
+		derror_t FindLines(void);
 		derror_t ZeroNeighbors(TH2F *hist, int xbin, int ybin);
 		int      IntersectionDensity(DArcHit *a, DArcHit *b, float &x, float&y);
 		derror_t FillArcDensityHistogram(TH2F *hist);
-		derror_t FillSlopeIntDensityHistos(void);
+		derror_t FillSlopeIntDensityHistos(float x0, float y0);
 		derror_t DrawPhiZPoints(void);
 		
 		inline DArcHit* Getarchits(void){return archit;}
@@ -99,6 +100,7 @@ class DFactory_MCTrackCandidates:public DFactory{
 		float masksize;		///< max distance a line-of-circle-centers line can
 									///< be from a focal point and still be considered
 									///< on the circle
+		float masksize2;
 		int flip_x_axis;		///< change sign of x-coordinate for circles
 
 		TH1F *slope_density, *offset_density;
