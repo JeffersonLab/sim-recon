@@ -34,8 +34,8 @@ ifeq ($(OStype),Linux)
 		COPTS = -g $(SWITCHES)
 		FOPTS = -g -Wno-globals $(SWITCHES)
 		GLIBS	:= 
-		LINUXEXPORTDYNAMIC = -Wl,-export-dynamic
-		LINUXSTATIC = -Wl,-Bstatic
+		EXPORTDYNAMIC = -Wl,-export-dynamic
+		STATIC = -Wl,-Bstatic
 	endif
 endif
 ifeq ($(OStype),OSF1)
@@ -43,6 +43,7 @@ ifeq ($(OStype),OSF1)
 	CPP	:= g++
 	F77	:= f77
 	NETLIB := 
+        EXPORTDYNAMIC :=
 	STATIC	:=
 	XLIBS  := -L/usr/lib -lXm -lSM -lICE -lXt -lX11 -lm -lPW -ldnet_stub
 	COPTS = -g -D_Tru64 $(SWITCHES)
@@ -55,12 +56,23 @@ ifeq ($(OStype),SunOS)
 	CPP	:= CC
 	F77	:= f77
 	NETLIB	:= 
+	EXPORTDYNAMIC :=
 	STATIC	:=
 	XLIBS	:= -L/usr/lib -lXm -lSM -lICE -lXt -lX11 -lm 
 	COPTS	:= -g $(SWITCHES)
 	FOPTS	:= -g $(SWITCHES)
 	LOPTS	:= -g
 	GLIBS	:=
+endif
+ifeq ($(OStype),Darwin)
+	CC	:= gcc
+	CPP	:= g++
+	F77	:= g77
+	NETLIB 	:=
+	XLIBS  	:= -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl -lpthread
+	COPTS = -g $(SWITCHES)
+	FOPTS = -g -Wno-globals $(SWITCHES)
+	GLIBS	:= -lcompat /usr/lib/libgcc.a
 endif
 
 HDDS = ../hdds
@@ -87,25 +99,25 @@ CERNLIB = $(CERN_ROOT)/bin/cernlib
 hdgeant++: gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXFIXED) \
            $(MISC_FIXES)
 	$(F77) -o $@ gxint.o uginit.o uglast.o \
-	   $(AUXF) $(AUXC) $(GXFIXED) $(STATIC) \
-	   -Lgelhad -lgelhad $(XLIBS) $(GLIBS) \
-	   `cernlib -v $(CERN_LEVEL) geant321 pawlib graflib/Motif packlib mathlib`
-	   -- $(LINUXEXPORTDYNAMIC)
+	   $(AUXF) $(AUXC) $(GXFIXED) $(MISC_FIXES) $(STATIC) \
+	   -Lgelhad -lgelhad \
+	   `cernlib -v $(CERN_LEVEL) geant321 pawlib graflib/Motif packlib mathlib` \
+	   $(EXPORTDYNAMIC) $(GLIBS)
 
 hdgeant: hdgeant.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(MISC_FIXES)
-	$(F77) $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(LINUXSTATIC) \
+	$(F77) $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(STATIC) \
 	  hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC) -Lgelhad -lgelhad \
 	  `$(CERNLIB) geant321 mathlib graflib grafX11` \
-	   $(NETLIB) $(XLIBS)
+	   $(NETLIB) $(XLIBS) $(GLIBS)
 
 install: hdgeant hdgeant++
 	cp $^ $(HALLD_HOME)/bin/$(OStype)
 
 .F.o:
-	$(F77) $(FOPTS) -I$(CERN_ROOT)/include -DCERNLIB_MOTIF -c -o $@ $<
+	$(F77) $(FOPTS) -I. -I$(CERN_ROOT)/include -DCERNLIB_MOTIF -c -o $@ $<
 
 .f.o:
-	$(F77) $(FOPTS) -I$(CERN_ROOT)/include -c -o $@ $<
+	$(F77) $(FOPTS) -I. -I$(CERN_ROOT)/include -c -o $@ $<
 
 .c.o:
 	$(CC) $(COPTS) -I. -I../include -I$(CERN_ROOT)/include -c -o $@ $<
