@@ -436,8 +436,8 @@ C   with rotations understood in the passive sense
       subroutine convol(nbins)
       integer nbins
       include 'cobrems.inc'
-      vector hisx(1000),hisy(1000),sig(4)
-      real norm(1000),result(1000)
+      vector hisx(10000),hisy(10000),sig(4)
+      real norm(10000),result(10000)
       real x,x0,x1,dx
       real alph,dalph
       real var0,varMS

@@ -2,6 +2,19 @@
 * $Id$
 *
 * $Log$
+* Revision 1.8  2001/12/18 20:32:12  jonesrt
+* I added the track="int" information to the output event, at the request of
+* Dave Doughty.  Track numbers are assigned by Geant in the order of declaration,
+* which is just the order they appear in the Reaction section, so it is not too
+* difficult to figure out which track goes with which final-state product.
+* However there is presently no internal identifier in the Reaction section that
+* matches up to the track number. Even calling it a track is a bit of a stretch
+* because it is assigned to neutrals as well as charged particles.  But that is
+* the Geant nomenclature and it is simple to decode.
+* I also added some comments to the control cards file control.in that might
+* make it easier for a newbie to run his own simulations.
+* -rtj-
+*
 * Revision 1.7  2001/10/30 11:52:36  jonesrt
 * - fixed bug in gukine.F in coherent beam simulation
 *   where variable spot was in meters but treated as if it were cm    -rtj-
@@ -92,16 +105,21 @@
 *              Try coherent bremsstrahlung beam generation next
 *
       elseif (E.gt.0) then
-         call GRNDM(RNDM,5)
+         call GRNDM(RNDM,7)
          phim = RNDM(1)*TWOPI
          rhom = mospread*sqrt(-2*log(RNDM(2)))
          thxMosaic = rhom*cos(phim)
          thyMosaic = rhom*sin(phim)
          phib = RNDM(3)*TWOPI
-         varBeam = (emit/spot)**2 + sigma2MS(t*RNDM(4))
-         rhob = sqrt(-2*varBeam*log(RNDM(5)))
+         varBeam = (emit/spot)**2
+         rhob = sqrt(-2*varBeam*log(RNDM(4)))
          thxBeam = rhob*cos(phib)
          thyBeam = rhob*sin(phib)
+         phis = RNDM(5)*TWOPI
+         varMS = sigma2MS(t*RNDM(6))
+         rhos = sqrt(-2*varMS*log(RNDM(7)))
+         thxMS = rhos*cos(phis)
+         thyMS = rhos*sin(phis)
          cos45 = 1/sqrt(2d0)
          rotate(1,1) = 0
          rotate(1,2) = cos45			!point (1,0,0) along beam
@@ -112,8 +130,8 @@
          rotate(3,1) = 1
          rotate(3,2) = 0
          rotate(3,3) = 0
-         call rotmat(rotate,thxBeam-thx-thxMosaic,0d0,0d0)
-         call rotmat(rotate,0d0,thyBeam-thy-thyMosaic,0d0)
+         call rotmat(rotate,thxBeam+thxMS-thx-thxMosaic,0d0,0d0)
+         call rotmat(rotate,0d0,thyBeam+thyMS-thy-thyMosaic,0d0)
          do i=1,10000
             call GRNDM(RNDM,4)
             phi = RNDM(1)*TWOPI
@@ -147,8 +165,8 @@
 
    50    continue
          theta = sqrt(theta2)*(me/E)
-         thetaX = thxBeam+theta*cos(phi)
-         thetaY = thyBeam+theta*sin(phi)
+         thetaX = thxMS+theta*cos(phi)
+         thetaY = thyMS+theta*sin(phi)
          PLAB(3) = E*x
          PLAB(1) = PLAB(3)*thetaX
          PLAB(2) = PLAB(3)*thetaY

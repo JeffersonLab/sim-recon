@@ -131,6 +131,7 @@ void hitStartCntr (float xin[4], float xout[4],
          s_StartCntr_t* vtx = *twig = make_s_StartCntr();
          s_StartPoints_t* points = make_s_StartPoints(1);
          vtx->startPoints = points;
+         points->in[0].track = track;
          points->in[0].t = t;
          points->in[0].z = x[2];
          points->in[0].r = sqrt(x[0]*x[0] + x[1]*x[1]);

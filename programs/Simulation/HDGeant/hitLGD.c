@@ -106,6 +106,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
       {
          s_ForwardEMcal_t* cal = *twig = make_s_ForwardEMcal();
          cal->forwardShowers = showers = make_s_ForwardShowers(1);
+         showers->in[0].track = track;
          showers->in[0].t = t;
          showers->in[0].x = x[0];
          showers->in[0].y = x[1];

@@ -27,5 +27,5 @@ C---- Simulation
 C---- Termination ----
       CALL UGLAST
       WRITE(0,999)
-  999 FORMAT(//,' ***** NORMAL EXIT FROM RADPHI MONTECARLO *****',//)
+  999 FORMAT(//,' ***** Normal exit from Hall D GEANT *****',//)
       END

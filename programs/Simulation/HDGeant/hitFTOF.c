@@ -150,6 +150,7 @@ void hitForwardTOF (float xin[4], float xout[4],
          s_ForwardTOF_t* tof = *twig = make_s_ForwardTOF();
          s_TofPoints_t* points = make_s_TofPoints(1);
          tof->tofPoints = points;
+         points->in[0].track = track;
          points->in[0].x = x[0];
          points->in[0].y = x[1];
          points->in[0].t = t;

@@ -135,6 +135,7 @@ void hitCentralDC (float xin[4], float xout[4],
             cdc->rings->in[0].straws->mult = 1;
             cdc->rings->in[0].straws->in[0].phim = phim;
             cdc->rings->in[0].straws->in[0].cdcPoints = points;
+            points->in[0].track = track;
             points->in[0].z = x[2];
             points->in[0].phi = atan2(x[1],x[0]);
             points->in[0].dradius = dradius;

@@ -142,6 +142,7 @@ void hitBarrelEMcal (float xin[4], float xout[4],
       {
          s_BarrelEMcal_t* cal = *twig = make_s_BarrelEMcal();
          cal->barrelShowers = showers = make_s_BarrelShowers(1);
+         showers->in[0].track = track;
          showers->in[0].z = x[2];
          showers->in[0].phi = phi;
          showers->in[0].t = t;

@@ -151,6 +151,7 @@ void hitForwardDC (float xin[4], float xout[4],
                             (floor(xlocal[0]/WIRE_SPACING) + 0.5)*WIRE_SPACING;
             fdc->chambers->in[0].anodePlanes->in[0].wires->in[0].fdcPoints =
                                                                     points;
+            points->in[0].track = track;
             points->in[0].x = x[0];
             points->in[0].y = x[1];
             points->in[0].z = x[2];

@@ -1,25 +1,25 @@
-C This is the control file for the GEANT simulation
-C Parameters defined in this file control the kind
-C and extent of simulation that is performed.  The
-C full list of options is given in section BASE-40
-C of the GEANT manual.  In addition, some new cards
-C have been defined to point to the location of the
-C input files containing the events to be simulated.
-C For example, the 4-card sequence:
+C This is the control file for the GEANT simulation.  Parameters defined
+C in this file control the kind and extent of simulation that is performed.
+C The full list of options is given in section BASE-40 of the GEANT manual.
 C
-C     file 'phi-1680.hddm'
-C     skip 25
-C
-C instructs HDGeant to open ./phi-1680.hddm, skip
-C the first 25 events and then process to the end of
-C that file.  If the event count specified in card
-C TRIG is exhausted before this is finished then
-C processing will stop at that point.  If the input
-C file is exhausted before the TRIG count expires
-C (or if no FILE card is given) then processing will
-C stop at the end of the input file.
+C In addition, some new cards have been defined to set up the input source
+C for the simulation.  Three kinds of simulation runs are available, selected
+C by which of the following three "cards" are present below.
+C    1. Input from Monte Carlo generator (card INFILE)
+C    2. Built-in coherent bremsstrahlung source (card BEAM)
+C    3. Built-in single-track event generator (card KINE)
+C The order of the list is significant, that is if INFILE is present then the
+C BEAM and KINE cards are ignored, otherwise if BEAM is present then KINE is
+C ignored.  For example, the 3-card sequence:
+C     INFILE 'phi-1680.hddm'
+C     SKIP 25
+C     TRIG 100
+C instructs HDGeant to open ./phi-1680.hddm, skip the first 25 events and then
+C process the following 100 input events and stop.  If the end of the file is
+C reached before the event count specified in card TRIG is exhausted then the
+C processing will stop at the end of file.
 
-TRIG 1000
+TRIG 10000
 INFILE 'rhop.hddm'
 BEAM 12.0 9.0 
 RUNG 9999
