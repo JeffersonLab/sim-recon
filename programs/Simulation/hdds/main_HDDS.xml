@@ -83,7 +83,7 @@
   </composition>
 
   <mcfast model="detector" template="db/detector.db">
-    <string name="name" value="AMEZON" />
+    <string name="name" value="GLUEX" />
     <string name="geom_id" value="CENTRAL" />
   </mcfast>
 
