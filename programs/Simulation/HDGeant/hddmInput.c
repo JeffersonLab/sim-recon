@@ -22,6 +22,16 @@
  *	position from the generator is (0,0,0) then the simulation vertex is
  *	generated uniformly inside the cylinder specified by TARGET_LENGTH,
  *	BEAM_DIAMETER, and TARGET_CENTER defined below.
+ *
+ * Revision history:
+ * >  Dec 15, 2004 - Richard Jones
+ *	Changed former behaviour of simulation to overwrite the vertex
+ *	coordinates from the input record, if the simulation decides to
+ *	override the input values.  At present this happens whenever the
+ *      input record specifies 0,0,0 for the vertex, but in the future it
+ * 	may be decided to let the simulator determine the vertex position
+ *	in other cases.  Since it is not part of the simulation proper, the
+ *	decision was made to store this information in the reaction tag.
  */
 
 #define TARGET_LENGTH 30
@@ -125,6 +135,9 @@ int loadInput ()
             v[1] *= BEAM_DIAMETER;
             v[2] *= TARGET_LENGTH;
             v[2] += TARGET_CENTER;
+            vert->origin->vx = v[0];
+            vert->origin->vy = v[1];
+            vert->origin->vz = v[2];
          }
          gsvert_(v, &ntbeam, &nttarg, &ubuf, &nubuf, &nvtx);
          prods = vert->products;

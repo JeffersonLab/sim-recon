@@ -45,7 +45,8 @@ static int showerCount = 0;
 /* register hits during tracking (from gustep) */
 
 void hitBarrelEMcal (float xin[4], float xout[4],
-                     float pin[5], float pout[5], float dEsum, int track)
+                     float pin[5], float pout[5], float dEsum,
+                     int track, int stack)
 {
    float x[3], t;
    float dx[3], dr;
@@ -134,6 +135,7 @@ void hitBarrelEMcal (float xin[4], float xout[4],
    /* post the hit to the truth tree, once per primary track */
    {
       s_BarrelShowers_t* showers;
+      float r = sqrt(x[0]*x[0]+x[1]*x[1]);
       float phi = atan2(x[1],x[0]);
       int mark = (track << 16);
       void** twig = getTwig(&barrelEMcalTree, mark);
@@ -141,8 +143,10 @@ void hitBarrelEMcal (float xin[4], float xout[4],
       {
          s_BarrelEMcal_t* cal = *twig = make_s_BarrelEMcal();
          cal->barrelShowers = showers = make_s_BarrelShowers(1);
+         showers->in[0].primary = (stack == 0);
          showers->in[0].track = track;
          showers->in[0].z = x[2];
+         showers->in[0].r = r;
          showers->in[0].phi = phi;
          showers->in[0].t = t;
          showers->in[0].E = dEsum;
@@ -154,6 +158,9 @@ void hitBarrelEMcal (float xin[4], float xout[4],
          showers = ((s_BarrelEMcal_t*) *twig)->barrelShowers;
          showers->in[0].z =
                         (showers->in[0].z * showers->in[0].E + x[2]*dEsum)
+                      / (showers->in[0].E + dEsum);
+         showers->in[0].r =
+                        (showers->in[0].r * showers->in[0].E + r*dEsum)
                       / (showers->in[0].E + dEsum);
          showers->in[0].phi =
                             (showers->in[0].phi * showers->in[0].E + phi*dEsum)
@@ -167,9 +174,10 @@ void hitBarrelEMcal (float xin[4], float xout[4],
 /* entry point from fortran */
 
 void hitbarrelemcal_(float* xin, float* xout,
-                     float* pin, float* pout, float* dEsum, int* track)
+                     float* pin, float* pout, float* dEsum,
+                     int* track, int* stack)
 {
-   hitBarrelEMcal(xin,xout,pin,pout,*dEsum,*track);
+   hitBarrelEMcal(xin,xout,pin,pout,*dEsum,*track,*stack);
 }
 
 

@@ -37,14 +37,16 @@
 #define MAX_HITS        100
 
 binTree_t* forwardTOFTree = 0;
-static int slabCount = 0;
+static int hcounterCount = 0;
+static int vcounterCount = 0;
 static int pointCount = 0;
 
 
 /* register hits during tracking (from gustep) */
 
 void hitForwardTOF (float xin[4], float xout[4],
-                    float pin[5], float pout[5], float dEsum, int track)
+                    float pin[5], float pout[5], float dEsum,
+                    int track, int stack)
 {
    float x[3], t;
    float dx[3], dr;
@@ -80,6 +82,7 @@ void hitForwardTOF (float xin[4], float xout[4],
       s_Hits_t* leftHits;
       s_Hits_t* rightHits;
       int row = getrow_();
+      int plane = getplane_();
       int column = getcolumn_();
       float dxleft = xlocal[0];
       float dxright = -xlocal[0];
@@ -87,25 +90,49 @@ void hitForwardTOF (float xin[4], float xout[4],
       float tright = (column == 1) ? 0 : t + dxright/C_EFFECTIVE;
       float dEleft  = (column == 2) ? 0 : dEsum * exp(-dxleft/ATTEN_LENGTH);
       float dEright = (column == 1) ? 0 : dEsum * exp(-dxright/ATTEN_LENGTH);
-      int mark = (row << 8) + column;
+      float ycenter = (fabs(xftof[1]) < 1e-4) ? 0 : xftof[1];
+      int mark = (plane << 16) + (row << 8) + column;
       void** twig = getTwig(&forwardTOFTree, mark);
       if (*twig == 0)
       {
          s_ForwardTOF_t* tof = *twig = make_s_ForwardTOF();
-         tof->slabs = make_s_Slabs(1);
-         tof->slabs->mult = 1;
-         tof->slabs->in[0].y = xftof[1];
-         tof->slabs->in[0].left = make_s_Left();
-         tof->slabs->in[0].left->hits = leftHits = make_s_Hits(MAX_HITS);
-         tof->slabs->in[0].right = make_s_Right();
-         tof->slabs->in[0].right->hits = rightHits = make_s_Hits(MAX_HITS);
-         slabCount++;
+         if (plane == 1)
+         {
+            tof->hcounters = make_s_Hcounters(1);
+            tof->hcounters->mult = 1;
+            tof->hcounters->in[0].y = ycenter;
+            tof->hcounters->in[0].left = make_s_Left();
+            tof->hcounters->in[0].left->hits = leftHits = make_s_Hits(MAX_HITS);
+            tof->hcounters->in[0].right = make_s_Right();
+            tof->hcounters->in[0].right->hits = rightHits = make_s_Hits(MAX_HITS);
+            hcounterCount++;
+         }
+         else
+         {
+            tof->vcounters = make_s_Vcounters(1);
+            tof->vcounters->mult = 1;
+            tof->vcounters->in[0].x = ycenter;
+            tof->vcounters->in[0].top = make_s_Top();
+            tof->vcounters->in[0].top->hits = leftHits = make_s_Hits(MAX_HITS);
+            tof->vcounters->in[0].bottom = make_s_Bottom();
+            tof->vcounters->in[0].bottom->hits = rightHits = make_s_Hits(MAX_HITS);
+            vcounterCount++;
+         }
       }
       else
       {
-         s_ForwardTOF_t* tof = *twig;
-         leftHits = tof->slabs->in[0].left->hits;
-         rightHits = tof->slabs->in[0].right->hits;
+         if (plane == 1)
+         {
+            s_ForwardTOF_t* tof = *twig;
+            leftHits = tof->hcounters->in[0].left->hits;
+            rightHits = tof->hcounters->in[0].right->hits;
+         }
+         else
+         {
+            s_ForwardTOF_t* tof = *twig;
+            leftHits = tof->vcounters->in[0].top->hits;
+            rightHits = tof->vcounters->in[0].bottom->hits;
+         }
       }
 
       for (nhit = 0; nhit < leftHits->mult; nhit++)
@@ -149,9 +176,11 @@ void hitForwardTOF (float xin[4], float xout[4],
          s_ForwardTOF_t* tof = *twig = make_s_ForwardTOF();
          s_TofPoints_t* points = make_s_TofPoints(1);
          tof->tofPoints = points;
+         points->in[0].primary = (stack == 0);
          points->in[0].track = track;
          points->in[0].x = x[0];
          points->in[0].y = x[1];
+         points->in[0].z = x[2];
          points->in[0].t = t;
          points->mult = 1;
          pointCount++;
@@ -162,9 +191,10 @@ void hitForwardTOF (float xin[4], float xout[4],
 /* entry point from fortran */
 
 void hitforwardtof_ (float* xin, float* xout,
-                     float* pin, float* pout, float* dEsum, int* track)
+                     float* pin, float* pout, float* dEsum,
+                     int* track, int* stack)
 {
-   hitForwardTOF(xin,xout,pin,pout,*dEsum,*track);
+   hitForwardTOF(xin,xout,pin,pout,*dEsum,*track,*stack);
 }
 
 
@@ -175,21 +205,48 @@ s_ForwardTOF_t* pickForwardTOF ()
    s_ForwardTOF_t* box;
    s_ForwardTOF_t* item;
 
-   if ((slabCount == 0) && (pointCount == 0))
+   if ((vcounterCount == 0) && (hcounterCount == 0) && (pointCount == 0))
    {
       return 0;
    }
 
    box = make_s_ForwardTOF();
-   box->slabs = make_s_Slabs(slabCount);
+   box->hcounters = make_s_Hcounters(hcounterCount);
+   box->vcounters = make_s_Vcounters(vcounterCount);
    box->tofPoints = make_s_TofPoints(pointCount);
    while (item = (s_ForwardTOF_t*) pickTwig(&forwardTOFTree))
    {
-      if (item->slabs)
+      if (item->hcounters)
       {
-         int m = box->slabs->mult++;
-         box->slabs->in[m] = item->slabs->in[0];
-         FREE(item->slabs);
+         int m = box->hcounters->mult++;
+         if (item->hcounters->in[0].left->hits->in[0].dE == 0)
+         {
+            FREE(item->hcounters->in[0].left);
+            item->hcounters->in[0].left = 0;
+         }
+         if (item->hcounters->in[0].right->hits->in[0].dE == 0)
+         {
+            FREE(item->hcounters->in[0].right);
+            item->hcounters->in[0].right = 0;
+         }
+         box->hcounters->in[m] = item->hcounters->in[0];
+         FREE(item->hcounters);
+      }
+      if (item->vcounters)
+      {
+         int m = box->vcounters->mult++;
+         if (item->vcounters->in[0].top->hits->in[0].dE == 0)
+         {
+            FREE(item->vcounters->in[0].top);
+            item->vcounters->in[0].top = 0;
+         }
+         if (item->vcounters->in[0].bottom->hits->in[0].dE == 0)
+         {
+            FREE(item->vcounters->in[0].bottom);
+            item->vcounters->in[0].bottom = 0;
+         }
+         box->vcounters->in[m] = item->vcounters->in[0];
+         FREE(item->vcounters);
       }
       else if (item->tofPoints)
       {
@@ -199,6 +256,6 @@ s_ForwardTOF_t* pickForwardTOF ()
       }
       FREE(item);
    }
-   slabCount = pointCount = 0;
+   vcounterCount = hcounterCount = pointCount = 0;
    return box;
 }

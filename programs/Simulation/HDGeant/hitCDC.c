@@ -28,7 +28,8 @@ static int pointCount = 0;
 /* register hits during tracking (from gustep) */
 
 void hitCentralDC (float xin[4], float xout[4],
-                   float pin[5], float pout[5], float dEsum, int track)
+                   float pin[5], float pout[5], float dEsum,
+                   int track, int stack)
 {
    float x[3], t;
    float dx[3], dr;
@@ -137,6 +138,7 @@ void hitCentralDC (float xin[4], float xout[4],
             cdc->rings->in[0].straws->mult = 1;
             cdc->rings->in[0].straws->in[0].phim = phim;
             cdc->rings->in[0].straws->in[0].cdcPoints = points;
+            points->in[0].primary = (stack == 0);
             points->in[0].track = track;
             points->in[0].z = x[2];
             points->in[0].r = sqrt(x[0]*x[0] + x[1]*x[1]);
@@ -180,9 +182,10 @@ void hitCentralDC (float xin[4], float xout[4],
 /* entry points from fortran */
 
 void hitcentraldc_(float* xin, float* xout,
-                   float* pin, float* pout, float* dEsum, int* track)
+                   float* pin, float* pout, float* dEsum,
+                   int* track, int* stack)
 {
-   hitCentralDC(xin,xout,pin,pout,*dEsum,*track);
+   hitCentralDC(xin,xout,pin,pout,*dEsum,*track,*stack);
 }
 
 
@@ -199,33 +202,13 @@ s_CentralDC_t* pickCentralDC ()
    }
 
    box = make_s_CentralDC();
-   box->cathodeCyls = make_s_CathodeCyls(5);
    box->rings = make_s_Rings(32);
+#if CATHODE_STRIPS_IN_CDC
+   box->cathodeCyls = make_s_CathodeCyls(5);
+#endif
    while (item = (s_CentralDC_t*) pickTwig(&centralDCTree))
    {
-      if (item->cathodeCyls)
-      {
-         float r = item->cathodeCyls->in[0].radius;
-         int m = box->cathodeCyls->mult;
-         if ((m == 0) || (r > box->cathodeCyls->in[m-1].radius + 0.5))
-         {
-            box->cathodeCyls->in[m] = item->cathodeCyls->in[0];
-            box->cathodeCyls->in[m].bands = make_s_Bands(bandCount);
-            box->cathodeCyls->mult++;
-         }
-         else
-         {
-            m--;
-         }
-         {
-            int mm = box->cathodeCyls->in[m].bands->mult++;
-            box->cathodeCyls->in[m].bands->in[mm] =
-                         item->cathodeCyls->in[0].bands->in[0];
-         }
-         FREE(item->cathodeCyls->in[0].bands);
-         FREE(item->cathodeCyls);
-      }
-      else if (item->rings)
+      if (item->rings)
       {
          float r = item->rings->in[0].radius;
          int m = box->rings->mult;
@@ -278,6 +261,30 @@ s_CentralDC_t* pickCentralDC ()
          FREE(item->rings->in[0].straws);
          FREE(item->rings);
       }
+#if CATHODE_STRIPS_IN_CDC
+      else if (item->cathodeCyls)
+      {
+         float r = item->cathodeCyls->in[0].radius;
+         int m = box->cathodeCyls->mult;
+         if ((m == 0) || (r > box->cathodeCyls->in[m-1].radius + 0.5))
+         {
+            box->cathodeCyls->in[m] = item->cathodeCyls->in[0];
+            box->cathodeCyls->in[m].bands = make_s_Bands(bandCount);
+            box->cathodeCyls->mult++;
+         }
+         else
+         {
+            m--;
+         }
+         {
+            int mm = box->cathodeCyls->in[m].bands->mult++;
+            box->cathodeCyls->in[m].bands->in[mm] =
+                         item->cathodeCyls->in[0].bands->in[0];
+         }
+         FREE(item->cathodeCyls->in[0].bands);
+         FREE(item->cathodeCyls);
+      }
+#endif
       FREE(item);
    }
    strawCount = bandCount = pointCount = 0;

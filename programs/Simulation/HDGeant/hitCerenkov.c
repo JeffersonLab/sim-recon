@@ -22,12 +22,14 @@
 
 binTree_t* cerenkovTree = 0;
 static int sectionCount = 0;
+static int pointCount = 0;
 
 
 /* register hits during tracking (from gustep) */
 
 void hitCerenkov (float xin[4], float xout[4],
-                  float pin[5], float pout[5], float dEsum, int track)
+                  float pin[5], float pout[5], float dEsum,
+                  int track, int stack)
 {
    float x[3], t;
    float dx[3], dr;
@@ -99,16 +101,40 @@ void hitCerenkov (float xin[4], float xout[4],
       }
    }
 
-   /* no truth sections here, for the moment */
-
+   /* post the hit to the truth tree, once per primary track */
+   {
+      int mark = (track << 16);
+      void** twig = getTwig(&cerenkovTree, mark);
+      if (*twig == 0)
+      {
+         s_Cerenkov_t* cere = *twig = make_s_Cerenkov();
+         s_CerenkovPoints_t* points = make_s_CerenkovPoints(1);
+         cere->cerenkovPoints = points;
+         float E = (pin[3]+pout[3])/2;
+         float p = (pin[4]+pout[4])/2;
+         points->in[0].primary = (stack == 0);
+         points->in[0].track = track;
+         points->in[0].x = x[0];
+         points->in[0].y = x[1];
+         points->in[0].z = x[2];
+         points->in[0].t = t;
+         points->in[0].px = p*(pin[0]+pout[0])/2;
+         points->in[0].py = p*(pin[1]+pout[1])/2;
+         points->in[0].pz = p*(pin[2]+pout[2])/2;
+         points->in[0].E = E;
+         points->mult = 1;
+         pointCount++;
+      }
+   }
 }
 
 /* entry point from fortran */
 
 void hitcerenkov_(float* xin, float* xout,
-                  float* pin, float* pout, float* dEsum, int* track)
+                  float* pin, float* pout, float* dEsum,
+                  int* track, int* stack)
 {
-   hitCerenkov(xin,xout,pin,pout,*dEsum,*track);
+   hitCerenkov(xin,xout,pin,pout,*dEsum,*track,*stack);
 }
 
 
@@ -119,13 +145,14 @@ s_Cerenkov_t* pickCerenkov ()
    s_Cerenkov_t* box;
    s_Cerenkov_t* item;
 
-   if (sectionCount == 0)
+   if ((sectionCount == 0) && (pointCount == 0))
    {
       return 0;
    }
 
    box = make_s_Cerenkov();
    box->sections = make_s_Sections(sectionCount);
+   box->cerenkovPoints = make_s_CerenkovPoints(pointCount);
    while (item = pickTwig(&cerenkovTree))
    {
       if (item->sections)
@@ -134,8 +161,14 @@ s_Cerenkov_t* pickCerenkov ()
          box->sections->in[m] = item->sections->in[0];
          FREE(item->sections);
       }
+      else if (item->cerenkovPoints)
+      {
+         int m = box->cerenkovPoints->mult++;
+         box->cerenkovPoints->in[m] = item->cerenkovPoints->in[0];
+         FREE(item->cerenkovPoints);
+      }
       FREE(item);
    }
-   sectionCount = 0;
+   sectionCount = pointCount = 0;
    return box;
 }

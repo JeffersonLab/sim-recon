@@ -32,7 +32,8 @@ static int pointCount = 0;
 /* register hits during tracking (from gustep) */
 
 void hitForwardDC (float xin[4], float xout[4],
-                   float pin[5], float pout[5], float dEsum, int track)
+                   float pin[5], float pout[5], float dEsum,
+                   int track, int stack)
 {
    float x[3], t;
    float dx[3], dr;
@@ -150,6 +151,7 @@ void hitForwardDC (float xin[4], float xout[4],
                             (floor(xlocal[0]/WIRE_SPACING) + 0.5)*WIRE_SPACING;
             fdc->chambers->in[0].anodePlanes->in[0].wires->in[0].fdcPoints =
                                                                     points;
+            points->in[0].primary = (stack == 0);
             points->in[0].track = track;
             points->in[0].x = x[0];
             points->in[0].y = x[1];
@@ -196,9 +198,10 @@ void hitForwardDC (float xin[4], float xout[4],
 /* entry points from fortran */
 
 void hitforwarddc_(float* xin, float* xout,
-                   float* pin, float* pout, float* dEsum, int* track)
+                   float* pin, float* pout, float* dEsum,
+                   int* track, int* stack)
 {
-   hitForwardDC(xin,xout,pin,pout,*dEsum,*track);
+   hitForwardDC(xin,xout,pin,pout,*dEsum,*track,*stack);
 }
 
 

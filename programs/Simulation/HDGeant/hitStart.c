@@ -40,7 +40,8 @@ static int pointCount = 0;
 /* register hits during tracking (from gustep) */
 
 void hitStartCntr (float xin[4], float xout[4],
-                   float pin[5], float pout[5], float dEsum, int track)
+                   float pin[5], float pout[5], float dEsum,
+                   int track, int stack)
 {
    float x[3], t;
    float dx[3], dr;
@@ -131,10 +132,11 @@ void hitStartCntr (float xin[4], float xout[4],
          s_StartCntr_t* vtx = *twig = make_s_StartCntr();
          s_StartPoints_t* points = make_s_StartPoints(1);
          vtx->startPoints = points;
+         points->in[0].primary = (stack == 0);
          points->in[0].track = track;
          points->in[0].t = t;
          points->in[0].z = x[2];
-         points->in[0].r = sqrt(x[0]*x[0] + x[1]*x[1]);
+         points->in[0].r = sqrt(x[0]*x[0]+x[1]*x[1]);
          points->in[0].phi = atan2(x[1],x[0]);
          points->in[0].dEdx = dEdx;
          points->mult = 1;
@@ -146,9 +148,10 @@ void hitStartCntr (float xin[4], float xout[4],
 /* entry point from fortran */
 
 void hitstartcntr_(float* xin, float* xout,
-                   float* pin, float* pout, float* dEsum, int* track)
+                   float* pin, float* pout, float* dEsum,
+                   int* track, int* stack)
 {
-   hitStartCntr(xin,xout,pin,pout,*dEsum,*track);
+   hitStartCntr(xin,xout,pin,pout,*dEsum,*track,*stack);
 }
 
 
