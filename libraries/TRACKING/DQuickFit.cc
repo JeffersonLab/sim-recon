@@ -7,20 +7,17 @@
 #include <iostream>
 using namespace std;
 
-
 #include "DQuickFit.h"
 
 static float *CHISQV=NULL;
 static int qsort_chisqv(const void* arg1, const void* arg2);
 static int qsort_int(const void* arg1, const void* arg2);
 
-
 //-----------------
 // DQuickFit
 //-----------------
 DQuickFit::DQuickFit()
-{
-	
+{	
 	x0 = y0 = 0;
 	chisq = 0;
 	chisq_source = NOFIT;
@@ -48,7 +45,9 @@ DQuickFit::~DQuickFit()
 //-----------------
 derror_t DQuickFit::AddHit(float r, float phi, float z)
 {
-	
+	/// Add a hit to the list of hits using cyclindrical coordinates
+	/// phi should be specified in radians. For 2D hits, the
+	/// value of z will be ignored.
 	*(TVector3**)hits->Add() = new TVector3(r*cos(phi), r*sin(phi), z);
 
 	return NOERROR;
@@ -59,6 +58,11 @@ derror_t DQuickFit::AddHit(float r, float phi, float z)
 //-----------------
 derror_t DQuickFit::AddHits(int N, TVector3 *v)
 {
+	/// Append a list of hits to the current list of hits using
+	/// TVector3 objects. The TVector3 objects are copied internally
+	/// so it is safe to delete the objects after calling AddHits()
+	/// For 2D hits, the value of z will be ignored.
+
 	TVector3 *my_v = v;
 	for(int i=0; i<N; i++, my_v++){
 		*(TVector3**)hits->Add() = new TVector3(*my_v);
@@ -72,6 +76,10 @@ derror_t DQuickFit::AddHits(int N, TVector3 *v)
 //-----------------
 derror_t DQuickFit::PruneHit(int idx)
 {
+	/// Remove the hit specified by idx from the list
+	/// of hits. The value of idx can be anywhere from
+	/// 0 to GetNhits()-1.
+
 	TVector3 *v = *(TVector3**)hits->index(idx);
 	delete v;	
 	hits->Delete(idx);
@@ -85,6 +93,14 @@ derror_t DQuickFit::PruneHit(int idx)
 //-----------------
 derror_t DQuickFit::PruneHits(float chisq_limit)
 {
+	/// Remove hits whose individual contribution to the chi-squared
+	/// value exceeds <i>chisq_limit</i>. The value of the individual
+	/// contribution is calculated like:
+	///
+	///   r0 = sqrt(x0*x0 + y0*y0)
+	///   r[i] = sqrt(pow(x[i]-x0,2.0) + pow(y[i]-y0,2.0))
+	///   chisq[i] = pow(r[i] - r0, 2.0);
+
 	if(hits->nrows != chisqv->nrows){
 		cerr<<__FILE__<<":"<<__LINE__<<" hits and chisqv do not have the same number of rows!"<<endl;
 		cerr<<"Call FitCircle() or FitTrack() method first!"<<endl;
@@ -107,6 +123,9 @@ derror_t DQuickFit::PruneHits(float chisq_limit)
 //-----------------
 derror_t DQuickFit::PruneWorst(int n)
 {
+	/// Remove the hit which contributes the most to the chi-squared
+	/// (See PruneHit() for more).
+
 	if(hits->nrows != chisqv->nrows){
 		cerr<<__FILE__<<":"<<__LINE__<<" hits and chisqv do not have the same number of rows!"<<endl;
 		cerr<<"Call FitCircle() or FitTrack() method first!"<<endl;
@@ -171,6 +190,11 @@ static int qsort_int(const void* arg1, const void* arg2)
 //-----------------
 derror_t DQuickFit::PrintChiSqVector(void)
 {
+	/// Dump the latest chi-squared vector to the screen.
+	/// This prints the individual hits' chi-squared
+	/// contributions in the order in which the hits were
+	/// added. See PruneHits() for more detail.
+
 	cout<<"Chisq vector from DQuickFit:"<<endl;
 	cout<<"----------------------------"<<endl;
 
@@ -189,7 +213,8 @@ derror_t DQuickFit::PrintChiSqVector(void)
 derror_t DQuickFit::CopyToFitParms(FitParms_t *fit)
 {
 	/// Copy the results of the most recent fit into the specified FitParms_t
-	/// structure.
+	/// structure. This is mainly here for use by factories which
+	/// include a FitParms_t structure.
 
 	fit->x0 = x0;
 	fit->y0 = y0;
@@ -293,6 +318,7 @@ derror_t DQuickFit::FitCircle(void)
 //-----------------
 derror_t DQuickFit::FitTrack(void)
 {
+	/// This method is not implemented yet.
 #if 0
 	// Sort by Z
 	qsort(points, Npoints, sizeof(TVector3), qsort_points_by_z);
