@@ -15,7 +15,7 @@ AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o gdstep.o guxcs.o \
 
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
-       hitLGD.o bintree.o hitutil.o memcheck.o
+       hitLGD.o bintree.o hitutil.o memcheck.o timel.o
 
 GXFIXED = gxcs.o gxphys.o
 
@@ -47,6 +47,9 @@ hddsGeant3.f:
 
 hddm_s.h:
 	$(HDDM)/hddm-c $(HDDM)/event.xml
+
+hddm_s.o: 	hddm_s.c
+	gcc $(COPTS) -I. -I../include -c -o $@ $<
 
 clean:
 	rm -f *.o core hddm_s.[ch] hddsGeant3.f last.kumac* paw.metafile
