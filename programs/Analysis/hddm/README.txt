@@ -3,6 +3,10 @@
 	    		    Richard Jones
 	    		  September 10, 2003
 
+This document is intended as a quick-start guide for building and using
+the hdds tools.  For more information and for discussion of features and
+bugs, please go to http://zeus.phys.cuonn.edu/forums/gluex.org
+
 1) Since you are reading this, you have already done the first step.
    From your cvs source directory you typed:
 
