@@ -6,7 +6,7 @@
 # Things common to both library and executable builds live in Makefile.common
 include $(HALLD_HOME)/src/BMS/Makefile.common
 
-.PHONY: mkdirs
+.PHONY: mkdirs clean env
 
 VPATH = $(DEP_DIR)
 
@@ -16,27 +16,25 @@ ifeq ($(OSNAME),Darwin)
 	ranlib $(LIBNAME)
 endif
 
-# Rules to make DEPENDS files from source
-%.d : %.cpp
-	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
-%.d : %.cc
-	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
-%.d : %.cxx
-	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
-%.d : %.c
-	@$(CC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CFLAGS) $< > $(DEP_DIR)/$@
-%.d : %.F
-	@$(FC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(FFLAGS) $< > $(DEP_DIR)/$@
-
-# Include all dependancy files
--include $(foreach s,$(DEPS),$(DEP_DIR)/$s)
-
 mkdirs:
 	@mkdir -p $(LIB_DIR)
 	@mkdir -p $(DEP_DIR)
 
 clean:
 	rm -rf $(LIBNAME) .depends *.bak *~ core last.kumac*  #*# 
+
+# Rules to make DEPENDS files from source. Note that these are similar to the
+# rules in Makefile.bin, but use the implicit rules for archiving objects.
+%$(DEBUG_SUFFIX).d : %.cpp
+	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
+%$(DEBUG_SUFFIX).d : %.cc
+	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
+%$(DEBUG_SUFFIX).d : %.cxx
+	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
+%$(DEBUG_SUFFIX).d : %.c
+	@$(CC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CFLAGS) $< > $(DEP_DIR)/$@
+%$(DEBUG_SUFFIX).d : %.F
+	@$(FC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(FFLAGS) $< > $(DEP_DIR)/$@
 
 
 env:

@@ -13,6 +13,15 @@
 # in which case Makefile.bin is included.
 # 
 
+.PHONY: mkdirs clean env all first
+
+# The first target is made by default when make is invoked with no
+# arguments. We want to include other targets here (namely, depends
+# files) so we need to make a dummy target appear first that calls
+# the real default target which resides in either Makefile.bin or
+# Makefile.lib
+first: all
+
 ifndef OSNAME
 OSNAME = $(shell uname)
 endif
@@ -48,7 +57,7 @@ FSRC		= $(wildcard *.F *.f)
 CSRC		= $(wildcard *.c)
 CXXSRC	= $(wildcard *.cc *.cpp *.cxx)
 OBJS		= $(addsuffix .o,$(basename $(FSRC) $(CSRC) $(CXXSRC)))
-DEPS		= $(OBJS:.o=.d)
+DEPS		= $(OBJS:.o=$(DEBUG_SUFFIX).d)
 
 ifdef ONLINE
 	CFLAGS += -DONLINE
@@ -68,6 +77,9 @@ MODULE_NAME = $(shell basename $(shell pwd))
 LIBNAME = $(LIB_DIR)/lib$(MODULE_NAME)$(DEBUG_SUFFIX).a
 
 # Include platform specific definitions
-# (the - at the front means don't error if the file doesn't exist)
+# (the "-" at the front means don't error if the file doesn't exist)
 -include $(HALLD_HOME)/src/BMS/Makefile.$(OSNAME)
+
+# Include all dependancy files
+-include $(foreach s,$(DEPS),$(DEP_DIR)/$s)
 
