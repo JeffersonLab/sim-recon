@@ -18,17 +18,28 @@ ifdef DEBUG
 	LD_FLAGS	+= -g -pg
 endif
 
-MODULES = $(MODULE_NAME)
-MODULES += $(ADDITIONAL_MODULES)
+# Some things (like GEANT) may need to link objects directly rather
+# than using a library. Add "USE_OBJECTS := 1" to local Makefile
+ifdef USE_OBJECTS
+	OBJ_DIR = obj/$(OSNAME)
+	OUTPUT_OPTION = -o $(OBJ_DIR)/$@
+	VPATH = $(OBJ_DIR)
+	MISC_LIBS += $(addprefix $(OBJ_DIR)/,$(OBJS))
+else
+	MODULES = $(MODULE_NAME)
+	VPATH = $(LIB_DIR)
+	MISC_LIBS += -l$(MODULE_NAME)$(DEBUG_SUFFIX)
+endif
+
 
 ifndef EXE_NAME
 	EXE_NAME = $(MODULE_NAME)$(DEBUG_SUFFIX)
 endif
 
-LIB_DIRS = $(LIB_DIR) $(PRIMEX_LIB)
-VPATH = $(LIB_DIR):$(PRIMEX_LIB)
-LD_DIRS = $(addprefix -L,$(LIB_DIRS))
 
+LIB_DIRS = $(LIB_DIR)
+LD_DIRS = $(addprefix -L,$(LIB_DIRS))
+MODULES += $(ADDITIONAL_MODULES)
 LD_LIBS = $(addsuffix $(DEBUG_SUFFIX),$(addprefix -l,$(MODULES)))
 
 
@@ -46,8 +57,11 @@ endif
 mkbin: mkbindir $(BINARY)
 
 $(BINARY): $(LD_LIBS)
-	$(LD) $(LD_FLAGS) $(LD_DIRS) $(LD_LIBS) $(MYSQL_LIBS) $(MISC_LIBS) -l$(MODULE_NAME)$(DEBUG_SUFFIX) \
+	$(LD) $(LD_FLAGS) $(LD_DIRS) \
+		$(LD_LIBS) $(MYSQL_LIBS) $(MISC_LIBS) \
 		-o $@
+
+mkobj: mkobjdir $(OBJS)
 
 mkbindir:
 	@mkdir -p $(BIN_DIR)
@@ -55,8 +69,11 @@ mkbindir:
 mklibdir:
 	@mkdir -p $(LIB_DIR)
 
+mkobjdir:
+	@mkdir -p $(OBJ_DIR)
+
 clean:
-	rm -f $(LIBNAME) *.bak *~ core last.kumac*  #*# 
+	rm -rf $(LIBNAME) $(OBJ_DIR) *.bak *~ core last.kumac*  #*# 
 
 env:
 	@echo FC			= $(FC)
