@@ -2,6 +2,13 @@
 * $Id$
 *
 * $Log$
+* Revision 1.2  2001/11/12 23:02:44  brash
+* Found a small bug in my original modification to this routine, which
+* exists only here for the alpha BTW.  The bug was that I was checking for small
+* values of rotation matrix elements, to avoid fpe's, and I should have been
+* checking for small ABSOLUTE values, since of course the matrix elements can
+* be negative.
+*
 * Revision 1.1  2001/10/04 06:20:57  brash
 * This routine is part of the cern library, but suffered arithmetic errors on the alpha.  I changed this file to trap these situations. EJB
 *
@@ -76,6 +83,9 @@ C
         Q(JR+3*N-2) = SINTHE * COS(PHIRAD)
         Q(JR+3*N-1) = SINTHE * SIN(PHIRAD)
         Q(JR+3*N  ) = COS(THERAD)
+        if(abs(Q(JR+3*N-2)).le.1.0E-10) Q(JR+3*N-2)=0.0
+        if(abs(Q(JR+3*N-1)).le.1.0E-10) Q(JR+3*N-1)=0.0
+        if(abs(Q(JR+3*N  )).le.1.0E-10) Q(JR+3*N  )=0.0
         CALL VUNIT (Q(JR+3*N-2),Q(JR+3*N-2),3)
   10  CONTINUE
 C.
@@ -83,6 +93,7 @@ C.---       Test orthonormality
       DO 20 J=1,9
         ROTMAT(J)=Q(JR+J)
   20  CONTINUE
+	goto 110
       PROD2=ZERO
 C.
 C.               X - Y
