@@ -77,7 +77,7 @@ INCS = -I$(STDHEP_DIR)/src/inc -I$(BUILDS)/include
 
 #------------------------------------------
 
-all:  ascii2stdhep  stdhep2ascii  stdhep2hddm
+all:  ascii2stdhep  stdhep2ascii  
 
 stdhep2hddm: hddm_s.o stdhep2hddm.o $(STDHEP_DIR)/lib/libstdhepC.a
 	$(CC) $(CFLAGS) $(INCS)  -o stdhep2hddm stdhep2hddm.o hddm_s.o  \
@@ -115,6 +115,8 @@ hddm_s.h:
 install: all
 	mv ascii2stdhep   $(HALLD_HOME)/bin/$(UNAME)/.  
 	mv stdhep2ascii    $(HALLD_HOME)/bin/$(UNAME)/.  
+
+install-hddm: stdhep2hddm
 	mv stdhep2hddm    $(HALLD_HOME)/bin/$(UNAME)/.  
 
 clean:
