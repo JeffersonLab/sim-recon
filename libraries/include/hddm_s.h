@@ -28,12 +28,12 @@
 #define CALLOC(N,S) calloc(N,1)
 #define FREE(P) free(P)
 
-#ifndef SAW_s_Momentum_t
-#define SAW_s_Momentum_t
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifndef SAW_s_Momentum_t
+#define SAW_s_Momentum_t
 
 typedef struct {
    float                E;
@@ -751,7 +751,7 @@ typedef struct {
 
 s_HDDM_t* read_s_HDDM(s_iostream_t* fp);
 
-int flush_s_HDDM(s_HDDM_t* thiss,s_iostream_t* fp);
+int flush_s_HDDM(s_HDDM_t* this1,s_iostream_t* fp);
 
 s_iostream_t* open_s_HDDM(char* filename);
 
@@ -762,3 +762,4 @@ void close_s_HDDM(s_iostream_t* fp);
 #ifdef __cplusplus
 }
 #endif
+
