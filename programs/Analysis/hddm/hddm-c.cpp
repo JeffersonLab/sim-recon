@@ -956,6 +956,7 @@ void constructCloseFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
 void constructDocument(DOM_Element& el, ofstream& hFile, ofstream& cFile)
 {
    static int indent = 0;
+   cFile << "\"";
    for (int n = 0; n < indent; n++)
    {
       cFile << "  ";
@@ -979,7 +980,7 @@ void constructDocument(DOM_Element& el, ofstream& hFile, ofstream& cFile)
    int contListLength = contList.getLength();
    if (contListLength > 0)
    {
-      cFile << ">" << endl;
+      cFile << ">\\n\"" << endl;
       indent++;
       for (int c = 0; c < contListLength; c++)
       {
@@ -991,15 +992,16 @@ void constructDocument(DOM_Element& el, ofstream& hFile, ofstream& cFile)
          }
       }
       indent--;
+      cFile << "\"";
       for (int n = 0; n < indent; n++)
       {
          cFile << "  ";
       }
-      cFile << "</" << tagStr << ">" << endl;
+      cFile << "</" << tagStr << ">\\n\"" << endl;
    }
    else
    {
-      cFile << " />" << endl;
+      cFile << " />\\n\"" << endl;
    }
    delete [] tagStr;
 }
@@ -1232,9 +1234,9 @@ int main(int argC, char* argV[])
 
    cFile							<< endl
 	 << "char HDDM_" << classPrefix << "_DocumentString[]"
-	 << " = \"" 						<< endl;
+	 << " = " 						<< endl;
    constructDocument(rootEl,hFile,cFile);
-   cFile << "\";"						<< endl;
+   cFile << ";"							<< endl;
 
    constructReadFunc(rootEl,hFile,cFile);
    constructFlushFunc(rootEl,hFile,cFile);
