@@ -1,9 +1,7 @@
 <hitView version="1.0">
    <centralDC>
       <cathodeCyl radius="float" repeat="*">
-         <band phim="float" z="float" repeat="*">
-            <hit t="float" dE="float" repeat="*" />
-         </band>
+         <band phim="float" z="float" repeat="*" />
       </cathodeCyl>
       <ring radius="float" repeat="*">
          <straw phim="float" repeat="*">
@@ -17,9 +15,7 @@
    <forwardDC>
       <chamber module="int" layer="int" repeat="*">
          <cathodePlane z="float" tau="float" repeat="*">
-            <strip u="float" repeat="*">
-               <hit t="float" dE="float" repeat="*" />
-            </strip>
+            <strip u="float" repeat="*" />
          </cathodePlane>
          <anodePlane z="float" tau="float" repeat="*">
             <wire u="float" repeat="*">

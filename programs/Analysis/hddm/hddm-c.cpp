@@ -828,7 +828,14 @@ void constructOpenFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
 	 << "   " << classPrefix << "_iostream* fp = "
 	 << "malloc(sizeof(" << classPrefix << "_iostream));"	<< endl
 	 << "   char* p;"					<< endl
-	 << "   fp->fd = fopen(filename,\"r\");"		<< endl
+         << "   if (filename)"					<< endl
+         << "   {"						<< endl
+	 << "      fp->fd = fopen(filename,\"r\");"		<< endl
+         << "   }"						<< endl
+         << "   else"						<< endl
+         << "   {"						<< endl
+	 << "      fp->fd = fdopen(0,\"r\");"			<< endl
+         << "   }"						<< endl
 	 << "   if (fp->fd == 0)"				<< endl
 	 << "   {"						<< endl
 	 << "      free(fp);"					<< endl
@@ -888,7 +895,14 @@ void constructInitFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
 	 << "   int len;"					<< endl	
 	 << "   " << classPrefix << "_iostream* fp = "
 	 << "malloc(sizeof(" << classPrefix << "_iostream));"	<< endl
-	 << "   fp->fd = fopen(filename,\"w\");"		<< endl
+         << "   if (filename)"					<< endl
+         << "   {"						<< endl
+	 << "      fp->fd = fopen(filename,\"w\");"		<< endl
+         << "   }"						<< endl
+         << "   else"						<< endl
+         << "   {"						<< endl
+	 << "      fp->fd = fdopen(1,\"w\");"			<< endl
+         << "   }"						<< endl
 	 << "   if (fp->fd == 0)"				<< endl
 	 << "   {"						<< endl
 	 << "      free(fp);"					<< endl

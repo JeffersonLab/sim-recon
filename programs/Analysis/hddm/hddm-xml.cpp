@@ -9,15 +9,15 @@
  *  -------------------
  * 1. The output from hddm-xml is a well-formed xml document.
  *
- * 2. The hddm file contains a xml header that functions as a prototype
+ * 2. The hddm stream contains a xml header that functions as a prototype
  *    of the xml output.
  *
- * 3. This tool can read any hddm file.  No recompilation is required.
+ * 3. This tool can read any hddm stream.  No recompilation is required.
  *
- * 3. The code has been tested with the xerces-c DOM implementation from
+ * 4. The code has been tested with the xerces-c DOM implementation from
  *    Apache, and is intended to be used with the xerces-c library.
  *
- * 4. Output is sent by default to stdout and can be changed with the
+ * 5. Output is sent by default to stdout and can be changed with the
  *    -o option.
  */
 
@@ -258,13 +258,13 @@ void constructXML(int* sp, int t)
             else if (strcmp(typeStr,"float") == 0)
             {
                float value = *(float*)(sp++);
-               sprintf(attrStr," %s=\"%f\"",name,value);
+               sprintf(attrStr," %s=\"%g\"",name,value);
             }
             else if (strcmp(typeStr,"double") == 0)
             {
                double value = *(double*)(sp++);
                ++sp;
-               sprintf(attrStr," %s=\"%f\"",name,value);
+               sprintf(attrStr," %s=\"%g\"",name,value);
             }
             else if (strcmp(typeStr,"bool") == 0)
             {
@@ -334,7 +334,7 @@ void constructXML(int* sp, int t)
 void usage()
 {
    cerr << "\nUsage:\n"
-        << "    hddm-xml [-o <filename>] {HDDM file}\n\n"
+        << "    hddm-xml [-o <filename>] [HDDM file]\n\n"
         << "Options:\n"
         <<  "    -o <filename>	write to <filename>.xml"
         << endl;
@@ -356,17 +356,6 @@ int main(int argC, char* argV[])
       return 1;
    }
 
-   if (argC < 2)
-   {
-      usage();
-      return 1;
-   }
-   else if ((argC == 2) && (strcmp(argV[1], "-?") == 0))
-   {
-      usage();
-      return 2;
-   }
-
    int argInd;
    for (argInd = 1; argInd < argC; argInd++)
    {
@@ -380,21 +369,32 @@ int main(int argC, char* argV[])
       }
       else
       {
-         cerr << "Unknown option \'" << argV[argInd]
-              << "\', ignoring it\n" << endl;
+         usage();
+         return 1;
       }
    }
 
-   if (argInd != argC - 1)
+   char* hddmFile;
+   ifstream* ifs;
+   if (argInd == argC)
+   {
+      ifs = new ifstream(0);
+      hddmFile = new char[1];
+      *hddmFile = 0;
+   }
+   else if (argInd == argC - 1)
+   {
+      hddmFile = argV[argInd];
+      ifs = new ifstream(hddmFile);
+   }
+   else
    {
       usage();
       return 1;
    }
-   char* hddmFile = argV[argInd];
-   ifstream ifs(hddmFile);
-   if (! ifs)
+   if (! *ifs)
    {
-      cerr << "hddm-xml: Error opening input file " << hddmFile << endl;
+      cerr << "hddm-xml: Error opening input stream " << hddmFile << endl;
       exit(1);
    }
    char* tmpFile = tmpnam(0);
@@ -407,25 +407,26 @@ int main(int argC, char* argV[])
 
    ofs << "<?xml version=\"1.0\"?>";
    char line[500];
-   if (ifs.getline(line,500))
+   if (ifs->getline(line,500))
    {
       ofs << line << endl;
    }
    else
    {
-      cerr << "hddm-xml: Error reading from input file " << hddmFile << endl;
+      cerr << "hddm-xml: Error reading from input stream " << hddmFile << endl;
       exit(1);
    }
-   if (ifs.getline(line,500) && (strstr(line,"<HDDM") != 0))
+   if (ifs->getline(line,500) && (strstr(line,"<HDDM") != 0))
    {
       ofs << line << endl;
    }
    else
    {
-      cerr << "hddm-xml: Input file does not contain valid hddm header" << endl;
+      cerr << "hddm-xml: Input stream does not contain valid hddm header"
+           << endl;
       exit(1);
    }
-   while (ifs.getline(line,500))
+   while (ifs->getline(line,500))
    {
       ofs << line << endl;
       if (strstr(line,"</HDDM>") != 0)
@@ -502,9 +503,9 @@ int main(int argC, char* argV[])
 
    int buff[100000];
    int icount;
-   while (ifs.read((char*)&icount,sizeof(int)))
+   while (ifs->read((char*)&icount,sizeof(int)))
    {
-      ifs.read((char*)buff,icount*sizeof(int));
+      ifs->read((char*)buff,icount*sizeof(int));
       constructXML(buff,0);
    }
 
