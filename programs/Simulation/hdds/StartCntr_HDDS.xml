@@ -5,6 +5,9 @@
   *****************************************
 
      version 1.0: Initial version	-rtj
+
+     version 1.1: Fix some problems with the Vertex Detector -cam
+                  Length and center were wrong in the previous version.
  
 <HDDS specification="v1.0"
       xmlns="http://www.gluex.org/hdds"
@@ -42,17 +45,17 @@
 				unit="cm"	/>
     <real       name="rmax"	value="5.60"	comment="outer radius"
 				unit="cm"	/>
-    <real       name="z0"	value="30.0"	comment="z of midplane"
+    <real       name="z0"	value="80.0"	comment="z of midplane"
 				unit="cm"	/>
-    <real       name="zlen"	value="35.0"	comment="length of cntr"
+    <real       name="zlen"	value="90.0"	comment="length of cntr"
 				unit="cm"	/>
   </parameters>
 
   <parameters name="startCntrLayer_pars" type="mcfast">
     <int	name="det"	value="1"	comment="num of mother"   />
-    <real	name="zlen"	value="35.0"	comment="length of layer"
+    <real	name="zlen"	value="90.0"	comment="length of layer"
 				unit="cm"	/>
-    <real	name="cell_height" value="0.1"	comment="thickness"
+    <real	name="cell_height" value="0.2"	comment="thickness"
 				unit="cm"	/>
     <int	name="nwires"	value="25"	comment="segmentation"	  />
     <int	name="ID_readout" value="-1"	/>
