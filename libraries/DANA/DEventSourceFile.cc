@@ -63,7 +63,7 @@ derror_t DEventSourceFile::GetEvent(void)
 {
 	/// Implementation of DEventSource virtual function
 	/// Support only HDDM formatted files for now.
-	if(hddm_s)flush_s_HDDM(hddm_s, fin);
+	if(hddm_s)flush_s_HDDM(hddm_s, 0);
 	hddm_s = read_s_HDDM(fin);
 	if(!hddm_s)return NO_MORE_EVENTS_IN_SOURCE;
 		
