@@ -51,6 +51,11 @@ class DContainer{
 			name = strdup(my_name);
 			flags = DCONTAINER_NULL;
 		}
+		
+		inline derror_t Set(int my_rows, void** my_ptr){
+			maxrows = nrows = my_rows;
+			container_ptr = my_ptr;
+		}
 
 		inline derror_t Grow(void){
 			if(nrows>maxrows)Grow(nrows);
