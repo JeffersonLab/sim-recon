@@ -1842,6 +1842,7 @@ int Refsys::createVolume(DOM_Element& el)
       if (myRef.fMother != 0)
       {
          char* motherStr = myRef.fMother.getAttribute("name").transcode();
+         int irot = myRef.createRotation();
          cout << endl
               << "      chname = \'" << nameStr << "\'" << endl
               << "      nr = " << ++icopy << endl
@@ -1849,7 +1850,7 @@ int Refsys::createVolume(DOM_Element& el)
               << "      x = " << myRef.fOrigin[0] << endl
               << "      y = " << myRef.fOrigin[1] << endl
               << "      z = " << myRef.fOrigin[2] << endl
-              << "      irot = " << myRef.createRotation() << endl
+              << "      irot = " << irot << endl
               << "      chonly = \'ONLY\'" << endl
               << "      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)"
               << endl;
