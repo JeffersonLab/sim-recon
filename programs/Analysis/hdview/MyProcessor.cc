@@ -74,6 +74,15 @@ derror_t MyProcessor::init(void)
 	// Make sure detectors have been drawn
 	if(!drew_detectors)DrawDetectors();
 	
+	// Get a pointer to the MCTrackCandidates factory object so we can 
+	// access things not included in the normal _data container
+	//DFactory_MCTrackCandidates *factory = (DFactory_MCTrackCandidates*)event_loop->GetFactory("MCTrackCandidates");
+	
+	// Set factory to handle flipping of x-axis for proper viewing
+	//factory->flip_x_axis = 1;
+	
+	// Tell factory to keep around a few density histos
+	//factory->SetNumDensityHistograms(4);
 	
 	return NOERROR;
 }
@@ -248,6 +257,7 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 
 	TPolyLine *line_top = new TPolyLine();
 	TPolyLine *line_side = new TPolyLine();
+	qf->Print();
 	float Z=z;
 	for(int i=0; i<500; i++){
 		float delta_z = Z-qf->z_vertex;
