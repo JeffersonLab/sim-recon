@@ -46,7 +46,7 @@ endif
 mkbin: mkbindir $(BINARY)
 
 $(BINARY): $(LD_LIBS)
-	$(LD) $(LD_FLAGS) $(LD_DIRS) $(LD_LIBS) $(MYSQL_LIBS) $(MISC_LIBS) -l$(MODULE_NAME) \
+	$(LD) $(LD_FLAGS) $(LD_DIRS) $(LD_LIBS) $(MYSQL_LIBS) $(MISC_LIBS) -l$(MODULE_NAME)$(DEBUG_SUFFIX) \
 		-o $@
 
 mkbindir:
@@ -74,8 +74,11 @@ env:
 	@echo LIBNAME	= $(LIBNAME)
 	@echo DEPS		= $(DEPS)
 	@echo EXENAME	= $(EXENAME)
+	@echo LD_LIBS  = $(LD_LIBS)
 	@echo MISC_LIBS= $(MISC_LIBS)
 	@echo ROOTLIBS = $(ROOTLIBS)
 	@echo VPATH		= $(VPATH)
+	@echo MODULE_NAME = $(MODULE_NAME)
+	@echo MODULES   = $(MODULES)
 
 
