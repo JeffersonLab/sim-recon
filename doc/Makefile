@@ -3,6 +3,7 @@
 
 all: clean
 	doxygen Doxyfile
+	cp htaccess .htaccess
 	
 	
 clean:
