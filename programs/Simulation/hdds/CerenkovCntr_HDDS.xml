@@ -26,33 +26,39 @@
   </composition>
 
   <composition name="cerenkovCntr" envelope="CERE">
-    <posXYZ volume="CGAS" X_Y_Z="0.0  0.0  0.0">
-    </posXYZ>
+     <posXYZ volume="CERI" X_Y_Z="0.0 0.0 27.23" />
+     <posXYZ volume="cerenkovDrum" X_Y_Z="0.0 0.0 132.0" />
+  </composition>
+  <composition name="cerenkovDrum" envelope="CGAS">
+     <mposPhi volume="CSEC" ncopy="16" Phi0="0.0" impliedRot="true">
+         <sector value="1" step="1" />
+     </mposPhi>
   </composition>
 
   <pcon name="CERE" material="Aluminum" comment="Cerenkov counter"
 		    parameters="cerenkovCntr_pars">
-    <polyplane Rio_Z="5.0  58.0   0.0" />
-    <polyplane Rio_Z="5.0  58.0  54.3" />
-    <polyplane Rio_Z="5.0 280.4  54.3" />
-    <polyplane Rio_Z="5.0 280.4 209.3" />
+     <polyplane Rio_Z="5.0  58.0   0.0" />
+     <polyplane Rio_Z="5.0  58.0  54.3" />
+     <polyplane Rio_Z="5.0 280.4  54.3" />
+     <polyplane Rio_Z="5.0 280.4 209.3" />
   </pcon>
-  <pcon name="CGAS" material="CerenkovGas" comment="Cerenkov gas volume"
-		    sensitive="true"	parameters="cerenkovCntr_pars">
-    <polyplane Rio_Z="5.1  57.9   0.06" />
-    <polyplane Rio_Z="5.1  57.9  54.4" />
-    <polyplane Rio_Z="5.1 280.3  54.4" />
-    <polyplane Rio_Z="5.1 280.3 209.2" />
-  </pcon>
+  <tubs name="CERI" material="CerenkovGas" Rio_Z="5.1  57.9  54.34"
+                    sensitive="true"       parameters="cerenkovCntr_pars"
+                                           comment="Cerenkov insert" />
+  <tubs name="CGAS" material="CerenkovGas" Rio_Z="5.1 280.3 154.8"
+		    sensitive="true"	   comment="Cerenkov gas volume" />
+  <tubs name="CSEC" material="CerenkovGas" Rio_Z="5.1 280.3 154.8"
+                    sensitive="true"       profile="-11.25 22.50"
+                                           comment="Cerenkov gas volume" />
 
   <parameters name="cerenkovCntr_pars" type="mcfast">
     <real 	name="Rmin"	value="5.0"
 				unit="cm"	/>
-    <real	name="Rmax"	value="95.0"
+    <real	name="Rmax"	value="58.0"
 				unit="cm"	/>
-    <real	name="zLength"	value="90.0"
+    <real	name="zLength"	value="209.0"
 				unit="cm"	/>
-    <real	name="zCenter"	value="455.0"
+    <real	name="zCenter"	value="511.0"
 				unit="cm"	/>
   </parameters>
 
@@ -64,15 +70,15 @@
     <string	name="name" 	value="Cerenkov" />
     <string	name="shape" 	value="BOX" 	comment="BOX only" />
     <int	name="type" 	value="2" 	comment="1=barrel, 2=forward" />
-    <real_array	name="xlimit"	values="-95.0  95.0" comment="x dimensions"
+    <real_array	name="xlimit"	values="-58.0  58.0" comment="x dimensions"
 				unit="cm"	/>
-    <real_array	name="ylimit"	values="-95.0  95.0" comment="y dimensions"
+    <real_array	name="ylimit"	values="-58.0  58.0" comment="y dimensions"
 				unit="cm"	/>
     <real_array	name="xlimit_gap" values="-5.0  5.0" comment="beam hole x"
 				unit="cm"	/>
     <real_array	name="ylimit_gap" values="-5.0  5.0" comment="beam hole y"
 				unit="cm"	/>
-    <real	name="z0"	value="460.5"	comment="z of midplane"
+    <real	name="z0"	value="511.5"	comment="z of midplane"
 				unit="cm"	/>
     <real	name="zlen"	value="1.0"	comment="thickness"
 				unit="cm"	/>

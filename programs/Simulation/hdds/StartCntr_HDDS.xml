@@ -6,7 +6,7 @@
 
      version 1.0: Initial version	-rtj
 
-     version 1.1: Fix some problems with the Vertex Detector -cam
+     version 1.1: Fix some problems with the start Detector -cam
                   Length and center were wrong in the previous version.
  
 <HDDS specification="v1.0"
@@ -19,7 +19,7 @@
          version     = "1.1"
          date        = "2005-01-26"
          author      = "R.T. Jones"
-         top_volume  = "VTXC"
+         top_volume  = "STRT"
          specification = "v1.0">
 
 
@@ -27,18 +27,29 @@
      of the sensitive region.                                             -->
 
   <composition name="StartCntr">
-    <posXYZ volume="VTXC" X_Y_Z="0.0  0.0  25.0">
+    <posXYZ volume="startCntr" X_Y_Z="0.0  0.0  25.0">
     </posXYZ>
-    <!--posXYZ volume="VTXP" X_Y_Z="0.0  0.0  55.0">
+    <!--posXYZ volume="STRP" X_Y_Z="0.0  0.0  55.0">
     </posXYZ-->
   </composition>
 
-  <tubs name="VTXC" Rio_Z="10.00  10.20 50.0" material="Scintillator"
+  <composition name="startCntr" envelope="STRT">
+     <mposPhi volume="STRC" ncopy="40" Phi0="0.0" R_Z="10.10  0.0"
+              impliedRot="true">
+         <sector value="1" step="1" />
+     </mposPhi>
+  </composition>
+
+  <tubs name="STRT" Rio_Z="10.00  10.30 50.0" unit_length="cm" material="Air"
+	parameters="startCntr_pars"     comment="start counter cylinder" />
+  <tubs name="STRS" Rio_Z="10.00  10.30 50.0" profile="-4.5  4.5"
+                    unit_length="cm"          unit_angle="deg"
+                    material="Air"      comment="start counter sector" />
+  <box  name="STRC" X_Y_Z="0.20  1.58  50.0" material="Scintillator"
+              	     sensitive="true"   comment="start counter stave"    />
+  <tubs name="STRP" Rio_Z="0.80  12.00  0.2" material="Scintillator"
 	parameters="startCntr_pars"	     sensitive="true"
-					comment="vertex counter cylinder" />
-  <tubs name="VTXP" Rio_Z="0.80  12.00  0.2" material="Scintillator"
-	parameters="startCntr_pars"	     sensitive="true"
-					comment="vertex counter endcap" />
+					comment="start counter endcap" />
 
   <parameters name="startCntr_pars" type="mcfast">
     <real       name="rmin"	value="10.00"	comment="inner radius"
@@ -91,7 +102,7 @@
 
   <mcfast model="Drift" template="db/drift.db" parameters="startCntr_pars">
     <int	name="num"	value="1"	/>
-    <string     name="name"	value="VTX"	/>
+    <string     name="name"	value="STRT"	/>
 
   <!-- for mcfast model the start counter as a vertex drift chamber -->
 
