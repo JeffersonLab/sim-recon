@@ -21,6 +21,8 @@ ifeq ($(OStype),Linux)
 		COPTS = -g
 		FOPTS = -g -Wno-globals
 		GLIBS	:= 
+		LINUXEXPORTDYNAMIC = -Wl,-export-dynamic
+		LINUXSTATIC = -Wl,-Bstatic
 	endif
 endif
 ifeq ($(OStype),OSF1)
@@ -33,7 +35,7 @@ ifeq ($(OStype),OSF1)
 	COPTS = -g -D_Tru64
 	FOPTS = -g -fpe4
 	LOPTS = -g -non_shared -fpe4
-	GLIBS 	:= -L/r5da/applications/gcc/lib/gcc-lib/alphaev5-dec-osf4.0f/2.95.3 -lg2c -lgcc
+	GLIBS 	:= -L/r5d1/applications/gcc3/lib/gcc-lib/alphaev5-dec-osf4.0f/ -lg2c -L/r5d1/applications/gcc3/lib/gcc-lib/alphaev5-dec-osf4.0f/3.3/ -lgcc
 endif
 
 HDDS = ../hdds
@@ -63,10 +65,10 @@ hdgeant++: gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXFIXED)
 	-o $@ gxint.o uginit.o uglast.o \
 	$(AUXF) $(AUXC) $(GXFIXED) $(STATIC) \
 	-Lgelhad -lgelhad $(XLIBS) $(GLIBS) \
-	-- -Wl,-export-dynamic
+	-- $(LINUXEXPORTDYNAMIC)
 
 hdgeant: hdgeant.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC)
-	$(F77) $(LOPTS) -o $@ -I$(CERN_ROOT)/include -Wl,-Bstatic \
+	$(F77) $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(LINUXSTATIC) \
 	 hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC) -Lgelhad -lgelhad \
 	`$(CERNLIB) geant321 mathlib graflib grafX11` \
 	$(NETLIB) $(XLIBS)
