@@ -1,21 +1,11 @@
 
 /// Base class for all Hall-D in-memory data containers.
-/// This is essentially a container class for holding
-/// lists of objects that actually hold the data. This
-/// could have been done using something like the STL
-/// vector class. However, we want to recycle the objects
-/// without constantly deleting and allocating memory.
 ///
-/// Memory allocation/deallocation can take significant
-/// CPU time. A test on a 1.9GHz Xenon showed about 120ns 
-/// per allocation/deallocation cycle. For a 5kb = 1250 word event,
-/// one can assume an average of 1000 containers being allocated/
-/// deallocated per event. This would result in 0.08ms per
-/// event. A 200 CPU farm processing data coming in at
-/// 200kHz will have about 1ms per event to make a Level-3
-/// analysis of the data. This would mean about 8% of the
-/// time would be spent in simply allocating/deallocating
-/// memory!
+/// This is essentially a container class for holding
+/// lists of objects that actually hold the data. It
+/// is designed so that it can hold the data itself or
+/// of course, a set of pointers to the data.
+
 
 #include <iostream>
 #include <iomanip>
@@ -37,18 +27,24 @@ class DContainer{
 		char *name;
 		
 		enum DContainer_Flags_t{
-			DCONTAINER_NULL			=0x00,
+			DCONTAINER_NULL	=0x00,
 			PERSISTANT			=0x01,
 			WRITE_TO_OUTPUT	=0x02
 		};
 		DContainer_Flags_t flags;
 		
 		DContainer(void** ptr,int my_rowsize, char *my_name){
-			container_ptr = ptr;
+			/// ptr can either be NULL, or can point to the location
+			/// where the array pointer should be kept. This allows
+			/// one to access the data through a mechanism external
+			/// to the DContainer class. If NULL is passed, the pointer
+			/// value is kept internally in a private member.
+			container_ptr = ptr==NULL ? &private_ptr:ptr;
 			*container_ptr = NULL;
+			nrows = 0;
 			maxrows = 0;
 			rowsize = my_rowsize;
-			name = strdup(my_name);
+			name = my_name==NULL ? (char*)"":strdup(my_name);
 			flags = DCONTAINER_NULL;
 		}
 		
@@ -83,6 +79,14 @@ class DContainer{
 			ptr += rowsize*(nrows-N);
 			return (void*)ptr;
 		}
+		
+		inline void ResetNrows(void){nrows=0;}
+		inline void* first(void){return (void*)*container_ptr;}
+		inline void* last(void){return (void*)(((char*)*container_ptr)+rowsize*(nrows-1));}
+		inline void* index(int idx){return (void*)(((char*)*container_ptr)+rowsize*idx);}
+
+	private:
+		void *private_ptr;
 };
 
 #endif // _DCONTAINER_H_
