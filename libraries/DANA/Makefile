@@ -1,3 +1,3 @@
 
-include $(HALLD_DIR)/src/BMS/Makefile.lib
+include $(HALLD_HOME)/src/BMS/Makefile.lib
 
