@@ -22,6 +22,7 @@ DEventSource::DEventSource(int narg, char *argv[])
 	sources = new char*[narg];
 	Nsources = 0;
 	source_type = EVENT_SOURCE_NONE;
+	for(int i=1;i<narg;i++)if(argv[i][0]!='-')sources[Nsources++] = strdup(argv[i]);
 	
 	Nevents_read = 0;
 	Nevents_read_total = 0;
@@ -31,6 +32,8 @@ DEventSource::DEventSource(int narg, char *argv[])
 	prate_period = 1;
 	prate_last_events = 0;
 	prate_last_rate = 0.0;
+	
+
 }
 
 //----------------
@@ -78,3 +81,39 @@ float DEventSource::GetRate(void)
 	return prate_last_rate;
 }
 
+//----------------
+// GuessSourceType
+//----------------
+DEventSource::EVENT_SOURCE_TYPE DEventSource::GuessSourceType(int narg, char *argv[])
+{
+	/// Returns the rate at which the events are being processed.
+	/// This could lag by as much as 1 prate_period from instantaneous.
+	return EVENT_SOURCE_NONE;
+}
+
+//----------------
+// Open
+//----------------
+derror_t DEventSource::Open(void)
+{
+	/// virtual function
+	return NOERROR;
+}
+
+//----------------
+// Close
+//----------------
+derror_t DEventSource::Close(void)
+{
+	/// virtual function
+	return NOERROR;
+}
+
+//----------------
+// GetEvent
+//----------------
+derror_t DEventSource::GetEvent(void)
+{
+	/// virtual function
+	return NOERROR;
+}
