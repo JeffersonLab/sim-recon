@@ -10,7 +10,7 @@
 #define _MYPROCESSOR_H_
 
 #include "DEventProcessor.h"
-
+#include "DMagneticFieldMap.h"
 class DQuickFit;
 
 #include <TPolyLine.h>
@@ -29,8 +29,8 @@ class MyProcessor:public DEventProcessor
 		MyProcessor();
 		~MyProcessor(){};
 	
-		derror_t init(void){};					///< Called once at program start.
-		derror_t brun(int runnumber){};		///< Called everytime a new run number is detected.
+		derror_t init(void);						///< Called once at program start.
+		derror_t brun(int runnumber);			///< Called everytime a new run number is detected.
 		derror_t evnt(int eventnumber);		///< Called every event.
 		derror_t erun(void){};					///< Called everytime run number changes, provided brun has been called.
 		derror_t fini(void){};					///< Called after last event of last event source has been processed.
@@ -42,6 +42,7 @@ class MyProcessor:public DEventProcessor
 		derror_t DrawTrack(DQuickFit *qf, int color);
 		derror_t DrawDetectors(void);
 
+		DMagneticFieldMap *Bfield;
 		int eventNo;
 		TMarker *hitMarkers[MAX_HIT_MARKERS];
 		int NhitMarkers;
