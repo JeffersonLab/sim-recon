@@ -18,15 +18,15 @@ hdgeant++.x:	gxint.o uginit.o uglast.o $(AUXS) $(GXFIXED)
 	gxint -g 321 -m -d Motif -o $@ $^
 
 hdgeant.x:	hdgeant.F uginit.F uglast.F $(AUXS)
-	f77 $(FOPTS) -o $@ -I/cern/pro/src/geant321 $^ \
+	f77 $(FOPTS) -o $@ -I$(CERN_ROOT)/src/geant321 $^ \
 	    -L${CERN_ROOT}/lib -lgeant321\
 	    -lpawlib -lgraflib -lgrafX11 -lpacklib -lmathlib \
 	    $(NETLIB) $(XLIBS)
 .f.o:
-	f77 $(FOPTS) -I/cern/pro/src/geant321 -c -o $@ $^
+	f77 $(FOPTS) -I$(CERN_ROOT)/src/geant321 -c -o $@ $^
 
 .F.o:
-	f77 $(FOPTS) -I/cern/pro/src/geant321 -DCERNLIB_MOTIF -c -o $@ $^
+	f77 $(FOPTS) -I$(CERN_ROOT)/src/geant321 -DCERNLIB_MOTIF -c -o $@ $^
 
 hddsGeant3.f:
 	$(HDDS)/hdds-geant $(HDDS)/main_HDDS.xml >hddsGeant3.f
