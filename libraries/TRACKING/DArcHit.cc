@@ -81,7 +81,11 @@ float DArcHit::Density(float x, float y)
 {
 	float d2 = Dist2ToLine(x,y);
 
-	return exp(-d2*d2/1.0);
+	float d = sqrt(d2);
+	float frac = (5.0 - d)/5.0;
+	return frac<0.0 ? 0.0:frac;
+
+	//return exp(-d2*d2/1.0);
 }
  
 //--------------
@@ -161,7 +165,7 @@ derror_t DArcHit::FillArcDensityHistogram(TH2F *density)
 			break;
 		case 1:
 		case 3:
-			cout<<__FILE__<<":"<<__LINE__<<" Odd number of borde crossings. This should NEVER happen!"<<endl;
+			cout<<__FILE__<<":"<<__LINE__<<" Odd number of border crossings. This should NEVER happen!"<<endl;
 			break;
 		case 2:
 			// This is what SHOULD happen.
@@ -175,7 +179,7 @@ derror_t DArcHit::FillArcDensityHistogram(TH2F *density)
 	// The key thing here is that the inner loop will loop over a fixed
 	// and small number of bins so it needs to be in the direction
 	// most perpendicular to the line (either x or y).
-	float spanwidth = 10.0; // in cm
+	float spanwidth = 4.0; // in cm
 	if(orientation==Y_OF_X){
 		// line has shallow slope.
 		// histogram will be filled for spanbins bins on either
