@@ -2,6 +2,12 @@
 * $Id$
 *
 * $Log$
+* Revision 1.9  2003/01/02 23:49:33  jonesrt
+* - included updates in gustep.F with conditional code for background
+*   studies, by R. Jones and C. Gauthier [rtj]
+* - moved the beam origin a meter upstream in gukine.F to make room for
+*   additional shielding in the collimator cave [rtj]
+*
 * Revision 1.8  2001/12/19 02:34:55  jonesrt
 * Fixed the names of sensitive volumes in the save-hits section of gustep.F,
 * also added support for the r="float" parameter of <cdcPoint> in hitCDC.c.
@@ -65,6 +71,7 @@
 *     -----------------------------------------------------------------
 *
 
+
 * #define BACKGROUND_STUDIES 1
 
 #ifdef BACKGROUND_STUDIES
@@ -88,6 +95,85 @@
       real xin(4),xout(4),pin(5),pout(5),dEsum
       save xin,xout,pin,pout,dEsum
 
+#ifdef BACKGROUND_PROFILING
+      integer det
+      real vertx(3),tofgx,ubuf(99),xint(999,3)
+      integer ntbeamx,nttargx,nubuf,mint
+      save ubuf,xint,det,mint
+      integer iorder(999)
+      save iorder
+      
+      logical hexist
+      external hexist   
+      integer id1, id2, id3
+#endif
+      
+#ifdef BACKGROUND_PROFILING
+********************************************************************************
+*   The following defines an ntuple containing information on particle type  
+*   energy, position, polarization, and at what virtual detector the 
+*   particle passes through. the last colume entry is defined by a integer 
+*   'det' whose value is the number of the detector the particle passes 
+*   through.  The xint(igen,icomp) array records the vertex history of the
+*   interaction sequence leading to the detected particle, igen=1...mint.
+********************************************************************************
+
+**********   assignment of the value of 'det' to a particle   ******************
+    
+      if (cnames(nlevel).eq.'DET1') then
+        det = 1
+      elseif (cnames(nlevel).eq.'DET2') then
+        det = 2
+      elseif (cnames(nlevel).eq.'DET3') then
+        det = 3
+      elseif (cnames(nlevel).eq.'DET4') then
+        det = 4
+      elseif (cnames(nlevel).eq.'DET5') then
+        det = 5
+      elseif (cnames(nlevel).eq.'DET6') then
+        det = 6
+      elseif (cnames(nlevel).eq.'DET7') then
+        det = 7
+      else
+        det = 0
+      endif
+
+**********************      Defintion of ntuple     ****************************
+      
+      if (inwvol.eq.1.and.det.eq.7.and.
+     +    ((ipart.eq.2).or.(ipart.eq.3)).and.
+          (vect(1)**2+vect(2)**2).gt.25.0) then
+        call gfvert(1,vertx,ntbeamx,nttargx,tofgx,ubuf,nubuf)
+        if (.not.hexist(10)) then
+          call hbnt(10,'New Ntuple',' ')
+          call hbname(10,'hits',gekin,'totE:r')
+          call hbname(10,'hits',vect,'x(7):r')
+          call hbname(10,'hits',ubuf,'ppol:r')
+          call hbname(10,'hits',ipart,'ptype:i')
+          call hbname(10,'hits',det,'det:i')
+          call hbname(10,'hits',mint,'mint[0,999]:i')
+          call hbname(10,'hits',xint,'xint(3,mint):r')
+        endif  
+        call hfnt(10)
+      endif
+      if (nstep.eq.0) then
+        if (istak.eq.0) then
+          mint = 0
+        else
+          do while (mint.gt.0.and.iorder(mint).gt.istak)
+            mint = mint-1
+          enddo
+          mint = mint+1
+          iorder(mint) = istak
+          xint(mint,1) = vect(1)
+          xint(mint,2) = vect(2)
+          xint(mint,3) = vect(3)
+        endif
+      endif
+
+********************************************************************************
+#endif
+ 
       CALL GDEBUG
 
 * Place any secondaries generated during this step onto the stack

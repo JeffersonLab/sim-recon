@@ -2,6 +2,12 @@
 * $Id$
 *
 * $Log$
+* Revision 1.10  2003/01/02 23:49:33  jonesrt
+* - included updates in gustep.F with conditional code for background
+*   studies, by R. Jones and C. Gauthier [rtj]
+* - moved the beam origin a meter upstream in gukine.F to make room for
+*   additional shielding in the collimator cave [rtj]
+*
 * Revision 1.9  2002/07/10 14:57:18  jonesrt
 * - fixed wierd problem with g77 compiler that wanted to interpret "slash star"
 *   in a fortran comment line as a comment indicator a-la-c (complained about
@@ -92,7 +98,7 @@
       real xMinimum,Theta02,CollimPos
       parameter (xMinimum=1e-2)
       parameter (Theta02=1.8)
-      parameter (CollimPos=-2100.0)
+      parameter (CollimPos=-2200.0)
 *
 *     -----------------------------------------------------------------
 *
