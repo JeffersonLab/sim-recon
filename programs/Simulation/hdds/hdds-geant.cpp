@@ -514,6 +514,7 @@ Refsys::Refsys()			// empty constructor
 {
    fMother = 0;
    fMagField = 0;
+   fIdentifiers = 0;
    this->reset();
 }
 
@@ -521,7 +522,6 @@ Refsys::Refsys(const Refsys& src)	// copy constructor
 {
    reset(src);
    fMother = src.fMother;
-   fRotation = src.fRotation;
    fMagField = src.fMagField;
    fIdentifiers = src.fIdentifiers;
    for (int i = 0; i < fIdentifiers; i++)
