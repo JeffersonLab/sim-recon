@@ -115,6 +115,7 @@ hddm_s.h:
 install: all
 	mv ascii2stdhep   $(HALLD_HOME)/bin/$(UNAME)/.  
 	mv stdhep2ascii    $(HALLD_HOME)/bin/$(UNAME)/.  
+	mv stdhep2hddm    $(HALLD_HOME)/bin/$(UNAME)/.  
 
 clean:
 	rm -f *.o
