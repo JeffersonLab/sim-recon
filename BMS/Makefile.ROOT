@@ -1,6 +1,6 @@
 
 ROOTCFLAGS   := $(shell root-config --cflags)
-ROOTLIBS     := $(shell root-config --libs)
+ROOTLIBS     := $(shell root-config --glibs)
 ROOTGLIBS    := $(shell root-config --glibs)
 ROOTINC      := $(shell root-config --incdir)
 
