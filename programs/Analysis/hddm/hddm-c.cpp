@@ -281,11 +281,11 @@ void writeHeader(DOMElement* el)
       }
       else if (typeS.equals("string"))
       {
-         hFile << "   const char*          " << S(nameS) << ";" << endl;
+         hFile << "   char*                " << S(nameS) << ";" << endl;
       }
       else if (typeS.equals("anyURI"))
       {
-         hFile << "   const char*          " << S(nameS) << ";" << endl;
+         hFile << "   char*                " << S(nameS) << ";" << endl;
       }
       else if (typeS.equals("Particle_t"))
       {
@@ -413,8 +413,8 @@ void constructMakeFuncs()
                << "   int size = sizeof(" << listType
                << ") + rep * sizeof(" << simpleType << ");"	<< endl
                << "   " << listType
-               << "* p = CALLOC(size,\""
-               << listType << "\");"			<< endl;
+               << "* p = (" << listType << "*)CALLOC(size,\""
+               << listType << "\");"				<< endl;
       }
       else
       {
@@ -430,7 +430,8 @@ void constructMakeFuncs()
          cFile << "()"	 					<< endl
                << "{"						<< endl
                << "   int size = sizeof(" << simpleType << ");"	<< endl
-               << "   " << simpleType << "* p = CALLOC(size,\""
+               << "   " << simpleType << "* p = "
+               << "(" << simpleType << "*)CALLOC(size,\""
                << simpleType << "\");"				<< endl;
       }
       cFile << "   return p;"					<< endl
@@ -543,8 +544,26 @@ void constructUnpackers()
          }
 	 else if (typeS.equals("long"))
          {
-            cFile << "         xdr_longlong_t(xdrs,&this1->"
-	          << nameStr << ");"				 << endl;
+            cFile << "#if defined XDR_LONGLONG_INTRINSIC"	 << endl
+                  << "         xdr_longlong_t(xdrs,&this1->"
+	          << nameStr << ");"				 << endl
+                  << "#else"					 << endl
+                  << "         {"				 << endl
+                  << "            int* " << nameStr << "_ = "
+                  << "(int*)&this1->" << nameStr << ";"		 << endl
+                  << "# if __BIG_ENDIAN__"			 << endl
+                  << "            xdr_int(xdrs,&"
+                  << nameStr << "_[0]);"			 << endl
+                  << "            xdr_int(xdrs,&"
+                  << nameStr << "_[1]);"			 << endl
+                  << "# else"					 << endl
+                  << "            xdr_int(xdrs,&"
+                  << nameStr << "_[1]);"			 << endl
+                  << "            xdr_int(xdrs,&"
+                  << nameStr << "_[0]);"			 << endl
+                  << "# endif"					 << endl
+                  << "         }"				 << endl
+                  << "#endif"					 << endl;
          }
          else if (typeS.equals("float"))
          {
@@ -629,7 +648,7 @@ void constructReadFunc(DOMElement* topEl)
 	 << "#define HDDM_STREAM_OUTPUT -92"				<< endl
            								<< endl
 	 << "struct popNode_s {"					<< endl
-         << "   void* (*unpacker)();"					<< endl
+         << "   void* (*unpacker)(XDR*, struct popNode_s*);"		<< endl
          << "   int inParent;"						<< endl
          << "   int popListLength;"					<< endl
          << "   struct popNode_s* popList[" << MAX_POPLIST_LENGTH << "];"
@@ -761,36 +780,61 @@ void constructPackers()
          }
          if (typeS.equals("int"))
          {
-            cFile << "      xdr_int(xdrs,&this1->" << nameStr << ");"	<< endl;
+            cFile << "      xdr_int(xdrs,&this1->"
+                  << nameStr << ");"				 << endl;
          }
          if (typeS.equals("long"))
          {
-            cFile << "      xdr_longlong_t(xdrs,&this1->" << nameStr << ");"
-	       								<< endl;
+            cFile << "#if defined XDR_LONGLONG_INTRINSIC"	 << endl
+                  << "         xdr_longlong_t(xdrs,&this1->"
+	          << nameStr << ");"				 << endl
+                  << "#else"					 << endl
+                  << "         {"				 << endl
+                  << "            int* " << nameStr << "_ = "
+                  << "(int*)&this1->" << nameStr << ";"		 << endl
+                  << "# if __BIG_ENDIAN__"			 << endl
+                  << "            xdr_int(xdrs,&"
+                  << nameStr << "_[0]);"			 << endl
+                  << "            xdr_int(xdrs,&"
+                  << nameStr << "_[1]);"			 << endl
+                  << "# else"					 << endl
+                  << "            xdr_int(xdrs,&"
+                  << nameStr << "_[1]);"			 << endl
+                  << "            xdr_int(xdrs,&"
+                  << nameStr << "_[0]);"			 << endl
+                  << "# endif"					 << endl
+                  << "         }"				 << endl
+                  << "#endif"					 << endl;
          }
          else if (typeS.equals("float"))
          {
-            cFile << "      xdr_float(xdrs,&this1->" << nameStr << ");"	<< endl;
+            cFile << "      xdr_float(xdrs,&this1->"
+                  << nameStr << ");"				 << endl;
          }
          else if (typeS.equals("double"))
          {
-            cFile << "      xdr_double(xdrs,&this1->" << nameStr << ");" << endl;
+            cFile << "      xdr_double(xdrs,&this1->" 
+                  << nameStr << ");" 				 << endl;
          }
          else if (typeS.equals("boolean"))
          {
-            cFile << "      xdr_bool(xdrs,&this1->" << nameStr << ");"	<< endl;
+            cFile << "      xdr_bool(xdrs,&this1->"
+                  << nameStr << ");"				 << endl;
          }
          else if (typeS.equals("Particle_t"))
          {
-            cFile << "      xdr_int(xdrs,(int*)&this1->" << nameStr << ");" << endl;
+            cFile << "      xdr_int(xdrs,(int*)&this1->"
+                  << nameStr << ");"  				 << endl;
          }
          else if (typeS.equals("string"))
          {
-            cFile << "      xdr_string(xdrs,&this1->" << nameStr << ");" << endl;
+            cFile << "      xdr_string(xdrs,&this1->" 
+                  << nameStr << ", 1000000);"			 << endl;
          }
          else if (typeS.equals("anyURI"))
          {
-            cFile << "      xdr_string(xdrs,&this1->" << nameStr << ");" << endl;
+            cFile << "      xdr_string(xdrs,&this1->" 
+                  << nameStr << ", 1000000);" 			 << endl;
          }
          else
          {
@@ -884,9 +928,9 @@ void constructFlushFunc(DOMElement* el)
          << "   }"						<< endl
          << "   else if (fp == 0)"				<< endl
          << "   {"						<< endl
-	 << "      XDR* xdrs = malloc(sizeof(XDR));"		<< endl
+	 << "      XDR* xdrs = (XDR*)malloc(sizeof(XDR));"	<< endl
 	 << "      int max_buffer_size = 1000000;"		<< endl
-	 << "      char* dump = malloc(max_buffer_size);"	<< endl
+	 << "      char* dump = (char*)malloc(max_buffer_size);"<< endl
 	 << "      xdrmem_create(xdrs,dump,max_buffer_size,XDR_ENCODE);"
 	 							<< endl
 	 << "      pack_" << topT << "(xdrs,this1);"		<< endl
@@ -978,7 +1022,8 @@ void writeMatcher()
 	 << "      if "
 	 << "((clevel == blevel) && (strcmp(ctag,btag) == 0))"	<< endl
 	 << "      {"						<< endl
-         << "         popNode* this1 = malloc(sizeof(popNode));" << endl
+         << "         popNode* this1 = "
+         << "(popNode*)malloc(sizeof(popNode));"		<< endl
 	 << "         int len = index(c+1,'\\n') - c;"		<< endl
 	 << "         if (strncmp(c,b,len) != 0)"		<< endl
 	 << "         {"					<< endl
@@ -1018,7 +1063,8 @@ void writeMatcher()
       cFile << "(strcmp(btag,\"" << S(tagS) << "\") == 0)"	<< endl
             << "         {"					<< endl
 	    << "            this1->unpacker = "
-	    << "(void*) unpack_" << tagT << ";"			<< endl
+	    << "(void*(*)(XDR*,popNode*))"
+            << "unpack_" << tagT << ";"				<< endl
             << "         }"					<< endl;
    }
 
@@ -1080,6 +1126,7 @@ void constructOpenFunc(DOMElement* el)
 	 << "open_" << tagT << "(char* filename)"		<< endl
 	 << "{"							<< endl
 	 << "   " << classPrefix << "_iostream_t* fp = "
+	 << "(" << classPrefix << "_iostream_t*)"
 	 << "malloc(sizeof(" << classPrefix << "_iostream_t));"	<< endl
 	 << "   char* p;"					<< endl
 	 << "   char* head;"					<< endl
@@ -1097,7 +1144,7 @@ void constructOpenFunc(DOMElement* el)
 	 << "      return 0;"					<< endl
 	 << "   }"						<< endl
 	 << "   fp->iomode = HDDM_STREAM_INPUT;"		<< endl
-	 << "   head = malloc(1000000);"			<< endl
+	 << "   head = (char*)malloc(1000000);"			<< endl
 	 << "   *head = 0;"					<< endl
 	 << "   for (p = head;"					<< endl
 	 << "        strstr(head,\"</HDDM>\") == 0;"		<< endl
@@ -1122,9 +1169,10 @@ void constructOpenFunc(DOMElement* el)
 	 << "      fprintf(stderr,\"  Please recompile.\\n\");"	<< endl
 	 << "      exit(9);"					<< endl
 	 << "   }"						<< endl
-	 << "   fp->filename = malloc(strlen(filename) + 1);"	<< endl
+	 << "   fp->filename = "
+         << "(char*)malloc(strlen(filename) + 1);"		<< endl
 	 << "   strcpy(fp->filename,filename);"			<< endl
-	 << "   fp->xdrs = malloc(sizeof(XDR));"		<< endl
+	 << "   fp->xdrs = (XDR*)malloc(sizeof(XDR));"		<< endl
          << "   xdrstdio_create(fp->xdrs,fp->fd,XDR_DECODE);"	<< endl
 	 << "   return fp;"					<< endl
 	 << "}"							<< endl;
@@ -1151,6 +1199,7 @@ void constructInitFunc(DOMElement* el)
 	 << "   int len;"					<< endl	
 	 << "   char* head;"					<< endl
 	 << "   " << classPrefix << "_iostream_t* fp = "
+	 << "(" << classPrefix << "_iostream_t*)"
 	 << "malloc(sizeof(" << classPrefix << "_iostream_t));"	<< endl
          << "   if (filename)"					<< endl
          << "   {"						<< endl
@@ -1168,7 +1217,7 @@ void constructInitFunc(DOMElement* el)
 	 << "   fp->iomode = HDDM_STREAM_OUTPUT;"		<< endl
 	 << "   len = strlen(HDDM_" 
 	 << classPrefix << "_DocumentString);"			<< endl
-	 << "   head = malloc(len+1);"				<< endl
+	 << "   head = (char*)malloc(len+1);"			<< endl
 	 << "   strcpy(head,HDDM_"
 	 << classPrefix << "_DocumentString);"			<< endl
 	 << "   if (fwrite(head,1,len,fp->fd) != len)"		<< endl
@@ -1178,10 +1227,11 @@ void constructInitFunc(DOMElement* el)
 	 << "      fprintf(stderr,\"output file %s\\n\",filename);" << endl
 	 << "      exit(9);"					<< endl
 	 << "   }"						<< endl
-	 << "   fp->filename = malloc(strlen(filename) + 1);"	<< endl
+	 << "   fp->filename = "
+         << "(char*)malloc(strlen(filename) + 1);"		<< endl
 	 << "   strcpy(fp->filename,filename);"			<< endl
          << "   fp->popTop = 0;"				<< endl
-	 << "   fp->xdrs = malloc(sizeof(XDR));"		<< endl
+	 << "   fp->xdrs = (XDR*)malloc(sizeof(XDR));"		<< endl
          << "   xdrstdio_create(fp->xdrs,fp->fd,XDR_ENCODE);"	<< endl
 	 << "   free(head);"					<< endl
 	 << "   return fp;"					<< endl

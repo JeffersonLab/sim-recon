@@ -14,6 +14,9 @@ endif
 ifeq ($(OStype),OSF1)
 	CPP	:= /usr/bin/g++ -g -DBASENAME_USE_BUILTIN
 endif
+ifeq ($(OStype),Darwin)
+	CPP	:= /usr/bin/g++ -g -DBASENAME_IN_LIBGEN
+endif
 ifeq ($(OStype),SunOS)
 	CPP	:= CC -g -DBASENAME_IN_LIBGEN
 	LIBXDR  := -lnsl
@@ -39,6 +42,13 @@ hddm-c: hddm-c.cpp XString.o XParsers.o
 
 hddmcat: hddmcat.cpp
 	$(CPP) -o $@ $^
+
+test: hddm-c hddm-xml test.xml
+	./hddm-c test.xml
+	$(CPP) -I../include -I$(XERCESCROOT)/include -o testhddm \
+		testhddm.cpp hddm_v.c
+	./testhddm
+	hddm-xml test.hddm
 
 %.xsd: %.xml hddm-schema.xsl
 	./hddm-schema $< >$@

@@ -134,7 +134,18 @@ void constructXML(XDR* xdrs, DOMElement* el, int depth)
 	 else if (typeS.equals("long"))
          {
             long long value;
+#if defined XDR_LONGLONG_INTRINSIC
 	    xdr_longlong_t(xdrs,&value);
+#else
+            int* ival = (int*)&value;
+# if __BIG_ENDIAN__
+	    xdr_int(xdrs,&ival[0]);
+	    xdr_int(xdrs,&ival[1]);
+# else
+	    xdr_int(xdrs,&ival[0]);
+	    xdr_int(xdrs,&ival[1]);
+# endif
+#endif
             sprintf(attrStr," %s=\"%lld\"",S(nameS),value);
          }
          else if (typeS.equals("float"))
@@ -149,7 +160,7 @@ void constructXML(XDR* xdrs, DOMElement* el, int depth)
 	    xdr_double(xdrs,&value);
             sprintf(attrStr," %s=\"%g\"",S(nameS),value);
          }
-         else if (typeS.equals("bool"))
+         else if (typeS.equals("boolean"))
          {
             bool_t value;
 	    xdr_bool(xdrs,&value);

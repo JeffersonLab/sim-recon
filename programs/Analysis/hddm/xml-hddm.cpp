@@ -175,7 +175,18 @@ void outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
       {
          long long val;
          sscanf(S(valueS),"%lld",&val);
+#if defined XDR_LONGLONG_INTRINSIC
          xdr_longlong_t(xdrs,&val);
+#else
+         int* ival = (int*)&val;
+# if __BIG_ENDIAN__
+         xdr_int(xdrs,&ival[0]);
+         xdr_int(xdrs,&ival[1]);
+# else
+         xdr_int(xdrs,&ival[1]);
+         xdr_int(xdrs,&ival[0]);
+# endif
+#endif
       }
       else if (typeS.equals("float"))
       {
@@ -189,7 +200,7 @@ void outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
          sscanf(S(valueS),"%Lg",&val);
          xdr_double(xdrs,&val);
       }
-      else if (typeS.equals("bool"))
+      else if (typeS.equals("boolean"))
       {
          int val;
          sscanf(S(valueS),"%d",&val);
