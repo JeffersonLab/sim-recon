@@ -782,13 +782,14 @@ int setMass(struct particleMC_t *Isobar)
       
       
       /* cut off the tails */
-      hcut= Isobar->mass + 4.0*Isobar->width ;
-      lcut= Isobar->mass - 4.0*Isobar->width ;
+      hcut= Isobar->bookmass + 4.0*Isobar->width ;
+      lcut= Isobar->bookmass - 4.0*Isobar->width ;
+      
       if(hightail> hcut)
 	hightail=hcut;
       if(lowtail < lcut)
 	lowtail= lcut;
-
+      
 
       do{
 	n=randm(0.0,0.9999);

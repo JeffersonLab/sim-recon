@@ -42,7 +42,7 @@ FOBJ =${FSRC:.F=.o}
 OBJS= $(patsubst %.c,$(OBJDIR)/%.o,$(SRCS))
 
 $(PROGRAM): $(OBJS)
-	$(CC) -v -o $@ $(CDBG) $(FINCLUDE) $^ $(FOBJ) $(LIBS)
+	$(CC) -v  -o $@ $(CDBG) $(FINCLUDE) $^ $(FOBJ) $(LIBS)
 
 install: genr8
 	mv -f genr8 $(TOP_DIR)/bin/$(OS_NAME)
