@@ -159,6 +159,7 @@ class Refsys
    DOMElement* fMother;		// current mother volume element
    int fMagField;		// flag indicating magnetic field
    double fOrigin[3];		// x,y,z coordinate of volume origin (cm)
+   double fPhiOffset;		// azimuthal angle of volume origin (deg)
    double fRmatrix[3][3];	// rotation matrix (daughter -> mother)
    int fRotation;		// unique Rmatrix flag
 
@@ -237,160 +238,6 @@ void rootMacroTrailer()
        << "gGeoManager->SetVisLevel(9);" << endl
        << "HALL->Raytrace();" << endl
        << "}" << endl;
-}
-
-void fortranGetfunc(DOMElement* el, char* ident)
-{
-   int* start = new int[Refsys::fVolumes + 1];
-   int* table = new int[999999];
-   int tableLength = 0;
-
-   char funcName[40];
-   sprintf(funcName, "get%s", ident);
-   funcName[3] = toupper(funcName[3]);
-   XString identS(ident);
-   XString wildS("*");
-   DOMNodeList* alltagsList = el->getOwnerDocument()
-                                ->getElementsByTagName(X(wildS));
-   for (int itag = 0; itag < alltagsList->getLength(); itag++)
-   {
-      DOMNode* node = alltagsList->item(itag);
-      DOMElement* elem = (DOMElement*) node;
-      XString icopyAttS("Geant3icopy");
-      XString ivoluAttS("Geant3ivolu");
-      XString icopyS(elem->getAttribute(X(icopyAttS)));
-      XString ivoluS(elem->getAttribute(X(ivoluAttS)));
-      if (ivoluS != 0)
-      {
-         int ivolu = atoi(S(ivoluS));
-         int icopy = atoi(S(icopyS));
-         XString idlistS(elem->getAttribute(X(identS)));
-         if (idlistS != 0)
-         {
-            XString spaceS(" ");
-            XMLStringTokenizer picker(X(idlistS),X(spaceS));
-            start[ivolu] = tableLength + 1;
-            XString idS;
-            for (idS = picker.nextToken(); idS != 0; idS = picker.nextToken())
-            {
-               table[tableLength++] = atoi(S(idS));
-               --icopy;
-            }
-            for (; icopy > 0; --icopy)
-            {
-               table[tableLength++] = 0;
-            }
-         }
-         else
-         {
-            start[ivolu] = 0;
-         }
-      }
-   }
-
-   cout << endl
-      << "      function " << funcName << "()" << endl
-      << "      implicit none" << endl
-      << "      integer " << funcName << endl
-      << "      integer nlevel,names,number,lvolum" << endl
-      << "      common /gcvolu/nlevel,names(15),number(15),lvolum(15)"
-      << endl;
-
-   if (tableLength > 0)
-   {
-     cout  << "      integer i,istart(" << Refsys::fVolumes << ")" << endl;
-
-      for (int i = 0; i < Refsys::fVolumes;)
-      {
-         char str[16];
-         if (i % 100 == 0)
-         {
-            int ilimit = i + 100;
-            ilimit = (ilimit > Refsys::fVolumes)? Refsys::fVolumes : ilimit;
-           cout   << "      data (istart(i),i=" << i + 1 << "," << ilimit
-	         << ") /" << endl;
-         }
-         if (i % 10 == 0)
-         {
-	   cout << "     + ";
-         }
-         sprintf(str, "%5d", start[++i]);
-         cout << str;
-         if (i == Refsys::fVolumes)
-         {
-	   cout << "/" << endl;
-         }
-         else if (i % 100 == 0)
-         {
-           cout << "/" << endl;
-         }
-         else if (i % 10 == 0)
-         {
-	   cout << "," << endl;
-         }
-         else
-         {
-            cout << ",";
-         }
-      }
-
-      cout << "      integer lookup(" << tableLength << ")" << endl;
-
-      for (int i = 0; i < tableLength;)
-      {
-         char str[16];
-         if (i % 100 == 0)
-         {
-            int ilimit = i + 100;
-            ilimit = (ilimit > tableLength)? tableLength : ilimit;
-            cout   << "      data (lookup(i),i=" << i + 1 << "," << ilimit
-                   << ") /" << endl;
-         }
-         if (i % 10 == 0)
-         {
-            cout << "     + ";
-         }
-         sprintf(str, "%5d", table[i++]);
-         cout << str;
-         if (i == tableLength)
-         {
-            cout << "/" << endl;
-         }
-         else if (i % 100 == 0)
-         {
-            cout << "/" << endl;
-         }
-         else if (i % 10 == 0)
-         {
-            cout << "," << endl;
-         }
-         else
-         {
-            cout << ",";
-         }
-      }
-
-      cout << "      integer level,index" << endl
-           << "      integer " << ident << endl
-           << "      " << funcName << " = 0" << endl
-           << "      do level=1,nlevel" << endl
-           << "        index = istart(lvolum(level))" << endl
-           << "        if (index.gt.0) then" << endl
-           << "          " << ident
-           << " = lookup(index + number(level) - 1)" << endl
-           << "          if (" << ident << ".gt.0) then" << endl
-           << "            " << funcName << " = " << ident << endl
-           << "          endif" << endl
-           << "        endif" << endl
-           << "      enddo" << endl;
-   }
-   else
-   {
-      cout << "      " << funcName << " = 0" << endl;
-   }
-   cout << "      end" << endl;
-   delete [] table;
-   delete [] start;
 }
 
 int main(int argC, char* argV[])
@@ -477,18 +324,6 @@ int main(int argC, char* argV[])
       rootMacroHeader();
       mrs.createVolume(rootEl);
       rootMacroTrailer();
-
-      if (mrs.fIdentifierList != 0)
-      {
-         char* identStr;
-         char* save_ptr;
-         for (identStr = strtok_r(mrs.fIdentifierList, " ", &save_ptr);
-              identStr != 0;
-              identStr = strtok_r(NULL, " ", &save_ptr))
-         {
-	   //fortranGetfunc(rootEl, identStr);
-         }
-      }
    }
 
    XMLPlatformUtils::Terminate();
@@ -607,8 +442,6 @@ DOMDocument* buildDOMDocument(const char* xmlFile)
       return 0;
    }
 
-   XString badAttS("CDSI");
-   DOMElement* targ = doc->getElementById(X(badAttS));
    return doc;
 }
 
@@ -706,6 +539,7 @@ Refsys::Refsys()			// empty constructor
 {
    fMother = 0;
    fMagField = 0;
+   fPhiOffset = 0;
    fIdentifiers = 0;
    this->reset();
 }
@@ -715,6 +549,7 @@ Refsys::Refsys(const Refsys& src)	// copy constructor
    reset(src);
    fMother = src.fMother;
    fMagField = src.fMagField;
+   fPhiOffset = src.fPhiOffset;
    fIdentifiers = src.fIdentifiers;
    for (int i = 0; i < fIdentifiers; i++)
    {
@@ -1692,7 +1527,7 @@ int Refsys::createVolume(DOMElement* el)
       myRef.fMagField = 3;
    }
 
-   DOMElement* env;
+   DOMElement* env = 0;
    DOMDocument* document = el->getOwnerDocument();
    XString envAttS("envelope");
    XString envS(el->getAttribute(X(envAttS)));
@@ -1925,13 +1760,9 @@ int Refsys::createVolume(DOMElement* el)
                   double phi1, dphi1;
                   sscanf(S(profS), "%lf %lf", &phi1, &dphi1);
                   getConversions(targEnv, tocm, todeg);
-                  double phiShift = phi1 + dphi1/2;
-                  phi0 += phiShift * todeg;
-                  phi1 -= phiShift;
-                  char pStr[80];
-                  sprintf(pStr, "%lf %lf", phi1, dphi1);
-                  XString pS(pStr);
-                  targEnv->setAttribute(X(profAttS),X(pS));
+                  double phiOffset = (phi1 + dphi1/2) * todeg;
+		  drs.fPhiOffset = phiOffset * (M_PI/180);
+                  phi0 += phiOffset;
                }
                int iaxis = 2;
                drs.createDivision(divStr, ncopy, iaxis, phi0 - dphi/2, dphi);
@@ -2222,8 +2053,9 @@ int Refsys::createVolume(DOMElement* el)
                XString rphiAttS("R_Phi");
                XString rphiS(contEl->getAttribute(X(rphiAttS)));
                sscanf(S(rphiS), "%lf %lf", &r, &phi);
-               x = r * cos(phi * torad);
-               y = r * sin(phi * torad);
+	       phi *= torad;
+               x = r * cos(phi);
+               y = r * sin(phi);
             }
             XString sAttS("S");
             XString sS(contEl->getAttribute(X(sAttS)));
@@ -2303,6 +2135,23 @@ int Refsys::createVolume(DOMElement* el)
       }
       else
       {
+         XString profAttS("profile");
+         XString profS(el->getAttribute(X(profAttS)));
+         if (profS != 0)
+         {
+            double phi0, dphi;
+	    double tocm, todeg;
+            sscanf(S(profS), "%lf %lf", &phi0, &dphi);
+            getConversions(el, tocm, todeg);
+	    if ( (myRef.fOrigin[0] == 0) && (myRef.fOrigin[1] == 0) )
+	    {
+               phi0 -= myRef.fPhiOffset*(180/M_PI)/todeg;
+	    }
+            char pStr[80];
+            sprintf(pStr, "%lf %lf", phi0, dphi);
+            XString pS(pStr);
+            el->setAttribute(X(profAttS),X(pS));
+	 }
          myRef.createSolid(el);
          icopy = 0;
       }
