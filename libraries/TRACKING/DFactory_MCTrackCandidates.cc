@@ -65,6 +65,7 @@ derror_t DFactory_MCTrackCandidates::evnt(int eventnumber)
 	MCCheatHit_t *mccheathit = (MCCheatHit_t*)mccheathits->first();
 	Narchits = 0;
 	for(int i=0;i<mccheathits->nrows;i++, mccheathit++){
+		if(Narchits>=300)break;
 	
 		if(mccheathit->system!=1 && mccheathit->system!=2)continue;
 		float x = mccheathit->r*cos(mccheathit->phi);
