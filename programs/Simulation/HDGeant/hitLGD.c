@@ -92,7 +92,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
       else
       {
          fprintf(stderr,"HDGeant error in hitforwardEMcal: ");
-         fprintf(stderr,"maximum hit count %d exceeded, quitting!\n",MAX_HITS);
+         fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
          exit(2);
       }
    }

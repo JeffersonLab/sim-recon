@@ -136,8 +136,7 @@ void hitForwardTOF (float xin[4], float xout[4],
       else
       {
          fprintf(stderr,"HDGeant error in hitForwardTOF: ");
-         fprintf(stderr,"maximum hit count %d exceeded, quitting!\n",MAX_HITS);
-         exit(2);
+         fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
       }
    }
 

@@ -2,6 +2,15 @@
 * $Id$
 *
 * $Log$
+* Revision 1.13  2003/12/10 15:32:57  jonesrt
+* -control.in : never mind [rtj]
+* -gukine.F : fixed a bug in the setting of polarization ppol used
+* 	for polarization studies of the coherent bremsstrahlung source [rtj]
+* -gustep.F : changed background studies facility to split data across
+* 	separate ntuples, one for each virtual detector [rtj]
+* -hit*.F : modified behaviour from "quit" to "truncate" in the case where
+* 	the number of hits exceeds the maximum allowed for that counter [rtj]
+*
 * Revision 1.12  2003/07/28 15:42:58  jonesrt
 * - gukine.F - added photon polarization as an additional attached info to
 *              vertex [rtj]
@@ -169,8 +178,9 @@ c #define BEAM_BOX_SIZE 6
             call GRNDM(RNDM,4)
             phi = RNDM(1)*TWOPI
             x = xMinimum**RNDM(2)
+            theta2 = Theta02*RNDM(3)/(1-RNDM(3)+1e-30)
             coSwitch = coSwitch+1
-            if (coSwitch/2*2.eq.coSwitch) then  !try coherent generation
+            if (coSwitch/2*2.eq.coSwitch) then    !try coherent generation
                freq = dNcdxdp(x,phi)
                f = freq*RNDM(3)
                do ip=1,q2points
@@ -180,13 +190,10 @@ c #define BEAM_BOX_SIZE 6
                   endif
                enddo
     5          continue
-               freq = freq*TWOPI*Theta02
-               ppol = polarization(x,phi)
+               ppol = polarization(x,theta2)
             else                                  !try incoherent generation
-               theta2 = Theta02
-     +                  *RNDM(3)/(1-RNDM(3)+1e-30)
                freq = dNidxdt2(x,theta2)
-               freq = freq*(Theta02+theta2)**2
+               freq = freq*(Theta02+theta2)**2/(TWOPI*Theta02)
                ppol = 0
             endif
             freq = x*freq

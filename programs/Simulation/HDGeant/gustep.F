@@ -2,6 +2,15 @@
 * $Id$
 *
 * $Log$
+* Revision 1.11  2003/12/10 15:32:57  jonesrt
+* -control.in : never mind [rtj]
+* -gukine.F : fixed a bug in the setting of polarization ppol used
+* 	for polarization studies of the coherent bremsstrahlung source [rtj]
+* -gustep.F : changed background studies facility to split data across
+* 	separate ntuples, one for each virtual detector [rtj]
+* -hit*.F : modified behaviour from "quit" to "truncate" in the case where
+* 	the number of hits exceeds the maximum allowed for that counter [rtj]
+*
 * Revision 1.10  2003/01/08 19:17:34  jonesrt
 * - gustep.F : added collection of information in a backgrounds ntuple - rtj
 * - gufld.F  : enabled magnetic field in sweep magnets, was off before - rtj
@@ -77,6 +86,7 @@
 
 
 * #define BACKGROUND_STUDIES 1
+#define BACKGROUND_PROFILING 1
 
 #ifdef BACKGROUND_STUDIES
       integer type
@@ -144,21 +154,22 @@
 
 **********************      Defintion of ntuple     ****************************
       
-      if (inwvol.eq.1.and.det.eq.7.and.
-     +    ((ipart.eq.2).or.(ipart.eq.3)).and.
-     +    (vect(1)**2+vect(2)**2).gt.25.0) then
+      if (inwvol.eq.1.and.det.gt.0
+c    +    .and.((ipart.eq.2).or.(ipart.eq.3))
+c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
+     +   ) then
         call gfvert(1,vertx,ntbeamx,nttargx,tofgx,ubuf,nubuf)
-        if (.not.hexist(10)) then
-          call hbnt(10,'New Ntuple',' ')
-          call hbname(10,'hits',gekin,'totE:r')
-          call hbname(10,'hits',vect,'x(7):r')
-          call hbname(10,'hits',ubuf,'ppol:r')
-          call hbname(10,'hits',ipart,'ptype:i')
-          call hbname(10,'hits',det,'det:i')
-          call hbname(10,'hits',mint,'mint[0,999]:i')
-          call hbname(10,'hits',xint,'xint(3,mint):r')
+        if (.not.hexist(9+det)) then
+          call hbnt(9+det,'New Ntuple',' ')
+          call hbname(9+det,'hits',gekin,'totE:r')
+          call hbname(9+det,'hits',vect,'x(7):r')
+          call hbname(9+det,'hits',ubuf,'ppol:r')
+          call hbname(9+det,'hits',ipart,'ptype:i')
+          call hbname(9+det,'hits',det,'det:i')
+          call hbname(9+det,'hits',mint,'mint[0,999]:i')
+          call hbname(9+det,'hits',xint,'xint(3,mint):r')
         endif  
-        call hfnt(10)
+        call hfnt(9+det)
       endif
       if (nstep.eq.0) then
         if (istak.eq.0) then

@@ -125,8 +125,7 @@ void hitForwardDC (float xin[4], float xout[4],
          else
          {
             fprintf(stderr,"HDGeant error in hitForwardDC: ");
-            fprintf(stderr,"max hit count %d exceeded, quitting!\n",MAX_HITS);
-            exit(2);
+            fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
          }
 
    /* post the hit to the truth tree, once per primary track per cell */
