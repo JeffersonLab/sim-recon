@@ -103,7 +103,7 @@ class DFactory_MCTrackCandidates:public DFactory{
 		DQuickFit* GetQFit(int n);
 
 		float circle_max;		///< max distance of focal point (circle center) from beamline
-		float bins_per_cm;	///< bins per cm in one dimension for density histo
+		float cm_per_bin;		///< cm per bin in one dimension for density histo
 		float masksize;		///< max distance a line-of-circle-centers line can
 									///< be from a focal point and still be considered
 									///< on the circle
