@@ -14,6 +14,7 @@ DFactory_MCTrackCandidates::DFactory_MCTrackCandidates(DEvent *event):DFactory(e
 	Narchits = 0;
 	Ncircles = 0;
 	Nmarkers = 0;
+		Nqfit = 0;
 	markers = NULL;
 	
 	// set limits for plot. This represents the space where the center 
@@ -92,6 +93,30 @@ derror_t DFactory_MCTrackCandidates::evnt(int eventnumber)
 	// Split tracks found in X/Y using the Z-info. This also fills in
 	// the factory data
 	FindLines();
+	
+	// At this point, we seem to often have tracks which were "found"
+	// multiple times (i.e. they have essentially the same fitted
+	// parameters). Someday, I'll have to track that down, but until
+	// then, I'll just go through and weed out duplicates.
+	MCTrackCandidate_t *a = (MCTrackCandidate_t*)_data->first();
+	for(int i=0;i<_data->nrows-1; i++, a++){
+		MCTrackCandidate_t *b = &a[1];
+		int filtered = 0;
+		for(int j=i+1;j<_data->nrows; j++, b++){
+			if(a->q == b->q)
+				if(fabs(a->p_trans - b->p_trans)<0.05)
+					if(fabs(a->phi - b->phi)<0.009)
+						if(fabs(a->theta - b->theta)<0.009){
+							ThereCanBeOnlyOne(i,j);
+							filtered = 1;
+							break;
+						}
+		}
+		if(filtered){
+			i--;
+			a--;
+		}
+	}
 	
 	return NOERROR;
 }
@@ -254,6 +279,10 @@ derror_t DFactory_MCTrackCandidates::FindLines(void)
 	/// fill the factory contents for this factory.
 
 	int Nslope_density_bins = slope_density->GetXaxis()->GetNbins();
+	
+	// Delete last event's DQuickfit objects
+	for(int i=0;i<Nqfit; i++)delete qfit[i];
+	Nqfit = 0;
 
 	// Loop over all circles
 	for(int j=0;j<Ncircles;j++){
@@ -285,9 +314,9 @@ derror_t DFactory_MCTrackCandidates::FindLines(void)
 			// for a new peak. The number of pairs of phi,z points
 			// is N(N-1)/2 (I think?). Assuming at least 4 good hits are
 			// needed for a track, we require that a maximum in the slope
-			// histo be at least 6 units.
+			// histo be at least 6 units. In practice, 10 seems a better cut-off
 			int slope_bin = slope_density->GetMaximumBin();
-			if(slope_density->GetBinContent(slope_bin)<6)break;
+			if(slope_density->GetBinContent(slope_bin)<10)break;
 			
 			float slope = slope_density->GetBinCenter(slope_bin);
 			
@@ -341,18 +370,27 @@ derror_t DFactory_MCTrackCandidates::FindLines(void)
 				mctrackcandidate->y0 = -fit->y0;	// why do we need the minus sign?
 		
 				mctrackcandidate->z_vertex = fit->z_vertex;
-				mctrackcandidate->dphidz = fit->theta;
+				mctrackcandidate->dphidz = fit->theta/r0;
+				mctrackcandidate->p = fit->p;
+				mctrackcandidate->p_trans = fit->p_trans;
+				mctrackcandidate->q = fit->q;
+				mctrackcandidate->phi = fit->phi;
+				mctrackcandidate->theta = fit->theta;
 			}else{
 				// Oops! not enough hits for a track. Delete this one.
 				_data->Delete(_data->nrows-1);
 			}
 			
-			// Delete the DQuickfit object
-			delete fit;
+			// Keep the DQuickFit object around (unless we have too many)
+			if(Nqfit<32){
+				qfit[Nqfit++] = fit;
+			}else{
+				delete fit;
+			}
 
-			// Zero out the slope_density histo for 3 bins on either side
+			// Zero out the slope_density histo for 5 bins on either side
 			// of the peak.
-			for(int i=slope_bin-3;i<=slope_bin+3;i++){
+			for(int i=slope_bin-5;i<=slope_bin+5;i++){
 				if(i<1 || i>Nslope_density_bins)continue;
 				slope_density->SetBinContent(i, 0.0);
 			}
@@ -421,6 +459,16 @@ derror_t DFactory_MCTrackCandidates::FillSlopeIntDensityHistos(float x0, float y
 	}
 	
 	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// GetQFit
+//------------------------------------------------------------------
+DQuickFit* DFactory_MCTrackCandidates::GetQFit(int n)
+{
+	if(n<0 || n>=Nqfit)return NULL;
+	
+	return qfit[n];
 }
 
 //------------------------------------------------------------------
@@ -572,6 +620,40 @@ TH1F* DFactory_MCTrackCandidates::GetOffsetDensityHistogram(int n)
 	return offset_density_histos[n];
 }
 
+//------------------------------------------------------------------
+// ThereCanBeOnlyOne
+//------------------------------------------------------------------
+derror_t DFactory_MCTrackCandidates::ThereCanBeOnlyOne(int trk1, int trk2)
+{
+	/// See the comment at the end of evnt(). Basically, we need to choose
+	/// which one track to keep and adjust the _data array to keep it.
+	
+	// first, make sure trk1 and trk2 are in sequential order
+	int trka = trk1<trk2 ? trk1:trk2;
+	int trkb = trk1<trk2 ? trk2:trk1;
+
+	// If we're keeping the track further down the list, then copy
+	// its results into the position near the front of the list.
+	// We should be using the chisq from the fits, but that isn't
+	// being calculated for the 3D track at the moment.
+	if(qfit[trka]->GetNhits() < qfit[trkb]->GetNhits()){
+		MCTrackCandidate_t *a = (MCTrackCandidate_t*)_data->index(trka);
+		MCTrackCandidate_t *b = (MCTrackCandidate_t*)_data->index(trkb);
+		*a = *b;
+		DQuickFit *tmp = qfit[trka];
+		qfit[trka] = qfit[trkb];
+		qfit[trkb] = tmp;
+	}
+	
+	// Shift the tracks after trkb up in the list(s)
+	_data->Delete(trkb);
+	delete qfit[trkb];
+	Nqfit--;
+	for(int i=trkb; i<Nqfit; i++)qfit[i] = qfit[i+1];
+
+	return NOERROR;	
+}
+
 //------------
 // Print
 //------------
@@ -582,7 +664,7 @@ derror_t DFactory_MCTrackCandidates::Print(void)
 	if(!_data)return NOERROR;
 	if(_data->nrows<=0)return NOERROR; // don't print anything if we have no data!
 
-	printheader("row:   Nhits:  x0(cm):   y0(cm):  z_vertex(cm):  dphi/dz(rad/cm):");
+	printheader("row: Nhits: x0(cm): y0(cm): z_vertex: dphi/dz:  q:   p: p_trans:   phi: theta:");
 	
 	MCTrackCandidate_t *trackcandidate = (MCTrackCandidate_t*)_data->first();
 	for(int i=0; i<_data->nrows; i++, trackcandidate++){
@@ -595,6 +677,11 @@ derror_t DFactory_MCTrackCandidates::Print(void)
 		printcol("%3.1f", trackcandidate->y0);
 		printcol("%3.1f", trackcandidate->z_vertex);
 		printcol("%1.3f", trackcandidate->dphidz);
+		printcol("%+1.0f", trackcandidate->q);
+		printcol("%3.1f", trackcandidate->p);
+		printcol("%3.2f", trackcandidate->p_trans);
+		printcol("%1.3f", trackcandidate->phi);
+		printcol("%1.3f", trackcandidate->theta);
 
 		printrow();
 	}
