@@ -23,7 +23,7 @@ int main(int narg, char *argv[])
 
 	// Open Window
 	TApplication app("HDView", &narg, argv);
-	hdvmf = new hdv_mainframe(gClient->GetRoot(), 800, 500);
+	hdvmf = new hdv_mainframe(gClient->GetRoot(), 1000, 600);
 	
 	// Hand control to ROOT event loop
 	app.Run();
@@ -40,7 +40,8 @@ int main(int narg, char *argv[])
 derror_t hdv_getevent(void)
 {
 	// Read in next event. 
-	derror_t err = eventloop->OneEvent();
+	derror_t err;
+	err = eventloop->OneEvent();
 	if(err!=NOERROR)return err;
 		
 
