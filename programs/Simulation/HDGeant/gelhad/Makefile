@@ -39,7 +39,7 @@ ifeq ($(OStype),OSF1)
 	GLIBS 	:= -L/r5da/applications/gcc/lib/gcc-lib/alphaev5-dec-osf4.0f/2.95.3 -lg2c -lgcc
 endif
 
-libgelhad.a:	caspim.o caspip.o gamate.o gelboost.o gelhad.cmz gelhad.db \
+libgelhad.a:	caspim.o caspip.o gamate.o gelboost.o gelh_outp.o \
 		gelh_last.o gelh_vrfy.o geltwobod.o gheishp.o begran.o \
 		ghstopp.o gmmate.o gpgheip.o gphad.o gpsig.o grmate.o gtgama.o \
 		labframe.o recoilframe.o sigmagamma.o sigmag.o

@@ -15,6 +15,12 @@ C.
 C.
 C.    ------------------------------------------------------------------
 C.
+
+#include "geant321/gctmed.inc"
+#include "geant321/gcvolu.inc"
+      character*4 cnames(2)
+      equivalence (NAMES(1),cnames(1))
+
       real Tesla2kG, cm2inch, zorigin
       parameter (Tesla2kG=10, cm2inch=0.3937, zorigin=26.0)
 
@@ -25,6 +31,18 @@ C.
       data Bsampl/20000*0, 20000*0, 20000*0/
       data nsampl,ncolumns,nrows/0,0,0/
       save /fieldMap/
+
+c Sweeping magnets in CAVE have fields along +y
+
+      if (cnames(2).eq.'CAVE') then
+        F(1) = 0
+        F(2) = fieldm
+        F(3) = 0
+        return
+      endif
+
+c For all other media look up field in map
+
       if (nsampl.eq.0) then
         open(unit=78,file='dsolenoid.table',status='old',err=9)
         rlast = 0
@@ -46,6 +64,11 @@ C.
     6   continue
         nrows = nrows + 1
         ncolumns = nsampl/nrows
+
+c This looks wierd, but FINT wants the column coordinate labels followed 
+c immediately by the row coordinate labels in the same 1d array, so I
+c just overwrite the contents of rsampl(i,1) beyond i=ncolumns - rtj 6/10/02
+
         do i=1,nrows
           rsampl(ncolumns+i,1) = rsampl(i*ncolumns,2)
         enddo

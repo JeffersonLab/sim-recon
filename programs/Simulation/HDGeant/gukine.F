@@ -2,6 +2,19 @@
 * $Id$
 *
 * $Log$
+* Revision 1.9  2002/07/10 14:57:18  jonesrt
+* - fixed wierd problem with g77 compiler that wanted to interpret "slash star"
+*   in a fortran comment line as a comment indicator a-la-c (complained about
+*   unterminated comment) so I just removed the asterisk - rtj.
+* - corrected the statistics printout from gelh_last() -rtj.
+* - changed confusing use of VSCAN (card SCAP) to define the origin for single
+*   particle generation; now gukine.F uses PKINE (card KINE) for both origin
+*   and direction of single-particle generator, with the following format:
+*      KINE kind energy theta phi vertex(1) vertex(2) vertex(3)
+* - fixed gelh_outp() to remove the BaBar-dependent code so that it correctly
+*   updates the photo-hadronic statistics that get reported at gelh_last() -rtj.
+* - updated gelhad/Makefile to follow the above changes -rtj.
+*
 * Revision 1.8  2001/12/18 20:32:12  jonesrt
 * I added the track="int" information to the output event, at the request of
 * Dave Doughty.  Track numbers are assigned by Geant in the order of declaration,
@@ -79,7 +92,7 @@
       real xMinimum,Theta02,CollimPos
       parameter (xMinimum=1e-2)
       parameter (Theta02=1.8)
-      parameter (CollimPos=-1500.0)
+      parameter (CollimPos=-2100.0)
 *
 *     -----------------------------------------------------------------
 *
@@ -184,9 +197,9 @@
 *
       else
 
-         VERTEX(1)=VSCAN(1)
-         VERTEX(2)=VSCAN(2)
-         VERTEX(3)=VSCAN(3)
+         VERTEX(1)=PKINE(4)
+         VERTEX(2)=PKINE(5)
+         VERTEX(3)=PKINE(6)
          IF(IKINE.GT.100)THEN
             IK=IKINE-100
             THETA=PKINE(2)*DEGRAD

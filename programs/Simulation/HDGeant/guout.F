@@ -2,6 +2,19 @@
 * $Id$
 *
 * $Log$
+* Revision 1.4  2002/07/10 14:57:18  jonesrt
+* - fixed wierd problem with g77 compiler that wanted to interpret "slash star"
+*   in a fortran comment line as a comment indicator a-la-c (complained about
+*   unterminated comment) so I just removed the asterisk - rtj.
+* - corrected the statistics printout from gelh_last() -rtj.
+* - changed confusing use of VSCAN (card SCAP) to define the origin for single
+*   particle generation; now gukine.F uses PKINE (card KINE) for both origin
+*   and direction of single-particle generator, with the following format:
+*      KINE kind energy theta phi vertex(1) vertex(2) vertex(3)
+* - fixed gelh_outp() to remove the BaBar-dependent code so that it correctly
+*   updates the photo-hadronic statistics that get reported at gelh_last() -rtj.
+* - updated gelhad/Makefile to follow the above changes -rtj.
+*
 * Revision 1.3  2001/10/29 17:39:23  jonesrt
 * - added mc truth info to output event for internal track/photon generators
 * - added special code for background studies, selected by the conditional
@@ -38,6 +51,9 @@ C.    ------------------------------------------------------------------
 C.
 *
 * #define DISABLE_OUTPUT 1
+
+      integer iskip
+      call gelh_outp(iskip)
 
 #ifndef DISABLE_OUTPUT
       call loadOutput();

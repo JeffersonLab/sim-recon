@@ -16,12 +16,15 @@
 *                      - Option jphadr = 3 only saves if ==1 interaction/event.
 *                      - Print skipped events.
 *    Kral      1/19/96 - Add interaction count.
+*    RT Jones  7/10/02 - Suppress special BaBar code using conditional BABAR
 *
 ******-****************************************************************-*******
       IMPLICIT NONE
 *..Include:
 #ifdef _GELH_
+# ifdef BABAR
 #include "gnbase/run_db.inc"
+# endif
 #include "geant321/gcflag.inc"
 C   from gelhad V00-00-03 and onwards
 #include "gelhad/gelhadused.inc"
@@ -36,12 +39,14 @@ C   from gelhad V00-00-05 and onwards
       Logical*1 First/.true./
       Save First
 #endif 
+
 *=====-================================================================-=======
 
 *..Clear to not skip
       Iskip = 0
 
 #ifdef _GELH_
+# ifdef BABAR
       If (First) then
         First = .false.
         If (jphadr_gelhad .ge. 2) then
@@ -88,6 +93,8 @@ C   from gelhad V00-00-05 and onwards
      +  print *,' GELH_OUTP:  Event ',ievent,IDEVT,
      +  '  skipped, n = ', ngelhperev,
      +  '  gelhadused = ', gelhadused
+
+# endif
 
 *..Count output
       nevtot_gelh = nevtot_gelh + 1
