@@ -22,10 +22,12 @@ ifeq ($(OStype),SunOS)
 	LIBXDR  := -lnsl
 endif
 
-all:	xml-hddm hddm-xml hddm-c
+all:	xml-hddm hddm-xml hddm-c hddm-cpp
 
-install: hddm-c xml-hddm hddm-xml hddm-c xml-xml hddm-schema schema-hddm hddmcat
+install: hddm-c xml-hddm hddm-xml hddm-c xml-xml hddm-schema schema-hddm hddmcat hddm-cpp
+	mkdir -p $(HALLD_HOME)/bin
 	cp hddm-schema schema-hddm xml-xml $(HALLD_HOME)/bin
+	mkdir -p $(HALLD_HOME)/bin/$(OStype)
 	cp hddm-c hddm-xml xml-hddm hddmcat $(HALLD_HOME)/bin/$(OStype)
 
 xml-hddm: xml-hddm.cpp XString.o XParsers.o
@@ -36,7 +38,7 @@ hddm-xml: hddm-xml.cpp XString.o XParsers.o
 	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
-hddm-c: hddm-c.cpp XString.o XParsers.o
+hddm-cpp: hddm-cpp.cpp XString.o XParsers.o
 	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
