@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.17  2005/01/21 09:34:05  davidl
+* If ff card NOSECONDARIES set, then don't push any secondaries onto the stack
+*
 * Revision 1.16  2004/06/17 18:32:55  davidl
 * Fixed typo that caused comment to be misleading
 *
@@ -112,6 +115,7 @@
 #include "geant321/gctmed.inc"
 #include "geant321/gctrak.inc"
 #include "geant321/gcflag.inc"
+#include "hdtrackparams.inc"
 *
 *     -----------------------------------------------------------------
 *
@@ -246,11 +250,13 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
 
 * Place any secondaries generated during this step onto the stack
 
-      do i=1,NGKINE
-        itypa  = GKIN(5,i)
-        if (itypa.ne.4) call GSKING(i)
-      enddo
-
+      if (nosecondaries.eq.0) then
+        do i=1,NGKINE
+          itypa  = GKIN(5,i)
+          if (itypa.ne.4) call GSKING(i)
+        enddo
+      endif
+	
 * For explicit Cerenkov generation, apply an inefficiency factor
 
       if (NGPHOT.gt.100) then
@@ -406,9 +412,11 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
         elseif ((cnames(NLEVEL).eq.'STRA').or.		! CDC straight straw
      +          (cnames(NLEVEL).eq.'STLA')) then	! CDC stereo straw
           call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA)
+c			 PRINT*,__FILE__,':',__LINE__,' CDC itra=',ITRA,' z=',xout(3),' ipart=',ipart,' GETOT=',GETOT
         elseif ((cnames(NLEVEL).eq.'FDCA').or.		! FDC anode drift cell
      +          (cnames(NLEVEL).eq.'FDCC')) then	! FDC cathode strip
           call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA)
+c			 PRINT*,__FILE__,':',__LINE__,' FDC itra=',ITRA,' z=',xout(3),' ipart=',ipart,' GETOT=',GETOT
         elseif (cnames(NLEVEL).eq.'CGAS') then		! Cerenkov counter
           call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA)
 #ifdef GENERALIZED_BCAL_NAME
