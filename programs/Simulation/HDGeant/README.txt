@@ -13,6 +13,16 @@ bugs, please go to http://zeus.phys.cuonn.edu/forums/gluex.org
 
    halld> cvs checkout HDGeant
 
+   To build the HDGeant executable you also need to check out the include
+   module.  If you want to be able to browse and modify the detector geometry
+   (probably) then you should also check out the hdds module, and if you want
+   to play with the hits structures (maybe) then you should check out the
+   hddm module.  The following lines do all three.
+
+   halld> cvs checkout include
+   halld> cvs checkout hdds
+   halld> cvs checkout hddm
+
 2) Download the xerces-c xml library from xml.apache.org and unpack
    it somewhere on your system or GlueX working area.  Getting the sources
    and doing the build yourself (next step) makes sure that you have a
@@ -49,13 +59,7 @@ bugs, please go to http://zeus.phys.cuonn.edu/forums/gluex.org
    setenv.  You will need to source this file before every session, (or
    invoke it with the . operator for ksh or bash).
 
-5) Now you need to check out the geometry package and build it.
-
-   halld> cvs checkout hdds
-   halld> cd hdds
-   halld> make hddsGeant3.f
-
-6) Now go to HDGeant and build the interactive version.
+5) Now go to HDGeant and build the interactive version.
 
    halld> cd ../HDGeant
    halld> make hdgeant++.x
@@ -64,7 +68,7 @@ bugs, please go to http://zeus.phys.cuonn.edu/forums/gluex.org
    make, and find out what you did wrong in steps 1..5.  Iterate until the
    package builds without errors.
 
-7) Start up interactive Geant and plot the detector.
+6) Start up interactive Geant and plot the detector.
 
    halld> ./hdgeant++.x
    ... lots of output
