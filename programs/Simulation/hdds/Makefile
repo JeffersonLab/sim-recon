@@ -1,6 +1,6 @@
 DOM = $(BUILDS)/xerces-c
 
-CC = /usr/bin/g++ -g
+CC = /usr/bin/g++ -g -D_REENTRANT
 
 XML_SOURCE = BarrelEMcal_HDDS.xml BeamLine_HDDS.xml CentralDC_HDDS.xml\
              CerenkovCntr_HDDS.xml ForwardDC_HDDS.xml ForwardEMcal_HDDS.xml\
@@ -10,7 +10,7 @@ XML_SOURCE = BarrelEMcal_HDDS.xml BeamLine_HDDS.xml CentralDC_HDDS.xml\
 all: hddsGeant3.f hddsMCfast.db
 
 hddsMCfast.db: hdds-mcfast $(XML_SOURCE)
-	ln -s $(BUILDS)/libmcfast/mcfast_v5_0_Linux+2.2/db db
+	ln -sf $(MCFAST_DIR)/db db
 	./hdds-mcfast main_HDDS.xml >$@
 	/bin/rm db
 	cp $@ $(BUILDS)/HDFast/HDFast.db
