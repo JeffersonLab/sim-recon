@@ -1,9 +1,9 @@
 <hitView version="1.0">
-   <barrelDC>
+   <centralDC>
       <cathodeCyl radius="float" repeat="*">
-         <strip sector="int" z="float" repeat="*">
+         <band sector="int" z="float" repeat="*">
             <hit t="float" dE="float" repeat="*" />
-         </strip>
+         </band>
       </cathodeCyl>
       <ring radius="float" repeat="*">
          <straw phim="float" repeat="*">
@@ -12,37 +12,44 @@
                                   dEdx="float" repeat="*" />
          </straw>
       </ring>
-   </barrelDC>
+   </centralDC>
 
    <forwardDC>
-      <chamber module="int" repeat="*">
-         <package layer="int" repeat="*">
-            <plane plane="int" tau="float" repeat="*">
-               <hit t="float" dE="float" repeat="*"/>
-               <fdcPoint z="float" v="float" dradius="float"
+      <chamber module="int" layer="int" repeat="*">
+         <cathodePlane z="float" tau="float" repeat="*">
+            <strip u="float" repeat="*">
+               <hit t="float" dE="float" repeat="*" />
+            </strip>
+         </cathodePlane>
+         <anodePlane z="float" tau="float" repeat="*">
+            <wire u="float" repeat="*">
+               <hit t="float" dE="float" repeat="*" />
+               <fdcPoint z="float" x="float" y="float" dradius="float"
                                    dEdx="float" repeat="*" />
-            </plane>
-         </package>
+            </wire>
+         </anodePlane>
       </chamber>
    </forwardDC>
 
    <startCntr>
-      <hit t="float" dE="float" repeat="*" />
+      <paddle sector="float" repeat="*">
+         <hit t="float" dE="float" repeat="*" />
+      </paddle>
       <startPoint z="float" r="float" phi="float"
                         dEdx="float" repeat="*" />
    </startCntr>
 
-   <barrelCal>
+   <barrelEMcal>
       <module sector="float" repeat="*">
          <upstream>
-            <flash t="float" pe="float" repeat="*" />
+            <shower t="float" E="float" repeat="*" />
          </upstream>
          <downstream>
-            <flash t="float" pe="float" repeat="*" />
+            <shower t="float" E="float" repeat="*" />
          </downstream> 
-         <barrelShower t="float" z="float" Eequiv="float" />
       </module>
-   </barrelCal>
+      <barrelShower t="float" z="float" phi="float" E="float" repeat="*" />
+   </barrelEMcal>
       
    <Cerenkov>
       <section sector="float" repeat="*">
@@ -59,13 +66,15 @@
             <hit t="float" dE="float" repeat="*" />
          </right>
       </slab>
+      <tofPoint x="float" y="float" repeat="*" />
    </forwardTOF>
 
    <forwardEMcal>
       <row row="int" repeat="*">
          <column col="int" repeat="*">
-            <flash t="float" pe="float" repeat="*" />
+            <shower t="float" E="float" repeat="*" />
          </column>
       </row>
+      <forwardShower t="float" x="float" y="float" E="float" repeat="*" />
    </forwardEMcal>
 </hitView>
