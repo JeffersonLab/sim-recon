@@ -1032,6 +1032,8 @@ void writeMatcher()
 	 << "}"							<< endl;
 }
 
+/* Generate c code to open a hddm file for reading */
+
 void constructOpenFunc(DOM_Element& el)
 {
    char* tagStr = el.getTagName().transcode();
@@ -1102,6 +1104,8 @@ void constructOpenFunc(DOM_Element& el)
    delete [] tagType;
 }
 
+/* Generate the c code to open a hddm file for writing */
+
 void constructInitFunc(DOM_Element& el)
 {
    char* tagStr = el.getTagName().transcode();
@@ -1156,6 +1160,8 @@ void constructInitFunc(DOM_Element& el)
    delete [] tagType;
 }
 
+/* Generate the c code to close an open hddm file */
+
 void constructCloseFunc(DOM_Element& el)
 {
    char* tagStr = el.getTagName().transcode();
@@ -1193,6 +1199,8 @@ void constructCloseFunc(DOM_Element& el)
    delete [] tagStr;
    delete [] tagType;
 }
+
+/* Generate the xml document model in normal form and store in a string */
 
 void constructDocument(DOM_Element& el)
 {

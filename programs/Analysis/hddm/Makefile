@@ -12,6 +12,10 @@ ifeq ($(OStype),OSF1)
 	CPP	:= /usr/bin/g++ -g
 endif
 
+xml-hddm: xml-hddm.cpp
+	$(CPP) -I../include -I$(DOM)/include -o $@ $^ \
+	-L$(DOM)/lib -lxerces-c1_5
+
 hddm-xml: hddm-xml.cpp
 	$(CPP) -I../include -I$(DOM)/include -o $@ $^ \
 	-L$(DOM)/lib -lxerces-c1_5

@@ -317,14 +317,14 @@ int main(int argC, char* argV[])
    catch (const XMLException& toCatch)
    {
       cerr << "\nhddm-xml: Error during parsing: '" << tmpFile << "'\n"
-           << "Exception message is:  \n"
+           << "Exception message is:  "
            << StrX(toCatch.getMessage()) << "\n" << endl;
       return -1;
    }
    catch (const DOM_DOMException& toCatch)
    {
       cerr << "\nhddm-xml: Error during parsing: '" << tmpFile << "'\n"
-           << "Exception message is:  \n"
+           << "Exception message is:  "
            << toCatch.msg.transcode() << "\n" << endl;
       XMLPlatformUtils::Terminate();
       return 4;
