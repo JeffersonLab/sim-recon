@@ -53,6 +53,9 @@ class DEventLoop
 
 		derror_t AddProcessor(DEventProcessor *processor);
 		derror_t SetStandardProcessors(EVENT_PROCESSORS processmask);
+		derror_t Init(void);
+		derror_t OneEvent(void);
+		derror_t Fini(void);
 		derror_t Run(void);
 		derror_t Run(DEventProcessor *proc);
 		derror_t Run(EVENT_PROCESSORS mask);
