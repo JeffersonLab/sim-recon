@@ -117,7 +117,10 @@ install: all
 	mv stdhep2ascii    $(HALLD_HOME)/bin/$(UNAME)/.  
 
 install-hddm: stdhep2hddm
-	mv stdhep2hddm    $(HALLD_HOME)/bin/$(UNAME)/.  
+	mv $^    $(HALLD_HOME)/bin/$(UNAME)/.  
+
+install-itape: stdhep2itape itape2stdhep
+	mv $^    $(HALLD_HOME)/bin/$(UNAME)/.  
 
 clean:
 	rm -f *.o
