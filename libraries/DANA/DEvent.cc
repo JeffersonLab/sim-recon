@@ -31,12 +31,27 @@ DContainer* DEvent::Get(char *data_name)
 	/// needs to be written here to catch that error and print
 	/// an error message.
 
-	// Search for specified factory and return pointer to it's data container
+	DFactory *factory = GetFactory(data_name);
+	if(!factory)return NULL;
+	
+	// Copy hddm pointer into factory and return pointer to it's data container
+	factory->hddm_s = hddm_s;
+	return factory->Get();
+
+	// No factory found. Return NULL
+	return NULL;
+}
+
+//-------------
+// GetFactory
+//-------------
+DFactory* DEvent::GetFactory(char *factory_name)
+{
+	// Search for specified factory and return pointer to it
 	DFactory **factory = (DFactory**)*(factories->container_ptr);
 	for(int i=0; i<factories->nrows; i++, factory++){
-		if(!strcmp((*factory)->name, data_name)){
-			(*factory)->hddm_s = hddm_s;
-			return (*factory)->Get();
+		if(!strcmp((*factory)->name, factory_name)){
+			return (*factory);
 		}
 	}
 
