@@ -103,8 +103,8 @@
 				unit="cm"	/>
     <real_array	name="phi"	values="0 360"	comment="phi range ()"
 				unit="deg"	/>
-    <real	name="dphi"	value="6283.18"	comment="angle of wedges"
-				unit="mrad"	/>
+    <real	name="dphi"	value="359.9999" comment="angle of wedges"
+				unit="deg"	/>
     <int	name="type"	value="3"	/>
     <string	name="speci"	value="ALL"	comment="SPC or ALL"	   />
     <int	name="nstrip"	value="119"	comment="number of wires"  />
@@ -137,8 +137,8 @@
 				unit="cm"	/>
     <real_array	name="phi"	values="0 360"	comment="phi range ()"
 				unit="deg"	/>
-    <real	name="dphi"	value="6283.18"	comment="angle of wedges"
-	    			unit="mrad"	/>
+    <real	name="dphi"	value="359.9999" comment="angle of wedges"
+				unit="deg"	/>
     <int	name="type"	value="3"	/>
     <string	name="speci"	value="ALL"	comment="SPC or ALL"	   />
     <int	name="nstrip"	value="119"	comment="cathode strips"   />
