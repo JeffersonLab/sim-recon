@@ -67,7 +67,7 @@ derror_t DEventSourceFile::GetEvent(void)
 	hddm_s = read_s_HDDM(fin);
 	if(!hddm_s)return NO_MORE_EVENTS_IN_SOURCE;
 	
-	//----- Convert historic hddm format to hddm_banks_t -----
+	//----- Convert historic hddm format to hddm_containers_t -----
 
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;

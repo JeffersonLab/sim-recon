@@ -47,7 +47,7 @@ class DEventSource
 		float GetRate(void);
 		static EVENT_SOURCE_TYPE GuessSourceType(int narg, char *argv[]);
 		
-		hddm_banks_t *hddm;
+		hddm_containers_t *hddm;
 		s_HDDM_t *hddm_s;
 		
 	private:

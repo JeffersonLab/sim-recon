@@ -1,5 +1,5 @@
 
-#include "DBank.h"
+#include "DContainer.h"
 #include <TVector3.h>
 #include <TLorentzVector.h>
 
@@ -9,17 +9,17 @@
 //------------------------------- FCALcluster -------------------------------
 typedef struct{ 
 	int nhits;				///< number of hits
-	int *hit_index;		///< indicies to rows in FCALhits bank 
+	int *hit_index;		///< indicies to rows in FCALhits container 
 	TVector3 position;	///< reconstructed hit position
 	float time;				///< time of hit
 	float width;			///< transverse spread of cluster
 	float energy;			///< energy of cluster 
 }FCALcluster_t; 
 
-class FCALclusters_t: public DBank 
+class FCALclusters_t: public DContainer 
 { 
 	public: 
-		FCALclusters_t(void):DBank((void**)&FCALcluster,sizeof(FCALcluster_t), "FCALclusters"){} 
+		FCALclusters_t(void):DContainer((void**)&FCALcluster,sizeof(FCALcluster_t), "FCALclusters"){} 
 		FCALcluster_t *FCALcluster; 
 }; 
 
@@ -30,10 +30,10 @@ typedef struct{
 	int  track;		///< track id associated with hit
 }CDChit_t; 
 
-class CDChits_t: public DBank 
+class CDChits_t: public DContainer 
 { 
 	public: 
-		CDChits_t(void):DBank((void**)&CDChit,sizeof(CDChit_t), "CDChits"){} 
+		CDChits_t(void):DContainer((void**)&CDChit,sizeof(CDChit_t), "CDChits"){} 
 		CDChit_t *CDChit; 
 };
 
@@ -47,26 +47,26 @@ typedef struct{
 	float y0;			///< y-coord. center of track in X/Y plane
 }CDCtrack_t;
 
-class CDCtracks_t: public DBank 
+class CDCtracks_t: public DContainer 
 { 
 	public: 
-		CDCtracks_t(void):DBank((void**)&CDCtrack,sizeof(CDCtrack_t), "CDCtracks"){} 
+		CDCtracks_t(void):DContainer((void**)&CDCtrack,sizeof(CDCtrack_t), "CDCtracks"){} 
 		CDCtrack_t *CDCtrack; 
 };
 
 //----------------------------------------------------------------------------
-//------------------------------- hddm_banks_t -------------------------------
+//------------------------------- hddm_containers_t -------------------------------
 //----------------------------------------------------------------------------
 typedef struct {
 
-		/// This struct should consist ONLY of classes derived from DBank
+		/// This struct should consist ONLY of classes derived from DContainer
 		FCALclusters_t 	*FCALclusters;
 		CDChits_t 			*CDChits;
 		CDCtracks_t			*CDCtracks;
-}hddm_banks_t;
+}hddm_containers_t;
 
-// in DANA/hddm_banks.cc
-derror_t init_hddm_banks_t(hddm_banks_t *hddm);
-derror_t delete_hddm_banks_t(hddm_banks_t *hddm);
+// in DANA/hddm_containers.cc
+derror_t init_hddm_containers_t(hddm_containers_t *hddm);
+derror_t delete_hddm_containers_t(hddm_containers_t *hddm);
 
 #endif // _HDDM_H_

@@ -29,7 +29,7 @@ class DEventProcessor
 		virtual derror_t fini(void);					///< Called after last event of last event source has been processed.
 
 		DEventLoop *event_loop;
-		hddm_banks_t *hddm;
+		hddm_containers_t *hddm;
 		s_HDDM_t *hddm_s;
 };
 
