@@ -100,7 +100,7 @@
     <real_array	name="ylimit_gap" comment="ymin  ymax of beam hole aperture"
 				values="   -6.0   6.0"
 				unit="cm"	/>
-    <real	name="z0"	value="597.5"	comment="z of midplane"
+    <real	name="z0"	value="645.1"	comment="z of midplane"
 				unit="cm"	/>
     <real	name="zlen"	value="45.0"	comment="length of blocks"
 				unit="cm"	/>
