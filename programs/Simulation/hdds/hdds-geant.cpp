@@ -85,7 +85,9 @@
  *  support for them in hdds-geant.
  */
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE true
+#endif
 
 /*
  * FIX_XERCES_getElementById_BUG does a store/load cycle at parsing time
@@ -107,11 +109,12 @@
 
 #include <string.h>
 #include <assert.h>
-#include <fstream.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <math.h>
+
+#include <fstream>
 
 #define X(XString) XString.unicodeForm()
 #define S(XString) XString.localForm()

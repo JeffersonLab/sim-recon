@@ -25,7 +25,9 @@
  *    (see the -v option).
  */
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/sax/SAXException.hpp>
@@ -37,10 +39,11 @@
 #include "hdds-mcfast.hpp"
 
 #include <assert.h>
-#include <fstream.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include <fstream>
 
 #define X(XString) XString.unicodeForm()
 #define S(XString) XString.localForm()
@@ -881,7 +884,7 @@ void MCfastParameterList::append(const DOMElement* par)
 }
 
 const DOMElement* MCfastParameterList::get(char* name, char* type,
-                                            int number=0, char* unit=0) const
+                                            int number, char* unit) const
 {
    int p = fListLen;
    while (--p >= 0)
