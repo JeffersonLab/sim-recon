@@ -16,15 +16,18 @@ all:	xml-hddm hddm-xml hddm-c
 
 xml-hddm: xml-hddm.cpp XString.o XParsers.o
 	$(CPP) -I../include -I$(XERCESCROOT)/include -o $@ $^ \
-	-L$(XERCESCROOT)/lib -lxerces-c
+	-L$(XERCESCROOT)/lib -lxerces-c \
+	-Wl,-rpath $(XERCESCROOT)/lib
 
 hddm-xml: hddm-xml.cpp XString.o XParsers.o
 	$(CPP) -I../include -I$(XERCESCROOT)/include -o $@ $^ \
-	-L$(XERCESCROOT)/lib -lxerces-c
+	-L$(XERCESCROOT)/lib -lxerces-c \
+	-Wl,-rpath $(XERCESCROOT)/lib
 
 hddm-c: hddm-c.cpp XString.o XParsers.o
 	$(CPP) -I../include -I$(XERCESCROOT)/include -o $@ $^ \
-	-L$(XERCESCROOT)/lib -lxerces-c
+	-L$(XERCESCROOT)/lib -lxerces-c \
+	-Wl,-rpath $(XERCESCROOT)/lib
 
 hddmcat: hddmcat.cpp
 	$(CPP) -o $@ $^

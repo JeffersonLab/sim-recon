@@ -471,7 +471,7 @@ void constructUnpackers()
             << "(XDR* xdrs, popNode* pop)"
 								<< endl
             << "{"						<< endl
-            << "   " << tagType << "* this = 0;"		<< endl
+            << "   " << tagType << "* this1 = 0;"		<< endl
             << "   int start;"					<< endl
             << "   unsigned int size;"				<< endl
 	    << "   xdr_u_int(xdrs,&size);"			<< endl
@@ -483,15 +483,15 @@ void constructUnpackers()
       {
          cFile << "      int m;"				<< endl
                << "      int mult;"				<< endl
-	       << "      xdr_u_int(xdrs,&mult);"			<< endl
-               << "      this = make_" << tagT << "(mult);"	<< endl
-               << "      this->mult = mult;"			<< endl
+	       << "      xdr_u_int(xdrs,&mult);"		<< endl
+               << "      this1 = make_" << tagT << "(mult);"	<< endl
+               << "      this1->mult = mult;"			<< endl
                << "      for (m = 0; m < mult; m++ )"		<< endl
                << "      {"					<< endl;
       }
       else
       {
-         cFile << "      this = make_" << tagT << "();"		<< endl
+         cFile << "      this1 = make_" << tagT << "();"	<< endl
                << "      {"					<< endl;
       }
 
@@ -510,7 +510,7 @@ void constructUnpackers()
 	    int re = (reS.equals("unbounded"))? 9999 : atoi(S(reS));
             char* names = plural(S(nameS));
             cFile << "         int p;"				<< endl
-                  << "         void* (*ptr) = (void**) &this->"
+                  << "         void* (*ptr) = (void**) &this1->"
                   << ((rep > 1) ? "in[m]." : "" )
                   << ((re > 1) ? names : S(nameS)) << ";"	<< endl;
             delete [] names;
@@ -535,42 +535,42 @@ void constructUnpackers()
          }
          if (typeS.equals("int"))
          {
-            cFile << "         xdr_int(xdrs,&this->"
+            cFile << "         xdr_int(xdrs,&this1->"
 	          << nameStr << ");"				 << endl;
          }
 	 else if (typeS.equals("long"))
          {
-            cFile << "         xdr_longlong_t(xdrs,&this->"
+            cFile << "         xdr_longlong_t(xdrs,&this1->"
 	          << nameStr << ");"				 << endl;
          }
          else if (typeS.equals("float"))
          {
-            cFile << "         xdr_float(xdrs,&this->"
+            cFile << "         xdr_float(xdrs,&this1->"
 	          << nameStr << ");"				 << endl;
          }
          else if (typeS.equals("double"))
          {
-            cFile << "         xdr_double(xdrs,&this->"
+            cFile << "         xdr_double(xdrs,&this1->"
 	          << nameStr << ");"				 << endl;
          }
          else if (typeS.equals("boolean"))
          {
-            cFile << "         xdr_bool(xdrs,&this->"
+            cFile << "         xdr_bool(xdrs,&this1->"
 	          << nameStr << ");"				 << endl;
          }
          else if (typeS.equals("Particle_t"))
          {
-            cFile << "         xdr_int(xdrs,(int*)&this->"
+            cFile << "         xdr_int(xdrs,(int*)&this1->"
 	          << nameStr << ");"				 << endl;
          }
          else if (typeS.equals("string"))
          {
-            cFile << "         xdr_string(xdrs,&this->"
+            cFile << "         xdr_string(xdrs,&this1->"
 	          << nameStr << ", 1000000);"			 << endl;
          }
          else if (typeS.equals("anyURI"))
          {
-            cFile << "         xdr_string(xdrs,&this->"
+            cFile << "         xdr_string(xdrs,&this1->"
 	          << nameStr << ", 1000000);"			 << endl;
          }
          else
@@ -602,7 +602,7 @@ void constructUnpackers()
       cFile << "      }"						<< endl
             << "   }"							<< endl
             << "   xdr_setpos(xdrs,start+size);"			<< endl
-            << "   return this;"					<< endl
+            << "   return this1;"					<< endl
             << "}"							<< endl;
    }
 }
@@ -691,7 +691,7 @@ void constructPackers()
       char* term = rindex(tagT,'_');
       *term = 0;
       cFile << "int pack_" << tagT << "(XDR* xdrs, "
-            << tagType << "* this);"				<< endl;
+            << tagType << "* this1);"				<< endl;
    }
 
    for (int t = 0; t < tagListLength; t++)
@@ -720,7 +720,7 @@ void constructPackers()
       char* term = rindex(tagT,'_');
       *term = 0;
       cFile << "int pack_" << tagT << "(XDR* xdrs, "
-            << tagType << "* this)"				<< endl
+            << tagType << "* this1)"				<< endl
             << "{"						<< endl
             << "   int m;"					<< endl
             << "   unsigned int size=0;"			<< endl
@@ -731,8 +731,8 @@ void constructPackers()
     								<< endl;
       if (rep > 1)
       {
-         cFile << "   xdr_u_int(xdrs,&this->mult);"		<< endl
-               << "   for (m = 0; m < this->mult; m++)"		<< endl
+         cFile << "   xdr_u_int(xdrs,&this1->mult);"		<< endl
+               << "   for (m = 0; m < this1->mult; m++)"	<< endl
                << "   {"					<< endl;
       }
       else
@@ -757,36 +757,36 @@ void constructPackers()
          }
          if (typeS.equals("int"))
          {
-            cFile << "      xdr_int(xdrs,&this->" << nameStr << ");"	<< endl;
+            cFile << "      xdr_int(xdrs,&this1->" << nameStr << ");"	<< endl;
          }
          if (typeS.equals("long"))
          {
-            cFile << "      xdr_longlong_t(xdrs,&this->" << nameStr << ");"
+            cFile << "      xdr_longlong_t(xdrs,&this1->" << nameStr << ");"
 	       								<< endl;
          }
          else if (typeS.equals("float"))
          {
-            cFile << "      xdr_float(xdrs,&this->" << nameStr << ");"	<< endl;
+            cFile << "      xdr_float(xdrs,&this1->" << nameStr << ");"	<< endl;
          }
          else if (typeS.equals("double"))
          {
-            cFile << "      xdr_double(xdrs,&this->" << nameStr << ");"	<< endl;
+            cFile << "      xdr_double(xdrs,&this1->" << nameStr << ");" << endl;
          }
          else if (typeS.equals("boolean"))
          {
-            cFile << "      xdr_bool(xdrs,&this->" << nameStr << ");"	<< endl;
+            cFile << "      xdr_bool(xdrs,&this1->" << nameStr << ");"	<< endl;
          }
          else if (typeS.equals("Particle_t"))
          {
-            cFile << "      xdr_int(xdrs,(int*)&this->" << nameStr << ");" << endl;
+            cFile << "      xdr_int(xdrs,(int*)&this1->" << nameStr << ");" << endl;
          }
          else if (typeS.equals("string"))
          {
-            cFile << "      xdr_string(xdrs,&this->" << nameStr << ");"	<< endl;
+            cFile << "      xdr_string(xdrs,&this1->" << nameStr << ");" << endl;
          }
          else if (typeS.equals("anyURI"))
          {
-            cFile << "      xdr_string(xdrs,&this->" << nameStr << ");"	<< endl;
+            cFile << "      xdr_string(xdrs,&this1->" << nameStr << ");" << endl;
          }
          else
          {
@@ -821,11 +821,11 @@ void constructPackers()
             strncpy(contT,contType,500);
             char* term = rindex(contT,'_');
             *term = 0;
-            cFile << "      if (this->"
+            cFile << "      if (this1->"
                   << ((rep > 1)? "in[m]." : "")
                   << ((re > 1)? names : S(nameS)) << ")"		<< endl
                   << "      {"						<< endl
-                  << "         pack_" << contT << "(xdrs,this->"
+                  << "         pack_" << contT << "(xdrs,this1->"
                   << ((rep > 1)? "in[m]." : "")
                   << ((re > 1)? names : S(nameS)) << ");"		<< endl
                   << "      }"						<< endl
@@ -841,7 +841,7 @@ void constructPackers()
       }
 
       cFile << "   }"							<< endl
-            << "   FREE(this);"						<< endl
+            << "   FREE(this1);"						<< endl
             << "   end = xdr_getpos(xdrs);"				<< endl
             << "   xdr_setpos(xdrs,base);"				<< endl
 	    << "   size = end-start;"					<< endl
@@ -867,13 +867,13 @@ void constructFlushFunc(DOMElement* el)
    constructPackers();
 
    hFile 							<< endl
-	 << "int flush_" << topT << "(" << topType << "* this,"
+	 << "int flush_" << topT << "(" << topType << "* this1,"
 	 << classPrefix << "_iostream_t* fp" << ");"		<< endl;
    cFile 							<< endl
-	 << "int flush_" << topT << "(" << topType << "* this,"
+	 << "int flush_" << topT << "(" << topType << "* this1,"
 	 << classPrefix << "_iostream_t* fp" << ")"		<< endl
 	 << "{"							<< endl
-         << "   if (this == 0)"					<< endl
+         << "   if (this1 == 0)"				<< endl
          << "   {"						<< endl
 	 << "      return 0;"					<< endl
          << "   }"						<< endl
@@ -884,7 +884,7 @@ void constructFlushFunc(DOMElement* el)
 	 << "      char* dump = malloc(max_buffer_size);"	<< endl
 	 << "      xdrmem_create(xdrs,dump,max_buffer_size,XDR_ENCODE);"
 	 							<< endl
-	 << "      pack_" << topT << "(xdrs,this);"		<< endl
+	 << "      pack_" << topT << "(xdrs,this1);"		<< endl
 	 << "      xdr_destroy(fp->xdrs);"			<< endl
 	 << "      free(fp->xdrs);"				<< endl
 	 << "      free(dump);"					<< endl
@@ -892,7 +892,7 @@ void constructFlushFunc(DOMElement* el)
          << "   }"						<< endl
          << "   else if (fp->iomode == HDDM_STREAM_OUTPUT)"	<< endl
 	 << "   {"						<< endl
-	 << "      pack_" << topT << "(fp->xdrs,this);"		<< endl
+	 << "      pack_" << topT << "(fp->xdrs,this1);"		<< endl
 	 << "      return 0;"					<< endl
 	 << "   }"						<< endl
 	 << "}"							<< endl;
@@ -973,7 +973,7 @@ void writeMatcher()
 	 << "      if "
 	 << "((clevel == blevel) && (strcmp(ctag,btag) == 0))"	<< endl
 	 << "      {"						<< endl
-         << "         popNode* this = malloc(sizeof(popNode));"	<< endl
+         << "         popNode* this1 = malloc(sizeof(popNode));" << endl
 	 << "         int len = index(c+1,'\\n') - c;"		<< endl
 	 << "         if (strncmp(c,b,len) != 0)"		<< endl
 	 << "         {"					<< endl
@@ -1012,7 +1012,7 @@ void writeMatcher()
       }
       cFile << "(strcmp(btag,\"" << S(tagS) << "\") == 0)"	<< endl
             << "         {"					<< endl
-	    << "            this->unpacker = "
+	    << "            this1->unpacker = "
 	    << "(void*) unpack_" << tagT << ";"			<< endl
             << "         }"					<< endl;
    }
@@ -1021,15 +1021,15 @@ void writeMatcher()
 	 << "         {"					<< endl
          << "            collide(btag);"			<< endl
 	 << "         }"					<< endl
-         << "         this->inParent = ptrSeqNo;"		<< endl
-         << "         this->popListLength = 0;"			<< endl
+         << "         this1->inParent = ptrSeqNo;"		<< endl
+         << "         this1->popListLength = 0;"		<< endl
 	 << "         c = index(c+1,'\\n');"			<< endl
 	 << "         b = index(b+1,'\\n');"			<< endl
 	 << "         while (getTag(b,btag) > blevel)"		<< endl
 	 << "         {"					<< endl
-         << "            this->popList[this->popListLength++] = matches(b,c);"
+         << "            this1->popList[this1->popListLength++] = matches(b,c);"
 								<< endl 
-         << "            if (this->popListLength > "
+         << "            if (this1->popListLength > "
          << MAX_POPLIST_LENGTH << ")"				<< endl
          << "            {"					<< endl
          << "               fprintf(stderr,"
@@ -1041,7 +1041,7 @@ void writeMatcher()
 	 << "            b = getEndTag(b,btag);"		<< endl
 	 << "            b = index(b+1,'\\n');"			<< endl
 	 << "         }"					<< endl
-	 << "         return this;"				<< endl
+	 << "         return this1;"				<< endl
 	 << "      }"						<< endl
 	 << "      else"					<< endl
 	 << "      {"						<< endl
