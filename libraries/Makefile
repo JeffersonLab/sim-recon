@@ -15,7 +15,7 @@ all:
 	make -C TOF
 	make -C TRIGGER
 	make -C UPV
-	make -C VERTEX
+	make -C TRACKING
 
 clean:
 	make -C BCAL clean
@@ -29,5 +29,5 @@ clean:
 	make -C TOF clean
 	make -C TRIGGER clean
 	make -C UPV clean
-	make -C VERTEX clean
+	make -C TRACKING clean
 	

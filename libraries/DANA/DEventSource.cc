@@ -8,6 +8,7 @@
 using namespace std;
 
 #include "DEventSource.h"
+#include "DContainer.h"
 
 //----------------
 // Constructor
@@ -34,9 +35,6 @@ DEventSource::DEventSource(int narg, char *argv[])
 	prate_period = 2;
 	prate_last_events = 0;
 	prate_last_rate = 0.0;
-	
-	hddm = new s_hddm_containers_t;
-	init_hddm_containers(hddm);
 }
 
 //----------------
@@ -45,8 +43,6 @@ DEventSource::DEventSource(int narg, char *argv[])
 DEventSource::~DEventSource()
 {
 	for(int i=0;i<Nsources;i++)free(sources[i]);
-
-	delete hddm;
 }
 
 //----------------
@@ -67,14 +63,6 @@ derror_t DEventSource::NextEvent(void)
 		return NextEvent();
 	}
 	
-	// Set number of rows in all containers to zero
-	DContainer **containers = (DContainer**)hddm;
-	int Ncontainers = sizeof(s_hddm_containers_t)/sizeof(DContainer*);
-	for(int i=0;i<Ncontainers;i++ ,containers++){
-		if((*containers)->flags & DContainer::PERSISTANT)continue;
-		(*containers)->nrows=0;
-	}
-
 	// Read next event from source. If none, then close source and recall ourself
 	switch(GetEvent()){
 		case NO_MORE_EVENTS_IN_SOURCE:

@@ -1,4 +1,4 @@
-// Author: David Lawrence  June 24, 2004
+	// Author: David Lawrence  June 24, 2004
 //
 //
 // DEventLoop methods
@@ -11,16 +11,6 @@ using namespace std;
 #include "DEventSourceET.h"
 #include "DEventSourceFile.h"
 
-#include "../BCAL/DBCAL.h"
-#include "../CDC/DCDC.h"
-#include "../FCAL/DFCAL.h"
-#include "../TAGGER/DTagger.h"
-#include "../TOF/DTOF.h"
-#include "../UPV/DUPV.h"
-#include "../TRIGGER/DTRIGGER.h"
-#include "../VERTEX/DVERTEX.h"
-#include "../FDC/DFDC.h"
-#include "../CHERENKOV/DCHERENKOV.h"
 
 int DONE = 0;
 
@@ -32,7 +22,6 @@ DEventLoop::DEventLoop(int narg, char *argv[])
 	/// Constructor for DEventLoop object 
 
 	// Initialize variables
-	proc_mask = EVENT_PROCESSOR_ALL;
 	Nprocessors = 0;
 	last_print_rate_time = 0;
 	
@@ -75,46 +64,32 @@ derror_t DEventLoop::AddProcessor(DEventProcessor *processor)
 }
 
 //----------------
-// SetStandardProcessors
-//----------------
-derror_t DEventLoop::SetStandardProcessors(EVENT_PROCESSORS processmask)
-{
-	proc_mask = processmask;
-	
-	return NOERROR;
-}
-
-//----------------
 // Init
 //----------------
 derror_t DEventLoop::Init(void)
 {
-	// At this point, all of the "user" specified event processors
-	// are in the processors list. However, we want the "standard"
-	// processors to be at the top of the list so they are called
-	// first allowing the "users" processors to see the reconstructed
-	// data. Thus, we must make a copy of the current list, make
-	// the list empty, and then append the user processors after
-	// the standard ones have been added.
-	DEventProcessor* processors_copy[MAX_EVENT_PROCESSORS];
-	int Nprocessors_copy = 0;
-	for(int i=0;i<Nprocessors;i++)processors_copy[Nprocessors_copy++] = processors[i];
-	Nprocessors = 0;
 
-	// Add standard processors specified by proc_mask
-	if(proc_mask&EVENT_PROCESSOR_TRIGGER	)AddProcessor(new DTRIGGER);
-	if(proc_mask&EVENT_PROCESSOR_TAGGER		)AddProcessor(new DTagger);
-	if(proc_mask&EVENT_PROCESSOR_UPV			)AddProcessor(new DUPV);
-	if(proc_mask&EVENT_PROCESSOR_VERTEX		)AddProcessor(new DVERTEX);
-	if(proc_mask&EVENT_PROCESSOR_BCAL		)AddProcessor(new DBCAL);
-	if(proc_mask&EVENT_PROCESSOR_CDC			)AddProcessor(new DCDC);
-	if(proc_mask&EVENT_PROCESSOR_FDC			)AddProcessor(new DFDC);
-	if(proc_mask&EVENT_PROCESSOR_CHERENKOV	)AddProcessor(new DCHERENKOV);
-	if(proc_mask&EVENT_PROCESSOR_TOF			)AddProcessor(new DTOF);
-	if(proc_mask&EVENT_PROCESSOR_FCAL		)AddProcessor(new DFCAL);
-	
-	// Re-append "user" processors
-	for(int i=0;i<Nprocessors_copy;i++)AddProcessor(processors_copy[i++]);
+	// Let each detector system install factories
+	extern derror_t BCAL_init(DEvent*);
+	extern derror_t CDC_init(DEvent*);
+	extern derror_t CHERENKOV_init(DEvent*);
+	extern derror_t FCAL_init(DEvent*);
+	extern derror_t FDC_init(DEvent*);
+	extern derror_t TAGGER_init(DEvent*);
+	extern derror_t TOF_init(DEvent*);
+	extern derror_t TRIGGER_init(DEvent*);
+	extern derror_t UPV_init(DEvent*);
+	extern derror_t TRACKING_init(DEvent*);
+	BCAL_init(this);
+	CDC_init(this);
+	CHERENKOV_init(this);
+	FCAL_init(this);
+	FDC_init(this);
+	TAGGER_init(this);
+	TOF_init(this);
+	TRIGGER_init(this);
+	UPV_init(this);
+	TRACKING_init(this);
 	
 	// Set the event_loop field for all processors
 	for(int i=0;i<Nprocessors;i++)processors[i]->event_loop = this;
@@ -130,6 +105,9 @@ derror_t DEventLoop::Init(void)
 //----------------
 derror_t DEventLoop::OneEvent(void)
 {
+	// Clear evnt_called flag in all factories
+	ClearFactories();
+
 	derror_t err = source->NextEvent();
 	switch(err){
 		case NOERROR:
@@ -141,13 +119,15 @@ derror_t DEventLoop::OneEvent(void)
 			break;
 	}
 	if(err != NOERROR)return err;
-		
+	
+	// Copy pointer to hddm_s to our object (from DEvent inheritance)
+	hddm_s = source->hddm_s;
+	
 	// Call Event Processors
 	DEventProcessor **p = processors;
 	int eventNo = 0;
 	for(int i=0;i<Nprocessors;i++, p++){
-		(*p)->hddm = source->hddm;
-		(*p)->hddm_s = source->hddm_s;
+		(*p)->hddm_s = hddm_s;
 		derror_t err = (*p)->evnt(eventNo);
 
 		// More will need to be done to truly filter out the event.
@@ -188,6 +168,8 @@ derror_t DEventLoop::Run(void)
 
 	// Clean up
 	err = Fini();
+	
+	cout<<endl<<source->Nevents_read<<" events processed total"<<endl;
 
 	return err;
 }
@@ -199,29 +181,6 @@ derror_t DEventLoop::Run(DEventProcessor *proc)
 {
 	derror_t err;
 	if(err=AddProcessor(proc))return err;
-	
-	return Run();
-}
-
-//----------------
-// Run
-//----------------
-derror_t DEventLoop::Run(EVENT_PROCESSORS mask)
-{
-	derror_t err;
-	if(err=SetStandardProcessors(mask))return err;
-	
-	return Run();
-}
-
-//----------------
-// Run
-//----------------
-derror_t DEventLoop::Run(DEventProcessor *proc, EVENT_PROCESSORS mask)
-{
-	derror_t err;
-	if(err=AddProcessor(proc))return err;
-	if(err=SetStandardProcessors(mask))return err;
 	
 	return Run();
 }
