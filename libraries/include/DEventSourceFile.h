@@ -12,15 +12,15 @@
 #include "derror.h"
 #include "hddm_s.h"
 
-class DEventSourceFile:DEventSource
+class DEventSourceFile:public DEventSource
 {
 	public:
 		DEventSourceFile(int narg, char *argv[]);
 		~DEventSourceFile();
 		
-		derror_t Open(void);			///< Open the first (if more than one) event source 
-		derror_t Close(void);		///< Close the current event source.
-		derror_t GetEvent(void);	///< Copy event from ET system into buffer.
+		derror_t Open(char *source);	///< Open the first (if more than one) event source 
+		derror_t Close(void);			///< Close the current event source.
+		derror_t GetEvent(void);		///< Copy event from ET system into buffer.
 		
 		s_iostream_t *fin;
 		s_HDDM_t *hddm;
