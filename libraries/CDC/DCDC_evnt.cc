@@ -9,7 +9,7 @@ using namespace std;
 
 #include "DCDC.h"
 
-static int qsort_cdc(const void* arg1, const void* arg2);
+static int qsort_cdchit(const void* arg1, const void* arg2);
 
 
 //------------------------------------------------------------------
@@ -17,128 +17,60 @@ static int qsort_cdc(const void* arg1, const void* arg2);
 //------------------------------------------------------------------
 derror_t DCDC::evnt(int eventnumber)
 {
-#if 0	
-	// Convert CDC hits to simpler format
-	copy_to_cdchits();
 
-	// Allocate memory for cdc_tracks. (there can't be more tracks than hits)
-	hddm->cdc_tracks = make_s_Cdc_tracks(hddm->cdc_trackhits->mult);
-	
+	// Sort CDC hits by track, then z
+	qsort(hddm->CDChits->CDChit, hddm->CDChits->nrows, sizeof(CDChit_t), qsort_cdchit);
+		
 	// Fit CDC tracks
-	s_Cdc_trackhits_t *cdc_trackhits = hddm->cdc_trackhits;
+	CDChit_t *CDChit = hddm->CDChits->CDChit;
 	int track_start = 0;
-	for(int j=1;j<cdc_trackhits->mult;j++){
-		if(cdc_trackhits->in[j].track!=cdc_trackhits->in[j-1].track || j==cdc_trackhits->mult-1){
-			// For now, we just use the "first guess" parameters until
-			// a real fitting routine is written
-			float theta,phi,p,q;
-			firstguess(&cdc_trackhits->in[track_start], j-track_start
-				,theta, phi, p, q);
-			track_start = j;
+	for(int j=0;j<hddm->CDChits->nrows-1;j++, CDChit++){
+		
+		if(CDChit->track!=CDChit[1].track || j==hddm->CDChits->nrows-2){
+			// Do a first guess calculation of track parameters
+			float theta,phi,p,q,x0,y0;
+			firstguess(&hddm->CDChits->CDChit[track_start] ,j+1-track_start ,theta, phi, p, q, x0, y0);
+			track_start = j+1;
 			
-			// Fill in cdctrack
-			s_Cdc_track_t *cdctrack = &hddm->cdc_tracks->in[hddm->cdc_tracks->mult++];
-			cdctrack->theta = theta;
-			cdctrack->phi = phi;
-			cdctrack->p = p;
-			cdctrack->q = q;
-			cdctrack->px = p*sin(theta)*cos(phi);
-			cdctrack->py = p*sin(theta)*sin(phi);
-			cdctrack->pz = p*cos(theta);
-			cdctrack->track = cdc_trackhits->in[j-1].track;
+			// Fill in CDCtrack
+			CDCtracks_t *CDCtracks = hddm->CDCtracks;
+			CDCtracks->nrows++;
+			CDCtracks->Grow();
+			CDCtrack_t *CDCtrack = &CDCtracks->CDCtrack[CDCtracks->nrows-1];
+
+			CDCtrack->q = q;
+			CDCtrack->dir.SetXYZ(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
+			CDCtrack->p.SetVect(p*CDCtrack->dir);
+			CDCtrack->track = CDChit->track;
+			CDCtrack->x0 = x0;
+			CDCtrack->y0 = y0;
 		}
 	}
-#endif
 
 	return NOERROR;
 }
 
-//------------------------------------------------------------------
-// copy_to_cdchits 
-//------------------------------------------------------------------
-derror_t DCDC::copy_to_cdchits(void)
-{
-#if 0
-	/// Copy from from s_CdcPoints_t to s_Cdc_trackhits_t
-	
-	// We need to allocate memory for the s_Cdc_trackhits_t, but
-	// we don't know how many hits there are and it just doesn't seem
-	// worth going through "N" levels to get the exact number. Just
-	// allocate 1000.
-	hddm->cdc_trackhits = make_s_Cdc_trackhits(1000);
-	int Ntrackhits = hddm->cdc_trackhits->mult = 0;
-	s_Cdc_trackhit_t *trackhits = hddm->cdc_trackhits->in;
-
-	// Loop over Physics Events
-	s_PhysicsEvents_t* PE = hddm->physicsEvents;
-	if(!PE)return NOERROR;
-	for(int i=0; i<PE->mult; i++){
-	
-		s_Rings_t *rings=NULL;
-		s_HitView_t *HV = PE->in[i].hitView;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->centralDC)
-				rings = PE->in[i].hitView->centralDC->rings;
-		if(rings){
-			for(int j=0;j<rings->mult;j++){
-				float radius = rings->in[j].radius;
-				s_Straws_t *straws = rings->in[j].straws;
-				if(straws){
-					for(int k=0;k<straws->mult;k++){
-						float phim = straws->in[k].phim;
-						s_CdcPoints_t *cdcPoints = straws->in[k].cdcPoints;
-						if(cdcPoints){						
-							for(int m=0;m<cdcPoints->mult;m++){
-								float	r = cdcPoints->in[m].r;
-								float phi = cdcPoints->in[m].phi;
-								float z = cdcPoints->in[m].z;
-								if(Ntrackhits>=1000)continue;
-								
-								trackhits[Ntrackhits].x = r*cos(phi);
-								trackhits[Ntrackhits].y = r*sin(phi);
-								trackhits[Ntrackhits].z = z;
-								trackhits[Ntrackhits].t = 0.0;
-								trackhits[Ntrackhits].track = cdcPoints->in[m].track;
-								Ntrackhits++;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	hddm->cdc_trackhits->mult = Ntrackhits;
-	
-	// Sort by track number, then z-position (ascending for both)
-	qsort(hddm->cdc_trackhits->in, Ntrackhits, sizeof(s_Cdc_trackhit_t), qsort_cdc);
-#endif
-
-	return NOERROR;
-}
-
-#if 0
 //------------------------------------------------------------------
 // qsort_cdc_trackhits
 //------------------------------------------------------------------
-static int qsort_cdc(const void* arg1, const void* arg2)
+static int qsort_cdchit(const void* arg1, const void* arg2)
 {
-	s_Cdc_trackhit_t *a = (s_Cdc_trackhit_t*)arg1;
-	s_Cdc_trackhit_t *b = (s_Cdc_trackhit_t*)arg2;
+	CDChit_t *a = (CDChit_t*)arg1;
+	CDChit_t *b = (CDChit_t*)arg2;
 	
 	// Sort by track first ...
 	if(a->track != b->track)return a->track - b->track;
 	
 	// ... then z
-	if(a->z == b->z)return 0;
-	return b->z > a->z ? 1:-1;
+	if(a->pos.z() == b->pos.z())return 0;
+	return b->pos.z() > a->pos.z() ? 1:-1;
 }
 
 //-----------------
 // firstguess
 //-----------------
-derror_t DCDC::firstguess(s_Cdc_trackhit_t *hits, int Npoints
-	, float &theta ,float &phi, float &p, float &q)
+derror_t DCDC::firstguess(CDChit_t *hits, int Npoints
+	, float &theta ,float &phi, float &p, float &q, float &x0, float &y0)
 {
 	/// This will determine starting parameters for the fit of a CDC track.
 	/// The alogorithm used here calculates the parameters directly using
@@ -152,10 +84,10 @@ derror_t DCDC::firstguess(s_Cdc_trackhit_t *hits, int Npoints
 	float alpha=0.0, beta=0.0, gamma=0.0, deltax=0.0, deltay=0.0;
 	
 	// Loop over hits to calculate alpha, beta, gamma, and delta
-	s_Cdc_trackhit_t *v=hits;
+	CDChit_t *v=hits;
 	for(int i=0;i<Npoints;i++, v++){
-		float x=v->x;
-		float y=v->y;
+		float x=v->pos.x();
+		float y=v->pos.y();
 		alpha += x*x;
 		beta += y*y;
 		gamma += x*y;
@@ -164,13 +96,13 @@ derror_t DCDC::firstguess(s_Cdc_trackhit_t *hits, int Npoints
 	}
 	
 	// Calculate x0,y0 - the center of the circle
-	float x0 = (deltax*beta-deltay*gamma)/(alpha*beta-gamma*gamma);
-	float y0 = (deltay-gamma*x0)/beta;
+	x0 = (deltax*beta-deltay*gamma)/(alpha*beta-gamma*gamma);
+	y0 = (deltay-gamma*x0)/beta;
 
 	// Momentum depends on magnetic field. Assume 2T for now.
 	// Also assume a singly charged track (i.e. q=+/-1)
 	// The sign of the charge will be deterined below.
-	float B=-2.0*0.593; // The 0.61 is empirical
+	float B=-2.0*0.593; // The 0.5931 is empirical
 	q = +1.0;
 	float r0 = sqrt(x0*x0 + y0*y0);
 	float hbarc = 197.326;
@@ -185,9 +117,9 @@ derror_t DCDC::firstguess(s_Cdc_trackhit_t *hits, int Npoints
 	float xprod_sum = 0.0;
 	int n_2 = Npoints/2; 
 	v = hits;
-	s_Cdc_trackhit_t *v2=&hits[n_2];
+	CDChit_t *v2=&hits[n_2];
 	for(int i=0;i<n_2;i++, v++, v2++){
-		xprod_sum += v->x*v2->y - v2->x*v->y;
+		xprod_sum += v->pos.x()*v2->pos.y() - v2->pos.x()*v->pos.y();
 	}
 	if(xprod_sum>0.0)q = -q;
 
@@ -204,9 +136,9 @@ derror_t DCDC::firstguess(s_Cdc_trackhit_t *hits, int Npoints
 	float dphidz =0.0;
 	int Ndphidzpoints = 0;
 	for(int i=0;i<Npoints-1;i++, v++, v2++){
-		float myphi1 = atan2(v->y-y0,  v->x-x0);
-		float myphi2 = atan2(v2->y-y0, v2->x-x0);
-		float mydphidz = (myphi2-myphi1)/(v2->z-v->z);
+		float myphi1 = atan2(v->pos.y()-y0,  v->pos.x()-x0);
+		float myphi2 = atan2(v2->pos.y()-y0, v2->pos.x()-x0);
+		float mydphidz = (myphi2-myphi1)/(v2->pos.z()-v->pos.z());
 		if(finite(mydphidz)){
 			dphidz+=mydphidz;
 			Ndphidzpoints++;
@@ -222,6 +154,8 @@ derror_t DCDC::firstguess(s_Cdc_trackhit_t *hits, int Npoints
 	return NOERROR;
 }
 
+
+#if 0
 //-----------------
 // firstguess_curtis
 //-----------------
