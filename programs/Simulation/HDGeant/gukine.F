@@ -2,6 +2,10 @@
 * $Id$
 *
 * $Log$
+* Revision 1.12  2003/07/28 15:42:58  jonesrt
+* - gukine.F - added photon polarization as an additional attached info to
+*              vertex [rtj]
+*
 * Revision 1.11  2003/07/28 15:31:33  jonesrt
 * - gukine.F - added conditional BEAM_BOX_SIZE to enable simulations with
 *   artificial electron beam motion superimposed on coherent bremsstrahlung [rtj]
@@ -107,6 +111,8 @@ c #define BEAM_BOX_SIZE 6
       parameter (xMinimum=1e-2)
       parameter (Theta02=1.8)
       parameter (CollimPos=-2200.0)
+      integer nubuf
+      real ubuf(10)
 *
 *     -----------------------------------------------------------------
 *
@@ -175,11 +181,13 @@ c #define BEAM_BOX_SIZE 6
                enddo
     5          continue
                freq = freq*TWOPI*Theta02
+               ppol = polarization(x,phi)
             else                                  !try incoherent generation
                theta2 = Theta02
      +                  *RNDM(3)/(1-RNDM(3)+1e-30)
                freq = dNidxdt2(x,theta2)
                freq = freq*(Theta02+theta2)**2
+               ppol = 0
             endif
             freq = x*freq
             if (freq.gt.freqMaximum) then
@@ -203,14 +211,17 @@ c #define BEAM_BOX_SIZE 6
          VERTEX(1) = (rhoc*cos(phic) + D*thetaX)*100
          VERTEX(2) = (rhoc*sin(phic) + D*thetaY)*100
          VERTEX(3) = CollimPos
+         ubuf(1) = ppol
+         nubuf = 1
 #if defined BEAM_BOX_SIZE
          call GRNDM(RNDM,2)
-         RNDM(1) = RNDM(1)*BEAM_BOX_SIZE
-         RNDM(2) = RNDM(2)*BEAM_BOX_SIZE
-         VERTEX(1) = VERTEX(1) + RNDM(1)
-         VERTEX(2) = VERTEX(2) + RNDM(2)
+         ubuf(2) = RNDM(1)*BEAM_BOX_SIZE
+         ubuf(3) = RNDM(2)*BEAM_BOX_SIZE
+         VERTEX(1) = VERTEX(1) + ubuf(2)
+         VERTEX(2) = VERTEX(2) + ubuf(3)
+         nubuf = 3
 #endif
-         call GSVERT(VERTEX,0,0,RNDM,2,NVERT)
+         call GSVERT(VERTEX,0,0,ubuf,nubuf,NVERT)
          call GSKINE(PLAB,1,NVERT,0,0,NT)
          call storeInput(IDRUN,IDEVT,NT);
 *
