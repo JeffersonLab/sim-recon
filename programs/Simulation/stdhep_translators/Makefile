@@ -86,13 +86,13 @@ stdhep2hddm: hddm_s.o stdhep2hddm.o $(STDHEP_DIR)/lib/libstdhepC.a
 
 stdhep2itape: stdhep2itape.o  $(STDHEP_DIR)/lib/libstdhepC.a
 	$(CC) $(CFLAGS) $(INCS)  -o stdhep2itape stdhep2itape.o   \
-		$(HALLDLIBS)/libdata.a \
+		$(HALLDLIBS)/libdata.a -lpthread \
 		$(STDHEP_DIR)/lib/libstdhepC.a \
 		$(STDHEP_DIR)/lib/libFmcfio.a $(LOCAL) -lm
 
 itape2stdhep: itape2stdhep.o  $(STDHEP_DIR)/lib/libstdhepC.a
 	$(CC) $(CFLAGS) $(INCS)  -o itape2stdhep itape2stdhep.o   \
-		$(HALLDLIBS)/libdata.a \
+		$(HALLDLIBS)/libdata.a -lpthread \
 		$(STDHEP_DIR)/lib/libstdhepC.a \
 		$(STDHEP_DIR)/lib/libFmcfio.a $(LOCAL) -lm
 

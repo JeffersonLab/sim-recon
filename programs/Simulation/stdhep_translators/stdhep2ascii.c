@@ -191,7 +191,8 @@ int main(int argc,char **argv)
      * Close the StdHep file and exit.
      */
 
-    /* StdHepXdrEnd(istream); */
+     StdHepXdrEnd(istream);
+     exit(0);
 
    } /* end of else /* good start */
 } /* end of main */

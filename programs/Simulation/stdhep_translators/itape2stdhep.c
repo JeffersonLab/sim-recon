@@ -199,6 +199,7 @@ int main(int argc,char **argv)
      */
 
     StdHepXdrEnd(istream); 
+    exit(0);
 
    } /* end of else /* good start */
 } /* end of main */
