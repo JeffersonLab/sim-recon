@@ -7,7 +7,7 @@
 ///
 
 #include "DEventProcessor.h"
-#include "hddm_s.h"
+#include "hddm.h"
 
 class DCDC:public DEventProcessor
 {
@@ -19,6 +19,6 @@ class DCDC:public DEventProcessor
 		derror_t fini(void);					///< Called after last event of last event source has been processed.
 
 		derror_t	copy_to_cdchits(void);
-		derror_t firstguess(s_Cdc_trackhit_t *hits, int Nhits, float &theta, float &phi, float &p, float &q);
-		derror_t firstguess_curtis(s_Cdc_trackhit_t *hits, int Nhits, float &theta, float &phi, float &p, float &q);
+		derror_t firstguess(CDChit_t *hits, int Nhits, float &theta, float &phi, float &p, float &q);
+		derror_t firstguess_curtis(CDChit_t *hits, int Nhits, float &theta, float &phi, float &p, float &q);
 };
