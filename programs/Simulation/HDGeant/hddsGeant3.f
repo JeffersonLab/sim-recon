@@ -59023,7 +59023,7 @@
       npar = 3
       par(1) = 65
       par(2) = 90
-      par(3) = 195
+      par(3) = 220
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.112) stop 'consistency check #1 failed'
 
@@ -59032,7 +59032,7 @@
       chmoth = 'LASS'
       x = 0
       y = 0
-      z = 210
+      z = 235
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -59078,7 +59078,7 @@
       npar = 5
       par(1) = 65
       par(2) = 90
-      par(3) = 195
+      par(3) = 220
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)

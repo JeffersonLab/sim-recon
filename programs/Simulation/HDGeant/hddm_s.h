@@ -20,7 +20,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <rpc/xdr.h>
+#include <rpc/rpc.h>
 #include <string.h>
 #include <particleType.h>
 
@@ -620,6 +620,10 @@ typedef struct {
 } s_HDDM_t;
 #endif /* s_HDDM_t */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 s_HDDM_t* make_s_HDDM();
 
 s_PhysicsEvents_t* make_s_PhysicsEvents(int n);
@@ -754,3 +758,7 @@ s_iostream_t* open_s_HDDM(char* filename);
 s_iostream_t* init_s_HDDM(char* filename);
 
 void close_s_HDDM(s_iostream_t* fp);
+
+#ifdef __cplusplus
+}
+#endif

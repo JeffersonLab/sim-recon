@@ -464,12 +464,14 @@ char HDDM_s_DocumentString[] =
 static s_HDDM_t* unpack_s_HDDM(XDR* xdrs, popNode* pop)
 {
    s_HDDM_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_HDDM();
       {
          int p;
@@ -490,20 +492,22 @@ static s_HDDM_t* unpack_s_HDDM(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_PhysicsEvents_t* unpack_s_PhysicsEvents(XDR* xdrs, popNode* pop)
 {
    s_PhysicsEvents_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -531,20 +535,22 @@ static s_PhysicsEvents_t* unpack_s_PhysicsEvents(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Reactions_t* unpack_s_Reactions(XDR* xdrs, popNode* pop)
 {
    s_Reactions_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -572,20 +578,22 @@ static s_Reactions_t* unpack_s_Reactions(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Beam_t* unpack_s_Beam(XDR* xdrs, popNode* pop)
 {
    s_Beam_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_Beam();
       {
          int p;
@@ -607,20 +615,22 @@ static s_Beam_t* unpack_s_Beam(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Momentum_t* unpack_s_Momentum(XDR* xdrs, popNode* pop)
 {
    s_Momentum_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_Momentum();
       {
          xdr_float(xdrs,&this1->E);
@@ -628,39 +638,43 @@ static s_Momentum_t* unpack_s_Momentum(XDR* xdrs, popNode* pop)
          xdr_float(xdrs,&this1->py);
          xdr_float(xdrs,&this1->pz);
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Properties_t* unpack_s_Properties(XDR* xdrs, popNode* pop)
 {
    s_Properties_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_Properties();
       {
          xdr_int(xdrs,&this1->charge);
          xdr_float(xdrs,&this1->mass);
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Target_t* unpack_s_Target(XDR* xdrs, popNode* pop)
 {
    s_Target_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_Target();
       {
          int p;
@@ -682,20 +696,22 @@ static s_Target_t* unpack_s_Target(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Vertices_t* unpack_s_Vertices(XDR* xdrs, popNode* pop)
 {
    s_Vertices_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -721,20 +737,22 @@ static s_Vertices_t* unpack_s_Vertices(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Products_t* unpack_s_Products(XDR* xdrs, popNode* pop)
 {
    s_Products_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -762,20 +780,22 @@ static s_Products_t* unpack_s_Products(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Origin_t* unpack_s_Origin(XDR* xdrs, popNode* pop)
 {
    s_Origin_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_Origin();
       {
          xdr_float(xdrs,&this1->t);
@@ -783,20 +803,22 @@ static s_Origin_t* unpack_s_Origin(XDR* xdrs, popNode* pop)
          xdr_float(xdrs,&this1->vy);
          xdr_float(xdrs,&this1->vz);
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_HitView_t* unpack_s_HitView(XDR* xdrs, popNode* pop)
 {
    s_HitView_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_HitView();
       {
          int p;
@@ -817,20 +839,22 @@ static s_HitView_t* unpack_s_HitView(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_CentralDC_t* unpack_s_CentralDC(XDR* xdrs, popNode* pop)
 {
    s_CentralDC_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_CentralDC();
       {
          int p;
@@ -851,20 +875,22 @@ static s_CentralDC_t* unpack_s_CentralDC(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_CathodeCyls_t* unpack_s_CathodeCyls(XDR* xdrs, popNode* pop)
 {
    s_CathodeCyls_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -891,20 +917,22 @@ static s_CathodeCyls_t* unpack_s_CathodeCyls(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Bands_t* unpack_s_Bands(XDR* xdrs, popNode* pop)
 {
    s_Bands_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -915,20 +943,22 @@ static s_Bands_t* unpack_s_Bands(XDR* xdrs, popNode* pop)
          xdr_float(xdrs,&this1->in[m].phim);
          xdr_float(xdrs,&this1->in[m].z);
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Rings_t* unpack_s_Rings(XDR* xdrs, popNode* pop)
 {
    s_Rings_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -955,20 +985,22 @@ static s_Rings_t* unpack_s_Rings(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Straws_t* unpack_s_Straws(XDR* xdrs, popNode* pop)
 {
    s_Straws_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -995,20 +1027,22 @@ static s_Straws_t* unpack_s_Straws(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Hits_t* unpack_s_Hits(XDR* xdrs, popNode* pop)
 {
    s_Hits_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1019,20 +1053,22 @@ static s_Hits_t* unpack_s_Hits(XDR* xdrs, popNode* pop)
          xdr_float(xdrs,&this1->in[m].dE);
          xdr_float(xdrs,&this1->in[m].t);
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_CdcPoints_t* unpack_s_CdcPoints(XDR* xdrs, popNode* pop)
 {
    s_CdcPoints_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1047,20 +1083,22 @@ static s_CdcPoints_t* unpack_s_CdcPoints(XDR* xdrs, popNode* pop)
          xdr_int(xdrs,&this1->in[m].track);
          xdr_float(xdrs,&this1->in[m].z);
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_ForwardDC_t* unpack_s_ForwardDC(XDR* xdrs, popNode* pop)
 {
    s_ForwardDC_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_ForwardDC();
       {
          int p;
@@ -1081,20 +1119,22 @@ static s_ForwardDC_t* unpack_s_ForwardDC(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Chambers_t* unpack_s_Chambers(XDR* xdrs, popNode* pop)
 {
    s_Chambers_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1122,20 +1162,22 @@ static s_Chambers_t* unpack_s_Chambers(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_CathodePlanes_t* unpack_s_CathodePlanes(XDR* xdrs, popNode* pop)
 {
    s_CathodePlanes_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1163,20 +1205,22 @@ static s_CathodePlanes_t* unpack_s_CathodePlanes(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Strips_t* unpack_s_Strips(XDR* xdrs, popNode* pop)
 {
    s_Strips_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1186,20 +1230,22 @@ static s_Strips_t* unpack_s_Strips(XDR* xdrs, popNode* pop)
       {
          xdr_float(xdrs,&this1->in[m].u);
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_AnodePlanes_t* unpack_s_AnodePlanes(XDR* xdrs, popNode* pop)
 {
    s_AnodePlanes_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1227,20 +1273,22 @@ static s_AnodePlanes_t* unpack_s_AnodePlanes(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Wires_t* unpack_s_Wires(XDR* xdrs, popNode* pop)
 {
    s_Wires_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1267,20 +1315,22 @@ static s_Wires_t* unpack_s_Wires(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_FdcPoints_t* unpack_s_FdcPoints(XDR* xdrs, popNode* pop)
 {
    s_FdcPoints_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1295,20 +1345,22 @@ static s_FdcPoints_t* unpack_s_FdcPoints(XDR* xdrs, popNode* pop)
          xdr_float(xdrs,&this1->in[m].y);
          xdr_float(xdrs,&this1->in[m].z);
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_StartCntr_t* unpack_s_StartCntr(XDR* xdrs, popNode* pop)
 {
    s_StartCntr_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_StartCntr();
       {
          int p;
@@ -1329,20 +1381,22 @@ static s_StartCntr_t* unpack_s_StartCntr(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Paddles_t* unpack_s_Paddles(XDR* xdrs, popNode* pop)
 {
    s_Paddles_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1369,20 +1423,22 @@ static s_Paddles_t* unpack_s_Paddles(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_StartPoints_t* unpack_s_StartPoints(XDR* xdrs, popNode* pop)
 {
    s_StartPoints_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1397,20 +1453,22 @@ static s_StartPoints_t* unpack_s_StartPoints(XDR* xdrs, popNode* pop)
          xdr_int(xdrs,&this1->in[m].track);
          xdr_float(xdrs,&this1->in[m].z);
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_BarrelEMcal_t* unpack_s_BarrelEMcal(XDR* xdrs, popNode* pop)
 {
    s_BarrelEMcal_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_BarrelEMcal();
       {
          int p;
@@ -1431,20 +1489,22 @@ static s_BarrelEMcal_t* unpack_s_BarrelEMcal(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Modules_t* unpack_s_Modules(XDR* xdrs, popNode* pop)
 {
    s_Modules_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1471,20 +1531,22 @@ static s_Modules_t* unpack_s_Modules(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Upstream_t* unpack_s_Upstream(XDR* xdrs, popNode* pop)
 {
    s_Upstream_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_Upstream();
       {
          int p;
@@ -1505,20 +1567,22 @@ static s_Upstream_t* unpack_s_Upstream(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Showers_t* unpack_s_Showers(XDR* xdrs, popNode* pop)
 {
    s_Showers_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1529,20 +1593,22 @@ static s_Showers_t* unpack_s_Showers(XDR* xdrs, popNode* pop)
          xdr_float(xdrs,&this1->in[m].E);
          xdr_float(xdrs,&this1->in[m].t);
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Downstream_t* unpack_s_Downstream(XDR* xdrs, popNode* pop)
 {
    s_Downstream_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_Downstream();
       {
          int p;
@@ -1563,20 +1629,22 @@ static s_Downstream_t* unpack_s_Downstream(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_BarrelShowers_t* unpack_s_BarrelShowers(XDR* xdrs, popNode* pop)
 {
    s_BarrelShowers_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1590,20 +1658,22 @@ static s_BarrelShowers_t* unpack_s_BarrelShowers(XDR* xdrs, popNode* pop)
          xdr_int(xdrs,&this1->in[m].track);
          xdr_float(xdrs,&this1->in[m].z);
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Cerenkov_t* unpack_s_Cerenkov(XDR* xdrs, popNode* pop)
 {
    s_Cerenkov_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_Cerenkov();
       {
          int p;
@@ -1624,20 +1694,22 @@ static s_Cerenkov_t* unpack_s_Cerenkov(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Sections_t* unpack_s_Sections(XDR* xdrs, popNode* pop)
 {
    s_Sections_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1664,20 +1736,22 @@ static s_Sections_t* unpack_s_Sections(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Flashes_t* unpack_s_Flashes(XDR* xdrs, popNode* pop)
 {
    s_Flashes_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1688,20 +1762,22 @@ static s_Flashes_t* unpack_s_Flashes(XDR* xdrs, popNode* pop)
          xdr_float(xdrs,&this1->in[m].pe);
          xdr_float(xdrs,&this1->in[m].t);
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_ForwardTOF_t* unpack_s_ForwardTOF(XDR* xdrs, popNode* pop)
 {
    s_ForwardTOF_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_ForwardTOF();
       {
          int p;
@@ -1722,20 +1798,22 @@ static s_ForwardTOF_t* unpack_s_ForwardTOF(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Slabs_t* unpack_s_Slabs(XDR* xdrs, popNode* pop)
 {
    s_Slabs_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1762,20 +1840,22 @@ static s_Slabs_t* unpack_s_Slabs(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Left_t* unpack_s_Left(XDR* xdrs, popNode* pop)
 {
    s_Left_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_Left();
       {
          int p;
@@ -1796,20 +1876,22 @@ static s_Left_t* unpack_s_Left(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Right_t* unpack_s_Right(XDR* xdrs, popNode* pop)
 {
    s_Right_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_Right();
       {
          int p;
@@ -1830,20 +1912,22 @@ static s_Right_t* unpack_s_Right(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_TofPoints_t* unpack_s_TofPoints(XDR* xdrs, popNode* pop)
 {
    s_TofPoints_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1856,20 +1940,22 @@ static s_TofPoints_t* unpack_s_TofPoints(XDR* xdrs, popNode* pop)
          xdr_float(xdrs,&this1->in[m].x);
          xdr_float(xdrs,&this1->in[m].y);
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_ForwardEMcal_t* unpack_s_ForwardEMcal(XDR* xdrs, popNode* pop)
 {
    s_ForwardEMcal_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       this1 = make_s_ForwardEMcal();
       {
          int p;
@@ -1890,20 +1976,22 @@ static s_ForwardEMcal_t* unpack_s_ForwardEMcal(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Rows_t* unpack_s_Rows(XDR* xdrs, popNode* pop)
 {
    s_Rows_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1930,20 +2018,22 @@ static s_Rows_t* unpack_s_Rows(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_Columns_t* unpack_s_Columns(XDR* xdrs, popNode* pop)
 {
    s_Columns_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1970,20 +2060,22 @@ static s_Columns_t* unpack_s_Columns(XDR* xdrs, popNode* pop)
             }
          }
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 
 static s_ForwardShowers_t* unpack_s_ForwardShowers(XDR* xdrs, popNode* pop)
 {
    s_ForwardShowers_t* this1 = 0;
-   int start;
    unsigned int size;
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-   if (size > 0)
+   if (! xdr_u_int(xdrs,&size))
    {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
       int m;
       int mult;
       xdr_u_int(xdrs,&mult);
@@ -1997,8 +2089,8 @@ static s_ForwardShowers_t* unpack_s_ForwardShowers(XDR* xdrs, popNode* pop)
          xdr_float(xdrs,&this1->in[m].x);
          xdr_float(xdrs,&this1->in[m].y);
       }
+      xdr_setpos(xdrs,start+size);
    }
-   xdr_setpos(xdrs,start+size);
    return this1;
 }
 

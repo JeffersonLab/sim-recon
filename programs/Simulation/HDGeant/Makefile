@@ -10,7 +10,7 @@ BINDIR = ../bin.$(OStype)
 #NTUPLE_OPTIONS = -DWERNERS_VTX_NTUPLE
 NTUPLE_OPTIONS = -DCERENKOV_PID_NTUPLE
 # Enable the following line to turn off writing out hddm data 
-IO_OPTIONS = -DDISABLE_OUTPUT
+#IO_OPTIONS = -DDISABLE_OUTPUT
 #--------------------------------------------------------------------
 
 SWITCHES = $(IO_OPTIONS) $(NTUPLE_OPTIONS)
@@ -85,6 +85,9 @@ hdgeant: hdgeant.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC)
 	 hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC) -Lgelhad -lgelhad \
 	`$(CERNLIB) geant321 mathlib graflib grafX11` \
 	$(NETLIB) $(XLIBS)
+
+install: hdgeant hdgeant++
+	cp $^ $(HALLD_HOME)/bin/$(OStype)
 
 .F.o:
 	$(F77) $(FOPTS) -I$(CERN_ROOT)/include -DCERNLIB_MOTIF -c -o $@ $<

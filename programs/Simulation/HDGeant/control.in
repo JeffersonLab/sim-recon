@@ -20,7 +20,7 @@ C reached before the event count specified in card TRIG is exhausted then the
 C processing will stop at the end of file.
 
 TRIG 1000
-c INFILE 'rhop.hddm'
+INFILE 'rhop.hddm'
 BEAM 12.0 9.0 
 RUNG 9999
 
