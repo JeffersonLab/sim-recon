@@ -12,8 +12,6 @@ using namespace std;
 #include "DEventSourceFile.h"
 
 
-int DONE = 0;
-
 //----------------
 // Constructor
 //----------------
@@ -24,6 +22,7 @@ DEventLoop::DEventLoop(int narg, char *argv[])
 	// Initialize variables
 	Nprocessors = 0;
 	last_print_rate_time = 0;
+	quit=0;
 	
 	// Determine event source type
 	DEventSource::EVENT_SOURCE_TYPE source_type;
@@ -164,7 +163,7 @@ derror_t DEventLoop::Run(void)
 	do{
 		err=OneEvent();
 		if(err!=NOERROR)break;
-	}while(!DONE);
+	}while(!quit);
 
 	// Clean up
 	err = Fini();
