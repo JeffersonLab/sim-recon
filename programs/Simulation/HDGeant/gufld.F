@@ -32,9 +32,9 @@ C.
       data nsampl,ncolumns,nrows/0,0,0/
       save /fieldMap/
 
-c Sweeping magnets in CAVE have fields along +y
+c Sweeping magnets have fields along +y
 
-      if (cnames(2).eq.'CAVE') then
+      if (cnames(NLEVEL).eq.'SMAG') then
         F(1) = 0
         F(2) = fieldm
         F(3) = 0

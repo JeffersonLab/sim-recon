@@ -2,6 +2,10 @@
 * $Id$
 *
 * $Log$
+* Revision 1.10  2003/01/08 19:17:34  jonesrt
+* - gustep.F : added collection of information in a backgrounds ntuple - rtj
+* - gufld.F  : enabled magnetic field in sweep magnets, was off before - rtj
+*
 * Revision 1.9  2003/01/02 23:49:33  jonesrt
 * - included updates in gustep.F with conditional code for background
 *   studies, by R. Jones and C. Gauthier [rtj]
@@ -97,7 +101,7 @@
 
 #ifdef BACKGROUND_PROFILING
       integer det
-      real vertx(3),tofgx,ubuf(99),xint(999,3)
+      real vertx(3),tofgx,ubuf(99),xint(3,999)
       integer ntbeamx,nttargx,nubuf,mint
       save ubuf,xint,det,mint
       integer iorder(999)
@@ -114,8 +118,8 @@
 *   energy, position, polarization, and at what virtual detector the 
 *   particle passes through. the last colume entry is defined by a integer 
 *   'det' whose value is the number of the detector the particle passes 
-*   through.  The xint(igen,icomp) array records the vertex history of the
-*   interaction sequence leading to the detected particle, igen=1...mint.
+*   through.  The xint(icomp,iint) array records the vertex history of the
+*   interaction sequence leading to the detected particle, iint=1...mint.
 ********************************************************************************
 
 **********   assignment of the value of 'det' to a particle   ******************
@@ -142,7 +146,7 @@
       
       if (inwvol.eq.1.and.det.eq.7.and.
      +    ((ipart.eq.2).or.(ipart.eq.3)).and.
-          (vect(1)**2+vect(2)**2).gt.25.0) then
+     +    (vect(1)**2+vect(2)**2).gt.25.0) then
         call gfvert(1,vertx,ntbeamx,nttargx,tofgx,ubuf,nubuf)
         if (.not.hexist(10)) then
           call hbnt(10,'New Ntuple',' ')
@@ -163,11 +167,13 @@
           do while (mint.gt.0.and.iorder(mint).gt.istak)
             mint = mint-1
           enddo
-          mint = mint+1
-          iorder(mint) = istak
-          xint(mint,1) = vect(1)
-          xint(mint,2) = vect(2)
-          xint(mint,3) = vect(3)
+          if (mint.lt.999) then
+            mint = mint+1
+            iorder(mint) = istak
+            xint(1,mint) = vect(1)
+            xint(2,mint) = vect(2)
+            xint(3,mint) = vect(3)
+          endif
         endif
       endif
 
