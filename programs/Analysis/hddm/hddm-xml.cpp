@@ -46,8 +46,6 @@
 #include <iostream>
 #include <fstream>
 
-#include "fdstream.hpp"
-
 #include "hddm-xml.hpp"
 #include "particleType.h"
 
@@ -248,26 +246,23 @@ int main(int argC, char* argV[])
 
    char* hddmFile;
    FILE* ifp;
-   boost::fdistream* ifs;
    if (argInd == argC)
    {
       hddmFile = new char[1];
       *hddmFile = 0;
       ifp = stdin;
-      ifs = new boost::fdistream(0);
    }
    else if (argInd == argC - 1)
    {
       hddmFile = argV[argInd];
       ifp = fopen(hddmFile,"r");
-      ifs = new boost::fdistream(fileno(ifp));
    }
    else
    {
       usage();
       return 1;
    }
-   if (ifp < 0)
+   if (!ifp)
    {
       cerr << "hddm-xml: Error opening input stream " << hddmFile << endl;
       exit(1);
@@ -282,10 +277,9 @@ int main(int argC, char* argV[])
    }
 
    ofs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-   char xmlHeader[500];
-   size_t lineSize = 500;
-   char* line = new char [500];
-   if (ifs->getline(line,lineSize))
+   char xmlHeader[1000];
+   char* line = new char[1000];
+   if (fscanf(ifp,"%999[^\n]",line) == 1 && fscanf(ifp,"\n") == 0)
    {
       if (strstr(line,"<?xml") != 0)
       {
@@ -295,7 +289,7 @@ int main(int argC, char* argV[])
       }
       else if (strstr(line,"<HDDM") == line)
       {
-         strncpy(xmlHeader,line,500);
+         strncpy(xmlHeader,line,999);
          ofs << line << endl;
       }
       else
@@ -310,7 +304,7 @@ int main(int argC, char* argV[])
       cerr << "hddm-xml: Error reading from input stream " << hddmFile << endl;
       exit(1);
    }
-   while (ifs->getline(line,lineSize))
+   while (fscanf(ifp,"%999[^\n]",line) == 1 && fscanf(ifp,"\n") == 0)
    {
       ofs << line << endl;
       if (strstr(line,"</HDDM>") != 0)
@@ -353,6 +347,7 @@ int main(int argC, char* argV[])
   
    writeXML("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
    writeXML(xmlHeader);
+   writeXML("\n");
 
    XDR* xdrs = new XDR;
    xdrstdio_create(xdrs,ifp,XDR_DECODE);
