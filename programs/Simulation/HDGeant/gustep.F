@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.12  2004/01/14 16:28:10  brash
+* Updates in order to analyze different readout modules of the barrel calorimeter.  (EJB)
+*
 * Revision 1.11  2003/12/10 15:32:57  jonesrt
 * -control.in : never mind [rtj]
 * -gukine.F : fixed a bug in the setting of polarization ppol used
@@ -85,7 +88,7 @@
 *
 
 
-* #define BACKGROUND_STUDIES 1
+*#define BACKGROUND_STUDIES 1
 #define BACKGROUND_PROFILING 1
 
 #ifdef BACKGROUND_STUDIES
@@ -102,12 +105,18 @@
 
 #define TOP_CERENKOV_EFFICIENCY 0.25
 
-      character*4 cnames(15)
+      character*4 cnames(15),startchar
       equivalence (NAMES(1),cnames(1))
       real rnd(100)
 
+      integer ichar
+      character*4 bcalstring
+      common /bcalblk/ichar,bcalstring
+
       real xin(4),xout(4),pin(5),pout(5),dEsum
       save xin,xout,pin,pout,dEsum
+
+      startchar=cnames(NLEVEL)
 
 #ifdef BACKGROUND_PROFILING
       integer det
@@ -303,7 +312,8 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
           call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA)
         elseif (cnames(NLEVEL).eq.'CGAS') then		! Cerenkov counter
           call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA)
-        elseif (cnames(NLEVEL).eq.'BCAM') then		! barrel calorimeter
+        elseif (startchar(1:ichar).eq.bcalstring(i:ichar)) then		! barrel calorimeter
+c	  write(*,*)'In GUSTEP: ',bcalstring,dEsum
           call hitBarrelEMcal(xin,xout,pin,pout,dEsum,ITRA)
         elseif ((cnames(NLEVEL).eq.'FTOC').or.		! forward TOF counter
      +          (cnames(NLEVEL).eq.'FTOS')) then
