@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.16  2004/06/17 18:32:55  davidl
+* Fixed typo that caused comment to be misleading
+*
 * Revision 1.15  2004/06/07 19:05:53  jonesrt
 * Makefile, gustep.F
 *      - added option CERENKOV_PID_NTUPLE to save information from a bg
@@ -365,7 +368,7 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
 
       if (ISTOP.ne.0) then		! particle stops
         continue
-      elseif (INWVOL.eq.2) then		! particle exists current volume
+      elseif (INWVOL.eq.2) then		! particle exits current volume
         continue
       elseif (INWVOL.eq.1) then		! particle enters new volume
         xin(1) = VECT(1)
