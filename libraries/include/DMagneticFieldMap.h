@@ -128,6 +128,14 @@ class DMagneticFieldMap
     
     int           serialize(int r, int z);
 
+    int Get_rDim(void){return rDim;}
+    int Get_zDim(void){return zDim;}
+    int Get_phiDim(void){return phiDim;}
+	 double Get_rMin(void){return rMin;}
+	 double Get_rMax(void){return rMax;}
+	 double Get_zMin(void){return zMin;}
+	 double Get_zMax(void){return zMax;}
+	 const double* Get_map(void){return map;}
 
   private:
 
@@ -138,6 +146,7 @@ class DMagneticFieldMap
     double zMax;   /*!< maximum double z coordinate  */
     int    rDim;   /*!< radial dimension of internal data structure  */
     int    zDim;   /*!< z dimension of internal data structure  */
+	 int    phiDim; /*!< phi dimension of internal data structure */
     bool   DEBUG;  /*!< if true output debug informations  */
     float  constBz;/*!< Use this (in tesla) for homogeneous field if gt -100 */
     
