@@ -1,11 +1,40 @@
 OStype = $(shell uname)
+ARCHtype = $(shell uname -m)
 BINDIR = ../bin.$(OStype)
 
-NETLIB := -lnsl
-XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp
- 
-COPTS = -g
-FOPTS = -g -Wno-globals
+ifeq ($(OStype),Linux)
+	ifeq ($(ARCHtype),alpha)
+		CC	:= gcc
+		CPP	:= g++
+		F77	:= g77
+		NETLIB := -lnsl
+		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp
+		COPTS = -g
+		FOPTS = -g -Wno-globals
+		GLIBS 	:= -L/usr/lib/gcc-lib/alpha-redhat-linux/egcs-2.91.66/ -lg2c 
+	else
+		CC	:= gcc
+		CPP	:= g++
+		F77	:= g77
+		NETLIB := -lnsl
+		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp
+		COPTS = -g
+		FOPTS = -g -Wno-globals
+		GLIBS	:= 
+	endif
+endif
+ifeq ($(OStype),OSF1)
+	CC	:= cc
+	CPP	:= g++
+	F77	:= f77
+	NETLIB := 
+	STATIC	:=
+	XLIBS  := -L/usr/lib -lXm -lSM -lICE -lXt -lX11 -lm -lPW -ldnet_stub
+	COPTS = -g
+	FOPTS = -g -fpe4
+	LOPTS = -g -non_shared -fpe4
+	GLIBS 	:= -L/r5da/applications/gcc/lib/gcc-lib/alphaev5-dec-osf4.0f/2.95.3 -lg2c -lgcc
+endif
 
 HDDS = ../hdds
 HDDM = ../hddm
@@ -20,27 +49,27 @@ AUXC = hddmInput.o hddmOutput.o hddm_s.o \
 GXFIXED = gxcs.o gxphys.o
 
 hdgeant++:	gxint.o uginit.o uglast.o $(AUXF) $(AUXC) $(GXFIXED)
-	$(CERN_ROOT)/bin/gxint -g 321 -m -d Motif -o $@ $^
+	$(CERN_ROOT)/bin/gxint -g 321 -m -d Motif -o $@ $^ $(STATIC) $(XLIBS) $(GLIBS)
 
 hdgeant:	hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC)
-	f77 $(FOPTS) -o $@ -I$(CERN_ROOT)/include $^ \
+	$(F77) $(LOPTS) -o $@ -I$(CERN_ROOT)/include $^ \
 	    -L${CERN_ROOT}/lib -lgeant321\
 	    -lpawlib -lgraflib -lgrafX11 -lpacklib -lmathlib \
-	    $(NETLIB) $(XLIBS)
+	    $(NETLIB) $(XLIBS) 
 
 .F.o:
-	f77 $(FOPTS) -I$(CERN_ROOT)/include -DCERNLIB_MOTIF -c -o $@ $<
+	$(F77) $(FOPTS) -I$(CERN_ROOT)/include -DCERNLIB_MOTIF -c -o $@ $<
 
 .f.o:
-	f77 $(FOPTS) -I$(CERN_ROOT)/include -c -o $@ $<
+	$(F77) $(FOPTS) -I$(CERN_ROOT)/include -c -o $@ $<
 
 .c.o:
-	gcc $(COPTS) -I. -I../include -I$(CERN_ROOT)/include -c -o $@ $<
+	$(CC) $(COPTS) -I. -I../include -I$(CERN_ROOT)/include -c -o $@ $<
 
-$(AUXC): hddm_s.h bintree.h geant3.h hddmOutput.h
+$(AUXC): hddm_s.h bintree.h geant3.h hddmOutput.h 
 
 .cpp.o:
-	g++ $(COPTS) -I. -I../include -c -o $@ $<
+	$(CPP) $(COPTS) -I. -I../include -c -o $@ $<
 
 hddsGeant3.f:
 	$(HDDS)/hdds-geant $(HDDS)/main_HDDS.xml >hddsGeant3.f
@@ -48,8 +77,11 @@ hddsGeant3.f:
 hddm_s.h:
 	$(HDDM)/hddm-c $(HDDM)/event.xml
 
+hddm_s.c:
+	$(HDDM)/hddm-c $(HDDM)/event.xml
+
 hddm_s.o: 	hddm_s.c
-	gcc $(COPTS) -I. -I../include -c -o $@ $<
+	$(CC) $(COPTS) -I. -I../include -c -o $@ $<
 
 clean:
-	rm -f *.o core hddm_s.[ch] hddsGeant3.f last.kumac* paw.metafile
+	rm -f *.o core last.kumac* paw.metafile
