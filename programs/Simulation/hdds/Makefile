@@ -15,6 +15,10 @@ ifeq ($(OStype),Darwin)
         COPTS = -D_REENTRANT -DBASENAME_IN_LIBGEN
 endif
 
+ifndef BUILDS
+ BUILDS = $(HALLD_HOME)/src/programs/Simulation/HDFast
+endif
+
 XML_SOURCE = BarrelEMcal_HDDS.xml BeamLine_HDDS.xml CentralDC_HDDS.xml\
              CerenkovCntr_HDDS.xml ForwardDC_HDDS.xml ForwardEMcal_HDDS.xml\
              ForwardTOF_HDDS.xml Material_HDDS.xml Solenoid_HDDS.xml \
@@ -25,7 +29,7 @@ all: hddsGeant3.f hddsMCfast.db hddsroot.C
 hddsMCfast.db: hdds-mcfast $(XML_SOURCE)
 	ln -sf $(MCFAST_DIR)/db db
 	./hdds-mcfast main_HDDS.xml >$@
-	/bin/rm db
+	rm db
 	cp $@ $(BUILDS)/HDFast/HDFast.db
 
 hddsGeant3.f: hdds-geant $(XML_SOURCE)
@@ -52,4 +56,4 @@ hdds-mcfast: hdds-mcfast.cpp hdds-mcfast.hpp XParsers.cpp XParsers.hpp XString.c
 	-L$(XERCESCROOT)/lib -lxerces-c
 
 clean:
-	/bin/rm -f *.o core *.depend
+	rm -f *.o core *.depend hdds-geant hdds-root hdds-mcfast
