@@ -31,7 +31,7 @@ DEventSource::DEventSource(int narg, char *argv[])
 	
 	prate_start_time = 0;
 	prate_last_time = 0;
-	prate_period = 1;
+	prate_period = 2;
 	prate_last_events = 0;
 	prate_last_rate = 0.0;
 	
@@ -86,14 +86,24 @@ derror_t DEventSource::NextEvent(void)
 		prate_start_time = time(NULL);
 		prate_last_time = prate_start_time;
 	}else{
-		time_t now = time(NULL);
-		if(now-prate_last_time >= prate_period){
-			prate_last_rate = (float)(Nevents_read_total-prate_last_events)/(float)(now-prate_last_time);
-			prate_last_events = Nevents_read_total;
-			prate_last_time = now;
+		// The time(NULL) call can take a while. We can avoid calling
+		// it a lot at higher rates by only calling it ever so often
+		unsigned long period=1;
+		if(prate_last_rate>100.0){
+			period = (unsigned long)(prate_last_rate/10.0);
+		}
+		if(period<1)period=1;
+		
+		if(((unsigned long)Nevents_read)%period == 0){
+			time_t now = time(NULL);
+			if(now-prate_last_time >= prate_period){
+				prate_last_rate = (float)(Nevents_read_total-prate_last_events)/(float)(now-prate_last_time);
+				prate_last_events = Nevents_read_total;
+				prate_last_time = now;
+			}
 		}
 	}
-	
+
 	return NOERROR;
 }
 
