@@ -273,7 +273,7 @@ int main(int argc,char **argv)
   char *evtfile = "default.evt";
   int istream=0, ilbl;
   s_HDDM_t *mc_evt;
-  s_iostream *outputfp;
+  s_iostream_t *outputfp;
   char hddmfile[400];
   strcpy(hddmfile,"stdhep.hddm");
 
