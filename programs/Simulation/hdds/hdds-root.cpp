@@ -116,6 +116,10 @@
 
 #include <fstream>
 
+#ifdef __APPLE__ // Required for basename in OSX. (Linux prefers string.h) 
+#include <libgen.h>
+#endif
+
 #define X(XString) XString.unicodeForm()
 #define S(XString) XString.localForm()
 
