@@ -14,6 +14,7 @@
 #include <time.h>
 
 #include "derror.h"
+#include "hddm.h"
 
 class DEventSource
 {
@@ -44,6 +45,8 @@ class DEventSource
 
 		float GetRate(void);
 		static EVENT_SOURCE_TYPE GuessSourceType(int narg, char *argv[]);
+		
+		hddm_banks_t *hddm;
 		
 	private:
 		char *buffer;

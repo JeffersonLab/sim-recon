@@ -17,7 +17,7 @@ DEventSourceFile::DEventSourceFile(int narg, char *argv[]):DEventSource(narg,arg
 {
 	/// Constructor for DEventSourceFile object
 	fin = NULL;
-	hddm = NULL;
+	hddm_s = NULL;
 	
 }
 
@@ -26,7 +26,7 @@ DEventSourceFile::DEventSourceFile(int narg, char *argv[]):DEventSource(narg,arg
 //----------------
 DEventSourceFile::~DEventSourceFile()
 {
-	if(hddm)flush_s_HDDM(hddm, fin);
+	if(hddm_s)flush_s_HDDM(hddm_s, fin);
 	if(fin)close_s_HDDM(fin);
 }
 
@@ -63,9 +63,12 @@ derror_t DEventSourceFile::GetEvent(void)
 {
 	/// Implementation of DEventSource virtual function
 	/// Support only HDDM formatted files for now.
-	if(hddm)flush_s_HDDM(hddm, fin);
-	hddm = read_s_HDDM(fin);
-	if(!hddm)return NO_MORE_EVENTS_IN_SOURCE;
+	if(hddm_s)flush_s_HDDM(hddm_s, fin);
+	hddm_s = read_s_HDDM(fin);
+	if(!hddm_s)return NO_MORE_EVENTS_IN_SOURCE;
+	
+	// Convert historic hddm format to hddm_banks_t
+	// <needs to be implemented>
 	
 	return NOERROR;
 }

@@ -35,7 +35,7 @@ DEventSource::DEventSource(int narg, char *argv[])
 	prate_last_events = 0;
 	prate_last_rate = 0.0;
 	
-
+	hddm = new hddm_banks_t();
 }
 
 //----------------
@@ -43,7 +43,7 @@ DEventSource::DEventSource(int narg, char *argv[])
 //----------------
 DEventSource::~DEventSource()
 {
-
+	delete hddm;
 }
 
 //----------------

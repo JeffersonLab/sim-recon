@@ -134,8 +134,10 @@ derror_t DEventLoop::Run(void)
 		if(err != NOERROR)break;
 		
 		// Call Event Processors
-		for(int i=0;i<Nprocessors;i++){
-			processors[i]->evnt(0);
+		DEventProcessor **p = processors;
+		for(int i=0;i<Nprocessors;i++, p++){
+			(*p)->hddm = source->hddm;
+			(*p)->evnt(0);
 		}
 		
 	}while(!DONE);

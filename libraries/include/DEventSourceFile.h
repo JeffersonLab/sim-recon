@@ -23,7 +23,7 @@ class DEventSourceFile:public DEventSource
 		derror_t GetEvent(void);		///< Copy event from ET system into buffer.
 		
 		s_iostream_t *fin;
-		s_HDDM_t *hddm;
+		s_HDDM_t *hddm_s;
 };
 
 #endif //_DEVENT_SOURCEHDDM_H_
