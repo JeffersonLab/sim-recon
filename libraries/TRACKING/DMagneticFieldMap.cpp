@@ -84,6 +84,7 @@ void DMagneticFieldMap::readMap(void)
 		cerr<<__FILE__<<":"<<__LINE__<<" Unable to open \"dsolenoid.table!\"";
 		cerr<<" Check that it exists in your working directory!"<<endl;
 	}else{
+		cout<<"Reading Magnetic field map from \"dsolenoid.table\""<<endl;
 		readMap(dsolenoid);
 		dsolenoid.close();
 	}
