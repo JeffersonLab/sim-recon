@@ -24,7 +24,7 @@ XML_SOURCE = BarrelEMcal_HDDS.xml BeamLine_HDDS.xml CentralDC_HDDS.xml\
              ForwardTOF_HDDS.xml Material_HDDS.xml Solenoid_HDDS.xml \
              StartCntr_HDDS.xml Target_HDDS.xml main_HDDS.xml
 
-all: hddsGeant3.f hddsMCfast.db hddsroot.C
+all: hddsGeant3.F hddsMCfast.db hddsroot.C
 
 hddsMCfast.db: hdds-mcfast $(XML_SOURCE)
 	ln -sf $(MCFAST_DIR)/db db
