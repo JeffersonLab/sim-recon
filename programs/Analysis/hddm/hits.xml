@@ -8,46 +8,56 @@
       <ring radius="float" repeat="*">
          <straw phim="float" repeat="*">
             <hit t="float" dE="float" repeat="*" />
-            <point z="float" dEdx="float" phi="float"
-                             dradius="float" repeat="*" />
+            <cdcPoint z="float" phi="float" dradius="float"
+                                  dEdx="float" repeat="*" />
          </straw>
       </ring>
    </barrelDC>
 
    <forwardDC>
-      <package pack="int" repeat="*">
-         <chamber module="int" repeat="*">
-            <cathodePlane layer="int" u="float" repeat="*">
+      <chamber module="int" repeat="*">
+         <package layer="int" repeat="*">
+            <plane plane="int" tau="float" repeat="*">
                <hit t="float" dE="float" repeat="*"/>
-               <cross v="float" z="float" tau="float" repeat="*" />
-            </cathodePlane>
-         </chamber>
-      </package>
+               <fdcPoint z="float" v="float" dradius="float"
+                                   dEdx="float" repeat="*" />
+            </plane>
+         </package>
+      </chamber>
    </forwardDC>
 
    <startCntr>
-      <sector sector="float" repeat="*">
-         <hit t="float" dE="float" repeat="*" />
-      </sector>
+      <hit t="float" dE="float" repeat="*" />
+      <startPoint z="float" r="float" phi="float"
+                        dEdx="float" repeat="*" />
    </startCntr>
 
    <barrelCal>
       <module sector="float" repeat="*">
-         <flash t="float" pe="float" repeat="*" />
+         <upstream>
+            <flash t="float" pe="float" repeat="*" />
+         </upstream>
+         <downstream>
+            <flash t="float" pe="float" repeat="*" />
+         </downstream> 
+         <barrelShower t="float" z="float" Eequiv="float" />
       </module>
    </barrelCal>
       
    <Cerenkov>
-      <module sector="float" repeat="*">
+      <section sector="float" repeat="*">
          <flash t="float" pe="float" repeat="*" />
-      </module>
+      </section>
    </Cerenkov>
 
    <forwardTOF>
       <slab y="float" repeat="*">
-         <side end="int" repeat="*">
+         <left>
             <hit t="float" dE="float" repeat="*" />
-         </side>
+         </left>
+         <right>
+            <hit t="float" dE="float" repeat="*" />
+         </right>
       </slab>
    </forwardTOF>
 
