@@ -18,6 +18,7 @@ class DFactory_FCALHits:public DFactory{
 	public:
 		DFactory_FCALHits(DEvent *event):DFactory(event, "FCALHits", sizeof(FCALHit_t)){};
 		~DFactory_FCALHits(){};
+		derror_t Print(void);
 	
 	private:
 		derror_t evnt(int eventnumber);		///< Called every event.
