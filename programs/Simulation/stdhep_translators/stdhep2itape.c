@@ -15,7 +15,6 @@
 /*
  * needed for itape */
 #include <sys/types.h>
-#include <malloc.h>
 #include <sys/signal.h>
 #include <sys/stat.h>
 #include <time.h>
