@@ -65,6 +65,8 @@ class DQuickFit{
 		derror_t PruneHit(int idx);
 		derror_t PruneHits(float chisq_limit);
 		derror_t PruneWorst(int n);
+		derror_t PruneOutlier(void);
+		derror_t PruneOutliers(int n);
 		derror_t FitCircle(void);
 		derror_t FitTrack(void);
 		inline TVector3** GetHits(){return (TVector3**)hits->container_ptr;};
@@ -83,6 +85,7 @@ class DQuickFit{
 		float q;
 		float p, p_trans;
 		float phi, theta;
+		float z_vertex;
 		float chisq;
 		ChiSqSourceType_t chisq_source;
 
