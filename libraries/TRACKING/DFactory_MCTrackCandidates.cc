@@ -131,11 +131,11 @@ derror_t DFactory_MCTrackCandidates::FindCircles(void)
 	/// Call either FindCirclesMaskSub or FindCirclesHitSub
 	///
 	/// There are two methods for finding the peaks in the density
-	/// histogram. The FindCirclesMaskSub routine with simply
+	/// histogram. The FindCirclesMaskSub routine will simply
 	/// zero all bins within masksize of the bin with the maximum
 	/// value. This method is probably quickest since you don't have
 	/// to refill the desnity histogram over and over. The drawback
-	/// is that if there can be areas where high density occurs
+	/// is that there can be areas where high density occurs
 	/// just from hits which have lines that are very close to the same
 	/// slope so overlap in areas far from the focus. The result
 	/// is false maxima being identified.
@@ -143,9 +143,9 @@ derror_t DFactory_MCTrackCandidates::FindCircles(void)
 	/// The second method is implemented in FindCirclesHitSub. This
 	/// method regenerates the density histogram after finding
 	/// each peak, but excludes hits from contributing if their 
-	/// lines passed within masksize of the focus. The draw back
+	/// lines passed within masksize of the focus. The drawback
 	/// of this method is that for events in which one track
-	/// has a hits whose lines happen to pass over the focus of another
+	/// has hits whose lines happen to pass over the focus of another
 	/// hit, they will be removed and the peak at their focus will 
 	/// disappear before being identified.
 	///
@@ -171,7 +171,7 @@ derror_t DFactory_MCTrackCandidates::FindCirclesHitSub(void)
 	Ncircles = 0;	
 	do{
 		// use tmp so we can more easily build in a mechanism for
-		// filling multiple histograms
+		// filling multiple histograms for debugging
 		TH2F *tmp = density_histos[Ncircles<Ndensity_histos ? Ncircles:Ndensity_histos-1];
 	
 		// Fill the density histogram
