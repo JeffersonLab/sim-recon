@@ -12,8 +12,9 @@
 	taken from the file src/doc/mainpage.c++
 
 	Use the links at the top to help navigate through this documentation.
+	Use the search form to search the documentation.
 
-	<i>More should be written here.</i>
+	To view CVS statistics, <A href="CVSstats">look here</A>.
 
 	\section starting Getting Started
 
