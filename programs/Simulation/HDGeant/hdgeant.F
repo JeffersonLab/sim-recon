@@ -1,3 +1,5 @@
+      PROGRAM HDGEANT
+
       implicit none
       real q,hq
       integer ispace,hspace
