@@ -26,15 +26,15 @@ clean:
 # Rules to make DEPENDS files from source. Note that these are similar to the
 # rules in Makefile.bin, but use the implicit rules for archiving objects.
 %.d : %.cpp
-	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
+	@$(DCXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
 %.d : %.cc
-	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
+	@$(DCXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
 %.d : %.cxx
-	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
+	@$(DCXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
 %.d : %.c
-	@$(CC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CFLAGS) $< > $(DEP_DIR)/$@
+	@$(DCC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CFLAGS) $< > $(DEP_DIR)/$@
 %.d : %.F
-	@$(FC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(FFLAGS) $< > $(DEP_DIR)/$@
+	@$(DFC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(FFLAGS) $< > $(DEP_DIR)/$@
 
 
 env:

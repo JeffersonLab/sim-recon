@@ -72,15 +72,15 @@ clean:
 # Rules to make DEPENDS files from source. Note that these are similar to the
 # rules in Makefile.lib, but uses the objects explicitly
 %.d : %.cpp
-	@$(CXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
+	@$(DCXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
 %.d : %.cc
-	@$(CXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
+	@$(DCXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
 %.d : %.cxx
-	@$(CXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
+	@$(DCXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
 %.d : %.c
-	@$(CC) -MM -MT "$(basename $@).o" $(CFLAGS) $< > $(DEP_DIR)/$(basename $@).d
+	@$(DCC) -MM -MT "$(basename $@).o" $(CFLAGS) $< > $(DEP_DIR)/$(basename $@).d
 %.d : %.F
-	@$(FC) -MM -MT "$(basename $@).o" $(FFLAGS) $< > $(DEP_DIR)/$(basename $@).d
+	@$(DFC) -MM -MT "$(basename $@).o" $(FFLAGS) $< > $(DEP_DIR)/$(basename $@).d
 
 # Rules to make DEBUG objects from source. Note for programs, we give the
 # objects funny names while for libraries only the library has a funny name.
