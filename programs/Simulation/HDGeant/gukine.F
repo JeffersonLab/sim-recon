@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.14  2004/12/08 14:43:24  davidl
+* Change argument 4 of second call to GSVERT from 0 to 0.0 to avoid compiler warnings
+*
 * Revision 1.13  2003/12/10 15:32:57  jonesrt
 * -control.in : never mind [rtj]
 * -gukine.F : fixed a bug in the setting of polarization ppol used
@@ -254,7 +257,7 @@ c #define BEAM_BOX_SIZE 6
          PLAB(2) = PKINE(1)*SIN(THETA)*SIN(PHI)
          PLAB(3) = PKINE(1)*COS(THETA)
 
-         CALL GSVERT(VERTEX,0,0,0,0,NVERT)
+         CALL GSVERT(VERTEX,0,0,0.0,0,NVERT)
          CALL GSKINE(PLAB,IK,NVERT,0,0,NT)
 
          call storeInput(IDRUN,IDEVT,NT);
