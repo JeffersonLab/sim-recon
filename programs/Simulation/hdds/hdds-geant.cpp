@@ -274,53 +274,78 @@ void fortranGetfunc(DOM_Element& el, char* ident)
 
    if (tableLength > 0)
    {
-      cout  << "      integer istart(" << Refsys::fVolumes << ")" << endl
-            << "      data istart/" << endl;
+      cout  << "      integer istart(" << Refsys::fVolumes << ")" << endl;
 
-      for (int i = 1; i <= Refsys::fVolumes;)
+      for (int i = 0; i < Refsys::fVolumes;)
       {
-         int i0 = i;
          char str[16];
-         sprintf(str, "%5d", start[i]);
-         cout << "     + " << str;
-         for (i++; i <= Refsys::fVolumes; i++)
+         if (i % 100 == 0)
          {
-            if (i == (i0 + 10)) break;
-            sprintf(str, ",%5d", start[i]);
-            cout << str;
+            int ilimit = i + 100;
+            ilimit = (ilimit > Refsys::fVolumes)? Refsys::fVolumes : ilimit;
+            cout   << "      data (istart(i),i=" << i + 1 << "," << ilimit
+                   << ") /" << endl;
          }
-         if (i > Refsys::fVolumes)
+         if (i % 10 == 0)
+         {
+            cout << "     + ";
+         }
+         sprintf(str, "%5d", start[++i]);
+         cout << str;
+         if (i == Refsys::fVolumes)
          {
             cout << "/" << endl;
          }
-         else
+         else if (i % 100 == 0)
+         {
+            cout << "/" << endl;
+         }
+         else if (i % 10 == 0)
          {
             cout << "," << endl;
          }
+         else
+         {
+            cout << ",";
+         }
       }
-      cout << "      integer lookup(" << tableLength << ")" << endl
-           << "      data lookup/" << endl;
+
+      cout << "      integer lookup(" << tableLength << ")" << endl;
+
       for (int i = 0; i < tableLength;)
       {
-         int i0 = i;
          char str[16];
-         sprintf(str, "%5d", table[i]);
-         cout << "     + " << str;
-         for (i++; i < tableLength; i++)
+         if (i % 100 == 0)
          {
-            if (i == (i0 + 10)) break;
-            sprintf(str, ",%5d", table[i]);
-            cout << str;
+            int ilimit = i + 100;
+            ilimit = (ilimit > tableLength)? tableLength : ilimit;
+            cout   << "      data (lookup(i),i=" << i + 1 << "," << ilimit
+                   << ") /" << endl;
          }
+         if (i % 10 == 0)
+         {
+            cout << "     + ";
+         }
+         sprintf(str, "%5d", table[i++]);
+         cout << str;
          if (i == tableLength)
          {
             cout << "/" << endl;
          }
-         else
+         else if (i % 100 == 0)
+         {
+            cout << "/" << endl;
+         }
+         else if (i % 10 == 0)
          {
             cout << "," << endl;
          }
+         else
+         {
+            cout << ",";
+         }
       }
+
       cout << "      integer level,index" << endl
            << "      integer " << ident << endl
            << "      " << funcName << " = 0" << endl

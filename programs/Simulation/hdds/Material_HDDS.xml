@@ -493,9 +493,9 @@
 
   <element name="Vacuum" symbol="Vac" z="0" a="0">
 	<real name="density"	value="0.0"	unit="cgm"	/>
-	<real name="radlen"	value="1.0e30"	unit="cgm"	/>
-	<real name="collen"	value="1.0e30"	unit="cgm"	/>
-	<real name="abslen"	value="1.0e30"	unit="cgm"	/>
+	<real name="radlen"	value="1.0"	unit="cgm"	/>
+	<real name="collen"	value="1.0"	unit="cgm"	/>
+	<real name="abslen"	value="1.0"	unit="cgm"	/>
 	<real name="dedx"	value="0.0"	unit="MeVcgm"	/>
   </element>
 
