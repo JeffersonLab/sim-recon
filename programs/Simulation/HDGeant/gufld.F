@@ -18,6 +18,7 @@ C.
 
 #include "geant321/gctmed.inc"
 #include "geant321/gcvolu.inc"
+#include "hdtrackparams.inc"
       character*4 cnames(2)
       equivalence (NAMES(1),cnames(1))
 
@@ -31,6 +32,15 @@ C.
       data Bsampl/20000*0, 20000*0, 20000*0/
       data nsampl,ncolumns,nrows/0,0,0/
       save /fieldMap/
+
+c If BFIELD card was set, use that and return right away
+      if (bfield.gt.-100.0) then
+		  F(1) = 0.0
+		  F(2) = 0.0
+		  F(3) = bfield*Tesla2kG
+c		  print*, __FILE__,':',__LINE__,' Bz=',F(3),' z=',X(3)
+        return
+		endif
 
 c read in the spectrometer field map from a file
 
