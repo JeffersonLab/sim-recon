@@ -28,25 +28,11 @@
 
 /*! \file DMagneticFieldMap.h
  *  \brief A class that holds the magnetic field map for the detector.
- *
- *  This class provides an interface to the map that is created for 
- *  the Solenoid used in this project.  The current implementation reads
- *  a solenoid table in the format described in the dsolenoid.table file.
- *
- *  NOTE:  There is an assumed radial symmetry, so there is actually only 
- *         an x and z entry in the table.  The x coordinate is assumed 
- *         to be equivalent to the radius.
  */
 
 #include <fstream>
 
 using std::ifstream;
-
-/*! \var typedef DVEC D3Vector_t
- *  \brief A simple magnetic field vector.
- *
- *  This is just an implementation of a 3-vector of doubles.
- */
 
 typedef struct DVEC
 {
@@ -55,7 +41,16 @@ typedef struct DVEC
   double z;
 } D3Vector_t;
 
-
+/*! DMagneticFiledMap class. 
+ * 
+ *  This class provides an interface to the map that is created for 
+ *  the Solenoid used in this project.  The current implementation reads
+ *  a solenoid table in the format described in the dsolenoid.table file.
+ *
+ *  NOTE:  There is an assumed radial symmetry, so there is actually only 
+ *         an x and z entry in the table.  The x coordinate is assumed 
+ *         to be equivalent to the radius.
+ */
 
 class DMagneticFieldMap
 {
@@ -72,6 +67,7 @@ class DMagneticFieldMap
 
     void          readMap(ifstream &in);
 
+    /*! defgroup g1 getMagVec */
     //@{
     /*! These are overloads of the getMagVec method */
     D3Vector_t    getMagVec(const D3Vector_t *vec);
@@ -79,7 +75,7 @@ class DMagneticFieldMap
     D3Vector_t    getMagVec(double r, double z);
     //@}
 
-    /*! Set the Debug state
+    /*! Set the Debug state.
      * @param val - state to set
      */
     void          setDebug(const bool val);
@@ -98,24 +94,6 @@ class DMagneticFieldMap
     
     void          getInds(const double &r, const double &z, int ind[2],
                           double &rho, double &zeta);
-
-
-  private:
-
-    double *map;   /*!< serialized array for Mag. Field values  */
-    double rMin;   /*!< minimum double radius coordinate  */
-    double rMax;   /*!< maximum double radius coordinate  */
-    double zMin;   /*!< minimum double z coordinate  */
-    double zMax;   /*!< maximum double z coordinate  */
-    int    rDim;   /*!< radial dimension of internal data structure  */
-    int    zDim;   /*!< z dimension of internal data structure  */
-    bool   DEBUG;  /*!< if true output debug informations  */
-
-    //-----------------
-    // Utility Methods
-    //-----------------
-    
-   
     /*!
      *  This utility funciton based on the assumption of radial symmetry.
      *  @param r - integer radius index
@@ -128,9 +106,22 @@ class DMagneticFieldMap
      *  y = map[ind+1]
      *  z = map[ind+2]
      */
-     
+    
     int           serialize(int r, int z);
 
+
+  private:
+
+    double *map;   /*!< serialized array for Mag Field values  */
+    double rMin;   /*!< minimum double radius coordinate  */
+    double rMax;   /*!< maximum double radius coordinate  */
+    double zMin;   /*!< minimum double z coordinate  */
+    double zMax;   /*!< maximum double z coordinate  */
+    int    rDim;   /*!< radial dimension of internal data structure  */
+    int    zDim;   /*!< z dimension of internal data structure  */
+    bool   DEBUG;  /*!< if true output debug informations  */
+
+    
 
 };
 
