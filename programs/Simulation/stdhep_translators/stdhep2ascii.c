@@ -272,7 +272,7 @@ int write_mc_parts(FILE *fp, mc_evt_t *mc_evt){
    */
   for(i=0;i<mc_evt->nparts;i++){
     fprintf(fp,"%d %d %lf \n",(i+1), 
-	    mc_evt->part[i].pid, mc_evt->part[i].mass);
+	    gampID(mc_evt->part[i].pid), mc_evt->part[i].mass);
     fprintf(fp,"   %d %lf %lf %lf %lf\n",
 	    getCharge( mc_evt->part[i].pid),
 	    /* mc_evt->part[i].pid/abs(mc_evt->part[i].pid),*/
