@@ -369,13 +369,6 @@ s_ForwardShowers_t* make_s_ForwardShowers(int n)
    return p;
 }
 
-s_ClusterView_t* make_s_ClusterView()
-{
-   int size = sizeof(s_ClusterView_t);
-   s_ClusterView_t* p = (s_ClusterView_t*)CALLOC(size,"s_ClusterView_t");
-   return p;
-}
-
 char HDDM_s_DocumentString[] = 
 "<HDDM class=\"s\" version=\"1.0\" xmlns:hddm=\"http://www.gluex.org/hddm\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n"
 "  <physicsEvent eventNo=\"int\" maxOccurs=\"unbounded\" runNo=\"int\">\n"
@@ -463,14 +456,6 @@ char HDDM_s_DocumentString[] =
 "        <forwardShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" />\n"
 "      </forwardEMcal>\n"
 "    </hitView>\n"
-"    <clusterView version=\"1.0\">\n"
-"      <cdcPoint dEdx=\"float\" dradius=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" r=\"float\" track=\"int\" z=\"float\" />\n"
-"      <fdcPoint dEdx=\"float\" dradius=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
-"      <startPoint dEdx=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" r=\"float\" t=\"float\" track=\"int\" z=\"float\" />\n"
-"      <barrelShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" t=\"float\" track=\"int\" z=\"float\" />\n"
-"      <tofPoint maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" />\n"
-"      <forwardShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" />\n"
-"    </clusterView>\n"
 "  </physicsEvent>\n"
 "</HDDM>\n"
 ;
@@ -2109,42 +2094,6 @@ static s_ForwardShowers_t* unpack_s_ForwardShowers(XDR* xdrs, popNode* pop)
    return this1;
 }
 
-static s_ClusterView_t* unpack_s_ClusterView(XDR* xdrs, popNode* pop)
-{
-   s_ClusterView_t* this1 = 0;
-   unsigned int size;
-   if (! xdr_u_int(xdrs,&size))
-   {
-       return 0;
-   }
-   else if (size > 0)
-   {
-      int start = xdr_getpos(xdrs);
-      this1 = make_s_ClusterView();
-      {
-         int p;
-         void* (*ptr) = (void**) &this1->cdcPoints;
-         for (p = 0; p < pop->popListLength; p++)
-         {
-            popNode* pnode = pop->popList[p];
-            if (pnode)
-            {
-               int kid = pnode->inParent;
-               ptr[kid] = pnode->unpacker(xdrs,pnode);
-            }
-            else
-            {
-               unsigned int skip;
-               xdr_u_int(xdrs,&skip);
-               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);
-            }
-         }
-      }
-      xdr_setpos(xdrs,start+size);
-   }
-   return this1;
-}
-
 s_HDDM_t* read_s_HDDM(s_iostream_t* fp)
 {
    return unpack_s_HDDM(fp->xdrs,fp->popTop);
@@ -2196,7 +2145,6 @@ static int pack_s_ForwardEMcal(XDR* xdrs, s_ForwardEMcal_t* this1);
 static int pack_s_Rows(XDR* xdrs, s_Rows_t* this1);
 static int pack_s_Columns(XDR* xdrs, s_Columns_t* this1);
 static int pack_s_ForwardShowers(XDR* xdrs, s_ForwardShowers_t* this1);
-static int pack_s_ClusterView(XDR* xdrs, s_ClusterView_t* this1);
 
 static int pack_s_HDDM(XDR* xdrs, s_HDDM_t* this1)
 {
@@ -2253,15 +2201,6 @@ static int pack_s_PhysicsEvents(XDR* xdrs, s_PhysicsEvents_t* this1)
       if (this1->in[m].hitView)
       {
          pack_s_HitView(xdrs,this1->in[m].hitView);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this1->in[m].clusterView)
-      {
-         pack_s_ClusterView(xdrs,this1->in[m].clusterView);
       }
       else
       {
@@ -3753,80 +3692,6 @@ static int pack_s_ForwardShowers(XDR* xdrs, s_ForwardShowers_t* this1)
    return size;
 }
 
-static int pack_s_ClusterView(XDR* xdrs, s_ClusterView_t* this1)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   {
-      if (this1->cdcPoints)
-      {
-         pack_s_CdcPoints(xdrs,this1->cdcPoints);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this1->fdcPoints)
-      {
-         pack_s_FdcPoints(xdrs,this1->fdcPoints);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this1->startPoints)
-      {
-         pack_s_StartPoints(xdrs,this1->startPoints);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this1->barrelShowers)
-      {
-         pack_s_BarrelShowers(xdrs,this1->barrelShowers);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this1->tofPoints)
-      {
-         pack_s_TofPoints(xdrs,this1->tofPoints);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this1->forwardShowers)
-      {
-         pack_s_ForwardShowers(xdrs,this1->forwardShowers);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-   }
-   FREE(this1);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
 int flush_s_HDDM(s_HDDM_t* this1,s_iostream_t* fp)
 {
    if (this1 == 0)
@@ -4095,10 +3960,6 @@ static popNode* matches(char* b, char* c)
          else if (strcmp(btag,"forwardShower") == 0)
          {
             this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_ForwardShowers;
-         }
-         else if (strcmp(btag,"clusterView") == 0)
-         {
-            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_ClusterView;
          }
          else
          {
