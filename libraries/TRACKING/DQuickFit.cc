@@ -350,10 +350,9 @@ derror_t DQuickFit::FitCircle(void)
 	float r0 = sqrt(x0*x0 + y0*y0);
 	float hbarc = 197.326;
 	p_trans = q*B*r0/hbarc; // are these the right units?
-	phi = atan2(y0,x0) - M_PI_2;
+	phi = atan2(y0,x0) + M_PI_2;
 	if(p_trans<0.0){
 		p_trans = -p_trans;
-		phi += M_PI;
 	}
 	if(phi<0)phi+=2.0*M_PI;
 	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
@@ -449,9 +448,14 @@ derror_t DQuickFit::FitTrack(void)
 	p = fabs(p_trans/sin(theta));
 	
 	// The sign of the electric charge will be the same as that
-	// of dphi/dz
-	if(dphidz<0.0)q = -q;
-
+	// of dphi/dz. Also, the value of phi will be PI out of phase
+	if(dphidz<0.0){
+		q = -q;
+		phi += M_PI;
+		if(phi<0)phi+=2.0*M_PI;
+		if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+	}
+	
 	return NOERROR;
 }
 
