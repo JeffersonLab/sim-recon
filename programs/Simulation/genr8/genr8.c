@@ -78,6 +78,7 @@ int FIRST_EVENT=1;
 int PrintFlag=10;
 int WriteAscii=0;
 int runNo=9000;
+int NFinalParts=0;
 /***********************/
 /* Declarations         */
 /***********************/
@@ -376,8 +377,16 @@ main(int argc,char **argv)
       if(!(*token == '*'))
 	particle[part].charge = atoi(token);
       token=strtok(NULL," ");
-      if(!(*token == '*'))
+      if(!(*token == '*')){
 	particle[part].flag = atoi(token);
+	if(PrintProduction==1){
+	  if(particle[part].flag==11 || particle[part].flag==01)
+	    NFinalParts++;
+	}else{
+	  if(particle[part].flag==11 || particle[part].flag==10)
+	    NFinalParts++;
+	}
+      }
       /* flag  00 = isobar or resonace
        * flag  01 = production particle that decays i.e. eta, pizero ..
        * flag  11 = production particle that does not decay i.e. piplus,...
@@ -623,7 +632,7 @@ main(int argc,char **argv)
 	Nprinted =0;
 	/* event header information 
 	fprintf(fout,"RunNo %d EventNo %d\n",runNo,naccepted);*/
-	fprintf(fout,"%d %d\n",runNo,naccepted);
+	fprintf(fout,"%d %d %d\n",runNo,naccepted, NFinalParts);
 
 	/*
 	 * Print out the production
