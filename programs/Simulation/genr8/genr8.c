@@ -11,6 +11,9 @@
  * created by:  Paul M Eugenio
  *              Carnegie Mellon University
  *              25-Mar-98
+ *
+ * minor modifications to avoid infinite loop in n_omega_pi0_pi+ generator
+ * garth huber, 04.04.21
  ******************************************************** */
 
 #include <stdio.h>
@@ -142,7 +145,7 @@ main(int argc,char **argv)
 {
   char *outputFile = "genr8.out";
   char *argptr,*token,line[2056];
-  int i,npart=0,ngenerated=0,naccepted=0;
+  int i,npart=0,ngenerated=0,naccepted=0, imassc, imassc2;
   int nv4,max=10,part,chld1=-1,chld2=-1,prnt=-1,lfevents=10000;
   FILE *fout=stdout;
   struct particleMC_t particle[20],beam,target,recoil,CM;
@@ -447,6 +450,7 @@ main(int argc,char **argv)
   while(naccepted <max){
 
     
+    if (Debug) fprintf(stderr,"In main do loop ... %d \n",naccepted);
   
     /* 
      * Generate the resonance 
@@ -455,7 +459,8 @@ main(int argc,char **argv)
      * for both X and the recoil.
      */
    
-    do{ 
+    do{
+l0:   imassc2=0;
     if(!(X->width<0)) 
       do{/*use BreitWigner--phasespace distribution */
 	initMass(X);
@@ -467,15 +472,30 @@ main(int argc,char **argv)
 	 * mass is unknown it's mass remains unknow at this time.
 	 */
 	
+	if(Debug) fprintf(stderr,"looping over nchildren = %d \n",X->nchildren);
 	for(i=0;i<X->nchildren;i++)
-	  setChildrenMass(X->child[i]); 
+	  {
+	  if(Debug) fprintf(stderr,"calling setChildrenMass X... %d \n",i);
+l1:	  imassc=setChildrenMass(X->child[i]); 
+	  if (Debug) fprintf(stderr,"Return from setChildrenMass X... %d %d \n",i,imassc);
 
-      }while((X->mass > MassHighBW) ||  ( X->nchildren==0 ? FALSE :
+          /* if the daughters of child[i] are more massive than child[i], generate masses */
+          if (imassc!=0) {
+               if (Debug) fprintf(stderr,"Need new masses for X %d %d %f \n",i,imassc,(X->child[i])->mass);
+	       imassc2=imassc2+1;
+                 if (imassc2<1000)
+                   goto l1;
+		 else
+	       goto l0; 
+          }
+          }
+       }while((X->mass > MassHighBW) ||  ( X->nchildren==0 ? FALSE :
 	    (X->mass <  ( (X->child[0])->mass +  (X->child[1])->mass))) );
-    else{/* there's an error.. */
-	fprintf(stderr,"Cannot use a negative width!\n");
-	exit(-1); 
-      }
+
+        else{/* there's an error.. */
+	  fprintf(stderr,"Cannot use a negative width!\n");
+	  exit(-1); 
+        }
     /*
      * Now do loop it for Y
      */
@@ -487,12 +507,20 @@ main(int argc,char **argv)
 	/*
 	 * set the children mass to the book mass or
 	 * distribute the by a Breit-Wigner. If the isobar
-	 * mass is unknown it's mass remains unknow at this time.
+	 * mass is unknown it's mass remains unknown at this time.
 	 */
 	
 	for(i=0;i<Y->nchildren;i++)
-	  setChildrenMass(Y->child[i]); 
+	  {
+	  if (Debug) fprintf(stderr,"calling setChildrenMass Y... %d \n",i);
+l2:	  imassc=setChildrenMass(Y->child[i]);
+	  if (Debug) fprintf(stderr,"Return from setChildrenMass Y... %d %d \n",i,imassc);
 
+          /* if the daughters of child[i] are more massive than child[i], generate masses */
+          if (imassc!=0) {
+               if (Debug) fprintf(stderr,"Need new masses for Y %d %d %f \n",i,imassc,(Y->child[i])->mass);
+	       goto l2; }
+          }
       }while((Y->mass > MassHighBW) || ( Y->nchildren==0 ? FALSE :
 	    (Y->mass <  ( (Y->child[0])->mass +  (Y->child[1])->mass)) ) );
     else{/* there's an error.. */
@@ -552,8 +580,6 @@ main(int argc,char **argv)
       
     }while(fabs(costheta)>1.0  );
     
-   
-    
     theta = acos(costheta);
     phi = randm(-1*M_PI,M_PI);
     
@@ -565,8 +591,6 @@ main(int argc,char **argv)
      *
      * Note: all particles are generated in their parent's rest frame.
      */
-
-
 
     /*
     if(Debug) 
@@ -591,13 +615,15 @@ main(int argc,char **argv)
     lf=v3mag(&(X->p.space));
     lorentzFactor(&lf,X);
     lorentzFactor(&lf,Y);
+	if (Debug) fprintf(stderr,"lorentz factor information: %f ... %f ... \n",lf,lfmax);
     if(lfevents-->0){
       lfmax = lf >lfmax ? lf : lfmax; /* find the largest value */
       if( (lfevents % 10) == 0 )
-	fprintf(stderr,"Calculating Lorentz Factor: %d \r",lfevents);
+	fprintf(stderr,"Calculating Lorentz Factor: %d \n",lfevents);
     }
     else{
      
+	if (Debug) fprintf(stderr," inside loop: lorentz factor information: %f ... %f ... \n",lf,lfmax);
       /*
        * Now generate the events weighted by phasespace
        * (the maximum Lorentz factor).
@@ -726,18 +752,41 @@ int checkFamily(struct particleMC_t *Isobar)
 
 int setChildrenMass(struct particleMC_t *Isobar)
 {
-  int i;
+  int i, imassc=0;
+
+/*  fprintf(stderr,"In setChildrenMass ... %f \n",Isobar->mass);
+*/
 
   initMass(Isobar);
   setMass(Isobar);
   for(i=0;i < Isobar->nchildren;i++){
-    setChildrenMass(Isobar->child[i]);
-  }
-  if(Isobar->nchildren !=0) 
+    if (Debug) fprintf(stderr,"In loop ... %d %d %f \n",i,Isobar->nchildren,(Isobar->child[i])->mass);
+
+    /* Generate masses of all of the daughters */
+l3:    imassc=setChildrenMass(Isobar->child[i]);
+
+       if (imassc!=0) {
+         if (Debug) fprintf(stderr,"Need new masses for Isobar %d %d %f \n",i,imassc,(Isobar->child[i])->mass);
+	 goto l3; }
+ }
+
+  if(Isobar->nchildren !=0)
+    {
     if((Isobar->mass) < ((Isobar->child[0])->mass)+((Isobar->child[1])->mass))
-      setChildrenMass(Isobar);
-  
-  
+      {
+
+     /* If the daughters are more massive than the parent, set the return code and exit */
+        if (Debug) fprintf(stderr,"final call ... \n");
+
+     /* setChildrenMass(Isobar);  */
+	imassc=imassc+1;
+	if (Debug) fprintf(stderr," %f %f %f \n",Isobar->mass,(Isobar->child[0])->mass,(Isobar->child[1])->mass);
+      } else {imassc=0;}
+    } 
+
+  if (Debug) fprintf(stderr,"Leaving setChildrenMass ... %f %d \n",Isobar->mass,imassc);
+
+  return imassc;
 }
 
 
@@ -922,6 +971,7 @@ int boost2lab(struct particleMC_t *Isobar)
   vector4_t beta;
   
   for(i=0;i<Isobar->nchildren;i++)
+
      boost2lab(Isobar->child[i]);
   
   beta = get_beta(&(Isobar->parent->p),PARENTFRAME);/* see kinematics.c */
