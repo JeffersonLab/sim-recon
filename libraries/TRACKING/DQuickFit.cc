@@ -9,9 +9,12 @@ using namespace std;
 
 #include "DQuickFit.h"
 
+static float target_center_z = 65.0; // Z coordinate of target center in cm (this will need to be changed at some point)
+
 static float *CHISQV=NULL;
 static int qsort_chisqv(const void* arg1, const void* arg2);
 static int qsort_int(const void* arg1, const void* arg2);
+static int qsort_points_by_z(const void* arg1, const void* arg2);
 
 //-----------------
 // DQuickFit
@@ -166,6 +169,62 @@ derror_t DQuickFit::PruneWorst(int n)
 	return NOERROR;
 }
 
+//-----------------
+// PruneOutliers
+//-----------------
+derror_t DQuickFit::PruneOutlier(void)
+{
+	/// Remove the point which is furthest from the geometric
+	/// center of all the points in the X/Y plane.
+	///
+	/// This just calculates the average x and y values of
+	/// registered hits. It finds the distance of every hit
+	/// with respect to the geometric mean and removes the
+	/// hit whose furthest from the mean.
+	
+	float X=0, Y=0;
+	TVector3 **v = (TVector3**)hits->first();
+	for(int i=0;i<hits->nrows;i++ ,v++){
+		X += (*v)->x();
+		Y += (*v)->y();
+	}
+	X /= (float)hits->nrows;
+	Y /= (float)hits->nrows;
+	
+	float max =0.0;
+	int idx = -1;
+	v = (TVector3**)hits->first();
+	for(int i=0;i<hits->nrows;i++ ,v++){
+		float x = (*v)->x()-X;
+		float y = (*v)->y()-Y;
+		float dist_sq = x*x + y*y; // we don't need to take sqrt just to find max
+		if(dist_sq>max){
+			max = dist_sq;
+			idx = i;
+		}
+	}
+	if(idx>=0)PruneHit(idx);
+	
+	return NOERROR;
+}
+
+//-----------------
+// PruneOutliers
+//-----------------
+derror_t DQuickFit::PruneOutliers(int n)
+{
+	/// Remove the n points which are furthest from the geometric
+	/// center of all the points in the X/Y plane.
+	///
+	/// This just calls PruneOutlier() n times. Since the mean
+	/// can change each time, it should be recalculated after
+	/// every hit is removed.
+	
+	for(int i=0;i<n;i++)PruneOutlier();
+	
+	return NOERROR;
+}
+
 //------------------------------------------------------------------
 // qsort_chisqv
 //------------------------------------------------------------------
@@ -235,7 +294,6 @@ derror_t DQuickFit::CopyToFitParms(FitParms_t *fit)
 	return NOERROR;
 }
 
-static int qsort_points_by_z(const void* arg1, const void* arg2);
 
 
 //-----------------
@@ -318,55 +376,77 @@ derror_t DQuickFit::FitCircle(void)
 //-----------------
 derror_t DQuickFit::FitTrack(void)
 {
-	/// This method is not implemented yet.
-#if 0
-	// Sort by Z
-	qsort(points, Npoints, sizeof(TVector3), qsort_points_by_z);
+	/// Find theta, sign of electric charge, total momentum and
+	/// vertex z position.
 
-	// Assuming points are ordered in increasing z, the sign of the
-	// cross-product between successive points will be the opposite
-	// sign of the charge. Since it's possible to have a few "bad"
-	// points, we don't want to rely on any one to determine this.
-	// The method we use is to sum cross-products of the first and
-	// middle points, the next-to-first and next-to-middle, etc.
-	float xprod_sum = 0.0;
-	int n_2 = Npoints/2; 
-	v = points;
-	TVector3 *v2=&points[n_2];
-	for(int i=0;i<n_2;i++, v++, v2++){
-		xprod_sum += v->x()*v2->y() - v2->x()*v->y();
-	}
-	if(xprod_sum>0.0)q = -q;
+	// Points must be in order of increasing Z
+	qsort(hits->first(), hits->nrows, sizeof(TVector3*), qsort_points_by_z);
 
-	// Phi is pi/2 out of phase with x0,y0. The sign of the phase difference
-	// depends on the charge
-	phi = atan2(y0,x0);
-	phi += q>0.0 ? -M_PI_2:M_PI_2;
+	// Fit to circle to get circle's center
+	FitCircle();
 	
-	// Theta is determined by extrapolating the helix back to the target.
-	// To do this, we need dphi/dz and a phi,z point. The easiest way to
-	// get these is by a simple average (I guess).
-	v = points;
-	v2=&v[1];
-	float dphidz =0.0;
-	int Ndphidzpoints = 0;
-	for(int i=0;i<Npoints-1;i++, v++, v2++){
-		float myphi1 = atan2(v->y()-y0,  v->x()-x0);
-		float myphi2 = atan2(v2->y()-y0, v2->x()-x0);
-		float mydphidz = (myphi2-myphi1)/(v2->z()-v->z());
-		if(finite(mydphidz)){
-			dphidz+=mydphidz;
-			Ndphidzpoints++;
-		}
+	// The thing that is really needed is dphi/dz (where phi is the angle
+	// of the point as measure from the center of the circle, not the beam
+	// line). The relation between phi and z is linear so we use linear
+	// regression to find the slope (dphi/dz). The one complication is
+	// that phi is periodic so the value obtained via the x and y of a
+	// specific point can be off by an integral number of 2pis. Handle this
+	// by assuming the first point is measured before a full rotation
+	// has occurred. Subsequent points should always be within 2pi of
+	// the previous point so we just need to calculate the relative phi
+	// between succesive points and keep a running sum. We do this in
+	// the first loop were we find the mean z and phi values. The regression
+	// formulae are calculated in the second loop.
+	TVector3 **v1 = (TVector3**)hits->first();
+	float *phiv = new float[hits->nrows]; // enough overhead in calculating this to justify memory allocation
+	float z_mean=0.0, phi_mean=0.0;
+	float x_last = -x0;
+	float y_last = -y0;
+	float r0 = sqrt(x0*x0 + y0*y0);
+	float r_last = r0;
+	float phi_last = 0.0;
+	for(int i=0;i<hits->nrows;i++, v1++){
+		// calculate phi via cross product
+		float x = (*v1)->x() - x0;
+		float y = (*v1)->y() - y0;
+		float r = sqrt(x*x + y*y);
+		float sin_dphi = (x*y_last - x_last*y)/r/r_last;
+		float dphi = asin(sin_dphi);
+		phiv[i] = phi_last +dphi;
+		
+		x_last = x;
+		y_last = y;
+		r_last = r;
+		phi_last = phiv[i];
+
+		// calculate means
+		z_mean += (*v1)->z();
+		phi_mean += phiv[i];
 	}
-	if(Ndphidzpoints){
-		dphidz/=(float)Ndphidzpoints;
+	z_mean /= (float)hits->nrows;
+	phi_mean /= (float)hits->nrows;
+
+	// Linear regression for z/phi relation
+	v1 = (TVector3**)hits->first();
+	float Sxx=0.0, Syy=0.0, Sxy=0.0;
+	for(int i=0;i<hits->nrows;i++, v1++){
+		float deltaZ = (*v1)->z() - z_mean;
+		float deltaPhi = phiv[i] - phi_mean;
+		Sxx += deltaZ*deltaZ;
+		Syy += deltaPhi*deltaPhi;
+		Sxy += deltaZ*deltaPhi;
 	}
+	float dphidz = Sxy/Sxx;
+	z_vertex = z_mean - phi_mean*Sxy/Syy;
+
+	delete phiv;
 	
 	theta = atan(r0*fabs(dphidz));
 	p = -p_trans/sin(theta);
-
-#endif
+	
+	// The sign of the electric charge will be the same as that
+	// of dphi/dz
+	if(dphidz<0.0)q = -q;
 
 	return NOERROR;
 }
@@ -376,11 +456,11 @@ derror_t DQuickFit::FitTrack(void)
 //------------------------------------------------------------------
 static int qsort_points_by_z(const void* arg1, const void* arg2)
 {
-	TVector3 *a = (TVector3*)arg1;
-	TVector3 *b = (TVector3*)arg2;
+	TVector3 **a = (TVector3**)arg1;
+	TVector3 **b = (TVector3**)arg2;
 	
-	if(a->z() == b->z())return 0;
-	return b->z() > a->z() ? 1:-1;
+	if((*a)->z() == (*b)->z())return 0;
+	return (*b)->z() < (*a)->z() ? 1:-1;
 }
 
 
