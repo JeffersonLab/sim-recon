@@ -55,15 +55,17 @@ AUXC = hddmInput.o hddmOutput.o hddm_s.o \
 
 GXFIXED = gxcs.o gxphys.o
 
+CERNLIB = $(CERN_ROOT)/bin/cernlib
+
 hdgeant++:	gxint.o uginit.o uglast.o $(AUXF) $(AUXC) $(GXFIXED)
 	$(CERN_ROOT)/bin/gxint -g 321 -m -d Motif -o $@ $^ $(STATIC) \
 	-Lgelhad -lgelhad $(XLIBS) $(GLIBS) -- -Wl,-export-dynamic
 
 hdgeant:	hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC)
 	$(F77) $(LOPTS) -o $@ -I$(CERN_ROOT)/include -Wl,-Bstatic $^ \
-	-Lgelhad -lgelhad -L${CERN_ROOT}/lib -lgeant321 -lmathlib \
-	-lgraflib -lgrafX11 -lpacklib \
-	$(NETLIB) $(XLIBS) 
+	-Lgelhad -lgelhad \
+	`$(CERNLIB) geant321 mathlib graflib grafX11` \
+	$(NETLIB) $(XLIBS)
 
 .F.o:
 	$(F77) $(FOPTS) -I$(CERN_ROOT)/include -DCERNLIB_MOTIF -c -o $@ $<

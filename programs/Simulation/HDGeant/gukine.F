@@ -2,6 +2,10 @@
 * $Id$
 *
 * $Log$
+* Revision 1.11  2003/07/28 15:31:33  jonesrt
+* - gukine.F - added conditional BEAM_BOX_SIZE to enable simulations with
+*   artificial electron beam motion superimposed on coherent bremsstrahlung [rtj]
+*
 * Revision 1.10  2003/01/02 23:49:33  jonesrt
 * - included updates in gustep.F with conditional code for background
 *   studies, by R. Jones and C. Gauthier [rtj]
@@ -68,6 +72,10 @@
 * Geant
 *
 *
+
+c To enable beam motion spreading, define the beam box size below (cm)
+c #define BEAM_BOX_SIZE 6
+
 #include "geant321/pilot.h"
 *CMZ :  3.21/02 29/03/94  15.41.35  by  S.Giani
 *-- Author :
@@ -195,7 +203,14 @@
          VERTEX(1) = (rhoc*cos(phic) + D*thetaX)*100
          VERTEX(2) = (rhoc*sin(phic) + D*thetaY)*100
          VERTEX(3) = CollimPos
-         call GSVERT(VERTEX,0,0,0,0,NVERT)
+#if defined BEAM_BOX_SIZE
+         call GRNDM(RNDM,2)
+         RNDM(1) = RNDM(1)*BEAM_BOX_SIZE
+         RNDM(2) = RNDM(2)*BEAM_BOX_SIZE
+         VERTEX(1) = VERTEX(1) + RNDM(1)
+         VERTEX(2) = VERTEX(2) + RNDM(2)
+#endif
+         call GSVERT(VERTEX,0,0,RNDM,2,NVERT)
          call GSKINE(PLAB,1,NVERT,0,0,NT)
          call storeInput(IDRUN,IDEVT,NT);
 *
