@@ -3,6 +3,7 @@
 
 #include "DEvent.h"
 #include "DFactory_FDCClusters.h"
+#include "DQuickFit.h"
 
 
 //-------------------
@@ -10,7 +11,35 @@
 //-------------------
 derror_t DFactory_FDCClusters::evnt(int eventnumber)
 {
+	// Use the MC cheat codes in place of cluster finding for now.
+	derror_t err = CopyFromMCCheatCodes();
 
+	// Do a quick fit to the clusters
+	FDCCluster_t *fdccluster = (FDCCluster_t*)_data->first();
+	for(int i=0; i<_data->nrows; i++, fdccluster++){
+		if(fdccluster->nhits<2)continue;
+
+		DQuickFit *qf = new DQuickFit();
+		FDCHit_t **hits = fdccluster->hits;
+		for(int j=0;j<fdccluster->nhits; j++, hits++){
+			//qf->AddHit((*hits)->radius, (*hits)->phim);
+		}
+		
+		// Do the fit and copy the results into the cluster
+		qf->FitCircle();
+		qf->CopyToFitParms(&fdccluster->fit);
+				
+		delete qf;
+	}
+
+	return err;
+}
+
+//-------------------
+// CopyFromMCCheatCodes
+//-------------------
+derror_t DFactory_FDCClusters::CopyFromMCCheatCodes(void)
+{
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
