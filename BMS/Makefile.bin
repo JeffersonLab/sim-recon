@@ -8,7 +8,9 @@ include $(HALLD_HOME)/src/BMS/Makefile.common
 
 .PHONY: mkdirs clean env
 
+ifndef LD
 LD = $(CXX)
+endif
 
 MISC_LIBS_SunOS	+= -lz
 MISC_LIBS_Linux	+=
@@ -108,7 +110,7 @@ env:
 	@echo OBJS		     = $(OBJS)
 	@echo LIBNAME	     = $(LIBNAME)
 	@echo DEPS		     = $(DEPS)
-	@echo EXENAME	     = $(EXENAME)
+	@echo EXE_NAMES     = $(EXE_NAMES)
 	@echo LD_LIBS       = $(LD_LIBS)
 	@echo MISC_LIBS     = $(MISC_LIBS)
 	@echo ROOTLIBS      = $(ROOTLIBS)
