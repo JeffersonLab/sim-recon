@@ -11,6 +11,8 @@ using namespace std;
 #include <TLorentzRotation.h>
 #include <TEllipse.h>
 #include <TBox.h>
+#include <TLine.h>
+#include <TText.h>
 
 #include "hdview.h"
 #include "hdv_mainframe.h"
@@ -102,8 +104,6 @@ derror_t MyProcessor::evnt(int eventnumber)
 	for(int i=0;i<NhitMarkers;i++)hitMarkers[i]->Draw();
 	maincanvas->Update();
 
-	cout<<"Drew Event"<<endl;
-
 	return NOERROR;
 }
 
@@ -145,9 +145,23 @@ derror_t MyProcessor::ConvertToFront(float x, float y, float z, float &X, float 
 //------------------------------------------------------------------
 derror_t MyProcessor::DrawDetectors(void)
 {
-	// Draw the detectors
 	float X,Y,R1,R2,xx,yy;
 	float X2,Y2;
+	
+	// ------ Draw Separators and labels ------
+	// Horizontal separator
+	TLine *line = new TLine(-2.1, 0.0, -0.1, 0.0);
+	line->SetLineWidth(5);
+	line->Draw();
+	// Vertical separator
+	line = new TLine(-0.1, -1.0, -0.1, 1.0);
+	line->SetLineWidth(5);
+	line->Draw();
+	// Labels
+	TText *label = new TText(-1.2, 0.85, "Top");
+	label->Draw();
+	label = new TText(-1.2, -0.15, "Side");
+	label->Draw();
 	
 	// ----- BCAL ------
 	// front
@@ -289,8 +303,6 @@ derror_t MyProcessor::DrawDetectors(void)
 		fdc_side->Draw();
 		fdc_side2->Draw();
 	}
-
-	cout<<__FILE__<<":"<<__LINE__<<" X="<<X<<" Y="<<Y<<" X2="<<X2<<" Y2="<<Y2<<endl;
 
 	drew_detectors = 1;
 
