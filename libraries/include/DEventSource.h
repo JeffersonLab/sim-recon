@@ -15,6 +15,7 @@
 
 #include "derror.h"
 #include "hddm.h"
+#include "hddm_s.h"
 
 class DEventSource
 {
@@ -47,6 +48,7 @@ class DEventSource
 		static EVENT_SOURCE_TYPE GuessSourceType(int narg, char *argv[]);
 		
 		hddm_banks_t *hddm;
+		s_HDDM_t *hddm_s;
 		
 	private:
 		char *buffer;
