@@ -1,7 +1,13 @@
 #
 # makefile for stdhep translators
 #
+
 UNAME = $(shell uname)
+
+ifndef BUILDS
+    BUILDS = $(HALLD_HOME)/src/programs/Analysis
+endif
+
 ifeq "$(UNAME)" "AIX"
     CC=cc
     CPP = /lib/cpp
@@ -73,11 +79,11 @@ ifeq "$(UNAME)" "HP-UX"
     KPPFLAGS= -C -P -DUNIX
 endif
 
-INCS = -I$(STDHEP_DIR)/src/inc -I$(BUILDS)/include
+INCS = -I$(STDHEP_DIR)/src/inc -I$(BUILDS)/include -I$(HALLD_HOME)/src/include
 
 #------------------------------------------
 
-all:  ascii2stdhep  stdhep2ascii  
+all:  ascii2stdhep  stdhep2ascii stdhep2hddm
 
 stdhep2hddm: hddm_s.o stdhep2hddm.o $(STDHEP_DIR)/lib/libstdhepC.a
 	$(CC) $(CFLAGS) $(INCS)  -o stdhep2hddm stdhep2hddm.o hddm_s.o  \
@@ -113,8 +119,9 @@ hddm_s.h:
 	$(BUILDS)/hddm/hddm-c $(BUILDS)/hddm/mc.xml
 
 install: all
-	mv ascii2stdhep   $(HALLD_HOME)/bin/$(UNAME)/.  
-	mv stdhep2ascii    $(HALLD_HOME)/bin/$(UNAME)/.  
+	mv -f ascii2stdhep   $(HALLD_HOME)/bin/$(UNAME)/.  
+	mv -f stdhep2ascii    $(HALLD_HOME)/bin/$(UNAME)/.  
+	mv -f stdhep2hddm    $(HALLD_HOME)/bin/$(UNAME)/.  
 
 install-hddm: stdhep2hddm
 	mv $^    $(HALLD_HOME)/bin/$(UNAME)/.  
