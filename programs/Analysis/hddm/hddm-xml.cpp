@@ -30,7 +30,9 @@
  *    -o option.
  */
 
-#define _GNU_SOURCE
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE true
+#endif
 
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/dom/DOMNamedNodeMap.hpp>
@@ -44,7 +46,8 @@
 #include <rpc/xdr.h>
 #include <string.h>
 #include <unistd.h>
-#include <fstream.h>
+
+#include <fstream>
 
 #include "hddm-xml.hpp"
 #include "particleType.h"
@@ -262,9 +265,12 @@ int main(int argC, char* argV[])
       cerr << "hddm-xml: Error opening input stream " << hddmFile << endl;
       exit(1);
    }
-   char tmpFile[] = "tmpXXXXXX";
-   ofstream ofs(mkstemp(tmpFile));
-   if (! ofs)
+   int pid;
+   sscanf(getenv("$$"),"%d",&pid);
+   char tmpFile[30];
+   sprintf(tmpFile,"tmp%d",pid);
+   ofstream ofs(tmpFile);
+   if (! ofs.is_open())
    {
       cerr << "hddm-xml: Error opening temp file " << tmpFile << endl;
       exit(2);

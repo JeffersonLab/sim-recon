@@ -40,12 +40,13 @@
 #include "XString.hpp"
 
 #include <assert.h>
-#include <fstream.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <rpc/xdr.h>
 #include <unistd.h>
+
+#include <fstream>
 
 #include "xml-hddm.hpp"
 #include "particleType.h"
@@ -413,8 +414,11 @@ int main(int argC, char* argV[])
 
       char* text = line;
 
-      char tmpFile[] = "tmpXXXXXX";
-      ofstream ofs(mkstemp(tmpFile));
+      int pid;
+      sscanf(getenv("$$"),"%d",&pid);
+      char tmpFile[30];
+      sprintf(tmpFile,"tmp%d",pid);
+      ofstream ofs(tmpFile);
       if (! ofs.is_open())
       {
          cerr << "xml-hddm: Error opening temp file " << tmpFile << endl;

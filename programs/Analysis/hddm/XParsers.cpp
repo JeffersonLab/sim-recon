@@ -26,7 +26,9 @@
  * the rest of the lifetime of the program.
  */ 
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE true
+#endif
 
 #include <xercesc/sax/SAXParseException.hpp>
 #include <xercesc/parsers/XercesDOMParser.hpp>

@@ -13,7 +13,8 @@
 #include <xercesc/util/XercesDefs.hpp>
 #include <xercesc/sax/ErrorHandler.hpp>
 #include <xercesc/dom/DOM.hpp>
-#include <iostream.h>
+#include <iostream>
+using namespace std;
 
 XERCES_CPP_NAMESPACE_USE
 

@@ -58,11 +58,12 @@
 #include "hddm-c.hpp"
 
 #include <assert.h>
-#include <fstream.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
+
+#include <fstream>
 
 #define X(XString) XString.unicodeForm()
 #define S(XString) XString.localForm()
