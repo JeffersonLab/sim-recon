@@ -32,6 +32,8 @@
 
 #include <fstream>
 
+#define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
+
 using std::ifstream;
 
 typedef struct DVEC
@@ -58,6 +60,7 @@ class DMagneticFieldMap
   public:
 
     DMagneticFieldMap(int rDim, int zDim);   /*!< Constructor */
+	 DMagneticFieldMap(const float Bz);			/*!< Constructor for constant field */
     ~DMagneticFieldMap();                    /*!< Destructor  */
 
     /*!
@@ -136,7 +139,7 @@ class DMagneticFieldMap
     int    rDim;   /*!< radial dimension of internal data structure  */
     int    zDim;   /*!< z dimension of internal data structure  */
     bool   DEBUG;  /*!< if true output debug informations  */
-
+    float  constBz;/*!< Use this (in tesla) for homogeneous field if gt -100 */
     
 
 };
