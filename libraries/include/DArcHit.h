@@ -41,6 +41,7 @@ class DArcHit{
 		float m, b;
 		int orientation;
 		int used;
+		int track;
 };
 
 
