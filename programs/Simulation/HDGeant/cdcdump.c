@@ -46,12 +46,25 @@ int process_event(s_HDDM_t *event)
    printf("New event number %d,",event->physicsEvents->in[0].eventNo);
    printf(" run number %d\n",event->physicsEvents->in[0].runNo);
    for (ring=0; ring<rings->mult; ring++) {
-      if (fabs(rings->in[ring].radius-19.5) < 0.5) {
+      if (fabs(rings->in[ring].radius-19.5) < 0.5e5) {
          s_Straws_t *straws = rings->in[ring].straws;
          int straw;
          for (straw=0; straw<straws->mult; straw++) {
-            printf("  straw hit at phi=%f,",straws->in[straw].phim);
-            printf("  drift time=%f\n",straws->in[straw].hits->in[0].t);
+            s_CdcPoints_t *points = straws->in[straw].cdcPoints;
+            if (points == 0) {
+               printf(" orphan found!\n");
+            }
+            else if (points->mult != 1) {
+               printf(" found %d cdcPoints!\n",points->mult);
+            }
+            else if (straws->in[straw].hits == 0) {
+               printf(" widow found!\n");
+            }
+            else {
+               printf("  straw hit at phi=%f,",straws->in[straw].phim);
+               printf("  drift time=%f,",straws->in[straw].hits->in[0].t);
+               printf("  dE/dx=%f\n",points->in[0].dEdx);
+            }
          }
       }
    }

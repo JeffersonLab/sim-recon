@@ -99,6 +99,14 @@ gcc3.2. The fix is to make a softlink from libgcc.a to libgcc_s.a in the
 /usr/lib/gcc-lib/i386-redhat-linux/3.2 directory. 
 
 
+Special note for users of Fedora
+--------------------------------
+The same note given above for Redhat 9 also applies to Fedora core X,
+except that the path to the libgcc_s.a library changes slightly with
+the release of gcc.  For FC3, for example, the complete library path is
+/usr/lib/gcc/i386-redhat-linux/3.4.2/libgcc_s.a .
+
+
 Mailing lists
 -------------
 

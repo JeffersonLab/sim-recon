@@ -232,7 +232,7 @@ s_CentralDC_t* pickCentralDC ()
                box->rings->in[m].straws->mult++;
             }
             else if ((mm == 0) ||
-                     (phim > box->rings->in[m].straws->in[mm-1].phim))
+                     (phim != box->rings->in[m].straws->in[mm-1].phim))
             {
                box->rings->in[m].straws->in[mm] =
                                           item->rings->in[0].straws->in[0];
