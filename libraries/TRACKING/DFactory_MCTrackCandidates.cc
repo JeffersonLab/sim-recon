@@ -80,14 +80,45 @@ derror_t DFactory_MCTrackCandidates::evnt(int eventnumber)
 		if(flip_x_axis)x = -x;
 		
 		archit[Narchits].track = mccheathit->track;
+		archit[Narchits].ihit = i;
 		archit[Narchits++].SetXYZ(x,y,mccheathit->z);
 	}
 	
 	// Find circle patterns first. (The results are left in circles[])
 	FindCircles();
 	
+	// Split tracks found in X/Y using the Z-info
 	FillSlopeIntDensityHistos();
+	
+	// Fill in Factory info
+	// THIS IS NOT VERY EFFICIENT RIGHT NOW!! It re-calculates the
+	// distance from the line-of-circle-centers to the focus which
+	// is done in at least 2 other places before we get here. See 
+	// FindCirclesHitSub(), FindCirclesMaskSub(), and FillSlopeIntDensityHistos()
+	for(int j=0;j<Ncircles;j++){
+		MCTrackCandidate_t *mctrackcandidate = (MCTrackCandidate_t*)_data->Add();
 		
+		float x0 = circles[j].GetX1();
+		float y0 = circles[j].GetY1();
+
+		mctrackcandidate->x0 = x0;
+		mctrackcandidate->y0 = y0;
+		
+		// Not implemented yet
+		mctrackcandidate->z_vertex = 0.0;
+		mctrackcandidate->dphidz = 0.0;
+
+		DArcHit *a = archit;
+		mctrackcandidate->Nhits = 0;
+		for(int i=0;i<Narchits;i++ ,a++){
+			
+			float d = a->DistToLine(x0,y0);
+			if(d > masksize)continue;
+			
+			mctrackcandidate->ihit[mctrackcandidate->Nhits++] = a->ihit;
+		}
+	}	
+
 	return NOERROR;
 }
 
