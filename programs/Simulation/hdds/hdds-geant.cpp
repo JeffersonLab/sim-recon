@@ -18,6 +18,71 @@
  *    hdds-geant verifies the source against the dtd before translating it.
  *    Therefore it may also be used as a validator of the xml specification
  *    (see the -v option).
+ *
+ *  Implementation:
+ *  ---------------
+ * Most of the translation was straight-forward, but there were a couple
+ * of tricky cases where decisions had to be made.  I think that these
+ * choices should work out in most cases.  If not, further tuning of the
+ * algorithm will be necessary.  Here are the tricky cases.
+ *
+ * 1. When to use divisions instead of placing multiple copies.
+ * 
+ *  Most of the time when a <mpos...> command appears it can be translated
+ *  into a division of the mother volume in Geant.  This is good to do
+ *  because it makes both more compact description and is more efficient
+ *  at tracking time.  The difficulty here is that there is no easy way
+ *  to check if the contents fit entirely inside the division.  This is
+ *  not a problem in the HDDS geometry description because the <mpos...>
+ *  command is only for positioning, and makes no statement about what
+ *  slice of the mother it occupies.  But it is a problem for Geant because
+ *  contents of divisions have to fit inside the division.  This can
+ *  happen at any time, but it most frequently happens when the object
+ *  is being rotated before placement, as in the case of stereo layers
+ *  in a drift chamber.  My solution is to make a strict set of rules
+ *  that are required before hdds-geant will create a division in response
+ *  to a <mpos...> command, and do individual placement by default.
+ *  The rules for creation of divisions are as follows:
+ *      (a) the <composition> command must have a solid container, either
+ *          via the envelope="..." attribute or by itself being a division.
+ *      (b) the <mpos...> command must be alone inside its <composition>
+ *      (c) the kind of shape of the container must be compatible with the
+ *          <mpos...> type, eg. <mposPhi> would work if its container is
+ *          a "tubs" (or division theroef) but not if it is a "box".
+ *      (d) for <mposPhi> the impliedRot attribute must be "true".
+ *      (e) the rot="..." attribute must be zeros or missing.
+ *  The last condition is not logically necessary for it to work, but it
+ *  avoids the problems that often occur with rotated placements failing
+ *  to fit inside the division.  To bypass this limitation and place
+ *  rotated volumes inside divisions, one can simply create a new volume
+ *  as a <composition> into which the content is placed with rotation,
+ *  and then place the new volume with the <mpos...> command without rot.
+ *
+ * 2. How to recognize which media contain magnetic fields.
+ *
+ *  There is no provision in the hdds geometry model for magnetic field
+ *  information.  Ultimately that is something that will be stored as a map
+ *  somewhere in a database.  Geant needs to distinguish between 4 cases:
+ *       (0) no magnetic field
+ *       (1) general case of inhomogenous field (Runge-Kutta)
+ *       (2) quasi-homogenous field with map (helical segments)
+ *       (3) uniform field (helices along local z-axis)
+ *  My solution is as follows.  By default, I assume case 0.  For all
+ *  contents of a composition named "fieldVolume" I assign case 2.  For
+ *  all contents of a composition named "sweepMagnet" I assign case 3.
+ *  For the magnitude of the field, I simply store a constant field value
+ *  (kG) for each case, and rely on the GUFLD user routine in Geant3 to
+ *  handle the actual field values at tracking time.
+ *
+ * 3. What to do about stackX/stackY/stackZ tags
+ *
+ *  In the case of Boolean tags (union/intersection/subtraction) the choice
+ *  was easy: no support in Geant3 for these cases.  For the stacks it is
+ *  possible to construct such structures in Geant3 but it is complicated
+ *  by the fact that the stacks do not give information about the kind or
+ *  size of volume that should be used for the mother.  Since stacks can
+ *  be implemented easily using compositions anyway, I decided not to include
+ *  support for them in hdds-geant.
  */
 
 #include <util/PlatformUtils.hpp>
@@ -1205,6 +1270,9 @@ int Refsys::createVolume(DOM_Element& el)
          angle[0] *= torad;
          angle[1] *= torad;
          angle[2] *= torad;
+         bool noRotation = (angle[0] == 0) &&
+                           (angle[1] == 0) &&
+                           (angle[2] == 0) ;
 
          DOM_Node ident;
          for (ident = cont.getFirstChild(); 
@@ -1330,13 +1398,12 @@ int Refsys::createVolume(DOM_Element& el)
             {
                containerS = el.getAttribute("divides");
             }
-            DOMString rotS = contEl.getAttribute("rot");
             DOMString implrotS = contEl.getAttribute("impliedRot");
-            if ((nSiblings == 1) &&
+            if (noRotation && (nSiblings == 1) &&
                 (containerS.equals("pcon") ||
                  containerS.equals("cons") ||
                  containerS.equals("tubs")) &&
-                rotS.equals("0 0 0") && implrotS.equals("true"))
+                implrotS.equals("true"))
             {
                static int phiDivisions = 0xd00;
                char* divStr = new char[5];
@@ -1351,7 +1418,6 @@ int Refsys::createVolume(DOM_Element& el)
                origin[2] = z;
                drs.reset();
                drs.shift(origin);
-               drs.rotate(angle);
                drs.createVolume(targEl);
             }
             else
@@ -1414,12 +1480,10 @@ int Refsys::createVolume(DOM_Element& el)
             {
                containerS = el.getAttribute("divides");
             }
-            DOMString rotS = contEl.getAttribute("rot");
-            if ((nSiblings == 1) &&
+            if (noRotation && (nSiblings == 1) &&
                 (containerS.equals("pcon") ||
                  containerS.equals("cons") ||
-                 containerS.equals("tubs")) &&
-                rotS.equals("0 0 0"))
+                 containerS.equals("tubs")))
             {
                static int rDivisions = 0xd00;
                char* divStr = new char[5];
@@ -1490,10 +1554,8 @@ int Refsys::createVolume(DOM_Element& el)
             {
                containerS = el.getAttribute("divides");
             }
-            DOMString rotS = contEl.getAttribute("rot");
-            if ((nSiblings == 1) && 
-                containerS.equals("box") &&
-                rotS.equals("0 0 0"))
+            if (noRotation && (nSiblings == 1) && 
+                containerS.equals("box"))
             {
                static int xDivisions = 0xd00;
                char* divStr = new char[5];
@@ -1564,10 +1626,8 @@ int Refsys::createVolume(DOM_Element& el)
             {
                containerS = el.getAttribute("divides");
             }
-            DOMString rotS = contEl.getAttribute("rot");
-            if ((nSiblings == 1) && 
-                containerS.equals("box") &&
-                rotS.equals("0 0 0"))
+            if (noRotation && (nSiblings == 1) && 
+                containerS.equals("box"))
             {
                static int yDivisions = 0xd00;
                char* divStr = new char[5];
@@ -1651,10 +1711,8 @@ int Refsys::createVolume(DOM_Element& el)
             {
                containerS = el.getAttribute("divides");
             }
-            DOMString rotS = contEl.getAttribute("rot");
-            if ((nSiblings == 1) &&
-                (containerS != 0) &&
-                rotS.equals("0 0 0"))
+            if (noRotation && (nSiblings == 1) &&
+                (containerS != 0))
             {
                static int zDivisions = 0xd00;
                char* divStr = new char[5];
