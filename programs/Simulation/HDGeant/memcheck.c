@@ -46,12 +46,12 @@ typedef struct {
 } memblock_t;
 
 binTree_t* memcheckTree = 0;
-void* addressRef = 0;
+int* addressRef = 0;
 int nodeCount = 0;
 
 void* checkin (void* p, char* tag)
 {
-   int mark = p - addressRef;
+   int mark = (int*)p - addressRef;
    void** twig = getTwig(&memcheckTree, mark);
    if (*twig == 0)
    {
@@ -104,7 +104,7 @@ void* checkin (void* p, char* tag)
 
 void* checkout (void* p)
 {
-   int mark = p - addressRef;
+   int mark = (int*)p - addressRef;
    void** twig = getTwig(&memcheckTree, mark);
    if (*twig == 0)
    {

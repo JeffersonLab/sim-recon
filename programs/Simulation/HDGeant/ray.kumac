@@ -21,8 +21,8 @@ MACRO init prec=0 fill=30 box=5.5 boy=-4 boz=100
   satt iyup colo 4
   satt iydn colo 4
   satt lgbl colo 3
-  satt csti colo 5
-  satt csto colo 5
+  satt cdsi colo 5
+  satt cdso colo 5
   satt cylw colo 2
   satt vrtx colo 7
   satt fdcc colo 7

@@ -2,6 +2,10 @@
 * $Id$
 *
 * $Log$
+* Revision 1.6  2001/09/27 20:07:39  jonesrt
+* -fixed memcheck.c to solve alpha compiler problems
+* -rtj-
+*
 * Revision 1.5  2001/08/02 15:54:18  jonesrt
 * added a check to uginit to verify that the random number generator has been
 * correctly initialized with valid seeds (or sequency number 1..215 !!!) -rtj
@@ -56,6 +60,7 @@
 *
 *             Initialize GEANT
 C..geant..
+      call trapfpe()
       CALL GINIT
 *
 *             Prints version number

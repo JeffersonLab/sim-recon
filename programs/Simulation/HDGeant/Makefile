@@ -44,7 +44,7 @@ AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o gdstep.o guxcs.o \
 
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
-       hitLGD.o bintree.o hitutil.o memcheck.o timel.o
+       hitLGD.o bintree.o hitutil.o memcheck.o timel.o trapfpe.o
 
 GXFIXED = gxcs.o gxphys.o
 
