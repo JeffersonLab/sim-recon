@@ -22,17 +22,17 @@ DFactory_MCTrackCandidates::DFactory_MCTrackCandidates(DEvent *event):DFactory(e
 	// bounds of the solenoid.
 	circle_max = 150.0; // in cm.
 	
-	// The number of bins per cm (in one dimension) for the density histogram
-	bins_per_cm = 4.0;
+	// The number of cm per bin (in one dimension) for the density histogram
+	cm_per_bin = 4.5;
 
-	int Nbins = (int)round(2.0*circle_max/bins_per_cm);
+	int Nbins = (int)round(2.0*circle_max/cm_per_bin);
 	density = new TH2F("density","Density",Nbins,-circle_max,circle_max,Nbins,-circle_max,circle_max);	
 	Ndensity_histos = 1;
 	density_histos[0] = density;
 
 	// max distance a line-of-circle-centers line can
 	// be from a focal point and still be considered on the circle
-	masksize = 2.0; // in cm
+	masksize = 3.0; // in cm
 	masksize2 = masksize*masksize;
 	
 	// See note in FindCircles
@@ -89,10 +89,12 @@ derror_t DFactory_MCTrackCandidates::evnt(int eventnumber)
 	
 	// Find circle patterns first. (The results are left in circles[])
 	FindCircles();
+	if(debug_level>0)cout<<__FILE__<<":"<<__LINE__<<" Ncircles:"<<Ncircles<<endl;
 	
 	// Split tracks found in X/Y using the Z-info. This also fills in
 	// the factory data
 	FindLines();
+	if(debug_level>0)cout<<__FILE__<<":"<<__LINE__<<" Ntracks:"<<_data->nrows<<" (before filter)"<<endl;
 	
 	// At this point, we seem to often have tracks which were "found"
 	// multiple times (i.e. they have essentially the same fitted
@@ -117,6 +119,7 @@ derror_t DFactory_MCTrackCandidates::evnt(int eventnumber)
 			a--;
 		}
 	}
+	if(debug_level>0)cout<<__FILE__<<":"<<__LINE__<<" Ntracks:"<<_data->nrows<<" (after filter)"<<endl;
 	
 	return NOERROR;
 }
@@ -287,6 +290,8 @@ derror_t DFactory_MCTrackCandidates::FindLines(void)
 	// Loop over all circles
 	for(int j=0;j<Ncircles;j++){
 
+		if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"   Finding tracks in circle "<<j<<endl;
+
 		// Fill the slope and z-intercept histos for all hits consistent
 		// with a circle at x0,y0. At the same time, place the list of
 		// hits in phi,z,Nhits.
@@ -309,6 +314,8 @@ derror_t DFactory_MCTrackCandidates::FindLines(void)
 
 		// Find all peaks in the slope histogram
 		do{
+			if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"    Looking for track in SlopeInt histo"<<endl;
+			
 			// Use a simple algorithm here. Just use the maximum as the
 			// peak center. Zero out the histogram near the peak to look
 			// for a new peak. The number of pairs of phi,z points
@@ -316,7 +323,12 @@ derror_t DFactory_MCTrackCandidates::FindLines(void)
 			// needed for a track, we require that a maximum in the slope
 			// histo be at least 6 units. In practice, 10 seems a better cut-off
 			int slope_bin = slope_density->GetMaximumBin();
-			if(slope_density->GetBinContent(slope_bin)<10)break;
+			if(slope_density->GetBinContent(slope_bin)<10){
+				if(debug_level>1){
+					cout<<__FILE__<<":"<<__LINE__<<"      No more tracks slope_bin="<<slope_bin<<"  bin content="<<slope_density->GetBinContent(slope_bin)<<endl;
+				}
+				break;
+			}
 			
 			float slope = slope_density->GetBinCenter(slope_bin);
 			
@@ -376,9 +388,11 @@ derror_t DFactory_MCTrackCandidates::FindLines(void)
 				mctrackcandidate->q = fit->q;
 				mctrackcandidate->phi = fit->phi;
 				mctrackcandidate->theta = fit->theta;
+				if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"      Adding track (Nhits="<<fit->GetNhits()<<")  -"<<_data->nrows<<"-"<<endl;
 			}else{
 				// Oops! not enough hits for a track. Delete this one.
 				_data->Delete(_data->nrows-1);
+				if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"      Aborting track (Nhits="<<fit->GetNhits()<<")"<<endl;
 			}
 			
 			// Keep the DQuickFit object around (unless we have too many)
@@ -631,6 +645,15 @@ derror_t DFactory_MCTrackCandidates::ThereCanBeOnlyOne(int trk1, int trk2)
 	// first, make sure trk1 and trk2 are in sequential order
 	int trka = trk1<trk2 ? trk1:trk2;
 	int trkb = trk1<trk2 ? trk2:trk1;
+	
+	// For some screwed up events, there will be more tracks in _data than
+	// there are fits in the qfit array. This can lead to trkb (and also
+	// trka) being greater than Nqfit. We pretty much can't do anything
+	// wrong in that case so just drop trkb for simplicity.
+	if(trkb>Nqfit){
+		_data->Delete(trkb);
+		return NOERROR;
+	}
 
 	// If we're keeping the track further down the list, then copy
 	// its results into the position near the front of the list.
@@ -775,13 +798,13 @@ derror_t DFactory_MCTrackCandidates::FindCirclesMaskSub(void)
 #if 0
 		ZeroNeighbors(tmp, xbin,ybin);
 #else
-		int Nmaskbins = (int)ceil(masksize*bins_per_cm);
+		int Nmaskbins = (int)ceil(masksize/cm_per_bin);
 		for(int i=xbin-Nmaskbins; i<xbin+Nmaskbins; i++){
 			if(i<1 || i>Nxbins)continue;
 			for(int j=ybin-Nmaskbins; j<ybin+Nmaskbins; j++){
 				if(j<1 || j>Nybins)continue;
 				float d = sqrt(pow((double)(i-xbin),2.0) + pow((double)(j-ybin),2.0));
-				if(d/bins_per_cm > masksize)continue;
+				if(d*cm_per_bin > masksize)continue;
 				
 				tmp->SetBinContent(i,j,0.0);
 			}
