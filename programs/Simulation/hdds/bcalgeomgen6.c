@@ -28,7 +28,7 @@ int main(int argc , char *argv[])
   //
   // Variables from command line:
   //
-  int phi_segments = 108; // number of segments in phi
+  int phi_segments = 96; // number of segments in phi
   double r_inner = 65.0; // bcal inner radius in cm
   double r_outer = 90.0; // bcal outer radius in cm
   double fibre_diameter = 1.0; // nominal scint layer thickness
@@ -130,7 +130,7 @@ int main(int argc , char *argv[])
   dst << "<!-- Origin of BarrelEMcal is center of upstream end. -->" << std::endl;
   dst << " " << std::endl;
   dst << "  <composition name='BarrelEMcal'>" << std::endl;
-  dst << "    <posXYZ volume='barrelEMcal' X_Y_Z='0.0 0.0 195.0' />" << std::endl;
+  dst << "    <posXYZ volume='barrelEMcal' X_Y_Z='0.0 0.0 220.0' />" << std::endl;
   dst << "  </composition>" << std::endl;
   dst << " " << std::endl;
   dst << "  <composition name='barrelEMcal' envelope='BCAL'>" << std::endl;
@@ -237,24 +237,24 @@ int main(int argc , char *argv[])
   dst << "  </composition>" << std::endl;
 
   dst << " " << std::endl;
-  dst << "  <tubs name='BCAL' Rio_Z='" << r_inner << "  " << r_e << "  390.0' unit_length='cm' material='Air'" << std::endl;
+  dst << "  <tubs name='BCAL' Rio_Z='" << r_inner << "  " << r_e << "  440.0' unit_length='cm' material='Air'" << std::endl;
   dst << "        parameters='barrelEMcal_pars'   comment='barrel EMcal mother'       />" << std::endl;
-  dst << "  <tubs name='BCLT' Rio_Z='" << r_inner << "  " << r_e << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+  dst << "  <tubs name='BCLT' Rio_Z='" << r_inner << "  " << r_e << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
   dst << "                    unit_length='cm' material='Air'" << std::endl;
   dst << "        parameters='barrelEMcal_pars'   comment='barrel EMcal module mother' />" << std::endl;
-  dst << "  <tubs name='BCLI' Rio_Z='" << r_inner << "  " << r_a << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+  dst << "  <tubs name='BCLI' Rio_Z='" << r_inner << "  " << r_a << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
   dst << "                    unit_length='cm' material='Air'" << std::endl;
   dst << "        parameters='barrelEMcal_pars'   comment='barrel EMcal inner module mother' />" << std::endl;
-  dst << "  <tubs name='BCLJ' Rio_Z='" << r_a << "  " << r_b << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+  dst << "  <tubs name='BCLJ' Rio_Z='" << r_a << "  " << r_b << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
   dst << "                    unit_length='cm' material='Air'" << std::endl;
   dst << "        parameters='barrelEMcal_pars'   comment='barrel EMcal middle module mother' />" << std::endl;
-  dst << "  <tubs name='BCLK' Rio_Z='" << r_b << "  " << r_c << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+  dst << "  <tubs name='BCLK' Rio_Z='" << r_b << "  " << r_c << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
   dst << "                    unit_length='cm' material='Air'" << std::endl;
   dst << "        parameters='barrelEMcal_pars'   comment='barrel EMcal inner module mother' />" << std::endl;
-  dst << "  <tubs name='BCLL' Rio_Z='" << r_c << "  " << r_d << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+  dst << "  <tubs name='BCLL' Rio_Z='" << r_c << "  " << r_d << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
   dst << "                    unit_length='cm' material='Air'" << std::endl;
   dst << "        parameters='barrelEMcal_pars'   comment='barrel EMcal middle module mother' />" << std::endl;
-  dst << "  <tubs name='BCLM' Rio_Z='" << r_d << "  " << r_e << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+  dst << "  <tubs name='BCLM' Rio_Z='" << r_d << "  " << r_e << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
   dst << "                    unit_length='cm' material='Air'" << std::endl;
   dst << "        parameters='barrelEMcal_pars'   comment='barrel EMcal outer module mother' />" << std::endl;
   dst << " " << std::endl;
@@ -269,14 +269,14 @@ int main(int argc , char *argv[])
       std::string endstring = mygetstring(i);
       lstring=lstring+endstring;
       sstring=sstring+endstring;
-      dst << "  <tubs name='" << lstring << "' Rio_Z='" << r1 << "  " << r2 << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+      dst << "  <tubs name='" << lstring << "' Rio_Z='" << r1 << "  " << r2 << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
       dst << "              unit_length='cm'          unit_angle='deg'" << std::endl;
       dst << "              material='Lead'      sensitive='true'" << std::endl;
       dst << "                                  comment='bcal lead aa' />" << std::endl;
       //std::cout << "The new lead string is " << lstring << " " << r1 << " " << r2 << std::endl;
       r1=r2;
       r2=r2+th_sc;
-      dst << "  <tubs name='" << sstring << "' Rio_Z='" << r1 << "  " << r2 << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+      dst << "  <tubs name='" << sstring << "' Rio_Z='" << r1 << "  " << r2 << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
       dst << "              unit_length='cm'          unit_angle='deg'" << std::endl;
       dst << "              material='Scintillator'      sensitive='true'" << std::endl;
       dst << "                                  comment='bcal scint aa' />" << std::endl;
@@ -292,14 +292,14 @@ int main(int argc , char *argv[])
       std::string endstring = mygetstring(i);
       lstring=lstring+endstring;
       sstring=sstring+endstring;
-      dst << "  <tubs name='" << lstring << "' Rio_Z='" << r1 << "  " << r2 << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+      dst << "  <tubs name='" << lstring << "' Rio_Z='" << r1 << "  " << r2 << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
       dst << "              unit_length='cm'          unit_angle='deg'" << std::endl;
       dst << "              material='Lead'      sensitive='true'" << std::endl;
       dst << "                                  comment='bcal lead aa' />" << std::endl;
       //std::cout << "The new lead string is " << lstring << " " << r1 << " " << r2 << std::endl;
       r1=r2;
       r2=r2+th_sc;
-      dst << "  <tubs name='" << sstring << "' Rio_Z='" << r1 << "  " << r2 << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+      dst << "  <tubs name='" << sstring << "' Rio_Z='" << r1 << "  " << r2 << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
       dst << "              unit_length='cm'          unit_angle='deg'" << std::endl;
       dst << "              material='Scintillator'      sensitive='true'" << std::endl;
       dst << "                                  comment='bcal scint aa' />" << std::endl;
@@ -315,14 +315,14 @@ int main(int argc , char *argv[])
       std::string endstring = mygetstring(i);
       lstring=lstring+endstring;
       sstring=sstring+endstring;
-      dst << "  <tubs name='" << lstring << "' Rio_Z='" << r1 << "  " << r2 << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+      dst << "  <tubs name='" << lstring << "' Rio_Z='" << r1 << "  " << r2 << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
       dst << "              unit_length='cm'          unit_angle='deg'" << std::endl;
       dst << "              material='Lead'      sensitive='true'" << std::endl;
       dst << "                                  comment='bcal lead aa' />" << std::endl;
       //std::cout << "The new lead string is " << lstring << " " << r1 << " " << r2 << std::endl;
       r1=r2;
       r2=r2+th_sc;
-      dst << "  <tubs name='" << sstring << "' Rio_Z='" << r1 << "  " << r2 << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+      dst << "  <tubs name='" << sstring << "' Rio_Z='" << r1 << "  " << r2 << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
       dst << "              unit_length='cm'          unit_angle='deg'" << std::endl;
       dst << "              material='Scintillator'      sensitive='true'" << std::endl;
       dst << "                                  comment='bcal scint aa' />" << std::endl;
@@ -338,14 +338,14 @@ int main(int argc , char *argv[])
       std::string endstring = mygetstring(i);
       lstring=lstring+endstring;
       sstring=sstring+endstring;
-      dst << "  <tubs name='" << lstring << "' Rio_Z='" << r1 << "  " << r2 << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+      dst << "  <tubs name='" << lstring << "' Rio_Z='" << r1 << "  " << r2 << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
       dst << "              unit_length='cm'          unit_angle='deg'" << std::endl;
       dst << "              material='Lead'      sensitive='true'" << std::endl;
       dst << "                                  comment='bcal lead aa' />" << std::endl;
       //std::cout << "The new lead string is " << lstring << " " << r1 << " " << r2 << std::endl;
       r1=r2;
       r2=r2+th_sc;
-      dst << "  <tubs name='" << sstring << "' Rio_Z='" << r1 << "  " << r2 << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+      dst << "  <tubs name='" << sstring << "' Rio_Z='" << r1 << "  " << r2 << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
       dst << "              unit_length='cm'          unit_angle='deg'" << std::endl;
       dst << "              material='Scintillator'      sensitive='true'" << std::endl;
       dst << "                                  comment='bcal scint aa' />" << std::endl;
@@ -361,14 +361,14 @@ int main(int argc , char *argv[])
       std::string endstring = mygetstring(i);
       lstring=lstring+endstring;
       sstring=sstring+endstring;
-      dst << "  <tubs name='" << lstring << "' Rio_Z='" << r1 << "  " << r2 << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+      dst << "  <tubs name='" << lstring << "' Rio_Z='" << r1 << "  " << r2 << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
       dst << "              unit_length='cm'          unit_angle='deg'" << std::endl;
       dst << "              material='Lead'      sensitive='true'" << std::endl;
       dst << "                                  comment='bcal lead aa' />" << std::endl;
       //std::cout << "The new lead string is " << lstring << " " << r1 << " " << r2 << std::endl;
       r1=r2;
       r2=r2+th_sc;
-      dst << "  <tubs name='" << sstring << "' Rio_Z='" << r1 << "  " << r2 << "  390.0' profile='0   " << phi_seg_angle << "'" << std::endl;
+      dst << "  <tubs name='" << sstring << "' Rio_Z='" << r1 << "  " << r2 << "  440.0' profile='0   " << phi_seg_angle << "'" << std::endl;
       dst << "              unit_length='cm'          unit_angle='deg'" << std::endl;
       dst << "              material='Scintillator'      sensitive='true'" << std::endl;
       dst << "                                  comment='bcal scint aa' />" << std::endl;
@@ -385,9 +385,9 @@ int main(int argc , char *argv[])
    dst << "    <real_array name='rmax'     comment='upstream, downstream end outer radius'" << std::endl;
    dst << "                                values='   " << r_e << "      " << r_e << "'" << std::endl;
    dst << "                                unit='cm'       />" << std::endl;
-   dst << "    <real       name='z0'       value='210.0'   comment='z coord. of midplane'" << std::endl;
+   dst << "    <real       name='z0'       value='237.0'   comment='z coord. of midplane'" << std::endl;
    dst << "                                unit='cm'       />" << std::endl;
-   dst << "    <real       name='zlen'     value='390.0'   comment='length of counters'" << std::endl;
+   dst << "    <real       name='zlen'     value='440.0'   comment='length of counters'" << std::endl;
    dst << "                                unit='cm'       />" << std::endl;
    dst << "    <reference  name='material' value='leadScint' />" << std::endl;
    dst << "    <reference  name='active'   value='leadScint' />" << std::endl;
