@@ -32,6 +32,7 @@ DFactory_MCTrackCandidates::DFactory_MCTrackCandidates(DEvent *event):DFactory(e
 	// max distance a line-of-circle-centers line can
 	// be from a focal point and still be considered on the circle
 	masksize = 2.0; // in cm
+	masksize2 = masksize*masksize;
 	
 	// See note in FindCircles
 	flip_x_axis = 0;
@@ -88,38 +89,10 @@ derror_t DFactory_MCTrackCandidates::evnt(int eventnumber)
 	// Find circle patterns first. (The results are left in circles[])
 	FindCircles();
 	
-	// Split tracks found in X/Y using the Z-info
-	FillSlopeIntDensityHistos();
+	// Split tracks found in X/Y using the Z-info. This also fills in
+	// the factory data
+	FindLines();
 	
-	// Fill in Factory info
-	// THIS IS NOT VERY EFFICIENT RIGHT NOW!! It re-calculates the
-	// distance from the line-of-circle-centers to the focus which
-	// is done in at least 2 other places before we get here. See 
-	// FindCirclesHitSub(), FindCirclesMaskSub(), and FillSlopeIntDensityHistos()
-	for(int j=0;j<Ncircles;j++){
-		MCTrackCandidate_t *mctrackcandidate = (MCTrackCandidate_t*)_data->Add();
-		
-		float x0 = circles[j].GetX1();
-		float y0 = circles[j].GetY1();
-
-		mctrackcandidate->x0 = x0;
-		mctrackcandidate->y0 = y0;
-		
-		// Not implemented yet
-		mctrackcandidate->z_vertex = 0.0;
-		mctrackcandidate->dphidz = 0.0;
-
-		DArcHit *a = archit;
-		mctrackcandidate->Nhits = 0;
-		for(int i=0;i<Narchits;i++ ,a++){
-			
-			float d = a->DistToLine(x0,y0);
-			if(d > masksize)continue;
-			
-			mctrackcandidate->ihit[mctrackcandidate->Nhits++] = a->ihit;
-		}
-	}	
-
 	return NOERROR;
 }
 
@@ -235,244 +208,6 @@ derror_t DFactory_MCTrackCandidates::FindCirclesHitSub(void)
 }
 
 //------------------------------------------------------------------
-// FindCirclesMaskSub
-//------------------------------------------------------------------
-derror_t DFactory_MCTrackCandidates::FindCirclesMaskSub(void)
-{
-	/// Find circles by filling the density histogram and looking
-	/// for the maximum. As each maximum is found, record its position in the
-	/// circles[] array and zero out the masksize area around the
-	/// maximum in the density histo.
-
-	Ncircles = 0;	
-
-	// Fill the density histogram
-	TH2F *tmp = density_histos[0];
-	TAxis *xaxis = tmp->GetXaxis();
-	TAxis *yaxis = tmp->GetYaxis();
-	int Nxbins = xaxis->GetNbins();
-	int Nybins = yaxis->GetNbins();
-	FillArcDensityHistogram(tmp);
-
-	do{
-
-		// Find the coordinates of the maximum
-		int xbin, ybin, zbin;
-		tmp->GetMaximumBin(xbin,ybin,zbin);
-		float x = xaxis->GetBinCenter(xbin);
-		float y = yaxis->GetBinCenter(ybin);
-		
-		// The maxmimum bin is not terribly accurate as the center of the
-		// circle. Use DQuickFit to quickly find a better center.
-		DQuickFit *fit = new DQuickFit();
-		DArcHit *a = archit;
-#if 0
-		for(int i=0;i<Narchits;i++ ,a++){
-			float d = a->DistToLine(x,y);
-			if(d <= masksize){
-				fit->AddHit(a->rhit, a->phihit, a->zhit);
-			}
-		}
-		if(fit->GetNhits()>=3){
-			fit->FitCircle();
-			x = -fit->x0;	// why do we need the minus sign?
-			y = -fit->y0;	// why do we need the minus sign?
-		}
-#endif
-		delete fit;
-
-		// Count the hits within masksize of the maximum
-		int Nhits_this_track = 0;
-		int Nhits_not_used = 0;
-		a = archit;
-		for(int i=0;i<Narchits;i++ ,a++){
-			float d = a->DistToLine(x,y);
-			if(d > masksize){
-				if(!a->used)Nhits_not_used++;
-				continue;
-			}else{
-				a->used = 1;
-				Nhits_this_track++;
-			}
-		}
-		
-		// There should be at least 4 hits for it to be a track
-		if(Nhits_this_track>=4){
-		
-			// Record the location of the maximum
-			circles[Ncircles].SetX1(x);
-			circles[Ncircles].SetY1(y);
-			circles[Ncircles].SetR1(masksize);
-			circles[Ncircles++].SetR2(masksize);
-		}
-
-		// Zero all bins within masksize of the maximum.
-		float maxval = tmp->GetBinContent(xbin,ybin,zbin);
-		cout<<__FILE__<<":"<<__LINE__<<" maxval = "<<maxval<<endl;
-#if 0
-		ZeroNeighbors(tmp, xbin,ybin);
-#else
-		int Nmaskbins = (int)ceil(masksize*bins_per_cm);
-		for(int i=xbin-Nmaskbins; i<xbin+Nmaskbins; i++){
-			if(i<1 || i>Nxbins)continue;
-			for(int j=ybin-Nmaskbins; j<ybin+Nmaskbins; j++){
-				if(j<1 || j>Nybins)continue;
-				float d = sqrt(pow((double)(i-xbin),2.0) + pow((double)(j-ybin),2.0));
-				if(d/bins_per_cm > masksize)continue;
-				
-				tmp->SetBinContent(i,j,0.0);
-			}
-		}
-#endif
-		
-		if(maxval < 15.0)break;
-
-	}while(Ncircles<20);
-	
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// ZeroNeighbors
-//------------------------------------------------------------------
-derror_t DFactory_MCTrackCandidates::ZeroNeighbors(TH2F *hist, int xbin, int ybin)
-{
-	/// Zero all of the 3x3 group of bins of in hist centered on
-	/// xbin, ybin. Any bins above a set limit will call us again
-	/// so this is a reentrant routine.
-	int Nxbins = hist->GetXaxis()->GetNbins();
-	int Nybins = hist->GetYaxis()->GetNbins();
-	for(int i=xbin-1; i<xbin+1; i++){
-		if(i<1 || i>Nxbins)continue;
-		for(int j=ybin-2; j<ybin+2; j++){
-			if(j<1 || j>Nybins)continue;
-			
-			float val = hist->GetBinContent(i,j,0);
-			hist->SetBinContent(i,j,0.0);
-			if(val > 10.0)ZeroNeighbors(hist,i,j);
-		}
-	}	
-
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// FindCirclesInt
-//------------------------------------------------------------------
-derror_t DFactory_MCTrackCandidates::FindCirclesInt(void)
-{
-	/// This essentially works the same as FindCirclesHitSub() only
-	/// it avoids filling and dealing with the large 2-D histograms.
-	/// It does this by looking at the intersection points of all
-	/// possible pairs of lines and finding ones in which many other
-	/// lines pass near.
-	
-	// Clear the "used" flag on all DArcHits
-	DArcHit *a = archit;
-	for(int i=0;i<Narchits;i++ ,a++)a->used=0;
-
-	// Loop until all tracks are found
-	Ncircles = 0;	
-	do{
-		
-		// Loop over all possible intersection points (of the unused
-		// hits) and find the one which has the most lines passing
-		// within masksize.
-		float x0, y0;
-		int max_lines_within_masksize = 0;
-		DArcHit *a = archit;
-		for(int i=0;i<Narchits;i++ ,a++){
-			if(a->used)continue;
-
-			DArcHit *b = a;
-			b++;
-			for(int j=i+1;j<Narchits;j++ ,b++){
-				if(b->used)continue;
-				
-				float x,y;
-				int n = IntersectionDensity(a,b,x,y);
-				if(n>max_lines_within_masksize){
-					max_lines_within_masksize = n;
-					x0 = x;
-					y0 = y;
-				}
-			}
-		}
-		
-		// Need a minimum number of hits to be considered a track
-		if(max_lines_within_masksize<4)break;
-		
-		// OK, looks like we found a good intersection. Go through
-		// the hits again and do a circle fit to find a better
-		// x0, y0 value to use as the true focus.
-		DQuickFit *fit = new DQuickFit();
-		float masksize2 = masksize*masksize;
-		DArcHit *c = archit;
-		for(int k=0;k<Narchits;k++ ,c++){
-			if(c->used)continue;
-			if(c->Dist2ToLine(x0,y0)>masksize2)continue;
-			fit->AddHit(c->rhit, c->phihit, c->zhit);
-		}
-		fit->FitCircle();
-		x0 = -fit->x0;	// why do we need the minus sign?
-		y0 = -fit->y0;	// why do we need the minus sign?
-		delete fit;
-
-		// Loop over the hits one final time and mark all that
-		// are within masksize of the focus as used
-		c = archit;
-		for(int k=0;k<Narchits;k++ ,c++){
-			if(c->used)continue;
-			if(c->Dist2ToLine(x0,y0)>masksize2)continue;
-			c->used = 1;
-		}
-		
-		// Finally, record the focus
-		if(Ncircles<32){
-			circles[Ncircles].SetX1(x0);
-			circles[Ncircles].SetY1(y0);
-			circles[Ncircles].SetR1(masksize);
-			circles[Ncircles++].SetR2(masksize);
-		}
-	}while(Ncircles<32);	
-	
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// IntersectionDensity
-//------------------------------------------------------------------
-int DFactory_MCTrackCandidates::IntersectionDensity(DArcHit *a, DArcHit *b, float &x, float&y)
-{
-	// Intersection of two lines:
-	// c1*x + c2*y = c3
-	// d1*x + d2*y = d3
-	float c1 = a->orientation==DArcHit::Y_OF_X ? -a->m:1.0;
-	float c2 = a->orientation==DArcHit::Y_OF_X ? 1.0:-a->m;
-	float c3 = a->b;
-	float d1 = b->orientation==DArcHit::Y_OF_X ? -b->m:1.0;
-	float d2 = b->orientation==DArcHit::Y_OF_X ? 1.0:-b->m;
-	float d3 = b->b;
-	x = (d2*c3 - d3*c2)/(d2*c1 - c2*d1);
-	y = (d3*c1 - d1*c3)/(d2*c1 - c2*d1);
-		
-	// It's possible that x or y could be infinite (parallel lines)
-	// In this case, just skip to the next hit.
-	if(!finite(x) || !finite(y))return 0;
-
-	DArcHit *c = archit;
-	int lines_within_masksize = 2;
-	float masksize2 = masksize*masksize;
-	for(int k=0;k<Narchits;k++ ,c++){
-		if(c->used)continue;
-		if(c==a || c==b)continue;
-		if(c->Dist2ToLine(x,y)<=masksize2)lines_within_masksize++;
-	}
-
-	return lines_within_masksize;
-}
-
-//------------------------------------------------------------------
 // FillArcDensityHistogram
 //------------------------------------------------------------------
 derror_t DFactory_MCTrackCandidates::FillArcDensityHistogram(TH2F *hist)
@@ -492,57 +227,196 @@ derror_t DFactory_MCTrackCandidates::FillArcDensityHistogram(TH2F *hist)
 }
 
 //------------------------------------------------------------------
-// FillSlopeIntDensityHistos
+// FindLines
 //------------------------------------------------------------------
-derror_t DFactory_MCTrackCandidates::FillSlopeIntDensityHistos(void)
+derror_t DFactory_MCTrackCandidates::FindLines(void)
 {
-	// Loop over track centers and find all hits which may contribute.
-	// Remember all phi,z coordinates for these hits so we can histogram
-	// slope and intercept of phi vs. z below.
-	
-	slope_density->Reset();
-	offset_density->Reset();
-	for(int i=0;i<Ndensity_histos;i++){
-		slope_density_histos[i]->Reset();
-		offset_density_histos[i]->Reset();
-	}
+	/// Find lines in the phi-z plane and create tracks from them.
+	///
+	/// This gets called after FindCircles and uses the results
+	/// of that to calculate phi about the circle centers for the
+	/// hits belonging to the circle. A list of phi,z points is then
+	/// made. The slope and z-intercept of every possible pair of
+	/// phi,z points are then used to fill 2 1-dimensional histograms.
+	/// Since a single circle in the x,y plane may correspond to
+	/// multiple tracks, then multiple peaks may appear in the slope
+	/// histogram (one for each track). If the tracks came from different
+	/// vertices, then multiple peaks may also appear in the 
+	/// z-intercept histogram. For now though, we assume only a 
+	/// single vertex.
+	///
+	/// Each peak in the slope histo is used along with the peak in
+	/// the z-intercept histogram to determine hits which form a track
+	/// (i.e. ones close to the line defined by the slope/intercept.)
+	/// When a group of hits are determined to form a track, they
+	/// are used to create a DQuickFit object which is then used to
+	/// quickly fit track parameters in 3-D. The results are used to
+	/// fill the factory contents for this factory.
+
+	int Nslope_density_bins = slope_density->GetXaxis()->GetNbins();
+
+	// Loop over all circles
 	for(int j=0;j<Ncircles;j++){
-		float phi[200], z[200];
-		int Nhits = 0;
-		DArcHit *a = archit;
+
+		// Fill the slope and z-intercept histos for all hits consistent
+		// with a circle at x0,y0. At the same time, place the list of
+		// hits in phi,z,Nhits.
 		float x0 = circles[j].GetX1();
 		float y0 = circles[j].GetY1();
 		float r0 = sqrt(x0*x0 + y0*y0);
-		float phi0 = atan2(y0, x0);
-		if(phi0<0.0)phi0 += 2.0*M_PI;
-		for(int i=0;i<Narchits;i++ ,a++){
-			if(Nhits>=200)break;
-			float d = a->DistToLine(x0,y0);
-			if(d > masksize)continue;
-			
-			// Take cross-product to find relative angle between this hit
-			// and vector pointing to origin
-			float x = a->xhit+x0;
-			float y = a->yhit+y0;
-			float r = sqrt(x*x + y*y);
-			float delta_phi = acos((x*x0 +y*y0)/(r*r0));
-			
-			phi[Nhits] = delta_phi;
-			z[Nhits++] = a->zhit;
-		}
+		FillSlopeIntDensityHistos(x0, y0);
 		
-		for(int i=0; i<Nhits-1; i++){
-			for(int k=i+1; k<Nhits;k++){ 
-				float m = (phi[i]-phi[k])/(z[i]-z[k]);
-				float b = phi[i] - m*z[i];
-				if(!finite(m) || !finite(b))continue;
-				slope_density->Fill(m);
-				offset_density->Fill(-b/m);
-				if(j<Ndensity_histos){
-					slope_density_histos[j]->Fill(m);
-					offset_density_histos[j]->Fill(-b/m);
+		// For debugging
+		if(j<Ndensity_histos){
+			*slope_density_histos[j] = *slope_density;
+			*offset_density_histos[j] = *offset_density;
+		}
+
+		// For now, assume a single vertex for all tracks included in
+		// in this circle. Just use the maximum
+		// in the z-intercept histo as the z coordinate of the vertex.
+		int z_bin = offset_density->GetMaximumBin();
+		float z_vertex = offset_density->GetBinCenter(z_bin);
+
+		// Find all peaks in the slope histogram
+		do{
+			// Use a simple algorithm here. Just use the maximum as the
+			// peak center. Zero out the histogram near the peak to look
+			// for a new peak. The number of pairs of phi,z points
+			// is N(N-1)/2 (I think?). Assuming at least 4 good hits are
+			// needed for a track, we require that a maximum in the slope
+			// histo be at least 6 units.
+			int slope_bin = slope_density->GetMaximumBin();
+			if(slope_density->GetBinContent(slope_bin)<6)break;
+			
+			float slope = slope_density->GetBinCenter(slope_bin);
+			
+			// Create a new DQuickFit object to do the fit (should there
+			// be enough hits to do one).
+			DQuickFit *fit = new DQuickFit();
+			
+			// Here we add a row to our factory data since we want to fill
+			// in the ihits values as we loop over the hits below. If it
+			// turns out we don't have enough hits after looping over them
+			// all, then we will delete this row.
+			MCTrackCandidate_t *mctrackcandidate = (MCTrackCandidate_t*)_data->Add();
+			mctrackcandidate->Nhits = 0;
+
+			// At this point, the "used" flag in the array of DArcHits should
+			// indicate which hits are consistent with the current circle
+			// (i.e. circles[j]). We now look for all hits with the "used"
+			// flag set that also have a delta_phi and zhit within a
+			// certain distance of the line defined by slope and z_vertex.
+			float m = slope;
+			float b = -z_vertex*m;
+			DArcHit *a = archit;
+			for(int i=0;i<Narchits;i++ ,a++){
+				if(!a->used)continue;
+
+				// calculate distance to line squared.
+				// NOTE: We assume here that we can always represent
+				// phi as a function of z. This will NOT be the case for
+				// tracks going out at 90 degrees from the target. This
+				// will have to be fixed later.
+				float z1 = (a->zhit-m*(b-a->delta_phi))/(1.0+m*m);
+				float phi1 = m*z1 + b;
+				float delta_z = a->zhit-z1;
+				float delta_phi = r0*(a->delta_phi-phi1); // convert into cm
+				float d2 = delta_z*delta_z + delta_phi*delta_phi;
+
+				if(d2<masksize2){
+					// Add hit to DQuickFit object
+					fit->AddHit(a->rhit, a->phihit, a->zhit);
+					
+					// Add hit index to track in factory data
+					mctrackcandidate->ihit[mctrackcandidate->Nhits++] = a->ihit;
 				}
 			}
+			
+			// If enough hits were added, then do the fit and record
+			// the results
+			if(fit->GetNhits()>=3){
+				fit->FitTrack();
+				mctrackcandidate->x0 = -fit->x0;	// why do we need the minus sign?
+				mctrackcandidate->y0 = -fit->y0;	// why do we need the minus sign?
+		
+				mctrackcandidate->z_vertex = fit->z_vertex;
+				mctrackcandidate->dphidz = fit->theta;
+			}else{
+				// Oops! not enough hits for a track. Delete this one.
+				_data->Delete(_data->nrows-1);
+			}
+			
+			// Delete the DQuickfit object
+			delete fit;
+
+			// Zero out the slope_density histo for 3 bins on either side
+			// of the peak.
+			for(int i=slope_bin-3;i<=slope_bin+3;i++){
+				if(i<1 || i>Nslope_density_bins)continue;
+				slope_density->SetBinContent(i, 0.0);
+			}
+
+		}while(1);
+
+	}
+	
+	// For debugging
+	slope_density->Reset();
+	offset_density->Reset();
+	for(int i=0; i<Ndensity_histos; i++){
+		slope_density->Add(slope_density_histos[i]);
+		offset_density->Add(offset_density_histos[i]);
+	}
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// FillSlopeIntDensityHistos
+//------------------------------------------------------------------
+derror_t DFactory_MCTrackCandidates::FillSlopeIntDensityHistos(float x0, float y0)
+{
+	/// This is called by FindLines()
+	
+	slope_density->Reset();
+	offset_density->Reset();
+	float r0 = sqrt(x0*x0 + y0*y0);
+	float x0_unit = x0/r0;
+	float y0_unit = y0/r0;
+	
+	// Loop over all hits. Use the "used" flag in the DArchit objects to
+	// record who is and isn't used to fill the slope and z-intercept histos
+	DArcHit *a = archit;
+	for(int i=0;i<Narchits;i++ ,a++){
+		float d2 = a->Dist2ToLine(x0,y0);
+		if(d2 > masksize2){
+			a->used = 0;
+			continue;
+		}
+		a->used = 1;
+
+		// Take cross-product to find relative angle between this hit
+		// and vector pointing to origin
+		float x = a->xhit+x0;
+		float y = a->yhit+y0;
+		float r = sqrt(x*x + y*y);
+		a->delta_phi = acos((x*x0_unit +y*y0_unit)/r);
+	}
+
+	// Loop over all pairs of phi,z points, filling the slope
+	// and z-intercept histos
+	a = archit;
+	for(int i=0; i<Narchits-1; i++, a++){
+		if(!a->used)continue;
+		DArcHit *b = &a[1];
+		for(int k=i+1; k<Narchits; k++, b++){ 
+			if(!b->used)continue;
+			float m = (a->delta_phi - b->delta_phi)/(a->zhit - b->zhit);
+			float z = a->delta_phi - m*a->zhit;
+			if(!finite(m) || !finite(z))continue;
+			slope_density->Fill(m);
+			offset_density->Fill(-z/m);
 		}
 	}
 	
@@ -727,3 +601,247 @@ derror_t DFactory_MCTrackCandidates::Print(void)
 	cout<<endl;
 }
 
+
+
+//-----------------------------------------------------------------------
+//-----------------------------------------------------------------------
+// ---------- Things below are unused -----------------------------------
+//-----------------------------------------------------------------------
+//-----------------------------------------------------------------------
+
+
+//------------------------------------------------------------------
+// FindCirclesMaskSub
+//------------------------------------------------------------------
+derror_t DFactory_MCTrackCandidates::FindCirclesMaskSub(void)
+{
+	/// Find circles by filling the density histogram and looking
+	/// for the maximum. As each maximum is found, record its position in the
+	/// circles[] array and zero out the masksize area around the
+	/// maximum in the density histo.
+
+	Ncircles = 0;	
+
+	// Fill the density histogram
+	TH2F *tmp = density_histos[0];
+	TAxis *xaxis = tmp->GetXaxis();
+	TAxis *yaxis = tmp->GetYaxis();
+	int Nxbins = xaxis->GetNbins();
+	int Nybins = yaxis->GetNbins();
+	FillArcDensityHistogram(tmp);
+
+	do{
+
+		// Find the coordinates of the maximum
+		int xbin, ybin, zbin;
+		tmp->GetMaximumBin(xbin,ybin,zbin);
+		float x = xaxis->GetBinCenter(xbin);
+		float y = yaxis->GetBinCenter(ybin);
+		
+		// The maxmimum bin is not terribly accurate as the center of the
+		// circle. Use DQuickFit to quickly find a better center.
+		DQuickFit *fit = new DQuickFit();
+		DArcHit *a = archit;
+#if 0
+		for(int i=0;i<Narchits;i++ ,a++){
+			float d = a->DistToLine(x,y);
+			if(d <= masksize){
+				fit->AddHit(a->rhit, a->phihit, a->zhit);
+			}
+		}
+		if(fit->GetNhits()>=3){
+			fit->FitCircle();
+			x = -fit->x0;	// why do we need the minus sign?
+			y = -fit->y0;	// why do we need the minus sign?
+		}
+#endif
+		delete fit;
+
+		// Count the hits within masksize of the maximum
+		int Nhits_this_track = 0;
+		int Nhits_not_used = 0;
+		a = archit;
+		for(int i=0;i<Narchits;i++ ,a++){
+			float d = a->DistToLine(x,y);
+			if(d > masksize){
+				if(!a->used)Nhits_not_used++;
+				continue;
+			}else{
+				a->used = 1;
+				Nhits_this_track++;
+			}
+		}
+		
+		// There should be at least 4 hits for it to be a track
+		if(Nhits_this_track>=4){
+		
+			// Record the location of the maximum
+			circles[Ncircles].SetX1(x);
+			circles[Ncircles].SetY1(y);
+			circles[Ncircles].SetR1(masksize);
+			circles[Ncircles++].SetR2(masksize);
+		}
+
+		// Zero all bins within masksize of the maximum.
+		float maxval = tmp->GetBinContent(xbin,ybin,zbin);
+		cout<<__FILE__<<":"<<__LINE__<<" maxval = "<<maxval<<endl;
+#if 0
+		ZeroNeighbors(tmp, xbin,ybin);
+#else
+		int Nmaskbins = (int)ceil(masksize*bins_per_cm);
+		for(int i=xbin-Nmaskbins; i<xbin+Nmaskbins; i++){
+			if(i<1 || i>Nxbins)continue;
+			for(int j=ybin-Nmaskbins; j<ybin+Nmaskbins; j++){
+				if(j<1 || j>Nybins)continue;
+				float d = sqrt(pow((double)(i-xbin),2.0) + pow((double)(j-ybin),2.0));
+				if(d/bins_per_cm > masksize)continue;
+				
+				tmp->SetBinContent(i,j,0.0);
+			}
+		}
+#endif
+		
+		if(maxval < 15.0)break;
+
+	}while(Ncircles<20);
+	
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// ZeroNeighbors
+//------------------------------------------------------------------
+derror_t DFactory_MCTrackCandidates::ZeroNeighbors(TH2F *hist, int xbin, int ybin)
+{
+	/// Zero all of the 3x3 group of bins of in hist centered on
+	/// xbin, ybin. Any bins above a set limit will call us again
+	/// so this is a reentrant routine.
+	int Nxbins = hist->GetXaxis()->GetNbins();
+	int Nybins = hist->GetYaxis()->GetNbins();
+	for(int i=xbin-1; i<xbin+1; i++){
+		if(i<1 || i>Nxbins)continue;
+		for(int j=ybin-2; j<ybin+2; j++){
+			if(j<1 || j>Nybins)continue;
+			
+			float val = hist->GetBinContent(i,j,0);
+			hist->SetBinContent(i,j,0.0);
+			if(val > 10.0)ZeroNeighbors(hist,i,j);
+		}
+	}	
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// FindCirclesInt
+//------------------------------------------------------------------
+derror_t DFactory_MCTrackCandidates::FindCirclesInt(void)
+{
+	/// This essentially works the same as FindCirclesHitSub() only
+	/// it avoids filling and dealing with the large 2-D histograms.
+	/// It does this by looking at the intersection points of all
+	/// possible pairs of lines and finding ones in which many other
+	/// lines pass near.
+	
+	// Clear the "used" flag on all DArcHits
+	DArcHit *a = archit;
+	for(int i=0;i<Narchits;i++ ,a++)a->used=0;
+
+	// Loop until all tracks are found
+	Ncircles = 0;	
+	do{
+		
+		// Loop over all possible intersection points (of the unused
+		// hits) and find the one which has the most lines passing
+		// within masksize.
+		float x0, y0;
+		int max_lines_within_masksize = 0;
+		DArcHit *a = archit;
+		for(int i=0;i<Narchits;i++ ,a++){
+			if(a->used)continue;
+
+			DArcHit *b = a;
+			b++;
+			for(int j=i+1;j<Narchits;j++ ,b++){
+				if(b->used)continue;
+				
+				float x,y;
+				int n = IntersectionDensity(a,b,x,y);
+				if(n>max_lines_within_masksize){
+					max_lines_within_masksize = n;
+					x0 = x;
+					y0 = y;
+				}
+			}
+		}
+		
+		// Need a minimum number of hits to be considered a track
+		if(max_lines_within_masksize<4)break;
+		
+		// OK, looks like we found a good intersection. Go through
+		// the hits again and do a circle fit to find a better
+		// x0, y0 value to use as the true focus.
+		DQuickFit *fit = new DQuickFit();
+		DArcHit *c = archit;
+		for(int k=0;k<Narchits;k++ ,c++){
+			if(c->used)continue;
+			if(c->Dist2ToLine(x0,y0)>masksize2)continue;
+			fit->AddHit(c->rhit, c->phihit, c->zhit);
+		}
+		fit->FitCircle();
+		x0 = -fit->x0;	// why do we need the minus sign?
+		y0 = -fit->y0;	// why do we need the minus sign?
+		delete fit;
+
+		// Loop over the hits one final time and mark all that
+		// are within masksize of the focus as used
+		c = archit;
+		for(int k=0;k<Narchits;k++ ,c++){
+			if(c->used)continue;
+			if(c->Dist2ToLine(x0,y0)>masksize2)continue;
+			c->used = 1;
+		}
+		
+		// Finally, record the focus
+		if(Ncircles<32){
+			circles[Ncircles].SetX1(x0);
+			circles[Ncircles].SetY1(y0);
+			circles[Ncircles].SetR1(masksize);
+			circles[Ncircles++].SetR2(masksize);
+		}
+	}while(Ncircles<32);	
+	
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// IntersectionDensity
+//------------------------------------------------------------------
+int DFactory_MCTrackCandidates::IntersectionDensity(DArcHit *a, DArcHit *b, float &x, float&y)
+{
+	// Intersection of two lines:
+	// c1*x + c2*y = c3
+	// d1*x + d2*y = d3
+	float c1 = a->orientation==DArcHit::Y_OF_X ? -a->m:1.0;
+	float c2 = a->orientation==DArcHit::Y_OF_X ? 1.0:-a->m;
+	float c3 = a->b;
+	float d1 = b->orientation==DArcHit::Y_OF_X ? -b->m:1.0;
+	float d2 = b->orientation==DArcHit::Y_OF_X ? 1.0:-b->m;
+	float d3 = b->b;
+	x = (d2*c3 - d3*c2)/(d2*c1 - c2*d1);
+	y = (d3*c1 - d1*c3)/(d2*c1 - c2*d1);
+		
+	// It's possible that x or y could be infinite (parallel lines)
+	// In this case, just skip to the next hit.
+	if(!finite(x) || !finite(y))return 0;
+
+	DArcHit *c = archit;
+	int lines_within_masksize = 2;
+	for(int k=0;k<Narchits;k++ ,c++){
+		if(c->used)continue;
+		if(c==a || c==b)continue;
+		if(c->Dist2ToLine(x,y)<=masksize2)lines_within_masksize++;
+	}
+
+	return lines_within_masksize;
+}
