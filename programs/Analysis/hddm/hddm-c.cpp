@@ -474,7 +474,7 @@ void constructUnpackers()
             << "   " << tagType << "* this1 = 0;"		<< endl
             << "   int start;"					<< endl
             << "   unsigned int size;"				<< endl
-	    << "   xdr_u_int(xdrs,&size);"			<< endl
+	    << "   if(!xdr_u_int(xdrs,&size))return NULL;"	<< endl
 	    << "   start = xdr_getpos(xdrs);"			<< endl
             << "   if (size > 0)"				<< endl
             << "   {"						<< endl;
@@ -1196,7 +1196,13 @@ void constructCloseFunc(DOMElement* el)
    *term = 0;
    hFile							<< endl
 	 << "void close_" << tagT << "("
-	 << classPrefix << "_iostream_t* fp);"			<< endl;
+	 << classPrefix << "_iostream_t* fp);"			<< endl
+	 <<							   endl
+	 << "#ifdef __cplusplus"				<< endl
+	 << "}"							<< endl
+	 << "#endif"						<< endl	
+	 <<							   endl;
+
    cFile							<< endl
          << "void popaway(popNode* p)"				<< endl
          << "{"							<< endl
@@ -1460,7 +1466,12 @@ int main(int argC, char* argV[])
 								<< endl
 	 << "#define MALLOC(N,S) malloc(N)"			<< endl
 	 << "#define CALLOC(N,S) calloc(N,1)"			<< endl
-	 << "#define FREE(P) free(P)"				<< endl;
+	 << "#define FREE(P) free(P)"				<< endl
+	 << 							   endl
+	 << "#ifdef __cplusplus"				<< endl
+	 << "extern \"C\" {"					<< endl
+	 << "#endif"						<< endl;
+
 
    cFile << "#include \"" << hname << "\"" 			<< endl;
 
