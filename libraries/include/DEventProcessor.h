@@ -30,6 +30,7 @@ class DEventProcessor
 
 		DEventLoop *event_loop;
 		hddm_banks_t *hddm;
+		s_HDDM_t *hddm_s;
 };
 
 #endif //_DEVENT_PROCESSOR_H_
