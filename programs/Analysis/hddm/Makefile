@@ -9,7 +9,7 @@ ifeq ($(OStype),Linux)
 	endif
 endif
 ifeq ($(OStype),OSF1)
-	CPP	:= /usr/bin/g++ -g
+	CPP	:= /usr/bin/g++ -g -D_Tru64
 endif
 
 all:	xml-hddm hddm-xml hddm-c
