@@ -28,13 +28,6 @@
 #include <dom/DOM_DOMException.hpp>
 #include <dom/DOM_NamedNodeMap.hpp>
 
-DOM_Element* tagList[100000];
-char* tagListName[100000];
-int tagListStackPtr[100000];
-int tagListLength = 0;
-int tagStack[100000];
-int tagStackLength = 0;
-
 #include <assert.h>
 #include <fstream.h>
 #include <string.h>
@@ -47,158 +40,28 @@ int tagStackLength = 0;
 
 ofstream xout; 
 
+/* inline functions to unpack values from input stream */
 
-int constructGroup(DOM_Element& el)
+inline int unpack_int(int* &bp)
 {
-   char* tagStr = el.getTagName().transcode();
-   int t;
-   for (t=0; t < tagListLength; t++)
-   {
-      if (strcmp(tagStr,tagListName[t]) == 0) break;
-   }
-
-   if (t < tagListLength)
-   {
-      DOM_NamedNodeMap oldAttr = tagList[t]->getAttributes();
-      DOM_NamedNodeMap newAttr = el.getAttributes();
-      int listLength = oldAttr.getLength();
-      if (newAttr.getLength() != listLength)
-      {
-         cerr << "hddm-c error: inconsistent usage of tag "
-              << "\"" << tagStr << "\" in xml document." << endl;
-         exit(1);
-      }
-      for (int n = 0; n < listLength; n++)
-      {
-         char* name = oldAttr.item(n).getNodeName().transcode();
-         char* value = oldAttr.item(n).getNodeValue().transcode();
-         short type = oldAttr.item(n).getNodeType();
-         char* was = tagList[t]->getAttribute(name).transcode();
-         char* is = el.getAttribute(name).transcode();
-         if (strcmp(was,is) != 0)
-         {
-            cerr << "hddm-c error: inconsistent usage of attribute "
-                 << "\"" << name << "\" in tag "
-                 << "\"" << tagStr << "\" in xml document." << endl;
-            exit(1);
-         }
-         delete [] name;
-         delete [] value;
-         delete [] was;
-         delete [] is;
-      }
-      DOM_NodeList oldList = tagList[t]->getChildNodes();
-      DOM_NodeList newList = el.getChildNodes();
-      listLength = oldList.getLength();
-      if (newList.getLength() != listLength)
-      {
-         cerr << "hddm-c error: inconsistent usage of tag "
-              << "\"" << tagStr << "\" in xml document." << endl;
-         exit(1);
-      }
-      for (int n = 0; n < listLength; n++)
-      {
-         DOM_Node cont = oldList.item(n);
-         char* name = cont.getNodeName().transcode();
-         short type = cont.getNodeType();
-         if (type == ELEMENT_NODE)
-         {
-            DOM_NodeList contList = el.getElementsByTagName(name);
-            if (contList.getLength() != 1)
-            {
-                cerr << "hddm-c error: inconsistent usage of tag "
-                     << "\"" << tagStr << "\" in xml document." << endl;
-                exit(1);
-            }
-         }
-         delete [] name;
-      }
-      delete [] tagStr;
-      return t;
-   }
-
-   tagList[t] = new DOM_Element(el);
-   tagListName[t] = new char [strlen(tagStr)+1];
-   strcpy(tagListName[t],tagStr);
-   tagListLength++;
-
-   DOM_NodeList contList = el.getChildNodes();
-   int contLength = contList.getLength();
-   for (int c = 0; c < contLength; c++)
-   {
-      DOM_Node cont = contList.item(c);
-      short type = cont.getNodeType();
-      if (type == ELEMENT_NODE)
-      {
-         DOM_Element contEl = (DOM_Element&) cont;
-         constructGroup(contEl);
-      }
-   }
-
-   tagListStackPtr[t] = tagStackLength;
-   tagStack[tagStackLength++] = t;		// this tag
-   int& repFlag = tagStack[tagStackLength++];	// repeat flag
-   int& wcount = tagStack[tagStackLength++];	// words of data
-   int& pcount = tagStack[tagStackLength++];	// words of pointers
-
-   wcount = 0;
-   DOM_NamedNodeMap varList = el.getAttributes();
-   int varCount = varList.getLength();
-   for (int v = 0; v < varCount; v++)
-   {
-      DOM_Node var = varList.item(v);
-      char* typeStr = var.getNodeValue().transcode();
-      if (strcmp(typeStr,"int") == 0)
-      {
-         wcount += 1;
-      }
-      else if (strcmp(typeStr,"float") == 0)
-      {
-         wcount += 1;
-      }
-      else if (strcmp(typeStr,"double") == 0)
-      {
-         wcount += 2;
-      }
-      else if (strcmp(typeStr,"bool") == 0)
-      {
-         wcount += 1;
-      }
-      else if (strcmp(typeStr,"Particle_t") == 0)
-      {
-         wcount += 1;
-      }
-      else
-      {
-         /* ignore attributes with unrecognized values */
-      }
-      delete [] typeStr;
-   }
-
-   pcount = 0;
-   for (int c = 0; c < contLength; c++)
-   {
-      DOM_Node cont = contList.item(c);
-      short type = cont.getNodeType();
-      if (type == ELEMENT_NODE)
-      {
-         DOM_Element contEl = (DOM_Element&) cont;
-         tagStack[tagStackLength++] = constructGroup(contEl);
-         ++pcount;
-      }
-   }
-
-   repFlag = 0;
-   DOMString rep = el.getAttribute("repeat");
-   if (rep != 0)
-   {
-      repFlag = 1;
-   }
-
-   delete [] tagStr;
-   return t;
+   return *(bp++);
 }
 
+inline float unpack_float(int* &bp)
+{
+   return *(float*)(bp++);
+}
+
+inline double unpack_double(int* &bp)
+{
+   double val;
+   int* pval = (int*) &val;
+   pval[0] = *(bp++);
+   pval[1] = *(bp++);
+   return val;
+}
+
+/* write a string to xml output stream, either stdout or a file */
 
 void writeXML(char* s)
 {
@@ -212,122 +75,116 @@ void writeXML(char* s)
       }
 }
 
+/* Generate the output xml document according the DOM;
+   at entry the buffer pointer bp points the the word after the word count */
 
-void constructXML(int* sp, int t)
+void constructXML(int* bp, DOM_Element el, int depth)
 {
-   int s = tagListStackPtr[t];
-   assert (tagStack[s++] == t);
-   int repFlag = tagStack[s++];
-   int wcount = tagStack[s++];
-   int pcount = tagStack[s++];
-
+   DOMString rep = el.getAttribute("repeat");
    int repeats;
-   if (repFlag)
+   if (rep != 0)
    {
-      repeats = *(sp++);
+      repeats = unpack_int(bp);
    }
    else
    {
       repeats = 1;
    }
 
-   static int depth = 0;
-
-   for (int i = 0; i < repeats; i++)
+   for (int r = 0; r < repeats; r++)
    {
-      if (depth == 0 || t > 0)
+      char* tagStr = el.getTagName().transcode();
+      for (int d = 0; d < depth; d++)
+      {
+         writeXML("  ");
+      }
+      writeXML("<");
+      writeXML(tagStr);
+      DOM_NamedNodeMap attrList = el.getAttributes();
+      int listLength = attrList.getLength();
+      for (int a = 0; a < listLength; a++)
+      {
+         DOMString nameS = attrList.item(a).getNodeName();
+         char* name = nameS.transcode();
+         DOMString typeS = attrList.item(a).getNodeValue();
+         char attrStr[500];
+         if (typeS.equals("int"))
+         {
+            int value = unpack_int(bp);
+            sprintf(attrStr," %s=\"%d\"",name,value);
+         }
+         else if (typeS.equals("float"))
+         {
+            float value = unpack_float(bp);
+            sprintf(attrStr," %s=\"%g\"",name,value);
+         }
+         else if (typeS.equals("double"))
+         {
+            double value = unpack_double(bp);
+            sprintf(attrStr," %s=\"%g\"",name,value);
+         }
+         else if (typeS.equals("bool"))
+         {
+            int value = unpack_int(bp);
+            sprintf(attrStr," %s=\"%d\"",name,value);
+         }
+         else if (typeS.equals("Particle_t"))
+         {
+            Particle_t value = (Particle_t)unpack_int(bp);
+            sprintf(attrStr," %s=\"%s\"",name,ParticleType(value));
+         }
+         else if (nameS.equals("repeat"))
+         {
+            attrStr[0] = 0;
+         }
+         else
+         {
+            char* value = typeS.transcode();
+            sprintf(attrStr," %s=\"%s\"",name,value);
+            delete [] value;
+         }
+         writeXML(attrStr);
+         delete [] name;
+      }
+
+      DOM_NodeList contList = el.getChildNodes();
+      int contLength = contList.getLength();
+      if (contLength > 1)
+      {
+         writeXML(">\n");
+      }
+      else
+      {
+         writeXML(" />\n");
+      }
+
+      for (int c = 0; c < contLength; c++)
+      {
+         DOM_Node cont = contList.item(c);
+         short type = cont.getNodeType();
+         if (type == ELEMENT_NODE)
+         {
+            DOM_Element contEl = (DOM_Element&) cont;
+            int size = unpack_int(bp);
+            if (size > 0)
+            {
+               constructXML(bp,contEl,depth +1);
+               bp += size;
+            }
+         }
+      }
+
+      if (contLength > 1)
       {
          for (int d = 0; d < depth; d++)
          {
             writeXML("  ");
          }
-         writeXML("<");
-         writeXML(tagListName[t]);
-         DOM_NamedNodeMap attrList = tagList[t]->getAttributes();
-         int listLength = attrList.getLength();
-         for (int n = 0; n < listLength; n++)
-         {
-            char* name = attrList.item(n).getNodeName().transcode();
-            char* typeStr = attrList.item(n).getNodeValue().transcode();
-            char attrStr[500];
-            if (strcmp(typeStr,"int") == 0)
-            {
-               int value = *(sp++);
-               sprintf(attrStr," %s=\"%d\"",name,value);
-            }
-            else if (strcmp(typeStr,"float") == 0)
-            {
-               float value = *(float*)(sp++);
-               sprintf(attrStr," %s=\"%g\"",name,value);
-            }
-            else if (strcmp(typeStr,"double") == 0)
-            {
-               double value = *(double*)(sp++);
-               ++sp;
-               sprintf(attrStr," %s=\"%g\"",name,value);
-            }
-            else if (strcmp(typeStr,"bool") == 0)
-            {
-               int value = *(sp++);
-               sprintf(attrStr," %s=\"%d\"",name,value);
-            }
-            else if (strcmp(typeStr,"Particle_t") == 0)
-            {
-               Particle_t value = *(Particle_t*)(sp++);
-               sprintf(attrStr," %s=\"%s\"",name,ParticleType(value));
-            }
-            else if (strcmp(name,"repeat") == 0)
-            {
-               attrStr[0] = 0;
-            }
-            else
-            {
-               sprintf(attrStr," %s=\"%s\"",name,typeStr);
-            }
-            writeXML(attrStr);
-            delete [] name;
-            delete [] typeStr;
-         }
-         if (pcount > 0)
-         {
-            writeXML(">\n");
-         }
-         else
-         {
-            writeXML(" />\n");
-         }
-         ++depth;
+         char endTag[500];
+         sprintf(endTag,"</%s>\n",tagStr);
+         writeXML(endTag);
       }
-
-      if (pcount > 0)
-      {
-         int ss = s;
-         for (int p = 0; p < pcount; p++)
-         {
-            int tt = tagStack[ss++];      
-            int wc = *(sp++);
-            if (wc > 0)
-            {
-               constructXML(sp,tt);
-               sp += wc;
-            }
-         }
-         if (depth > 1)
-         {
-            --depth;
-            for (int d = 0; d < depth; d++)
-            {
-               writeXML("  ");
-            }
-            char endTag[500];
-            sprintf(endTag,"</%s>\n",tagListName[t]);
-            writeXML(endTag);
-         }
-      }
-      else
-      {
-         --depth;
-      }
+      delete [] tagStr;
    }
 }
 
@@ -405,10 +262,17 @@ int main(int argC, char* argV[])
       exit(2);
    }
 
-   ofs << "<?xml version=\"1.0\"?>";
+   ofs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
    char line[500];
+   char xmlHeader[500];
    if (ifs->getline(line,500))
    {
+      if (strstr(line,"<?xml") != 0)
+      {
+         cerr << "hddm-xml: Error reading input stream " << hddmFile << endl;
+         cerr << "Input file appears to be an xml document!" << endl;
+         exit(1);
+      }
       ofs << line << endl;
    }
    else
@@ -416,8 +280,9 @@ int main(int argC, char* argV[])
       cerr << "hddm-xml: Error reading from input stream " << hddmFile << endl;
       exit(1);
    }
-   if (ifs->getline(line,500) && (strstr(line,"<HDDM") != 0))
+   if (ifs->getline(line,500) && (strstr(line,"<HDDM") == line))
    {
+      strncpy(xmlHeader,line,500);
       ofs << line << endl;
    }
    else
@@ -490,8 +355,6 @@ int main(int argC, char* argV[])
    }
    delete [] rootStr;
 
-   constructGroup(rootEl);
-
    if (xFilename)
    {
       char fname[500];
@@ -500,13 +363,31 @@ int main(int argC, char* argV[])
    }
   
    writeXML("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+   writeXML(xmlHeader);
+   writeXML("\n");
 
    int buff[100000];
    int icount;
    while (ifs->read((char*)&icount,sizeof(int)))
    {
       ifs->read((char*)buff,icount*sizeof(int));
-      constructXML(buff,0);
+      DOM_NodeList contList = rootEl.getChildNodes();
+      int contLength = contList.getLength();
+      int* bp = buff;
+      for (int c = 0; c < contLength; c++)
+      {
+         DOM_Node cont = contList.item(c);
+         short type = cont.getNodeType();
+         if (type == ELEMENT_NODE)
+         {
+            DOM_Element contEl = (DOM_Element&) cont;
+            int size = unpack_int(bp);
+            if (size > 0)
+            {
+               constructXML(bp,contEl,1);
+            }
+         }
+      }
    }
 
    writeXML("</HDDM>\n");
