@@ -37,6 +37,9 @@ class DEventSource
 
 		virtual derror_t Open(char *source); ///< Open the first (if more than one) event source 
 		virtual derror_t Close(void); ///< Close the current event source.
+		virtual derror_t GotoEvent(int eventno);
+		virtual derror_t RecordEventNumber(int eventno);
+		virtual derror_t SetEventBufferSize(int Nevents);
 
 		/// Get the next event and update all of the counters and rate
 		/// calculators. This is will call the private GetEvent() method
@@ -47,7 +50,7 @@ class DEventSource
 		static EVENT_SOURCE_TYPE GuessSourceType(int narg, char *argv[]);
 		
 		s_HDDM_t *hddm_s;
-		
+
 	private:
 		char *buffer;
 		int buflen;
@@ -65,7 +68,7 @@ class DEventSource
 		time_t prate_period;
 		unsigned long long prate_last_events;
 		float prate_last_rate;
-
+		
 		/// Get the next event and copy it into buffer. The buffer will be
 		/// reallocated if the event is larger than buflen to hold the event.
 		/// This should be implemented by the class which inherits from

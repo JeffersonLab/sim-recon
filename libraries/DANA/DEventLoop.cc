@@ -23,6 +23,7 @@ DEventLoop::DEventLoop(int narg, char *argv[])
 	Nprocessors = 0;
 	last_print_rate_time = 0;
 	quit=0;
+	goto_event = -1;
 	
 	// Determine event source type
 	DEventSource::EVENT_SOURCE_TYPE source_type;
@@ -104,20 +105,36 @@ derror_t DEventLoop::Init(void)
 //----------------
 derror_t DEventLoop::OneEvent(void)
 {
+	/// Read in and process one event. If eventno is
+	/// less than 0, then grab the next event from
+	/// the source. Otherwise, jump to the specified event
+
 	// Clear evnt_called flag in all factories
 	ClearFactories();
 
-	derror_t err = source->NextEvent();
+	derror_t err;
+	if(goto_event>=0){
+		err = source->GotoEvent(goto_event);
+		if(!err)eventnumber = goto_event - 1; // eventnumber is incremented below
+		goto_event = -1;
+	}else{
+		err = source->NextEvent();
+	}
+	
 	switch(err){
 		case NOERROR:
 			break;
 		case NO_MORE_EVENT_SOURCES:
 			cout<<endl<<"No more event sources"<<endl;
 			break;
+		case EVENT_NOT_IN_MEMORY:
+			cout<<endl<<"Event not in memory"<<endl;
+			eventnumber--;
+			break;
 		default:
 			break;
 	}
-	if(err != NOERROR)return err;
+	if(err != NOERROR && err !=EVENT_NOT_IN_MEMORY)return err;
 	
 	// Copy pointer to hddm_s to our object (from DEvent inheritance)
 	hddm_s = source->hddm_s;
@@ -154,6 +171,11 @@ derror_t DEventLoop::OneEvent(void)
 		// events by adding a "filter" to the front of the processor list
 		if(err == FILTER_EVENT_OUT)break;
 	}
+	
+	// In order for the source to jump to an event via GotoEvent(),
+	// it needs to know the event number which may only be obtained
+	// after parsing the data.
+	source->RecordEventNumber(eventnumber);
 		
 	return NOERROR;
 }

@@ -152,3 +152,33 @@ derror_t DEventSource::GetEvent(void)
 	/// virtual function
 	return NOERROR;
 }
+
+//----------------
+// GotoEvent
+//----------------
+derror_t DEventSource::GotoEvent(int eventno)
+{
+	/// virtual function
+	cout<<"GotoEvent() not implemented for this type of event source."<<endl;
+	return NOERROR;
+}
+
+//----------------
+// SetEventBufferSize
+//----------------
+derror_t DEventSource::SetEventBufferSize(int Nevents)
+{
+	/// virtual function
+	cout<<"SetEventBufferSize() not implemented for this type of event source."<<endl;
+	return NOERROR;
+}
+
+//----------------
+// RecordEventNumber
+//----------------
+derror_t DEventSource::RecordEventNumber(int eventno)
+{
+	/// virtual function
+	// This gets called no matter what so don't print any warnings
+	return NOERROR;
+}

@@ -37,6 +37,7 @@ class DEventLoop:public DEvent{
 
 		derror_t AddProcessor(DEventProcessor *processor);
 		derror_t Init(void);
+		derror_t GotoEvent(int eventno){goto_event = eventno;}
 		derror_t OneEvent(void);
 		derror_t Fini(void);
 		derror_t Run(void);
@@ -51,6 +52,7 @@ class DEventLoop:public DEvent{
 		DEventSource *source;
 		time_t last_print_rate_time;
 		int quit;
+		int goto_event;
 };
 
 
