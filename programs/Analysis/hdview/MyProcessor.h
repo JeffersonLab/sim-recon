@@ -11,11 +11,17 @@
 
 #include "DEventProcessor.h"
 
+class DQuickFit;
+
+#include <TPolyLine.h>
 #include <TEllipse.h>
 #include <TMarker.h>
 #include <TFile.h>
 #include <TH1.h>
 
+#define MAX_HIT_MARKERS 2000
+#define MAX_LINES 100
+#define MAX_CIRCLES 100
 
 class MyProcessor:public DEventProcessor
 {
@@ -33,13 +39,17 @@ class MyProcessor:public DEventProcessor
 		derror_t ConvertToSide(float x, float y, float z, float &X, float &Y);
 		derror_t ConvertToFront(float x, float y, float z, float &X, float &Y);
 
+		derror_t DrawTrack(DQuickFit *qf, int color);
 		derror_t DrawDetectors(void);
 
 		int eventNo;
-		TMarker *hitMarkers[1000];
+		TMarker *hitMarkers[MAX_HIT_MARKERS];
 		int NhitMarkers;
-		TEllipse *circles[100];
+		TEllipse *circles[MAX_CIRCLES];
 		int Ncircles;
+		TPolyLine *lines[MAX_LINES];
+		int Nlines;
+		
 	
 	private:
 		int drew_detectors;
