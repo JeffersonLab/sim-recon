@@ -1,7 +1,10 @@
 // $Id$
 
+#include <stdlib.h>
+
 #include "DFactory.h"
 #include "DEvent.h"
+
 
 //-------------
 // DFactory
@@ -15,6 +18,13 @@ DFactory::DFactory(DEvent *my_devent, char *my_name, int rowsize)
 	event = my_devent;
 	name = my_name;
 	_data = new DContainer(NULL, rowsize, my_name);
+
+	// Allow any factory to have its debug_level set via environment variable
+	debug_level = 0;
+	char envar[256];
+	sprintf(envar, "DEBUG_%s", name);
+	char *ptr = getenv(envar);
+	if(ptr)debug_level = atoi(ptr);
 }
 
 //-------------
