@@ -1454,7 +1454,7 @@ int main(int argC, char* argV[])
 
    hFile << "#include <stdlib.h>" 				<< endl
 	 << "#include <stdio.h>" 				<< endl
-	 << "#include <rpc/xdr.h>" 				<< endl
+	 << "#include <rpc/rpc.h>" 				<< endl
 	 << "#include <string.h>"				<< endl
 	 << "#include <particleType.h>"				<< endl
 								<< endl
