@@ -25,7 +25,8 @@ clean:
 	@rm  *.o 
 
 
-
+install: genr8
+	mv genr8 $(HALLD_HOME)/bin/$(UNAME)
 
 
 

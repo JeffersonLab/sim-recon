@@ -77,7 +77,7 @@ INCS = -I$(STDHEP_DIR)/src/inc -I$(HALLD_HOME)/source/include
 
 #------------------------------------------
 
-all:  ascii2stdhep  stdhep2ascii itape2stdhep stdhep2itape
+all:  ascii2stdhep  stdhep2ascii 
 
 stdhep2itape: stdhep2itape.o  $(STDHEP_DIR)/lib/libstdhepC.a
 	$(CC) $(CFLAGS) $(INCS)  -o stdhep2itape stdhep2itape.o   \
@@ -102,7 +102,9 @@ stdhep2ascii: stdhep2ascii.o  $(STDHEP_DIR)/lib/libstdhepC.a
 		$(STDHEP_DIR)/lib/libstdhepC.a \
 		$(STDHEP_DIR)/lib/libFmcfio.a $(LOCAL) -lm
 
-
+install: all
+	mv ascii2stdhep   $(HALLD_HOME)/bin/$(UNAME)/.  
+	mv stdhep2ascii    $(HALLD_HOME)/bin/$(UNAME)/.  
 
 clean:
 	rm -f *.o
