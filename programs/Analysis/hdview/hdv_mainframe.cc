@@ -47,7 +47,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 
 	maincanvas = emcanvas->GetCanvas();
 	maincanvas->cd(0);
-	maincanvas->Range(-200.0,-200.0,200.0, 200.0);
+	maincanvas->Range(-290.0,-200.0,290.0, 200.0);
 }
 
 //-------------------
