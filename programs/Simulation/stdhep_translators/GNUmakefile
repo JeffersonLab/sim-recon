@@ -40,7 +40,7 @@ ifeq "$(UNAME)" "Linux"
     CPP=gcc -E
     F77=g77
     AR=ar
-    CFLAGS= 
+    CFLAGS= -g
     FFLAGS= -fno-second-underscore
     KPPFLAGS= -C -P -DLinux -DUNIX
 endif
@@ -78,6 +78,11 @@ INCS = -I$(STDHEP_DIR)/src/inc -I$(HALLD_HOME)/source/include
 #------------------------------------------
 
 all:  ascii2stdhep  stdhep2ascii 
+
+stdhep2hddm: stdhep2hddm.o hddm_s.o $(STDHEP_DIR)/lib/libstdhepC.a
+	$(CC) $(CFLAGS) $(INCS)  -o stdhep2hddm stdhep2hddm.o hddm_s.o  \
+		$(STDHEP_DIR)/lib/libstdhepC.a \
+		$(STDHEP_DIR)/lib/libFmcfio.a $(LOCAL) -lm
 
 stdhep2itape: stdhep2itape.o  $(STDHEP_DIR)/lib/libstdhepC.a
 	$(CC) $(CFLAGS) $(INCS)  -o stdhep2itape stdhep2itape.o   \
