@@ -15,7 +15,6 @@ using namespace std;
 DEventProcessor::DEventProcessor(void)
 {
 	/// Constructor for DEventProcessor object 
-	cout<<__FILE__<<":"<<__LINE__<<endl;
 	
 	event_loop = NULL; // This will be set by the event loop object (if used)
 }
