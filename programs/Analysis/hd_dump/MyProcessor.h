@@ -12,6 +12,7 @@
 
 extern int PAUSE_BETWEEN_EVENTS;
 extern int SKIP_BORING_EVENTS;
+extern int PRINT_ALL;
 
 extern int Ntoprint;
 extern char *toprint[1024];

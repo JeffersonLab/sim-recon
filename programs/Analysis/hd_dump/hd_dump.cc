@@ -53,6 +53,9 @@ void ParseCommandLineArguments(int &narg, char *argv[])
 			case 's':
 				SKIP_BORING_EVENTS = 1;
 				break;
+			case 'A':
+				PRINT_ALL = 1;
+				break;
 		}
 	}
 }
@@ -72,6 +75,7 @@ void Usage(void)
 	cout<<endl;
 	cout<<"   -h        Print this message"<<endl;
 	cout<<"   -Dname    Print the data of type \"name\" (can be used multiple times)"<<endl;
+	cout<<"   -A        Print ALL data types (overrides and -DXXX options)"<<endl;
 	cout<<"   -p        Don't pause for keystroke between events (def. is to pause)"<<endl;
 	cout<<"   -s        Skip events which don't have any of the specified data types"<<endl;
 	cout<<endl;

@@ -18,6 +18,7 @@ using namespace std;
 
 int PAUSE_BETWEEN_EVENTS = 1;
 int SKIP_BORING_EVENTS = 0;
+int PRINT_ALL=0;
 
 int Ntoprint = 0;
 char *toprint[1024];
@@ -39,16 +40,18 @@ char *toprint[1024];
 //------------------------------------------------------------------
 derror_t MyProcessor::evnt(int eventnumber)
 {
-	// If Ntoprint is zero, then no -DXXX options were given on the command
-	// line. Assume they want EVERYTHING.
-	if(Ntoprint==0){
+	// If int PRINT_ALL is set then add EVERYTHING.
+	if(PRINT_ALL){
 		DContainer *factoryNames = event_loop->GetFactoryNames();
 		char **name = (char**)factoryNames->first();
+		Ntoprint = 0; // Clear any data specified by -D so it doesn't print twice
 		for(int i=0; i<factoryNames->nrows; i++, name++){
 			cout<<"Adding to print list : "<<*name<<endl;
 			toprint[Ntoprint++] = *name;
 		}
 
+		PRINT_ALL = 0; // clear PRINT_ALL flag so we don't re-add all factories
+		SKIP_BORING_EVENTS = 0; // with PRINT_ALL, nothing is boring!
 		delete factoryNames;
 	}
 
