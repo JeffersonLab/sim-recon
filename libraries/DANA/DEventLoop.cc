@@ -85,9 +85,9 @@ derror_t DEventLoop::SetStandardProcessors(EVENT_PROCESSORS processmask)
 }
 
 //----------------
-// Run
+// Init
 //----------------
-derror_t DEventLoop::Run(void)
+derror_t DEventLoop::Init(void)
 {
 	// At this point, all of the "user" specified event processors
 	// are in the processors list. However, we want the "standard"
@@ -119,28 +119,76 @@ derror_t DEventLoop::Run(void)
 	// Set the event_loop field for all processors
 	for(int i=0;i<Nprocessors;i++)processors[i]->event_loop = this;
 	
+	// Call init Processors
+	for(int i=0;i<Nprocessors;i++)processors[i]->init();
+
+	return NOERROR;
+}
+
+//----------------
+// OneEvent
+//----------------
+derror_t DEventLoop::OneEvent(void)
+{
+	derror_t err = source->NextEvent();
+	switch(err){
+		case NOERROR:
+			break;
+		case NO_MORE_EVENT_SOURCES:
+			cout<<endl<<"No more event sources"<<endl;
+			break;
+		default:
+			break;
+	}
+	if(err != NOERROR)return err;
+		
+	// Call Event Processors
+	DEventProcessor **p = processors;
+	int eventNo = 0;
+	for(int i=0;i<Nprocessors;i++, p++){
+		(*p)->hddm = source->hddm;
+		derror_t err = (*p)->evnt(eventNo);
+
+		// More will need to be done to truly filter out the event.
+		// for now, this just provides a means to not completely process
+		// events by adding a "filter" to the front of the processor list
+		if(err == FILTER_EVENT_OUT)break;
+	}
+		
+	return NOERROR;
+}
+
+//----------------
+// Fini
+//----------------
+derror_t DEventLoop::Fini(void)
+{
+	// Call fini Processors
+	for(int i=0;i<Nprocessors;i++)processors[i]->fini();
+	
+	return NOERROR;
+}
+
+//----------------
+// Run
+//----------------
+derror_t DEventLoop::Run(void)
+{
+	// Initialize
+	derror_t err;
+	err = Init();
+	if(err!=NOERROR)return err;
+
 	// Loop over events
 	do{
-		derror_t err = source->NextEvent();
-		switch(err){
-			case NOERROR:
-				break;
-			case NO_MORE_EVENT_SOURCES:
-				cout<<endl<<"No more event sources"<<endl;
-				break;
-			default:
-				break;
-		}
-		if(err != NOERROR)break;
-		
-		// Call Event Processors
-		DEventProcessor **p = processors;
-		for(int i=0;i<Nprocessors;i++, p++){
-			(*p)->hddm = source->hddm;
-			(*p)->evnt(0);
-		}
-		
+		err=OneEvent();
+		if(err!=NOERROR)break;
 	}while(!DONE);
+
+	// Clean up
+	err = Fini();
+
+	return err;
 }
 
 //----------------
@@ -213,7 +261,7 @@ derror_t DEventLoop::PrintRate(void)
 		char *rateunits = "Hz";
 		if(rate>1500000.){
 			rate/=1000000.;
-			rateunits = "kHz";
+			rateunits = "MHz";
 		}else if(rate>1500.){
 			rate/=1000;
 			rateunits = "kHz";
