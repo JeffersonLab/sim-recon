@@ -43,8 +43,7 @@
   <box name="FTOF" X_Y_Z="250.  250.  2.54" material="Scintillator" />
   <box name="FTOH" X_Y_Z=" 12.   12.  2.54" material="Scintillator" />
 
-  <composition name="forwardTOF">
-    <posXYZ volume="FTOF" />
+  <composition name="forwardTOF" envelope="FTOF">
     <posXYZ volume="FTOH" />
   </composition>
 

@@ -31,22 +31,22 @@
     <real	name="rmax"	value="60.0"	comment="outer radius"
 				unit="cm"	/>
     <real_array	name="phi"	values="0 360"	comment="phi range ()"
-				unit="cm"	/>
+				unit="deg"	/>
     <real	name="dphi"	value="360"	comment="angle of wedges"
-				unit="cm"	/>
+				unit="deg"	/>
     <int	name="type"	value="3"	/>
     <string	name="speci"	value="ALL"	comment="SPC or ALL"	   />
     <int	name="nstrip"	value="119"	comment="number of wires"  />
     <real	name="c0_r"	value="0.00"
 				unit="cm"	/>
     <real	name="c0_phi"	value="0.00"
-				unit="cm"	/>
+				unit="deg"	/>
     <real	name="pitch"	value="1.0"	comment="wire spacing"
 				unit="cm"	/>
     <real	name="stereo"	value="0.00"	comment="phi orientation"
-				unit="cm"	/>
+				unit="deg"	/>
     <real	name="eff_hit"	value="0.96"	comment="hit efficiency"
-				unit="cm"	/>
+				unit="none"	/>
     <real	name="siga"	value="0.015"	comment="hit resolution"
 				unit="cm"	/>
     <real	name="sigb"	value="0.00"	comment="resolution par b"
@@ -65,20 +65,20 @@
     <real	name="rmax"	value="60.0"	comment="outer radius"
 				unit="cm"	/>
     <real_array	name="phi"	values="0 360"	comment="phi range ()"
-				unit="cm"	/>
+				unit="deg"	/>
     <real	name="dphi"	value="360"	comment="angle of wedges"
-				unit="cm"	/>
+				unit="deg"	/>
     <int	name="type"	value="3"	/>
     <string	name="speci"	value="ALL"	comment="SPC or ALL"	   />
     <int	name="nstrip"	value="119"	comment="cathode strips"   />
     <real	name="c0_r"	value="0.00"
 				unit="cm"	/>
     <real	name="c0_phi"	value="0.00"
-				unit="cm"	/>
+				unit="deg"	/>
     <real	name="pitch"	value="1.0"	comment="strip pitch"
 				unit="cm"	/>
     <real	name="eff_hit"	value="0.96"	comment="hit efficiency"
-				unit="cm"	/>
+				unit="none"	/>
     <real	name="siga"	value="0.015"	comment="hit resolution"
 				unit="cm"	/>
     <real	name="sigb"	value="0.00"	comment="resolution par b"
@@ -113,7 +113,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 				parameters="forwardDCanode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -124,7 +124,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -135,7 +135,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -146,7 +146,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -157,7 +157,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -167,8 +167,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="120.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -178,8 +178,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="120.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="0.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -190,7 +190,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -201,7 +201,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-120.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
@@ -219,7 +219,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 				parameters="forwardDCanode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -230,7 +230,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -241,7 +241,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -252,7 +252,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -263,7 +263,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -273,8 +273,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="120.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -284,8 +284,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="120.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="0.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -296,7 +296,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -307,7 +307,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-120.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
@@ -325,7 +325,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 				parameters="forwardDCanode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -336,7 +336,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -347,7 +347,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -358,7 +358,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -369,7 +369,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -379,8 +379,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="120.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -390,8 +390,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="120.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="0.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -402,7 +402,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -413,7 +413,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-120.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
@@ -431,7 +431,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 				parameters="forwardDCanode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -442,7 +442,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -453,7 +453,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -464,7 +464,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -475,7 +475,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -485,8 +485,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="120.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -496,8 +496,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="120.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="0.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -508,7 +508,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -519,7 +519,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-120.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
@@ -537,7 +537,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 				parameters="forwardDCanode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -548,7 +548,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -559,7 +559,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -570,7 +570,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -581,7 +581,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -591,8 +591,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="120.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -602,8 +602,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="120.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="0.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -614,7 +614,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -625,7 +625,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-120.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
@@ -643,7 +643,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 				parameters="forwardDCanode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -654,7 +654,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -665,7 +665,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -676,7 +676,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -687,7 +687,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -697,8 +697,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="120.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -708,8 +708,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="120.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="0.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -720,7 +720,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -731,7 +731,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-120.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
@@ -749,7 +749,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 				parameters="forwardDCanode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -760,7 +760,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -771,7 +771,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -782,7 +782,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -793,7 +793,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -803,8 +803,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="120.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -814,8 +814,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="120.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="0.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -826,7 +826,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -837,7 +837,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-120.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
@@ -855,7 +855,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 				parameters="forwardDCanode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -866,7 +866,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -877,7 +877,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCanode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -888,7 +888,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -899,7 +899,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-60.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -909,8 +909,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="120.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -920,8 +920,8 @@
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="120.0"
-				unit="cm"	/>
+        <real	name="stereo"	value="0.0"
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -932,7 +932,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="0.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
@@ -943,7 +943,7 @@
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
         <real	name="stereo"	value="-120.0"
-				unit="cm"	/>
+				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
@@ -974,37 +974,32 @@
   </mcfast>
 
   <tubs name="FDCH" Rio_Z=" 3.5 61.0 6.0" material="Air"        />
-  <tubs name="FDCA" Rio_Z=" 3.5 60.0 2.0" material="chamberGas" />
+  <tubs name="FDMO" Rio_Z=" 3.5 61.0 2.0" material="Air"        />
+  <tubs name="FDCA" Rio_Z=" 3.5 60.0 1.992" material="chamberGas" />
   <tubs name="FDCC" Rio_Z=" 3.5 60.0 0.008" material="Mylar"    />
   <tubs name="FDCS" Rio_Z="60.0 61.0 6.0" material="Aluminum"   />
 
+  <composition name="forwardDC_module" envelope="FDMO">
+    <posXYZ volume="FDCA" X_Y_Z="0.0 0.0 0.0">
+      <plane value="2" />
+    </posXYZ>
+    <posXYZ volume="FDCA" X_Y_Z="0.0 0.0 -1.96" rot="0   0   60">
+      <plane value="1" />
+    </posXYZ>
+    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0 +1.96" rot="0   0  -60">
+      <plane value="3" />
+    </posXYZ>
+  </composition>
+
   <composition name="forwardDC_unit" envelope="FDCH">
-    <posXYZ volume="FDCA" X_Y_Z="0.0 0.0 -2.0" rot="0   0    0">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0 0.0 -2.0" rot="0   0    0">
       <layer value="1" />
     </posXYZ>
-    <posXYZ volume="FDCA" X_Y_Z="0.0 0.0  0.0" rot="0   0   60">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0 0.0  0.0" rot="0   0   60">
       <layer value="2" />
     </posXYZ>
-    <posXYZ volume="FDCA" X_Y_Z="0.0 0.0  2.0" rot="0   0  -60">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0 0.0  2.0" rot="0   0  -60">
       <layer value="3" />
-    </posXYZ>
-    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0 -2.5" rot="0   0   60">
-      <layer value="1" />
-    </posXYZ>
-    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0 -1.5" rot="0   0  -60">
-      <layer value="2" />
-    </posXYZ>
-    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0 -0.5" rot="0   0    0">
-      <layer value="3" />
-    </posXYZ>
-    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0  0.5" rot="0   0  120">
-      <layer value="4" />
-    </posXYZ>
-    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0  1.5" rot="0   0    0">
-      <layer value="5" />
-    </posXYZ>
-    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0  2.5" rot="0   0 -120">
-      <layer value="6" />
     </posXYZ>
   </composition>
 
@@ -1012,28 +1007,28 @@
                                           comment="forward drift chambers" />
 
   <composition name="forwardDC" envelope="FDC">
-    <posXYZ volume="FDCH" X_Y_Z="0.0  0.0  -85.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -85.0">
       <module value="1" />
     </posXYZ>
-    <posXYZ volume="FDCH" X_Y_Z="0.0  0.0  -79.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -79.0">
       <module value="2" />
     </posXYZ>
-    <posXYZ volume="FDCH" X_Y_Z="0.0  0.0  -33.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -33.0">
       <module value="3" />
     </posXYZ>
-    <posXYZ volume="FDCH" X_Y_Z="0.0  0.0  -27.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -27.0">
       <module value="4" />
     </posXYZ>
-    <posXYZ volume="FDCH" X_Y_Z="0.0  0.0   23.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   23.0">
       <module value="5" />
     </posXYZ>
-    <posXYZ volume="FDCH" X_Y_Z="0.0  0.0   29.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   29.0">
       <module value="6" />
     </posXYZ>
-    <posXYZ volume="FDCH" X_Y_Z="0.0  0.0   79.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   79.0">
       <module value="7" />
     </posXYZ>
-    <posXYZ volume="FDCH" X_Y_Z="0.0  0.0   85.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   85.0">
       <module value="8" />
     </posXYZ>
   </composition>

@@ -587,141 +587,141 @@
   </composition>
 
   <composition name="CDClayer_1" envelope="DC1">
-    <mposPhi volume="STRA" ncopy="100" R_Z="16.0 0.0" unit_length="cm">
+    <mposPhi volume="CDCstraw" ncopy="100" R_Z="16.0 0.0" unit_length="cm">
       <ring value="1" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_2" envelope="DC2">
-    <mposPhi volume="STRA" ncopy="113" R_Z="18.0 0.0" unit_length="cm">
+    <mposPhi volume="CDCstraw" ncopy="113" R_Z="18.0 0.0" unit_length="cm">
       <ring value="2" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_3" envelope="DC3">
-    <mposPhi volume="STRA" ncopy="126" R_Z="20.0.0 0.0" unit_length="cm"
+    <mposPhi volume="CDCstraw" ncopy="126" R_Z="20.0.0 0.0" unit_length="cm"
                                        rot="-0.581 0 0" unit_angle="deg">
       <ring value="3" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_4" envelope="DC4">
-    <mposPhi volume="STRA" ncopy="139" R_Z="22.0.0 0.0" unit_length="cm"
+    <mposPhi volume="CDCstraw" ncopy="139" R_Z="22.0.0 0.0" unit_length="cm"
                                        rot="-0.655 0 0" unit_angle="deg">
       <ring value="4" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_5" envelope="DC5">
-    <mposPhi volume="STRA" ncopy="152" R_Z="24.0 0.0" unit_length="cm">
+    <mposPhi volume="CDCstraw" ncopy="152" R_Z="24.0 0.0" unit_length="cm">
       <ring value="5" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_6" envelope="DC6">
-    <mposPhi volume="STRA" ncopy="165" R_Z="26.0 0.0" unit_length="cm">
+    <mposPhi volume="CDCstraw" ncopy="165" R_Z="26.0 0.0" unit_length="cm">
       <ring value="6" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_7" envelope="DC7">
-    <mposPhi volume="STRA" ncopy="178" R_Z="28.0 0.0" unit_length="cm">
+    <mposPhi volume="CDCstraw" ncopy="178" R_Z="28.0 0.0" unit_length="cm">
       <ring value="7" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_8" envelope="DC8">
-    <mposPhi volume="STRA" ncopy="191" R_Z="30.0.0 0.0" unit_length="cm"
+    <mposPhi volume="CDCstraw" ncopy="191" R_Z="30.0.0 0.0" unit_length="cm"
                                        rot="0.894 0 0" unit_angle="deg">
       <ring value="8" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_9" envelope="DC9">
-    <mposPhi volume="STRA" ncopy="204" R_Z="32.0.0 0.0" unit_length="cm"
+    <mposPhi volume="CDCstraw" ncopy="204" R_Z="32.0.0 0.0" unit_length="cm"
                                        rot="0.953 0 0" unit_angle="deg">
       <ring value="9" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_10" envelope="DC10">
-    <mposPhi volume="STRA" ncopy="217" R_Z="34.0 0.0" unit_length="cm">
+    <mposPhi volume="CDCstraw" ncopy="217" R_Z="34.0 0.0" unit_length="cm">
       <ring value="10" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_11" envelope="DC11">
-    <mposPhi volume="STRA" ncopy="230" R_Z="36.0 0.0" unit_length="cm">
+    <mposPhi volume="CDCstraw" ncopy="230" R_Z="36.0 0.0" unit_length="cm">
       <ring value="11" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_12" envelope="DC12">
-    <mposPhi volume="STRA" ncopy="243" R_Z="38.0 0.0" unit_length="cm">
+    <mposPhi volume="CDCstraw" ncopy="243" R_Z="38.0 0.0" unit_length="cm">
       <ring value="12" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_13" envelope="DC13">
-    <mposPhi volume="STRA" ncopy="256" R_Z="40.0.0 0.0" unit_length="cm"
+    <mposPhi volume="CDCstraw" ncopy="256" R_Z="40.0.0 0.0" unit_length="cm"
                                        rot="-1.192 0 0" unit_angle="deg">
       <ring value="13" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_14" envelope="DC14">
-    <mposPhi volume="STRA" ncopy="269" R_Z="42.0.0 0.0" unit_length="cm"
+    <mposPhi volume="CDCstraw" ncopy="269" R_Z="42.0.0 0.0" unit_length="cm"
                                        rot="-1.251 0 0" unit_angle="deg">
       <ring value="14" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_15" envelope="DC15">
-    <mposPhi volume="STRA" ncopy="282" R_Z="44.0 0.0" unit_length="cm">
+    <mposPhi volume="CDCstraw" ncopy="282" R_Z="44.0 0.0" unit_length="cm">
       <ring value="15" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_16" envelope="DC16">
-    <mposPhi volume="STRA" ncopy="295" R_Z="46.0 0.0" unit_length="cm">
+    <mposPhi volume="CDCstraw" ncopy="295" R_Z="46.0 0.0" unit_length="cm">
       <ring value="16" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_17" envelope="DC17">
-    <mposPhi volume="STRA" ncopy="308" R_Z="48.0 0.0" unit_length="cm">
+    <mposPhi volume="CDCstraw" ncopy="308" R_Z="48.0 0.0" unit_length="cm">
       <ring value="17" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_18" envelope="DC18">
-    <mposPhi volume="STRA" ncopy="321" R_Z="50.0.0 0.0" unit_length="cm"
+    <mposPhi volume="CDCstraw" ncopy="321" R_Z="50.0.0 0.0" unit_length="cm"
                                        rot="1.489 0 0" unit_angle="deg">
       <ring value="18" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_19" envelope="DC19">
-    <mposPhi volume="STRA" ncopy="334" R_Z="52.0.0 0.0" unit_length="cm"
+    <mposPhi volume="CDCstraw" ncopy="334" R_Z="52.0.0 0.0" unit_length="cm"
                                        rot="1.746 0 0" unit_angle="deg">
       <ring value="19" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_20" envelope="DC20">
-    <mposPhi volume="STRA" ncopy="347" R_Z="54.0 0.0" unit_length="cm">
+    <mposPhi volume="CDCstraw" ncopy="347" R_Z="54.0 0.0" unit_length="cm">
       <ring value="20" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_21" envelope="DC21">
-    <mposPhi volume="STRA" ncopy="360" R_Z="56.0 0.0" unit_length="cm">
+    <mposPhi volume="CDCstraw" ncopy="360" R_Z="56.0 0.0" unit_length="cm">
       <ring value="21" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_22" envelope="DC22">
-    <mposPhi volume="STRA" ncopy="373" R_Z="58.0 0.0" unit_length="cm">
+    <mposPhi volume="CDCstraw" ncopy="373" R_Z="58.0 0.0" unit_length="cm">
       <ring value="22" />
       <sector value="1" step="1" />
     </mposPhi>

@@ -1410,6 +1410,22 @@ int Refsys::createVolume(DOM_Element& el)
                sprintf(divStr, "s%3.3x", ++phiDivisions);
                phi0 *= 180/M_PI;
                dphi *= 180/M_PI;
+               DOMString profS = targEl.getAttribute("profile");
+               if (profS != 0)
+               {
+                  double phi1, dphi1;
+                  char* profStr = profS.transcode();
+                  sscanf(profStr, "%lf %lf", &phi1, &dphi1);
+                  delete [] profStr;
+                  getConversions(targEl, tocm, todeg);
+                  double phiShift = phi1 + dphi1/2;
+                  phi0 += phiShift * todeg;
+                  phi1 -= phiShift;
+                  profStr = new char[80];
+                  sprintf(profStr, "%lf %lf", phi1, dphi1);
+                  targEl.setAttribute("profile",profStr);
+                  delete [] profStr;
+               }
                int iaxis = 2;
                drs.createDivision(divStr, ncopy, iaxis, phi0, dphi);
                targEl.setAttribute("divides", containerS);
