@@ -35,7 +35,7 @@ hdgeant:	hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC)
 	f77 $(FOPTS) -I$(CERN_ROOT)/include -c -o $@ $<
 
 .c.o:
-	gcc $(COPTS) -I. -I../include -c -o $@ $<
+	gcc $(COPTS) -I. -I../include -I$(CERN_ROOT)/include -c -o $@ $<
 
 $(AUXC): hddm_s.h bintree.h geant3.h hddmOutput.h
 
