@@ -31,7 +31,7 @@ PROGRAM= genr8
 
 exe: genr8
 
-SRCS= genr8.c kinematics.c
+SRCS= genr8.c genkin.c
 FSRC= 
 
 FOBJ =${FSRC:.F=.o}
