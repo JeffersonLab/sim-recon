@@ -1,9 +1,7 @@
-MACRO draw vol=hall the=30 phi=20 psi=0 x0=10 y0=10 sx=5 sy=5 out=
+MACRO draw vol=hall the=30 phi=20 psi=0 x0=10 y0=10 sx=5 sy=5 out=halld.gif
   pict/create def
   draw [vol] [the] [phi] [psi] [x0] [y0] [sx] [sy]
-  if ([out] .ne. '.') then
-    pict/print ~/public_html/outbox/halld.gif 600 600
-  endif
+  pict/print [out] 600 600
   pict/delete def
 RETURN
 
