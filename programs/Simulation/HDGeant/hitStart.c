@@ -5,6 +5,18 @@
  *	HDGeant simulation program for Hall D.
  *
  *	version 1.0 	-Richard Jones July 16, 2001
+ *
+ * Programmer's Notes:
+ * -------------------
+ * 1) In applying the attenuation to light propagating down to the end
+ *    of the counters, there has to be some point where the attenuation
+ *    factor is 1.  I chose it to be the midplane, so that in the middle
+ *    of the counters the attenuation factor is 1.
+ * 2) In applying the propagation delay to light propagating down to the
+ *    end of the counters, there has to be some point where the timing
+ *    offset is 0.  I chose it to be the midplane, so that for hits in
+ *    the middle of the counter the t values measure time-of-flight from
+ *    the t=0 of the event.
  */
 
 #include <stdlib.h>
@@ -14,11 +26,10 @@
 #include <geant3.h>
 #include <bintree.h>
 
-#define Z0		-45.
 #define ATTEN_LENGTH	150.
 #define C_EFFECTIVE	15.
 #define TWO_HIT_RESOL	25.
-#define MAX_HITS 	10
+#define MAX_HITS 	100
 
 binTree_t* startCntrTree = 0;
 static int paddleCount = 0;
@@ -34,6 +45,8 @@ void hitStartCntr (float xin[4], float xout[4],
    float dx[3], dr;
    float dEdx;
    float xlocal[3];
+   float xvrtx[3];
+   float xHat[] = {1,0,0};
 
    if (dEsum == 0) return;		/* only seen if it deposits energy */
 
@@ -41,7 +54,8 @@ void hitStartCntr (float xin[4], float xout[4],
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
-   getlocalcoord_(x,xlocal,"VRTX",4);
+   transformCoord(x,"global",xlocal,"VRTX");
+   transformCoord(xHat,"local",xvrtx,"VRTX");
    dx[0] = xin[0] - xout[0];
    dx[1] = xin[1] - xout[1];
    dx[2] = xin[2] - xout[2];
@@ -59,10 +73,9 @@ void hitStartCntr (float xin[4], float xout[4],
    {
       int nhit;
       s_Hits_t* hits;
-      int count = getcount_();
       int sector = getsector_();
-      float phim = (sector - 0.5) * 2*M_PI/count;
-      float dzup = xlocal[2] - Z0;
+      float phim = atan2(xvrtx[1],xvrtx[0]);
+      float dzup = xlocal[2];
       float tcorr = t + dzup/C_EFFECTIVE;
       float dEcorr = dEsum * exp(-dzup/ATTEN_LENGTH);
       void** twig = getTwig(&startCntrTree, sector);

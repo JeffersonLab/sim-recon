@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.4  2001/07/27 21:04:09  jonesrt
+* With this release, HDGeant version 1.0 is now in beta.  -rtj
+*
 * Revision 1.3  2001/07/24 05:37:16  jonesrt
 * First working prototype of hits package -rtj
 *
@@ -27,6 +30,7 @@
 *                                                                      *
 ************************************************************************
 *
+#include "geant321/gcunit.inc"
 #include "geant321/gcflag.inc"
 #include "geant321/gckine.inc"
 #include "geant321/gconsp.inc"
@@ -70,6 +74,15 @@
          ieorun = 1
          ieotri = 1
          return
+      endif
+
+      ev = IDEVT
+      do i=1,10
+        ev = ev/10.
+        if (ev.lt.10) goto 5
+      enddo
+    5 if (int(ev).eq.ev) then
+        write(LOUT,*) IDEVT," events simulated"
       endif
 *
 *              Kinematic debug (controled by ISWIT(1))

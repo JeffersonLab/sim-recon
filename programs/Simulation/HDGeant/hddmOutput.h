@@ -1,5 +1,3 @@
-#include <hddm_s.h>
-
 s_CentralDC_t*	pickCentralDC (void);
 s_ForwardDC_t*	pickForwardDC (void);
 s_StartCntr_t*	pickStartCntr (void);

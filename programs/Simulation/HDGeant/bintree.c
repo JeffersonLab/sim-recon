@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include <assert.h>
 #include <bintree.h>
 
 void** getTwig(binTree_t** tree, int mark)
@@ -29,6 +30,7 @@ void** getTwig(binTree_t** tree, int mark)
    }
    else
    {
+      assert (node->mark >= 0);
       return getTwig(&node->right, mark);
    }
 }

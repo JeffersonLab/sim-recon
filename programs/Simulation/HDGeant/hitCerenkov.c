@@ -14,11 +14,10 @@
 #include <geant3.h>
 #include <bintree.h>
 
-#define MAX_HITS        10
-#define TWO_HIT_RESOL   50.
-#define PHI_SECTORS	24
 #define N0_FIGURE	60
 #define REFR_INDEX	1.0017
+#define TWO_HIT_RESOL   50.
+#define MAX_HITS        100
 
 binTree_t* cerenkovTree = 0;
 static int sectionCount = 0;
@@ -31,7 +30,8 @@ void hitCerenkov (float xin[4], float xout[4],
 {
    float x[3], t;
    float dx[3], dr;
-   float xlocal[3];
+   float xcere[3];
+   float xHat[] = {1,0,0};
    double Eave = (pin[3] + pout[3])/2;
    double pave = (pin[4] + pout[4])/2;
    double beta = pave/Eave;
@@ -39,24 +39,22 @@ void hitCerenkov (float xin[4], float xout[4],
 
    if (costheta > 1) return;		/* no light below threshold */
 
-/* x[0] = (xin[0] + xout[0])/2;
- * x[1] = (xin[1] + xout[1])/2;
- * x[2] = (xin[2] + xout[2])/2;
- * t    = (xin[3] + xout[3])/2 * 1e9;
- * getlocalcoord_(x,xlocal,"local",5);
- * dx[0] = xin[0] - xout[0];
- * dx[1] = xin[1] - xout[1];
- * dx[2] = xin[2] - xout[2];
- * dr = sqrt(dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
- */
+   x[0] = (xin[0] + xout[0])/2;
+   x[1] = (xin[1] + xout[1])/2;
+   x[2] = (xin[2] + xout[2])/2;
+   t    = (xin[3] + xout[3])/2 * 1e9;
+   transformCoord(xHat,"local",xcere,"CERE");
+   dx[0] = xin[0] - xout[0];
+   dx[1] = xin[1] - xout[1];
+   dx[2] = xin[2] - xout[2];
+   dr = sqrt(dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
 
    /* post the hit to the hits tree, mark sector as hit */
    {
       int nshot;
       s_Flashes_t* shots;
-      int count = getcount_();
       int sector = getsector_();
-      float phim = (sector - 0.5) * 2*M_PI/count;
+      float phim = atan2(xcere[1],xcere[0]);
       double sintheta2 = 1 - costheta*costheta;
       float pe = N0_FIGURE * sintheta2 * dr;
       void** twig = getTwig(&cerenkovTree, sector);

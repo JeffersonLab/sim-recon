@@ -5,6 +5,22 @@
  *	HDGeant simulation program for Hall D.
  *
  *	version 1.0 	-Richard Jones July 16, 2001
+ *
+ * Programmer's Notes:
+ * -------------------
+ * 1) In applying the attenuation to light propagating down to both ends
+ *    of the counters, there has to be some point where the attenuation
+ *    factor is 1.  I chose it to be the midplane, so that in the middle
+ *    of the counter both ends see the unattenuated dE values.  Closer to
+ *    either end, that end has a larger dE value and the opposite end a
+ *    lower dE value than the actual deposition.
+ * 2) In applying the propagation delay to light propagating down to the
+ *    ends of the counters, there has to be some point where the timing
+ *    offset is 0.  I chose it to be the midplane, so that for hits in
+ *    the middle of the counter the t values measure time-of-flight from
+ *    the t=0 of the event.  For hits closer to one end, that end sees
+ *    a t value smaller than its true time-of-flight, and the other end
+ *    sees a value correspondingly larger.  The average is the true tof.
  */
 
 #include <stdlib.h>
@@ -14,13 +30,10 @@
 #include <geant3.h>
 #include <bintree.h>
 
-#define Y0		-125.
-#define SLAB_WIDTH	5.0
-#define HALF_LENGTH	125
 #define ATTEN_LENGTH	150
 #define C_EFFECTIVE	15
 #define TWO_HIT_RESOL   25.
-#define MAX_HITS        10
+#define MAX_HITS        100
 
 binTree_t* forwardTOFTree = 0;
 static int slabCount = 0;
@@ -36,6 +49,8 @@ void hitForwardTOF (float xin[4], float xout[4],
    float dx[3], dr;
    float dEdx;
    float xlocal[3];
+   float xftof[3];
+   float zeroHat[] = {0,0,0};
 
    if (dEsum == 0) return;              /* only seen if it deposits energy */
 
@@ -43,7 +58,8 @@ void hitForwardTOF (float xin[4], float xout[4],
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
-   getlocalcoord_(x,xlocal,"local",5);
+   transformCoord(x,"global",xlocal,"FTOF");
+   transformCoord(zeroHat,"local",xftof,"FTOF");
    dx[0] = xin[0] - xout[0];
    dx[1] = xin[1] - xout[1];
    dx[2] = xin[2] - xout[2];
@@ -62,20 +78,22 @@ void hitForwardTOF (float xin[4], float xout[4],
       int nhit;
       s_Hits_t* leftHits;
       s_Hits_t* rightHits;
-      float dxleft = HALF_LENGTH - xlocal[0];
-      float dxright = HALF_LENGTH + xlocal[0];
-      float tleft  = t + dxleft/C_EFFECTIVE;
-      float tright = t + dxright/C_EFFECTIVE;
-      float dEleft  = dEsum * exp(-dxleft/ATTEN_LENGTH);
-      float dEright = dEsum * exp(-dxright/ATTEN_LENGTH);
-      int slab = (xlocal[1] - Y0)/SLAB_WIDTH +1;
-      void** twig = getTwig(&forwardTOFTree, slab);
+      int row = getrow_();
+      int column = getcolumn_();
+      float dxleft = xlocal[0];
+      float dxright = -xlocal[0];
+      float tleft  = (column == 2) ? 0 : t + dxleft/C_EFFECTIVE;
+      float tright = (column == 1) ? 0 : t + dxright/C_EFFECTIVE;
+      float dEleft  = (column == 2) ? 0 : dEsum * exp(-dxleft/ATTEN_LENGTH);
+      float dEright = (column == 1) ? 0 : dEsum * exp(-dxright/ATTEN_LENGTH);
+      int mark = (row << 8) + column;
+      void** twig = getTwig(&forwardTOFTree, mark);
       if (*twig == 0)
       {
          s_ForwardTOF_t* tof = *twig = make_s_ForwardTOF();
          tof->slabs = make_s_Slabs(1);
          tof->slabs->mult = 1;
-         tof->slabs->in[0].y = (slab -1)*SLAB_WIDTH + Y0;
+         tof->slabs->in[0].y = xftof[1];
          tof->slabs->in[0].left = make_s_Left();
          tof->slabs->in[0].left->hits = leftHits = make_s_Hits(MAX_HITS);
          tof->slabs->in[0].right = make_s_Right();

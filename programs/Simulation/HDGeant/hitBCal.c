@@ -5,6 +5,22 @@
  *	HDGeant simulation program for Hall D.
  *
  *	version 1.0 	-Richard Jones July 16, 2001
+ *
+ * Programmer's Notes:
+ * -------------------
+ * 1) In applying the attenuation to light propagating down to both ends
+ *    of the modules, there has to be some point where the attenuation
+ *    factor is 1.  I chose it to be the midplane, so that in the middle
+ *    of the module both ends see the unattenuated E values.  Closer to
+ *    either end, that end has a larger E value and the opposite end a
+ *    lower E value than the actual deposition.
+ * 2) In applying the propagation delay to light propagating down to the
+ *    ends of the modules, there has to be some point where the timing
+ *    offset is 0.  I chose it to be the midplane, so that for hits in
+ *    the middle of the module the t values measure time-of-flight from
+ *    the t=0 of the event.  For hits closer to one end, that end sees
+ *    a t value smaller than its true time-of-flight, and the other end
+ *    sees a value correspondingly larger.  The average is the true tof.
  */
 
 #include <stdlib.h>
@@ -14,13 +30,11 @@
 #include <geant3.h>
 #include <bintree.h>
 
-#define Z0		15.
-#define TWO_HIT_RESOL	50.
-#define HALF_LENGTH	200.
 #define ATTEN_LENGTH	150.
 #define C_EFFECTIVE	15.
 #define THRESH_MEV	10.
-#define MAX_HITS 	10
+#define TWO_HIT_RESOL	50.
+#define MAX_HITS 	100
 
 binTree_t* barrelEMcalTree = 0;
 static int moduleCount = 0;
@@ -35,6 +49,8 @@ void hitBarrelEMcal (float xin[4], float xout[4],
    float x[3], t;
    float dx[3], dr;
    float xlocal[3];
+   float xbcal[3];
+   float xHat[] = {1,0,0};
 
    if (dEsum == 0) return;              /* only seen if it deposits energy */
 
@@ -42,18 +58,18 @@ void hitBarrelEMcal (float xin[4], float xout[4],
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
-   getlocalcoord_(x,xlocal,"BCAL",4);
+   transformCoord(x,"global",xlocal,"BCAL");
+   transformCoord(xHat,"local",xbcal,"BCAL");
 
    /* post the hit to the hits tree, mark sector as hit */
    {
       int nshot;
       s_Showers_t* upshots;
       s_Showers_t* downshots;
-      int count = getcount_();
       int sector = getsector_();
-      float phim = (sector - 0.5) * 2*M_PI/count;
-      float dzup = HALF_LENGTH + xlocal[2];
-      float dzdown = HALF_LENGTH - xlocal[2];
+      float phim = atan2(xbcal[1],xbcal[0]);
+      float dzup = xlocal[2];
+      float dzdown = -xlocal[2];
       float tup = t + dzup/C_EFFECTIVE;
       float tdown = t + dzdown/C_EFFECTIVE;
       float Eup = dEsum * exp(-dzup/ATTEN_LENGTH);

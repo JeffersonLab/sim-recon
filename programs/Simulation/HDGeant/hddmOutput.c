@@ -17,12 +17,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <hddm_s.h>
 #include <hddmOutput.h>
 
 s_iostream* thisOutputStream = 0;
 s_HDDM_t* thisOutputEvent = 0;
-
-s_HDDM_t* getInput(void);
+extern s_HDDM_t* thisInputEvent;
 
 int openOutput (char* filename)
 {
@@ -58,14 +58,18 @@ int loadOutput ()
       flush_s_HDDM(thisOutputEvent, 0);
    }
 
-   thisOutputEvent = getInput();
+   thisOutputEvent = thisInputEvent;
+   thisInputEvent = 0;
    if (thisOutputEvent == 0)
    {
       static int eventNo = 0;
       thisOutputEvent = make_s_HDDM();
       thisOutputEvent->physicsEvent = make_s_PhysicsEvent();
-      thisOutputEvent->physicsEvent->hitView = make_s_HitView();
       thisOutputEvent->physicsEvent->eventNo = ++eventNo;
+   }
+   if (thisOutputEvent->physicsEvent->hitView == 0)
+   {
+      thisOutputEvent->physicsEvent->hitView = make_s_HitView();
    }
    thisOutputEvent->physicsEvent->hitView->centralDC    = pickCentralDC();
    thisOutputEvent->physicsEvent->hitView->forwardDC    = pickForwardDC();

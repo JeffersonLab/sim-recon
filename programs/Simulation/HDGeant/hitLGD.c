@@ -14,10 +14,9 @@
 #include <geant3.h>
 #include <bintree.h>
 
-#define BLOCK_WIDTH	4.0
-#define THRESH_MEV	150.
+#define THRESH_MEV	10.
 #define TWO_HIT_RESOL   75.
-#define MAX_HITS        10
+#define MAX_HITS        100
 
 binTree_t* forwardEMcalTree = 0;
 static int blockCount = 0;
@@ -30,7 +29,8 @@ void hitForwardEMcal (float xin[4], float xout[4],
                       float pin[5], float pout[5], float dEsum, int track)
 {
    float x[3], t;
-   float xlocal[3];
+   float xfcal[3];
+   float zeroHat[] = {0,0,0};
 
    if (dEsum == 0) return;              /* only seen if it deposits energy */
 
@@ -38,7 +38,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
-   getlocalcoord_(x,xlocal,"FCAL",4);
+   transformCoord(zeroHat,"local",xfcal,"FCAL");
 
    /* post the hit to the hits tree, mark block as hit */
    {
@@ -46,8 +46,8 @@ void hitForwardEMcal (float xin[4], float xout[4],
       s_Showers_t* shots;
       int row = getrow_();
       int column = getcolumn_();
-      float xcol = (floor(xlocal[0]/BLOCK_WIDTH) + 0.5)*BLOCK_WIDTH;
-      float yrow = (floor(xlocal[1]/BLOCK_WIDTH) + 0.5)*BLOCK_WIDTH;
+      float xcol = xfcal[0];
+      float yrow = xfcal[1];
       int mark = (row << 16) + column;
       void** twig = getTwig(&forwardEMcalTree, mark);
       if (*twig == 0)
@@ -84,9 +84,8 @@ void hitForwardEMcal (float xin[4], float xout[4],
       }
       else if (nshot < MAX_HITS)         /* create new hit */
       {
-         shots->in[nshot].t =
-                       (shots->in[nshot].t * shots->in[nshot].E + t*dEsum)
-                     / (shots->in[nshot].E += dEsum);
+         shots->in[nshot].t = t;
+         shots->in[nshot].E = dEsum;
          shots->mult++;
       }
       else
@@ -159,8 +158,8 @@ s_ForwardEMcal_t* pickForwardEMcal ()
          int m = box->rows->mult;
          if (m == 0)
          {
-            box->rows->in[m] = item->rows->in[0];
-            box->rows->in[m].columns = make_s_Columns(blockCount);
+            box->rows->in[0] = item->rows->in[0];
+            box->rows->in[0].columns = make_s_Columns(blockCount);
             box->rows->mult++;
          }
          else if (y > box->rows->in[m-1].y + 0.5)
@@ -203,7 +202,7 @@ s_ForwardEMcal_t* pickForwardEMcal ()
    /* Reduce the last <row>...</row> if empty */
    {
       int m = box->rows->mult;
-      if ((m > 0) && box->rows->in[m-1].columns->mult == 0)
+      while ((m > 0) && box->rows->in[m-1].columns->mult == 0)
       {
          FREE(box->rows->in[--m].columns);
          box->rows->mult--;

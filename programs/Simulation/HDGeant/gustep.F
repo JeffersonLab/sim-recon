@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.6  2001/07/27 21:04:09  jonesrt
+* With this release, HDGeant version 1.0 is now in beta.  -rtj
+*
 * Revision 1.5  2001/07/24 05:37:16  jonesrt
 * First working prototype of hits package -rtj
 *
@@ -83,6 +86,13 @@
         enddo
       endif
 
+* Stop wimpy charged particles that are taking forever to range out
+
+      if ((NSTEP.ge.9999).and.(CHARGE.ne.0)) then
+        DESTEP = GEKIN
+        ISTOP = 1
+      endif
+
 * If not a sensitive volume then exit here
 
       if (ISVOL.eq.0) return
@@ -122,8 +132,8 @@
       if (CHARGE.ne.0) then
         if (cnames(NLEVEL).eq.'VRTX') then		! start counter
           call hitStartCntr(xin,xout,pin,pout,dEsum,ITRA)
-        elseif ((cnames(NLEVEL).eq.'CSTI').or.		! CDC inner strips
-     +          (cnames(NLEVEL).eq.'CSTO').or.		! CDC outer strips
+        elseif ((cnames(NLEVEL).eq.'CDBI').or.		! CDC inner bands
+     +          (cnames(NLEVEL).eq.'CDBO').or.		! CDC outer bands
      +          (cnames(NLEVEL).eq.'STRA')) then	! CDC drift straw
           call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA)
         elseif ((cnames(NLEVEL).eq.'FDCA').or.		! FDC anode drift cell

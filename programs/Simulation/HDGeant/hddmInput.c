@@ -7,7 +7,6 @@
  *	skipInput(count) - skip next <count> events on open input file
  *      nextInput() - advance to next event on open input stream
  *      loadInput() - push current input event to Geant kine structures
- *	getInput() - return pointer to top structure of current event
  *	closeInput() - close currently open input stream
  *
  * Richard Jones
@@ -158,10 +157,6 @@ int closeInput ()
    return 0;
 }
 
-s_HDDM_t* getInput()
-{
-   return thisInputEvent;
-}
 
 /* entry points from Fortran */
 
