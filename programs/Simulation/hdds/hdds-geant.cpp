@@ -243,10 +243,10 @@ void fortranGetfunc(DOM_Element& el, char* ident)
             char* idlistStr = idlistS.transcode();
             start[ivolu] = tableLength + 1;
             char* idStr;
-            char** token = &idlistStr;
-            for (idStr = strsep(token, " ");
+            char* save_ptr;
+            for (idStr = strtok_r(idlistStr, " ", &save_ptr);
                  (idStr != 0) && (strlen(idStr) > 0);
-                 idStr = strsep(token, " "))
+                 idStr = strtok_r(NULL, " ", &save_ptr))
             {
                table[tableLength++] = atoi(idStr);
                --icopy;
@@ -475,10 +475,10 @@ int main(int argC, char* argV[])
       if (mrs.fIdentifierList != 0)
       {
          char* identStr;
-         char** token = &mrs.fIdentifierList;
-         for (identStr = strsep(token, " ");
+         char* save_ptr;
+         for (identStr = strtok_r(mrs.fIdentifierList, " ", &save_ptr);
               identStr != 0;
-              identStr = strsep(token, " "))
+              identStr = strtok_r(NULL, " ", &save_ptr))
          {
             fortranGetfunc(rootEl, identStr);
          }
@@ -1865,11 +1865,11 @@ int Refsys::createVolume(DOM_Element& el)
          DOMString fieldS = myRef.fIdentifier[id].fieldS;
          DOMString idlistS = el.getAttribute(fieldS);
          char* idlistStr = idlistS.transcode();
-         char* token = idlistStr;
          int count = icopy;
-         for (char* idStr = strsep(&token, " ");
+         char* save_ptr;
+         for (char* idStr = strtok_r(idlistStr, " ", &save_ptr);
               (idStr != 0) && (strlen(idStr) > 0);
-              idStr = strsep(&token, " "))
+              idStr = strtok_r(NULL, " ", &save_ptr))
          {
             count--;
          }
