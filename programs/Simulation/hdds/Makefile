@@ -1,4 +1,8 @@
-CC = /usr/bin/g++ -g -D_REENTRANT
+OStype = $(shell uname)
+ifeq ($(OStype),OSF1)
+        COPTS = -D_Tru64
+endif
+CC = /usr/bin/g++ -g $(COPTS) -D_REENTRANT
 
 XML_SOURCE = BarrelEMcal_HDDS.xml BeamLine_HDDS.xml CentralDC_HDDS.xml\
              CerenkovCntr_HDDS.xml ForwardDC_HDDS.xml ForwardEMcal_HDDS.xml\

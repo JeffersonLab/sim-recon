@@ -119,7 +119,21 @@
 #define X(XString) XString.unicodeForm()
 #define S(XString) XString.localForm()
 
-
+#ifdef _Tru64
+#undef basename
+#define basename _RC_basename
+static char * basename(const char *f)
+{ const char *base;
+        
+  for(base = f; *f; f++)
+  { if (*f == '/')
+      base = f+1;
+  }
+        
+  return (char *)base;
+}
+#endif
+        
 double fieldStrength[] =
 {
    0.0,	  // zero field regions
