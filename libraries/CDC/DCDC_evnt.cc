@@ -165,7 +165,7 @@ derror_t DCDC::firstguess(s_Cdc_trackhit_t *hits, int Npoints
 	// Momentum depends on magnetic field. Assume 2T for now.
 	// Also assume a singly charged track (i.e. q=+/-1)
 	// The sign of the charge will be deterined below.
-	float B=-2.0*0.61; // The 0.61 is empirical
+	float B=-2.0*0.593; // The 0.61 is empirical
 	q = +1.0;
 	float r0 = sqrt(x0*x0 + y0*y0);
 	float hbarc = 197.326;
@@ -217,3 +217,85 @@ derror_t DCDC::firstguess(s_Cdc_trackhit_t *hits, int Npoints
 	return NOERROR;
 }
 
+//-----------------
+// firstguess_curtis
+//-----------------
+derror_t DCDC::firstguess_curtis(s_Cdc_trackhit_t *hits, int Npoints
+	, float &theta ,float &phi, float &p, float &q)
+{
+	if(Npoints<3)return NOERROR;
+	// pick out 3 points to calculate the circle with
+	s_Cdc_trackhit_t *hit1, *hit2, *hit3;
+	hit1 = hits;
+	hit2 = &hits[Npoints/2];
+	hit3 = &hits[Npoints-1];
+
+	float x1 = hit1->x, y1=hit1->y;
+	float x2 = hit2->x, y2=hit2->y;
+	float x3 = hit3->x, y3=hit3->y;
+
+	float b = (x2*x2+y2*y2-x1*x1-y1*y1)/(2.0*(x2-x1));
+	b -= (x3*x3+y3*y3-x1*x1-y1*y1)/(2.0*(x3-x1));
+	b /= ((y1-y2)/(x1-x2)) - ((y1-y3)/(x1-x3));
+	float a = (x2*x2-y2*y2-x1*x1-y1*y1)/(2.0*(x2-x1));
+	a -= b*(y2-y1)/(x2-x1);
+
+	// Above is the method from Curtis's crystal barrel note 93, pg 72
+	// Below here is just a copy of the code from David's firstguess
+	// routine above (after the x0,y0 calculation)
+	float x0=a, y0=b;
+
+	// Momentum depends on magnetic field. Assume 2T for now.
+	// Also assume a singly charged track (i.e. q=+/-1)
+	// The sign of the charge will be deterined below.
+	float B=-2.0*0.593; // The 0.61 is empirical
+	q = +1.0;
+	float r0 = sqrt(x0*x0 + y0*y0);
+	float hbarc = 197.326;
+	float p_trans = q*B*r0/hbarc; // are these the right units?
+	
+	// Assuming points are ordered in increasing z, the sign of the
+	// cross-product between successive points will be the opposite
+	// sign of the charge. Since it's possible to have a few "bad"
+	// points, we don't want to rely on any one to determine this.
+	// The method we use is to sum cross-products of the first and
+	// middle points, the next-to-first and next-to-middle, etc.
+	float xprod_sum = 0.0;
+	int n_2 = Npoints/2; 
+	s_Cdc_trackhit_t *v = hits;
+	s_Cdc_trackhit_t *v2=&hits[n_2];
+	for(int i=0;i<n_2;i++, v++, v2++){
+		xprod_sum += v->x*v2->y - v2->x*v->y;
+	}
+	if(xprod_sum>0.0)q = -q;
+
+	// Phi is pi/2 out of phase with x0,y0. The sign of the phase difference
+	// depends on the charge
+	phi = atan2(y0,x0);
+	phi += q>0.0 ? -M_PI_2:M_PI_2;
+	
+	// Theta is determined by extrapolating the helix back to the target.
+	// To do this, we need dphi/dz and a phi,z point. The easiest way to
+	// get these is by a simple average (I guess).
+	v = hits;
+	v2=&v[1];
+	float dphidz =0.0;
+	int Ndphidzpoints = 0;
+	for(int i=0;i<Npoints-1;i++, v++, v2++){
+		float myphi1 = atan2(v->y-y0,  v->x-x0);
+		float myphi2 = atan2(v2->y-y0, v2->x-x0);
+		float mydphidz = (myphi2-myphi1)/(v2->z-v->z);
+		if(finite(mydphidz)){
+			dphidz+=mydphidz;
+			Ndphidzpoints++;
+		}
+	}
+	if(Ndphidzpoints){
+		dphidz/=(float)Ndphidzpoints;
+	}
+	
+	theta = atan(r0*fabs(dphidz));
+	p = -p_trans/sin(theta);
+
+	return NOERROR;
+}

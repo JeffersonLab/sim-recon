@@ -20,4 +20,5 @@ class DCDC:public DEventProcessor
 
 		derror_t	copy_to_cdchits(void);
 		derror_t firstguess(s_Cdc_trackhit_t *hits, int Nhits, float &theta, float &phi, float &p, float &q);
+		derror_t firstguess_curtis(s_Cdc_trackhit_t *hits, int Nhits, float &theta, float &phi, float &p, float &q);
 };
