@@ -97,6 +97,7 @@ int StdHepXdrEnd(int istream);
 int PrintUsage(char *processName);
 int fill_mc_parts(mc_evt_t *mc_evt);
 int write_mc_parts(FILE *fp, mc_evt_t *mc_evt);
+int getCharge(int PDGpid);
 
 /****************
  * main()
@@ -272,7 +273,7 @@ int write_mc_parts(FILE *fp, mc_evt_t *mc_evt){
 
   for(i=0;i<mc_evt->nparts;i++){
     esr->p[i].particleType =mc_evt->part[i].pid;
-    esr->p[i].charge =mc_evt->part[i].pid/abs(mc_evt->part[i].pid);
+    esr->p[i].charge = getCharge( mc_evt->part[i].pid);
     esr->p[i].p.space.x=mc_evt->part[i].p.space.x;/* float = double */
     esr->p[i].p.space.y=mc_evt->part[i].p.space.y;
     esr->p[i].p.space.z=mc_evt->part[i].p.space.z;
@@ -283,7 +284,8 @@ int write_mc_parts(FILE *fp, mc_evt_t *mc_evt){
 	      mc_evt->part[i].pid, mc_evt->part[i].mass);
     if(Debug)
       fprintf(fp,"   %d %lf %lf %lf %lf\n",
-	      mc_evt->part[i].pid/abs(mc_evt->part[i].pid),
+	       getCharge( mc_evt->part[i].pid),
+	      /*mc_evt->part[i].pid/abs(mc_evt->part[i].pid),*/
 	      mc_evt->part[i].p.space.x,
 	      mc_evt->part[i].p.space.y,
 	      mc_evt->part[i].p.space.z,
@@ -295,6 +297,51 @@ int write_mc_parts(FILE *fp, mc_evt_t *mc_evt){
 
   return 1;
 }
+
+/********************
+ * getCharge
+ *******************/
+int getCharge(int PDGpid){
+  int charge;
+  /* 
+   * See 1998 PDG Rev. MC particle numbering scheme 
+   */
+  typedef enum {
+    gamma=22,
+    pizero=111,
+    eta=221,
+    etaprime=331,
+    Kshort=310,
+    Klong=130,
+    neutron=2112,
+    Lambda=3122
+  } PGDneutralPID_t;
+
+  charge = PDGpid/abs(PDGpid);
+  /* 
+   * now check for neutrals 
+   */
+  switch((PGDneutralPID_t) PDGpid){ /* See PDG Rev. MC particle numbering scheme */
+  case gamma:
+  case pizero:
+  case eta:
+  case etaprime:
+  case Kshort:
+  case Klong:
+  case neutron:
+  case -neutron:
+  case Lambda:
+  case -Lambda:
+    charge =0;
+  default:
+  }
+
+  return charge;  
+
+}
+
+
+
 /********************
  * PrintUsage
  *******************/
