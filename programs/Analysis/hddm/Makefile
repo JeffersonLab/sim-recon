@@ -38,6 +38,10 @@ hddm-xml: hddm-xml.cpp XString.o XParsers.o
 	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
+hddm-c: hddm-c.cpp XString.o XParsers.o
+	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include -o $@ $^ \
+	-L$(XERCESCROOT)/lib -lxerces-c
+
 hddm-cpp: hddm-cpp.cpp XString.o XParsers.o
 	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c
