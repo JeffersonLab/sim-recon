@@ -28,6 +28,7 @@ class DFactory:public DEventProcessor{
 		~DFactory();
 		DContainer* Get();  ///< Get a list of the data produced by this factory
 		inline void ResetNrows(void){_data->ResetNrows();}
+		virtual derror_t Print(void){cout<<" <Print method undefined for "<<name<<">"<<endl;}
 
 		char* name;
 
