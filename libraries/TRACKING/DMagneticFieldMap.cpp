@@ -220,7 +220,7 @@ void DMagneticFieldMap::readMap(ifstream &in)
 
 int DMagneticFieldMap::serialize(int r, int z)
 {
-  return (r*zDim*3) + z;
+  return ((r*zDim) + z)*3;
 }
 
 //----------------------------------------------------------------------
@@ -249,6 +249,9 @@ void DMagneticFieldMap::getInds(const double &r, const double &z, int ind[2],
 
   rho  = ((rN * (rDim-1)) - baseR)/(rDim-1);
   zeta = ((zN * (zDim-1)) - baseZ)/(zDim-1);
+  
+  ind[0] = baseR;
+  ind[1] = baseZ;
 
 /*
   printf("(rMin, rMax)(zMin, zMax):  (%.2f, %.2f)(%.2f, %.2f)\n", 
@@ -275,9 +278,17 @@ D3Vector_t DMagneticFieldMap::getQuick(double r, double z)
   getInds(r, z, inds, rho, zeta);
 
   ind = serialize(inds[0], inds[1]);
-  vec.x = map[ind];
-  vec.y = map[ind + 1];
-  vec.z = map[ind + 2];
+  
+  int max = rDim*zDim*3;
+  if(ind>=0 && ind<max){
+  	vec.x = map[ind];
+  	vec.y = map[ind + 1];
+  	vec.z = map[ind + 2];
+  }else{
+  	vec.x = 0.0;
+	vec.y = 0.0;
+	vec.z = 0.0;
+  }
 
   return vec;
 }
