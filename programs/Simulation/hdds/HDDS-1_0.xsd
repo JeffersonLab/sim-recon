@@ -7,9 +7,9 @@
 <!-- HDDS: HALL D Geometric Detector Specification
      =============================================
 
-     Version:   1
-     Release:   0
-     Date   :   April 10, 2000
+     Version:   1.0
+     Release:   1.0
+     Date   :   January 25, 2005
      
      This xml schema defines the structure and syntax for
      Hall D Geometric Detector Specification xml files. 
@@ -159,7 +159,8 @@
            |-> tubs	tube section
            |-> trd	trapezoid
            |-> pcon	poly-cone (sequence of joined cons)
-           +-> cons 	cone section
+           |-> cons 	cone section
+           +-> sphere	sphere (or a section thereof)
 
         2) composition (build a logical composition)
 
@@ -307,12 +308,33 @@
                      Z      position z
 
 
+1.4.1.6) Sphere segment (element tag "sphere" )
+
+  A sphere segment is a section of a sphere that is delimited by boundaries
+  of fixed radius, polar angle and azimuthal angle.
+
+  The bounds of the sphere segment are given in three compound attributes:
+      
+                     Rio="Ri Ro"
+                     polar_bounds="Theta0 Theta1"      (defaulted to "0 180")
+                     profile="PhiS dPhi"               (defaulted to "0 360") 
+
+  with :
+
+                     Ri      radius of inner surface
+                     Ro      radius of outer surface
+                     Theta0  lower bound in theta
+                     Theta1  upper bound in theta
+                     PhiS    Starting angle phi
+                     dPhi    Delta angle phi
+
+
 
 1.4.2) Composition
 ==================
 
   Construct a new volume which consists of positioning several volumes
-  (defined elsewhere in HDDS) placed at various places w.r.t the
+  (defined elsewhere in HDDS) placed at various places w.r.t. the
   reference frame of this new entity.
 
     The positioning of volumes proceeds via position elements:
@@ -326,7 +348,7 @@
         mposZ
   
   Volume are positionned according to the coordinates specified in the
-  above positionning elements w.r.t the implicit coordinate system of
+  above positionning elements w.r.t. the implicit coordinate system of
   the composition (which defines the reference)..
 
   In general, there is a priori no defined volume corresponding to
@@ -460,7 +482,6 @@
 
 1.5.1) Common properties
 
-
    All positioning operators share some properties :
 
      attributes :
@@ -485,8 +506,7 @@
 
 1.5.1.1) posXYZ
 
-
-     posXYZ: single positioning of a 'generic' volume, in carthesians
+     posXYZ: single positioning of a 'generic' volume, in cartesian
              coordinates.
              The coordinate system is implicitly defined by the
              posXYZ (take a coordinate system, and place the volume in
@@ -498,8 +518,8 @@
               coordinate system   
           The volume is rotated before it is placed.
 
-1.5.1.2) posRPhiZ
 
+1.5.1.2) posRPhiZ
 
       posRPhiZ: single positioning of a 'generic' volume, in cylindrical
                 coordinates.
@@ -515,8 +535,8 @@
        
       The volume is rotated before it is placed.
         
-1.5.1.3) mposPhi
 
+1.5.1.3) mposPhi
 
       mposPhi: multiple positioning of a 'generic' volume, around the
                Z-axis at a given radius R, with incremental values of phi.
@@ -535,7 +555,6 @@
               coordinate system (true) or not (false).
 
 1.5.1.4) mposR/X/Y/Z
-
 
      mposR, mposX, mposY, mposZ: multiple positioning of volumes along
                                  the R, X, Y, Z directions respectively.
@@ -560,6 +579,7 @@
      defined in the 'transverse' direction by the Z_Phi, R_phi, X_Y, Y_Z or Z_X
      attributes. In the positioning-direction it is defined by the
      attributes R0, X0, Y0 or Z0. 
+
 
 1.6) Identifiers
 ================
@@ -604,6 +624,7 @@
 
     step         only used in multi-positioning.
 
+
 1.7) Special models
 ====================
 
@@ -613,6 +634,7 @@
    specification in terms of solids, stacks and compositions.  This will
    facilitate the maintenance of a coordinated geometry model for all 
    applications. 
+
 
 1.7.1) mcfast
 =============
@@ -654,6 +676,7 @@
    | reference_vector
    mcfast	: one or more other mcfast blocks
 
+
 2) Some examples showing typical usage of different elements
 ============================================================
 
@@ -661,8 +684,8 @@
    complete definitions. Therefore they are not expected to be
    complete and compilable, since some references may not be shown)
 
-2.1) Using compositions and identifiers
 
+2.1) Using compositions and identifiers
 
 <composition  name="MU_Stat_BML1">
    <posXYZ  volume="MU_BML1_RPC1"  X_Y_Z="  0        0  0">  <layer value=" 1" />  </posXYZ>
@@ -699,7 +722,6 @@
 
 
 2.2) Using parameters
-
     
 <box  name="MU_BML1_MDT1" X_Y_Z="96.96 3580. 1440." material="Air"> 
   <real name="layers"              value="3"    unit="none"   comment="number of layers" />
@@ -712,6 +734,7 @@
 <box  name="MU_BML1_RPC1" X_Y_Z="100.  3440. 1440." material="Honeycomb"> 
    <reference value="inner_RPC_1" /> 
 </box>
+
 
 2.3) Parameter complete syntax
 
@@ -740,8 +763,8 @@
    etc...
 </parameters>
 
-2.4) Using Axis compositions
 
+2.4) Using Axis compositions
 
 <stackX name="MU_RPC1_LongStrips">
   <axisMPos volume="MU_RPC1_LongStrip" ncopy="96" gap0="2.6" shift="30.8"/>
@@ -776,6 +799,7 @@
   <axisPos volume="MU_RPC1_Bakelite"       />
   <axisPos volume="MU_RPC1_LongStripPanel" />
 </stackY>
+
 
 2.5) Using the polycone:
 
@@ -1431,6 +1455,46 @@
   </xs:complexType>
 </xs:element>
 
+<xs:element name="sphere">
+  <xs:complexType>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="material" use="required" type="xs:IDREF"/>
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+    <xs:attribute name="Rio" use="required">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="profile" default="0 360">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="polar_bounds" default="0 180">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="sensitive" default="false">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+  </xs:complexType>
+</xs:element>
+
 <xs:element name="plane">
   <xs:complexType>
     <xs:attribute name="field" default="plane">
@@ -1602,6 +1666,7 @@
       <xs:element ref="tubs"/>
       <xs:element ref="cons"/>
       <xs:element ref="pcon"/>
+      <xs:element ref="sphere"/>
       <xs:element ref="union"/>
       <xs:element ref="intersection"/>
       <xs:element ref="subtraction"/>

@@ -5,8 +5,8 @@
      =============================================
 
      Version:   1
-     Release:   0
-     Date   :   April 10, 2000
+     Release:   1.0
+     Date   :   January 25, 2005
      
      This dtd definition file defines the syntax for the
      Hall D Geometric Detector Specification xml files. 
@@ -156,7 +156,8 @@
            |-> tubs	tube section
            |-> trd	trapezoid
            |-> pcon	poly-cone (sequence of joined cons)
-           +-> cons 	cone section
+           |-> cons 	cone section
+           +-> sphere	sphere (or a section thereof)
 
         2) composition (build a logical composition)
 
@@ -302,6 +303,27 @@
                      Ri     inside radius at  point Z
                      Ro     inside radius at  point Z
                      Z      position z
+
+
+1.4.1.6) Sphere segment (element tag "sphere" )
+
+  A sphere segment is a section of a sphere that is delimited by boundaries
+  of fixed radius, polar angle and azimuthal angle.
+
+  The bounds of the sphere segment are given in three compound attributes:
+      
+                     Rio="Ri Ro"
+                     polar_bounds="Theta0 Theta1"      (defaulted to "0 180")
+                     profile="PhiS dPhi"               (defaulted to "0 360") 
+
+  with :
+
+                     Ri      radius of inner surface
+                     Ro      radius of outer surface
+                     Theta0  lower bound in theta
+                     Theta1  upper bound in theta
+                     PhiS    Starting angle phi
+                     dPhi    Delta angle phi
 
 
 
@@ -457,7 +479,6 @@
 
 1.5.1) Common properties
 
-
    All positioning operators share some properties :
 
      attributes :
@@ -479,11 +500,9 @@
           the Y rotation of b angle is done second 
           the Z rotation of c angle is done last.
 
-
 1.5.1.1) posXYZ
 
-
-     posXYZ: single positioning of a 'generic' volume, in carthesians
+     posXYZ: single positioning of a 'generic' volume, in cartesian
              coordinates.
              The coordinate system is implicitly defined by the
              posXYZ (take a coordinate system, and place the volume in
@@ -495,8 +514,8 @@
               coordinate system   
           The volume is rotated before it is placed.
 
-1.5.1.2) posRPhiZ
 
+1.5.1.2) posRPhiZ
 
       posRPhiZ: single positioning of a 'generic' volume, in cylindrical
                 coordinates.
@@ -512,8 +531,8 @@
        
       The volume is rotated before it is placed.
         
-1.5.1.3) mposPhi
 
+1.5.1.3) mposPhi
 
       mposPhi: multiple positioning of a 'generic' volume, around the
                Z-axis at a given radius R, with incremental values of phi.
@@ -531,8 +550,8 @@
       impliedRot : (true | false) rotation of volumes to point to center
               coordinate system (true) or not (false).
 
-1.5.1.4) mposR/X/Y/Z
 
+1.5.1.4) mposR/X/Y/Z
 
      mposR, mposX, mposY, mposZ: multiple positioning of volumes along
                                  the R, X, Y, Z directions respectively.
@@ -557,6 +576,7 @@
      defined in the 'transverse' direction by the Z_Phi, R_phi, X_Y, Y_Z or Z_X
      attributes. In the positioning-direction it is defined by the
      attributes R0, X0, Y0 or Z0. 
+
 
 1.6) Identifiers
 ================
@@ -601,6 +621,7 @@
 
     step         only used in multi-positioning.
 
+
 1.7) Special models
 ====================
 
@@ -610,6 +631,7 @@
    specification in terms of solids, stacks and compositions.  This will
    facilitate the maintenance of a coordinated geometry model for all 
    applications. 
+
 
 1.7.1) mcfast
 =============
@@ -651,6 +673,7 @@
    | reference_vector
    mcfast	: one or more other mcfast blocks
 
+
 2) Some examples showing typical usage of different elements
 ============================================================
 
@@ -658,8 +681,8 @@
    complete definitions. Therefore they are not expected to be
    complete and compilable, since some references may not be shown)
 
-2.1) Using compositions and identifiers
 
+2.1) Using compositions and identifiers
 
 <composition  name="MU_Stat_BML1">
    <posXYZ  volume="MU_BML1_RPC1"  X_Y_Z="  0        0  0">  <layer value=" 1" />  </posXYZ>
@@ -696,7 +719,6 @@
 
 
 2.2) Using parameters
-
     
 <box  name="MU_BML1_MDT1" X_Y_Z="96.96 3580. 1440." material="Air"> 
   <real name="layers"              value="3"    unit="none"   comment="number of layers" />
@@ -709,6 +731,7 @@
 <box  name="MU_BML1_RPC1" X_Y_Z="100.  3440. 1440." material="Honeycomb"> 
    <reference value="inner_RPC_1" /> 
 </box>
+
 
 2.3) Parameter complete syntax
 
@@ -737,8 +760,8 @@
    etc...
 </parameters>
 
-2.4) Using Axis compositions
 
+2.4) Using Axis compositions
 
 <stackX name="MU_RPC1_LongStrips">
   <axisMPos volume="MU_RPC1_LongStrip" ncopy="96" gap0="2.6" shift="30.8"/>
@@ -774,6 +797,7 @@
   <axisPos volume="MU_RPC1_LongStripPanel" />
 </stackY>
 
+
 2.5) Using the polycone:
 
 <pcon name="TEST_polycone" material="Air">
@@ -797,7 +821,7 @@
            %constraint;>
 
 
-<!ELEMENT  section  ( box | trd | tubs | cons | pcon | 
+<!ELEMENT  section  ( box | trd | tubs | cons | pcon | sphere |
                       union | intersection | subtraction |
                       composition |
                       stackX | stackY | stackZ |
@@ -915,6 +939,14 @@ identifiers with corresponding field names.
 
 <!ELEMENT  pcon   (polyplane+)>
 <!ATTLIST  pcon
+           profile         CDATA     "0 360"
+           %solid_properties;
+           %units;>
+
+<!ELEMENT  sphere  EMPTY >
+<!ATTLIST  sphere
+           Rio             CDATA     #REQUIRED
+           polar_bounds    CDATA     "0 180"
            profile         CDATA     "0 360"
            %solid_properties;
            %units;>

@@ -13,8 +13,8 @@
 -->
 
 <section name        = "ForwardDC"
-         version     = "1.0"
-         date        = "2001-04-15"
+         version     = "1.1"
+         date        = "2005-01-25"
          author      = "R.T. Jones"
          top_volume  = "FDC"
          specification = "v1.0">
@@ -23,32 +23,32 @@
      of the most upstream chamber.                        -->
 
   <composition name="ForwardDC">
-    <posXYZ volume="forwardDC" X_Y_Z="0.0  0.0  88.0" />
+    <posXYZ volume="forwardDC" X_Y_Z="0.0  0.0  88.5" />
   </composition>
 
   <composition name="forwardDC" envelope="FDC">
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -85.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -85.5">
       <module value="1" />
     </posXYZ>
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -79.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -79.5">
       <module value="2" />
     </posXYZ>
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -33.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -30.5">
       <module value="3" />
     </posXYZ>
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -27.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -24.5">
       <module value="4" />
     </posXYZ>
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   23.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   24.5">
       <module value="5" />
     </posXYZ>
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   29.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   30.5">
       <module value="6" />
     </posXYZ>
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   79.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   79.5">
       <module value="7" />
     </posXYZ>
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   85.0">
+    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   85.5">
       <module value="8" />
     </posXYZ>
   </composition>
@@ -77,7 +77,7 @@
     </posXYZ>
   </composition>
 
-  <tubs name="FDC" Rio_Z="3.5 62.0 176.0" material="Air"
+  <tubs name="FDC" Rio_Z="3.5 62.0 178.0" material="Air"
                                           comment="forward drift chambers" />
 
   <tubs name="FDCH" Rio_Z=" 3.5 61.0 6.0" material="Air"        />

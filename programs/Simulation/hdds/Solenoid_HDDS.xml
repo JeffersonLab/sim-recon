@@ -14,7 +14,7 @@
 
 <section name        = "Solenoid"
          version     = "1.1"
-         date        = "2004-02-18"
+         date        = "2005-01-25"
          author      = "R.T. Jones"
          top_volume  = "LASS"
          specification = "v1.0">
@@ -28,19 +28,21 @@
 
   <composition name="solenoid">
     <posXYZ volume="IYUP" X_Y_Z="0.0 0.0 -25.4"> </posXYZ>
-    <posXYZ volume="IYOK" X_Y_Z="0.0 0.0 189.0"> </posXYZ>
-    <posXYZ volume="IYDN" X_Y_Z="0.0 0.0 411.0"> </posXYZ>
+    <posXYZ volume="IYOK" X_Y_Z="0.0 0.0 188.9"> </posXYZ>
+    <posXYZ volume="IYDN" X_Y_Z="0.0 0.0 410.8"> </posXYZ>
   </composition>
 
   <pcon name="LASS" material="Air">
-    <polyplane Rio_Z="3.0   188.0  -50.8" />
-    <polyplane Rio_Z="3.0   188.0  410.0" />
-    <polyplane Rio_Z="70.0  188.0  410.1" />
-    <polyplane Rio_Z="80.0  188.0  444.0" />
+    <polyplane Rio_Z="10.0  188.0  -50.8" />
+    <polyplane Rio_Z="10.0  188.0  100.0" />
+    <polyplane Rio_Z="0.0   188.0  100.0" />
+    <polyplane Rio_Z="0.0   188.0  406.0" />
+    <polyplane Rio_Z="62.0  188.0  406.0" />
+    <polyplane Rio_Z="62.0  188.0  443.8" />
   </pcon>
 
   <tubs name="IYUP" Rio_Z=" 92.71 187.96  50.8" material="Iron" />
-  <tubs name="IYOK" Rio_Z=" 90.0 187.96  378.0" material="Iron" />
+  <tubs name="IYOK" Rio_Z=" 95.0 187.96  377.8" material="Iron" />
   <tubs name="IYDN" Rio_Z=" 92.71 187.96  66.0" material="Iron" />
 
   <parameters name="solenoid_pars" type="mcfast">
@@ -51,9 +53,9 @@
                         unit="cm" />
     <real name="rmax"   value="95.000" comment="outer limits of field"
                         unit="cm" />
-    <real name="z0"     value="196.6"  comment="z-position of center"
+    <real name="z0"     value="196.5"  comment="z-position of center"
                         unit="cm" />
-    <real name="zlen"   value="494.8"  comment="z-length of solenoid"
+    <real name="zlen"   value="494.6"  comment="z-length of solenoid"
                         unit="cm" />
     <reference name="mat_fill" value="Air" comment="air inside solenoid" />
     <real_array name="thick_boun" comment="inner outer upstream downstream

@@ -3,6 +3,9 @@
  *		   (Hall D Detector Specification) and writes out a
  *		   ROOT macro to instantiate the geometry within ROOT.
  *
+ *  Revision - Richard Jones, January 25, 2005.
+ *   -added the sphere section as a new supported volume type
+ *
  *  Original version - Edward Brash, November 1 2003.
  *  Based on hdds-geant by Richard Jones, May 19 2001.
  *
@@ -1357,6 +1360,33 @@ int Refsys::createSolid(DOMElement* el)
 	       << "\",med" << itmed << "," << par[0] << "," << par[1] << "," << par[2] 
 	       << "," << par[3] << "," << par[4] << "," << par[5] << "," << par[6] << ");" << endl;
 	}
+   }
+   else if (shapeS.equals("sphere"))
+   {
+      shapeS = "SPHE";
+      double ri, ro;
+      XString rioAttS("Rio");
+      XString rioS(el->getAttribute(X(rioAttS)));
+      sscanf(S(rioS), "%lf %lf", &ri, &ro);
+      double theta0, theta1;
+      XString polarAttS("polar_bounds");
+      XString polarS(el->getAttribute(X(polarAttS)));
+      sscanf(S(polarS), "%lf %lf", &theta0, &theta1);
+      double phi0, dphi;
+      XString profAttS("profile");
+      XString profS(el->getAttribute(X(profAttS)));
+      sscanf(S(profS), "%lf %lf", &phi0, &dphi);
+
+      npar = 6;
+      par[0] = ri * tocm;
+      par[1] = ro * tocm;
+      par[2] = theta0 * todeg;
+      par[3] = theta1 * todeg;
+      par[4] = phi0 * todeg;
+      par[5] = (phi0 + dphi) * todeg;
+      cout << "TGeoVolume *" << S(nameS) << "= gGeoManager->MakeSphere(\"" << S(nameS) 
+	   << "\",med" << itmed << "," << par[0] << "," << par[1] << "," << par[2] 
+	   << "," << par[3] << "," << par[4] << "," << par[5] << ");" << endl;
    }
    else
    {

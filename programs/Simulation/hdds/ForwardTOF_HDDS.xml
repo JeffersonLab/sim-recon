@@ -13,8 +13,8 @@
 -->
 
 <section name        = "ForwardTOF"
-         version     = "1.0"
-         date        = "2001-04-15"
+         version     = "1.1"
+         date        = "2005-01-25"
          author      = "R.T. Jones"
          top_volume  = "FTOF"
          specification = "v1.0">
@@ -22,59 +22,62 @@
 <!-- Origin of ForwardTOF is center of entrance plane of detector -->
 
   <composition name="ForwardTOF">
-    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0  1.27" />
+    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 -0.635">
+      <plane value="1" />
+    </posXYZ>
+    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 +0.635" rot="0 0 90">
+      <plane value="2" />
+    </posXYZ>
   </composition>
 
   <composition name="forwardTOF" envelope="FTOF">
-    <posXYZ volume="forwardTOF_bottom" X_Y_Z="0.0 -65.0 0.0" />
-    <posXYZ volume="forwardTOF_left" X_Y_Z="-65.0 0.0 0.0" />
-    <posXYZ volume="forwardTOF_right" X_Y_Z="+65.0 0.0 0.0" />
-    <posXYZ volume="forwardTOF_top" X_Y_Z="0.0 +65.0 0.0" />
+    <posXYZ volume="forwardTOF_bottom" X_Y_Z="0.0 -66.0 0.0" />
+    <posXYZ volume="forwardTOF_left" X_Y_Z="-66.0 0.0 0.0" />
+    <posXYZ volume="forwardTOF_right" X_Y_Z="+66.0 0.0 0.0" />
+    <posXYZ volume="forwardTOF_top" X_Y_Z="0.0 +66.0 0.0" />
   </composition>
 
   <composition name="forwardTOF_bottom" envelope="FTOB">
-    <mposY volume="FTOC" ncopy="24" Z_X="0.0 0.0" Y0="-57.5" dY="5.0">
+    <mposY volume="FTOC" ncopy="21" Z_X="0.0 0.0" Y0="-60.00" dY="6.00">
       <row value="1" step="1" />
     </mposY>
   </composition>
   <composition name="forwardTOF_left" envelope="FTOL">
-    <mposY volume="FTOS" ncopy="2" Z_X="0.0 0.0" Y0="-2.5" dY="5.0">
-      <column value="1" />
-      <row value="25" step="1" />
-    </mposY>
+    <posXYZ volume="FTOS">
+      <row value="22" />
+    </posXYZ>
   </composition>
   <composition name="forwardTOF_right" envelope="FTOR">
-    <mposY volume="FTOS" ncopy="2" Z_X="0.0 0.0" Y0="-2.5" dY="5.0">
-      <column value="2" />
-      <row value="25" step="1" />
-    </mposY>
+    <posXYZ volume="FTOS">
+      <row value="22" />
+    </posXYZ>
   </composition>
   <composition name="forwardTOF_top" envelope="FTOT">
-    <mposY volume="FTOC" ncopy="24" Z_X="0.0 0.0" Y0="-57.5" dY="5.0">
-      <row value="27" step="1" />
+    <mposY volume="FTOC" ncopy="21" Z_X="0.0 0.0" Y0="-60.0" dY="6.00">
+      <row value="23" step="1" />
     </mposY>
   </composition>
 
-  <box name="FTOF" X_Y_Z="250.  250.  2.54" material="Air" />
-  <box name="FTOB" X_Y_Z="250.  120.  2.54" material="Air" />
-  <box name="FTOT" X_Y_Z="250.  120.  2.54" material="Air" />
-  <box name="FTOL" X_Y_Z="120.   10.  2.54" material="Air" />
-  <box name="FTOR" X_Y_Z="120.   10.  2.54" material="Air" />
-  <box name="FTOC" X_Y_Z="250.    5.  2.50" material="Scintillator"
+  <box name="FTOF" X_Y_Z="258.0 258.0 1.27" material="Air" />
+  <box name="FTOB" X_Y_Z="258.0 126.0 1.27" material="Air" />
+  <box name="FTOT" X_Y_Z="258.0 126.0 1.27" material="Air" />
+  <box name="FTOL" X_Y_Z="126.0   6.0 1.27" material="Air" />
+  <box name="FTOR" X_Y_Z="126.0   6.0 1.27" material="Air" />
+  <box name="FTOC" X_Y_Z="258.0   6.0 1.27" material="Scintillator"
 					    sensitive="true" />
-  <box name="FTOS" X_Y_Z="120.    5.  2.50" material="Scintillator"
+  <box name="FTOS" X_Y_Z="126.0   6.0 1.27" material="Scintillator"
 					    sensitive="true" />
 
   <parameters name="forwardTOF_pars" type="mcfast">
-    <real_array	name="xlimit"	values="-125.0 125.0" comment="x dimensions"
+    <real_array	name="xlimit"	values="-126.0 126.0" comment="x dimensions"
 				unit="cm"	/>
-    <real_array	name="ylimit"	values="-125.0 125.0" comment="y dimensions"
+    <real_array	name="ylimit"	values="-126.0 126.0" comment="y dimensions"
 				unit="cm"	/>
-    <real_array	name="xlimit_gap" values="-6.0  6.0" comment="beam hole x"
+    <real_array	name="xlimit_gap" values="-3.0  3.0" comment="beam hole x"
 				unit="cm"	/>
-    <real_array	name="ylimit_gap" values="-6.0  6.0" comment="beam hole y"
+    <real_array	name="ylimit_gap" values="-3.0  3.0" comment="beam hole y"
 				unit="cm"	/>
-    <real	name="z0"	value="619.87"	comment="z of midplane"
+    <real	name="z0"	value="620.07"	comment="z of midplane"
 				unit="cm"	/>
     <real	name="zlen"	value="2.54"	comment="thickness"
 				unit="cm"	/>

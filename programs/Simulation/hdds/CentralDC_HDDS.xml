@@ -40,6 +40,9 @@
   </composition>
 
   <composition name="centralDC" envelope="CDC">
+    <posXYZ volume="CDCI" />
+    <posXYZ volume="CDCO" />
+    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -99.0" />
     <posXYZ volume="CDClayer_1" />
     <posXYZ volume="CDClayer_2" />
     <posXYZ volume="CDClayer_3" />
@@ -57,6 +60,7 @@
     <posXYZ volume="CDClayer_21" />
     <posXYZ volume="CDClayer_22" />
     <posXYZ volume="CDClayer_23" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 99.5" />
   </composition>
   <composition name="CDClayer_1" envelope="DC1">
     <mposPhi volume="CDCstrawShort" ncopy="63" R_Z="16.049 0.0" unit_length="cm">
@@ -125,7 +129,7 @@
     </mposPhi>
   </composition>
   <composition name="CDClayer_12" envelope="DC12">
-    <mposPhi volume="CDCstrawShort" ncopy="147" R_Z="34.435 0.0" unit_length="cm">
+    <mposPhi volume="CDCstrawShort" ncopy="147" R_Z="37.435 0.0" unit_length="cm">
       <ring value="12" />
       <sector value="1" step="1" />
     </mposPhi>
@@ -206,6 +210,14 @@
 
   <tubs name="CDC" Rio_Z="15.0   60.0   200.0" material="Air"
 	parameters="centralDC_pars"	comment="CDC mother volume"          />
+  <tubs name="CDCI" Rio_Z="15.00  15.06 200.0" material="Aluminum"
+	                            	comment="CDC inner cylinder"         />
+  <tubs name="CDCO" Rio_Z="59.80  60.00 200.0" material="Aluminum"
+	                            	comment="CDC outer cylinder"         />
+  <tubs name="CDPU" Rio_Z="15.0   60.0    2.0" material="Aluminum"
+	                           	comment="CDC downstream endplate"    />
+  <tubs name="CDPD" Rio_Z="15.0   60.0    1.0" material="Aluminum"
+	                           	comment="CDC downstream endplate"    />
   <tubs name="STRA" Rio_Z="0.000  0.800  200.0" material="chamberGas"
 						sensitive="true" />
   <tubs name="STRW" Rio_Z="0.792  0.800  200.0" material="Aluminum" />

@@ -13,8 +13,8 @@
 -->
 
 <section name        = "BarrelEMcal"
-         version     = "1.0"
-         date        = "2001-04-15"
+         version     = "1.1"
+         date        = "2005-01-25"
          author      = "R.T. Jones"
          top_volume  = "BCAL"
          specification = "v1.0">

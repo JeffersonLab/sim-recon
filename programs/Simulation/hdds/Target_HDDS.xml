@@ -13,8 +13,8 @@
 -->
 
 <section name        = "Target"
-         version     = "1.0"
-         date        = "2001-04-15"
+         version     = "1.1"
+         date        = "2005-01-26"
          author      = "R.T. Jones"
          top_volume  = "TARG"
          specification = "v1.0">
@@ -24,48 +24,54 @@
      liquid hydrogen target - not the start of the vacuum vessel.  -->
 
   <composition name="Target">
-    <posXYZ volume="BerylliumPipe" X_Y_Z="0. 0. 2.5" />
+    <posXYZ volume="BerylliumPipe" X_Y_Z="0. 0. -48.5" />
   </composition>
 
   <composition name="BerylliumPipe" envelope="TARG">
-    <posXYZ volume="CYLW" X_Y_Z="0. 0. 0."/>
-    <posXYZ volume="UWIT" X_Y_Z="0. 0. -32.45"/>
-    <posXYZ volume="DWIT" X_Y_Z="0. 0. +32.45"/>
-    <posXYZ volume="targetVessel" X_Y_Z="0. 0. 12.5" />
+    <posXYZ volume="CYLW" X_Y_Z="0. 0. -4.75"/>
+    <posXYZ volume="UWIT" X_Y_Z="0. 0. -91.47"/>
+    <posXYZ volume="targetCap" X_Y_Z="0. 0. 86.75"/>
+    <posXYZ volume="targetVessel" X_Y_Z="0. 0. 63.5" />
   </composition>
 
   <composition name="targetVessel" envelope="TGTV">
-    <posXYZ volume="CYTV" X_Y_Z="0. 0. 0."/>
-    <posXYZ volume="UWTV" X_Y_Z="0. 0. -14.99"/>
-    <posXYZ volume="DWTV" X_Y_Z="0. 0. +14.99"/>
+    <posXYZ volume="LIH2" X_Y_Z="0. 0. 0."/>
   </composition>
 
-  <tubs name="TGTV" Rio_Z="0.00 1.50 30.0" material="LiqHydrogen"
+  <tubs name="TGTV" Rio_Z="0.00 2.50 30.00" material="Aluminum"
 	parameters="target_pars"	comment="target vessel mother"      />
-  <tubs name="CYTV" Rio_Z="1.45 1.50 30.0" material="Aluminum"
-					comment="cylinder wall of beer can" />
-  <tubs name="UWTV" Rio_Z="0.00 1.45 0.02" material="Aluminum"
-					comment="entance wall of beer can"  />
-  <tubs name="DWTV" Rio_Z="0.00 1.45 0.02" material="Aluminum"
-					comment="exit wall of beer can"     />
+  <tubs name="LIH2" Rio_Z="0.00 2.48 29.98" material="LiqHydrogen"
+	                         	comment="target vessel mother"      />
 
-  <tubs name="TARG" Rio_Z="0.00 2.50 65.0" material="Vacuum"
+  <tubs name="TARG" Rio_Z="0.00 9.50 183.0" material="Vacuum"
 	parameters="targetTube_pars" 	comment="target tube mother volume" />
-  <tubs name="CYLW" Rio_Z="2.45 2.50 65.0" material="Beryllium"
+  <tubs name="CYLW" Rio_Z="9.40 9.50 173.5" material="Beryllium"
 					comment="cylindrical wall of tube"  />
-  <tubs name="UWIT" Rio_Z="0.00 2.45 0.050" material="Kapton"
+  <tubs name="UWIT" Rio_Z="0.00 9.50 0.050" material="Kapton"
 					comment="upstream window of tube"   />
-  <tubs name="DWIT" Rio_Z="0.00 2.45 0.050" material="Kapton"
-					comment="downstream window of tube" />
+  <tubs name="DWIT" Rio_Z="0.00 9.50 9.50" material="Air"
+                                        comment="downstream cap of tube" />
+
+  <composition name="targetCap" envelope="DWIT">
+    <posXYZ volume="targetDome" X_Y_Z="0. 0. -4.75"/>
+  </composition>
+  <composition name="targetDome" envelope="DWIC">
+    <posXYZ volume="DWID" X_Y_Z="0. 0. 0."/>
+  </composition>
+
+  <sphere name="DWIC" Rio="0.00 9.50" material="Beryllium"
+                    polar_bounds="0 90" comment="downstream cap of tube" />
+  <sphere name="DWID" Rio="0.00 9.40" material="Vacuum"
+                    polar_bounds="0 90" comment="vacuum inside cap of tube" />
  
   <parameters name="targetTube_pars" type="mcfast">
     <real name="rmin" value="0.00"  unit="cm" comment="inner radius" />
-    <real name="rmax" value="2.50"  unit="cm" comment="outer radius" />
-    <real name="z0"   value="2.50" unit="cm" comment="from origin"  />
-    <real name="zlen" value="65.0" unit="cm" comment="cover the target" />
+    <real name="rmax" value="9.50"  unit="cm" comment="outer radius" />
+    <real name="z0"   value="1.50" unit="cm" comment="from origin"  />
+    <real name="zlen" value="183.5" unit="cm" comment="cover the target" />
     <reference name="mat_fill" value="Vacuum"  comment="what fills the pipe" />
     <real_array name="bndrthk" comment="innner outer upstream downstream
-           wall thicknesses" values="0.00   0.05   0.00      0.00"
+           wall thicknesses" values="0.00   0.10   0.00      0.00"
                              unit="cm" />
     <reference_vector name="matrbnd"    comment="window materials"   >
       <reference_data value="Vacuum"    comment="inner wall??"      />
@@ -80,13 +86,13 @@
                            unit="cm" />
     <real_array name="sig" values="0.30 0.30 15." comment="size of target"
                            unit="cm" />
-    <real name="rmax"      value="1.50"  comment="radius of target vessel"
+    <real name="rmax"      value="2.50"  comment="radius of target vessel"
                            unit="cm" />
     <real name="zlen"      value="30.0"  comment="length of target vessel"
                            unit="cm" />
     <reference name="mat_fill" value="LiqHydrogen" comment="target material" />
     <real_array name="bndrthk" comment="cylinder upstream downstream
-           wall thicknesses"   values="0.03     0.02      0.02"
+           wall thicknesses"   values="0.02     0.02      0.02"
                                unit="cm" />
     <reference_vector name="matrbnd"   comment="target vessel materials">
       <reference_data value="Aluminum" comment="cylinder wall"     />

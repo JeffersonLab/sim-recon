@@ -13,8 +13,8 @@
 -->
 
 <section name        = "CerenkovCntr"
-         version     = "1.0"
-         date        = "2001-04-15"
+         version     = "1.1"
+         date        = "2005-01-25"
          author      = "R.T. Jones"
          top_volume  = "CERE"
          specification = "v1.0">
@@ -32,21 +32,21 @@
 
   <pcon name="CERE" material="Aluminum" comment="Cerenkov counter"
 		    parameters="cerenkovCntr_pars">
-    <polyplane Rio_Z="5.0  65.0   0.0" />
-    <polyplane Rio_Z="5.0  95.0  80.0" />
-    <polyplane Rio_Z="5.0 250.0 120.0" />
-    <polyplane Rio_Z="5.0 250.0 140.0" />
+    <polyplane Rio_Z="5.0  58.0   0.0" />
+    <polyplane Rio_Z="5.0  58.0  54.3" />
+    <polyplane Rio_Z="5.0 280.4  54.3" />
+    <polyplane Rio_Z="5.0 280.4 209.3" />
   </pcon>
   <pcon name="CGAS" material="CerenkovGas" comment="Cerenkov gas volume"
 		    sensitive="true"	parameters="cerenkovCntr_pars">
-    <polyplane Rio_Z="5.1  64.5   0.02" />
-    <polyplane Rio_Z="5.1  94.5  80.0" />
-    <polyplane Rio_Z="5.1 249.5 120.0" />
-    <polyplane Rio_Z="5.1 249.5 139.5" />
+    <polyplane Rio_Z="5.1  57.9   0.06" />
+    <polyplane Rio_Z="5.1  57.9  54.4" />
+    <polyplane Rio_Z="5.1 280.3  54.4" />
+    <polyplane Rio_Z="5.1 280.3 209.2" />
   </pcon>
 
   <parameters name="cerenkovCntr_pars" type="mcfast">
-    <real 	name="Rmin"	value="20.0"
+    <real 	name="Rmin"	value="5.0"
 				unit="cm"	/>
     <real	name="Rmax"	value="95.0"
 				unit="cm"	/>
@@ -68,9 +68,9 @@
 				unit="cm"	/>
     <real_array	name="ylimit"	values="-95.0  95.0" comment="y dimensions"
 				unit="cm"	/>
-    <real_array	name="xlimit_gap" values="-6.0  6.0" comment="beam hole x"
+    <real_array	name="xlimit_gap" values="-5.0  5.0" comment="beam hole x"
 				unit="cm"	/>
-    <real_array	name="ylimit_gap" values="-6.0  6.0" comment="beam hole y"
+    <real_array	name="ylimit_gap" values="-5.0  5.0" comment="beam hole y"
 				unit="cm"	/>
     <real	name="z0"	value="460.5"	comment="z of midplane"
 				unit="cm"	/>
