@@ -23,6 +23,7 @@ class hdv_mainframe:public TGMainFrame {
 		TGTextButton *quit, *next;
 		TGLayoutHints *fLayout;
 		TRootEmbeddedCanvas *emcanvas;
+
 };
 
 

@@ -28,14 +28,18 @@ class MyProcessor:public DEventProcessor
 		derror_t erun(void){};					///< Called everytime run number changes, provided brun has been called.
 		derror_t fini(void){};					///< Called after last event of last event source has been processed.
 
-		TMarker* MakeTopViewMarker(float x, float y, float z, int mtype);
-		TMarker* MakeSideViewMarker(float x, float y, float z, int mtype);
-		TMarker* MakeFrontViewMarker(float x, float y, float z, int mtype);
+		derror_t ConvertToTop(float x, float y, float z, float &X, float &Y);
+		derror_t ConvertToSide(float x, float y, float z, float &X, float &Y);
+		derror_t ConvertToFront(float x, float y, float z, float &X, float &Y);
+
+		derror_t DrawDetectors(void);
 
 		int eventNo;
 		TMarker *hitMarkers[1000];
 		int NhitMarkers;
-		
+	
+	private:
+		int drew_detectors;
 };
 
 #endif // _MYPROCESSOR_H_

@@ -24,7 +24,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 {
 	fLayout = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY);
 
-	emcanvas = new TRootEmbeddedCanvas("Main Canvas",this,w, h, kSunkenFrame, GetWhitePixel());
+	emcanvas = new TRootEmbeddedCanvas("Main Canvas",this,w, h-100, kSunkenFrame, GetWhitePixel());
 	emcanvas->SetScrolling(TGCanvas::kCanvasNoScroll);
 	AddFrame(emcanvas, fLayout);
 	
@@ -46,7 +46,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 
 	maincanvas = emcanvas->GetCanvas();
 	maincanvas->cd(0);
-	maincanvas->Range(-2.0,-1.0,2.0, 1.0);	
+	maincanvas->Range(-2.1,-1.0,2.1, 1.0);	
 }
 
 //-------------------
