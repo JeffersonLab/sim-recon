@@ -481,26 +481,11 @@
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="clusterView">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element minOccurs="0" maxOccurs="unbounded" ref="hddm:cdcPoint"/>
-        <xs:element minOccurs="0" maxOccurs="unbounded" ref="hddm:fdcPoint"/>
-        <xs:element minOccurs="0" maxOccurs="unbounded" ref="hddm:startPoint"/>
-        <xs:element minOccurs="0" maxOccurs="unbounded" ref="hddm:barrelShower"/>
-        <xs:element minOccurs="0" maxOccurs="unbounded" ref="hddm:tofPoint"/>
-        <xs:element minOccurs="0" maxOccurs="unbounded" ref="hddm:forwardShower"/>
-      </xs:sequence>
-      <xs:attribute fixed="1.0" name="version" type="xs:string" use="required"/>
-    </xs:complexType>
-  </xs:element>
-
   <xs:element name="physicsEvent">
     <xs:complexType>
       <xs:sequence>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:reaction"/>
         <xs:element ref="hddm:hitView"/>
-        <xs:element ref="hddm:clusterView"/>
       </xs:sequence>
       <xs:attribute name="eventNo" type="hddm:int" use="required"/>
       <xs:attribute name="runNo" type="hddm:int" use="required"/>
