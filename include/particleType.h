@@ -201,7 +201,7 @@ static char *ParticleType(Particle_t p)
   return(ret);
 }
 
-static float ParticleMass(Particle_t p)
+static double ParticleMass(Particle_t p)
 {
   switch (p) {
   default:
