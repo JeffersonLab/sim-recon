@@ -19,6 +19,7 @@ using namespace std;
 #include "MyProcessor.h"
 #include "DContainer.h"
 #include "DFactory_MCCheatHits.h"
+#include "DQuickFit.h"
 
 extern TCanvas *maincanvas;
 //extern DEventLoop *eventloop;
@@ -53,6 +54,7 @@ static float FDC_Zpos[4] = {230.0, 282.0, 338.0, 394.0};
 MyProcessor::MyProcessor()
 {
 	NhitMarkers = 0;
+	Ncircles = 0;
 	drew_detectors=0;
 }
 
@@ -61,8 +63,10 @@ MyProcessor::MyProcessor()
 //------------------------------------------------------------------
 derror_t MyProcessor::evnt(int eventnumber)
 {
-	int colors[] = {3,2,4,5,6};
+	int colors[] = {5,2,4,6,3};
 	int ncolors = 5;
+	
+	cout<<"----------- New Event -------------"<<endl;
 	
 	// Make sure detectors have been drawn
 	if(!drew_detectors)DrawDetectors();
@@ -71,8 +75,17 @@ derror_t MyProcessor::evnt(int eventnumber)
 	for(int i=0;i<NhitMarkers;i++)delete hitMarkers[i];
 	NhitMarkers = 0;
 
+	// Delete old circles
+	for(int i=0;i<Ncircles;i++)delete circles[i];
+	Ncircles = 0;
+
 	// Get MCCheatHits
 	DContainer *mccheathits = event_loop->Get("MCCheatHits");
+	
+	// Loop over hits creating markers for all 3 views
+	// Also, add hits to DQuickFit objects along the way
+	int track = -1;
+	DContainer *fits = new DContainer(NULL,sizeof(DQuickFit**),"fits");
 	MCCheatHit_t *mccheathit = (MCCheatHit_t*)mccheathits->first();
 	for(int i=0;i<mccheathits->nrows;i++, mccheathit++){
 		float x = mccheathit->r*cos(mccheathit->phi);
@@ -98,10 +111,45 @@ derror_t MyProcessor::evnt(int eventnumber)
 		hitMarkers[NhitMarkers++] = top;
 		hitMarkers[NhitMarkers++] = side;
 		hitMarkers[NhitMarkers++] = front;
+		
+		if(track!=mccheathit->track){
+			DQuickFit **fit = (DQuickFit**)fits->Add();
+			*fit = new DQuickFit();
+		}
+		(*(DQuickFit**)fits->last())->AddHit(mccheathit->r, mccheathit->phi, mccheathit->z);
+		track = mccheathit->track;
 	}
+	
+	// Do a fit to the points and draw circles
+	float x_center, y_center, X, Y;
+	ConvertToFront(0, 0, 0, x_center, y_center);
+	DQuickFit **fit = (DQuickFit**)fits->first();
+	for(int i=0;i<fits->nrows;i++, fit++){
+		DQuickFit *qf = *fit;
+		while(qf->GetNhits()>1){
+			qf->FitCircle();
+			//qf->PrintChiSqVector();
+			if(qf->chisq/(float)qf->GetNhits() <1.0)break;
+			qf->PruneWorst(1);
+		}
+	
+		if(qf->GetNhits()>1){
+			ConvertToFront(qf->x0, qf->y0, 0, X, Y);
+			float dX = X-x_center;
+			float dY = Y-y_center;
+			float r = sqrt(dX*dX + dY*dY);
+			circles[Ncircles++] = new TEllipse(X,Y,r,r);
+			cout<<"ChiSq = "<<qf->chisq/(float)qf->GetNhits()<<endl;
+		}
+	}
+	// Delete all DQuickFit objects and the DContainer
+	fit = (DQuickFit**)fits->first();
+	for(int i=0;i<fits->nrows;i++, fit++)delete (*fit);
+	delete fits;
 	
 	// Draw all markers and update canvas
 	for(int i=0;i<NhitMarkers;i++)hitMarkers[i]->Draw();
+	for(int i=0;i<Ncircles;i++)circles[i]->Draw();
 	maincanvas->Update();
 
 	return NOERROR;

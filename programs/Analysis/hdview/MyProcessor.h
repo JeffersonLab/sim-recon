@@ -11,6 +11,7 @@
 
 #include "DEventProcessor.h"
 
+#include <TEllipse.h>
 #include <TMarker.h>
 #include <TFile.h>
 #include <TH1.h>
@@ -37,6 +38,8 @@ class MyProcessor:public DEventProcessor
 		int eventNo;
 		TMarker *hitMarkers[1000];
 		int NhitMarkers;
+		TEllipse *circles[100];
+		int Ncircles;
 	
 	private:
 		int drew_detectors;
