@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 #  hddm-schema: create a xml schema based on a hddm template
 #

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 #  xml-xml: read any well-formed xml document and prints it to stdout
 #           in a easy-to-read form, resolving all external entities.
