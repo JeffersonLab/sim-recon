@@ -100,9 +100,9 @@ derror_t DQuickFit::PruneHits(float chisq_limit)
 	/// value exceeds <i>chisq_limit</i>. The value of the individual
 	/// contribution is calculated like:
 	///
-	///   r0 = sqrt(x0*x0 + y0*y0)
-	///   r[i] = sqrt(pow(x[i]-x0,2.0) + pow(y[i]-y0,2.0))
-	///   chisq[i] = pow(r[i] - r0, 2.0);
+	///	\f$ r_0 = \sqrt{x_0^2 + y_0^2} \f$ <br>
+	///	\f$ r_i = \sqrt{(x_i-x_0)^2 + (y_i-y_0)^2} \f$ <br>
+	///	\f$ \chi_i^2 = (r_i-r_0)^2 \f$ <br>
 
 	if(hits->nrows != chisqv->nrows){
 		cerr<<__FILE__<<":"<<__LINE__<<" hits and chisqv do not have the same number of rows!"<<endl;
@@ -386,7 +386,7 @@ derror_t DQuickFit::FitTrack(void)
 	FitCircle();
 	
 	// The thing that is really needed is dphi/dz (where phi is the angle
-	// of the point as measure from the center of the circle, not the beam
+	// of the point as measured from the center of the circle, not the beam
 	// line). The relation between phi and z is linear so we use linear
 	// regression to find the slope (dphi/dz). The one complication is
 	// that phi is periodic so the value obtained via the x and y of a
@@ -432,17 +432,18 @@ derror_t DQuickFit::FitTrack(void)
 	for(int i=0;i<hits->nrows;i++, v1++){
 		float deltaZ = (*v1)->z() - z_mean;
 		float deltaPhi = phiv[i] - phi_mean;
-		Sxx += deltaZ*deltaZ;
-		Syy += deltaPhi*deltaPhi;
+		Syy += deltaZ*deltaZ;
+		Sxx += deltaPhi*deltaPhi;
 		Sxy += deltaZ*deltaPhi;
 	}
-	float dphidz = Sxy/Sxx;
-	z_vertex = z_mean - phi_mean*Sxy/Syy;
+	float dzdphi = Syy/Sxy;
+	float dphidz = Sxy/Syy;
+	z_vertex = z_mean - phi_mean*dzdphi;
 
 	delete phiv;
 	
 	theta = atan(r0*fabs(dphidz));
-	p = -p_trans/sin(theta);
+	p = fabs(p_trans/sin(theta));
 	
 	// The sign of the electric charge will be the same as that
 	// of dphi/dz
@@ -463,6 +464,31 @@ static int qsort_points_by_z(const void* arg1, const void* arg2)
 	return (*b)->z() < (*a)->z() ? 1:-1;
 }
 
+//------------------------------------------------------------------
+// Print
+//------------------------------------------------------------------
+derror_t DQuickFit::Print(void)
+{
+	cout<<"-- DQuickFit Params ---------------"<<endl;
+	cout<<"          x0 = "<<x0<<endl;
+	cout<<"          y0 = "<<y0<<endl;
+	cout<<"           q = "<<q<<endl;
+	cout<<"           p = "<<p<<endl;
+	cout<<"     p_trans = "<<p_trans<<endl;
+	cout<<"         phi = "<<phi<<endl;
+	cout<<"       theta = "<<theta<<endl;
+	cout<<"    z_vertex = "<<z_vertex<<endl;
+	cout<<"       chisq = "<<chisq<<endl;
+	cout<<"chisq_source = ";
+	switch(chisq_source){
+		case NOFIT:		cout<<"NOFIT";		break;
+		case CIRCLE:	cout<<"CIRCLE";	break;
+		case TRACK:		cout<<"TRACK";		break;
+	}
+	cout<<endl;
+
+	return NOERROR;
+}
 
 #if 0
 //-----------------
