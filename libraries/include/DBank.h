@@ -17,8 +17,13 @@
 /// time would be spent in simply allocating/deallocating
 /// memory!
 
+#include <iostream>
+#include <iomanip>
+using namespace std;
+
 #include <string.h>
-#include <derror.h>
+#include <stdlib.h>
+#include "derror.h"
 
 #ifndef _DBANK_H_
 #define _DBANK_H_
@@ -31,16 +36,38 @@ class DBank{
 		void **bank_ptr;
 		char *name;
 		
+		enum DBank_Flags_t{
+			DBANK_NULL			=0x00,
+			PERSISTANT			=0x01,
+			WRITE_TO_OUTPUT	=0x02
+		};
+		DBank_Flags_t flags;
+		
 		DBank(void** ptr,int my_rowsize, char *my_name){
 			bank_ptr = ptr;
 			*bank_ptr = NULL;
 			maxrows = 0;
 			rowsize = my_rowsize;
 			name = strdup(my_name);
+			flags = DBANK_NULL;
 		}
 
-		derror_t Grow(void);
-		derror_t Grow(int my_maxrows);		
+		inline derror_t Grow(void){
+			if(nrows>maxrows)Grow(nrows);
+		}
+		
+		inline derror_t Grow(int my_maxrows)
+		{
+			if(my_maxrows<=maxrows)return NOERROR;
+			maxrows = my_maxrows+10;
+			unsigned long size = maxrows*rowsize;
+			if(*bank_ptr == NULL){
+				*bank_ptr = malloc(size);
+			}else{
+				*bank_ptr = realloc(*bank_ptr, size);
+			}
+			return NOERROR;
+		}
 };
 
 #endif // _DBANK_H_
