@@ -40,9 +40,9 @@ LIB_DIR		= $(HALLD_HOME)/lib/$(OSNAME)
 BIN_DIR		= $(HALLD_HOME)/bin/$(OSNAME)
 DEP_DIR		= .depends/$(OSNAME)
 
-FFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
-CFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
-CXXFLAGS += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
+FFLAGS   += -I. -I$(HALLD_HOME)/include -I$(HALLD_HOME)/src/libraries/include
+CFLAGS   += -I. -I$(HALLD_HOME)/include -I$(HALLD_HOME)/src/libraries/include
+CXXFLAGS += -I. -I$(HALLD_HOME)/include -I$(HALLD_HOME)/src/libraries/include
 
 
 # Include user specified package makefiles
