@@ -529,13 +529,9 @@ main(int argc,char **argv)
       /* 
        *fprintf(stderr,"beam.mass= %lf xmass= %lf target.mass=%lf ymass= %lf sqrt_s= %lf beam.p= %lf X->p= %lf  X_momentum= %lf\n",beam.mass,xmass,target.mass,ymass,sqrt_s,v3mag(&(beam.p.space)),v3mag(&(X->p.space)), X_momentum);
        */
-      
-					     
-      /* 
-       * Take care of threshold effects due to unknown masses at this stage
-       */
-      fprintf(stderr,"t_min: %lf t_max: %lf\n", t_min,t_max);
-      /*
+
+      /*fprintf(stderr,"t_min: %lf t_max: %lf\n", t_min,t_max);
+       *
        * t_max=10.0;
        * t_min=0.0;
        */
