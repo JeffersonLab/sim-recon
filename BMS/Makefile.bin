@@ -8,8 +8,8 @@ include $(HALLD_HOME)/src/BMS/Makefile.common
 
 .PHONY: mkdirs clean env
 
-ifndef LD
-LD = $(CXX)
+ifeq ($(LD), ld)
+ LD = $(CXX)
 endif
 
 MISC_LIBS_SunOS	+= -lz
@@ -99,6 +99,7 @@ env:
 	@echo FC			     = $(FC)
 	@echo CC			     = $(CC)
 	@echo CXX		     = $(CXX)
+	@echo LD            = $(LD)
 	@echo FFLAGS	     = $(FFLAGS)
 	@echo CFLAGS	     = $(CFLAGS)
 	@echo CXXFLAGS	     = $(CXXFLAGS)
