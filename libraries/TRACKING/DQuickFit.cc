@@ -10,6 +10,11 @@ using namespace std;
 
 #include "DQuickFit.h"
 
+static float *CHISQV=NULL;
+static int qsort_chisqv(const void* arg1, const void* arg2);
+static int qsort_int(const void* arg1, const void* arg2);
+
+
 //-----------------
 // DQuickFit
 //-----------------
@@ -21,7 +26,7 @@ DQuickFit::DQuickFit()
 	chisq_source = NOFIT;
 
 	hits = new DContainer(NULL, sizeof(TVector3*), "hits");
-	chisqv = new DContainer(NULL, sizeof(int), "chisqv");
+	chisqv = new DContainer(NULL, sizeof(float), "chisqv");
 }
 
 //-----------------
@@ -63,6 +68,19 @@ derror_t DQuickFit::AddHits(int N, TVector3 *v)
 }
 
 //-----------------
+// PruneHit
+//-----------------
+derror_t DQuickFit::PruneHit(int idx)
+{
+	TVector3 *v = *(TVector3**)hits->index(idx);
+	delete v;	
+	hits->Delete(idx);
+	chisqv->Delete(idx);
+
+	return NOERROR;
+}
+
+//-----------------
 // PruneHits
 //-----------------
 derror_t DQuickFit::PruneHits(float chisq_limit)
@@ -76,15 +94,92 @@ derror_t DQuickFit::PruneHits(float chisq_limit)
 	
 	// Loop over these backwards to make it easier to
 	// handle the deletes
-	TVector3 **v = (TVector3**)hits->last();
-	int *c = (int*)chisqv->last();
-	for(int i=hits->nrows-1; i>=0; i--, v--, c--){
-		if(*c > chisq_limit){
-			hits->Delete(i);
-			chisqv->Delete(i);
-		}
+	float *c = (float*)chisqv->last();
+	for(int i=hits->nrows-1; i>=0; i--, c--){
+		if(*c > chisq_limit)PruneHit(i);
 	}
 	
+	return NOERROR;
+}
+
+//-----------------
+// PruneWorst
+//-----------------
+derror_t DQuickFit::PruneWorst(int n)
+{
+	if(hits->nrows != chisqv->nrows){
+		cerr<<__FILE__<<":"<<__LINE__<<" hits and chisqv do not have the same number of rows!"<<endl;
+		cerr<<"Call FitCircle() or FitTrack() method first!"<<endl;
+
+		return NOERROR;
+	}
+	
+	// Create an index that we can sort according to the chisq vector
+	int *index = new int[chisqv->nrows];
+	for(int i=0;i<chisqv->nrows;i++)index[i] = i;
+	
+	// qsort works on the array you want sorted (index). We
+	// must give it access to the chisq vector so it can use
+	// it to sort by. Do this via a global variable.
+	CHISQV = (float*)chisqv->first();
+	
+	// sort the index
+	qsort(index, chisqv->nrows, sizeof(int), qsort_chisqv);
+
+	// OK now we have the list of hits to prune. However, for
+	// each one we prune, the list changes which means our
+	// index can (and often does) become invalid. We must
+	// therefore, sort the first n index entries (the ones
+	// we want to prune) from largest to smallest to make
+	// sure we prune from the end of the list first so as
+	// not to corrupt the remaining index entries.
+	qsort(index, n, sizeof(int), qsort_int);
+
+	// Remove the first n hits according to our index
+	for(int i=0;i<n;i++)PruneHit(index[i]);
+	
+	// free memory allocated for index
+	delete index;
+	
+	// chisqv is no longer valid
+	chisqv->ResetNrows();
+	
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// qsort_chisqv
+//------------------------------------------------------------------
+static int qsort_chisqv(const void* arg1, const void* arg2)
+{
+	int idx1 = *(int*)arg1;
+	int idx2 = *(int*)arg2;
+	
+	return CHISQV[idx1] < CHISQV[idx2] ? 1:-1;
+}
+
+//------------------------------------------------------------------
+// qsort_int
+//------------------------------------------------------------------
+static int qsort_int(const void* arg1, const void* arg2)
+{
+	return *(int*)arg2 - *(int*)arg1;
+}
+
+//-----------------
+// PrintChiSqVector
+//-----------------
+derror_t DQuickFit::PrintChiSqVector(void)
+{
+	cout<<"Chisq vector from DQuickFit:"<<endl;
+	cout<<"----------------------------"<<endl;
+
+	float *mychisq = (float*)chisqv->first();
+	for(int i=0;i<chisqv->nrows;i++, mychisq++){
+		cout<<i<<"  "<<*mychisq<<endl;
+	}
+	cout<<"Total: "<<chisq<<endl<<endl;
+
 	return NOERROR;
 }
 
@@ -104,7 +199,7 @@ derror_t DQuickFit::CopyToFitParms(FitParms_t *fit)
 	fit->phi = phi;
 	fit->theta = theta;
 	fit->chisq = chisq;
-	int *c = (int*)chisqv->first();
+	float *c = (float*)chisqv->first();
 	fit->nhits = 0;
 	for(int i=0; i<chisqv->nrows; i++, c++){
 		if(i>=MAX_CHISQV_HITS)break;
@@ -176,6 +271,19 @@ derror_t DQuickFit::FitCircle(void)
 	phi = atan2(y0,x0) - M_PI_2;
 	if(phi<0)phi+=2.0*M_PI;
 	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+	
+	// Calculate the chisq
+	chisqv->nrows = 0;
+	v= (TVector3**)hits->first();
+	chisq = 0.0;
+	for(int i=0;i<hits->nrows;i++, v++){
+		float *c = (float*)chisqv->Add();
+		float x = (*v)->x() - x0;
+		float y = (*v)->y() - y0;
+		*c = sqrt(x*x + y*y) - r0;
+		*c *= *c;
+		chisq+=*c;
+	}
 
 	return NOERROR;
 }

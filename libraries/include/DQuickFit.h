@@ -26,12 +26,15 @@ class DQuickFit{
 		inline derror_t AddHit(float r, float phi){AddHit(r, phi, 0.0);};
 		derror_t AddHit(float r, float phi, float z);
 		derror_t AddHits(int N, TVector3 *v);		
+		derror_t PruneHit(int idx);
 		derror_t PruneHits(float chisq_limit);
+		derror_t PruneWorst(int n);
 		derror_t FitCircle(void);
 		derror_t FitTrack(void);
 		inline TVector3** GetHits(){return (TVector3**)hits->container_ptr;};
 		inline int* GetChiSqVector(){return (int*)chisqv->container_ptr;};
 		inline int GetNhits(){return hits->nrows;};
+		derror_t PrintChiSqVector(void);
 		derror_t CopyToFitParms(FitParms_t *fit);
 
 		enum ChiSqSourceType_t{
