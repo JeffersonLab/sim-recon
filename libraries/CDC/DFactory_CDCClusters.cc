@@ -2,12 +2,42 @@
 
 #include "DEvent.h"
 #include "DFactory_CDCClusters.h"
+#include "DQuickFit.h"
 
 
 //-------------------
 // evnt
 //-------------------
 derror_t DFactory_CDCClusters::evnt(int eventnumber)
+{
+	// Use the MC cheat codes in place of cluster finding for now.
+	derror_t err = CopyFromMCCheatCodes();
+
+	// Do a quick fit to the clusters
+	CDCCluster_t *cdccluster = (CDCCluster_t*)_data->first();
+	for(int i=0; i<_data->nrows; i++, cdccluster++){
+		if(cdccluster->nhits<2)continue;
+
+		DQuickFit *qf = new DQuickFit();
+		CDCHit_t **hits = cdccluster->hits;
+		for(int j=0;j<cdccluster->nhits; j++, hits++){
+			qf->AddHit((*hits)->radius, (*hits)->phim);
+		}
+		
+		// Do the fit and copy the results into the cluster
+		qf->FitCircle();
+		qf->CopyToFitParms(&cdccluster->fit);
+				
+		delete qf;
+	}
+
+	return err;
+}
+
+//-------------------
+// CopyFromMCCheatCodes
+//-------------------
+derror_t DFactory_CDCClusters::CopyFromMCCheatCodes(void)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -72,7 +102,6 @@ derror_t DFactory_CDCClusters::evnt(int eventnumber)
 		}
 	}
 
-	
 	return NOERROR;
 }
 
@@ -87,8 +116,8 @@ derror_t DFactory_CDCClusters::Print(void)
 	if(_data->nrows<=0)return NOERROR; // don't print anything if we have no data!
 
 	cout<<name<<endl;
-	cout<<"---------------------------------------"<<endl;
-	cout<<"row: radius(cm): phim(rad):   dE(MeV):   t(ns):"<<endl;
+	cout<<"------------------------------------------------------------------------------"<<endl;
+	cout<<"row: radius(cm): phim(rad):   dE(MeV):   t(ns):     x0:    y0: p_trans(GeV/c):"<<endl;
 	cout<<endl;
 	
 	CDCCluster_t *cdccluster = (CDCCluster_t*)_data->first();
@@ -115,6 +144,14 @@ derror_t DFactory_CDCClusters::Print(void)
 			strncpy(&str[37-strlen(num)], num, strlen(num));
 			sprintf(num, "%4.0f", (*cdchit)->t);
 			strncpy(&str[46-strlen(num)], num, strlen(num));
+			if(j==0){
+				sprintf(num, "%3.2f", cdccluster->fit.x0);
+				strncpy(&str[54-strlen(num)], num, strlen(num));
+				sprintf(num, "%3.2f", cdccluster->fit.y0);
+				strncpy(&str[61-strlen(num)], num, strlen(num));
+				sprintf(num, "%2.3f", cdccluster->fit.p_trans);
+				strncpy(&str[77-strlen(num)], num, strlen(num));
+			}
 			cout<<str<<endl;
 		}
 	}
