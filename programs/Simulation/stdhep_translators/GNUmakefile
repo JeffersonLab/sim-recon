@@ -82,30 +82,30 @@ all:  ascii2stdhep  stdhep2ascii
 stdhep2hddm: hddm_s.o stdhep2hddm.o $(STDHEP_DIR)/lib/libstdhepC.a
 	$(CC) $(CFLAGS) $(INCS)  -o stdhep2hddm stdhep2hddm.o hddm_s.o  \
 		$(STDHEP_DIR)/lib/libstdhepC.a \
-		$(STDHEP_DIR)/lib/libFmcfio.a $(LOCAL) -lm
+		$(STDHEP_DIR)/lib.Linux/libFmcfio.a $(LOCAL) -lm
 
 stdhep2itape: stdhep2itape.o  $(STDHEP_DIR)/lib/libstdhepC.a
 	$(CC) $(CFLAGS) $(INCS)  -o stdhep2itape stdhep2itape.o   \
 		$(HALLDLIBS)/libdata.a \
 		$(STDHEP_DIR)/lib/libstdhepC.a \
-		$(STDHEP_DIR)/lib/libFmcfio.a $(LOCAL) -lm
+		$(STDHEP_DIR)/lib.Linux/libFmcfio.a $(LOCAL) -lm
 
 itape2stdhep: itape2stdhep.o  $(STDHEP_DIR)/lib/libstdhepC.a
 	$(CC) $(CFLAGS) $(INCS)  -o itape2stdhep itape2stdhep.o   \
 		$(HALLDLIBS)/libdata.a \
 		$(STDHEP_DIR)/lib/libstdhepC.a \
-		$(STDHEP_DIR)/lib/libFmcfio.a $(LOCAL) -lm
+		$(MCFAST_DIR)/lib.Linux/libFmcfio.a $(LOCAL) -lm
 
 
 ascii2stdhep: ascii2stdhep.o  $(STDHEP_DIR)/lib/libstdhepC.a
 	$(CC) $(CFLAGS)  -o ascii2stdhep ascii2stdhep.o  \
 		$(STDHEP_DIR)/lib/libstdhepC.a \
-		$(STDHEP_DIR)/lib/libFmcfio.a $(LOCAL) -lm
+		$(MCFAST_DIR)/lib.Linux/libFmcfio.a $(LOCAL) -lm
 
 stdhep2ascii: stdhep2ascii.o  $(STDHEP_DIR)/lib/libstdhepC.a
 	$(CC) $(CFLAGS)  -o stdhep2ascii stdhep2ascii.o  \
 		$(STDHEP_DIR)/lib/libstdhepC.a \
-		$(STDHEP_DIR)/lib/libFmcfio.a $(LOCAL) -lm
+		$(MCFAST_DIR)/lib.Linux/libFmcfio.a $(LOCAL) -lm
 
 hddm_s.c: hddm_s.h
 
