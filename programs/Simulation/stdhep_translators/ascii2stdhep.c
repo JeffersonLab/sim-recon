@@ -18,7 +18,7 @@
 #include<stdlun.h>
 #include<stdcnt.h>
 
-#define TRUE 1
+#define TRUE 1 
 #define FALSE 0
 
 /*
@@ -94,7 +94,7 @@ int  pdgID(Particle_t p);
 int main(int argc,char **argv)
 {
   char *argptr;
-  int i,ntries=0,ret,gotANevent,written=0;
+  int i,ntries=0,nskip=0,ret,gotANevent,written=0;
   int ilbl=1,istream=0,nparts=0;/*I guessed at istream */ 
   int read_gamp_file=FALSE;
   char *outputfile ="default.evt";
@@ -124,6 +124,10 @@ int main(int argc,char **argv)
 	case 'g':
 	  read_gamp_file=TRUE;
 	  break;
+	case 'S':
+          nskip=atoi(++argptr);
+	  fprintf(stderr,"Skipping the first %d events\n",nskip);
+          break;
         case 'N':
           ntries=atoi(++argptr);
           break;
@@ -172,24 +176,31 @@ int main(int argc,char **argv)
     else
       gotANevent=getFromAscii(inputfp,nparts,parts);
     while(gotANevent>0){  /* I have an event! */
-      if( gotANevent==-2){
-	fprintf(stderr,"Broken input file.\n");
-	exit(-1);
+      if(!(nskip-- > 0)){
+	if( gotANevent==-2){
+	  fprintf(stderr,"Broken input file.\n");
+	  exit(-1);
+	}
+	/* fill the hepevt structure */
+	fill_hepevt(nparts, parts);
+	
+	/* write to stdhep file */
+	ret=StdHepXdrWrite(ilbl,istream);
+	if(!(++written %100))
+	  fprintf(stderr,"McFast events Written: %d\r",written);
+      } else{
+	if(!(nskip %100))
+	  fprintf(stderr,"                          \rSkipping events: %d\r",nskip);
       }
-      /* fill the hepevt structure */
-      fill_hepevt(nparts, parts);
-      
-      /* write to stdhep file */
-      ret=StdHepXdrWrite(ilbl,istream);
       if(read_gamp_file)
 	gotANevent=getFromGampFile(inputfp,&nparts,parts);
       else
 	gotANevent=getFromAscii(inputfp,nparts,parts);
-      if(!(++written %100))
-	fprintf(stderr,"McFast events Written: %d\r",written);
+      
       if(written == ntries)
 	gotANevent=0; /* Stop reading events */
     }
+
     if(written<ntries)
       fprintf(stderr,"Warning!! wanted %d events found only %d\n",
 	      ntries,written);   
@@ -532,6 +543,7 @@ int PrintUsage(char *processName)
    fprintf(stderr,"\t-i<name> The input ascii file(default is stdin).\n");
   fprintf(stderr,"\t-o<name> The output  file.\n");
   fprintf(stderr,"\t-N<#> The number output events. (N <= NasciiEvents)\n");
+  fprintf(stderr,"\t-S<#> Skip the first # number of input events. \n");
   fprintf(stderr,"\t-n<#> The number particles per event.\n");
   fprintf(stderr,"\t-g Read gamp event format\n");
   fprintf(stderr,"\t-h Print this help message\n\n");
