@@ -85,7 +85,7 @@ int loadInput ()
    s_Reactions_t* reacts;
    int reactCount, ir;
 
-   reacts = thisInputEvent ->physicsEvent ->reactions;
+   reacts = thisInputEvent ->physicsEvents->in[0].reactions;
    reactCount = reacts->mult;
    for (ir = 0; ir < reactCount; ir++)
    {
@@ -151,7 +151,7 @@ int loadInput ()
 
 int storeInput (int runNo, int eventNo, int ntracks)
 {
-   s_PhysicsEvent_t* pe;
+   s_PhysicsEvents_t* pes;
    s_Reactions_t* rs;
    s_Vertices_t* vs;
    s_Origin_t* or;
@@ -165,8 +165,9 @@ int storeInput (int runNo, int eventNo, int ntracks)
       flush_s_HDDM(thisInputEvent, 0);
    }
    thisInputEvent = make_s_HDDM();
-   thisInputEvent->physicsEvent = pe = make_s_PhysicsEvent();
-   pe->reactions = rs = make_s_Reactions(1);
+   thisInputEvent->physicsEvents = pes = make_s_PhysicsEvents(1);
+   pes->in[0].reactions = rs = make_s_Reactions(1);
+   pes->mult = 1;
    rs->mult = 1;
    rs->in[0].vertices = vs = make_s_Vertices(99);
    vs->mult = 0;
@@ -207,8 +208,8 @@ int storeInput (int runNo, int eventNo, int ntracks)
       ps->in[ps->mult].momentum->E  = plab[3];
       ps->mult++;
    }
-   pe->runNo = runNo;
-   pe->eventNo = eventNo;
+   pes->in[0].runNo = runNo;
+   pes->in[0].eventNo = eventNo;
    return 0;
 }
 

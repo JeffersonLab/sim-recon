@@ -19,8 +19,8 @@ C process the following 100 input events and stop.  If the end of the file is
 C reached before the event count specified in card TRIG is exhausted then the
 C processing will stop at the end of file.
 
-TRIG 1000
-c INFILE 'rhop.hddm'
+TRIG 10
+INFILE 'rhop.hddm'
 BEAM 12.0 9.0 
 RUNG 9999
 

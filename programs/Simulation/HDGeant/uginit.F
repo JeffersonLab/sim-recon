@@ -2,6 +2,15 @@
 * $Id$
 *
 * $Log$
+* Revision 1.10  2003/10/30 12:29:24  jonesrt
+* README.txt: updated build procedures that work up to Redhat 9
+* hddmInput.c,hddmOutput.c: small change to hddm input/output library
+*   that reflects a change in the Monte Carlo hddm template.
+* uginit.F: added a line to generate geometry rz file needed by g2root
+* Makefile: updates to make build work under Redhat 9 and cernlib 2003
+* gelhad/Makefile: updates to make build work under Redhat 9
+* [richard.t.jones@uconn.edu]
+*
 * Revision 1.9  2002/07/10 19:53:08  jonesrt
 * - moved open/close of hbook file from hdgeant.f to uginit.F/uglast.F so that
 *   it gets called from hdgeant++ [rtj]
@@ -203,6 +212,7 @@ C..geant..
       CALL GGCLOS
       CALL GPART
       CALL GPHYSI
+      CALL GRFILE(3,'hdgeant.rz','ON')
 *
       call gelh_vrfy()
 *

@@ -64,20 +64,28 @@ int loadOutput ()
    {
       static int eventNo = 0;
       thisOutputEvent = make_s_HDDM();
-      thisOutputEvent->physicsEvent = make_s_PhysicsEvent();
-      thisOutputEvent->physicsEvent->eventNo = ++eventNo;
+      thisOutputEvent->physicsEvents = make_s_PhysicsEvents(1);
+      thisOutputEvent->physicsEvents->mult = 1;
+      thisOutputEvent->physicsEvents->in[0].eventNo = ++eventNo;
    }
-   if (thisOutputEvent->physicsEvent->hitView == 0)
+   if (thisOutputEvent->physicsEvents->in[0].hitView == 0)
    {
-      thisOutputEvent->physicsEvent->hitView = make_s_HitView();
+      thisOutputEvent->physicsEvents->in[0].hitView = make_s_HitView();
    }
-   thisOutputEvent->physicsEvent->hitView->centralDC    = pickCentralDC();
-   thisOutputEvent->physicsEvent->hitView->forwardDC    = pickForwardDC();
-   thisOutputEvent->physicsEvent->hitView->startCntr    = pickStartCntr();
-   thisOutputEvent->physicsEvent->hitView->barrelEMcal  = pickBarrelEMcal();
-   thisOutputEvent->physicsEvent->hitView->Cerenkov     = pickCerenkov();
-   thisOutputEvent->physicsEvent->hitView->forwardTOF   = pickForwardTOF();
-   thisOutputEvent->physicsEvent->hitView->forwardEMcal = pickForwardEMcal();
+   thisOutputEvent->physicsEvents->in[0].hitView->
+      					centralDC = pickCentralDC();
+   thisOutputEvent->physicsEvents->in[0].hitView->
+      					forwardDC = pickForwardDC();
+   thisOutputEvent->physicsEvents->in[0].hitView->
+      					startCntr = pickStartCntr();
+   thisOutputEvent->physicsEvents->in[0].hitView->
+      					barrelEMcal = pickBarrelEMcal();
+   thisOutputEvent->physicsEvents->in[0].hitView->
+      					Cerenkov = pickCerenkov();
+   thisOutputEvent->physicsEvents->in[0].hitView->
+      					forwardTOF = pickForwardTOF();
+   thisOutputEvent->physicsEvents->in[0].hitView->
+      					forwardEMcal = pickForwardEMcal();
    return 0;
 }
 

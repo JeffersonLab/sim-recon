@@ -17,7 +17,7 @@ ifeq ($(OStype),Linux)
 		CPP	:= g++
 		F77	:= g77
 		NETLIB := -lnsl
-		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
+		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl -lpthread
 		COPTS = -g
 		FOPTS = -g -Wno-globals
 		GLIBS	:= 
@@ -54,16 +54,20 @@ AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitLGD.o bintree.o hitutil.o memcheck.o timel.o trapfpe.o
 
 GXFIXED = gxcs.o gxphys.o
+GELHAD = gelhad/libgelhad.a
 
 CERNLIB = $(CERN_ROOT)/bin/cernlib
 
-hdgeant++:	gxint.o uginit.o uglast.o $(AUXF) $(AUXC) $(GXFIXED)
-	$(CERN_ROOT)/bin/gxint -g 321 -m -d Motif -o $@ $^ $(STATIC) \
-	-Lgelhad -lgelhad $(XLIBS) $(GLIBS) -- -Wl,-export-dynamic
+hdgeant++: gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXFIXED)
+	$(CERN_ROOT)/bin/gxint -v $(CERN_LEVEL) -g 321 -m -d Motif \
+	-o $@ gxint.o uginit.o uglast.o \
+	$(AUXF) $(AUXC) $(GXFIXED) $(STATIC) \
+	-Lgelhad -lgelhad $(XLIBS) $(GLIBS) \
+	-- -Wl,-export-dynamic
 
-hdgeant:	hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC)
-	$(F77) $(LOPTS) -o $@ -I$(CERN_ROOT)/include -Wl,-Bstatic $^ \
-	-Lgelhad -lgelhad \
+hdgeant: hdgeant.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC)
+	$(F77) $(LOPTS) -o $@ -I$(CERN_ROOT)/include -Wl,-Bstatic \
+	 hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC) -Lgelhad -lgelhad \
 	`$(CERNLIB) geant321 mathlib graflib grafX11` \
 	$(NETLIB) $(XLIBS)
 
@@ -92,6 +96,9 @@ hddm_s.c:
 
 hddm_s.o: 	hddm_s.c
 	$(CC) $(COPTS) -I. -I../include -c -o $@ $<
+
+$(GELHAD):
+	$(MAKE) -C gelhad
 
 clean:
 	rm -f *.o core last.kumac* paw.metafile
