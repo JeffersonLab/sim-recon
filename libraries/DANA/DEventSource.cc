@@ -35,7 +35,8 @@ DEventSource::DEventSource(int narg, char *argv[])
 	prate_last_events = 0;
 	prate_last_rate = 0.0;
 	
-	hddm = new hddm_banks_t();
+	hddm = new hddm_banks_t;
+	init_hddm_banks_t(hddm);
 }
 
 //----------------
@@ -43,6 +44,8 @@ DEventSource::DEventSource(int narg, char *argv[])
 //----------------
 DEventSource::~DEventSource()
 {
+	for(int i=0;i<Nsources;i++)free(sources[i]);
+
 	delete hddm;
 }
 
@@ -62,6 +65,14 @@ derror_t DEventSource::NextEvent(void)
 		if(err)return err;
 		source_is_open = 1;
 		return NextEvent();
+	}
+	
+	// Set number of rows in all banks to zero
+	DBank **banks = (DBank**)hddm;
+	int Nbanks = sizeof(hddm_banks_t)/sizeof(DBank*);
+	for(int i=0;i<Nbanks;i++ ,banks++){
+		if((*banks)->flags & DBank::PERSISTANT)continue;
+		(*banks)->nrows=0;
 	}
 
 	// Read next event from source. If none, then close source and recall ourself
