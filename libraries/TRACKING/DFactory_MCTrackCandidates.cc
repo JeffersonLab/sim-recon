@@ -19,10 +19,10 @@ DFactory_MCTrackCandidates::DFactory_MCTrackCandidates(DEvent *event):DFactory(e
 	// set limits for plot. This represents the space where the center 
 	// of the circle can be. It can be (and often is) outside of the
 	// bounds of the solenoid.
-	circle_max = 120.0; // in cm.
+	circle_max = 150.0; // in cm.
 	
 	// The number of bins per cm (in one dimension) for the density histogram
-	bins_per_cm = 1.0;
+	bins_per_cm = 4.0;
 
 	int Nbins = (int)round(2.0*circle_max/bins_per_cm);
 	density = new TH2F("density","Density",Nbins,-circle_max,circle_max,Nbins,-circle_max,circle_max);	
@@ -31,7 +31,7 @@ DFactory_MCTrackCandidates::DFactory_MCTrackCandidates(DEvent *event):DFactory(e
 
 	// max distance a line-of-circle-centers line can
 	// be from a focal point and still be considered on the circle
-	masksize = 5.0; // in cm
+	masksize = 2.0; // in cm
 	
 	// See note in FindCircles
 	flip_x_axis = 0;
@@ -189,7 +189,7 @@ derror_t DFactory_MCTrackCandidates::FindCirclesHitSub(void)
 		DArcHit *a = archit;
 		for(int i=0;i<Narchits;i++ ,a++){
 			float d = a->DistToLine(x,y);
-			if(d <= masksize){
+			if(d <= 2.0*masksize){
 				fit->AddHit(a->rhit, a->phihit, a->zhit);
 			}
 		}
@@ -309,8 +309,9 @@ derror_t DFactory_MCTrackCandidates::FindCirclesMaskSub(void)
 		// Zero all bins within masksize of the maximum.
 		float maxval = tmp->GetBinContent(xbin,ybin,zbin);
 		cout<<__FILE__<<":"<<__LINE__<<" maxval = "<<maxval<<endl;
-		ZeroNeighbors(tmp, xbin,ybin);
 #if 0
+		ZeroNeighbors(tmp, xbin,ybin);
+#else
 		int Nmaskbins = (int)ceil(masksize*bins_per_cm);
 		for(int i=xbin-Nmaskbins; i<xbin+Nmaskbins; i++){
 			if(i<1 || i>Nxbins)continue;
@@ -356,6 +357,122 @@ derror_t DFactory_MCTrackCandidates::ZeroNeighbors(TH2F *hist, int xbin, int ybi
 }
 
 //------------------------------------------------------------------
+// FindCirclesInt
+//------------------------------------------------------------------
+derror_t DFactory_MCTrackCandidates::FindCirclesInt(void)
+{
+	/// This essentially works the same as FindCirclesHitSub() only
+	/// it avoids filling and dealing with the large 2-D histograms.
+	/// It does this by looking at the intersection points of all
+	/// possible pairs of lines and finding ones in which many other
+	/// lines pass near.
+	
+	// Clear the "used" flag on all DArcHits
+	DArcHit *a = archit;
+	for(int i=0;i<Narchits;i++ ,a++)a->used=0;
+
+	// Loop until all tracks are found
+	Ncircles = 0;	
+	do{
+		
+		// Loop over all possible intersection points (of the unused
+		// hits) and find the one which has the most lines passing
+		// within masksize.
+		float x0, y0;
+		int max_lines_within_masksize = 0;
+		DArcHit *a = archit;
+		for(int i=0;i<Narchits;i++ ,a++){
+			if(a->used)continue;
+
+			DArcHit *b = a;
+			b++;
+			for(int j=i+1;j<Narchits;j++ ,b++){
+				if(b->used)continue;
+				
+				float x,y;
+				int n = IntersectionDensity(a,b,x,y);
+				if(n>max_lines_within_masksize){
+					max_lines_within_masksize = n;
+					x0 = x;
+					y0 = y;
+				}
+			}
+		}
+		
+		// Need a minimum number of hits to be considered a track
+		if(max_lines_within_masksize<4)break;
+		
+		// OK, looks like we found a good intersection. Go through
+		// the hits again and do a circle fit to find a better
+		// x0, y0 value to use as the true focus.
+		DQuickFit *fit = new DQuickFit();
+		float masksize2 = masksize*masksize;
+		DArcHit *c = archit;
+		for(int k=0;k<Narchits;k++ ,c++){
+			if(c->used)continue;
+			if(c->Dist2ToLine(x0,y0)>masksize2)continue;
+			fit->AddHit(c->rhit, c->phihit, c->zhit);
+		}
+		fit->FitCircle();
+		x0 = -fit->x0;	// why do we need the minus sign?
+		y0 = -fit->y0;	// why do we need the minus sign?
+		delete fit;
+
+		// Loop over the hits one final time and mark all that
+		// are within masksize of the focus as used
+		c = archit;
+		for(int k=0;k<Narchits;k++ ,c++){
+			if(c->used)continue;
+			if(c->Dist2ToLine(x0,y0)>masksize2)continue;
+			c->used = 1;
+		}
+		
+		// Finally, record the focus
+		if(Ncircles<32){
+			circles[Ncircles].SetX1(x0);
+			circles[Ncircles].SetY1(y0);
+			circles[Ncircles].SetR1(masksize);
+			circles[Ncircles++].SetR2(masksize);
+		}
+	}while(Ncircles<32);	
+	
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// IntersectionDensity
+//------------------------------------------------------------------
+int DFactory_MCTrackCandidates::IntersectionDensity(DArcHit *a, DArcHit *b, float &x, float&y)
+{
+	// Intersection of two lines:
+	// c1*x + c2*y = c3
+	// d1*x + d2*y = d3
+	float c1 = a->orientation==DArcHit::Y_OF_X ? -a->m:1.0;
+	float c2 = a->orientation==DArcHit::Y_OF_X ? 1.0:-a->m;
+	float c3 = a->b;
+	float d1 = b->orientation==DArcHit::Y_OF_X ? -b->m:1.0;
+	float d2 = b->orientation==DArcHit::Y_OF_X ? 1.0:-b->m;
+	float d3 = b->b;
+	x = (d2*c3 - d3*c2)/(d2*c1 - c2*d1);
+	y = (d3*c1 - d1*c3)/(d2*c1 - c2*d1);
+		
+	// It's possible that x or y could be infinite (parallel lines)
+	// In this case, just skip to the next hit.
+	if(!finite(x) || !finite(y))return 0;
+
+	DArcHit *c = archit;
+	int lines_within_masksize = 2;
+	float masksize2 = masksize*masksize;
+	for(int k=0;k<Narchits;k++ ,c++){
+		if(c->used)continue;
+		if(c==a || c==b)continue;
+		if(c->Dist2ToLine(x,y)<=masksize2)lines_within_masksize++;
+	}
+
+	return lines_within_masksize;
+}
+
+//------------------------------------------------------------------
 // FillArcDensityHistogram
 //------------------------------------------------------------------
 derror_t DFactory_MCTrackCandidates::FillArcDensityHistogram(TH2F *hist)
@@ -368,6 +485,7 @@ derror_t DFactory_MCTrackCandidates::FillArcDensityHistogram(TH2F *hist)
 		if(a->used)continue;
 		
 		a->FillArcDensityHistogram(hist);
+		//break;
 	}
 	
 	return NOERROR;
@@ -394,13 +512,22 @@ derror_t DFactory_MCTrackCandidates::FillSlopeIntDensityHistos(void)
 		DArcHit *a = archit;
 		float x0 = circles[j].GetX1();
 		float y0 = circles[j].GetY1();
-		float phi0 = atan2(-y0, -x0);
+		float r0 = sqrt(x0*x0 + y0*y0);
+		float phi0 = atan2(y0, x0);
+		if(phi0<0.0)phi0 += 2.0*M_PI;
 		for(int i=0;i<Narchits;i++ ,a++){
 			if(Nhits>=200)break;
 			float d = a->DistToLine(x0,y0);
 			if(d > masksize)continue;
 			
-			phi[Nhits] = atan2(a->yhit-y0, a->xhit-x0);
+			// Take cross-product to find relative angle between this hit
+			// and vector pointing to origin
+			float x = a->xhit+x0;
+			float y = a->yhit+y0;
+			float r = sqrt(x*x + y*y);
+			float delta_phi = acos((x*x0 +y*y0)/(r*r0));
+			
+			phi[Nhits] = delta_phi;
 			z[Nhits++] = a->zhit;
 		}
 		
@@ -410,10 +537,10 @@ derror_t DFactory_MCTrackCandidates::FillSlopeIntDensityHistos(void)
 				float b = phi[i] - m*z[i];
 				if(!finite(m) || !finite(b))continue;
 				slope_density->Fill(m);
-				offset_density->Fill((phi0-b)/m);
+				offset_density->Fill(-b/m);
 				if(j<Ndensity_histos){
 					slope_density_histos[j]->Fill(m);
-					offset_density_histos[j]->Fill((phi0-b)/m);
+					offset_density_histos[j]->Fill(-b/m);
 				}
 			}
 		}
@@ -433,7 +560,7 @@ derror_t DFactory_MCTrackCandidates::DrawPhiZPoints(void)
 	/// are the phi value on the Y-axis and the z value of the
 	/// hit on the X-axis. The value of phi is relative to the
 	/// focus. All hits passing within masksize of a focus are
-	/// plotted in a corresponding to the focus. A single hit
+	/// plotted in a color corresponding to the focus. A single hit
 	/// can thus be plotted more than once, but will necessarily
 	/// show up in different places on the plot for the different
 	/// foci because phi will be different.
@@ -454,22 +581,25 @@ derror_t DFactory_MCTrackCandidates::DrawPhiZPoints(void)
 		DArcHit *a = archit;
 		float x0 = circles[j].GetX1();
 		float y0 = circles[j].GetY1();
-		float phi0 = atan2(-y0, -x0);
+		float r0 = sqrt(x0*x0 + y0*y0);
+		float phi0 = atan2(y0, x0);
 		if(phi0<0.0)phi0 += 2.0*M_PI;
 		for(int i=0;i<Narchits;i++ ,a++){
 			
 			float d = a->DistToLine(x0,y0);
 			if(d > masksize)continue;
 			
-			float phi = atan2(a->yhit-y0, a->xhit-x0);
+			// Take cross-product to find relative angle between this hit
+			// and vector pointing to origin
+			float x = a->xhit+x0;
+			float y = a->yhit+y0;
+			float r = sqrt(x*x + y*y);
+			float delta_phi = acos((x*x0 +y*y0)/(r*r0));
 			float z = a->zhit;
-			
-			if(phi<0.0)phi += 2.0*M_PI;
-			float delta_phi = phi-phi0;
 			
 			markers[Nmarkers].SetX(z);
 			markers[Nmarkers].SetY(delta_phi);
-			markers[Nmarkers].SetMarkerColor(colors[j%Ncircles]);
+			markers[Nmarkers].SetMarkerColor(colors[j%6]);
 			markers[Nmarkers].SetMarkerStyle(20+j);
 			markers[Nmarkers].Draw();
 
