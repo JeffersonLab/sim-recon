@@ -9,6 +9,10 @@
 INCLUDE := -I. -Iinc  
 CC = cc
 
+ifndef UNAME
+UNAME = $(shell uname)
+endif
+
 PROGRAM= genr8
 
 genr8: genr8.o genkin.o
