@@ -220,6 +220,12 @@ derror_t MyProcessor::DrawDetectors(void)
 	R2 = fabs(yy-Y);
 	TEllipse *bcal1 = new TEllipse(X,Y,R1,R1);
 	TEllipse *bcal2 = new TEllipse(X,Y,R2,R2);
+	TEllipse *bcal3 = new TEllipse(X,Y,(R1+R2)/2.0,(R1+R2)/2.0);
+	bcal1->SetLineColor(14); // 16= light grey
+	bcal2->SetLineColor(14); // 16= light grey
+	bcal3->SetLineColor(16); // 16= light grey
+	bcal3->SetLineWidth(48); // 16= light grey
+	bcal3->Draw();
 	bcal1->Draw();
 	bcal2->Draw();
 	
