@@ -1,14 +1,15 @@
-<reaction type="int" weight="float" repeat="*">
-   <beam type="Particle_t">
+<?xml version="1.0" encoding="UTF-8"?>
+<reaction type="int" weight="float" minOccurs="0" maxOccurs="unbounded">
+   <beam type="Particle_t" minOccurs="0">
       <momentum px="float" py="float" pz="float" E="float" />
       <properties charge="int" mass="float" />
    </beam>
-   <target type="Particle_t">
+   <target type="Particle_t" minOccurs="0">
       <momentum px="float" py="float" pz="float" E="float" />
       <properties charge="int" mass="float" />
    </target>
-   <vertex repeat="*">
-      <product type="Particle_t" decayVertex="int" repeat="*">
+   <vertex maxOccurs="unbounded">
+      <product type="Particle_t" decayVertex="int" maxOccurs="unbounded">
          <momentum px="float" py="float" pz="float" E="float" />
          <properties charge="int" mass="float" />
       </product>

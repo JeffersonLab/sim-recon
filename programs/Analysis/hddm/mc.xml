@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE HDDM [
 
  <!ENTITY ReactionModel SYSTEM "reaction.xml">
@@ -6,8 +6,8 @@
 
 ]>
 
-<HDDM class="s" version="1.0">
-   <physicsEvent eventNo="int" runNo="int">
+<HDDM class="s" version="1.0" xmlns="http://www.gluex.org/hddm">
+   <physicsEvent eventNo="int" runNo="int" maxOccurs="unbounded">
       &ReactionModel;
    </physicsEvent>
 </HDDM>

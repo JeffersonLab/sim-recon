@@ -1,7 +1,16 @@
 /*
  *  xml-hddm :	tool that reads in a plain-text xml data document
  *              and writes it out as a hddm (Hall D Data Model)
- *              following the data model provided.
+ *              following the template provided.
+ *
+ *  Version 1.1 - Richard Jones, September 2003.
+ *  - Updated code to work with the new DOM-2 implementation Xerces-c
+ *    from apache.org.  Significant changes have taken place in the API
+ *    since DOM-1.
+ *  - Added support for new types "long" (int64), "string" (char arrays of
+ *    arbitrary length), and "anyURI" (special case of string).
+ *  - Switched from native encoding to the use of the XDR library to make
+ *    hddm files machine-independent.
  *
  *  Original version - Richard Jones, October 1 2001.
  *
@@ -10,82 +19,60 @@
  *  -------------------
  * 1. The output from xml-hddm is a valid hddm data stream.
  *
- * 2. Two inputs are required: the input xml data document, and a hddm
- *    data model describing the structure of the data in the document.
+ * 2. Two inputs are required: the input xml data document, and a xml
+ *    template describing the structure of the data in the document.
  *    Both documents must be well-formed.  In addition, the data document
  *    must conform to the hddm specification document.  Only if both of
  *    these requirements are met is it possible to insure that the data
  *    document can be expressed in a hddm stream.
  *
- * 3. There is an ambiguity in the interpretation of a xml data document
- *    that conforms to a hddm data model with more than one tag directly
- *    descending from the <HDDM> document tag.  Since the data model does
- *    not treat the order of content tags at a given level as significant
- *    in distinguishing one data model from another, it is not possible
- *    just looking at the sequence of level-1 tags in the document to tell
- *    where one "event" (in-memory structure) stops and the next one begins.
- *    Thus it is decided that each level-1 tag constititutes a new event.
- *
- * 4. The code has been tested with the xerces-c DOM implementation from
+ * 3. The code has been tested with the xerces-c DOM implementation from
  *    Apache, and is intended to be used with the xerces-c library.
  *
- * 5. Output is sent by default to stdout and can be changed with the
+ * 4. Output is sent by default to stdout and can be changed with the
  *    -o option.
  */
 
-#include <util/PlatformUtils.hpp>
-#include <sax/SAXException.hpp>
-#include <sax/SAXParseException.hpp>
-#include <parsers/DOMParser.hpp>
-#include <dom/DOM_DOMException.hpp>
-#include <dom/DOM_NamedNodeMap.hpp>
+#include <xercesc/util/PlatformUtils.hpp>
+#include <xercesc/dom/DOMNamedNodeMap.hpp>
+
+#include "XParsers.hpp"
+#include "XString.hpp"
 
 #include <assert.h>
 #include <fstream.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <rpc/xdr.h>
 #include <unistd.h>
 
 #include "xml-hddm.hpp"
 #include "particleType.h"
 
-ofstream out; 
+#define X(XString) XString.unicodeForm()
+#define S(XString) XString.localForm()
 
-/* inline functions to pack values into the output stream */
+FILE* ofd; 
 
-inline void pack_int(int* &bp, int val)
+void usage()
 {
-   *(bp++) = val;
+   cerr << "\nUsage:\n"
+        << "    xml-hddm [-o <filename>] -t <template> [input file]\n\n"
+        << "Options:\n"
+        <<  "    -t <template>    read template from <template>\n"
+        <<  "    -o <filename>    write to hddm file <filename>"
+        << endl;
 }
 
-inline void pack_float(int* &bp, float val)
+inline void writeOut(const char* string)
 {
-   *(float*)(bp++) = val;
+   fwrite(string,1,strlen(string),ofd);
 }
 
-inline void pack_double(int* &bp, double val)
-{
-   int* pval = (int*) bp;
-   *(bp++) = pval[0];
-   *(bp++) = pval[1];
-}
+/* Generate the xml document template in normal form */
 
-inline void writeOut(char* string)
-{
-   if (out.is_open())
-   {
-      out.write(string,strlen(string));
-   }
-   else
-   {
-      cout << string;
-   }
-}
-
-/* Generate the xml document model in normal form */
-
-void constructDocument(DOM_Element& el)
+void constructDocument(DOMElement* el)
 {
    static int indent = 0;
    for (int n = 0; n < indent; n++)
@@ -93,33 +80,31 @@ void constructDocument(DOM_Element& el)
       writeOut("  ");
    }
    
-   char* tagStr = el.getTagName().transcode();
-   writeOut("<"), writeOut(tagStr);
-   DOM_NamedNodeMap attrList = el.getAttributes();
-   int attrListLength = attrList.getLength();
+   XString tagS(el->getTagName());
+   writeOut("<"), writeOut(S(tagS));
+   DOMNamedNodeMap* attrList = el->getAttributes();
+   int attrListLength = attrList->getLength();
    for (int a = 0; a < attrListLength; a++)
    {
-      DOM_Node node = attrList.item(a);
-      char* name = node.getNodeName().transcode();
-      char* value = node.getNodeValue().transcode();
-      writeOut(" "), writeOut(name),
-      writeOut("=\""), writeOut(value), writeOut("\"");
-      delete [] name;
-      delete [] value;
+      DOMNode* node = attrList->item(a);
+      XString nameS(node->getNodeName());
+      XString valueS(node->getNodeValue());
+      writeOut(" "), writeOut(S(nameS)),
+      writeOut("=\""), writeOut(S(valueS)), writeOut("\"");
    }
 
-   DOM_NodeList contList = el.getChildNodes();
-   int contListLength = contList.getLength();
+   DOMNodeList* contList = el->getChildNodes();
+   int contListLength = contList->getLength();
    if (contListLength > 0)
    {
       writeOut(">"), writeOut("\n");
       indent++;
       for (int c = 0; c < contListLength; c++)
       {
-         DOM_Node node = contList.item(c);
-         if (node.getNodeType() == ELEMENT_NODE)
+         DOMNode* node = contList->item(c);
+         if (node->getNodeType() == DOMNode::ELEMENT_NODE)
          {
-            DOM_Element contEl = (DOM_Element&) node;
+            DOMElement* contEl = (DOMElement*) node;
             constructDocument(contEl);
          }
       }
@@ -128,173 +113,178 @@ void constructDocument(DOM_Element& el)
       {
          writeOut("  ");
       }
-      writeOut("</"), writeOut(tagStr), writeOut(">\n");
+      writeOut("</"), writeOut(S(tagS)), writeOut(">\n");
    }
    else
    {
       writeOut(" />\n");
    }
-   delete [] tagStr;
 }
 
-/* Generate the output binary stream according the HDDM model */
+/* Generate the output binary stream according the HDDM template */
 
-void outputStream(DOM_Element thisEl, DOM_Element modelEl, int* &bp)
+void outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
 {
-   char* modelStr = modelEl.getTagName().transcode();
-   char* thisStr = thisEl.getTagName().transcode();
+   XString modelS(modelEl->getTagName());
+   XString thisS(thisEl->getTagName());
 
-   DOM_NamedNodeMap modelAttrList = modelEl.getAttributes();
-   int modelAttrListLength = modelAttrList.getLength();
-   DOM_NamedNodeMap thisAttrList = thisEl.getAttributes();
-   int thisAttrListLength = thisAttrList.getLength();
-   DOMString rep = modelEl.getAttribute("repeat");
-   int expectAttrCount = modelAttrListLength - ((rep == 0)? 0 : 1);
+   DOMNamedNodeMap* modelAttrList = modelEl->getAttributes();
+   int modelAttrListLength = modelAttrList->getLength();
+   DOMNamedNodeMap* thisAttrList = thisEl->getAttributes();
+   int thisAttrListLength = thisAttrList->getLength();
+   XString minAttS("minOccurs");
+   XString maxAttS("maxOccurs");
+   XString minS(modelEl->getAttribute(X(minAttS)));
+   XString maxS(modelEl->getAttribute(X(maxAttS)));
+   int expectAttrCount = modelAttrList->getLength()
+                         - (minS.equals("")? 0 : 1)
+                         - (maxS.equals("")? 0 : 1);
    if (thisAttrListLength != expectAttrCount)
    {
       cerr << "xml-hddm: Inconsistency in input xml document" << endl
-           << "tag " << thisStr << " in input document with "
+           << "tag " << S(thisS) << " in input document with "
            << thisAttrListLength << " attributes " << endl
-           << "matched to tag" << modelStr << " in hddm model "
+           << "matched to tag " << S(modelS) << " in hddm template "
            << "with " << expectAttrCount << " attributes." << endl;
       exit(1);
    }
    for (int a = 0; a < modelAttrListLength; a++)
    {
-      DOMString attrS = modelAttrList.item(a).getNodeName();
-      DOMString typeS = modelAttrList.item(a).getNodeValue();
-      DOMString valueS = thisEl.getAttribute(attrS);
-      if (attrS.equals("repeat"))
+      XString attrS(modelAttrList->item(a)->getNodeName());
+      XString typeS(modelAttrList->item(a)->getNodeValue());
+      XString valueS(thisEl->getAttribute(X(attrS)));
+      if (attrS.equals("maxOccurs") || attrS.equals("minOccurs"))
       {
          continue;
       }
-      else if (valueS == 0)
+      else if (valueS.equals(""))
       {
-         char* attrStr = attrS.transcode();
          cerr << "xml-hddm: Inconsistency in input xml document" << endl
-              << "tag " << thisStr << " in input document is missing "
-              << "attribute " << attrStr << endl;
+              << "tag " << S(thisS) << " in input document is missing "
+              << "attribute " << S(attrS) << endl;
          exit(1);
       }
-      char* value = valueS.transcode();
       if (typeS.equals("int"))
       {
-         int val = atoi(value);
-         pack_int(bp,val);
+         int val;
+         sscanf(S(valueS),"%d",&val);
+         xdr_int(xdrs,&val);
+      }
+      if (typeS.equals("long"))
+      {
+         long long val;
+         sscanf(S(valueS),"%lld",&val);
+         xdr_longlong_t(xdrs,&val);
       }
       else if (typeS.equals("float"))
       {
-         float val = atof(value);
-         pack_float(bp,val);
+         float val;
+         sscanf(S(valueS),"%g",&val);
+         xdr_float(xdrs,&val);
       }
       else if (typeS.equals("double"))
       {
-         double val = atof(value);
-         pack_double(bp,val);
+         double val;
+         sscanf(S(valueS),"%Lg",&val);
+         xdr_double(xdrs,&val);
       }
       else if (typeS.equals("bool"))
       {
-         int val = atoi(value);
-         pack_int(bp,val);
+         int val;
+         sscanf(S(valueS),"%d",&val);
+         xdr_int(xdrs,&val);
       }
       else if (typeS.equals("Particle_t"))
       {
          int val;
          for (val = 1; val < 99; val++)
          {
-            if (strcmp(value,ParticleType((Particle_t)val)) == 0)
+            if (valueS.equals(ParticleType((Particle_t)val)))
             {
                break;
             }
          }
-         pack_int(bp,val);
+         xdr_int(xdrs,&val);
       }
-      delete [] value;
    }
 
-   DOM_NodeList thisList = thisEl.getChildNodes();
-   int thisListLength = thisList.getLength();
-   DOM_NodeList modelList = modelEl.getChildNodes();
-   int modelListLength = modelList.getLength();
+   DOMNodeList* thisList = thisEl->getChildNodes();
+   int thisListLength = thisList->getLength();
+   DOMNodeList* modelList = modelEl->getChildNodes();
+   int modelListLength = modelList->getLength();
    for (int m = 0; m < modelListLength; m++)
    {
-      DOM_Node mode = modelList.item(m);
-      short type = mode.getNodeType();
-      if (type == ELEMENT_NODE)
+      DOMNode* mode = modelList->item(m);
+      short type = mode->getNodeType();
+      if (type == DOMNode::ELEMENT_NODE)
       {
-         int* bpStart = bp++;
-         DOM_Element model = (DOM_Element&) mode;
-         DOMString modelS = model.getTagName();
-         DOMString re = model.getAttribute("repeat");
-         int repCounter;
-         int* repCount;
-         if (re != 0)
+	 int start=0;
+         int base = xdr_getpos(xdrs);
+	 xdr_int(xdrs,&start);
+         start = xdr_getpos(xdrs);
+         DOMElement* model = (DOMElement*) mode;
+         XString modelS(model->getTagName());
+	 XString repAttS("maxOccurs");
+         XString repS(model->getAttribute(X(repAttS)));
+	 int rep = (repS.equals("unbounded"))? 9999 : atoi(S(repS));
+         int repCount=0;
+         if (rep > 1)
          {
-            repCount = bp++;
+            xdr_int(xdrs,&repCount);
          }
-         else
-         {
-             repCount = &repCounter;
-         }
-         *repCount = 0;
+         repCount = 0;
          for (int i = 0; i < thisListLength; i++)
          {
-            DOM_Node instance = thisList.item(i);
-            short type = instance.getNodeType();
-            if (type == ELEMENT_NODE)
+            DOMNode* instance = thisList->item(i);
+            short type = instance->getNodeType();
+            if (type == DOMNode::ELEMENT_NODE)
             {
-               DOM_Element instancel = (DOM_Element&) instance;
-               DOMString nameS = instancel.getTagName();
+               DOMElement* instanceEl = (DOMElement*) instance;
+               XString nameS(instanceEl->getTagName());
                if (nameS.equals(modelS))
                {
-                  outputStream(instancel,model,bp);
-                  if ((*repCount)++ && (re == 0))
+                  outputStream(instanceEl,model,xdrs);
+                  if (repCount++ && (rep == 0))
                   {
-                     char* name = nameS.transcode();
                      cerr << "xml-hddm: Inconsistency in input xml document"
                           << endl
-                          << "tag " << thisStr << " in input document contains"
-                          << " multiple instances of tag " << name << endl
-                          << "but it does not have a repeat=\"*\" attribute "
-                          << "in the data model." << endl;
+                          << "tag " << S(thisS) << " in input document contains"
+                          << " multiple instances of tag " << S(nameS) << endl
+                          << "but it does not have a maxOccurs=\"*\" attribute "
+                          << "in the template." << endl;
                      exit(1);
                   }
                }
             }
          }
-         int size = bp - bpStart;
-         *bpStart = size -1;
+	 int end = xdr_getpos(xdrs);
+         int size = end - start;
+	 xdr_setpos(xdrs,base);
+	 xdr_int(xdrs,&size);
+	 if (rep > 1)
+	 {
+	    xdr_int(xdrs,&repCount);
+	 }
+	 xdr_setpos(xdrs,end);
       }
    }
-   delete [] modelStr;
-   delete [] thisStr;
 }
-
-void usage()
-{
-   cerr << "\nUsage:\n"
-        << "    xml-hddm [-o <filename>] -m <model> [input file]\n\n"
-        << "Options:\n"
-        <<  "    -m <model file>  read hddm model from <model>.xml\n"
-        <<  "    -o <filename>    write to <filename>.hddm"
-        << endl;
-}
-
 
 int main(int argC, char* argV[])
 {
    ifstream* ifs;
-   char* modelFilename = 0;
+   char* templFilename = 0;
    char* outFilename = 0;
 
    try
    {
       XMLPlatformUtils::Initialize();
    }
-   catch (const XMLException& toCatch)
+   catch (const XMLException* toCatch)
    {
+      XString msg(toCatch->getMessage());
       cerr << "hddm-xml: Error during initialization! :\n"
-           << StrX(toCatch.getMessage()) << endl;
+           << S(msg) << endl;
       return 1;
    }
 
@@ -305,9 +295,9 @@ int main(int argC, char* argV[])
       {
          break;
       }
-      else if (strcmp(argV[argInd],"-m") == 0)
+      else if (strcmp(argV[argInd],"-t") == 0)
       {
-         modelFilename = argV[++argInd];
+         templFilename = argV[++argInd];
       }
       else if (strcmp(argV[argInd],"-o") == 0)
       {
@@ -320,7 +310,7 @@ int main(int argC, char* argV[])
       }
    }
 
-   if (modelFilename == 0)
+   if (templFilename == 0)
    {
       usage();
       exit(1);
@@ -330,63 +320,35 @@ int main(int argC, char* argV[])
    {
       char fname[500];
       sprintf(fname,"%s.xml",outFilename);
-      out.open(fname);
+      ofd = fopen(fname,"w");
    }
-
-   DOMParser modelParser;
-   modelParser.setValidationScheme(DOMParser::Val_Never);
-   modelParser.setCreateEntityReferenceNodes(false);
-   modelParser.setDoNamespaces(false);
-
-   MyOwnErrorHandler errorHandler;
-   modelParser.setErrorHandler(&errorHandler);
-
-   try
+   else
    {
-      char fname[500];
-      sprintf(fname,"%s.xml",modelFilename);
-      modelParser.parse(fname);
-      ifs = new ifstream(fname);
+      ofd = stdout;
    }
 
-   catch (const XMLException& toCatch)
+#if defined OLD_STYLE_XERCES_PARSER
+   DOMDocument* document = parseInputDocument(templFilename,true);
+#else
+   DOMDocument* document = buildDOMDocument(templFilename,true);
+#endif
+   if (document == 0)
    {
-      cerr << "\nxml-hddm: Error during parsing: '" << modelFilename
-           << ".xml'\n"
-           << "Exception message is: "
-           << StrX(toCatch.getMessage()) << "\n" << endl;
-      return -1;
-   }
-   catch (const DOM_DOMException& toCatch)
-   {
-      cerr << "\nxml-hddm: Error during parsing: '" << modelFilename
-           << ".xml'\n"
-           << "Exception message is: "
-           << toCatch.msg.transcode() << "\n" << endl;
-      XMLPlatformUtils::Terminate();
-      return 4;
-   }
-   catch (...)
-   {
-      cerr << "\nxml-hddm: Unexpected exception during parsing: '"
-           << modelFilename << ".xml'\n";
-      XMLPlatformUtils::Terminate();
-      return 4;
+      cerr << "xml-hddm : Error parsing HDDM document, "
+           << "cannot continue" << endl;
+      return 1;
    }
 
-   DOM_Document modelDoc = modelParser.getDocument();
-   DOM_Element rootEl = modelDoc.getDocumentElement();
-   char* rootStr = rootEl.getTagName().transcode();
-   if (strcmp(rootStr,"HDDM") != 0)
+   DOMElement* rootEl = document->getDocumentElement();
+   XString rootS(rootEl->getTagName());
+   if (!rootS.equals("HDDM"))
    {
       cerr << "xml-hddm error: root element of input document is "
-           << "\"" << rootStr << "\", expected \"HDDM\""
+           << "\"" << S(rootS) << "\", expected \"HDDM\""
            << endl;
       exit(1);
    }
-   delete [] rootStr;
 
-   writeOut("\n");
    constructDocument(rootEl);
 
    char* hddmFile;
@@ -406,6 +368,7 @@ int main(int argC, char* argV[])
       usage();
       return 1;
    }
+
    if (! *ifs)
    {
       cerr << "xml-hddm: Error opening input stream " << hddmFile << endl;
@@ -438,10 +401,8 @@ int main(int argC, char* argV[])
    }
    strncpy(docHeader,line,500);
 
-   int* buffer = new int[1000000];
-   char* tmpFile = tmpnam(0);
-   ofstream ofs;
-
+   XDR* xdrs = new XDR;
+   xdrstdio_create(xdrs,ofd,XDR_ENCODE);
    while (ifs->getline(line,500000))
    {
       if (strlen(line) > 499990)
@@ -451,13 +412,9 @@ int main(int argC, char* argV[])
       }
 
       char* text = line;
-      DOMParser parser;
-      parser.setValidationScheme(DOMParser::Val_Never);
-      parser.setDoNamespaces(false);
-      MyOwnErrorHandler errorHandler;
-      parser.setErrorHandler(&errorHandler);
 
-      ofs.open(tmpFile);
+      char tmpFile[] = "tmpXXXXXX";
+      ofstream ofs(mkstemp(tmpFile));
       if (! ofs.is_open())
       {
          cerr << "xml-hddm: Error opening temp file " << tmpFile << endl;
@@ -514,99 +471,35 @@ int main(int argC, char* argV[])
          ofs << "</HDDM>" << endl;
          ofs.close();
 
-         try
+#if defined OLD_STYLE_XERCES_PARSER
+         document = parseInputDocument(tmpFile,false);
+#else
+         document = buildDOMDocument(tmpFile,false);
+#endif
+         if (document == 0)
          {
-            parser.parse(tmpFile);
-            unlink(tmpFile);
+            cerr << "xml-hddm : Error parsing HDDM document, "
+                 << "cannot continue" << endl;
+            return 1;
          }
-         catch (const XMLException& toCatch)
-         {
-            cerr << "\nxml-hddm: Error during parsing: '" << tmpFile << "'\n"
-                 << "Exception message is:  "
-                 << StrX(toCatch.getMessage()) << "\n" << endl;
-            return -1;
-         }
-         catch (const DOM_DOMException& toCatch)
-         {
-            cerr << "\nxml-hddm: Error during parsing: '" << tmpFile << "'\n"
-                 << "Exception message is:  "
-                 << toCatch.msg.transcode() << "\n" << endl;
-            XMLPlatformUtils::Terminate();
-            return 4;
-         }
-         catch (...)
-         {
-            cerr << "\nxml-hddm: Unexpected exception during parsing: '"
-                 << tmpFile << "'\n";
-            XMLPlatformUtils::Terminate();
-            return 4;
-         }
+         unlink(tmpFile);
 
-         if (errorHandler.getSawErrors())
-         {
-            cerr << "\nErrors occured, no output available\n" << endl;
-         }
+         DOMElement* thisEl = document->getDocumentElement();
 
-         DOM_Document doc = parser.getDocument();
-         DOM_Element thisEl = doc.getDocumentElement();
-
-         int* bp = buffer;
-         outputStream(thisEl,rootEl,++bp);
-         int size = bp - buffer;
-         *buffer = size -1;
-         if (out.is_open())
-         {
-            out.write(buffer,size * sizeof(int));
-         }
-         else
-         {
-            cout.write(buffer,size * sizeof(int));
-         }
+	 int base = xdr_getpos(xdrs);
+	 int first=0;
+	 xdr_int(xdrs,&first);
+	 first = xdr_getpos(xdrs);
+         outputStream(thisEl,rootEl,xdrs);
+	 int last = xdr_getpos(xdrs);
+	 int size = last - first;
+	 xdr_setpos(xdrs,base);
+	 xdr_int(xdrs,&size);
+	 xdr_setpos(xdrs,last);
       }
    }
+   xdr_destroy(xdrs);
 
    XMLPlatformUtils::Terminate();
    return 0;
-}
-
-
-MyOwnErrorHandler::MyOwnErrorHandler() : 
-   fSawErrors(false)
-{
-}
-
-MyOwnErrorHandler::~MyOwnErrorHandler()
-{
-}
-
-/* Overrides of the SAX ErrorHandler interface */
-
-void MyOwnErrorHandler::error(const SAXParseException& e)
-{
-   fSawErrors = true;
-   cerr << "\nhddm-xml: Error at file " << StrX(e.getSystemId())
-        << ", line " << e.getLineNumber()
-        << ", char " << e.getColumnNumber()
-        << "\n  Message: " << StrX(e.getMessage()) << endl;
-}
-
-void MyOwnErrorHandler::fatalError(const SAXParseException& e)
-{
-   fSawErrors = true;
-   cerr << "\nhddm-xml: Fatal Error at file " << StrX(e.getSystemId())
-        << ", line " << e.getLineNumber()
-        << ", char " << e.getColumnNumber()
-        << "\n  Message: " << StrX(e.getMessage()) << endl;
-}
-
-void MyOwnErrorHandler::warning(const SAXParseException& e)
-{
-   cerr << "\nhddm-xml: Warning at file " << StrX(e.getSystemId())
-        << ", line " << e.getLineNumber()
-        << ", char " << e.getColumnNumber()
-        << "\n  Message: " << StrX(e.getMessage()) << endl;
-}
-
-void MyOwnErrorHandler::resetErrors()
-{
 }

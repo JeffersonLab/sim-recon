@@ -1,78 +1,79 @@
-<hitView version="1.1">
-   <centralDC>
-      <cathodeCyl radius="float" repeat="*">
-         <band phim="float" z="float" repeat="*" />
+<?xml version="1.0" encoding="UTF-8"?>
+<hitView version="1.0">
+   <centralDC minOccurs="0">
+      <cathodeCyl radius="float" minOccurs="0" maxOccurs="unbounded">
+         <band phim="float" z="float" maxOccurs="unbounded" />
       </cathodeCyl>
-      <ring radius="float" repeat="*">
-         <straw phim="float" repeat="*">
-            <hit t="float" dE="float" repeat="*" />
+      <ring radius="float" minOccurs="0" maxOccurs="unbounded">
+         <straw phim="float" maxOccurs="unbounded">
+            <hit t="float" dE="float" minOccurs="0" maxOccurs="unbounded" />
             <cdcPoint z="float" r="float" phi="float" dradius="float"
-                                  track="int" dEdx="float" repeat="*" />
+                track="int" dEdx="float" minOccurs="0" maxOccurs="unbounded" />
          </straw>
       </ring>
    </centralDC>
 
-   <forwardDC>
-      <chamber module="int" layer="int" repeat="*">
-         <cathodePlane z="float" tau="float" repeat="*">
-            <strip u="float" repeat="*" />
+   <forwardDC minOccurs="0">
+      <chamber module="int" layer="int" maxOccurs="unbounded">
+         <cathodePlane z="float" tau="float" minOccurs="0" maxOccurs="unbounded">
+            <strip u="float" maxOccurs="unbounded" />
          </cathodePlane>
-         <anodePlane z="float" tau="float" repeat="*">
-            <wire u="float" repeat="*">
-               <hit t="float" dE="float" repeat="*" />
+         <anodePlane z="float" tau="float" minOccurs="0" maxOccurs="unbounded">
+            <wire u="float" maxOccurs="unbounded">
+               <hit t="float" dE="float" minOccurs="0" maxOccurs="unbounded" />
                <fdcPoint z="float" x="float" y="float" dradius="float"
-                                   track="int" dEdx="float" repeat="*" />
+                  track="int" dEdx="float" minOccurs="0" maxOccurs="unbounded" />
             </wire>
          </anodePlane>
       </chamber>
    </forwardDC>
 
-   <startCntr>
-      <paddle phim="float" repeat="*">
-         <hit t="float" dE="float" repeat="*" />
+   <startCntr minOccurs="0">
+      <paddle phim="float" minOccurs="0" maxOccurs="unbounded">
+         <hit t="float" dE="float" minOccurs="0" maxOccurs="unbounded" />
       </paddle>
       <startPoint t="float" z="float" r="float" phi="float"
-                                      track="int" dEdx="float" repeat="*" />
+             track="int" dEdx="float" minOccurs="0" maxOccurs="unbounded" />
    </startCntr>
 
-   <barrelEMcal>
-      <module phim="float" repeat="*">
-         <upstream>
-            <shower t="float" E="float" repeat="*" />
+   <barrelEMcal minOccurs="0">
+      <module phim="float" minOccurs="0" maxOccurs="unbounded">
+         <upstream minOccurs="0">
+            <shower t="float" E="float" maxOccurs="unbounded" />
          </upstream>
-         <downstream>
-            <shower t="float" E="float" repeat="*" />
+         <downstream minOccurs="0">
+            <shower t="float" E="float" maxOccurs="unbounded" />
          </downstream> 
       </module>
       <barrelShower t="float" z="float" phi="float" E="float"
-                                        track="int" repeat="*" />
+                    track="int" minOccurs="0" maxOccurs="unbounded" />
    </barrelEMcal>
       
-   <Cerenkov>
-      <section phim="float" repeat="*">
-         <flash t="float" pe="float" repeat="*" />
+   <Cerenkov minOccurs="0">
+      <section phim="float" maxOccurs="unbounded">
+         <flash t="float" pe="float" maxOccurs="unbounded" />
       </section>
    </Cerenkov>
 
-   <forwardTOF>
-      <slab y="float" repeat="*">
-         <left>
-            <hit t="float" dE="float" repeat="*" />
+   <forwardTOF minOccurs="0">
+      <slab y="float" minOccurs="0" maxOccurs="unbounded">
+         <left minOccurs="0">
+            <hit t="float" dE="float" maxOccurs="unbounded" />
          </left>
-         <right>
-            <hit t="float" dE="float" repeat="*" />
+         <right minOccurs="0">
+            <hit t="float" dE="float" maxOccurs="unbounded" />
          </right>
       </slab>
-      <tofPoint t="float" x="float" y="float" track="int" repeat="*" />
+      <tofPoint t="float" x="float" y="float" track="int" minOccurs="0" maxOccurs="unbounded" />
    </forwardTOF>
 
-   <forwardEMcal>
-      <row y="float" repeat="*">
-         <column x="float" repeat="*">
-            <shower t="float" E="float" repeat="*" />
+   <forwardEMcal minOccurs="0">
+      <row y="float" minOccurs="0" maxOccurs="unbounded">
+         <column x="float" minOccurs="0" maxOccurs="unbounded">
+            <shower t="float" E="float" maxOccurs="unbounded" />
          </column>
       </row>
       <forwardShower t="float" x="float" y="float" E="float" 
-                                         track="int" repeat="*" />
+                     track="int" minOccurs="0" maxOccurs="unbounded" />
    </forwardEMcal>
 </hitView>
