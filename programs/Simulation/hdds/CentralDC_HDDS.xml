@@ -365,7 +365,7 @@
   <mcfast model="Drift" template="db/drift.db" parameters="centralDC_pars">
     <int	name="num"	value="2"	/>
     <string     name="name"	value="CDC"	/>
-    <int	name="num_anode"    value="3"	comment="anode layers" />
+    <int	name="num_anode"    value="23"	comment="anode layers" />
     <int	name="num_cathode"  value="0"		 />
     <reference  name="material"	    value="Scintillator" />
     <real_array name="thick_boun"   comment="inner outer upstream downstream
@@ -702,6 +702,8 @@
       <int	name="lyr"	value="23"	comment="layer number"	/>
     </mcfast>
 
+    <!-- removed by Curtis Meyer, June 2000
+
     <mcfast model="LayerDRFCatho" template="db/drift_cathode.db"
 				  parameters="centralDCstrips_pars">
       <int	name="lyr"	value="1"	comment="layer number"	/>
@@ -710,6 +712,8 @@
 				  parameters="centralDCstrips_pars">
       <int	name="lyr"	value="2"	comment="layer number"	/>
     </mcfast>
+
+    -->
 
     <mcfast model="Absorber"	template="db/absorber.db"
 				parameters="centralDCsupport_pars">
