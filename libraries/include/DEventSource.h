@@ -17,6 +17,8 @@
 
 class DEventSource
 {
+		friend class DEventLoop;
+
 	public:
 		
 		enum EVENT_SOURCE_TYPE{
@@ -32,7 +34,7 @@ class DEventSource
 		DEventSource(int narg, char *argv[]);
 		~DEventSource();
 
-		virtual derror_t Open(void); ///< Open the first (if more than one) event source 
+		virtual derror_t Open(char *source); ///< Open the first (if more than one) event source 
 		virtual derror_t Close(void); ///< Close the current event source.
 
 		/// Get the next event and update all of the counters and rate
@@ -49,7 +51,8 @@ class DEventSource
 
 		char **sources;
 		int Nsources;
-		char *current_source;
+		int source_index;
+		int source_is_open;
 		EVENT_SOURCE_TYPE source_type;
 		unsigned long long Nevents_read;
 		unsigned long long Nevents_read_total;
