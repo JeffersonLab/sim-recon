@@ -19,6 +19,7 @@ class DEvent{
 		DEvent();
 		~DEvent();
 		DContainer* Get(char* data_name);
+		DFactory* GetFactory(char* factory_name);
 		derror_t AddFactory(DFactory* factory);
 		derror_t PrintFactories(void){PrintFactories(0);};
 		derror_t PrintFactories(int sparsify);
