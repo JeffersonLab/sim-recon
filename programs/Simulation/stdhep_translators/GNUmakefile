@@ -73,13 +73,13 @@ ifeq "$(UNAME)" "HP-UX"
     KPPFLAGS= -C -P -DUNIX
 endif
 
-INCS = -I$(STDHEP_DIR)/src/inc -I$(HALLD_HOME)/source/include
+INCS = -I$(STDHEP_DIR)/src/inc -I$(BUILDS)/include
 
 #------------------------------------------
 
-all:  ascii2stdhep  stdhep2ascii 
+all:  ascii2stdhep  stdhep2ascii  stdhep2hddm
 
-stdhep2hddm: stdhep2hddm.o hddm_s.o $(STDHEP_DIR)/lib/libstdhepC.a
+stdhep2hddm: hddm_s.o stdhep2hddm.o $(STDHEP_DIR)/lib/libstdhepC.a
 	$(CC) $(CFLAGS) $(INCS)  -o stdhep2hddm stdhep2hddm.o hddm_s.o  \
 		$(STDHEP_DIR)/lib/libstdhepC.a \
 		$(STDHEP_DIR)/lib/libFmcfio.a $(LOCAL) -lm
@@ -107,6 +107,11 @@ stdhep2ascii: stdhep2ascii.o  $(STDHEP_DIR)/lib/libstdhepC.a
 		$(STDHEP_DIR)/lib/libstdhepC.a \
 		$(STDHEP_DIR)/lib/libFmcfio.a $(LOCAL) -lm
 
+hddm_s.c: hddm_s.h
+
+hddm_s.h:
+	$(BUILDS)/hddm/hddm-c $(BUILDS)/hddm/mc.xml
+
 install: all
 	mv ascii2stdhep   $(HALLD_HOME)/bin/$(UNAME)/.  
 	mv stdhep2ascii    $(HALLD_HOME)/bin/$(UNAME)/.  
@@ -119,6 +124,7 @@ realclean:
 	rm -f stdtstio stdtstiom stdtstiox stdtstxin stdtstxout
 	rm -f testpdg stdtst_dpm
 	rm -f *.bak *.o
+	rm -f hddm_s.*
 
 #------------------------------------------
 
