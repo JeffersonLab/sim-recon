@@ -80,6 +80,15 @@ class DContainer{
 			return (void*)ptr;
 		}
 		
+		derror_t Delete(int idx){
+			if(idx<0 || idx>=nrows)return NOERROR;
+			if(idx>=0 && idx<nrows-1){
+				char *ptr = (char*)*container_ptr;
+				memcpy(ptr+rowsize*idx, ptr+rowsize*(idx+1), rowsize);
+			}
+			nrows--;
+		}
+		
 		inline void ResetNrows(void){nrows=0;}
 		inline void* first(void){return (void*)*container_ptr;}
 		inline void* last(void){return (void*)(((char*)*container_ptr)+rowsize*(nrows-1));}
