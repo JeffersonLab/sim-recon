@@ -70,6 +70,7 @@
     <posXYZ volume="barrelPackage" />
     <posXYZ volume="forwardPackage" />
     <posXYZ volume="Target" X_Y_Z="0.0 0.0 50.0" />
+    <posXYZ volume="VTXP" X_Y_Z="0.0 0.0 90.0" />
   </composition>
 
   <composition name="experimentalHall" envelope="HALL">

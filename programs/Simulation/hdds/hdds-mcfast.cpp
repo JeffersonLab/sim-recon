@@ -44,6 +44,7 @@
 #include <stdio.h>
 
 #include <fstream>
+#include <sstream>
 
 #define X(XString) XString.unicodeForm()
 #define S(XString) XString.localForm()
@@ -63,7 +64,17 @@ static char* basename(const char *f)
 }
 #endif
 
+struct _modelTableEntry
+{
+   char* model;
+   int refcount;
+   int maxcount;
+   ostringstream db;
+} modelTable[999];
+int modelTableLen=0;
+
 makeTargetTable targetTable(999);
+
 
 void usage()
 {
@@ -77,15 +88,6 @@ void usage()
 void processTemplateFile(const DOMElement* const targetEl,
                          const char* const fname)
 {
-   struct _modelTableEntry
-   {
-      char* model;
-      int refcount;
-      int maxcount;
-   };
-   static struct _modelTableEntry modelTable[999];
-   static int modelTableLen=0;
-
    XString* processingTarget=0;
    int processedTemplates=0;
 
@@ -108,7 +110,7 @@ void processTemplateFile(const DOMElement* const targetEl,
    }
    if (modelTable[model].refcount == 0)
    {
-      cout << "include " << fname << endl;
+      modelTable[model].db << "include " << fname << endl;
    }
 
    ifstream dbFile(fname);
@@ -139,7 +141,7 @@ void processTemplateFile(const DOMElement* const targetEl,
                  << " in input file " << fname << endl;
             exit(2);
          }
-         cout << endl;
+         modelTable[model].db << endl;
       }
       else if (strcasecmp(token,"include") == 0)
       {
@@ -169,7 +171,7 @@ void processTemplateFile(const DOMElement* const targetEl,
                exit(2);
             }
             modelTable[model].maxcount = dim;
-            cout << "make " << S(modelS);
+            modelTable[model].db << "make " << S(modelS);
             ++processedTemplates;
          }
       }
@@ -237,16 +239,16 @@ void processTemplateFile(const DOMElement* const targetEl,
             exit(3);
          }
          char* intstr = strtok((char*)S(valueS)," ");
-         cout << " " << intstr;
+         modelTable[model].db << " " << intstr;
          for (int i=1; i < dim; i++)
          {
             if (intstr = strtok(0," "))
             {
-               cout << " " << intstr;
+               modelTable[model].db << " " << intstr;
             }
             else
             {
-               cout << " 0";
+               modelTable[model].db << " 0";
             }
          }
       }
@@ -285,16 +287,16 @@ void processTemplateFile(const DOMElement* const targetEl,
             exit(3);
          }
          const char* fltstr = strtok((char*)S(valueS)," ");
-         cout << " " << fltstr;
+         modelTable[model].db << " " << fltstr;
          for (int i=1; i < dim; i++)
          {
             if (fltstr = strtok(0," "))
             {
-               cout << " " << fltstr;
+               modelTable[model].db << " " << fltstr;
             }
             else
             {
-               cout << " 0";
+               modelTable[model].db << " 0";
             }
          }
       }
@@ -318,7 +320,7 @@ void processTemplateFile(const DOMElement* const targetEl,
             }
 	    const XString valAttS("value");
             valueS = el->getAttribute(X(valAttS));
-            cout << " \"" << S(valueS) << "\"";
+            modelTable[model].db << " \"" << S(valueS) << "\"";
          }
          else
          {
@@ -345,13 +347,13 @@ void processTemplateFile(const DOMElement* const targetEl,
                {
 	          const XString valAttS("value");
                   const XString valueS(vectEl->getAttribute(X(valAttS)));
-                  cout << " \"" << S(valueS) << "\"";
+                  modelTable[model].db << " \"" << S(valueS) << "\"";
                   vcount++;
                }
             }
             for ( ; vcount < dim; vcount++)
             {
-               cout << " \"\"";
+               modelTable[model].db << " \"\"";
             }
             if (vcount != dim)
             {
@@ -389,7 +391,7 @@ void processTemplateFile(const DOMElement* const targetEl,
             }
 	    const XString valAttS("value");
             const XString valueS(el->getAttribute(X(valAttS)));
-            cout << " \"" << S(valueS) << "\"";
+            modelTable[model].db << " \"" << S(valueS) << "\"";
          }
          else
          {
@@ -416,13 +418,13 @@ void processTemplateFile(const DOMElement* const targetEl,
                {
 	          const XString valAttS("value");
                   const XString valueS(vectEl->getAttribute(X(valAttS)));
-                  cout << " \"" << S(valueS) << "\"";
+                  modelTable[model].db << " \"" << S(valueS) << "\"";
                   vcount++;
                }
             }
             for ( ; vcount < dim; vcount++)
             {
-               cout << " \"-\"";
+               modelTable[model].db << " \"-\"";
             }
             if (vcount != dim)
             {
@@ -435,6 +437,10 @@ void processTemplateFile(const DOMElement* const targetEl,
                exit(3);
             }
          }
+      }
+      else if (strstr(token,"!") == token)
+      {
+         continue;
       }
       else
       {
@@ -477,6 +483,21 @@ void makedb(DOMElement* el)
          makedb(contEl);
       }
    }
+}
+
+void printdb()
+{
+   char line[999];
+   for (int m=0; m < modelTableLen; m++)
+   {
+      istringstream idb(modelTable[m].db.str());
+      while (! idb.eof())
+      {
+         idb.getline(line,999);
+         cout << line << endl;
+      }
+   }
+   cout << "end" << endl;
 }
 
 int main(int argC, char* argV[])
@@ -543,12 +564,42 @@ int main(int argC, char* argV[])
       return 0;
    }
 
-   cout << "database mcfast 0000" << endl;
+   int model=modelTableLen++;
+   char hdrStr[] = "database";             // header line must come first
+   modelTable[model].model = hdrStr;
+   modelTable[model].refcount = 1;
+   modelTable[model].maxcount = 1;
+   modelTable[model].db << "database mcfast 0000" << endl;
+
+   model=modelTableLen++;
+   char detStr[] = "detector";             // detector is first declaration
+   modelTable[model].model = detStr;
+   modelTable[model].refcount = 0;
+   modelTable[model].maxcount = 0;
+
+   model=modelTableLen++;
+   char matStr[] = "Material";             // force materials next
+   modelTable[model].model = matStr;
+   modelTable[model].refcount = 0;
+   modelTable[model].maxcount = 0;
+
+   model=modelTableLen++;
+   char mixStr[] = "Mixture";              // then mixtures
+   modelTable[model].model = mixStr;
+   modelTable[model].refcount = 0;
+   modelTable[model].maxcount = 0;
+
    DOMElement* rootEl = doc->getDocumentElement();
    makedb(rootEl);
-   cout << "include db/hitsontrack.db" << endl
-        << "make HitsOnTrack 4 0 0" << endl
-        << "end" << endl;
+
+   model=modelTableLen++;
+   char hitsStr[] = "hitsontrack";         // last comes histontrack
+   modelTable[model].model = hitsStr;
+   modelTable[model].refcount = 1;
+   modelTable[model].maxcount = 1;
+   modelTable[model].db << "include db/hitsontrack.db" << endl
+                        << "make HitsOnTrack 4 0 0" << endl;
+   printdb();
 
    XMLPlatformUtils::Terminate();
    return 0;

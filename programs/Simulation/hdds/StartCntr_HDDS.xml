@@ -16,7 +16,7 @@
          version     = "1.0"
          date        = "2001-04-15"
          author      = "R.T. Jones"
-         top_volume  = "VRTX"
+         top_volume  = "VTXC"
          specification = "v1.0">
 
 
@@ -24,30 +24,35 @@
      of the sensitive region.                                             -->
 
   <composition name="StartCntr">
-    <posXYZ volume="VRTX" X_Y_Z="0.0  0.0  45.0">
+    <posXYZ volume="VTXC" X_Y_Z="0.0  0.0  30.0">
+    </posXYZ>
+    <posXYZ volume="VTXP" X_Y_Z="0.0  0.0  55.0">
     </posXYZ>
   </composition>
 
-  <tubs name="VRTX" Rio_Z="4.95  5.65  90.0" material="Scintillator"
+  <tubs name="VTXC" Rio_Z="5.00  5.60 35.0" material="Scintillator"
 	parameters="startCntr_pars"	     sensitive="true"
-					comment="start counter mother" />
+					comment="vertex counter cylinder" />
+  <tubs name="VTXP" Rio_Z="0.80  6.50  0.2" material="Scintillator"
+	parameters="startCntr_pars"	     sensitive="true"
+					comment="vertex counter endcap" />
 
   <parameters name="startCntr_pars" type="mcfast">
-    <real       name="rmin"	value="4.95"	comment="inner radius"
+    <real       name="rmin"	value="5.00"	comment="inner radius"
 				unit="cm"	/>
-    <real       name="rmax"	value="5.65"	comment="outer radius"
+    <real       name="rmax"	value="5.60"	comment="outer radius"
 				unit="cm"	/>
-    <real       name="z0"	value="80.0"	comment="z of midplane"
+    <real       name="z0"	value="30.0"	comment="z of midplane"
 				unit="cm"	/>
-    <real       name="zlen"	value="90.0"	comment="length of cntr"
+    <real       name="zlen"	value="35.0"	comment="length of cntr"
 				unit="cm"	/>
   </parameters>
 
   <parameters name="startCntrLayer_pars" type="mcfast">
     <int	name="det"	value="1"	comment="num of mother"   />
-    <real	name="zlen"	value="90.0"	comment="length of layer"
+    <real	name="zlen"	value="35.0"	comment="length of layer"
 				unit="cm"	/>
-    <real	name="cell_height" value="1.0"	comment="thickness"
+    <real	name="cell_height" value="0.1"	comment="thickness"
 				unit="cm"	/>
     <int	name="nwires"	value="25"	comment="segmentation"	  />
     <int	name="ID_readout" value="-1"	/>
@@ -103,7 +108,7 @@
     <mcfast model="LayerDRFAno" template="db/drift_layer.db"
 			        parameters="startCntrLayer_pars">
       <int	name="lyr"	value="1"	comment="layer number" 	 />
-      <real	name="radius"	value="5.0"	comment="central radius"
+      <real	name="radius"	value="5.1"	comment="central radius"
 				unit="cm"	/>
       <real	name="stereo_tau" value="-0.10"	comment="twist angle tau"
 				unit="cm"	/>
@@ -111,7 +116,7 @@
     <mcfast model="LayerDRFAno" template="db/drift_layer.db"
 			        parameters="startCntrLayer_pars">
       <int	name="lyr"	value="2"	comment="layer number" 	 />
-      <real	name="radius"	value="5.1"	comment="central radius"
+      <real	name="radius"	value="5.3"	comment="central radius"
 				unit="cm"	/>
       <real	name="stereo_tau" value="0.0"	comment="twist angle tau"
 				unit="cm"	/>
@@ -119,7 +124,7 @@
     <mcfast model="LayerDRFAno" template="db/drift_layer.db"
 			        parameters="startCntrLayer_pars">
       <int	name="lyr"	value="3"	comment="layer number" 	 />
-      <real	name="radius"	value="5.2"	comment="central radius"
+      <real	name="radius"	value="5.5"	comment="central radius"
 				unit="cm"	/>
       <real	name="stereo_tau" value="+0.10"	comment="twist angle tau"
 				unit="cm"	/>

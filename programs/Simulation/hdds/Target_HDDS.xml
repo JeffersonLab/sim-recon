@@ -24,14 +24,14 @@
      liquid hydrogen target - not the start of the vacuum vessel.  -->
 
   <composition name="Target">
-    <posXYZ volume="BerylliumPipe" X_Y_Z="0. 0. 225.0" />
+    <posXYZ volume="BerylliumPipe" X_Y_Z="0. 0. 2.5" />
   </composition>
 
   <composition name="BerylliumPipe" envelope="TARG">
     <posXYZ volume="CYLW" X_Y_Z="0. 0. 0."/>
-    <posXYZ volume="UWIT" X_Y_Z="0. 0. -274.95"/>
-    <posXYZ volume="DWIT" X_Y_Z="0. 0. +274.95"/>
-    <posXYZ volume="targetVessel" X_Y_Z="0. 0. -210.00" />
+    <posXYZ volume="UWIT" X_Y_Z="0. 0. -32.45"/>
+    <posXYZ volume="DWIT" X_Y_Z="0. 0. +32.45"/>
+    <posXYZ volume="targetVessel" X_Y_Z="0. 0. 12.5" />
   </composition>
 
   <composition name="targetVessel" envelope="TGTV">
@@ -49,9 +49,9 @@
   <tubs name="DWTV" Rio_Z="0.00 1.45 0.02" material="Aluminum"
 					comment="exit wall of beer can"     />
 
-  <tubs name="TARG" Rio_Z="0.00 2.50 550.0" material="Vacuum"
+  <tubs name="TARG" Rio_Z="0.00 2.50 65.0" material="Vacuum"
 	parameters="targetTube_pars" 	comment="target tube mother volume" />
-  <tubs name="CYLW" Rio_Z="2.45 2.50 550.0" material="Beryllium"
+  <tubs name="CYLW" Rio_Z="2.45 2.50 65.0" material="Beryllium"
 					comment="cylindrical wall of tube"  />
   <tubs name="UWIT" Rio_Z="0.00 2.45 0.050" material="Kapton"
 					comment="upstream window of tube"   />
@@ -61,8 +61,8 @@
   <parameters name="targetTube_pars" type="mcfast">
     <real name="rmin" value="0.00"  unit="cm" comment="inner radius" />
     <real name="rmax" value="2.50"  unit="cm" comment="outer radius" />
-    <real name="z0"   value="275.0" unit="cm" comment="from origin"  />
-    <real name="zlen" value="550.0" unit="cm" comment="through the CERE" />
+    <real name="z0"   value="2.50" unit="cm" comment="from origin"  />
+    <real name="zlen" value="65.0" unit="cm" comment="cover the target" />
     <reference name="mat_fill" value="Vacuum"  comment="what fills the pipe" />
     <real_array name="bndrthk" comment="innner outer upstream downstream
            wall thicknesses" values="0.00   0.05   0.00      0.00"
