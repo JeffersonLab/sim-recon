@@ -9,7 +9,8 @@ FOPTS = -g -Wno-globals
 
 HDDS = ../hdds
 
-AUXS = hddsGeant3.o goptimize.o
+AUXS = hddsGeant3.o goptimize.o \
+       gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o
 
 GXFIXED = gxcs.o gxphys.o
 

@@ -1,0 +1,41 @@
+MACRO draw vol=hall the=30 phi=20 psi=0 x0=10 y0=10 sx=5 sy=5
+  pict/create def
+  draw [vol] [the] [phi] [psi] [x0] [y0] [sx] [sy]
+  pict/print ~/public_html/outbox/halld.gif 600 600
+  pict/delete def
+RETURN
+
+MACRO init prec=4 fill=30 box=0 boy=0 boz=100
+  next
+  dopt rayt on
+  dopt mapp [prec]
+  dopt proj pers
+  persp hall 2000
+  satt * fill [fill]
+  satt iyok lsty 5
+  satt iyup lsty 5
+  satt iydn lsty 5
+  satt lgbl lsty 6
+  satt wall lsty 4
+  satt ftof lsty 2
+  satt bcal lsty 3
+  dopt user on
+  satt iyok colo 4
+  satt iyup colo 4
+  satt iydn colo 4
+  satt lgbl colo 5
+  satt csti colo 5
+  satt csto colo 5
+  satt cylw colo 2
+  satt fdcc colo 6
+  satt fdca seen 0
+  satt cere colo 7
+  satt bcam colo 3
+  satt ftof colo 6
+  satt stra colo 6
+  satt wall colo 3
+  valcut [box] [boy] [boz]
+  editv 1 hall
+  editv 0
+  tim
+RETURN
