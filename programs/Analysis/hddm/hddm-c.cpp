@@ -544,7 +544,7 @@ void constructUnpackers()
          }
 	 else if (typeS.equals("long"))
          {
-            cFile << "#if defined XDR_LONGLONG_INTRINSIC"	 << endl
+            cFile << "#ifndef XDR_LONGLONG_MISSING"		 << endl
                   << "         xdr_longlong_t(xdrs,&this1->"
 	          << nameStr << ");"				 << endl
                   << "#else"					 << endl
@@ -785,7 +785,7 @@ void constructPackers()
          }
          if (typeS.equals("long"))
          {
-            cFile << "#if defined XDR_LONGLONG_INTRINSIC"	 << endl
+            cFile << "#ifndef XDR_LONGLONG_MISSING"		 << endl
                   << "         xdr_longlong_t(xdrs,&this1->"
 	          << nameStr << ");"				 << endl
                   << "#else"					 << endl

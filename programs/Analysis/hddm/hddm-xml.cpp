@@ -134,7 +134,7 @@ void constructXML(XDR* xdrs, DOMElement* el, int depth)
 	 else if (typeS.equals("long"))
          {
             long long value;
-#if defined XDR_LONGLONG_INTRINSIC
+#ifndef XDR_LONGLONG_MISSING
 	    xdr_longlong_t(xdrs,&value);
 #else
             int* ival = (int*)&value;

@@ -175,7 +175,7 @@ void outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
       {
          long long val;
          sscanf(S(valueS),"%lld",&val);
-#if defined XDR_LONGLONG_INTRINSIC
+#ifndef XDR_LONGLONG_MISSING
          xdr_longlong_t(xdrs,&val);
 #else
          int* ival = (int*)&val;

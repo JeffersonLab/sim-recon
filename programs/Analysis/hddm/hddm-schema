@@ -60,8 +60,13 @@ $cmd = "$ENV{JAVAROOT}/bin/java org.apache.xalan.xslt.Process" .
        " -IN $tmpxml -OUT $tmpxsd -XSL hddm-schema.xsl -L";
 
 if (system($cmd)) {
-   print "command was:$cmd\n";
-   die "hddm-schema: errors returned by Xalan, quitting\n";
+   if (! -x "$ENV{JAVAROOT}/bin/java") {
+      die "Please check that $JAVAROOT/bin/java exists and try again.\n";
+   }
+   else {
+      print "command was:$cmd\n";
+      die "hddm-schema: errors returned by Xalan, quitting\n";
+   }
 }
 
 # check the result for correctness and pretty-print it
