@@ -366,7 +366,7 @@ int main(int argC, char* argV[])
    writeXML(xmlHeader);
    writeXML("\n");
 
-   int buff[100000];
+   int* buff = new int[100000];
    int icount;
    while (ifs->read((char*)&icount,sizeof(int)))
    {

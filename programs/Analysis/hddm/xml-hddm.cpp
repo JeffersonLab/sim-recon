@@ -412,9 +412,9 @@ int main(int argC, char* argV[])
       exit(1);
    }
 
-   char line[500000];
    char xmlHeader[500];
    char docHeader[500];
+   char* line = new char[500000];
    if (ifs->getline(line,500))
    {
       if (strstr(line,"<?xml") == 0)
@@ -438,7 +438,7 @@ int main(int argC, char* argV[])
    }
    strncpy(docHeader,line,500);
 
-   int buffer[1000000];
+   int* buffer = new int[1000000];
    char* tmpFile = tmpnam(0);
    ofstream ofs;
 
