@@ -121,7 +121,6 @@ derror_t MyProcessor::evnt(int eventnumber)
 		float size = 0.5;
 		switch(mccheathit->system){
 			case 6:	// FCAL
-				cout<<__FILE__<<":"<<__LINE__<<" FCAL z="<<z<<" X/Y="<<X<<"/"<<Y<<endl;
 			case 3:	// BCAL
 				size=1.0;
 		}
@@ -168,13 +167,13 @@ derror_t MyProcessor::evnt(int eventnumber)
 		if(qf->GetNhits()>1){
 			qf->FitTrack();
 			DrawTrack(qf, colors[(i+1)%ncolors]);
-			cout<<__FILE__<<":"<<__LINE__<<" z_vertex="<<qf->z_vertex<<endl;
+			cout<<__FILE__<<":"<<__LINE__<<endl;
+			qf->Print();
 			ConvertToFront(qf->x0, qf->y0, 0, X, Y);
 			float dX = X-x_center;
 			float dY = Y-y_center;
 			float r = sqrt(dX*dX + dY*dY);
 			circles[Ncircles++] = new TEllipse(X,Y,r,r);
-			cout<<"ChiSq = "<<qf->chisq/(float)qf->GetNhits()<<endl;
 			if(Ncircles>=MAX_CIRCLES)break;
 		}
 	}
@@ -203,7 +202,7 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 	float y = qf->y0;
 	float z = qf->z_vertex;
 	float r = sqrt(x*x + y*y);
-	float dphidz = -qf->q*qf->theta/r;
+	float dphidz = -qf->q*tan(qf->theta)/r;
 	float phi0 = atan2(-qf->y0, -qf->x0);
 	float X,Y;
 
