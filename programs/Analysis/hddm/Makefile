@@ -1,13 +1,23 @@
+OStype = $(shell uname)
+ARCHtype = $(shell uname -m)
 DOM = $(BUILDS)/xerces-c
-
-CC = /usr/bin/g++ -g
+ifeq ($(OStype),Linux)
+	ifeq ($(ARCHtype),alpha)
+		CPP      := /usr/bin/g++ -g
+	else
+		CPP	:= /usr/bin/g++ -g
+	endif
+endif
+ifeq ($(OStype),OSF1)
+	CPP	:= /usr/bin/g++ -g
+endif
 
 hddm-xml: hddm-xml.cpp
-	$(CC) -I../include -I$(DOM)/include -o $@ $^ \
+	$(CPP) -I../include -I$(DOM)/include -o $@ $^ \
 	-L$(DOM)/lib -lxerces-c1_5
 
 hddm-c: hddm-c.cpp
-	$(CC) -I../include -I$(DOM)/include -o $@ $^ \
+	$(CPP) -I../include -I$(DOM)/include -o $@ $^ \
 	-L$(DOM)/lib -lxerces-c1_5
 
 clean:
