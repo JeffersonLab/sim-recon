@@ -64,7 +64,9 @@ void hitCentralDC (float xin[4], float xout[4],
       int nhit;
       s_Hits_t* hits;
       int layer = getlayer_();
+#if CATHODE_STRIPS_IN_CDC
       int cell = getcell_();
+#endif
       int ring = getring_();
       int sector = getsector_();
       float phim = atan2(xcdc[1],xcdc[0]);
@@ -146,6 +148,7 @@ void hitCentralDC (float xin[4], float xout[4],
          }
       }
 
+#if CATHODE_STRIPS_IN_CDC
       else			/* in one of the z-readout (band) layers */
       {
          int mark = (layer << 28) + (sector << 20) + (cell << 8);
@@ -170,6 +173,7 @@ void hitCentralDC (float xin[4], float xout[4],
             cdc->cathodeCyls->in[0].bands->in[0].z /= 2;
          }
       }
+#endif
    }
 }
 

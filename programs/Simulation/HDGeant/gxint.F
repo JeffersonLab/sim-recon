@@ -2,6 +2,13 @@
 * $Id$
 *
 * $Log$
+* Revision 1.2  2004/03/15 16:32:27  jonesrt
+* -gxint.F : increased the size of the pawc area to accomodate larger
+*            2d histograms (without ZFATAL crashes) [rtj]
+* -hitCDC.c : enclosed the sections relevant to barrel cathode strips in a
+*            conditional CATHODE_STRIPS_IN_CDC after they were removed from
+*            the CDC geometry definition by C. Meyer [rtj]
+*
 * Revision 1.1  2001/07/08 06:24:34  jonesrt
 * First release of the Geant3 geometry package for Hall D based on hdds.  -rtj
 *
@@ -23,7 +30,7 @@
 *     graphics version.
 *
 #if !defined(CERNLIB_IBM)
-      PARAMETER (NWGEAN=3000000,NWPAW=1000000)
+      PARAMETER (NWGEAN=5000000,NWPAW=1000000)
 #endif
 #if defined(CERNLIB_IBM)
       PARAMETER (NWGEAN=1000000,NWPAW=500000)
