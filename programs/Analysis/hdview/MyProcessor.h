@@ -52,6 +52,8 @@ class MyProcessor:public DEventProcessor
 		TPolyLine *lines[MAX_LINES];
 		int Nlines;
 		
+		TObject* graphics[100];
+		int Ngraphics;
 	
 	private:
 		int drew_detectors;
