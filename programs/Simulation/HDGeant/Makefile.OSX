@@ -2,5 +2,7 @@
 PACKAGES := CERNLIB
 MISC_LIBS = -L/sw/lib -lXm -L/usr/X11R6/lib -lXt -lf2c -lg2c -lcompat -lgelhad
 
+USE_OBJECTS := 1
+
 include $(HALLD_DIR)/src/BMS/Makefile.bin
 
