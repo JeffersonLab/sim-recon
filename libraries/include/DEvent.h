@@ -22,6 +22,8 @@ class DEvent{
 		derror_t AddFactory(DFactory* factory);
 		derror_t PrintFactories(void);
 		derror_t ClearFactories(void);
+		derror_t Print(char *data_name);
+		DContainer* GetFactoryNames(void);
 		
 		int runnumber;
 		int eventnumber;
