@@ -122,12 +122,32 @@ derror_t DEventLoop::OneEvent(void)
 	// Copy pointer to hddm_s to our object (from DEvent inheritance)
 	hddm_s = source->hddm_s;
 	
+	// Need to extract the event number and run number here.
+	//runnumber = 1;
+	eventnumber++;
+	
 	// Call Event Processors
 	DEventProcessor **p = processors;
-	int eventNo = 0;
 	for(int i=0;i<Nprocessors;i++, p++){
 		(*p)->hddm_s = hddm_s;
-		derror_t err = (*p)->evnt(eventNo);
+
+		// Call brun routine if run number has changed or it's not been called
+		if(runnumber!=(*p)->GetBRUN_RunNumber()){
+			if((*p)->brun_was_called() && !(*p)->erun_was_called()){
+				(*p)->erun();
+				(*p)->Set_erun_called();
+			}
+			(*p)->Clear_brun_called();
+		}
+		if(!(*p)->brun_was_called()){
+			(*p)->brun(runnumber);
+			(*p)->Set_brun_called();
+			(*p)->Clear_erun_called();
+			(*p)->SetBRUN_RunNumber(runnumber);
+		}
+
+		// Call the event routine
+		derror_t err = (*p)->evnt(eventnumber);
 
 		// More will need to be done to truly filter out the event.
 		// for now, this just provides a means to not completely process
