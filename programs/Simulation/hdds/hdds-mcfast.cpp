@@ -51,19 +51,19 @@
 #ifdef _Tru64
 #undef basename
 #define basename _RC_basename
-static char * basename(const char *f)
-{ const char *base;
-                                                                                
-  for(base = f; *f; f++)
-  { if (*f == '/')
+static char* basename(const char *f)
+{
+   const char* base;
+   for (base = f; *f; f++)
+   {
+      if (*f == '/')
       base = f+1;
-  }
-                                                                                
-  return (char *)base;
+   }
+   return (char *)base;
 }
 #endif
 
-char* templateFileList = 0;
+makeTargetTable targetTable(999);
 
 void usage()
 {
@@ -74,15 +74,49 @@ void usage()
          << endl;
 }
 
-void processTemplateFile(const char* fname, MCfastParameterList& pars)
+void processTemplateFile(const DOMElement* const targetEl,
+                         const char* const fname)
 {
+   struct _modelTableEntry
+   {
+      char* model;
+      int refcount;
+      int maxcount;
+   };
+   static struct _modelTableEntry modelTable[999];
+   static int modelTableLen=0;
+
+   XString* processingTarget=0;
+   int processedTemplates=0;
+
+   const XString modelAttS("model");
+   const XString modelS = targetEl->getAttribute(X(modelAttS));
+   int model;
+   for (model=0; model < modelTableLen; model++)
+   {
+      if (modelS.equals(modelTable[model].model))
+         break;
+   }
+   if (model == modelTableLen)
+   {
+      char* str = new char[strlen(S(modelS))+1];
+      strcpy(str,S(modelS));
+      modelTable[model].model = str;
+      modelTable[model].refcount = 0;
+      modelTable[model].maxcount = 0;
+      modelTableLen++;
+   }
+   if (modelTable[model].refcount == 0)
+   {
+      cout << "include " << fname << endl;
+   }
+
    ifstream dbFile(fname);
    if (dbFile == 0)
    {
       cerr << "hdds-mcfast: Error opening input file " << fname << endl;
       exit(2);
    }
-
    while (! dbFile.eof())
    {
       char line[250];
@@ -91,103 +125,206 @@ void processTemplateFile(const char* fname, MCfastParameterList& pars)
       {
          continue;
       }
-      char* token = strtok(line," ");
+      const char* token = strtok(line," ");
       if (strcasecmp(token,"end") == 0)
       {
-         break;
+         if (processingTarget)
+         {
+            delete processingTarget;
+            processingTarget = 0;
+         }
+         else
+         {
+            cerr << "hdds-mcfast: end statement without matching template"
+                 << " in input file " << fname << endl;
+            exit(2);
+         }
+         cout << endl;
       }
       else if (strcasecmp(token,"include") == 0)
       {
-         processTemplateFile(strtok(0," "),pars);
+         processTemplateFile(targetEl,strtok(0," "));
       }
       else if (strcasecmp(token,"template") == 0)
+      {
+         processingTarget = new XString(strtok(0,", ("));
+         const char* maxcount = strtok(0,")");
+         int dim = (maxcount == 0) ? 0 : atoi(maxcount);
+         if (dim == 0)
+         {
+            cerr << "hdds-mcfast: bad format in template statement"
+                 << " in input file " << fname << endl;
+            exit(2);
+         }
+         else if (processingTarget && processingTarget->equals(modelS))
+         {
+            if (++modelTable[model].refcount > dim)
+            { 
+               cerr << "hdds-mcfast: number of objects of type " << S(modelS)
+                    << " exceeds maximum of " << dim << endl;
+               cerr << "defined in input file " << fname << endl;
+               cerr << "Increase the array size in the template statement"
+                    << " found in the above file" << endl;
+               cerr << "and try again." << endl;
+               exit(2);
+            }
+            modelTable[model].maxcount = dim;
+            cout << "make " << S(modelS);
+            ++processedTemplates;
+         }
+      }
+      else if (strcasecmp(token,"make") == 0)
+      {
+         const char* tgt = strtok(0," ");
+         int m;
+         for (m=0; m < modelTableLen; m++)
+         {
+            if (strcmp(modelTable[m].model,tgt) == 0)
+               break;
+         }
+         if (m == modelTableLen)
+         { 
+            cerr << "hdds-mcfast: error in template file " << fname << endl;
+            cerr << "Statement template " << S(modelS)
+                 << " must appear before first make instance." << endl;
+            exit(2);
+         }
+         else if (modelTable[m].refcount > modelTable[m].maxcount)
+         {
+            cerr << "hdds-mcfast: number of objects of type " << tgt
+                 << " overflows table." << endl;
+            cerr << "Increase the array size in the template file"
+                 << " and try again." << endl;
+            exit(2);
+         }
+      }
+      else if (!(processingTarget && processingTarget->equals(modelS)))
       {
          continue;
       }
       else if (strcasecmp(token,"int") == 0)
       {
-         char* var = strtok(0,", (");
-         char* arg = strtok(0,")");
-         int   dim = (arg == 0) ? 0 : atoi(arg);
+         const char* var = strtok(0,", (");
+         const char* arg = strtok(0,")");
+         int dim = (arg == 0) ? 0 : atoi(arg);
          const DOMElement* el;
          XString valueS;
          if (dim == 0)
          {
-            el = pars.get(var,"int");
-	    XString valAttS("value");
-            valueS = el->getAttribute(X(valAttS));
+            const XString typeS("int");
+            const XString varS(var);
+            if (el = targetTable.lookup(targetEl,typeS,varS))
+            {
+	       const XString valAttS("value");
+               valueS = el->getAttribute(X(valAttS));
+            }
          }
          else
          {
-            el = pars.get(var,"int_array",dim);
-	    XString valAttS("values");
-            valueS = el->getAttribute(X(valAttS));
+            const XString typeS("int_array");
+            const XString varS(var);
+            if (el = targetTable.lookup(targetEl,typeS,varS))
+            {
+	       const XString valAttS("values");
+               valueS = el->getAttribute(X(valAttS));
+            }
          }
-         if (el)
-         {
-            cout << " " << S(valueS);
-         }
-         else
+         if (valueS == 0)
          {
             cerr << "hdds-mcfast: Parameter \"" << var << "\""
                  << " required in template file " << fname << endl
                  << "is missing from HDDS" << endl;
             exit(3);
+         }
+         char* intstr = strtok((char*)S(valueS)," ");
+         cout << " " << intstr;
+         for (int i=1; i < dim; i++)
+         {
+            if (intstr = strtok(0," "))
+            {
+               cout << " " << intstr;
+            }
+            else
+            {
+               cout << " 0";
+            }
          }
       }
       else if (strcasecmp(token,"real") == 0)
       {
-         char* var = strtok(0,", (");
-         char* arg = strtok(0,")");
-         int   dim = (arg == 0) ? 0 : atoi(arg);
+         const char* var = strtok(0,", (");
+         const char* arg = strtok(0,")");
+         int dim = (arg == 0) ? 0 : atoi(arg);
          const DOMElement* el;
          XString valueS;
          if (dim == 0)
          {
-            el = pars.get(var,"real");
-	    XString valAttS("value");
-            valueS = el->getAttribute(X(valAttS));
+            const XString typeS("real");
+            const XString varS(var);
+            if (el = targetTable.lookup(targetEl,typeS,varS))
+            {
+	       const XString valAttS("value");
+               valueS = el->getAttribute(X(valAttS));
+            }
          }
          else
          {
-            el = pars.get(var,"real_array",dim);
-	    XString valAttS("values");
-            valueS = el->getAttribute(X(valAttS));
+            const XString typeS("real_array");
+            const XString varS(var);
+            if (el = targetTable.lookup(targetEl,typeS,varS))
+            {
+	       const XString valAttS("values");
+               valueS = el->getAttribute(X(valAttS));
+            }
          }
-         if (el)
-         {
-            cout << " " << S(valueS);
-         }
-         else
+         if (valueS == 0)
          {
             cerr << "hdds-mcfast: Parameter \"" << var << "\""
                  << " required in template file " << fname << endl
                  << "is missing from HDDS" << endl;
             exit(3);
          }
+         const char* fltstr = strtok((char*)S(valueS)," ");
+         cout << " " << fltstr;
+         for (int i=1; i < dim; i++)
+         {
+            if (fltstr = strtok(0," "))
+            {
+               cout << " " << fltstr;
+            }
+            else
+            {
+               cout << " 0";
+            }
+         }
       }
       else if (strcasecmp(token,"char") == 0)
       {
-         char* var = strtok(0,", (");
-         char* arg = strtok(0,")");
-         int   dim = (arg == 0) ? 0 : atoi(arg);
+         const char* var = strtok(0,", (");
+         const char* arg = strtok(0,")");
+         int dim = (arg == 0) ? 0 : atoi(arg);
          const DOMElement* el;
+         XString valueS;
          if (dim == 0)
          {
-            if (! (el = pars.get(var,"string")) )
+            const XString typeS("string");
+            const XString varS(var);
+            if ((el = targetTable.lookup(targetEl,typeS,varS)) == 0)
             {
                cerr << "hdds-mcfast: Parameter \"" << var << "\""
                     << " required in template file " << fname << endl
                     << "is missing from HDDS" << endl;
                exit(3);
             }
-	    XString valAttS("value");
-            XString valueS(el->getAttribute(X(valAttS)));
+	    const XString valAttS("value");
+            valueS = el->getAttribute(X(valAttS));
             cout << " \"" << S(valueS) << "\"";
          }
          else
          {
-            if (! (el = pars.get(var,"string_vector")) )
+            const XString typeS("string_vector");
+            const XString varS(var);
+            if ((el = targetTable.lookup(targetEl,typeS,varS)) == 0)
             {
                cerr << "hdds-mcfast: Parameter \"" << var << "\""
                     << " required in template file " << fname << endl
@@ -195,29 +332,35 @@ void processTemplateFile(const char* fname, MCfastParameterList& pars)
                exit(3);
             }
             int vcount = 0;
-            DOMNode* vect;
+            const DOMNode* vect;
             for ( vect = el->getFirstChild(); 
                   vect != 0;
                   vect = vect->getNextSibling() )
             {
-               if (vect->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-               DOMElement* vectEl = (DOMElement*) vect;
-               XString tagS(vectEl->getTagName());
+               if (vect->getNodeType() != DOMNode::ELEMENT_NODE)
+                  continue;
+               const DOMElement* vectEl = (DOMElement*) vect;
+               const XString tagS(vectEl->getTagName());
                if (tagS.equals("string_data"))
                {
-	          XString valAttS("value");
-                  XString valueS(vectEl->getAttribute(X(valAttS)));
+	          const XString valAttS("value");
+                  const XString valueS(vectEl->getAttribute(X(valAttS)));
                   cout << " \"" << S(valueS) << "\"";
                   vcount++;
                }
             }
+            for ( ; vcount < dim; vcount++)
+            {
+               cout << " \"\"";
+            }
             if (vcount != dim)
             {
-	       XString nameAttS("name");
-               XString vnameS(el->getAttribute(X(nameAttS)));
-               cerr << "hdds-mcfast: String vector "
-                    << S(vnameS) << " has too few elements, "
-                    << dim << " required." << endl;
+	       const XString nameAttS("name");
+               const XString vnameS(el->getAttribute(X(nameAttS)));
+               cerr << "hdds-mcfast: mcfast array size of " << dim
+                    << " for variable " << S(vnameS) << " is too small"
+                    << " to hold " << vcount << " elements" << endl;
+               cerr << "Please increase array size in " << fname << endl;
                exit(3);
             }
          }
@@ -229,56 +372,66 @@ void processTemplateFile(const char* fname, MCfastParameterList& pars)
       }
       else if (strcasecmp(token,"material") == 0)
       {
-         char* var = strtok(0,", (");
-         char* arg = strtok(0,")");
-         int   dim = (arg == 0) ? 0 : atoi(arg);
+         const char* var = strtok(0,", (");
+         const char* arg = strtok(0,")");
+         int dim = (arg == 0) ? 0 : atoi(arg);
          const DOMElement* el;
          if (dim == 0)
          {
-            if (! (el = pars.get(var,"reference")) )
+            const XString typeS("reference");
+            const XString varS(var);
+            if ((el = targetTable.lookup(targetEl,typeS,varS)) == 0)
             {
                cerr << "hdds-mcfast: Parameter \"" << var << "\""
                     << " required in template file " << fname << endl
                     << "is missing from HDDS" << endl;
                exit(3);
             }
-	    XString valAttS("value");
-            XString valueS(el->getAttribute(X(valAttS)));
+	    const XString valAttS("value");
+            const XString valueS(el->getAttribute(X(valAttS)));
             cout << " \"" << S(valueS) << "\"";
          }
          else
          {
-            if (! (el = pars.get(var,"reference_vector")) )
+            const XString typeS("reference_vector");
+            const XString varS(var);
+            if ((el = targetTable.lookup(targetEl,typeS,varS)) == 0)
             {
                cerr << "hdds-mcfast: Parameter \"" << var << "\""
                     << " required in template file " << fname << endl
                     << "is missing from HDDS" << endl;
                exit(3);
             }
-            DOMNode* vect;
+            const DOMNode* vect;
             int vcount = 0;
             for ( vect = el->getFirstChild();
                   vect != 0;
                   vect = vect->getNextSibling() )
             {
-               if (vect->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-               DOMElement* vectEl = (DOMElement*) vect;
-               XString tagS(vectEl->getTagName());
+               if (vect->getNodeType() != DOMNode::ELEMENT_NODE)
+                  continue;
+               const DOMElement* vectEl = (DOMElement*) vect;
+               const XString tagS(vectEl->getTagName());
                if (tagS.equals("reference_data"))
                {
-	          XString valAttS("value");
-                  XString valueS(vectEl->getAttribute(X(valAttS)));
+	          const XString valAttS("value");
+                  const XString valueS(vectEl->getAttribute(X(valAttS)));
                   cout << " \"" << S(valueS) << "\"";
                   vcount++;
                }
             }
-            if (vcount < dim)
+            for ( ; vcount < dim; vcount++)
             {
-	       XString nameAttS("name");
-               XString rnameS(el->getAttribute(X(nameAttS)));
-               cerr << "hdds-mcfast: Reference vector "
-                    << S(rnameS) << " has too few elements, "
-                    << dim << " required." << endl;
+               cout << " \"-\"";
+            }
+            if (vcount != dim)
+            {
+	       const XString nameAttS("name");
+               const XString vnameS(el->getAttribute(X(nameAttS)));
+               cerr << "hdds-mcfast: mcfast array size of " << dim
+                    << " for variable " << S(vnameS) << " is too small"
+                    << " to hold " << vcount << " elements" << endl;
+               cerr << "Please increase array size in " << fname << endl;
                exit(3);
             }
          }
@@ -290,274 +443,39 @@ void processTemplateFile(const char* fname, MCfastParameterList& pars)
          exit(3);
       }
    }
+   if (processedTemplates == 0)
+   {
+      cerr << "hdds-mcfast: template for " << S(modelS)
+           << " not found in input file " << fname << endl;
+      exit(2);
+   }
+   else if (processingTarget)
+   {
+      cerr << "hdds-mcfast: template statement without matching end"
+           << " in input file " << fname << endl;
+      exit(2);
+   }
 }
 
-void writeMCfastRecord(const DOMElement* el, MCfastParameterList* pars)
+void makedb(DOMElement* el)
 {
-   XString parAttS("parameters");
-   XString parBlockS(el->getAttribute(X(parAttS)));
-   DOMElement* parEl = el->getOwnerDocument()->getElementById(X(parBlockS));
-   DOMNode* parNode;
-   int parCount;
-   if (parEl != 0)
+   DOMNode* cont;
+   for (cont = el->getLastChild();
+        cont != 0;
+        cont = cont->getPreviousSibling())
    {
-      parNode = parEl->getFirstChild();
-      XString wildS("*");
-      parCount = parEl->getElementsByTagName(X(wildS))->getLength();
-   }
-   else
-   {
-      parNode = 0;
-      parCount = 0;
-   }
-   MCfastParameterList basePars(parCount);
-   basePars.inherits(*pars);
-   for ( ; parNode != 0; parNode = parNode->getNextSibling() )
-   {
-      if (parNode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-      DOMElement* thisEl = (DOMElement*) parNode;
-      basePars.append(thisEl);
-   }
-
-   XString wildS("*");
-   parCount = el->getElementsByTagName(X(wildS))->getLength();
-   MCfastParameterList myPars(parCount);
-   myPars.inherits(basePars);
-   for ( parNode = el->getFirstChild();
-         parNode != 0;
-         parNode = parNode->getNextSibling() )
-   {
-      if (parNode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-      DOMElement* thisEl = (DOMElement*) parNode;
-      XString tagS(thisEl->getTagName());
+      if (cont->getNodeType() != DOMNode::ELEMENT_NODE)
+         continue;
+      DOMElement* contEl = (DOMElement*)cont;
+      const XString tagS = contEl->getTagName();
       if (tagS.equals("mcfast"))
       {
-         writeMCfastRecord(thisEl, &myPars);
+         targetTable.add(contEl);
       }
       else
       {
-         myPars.append(thisEl);
+         makedb(contEl);
       }
-   }
-
-   XString tempAttS("template");
-   XString templS(el->getAttribute(X(tempAttS)));
-   if (templateFileList == 0)
-   {
-      templateFileList = new char[99999];	// big enough to forget
-      templateFileList[0] = 0;
-   }
-   if (strstr(templateFileList,S(templS)) == 0)
-   {
-      strcat(templateFileList,S(templS));
-      cout << "include " << S(templS) << endl;
-   }
-     
-   XString modAttS("model");
-   XString modelS(el->getAttribute(X(modAttS)));
-   cout << "make " << S(modelS);
-   processTemplateFile(S(templS),myPars);
-   cout << endl;
-}
-
-void writeMaterialRecord(DOMElement* el)
-{
-   MCfastParameterList parList(3);
-
-   XString stringS("string");
-   DOMElement* nameEl = el->getOwnerDocument()->createElement(X(stringS));
-   XString nameAttS("name");
-   XString valueAttS("value");
-   nameEl->setAttribute(X(nameAttS),X(nameAttS));
-   nameEl->setAttribute(X(valueAttS),el->getAttribute(X(nameAttS)));
-   parList.append(nameEl);
-
-   XString realS("real");
-   DOMElement* aEl = el->getOwnerDocument()->createElement(X(realS));
-   XString aS("a");
-   aEl->setAttribute(X(nameAttS),X(aS));
-   aEl->setAttribute(X(valueAttS),el->getAttribute(X(aS)));
-   parList.append(aEl);
-
-   DOMElement* zEl = el->getOwnerDocument()->createElement(X(realS));
-   XString zS("z");
-   zEl->setAttribute(X(nameAttS),X(zS));
-   zEl->setAttribute(X(valueAttS),el->getAttribute(X(zS)));
-   parList.append(zEl);
-
-   XString modelAttS("model");
-   XString materialS("Material");
-   el->setAttribute(X(modelAttS),X(materialS));
-   XString templAttS("template");
-   XString dbS("db/materials.db");
-   el->setAttribute(X(templAttS),X(dbS));
-   writeMCfastRecord(el,&parList);
-}
-
-void writeMixtureRecord(DOMElement* el)
-{
-   XString realS("real");
-   DOMNodeList* propList = el->getElementsByTagName(X(realS));
-   int propCount = propList->getLength();
-   if (propCount > 4)
-   {
-      writeMaterialRecord(el);
-      return;
-   }
-
-   MCfastParameterList parList(4);
-
-   XString stringS("string");
-   DOMElement* nameEl = el->getOwnerDocument()->createElement(X(stringS));
-   XString nameAttS("name");
-   XString valueAttS("value");
-   nameEl->setAttribute(X(nameAttS),X(nameAttS));
-   nameEl->setAttribute(X(valueAttS),el->getAttribute(X(nameAttS)));
-   parList.append(nameEl);
-
-   XString addmatS("addmaterial");
-   DOMNodeList* matList = el->getElementsByTagName(X(addmatS));
-   int matCount = matList->getLength();
-   assert (matCount > 0);
-   float fVol[matCount], fSum = 0.;
-   XString refvecS("reference_vector");
-   DOMElement* matVecEl =
-               el->getOwnerDocument()->createElement(X(refvecS));
-   DOMElement* dataEl[5];
-   int m;
-   for (m = 0; m < matCount; m++)
-   {
-      DOMNode* mat = matList->item(m);
-      DOMElement* matEl = (DOMElement*) mat;
-      XString materialS("material");
-      XString refIdS(matEl->getAttribute(X(materialS)));
-      XString refdataS("reference_data");
-      dataEl[m] = el->getOwnerDocument()->createElement(X(refdataS));
-      XString valueAttS("value");
-      dataEl[m]->setAttribute(X(valueAttS),X(refIdS));
-      matVecEl->appendChild(dataEl[m]);
-
-      DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refIdS));
-      XString aAttS("a");
-      XString aS(refEl->getAttribute(X(aAttS)));
-      float a = atof(S(aS));
-      XString zAttS("z");
-      XString zS(refEl->getAttribute(X(zAttS)));
-      float z = atof(S(zS));
-
-      DOMNodeList* parList = refEl->getElementsByTagName(X(realS));
-      int parCount = parList->getLength();
-      float density = 1.0e30;
-      for (int p = 0; p < parCount; p++)
-      {
-         DOMNode* par = parList->item(p);
-         DOMElement* parEl = (DOMElement*) par;
-	 XString nameAttS("name");
-         XString parName(parEl->getAttribute(X(nameAttS)));
-         if (parName.equals("density"))
-         {
-	    XString valueAttS("value");
-            XString valS(parEl->getAttribute(X(valueAttS)));
-            density = atof(S(valS));
-         }
-      }
-
-      XString wildS("*");
-      DOMNodeList* specList = matEl->getElementsByTagName(X(wildS));
-      assert (specList->getLength() > 0);
-      DOMNode* spec = specList->item(0);
-      DOMElement* specEl = (DOMElement*) spec;
-      XString specTypeS(specEl->getTagName());
-      float fMass = 0;
-      if (specTypeS.equals("natoms"))
-      {
-	 XString nAttS("n");
-         XString nS(specEl->getAttribute(X(nAttS)));
-         int n = atoi(S(nS));
-         fMass = n*a;
-      }
-      else if (specTypeS.equals("fractionmass"))
-      {
-	 XString fracAttS("fraction");
-         XString fS(specEl->getAttribute(X(fracAttS)));
-         fMass = atof(S(fS));
-      }
-      fVol[m] = fMass/density;
-      fSum += fVol[m];
-   }
-
-   for (; m < 5; m++)
-   {
-      XString tagS("reference_data");
-      XString valAttS("value");
-      XString minuS("-");
-      dataEl[m] = el->getOwnerDocument()->createElement(X(tagS));
-      dataEl[m]->setAttribute(X(valAttS),X(minuS));
-      matVecEl->appendChild(dataEl[m]);
-      fVol[m] = 0;
-   }
-
-   char nmatStr[10];
-   sprintf(nmatStr,"%d",matCount);
-   XString nmatS(nmatStr);
-   XString nmatAttS("nmat");
-   XString intS("int");
-   DOMElement* nmatEl = el->getOwnerDocument()->createElement(X(intS));
-   nmatEl->setAttribute(X(nameAttS),X(nmatAttS));
-   nmatEl->setAttribute(X(valueAttS),X(nmatS));
-   parList.append(nmatEl);
-
-   XString matnameS("matnames");
-   matVecEl->setAttribute(X(nameAttS),X(matnameS));
-   parList.append(matVecEl);
-
-   char fVolStr[300];
-   sprintf(fVolStr,"%f %f %f %f %f", fVol[0]/fSum, fVol[1]/fSum,
-           fVol[2]/fSum, fVol[3]/fSum, fVol[4]/fSum);
-   XString fvolS(fVolStr);
-   XString rarrayS("real_array");
-   DOMElement* fVolEl = el->getOwnerDocument()->createElement(X(rarrayS));
-   XString propS("prop");
-   fVolEl->setAttribute(X(nameAttS),X(propS));
-   fVolEl->setAttribute(X(valueAttS),X(fvolS));
-   parList.append(fVolEl);
-
-   XString modelAttS("model");
-   XString templAttS("template");
-   XString mixtureS("Mixture");
-   XString dbS("db/mixtures.db");
-   el->setAttribute(X(modelAttS),X(mixtureS));
-   el->setAttribute(X(templAttS),X(dbS));
-   writeMCfastRecord(el,&parList);
-}
-
-void doMaterials(DOMElement* rootEl)
-{
-   XString elemS("element");
-   DOMNodeList* matList = rootEl->getElementsByTagName(X(elemS));
-   int matCount = matList->getLength();
-   for (int m = 0; m < matCount; m++)
-   {
-      DOMNode* mat = matList->item(m);
-      DOMElement* matEl = (DOMElement*) mat;
-      XString realS("real");
-      int nRealPars = matEl->getElementsByTagName(X(realS))->getLength();
-      if (nRealPars > 4)
-      {
-         writeMaterialRecord(matEl);
-      }
-   }
-
-   XString compoS("composite");
-   DOMNodeList* compList = rootEl->getElementsByTagName(X(compoS));
-   int compCount = compList->getLength();
-   for (int c = 0; c < compCount; c++)
-   {
-      DOMNode* comp = compList->item(c);
-      DOMElement* compEl = (DOMElement*) comp;
-      XString realS("real");
-      int nRealPars = compEl->getElementsByTagName(X(realS))->getLength();
-      writeMixtureRecord(compEl);
    }
 }
 
@@ -611,7 +529,7 @@ int main(int argC, char* argV[])
 #if defined OLD_STYLE_XERCES_PARSER
    DOMDocument* doc = parseInputDocument(xmlFile);
 #else
-   DOMDocument* doc = buildDOMDocument(xmlFile);
+   DOMDocument* doc = buildDOMDocument(xmlFile,false);
 #endif
    if (doc == 0)
    {
@@ -626,422 +544,777 @@ int main(int argC, char* argV[])
    }
 
    cout << "database mcfast 0000" << endl;
-
    DOMElement* rootEl = doc->getDocumentElement();
-   DOMNode* sect;
-   for ( sect = rootEl->getLastChild();
-         sect != 0;
-         sect = sect->getPreviousSibling() )
-   {
-      if (sect->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-      DOMElement* sectEl = (DOMElement*) sect;
-      XString stagS = sectEl->getTagName();
-      if (stagS.equals("section"))
-      {
-         DOMNode* cont;
-         for ( cont = sect->getFirstChild();
-               cont != 0;
-               cont = cont->getNextSibling() )
-         {
-            if (cont->getNodeType() != DOMNode::ELEMENT_NODE) continue;
-            DOMElement* contEl = (DOMElement*) cont;
-            XString tagS = contEl->getTagName();
-            if (tagS.equals("mcfast"))
-            {
-               static bool firstTime = true;
-               writeMCfastRecord(contEl, 0);
-               if (firstTime)
-               {
-                  doMaterials(rootEl);
-                  firstTime = false;
-               }
-            }
-         }
-      }
-   }
+   makedb(rootEl);
+   cout << "include db/hitsontrack.db" << endl
+        << "make HitsOnTrack 4 0 0" << endl
+        << "end" << endl;
 
    XMLPlatformUtils::Terminate();
    return 0;
 }
 
-/* Parser implemented using the old-style XercesDOMParser interface
- * based on the example code in $XERCESCROOT/samples/DOMPrint
- */
-DOMDocument* parseInputDocument(const char* xmlFile)
+
+makeTargetTable::makeTargetTable(const int capacity)
 {
-   XercesDOMParser* parser = new XercesDOMParser;
-   parser->setValidationScheme(XercesDOMParser::Val_Auto);
-   parser->setCreateEntityReferenceNodes(false);
-   parser->setValidationSchemaFullChecking(true);
-   parser->setDoNamespaces(true);
-   parser->setDoSchema(true);
-
-   MyOwnErrorHandler errorHandler;
-   parser->setErrorHandler(&errorHandler);
-
-   try
-   {
-      parser->parse(xmlFile);
+   if (capacity > 0) {
+      fTargetEl = new DOMElement*[capacity];
+      fParentEl = new DOMElement*[capacity];
+      fTableSize = capacity;
    }
-   catch (const XMLException& toCatch)
+   else {
+      fTableSize = 0;
+   }
+   fTableLen = 0;
+}
+
+makeTargetTable::~makeTargetTable()
+{
+   delete [] fTargetEl;
+   delete [] fParentEl;
+}
+
+int makeTargetTable::add(DOMElement* const targetEl,
+                         DOMElement* const parentEl)
+{
+   if (targetEl == 0)
    {
-      XString message(toCatch.getMessage());
-      cerr << "\nhdds-geant: Error during parsing: '" << xmlFile << "'\n"
-           << "Exception message is:  \n"
-           << S(message) << "\n" << endl;
+      cerr << "makeTargetTable::add - called with null pointer" << endl;
       return 0;
    }
-   catch (const DOMException& toCatch)
+   int i;
+   for (i=0; i < fTableLen; i++)
    {
-      XString message(toCatch.msg);
-      cerr << "\nhdds-geant: Error during parsing: '" << xmlFile << "'\n"
-           << "Exception message is:  \n"
-           << S(message) << "\n" << endl;
-      XMLPlatformUtils::Terminate();
-      return 0;
-   }
-   catch (...)
-   {
-      cerr << "\nhdds-geant: Unexpected exception during parsing: '"
-           << xmlFile << "'\n";
-      XMLPlatformUtils::Terminate();
-      return 0;
-   }
-
-   if (errorHandler.getSawErrors())
-   {
-      cerr << "\nErrors occured, no output available\n" << endl;
-      return 0;
-   }
-
-   return parser->getDocument();
-}
-
-/* Parser implemented using the w3c standard DOMBuilder interface
- * based on the example code in $XERCESCROOT/samples/DOMCount
- */
-DOMDocument* buildDOMDocument(const char* xmlFile)
-{
-   XString lsS("LS");
-   DOMImplementation *impl = DOMImplementationRegistry::getDOMImplementation(X(lsS));
-   DOMBuilder* parser = ((DOMImplementationLS*)impl)->createDOMBuilder(DOMImplementationLS::MODE_SYNCHRONOUS, 0);
-   DOMWriter* writer = ((DOMImplementationLS*)impl)->createDOMWriter();
-   XString tmpFileS(".tmp-");
-   XString suffix(basename(xmlFile));
-   tmpFileS += suffix;
-
-   parser->setFeature(XMLUni::fgDOMValidation, true);
-   parser->setFeature(XMLUni::fgDOMNamespaces, true);
-   parser->setFeature(XMLUni::fgDOMDatatypeNormalization, true);
-   parser->setFeature(XMLUni::fgDOMEntities, false);
-   parser->setFeature(XMLUni::fgXercesSchemaFullChecking, true);
-   parser->setFeature(XMLUni::fgXercesSchema, true);
-
-   MyDOMErrorHandler* errHandler = new MyDOMErrorHandler();
-   parser->setErrorHandler(errHandler);
-
-   DOMDocument* doc = 0;
-
-   try {
-      parser->resetDocumentPool();
-      doc = parser->parseURI(xmlFile);
-#if defined FIX_XERCES_getElementById_BUG
-      LocalFileFormatTarget* lfft = new LocalFileFormatTarget(X(tmpFileS));
-      writer->writeNode(lfft,*(doc->getDocumentElement()));
-      delete lfft;
-      parser->resetDocumentPool();
-      doc = parser->parseURI(X(tmpFileS));
-#endif
-   }
-   catch (const XMLException& toCatch) {
-      XString message(toCatch.getMessage());
-      cout << "Exception message is: \n"
-           << S(message) << "\n";
-      return 0;
-   }
-   catch (const DOMException& toCatch) {
-      XString message(toCatch.msg);
-      cout << "Exception message is: \n"
-           << S(message) << "\n";
-      return 0;
-   }
-   catch (...) {
-      cout << "Unexpected Exception \n" ;
-      return 0;
-   }
-
-   if (errHandler->getSawErrors())
-   {
-      cerr << "\nErrors occured, no output available\n" << endl;
-      return 0;
-   }
-
-   XString badAttS("CDSI");
-   DOMElement* targ = doc->getElementById(X(badAttS));
-   return doc;
-}
-
-// Overrides of the SAX ErrorHandler interface
-
-void MyOwnErrorHandler::error(const SAXParseException& e)
-{
-   fSawErrors = true;
-   XString systemId(e.getSystemId());
-   XString message(e.getMessage());
-   cerr << "\nhdds-geant: Error at file " << S(systemId)
-        << ", line " << e.getLineNumber()
-        << ", char " << e.getColumnNumber()
-        << "\n  Message: " << S(message) << endl;
-}
-
-void MyOwnErrorHandler::fatalError(const SAXParseException& e)
-{
-   fSawErrors = true;
-   XString systemId(e.getSystemId());
-   XString message(e.getMessage());
-   cerr << "\nhdds-geant: Fatal Error at file " << S(systemId)
-        << ", line " << e.getLineNumber()
-        << ", char " << e.getColumnNumber()
-        << "\n  Message: " << S(message) << endl;
-}
-
-void MyOwnErrorHandler::warning(const SAXParseException& e)
-{
-   XString systemId(e.getSystemId());
-   XString message(e.getMessage());
-   cerr << "\nhdds-geant: Warning at file " << S(systemId)
-        << ", line " << e.getLineNumber()
-        << ", char " << e.getColumnNumber()
-        << "\n  Message: " << S(message) << endl;
-}
-
-void MyOwnErrorHandler::resetErrors()
-{
-}
-
-MyDOMErrorHandler::MyDOMErrorHandler() :
-
-    fSawErrors(false)
-{
-}
-
-MyDOMErrorHandler::~MyDOMErrorHandler()
-{
-}
-
-//  MyDOMHandlers: Overrides of the DOM ErrorHandler interface
-
-bool MyDOMErrorHandler::handleError(const DOMError& domError)
-{
-   fSawErrors = true;
-   if (domError.getSeverity() == DOMError::DOM_SEVERITY_WARNING)
-      cerr << "\nWarning at file ";
-   else if (domError.getSeverity() == DOMError::DOM_SEVERITY_ERROR)
-       cerr << "\nError at file ";
-   else
-       cerr << "\nFatal Error at file ";
-
-   cerr << XString(domError.getLocation()->getURI()).localForm()
-        << ", line " << domError.getLocation()->getLineNumber()
-        << ", char " << domError.getLocation()->getColumnNumber()
-        << "\n  Message: " << XString(domError.getMessage()).localForm()
-       	<< endl;
-
-   return true;
-}
-
-void MyDOMErrorHandler::resetErrors()
-{
-   fSawErrors = false;
-}
-MyOwnErrorHandler::MyOwnErrorHandler() : 
-   fSawErrors(false)
-{
-}
-
-MyOwnErrorHandler::~MyOwnErrorHandler()
-{
-}
-
-
-MCfastParameterList::MCfastParameterList(const int capacity)
-{
-   fListCap = (capacity > 0) ? capacity : 1;
-   fListEl = new const DOMElement* [fListCap];
-   fAncestor = 0;
-   fListLen = 0;
-}
-
-MCfastParameterList::~MCfastParameterList()
-{
-   delete [] fListEl;
-}
-
-void MCfastParameterList::inherits(MCfastParameterList& anc)
-{
-   fAncestor = &anc;
-}
-
-void MCfastParameterList::append(const DOMElement* par)
-{
-   DOMElement* myCopy = (DOMElement*) par->cloneNode(true);
-   if (fListLen < fListCap)
-   {
-      fListEl[fListLen++] = myCopy;
-   }
-   else
-   {
-      cerr << "hdds-mcfast: Error in MCfastParameterList::append" << endl
-           << "   list overflow, insufficient capacity" << endl;
-      exit(1);
-   }
-}
-
-const DOMElement* MCfastParameterList::get(char* name, char* type,
-                                            int number, char* unit) const
-{
-   int p = fListLen;
-   while (--p >= 0)
-   {
-      const DOMElement* el = fListEl[p];
-      XString nameAttS("name");
-      XString namS(el->getAttribute(X(nameAttS)));
-      XString typS(el->getTagName());
-      XString unitAttS("unit");
-      XString uniS(el->getAttribute(X(unitAttS)));
-      bool foundIt = ((name == 0) || namS.equals(name)) &&
-                     ((type == 0) || typS.equals(type)) &&
-                     ((unit == 0) || uniS.equals(unit)) ;
-      if (foundIt)
-      {
+      if (fTargetEl[i] == targetEl)
          break;
-      }
    }
-   
-   if (p < 0)
+   if (i >= fTableSize) {
+      cerr << "makeTargetTable::add - internal table overflow, "
+           << "please increase table size." << endl;
+      return 0;
+   }
+   else if (i == fTableLen)
    {
-      if (fAncestor)
+      fTargetEl[i] = targetEl;
+      fParentEl[i] = parentEl;
+      ++fTableLen;
+      const XString tagS = targetEl->getTagName();
+      if (tagS.equals("mcfast"))
       {
-         return fAncestor->get(name, type, number, unit);
+         addModel(targetEl);
+      }
+      else if (tagS.equals("element"))
+      {
+         addElement(targetEl);
+      }
+      else if (tagS.equals("composite"))
+      {
+         addComposite(targetEl);
       }
       else
       {
+         cerr << "makeTargetTable::add - called with unexpected tag "
+              << S(tagS) << endl;
          return 0;
       }
    }
+}
+
+int makeTargetTable::addElement(DOMElement* const targetEl)
+{
+   set_name(targetEl);
+   set_a(targetEl);
+   set_z(targetEl);
+   const XString modelAttS("model");
+   const XString materialS("Material");
+   targetEl->setAttribute(X(modelAttS),X(materialS));
+   const XString templAttS("template");
+   const XString dbS("db/materials.db");
+   targetEl->setAttribute(X(templAttS),X(dbS));
+   processTemplateFile(targetEl,S(dbS));
+   return 0;
+}
+
+int makeTargetTable::addComposite(DOMElement* const targetEl)
+{
+   const XString densityS("density");
+   const XString radlenS("radlen");
+   const XString collenS("collen");
+   const XString abslenS("abslen");
+   const XString dedxS("dedx");
+   const XString realS("real");
+   if (lookup(targetEl,realS,densityS) ||
+       lookup(targetEl,realS,radlenS) ||
+       lookup(targetEl,realS,collenS) ||
+       lookup(targetEl,realS,abslenS) ||
+       lookup(targetEl,realS,dedxS))
+   {
+      set_density(targetEl);
+      set_radlen(targetEl);
+      set_abslen(targetEl);
+      set_collen(targetEl);
+      set_dedx(targetEl);
+      return addElement(targetEl);
+   }
    else
    {
-      return fListEl[p];
-   } 
-}
-
-XString::XString(void)
-{
-   fUnicodeForm = XMLString::transcode("");
-   fLocalForm = XMLString::replicate("");
-}
-
-XString::XString(const XMLCh* const x)
-{
-   if (x) {
-      fUnicodeForm = XMLString::replicate(x);
-      fLocalForm = XMLString::transcode(x);
+      set_name(targetEl);
+      set_a(targetEl);
+      set_z(targetEl);
+      set_density(targetEl);
    }
-   else {
-      fUnicodeForm = XMLString::transcode("");
-      fLocalForm = XMLString::replicate("");
+
+   const XString addmatS("addmaterial");
+   DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
+   const int matCount = matList->getLength();
+   char nmatStr[10];
+   sprintf(nmatStr,"%d",matCount);
+   const XString nmatS(nmatStr);
+   const XString nmatAttS("nmat");
+   const XString intS("int");
+   DOMElement* nmatEl = targetEl->getOwnerDocument()->createElement(X(intS));
+   const XString nameAttS("name");
+   const XString valueAttS("value");
+   nmatEl->setAttribute(X(nameAttS),X(nmatAttS));
+   nmatEl->setAttribute(X(valueAttS),X(nmatS));
+   targetEl->appendChild(nmatEl);
+
+   float fVol[matCount];
+   DOMElement* dataEl[matCount];
+   const XString refvecS("reference_vector");
+   DOMElement* matVecEl = targetEl->getOwnerDocument()->createElement(X(refvecS));
+   const XString matnameS("matnames");
+   matVecEl->setAttribute(X(nameAttS),X(matnameS));
+   for (int m=0; m < matCount; m++)
+   {
+      DOMElement* matEl = (DOMElement*)matList->item(m);
+      const XString materialS("material");
+      const XString refIdS(matEl->getAttribute(X(materialS)));
+      const XString refdataS("reference_data");
+      dataEl[m] = targetEl->getOwnerDocument()->createElement(X(refdataS));
+      const XString valueAttS("value");
+      dataEl[m]->setAttribute(X(valueAttS),X(refIdS));
+      matVecEl->appendChild(dataEl[m]);
+      DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refIdS));
+      add(refEl);
+      const XString fractionS("fractionmass");
+      DOMNodeList* specList = matEl->getElementsByTagName(X(fractionS));
+      if (specList->getLength() == 0)
+      {
+         const XString nameAttS("name");
+         const XString nameS = matEl->getAttribute(X(nameAttS));
+         cerr << "makeTargetTable::addComposite - "
+              << "composite " << S(nameS) << " is missing information."
+              << endl;
+         exit(2);
+      }
+      DOMElement* specEl = (DOMElement*)specList->item(0);
+      const XString fracAttS("fraction");
+      const XString fS(specEl->getAttribute(X(fracAttS)));
+      float fMass_m = atof(S(fS));
+      float density_m = set_density(refEl);
+      float density = set_density(targetEl);
+      fVol[m] = fMass_m*(density/density_m);
+   }
+   targetEl->appendChild(matVecEl);
+
+   const XString rarrayS("real_array");
+   DOMElement* fVolEl = targetEl->getOwnerDocument()->createElement(X(rarrayS));
+   const XString propS("prop");
+   fVolEl->setAttribute(X(nameAttS),X(propS));
+   char str[20];
+   sprintf(str,"%f",fVol[0]);
+   XString fVolS(str);
+   for (int m=1; m < matCount; m++)
+   {
+      sprintf(str," %f",fVol[m]);
+      const XString xS(str);
+      fVolS += xS;
+   }
+   const XString valuesAttS("values");
+   fVolEl->setAttribute(X(valuesAttS),X(fVolS));
+   targetEl->appendChild(fVolEl);
+
+   const XString modelAttS("model");
+   const XString templAttS("template");
+   const XString mixtureS("Mixture");
+   const XString dbS("db/mixtures.db");
+   targetEl->setAttribute(X(modelAttS),X(mixtureS));
+   targetEl->setAttribute(X(templAttS),X(dbS));
+   processTemplateFile(targetEl,S(dbS));
+   return 0;
+}
+
+int makeTargetTable::addModel(DOMElement* const targetEl)
+{
+   const XString paramAttS("parameters");
+   const XString parS = targetEl->getAttribute(X(paramAttS));
+   if (parS != 0)
+   {
+      DOMElement* parEl = targetEl->getOwnerDocument()->getElementById(X(parS));
+      for (DOMNode* var = parEl->getFirstChild(); 
+           var != 0;
+           var = var->getNextSibling() )
+      {
+         if (var->getNodeType() != DOMNode::ELEMENT_NODE)
+            continue;
+         DOMElement* varEl = (DOMElement*)var;
+         const XString refS("reference");
+         const XString varS = varEl->getTagName();
+         if (varS.equals(refS))
+         {
+            const XString valueAttrS("value");
+            const XString valueS = varEl->getAttribute(X(valueAttrS));
+            DOMElement* matEl = varEl->getOwnerDocument()->getElementById(X(valueS));
+            add(matEl);
+         }
+      }
+   }
+   for (DOMNode* var = targetEl->getFirstChild(); 
+        var != 0;
+        var = var->getNextSibling() )
+   {
+      if (var->getNodeType() != DOMNode::ELEMENT_NODE)
+         continue;
+      DOMElement* varEl = (DOMElement*)var;
+      const XString varS = varEl->getTagName();
+      if (varS.equals("reference"))
+      {
+         const XString valueAttrS("value");
+         const XString valueS = varEl->getAttribute(X(valueAttrS));
+         DOMElement* matEl = varEl->getOwnerDocument()->getElementById(X(valueS));
+         add(matEl);
+      }
+      else if (varS.equals("mcfast"))
+      {
+         add(varEl,targetEl);
+      }
+   }
+   const XString templAttS("template");
+   const XString templS = targetEl->getAttribute(X(templAttS));
+   processTemplateFile(targetEl,S(templS));
+   return 0;
+}
+
+void makeTargetTable::set_name(DOMElement* const targetEl)
+{
+   const XString nameAttS("name");
+   const XString valueAttS("value");
+   const XString stringS("string");
+   DOMElement* nameEl = lookup(targetEl,stringS,nameAttS);
+   if (nameEl == 0)
+   {
+      const XString nameS = targetEl->getAttribute(X(nameAttS));
+      nameEl = targetEl->getOwnerDocument()->createElement(X(stringS));
+      nameEl->setAttribute(X(nameAttS),X(nameAttS));
+      nameEl->setAttribute(X(valueAttS),X(nameS));
+      targetEl->appendChild(nameEl);
    }
 }
 
-XString::XString(const char* const s)
+float makeTargetTable::set_a(DOMElement* const targetEl)
 {
-   if (s) {
-      fUnicodeForm = XMLString::transcode(s);
-      fLocalForm = XMLString::replicate(s);
+   const XString nameAttS("name");
+   const XString valueAttS("value");
+   const XString realS("real");
+   const XString aAttS("a");
+   XString aS = targetEl->getAttribute(X(aAttS));
+   DOMElement* aEl = lookup(targetEl,realS,aAttS);
+   if (aEl == 0)
+   {
+      if (aS == 0)
+      {
+         const XString addmatS("addmaterial");
+         DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
+         int matCount = matList->getLength();
+         float a_sum=0;
+         float wgt_sum=0;
+         for (int m=0; m < matCount; m++)
+         {
+            DOMElement* matEl = (DOMElement*)matList->item(m);
+            const XString materialS("material");
+            const XString refS = matEl->getAttribute(X(materialS));
+            DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
+            float a_m = set_a(refEl);
+            float wgt_m=0;
+            const XString natomsS("natoms");
+            DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
+            if (wgtList->getLength())
+            {
+               DOMElement* natomsEl = (DOMElement*)wgtList->item(0);
+               const XString nAttS("n");
+               const XString nS = natomsEl->getAttribute(X(nAttS));
+               int n = atoi(S(nS));
+               wgt_m = n*a_m;
+            }
+            const XString fractionS("fractionmass");
+            wgtList = matEl->getElementsByTagName(X(fractionS));
+            if (wgtList->getLength())
+            {
+               DOMElement* fractionEl = (DOMElement*)wgtList->item(0);
+               const XString fractionAttS("fraction");
+               const XString fracS = fractionEl->getAttribute(X(fractionAttS));
+               wgt_m = atof(S(fracS));
+            }
+            a_sum += a_m*wgt_m;
+            wgt_sum += wgt_m;
+         }
+         char aStr[20];
+         sprintf(aStr,"%g",a_sum/wgt_sum);
+         const XString aStrS(aStr);
+         aS = aStrS;
+      }
+      DOMElement* aEl = targetEl->getOwnerDocument()->createElement(X(realS));
+      aEl->setAttribute(X(nameAttS),X(aAttS));
+      aEl->setAttribute(X(valueAttS),X(aS));
+      targetEl->appendChild(aEl);
    }
-   else {
-      fUnicodeForm = XMLString::transcode("");
-      fLocalForm = XMLString::replicate("");
+   return atof(S(aS));
+}
+
+float makeTargetTable::set_z(DOMElement* const targetEl)
+{
+   const XString nameAttS("name");
+   const XString valueAttS("value");
+   const XString realS("real");
+   const XString zAttS("z");
+   XString zS = targetEl->getAttribute(X(zAttS));
+   DOMElement* zEl = lookup(targetEl,realS,zAttS);
+   if (zEl == 0)
+   {
+      if (zS == 0)
+      {
+         const XString addmatS("addmaterial");
+         DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
+         int matCount = matList->getLength();
+         float z_sum=0;
+         float wgt_sum=0;
+         for (int m=0; m < matCount; m++)
+         {
+            DOMElement* matEl = (DOMElement*)matList->item(m);
+            const XString materialS("material");
+            const XString refS = matEl->getAttribute(X(materialS));
+            DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
+            float z_m = set_z(refEl);
+            float wgt_m=0;
+            const XString natomsS("natoms");
+            DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
+            if (wgtList->getLength())
+            {
+               DOMElement* natomsEl = (DOMElement*)wgtList->item(0);
+               const XString nAttS("n");
+               const XString nS = natomsEl->getAttribute(X(nAttS));
+               int n = atoi(S(nS));
+               const XString materialS("material");
+               const XString refIdS = matEl->getAttribute(X(materialS));
+               DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refIdS));
+               wgt_m = n*set_a(refEl);
+            }
+            const XString fractionS("fractionmass");
+            wgtList = matEl->getElementsByTagName(X(fractionS));
+            if (wgtList->getLength())
+            {
+               DOMElement* fractionEl = (DOMElement*)wgtList->item(0);
+               const XString fractionAttS("fraction");
+               const XString fracS = fractionEl->getAttribute(X(fractionAttS));
+               wgt_m = atof(S(fracS));
+            }
+            z_sum += z_m*wgt_m;
+            wgt_sum += wgt_m;
+         }
+         char zStr[20];
+         sprintf(zStr,"%g",z_sum/wgt_sum);
+         const XString zStrS(zStr);
+         zS = zStrS;
+      }
+      DOMElement* zEl = targetEl->getOwnerDocument()->createElement(X(realS));
+      zEl->setAttribute(X(nameAttS),X(zAttS));
+      zEl->setAttribute(X(valueAttS),X(zS));
+      targetEl->appendChild(zEl);
+   }
+   return atof(S(zS));
+}
+
+float makeTargetTable::set_density(DOMElement* const targetEl)
+{
+   const XString nameAttS("name");
+   const XString valueAttS("value");
+   const XString realS("real");
+   const XString densityS("density");
+   DOMElement* densityEl = lookup(targetEl,realS,densityS);
+   if (densityEl == 0)
+   {
+      const XString addmatS("addmaterial");
+      DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
+      int matCount = matList->getLength();
+      float ohr_sum=0;
+      float wgt_sum=0;
+      for (int m=0; m < matCount; m++)
+      {
+         DOMElement* matEl = (DOMElement*)matList->item(m);
+         const XString materialS("material");
+         const XString refS = matEl->getAttribute(X(materialS));
+         DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
+         float rho_m = set_density(refEl);
+         float wgt_m=0;
+         const XString natomsS("natoms");
+         DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
+         if (wgtList->getLength())
+         {
+            const XString nameS = matEl->getAttribute(X(nameAttS));
+            cerr << "makeTargetTable::set_density - "
+                 << "no automatic density calculation for atomic mixture "
+                 << S(nameS) << endl;
+            exit(2);
+         }
+         const XString fractionS("fractionmass");
+         wgtList = matEl->getElementsByTagName(X(fractionS));
+         if (wgtList->getLength())
+         {
+            DOMElement* fractionEl = (DOMElement*)wgtList->item(0);
+            const XString fractionAttS("fraction");
+            const XString fracS = fractionEl->getAttribute(X(fractionAttS));
+            wgt_m = atof(S(fracS));
+         }
+         ohr_sum += wgt_m/rho_m;
+         wgt_sum += wgt_m;
+      }
+      char rhoStr[20];
+      sprintf(rhoStr,"%g",wgt_sum/ohr_sum);
+      const XString rhoS(rhoStr);
+      densityEl = targetEl->getOwnerDocument()->createElement(X(realS));
+      densityEl->setAttribute(X(nameAttS),X(densityS));
+      densityEl->setAttribute(X(valueAttS),X(rhoS));
+      targetEl->appendChild(densityEl);
+   }
+   const XString resultS = densityEl->getAttribute(X(valueAttS));
+   return atof(S(resultS));
+}
+
+float makeTargetTable::set_radlen(DOMElement* const targetEl)
+{
+   const XString nameAttS("name");
+   const XString valueAttS("value");
+   const XString realS("real");
+   const XString radlenS("radlen");
+   DOMElement* radlenEl = lookup(targetEl,realS,radlenS);
+   if (radlenEl == 0)
+   {
+      const XString addmatS("addmaterial");
+      DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
+      int matCount = matList->getLength();
+      float rho = set_density(targetEl);
+      float adbmal_sum=0;
+      float wgt_sum=0;
+      for (int m=0; m < matCount; m++)
+      {
+         DOMElement* matEl = (DOMElement*)matList->item(m);
+         const XString materialS("material");
+         const XString refS = matEl->getAttribute(X(materialS));
+         DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
+         float lambda_m = set_radlen(refEl);
+         float rho_m = set_density(refEl);
+         float wgt_m=0;
+         const XString natomsS("natoms");
+         DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
+         if (wgtList->getLength())
+         {
+            DOMElement* natomsEl = (DOMElement*)wgtList->item(0);
+            const XString nAttS("n");
+            const XString nS = natomsEl->getAttribute(X(nAttS));
+            int n = atoi(S(nS));
+            wgt_m = n*set_a(refEl);
+         }
+         const XString fractionS("fractionmass");
+         wgtList = matEl->getElementsByTagName(X(fractionS));
+         if (wgtList->getLength())
+         {
+            DOMElement* fractionEl = (DOMElement*)wgtList->item(0);
+            const XString fractionAttS("fraction");
+            const XString fracS = fractionEl->getAttribute(X(fractionAttS));
+            wgt_m = atof(S(fracS));
+         }
+         adbmal_sum += (wgt_m/lambda_m)*(rho/rho_m);
+         wgt_sum += wgt_m;
+      }
+      char lambdaStr[20];
+      sprintf(lambdaStr,"%g",wgt_sum/adbmal_sum);
+      const XString lambdaS(lambdaStr);
+      radlenEl = targetEl->getOwnerDocument()->createElement(X(realS));
+      radlenEl->setAttribute(X(nameAttS),X(radlenS));
+      radlenEl->setAttribute(X(valueAttS),X(lambdaS));
+      targetEl->appendChild(radlenEl);
+   }
+   const XString resultS = radlenEl->getAttribute(X(valueAttS));
+   return atof(S(resultS));
+}
+
+float makeTargetTable::set_collen(DOMElement* const targetEl)
+{
+   const XString nameAttS("name");
+   const XString valueAttS("value");
+   const XString realS("real");
+   const XString collenS("collen");
+   DOMElement* collenEl = lookup(targetEl,realS,collenS);
+   if (collenEl == 0)
+   {
+      const XString addmatS("addmaterial");
+      DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
+      int matCount = matList->getLength();
+      float rho = set_density(targetEl);
+      float adbmal_sum=0;
+      float wgt_sum=0;
+      for (int m=0; m < matCount; m++)
+      {
+         DOMElement* matEl = (DOMElement*)matList->item(m);
+         const XString materialS("material");
+         const XString refS = matEl->getAttribute(X(materialS));
+         DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
+         float lambda_m = set_collen(refEl);
+         float rho_m = set_density(refEl);
+         float wgt_m=0;
+         const XString natomsS("natoms");
+         DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
+         if (wgtList->getLength())
+         {
+            DOMElement* natomsEl = (DOMElement*)wgtList->item(0);
+            const XString nAttS("n");
+            const XString nS = natomsEl->getAttribute(X(nAttS));
+            int n = atoi(S(nS));
+            wgt_m = n*set_a(refEl);
+         }
+         const XString fractionS("fractionmass");
+         wgtList = matEl->getElementsByTagName(X(fractionS));
+         if (wgtList->getLength())
+         {
+            DOMElement* fractionEl = (DOMElement*)wgtList->item(0);
+            const XString fractionAttS("fraction");
+            const XString fracS = fractionEl->getAttribute(X(fractionAttS));
+            wgt_m = atof(S(fracS));
+         }
+         adbmal_sum += (wgt_m/lambda_m)*(rho/rho_m);
+         wgt_sum += wgt_m;
+      }
+      char lambdaStr[20];
+      sprintf(lambdaStr,"%g",wgt_sum/adbmal_sum);
+      const XString lambdaS(lambdaStr);
+      collenEl = targetEl->getOwnerDocument()->createElement(X(realS));
+      collenEl->setAttribute(X(nameAttS),X(collenS));
+      collenEl->setAttribute(X(valueAttS),X(lambdaS));
+      targetEl->appendChild(collenEl);
+   }
+   const XString resultS = collenEl->getAttribute(X(valueAttS));
+   return atof(S(resultS));
+}
+
+float makeTargetTable::set_abslen(DOMElement* const targetEl)
+{
+   const XString nameAttS("name");
+   const XString valueAttS("value");
+   const XString realS("real");
+   const XString abslenS("abslen");
+   DOMElement* abslenEl = lookup(targetEl,realS,abslenS);
+   if (abslenEl == 0)
+   {
+      const XString addmatS("addmaterial");
+      DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
+      int matCount = matList->getLength();
+      float rho = set_density(targetEl);
+      float adbmal_sum=0;
+      float wgt_sum=0;
+      for (int m=0; m < matCount; m++)
+      {
+         DOMElement* matEl = (DOMElement*)matList->item(m);
+         const XString materialS("material");
+         const XString refS = matEl->getAttribute(X(materialS));
+         DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
+         float lambda_m = set_abslen(refEl);
+         float rho_m = set_density(refEl);
+         float wgt_m=0;
+         const XString natomsS("natoms");
+         DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
+         if (wgtList->getLength())
+         {
+            DOMElement* natomsEl = (DOMElement*)wgtList->item(0);
+            const XString nAttS("n");
+            const XString nS = natomsEl->getAttribute(X(nAttS));
+            int n = atoi(S(nS));
+            wgt_m = n*set_a(refEl);
+         }
+         const XString fractionS("fractionmass");
+         wgtList = matEl->getElementsByTagName(X(fractionS));
+         if (wgtList->getLength())
+         {
+            DOMElement* fractionEl = (DOMElement*)wgtList->item(0);
+            const XString fractionAttS("fraction");
+            const XString fracS = fractionEl->getAttribute(X(fractionAttS));
+            wgt_m = atof(S(fracS));
+         }
+         adbmal_sum += (wgt_m/lambda_m)*(rho/rho_m);
+         wgt_sum += wgt_m;
+      }
+      char lambdaStr[20];
+      sprintf(lambdaStr,"%g",wgt_sum/adbmal_sum);
+      const XString lambdaS(lambdaStr);
+      abslenEl = targetEl->getOwnerDocument()->createElement(X(realS));
+      abslenEl->setAttribute(X(nameAttS),X(abslenS));
+      abslenEl->setAttribute(X(valueAttS),X(lambdaS));
+      targetEl->appendChild(abslenEl);
+   }
+   const XString resultS = abslenEl->getAttribute(X(valueAttS));
+   return atof(S(resultS));
+}
+
+float makeTargetTable::set_dedx(DOMElement* const targetEl)
+{
+   const XString nameAttS("name");
+   const XString valueAttS("value");
+   const XString realS("real");
+   const XString dedxS("dedx");
+   DOMElement* dedxEl = lookup(targetEl,realS,dedxS);
+   if (dedxEl == 0)
+   {
+      const XString addmatS("addmaterial");
+      DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
+      int matCount = matList->getLength();
+      float rho = set_density(targetEl);
+      float dedx_sum=0;
+      float wgt_sum=0;
+      for (int m=0; m < matCount; m++)
+      {
+         DOMElement* matEl = (DOMElement*)matList->item(m);
+         const XString materialS("material");
+         const XString refS = matEl->getAttribute(X(materialS));
+         DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
+         float dedx_m = set_dedx(refEl);
+         float rho_m = set_density(refEl);
+         float wgt_m=0;
+         const XString natomsS("natoms");
+         DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
+         if (wgtList->getLength())
+         {
+            DOMElement* natomsEl = (DOMElement*)wgtList->item(0);
+            const XString nAttS("n");
+            const XString nS = natomsEl->getAttribute(X(nAttS));
+            int n = atoi(S(nS));
+            wgt_m = n*set_a(refEl);
+         }
+         const XString fractionS("fractionmass");
+         wgtList = matEl->getElementsByTagName(X(fractionS));
+         if (wgtList->getLength())
+         {
+            DOMElement* fractionEl = (DOMElement*)wgtList->item(0);
+            const XString fractionAttS("fraction");
+            const XString fracS = fractionEl->getAttribute(X(fractionAttS));
+            wgt_m = atof(S(fracS));
+         }
+         dedx_sum += (wgt_m*dedx_m)*(rho/rho_m);
+         wgt_sum += wgt_m;
+      }
+      char dedxStr[20];
+      sprintf(dedxStr,"%g",dedx_sum/wgt_sum);
+      const XString dedxStrS(dedxStr);
+      dedxEl = targetEl->getOwnerDocument()->createElement(X(realS));
+      dedxEl->setAttribute(X(nameAttS),X(dedxS));
+      dedxEl->setAttribute(X(valueAttS),X(dedxStrS));
+      targetEl->appendChild(dedxEl);
+   }
+   const XString resultS = dedxEl->getAttribute(X(valueAttS));
+   return atof(S(resultS));
+}
+
+DOMElement* makeTargetTable::lookup(const DOMElement* const targetEl,
+                                    const XString& type, const XString& name)
+{
+   if (targetEl == 0)
+      return 0;
+
+   const XString nameAttS("name");
+   DOMNodeList* varList = targetEl->getElementsByTagName(X(type));
+   int varCount = varList->getLength();
+   for (int v=0; v < varCount; v++)
+   {
+      DOMElement* varEl = (DOMElement*)varList->item(v);
+      const XString nameS = varEl->getAttribute(X(nameAttS));
+      if (nameS.equals(name))
+         return varEl;
+   }
+
+   const XString paramAttS("parameters");
+   const XString paramS = targetEl->getAttribute(X(paramAttS));
+   if (paramS != 0)
+   {
+      DOMElement* paramEl = targetEl->getOwnerDocument()->getElementById(X(paramS));
+      varList = paramEl->getElementsByTagName(X(type));
+      varCount = varList->getLength();
+      for (int v=0; v < varCount; v++)
+      {
+         DOMElement* varEl = (DOMElement*)varList->item(v);
+         const XString nameS = varEl->getAttribute(X(nameAttS));
+         if (nameS.equals(name))
+            return varEl;
+      }
+   }
+
+   for (int i=0; i < fTableLen; i++)
+   {
+      if (fTargetEl[i] == targetEl)
+      {
+         return lookup(fParentEl[i],type,name);
+      }
+   }
+   return 0;
+}
+
+void makeTargetTable::dump(const DOMElement* const targetEl)
+{
+   static int indent = 0;
+   for (int n = 0; n < indent; n++)
+   {
+      cout << "  ";
+   }
+   
+   XString tagS(targetEl->getTagName());
+   cout << "<" << S(tagS);
+   DOMNamedNodeMap* attrList = targetEl->getAttributes();
+   int attrListLength = attrList->getLength();
+   for (int a = 0; a < attrListLength; a++)
+   {
+      DOMNode* node = attrList->item(a);
+      XString nameS(node->getNodeName());
+      XString valueS(node->getNodeValue());
+      cout << " " << S(nameS) << "=\"" << S(valueS) << "\"";
+   }
+
+   DOMNodeList* contList = targetEl->getChildNodes();
+   int contListLength = contList->getLength();
+   if (contListLength > 0)
+   {
+      cout << ">" << endl;
+      indent++;
+      for (int c = 0; c < contListLength; c++)
+      {
+         DOMNode* node = contList->item(c);
+         if (node->getNodeType() == DOMNode::ELEMENT_NODE)
+         {
+            DOMElement* contEl = (DOMElement*) node;
+            dump(contEl);
+         }
+      }
+      indent--;
+      for (int n = 0; n < indent; n++)
+      {
+         cout << "  ";
+      }
+      cout << "</" << S(tagS) << ">" << endl;
+   }
+   else
+   {
+      cout << " />" << endl;
    }
 }
 
-XString::XString(const XString& X)
+void makeTargetTable::dump(DOMElement* const targetEl)
 {
-   if (X.fUnicodeForm) {
-      fUnicodeForm = XMLString::replicate(X.fUnicodeForm);
-      fLocalForm = XMLString::transcode(X.fUnicodeForm);
-   }
-   else {
-      fUnicodeForm = XMLString::transcode("");
-      fLocalForm = XMLString::replicate("");
-   }
-}
-
-XString::~XString()
-{
-   XMLString::release(&fUnicodeForm);
-   XMLString::release(&fLocalForm);
-}
-
-const char* XString::localForm() const
-{
-   return fLocalForm;
-}
-
-const XMLCh* XString::unicodeForm() const
-{
-   return fUnicodeForm;
-}
-
-bool XString::equals(const XString& X) const
-{
-   return XMLString::equals(fUnicodeForm,X.fUnicodeForm);
-}
-
-bool XString::equals(const char* const s) const
-{
-   return XMLString::equals(fLocalForm,s);
-}
-
-bool XString::equals(const XMLCh* const x) const
-{
-   return XMLString::equals(fUnicodeForm,x);
-}
-
-int XString::stringLen() const
-{
-   return XMLString::stringLen(fUnicodeForm);
-}
-
-bool XString::operator==(const int len) const
-{
-   return (stringLen() == len);
-}
-
-bool XString::operator!=(const int len) const
-{
-   return (stringLen() != len);
-}
-
-XString& XString::operator=(const XString& X)
-{
-   XMLString::release(&fUnicodeForm);
-   XMLString::release(&fLocalForm);
-   fUnicodeForm = XMLString::replicate(X.fUnicodeForm);
-   fLocalForm = XMLString::transcode(X.fUnicodeForm);
-   return *this;
-}
-
-XString& XString::operator+=(const XString& X)
-{
-   int len = stringLen() + X.stringLen();
-   XMLCh* sum = new XMLCh[len+1];
-   XMLString::copyString(sum,fUnicodeForm);
-   XMLString::catString(sum,X.fUnicodeForm);
-   XMLString::release(&fUnicodeForm);
-   XMLString::release(&fLocalForm);
-   fUnicodeForm = XMLString::replicate(sum);
-   fLocalForm = XMLString::transcode(sum);
-   delete [] sum;
-   return *this;
+   return dump((const DOMElement* const) targetEl);
 }

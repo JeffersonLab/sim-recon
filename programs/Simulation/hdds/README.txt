@@ -3,6 +3,10 @@
 	    		    Richard Jones
 	    		  September 10, 2003
 
+This document is intended as a quick-start guide for building and using
+the hdds tools.  For more information and for discussion of features and
+bugs, please go to http://zeus.phys.cuonn.edu/forums/gluex.org
+
 1) Since you are reading this, you have already done the first step.
    From your cvs source directory you typed:
 
@@ -49,7 +53,7 @@
    by going to the hdds directory you created in step 1 and doing make.
 
    halld> cd hdds
-   halld> make hdds-geant hdds-mcfast
+   halld> make hdds-geant hdds-mcfast hdds-root
 
 7) The tool hdds-geant will run immediately.  If you invoke it by the
    command "make hddsGeant3.f" then it will use hdds-geant to create the

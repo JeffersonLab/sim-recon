@@ -81,7 +81,7 @@
     <reference	name="material"	value="Scintillator" />
   </parameters>
 
-  <mcfast model="Absorberbox" template="db/absorberbox.db"
+  <mcfast model="AbsorberBox" template="db/absorberbox.db"
 			      parameters="forwardTOF_pars">
     <string	name="name"	value="FTOF" />
     <string	name="shape"	value="BOX"  />

@@ -290,7 +290,7 @@ int main(int argC, char* argV[])
 #if defined OLD_STYLE_XERCES_PARSER
    DOMDocument* document = parseInputDocument(xmlFile);
 #else
-   DOMDocument* document = buildDOMDocument(xmlFile);
+   DOMDocument* document = buildDOMDocument(xmlFile,false);
 #endif
    if (document == 0)
    {
@@ -330,6 +330,7 @@ int main(int argC, char* argV[])
    return 0;
 }
 
+#if 0
 /* Parser implemented using the old-style XercesDOMParser interface
  * based on the example code in $XERCESCROOT/samples/DOMPrint
  */
@@ -529,7 +530,7 @@ void MyDOMErrorHandler::resetErrors()
    fSawErrors = false;
 }
 
-
+#endif
 
 int Refsys::fVolumes = 0;
 int Refsys::fRotations = 0;
@@ -2232,6 +2233,8 @@ int Refsys::createVolume(DOMElement* el)
    return icopy;
 }
 
+#if 0
+
 XString::XString(void)
 {
    fUnicodeForm = XMLString::transcode("");
@@ -2342,3 +2345,4 @@ XString& XString::operator+=(const XString& X)
    delete [] sum;
    return *this;
 }
+#endif

@@ -5,108 +5,39 @@ using namespace std;
 
 XERCES_CPP_NAMESPACE_USE
 
-/* a simple error handler deriviative to install on parser */
+#include "XString.hpp"
+#include "XParsers.hpp"
 
-class MyOwnErrorHandler : public ErrorHandler
-{
-public:
-   MyOwnErrorHandler();
-   ~MyOwnErrorHandler();
-
-   bool getSawErrors() const;
-
-/* Implementation of the SAX ErrorHandler interface */
-   void warning(const SAXParseException& e);
-   void error(const SAXParseException& e);
-   void fatalError(const SAXParseException& e);
-   void resetErrors();
-
-private :
-   MyOwnErrorHandler(const MyOwnErrorHandler&);
-   void operator=(const MyOwnErrorHandler&);
-
-   bool    fSawErrors;     // flag to record that an error occurred
-};
-
-class MyDOMErrorHandler : public DOMErrorHandler
-{
-public:
-   MyDOMErrorHandler();
-   ~MyDOMErrorHandler();
-
-   bool getSawErrors() const;
-   bool handleError(const DOMError& domError);
-   void resetErrors();
-
-private :
-    MyDOMErrorHandler(const MyDOMErrorHandler&);
-    void operator=(const MyDOMErrorHandler&);
-    bool fSawErrors;
-};
-
-inline bool MyDOMErrorHandler::getSawErrors() const
-{
-       return fSawErrors;
-}
-
-/*  a simple class for translation between XMLCh strings and local coding */
-
-class XString
+class makeTargetTable
 {
 public :
-   XString(void);
-   XString(const XMLCh* const x);
-   XString(const char* const s);
-   XString(const XString& X);
-   ~XString();
+   makeTargetTable(const int capacity);
+   ~makeTargetTable();
 
-   const char* localForm() const;
-   const XMLCh* unicodeForm() const;
-   bool equals(const XString& X) const;
-   bool equals(const char* const s) const;
-   bool equals(const XMLCh* const x) const;
-   int stringLen() const;
-   bool operator==(const int len) const;
-   bool operator!=(const int len) const;
-   XString& operator=(const XString& X);
-   XString& operator+=(const XString& X);
+   int add(DOMElement* const targetEl,
+           DOMElement* const parentEl = 0);
+   DOMElement* lookup(const DOMElement* const targetEl,
+                      const XString& type, const XString& name);
 
 private :
-    XMLCh* fUnicodeForm;	// string in XMLCh coding, eg. Unicode
-    char* fLocalForm;		// string in local coding, eg. ASCII
+   int fTableLen;
+   int fTableSize;
+   DOMElement** fTargetEl;
+   DOMElement** fParentEl;
+
+   int addElement(DOMElement* const targetEl);
+   int addComposite(DOMElement* const targetEl);
+   int addModel(DOMElement* const targetEl);
+
+   void set_name(DOMElement* const targetEl);
+   float set_a(DOMElement* const targetEl);
+   float set_z(DOMElement* const targetEl);
+   float set_density(DOMElement* const targetEl);
+   float set_radlen(DOMElement* const targetEl);
+   float set_collen(DOMElement* const targetEl);
+   float set_abslen(DOMElement* const targetEl);
+   float set_dedx(DOMElement* const targetEl);
+
+   void dump(const DOMElement* const targetEl);
+   void dump(DOMElement* const targetEl);
 };
-
-/* class for holding a parameter list */
-
-class MCfastParameterList
-{
-public:
-   MCfastParameterList(const int capacity);
-   ~MCfastParameterList();
-
-   void inherits(MCfastParameterList& anc);
-   void append(const DOMElement* par);
-   const DOMElement* get(char* name, char* type,
-                          int number=0, char* unit=0) const;
-
-private:
-   MCfastParameterList* fAncestor;	// inheritance pointer, if any
-   const DOMElement** fListEl;		// array of DOM_Element contents
-   int fListLen;			// current parameter count
-   int fListCap;			// allocation size
-};
-
-
-inline ostream& operator<<(ostream& target, const XString& toDump)
-{
-   target << toDump.localForm();
-   return target;
-}
-
-inline bool MyOwnErrorHandler::getSawErrors() const
-{
-   return fSawErrors;
-}
-
-DOMDocument* parseInputDocument(const char* file);
-DOMDocument* buildDOMDocument(const char* file);

@@ -59,7 +59,7 @@
 
 <!-- Currently the mcfast model of the Cerenkov is 1cm of scintillator -->
 
-  <mcfast model="Absorberbox" template="db/absorberbox.db"
+  <mcfast model="AbsorberBox" template="db/absorberbox.db"
 			      parameters="cerenkovCntr_pars">
     <string	name="name" 	value="Cerenkov" />
     <string	name="shape" 	value="BOX" 	comment="BOX only" />
