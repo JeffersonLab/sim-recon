@@ -1,0 +1,68 @@
+<!--
+<?xml version="1.0"?>
+<!DOCTYPE HDDS SYSTEM "HDDS_1.0.dtd">
+
+  Hall D Geometry Data Base: Cerenkov counter
+  ********************************************
+
+     version 1.0: Initial version	-rtj
+ 
+<HDDS>
+						-->
+
+<section name        = "CerenkovCntr"
+         version     = "1.0"
+         date        = "Mon Apr 15, 2001"
+         author      = "R.T. Jones"
+         top_volume  = "CERE"
+         DTD_version = "v1">
+
+  <parameters name="cerenkovCntr_pars" type="mcfast">
+    <real 	name="Rmin"	value="20.0"
+				unit="cm"	/>
+    <real	name="Rmax"	value="95.0"
+				unit="cm"	/>
+    <real	name="zLength"	value="90.0"
+				unit="cm"	/>
+    <real	name="zCenter"	value="455.0"
+				unit="cm"	/>
+  </parameters>
+
+
+<!-- Currently the mcfast model of the Cerenkov is 1cm of scintillator -->
+
+  <mcfast model="Absorberbox" template="db/absorberbox.db"
+			      parameters="cerenkovCntr_pars">
+    <string	name="name" 	value="Cerenkov" />
+    <string	name="shape" 	value="BOX" 	comment="BOX only" />
+    <int	name="type" 	value="2" 	comment="1=barrel, 2=forward" />
+    <real_array	name="xlimit"	values="-95.0  95.0" comment="x dimensions"
+				unit="cm"	/>
+    <real_array	name="ylimit"	values="-95.0  95.0" comment="y dimensions"
+				unit="cm"	/>
+    <real_array	name="xlimit_gap" values="-6.0  6.0" comment="beam hole x"
+				unit="cm"	/>
+    <real_array	name="ylimit_gap" values="-6.0  6.0" comment="beam hole y"
+				unit="cm"	/>
+    <real	name="z0"	value="420.5"	comment="z of midplane"
+				unit="cm"	/>
+    <real	name="zlen"	value="1.0"	comment="thickness"
+				unit="cm"	/>
+    <reference	name="material"	value="Scintillator"			    />
+  </mcfast>
+
+  <pcon name="CERE" material="CerenkovGas" comment="Cerenkov counter volume"
+		    parameters="cerenkovCntr_pars">
+    <polyplane Rio_Z="20.0  95.0   0.0" />
+    <polyplane Rio_Z="20.0  95.0  50.0" />
+    <polyplane Rio_Z="20.0 105.0  50.1" />
+    <polyplane Rio_Z="20.0 105.0  90.0" />
+  </pcon>
+
+  <composition name="CerenkovCntr">
+    <posXYZ volume="CERE" X_Y_Z="0.0  0.0  455.0" />
+  </composition>
+
+</section>
+
+<!-- </HDDS> -->

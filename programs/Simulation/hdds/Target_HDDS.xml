@@ -1,0 +1,102 @@
+<!--
+<?xml version="1.0"?>
+<!DOCTYPE HDDS SYSTEM "HDDS_1.0.dtd">
+
+  Hall D Geometry Data Base: Target
+  **********************************
+
+     version 1.0: Initial version	-rtj
+ 
+<HDDS>
+						-->
+
+<section name        = "Target"
+         version     = "1.0"
+         date        = "Mon Apr 15, 2001"
+         author      = "R.T. Jones"
+         top_volume  = "TARG"
+         DTD_version = "v1">
+
+  <parameters name="targetTube_pars" type="mcfast">
+    <real name="rmin" value="0.00"  unit="cm" comment="inner radius" />
+    <real name="rmax" value="2.50"  unit="cm" comment="outer radius" />
+    <real name="z0"   value="225.0" unit="cm" comment="from origin"  />
+    <real name="zlen" value="450.0" unit="cm" comment="through the FCAL" />
+    <reference name="mat_fill" value="Vacuum"  comment="what fills the pipe" />
+    <real_array name="bndrthk" comment="innner outer upstream downstream
+           wall thicknesses" values="    0.00   0.05   0.00      0.00   "
+                             unit="cm" />
+    <reference_vector name="matrbnd"    comment="window materials"   >
+      <reference_data value="Vacuum"    comment="inner wall??"      />
+      <reference_data value="Beryllium" comment="outer wall"        />
+      <reference_data value="Vacuum"    comment="upstream window"   />
+      <reference_data value="Vacuum"    comment="downstream window" />
+    </reference_vector>
+  </parameters>
+
+  <parameters name="target_pars" type="mixed">
+    <real_array name="xyz" values="0.   0.   65." comment="center of target"
+                           unit="cm" />
+    <real_array name="sig" values="0.30 0.30 15." comment="size of target"
+                           unit="cm" />
+    <real name="rmax"      value="1.50"  comment="radius of target vessel"
+                           unit="cm" />
+    <real name="zlen"      value="30.0"  comment="length of target vessel"
+                           unit="cm" />
+    <reference name="mat_fill" value="LiqHydrogen" comment="target material" />
+    <real_array name="bndrthk" comment="cylinder upstream downstream
+           wall thicknesses"   values="   0.03     0.02      0.02   "
+                               unit="cm" />
+    <reference_vector name="matrbnd"   comment="target vessel materials">
+      <reference_data value="Aluminum" comment="cylinder wall"     />
+      <reference_data value="Aluminum" comment="upstream window"   />
+      <reference_data value="Aluminum" comment="downstream window" />
+    </reference_vector>
+  </parameters>
+
+  <mcfast model="BPipe" template="db/beampipe.db"
+			parameters="targetTube_pars">
+    <string name="name" value="beam"  />
+  </mcfast>
+
+  <mcfast model="BeamVrtx" template="db/beamvrtx.db" parameters="target_pars">
+  </mcfast>
+
+  <tubs name="TGTV" Rio_Z="0.00 1.50 30.0" material="LiqHydrogen"
+	parameters="target_pars"	comment="target vessel mother"      />
+  <tubs name="CYTV" Rio_Z="2.45 1.50 30.0" material="Aluminum"
+					comment="cylinder wall of beer can" />
+  <tubs name="UWTV" Rio_Z="0.00 1.45 0.02" material="Aluminum"
+					comment="entance wall of beer can"  />
+  <tubs name="DWTV" Rio_Z="0.00 1.45 0.02" material="Aluminum"
+					comment="exit wall of beer can"     />
+
+  <composition name="targetVessel" envelope="TGTV">
+    <posXYZ volume="CYTV">		        </posXYZ>
+    <posXYZ volume="UWTV" X_Y_Z="0. 0. -14.99"> </posXYZ>
+    <posXYZ volume="DWTV" X_Y_Z="0. 0. +14.99"> </posXYZ>
+  </composition>
+
+  <tubs name="TARG" Rio_Z="0.00 2.50 450.0" material="Vacuum"
+	parameters="targetTube_pars" 	comment="target tube mother volume" />
+  <tubs name="CYLW" Rio_Z="2.45 2.50 450.0" material="Beryllium"
+					comment="cylindrical wall of tube"  />
+  <tubs name="UWIT" Rio_Z="0.00 2.45 0.050" material="Kapton"
+					comment="upstream window of tube"   />
+  <tubs name="DWIT" Rio_Z="0.00 2.45 0.050" material="Kapton"
+					comment="downstream window of tube" />
+ 
+  <composition name="BerylliumPipe" envelope="TARG">
+    <posXYZ volume="CYLW">			 </posXYZ>
+    <posXYZ volume="UWIT" X_Y_Z="0. 0. -225.95"> </posXYZ>
+    <posXYZ volume="DWIT" X_Y_Z="0. 0. +225.95"> </posXYZ>
+    <posXYZ volume="TGTV" X_Y_Z="0. 0. -160.00"> </posXYZ>
+  </composition>
+
+  <composition name="Target">
+    <posXYZ volume="BerylliumPipe" X_Y_Z="0. 0. 225.0"> </posXYZ>
+  </composition>
+
+</section>
+
+<!-- </HDDS> -->

@@ -1,0 +1,51 @@
+<!--
+<?xml version="1.0"?>
+<!DOCTYPE HDDS SYSTEM "HDDS_1.0.dtd">
+
+  Hall D Geometry Data Base: Forward TOF counter
+  ***********************************************
+
+     version 1.0: Initial version	-rtj
+ 
+<HDDS>
+						-->
+
+<section name        = "ForwardTOF"
+         version     = "1.0"
+         date        = "Mon Apr 15, 2001"
+         author      = "R.T. Jones"
+         top_volume  = "FTOF"
+         DTD_version = "v1">
+
+  <parameters name="forwardTOF_pars" type="mcfast">
+    <real_array	name="xlimit"	values="-125.0 125.0" comment="x dimensions"
+				unit="cm"	/>
+    <real_array	name="ylimit"	values="-125.0 125.0" comment="y dimensions"
+				unit="cm"	/>
+    <real_array	name="xlimit_gap" values="-6.0  6.0" comment="beam hole x"
+				unit="cm"	/>
+    <real_array	name="ylimit_gap" values="-6.0  6.0" comment="beam hole y"
+				unit="cm"	/>
+    <real	name="z0"	value="566.27"	comment="z of midplane"
+				unit="cm"	/>
+    <real	name="zlen"	value="2.54"	comment="thickness"
+				unit="cm"	/>
+    <reference	name="material"	value="Scintillator" />
+  </parameters>
+
+  <mcfast model="Absorberbox" template="db/absorberbox.db"
+			      parameters="forwardTOF_pars">
+    <string	name="name"	value="FTOF" />
+    <string	name="shape"	value="BOX"  />
+    <int	name="type"	value="42"   />
+  </mcfast>
+
+  <box name="FTOF" X_Y_Z="250.  250.  2.54" material="Scintillator" />
+
+  <composition name="ForwardTOF">
+    <posXYZ volume="FTOF" X_Y_Z="0.0  0.0  566.2"> </posXYZ>
+  </composition>
+
+</section>
+
+<!-- </HDDS> -->

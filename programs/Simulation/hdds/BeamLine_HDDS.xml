@@ -1,0 +1,40 @@
+<!--
+<?xml version="1.0"?>
+<!DOCTYPE HDDS SYSTEM "HDDS_1.0.dtd">
+
+  Hall D Geometry Data Base: Beam Line
+  ************************************
+
+     version 1.0: Initial version	-rtj
+ 
+<HDDS>
+						-->
+
+<section name        = "BeamLine"
+         version     = "1.0"
+         date        = "Mon Apr 15, 2001"
+         author      = "R.T. Jones"
+         top_volume  = "BEAM"
+         DTD_version = "v1">
+
+  <!-- there is no mcfast model of the photon beamline -->
+
+  <box  name="BEAM" X_Y_Z="100. 100.  8000." material="Air"    />
+  <tubs name="PTUB" Rio_Z="0.0  10.0  8000." material="Vacuum" />
+  <tubs name="PPIP" Rio_Z="9.6  10.0  8000." material="Iron"   />
+
+  <composition name="beamTube" envelope="PTUB">
+    <posXYZ volume="PPIP" X_Y_Z="0.0  0.0  0.0" />
+  </composition>
+
+  <composition name="beamLine" envelope="BEAM">
+    <posXYZ volume="PTUB" X_Y_Z="0.0  0.0  0.0" />
+  </composition>
+
+  <composition name="BeamLine">
+    <posXYZ volume="PTUB" X_Y_Z="0.0  0.0  -4200.0" />
+  </composition>
+
+</section>
+
+<!-- </HDDS> -->

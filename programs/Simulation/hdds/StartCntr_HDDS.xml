@@ -1,0 +1,136 @@
+<!--
+<?xml version="1.0"?>
+<!DOCTYPE HDDS SYSTEM "HDDS_1.0.dtd">
+
+  Hall D Geometry Data Base: Start counter
+  *****************************************
+
+     version 1.0: Initial version	-rtj
+ 
+<HDDS>
+						-->
+
+<section name        = "StartCntr"
+         version     = "1.0"
+         date        = "Mon Apr 15, 2001"
+         author      = "R.T. Jones"
+         top_volume  = "VRTX"
+         DTD_version = "v1">
+
+  <parameters name="startCntr_pars" type="mcfast">
+    <real       name="rmin"	value="4.95"	comment="inner radius"
+				unit="cm"	/>
+    <real       name="rmax"	value="5.65"	comment="outer radius"
+				unit="cm"	/>
+    <real       name="z0"	value="80.0"	comment="z of midplane"
+				unit="cm"	/>
+    <real       name="zlen"	value="90.0"	comment="length of cntr"
+				unit="cm"	/>
+  </parameters>
+
+  <parameters name="startCntrLayer_pars" type="mcfast">
+    <int	name="det"	value="1"	comment="num of mother"   />
+    <real	name="zlen"	value="90.0"	comment="length of layer"
+				unit="cm"	/>
+    <real	name="cell_height" value="1.0"	comment="thickness"
+				unit="cm"	/>
+    <int	name="nwires"	value="25"	comment="segmentation"	  />
+    <int	name="ID_readout" value="-1"	/>
+    <int	name="ID_cathode" value="1"	/>
+    <real	name="phi0"	value="0."	comment="offset to wire 1"
+				unit="cm"	/>
+    <real	name="stereo_offset" value="0."	comment="where is phi0"
+				unit="cm"	/>
+    <real	name="eff_hit"	value="0.96"	comment="hit efficiency"
+				unit="cm"	/>
+    <real	name="eff_dedx"	value="0.96"	comment="dE/dx efficiency"
+				unit="cm"	/>
+    <real	name="siga"	value="0.04"	comment="xy resolution"
+				unit="cm"	/>
+    <real	name="sigb"	value="0.00"	comment="?? resolution"
+				unit="cm"	/>
+    <real	name="sigc"	value="0.00"	comment="?? resolution"
+				unit="cm"	/>
+  </parameters>
+
+  <parameters name="startCntrOffset_pars" type="mcfast">
+    <int	name="det"	value="1"	comment="num of mother"   />
+    <real	name="cell_offset" value="0.0"	comment="offset in phi"
+				unit="cm"	/>
+    <real	name="sag"	value="0.0"	comment="sagitta of wire"
+				unit="cm"	/>
+    <real_array	name="offset"	values="0.0 0.0 0.0" comment="not used"
+				unit="cm"	/>
+    <real_array	name="dircos"	values="0.0 0.0 0.0" comment="not used"
+				unit="cm"	/>
+  </parameters>
+
+
+  <mcfast model="Drift" template="db/drift.db" parameters="startCntr_pars">
+    <int	name="num"	value="1"	/>
+    <string     name="name"	value="VTX"	/>
+
+  <!-- for mcfast model the start counter as a vertex drift chamber -->
+
+    <int	name="num_anode"    value="3"	comment="anode layers" />
+    <int	name="num_cathode"  value="0"		 />
+    <reference  name="material"	    value="Scintillator" />
+    <real_array name="thick_boun"   comment="inner outer upstream downstream
+		window thicknesses" values=" 0.20  0.05    0.20     0.20 "
+				    unit="cm"	/>
+    <reference_vector name="mat_boun">
+      <reference_data value="Mylar" comment="inner window material"  />
+      <reference_data value="Mylar" comment="outer window material"  />
+      <reference_data value="Mylar" comment="upstream window matl"   />
+      <reference_data value="Mylar" comment="downstream window matl" />
+    </reference_vector>
+
+    <mcfast model="LayerDRFAno" template="db/drift_layer.db"
+			        parameters="startCntrLayer_pars">
+      <int	name="lyr"	value="1"	comment="layer number" 	 />
+      <real	name="radius"	value="5.0"	comment="central radius"
+				unit="cm"	/>
+      <real	name="stereo_tau" value="-0.10"	comment="twist angle tau"
+				unit="cm"	/>
+    </mcfast>
+    <mcfast model="LayerDRFAno" template="db/drift_layer.db"
+			        parameters="startCntrLayer_pars">
+      <int	name="lyr"	value="2"	comment="layer number" 	 />
+      <real	name="radius"	value="5.1"	comment="central radius"
+				unit="cm"	/>
+      <real	name="stereo_tau" value="0.0"	comment="twist angle tau"
+				unit="cm"	/>
+    </mcfast>
+    <mcfast model="LayerDRFAno" template="db/drift_layer.db"
+			        parameters="startCntrLayer_pars">
+      <int	name="lyr"	value="3"	comment="layer number" 	 />
+      <real	name="radius"	value="5.2"	comment="central radius"
+				unit="cm"	/>
+      <real	name="stereo_tau" value="+0.10"	comment="twist angle tau"
+				unit="cm"	/>
+    </mcfast>
+
+    <mcfast model="OffsetDRFAno" template="db/drift_offset.db"
+				 parameters="startCntrOffset_pars">
+      <int	name="lyr"	value="1"	comment="layer number"	/>
+    </mcfast>
+    <mcfast model="OffsetDRFAno" template="db/drift_offset.db"
+				 parameters="startCntrOffset_pars">
+      <int	name="lyr"	value="2"	comment="layer number"	/>
+    </mcfast>
+    <mcfast model="OffsetDRFAno" template="db/drift_offset.db"
+				 parameters="startCntrOffset_pars">
+      <int	name="lyr"	value="3"	comment="layer number"	/>
+    </mcfast>
+  </mcfast>
+
+  <tubs name="VRTX" Rio_Z="4.95  5.65  90.0" material="Scintillator"
+	parameters="startCntr_pars"	comment="start counter mother" />
+
+  <composition name="StartCntr">
+    <posXYZ volume="VRTX" X_Y_Z="0.0  0.0  80.0"> </posXYZ>
+  </composition>
+
+</section>
+
+<!-- </HDDS> -->

@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<!DOCTYPE HDDS SYSTEM "HDDS_1.0.dtd" [
+
+  <!ENTITY Material_s SYSTEM "Material_HDDS.xml">
+  <!ENTITY BeamLine_s SYSTEM "BeamLine_HDDS.xml">
+  <!ENTITY Target_s SYSTEM "Target_HDDS.xml"  >
+  <!ENTITY Solenoid_s SYSTEM "Solenoid_HDDS.xml">
+  <!ENTITY CentralDC_s SYSTEM "CentralDC_HDDS.xml">
+  <!ENTITY ForwardDC_s SYSTEM "ForwardDC_HDDS.xml">
+  <!ENTITY StartCntr_s SYSTEM "StartCntr_HDDS.xml">
+  <!ENTITY ForwardTOF_s SYSTEM "ForwardTOF_HDDS.xml">
+  <!ENTITY BarrelEMcal_s SYSTEM "BarrelEMcal_HDDS.xml">
+  <!ENTITY ForwardEMcal_s SYSTEM "ForwardEMcal_HDDS.xml">
+  <!ENTITY CerenkovCntr_s SYSTEM "CerenkovCntr_HDDS.xml">
+
+]>
+
+<HDDS DTD_version="v1">
+
+<!-- Include materials -->
+     &Material_s;
+
+<!-- Include spec files -->
+     &ForwardEMcal_s;
+     &BarrelEMcal_s;
+     &ForwardTOF_s;
+     &CerenkovCntr_s;
+     &ForwardDC_s;
+     &CentralDC_s;
+     &StartCntr_s;
+     &Target_s;
+     &Solenoid_s;
+     &BeamLine_s;
+<!-- End of include    -->
+
+
+<!-- Hall D Detector Specification : top volume
+     ******************************************
+-->
+<section name        = "HallD"
+         version     = "1.0"
+         date        = "Mon Apr 15, 2001"
+         author      = "R.T. Jones"
+         top_volume  = "HALL"
+         DTD_version = "v1">
+
+  <mcfast model="detector" template="db/detector.db">
+    <string name="name" value="AMEZON" />
+    <string name="geom_id" value="CENTRAL" />
+  </mcfast>
+
+  <box name="HALL" X_Y_Z="1000. 1000. 20000." material="Air"
+       				comment="master volume for description" />
+
+  <composition name="fieldVolume" envelope="LASS">
+    <posXYZ volume="Target">		</posXYZ>
+    <posXYZ volume="CentralDC">		</posXYZ>
+    <posXYZ volume="ForwardDC"> 	</posXYZ>
+    <posXYZ volume="StartCntr"> 	</posXYZ>
+    <posXYZ volume="BarrelEMcal">	</posXYZ>
+    <posXYZ volume="CerenkovCntr">	</posXYZ>
+  </composition>
+
+  <composition name="everything" envelope="HALL">
+    <posXYZ volume="BeamLine">		</posXYZ>
+    <posXYZ volume="fieldVolume">	</posXYZ>
+    <posXYZ volume="ForwardTOF">	</posXYZ>
+    <posXYZ volume="ForwardEMcal">	</posXYZ>
+  </composition>
+
+</section>
+
+
+</HDDS>

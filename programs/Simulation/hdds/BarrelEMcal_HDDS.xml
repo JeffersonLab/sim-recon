@@ -1,0 +1,73 @@
+<!--
+<?xml version="1.0"?>
+<!DOCTYPE HDDS SYSTEM "HDDS_1.0.dtd">
+
+  Hall D Geometry Data Base: Barrel EM calorimeter
+  *************************************************
+
+     version 1.0: Initial version  -rtj
+ 
+<HDDS>
+						-->
+
+<section name        = "BarrelEMcal"
+         version     = "1.0"
+         date        = "Mon Apr 15, 2001"
+         author      = "R.T. Jones"
+         top_volume  = "BCAL"
+         DTD_version = "v1">
+
+  <parameters name="barrelEMcal_pars" type="mcfast">
+    <real_array name="rmin"	comment="upstream, downstream end inner radius"
+ 				values="   65.0      65.0  "
+				unit="cm" 	/>
+    <real_array name="rmax"	comment="upstream, downstream end outer radius"
+                                values="   90.0      90.0  "
+				unit="cm" 	/>
+    <real       name="z0"	value="217.5"	comment="z coord. of midplane"
+				unit="cm"	/>
+    <real       name="zlen"	value="405.0"	comment="length of counters"
+				unit="cm"	/>
+    <reference  name="material"	value="leadScint" />
+    <reference  name="active"	value="leadScint" />
+    <int	name="nphi"	value="48"	comment="phi segmentation" />
+    <int	name="neta"	value="1"	comment="longitudinal seg" />
+    <int	name="nlayers"	value="1"	comment="radial segmentation" />
+    <real       name="siga_em"	value="0.06"	comment="rootE coefficient"
+				unit="cm"	/>
+    <real       name="sigb_em"	value="0.01"	comment="floor term"
+				unit="cm"	/>
+    <real       name="siga_had"	value="0.30"	comment="rootE coefficient"
+				unit="cm"	/>
+    <real       name="sigb_had"	value="0.03"	comment="floor term"
+				unit="cm"	/>
+    <real       name="em_had_ratio" value="4.0" comment="response ratio"
+				unit="cm"	/>
+  </parameters>
+
+  <mcfast model="EMCal" template="db/emcal.db" parameters="barrelEMcal_pars">
+    <string     name="name"	value="BCAL"	/>
+    <string     name="shape"	value="TUBE"	/>
+    <int	name="type"	value="1"	/>
+  </mcfast>
+
+  <tubs name="BCAL" Rio_Z="65.0  90.0  405.0" unit_length="cm" material="Air"
+	parameters="barrelEMcal_pars"	comment="barrel EMcal mother"       />
+  <tubs name="BCAM" Rio_Z="65.0  90.0  405.0" profile="0   7.5" 
+		    unit_length="cm"	      unit_angle="deg"
+	material="leadScint" 		comment="barrel calorimeter module" />
+
+  <composition name="barrelEMcal" envelope="BCAL">
+    <mposPhi volume="BCAM" ncopy="48" Phi0="7.5" impliedRot="true">
+      <sector value="1" step="1" />
+    </mposPhi>
+  </composition>
+
+  <composition name="BarrelEMcal">
+    <posXYZ volume="barrelEMcal" X_Y_Z="0.0 0.0 217.5">
+    </posXYZ>
+  </composition>
+
+</section>
+
+<!-- </HDDS> -->
