@@ -37,6 +37,11 @@ class DEventProcessor
 		int GetNrows(void){return _data ? _data->nrows:0;}
 		int GetMaxrows(void){return _data ? _data->maxrows:0;}
 		int GetRowsize(void){return _data ? _data->rowsize:0;}
+		int init_was_called(void){return init_called;}
+		int brun_was_called(void){return brun_called;}
+		int evnt_was_called(void){return evnt_called;}
+		int erun_was_called(void){return erun_called;}
+		int fini_was_called(void){return fini_called;}
 		int GetBRUN_RunNumber(void){return brun_runnumber;}
 		int GetContainerFlags(void){return _data ? _data->flags:0;}
 		int GetStatus(void);
@@ -46,6 +51,13 @@ class DEventProcessor
 		int Clear_evnt_called(void){evnt_called=0;}
 		int Clear_erun_called(void){erun_called=0;}
 		int Clear_fini_called(void){fini_called=0;}
+
+		void Set_init_called(void){init_called=1;}
+		void Set_brun_called(void){brun_called=1;}
+		void Set_evnt_called(void){evnt_called=1;}
+		void Set_erun_called(void){erun_called=1;}
+		void Set_fini_called(void){fini_called=1;}
+		void SetBRUN_RunNumber(int run){brun_runnumber = run;}
 
 	protected:
 		int init_called;
