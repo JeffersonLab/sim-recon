@@ -26,13 +26,9 @@
  * the rest of the lifetime of the program.
  */ 
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE true
-#endif
-
-#ifdef BASENAME_IN_LIBGEN // basename defined here in OSX. (Linux uses string.h)
+#ifdef BASENAME_IN_LIBGEN
 #include <libgen.h>
-#elif defined _Tru64
+#elif defined BASENAME_USE_BUILTIN
 #undef basename
 #define basename _RC_basename
 static char * basename(const char *f)
@@ -148,7 +144,9 @@ DOMDocument* buildDOMDocument(const char* xmlFile, bool keep)
       builder = scratchBuilder;
    }
    XString tmpFileS(".tmp-");
-   XString suffix(basename(xmlFile));
+   char fname[250];
+   strncpy(fname,xmlFile,250);
+   XString suffix(basename(fname));
    tmpFileS += suffix;
 
    builder->setFeature(XMLUni::fgDOMValidation, true);

@@ -1,8 +1,16 @@
-OStype = $(shell uname)
+	OStype = $(shell uname)
+
+	CC = /usr/bin/g++
+	COPTS = -g -D_REENTRANT
+
 ifeq ($(OStype),OSF1)
-        COPTS = -D_Tru64
+	COPTS = -g -D_REENTRANT -DBASENAME_USE_BUILTIN
 endif
-CC = /usr/bin/g++ -g $(COPTS) -D_REENTRANT
+
+ifeq ($(OStype),SunOS)
+	CC = CC
+        COPTS = -D_REENTRANT -DBASENAME_IN_LIBGEN
+endif
 
 XML_SOURCE = BarrelEMcal_HDDS.xml BeamLine_HDDS.xml CentralDC_HDDS.xml\
              CerenkovCntr_HDDS.xml ForwardDC_HDDS.xml ForwardEMcal_HDDS.xml\
@@ -26,17 +34,17 @@ hddsroot.C: hdds-root $(XML_SOURCE)
 	cp $@ $(BUILDS)/HDGeant
 
 hdds-geant: hdds-geant.cpp hdds-geant.hpp XParsers.cpp XParsers.hpp XString.cpp XString.hpp
-	$(CC) -I$(XERCESCROOT)/include -o $@ hdds-geant.cpp \
+	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ hdds-geant.cpp \
 	XParsers.cpp XString.cpp \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
 hdds-root: hdds-root.cpp hdds-root.hpp XParsers.cpp XParsers.hpp XString.cpp XString.hpp
-	$(CC) -I$(XERCESCROOT)/include -o $@ hdds-root.cpp \
+	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ hdds-root.cpp \
 	XParsers.cpp XString.cpp \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
 hdds-mcfast: hdds-mcfast.cpp hdds-mcfast.hpp XParsers.cpp XParsers.hpp XString.cpp XString.hpp
-	$(CC) -I$(XERCESCROOT)/include -o $@ hdds-mcfast.cpp \
+	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ hdds-mcfast.cpp \
 	XParsers.cpp XString.cpp \
 	-L$(XERCESCROOT)/lib -lxerces-c
 

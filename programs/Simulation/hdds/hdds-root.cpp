@@ -85,10 +85,6 @@
  *  support for them in hdds-root.
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE true
-#endif
-
 /*
  * FIX_XERCES_getElementById_BUG does a store/load cycle at parsing time
  * to fully instantiate entity references on the document tree.
@@ -116,14 +112,12 @@
 
 #include <fstream>
 
-#ifdef __APPLE__ // Required for basename in OSX. (Linux prefers string.h) 
-#include <libgen.h>
-#endif
-
 #define X(XString) XString.unicodeForm()
 #define S(XString) XString.localForm()
 
-#ifdef _Tru64
+#ifdef BASENAME_IN_LIBGEN
+#include <libgen.h>
+#elif defined BASENAME_USE_BUILTIN
 #undef basename
 #define basename _RC_basename
 static char * basename(const char *f)

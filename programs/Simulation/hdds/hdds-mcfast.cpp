@@ -25,10 +25,6 @@
  *    (see the -v option).
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/sax/SAXException.hpp>
 #include <xercesc/sax/SAXParseException.hpp>
@@ -46,14 +42,12 @@
 #include <fstream>
 #include <sstream>
 
-#ifdef __APPLE__ // Required for basename in OSX. (Linux prefers string.h) 
-#include <libgen.h>
-#endif
-
 #define X(XString) XString.unicodeForm()
 #define S(XString) XString.localForm()
 
-#ifdef _Tru64
+#ifdef BASENAME_IN_LIBGEN
+#include <libgen.h>
+#elif defined BASENAME_USE_BUILTIN
 #undef basename
 #define basename _RC_basename
 static char* basename(const char *f)
@@ -805,8 +799,8 @@ int makeTargetTable::addComposite(DOMElement* const targetEl)
    nmatEl->setAttribute(X(valueAttS),X(nmatS));
    targetEl->appendChild(nmatEl);
 
-   float fVol[matCount];
-   DOMElement* dataEl[matCount];
+   float *fVol = new float[matCount];
+   DOMElement** dataEl = new DOMElement*[matCount];
    const XString refvecS("reference_vector");
    DOMElement* matVecEl = targetEl->getOwnerDocument()->createElement(X(refvecS));
    const XString matnameS("matnames");
@@ -868,6 +862,9 @@ int makeTargetTable::addComposite(DOMElement* const targetEl)
    targetEl->setAttribute(X(modelAttS),X(mixtureS));
    targetEl->setAttribute(X(templAttS),X(dbS));
    processTemplateFile(targetEl,S(dbS));
+
+   delete [] dataEl;
+   delete [] fVol;
    return 0;
 }
 
