@@ -30,7 +30,7 @@ ifeq ($(OStype),OSF1)
 	NETLIB := 
 	STATIC	:=
 	XLIBS  := -L/usr/lib -lXm -lSM -lICE -lXt -lX11 -lm -lPW -ldnet_stub
-	COPTS = -g
+	COPTS = -g -D_Tru64
 	FOPTS = -g -fpe4
 	LOPTS = -g -non_shared -fpe4
 	GLIBS 	:= -L/r5da/applications/gcc/lib/gcc-lib/alphaev5-dec-osf4.0f/2.95.3 -lg2c -lgcc
