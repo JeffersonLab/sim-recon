@@ -10,6 +10,9 @@ DEventLoop *eventloop=NULL;
 MyProcessor *myproc = NULL;
 hdv_mainframe *hdvmf=NULL;
 
+//-------------------
+// main
+//-------------------
 int main(int narg, char *argv[])
 {
 	// Instantiate an event loop object and initialize it
@@ -20,7 +23,7 @@ int main(int narg, char *argv[])
 
 	// Open Window
 	TApplication app("HDView", &narg, argv);
-	hdvmf = new hdv_mainframe(gClient->GetRoot(), 600, 680);
+	hdvmf = new hdv_mainframe(gClient->GetRoot(), 800, 400);
 	
 	// Hand control to ROOT event loop
 	app.Run();
@@ -29,4 +32,17 @@ int main(int narg, char *argv[])
 	eventloop->Fini();
 
 	return 0;
+}
+
+//-------------------
+// hdv_getevent
+//-------------------
+derror_t hdv_getevent(void)
+{
+	// Read in next event. 
+	derror_t err = eventloop->OneEvent();
+	if(err!=NOERROR)return err;
+		
+
+	return NOERROR;
 }

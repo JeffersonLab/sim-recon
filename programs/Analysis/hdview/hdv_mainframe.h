@@ -15,16 +15,14 @@ class hdv_mainframe:public TGMainFrame {
 
 	public:
 		hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h);
-		~hdv_mainframe();
+		~hdv_mainframe(){};
 		
 		Bool_t ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2);
 
 	private:
-		TGTextButton *quit, *next, *rotatex, *rotatey, *rotatez, *orbit;
+		TGTextButton *quit, *next;
 		TGLayoutHints *fLayout;
 		TRootEmbeddedCanvas *emcanvas;
-		TTUBE *coils;
-		TNode *n_coils;
 };
 
 

@@ -9,104 +9,108 @@ using namespace std;
 
 #include <TLorentzVector.h>
 #include <TLorentzRotation.h>
-#include <TGeoVolume.h>
-#include <TGeoManager.h>
+
 
 #include "hdview.h"
 #include "hdv_mainframe.h"
 #include "MyProcessor.h"
-#include "hddm.h"
+#include "DContainer.h"
+#include "DFactory_MCCheatHits.h"
 
 extern TCanvas *maincanvas;
-extern DEventLoop *eventloop;
+//extern DEventLoop *eventloop;
 
+//------------------------------------------------------------------
+// MyProcessor 
+//------------------------------------------------------------------
+MyProcessor::MyProcessor()
+{
+	NhitMarkers = 0;
+}
 
 //------------------------------------------------------------------
 // evnt 
 //------------------------------------------------------------------
 derror_t MyProcessor::evnt(int eventnumber)
 {
+	int colors[] = {3,2,4,5,6};
+	int ncolors = 5;
 
-	// Delete objects from previous event
-	for(int i=0;i<Nellipse;i++)delete ellipse[i];
-	for(int i=0;i<Nhelix;i++)delete helix[i];
-	for(int i=0;i<Ncdctracks;i++)delete cdchits3D[i];
-	Nellipse = Nhelix = Ncdctracks = 0;
-	
-	// Draw Detector
-	extern TGeoVolume *MOTHER;
-	MOTHER->Draw();
+	// Delete old markers
+	for(int i=0;i<NhitMarkers;i++)delete hitMarkers[i];
+	NhitMarkers = 0;
 
-	// Need to get Rotation matrix of detector. For some reason, ROOT
-	// uses two independant rotation classes.
-	extern TGeoCombiTrans *MotherRotTrans;
-	double theta1,phi1,theta2,phi2,theta3,phi3;
-	MotherRotTrans->GetRotation()->GetAngles(theta1,phi1,theta2,phi2,theta3,phi3);
-	TRotation rot;
-	TVector3 xx,yy,zz;
-	xx.SetPtThetaPhi(1.0, theta1, phi1);
-	yy.SetPtThetaPhi(1.0, theta2, phi2);
-	zz.SetPtThetaPhi(1.0, theta3, phi3);
-	rot.SetXAxis(xx);
-	rot.SetYAxis(yy);
-	rot.SetZAxis(zz);
-	TLorentzRotation lrot(rot);
-
-	// Create 3D polymarkers from CDChits
-	CDChit_t *CDChit = hddm->CDChits->CDChit;
-	CDCtrack_t *CDCtrack = hddm->CDCtracks->CDCtrack;
-	int last_track = -1;
-	for(Ncdchits=0; Ncdchits<hddm->CDChits->nrows; Ncdchits++, CDChit++){
+	// Get MCCheatHits
+	DContainer *mccheathits = event_loop->Get("MCCheatHits");
+	MCCheatHit_t *mccheathit = (MCCheatHit_t*)mccheathits->first();
+	for(int i=0;i<mccheathits->nrows;i++, mccheathit++){
+		float x = mccheathit->r*cos(mccheathit->phi);
+		float y = mccheathit->r*sin(mccheathit->phi);
+		float z = mccheathit->z;
+		TMarker *top = MakeTopViewMarker(x,y,z,20);
+		TMarker *side = MakeSideViewMarker(x,y,z,20);
+		TMarker *front = MakeFrontViewMarker(x,y,z,20);
+		int color = colors[mccheathit->track%ncolors];
+		float size = 0.5;
+		top->SetMarkerColor(color);
+		top->SetMarkerSize(size);
+		side->SetMarkerColor(color);
+		side->SetMarkerSize(size);
+		front->SetMarkerColor(color);
+		front->SetMarkerSize(size);
 		
-		TVector3 *v = &CDChit->pos;
-		if(CDChit->track != last_track){
-		
-			// create new polymarker for track
-			last_track = CDChit->track;
-			cdchits3D[Ncdctracks] = new TPolyMarker3D();
-			
-			// create new helix for track
-			if(Nhelix<10){
-				// To find the vertex z position, we must extrapolate from
-				// the current point back to the beamline along the helix.
-				// First, find dphi/dz. Then find deltaphi between the beamline
-				// and the current cdchit.
-				CDCtrack_t *trk = &CDCtrack[Ncdctracks];
-				float r0 = sqrt(trk->x0*trk->x0 + trk->y0*trk->y0);
-				float dphidz = r0*tan(trk->dir.Theta());
-				TVector3 center(trk->x0,trk->y0, 0);
-				TVector3 pt(v->x()-trk->x0, v->y()-trk->y0, 0);
-				float dphi = pt.Phi() - center.Phi();
-				float z0 = 70. - (dphi/dphidz);
-				z0=70.0;
-				cout <<" center.Phi()="<<center.Phi()<<" v->Phi()="<<v->Phi()<<" ";
-				cout << "z0="<<z0<<" dphidz="<<dphidz<<" dphi="<<dphi<<endl;
-			
-				TLorentzVector p = trk->p;
-				float B=-2.0*0.593/197.326; // empirical
-				helix[Nhelix] = new THelix(0, 0, z0, p.X(), p.Y(), p.Z(), CDCtrack[Ncdctracks].q*B);
-				helix[Nhelix]->SetRange(z0,400);
-				helix[Nhelix]->SetLineColor(Ncdctracks+2);
-				helix[Nhelix++]->Draw();
-			}
-			Ncdctracks++;
-		}
-		
-		// Add hit to polymarker
-		cdchits3D[Ncdctracks-1]->SetNextPoint(v->x(), v->y(), v->z());
-		//cout<<__FILE__<<":"<<__LINE__<<" x="<<v->x()<<" y="<<v->y()<<" z="<<v->z()<<endl;
-	}
-	for(int i=0;i<Ncdctracks;i++){
-		cout<<__FILE__<<":"<<__LINE__<<" nhits="<<cdchits3D[i]->GetLastPoint()<<endl;
-		cdchits3D[i]->SetMarkerColor(i+2);
-		cdchits3D[i]->SetMarkerSize(0.4);
-		cdchits3D[i]->SetMarkerStyle(20);
-		cdchits3D[i]->Draw();
+		hitMarkers[NhitMarkers++] = top;
+		hitMarkers[NhitMarkers++] = side;
+		hitMarkers[NhitMarkers++] = front;
 	}
 	
-	cout<<"Next Event"<<endl;
-	//cout<<"\t Ncdctracks="<<hddm->CDCtracks->nrows<<endl;
-	
+	// Draw all markers and update canvas
+	for(int i=0;i<NhitMarkers;i++)hitMarkers[i]->Draw();
+	maincanvas->Update();
+
+	cout<<"Drew Event"<<endl;
+
 	return NOERROR;
 }
+
+//------------------------------------------------------------------
+// MakeSideViewMarker 
+//------------------------------------------------------------------
+TMarker* MyProcessor::MakeSideViewMarker(float x, float y, float z, int mtype)
+{
+	// This just shifts and scales the coordinates to display
+	// in the "top-view" section
+	float xx = z/400.0 - 2.0;
+	float yy = y/400.0 - 0.5;
+
+	return new TMarker(xx,yy,mtype);
+}
+
+//------------------------------------------------------------------
+// MakeTopViewMarker 
+//------------------------------------------------------------------
+TMarker* MyProcessor::MakeTopViewMarker(float x, float y, float z, int mtype)
+{
+	// This just shifts and scales the coordinates to display
+	// in the "top-view" section
+	float xx = z/400.0 - 2.0;
+	float yy = -x/400.0 + 0.5;
+
+	return new TMarker(xx,yy,mtype);
+}
+
+//------------------------------------------------------------------
+// MakeFrontViewMarker 
+//------------------------------------------------------------------
+TMarker* MyProcessor::MakeFrontViewMarker(float x, float y, float z, int mtype)
+{
+	// This just shifts and scales the coordinates to display
+	// in the "top-view" section
+	float xx = x/100.0 + 1.0;
+	float yy = y/100.0 + 0.0;
+
+	return new TMarker(xx,yy,mtype);
+}
+
+
 

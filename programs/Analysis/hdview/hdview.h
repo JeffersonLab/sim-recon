@@ -21,7 +21,5 @@ extern MyProcessor *myproc;
 
 derror_t hdv_getevent(void);
 derror_t hdv_drawevent(void);
-void RotatePoints(int how);
-void Orbit(void);
 
 #endif //_HDDVIEW_H_

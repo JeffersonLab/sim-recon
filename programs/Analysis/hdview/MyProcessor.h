@@ -11,45 +11,31 @@
 
 #include "DEventProcessor.h"
 
-#include <TVector3.h>
+#include <TMarker.h>
 #include <TFile.h>
 #include <TH1.h>
-#include <TEllipse.h>
-#include <THelix.h>
-#include <TNode.h>
-#include <TPolyMarker3D.h>
-#include <TGeoVolume.h>
 
 
 class MyProcessor:public DEventProcessor
 {
 	public:
+		MyProcessor();
+		~MyProcessor(){};
+	
 		derror_t init(void){};					///< Called once at program start.
 		derror_t brun(int runnumber){};		///< Called everytime a new run number is detected.
 		derror_t evnt(int eventnumber);		///< Called every event.
 		derror_t erun(void){};					///< Called everytime run number changes, provided brun has been called.
 		derror_t fini(void){};					///< Called after last event of last event source has been processed.
 
+		TMarker* MakeTopViewMarker(float x, float y, float z, int mtype);
+		TMarker* MakeSideViewMarker(float x, float y, float z, int mtype);
+		TMarker* MakeFrontViewMarker(float x, float y, float z, int mtype);
+
 		int eventNo;
-		TVector3 cdchits[1000];
-		TPolyMarker3D *cdchits3D[1000];
-		int cdchit_tracks[1000];
-		int Ncdchits;
-		int Ncdctracks;
+		TMarker *hitMarkers[1000];
+		int NhitMarkers;
 		
-		TEllipse *ellipse[10];
-		int Nellipse;
-		
-		THelix *helix[10];
-		int Nhelix;
-		
-		MyProcessor(void){
-			Ncdchits=0;
-			Nellipse=0;
-			Nhelix=0;
-			Ncdctracks=0;
-		}
-		derror_t Draw(void);
 };
 
 #endif // _MYPROCESSOR_H_
