@@ -8,6 +8,7 @@
 #include <TH1.h>
 #include <TH2.h>
 #include <TEllipse.h>
+#include <TMarker.h>
 
 #include "DFactory.h"
 #include "DArcHit.h"
@@ -79,13 +80,17 @@ class DFactory_MCTrackCandidates:public DFactory{
 		derror_t ZeroNeighbors(TH2F *hist, int xbin, int ybin);
 		derror_t FillArcDensityHistogram(TH2F *hist);
 		derror_t FillSlopeIntDensityHistos(void);
+		derror_t DrawPhiZPoints(void);
 		
 		inline DArcHit* Getarchits(void){return archit;}
 		inline int GetNarchits(void){return Narchits;}
 		inline TEllipse* GetCircles(void){return circles;}
 		inline int GetNcircles(void){return Ncircles;}
 		derror_t SetNumDensityHistograms(int N);
+		inline int GetNumDensityHistograms(void){return Ndensity_histos;}
 		TH2F* GetDensityHistogram(int n);
+		TH1F* GetSlopeDensityHistogram(int n);
+		TH1F* GetOffsetDensityHistogram(int n);
 
 		float circle_max;		///< max distance of focal point (circle center) from beamline
 		float bins_per_cm;	///< bins per cm in one dimension for density histo
@@ -99,12 +104,16 @@ class DFactory_MCTrackCandidates:public DFactory{
 	private:
 		DArcHit archit[300];
 		int Narchits;
-		TEllipse circles[32]; // use ellipses to remember circle centers
+		TEllipse circles[32];	///< use ellipses to remember circle centers
 		int Ncircles;
+		TMarker *markers;			///< For debugging only
+		int Nmarkers;				///< For debugging only
 		
 		TH2F *density;					///< 2-D density histogram for finding points on a circle
 		TH2F *density_histos[8];	///< for debugging
 		int Ndensity_histos;			///< number of valid pointers in density_histos[]
+		TH1F *slope_density_histos[8];
+		TH1F *offset_density_histos[8];
 
 		derror_t evnt(int eventnumber);	///< Called every event.
 		
