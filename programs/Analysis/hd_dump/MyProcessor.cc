@@ -73,6 +73,14 @@ derror_t MyProcessor::evnt(int eventnumber)
 	
 	// Print event separator
 	cout<<"================================================================"<<endl;
+
+	// We want to print info about all factories results, even if we aren't
+	// printing the actual data. Hence we must call every factory's Get() method.
+	DContainer *factoryNames = event_loop->GetFactoryNames();
+	char **name = (char**)factoryNames->first();
+	for(int i=0; i<factoryNames->nrows; i++, name++)event_loop->Get(*name);
+	delete factoryNames;	
+	event_loop->PrintFactories(1); // print sparsified factory info
 	
 	// Print data for all specified factories
 	for(int i=0;i<Ntoprint;i++){
