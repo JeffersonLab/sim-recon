@@ -8,13 +8,21 @@
 using namespace std;
 
 #include "MyProcessor.h"
+#include "hddm_s.h"
 
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
 //------------------------------------------------------------------
 derror_t MyProcessor::init(void)
 {
-	cout<<__FILE__<<":"<<__LINE__<<endl;
+	// open ROOT file
+	ROOTfile = new TFile("hd_ana.root","RECREATE","Produced by hd_ana");
+	cout<<"Opened ROOT file \"hd_ana.root\""<<endl;
+
+	// Create histogram
+	Photon_Energy	= new TH1F("Photon_Energy","Thrown photon energy(GeV)",100, 0.0, 12.0);
+	FCAL_Energy	= new TH1F("FCAL_Energy","Forward calorimeter cluster energy(GeV)",100, 0.0, 12.0);
+
 	return NOERROR;
 }
 
@@ -32,8 +40,8 @@ derror_t MyProcessor::brun(int runnumber)
 //------------------------------------------------------------------
 derror_t MyProcessor::evnt(int eventnumber)
 {
-	//cout<<__FILE__<<":"<<__LINE__<<endl;
 	event_loop->PrintRate();
+
 
 	return NOERROR;
 }
@@ -52,7 +60,10 @@ derror_t MyProcessor::erun(void)
 //------------------------------------------------------------------
 derror_t MyProcessor::fini(void)
 {
-	cout<<__FILE__<<":"<<__LINE__<<endl;
+	ROOTfile->Write();
+	delete ROOTfile;
+	cout<<endl<<"Closed ROOT file"<<endl;
+
 	return NOERROR;
 }
 

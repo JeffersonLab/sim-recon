@@ -8,6 +8,10 @@
 
 #include "DEventProcessor.h"
 
+#include <TFile.h>
+#include <TH1.h>
+
+
 class MyProcessor:public DEventProcessor
 {
 	public:
@@ -16,4 +20,8 @@ class MyProcessor:public DEventProcessor
 		derror_t evnt(int eventnumber);	///< Called every event.
 		derror_t erun(void);					///< Called everytime run number changes, provided brun has been called.
 		derror_t fini(void);					///< Called after last event of last event source has been processed.
+
+		TFile *ROOTfile;
+		TH1 *Photon_Energy;
+		TH1 *FCAL_Energy;
 };
