@@ -344,27 +344,6 @@ void fortranGetfunc(DOM_Element& el, char* ident)
    delete [] start;
 }
 
-void fortranGetcoord()
-{
-   cout << endl
-        << "      subroutine getLocalCoord(xlab,xlocal,name)" 	<< endl
-        << "      real xlab(3)" 				<< endl
-        << "      real xlocal(3)" 				<< endl
-        << "      character*(*) name" 				<< endl
-        << "      common /gcvolu/nlevel,names(15),number(15),lvolum(15)"
-								<< endl
-        << "      character*4 cnames(15)"			<< endl
-        << "      equivalence (cnames(1),names(1))"		<< endl
-        << "      integer saveLevel" 				<< endl
-        << "      saveLevel = nlevel" 				<< endl
-        << "      do nlevel = 1,saveLevel-1" 			<< endl
-        << "        if (name.eq.cnames(nlevel)) goto 9"		<< endl
-        << "      enddo"					<< endl
-        << "    9 call gmtod(xlab,xlocal,1)"			<< endl
-        << "      nlevel = saveLevel"				<< endl
-        << "      end"						<< endl;
-}
-
 int main(int argC, char* argV[])
 {
    try
@@ -479,7 +458,6 @@ int main(int argC, char* argV[])
             fortranGetfunc(rootEl, identStr);
          }
       }
-      fortranGetcoord();
    }
 
    XMLPlatformUtils::Terminate();
@@ -666,7 +644,7 @@ int Refsys::createMaterial(DOM_Element& el)
    int imate = ++imateCount;
    char imateStr[30];
    sprintf(imateStr, "%d", imate);
-   el.setAttribute("imate", imateStr);
+   el.setAttribute("Geant3imate", imateStr);
 
    DOMString tagS = el.getTagName();
    DOMString matS = el.getAttribute("name");
@@ -720,7 +698,7 @@ int Refsys::createMaterial(DOM_Element& el)
       DOMString compS = elem.getAttribute("material");
       DOM_Element compEl = document.getElementById(compS);
       DOMString cS;
-      if ( (cS = compEl.getAttribute("imate")) != 0)
+      if ( (cS = compEl.getAttribute("Geant3imate")) != 0)
       {
          char* cStr = cS.transcode();
          iList[nList] = atoi(cStr);
@@ -926,7 +904,7 @@ int Refsys::createSolid(DOM_Element& el)
    int imate;
    DOM_Document document = el.getOwnerDocument();
    DOM_Element matEl = document.getElementById(materialS);
-   DOMString imateS = matEl.getAttribute("imate");
+   DOMString imateS = matEl.getAttribute("Geant3imate");
    if (imateS != 0)
    {
       char* imateStr = imateS.transcode();
@@ -948,7 +926,7 @@ int Refsys::createSolid(DOM_Element& el)
         << "      isvol = " << (sensiS.equals("true") ? 1 : 0) << endl
         << "      ifield = " << fMagField << endl
         << "      fieldm = " << fieldStrength[fMagField] << endl
-        << "      tmaxfd = " << ((fMagField == 0) ? 0 : 1.0) << endl
+        << "      tmaxfd = " << ((fMagField == 0) ? 0 : 10) << endl
         << "      stemax = 0" << endl
         << "      deemax = 0" << endl
         << "      epsil = 1e-3" << endl
@@ -1179,8 +1157,8 @@ int Refsys::createDivision(char* divStr,
         << "      chmoth = \'" << motherStr << "\'" << endl
         << "      ndiv = " << ncopy << endl
         << "      iaxis = " << iaxis << endl
-        << "      step = " <<step << endl
-        << "      c0 = " << (start - step/2) << endl
+        << "      step = " << step << endl
+        << "      c0 = " << start << endl
         << "      numed = 0" << endl
         << "      ndvmax = 0" << endl
         << "      call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)"
@@ -1447,24 +1425,30 @@ int Refsys::createVolume(DOM_Element& el)
                sprintf(divStr, "s%3.3x", ++phiDivisions);
                phi0 *= 180/M_PI;
                dphi *= 180/M_PI;
-               DOMString profS = targEl.getAttribute("profile");
-               if (profS != 0)
+               DOM_Element targEnv(targEl);
+               DOMString targEnvS = targEl.getAttribute("envelope");
+               if (targEnvS != 0)
+               {
+                  targEnv = document.getElementById(targEnvS);
+               }
+               DOMString profS = targEnv.getAttribute("profile");
+               if ((r == 0) && (profS != 0))
                {
                   double phi1, dphi1;
                   char* profStr = profS.transcode();
                   sscanf(profStr, "%lf %lf", &phi1, &dphi1);
                   delete [] profStr;
-                  getConversions(targEl, tocm, todeg);
+                  getConversions(targEnv, tocm, todeg);
                   double phiShift = phi1 + dphi1/2;
                   phi0 += phiShift * todeg;
                   phi1 -= phiShift;
                   profStr = new char[80];
                   sprintf(profStr, "%lf %lf", phi1, dphi1);
-                  targEl.setAttribute("profile",profStr);
+                  targEnv.setAttribute("profile",profStr);
                   delete [] profStr;
                }
                int iaxis = 2;
-               drs.createDivision(divStr, ncopy, iaxis, phi0, dphi);
+               drs.createDivision(divStr, ncopy, iaxis, phi0 - dphi/2, dphi);
                targEl.setAttribute("divides", containerS);
                origin[0] = r;
                origin[1] = s;
@@ -1542,7 +1526,7 @@ int Refsys::createVolume(DOM_Element& el)
                char* divStr = new char[5];
                sprintf(divStr, "r%3.3x", ++rDivisions);
                int iaxis = 1;
-               drs.createDivision(divStr, ncopy, iaxis, r0, dr);
+               drs.createDivision(divStr, ncopy, iaxis, r0 - dr/2, dr);
                targEl.setAttribute("divides", containerS);
                origin[0] = r0 * cos(phi) - s * sin(phi);
                origin[1] = r0 * sin(phi) + s * cos(phi);
@@ -1614,7 +1598,7 @@ int Refsys::createVolume(DOM_Element& el)
                char* divStr = new char[5];
                sprintf(divStr, "x%3.3x", ++xDivisions);
                int iaxis = 1;
-               drs.createDivision(divStr, ncopy, iaxis, x0, dx);
+               drs.createDivision(divStr, ncopy, iaxis, x0 - dx/2, dx);
                targEl.setAttribute("divides", containerS);
                origin[0] = 0;
                origin[1] = y + s;
@@ -1660,7 +1644,7 @@ int Refsys::createVolume(DOM_Element& el)
             delete [] yStr;
 
             double x, z, s;
-            char* xzStr = contEl.getAttribute("X_Z").transcode();
+            char* xzStr = contEl.getAttribute("Z_X").transcode();
             sscanf(xzStr, "%lf %lf", &x, &z);
             delete [] xzStr;
             char* sStr = contEl.getAttribute("S").transcode();
@@ -1686,7 +1670,7 @@ int Refsys::createVolume(DOM_Element& el)
                char* divStr = new char[5];
                sprintf(divStr, "y%3.3x", ++yDivisions);
                int iaxis = 2;
-               drs.createDivision(divStr, ncopy, iaxis, y0, dy);
+               drs.createDivision(divStr, ncopy, iaxis, y0 - dy/2, dy);
                targEl.setAttribute("divides", containerS);
                origin[0] = x + s;
                origin[1] = 0;
@@ -1771,7 +1755,7 @@ int Refsys::createVolume(DOM_Element& el)
                char* divStr = new char[5];
                sprintf(divStr, "z%3.3x", ++zDivisions);
                int iaxis = 3;
-               drs.createDivision(divStr, ncopy, iaxis, z0, dz);
+               drs.createDivision(divStr, ncopy, iaxis, z0 - dz/2, dz);
                targEl.setAttribute("divides", containerS);
                double phi = atan2(y,x);
                origin[0] = x - s * sin(phi);
@@ -1854,12 +1838,19 @@ int Refsys::createVolume(DOM_Element& el)
       {
          DOMString fieldS = myRef.fIdentifier[id].fieldS;
          DOMString idlistS = el.getAttribute(fieldS);
-         if (idlistS == 0)
+         char* idlistStr = idlistS.transcode();
+         char* token = idlistStr;
+         int count = icopy;
+         for (char* idStr = strsep(&token, " ");
+              (idStr != 0) && (strlen(idStr) > 0);
+              idStr = strsep(&token, " "))
          {
-            for (int ic = 1; ic < icopy; ic++)
-            {
-               idlistS += "0 ";
-            }
+            count--;
+         }
+         delete [] idlistStr;
+         for ( ; count > 1; --count)
+         {
+            idlistS += "0 ";
          }
          char str[30];
          sprintf(str, "%d ", myRef.fIdentifier[id].value);

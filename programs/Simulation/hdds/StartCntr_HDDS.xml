@@ -23,7 +23,6 @@
 
   <composition name="StartCntr">
     <posXYZ volume="VRTX" X_Y_Z="0.0  0.0  45.0">
-       <count value="1" />
     </posXYZ>
   </composition>
 

@@ -53,21 +53,18 @@
   <composition name="CDCcathode_1" envelope="CDCI">
     <mposPhi volume="CDCcathodeSector_1" ncopy="6">
       <layer value="1" />
-      <count value="6" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_1" envelope="DC1">
     <mposPhi volume="CDCstraw" ncopy="100" R_Z="16.0 0.0" unit_length="cm">
       <ring value="1" />
-      <count value="100" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_2" envelope="DC2">
     <mposPhi volume="CDCstraw" ncopy="113" R_Z="18.0 0.0" unit_length="cm">
       <ring value="2" />
-      <count value="113" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
@@ -75,7 +72,6 @@
     <mposPhi volume="CDCstraw" ncopy="126" R_Z="20.0.0 0.0" unit_length="cm"
                                        rot="-0.581 0 0" unit_angle="deg">
       <ring value="3" />
-      <count value="126" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
@@ -83,28 +79,24 @@
     <mposPhi volume="CDCstraw" ncopy="139" R_Z="22.0.0 0.0" unit_length="cm"
                                        rot="-0.655 0 0" unit_angle="deg">
       <ring value="4" />
-      <count value="139" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_5" envelope="DC5">
     <mposPhi volume="CDCstraw" ncopy="152" R_Z="24.0 0.0" unit_length="cm">
       <ring value="5" />
-      <count value="152" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_6" envelope="DC6">
     <mposPhi volume="CDCstraw" ncopy="165" R_Z="26.0 0.0" unit_length="cm">
       <ring value="6" />
-      <count value="165" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_7" envelope="DC7">
     <mposPhi volume="CDCstraw" ncopy="178" R_Z="28.0 0.0" unit_length="cm">
       <ring value="7" />
-      <count value="178" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
@@ -112,7 +104,6 @@
     <mposPhi volume="CDCstraw" ncopy="191" R_Z="30.0.0 0.0" unit_length="cm"
                                        rot="0.894 0 0" unit_angle="deg">
       <ring value="8" />
-      <count value="191" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
@@ -120,28 +111,24 @@
     <mposPhi volume="CDCstraw" ncopy="204" R_Z="32.0.0 0.0" unit_length="cm"
                                        rot="0.953 0 0" unit_angle="deg">
       <ring value="9" />
-      <count value="204" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_10" envelope="DC10">
     <mposPhi volume="CDCstraw" ncopy="217" R_Z="34.0 0.0" unit_length="cm">
       <ring value="10" />
-      <count value="217" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_11" envelope="DC11">
     <mposPhi volume="CDCstraw" ncopy="230" R_Z="36.0 0.0" unit_length="cm">
       <ring value="11" />
-      <count value="230" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_12" envelope="DC12">
     <mposPhi volume="CDCstraw" ncopy="243" R_Z="38.0 0.0" unit_length="cm">
       <ring value="12" />
-      <count value="243" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
@@ -149,7 +136,6 @@
     <mposPhi volume="CDCstraw" ncopy="256" R_Z="40.0.0 0.0" unit_length="cm"
                                        rot="-1.192 0 0" unit_angle="deg">
       <ring value="13" />
-      <count value="256" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
@@ -157,14 +143,12 @@
     <mposPhi volume="CDCstraw" ncopy="269" R_Z="42.0.0 0.0" unit_length="cm"
                                        rot="-1.251 0 0" unit_angle="deg">
       <ring value="14" />
-      <count value="269" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_15" envelope="DC15">
     <mposPhi volume="CDCstraw" ncopy="282" R_Z="44.0 0.0" unit_length="cm">
       <ring value="15" />
-      <count value="282" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
@@ -177,7 +161,6 @@
   <composition name="CDClayer_17" envelope="DC17">
     <mposPhi volume="CDCstraw" ncopy="308" R_Z="48.0 0.0" unit_length="cm">
       <ring value="17" />
-      <count value="308" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
@@ -185,7 +168,6 @@
     <mposPhi volume="CDCstraw" ncopy="321" R_Z="50.0.0 0.0" unit_length="cm"
                                        rot="1.489 0 0" unit_angle="deg">
       <ring value="18" />
-      <count value="321" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
@@ -199,28 +181,24 @@
   <composition name="CDClayer_20" envelope="DC20">
     <mposPhi volume="CDCstraw" ncopy="347" R_Z="54.0 0.0" unit_length="cm">
       <ring value="20" />
-      <count value="347" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_21" envelope="DC21">
     <mposPhi volume="CDCstraw" ncopy="360" R_Z="56.0 0.0" unit_length="cm">
       <ring value="21" />
-      <count value="360" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDClayer_22" envelope="DC22">
     <mposPhi volume="CDCstraw" ncopy="373" R_Z="58.0 0.0" unit_length="cm">
       <ring value="22" />
-      <count value="373" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
   <composition name="CDCcathode_2" envelope="CDCO">
     <mposPhi volume="CDCcathodeSector_2" ncopy="6">
       <layer value="2" />
-      <count value="6" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
@@ -261,7 +239,7 @@
   <tubs name="STRW" Rio_Z="0.472  0.478  200.0" material="Aluminum" />
   <tubs name="WIRE" Rio_Z="0.000  0.025  200.0" material="Tungsten" />
 
-  <tubs name="DC1"  Rio_Z="15.0  17.0  200.0" material="Air"
+  <tubs name="DC1"  Rio_Z="15.05 17.0  200.0" material="Air"
 					 parameters="centralDClayer_pars" />
   <tubs name="DC2"  Rio_Z="17.0  19.0  200.0" material="Air"
 					 parameters="centralDClayer_pars" />
@@ -303,7 +281,7 @@
 					 parameters="centralDClayer_pars" />
   <tubs name="DC21" Rio_Z="55.0  57.0  200.0" material="Air"
 					 parameters="centralDClayer_pars" />
-  <tubs name="DC22" Rio_Z="57.0  59.0  200.0" material="Air"
+  <tubs name="DC22" Rio_Z="57.0  58.95 200.0" material="Air"
 					 parameters="centralDClayer_pars" />
 
   <parameters name="centralDC_pars" type="mcfast">

@@ -25,7 +25,6 @@
 
   <composition name="barrelEMcal" envelope="BCAL">
     <mposPhi volume="BCAM" ncopy="48" Phi0="0.0" impliedRot="true">
-      <count value="48" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>

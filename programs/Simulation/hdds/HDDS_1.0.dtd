@@ -594,7 +594,6 @@
                  sector (typically Phi in barrels)
                  plane  (typically Z in stacks)
 		 module (generic)
-		 count  (generic)
 		 cell   (generic)
 
     value        the exact value to be entered in single positioning or
@@ -867,12 +866,6 @@ identifiers with corresponding field names.
                  value  CDATA  "0"
                  step   CDATA  "0">
 
-<!ELEMENT count EMPTY>
-
-<!ATTLIST count  field  (count) "count"
-                 value  CDATA  "0"
-                 step   CDATA  "0">
-
 <!ELEMENT plane EMPTY>
 
 <!ATTLIST plane field  (plane) "plane"
@@ -880,7 +873,7 @@ identifiers with corresponding field names.
                  step   CDATA  "0">
 
 <!ENTITY % any_identifier 'layer | ring | sector | row | column |
-			   module | cell | count | plane | identifier'>
+			   module | cell | plane | identifier'>
 
 <!ENTITY % volume_properties 'name        ID               #REQUIRED
                               parameters  IDREF            #IMPLIED'>
