@@ -410,7 +410,7 @@
       chname = 'DIV1'
       nr = 2
       chmoth = 'AIRH'
-      x = 2.06652e-16
+      x = 2.06659e-16
       y = 3.375
       z = 0
       irot = 1
@@ -430,7 +430,7 @@
       nr = 3
       chmoth = 'AIRH'
       x = -3.375
-      y = 4.13305e-16
+      y = 4.13318e-16
       z = 0
       irot = 2
       chonly = 'ONLY'
@@ -440,7 +440,7 @@
       theta1 = 90
       phi1 = -90
       theta2 = 90
-      phi2 = -1.05247e-14
+      phi2 = -1.05251e-14
       theta3 = 0
       phi3 = 0
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
@@ -448,7 +448,7 @@
       chname = 'DIV1'
       nr = 4
       chmoth = 'AIRH'
-      x = -6.19957e-16
+      x = -6.19977e-16
       y = -3.375
       z = 0
       irot = 3
@@ -35269,7 +35269,7 @@
       irot = 1804
       theta1 = 90
       phi1 = 0
-      theta2 = 3.50824e-15
+      theta2 = 3.50835e-15
       phi2 = 90
       theta3 = 90
       phi3 = -90
@@ -35597,7 +35597,7 @@
       irot = 1805
       theta1 = 90
       phi1 = 0
-      theta2 = 3.50824e-15
+      theta2 = 3.50835e-15
       phi2 = 90
       theta3 = 90
       phi3 = -90
@@ -35731,7 +35731,7 @@
       irot = 1806
       theta1 = 90
       phi1 = 0
-      theta2 = 3.50824e-15
+      theta2 = 3.50835e-15
       phi2 = 90
       theta3 = 90
       phi3 = -90
@@ -39896,7 +39896,7 @@
       nr = 141
       chmoth = 'DC5'
       x = -24.96
-      y = 3.05662e-15
+      y = 3.05672e-15
       z = 0
       irot = 1947
       chonly = 'ONLY'
@@ -43347,13 +43347,13 @@
       theta2 = 84
       phi2 = 180
       theta3 = 6
-      phi3 = -3.50824e-15
+      phi3 = -3.50835e-15
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 323
       chmoth = 'DC5'
-      x = 1.74653e-15
+      x = 1.74659e-15
       y = 28.524
       z = 0
       irot = 2129
@@ -43886,7 +43886,7 @@
       nr = 351
       chmoth = 'DC5'
       x = -28.524
-      y = 3.49307e-15
+      y = 3.49318e-15
       z = 0
       irot = 2157
       chonly = 'ONLY'
@@ -44417,7 +44417,7 @@
       chname = 'STLA'
       nr = 379
       chmoth = 'DC5'
-      x = -5.2396e-15
+      x = -5.23977e-15
       y = -28.524
       z = 0
       irot = 2185
@@ -49116,7 +49116,7 @@
       chname = 'STLA'
       nr = 610
       chmoth = 'DC14'
-      x = 2.61962e-15
+      x = 2.6197e-15
       y = 42.783
       z = 0
       irot = 2416
@@ -49915,7 +49915,7 @@
       nr = 652
       chmoth = 'DC14'
       x = -42.783
-      y = 5.23923e-15
+      y = 5.23941e-15
       z = 0
       irot = 2458
       chonly = 'ONLY'
@@ -50704,15 +50704,15 @@
       theta1 = 90
       phi1 = -90
       theta2 = 96
-      phi2 = 4.03642e-14
+      phi2 = 4.03638e-14
       theta3 = 6
-      phi3 = 4.03642e-14
+      phi3 = 4.03638e-14
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 694
       chmoth = 'DC14'
-      x = -7.85885e-15
+      x = -7.85911e-15
       y = -42.783
       z = 0
       irot = 2500
@@ -56565,7 +56565,7 @@
       nr = 1002
       chmoth = 'DC14'
       x = -46.348
-      y = 5.67581e-15
+      y = 5.67599e-15
       z = 0
       irot = 2808
       chonly = 'ONLY'
@@ -59023,7 +59023,7 @@
       npar = 3
       par(1) = 65
       par(2) = 90
-      par(3) = 220
+      par(3) = 195
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.112) stop 'consistency check #1 failed'
 
@@ -59032,7 +59032,7 @@
       chmoth = 'LASS'
       x = 0
       y = 0
-      z = 235
+      z = 210
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -59078,7 +59078,7 @@
       npar = 5
       par(1) = 65
       par(2) = 90
-      par(3) = 220
+      par(3) = 195
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
