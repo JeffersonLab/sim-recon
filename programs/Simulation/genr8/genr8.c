@@ -23,14 +23,8 @@
 #include <sys/stat.h>
 #include <time.h>
 
-#include <disData.h>
-#include <dataIO.h>
-
 #include <genkin.h>
 #include <particleType.h>
-#include <ntypes.h>
-
-#include <esr.h>
 
 #define TRUE 1
 #define FALSE 0
@@ -74,7 +68,6 @@ struct particleMC_t{
  *           variable names.  Thank You 8^)
  **********************************************************************/
  
-FILE *NewItape;
 int Debug = 0;
 int Nprinted =0;
 int PrintProduction=0;
@@ -83,8 +76,6 @@ double MassHighBW;
 int UseName=0;
 int FIRST_EVENT=1;
 int PrintFlag=10;
-static itape_header_t *Buffer=NULL;
-int WriteEsr=0;
 int WriteAscii=0;
 int runNo=9000;
 /***********************/
@@ -109,8 +100,7 @@ int printFinal(FILE *fp,struct particleMC_t *Isobar);
 int printp2ascii(FILE *fp,struct particleMC_t *Isobar);
 int setMass(struct particleMC_t *Isobar);
 int initMass(struct particleMC_t *Isobar);
-int fillEsr(struct particleMC_t *Isobar,int *npart,esr_particle_t *esrp);
-int WriteItape(struct particleMC_t *CM,vector4_t *beam);
+char *ParticleType(Particle_t p);
 
 /*
  ***********************
@@ -123,7 +113,7 @@ int WriteItape(struct particleMC_t *CM,vector4_t *beam);
 int PrintUsage(char *processName)
 {
  
-  fprintf(stderr,"%s usage: [-o<name>]   < infile \n",processName);
+  fprintf(stderr,"%s usage: [-A<name>]   < infile \n",processName);
   fprintf(stderr,"\t-d debug flag\n");
   fprintf(stderr,"\t-n Use a particle name and not its ID number (ascii only) \n");
   fprintf(stderr,"\t-M<max> Process first max events\n");
@@ -132,7 +122,7 @@ int PrintUsage(char *processName)
   /*fprintf(stderr,"\t-o<name> The output file \n");*/
   fprintf(stderr,"\t-P save flag= 11 & 01 events(default saves 11 & 10 events) \n");
   /* fprintf(stderr,"\t-R Save recoiling baryon information. \n"); */
-  fprintf(stderr,"\t-I<filename> Save in itape format. \n");
+ 
   fprintf(stderr,"\t-A<filename> Save in ascii format. \n");
   fprintf(stderr,"\t-h Print this help message\n\n");
 
@@ -172,8 +162,6 @@ main(int argc,char **argv)
   CM.child[0]= X;
   CM.child[1]= Y;
   /* CM.child[1]= &recoil; */
-
-  NewItape=stdout;
 
   if (argc == 1){
     PrintUsage(argv[0]);
@@ -224,11 +212,6 @@ main(int argc,char **argv)
 	case 'r':
 	  runNo = atoi(++argptr);
 	  fprintf(stderr,"Using runNo: %d\n",runNo);
-	  break;
-	case 'I':
-	  WriteEsr=1;
-	  fprintf(stderr,"Using itapes\n");
-	  NewItape=fopen(++argptr,"w");
 	  break;
 	default:
 	  fprintf(stderr,"Unrecognized argument -%s\n\n",argptr);
@@ -625,7 +608,7 @@ main(int argc,char **argv)
 	naccepted++;
 	boost2lab(X);
 	boost2lab(Y);
-	initBeam4;  /* use lab frame beam */
+	/*initBeam4;   use lab frame beam */
 	/*
 	 * We have a complete event.  Now save it!
 	 */
@@ -645,9 +628,11 @@ main(int argc,char **argv)
 	/*
 	 * Print out the production
 	 * or the final state particles.
-	 */
+	 *
 	if(WriteEsr)
 	  WriteItape(&CM,&initBeam4); 
+	*  Remove old BNL-E852 dependence 
+	*/
 
 	if(PrintProduction){
 	  if(X->nchildren==0)
@@ -687,9 +672,6 @@ main(int argc,char **argv)
    */
   fflush(fout);
   fclose(fout);
-  data_flush(fileno(NewItape));
-  fclose(NewItape);
-
   
 }/* end of main */
 
@@ -1037,67 +1019,6 @@ int printFamily(struct particleMC_t *Isobar)
   printParticle(Isobar);
   for(j=0;j<Isobar->nchildren;j++)
     printFamily(Isobar->child[j]); 
-}
-
-/*************************
- *
- * WriteItape((struct particleMC_t *CM,vector4_t *beam)
- *
- *************************/
-int WriteItape(struct particleMC_t *CM, vector4_t *beam) 
-{
-  int group=802; /* esrGroup */
-  int nparticles,i;
-  esr_nparticle_t *esr;
-  esr_particle_t esrp[20];
-  static int icount;
-
-  if(FIRST_EVENT==TRUE){
-    Buffer = (itape_header_t *) malloc(BUFSIZE);
-    
-    data_newItape(Buffer);
-    FIRST_EVENT=FALSE;
-  }
-
-  nparticles=0;
-  fillEsr(CM->child[0],&nparticles,esrp);
-  fillEsr(CM->child[1],&nparticles,esrp);
- 
-
-  Buffer->runNo= runNo;
-  Buffer->spillNo =0;
-  Buffer->eventNo =icount++;
-  Buffer->trigger =1;
-  esr= data_addGroup(Buffer,BUFSIZE,802,sizeof(esr_nparticle_t)+ 
-		     nparticles*sizeof(esr_particle_t));
-  esr->nparticles=nparticles;
-  for(i=0;i<nparticles;i++)
-    esr->p[i] = esrp[i]; 
-  esr->beam = *beam;
-  /*  esr->miss=CM->child[1]->p;
-   */
-  data_saveGroups(Buffer,1,&group);
-  data_clean(Buffer);
-  data_write(fileno(NewItape),Buffer);
-}
-
-int fillEsr(struct particleMC_t *Isobar,int *npart,esr_particle_t *esrp)
-{
-  int i;
-  
-  if(Isobar->flag == 11 || Isobar->flag==PrintFlag)
-    {
-      (esrp + *npart)->p = Isobar->p;
-      (esrp + *npart)->charge = Isobar->charge;
-      (esrp + *npart)->particleType = Isobar->particleID;
-      (*npart)++;
-      if(*npart>19){
-	fprintf(stderr,"Increase the number of esr particles in WriteItape()\n");
-	exit(-1);
-      }
-    }
-  for(i=0;i<Isobar->nchildren;i++)
-    fillEsr(Isobar->child[i],npart,esrp);
 }
 
 
