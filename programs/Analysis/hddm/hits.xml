@@ -1,4 +1,4 @@
-<hitView version="1.0">
+<hitView version="1.1">
    <centralDC>
       <cathodeCyl radius="float" repeat="*">
          <band phim="float" z="float" repeat="*" />
@@ -6,7 +6,7 @@
       <ring radius="float" repeat="*">
          <straw phim="float" repeat="*">
             <hit t="float" dE="float" repeat="*" />
-            <cdcPoint z="float" phi="float" dradius="float"
+            <cdcPoint z="float" r="float" phi="float" dradius="float"
                                   track="int" dEdx="float" repeat="*" />
          </straw>
       </ring>
