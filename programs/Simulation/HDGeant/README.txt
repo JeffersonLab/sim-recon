@@ -24,6 +24,7 @@
    setenv QQ_DIR ${HALLD_ROOT}/libmcfast/qq_v9_2b_Linux+2.2
    setenv STDHEP_DIR ${HALLD_ROOT}/libmcfast/stdhep_v4_08_Linux+2.2
    setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/${HALLD_ROOT}/xerces-c/lib
+   setenv XERCESCROOT $(HALLD_ROOT)/xerces-c
 
    For the bash or ksh shells you should use the export command instead of
    setenv.  You will need to source this file before every session, (or
@@ -34,13 +35,20 @@
    halld> cd ${HALLD_ROOT}
    halld> cvs checkout xerces-c
 
-4) Now you need to check out the geometry package and build it.
+4) Build the xerces xml library for your system.
+
+   This is pretty simple.  The instructions are found in the file
+   xerces-c/src/BUILDINSTRUCTIONS.txt.  There are just two steps:
+   runConfigure and gmake.  The result is a shared library in the
+   directory xerces-c/lib.
+
+5) Now you need to check out the geometry package and build it.
 
    halld> cvs checkout hdds
    halld> cd hdds
    halld> make hddsGeant3.f
 
-5) Now go to HDGeant and build the interactive version.
+6) Now go to HDGeant and build the interactive version.
 
    halld> cd ../HDGeant
    halld> make hdgeant++.x
@@ -49,7 +57,7 @@
    make, and find out what you did wrong in steps 1..5.  Iterate until the
    package builds without errors.
 
-6) Start up interactive Geant and plot the detector.
+7) Start up interactive Geant and plot the detector.
 
    halld> ./hdgeant++.x
    ... lots of output
@@ -65,5 +73,3 @@ to richard.t.jones@uconn.edu letting me know how things went.
 
 
 Richard Jones
-
-

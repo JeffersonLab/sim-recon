@@ -5,7 +5,7 @@ NETLIB := -lnsl
 XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp
  
 COPTS = -g
-FOPTS = -g -Wno-globals -fdebug-kludge
+FOPTS = -g -Wno-globals
 
 HDDS = ../hdds
 HDDM = ../hddm
