@@ -7,7 +7,8 @@ BINDIR = ../bin.$(OStype)
 # to enable custom versions of the simulation program.
 #NTUPLE_OPTIONS = -DBACKGROUND_STUDIES
 #NTUPLE_OPTIONS = -DBACKGROUND_PROFILING
-NTUPLE_OPTIONS = -DWERNERS_VTX_NTUPLE
+#NTUPLE_OPTIONS = -DWERNERS_VTX_NTUPLE
+NTUPLE_OPTIONS = -DCERENKOV_PID_NTUPLE
 # Enable the following line to turn off writing out hddm data 
 IO_OPTIONS = -DDISABLE_OUTPUT
 #--------------------------------------------------------------------

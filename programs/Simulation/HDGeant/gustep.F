@@ -2,6 +2,11 @@
 * $Id$
 *
 * $Log$
+* Revision 1.15  2004/06/07 19:05:53  jonesrt
+* Makefile, gustep.F
+*      - added option CERENKOV_PID_NTUPLE to save information from a bg
+*       simulation to an ntuple stored in geant.hbook [rjt,rem]
+*
 * Revision 1.14  2004/05/18 12:58:54  jonesrt
 * Makefile
 *      - created a section at the top for global defines that are used to
@@ -142,7 +147,7 @@
       save iorder
 #endif
 
-#ifdef WERNERS_VTX_NTUPLE
+#if defined WERNERS_VTX_NTUPLE
       integer evno,part,vid
       real xvtx(3),xdet(3),pdet(3)
       common /wernerNtuple/evno,xvtx,xdet,pdet,part,vid
@@ -151,6 +156,15 @@
       parameter (ntwernerdef='ev:I,xv(3):R,xt(3):R,p(3):R,part:I,vid:I')
       integer ntwerner
       parameter (ntwerner=10)
+#elif defined CERENKOV_PID_NTUPLE
+      integer evno,part
+      real xvtx(3),xdet(3),pdet(3)
+      common /ckovNtuple/evno,xvtx,xdet,pdet,part
+      save /ckovNtuple/
+      character*80 ntckovdef
+      parameter (ntckovdef='ev:I,xv(3):R,xt(3):R,p(3):R,part:I,vid:I')
+      integer ntckov
+      parameter (ntckov=10)
 #endif
 
       logical hexist
@@ -290,7 +304,7 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
       endif
 #endif
 
-#ifdef WERNERS_VTX_NTUPLE
+#if defined WERNERS_VTX_NTUPLE
       if (.not.HEXIST(ntwerner)) then
         call HBNT(ntwerner,'vertex counter hits','')
         call HBNAME(ntwerner,'hits',evno,ntwernerdef)
@@ -317,6 +331,28 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
           part = IPART
           evno = IDEVT
           call HFNT(ntwerner)
+        endif
+      endif
+#elif defined CERENKOV_PID_NTUPLE
+      if (.not.HEXIST(ntckov)) then
+        call HBNT(ntckov,'cerenkov counter hits','')
+        call HBNAME(ntckov,'hits',evno,ntckovdef)
+      endif
+      if (NSTEP.eq.0) then
+        xvtx(1) = vect(1)
+        xvtx(2) = vect(2)
+        xvtx(3) = vect(3)
+      elseif (INWVOL.eq.1) then
+        if (cnames(NLEVEL).eq.'CGAS') then
+          xdet(1) = VECT(1)
+          xdet(2) = VECT(2)
+          xdet(3) = VECT(3)
+          pdet(1) = VECT(4)*VECT(7)
+          pdet(2) = VECT(5)*VECT(7)
+          pdet(3) = VECT(6)*VECT(7)
+          part = IPART
+          evno = IDEVT
+          call HFNT(ntckov)
         endif
       endif
 #endif

@@ -36518,9 +36518,9 @@
       natmed = 'HALL Air'
       nmat = 1
       isvol = 0
-      ifield = 0
-      fieldm = 0
-      tmaxfd = 0
+      ifield = 2
+      fieldm = 22.4
+      tmaxfd = 1
       stemax = 0
       deemax = 0
       epsil = 1e-3
@@ -36731,7 +36731,7 @@
       chmoth = 'LASS'
       x = 0
       y = 0
-      z = 134
+      z = 117
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -60183,9 +60183,9 @@
       natmed = 'DET4 Air'
       nmat = 1
       isvol = 0
-      ifield = 0
-      fieldm = 0
-      tmaxfd = 0
+      ifield = 2
+      fieldm = 22.4
+      tmaxfd = 1
       stemax = 0
       deemax = 0
       epsil = 1e-3
@@ -60218,9 +60218,9 @@
       natmed = 'DET5 Air'
       nmat = 1
       isvol = 0
-      ifield = 0
-      fieldm = 0
-      tmaxfd = 0
+      ifield = 2
+      fieldm = 22.4
+      tmaxfd = 1
       stemax = 0
       deemax = 0
       epsil = 1e-3
@@ -60253,9 +60253,9 @@
       natmed = 'DET6 Air'
       nmat = 1
       isvol = 0
-      ifield = 0
-      fieldm = 0
-      tmaxfd = 0
+      ifield = 2
+      fieldm = 22.4
+      tmaxfd = 1
       stemax = 0
       deemax = 0
       epsil = 1e-3
@@ -60288,9 +60288,9 @@
       natmed = 'DET7 Air'
       nmat = 1
       isvol = 0
-      ifield = 0
-      fieldm = 0
-      tmaxfd = 0
+      ifield = 2
+      fieldm = 22.4
+      tmaxfd = 1
       stemax = 0
       deemax = 0
       epsil = 1e-3
@@ -60314,7 +60314,7 @@
       chmoth = 'HALL'
       x = 0
       y = 0
-      z = -521
+      z = -551
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -60323,9 +60323,9 @@
       natmed = 'OHPI Iron'
       nmat = 10
       isvol = 0
-      ifield = 0
-      fieldm = 0
-      tmaxfd = 0
+      ifield = 2
+      fieldm = 22.4
+      tmaxfd = 1
       stemax = 0
       deemax = 0
       epsil = 1e-3
@@ -60340,7 +60340,7 @@
       npar = 3
       par(1) = 0
       par(2) = 2.5
-      par(3) = 489
+      par(3) = 474
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.154) stop 'consistency check #1 failed'
 
@@ -60349,7 +60349,7 @@
       chmoth = 'HALL'
       x = 150
       y = -350
-      z = -1011
+      z = -1026
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -60358,9 +60358,9 @@
       natmed = 'IHPI Vacuum'
       nmat = 18
       isvol = 0
-      ifield = 0
-      fieldm = 0
-      tmaxfd = 0
+      ifield = 2
+      fieldm = 22.4
+      tmaxfd = 1
       stemax = 0
       deemax = 0
       epsil = 1e-3
@@ -60375,7 +60375,7 @@
       npar = 3
       par(1) = 0
       par(2) = 2.2
-      par(3) = 489
+      par(3) = 474
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.155) stop 'consistency check #1 failed'
 
@@ -60393,9 +60393,9 @@
       natmed = 'CAP2 Mylar'
       nmat = 19
       isvol = 0
-      ifield = 0
-      fieldm = 0
-      tmaxfd = 0
+      ifield = 2
+      fieldm = 22.4
+      tmaxfd = 1
       stemax = 0
       deemax = 0
       epsil = 1e-3
@@ -60419,7 +60419,7 @@
       chmoth = 'IHPI'
       x = 0
       y = 0
-      z = 488.975
+      z = 473.975
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
