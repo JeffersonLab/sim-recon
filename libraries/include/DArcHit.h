@@ -38,6 +38,7 @@ class DArcHit{
 		
 		float xhit, yhit, zhit;
 		float rhit, phihit;
+		float delta_phi;		///< Used by DFactory_MCTrackCandidates::FindLines()
 		float m, b;
 		int orientation;
 		int used;
