@@ -57,6 +57,34 @@ MyProcessor::MyProcessor()
 	Ncircles = 0;
 	Nlines = 0;
 	drew_detectors=0;
+	Bfield = NULL;
+}
+
+//------------------------------------------------------------------
+// init 
+//------------------------------------------------------------------
+derror_t MyProcessor::init(void)
+{
+	// We'd really like to draw the detectors here, but this seems to
+	// get called before the window is mapped
+	// Make sure detectors have been drawn
+	if(!drew_detectors)DrawDetectors();
+	
+	
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// brun 
+//------------------------------------------------------------------
+derror_t MyProcessor::brun(int runnumber)
+{
+	// Read in Magnetic field map
+	if(Bfield)delete Bfield;
+	Bfield = new DMagneticFieldMap(41,251);
+	Bfield->readMap();
+
+	return NOERROR;
 }
 
 //------------------------------------------------------------------
@@ -69,9 +97,6 @@ derror_t MyProcessor::evnt(int eventnumber)
 	
 	cout<<"----------- New Event -------------"<<endl;
 	
-	// Make sure detectors have been drawn
-	if(!drew_detectors)DrawDetectors();
-
 	// Delete old markers
 	for(int i=0;i<NhitMarkers;i++)delete hitMarkers[i];
 	NhitMarkers = 0;
