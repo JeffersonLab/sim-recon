@@ -85,6 +85,8 @@
  *  support for them in hdds-geant.
  */
 
+#define _GNU_SOURCE true
+
 /*
  * FIX_XERCES_getElementById_BUG does a store/load cycle at parsing time
  * to fully instantiate entity references on the document tree.
@@ -92,7 +94,6 @@
  */
 #define FIX_XERCES_getElementById_BUG true
 
-#define _GNU_SOURCE true
 
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/util/XMLString.hpp>
