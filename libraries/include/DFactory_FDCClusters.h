@@ -7,12 +7,14 @@
 
 #include "DFactory.h"
 #include "DFactory_FDCHits.h"
+#include "fit_utils.h"
 
 #define MAX_FDC_CLUSTER_HITS 100
 
 typedef struct{
 	int nhits;
 	FDCHit_t *hits[MAX_FDC_CLUSTER_HITS];
+	FitParms_t fit;
 }FDCCluster_t;
 
 class DFactory_FDCClusters:public DFactory{
@@ -22,7 +24,8 @@ class DFactory_FDCClusters:public DFactory{
 		derror_t Print(void);
 	
 	private:
-		derror_t evnt(int eventnumber);		///< Called every event.
+		derror_t evnt(int eventnumber);			///< Called every event.
+		derror_t CopyFromMCCheatCodes(void);	///< Use MC cheatcodes
 };
 
 #endif //_DFDCCLUSTERS_H_

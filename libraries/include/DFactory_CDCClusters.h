@@ -7,12 +7,14 @@
 
 #include "DFactory.h"
 #include "DFactory_CDCHits.h"
+#include "fit_utils.h"
 
 #define MAX_CDC_CLUSTER_HITS 100
 
 typedef struct{
 	int nhits;
 	CDCHit_t *hits[MAX_CDC_CLUSTER_HITS];
+	FitParms_t fit;
 }CDCCluster_t;
 
 class DFactory_CDCClusters:public DFactory{
@@ -23,7 +25,8 @@ class DFactory_CDCClusters:public DFactory{
 
 	
 	private:
-		derror_t evnt(int eventnumber);		///< Called every event.
+		derror_t evnt(int eventnumber);			///< Called every event.
+		derror_t CopyFromMCCheatCodes(void);	///< Use MC cheatcodes
 };
 
 #endif //_DCDCCLUSTERS_H_
