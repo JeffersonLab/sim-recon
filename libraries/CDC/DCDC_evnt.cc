@@ -189,7 +189,7 @@ derror_t DCDC::firstguess(s_Cdc_trackhit_t *hits, int Npoints
 	// Phi is pi/2 out of phase with x0,y0. The sign of the phase difference
 	// depends on the charge
 	phi = atan2(y0,x0);
-	phi += q>0.0 ? M_PI_2:-M_PI_2;
+	phi += q>0.0 ? -M_PI_2:M_PI_2;
 	
 	// Theta is determined by extrapolating the helix back to the target.
 	// To do this, we need dphi/dz and a phi,z point. The easiest way to
