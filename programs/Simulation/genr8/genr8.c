@@ -21,7 +21,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <malloc.h>
 #include <sys/signal.h>
 #include <sys/stat.h>
 #include <time.h>

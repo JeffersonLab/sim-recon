@@ -13,7 +13,6 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <malloc.h>
 #include <sys/stat.h>
 #include <math.h>
 
