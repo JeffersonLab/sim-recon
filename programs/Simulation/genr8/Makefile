@@ -14,7 +14,11 @@ TESTLIBS = -L$(TOP_DIR)/lib/$(OS_NAME) -L$(HALLDLIB) -ldata -lkine_c
 MISCLIB_SunOS :=  -L/usr/lib -lm -lc -lnsl -lsocket
 MISCLIB_HP-UX :=  -L/usr/lib -lm -lc -lf
 MISCLIB_AIX :=  -L/usr/lib -lxlf90 -lm -lc 
-MISCLIB_Linux :=  -L/usr/lib  -lm -lc -lg2c
+<<<<<<< Makefile
+#MISCLIB_Linux :=  -L/usr/lib  -lm -lc /usr/lib/libf2c.a
+# redhat 5.1 with egcs-2.91.60 MISCLIB_Linux :=  -L/usr/lib  -lm -lc -lg2c
+# redhat 6.1 w/ egcs-2.91.66
+MISCLIB_Linux :=  -L/usr/lib  -lm -lc 
 MISCLIB_OSF1 :=  -L/usr/lib -lm -lc -lfor -lUfor
 MISCLIB_IRIX64 := -L/usr/lib64 -lm
 MISCLIB_IRIX := -L/usr/lib -lm
