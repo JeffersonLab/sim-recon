@@ -3,8 +3,9 @@
 #include "DEvent.h"
 #include "DFactory_MCCheatHits.h"
 
-static float BCAL_R=60.0;
-static float TOF_Z=450.0;
+static float BCAL_R=65.0 + 10.0; // assume shower is centered at ~10cm into calorimeter
+static float TOF_Z=619.87; // from ForwardTOF_HDDS.xml mcfast (is this right?)
+static float FCAL_Z=245.1 - 45.0/2.0 + 10.0;
 
 static int qsort_mccheat_hits(const void* arg1, const void* arg2);
 
@@ -37,6 +38,13 @@ derror_t DFactory_MCCheatHits::evnt(int eventnumber)
 	GetCherenkovHits();
 	GetFCALHits();
 	GetUPVHits();
+	
+	// Some systems will use negative phis. Force them all to
+	// be in the 0 to 2pi range
+	MCCheatHit_t *mccheathit = (MCCheatHit_t*)_data->first();
+	for(int i=0;i<_data->nrows;i++, mccheathit++){
+		if(mccheathit->phi<0.0)mccheathit->phi += 2.0*M_PI;
+	}
 	
 	// sort hits by track, then z
 	qsort(_data->first(), _data->nrows, sizeof(MCCheatHit_t), qsort_mccheat_hits);
@@ -114,7 +122,7 @@ derror_t DFactory_MCCheatHits::GetFDCHits(void)
 					if(!wires)continue;
 				
 					for(int m=0;m<wires->mult;m++){
-						s_FdcPoints_t *fdcPoints = wires->in[k].fdcPoints;
+						s_FdcPoints_t *fdcPoints = wires->in[m].fdcPoints;
 						if(!fdcPoints)continue;
 						for(int n=0;n<fdcPoints->mult;n++){
 							MCCheatHit_t *mccheathit = (MCCheatHit_t*)_data->Add();
@@ -122,7 +130,6 @@ derror_t DFactory_MCCheatHits::GetFDCHits(void)
 							float y = fdcPoints->in[n].y;
 							mccheathit->r			= sqrt(x*x + y*y);
 							mccheathit->phi		= atan2(y,x);
-							if(mccheathit->phi<0.0)mccheathit->phi += 2.0*M_PI;
 							mccheathit->z			= fdcPoints->in[n].z;
 							mccheathit->track		= fdcPoints->in[n].track;
 							mccheathit->system	= 2;
@@ -164,7 +171,7 @@ derror_t DFactory_MCCheatHits::GetBCALHits(void)
 		s_BarrelShowers_t *barrelShowers = NULL;
 		s_HitView_t *HV = PE->in[i].hitView;
 		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->forwardTOF)
+			if(PE->in[i].hitView->barrelEMcal)
 				barrelShowers = PE->in[i].hitView->barrelEMcal->barrelShowers;
 		if(!barrelShowers)continue;
 		
@@ -228,6 +235,32 @@ derror_t DFactory_MCCheatHits::GetCherenkovHits(void)
 //-------------------
 derror_t DFactory_MCCheatHits::GetFCALHits(void)
 {
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+	
+	for(int i=0; i<PE->mult; i++){
+		s_ForwardShowers_t *forwardShowers = NULL;
+		s_HitView_t *HV = PE->in[i].hitView;
+		if(PE->in[i].hitView)
+			if(PE->in[i].hitView->forwardEMcal)
+				forwardShowers = PE->in[i].hitView->forwardEMcal->forwardShowers;
+		if(!forwardShowers)continue;
+		
+		for(int j=0;j<forwardShowers->mult;j++){
+			MCCheatHit_t *mccheathit = (MCCheatHit_t*)_data->Add();
+			float x = forwardShowers->in[j].x;
+			float y = forwardShowers->in[j].y;
+			mccheathit->r			= sqrt(x*x + y*y);
+			mccheathit->phi		= atan2(y,x);
+			if(mccheathit->phi<0.0)mccheathit->phi += 2.0*M_PI;
+			mccheathit->z			= FCAL_Z;
+			mccheathit->track		= forwardShowers->in[j].track;
+			mccheathit->system	= 6;
+		}
+	}
+
+	return NOERROR;
 
 	return NOERROR;
 }
