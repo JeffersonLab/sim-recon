@@ -1,4 +1,4 @@
-/********************************************************
+ /********************************************************
  * 
  *  Usage: genr8 <options> < input.gen
  *         Use "genr8 -h" for help with options.
@@ -74,7 +74,7 @@ struct particleMC_t{
  *           variable names.  Thank You 8^)
  **********************************************************************/
  
-FILE *NewItape=stdout;
+FILE *NewItape;
 int Debug = 0;
 int Nprinted =0;
 int PrintProduction=0;
@@ -173,6 +173,7 @@ main(int argc,char **argv)
   CM.child[1]= Y;
   /* CM.child[1]= &recoil; */
 
+  NewItape=stdout;
 
   if (argc == 1){
     PrintUsage(argv[0]);
@@ -691,7 +692,7 @@ main(int argc,char **argv)
 	    printp2ascii(fout,X);
 	  else
 	    printFinal(fout,X);
-	  if(Y->nchildren==0)
+	  if(Y->nchildren==0  && Y->flag/10 == 1 )
 	    printp2ascii(fout,Y);
 	  else
 	    printFinal(fout,Y);
@@ -1185,6 +1186,7 @@ double randm(double low, double high)
  *                     *
  ***********************
  */
+
 
 
 
