@@ -18,6 +18,8 @@
 #ifndef _DEVENT_LOOP_H_
 #define _DEVENT_LOOP_H_
 
+class DEventLoop;
+
 #include "DEventSource.h"
 #include "DEventProcessor.h"
 #include "derror.h"
@@ -26,6 +28,7 @@
 
 class DEventLoop
 {
+	public:
 	enum EVENT_PROCESSORS{
 		EVENT_PROCESSOR_NONE			= 0x0000,
 		EVENT_PROCESSOR_TAGGER		= 0x0001,
@@ -43,7 +46,6 @@ class DEventLoop
 		EVENT_PROCESSOR_ALL			= 0xFFFF
 	};
 
-	public:
 		/// Constructor for a DEventLoop object. This should normally be
 		/// called with the same arguments passed to main() on program start up.
 		DEventLoop(int narg, char *argv[]);
@@ -55,6 +57,8 @@ class DEventLoop
 		derror_t Run(DEventProcessor *proc);
 		derror_t Run(EVENT_PROCESSORS mask);
 		derror_t Run(DEventProcessor *proc, EVENT_PROCESSORS mask);
+		float GetRate(void);
+		derror_t PrintRate(void);
 		
 		EVENT_PROCESSORS proc_mask;
 	
@@ -62,6 +66,7 @@ class DEventLoop
 		int Nprocessors;
 		DEventProcessor* processors[MAX_EVENT_PROCESSORS];
 		DEventSource *source;
+		time_t last_print_rate_time;
 };
 
 
