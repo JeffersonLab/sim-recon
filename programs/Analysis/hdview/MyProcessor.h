@@ -18,6 +18,8 @@
 #include <THelix.h>
 #include <TNode.h>
 #include <TPolyMarker3D.h>
+#include <TGeoVolume.h>
+
 
 class MyProcessor:public DEventProcessor
 {
@@ -47,6 +49,7 @@ class MyProcessor:public DEventProcessor
 			Nhelix=0;
 			Ncdctracks=0;
 		}
+		derror_t Draw(void);
 };
 
 #endif // _MYPROCESSOR_H_

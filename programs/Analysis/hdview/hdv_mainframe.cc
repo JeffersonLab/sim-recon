@@ -3,12 +3,19 @@
 #include <iomanip>
 using namespace std;
 
+#include <pthread.h>
+
 #include "hdv_mainframe.h"
 
 #include <TPolyMarker3D.h>
 #include <TLine.h>
 #include <TMarker.h>
 #include <TVector3.h>
+#include <TGeoVolume.h>
+#include <TGeoManager.h>
+
+TGeoVolume *MOTHER = NULL;
+TGeoCombiTrans *MotherRotTrans = NULL;
 
 //-------------------
 // Constructor
@@ -50,9 +57,29 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	maincanvas->Range(-250.0,-250.0,250.0, 250.0);
 	
 	//--- Draw some detectors ---
-	coils = new TTUBE("coils","coils","void",183.0, 380.0, 500.0/2.0);
-	n_coils = new TNode("n_coils", "n_coils,", "coils", 0.0, 0.0, 0.0);
-	n_coils->Draw();
+	// hdgeant is made via by running g2root on hdgeant.rz
+	// e.g.  >g2root hdgeant.rz ; mv hdgeant.C hdgeant.cc
+	void hdgeant(void);
+	hdgeant();
+	
+	// To get control of the angles, we must place SITE into
+	// another volume using a TGeoCombiTrans object that we
+	// can manipulate.
+	extern TGeoVolume *SITE;
+	MOTHER = gGeoManager->MakeBox("MOTHER",NULL,4500,4500,4500);
+	gGeoManager->SetTopVolume(MOTHER);
+	TGeoRotation *MotherRot = new TGeoRotation("MotherRot");
+	MotherRotTrans = new TGeoCombiTrans(0,0,0,MotherRot);
+	MOTHER->AddNode(SITE,1,MotherRotTrans);
+	MOTHER->Draw();
+	//MotherRotTrans->RotateX(90.0);
+
+	// launch thread to continuously rotate and redraw
+	void* hdv_graphicsthread(void *ptr);
+	pthread_t graphics_thread;
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	//pthread_create(&graphics_thread, &attr,hdv_graphicsthread,	NULL);
 }
 
 //-------------------

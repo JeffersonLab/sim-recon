@@ -1,5 +1,5 @@
 
-
+#include <TGApplication.h>
 
 #include "hdview.h"
 #include "hdv_mainframe.h"
@@ -8,6 +8,7 @@
 TCanvas *maincanvas=NULL;
 DEventLoop *eventloop=NULL;
 MyProcessor *myproc = NULL;
+hdv_mainframe *hdvmf=NULL;
 
 int main(int narg, char *argv[])
 {
@@ -19,7 +20,7 @@ int main(int narg, char *argv[])
 
 	// Open Window
 	TApplication app("HDView", &narg, argv);
-	hdv_mainframe hdvmf(gClient->GetRoot(), 600, 680);
+	hdvmf = new hdv_mainframe(gClient->GetRoot(), 600, 680);
 	
 	// Hand control to ROOT event loop
 	app.Run();
