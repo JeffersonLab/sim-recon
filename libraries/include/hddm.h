@@ -2,6 +2,9 @@
 #include <DBank.h>
 #include <TVector3.h>
 
+#ifndef _HDDM_H_
+#define _HDDM_H_
+
 //------------------------------- FCALcluster -------------------------------
 typedef struct{ 
 	int nhits;				///< number of hits
@@ -55,3 +58,5 @@ class  hddm_banks_t
 		}
 		
 };
+
+#endif // _HDDM_H_
