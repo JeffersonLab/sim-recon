@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.11  2005/01/21 09:36:34  davidl
+* Read in BFIELD and NOSECONDARIES cards and store in hdtrackparams common block
+*
 * Revision 1.10  2003/10/30 12:29:24  jonesrt
 * README.txt: updated build procedures that work up to Redhat 9
 * hddmInput.c,hddmOutput.c: small change to hddm input/output library
@@ -93,6 +96,7 @@
 #include "geant321/gckine.inc"
 #include "geant321/gcunit.inc"
 #include "geant321/gcphys.inc"
+#include "hdtrackparams.inc"
 *
       integer iskip
       integer infile(20)
@@ -106,6 +110,9 @@
       real beamE0, beamEpeak, radColDist
       common /beamPars/ beamE0,beamEpeak,radColDist
       data beamPars,beamEpeak,radColDist/0,0,76.0/
+      data bfield/-999.0/
+      data nosecondaries/0/
+
 *
 *     -----------------------------------------------------------------
 *
@@ -148,6 +155,8 @@ C..geant..
       call ffkey('skip',iskip,1,'INTEGER')
       call ffkey('outfile',outfile,20,'MIXED')
       call ffkey('beam',beamE0,3,'REAL')
+		call ffkey('bfield', bfield,1,'REAL')
+		call ffkey('nosecondaries', nosecondaries,1,'INTEGER')
       call gtgamaff()
       CALL GFFGO
 *
