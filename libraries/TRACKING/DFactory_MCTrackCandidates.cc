@@ -33,6 +33,10 @@ DFactory_MCTrackCandidates::DFactory_MCTrackCandidates(DEvent *event):DFactory(e
 	
 	// See note in FindCircles
 	flip_x_axis = 0;
+	
+	// Create slope and intercept density histos
+	slope_density = new TH1F("slope","slope", 2000,-0.2,0.2);
+	offset_density = new TH1F("intercept","intercept", 2000, -10.0,10.0);
 }
 
 //------------------------------------------------------------------
@@ -41,6 +45,8 @@ DFactory_MCTrackCandidates::DFactory_MCTrackCandidates(DEvent *event):DFactory(e
 DFactory_MCTrackCandidates::~DFactory_MCTrackCandidates()
 {
 	for(int i=0; i<Ndensity_histos; i++)delete density_histos[i];
+	delete slope_density;
+	delete offset_density;
 }
 
 //------------------------------------------------------------------
@@ -71,19 +77,56 @@ derror_t DFactory_MCTrackCandidates::evnt(int eventnumber)
 	
 	// Find circle patterns first. (The results are left in circles[])
 	FindCircles();
+	
+	FillSlopeIntDensityHistos();
 		
 	return NOERROR;
 }
 
 //------------------------------------------------------------------
-// FindTracks
+// FindCircles
 //------------------------------------------------------------------
 derror_t DFactory_MCTrackCandidates::FindCircles(void)
+{
+	/// Call either FindCirclesMaskSub or FindCirclesHitSub
+	///
+	/// There are two methods for finding the peaks in the density
+	/// histogram. The FindCirclesMaskSub routine with simply
+	/// zero all bins within masksize of the bin with the maximum
+	/// value. This method is probably quickest since you don't have
+	/// to refill the desnity histogram over and over. The drawback
+	/// is that if there can be areas where high density occurs
+	/// just from hits which have lines that are very close to the same
+	/// slope so overlap in areas far from the focus. The result
+	/// is false maxima being identified.
+	///
+	/// The second method is implemented in FindCirclesHitSub. This
+	/// method regenerates the density histogram after finding
+	/// each peak, but excludes hits from contributing if their 
+	/// lines passed within masksize of the focus. The draw back
+	/// of this method is that for events in which one track
+	/// has a hits whose lines happen to pass over the focus of another
+	/// hit, they will be removed and the peak at their focus will 
+	/// disappear before being identified.
+	///
+	/// Both of these methods should be optimized by adjusting the
+	/// density fundtion itself (DArcHit::Density()). At this point
+	/// it seems as though it will be easier to look at contrasting
+	/// the two if they are called from here.
+	
+	return FindCirclesHitSub();
+}
+
+//------------------------------------------------------------------
+// FindCirclesHitSub
+//------------------------------------------------------------------
+derror_t DFactory_MCTrackCandidates::FindCirclesHitSub(void)
 {
 	/// Find circles by repeatedly filling the density
 	/// histogram and looking for the maximum. As each
 	/// maximum is found, record its position in the
-	/// circles[] array.
+	/// circles[] array and remove the contributing hits
+	/// from the density histo.
 
 	Ncircles = 0;	
 	do{
@@ -152,6 +195,127 @@ derror_t DFactory_MCTrackCandidates::FindCircles(void)
 }
 
 //------------------------------------------------------------------
+// FindCirclesMaskSub
+//------------------------------------------------------------------
+derror_t DFactory_MCTrackCandidates::FindCirclesMaskSub(void)
+{
+	/// Find circles by filling the density histogram and looking
+	/// for the maximum. As each maximum is found, record its position in the
+	/// circles[] array and zero out the masksize area around the
+	/// maximum in the density histo.
+
+	Ncircles = 0;	
+
+	// Fill the density histogram
+	TH2F *tmp = density_histos[0];
+	TAxis *xaxis = tmp->GetXaxis();
+	TAxis *yaxis = tmp->GetYaxis();
+	int Nxbins = xaxis->GetNbins();
+	int Nybins = yaxis->GetNbins();
+	FillArcDensityHistogram(tmp);
+
+	do{
+
+		// Find the coordinates of the maximum
+		int xbin, ybin, zbin;
+		tmp->GetMaximumBin(xbin,ybin,zbin);
+		float x = xaxis->GetBinCenter(xbin);
+		float y = yaxis->GetBinCenter(ybin);
+		
+		// The maxmimum bin is not terribly accurate as the center of the
+		// circle. Use DQuickFit to quickly find a better center.
+		DQuickFit *fit = new DQuickFit();
+		DArcHit *a = archit;
+#if 0
+		for(int i=0;i<Narchits;i++ ,a++){
+			float d = a->DistToLine(x,y);
+			if(d <= masksize){
+				fit->AddHit(a->rhit, a->phihit, a->zhit);
+			}
+		}
+		if(fit->GetNhits()>=3){
+			fit->FitCircle();
+			x = -fit->x0;	// why do we need the minus sign?
+			y = -fit->y0;	// why do we need the minus sign?
+		}
+#endif
+		delete fit;
+
+		// Count the hits within masksize of the maximum
+		int Nhits_this_track = 0;
+		int Nhits_not_used = 0;
+		a = archit;
+		for(int i=0;i<Narchits;i++ ,a++){
+			float d = a->DistToLine(x,y);
+			if(d > masksize){
+				if(!a->used)Nhits_not_used++;
+				continue;
+			}else{
+				a->used = 1;
+				Nhits_this_track++;
+			}
+		}
+		
+		// There should be at least 4 hits for it to be a track
+		if(Nhits_this_track>=4){
+		
+			// Record the location of the maximum
+			circles[Ncircles].SetX1(x);
+			circles[Ncircles].SetY1(y);
+			circles[Ncircles].SetR1(masksize);
+			circles[Ncircles++].SetR2(masksize);
+		}
+
+		// Zero all bins within masksize of the maximum.
+		float maxval = tmp->GetBinContent(xbin,ybin,zbin);
+		cout<<__FILE__<<":"<<__LINE__<<" maxval = "<<maxval<<endl;
+		ZeroNeighbors(tmp, xbin,ybin);
+#if 0
+		int Nmaskbins = (int)ceil(masksize*bins_per_cm);
+		for(int i=xbin-Nmaskbins; i<xbin+Nmaskbins; i++){
+			if(i<1 || i>Nxbins)continue;
+			for(int j=ybin-Nmaskbins; j<ybin+Nmaskbins; j++){
+				if(j<1 || j>Nybins)continue;
+				float d = sqrt(pow((double)(i-xbin),2.0) + pow((double)(j-ybin),2.0));
+				if(d/bins_per_cm > masksize)continue;
+				
+				tmp->SetBinContent(i,j,0.0);
+			}
+		}
+#endif
+		
+		if(maxval < 15.0)break;
+
+	}while(Ncircles<20);
+	
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// ZeroNeighbors
+//------------------------------------------------------------------
+derror_t DFactory_MCTrackCandidates::ZeroNeighbors(TH2F *hist, int xbin, int ybin)
+{
+	/// Zero all of the 3x3 group of bins of in hist centered on
+	/// xbin, ybin. Any bins above a set limit will call us again
+	/// so this is a reentrant routine.
+	int Nxbins = hist->GetXaxis()->GetNbins();
+	int Nybins = hist->GetYaxis()->GetNbins();
+	for(int i=xbin-1; i<xbin+1; i++){
+		if(i<1 || i>Nxbins)continue;
+		for(int j=ybin-2; j<ybin+2; j++){
+			if(j<1 || j>Nybins)continue;
+			
+			float val = hist->GetBinContent(i,j,0);
+			hist->SetBinContent(i,j,0.0);
+			if(val > 10.0)ZeroNeighbors(hist,i,j);
+		}
+	}	
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
 // FillArcDensityHistogram
 //------------------------------------------------------------------
 derror_t DFactory_MCTrackCandidates::FillArcDensityHistogram(TH2F *hist)
@@ -164,6 +328,47 @@ derror_t DFactory_MCTrackCandidates::FillArcDensityHistogram(TH2F *hist)
 		if(a->used)continue;
 		
 		a->FillArcDensityHistogram(hist);
+	}
+	
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// FillSlopeIntDensityHistos
+//------------------------------------------------------------------
+derror_t DFactory_MCTrackCandidates::FillSlopeIntDensityHistos(void)
+{
+	// Loop over track centers and find all hits which may contribute.
+	// Remember all phi,z coordinates for these hits so we can histogram
+	// slope and intercept of phi vs. z below.
+	
+	slope_density->Reset();
+	offset_density->Reset();
+	for(int j=0;j<Ncircles;j++){
+		float phi[100], z[100];
+		int Nhits = 0;
+		DArcHit *a = archit;
+		float x0 = circles[j].GetX1();
+		float y0 = circles[j].GetY1();
+		for(int i=0;i<Narchits;i++ ,a++){
+			
+			float d = a->DistToLine(x0,y0);
+			if(d > masksize)continue;
+			
+			phi[Nhits] = atan2(a->yhit-y0, a->xhit-x0);
+			z[Nhits++] = a->zhit;
+		}
+		
+		for(int i=0; i<Nhits-1; i++){
+			for(int k=i+1; k<Nhits;k++){ 
+				float m = (phi[i]-phi[k])/(z[i]-z[k]);
+				float b = phi[i] - m*z[i];
+				if(!finite(m) || !finite(b))continue;
+				slope_density->Fill(m);
+				offset_density->Fill(b);
+			}
+		}
+		break;
 	}
 	
 	return NOERROR;

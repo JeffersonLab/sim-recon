@@ -49,6 +49,7 @@
 #ifndef _DMCTRACKCANDIDATES_H_
 #define _DMCTRACKCANDIDATES_H_
 
+#include <TH1.h>
 #include <TH2.h>
 #include <TEllipse.h>
 
@@ -71,8 +72,11 @@ class DFactory_MCTrackCandidates:public DFactory{
 		derror_t Print(void);
 	
 		derror_t FindCircles(void);
-		derror_t FindTracks(void);
+		derror_t FindCirclesHitSub(void);
+		derror_t FindCirclesMaskSub(void);
+		derror_t ZeroNeighbors(TH2F *hist, int xbin, int ybin);
 		derror_t FillArcDensityHistogram(TH2F *hist);
+		derror_t FillSlopeIntDensityHistos(void);
 		
 		inline DArcHit* Getarchits(void){return archit;}
 		inline int GetNarchits(void){return Narchits;}
@@ -87,6 +91,8 @@ class DFactory_MCTrackCandidates:public DFactory{
 									///< be from a focal point and still be considered
 									///< on the circle
 		int flip_x_axis;		///< change sign of x-coordinate for circles
+
+		TH1F *slope_density, *offset_density;
 
 	private:
 		DArcHit archit[300];
