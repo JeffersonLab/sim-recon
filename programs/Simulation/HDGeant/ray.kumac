@@ -6,6 +6,10 @@ MACRO draw vol=hall the=30 phi=20 psi=0 x0=10 y0=10 sx=5 sy=5
 RETURN
 
 MACRO init prec=4 fill=30 box=0 boy=0 boz=100
+  message "Initialization of Hall D drawing macros"
+  message "Below you will be prompted for some input."
+  message "To the first prompt, type HALL"
+  message "and to the following three answer 10000."
   next
   dopt rayt on
   dopt mapp [prec]
@@ -28,7 +32,7 @@ MACRO init prec=4 fill=30 box=0 boy=0 boz=100
   satt csto colo 5
   satt cylw colo 2
   satt fdcc colo 6
-  satt fdca seen 0
+  satt fdca colo 5
   satt cere colo 7
   satt bcam colo 3
   satt ftof colo 6
