@@ -51,6 +51,9 @@ using std::endl;
 
 DMagneticFieldMap::DMagneticFieldMap(int rDim, int zDim)
 {
+	/// The September 21, 2001 table in dsolenoid.table file has
+	/// rDim = 41 and zDim = 251.
+
   this->rDim = rDim;
   this->zDim = zDim;
   this->rMin = 0.0;
@@ -69,6 +72,21 @@ DMagneticFieldMap::~DMagneticFieldMap()
 void DMagneticFieldMap::setDebug(const bool val)
 {
   DEBUG = val;
+}
+
+void DMagneticFieldMap::readMap(void)
+{
+	/// Try opening "dsolenoid.table" in the local directory
+	/// If successful, pass the stream pointer to the method below
+
+	ifstream dsolenoid("dsolenoid.table");
+	if(!dsolenoid.is_open()){
+		cerr<<__FILE__<<":"<<__LINE__<<" Unable to open \"dsolenoid.table!\"";
+		cerr<<" Check that it exists in your working directory!"<<endl;
+	}else{
+		readMap(dsolenoid);
+		dsolenoid.close();
+	}
 }
 
 void DMagneticFieldMap::readMap(ifstream &in)
