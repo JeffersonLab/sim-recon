@@ -1480,6 +1480,10 @@ int main(int argC, char* argV[])
 	 << "extern "
 	 << "char HDDM_" << classPrefix << "_DocumentString[];"	<< endl
          							<< endl
+         << "#ifdef _Tru64"					<< endl
+         << "#define inline __inline"				<< endl
+         << "#endif"						<< endl
+								<< endl
 	 << "#endif /* " << classPrefix << "_DocumentString */"	<< endl;
 
    cFile							<< endl
