@@ -83,7 +83,7 @@ class DFactory_MCTrackCandidates:public DFactory{
 		derror_t FindCirclesHitSub(void);
 		derror_t FindCirclesMaskSub(void);
 		derror_t FindCirclesInt(void);
-		derror_t FindLines(void);
+		int      FindTracks(float x, float y);
 		derror_t ZeroNeighbors(TH2F *hist, int xbin, int ybin);
 		int      IntersectionDensity(DArcHit *a, DArcHit *b, float &x, float&y);
 		derror_t FillArcDensityHistogram(TH2F *hist);
