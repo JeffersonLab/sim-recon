@@ -15,7 +15,9 @@
 #include <TFile.h>
 #include <TH1.h>
 #include <TEllipse.h>
-
+#include <THelix.h>
+#include <TNode.h>
+#include <TPolyMarker3D.h>
 
 class MyProcessor:public DEventProcessor
 {
@@ -28,15 +30,22 @@ class MyProcessor:public DEventProcessor
 
 		int eventNo;
 		TVector3 cdchits[1000];
+		TPolyMarker3D *cdchits3D[1000];
 		int cdchit_tracks[1000];
 		int Ncdchits;
+		int Ncdctracks;
 		
 		TEllipse *ellipse[10];
 		int Nellipse;
 		
+		THelix *helix[10];
+		int Nhelix;
+		
 		MyProcessor(void){
 			Ncdchits=0;
 			Nellipse=0;
+			Nhelix=0;
+			Ncdctracks=0;
 		}
 };
 

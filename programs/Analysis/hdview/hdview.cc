@@ -19,7 +19,7 @@ int main(int narg, char *argv[])
 
 	// Open Window
 	TApplication app("HDView", &narg, argv);
-	hdv_mainframe hdvmf(gClient->GetRoot(), 600, 500);
+	hdv_mainframe hdvmf(gClient->GetRoot(), 600, 680);
 	
 	// Hand control to ROOT event loop
 	app.Run();

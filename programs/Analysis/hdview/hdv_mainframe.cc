@@ -47,12 +47,12 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 
 	maincanvas = emcanvas->GetCanvas();
 	maincanvas->cd(0);
-	maincanvas->Range(-290.0,-200.0,290.0, 200.0);
+	maincanvas->Range(-250.0,-250.0,250.0, 250.0);
 	
 	//--- Draw some detectors ---
-	coils = new TTUBE("coils","coils","void",1.0, 1.6, 2.5);
+	coils = new TTUBE("coils","coils","void",183.0, 380.0, 500.0/2.0);
 	n_coils = new TNode("n_coils", "n_coils,", "coils", 0.0, 0.0, 0.0);
-	//n_coils->Draw();
+	n_coils->Draw();
 }
 
 //-------------------
