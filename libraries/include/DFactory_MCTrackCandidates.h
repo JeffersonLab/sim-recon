@@ -1,5 +1,28 @@
 // $Id$
 
+
+
+#ifndef _DMCTRACKCANDIDATES_H_
+#define _DMCTRACKCANDIDATES_H_
+
+#include <TH1.h>
+#include <TH2.h>
+#include <TEllipse.h>
+
+#include "DFactory.h"
+#include "DArcHit.h"
+
+
+typedef struct{
+	int Nhits;
+	int ihit[100];		///< index of hits in MCCheatHits factory
+	float x0,y0;		///< center of circle
+	float z_vertex;	///< z coordinate of vertex
+	float dphidz;		///< dphi/dz in radians per cm
+}MCTrackCandidate_t;
+
+class DFactory_MCTrackCandidates:public DFactory{
+
 /// Determine track candidates from the MCCheatHits data.
 ///
 /// This is designed to work only on the cheat codes from the
@@ -45,27 +68,6 @@
 /// peak should appear in a histogram of the intercepts indicating
 /// the z-vertex position.
 
-
-#ifndef _DMCTRACKCANDIDATES_H_
-#define _DMCTRACKCANDIDATES_H_
-
-#include <TH1.h>
-#include <TH2.h>
-#include <TEllipse.h>
-
-#include "DFactory.h"
-#include "DArcHit.h"
-
-
-typedef struct{
-	int Nhits;
-	int ihit[100];		///< index of hits in MCCheatHits factory
-	float x0,y0;		///< center of circle
-	float z_vertex;	///< z coordinate of vertex
-	float dphidz;		///< dphi/dz in radians per cm
-}MCTrackCandidate_t;
-
-class DFactory_MCTrackCandidates:public DFactory{
 	public:
 		DFactory_MCTrackCandidates(DEvent *event);
 		~DFactory_MCTrackCandidates();
