@@ -10,7 +10,7 @@
 
 #include "DEventSource.h"
 #include "derror.h"
-#include "hddm_s.hpp"
+#include "hddm_s.h"
 
 class DEventSourceFile:public DEventSource
 {

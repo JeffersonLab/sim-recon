@@ -14,7 +14,7 @@
 #include <time.h>
 
 #include "derror.h"
-#include "hddm_s.hpp"
+#include "hddm_s.h"
 
 class DEventSource
 {
@@ -46,7 +46,6 @@ class DEventSource
 		float GetRate(void);
 		static EVENT_SOURCE_TYPE GuessSourceType(int narg, char *argv[]);
 		
-		s_hddm_containers_t *hddm;
 		s_HDDM_t *hddm_s;
 		
 	private:
