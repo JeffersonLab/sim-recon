@@ -8,6 +8,8 @@
 #include <TGButton.h>
 #include <TCanvas.h>
 #include <TRootEmbeddedCanvas.h>
+#include <TTUBE.h>
+#include <TNode.h>
 
 class hdv_mainframe:public TGMainFrame {
 
@@ -21,6 +23,8 @@ class hdv_mainframe:public TGMainFrame {
 		TGTextButton *quit, *next, *rotatex, *rotatey, *rotatez, *orbit;
 		TGLayoutHints *fLayout;
 		TRootEmbeddedCanvas *emcanvas;
+		TTUBE *coils;
+		TNode *n_coils;
 };
 
 

@@ -4,10 +4,7 @@
 #include <TVector3.h>
 #include <TMarker.h>
 #include <TTUBE.h>
-#include <TEllipse.h>
 
-TEllipse *ellipse[10];
-int Nellipse = 0;
 
 TMarker *cdcMarkers[1000];
 int NcdcMarkers=0;
@@ -17,35 +14,10 @@ int NcdcMarkers=0;
 //-------------------
 derror_t hdv_getevent(void)
 {
-	// Read in next event. The MyProcessor object's event
-	// method will automatically be called which will convert
-	// the hddm to more succienct variables used in
-	// hdv_drawevent() below.
+	// Read in next event. 
 	derror_t err = eventloop->OneEvent();
 	if(err!=NOERROR)return err;
-	
-	cout<<"Event Number:"<<myproc->eventNo<<endl;
-	cout<<"Ncdchits = "<<myproc->Ncdchits<<endl;
-	cout<<endl;
-
-	// Do this here so it is doesn't slow down "orbit"
-	// Draw an ellipse for each track
-	for(int i=0;i<Nellipse;i++)delete ellipse[i];
-	Nellipse = 0;
-	s_Cdc_track_t *cdc_track = myproc->hddm->cdc_tracks->in;
-	for(int i=0;i<myproc->hddm->cdc_tracks->mult;i++, cdc_track++){
-		float B=-2.0*0.61; // The 0.61 is empirical
-		float hbarc = 197.326;
-		float r0 = -cdc_track->p*sin(cdc_track->theta)*hbarc/B/fabs(cdc_track->q);
-		float phi = cdc_track->phi - cdc_track->q*M_PI_2;
-		float x0 = r0*cos(phi);
-		float y0 = r0*sin(phi);
-
-		ellipse[Nellipse] = new TEllipse(x0, y0, r0, r0);
-		ellipse[Nellipse++]->Draw();
-		maincanvas->Update();
-		if(Nellipse>=10)break;
-	}
+		
 
 	return NOERROR;
 }
@@ -64,14 +36,12 @@ derror_t hdv_drawevent(void)
 	// Create markers for all CDC hits
 	TVector3 *v = myproc->cdchits;
 	for(int i=0;i<myproc->Ncdchits;i++ ,v++){
-		//cdcMarkers[NcdcMarkers] = new TMarker(0.5+v->x()/500.0, 0.5+v->y()/300.0, 20);
 		cdcMarkers[NcdcMarkers] = new TMarker(v->x(), v->y(), 20);
 		cdcMarkers[NcdcMarkers]->SetMarkerColor(myproc->cdchit_tracks[i]);
 		cdcMarkers[NcdcMarkers]->SetMarkerSize(exp(v->z()/500.0)/2.0);
 		cdcMarkers[NcdcMarkers++]->Draw();
 	}
 	
-
 	// Update canvas
 	maincanvas->Update();
 

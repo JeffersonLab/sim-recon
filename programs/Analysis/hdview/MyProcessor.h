@@ -14,6 +14,7 @@
 #include <TVector3.h>
 #include <TFile.h>
 #include <TH1.h>
+#include <TEllipse.h>
 
 
 class MyProcessor:public DEventProcessor
@@ -29,6 +30,14 @@ class MyProcessor:public DEventProcessor
 		TVector3 cdchits[1000];
 		int cdchit_tracks[1000];
 		int Ncdchits;
+		
+		TEllipse *ellipse[10];
+		int Nellipse;
+		
+		MyProcessor(void){
+			Ncdchits=0;
+			Nellipse=0;
+		}
 };
 
 #endif // _MYPROCESSOR_H_

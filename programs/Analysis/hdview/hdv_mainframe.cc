@@ -15,29 +15,29 @@ using namespace std;
 //-------------------
 hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p,w,h)
 {
-	next = new TGTextButton(this, "&Next", 2);
-
-	rotatex = new TGTextButton(this, "Rotate-X", 3);
-	rotatey = new TGTextButton(this, "Rotate-Y", 4);
-	rotatez = new TGTextButton(this, "Rotate-Z", 5);
-
-	orbit = new TGTextButton(this, "Orbit", 6);
-
-	quit = new TGTextButton(this, "&Quit", 1);
-	quit->SetCommand(".q");
+	fLayout = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY);
 
 	emcanvas = new TRootEmbeddedCanvas("Main Canvas",this,w-20, h-100, kSunkenFrame, GetWhitePixel());
 	emcanvas->SetScrolling(TGCanvas::kCanvasNoScroll);
-	
-	fLayout = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY);
-	
 	AddFrame(emcanvas, fLayout);
-	AddFrame(next, fLayout);
-	AddFrame(rotatex, fLayout);
-	AddFrame(rotatey, fLayout);
-	AddFrame(rotatez, fLayout);
-	AddFrame(orbit, fLayout);
-	AddFrame(quit, fLayout);
+	
+	TGHorizontalFrame *buttonframe = new TGHorizontalFrame(this, w, 50);
+	AddFrame(buttonframe, fLayout);
+
+	next = new TGTextButton(this, 	 			"&Next", 2);
+	rotatex = new TGTextButton(this,	"Rotate-X", 3);
+	rotatey = new TGTextButton(this,	"Rotate-Y", 4);
+	rotatez = new TGTextButton(this,	"Rotate-Z", 5);
+	orbit = new TGTextButton(this,		"Orbit", 6);
+	quit = new TGTextButton(this,		"&Quit", 1);
+	quit->SetCommand(".q");
+	
+	buttonframe->AddFrame(next, fLayout);
+	buttonframe->AddFrame(rotatex, fLayout);
+	buttonframe->AddFrame(rotatey, fLayout);
+	buttonframe->AddFrame(rotatez, fLayout);
+	buttonframe->AddFrame(orbit, fLayout);
+	buttonframe->AddFrame(quit, fLayout);
 	
 	MapSubwindows();
 	Layout();
@@ -48,6 +48,11 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	maincanvas = emcanvas->GetCanvas();
 	maincanvas->cd(0);
 	maincanvas->Range(-290.0,-200.0,290.0, 200.0);
+	
+	//--- Draw some detectors ---
+	coils = new TTUBE("coils","coils","void",1.0, 1.6, 2.5);
+	n_coils = new TNode("n_coils", "n_coils,", "coils", 0.0, 0.0, 0.0);
+	//n_coils->Draw();
 }
 
 //-------------------

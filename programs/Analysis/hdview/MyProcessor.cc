@@ -7,8 +7,12 @@
 #include <iostream>
 using namespace std;
 
+#include "hdview.h"
 #include "MyProcessor.h"
-#include "hddm_s.h"
+#include "hddm.h"
+
+extern TCanvas *maincanvas;
+extern DEventLoop *eventloop;
 
 
 //------------------------------------------------------------------
@@ -16,40 +20,34 @@ using namespace std;
 //------------------------------------------------------------------
 derror_t MyProcessor::evnt(int eventnumber)
 {
-	eventNo = eventnumber;
-	Ncdchits = 0;
 
-	// Copy the cdc_trackhits into TVector3 array so
-	// we can rotate the points.
-	s_Cdc_trackhit_t *c = hddm->cdc_trackhits->in;
-	TVector3 *v = cdchits;
-	int *t = cdchit_tracks;
-	for(Ncdchits=0;Ncdchits<hddm->cdc_trackhits->mult;Ncdchits++, c++, v++, t++){
-		v->SetXYZ(c->x, c->y, c->z);
-		*t = c->track;
+	// Copy cdc hits to array of 3-vectors
+	CDChit_t *CDChit = hddm->CDChits->CDChit;
+	for(Ncdchits=0; Ncdchits<hddm->CDChits->nrows; Ncdchits++, CDChit++){
+		cdchits[Ncdchits]=CDChit->pos;
+		cdchit_tracks[Ncdchits] = CDChit->track;
 	}
 
+	// Do this here so it is doesn't slow down "orbit"
+	// Draw an ellipse for each track
+	for(int i=0;i<Nellipse;i++)delete ellipse[i];
+	Nellipse = 0;
+	CDCtrack_t *CDCtrack = hddm->CDCtracks->CDCtrack;
+	for(int i=0;i<hddm->CDCtracks->nrows; i++, CDCtrack++){
+		float x0 = CDCtrack->x0;
+		float y0 = CDCtrack->y0;
+		float r0 = sqrt(x0*x0 + y0*y0);
+		
+		cout<<__FILE__<<":"<<__LINE__<<" x0="<<x0<<" y0="<<y0<<" r0="<<r0<<endl;
 
-	// Loop over Physics Events
-	s_PhysicsEvents_t* PE = hddm->physicsEvents;
-	if(!PE)return NOERROR;
-	for(int i=0; i<PE->mult; i++){
-		s_Reactions_t *reactions = PE->in[i].reactions;
-		if(reactions){
-			for(int j=0;j<reactions->mult;j++){
-				s_Vertices_t *vertices = reactions->in[j].vertices;
-				if(!vertices)continue;
-				for(int k=0;k<vertices->mult;k++){
-					s_Products_t *products = vertices->in[j].products;
-					if(!products)continue;
-					for(int m=0;m<products->mult;m++){
-						if(products->in[m].momentum){
-						}
-					}
-				}
-			}
-		}
+		ellipse[Nellipse] = new TEllipse(x0, y0, r0, r0);
+		ellipse[Nellipse++]->Draw();
+		maincanvas->Update();
+		if(Nellipse>=10)break;
 	}
+	
+	cout<<"Next Event"<<endl;
+	cout<<"\t Ncdctracks="<<hddm->CDCtracks->nrows<<endl;
 
 	return NOERROR;
 }
