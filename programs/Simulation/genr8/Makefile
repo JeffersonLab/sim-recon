@@ -16,7 +16,7 @@ endif
 PROGRAM= genr8
 
 genr8: genr8.o genkin.o
-	$(CC) -v  -o $@  $^  -lm
+	$(CC) -o $@  $^  -lm
 
 genr8.o: genr8.c
 	$(CC) -c -o genr8.o   genr8.c $(INCLUDE)
