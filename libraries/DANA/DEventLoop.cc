@@ -147,6 +147,7 @@ derror_t DEventLoop::OneEvent(void)
 	int eventNo = 0;
 	for(int i=0;i<Nprocessors;i++, p++){
 		(*p)->hddm = source->hddm;
+		(*p)->hddm_s = source->hddm_s;
 		derror_t err = (*p)->evnt(eventNo);
 
 		// More will need to be done to truly filter out the event.
