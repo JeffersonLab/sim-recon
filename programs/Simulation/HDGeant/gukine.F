@@ -2,6 +2,10 @@
 * $Id$
 *
 * $Log$
+* Revision 1.7  2001/10/30 11:52:36  jonesrt
+* - fixed bug in gukine.F in coherent beam simulation
+*   where variable spot was in meters but treated as if it were cm    -rtj-
+*
 * Revision 1.6  2001/10/29 17:39:23  jonesrt
 * - added mc truth info to output event for internal track/photon generators
 * - added special code for background studies, selected by the conditional
@@ -89,15 +93,15 @@
 *
       elseif (E.gt.0) then
          call GRNDM(RNDM,5)
-         phi = RNDM(1)*TWOPI
-         rho = mospread*sqrt(-2*log(RNDM(2)))
-         thxMosaic = rho*cos(phi)
-         thyMosaic = rho*sin(phi)
-         phi = RNDM(3)*TWOPI
+         phim = RNDM(1)*TWOPI
+         rhom = mospread*sqrt(-2*log(RNDM(2)))
+         thxMosaic = rhom*cos(phim)
+         thyMosaic = rhom*sin(phim)
+         phib = RNDM(3)*TWOPI
          varBeam = (emit/spot)**2 + sigma2MS(t*RNDM(4))
-         rho = sqrt(-2*varBeam*log(RNDM(5)))
-         thxBeam = rho*cos(phi)
-         thyBeam = rho*sin(phi)
+         rhob = sqrt(-2*varBeam*log(RNDM(5)))
+         thxBeam = rhob*cos(phib)
+         thyBeam = rhob*sin(phib)
          cos45 = 1/sqrt(2d0)
          rotate(1,1) = 0
          rotate(1,2) = cos45			!point (1,0,0) along beam
@@ -149,10 +153,10 @@
          PLAB(1) = PLAB(3)*thetaX
          PLAB(2) = PLAB(3)*thetaY
          call GRNDM(RNDM,2)
-         phi = RNDM(1)*TWOPI
-         rho = sqrt(-2*log(RNDM(2)))
-         VERTEX(1) = spot*rho*cos(phi) + D*100*thetaX
-         VERTEX(2) = spot*rho*sin(phi) + D*100*thetaY
+         phic = RNDM(1)*TWOPI
+         rhoc = spot*sqrt(-2*log(RNDM(2)))
+         VERTEX(1) = (rhoc*cos(phic) + D*thetaX)*100
+         VERTEX(2) = (rhoc*sin(phic) + D*thetaY)*100
          VERTEX(3) = CollimPos
          call GSVERT(VERTEX,0,0,0,0,NVERT)
          call GSKINE(PLAB,1,NVERT,0,0,NT)
