@@ -30,6 +30,10 @@
 #define _GNU_SOURCE true
 #endif
 
+#ifdef BASENAME_IN_LIBGEN // basename defined here in OSX. (Linux uses string.h) 
+#include <libgen.h>
+#endif
+
 #include <xercesc/sax/SAXParseException.hpp>
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/framework/LocalFileFormatTarget.hpp>
