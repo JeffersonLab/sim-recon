@@ -6,9 +6,12 @@
 ifeq ($(OStype),OSF1)
 	COPTS = -g -D_REENTRANT -DBASENAME_USE_BUILTIN
 endif
-
 ifeq ($(OStype),SunOS)
 	CC = CC
+        COPTS = -D_REENTRANT -DBASENAME_IN_LIBGEN
+endif
+ifeq ($(OStype),Darwin)
+	CC = g++
         COPTS = -D_REENTRANT -DBASENAME_IN_LIBGEN
 endif
 
