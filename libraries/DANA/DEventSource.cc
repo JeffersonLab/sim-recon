@@ -67,7 +67,7 @@ derror_t DEventSource::NextEvent(void)
 	// Read next event from source. If none, then close source and recall ourself
 	switch(GetEvent()){
 		case NO_MORE_EVENTS_IN_SOURCE:
-			cout<<endl<<"Closing \""<<sources[source_index]<<"\""<<endl;
+			cout<<endl<<"Closing \""<<sources[source_index-1]<<"\""<<endl;
 			err = Close();
 			if(err)return err;
 			source_is_open = 0;
