@@ -388,14 +388,14 @@ derror_t DFactory_MCTrackCandidates::FillSlopeIntDensityHistos(void)
 		offset_density_histos[i]->Reset();
 	}
 	for(int j=0;j<Ncircles;j++){
-		float phi[100], z[100];
+		float phi[200], z[200];
 		int Nhits = 0;
 		DArcHit *a = archit;
 		float x0 = circles[j].GetX1();
 		float y0 = circles[j].GetY1();
 		float phi0 = atan2(-y0, -x0);
 		for(int i=0;i<Narchits;i++ ,a++){
-			
+			if(Nhits>=200)break;
 			float d = a->DistToLine(x0,y0);
 			if(d > masksize)continue;
 			
