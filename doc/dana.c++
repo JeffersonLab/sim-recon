@@ -2,7 +2,7 @@
 // It is written in this way so Doxygen can find it.
 
 /**
- * @defgroup DANA
+ * @defgroup DANA the DANA framework
  * @{
 */
 		class DContainer{};
@@ -13,7 +13,7 @@
 		class DEventSourceET{};
 		class DEventSourceFile{};
 		class DFactory{};
-/** @}
+/**
 
 	\page DANA The DANA framework
 
@@ -36,5 +36,6 @@
 	filtering of events as well as more efficient "special purpose"
 	programs which look only at specific detector systems.
 	
-	
+
+	@}
 */
