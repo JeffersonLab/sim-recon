@@ -5,19 +5,20 @@ NETLIB := -lnsl
 XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp
  
 COPTS = -g
-FOPTS = -g -Wno-globals
+FOPTS = -g -Wno-globals -fdebug-kludge
 
 HDDS = ../hdds
+HDDM = ../hddm
 
-AUXS = hddsGeant3.o goptimize.o \
-       gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o
+AUXS = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o gdstep.o guxcs.o \
+       hddsGeant3.o goptimize.o hddmInput.o hddm_s.o
 
 GXFIXED = gxcs.o gxphys.o
 
-hdgeant++.x:	gxint.o uginit.o uglast.o $(AUXS) $(GXFIXED)
+hdgeant++:	gxint.o uginit.o uglast.o $(AUXS) $(GXFIXED)
 	$(CERN_ROOT)/bin/gxint -g 321 -m -d Motif -o $@ $^
 
-hdgeant.x:	hdgeant.F uginit.F uglast.F $(AUXS)
+hdgeant:	hdgeant.F uginit.F uglast.F $(AUXS)
 	f77 $(FOPTS) -o $@ -I$(CERN_ROOT)/include $^ \
 	    -L${CERN_ROOT}/lib -lgeant321\
 	    -lpawlib -lgraflib -lgrafX11 -lpacklib -lmathlib \
@@ -28,8 +29,19 @@ hdgeant.x:	hdgeant.F uginit.F uglast.F $(AUXS)
 .F.o:
 	f77 $(FOPTS) -I$(CERN_ROOT)/include -DCERNLIB_MOTIF -c -o $@ $^
 
+.c.o:
+	gcc $(COPTS) -I. -I../include -c -o $@ $^
+
 hddsGeant3.f:
 	$(HDDS)/hdds-geant $(HDDS)/main_HDDS.xml >hddsGeant3.f
 
+hddmInput.c: hddm_s.h
+
+hddm_s.c: hddm_s.h
+	$(HDDM)/hddm-c $(HDDM)/event.xml
+
+hddm_s.h:
+	$(HDDM)/hddm-c $(HDDM)/event.xml
+
 clean:
-	rm -f *.o core hddsGeant3.f last.kumac* paw.metafile
+	rm -f *.o core hddm_s.[ch] hddsGeant3.f last.kumac* paw.metafile

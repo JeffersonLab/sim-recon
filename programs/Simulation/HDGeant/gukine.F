@@ -2,6 +2,10 @@
 * $Id$
 *
 * $Log$
+* Revision 1.2  2001/07/15 07:31:37  jonesrt
+* HDGeant now supportskinematic input from Monte Carlo generators
+* via the routines in hddmInput.c  -rtj
+*
 * Revision 1.1  2001/07/10 18:05:46  jonesrt
 * imported several of the gu*.F user subroutines for Hall D customization -rtj
 *
@@ -37,27 +41,41 @@
          GO TO 99
       ENDIF
 #endif
+
+*
+*              Try input from MonteCarlo generator first
+*
+      itry = nextInput()
+      if (itry .eq. 0) then
+         itry = loadInput()
+      elseif (itry .eq. 9) then
  
-      VERTEX(1)=VSCAN(1)
-      VERTEX(2)=VSCAN(2)
-      VERTEX(3)=VSCAN(3)
-      IF(IKINE.GT.100)THEN
-         IK=IKINE-100
-         THETA=PKINE(2)*DEGRAD
-         PHI=PKINE(3)*DEGRAD
-      ELSE
-         IK=IKINE
-         CALL GRNDM(RNDM,2)
-         THETA=PI*RNDM(1)
-         PHI=TWOPI*RNDM(2)
-      ENDIF
-C
-      PLAB(1) = PKINE(1)*SIN(THETA)*COS(PHI)
-      PLAB(2) = PKINE(1)*SIN(THETA)*SIN(PHI)
-      PLAB(3) = PKINE(1)*COS(THETA)
-C
-      CALL GSVERT(VERTEX,0,0,0,0,NVERT)
-      CALL GSKINE(PLAB,IK,NVERT,0,0,NT)
+         VERTEX(1)=VSCAN(1)
+         VERTEX(2)=VSCAN(2)
+         VERTEX(3)=VSCAN(3)
+         IF(IKINE.GT.100)THEN
+            IK=IKINE-100
+            THETA=PKINE(2)*DEGRAD
+            PHI=PKINE(3)*DEGRAD
+         ELSE
+            IK=IKINE
+            CALL GRNDM(RNDM,2)
+            THETA=PI*RNDM(1)
+            PHI=TWOPI*RNDM(2)
+         ENDIF
+
+         PLAB(1) = PKINE(1)*SIN(THETA)*COS(PHI)
+         PLAB(2) = PKINE(1)*SIN(THETA)*SIN(PHI)
+         PLAB(3) = PKINE(1)*COS(THETA)
+
+         CALL GSVERT(VERTEX,0,0,0,0,NVERT)
+         CALL GSKINE(PLAB,IK,NVERT,0,0,NT)
+
+      else
+         ieorun = 1
+         ieotri = 1
+         return
+      endif
 *
 *              Kinematic debug (controled by ISWIT(1))
 *

@@ -2,6 +2,10 @@
 * $Id$
 *
 * $Log$
+* Revision 1.2  2001/07/15 07:31:38  jonesrt
+* HDGeant now supportskinematic input from Monte Carlo generators
+* via the routines in hddmInput.c  -rtj
+*
 * Revision 1.1  2001/07/08 06:24:35  jonesrt
 * First release of the Geant3 geometry package for Hall D based on hdds.  -rtj
 *
@@ -23,6 +27,14 @@
 #include "geant321/gckine.inc"
 #include "geant321/gcunit.inc"
 #include "geant321/gcphys.inc"
+*
+      integer iskip
+      integer infile(20)
+      common /inputFile/ iskip,infile
+      data iskip/0/
+      data infile/20*0/
+      integer openInput, skipInput
+      external openInput, skipInput
 *
 *     -----------------------------------------------------------------
 *
@@ -60,7 +72,26 @@ C..geant..
 *
       OPEN(UNIT=4,FILE='control.in',STATUS='UNKNOWN')
       CALL FFSET('LINP',4)
+      call ffkey('file',infile,20,'MIXED')
+      call ffkey('skip',iskip,1,'INTEGER')
       CALL GFFGO
+*
+*             Open the input stream
+*
+      if (infile(1) .gt. 0) then
+        ifail = openInput(infile)
+        if (ifail .ne. 0) then
+           write(lout,9000) infile
+ 9000      format('GUKINE ERROR - Could not open input stream ',20a4)
+           stop
+        endif
+        if (iskip .gt. 0) then
+          ifail = skipInput(iskip)
+        endif
+        if (nevent .eq. 0) then
+          nevent = 999999999
+        endif
+      endif
 *
 *             Initialize graphics package
 *

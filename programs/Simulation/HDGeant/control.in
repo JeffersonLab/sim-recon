@@ -1,22 +1,38 @@
 C This is the control file for the GEANT simulation
 C Parameters defined in this file control the kind
 C and extent of simulation that is performed.  The
-C full list of options is given in section base-40
-C of the GEANT manual
+C full list of options is given in section BASE-40
+C of the GEANT manual.  In addition, some new cards
+C have been defined to point to the location of the
+C input files containing the events to be simulated.
+C For example, the 4-card sequence:
+C
+C     file 'phi-1680.hddm'
+C     skip 25
+C
+C instructs HDGeant to open ./phi-1680.hddm, skip
+C the first 25 events and then process to the end of
+C that file.  If the event count specified in card
+C TRIG is exhausted before this is finished then
+C processing will stop at that point.  If the input
+C file is exhausted before the TRIG count expires
+C (or if no FILE card is given) then processing will
+C stop at the end of the input file.
+
+TRIG 100
+FILE 'test.hddm'
+SKIP 100
+RUNG 9999
 
 KINE 1 1.0 8. 45. 0. 0. 0.
+
+RNDM 2
 
 CUTS 1e-4 1e-4
 
 SWIT 0 0 0 0 0 0 0 0 0 0
 
-RNDM 2
-
 CKOV 1
 LABS 1
-
-TRIG 100
-
-RUNG 9999
 
 END

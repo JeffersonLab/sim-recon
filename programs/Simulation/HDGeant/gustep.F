@@ -2,6 +2,10 @@
 * $Id$
 *
 * $Log$
+* Revision 1.2  2001/07/15 07:31:37  jonesrt
+* HDGeant now supportskinematic input from Monte Carlo generators
+* via the routines in hddmInput.c  -rtj
+*
 * Revision 1.1  2001/07/10 18:05:47  jonesrt
 * imported several of the gu*.F user subroutines for Hall D customization -rtj
 *
@@ -47,9 +51,5 @@
    5    CONTINUE
       ENDIF
       CALL GDEBUG
-
-      if (cnames(nlevel).eq.'FDC ') then
-         write(6,*) vect
-      endif
 
   99  END

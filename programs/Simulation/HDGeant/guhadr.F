@@ -2,6 +2,10 @@
 * $Id$
 *
 * $Log$
+* Revision 1.2  2001/07/15 07:31:36  jonesrt
+* HDGeant now supportskinematic input from Monte Carlo generators
+* via the routines in hddmInput.c  -rtj
+*
 * Revision 1.1  2001/07/10 18:05:46  jonesrt
 * imported several of the gu*.F user subroutines for Hall D customization -rtj
 *
@@ -110,6 +114,8 @@ C.
 *     April 28-29 1994, Proceedings in press.                          *
 *                                                                      *
 *======================================================================*
+C
+#include "geant321/gcphys.inc"
 C.
 C.    ------------------------------------------------------------------
 C.
