@@ -32,16 +32,7 @@ C.
       data nsampl,ncolumns,nrows/0,0,0/
       save /fieldMap/
 
-c Sweeping magnets have fields along +y
-
-      if (cnames(NLEVEL).eq.'SMAG') then
-        F(1) = 0
-        F(2) = fieldm
-        F(3) = 0
-        return
-      endif
-
-c For all other media look up field in map
+c read in the spectrometer field map from a file
 
       if (nsampl.eq.0) then
         open(unit=78,file='dsolenoid.table',status='old',err=9)
@@ -75,14 +66,25 @@ c just overwrite the contents of rsampl(i,1) beyond i=ncolumns - rtj 6/10/02
         close(unit=78)
       endif
 
-      r(1) = zorigin + X(3)*cm2inch
-      r(2) = sqrt(X(1)**2 + X(2)**2)*cm2inch
-      phi = atan2(X(2),X(1))
-      F(3) = FINT(2,r,ncolumns,rsampl,Bsampl(1,3))*Tesla2kG
-      F(1) = FINT(2,r,ncolumns,rsampl,Bsampl(1,1))*Tesla2kG
-      F(2) = F(1)*sin(phi)
-      F(1) = F(1)*cos(phi)
-      return
+c For areas inside Hall D, look up field in map
 
+      if (cnames(2).eq.'HALL') then
+        r(1) = zorigin + X(3)*cm2inch
+        r(2) = sqrt(X(1)**2 + X(2)**2)*cm2inch
+        phi = atan2(X(2),X(1))
+        F(3) = FINT(2,r,ncolumns,rsampl,Bsampl(1,3))*Tesla2kG
+        F(1) = FINT(2,r,ncolumns,rsampl,Bsampl(1,1))*Tesla2kG
+        F(2) = F(1)*sin(phi)
+        F(1) = F(1)*cos(phi)
+      else
+
+c otherwise, just assume magnetic field is along y axis
+
+        F(1) = 0
+        F(2) = fieldm
+        F(3) = 0
+      endif
+
+      return
     9 stop 'ERROR - Could not open input field map file dsolenoid.table'
       end
