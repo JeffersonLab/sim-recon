@@ -25,7 +25,7 @@
     <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 -0.635">
       <plane value="1" />
     </posXYZ>
-    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 +0.635" rot="0 0 90">
+    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 +0.635" rot="0 0 -90">
       <plane value="2" />
     </posXYZ>
   </composition>
@@ -44,11 +44,13 @@
   </composition>
   <composition name="forwardTOF_left" envelope="FTOL">
     <posXYZ volume="FTOS">
+      <column value="1" />
       <row value="22" />
     </posXYZ>
   </composition>
   <composition name="forwardTOF_right" envelope="FTOR">
     <posXYZ volume="FTOS">
+      <column value="2" />
       <row value="22" />
     </posXYZ>
   </composition>
