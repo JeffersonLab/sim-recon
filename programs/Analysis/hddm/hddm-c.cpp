@@ -58,6 +58,7 @@
 #include <assert.h>
 #include <fstream.h>
 #include <string.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -405,16 +406,15 @@ void constructReadFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
 	 << "   char* hddm;"					<< endl
 	 << "   char* filename;"				<< endl
 	 << "   int sections;"					<< endl
+         << "   int sect;"					<< endl
+         << "   int* sp;"					<< endl
+         << "   int* dp;"					<< endl
 	 << "   void* (*unpacker[10000])();"			<< endl
 	 << "   int modelLevel[10000];"				<< endl
 	 << "   int ptrOffset[10000];"				<< endl
 	 << "} " << classPrefix << "_iostream;"			<< endl
 								<< endl
 	 << "#endif /* HDDM_STREAM_INPUT */"			<< endl;
-
-   cFile							<< endl
-	 << "int* sp;"						<< endl
-	 << "int* dp;"						<< endl;
 
    for (int s=0; s < tagStackLength; )
    {
@@ -444,48 +444,73 @@ void constructReadFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
       strncpy(tagT,tagType,500);
       char* term = rindex(tagT,'_');
       *term = 0;
-      cFile << tagType << "* unpack_" << tagT << "()"		<< endl
+      cFile << tagType << "* unpack_" << tagT
+            << "(" << classPrefix << "_iostream* fp)"		<< endl
             << "{"						<< endl
-            << "   int size = *(sp++);"				<< endl;
+            << "   int sect = fp->sect;"			<< endl
+            << "   int size = *(fp->sp++);"			<< endl
+            << "   " << tagType << "* his = 0;"			<< endl
+            << "   if (size > 0)"				<< endl
+            << "   {"						<< endl
+            << "      int level = fp->modelLevel[sect];"	<< endl;
 
       if (repFlag)
       {
-         cFile << "   int rep = *(sp++);"			<< endl
-               << "   " << tagType << "* his = 0;"		<< endl
-               << "   if (size > 0)"				<< endl
-               << "   {"					<< endl
-               << "      int r;"				<< endl
-               << "      his = make_" << tagT << "(rep);"	<< endl
-               << "      his->mult = rep;"			<< endl
-               << "      for (r = 0; r < rep; r++ )"		<< endl
+         cFile << "      int rep;"				<< endl
+               << "      int repeats = *(fp->sp++);"		<< endl
+               << "      his = make_" << tagT << "(repeats);"	<< endl
+               << "      his->mult = repeats;"			<< endl
+               << "      for (rep = 0; rep < repeats; rep++ )"	<< endl
                << "      {"					<< endl
-               << "         dp = (int*) his;"			<< endl;
+               << "         int* dp = (int*) &his->in[rep];"	<< endl
+               << "         void** pp = (void**) dp;"		<< endl;
+         for (int w = 0; w < wcount; w++)
+         {
+            cFile << "         *(dp++) = *(fp->sp++);"		<< endl;
+         }
+         cFile << "         fp->sect = sect;"			<< endl
+               << "         while "
+               << "(fp->modelLevel[++fp->sect] > level)"	<< endl
+               << "         {"					<< endl
+               << "            void* (*unpacker)() = "
+               << "fp->unpacker[fp->sect];"			<< endl
+               << "            int offset = "
+               << "fp->ptrOffset[fp->sect];"			<< endl
+               << "            pp[offset] = (*unpacker)(fp);"	<< endl
+               << "         }"					<< endl
+               << "      }"					<< endl;
       }
       else
       {
-         cFile << "   " << tagType << "* his = 0;"		<< endl
-               << "   if (size > 0)"				<< endl
-               << "   {"					<< endl
-               << "      his = make_" << tagT << "();"		<< endl
+         cFile << "      int* dp = (int*) his;"			<< endl
+               << "      void** pp = (void**) dp;"		<< endl
+               << "      his = make_" << tagT << "();"		<< endl;
+         for (int w = 0; w < wcount; w++)
+         {
+            cFile << "      *(dp++) = *(fp->sp++);"		<< endl;
+         }
+         cFile << "      while "
+               << "(fp->modelLevel[++fp->sect] > level)"	<< endl
                << "      {"					<< endl
-               << "         dp = (int*) his;"			<< endl;
+               << "         void* (*unpacker)() = "
+               << "fp->unpacker[fp->sect];"			<< endl
+               << "         int offset = "
+               << "fp->ptrOffset[fp->sect];"			<< endl
+               << "         pp[offset] = (*unpacker)(fp);"	<< endl
+               << "      }"					<< endl;
       }
-      for (int w = 0; w < wcount; w++)
-      {
-         cFile << "         *(dp++) = *(sp++);"			<< endl;
-      }
-      cFile << "      }"					<< endl
-            << "   }"						<< endl
+      cFile << "   }"						<< endl
             << "   return his;"					<< endl
             << "}"						<< endl;
       delete [] containerType;
       delete [] basicType;
    }
    cFile							<< endl
-	 << "void* unpack_NULL()"				<< endl
+	 << "static void* unpack_NULL"
+         << "(" << classPrefix << "_iostream* fp)"		<< endl
          << "{"							<< endl
-         << "   int size = *(sp++);"				<< endl
-         << "   sp += size;"					<< endl
+         << "   int size = *(fp->sp++);"			<< endl
+         << "   fp->sp += size;"				<< endl
          << "   return 0;"					<< endl
          << "}"							<< endl;
  
@@ -499,7 +524,6 @@ void constructReadFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
 	 << "   " << topType << "* this = 0;"			<< endl
 	 << "   int ret = 0;"					<< endl
 	 << "   int* buff = malloc(1000000);"			<< endl
-	 << "   sp = buff;"					<< endl
 								<< endl
 	 << "   if (fp && (fp->iomode == HDDM_STREAM_INPUT))"	<< endl
 	 << "   {"						<< endl
@@ -508,7 +532,7 @@ void constructReadFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
 	 << "   if (ret)"					<< endl
 	 << "   {"						<< endl
 	 << "      ret = *buff;"				<< endl
-	 << "      ret -= fread(&sp[1],sizeof(int),ret,fp->fd);"<< endl
+	 << "      ret -= fread(&buff[1],sizeof(int),ret,fp->fd);"<< endl
 	 << "   }"						<< endl
 	 << "   else"						<< endl
 	 << "   {"						<< endl
@@ -517,27 +541,9 @@ void constructReadFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
 	 << "   }"						<< endl
 	 << "   if (ret == 0)"					<< endl
 	 << "   {"						<< endl
-	 << "      int s;"					<< endl
-	 << "      void* ptrStack[10000];"			<< endl
-	 << "      void* (*unpacker)() = fp->unpacker[0];"	<< endl
-	 << "      ptrStack[0] = (*unpacker)();"		<< endl
-	 << "      for (s = 1; s < fp->sections; s++)"		<< endl
-	 << "      {"						<< endl
-	 << "         int ptrOffset = fp->ptrOffset[s];"	<< endl
-	 << "         int level = fp->modelLevel[s];"		<< endl
-	 << "         int* ptr = ptrStack[level - 1];"		<< endl
-	 << "         if (ptr != 0)"				<< endl
-	 << "         {"					<< endl
-	 << "            void** pp = (void**) &ptr[ptrOffset];"	<< endl
-	 << "            unpacker = fp->unpacker[s];"		<< endl
-	 << "            ptrStack[level] = (*unpacker)();"	<< endl
-	 << "            *pp = ptrStack[level];"		<< endl
-	 << "         }"					<< endl
-	 << "         else"					<< endl
-	 << "         {"					<< endl
-	 << "            ptrStack[level] = 0;"			<< endl
-	 << "         }"					<< endl
-	 << "      }"						<< endl
+	 << "      fp->sp = buff;"				<< endl
+	 << "      fp->sect = 0;"				<< endl
+	 << "      this = unpack_s_HDDM(fp);"			<< endl
 	 << "   }"						<< endl
 	 << "   free(buff);"					<< endl
 	 << "   return this;"					<< endl
@@ -583,16 +589,16 @@ void constructFlushFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
       strncpy(tagT,tagType,500);
       char* term = rindex(tagT,'_');
       *term = 0;
-      cFile << "int pack_" << tagT;
-      cFile << "(" << tagType << "* pp, "
+      cFile << "int pack_" << tagT
+            << "(" << tagType << "* pp, "
             << classPrefix << "_iostream* fp" << ")"		<< endl
             << "{"						<< endl
-            << "   int* dpp = dp++;"				<< endl
+            << "   int* dpp = fp->dp++;"			<< endl
             << "   int* spp = (int*) pp;"			<< endl;
 
       if (repFlag)
       {
-         cFile << "   int* dpm = dp++;"				<< endl
+         cFile << "   int* dpm = fp->dp++;"			<< endl
                << "   if (spp != 0)"				<< endl
                << "   {"					<< endl
                << "      int n;"				<< endl
@@ -607,7 +613,7 @@ void constructFlushFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
       cFile << "      {"					<< endl;
       for (int w = 0; w < wcount; w++)
       {
-         cFile << "         *(dp++) = *(spp++);"		<< endl;
+         cFile << "         *(fp->dp++) = *(spp++);"		<< endl;
       }
       for (int c = 0; c < pcount; c++)
       {
@@ -635,7 +641,7 @@ void constructFlushFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
       cFile << "      }"					<< endl
             << "      free(pp);"				<< endl
             << "   }"						<< endl
-            << "   *dpp = dp - dpp - 1;"			<< endl
+            << "   *dpp = fp->dp - dpp - 1;"			<< endl
             << "   return *dpp;"				<< endl
             << "}"						<< endl;
       delete [] containerType;
@@ -651,13 +657,13 @@ void constructFlushFunc(DOM_Element& el, ofstream& hFile, ofstream& cFile)
 	 << "{"							<< endl
 	 << "   int ret = 0;"					<< endl
 	 << "   int* buff = malloc(1000000);"			<< endl
-	 << "   dp = buff;"					<< endl
-	 << "   sp = (int*) p;"					<< endl
+	 << "   fp->dp = buff;"					<< endl
+	 << "   fp->sp = (int*) p;"				<< endl
 								<< endl
 	 << "   if (p != 0)"					<< endl
 	 << "   {"						<< endl
 	 << "      pack_" << topT << "((" << topType
-	 << "*) (sp++), fp);"					<< endl
+	 << "*) (fp->sp++), fp);"					<< endl
 	 << "   }"						<< endl
 	 << "   if (fp && (fp->iomode == HDDM_STREAM_OUTPUT))"	<< endl
 	 << "   {"						<< endl
