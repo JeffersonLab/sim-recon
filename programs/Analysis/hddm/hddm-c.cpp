@@ -59,6 +59,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <strings.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -1485,7 +1486,7 @@ int main(int argC, char* argV[])
 	 << "extern "
 	 << "char HDDM_" << classPrefix << "_DocumentString[];"	<< endl
          							<< endl
-         << "#ifdef _Tru64"					<< endl
+         << "#ifdef INLINE_PREPEND_UNDERSCORES"			<< endl
          << "#define inline __inline"				<< endl
          << "#endif"						<< endl
 								<< endl

@@ -1,17 +1,22 @@
 OStype = $(shell uname)
 ARCHtype = $(shell uname -m)
 
-CPP =g++
+CPP = g++
+LIBXDR = 
 
 ifeq ($(OStype),Linux)
 	ifeq ($(ARCHtype),alpha)
-		CPP      := /usr/bin/g++ -g
+		CPP     := /usr/bin/g++ -g
 	else
 		CPP	:= /usr/bin/g++ -g
 	endif
 endif
 ifeq ($(OStype),OSF1)
-	CPP	:= /usr/bin/g++ -g -D_Tru64
+	CPP	:= /usr/bin/g++ -g -DBASENAME_USE_BUILTIN
+endif
+ifeq ($(OStype),SunOS)
+	CPP	:= CC -DBASENAME_IN_LIBGEN
+	LIBXDR  := -lnsl
 endif
 
 all:	xml-hddm hddm-xml hddm-c
@@ -22,18 +27,15 @@ install: hddm-c xml-hddm hddm-xml hddm-c xml-xml hddm-schema schema-hddm hddmcat
 
 xml-hddm: xml-hddm.cpp XString.o XParsers.o
 	$(CPP) -I../include -I$(XERCESCROOT)/include -o $@ $^ \
-	-L$(XERCESCROOT)/lib -lxerces-c \
-	-Wl,-rpath $(XERCESCROOT)/lib
+	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 hddm-xml: hddm-xml.cpp XString.o XParsers.o
 	$(CPP) -I../include -I$(XERCESCROOT)/include -o $@ $^ \
-	-L$(XERCESCROOT)/lib -lxerces-c \
-	-Wl,-rpath $(XERCESCROOT)/lib
+	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 hddm-c: hddm-c.cpp XString.o XParsers.o
 	$(CPP) -I../include -I$(XERCESCROOT)/include -o $@ $^ \
-	-L$(XERCESCROOT)/lib -lxerces-c \
-	-Wl,-rpath $(XERCESCROOT)/lib
+	-L$(XERCESCROOT)/lib -lxerces-c
 
 hddmcat: hddmcat.cpp
 	$(CPP) -o $@ $^

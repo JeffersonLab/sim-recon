@@ -30,10 +30,6 @@
  *    -o option.
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE true
-#endif
-
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/dom/DOMNamedNodeMap.hpp>
 
@@ -47,7 +43,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <iostream>
 #include <fstream>
+
+#include "fdstream.hpp"
 
 #include "hddm-xml.hpp"
 #include "particleType.h"
@@ -248,24 +247,27 @@ int main(int argC, char* argV[])
    }
 
    char* hddmFile;
-   FILE* ifd;
+   FILE* ifp;
+   boost::fdistream* ifs;
    if (argInd == argC)
    {
-      ifd = stdin;
       hddmFile = new char[1];
       *hddmFile = 0;
+      ifp = stdin;
+      ifs = new boost::fdistream(0);
    }
    else if (argInd == argC - 1)
    {
       hddmFile = argV[argInd];
-      ifd = fopen(hddmFile,"r");
+      ifp = fopen(hddmFile,"r");
+      ifs = new boost::fdistream(fileno(ifp));
    }
    else
    {
       usage();
       return 1;
    }
-   if (!ifd)
+   if (ifp < 0)
    {
       cerr << "hddm-xml: Error opening input stream " << hddmFile << endl;
       exit(1);
@@ -283,7 +285,7 @@ int main(int argC, char* argV[])
    char xmlHeader[500];
    size_t lineSize = 500;
    char* line = new char [500];
-   if (getline(&line,&lineSize,ifd))
+   if (ifs->getline(line,lineSize))
    {
       if (strstr(line,"<?xml") != 0)
       {
@@ -308,7 +310,7 @@ int main(int argC, char* argV[])
       cerr << "hddm-xml: Error reading from input stream " << hddmFile << endl;
       exit(1);
    }
-   while (getline(&line,&lineSize,ifd))
+   while (ifs->getline(line,lineSize))
    {
       ofs << line << endl;
       if (strstr(line,"</HDDM>") != 0)
@@ -353,7 +355,7 @@ int main(int argC, char* argV[])
    writeXML(xmlHeader);
 
    XDR* xdrs = new XDR;
-   xdrstdio_create(xdrs,ifd,XDR_DECODE);
+   xdrstdio_create(xdrs,ifp,XDR_DECODE);
    int icount;
    while (--reqcount && xdr_int(xdrs,&icount))
    {

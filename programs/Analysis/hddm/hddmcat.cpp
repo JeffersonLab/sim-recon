@@ -6,17 +6,18 @@
  *
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE true
-#endif
-
 #include <iostream>
+using namespace std;
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <fcntl.h>
 #include <rpc/xdr.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "fdstream.hpp"
 
 struct stringArray;
 struct stringArray
@@ -51,34 +52,36 @@ int main(int argC, char* argV[])
    }
 
    char* hddmFile;
-   FILE* ifd;
+   int ifd;
+   boost::fdistream* ifs;
    if (argInd == argC)
    {
-      ifd = stdin;
       hddmFile = new char[1];
       *hddmFile = 0;
+      ifd = 0;
    }
    else if (argInd < argC)
    {
       hddmFile = argV[argInd++];
-      ifd = fopen(hddmFile,"r");
+      ifd = open(hddmFile,O_RDONLY);
    }
    else
    {
       usage();
       return 1;
    }
-   if (!ifd)
+   if (ifd < 0)
    {
       cerr << "hddmcat: Error opening input stream " << hddmFile << endl;
       exit(1);
    }
+   ifs = new boost::fdistream(ifd);
 
    struct stringArray* head = new struct stringArray;
    struct stringArray* h = head;
    size_t lineSize = 500;
    h->line = new char [lineSize];
-   if (getline(&h->line,&lineSize,ifd))
+   if (ifs->getline(h->line,lineSize))
    {
       if (strstr(h->line,"<?xml") != 0)
       {
@@ -104,7 +107,7 @@ int main(int argC, char* argV[])
    }
    h = h->next = new struct stringArray;
    h->line = new char [lineSize];
-   while (getline(&h->line,&lineSize,ifd))
+   while (ifs->getline(h->line,lineSize))
    {
       printf("%s",h->line);
       if (strstr(h->line,"</HDDM>") != 0)
@@ -116,26 +119,30 @@ int main(int argC, char* argV[])
       h->line = new char [lineSize];
    }
 
-   int bufferSize = 1000000;
-   int buffer[bufferSize];
+   const int bufferSize = 1000000;
+   char buffer[bufferSize];
    int count;
-   while (count = fread(buffer,sizeof(int),bufferSize,ifd))
+   while (ifs->read(buffer,bufferSize), count = ifs->gcount())
    {
-      fwrite(buffer,sizeof(int),count,stdout);
+      cout.write(buffer,count);
    }
+   if (ifd)
+      close(ifd);
+   delete *ifs;
 
    while (argInd < argC)
    {
       hddmFile = argV[argInd++];
-      ifd = fopen(hddmFile,"r");
-      if (!ifd)
+      ifd = open(hddmFile,O_RDONLY);
+      if (ifd < 0)
       {
          cerr << "hddmcat: Error opening input stream " << hddmFile << endl;
          exit(1);
       }
+      ifs = new boost::fdistream(ifd);
       h = head;
       char* line = new char [lineSize];
-      if (getline(&line,&lineSize,ifd))
+      if (ifs->getline(line,lineSize))
       {
          if (strstr(line,"<?xml") != 0)
          {
@@ -159,7 +166,7 @@ int main(int argC, char* argV[])
          cerr << "hddmcat: Error reading from input stream " << hddmFile << endl;
          exit(1);
       }
-      while (getline(&line,&lineSize,ifd))
+      while (ifs->getline(line,lineSize))
       {
          if (h == 0 || strstr(line,h->line) != line)
          {
@@ -174,9 +181,11 @@ int main(int argC, char* argV[])
          h = h->next;
       }
 
-      while (count = fread(buffer,sizeof(int),bufferSize,ifd))
+      while (ifs->read(buffer,bufferSize), count=ifs->gcount())
       {
          fwrite(buffer,sizeof(int),count,stdout);
       }
+      close(ifd);
+      delete *ifs;
    }
 }
