@@ -20,7 +20,7 @@ C reached before the event count specified in card TRIG is exhausted then the
 C processing will stop at the end of file.
 
 TRIG 10000
-INFILE 'rhop.hddm'
+c INFILE 'rhop.hddm'
 BEAM 12.0 9.0 
 RUNG 9999
 
@@ -32,6 +32,10 @@ RNDM 172
 CUTS 1e-4 1e-4
 
 SWIT 0 0 0 0 0 0 0 0 0 0
+
+C The following card enables the GelHad package (from BaBar)
+C   on/off  ecut   scale   mode   thresh
+GELH  1     0.2     1.0     4     0.160
 
 CKOV 1
 LABS 1

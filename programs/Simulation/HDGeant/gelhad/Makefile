@@ -1,0 +1,60 @@
+OStype = $(shell uname)
+ARCHtype = $(shell uname -m)
+BINDIR = $(BUILDS)/bin.$(OStype)
+
+ifeq ($(OStype),Linux)
+	ifeq ($(ARCHtype),alpha)
+		CC	:= gcc
+		CPP	:= g++
+		F77	:= g77
+		AR	:= ar
+		NETLIB := -lnsl
+		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp
+		COPTS = -g
+		FOPTS = -g -Wno-globals
+		GLIBS 	:= -L/usr/lib/gcc-lib/alpha-redhat-linux/egcs-2.91.66/ -lg2c 
+	else
+		CC	:= gcc
+		CPP	:= g++
+		F77	:= g77
+		AR	:= ar
+		NETLIB := -lnsl
+		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp
+		COPTS = -g
+		FOPTS = -g -Wno-globals
+		GLIBS	:= 
+	endif
+endif
+ifeq ($(OStype),OSF1)
+	CC	:= cc
+	CPP	:= g++
+	F77	:= f77
+	AR	:= ar
+	NETLIB := 
+	STATIC	:=
+	XLIBS  := -L/usr/lib -lXm -lSM -lICE -lXt -lX11 -lm -lPW -ldnet_stub
+	COPTS = -g -D_Tru64
+	FOPTS = -g -fpe4
+	LOPTS = -g -non_shared -fpe4
+	GLIBS 	:= -L/r5da/applications/gcc/lib/gcc-lib/alphaev5-dec-osf4.0f/2.95.3 -lg2c -lgcc
+endif
+
+libgelhad.a:	caspim.o caspip.o gamate.o gelboost.o gelhad.cmz gelhad.db \
+		gelh_last.o gelh_vrfy.o geltwobod.o gheishp.o begran.o \
+		ghstopp.o gmmate.o gpgheip.o gphad.o gpsig.o grmate.o gtgama.o \
+		labframe.o recoilframe.o sigmagamma.o sigmag.o
+	$(AR) rv $@ $?
+
+.F.o:
+	$(F77) -c -o $@ $(FOPTS) -I$(CERN_ROOT)/include -Ighcdes -I. \
+        -DCERNLIB_MOTIF -D_GELH_ -DCERNLIB_TYPE \
+        $<
+
+.f.o:
+	$(F77) $(FOPTS) -I$(CERN_ROOT)/include -c -o $@ $<
+
+.c.o:
+	$(CC) $(COPTS) -I. -I$(BUILDS)/include -I$(CERN_ROOT)/include -c -o $@ $<
+
+clean:
+	rm -f *.o core last.kumac* paw.metafile cmedt.edt

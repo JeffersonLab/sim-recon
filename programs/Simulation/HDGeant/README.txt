@@ -14,7 +14,8 @@
    What that looks like depends on your shell, but for tcsh it looks like:
 
    halld> cat setup
-   setenv CVSROOT :pserver:<userid>@jlabs1.jlab.org:/halld/cvsroot
+   setenv CVS_RSH ssh
+   setenv CVSROOT <userid>@login1.jlab.org:/halld/cvsroot
    setenv CERN <your local cernlib path, contains pro, old, new, 2000...>
    setenv CERN_ROOT ${CERN}/<pro or whatever you use>
    setenv HALLD_ROOT <your local source directory path>
