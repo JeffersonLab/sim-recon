@@ -30,10 +30,10 @@ ifeq ($(OStype),Linux)
 		CPP	:= g++
 		F77	:= g77
 		NETLIB := -lnsl
-		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl -lpthread
+		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
 		COPTS = -g $(SWITCHES)
 		FOPTS = -g -Wno-globals $(SWITCHES)
-		GLIBS	:= 
+		GLIBS	:= -lXmu -lSM -lICE -lpthread
 		EXPORTDYNAMIC = -Wl,-export-dynamic
 		STATIC = -Wl,-Bstatic
 	endif
@@ -69,7 +69,7 @@ ifeq ($(OStype),Darwin)
 	CPP	:= g++
 	F77	:= g77
 	NETLIB 	:=
-	XLIBS  	:= -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl -lpthread
+	XLIBS  	:= -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
 	COPTS = -g $(SWITCHES)
 	FOPTS = -g -Wno-globals $(SWITCHES)
 	GLIBS	:= -lcompat /usr/lib/libgcc.a
