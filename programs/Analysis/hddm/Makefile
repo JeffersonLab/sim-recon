@@ -1,6 +1,8 @@
 OStype = $(shell uname)
 ARCHtype = $(shell uname -m)
 
+CPP =g++
+
 ifeq ($(OStype),Linux)
 	ifeq ($(ARCHtype),alpha)
 		CPP      := /usr/bin/g++ -g
