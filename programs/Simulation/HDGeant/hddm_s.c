@@ -370,7 +370,7 @@ s_ForwardShowers_t* make_s_ForwardShowers(int n)
 }
 
 char HDDM_s_DocumentString[] = 
-"<HDDM class=\"s\" version=\"1.0\" xmlns=\"http://www.gluex.org/hddm\">\n"
+"<HDDM class=\"s\" version=\"1.0\" xmlns:hddm=\"http://www.gluex.org/hddm\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n"
 "  <physicsEvent eventNo=\"int\" maxOccurs=\"unbounded\" runNo=\"int\">\n"
 "    <reaction maxOccurs=\"unbounded\" minOccurs=\"0\" type=\"int\" weight=\"float\">\n"
 "      <beam minOccurs=\"0\" type=\"Particle_t\">\n"
