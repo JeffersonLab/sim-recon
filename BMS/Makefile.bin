@@ -3,6 +3,7 @@
 # $Header$
 #
 
+
 # Things common to both library and executable builds live in Makefile.common
 include $(HALLD_HOME)/src/BMS/Makefile.common
 
@@ -70,15 +71,15 @@ clean:
 
 # Rules to make DEPENDS files from source. Note that these are similar to the
 # rules in Makefile.lib, but uses the objects explicitly
-%$(DEBUG_SUFFIX).d : %.cpp
+%.d : %.cpp
 	@$(CXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
-%$(DEBUG_SUFFIX).d : %.cc
+%.d : %.cc
 	@$(CXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
-%$(DEBUG_SUFFIX).d : %.cxx
+%.d : %.cxx
 	@$(CXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
-%$(DEBUG_SUFFIX).d : %.c
+%.d : %.c
 	@$(CC) -MM -MT "$(basename $@).o" $(CFLAGS) $< > $(DEP_DIR)/$(basename $@).d
-%$(DEBUG_SUFFIX).d : %.F
+%.d : %.F
 	@$(FC) -MM -MT "$(basename $@).o" $(FFLAGS) $< > $(DEP_DIR)/$(basename $@).d
 
 # Rules to make DEBUG objects from source. Note for programs, we give the

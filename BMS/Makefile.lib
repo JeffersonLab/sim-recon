@@ -25,15 +25,15 @@ clean:
 
 # Rules to make DEPENDS files from source. Note that these are similar to the
 # rules in Makefile.bin, but use the implicit rules for archiving objects.
-%$(DEBUG_SUFFIX).d : %.cpp
+%.d : %.cpp
 	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
-%$(DEBUG_SUFFIX).d : %.cc
+%.d : %.cc
 	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
-%$(DEBUG_SUFFIX).d : %.cxx
+%.d : %.cxx
 	@$(CXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $(DEP_DIR)/$@
-%$(DEBUG_SUFFIX).d : %.c
+%.d : %.c
 	@$(CC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CFLAGS) $< > $(DEP_DIR)/$@
-%$(DEBUG_SUFFIX).d : %.F
+%.d : %.F
 	@$(FC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(FFLAGS) $< > $(DEP_DIR)/$@
 
 
