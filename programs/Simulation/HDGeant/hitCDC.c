@@ -130,13 +130,15 @@ void hitCentralDC (float xin[4], float xout[4],
             s_CdcPoints_t* points = make_s_CdcPoints(1);
             cdc->rings = make_s_Rings(1);
             cdc->rings->mult = 1;
-            cdc->rings->in[0].radius = sqrt(x[0]*x[0] + x[1]*x[1]);
+            cdc->rings->in[0].radius = 
+                              sqrt(xcdc[0]*xcdc[0] + xcdc[1]*xcdc[1]) - 1;
             cdc->rings->in[0].straws = make_s_Straws(1);
             cdc->rings->in[0].straws->mult = 1;
             cdc->rings->in[0].straws->in[0].phim = phim;
             cdc->rings->in[0].straws->in[0].cdcPoints = points;
             points->in[0].track = track;
             points->in[0].z = x[2];
+            points->in[0].r = sqrt(x[0]*x[0] + x[1]*x[1]);
             points->in[0].phi = atan2(x[1],x[0]);
             points->in[0].dradius = dradius;
             points->in[0].dEdx = dEdx;

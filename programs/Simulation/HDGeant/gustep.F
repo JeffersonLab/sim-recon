@@ -2,6 +2,11 @@
 * $Id$
 *
 * $Log$
+* Revision 1.8  2001/12/19 02:34:55  jonesrt
+* Fixed the names of sensitive volumes in the save-hits section of gustep.F,
+* also added support for the r="float" parameter of <cdcPoint> in hitCDC.c.
+* -rtj-
+*
 * Revision 1.7  2001/10/29 17:39:23  jonesrt
 * - added mc truth info to output event for internal track/photon generators
 * - added special code for background studies, selected by the conditional
@@ -187,9 +192,8 @@
       if (CHARGE.ne.0) then
         if (cnames(NLEVEL).eq.'VRTX') then		! start counter
           call hitStartCntr(xin,xout,pin,pout,dEsum,ITRA)
-        elseif ((cnames(NLEVEL).eq.'CDBI').or.		! CDC inner bands
-     +          (cnames(NLEVEL).eq.'CDBO').or.		! CDC outer bands
-     +          (cnames(NLEVEL).eq.'STRA')) then	! CDC drift straw
+        elseif ((cnames(NLEVEL).eq.'STRA').or.		! CDC straight straw
+     +          (cnames(NLEVEL).eq.'STLA')) then	! CDC stereo straw
           call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA)
         elseif ((cnames(NLEVEL).eq.'FDCA').or.		! FDC anode drift cell
      +          (cnames(NLEVEL).eq.'FDCC')) then	! FDC cathode strip
@@ -198,7 +202,8 @@
           call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA)
         elseif (cnames(NLEVEL).eq.'BCAM') then		! barrel calorimeter
           call hitBarrelEMcal(xin,xout,pin,pout,dEsum,ITRA)
-        elseif (cnames(NLEVEL).eq.'FTOF') then		! forward TOF counter
+        elseif ((cnames(NLEVEL).eq.'FTOC').or.		! forward TOF counter
+     +          (cnames(NLEVEL).eq.'FTOS')) then
           call hitForwardTOF(xin,xout,pin,pout,dEsum,ITRA)
         elseif (cnames(NLEVEL).eq.'LGBL') then		! forward calorimeter
           call hitForwardEMcal(xin,xout,pin,pout,dEsum,ITRA)
