@@ -1,5 +1,6 @@
 // $Id$
 
+///
 /// Hall-D Data Factory
 ///
 /// All data (except that read from the data source) must
