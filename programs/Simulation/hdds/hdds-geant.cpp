@@ -1510,6 +1510,10 @@ int Refsys::createVolume(DOMElement* el)
                      drs.rotate(drs0, angle);
                   }
                   drs.createVolume(targEl);
+                  for (int id = 0; id < drs.fIdentifiers; id++)
+                  {
+                     drs.fIdentifier[id].value += drs.fIdentifier[id].step;
+                  }
                }
             }
          }
@@ -1586,6 +1590,10 @@ int Refsys::createVolume(DOMElement* el)
                   origin[2] = z;
                   drs.shift(drs0, origin);
                   drs.createVolume(targEl);
+                  for (int id = 0; id < drs.fIdentifiers; id++)
+                  {
+                     drs.fIdentifier[id].value += drs.fIdentifier[id].step;
+                  }
                }
             }
          }
@@ -1660,6 +1668,10 @@ int Refsys::createVolume(DOMElement* el)
                   origin[2] = z;
                   drs.shift(drs0, origin);
                   drs.createVolume(targEl);
+                  for (int id = 0; id < drs.fIdentifiers; id++)
+                  {
+                     drs.fIdentifier[id].value += drs.fIdentifier[id].step;
+                  }
                }
             }
          }
@@ -1824,6 +1836,10 @@ int Refsys::createVolume(DOMElement* el)
                   origin[2] = z;
                   drs.shift(drs0, origin);
                   drs.createVolume(targEl);
+                  for (int id = 0; id < drs.fIdentifiers; id++)
+                  {
+                     drs.fIdentifier[id].value += drs.fIdentifier[id].step;
+                  }
                }
             }
          }
@@ -1918,7 +1934,6 @@ int Refsys::createVolume(DOMElement* el)
          sprintf(str, "%d ", myRef.fIdentifier[id].value);
          mylistS += str;
          el->setAttribute(X(fieldS),X(mylistS));
-         myRef.fIdentifier[id].value += myRef.fIdentifier[id].step;
       }
    }
    return icopy;
