@@ -831,23 +831,50 @@ int makeTargetTable::addModel(DOMElement* const targetEl)
    if (parS != 0)
    {
       DOMElement* parEl = targetEl->getOwnerDocument()->getElementById(X(parS));
-      for (DOMNode* var = parEl->getFirstChild(); 
-           var != 0;
-           var = var->getNextSibling() )
+      const XString refS("reference");
+      DOMNodeList* matList = parEl->getElementsByTagName(X(refS));
+      int matCount = matList->getLength();
+      for (int m=0; m < matCount; m++)
       {
-         if (var->getNodeType() != DOMNode::ELEMENT_NODE)
-            continue;
-         DOMElement* varEl = (DOMElement*)var;
-         const XString refS("reference");
-         const XString varS = varEl->getTagName();
-         if (varS.equals(refS))
-         {
-            const XString valueAttrS("value");
-            const XString valueS = varEl->getAttribute(X(valueAttrS));
-            DOMElement* matEl = varEl->getOwnerDocument()->getElementById(X(valueS));
-            add(matEl);
-         }
+         DOMElement* ptrEl = (DOMElement*)matList->item(m);
+         const XString valueAttrS("value");
+         const XString valueS = ptrEl->getAttribute(X(valueAttrS));
+         DOMElement* matEl = ptrEl->getOwnerDocument()->getElementById(X(valueS));
+         add(matEl);
       }
+      const XString refdatS("reference_data");
+      matList = parEl->getElementsByTagName(X(refdatS));
+      matCount = matList->getLength();
+      for (int m=0; m < matCount; m++)
+      {
+         DOMElement* ptrEl = (DOMElement*)matList->item(m);
+         const XString valueAttrS("value");
+         const XString valueS = ptrEl->getAttribute(X(valueAttrS));
+         DOMElement* matEl = ptrEl->getOwnerDocument()->getElementById(X(valueS));
+         add(matEl);
+      }
+   }
+   const XString refS("reference");
+   DOMNodeList* matList = targetEl->getElementsByTagName(X(refS));
+   int matCount = matList->getLength();
+   for (int m=0; m < matCount; m++)
+   {
+      DOMElement* ptrEl = (DOMElement*)matList->item(m);
+      const XString valueAttrS("value");
+      const XString valueS = ptrEl->getAttribute(X(valueAttrS));
+      DOMElement* matEl = ptrEl->getOwnerDocument()->getElementById(X(valueS));
+      add(matEl);
+   }
+   const XString refdatS("reference_data");
+   matList = targetEl->getElementsByTagName(X(refdatS));
+   matCount = matList->getLength();
+   for (int m=0; m < matCount; m++)
+   {
+      DOMElement* ptrEl = (DOMElement*)matList->item(m);
+      const XString valueAttrS("value");
+      const XString valueS = ptrEl->getAttribute(X(valueAttrS));
+      DOMElement* matEl = ptrEl->getOwnerDocument()->getElementById(X(valueS));
+      add(matEl);
    }
    for (DOMNode* var = targetEl->getFirstChild(); 
         var != 0;
@@ -857,14 +884,7 @@ int makeTargetTable::addModel(DOMElement* const targetEl)
          continue;
       DOMElement* varEl = (DOMElement*)var;
       const XString varS = varEl->getTagName();
-      if (varS.equals("reference"))
-      {
-         const XString valueAttrS("value");
-         const XString valueS = varEl->getAttribute(X(valueAttrS));
-         DOMElement* matEl = varEl->getOwnerDocument()->getElementById(X(valueS));
-         add(matEl);
-      }
-      else if (varS.equals("mcfast"))
+      if (varS.equals("mcfast"))
       {
          add(varEl,targetEl);
       }
