@@ -22,7 +22,7 @@ DEventProcessor::DEventProcessor(void)
 	evnt_called = 0;
 	erun_called = 0;
 	fini_called = 0;
-	brun_runnumber = 0;
+	brun_runnumber = -1; // ensure brun is called
 	_data = NULL;
 }
 
