@@ -7,6 +7,7 @@
 #include <TGClient.h>
 #include <TGButton.h>
 #include <TCanvas.h>
+#include <TText.h>
 #include <TRootEmbeddedCanvas.h>
 #include <TTUBE.h>
 #include <TNode.h>
@@ -18,12 +19,14 @@ class hdv_mainframe:public TGMainFrame {
 		~hdv_mainframe(){};
 		
 		Bool_t ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2);
+		void SetEvent(int id);
 
 	private:
 		TGTextButton *quit, *next;
 		TGLayoutHints *fLayout;
 		TRootEmbeddedCanvas *emcanvas;
 
+		TText *event_text;
 };
 
 

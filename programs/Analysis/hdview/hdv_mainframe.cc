@@ -46,7 +46,10 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 
 	maincanvas = emcanvas->GetCanvas();
 	maincanvas->cd(0);
-	maincanvas->Range(-2.1,-1.0,2.1, 1.0);	
+	maincanvas->Range(-2.1,-1.0,2.1, 1.0);
+
+	event_text = new TText(1.5,-0.95,"Event:");
+	event_text->Draw();
 }
 
 //-------------------
@@ -71,4 +74,15 @@ Bool_t hdv_mainframe::ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2)
 	}
 }
 
+
+//-------------------
+// SetEvent
+//-------------------
+void hdv_mainframe::SetEvent(int id)
+{
+	char str[256];
+	sprintf(str,"Event: %5d", id);
+	event_text->SetTitle(str);
+	event_text->Draw();
+}
 

@@ -24,6 +24,7 @@ using namespace std;
 #include "DFactory_MCTrackCandidates.h"
 
 extern TCanvas *maincanvas;
+extern hdv_mainframe *hdvmf;
 //extern DEventLoop *eventloop;
 
 // These values are just used to draw the detectors for visualization.
@@ -100,6 +101,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 	int ncolors = 5;
 	
 	cout<<"----------- New Event -------------"<<endl;
+	hdvmf->SetEvent(eventnumber);
 	
 	// Delete old markers
 	for(int i=0;i<NhitMarkers;i++)delete hitMarkers[i];
