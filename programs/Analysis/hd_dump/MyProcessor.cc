@@ -8,6 +8,7 @@
 using namespace std;
 
 #include <stdio.h>
+#include <unistd.h>
 
 #include "MyProcessor.h"
 #include "hddm_s.h"
