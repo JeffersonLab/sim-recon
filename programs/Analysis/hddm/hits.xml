@@ -7,7 +7,7 @@
          <straw phim="float" repeat="*">
             <hit t="float" dE="float" repeat="*" />
             <cdcPoint z="float" phi="float" dradius="float"
-                                  dEdx="float" repeat="*" />
+                                  track="int" dEdx="float" repeat="*" />
          </straw>
       </ring>
    </centralDC>
@@ -21,7 +21,7 @@
             <wire u="float" repeat="*">
                <hit t="float" dE="float" repeat="*" />
                <fdcPoint z="float" x="float" y="float" dradius="float"
-                                   dEdx="float" repeat="*" />
+                                   track="int" dEdx="float" repeat="*" />
             </wire>
          </anodePlane>
       </chamber>
@@ -32,7 +32,7 @@
          <hit t="float" dE="float" repeat="*" />
       </paddle>
       <startPoint t="float" z="float" r="float" phi="float"
-                        dEdx="float" repeat="*" />
+                                      track="int" dEdx="float" repeat="*" />
    </startCntr>
 
    <barrelEMcal>
@@ -44,7 +44,8 @@
             <shower t="float" E="float" repeat="*" />
          </downstream> 
       </module>
-      <barrelShower t="float" z="float" phi="float" E="float" repeat="*" />
+      <barrelShower t="float" z="float" phi="float" E="float"
+                                        track="int" repeat="*" />
    </barrelEMcal>
       
    <Cerenkov>
@@ -62,7 +63,7 @@
             <hit t="float" dE="float" repeat="*" />
          </right>
       </slab>
-      <tofPoint t="float" x="float" y="float" repeat="*" />
+      <tofPoint t="float" x="float" y="float" track="int" repeat="*" />
    </forwardTOF>
 
    <forwardEMcal>
@@ -71,6 +72,7 @@
             <shower t="float" E="float" repeat="*" />
          </column>
       </row>
-      <forwardShower t="float" x="float" y="float" E="float" repeat="*" />
+      <forwardShower t="float" x="float" y="float" E="float" 
+                                         track="int" repeat="*" />
    </forwardEMcal>
 </hitView>
