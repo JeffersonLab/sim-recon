@@ -74,7 +74,7 @@
 				unit="cm"	/>
     <real_array	name="ylimit_gap" values="-6.0  6.0" comment="beam hole y"
 				unit="cm"	/>
-    <real	name="z0"	value="566.27"	comment="z of midplane"
+    <real	name="z0"	value="619.87"	comment="z of midplane"
 				unit="cm"	/>
     <real	name="zlen"	value="2.54"	comment="thickness"
 				unit="cm"	/>
