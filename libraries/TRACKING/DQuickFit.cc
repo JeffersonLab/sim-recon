@@ -8,6 +8,7 @@
 using namespace std;
 
 #include "DQuickFit.h"
+#include "DMagneticFieldMap.h"
 
 static float target_center_z = 65.0; // Z coordinate of target center in cm (this will need to be changed at some point)
 
@@ -24,6 +25,7 @@ DQuickFit::DQuickFit()
 	x0 = y0 = 0;
 	chisq = 0;
 	chisq_source = NOFIT;
+	bfield = NULL;
 
 	hits = new DContainer(NULL, sizeof(TVector3*), "hits");
 	chisqv = new DContainer(NULL, sizeof(float), "chisqv");
@@ -327,6 +329,8 @@ derror_t DQuickFit::FitCircle(void)
 	float alpha=0.0, beta=0.0, gamma=0.0, deltax=0.0, deltay=0.0;
 	
 	// Loop over hits to calculate alpha, beta, gamma, and delta
+	// if a magnetic field map was given, use it to find average Z B-field
+	float Bz = 0.0;
 	TVector3 **v= (TVector3**)hits->first();
 	for(int i=0;i<hits->nrows;i++, v++){
 		float x=(*v)->x();
@@ -336,6 +340,12 @@ derror_t DQuickFit::FitCircle(void)
 		gamma += x*y;
 		deltax += x*(x*x+y*y)/2.0;
 		deltay += y*(x*x+y*y)/2.0;
+		
+		if(bfield){
+			D3Vector_t tmp;
+			tmp = bfield->getQuick((*v)->x()/2.54, (*v)->y()/2.54, 26.0+(*v)->z()/2.54);
+			Bz += tmp.z;
+		}
 	}
 	
 	// Calculate x0,y0 - the center of the circle
@@ -345,11 +355,12 @@ derror_t DQuickFit::FitCircle(void)
 	// Momentum depends on magnetic field. Assume 2T for now.
 	// Also assume a singly charged track (i.e. q=+/-1)
 	// The sign of the charge will be determined below.
-	float B=-2.0*0.593; // The 0.5931 is empirical
+	Bz_avg=-2.0; 
+	if(bfield)Bz_avg = Bz/(float)hits->nrows;
+	//Bz_avg *= 0.593; // The 0.5931 is empirical fudge factor
 	q = +1.0;
 	float r0 = sqrt(x0*x0 + y0*y0);
-	float hbarc = 197.326;
-	p_trans = q*B*r0/hbarc; // are these the right units?
+	p_trans = q*Bz_avg*r0*qBr2p; // qBr2p converts to GeV/c
 	phi = atan2(y0,x0) + M_PI_2;
 	if(p_trans<0.0){
 		p_trans = -p_trans;
@@ -369,6 +380,7 @@ derror_t DQuickFit::FitCircle(void)
 		*c *= *c;
 		chisq+=*c;
 	}
+	chisq_source = CIRCLE;
 
 	return NOERROR;
 }
@@ -447,13 +459,31 @@ derror_t DQuickFit::FitTrack(void)
 	theta = atan(r0*fabs(dphidz));
 	p = fabs(p_trans/sin(theta));
 	
-	// The sign of the electric charge will be the same as that
+	// The sign of the electric charge will be opposite that
 	// of dphi/dz. Also, the value of phi will be PI out of phase
 	if(dphidz<0.0){
-		q = -q;
 		phi += M_PI;
 		if(phi<0)phi+=2.0*M_PI;
 		if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+	}else{
+		q = -q;
+	}
+	
+	// Re-calculate chi-sq (needs to be done)
+	chisq_source = TRACK;
+	
+	// Up to now, the fit has assumed a forward going particle. In
+	// other words, if the particle is going backwards, the helix does
+	// actually go still go through the points, but only if extended
+	// backward in time. We use the average z of the hits compared
+	// to the reconstructed vertex to determine if it was back-scattered.
+	if(z_mean<z_vertex){
+		// back scattered particle
+		theta = M_PI - theta;
+		phi += M_PI;
+		if(phi<0)phi+=2.0*M_PI;
+		if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+		q = -q;
 	}
 	
 	return NOERROR;
@@ -493,6 +523,7 @@ derror_t DQuickFit::Print(void)
 		case TRACK:		cout<<"TRACK";		break;
 	}
 	cout<<endl;
+	cout<<"     Bz(avg) = "<<Bz_avg<<endl;
 
 	return NOERROR;
 }
