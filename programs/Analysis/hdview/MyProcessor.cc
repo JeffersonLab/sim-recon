@@ -55,6 +55,7 @@ MyProcessor::MyProcessor()
 {
 	NhitMarkers = 0;
 	Ncircles = 0;
+	Nlines = 0;
 	drew_detectors=0;
 }
 
@@ -79,6 +80,10 @@ derror_t MyProcessor::evnt(int eventnumber)
 	for(int i=0;i<Ncircles;i++)delete circles[i];
 	Ncircles = 0;
 
+	// Delete old lines (tracks)
+	for(int i=0;i<Nlines;i++)delete lines[i];
+	Nlines = 0;
+
 	// Get MCCheatHits
 	DContainer *mccheathits = event_loop->Get("MCCheatHits");
 	
@@ -88,6 +93,19 @@ derror_t MyProcessor::evnt(int eventnumber)
 	DContainer *fits = new DContainer(NULL,sizeof(DQuickFit**),"fits");
 	MCCheatHit_t *mccheathit = (MCCheatHit_t*)mccheathits->first();
 	for(int i=0;i<mccheathits->nrows;i++, mccheathit++){
+		
+		// Skip hits from some detectors?
+		switch(mccheathit->system){
+			case 1:	break;		// CDC
+			case 2:	break;		// FDC
+			case 3:	continue;		// BCAL
+			case 4:	continue;		// TOF
+			case 5:	break;		// Cherenkov
+			case 6:	continue;		// FCAL
+			case 7:	break;		// UPV
+			default: continue;
+		}
+	
 		float x = mccheathit->r*cos(mccheathit->phi);
 		float y = mccheathit->r*sin(mccheathit->phi);
 		float z = mccheathit->z;
@@ -108,6 +126,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 		front->SetMarkerColor(color);
 		front->SetMarkerSize(size);
 		
+		if(NhitMarkers>MAX_HIT_MARKERS-3)break;
 		hitMarkers[NhitMarkers++] = top;
 		hitMarkers[NhitMarkers++] = side;
 		hitMarkers[NhitMarkers++] = front;
@@ -130,18 +149,24 @@ derror_t MyProcessor::evnt(int eventnumber)
 			qf->FitCircle();
 			//qf->PrintChiSqVector();
 			if(qf->chisq/(float)qf->GetNhits() <1.0)break;
-			qf->PruneWorst(1);
+			//qf->PruneWorst(1);
+			qf->PruneOutlier();
 		}
 	
 		if(qf->GetNhits()>1){
+			qf->FitTrack();
+			DrawTrack(qf, colors[(i+1)%ncolors]);
+			cout<<__FILE__<<":"<<__LINE__<<" z_vertex="<<qf->z_vertex<<endl;
 			ConvertToFront(qf->x0, qf->y0, 0, X, Y);
 			float dX = X-x_center;
 			float dY = Y-y_center;
 			float r = sqrt(dX*dX + dY*dY);
 			circles[Ncircles++] = new TEllipse(X,Y,r,r);
 			cout<<"ChiSq = "<<qf->chisq/(float)qf->GetNhits()<<endl;
+			if(Ncircles>=MAX_CIRCLES)break;
 		}
 	}
+
 	// Delete all DQuickFit objects and the DContainer
 	fit = (DQuickFit**)fits->first();
 	for(int i=0;i<fits->nrows;i++, fit++)delete (*fit);
@@ -151,6 +176,44 @@ derror_t MyProcessor::evnt(int eventnumber)
 	for(int i=0;i<NhitMarkers;i++)hitMarkers[i]->Draw();
 	for(int i=0;i<Ncircles;i++)circles[i]->Draw();
 	maincanvas->Update();
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// DrawTrack 
+//------------------------------------------------------------------
+derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
+{
+	if(Nlines>MAX_LINES-2)return NOERROR;
+
+	float x = qf->x0;
+	float y = qf->y0;
+	float z = qf->z_vertex;
+	float r = sqrt(x*x + y*y);
+	float dphidz = -qf->q*qf->theta/r;
+	float phi0 = atan2(-qf->y0, -qf->x0);
+	float X,Y;
+
+	TPolyLine *line_top = new TPolyLine();
+	TPolyLine *line_side = new TPolyLine();
+	for(float Z=z; Z<z+500.0; Z+=10.0){
+		float delta_z = Z-qf->z_vertex;
+		float phi = phi0 + delta_z*dphidz;
+		x = qf->x0 + r*cos(phi);
+		y = qf->y0 + r*sin(phi);
+		
+		ConvertToSide(x,y,Z,X,Y);
+		line_side->SetNextPoint(X,Y);
+		ConvertToTop(x,y,Z,X,Y);
+		line_top->SetNextPoint(X,Y);
+	}
+	line_side->SetLineColor(color);
+	line_side->Draw();
+	line_top->SetLineColor(color);
+	line_top->Draw();
+	lines[Nlines++] = line_side;
+	lines[Nlines++] = line_top;
 
 	return NOERROR;
 }
