@@ -72,7 +72,7 @@ ifeq ($(OStype),Darwin)
 	XLIBS  	:= -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
 	COPTS = -g $(SWITCHES)
 	FOPTS = -g -Wno-globals $(SWITCHES)
-	GLIBS	:= -lcompat /usr/lib/libgcc.a
+	GLIBS	:= -L$(CERN_ROOT)/lib -lcompat /usr/lib/libgcc.a
 endif
 
 HDDS = ../hdds
