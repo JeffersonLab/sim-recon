@@ -45,6 +45,7 @@ class DFactory:public DEventProcessor{
 		char _str[256];		///< buffer used for Print()
 		int _icol;
 		int _columns[100];
+		int debug_level;
 };
 
 #endif // _DFACTORY_H_
