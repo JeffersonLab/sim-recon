@@ -30,11 +30,21 @@ class DFactory:public DEventProcessor{
 		DContainer* Get();  ///< Get a list of the data produced by this factory
 		inline void ResetNrows(void){_data->ResetNrows();}
 		virtual derror_t Print(void){cout<<" <Print method undefined for "<<name<<">"<<endl;}
+		void printheader(const char *header);
+		void printnewrow(void);
+		void printcol(const char *val);
+		void printcol(const char *format, float val);
+		void printcol(const char *format, double val);
+		void printcol(const char *format, int val);
+		void printrow(void);
 
 		char* name;
 
 	protected:
 		DEvent *event;
+		char _str[256];		///< buffer used for Print()
+		int _icol;
+		int _columns[100];
 };
 
 #endif // _DFACTORY_H_
