@@ -68,7 +68,7 @@
  *       (2) quasi-homogenous field with map (helical segments)
  *       (3) uniform field (helices along local z-axis)
  *  My solution is as follows.  By default, I assume case 0.  For all
- *  contents of a composition named "fieldVolume" I assign case 2.  For
+ *  contents of a composition named "*fieldVolume" I assign case 2.  For
  *  all contents of a composition named "*Magnet*" I assign case 3.
  *  For the magnitude of the field, I simply store a constant field value
  *  (kG) for each case, and rely on the GUFLD user routine in Geant3 to
@@ -1211,7 +1211,7 @@ int Refsys::createVolume(DOMElement* el)
    XString tagS(el->getTagName());
    XString nameAttS("name");
    XString nameS(el->getAttribute(X(nameAttS)));
-   if (nameS.equals("fieldVolume"))
+   if (strstr(S(nameS),"fieldVolume"))
    {
       myRef.fMagField = 2;
    }

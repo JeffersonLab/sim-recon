@@ -66,7 +66,7 @@
     <posXYZ volume="ForwardEMcal" X_Y_Z="0.0 0.0 575.0" />
   </composition>
 
-  <composition name="fieldVolume">
+  <composition name="GlueXdetector">
     <posXYZ volume="barrelPackage" />
     <posXYZ volume="forwardPackage" />
     <posXYZ volume="Target" X_Y_Z="0.0 0.0 50.0" />
@@ -74,13 +74,17 @@
   </composition>
 
   <composition name="experimentalHall" envelope="HALL">
-    <posXYZ volume="fieldVolume" X_Y_Z="150.0 -350.0 -500.0" />
+    <posXYZ volume="GlueXdetector" X_Y_Z="150.0 -350.0 -500.0" />
     <posXYZ volume="beamPipe" X_Y_Z="0.0 0.0 0.0" />
+  </composition>
+
+  <composition name="LASSfieldVolume">
+    <posXYZ volume="experimentalHall" X_Y_Z="-150.0 350.0 500.0" />
   </composition>
 
   <composition name="everything" envelope="SITE">
     <posXYZ volume="collimatorPackage" X_Y_Z="0.0 0.0 -2050." />
-    <posXYZ volume="experimentalHall" X_Y_Z="-150. 350. 500." />
+    <posXYZ volume="LASSfieldVolume" X_Y_Z="0. 0. 0." />
   </composition>
 
   <mcfast model="detector" template="db/detector.db">
