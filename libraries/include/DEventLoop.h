@@ -41,6 +41,7 @@ class DEventLoop:public DEvent{
 		derror_t Fini(void);
 		derror_t Run(void);
 		derror_t Run(DEventProcessor *proc);
+		derror_t Quit(void){quit=1;};
 		float GetRate(void);
 		derror_t PrintRate(void);
 		
@@ -49,6 +50,7 @@ class DEventLoop:public DEvent{
 		DEventProcessor* processors[MAX_EVENT_PROCESSORS];
 		DEventSource *source;
 		time_t last_print_rate_time;
+		int quit;
 };
 
 
