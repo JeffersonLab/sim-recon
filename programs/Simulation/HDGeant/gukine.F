@@ -2,6 +2,10 @@
 * $Id$
 *
 * $Log$
+* Revision 1.5  2001/08/02 03:08:05  jonesrt
+* Now the BEAM data card is supported, with correct generation of
+* coherent bremsstrahlung radiation. -rtj
+*
 * Revision 1.4  2001/07/27 21:04:09  jonesrt
 * With this release, HDGeant version 1.0 is now in beta.  -rtj
 *
@@ -38,17 +42,116 @@
 #include "geant321/gcomis.inc"
 *
       DIMENSION VERTEX(3),PLAB(3)
-      DIMENSION RNDM(2)
+      DIMENSION RNDM(20)
+*
+      include 'cobrems.inc'
+      integer coSwitch
+      real freqMaximum
+      common /coherentGen/coSwitch,freqMaximum
+      data coSwitch,freqMaximum/0,0/
+      save /coherentGen/
+      real xMinimum,Theta02,CollimPos
+      parameter (xMinimum=1e-2)
+      parameter (Theta02=1.8)
+      parameter (CollimPos=-1500.0)
 *
 *     -----------------------------------------------------------------
+*
+      ev = IDEVT
+      do i=1,10
+        ev = ev/10.
+        if (ev.lt.10) goto 2
+      enddo
+    2 if (int(ev).eq.ev) then
+        write(LOUT,*) IDEVT," events simulated"
+      endif
 *
 *              Try input from MonteCarlo generator first
 *
       itry = nextInput()
       if (itry .eq. 0) then
          itry = loadInput()
-      elseif (itry .eq. 9) then
- 
+      elseif (itry .ne. 9) then
+         ieorun = 1
+         ieotri = 1
+         return
+*
+*              Try coherent bremsstrahlung beam generation next
+*
+      elseif (E.gt.0) then
+         call GRNDM(RNDM,5)
+         phi = RNDM(1)*TWOPI
+         rho = mospread*sqrt(-2*log(RNDM(2)))
+         thxMosaic = rho*cos(phi)
+         thyMosaic = rho*sin(phi)
+         phi = RNDM(3)*TWOPI
+         varBeam = (emit/spot)**2 + sigma2MS(t*RNDM(4))
+         rho = sqrt(-2*varBeam*log(RNDM(5)))
+         thxBeam = rho*cos(phi)
+         thyBeam = rho*sin(phi)
+         cos45 = 1/sqrt(2d0)
+         rotate(1,1) = 0
+         rotate(1,2) = cos45			!point (1,0,0) along beam
+         rotate(1,3) = -cos45			!point (0,1,1) vertically
+         rotate(2,1) = 0
+         rotate(2,2) = cos45
+         rotate(2,3) = cos45
+         rotate(3,1) = 1
+         rotate(3,2) = 0
+         rotate(3,3) = 0
+         call rotmat(rotate,thxBeam-thx-thxMosaic,0d0,0d0)
+         call rotmat(rotate,0d0,thyBeam-thy-thyMosaic,0d0)
+         do i=1,10000
+            call GRNDM(RNDM,4)
+            phi = RNDM(1)*TWOPI
+            x = xMinimum**RNDM(2)
+            coSwitch = coSwitch+1
+            if (coSwitch/2*2.eq.coSwitch) then  !try coherent generation
+               freq = dNcdxdp(x,phi)
+               f = freq*RNDM(3)
+               do ip=1,q2points
+                  if (f.le.q2weight(ip)) then
+                     theta2 = q2theta2(ip)
+                     goto 5
+                  endif
+               enddo
+    5          continue
+               freq = freq*TWOPI*Theta02
+            else                                  !try incoherent generation
+               theta2 = Theta02
+     +                  *RNDM(3)/(1-RNDM(3)+1e-30)
+               freq = dNidxdt2(x,theta2)
+               freq = freq*(Theta02+theta2)**2
+            endif
+            freq = x*freq
+            if (freq.gt.freqMaximum) then
+               freqMaximum = freq*1.2
+            elseif (freq.ge.freqMaximum*RNDM(4)) then
+               goto 50
+            endif
+         enddo
+         write(5,*) 'Gukine: photon beam generator failed, giving up'
+
+   50    continue
+         theta = sqrt(theta2)*(me/E)
+         thetaX = thxBeam+theta*cos(phi)
+         thetaY = thyBeam+theta*sin(phi)
+         PLAB(3) = E*x
+         PLAB(1) = PLAB(3)*thetaX
+         PLAB(2) = PLAB(3)*thetaY
+         call GRNDM(RNDM,2)
+         phi = RNDM(1)*TWOPI
+         rho = sqrt(-2*log(RNDM(2)))
+         VERTEX(1) = spot*rho*cos(phi) + D*100*thetaX
+         VERTEX(2) = spot*rho*sin(phi) + D*100*thetaY
+         VERTEX(3) = CollimPos
+         call GSVERT(VERTEX,0,0,0,0,NVERT)
+         call GSKINE(PLAB,1,NVERT,0,0,NT)
+*
+*              If all else fails, do automatic single-track generation
+*
+      else
+
          VERTEX(1)=VSCAN(1)
          VERTEX(2)=VSCAN(2)
          VERTEX(3)=VSCAN(3)
@@ -70,19 +173,6 @@
          CALL GSVERT(VERTEX,0,0,0,0,NVERT)
          CALL GSKINE(PLAB,IK,NVERT,0,0,NT)
 
-      else
-         ieorun = 1
-         ieotri = 1
-         return
-      endif
-
-      ev = IDEVT
-      do i=1,10
-        ev = ev/10.
-        if (ev.lt.10) goto 5
-      enddo
-    5 if (int(ev).eq.ev) then
-        write(LOUT,*) IDEVT," events simulated"
       endif
 *
 *              Kinematic debug (controled by ISWIT(1))
@@ -92,4 +182,4 @@
         CALL GPRINT('KINE',0)
       ENDIF
 *
-  99  END
+      END

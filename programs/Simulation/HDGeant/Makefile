@@ -11,7 +11,7 @@ HDDS = ../hdds
 HDDM = ../hddm
 
 AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o gdstep.o guxcs.o \
-       hddsGeant3.o goptimize.o
+       hddsGeant3.o goptimize.o cobrems.o
 
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
@@ -22,17 +22,17 @@ GXFIXED = gxcs.o gxphys.o
 hdgeant++:	gxint.o uginit.o uglast.o $(AUXF) $(AUXC) $(GXFIXED)
 	$(CERN_ROOT)/bin/gxint -g 321 -m -d Motif -o $@ $^
 
-hdgeant:	hdgeant.F uginit.F uglast.F $(AUXF) $(AUXC)
+hdgeant:	hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC)
 	f77 $(FOPTS) -o $@ -I$(CERN_ROOT)/include $^ \
 	    -L${CERN_ROOT}/lib -lgeant321\
 	    -lpawlib -lgraflib -lgrafX11 -lpacklib -lmathlib \
 	    $(NETLIB) $(XLIBS)
 
-.f.o:
-	f77 $(FOPTS) -I$(CERN_ROOT)/include -c -o $@ $<
-
 .F.o:
 	f77 $(FOPTS) -I$(CERN_ROOT)/include -DCERNLIB_MOTIF -c -o $@ $<
+
+.f.o:
+	f77 $(FOPTS) -I$(CERN_ROOT)/include -c -o $@ $<
 
 .c.o:
 	gcc $(COPTS) -I. -I../include -c -o $@ $<

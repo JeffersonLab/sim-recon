@@ -2,6 +2,10 @@
 * $Id$
 *
 * $Log$
+* Revision 1.4  2001/08/02 03:08:05  jonesrt
+* Now the BEAM data card is supported, with correct generation of
+* coherent bremsstrahlung radiation. -rtj
+*
 * Revision 1.3  2001/07/19 23:25:51  jonesrt
 * numerous new files as I develop the prototype hits libraries -rtj
 *
@@ -40,6 +44,9 @@
       data outfile/20*0/
       integer openInput, skipInput, openOutput
       external openInput, skipInput, openOutput
+      real beamE0, beamEpeak, radColDist
+      common /beamPars/ beamE0,beamEpeak,radColDist
+      data beamPars,beamEpeak,radColDist/0,0,76.0/
 *
 *     -----------------------------------------------------------------
 *
@@ -80,6 +87,7 @@ C..geant..
       call ffkey('infile',infile,20,'MIXED')
       call ffkey('skip',iskip,1,'INTEGER')
       call ffkey('outfile',outfile,20,'MIXED')
+      call ffkey('beam',beamE0,3,'REAL')
       CALL GFFGO
 *
 *             Open the input stream
@@ -110,6 +118,10 @@ C..geant..
  9010   format('GUKINE ERROR - Could not open output stream ',20a4)
         stop
       endif
+*
+*             Assign the beam parameters
+*
+      call cobrems(beamE0,beamEpeak,radColDist)
 *
 *             Initialize graphics package
 *
