@@ -20,6 +20,7 @@ using namespace std;
 #include "DContainer.h"
 #include "DFactory_MCCheatHits.h"
 #include "DQuickFit.h"
+#include "DMagneticFieldStepper.h"
 
 extern TCanvas *maincanvas;
 //extern DEventLoop *eventloop;
@@ -192,6 +193,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 		if(qf->GetNhits()>1){
 			qf->FitTrack();
 			DrawTrack(qf, colors[(i+1)%ncolors]);
+			DrawHelicalTrack(qf, kBlack);
 			cout<<__FILE__<<":"<<__LINE__<<endl;
 			qf->Print();
 			ConvertToFront(qf->x0, qf->y0, 0, X, Y);
@@ -217,9 +219,9 @@ derror_t MyProcessor::evnt(int eventnumber)
 }
 
 //------------------------------------------------------------------
-// DrawTrack 
+// DrawHelicalTrack 
 //------------------------------------------------------------------
-derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
+derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 {
 	if(Nlines>MAX_LINES-2)return NOERROR;
 
@@ -247,6 +249,51 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 		ConvertToTop(x,y,Z,X,Y);
 		line_top->SetNextPoint(X,Y);
 	}
+	line_side->SetLineColor(color+100);
+	line_side->Draw();
+	line_top->SetLineColor(color+100);
+	line_top->Draw();
+	lines[Nlines++] = line_side;
+	lines[Nlines++] = line_top;
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// DrawTrack 
+//------------------------------------------------------------------
+derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
+{
+	if(Nlines>MAX_LINES-2)return NOERROR;
+	
+	TVector3 pos(0.0, 0.0, qf->z_vertex);
+	TVector3 mom;
+	mom.SetMagThetaPhi(qf->p, qf->theta, qf->phi);
+	DMagneticFieldStepper *stepper = new DMagneticFieldStepper(Bfield, qf->q, &pos, &mom);
+
+	TPolyLine *line_top = new TPolyLine();
+	TPolyLine *line_side = new TPolyLine();
+	qf->Print();
+	for(int i=0;i<500;i++){
+	
+		stepper->Step(&pos);
+		float x = pos.x();
+		float y = pos.y();
+		float z = pos.z();
+		float X,Y;
+	
+		if(z>=620.0)break;
+		float R = sqrt(x*x + y*y);
+		//if(R>=(BCAL_Rmin+10.0))break;
+		
+		ConvertToSide(x,y,z,X,Y);
+		line_side->SetNextPoint(X,Y);
+		ConvertToTop(x,y,z,X,Y);
+		line_top->SetNextPoint(X,Y);
+	}
+	delete stepper;
+	qf->Print();
+	
 	line_side->SetLineColor(color+100);
 	line_side->Draw();
 	line_top->SetLineColor(color+100);

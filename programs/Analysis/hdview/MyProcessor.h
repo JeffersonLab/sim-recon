@@ -39,6 +39,7 @@ class MyProcessor:public DEventProcessor
 		derror_t ConvertToSide(float x, float y, float z, float &X, float &Y);
 		derror_t ConvertToFront(float x, float y, float z, float &X, float &Y);
 
+		derror_t DrawHelicalTrack(DQuickFit *qf, int color);
 		derror_t DrawTrack(DQuickFit *qf, int color);
 		derror_t DrawDetectors(void);
 
