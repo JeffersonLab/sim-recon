@@ -56,6 +56,7 @@ DMagneticFieldMap::DMagneticFieldMap(int rDim, int zDim)
 
   this->rDim = rDim;
   this->zDim = zDim;
+  this->phiDim = 0; // place holder for now (1/23/05) D.L.
   this->rMin = 0.0;
   this->rMax = 0.0;
   this->zMin = 0.0;
