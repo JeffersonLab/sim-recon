@@ -718,10 +718,10 @@
 
   <composite name="leadScint">
 	<addmaterial material="Scintillator">
-		<fractionmass	fraction="0.60"	/>
+		<fractionmass	fraction="0.15"	/>
  	</addmaterial>
 	<addmaterial material="Lead">
-		<fractionmass	fraction="0.40"	/>
+		<fractionmass	fraction="0.85"	/>
  	</addmaterial>
   </composite>
 

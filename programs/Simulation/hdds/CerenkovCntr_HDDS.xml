@@ -24,7 +24,9 @@
   </composition>
 
   <composition name="cerenkovCntr" envelope="CERE">
-    <posXYZ volume="CGAS" X_Y_Z="0.0  0.0  0.0" />
+    <posXYZ volume="CGAS" X_Y_Z="0.0  0.0  0.0">
+      <count value="1" />
+    </posXYZ>
   </composition>
 
   <pcon name="CERE" material="Aluminum" comment="Cerenkov counter"

@@ -22,7 +22,9 @@
      of the sensitive region.                                             -->
 
   <composition name="StartCntr">
-    <posXYZ volume="VRTX" X_Y_Z="0.0  0.0  45.0" />
+    <posXYZ volume="VRTX" X_Y_Z="0.0  0.0  45.0">
+       <count value="1" />
+    </posXYZ>
   </composition>
 
   <tubs name="VRTX" Rio_Z="4.95  5.65  90.0" material="Scintillator"

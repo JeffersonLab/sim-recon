@@ -322,12 +322,16 @@ void fortranGetfunc(DOM_Element& el, char* ident)
          }
       }
       cout << "      integer level,index" << endl
+           << "      integer " << ident << endl
            << "      " << funcName << " = 0" << endl
            << "      do level=1,nlevel" << endl
            << "        index = istart(lvolum(level))" << endl
            << "        if (index.gt.0) then" << endl
-           << "          " << funcName
+           << "          " << ident
            << " = lookup(index + number(level) - 1)" << endl
+           << "          if (" << ident << ".gt.0) then" << endl
+           << "            " << funcName << " = " << ident << endl
+           << "          endif" << endl
            << "        endif" << endl
            << "      enddo" << endl;
    }
@@ -338,6 +342,27 @@ void fortranGetfunc(DOM_Element& el, char* ident)
    cout << "      end" << endl;
    delete [] table;
    delete [] start;
+}
+
+void fortranGetcoord()
+{
+   cout << endl
+        << "      subroutine getLocalCoord(xlab,xlocal,name)" 	<< endl
+        << "      real xlab(3)" 				<< endl
+        << "      real xlocal(3)" 				<< endl
+        << "      character*(*) name" 				<< endl
+        << "      common /gcvolu/nlevel,names(15),number(15),lvolum(15)"
+								<< endl
+        << "      character*4 cnames(15)"			<< endl
+        << "      equivalence (cnames(1),names(1))"		<< endl
+        << "      integer saveLevel" 				<< endl
+        << "      saveLevel = nlevel" 				<< endl
+        << "      do nlevel = 1,saveLevel-1" 			<< endl
+        << "        if (name.eq.cnames(nlevel)) goto 9"		<< endl
+        << "      enddo"					<< endl
+        << "    9 call gmtod(xlab,xlocal,1)"			<< endl
+        << "      nlevel = saveLevel"				<< endl
+        << "      end"						<< endl;
 }
 
 int main(int argC, char* argV[])
@@ -454,6 +479,7 @@ int main(int argC, char* argV[])
             fortranGetfunc(rootEl, identStr);
          }
       }
+      fortranGetcoord();
    }
 
    XMLPlatformUtils::Terminate();
@@ -810,7 +836,7 @@ int Refsys::createMaterial(DOM_Element& el)
       double rho = dens;
       if (rho < 0)
       {
-         rho = -1/dens;
+         rho = -1/(dens + 0.999999);
       }
       cout << endl
            << "      imate = " << imate << endl
@@ -832,7 +858,7 @@ int Refsys::createMaterial(DOM_Element& el)
    if (dens < 0)
    {
       char densStr[30];
-      sprintf(densStr, "%f", -1/dens);
+      sprintf(densStr, "%f", -1/(dens + 0.999999));
       DOM_Element densEl = document.createElement("real");
       densEl.setAttribute("name", "density");
       densEl.setAttribute("value", densStr);
@@ -1085,9 +1111,20 @@ int Refsys::createSolid(DOM_Element& el)
    delete [] matStr;
 
    char ivoluStr[10];
-   sprintf(ivoluStr, "%d", ++Refsys::fVolumes);
+   int ivolu = ++Refsys::fVolumes;
+   sprintf(ivoluStr, "%d", ivolu);
    el.setAttribute("Geant3ivolu", ivoluStr);  
    el.setAttribute("Geant3icopy", "0");  
+
+/* consistency check #1: require Geant's volume index to match mine
+ * 
+ * This is required if the getX() lookup functions are going to work.
+ * I count volumes in the order I define them, starting from 1.  If
+ * Geant does the same thing then this error should never occur.
+ */
+   cout << "      if (ivolu.ne." << ivolu << ")"
+        << " stop \'consistency check #1 failed\'" << endl;
+
    return Refsys::fVolumes;
 }
 

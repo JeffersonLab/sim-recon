@@ -53,6 +53,7 @@
   <composition name="CDCcathode_1" envelope="CDCI">
     <mposPhi volume="CDCcathodeSector_1" ncopy="6">
       <layer value="1" />
+      <count value="6" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
@@ -219,17 +220,18 @@
   <composition name="CDCcathode_2" envelope="CDCO">
     <mposPhi volume="CDCcathodeSector_2" ncopy="6">
       <layer value="2" />
+      <count value="6" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
 
   <composition name="CDCcathodeSector_1" envelope="CDSI">
-    <mposZ volume="CDBI" ncopy="200" Z0="-100.0" dZ="1.0">
+    <mposZ volume="CDBI" ncopy="200" Z0="-99.5" dZ="1.0">
       <cell value="1" step="1" />
     </mposZ>
   </composition>
   <composition name="CDCcathodeSector_2" envelope="CDSO">
-    <mposZ volume="CDBO" ncopy="200" Z0="-100.0" dZ="1.0">
+    <mposZ volume="CDBO" ncopy="200" Z0="-99.5" dZ="1.0">
       <cell value="1" step="1" />
     </mposZ>
   </composition>
