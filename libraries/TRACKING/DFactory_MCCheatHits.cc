@@ -83,6 +83,7 @@ derror_t DFactory_MCCheatHits::GetCDCHits(void)
 								mccheathit->phi		= cdcpoints->in[m].phi;
 								mccheathit->z			= cdcpoints->in[m].z;
 								mccheathit->track		= cdcpoints->in[m].track;
+								mccheathit->primary	= cdcpoints->in[m].primary;
 								mccheathit->system	= 1;
 							}
 						}
@@ -132,6 +133,7 @@ derror_t DFactory_MCCheatHits::GetFDCHits(void)
 							mccheathit->phi		= atan2(y,x);
 							mccheathit->z			= fdcPoints->in[n].z;
 							mccheathit->track		= fdcPoints->in[n].track;
+							mccheathit->primary	= fdcPoints->in[n].primary;
 							mccheathit->system	= 2;
 						}
 					}
@@ -177,10 +179,11 @@ derror_t DFactory_MCCheatHits::GetBCALHits(void)
 		
 		for(int j=0;j<barrelShowers->mult;j++){
 			MCCheatHit_t *mccheathit = (MCCheatHit_t*)_data->Add();
-			mccheathit->r			= BCAL_R;
+			mccheathit->r			= barrelShowers->in[j].r;
 			mccheathit->phi		= barrelShowers->in[j].phi;
 			mccheathit->z			= barrelShowers->in[j].z;
 			mccheathit->track		= barrelShowers->in[j].track;
+			mccheathit->primary	= barrelShowers->in[j].primary;
 			mccheathit->system	= 3;
 		}
 	}
@@ -212,8 +215,9 @@ derror_t DFactory_MCCheatHits::GetTOFHits(void)
 			mccheathit->r			= sqrt(x*x + y*y);
 			mccheathit->phi		= atan2(y,x);
 			if(mccheathit->phi<0.0)mccheathit->phi += 2.0*M_PI;
-			mccheathit->z			= TOF_Z;
+			mccheathit->z			= tofPoints->in[j].z;
 			mccheathit->track		= tofPoints->in[j].track;
+			mccheathit->primary	= tofPoints->in[j].primary;
 			mccheathit->system	= 4;
 		}
 	}
@@ -254,13 +258,12 @@ derror_t DFactory_MCCheatHits::GetFCALHits(void)
 			mccheathit->r			= sqrt(x*x + y*y);
 			mccheathit->phi		= atan2(y,x);
 			if(mccheathit->phi<0.0)mccheathit->phi += 2.0*M_PI;
-			mccheathit->z			= FCAL_Z;
+			mccheathit->z			= forwardShowers->in[j].z;
 			mccheathit->track		= forwardShowers->in[j].track;
+			mccheathit->primary	= forwardShowers->in[j].primary;
 			mccheathit->system	= 6;
 		}
 	}
-
-	return NOERROR;
 
 	return NOERROR;
 }
@@ -284,29 +287,20 @@ derror_t DFactory_MCCheatHits::Print(void)
 	if(!_data)return NOERROR;
 	if(_data->nrows<=0)return NOERROR; // don't print anything if we have no data!
 
-	cout<<name<<endl;
-	cout<<"---------------------------------------"<<endl;
-	cout<<"row:   r(cm): phi(rad):  z(cm): track:    system:"<<endl;
-	cout<<endl;
+	printheader("row:   r(cm): phi(rad):  z(cm): track: primary:    system:");
 	
 	MCCheatHit_t *mccheathit = (MCCheatHit_t*)_data->first();
 	for(int i=0; i<_data->nrows; i++, mccheathit++){
-		char str[80];
-		memset(str,' ',80);
-		str[79] = 0;
 
-		char num[32];
-		sprintf(num, "%d", i);
-		strncpy(&str[3-strlen(num)], num, strlen(num));
+		printnewrow();
+		
+		printcol("%d", i);
+		printcol("%3.1f", mccheathit->r);
+		printcol("%1.3f", mccheathit->phi);
+		printcol("%3.1f", mccheathit->z);
+		printcol("%d", mccheathit->track);
+		printcol(mccheathit->primary ? "Y":"N");
 
-		sprintf(num, "%3.1f", mccheathit->r);
-		strncpy(&str[12-strlen(num)], num, strlen(num));
-		sprintf(num, "%1.3f", mccheathit->phi);
-		strncpy(&str[22-strlen(num)], num, strlen(num));
-		sprintf(num, "%3.1f", mccheathit->z);
-		strncpy(&str[30-strlen(num)], num, strlen(num));
-		sprintf(num, "%d", mccheathit->track);
-		strncpy(&str[37-strlen(num)], num, strlen(num));
 		char *system = "<unknown>";
 		switch(mccheathit->system){
 			case 1: system = "CDC";				break;
@@ -317,10 +311,9 @@ derror_t DFactory_MCCheatHits::Print(void)
 			case 6: system = "FCAL";			break;
 			case 7: system = "UPV";				break;
 		}
-		sprintf(num, "%s", system);
-		strncpy(&str[48-strlen(num)], num, strlen(num));
+		printcol(system);
 
-		cout<<str<<endl;
+		printrow();
 	}
 	cout<<endl;
 }
