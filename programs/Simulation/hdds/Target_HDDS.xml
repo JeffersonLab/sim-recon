@@ -17,6 +17,45 @@
          top_volume  = "TARG"
          DTD_version = "v1">
 
+
+<!-- Origin of Target is the center of the entrance window to the
+     liquid hydrogen target - not the start of the vacuum vessel.  -->
+
+  <composition name="Target">
+    <posXYZ volume="BerylliumPipe" X_Y_Z="0. 0. 225.0" />
+  </composition>
+
+  <composition name="BerylliumPipe" envelope="TARG">
+    <posXYZ volume="CYLW">			 </posXYZ>
+    <posXYZ volume="UWIT" X_Y_Z="0. 0. -274.95"> </posXYZ>
+    <posXYZ volume="DWIT" X_Y_Z="0. 0. +274.95"> </posXYZ>
+    <posXYZ volume="targetVessel" X_Y_Z="0. 0. -210.00" />
+  </composition>
+
+  <composition name="targetVessel" envelope="TGTV">
+    <posXYZ volume="CYTV">		        </posXYZ>
+    <posXYZ volume="UWTV" X_Y_Z="0. 0. -14.99"> </posXYZ>
+    <posXYZ volume="DWTV" X_Y_Z="0. 0. +14.99"> </posXYZ>
+  </composition>
+
+  <tubs name="TGTV" Rio_Z="0.00 1.50 30.0" material="LiqHydrogen"
+	parameters="target_pars"	comment="target vessel mother"      />
+  <tubs name="CYTV" Rio_Z="2.45 1.50 30.0" material="Aluminum"
+					comment="cylinder wall of beer can" />
+  <tubs name="UWTV" Rio_Z="0.00 1.45 0.02" material="Aluminum"
+					comment="entance wall of beer can"  />
+  <tubs name="DWTV" Rio_Z="0.00 1.45 0.02" material="Aluminum"
+					comment="exit wall of beer can"     />
+
+  <tubs name="TARG" Rio_Z="0.00 2.50 550.0" material="Vacuum"
+	parameters="targetTube_pars" 	comment="target tube mother volume" />
+  <tubs name="CYLW" Rio_Z="2.45 2.50 550.0" material="Beryllium"
+					comment="cylindrical wall of tube"  />
+  <tubs name="UWIT" Rio_Z="0.00 2.45 0.050" material="Kapton"
+					comment="upstream window of tube"   />
+  <tubs name="DWIT" Rio_Z="0.00 2.45 0.050" material="Kapton"
+					comment="downstream window of tube" />
+ 
   <parameters name="targetTube_pars" type="mcfast">
     <real name="rmin" value="0.00"  unit="cm" comment="inner radius" />
     <real name="rmax" value="2.50"  unit="cm" comment="outer radius" />
@@ -61,45 +100,6 @@
 
   <mcfast model="BeamVrtx" template="db/beamvrtx.db" parameters="target_pars">
   </mcfast>
-
-  <tubs name="TGTV" Rio_Z="0.00 1.50 30.0" material="LiqHydrogen"
-	parameters="target_pars"	comment="target vessel mother"      />
-  <tubs name="CYTV" Rio_Z="2.45 1.50 30.0" material="Aluminum"
-					comment="cylinder wall of beer can" />
-  <tubs name="UWTV" Rio_Z="0.00 1.45 0.02" material="Aluminum"
-					comment="entance wall of beer can"  />
-  <tubs name="DWTV" Rio_Z="0.00 1.45 0.02" material="Aluminum"
-					comment="exit wall of beer can"     />
-
-  <composition name="targetVessel" envelope="TGTV">
-    <posXYZ volume="CYTV">		        </posXYZ>
-    <posXYZ volume="UWTV" X_Y_Z="0. 0. -14.99"> </posXYZ>
-    <posXYZ volume="DWTV" X_Y_Z="0. 0. +14.99"> </posXYZ>
-  </composition>
-
-  <tubs name="TARG" Rio_Z="0.00 2.50 550.0" material="Vacuum"
-	parameters="targetTube_pars" 	comment="target tube mother volume" />
-  <tubs name="CYLW" Rio_Z="2.45 2.50 550.0" material="Beryllium"
-					comment="cylindrical wall of tube"  />
-  <tubs name="UWIT" Rio_Z="0.00 2.45 0.050" material="Kapton"
-					comment="upstream window of tube"   />
-  <tubs name="DWIT" Rio_Z="0.00 2.45 0.050" material="Kapton"
-					comment="downstream window of tube" />
- 
-  <composition name="BerylliumPipe" envelope="TARG">
-    <posXYZ volume="CYLW">			 </posXYZ>
-    <posXYZ volume="UWIT" X_Y_Z="0. 0. -274.95"> </posXYZ>
-    <posXYZ volume="DWIT" X_Y_Z="0. 0. +274.95"> </posXYZ>
-    <posXYZ volume="TGTV" X_Y_Z="0. 0. -210.00"> </posXYZ>
-  </composition>
-
-  <composition name="Target">
-<!-->
-    Origin of Target is the center of the entrance window to the
-    liquid hydrogen target - not the start of the vacuum vessel.
->>-->
-    <posXYZ volume="BerylliumPipe" X_Y_Z="0. 0. 225.0" />
-  </composition>
 
 </section>
 

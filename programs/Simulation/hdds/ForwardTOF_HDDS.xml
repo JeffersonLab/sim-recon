@@ -17,6 +17,20 @@
          top_volume  = "FTOF"
          DTD_version = "v1">
 
+<!-- Origin of ForwardTOF is center of entrance plane of detector -->
+
+  <composition name="ForwardTOF">
+    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0  1.27" />
+  </composition>
+
+  <composition name="forwardTOF" envelope="FTOF">
+    <posXYZ volume="FTOH" />
+  </composition>
+
+  <box name="FTOF" X_Y_Z="250.  250.  2.54" material="Scintillator"
+					    sensitive="true" />
+  <box name="FTOH" X_Y_Z=" 12.   12.  2.54" material="Air" />
+
   <parameters name="forwardTOF_pars" type="mcfast">
     <real_array	name="xlimit"	values="-125.0 125.0" comment="x dimensions"
 				unit="cm"	/>
@@ -39,20 +53,6 @@
     <string	name="shape"	value="BOX"  />
     <int	name="type"	value="42"   />
   </mcfast>
-
-  <box name="FTOF" X_Y_Z="250.  250.  2.54" material="Scintillator" />
-  <box name="FTOH" X_Y_Z=" 12.   12.  2.54" material="Scintillator" />
-
-  <composition name="forwardTOF" envelope="FTOF">
-    <posXYZ volume="FTOH" />
-  </composition>
-
-  <composition name="ForwardTOF">
-<!-->
-    Origin of ForwardTOF is center of entrance plane of detector
->>-->
-    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0  1.27" />
-  </composition>
 
 </section>
 

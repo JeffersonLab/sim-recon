@@ -17,6 +17,25 @@
          top_volume  = "BCAL"
          DTD_version = "v1">
 
+<!-- Origin of BarrelEMcal is center of upstream end. -->
+
+  <composition name="BarrelEMcal">
+    <posXYZ volume="barrelEMcal" X_Y_Z="0.0 0.0 195.0" />
+  </composition>
+
+  <composition name="barrelEMcal" envelope="BCAL">
+    <mposPhi volume="BCAM" ncopy="48" Phi0="0.0" impliedRot="true">
+      <sector value="1" step="1" />
+    </mposPhi>
+  </composition>
+
+  <tubs name="BCAL" Rio_Z="65.0  90.0  390.0" unit_length="cm" material="Air"
+	parameters="barrelEMcal_pars"	comment="barrel EMcal mother"       />
+  <tubs name="BCAM" Rio_Z="65.0  90.0  390.0" profile="0   7.5" 
+		    unit_length="cm"	      unit_angle="deg"
+	            material="leadScint"      sensitive="true"
+					comment="barrel calorimeter module" />
+
   <parameters name="barrelEMcal_pars" type="mcfast">
     <real_array name="rmin"	comment="upstream, downstream end inner radius"
  				values="   65.0      65.0"
@@ -50,25 +69,6 @@
     <string     name="shape"	value="TUBE"	/>
     <int	name="type"	value="1"	/>
   </mcfast>
-
-  <tubs name="BCAL" Rio_Z="65.0  90.0  390.0" unit_length="cm" material="Air"
-	parameters="barrelEMcal_pars"	comment="barrel EMcal mother"       />
-  <tubs name="BCAM" Rio_Z="65.0  90.0  390.0" profile="0   7.5" 
-		    unit_length="cm"	      unit_angle="deg"
-	material="leadScint" 		comment="barrel calorimeter module" />
-
-  <composition name="barrelEMcal" envelope="BCAL">
-    <mposPhi volume="BCAM" ncopy="48" Phi0="0.0" impliedRot="true">
-      <sector value="1" step="1" />
-    </mposPhi>
-  </composition>
-
-  <composition name="BarrelEMcal">
-<!-->
-     Origin of BarrelEMcal is center of upstream end.
->>-->
-    <posXYZ volume="barrelEMcal" X_Y_Z="0.0 0.0 195.0" />
-  </composition>
 
 </section>
 

@@ -17,6 +17,18 @@
          top_volume  = "VRTX"
          DTD_version = "v1">
 
+
+<!-- Origin of StartCntr is center of the cylinder at the upstream limit
+     of the sensitive region.                                             -->
+
+  <composition name="StartCntr">
+    <posXYZ volume="VRTX" X_Y_Z="0.0  0.0  45.0" />
+  </composition>
+
+  <tubs name="VRTX" Rio_Z="4.95  5.65  90.0" material="Scintillator"
+	parameters="startCntr_pars"	     sensitive="true"
+					comment="start counter mother" />
+
   <parameters name="startCntr_pars" type="mcfast">
     <real       name="rmin"	value="4.95"	comment="inner radius"
 				unit="cm"	/>
@@ -123,17 +135,6 @@
       <int	name="lyr"	value="3"	comment="layer number"	/>
     </mcfast>
   </mcfast>
-
-  <tubs name="VRTX" Rio_Z="4.95  5.65  90.0" material="Scintillator"
-	parameters="startCntr_pars"	comment="start counter mother" />
-
-  <composition name="StartCntr">
-<!-->
-    Origin of StartCntr is center of the cylinder at the upstream limit
-    of the sensitive region.
->>-->
-    <posXYZ volume="VRTX" X_Y_Z="0.0  0.0  45.0" />
-  </composition>
 
 </section>
 

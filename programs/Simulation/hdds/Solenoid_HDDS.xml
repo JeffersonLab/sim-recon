@@ -17,6 +17,30 @@
          top_volume  = "LASS"
          DTD_version = "v1">
 
+<!-- Origin of Solenoid is center of the upstream edge of the first coil
+    which also coincides with the inside surface of upstream mirror plate.  -->
+
+  <composition name="Solenoid">
+    <posXYZ volume="solenoid" X_Y_Z="0.0 0.0 0.0" />
+  </composition>
+
+  <composition name="solenoid">
+    <posXYZ volume="IYUP" X_Y_Z="0.0 0.0 -10.0"> </posXYZ>
+    <posXYZ volume="IYOK" X_Y_Z="0.0 0.0 210.0"> </posXYZ>
+    <posXYZ volume="IYDN" X_Y_Z="0.0 0.0 430.0"> </posXYZ>
+  </composition>
+
+  <pcon name="LASS" material="Air">
+    <polyplane Rio_Z="3.0   125.0  -20.0" />
+    <polyplane Rio_Z="3.0   125.0  410.0" />
+    <polyplane Rio_Z="70.00  125.0  410.1" />
+    <polyplane Rio_Z="80.00  125.0  440.0" />
+  </pcon>
+
+  <tubs name="IYUP" Rio_Z=" 65.0 125.0  20.0" material="Iron" />
+  <tubs name="IYOK" Rio_Z=" 95.0 125.0 420.0" material="Iron" />
+  <tubs name="IYDN" Rio_Z=" 80.0 125.0  20.0" material="Iron" />
+
   <parameters name="solenoid_pars" type="mcfast">
     <string name="name" value="LASS"   comment="name of magnetic volume" />
     <real name="bfield" value="2.240"  comment="max magnetic field"
@@ -43,31 +67,6 @@
 
   <mcfast model="Solenoid" template="db/solenoid.db" 
                            parameters="solenoid_pars" />
-
-  <pcon name="LASS" material="Air">
-    <polyplane Rio_Z="3.0   125.0  -20.0" />
-    <polyplane Rio_Z="3.0   125.0  410.0" />
-    <polyplane Rio_Z="70.00  125.0  410.1" />
-    <polyplane Rio_Z="80.00  125.0  440.0" />
-  </pcon>
-
-  <tubs name="IYUP" Rio_Z=" 65.0 125.0  20.0" material="Iron" />
-  <tubs name="IYOK" Rio_Z=" 95.0 125.0 420.0" material="Iron" />
-  <tubs name="IYDN" Rio_Z=" 80.0 125.0  20.0" material="Iron" />
-
-  <composition name="solenoid">
-    <posXYZ volume="IYUP" X_Y_Z="0.0 0.0 -10.0"> </posXYZ>
-    <posXYZ volume="IYOK" X_Y_Z="0.0 0.0 210.0"> </posXYZ>
-    <posXYZ volume="IYDN" X_Y_Z="0.0 0.0 430.0"> </posXYZ>
-  </composition>
-
-  <composition name="Solenoid">
-<!-->
-    Origin of Solenoid is center of the upstream edge of the first coil
-    which also coincides with the inside surface of upstream mirror plate.
->>-->
-    <posXYZ volume="solenoid" X_Y_Z="0.0 0.0 0.0" />
-  </composition>
 
 </section>
 

@@ -17,7 +17,44 @@
          top_volume  = "BEAM"
          DTD_version = "v1">
 
-  <!-- there is no mcfast model of the photon beamline -->
+<!-- Origin of Beamline is center of the entrance face of the
+     primary collimator.  					-->
+
+  <composition name="BeamLine">
+    <posXYZ volume="collimatorCave" X_Y_Z="0.0  0.0  540.0" />
+  </composition>
+
+  <composition name="collimatorCave" envelope="CAVE">
+    <posXYZ volume="BEAM" />
+    <posXYZ volume="collimatorStack" X_Y_Z="0.0 0.0 -540." />
+    <posXYZ volume="shieldingWall" X_Y_Z="0.0 0.0 525." />
+  </composition>
+
+  <composition name="collimatorStack">
+    <posXYZ volume="COL1" X_Y_Z="0.0  0.0  25.0" />
+    <posXYZ volume="sweepMagnet" X_Y_Z="0.0 0.0 75." rot="90 0 0" />
+    <posXYZ volume="shieldingBlock1" X_Y_Z="0.0  0.0  360." />
+    <posXYZ volume="COL2" X_Y_Z="0.0  0.0  645." />
+    <posXYZ volume="sweepMagnet" X_Y_Z="0.0 0.0 705." rot="90 0 0" />
+    <posXYZ volume="shieldingBlock2" X_Y_Z="0.0  0.0  890." />
+  </composition>
+
+  <composition name="shieldingWall" envelope="WALL">
+    <posXYZ volume="HOLE" />
+  </composition>
+  <composition name="shieldingBlock1" envelope="ABS1">
+    <posXYZ volume="HOL1" />
+  </composition>
+  <composition name="shieldingBlock2" envelope="ABS2">
+    <posXYZ volume="HOL2" />
+  </composition>
+
+  <composition name="sweepMagnet" envelope="SMAG">
+    <posXYZ volume="SPOL" X_Y_Z="0.0 0.0 -8.0" />
+    <posXYZ volume="SPOL" X_Y_Z="0.0 0.0 +8.0" />
+    <posXYZ volume="SGAP" X_Y_Z="-5.5 0.0 0.0" />
+    <posXYZ volume="SGAP" X_Y_Z="+5.5 0.0 0.0" />
+  </composition>
 
   <box  name="CAVE" X_Y_Z="200. 200. 1100." material="Air" />
   <tubs name="BEAM" Rio_Z="0.0  0.25 1100." material="Air" />
@@ -36,45 +73,7 @@
   <box name="WALL" X_Y_Z="200. 200. 50.0" material="Lead" />
   <tubs name="HOLE" Rio_Z="0.0  1.0 50.0" material="Air" />
 
-  <composition name="sweepMagnet" envelope="SMAG">
-    <posXYZ volume="SPOL" X_Y_Z="0.0 0.0 -8.0" />
-    <posXYZ volume="SPOL" X_Y_Z="0.0 0.0 +8.0" />
-    <posXYZ volume="SGAP" X_Y_Z="-5.5 0.0 0.0" />
-    <posXYZ volume="SGAP" X_Y_Z="+5.5 0.0 0.0" />
-  </composition>
-
-  <composition name="shieldingBlock1" envelope="ABS1">
-    <posXYZ volume="HOL1" />
-  </composition>
-  <composition name="shieldingBlock2" envelope="ABS2">
-    <posXYZ volume="HOL2" />
-  </composition>
-  <composition name="shieldingWall" envelope="WALL">
-    <posXYZ volume="HOLE" />
-  </composition>
-
-  <composition name="collimatorStack">
-    <posXYZ volume="COL1" X_Y_Z="0.0  0.0  25.0" />
-    <posXYZ volume="sweepMagnet" X_Y_Z="0.0 0.0 75." rot="90 0 0" />
-    <posXYZ volume="shieldingBlock1" X_Y_Z="0.0  0.0  360." />
-    <posXYZ volume="COL2" X_Y_Z="0.0  0.0  645." />
-    <posXYZ volume="sweepMagnet" X_Y_Z="0.0 0.0 705." rot="90 0 0" />
-    <posXYZ volume="shieldingBlock2" X_Y_Z="0.0  0.0  890." />
-  </composition>
-
-  <composition name="collimatorCave" envelope="CAVE">
-    <posXYZ volume="BEAM" />
-    <posXYZ volume="collimatorStack" X_Y_Z="0.0 0.0 -540." />
-    <posXYZ volume="shieldingWall" X_Y_Z="0.0 0.0 525." />
-  </composition>
-
-  <composition name="BeamLine">
-<!-->
-     Origin of Beamline is center of the entrance face of the
-     primary collimator.
->>-->
-    <posXYZ volume="collimatorCave" X_Y_Z="0.0  0.0  540.0" />
-  </composition>
+  <!-- there is no mcfast model of the photon beamline -->
 
 </section>
 

@@ -17,6 +17,31 @@
          top_volume  = "CERE"
          DTD_version = "v1">
 
+<!-- Origin of CerenkovCntr is center of upstream end.  -->
+
+  <composition name="CerenkovCntr">
+    <posXYZ volume="cerenkovCntr" X_Y_Z="0.0  0.0  0.0" />
+  </composition>
+
+  <composition name="cerenkovCntr" envelope="CERE">
+    <posXYZ volume="CGAS" X_Y_Z="0.0  0.0  0.0" />
+  </composition>
+
+  <pcon name="CERE" material="Aluminum" comment="Cerenkov counter"
+		    parameters="cerenkovCntr_pars">
+    <polyplane Rio_Z="5.0  65.0   0.0" />
+    <polyplane Rio_Z="5.0  95.0  80.0" />
+    <polyplane Rio_Z="5.0 250.0 120.0" />
+    <polyplane Rio_Z="5.0 250.0 140.0" />
+  </pcon>
+  <pcon name="CGAS" material="CerenkovGas" comment="Cerenkov gas volume"
+		    sensitive="true"	parameters="cerenkovCntr_pars">
+    <polyplane Rio_Z="5.1  64.5   0.02" />
+    <polyplane Rio_Z="5.1  94.5  80.0" />
+    <polyplane Rio_Z="5.1 249.5 120.0" />
+    <polyplane Rio_Z="5.1 249.5 139.5" />
+  </pcon>
+
   <parameters name="cerenkovCntr_pars" type="mcfast">
     <real 	name="Rmin"	value="20.0"
 				unit="cm"	/>
@@ -50,32 +75,6 @@
 				unit="cm"	/>
     <reference	name="material"	value="Scintillator"			    />
   </mcfast>
-
-  <pcon name="CERE" material="Aluminum" comment="Cerenkov counter"
-		    parameters="cerenkovCntr_pars">
-    <polyplane Rio_Z="5.0  65.0   0.0" />
-    <polyplane Rio_Z="5.0  95.0  80.0" />
-    <polyplane Rio_Z="5.0 250.0 120.0" />
-    <polyplane Rio_Z="5.0 250.0 140.0" />
-  </pcon>
-  <pcon name="CGAS" material="CerenkovGas" comment="Cerenkov gas volume"
-		    parameters="cerenkovCntr_pars">
-    <polyplane Rio_Z="5.1  65.1   0.1" />
-    <polyplane Rio_Z="5.1  95.1  80.0" />
-    <polyplane Rio_Z="5.1 250.1 120.0" />
-    <polyplane Rio_Z="5.1 250.1 139.9" />
-  </pcon>
-
-  <composition name="cerenkovCntr" envelope="CERE">
-    <posXYZ volume="CGAS" X_Y_Z="0.0  0.0  0.0" />
-  </composition>
-
-  <composition name="CerenkovCntr">
-<!-->
-    Origin of CerenkovCntr is center of upstream end.
->>-->
-    <posXYZ volume="cerenkovCntr" X_Y_Z="0.0  0.0  0.0" />
-  </composition>
 
 </section>
 
