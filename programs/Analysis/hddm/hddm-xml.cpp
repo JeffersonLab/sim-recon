@@ -224,6 +224,7 @@ int main(int argC, char* argV[])
       return 1;
    }
 
+   int reqcount=0;
    int argInd;
    for (argInd = 1; argInd < argC; argInd++)
    {
@@ -234,6 +235,10 @@ int main(int argC, char* argV[])
       else if (strcmp(argV[argInd],"-o") == 0)
       {
          xFilename = argV[++argInd];
+      }
+      else if (sscanf(argV[argInd],"%d",&reqcount))
+      {
+	 reqcount = 1-reqcount;
       }
       else
       {
@@ -350,7 +355,7 @@ int main(int argC, char* argV[])
    XDR* xdrs = new XDR;
    xdrstdio_create(xdrs,ifd,XDR_DECODE);
    int icount;
-   while (xdr_int(xdrs,&icount))
+   while (--reqcount && xdr_int(xdrs,&icount))
    {
       DOMNodeList* contList = rootEl->getChildNodes();
       int contLength = contList->getLength();

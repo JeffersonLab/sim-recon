@@ -26,6 +26,9 @@ hddm-c: hddm-c.cpp XString.o XParsers.o
 	$(CPP) -I../include -I$(XERCESCROOT)/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
+hddmcat: hddmcat.cpp
+	$(CPP) -o $@ $^
+
 %.xsd: %.xml hddm-schema.xsl
 	./hddm-schema $< >$@
 
