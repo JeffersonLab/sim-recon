@@ -4,7 +4,7 @@
  *         Use "genr8 -h" for help with options.
  ********************************************************
  *                      * Generate t-channel        
- *  genr8bw.c           * monte carlo events.        
+ *  genr8.c           * monte carlo events.        
  *                      * 
  ********************************************************
  * 
@@ -510,13 +510,35 @@ main(int argc,char **argv)
 
     xmass=rawthresh(X);
     ymass=rawthresh(Y);
+    /*
+     * fprintf(stderr," xmass= %lf ymass= %lf  X->mass= %lf Y->mass= %lf\n",
+     * xmass,ymass, X->mass , Y->mass);
+    */
+    xmass = X->mass;
+    ymass = Y->mass;
 
     X_momentum = CMmomentum( CMenergy, X->mass, Y->mass);
     X_energy =  sqrt( (X->mass)*(X->mass) + X_momentum*X_momentum);
 
     if(Y->nchildren ==0){
-      t_max=10.0;
-      t_min=0.0;
+      
+      t_min = -( SQ( (SQ(beam.mass) -SQ(xmass) -SQ(target.mass) +SQ(ymass))/(2.0*sqrt_s))
+		 -SQ(v3mag(&(beam.p.space)) - X_momentum ));
+      t_max = -( SQ( (SQ(beam.mass) -SQ(xmass) -SQ(target.mass) +SQ(ymass))/(2.0*sqrt_s))
+		 -SQ(v3mag(&(beam.p.space)) + X_momentum ));
+      /* 
+       *fprintf(stderr,"beam.mass= %lf xmass= %lf target.mass=%lf ymass= %lf sqrt_s= %lf beam.p= %lf X->p= %lf  X_momentum= %lf\n",beam.mass,xmass,target.mass,ymass,sqrt_s,v3mag(&(beam.p.space)),v3mag(&(X->p.space)), X_momentum);
+       */
+      
+					     
+      /* 
+       * Take care of threshold effects due to unknown masses at this stage
+       */
+      fprintf(stderr,"t_min: %lf t_max: %lf\n", t_min,t_max);
+      /*
+       * t_max=10.0;
+       * t_min=0.0;
+       */
     } else{ /* it's some baryon pseudo t process */
        
     t_min=0.4;
@@ -841,11 +863,19 @@ double rawthresh(struct particleMC_t *Isobar)
   int i;
   double rmassThresh=0.0;
 
-  for(i=0; i < Isobar->nchildren;i++){
-    if (Isobar->child[i]->mass <0)/* it is not known now */
-      rmassThresh += rawthresh(Isobar->child[i]);
-    else /* it is known now */
-      rmassThresh += Isobar->child[i]->mass;
+  if(Isobar->nchildren){
+    for(i=0; i < Isobar->nchildren;i++){
+      if (Isobar->child[i]->mass <0)/* it is not known now */
+	rmassThresh += rawthresh(Isobar->child[i]);
+      else /* it is known now */
+	rmassThresh += Isobar->child[i]->mass;
+    }
+  }else{
+    rmassThresh=Isobar->mass;
+    if(Isobar->mass <0){ /* error */
+      fprintf(stderr,"Error!: Isobar->mass <0 for Isobar with no children\nExit\n");
+      exit(-1);
+    }
   }
   return rmassThresh;
 }
