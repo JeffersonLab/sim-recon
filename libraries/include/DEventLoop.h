@@ -1,4 +1,5 @@
 // Author: David Lawrence  June 24, 2004
+// $Id$
 //
 //
 // DEventLoop
@@ -19,52 +20,30 @@
 #define _DEVENT_LOOP_H_
 
 class DEventLoop;
+class DEventSource;
+class DEventProcessor;
 
-#include "DEventSource.h"
-#include "DEventProcessor.h"
+#include "DEvent.h"
 #include "derror.h"
 
 #define MAX_EVENT_PROCESSORS 256
 
-class DEventLoop
-{
+class DEventLoop:public DEvent{
 	public:
-	enum EVENT_PROCESSORS{
-		EVENT_PROCESSOR_NONE			= 0x0000,
-		EVENT_PROCESSOR_TAGGER		= 0x0001,
-		EVENT_PROCESSOR_UPV			= 0x0002,
-		EVENT_PROCESSOR_VERTEX		= 0x0004,
-		EVENT_PROCESSOR_BCAL			= 0x0008,
-		EVENT_PROCESSOR_CDC			= 0x0010,
-		EVENT_PROCESSOR_FDC			= 0x0020,
-		EVENT_PROCESSOR_CHERENKOV	= 0x0040,
-		EVENT_PROCESSOR_TOF			= 0x0080,
-		EVENT_PROCESSOR_FCAL			= 0x0100,
-		EVENT_PROCESSOR_TRIGGER		= 0x0200,
-		EVENT_PROCESSOR_TRACKING	= 0x0400,
-		EVENT_PROCESSOR_PID			= 0x0800,
-		EVENT_PROCESSOR_ALL			= 0xFFFF
-	};
-
 		/// Constructor for a DEventLoop object. This should normally be
 		/// called with the same arguments passed to main() on program start up.
 		DEventLoop(int narg, char *argv[]);
 		~DEventLoop();
 
 		derror_t AddProcessor(DEventProcessor *processor);
-		derror_t SetStandardProcessors(EVENT_PROCESSORS processmask);
 		derror_t Init(void);
 		derror_t OneEvent(void);
 		derror_t Fini(void);
 		derror_t Run(void);
 		derror_t Run(DEventProcessor *proc);
-		derror_t Run(EVENT_PROCESSORS mask);
-		derror_t Run(DEventProcessor *proc, EVENT_PROCESSORS mask);
 		float GetRate(void);
 		derror_t PrintRate(void);
 		
-		EVENT_PROCESSORS proc_mask;
-	
 	private:
 		int Nprocessors;
 		DEventProcessor* processors[MAX_EVENT_PROCESSORS];
