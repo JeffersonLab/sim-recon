@@ -588,7 +588,7 @@
 	<addmaterial material="Hydrogen"> <natoms n="4"	/> </addmaterial>
 	<addmaterial material="Oxygen">   <natoms n="2"	/> </addmaterial>
 	<real name="density"	value="1.39"	unit="g/cm^3"	/>
-	<real name="radlen"	value="28.71"	unit="g/cm^2"	/>
+	<real name="radlen"	value="39.95"	unit="g/cm^2"	/>
 	<real name="collen"	value="60.2"	unit="g/cm^2"	/>
 	<real name="abslen"	value="85.7"	unit="g/cm^2"	/>
 	<real name="dedx"	value="1.848"	unit="MeV/g/cm^2"	/>
@@ -610,7 +610,7 @@
 	<addmaterial material="Oxygen">   <natoms n="5"	/> </addmaterial>
 	<addmaterial material="Nitrogen"> <natoms n="2"	/> </addmaterial>
 	<real name="density"	value="1.42"	unit="g/cm^3"	/>
-	<real name="radlen"	value="28.6"	unit="g/cm^2"	/>
+	<real name="radlen"	value="40.56"	unit="g/cm^2"	/>
 	<real name="collen"	value="60.3"	unit="g/cm^2"	/>
 	<real name="abslen"	value="85.8"	unit="g/cm^2"	/>
 	<real name="dedx"	value="1.820"	unit="MeV/g/cm^2"	/>
