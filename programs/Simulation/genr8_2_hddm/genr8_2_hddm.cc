@@ -83,7 +83,7 @@ int main(int narg, char *argv[])
 		
 		if(nParticles>0){
 			flush_s_HDDM(thisOutputEvent, thisOutputStream);
-			cout<<"Wrote event "<<eventNumber<<endl;
+			if(eventNumber%1000 == 0)cout<<"Wrote event "<<eventNumber<<endl;
 		}
 	}
 	
