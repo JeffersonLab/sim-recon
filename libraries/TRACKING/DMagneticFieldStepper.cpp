@@ -90,10 +90,8 @@ derror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	// is zero).
 	
 	// Get B-field
-	float hbarc = 197.326;
-	D3Vector_t tmp = bfield->getQuick(pos.x()/2.54, pos.y()/2.54, (-66.0+pos.z())/2.54);
-	TVector3 B(tmp.x/hbarc, tmp.y/hbarc, tmp.z/hbarc);
-	//TVector3 B(0.0, 0.0, -2.0/hbarc);
+	D3Vector_t tmp = bfield->getQuick(pos.x()/2.54, pos.y()/2.54, 26.0+(pos.z())/2.54);
+	TVector3 B(tmp.x, tmp.y, tmp.z);
 
 	// If the magnetic field is zero or the charge is zero, then our job is easy
 	if(B.Mag()==0.0 || q==0.0){
@@ -121,12 +119,12 @@ derror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	double theta = B.Angle(mom);
 	double cos_theta = cos(theta);
 	double sin_theta = sin(theta);
-	
+
 	// delta_z is step size in z direction
 	TVector3 delta_z = zdir*stepsize*cos_theta;
 	
 	// The ratio p/qB appears in a few places.
-	double Rp = mom.Mag()/(q*B.Mag()*0.5931); // 0.5931 is fudge factor for now
+	double Rp = mom.Mag()/(q*B.Mag()*qBr2p); // qBr2p converts to GeV/c/cm so Rp will be in cm
 	double Ro = Rp*sin_theta;
 
 	// delta_phi is angle of rotation in natural x/y plane
@@ -142,7 +140,7 @@ derror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	pos += delta_x + delta_y + delta_z;
 	
 	// Update momentum by rotating it by delta_phi about B
-	mom.Rotate(delta_phi, B);
+	mom.Rotate(-delta_phi, B);
 	
 	// return new position 
 	if(newpos)*newpos = pos;
@@ -150,4 +148,13 @@ derror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	return NOERROR;
 }
 
-
+//-----------------------
+// GetBField
+//-----------------------
+TVector3 DMagneticFieldStepper::GetBField(void)
+{
+	D3Vector_t tmp = bfield->getQuick(pos.x()/2.54, pos.y()/2.54, 26.0+(pos.z())/2.54);
+	TVector3 B(tmp.x, tmp.y, tmp.z);
+	
+	return B;
+}
