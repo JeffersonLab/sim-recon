@@ -3,9 +3,9 @@
 #include "DEvent.h"
 #include "DFactory_MCCheatHits.h"
 
-static float BCAL_R=65.0 + 10.0; // assume shower is centered at ~10cm into calorimeter
-static float TOF_Z=619.87; // from ForwardTOF_HDDS.xml mcfast (is this right?)
-static float FCAL_Z=645.1 - 45.0/2.0 + 10.0;
+static float BCAL_R=65.0;
+static float TOF_Z=565.0+1.27; // from ForwardTOF_HDDS.xml (is this right?)
+static float FCAL_Z=575.0 + 45.0/2.0; // (is this right?)
 
 static int qsort_mccheat_hits(const void* arg1, const void* arg2);
 
