@@ -19,7 +19,8 @@ int main(int narg, char *argv[])
 	DEventLoop eventloop(narg, argv);
 
 	// Run though all events, calling our event processor's methods
-	eventloop.Run(&myproc,DEventLoop::EVENT_PROCESSOR_NONE);
+	//eventloop.Run(&myproc,DEventLoop::EVENT_PROCESSOR_NONE);
+	eventloop.Run(&myproc);
 	
 	return 0;
 }
