@@ -5,6 +5,8 @@
 //
 
 #include <iostream>
+#include <vector>
+#include <string>
 using namespace std;
 
 #include <TLorentzVector.h>
@@ -17,11 +19,10 @@ using namespace std;
 #include "hdview.h"
 #include "hdv_mainframe.h"
 #include "MyProcessor.h"
-#include "DContainer.h"
-#include "DFactory_MCCheatHits.h"
+#include "DFactory_DMCCheatHit.h"
 #include "DQuickFit.h"
 #include "DMagneticFieldStepper.h"
-#include "DFactory_MCTrackCandidates.h"
+#include "DFactory_DMCTrackCandidate.h"
 
 extern TCanvas *maincanvas;
 extern hdv_mainframe *hdvmf;
@@ -125,15 +126,12 @@ derror_t MyProcessor::evnt(int eventnumber)
 	Nlines = 0;
 
 	// Get MCCheatHits
-	DContainer *mccheathits = event_loop->Get("MCCheatHits");
-	event_loop->Get("MCTrackCandidates");
+	vector<DMCCheatHit*> mccheathits;
+	eventLoop->Get(mccheathits);
 	
 	// Loop over hits creating markers for all 3 views
-	// Also, add hits to DQuickFit objects along the way
-	int track = -1;
-	DContainer *fits = new DContainer(NULL,sizeof(DQuickFit**),"fits");
-	MCCheatHit_t *mccheathit = (MCCheatHit_t*)mccheathits->first();
-	for(int i=0;i<mccheathits->nrows;i++, mccheathit++){
+	for(int i=0;i<mccheathits.size();i++){
+		DMCCheatHit *mccheathit = mccheathits[i];
 		
 		// Skip hits from some detectors?
 		switch(mccheathit->system){
@@ -193,39 +191,11 @@ derror_t MyProcessor::evnt(int eventnumber)
 		hitMarkers[NhitMarkers++] = side;
 		hitMarkers[NhitMarkers++] = front;
 		
-		if(track!=mccheathit->track){
-			DQuickFit **fit = (DQuickFit**)fits->Add();
-			*fit = new DQuickFit();
-			(*fit)->SetMagneticFieldMap(Bfield);
-		}
-		
-		// DQuickFit assumes a constant B-field so only give it
-		// CDC and FDC hits.
-		if(mccheathit->system==1 || mccheathit->system==2){
-			(*(DQuickFit**)fits->last())->AddHit(mccheathit->r, mccheathit->phi, mccheathit->z);
-		}
-		track = mccheathit->track;
 	}
-	
-	// Do a fit to the points
-	DQuickFit **fit = (DQuickFit**)fits->first();
-	for(int i=0;i<fits->nrows;i++, fit++){
-		DQuickFit *qf = *fit;
-		if(qf->GetNhits()>=4){
-			qf->FitTrack();
-			//DrawTrack(qf, colors[(i+1)%ncolors]);
-			//DrawHelicalTrack(qf, kBlack);
-			//qf->Print();
-		}
-	}
-
-	// Delete all DQuickFit objects and the DContainer
-	fit = (DQuickFit**)fits->first();
-	for(int i=0;i<fits->nrows;i++, fit++)delete (*fit);
-	delete fits;
 	
 	// Draw all "found" tracks
-	DFactory_MCTrackCandidates *mctcfactory = (DFactory_MCTrackCandidates*)event_loop->GetFactory("MCTrackCandidates");
+	vector<DMCTrackCandidate*> mctc;
+	DFactory_DMCTrackCandidate *mctcfactory = (DFactory_DMCTrackCandidate *)eventLoop->Get(mctc);
 	int Nqfit = mctcfactory->GetNqfit();
 	for(int i=0; i<Nqfit; i++){
 		DQuickFit *qf = mctcfactory->GetQFit(i);
