@@ -92,7 +92,7 @@ ifdef DEBUG
 	CFLAGS	+= -g -pg
 	CXXFLAGS	+= -g -pg
 else
-	FFLAGS   += -O2
+#	Do NOT turn on optimization in FFLAGS. Compilation will fail on hddsGeant3.F
 	CFLAGS	+= -O2
 	CXXFLAGS	+= -O2
 endif
