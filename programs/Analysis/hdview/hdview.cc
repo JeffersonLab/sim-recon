@@ -7,9 +7,7 @@
 #include "hdv_mainframe.h"
 #include "MyProcessor.h"
 
-void* EventUpdateThread(void *arg);
-int DONE = 0;
-int GO = 1;
+int GO = 0; // 1=continuously display events 0=wait for user
 
 TCanvas *maincanvas=NULL;
 DEventLoop *eventloop=NULL;
@@ -35,17 +33,9 @@ int main(int narg, char *argv[])
 	myproc = new MyProcessor();
 	eventloop->AddProcessor(myproc);
 	eventloop->Init();
-	
-	// create a thread to auto-advance events
-	pthread_t thr;
-	pthread_create(&thr, NULL,EventUpdateThread, NULL);
 
 	// Hand control to ROOT event loop
 	app.Run();
-	
-	DONE=1;
-	void *retval;
-	pthread_join(thr, &retval);
 	
 	// Close out event loop
 	eventloop->Fini();
@@ -53,31 +43,3 @@ int main(int narg, char *argv[])
 	return 0;
 }
 
-//-------------------
-// EventUpdateThread
-//-------------------
-void* EventUpdateThread(void *arg)
-{
-	int Niterations = 0;
-	while(!DONE){
-		sleep(1);
-		
-		if(GO)hdv_getevent();
-	}
-	
-	pthread_exit(NULL);
-}
-
-//-------------------
-// hdv_getevent
-//-------------------
-derror_t hdv_getevent(void)
-{
-	// Read in next event. 
-	derror_t err;
-	err = eventloop->OneEvent();
-	if(err!=NOERROR)return err;
-		
-
-	return NOERROR;
-}
