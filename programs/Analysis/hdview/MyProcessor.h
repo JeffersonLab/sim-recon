@@ -27,7 +27,7 @@ class MyProcessor:public DEventProcessor
 {
 	public:
 		MyProcessor();
-		~MyProcessor(){};
+		~MyProcessor();
 	
 		derror_t init(void);						///< Called once at program start.
 		derror_t brun(int runnumber);			///< Called everytime a new run number is detected.
@@ -45,17 +45,14 @@ class MyProcessor:public DEventProcessor
 
 		DMagneticFieldMap *Bfield;
 		int eventNo;
-		TMarker *hitMarkers[MAX_HIT_MARKERS];
-		int NhitMarkers;
-		TEllipse *circles[MAX_CIRCLES];
-		int Ncircles;
-		TPolyLine *lines[MAX_LINES];
-		int Nlines;
+		vector<TMarker*> markers;
+		vector<TEllipse*> circles;
+		vector<TPolyLine*> lines;
+		vector<TObject*> graphics;
 		
-		TObject* graphics[100];
-		int Ngraphics;
-	
 	private:
+		void ClearEvent(void);
+	
 		int drew_detectors;
 };
 

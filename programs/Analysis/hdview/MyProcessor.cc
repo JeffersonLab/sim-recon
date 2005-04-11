@@ -57,12 +57,35 @@ static float FDC_Zpos[4] = {240.0, 292.0, 348.0, 404.0};
 //------------------------------------------------------------------
 MyProcessor::MyProcessor()
 {
-	NhitMarkers = 0;
-	Ncircles = 0;
-	Nlines = 0;
 	drew_detectors=0;
 	Bfield = NULL;
-	Ngraphics = 0;
+}
+
+//------------------------------------------------------------------
+// ~MyProcessor 
+//------------------------------------------------------------------
+MyProcessor::~MyProcessor()
+{
+	ClearEvent();
+
+	for(int i=0;i<graphics.size();i++)delete graphics[i];
+	graphics.clear();
+	
+	delete Bfield;
+}
+
+//------------------------------------------------------------------
+// ClearEvent 
+//------------------------------------------------------------------
+void MyProcessor::ClearEvent(void)
+{
+	for(int i=0;i<markers.size();i++)delete markers[i];
+	for(int i=0;i<circles.size();i++)delete circles[i];
+	for(int i=0;i<lines.size();i++)delete lines[i];
+	markers.clear();
+	circles.clear();
+	lines.clear();
+	
 }
 
 //------------------------------------------------------------------
@@ -70,20 +93,8 @@ MyProcessor::MyProcessor()
 //------------------------------------------------------------------
 derror_t MyProcessor::init(void)
 {
-	// We'd really like to draw the detectors here, but this seems to
-	// get called before the window is mapped
 	// Make sure detectors have been drawn
 	if(!drew_detectors)DrawDetectors();
-	
-	// Get a pointer to the MCTrackCandidates factory object so we can 
-	// access things not included in the normal _data container
-	//DFactory_MCTrackCandidates *factory = (DFactory_MCTrackCandidates*)event_loop->GetFactory("MCTrackCandidates");
-	
-	// Set factory to handle flipping of x-axis for proper viewing
-	//factory->flip_x_axis = 1;
-	
-	// Tell factory to keep around a few density histos
-	//factory->SetNumDensityHistograms(4);
 	
 	return NOERROR;
 }
@@ -95,9 +106,9 @@ derror_t MyProcessor::brun(int runnumber)
 {
 	// Read in Magnetic field map
 	if(Bfield)delete Bfield;
-	Bfield = new DMagneticFieldMap(41,251);
-	Bfield->readMap();
-	//Bfield = new DMagneticFieldMap(-2.0);
+	//Bfield = new DMagneticFieldMap(41,251);
+	//Bfield->readMap();
+	Bfield = new DMagneticFieldMap(-2.0);
 
 	return NOERROR;
 }
@@ -113,18 +124,9 @@ derror_t MyProcessor::evnt(int eventnumber)
 	cout<<"----------- New Event -------------"<<endl;
 	hdvmf->SetEvent(eventnumber);
 	
-	// Delete old markers
-	for(int i=0;i<NhitMarkers;i++)delete hitMarkers[i];
-	NhitMarkers = 0;
-
-	// Delete old circles
-	for(int i=0;i<Ncircles;i++)delete circles[i];
-	Ncircles = 0;
-
-	// Delete old lines (tracks)
-	for(int i=0;i<Nlines;i++)delete lines[i];
-	Nlines = 0;
-
+	// Delete objects from last event
+	ClearEvent();
+	
 	// Get MCCheatHits
 	vector<DMCCheatHit*> mccheathits;
 	eventLoop->Get(mccheathits);
@@ -186,25 +188,22 @@ derror_t MyProcessor::evnt(int eventnumber)
 		front->SetMarkerColor(color);
 		front->SetMarkerSize(size);
 		
-		if(NhitMarkers>MAX_HIT_MARKERS-3)break;
-		hitMarkers[NhitMarkers++] = top;
-		hitMarkers[NhitMarkers++] = side;
-		hitMarkers[NhitMarkers++] = front;
-		
+		markers.push_back(top);
+		markers.push_back(side);
+		markers.push_back(front);
 	}
 	
 	// Draw all "found" tracks
 	vector<DMCTrackCandidate*> mctc;
 	DFactory_DMCTrackCandidate *mctcfactory = (DFactory_DMCTrackCandidate *)eventLoop->Get(mctc);
-	int Nqfit = mctcfactory->GetNqfit();
-	for(int i=0; i<Nqfit; i++){
-		DQuickFit *qf = mctcfactory->GetQFit(i);
-		DrawHelicalTrack(qf,kBlack);
+	vector<DQuickFit*> qfits = mctcfactory->GetDQuickFits();
+	for(int i=0; i<qfits.size(); i++){
+		DrawHelicalTrack(qfits[i], kBlack);
 	}
 
 	// Draw all markers and update canvas
-	for(int i=0;i<NhitMarkers;i++)hitMarkers[i]->Draw();
-	for(int i=0;i<Ncircles;i++)circles[i]->Draw();
+	for(int i=0;i<markers.size();i++)markers[i]->Draw();
+	for(int i=0;i<circles.size();i++)circles[i]->Draw();
 	maincanvas->Update();
 
 	return NOERROR;
@@ -215,7 +214,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 //------------------------------------------------------------------
 derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 {
-	if(Nlines>MAX_LINES-2)return NOERROR;
+	if(lines.size()>MAX_LINES-2)return NOERROR;
 
 	float x = qf->x0;
 	float y = qf->y0;
@@ -250,18 +249,18 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 	line_side->Draw();
 	line_top->SetLineColor(color);
 	line_top->Draw();
-	lines[Nlines++] = line_side;
-	lines[Nlines++] = line_top;
+	lines.push_back(line_side);
+	lines.push_back(line_top);
 	
 	// Draw circle on front view
-	if(Ncircles<MAX_CIRCLES){
+	if(circles.size()<MAX_CIRCLES){
 		float x_center, y_center, X, Y;
 		ConvertToFront(0, 0, 0, x_center, y_center);
 		ConvertToFront(qf->x0, qf->y0, 0, X, Y);
 		float dX = X-x_center;
 		float dY = Y-y_center;
 		float r = sqrt(dX*dX + dY*dY);
-		circles[Ncircles++] = new TEllipse(X,Y,r,r);
+		circles.push_back(new TEllipse(X,Y,r,r));
 	}
 
 	return NOERROR;
@@ -272,7 +271,7 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 //------------------------------------------------------------------
 derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 {
-	if(Nlines>MAX_LINES-2)return NOERROR;
+	if(lines.size()>MAX_LINES-2)return NOERROR;
 	
 	TVector3 pos(0.0, 0.0, qf->z_vertex);
 	TVector3 mom;
@@ -313,9 +312,9 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 	line_top->Draw();
 	line_beam->SetLineColor(color+100);
 	line_beam->Draw();
-	lines[Nlines++] = line_side;
-	lines[Nlines++] = line_top;
-	lines[Nlines++] = line_beam;
+	lines.push_back(line_side);
+	lines.push_back(line_top);
+	lines.push_back(line_beam);
 
 	return NOERROR;
 }
@@ -363,26 +362,26 @@ derror_t MyProcessor::DrawDetectors(void)
 	
 	// If detectors were already drawn before, delete
 	// the old objects
-	for(int i=0;i<Ngraphics;i++)delete graphics[i];
-	Ngraphics = 0;
+	for(int i=0;i<graphics.size();i++)delete graphics[i];
+	graphics.clear();
 	
 	// ------ Draw Separators and labels ------
 	// Horizontal separator
 	TLine *line = new TLine(-2.1, 0.0, -0.1, 0.0);
-	graphics[Ngraphics++] = line;
+	graphics.push_back(line);
 	line->SetLineWidth(5);
 	line->Draw();
 	// Vertical separator
 	line = new TLine(-0.1, -1.0, -0.1, 1.0);
-	graphics[Ngraphics++] = line;
+	graphics.push_back(line);
 	line->SetLineWidth(5);
 	line->Draw();
 	// Labels
 	TText *label = new TText(-1.2, 0.85, "Top");
-	graphics[Ngraphics++] = label;
+	graphics.push_back(label);
 	label->Draw();
 	label = new TText(-1.2, -0.15, "Side");
-	graphics[Ngraphics++] = label;
+	graphics.push_back(label);
 	label->Draw();
 	
 	// ----- BCAL ------
@@ -395,9 +394,9 @@ derror_t MyProcessor::DrawDetectors(void)
 	TEllipse *bcal1 = new TEllipse(X,Y,R1,R1);
 	TEllipse *bcal2 = new TEllipse(X,Y,R2,R2);
 	TEllipse *bcal3 = new TEllipse(X,Y,(R1+R2)/2.0,(R1+R2)/2.0);
-	graphics[Ngraphics++] = bcal1;
-	graphics[Ngraphics++] = bcal2;
-	graphics[Ngraphics++] = bcal3;
+	graphics.push_back(bcal1);
+	graphics.push_back(bcal2);
+	graphics.push_back(bcal3);
 	bcal1->SetLineColor(14); // 16= light grey
 	bcal2->SetLineColor(14); // 16= light grey
 	bcal3->SetLineColor(16); // 16= light grey
@@ -410,11 +409,11 @@ derror_t MyProcessor::DrawDetectors(void)
 	ConvertToSide(0, BCAL_Rmin, BCAL_Zmid - BCAL_Zlen/2.0,X,Y);
 	ConvertToSide(0, BCAL_Rmax, BCAL_Zmid + BCAL_Zlen/2.0,X2,Y2);
 	TBox *bcal_side = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = bcal_side;
+	graphics.push_back(bcal_side);
 	ConvertToSide(0, -BCAL_Rmin, BCAL_Zmid - BCAL_Zlen/2.0,X,Y);
 	ConvertToSide(0, -BCAL_Rmax, BCAL_Zmid + BCAL_Zlen/2.0,X2,Y2);
 	TBox *bcal_side2 = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = bcal_side2;
+	graphics.push_back(bcal_side2);
 	bcal_side->SetFillColor(16); // 16= light grey
 	bcal_side2->SetFillColor(16); // 16= light grey
 	bcal_side->Draw();
@@ -424,11 +423,11 @@ derror_t MyProcessor::DrawDetectors(void)
 	ConvertToTop(-BCAL_Rmin, 0, BCAL_Zmid - BCAL_Zlen/2.0,X,Y);
 	ConvertToTop(-BCAL_Rmax, 0, BCAL_Zmid + BCAL_Zlen/2.0,X2,Y2);
 	bcal_side = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = bcal_side;
+	graphics.push_back(bcal_side);
 	ConvertToTop(BCAL_Rmin, 0, BCAL_Zmid - BCAL_Zlen/2.0,X,Y);
 	ConvertToTop(BCAL_Rmax, 0, BCAL_Zmid + BCAL_Zlen/2.0,X2,Y2);
 	bcal_side2 = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = bcal_side2;
+	graphics.push_back(bcal_side2);
 	bcal_side->SetFillColor(16); // 16= light grey
 	bcal_side2->SetFillColor(16); // 16= light grey
 	bcal_side->Draw();
@@ -439,11 +438,11 @@ derror_t MyProcessor::DrawDetectors(void)
 	ConvertToSide(0, TOF_Rmin, TOF_Zmid - TOF_Zlen/2.0,X,Y);
 	ConvertToSide(0, TOF_width/2.0, TOF_Zmid + TOF_Zlen/2.0,X2,Y2);
 	TBox *tof_side = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = tof_side;
+	graphics.push_back(tof_side);
 	ConvertToSide(0, -TOF_Rmin, TOF_Zmid - TOF_Zlen/2.0,X,Y);
 	ConvertToSide(0, -TOF_width/2.0, TOF_Zmid + TOF_Zlen/2.0,X2,Y2);
 	TBox *tof_side2 = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = tof_side2;
+	graphics.push_back(tof_side2);
 	tof_side->SetFillColor(27);
 	tof_side2->SetFillColor(27);
 	tof_side->Draw();
@@ -453,11 +452,11 @@ derror_t MyProcessor::DrawDetectors(void)
 	ConvertToTop(-TOF_Rmin, 0, TOF_Zmid - TOF_Zlen/2.0,X,Y);
 	ConvertToTop(-TOF_width/2.0, 0, TOF_Zmid + TOF_Zlen/2.0,X2,Y2);
 	tof_side = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = tof_side;
+	graphics.push_back(tof_side);
 	ConvertToTop(TOF_Rmin, 0, TOF_Zmid - TOF_Zlen/2.0,X,Y);
 	ConvertToTop(TOF_width/2.0, 0, TOF_Zmid + TOF_Zlen/2.0,X2,Y2);
 	tof_side2 = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = tof_side2;
+	graphics.push_back(tof_side2);
 	tof_side->SetFillColor(27);
 	tof_side2->SetFillColor(27);
 	tof_side->Draw();
@@ -468,11 +467,11 @@ derror_t MyProcessor::DrawDetectors(void)
 	ConvertToSide(0, FCAL_Rmin, FCAL_Zmid - FCAL_Zlen/2.0,X,Y);
 	ConvertToSide(0, FCAL_Rmax, FCAL_Zmid + FCAL_Zlen/2.0,X2,Y2);
 	TBox *fcal_side1 = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = fcal_side1;
+	graphics.push_back(fcal_side1);
 	ConvertToSide(0, -FCAL_Rmin, FCAL_Zmid - FCAL_Zlen/2.0,X,Y);
 	ConvertToSide(0, -FCAL_Rmax, FCAL_Zmid + FCAL_Zlen/2.0,X2,Y2);
 	TBox *fcal_side2 = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = fcal_side2;
+	graphics.push_back(fcal_side2);
 	fcal_side1->SetFillColor(30);
 	fcal_side2->SetFillColor(30);
 	fcal_side1->Draw();
@@ -482,11 +481,11 @@ derror_t MyProcessor::DrawDetectors(void)
 	ConvertToTop(-FCAL_Rmin, 0, FCAL_Zmid - FCAL_Zlen/2.0,X,Y);
 	ConvertToTop(-FCAL_Rmax, 0, FCAL_Zmid + FCAL_Zlen/2.0,X2,Y2);
 	TBox *fcal_side3 = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = fcal_side3;
+	graphics.push_back(fcal_side3);
 	ConvertToTop(FCAL_Rmin, 0, FCAL_Zmid - FCAL_Zlen/2.0,X,Y);
 	ConvertToTop(FCAL_Rmax, 0, FCAL_Zmid + FCAL_Zlen/2.0,X2,Y2);
 	TBox *fcal_side4 = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = fcal_side4;
+	graphics.push_back(fcal_side4);
 	fcal_side3->SetFillColor(30);
 	fcal_side4->SetFillColor(30);
 	fcal_side3->Draw();
@@ -497,11 +496,11 @@ derror_t MyProcessor::DrawDetectors(void)
 	ConvertToSide(0, CDC_Rmin, CDC_Zmid - CDC_Zlen/2.0,X,Y);
 	ConvertToSide(0, CDC_Rmax, CDC_Zmid + CDC_Zlen/2.0,X2,Y2);
 	TBox *cdc_side = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = cdc_side;
+	graphics.push_back(cdc_side);
 	ConvertToSide(0, -CDC_Rmin, CDC_Zmid - CDC_Zlen/2.0,X,Y);
 	ConvertToSide(0, -CDC_Rmax, CDC_Zmid + CDC_Zlen/2.0,X2,Y2);
 	TBox *cdc_side2 = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = cdc_side2;
+	graphics.push_back(cdc_side2);
 	cdc_side->SetFillColor(33);
 	cdc_side2->SetFillColor(33);
 	cdc_side->Draw();
@@ -511,11 +510,11 @@ derror_t MyProcessor::DrawDetectors(void)
 	ConvertToTop(-CDC_Rmin, 0, CDC_Zmid - CDC_Zlen/2.0,X,Y);
 	ConvertToTop(-CDC_Rmax, 0, CDC_Zmid + CDC_Zlen/2.0,X2,Y2);
 	cdc_side = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = cdc_side;
+	graphics.push_back(cdc_side);
 	ConvertToTop(CDC_Rmin, 0, CDC_Zmid - CDC_Zlen/2.0,X,Y);
 	ConvertToTop(CDC_Rmax, 0, CDC_Zmid + CDC_Zlen/2.0,X2,Y2);
 	cdc_side2 = new TBox(X,Y,X2,Y2);
-	graphics[Ngraphics++] = cdc_side2;
+	graphics.push_back(cdc_side2);
 	cdc_side->SetFillColor(33);
 	cdc_side2->SetFillColor(33);
 	cdc_side->Draw();
@@ -528,11 +527,11 @@ derror_t MyProcessor::DrawDetectors(void)
 		ConvertToSide(0, FDC_Rmin, FDC_Zpos[i] - FDC_Zlen/2.0,X,Y);
 		ConvertToSide(0, FDC_Rmax, FDC_Zpos[i] + FDC_Zlen/2.0,X2,Y2);
 		fdc_side = new TBox(X,Y,X2,Y2);
-		graphics[Ngraphics++] = fdc_side;
+		graphics.push_back(fdc_side);
 		ConvertToSide(0, -FDC_Rmin, FDC_Zpos[i] - FDC_Zlen/2.0,X,Y);
 		ConvertToSide(0, -FDC_Rmax, FDC_Zpos[i] + FDC_Zlen/2.0,X2,Y2);
 		fdc_side2 = new TBox(X,Y,X2,Y2);
-		graphics[Ngraphics++] = fdc_side2;
+		graphics.push_back(fdc_side2);
 		fdc_side->SetFillColor(40);
 		fdc_side2->SetFillColor(40);
 		fdc_side->Draw();
@@ -544,11 +543,11 @@ derror_t MyProcessor::DrawDetectors(void)
 		ConvertToTop(-FDC_Rmin, 0, FDC_Zpos[i] - FDC_Zlen/2.0,X,Y);
 		ConvertToTop(-FDC_Rmax, 0, FDC_Zpos[i] + FDC_Zlen/2.0,X2,Y2);
 		fdc_side = new TBox(X,Y,X2,Y2);
-		graphics[Ngraphics++] = fdc_side;
+		graphics.push_back(fdc_side);
 		ConvertToTop(FDC_Rmin, 0, FDC_Zpos[i] - FDC_Zlen/2.0,X,Y);
 		ConvertToTop(FDC_Rmax, 0, FDC_Zpos[i] + FDC_Zlen/2.0,X2,Y2);
 		fdc_side2 = new TBox(X,Y,X2,Y2);
-		graphics[Ngraphics++] = fdc_side2;
+		graphics.push_back(fdc_side2);
 		fdc_side->SetFillColor(40);
 		fdc_side2->SetFillColor(40);
 		fdc_side->Draw();
