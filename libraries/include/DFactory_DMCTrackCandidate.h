@@ -42,7 +42,7 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 /// (in DArcHit::Density(x,y)) and entered into a 2 dimensional
 /// histogram. Peaks in this histogram will emerge where several
 /// lines intersect (i.e. the center of a circle). Hits whose
-/// lines pass within some distance (DFactory_MCTrackCandidates::masksize)
+/// lines pass within some distance (DFactory_DMCTrackCandidate::masksize)
 /// of the focal point are added to the list of hits for the
 /// track candidate. Any hit can be considered part of more than
 /// one track.
@@ -59,7 +59,7 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 /// go out back-to-back from the vertex. In this case, the two
 /// will fall on the same circle in the x,y plane. They will,
 /// however, form lines of different slopes on the phi z plane.
-/// (note again that phi means in the coordinate system centered
+/// (note again that phi is in the coordinate system centered
 /// on the circle, not on the beamline). By histogramming the
 /// the slope for lines formed from all possible pairs of hits
 /// in the track candidates, peaks will emerge indicating
@@ -83,13 +83,11 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 		derror_t FillSlopeIntDensityHistos(float x0, float y0);
 		derror_t DrawPhiZPoints(void);
 		
-		inline DArcHit* Getarchits(void){return archit;}
-		inline int GetNarchits(void){return Narchits;}
-		inline TEllipse* GetCircles(void){return circles;}
-		inline int GetNcircles(void){return Ncircles;}
-		inline int GetNqfit(void){return Nqfit;}
-		derror_t SetNumDensityHistograms(int N);
-		inline int GetNumDensityHistograms(void){return Ndensity_histos;}
+		inline vector<DArcHit*> GetDArcHits(void){return archits;}
+		inline vector<TEllipse*> GetCircles(void){return circles;}
+		inline vector<DQuickFit*> GetDQuickFits(void){return qfits;}
+		derror_t SetMaxDensityHistograms(int N);
+		inline int GetNumDensityHistograms(void){return max_density_histos;}
 		TH2F* GetDensityHistogram(int n);
 		TH1F* GetSlopeDensityHistogram(int n);
 		TH1F* GetOffsetDensityHistogram(int n);
@@ -103,24 +101,20 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 		float masksize2;
 		int flip_x_axis;		///< change sign of x-coordinate for circles
 
-		TH1F *slope_density, *offset_density;
 
 	private:
-		DArcHit archit[300];
-		int Narchits;
-		TEllipse circles[32];	///< use ellipses to remember circle centers
-		int Ncircles;
-		TMarker *markers;			///< For debugging only
-		int Nmarkers;				///< For debugging only
+		void ClearEvent(void);
 		
-		TH2F *density;					///< 2-D density histogram for finding points on a circle
-		TH2F *density_histos[8];	///< for debugging
-		int Ndensity_histos;			///< number of valid pointers in density_histos[]
-		TH1F *slope_density_histos[8];
-		TH1F *offset_density_histos[8];
+		vector<DArcHit*> archits;	///< hit info for hits assumed to be on a circle
+		vector<TEllipse*> circles;	///< use ellipses to remember circle centers
+		vector<TMarker*> markers;	///< For debugging only
 		
-		DQuickFit *qfit[32];
-		int Nqfit;
+		vector<TH2F*> density_histos;	///< for debugging
+		vector<TH1F*> slope_density_histos;
+		vector<TH1F*> offset_density_histos;
+		int max_density_histos;			///< maximum number of histos to allocate
+		
+		vector<DQuickFit*> qfits;
 		
 		derror_t ThereCanBeOnlyOne(int trk1, int trk2); ///< Aaaah!! the quickening!!!
 		derror_t evnt(int eventnumber);	///< Invoked via DEventProcessor virtual method
