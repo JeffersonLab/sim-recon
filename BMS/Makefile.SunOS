@@ -1,0 +1,4 @@
+# This defines flags which can implement (or not) features
+# in a way compatible with this OS
+
+MISC_LIBS += -lz

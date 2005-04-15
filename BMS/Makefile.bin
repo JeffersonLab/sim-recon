@@ -13,10 +13,7 @@ ifeq ($(LD), ld)
  LD = $(CXX)
 endif
 
-MISC_LIBS_SunOS	+= -lz
-MISC_LIBS_Linux	+=
 MISC_LIBS			+= -lpthread
-MISC_LIBS			+= $(MISC_LIBS_$(OSNAME))
 
 ifdef DEBUG
 	LD_FLAGS	+= -g -pg
