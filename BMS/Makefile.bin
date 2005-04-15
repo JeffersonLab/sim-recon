@@ -58,7 +58,7 @@ all: mkdirs $(DEPS) $(EXE_NAMES)
 
 $(EXE_NAMES): $(DOBJS)
 	$(LD) $(LD_FLAGS) $(LD_DIRS) \
-		$(OBJ_DIR)/$@.o $(LINK_OBJS) $(MISC_LIBS) $(LD_LIBS) $(MYSQL_LIBS) \
+		$(OBJ_DIR)/$@.o $(LINK_OBJS) $(LD_LIBS) $(MYSQL_LIBS)  $(MISC_LIBS) \
 		-o $(BIN_DIR)/$@
 
 mkdirs:
