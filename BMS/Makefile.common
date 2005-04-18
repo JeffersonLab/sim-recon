@@ -77,8 +77,20 @@ endif
 FSRC		= $(wildcard *.F *.f)
 CSRC		= $(wildcard *.c)
 CXXSRC	= $(wildcard *.cc *.cpp *.cxx)
-OBJS		= $(addsuffix .o,$(basename $(FSRC) $(CSRC) $(CXXSRC)))
-DEPS		= $(OBJS:.o=.d)
+
+# Create ROOT dictionaries from C++ files containing ClassDef
+HSRC = $(wildcard *.h)
+ifneq ($(strip $(HSRC)),)
+DICT_IN = $(shell grep -l "ClassDef" $(HSRC))
+DICT_SRC = $(addsuffix _Dict.cc,$(basename $(DICT_IN)))
+DICT_FILES = $(DICT_SRC) $(DICT_SRC:.cc=.h)
+endif
+
+NON_DICT_OBJS		= $(addsuffix .o,$(basename $(FSRC) $(CSRC) $(CXXSRC)))
+DEPS		= $(NON_DICT_OBJS:.o=.d)
+
+# Note: we use sort here just to remove duplicates
+OBJS  = $(sort $(NON_DICT_OBJS) $(addsuffix .o,$(basename $(DICT_SRC))))
 
 ifdef ONLINE
 	CFLAGS += -DONLINE
@@ -107,4 +119,5 @@ LIBNAME = $(LIB_DIR)/lib$(MODULE_NAME)$(DEBUG_SUFFIX).a
 
 # Include all dependancy files
 -include $(foreach s,$(DEPS),$(DEP_DIR)/$s)
+
 

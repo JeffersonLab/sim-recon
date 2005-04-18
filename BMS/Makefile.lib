@@ -12,6 +12,7 @@ VPATH = $(DEP_DIR)
 
 # First rule. Make sure directories and dependancy files exist
 all: mkdirs $(DEPS) $(LIBNAME)($(OBJS))
+	@rm -f $(DICT_FILES)
 ifeq ($(OSNAME),Darwin)
 	ranlib $(LIBNAME)
 endif
@@ -21,7 +22,7 @@ mkdirs:
 	@mkdir -p $(DEP_DIR)
 
 clean:
-	rm -rf $(LIBNAME) .depends *.bak *~ core last.kumac*  #*# 
+	rm -rf $(LIBNAME) $(DICT_FILES) .depends *.bak *~ core last.kumac*  #*# 
 
 # Rules to make DEPENDS files from source. Note that these are similar to the
 # rules in Makefile.bin, but use the implicit rules for archiving objects.
@@ -35,6 +36,10 @@ clean:
 	@$(DCC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CFLAGS) $< > $(DEP_DIR)/$@
 %.d : %.F
 	@$(DFC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(FFLAGS) $< > $(DEP_DIR)/$@
+
+# Rule to make ROOT dictionary
+%_Dict.cc: %.h
+	rootcint -f $@ -c $(INCS) $< 
 
 
 env:
@@ -56,4 +61,8 @@ env:
 	@echo TMP		= $(TMP)
 	@echo PACKAGES = $(PACKAGES)
 	@echo PACKAGE_MAKEFILES = $(PACKAGE_MAKEFILES)
+	@echo HSRC		         = $(HSRC)
+	@echo DICT_IN           = $(DICT_IN)
+	@echo DICT_SRC          = $(DICT_SRC)
+	@echo DICT_FILES        = $(DICT_FILES)
 

@@ -52,6 +52,7 @@ BINARY = $(BIN_DIR)/$(EXE_NAME)
 .PHONY:  mkdirs
 
 all: mkdirs $(DEPS) $(EXE_NAMES)
+	@rm -f $(DICT_FILES)
 
 $(EXE_NAMES): $(DOBJS)
 	$(LD) $(LD_FLAGS) $(LD_DIRS) \
@@ -64,7 +65,7 @@ mkdirs:
 	@mkdir -p $(DEP_DIR)
 
 clean:
-	rm -rf $(OBJ_DIR) .depends *.o $(EXE_PATHNAMES) *.bak *~ core last.kumac*  #*# 
+	rm -rf $(OBJ_DIR) .depends *.o $(EXE_PATHNAMES) $(DICT_FILES) *.bak *~ core last.kumac*  #*# 
 
 # Rules to make DEPENDS files from source. Note that these are similar to the
 # rules in Makefile.lib, but uses the objects explicitly
@@ -93,6 +94,11 @@ clean:
 	$(FC) -c $(FFLAGS) $< $(OUTPUT_OPTION)
 
 
+# Rule to make ROOT dictionary
+%_Dict.cc: %.h
+	rootcint -f $@ -c $(INCS) $< 
+
+
 env:
 	@echo FC			     = $(FC)
 	@echo CC			     = $(CC)
@@ -119,5 +125,9 @@ env:
 	@echo MAIN_FILES    = "$(MAIN_FILES)"
 	@echo MAIN_OBJS     = $(MAIN_OBJS)
 	@echo NON_MAIN_OBJS = $(NON_MAIN_OBJS)
+	@echo HSRC		         = $(HSRC)
+	@echo DICT_IN       = $(DICT_IN)
+	@echo DICT_SRC      = $(DICT_SRC)
+	@echo DICT_FILES    = $(DICT_FILES)
 
 
