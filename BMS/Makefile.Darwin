@@ -1,7 +1,7 @@
 # This defines flags which can implement (or not) features
 # in a way compatible with this OS
 
-OSXFLAGS = -DBASENAME_IN_LIBGEN -DXDR_LONGLONG_MISSING
+OSXFLAGS = -DBASENAME_IN_LIBGEN -DXDR_LONGLONG_MISSING -Wno-long-double
 
 CFLAGS += $(OSXFLAGS)
 CXXFLAGS += $(OSXFLAGS)
