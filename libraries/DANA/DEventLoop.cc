@@ -283,3 +283,11 @@ derror_t DEventLoop::PrintRate(void)
 	return NOERROR;
 }
 
+//----------------
+// GetSourceName
+//----------------
+const char* DEventLoop::GetSourceName(void)
+{
+	return source->GetSourceName();
+}
+

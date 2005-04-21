@@ -48,6 +48,7 @@ class DEventSource
 
 		float GetRate(void);
 		static EVENT_SOURCE_TYPE GuessSourceType(int narg, char *argv[]);
+		const char* GetSourceName(void){return (const char*)sources[source_index-1];}
 		
 		s_HDDM_t *hddm_s;
 

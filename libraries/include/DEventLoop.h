@@ -45,6 +45,7 @@ class DEventLoop:public DEvent{
 		void Quit(void){quit=1;};
 		float GetRate(void);
 		derror_t PrintRate(void);
+		const char* GetSourceName(void);
 		
 	private:
 		int Nprocessors;
