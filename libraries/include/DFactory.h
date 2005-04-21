@@ -18,6 +18,11 @@
 #ifndef _DFACTORY_H_
 #define _DFACTORY_H_
 
+#define HDCLASSDEF(T) \
+	static const char* className(){return #T;}
+
+#ifndef __CINT__  // disable this file from ROOT interpreter
+
 #include <vector>
 #include <string>
 using namespace std;
@@ -25,9 +30,6 @@ using namespace std;
 #include "DFactory_base.h"
 #include "DEvent.h"
 
-#define HDCLASSDEF(T) \
-	static const char* className(){return #T;}\
-	const char* derivedClassName(){return className();}
 
 //-----------------------
 // class DFactory
@@ -221,5 +223,6 @@ derror_t DFactory<T>::HardReset(void)
 	return NOERROR;
 }
 
+#endif // __CINT__
 
 #endif // _DFACTORY_H_
