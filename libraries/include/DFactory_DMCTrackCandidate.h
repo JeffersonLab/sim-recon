@@ -87,7 +87,8 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 		inline vector<TEllipse*> GetCircles(void){return circles;}
 		inline vector<DQuickFit*> GetDQuickFits(void){return qfits;}
 		derror_t SetMaxDensityHistograms(int N);
-		inline int GetNumDensityHistograms(void){return max_density_histos;}
+		inline int GetNumDensityHistograms(void){return density_histos.size();}
+		inline int GetMaxDensityHistograms(void){return max_density_histos;}
 		TH2F* GetDensityHistogram(int n);
 		TH1F* GetSlopeDensityHistogram(int n);
 		TH1F* GetOffsetDensityHistogram(int n);
