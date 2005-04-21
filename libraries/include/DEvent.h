@@ -58,11 +58,11 @@ DFactory<T>* DEvent::Get(vector<T*> &t)
 	/// who can supply the data type T. Call the factory's
 	/// Get() method to get a reference to the data vector.
 	/// We have to call the Get() method (which eventually
-	/// calls the factory's event() method) through the
-	/// DFactory_base virtual Get() method. Thus, it is type
-	/// cast as a vector<int*> before getting sent to us.
-	/// We must cast it back to the proper type before passing
-	/// it back to the user.
+	/// calls the factory's evnt() method) through the
+	/// DFactory_base virtual Get() method. The object pointers
+	/// are  type cast as void* and placed in another vector before
+	/// getting sent to us. We must cast it back to the proper
+	/// type before passing it back to the user.
 
 	// We need to find the factory providing data type T. Since
 	// the factory will return the result of a call to the same
