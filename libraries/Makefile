@@ -4,6 +4,7 @@
 
 
 all:
+	make -C include
 	make -C BCAL
 	make -C CDC
 	make -C CHERENKOV
@@ -18,6 +19,7 @@ all:
 	make -C TRACKING
 
 clean:
+	make -C include clean
 	make -C BCAL clean
 	make -C CDC clean
 	make -C CHERENKOV clean
