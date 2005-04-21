@@ -9,6 +9,7 @@
 #define _DMCThrown_
 
 #include "DFactory.h"
+#include <TObject.h>
 
 class DMCThrown{
 	public:
@@ -21,6 +22,8 @@ class DMCThrown{
 		float theta,phi;	///< Inital theta and phi angles in radians
 		float x,y,z;		///< Vertex position in cm
 		float mass;			///< Mass in GeV/c^2
+
+		ClassDef(DMCThrown,1)
 };
 
 #endif // _DMCThrown_
