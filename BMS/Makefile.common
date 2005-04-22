@@ -109,8 +109,9 @@ else
 	CXXFLAGS	+= -O2
 endif
 
-
-MODULE_NAME = $(shell basename $(shell pwd))
+ifndef MODULE_NAME
+ MODULE_NAME = $(shell basename $(shell pwd))
+endif
 LIBNAME = $(LIB_DIR)/lib$(MODULE_NAME)$(DEBUG_SUFFIX).a
 
 # Include platform specific definitions
@@ -118,6 +119,7 @@ LIBNAME = $(LIB_DIR)/lib$(MODULE_NAME)$(DEBUG_SUFFIX).a
 -include $(HALLD_HOME)/src/BMS/Makefile.$(OSNAME)
 
 # Include all dependancy files
+ifneq ($(strip $(DEPS)),)
 -include $(foreach s,$(DEPS),$(DEP_DIR)/$s)
-
+endif
 
