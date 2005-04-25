@@ -24,7 +24,7 @@ class DEvent{
 	public:
 		DEvent();
 		~DEvent();
-		template<class T> DFactory<T>* Get(vector<T*> &t);
+		template<class T> DFactory<T>* Get(vector<const T*> &t);
 		DFactory_base* GetFactory(const string data_name);
 		derror_t AddFactory(DFactory_base* factory);
 		derror_t PrintFactories(void){return PrintFactories(0);};
@@ -52,11 +52,11 @@ class DEvent{
 // Get
 //-------------
 template<class T> 
-DFactory<T>* DEvent::Get(vector<T*> &t)
+DFactory<T>* DEvent::Get(vector<const T*> &t)
 {
 	/// Search through the list of factories and find the one
 	/// who can supply the data type T. Call the factory's
-	/// Get() method to get a reference to the data vector.
+	/// Get() method to get a copy of the _data vector.
 	/// We have to call the Get() method (which eventually
 	/// calls the factory's evnt() method) through the
 	/// DFactory_base virtual Get() method. The object pointers
@@ -83,10 +83,10 @@ DFactory<T>* DEvent::Get(vector<T*> &t)
 	// Get pointers to data from factory. The pointers must be
 	// passed to us as void* since DFactory_base doesn't necessarily 
 	// know about the class type they hold. Here, we re-cast them 
-	// back into the proper type.
+	// back into the proper (const) type.
 	vector<void*> vt = factory->Get();
 	t.clear();
-	for(int i=0;i<vt.size();i++)t.push_back((T*)vt[i]);
+	for(int i=0;i<vt.size();i++)t.push_back((const T*)vt[i]);
 
 	return (DFactory<T>*)factory;
 }

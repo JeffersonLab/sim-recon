@@ -38,20 +38,20 @@ derror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 derror_t MyProcessor::evnt(int eventnumber)
 {
-	vector<DCDCHit*> cdchits;
-	vector<DFCALHit*> fcalhits;
+	vector<const DCDCHit*> cdchits;
+	vector<const DFCALHit*> fcalhits;
 	eventLoop->Get(cdchits);
 	eventLoop->Get(fcalhits);
 	
 	for(int i=0;i<cdchits.size();i++){
-		DCDCHit *cdchit = cdchits[i];
+		const DCDCHit *cdchit = cdchits[i];
 		float x = cdchit->radius*cos(cdchit->phim);
 		float y = cdchit->radius*sin(cdchit->phim);
 		cdc_y_vs_x->Fill(y,x);
 	}
 
 	for(int i=0;i<fcalhits.size();i++){
-		DFCALHit *fcalhit = fcalhits[i];
+		const DFCALHit *fcalhit = fcalhits[i];
 		fcal_y_vs_x->Fill(fcalhit->y,fcalhit->x);
 		fcalhitE->Fill(fcalhit->E);
 	}
