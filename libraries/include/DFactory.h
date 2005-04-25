@@ -197,6 +197,7 @@ derror_t DFactory<T>::Reset(void)
 {
 	/// Clear out the factories current contents unless the
 	/// PERSISTANT flag is set.
+	evnt_called = 0;
 	if(flags & PERSISTANT)return NOERROR;
 	
 	return HardReset();
