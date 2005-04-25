@@ -138,22 +138,24 @@ derror_t DFactory_DMCTrackCandidate::evnt(int eventnumber)
 	// multiple times (i.e. they have essentially the same fitted
 	// parameters). Someday, I'll have to track that down, but until
 	// then, I'll just go through and weed out duplicates.
-	for(int i=0;i<_data.size()-1; i++){
-		DMCTrackCandidate *a = _data[i];
-		int filtered = 0;
-		for(int j=i+1;j<_data.size(); j++){
-			DMCTrackCandidate *b = _data[j];
-			if(a->q == b->q)
-				if(fabs(a->p_trans - b->p_trans)<0.05)
-					if(fabs(a->phi - b->phi)<0.009)
-						if(fabs(a->theta - b->theta)<0.009){
-							ThereCanBeOnlyOne(i,j);
-							filtered = 1;
-							break;
-						}
-		}
-		if(filtered){
-			i--;
+	if(_data.size()>1){
+		for(int i=0;i<_data.size()-1; i++){
+			DMCTrackCandidate *a = _data[i];
+			int filtered = 0;
+			for(int j=i+1;j<_data.size(); j++){
+				DMCTrackCandidate *b = _data[j];
+				if(a->q == b->q)
+					if(fabs(a->p_trans - b->p_trans)<0.05)
+						if(fabs(a->phi - b->phi)<0.009)
+							if(fabs(a->theta - b->theta)<0.009){
+								ThereCanBeOnlyOne(i,j);
+								filtered = 1;
+								break;
+							}
+			}
+			if(filtered){
+				i--;
+			}
 		}
 	}
 	if(debug_level>0)cout<<__FILE__<<":"<<__LINE__<<" Ntracks:"<<_data.size()<<" (after filter)"<<endl;
