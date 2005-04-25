@@ -112,23 +112,20 @@ DFactory<T>::~DFactory()
 template<class T>
 vector<void*>& DFactory<T>::Get()
 {
-	/// Return a reference to the vector object containing this
-	/// factory's data, but type cast as a const vector<int*>&. The
-	/// cast is done because the DEventLoop object has to
-	/// keep a list of all factories and does so by treating them
-	/// as DFactory_base objects. This Get() method is called
-	/// by the DEventLoop calling the virtual DFactory_base method
-	/// Get(). The DFactory_base class doesn't have type information
-	/// in it. Thus, we must cast _data as a const vector<int*>&
-	/// here and cast it back into the proper class type in
-	/// DEventLoop::Get(). (make sense?).
+	/// Return a STL vector of pointers to the objects produced by the
+	/// factory. The pointers must be type cast as void* because
+	/// the DEventLoop object doesn't necessarily know anything about
+	/// the objects produced by the factory. (Note that this method
+	/// is accessed via the DFactory_base class's virtual Get() method).
+	/// The templatized DEvent::Get() method of will typecast the
+	/// pointers back to the appropriate type for the user.
 	///
 	/// This method will check first to make sure this factory hasn't
 	/// already been called for this event. If so, it just returns the
-	/// (type cast) _data pointer right away. Otherwise, it calls the
+	/// (type cast) _data vector right away. Otherwise, it calls the
 	/// factory's event() method to fill it first.
 	///
-	/// This also uses a busy flag to ensure were not called
+	/// This also uses a busy flag to ensure we're not called
 	/// recursively. i.e. we call a factory who calls another
 	/// factory who eventually calls us. An exception is thrown
 	/// (type derror_t) with a value INFINITE_RECURSION if that
