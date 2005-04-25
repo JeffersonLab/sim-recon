@@ -74,7 +74,7 @@ ifdef PACKAGES
 include $(PACKAGE_MAKEFILES)
 endif
 
-FSRC		= $(wildcard *.F *.f)
+FSRC		= $(wildcard *.F)
 CSRC		= $(wildcard *.c)
 CXXSRC	= $(wildcard *.cc *.cpp *.cxx)
 
