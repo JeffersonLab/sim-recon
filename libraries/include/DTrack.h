@@ -21,6 +21,10 @@ class DMCReconstructed{
 		float theta,phi;	///< Inital theta and phi angles in radians
 		float x,y,z;		///< Vertex position in cm
 		float mass;			///< Mass in GeV/c^2
+		int thrownid;		///< index to closest match in DMCThrown
+		float thrown_delta_p;	///< Magnitude of momentum diff. with thrownid
+		
+		void FindClosestThrown(vector<const DMCThrown*> &mcthrowns);
 };
 
 #endif // _DMCReconstructed_
