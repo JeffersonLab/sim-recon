@@ -6,6 +6,7 @@
 //
 
 #include "DMCTrackCandidate.h"
+#include "DMCThrown.h"
 #include "DFactory_DMCReconstructed.h"
 #include "DEvent.h"
 
@@ -16,11 +17,14 @@ derror_t DFactory_DMCReconstructed::evnt(int eventnumber)
 {
 	// For now, we just copy from the MCTrackCandidates. Eventually,
 	// a track fitter will be implemented.
-	vector<DMCTrackCandidate*> mctc;
+	vector<const DMCTrackCandidate*> mctc;
 	event->Get(mctc);
+
+	vector<const DMCThrown*> mcthrowns;
+	event->Get(mcthrowns);
 	
 	for(int i=0; i<mctc.size(); i++){
-		DMCTrackCandidate *mctrackcandidate = mctc[i];
+		const DMCTrackCandidate *mctrackcandidate = mctc[i];
 		DMCReconstructed *mcreconstructed = new DMCReconstructed;
 
 		mcreconstructed->type = 0;
@@ -33,6 +37,8 @@ derror_t DFactory_DMCReconstructed::evnt(int eventnumber)
 		mcreconstructed->y = 0.0;
 		mcreconstructed->z = mctrackcandidate->z_vertex;
 		mcreconstructed->mass = 0.0;
+		mcreconstructed->FindClosestThrown(mcthrowns);
+		
 		_data.push_back(mcreconstructed);
 	}
 
