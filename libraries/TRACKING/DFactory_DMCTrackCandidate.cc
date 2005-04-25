@@ -99,10 +99,10 @@ derror_t DFactory_DMCTrackCandidate::evnt(int eventnumber)
 
 	// Get MCCheatHits and loop over them copying them into
 	// the archit objects array
-	vector<DMCCheatHit*> mccheathits;
+	vector<const DMCCheatHit*> mccheathits;
 	event->Get(mccheathits);
 	for(int i=0; i<mccheathits.size(); i++){
-		DMCCheatHit *mccheathit = mccheathits[i];
+		const DMCCheatHit *mccheathit = mccheathits[i];
 	
 		if(mccheathit->system!=1 && mccheathit->system!=2)continue;
 		float x = mccheathit->r*cos(mccheathit->phi);

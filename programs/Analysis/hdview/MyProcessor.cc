@@ -128,12 +128,12 @@ derror_t MyProcessor::evnt(int eventnumber)
 	ClearEvent();
 	
 	// Get MCCheatHits
-	vector<DMCCheatHit*> mccheathits;
+	vector<const DMCCheatHit*> mccheathits;
 	eventLoop->Get(mccheathits);
 	
 	// Loop over hits creating markers for all 3 views
 	for(int i=0;i<mccheathits.size();i++){
-		DMCCheatHit *mccheathit = mccheathits[i];
+		const DMCCheatHit *mccheathit = mccheathits[i];
 		
 		// Skip hits from some detectors?
 		switch(mccheathit->system){
@@ -194,7 +194,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 	}
 	
 	// Draw all "found" tracks
-	vector<DMCTrackCandidate*> mctc;
+	vector<const DMCTrackCandidate*> mctc;
 	DFactory_DMCTrackCandidate *mctcfactory = (DFactory_DMCTrackCandidate *)eventLoop->Get(mctc);
 	vector<DQuickFit*> qfits = mctcfactory->GetDQuickFits();
 	for(int i=0; i<qfits.size(); i++){
