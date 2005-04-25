@@ -10,6 +10,8 @@
 
 #include "DFactory.h"
 
+class DMCThrown;
+
 class DMCReconstructed{
 	public:
 		HDCLASSDEF(DMCReconstructed);
