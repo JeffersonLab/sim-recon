@@ -501,6 +501,65 @@
     </xs:complexType>
   </xs:element>
 
+  <xs:element name="upvLeft">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="hddm:shower"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="upvRight">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="hddm:shower"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="upvRow">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="hddm:upvLeft"/>
+        <xs:element minOccurs="0" ref="hddm:upvRight"/>
+      </xs:sequence>
+      <xs:attribute name="y" type="hddm:float" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="upvPaddle">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="hddm:upvLeft"/>
+        <xs:element minOccurs="0" ref="hddm:upvRight"/>
+      </xs:sequence>
+      <xs:attribute name="y" type="hddm:float" use="required"/>
+      <xs:attribute name="z" type="hddm:float" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="upvShower">
+    <xs:complexType>
+      <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="x" type="hddm:float" use="required"/>
+      <xs:attribute name="y" type="hddm:float" use="required"/>
+      <xs:attribute name="z" type="hddm:float" use="required"/>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
+      <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="upstreamEMveto">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:upvRow"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:upvPaddle"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:upvShower"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
   <xs:element name="hitView">
     <xs:complexType>
       <xs:sequence>
@@ -511,6 +570,7 @@
         <xs:element minOccurs="0" ref="hddm:Cerenkov"/>
         <xs:element minOccurs="0" ref="hddm:forwardTOF"/>
         <xs:element minOccurs="0" ref="hddm:forwardEMcal"/>
+        <xs:element minOccurs="0" ref="hddm:upstreamEMveto"/>
       </xs:sequence>
       <xs:attribute fixed="1.0" name="version" type="xs:string" use="required"/>
     </xs:complexType>

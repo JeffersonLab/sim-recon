@@ -12,6 +12,7 @@
   <!ENTITY BarrelEMcal_s SYSTEM "BarrelEMcal_HDDS.xml">
   <!ENTITY ForwardEMcal_s SYSTEM "ForwardEMcal_HDDS.xml">
   <!ENTITY CerenkovCntr_s SYSTEM "CerenkovCntr_HDDS.xml">
+  <!ENTITY UpstreamEMveto_s SYSTEM "UpstreamEMveto_HDDS.xml">
 
 ]>
 
@@ -34,6 +35,7 @@
      &Target_s;
      &Solenoid_s;
      &BeamLine_s;
+     &UpstreamEMveto_s;
 <!-- End of include    -->
 
 
@@ -66,10 +68,15 @@
     <posXYZ volume="ForwardEMcal" X_Y_Z="0.0 0.0 622.8" />
   </composition>
 
+  <composition name="backwardPackage">
+    <posXYZ volume="UpstreamEMveto" X_Y_Z="0.0 0.0 -60.8" />
+  </composition>
+
   <composition name="GlueXdetector">
     <posXYZ volume="Target" X_Y_Z="0.0 0.0 50.0" />
     <posXYZ volume="barrelPackage" />
     <posXYZ volume="forwardPackage" />
+    <posXYZ volume="backwardPackage" />
   </composition>
 
   <composition name="experimentalHall" envelope="HALL">

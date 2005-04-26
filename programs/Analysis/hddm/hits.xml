@@ -92,4 +92,27 @@
                      E="float" track="int" primary="boolean"
                      minOccurs="0" maxOccurs="unbounded" />
    </forwardEMcal>
+
+   <upstreamEMveto minOccurs="0">
+      <upvRow y="float" minOccurs="0" maxOccurs="unbounded">
+         <upvLeft minOccurs="0">
+            <shower t="float" E="float" maxOccurs="unbounded" />
+         </upvLeft>
+         <upvRight minOccurs="0">
+            <shower t="float" E="float" maxOccurs="unbounded" />
+         </upvRight>
+      </upvRow>	 
+      <upvPaddle y="float" z="float" minOccurs="0" maxOccurs="unbounded" >
+         <upvLeft minOccurs="0">
+            <shower t="float" E="float" maxOccurs="unbounded" />
+         </upvLeft>
+         <upvRight minOccurs="0">
+	    <shower t="float" E="float" maxOccurs="unbounded" />
+         </upvRight>
+      </upvPaddle>
+      <upvShower t="float" x="float" y="float" z="float" 
+                 E="float" track="int" primary="boolean"
+                 minOccurs="0" maxOccurs="unbounded" />
+   </upstreamEMveto>
+
 </hitView>

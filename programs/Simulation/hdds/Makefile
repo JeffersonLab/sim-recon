@@ -22,7 +22,8 @@ endif
 XML_SOURCE = BarrelEMcal_HDDS.xml BeamLine_HDDS.xml CentralDC_HDDS.xml\
              CerenkovCntr_HDDS.xml ForwardDC_HDDS.xml ForwardEMcal_HDDS.xml\
              ForwardTOF_HDDS.xml Material_HDDS.xml Solenoid_HDDS.xml \
-             StartCntr_HDDS.xml Target_HDDS.xml main_HDDS.xml
+             StartCntr_HDDS.xml Target_HDDS.xml UpstreamEMveto_HDDS.xml \
+	     main_HDDS.xml
 
 all: hddsGeant3.F hddsMCfast.db hddsroot.C
 
