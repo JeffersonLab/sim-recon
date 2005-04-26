@@ -383,8 +383,53 @@ s_ForwardShowers_t* make_s_ForwardShowers(int n)
    return p;
 }
 
+s_UpstreamEMveto_t* make_s_UpstreamEMveto()
+{
+   int size = sizeof(s_UpstreamEMveto_t);
+   s_UpstreamEMveto_t* p = (s_UpstreamEMveto_t*)CALLOC(size,"s_UpstreamEMveto_t");
+   return p;
+}
+
+s_UpvRows_t* make_s_UpvRows(int n)
+{
+   int rep = (n > 1) ? n-1 : 0;
+   int size = sizeof(s_UpvRows_t) + rep * sizeof(s_UpvRow_t);
+   s_UpvRows_t* p = (s_UpvRows_t*)CALLOC(size,"s_UpvRows_t");
+   return p;
+}
+
+s_UpvLeft_t* make_s_UpvLeft()
+{
+   int size = sizeof(s_UpvLeft_t);
+   s_UpvLeft_t* p = (s_UpvLeft_t*)CALLOC(size,"s_UpvLeft_t");
+   return p;
+}
+
+s_UpvRight_t* make_s_UpvRight()
+{
+   int size = sizeof(s_UpvRight_t);
+   s_UpvRight_t* p = (s_UpvRight_t*)CALLOC(size,"s_UpvRight_t");
+   return p;
+}
+
+s_UpvPaddles_t* make_s_UpvPaddles(int n)
+{
+   int rep = (n > 1) ? n-1 : 0;
+   int size = sizeof(s_UpvPaddles_t) + rep * sizeof(s_UpvPaddle_t);
+   s_UpvPaddles_t* p = (s_UpvPaddles_t*)CALLOC(size,"s_UpvPaddles_t");
+   return p;
+}
+
+s_UpvShowers_t* make_s_UpvShowers(int n)
+{
+   int rep = (n > 1) ? n-1 : 0;
+   int size = sizeof(s_UpvShowers_t) + rep * sizeof(s_UpvShower_t);
+   s_UpvShowers_t* p = (s_UpvShowers_t*)CALLOC(size,"s_UpvShowers_t");
+   return p;
+}
+
 char HDDM_s_DocumentString[] = 
-"<HDDM class=\"s\" version=\"1.0\" xmlns=\"http://www.gluex.org/hddm\">\n"
+"<HDDM class=\"s\" version=\"1.0\" xmlns:hddm=\"http://www.gluex.org/hddm\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n"
 "  <physicsEvent eventNo=\"int\" maxOccurs=\"unbounded\" runNo=\"int\">\n"
 "    <reaction maxOccurs=\"unbounded\" minOccurs=\"0\" type=\"int\" weight=\"float\">\n"
 "      <beam minOccurs=\"0\" type=\"Particle_t\">\n"
@@ -475,6 +520,25 @@ char HDDM_s_DocumentString[] =
 "        </row>\n"
 "        <forwardShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "      </forwardEMcal>\n"
+"      <upstreamEMveto minOccurs=\"0\">\n"
+"        <upvRow maxOccurs=\"unbounded\" minOccurs=\"0\" y=\"float\">\n"
+"          <upvLeft minOccurs=\"0\">\n"
+"            <shower E=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
+"          </upvLeft>\n"
+"          <upvRight minOccurs=\"0\">\n"
+"            <shower E=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
+"          </upvRight>\n"
+"        </upvRow>\n"
+"        <upvPaddle maxOccurs=\"unbounded\" minOccurs=\"0\" y=\"float\" z=\"float\">\n"
+"          <upvLeft minOccurs=\"0\">\n"
+"            <shower E=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
+"          </upvLeft>\n"
+"          <upvRight minOccurs=\"0\">\n"
+"            <shower E=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
+"          </upvRight>\n"
+"        </upvPaddle>\n"
+"        <upvShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
+"      </upstreamEMveto>\n"
 "    </hitView>\n"
 "  </physicsEvent>\n"
 "</HDDM>\n"
@@ -2203,6 +2267,230 @@ static s_ForwardShowers_t* unpack_s_ForwardShowers(XDR* xdrs, popNode* pop)
    return this1;
 }
 
+static s_UpstreamEMveto_t* unpack_s_UpstreamEMveto(XDR* xdrs, popNode* pop)
+{
+   s_UpstreamEMveto_t* this1 = 0;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      this1 = make_s_UpstreamEMveto();
+      {
+         int p;
+         void* (*ptr) = (void**) &this1->upvRows;
+         for (p = 0; p < pop->popListLength; p++)
+         {
+            popNode* pnode = pop->popList[p];
+            if (pnode)
+            {
+               int kid = pnode->inParent;
+               ptr[kid] = pnode->unpacker(xdrs,pnode);
+            }
+            else
+            {
+               unsigned int skip;
+               xdr_u_int(xdrs,&skip);
+               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);
+            }
+         }
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
+static s_UpvRows_t* unpack_s_UpvRows(XDR* xdrs, popNode* pop)
+{
+   s_UpvRows_t* this1 = 0;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      int m;
+      unsigned int mult;
+      xdr_u_int(xdrs,&mult);
+      this1 = make_s_UpvRows(mult);
+      this1->mult = mult;
+      for (m = 0; m < mult; m++ )
+      {
+         int p;
+         void* (*ptr) = (void**) &this1->in[m].upvLeft;
+         xdr_float(xdrs,&this1->in[m].y);
+         for (p = 0; p < pop->popListLength; p++)
+         {
+            popNode* pnode = pop->popList[p];
+            if (pnode)
+            {
+               int kid = pnode->inParent;
+               ptr[kid] = pnode->unpacker(xdrs,pnode);
+            }
+            else
+            {
+               unsigned int skip;
+               xdr_u_int(xdrs,&skip);
+               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);
+            }
+         }
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
+static s_UpvLeft_t* unpack_s_UpvLeft(XDR* xdrs, popNode* pop)
+{
+   s_UpvLeft_t* this1 = 0;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      this1 = make_s_UpvLeft();
+      {
+         int p;
+         void* (*ptr) = (void**) &this1->showers;
+         for (p = 0; p < pop->popListLength; p++)
+         {
+            popNode* pnode = pop->popList[p];
+            if (pnode)
+            {
+               int kid = pnode->inParent;
+               ptr[kid] = pnode->unpacker(xdrs,pnode);
+            }
+            else
+            {
+               unsigned int skip;
+               xdr_u_int(xdrs,&skip);
+               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);
+            }
+         }
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
+static s_UpvRight_t* unpack_s_UpvRight(XDR* xdrs, popNode* pop)
+{
+   s_UpvRight_t* this1 = 0;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      this1 = make_s_UpvRight();
+      {
+         int p;
+         void* (*ptr) = (void**) &this1->showers;
+         for (p = 0; p < pop->popListLength; p++)
+         {
+            popNode* pnode = pop->popList[p];
+            if (pnode)
+            {
+               int kid = pnode->inParent;
+               ptr[kid] = pnode->unpacker(xdrs,pnode);
+            }
+            else
+            {
+               unsigned int skip;
+               xdr_u_int(xdrs,&skip);
+               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);
+            }
+         }
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
+static s_UpvPaddles_t* unpack_s_UpvPaddles(XDR* xdrs, popNode* pop)
+{
+   s_UpvPaddles_t* this1 = 0;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      int m;
+      unsigned int mult;
+      xdr_u_int(xdrs,&mult);
+      this1 = make_s_UpvPaddles(mult);
+      this1->mult = mult;
+      for (m = 0; m < mult; m++ )
+      {
+         int p;
+         void* (*ptr) = (void**) &this1->in[m].upvLeft;
+         xdr_float(xdrs,&this1->in[m].y);
+         xdr_float(xdrs,&this1->in[m].z);
+         for (p = 0; p < pop->popListLength; p++)
+         {
+            popNode* pnode = pop->popList[p];
+            if (pnode)
+            {
+               int kid = pnode->inParent;
+               ptr[kid] = pnode->unpacker(xdrs,pnode);
+            }
+            else
+            {
+               unsigned int skip;
+               xdr_u_int(xdrs,&skip);
+               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);
+            }
+         }
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
+static s_UpvShowers_t* unpack_s_UpvShowers(XDR* xdrs, popNode* pop)
+{
+   s_UpvShowers_t* this1 = 0;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      int m;
+      unsigned int mult;
+      xdr_u_int(xdrs,&mult);
+      this1 = make_s_UpvShowers(mult);
+      this1->mult = mult;
+      for (m = 0; m < mult; m++ )
+      {
+         xdr_float(xdrs,&this1->in[m].E);
+         xdr_bool(xdrs,&this1->in[m].primary);
+         xdr_float(xdrs,&this1->in[m].t);
+         xdr_int(xdrs,&this1->in[m].track);
+         xdr_float(xdrs,&this1->in[m].x);
+         xdr_float(xdrs,&this1->in[m].y);
+         xdr_float(xdrs,&this1->in[m].z);
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
 s_HDDM_t* read_s_HDDM(s_iostream_t* fp)
 {
    return unpack_s_HDDM(fp->xdrs,fp->popTop);
@@ -2256,6 +2544,12 @@ static int pack_s_ForwardEMcal(XDR* xdrs, s_ForwardEMcal_t* this1);
 static int pack_s_Rows(XDR* xdrs, s_Rows_t* this1);
 static int pack_s_Columns(XDR* xdrs, s_Columns_t* this1);
 static int pack_s_ForwardShowers(XDR* xdrs, s_ForwardShowers_t* this1);
+static int pack_s_UpstreamEMveto(XDR* xdrs, s_UpstreamEMveto_t* this1);
+static int pack_s_UpvRows(XDR* xdrs, s_UpvRows_t* this1);
+static int pack_s_UpvLeft(XDR* xdrs, s_UpvLeft_t* this1);
+static int pack_s_UpvRight(XDR* xdrs, s_UpvRight_t* this1);
+static int pack_s_UpvPaddles(XDR* xdrs, s_UpvPaddles_t* this1);
+static int pack_s_UpvShowers(XDR* xdrs, s_UpvShowers_t* this1);
 
 static int pack_s_HDDM(XDR* xdrs, s_HDDM_t* this1)
 {
@@ -2676,6 +2970,15 @@ static int pack_s_HitView(XDR* xdrs, s_HitView_t* this1)
       if (this1->forwardEMcal)
       {
          pack_s_ForwardEMcal(xdrs,this1->forwardEMcal);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->upstreamEMveto)
+      {
+         pack_s_UpstreamEMveto(xdrs,this1->upstreamEMveto);
       }
       else
       {
@@ -3896,6 +4199,223 @@ static int pack_s_ForwardShowers(XDR* xdrs, s_ForwardShowers_t* this1)
    return size;
 }
 
+static int pack_s_UpstreamEMveto(XDR* xdrs, s_UpstreamEMveto_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   {
+      if (this1->upvRows)
+      {
+         pack_s_UpvRows(xdrs,this1->upvRows);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->upvPaddles)
+      {
+         pack_s_UpvPaddles(xdrs,this1->upvPaddles);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->upvShowers)
+      {
+         pack_s_UpvShowers(xdrs,this1->upvShowers);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_UpvRows(XDR* xdrs, s_UpvRows_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].y);
+      if (this1->in[m].upvLeft)
+      {
+         pack_s_UpvLeft(xdrs,this1->in[m].upvLeft);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->in[m].upvRight)
+      {
+         pack_s_UpvRight(xdrs,this1->in[m].upvRight);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_UpvLeft(XDR* xdrs, s_UpvLeft_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   {
+      if (this1->showers)
+      {
+         pack_s_Showers(xdrs,this1->showers);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_UpvRight(XDR* xdrs, s_UpvRight_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   {
+      if (this1->showers)
+      {
+         pack_s_Showers(xdrs,this1->showers);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_UpvPaddles(XDR* xdrs, s_UpvPaddles_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].y);
+      xdr_float(xdrs,&this1->in[m].z);
+      if (this1->in[m].upvLeft)
+      {
+         pack_s_UpvLeft(xdrs,this1->in[m].upvLeft);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->in[m].upvRight)
+      {
+         pack_s_UpvRight(xdrs,this1->in[m].upvRight);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_UpvShowers(XDR* xdrs, s_UpvShowers_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].E);
+      xdr_bool(xdrs,&this1->in[m].primary);
+      xdr_float(xdrs,&this1->in[m].t);
+      xdr_int(xdrs,&this1->in[m].track);
+      xdr_float(xdrs,&this1->in[m].x);
+      xdr_float(xdrs,&this1->in[m].y);
+      xdr_float(xdrs,&this1->in[m].z);
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
 int flush_s_HDDM(s_HDDM_t* this1,s_iostream_t* fp)
 {
    if (this1 == 0)
@@ -4172,6 +4692,30 @@ static popNode* matches(char* b, char* c)
          else if (strcmp(btag,"forwardShower") == 0)
          {
             this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_ForwardShowers;
+         }
+         else if (strcmp(btag,"upstreamEMveto") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_UpstreamEMveto;
+         }
+         else if (strcmp(btag,"upvRow") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_UpvRows;
+         }
+         else if (strcmp(btag,"upvLeft") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_UpvLeft;
+         }
+         else if (strcmp(btag,"upvRight") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_UpvRight;
+         }
+         else if (strcmp(btag,"upvPaddle") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_UpvPaddles;
+         }
+         else if (strcmp(btag,"upvShower") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_UpvShowers;
          }
          else
          {

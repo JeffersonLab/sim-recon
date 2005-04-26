@@ -2,6 +2,15 @@
 * $Id$
 *
 * $Log$
+* Revision 1.19  2005/04/26 14:51:52  ostrov
+* Addition of UPV
+*
+* Revision 1.19 2005/03/20 ao
+* hitUPV.c
+* Makefile.orig
+* gustep.F
+*   - support for hits in UPV
+*
 * Revision 1.18  2005/01/29 19:25:28  jonesrt
 * hitLGD.c
 *   - renamed to hitFCal.c [rtj]
@@ -467,6 +476,9 @@ c	  write(*,*)'In GUSTEP: ',bcalstring,dEsum
           call hitForwardTOF(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
         elseif (cnames(NLEVEL).eq.'LGBL') then		! forward calorimeter
           call hitForwardEMcal(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
+        elseif ((cnames(NLEVEL).eq.'UPVP').or.		! UPV
+     +          (cnames(NLEVEL).eq.'UPVC')) then
+          call hitUpstreamEMveto(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
         endif
       endif
       END
