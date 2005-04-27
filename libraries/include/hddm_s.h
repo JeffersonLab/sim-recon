@@ -618,6 +618,82 @@ typedef struct {
 } s_ForwardEMcal_t;
 #endif /* s_ForwardEMcal_t */
 
+#ifndef SAW_s_UpvLeft_t
+#define SAW_s_UpvLeft_t
+
+typedef struct {
+   s_Showers_t*         showers;
+} s_UpvLeft_t;
+#endif /* s_UpvLeft_t */
+
+#ifndef SAW_s_UpvRight_t
+#define SAW_s_UpvRight_t
+
+typedef struct {
+   s_Showers_t*         showers;
+} s_UpvRight_t;
+#endif /* s_UpvRight_t */
+
+#ifndef SAW_s_UpvRow_t
+#define SAW_s_UpvRow_t
+
+typedef struct {
+   float                y;
+   s_UpvLeft_t*         upvLeft;
+   s_UpvRight_t*        upvRight;
+} s_UpvRow_t;
+
+typedef struct {
+   unsigned int mult;
+   s_UpvRow_t in[1];
+} s_UpvRows_t;
+#endif /* s_UpvRow_t */
+
+#ifndef SAW_s_UpvPaddle_t
+#define SAW_s_UpvPaddle_t
+
+typedef struct {
+   float                y;
+   float                z;
+   s_UpvLeft_t*         upvLeft;
+   s_UpvRight_t*        upvRight;
+} s_UpvPaddle_t;
+
+typedef struct {
+   unsigned int mult;
+   s_UpvPaddle_t in[1];
+} s_UpvPaddles_t;
+#endif /* s_UpvPaddle_t */
+
+#ifndef SAW_s_UpvShower_t
+#define SAW_s_UpvShower_t
+
+typedef struct {
+   float                E;
+   bool_t               primary;
+   float                t;
+   int                  track;
+   float                x;
+   float                y;
+   float                z;
+} s_UpvShower_t;
+
+typedef struct {
+   unsigned int mult;
+   s_UpvShower_t in[1];
+} s_UpvShowers_t;
+#endif /* s_UpvShower_t */
+
+#ifndef SAW_s_UpstreamEMveto_t
+#define SAW_s_UpstreamEMveto_t
+
+typedef struct {
+   s_UpvRows_t*         upvRows;
+   s_UpvPaddles_t*      upvPaddles;
+   s_UpvShowers_t*      upvShowers;
+} s_UpstreamEMveto_t;
+#endif /* s_UpstreamEMveto_t */
+
 #ifndef SAW_s_HitView_t
 #define SAW_s_HitView_t
 
@@ -629,6 +705,7 @@ typedef struct {
    s_Cerenkov_t*        Cerenkov;
    s_ForwardTOF_t*      forwardTOF;
    s_ForwardEMcal_t*    forwardEMcal;
+   s_UpstreamEMveto_t*  upstreamEMveto;
 } s_HitView_t;
 #endif /* s_HitView_t */
 
@@ -755,6 +832,18 @@ s_Rows_t* make_s_Rows(int n);
 s_Columns_t* make_s_Columns(int n);
 
 s_ForwardShowers_t* make_s_ForwardShowers(int n);
+
+s_UpstreamEMveto_t* make_s_UpstreamEMveto();
+
+s_UpvRows_t* make_s_UpvRows(int n);
+
+s_UpvLeft_t* make_s_UpvLeft();
+
+s_UpvRight_t* make_s_UpvRight();
+
+s_UpvPaddles_t* make_s_UpvPaddles(int n);
+
+s_UpvShowers_t* make_s_UpvShowers(int n);
 
 #ifdef __cplusplus
 }
