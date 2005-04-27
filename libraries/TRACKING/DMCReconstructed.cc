@@ -21,7 +21,7 @@ void DMCReconstructed::FindClosestThrown(vector<const DMCThrown*> &mcthrowns)
 		const DMCThrown *mcthrown = mcthrowns[i];
 		
 		// bail early if magnitudes aren't even close
-		if(fabs(mcthrown->p/p - 1.0) > 0.2)continue;
+		//if(fabs(mcthrown->p/p - 1.0) > 0.2)continue;
 		
 		float p_trans_thrown = mcthrown->p*sin(mcthrown->theta);
 		float p_trans_recon = p*sin(theta);
@@ -35,10 +35,8 @@ void DMCReconstructed::FindClosestThrown(vector<const DMCThrown*> &mcthrowns)
 		}
 	}
 	
-	float thrown_delta_p = sqrt(best_delta_p2);
+	thrown_delta_p = sqrt(best_delta_p2);
 	
-	if(thrown_delta_p/p > 0.2){
-		thrownid = -1;
-		return;
-	}
+	//if(thrown_delta_p/p > 0.2)thrownid = -1;
+
 }
