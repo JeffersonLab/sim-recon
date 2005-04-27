@@ -8,7 +8,7 @@
 #include <iostream>
 using namespace std;
 
-#include "DMCFitstats.h"
+#include "DMCFitStats.h"
 
 #include "DFactory_DMCTrackCandidate.h"
 #include "DFactory_DMCCheatHit.h"
