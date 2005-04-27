@@ -7,6 +7,7 @@
 //
 #include <stdio.h>
 #include <signal.h>
+#include <setjmp.h>
 #include <iostream>
 using namespace std;
 
@@ -17,14 +18,19 @@ using namespace std;
 
 
 int SIGINT_RECEIVED = 0;
+jmp_buf SETJMP_ENV;
 
 //-----------------------------------------------------------------
 // ctrlCHandle
 //-----------------------------------------------------------------
 void ctrlCHandle(int x)
 {
-	cerr<<endl<<"SIGINT received....."<<endl;
 	SIGINT_RECEIVED++;
+	cerr<<endl<<"SIGINT received ("<<SIGINT_RECEIVED<<")....."<<endl;
+	if(SIGINT_RECEIVED == 3){
+		cerr<<endl<<"Three SIGINTS received! Attempting graceful exit ..."<<endl<<endl;
+		longjmp(SETJMP_ENV, 1);
+	}
 }
 
 
@@ -139,6 +145,14 @@ derror_t DEventLoop::OneEvent(void)
 	}else{
 		err = source->NextEvent();
 	}
+	
+	// Here is a bit of voodoo. Calling setjmp() records the etire stack
+	// so that a subsequent call to longjmp() will return us right here.
+	// If we're returning here from a longjmp() call, then the return
+	// value of setjmp() will be non-zero. The longjmp() call is made
+	// from the SIGNINT interrupt handler so infinite loops can be
+	// broken out of and the program will still gracefully exit.
+	if(setjmp(SETJMP_ENV))err = NO_MORE_EVENT_SOURCES;
 	
 	switch(err){
 		case NOERROR:
