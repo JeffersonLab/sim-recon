@@ -62,9 +62,11 @@ float DArcHit::Dist2ToLine(float x, float y)
 		x1 = m*y1 + b;
 	}
 
-	float d2 = pow((double)(x-x1),2.0) + pow((double)(y-y1),2.0);
+	//float d2 = pow((double)(x-x1),2.0) + pow((double)(y-y1),2.0);
+	float dx = x-x1;
+	float dy = y-y1;
 	
-	return d2;
+	return dx*dx + dy*dy;
 }
 
 //--------------
@@ -75,14 +77,15 @@ float DArcHit::DistToLine(float x, float y)
 	return sqrt(Dist2ToLine(x,y));
 }
 //--------------
-// FillDensityHistogram
+// Density
 //--------------
 float DArcHit::Density(float x, float y)
 {
 	float d2 = Dist2ToLine(x,y);
 
-	float d = sqrt(d2);
-	float frac = (5.0 - d)/5.0;
+	//float d = sqrt(d2);
+	//float frac = (5.0 - d)/5.0;
+	float frac = (25.0 - d2)/25.0;
 	return frac<0.0 ? 0.0:frac;
 
 	//return exp(-d2*d2/1.0);
