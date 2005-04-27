@@ -42,6 +42,7 @@ class DEvent{
 		s_HDDM_t *_hddm_s;
 		int _runnumber;
 		int _eventnumber;
+		derror_t Fini(void);
 
 	private:
 		vector<DFactory_base*> factories;

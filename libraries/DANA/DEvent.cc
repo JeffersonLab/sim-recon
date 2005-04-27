@@ -158,4 +158,22 @@ const vector<string> DEvent::GetFactoryNames(void)
 }
 
 
+//-------------
+// Fini
+//-------------
+derror_t DEvent::Fini(void)
+{
+	/// Call fini() methods of all factories. Not all factories are
+	/// accessed by every program so each one that implements a fini()
+	/// method must not assume it's init(), brun(), evnt(), or erun()
+	/// methods were called.
+	vector<string> names;
+	vector<DFactory_base*>::iterator factory=factories.begin();
+	for(; factory!=factories.end(); factory++){
+		(*factory)->fini();
+	}
+
+	return NOERROR;
+}
+
 
