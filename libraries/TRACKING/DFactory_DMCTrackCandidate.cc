@@ -38,7 +38,7 @@ DFactory_DMCTrackCandidate::DFactory_DMCTrackCandidate()
 
 	// max distance a line-of-circle-centers line can
 	// be from a focal point and still be considered on the circle
-	masksize = 3.0; // in cm
+	masksize = 5.0; // in cm
 	masksize2 = masksize*masksize;
 	
 	// See note in FindCircles
@@ -230,6 +230,7 @@ derror_t DFactory_DMCTrackCandidate::FindCirclesHitSub(void)
 		DQuickFit *fit = new DQuickFit();
 		for(int i=0; i<archits.size(); i++){
 			DArcHit *a = archits[i];
+			if(a->used)continue;
 			if(a->Dist2ToLine(x,y) <= masksize2){
 				fit->AddHit(a->rhit, a->phihit, a->zhit);
 			}
@@ -294,6 +295,7 @@ derror_t DFactory_DMCTrackCandidate::FillArcDensityHistogram(TH2F *hist)
 	/// Loop over all archits and fill the density histo for
 	/// any that don't have their used flag set.
 	hist->Reset();
+	unsigned int NN = archits.size();
 	for(int i=0;i<archits.size();i++){
 		DArcHit *a = archits[i];
 		if(a->used)continue;
