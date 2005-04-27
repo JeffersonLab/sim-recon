@@ -1,9 +1,12 @@
-	// Author: David Lawrence  June 24, 2004
+// $Id$
+//
+// Author: David Lawrence  June 24, 2004
 //
 //
 // DEventLoop methods
 //
 #include <stdio.h>
+#include <signal.h>
 #include <iostream>
 using namespace std;
 
@@ -11,6 +14,18 @@ using namespace std;
 #include "DEventProcessor.h"
 #include "DEventSourceET.h"
 #include "DEventSourceFile.h"
+
+
+int SIGINT_RECEIVED = 0;
+
+//-----------------------------------------------------------------
+// ctrlCHandle
+//-----------------------------------------------------------------
+void ctrlCHandle(int x)
+{
+	cerr<<endl<<"SIGINT received....."<<endl;
+	SIGINT_RECEIVED++;
+}
 
 
 //----------------
@@ -25,6 +40,9 @@ DEventLoop::DEventLoop(int narg, char *argv[])
 	last_print_rate_time = 0;
 	quit=0;
 	goto_event = -1;
+	
+	// Set up to catch SIGINTs for graceful exits
+	signal(SIGINT,ctrlCHandle);
 	
 	// Determine event source type
 	DEventSource::EVENT_SOURCE_TYPE source_type;
@@ -186,6 +204,9 @@ derror_t DEventLoop::OneEvent(void)
 //----------------
 derror_t DEventLoop::Fini(void)
 {
+	// Call fini for all factories
+	DEvent::Fini();
+
 	// Call fini Processors
 	for(int i=0;i<Nprocessors;i++)processors[i]->fini();
 	
@@ -206,7 +227,7 @@ derror_t DEventLoop::Run(void)
 	do{
 		err=OneEvent();
 		if(err!=NOERROR)break;
-	}while(!quit);
+	}while(!quit && !SIGINT_RECEIVED);
 
 	// Clean up
 	err = Fini();
