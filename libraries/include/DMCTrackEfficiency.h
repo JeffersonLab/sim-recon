@@ -22,6 +22,7 @@ class DMCTrackEfficiency{
 		int Nhits_thrown_and_found;	///< Num hits in both thrown and found (primary) tracks
 		int Nhits_found_different;		///< Nfound - Nhits_thrown_and_found
 		int Nhits_thrown_unused;		///< Nthrown - Nhits_thrown_and_found
+		int fittable;						///< non-zero if more than 3 pimary hits
 
 		int track;							///< track number from GEANT (same as DMCCheatHits)
 		int index_DMCReconstructed;	///< index to corresponding DMCReconstructed
