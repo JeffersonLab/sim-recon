@@ -5,6 +5,9 @@
 // Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
 //
 
+#include <iostream>
+using namespace std;
+
 #include "DFactory_DMCFitStats.h"
 
 
@@ -58,7 +61,16 @@ derror_t DFactory_DMCFitStats::evnt(int eventnumber)
 //------------------
 derror_t DFactory_DMCFitStats::fini(void)
 {
-	if(fitstats)fitstats->Finalize();
+	if(fitstats){
+		fitstats->Finalize();
+		
+		float h[DMCFitStats::NBINS];
+		for(int i=1; i<DMCFitStats::NBINS; i++){
+			h[i] = fitstats->stats->GetBinContent(i);
+			
+			cout<<" h["<<i<<"] = "<<h[i]<<"\t"<<FitStatsDescription[i]<<endl;
+		}
+	}
 }
 
 //------------------
