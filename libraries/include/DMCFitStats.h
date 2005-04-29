@@ -19,37 +19,56 @@ class DMCFitStats{
 	public:
 		HDCLASSDEF(DMCFitStats);
 		
+		enum{
+			NHITS_THROWN =1,
+			NHITS_FOUND,
+			NHITS_THROWN_AND_FOUND,
+			NHITS_FOUND_DIFFERENT,
+			NHITS_THROWN_UNUSED,
+			NTHROWN,
+			NFOUND,
+			NFITTABLE,
+			NMATCHED,
+
+			R_FOUND_TO_FITTABLE,
+			R_THROWN_AND_FOUND_TO_THROWN,
+			R_THROWN_AND_FOUND_TO_FOUND,
+			R_MATCHED_TO_FITTABLE,
+			
+			NBINS
+		};
+		
 		DMCFitStats();
 		~DMCFitStats();
 		void AddEvent(DEvent *event);
+		void FillAll(float what, float theta, float phi, float p, float weight=1.0);
+		void EffVsX(TH1F *out, TH2F* in);
 		void DMCFitStats::Finalize(void);
 		
-		
-		TH1F *stats, *frac, *h4_dist, *h4_dist_primary;
-		TH2F *delta_p;
-		TH1F *delta_p_over_p;
-		TH1F *hits_per_thrown_track; 
+		TH1F *stats;
+		TH2F *stats_vs_theta, *stats_vs_phi, *stats_vs_p;
+		TH2F *dp_over_p_vs_p, *dp_over_p_vs_theta;
+		TH1F *eff_vs_theta, *eff_vs_phi, *eff_vs_p;
 
-		/// The "stats" histogram has a special meaning for each bin:
-		///
-		///  1 - Number of hits in found track that were actually from same track
-		///  2 - Number of hits in found track that were actually from different track
-		///  3 - Number of hits in actual track which corresponds to this found one
-		///  4 - Same as above, but which also were included in the found track
-		///  5 - Number of hits not included in any found track
-		///  6 - Total number of cheat hits
-		///  7 - Total number of tracks thrown (FDC+CDC had more than 3 hits)
-		///  8 - Total number of tracks found
-		///
-		///
-		/// The "frac" histogram also has special meanings for each bin:
-		///
-		///  1 - Ratio of found to "thrown" tracks (thrown means >3 hits in CDC+FDC)
-		///  2 - Fraction of cheat hits used in at least one found track
-		///  3 - Fraction of hits assigned to track they actually came from
-		///  4 - Fraction of hits in thrown track assigned to found track
-		
 		ClassDef(DMCFitStats,1)
+};
+
+static const char* FitStatsDescription[DMCFitStats::NBINS] = {
+	"<nothing>",
+	"Num (primary) hits in thrown track",
+	"Num (primary) hits in reconstructed track",
+	"Num (primary) hits in both thrown and found tracks",
+	"Nfound - Nhits_thrown_and_found",
+	"Nthrown - Nhits_thrown_and_found",
+	"Num of thrown tracks (fittable or not)",
+	"Num of found tracks (real or not)",
+	"Num fittable tracks",
+	"Num fittable tracks that were found",
+	
+	"Ratio of found tracks to fittable ones",
+	"Frac. of thrown (fittable or not) trks that were found",
+	"Frac. of found tracks that were thrown",
+	"Frac. of fittable tracks that were found",
 };
 
 #endif // _DMCFitStats_
