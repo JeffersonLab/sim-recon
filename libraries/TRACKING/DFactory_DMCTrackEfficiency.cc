@@ -52,6 +52,7 @@ derror_t DFactory_DMCTrackEfficiency::evnt(int eventnumber)
 		for(int j=0;j<mccheathits.size();j++){
 			const DMCCheatHit* mccheathit = mccheathits[j];
 			if(!mccheathit->primary)continue;
+			if(mccheathit->system>2)continue;
 			if(mccheathit->track == trkeff->track)trkeff->Nhits_thrown++;
 		}
 
@@ -74,13 +75,14 @@ derror_t DFactory_DMCTrackEfficiency::evnt(int eventnumber)
 				
 				// Only consider primary track hits for now
 				if(!mccheathit->primary)continue;
+				if(mccheathit->system>2)continue;
 				if(mccheathit->track == trkeff->track)trkeff->Nhits_thrown_and_found++;
 			}
 		}
 
 		trkeff->Nhits_found_different = trkeff->Nhits_found - trkeff->Nhits_thrown_and_found;
 		trkeff->Nhits_thrown_unused = trkeff->Nhits_thrown - trkeff->Nhits_thrown_and_found;
-		
+		trkeff->fittable = trkeff->Nhits_thrown > 3;
 	}
 	
 	return NOERROR;
@@ -109,7 +111,7 @@ const string DFactory_DMCTrackEfficiency::toString(void)
 		printcol("%d", trkeff->Nhits_found);
 		printcol("%d", trkeff->Nhits_thrown_and_found);
 		printcol("%3.0f%%", 100.0*(float)trkeff->Nhits_thrown_and_found/(float)trkeff->Nhits_thrown);
-		printcol("%s", trkeff->Nhits_thrown>3 ? "Y":"N");
+		printcol("%s", trkeff->fittable ? "Y":"N");
 
 		printrow();
 	}
