@@ -1,0 +1,29 @@
+*** Begin of history file: Thu Apr 28 13:04:56 2005
+satt 'BCAL' 'COLO' 3
+satt 'BCL1' 'COLO' 2
+satt 'BCL2' 'COLO' 2
+satt 'BCL3' 'COLO' 2
+satt 'BCL4' 'COLO' 2
+satt 'BCL5' 'COLO' 2
+satt 'BCL6' 'COLO' 3
+satt 'BCL7' 'COLO' 3
+satt 'BCL8' 'COLO' 3
+satt 'BCL9' 'COLO' 3
+satt 'BCM1' 'COLO' 2
+satt 'BCM2' 'COLO' 2
+satt 'BCM3' 'COLO' 2
+satt 'BCM4' 'COLO' 2
+satt 'BCM5' 'COLO' 2
+satt 'BCM6' 'COLO' 3
+satt 'BCM7' 'COLO' 3
+satt 'BCM8' 'COLO' 3
+satt 'BCM9' 'COLO' 3
+picture/create zisis
+text 1 1 'BCAL Sectors' 0.5
+next
+text 1 1 'BCAL Sectors' 0.5
+text 15 1 'C. Xu and Z. Papandreou' 0.2
+text 15 0.5 '29-04-2005' 0.2
+dcut BCAL z .1 10 10 .1 .1
+picture/print sectors.ps
+*** End   of history file: Thu Apr 28 13:13:15 2005
