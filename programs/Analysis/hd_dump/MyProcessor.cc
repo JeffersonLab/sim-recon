@@ -40,7 +40,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 	// If int PRINT_ALL is set then add EVERYTHING.
 	if(PRINT_ALL){
 		toprint = eventLoop->GetFactoryNames();
-		for(int i=0; i<toprint.size(); i++){
+		for(unsigned int i=0; i<toprint.size(); i++){
 			string name = toprint[i];
 			cout<<"Adding to print list : "<<name<<endl;
 		}
@@ -54,7 +54,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 	// "boring".
 	int event_is_boring = 1;
 	if(SKIP_BORING_EVENTS){
-		for(int i=0;i<toprint.size();i++){
+		for(unsigned int i=0;i<toprint.size();i++){
 			DFactory_base *factory = eventLoop->GetFactory(toprint[i]);
 			if(factory){
 				if(factory->GetNrows()>0){
@@ -77,7 +77,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 	eventLoop->PrintFactories(1);
 	
 	// Print data for all specified factories
-	for(int i=0;i<toprint.size();i++){
+	for(unsigned int i=0;i<toprint.size();i++){
 		eventLoop->Print(toprint[i]);
 	}
 	
