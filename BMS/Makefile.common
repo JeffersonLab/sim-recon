@@ -61,9 +61,9 @@ ifdef HALLD_MY
 	BIN_DIR		= $(HALLD_MY)/bin/$(OSNAME)
 endif
 
-FFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
-CFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
-CXXFLAGS += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
+FFLAGS   += -Wall -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
+CFLAGS   += -Wall -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
+CXXFLAGS += -Wall -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
 
 
 # Include user specified package makefiles
