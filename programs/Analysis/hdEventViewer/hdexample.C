@@ -41,49 +41,60 @@ MyMainFrame::MyMainFrame(const TGWindow *p, UInt_t w, UInt_t h)
   //Create a main frame
   fMain = new TGMainFrame(p, w, h);
 
+  TGHorizontalFrame *mFrame = new TGHorizontalFrame(fMain,600,600);
+
+  TGVerticalFrame *vframe1 = new TGVerticalFrame(mFrame, 40, 40);
+  TGVerticalFrame *vframe2 = new TGVerticalFrame(mFrame, 40, 40);
+
+
+  TGTextButton *exit2 = new TGTextButton(vframe1, "&Exit2", "gApplication->Terminate(0)");
+  vframe1->AddFrame(exit2, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+
   //Create canvas widget
-  fEcanvas = new TRootEmbeddedCanvas("Ecanvas", fMain, 600, 600);
-  fMain->AddFrame(fEcanvas, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 10, 10, 10, 1));
+  fEcanvas = new TRootEmbeddedCanvas("Ecanvas", mFrame, 400, 400);
 
   //Create a horizontal frame widget with buttons
-  TGHorizontalFrame *hframe = new TGHorizontalFrame(fMain, 200, 40);
 
-  TGTextButton *drawSITE = new TGTextButton(hframe, "&SITE");
+  TGTextButton *drawSITE = new TGTextButton(vframe2, "&SITE");
   drawSITE->Connect("Clicked()", "MyMainFrame", this, "DrawSITE()");
-  hframe->AddFrame(drawSITE, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+  vframe2->AddFrame(drawSITE, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
 
-  TGTextButton *drawCDC = new TGTextButton(hframe, "&CDC");
+  TGTextButton *drawCDC = new TGTextButton(vframe2, "&CDC");
   drawCDC->Connect("Clicked()", "MyMainFrame", this, "DrawCDC()");
-  hframe->AddFrame(drawCDC, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+  vframe2->AddFrame(drawCDC, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
 
-  TGTextButton *drawBCAL = new TGTextButton(hframe, "&BCAL");
+  TGTextButton *drawBCAL = new TGTextButton(vframe2, "&BCAL");
   drawBCAL->Connect("Clicked()", "MyMainFrame", this, "DrawBCAL()");
-  hframe->AddFrame(drawBCAL, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+  vframe2->AddFrame(drawBCAL, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
 
-  TGTextButton *phiM = new TGTextButton(hframe, "&phi-");
+  TGTextButton *phiM = new TGTextButton(vframe2, "&phi-");
   phiM->Connect("Clicked()", "MyMainFrame", this, "PhiMinus()");
-  hframe->AddFrame(phiM, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+  vframe2->AddFrame(phiM, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
 
-  TGTextButton *phiP = new TGTextButton(hframe, "&phi+");
+  TGTextButton *phiP = new TGTextButton(vframe2, "&phi+");
   phiP->Connect("Clicked()", "MyMainFrame", this, "PhiPlus()");
-  hframe->AddFrame(phiP, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+  vframe2->AddFrame(phiP, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
 
-  TGTextButton *thetaM = new TGTextButton(hframe, "&theta-");
+  TGTextButton *thetaM = new TGTextButton(vframe2, "&theta-");
   thetaM->Connect("Clicked()", "MyMainFrame", this, "ThetaMinus()");
-  hframe->AddFrame(thetaM, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+  vframe2->AddFrame(thetaM, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
 
-  TGTextButton *thetaP = new TGTextButton(hframe, "&theta+");
+  TGTextButton *thetaP = new TGTextButton(vframe2, "&theta+");
   thetaP->Connect("Clicked()", "MyMainFrame", this, "ThetaPlus()");
-  hframe->AddFrame(thetaP, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+  vframe2->AddFrame(thetaP, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
 
-  TGTextButton *sideV = new TGTextButton(hframe, "&Side View");
+  TGTextButton *sideV = new TGTextButton(vframe2, "&Side View");
   sideV->Connect("Clicked()", "MyMainFrame", this, "SideView()");
-  hframe->AddFrame(sideV, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+  vframe2->AddFrame(sideV, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
 
-  TGTextButton *exit = new TGTextButton(hframe, "&Exit", "gApplication->Terminate(0)");
-  hframe->AddFrame(exit, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+  TGTextButton *exit = new TGTextButton(vframe2, "&Exit", "gApplication->Terminate(0)");
+  vframe2->AddFrame(exit, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
 
-  fMain->AddFrame(hframe, new TGLayoutHints(kLHintsCenterX, 2, 2, 2, 2));
+  mFrame->AddFrame(vframe1, new TGLayoutHints(kLHintsLeft, 2, 2, 2, 2));
+  mFrame->AddFrame(fEcanvas, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 2, 2, 2, 1));
+  mFrame->AddFrame(vframe2, new TGLayoutHints(kLHintsRight, 2, 2, 2, 2));
+
+  fMain->AddFrame(mFrame, new TGLayoutHints(kLHintsCenterX|kLHintsExpandX | kLHintsExpandY, 2, 2, 2, 1));
 
   cerr << "Here.....0" << endl;
 
@@ -100,12 +111,16 @@ MyMainFrame::MyMainFrame(const TGWindow *p, UInt_t w, UInt_t h)
   // Map main frame
   fMain->MapWindow();
 
-  gROOT->LoadMacro("hdgeant.C");
+  //gROOT->LoadMacro("hdgeant.C");
+  gROOT->LoadMacro("hddsroot.C");
   float xmin[3] = {-100, -100, -100};
   float xmax[3] = {100, 100, 100};
   fView = new TView(xmin, xmax, 1);
 
-  hdgeant();
+  //hdgeant();
+  hddsroot();
+
+  this->DrawSITE();
 
 
 }
@@ -196,16 +211,16 @@ void MyMainFrame::ThetaMinus()
 
 void MyMainFrame::SideView()
 {
-  //  fView->Side();
-  //  this->fPhiView = 0;
-  //  this->fThetaView = 90;
+    fView->Side();
+    this->fPhiView = 0;
+    this->fThetaView = 90;
 
-  this->fPhiView = 0;
-  this->fThetaView = 90;
-  this->fPsiView = 90;
-  fView->RotateView(this->fPhiView,this->fThetaView);
-  fView->SetPsi(this->fPsiView);      
-  fView->Zoom();    
+  //this->fPhiView = 0;
+  //this->fThetaView = 90;
+  //this->fPsiView = 90;
+  //fView->RotateView(this->fPhiView,this->fThetaView);
+  //fView->SetPsi(this->fPsiView);      
+  //fView->Zoom();    
 }
 
 MyMainFrame::~MyMainFrame()
@@ -218,5 +233,5 @@ MyMainFrame::~MyMainFrame()
 void hdexample()
 {
   // Popup the GUI.....
-  new MyMainFrame(gClient->GetRoot(), 600, 600);
+  new MyMainFrame(gClient->GetRoot(), 800, 800);
 }
