@@ -17,7 +17,7 @@ void DMCReconstructed::FindClosestThrown(vector<const DMCThrown*> &mcthrowns)
 	thrown_delta_p = 1000.0;
 	
 	float best_delta_p2 = 1000.0;
-	for(int i=0; i<mcthrowns.size(); i++){
+	for(unsigned int i=0; i<mcthrowns.size(); i++){
 		const DMCThrown *mcthrown = mcthrowns[i];
 		
 		// bail early if magnitudes aren't even close

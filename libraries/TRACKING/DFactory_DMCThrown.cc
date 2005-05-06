@@ -16,19 +16,19 @@ derror_t DFactory_DMCThrown::evnt(int enventnumber)
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
 	
-	for(int i=0; i<PE->mult; i++){
+	for(unsigned int i=0; i<PE->mult; i++){
 		// ------------ Reactions --------------
 		s_Reactions_t *reactions=PE->in[i].reactions;
 		if(!reactions)continue;
 
-		for(int j=0; j<reactions->mult; j++){
+		for(unsigned int j=0; j<reactions->mult; j++){
 			s_Vertices_t *vertices = reactions->in[j].vertices;
 			if(vertices){
-				for(int k=0; k<vertices->mult; k++){
+				for(unsigned int k=0; k<vertices->mult; k++){
 					s_Origin_t *origin = vertices->in[k].origin;
 					s_Products_t *products = vertices->in[k].products;
 					if(products && origin){
-						for(int m=0;m<products->mult;m++){
+						for(unsigned int m=0;m<products->mult;m++){
 							s_Product_t *product = &products->in[m];
 							
 							DMCThrown *mcthrown = new DMCThrown;
@@ -66,7 +66,7 @@ const string DFactory_DMCThrown::toString(void)
 
 	printheader("row: type:  q:    p:    E: theta:   phi:   mass:     x:     y:     z:");
 	
-	for(int i=0; i<_data.size(); i++){
+	for(unsigned int i=0; i<_data.size(); i++){
 		DMCThrown * mcthrown = _data[i];
 
 		printnewrow();

@@ -51,6 +51,6 @@ const string DFactory_DUPVHit::toString(void)
 	//			printrow();
 	//		}
 	//
-	//		return _table;
+	return _table;
 
 }

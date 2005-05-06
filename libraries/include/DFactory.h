@@ -171,7 +171,7 @@ vector<void*>& DFactory<T>::Get()
 	// They will be cast back into the proper pointer type in
 	// DEvent::Get().
 	_vdata.clear();
-	for(int i=0;i<_data.size();i++)_vdata.push_back((void*)_data[i]);
+	for(unsigned int i=0;i<_data.size();i++)_vdata.push_back((void*)_data[i]);
 	
 	return _vdata;
 }
@@ -210,7 +210,7 @@ template<class T>
 derror_t DFactory<T>::HardReset(void)
 {
 	/// Clear out the factories current contents.
-	for(int i=0;i<_data.size();i++){
+	for(unsigned int i=0;i<_data.size();i++){
 		delete _data[i];
 	}
 	_data.clear();

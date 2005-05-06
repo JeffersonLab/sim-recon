@@ -23,7 +23,7 @@ void DFactory_base::printheader(const char *header)
 	// Find and record the column positions (just look for colons)
 	char *c = (char*)header;
 	_icol = 0;
-	while(c = strstr(c,":")){
+	while((c = strstr(c,":"))){
 		_columns[_icol++] = (int)((unsigned long)c - (unsigned long)header);
 		if(_icol>=99)break;
 		c++;

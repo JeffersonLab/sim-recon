@@ -39,7 +39,7 @@ class DMCFitStats{
 		};
 		
 		DMCFitStats();
-		~DMCFitStats();
+		virtual ~DMCFitStats();
 		void AddEvent(DEvent *event);
 		void FillAll(float what, float theta, float phi, float p, float weight=1.0);
 		void EffVsX(TH1F *out, TH2F* in);
@@ -53,23 +53,7 @@ class DMCFitStats{
 		ClassDef(DMCFitStats,1)
 };
 
-static const char* FitStatsDescription[DMCFitStats::NBINS] = {
-	"<nothing>",
-	"Num (primary) hits in thrown track",
-	"Num (primary) hits in reconstructed track",
-	"Num (primary) hits in both thrown and found tracks",
-	"Nfound - Nhits_thrown_and_found",
-	"Nthrown - Nhits_thrown_and_found",
-	"Num of thrown tracks (fittable or not)",
-	"Num of found tracks (real or not)",
-	"Num fittable tracks",
-	"Num fittable tracks that were found",
-	
-	"Ratio of found tracks to fittable ones",
-	"Frac. of thrown (fittable or not) trks that were found",
-	"Frac. of found tracks that were thrown",
-	"Frac. of fittable tracks that were found",
-};
+extern const char* FitStatsDescription[DMCFitStats::NBINS]; 
 
 #endif // _DMCFitStats_
 

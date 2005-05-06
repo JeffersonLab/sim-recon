@@ -38,6 +38,7 @@ double DTrackFit::Dist(TVector3 *v)
 	// in most cases since the angular difference from the hit to the track
 	// should be very small given the large dz/dphi.
 	
+#if 0
 	double r, Ro, dzdphi;
 	
 	double k = -(dzdphi*dzdphi)/r/Ro;
@@ -55,5 +56,8 @@ double DTrackFit::Dist(TVector3 *v)
 	double dist = sqrt(r*r + Ro*Ro - 2.0*r*Ro*cos(delta_phi) + delta_z*delta_z);
 
 	return dist;
+#endif
+
+	return 0;
 }
 	

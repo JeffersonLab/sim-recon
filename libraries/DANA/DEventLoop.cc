@@ -51,7 +51,6 @@ DEventLoop::DEventLoop(int narg, char *argv[])
 	signal(SIGINT,ctrlCHandle);
 	
 	// Determine event source type
-	DEventSource::EVENT_SOURCE_TYPE source_type;
 	switch(DEventSource::GuessSourceType(narg, argv)){
 		case DEventSource::EVENT_SOURCE_ET:
 			source = new DEventSourceET(narg, argv);
@@ -256,8 +255,8 @@ derror_t DEventLoop::Run(void)
 //----------------
 derror_t DEventLoop::Run(DEventProcessor *proc)
 {
-	derror_t err;
-	if(err=AddProcessor(proc))return err;
+	derror_t err = AddProcessor(proc);
+	if(err)return err;
 	
 	return Run();
 }

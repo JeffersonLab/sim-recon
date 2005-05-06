@@ -87,7 +87,7 @@ DFactory<T>* DEvent::Get(vector<const T*> &t)
 	// back into the proper (const) type.
 	vector<void*> vt = factory->Get();
 	t.clear();
-	for(int i=0;i<vt.size();i++)t.push_back((const T*)vt[i]);
+	for(unsigned int i=0;i<vt.size();i++)t.push_back((const T*)vt[i]);
 
 	return (DFactory<T>*)factory;
 }

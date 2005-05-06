@@ -74,7 +74,7 @@ derror_t DEvent::PrintFactories(int sparsify)
 	cout<<"Name:             nrows:"<<endl;
 	cout<<"---------------- -------"<<endl;
 
-	for(int i=0; i<factories.size(); i++){
+	for(unsigned int i=0; i<factories.size(); i++){
 		DFactory_base *factory = factories[i];
 		
 		if(_hddm_s)
@@ -110,7 +110,7 @@ derror_t DEvent::ClearFactories(void)
 	/// (if apropriate). This is called from DEventLoop at the
 	/// begining of a new event.
 
-	for(int i=0; i<factories.size(); i++){
+	for(unsigned int i=0; i<factories.size(); i++){
 		factories[i]->Reset();
 	}
 

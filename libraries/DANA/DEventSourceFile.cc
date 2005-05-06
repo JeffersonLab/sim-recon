@@ -73,7 +73,7 @@ derror_t DEventSourceFile::GetEvent(void)
 	// Then call GotoEvent instead to use the values already in
 	// memory. The value of current_event_index will be updated
 	// in RecordEventNumber() below.
-	if(current_event_index != event_buff.size() - 1){
+	if(current_event_index != (int)event_buff.size() - 1){
 		const event_buffer_t &e = event_buff[current_event_index+1];
 		return GotoEvent(e.event);
 	}
@@ -114,7 +114,7 @@ derror_t DEventSourceFile::SetEventBufferSize(int Nevents)
 
 	// If we're reducing the number of events, delete oldest
 	// records until we're within the new limit
-	while(max_event_buff<event_buff.size()){
+	while(max_event_buff<(int)event_buff.size()){
 		event_buffer_t &e = event_buff[0];
 		flush_s_HDDM(e.hddm_s, 0);
 		event_buff.erase(event_buff.begin(),event_buff.begin());
@@ -158,13 +158,13 @@ derror_t DEventSourceFile::RecordEventNumber(int eventno)
 	event_buff.push_back(e);
 
 	// If we're over the limit, then delete an event
-	if(event_buff.size() > max_event_buff){
+	if((int)event_buff.size() > max_event_buff){
 		event_buffer_t &e = event_buff[0];
 		flush_s_HDDM(e.hddm_s, 0);
 		event_buff.erase(event_buff.begin());
 	}
 	
-	current_event_index = event_buff.size() - 1;
+	current_event_index = (int)event_buff.size() - 1;
 
 	return NOERROR;
 }

@@ -40,8 +40,7 @@ derror_t DFactory_DMCTrackEfficiency::evnt(int eventnumber)
 	}
 
 	// Loop over thrown tracks. 
-	for(int i=0;i<mcthrowns.size();i++){
-		const DMCThrown *mcthrown = mcthrowns[i];
+	for(unsigned int i=0;i<mcthrowns.size();i++){
 		DMCTrackEfficiency *trkeff = new DMCTrackEfficiency();
 		_data.push_back(trkeff);
 		
@@ -49,7 +48,7 @@ derror_t DFactory_DMCTrackEfficiency::evnt(int eventnumber)
 
 		// Find total hits from primary thrown track
 		trkeff->Nhits_thrown = 0;
-		for(int j=0;j<mccheathits.size();j++){
+		for(unsigned int j=0;j<mccheathits.size();j++){
 			const DMCCheatHit* mccheathit = mccheathits[j];
 			if(!mccheathit->primary)continue;
 			if(mccheathit->system>2)continue;
@@ -58,8 +57,8 @@ derror_t DFactory_DMCTrackEfficiency::evnt(int eventnumber)
 
 		// Find reconstructed track (if any) corresponding to this one
 		trkeff->index_DMCReconstructed = -1;
-		for(int j=0; j<mcreconstructeds.size(); j++){
-			if(mcreconstructeds[j]->thrownid == i)trkeff->index_DMCReconstructed = j;
+		for(unsigned int j=0; j<mcreconstructeds.size(); j++){
+			if(mcreconstructeds[j]->thrownid == (int)i)trkeff->index_DMCReconstructed = j;
 		}
 		
 		
@@ -100,7 +99,7 @@ const string DFactory_DMCTrackEfficiency::toString(void)
 
 	printheader("row: Nthrown: Nfound: Nthrown_and_found: fraction_found: fittable:");
 	
-	for(int i=0; i<_data.size(); i++){
+	for(unsigned int i=0; i<_data.size(); i++){
 
 		DMCTrackEfficiency *trkeff = _data[i];
 		

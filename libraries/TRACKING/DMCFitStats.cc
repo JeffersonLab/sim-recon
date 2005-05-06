@@ -15,6 +15,23 @@ using namespace std;
 #include "DFactory_DMCThrown.h"
 #include "DFactory_DMCReconstructed.h"
 
+const char* FitStatsDescription[DMCFitStats::NBINS] = {
+	"<nothing>",
+	"Num (primary) hits in thrown track",
+	"Num (primary) hits in reconstructed track",
+	"Num (primary) hits in both thrown and found tracks",
+	"Nfound - Nhits_thrown_and_found",
+	"Nthrown - Nhits_thrown_and_found",
+	"Num of thrown tracks (fittable or not)",
+	"Num of found tracks (real or not)",
+	"Num fittable tracks",
+	"Num fittable tracks that were found",
+	
+	"Ratio of found tracks to fittable ones",
+	"Frac. of thrown (fittable or not) trks that were found",
+	"Frac. of found tracks that were thrown",
+	"Frac. of fittable tracks that were found",
+};
 
 //------------------------------------------------------------------
 // DMCFitStats 
@@ -88,7 +105,7 @@ void DMCFitStats::AddEvent(DEvent *event)
 	}
 	
 	// Loop over thrown tracks
-	for(int i=0;i<mcthrowns.size();i++){
+	for(unsigned int i=0;i<mcthrowns.size();i++){
 		const DMCThrown *mcthrown = mcthrowns[i];
 		const DMCTrackEfficiency *trkeff = mctrackefficiencies[i];
 		
@@ -106,7 +123,7 @@ void DMCFitStats::AddEvent(DEvent *event)
 			FillAll(NFITTABLE, theta, phi, p);
 		
 			int idx = trkeff->index_DMCReconstructed;
-			if(idx>=0 && idx< mcreconstructeds.size()){
+			if(idx>=0 && idx< (int)mcreconstructeds.size()){
 				const DMCReconstructed *mcreconstructed = mcreconstructeds[idx];
 				
 				float dp_over_p = mcreconstructed->thrown_delta_p/mcthrown->p;
@@ -120,7 +137,7 @@ void DMCFitStats::AddEvent(DEvent *event)
 		}
 	}
 	
-	for(int i=0;i<mcreconstructeds.size();i++){
+	for(unsigned int i=0;i<mcreconstructeds.size();i++){
 		const DMCReconstructed *mcreconstructed = mcreconstructeds[i];
 
 		float theta = mcreconstructed->theta;

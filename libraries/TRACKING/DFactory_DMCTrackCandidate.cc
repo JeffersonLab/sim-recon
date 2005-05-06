@@ -73,19 +73,19 @@ DFactory_DMCTrackCandidate::~DFactory_DMCTrackCandidate()
 //------------------------------------------------------------------
 void DFactory_DMCTrackCandidate::ClearEvent(void)
 {
-	for(int i=0; i<archits.size(); i++)delete archits[i];
+	for(unsigned int i=0; i<archits.size(); i++)delete archits[i];
 	archits.clear();
-	for(int i=0; i<circles.size(); i++)delete circles[i];
+	for(unsigned int i=0; i<circles.size(); i++)delete circles[i];
 	circles.clear();
-	for(int i=0; i<markers.size(); i++)delete markers[i];
+	for(unsigned int i=0; i<markers.size(); i++)delete markers[i];
 	markers.clear();
-	for(int i=1; i<density_histos.size(); i++)delete density_histos[i];
+	for(unsigned int i=1; i<density_histos.size(); i++)delete density_histos[i];
 	density_histos.erase(density_histos.begin()+1, density_histos.end());
-	for(int i=1; i<slope_density_histos.size(); i++)delete slope_density_histos[i];
+	for(unsigned int i=1; i<slope_density_histos.size(); i++)delete slope_density_histos[i];
 	slope_density_histos.erase(slope_density_histos.begin()+1, slope_density_histos.end());
-	for(int i=1; i<offset_density_histos.size(); i++)delete offset_density_histos[i];
+	for(unsigned int i=1; i<offset_density_histos.size(); i++)delete offset_density_histos[i];
 	offset_density_histos.erase(offset_density_histos.begin()+1, offset_density_histos.end());
-	for(int i=0; i<qfits.size(); i++)delete qfits[i];
+	for(unsigned int i=0; i<qfits.size(); i++)delete qfits[i];
 	qfits.clear();
 }
 
@@ -101,7 +101,7 @@ derror_t DFactory_DMCTrackCandidate::evnt(int eventnumber)
 	// the archit objects array
 	vector<const DMCCheatHit*> mccheathits;
 	event->Get(mccheathits);
-	for(int i=0; i<mccheathits.size(); i++){
+	for(unsigned int i=0; i<mccheathits.size(); i++){
 		const DMCCheatHit *mccheathit = mccheathits[i];
 	
 		if(mccheathit->system!=1 && mccheathit->system!=2)continue;
@@ -139,10 +139,10 @@ derror_t DFactory_DMCTrackCandidate::evnt(int eventnumber)
 	// parameters). Someday, I'll have to track that down, but until
 	// then, I'll just go through and weed out duplicates.
 	if(_data.size()>1){
-		for(int i=0;i<_data.size()-1; i++){
+		for(unsigned int i=0;i<_data.size()-1; i++){
 			DMCTrackCandidate *a = _data[i];
 			int filtered = 0;
-			for(int j=i+1;j<_data.size(); j++){
+			for(unsigned int j=i+1;j<_data.size(); j++){
 				DMCTrackCandidate *b = _data[j];
 				if(a->q == b->q)
 					if(fabs(a->p_trans - b->p_trans)<0.05)
@@ -208,7 +208,7 @@ derror_t DFactory_DMCTrackCandidate::FindCirclesHitSub(void)
 	/// to filling the density histo on subsequent iterations.
 
 	// Clear the "used" flags on all archits
-	for(int i=0;i<archits.size();i++ )archits[i]->used = 0;
+	for(unsigned int i=0;i<archits.size();i++ )archits[i]->used = 0;
 
 	// Loop until we run out of circles 
 	do{
@@ -217,7 +217,7 @@ derror_t DFactory_DMCTrackCandidate::FindCirclesHitSub(void)
 	
 		// Fill the density histogram
 		FillArcDensityHistogram(density_histo);
-		if(density_histos.size()<=max_density_histos)density_histos.push_back(new TH2F(*density_histo));
+		if((int)density_histos.size()<=max_density_histos)density_histos.push_back(new TH2F(*density_histo));
 
 		// Find the coordinates of the maximum
 		int xbin, ybin, zbin;
@@ -228,7 +228,7 @@ derror_t DFactory_DMCTrackCandidate::FindCirclesHitSub(void)
 		// The maxmimum bin is not terribly accurate as the center of the
 		// circle. Use DQuickFit to quickly find a better center.
 		DQuickFit *fit = new DQuickFit();
-		for(int i=0; i<archits.size(); i++){
+		for(unsigned int i=0; i<archits.size(); i++){
 			DArcHit *a = archits[i];
 			if(a->used)continue;
 			if(a->Dist2ToLine(x,y) <= masksize2){
@@ -262,7 +262,7 @@ derror_t DFactory_DMCTrackCandidate::FindCirclesHitSub(void)
 		// of this circle if no tracks were found. (There may be a something
 		// more clever to do here, but right now I'm not sure what).
 		if(Ntracks<1){
-			for(int i=0;i<archits.size();i++){
+			for(unsigned int i=0;i<archits.size();i++){
 				DArcHit *a = archits[i];
 				if(a->used)continue;
 				float d2 = a->Dist2ToLine(x,y);
@@ -272,7 +272,7 @@ derror_t DFactory_DMCTrackCandidate::FindCirclesHitSub(void)
 		
 		// Count how many un-used hits we have left
 		int Nhits_not_used = 0;
-		for(int i=0;i<archits.size();i++){
+		for(unsigned int i=0;i<archits.size();i++){
 			DArcHit *a = archits[i];
 			if(!a->used)Nhits_not_used++;
 		}
@@ -295,8 +295,8 @@ derror_t DFactory_DMCTrackCandidate::FillArcDensityHistogram(TH2F *hist)
 	/// Loop over all archits and fill the density histo for
 	/// any that don't have their used flag set.
 	hist->Reset();
-	unsigned int NN = archits.size();
-	for(int i=0;i<archits.size();i++){
+
+	for(unsigned int i=0;i<archits.size();i++){
 		DArcHit *a = archits[i];
 		if(a->used)continue;
 		
@@ -348,7 +348,7 @@ int DFactory_DMCTrackCandidate::FindTracks(float x0, float y0)
 	FillSlopeIntDensityHistos(x0, y0);
 		
 	// For debugging
-	if(slope_density_histos.size()<=max_density_histos){
+	if((int)slope_density_histos.size()<=max_density_histos){
 		slope_density_histos.push_back(new TH1F(*slope_density));
 		offset_density_histos.push_back(new TH1F(*offset_density));
 	}
@@ -399,7 +399,7 @@ int DFactory_DMCTrackCandidate::FindTracks(float x0, float y0)
 		// certain distance of the line defined by slope and z_vertex.
 		float m = slope;
 		float b = -z_vertex*m;		
-		for(int i=0;i<archits.size();i++){
+		for(unsigned int i=0;i<archits.size();i++){
 			DArcHit *a = archits[i];
 			if(!a->on_circle)continue;
 
@@ -477,15 +477,12 @@ derror_t DFactory_DMCTrackCandidate::FillSlopeIntDensityHistos(float x0, float y
 	TH1F *offset_density = offset_density_histos[0];
 	slope_density->Reset();
 	offset_density->Reset();
-	float r0 = sqrt(x0*x0 + y0*y0);
-	float x0_unit = x0/r0;
-	float y0_unit = y0/r0;
 	float phi0 = atan2(y0, x0);
 	if(phi0<0.0)phi0 += 2.0*M_PI;
 	
 	// Loop over all hits. Use the "on_circle" flag in the DArchit objects to
 	// record who is and isn't used to fill the slope and z-intercept histos
-	for(int i=0;i<archits.size();i++){
+	for(unsigned int i=0;i<archits.size();i++){
 		DArcHit *a = archits[i];
 		if(a->used){
 			a->on_circle = 0;
@@ -502,7 +499,6 @@ derror_t DFactory_DMCTrackCandidate::FillSlopeIntDensityHistos(float x0, float y
 		// and vector pointing to origin
 		float x = a->xhit+x0;
 		float y = a->yhit+y0;
-		float r = sqrt(x*x + y*y);
 		
 		// Calculate delta_phi and force it to be in the -PI to +PI range
 		a->delta_phi = atan2(y, x)-phi0;
@@ -513,10 +509,10 @@ derror_t DFactory_DMCTrackCandidate::FillSlopeIntDensityHistos(float x0, float y
 	// Loop over all pairs of phi,z points, filling the slope
 	// and z-intercept histos
 	
-	for(int i=0; i<archits.size()-1; i++){
+	for(unsigned int i=0; i<archits.size()-1; i++){
 		DArcHit *a = archits[i];
 		if(!a->on_circle)continue;
-		for(int k=i+1; k<archits.size(); k++){ 
+		for(unsigned int k=i+1; k<archits.size(); k++){ 
 			DArcHit *b = archits[k];
 			if(!b->on_circle)continue;
 			if(b->delta_phi<0.0 && a->delta_phi>0.0)continue; // filter out pairs which can't fall on the same line
@@ -537,7 +533,7 @@ derror_t DFactory_DMCTrackCandidate::FillSlopeIntDensityHistos(float x0, float y
 //------------------------------------------------------------------
 DQuickFit* DFactory_DMCTrackCandidate::GetQFit(int n)
 {
-	if(n<0 || n>=qfits.size())return NULL;
+	if(n<0 || n>=(int)qfits.size())return NULL;
 	
 	return qfits[n];
 }
@@ -563,14 +559,13 @@ derror_t DFactory_DMCTrackCandidate::DrawPhiZPoints(void)
 	/// this for development. (The program patfind uses this).
 	
 	int colors[] = {kRed,kBlue,kMagenta,kGreen,kBlack};
-	for(int j=0;j<circles.size();j++){
+	for(unsigned int j=0;j<circles.size();j++){
 		TEllipse *circle = circles[j];
 		float x0 = circle->GetX1();
 		float y0 = circle->GetY1();
-		float r0 = sqrt(x0*x0 + y0*y0);
 		float phi0 = atan2(y0, x0);
 		if(phi0<0.0)phi0 += 2.0*M_PI;
-		for(int i=0;i<archits.size();i++){
+		for(unsigned int i=0;i<archits.size();i++){
 			DArcHit *a = archits[i];
 			
 			if(a->Dist2ToLine(x0,y0) > masksize2)continue;
@@ -579,7 +574,6 @@ derror_t DFactory_DMCTrackCandidate::DrawPhiZPoints(void)
 			// and vector pointing to origin
 			float x = a->xhit+x0;
 			float y = a->yhit+y0;
-			float r = sqrt(x*x + y*y);
 			float delta_phi = atan2(y, x)-phi0;
 			while(delta_phi<0.0)delta_phi += 2.0*M_PI;
 			if(delta_phi>M_PI)delta_phi -= 2.0*M_PI;
@@ -660,7 +654,7 @@ TH2F* DFactory_DMCTrackCandidate::GetDensityHistogram(int n)
 	/// Return a pointer to 2-D density histogram n where n is value from
 	/// 0 to 1 less than the last call to SetNumDensityHistograms().
 	
-	if(n<0 || n>=density_histos.size())return NULL;
+	if(n<0 || n>=(int)density_histos.size())return NULL;
 
 	return density_histos[n];
 }
@@ -673,7 +667,7 @@ TH1F* DFactory_DMCTrackCandidate::GetSlopeDensityHistogram(int n)
 	/// Return a pointer to 1-D slope density histogram n where n is value from
 	/// 0 to 1 less than the last call to SetNumDensityHistograms().
 	
-	if(n<0 || n>=slope_density_histos.size())return NULL;
+	if(n<0 || n>=(int)slope_density_histos.size())return NULL;
 
 	return slope_density_histos[n];
 }
@@ -686,7 +680,7 @@ TH1F* DFactory_DMCTrackCandidate::GetOffsetDensityHistogram(int n)
 	/// Return a pointer to 1-D z-offset density histogram n where n is value from
 	/// 0 to 1 less than the last call to SetNumDensityHistograms().
 	
-	if(n<0 || n>=offset_density_histos.size())return NULL;
+	if(n<0 || n>=(int)offset_density_histos.size())return NULL;
 
 	return offset_density_histos[n];
 }
@@ -741,7 +735,7 @@ const string DFactory_DMCTrackCandidate::toString(void)
 
 	printheader("row: Nhits: x0(cm): y0(cm): z_vertex: dphi/dz:  q:   p: p_trans:   phi: theta:");
 	
-	for(int i=0; i<_data.size(); i++){
+	for(unsigned int i=0; i<_data.size(); i++){
 		DMCTrackCandidate *trackcandidate = _data[i];
 
 		printnewrow();

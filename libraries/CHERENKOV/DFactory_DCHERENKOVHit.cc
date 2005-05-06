@@ -33,7 +33,7 @@ const string DFactory_DCHERENKOVHit::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
 	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
+	if(_data.size()==0)return string(); // don't print anything if we have no data!
 
 	// Put the class specific code to produce nicely formatted ASCII here.
 	// The DFactory_base class has several methods defined to help. They
@@ -51,6 +51,5 @@ const string DFactory_DCHERENKOVHit::toString(void)
 	//			printrow();
 	//		}
 	//
-	//		return _table;
-
+	return _table;
 }

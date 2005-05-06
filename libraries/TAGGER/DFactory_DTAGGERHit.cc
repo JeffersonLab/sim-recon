@@ -51,6 +51,6 @@ const string DFactory_DTAGGERHit::toString(void)
 	//			printrow();
 	//		}
 	//
-	//		return _table;
+			return _table;
 
 }

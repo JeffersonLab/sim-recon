@@ -18,22 +18,21 @@ derror_t DFactory_DBCALHit::evnt(int enventnumber)
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
 	
-	for(int i=0; i<PE->mult; i++){
+	for(unsigned int i=0; i<PE->mult; i++){
 		s_Modules_t *modules = NULL;
-		s_HitView_t *HV = PE->in[i].hitView;
 		if(PE->in[i].hitView)
 			if(PE->in[i].hitView->barrelEMcal)
 				modules = PE->in[i].hitView->barrelEMcal->modules;
 		if(!modules)continue;
 
-		for(int j=0;j<modules->mult;j++){
+		for(unsigned int j=0;j<modules->mult;j++){
 			float phim = modules->in[j].phim;
 			s_Upstream_t *upstream = modules->in[j].upstream;
 			if(upstream){
 				s_Showers_t *showers = upstream->showers;
 				if(!showers)continue;
 				
-				for(int m=0;m<showers->mult;m++){
+				for(unsigned int m=0;m<showers->mult;m++){
 					float E = showers->in[m].E;
 					float t = showers->in[m].t;
 					
@@ -50,7 +49,7 @@ derror_t DFactory_DBCALHit::evnt(int enventnumber)
 				s_Showers_t *showers = downstream->showers;
 				if(!showers)continue;
 				
-				for(int m=0;m<showers->mult;m++){
+				for(unsigned int m=0;m<showers->mult;m++){
 					float E = showers->in[m].E;
 					float t = showers->in[m].t;
 					
@@ -75,11 +74,11 @@ const string DFactory_DBCALHit::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
 	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
+	if(_data.size()==0)return string(); // don't print anything if we have no data!
 
 	printheader("row:   phim(rad):      end:     E(GeV):   t(ns):");
 	
-	for(int i=0; i<_data.size(); i++){
+	for(unsigned int i=0; i<_data.size(); i++){
 		DBCALHit *bcalhit = _data[i];
 		
 		printnewrow();

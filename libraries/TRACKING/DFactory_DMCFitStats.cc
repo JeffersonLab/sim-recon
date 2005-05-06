@@ -71,6 +71,8 @@ derror_t DFactory_DMCFitStats::fini(void)
 			cout<<" h["<<i<<"] = "<<h[i]<<"\t"<<FitStatsDescription[i]<<endl;
 		}
 	}
+
+	return NOERROR;
 }
 
 //------------------

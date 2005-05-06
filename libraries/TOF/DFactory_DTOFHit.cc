@@ -16,8 +16,7 @@ derror_t DFactory_DTOFHit::evnt(int enventnumber)
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
 	
-	for(int i=0; i<PE->mult; i++){
-		s_HitView_t *HV = PE->in[i].hitView;
+	for(unsigned int i=0; i<PE->mult; i++){
 		s_Vcounters_t *vcounters = NULL;
 		s_Hcounters_t *hcounters = NULL;
 		if(PE->in[i].hitView){
@@ -28,12 +27,12 @@ derror_t DFactory_DTOFHit::evnt(int enventnumber)
 		}
 		
 		if(vcounters){
-			for(int j=0;j<vcounters->mult;j++){
+			for(unsigned int j=0;j<vcounters->mult;j++){
 				float x = vcounters->in[j].x;
 				s_Top_t *top = vcounters->in[j].top;
 				if(top){
 					s_Hits_t *hits = top->hits;
-					for(int k=0;k<hits->mult;k++){
+					for(unsigned int k=0;k<hits->mult;k++){
 						float dE = hits->in[k].dE;
 						float t = hits->in[k].t;
 					
@@ -50,7 +49,7 @@ derror_t DFactory_DTOFHit::evnt(int enventnumber)
 				s_Bottom_t *bottom = vcounters->in[j].bottom;
 				if(bottom){
 					s_Hits_t *hits = bottom->hits;
-					for(int k=0;k<hits->mult;k++){
+					for(unsigned int k=0;k<hits->mult;k++){
 						float dE = hits->in[k].dE;
 						float t = hits->in[k].t;
 					
@@ -68,12 +67,12 @@ derror_t DFactory_DTOFHit::evnt(int enventnumber)
 		}
 
 		if(hcounters){
-			for(int j=0;j<hcounters->mult;j++){
+			for(unsigned int j=0;j<hcounters->mult;j++){
 				float y = hcounters->in[j].y;
 				s_Left_t *left = hcounters->in[j].left;
 				if(left){
 					s_Hits_t *hits = left->hits;
-					for(int k=0;k<hits->mult;k++){
+					for(unsigned int k=0;k<hits->mult;k++){
 						float dE = hits->in[k].dE;
 						float t = hits->in[k].t;
 					
@@ -90,7 +89,7 @@ derror_t DFactory_DTOFHit::evnt(int enventnumber)
 				s_Right_t *right = hcounters->in[j].right;
 				if(right){
 					s_Hits_t *hits = right->hits;
-					for(int k=0;k<hits->mult;k++){
+					for(unsigned int k=0;k<hits->mult;k++){
 						float dE = hits->in[k].dE;
 						float t = hits->in[k].t;
 					
@@ -122,7 +121,7 @@ const string DFactory_DTOFHit::toString(void)
 
 	printheader("row:   y(cm):      end:     dE(MeV):   t(ns):");
 	
-	for(int i=0; i<_data.size(); i++){
+	for(unsigned int i=0; i<_data.size(); i++){
 		DTOFHit *tofhit = _data[i];
 
 		printnewrow();

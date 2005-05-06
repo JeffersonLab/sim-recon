@@ -33,7 +33,7 @@ class DEventSource
 		/// Constructor for a DEventSource object. This should normally be
 		/// called with the same arguments passed to main() on program start up.
 		DEventSource(int narg, char *argv[]);
-		~DEventSource();
+		virtual ~DEventSource();
 
 		virtual derror_t Open(char *source); ///< Open the first (if more than one) event source 
 		virtual derror_t Close(void); ///< Close the current event source.

@@ -51,6 +51,6 @@ const string DFactory_DTRIGGER::toString(void)
 	//			printrow();
 	//		}
 	//
-	//		return _table;
+	return _table;
 
 }

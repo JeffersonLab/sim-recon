@@ -12,12 +12,12 @@ using namespace std;
 #include "DQuickFit.h"
 #include "DMagneticFieldMap.h"
 
-static float target_center_z = 65.0; // Z coordinate of target center in cm (this will need to be changed at some point)
 
-static float *CHISQV=NULL;
+#if 0
 static int qsort_chisqv(const void* arg1, const void* arg2);
 static int qsort_int(const void* arg1, const void* arg2);
 static int qsort_points_by_z(const void* arg1, const void* arg2);
+#endif
 
 // The following is for sorting hits (TVector3*) by z
 class TVector3LessThanZ{
@@ -44,7 +44,7 @@ DQuickFit::DQuickFit()
 //-----------------
 DQuickFit::~DQuickFit()
 {
-	for(int i=0;i<hits.size();i++){
+	for(unsigned int i=0;i<hits.size();i++){
 		delete hits[i];
 	}
 	hits.clear();
@@ -89,11 +89,11 @@ derror_t DQuickFit::PruneHit(int idx)
 	/// Remove the hit specified by idx from the list
 	/// of hits. The value of idx can be anywhere from
 	/// 0 to GetNhits()-1.
-	if(idx<0 || idx>=hits.size())return VALUE_OUT_OF_RANGE;
+	if(idx<0 || idx>=(int)hits.size())return VALUE_OUT_OF_RANGE;
 
 	delete hits[idx];
 	hits.erase(hits.begin() + idx);
-	if(chisqv.size()>idx)chisqv.erase(chisqv.begin() + idx);
+	if((int)chisqv.size()>idx)chisqv.erase(chisqv.begin() + idx);
 
 	return NOERROR;
 }
@@ -191,7 +191,7 @@ derror_t DQuickFit::PruneOutlier(void)
 	/// hit whose furthest from the mean.
 	
 	float X=0, Y=0;
-	for(int i=0;i<hits.size();i++){
+	for(unsigned int i=0;i<hits.size();i++){
 		TVector3 *v = hits[i];
 		X += v->x();
 		Y += v->y();
@@ -201,7 +201,7 @@ derror_t DQuickFit::PruneOutlier(void)
 	
 	float max =0.0;
 	int idx = -1;
-	for(int i=0;i<hits.size();i++){
+	for(unsigned int i=0;i<hits.size();i++){
 		TVector3 *v = hits[i];
 		float x = v->x()-X;
 		float y = v->y()-Y;
@@ -233,6 +233,7 @@ derror_t DQuickFit::PruneOutliers(int n)
 	return NOERROR;
 }
 
+#if 0
 //------------------------------------------------------------------
 // qsort_chisqv
 //------------------------------------------------------------------
@@ -251,6 +252,7 @@ static int qsort_int(const void* arg1, const void* arg2)
 {
 	return *(int*)arg2 - *(int*)arg1;
 }
+#endif
 
 //-----------------
 // PrintChiSqVector
@@ -265,7 +267,7 @@ derror_t DQuickFit::PrintChiSqVector(void)
 	cout<<"Chisq vector from DQuickFit:"<<endl;
 	cout<<"----------------------------"<<endl;
 
-	for(int i=0;i<chisqv.size();i++){
+	for(unsigned int i=0;i<chisqv.size();i++){
 		cout<<i<<"  "<<chisqv[i]<<endl;
 	}
 	cout<<"Total: "<<chisq<<endl<<endl;
@@ -291,7 +293,7 @@ derror_t DQuickFit::CopyToFitParms(FitParms_t *fit)
 	fit->theta = theta;
 	fit->chisq = chisq;
 	fit->nhits = 0;
-	for(int i=0; i<chisqv.size(); i++){
+	for(unsigned int i=0; i<chisqv.size(); i++){
 		if(i>=MAX_CHISQV_HITS)break;
 		
 		fit->chisqv[fit->nhits++] = chisqv[i];
@@ -335,7 +337,7 @@ derror_t DQuickFit::FitCircle(void)
 	// Loop over hits to calculate alpha, beta, gamma, and delta
 	// if a magnetic field map was given, use it to find average Z B-field
 	float Bz = 0.0;
-	for(int i=0;i<hits.size();i++){
+	for(unsigned int i=0;i<hits.size();i++){
 		TVector3 *v = hits[i];
 		float x=v->x();
 		float y=v->y();
@@ -375,7 +377,7 @@ derror_t DQuickFit::FitCircle(void)
 	// Calculate the chisq
 	chisqv.clear();
 	chisq = 0.0;
-	for(int i=0;i<hits.size();i++){
+	for(unsigned int i=0;i<hits.size();i++){
 		TVector3 *v = hits[i];
 		float x = v->x() - x0;
 		float y = v->y() - y0;
@@ -422,7 +424,7 @@ derror_t DQuickFit::FitTrack(void)
 	float r0 = sqrt(x0*x0 + y0*y0);
 	float r_last = r0;
 	float phi_last = 0.0;
-	for(int i=0;i<hits.size();i++){
+	for(unsigned int i=0;i<hits.size();i++){
 		TVector3 *v1 = hits[i];
 		// calculate phi via cross product
 		float x = v1->x() - x0;
@@ -446,7 +448,7 @@ derror_t DQuickFit::FitTrack(void)
 
 	// Linear regression for z/phi relation
 	float Sxx=0.0, Syy=0.0, Sxy=0.0;
-	for(int i=0;i<hits.size();i++){
+	for(unsigned int i=0;i<hits.size();i++){
 		TVector3 *v1 = hits[i];
 		float deltaZ = v1->z() - z_mean;
 		float deltaPhi = phiv[i] - phi_mean;
@@ -493,6 +495,7 @@ derror_t DQuickFit::FitTrack(void)
 	return NOERROR;
 }
 
+#if 0
 //------------------------------------------------------------------
 // qsort_points_by_z
 //------------------------------------------------------------------
@@ -504,6 +507,7 @@ static int qsort_points_by_z(const void* arg1, const void* arg2)
 	if((*a)->z() == (*b)->z())return 0;
 	return (*b)->z() < (*a)->z() ? 1:-1;
 }
+#endif
 
 //------------------------------------------------------------------
 // Print

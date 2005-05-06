@@ -16,23 +16,22 @@ derror_t DFactory_DCDCHit::evnt(int enventnumber)
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
 	
-	for(int i=0; i<PE->mult; i++){
+	for(unsigned int i=0; i<PE->mult; i++){
 		// ------------ CdcPoints, Hits --------------
 		s_Rings_t *rings=NULL;
-		s_HitView_t *HV = PE->in[i].hitView;
 		if(PE->in[i].hitView)
 			if(PE->in[i].hitView->centralDC)
 				rings = PE->in[i].hitView->centralDC->rings;
 		if(rings){
-			for(int j=0;j<rings->mult;j++){
+			for(unsigned int j=0;j<rings->mult;j++){
 				float radius = rings->in[j].radius;
 				s_Straws_t *straws = rings->in[j].straws;
 				if(straws){
-					for(int k=0;k<straws->mult;k++){
+					for(unsigned int k=0;k<straws->mult;k++){
 						float phim = straws->in[k].phim;
 						s_Hits_t *hits = straws->in[k].hits;
 						if(hits){
-							for(int m=0;m<hits->mult;m++){
+							for(unsigned int m=0;m<hits->mult;m++){
 								float dE = hits->in[m].dE;
 								float t = hits->in[m].t;
 								
@@ -65,7 +64,7 @@ const string DFactory_DCDCHit::toString(void)
 
 	printheader("row: radius(cm):  phim(rad):   dE(MeV):   t(ns):");
 	
-	for(int i=0; i<_data.size(); i++){
+	for(unsigned int i=0; i<_data.size(); i++){
 		DCDCHit *cdchit = _data[i];
 
 		printnewrow();

@@ -8,13 +8,11 @@
 #include "DFactory_DMCCheatHit.h"
 #include "DEvent.h"
 
-static float BCAL_R=65.0;
-static float TOF_Z=565.0+1.27; // from ForwardTOF_HDDS.xml (is this right?)
-static float FCAL_Z=575.0 + 45.0/2.0; // (is this right?)
 
-static int qsort_mccheat_hits(const void* arg1, const void* arg2);
 
 #if 0
+static int qsort_mccheat_hits(const void* arg1, const void* arg2);
+
 //------------------------------------------------------------------
 // qsort_points_by_z
 //------------------------------------------------------------------
@@ -48,7 +46,7 @@ derror_t DFactory_DMCCheatHit::evnt(int eventnumber)
 	
 	// Some systems will use negative phis. Force them all to
 	// be in the 0 to 2pi range
-	for(int i=0;i<_data.size();i++){
+	for(unsigned int i=0;i<_data.size();i++){
 		DMCCheatHit *mccheathit = _data[i];
 		if(mccheathit->phi<0.0)mccheathit->phi += 2.0*M_PI;
 	}
@@ -67,23 +65,22 @@ derror_t DFactory_DMCCheatHit::GetCDCHits(void)
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
 	
-	for(int i=0; i<PE->mult; i++){
+	for(unsigned int i=0; i<PE->mult; i++){
 		// ------------ CdcPoints, Hits --------------
 		s_Rings_t *rings=NULL;
-		s_HitView_t *HV = PE->in[i].hitView;
 		if(PE->in[i].hitView)
 			if(PE->in[i].hitView->centralDC)
 				rings = PE->in[i].hitView->centralDC->rings;
 		if(rings){
-			for(int j=0;j<rings->mult;j++){
-				float radius = rings->in[j].radius;
+			for(unsigned int j=0;j<rings->mult;j++){
+				//float radius = rings->in[j].radius;
 				s_Straws_t *straws = rings->in[j].straws;
 				if(straws){
-					for(int k=0;k<straws->mult;k++){
-						float phim = straws->in[k].phim;
+					for(unsigned int k=0;k<straws->mult;k++){
+						//float phim = straws->in[k].phim;
 						s_CdcPoints_t *cdcpoints = straws->in[k].cdcPoints;
 						if(cdcpoints){
-							for(int m=0;m<cdcpoints->mult;m++){
+							for(unsigned int m=0;m<cdcpoints->mult;m++){
 								DMCCheatHit *mccheathit = new DMCCheatHit;
 								mccheathit->r			= cdcpoints->in[m].r;
 								mccheathit->phi		= cdcpoints->in[m].phi;
@@ -112,27 +109,26 @@ derror_t DFactory_DMCCheatHit::GetFDCHits(void)
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
 	
-	for(int i=0; i<PE->mult; i++){
+	for(unsigned int i=0; i<PE->mult; i++){
 		s_Chambers_t *chambers = NULL;
-		s_HitView_t *HV = PE->in[i].hitView;
 		if(PE->in[i].hitView)
 			if(PE->in[i].hitView->forwardDC)
 				chambers = PE->in[i].hitView->forwardDC->chambers;
 		if(!chambers)continue;
 		
-		for(int j=0;j<chambers->mult;j++){
+		for(unsigned int j=0;j<chambers->mult;j++){
 
 			s_AnodePlanes_t *anodeplanes = chambers->in[j].anodePlanes;
 			if(anodeplanes){
 			
-				for(int k=0;k<anodeplanes->mult;k++){
+				for(unsigned int k=0;k<anodeplanes->mult;k++){
 					s_Wires_t *wires = anodeplanes->in[k].wires;
 					if(!wires)continue;
 				
-					for(int m=0;m<wires->mult;m++){
+					for(unsigned int m=0;m<wires->mult;m++){
 						s_FdcPoints_t *fdcPoints = wires->in[m].fdcPoints;
 						if(!fdcPoints)continue;
-						for(int n=0;n<fdcPoints->mult;n++){
+						for(unsigned int n=0;n<fdcPoints->mult;n++){
 							DMCCheatHit *mccheathit = new DMCCheatHit;
 							float x = fdcPoints->in[n].x;
 							float y = fdcPoints->in[n].y;
@@ -151,13 +147,13 @@ derror_t DFactory_DMCCheatHit::GetFDCHits(void)
 			s_CathodePlanes_t *cathodeplanes = chambers->in[j].cathodePlanes;
 			if(cathodeplanes){
 			
-				for(int k=0;k<cathodeplanes->mult;k++){
-					float tau = cathodeplanes->in[k].tau;
-					float z = cathodeplanes->in[k].z;
+				for(unsigned int k=0;k<cathodeplanes->mult;k++){
+					//float tau = cathodeplanes->in[k].tau;
+					//float z = cathodeplanes->in[k].z;
 					s_Strips_t *strips = cathodeplanes->in[k].strips;
 					if(!strips)continue;
 				
-					for(int m=0;m<strips->mult;m++){
+					for(unsigned int m=0;m<strips->mult;m++){
 						// Just skip cathode hits
 					}
 				}
@@ -177,15 +173,14 @@ derror_t DFactory_DMCCheatHit::GetBCALHits(void)
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
 	
-	for(int i=0; i<PE->mult; i++){
+	for(unsigned int i=0; i<PE->mult; i++){
 		s_BarrelShowers_t *barrelShowers = NULL;
-		s_HitView_t *HV = PE->in[i].hitView;
 		if(PE->in[i].hitView)
 			if(PE->in[i].hitView->barrelEMcal)
 				barrelShowers = PE->in[i].hitView->barrelEMcal->barrelShowers;
 		if(!barrelShowers)continue;
 		
-		for(int j=0;j<barrelShowers->mult;j++){
+		for(unsigned int j=0;j<barrelShowers->mult;j++){
 			DMCCheatHit *mccheathit = new DMCCheatHit;
 			mccheathit->r			= barrelShowers->in[j].r;
 			mccheathit->phi		= barrelShowers->in[j].phi;
@@ -209,15 +204,14 @@ derror_t DFactory_DMCCheatHit::GetTOFHits(void)
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
 	
-	for(int i=0; i<PE->mult; i++){
+	for(unsigned int i=0; i<PE->mult; i++){
 		s_TofPoints_t *tofPoints = NULL;
-		s_HitView_t *HV = PE->in[i].hitView;
 		if(PE->in[i].hitView)
 			if(PE->in[i].hitView->forwardTOF)
 				tofPoints = PE->in[i].hitView->forwardTOF->tofPoints;
 		if(!tofPoints)continue;
 		
-		for(int j=0;j<tofPoints->mult;j++){
+		for(unsigned int j=0;j<tofPoints->mult;j++){
 			DMCCheatHit *mccheathit = new DMCCheatHit;
 			float x = tofPoints->in[j].x;
 			float y = tofPoints->in[j].y;
@@ -253,15 +247,14 @@ derror_t DFactory_DMCCheatHit::GetFCALHits(void)
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
 	
-	for(int i=0; i<PE->mult; i++){
+	for(unsigned int i=0; i<PE->mult; i++){
 		s_ForwardShowers_t *forwardShowers = NULL;
-		s_HitView_t *HV = PE->in[i].hitView;
 		if(PE->in[i].hitView)
 			if(PE->in[i].hitView->forwardEMcal)
 				forwardShowers = PE->in[i].hitView->forwardEMcal->forwardShowers;
 		if(!forwardShowers)continue;
 		
-		for(int j=0;j<forwardShowers->mult;j++){
+		for(unsigned int j=0;j<forwardShowers->mult;j++){
 			DMCCheatHit *mccheathit = new DMCCheatHit;
 			float x = forwardShowers->in[j].x;
 			float y = forwardShowers->in[j].y;
@@ -299,7 +292,7 @@ const string DFactory_DMCCheatHit::toString(void)
 
 	printheader("row:   r(cm): phi(rad):  z(cm): track: primary:    system:");
 	
-	for(int i=0; i<_data.size(); i++){
+	for(unsigned int i=0; i<_data.size(); i++){
 		DMCCheatHit *mccheathit = _data[i];
 
 		printnewrow();

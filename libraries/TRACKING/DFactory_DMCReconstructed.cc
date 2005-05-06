@@ -23,7 +23,7 @@ derror_t DFactory_DMCReconstructed::evnt(int eventnumber)
 	vector<const DMCThrown*> mcthrowns;
 	event->Get(mcthrowns);
 	
-	for(int i=0; i<mctc.size(); i++){
+	for(unsigned int i=0; i<mctc.size(); i++){
 		const DMCTrackCandidate *mctrackcandidate = mctc[i];
 		DMCReconstructed *mcreconstructed = new DMCReconstructed;
 
@@ -56,7 +56,7 @@ const string DFactory_DMCReconstructed::toString(void)
 
 	printheader("row: type:  q:    p:    E: theta:   phi:   mass:     x:     y:     z:");
 	
-	for(int i=0; i<_data.size(); i++){
+	for(unsigned int i=0; i<_data.size(); i++){
 
 		DMCReconstructed *mcreconstructed = _data[i];
 

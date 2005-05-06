@@ -22,7 +22,7 @@ class DEventProcessor
 {
 	public:
 		DEventProcessor(void);
-		~DEventProcessor();
+		virtual ~DEventProcessor();
 	
 		virtual derror_t init(void);					///< Called once at program start.
 		virtual derror_t brun(int runnumber);		///< Called everytime a new run number is detected.
