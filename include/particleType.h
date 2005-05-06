@@ -67,7 +67,7 @@ typedef enum {
 
 } Particle_t;
 
-static char *ParticleType(Particle_t p)
+inline static char *ParticleType(Particle_t p)
 {
   static char ret[20];
   switch (p) {
@@ -201,7 +201,7 @@ static char *ParticleType(Particle_t p)
   return(ret);
 }
 
-static double ParticleMass(Particle_t p)
+inline static double ParticleMass(Particle_t p)
 {
   switch (p) {
   default:
@@ -252,7 +252,7 @@ static double ParticleMass(Particle_t p)
   }
 }
 
-static int ParticleCharge(Particle_t p)
+inline static int ParticleCharge(Particle_t p)
 {
   switch (p) {
   default:

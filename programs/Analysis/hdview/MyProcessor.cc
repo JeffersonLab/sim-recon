@@ -68,7 +68,7 @@ MyProcessor::~MyProcessor()
 {
 	ClearEvent();
 
-	for(int i=0;i<graphics.size();i++)delete graphics[i];
+	for(unsigned int i=0;i<graphics.size();i++)delete graphics[i];
 	graphics.clear();
 	
 	delete Bfield;
@@ -79,9 +79,9 @@ MyProcessor::~MyProcessor()
 //------------------------------------------------------------------
 void MyProcessor::ClearEvent(void)
 {
-	for(int i=0;i<markers.size();i++)delete markers[i];
-	for(int i=0;i<circles.size();i++)delete circles[i];
-	for(int i=0;i<lines.size();i++)delete lines[i];
+	for(unsigned int i=0;i<markers.size();i++)delete markers[i];
+	for(unsigned int i=0;i<circles.size();i++)delete circles[i];
+	for(unsigned int i=0;i<lines.size();i++)delete lines[i];
 	markers.clear();
 	circles.clear();
 	lines.clear();
@@ -132,7 +132,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 	eventLoop->Get(mccheathits);
 	
 	// Loop over hits creating markers for all 3 views
-	for(int i=0;i<mccheathits.size();i++){
+	for(unsigned int i=0;i<mccheathits.size();i++){
 		const DMCCheatHit *mccheathit = mccheathits[i];
 		
 		// Skip hits from some detectors?
@@ -197,13 +197,13 @@ derror_t MyProcessor::evnt(int eventnumber)
 	vector<const DMCTrackCandidate*> mctc;
 	DFactory_DMCTrackCandidate *mctcfactory = (DFactory_DMCTrackCandidate *)eventLoop->Get(mctc);
 	vector<DQuickFit*> qfits = mctcfactory->GetDQuickFits();
-	for(int i=0; i<qfits.size(); i++){
+	for(unsigned int i=0; i<qfits.size(); i++){
 		DrawHelicalTrack(qfits[i], kBlack);
 	}
 
 	// Draw all markers and update canvas
-	for(int i=0;i<markers.size();i++)markers[i]->Draw();
-	for(int i=0;i<circles.size();i++)circles[i]->Draw();
+	for(unsigned int i=0;i<markers.size();i++)markers[i]->Draw();
+	for(unsigned int i=0;i<circles.size();i++)circles[i]->Draw();
 	maincanvas->Update();
 
 	return NOERROR;
@@ -233,9 +233,6 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 		float phi = phi0 + delta_z*dphidz;
 		x = qf->x0 + r*cos(phi);
 		y = qf->y0 + r*sin(phi);
-		
-		float R = sqrt(x*x + y*y);
-		//if(R>=(BCAL_Rmin+10.0))break;
 		
 		ConvertToSide(x,y,Z,X,Y);
 		line_side->SetNextPoint(X,Y);
@@ -292,8 +289,6 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 		float X,Y;
 	
 		if(z>=620.0 || z<-10.0)break;
-		float R = sqrt(x*x + y*y);
-		//if(R>=(BCAL_Rmin+10.0))break;
 		
 		ConvertToSide(x,y,z,X,Y);
 		line_side->SetNextPoint(X,Y);
@@ -362,7 +357,7 @@ derror_t MyProcessor::DrawDetectors(void)
 	
 	// If detectors were already drawn before, delete
 	// the old objects
-	for(int i=0;i<graphics.size();i++)delete graphics[i];
+	for(unsigned int i=0;i<graphics.size();i++)delete graphics[i];
 	graphics.clear();
 	
 	// ------ Draw Separators and labels ------

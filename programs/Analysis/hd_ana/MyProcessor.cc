@@ -43,14 +43,14 @@ derror_t MyProcessor::evnt(int eventnumber)
 	eventLoop->Get(cdchits);
 	eventLoop->Get(fcalhits);
 	
-	for(int i=0;i<cdchits.size();i++){
+	for(unsigned int i=0;i<cdchits.size();i++){
 		const DCDCHit *cdchit = cdchits[i];
 		float x = cdchit->radius*cos(cdchit->phim);
 		float y = cdchit->radius*sin(cdchit->phim);
 		cdc_y_vs_x->Fill(y,x);
 	}
 
-	for(int i=0;i<fcalhits.size();i++){
+	for(unsigned int i=0;i<fcalhits.size();i++){
 		const DFCALHit *fcalhit = fcalhits[i];
 		fcal_y_vs_x->Fill(fcalhit->y,fcalhit->x);
 		fcalhitE->Fill(fcalhit->E);
