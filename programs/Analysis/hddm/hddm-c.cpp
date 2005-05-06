@@ -733,7 +733,8 @@ void constructPackers()
       }
       else
       {
-         cFile << "   {"					<< endl;
+			cFile << "   m = 0; /* avoid warnings from -Wall */"<< endl
+         		<< "   {"					<< endl;
       }
 
       DOMNamedNodeMap* attList = tagEl->getAttributes();
@@ -917,6 +918,7 @@ void constructFlushFunc(DOMElement* el)
 	 << "      pack_" << topT << "(fp->xdrs,this1);"		<< endl
 	 << "      return 0;"					<< endl
 	 << "   }"						<< endl
+	 << "   return 0;"			<< endl
 	 << "}"							<< endl;
    delete [] topType;
 }
