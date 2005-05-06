@@ -2560,6 +2560,7 @@ static int pack_s_HDDM(XDR* xdrs, s_HDDM_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->physicsEvents)
       {
@@ -2682,6 +2683,7 @@ static int pack_s_Beam(XDR* xdrs, s_Beam_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       xdr_int(xdrs,(int*)&this1->type);
       if (this1->momentum)
@@ -2721,6 +2723,7 @@ static int pack_s_Momentum(XDR* xdrs, s_Momentum_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       xdr_float(xdrs,&this1->E);
       xdr_float(xdrs,&this1->px);
@@ -2745,6 +2748,7 @@ static int pack_s_Properties(XDR* xdrs, s_Properties_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       xdr_int(xdrs,&this1->charge);
       xdr_float(xdrs,&this1->mass);
@@ -2767,6 +2771,7 @@ static int pack_s_Target(XDR* xdrs, s_Target_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       xdr_int(xdrs,(int*)&this1->type);
       if (this1->momentum)
@@ -2888,6 +2893,7 @@ static int pack_s_Origin(XDR* xdrs, s_Origin_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       xdr_float(xdrs,&this1->t);
       xdr_float(xdrs,&this1->vx);
@@ -2912,6 +2918,7 @@ static int pack_s_HitView(XDR* xdrs, s_HitView_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->centralDC)
       {
@@ -3004,6 +3011,7 @@ static int pack_s_CentralDC(XDR* xdrs, s_CentralDC_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->rings)
       {
@@ -3159,6 +3167,7 @@ static int pack_s_ForwardDC(XDR* xdrs, s_ForwardDC_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->chambers)
       {
@@ -3389,6 +3398,7 @@ static int pack_s_StartCntr(XDR* xdrs, s_StartCntr_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->paddles)
       {
@@ -3488,6 +3498,7 @@ static int pack_s_BarrelEMcal(XDR* xdrs, s_BarrelEMcal_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->modules)
       {
@@ -3567,6 +3578,7 @@ static int pack_s_Upstream(XDR* xdrs, s_Upstream_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->showers)
       {
@@ -3620,6 +3632,7 @@ static int pack_s_Downstream(XDR* xdrs, s_Downstream_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->showers)
       {
@@ -3678,6 +3691,7 @@ static int pack_s_Cerenkov(XDR* xdrs, s_Cerenkov_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->sections)
       {
@@ -3804,6 +3818,7 @@ static int pack_s_ForwardTOF(XDR* xdrs, s_ForwardTOF_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->hcounters)
       {
@@ -3892,6 +3907,7 @@ static int pack_s_Left(XDR* xdrs, s_Left_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->hits)
       {
@@ -3921,6 +3937,7 @@ static int pack_s_Right(XDR* xdrs, s_Right_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->hits)
       {
@@ -3991,6 +4008,7 @@ static int pack_s_Top(XDR* xdrs, s_Top_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->hits)
       {
@@ -4020,6 +4038,7 @@ static int pack_s_Bottom(XDR* xdrs, s_Bottom_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->hits)
       {
@@ -4077,6 +4096,7 @@ static int pack_s_ForwardEMcal(XDR* xdrs, s_ForwardEMcal_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->rows)
       {
@@ -4208,6 +4228,7 @@ static int pack_s_UpstreamEMveto(XDR* xdrs, s_UpstreamEMveto_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->upvRows)
       {
@@ -4296,6 +4317,7 @@ static int pack_s_UpvLeft(XDR* xdrs, s_UpvLeft_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->showers)
       {
@@ -4325,6 +4347,7 @@ static int pack_s_UpvRight(XDR* xdrs, s_UpvRight_t* this1)
    xdr_u_int(xdrs,&size);
    start = xdr_getpos(xdrs);
 
+   m = 0; /* avoid warnings from -Wall */
    {
       if (this1->showers)
       {
@@ -4439,6 +4462,7 @@ int flush_s_HDDM(s_HDDM_t* this1,s_iostream_t* fp)
       pack_s_HDDM(fp->xdrs,this1);
       return 0;
    }
+   return 0;
 }
 
 static int getTag(char* d, char* tag)
