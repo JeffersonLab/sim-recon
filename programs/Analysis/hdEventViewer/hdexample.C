@@ -29,6 +29,10 @@ class MyMainFrame{
     void DrawSITE();
     void DrawCDC();
     void DrawBCAL();
+    void DrawFTOF();
+    void DrawFCAL();
+    void DrawCERE();
+    void DrawBOTH();
     void ThetaPlus();
     void PhiPlus();
     void ThetaMinus();
@@ -66,6 +70,22 @@ MyMainFrame::MyMainFrame(const TGWindow *p, UInt_t w, UInt_t h)
   TGTextButton *drawBCAL = new TGTextButton(vframe2, "&BCAL");
   drawBCAL->Connect("Clicked()", "MyMainFrame", this, "DrawBCAL()");
   vframe2->AddFrame(drawBCAL, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+
+  TGTextButton *drawFTOF = new TGTextButton(vframe2, "&FTOF");
+  drawFTOF->Connect("Clicked()", "MyMainFrame", this, "DrawFTOF()");
+  vframe2->AddFrame(drawFTOF, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+
+  TGTextButton *drawFCAL = new TGTextButton(vframe2, "&FCAL");
+  drawFCAL->Connect("Clicked()", "MyMainFrame", this, "DrawFCAL()");
+  vframe2->AddFrame(drawFCAL, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+
+  TGTextButton *drawCERE = new TGTextButton(vframe2, "&CERE");
+  drawCERE->Connect("Clicked()", "MyMainFrame", this, "DrawCERE()");
+  vframe2->AddFrame(drawCERE, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
+
+  TGTextButton *drawBOTH = new TGTextButton(vframe2, "&BOTH");
+  drawBOTH->Connect("Clicked()", "MyMainFrame", this, "DrawBOTH()");
+  vframe2->AddFrame(drawBOTH, new TGLayoutHints(kLHintsCenterX, 5, 5, 3, 4));
 
   TGTextButton *phiM = new TGTextButton(vframe2, "&phi-");
   phiM->Connect("Clicked()", "MyMainFrame", this, "PhiMinus()");
@@ -159,6 +179,60 @@ void MyMainFrame::DrawBCAL()
 
 }
 
+void MyMainFrame::DrawFTOF()
+{
+  // Draws function graphics in randomly choosen interval
+  TGeoVolume *FTOF = gGeoManager->GetVolume("FTOF");
+  gGeoManager->SetTopVolume(FTOF);
+  gGeoManager->SetVisLevel(3);
+  gGeoManager->GetTopVolume()->Draw();
+
+  fView->RotateView(fPhiView, fThetaView);
+  fView->SetPsi(this->fPsiView);      
+  fView->Zoom();    
+
+  TCanvas *fCanvas = fEcanvas->GetCanvas();
+  fCanvas->cd();
+  fCanvas->Update();
+
+}
+
+void MyMainFrame::DrawFCAL()
+{
+  // Draws function graphics in randomly choosen interval
+  TGeoVolume *FCAL = gGeoManager->GetVolume("FCAL");
+  gGeoManager->SetTopVolume(FCAL);
+  gGeoManager->SetVisLevel(2);
+  gGeoManager->GetTopVolume()->Draw();
+
+  fView->RotateView(fPhiView, fThetaView);
+  fView->SetPsi(this->fPsiView);      
+  fView->Zoom();    
+
+  TCanvas *fCanvas = fEcanvas->GetCanvas();
+  fCanvas->cd();
+  fCanvas->Update();
+
+}
+
+void MyMainFrame::DrawCERE()
+{
+  // Draws function graphics in randomly choosen interval
+  TGeoVolume *CERE = gGeoManager->GetVolume("CERE");
+  gGeoManager->SetTopVolume(CERE);
+  gGeoManager->SetVisLevel(2);
+  gGeoManager->GetTopVolume()->Draw();
+
+  fView->RotateView(fPhiView, fThetaView);
+  fView->SetPsi(this->fPsiView);      
+  fView->Zoom();    
+
+  TCanvas *fCanvas = fEcanvas->GetCanvas();
+  fCanvas->cd();
+  fCanvas->Update();
+
+}
+
 void MyMainFrame::DrawCDC()
 {
   // Draws function graphics in randomly choosen interval
@@ -170,6 +244,34 @@ void MyMainFrame::DrawCDC()
   fView->RotateView(fPhiView, fThetaView);
   fView->SetPsi(this->fPsiView);      
   fView->Zoom();    
+
+  TCanvas *fCanvas = fEcanvas->GetCanvas();
+  fCanvas->cd();
+  fCanvas->Update();
+
+}
+
+void MyMainFrame::DrawBOTH()
+{
+  // Draws function graphics in randomly choosen interval
+  TGeoMedium *medium = 0;
+  TGeoVolume *vol = gGeoManager->MakeBox("TOP",medium,100,250,250);
+  gGeoManager->SetTopVolume(vol);
+
+  TGeoVolume *BCAL = gGeoManager->GetVolume("BCAL");
+  TGeoVolume *CDC = gGeoManager->GetVolume("CDC");
+
+  vol->AddNode(CDC, 1, gGeoIdentity);
+  vol->AddNode(BCAL, 1, gGeoIdentity);
+
+  gGeoManager->SetTopVolume(vol);
+  gGeoManager->SetVisLevel(1);
+//  gGeoManager->CloseGeometry();
+  gGeoManager->GetTopVolume()->Draw();
+
+  fView->RotateView(fPhiView, fThetaView);
+//  fView->SetPsi(this->fPsiView);      
+//  fView->Zoom();    
 
   TCanvas *fCanvas = fEcanvas->GetCanvas();
   fCanvas->cd();
