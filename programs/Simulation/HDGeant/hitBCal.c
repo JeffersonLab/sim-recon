@@ -116,13 +116,11 @@ void hitBarrelEMcal (float xin[4], float xout[4],
       }
       else if (nshot < MAX_HITS)		/* create new hit */
       {
-         upshots->in[nshot].t =
-                    (upshots->in[nshot].t * upshots->in[nshot].E + tup * Eup)
-                  / (upshots->in[nshot].E += Eup);
+         upshots->in[nshot].t = tup;
+         upshots->in[nshot].E = Eup;
          upshots->mult++;
-         downshots->in[nshot].t = 
-            (downshots->in[nshot].t * downshots->in[nshot].E +  tdown * Edown)
-          / (downshots->in[nshot].E += Edown);
+         downshots->in[nshot].t = tdown;
+         downshots->in[nshot].E = Edown;
          downshots->mult++;
       }
       else
