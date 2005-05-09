@@ -61,9 +61,9 @@ ifdef HALLD_MY
 	BIN_DIR		= $(HALLD_MY)/bin/$(OSNAME)
 endif
 
-FFLAGS   += -Wall -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
-CFLAGS   += -Wall -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
-CXXFLAGS += -Wall -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
+FFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
+CFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
+CXXFLAGS += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
 
 
 # Include user specified package makefiles
@@ -117,6 +117,17 @@ LIBNAME = $(LIB_DIR)/lib$(MODULE_NAME)$(DEBUG_SUFFIX).a
 # Include platform specific definitions
 # (the "-" at the front means don't error if the file doesn't exist)
 -include $(HALLD_HOME)/src/BMS/Makefile.$(OSNAME)
+
+# For GNU compilers, add verbose warnings
+ifeq ($(FC),g77)
+  FFLAGS   += -Wall
+endif
+ifeq ($(CC),gcc)
+  CFLAGS   += -Wall
+endif
+ifeq ($(CXX),g++)
+  CXXFLAGS += -Wall
+endif
 
 # Include all dependancy files
 ifneq ($(strip $(DEPS)),)
