@@ -1,4 +1,10 @@
 # This defines flags which can implement (or not) features
 # in a way compatible with this OS
 
+# Use solaris compilers on SunOS
+FC		= f77
+CC		= cc
+CXX	= CC
+
+
 MISC_LIBS += -lz
