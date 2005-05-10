@@ -33,7 +33,7 @@ DFactory_DMCFitStats::DFactory_DMCFitStats()
 //------------------
 DFactory_DMCFitStats::~DFactory_DMCFitStats()
 {
-	if(fitstats)delete fitstats;
+	// fitstats gets freed automatically by DANA since it is factory data
 }
 
 //------------------
