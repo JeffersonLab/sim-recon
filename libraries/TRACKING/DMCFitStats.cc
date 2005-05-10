@@ -43,8 +43,8 @@ DMCFitStats::DMCFitStats()
 	stats_vs_theta	= new TH2F("stats_vs_theta","MC Tracking Eff. vs. Theta", 100, 0.0, M_PI,NBINS, 0.5, (float)NBINS + 0.5);
 	stats_vs_phi	= new TH2F("stats_vs_phi","MC Tracking Eff. vs. Phi", 100, 0.0, 2.0*M_PI,NBINS, 0.5, (float)NBINS + 0.5);
 	stats_vs_p	= new TH2F("stats_vs_p","MC Tracking Eff. vs. p", 100, 0.0, 10.0, NBINS, 0.5, (float)NBINS + 0.5);
-	dp_over_p_vs_p	= new TH2F("dp_over_p_vs_p","dp/p vs. p",	200, 0.0, 10.0, 200, 0.0, 0.500);
-	dp_over_p_vs_theta	= new TH2F("dp_over_p_vs_theta","dp/p vs. theta",	200, 0.0, M_PI, 200, 0.0, 0.500);
+	dp_over_p_vs_p	= new TH2F("dp_over_p_vs_p","dp/p vs. p",	200, 0.0, 10.0, 200, -0.500, 0.500);
+	dp_over_p_vs_theta	= new TH2F("dp_over_p_vs_theta","dp/p vs. theta",	200, 0.0, M_PI, 200, -0.500, 0.500);
 	
 	eff_vs_theta = new TH1F("eff_vs_theta", "Tracking efficiency vs. theta (all tracks)", 100, 0.0, M_PI);
 	eff_vs_phi = new TH1F("eff_vs_phi", "Tracking efficiency vs. phi (all tracks)", 100, 0.0, 2.0*M_PI);
@@ -74,11 +74,17 @@ DMCFitStats::DMCFitStats()
 //------------------------------------------------------------------
 DMCFitStats::~DMCFitStats()
 {
+#if 0
 	delete stats;
 	delete stats_vs_theta;
 	delete stats_vs_phi;
 	delete stats_vs_p;
 	delete dp_over_p_vs_p;
+	delete dp_over_p_vs_theta;
+	delete eff_vs_theta;
+	delete eff_vs_phi;
+	delete eff_vs_p;
+#endif
 }
 
 //------------------------------------------------------------------
@@ -127,10 +133,11 @@ void DMCFitStats::AddEvent(DEvent *event)
 				const DMCReconstructed *mcreconstructed = mcreconstructeds[idx];
 				
 				float dp_over_p = mcreconstructed->thrown_delta_p/mcthrown->p;
+
 				dp_over_p_vs_p->Fill(p, dp_over_p);
 				dp_over_p_vs_theta->Fill(theta, dp_over_p);
 
-				if(dp_over_p <=0.2){
+				if(fabs(dp_over_p) <=0.2){
 					FillAll(NMATCHED, theta, phi, p);
 				}
 			}
