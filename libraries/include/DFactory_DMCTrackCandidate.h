@@ -81,7 +81,7 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 		int      IntersectionDensity(DArcHit *a, DArcHit *b, float &x, float&y);
 		derror_t FillArcDensityHistogram(TH2F *hist);
 		derror_t FillSlopeIntDensityHistos(float x0, float y0);
-		derror_t DrawPhiZPoints(void);
+		derror_t DrawPhiZPoints(int which=0);
 		
 		inline vector<DArcHit*> GetDArcHits(void){return archits;}
 		inline vector<TEllipse*> GetCircles(void){return circles;}
