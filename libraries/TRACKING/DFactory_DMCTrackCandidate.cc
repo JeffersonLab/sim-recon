@@ -541,7 +541,7 @@ DQuickFit* DFactory_DMCTrackCandidate::GetQFit(int n)
 //------------------------------------------------------------------
 // DrawPhiZPoints
 //------------------------------------------------------------------
-derror_t DFactory_DMCTrackCandidate::DrawPhiZPoints(void)
+derror_t DFactory_DMCTrackCandidate::DrawPhiZPoints(int which)
 {
 	/// This is for debugging/development only.
 	///
@@ -558,8 +558,12 @@ derror_t DFactory_DMCTrackCandidate::DrawPhiZPoints(void)
 	/// track will fall on a line. This just helps visualize
 	/// this for development. (The program patfind uses this).
 	
+	for(unsigned int i=0; i<markers.size(); i++)delete markers[i];
+	markers.clear();
+
 	int colors[] = {kRed,kBlue,kMagenta,kGreen,kBlack};
 	for(unsigned int j=0;j<circles.size();j++){
+		if(which>0 && (int)j!=which-1)continue;
 		TEllipse *circle = circles[j];
 		float x0 = circle->GetX1();
 		float y0 = circle->GetY1();
