@@ -1,6 +1,6 @@
 // $Id$
 //
-//    File: DMCFitStats.cc
+//    File: DMCTrackHists.cc
 // Created: Sun Apr 24 06:45:21 EDT 2005
 // Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
 //
@@ -8,14 +8,14 @@
 #include <iostream>
 using namespace std;
 
-#include "DMCFitStats.h"
+#include "DMCTrackHists.h"
 
 #include "DFactory_DMCTrackEfficiency.h"
 #include "DFactory_DMCCheatHit.h"
 #include "DFactory_DMCThrown.h"
 #include "DFactory_DMCReconstructed.h"
 
-const char* FitStatsDescription[DMCFitStats::NBINS] = {
+const char* TrackHistsDescription[DMCTrackHists::NBINS] = {
 	"<nothing>",
 	"Num (primary) hits in thrown track",
 	"Num (primary) hits in reconstructed track",
@@ -34,9 +34,9 @@ const char* FitStatsDescription[DMCFitStats::NBINS] = {
 };
 
 //------------------------------------------------------------------
-// DMCFitStats 
+// DMCTrackHists 
 //------------------------------------------------------------------
-DMCFitStats::DMCFitStats()
+DMCTrackHists::DMCTrackHists()
 {
 	// Create histograms
 	stats	= new TH1F("stats","MC Tracking Efficiency",NBINS, 0.5, (float)NBINS + 0.5);
@@ -58,21 +58,21 @@ DMCFitStats::DMCFitStats()
 
 	for(int i=1;i<NBINS;i++){
 		TAxis *axis = stats->GetXaxis();
-		axis->SetBinLabel(i, FitStatsDescription[i]);
+		axis->SetBinLabel(i, TrackHistsDescription[i]);
 		axis = stats_vs_theta->GetYaxis();
-		axis->SetBinLabel(i, FitStatsDescription[i]);
+		axis->SetBinLabel(i, TrackHistsDescription[i]);
 		axis = stats_vs_phi->GetYaxis();
-		axis->SetBinLabel(i, FitStatsDescription[i]);
+		axis->SetBinLabel(i, TrackHistsDescription[i]);
 		axis = stats_vs_p->GetYaxis();
-		axis->SetBinLabel(i, FitStatsDescription[i]);
+		axis->SetBinLabel(i, TrackHistsDescription[i]);
 	}
 
 }
 
 //------------------------------------------------------------------
-// ~DMCFitStats 
+// ~DMCTrackHists 
 //------------------------------------------------------------------
-DMCFitStats::~DMCFitStats()
+DMCTrackHists::~DMCTrackHists()
 {
 #if 0
 	delete stats;
@@ -90,7 +90,7 @@ DMCFitStats::~DMCFitStats()
 //------------------------------------------------------------------
 // evnt   -Fill histograms here
 //------------------------------------------------------------------
-void DMCFitStats::AddEvent(DEvent *event)
+void DMCTrackHists::AddEvent(DEvent *event)
 {	
 	vector<const DMCCheatHit*> mccheathits;
 	vector<const DMCReconstructed*> mcreconstructeds;
@@ -158,7 +158,7 @@ void DMCFitStats::AddEvent(DEvent *event)
 //------------------------------------------------------------------
 // FillAll
 //------------------------------------------------------------------
-void DMCFitStats::FillAll(float what, float theta, float phi, float p, float weight)
+void DMCTrackHists::FillAll(float what, float theta, float phi, float p, float weight)
 {
 	stats->Fill(what, weight);
 	stats_vs_theta->Fill(theta,what, weight);
@@ -169,7 +169,7 @@ void DMCFitStats::FillAll(float what, float theta, float phi, float p, float wei
 //------------------------------------------------------------------
 // EffVsX
 //------------------------------------------------------------------
-void DMCFitStats::EffVsX(TH1F *out, TH2F* in)
+void DMCTrackHists::EffVsX(TH1F *out, TH2F* in)
 {
 	TH1D *matched = in->ProjectionX("matched", NMATCHED, NMATCHED);
 	TH1D *fittable = in->ProjectionX("fittable", NFITTABLE,NFITTABLE);
@@ -183,7 +183,7 @@ void DMCFitStats::EffVsX(TH1F *out, TH2F* in)
 //------------------------------------------------------------------
 // Finalize
 //------------------------------------------------------------------
-void DMCFitStats::Finalize(void)
+void DMCTrackHists::Finalize(void)
 {
 	// Fill the fractions histo with ratios
 	float h[NBINS];

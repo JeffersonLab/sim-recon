@@ -1,12 +1,12 @@
 // $Id$
 //
-//    File: DMCFitStats.h
+//    File: DMCTrackHists.h
 // Created: Sun Apr 24 06:45:21 EDT 2005
 // Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
 //
 
-#ifndef _DMCFitStats_
-#define _DMCFitStats_
+#ifndef _DMCTrackHists_
+#define _DMCTrackHists_
 
 #include <TH1.h>
 #include <TH2.h>
@@ -15,9 +15,9 @@
 
 class DEvent;
 
-class DMCFitStats{
+class DMCTrackHists{
 	public:
-		HDCLASSDEF(DMCFitStats);
+		HDCLASSDEF(DMCTrackHists);
 		
 		enum{
 			NHITS_THROWN =1,
@@ -38,22 +38,22 @@ class DMCFitStats{
 			NBINS
 		};
 		
-		DMCFitStats();
-		virtual ~DMCFitStats();
+		DMCTrackHists();
+		virtual ~DMCTrackHists();
 		void AddEvent(DEvent *event);
 		void FillAll(float what, float theta, float phi, float p, float weight=1.0);
 		void EffVsX(TH1F *out, TH2F* in);
-		void DMCFitStats::Finalize(void);
+		void DMCTrackHists::Finalize(void);
 		
 		TH1F *stats;
 		TH2F *stats_vs_theta, *stats_vs_phi, *stats_vs_p;
 		TH2F *dp_over_p_vs_p, *dp_over_p_vs_theta;
 		TH1F *eff_vs_theta, *eff_vs_phi, *eff_vs_p;
 
-		ClassDef(DMCFitStats,1)
+		ClassDef(DMCTrackHists,1)
 };
 
-extern const char* FitStatsDescription[DMCFitStats::NBINS]; 
+extern const char* TrackHistsDescription[DMCTrackHists::NBINS]; 
 
-#endif // _DMCFitStats_
+#endif // _DMCTrackHists_
 
