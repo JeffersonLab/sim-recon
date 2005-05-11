@@ -210,7 +210,7 @@ derror_t DFactory_DMCTrackCandidate::FindCirclesHitSub(void)
 	// Clear the "used" flags on all archits
 	for(unsigned int i=0;i<archits.size();i++ )archits[i]->used = 0;
 
-	// Loop until we run out of circles 
+	// Loop until we run out of circles
 	do{
 		// Copy pointer to first (default) density histo to local variable
 		TH2F *density_histo = density_histos[0];
@@ -231,7 +231,8 @@ derror_t DFactory_DMCTrackCandidate::FindCirclesHitSub(void)
 		for(unsigned int i=0; i<archits.size(); i++){
 			DArcHit *a = archits[i];
 			if(a->used)continue;
-			if(a->Dist2ToLine(x,y) <= masksize2){
+			float d2 = a->Dist2ToLine(x,y);
+			if(d2 <= masksize2){
 				fit->AddHit(a->rhit, a->phihit, a->zhit);
 			}
 		}
@@ -280,6 +281,13 @@ derror_t DFactory_DMCTrackCandidate::FindCirclesHitSub(void)
 					
 		// If less than 4 hits remain unused, we can stop looking now
 		if(Nhits_not_used<4)break;
+		
+		// I ran across a strange event in which 6 hits were unused, but
+		// none of them came close to the circle center. This caused an
+		// infinite loop. We break that possibility here.
+		static int last_Nhits_not_used=0;
+		if(Nhits_not_used == last_Nhits_not_used)break;
+		last_Nhits_not_used = Nhits_not_used;
 
 		// With 20 circles, something just ain't right and we should bail
 	}while(circles.size()<20);
