@@ -1,4 +1,4 @@
-// Author: David Lawrence  June 25, 2004
+// Author: Edward Brash February 15, 2005
 //
 //
 // MyProcessor.cc
@@ -7,11 +7,26 @@
 #include <iostream>
 using namespace std;
 
+#include <TTree.h>
+
 #include "MyProcessor.h"
 #include "hddm_s.h"
 
+#include "DBCALHit.h"
 #include "DCDCHit.h"
+#include "DCHERENKOVHit.h"
 #include "DFCALHit.h"
+#include "DFDCHit.h"
+#include "DTAGGERHit.h"
+#include "DTOFHit.h"
+#include "DUPVHit.h"
+#include "DMCCheatHit.h"
+#include "DMCTrackCandidate.h"
+#include "DMCReconstructed.h"
+#include "DMCTrackCandidate.h"
+#include "DQuickFit.h"
+#include "DTrackFit.h"
+#include "DMCThrown.h"
 
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
@@ -22,19 +37,27 @@ derror_t MyProcessor::init(void)
 	eventLoop->PrintFactories();
 
 	// open ROOT file
-	ROOTfile = new TFile("hd_ana.root","RECREATE","Produced by hd_ana");
-	cout<<"Opened ROOT file \"hd_ana.root\""<<endl;
+	ROOTfile = new TFile("hd_tree.root","RECREATE","Produced by hd_root");
+	cout<<"Opened ROOT file \"hd_tree.root\" ..."<<endl;
 
-	// Create histogram
-	cdc_y_vs_x	= new TH2F("cdc_y_vs_x","CDC Y vs. X",200, -70.0, 70.0, 200, -70.0, 70.0);
-	fcal_y_vs_x	= new TH2F("fcal_y_vs_x","FCAL Y vs. X",200, -100.0, 100.0, 200, -100.0, 100.0);
-	fcalhitE	= new TH1F("fcalhitE","fcal single detector energy(GeV)",100, 0.0, 6.0);
+	// Create tree
+
+	ROOTtree = new TTree("ROOTtree","HDGeant Hits Tree");
+	cout<<"Created Root Tree ..."<<endl;
+
+	ROOTcdchit = new CDCHitCopy;
+	ROOTfcalhit = new FCALHitCopy;
+
+	ROOTtree->Branch("CDCHits","CDCHitCopy",&ROOTcdchit);
+	cout<<"Created CDCHits Branch ..."<<endl;
+	ROOTtree->Branch("FCALHits","FCALHitCopy",&ROOTfcalhit);
+	cout<<"Created FCALHits Branch ..."<<endl;
 
 	return NOERROR;
 }
 
 //------------------------------------------------------------------
-// evnt   -Fill histograms here
+// evnt   -Fill tree here
 //------------------------------------------------------------------
 derror_t MyProcessor::evnt(int eventnumber)
 {
@@ -42,20 +65,30 @@ derror_t MyProcessor::evnt(int eventnumber)
 	vector<const DFCALHit*> fcalhits;
 	eventLoop->Get(cdchits);
 	eventLoop->Get(fcalhits);
-	
+		
 	for(unsigned int i=0;i<cdchits.size();i++){
-		const DCDCHit *cdchit = cdchits[i];
-		float x = cdchit->radius*cos(cdchit->phim);
-		float y = cdchit->radius*sin(cdchit->phim);
-		cdc_y_vs_x->Fill(y,x);
+	  const DCDCHit *cdchit = cdchits[i];
+	  ROOTcdchit->x=cdchit->radius*cos(cdchit->phim);
+	  ROOTcdchit->y = cdchit->radius*sin(cdchit->phim);
+	  ROOTcdchit->radius = cdchit->radius;
+	  ROOTcdchit->phim = cdchit->phim;
+	  ROOTcdchit->dE=cdchit->dE;
+	  ROOTcdchit->t=cdchit->t;
+	  
+	  ROOTtree->Fill();
+
 	}
 
 	for(unsigned int i=0;i<fcalhits.size();i++){
-		const DFCALHit *fcalhit = fcalhits[i];
-		fcal_y_vs_x->Fill(fcalhit->y,fcalhit->x);
-		fcalhitE->Fill(fcalhit->E);
+	  const DFCALHit *fcalhit = fcalhits[i];
+      	  ROOTfcalhit->x=fcalhit->y;
+	  ROOTfcalhit->y=fcalhit->y;
+	  ROOTfcalhit->E=fcalhit->E;
+	  ROOTfcalhit->t=fcalhit->t;
+
+	  ROOTtree->Fill();
 	}
-	
+
 	eventLoop->PrintRate();
 
 	return NOERROR;
