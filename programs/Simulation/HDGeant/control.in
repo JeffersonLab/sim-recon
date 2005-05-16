@@ -20,15 +20,15 @@ C reached before the event count specified in card TRIG is exhausted then the
 C processing will stop at the end of file.
 
 TRIG 1000
-INFILE 'rhop.hddm'
-cBEAM 12.0 9.0 
+c INFILE 'rhop.hddm'
+INFILE 'events.hddm'
 RUNG 9999
 
 C The following card enables single-track generation (for testing)
 C    particle  energy  theta  phi  vertex(x y z)
-KINE  103        1.0     80.  45.    0. 0. 65.
+KINE    3        1.0     80.  45.    0. 0. 65.
 
-RNDM 172
+RNDM 121
 
 CUTS 1e-4 1e-4
 
@@ -40,5 +40,6 @@ GELH  1     0.2     1.0     4     0.160
 
 CKOV 1
 LABS 1
+ABAN 0
 
 END
