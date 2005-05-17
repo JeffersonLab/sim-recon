@@ -1,0 +1,25 @@
+// $Id$
+//
+//    File: DFCALShowers.h
+// Created: Tue May 17 09:47:34 EST 2005
+// Creator: remitche (on Linux mantrid00 2.4.20-18.8smp i686)
+//
+
+#ifndef _DFCALShowers_
+#define _DFCALShowers_
+
+#include "DFactory.h"
+
+class DFCALShowers{
+	public:
+		HDCLASSDEF(DFCALShowers);
+
+                float x;  ///< x position of the shower center
+                float y;  ///< y position of the shower center
+                float E;  ///< Energy of the shower
+                float t;  ///< Time of the shower
+		
+};
+
+#endif // _DFCALShowers_
+
