@@ -1483,7 +1483,9 @@ int Refsys::createVolume(DOMElement* el)
                   phi0 += phiOffset;
                }
                int iaxis = 2;
-               drs.createDivision(divStr, ncopy, iaxis, phi0 - dphi/2, dphi);
+               drs.createDivision(divStr, ncopy, iaxis,
+                                  phi0 - dphi/2 - myRef.fPhiOffset*(180/M_PI),
+                                  dphi);
                XString divAttS("divides");
                targEl->setAttribute(X(divAttS),X(containerS));
                origin[0] = r;
