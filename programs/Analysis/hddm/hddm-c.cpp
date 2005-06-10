@@ -1136,6 +1136,7 @@ void constructOpenFunc(DOMElement* el)
 	 << "   }"						<< endl
 	 << "   fp->popTop = matches(head,HDDM_" << classPrefix
 	 << "_DocumentString);"					<< endl
+	 << "   free(head);" 					<< endl
          << "   if (fp->popTop == 0)"				<< endl
 	 << "   {"						<< endl
 	 << "      fprintf(stderr,\"HDDM Error: \");"		<< endl
