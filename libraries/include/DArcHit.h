@@ -15,6 +15,10 @@
 /// parameter space where the helix resides. For more details,
 /// see the DFactory_MCCheatHits class.
 
+
+#ifndef _DArcHit_
+#define _DArcHit_
+
 #include <TH2.h>
 
 #include "derror.h"
@@ -45,7 +49,22 @@ class DArcHit{
 		int on_circle;
 		int track;		///< track number from cheat code
 		int ihit;		///< index of hits in MCCheatHits factory
+
 };
 
+//------------------------------------------------------------------
+// This bit of voodoo is to provide a "binary predicate" (Google it)
+// to be used with the STL sort algorithm on a vector. It is
+// used in DFactory_DMCTrackCandidate::evnt(). And yes, it apparently
+// does need to be in the form of a template.
+//------------------------------------------------------------------
+template<class T>
+class ArcSort{
+	public:
+		bool operator()(const T &archit1,const T &archit2) const {
+			return archit1->zhit < archit2->zhit;
+		}
+};
 
+#endif //_DArcHit_
 
