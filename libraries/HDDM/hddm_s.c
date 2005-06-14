@@ -4808,6 +4808,7 @@ s_iostream_t* open_s_HDDM(char* filename)
       }
    }
    fp->popTop = matches(head,HDDM_s_DocumentString);
+   free(head);
    if (fp->popTop == 0)
    {
       fprintf(stderr,"HDDM Error: ");
