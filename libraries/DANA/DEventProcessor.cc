@@ -1,51 +1,34 @@
-// Author: David Lawrence  June 25, 2004
+// $Id$
 //
+//    File: DEventProcessor.cc
+// Created: Wed Jun  8 12:31:12 EDT 2005
+// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
-// DEventProcessor methods
-//
-
-#include <iostream>
-using namespace std;
 
 #include "DEventProcessor.h"
 
-//----------------
-// Constructor
-//----------------
+//---------------------------------
+// DEventProcessor    (Constructor)
+//---------------------------------
 DEventProcessor::DEventProcessor(void)
 {
-	/// Constructor for DEventProcessor object 
-	
-	eventLoop = NULL; // This will be set by the event loop object (if used)
+
 	init_called = 0;
 	brun_called = 0;
 	evnt_called = 0;
 	erun_called = 0;
 	fini_called = 0;
 	brun_runnumber = -1; // ensure brun is called
+	pthread_mutex_init(&state_mutex, NULL);
+	app = NULL;
 }
 
-//----------------
-// Destructor
-//----------------
+//---------------------------------
+// ~DEventProcessor    (Destructor)
+//---------------------------------
 DEventProcessor::~DEventProcessor()
 {
-	/// Destructor for DEventProcessor object 
-}
 
-//----------------
-// GetStatus
-//----------------
-int DEventProcessor::GetStatus(void)
-{
-	int status = 0;
-	if(init_called)status |= 0x1<<0;
-	if(brun_called)status |= 0x1<<1;
-	if(evnt_called)status |= 0x1<<2;
-	if(erun_called)status |= 0x1<<3;
-	if(fini_called)status |= 0x1<<4;
-	
-	return status;
 }
 
 //----------------
@@ -59,7 +42,7 @@ derror_t DEventProcessor::init(void)
 //----------------
 // brun
 //----------------
-derror_t DEventProcessor::brun(int runnumber)
+derror_t DEventProcessor::brun(DEventLoop *loop, int runnumber)
 {
 	return NOERROR;
 }
@@ -67,7 +50,7 @@ derror_t DEventProcessor::brun(int runnumber)
 //----------------
 // evnt
 //----------------
-derror_t DEventProcessor::evnt(int eventnumber)
+derror_t DEventProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 {
 	return NOERROR;
 }
@@ -87,5 +70,3 @@ derror_t DEventProcessor::fini(void)
 {
 	return NOERROR;
 }
-
-

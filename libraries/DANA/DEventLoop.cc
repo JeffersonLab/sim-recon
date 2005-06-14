@@ -1,109 +1,49 @@
 // $Id$
 //
-// Author: David Lawrence  June 24, 2004
+//    File: DEventLoop.cc
+// Created: Wed Jun  8 12:30:51 EDT 2005
+// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
-//
-// DEventLoop methods
-//
-#include <stdio.h>
-#include <signal.h>
-#include <setjmp.h>
+
+#include <cstdio>
 #include <iostream>
+#include <iomanip>
 using namespace std;
 
+#include <setjmp.h>
+#include <unistd.h>
+
+#include "DApplication.h"
 #include "DEventLoop.h"
-#include "DEventProcessor.h"
-#include "DEventSourceET.h"
-#include "DEventSourceFile.h"
+#include "DEvent.h"
+#include "DFactory.h"
 
-
-int SIGINT_RECEIVED = 0;
 jmp_buf SETJMP_ENV;
 
-//-----------------------------------------------------------------
-// ctrlCHandle
-//-----------------------------------------------------------------
-void ctrlCHandle(int x)
+
+//---------------------------------
+// DEventLoop    (Constructor)
+//---------------------------------
+DEventLoop::DEventLoop(DApplication *app)
 {
-	SIGINT_RECEIVED++;
-	cerr<<endl<<"SIGINT received ("<<SIGINT_RECEIVED<<")....."<<endl;
-	if(SIGINT_RECEIVED == 3){
-		cerr<<endl<<"Three SIGINTS received! Attempting graceful exit ..."<<endl<<endl;
-		longjmp(SETJMP_ENV, 1);
-	}
-}
-
-
-//----------------
-// Constructor
-//----------------
-DEventLoop::DEventLoop(int narg, char *argv[])
-{
-	/// Constructor for DEventLoop object 
-
-	// Initialize variables
-	Nprocessors = 0;
-	last_print_rate_time = 0;
-	quit=0;
-	goto_event = -1;
+	this->app = app;
+	app->AddDEventLoop(this);
+	event.SetDEventLoop(this);
+	pause = 0;
+	quit = 0;
+	auto_free = 1;
 	
-	// Set up to catch SIGINTs for graceful exits
-	signal(SIGINT,ctrlCHandle);
-	
-	// Determine event source type
-	switch(DEventSource::GuessSourceType(narg, argv)){
-		case DEventSource::EVENT_SOURCE_ET:
-			source = new DEventSourceET(narg, argv);
-			break;
-		case DEventSource::EVENT_SOURCE_FILE:
-			source = new DEventSourceFile(narg, argv);
-			break;
-		default:
-			source = NULL;
-	}
-}
-
-//----------------
-// Destructor
-//----------------
-DEventLoop::~DEventLoop()
-{
-	if(source)delete source;
-}
-
-//----------------
-// AddProcessor
-//----------------
-derror_t DEventLoop::AddProcessor(DEventProcessor *processor)
-{
-	if(Nprocessors >= MAX_EVENT_PROCESSORS){
-		cerr<<"Maximum number of event processors defined in DEventLoop"<<endl;
-		cerr<<"object ("<<MAX_EVENT_PROCESSORS<<")"<<endl;
-		return MAX_EVENT_PROCESSORS_EXCEEDED;
-	}
-	
-	processors[Nprocessors++] = processor;
-	
-	return NOERROR;
-}
-
-//----------------
-// Init
-//----------------
-derror_t DEventLoop::Init(void)
-{
-
 	// Let each detector system install factories
-	extern derror_t BCAL_init(DEvent*);
-	extern derror_t CDC_init(DEvent*);
-	extern derror_t CHERENKOV_init(DEvent*);
-	extern derror_t FCAL_init(DEvent*);
-	extern derror_t FDC_init(DEvent*);
-	extern derror_t TAGGER_init(DEvent*);
-	extern derror_t TOF_init(DEvent*);
-	extern derror_t TRIGGER_init(DEvent*);
-	extern derror_t UPV_init(DEvent*);
-	extern derror_t TRACKING_init(DEvent*);
+	extern derror_t BCAL_init(DEventLoop*);
+	extern derror_t CDC_init(DEventLoop*);
+	extern derror_t CHERENKOV_init(DEventLoop*);
+	extern derror_t FCAL_init(DEventLoop*);
+	extern derror_t FDC_init(DEventLoop*);
+	extern derror_t TAGGER_init(DEventLoop*);
+	extern derror_t TOF_init(DEventLoop*);
+	extern derror_t TRIGGER_init(DEventLoop*);
+	extern derror_t UPV_init(DEventLoop*);
+	extern derror_t TRACKING_init(DEventLoop*);
 	BCAL_init(this);
 	CDC_init(this);
 	CHERENKOV_init(this);
@@ -115,18 +55,219 @@ derror_t DEventLoop::Init(void)
 	UPV_init(this);
 	TRACKING_init(this);
 	
-	// Set the event_loop field for all processors
-	for(int i=0;i<Nprocessors;i++)processors[i]->eventLoop = this;
-	
-	// Call init Processors
-	for(int i=0;i<Nprocessors;i++)processors[i]->init();
+	// Copy the event processor list to our local vector
+	app->GetProcessors(processors);
+}
+
+//---------------------------------
+// ~DEventLoop    (Destructor)
+//---------------------------------
+DEventLoop::~DEventLoop()
+{
+	// Remove us from the DEventLoop's list. The application exits
+	// when there are no more DEventLoops registered with it.
+	app->RemoveDEventLoop(this);
+
+	// Call all factories' fini methods
+	for(unsigned int i=0; i<factories.size(); i++){
+		try{
+			factories[i]->fini();
+		}catch(derror_t err){
+			cerr<<endl;
+			cerr<<__FILE__<<":"<<__LINE__<<" Error thrown ("<<err<<") from DFactory<";
+			cerr<<factories[i]->dataClassName()<<">::fini()"<<endl;
+		}
+	}
+
+	// Delete all of the factories
+	// Call all factories' fini methods
+	for(unsigned int i=0; i<factories.size(); i++){
+		try{
+			delete factories[i];
+		}catch(derror_t err){
+			cerr<<endl;
+			cerr<<__FILE__<<":"<<__LINE__<<" Error thrown ("<<err<<") while deleting DFactory<";
+			cerr<<factories[i]->dataClassName()<<">"<<endl;
+		}
+	}
+
+	factories.clear();
+}
+
+//-------------
+// AddFactory
+//-------------
+derror_t DEventLoop::AddFactory(DFactory_base* factory)
+{
+	factory->SetDEventLoop(this);
+	factories.push_back(factory);
 
 	return NOERROR;
 }
 
-//----------------
+//-------------
+// RemoveFactory
+//-------------
+derror_t DEventLoop::RemoveFactory(DFactory_base* factory)
+{
+	vector<DFactory_base*>::iterator iter = factories.begin();
+	for(;iter!=factories.end(); iter++){
+		if(*iter == factory){
+			factories.erase(iter);
+			break;
+		}
+	}
+
+	return NOERROR;
+}
+
+//-------------
+// GetFactory
+//-------------
+DFactory_base* DEventLoop::GetFactory(const string data_name)
+{
+	// Search for specified factory and return pointer to it
+	vector<DFactory_base*>::iterator iter = factories.begin();
+	for(; iter!=factories.end(); iter++){
+		if(data_name == (*iter)->dataClassName()){
+			return *iter;
+		}
+	}
+
+	// No factory found. Return NULL
+	return NULL;
+}
+
+//-------------
+// GetFactoryNames
+//-------------
+vector<string> DEventLoop::GetFactoryNames(void)
+{
+	/// Return a vector<string> whose members are 
+	/// the names of the currently registered factories. 
+	vector<string> names;
+	vector<DFactory_base*>::iterator factory = factories.begin();
+	for(; factory!=factories.end(); factory++){
+		names.push_back((*factory)->dataClassName());
+	}	
+	
+	return names;
+}
+
+//-------------
+// ClearFactories
+//-------------
+derror_t DEventLoop::ClearFactories(void)
+{
+	/// Loop over all factories and call their Reset() methods.
+	/// Amoung other things, this will clear their evnt_called flags
+	/// This is called from DEventLoop at the
+	/// begining of a new event.
+
+	vector<DFactory_base*>::iterator iter = factories.begin();
+	for(; iter!=factories.end(); iter++){
+		(*iter)->Reset();
+	}
+
+	return NOERROR;
+}
+
+//-------------
+// PrintFactories
+//-------------
+derror_t DEventLoop::PrintFactories(int sparsify)
+{
+	/// Print a list of all registered factories to the screen
+	/// along with a little info about each.
+
+	cout<<endl;
+	cout<<"Registered factories: ("<<factories.size()<<" total)"<<endl;
+	cout<<endl;
+	cout<<"Name:             nrows:"<<endl;
+	cout<<"---------------- -------"<<endl;
+
+	for(unsigned int i=0; i<factories.size(); i++){
+		DFactory_base *factory = factories[i];
+		
+		if(sparsify)
+			if(factory->GetNrows()<1)continue;
+		
+		// To make things look pretty, copy all values into the buffer "str"
+		string str(79,' ');
+		string name = factory->dataClassName();
+		str.replace(0, name.size(), name);
+
+		char num[32];
+		sprintf(num, "%d", factory->GetNrows());
+		str.replace(22-strlen(num), strlen(num), num);
+
+		cout<<str<<endl;
+	}
+	
+	cout<<endl;
+
+	return NOERROR;
+}
+
+//-------------
+// Print
+//-------------
+derror_t DEventLoop::Print(const string data_name)
+{
+	/// Dump the data to stdout for the specified factory
+	///
+	/// Find the factory corresponding to data_name and send
+	/// the return value of its toString() method to stdout.
+
+	// Search for specified factory and return pointer to it's data container
+	DFactory_base *factory = GetFactory(data_name);
+	if(!factory){
+		cerr<<" ERROR -- Factory not found for class \""<<data_name<<"\""<<endl;
+		return NOERROR;
+	}
+	
+	cout<<factory->toString();
+
+	return NOERROR;
+}
+
+//-------------
+// Loop
+//-------------
+derror_t DEventLoop::Loop(void)
+{
+	/// Loop over events until Quit() method is called or we run
+	/// out of events.
+	
+	do{
+		// Handle pauses and quits
+		while(pause){
+			usleep(500000);
+			if(quit)break;
+		}
+		if(quit)break;
+		
+		// Read in a new event
+		switch(OneEvent()){
+			case NO_MORE_EVENT_SOURCES:
+				// No more events. Time to quit
+				quit = 1;
+				break;
+			case NOERROR:
+				// Don't need to do anything here
+				break;
+			default:
+				break;
+		}
+	
+	}while(!quit);
+	
+	return NOERROR;
+}
+
+//-------------
 // OneEvent
-//----------------
+//-------------
 derror_t DEventLoop::OneEvent(void)
 {
 	/// Read in and process one event. If eventno is
@@ -136,14 +277,8 @@ derror_t DEventLoop::OneEvent(void)
 	// Clear evnt_called flag in all factories
 	ClearFactories();
 
-	derror_t err;
-	if(goto_event>=0){
-		err = source->GotoEvent(goto_event);
-		if(!err)_eventnumber = goto_event - 1; // eventnumber is incremented below
-		goto_event = -1;
-	}else{
-		err = source->NextEvent();
-	}
+	// Try to read in an event
+	derror_t err = app->NextEvent(event);
 	
 	// Here is a bit of voodoo. Calling setjmp() records the etire stack
 	// so that a subsequent call to longjmp() will return us right here.
@@ -151,7 +286,10 @@ derror_t DEventLoop::OneEvent(void)
 	// value of setjmp() will be non-zero. The longjmp() call is made
 	// from the SIGNINT interrupt handler so infinite loops can be
 	// broken out of and the program will still gracefully exit.
-	if(setjmp(SETJMP_ENV))err = NO_MORE_EVENT_SOURCES;
+	if(setjmp(SETJMP_ENV)){
+		cerr<<endl<<"Uh-oh, seems the way-back machine was activated. Bailing this thread"<<endl<<endl;
+		err = NO_MORE_EVENT_SOURCES;
+	}
 	
 	switch(err){
 		case NOERROR:
@@ -161,167 +299,42 @@ derror_t DEventLoop::OneEvent(void)
 			break;
 		case EVENT_NOT_IN_MEMORY:
 			cout<<endl<<"Event not in memory"<<endl;
-			_eventnumber--;
 			break;
 		default:
 			break;
 	}
 	if(err != NOERROR && err !=EVENT_NOT_IN_MEMORY)return err;
-	
-	// Copy pointer to hddm_s to our object (from DEvent inheritance)
-	_hddm_s = source->hddm_s;
-	
-	// Need to extract the event number and run number here.
-	//runnumber = 1;
-	_eventnumber++;
-	
+		
 	// Call Event Processors
-	DEventProcessor **p = processors;
-	for(int i=0;i<Nprocessors;i++, p++){
-		(*p)->hddm_s = hddm_s();
+	int event_number = event.GetEventNumber();
+	int run_number = event.GetRunNumber();
+	vector<DEventProcessor*>::iterator p = processors.begin();
+	for(; p!=processors.end(); p++){
+		DEventProcessor *proc = *p;
 
 		// Call brun routine if run number has changed or it's not been called
-		if(_runnumber!=(*p)->GetBRUN_RunNumber()){
-			if((*p)->brun_was_called() && !(*p)->erun_was_called()){
-				(*p)->erun();
-				(*p)->Set_erun_called();
+		proc->LockState();
+		if(run_number!=proc->GetBRUN_RunNumber()){
+			if(proc->brun_was_called() && !proc->erun_was_called()){
+				proc->erun();
+				proc->Set_erun_called();
 			}
-			(*p)->Clear_brun_called();
+			proc->Clear_brun_called();
 		}
-		if(!(*p)->brun_was_called()){
-			(*p)->brun(_runnumber);
-			(*p)->Set_brun_called();
-			(*p)->Clear_erun_called();
-			(*p)->SetBRUN_RunNumber(_runnumber);
+		if(!proc->brun_was_called()){
+			proc->brun(this, run_number);
+			proc->Set_brun_called();
+			proc->Clear_erun_called();
+			proc->SetBRUN_RunNumber(run_number);
 		}
+		proc->UnlockState();
 
 		// Call the event routine
-		derror_t err = (*p)->evnt(_eventnumber);
-
-		// More will need to be done to truly filter out the event.
-		// for now, this just provides a means to not completely process
-		// events by adding a "filter" to the front of the processor list
-		if(err == FILTER_EVENT_OUT)break;
+		proc->evnt(this, event_number);
 	}
-	
-	// In order for the source to jump to an event via GotoEvent(),
-	// it needs to know the event number which may only be obtained
-	// after parsing the data.
-	source->RecordEventNumber(_eventnumber);
-		
+
+	if(auto_free)event.FreeEvent();
+			
 	return NOERROR;
-}
-
-//----------------
-// Fini
-//----------------
-derror_t DEventLoop::Fini(void)
-{
-	// Call fini for all factories
-	DEvent::Fini();
-
-	// Call fini Processors
-	for(int i=0;i<Nprocessors;i++)processors[i]->fini();
-	
-	return NOERROR;
-}
-
-//----------------
-// Run
-//----------------
-derror_t DEventLoop::Run(void)
-{
-	// Initialize
-	derror_t err;
-	err = Init();
-	if(err!=NOERROR)return err;
-
-	// Loop over events
-	do{
-		err=OneEvent();
-		if(err!=NOERROR)break;
-	}while(!quit && !SIGINT_RECEIVED);
-
-	// Clean up
-	err = Fini();
-	
-	cout<<endl<<source->Nevents_read<<" events processed total"<<endl;
-
-	return err;
-}
-
-//----------------
-// Run
-//----------------
-derror_t DEventLoop::Run(DEventProcessor *proc)
-{
-	derror_t err = AddProcessor(proc);
-	if(err)return err;
-	
-	return Run();
-}
-
-//----------------
-// GetRate
-//----------------
-float DEventLoop::GetRate(void)
-{
-	/// This just returns GetRate from the private DEventSource member
-	if(!source){
-		cerr<<__FILE__<<":"<<__LINE__<<" No event source set (source=NULL)!"<<endl;
-		return -1.0;
-	}
-	
-	return source->prate_last_rate;
-}
-
-//----------------
-// PrintRate
-//----------------
-derror_t DEventLoop::PrintRate(void)
-{
-	/// Update the screen with the current event processing rate.
-	/// This governs itself to only update as often as the rate
-	/// is recalculated by DEventSource so it is safe to call
-	/// it every event.
-	if(!source){
-		cerr<<__FILE__<<":"<<__LINE__<<" No event source set (source=NULL)!"<<endl;
-		return RESOURCE_UNAVAILABLE;
-	}
-
-	//cout<<__FILE__<<":"<<__LINE__<<" last_print_rate_time="<<last_print_rate_time;
-	//cout<<" source->prate_last_time="<<source->prate_last_time<<endl;
-
-	if(last_print_rate_time != source->prate_last_time){
-		float rate = source->prate_last_rate;
-		char *rateunits = "Hz";
-		if(rate>1500000.){
-			rate/=1000000.;
-			rateunits = "MHz";
-		}else if(rate>1500.){
-			rate/=1000;
-			rateunits = "kHz";
-		}
-		float Nevents = (float)source->Nevents_read;
-		char *eventunits = "";
-		if(Nevents>10000.){
-			Nevents/=1000.;
-			eventunits = "k";
-		}
-		
-		printf("  %3.1f%s events  (%3.1f%s)          \r", Nevents,eventunits, rate, rateunits);
-		fflush(stdout);
-		last_print_rate_time = source->prate_last_time;
-	}
-	
-	return NOERROR;
-}
-
-//----------------
-// GetSourceName
-//----------------
-const char* DEventLoop::GetSourceName(void)
-{
-	return source->GetSourceName();
 }
 

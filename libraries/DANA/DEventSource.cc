@@ -1,183 +1,70 @@
-// Author: David Lawrence  June 22, 2004
+// $Id$
 //
-//
-// DEventSource methods
+//    File: DEventSource.cc
+// Created: Wed Jun  8 12:31:04 EDT 2005
+// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
 #include <iostream>
+#include <iomanip>
 using namespace std;
 
 #include "DEventSource.h"
+#include "DEventSourceHDDM.h"
 
-//----------------
-// Constructor
-//----------------
-DEventSource::DEventSource(int narg, char *argv[])
+//---------------------------------
+// DEventSource    (Constructor)
+//---------------------------------
+DEventSource::DEventSource(const char *source_name)
 {
-	/// Constructor for DEventSource object 
-
-	buflen = sizeof(int);
-	buffer = (char*)malloc(buflen);
-	
-	sources = new char*[narg];
-	Nsources = 0;
-	source_type = EVENT_SOURCE_NONE;
-	source_index = 0;
+	this->source_name = source_name;
 	source_is_open = 0;
-	for(int i=1;i<narg;i++)if(argv[i][0]!='-')sources[Nsources++] = strdup(argv[i]);
-	
+	pthread_mutex_init(&read_mutex, NULL);
+	event_buffer_size = 10;
 	Nevents_read = 0;
-	Nevents_read_total = 0;
-	
-	prate_start_time = 0;
-	prate_last_time = 0;
-	prate_period = 2;
-	prate_last_events = 0;
-	prate_last_rate = 0.0;
 }
 
-//----------------
-// Destructor
-//----------------
+//---------------------------------
+// ~DEventSource    (Destructor)
+//---------------------------------
 DEventSource::~DEventSource()
 {
-	for(int i=0;i<Nsources;i++)free(sources[i]);
-}
 
-//----------------
-// NextEvent
-//----------------
-derror_t DEventSource::NextEvent(void)
-{
-	/// Increment event counters and update event rate calculation
-
-	// If an event source isn't open, then open the next one and recall ourself
-	derror_t err;
-	if(!source_is_open){
-		if(source_index>=Nsources)return NO_MORE_EVENT_SOURCES;
-		cout<<endl<<"Opening \""<<sources[source_index]<<"\""<<endl;
-		err = Open(sources[source_index++]);
-		if(err)return err;
-		source_is_open = 1;
-		return NextEvent();
-	}
-	
-	// Read next event from source. If none, then close source and recall ourself
-	switch(GetEvent()){
-		case NO_MORE_EVENTS_IN_SOURCE:
-			cout<<endl<<"Closing \""<<sources[source_index-1]<<"\""<<endl;
-			err = Close();
-			if(err)return err;
-			source_is_open = 0;
-			return NextEvent();
-			break;
-		default:
-			break;
-	}
-
-	// Event counters
-	Nevents_read++;
-	Nevents_read_total++;
-
-	// Calculate rate
-	if(prate_start_time == 0){
-		prate_start_time = time(NULL);
-		prate_last_time = prate_start_time;
-	}else{
-		// The time(NULL) call can take a while. We can avoid calling
-		// it a lot at higher rates by only calling it ever so often
-		unsigned long period=1;
-		if(prate_last_rate>100.0){
-			period = (unsigned long)(prate_last_rate/10.0);
-		}
-		if(period<1)period=1;
-		
-		if(((unsigned long)Nevents_read)%period == 0){
-			time_t now = time(NULL);
-			if(now-prate_last_time >= prate_period){
-				prate_last_rate = (float)(Nevents_read_total-prate_last_events)/(float)(now-prate_last_time);
-				prate_last_events = Nevents_read_total;
-				prate_last_time = now;
-			}
-		}
-	}
-
-	return NOERROR;
-}
-
-//----------------
-// GetRate
-//----------------
-float DEventSource::GetRate(void)
-{
-	/// Returns the rate at which the events are being processed.
-	/// This could lag by as much as 1 prate_period from instantaneous.
-	return prate_last_rate;
 }
 
 //----------------
 // GuessSourceType
 //----------------
-DEventSource::EVENT_SOURCE_TYPE DEventSource::GuessSourceType(int narg, char *argv[])
+const char* DEventSource::GuessSourceType(const char* source_name)
 {
 	/// Guesses type of event source
 	/// Only hddm is supported for now.
-	return EVENT_SOURCE_FILE;
+	return DEventSourceHDDM::static_className();
 }
 
 //----------------
-// Open
+// OpenSource
 //----------------
-derror_t DEventSource::Open(char *source)
+DEventSource* DEventSource::OpenSource(const char* name)
 {
-	/// virtual function
-	return NOERROR;
+	// Get the name of the subclass of DEventSource for this source
+	string type = GuessSourceType(name);
+
+	// Create a new object of the appropriate class and return a pointer to it
+	if(type == DEventSourceHDDM::static_className())	return new DEventSourceHDDM(name);
+
+	// Mmmm... Don't seem to know this source type.
+	cerr<<__FILE__<<":"<<__LINE__<<" Unknown source type for \""<<name<<"\"."<<endl;
+	return NULL;
 }
 
 //----------------
-// Close
+// GetObjects
 //----------------
-derror_t DEventSource::Close(void)
+derror_t DEventSource::GetObjects(const char *name, vector<void*> &v, const char* tag, void* ref, DFactory_base *factory)
 {
-	/// virtual function
-	return NOERROR;
+	/// This only gets called if the subclass doesn't define it. In that
+	/// case, the subclass must not support objects.
+	return OBJECT_NOT_AVAILABLE;
 }
 
-//----------------
-// GetEvent
-//----------------
-derror_t DEventSource::GetEvent(void)
-{
-	/// virtual function
-	return NOERROR;
-}
-
-//----------------
-// GotoEvent
-//----------------
-derror_t DEventSource::GotoEvent(int eventno)
-{
-	/// virtual function
-	cout<<"GotoEvent() not implemented for this type of event source."<<endl;
-	return NOERROR;
-}
-
-//----------------
-// SetEventBufferSize
-//----------------
-derror_t DEventSource::SetEventBufferSize(int Nevents)
-{
-	/// virtual function
-	cout<<"SetEventBufferSize() not implemented for this type of event source."<<endl;
-	return NOERROR;
-}
-
-//----------------
-// RecordEventNumber
-//----------------
-derror_t DEventSource::RecordEventNumber(int eventno)
-{
-	/// virtual function
-	// This gets called no matter what so don't print any warnings
-	return NOERROR;
-}
