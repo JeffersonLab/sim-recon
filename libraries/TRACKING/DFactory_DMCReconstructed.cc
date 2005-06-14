@@ -5,23 +5,23 @@
 // Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
 //
 
-#include "DMCTrackCandidate.h"
 #include "DMCThrown.h"
+#include "DMCTrackCandidate.h"
 #include "DFactory_DMCReconstructed.h"
-#include "DEvent.h"
+#include "DEventLoop.h"
 
 //------------------
 // evnt
 //------------------
-derror_t DFactory_DMCReconstructed::evnt(int eventnumber)
+derror_t DFactory_DMCReconstructed::evnt(DEventLoop *eventLoop, int eventnumber)
 {
 	// For now, we just copy from the MCTrackCandidates. Eventually,
 	// a track fitter will be implemented.
 	vector<const DMCTrackCandidate*> mctc;
-	event->Get(mctc);
+	eventLoop->Get(mctc);
 
 	vector<const DMCThrown*> mcthrowns;
-	event->Get(mcthrowns);
+	eventLoop->Get(mcthrowns);
 	
 	for(unsigned int i=0; i<mctc.size(); i++){
 		const DMCTrackCandidate *mctrackcandidate = mctc[i];
@@ -51,7 +51,7 @@ derror_t DFactory_DMCReconstructed::evnt(int eventnumber)
 const string DFactory_DMCReconstructed::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
-	Get();
+	GetNrows();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
 	printheader("row: type:  q:    p:    E: theta:   phi:   mass:     x:     y:     z:");

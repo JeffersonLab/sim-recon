@@ -30,8 +30,8 @@ class MyProcessor:public DEventProcessor
 		~MyProcessor();
 	
 		derror_t init(void);						///< Called once at program start.
-		derror_t brun(int runnumber);			///< Called everytime a new run number is detected.
-		derror_t evnt(int eventnumber);		///< Called every event.
+		derror_t brun(DEventLoop *eventLoop, int runnumber);			///< Called everytime a new run number is detected.
+		derror_t evnt(DEventLoop *eventLoop, int eventnumber);		///< Called every event.
 
 		derror_t ConvertToTop(float x, float y, float z, float &X, float &Y);
 		derror_t ConvertToSide(float x, float y, float z, float &X, float &Y);

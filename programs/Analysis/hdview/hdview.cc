@@ -10,7 +10,8 @@
 int GO = 0; // 1=continuously display events 0=wait for user
 
 TCanvas *maincanvas=NULL;
-DEventLoop *eventloop=NULL;
+DApplication *dapp = NULL;
+DEventLoop *eventloop =NULL;
 MyProcessor *myproc = NULL;
 hdv_mainframe *hdvmf=NULL;
 
@@ -19,10 +20,10 @@ hdv_mainframe *hdvmf=NULL;
 //-------------------
 int main(int narg, char *argv[])
 {
-	// Instantiate an event loop object this has to be done BEFORE
+	// Instantiate a DApplication object this has to be done BEFORE
 	// creating the TApplication object since that modifes the argument list.
-	eventloop = new DEventLoop(narg, argv);
-
+	dapp = new DApplication(narg, argv);
+	
 	// Open Window
 	TApplication app("HDView", &narg, argv);
 	hdvmf = new hdv_mainframe(gClient->GetRoot(), 1000, 600);
@@ -31,14 +32,17 @@ int main(int narg, char *argv[])
 	// init routine is called, the window will be mapped and it can
 	// draw the detectors.
 	myproc = new MyProcessor();
-	eventloop->AddProcessor(myproc);
-	eventloop->Init();
+	dapp->AddProcessor(myproc);
+	eventloop = new DEventLoop(dapp);
+	dapp->Init();
 
 	// Hand control to ROOT event loop
 	app.Run();
 	
-	// Close out event loop
-	eventloop->Fini();
+	// Clean-up the app (call erun and fini methods, delete sources)
+	dapp->Fini();
+		
+	delete dapp;
 
 	return 0;
 }

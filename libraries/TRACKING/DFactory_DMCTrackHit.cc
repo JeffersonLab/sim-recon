@@ -6,43 +6,42 @@
 //
 
 #include "DFactory_DMCCheatHit.h"
-#include "DEvent.h"
-
-
-
-#if 0
-static int qsort_mccheat_hits(const void* arg1, const void* arg2);
-
-//------------------------------------------------------------------
-// qsort_points_by_z
-//------------------------------------------------------------------
-static int qsort_mccheat_hits(const void* arg1, const void* arg2)
-{
-	MCCheatHit_t *a = (MCCheatHit_t*)arg1;
-	MCCheatHit_t *b = (MCCheatHit_t*)arg2;
-	
-	// sort by track number first
-	if(a->track != b->track)return a->track-b->track;
-	
-	// sort by z second
-	if(a->z == b->z)return 0;
-	return b->z < a->z ? 1:-1;
-}
-#endif
+#include "DEventLoop.h"
 
 
 //------------------
 // evnt
 //------------------
-derror_t DFactory_DMCCheatHit::evnt(int eventnumber)
+derror_t DFactory_DMCCheatHit::evnt(DEventLoop *eventLoop, int eventnumber)
 {
-	GetCDCHits();
-	GetFDCHits();
-	GetBCALHits();
-	GetTOFHits();
-	GetCherenkovHits();
-	GetFCALHits();
-	GetUPVHits();
+	/// This doesn't do anything. All of the work is done in  Extract_HDDM()
+	/// and the GetXXXHits() methods.
+
+	return NOERROR;
+}
+
+//------------------
+// Extract_HDDM
+//------------------
+derror_t DFactory_DMCCheatHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from DEventSourceHDDM::GetObjects.
+	
+	v.clear();
+
+	// These will put the data in the correctly typed _data vector. The
+	// pointers are copied to the v vector below. Note this means that 
+	// _data will be overwritten by the contents of v later by DEvent::Get()
+	// but the contents will be identical. This somewhat convoluted way
+	// of doing things is needed to implement a generic API for event sources.
+	GetCDCHits(hddm_s);
+	GetFDCHits(hddm_s);
+	GetBCALHits(hddm_s);
+	GetTOFHits(hddm_s);
+	GetCherenkovHits(hddm_s);
+	GetFCALHits(hddm_s);
+	GetUPVHits(hddm_s);
 	
 	// Some systems will use negative phis. Force them all to
 	// be in the 0 to 2pi range
@@ -53,13 +52,16 @@ derror_t DFactory_DMCCheatHit::evnt(int eventnumber)
 	
 	// sort hits by track, then z
 	sort(_data.begin(), _data.end()); // uses DMCCheatHit::operator<
+	
+	// Copy into v
+	for(unsigned int i=0; i<_data.size(); i++)v.push_back(_data[i]);
 
 	return NOERROR;
 }
 //-------------------
 // GetCDCHits
 //-------------------
-derror_t DFactory_DMCCheatHit::GetCDCHits(void)
+derror_t DFactory_DMCCheatHit::GetCDCHits(s_HDDM_t *hddm_s)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -103,7 +105,7 @@ derror_t DFactory_DMCCheatHit::GetCDCHits(void)
 //-------------------
 // GetFDCHits
 //-------------------
-derror_t DFactory_DMCCheatHit::GetFDCHits(void)
+derror_t DFactory_DMCCheatHit::GetFDCHits(s_HDDM_t *hddm_s)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -167,7 +169,7 @@ derror_t DFactory_DMCCheatHit::GetFDCHits(void)
 //-------------------
 // GetBCALHits
 //-------------------
-derror_t DFactory_DMCCheatHit::GetBCALHits(void)
+derror_t DFactory_DMCCheatHit::GetBCALHits(s_HDDM_t *hddm_s)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -198,7 +200,7 @@ derror_t DFactory_DMCCheatHit::GetBCALHits(void)
 //-------------------
 // GetTOFHits
 //-------------------
-derror_t DFactory_DMCCheatHit::GetTOFHits(void)
+derror_t DFactory_DMCCheatHit::GetTOFHits(s_HDDM_t *hddm_s)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -232,7 +234,7 @@ derror_t DFactory_DMCCheatHit::GetTOFHits(void)
 //-------------------
 // GetCherenkovHits
 //-------------------
-derror_t DFactory_DMCCheatHit::GetCherenkovHits(void)
+derror_t DFactory_DMCCheatHit::GetCherenkovHits(s_HDDM_t *hddm_s)
 {
 
 	return NOERROR;
@@ -241,7 +243,7 @@ derror_t DFactory_DMCCheatHit::GetCherenkovHits(void)
 //-------------------
 // GetFCALHits
 //-------------------
-derror_t DFactory_DMCCheatHit::GetFCALHits(void)
+derror_t DFactory_DMCCheatHit::GetFCALHits(s_HDDM_t *hddm_s)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -275,7 +277,7 @@ derror_t DFactory_DMCCheatHit::GetFCALHits(void)
 //-------------------
 // GetUPVHits
 //-------------------
-derror_t DFactory_DMCCheatHit::GetUPVHits(void)
+derror_t DFactory_DMCCheatHit::GetUPVHits(s_HDDM_t *hddm_s)
 {
 
 	return NOERROR;
@@ -287,7 +289,7 @@ derror_t DFactory_DMCCheatHit::GetUPVHits(void)
 const string DFactory_DMCCheatHit::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
-	Get();
+	GetNrows();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
 	printheader("row:   r(cm): phi(rad):  z(cm): track: primary:    system:");

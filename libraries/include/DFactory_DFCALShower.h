@@ -9,6 +9,7 @@
 #define _DFactory_DFCALShower_
 
 #include "DFactory.h"
+#include "DEventLoop.h"
 #include "DFCALShower.h"
 
 class DFactory_DFCALShower:public DFactory<DFCALShower>{
@@ -18,7 +19,7 @@ class DFactory_DFCALShower:public DFactory<DFCALShower>{
 		const string toString(void);
 	
 	private:
-		derror_t evnt(int eventnumber);	///< Invoked via DEventProcessor virtual method
+		derror_t evnt(DEventLoop *eventLoop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 };
 
 #endif // _DFactory_DFCALShower_

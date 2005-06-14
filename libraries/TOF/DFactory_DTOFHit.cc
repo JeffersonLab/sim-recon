@@ -1,8 +1,8 @@
 // $Id$
 //
 //    File: DFactory_DTOFHit.cc
-// Created: Sun Apr  3 10:31:26 EDT 2005
-// Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
+// Created: Thu Jun  9 10:05:21 EDT 2005
+// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
 #include "DFactory_DTOFHit.h"
@@ -10,8 +10,23 @@
 //------------------
 // evnt
 //------------------
-derror_t DFactory_DTOFHit::evnt(int enventnumber)
+derror_t DFactory_DTOFHit::evnt(DEventLoop *eventLoop, int eventnumber)
 {
+	/// Place holder for now. 
+
+	return NOERROR;
+}
+
+//------------------
+// Extract_HDDM
+//------------------
+derror_t DFactory_DTOFHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from DEventSourceHDDM::GetObjects.
+	
+	v.clear();
+
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
@@ -43,7 +58,7 @@ derror_t DFactory_DTOFHit::evnt(int enventnumber)
 						tofhit->end = 0;
 						tofhit->dE = dE;
 						tofhit->t = t;
-						_data.push_back(tofhit);
+						v.push_back(tofhit);
 					}
 				}
 				s_Bottom_t *bottom = vcounters->in[j].bottom;
@@ -60,7 +75,7 @@ derror_t DFactory_DTOFHit::evnt(int enventnumber)
 						tofhit->end = 1;
 						tofhit->dE = dE;
 						tofhit->t = t;
-						_data.push_back(tofhit);
+						v.push_back(tofhit);
 					}
 				}
 			}

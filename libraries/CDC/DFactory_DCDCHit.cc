@@ -1,8 +1,8 @@
 // $Id$
 //
 //    File: DFactory_DCDCHit.cc
-// Created: Sun Apr  3 10:46:28 EDT 2005
-// Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
+// Created: Thu Jun  9 10:22:37 EDT 2005
+// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
 #include "DFactory_DCDCHit.h"
@@ -10,8 +10,23 @@
 //------------------
 // evnt
 //------------------
-derror_t DFactory_DCDCHit::evnt(int enventnumber)
+derror_t DFactory_DCDCHit::evnt(DEventLoop *eventLoop, int eventnumber)
 {
+	/// Place holder for now. 
+
+	return NOERROR;
+}
+
+//------------------
+// Extract_HDDM
+//------------------
+derror_t DFactory_DCDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from DEventSourceHDDM::GetObjects.
+	
+	v.clear();
+
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
@@ -41,7 +56,7 @@ derror_t DFactory_DCDCHit::evnt(int enventnumber)
 								cdchit->phim = phim;
 								cdchit->dE = dE;
 								cdchit->t = t;
-								_data.push_back(cdchit);
+								v.push_back(cdchit);
 							}
 						}
 					}

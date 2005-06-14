@@ -19,17 +19,17 @@ using namespace std;
 //------------------
 // evnt
 //------------------
-derror_t DFactory_DMCTrackEfficiency::evnt(int eventnumber)
+derror_t DFactory_DMCTrackEfficiency::evnt(DEventLoop *loop, int eventnumber)
 {
 	vector<const DMCTrackCandidate*> mctrackcandidates;
 	vector<const DMCCheatHit*> mccheathits;
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCReconstructed*> mcreconstructeds;
 	
-	event->Get(mctrackcandidates);
-	event->Get(mccheathits);
-	event->Get(mcthrowns);
-	event->Get(mcreconstructeds);
+	loop->Get(mctrackcandidates);
+	loop->Get(mccheathits);
+	loop->Get(mcthrowns);
+	loop->Get(mcreconstructeds);
 	
 	// The vector of DMCReconstructed objects should correspond
 	// exactly to the vector of DMCTrackCandidate objects.
@@ -94,7 +94,7 @@ derror_t DFactory_DMCTrackEfficiency::evnt(int eventnumber)
 const string DFactory_DMCTrackEfficiency::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
-	Get();
+	GetNrows();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
 	printheader("row: Nthrown: Nfound: Nthrown_and_found: fraction_found: fittable:");

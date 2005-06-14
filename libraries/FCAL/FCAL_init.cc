@@ -1,14 +1,14 @@
 // $Id$
 
-#include "DEvent.h"
+#include "DEventLoop.h"
 #include "DFactory_DFCALHit.h"
 #include "DFactory_DFCALShower.h"
 
-derror_t FCAL_init(DEvent *event)
+derror_t FCAL_init(DEventLoop *loop)
 {
 	/// Create and register FCAL data factories
-	event->AddFactory(new DFactory_DFCALHit());
-	event->AddFactory(new DFactory_DFCALShower());
+	loop->AddFactory(new DFactory_DFCALHit());
+	loop->AddFactory(new DFactory_DFCALShower());
 
 	return NOERROR;
 }

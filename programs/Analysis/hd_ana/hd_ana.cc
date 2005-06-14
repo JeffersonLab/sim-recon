@@ -5,7 +5,7 @@
 //
 
 #include "MyProcessor.h"
-#include "DEventLoop.h"
+#include "DApplication.h"
 
 //-----------
 // main
@@ -16,10 +16,10 @@ int main(int narg, char *argv[])
 	MyProcessor myproc;
 
 	// Instantiate an event loop object
-	DEventLoop eventloop(narg, argv);
+	DApplication app(narg, argv);
 
 	// Run though all events, calling our event processor's methods
-	eventloop.Run(&myproc);
+	app.Run(&myproc, 10);
 	
 	return 0;
 }

@@ -1,8 +1,8 @@
 // $Id$
 //
 //    File: DFactory_DUPVHit.cc
-// Created: Sun Apr  3 10:35:31 EDT 2005
-// Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
+// Created: Thu Jun  9 10:01:38 EDT 2005
+// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
 #include "DFactory_DUPVHit.h"
@@ -10,7 +10,7 @@
 //------------------
 // evnt
 //------------------
-derror_t DFactory_DUPVHit::evnt(int enventnumber)
+derror_t DFactory_DUPVHit::evnt(DEventLoop *eventLoop, int eventnumber)
 {
 	// Code to generate factory data goes here. Add it like:
 	//
@@ -27,12 +27,24 @@ derror_t DFactory_DUPVHit::evnt(int enventnumber)
 }
 
 //------------------
+// Extract_HDDM
+//------------------
+derror_t DFactory_DUPVHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
+{
+	/// Needs to be written
+
+	return NOERROR;
+}
+
+//------------------
 // toString
 //------------------
 const string DFactory_DUPVHit::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
-	Get();
+	// GetNrows() will check the data source first in case the objects
+	// are obtained fom there.
+	GetNrows();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
 	// Put the class specific code to produce nicely formatted ASCII here.

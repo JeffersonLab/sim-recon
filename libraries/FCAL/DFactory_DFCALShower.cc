@@ -15,11 +15,11 @@
 //    Nothing is done at this point except a copy of the DFCALHits
 //      object into the DFCALShower object.
 //------------------
-derror_t DFactory_DFCALShower::evnt(int eventnumber)
+derror_t DFactory_DFCALShower::evnt(DEventLoop *eventLoop, int eventnumber)
 {
 
         vector<const DFCALHit*> fcalhits;
-        event->Get(fcalhits);
+        eventLoop->Get(fcalhits);
 
         for (unsigned int i = 0; i < fcalhits.size(); i++){
 

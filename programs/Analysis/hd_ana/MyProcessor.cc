@@ -8,19 +8,18 @@
 using namespace std;
 
 #include "MyProcessor.h"
+#include "DEvent.h"
 #include "hddm_s.h"
 
 #include "DCDCHit.h"
 #include "DFCALHit.h"
+#include "DMCReconstructed.h"
 
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
 //------------------------------------------------------------------
 derror_t MyProcessor::init(void)
 {
-	// Print list of factories
-	eventLoop->PrintFactories();
-
 	// open ROOT file
 	ROOTfile = new TFile("hd_ana.root","RECREATE","Produced by hd_ana");
 	cout<<"Opened ROOT file \"hd_ana.root\""<<endl;
@@ -36,12 +35,15 @@ derror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // evnt   -Fill histograms here
 //------------------------------------------------------------------
-derror_t MyProcessor::evnt(int eventnumber)
+derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 {
 	vector<const DCDCHit*> cdchits;
 	vector<const DFCALHit*> fcalhits;
 	eventLoop->Get(cdchits);
 	eventLoop->Get(fcalhits);
+	
+	vector<const DMCReconstructed*> mcreconstructed;
+	eventLoop->Get(mcreconstructed);
 	
 	for(unsigned int i=0;i<cdchits.size();i++){
 		const DCDCHit *cdchit = cdchits[i];
@@ -56,8 +58,6 @@ derror_t MyProcessor::evnt(int eventnumber)
 		fcalhitE->Fill(fcalhit->E);
 	}
 	
-	eventLoop->PrintRate();
-
 	return NOERROR;
 }
 

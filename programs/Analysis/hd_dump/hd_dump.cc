@@ -10,7 +10,7 @@ using namespace std;
 #include <termios.h>
 
 #include "MyProcessor.h"
-#include "DEventLoop.h"
+#include "DApplication.h"
 
 void ParseCommandLineArguments(int &narg, char *argv[]);
 void Usage(void);
@@ -28,7 +28,7 @@ int main(int narg, char *argv[])
 	MyProcessor myproc;
 
 	// Instantiate an event loop object
-	DEventLoop eventloop(narg, argv);
+	DApplication app(narg, argv);
 
 	// This monkey shines is needed to get getchar() to return single
 	// characters without waiting for the user to hit return
@@ -40,7 +40,8 @@ int main(int narg, char *argv[])
 
 
 	// Run though all events, calling our event processor's methods
-	eventloop.Run(&myproc);
+	app.SetShowTicker(0);
+	app.Run(&myproc);
 	
 	return 0;
 }

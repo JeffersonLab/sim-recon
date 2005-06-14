@@ -1,12 +1,12 @@
 // $Id$
 
-#include "DEvent.h"
+#include "DEventLoop.h"
 #include "DFactory_DUPVHit.h"
 
-derror_t UPV_init(DEvent *event)
+derror_t UPV_init(DEventLoop *loop)
 {
 	/// Create and register UPV data factories
-	event->AddFactory(new DFactory_DUPVHit());
+	loop->AddFactory(new DFactory_DUPVHit());
 
 	return NOERROR;
 }

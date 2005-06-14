@@ -10,8 +10,23 @@
 //------------------
 // evnt
 //------------------
-derror_t DFactory_DMCThrown::evnt(int enventnumber)
+derror_t DFactory_DMCThrown::evnt(DEventLoop *loop, int enventnumber)
 {
+	/// This doesn't do anything. All of the work is done in  Extract_HDDM()
+
+	return NOERROR;
+}
+
+//------------------
+// Extract_HDDM
+//------------------
+derror_t DFactory_DMCThrown::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from DEventSourceHDDM::GetObjects.
+	
+	v.clear();
+
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
@@ -43,7 +58,7 @@ derror_t DFactory_DMCThrown::evnt(int enventnumber)
 							mcthrown->phi = atan2(product->momentum->py, product->momentum->px);
 							if(mcthrown->phi<0.0)mcthrown->phi += 2.0*M_PI;
 							mcthrown->theta = acos(product->momentum->pz/mcthrown->p);
-							_data.push_back(mcthrown);
+							v.push_back((void*)mcthrown);
 						}
 					}
 				}
@@ -61,7 +76,7 @@ derror_t DFactory_DMCThrown::evnt(int enventnumber)
 const string DFactory_DMCThrown::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
-	Get();
+	GetNrows();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
 	printheader("row: type:  q:    p:    E: theta:   phi:   mass:     x:     y:     z:");

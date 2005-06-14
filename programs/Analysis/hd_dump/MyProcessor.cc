@@ -33,21 +33,55 @@ vector<string> toprint;
 #define ansi_back(A)		ansi_escape<<"["<<(A)<<"D"
 
 //------------------------------------------------------------------
-// evnt   -Fill histograms here
+// brun
 //------------------------------------------------------------------
-derror_t MyProcessor::evnt(int eventnumber)
+derror_t MyProcessor::brun(DEventLoop *eventLoop, int runnumber)
 {
+	vector<string> factory_names = eventLoop->GetFactoryNames();
+
+	usleep(100000); //this just gives the Main thread a chance to finish printing the "Launching threads" message
+	cout<<endl;
+
 	// If int PRINT_ALL is set then add EVERYTHING.
 	if(PRINT_ALL){
-		toprint = eventLoop->GetFactoryNames();
-		for(unsigned int i=0; i<toprint.size(); i++){
-			string name = toprint[i];
-			cout<<"Adding to print list : "<<name<<endl;
-		}
-
-		PRINT_ALL = 0; // clear PRINT_ALL flag so we don't re-add all factories
+		toprint = factory_names;
 		SKIP_BORING_EVENTS = 0; // with PRINT_ALL, nothing is boring!
+	}else{
+		// make sure factories exist for all requested data types
+		// If a factory isn't found, but one with a "D" prefixed
+		// is, go ahead and correct the name.
+		vector<string> really_toprint;
+		for(unsigned int i=0; i<toprint.size();i++){
+			int found = 0;
+			int dfound = 0;
+			for(unsigned int j=0;j<factory_names.size();j++){
+				if(factory_names[j] == toprint[i])found = 1;
+				if(factory_names[j] == "D" + toprint[i])dfound = 1;
+			}
+			if(found)
+				really_toprint.push_back(toprint[i]);
+			else if(dfound)
+				really_toprint.push_back("D" + toprint[i]);
+			else
+				cout<<ansi_red<<"WARNING:"<<ansi_normal
+					<<" Couldn't find factory for \""
+					<<ansi_bold<<toprint[i]<<ansi_normal
+					<<"\"!"<<endl;
+		}
+		
+		toprint = really_toprint;
 	}
+	
+	cout<<endl;
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// evnt
+//------------------------------------------------------------------
+derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
+{
 
 	// If we're skipping boring events (events with no rows for any of
 	// the types we're printing) we must find out first if the event is
@@ -56,6 +90,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 	if(SKIP_BORING_EVENTS){
 		for(unsigned int i=0;i<toprint.size();i++){
 			DFactory_base *factory = eventLoop->GetFactory(toprint[i]);
+			if(!factory)factory = eventLoop->GetFactory("D" + toprint[i]);
 			if(factory){
 				if(factory->GetNrows()>0){
 					event_is_boring=0;
@@ -94,7 +129,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 				eventLoop->Quit();
 				break;
 			case 'P':
-				eventLoop->GotoEvent(eventnumber-1);
+				//eventLoop->GotoEvent(eventnumber-1);
 				break;
 			case 'N':
 				break;

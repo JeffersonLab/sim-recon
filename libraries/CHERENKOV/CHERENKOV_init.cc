@@ -1,12 +1,12 @@
 // $Id$
 
-#include "DEvent.h"
+#include "DEventLoop.h"
 #include "DFactory_DCHERENKOVHit.h"
 
-derror_t CHERENKOV_init(DEvent *event)
+derror_t CHERENKOV_init(DEventLoop *loop)
 {
 	/// Create and register CHERENKOV data factories
-	event->AddFactory(new DFactory_DCHERENKOVHit());
+	loop->AddFactory(new DFactory_DCHERENKOVHit());
 
 	return NOERROR;
 }

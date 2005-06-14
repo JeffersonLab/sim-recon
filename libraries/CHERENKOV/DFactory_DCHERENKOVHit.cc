@@ -1,8 +1,8 @@
 // $Id$
 //
 //    File: DFactory_DCHERENKOVHit.cc
-// Created: Sun Apr  3 10:45:03 EDT 2005
-// Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
+// Created: Thu Jun  9 10:32:49 EDT 2005
+// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
 #include "DFactory_DCHERENKOVHit.h"
@@ -10,18 +10,23 @@
 //------------------
 // evnt
 //------------------
-derror_t DFactory_DCHERENKOVHit::evnt(int enventnumber)
+derror_t DFactory_DCHERENKOVHit::evnt(DEventLoop *eventLoop, int eventnumber)
 {
-	// Code to generate factory data goes here. Add it like:
-	//
-	// DCHERENKOVHit *myDCHERENKOVHit = new DCHERENKOVHit;
-	// myDCHERENKOVHit->x = x;
-	// myDCHERENKOVHit->y = y;
-	// ...
-	// _data.push_back(myDCHERENKOVHit);
-	//
-	// Note that the objects you create here will be deleted later
-	// by the system and the _data vector will be cleared automatically.
+	/// Place holder for now. 
+
+	return NOERROR;
+}
+
+//------------------
+// Extract_HDDM
+//------------------
+derror_t DFactory_DCHERENKOVHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
+{
+	/// THIS NEEDS TO BE WRITTEN!!
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from DEventSourceHDDM::GetObjects.
+	
+	v.clear();
 
 	return NOERROR;
 }
@@ -32,8 +37,10 @@ derror_t DFactory_DCHERENKOVHit::evnt(int enventnumber)
 const string DFactory_DCHERENKOVHit::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()==0)return string(); // don't print anything if we have no data!
+	// GetNrows() will check the data source first in case the objects
+	// are obtained fom there.
+	GetNrows();
+	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
 	// Put the class specific code to produce nicely formatted ASCII here.
 	// The DFactory_base class has several methods defined to help. They
@@ -52,4 +59,5 @@ const string DFactory_DCHERENKOVHit::toString(void)
 	//		}
 	//
 	return _table;
+
 }

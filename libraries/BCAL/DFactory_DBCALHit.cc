@@ -1,8 +1,8 @@
 // $Id$
 //
 //    File: DFactory_DBCALHit.cc
-// Created: Sun Apr  3 10:49:22 EDT 2005
-// Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
+// Created: Thu Jun  9 10:14:35 EDT 2005
+// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
 #include "DFactory_DBCALHit.h"
@@ -10,9 +10,22 @@
 //------------------
 // evnt
 //------------------
-derror_t DFactory_DBCALHit::evnt(int enventnumber)
+derror_t DFactory_DBCALHit::evnt(DEventLoop *eventLoop, int eventnumber)
 {
-	/// This just copies the data from the hddm_s structure for now
+	/// Place holder for now. 
+
+	return NOERROR;
+}
+
+//------------------
+// Extract_HDDM
+//------------------
+derror_t DFactory_DBCALHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from DEventSourceHDDM::GetObjects.
+	
+	v.clear();
 
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -41,7 +54,7 @@ derror_t DFactory_DBCALHit::evnt(int enventnumber)
 					bcalhit->end = DBCALHit::UPSTREAM;
 					bcalhit->E = E;
 					bcalhit->t = t;
-					_data.push_back(bcalhit);
+					v.push_back(bcalhit);
 				}
 			}
 			s_Downstream_t *downstream = modules->in[j].downstream;
@@ -58,7 +71,7 @@ derror_t DFactory_DBCALHit::evnt(int enventnumber)
 					bcalhit->end = DBCALHit::DOWNSTREAM;
 					bcalhit->E = E;
 					bcalhit->t = t;
-					_data.push_back(bcalhit);
+					v.push_back(bcalhit);
 				}
 			}
 		}
@@ -73,7 +86,7 @@ derror_t DFactory_DBCALHit::evnt(int enventnumber)
 const string DFactory_DBCALHit::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
-	Get();
+	GetNrows();
 	if(_data.size()==0)return string(); // don't print anything if we have no data!
 
 	printheader("row:   phim(rad):      end:     E(GeV):   t(ns):");

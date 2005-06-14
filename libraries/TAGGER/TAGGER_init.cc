@@ -1,12 +1,12 @@
 // $Id$
 
-#include "DEvent.h"
+#include "DEventLoop.h"
 #include "DFactory_DTAGGERHit.h"
 
-derror_t TAGGER_init(DEvent *event)
+derror_t TAGGER_init(DEventLoop *loop)
 {
 	/// Create and register TAGGER data factories
-	event->AddFactory(new DFactory_DTAGGERHit());
+	loop->AddFactory(new DFactory_DTAGGERHit());
 
 	return NOERROR;
 }

@@ -1,12 +1,12 @@
 // $Id$
 
-#include "DEvent.h"
+#include "DEventLoop.h"
 #include "DFactory_DTOFHit.h"
 
-derror_t TOF_init(DEvent *event)
+derror_t TOF_init(DEventLoop *loop)
 {
 	/// Create and register TOF data factories
-	event->AddFactory(new DFactory_DTOFHit());
+	loop->AddFactory(new DFactory_DTOFHit());
 
 	return NOERROR;
 }

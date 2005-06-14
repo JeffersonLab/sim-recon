@@ -102,7 +102,7 @@ derror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // brun 
 //------------------------------------------------------------------
-derror_t MyProcessor::brun(int runnumber)
+derror_t MyProcessor::brun(DEventLoop *eventLoop, int runnumber)
 {
 	// Read in Magnetic field map
 	if(Bfield)delete Bfield;
@@ -116,7 +116,7 @@ derror_t MyProcessor::brun(int runnumber)
 //------------------------------------------------------------------
 // evnt 
 //------------------------------------------------------------------
-derror_t MyProcessor::evnt(int eventnumber)
+derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 {
 	int colors[] = {5,2,4,6,3};
 	int ncolors = 5;

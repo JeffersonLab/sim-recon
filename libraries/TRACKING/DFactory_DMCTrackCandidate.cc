@@ -6,12 +6,16 @@
 //
 
 #include <iostream>
+#include <string>
 using namespace std;
+
+#include <pthread.h>
 
 #include "DFactory_DMCTrackCandidate.h"
 #include "DMCCheatHit.h"
-#include "DEvent.h"
+#include "DEventLoop.h"
 #include "DQuickFit.h"
+#include "DArcHit.h"
 
 //------------------------------------------------------------------
 // DFactory_DMCTrackCandidates (constructor)
@@ -24,16 +28,22 @@ DFactory_DMCTrackCandidate::DFactory_DMCTrackCandidate()
 	markers.clear();
 	qfits.clear();
 	
+	// ROOT objects need unique names so they don't conflict with 
+	// those defined by other factories in other threads.
+	char str[256];
+	unsigned int id = (unsigned int)pthread_self();
+
 	// set limits for plot. This represents the space where the center 
 	// of the circle can be. It can be (and often is) outside of the
 	// bounds of the solenoid.
-	circle_max = 150.0; // in cm.
+	circle_max = 400.0; // in cm.
 	
 	// The number of cm per bin (in one dimension) for the density histogram
 	cm_per_bin = 4.5;
 
 	int Nbins = (int)floor(0.5 + 2.0*circle_max/cm_per_bin);
-	TH2F *density = new TH2F("density","Density",Nbins,-circle_max,circle_max,Nbins,-circle_max,circle_max);	
+	sprintf(str,"density-%x", id);
+	TH2F *density = new TH2F(str,"Density",Nbins,-circle_max,circle_max,Nbins,-circle_max,circle_max);	
 	density_histos.push_back(density);
 
 	// max distance a line-of-circle-centers line can
@@ -45,9 +55,11 @@ DFactory_DMCTrackCandidate::DFactory_DMCTrackCandidate()
 	flip_x_axis = 0;
 	
 	// Create slope and intercept density histos
-	TH1F *slope_density = new TH1F("slope","slope", 3000,-0.15,0.15);
+	sprintf(str,"slope-%x", id);
+	TH1F *slope_density = new TH1F(str,"slope", 3000,-M_PI, +M_PI);
 	slope_density_histos.push_back(slope_density);
-	TH1F *offset_density = new TH1F("intercept","z intercept", 2100, -100.0,2000.0);
+	sprintf(str,"intercept-%x", id);
+	TH1F *offset_density = new TH1F(str,"z intercept", 2100, -100.0,2000.0);
 	offset_density_histos.push_back(offset_density);
 }
 
@@ -92,7 +104,7 @@ void DFactory_DMCTrackCandidate::ClearEvent(void)
 //------------------
 // evnt
 //------------------
-derror_t DFactory_DMCTrackCandidate::evnt(int eventnumber)
+derror_t DFactory_DMCTrackCandidate::evnt(DEventLoop *loop, int eventnumber)
 {
 	// Empty vectors used to store objects for the event
 	ClearEvent();
@@ -100,7 +112,7 @@ derror_t DFactory_DMCTrackCandidate::evnt(int eventnumber)
 	// Get MCCheatHits and loop over them copying them into
 	// the archit objects array
 	vector<const DMCCheatHit*> mccheathits;
-	event->Get(mccheathits);
+	loop->Get(mccheathits);
 	for(unsigned int i=0; i<mccheathits.size(); i++){
 		const DMCCheatHit *mccheathit = mccheathits[i];
 	
@@ -128,6 +140,9 @@ derror_t DFactory_DMCTrackCandidate::evnt(int eventnumber)
 		archits.push_back(archit);
 	}
 	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<" Narchits:"<<archits.size()<<endl;
+	
+	// sort the archits by z (mccheathits are sorted by track number , then z)
+	sort(archits.begin(), archits.end(), ArcSort<DArcHit*>()); // ArcSort definied in DArcHit.h
 	
 	// Find circle patterns. When a circle is found, FindTracks is
 	// automatically called to find all tracks associated with the circle.
@@ -366,6 +381,7 @@ int DFactory_DMCTrackCandidate::FindTracks(float x0, float y0)
 	// in the z-intercept histo as the z coordinate of the vertex.
 	int z_bin = offset_density_histos[0]->GetMaximumBin();
 	float z_vertex = offset_density_histos[0]->GetBinCenter(z_bin);
+	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"    z_vertex from offset density histo: "<<z_vertex<<endl;
 
 	// Find all peaks in the slope histogram
 	int Ntracks_found = 0;
@@ -375,19 +391,30 @@ int DFactory_DMCTrackCandidate::FindTracks(float x0, float y0)
 		// Use a simple algorithm here. Just use the maximum as the
 		// peak center. Zero out the histogram near the peak to look
 		// for a new peak. The number of pairs of phi,z points
-		// is N(N-1)/2 (I think?). Assuming at least 4 good hits are
-		// needed for a track, we require that a maximum in the slope
-		// histo be at least 6 units. In practice, this cutoff is too
-		// small (probably because we often have way more than 4 hits). 
-		// This value should be optimized.
+		// is N(N-1)/2 . Thus, we need to find N which is the number
+		// of unused archits on the circle.
+		int Nuseable_archits = 0;		
+		for(unsigned int i=0;i<archits.size();i++){
+			DArcHit *a = archits[i];
+			if(!a->on_circle || a->used)continue;
+			Nuseable_archits++;
+		}
+		
+		// Set the limit on the peak size. We do this so we can catch
+		// the tracks with very few hits which all resonate.
+		int min_peak_size = (Nuseable_archits*(Nuseable_archits-1))/2/2;
+		if(min_peak_size > 20)min_peak_size = 20;
+		if(min_peak_size < 3)min_peak_size = 3;
+		
 		int slope_bin = slope_density_histos[0]->GetMaximumBin();
-		if(slope_density_histos[0]->GetBinContent(slope_bin)<=20){
-			if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"      No more tracks slope_bin="<<slope_bin<<"  bin content="<<slope_density_histos[0]->GetBinContent(slope_bin)<<endl;
+		if(slope_density_histos[0]->GetBinContent(slope_bin)<min_peak_size){
+			if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"      No more tracks slope_bin="<<slope_bin<<"  bin content="<<slope_density_histos[0]->GetBinContent(slope_bin)<<"  min_peak_size="<<min_peak_size<<endl;
 			break;
 		}
-		if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"      Peak in slope histo: slope_bin="<<slope_bin<<"  bin content="<<slope_density_histos[0]->GetBinContent(slope_bin)<<endl;
-			
-		float slope = slope_density_histos[0]->GetBinCenter(slope_bin);
+		if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"      Peak in slope histo: slope_bin="<<slope_bin<<"  bin content="<<slope_density_histos[0]->GetBinContent(slope_bin)<<"  min_peak_size="<<min_peak_size<<endl;
+		
+		// (see note in FillSlopeIntDensityHistos about 600/M_PI)
+		float phi_z_angle = slope_density_histos[0]->GetBinCenter(slope_bin);
 			
 		// Create a new DQuickFit object to do the fit (should there
 		// be enough hits to do one).
@@ -405,24 +432,22 @@ int DFactory_DMCTrackCandidate::FindTracks(float x0, float y0)
 		// (i.e. centered at x0,y0). We now look for all hits with the "on_circle"
 		// flag set that also have a delta_phi and zhit within a
 		// certain distance of the line defined by slope and z_vertex.
-		float m = slope;
-		float b = -z_vertex*m;		
+
 		for(unsigned int i=0;i<archits.size();i++){
 			DArcHit *a = archits[i];
 			if(!a->on_circle)continue;
 
-			// calculate distance to line squared.
-			// NOTE: We assume here that we can always represent
-			// phi as a function of z. This will NOT be the case for
-			// tracks going out at 90 degrees from the target. This
-			// will have to be fixed later.
-			float z1 = (a->zhit-m*(b-a->delta_phi))/(1.0+m*m);
-			float phi1 = m*z1 + b;
-			float delta_z = a->zhit-z1;
-			float delta_phi = r0*(a->delta_phi-phi1); // convert into cm
-			float d2 = delta_z*delta_z + delta_phi*delta_phi;
+			// Calculate distance to line.
+			// The value of phi_z_angle represents the angle of the
+			// line in the phi-z plane make wrt to the beam line (x-axis).
+			// Oddly enough, the distance of an arbitrary point to
+			// this line is linear in the point's coordinates.
+			// (see note in FillSlopeIntDensityHistos about 600/M_PI)
+			float d = 600.0/M_PI*a->delta_phi*cos(phi_z_angle) - (a->zhit-z_vertex)*sin(phi_z_angle);
 
-			if(d2<masksize2){
+			//if(debug_level>10)cout<<__FILE__<<":"<<__LINE__<<"        masksize="<<masksize<<"    d="<<d<<"  ratio="<<((a->zhit-z_vertex)*sin(phi_z_angle))/(600.0/M_PI*a->delta_phi*cos(phi_z_angle))<<" sin_theta="<<sin(phi_z_angle)<<" cos_theta="<<cos(phi_z_angle)<<endl;
+
+			if(fabs(d)<masksize){
 				// Add hit to DQuickFit object
 				fit->AddHit(a->rhit, a->phihit, a->zhit);
 					
@@ -525,11 +550,31 @@ derror_t DFactory_DMCTrackCandidate::FillSlopeIntDensityHistos(float x0, float y
 			if(!b->on_circle)continue;
 			if(b->delta_phi<0.0 && a->delta_phi>0.0)continue; // filter out pairs which can't fall on the same line
 			if(b->delta_phi>0.0 && a->delta_phi<0.0)continue; // filter out pairs which can't fall on the same line
-			float m = (a->delta_phi - b->delta_phi)/(a->zhit - b->zhit);
-			float z = a->delta_phi - m*a->zhit;
+
+			// archits are sorted by Z so "a" is always upstream of "b"
+			float delta_z = b->zhit - a->zhit;
+			if(fabs(delta_z)==0.0)continue; // don't include hits from same plane
+			float delta_phi = b->delta_phi-a->delta_phi;
+
+			// OK, this may need to be re-thought, but here goes:
+			// There is a problem using the slope due to the pole
+			// at 90 degrees. Using the angle in phi vs. z space
+			// is tricky since the typical range of values 
+			// for phi is much smaller than that of z. This leads
+			// to very poor sensitivity for forward going tracks.
+			// We alleviate the problem by scaling
+			// up the value of delta_phi to increase sensitivity 
+			// in small phi-z angles. This is at the cost of becoming
+			// less sensitive to large (~ 90 degree) angles.
+			// This sensitivity comes about from using a histogram
+			// of fixed bin size over the entire range of angles.
+			
+			float m = atan2(600.0/M_PI*(double)delta_phi, (double)delta_z);
+			float z = a->zhit - a->delta_phi*delta_z/delta_phi;
 			if(!finite(m) || !finite(z))continue;
+			
 			slope_density->Fill(m);
-			offset_density->Fill(-z/m);
+			offset_density->Fill(z);
 		}
 	}
 	

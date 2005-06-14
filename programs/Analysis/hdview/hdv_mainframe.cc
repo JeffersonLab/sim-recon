@@ -78,7 +78,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 //-------------------
 void hdv_mainframe::DoQuit(void)
 {
-	eventloop->Quit();
+	dapp->Quit();
 	gApplication->Terminate(0);
 }
 
@@ -95,7 +95,7 @@ void hdv_mainframe::DoNext(void)
 //-------------------
 void hdv_mainframe::DoPrev(void)
 {
-	eventloop->GotoEvent(current_eventnumber-1);
+	//eventloop->GotoEvent(current_eventnumber-1);
 	eventloop->OneEvent();
 }
 

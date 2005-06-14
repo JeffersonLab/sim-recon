@@ -1,8 +1,8 @@
 // $Id$
 //
 //    File: DFactory_DTAGGERHit.cc
-// Created: Sun Apr  3 10:29:09 EDT 2005
-// Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
+// Created: Thu Jun  9 10:38:26 EDT 2005
+// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
 #include "DFactory_DTAGGERHit.h"
@@ -10,7 +10,7 @@
 //------------------
 // evnt
 //------------------
-derror_t DFactory_DTAGGERHit::evnt(int enventnumber)
+derror_t DFactory_DTAGGERHit::evnt(DEventLoop *eventLoop, int eventnumber)
 {
 	// Code to generate factory data goes here. Add it like:
 	//
@@ -32,7 +32,9 @@ derror_t DFactory_DTAGGERHit::evnt(int enventnumber)
 const string DFactory_DTAGGERHit::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
-	Get();
+	// GetNrows() will check the data source first in case the objects
+	// are obtained fom there.
+	GetNrows();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
 	// Put the class specific code to produce nicely formatted ASCII here.
@@ -51,6 +53,6 @@ const string DFactory_DTAGGERHit::toString(void)
 	//			printrow();
 	//		}
 	//
-			return _table;
+	return _table;
 
 }
