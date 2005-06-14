@@ -1,8 +1,8 @@
 // $Id$
 //
 //    File: DTRIGGER.h
-// Created: Mon Apr  4 21:45:02 EDT 2005
-// Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
+// Created: Thu Jun  9 10:03:17 EDT 2005
+// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
 #ifndef _DTRIGGER_

@@ -24,7 +24,8 @@ using namespace std;
 
 #include "DEventProcessor.h"
 
-class DEvent;
+class DEventLoop;
+#include "hddm_s.h"
 
 //-----------------------
 // class DFactory_base
@@ -61,9 +62,24 @@ class DFactory_base:public DEventProcessor{
 		/// factory provides.
 		virtual const char* dataClassName(void)=0;
 		
+		/// Returns the size of the data class on which this factory is based
+		virtual int dataClassSize(void)=0;
+		
 		/// Returns a string object with a nicely formatted ASCII table of the data
 		virtual const string toString(void){return string(" <Print method undefined for ")+dataClassName()+string("> ");}
 
+		/// Extracts data from the given hddm_s structure and places it
+		/// in objects whose pointers are placed in the passed vector
+		/// (Most factories won't need this)
+		virtual derror_t Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v){return OBJECT_NOT_AVAILABLE;}
+
+		/// The data tag string associated with this factory. Most factories
+		/// will not overide this.
+		virtual inline const char* Tag(void){return "";}
+
+		/// Used by DEventLoop to give a pointer back to itself
+		void SetDEventLoop(DEventLoop *loop){this->eventLoop=loop;}
+		
 		enum DFactory_Flags_t{
 			DFACTORY_NULL		=0x00,
 			PERSISTANT			=0x01,
@@ -73,7 +89,7 @@ class DFactory_base:public DEventProcessor{
 		const DFactory_Flags_t& GetFactoryFlags(void){return flags;}
 	
 	protected:
-		DEvent *event;
+		DEventLoop *eventLoop;
 		DFactory_Flags_t flags;
 		int debug_level;
 		int busy;
@@ -82,9 +98,7 @@ class DFactory_base:public DEventProcessor{
 		int _icol;
 		int _columns[100];
 
-		void SetDEvent(DEvent *e){event=e;}
-		
-		/// Methods useful in help produce nicely formatted ASCII
+		// Methods useful in help produce nicely formatted ASCII
 		void printheader(const char *header);
 		void printnewrow(void);
 		void printcol(const char *str);

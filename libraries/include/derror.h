@@ -6,6 +6,7 @@
 /// of type derror_t. This header should be included in all
 /// files which must deal with this type.
 
+
 #ifndef _DERROR_H_
 #define _DERROR_H_
 
@@ -21,6 +22,9 @@ enum derror_t{
 	NO_MORE_EVENTS_IN_SOURCE,
 	NO_MORE_EVENT_SOURCES,
 	EVENT_NOT_IN_MEMORY,
+	EVENT_SOURCE_NOT_OPEN,
+	OBJECT_NOT_AVAILABLE,
+	DEVENT_OBJECT_DOES_NOT_EXIST,
 	
 	MEMORY_ALLOCATION_ERROR,
 	
@@ -28,6 +32,7 @@ enum derror_t{
 	VALUE_OUT_OF_RANGE,
 	
 	INFINITE_RECURSION,
+	UNRECOVERABLE_ERROR,
 	
 	FILTER_EVENT_OUT
 };

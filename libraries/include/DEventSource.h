@@ -1,81 +1,52 @@
-// Author: David Lawrence  June 22, 2004
+// $Id$
 //
+//    File: DEventSource.h
+// Created: Wed Jun  8 12:31:04 EDT 2005
+// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
-// DEventSource
-//
-/// Hall-D DANA package:
-/// Class provides events from various sources:
-/// File, ET system, Pipe, ... 
-///
 
-#ifndef _DEVENT_SOURCE_H_
-#define _DEVENT_SOURCE_H_
+#ifndef _DEventSource_
+#define _DEventSource_
 
-#include <time.h>
+#include <vector>
+#include <string>
+using namespace std;
 
 #include "derror.h"
-#include "hddm_s.h"
 
-class DEventSource
-{
-		friend class DEventLoop;
+class DFactory_base;
+class DEvent;
 
+class DEventSource{
 	public:
-		
-		enum EVENT_SOURCE_TYPE{
-			EVENT_SOURCE_NONE,	///< No event source
-			EVENT_SOURCE_FILE,	///< Events read from 1 or more files
-			EVENT_SOURCE_ET,		///< Events read from ET system
-			EVENT_SOURCE_PIPE,	///< Events read from pipe
-			NEVENT_SOURCE_TYPES	///< The number of event source types 
-		};
-		
-		/// Constructor for a DEventSource object. This should normally be
-		/// called with the same arguments passed to main() on program start up.
-		DEventSource(int narg, char *argv[]);
+		DEventSource(const char *source_name);
 		virtual ~DEventSource();
-
-		virtual derror_t Open(char *source); ///< Open the first (if more than one) event source 
-		virtual derror_t Close(void); ///< Close the current event source.
-		virtual derror_t GotoEvent(int eventno);
-		virtual derror_t RecordEventNumber(int eventno);
-		virtual derror_t SetEventBufferSize(int Nevents);
-
-		/// Get the next event and update all of the counters and rate
-		/// calculators. This is will call the private GetEvent() method
-		/// to actually read the next event into the buffer.
-		derror_t NextEvent(void); 
-
-		float GetRate(void);
-		static EVENT_SOURCE_TYPE GuessSourceType(int narg, char *argv[]);
-		const char* GetSourceName(void){return (const char*)sources[source_index-1];}
+		virtual const char* className(void){return static_className();}
+		static const char* static_className(void){return "DEventSource";}
 		
-		s_HDDM_t *hddm_s;
+		static const char* GuessSourceType(const char* source_name);
+		static DEventSource* OpenSource(const char* name);
+		virtual derror_t GetEvent(DEvent &event)=0;
+		virtual void FreeEvent(void *ref){};
+		virtual derror_t GetObjects(const char *name, vector<void*> &v, const char* tag, void* ref, DFactory_base *factory);
 
-	private:
-		char *buffer;
-		int buflen;
+		inline void SetEventBufferSize(int size){event_buffer_size = size;}
+		inline int GetEventBufferSize(void){return event_buffer_size;}
+		inline const char* GetSourceName(void){return source_name;}
 
-		char **sources;
-		int Nsources;
-		int source_index;
+	protected:
+		const char* source_name;
 		int source_is_open;
-		EVENT_SOURCE_TYPE source_type;
-		unsigned long long Nevents_read;
-		unsigned long long Nevents_read_total;
-		
-		time_t prate_start_time;
-		time_t prate_last_time;
-		time_t prate_period;
-		unsigned long long prate_last_events;
-		float prate_last_rate;
-		
-		/// Get the next event and copy it into buffer. The buffer will be
-		/// reallocated if the event is larger than buflen to hold the event.
-		/// This should be implemented by the class which inherits from
-		/// DEventSource.
-		virtual derror_t GetEvent(void);
+		pthread_mutex_t read_mutex;
+		int event_buffer_size;
+		int Nevents_read;
+	
+		inline void LockRead(void){pthread_mutex_lock(&read_mutex);}
+		inline void UnlockRead(void){pthread_mutex_unlock(&read_mutex);}
+	
+	private:
+
 };
 
-#endif //_DEVENT_SOURCE_H_
+#endif // _DEventSource_
 

@@ -8,8 +8,8 @@
 #ifndef _DMCThrown_
 #define _DMCThrown_
 
-#include "DFactory.h"
 #include <TObject.h>
+#include "DFactory.h"
 
 class DMCThrown{
 	public:

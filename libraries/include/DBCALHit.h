@@ -1,8 +1,8 @@
 // $Id$
 //
 //    File: DBCALHit.h
-// Created: Sun Apr  3 10:49:22 EDT 2005
-// Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
+// Created: Thu Jun  9 10:14:35 EDT 2005
+// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
 #ifndef _DBCALHit_

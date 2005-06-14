@@ -1,8 +1,8 @@
 // $Id$
 //
 //    File: DCDCHit.h
-// Created: Sun Apr  3 10:46:28 EDT 2005
-// Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
+// Created: Thu Jun  9 10:22:37 EDT 2005
+// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
 #ifndef _DCDCHit_

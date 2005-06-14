@@ -1,95 +1,76 @@
 // $Id$
+//
+//    File: DEvent.h
+// Created: Wed Jun  8 12:30:53 EDT 2005
+// Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
+//
 
-/// Top-level Hall-D event object
-///
-/// This is actually a base class from which DEventLoop is derived.
-/// Virtually all accesses to DEvent will be though its derived
-/// form as a DEventLoop.
+#ifndef _DEvent_
+#define _DEvent_
 
-
-#ifndef _DEVENT_H_
-#define _DEVENT_H_
-
-#include <string>
+#include <cstdio>
 #include <vector>
+#include <string>
 using namespace std;
 
 #include "derror.h"
-#include "hddm_s.h"
+#include "DEventSource.h"
 
 class DFactory_base;
-template<class T> class DFactory;
+class DEventLoop;
 
 class DEvent{
 	public:
 		DEvent();
-		~DEvent();
-		template<class T> DFactory<T>* Get(vector<const T*> &t);
-		DFactory_base* GetFactory(const string data_name);
-		derror_t AddFactory(DFactory_base* factory);
-		derror_t PrintFactories(void){return PrintFactories(0);};
-		derror_t PrintFactories(int sparsify);
-		derror_t ClearFactories(void);
-		template<class T> const string toString(T*);
-		const vector<string> GetFactoryNames(void);
-		derror_t Print(const string data_name);
-		
-		inline const int runnumber(){return _runnumber;}
-		inline const int eventnumber(){return _eventnumber;}
-		inline s_HDDM_t* hddm_s(){return _hddm_s;}
-
-	protected:
-		s_HDDM_t *_hddm_s;
-		int _runnumber;
-		int _eventnumber;
-		derror_t Fini(void);
-
+		virtual ~DEvent();
+		virtual const char* className(void){return static_className();}
+		static const char* static_className(void){return "DEvent";}
+		template<class T> derror_t GetObjects(vector<const T*> &t, const char* tag, DFactory_base *factory=NULL);
+		inline DEventSource* GetDEventSource(void){return source;}
+		inline int GetEventNumber(void){return event_number;}
+		inline int GetRunNumber(void){return run_number;}
+		inline void* GetRef(void){return ref;}
+		inline DEventLoop* GetDEventLoop(void){return loop;}
+		inline void SetDEventSource(DEventSource *source){this->source=source;}
+		inline void SetRunNumber(int run_number){this->run_number=run_number;}
+		inline void SetEventNumber(int event_number){this->event_number=event_number;}
+		inline void SetRef(void *ref){this->ref=ref;}
+		inline void SetDEventLoop(DEventLoop *loop){this->loop=loop;}
+		inline void FreeEvent(void){if(source)source->FreeEvent(ref);}
+	
 	private:
-		vector<DFactory_base*> factories;
+		DEventSource *source;
+		int event_number;
+		int run_number;
+		void *ref;
+		DEventLoop *loop;
+
 };
 
-
-//-------------
-// Get
-//-------------
-template<class T> 
-DFactory<T>* DEvent::Get(vector<const T*> &t)
+//---------------------------------
+// GetObjects
+//---------------------------------
+template<class T>
+derror_t DEvent::GetObjects(vector<const T*> &t, const char* tag, DFactory_base *factory)
 {
-	/// Search through the list of factories and find the one
-	/// who can supply the data type T. Call the factory's
-	/// Get() method to get a copy of the _data vector.
-	/// We have to call the Get() method (which eventually
-	/// calls the factory's evnt() method) through the
-	/// DFactory_base virtual Get() method. The object pointers
-	/// are  type cast as void* and placed in another vector before
-	/// getting sent to us. We must cast it back to the proper
-	/// type before passing it back to the user.
-
-	// We need to find the factory providing data type T. Since
-	// the factory will return the result of a call to the same
-	// static className() method of class T, we only need to 
-	// compare the pointers of the string and not the actual
-	// string contents.
-	const char* className = T::className();
-	vector<DFactory_base*>::iterator iter=factories.begin();
-	DFactory_base *factory = NULL;
-	for(; iter!=factories.end(); iter++){
-		if((*iter)->dataClassName() == className){
-			factory = *iter;
-			break;
-		}
-	}
-	if(!factory)return (DFactory<T>*)NULL;
+	/// Call the GetObjects() method of the associated source.
 	
-	// Get pointers to data from factory. The pointers must be
-	// passed to us as void* since DFactory_base doesn't necessarily 
-	// know about the class type they hold. Here, we re-cast them 
-	// back into the proper (const) type.
-	vector<void*> vt = factory->Get();
-	t.clear();
-	for(unsigned int i=0;i<vt.size();i++)t.push_back((const T*)vt[i]);
+	// Make sure source is at least not NULL
+	if(!source)throw EVENT_SOURCE_NOT_OPEN;
+	
+	// Get list of object pointers cast as void*. This is needed because
+	// you can't have a virtual template and we need to call GetObjects
+	// as a virtual method of DEventSource. 
+	vector<void*> v;
+	derror_t err = source->GetObjects(T::className(), v, tag, ref, factory);
+	if(err)return err;
+	
+	// OK, must have found some objects (possibly even zero) in the source.
+	// The pointers are cast back to type const T* here.
+	for(unsigned int i=0; i<v.size(); i++)t.push_back((const T*)v[i]);
 
-	return (DFactory<T>*)factory;
+	return NOERROR;
 }
 
-#endif // _DEVENT_H_
+#endif // _DEvent_
+

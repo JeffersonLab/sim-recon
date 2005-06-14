@@ -112,13 +112,14 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 		
 		vector<TH2F*> density_histos;	///< for debugging
 		vector<TH1F*> slope_density_histos;
+		vector<TH1F*> slope_density_histos_b;
 		vector<TH1F*> offset_density_histos;
 		int max_density_histos;			///< maximum number of histos to allocate
 		
 		vector<DQuickFit*> qfits;
 		
 		derror_t ThereCanBeOnlyOne(int trk1, int trk2); ///< Aaaah!! the quickening!!!
-		derror_t evnt(int eventnumber);	///< Invoked via DEventProcessor virtual method
+		derror_t evnt(DEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 };
 
 #endif // _DFactory_DMCTrackCandidate_

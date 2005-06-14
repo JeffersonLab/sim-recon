@@ -20,7 +20,7 @@ class DFactory_DMCTrackEfficiency:public DFactory<DMCTrackEfficiency>{
 		const string toString(void);
 	
 	private:
-		derror_t evnt(int eventnumber);	///< Invoked via DEventProcessor virtual method
+		derror_t evnt(DEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 
 };
 

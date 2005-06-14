@@ -18,7 +18,7 @@ class DFactory_DMCReconstructed:public DFactory<DMCReconstructed>{
 		const string toString(void);
 	
 	private:
-		derror_t evnt(int eventnumber);	///< Invoked via DEventProcessor virtual method
+		derror_t evnt(DEventLoop *eventLoop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 };
 
 #endif // _DFactory_DMCReconstructed_

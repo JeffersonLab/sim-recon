@@ -60,14 +60,25 @@ class DFactory:public DFactory_base{
 		const int GetNrows(void);
 		inline const char* className(void){return T::className();}
 		inline const char* dataClassName(void){return className();}
+		inline int dataClassSize(void){return sizeof(T);}
+		inline int GetEventCalled(void){return evnt_called;}
+		inline int CheckSourceFirst(void){return !use_factory;}
+		derror_t CopyExternal(vector<const T*> data);
 		
 	protected:
 		vector<T*> _data;
 		vector<void*>_vdata;
+		int use_factory;
 		
 		derror_t Reset(void);
 		derror_t HardReset(void);
 		
+		enum data_origin_t{
+			ORIGIN_NONE,
+			ORIGIN_FACTORY,
+			ORIGIN_EXTERNAL
+		};
+		data_origin_t data_origin;
 };
 
 
@@ -114,16 +125,20 @@ vector<void*>& DFactory<T>::Get()
 {
 	/// Return a STL vector of pointers to the objects produced by the
 	/// factory. The pointers must be type cast as void* because
-	/// the DEventLoop object doesn't necessarily know anything about
+	/// the DEventLoop object deals with DFactory_base objects which
+	/// don't know anything specific about
 	/// the objects produced by the factory. (Note that this method
 	/// is accessed via the DFactory_base class's virtual Get() method).
-	/// The templatized DEvent::Get() method of will typecast the
+	/// The templatized DEvent::Get() method will typecast the
 	/// pointers back to the appropriate type for the user.
 	///
 	/// This method will check first to make sure this factory hasn't
 	/// already been called for this event. If so, it just returns the
-	/// (type cast) _data vector right away. Otherwise, it calls the
-	/// factory's event() method to fill it first.
+	/// existing _vdata vector right away.
+	///
+	/// The normal way to get here is through a call to
+	/// DEvent::Get(). That method handles checking for the objects
+	/// in the data source so we don't have to worry about it here.
 	///
 	/// This also uses a busy flag to ensure we're not called
 	/// recursively. i.e. we call a factory who calls another
@@ -137,8 +152,9 @@ vector<void*>& DFactory<T>::Get()
 	busy++;
 	if(busy!=1)throw(INFINITE_RECURSION);  // Should we use a mutex here?
 	
-	// Copy DEvent's hddm_s pointer to our local one
-	hddm_s = event->hddm_s();
+	// Grab the current event and run numbers
+	int event_number = eventLoop->GetDEvent().GetEventNumber();
+	int run_number = eventLoop->GetDEvent().GetRunNumber();
 	
 	// Make sure we're initialized
 	if(!init_called){
@@ -147,7 +163,7 @@ vector<void*>& DFactory<T>::Get()
 	}
 	
 	// Call brun routine if run number has changed or it's not been called
-	if(event->runnumber()!=brun_runnumber){
+	if(run_number!=brun_runnumber){
 		if(brun_called && !erun_called){
 			erun();
 			erun_called = 1;
@@ -155,21 +171,21 @@ vector<void*>& DFactory<T>::Get()
 		brun_called = 0;
 	}
 	if(!brun_called){
-		brun(event->runnumber());
+		brun(eventLoop, run_number);
 		brun_called = 1;
 		erun_called = 0;
-		brun_runnumber = event->runnumber();
+		brun_runnumber = run_number;
 	}
 	
 	// Call evnt routine to generate data
-	evnt(event->eventnumber());
+	evnt(eventLoop, event_number);
 	evnt_called = 1;
 	busy=0;
 	
 	// Since DFactory_base doesn't know anything about type T
 	// we have to copy the pointers into a vector of void*s.
 	// They will be cast back into the proper pointer type in
-	// DEvent::Get().
+	// DEvent::GetFromFactory().
 	_vdata.clear();
 	for(unsigned int i=0;i<_data.size();i++)_vdata.push_back((void*)_data[i]);
 	
@@ -182,11 +198,19 @@ vector<void*>& DFactory<T>::Get()
 template<class T>
 const int DFactory<T>::GetNrows(void)
 {
-	// Call the Get() method to make sure the factory has produced
-	// the data before returning the number of rows.
-	Get();
+	// Call the factory's Get() method to make sure the data has been
+	// obtained (either via data souce or factory) before returning
+	// the number of rows. Return the size of _vdata Since that
+	// should be valid in all cases.
+
+	if(!evnt_called){
+		if(!eventLoop)throw RESOURCE_UNAVAILABLE;
+		
+		vector<const T*> d; // dummy placeholder
+		eventLoop->Get(d, Tag());
+	}
 	
-	return _data.size();
+	return _vdata.size();
 }
 
 //-------------
@@ -220,6 +244,29 @@ derror_t DFactory<T>::HardReset(void)
 	
 	return NOERROR;
 }
+
+//-------------
+// CopyExternal
+//-------------
+template<class T>
+derror_t DFactory<T>::CopyExternal(vector<const T*> data)
+{
+	// Set flag so subsequent calls for this event will return this
+	// data.
+	evnt_called = 1;
+	
+	// Just copy into the _vdata vector since _data is not used outside
+	// of the factory.
+	_data.clear();
+	_vdata.clear();
+	for(unsigned int i=0;i<data.size();i++){
+		_data.push_back((T*)data[i]);
+		_vdata.push_back((void*)data[i]);
+	}
+
+	return NOERROR;
+}
+
 
 #endif // __CINT__
 

@@ -10,15 +10,17 @@
 
 #include "DFactory.h"
 #include "DMCThrown.h"
+#include "DEventLoop.h"
 
 class DFactory_DMCThrown:public DFactory<DMCThrown>{
 	public:
 		DFactory_DMCThrown(){};
 		~DFactory_DMCThrown(){};
+		derror_t Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v);
 		const string toString(void);
 	
 	private:
-		derror_t evnt(int eventnumber);	///< Invoked via DEventProcessor virtual method
+		derror_t evnt(DEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 };
 
 #endif // _DFactory_DMCThrown_
