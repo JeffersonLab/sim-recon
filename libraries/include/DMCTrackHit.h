@@ -19,7 +19,7 @@ class DMCCheatHit{
 		int primary;	///< primary track=1    not primary track=0
 		int system;		///< 1=CDC 2=FDC 3=BCAL 4=TOF 5=Cherenkov 6=FCAL 7=UPV
 
-		bool operator<(const DMCCheatHit &mccheathit) const{
+		inline bool operator<(const DMCCheatHit &mccheathit) const{
 			if(track < mccheathit.track)return true;
 			if(track > mccheathit.track)return false;
 			if(z < mccheathit.z)return true;
