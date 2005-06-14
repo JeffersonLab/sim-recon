@@ -1,6 +1,6 @@
 // $Id$
 //
-//    File: DMCTrackHists.cc
+//    File: DEventProcessor_TrackHists.cc
 // Created: Sun Apr 24 06:45:21 EDT 2005
 // Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
 //
@@ -8,14 +8,16 @@
 #include <iostream>
 using namespace std;
 
-#include "DMCTrackHists.h"
 
-#include "DFactory_DMCTrackEfficiency.h"
-#include "DFactory_DMCCheatHit.h"
-#include "DFactory_DMCThrown.h"
-#include "DFactory_DMCReconstructed.h"
+#include "DEventProcessor_TrackHists.h"
 
-const char* TrackHistsDescription[DMCTrackHists::NBINS] = {
+#include "DEventLoop.h"
+#include "DMCTrackEfficiency.h"
+#include "DMCCheatHit.h"
+#include "DMCThrown.h"
+#include "DMCReconstructed.h"
+
+const char* TrackHistsDescription[DEventProcessor_TrackHists::NBINS] = {
 	"<nothing>",
 	"Num (primary) hits in thrown track",
 	"Num (primary) hits in reconstructed track",
@@ -33,11 +35,25 @@ const char* TrackHistsDescription[DMCTrackHists::NBINS] = {
 	"Frac. of fittable tracks that were found",
 };
 
-//------------------------------------------------------------------
-// DMCTrackHists 
-//------------------------------------------------------------------
-DMCTrackHists::DMCTrackHists()
+//------------------
+// DEventProcessor_TrackHists
+//------------------
+DEventProcessor_TrackHists::DEventProcessor_TrackHists()
+{	
+}
+
+//------------------
+// ~DEventProcessor_TrackHists
+//------------------
+DEventProcessor_TrackHists::~DEventProcessor_TrackHists()
 {
+}
+
+//------------------
+// init
+//------------------
+derror_t DEventProcessor_TrackHists::init(void)
+{	
 	// Create histograms
 	stats	= new TH1F("stats","MC Tracking Efficiency",NBINS, 0.5, (float)NBINS + 0.5);
 	stats_vs_theta	= new TH2F("stats_vs_theta","MC Tracking Eff. vs. Theta", 100, 0.0, M_PI,NBINS, 0.5, (float)NBINS + 0.5);
@@ -66,48 +82,32 @@ DMCTrackHists::DMCTrackHists()
 		axis = stats_vs_p->GetYaxis();
 		axis->SetBinLabel(i, TrackHistsDescription[i]);
 	}
-
+	
+	return NOERROR;
 }
 
-//------------------------------------------------------------------
-// ~DMCTrackHists 
-//------------------------------------------------------------------
-DMCTrackHists::~DMCTrackHists()
+//------------------
+// evnt
+//------------------
+derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 {
-#if 0
-	delete stats;
-	delete stats_vs_theta;
-	delete stats_vs_phi;
-	delete stats_vs_p;
-	delete dp_over_p_vs_p;
-	delete dp_over_p_vs_theta;
-	delete eff_vs_theta;
-	delete eff_vs_phi;
-	delete eff_vs_p;
-#endif
-}
 
-//------------------------------------------------------------------
-// evnt   -Fill histograms here
-//------------------------------------------------------------------
-void DMCTrackHists::AddEvent(DEvent *event)
-{	
 	vector<const DMCCheatHit*> mccheathits;
 	vector<const DMCReconstructed*> mcreconstructeds;
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrackEfficiency*> mctrackefficiencies;
 	
-	event->Get(mccheathits);
-	event->Get(mcreconstructeds);
-	event->Get(mcthrowns);
-	event->Get(mctrackefficiencies);
-	
+	loop->Get(mccheathits);
+	loop->Get(mcreconstructeds);
+	loop->Get(mcthrowns);
+	loop->Get(mctrackefficiencies);
+
 	// There should be a one to one correspondance between DMCThrown
 	// and DMCTrackEfficiency
 	if(mctrackefficiencies.size() != mcthrowns.size()){
 		cerr<<__FILE__<<":"<<__LINE__<<" DMCTrackEfficiency size does not";
 		cerr<<" match that of DMCThrown!"<<endl;
-		return;
+		return NOERROR;
 	}
 	
 	// Loop over thrown tracks
@@ -153,12 +153,13 @@ void DMCTrackHists::AddEvent(DEvent *event)
 		FillAll(NFOUND, theta, phi, p);
 	}
 
+	return NOERROR;
 }
 
 //------------------------------------------------------------------
 // FillAll
 //------------------------------------------------------------------
-void DMCTrackHists::FillAll(float what, float theta, float phi, float p, float weight)
+void DEventProcessor_TrackHists::FillAll(float what, float theta, float phi, float p, float weight)
 {
 	stats->Fill(what, weight);
 	stats_vs_theta->Fill(theta,what, weight);
@@ -169,7 +170,7 @@ void DMCTrackHists::FillAll(float what, float theta, float phi, float p, float w
 //------------------------------------------------------------------
 // EffVsX
 //------------------------------------------------------------------
-void DMCTrackHists::EffVsX(TH1F *out, TH2F* in)
+void DEventProcessor_TrackHists::EffVsX(TH1F *out, TH2F* in)
 {
 	TH1D *matched = in->ProjectionX("matched", NMATCHED, NMATCHED);
 	TH1D *fittable = in->ProjectionX("fittable", NFITTABLE,NFITTABLE);
@@ -180,14 +181,15 @@ void DMCTrackHists::EffVsX(TH1F *out, TH2F* in)
 	delete fittable;
 }
 
-//------------------------------------------------------------------
-// Finalize
-//------------------------------------------------------------------
-void DMCTrackHists::Finalize(void)
+//------------------
+// erun
+//------------------
+derror_t DEventProcessor_TrackHists::erun(void)
 {
 	// Fill the fractions histo with ratios
 	float h[NBINS];
 	for(int i=1;i<NBINS;i++){
+		// copy bin contents into local "h" array
 		h[i] = stats->GetBinContent(i);
 	}
 
@@ -195,10 +197,17 @@ void DMCTrackHists::Finalize(void)
 	stats->Fill(R_THROWN_AND_FOUND_TO_THROWN, h[NHITS_THROWN_AND_FOUND]/h[NHITS_THROWN]);
 	stats->Fill(R_THROWN_AND_FOUND_TO_FOUND, h[NHITS_THROWN_AND_FOUND]/h[NHITS_FOUND]);
 	stats->Fill(R_MATCHED_TO_FITTABLE, h[NMATCHED]/h[NFITTABLE]);
+
+	for(int i=1;i<NBINS;i++){
+		// Once again copy, but now ratios are valid
+		h[i] = stats->GetBinContent(i);
+		cout<<" h["<<i<<"] = "<<h[i]<<"\t"<<TrackHistsDescription[i]<<endl;
+	}
 	
 	// Fill efficiency vs. X histos
 	EffVsX(eff_vs_theta, stats_vs_theta);
 	EffVsX(eff_vs_phi, stats_vs_phi);
 	EffVsX(eff_vs_p, stats_vs_p);
-}
 
+	return NOERROR;
+}
