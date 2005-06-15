@@ -36,7 +36,7 @@ DFactory_DMCTrackCandidate::DFactory_DMCTrackCandidate()
 	// set limits for plot. This represents the space where the center 
 	// of the circle can be. It can be (and often is) outside of the
 	// bounds of the solenoid.
-	circle_max = 400.0; // in cm.
+	circle_max = 150.0; // in cm.
 	
 	// The number of cm per bin (in one dimension) for the density histogram
 	cm_per_bin = 4.5;
@@ -251,6 +251,8 @@ derror_t DFactory_DMCTrackCandidate::FindCirclesHitSub(void)
 				fit->AddHit(a->rhit, a->phihit, a->zhit);
 			}
 		}
+		
+		if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<" NHits for fit:"<<fit->GetNhits()<<endl;
 		int Ntracks = 0;
 		if(fit->GetNhits()>=3){
 			fit->FitCircle();
@@ -456,6 +458,11 @@ int DFactory_DMCTrackCandidate::FindTracks(float x0, float y0)
 				
 				// Flag this hit as having been used
 				a->used = 1;
+				
+				if(mctrackcandidate->Nhits>=MAX_IHITS){
+					cout<<__FILE__<<":"<<__LINE__<<" More than "<<MAX_IHITS<<" hits on track. Truncating..."<<endl;
+					break;
+				}
 			}
 		}
 			
@@ -750,33 +757,27 @@ derror_t DFactory_DMCTrackCandidate::ThereCanBeOnlyOne(int trk1, int trk2)
 	/// See the comment at the end of evnt(). Basically, we need to choose
 	/// which one track to keep and adjust the _data array to keep it.
 	
-	// first, make sure trk1 and trk2 are in sequential order
-	int trka = trk1<trk2 ? trk1:trk2;
-	int trkb = trk1<trk2 ? trk2:trk1;
-	
-	// For some screwed up events, there will be more tracks in _data than
-	// there are fits in the qfit array. This can lead to trkb (and also
-	// trka) being greater than Nqfit. We pretty much can't do anything
-	// wrong in that case so just drop trkb for simplicity.
-
 	// If we're keeping the track further down the list, then copy
 	// its results into the position near the front of the list.
 	// We should be using the chisq from the fits, but that isn't
 	// being calculated for the 3D track at the moment.
-	if(qfits[trka]->GetNhits() < qfits[trkb]->GetNhits()){
-		DMCTrackCandidate *a = _data[trka];
-		DMCTrackCandidate *b = _data[trkb];
-		*a = *b;
-		DQuickFit *qa = qfits[trka];
-		DQuickFit *qb = qfits[trka];
-		*qa = *qb;
+	DQuickFit *qf1 = qfits[trk1];
+	DQuickFit *qf2 = qfits[trk2];
+	DQuickFit *qf;
+	int trk = -1;
+	if(qf1->GetNhits() < qf2->GetNhits()){
+		trk = trk2;
+		qf = qf2;
+	}else{
+		trk = trk1;
+		qf = qf1;
 	}
-	
-	// Shift the tracks after trkb up in the list(s)
-	delete _data[trkb];
-	_data.erase(_data.begin() + trkb);
-	delete qfits[trkb];
-	qfits.erase(qfits.begin() + trkb);
+		
+	// Delete the losing track and shift the ones after it up in the list(s)
+	delete _data[trk];
+	_data.erase(_data.begin() + trk);
+	delete qf;
+	qfits.erase(qfits.begin() + trk);
 
 	return NOERROR;	
 }
