@@ -118,7 +118,7 @@ derror_t MyProcessor::brun(DEventLoop *eventLoop, int runnumber)
 //------------------------------------------------------------------
 derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 {
-	int colors[] = {5,2,4,6,3};
+	int colors[] = {kRed,kBlue,kCyan,kGreen,kBlack};
 	int ncolors = 5;
 	
 	cout<<"----------- New Event -------------"<<endl;
@@ -174,7 +174,7 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 		ConvertToFront(x,y,z,X,Y);
 		TMarker *front = new TMarker(X,Y,20);
 
-		int color = colors[mccheathit->track%ncolors];
+		int color = colors[(mccheathit->track-1)%ncolors];
 		float size = 0.5;
 		switch(mccheathit->system){
 			case 6:	// FCAL
@@ -320,7 +320,7 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 derror_t MyProcessor::ConvertToTop(float x, float y, float z, float &X, float &Y)
 {
 	X = z/400.0 - 2.0;
-	Y = -x/400.0 + 0.5;
+	Y = x/400.0 + 0.5;
 
 	return NOERROR;
 }
@@ -331,7 +331,7 @@ derror_t MyProcessor::ConvertToTop(float x, float y, float z, float &X, float &Y
 derror_t MyProcessor::ConvertToSide(float x, float y, float z, float &X, float &Y)
 {
 	X = z/400.0 - 2.0;
-	Y = -y/400.0 - 0.5;
+	Y = y/400.0 - 0.5;
 
 	return NOERROR;
 }
@@ -342,7 +342,7 @@ derror_t MyProcessor::ConvertToSide(float x, float y, float z, float &X, float &
 derror_t MyProcessor::ConvertToFront(float x, float y, float z, float &X, float &Y)
 {
 	X = x/100.0 + 1.0;
-	Y = -y/100.0 + 0.0;
+	Y = y/100.0 + 0.0;
 
 	return NOERROR;
 }
