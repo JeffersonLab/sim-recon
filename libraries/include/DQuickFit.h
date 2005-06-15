@@ -78,6 +78,7 @@ class DQuickFit{
 		derror_t PrintChiSqVector(void);
 		derror_t CopyToFitParms(FitParms_t *fit);
 		derror_t Print(void);
+		derror_t Dump(void);
 		inline void SetMagneticFieldMap(DMagneticFieldMap *map){bfield=map;};
 
 
