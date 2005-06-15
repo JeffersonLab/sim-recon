@@ -67,6 +67,9 @@ mkdirs:
 clean:
 	rm -rf $(OBJ_DIR) .depends *.o $(EXE_PATHNAMES) $(DICT_FILES) *.bak *~ core last.kumac*  #*# 
 
+exec_clean:
+	rm -f $(EXE_PATHNAMES)
+
 # Rules to make DEPENDS files from source. Note that these are similar to the
 # rules in Makefile.lib, but uses the objects explicitly
 %.d : %.cpp
