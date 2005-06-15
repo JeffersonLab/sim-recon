@@ -13,12 +13,6 @@ using namespace std;
 #include "DMagneticFieldMap.h"
 
 
-#if 0
-static int qsort_chisqv(const void* arg1, const void* arg2);
-static int qsort_int(const void* arg1, const void* arg2);
-static int qsort_points_by_z(const void* arg1, const void* arg2);
-#endif
-
 // The following is for sorting hits (TVector3*) by z
 class TVector3LessThanZ{
 	public:
@@ -59,7 +53,7 @@ derror_t DQuickFit::AddHit(float r, float phi, float z)
 	/// Add a hit to the list of hits using cyclindrical coordinates
 	/// phi should be specified in radians. For 2D hits, the
 	/// value of z will be ignored.
-	TVector3 *vec = new TVector3((r*cos(phi), r*sin(phi), z));
+	TVector3 *vec = new TVector3(r*cos(phi), r*sin(phi), z);
 	if(vec)
 		hits.push_back(vec);
 	else
@@ -135,56 +129,6 @@ derror_t DQuickFit::PruneHits(float chisq_limit)
 	return NOERROR;
 }
 
-#if 0
-//-----------------
-// PruneWorst
-//-----------------
-derror_t DQuickFit::PruneWorst(int n)
-{
-	/// Remove the hit which contributes the most to the chi-squared
-	/// (See PruneHit() for more).
-
-	if(hits.size() != chisqv.size()){
-		cerr<<__FILE__<<":"<<__LINE__<<" hits and chisqv do not have the same number of rows!"<<endl;
-		cerr<<"Call FitCircle() or FitTrack() method first!"<<endl;
-
-		return NOERROR;
-	}
-	
-	// Create an index that we can sort according to the chisq vector
-	int *index = new int[chisqv.size()];
-	for(int i=0;i<chisqv.size();i++)index[i] = i;
-	
-	// qsort works on the array you want sorted (index). We
-	// must give it access to the chisq vector so it can use
-	// it to sort by. Do this via a global variable.
-	CHISQV = (float*)chisqv->first();
-	
-	// sort the index
-	qsort(index, chisqv->nrows, sizeof(int), qsort_chisqv);
-
-	// OK now we have the list of hits to prune. However, for
-	// each one we prune, the list changes which means our
-	// index can (and often does) become invalid. We must
-	// therefore, sort the first n index entries (the ones
-	// we want to prune) from largest to smallest to make
-	// sure we prune from the end of the list first so as
-	// not to corrupt the remaining index entries.
-	qsort(index, n, sizeof(int), qsort_int);
-
-	// Remove the first n hits according to our index
-	for(int i=0;i<n;i++)PruneHit(index[i]);
-	
-	// free memory allocated for index
-	delete index;
-	
-	// chisqv is no longer valid
-	chisqv->ResetNrows();
-	
-	return NOERROR;
-}
-#endif
-
 //-----------------
 // PruneOutliers
 //-----------------
@@ -240,27 +184,6 @@ derror_t DQuickFit::PruneOutliers(int n)
 	
 	return NOERROR;
 }
-
-#if 0
-//------------------------------------------------------------------
-// qsort_chisqv
-//------------------------------------------------------------------
-static int qsort_chisqv(const void* arg1, const void* arg2)
-{
-	int idx1 = *(int*)arg1;
-	int idx2 = *(int*)arg2;
-	
-	return CHISQV[idx1] < CHISQV[idx2] ? 1:-1;
-}
-
-//------------------------------------------------------------------
-// qsort_int
-//------------------------------------------------------------------
-static int qsort_int(const void* arg1, const void* arg2)
-{
-	return *(int*)arg2 - *(int*)arg1;
-}
-#endif
 
 //-----------------
 // PrintChiSqVector
@@ -503,20 +426,6 @@ derror_t DQuickFit::FitTrack(void)
 	return NOERROR;
 }
 
-#if 0
-//------------------------------------------------------------------
-// qsort_points_by_z
-//------------------------------------------------------------------
-static int qsort_points_by_z(const void* arg1, const void* arg2)
-{
-	TVector3 **a = (TVector3**)arg1;
-	TVector3 **b = (TVector3**)arg2;
-	
-	if((*a)->z() == (*b)->z())return 0;
-	return (*b)->z() < (*a)->z() ? 1:-1;
-}
-#endif
-
 //------------------------------------------------------------------
 // Print
 //------------------------------------------------------------------
@@ -541,6 +450,23 @@ derror_t DQuickFit::Print(void)
 	cout<<endl;
 	cout<<"     Bz(avg) = "<<Bz_avg<<endl;
 
+	return NOERROR;
+}
+
+
+//------------------------------------------------------------------
+// Dump
+//------------------------------------------------------------------
+derror_t DQuickFit::Dump(void)
+{
+	Print();
+
+	for(unsigned int i=0;i<hits.size();i++){
+		TVector3 *v = hits[i];
+		v->Dump();
+		
+	}
+	
 	return NOERROR;
 }
 
