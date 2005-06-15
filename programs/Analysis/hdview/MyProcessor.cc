@@ -378,6 +378,9 @@ derror_t MyProcessor::DrawDetectors(void)
 	label = new TText(-1.2, -0.15, "Side");
 	graphics.push_back(label);
 	label->Draw();
+	label = new TText(0.0, 0.87, "Upstream View");
+	graphics.push_back(label);
+	label->Draw();
 	
 	// ----- BCAL ------
 	// front
