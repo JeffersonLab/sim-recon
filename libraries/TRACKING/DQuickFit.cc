@@ -39,7 +39,8 @@ DQuickFit::DQuickFit()
 DQuickFit::~DQuickFit()
 {
 	for(unsigned int i=0;i<hits.size();i++){
-		delete hits[i];
+		TVector3 *v = hits[i];
+		delete v;
 	}
 	hits.clear();
 	chisqv.clear();
