@@ -50,10 +50,7 @@ DFactory_DMCTrackCandidate::DFactory_DMCTrackCandidate()
 	// be from a focal point and still be considered on the circle
 	masksize = 5.0; // in cm
 	masksize2 = masksize*masksize;
-	
-	// See note in FindCircles
-	flip_x_axis = 0;
-	
+		
 	// Create slope and intercept density histos
 	sprintf(str,"slope-%x", id);
 	TH1F *slope_density = new TH1F(str,"slope", 3000,-M_PI, +M_PI);
@@ -119,19 +116,7 @@ derror_t DFactory_DMCTrackCandidate::evnt(DEventLoop *loop, int eventnumber)
 		if(mccheathit->system!=1 && mccheathit->system!=2)continue;
 		float x = mccheathit->r*cos(mccheathit->phi);
 		float y = mccheathit->r*sin(mccheathit->phi);
-		
-		// When drawing these circles on the screen, the natural coordinates
-		// of the screen have the x-axis pointing to the right. However, in
-		// the lab coordinate system, the x-axis points to the left (when
-		// looking downstream). If the flip_x_axis flag is set, change the
-		// sign of the x-coordinate so it is displayed properly. This actually
-		// comes about because we keep the the circle center coordinates
-		// in TEllipse objects which can just be drawn directly by viewers.
-		// We could maybe save some trouble here by keeping this info in
-		// different structures/objects and requiring viewers to create
-		// their own TEllipses.
-		if(flip_x_axis)x = -x;
-		
+
 		// Create new DArcHit object to hold info from this hit
 		DArcHit *archit = new DArcHit();
 		archit->track = mccheathit->track;
@@ -470,8 +455,8 @@ int DFactory_DMCTrackCandidate::FindTracks(float x0, float y0)
 		// the results
 		if(fit->GetNhits()>=3){
 			fit->FitTrack();
-			mctrackcandidate->x0 = -fit->x0;	// why do we need the minus sign?
-			mctrackcandidate->y0 = -fit->y0;	// why do we need the minus sign?
+			mctrackcandidate->x0 = fit->x0;	// why do we need the minus sign?
+			mctrackcandidate->y0 = fit->y0;	// why do we need the minus sign?
 		
 			mctrackcandidate->z_vertex = fit->z_vertex;
 			mctrackcandidate->dphidz = fit->theta/r0;

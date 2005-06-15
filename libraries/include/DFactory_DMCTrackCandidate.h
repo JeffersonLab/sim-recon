@@ -100,7 +100,6 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 									///< be from a focal point and still be considered
 									///< on the circle
 		float masksize2;
-		int flip_x_axis;		///< change sign of x-coordinate for circles
 
 
 	private:
