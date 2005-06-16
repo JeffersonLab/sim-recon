@@ -46,6 +46,16 @@ DFactory_DMCTrackCandidate::DFactory_DMCTrackCandidate()
 	TH2F *density = new TH2F(str,"Density",Nbins,-circle_max,circle_max,Nbins,-circle_max,circle_max);	
 	density_histos.push_back(density);
 
+	// Histos of x and y coordinates of intersections of lines
+	float intersect_circle_max = 1000.0;
+	Nbins = (int)floor(0.5 + 2.0*intersect_circle_max/cm_per_bin);
+	sprintf(str,"density-x-%x", id);
+	TH1F *density_x = new TH1F(str,"Intersection Density-X",Nbins,-intersect_circle_max,intersect_circle_max);	
+	intersect_density_histos_x.push_back(density_x);
+	sprintf(str,"density-y-%x", id);
+	TH1F *density_y = new TH1F(str,"Intersection Density-Y",Nbins,-intersect_circle_max,intersect_circle_max);	
+	intersect_density_histos_y.push_back(density_y);
+
 	// max distance a line-of-circle-centers line can
 	// be from a focal point and still be considered on the circle
 	masksize = 5.0; // in cm
@@ -69,6 +79,8 @@ DFactory_DMCTrackCandidate::~DFactory_DMCTrackCandidate()
 	
 	// The ClearEvent() method doesn't delete the zeroth element histograms
 	delete density_histos[0];
+	delete intersect_density_histos_x[0];
+	delete intersect_density_histos_y[0];
 	delete slope_density_histos[0];
 	delete offset_density_histos[0];
 	density_histos.clear();
@@ -90,12 +102,18 @@ void DFactory_DMCTrackCandidate::ClearEvent(void)
 	markers.clear();
 	for(unsigned int i=1; i<density_histos.size(); i++)delete density_histos[i];
 	density_histos.erase(density_histos.begin()+1, density_histos.end());
+	for(unsigned int i=1; i<intersect_density_histos_x.size(); i++)delete intersect_density_histos_x[i];
+	intersect_density_histos_x.erase(intersect_density_histos_x.begin()+1, intersect_density_histos_x.end());
+	for(unsigned int i=1; i<intersect_density_histos_y.size(); i++)delete intersect_density_histos_y[i];
+	intersect_density_histos_y.erase(intersect_density_histos_y.begin()+1, intersect_density_histos_y.end());
 	for(unsigned int i=1; i<slope_density_histos.size(); i++)delete slope_density_histos[i];
 	slope_density_histos.erase(slope_density_histos.begin()+1, slope_density_histos.end());
 	for(unsigned int i=1; i<offset_density_histos.size(); i++)delete offset_density_histos[i];
 	offset_density_histos.erase(offset_density_histos.begin()+1, offset_density_histos.end());
 	for(unsigned int i=0; i<qfits.size(); i++)delete qfits[i];
 	qfits.clear();
+	
+	intersect_points.clear();
 }
 
 //------------------
@@ -191,7 +209,9 @@ derror_t DFactory_DMCTrackCandidate::FindCircles(void)
 	/// it seems as though it will be easier to look at contrasting
 	/// the two if they are called from here.
 	
-	return FindCirclesHitSub();
+	return FindCirclesInt();
+	
+	//return FindCirclesHitSub();
 }
 
 //------------------------------------------------------------------
@@ -225,39 +245,9 @@ derror_t DFactory_DMCTrackCandidate::FindCirclesHitSub(void)
 		float x = density_histo->GetXaxis()->GetBinCenter(xbin);
 		float y = density_histo->GetYaxis()->GetBinCenter(ybin);
 		
-		// The maxmimum bin is not terribly accurate as the center of the
-		// circle. Use DQuickFit to quickly find a better center.
-		DQuickFit *fit = new DQuickFit();
-		for(unsigned int i=0; i<archits.size(); i++){
-			DArcHit *a = archits[i];
-			if(a->used)continue;
-			float d2 = a->Dist2ToLine(x,y);
-			if(d2 <= masksize2){
-				fit->AddHit(a->rhit, a->phihit, a->zhit);
-			}
-		}
-		
-		if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<" NHits for fit:"<<fit->GetNhits()<<endl;
-		int Ntracks = 0;
-		if(fit->GetNhits()>=3){
-			fit->FitCircle();
-			x = -fit->x0;	// why do we need the minus sign?
-			y = -fit->y0;	// why do we need the minus sign?
-
-			// Record the location of the maximum
-			TEllipse *circle = new TEllipse();
-			circle->SetX1(x);
-			circle->SetY1(y);
-			circle->SetR1(masksize);
-			circle->SetR2(masksize);
-			circles.push_back(circle);
-
-			// Now look for tracks in phi/z plane using this circle as the
-			// axis for phi.
-			Ntracks = FindTracks(x,y);
-		}
-		delete fit;		
-
+		// Use our "rough" x/y values to find a better set an then
+		// look for tracks
+		int Ntracks = FindTracks_RoughXY(x, y);
 		
 		// If no tracks were found, then no more hits were marked "used"
 		// meaning we will loop infinitely (if the loop is not broken out
@@ -295,6 +285,48 @@ derror_t DFactory_DMCTrackCandidate::FindCirclesHitSub(void)
 	}while(circles.size()<20);
 	
 	return NOERROR;
+}
+
+
+//------------------------------------------------------------------
+// FindTracks_RoughXY
+//------------------------------------------------------------------
+int DFactory_DMCTrackCandidate::FindTracks_RoughXY(float x, float y)
+{
+	// The maxmimum bin is not terribly accurate as the center of the
+	// circle. Use DQuickFit to quickly find a better center.
+	DQuickFit *fit = new DQuickFit();
+	for(unsigned int i=0; i<archits.size(); i++){
+		DArcHit *a = archits[i];
+		if(a->used)continue;
+		float d2 = a->Dist2ToLine(x,y);
+		if(d2 <= masksize2){
+			fit->AddHit(a->rhit, a->phihit, a->zhit);
+		}
+	}
+		
+	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<" NHits for fit:"<<fit->GetNhits()<<endl;
+	int Ntracks = 0;
+	if(fit->GetNhits()>=3){
+		fit->FitCircle();
+		x = -fit->x0;	// why do we need the minus sign?
+		y = -fit->y0;	// why do we need the minus sign?
+
+		// Record the location of the maximum
+		TEllipse *circle = new TEllipse();
+		circle->SetX1(x);
+		circle->SetY1(y);
+		circle->SetR1(masksize);
+		circle->SetR2(masksize);
+		circles.push_back(circle);
+
+		// Now look for tracks in phi/z plane using this circle as the
+		// axis for phi.
+		Ntracks = FindTracks(x,y);
+	}
+	delete fit;		
+
+	return Ntracks;
 }
 
 //------------------------------------------------------------------
@@ -646,6 +678,162 @@ derror_t DFactory_DMCTrackCandidate::DrawPhiZPoints(int which)
 }
 
 //------------------------------------------------------------------
+// FindCirclesInt
+//------------------------------------------------------------------
+derror_t DFactory_DMCTrackCandidate::FindCirclesInt(void)
+{
+	/// Find circle centers using 1-D histograms of coordinates of
+	/// intersection points.
+
+	// Clear the "used" flags on all archits
+	for(unsigned int i=0;i<archits.size();i++ )archits[i]->used = 0;
+	
+	// Fill the intersect_points vector
+	FindIntersectionPoints();
+
+	// Copy pointer of first (default) density histos to local variables
+	TH1F *density_x = intersect_density_histos_x[0];
+	TH1F *density_y = intersect_density_histos_y[0];
+
+	// Loop until we run out of circles
+	float x_limit = 3.0*masksize;
+	int Nbins_density_y = density_y->GetXaxis()->GetNbins();
+	int refill_x_histo = 1;
+	do{
+		// If we did not find any tracks in the previous iteration then
+		// we shouldn't re-fill the density_x histo since no more tracks
+		// were marked as used. The previous peak is zeroed out at the
+		// end of the previous iteration in this case.
+		if(refill_x_histo){
+			// Fill X histo with values from intersection points of unused hits
+			density_x->Reset();
+			for(unsigned int i=0; i<intersect_points.size(); i++){
+				intersect_pt_t &pt = intersect_points[i]; // is this efficient?
+				if(pt.archit_a->used)continue;
+				if(pt.archit_b->used)continue;
+				density_x->Fill(pt.x);
+			}
+		}
+			
+		// This is just for debugging
+		if((int)intersect_density_histos_x.size()<=max_density_histos){
+			intersect_density_histos_x.push_back(new TH1F(*density_x));
+		}
+		
+		// Find the largest peak in the X density 
+		int xbin, ybin, zbin;
+		density_x->GetMaximumBin(xbin,ybin,zbin);
+		if(density_x->GetBinContent(xbin) < 10)break;
+		float x = density_x->GetXaxis()->GetBinCenter(xbin);
+		
+		// Fill the Y histo with values from un-used hits which have
+		// x-values within +/- 3 masksizes of x
+		density_y->Reset();
+		for(unsigned int i=0; i<intersect_points.size(); i++){
+			intersect_pt_t &pt = intersect_points[i]; // is this efficient?
+			if(pt.archit_a->used)continue;
+			if(pt.archit_b->used)continue;
+			if(pt.x > x+x_limit)continue;
+			if(pt.x < x-x_limit)continue;
+			density_y->Fill(pt.y);
+		}
+		
+		// This is just for debugging
+		if((int)intersect_density_histos_y.size()<=max_density_histos){
+			intersect_density_histos_y.push_back(new TH1F(*density_y));
+		}
+
+		// Find all peaks in the Y density histo
+		int Ntracks = 0;
+		do{
+			// Find largest peak
+			int xbin, ybin, zbin;
+			density_y->GetMaximumBin(xbin,ybin,zbin);
+			if(density_y->GetBinContent(xbin) < 10)break;
+			float y = density_y->GetXaxis()->GetBinCenter(xbin);
+			
+			// Try this X/Y combination
+			Ntracks = FindTracks_RoughXY(x,y);
+			
+			// If a track was found, break here and let the density_x
+			// histogram be re-filled on the next iteration of the outer
+			// loop, excluding the points used by the recently found track(s)
+			if(Ntracks > 0)break;
+			
+			// Zero out the density_y histo for 5 bins on either side
+			// of the peak.
+			for(int i=xbin-5;i<=xbin+5;i++){
+				if(i<1 || i>Nbins_density_y)continue;
+				density_y->SetBinContent(i, 0.0);
+			}
+			
+			// At some point, the entire histogram will get zeroed out
+			// and we will break the loop at the top
+		}while(1);
+		
+		// If no tracks were found then no more hits were marked as new
+		// and we'll infinitely loop unless something is changed. If no
+		// tracks were found, we zero out the current peak in the X density
+		// and clear the refill flag so it is not refilled at the next
+		// iteration.
+		if(Ntracks==0){
+			refill_x_histo = 0;
+			for(int i=xbin-5;i<=xbin+5;i++){
+				if(i<1 || i>Nbins_density_y)continue;
+				density_x->SetBinContent(i, 0.0);
+			}
+		}else{
+			refill_x_histo = 1;
+		}
+		
+		// Similar to the Y-loop above, the entire histogram will 
+		// eventually get zeroed out and we will break the loop at the top
+	}while(1);
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// FindIntersectionPoints
+//------------------------------------------------------------------
+derror_t DFactory_DMCTrackCandidate::FindIntersectionPoints(void)
+{
+	
+	// This is redundant since it is also done in ClearEvent(). Oh well...
+	intersect_points.clear();
+	
+	// Loop over all pairs of lines, finding and recording the intersection
+	// point of each.
+	for(unsigned int i=0;i<archits.size()-1;i++){
+		DArcHit *a = archits[i];
+		for(unsigned int j=i+1;j<archits.size();j++){
+			DArcHit *b = archits[j];
+	
+			// Intersection of two lines:
+			// c1*x + c2*y = c3
+			// d1*x + d2*y = d3
+			intersect_pt_t pt;
+			float c1 = a->orientation==DArcHit::Y_OF_X ? -a->m:1.0;
+			float c2 = a->orientation==DArcHit::Y_OF_X ? 1.0:-a->m;
+			float c3 = a->b;
+			float d1 = b->orientation==DArcHit::Y_OF_X ? -b->m:1.0;
+			float d2 = b->orientation==DArcHit::Y_OF_X ? 1.0:-b->m;
+			float d3 = b->b;
+			pt.x = (d2*c3 - d3*c2)/(d2*c1 - c2*d1);
+			pt.y = (d3*c1 - d1*c3)/(d2*c1 - c2*d1);
+			
+			if(finite(pt.x) && finite(pt.y)){
+				pt.archit_a = a;
+				pt.archit_b = b;
+				intersect_points.push_back(pt);
+			}
+		}
+	}
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
 // SetNumDensityHistograms
 //------------------------------------------------------------------
 derror_t DFactory_DMCTrackCandidate::SetMaxDensityHistograms(int N)
@@ -706,6 +894,32 @@ TH2F* DFactory_DMCTrackCandidate::GetDensityHistogram(int n)
 	if(n<0 || n>=(int)density_histos.size())return NULL;
 
 	return density_histos[n];
+}
+
+//------------------------------------------------------------------
+// GetIntersectDensityHistogramX
+//------------------------------------------------------------------
+TH1F* DFactory_DMCTrackCandidate::GetIntersectDensityHistogramX(int n)
+{
+	/// Return a pointer to 1-D density histogram representing X 
+	/// distribution of intersection points
+	
+	if(n<0 || n>=(int)intersect_density_histos_x.size())return NULL;
+
+	return intersect_density_histos_x[n];
+}
+
+//------------------------------------------------------------------
+// GetIntersectDensityHistogramY
+//------------------------------------------------------------------
+TH1F* DFactory_DMCTrackCandidate::GetIntersectDensityHistogramY(int n)
+{
+	/// Return a pointer to 1-D density histogram representing Y
+	/// distribution of intersection points
+	
+	if(n<0 || n>=(int)intersect_density_histos_y.size())return NULL;
+
+	return intersect_density_histos_y[n];
 }
 
 //------------------------------------------------------------------

@@ -77,9 +77,11 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 		derror_t FindCirclesMaskSub(void);
 		derror_t FindCirclesInt(void);
 		int      FindTracks(float x, float y);
+		int      FindTracks_RoughXY(float x, float y);
 		derror_t ZeroNeighbors(TH2F *hist, int xbin, int ybin);
 		int      IntersectionDensity(DArcHit *a, DArcHit *b, float &x, float&y);
 		derror_t FillArcDensityHistogram(TH2F *hist);
+		derror_t FindIntersectionPoints(void);
 		derror_t FillSlopeIntDensityHistos(float x0, float y0);
 		derror_t DrawPhiZPoints(int which=0);
 		
@@ -89,7 +91,11 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 		derror_t SetMaxDensityHistograms(int N);
 		inline int GetNumDensityHistograms(void){return density_histos.size();}
 		inline int GetMaxDensityHistograms(void){return max_density_histos;}
+		inline int GetNIntDensityX(void){return (int)intersect_density_histos_x.size();}
+		inline int GetNIntDensityY(void){return (int)intersect_density_histos_y.size();}
 		TH2F* GetDensityHistogram(int n);
+		TH1F* GetIntersectDensityHistogramX(int n);
+		TH1F* GetIntersectDensityHistogramY(int n);
 		TH1F* GetSlopeDensityHistogram(int n);
 		TH1F* GetOffsetDensityHistogram(int n);
 		DQuickFit* GetQFit(int n);
@@ -110,12 +116,21 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 		vector<TMarker*> markers;	///< For debugging only
 		
 		vector<TH2F*> density_histos;	///< for debugging
+		vector<TH1F*> intersect_density_histos_x;
+		vector<TH1F*> intersect_density_histos_y;
 		vector<TH1F*> slope_density_histos;
 		vector<TH1F*> slope_density_histos_b;
 		vector<TH1F*> offset_density_histos;
+		vector<DQuickFit*> qfits;
 		int max_density_histos;			///< maximum number of histos to allocate
 		
-		vector<DQuickFit*> qfits;
+		typedef struct{
+			float x;
+			float y;
+			DArcHit *archit_a;
+			DArcHit *archit_b;
+		}intersect_pt_t;
+		vector<intersect_pt_t> intersect_points; 
 		
 		derror_t ThereCanBeOnlyOne(int trk1, int trk2); ///< Aaaah!! the quickening!!!
 		derror_t evnt(DEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
