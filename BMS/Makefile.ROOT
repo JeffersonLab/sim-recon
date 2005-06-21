@@ -6,4 +6,4 @@ ROOTINC      := $(shell root-config --incdir)
 
 CFLAGS		+= -D_ROOT_ $(ROOTCFLAGS) -I$(ROOTINC)
 CXXFLAGS		+= -D_ROOT_ $(ROOTCFLAGS) -I$(ROOTINC)
-MISC_LIBS 	+= $(ROOTGLIBS)
+MISC_LIBS 	+= $(ROOTGLIBS) -lThread
