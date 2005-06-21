@@ -161,6 +161,7 @@ derror_t DFactory_DMCTrackCandidate::evnt(DEventLoop *loop, int eventnumber)
 		archits.push_back(archit);
 	}
 	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<" Narchits:"<<archits.size()<<endl;
+	if(archits.size()<3)return NOERROR;
 	
 	// sort the archits by z (mccheathits are sorted by track number , then z)
 	sort(archits.begin(), archits.end(), ArcSort<DArcHit*>()); // ArcSort definied in DArcHit.h
