@@ -20,6 +20,7 @@ using namespace std;
 void* LaunchThread(void* arg);
 
 int SIGINT_RECEIVED = 0;
+int NTHREADS_COMMAND_LINE = 0;
 
 //-----------------------------------------------------------------
 // ctrlCHandle
@@ -58,6 +59,11 @@ DApplication::DApplication(int narg, char* argv[])
 	// Sources
 	current_source = NULL;
 	for(int i=1; i<narg; i++){
+		const char *arg="--nthreads=";
+		if(!strncmp(arg, argv[i],strlen(arg))){
+			NTHREADS_COMMAND_LINE = atoi(&argv[i][strlen(arg)]);
+			continue;
+		}
 		if(argv[i][0] == '-')continue;
 		source_names.push_back(argv[i]);
 	}
@@ -242,6 +248,9 @@ derror_t DApplication::Run(DEventProcessor *proc, int Nthreads)
 	if(Nthreads<1){
 		// If Nthreads is less than 1 then automatically set to 1
 		Nthreads = 1;
+	}
+	if(NTHREADS_COMMAND_LINE>0){
+		Nthreads = NTHREADS_COMMAND_LINE;
 	}
 	cout<<"Launching threads "; cout.flush();
 	for(int i=0; i<Nthreads; i++){
