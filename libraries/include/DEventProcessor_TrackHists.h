@@ -20,7 +20,7 @@ class DEventProcessor_TrackHists:public DEventProcessor{
 	public:
 		DEventProcessor_TrackHists();
 		~DEventProcessor_TrackHists();
-		void FillAll(float what, float theta, float phi, float p, float weight=1.0);
+		void FillAll(float what, int nhits, float theta, float phi, float p, float weight=1.0);
 		void EffVsX(TH1F *out, TH2F* in);
 
 		enum{
@@ -43,9 +43,9 @@ class DEventProcessor_TrackHists:public DEventProcessor{
 		};
 		
 		TH1F *stats;
-		TH2F *stats_vs_theta, *stats_vs_phi, *stats_vs_p;
+		TH2F *stats_vs_theta, *stats_vs_phi, *stats_vs_p, *stats_vs_nhits;
 		TH2F *dp_over_p_vs_p, *dp_over_p_vs_theta;
-		TH1F *eff_vs_theta, *eff_vs_phi, *eff_vs_p;
+		TH1F *eff_vs_theta, *eff_vs_phi, *eff_vs_p, *eff_vs_nhits;
 
 	private:
 		derror_t init(void);	///< Invoked via DEventProcessor virtual method

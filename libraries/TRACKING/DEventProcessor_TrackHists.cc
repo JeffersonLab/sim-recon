@@ -60,12 +60,14 @@ derror_t DEventProcessor_TrackHists::init(void)
 	stats_vs_theta	= new TH2F("stats_vs_theta","MC Tracking Eff. vs. Theta", 100, 0.0, M_PI,NBINS, 0.5, (float)NBINS + 0.5);
 	stats_vs_phi	= new TH2F("stats_vs_phi","MC Tracking Eff. vs. Phi", 100, 0.0, 2.0*M_PI,NBINS, 0.5, (float)NBINS + 0.5);
 	stats_vs_p	= new TH2F("stats_vs_p","MC Tracking Eff. vs. p", 100, 0.0, 10.0, NBINS, 0.5, (float)NBINS + 0.5);
+	stats_vs_nhits	= new TH2F("stats_vs_nhits","MC Tracking Eff. vs. Nhits", 201, -0.5, 200.5, NBINS, 0.5, (float)NBINS + 0.5);
 	dp_over_p_vs_p	= new TH2F("dp_over_p_vs_p","dp/p vs. p",	200, 0.0, 10.0, 200, -0.500, 0.500);
 	dp_over_p_vs_theta	= new TH2F("dp_over_p_vs_theta","dp/p vs. theta",	200, 0.0, M_PI, 200, -0.500, 0.500);
 	
 	eff_vs_theta = new TH1F("eff_vs_theta", "Tracking efficiency vs. theta (all tracks)", 100, 0.0, M_PI);
 	eff_vs_phi = new TH1F("eff_vs_phi", "Tracking efficiency vs. phi (all tracks)", 100, 0.0, 2.0*M_PI);
 	eff_vs_p = new TH1F("eff_vs_p", "Tracking efficiency vs. p (all tracks)", 100, 0.0, 10.0);
+	eff_vs_nhits = new TH1F("eff_vs_nhits", "Tracking efficiency vs. nhits (all tracks)", 201, -0.5, 200.5);
 
 	stats->SetOption("B"); // bar chart
 	stats->SetBarWidth(0.5);
@@ -120,14 +122,15 @@ derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 		float phi = mcthrown->phi;
 		float p = mcthrown->p;
 		
-		FillAll(NHITS_THROWN, theta, phi, p, trkeff->Nhits_thrown);
-		FillAll(NHITS_FOUND, theta, phi, p, trkeff->Nhits_found);
-		FillAll(NHITS_THROWN_AND_FOUND, theta, phi, p, trkeff->Nhits_thrown_and_found);
-		FillAll(NHITS_FOUND_DIFFERENT, theta, phi, p, trkeff->Nhits_found_different);
-		FillAll(NHITS_THROWN_UNUSED, theta, phi, p, trkeff->Nhits_thrown_unused);
-		FillAll(NTHROWN, theta, phi, p);
+		int Nhits = trkeff->Nhits_thrown;
+		FillAll(NHITS_THROWN, Nhits, theta, phi, p, Nhits);
+		FillAll(NHITS_FOUND, Nhits, theta, phi, p, trkeff->Nhits_found);
+		FillAll(NHITS_THROWN_AND_FOUND, Nhits, theta, phi, p, trkeff->Nhits_thrown_and_found);
+		FillAll(NHITS_FOUND_DIFFERENT, Nhits, theta, phi, p, trkeff->Nhits_found_different);
+		FillAll(NHITS_THROWN_UNUSED, Nhits, theta, phi, p, trkeff->Nhits_thrown_unused);
+		FillAll(NTHROWN, Nhits, theta, phi, p);
 		if(trkeff->fittable){
-			FillAll(NFITTABLE, theta, phi, p);
+			FillAll(NFITTABLE, Nhits, theta, phi, p);
 		
 			int idx = trkeff->index_DMCReconstructed;
 			if(idx>=0 && idx< (int)mcreconstructeds.size()){
@@ -139,7 +142,7 @@ derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 				dp_over_p_vs_theta->Fill(theta, dp_over_p);
 
 				if(fabs(dp_over_p) <=0.2){
-					FillAll(NMATCHED, theta, phi, p);
+					FillAll(NMATCHED, Nhits, theta, phi, p);
 				}
 			}
 		}
@@ -151,7 +154,7 @@ derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 		float theta = mcreconstructed->theta;
 		float phi = mcreconstructed->phi;
 		float p = mcreconstructed->p;
-		FillAll(NFOUND, theta, phi, p);
+		FillAll(NFOUND, 0, theta, phi, p);
 	}
 
 	return NOERROR;
@@ -160,7 +163,7 @@ derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 //------------------------------------------------------------------
 // FillAll
 //------------------------------------------------------------------
-void DEventProcessor_TrackHists::FillAll(float what, float theta, float phi, float p, float weight)
+void DEventProcessor_TrackHists::FillAll(float what, int nhits, float theta, float phi, float p, float weight)
 {
 	// Since multiple threads can call this while trying to fill
 	// the same histogram objects, we need to lock these
@@ -169,6 +172,7 @@ void DEventProcessor_TrackHists::FillAll(float what, float theta, float phi, flo
 	stats_vs_theta->Fill(theta,what, weight);
 	stats_vs_phi->Fill(phi, what, weight);
 	stats_vs_p->Fill(p, what, weight);
+	stats_vs_nhits->Fill(nhits, what, weight);
 	TThread::UnLock();
 }
 
@@ -213,6 +217,7 @@ derror_t DEventProcessor_TrackHists::erun(void)
 	EffVsX(eff_vs_theta, stats_vs_theta);
 	EffVsX(eff_vs_phi, stats_vs_phi);
 	EffVsX(eff_vs_p, stats_vs_p);
+	EffVsX(eff_vs_nhits, stats_vs_nhits);
 
 	return NOERROR;
 }
