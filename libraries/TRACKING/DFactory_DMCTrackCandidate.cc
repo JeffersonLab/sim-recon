@@ -10,6 +10,7 @@
 using namespace std;
 
 #include <pthread.h>
+#include <TThread.h>
 
 #include "DFactory_DMCTrackCandidate.h"
 #include "DMCCheatHit.h"
@@ -41,13 +42,19 @@ DFactory_DMCTrackCandidate::DFactory_DMCTrackCandidate()
 	// The number of cm per bin (in one dimension) for the density histogram
 	cm_per_bin = 4.5;
 
+	// Creating and destroying histograms (and presumably other ROOT
+	// objects) is not a thread safe operation (see chapter 21 pg 4
+	// of the ROOT user's manual). Luckily, ROOT provides a locking
+	// mechanism to prevent collisions.
+	TThread::Lock();
+
 	int Nbins = (int)floor(0.5 + 2.0*circle_max/cm_per_bin);
 	sprintf(str,"density-%x", id);
 	TH2F *density = new TH2F(str,"Density",Nbins,-circle_max,circle_max,Nbins,-circle_max,circle_max);	
 	density_histos.push_back(density);
 
 	// Histos of x and y coordinates of intersections of lines
-	float intersect_circle_max = 1000.0;
+	float intersect_circle_max = 500.0;
 	Nbins = (int)floor(0.5 + 2.0*intersect_circle_max/cm_per_bin);
 	sprintf(str,"density-x-%x", id);
 	TH1F *density_x = new TH1F(str,"Intersection Density-X",Nbins,-intersect_circle_max,intersect_circle_max);	
@@ -66,8 +73,11 @@ DFactory_DMCTrackCandidate::DFactory_DMCTrackCandidate()
 	TH1F *slope_density = new TH1F(str,"slope", 3000,-M_PI, +M_PI);
 	slope_density_histos.push_back(slope_density);
 	sprintf(str,"intercept-%x", id);
-	TH1F *offset_density = new TH1F(str,"z intercept", 2100, -100.0,2000.0);
+	TH1F *offset_density = new TH1F(str,"z intercept", 2100, -100.0, +200.0);
 	offset_density_histos.push_back(offset_density);
+	
+	// Release ROOT mutex
+	TThread::UnLock();
 }
 
 //------------------------------------------------------------------
@@ -78,11 +88,14 @@ DFactory_DMCTrackCandidate::~DFactory_DMCTrackCandidate()
 	ClearEvent();
 	
 	// The ClearEvent() method doesn't delete the zeroth element histograms
+	TThread::Lock();
 	delete density_histos[0];
 	delete intersect_density_histos_x[0];
 	delete intersect_density_histos_y[0];
 	delete slope_density_histos[0];
 	delete offset_density_histos[0];
+	TThread::UnLock();
+
 	density_histos.clear();
 	slope_density_histos.clear();
 	offset_density_histos.clear();
@@ -100,6 +113,8 @@ void DFactory_DMCTrackCandidate::ClearEvent(void)
 	circles.clear();
 	for(unsigned int i=0; i<markers.size(); i++)delete markers[i];
 	markers.clear();
+
+	TThread::Lock();
 	for(unsigned int i=1; i<density_histos.size(); i++)delete density_histos[i];
 	density_histos.erase(density_histos.begin()+1, density_histos.end());
 	for(unsigned int i=1; i<intersect_density_histos_x.size(); i++)delete intersect_density_histos_x[i];
@@ -110,10 +125,13 @@ void DFactory_DMCTrackCandidate::ClearEvent(void)
 	slope_density_histos.erase(slope_density_histos.begin()+1, slope_density_histos.end());
 	for(unsigned int i=1; i<offset_density_histos.size(); i++)delete offset_density_histos[i];
 	offset_density_histos.erase(offset_density_histos.begin()+1, offset_density_histos.end());
+	TThread::UnLock();
+
 	for(unsigned int i=0; i<qfits.size(); i++)delete qfits[i];
 	qfits.clear();
-	
+	for(unsigned int i=0; i<intersect_points.size(); i++)delete intersect_points[i];
 	intersect_points.clear();
+	
 }
 
 //------------------
@@ -209,10 +227,706 @@ derror_t DFactory_DMCTrackCandidate::FindCircles(void)
 	/// it seems as though it will be easier to look at contrasting
 	/// the two if they are called from here.
 	
-	return FindCirclesInt();
+	return FindCirclesIntersections();
 	
 	//return FindCirclesHitSub();
 }
+
+//------------------------------------------------------------------
+// FindCirclesIntersections
+//------------------------------------------------------------------
+derror_t DFactory_DMCTrackCandidate::FindCirclesIntersections(void)
+{
+	/// Find circle centers using 1-D histograms of coordinates of
+	/// intersection points.
+
+	// Clear the "used" flags on all archits
+	for(unsigned int i=0;i<archits.size();i++ )archits[i]->used = 0;
+	
+	// Fill the intersect_points vector
+	FindIntersectionPoints();
+
+	// Copy pointer of first (default) density histos to local variables
+	TH1F *density_x = intersect_density_histos_x[0];
+	TH1F *density_y = intersect_density_histos_y[0];
+
+	// Loop until we run out of circles
+	float half_band_width = 3.0*masksize;
+	int Nbins = density_y->GetXaxis()->GetNbins();
+	int refill_primary_histo = 1;
+	int band_direction;
+	TH1F *density_primary, *density_secondary;
+	do{
+		// If we did not find any tracks in the previous iteration then
+		// we shouldn't re-fill the density histos since no more tracks
+		// were marked as used. The previous peak is zeroed out at the
+		// end of the previous iteration in th0se cases case.
+		int xbin, ybin;
+		if(refill_primary_histo){
+			// Fill histos with values from intersection points of unused hits
+			density_x->Reset();
+			density_y->Reset();
+			for(unsigned int i=0; i<intersect_points.size(); i++){
+				intersect_pt_t *pt = intersect_points[i]; // is this efficient?
+				if(pt->archit_a->used)continue;
+				if(pt->archit_b->used)continue;
+				density_x->Fill(pt->x);
+				density_y->Fill(pt->y);
+			}
+			
+			// This is just for debugging
+			if((int)intersect_density_histos_x.size()<=max_density_histos){
+				intersect_density_histos_x.push_back(new TH1F(*density_x));
+			}
+			if((int)intersect_density_histos_y.size()<=max_density_histos){
+				intersect_density_histos_y.push_back(new TH1F(*density_y));
+			}
+			
+			// Here we choose whether we need to refill the x density with
+			// a cut on y or the other way around. We choose by whichever
+			// projection's maximum bin is smallest. That projection is
+			// more likely to have the resonances spread out so we're less likely
+			// to have multiple tracks overlapping.
+			int tmp1,tmp2;
+			density_x->GetMaximumBin(xbin,tmp1,tmp2);
+			density_y->GetMaximumBin(ybin,tmp1,tmp2);
+			if(density_x->GetBinContent(xbin) < density_y->GetBinContent(ybin)){
+				band_direction = BAND_DIR_X;
+				density_primary = density_x;
+				density_secondary = density_y;
+				if(debug_level>10)cout<<__FILE__<<":"<<__LINE__<<" Band direction: X"<<endl;
+			}else{
+				band_direction = BAND_DIR_Y;
+				density_primary = density_y;
+				density_secondary = density_x;
+				if(debug_level>10)cout<<__FILE__<<":"<<__LINE__<<" Band direction: Y"<<endl;
+			}
+		}
+		
+		// Center of peak in band direction 
+		int prim_bin,tmp1,tmp2;
+		density_primary->GetMaximumBin(prim_bin,tmp1,tmp2);
+		if(density_primary->GetBinContent(prim_bin) < 10)break;
+		float prim_center = density_primary->GetXaxis()->GetBinCenter(prim_bin);
+		
+		// Fill the secondary histo with values from un-used hits which have
+		// values within +/- 3 masksizes of peak in the primary direction
+		density_secondary->Reset();
+		for(unsigned int i=0; i<intersect_points.size(); i++){
+			intersect_pt_t *pt = intersect_points[i]; // is this efficient?
+			if(pt->archit_a->used)continue;
+			if(pt->archit_b->used)continue;
+			float vprim = band_direction==BAND_DIR_X ? pt->x:pt->y;
+			if(vprim > prim_center+half_band_width)continue;
+			if(vprim < prim_center-half_band_width)continue;
+			density_secondary->Fill(band_direction==BAND_DIR_X ? pt->y:pt->x);
+		}
+		
+
+		// Find all peaks in the secondary density histo, zeroing out peaks
+		// as we fail to find tracks in them. If a track is found, we jump
+		// back to the outer loop and refill the x/y histos and choose a new
+		// primary.
+		int Ntracks = 0;
+		do{
+			// Center of peak in direction orthogonal to band
+			int sec_bin,tmp1,tmp2;
+			density_secondary->GetMaximumBin(sec_bin,tmp1,tmp2);
+			if(density_secondary->GetBinContent(sec_bin) < 10)break;
+			float sec_center = density_secondary->GetXaxis()->GetBinCenter(sec_bin);
+
+			// Assign X/Y depending upon what the band direction is
+			float x,y;
+			if(band_direction==BAND_DIR_X){
+				x = prim_center;
+				y = sec_center;
+			}else{
+				y = prim_center;
+				x = sec_center;
+			}
+			
+			// Try this X/Y combination
+			Ntracks = FindTrack_RoughXY(x,y);
+			
+			// If a track was found, break here and let the density_x
+			// histogram be re-filled on the next iteration of the outer
+			// loop, excluding the points used by the recently found track(s)
+			if(Ntracks > 0)break;
+			
+			// Zero out the density_secondary histo for 5 bins on either side
+			// of the peak so we can try again with the next peak.
+			for(int i=sec_bin-5;i<=sec_bin+5;i++){
+				if(i<1 || i>Nbins)continue;
+				density_secondary->SetBinContent(i, 0.0);
+			}
+			
+			// At some point, the entire histogram will get zeroed out
+			// and we will break the loop at the top
+		}while(1);
+		
+		// If no tracks were found then no more hits were marked as new
+		// and we'll infinitely loop unless something is changed. If no
+		// tracks were found, we zero out the current peak in the primary
+		// and clear the refill flag so it is not refilled at the next
+		// iteration.
+		if(Ntracks==0){
+			refill_primary_histo = 0;
+			for(int i=prim_bin-5;i<=prim_bin+5;i++){
+				if(i<1 || i>Nbins)continue;
+				density_primary->SetBinContent(i, 0.0);
+			}
+		}else{
+			refill_primary_histo = 1;
+		}
+		
+		// Similar to the secondary-loop above, the entire histogram will 
+		// eventually get zeroed out and we will break the loop at the top
+	}while(1);
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// FindIntersectionPoints
+//------------------------------------------------------------------
+derror_t DFactory_DMCTrackCandidate::FindIntersectionPoints(void)
+{
+	
+	// This is redundant since it is also done in ClearEvent(). Oh well...
+	intersect_points.clear();
+	
+	// Loop over all pairs of lines, finding and recording the intersection
+	// point of each.
+	for(unsigned int i=0;i<archits.size()-1;i++){
+		DArcHit *a = archits[i];
+		for(unsigned int j=i+1;j<archits.size();j++){
+			DArcHit *b = archits[j];
+	
+			// Intersection of two lines:
+			// c1*x + c2*y = c3
+			// d1*x + d2*y = d3
+			intersect_pt_t *pt = new intersect_pt_t;
+			float c1 = a->orientation==DArcHit::Y_OF_X ? -a->m:1.0;
+			float c2 = a->orientation==DArcHit::Y_OF_X ? 1.0:-a->m;
+			float c3 = a->b;
+			float d1 = b->orientation==DArcHit::Y_OF_X ? -b->m:1.0;
+			float d2 = b->orientation==DArcHit::Y_OF_X ? 1.0:-b->m;
+			float d3 = b->b;
+			pt->x = (d2*c3 - d3*c2)/(d2*c1 - c2*d1);
+			pt->y = (d3*c1 - d1*c3)/(d2*c1 - c2*d1);
+			
+			if(finite(pt->x) && finite(pt->y)){
+				pt->archit_a = a;
+				pt->archit_b = b;
+				intersect_points.push_back(pt);
+			}
+		}
+	}
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// FindTracks_RoughXY
+//------------------------------------------------------------------
+int DFactory_DMCTrackCandidate::FindTrack_RoughXY(float x, float y)
+{
+	/// This routine takes as input a rough guess of the X/Y coordinates of
+	/// the center of a circle. It fits a circle to the points whose
+	/// corresponding archit line comes close to the "rough" center
+	/// in order to find an accurate center. It then sets the on_circle
+	/// flag along with the delta_phi attribute for all un-used archits
+	/// with lines that come close to the
+	/// accurate center. Finally, it calls FindTracks().
+
+
+	// The maxmimum bin is not terribly accurate as the center of the
+	// circle. Use DQuickFit to quickly find a better center.
+	DQuickFit *fit = new DQuickFit();
+	for(unsigned int i=0; i<archits.size(); i++){
+		DArcHit *a = archits[i];
+		if(a->used)continue;
+		float d2 = a->Dist2ToLine(x,y);
+		if(d2 <= masksize2){
+			fit->AddHit(a->rhit, a->phihit, a->zhit);
+		}
+	}
+		
+	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<" NHits for fit:"<<fit->GetNhits()<<endl;
+	int Ntracks = 0;
+	if(fit->GetNhits()>=3){
+		fit->FitCircle();
+		float x0 = -fit->x0;	// why do we need the minus sign?
+		float y0 = -fit->y0;	// why do we need the minus sign?
+		float phi0 = atan2(y0, x0);
+		if(phi0<0.0)phi0 += 2.0*M_PI;
+
+		// Record the location of the maximum
+		TEllipse *circle = new TEllipse();
+		circle->SetX1(x0);
+		circle->SetY1(y0);
+		circle->SetR1(masksize);
+		circle->SetR2(masksize);
+		circles.push_back(circle);
+		
+		// Loop over all hits. Use the "on_circle" flag in the DArchit objects to
+		// mark hits which actually appear to be on this circle.
+		for(unsigned int i=0;i<archits.size();i++){
+			DArcHit *a = archits[i];
+			if(a->used){
+				a->on_circle = 0;
+				continue;
+			}
+			float d2 = a->Dist2ToLine(x0,y0);
+			if(d2 > masksize2){
+				a->on_circle = 0;
+				continue;
+			}
+			a->on_circle = 1;
+
+			// Find relative angle between this hit
+			// and vector pointing to origin
+			float delta_x = a->xhit+x0;
+			float delta_y = a->yhit+y0;
+		
+			// Calculate delta_phi and force it to be in the 0 to +2PI range
+			a->delta_phi = atan2(delta_y, delta_x)-phi0;
+			while(a->delta_phi<0.0)a->delta_phi += 2.0*M_PI;
+			if(a->delta_phi>M_PI)a->delta_phi -= 2.0*M_PI;
+			float r0 = sqrt(x0*x0 + y0*y0);
+			a->delta_phi *= r0; // put in cm so it has same units as a->zhit
+		}
+
+		// Now look for tracks in phi/z plane using this circle as the
+		// axis for phi.
+		Ntracks = FindTrack(x0,y0);
+	}
+	delete fit;
+
+	return Ntracks;
+}
+
+//------------------------------------------------------------------
+// FindTracks
+//------------------------------------------------------------------
+int DFactory_DMCTrackCandidate::FindTrack(float x0, float y0)
+{
+	// At this point the archits which fall on the circle centered at
+	// x0,y0 should all have their "on_circle" flags set. Now we need
+	// to identify those hits which fall on a line in the phi/z plane
+	// and fit them to a 3D track.
+	// 
+	// There are several approaches we can take here. All of them
+	// involve histograming the slope and intercept of all possible
+	// pairs of phi/z points from them on_circle hits. One major
+	// choice to be made here is whether or not to try looping over
+	// peaks in one or both of the histograms while looking for a
+	// track. Note that we are already looping over peaks in the
+	// intersection density histos in FindCirclesIntercetion(). Ideally,
+	// we would loop over all peaks in all density histos while looking
+	// for tracks, but in the order in which we are most likely to find
+	// them. In other words, test the secondary peaks in
+	// the slope histo only after checking the secondary peaks in the
+	// x and y intersection histos.
+	//
+	// Looping over peaks in the slope and density histos here gave
+	// poorer results at reduced efficiency from just simulataneously
+	// filling the slope and offset histos and taking the largest
+	// peak in each. Hence, we stick with that.
+	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"   Finding tracks in circle at x="<<x0<<" y="<<y0<<endl;
+
+	// Fill the slope and offest histos
+	FillSlopeIntDensityHistos();
+
+	// Copy pointer of first (default) density histos to local variables
+	TH1F *slope_density = slope_density_histos[0];
+	TH1F *offset_density = offset_density_histos[0];
+	
+	// Find the largest peak in the offset density 
+	int xbin, ybin, zbin;
+	offset_density->GetMaximumBin(xbin,ybin,zbin);
+	if(offset_density->GetBinContent(xbin) < 10)return 0;
+	float z_vertex = offset_density->GetXaxis()->GetBinCenter(xbin);
+	if(z_vertex<-95.0 || z_vertex>+195.0)return 0;
+	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"    z_vertex = "<<z_vertex<<endl;
+
+	// Find the largest peak in the slope density 
+	slope_density->GetMaximumBin(xbin,ybin,zbin);
+	if(slope_density->GetBinContent(xbin) < 10)return 0;
+	float phi_z_angle = slope_density->GetXaxis()->GetBinCenter(xbin);
+	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"    slope_density = "<<phi_z_angle<<endl;
+
+	// Now try and make the track
+	int Ntracks = MakeTrack(phi_z_angle, z_vertex);
+	
+	// If we got here, no tracks were found
+	return Ntracks;
+}
+
+//------------------------------------------------------------------
+// FillSlopeIntDensityHistos
+//------------------------------------------------------------------
+derror_t DFactory_DMCTrackCandidate::FillSlopeIntDensityHistos(void)
+{
+	/// Calculate parameters for all possible pairs of phi-z coordinates
+	/// for all archits currently flagged as being "on_circle" recording
+	/// the results in the phi_z_lines vector.
+	
+	// Copy pointer of first (default) density histos to local variables
+	TH1F *slope_density = slope_density_histos[0];
+	TH1F *offset_density = offset_density_histos[0];
+	
+	slope_density->Reset();
+	offset_density->Reset();
+	for(unsigned int i=0; i<archits.size()-1; i++){
+		DArcHit *a = archits[i];
+		if(!a->on_circle)continue;
+		for(unsigned int k=i+1; k<archits.size(); k++){ 
+			DArcHit *b = archits[k];
+			if(!b->on_circle)continue;
+			
+			// archits are sorted by Z so "a" is always upstream of "b"
+			float delta_z = b->zhit - a->zhit;
+			float delta_phi = b->delta_phi-a->delta_phi; //NOTE: already scaled by r0 (see FindTrack_RoughXY)
+			float phi_z_angle;
+			float z_vertex;
+			if(delta_z > delta_phi){ // is this really worth while?
+				phi_z_angle = atan2(delta_phi, delta_z);
+			}else{
+				phi_z_angle = atan2(-delta_z, delta_phi) + M_PI/2.0;				
+			}
+			z_vertex = a->zhit - a->delta_phi*delta_z/delta_phi;
+
+			if(!finite(phi_z_angle) || !finite(z_vertex))continue;
+			slope_density->Fill(phi_z_angle);
+			offset_density->Fill(z_vertex);
+		}
+	}
+	
+	// This is just for debugging
+	if((int)slope_density_histos.size()<=max_density_histos){
+		slope_density_histos.push_back(new TH1F(*slope_density));
+	}
+	if((int)offset_density_histos.size()<=max_density_histos){
+		offset_density_histos.push_back(new TH1F(*offset_density));
+	}
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// MakeTrack
+//------------------------------------------------------------------
+int DFactory_DMCTrackCandidate::MakeTrack(float phi_z_angle, float z_vertex)
+{
+		
+	// Create a new DQuickFit object to do the fit (should there
+	// be enough hits to do one).
+	DQuickFit *fit = new DQuickFit();
+		
+	// Create a new DMCTrackCandidate object and fill in the ihits
+	// values as we loop over hits below. If it
+	// turns out we don't have enough hits after looping over them
+	// all, then we will delete the object.
+	DMCTrackCandidate *mctrackcandidate = new DMCTrackCandidate;
+	mctrackcandidate->Nhits = 0;
+
+	// At this point, the "on_circle" flag in the array of DArcHits should
+	// indicate which hits are consistent with the current circle
+	// (i.e. centered at x0,y0). We now look for all hits with the "on_circle"
+	// flag set that also have a delta_phi and zhit within a
+	// certain distance of the line defined by phi_z_angle and z_vertex.
+
+	for(unsigned int i=0;i<archits.size();i++){
+		DArcHit *a = archits[i];
+		if(!a->on_circle)continue;
+		if(a->used)continue;
+
+		// Calculate distance of the archit phi/z point to the line
+		// defined by phi_z_angle and z_vertex. 
+		float d = a->delta_phi*cos(phi_z_angle) - (a->zhit-z_vertex)*sin(phi_z_angle);
+		
+		if(debug_level>10)cout<<__FILE__<<":"<<__LINE__<<"        distance["<<i<<"] = "<<d<<endl;
+		if(fabs(d)>masksize)continue; // this point is too far away from the line
+		
+		// Add hit to DQuickFit object
+		fit->AddHit(a->rhit, a->phihit, a->zhit);
+					
+		// Add hit index to track in factory data
+		mctrackcandidate->ihit[mctrackcandidate->Nhits++] = a->ihit;
+				
+		// Flag this hit as having been used
+		a->used = 1;
+				
+		if(mctrackcandidate->Nhits>=MAX_IHITS){
+			cout<<__FILE__<<":"<<__LINE__<<" More than "<<MAX_IHITS<<" hits on track. Truncating..."<<endl;
+			break;
+		}
+	}			
+		
+	// If enough hits were added, then do the fit and record
+	// the results
+	int NTracks = 0;
+	if(fit->GetNhits()>=3){
+		fit->FitTrack();
+		mctrackcandidate->x0 = fit->x0;
+		mctrackcandidate->y0 = fit->y0;
+		float r0 = sqrt(fit->x0*fit->x0 + fit->y0*fit->y0);
+		
+		mctrackcandidate->z_vertex = fit->z_vertex;
+		mctrackcandidate->dphidz = fit->theta/r0;
+		mctrackcandidate->p = fit->p;
+		mctrackcandidate->p_trans = fit->p_trans;
+		mctrackcandidate->q = fit->q;
+		mctrackcandidate->phi = fit->phi;
+		mctrackcandidate->theta = fit->theta;
+		_data.push_back(mctrackcandidate);
+		NTracks++;
+		if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"      Adding track (Nhits="<<fit->GetNhits()<<")  -"<<_data.size()<<"-"<<endl;
+
+		// Keep the DQuickFit object around
+		qfits.push_back(fit);
+	}else{
+		// Oops! not enough hits for a track. Delete this one.
+		delete mctrackcandidate;
+		delete fit;
+		if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"      Aborting track (Nhits="<<fit->GetNhits()<<")"<<endl;
+	}
+
+	return NTracks;
+}
+
+//------------------------------------------------------------------
+// GetQFit
+//------------------------------------------------------------------
+DQuickFit* DFactory_DMCTrackCandidate::GetQFit(int n)
+{
+	if(n<0 || n>=(int)qfits.size())return NULL;
+	
+	return qfits[n];
+}
+
+//------------------------------------------------------------------
+// DrawPhiZPoints
+//------------------------------------------------------------------
+derror_t DFactory_DMCTrackCandidate::DrawPhiZPoints(int which)
+{
+	/// This is for debugging/development only.
+	///
+	/// Draw markers on the current canvas. The coordinates
+	/// are the phi value on the Y-axis and the z value of the
+	/// hit on the X-axis. The value of phi is relative to the
+	/// focus. All hits passing within masksize of a focus are
+	/// plotted in a color corresponding to the focus. A single hit
+	/// can thus be plotted more than once, but will necessarily
+	/// show up in different places on the plot for the different
+	/// foci because phi will be different.
+	///
+	/// The idea here is that points who are really from the same
+	/// track will fall on a line. This just helps visualize
+	/// this for development. (The program patfind uses this).
+	
+	for(unsigned int i=0; i<markers.size(); i++)delete markers[i];
+	markers.clear();
+
+	int colors[] = {kRed,kBlue,kMagenta,kGreen,kBlack};
+	for(unsigned int j=0;j<circles.size();j++){
+		if(which>0 && (int)j!=which-1)continue;
+		TEllipse *circle = circles[j];
+		float x0 = circle->GetX1();
+		float y0 = circle->GetY1();
+		float phi0 = atan2(y0, x0);
+		if(phi0<0.0)phi0 += 2.0*M_PI;
+		for(unsigned int i=0;i<archits.size();i++){
+			DArcHit *a = archits[i];
+			
+			if(a->Dist2ToLine(x0,y0) > masksize2)continue;
+			
+			// Find relative angle between this hit
+			// and vector pointing to origin
+			float delta_x = a->xhit+x0;
+			float delta_y = a->yhit+y0;
+		
+			// Calculate delta_phi and force it to be in the 0 to +2PI range
+			float delta_phi = atan2(delta_y, delta_x)-phi0;
+			while(delta_phi<0.0)delta_phi += 2.0*M_PI;
+			if(delta_phi>M_PI)delta_phi -= 2.0*M_PI;
+			
+			TMarker *marker = new TMarker();
+			marker->SetX(a->zhit);
+			marker->SetY(delta_phi);
+			marker->SetMarkerColor(colors[j%6]);
+			marker->SetMarkerStyle(20+j);
+			marker->Draw();
+			markers.push_back(marker);
+
+			if(markers.size()>=300)break;
+		}
+		if(markers.size()>=300)break;
+	}
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// SetNumDensityHistograms
+//------------------------------------------------------------------
+derror_t DFactory_DMCTrackCandidate::SetMaxDensityHistograms(int N)
+{
+	/// Set the number of density histograms to keep.
+	///
+	/// This is meant as a diagnostic and should not normally be used.
+	/// It tells the factory to copy and keep around multiple 
+	/// histograms corresponding to subsequent stages of the track
+	/// finding. This can cost a little in memory, but the real
+	/// cost is in the CPU time to copy the histograms. This value
+	/// is actually used by the intersection density X , density Y
+	/// slope, and z_vertex histos so changing it can have a large affect.
+
+	max_density_histos = N;
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// GetDensityHistogram
+//------------------------------------------------------------------
+TH2F* DFactory_DMCTrackCandidate::GetDensityHistogram(int n)
+{
+	/// Return a pointer to 2-D density histogram n where n is value from
+	/// 0 to 1 less than the last call to SetNumDensityHistograms().
+	
+	if(n<0 || n>=(int)density_histos.size())return NULL;
+
+	return density_histos[n];
+}
+
+//------------------------------------------------------------------
+// GetIntersectDensityHistogramX
+//------------------------------------------------------------------
+TH1F* DFactory_DMCTrackCandidate::GetIntersectDensityHistogramX(int n)
+{
+	/// Return a pointer to 1-D density histogram representing X 
+	/// distribution of intersection points
+	
+	if(n<0 || n>=(int)intersect_density_histos_x.size())return NULL;
+
+	return intersect_density_histos_x[n];
+}
+
+//------------------------------------------------------------------
+// GetIntersectDensityHistogramY
+//------------------------------------------------------------------
+TH1F* DFactory_DMCTrackCandidate::GetIntersectDensityHistogramY(int n)
+{
+	/// Return a pointer to 1-D density histogram representing Y
+	/// distribution of intersection points
+	
+	if(n<0 || n>=(int)intersect_density_histos_y.size())return NULL;
+
+	return intersect_density_histos_y[n];
+}
+
+//------------------------------------------------------------------
+// GetSlopeDensityHistogram
+//------------------------------------------------------------------
+TH1F* DFactory_DMCTrackCandidate::GetSlopeDensityHistogram(int n)
+{
+	/// Return a pointer to 1-D slope density histogram n where n is value from
+	/// 0 to 1 less than the last call to SetNumDensityHistograms().
+	
+	if(n<0 || n>=(int)slope_density_histos.size())return NULL;
+
+	return slope_density_histos[n];
+}
+
+//------------------------------------------------------------------
+// GetOffsetDensityHistogram
+//------------------------------------------------------------------
+TH1F* DFactory_DMCTrackCandidate::GetOffsetDensityHistogram(int n)
+{
+	/// Return a pointer to 1-D z-offset density histogram n where n is value from
+	/// 0 to 1 less than the last call to SetNumDensityHistograms().
+	
+	if(n<0 || n>=(int)offset_density_histos.size())return NULL;
+
+	return offset_density_histos[n];
+}
+
+//------------------------------------------------------------------
+// ThereCanBeOnlyOne
+//------------------------------------------------------------------
+derror_t DFactory_DMCTrackCandidate::ThereCanBeOnlyOne(int trk1, int trk2)
+{
+	/// See the comment at the end of evnt(). Basically, we need to choose
+	/// which one track to keep and adjust the _data array to keep it.
+	
+	// If we're keeping the track further down the list, then copy
+	// its results into the position near the front of the list.
+	// We should be using the chisq from the fits, but that isn't
+	// being calculated for the 3D track at the moment.
+	DQuickFit *qf1 = qfits[trk1];
+	DQuickFit *qf2 = qfits[trk2];
+	DQuickFit *qf;
+	int trk = -1;
+	if(qf1->GetNhits() < qf2->GetNhits()){
+		trk = trk2;
+		qf = qf2;
+	}else{
+		trk = trk1;
+		qf = qf1;
+	}
+		
+	// Delete the losing track and shift the ones after it up in the list(s)
+	delete _data[trk];
+	_data.erase(_data.begin() + trk);
+	delete qf;
+	qfits.erase(qfits.begin() + trk);
+
+	return NOERROR;	
+}
+
+//------------------
+// toString
+//------------------
+const string DFactory_DMCTrackCandidate::toString(void)
+{
+	// Ensure our Get method has been called so _data is up to date
+	Get();
+	if(_data.size()<=0)return string(); // don't print anything if we have no data!
+
+	printheader("row: Nhits: x0(cm): y0(cm): z_vertex: dphi/dz:  q:   p: p_trans:   phi: theta:");
+	
+	for(unsigned int i=0; i<_data.size(); i++){
+		DMCTrackCandidate *trackcandidate = _data[i];
+
+		printnewrow();
+		
+		printcol("%d",    i);
+		printcol("%d",    trackcandidate->Nhits);
+		printcol("%3.1f", trackcandidate->x0);
+		printcol("%3.1f", trackcandidate->y0);
+		printcol("%3.1f", trackcandidate->z_vertex);
+		printcol("%1.3f", trackcandidate->dphidz);
+		printcol("%+1.0f", trackcandidate->q);
+		printcol("%3.1f", trackcandidate->p);
+		printcol("%3.2f", trackcandidate->p_trans);
+		printcol("%1.3f", trackcandidate->phi);
+		printcol("%1.3f", trackcandidate->theta);
+
+		printrow();
+	}
+	
+	return _table;
+}
+
+
+//-----------------------------------------------------------------------
+//-----------------------------------------------------------------------
+// ---------- Things below are unused -----------------------------------
+//-----------------------------------------------------------------------
+//-----------------------------------------------------------------------
+#if 0
 
 //------------------------------------------------------------------
 // FindCirclesHitSub
@@ -287,48 +1001,6 @@ derror_t DFactory_DMCTrackCandidate::FindCirclesHitSub(void)
 	return NOERROR;
 }
 
-
-//------------------------------------------------------------------
-// FindTracks_RoughXY
-//------------------------------------------------------------------
-int DFactory_DMCTrackCandidate::FindTracks_RoughXY(float x, float y)
-{
-	// The maxmimum bin is not terribly accurate as the center of the
-	// circle. Use DQuickFit to quickly find a better center.
-	DQuickFit *fit = new DQuickFit();
-	for(unsigned int i=0; i<archits.size(); i++){
-		DArcHit *a = archits[i];
-		if(a->used)continue;
-		float d2 = a->Dist2ToLine(x,y);
-		if(d2 <= masksize2){
-			fit->AddHit(a->rhit, a->phihit, a->zhit);
-		}
-	}
-		
-	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<" NHits for fit:"<<fit->GetNhits()<<endl;
-	int Ntracks = 0;
-	if(fit->GetNhits()>=3){
-		fit->FitCircle();
-		x = -fit->x0;	// why do we need the minus sign?
-		y = -fit->y0;	// why do we need the minus sign?
-
-		// Record the location of the maximum
-		TEllipse *circle = new TEllipse();
-		circle->SetX1(x);
-		circle->SetY1(y);
-		circle->SetR1(masksize);
-		circle->SetR2(masksize);
-		circles.push_back(circle);
-
-		// Now look for tracks in phi/z plane using this circle as the
-		// axis for phi.
-		Ntracks = FindTracks(x,y);
-	}
-	delete fit;		
-
-	return Ntracks;
-}
-
 //------------------------------------------------------------------
 // FillArcDensityHistogram
 //------------------------------------------------------------------
@@ -379,6 +1051,8 @@ int DFactory_DMCTrackCandidate::FindTracks(float x0, float y0)
 
 	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"   Finding tracks in circle at x="<<x0<<" y="<<y0<<endl;
 
+	// Fill in the phi_z_lines array
+	FindPhiZLines();
 	
 	TH1F *slope_density = slope_density_histos[0];
 	TH1F *offset_density = offset_density_histos[0];
@@ -604,425 +1278,6 @@ derror_t DFactory_DMCTrackCandidate::FillSlopeIntDensityHistos(float x0, float y
 	
 	return NOERROR;
 }
-
-//------------------------------------------------------------------
-// GetQFit
-//------------------------------------------------------------------
-DQuickFit* DFactory_DMCTrackCandidate::GetQFit(int n)
-{
-	if(n<0 || n>=(int)qfits.size())return NULL;
-	
-	return qfits[n];
-}
-
-//------------------------------------------------------------------
-// DrawPhiZPoints
-//------------------------------------------------------------------
-derror_t DFactory_DMCTrackCandidate::DrawPhiZPoints(int which)
-{
-	/// This is for debugging/development only.
-	///
-	/// Draw markers on the current canvas. The coordinates
-	/// are the phi value on the Y-axis and the z value of the
-	/// hit on the X-axis. The value of phi is relative to the
-	/// focus. All hits passing within masksize of a focus are
-	/// plotted in a color corresponding to the focus. A single hit
-	/// can thus be plotted more than once, but will necessarily
-	/// show up in different places on the plot for the different
-	/// foci because phi will be different.
-	///
-	/// The idea here is that points who are really from the same
-	/// track will fall on a line. This just helps visualize
-	/// this for development. (The program patfind uses this).
-	
-	for(unsigned int i=0; i<markers.size(); i++)delete markers[i];
-	markers.clear();
-
-	int colors[] = {kRed,kBlue,kMagenta,kGreen,kBlack};
-	for(unsigned int j=0;j<circles.size();j++){
-		if(which>0 && (int)j!=which-1)continue;
-		TEllipse *circle = circles[j];
-		float x0 = circle->GetX1();
-		float y0 = circle->GetY1();
-		float phi0 = atan2(y0, x0);
-		if(phi0<0.0)phi0 += 2.0*M_PI;
-		for(unsigned int i=0;i<archits.size();i++){
-			DArcHit *a = archits[i];
-			
-			if(a->Dist2ToLine(x0,y0) > masksize2)continue;
-			
-			// Take cross-product to find relative angle between this hit
-			// and vector pointing to origin
-			float x = a->xhit+x0;
-			float y = a->yhit+y0;
-			float delta_phi = atan2(y, x)-phi0;
-			while(delta_phi<0.0)delta_phi += 2.0*M_PI;
-			if(delta_phi>M_PI)delta_phi -= 2.0*M_PI;
-			//float delta_phi = acos((x*x0 + y*y0)/(r*r0));
-			float z = a->zhit;
-			
-			TMarker *marker = new TMarker();
-			marker->SetX(z);
-			marker->SetY(delta_phi);
-			marker->SetMarkerColor(colors[j%6]);
-			marker->SetMarkerStyle(20+j);
-			marker->Draw();
-			markers.push_back(marker);
-
-			if(markers.size()>=300)break;
-		}
-		if(markers.size()>=300)break;
-	}
-
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// FindCirclesInt
-//------------------------------------------------------------------
-derror_t DFactory_DMCTrackCandidate::FindCirclesInt(void)
-{
-	/// Find circle centers using 1-D histograms of coordinates of
-	/// intersection points.
-
-	// Clear the "used" flags on all archits
-	for(unsigned int i=0;i<archits.size();i++ )archits[i]->used = 0;
-	
-	// Fill the intersect_points vector
-	FindIntersectionPoints();
-
-	// Copy pointer of first (default) density histos to local variables
-	TH1F *density_x = intersect_density_histos_x[0];
-	TH1F *density_y = intersect_density_histos_y[0];
-
-	// Loop until we run out of circles
-	float x_limit = 3.0*masksize;
-	int Nbins_density_y = density_y->GetXaxis()->GetNbins();
-	int refill_x_histo = 1;
-	do{
-		// If we did not find any tracks in the previous iteration then
-		// we shouldn't re-fill the density_x histo since no more tracks
-		// were marked as used. The previous peak is zeroed out at the
-		// end of the previous iteration in this case.
-		if(refill_x_histo){
-			// Fill X histo with values from intersection points of unused hits
-			density_x->Reset();
-			for(unsigned int i=0; i<intersect_points.size(); i++){
-				intersect_pt_t &pt = intersect_points[i]; // is this efficient?
-				if(pt.archit_a->used)continue;
-				if(pt.archit_b->used)continue;
-				density_x->Fill(pt.x);
-			}
-		}
-			
-		// This is just for debugging
-		if((int)intersect_density_histos_x.size()<=max_density_histos){
-			intersect_density_histos_x.push_back(new TH1F(*density_x));
-		}
-		
-		// Find the largest peak in the X density 
-		int xbin, ybin, zbin;
-		density_x->GetMaximumBin(xbin,ybin,zbin);
-		if(density_x->GetBinContent(xbin) < 10)break;
-		float x = density_x->GetXaxis()->GetBinCenter(xbin);
-		
-		// Fill the Y histo with values from un-used hits which have
-		// x-values within +/- 3 masksizes of x
-		density_y->Reset();
-		for(unsigned int i=0; i<intersect_points.size(); i++){
-			intersect_pt_t &pt = intersect_points[i]; // is this efficient?
-			if(pt.archit_a->used)continue;
-			if(pt.archit_b->used)continue;
-			if(pt.x > x+x_limit)continue;
-			if(pt.x < x-x_limit)continue;
-			density_y->Fill(pt.y);
-		}
-		
-		// This is just for debugging
-		if((int)intersect_density_histos_y.size()<=max_density_histos){
-			intersect_density_histos_y.push_back(new TH1F(*density_y));
-		}
-
-		// Find all peaks in the Y density histo
-		int Ntracks = 0;
-		do{
-			// Find largest peak
-			int xbin, ybin, zbin;
-			density_y->GetMaximumBin(xbin,ybin,zbin);
-			if(density_y->GetBinContent(xbin) < 10)break;
-			float y = density_y->GetXaxis()->GetBinCenter(xbin);
-			
-			// Try this X/Y combination
-			Ntracks = FindTracks_RoughXY(x,y);
-			
-			// If a track was found, break here and let the density_x
-			// histogram be re-filled on the next iteration of the outer
-			// loop, excluding the points used by the recently found track(s)
-			if(Ntracks > 0)break;
-			
-			// Zero out the density_y histo for 5 bins on either side
-			// of the peak.
-			for(int i=xbin-5;i<=xbin+5;i++){
-				if(i<1 || i>Nbins_density_y)continue;
-				density_y->SetBinContent(i, 0.0);
-			}
-			
-			// At some point, the entire histogram will get zeroed out
-			// and we will break the loop at the top
-		}while(1);
-		
-		// If no tracks were found then no more hits were marked as new
-		// and we'll infinitely loop unless something is changed. If no
-		// tracks were found, we zero out the current peak in the X density
-		// and clear the refill flag so it is not refilled at the next
-		// iteration.
-		if(Ntracks==0){
-			refill_x_histo = 0;
-			for(int i=xbin-5;i<=xbin+5;i++){
-				if(i<1 || i>Nbins_density_y)continue;
-				density_x->SetBinContent(i, 0.0);
-			}
-		}else{
-			refill_x_histo = 1;
-		}
-		
-		// Similar to the Y-loop above, the entire histogram will 
-		// eventually get zeroed out and we will break the loop at the top
-	}while(1);
-
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// FindIntersectionPoints
-//------------------------------------------------------------------
-derror_t DFactory_DMCTrackCandidate::FindIntersectionPoints(void)
-{
-	
-	// This is redundant since it is also done in ClearEvent(). Oh well...
-	intersect_points.clear();
-	
-	// Loop over all pairs of lines, finding and recording the intersection
-	// point of each.
-	for(unsigned int i=0;i<archits.size()-1;i++){
-		DArcHit *a = archits[i];
-		for(unsigned int j=i+1;j<archits.size();j++){
-			DArcHit *b = archits[j];
-	
-			// Intersection of two lines:
-			// c1*x + c2*y = c3
-			// d1*x + d2*y = d3
-			intersect_pt_t pt;
-			float c1 = a->orientation==DArcHit::Y_OF_X ? -a->m:1.0;
-			float c2 = a->orientation==DArcHit::Y_OF_X ? 1.0:-a->m;
-			float c3 = a->b;
-			float d1 = b->orientation==DArcHit::Y_OF_X ? -b->m:1.0;
-			float d2 = b->orientation==DArcHit::Y_OF_X ? 1.0:-b->m;
-			float d3 = b->b;
-			pt.x = (d2*c3 - d3*c2)/(d2*c1 - c2*d1);
-			pt.y = (d3*c1 - d1*c3)/(d2*c1 - c2*d1);
-			
-			if(finite(pt.x) && finite(pt.y)){
-				pt.archit_a = a;
-				pt.archit_b = b;
-				intersect_points.push_back(pt);
-			}
-		}
-	}
-
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// SetNumDensityHistograms
-//------------------------------------------------------------------
-derror_t DFactory_DMCTrackCandidate::SetMaxDensityHistograms(int N)
-{
-	/// Set the number of density histograms to keep.
-	///
-	/// This is meant as a diagnostic and should not normally be used.
-	/// It tells the factory to keep around multiple 2-D density
-	/// histograms corresponding to subsequent stages of the track
-	/// finding in the X/Y plane. Since the 2-D histogram can be
-	/// quite large, setting this to a large number will consume
-	/// a lot of memory (about 1/4 to 1/2 MB per histogram).
-	/// The default value is set to 1 when the object is instantiated.
-	/// The value of N here can be from 1 to 8.
-	///
-	/// Note also that this affects the number of slope_density
-	/// and offset density histos also. Those are 1-D histos though
-	/// so they do not take up us much space
-
-	max_density_histos = N;
-#if 0
-	// Make sure N is in range
-	if(N<1 || N>8){
-		cerr<<__FILE__<<":"<<__LINE__<<" The number of density histograms"<<endl;
-		cerr<<"requested is out of range. It must be between 1 and 8 inclusive."<<endl;
-		cerr<<"The value passed was "<<N<<"."<<endl;
-		
-		return VALUE_OUT_OF_RANGE;
-	}
-
-	// If we're reducing the number of histos, delete the extras
-	for(int i=N+1;i<=Ndensity_histos;i++){
-		delete density_histos[i-1];
-		delete slope_density_histos[i-1];
-		delete offset_density_histos[i-1];
-	}
-	
-	// If we're increasing the number of histos, instantiate them
-	for(int i=Ndensity_histos;i<N;i++){
-		density_histos[i] = new TH2F(*density);
-		slope_density_histos[i] = new TH1F(*slope_density);
-		offset_density_histos[i] = new TH1F(*offset_density);
-	}
-	
-	Ndensity_histos = N;
-#endif
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// GetDensityHistogram
-//------------------------------------------------------------------
-TH2F* DFactory_DMCTrackCandidate::GetDensityHistogram(int n)
-{
-	/// Return a pointer to 2-D density histogram n where n is value from
-	/// 0 to 1 less than the last call to SetNumDensityHistograms().
-	
-	if(n<0 || n>=(int)density_histos.size())return NULL;
-
-	return density_histos[n];
-}
-
-//------------------------------------------------------------------
-// GetIntersectDensityHistogramX
-//------------------------------------------------------------------
-TH1F* DFactory_DMCTrackCandidate::GetIntersectDensityHistogramX(int n)
-{
-	/// Return a pointer to 1-D density histogram representing X 
-	/// distribution of intersection points
-	
-	if(n<0 || n>=(int)intersect_density_histos_x.size())return NULL;
-
-	return intersect_density_histos_x[n];
-}
-
-//------------------------------------------------------------------
-// GetIntersectDensityHistogramY
-//------------------------------------------------------------------
-TH1F* DFactory_DMCTrackCandidate::GetIntersectDensityHistogramY(int n)
-{
-	/// Return a pointer to 1-D density histogram representing Y
-	/// distribution of intersection points
-	
-	if(n<0 || n>=(int)intersect_density_histos_y.size())return NULL;
-
-	return intersect_density_histos_y[n];
-}
-
-//------------------------------------------------------------------
-// GetSlopeDensityHistogram
-//------------------------------------------------------------------
-TH1F* DFactory_DMCTrackCandidate::GetSlopeDensityHistogram(int n)
-{
-	/// Return a pointer to 1-D slope density histogram n where n is value from
-	/// 0 to 1 less than the last call to SetNumDensityHistograms().
-	
-	if(n<0 || n>=(int)slope_density_histos.size())return NULL;
-
-	return slope_density_histos[n];
-}
-
-//------------------------------------------------------------------
-// GetOffsetDensityHistogram
-//------------------------------------------------------------------
-TH1F* DFactory_DMCTrackCandidate::GetOffsetDensityHistogram(int n)
-{
-	/// Return a pointer to 1-D z-offset density histogram n where n is value from
-	/// 0 to 1 less than the last call to SetNumDensityHistograms().
-	
-	if(n<0 || n>=(int)offset_density_histos.size())return NULL;
-
-	return offset_density_histos[n];
-}
-
-//------------------------------------------------------------------
-// ThereCanBeOnlyOne
-//------------------------------------------------------------------
-derror_t DFactory_DMCTrackCandidate::ThereCanBeOnlyOne(int trk1, int trk2)
-{
-	/// See the comment at the end of evnt(). Basically, we need to choose
-	/// which one track to keep and adjust the _data array to keep it.
-	
-	// If we're keeping the track further down the list, then copy
-	// its results into the position near the front of the list.
-	// We should be using the chisq from the fits, but that isn't
-	// being calculated for the 3D track at the moment.
-	DQuickFit *qf1 = qfits[trk1];
-	DQuickFit *qf2 = qfits[trk2];
-	DQuickFit *qf;
-	int trk = -1;
-	if(qf1->GetNhits() < qf2->GetNhits()){
-		trk = trk2;
-		qf = qf2;
-	}else{
-		trk = trk1;
-		qf = qf1;
-	}
-		
-	// Delete the losing track and shift the ones after it up in the list(s)
-	delete _data[trk];
-	_data.erase(_data.begin() + trk);
-	delete qf;
-	qfits.erase(qfits.begin() + trk);
-
-	return NOERROR;	
-}
-
-//------------------
-// toString
-//------------------
-const string DFactory_DMCTrackCandidate::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("row: Nhits: x0(cm): y0(cm): z_vertex: dphi/dz:  q:   p: p_trans:   phi: theta:");
-	
-	for(unsigned int i=0; i<_data.size(); i++){
-		DMCTrackCandidate *trackcandidate = _data[i];
-
-		printnewrow();
-		
-		printcol("%d",    i);
-		printcol("%d",    trackcandidate->Nhits);
-		printcol("%3.1f", trackcandidate->x0);
-		printcol("%3.1f", trackcandidate->y0);
-		printcol("%3.1f", trackcandidate->z_vertex);
-		printcol("%1.3f", trackcandidate->dphidz);
-		printcol("%+1.0f", trackcandidate->q);
-		printcol("%3.1f", trackcandidate->p);
-		printcol("%3.2f", trackcandidate->p_trans);
-		printcol("%1.3f", trackcandidate->phi);
-		printcol("%1.3f", trackcandidate->theta);
-
-		printrow();
-	}
-	
-	return _table;
-}
-
-
-//-----------------------------------------------------------------------
-//-----------------------------------------------------------------------
-// ---------- Things below are unused -----------------------------------
-//-----------------------------------------------------------------------
-//-----------------------------------------------------------------------
-#if 0
-
 
 //------------------------------------------------------------------
 // FindCirclesMaskSub

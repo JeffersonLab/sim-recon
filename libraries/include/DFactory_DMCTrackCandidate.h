@@ -73,23 +73,40 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 		const string toString(void);
 	
 		derror_t FindCircles(void);
-		derror_t FindCirclesHitSub(void);
-		derror_t FindCirclesMaskSub(void);
-		derror_t FindCirclesInt(void);
-		int      FindTracks(float x, float y);
-		int      FindTracks_RoughXY(float x, float y);
-		derror_t ZeroNeighbors(TH2F *hist, int xbin, int ybin);
-		int      IntersectionDensity(DArcHit *a, DArcHit *b, float &x, float&y);
-		derror_t FillArcDensityHistogram(TH2F *hist);
+		derror_t FindCirclesIntersections(void);
 		derror_t FindIntersectionPoints(void);
-		derror_t FillSlopeIntDensityHistos(float x0, float y0);
+		int      FindTrack_RoughXY(float x, float y);
+		int      FindTrack(float x, float y);
+		derror_t FillSlopeIntDensityHistos(void);
+		int MakeTrack(float phi_z_angle, float z_vertex);
 		derror_t DrawPhiZPoints(int which=0);
 		
+#if 0
+		derror_t FindCirclesHitSub(void);
+		derror_t FillArcDensityHistogram(TH2F *hist);
+		derror_t FindCirclesMaskSub(void);
+		derror_t ZeroNeighbors(TH2F *hist, int xbin, int ybin);
+		int      IntersectionDensity(DArcHit *a, DArcHit *b, float &x, float&y);
+		derror_t FillSlopeIntDensityHistos(float x0, float y0);
+
+		typedef struct{
+			float m;
+			float b;
+			int orientation;
+			float z_vertex;
+			DArcHit *archit_a;
+			DArcHit *archit_b;
+		}phi_z_line_t;
+		vector<phi_z_line_t> phi_z_lines;
+		
+#endif
 		inline vector<DArcHit*> GetDArcHits(void){return archits;}
 		inline vector<TEllipse*> GetCircles(void){return circles;}
 		inline vector<DQuickFit*> GetDQuickFits(void){return qfits;}
 		derror_t SetMaxDensityHistograms(int N);
 		inline int GetNumDensityHistograms(void){return density_histos.size();}
+		inline int GetNumSlopeHistograms(void){return slope_density_histos.size();}
+		inline int GetNumOffsetHistograms(void){return offset_density_histos.size();}
 		inline int GetMaxDensityHistograms(void){return max_density_histos;}
 		inline int GetNIntDensityX(void){return (int)intersect_density_histos_x.size();}
 		inline int GetNIntDensityY(void){return (int)intersect_density_histos_y.size();}
@@ -106,6 +123,11 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 									///< be from a focal point and still be considered
 									///< on the circle
 		float masksize2;
+		
+		enum{
+			BAND_DIR_X,
+			BAND_DIR_Y
+		};
 
 
 	private:
@@ -119,19 +141,18 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 		vector<TH1F*> intersect_density_histos_x;
 		vector<TH1F*> intersect_density_histos_y;
 		vector<TH1F*> slope_density_histos;
-		vector<TH1F*> slope_density_histos_b;
 		vector<TH1F*> offset_density_histos;
 		vector<DQuickFit*> qfits;
 		int max_density_histos;			///< maximum number of histos to allocate
-		
+				
 		typedef struct{
 			float x;
 			float y;
 			DArcHit *archit_a;
 			DArcHit *archit_b;
 		}intersect_pt_t;
-		vector<intersect_pt_t> intersect_points; 
-		
+		vector<intersect_pt_t*> intersect_points;
+
 		derror_t ThereCanBeOnlyOne(int trk1, int trk2); ///< Aaaah!! the quickening!!!
 		derror_t evnt(DEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 };
