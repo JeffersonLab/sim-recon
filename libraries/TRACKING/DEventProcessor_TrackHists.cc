@@ -8,6 +8,7 @@
 #include <iostream>
 using namespace std;
 
+#include <TThread.h>
 
 #include "DEventProcessor_TrackHists.h"
 
@@ -161,10 +162,14 @@ derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 //------------------------------------------------------------------
 void DEventProcessor_TrackHists::FillAll(float what, float theta, float phi, float p, float weight)
 {
+	// Since multiple threads can call this while trying to fill
+	// the same histogram objects, we need to lock these
+	TThread::Lock();
 	stats->Fill(what, weight);
 	stats_vs_theta->Fill(theta,what, weight);
 	stats_vs_phi->Fill(phi, what, weight);
 	stats_vs_p->Fill(p, what, weight);
+	TThread::UnLock();
 }
 
 //------------------------------------------------------------------
