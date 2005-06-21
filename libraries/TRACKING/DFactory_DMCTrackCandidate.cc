@@ -254,8 +254,8 @@ derror_t DFactory_DMCTrackCandidate::FindCirclesIntersections(void)
 	float half_band_width = 3.0*masksize;
 	int Nbins = density_y->GetXaxis()->GetNbins();
 	int refill_primary_histo = 1;
-	int band_direction;
-	TH1F *density_primary, *density_secondary;
+	int band_direction = -1;
+	TH1F *density_primary = NULL, *density_secondary = NULL;
 	do{
 		// If we did not find any tracks in the previous iteration then
 		// we shouldn't re-fill the density histos since no more tracks
