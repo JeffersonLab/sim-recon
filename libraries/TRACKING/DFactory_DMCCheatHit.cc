@@ -8,6 +8,19 @@
 #include "DFactory_DMCCheatHit.h"
 #include "DEventLoop.h"
 
+//------------------------------------------------------------------
+// Binary predicate used to sort cheat hits
+//------------------------------------------------------------------
+template<class T>
+class CheatHitSort{
+	public:
+		bool operator()(const T &chit1,const T &chit2) const {
+			if(chit1->track != chit2->track){
+				return chit1->track < chit2->track;
+			}
+			return chit1->z < chit2->z;
+		}
+};
 
 //------------------
 // evnt
@@ -51,7 +64,7 @@ derror_t DFactory_DMCCheatHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	}
 	
 	// sort hits by track, then z
-	sort(_data.begin(), _data.end()); // uses DMCCheatHit::operator<
+	sort(_data.begin(), _data.end(), CheatHitSort<DMCCheatHit*>());
 	
 	// Copy into v
 	for(unsigned int i=0; i<_data.size(); i++)v.push_back(_data[i]);
