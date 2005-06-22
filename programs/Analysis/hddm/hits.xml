@@ -37,14 +37,19 @@
    </startCntr>
 
    <barrelEMcal minOccurs="0">
-      <module phim="float" minOccurs="0" maxOccurs="unbounded">
+     <mod module ="int" minOccurs="0" maxOccurs="unbounded">  
+      <shell  layer="int" minOccurs="0" maxOccurs="9">
+       <cone  sector="int" minOccurs="0" maxOccurs="4">
          <upstream minOccurs="0">
             <shower t="float" E="float" maxOccurs="unbounded" />
          </upstream>
          <downstream minOccurs="0">
             <shower t="float" E="float" maxOccurs="unbounded" />
          </downstream> 
-      </module>
+       </cone>
+      </shell>
+     </mod>
+
       <barrelShower t="float" z="float" phi="float" r="float"
                     E="float" track="int" primary="boolean"
                     minOccurs="0" maxOccurs="unbounded" />
