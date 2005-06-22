@@ -18,8 +18,10 @@ class DBCALHit{
 			UPSTREAM,
 			DOWNSTREAM
 		};
-	
-		float phim;
+		
+		int module;
+		int layer;
+		int sector;
 		END_t end; /// use BCALHit::UPSTREAM or BCALHit::DOWNSTREAM
 		float E;
 		float t;
