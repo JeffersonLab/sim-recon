@@ -69,33 +69,53 @@ void hitBarrelEMcal (float xin[4], float xout[4],
       s_Showers_t* upshots;
       s_Showers_t* downshots;
       int sector = getsector_();
+      int layer  = getlayer_();
+      int module = getmodule_();
       float phim = atan2(xbcal[1],xbcal[0]);
+      float radius=sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
       float dzup = xlocal[2];
       float dzdown = -xlocal[2];
       float tup = t + dzup/C_EFFECTIVE;
       float tdown = t + dzdown/C_EFFECTIVE;
       float Eup = dEsum * exp(-dzup/ATTEN_LENGTH);
       float Edown = dEsum * exp(-dzdown/ATTEN_LENGTH);
-      void** twig = getTwig(&barrelEMcalTree, sector);
+      int mark = (module<<16)+ (layer<<9) + sector;
+      
+      /* checks */
+      /*  void** twig = getTwig(&barrelEMcalTree, sector);*/
+      /*   printf("\nInside hitbcal, layer = %d  ",layer); */
+      /* printf("\nInside hitbcal, sector = %d  ",sector); */
+      /* printf("\nInside hitbcal, mark1 = %d  ",mark); */
+
+      void** twig = getTwig(&barrelEMcalTree, mark);
+
+      /*   printf("\nInside hitbcal, layer = %d  ",layer); */
+
       if (*twig == 0)
       {
          s_BarrelEMcal_t* cal = *twig = make_s_BarrelEMcal();
-         cal->modules = make_s_Modules(1);
-         cal->modules->mult = 1;
-         cal->modules->in[0].phim = phim;
-         cal->modules->in[0].upstream = make_s_Upstream();
-         cal->modules->in[0].downstream = make_s_Downstream();
-         cal->modules->in[0].upstream->showers =
+         cal->mods = make_s_Mods(1);
+         cal->mods->mult = 1;
+         cal->mods->in[0].module = module;
+         cal->mods->in[0].shells  = make_s_Shells(1);
+         cal->mods->in[0].shells->mult = 1;
+         cal->mods->in[0].shells->in[0].layer = layer;
+         cal->mods->in[0].shells->in[0].cones     = make_s_Cones(1); 
+         cal->mods->in[0].shells->in[0].cones->mult = 1;
+         cal->mods->in[0].shells->in[0].cones->in[0].sector = sector;
+         cal->mods->in[0].shells->in[0].cones->in[0].upstream = make_s_Upstream();
+         cal->mods->in[0].shells->in[0].cones->in[0].downstream = make_s_Downstream();
+         cal->mods->in[0].shells->in[0].cones->in[0].upstream->showers =
          upshots = make_s_Showers(MAX_HITS);
-         cal->modules->in[0].downstream->showers =
+         cal->mods->in[0].shells->in[0].cones->in[0].downstream->showers =
          downshots = make_s_Showers(MAX_HITS);
          moduleCount++;
       }
       else
       {
          s_BarrelEMcal_t* cal = *twig;
-         upshots = cal->modules->in[0].upstream->showers;
-         downshots = cal->modules->in[0].downstream->showers;
+         upshots = cal->mods->in[0].shells->in[0].cones->in[0].upstream->showers;
+         downshots = cal->mods->in[0].shells->in[0].cones->in[0].downstream->showers;
       }
 
       for (nshot = 0; nshot < upshots->mult; nshot++)
@@ -130,14 +150,17 @@ void hitBarrelEMcal (float xin[4], float xout[4],
       }
    }
 
+
    /* post the hit to the truth tree, once per primary track */
    {
       s_BarrelShowers_t* showers;
       float r = sqrt(x[0]*x[0]+x[1]*x[1]);
       float phi = atan2(x[1],x[0]);
-      int mark = (track << 16);
+      /*    int mark = layer<<10 + sector+track;*/
+            int mark = (track << 25);
+	    /*  printf("\nInside hitbcal, mark2 = %d  ",mark);*/
       void** twig = getTwig(&barrelEMcalTree, mark);
-      if (*twig == 0)
+      if (*twig == 0) 
       {
          s_BarrelEMcal_t* cal = *twig = make_s_BarrelEMcal();
          cal->barrelShowers = showers = make_s_BarrelShowers(1);
@@ -193,28 +216,94 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
       return 0;
    }
 
+   /*    printf("moduleCount ,showerCount = %4d%4d !\n",moduleCount,showerCount);*/
+
    box = make_s_BarrelEMcal();
-   box->modules = make_s_Modules(moduleCount);
+   box->mods = make_s_Mods(48);
    box->barrelShowers = make_s_BarrelShowers(showerCount);
    while (item = (s_BarrelEMcal_t*) pickTwig(&barrelEMcalTree))
    {
-      if (item->modules)
+      if (item->mods)
       {
-         float Eup = item->modules->in[0].upstream->showers->in[0].E;
-         float Edown = item->modules->in[0].downstream->showers->in[0].E;
-         if (Eup + Edown > THRESH_MEV/1000)
+	int n = box->mods->mult;
+        int module = item->mods->in[0].module;
+
+         if (n==0)
          {
-            int m = box->modules->mult++;
-            box->modules->in[m] = item->modules->in[0];
+            box->mods->in[0] = item->mods->in[0];
+            box->mods->in[0].shells = make_s_Shells(9);
+            box->mods->mult++;
+         }
+
+         else if (module>box->mods->in[n-1].module)
+	   { 
+           if (box->mods->in[n-1].shells->mult == 0)
+            {
+               FREE(box->mods->in[--n].shells);
+               box->mods->mult--;
+            }
+            box->mods->in[n] = item->mods->in[0];
+            box->mods->in[n].shells = make_s_Shells(9);
+            box->mods->mult++;
+           }
+         else
+	 {
+	   n--;
+	 }   
+
+
+        float E1 = item->mods->in[0].shells->in[0].cones->in[0].
+        upstream->showers->in[0].E;
+        float E2 = item->mods->in[0].shells->in[0].cones->in[0].
+        downstream->showers->in[0].E;
+         float E = E1+E2;
+
+         int layer =  item->mods->in[0].shells->in[0].layer;
+         int m = box->mods->in[n].shells->mult;
+         if (m == 0)
+         {
+            box->mods->in[n].shells->in[0] = item->mods->in[0].shells->in[0];
+            box->mods->in[n].shells->in[0].cones = make_s_Cones(4);
+            box->mods->in[n].shells->mult++;
+         }
+
+         else if (layer > box->mods->in[n].shells->in[m-1].layer)
+
+         {
+	 
+
+            if (box->mods->in[n].shells->in[m-1].cones->mult == 0)
+            {
+               FREE(box->mods->in[n].shells->in[--m].cones);
+               box->mods->in[n].shells->mult--;
+            }
+            box->mods->in[n].shells->in[m] = item->mods->in[0].shells->in[0];
+            box->mods->in[n].shells->in[m].cones = make_s_Cones(4);
+            box->mods->in[n].shells->mult++;
          }
          else
          {
-            FREE(item->modules->in[0].upstream->showers);
-            FREE(item->modules->in[0].downstream->showers);
-            FREE(item->modules->in[0].upstream);
-            FREE(item->modules->in[0].downstream);
+            m--;
          }
-         FREE(item->modules);
+         if (E > THRESH_MEV/1000)
+         {
+            int mm = box->mods->in[n].shells->in[m].cones->mult++;
+            box->mods->in[n].shells->in[m].cones->in[mm] = 
+                                      item->mods->in[0].shells->in[0].
+            cones->in[0];
+         }
+         else
+         {
+            FREE(item->mods->in[0].shells->in[0].cones->in[0].upstream->showers);
+            FREE(item->mods->in[0].shells->in[0].cones->in[0].downstream->
+            showers);
+            FREE(item->mods->in[0].shells->in[0].cones->in[0].upstream);
+            FREE(item->mods->in[0].shells->in[0].cones->in[0].downstream);
+         }
+
+         FREE(item->mods->in[0].shells->in[0].cones);
+         FREE(item->mods->in[0].shells);
+         FREE(item->mods); 
       }
       else if (item->barrelShowers)
       {
@@ -224,6 +313,87 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
       }
       FREE(item);
    }
+
+   /* Reduce the last <shell>...</shell> if empty */
+   /*      {
+      int m = box->shells->mult;
+      while ((m > 0) && box->shells->in[m-1].cones->mult == 0)
+      {
+         FREE(box->shells->in[--m].cones);
+         box->shells->mult--;
+      }
+   }
+   */
+
+   /*   
+   {
+    int n = box->mods->mult;
+    
+    while (n>0)
+    {
+    int m = box->mods->in[n-1].shells->mult;
+    while (n>0 && m>0 && box->mods->in[n-1].shells->in[m-1].cones->mult == 0)   
+       {
+             FREE(box->mods->in[n-1].shells->in[--m].cones);
+             box->mods->in[n-1].shells->mult--;	 
+       }
+    --n;
+    } 
+     
+   }
+   */  
+
+
+   
+   {
+    int n = box->mods->mult;
+    
+    while (n>0)
+    {
+    int m = box->mods->in[n-1].shells->mult;
+    while (n>0 && m>0 && box->mods->in[n-1].shells->in[m-1].cones->mult == 0)   
+       {
+             FREE(box->mods->in[n-1].shells->in[m-1].cones);
+             box->mods->in[n-1].shells->mult--;	 
+	     --m;
+       }
+    --n;
+    } 
+     
+   }
+   
+
+
+
+   /*   
+     {
+          int n = box->mods->mult;
+          while (n>0 && box->mods->in[n-1].shells->mult==0)
+	    {
+	      FREE(box->mods->in[--n].shells);
+	      box->mods->mult--;
+            }    
+     }
+   
+   */
+
+
+   
+     {
+          int n = box->mods->mult;
+          while (n>0 && box->mods->in[n-1].shells->mult==0)
+	    {
+	      FREE(box->mods->in[n-1].shells);
+	      box->mods->mult--;
+	      --n;
+            }    
+
+     }
+   
+   
+   
+
    moduleCount = showerCount = 0;
    return box;
 }
+
