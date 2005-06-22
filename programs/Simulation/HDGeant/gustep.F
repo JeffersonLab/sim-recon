@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.20  2005/06/22 15:32:16  zisis
+* First draft of this routine to work with the new BCAL geometry and hits. CX.
+*
 * Revision 1.19  2005/04/26 14:51:52  ostrov
 * Addition of UPV
 *
@@ -451,6 +454,8 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
       pout(4) = GETOT
       pout(5) = VECT(7)
       if (CHARGE.ne.0) then
+c      write(*,*) 'volume name= ',cnames(NLEVEL)
+
         if ((cnames(NLEVEL).eq.'STRC').or.		! vertex cylinder
      +      (cnames(NLEVEL).eq.'STRP')) then		! vertex endcap
           call hitStartCntr(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
@@ -468,7 +473,13 @@ c			 PRINT*,__FILE__,':',__LINE__,' FDC itra=',ITRA,' z=',xout(3),' ipart=',ipar
         elseif (cnames(NLEVEL)(1:ichar).eq.bcalstring(i:ichar)) then		! barrel calorimeter
 c	  write(*,*)'In GUSTEP: ',bcalstring,dEsum
 #else
-        elseif (cnames(NLEVEL).eq.'BCAM') then		! barrel calorimeter
+        elseif ((cnames(NLEVEL).eq.'BCM1').or.
+     +  (cnames(NLEVEL).eq.'BCM2').or.(cnames(NLEVEL).eq.'BCM3').or.
+     +  (cnames(NLEVEL).eq.'BCM4').or.(cnames(NLEVEL).eq.'BCM5').or.
+     +  (cnames(NLEVEL).eq.'BCM6').or.(cnames(NLEVEL).eq.'BCM7').or.
+     +  (cnames(NLEVEL).eq.'BCM8').or.(cnames(NLEVEL).eq.'BCM9')
+     +  ) then
+
 #endif
           call hitBarrelEMcal(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
         elseif ((cnames(NLEVEL).eq.'FTOC').or.		! forward TOF counter
