@@ -224,11 +224,27 @@ s_BarrelEMcal_t* make_s_BarrelEMcal()
    return p;
 }
 
-s_Modules_t* make_s_Modules(int n)
+s_Mods_t* make_s_Mods(int n)
 {
    int rep = (n > 1) ? n-1 : 0;
-   int size = sizeof(s_Modules_t) + rep * sizeof(s_Module_t);
-   s_Modules_t* p = (s_Modules_t*)CALLOC(size,"s_Modules_t");
+   int size = sizeof(s_Mods_t) + rep * sizeof(s_Mod_t);
+   s_Mods_t* p = (s_Mods_t*)CALLOC(size,"s_Mods_t");
+   return p;
+}
+
+s_Shells_t* make_s_Shells(int n)
+{
+   int rep = (n > 1) ? n-1 : 0;
+   int size = sizeof(s_Shells_t) + rep * sizeof(s_Shell_t);
+   s_Shells_t* p = (s_Shells_t*)CALLOC(size,"s_Shells_t");
+   return p;
+}
+
+s_Cones_t* make_s_Cones(int n)
+{
+   int rep = (n > 1) ? n-1 : 0;
+   int size = sizeof(s_Cones_t) + rep * sizeof(s_Cone_t);
+   s_Cones_t* p = (s_Cones_t*)CALLOC(size,"s_Cones_t");
    return p;
 }
 
@@ -477,14 +493,18 @@ char HDDM_s_DocumentString[] =
 "        <startPoint dEdx=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" primary=\"boolean\" r=\"float\" t=\"float\" track=\"int\" z=\"float\" />\n"
 "      </startCntr>\n"
 "      <barrelEMcal minOccurs=\"0\">\n"
-"        <module maxOccurs=\"unbounded\" minOccurs=\"0\" phim=\"float\">\n"
-"          <upstream minOccurs=\"0\">\n"
-"            <shower E=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
-"          </upstream>\n"
-"          <downstream minOccurs=\"0\">\n"
-"            <shower E=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
-"          </downstream>\n"
-"        </module>\n"
+"        <mod maxOccurs=\"unbounded\" minOccurs=\"0\" module=\"int\">\n"
+"          <shell layer=\"int\" maxOccurs=\"9\" minOccurs=\"0\">\n"
+"            <cone maxOccurs=\"4\" minOccurs=\"0\" sector=\"int\">\n"
+"              <upstream minOccurs=\"0\">\n"
+"                <shower E=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
+"              </upstream>\n"
+"              <downstream minOccurs=\"0\">\n"
+"                <shower E=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
+"              </downstream>\n"
+"            </cone>\n"
+"          </shell>\n"
+"        </mod>\n"
 "        <barrelShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" primary=\"boolean\" r=\"float\" t=\"float\" track=\"int\" z=\"float\" />\n"
 "      </barrelEMcal>\n"
 "      <Cerenkov minOccurs=\"0\">\n"
@@ -1491,7 +1511,7 @@ static s_BarrelEMcal_t* unpack_s_BarrelEMcal(XDR* xdrs, popNode* pop)
       this1 = make_s_BarrelEMcal();
       {
          int p;
-         void* (*ptr) = (void**) &this1->modules;
+         void* (*ptr) = (void**) &this1->mods;
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -1513,9 +1533,9 @@ static s_BarrelEMcal_t* unpack_s_BarrelEMcal(XDR* xdrs, popNode* pop)
    return this1;
 }
 
-static s_Modules_t* unpack_s_Modules(XDR* xdrs, popNode* pop)
+static s_Mods_t* unpack_s_Mods(XDR* xdrs, popNode* pop)
 {
-   s_Modules_t* this1 = 0;
+   s_Mods_t* this1 = 0;
    unsigned int size;
    if (! xdr_u_int(xdrs,&size))
    {
@@ -1527,13 +1547,97 @@ static s_Modules_t* unpack_s_Modules(XDR* xdrs, popNode* pop)
       int m;
       unsigned int mult;
       xdr_u_int(xdrs,&mult);
-      this1 = make_s_Modules(mult);
+      this1 = make_s_Mods(mult);
+      this1->mult = mult;
+      for (m = 0; m < mult; m++ )
+      {
+         int p;
+         void* (*ptr) = (void**) &this1->in[m].shells;
+         xdr_int(xdrs,&this1->in[m].module);
+         for (p = 0; p < pop->popListLength; p++)
+         {
+            popNode* pnode = pop->popList[p];
+            if (pnode)
+            {
+               int kid = pnode->inParent;
+               ptr[kid] = pnode->unpacker(xdrs,pnode);
+            }
+            else
+            {
+               unsigned int skip;
+               xdr_u_int(xdrs,&skip);
+               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);
+            }
+         }
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
+static s_Shells_t* unpack_s_Shells(XDR* xdrs, popNode* pop)
+{
+   s_Shells_t* this1 = 0;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      int m;
+      unsigned int mult;
+      xdr_u_int(xdrs,&mult);
+      this1 = make_s_Shells(mult);
+      this1->mult = mult;
+      for (m = 0; m < mult; m++ )
+      {
+         int p;
+         void* (*ptr) = (void**) &this1->in[m].cones;
+         xdr_int(xdrs,&this1->in[m].layer);
+         for (p = 0; p < pop->popListLength; p++)
+         {
+            popNode* pnode = pop->popList[p];
+            if (pnode)
+            {
+               int kid = pnode->inParent;
+               ptr[kid] = pnode->unpacker(xdrs,pnode);
+            }
+            else
+            {
+               unsigned int skip;
+               xdr_u_int(xdrs,&skip);
+               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);
+            }
+         }
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
+static s_Cones_t* unpack_s_Cones(XDR* xdrs, popNode* pop)
+{
+   s_Cones_t* this1 = 0;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return 0;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      int m;
+      unsigned int mult;
+      xdr_u_int(xdrs,&mult);
+      this1 = make_s_Cones(mult);
       this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          int p;
          void* (*ptr) = (void**) &this1->in[m].upstream;
-         xdr_float(xdrs,&this1->in[m].phim);
+         xdr_int(xdrs,&this1->in[m].sector);
          for (p = 0; p < pop->popListLength; p++)
          {
             popNode* pnode = pop->popList[p];
@@ -2523,7 +2627,9 @@ static int pack_s_StartCntr(XDR* xdrs, s_StartCntr_t* this1);
 static int pack_s_Paddles(XDR* xdrs, s_Paddles_t* this1);
 static int pack_s_StartPoints(XDR* xdrs, s_StartPoints_t* this1);
 static int pack_s_BarrelEMcal(XDR* xdrs, s_BarrelEMcal_t* this1);
-static int pack_s_Modules(XDR* xdrs, s_Modules_t* this1);
+static int pack_s_Mods(XDR* xdrs, s_Mods_t* this1);
+static int pack_s_Shells(XDR* xdrs, s_Shells_t* this1);
+static int pack_s_Cones(XDR* xdrs, s_Cones_t* this1);
 static int pack_s_Upstream(XDR* xdrs, s_Upstream_t* this1);
 static int pack_s_Showers(XDR* xdrs, s_Showers_t* this1);
 static int pack_s_Downstream(XDR* xdrs, s_Downstream_t* this1);
@@ -3500,9 +3606,9 @@ static int pack_s_BarrelEMcal(XDR* xdrs, s_BarrelEMcal_t* this1)
 
    m = 0; /* avoid warnings from -Wall */
    {
-      if (this1->modules)
+      if (this1->mods)
       {
-         pack_s_Modules(xdrs,this1->modules);
+         pack_s_Mods(xdrs,this1->mods);
       }
       else
       {
@@ -3528,7 +3634,7 @@ static int pack_s_BarrelEMcal(XDR* xdrs, s_BarrelEMcal_t* this1)
    return size;
 }
 
-static int pack_s_Modules(XDR* xdrs, s_Modules_t* this1)
+static int pack_s_Mods(XDR* xdrs, s_Mods_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3540,7 +3646,71 @@ static int pack_s_Modules(XDR* xdrs, s_Modules_t* this1)
    xdr_u_int(xdrs,&this1->mult);
    for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this1->in[m].phim);
+      xdr_int(xdrs,&this1->in[m].module);
+      if (this1->in[m].shells)
+      {
+         pack_s_Shells(xdrs,this1->in[m].shells);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_Shells(XDR* xdrs, s_Shells_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_int(xdrs,&this1->in[m].layer);
+      if (this1->in[m].cones)
+      {
+         pack_s_Cones(xdrs,this1->in[m].cones);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_Cones(XDR* xdrs, s_Cones_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_int(xdrs,&this1->in[m].sector);
       if (this1->in[m].upstream)
       {
          pack_s_Upstream(xdrs,this1->in[m].upstream);
@@ -4633,9 +4803,17 @@ static popNode* matches(char* b, char* c)
          {
             this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_BarrelEMcal;
          }
-         else if (strcmp(btag,"module") == 0)
+         else if (strcmp(btag,"mod") == 0)
          {
-            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Modules;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Mods;
+         }
+         else if (strcmp(btag,"shell") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Shells;
+         }
+         else if (strcmp(btag,"cone") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Cones;
          }
          else if (strcmp(btag,"upstream") == 0)
          {
