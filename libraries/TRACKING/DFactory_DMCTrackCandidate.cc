@@ -641,7 +641,7 @@ derror_t DFactory_DMCTrackCandidate::FillSlopeDensityHisto(float z_vertex)
 	TH1F *slope_density = slope_density_histos[0];
 	
 	slope_density->Reset();
-	for(unsigned int i=0; i<archits.size()-1; i++){
+	for(unsigned int i=0; i<archits.size(); i++){
 		DArcHit *a = archits[i];
 		if(!a->on_circle)continue;
 			
