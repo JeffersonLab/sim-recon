@@ -77,8 +77,9 @@ class DFactory_DMCTrackCandidate:public DFactory<DMCTrackCandidate>{
 		derror_t FindIntersectionPoints(void);
 		int      FindTrack_RoughXY(float x, float y);
 		int      FindTrack(float x, float y);
-		derror_t FillSlopeIntDensityHistos(void);
-		int MakeTrack(float phi_z_angle, float z_vertex);
+		derror_t FillOffsetDensityHisto(void);
+		derror_t FillSlopeDensityHisto(float z_vertex);
+		int MakeTrack(float phi_z_angle, float z_vertex, float r0);
 		derror_t DrawPhiZPoints(int which=0);
 		
 #if 0

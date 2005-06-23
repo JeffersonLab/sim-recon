@@ -70,10 +70,10 @@ DFactory_DMCTrackCandidate::DFactory_DMCTrackCandidate()
 		
 	// Create slope and intercept density histos
 	sprintf(str,"slope-%x", id);
-	TH1F *slope_density = new TH1F(str,"slope", 3000,-M_PI, +M_PI);
+	TH1F *slope_density = new TH1F(str,"slope", 1000,-M_PI, +M_PI);
 	slope_density_histos.push_back(slope_density);
 	sprintf(str,"intercept-%x", id);
-	TH1F *offset_density = new TH1F(str,"z intercept", 2100, -100.0, +200.0);
+	TH1F *offset_density = new TH1F(str,"z intercept", 300, -100.0, +200.0);
 	offset_density_histos.push_back(offset_density);
 	
 	// Release ROOT mutex
@@ -453,7 +453,7 @@ int DFactory_DMCTrackCandidate::FindTrack_RoughXY(float x, float y)
 		}
 	}
 		
-	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<" NHits for fit:"<<fit->GetNhits()<<endl;
+	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<" NHits for circle fit:"<<fit->GetNhits()<<endl;
 	int Ntracks = 0;
 	if(fit->GetNhits()>=3){
 		fit->FitCircle();
@@ -472,6 +472,10 @@ int DFactory_DMCTrackCandidate::FindTrack_RoughXY(float x, float y)
 		
 		// Loop over all hits. Use the "on_circle" flag in the DArchit objects to
 		// mark hits which actually appear to be on this circle.
+		int Nhits_on_circle = 0;
+		float delta_phi_offset = 0.0;
+		float last_delta_phi=-1000.0;
+		float r0 = sqrt(x0*x0 + y0*y0);
 		for(unsigned int i=0;i<archits.size();i++){
 			DArcHit *a = archits[i];
 			if(a->used){
@@ -484,6 +488,7 @@ int DFactory_DMCTrackCandidate::FindTrack_RoughXY(float x, float y)
 				continue;
 			}
 			a->on_circle = 1;
+			Nhits_on_circle++;
 
 			// Find relative angle between this hit
 			// and vector pointing to origin
@@ -491,12 +496,21 @@ int DFactory_DMCTrackCandidate::FindTrack_RoughXY(float x, float y)
 			float delta_y = a->yhit+y0;
 		
 			// Calculate delta_phi and force it to be in the 0 to +2PI range
-			a->delta_phi = atan2(delta_y, delta_x)-phi0;
-			while(a->delta_phi<0.0)a->delta_phi += 2.0*M_PI;
-			if(a->delta_phi>M_PI)a->delta_phi -= 2.0*M_PI;
-			float r0 = sqrt(x0*x0 + y0*y0);
-			a->delta_phi *= r0; // put in cm so it has same units as a->zhit
+			float delta_phi = atan2(delta_y, delta_x) - phi0;
+			while(delta_phi<0.0)delta_phi += 2.0*M_PI;
+			if(delta_phi>M_PI)delta_phi -= 2.0*M_PI;
+			if(last_delta_phi != -1000.0){
+				float dphi = delta_phi - last_delta_phi;
+				if(fabs(dphi) > M_PI){
+					delta_phi_offset += dphi<0.0 ? +2.0*M_PI:-2.0*M_PI;
+					if(debug_level>20)cout<<__FILE__<<":"<<__LINE__<<"  delta_phi_offset="<<delta_phi_offset<<endl;
+				}
+			}
+			last_delta_phi = delta_phi;
+			delta_phi += delta_phi_offset;
+			a->delta_phi = delta_phi*r0; // put in cm so it has same units as a->zhit
 		}
+		if(debug_level>10)cout<<__FILE__<<":"<<__LINE__<<" Nhits on circle #"<<circles.size()<<": "<<Nhits_on_circle<<endl;
 
 		// Now look for tracks in phi/z plane using this circle as the
 		// axis for phi.
@@ -536,48 +550,52 @@ int DFactory_DMCTrackCandidate::FindTrack(float x0, float y0)
 	// peak in each. Hence, we stick with that.
 	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"   Finding tracks in circle at x="<<x0<<" y="<<y0<<endl;
 
-	// Fill the slope and offest histos
-	FillSlopeIntDensityHistos();
-
 	// Copy pointer of first (default) density histos to local variables
 	TH1F *slope_density = slope_density_histos[0];
 	TH1F *offset_density = offset_density_histos[0];
 	
+	// Fill the offset histo
+	FillOffsetDensityHisto();
+
 	// Find the largest peak in the offset density 
 	int xbin, ybin, zbin;
 	offset_density->GetMaximumBin(xbin,ybin,zbin);
-	if(offset_density->GetBinContent(xbin) < 10)return 0;
+	if(debug_level>10)cout<<__FILE__<<":"<<__LINE__<<"   offset density: maxbin="<<offset_density->GetXaxis()->GetBinCenter(xbin)<<"  bin contents="<<offset_density->GetBinContent(xbin)<<endl;
+	if(offset_density->GetBinContent(xbin) < 3)return 0;
 	float z_vertex = offset_density->GetXaxis()->GetBinCenter(xbin);
-	if(z_vertex<-95.0 || z_vertex>+195.0)return 0;
+z_vertex=65.0;
 	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"    z_vertex = "<<z_vertex<<endl;
+	if(z_vertex<-95.0 || z_vertex>+195.0)return 0;
+	
+	// Fill slope density histo using the found z_vertex
+	FillSlopeDensityHisto(z_vertex);
 
 	// Find the largest peak in the slope density 
 	slope_density->GetMaximumBin(xbin,ybin,zbin);
-	if(slope_density->GetBinContent(xbin) < 10)return 0;
+	if(debug_level>10)cout<<__FILE__<<":"<<__LINE__<<"   slope density: maxbin="<<slope_density->GetXaxis()->GetBinCenter(xbin)<<"  bin contents="<<slope_density->GetBinContent(xbin)<<endl;
+	if(slope_density->GetBinContent(xbin) < 3)return 0;
 	float phi_z_angle = slope_density->GetXaxis()->GetBinCenter(xbin);
 	if(debug_level>1)cout<<__FILE__<<":"<<__LINE__<<"    slope_density = "<<phi_z_angle<<endl;
 
 	// Now try and make the track
-	int Ntracks = MakeTrack(phi_z_angle, z_vertex);
+	int Ntracks = MakeTrack(phi_z_angle, z_vertex, sqrt(x0*x0+y0*y0));
 	
 	// If we got here, no tracks were found
 	return Ntracks;
 }
 
 //------------------------------------------------------------------
-// FillSlopeIntDensityHistos
+// FillOffsetDensityHisto
 //------------------------------------------------------------------
-derror_t DFactory_DMCTrackCandidate::FillSlopeIntDensityHistos(void)
+derror_t DFactory_DMCTrackCandidate::FillOffsetDensityHisto(void)
 {
 	/// Calculate parameters for all possible pairs of phi-z coordinates
 	/// for all archits currently flagged as being "on_circle" recording
 	/// the results in the phi_z_lines vector.
 	
 	// Copy pointer of first (default) density histos to local variables
-	TH1F *slope_density = slope_density_histos[0];
 	TH1F *offset_density = offset_density_histos[0];
 	
-	slope_density->Reset();
 	offset_density->Reset();
 	for(unsigned int i=0; i<archits.size()-1; i++){
 		DArcHit *a = archits[i];
@@ -589,25 +607,20 @@ derror_t DFactory_DMCTrackCandidate::FillSlopeIntDensityHistos(void)
 			// archits are sorted by Z so "a" is always upstream of "b"
 			float delta_z = b->zhit - a->zhit;
 			float delta_phi = b->delta_phi-a->delta_phi; //NOTE: already scaled by r0 (see FindTrack_RoughXY)
-			float phi_z_angle;
-			float z_vertex;
-			if(delta_z > delta_phi){ // is this really worth while?
-				phi_z_angle = atan2(delta_phi, delta_z);
-			}else{
-				phi_z_angle = atan2(-delta_z, delta_phi) + M_PI/2.0;				
-			}
-			z_vertex = a->zhit - a->delta_phi*delta_z/delta_phi;
+			float phi_z_angle = atan2(delta_phi, delta_z);
+			float z_vertex = a->zhit - a->delta_phi*delta_z/delta_phi;
 
+			//if(debug_level>10)cout<<__FILE__<<":"<<__LINE__<<"  phi_z_angle="<<phi_z_angle<<"  z_vertex="<<z_vertex<<endl;
 			if(!finite(phi_z_angle) || !finite(z_vertex))continue;
-			slope_density->Fill(phi_z_angle);
+			
+			// Limit target range (Probably shouldn't hardcode this
+			if(fabs(z_vertex - 65.0)>30.0)continue;
+			
 			offset_density->Fill(z_vertex);
 		}
 	}
 	
 	// This is just for debugging
-	if((int)slope_density_histos.size()<=max_density_histos){
-		slope_density_histos.push_back(new TH1F(*slope_density));
-	}
 	if((int)offset_density_histos.size()<=max_density_histos){
 		offset_density_histos.push_back(new TH1F(*offset_density));
 	}
@@ -616,9 +629,43 @@ derror_t DFactory_DMCTrackCandidate::FillSlopeIntDensityHistos(void)
 }
 
 //------------------------------------------------------------------
+// FillSlopeDensityHisto
+//------------------------------------------------------------------
+derror_t DFactory_DMCTrackCandidate::FillSlopeDensityHisto(float z_vertex)
+{
+	/// Calculate the slope between each on_circle archit and the
+	/// specified z_vertex position on the beamline filling the slope
+	/// density histogram.
+	
+	// Copy pointer of first (default) density histos to local variables
+	TH1F *slope_density = slope_density_histos[0];
+	
+	slope_density->Reset();
+	for(unsigned int i=0; i<archits.size()-1; i++){
+		DArcHit *a = archits[i];
+		if(!a->on_circle)continue;
+			
+		// angle between this hit and the vertex
+		float delta_z = a->zhit - z_vertex;
+		float delta_phi = a->delta_phi; //NOTE: already scaled by r0 (see FindTrack_RoughXY)
+		float phi_z_angle = atan2(delta_phi, delta_z);
+
+		if(!finite(phi_z_angle))continue;
+						
+		slope_density->Fill(phi_z_angle);
+	}
+	
+	// This is just for debugging
+	if((int)slope_density_histos.size()<=max_density_histos){
+		slope_density_histos.push_back(new TH1F(*slope_density));
+	}
+
+	return NOERROR;
+}
+//------------------------------------------------------------------
 // MakeTrack
 //------------------------------------------------------------------
-int DFactory_DMCTrackCandidate::MakeTrack(float phi_z_angle, float z_vertex)
+int DFactory_DMCTrackCandidate::MakeTrack(float phi_z_angle, float z_vertex, float r0)
 {
 		
 	// Create a new DQuickFit object to do the fit (should there
@@ -644,10 +691,16 @@ int DFactory_DMCTrackCandidate::MakeTrack(float phi_z_angle, float z_vertex)
 		if(a->used)continue;
 
 		// Calculate distance of the archit phi/z point to the line
-		// defined by phi_z_angle and z_vertex. 
-		float d = a->delta_phi*cos(phi_z_angle) - (a->zhit-z_vertex)*sin(phi_z_angle);
-		
-		if(debug_level>10)cout<<__FILE__<<":"<<__LINE__<<"        distance["<<i<<"] = "<<d<<endl;
+		// defined by phi_z_angle and z_vertex.
+		float cos_phi_z_angle = cos(phi_z_angle);
+		float d = a->delta_phi*cos_phi_z_angle - (a->zhit-z_vertex)*sin(phi_z_angle);
+		if(fabs(d)>masksize){
+			// sometimes, the delta_phi values can be off by a multiple
+			// of 2pi. Try and recover those points.
+			float fN = round(d/(r0*2.0*M_PI*cos_phi_z_angle));
+			d -= fN*2.0*M_PI*r0*cos_phi_z_angle;
+		}
+		if(debug_level>10)cout<<__FILE__<<":"<<__LINE__<<"        distance["<<i<<"] = "<<d<<"   N 2pis="<<d/(r0*2.0*M_PI*cos(phi_z_angle))<<endl;
 		if(fabs(d)>masksize)continue; // this point is too far away from the line
 		
 		// Add hit to DQuickFit object
@@ -738,6 +791,8 @@ derror_t DFactory_DMCTrackCandidate::DrawPhiZPoints(int which)
 		float y0 = circle->GetY1();
 		float phi0 = atan2(y0, x0);
 		if(phi0<0.0)phi0 += 2.0*M_PI;
+		float delta_phi_offset = 0.0;
+		float last_delta_phi=-1000.0;
 		for(unsigned int i=0;i<archits.size();i++){
 			DArcHit *a = archits[i];
 			
@@ -749,9 +804,18 @@ derror_t DFactory_DMCTrackCandidate::DrawPhiZPoints(int which)
 			float delta_y = a->yhit+y0;
 		
 			// Calculate delta_phi and force it to be in the 0 to +2PI range
-			float delta_phi = atan2(delta_y, delta_x)-phi0;
+			float delta_phi = atan2(delta_y, delta_x) - phi0;
 			while(delta_phi<0.0)delta_phi += 2.0*M_PI;
 			if(delta_phi>M_PI)delta_phi -= 2.0*M_PI;
+			if(last_delta_phi != -1000.0){
+				float dphi = delta_phi - last_delta_phi;
+				if(fabs(dphi) > M_PI){
+					delta_phi_offset += dphi<0.0 ? +2.0*M_PI:-2.0*M_PI;
+					if(debug_level>20)cout<<__FILE__<<":"<<__LINE__<<"  delta_phi_offset="<<delta_phi_offset<<endl;
+				}
+			}
+			last_delta_phi = delta_phi;
+			delta_phi += delta_phi_offset;
 			
 			TMarker *marker = new TMarker();
 			marker->SetX(a->zhit);
