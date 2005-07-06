@@ -44,6 +44,7 @@ derror_t DFactory_DTOFHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 		if(vcounters){
 			for(unsigned int j=0;j<vcounters->mult;j++){
 				float x = vcounters->in[j].x;
+				float y = 0.0;
 				s_Top_t *top = vcounters->in[j].top;
 				if(top){
 					s_Hits_t *hits = top->hits;
@@ -53,7 +54,7 @@ derror_t DFactory_DTOFHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 					
 						DTOFHit *tofhit = new DTOFHit;
 						tofhit->x = x;
-						tofhit->y = 0.0;
+						tofhit->y = y;
 						tofhit->orientation = 0;
 						tofhit->end = 0;
 						tofhit->dE = dE;
@@ -70,7 +71,7 @@ derror_t DFactory_DTOFHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 					
 						DTOFHit *tofhit = new DTOFHit;
 						tofhit->x = x;
-						tofhit->y = 0.0;
+						tofhit->y = y;
 						tofhit->orientation = 0;
 						tofhit->end = 1;
 						tofhit->dE = dE;
@@ -84,6 +85,7 @@ derror_t DFactory_DTOFHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 		if(hcounters){
 			for(unsigned int j=0;j<hcounters->mult;j++){
 				float y = hcounters->in[j].y;
+				float x = 0.0;
 				s_Left_t *left = hcounters->in[j].left;
 				if(left){
 					s_Hits_t *hits = left->hits;
@@ -92,13 +94,13 @@ derror_t DFactory_DTOFHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 						float t = hits->in[k].t;
 					
 						DTOFHit *tofhit = new DTOFHit;
-						tofhit->x = 0.0;
+						tofhit->x = x;
 						tofhit->y = y;
 						tofhit->orientation = 1;
 						tofhit->end = 0;
 						tofhit->dE = dE;
 						tofhit->t = t;
-						_data.push_back(tofhit);
+						v.push_back(tofhit);
 					}
 				}
 				s_Right_t *right = hcounters->in[j].right;
@@ -109,13 +111,13 @@ derror_t DFactory_DTOFHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 						float t = hits->in[k].t;
 					
 						DTOFHit *tofhit = new DTOFHit;
-						tofhit->x = 0.0;
+						tofhit->x = x;
 						tofhit->y = y;
 						tofhit->orientation = 1;
 						tofhit->end = 1;
 						tofhit->dE = dE;
 						tofhit->t = t;
-						_data.push_back(tofhit);
+						v.push_back(tofhit);
 					}
 				}
 			}
@@ -134,7 +136,7 @@ const string DFactory_DTOFHit::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row:   y(cm):      end:     dE(MeV):   t(ns):");
+	printheader("row:   x(cm):   y(cm):  orientation:     end:     dE(MeV):   t(ns):");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DTOFHit *tofhit = _data[i];
@@ -142,7 +144,9 @@ const string DFactory_DTOFHit::toString(void)
 		printnewrow();
 		
 		printcol("%d", i);
+		printcol("%3.1f", tofhit->x);
 		printcol("%3.1f", tofhit->y);
+		printcol(tofhit->orientation ? "horizontal":"vertical");
 		printcol(tofhit->end ? "right":"left");
 		printcol("%2.3fs", tofhit->dE*1000.0);
 		printcol("%4.3fs", tofhit->t);
