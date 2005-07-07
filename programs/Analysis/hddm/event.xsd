@@ -318,15 +318,35 @@
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="module">
+   <xs:element name="cone">
     <xs:complexType>
       <xs:sequence>
         <xs:element minOccurs="0" ref="hddm:upstream"/>
         <xs:element minOccurs="0" ref="hddm:downstream"/>
       </xs:sequence>
-      <xs:attribute name="phim" type="hddm:float" use="required"/>
+      <xs:attribute name="sector" type="hddm:int" use="required"/>
     </xs:complexType>
   </xs:element>
+
+  <xs:element name="shell">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="hddm:cone"/>
+      </xs:sequence>
+      <xs:attribute name="layer" type="hddm:int" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+
+  <xs:element name="mod">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="hddm:shell"/>
+      </xs:sequence>
+      <xs:attribute name="module" type="hddm:int" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
 
   <xs:element name="barrelShower">
     <xs:complexType>
@@ -343,7 +363,7 @@
   <xs:element name="barrelEMcal">
     <xs:complexType>
       <xs:sequence>
-        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:module"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:mod"/>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:barrelShower"/>
       </xs:sequence>
     </xs:complexType>
