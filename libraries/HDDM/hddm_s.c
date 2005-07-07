@@ -445,7 +445,7 @@ s_UpvShowers_t* make_s_UpvShowers(int n)
 }
 
 char HDDM_s_DocumentString[] = 
-"<HDDM class=\"s\" version=\"1.0\" xmlns:hddm=\"http://www.gluex.org/hddm\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n"
+"<HDDM class=\"s\" version=\"1.0\" xmlns=\"http://www.gluex.org/hddm\" xmlns:hddm=\"http://www.gluex.org/hddm\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n"
 "  <physicsEvent eventNo=\"int\" maxOccurs=\"unbounded\" runNo=\"int\">\n"
 "    <reaction maxOccurs=\"unbounded\" minOccurs=\"0\" type=\"int\" weight=\"float\">\n"
 "      <beam minOccurs=\"0\" type=\"Particle_t\">\n"
@@ -494,8 +494,8 @@ char HDDM_s_DocumentString[] =
 "      </startCntr>\n"
 "      <barrelEMcal minOccurs=\"0\">\n"
 "        <mod maxOccurs=\"unbounded\" minOccurs=\"0\" module=\"int\">\n"
-"          <shell layer=\"int\" maxOccurs=\"9\" minOccurs=\"0\">\n"
-"            <cone maxOccurs=\"4\" minOccurs=\"0\" sector=\"int\">\n"
+"          <shell layer=\"int\" maxOccurs=\"unbounded\">\n"
+"            <cone maxOccurs=\"unbounded\" sector=\"int\">\n"
 "              <upstream minOccurs=\"0\">\n"
 "                <shower E=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
 "              </upstream>\n"
