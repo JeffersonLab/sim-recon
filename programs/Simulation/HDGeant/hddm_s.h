@@ -370,20 +370,48 @@ typedef struct {
 } s_Downstream_t;
 #endif /* s_Downstream_t */
 
-#ifndef SAW_s_Module_t
-#define SAW_s_Module_t
+#ifndef SAW_s_Cone_t
+#define SAW_s_Cone_t
 
 typedef struct {
-   float                phim;
+   int                  sector;
    s_Upstream_t*        upstream;
    s_Downstream_t*      downstream;
-} s_Module_t;
+} s_Cone_t;
 
 typedef struct {
    unsigned int mult;
-   s_Module_t in[1];
-} s_Modules_t;
-#endif /* s_Module_t */
+   s_Cone_t in[1];
+} s_Cones_t;
+#endif /* s_Cone_t */
+
+#ifndef SAW_s_Shell_t
+#define SAW_s_Shell_t
+
+typedef struct {
+   int                  layer;
+   s_Cones_t*           cones;
+} s_Shell_t;
+
+typedef struct {
+   unsigned int mult;
+   s_Shell_t in[1];
+} s_Shells_t;
+#endif /* s_Shell_t */
+
+#ifndef SAW_s_Mod_t
+#define SAW_s_Mod_t
+
+typedef struct {
+   int                  module;
+   s_Shells_t*          shells;
+} s_Mod_t;
+
+typedef struct {
+   unsigned int mult;
+   s_Mod_t in[1];
+} s_Mods_t;
+#endif /* s_Mod_t */
 
 #ifndef SAW_s_BarrelShower_t
 #define SAW_s_BarrelShower_t
@@ -408,7 +436,7 @@ typedef struct {
 #define SAW_s_BarrelEMcal_t
 
 typedef struct {
-   s_Modules_t*         modules;
+   s_Mods_t*            mods;
    s_BarrelShowers_t*   barrelShowers;
 } s_BarrelEMcal_t;
 #endif /* s_BarrelEMcal_t */
@@ -791,7 +819,11 @@ s_StartPoints_t* make_s_StartPoints(int n);
 
 s_BarrelEMcal_t* make_s_BarrelEMcal();
 
-s_Modules_t* make_s_Modules(int n);
+s_Mods_t* make_s_Mods(int n);
+
+s_Shells_t* make_s_Shells(int n);
+
+s_Cones_t* make_s_Cones(int n);
 
 s_Upstream_t* make_s_Upstream();
 
