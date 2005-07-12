@@ -13,6 +13,7 @@
 using namespace std;
 
 #include "DEvent.h"
+#include "DFactory_base.h"
 #include "derror.h"
 
 template<class T> class DFactory;
