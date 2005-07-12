@@ -29,7 +29,7 @@ using namespace std;
 
 #include "DFactory_base.h"
 #include "DEvent.h"
-
+#include "DEventLoop.h"
 
 //-----------------------
 // class DFactory
