@@ -8,4 +8,4 @@ CXX	= CC
 
 CXXFLAGS += -erroff=%all
 
-MISC_LIBS += -lz
+MISC_LIBS += -lz -lrt
