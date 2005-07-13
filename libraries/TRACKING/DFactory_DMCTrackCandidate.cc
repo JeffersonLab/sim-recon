@@ -697,7 +697,7 @@ int DFactory_DMCTrackCandidate::MakeTrack(float phi_z_angle, float z_vertex, flo
 		if(fabs(d)>masksize){
 			// sometimes, the delta_phi values can be off by a multiple
 			// of 2pi. Try and recover those points.
-			float fN = round(d/(r0*2.0*M_PI*cos_phi_z_angle));
+			float fN = floor(0.5 + d/(r0*2.0*M_PI*cos_phi_z_angle));
 			d -= fN*2.0*M_PI*r0*cos_phi_z_angle;
 		}
 		if(debug_level>10)cout<<__FILE__<<":"<<__LINE__<<"        distance["<<i<<"] = "<<d<<"   N 2pis="<<d/(r0*2.0*M_PI*cos(phi_z_angle))<<endl;
