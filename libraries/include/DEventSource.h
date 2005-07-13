@@ -12,6 +12,8 @@
 #include <string>
 using namespace std;
 
+#include <pthread.h>
+
 #include "derror.h"
 
 class DFactory_base;
