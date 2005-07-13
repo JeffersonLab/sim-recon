@@ -6,5 +6,6 @@ FC		= f77
 CC		= cc
 CXX	= CC
 
+CXXFLAGS += -erroff=%all
 
 MISC_LIBS += -lz
