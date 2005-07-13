@@ -10,7 +10,7 @@
 
 #include "DFactory.h"
 
-#define MAX_IHITS 128
+#define MAX_IHITS 256
 
 class DMCTrackCandidate{
 	public:
