@@ -10,6 +10,8 @@
 using namespace std;
 
 #include <signal.h>
+#include <dlfcn.h>
+#include <dirent.h>
 
 #include "DApplication.h"
 #include "DEventProcessor.h"
@@ -62,6 +64,18 @@ DApplication::DApplication(int narg, char* argv[])
 		const char *arg="--nthreads=";
 		if(!strncmp(arg, argv[i],strlen(arg))){
 			NTHREADS_COMMAND_LINE = atoi(&argv[i][strlen(arg)]);
+			continue;
+		}
+		arg="--so=";
+		if(!strncmp(arg, argv[i],strlen(arg))){
+			const char* soname = &argv[i][strlen(arg)];
+			RegisterSharedObject(soname);
+			continue;
+		}
+		arg="--sodir=";
+		if(!strncmp(arg, argv[i],strlen(arg))){
+			const char* sodirname = &argv[i][strlen(arg)];
+			RegisterSharedObjectDirectory(sodirname);
 			continue;
 		}
 		if(argv[i][0] == '-')continue;
@@ -157,6 +171,14 @@ derror_t DApplication::GetProcessors(vector<DEventProcessor*> &processors)
 derror_t DApplication::AddDEventLoop(DEventLoop *loop)
 {
 	loops.push_back(loop);
+
+	// Call InitFactories routines from shared objects.
+	// This doing this here adds the factories from the
+	// shared object to the front of the list before the
+	// DEventLoop calls all of the subsystem Init_* routines
+	for(unsigned int i=0; i<InitFactoriesProcs.size();i++){
+		(*InitFactoriesProcs[i])(loop);
+	}
 
 	return NOERROR;
 }
@@ -426,7 +448,24 @@ derror_t DApplication::OpenNext(void)
 	// Instantiate an object of the appropriate type.
 	const char *sname = source_names[sources.size()];
 	const string type = DEventSource::GuessSourceType(sname);
-	current_source = DEventSource::OpenSource(sname);
+	
+	current_source = NULL;
+	
+	// Look through shared objects first
+	for(unsigned int i=0; i<EventSourceSharedObjects.size(); i++){
+		EventSourceSharedObject_t &esso = EventSourceSharedObjects[i];
+		if(type == esso.name){
+			current_source = (*esso.MakeDEventSource)(sname);
+			if(current_source)cout<<"Using "<<type<<" from "<<esso.soname<<endl;
+			break;
+		}
+	}
+	
+	// If source not found in shared object, try built-in
+	if(!current_source){
+		current_source = DEventSource::OpenSource(sname);
+	}
+
 	if(!current_source){
 		cerr<<"Unknown source type \""<<sname<<"\""<<endl;
 	}
@@ -436,4 +475,72 @@ derror_t DApplication::OpenNext(void)
 	
 	return NOERROR;
 }
+
+//---------------------------------
+// RegisterSharedObject
+//---------------------------------
+derror_t DApplication::RegisterSharedObject(const char *soname)
+{
+	// Open shared object
+	void* handle = dlopen(soname, RTLD_LAZY);
+	if(!handle){
+		cerr<<dlerror()<<endl;
+		return NOERROR;
+	}
+	
+	int things_found = 0;
+	
+	// Look for an event source
+	GetDEventSourceType_t *GetDEventSourceType = (GetDEventSourceType_t*)dlsym(handle, "GetDEventSourceType");
+	if(GetDEventSourceType){
+		EventSourceSharedObject_t esso;
+		esso.soname = soname;
+		esso.name = (*GetDEventSourceType)();
+		esso.MakeDEventSource = (MakeDEventSource_t*)dlsym(handle, "MakeDEventSource");
+		if(!esso.MakeDEventSource){
+			cerr<<dlerror()<<endl;
+		}else{
+			cout<<"Adding event source \""<<esso.name<<"\" from "<<soname<<endl;
+			EventSourceSharedObjects.push_back(esso);
+			things_found++;
+		}
+	}else{
+		//cerr<<dlerror()<<endl;
+	}
+	
+	// Look for InitFactories
+	InitFactories_t *InitFactories = (InitFactories_t*)dlsym(handle, "InitFactories");
+	if(InitFactories){
+		cout<<"Adding InitFactories from "<<soname<<endl;
+		InitFactoriesProcs.push_back(InitFactories);
+		things_found++;
+	}else{
+		//cerr<<dlerror()<<endl;
+	}
+	
+	if(!things_found)cout<<" --- Nothing useful found in "<<soname<<" ---"<<endl;
+
+	return NOERROR;
+}
+
+//---------------------------------
+// RegisterSharedObjectDirectory
+//---------------------------------
+derror_t DApplication::RegisterSharedObjectDirectory(const char *sodirname)
+{
+	DIR *dir = opendir(sodirname);
+
+	struct dirent *d;
+	char full_path[512];
+	while((d=readdir(dir))){
+		if(strncmp(d->d_name, "lib", 3))continue;
+		if(strcmp(&d->d_name[strlen(d->d_name)-3], ".so"))continue;
+		sprintf(full_path, "%s/%s",sodirname, d->d_name);
+
+		RegisterSharedObject(full_path);
+	}
+
+	return NOERROR;
+}
+
 
