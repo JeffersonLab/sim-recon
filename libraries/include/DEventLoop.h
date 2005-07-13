@@ -27,7 +27,7 @@ class DEventLoop{
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DEventLoop";}
 		
-		derror_t AddFactory(DFactory_base* factory);
+		virtual derror_t AddFactory(DFactory_base* factory);
 		derror_t RemoveFactory(DFactory_base* factory);
 		DFactory_base* GetFactory(const string data_name);
 		vector<DFactory_base*> GetFactories(void){return factories;}
