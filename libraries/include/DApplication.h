@@ -19,6 +19,11 @@ class DEventSource;
 class DEventLoop;
 class DEvent;
 
+// These are for shared objects
+typedef const char* GetDEventSourceType_t(void);
+typedef DEventSource* MakeDEventSource_t(const char* name);
+typedef void InitFactories_t(DEventLoop* eventLoop);
+
 class DApplication{
 	public:
 		DApplication(int narg, char* argv[]);
@@ -48,6 +53,8 @@ class DApplication{
 	
 		string Val2StringWithPrefix(float val);
 		derror_t OpenNext(void);
+		derror_t RegisterSharedObject(const char *soname);
+		derror_t RegisterSharedObjectDirectory(const char *sodirname);
 
 		vector<const char*> source_names;
 		vector<DEventSource*> sources;
@@ -58,6 +65,14 @@ class DApplication{
 		vector<DEventLoop*> loops;
 		vector<pthread_t> threads;
 		pthread_mutex_t app_mutex;
+		
+		typedef struct{
+			const char* name;
+			const char *soname;
+			MakeDEventSource_t *MakeDEventSource;
+		}EventSourceSharedObject_t;
+		vector<EventSourceSharedObject_t> EventSourceSharedObjects;
+		vector<InitFactories_t*> InitFactoriesProcs;
 
 		int show_ticker;
 		int NEvents;
