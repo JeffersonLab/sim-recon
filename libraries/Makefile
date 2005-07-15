@@ -11,12 +11,12 @@ all:
 	make -C DANA
 	make -C FCAL
 	make -C FDC
-	make -C HDDM
 	make -C TAGGER
 	make -C TOF
 	make -C TRIGGER
 	make -C UPV
 	make -C TRACKING
+	make -C HDDM
 
 clean:
 	make -C include clean
