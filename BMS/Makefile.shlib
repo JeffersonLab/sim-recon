@@ -36,7 +36,7 @@ all: mkdirs $(DEPS) $(SOLIB_NAME)
 	@rm -f $(DICT_FILES)
 
 $(SOLIB_NAME): $(DOBJS)
-	$(CXX) $(LD_SO_FLAGS) -r $(LINK_OBJS) -L$(LIB_DIR) $(LD_LIBS) $(MISC_LIBS) \
+	$(CXX) $(LD_SO_FLAGS) $(LINK_OBJS) -L$(LIB_DIR) $(LD_LIBS) $(MISC_LIBS) \
 		 -o $(LIB_DIR)/$@
 
 mkdirs:
