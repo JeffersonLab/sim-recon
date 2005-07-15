@@ -1,0 +1,116 @@
+#
+#
+# $Header$
+#
+
+
+# Things common to both library and executable builds live in Makefile.common
+include $(HALLD_HOME)/src/BMS/Makefile.common
+
+.PHONY: mkdirs clean env
+
+ifeq ($(LD), ld)
+ LD = $(CXX)
+endif
+
+ifdef DEBUG
+	LD_FLAGS	+= -g -pg
+endif
+
+# Redefine OBJS to include debug suffixes
+DOBJS = $(addsuffix $(DEBUG_SUFFIX).o,$(basename $(OBJS)))
+
+OBJ_DIR = obj/$(OSNAME)
+OUTPUT_OPTION = -o $(OBJ_DIR)/$@
+VPATH = $(OBJ_DIR):$(BIN_DIR)
+LINK_OBJS += $(addprefix $(OBJ_DIR)/,$(DOBJS))
+
+LD_LIBS = $(addsuffix $(DEBUG_SUFFIX),$(addprefix -l,$(ADDITIONAL_MODULES)))
+
+
+SOLIB_NAME = lib$(MODULE_NAME).so
+
+.PHONY:  mkdirs
+
+all: mkdirs $(DEPS) $(SOLIB_NAME)
+	@rm -f $(DICT_FILES)
+
+$(SOLIB_NAME): $(DOBJS)
+	$(CXX) $(LD_SO_FLAGS) -r $(LINK_OBJS) -L$(LIB_DIR) $(LD_LIBS) $(MISC_LIBS) \
+		 -o $(LIB_DIR)/$@
+
+mkdirs:
+	@mkdir -p $(BIN_DIR)
+	@mkdir -p $(OBJ_DIR)
+	@mkdir -p $(DEP_DIR)
+
+clean:
+	rm -rf $(OBJ_DIR) .depends *.o $(SOLIB_NAME) $(DICT_FILES) *.bak *~ core last.kumac*  #*# 
+
+exec_clean:
+	rm -f $(SOLIB_NAME)
+
+# Rules to make DEPENDS files from source. Note that these are similar to the
+# rules in Makefile.lib, but uses the objects explicitly
+%.d : %.cpp
+	@$(DCXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
+%.d : %.cc
+	@$(DCXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
+%.d : %.cxx
+	@$(DCXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
+%.d : %.c
+	@$(DCC) -MM -MT "$(basename $@).o" $(CFLAGS) $< > $(DEP_DIR)/$(basename $@).d
+%.d : %.F
+	@$(DFC) -MM -MT "$(basename $@).o" $(FFLAGS) $< > $(DEP_DIR)/$(basename $@).d
+
+# Rules to make DEBUG objects from source. Note for programs, we give the
+# objects funny names while for libraries only the library has a funny name.
+%_d.o : %.cpp
+	$(CXX) -c $(CXXFLAGS) $< $(OUTPUT_OPTION)
+%_d.o : %.cc
+	$(CXX) -c $(CXXFLAGS) $< $(OUTPUT_OPTION)
+%_d.o : %.cxx
+	$(CXX) -c $(CXXFLAGS) $< $(OUTPUT_OPTION)
+%_d.o : %.c
+	$(CC) -c $(CFLAGS) $< $(OUTPUT_OPTION)
+%_d.o : %.F
+	$(FC) -c $(FFLAGS) $< $(OUTPUT_OPTION)
+
+
+# Rule to make ROOT dictionary
+%_Dict.cc: %.h
+	rootcint -f $@ -c $(INCS) $< 
+
+
+env:
+	@echo FC			     = $(FC)
+	@echo CC			     = $(CC)
+	@echo CXX		     = $(CXX)
+	@echo LD            = $(LD)
+	@echo FFLAGS	     = $(FFLAGS)
+	@echo CFLAGS	     = $(CFLAGS)
+	@echo CXXFLAGS	     = $(CXXFLAGS)
+	@echo FSRC		     = $(FSRC)
+	@echo CSRC		     = $(CSRC)
+	@echo CXXSRC	     = $(CXXSRC)
+	@echo LIBS		     = $(LIBS)
+	@echo OSNAME	     = $(OSNAME)
+	@echo OBJS		     = $(OBJS)
+	@echo LIBNAME	     = $(LIBNAME)
+	@echo DEPS		     = $(DEPS)
+	@echo SOLIB_NAME    = $(SOLIB_NAME)
+	@echo LD_LIBS       = $(LD_LIBS)
+	@echo MISC_LIBS     = $(MISC_LIBS)
+	@echo ROOTLIBS      = $(ROOTLIBS)
+	@echo VPATH		     = $(VPATH)
+	@echo MODULE_NAME   = $(MODULE_NAME)
+	@echo MODULES       = $(MODULES)
+	@echo MAIN_FILES    = "$(MAIN_FILES)"
+	@echo MAIN_OBJS     = $(MAIN_OBJS)
+	@echo NON_MAIN_OBJS = $(NON_MAIN_OBJS)
+	@echo HSRC		         = $(HSRC)
+	@echo DICT_IN       = $(DICT_IN)
+	@echo DICT_SRC      = $(DICT_SRC)
+	@echo DICT_FILES    = $(DICT_FILES)
+
+
