@@ -60,6 +60,7 @@ class DFactory:public DFactory_base{
 		const int GetNrows(void);
 		inline const char* className(void){return T::className();}
 		inline const char* dataClassName(void){return className();}
+		virtual const char* Tag(void){return "";}
 		inline int dataClassSize(void){return sizeof(T);}
 		inline int GetEventCalled(void){return evnt_called;}
 		inline int CheckSourceFirst(void){return !use_factory;}
