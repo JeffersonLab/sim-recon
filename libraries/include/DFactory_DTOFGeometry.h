@@ -20,6 +20,7 @@ class DFactory_DTOFGeometry:public DFactory<DTOFGeometry>{
 
 	private:
 		derror_t evnt(DEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
+		derror_t init(void);
 };
 
 #endif // _DFactory_DTOFGeometry_
