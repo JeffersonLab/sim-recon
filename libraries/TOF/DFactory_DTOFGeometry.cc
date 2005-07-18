@@ -7,6 +7,35 @@
 
 #include "DFactory_DTOFGeometry.h"
 
+derror_t DFactory_DTOFGeometry::init(void)
+{
+
+//   This is the geometry as it currently stands inside HDGeant.
+//   This does not represent the current design, but will be
+//   used just to get things going.  Eventually these will be changed
+//   to:
+//
+//     nlongbars=40
+//     nshortbars=4
+//     longbarlength=252.0
+//     shortbarlength=120.0
+//     barwidth=6.0
+
+
+    DTOFGeometry *myDTOFGeometry = new DTOFGeometry;
+
+    myDTOFGeometry->NLONGBARS        = 42;
+    myDTOFGeometry->NSHORTBARS       = 2;
+    myDTOFGeometry->LONGBARLENGTH    = 258.0;
+    myDTOFGeometry->SHORTBARLENGTH   = 126.0;
+    myDTOFGeometry->BARWIDTH         = 6.0;
+
+    _data.push_back(myDTOFGeometry);
+
+    return NOERROR;
+}  
+
+
 //------------------
 // evnt
 //------------------
@@ -32,25 +61,27 @@ derror_t DFactory_DTOFGeometry::evnt(DEventLoop *loop, int eventnumber)
 const string DFactory_DTOFGeometry::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
+    Get();
+    if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
 	// Put the class specific code to produce nicely formatted ASCII here.
 	// The DFactory_base class has several methods defined to help. They
 	// rely on positions of colons (:) in the header. Here's an example:
 	//
-	//		printheader("row:    x:     y:");
-	//
-	// 	for(int i=0; i<_data.size(); i++){
-	//			DTOFGeometry *myDTOFGeometry = _data[i];
-	//
-	//			printnewrow();
-	//			printcol("%d",	i);
-	//			printcol("%1.3f",	myDTOFGeometry->x);
-	//			printcol("%3.2f",	myDTOFGeometry->y);
-	//			printrow();
-	//		}
-	//
-	return _table;
+
+    printheader("NLONGBARS:  NSHORTBARS:  LONGBARLENGTH:  SHORTBARLENGTH:  BARWIDTH:");
+	
+    for(int i=0; i<_data.size(); i++){
+        DTOFGeometry *myDTOFGeometry = _data[i];
+        printnewrow();
+        printcol("%d",myDTOFGeometry->NLONGBARS);
+        printcol("%d",myDTOFGeometry->NSHORTBARS);
+        printcol("%6.3f",myDTOFGeometry->LONGBARLENGTH);
+        printcol("%6.3f",myDTOFGeometry->SHORTBARLENGTH);
+        printcol("%6.3f",myDTOFGeometry->BARWIDTH);
+        printrow();
+    }
+	
+    return _table;
 
 }
