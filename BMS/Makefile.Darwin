@@ -7,4 +7,4 @@ CFLAGS += $(OSXFLAGS)
 CXXFLAGS += $(OSXFLAGS)
 LD_FLAGS += -multiply_defined suppress
 
-LD_SO_FLAGS += -dynamiclib -r
+LD_SO_FLAGS += -dynamiclib -r -multiply_defined suppress
