@@ -10,7 +10,7 @@ FFLAGS += -I$(CERN)/$(CERN_LEVEL)/include
 CFLAGS += -I$(CERN)/$(CERN_LEVEL)/include
 CXXFLAGS += -I$(CERN)/$(CERN_LEVEL)/include
 CERNLIBS = $(shell cernlib geant321 pawlib graflib grafX11 packlib mathlib kernlib)
-CERNLIBS += -L$(CERN)/$(CERN_LEVEL)/lib $(PYTHIA) -lherwig -lpdflib804
+CERNLIBS += -L$(CERN)/$(CERN_LEVEL)/lib $(PYTHIA) -lherwig #-lpdflib804
 
 ifneq "$(OSNAME)" "SunOS"
  MISC_LIBS += -lg2c
