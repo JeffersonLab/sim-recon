@@ -183,8 +183,8 @@ derror_t DEventLoop::PrintFactories(int sparsify)
 	cout<<endl;
 	cout<<"Registered factories: ("<<factories.size()<<" total)"<<endl;
 	cout<<endl;
-	cout<<"Name:             nrows:"<<endl;
-	cout<<"---------------- -------"<<endl;
+	cout<<"Name:             nrows:  tag:"<<endl;
+	cout<<"---------------- ------- --------------"<<endl;
 
 	for(unsigned int i=0; i<factories.size(); i++){
 		DFactory_base *factory = factories[i];
@@ -201,6 +201,13 @@ derror_t DEventLoop::PrintFactories(int sparsify)
 		sprintf(num, "%d", factory->GetNrows());
 		str.replace(22-strlen(num), strlen(num), num);
 
+		const char *tag = factory->Tag();
+		if(strlen(tag)){
+			char tag_str[256];
+			sprintf(tag_str, "\"%s\"", tag);
+			str.replace(26, strlen(tag_str), tag_str);
+		}
+		
 		cout<<str<<endl;
 	}
 	
