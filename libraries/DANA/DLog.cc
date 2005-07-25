@@ -1,3 +1,10 @@
+//*********************************************************************
+// DLog.cc - Implementation file for the DLog class. See the dot H file
+// for the implementation of the "log" method.
+// Author: Craig Bookwalter (craigb@jlab.org)
+// July 2005
+//********************************************************************
+
 #include "DLog.h"
 #include <stdexcept>
 #include <time.h>

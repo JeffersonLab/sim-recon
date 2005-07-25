@@ -1,7 +1,32 @@
-// TODO: Fix the way the time output looks--make the damned thing all on one 
-// line
+//****************************************************************
+// DLog.h - Error-logging class for use with the Hall D analysis 
+// framework.
+// 
+// At some point, there will be a global log that all subsystems will
+// log errors to. For now, in your own subsystem, create yourself a 
+// DLog object in one of the following ways:
+//
+//	DLog* log = new DLog();    // Only display "ERROR"-level messages (on cerr)
+//  
+//
+//	ofstream info ("info.log");
+//  ofstream warn ("warn.log");
+//	DLog* log = new DLog(info, warn, cerr);  // Put "INFO"-, "WARN"-, and 
+//											 // "ERR"-level messages into these
+//											 // respective streams.
+//
+// After that, to log a message to your DLog, use:
+// 
+//	log->log("A blankity-blank error occurred.", ERR);
+//
+//
+// 
+// Author: Craig Bookwalter
+// July 2005
+//
 // TODO: Add an ID string to identify who the log belongs to?
-
+// TODO: use DOxygen to do the docs.
+//****************************************************************
 #ifndef _DLOG_H_
 #define _DLOG_H_
 
