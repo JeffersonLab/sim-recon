@@ -29,7 +29,7 @@ class DEventLoop{
 		
 		virtual derror_t AddFactory(DFactory_base* factory);
 		derror_t RemoveFactory(DFactory_base* factory);
-		DFactory_base* GetFactory(const string data_name);
+		DFactory_base* GetFactory(const string data_name, const char *tag="");
 		vector<DFactory_base*> GetFactories(void){return factories;}
 		vector<string> GetFactoryNames(void);
 		derror_t ClearFactories(void);

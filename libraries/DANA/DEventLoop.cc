@@ -124,13 +124,15 @@ derror_t DEventLoop::RemoveFactory(DFactory_base* factory)
 //-------------
 // GetFactory
 //-------------
-DFactory_base* DEventLoop::GetFactory(const string data_name)
+DFactory_base* DEventLoop::GetFactory(const string data_name, const char *tag)
 {
 	// Search for specified factory and return pointer to it
 	vector<DFactory_base*>::iterator iter = factories.begin();
 	for(; iter!=factories.end(); iter++){
 		if(data_name == (*iter)->dataClassName()){
-			return *iter;
+			if(!strcmp((*iter)->Tag(), tag)){
+				return *iter;
+			}
 		}
 	}
 
