@@ -17,8 +17,8 @@
 //
 // After that, to log a message to your DLog, use:
 // 
-//	log->log("A blankity-blank error occurred.", ERR);
-//
+//	log("A blankity-blank error occurred.", ERR);
+//  
 //
 // 
 // Author: Craig Bookwalter
@@ -26,6 +26,7 @@
 //
 // TODO: Add an ID string to identify who the log belongs to?
 // TODO: use DOxygen to do the docs.
+// TODO: operator()?
 //****************************************************************
 #ifndef _DLOG_H_
 #define _DLOG_H_
@@ -80,7 +81,13 @@ class DLog
 		}
 		inline void log(char* msg, int level){
 			log(std::string(msg), level);
-		} 
+		}
+		inline void operator() (std::string msg, int level){
+			log(msg, level);
+		}
+		inline void operator() (char* msg, int level) {
+			log(msg, level);
+		}
 			
 	private:
 		std::ostream* __info;
