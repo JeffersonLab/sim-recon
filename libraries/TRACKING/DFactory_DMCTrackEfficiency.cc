@@ -26,7 +26,7 @@ derror_t DFactory_DMCTrackEfficiency::evnt(DEventLoop *loop, int eventnumber)
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCReconstructed*> mcreconstructeds;
 	
-	loop->Get(mctrackcandidates);
+	loop->Get(mctrackcandidates, "B");
 	loop->Get(mccheathits);
 	loop->Get(mcthrowns);
 	loop->Get(mcreconstructeds);
@@ -35,7 +35,7 @@ derror_t DFactory_DMCTrackEfficiency::evnt(DEventLoop *loop, int eventnumber)
 	// exactly to the vector of DMCTrackCandidate objects.
 	if(mctrackcandidates.size() != mcreconstructeds.size()){
 		cerr<<__FILE__<<":"<<__LINE__<<" DMCTrackCandidate and DMCReconstructed";
-		cerr<<" have different sizes!!!"<<endl;
+		cerr<<" have different sizes ("<<mctrackcandidates.size()<<" and "<<mcreconstructeds.size()<<")!!!"<<endl;
 		return VALUE_OUT_OF_RANGE;
 	}
 

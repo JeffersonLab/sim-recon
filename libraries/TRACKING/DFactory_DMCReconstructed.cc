@@ -18,7 +18,7 @@ derror_t DFactory_DMCReconstructed::evnt(DEventLoop *eventLoop, int eventnumber)
 	// For now, we just copy from the MCTrackCandidates. Eventually,
 	// a track fitter will be implemented.
 	vector<const DMCTrackCandidate*> mctc;
-	eventLoop->Get(mctc);
+	eventLoop->Get(mctc, "B");
 
 	vector<const DMCThrown*> mcthrowns;
 	eventLoop->Get(mcthrowns);

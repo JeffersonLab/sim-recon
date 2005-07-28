@@ -6,6 +6,7 @@
 #include "DFactory_DMCThrown.h"
 #include "DFactory_DMCReconstructed.h"
 #include "DFactory_DMCTrackEfficiency.h"
+#include "DFactory_DMCTrackCandidate_B.h"
 
 derror_t TRACKING_init(DEventLoop *loop)
 {
@@ -15,6 +16,7 @@ derror_t TRACKING_init(DEventLoop *loop)
 	loop->AddFactory(new DFactory_DMCThrown());
 	loop->AddFactory(new DFactory_DMCReconstructed());
 	loop->AddFactory(new DFactory_DMCTrackEfficiency());
+	loop->AddFactory(new DFactory_DMCTrackCandidate_B());
 
 	return NOERROR;
 }
