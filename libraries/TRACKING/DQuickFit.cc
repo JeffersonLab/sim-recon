@@ -64,6 +64,23 @@ derror_t DQuickFit::AddHit(float r, float phi, float z)
 }
 
 //-----------------
+// AddHitXYZ
+//-----------------
+derror_t DQuickFit::AddHitXYZ(float x, float y, float z)
+{
+	/// Add a hit to the list of hits using cyclindrical coordinates
+	/// phi should be specified in radians. For 2D hits, the
+	/// value of z will be ignored.
+	TVector3 *vec = new TVector3(x, y, z);
+	if(vec)
+		hits.push_back(vec);
+	else
+		cerr<<__FILE__<<":"<<__LINE__<<" NULL vector in DQuickFit::AddHits. Hit dropped."<<endl;
+
+	return NOERROR;
+}
+
+//-----------------
 // AddHits
 //-----------------
 derror_t DQuickFit::AddHits(int N, TVector3 *v)

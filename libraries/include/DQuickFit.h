@@ -64,6 +64,7 @@ class DQuickFit{
 		inline derror_t AddHit(TVector3 *v){return AddHits(1,v);};
 		inline derror_t AddHit(float myr, float myphi){return AddHit(myr, myphi, 0.0);};
 		derror_t AddHit(float r, float phi, float z);
+		derror_t AddHitXYZ(float x, float y, float z);
 		derror_t AddHits(int N, TVector3 *v);		
 		derror_t PruneHit(int idx);
 		derror_t PruneHits(float chisq_limit);
