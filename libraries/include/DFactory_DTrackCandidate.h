@@ -23,10 +23,12 @@ class DFactory_DMCTrackCandidate_B:public DFactory<DMCTrackCandidate>{
 		const string toString(void);
 		const char* Tag(void){return "B";}
 		void SetMaxDebugBuffers(int N){MAX_DEBUG_BUFFERS = N;}
+		void Fill_phi_circle(vector<DTrkHit*> hits, float x0, float y0);
 		
 		vector<DTrkHit*>& Get_trkhits(void){return trkhits;}
 		vector<vector<DTrkHit*> >& Get_dbg_in_seed(void){return dbg_in_seed;}
 		vector<vector<DTrkHit*> >& Get_dbg_hoc(void){return dbg_hoc;}
+		vector<vector<DTrkHit*> >& Get_dbg_hol(void){return dbg_hol;}
 		vector<vector<DTrkHit*> >& Get_dbg_hot(void){return dbg_hot;}
 		vector<DQuickFit*>& Get_dbg_seed_fit(void){return dbg_seed_fit;}
 		vector<DQuickFit*>& Get_dbg_track_fit(void){return dbg_track_fit;}
@@ -44,22 +46,26 @@ class DFactory_DMCTrackCandidate_B:public DFactory<DMCTrackCandidate>{
 		int TraceSeed(DTrkHit *hit);
 		DTrkHit* FindClosestXY(DTrkHit *hit);
 		int FitSeed(void);
-		int FindTrackHits(void);
+		int FindLineHits(void);
 		int FindPhiZAngle(void);
 		int FindZvertex(void);
 		int FitTrack(void);
+		int MarkTrackHits(void);
 		inline void ChopSeed(void){if(hits_in_seed.size()>0)hits_in_seed[0]->flags |= DTrkHit::IGNORE;}
 
 
 		void DebugMessage(int line);
 		int SeedTrack(void);
 
-		vector<DTrkHit*> trkhits;
+		vector<DTrkHit*> trkhits; // sorted by z
+		vector<DTrkHit*> trkhits_r_sorted; // sorted by dist. from beam line
 		vector<DTrkHit*> hits_in_seed;
 		vector<DTrkHit*> hits_on_circle;
+		vector<DTrkHit*> hits_on_line;
 		vector<DTrkHit*> hits_on_track;
 		vector<vector<DTrkHit*> > dbg_in_seed;
 		vector<vector<DTrkHit*> > dbg_hoc;
+		vector<vector<DTrkHit*> > dbg_hol;
 		vector<vector<DTrkHit*> > dbg_hot;
 		vector<DQuickFit*> dbg_seed_fit;
 		vector<DQuickFit*> dbg_track_fit;
@@ -75,9 +81,11 @@ class DFactory_DMCTrackCandidate_B:public DFactory<DMCTrackCandidate>{
 		float MAX_DEBUG_BUFFERS;
 		float TARGET_Z_MIN;
 		float TARGET_Z_MAX;
-		float phi_z_angle_bin_size;
+		float phizangle_bin_size;
+		float z_vertex_bin_size;
 		float x0,y0,r0;
 		float phizangle, z_vertex;
+		float phizangle_min, phizangle_max;
 		
 		TH1F *phizangle_hist, *zvertex_hist, *phi_relative;
 		

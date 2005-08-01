@@ -9,6 +9,8 @@
 #include <iomanip>
 using namespace std;
 
+#include <math.h>
+
 #include <TH1.h>
 
 #include "DMCCheatHit.h"
@@ -43,13 +45,14 @@ DFactory_DMCTrackCandidate_B::DFactory_DMCTrackCandidate_B()
 	MAX_CIRCLE_DIST = 2.0;
 	MAX_PHI_Z_DIST = 10.0;
 	MAX_DEBUG_BUFFERS = 0.0;
-	TARGET_Z_MIN = 30.0;
-	TARGET_Z_MAX = 100.0;
+	TARGET_Z_MIN = 64.0;
+	TARGET_Z_MAX = 66.0;
 	
 	phizangle_hist = new TH1F("phi_z_angle","phi_z_angle", 1000, -M_PI, M_PI);
-	phi_z_angle_bin_size = phizangle_hist->GetBinCenter(2)-phizangle_hist->GetBinCenter(1);
+	phizangle_bin_size = phizangle_hist->GetBinCenter(2)-phizangle_hist->GetBinCenter(1);
 	phi_relative = new TH1F("phi_relative","phi_relative", 1000, -M_PI, M_PI);
 	zvertex_hist = new TH1F("z_vertex","z_vertex", 140, TARGET_Z_MIN, TARGET_Z_MAX);
+	z_vertex_bin_size = zvertex_hist->GetBinCenter(2)-zvertex_hist->GetBinCenter(1);
 }
 
 //------------------
@@ -76,12 +79,15 @@ derror_t DFactory_DMCTrackCandidate_B::evnt(DEventLoop *loop, int eventnumber)
 
 		// Using results of X/Y fit, find phi-z angle and z_vertex
 		// Make a list of hits consistent with the values found.
-		if(!FindTrackHits())continue;
+		if(!FindLineHits())continue;
 		
 		// Fit the hits in the list created by above. Use result
 		// to make a new DMCTrackCandidate
 		if(!FitTrack())continue;
 		
+		// Loop over all un-used hits and mark any that are consistent
+		// with the fit parameters as used
+		if(!MarkTrackHits())continue;
 	}
 
 	return NOERROR;
@@ -97,20 +103,23 @@ void DFactory_DMCTrackCandidate_B::ClearEvent(void)
 	trkhits.clear();
 
 	// Clear debugging buffers
-	dbg_in_seed.clear();
-	dbg_hoc.clear();	
-	dbg_hot.clear();	
-	for(unsigned int i=0; i<dbg_seed_fit.size(); i++)delete dbg_seed_fit[i];
-	dbg_seed_fit.clear();
-	for(unsigned int i=0; i<dbg_track_fit.size(); i++)delete dbg_track_fit[i];
-	dbg_track_fit.clear();
-	dbg_seed_index.clear();
-	for(unsigned int i=0; i<dbg_phiz_hist.size(); i++)delete dbg_phiz_hist[i];
-	dbg_phiz_hist.clear();
-	for(unsigned int i=0; i<dbg_zvertex_hist.size(); i++)delete dbg_zvertex_hist[i];
-	dbg_zvertex_hist.clear();
-	dbg_phizangle.clear();
-	dbg_z_vertex.clear();
+	if(MAX_DEBUG_BUFFERS){
+		dbg_in_seed.clear();
+		dbg_hoc.clear();
+		dbg_hol.clear();
+		dbg_hot.clear();
+		for(unsigned int i=0; i<dbg_seed_fit.size(); i++)delete dbg_seed_fit[i];
+		dbg_seed_fit.clear();
+		for(unsigned int i=0; i<dbg_track_fit.size(); i++)delete dbg_track_fit[i];
+		dbg_track_fit.clear();
+		dbg_seed_index.clear();
+		for(unsigned int i=0; i<dbg_phiz_hist.size(); i++)delete dbg_phiz_hist[i];
+		dbg_phiz_hist.clear();
+		for(unsigned int i=0; i<dbg_zvertex_hist.size(); i++)delete dbg_zvertex_hist[i];
+		dbg_zvertex_hist.clear();
+		dbg_phizangle.clear();
+		dbg_z_vertex.clear();
+	}
 }
 
 //------------------
@@ -134,7 +143,12 @@ void DFactory_DMCTrackCandidate_B::GetTrkHits(DEventLoop *loop)
 	}
 	
 	// Sort hits by r in X/Y plane
-	sort(trkhits.begin(), trkhits.end(), TrkHitSort());
+	trkhits_r_sorted = trkhits;
+	sort(trkhits_r_sorted.begin(), trkhits_r_sorted.end(), TrkHitSort());
+
+	// Order the track hits by z.
+	sort(trkhits.begin(), trkhits.end(), TrkHitZSort());
+
 }
 
 //------------------
@@ -147,8 +161,8 @@ int DFactory_DMCTrackCandidate_B::FindSeed(void)
 	// tracing a seed from each. Once a seed with 4 or
 	// more hits is found, return a 1 so a track can
 	// be searched for.
-	for(unsigned int i=0; i<trkhits.size(); i++){
-		DTrkHit *a = trkhits[i];
+	for(unsigned int i=0; i<trkhits_r_sorted.size(); i++){
+		DTrkHit *a = trkhits_r_sorted[i];
 		if(!(a->flags & (DTrkHit::USED | DTrkHit::IGNORE))){
 		
 			// Clear IN_SEED bit flag all hits
@@ -248,7 +262,7 @@ int DFactory_DMCTrackCandidate_B::FitSeed(void)
 	hits_on_circle.clear();
 	for(unsigned int i=0; i<trkhits.size(); i++){
 		DTrkHit *a = trkhits[i];
-		a->flags &= ~(DTrkHit::ON_CIRCLE | DTrkHit::ON_TRACK);
+		a->flags &= ~(DTrkHit::ON_CIRCLE | DTrkHit::ON_LINE | DTrkHit::ON_TRACK);
 		if(a->flags&DTrkHit::USED)continue;
 
 		float dx = a->x - x0;
@@ -274,6 +288,7 @@ int DFactory_DMCTrackCandidate_B::FitSeed(void)
 	// If the IN_SEED hits don't actually end up on the circle
 	// (I don't quite understand it, but it happens) then we should
 	// set the ignore flag for the first IN_SEED hit and try again.
+//cout<<__FILE__<<":"<<__LINE__<<" N_in_seed_and_on_circle="<<N_in_seed_and_on_circle<<"  hits_on_circle.size()"<<hits_on_circle.size()<<endl;
 	if(N_in_seed_and_on_circle<3 || hits_on_circle.size()<4){
 		ChopSeed();
 		return 0;
@@ -283,16 +298,13 @@ int DFactory_DMCTrackCandidate_B::FitSeed(void)
 }
 
 //------------------
-// FindTrackHits
+// FindLineHits
 //------------------
-int DFactory_DMCTrackCandidate_B::FindTrackHits(void)
+int DFactory_DMCTrackCandidate_B::FindLineHits(void)
 {
 	// The hits_on_circle vector should now contain pointers to
 	// only those hits on the circle and there should be enough
 	// hits (>=4) to do a fit
-	
-	// Order the track hits by z.
-	sort(hits_on_circle.begin(), hits_on_circle.end(), TrkHitZSort());
 	
 	// Find the phi-z angle and the z-vertex
 	int ok = FindPhiZAngle();
@@ -305,7 +317,7 @@ int DFactory_DMCTrackCandidate_B::FindTrackHits(void)
 	// Find all on-circle hits consistent with phizangle and zvertex
 	float cos_phizangle = cos(phizangle);
 	float sin_phizangle = sin(phizangle);
-	hits_on_track.clear();
+	hits_on_line.clear();
 	//cout<<__FILE__<<":"<<__LINE__<<" phizangle="<<phizangle<<"  z_vertex="<<z_vertex<<" r0="<<r0<<endl;
 	for(unsigned int i=0; i<hits_on_circle.size(); i++){
 		DTrkHit *a = hits_on_circle[i];
@@ -316,14 +328,15 @@ int DFactory_DMCTrackCandidate_B::FindTrackHits(void)
 		float d = sin_rel*dr;
 		//cout<<__FILE__<<":"<<__LINE__<<" d="<<d<<" z="<<a->z<<" dphi="<<dphi<<" dz="<<dz<<" dr="<<dr<<" sin_rel="<<sin_rel<<endl;
 		if(fabs(d)<MAX_PHI_Z_DIST){
-			// Flags hits as "ON_TRACK" and push onto hits_on_track vector
-			a->flags |= DTrkHit::ON_TRACK;
-			hits_on_track.push_back(a);
+			// Flags hits as "ON_LINE" and push onto hits_on_line vector
+			a->flags |= DTrkHit::ON_LINE;
+			hits_on_line.push_back(a);
 		}
 	}
-	//cout<<__FILE__<<":"<<__LINE__<<" phizangle="<<phizangle<<" z_vertex="<<z_vertex<<endl;
-	
-	if(hits_on_track.size()<4){
+//cout<<__FILE__<<":"<<__LINE__<<" phizangle="<<phizangle<<" z_vertex="<<z_vertex<<endl;	
+//cout<<__FILE__<<":"<<__LINE__<<" Nhits_on_line="<<hits_on_line.size()<<endl;
+
+	if(hits_on_line.size()<4){
 		ChopSeed();
 		return 0;
 	}
@@ -336,28 +349,17 @@ int DFactory_DMCTrackCandidate_B::FindTrackHits(void)
 //------------------
 int DFactory_DMCTrackCandidate_B::FindPhiZAngle(void)
 {
+	// Fill the phi_circle field for all hits on the circle
+	// centered at x0,y0
+	Fill_phi_circle(hits_on_circle, x0, y0);
+
+	// Loop over all hits on circle and fill the phizangle histo.
 	phizangle_hist->Reset();
-	float x_last = -x0;
-	float y_last = -y0;
-	float r_last = r0;
-	float phi_last = 0.0;
 	for(unsigned int i=0; i<hits_on_circle.size(); i++){
 		DTrkHit *a = hits_on_circle[i];
 
-		float dx = a->x - x0;
-		float dy = a->y - y0;
-		float r = sqrt(dx*dx + dy*dy);
-		float sin_dphi = (dx*y_last - x_last*dy)/r/r_last;
-		float dphi = asin(sin_dphi);
-		float phi = phi_last +dphi;
-		phi_relative->Fill(phi);
-		a->phi_circle = phi*r0;
-		x_last = dx;
-		y_last = dy;
-		r_last = r;
-		phi_last = phi;
-		float theta1 = atan2f((phi - 0.0)*r0, a->z - TARGET_Z_MIN);
-		float theta2 = atan2f((phi - 0.0)*r0, a->z - TARGET_Z_MAX);
+		float theta1 = atan2f((a->phi_circle - 0.0), a->z - TARGET_Z_MIN);
+		float theta2 = atan2f((a->phi_circle - 0.0), a->z - TARGET_Z_MAX);
 		float theta_min, theta_max;
 		if(theta1<theta2){
 			theta_min = theta1;
@@ -367,7 +369,7 @@ int DFactory_DMCTrackCandidate_B::FindPhiZAngle(void)
 			theta_max = theta1;
 		}
 		
-		for(float t=theta_min; t<=theta_max; t+=phi_z_angle_bin_size){
+		for(float t=theta_min; t<=theta_max; t+=phizangle_bin_size){
 			phizangle_hist->Fill(t);
 		}
 	}
@@ -377,19 +379,25 @@ int DFactory_DMCTrackCandidate_B::FindPhiZAngle(void)
 	phizangle_hist->GetMaximumBin(xbin,ybin,zbin);
 	phizangle = phizangle_hist->GetXaxis()->GetBinCenter(xbin);
 	
+	// Bin content should be at least as musch as the minimum
+	// number of hits required for a track.
+	float height = phizangle_hist->GetBinContent(xbin);
+	if(height<4)return 0;
+
 	// For large angle tracks, the "peak" in the phizangle histo
 	// becomes a plateau. In this case, the maximum bin returned
 	// is the left-most bin of the plateau. (At least this  is the
 	// current behaviour of ROOT.) Look for a plateau and use the
 	// center of it if it exists.
 	int Nbins = phizangle_hist->GetXaxis()->GetNbins();
-	float height = phizangle_hist->GetBinContent(xbin);
 	int xbin_right = xbin;
 	for(int i=xbin+1; i<Nbins; i++){
 		if(phizangle_hist->GetBinContent(i) != height)break;
 		xbin_right = i;
 	}
-	phizangle = (2.0*phizangle + phi_z_angle_bin_size*(float)(xbin_right-xbin))/2.0;
+	phizangle_min = phizangle - phizangle_bin_size/2.0;
+	phizangle_max = phizangle + phizangle_bin_size*(float)(xbin_right-xbin+1);
+	phizangle = (phizangle_min + phizangle_max)/2.0;
 
 	// Diagnostics
 	if(dbg_phiz_hist.size()<MAX_DEBUG_BUFFERS){
@@ -397,6 +405,34 @@ int DFactory_DMCTrackCandidate_B::FindPhiZAngle(void)
 	}
 
 	return 1;
+}
+
+//------------------
+// Fill_phi_circle
+//------------------
+void DFactory_DMCTrackCandidate_B::Fill_phi_circle(vector<DTrkHit*> hits, float X, float Y)
+{
+	/// Fill in the phi_circle attribute for all DTrkHits in "hits" by
+	/// calculating phi measured about the axis at x0,y0. Hits with either
+	/// the IGNORE or USED flags set will be ignored.
+	float r0 = sqrt(X*X + Y*Y);
+	float x_last = -X;
+	float y_last = -Y;
+	float phi_last = 0.0;
+	unsigned int mask = DTrkHit::IGNORE | DTrkHit::USED;
+	for(unsigned int i=0; i<hits.size(); i++){
+		DTrkHit *a = hits[i];
+		if(a->flags & mask)continue;
+
+		float dx = a->x - X;
+		float dy = a->y - Y;
+		float dphi = atan2f(dx*y_last - dy*x_last, dx*x_last + dy*y_last);
+		float phi = phi_last +dphi;
+		a->phi_circle = phi*r0;
+		x_last = dx;
+		y_last = dy;
+		phi_last = phi;
+	}
 }
 
 //------------------
@@ -410,21 +446,53 @@ int DFactory_DMCTrackCandidate_B::FindZvertex(void)
 	// tan(x) has poles at x=+/- pi/2 What we really want
 	// is cot(x) but that isn't always available. To avoid
 	// the pole condition, calculate it using cos(x)/sin(x).
-	float cot_phizangle = cos(phizangle)/sin(phizangle);
+	float cot_phizangle_min = cos(phizangle_min)/sin(phizangle_min);
+	float cot_phizangle_max = cos(phizangle_max)/sin(phizangle_max);
 
 	for(unsigned int i=0; i<hits_on_circle.size(); i++){
 		DTrkHit *a = hits_on_circle[i];
 
-		// Find intersection with Z-axis for a line with angle
-		// phizangle going through point (a->z, a->phi_circle).
-		float z = a->z - a->phi_circle*cot_phizangle;
-		zvertex_hist->Fill(z);
+		// Find intersections with Z-axis for lines with min and
+		// max phizangle going through point (a->z, a->phi_circle).
+		float z1 = a->z - a->phi_circle*cot_phizangle_min;
+		float z2 = a->z - a->phi_circle*cot_phizangle_max;
+		float z_min, z_max;
+		if(z1<z2){
+			z_min = z1;
+			z_max = z2;
+		}else{
+			z_min = z2;
+			z_max = z1;
+		}
+		if(z_min<TARGET_Z_MIN) z_min = TARGET_Z_MIN;
+		if(z_max>TARGET_Z_MAX) z_max = TARGET_Z_MAX;
+		
+		for(float z=z_min; z<=z_max; z+=z_vertex_bin_size){
+			zvertex_hist->Fill(z);
+		}
 	}
 	
 	// Use maximum bin for z vertex
 	int xbin, ybin, zbin;
 	zvertex_hist->GetMaximumBin(xbin,ybin,zbin);
 	z_vertex = zvertex_hist->GetXaxis()->GetBinCenter(xbin);
+	
+	// Bin content should be at least as musch as the minimum
+	// number of hits required for a track.
+	float height = zvertex_hist->GetBinContent(xbin);
+//cout<<__FILE__<<":"<<__LINE__<<" height="<<height<<endl;
+	if(height<4)return 0;
+
+	// Similar to phizangle method above, find range of plateau
+	int Nbins = zvertex_hist->GetXaxis()->GetNbins();
+	int xbin_right = xbin;
+	for(int i=xbin+1; i<Nbins; i++){
+		if(phizangle_hist->GetBinContent(i) != height)break;
+		xbin_right = i;
+	}
+	float z_vertex_min = z_vertex - z_vertex_bin_size/2.0;
+	float z_vertex_max = z_vertex + z_vertex_bin_size*(float)(xbin_right-xbin+1);
+	z_vertex = (z_vertex_min + z_vertex_max)/2.0;
 
 	// Diagnostics
 	if(dbg_zvertex_hist.size()<MAX_DEBUG_BUFFERS){
@@ -444,11 +512,11 @@ int DFactory_DMCTrackCandidate_B::FitTrack(void)
 	DMCTrackCandidate *mctrackcandidate = new DMCTrackCandidate;
 	mctrackcandidate->Nhits = 0;
 	DQuickFit *fit = new DQuickFit();
-	for(unsigned int i=0; i<hits_on_track.size(); i++){
-		DTrkHit *a = hits_on_track[i];
+	for(unsigned int i=0; i<hits_on_line.size(); i++){
+		DTrkHit *a = hits_on_line[i];
 
-		// Set the USED flag for hits that are "ON_TRACK"
-		a->flags |= DTrkHit::USED;
+		// Set the USED flag for hits that are "ON_LINE"
+		//a->flags |= DTrkHit::USED;
 		
 		// Add hit to fit
 		fit->AddHitXYZ(a->x, a->y, a->z);
@@ -462,9 +530,9 @@ int DFactory_DMCTrackCandidate_B::FitTrack(void)
 	}
 	
 	fit->FitTrack();
-	mctrackcandidate->x0 = fit->x0;
-	mctrackcandidate->y0 = fit->y0;
-	float r0 = sqrt(fit->x0*fit->x0 + fit->y0*fit->y0);
+	mctrackcandidate->x0 = x0 = fit->x0;
+	mctrackcandidate->y0 = y0 = fit->y0;
+	r0 = sqrt(x0*x0 + y0*y0);
 		
 	mctrackcandidate->z_vertex = fit->z_vertex;
 	mctrackcandidate->dphidz = fit->theta/r0;
@@ -478,7 +546,7 @@ int DFactory_DMCTrackCandidate_B::FitTrack(void)
 	// For diagnostics
 	if(dbg_track_fit.size()<MAX_DEBUG_BUFFERS){
 		dbg_track_fit.push_back(fit);
-		dbg_hot.push_back(hits_on_track);
+		dbg_hol.push_back(hits_on_line);
 		dbg_phizangle.push_back(phizangle);
 		dbg_z_vertex.push_back(z_vertex);
 		dbg_seed_index.push_back(dbg_seed_fit.size()-1);
@@ -489,6 +557,60 @@ int DFactory_DMCTrackCandidate_B::FitTrack(void)
 	return 1;
 }
 
+//------------------
+// MarkTrackHits
+//------------------
+int DFactory_DMCTrackCandidate_B::MarkTrackHits(void)
+{
+	// The values of x0 and y0 are set in FitTrack as the
+	// mctrackcandidate object is being filled. 
+	Fill_phi_circle(trkhits, x0, y0);
+
+	// Find all hits consistent with phizangle and zvertex
+	float cos_phizangle = cos(phizangle);
+	float sin_phizangle = sin(phizangle);
+	float r0 = sqrt(x0*x0 + y0*y0);
+	hits_on_track.clear();
+	unsigned int mask = DTrkHit::IGNORE | DTrkHit::USED;
+	for(unsigned int i=0; i<trkhits.size(); i++){
+		DTrkHit *a = trkhits[i];
+		if(a->flags & mask)continue;
+
+		float x = a->x - x0;
+		float y = a->y - y0;
+		float r = sqrt(x*x + y*y);
+		float dr = r - r0;
+		
+		// The phi angle could be off by an integral number
+		// of 2pi's. To calculate the "real" distance, first
+		// figure out how many 2pi's to shift by		
+		float dphi = a->phi_circle;
+		float dz = a->z-z_vertex;
+		float d = dphi*cos_phizangle - dz*sin_phizangle;
+		float n = floor(0.5 + d/2.0/M_PI/r0);
+		d -= n*2.0*M_PI*r0;
+//cout<<__FILE__<<":"<<__LINE__<<" z="<<a->z<<" n="<<n<<" dr="<<dr<<" d="<<d<<endl;
+//cout<<__FILE__<<":"<<__LINE__<<" x0="<<x0<<" y0="<<y0<<" a->x="<<a->x<<" a->y="<<a->y<<" r0="<<r0<<" r="<<r<<endl;
+		if(fabs(dr)>MAX_CIRCLE_DIST)continue;
+		if(fabs(d)>MAX_PHI_Z_DIST)continue;
+		
+		// Flags hits as "ON_TRACK" and "USED" and push onto hits_on_track vector
+		a->flags |= DTrkHit::ON_TRACK | DTrkHit::USED;
+		hits_on_track.push_back(a);
+	}
+
+	// For diagnostics
+	if(dbg_hot.size()<MAX_DEBUG_BUFFERS){
+		dbg_hot.push_back(hits_on_track);
+	}
+	
+	if(hits_on_track.size()<3){
+		ChopSeed();
+		return 0;
+	}
+
+	return 1;
+}
 
 //------------------
 // toString
