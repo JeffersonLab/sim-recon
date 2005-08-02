@@ -54,6 +54,10 @@ using namespace std;
 #include "derror.h"
 #include "fit_utils.h"
 
+#ifndef atan2f
+#define atan2f(x,y) atan2((double)x,(double)y)
+#endif
+
 class DMagneticFieldMap;
 
 class DQuickFit{
