@@ -54,7 +54,7 @@ const string DFactory_DMCReconstructed::toString(void)
 	GetNrows();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row: type:  q:    p:    E: theta:   phi:   mass:     x:     y:     z:");
+	printheader("row: type:  q:    p:    E: theta:   phi:   mass:    x:    y:    z: thrownid: thrown_delta_p:   dp/p:");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 
@@ -73,6 +73,9 @@ const string DFactory_DMCReconstructed::toString(void)
 		printcol("%2.2f", mcreconstructed->x);
 		printcol("%2.2f", mcreconstructed->y);
 		printcol("%2.2f", mcreconstructed->z);
+		printcol("%d", mcreconstructed->thrownid);
+		printcol("%2.2f", mcreconstructed->thrown_delta_p);
+		printcol("%2.2f", mcreconstructed->thrown_delta_p/mcreconstructed->p);
 
 		printrow();
 	}
