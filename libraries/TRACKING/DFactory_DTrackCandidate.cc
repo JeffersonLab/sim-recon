@@ -17,9 +17,6 @@ using namespace std;
 #include "DFactory_DMCTrackCandidate_B.h"
 #include "DQuickFit.h"
 
-#ifndef atan2f
-#define atan2f(x,y) atan2((double)x,(double)y)
-#endif
 
 
 class TrkHitSort{
