@@ -97,6 +97,7 @@ class DFactory_base:public DEventProcessor{
 		string _row;
 		int _icol;
 		int _columns[100];
+		int header_width;
 
 		// Methods useful in help produce nicely formatted ASCII
 		void printheader(const char *header);
