@@ -371,21 +371,17 @@ derror_t DQuickFit::FitTrack(void)
 	float x_last = -x0;
 	float y_last = -y0;
 	float r0 = sqrt(x0*x0 + y0*y0);
-	float r_last = r0;
 	float phi_last = 0.0;
 	for(unsigned int i=0;i<hits.size();i++){
 		TVector3 *v1 = hits[i];
 		// calculate phi via cross product
 		float x = v1->x() - x0;
 		float y = v1->y() - y0;
-		float r = sqrt(x*x + y*y);
-		float sin_dphi = (x*y_last - x_last*y)/r/r_last;
-		float dphi = asin(sin_dphi);
+		float dphi = atan2f(x*y_last - y*x_last, x*x_last + y*y_last);
 		phiv[i] = phi_last +dphi;
 		
 		x_last = x;
 		y_last = y;
-		r_last = r;
 		phi_last = phiv[i];
 
 		// calculate means
