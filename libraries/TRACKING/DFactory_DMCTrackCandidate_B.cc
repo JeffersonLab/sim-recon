@@ -112,8 +112,10 @@ void DFactory_DMCTrackCandidate_B::ClearEvent(void)
 		dbg_seed_index.clear();
 		for(unsigned int i=0; i<dbg_phiz_hist.size(); i++)delete dbg_phiz_hist[i];
 		dbg_phiz_hist.clear();
+		dbg_phiz_hist_seed.clear();
 		for(unsigned int i=0; i<dbg_zvertex_hist.size(); i++)delete dbg_zvertex_hist[i];
 		dbg_zvertex_hist.clear();
+		dbg_zvertex_hist_seed.clear();
 		dbg_phizangle.clear();
 		dbg_z_vertex.clear();
 	}
@@ -130,6 +132,7 @@ void DFactory_DMCTrackCandidate_B::GetTrkHits(DEventLoop *loop)
 	for(unsigned int i=0; i<mccheathits.size(); i++){
 		const DMCCheatHit *mchit = mccheathits[i];
 		if(!mchit->primary)continue;
+		if(mchit->system>2)continue;
 		float x = mchit->r*cos(mchit->phi);
 		float y = mchit->r*sin(mchit->phi);
 		float z = mchit->z;
@@ -399,6 +402,7 @@ int DFactory_DMCTrackCandidate_B::FindPhiZAngle(void)
 	// Diagnostics
 	if(dbg_phiz_hist.size()<MAX_DEBUG_BUFFERS){
 		dbg_phiz_hist.push_back(new TH1F(*phizangle_hist));
+		dbg_phiz_hist_seed.push_back(dbg_seed_fit.size()-1);
 	}
 
 	return 1;
@@ -494,6 +498,7 @@ int DFactory_DMCTrackCandidate_B::FindZvertex(void)
 	// Diagnostics
 	if(dbg_zvertex_hist.size()<MAX_DEBUG_BUFFERS){
 		dbg_zvertex_hist.push_back(new TH1F(*zvertex_hist));
+		dbg_zvertex_hist_seed.push_back(dbg_seed_fit.size()-1);
 	}
 
 	return 1;
