@@ -42,6 +42,7 @@ class DFactory_DMCTrackCandidate_B:public DFactory<DMCTrackCandidate>{
 
 	private:
 		derror_t evnt(DEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
+		derror_t fini(void);	///< Invoked via DEventProcessor virtual method
 		void ClearEvent(void);
 		void GetTrkHits(DEventLoop *loop);
 		int FindSeed(void);
