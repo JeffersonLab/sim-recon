@@ -23,7 +23,7 @@ class DFactory_DMCTrackCandidate_B:public DFactory<DMCTrackCandidate>{
 		const string toString(void);
 		const char* Tag(void){return "B";}
 		void SetMaxDebugBuffers(int N){MAX_DEBUG_BUFFERS = N;}
-		void Fill_phi_circle(vector<DTrkHit*> hits, float x0, float y0);
+		static void Fill_phi_circle(vector<DTrkHit*> hits, float x0, float y0);
 		
 		vector<DTrkHit*>& Get_trkhits(void){return trkhits;}
 		vector<vector<DTrkHit*> >& Get_dbg_in_seed(void){return dbg_in_seed;}
@@ -34,7 +34,9 @@ class DFactory_DMCTrackCandidate_B:public DFactory<DMCTrackCandidate>{
 		vector<DQuickFit*>& Get_dbg_track_fit(void){return dbg_track_fit;}
 		vector<int>& Get_dbg_seed_index(void){return dbg_seed_index;}
 		vector<TH1F*>& Get_dbg_phiz_hist(void){return dbg_phiz_hist;}
+		vector<int>& Get_dbg_phiz_hist_seed(void){return dbg_phiz_hist_seed;}
 		vector<TH1F*>& Get_dbg_zvertex_hist(void){return dbg_zvertex_hist;}
+		vector<int>& Get_dbg_zvertex_hist_seed(void){return dbg_zvertex_hist_seed;}
 		vector<float>& Get_dbg_z_vertex(void){return dbg_z_vertex;}
 		vector<float>& Get_dbg_phizangle(void){return dbg_phizangle;}
 
@@ -71,7 +73,9 @@ class DFactory_DMCTrackCandidate_B:public DFactory<DMCTrackCandidate>{
 		vector<DQuickFit*> dbg_track_fit;
 		vector<int> dbg_seed_index;
 		vector<TH1F*> dbg_phiz_hist;
+		vector<int> dbg_phiz_hist_seed;
 		vector<TH1F*> dbg_zvertex_hist;
+		vector<int> dbg_zvertex_hist_seed;
 		vector<float> dbg_phizangle;
 		vector<float> dbg_z_vertex;
 		float MAX_SEED_DIST;
