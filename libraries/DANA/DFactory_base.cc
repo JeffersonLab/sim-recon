@@ -30,6 +30,9 @@ void DFactory_base::printheader(const char *header)
 	}
 	for(int i=_icol;i<100;i++)_columns[i] = 100;
 	_table = "";
+	
+	header_width = strlen(header)+1;
+	if(header_width<79)header_width=79;
 }
 
 //-------------
@@ -39,7 +42,7 @@ void DFactory_base::printnewrow(void)
 {
 	/// Initialize internal buffer in preparation of printing a new row.
 	/// Call this before calling printcol().
-	_row = string(79,' ');
+	_row = string(header_width,' ');
 	_icol = 0;
 }
 
