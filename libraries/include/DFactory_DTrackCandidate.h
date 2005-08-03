@@ -53,7 +53,7 @@ class DFactory_DMCTrackCandidate_B:public DFactory<DMCTrackCandidate>{
 		int FindPhiZAngle(void);
 		int FindZvertex(void);
 		int FitTrack(void);
-		int MarkTrackHits(void);
+		int MarkTrackHits(DMCTrackCandidate* mctrackcandidate);
 		inline void ChopSeed(void){if(hits_in_seed.size()>0)hits_in_seed[0]->flags |= DTrkHit::IGNORE;}
 
 
