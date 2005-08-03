@@ -33,6 +33,7 @@ class DEventSourceHDDM:public DEventSource
 		
 		s_iostream_t *fin;
 		s_HDDM_t *hddm_s;
+		bool flush_on_free;
 		
 	private:
 		typedef struct{
