@@ -24,6 +24,8 @@ class DMCTrackCandidate{
 		float q;					///< electric charge 
 		float p, p_trans;		///< total and transverse momenta in GeV/c
 		float phi, theta;		///< theta and phi in radians
+		int track;				///< track from which most hits came from
+		int Ntrackhits;		///< number of hits in this candidate that came from "track"
 };
 
 #endif // _DMCTrackCandidate_
