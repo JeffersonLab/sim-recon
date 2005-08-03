@@ -21,7 +21,7 @@ class DEventProcessor_TrackHists:public DEventProcessor{
 		DEventProcessor_TrackHists();
 		~DEventProcessor_TrackHists();
 		void FillAll(float what, int nhits, float theta, float phi, float p, float weight=1.0);
-		void EffVsX(TH1F *out, TH2F* in);
+		void EffVsX(TH1F *out, TH2F* in, int numerator=NMATCHED);
 
 		enum{
 			NHITS_THROWN =1,
@@ -33,19 +33,23 @@ class DEventProcessor_TrackHists:public DEventProcessor{
 			NFOUND,
 			NFITTABLE,
 			NMATCHED,
+			NHITMATCHED,
 
 			R_FOUND_TO_FITTABLE,
 			R_THROWN_AND_FOUND_TO_THROWN,
 			R_THROWN_AND_FOUND_TO_FOUND,
 			R_MATCHED_TO_FITTABLE,
+			R_HITMATCHED_TO_FITTABLE,
 			
 			NBINS
 		};
 		
 		TH1F *stats;
+		TH1F *frac_from_thrown;
 		TH2F *stats_vs_theta, *stats_vs_phi, *stats_vs_p, *stats_vs_nhits;
 		TH2F *dp_over_p_vs_p, *dp_over_p_vs_theta;
 		TH1F *eff_vs_theta, *eff_vs_phi, *eff_vs_p, *eff_vs_nhits;
+		TH1F *eff_vs_theta_hm, *eff_vs_phi_hm, *eff_vs_p_hm, *eff_vs_nhits_hm;
 
 	private:
 		derror_t init(void);	///< Invoked via DEventProcessor virtual method
