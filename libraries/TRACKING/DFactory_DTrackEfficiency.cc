@@ -56,26 +56,22 @@ derror_t DFactory_DMCTrackEfficiency::evnt(DEventLoop *loop, int eventnumber)
 		}
 
 		// Find reconstructed track (if any) corresponding to this one
-		trkeff->index_DMCReconstructed = -1;
-		for(unsigned int j=0; j<mcreconstructeds.size(); j++){
-			if(mcreconstructeds[j]->thrownid == (int)i)trkeff->index_DMCReconstructed = j;
-		}
-		
-		
-		// Loop over reconstructed tracks hits (if one was found)
+		// There may be several reconstructed tracks corresponding to
+		// this. Pick the one with the most hits from this track.
+		// (Should we use the largest fraction of hits?)
 		trkeff->Nhits_thrown_and_found = 0;
 		trkeff->Nhits_found = 0;
-		if(trkeff->index_DMCReconstructed >= 0){
-			const DMCTrackCandidate *mctc = mctrackcandidates[trkeff->index_DMCReconstructed];
-
-			trkeff->Nhits_found = mctc->Nhits;
-			for(int j=0;j<mctc->Nhits;j++){
-				const DMCCheatHit *mccheathit = mccheathits[mctc->ihit[j]];
-				
-				// Only consider primary track hits for now
-				if(!mccheathit->primary)continue;
-				if(mccheathit->system>2)continue;
-				if(mccheathit->track == trkeff->track)trkeff->Nhits_thrown_and_found++;
+		trkeff->index_DMCReconstructed = -1;
+		int max_Ntrackhits = 0;
+		for(unsigned int j=0; j<mctrackcandidates.size(); j++){
+			const DMCTrackCandidate *mctc = mctrackcandidates[j];
+			if(mctc->track == (int)i+1){
+				if(mctc->Ntrackhits > max_Ntrackhits){
+					max_Ntrackhits = mctc->Ntrackhits;
+					trkeff->Nhits_thrown_and_found = max_Ntrackhits;
+					trkeff->Nhits_found = mctc->Nhits;
+					trkeff->index_DMCReconstructed = j;
+				}
 			}
 		}
 
