@@ -25,6 +25,7 @@ DEventSourceHDDM::DEventSourceHDDM(const char* source_name):DEventSource(source_
 	hddm_s = NULL;
 	
 	if(fin)source_is_open = 1;
+	flush_on_free = true;
 }
 
 //----------------
@@ -106,7 +107,7 @@ void DEventSourceHDDM::FreeEvent(void *ref)
 	vector<event_buffer_t>::iterator iter = event_buff.begin();
 	for(; iter!=event_buff.end(); iter++){
 		if((*iter).hddm_s == my_hddm_s){
-			flush_s_HDDM((*iter).hddm_s, 0);
+			if(flush_on_free)flush_s_HDDM((*iter).hddm_s, 0);
 			event_buff.erase(iter);
 			break;
 		}
