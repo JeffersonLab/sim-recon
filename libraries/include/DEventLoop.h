@@ -45,7 +45,7 @@ class DEventLoop{
 		template<class T> DFactory<T>* Get(vector<const T*> &t, const char *tag="");
 		template<class T> DFactory<T>* GetFromFactory(vector<const T*> &t, const char *tag="");
 		template<class T> derror_t GetFromSource(vector<const T*> &t, const char *tag="", DFactory_base *factory=NULL);
-		inline DEvent GetDEvent(void){return event;}
+		inline DEvent& GetDEvent(void){return event;}
 		inline void SetDEvent(DEvent *event){this->event = *event;}
 		inline void SetAutoFree(int auto_free){this->auto_free = auto_free;}
 		
