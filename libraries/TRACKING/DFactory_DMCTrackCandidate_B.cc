@@ -100,10 +100,6 @@ derror_t DFactory_DMCTrackCandidate_B::evnt(DEventLoop *loop, int eventnumber)
 		// Fit the hits in the list created by above. Use result
 		// to make a new DMCTrackCandidate
 		if(!FitTrack())continue;
-		
-		// Loop over all un-used hits and mark any that are consistent
-		// with the fit parameters as used
-		if(!MarkTrackHits())continue;
 	}
 
 	return NOERROR;
@@ -500,7 +496,6 @@ int DFactory_DMCTrackCandidate_B::FindZvertex(void)
 	// Bin content should be at least as musch as the minimum
 	// number of hits required for a track.
 	float height = zvertex_hist->GetBinContent(xbin);
-//cout<<__FILE__<<":"<<__LINE__<<" height="<<height<<endl;
 	if(height<4)return 0;
 
 	// Similar to phizangle method above, find range of plateau
@@ -531,26 +526,17 @@ int DFactory_DMCTrackCandidate_B::FitTrack(void)
 	// Create a new DMCTrackCandidate object and fill in the ihits
 	// values as we loop over hits below.
 	DMCTrackCandidate *mctrackcandidate = new DMCTrackCandidate;
-	mctrackcandidate->Nhits = 0;
 	DQuickFit *fit = new DQuickFit();
 	for(unsigned int i=0; i<hits_on_line.size(); i++){
 		DTrkHit *a = hits_on_line[i];
-
-		// Set the USED flag for hits that are "ON_LINE"
-		//a->flags |= DTrkHit::USED;
 		
 		// Add hit to fit
 		fit->AddHitXYZ(a->x, a->y, a->z);
-
-		// Add hit index to track in factory data
-		mctrackcandidate->ihit[mctrackcandidate->Nhits++] = a->ihit;
-		if(mctrackcandidate->Nhits>=MAX_IHITS){
-			cout<<__FILE__<<":"<<__LINE__<<" More than "<<MAX_IHITS<<" hits on track. Truncating..."<<endl;
-			break;
-		}
 	}
 	
+	// Do a fit to the final subset of hits
 	fit->FitTrack();
+	
 	mctrackcandidate->x0 = x0 = fit->x0;
 	mctrackcandidate->y0 = y0 = fit->y0;
 	r0 = sqrt(x0*x0 + y0*y0);
@@ -562,6 +548,11 @@ int DFactory_DMCTrackCandidate_B::FitTrack(void)
 	mctrackcandidate->q = fit->q;
 	mctrackcandidate->phi = fit->phi;
 	mctrackcandidate->theta = fit->theta;
+
+	// Do one last pass over the hits, marking all 
+	// that are consistent with these parameters as used.
+	MarkTrackHits(mctrackcandidate);
+	
 	_data.push_back(mctrackcandidate);
 
 	// For diagnostics
@@ -581,7 +572,7 @@ int DFactory_DMCTrackCandidate_B::FitTrack(void)
 //------------------
 // MarkTrackHits
 //------------------
-int DFactory_DMCTrackCandidate_B::MarkTrackHits(void)
+int DFactory_DMCTrackCandidate_B::MarkTrackHits(DMCTrackCandidate *mctrackcandidate)
 {
 	// The values of x0 and y0 are set in FitTrack as the
 	// mctrackcandidate object is being filled. 
@@ -592,15 +583,16 @@ int DFactory_DMCTrackCandidate_B::MarkTrackHits(void)
 	float sin_phizangle = sin(phizangle);
 	float r0 = sqrt(x0*x0 + y0*y0);
 	hits_on_track.clear();
-	unsigned int mask = DTrkHit::IGNORE | DTrkHit::USED;
+	int track_hits[10]={0,0,0,0,0,0,0,0,0,0};
+	mctrackcandidate->Nhits = 0;
 	for(unsigned int i=0; i<trkhits.size(); i++){
 		DTrkHit *a = trkhits[i];
-		if(a->flags & mask)continue;
 
 		float x = a->x - x0;
 		float y = a->y - y0;
 		float r = sqrt(x*x + y*y);
 		float dr = r - r0;
+		if(fabs(dr)>MAX_CIRCLE_DIST)continue;
 		
 		// The phi angle could be off by an integral number
 		// of 2pi's. To calculate the "real" distance, first
@@ -610,15 +602,28 @@ int DFactory_DMCTrackCandidate_B::MarkTrackHits(void)
 		float d = dphi*cos_phizangle - dz*sin_phizangle;
 		float n = floor(0.5 + d/2.0/M_PI/r0);
 		d -= n*2.0*M_PI*r0;
-//cout<<__FILE__<<":"<<__LINE__<<" z="<<a->z<<" n="<<n<<" dr="<<dr<<" d="<<d<<endl;
-//cout<<__FILE__<<":"<<__LINE__<<" x0="<<x0<<" y0="<<y0<<" a->x="<<a->x<<" a->y="<<a->y<<" r0="<<r0<<" r="<<r<<endl;
-		if(fabs(dr)>MAX_CIRCLE_DIST)continue;
 		if(fabs(d)>MAX_PHI_Z_DIST)continue;
 		
 		// Flags hits as "ON_TRACK" and "USED" and push onto hits_on_track vector
 		a->flags |= DTrkHit::ON_TRACK | DTrkHit::USED;
 		hits_on_track.push_back(a);
+		if(a->track>=1 && a->track<=9)track_hits[a->track]++;
+
+		// Add hit index to track in factory data
+		mctrackcandidate->ihit[mctrackcandidate->Nhits++] = a->ihit;
+		if(mctrackcandidate->Nhits>=MAX_IHITS){
+			cout<<__FILE__<<":"<<__LINE__<<" More than "<<MAX_IHITS<<" hits on track. Truncating..."<<endl;
+			break;
+		}
 	}
+	
+	// Fill in track and Ntrackhits fields of DMCTrackCandidate
+	int imax = 0;
+	for(int i=1;i<10;i++){
+		if(track_hits[i]>track_hits[imax])imax = i;
+	}
+	mctrackcandidate->track = imax;
+	mctrackcandidate->Ntrackhits = track_hits[imax];
 
 	// For diagnostics
 	if(dbg_hot.size()<MAX_DEBUG_BUFFERS){
