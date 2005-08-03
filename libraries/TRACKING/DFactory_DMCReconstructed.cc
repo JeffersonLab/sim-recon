@@ -37,7 +37,7 @@ derror_t DFactory_DMCReconstructed::evnt(DEventLoop *eventLoop, int eventnumber)
 		mcreconstructed->y = 0.0;
 		mcreconstructed->z = mctrackcandidate->z_vertex;
 		mcreconstructed->mass = 0.0;
-		mcreconstructed->FindClosestThrown(mcthrowns);
+		mcreconstructed->thrownid = mctrackcandidate->track;
 		
 		_data.push_back(mcreconstructed);
 	}
