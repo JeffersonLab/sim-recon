@@ -16,3 +16,13 @@ void grndm_(float v[], int* len);
 
 #define transformCoord(xin,sin,xout,sout) \
    transformcoord_(xin,sin,xout,sout,strlen(sin),strlen(sout))
+
+
+/* Type declarations to avoid "implicit function declaration" errors */
+void transformcoord_(float* xin, char* sin, float* xout, char* sout, int, int);
+int getsector_(void);
+int getlayer_(void);
+int getmodule_(void);
+int getrow_(void);
+int getcolumn_(void);
+int getplane_(void);
