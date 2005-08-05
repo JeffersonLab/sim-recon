@@ -39,6 +39,7 @@ DFactory_DMCTrackCandidate_B::DFactory_DMCTrackCandidate_B()
 {
 	MAX_SEED_DIST = 5.0;
 	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
+	MAX_SEED_HITS = 10;
 	MAX_CIRCLE_DIST = 2.0;
 	MAX_PHI_Z_DIST = 10.0;
 	MAX_DEBUG_BUFFERS = 0.0;
@@ -83,7 +84,7 @@ derror_t DFactory_DMCTrackCandidate_B::evnt(DEventLoop *loop, int eventnumber)
 	GetTrkHits(loop);
 
 	// Loop as long as we keep finding tracks
-	for(int i=0;i<10;i++){
+	for(int i=0;i<100;i++){
 		// Find a seed (group of hits that appear to be a clean track segment)
 		if(!FindSeed())break;
 		
@@ -219,6 +220,7 @@ int DFactory_DMCTrackCandidate_B::TraceSeed(DTrkHit *hit)
 		N++;
 		current_hit->flags |= DTrkHit::IN_SEED;
 		hits_in_seed.push_back(current_hit);
+		if(hits_in_seed.size() >= MAX_SEED_HITS)break;
 		DTrkHit *a = FindClosestXY(current_hit);
 		if(!a)break;
 		if(a->DistXY2(current_hit) > MAX_SEED_DIST2)break;
@@ -435,16 +437,18 @@ void DFactory_DMCTrackCandidate_B::Fill_phi_circle(vector<DTrkHit*> hits, float 
 	float x_last = -X;
 	float y_last = -Y;
 	float phi_last = 0.0;
-	unsigned int mask = DTrkHit::IGNORE | DTrkHit::USED;
+	//unsigned int mask = DTrkHit::IGNORE | DTrkHit::USED;
+//cout<<__FILE__<<":"<<__LINE__<<"  ------ x0="<<X<<" y0="<<Y<<" -----"<<endl;
 	for(unsigned int i=0; i<hits.size(); i++){
 		DTrkHit *a = hits[i];
-		if(a->flags & mask)continue;
+		//if(a->flags & mask)continue;
 
 		float dx = a->x - X;
 		float dy = a->y - Y;
 		float dphi = atan2f(dx*y_last - dy*x_last, dx*x_last + dy*y_last);
 		float phi = phi_last +dphi;
 		a->phi_circle = phi*r0;
+//cout<<__FILE__<<":"<<__LINE__<<" z="<<a->z<<" dphi="<<a->phi_circle<<endl;
 		x_last = dx;
 		y_last = dy;
 		phi_last = phi;
@@ -551,7 +555,8 @@ int DFactory_DMCTrackCandidate_B::FitTrack(void)
 
 	// Do one last pass over the hits, marking all 
 	// that are consistent with these parameters as used.
-	MarkTrackHits(mctrackcandidate);
+//cout<<__FILE__<<":"<<__LINE__<<" theta"<<fit->theta<<endl;
+	MarkTrackHits(mctrackcandidate, fit);
 	
 	_data.push_back(mctrackcandidate);
 
@@ -572,16 +577,19 @@ int DFactory_DMCTrackCandidate_B::FitTrack(void)
 //------------------
 // MarkTrackHits
 //------------------
-int DFactory_DMCTrackCandidate_B::MarkTrackHits(DMCTrackCandidate *mctrackcandidate)
+int DFactory_DMCTrackCandidate_B::MarkTrackHits(DMCTrackCandidate *mctrackcandidate, DQuickFit *fit)
 {
 	// The values of x0 and y0 are set in FitTrack as the
 	// mctrackcandidate object is being filled. 
 	Fill_phi_circle(trkhits, x0, y0);
 
 	// Find all hits consistent with phizangle and zvertex
-	float cos_phizangle = cos(phizangle);
-	float sin_phizangle = sin(phizangle);
-	float r0 = sqrt(x0*x0 + y0*y0);
+	float my_phizangle = -fit->q/fabs(fit->q)*tan(fit->theta);
+//cout<<__FILE__<<":"<<__LINE__<<" my_phizangle/phizangle="<<my_phizangle/phizangle<<endl;
+my_phizangle = phizangle;
+	float cos_phizangle = cos(my_phizangle);
+	float sin_phizangle = sin(my_phizangle);
+	float r0_2pi_cos_phizangle = 2.0*M_PI*r0*cos_phizangle;
 	hits_on_track.clear();
 	int track_hits[10]={0,0,0,0,0,0,0,0,0,0};
 	mctrackcandidate->Nhits = 0;
@@ -592,7 +600,6 @@ int DFactory_DMCTrackCandidate_B::MarkTrackHits(DMCTrackCandidate *mctrackcandid
 		float y = a->y - y0;
 		float r = sqrt(x*x + y*y);
 		float dr = r - r0;
-		if(fabs(dr)>MAX_CIRCLE_DIST)continue;
 		
 		// The phi angle could be off by an integral number
 		// of 2pi's. To calculate the "real" distance, first
@@ -600,9 +607,11 @@ int DFactory_DMCTrackCandidate_B::MarkTrackHits(DMCTrackCandidate *mctrackcandid
 		float dphi = a->phi_circle;
 		float dz = a->z-z_vertex;
 		float d = dphi*cos_phizangle - dz*sin_phizangle;
-		float n = floor(0.5 + d/2.0/M_PI/r0);
-		d -= n*2.0*M_PI*r0;
+		float n = floor(0.5 + d/r0_2pi_cos_phizangle);
+		d -= n*r0_2pi_cos_phizangle;
+//cout<<__FILE__<<":"<<__LINE__<<" z="<<a->z<<" d="<<d<<" d0="<<d+n*r0_2pi_cos_phizangle<<" dphi="<<dphi<<" n="<<d/r0_2pi_cos_phizangle<<" r0="<<r0<<endl;
 		if(fabs(d)>MAX_PHI_Z_DIST)continue;
+		if(fabs(dr)>MAX_CIRCLE_DIST)continue;
 		
 		// Flags hits as "ON_TRACK" and "USED" and push onto hits_on_track vector
 		a->flags |= DTrkHit::ON_TRACK | DTrkHit::USED;
