@@ -56,30 +56,22 @@ derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 	if(!hddm)return NOERROR;
 	
 	// Get data
-	vector<const DMCReconstructed*> mcreconstructeds;
-	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrackEfficiency*> mctrackefficiencies;
-	loop->Get(mcreconstructeds);
-	loop->Get(mcthrowns);
 	loop->Get(mctrackefficiencies);
 
 	// Loop over thrown tracks
 	bool write_out=false;
-	for(unsigned int i=0;i<mcthrowns.size();i++){
-		const DMCThrown *mcthrown = mcthrowns[i];
+	for(unsigned int i=0;i<mctrackefficiencies.size();i++){
 		const DMCTrackEfficiency *trkeff = mctrackefficiencies[i];
 		
 		if(trkeff->fittable){
-		
-			int idx = trkeff->index_DMCReconstructed;
-			if(idx>=0 && idx< (int)mcreconstructeds.size()){
-				const DMCReconstructed *mcreconstructed = mcreconstructeds[idx];
-				
-				float dp_over_p = mcreconstructed->thrown_delta_p/mcthrown->p;
-
-				if(fabs(dp_over_p) >0.2){
+			if(trkeff->Nhits_found){
+				float fraction_from_thrown = (float)trkeff->Nhits_thrown_and_found/(float)trkeff->Nhits_found;
+				if(fraction_from_thrown <0.70){
 					write_out=true;
 				}
+			}else{
+				write_out=true;
 			}
 		}
 	}
