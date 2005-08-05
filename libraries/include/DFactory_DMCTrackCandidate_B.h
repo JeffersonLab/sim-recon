@@ -53,7 +53,7 @@ class DFactory_DMCTrackCandidate_B:public DFactory<DMCTrackCandidate>{
 		int FindPhiZAngle(void);
 		int FindZvertex(void);
 		int FitTrack(void);
-		int MarkTrackHits(DMCTrackCandidate* mctrackcandidate);
+		int MarkTrackHits(DMCTrackCandidate* mctrackcandidate, DQuickFit *fit);
 		inline void ChopSeed(void){if(hits_in_seed.size()>0)hits_in_seed[0]->flags |= DTrkHit::IGNORE;}
 
 
@@ -81,6 +81,7 @@ class DFactory_DMCTrackCandidate_B:public DFactory<DMCTrackCandidate>{
 		vector<float> dbg_z_vertex;
 		float MAX_SEED_DIST;
 		float MAX_SEED_DIST2;
+		unsigned int MAX_SEED_HITS;
 		float MAX_CIRCLE_DIST;
 		float MAX_PHI_Z_DIST;
 		float MAX_DEBUG_BUFFERS;
