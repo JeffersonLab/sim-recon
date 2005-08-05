@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include "hddm_s.h"
 
+int process_event(s_HDDM_t *event);
+
 int main(int argc, char **argv)
 {
    s_HDDM_t *thisInputEvent = 0;
