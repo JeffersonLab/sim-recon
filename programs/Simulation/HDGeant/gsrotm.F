@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.3  2005/08/05 18:46:22  davidl
+* Commented out lines 97-109 since they can never be reached. This was indicated by the SunOS compiler
+*
 * Revision 1.2  2001/11/12 23:02:44  brash
 * Found a small bug in my original modification to this routine, which
 * exists only here for the alpha BTW.  The bug was that I was checking for small
@@ -94,17 +97,17 @@ C.---       Test orthonormality
         ROTMAT(J)=Q(JR+J)
   20  CONTINUE
 	goto 110
-      PROD2=ZERO
+c      PROD2=ZERO
 C.
 C.               X - Y
-      PROD1=
-     +ROTMAT(1)*ROTMAT(4)+ROTMAT(2)*ROTMAT(5)+ROTMAT(3)*ROTMAT(6)
-      IF(ABS(PROD1).GT.SINMIN) GO TO 30
+c      PROD1=
+c     +ROTMAT(1)*ROTMAT(4)+ROTMAT(2)*ROTMAT(5)+ROTMAT(3)*ROTMAT(6)
+c      IF(ABS(PROD1).GT.SINMIN) GO TO 30
 C.
 C.               X - Z
-      PROD2=
-     +ROTMAT(1)*ROTMAT(7)+ROTMAT(2)*ROTMAT(8)+ROTMAT(3)*ROTMAT(9)
-      IF(ABS(PROD2).GT.SINMIN) GO TO 30
+c      PROD2=
+c     +ROTMAT(1)*ROTMAT(7)+ROTMAT(2)*ROTMAT(8)+ROTMAT(3)*ROTMAT(9)
+c      IF(ABS(PROD2).GT.SINMIN) GO TO 30
 C.
 C.               Y - Z
       PROD3=
