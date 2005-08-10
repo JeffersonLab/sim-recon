@@ -22,7 +22,7 @@ using namespace std;
 #include "DFactory_DMCCheatHit.h"
 #include "DQuickFit.h"
 #include "DMagneticFieldStepper.h"
-#include "DFactory_DMCTrackCandidate.h"
+#include "DFactory_DMCTrackCandidate_B.h"
 
 extern TCanvas *maincanvas;
 extern hdv_mainframe *hdvmf;
@@ -96,6 +96,21 @@ derror_t MyProcessor::init(void)
 	// Make sure detectors have been drawn
 	if(!drew_detectors)DrawDetectors();
 	
+	// Get a pointer to the MCTrackCandidates factory object so we can 
+	// access things not included in the normal _data container
+	DFactory_base *base = eventloop->GetFactory("DMCTrackCandidate", "B");
+	DFactory_DMCTrackCandidate_B* factory = dynamic_cast<DFactory_DMCTrackCandidate_B*>(base);
+	if(!factory){
+		cerr<<endl;
+		cerr<<"Unable to get pointer to DFactory_DMCTrackCandidate_B factory!"<<endl;
+		cerr<<"I can't do much without it! Exiting ..."<<endl;
+		cerr<<endl;
+		exit(-1);
+	}
+
+	// Tell factory to keep around a few density histos
+	factory->SetMaxDebugBuffers(16);
+
 	return NOERROR;
 }
 
@@ -195,8 +210,9 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	
 	// Draw all "found" tracks
 	vector<const DMCTrackCandidate*> mctc;
-	DFactory_DMCTrackCandidate *mctcfactory = (DFactory_DMCTrackCandidate *)eventLoop->Get(mctc);
-	vector<DQuickFit*> qfits = mctcfactory->GetDQuickFits();
+	DFactory_DMCTrackCandidate_B *mctcfactory = (DFactory_DMCTrackCandidate_B *)eventLoop->Get(mctc,"B");
+	//vector<DQuickFit*> qfits = mctcfactory->GetDQuickFits();
+	vector<DQuickFit*> qfits = mctcfactory->Get_dbg_track_fit();
 	for(unsigned int i=0; i<qfits.size(); i++){
 		DrawHelicalTrack(qfits[i], kBlack);
 	}
