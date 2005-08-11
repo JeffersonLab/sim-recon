@@ -60,32 +60,40 @@ using namespace std;
 
 class DMagneticFieldMap;
 
+typedef struct{
+	float x,y,z;		///< point in lab coordinates
+	float phi_circle;	///< phi angle relative to axis of helix
+	float chisq;		///< chi-sq contribution of this hit
+}DQFHit_t;
+
 class DQuickFit{
 	public:
 		DQuickFit();
 		~DQuickFit();
 
-		inline derror_t AddHit(TVector3 *v){return AddHits(1,v);};
-		inline derror_t AddHit(float myr, float myphi){return AddHit(myr, myphi, 0.0);};
 		derror_t AddHit(float r, float phi, float z);
 		derror_t AddHitXYZ(float x, float y, float z);
-		derror_t AddHits(int N, TVector3 *v);		
 		derror_t PruneHit(int idx);
-		derror_t PruneHits(float chisq_limit);
-		derror_t PruneWorst(int n);
-		derror_t PruneOutlier(void);
-		derror_t PruneOutliers(int n);
 		derror_t FitCircle(void);
 		derror_t FitTrack(void);
-		inline const vector<TVector3*> GetHits(){return hits;};
-		inline const vector<float> GetChiSqVector(){return chisqv;};
+		derror_t FitTrack_FixedZvertex(float z_vertex);
+		derror_t Fill_phi_circle(vector<DQFHit_t*> hits, float x0, float y0);
+		inline const vector<DQFHit_t*> GetHits(){return hits;};
 		inline int GetNhits(){return hits.size();};
 		derror_t PrintChiSqVector(void);
-		derror_t CopyToFitParms(FitParms_t *fit);
 		derror_t Print(void);
 		derror_t Dump(void);
 		inline void SetMagneticFieldMap(DMagneticFieldMap *map){bfield=map;};
 
+		//inline derror_t AddHit(TVector3 *v){return AddHits(1,v);};
+		//inline derror_t AddHit(float myr, float myphi){return AddHit(myr, myphi, 0.0);};
+		//derror_t AddHits(int N, TVector3 *v);		
+		//derror_t PruneHits(float chisq_limit);
+		//derror_t PruneWorst(int n);
+		//derror_t PruneOutlier(void);
+		//derror_t PruneOutliers(int n);
+		//inline const vector<float> GetChiSqVector(){return chisqv;};
+		//derror_t CopyToFitParms(FitParms_t *fit);
 
 		enum ChiSqSourceType_t{
 			NOFIT,
@@ -99,17 +107,18 @@ class DQuickFit{
 		float phi, theta;
 		float z_vertex;
 		float chisq;
+		float dphidz;
 		ChiSqSourceType_t chisq_source;
 
 	protected:
-		vector<TVector3*> hits;
-		vector<float> chisqv;
+		vector<DQFHit_t*> hits;
 		DMagneticFieldMap *bfield; ///< pointer to magnetic field map
 		float Bz_avg;
+		float z_mean, phi_mean;
+		
+		derror_t FillTrackParams(void);
 };
 
-derror_t qfit_circle(TVector3 *points, int Npoints
-	, float &theta ,float &phi, float &p, float &q, float &x0, float &y0);
 
 
 #endif //_DQUICK_FIT_H_
