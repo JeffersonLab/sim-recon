@@ -41,6 +41,30 @@ double SampleGaussian(double sigma)
 }
 
 //--------------------------
+// SampleRange
+//--------------------------
+double SampleRange(double x1, double x2)
+{
+	int r;
+	double s, f;
+	double xlo, xhi;
+	
+	if(x1<x2){
+		xlo = x1;
+		xhi = x2;
+	}else{
+		xlo = x2;
+		xhi = x1;
+	}
+
+	r  = random();
+	s  = (float)r/RANDOM_MAX;
+	f  = xlo + s*(xhi-xlo);
+	
+	return f;
+}
+
+//--------------------------
 // FindERFFromIntegralFraction
 //--------------------------
 double FindERFFromIntegralFraction(double fraction)
