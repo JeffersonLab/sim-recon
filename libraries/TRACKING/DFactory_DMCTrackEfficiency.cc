@@ -77,7 +77,7 @@ derror_t DFactory_DMCTrackEfficiency::evnt(DEventLoop *loop, int eventnumber)
 
 		trkeff->Nhits_found_different = trkeff->Nhits_found - trkeff->Nhits_thrown_and_found;
 		trkeff->Nhits_thrown_unused = trkeff->Nhits_thrown - trkeff->Nhits_thrown_and_found;
-		trkeff->fittable = trkeff->Nhits_thrown > 3;
+		trkeff->fittable = trkeff->Nhits_thrown >=10;
 	}
 	
 	return NOERROR;
