@@ -133,7 +133,7 @@ derror_t MyProcessor::brun(DEventLoop *eventLoop, int runnumber)
 //------------------------------------------------------------------
 derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 {
-	int colors[] = {kRed,kBlue,kCyan,kGreen,kBlack};
+	int colors[] = {kBlack,kRed,kBlue,kCyan,kGreen};
 	int ncolors = 5;
 	
 	cout<<"----------- New Event -------------"<<endl;
@@ -189,7 +189,7 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 		ConvertToFront(x,y,z,X,Y);
 		TMarker *front = new TMarker(X,Y,20);
 
-		int color = colors[(mccheathit->track-1)%ncolors];
+		int color = colors[mccheathit->track%ncolors];
 		float size = 0.5;
 		switch(mccheathit->system){
 			case 6:	// FCAL
