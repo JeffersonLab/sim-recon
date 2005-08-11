@@ -102,6 +102,23 @@ derror_t DFactory_DMCTrackCandidate_B::evnt(DEventLoop *loop, int eventnumber)
 		// to make a new DMCTrackCandidate
 		if(!FitTrack())continue;
 	}
+	
+	// Filter out "bad" track candidates
+	for(unsigned int i=0; i<_data.size(); i++){
+		DMCTrackCandidate *mctc = _data[i];
+		//cout<<__FILE__<<":"<<__LINE__<<" Nhits="<<mctc->Nhits<<endl;
+		if(mctc->Nhits<10){
+			delete mctc;
+			_data.erase(_data.begin()+i);
+			if(dbg_track_fit.size()<MAX_DEBUG_BUFFERS){
+				delete dbg_track_fit[i];
+				dbg_track_fit.erase(dbg_track_fit.begin()+i);
+			}
+			i--;
+			//cout<<__FILE__<<":"<<__LINE__<<" ---- erasing Nhits="<<mctc->Nhits<<endl;
+		}
+	}
+	//cout<<__FILE__<<":"<<__LINE__<<" #### Ntracks="<<_data.size()<<endl;
 
 	return NOERROR;
 }
@@ -539,7 +556,8 @@ int DFactory_DMCTrackCandidate_B::FitTrack(void)
 	}
 	
 	// Do a fit to the final subset of hits
-	fit->FitTrack();
+	//fit->FitTrack();
+	fit->FitTrack_FixedZvertex(z_vertex);
 	
 	mctrackcandidate->x0 = x0 = fit->x0;
 	mctrackcandidate->y0 = y0 = fit->y0;
