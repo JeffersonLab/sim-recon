@@ -12,3 +12,6 @@ clean:
 	make -C gelhad clean
 	make -f Makefile.bms clean
 
+exec_clean:
+	make -f Makefile.bms exec_clean
+	
