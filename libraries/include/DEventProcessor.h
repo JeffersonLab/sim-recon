@@ -9,10 +9,14 @@
 #define _DEventProcessor_
 
 #include <pthread.h>
+#include <vector>
+using namespace std;
 
 #include "derror.h"
 class DEventLoop;
 class DApplication;
+
+typedef int identifier_t;
 
 class DEventProcessor{
 	public:
@@ -64,6 +68,20 @@ class DEventProcessor{
 		pthread_mutex_t state_mutex;
 
 };
+
+
+//-------------
+// GetByID
+//-------------
+template<class T>
+const T* GetByID(vector<const T*> v, identifier_t id){
+	for(unsigned int i=0;i<v.size(); i++){
+		const T* Tptr = v[i];
+		if(Tptr->id == id)return Tptr;
+	}
+	
+	return NULL;
+}
 
 #endif // _DEventProcessor_
 
