@@ -18,8 +18,13 @@
 #ifndef _DFACTORY_H_
 #define _DFACTORY_H_
 
+#ifdef __CINT__
+typedef int identifier_t; // so ROOT knows about identifier_t
+#endif // __CINIT__
+
 #define HDCLASSDEF(T) \
-	static const char* className(){return #T;}
+	static const char* className(){return #T;} \
+	identifier_t id;
 
 #ifndef __CINT__  // disable this file from ROOT interpreter
 
