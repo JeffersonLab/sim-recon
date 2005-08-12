@@ -18,6 +18,7 @@ using namespace std;
 #include "DEventSource.h"
 #include "DEventLoop.h"
 #include "DEvent.h"
+#include "DGeometry.h"
 
 void* LaunchThread(void* arg);
 
@@ -48,6 +49,7 @@ DApplication::DApplication(int narg, char* argv[])
 	// Initialize application level mutexes
 	pthread_mutex_init(&app_mutex, NULL);
 	pthread_mutex_init(&current_source_mutex, NULL);
+	pthread_mutex_init(&geometry_mutex, NULL);
 
 	// Variables used for calculating the rate
 	show_ticker = 1;
@@ -88,7 +90,8 @@ DApplication::DApplication(int narg, char* argv[])
 //---------------------------------
 DApplication::~DApplication()
 {
-	
+	for(unsigned int i=0; i<geometries.size(); i++)delete geometries[i];
+	geometries.clear();
 }
 
 //---------------------------------
@@ -207,6 +210,50 @@ derror_t DApplication::GetDEventLoops(vector<DEventLoop*> &loops)
 	loops = this->loops;
 
 	return NOERROR;
+}
+
+//---------------------------------
+// GetGeometry
+//---------------------------------
+DGeometry* DApplication::GetGeometry(unsigned int run_number)
+{
+	/// Return a pointer a DGeometry object that is valid for the
+	/// given run number.
+	///
+	/// This first searches through the list of existing DGeometry
+	/// objects created by this DApplication object to see if it
+	/// already has the right one.If so, a pointer to it is returned.
+	/// If not, a new DGeometry object is created and added to the
+	/// internal list.
+	/// Note that since we need to make sure the list is not modified 
+	/// by one thread while being searched by another, a mutex is
+	/// locked while searching the list. It is <b>NOT</b> efficient
+	/// to get the DGeometry object pointer every event. Factories
+	/// should get a copy in their brun() callback and keep a local
+	/// copy of the pointer for use in the evnt() callback.
+
+	// Lock mutex to keep list from being modified while we search it
+	pthread_mutex_lock(&geometry_mutex);
+
+	vector<DGeometry*>::iterator iter = geometries.begin();
+	for(; iter!=geometries.end(); iter++){
+		if((*iter)->IsInRange(run_number)){
+			// Found it! Unlock mutex and return pointer
+			DGeometry *g = *iter;
+			pthread_mutex_unlock(&geometry_mutex);
+			return g;
+		}
+	}
+	
+	// DGeometry object for this run_number doesn't exist in our list.
+	// Create a new one and add it to the list.
+	DGeometry *g = new DGeometry(run_number);
+	if(g)geometries.push_back(g);
+
+	// Unlock geometry mutex
+	pthread_mutex_unlock(&geometry_mutex);
+
+	return g;
 }
 
 //----------------

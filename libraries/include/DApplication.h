@@ -18,6 +18,7 @@ class DEventProcessor;
 class DEventSource;
 class DEventLoop;
 class DEvent;
+class DGeometry;
 
 // These are for shared objects
 typedef const char* GetDEventSourceType_t(void);
@@ -38,6 +39,7 @@ class DApplication{
 		derror_t AddDEventLoop(DEventLoop *loop);
 		derror_t RemoveDEventLoop(DEventLoop *loop);
 		derror_t GetDEventLoops(vector<DEventLoop*> &loops);
+		DGeometry* GetGeometry(unsigned int run_number);
 		derror_t Init(void);
 		derror_t Run(DEventProcessor *proc=NULL, int Nthreads=0);
 		derror_t Fini(void);
@@ -65,6 +67,9 @@ class DApplication{
 		vector<DEventLoop*> loops;
 		vector<pthread_t> threads;
 		pthread_mutex_t app_mutex;
+		
+		vector<DGeometry*> geometries;
+		pthread_mutex_t geometry_mutex;
 		
 		typedef struct{
 			const char* name;
