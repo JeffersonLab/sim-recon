@@ -13,10 +13,11 @@ using namespace std;
 
 #include <TH1.h>
 
+#include "DApplication.h"
 #include "DMCCheatHit.h"
 #include "DFactory_DMCTrackCandidate_B.h"
 #include "DQuickFit.h"
-
+#include "DGeometry.h"
 
 
 class TrkHitSort{
@@ -43,8 +44,8 @@ DFactory_DMCTrackCandidate_B::DFactory_DMCTrackCandidate_B()
 	MAX_CIRCLE_DIST = 2.0;
 	MAX_PHI_Z_DIST = 10.0;
 	MAX_DEBUG_BUFFERS = 0.0;
-	TARGET_Z_MIN = 64.0;
-	TARGET_Z_MAX = 66.0;
+	TARGET_Z_MIN = 50.0;
+	TARGET_Z_MAX = 80.0;
 	
 	char suffix[32];
 	sprintf(suffix,"_%08x", (unsigned int)pthread_self());
