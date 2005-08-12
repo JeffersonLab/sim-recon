@@ -100,6 +100,7 @@ DEventLoop::~DEventLoop()
 derror_t DEventLoop::AddFactory(DFactory_base* factory)
 {
 	factory->SetDEventLoop(this);
+	factory->SetDApplication(app);
 	factories.push_back(factory);
 
 	return NOERROR;
