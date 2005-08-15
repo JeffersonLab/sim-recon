@@ -57,6 +57,7 @@ DEventLoop::DEventLoop(DApplication *app)
 	
 	// Copy the event processor list to our local vector
 	app->GetProcessors(processors);
+
 }
 
 //---------------------------------
@@ -80,7 +81,6 @@ DEventLoop::~DEventLoop()
 	}
 
 	// Delete all of the factories
-	// Call all factories' fini methods
 	for(unsigned int i=0; i<factories.size(); i++){
 		try{
 			delete factories[i];
