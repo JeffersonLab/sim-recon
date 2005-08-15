@@ -95,7 +95,18 @@ derror_t MyProcessor::init(void)
 {
 	// Make sure detectors have been drawn
 	if(!drew_detectors)DrawDetectors();
+
+	// Tell factory to keep around a few density histos	
+	app->SetParameter("MAX_DEBUG_BUFFERS",	16);
 	
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// brun 
+//------------------------------------------------------------------
+derror_t MyProcessor::brun(DEventLoop *eventLoop, int runnumber)
+{
 	// Get a pointer to the MCTrackCandidates factory object so we can 
 	// access things not included in the normal _data container
 	DFactory_base *base = eventloop->GetFactory("DMCTrackCandidate", "B");
@@ -108,17 +119,6 @@ derror_t MyProcessor::init(void)
 		exit(-1);
 	}
 
-	// Tell factory to keep around a few density histos
-	factory->SetMaxDebugBuffers(16);
-
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// brun 
-//------------------------------------------------------------------
-derror_t MyProcessor::brun(DEventLoop *eventLoop, int runnumber)
-{
 	// Read in Magnetic field map
 	if(Bfield)delete Bfield;
 	//Bfield = new DMagneticFieldMap(41,251);
