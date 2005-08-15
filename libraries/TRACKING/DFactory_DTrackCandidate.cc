@@ -36,16 +36,26 @@ class TrkHitZSort{
 //------------------
 // DFactory_DMCTrackCandidate_B
 //------------------
-DFactory_DMCTrackCandidate_B::DFactory_DMCTrackCandidate_B()
+derror_t DFactory_DMCTrackCandidate_B::init()
 {
+	// Set defaults
 	MAX_SEED_DIST = 5.0;
-	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
 	MAX_SEED_HITS = 10;
 	MAX_CIRCLE_DIST = 2.0;
 	MAX_PHI_Z_DIST = 10.0;
-	MAX_DEBUG_BUFFERS = 0.0;
+	MAX_DEBUG_BUFFERS = 0;
 	TARGET_Z_MIN = 50.0;
 	TARGET_Z_MAX = 80.0;
+	
+	app->SetDefaultParameter("MAX_SEED_DIST",			MAX_SEED_DIST);
+	app->SetDefaultParameter("MAX_SEED_HITS",			MAX_SEED_HITS);
+	app->SetDefaultParameter("MAX_CIRCLE_DIST",		MAX_CIRCLE_DIST);
+	app->SetDefaultParameter("MAX_PHI_Z_DIST",		MAX_PHI_Z_DIST);
+	app->SetDefaultParameter("MAX_DEBUG_BUFFERS",	MAX_DEBUG_BUFFERS);
+	app->SetDefaultParameter("TARGET_Z_MIN",			TARGET_Z_MIN);
+	app->SetDefaultParameter("TARGET_Z_MAX",			TARGET_Z_MAX);
+	
+	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
 	
 	char suffix[32];
 	sprintf(suffix,"_%08x", (unsigned int)pthread_self());
@@ -59,6 +69,8 @@ DFactory_DMCTrackCandidate_B::DFactory_DMCTrackCandidate_B()
 	sprintf(title,"z_vertex%s",suffix);
 	zvertex_hist = new TH1F(title,"z_vertex", 140, TARGET_Z_MIN, TARGET_Z_MAX);
 	z_vertex_bin_size = zvertex_hist->GetBinCenter(2)-zvertex_hist->GetBinCenter(1);
+
+	return NOERROR;
 }
 
 //------------------
@@ -323,7 +335,6 @@ int DFactory_DMCTrackCandidate_B::FitSeed(void)
 	// If the IN_SEED hits don't actually end up on the circle
 	// (I don't quite understand it, but it happens) then we should
 	// set the ignore flag for the first IN_SEED hit and try again.
-//cout<<__FILE__<<":"<<__LINE__<<" N_in_seed_and_on_circle="<<N_in_seed_and_on_circle<<"  hits_on_circle.size()"<<hits_on_circle.size()<<endl;
 	if(N_in_seed_and_on_circle<3 || hits_on_circle.size()<4){
 		ChopSeed();
 		return 0;
