@@ -16,7 +16,6 @@ class DFactory_DTOFHit:public DFactory<DTOFHit>{
 	public:
 		DFactory_DTOFHit(){};
 		~DFactory_DTOFHit(){};
-		derror_t Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v);
 		const string toString(void);
 	
 	protected:
