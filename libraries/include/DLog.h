@@ -96,4 +96,7 @@ class DLog
 		int __level;
 };
 
+// Global variable used for logging
+extern DLog dlog;
+
 #endif /*_DLOG_H_*/
