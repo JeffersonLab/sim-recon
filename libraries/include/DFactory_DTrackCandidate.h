@@ -18,8 +18,9 @@
 
 class DFactory_DMCTrackCandidate_B:public DFactory<DMCTrackCandidate>{
 	public:
-		DFactory_DMCTrackCandidate_B();
+		DFactory_DMCTrackCandidate_B(){};
 		~DFactory_DMCTrackCandidate_B(){};
+		derror_t init(void);
 		const string toString(void);
 		const char* Tag(void){return "B";}
 		void SetMaxDebugBuffers(int N){MAX_DEBUG_BUFFERS = N;}
