@@ -36,7 +36,7 @@ class TrkHitZSort{
 //------------------
 // DFactory_DMCTrackCandidate_B
 //------------------
-derror_t DFactory_DMCTrackCandidate_B::init()
+DFactory_DMCTrackCandidate_B::DFactory_DMCTrackCandidate_B()
 {
 	// Set defaults
 	MAX_SEED_DIST = 5.0;
@@ -47,13 +47,13 @@ derror_t DFactory_DMCTrackCandidate_B::init()
 	TARGET_Z_MIN = 50.0;
 	TARGET_Z_MAX = 80.0;
 	
-	app->SetDefaultParameter("MAX_SEED_DIST",			MAX_SEED_DIST);
-	app->SetDefaultParameter("MAX_SEED_HITS",			MAX_SEED_HITS);
-	app->SetDefaultParameter("MAX_CIRCLE_DIST",		MAX_CIRCLE_DIST);
-	app->SetDefaultParameter("MAX_PHI_Z_DIST",		MAX_PHI_Z_DIST);
-	app->SetDefaultParameter("MAX_DEBUG_BUFFERS",	MAX_DEBUG_BUFFERS);
-	app->SetDefaultParameter("TARGET_Z_MIN",			TARGET_Z_MIN);
-	app->SetDefaultParameter("TARGET_Z_MAX",			TARGET_Z_MAX);
+	dparms.SetDefaultParameter("TRK:MAX_SEED_DIST",		MAX_SEED_DIST);
+	dparms.SetDefaultParameter("TRK:MAX_SEED_HITS",		MAX_SEED_HITS);
+	dparms.SetDefaultParameter("TRK:MAX_CIRCLE_DIST",	MAX_CIRCLE_DIST);
+	dparms.SetDefaultParameter("TRK:MAX_PHI_Z_DIST",		MAX_PHI_Z_DIST);
+	dparms.SetDefaultParameter("TRK:MAX_DEBUG_BUFFERS",	MAX_DEBUG_BUFFERS);
+	dparms.SetDefaultParameter("TRK:TARGET_Z_MIN",		TARGET_Z_MIN);
+	dparms.SetDefaultParameter("TRK:TARGET_Z_MAX",		TARGET_Z_MAX);
 	
 	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
 	
@@ -69,8 +69,6 @@ derror_t DFactory_DMCTrackCandidate_B::init()
 	sprintf(title,"z_vertex%s",suffix);
 	zvertex_hist = new TH1F(title,"z_vertex", 140, TARGET_Z_MIN, TARGET_Z_MAX);
 	z_vertex_bin_size = zvertex_hist->GetBinCenter(2)-zvertex_hist->GetBinCenter(1);
-
-	return NOERROR;
 }
 
 //------------------
