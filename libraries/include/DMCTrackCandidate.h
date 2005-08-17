@@ -8,6 +8,7 @@
 #ifndef _DMCTrackCandidate_
 #define _DMCTrackCandidate_
 
+#include "DObject.h"
 #include "DFactory.h"
 
 #define MAX_IHITS 256

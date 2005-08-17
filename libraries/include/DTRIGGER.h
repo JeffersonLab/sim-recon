@@ -8,6 +8,7 @@
 #ifndef _DTRIGGER_
 #define _DTRIGGER_
 
+#include "DObject.h"
 #include "DFactory.h"
 
 class DTRIGGER:public DObject{

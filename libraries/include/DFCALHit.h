@@ -8,6 +8,7 @@
 #ifndef _DFCALHit_
 #define _DFCALHit_
 
+#include "DObject.h"
 #include "DFactory.h"
 
 class DFCALHit:public DObject{

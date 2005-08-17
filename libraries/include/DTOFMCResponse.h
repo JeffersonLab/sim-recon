@@ -8,6 +8,7 @@
 #ifndef _DTOFMCResponse_
 #define _DTOFMCResponse_
 
+#include "DObject.h"
 #include "DFactory.h"
 
 class DTOFMCResponse:public DObject{

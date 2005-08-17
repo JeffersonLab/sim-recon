@@ -8,6 +8,7 @@
 #ifndef _DCHERENKOVHit_
 #define _DCHERENKOVHit_
 
+#include "DObject.h"
 #include "DFactory.h"
 
 class DCHERENKOVHit:public DObject{

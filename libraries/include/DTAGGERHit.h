@@ -8,6 +8,7 @@
 #ifndef _DTAGGERHit_
 #define _DTAGGERHit_
 
+#include "DObject.h"
 #include "DFactory.h"
 
 class DTAGGERHit:public DObject{

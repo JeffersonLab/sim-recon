@@ -8,6 +8,7 @@
 #ifndef _DMCCheatHit_
 #define _DMCCheatHit_
 
+#include "DObject.h"
 #include "DFactory.h"
 
 class DMCCheatHit:public DObject{

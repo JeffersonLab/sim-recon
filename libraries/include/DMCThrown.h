@@ -9,6 +9,7 @@
 #define _DMCThrown_
 
 #include <TObject.h>
+#include "DObject.h"
 #include "DFactory.h"
 
 class DMCThrown:public DObject{

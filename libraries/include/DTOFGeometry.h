@@ -8,6 +8,7 @@
 #ifndef _DTOFGeometry_
 #define _DTOFGeometry_
 
+#include "DObject.h"
 #include "DFactory.h"
 
 class DTOFGeometry:public DObject{

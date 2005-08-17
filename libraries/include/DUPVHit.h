@@ -8,6 +8,7 @@
 #ifndef _DUPVHit_
 #define _DUPVHit_
 
+#include "DObject.h"
 #include "DFactory.h"
 
 class DUPVHit:public DObject{

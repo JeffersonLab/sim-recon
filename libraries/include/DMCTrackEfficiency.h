@@ -10,6 +10,7 @@
 
 #include <Rtypes.h>
 
+#include "DObject.h"
 #include "DFactory.h"
 
 class DMCTrackEfficiency:public DObject{

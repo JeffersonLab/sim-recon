@@ -8,6 +8,7 @@
 #ifndef _DMCReconstructed_
 #define _DMCReconstructed_
 
+#include "DObject.h"
 #include "DFactory.h"
 
 class DMCThrown;

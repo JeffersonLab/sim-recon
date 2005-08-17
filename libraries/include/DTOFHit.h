@@ -8,6 +8,7 @@
 #ifndef _DTOFHit_
 #define _DTOFHit_
 
+#include "DObject.h"
 #include "DFactory.h"
 
 class DTOFHit:public DObject{

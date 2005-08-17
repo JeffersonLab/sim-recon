@@ -8,6 +8,7 @@
 #ifndef _DCDCHit_
 #define _DCDCHit_
 
+#include "DObject.h"
 #include "DFactory.h"
 
 class DCDCHit:public DObject{

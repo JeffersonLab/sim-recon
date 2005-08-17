@@ -8,6 +8,7 @@
 #ifndef _DFCALShower_
 #define _DFCALShower_
 
+#include "DObject.h"
 #include "DFactory.h"
 
 class DFCALShower:public DObject{
