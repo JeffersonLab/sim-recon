@@ -15,6 +15,7 @@ DParameter::DParameter(string my_key, string my_value)
 	key = my_key;
 	value = my_value;
 	isdefault = false;
+	hasdefault = false;
 }
 
 //---------------------------------
