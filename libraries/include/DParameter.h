@@ -15,6 +15,9 @@ using namespace std;
 #include "derror.h"
 
 class DParameter{
+
+	friend class DParameterManager;
+
 	public:
 		DParameter(string my_key, string my_value);
 		virtual ~DParameter();
@@ -27,12 +30,13 @@ class DParameter{
 		inline float f(void){return (float)atof(value.c_str());}		///< Return value as a float
 		inline double d(void){return (double)atof(value.c_str());}	///< Return value as a double
 		inline int i(void){return (int)atoi(value.c_str());}			///< Return value as an int
-		bool isdefault;
 		
 	protected:
 		string key;
 		string value;
-	
+		bool isdefault;	///< is the current value set by SetDefaultParameter ?
+		bool hasdefault;	///< was SetDefaultParameter ever called for this key ?
+		bool printme;		///< used by ParameterManager::PrintParameters()
 	private:
 
 };
