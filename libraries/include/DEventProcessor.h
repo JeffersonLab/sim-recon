@@ -14,11 +14,10 @@ using namespace std;
 
 #include "derror.h"
 #include "DParameterManager.h"
+#include "DObject.h"
 
 class DEventLoop;
 class DApplication;
-
-typedef int identifier_t;
 
 class DEventProcessor{
 	public:
