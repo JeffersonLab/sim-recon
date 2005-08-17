@@ -59,6 +59,10 @@ MyProcessor::MyProcessor()
 {
 	drew_detectors=0;
 	Bfield = NULL;
+
+	// Tell factory to keep around a few density histos	
+	dparms.SetParameter("TRK:MAX_DEBUG_BUFFERS",	16);
+	
 }
 
 //------------------------------------------------------------------
@@ -96,9 +100,6 @@ derror_t MyProcessor::init(void)
 	// Make sure detectors have been drawn
 	if(!drew_detectors)DrawDetectors();
 
-	// Tell factory to keep around a few density histos	
-	app->SetParameter("MAX_DEBUG_BUFFERS",	16);
-	
 	return NOERROR;
 }
 
