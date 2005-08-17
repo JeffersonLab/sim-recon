@@ -23,7 +23,7 @@ derror_t DEventProcessor_MCStats::init(void)
 	dist_same = new TH1F("dist_same", "Distance between hists from same track (cm)", 1000, 0.0, 500.0);
 	dist_diff = new TH1F("dist_diff", "Distance between hists from different tracks (cm)", 1000, 0.0, 500.0);
 	r0 = new TH1F("r0", "Radius of curvature", 1000, 0.0, 500.0);
-	stats = new TH1F("stats", "stats", 10, 0.5, 10.5);
+	stats = new TH1F("mcstats", "stats", 10, 0.5, 10.5);
 
 	r0_vs_dist_same = new TH2F("r0_vs_dist_same", "Ro vs. distance between points from same track", 100, 0.0, 500.0, 100, 0.0, 500.0);
 	r0_vs_dist_diff = new TH2F("r0_vs_dist_diff", "Ro vs. distance between points from different tracks", 100, 0.0, 500.0, 100, 0.0, 500.0);
