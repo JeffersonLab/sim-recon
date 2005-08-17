@@ -199,8 +199,19 @@ void DEventProcessor_TrackHists::EffVsX(TH1F *out, TH2F* in, int numerator)
 {
 	TH1D *matched = in->ProjectionX("matched", numerator, numerator);
 	TH1D *fittable = in->ProjectionX("fittable", NFITTABLE,NFITTABLE);
-	out->Sumw2();
 	out->Divide(matched, fittable);
+	
+	// calculate error based on binomial distribution (sigma=sqrt(Npq))
+	int Nbins = matched->GetNbinsX();
+	for(int i=1; i<=Nbins; i++){
+		double Nfound = matched->GetBinContent(i);
+		double p = out->GetBinContent(i);
+		double q = 1.0 - p;
+		double sigma_found = sqrt(Nfound*p*q);
+		double sigma = p*sigma_found/Nfound;
+		if(!finite(sigma))sigma=0.0;
+		out->SetBinError(i, sigma);
+	}
 	out->SetOption("E1");
 	delete matched;
 	delete fittable;
