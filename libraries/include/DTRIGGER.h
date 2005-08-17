@@ -10,7 +10,7 @@
 
 #include "DFactory.h"
 
-class DTRIGGER{
+class DTRIGGER:public DObject{
 	public:
 		HDCLASSDEF(DTRIGGER);
 		

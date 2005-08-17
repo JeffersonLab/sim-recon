@@ -10,7 +10,7 @@
 
 #include "DFactory.h"
 
-class DTOFHit{
+class DTOFHit:public DObject{
 	public:
 		HDCLASSDEF(DTOFHit);
 		

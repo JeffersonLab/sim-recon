@@ -10,7 +10,7 @@
 
 #include "DFactory.h"
 
-class DTAGGERHit{
+class DTAGGERHit:public DObject{
 	public:
 		HDCLASSDEF(DTAGGERHit);
 		

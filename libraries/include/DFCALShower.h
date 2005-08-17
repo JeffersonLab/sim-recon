@@ -10,7 +10,7 @@
 
 #include "DFactory.h"
 
-class DFCALShower{
+class DFCALShower:public DObject{
 	public:
 		HDCLASSDEF(DFCALShower);
 

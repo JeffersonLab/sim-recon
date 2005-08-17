@@ -10,7 +10,7 @@
 
 #include "DFactory.h"
 
-class DFCALHit{
+class DFCALHit:public DObject{
 	public:
 		HDCLASSDEF(DFCALHit);
 		

@@ -12,7 +12,7 @@
 
 #include "DFactory.h"
 
-class DMCTrackEfficiency{
+class DMCTrackEfficiency:public DObject{
 	public:
 		HDCLASSDEF(DMCTrackEfficiency);
 

@@ -10,7 +10,7 @@
 
 #include "DFactory.h"
 
-class DUPVHit{
+class DUPVHit:public DObject{
 	public:
 		HDCLASSDEF(DUPVHit);
 		

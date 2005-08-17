@@ -12,7 +12,7 @@
 
 class DMCThrown;
 
-class DMCReconstructed{
+class DMCReconstructed:public DObject{
 	public:
 		HDCLASSDEF(DMCReconstructed);
 		

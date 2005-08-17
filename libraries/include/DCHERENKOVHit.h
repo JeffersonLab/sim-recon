@@ -10,7 +10,7 @@
 
 #include "DFactory.h"
 
-class DCHERENKOVHit{
+class DCHERENKOVHit:public DObject{
 	public:
 		HDCLASSDEF(DCHERENKOVHit);
 		

@@ -10,7 +10,7 @@
 
 #include "DFactory.h"
 
-class DBCALHit{
+class DBCALHit:public DObject{
 	public:
 		HDCLASSDEF(DBCALHit);
 		

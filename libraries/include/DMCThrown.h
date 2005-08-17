@@ -11,7 +11,7 @@
 #include <TObject.h>
 #include "DFactory.h"
 
-class DMCThrown{
+class DMCThrown:public DObject{
 	public:
 		HDCLASSDEF(DMCThrown);
 		

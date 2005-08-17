@@ -10,7 +10,7 @@
 
 #include "DFactory.h"
 
-class DFDCHit{
+class DFDCHit:public DObject{
 	public:
 		HDCLASSDEF(DFDCHit);
 		

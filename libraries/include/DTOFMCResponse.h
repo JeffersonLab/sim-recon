@@ -10,7 +10,7 @@
 
 #include "DFactory.h"
 
-class DTOFMCResponse{
+class DTOFMCResponse:public DObject{
 	public:
 		HDCLASSDEF(DTOFMCResponse);
 		

@@ -10,7 +10,7 @@
 
 #include "DFactory.h"
 
-class DTOFGeometry{
+class DTOFGeometry:public DObject{
 	public:
 		HDCLASSDEF(DTOFGeometry);
 

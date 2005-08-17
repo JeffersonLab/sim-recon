@@ -10,7 +10,7 @@
 
 #include "DFactory.h"
 
-class DMCCheatHit{
+class DMCCheatHit:public DObject{
 	public:
 		HDCLASSDEF(DMCCheatHit);
 		

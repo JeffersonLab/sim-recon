@@ -12,7 +12,7 @@
 
 #define MAX_IHITS 256
 
-class DMCTrackCandidate{
+class DMCTrackCandidate:public DObject{
 	public:
 		HDCLASSDEF(DMCTrackCandidate);
 		
