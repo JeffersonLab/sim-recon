@@ -19,7 +19,7 @@ using namespace std;
 #include "DEventLoop.h"
 #include "DEvent.h"
 #include "DGeometry.h"
-#include "DParameter.h"
+#include "DParameterManager.h"
 #include "DLog.h"
 
 void* LaunchThread(void* arg);
@@ -54,10 +54,8 @@ DApplication::DApplication(int narg, char* argv[])
 	pthread_mutex_init(&app_mutex, NULL);
 	pthread_mutex_init(&current_source_mutex, NULL);
 	pthread_mutex_init(&geometry_mutex, NULL);
-	pthread_mutex_init(&parameter_mutex, NULL);
 
 	// Variables used for calculating the rate
-	printDefaultParameters = false;
 	show_ticker = 1;
 	NEvents = 0;
 	last_NEvents = 0;
@@ -91,14 +89,14 @@ DApplication::DApplication(int narg, char* argv[])
 			char* pstr = strdup(&argv[i][strlen(arg)]);
 			if(!strcmp(pstr, "print")){
 				// Special option "-Pprint" flags even default parameters to be printed
-				printDefaultParameters = true;
+				dparms.SetParameter("print", "all");
 				continue;
 			}
 			char *ptr = strstr(pstr, "=");
 			if(ptr){
 				*ptr = 0;
 				ptr++;
-				SetParameter(pstr, ptr);
+				dparms.SetParameter(pstr, ptr);
 			}else{
 				cerr<<__FILE__<<":"<<__LINE__<<" bad parameter argument ("<<argv[i]<<") should be of form -Pkey=value"<<endl;
 			}
@@ -117,9 +115,6 @@ DApplication::~DApplication()
 {
 	for(unsigned int i=0; i<geometries.size(); i++)delete geometries[i];
 	geometries.clear();
-
-	for(unsigned int i=0; i<parameters.size(); i++)delete parameters[i];
-	parameters.clear();
 }
 
 //---------------------------------
@@ -324,9 +319,6 @@ derror_t DApplication::Init(void)
 		exit(-1);
 	}
 	
-	// If any parameters are defined yet, then print them
-	if(parameters.size())PrintParameters();
-
 	return NOERROR;
 }
 
@@ -619,40 +611,5 @@ derror_t DApplication::RegisterSharedObjectDirectory(const char *sodirname)
 	}
 
 	return NOERROR;
-}
-
-//---------------------------------
-// PrintParameters
-//---------------------------------
-void DApplication::PrintParameters(void)
-{
-	if(parameters.size() == 0){
-		cout<<" - No configuration parameters defined -"<<endl;
-		return;
-	}
-	
-	cout<<" --- Configuration Parameters --"<<endl;
-	
-	// First, find the longest key and value
-	unsigned int max_key_len = 0;
-	unsigned int max_val_len = 0;
-	for(unsigned int i=0; i<parameters.size(); i++){
-		DParameter *p = parameters[i];
-		if(!printDefaultParameters && p->isdefault)continue;
-		if(p->GetKey().length()>max_key_len) max_key_len = p->GetKey().length(); 
-		if(p->GetValue().length()>max_val_len) max_val_len = p->GetValue().length(); 
-	}
-	
-	// Loop over parameters a second time and print them out
-	for(unsigned int i=0; i<parameters.size(); i++){
-		DParameter *p = parameters[i];
-		if(!printDefaultParameters && p->isdefault)continue;
-		string key = p->GetKey();
-		string val = p->GetValue();
-		string line = string(max_key_len-key.length()+1,' ') + key + " = " + val + string(max_val_len-val.length(),' ');
-		cout<<line.c_str()<<endl;
-	}
-	
-	cout<<" -------------------------------"<<endl;
 }
 
