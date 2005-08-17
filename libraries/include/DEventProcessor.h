@@ -13,6 +13,8 @@
 using namespace std;
 
 #include "derror.h"
+#include "DParameterManager.h"
+
 class DEventLoop;
 class DApplication;
 
