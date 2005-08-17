@@ -58,6 +58,7 @@ DEventLoop::DEventLoop(DApplication *app)
 	// Copy the event processor list to our local vector
 	app->GetProcessors(processors);
 
+	dparms.PrintParameters();
 }
 
 //---------------------------------
