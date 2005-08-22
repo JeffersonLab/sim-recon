@@ -31,6 +31,7 @@ class DParameterManager{
 		template<typename K> DParameter* DParameterManager::GetParameter(K key);
 		template<typename K, typename V> DParameter* DParameterManager::GetParameter(K key, V &val);
 		void PrintParameters(void);
+		void Dump(void);
 		
 	private:
 		vector<DParameter*> parameters;
@@ -95,6 +96,7 @@ DParameter* DParameterManager::SetParameter(K key, V val)
 		p->SetValue(sval);
 	}
 	p->isdefault = false;
+	p->type = DParameter::DataType(val);
 	
 	// Tell the DParameterManager it needs to re-print if requested
 	printParametersCalled = false;
