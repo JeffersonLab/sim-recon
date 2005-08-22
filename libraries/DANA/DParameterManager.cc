@@ -147,3 +147,19 @@ void DParameterManager::PrintParameters(void)
 	cout<<" -------------------------------"<<endl;
 }
 
+//---------------------------------
+// Dump
+//---------------------------------
+void DParameterManager::Dump(void)
+{
+	// Just in case a new parameter is written while we're dumping
+	pthread_mutex_lock(&parameter_mutex);
+
+	// Call Dump() for all parameters
+	for(unsigned int i=0; i<parameters.size(); i++){
+		parameters[i]->Dump();
+	}
+	
+	pthread_mutex_unlock(&parameter_mutex);
+
+}
