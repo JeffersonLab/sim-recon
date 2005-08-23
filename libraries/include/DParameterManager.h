@@ -28,8 +28,8 @@ class DParameterManager{
 		template<typename K, typename V> DParameter* SetDefaultParameter(K key, V& val);
 		template<typename K, typename V> DParameter* SetParameter(K key, V val);
 		template<typename K> DParameter* GetParameterNoLock(K key);
-		template<typename K> DParameter* DParameterManager::GetParameter(K key);
-		template<typename K, typename V> DParameter* DParameterManager::GetParameter(K key, V &val);
+		template<typename K> DParameter* GetParameter(K key);
+		template<typename K, typename V> DParameter* GetParameter(K key, V &val);
 		void PrintParameters(void);
 		void Dump(void);
 		
