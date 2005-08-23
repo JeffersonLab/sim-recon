@@ -65,6 +65,13 @@ DParameter* DParameterManager::SetDefaultParameter(K key, V &val)
 				cout<<" WARNING: Multiple calls to SetDefaultParameter with key=\""
 				<<key<<"\" value= "<<val<<" and "<<my_val<<endl;
 			}
+		}else{
+			// Parameters set from the command line will have the
+			// wrong data type since SetParameter will have been called
+			// with a string type for the value. If a default was set,
+			// already for this parameter, then we don't need to set it
+			// again, but if not, we should set it to the correct type.
+			p->type = DParameter::DataType(val);
 		}
 	}
 	
