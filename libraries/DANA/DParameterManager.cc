@@ -6,6 +6,7 @@
 //
 
 #include <ctype.h>
+#include <pthread.h>
 
 #include "DParameterManager.h"
 
