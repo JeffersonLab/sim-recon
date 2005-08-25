@@ -13,7 +13,6 @@ using namespace std;
 
 #include "DCDCHit.h"
 #include "DFCALHit.h"
-#include "DMCReconstructed.h"
 
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
@@ -41,9 +40,6 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	vector<const DFCALHit*> fcalhits;
 	eventLoop->Get(cdchits);
 	eventLoop->Get(fcalhits);
-	
-	vector<const DMCReconstructed*> mcreconstructed;
-	eventLoop->Get(mcreconstructed);
 	
 	for(unsigned int i=0;i<cdchits.size();i++){
 		const DCDCHit *cdchit = cdchits[i];
