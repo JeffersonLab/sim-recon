@@ -8,7 +8,6 @@
 #ifndef _DMCThrown_
 #define _DMCThrown_
 
-#include <TObject.h>
 #include "DObject.h"
 #include "DFactory.h"
 
@@ -24,7 +23,6 @@ class DMCThrown:public DObject{
 		float x,y,z;		///< Vertex position in cm
 		float mass;			///< Mass in GeV/c^2
 
-		ClassDef(DMCThrown,1)
 };
 
 #endif // _DMCThrown_
