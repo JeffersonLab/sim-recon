@@ -1,34 +1,28 @@
 // $Id$
 //
-//    File: DMCReconstructed.h
+//    File: DTrack.h
 // Created: Sun Apr  3 12:28:45 EDT 2005
 // Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
 //
 
-#ifndef _DMCReconstructed_
-#define _DMCReconstructed_
+#ifndef _DTrack_
+#define _DTrack_
 
 #include "DObject.h"
 #include "DFactory.h"
 
 class DMCThrown;
 
-class DMCReconstructed:public DObject{
+class DTrack:public DObject{
 	public:
-		HDCLASSDEF(DMCReconstructed);
+		HDCLASSDEF(DTrack);
 		
-		int type;			///< GEANT particle ID
 		float q;				///< electric charge
 		float p;				///< Total momentum in GeV/c
-		float E;				///< Total energy in GeV
 		float theta,phi;	///< Inital theta and phi angles in radians
 		float x,y,z;		///< Vertex position in cm
-		float mass;			///< Mass in GeV/c^2
-		int thrownid;		///< index to closest match in DMCThrown
-		float thrown_delta_p;	///< Magnitude of momentum diff. with thrownid
-		
-		void FindClosestThrown(vector<const DMCThrown*> &mcthrowns);
+		identifier_t candidateid;	///< id of DTrackCandidate this came from
 };
 
-#endif // _DMCReconstructed_
+#endif // _DTrack_
 
