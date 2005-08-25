@@ -1,31 +1,29 @@
 // $Id$
 //
-//    File: DFactory_DMCCheatHit.cc
+//    File: DFactory_DMCTrackHit.cc
 // Created: Mon Apr  4 08:18:07 EDT 2005
 // Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
-#include "DFactory_DMCCheatHit.h"
+#include "DFactory_DMCTrackHit.h"
 #include "DEventLoop.h"
+#include "DTrackHit.h"
+#include "GlueX.h"
 
 //------------------------------------------------------------------
-// Binary predicate used to sort cheat hits
+// Binary predicate used to sort hits
 //------------------------------------------------------------------
-template<class T>
-class CheatHitSort{
+class MCTrackHitSort{
 	public:
-		bool operator()(const T &chit1,const T &chit2) const {
-			if(chit1->track != chit2->track){
-				return chit1->track < chit2->track;
-			}
-			return chit1->z < chit2->z;
+		bool operator()(DMCTrackHit* const &thit1, DMCTrackHit* const &thit2) const {
+			return thit1->z < thit2->z;
 		}
 };
 
 //------------------
 // evnt
 //------------------
-derror_t DFactory_DMCCheatHit::evnt(DEventLoop *eventLoop, int eventnumber)
+derror_t DFactory_DMCTrackHit::evnt(DEventLoop *eventLoop, int eventnumber)
 {
 	/// This doesn't do anything. All of the work is done in  Extract_HDDM()
 	/// and the GetXXXHits() methods.
@@ -36,7 +34,7 @@ derror_t DFactory_DMCCheatHit::evnt(DEventLoop *eventLoop, int eventnumber)
 //------------------
 // Extract_HDDM
 //------------------
-derror_t DFactory_DMCCheatHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
+derror_t DFactory_DMCTrackHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 {
 	/// Copies the data from the given hddm_s structure. This is called
 	/// from DEventSourceHDDM::GetObjects.
@@ -56,15 +54,18 @@ derror_t DFactory_DMCCheatHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	GetFCALHits(hddm_s);
 	GetUPVHits(hddm_s);
 	
+	// sort hits by z
+	sort(_data.begin(), _data.end(), MCTrackHitSort());
+	
+	// Set id values of all hits to be unique. At the same time ...
 	// Some systems will use negative phis. Force them all to
 	// be in the 0 to 2pi range
+	identifier_t idcntr = 1;
 	for(unsigned int i=0;i<_data.size();i++){
-		DMCCheatHit *mccheathit = _data[i];
-		if(mccheathit->phi<0.0)mccheathit->phi += 2.0*M_PI;
+		DMCTrackHit *mctrackhit = _data[i];
+		if(mctrackhit->phi<0.0)mctrackhit->phi += 2.0*M_PI;
+		mctrackhit->id = idcntr++;
 	}
-	
-	// sort hits by track, then z
-	sort(_data.begin(), _data.end(), CheatHitSort<DMCCheatHit*>());
 	
 	// Copy into v
 	for(unsigned int i=0; i<_data.size(); i++)v.push_back(_data[i]);
@@ -74,7 +75,7 @@ derror_t DFactory_DMCCheatHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 //-------------------
 // GetCDCHits
 //-------------------
-derror_t DFactory_DMCCheatHit::GetCDCHits(s_HDDM_t *hddm_s)
+derror_t DFactory_DMCTrackHit::GetCDCHits(s_HDDM_t *hddm_s)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -96,14 +97,14 @@ derror_t DFactory_DMCCheatHit::GetCDCHits(s_HDDM_t *hddm_s)
 						s_CdcPoints_t *cdcpoints = straws->in[k].cdcPoints;
 						if(cdcpoints){
 							for(unsigned int m=0;m<cdcpoints->mult;m++){
-								DMCCheatHit *mccheathit = new DMCCheatHit;
-								mccheathit->r			= cdcpoints->in[m].r;
-								mccheathit->phi		= cdcpoints->in[m].phi;
-								mccheathit->z			= cdcpoints->in[m].z;
-								mccheathit->track		= cdcpoints->in[m].track;
-								mccheathit->primary	= cdcpoints->in[m].primary;
-								mccheathit->system	= 1;
-								_data.push_back(mccheathit);
+								DMCTrackHit *mctrackhit = new DMCTrackHit;
+								mctrackhit->r			= cdcpoints->in[m].r;
+								mctrackhit->phi		= cdcpoints->in[m].phi;
+								mctrackhit->z			= cdcpoints->in[m].z;
+								mctrackhit->track		= cdcpoints->in[m].track;
+								mctrackhit->primary	= cdcpoints->in[m].primary;
+								mctrackhit->system	= SYS_CDC;
+								_data.push_back(mctrackhit);
 							}
 						}
 					}
@@ -118,7 +119,7 @@ derror_t DFactory_DMCCheatHit::GetCDCHits(s_HDDM_t *hddm_s)
 //-------------------
 // GetFDCHits
 //-------------------
-derror_t DFactory_DMCCheatHit::GetFDCHits(s_HDDM_t *hddm_s)
+derror_t DFactory_DMCTrackHit::GetFDCHits(s_HDDM_t *hddm_s)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -144,16 +145,16 @@ derror_t DFactory_DMCCheatHit::GetFDCHits(s_HDDM_t *hddm_s)
 						s_FdcPoints_t *fdcPoints = wires->in[m].fdcPoints;
 						if(!fdcPoints)continue;
 						for(unsigned int n=0;n<fdcPoints->mult;n++){
-							DMCCheatHit *mccheathit = new DMCCheatHit;
+							DMCTrackHit *mctrackhit = new DMCTrackHit;
 							float x = fdcPoints->in[n].x;
 							float y = fdcPoints->in[n].y;
-							mccheathit->r			= sqrt(x*x + y*y);
-							mccheathit->phi		= atan2(y,x);
-							mccheathit->z			= fdcPoints->in[n].z;
-							mccheathit->track		= fdcPoints->in[n].track;
-							mccheathit->primary	= fdcPoints->in[n].primary;
-							mccheathit->system	= 2;
-							_data.push_back(mccheathit);
+							mctrackhit->r			= sqrt(x*x + y*y);
+							mctrackhit->phi		= atan2(y,x);
+							mctrackhit->z			= fdcPoints->in[n].z;
+							mctrackhit->track		= fdcPoints->in[n].track;
+							mctrackhit->primary	= fdcPoints->in[n].primary;
+							mctrackhit->system	= SYS_FDC;
+							_data.push_back(mctrackhit);
 						}
 					}
 				}
@@ -182,7 +183,7 @@ derror_t DFactory_DMCCheatHit::GetFDCHits(s_HDDM_t *hddm_s)
 //-------------------
 // GetBCALHits
 //-------------------
-derror_t DFactory_DMCCheatHit::GetBCALHits(s_HDDM_t *hddm_s)
+derror_t DFactory_DMCTrackHit::GetBCALHits(s_HDDM_t *hddm_s)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -196,14 +197,14 @@ derror_t DFactory_DMCCheatHit::GetBCALHits(s_HDDM_t *hddm_s)
 		if(!barrelShowers)continue;
 		
 		for(unsigned int j=0;j<barrelShowers->mult;j++){
-			DMCCheatHit *mccheathit = new DMCCheatHit;
-			mccheathit->r			= barrelShowers->in[j].r;
-			mccheathit->phi		= barrelShowers->in[j].phi;
-			mccheathit->z			= barrelShowers->in[j].z;
-			mccheathit->track		= barrelShowers->in[j].track;
-			mccheathit->primary	= barrelShowers->in[j].primary;
-			mccheathit->system	= 3;
-			_data.push_back(mccheathit);
+			DMCTrackHit *mctrackhit = new DMCTrackHit;
+			mctrackhit->r			= barrelShowers->in[j].r;
+			mctrackhit->phi		= barrelShowers->in[j].phi;
+			mctrackhit->z			= barrelShowers->in[j].z;
+			mctrackhit->track		= barrelShowers->in[j].track;
+			mctrackhit->primary	= barrelShowers->in[j].primary;
+			mctrackhit->system	= SYS_BCAL;
+			_data.push_back(mctrackhit);
 		}
 	}
 
@@ -213,7 +214,7 @@ derror_t DFactory_DMCCheatHit::GetBCALHits(s_HDDM_t *hddm_s)
 //-------------------
 // GetTOFHits
 //-------------------
-derror_t DFactory_DMCCheatHit::GetTOFHits(s_HDDM_t *hddm_s)
+derror_t DFactory_DMCTrackHit::GetTOFHits(s_HDDM_t *hddm_s)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -227,17 +228,17 @@ derror_t DFactory_DMCCheatHit::GetTOFHits(s_HDDM_t *hddm_s)
 		if(!tofPoints)continue;
 		
 		for(unsigned int j=0;j<tofPoints->mult;j++){
-			DMCCheatHit *mccheathit = new DMCCheatHit;
+			DMCTrackHit *mctrackhit = new DMCTrackHit;
 			float x = tofPoints->in[j].x;
 			float y = tofPoints->in[j].y;
-			mccheathit->r			= sqrt(x*x + y*y);
-			mccheathit->phi		= atan2(y,x);
-			if(mccheathit->phi<0.0)mccheathit->phi += 2.0*M_PI;
-			mccheathit->z			= tofPoints->in[j].z;
-			mccheathit->track		= tofPoints->in[j].track;
-			mccheathit->primary	= tofPoints->in[j].primary;
-			mccheathit->system	= 4;
-			_data.push_back(mccheathit);
+			mctrackhit->r			= sqrt(x*x + y*y);
+			mctrackhit->phi		= atan2(y,x);
+			if(mctrackhit->phi<0.0)mctrackhit->phi += 2.0*M_PI;
+			mctrackhit->z			= tofPoints->in[j].z;
+			mctrackhit->track		= tofPoints->in[j].track;
+			mctrackhit->primary	= tofPoints->in[j].primary;
+			mctrackhit->system	= SYS_TOF;
+			_data.push_back(mctrackhit);
 		}
 	}
 
@@ -247,7 +248,7 @@ derror_t DFactory_DMCCheatHit::GetTOFHits(s_HDDM_t *hddm_s)
 //-------------------
 // GetCherenkovHits
 //-------------------
-derror_t DFactory_DMCCheatHit::GetCherenkovHits(s_HDDM_t *hddm_s)
+derror_t DFactory_DMCTrackHit::GetCherenkovHits(s_HDDM_t *hddm_s)
 {
 
 	return NOERROR;
@@ -256,7 +257,7 @@ derror_t DFactory_DMCCheatHit::GetCherenkovHits(s_HDDM_t *hddm_s)
 //-------------------
 // GetFCALHits
 //-------------------
-derror_t DFactory_DMCCheatHit::GetFCALHits(s_HDDM_t *hddm_s)
+derror_t DFactory_DMCTrackHit::GetFCALHits(s_HDDM_t *hddm_s)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -270,17 +271,17 @@ derror_t DFactory_DMCCheatHit::GetFCALHits(s_HDDM_t *hddm_s)
 		if(!forwardShowers)continue;
 		
 		for(unsigned int j=0;j<forwardShowers->mult;j++){
-			DMCCheatHit *mccheathit = new DMCCheatHit;
+			DMCTrackHit *mctrackhit = new DMCTrackHit;
 			float x = forwardShowers->in[j].x;
 			float y = forwardShowers->in[j].y;
-			mccheathit->r			= sqrt(x*x + y*y);
-			mccheathit->phi		= atan2(y,x);
-			if(mccheathit->phi<0.0)mccheathit->phi += 2.0*M_PI;
-			mccheathit->z			= forwardShowers->in[j].z;
-			mccheathit->track		= forwardShowers->in[j].track;
-			mccheathit->primary	= forwardShowers->in[j].primary;
-			mccheathit->system	= 6;
-			_data.push_back(mccheathit);
+			mctrackhit->r			= sqrt(x*x + y*y);
+			mctrackhit->phi		= atan2(y,x);
+			if(mctrackhit->phi<0.0)mctrackhit->phi += 2.0*M_PI;
+			mctrackhit->z			= forwardShowers->in[j].z;
+			mctrackhit->track		= forwardShowers->in[j].track;
+			mctrackhit->primary	= forwardShowers->in[j].primary;
+			mctrackhit->system	= SYS_FCAL;
+			_data.push_back(mctrackhit);
 		}
 	}
 
@@ -290,7 +291,7 @@ derror_t DFactory_DMCCheatHit::GetFCALHits(s_HDDM_t *hddm_s)
 //-------------------
 // GetUPVHits
 //-------------------
-derror_t DFactory_DMCCheatHit::GetUPVHits(s_HDDM_t *hddm_s)
+derror_t DFactory_DMCTrackHit::GetUPVHits(s_HDDM_t *hddm_s)
 {
 
 	return NOERROR;
@@ -299,37 +300,26 @@ derror_t DFactory_DMCCheatHit::GetUPVHits(s_HDDM_t *hddm_s)
 //------------------
 // toString
 //------------------
-const string DFactory_DMCCheatHit::toString(void)
+const string DFactory_DMCTrackHit::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
 	GetNrows();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row:   r(cm): phi(rad):  z(cm): track: primary:    system:");
+	printheader("id:   r(cm): phi(rad):  z(cm): track: primary:    system:");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
-		DMCCheatHit *mccheathit = _data[i];
+		DMCTrackHit *mctrackhit = _data[i];
 
 		printnewrow();
 		
-		printcol("%d", i);
-		printcol("%3.1f", mccheathit->r);
-		printcol("%1.3f", mccheathit->phi);
-		printcol("%3.1f", mccheathit->z);
-		printcol("%d", mccheathit->track);
-		printcol(mccheathit->primary ? "Y":"N");
-
-		char *system = "<unknown>";
-		switch(mccheathit->system){
-			case 1: system = "CDC";				break;
-			case 2: system = "FDC";				break;
-			case 3: system = "BCAL";			break;
-			case 4: system = "TOF";				break;
-			case 5: system = "Cherenkov";		break;
-			case 6: system = "FCAL";			break;
-			case 7: system = "UPV";				break;
-		}
-		printcol(system);
+		printcol("%d", mctrackhit->id);
+		printcol("%3.1f", mctrackhit->r);
+		printcol("%1.3f", mctrackhit->phi);
+		printcol("%3.1f", mctrackhit->z);
+		printcol("%d", mctrackhit->track);
+		printcol(mctrackhit->primary ? "Y":"N");
+		printcol(SystemName(mctrackhit->system));
 		printrow();
 	}
 

@@ -13,10 +13,10 @@ using namespace std;
 #include "DEventProcessor_TrackHists.h"
 
 #include "DEventLoop.h"
-#include "DMCTrackEfficiency.h"
-#include "DMCCheatHit.h"
+#include "DTrackEfficiency.h"
+#include "DTrackHit.h"
 #include "DMCThrown.h"
-#include "DMCReconstructed.h"
+#include "DTrack.h"
 
 const char* TrackHistsDescription[DEventProcessor_TrackHists::NBINS] = {
 	"<nothing>",
@@ -56,7 +56,11 @@ DEventProcessor_TrackHists::~DEventProcessor_TrackHists()
 // init
 //------------------
 derror_t DEventProcessor_TrackHists::init(void)
-{	
+{
+	// Create TRACKING directory
+	TDirectory *dir = new TDirectory("TRACKING","TRACKING");
+	dir->cd();
+
 	// Create histograms
 	stats	= new TH1F("stats","MC Tracking Efficiency",NBINS, 0.5, (float)NBINS + 0.5);
 	frac_from_thrown	= new TH1F("frac_from_thrown","Fraction of found track's hit from same thrown",110, 0.0, 1.1);
@@ -67,15 +71,21 @@ derror_t DEventProcessor_TrackHists::init(void)
 	dp_over_p_vs_p	= new TH2F("dp_over_p_vs_p","dp/p vs. p",	200, 0.0, 10.0, 200, -0.500, 0.500);
 	dp_over_p_vs_theta	= new TH2F("dp_over_p_vs_theta","dp/p vs. theta",	200, 0.0, M_PI, 200, -0.500, 0.500);
 	
+	dir = new TDirectory("HitMatch","HitMatch");
+	dir->cd();
 	eff_vs_theta = new TH1F("eff_vs_theta", "Tracking efficiency vs. theta (param match,all tracks)", 100, 0.0, M_PI);
 	eff_vs_phi = new TH1F("eff_vs_phi", "Tracking efficiency vs. phi (param match,all tracks)", 100, 0.0, 2.0*M_PI);
 	eff_vs_p = new TH1F("eff_vs_p", "Tracking efficiency vs. p (param match,all tracks)", 100, 0.0, 10.0);
 	eff_vs_nhits = new TH1F("eff_vs_nhits", "Tracking efficiency vs. nhits (param match,all tracks)", 201, -0.5, 200.5);
+	dir->cd("../");
 
+	dir = new TDirectory("ParameterMatch","ParameterMatch");
+	dir->cd();
 	eff_vs_theta_hm = new TH1F("eff_vs_theta_hm", "Tracking efficiency vs. theta (hit match,all tracks)", 100, 0.0, M_PI);
 	eff_vs_phi_hm = new TH1F("eff_vs_phi_hm", "Tracking efficiency vs. phi (hit match,all tracks)", 100, 0.0, 2.0*M_PI);
 	eff_vs_p_hm = new TH1F("eff_vs_p_hm", "Tracking efficiency vs. p (hit match,all tracks)", 100, 0.0, 10.0);
 	eff_vs_nhits_hm = new TH1F("eff_vs_nhits_hm", "Tracking efficiency vs. nhits (hit match,all tracks)", 201, -0.5, 200.5);
+	dir->cd("../");
 
 	stats->SetOption("B"); // bar chart
 	stats->SetBarWidth(0.5);
@@ -94,6 +104,8 @@ derror_t DEventProcessor_TrackHists::init(void)
 		axis->SetBinLabel(i, TrackHistsDescription[i]);
 	}
 	
+	dir->cd("../");
+	
 	return NOERROR;
 }
 
@@ -102,21 +114,20 @@ derror_t DEventProcessor_TrackHists::init(void)
 //------------------
 derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 {
-
-	vector<const DMCCheatHit*> mccheathits;
-	vector<const DMCReconstructed*> mcreconstructeds;
+	vector<const DTrackHit*> trackhits;
+	vector<const DTrack*> tracks;
 	vector<const DMCThrown*> mcthrowns;
-	vector<const DMCTrackEfficiency*> mctrackefficiencies;
+	vector<const DTrackEfficiency*> trackefficiencies;
 	
-	loop->Get(mccheathits);
-	loop->Get(mcreconstructeds);
+	loop->Get(trackhits);
+	loop->Get(tracks);
 	loop->Get(mcthrowns);
-	loop->Get(mctrackefficiencies);
+	loop->Get(trackefficiencies);
 
 	// There should be a one to one correspondance between DMCThrown
-	// and DMCTrackEfficiency
-	if(mctrackefficiencies.size() != mcthrowns.size()){
-		cerr<<__FILE__<<":"<<__LINE__<<" DMCTrackEfficiency size does not";
+	// and DTrackEfficiency
+	if(trackefficiencies.size() != mcthrowns.size()){
+		cerr<<__FILE__<<":"<<__LINE__<<" DTrackEfficiency size does not";
 		cerr<<" match that of DMCThrown!"<<endl;
 		return NOERROR;
 	}
@@ -124,7 +135,7 @@ derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 	// Loop over thrown tracks
 	for(unsigned int i=0;i<mcthrowns.size();i++){
 		const DMCThrown *mcthrown = mcthrowns[i];
-		const DMCTrackEfficiency *trkeff = mctrackefficiencies[i];
+		const DTrackEfficiency *trkeff = trackefficiencies[i];
 		
 		float theta = mcthrown->theta;
 		float phi = mcthrown->phi;
@@ -148,11 +159,9 @@ derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 				}
 			}
 		
-			int idx = trkeff->index_DMCReconstructed;
-			if(idx>=0 && idx< (int)mcreconstructeds.size()){
-				const DMCReconstructed *mcreconstructed = mcreconstructeds[idx];
-				
-				float dp_over_p = mcreconstructed->thrown_delta_p/mcthrown->p;
+			const DTrack *track = GetByID(tracks, trkeff->trackid);
+			if(track){				
+				float dp_over_p = (track->p - mcthrown->p)/mcthrown->p;
 
 				dp_over_p_vs_p->Fill(p, dp_over_p);
 				dp_over_p_vs_theta->Fill(theta, dp_over_p);
@@ -164,12 +173,12 @@ derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 		}
 	}
 	
-	for(unsigned int i=0;i<mcreconstructeds.size();i++){
-		const DMCReconstructed *mcreconstructed = mcreconstructeds[i];
+	for(unsigned int i=0;i<tracks.size();i++){
+		const DTrack *track = tracks[i];
 
-		float theta = mcreconstructed->theta;
-		float phi = mcreconstructed->phi;
-		float p = mcreconstructed->p;
+		float theta = track->theta;
+		float phi = track->phi;
+		float p = track->p;
 		FillAll(NFOUND, 0, theta, phi, p);
 	}
 

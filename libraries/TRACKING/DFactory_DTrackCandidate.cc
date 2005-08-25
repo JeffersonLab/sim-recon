@@ -1,6 +1,6 @@
 // $Id$
 //
-//    File: DFactory_DMCTrackCandidate_B.cc
+//    File: DFactory_DTrackCandidate.cc
 // Created: Mon Jul 18 15:23:04 EDT 2005
 // Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
@@ -13,30 +13,30 @@ using namespace std;
 
 #include <TH1.h>
 
+#include "DFactory_DTrackCandidate.h"
 #include "DApplication.h"
-#include "DMCCheatHit.h"
-#include "DFactory_DMCTrackCandidate_B.h"
+#include "DTrack.h"
 #include "DQuickFit.h"
 #include "DGeometry.h"
 
 
 class TrkHitSort{
 	public:
-		bool operator()(DTrkHit* const &hit1, DTrkHit* const &hit2) const {
+		bool operator()(Dtrkhit* const &hit1, Dtrkhit* const &hit2) const {
 			return hit1->r > hit2->r;
 		}
 };
 class TrkHitZSort{
 	public:
-		bool operator()(DTrkHit* const &hit1, DTrkHit* const &hit2) const {
+		bool operator()(Dtrkhit* const &hit1, Dtrkhit* const &hit2) const {
 			return hit1->z < hit2->z;
 		}
 };
 
 //------------------
-// DFactory_DMCTrackCandidate_B
+// DFactory_DTrackCandidate
 //------------------
-DFactory_DMCTrackCandidate_B::DFactory_DMCTrackCandidate_B()
+DFactory_DTrackCandidate::DFactory_DTrackCandidate()
 {
 	// Set defaults
 	MAX_SEED_DIST = 5.0;
@@ -46,14 +46,16 @@ DFactory_DMCTrackCandidate_B::DFactory_DMCTrackCandidate_B()
 	MAX_DEBUG_BUFFERS = 0;
 	TARGET_Z_MIN = 50.0;
 	TARGET_Z_MAX = 80.0;
+	TRACKHIT_SOURCE = "MC";
 	
 	dparms.SetDefaultParameter("TRK:MAX_SEED_DIST",		MAX_SEED_DIST);
 	dparms.SetDefaultParameter("TRK:MAX_SEED_HITS",		MAX_SEED_HITS);
 	dparms.SetDefaultParameter("TRK:MAX_CIRCLE_DIST",	MAX_CIRCLE_DIST);
-	dparms.SetDefaultParameter("TRK:MAX_PHI_Z_DIST",		MAX_PHI_Z_DIST);
-	dparms.SetDefaultParameter("TRK:MAX_DEBUG_BUFFERS",	MAX_DEBUG_BUFFERS);
+	dparms.SetDefaultParameter("TRK:MAX_PHI_Z_DIST",	MAX_PHI_Z_DIST);
+	dparms.SetDefaultParameter("TRK:MAX_DEBUG_BUFFERS",MAX_DEBUG_BUFFERS);
 	dparms.SetDefaultParameter("TRK:TARGET_Z_MIN",		TARGET_Z_MIN);
 	dparms.SetDefaultParameter("TRK:TARGET_Z_MAX",		TARGET_Z_MAX);
+	dparms.SetDefaultParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
 	
 	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
 	
@@ -74,7 +76,7 @@ DFactory_DMCTrackCandidate_B::DFactory_DMCTrackCandidate_B()
 //------------------
 // fini
 //------------------
-derror_t DFactory_DMCTrackCandidate_B::fini(void)
+derror_t DFactory_DTrackCandidate::fini(void)
 {
 	delete phizangle_hist;
 	delete phi_relative;
@@ -86,7 +88,7 @@ derror_t DFactory_DMCTrackCandidate_B::fini(void)
 //------------------
 // evnt
 //------------------
-derror_t DFactory_DMCTrackCandidate_B::evnt(DEventLoop *loop, int eventnumber)
+derror_t DFactory_DTrackCandidate::evnt(DEventLoop *loop, int eventnumber)
 {
 	// Clear previous event from internal buffers
 	ClearEvent();
@@ -110,26 +112,28 @@ derror_t DFactory_DMCTrackCandidate_B::evnt(DEventLoop *loop, int eventnumber)
 		if(!FindLineHits())continue;
 		
 		// Fit the hits in the list created by above. Use result
-		// to make a new DMCTrackCandidate
+		// to make a new DTrackCandidate
 		if(!FitTrack())continue;
 	}
 	
-	// Filter out "bad" track candidates
+	// Filter out "bad" track candidates and set
+	// unique id values
+	identifier_t idcntr = 1;
 	for(unsigned int i=0; i<_data.size(); i++){
-		DMCTrackCandidate *mctc = _data[i];
-		//cout<<__FILE__<<":"<<__LINE__<<" Nhits="<<mctc->Nhits<<endl;
-		if(mctc->Nhits<10){
-			delete mctc;
+		DTrackCandidate *trackcandidate = _data[i];
+
+		if(trackcandidate->hitid.size()<10){
+			delete trackcandidate;
 			_data.erase(_data.begin()+i);
 			if(dbg_track_fit.size()<MAX_DEBUG_BUFFERS){
 				delete dbg_track_fit[i];
 				dbg_track_fit.erase(dbg_track_fit.begin()+i);
 			}
 			i--;
-			//cout<<__FILE__<<":"<<__LINE__<<" ---- erasing Nhits="<<mctc->Nhits<<endl;
+		}else{
+			trackcandidate->id = idcntr++;
 		}
 	}
-	//cout<<__FILE__<<":"<<__LINE__<<" #### Ntracks="<<_data.size()<<endl;
 
 	return NOERROR;
 }
@@ -137,10 +141,9 @@ derror_t DFactory_DMCTrackCandidate_B::evnt(DEventLoop *loop, int eventnumber)
 //------------------
 // ClearEvent
 //------------------
-void DFactory_DMCTrackCandidate_B::ClearEvent(void)
+void DFactory_DTrackCandidate::ClearEvent(void)
 {
-	// Delete TrkHits from previous event
-	for(unsigned int i=0; i<trkhits.size(); i++)delete trkhits[i];
+	// Clear TrkHits from previous event
 	trkhits.clear();
 
 	// Clear debugging buffers
@@ -168,22 +171,18 @@ void DFactory_DMCTrackCandidate_B::ClearEvent(void)
 //------------------
 // GetTrkHits
 //------------------
-void DFactory_DMCTrackCandidate_B::GetTrkHits(DEventLoop *loop)
+void DFactory_DTrackCandidate::GetTrkHits(DEventLoop *loop)
 {
-	// Copy Cheat Hits into trkhits vector
-	vector<const DMCCheatHit*> mccheathits;
-	loop->Get(mccheathits);
-	for(unsigned int i=0; i<mccheathits.size(); i++){
-		const DMCCheatHit *mchit = mccheathits[i];
-		if(!mchit->primary)continue;
-		if(mchit->system>2)continue;
-		float x = mchit->r*cos(mchit->phi);
-		float y = mchit->r*sin(mchit->phi);
-		float z = mchit->z;
-		float r = mchit->r;
-		float phi = mchit->phi;
-		DTrkHit *hit = new DTrkHit(x,y,z,r,phi,mchit->system,mchit->track, i);
-		trkhits.push_back(hit);
+	// Copy Hits into trkhits vector. The objects returned as
+	// DTrackHit should really be Dtrkhit types. Dynamically
+	// cast them back
+	vector<const DTrackHit*> trackhits;
+	loop->Get(trackhits, TRACKHIT_SOURCE.c_str());
+	for(unsigned int i=0; i<trackhits.size(); i++){
+		Dtrkhit *hit = (Dtrkhit*)dynamic_cast<const Dtrkhit*>(trackhits[i]);
+		if(hit){
+			if(hit->system&&(SYS_CDC|SYS_FDC))trkhits.push_back(hit);
+		}
 	}
 	
 	// Sort hits by r in X/Y plane
@@ -198,7 +197,7 @@ void DFactory_DMCTrackCandidate_B::GetTrkHits(DEventLoop *loop)
 //------------------
 // FindSeed
 //------------------
-int DFactory_DMCTrackCandidate_B::FindSeed(void)
+int DFactory_DTrackCandidate::FindSeed(void)
 {
 
 	// Loop over all un-used, non-ignored hits and try
@@ -206,12 +205,12 @@ int DFactory_DMCTrackCandidate_B::FindSeed(void)
 	// more hits is found, return a 1 so a track can
 	// be searched for.
 	for(unsigned int i=0; i<trkhits_r_sorted.size(); i++){
-		DTrkHit *a = trkhits_r_sorted[i];
-		if(!(a->flags & (DTrkHit::USED | DTrkHit::IGNORE))){
+		Dtrkhit *a = trkhits_r_sorted[i];
+		if(!(a->flags & (Dtrkhit::USED | Dtrkhit::IGNORE))){
 		
 			// Clear IN_SEED bit flag all hits
 			for(unsigned int j=0; j<trkhits.size(); j++){
-				trkhits[j]->flags &= ~(DTrkHit::IN_SEED);
+				trkhits[j]->flags &= ~(Dtrkhit::IN_SEED);
 			}
 
 			// We call TraceSeed twice here on purpose! The first
@@ -235,21 +234,21 @@ int DFactory_DMCTrackCandidate_B::FindSeed(void)
 //------------------
 // TraceSeed
 //------------------
-int DFactory_DMCTrackCandidate_B::TraceSeed(DTrkHit *hit)
+int DFactory_DTrackCandidate::TraceSeed(Dtrkhit *hit)
 {
 	// Starting with "hit", look for nearest neighbors to
 	// trace the seed out on one side as far as possible
 	// until we find a hit that is either too far away, or
 	// changes directions by too large an angle
 	int N = 0;
-	DTrkHit *current_hit = hit;
-	DTrkHit *last_hit = NULL;
+	Dtrkhit *current_hit = hit;
+	Dtrkhit *last_hit = NULL;
 	do{
 		N++;
-		current_hit->flags |= DTrkHit::IN_SEED;
+		current_hit->flags |= Dtrkhit::IN_SEED;
 		hits_in_seed.push_back(current_hit);
 		if(hits_in_seed.size() >= MAX_SEED_HITS)break;
-		DTrkHit *a = FindClosestXY(current_hit);
+		Dtrkhit *a = FindClosestXY(current_hit);
 		if(!a)break;
 		if(a->DistXY2(current_hit) > MAX_SEED_DIST2)break;
 		if(last_hit){
@@ -267,13 +266,13 @@ int DFactory_DMCTrackCandidate_B::TraceSeed(DTrkHit *hit)
 //------------------
 // FindClosestXY
 //------------------
-DTrkHit* DFactory_DMCTrackCandidate_B::FindClosestXY(DTrkHit *hit)
+Dtrkhit* DFactory_DTrackCandidate::FindClosestXY(Dtrkhit *hit)
 {
-	DTrkHit *closest_hit = NULL;
-	unsigned int mask = DTrkHit::USED | DTrkHit::IN_SEED | DTrkHit::IGNORE;
+	Dtrkhit *closest_hit = NULL;
+	unsigned int mask = Dtrkhit::USED | Dtrkhit::IN_SEED | Dtrkhit::IGNORE;
 	float d2_min = 1000.0;
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		DTrkHit *a = trkhits[i];
+		Dtrkhit *a = trkhits[i];
 		if(a->flags & mask)continue;
 		float d2 = hit->DistXY2(a);
 		if(d2<d2_min){
@@ -288,13 +287,13 @@ DTrkHit* DFactory_DMCTrackCandidate_B::FindClosestXY(DTrkHit *hit)
 //------------------
 // FitSeed
 //------------------
-int DFactory_DMCTrackCandidate_B::FitSeed(void)
+int DFactory_DTrackCandidate::FitSeed(void)
 {
 	// Do a quick circle fit to find the center of the seed
 	DQuickFit *fit = new DQuickFit();
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		DTrkHit *a = trkhits[i];
-		if(!(a->flags&DTrkHit::IN_SEED))continue;
+		Dtrkhit *a = trkhits[i];
+		if(!(a->flags&Dtrkhit::IN_SEED))continue;
 		fit->AddHitXYZ(a->x, a->y, a->z);
 	}
 	fit->FitCircle();
@@ -306,18 +305,18 @@ int DFactory_DMCTrackCandidate_B::FitSeed(void)
 	int N_in_seed_and_on_circle = 0;
 	hits_on_circle.clear();
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		DTrkHit *a = trkhits[i];
-		a->flags &= ~(DTrkHit::ON_CIRCLE | DTrkHit::ON_LINE | DTrkHit::ON_TRACK);
-		if(a->flags&DTrkHit::USED)continue;
+		Dtrkhit *a = trkhits[i];
+		a->flags &= ~(Dtrkhit::ON_CIRCLE | Dtrkhit::ON_LINE | Dtrkhit::ON_TRACK);
+		if(a->flags&Dtrkhit::USED)continue;
 
 		float dx = a->x - x0;
 		float dy = a->y - y0;
 		float r = sqrt(dx*dx + dy*dy);
 			
 		if(fabs(r0-r) <= MAX_CIRCLE_DIST){
-			a->flags |= DTrkHit::ON_CIRCLE;
+			a->flags |= Dtrkhit::ON_CIRCLE;
 			hits_on_circle.push_back(a);
-			if(a->flags & DTrkHit::IN_SEED)N_in_seed_and_on_circle++;
+			if(a->flags & Dtrkhit::IN_SEED)N_in_seed_and_on_circle++;
 		}
 	}
 	
@@ -344,7 +343,7 @@ int DFactory_DMCTrackCandidate_B::FitSeed(void)
 //------------------
 // FindLineHits
 //------------------
-int DFactory_DMCTrackCandidate_B::FindLineHits(void)
+int DFactory_DTrackCandidate::FindLineHits(void)
 {
 	// The hits_on_circle vector should now contain pointers to
 	// only those hits on the circle and there should be enough
@@ -364,7 +363,7 @@ int DFactory_DMCTrackCandidate_B::FindLineHits(void)
 	hits_on_line.clear();
 	//cout<<__FILE__<<":"<<__LINE__<<" phizangle="<<phizangle<<"  z_vertex="<<z_vertex<<" r0="<<r0<<endl;
 	for(unsigned int i=0; i<hits_on_circle.size(); i++){
-		DTrkHit *a = hits_on_circle[i];
+		Dtrkhit *a = hits_on_circle[i];
 		float dphi = a->phi_circle;
 		float dz = a->z-z_vertex;
 		float dr = sqrt(dphi*dphi + dz*dz);
@@ -373,7 +372,7 @@ int DFactory_DMCTrackCandidate_B::FindLineHits(void)
 		//cout<<__FILE__<<":"<<__LINE__<<" d="<<d<<" z="<<a->z<<" dphi="<<dphi<<" dz="<<dz<<" dr="<<dr<<" sin_rel="<<sin_rel<<endl;
 		if(fabs(d)<MAX_PHI_Z_DIST){
 			// Flags hits as "ON_LINE" and push onto hits_on_line vector
-			a->flags |= DTrkHit::ON_LINE;
+			a->flags |= Dtrkhit::ON_LINE;
 			hits_on_line.push_back(a);
 		}
 	}
@@ -391,7 +390,7 @@ int DFactory_DMCTrackCandidate_B::FindLineHits(void)
 //------------------
 // FindPhiZAngle
 //------------------
-int DFactory_DMCTrackCandidate_B::FindPhiZAngle(void)
+int DFactory_DTrackCandidate::FindPhiZAngle(void)
 {
 	// Fill the phi_circle field for all hits on the circle
 	// centered at x0,y0
@@ -400,7 +399,7 @@ int DFactory_DMCTrackCandidate_B::FindPhiZAngle(void)
 	// Loop over all hits on circle and fill the phizangle histo.
 	phizangle_hist->Reset();
 	for(unsigned int i=0; i<hits_on_circle.size(); i++){
-		DTrkHit *a = hits_on_circle[i];
+		Dtrkhit *a = hits_on_circle[i];
 
 		float theta1 = atan2f((a->phi_circle - 0.0), a->z - TARGET_Z_MIN);
 		float theta2 = atan2f((a->phi_circle - 0.0), a->z - TARGET_Z_MAX);
@@ -455,19 +454,19 @@ int DFactory_DMCTrackCandidate_B::FindPhiZAngle(void)
 //------------------
 // Fill_phi_circle
 //------------------
-void DFactory_DMCTrackCandidate_B::Fill_phi_circle(vector<DTrkHit*> hits, float X, float Y)
+void DFactory_DTrackCandidate::Fill_phi_circle(vector<Dtrkhit*> hits, float X, float Y)
 {
-	/// Fill in the phi_circle attribute for all DTrkHits in "hits" by
+	/// Fill in the phi_circle attribute for all Dtrkhits in "hits" by
 	/// calculating phi measured about the axis at x0,y0. Hits with either
 	/// the IGNORE or USED flags set will be ignored.
 	float r0 = sqrt(X*X + Y*Y);
 	float x_last = -X;
 	float y_last = -Y;
 	float phi_last = 0.0;
-	//unsigned int mask = DTrkHit::IGNORE | DTrkHit::USED;
+	//unsigned int mask = Dtrkhit::IGNORE | Dtrkhit::USED;
 //cout<<__FILE__<<":"<<__LINE__<<"  ------ x0="<<X<<" y0="<<Y<<" -----"<<endl;
 	for(unsigned int i=0; i<hits.size(); i++){
-		DTrkHit *a = hits[i];
+		Dtrkhit *a = hits[i];
 		//if(a->flags & mask)continue;
 
 		float dx = a->x - X;
@@ -485,7 +484,7 @@ void DFactory_DMCTrackCandidate_B::Fill_phi_circle(vector<DTrkHit*> hits, float 
 //------------------
 // FindZvertex
 //------------------
-int DFactory_DMCTrackCandidate_B::FindZvertex(void)
+int DFactory_DTrackCandidate::FindZvertex(void)
 {
 	// Reset z_vertex histogram
 	zvertex_hist->Reset();
@@ -497,7 +496,7 @@ int DFactory_DMCTrackCandidate_B::FindZvertex(void)
 	float cot_phizangle_max = cos(phizangle_max)/sin(phizangle_max);
 
 	for(unsigned int i=0; i<hits_on_circle.size(); i++){
-		DTrkHit *a = hits_on_circle[i];
+		Dtrkhit *a = hits_on_circle[i];
 
 		// Find intersections with Z-axis for lines with min and
 		// max phizangle going through point (a->z, a->phi_circle).
@@ -552,14 +551,14 @@ int DFactory_DMCTrackCandidate_B::FindZvertex(void)
 //------------------
 // FitTrack
 //------------------
-int DFactory_DMCTrackCandidate_B::FitTrack(void)
+int DFactory_DTrackCandidate::FitTrack(void)
 {
-	// Create a new DMCTrackCandidate object and fill in the ihits
+	// Create a new DTrackCandidate object and fill in the ihits
 	// values as we loop over hits below.
-	DMCTrackCandidate *mctrackcandidate = new DMCTrackCandidate;
+	DTrackCandidate *trackcandidate = new DTrackCandidate;
 	DQuickFit *fit = new DQuickFit();
 	for(unsigned int i=0; i<hits_on_line.size(); i++){
-		DTrkHit *a = hits_on_line[i];
+		Dtrkhit *a = hits_on_line[i];
 		
 		// Add hit to fit
 		fit->AddHitXYZ(a->x, a->y, a->z);
@@ -569,24 +568,24 @@ int DFactory_DMCTrackCandidate_B::FitTrack(void)
 	//fit->FitTrack();
 	fit->FitTrack_FixedZvertex(z_vertex);
 	
-	mctrackcandidate->x0 = x0 = fit->x0;
-	mctrackcandidate->y0 = y0 = fit->y0;
+	trackcandidate->x0 = x0 = fit->x0;
+	trackcandidate->y0 = y0 = fit->y0;
 	r0 = sqrt(x0*x0 + y0*y0);
 		
-	mctrackcandidate->z_vertex = fit->z_vertex;
-	mctrackcandidate->dphidz = fit->theta/r0;
-	mctrackcandidate->p = fit->p;
-	mctrackcandidate->p_trans = fit->p_trans;
-	mctrackcandidate->q = fit->q;
-	mctrackcandidate->phi = fit->phi;
-	mctrackcandidate->theta = fit->theta;
+	trackcandidate->z_vertex = fit->z_vertex;
+	trackcandidate->dphidz = fit->theta/r0;
+	trackcandidate->p = fit->p;
+	trackcandidate->p_trans = fit->p_trans;
+	trackcandidate->q = fit->q;
+	trackcandidate->phi = fit->phi;
+	trackcandidate->theta = fit->theta;
 
 	// Do one last pass over the hits, marking all 
 	// that are consistent with these parameters as used.
 //cout<<__FILE__<<":"<<__LINE__<<" theta"<<fit->theta<<endl;
-	MarkTrackHits(mctrackcandidate, fit);
+	MarkTrackHits(trackcandidate, fit);
 	
-	_data.push_back(mctrackcandidate);
+	_data.push_back(trackcandidate);
 
 	// For diagnostics
 	if(dbg_track_fit.size()<MAX_DEBUG_BUFFERS){
@@ -605,10 +604,10 @@ int DFactory_DMCTrackCandidate_B::FitTrack(void)
 //------------------
 // MarkTrackHits
 //------------------
-int DFactory_DMCTrackCandidate_B::MarkTrackHits(DMCTrackCandidate *mctrackcandidate, DQuickFit *fit)
+int DFactory_DTrackCandidate::MarkTrackHits(DTrackCandidate *trackcandidate, DQuickFit *fit)
 {
 	// The values of x0 and y0 are set in FitTrack as the
-	// mctrackcandidate object is being filled. 
+	// trackcandidate object is being filled. 
 	Fill_phi_circle(trkhits, x0, y0);
 
 	// Find all hits consistent with phizangle and zvertex
@@ -619,10 +618,8 @@ my_phizangle = phizangle;
 	float sin_phizangle = sin(my_phizangle);
 	float r0_2pi_cos_phizangle = 2.0*M_PI*r0*cos_phizangle;
 	hits_on_track.clear();
-	int track_hits[10]={0,0,0,0,0,0,0,0,0,0};
-	mctrackcandidate->Nhits = 0;
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		DTrkHit *a = trkhits[i];
+		Dtrkhit *a = trkhits[i];
 
 		float x = a->x - x0;
 		float y = a->y - y0;
@@ -642,25 +639,12 @@ my_phizangle = phizangle;
 		if(fabs(dr)>MAX_CIRCLE_DIST)continue;
 		
 		// Flags hits as "ON_TRACK" and "USED" and push onto hits_on_track vector
-		a->flags |= DTrkHit::ON_TRACK | DTrkHit::USED;
+		a->flags |= Dtrkhit::ON_TRACK | Dtrkhit::USED;
 		hits_on_track.push_back(a);
-		if(a->track>=1 && a->track<=9)track_hits[a->track]++;
 
 		// Add hit index to track in factory data
-		mctrackcandidate->ihit[mctrackcandidate->Nhits++] = a->ihit;
-		if(mctrackcandidate->Nhits>=MAX_IHITS){
-			cout<<__FILE__<<":"<<__LINE__<<" More than "<<MAX_IHITS<<" hits on track. Truncating..."<<endl;
-			break;
-		}
+		trackcandidate->hitid.push_back(a->id);
 	}
-	
-	// Fill in track and Ntrackhits fields of DMCTrackCandidate
-	int imax = 0;
-	for(int i=1;i<10;i++){
-		if(track_hits[i]>track_hits[imax])imax = i;
-	}
-	mctrackcandidate->track = imax;
-	mctrackcandidate->Ntrackhits = track_hits[imax];
 
 	// For diagnostics
 	if(dbg_hot.size()<MAX_DEBUG_BUFFERS){
@@ -678,21 +662,21 @@ my_phizangle = phizangle;
 //------------------
 // toString
 //------------------
-const string DFactory_DMCTrackCandidate_B::toString(void)
+const string DFactory_DTrackCandidate::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row: Nhits: x0(cm): y0(cm): z_vertex: dphi/dz:  q:   p: p_trans:   phi: theta:");
+	printheader("id: Nhits: x0(cm): y0(cm): z_vertex: dphi/dz:  q:   p: p_trans:   phi: theta:");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
-		DMCTrackCandidate *trackcandidate = _data[i];
+		DTrackCandidate *trackcandidate = _data[i];
 
 		printnewrow();
 		
-		printcol("%d",    i);
-		printcol("%d",    trackcandidate->Nhits);
+		printcol("%d",    trackcandidate->id);
+		printcol("%d",    trackcandidate->hitid.size());
 		printcol("%3.1f", trackcandidate->x0);
 		printcol("%3.1f", trackcandidate->y0);
 		printcol("%3.1f", trackcandidate->z_vertex);
@@ -717,9 +701,9 @@ const string DFactory_DMCTrackCandidate_B::toString(void)
 // ----------------------------------------------------------------
 
 //------------------
-// DebugMessage
+// DebugMessage  -- BROKEN !!! --
 //------------------
-void DFactory_DMCTrackCandidate_B::DebugMessage(int line)
+void DFactory_DTrackCandidate::DebugMessage(int line)
 {
 	// Find how many seed hits are from the same track
 	int Nhits = 0;
@@ -727,16 +711,12 @@ void DFactory_DMCTrackCandidate_B::DebugMessage(int line)
 	int oc_hist[5]={0,0,0,0,0};
 	int is_hist[5]={0,0,0,0,0};
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		const DTrkHit *a = trkhits[i];
+		const Dtrkhit *a = trkhits[i];
 		Nhits++;
-		if(a->flags&DTrkHit::IN_SEED)in_seed++;
-		if(a->flags&DTrkHit::USED)used++;
-		if(a->flags&DTrkHit::ON_CIRCLE)on_circle++;
-		if(a->flags&DTrkHit::IGNORE)ignore++;
-		
-		if(a->track<1 || a->track>4)continue;
-		if(a->flags&DTrkHit::IN_SEED)is_hist[a->track]++;
-		if(a->flags&DTrkHit::ON_CIRCLE)oc_hist[a->track]++;
+		if(a->flags&Dtrkhit::IN_SEED)in_seed++;
+		if(a->flags&Dtrkhit::USED)used++;
+		if(a->flags&Dtrkhit::ON_CIRCLE)on_circle++;
+		if(a->flags&Dtrkhit::IGNORE)ignore++;
 	}
 	
 	int oc_hits=0, oc_max_content=0;
@@ -757,16 +737,15 @@ void DFactory_DMCTrackCandidate_B::DebugMessage(int line)
 }
 
 //------------------
-// SeedTrack
+// SeedTrack -- BROKEN! --
 //------------------
-int DFactory_DMCTrackCandidate_B::SeedTrack(void)
+int DFactory_DTrackCandidate::SeedTrack(void)
 {
 	// Find the track which most of the seed hits come from
 	int is_hist[5]={0,0,0,0,0};
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		const DTrkHit *a = trkhits[i];		
-		if(a->track<1 || a->track>4)continue;
-		if(a->flags&DTrkHit::IN_SEED)is_hist[a->track]++;
+		//const Dtrkhit *a = trkhits[i];		
+		//if(a->flags&Dtrkhit::IN_SEED)is_hist[a->track]++;
 	}
 	
 	int track = 1;
