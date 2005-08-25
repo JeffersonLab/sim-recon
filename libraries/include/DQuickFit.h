@@ -52,7 +52,6 @@ using namespace std;
 #include <TVector3.h>
 
 #include "derror.h"
-#include "fit_utils.h"
 
 #ifndef atan2f
 #define atan2f(x,y) atan2((double)x,(double)y)
@@ -84,16 +83,6 @@ class DQuickFit{
 		derror_t Print(void);
 		derror_t Dump(void);
 		inline void SetMagneticFieldMap(DMagneticFieldMap *map){bfield=map;};
-
-		//inline derror_t AddHit(TVector3 *v){return AddHits(1,v);};
-		//inline derror_t AddHit(float myr, float myphi){return AddHit(myr, myphi, 0.0);};
-		//derror_t AddHits(int N, TVector3 *v);		
-		//derror_t PruneHits(float chisq_limit);
-		//derror_t PruneWorst(int n);
-		//derror_t PruneOutlier(void);
-		//derror_t PruneOutliers(int n);
-		//inline const vector<float> GetChiSqVector(){return chisqv;};
-		//derror_t CopyToFitParms(FitParms_t *fit);
 
 		enum ChiSqSourceType_t{
 			NOFIT,
