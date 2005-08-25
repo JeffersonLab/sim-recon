@@ -1,22 +1,22 @@
 // $Id$
 //
-//    File: DFactory_DMCTrackEfficiency.h
+//    File: DFactory_DTrackEfficiency.h
 // Created: Sun Apr 24 06:45:21 EDT 2005
 // Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
 //
 
-#ifndef _DFactory_DMCTrackEfficiency_
-#define _DFactory_DMCTrackEfficiency_
+#ifndef _DFactory_DTrackEfficiency_
+#define _DFactory_DTrackEfficiency_
 
 
 #include "DFactory.h"
-#include "DMCTrackEfficiency.h"
+#include "DTrackEfficiency.h"
 
-class DFactory_DMCTrackEfficiency:public DFactory<DMCTrackEfficiency>{
+class DFactory_DTrackEfficiency:public DFactory<DTrackEfficiency>{
 
 	public:
-		DFactory_DMCTrackEfficiency(){};
-		~DFactory_DMCTrackEfficiency(){};
+		DFactory_DTrackEfficiency(){};
+		~DFactory_DTrackEfficiency(){};
 		const string toString(void);
 	
 	private:
@@ -24,5 +24,5 @@ class DFactory_DMCTrackEfficiency:public DFactory<DMCTrackEfficiency>{
 
 };
 
-#endif // _DFactory_DMCTrackEfficiency_
+#endif // _DFactory_DTrackEfficiency_
 
