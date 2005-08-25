@@ -2,6 +2,9 @@
 * $Id$
 *
 * $Log$
+* Revision 1.4  2005/08/25 12:22:05  davidl
+* Commented out lines 113-115 since they also can never be reached, leading to compiler warnings from solaris compiler
+*
 * Revision 1.3  2005/08/05 18:46:22  davidl
 * Commented out lines 97-109 since they can never be reached. This was indicated by the SunOS compiler
 *
@@ -110,9 +113,9 @@ c     +ROTMAT(1)*ROTMAT(7)+ROTMAT(2)*ROTMAT(8)+ROTMAT(3)*ROTMAT(9)
 c      IF(ABS(PROD2).GT.SINMIN) GO TO 30
 C.
 C.               Y - Z
-      PROD3=
-     +ROTMAT(7)*ROTMAT(4)+ROTMAT(8)*ROTMAT(5)+ROTMAT(9)*ROTMAT(6)
-      IF(ABS(PROD3).LE.SINMIN) GO TO 110
+C      PROD3=
+C     +ROTMAT(7)*ROTMAT(4)+ROTMAT(8)*ROTMAT(5)+ROTMAT(9)*ROTMAT(6)
+C      IF(ABS(PROD3).LE.SINMIN) GO TO 110
   30  CONTINUE
 C.
 C.---       Orthonormalization needed
