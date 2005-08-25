@@ -8,6 +8,8 @@
 #ifndef _DParameter_
 #define _DParameter_
 
+#include <Rtypes.h>
+
 #include <string>
 #include <stdlib.h>
 using namespace std;
@@ -79,6 +81,7 @@ class DParameter{
 		dataType_t type;	///< data type used in last set
 	private:
 
+	ClassDef(DParameter,1)
 };
 
 #endif // _DParameter_
