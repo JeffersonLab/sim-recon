@@ -1,23 +1,21 @@
 // $Id$
 //
-//    File: DMCTrackEfficiency.h
+//    File: DTrackEfficiency.h
 // Created: Sun Apr 24 06:45:21 EDT 2005
 // Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
 //
 
-#ifndef _DMCTrackEfficiency_
-#define _DMCTrackEfficiency_
-
-#include <Rtypes.h>
+#ifndef _DTrackEfficiency_
+#define _DTrackEfficiency_
 
 #include "DObject.h"
 #include "DFactory.h"
 
-class DMCTrackEfficiency:public DObject{
+class DTrackEfficiency:public DObject{
 	public:
-		HDCLASSDEF(DMCTrackEfficiency);
+		HDCLASSDEF(DTrackEfficiency);
 
-		/// Objects in this class correspond 1 to 1 with those in DMCThrown
+		/// Objects in this class correspond 1 to 1 with those in DThrown
 		int Nhits_thrown;					///< Num hits in thrown (primary) track
 		int Nhits_found;					///< Num hits in reconstructed (primary) track
 		int Nhits_thrown_and_found;	///< Num hits in both thrown and found (primary) tracks
@@ -25,11 +23,8 @@ class DMCTrackEfficiency:public DObject{
 		int Nhits_thrown_unused;		///< Nthrown - Nhits_thrown_and_found
 		int fittable;						///< non-zero if more than 3 pimary hits
 
-		int track;							///< track number from GEANT (same as DMCCheatHits)
-		int index_DMCReconstructed;	///< index to corresponding DMCReconstructed
-		
-		ClassDef(DMCTrackEfficiency,1)
+		identifier_t trackid;			///< id of DTrack (if any)
 };
 
-#endif // _DMCTrackEfficiency_
+#endif // _DTrackEfficiency_
 
