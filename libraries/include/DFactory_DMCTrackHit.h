@@ -1,20 +1,20 @@
 // $Id$
 //
-//    File: DFactory_DMCCheatHit.h
+//    File: DFactory_DMCTrackHit.h
 // Created: Mon Apr  4 08:18:07 EDT 2005
 // Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
-#ifndef _DFactory_DMCCheatHit_
-#define _DFactory_DMCCheatHit_
+#ifndef _DFactory_DMCTrackHit_
+#define _DFactory_DMCTrackHit_
 
 #include "DFactory.h"
-#include "DMCCheatHit.h"
+#include "DMCTrackHit.h"
 
-class DFactory_DMCCheatHit:public DFactory<DMCCheatHit>{
+class DFactory_DMCTrackHit:public DFactory<DMCTrackHit>{
 	public:
-		DFactory_DMCCheatHit(){};
-		~DFactory_DMCCheatHit(){};
+		DFactory_DMCTrackHit(){};
+		~DFactory_DMCTrackHit(){};
 		derror_t Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v);
 		const string toString(void);
 	
@@ -30,5 +30,5 @@ class DFactory_DMCCheatHit:public DFactory<DMCCheatHit>{
 		derror_t evnt(DEventLoop *eventLoop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 };
 
-#endif // _DFactory_DMCCheatHit_
+#endif // _DFactory_DMCTrackHit_
 
