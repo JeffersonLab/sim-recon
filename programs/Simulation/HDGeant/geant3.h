@@ -26,3 +26,4 @@ int getmodule_(void);
 int getrow_(void);
 int getcolumn_(void);
 int getplane_(void);
+int getring_(void);
