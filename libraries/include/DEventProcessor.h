@@ -84,5 +84,19 @@ const T* GetByID(vector<const T*> v, identifier_t id){
 	return NULL;
 }
 
+//-------------
+// GetVectorByID
+//-------------
+template<class T>
+vector<const T*> GetVectorByID(vector<const T*> v, identifier_t id){
+	vector<const T*> matched;
+	for(unsigned int i=0;i<v.size(); i++){
+		const T* Tptr = v[i];
+		if(Tptr->id == id)matched.push_back(Tptr);
+	}
+	
+	return matched;
+}
+
 #endif // _DEventProcessor_
 
