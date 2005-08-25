@@ -12,6 +12,7 @@
 #include "DEventProcessor.h"
 #include "DMagneticFieldMap.h"
 class DQuickFit;
+class DFactory_DTrackCandidate;
 
 #include <TPolyLine.h>
 #include <TEllipse.h>
@@ -52,6 +53,8 @@ class MyProcessor:public DEventProcessor
 		void ClearEvent(void);
 	
 		int drew_detectors;
+		DFactory_DTrackCandidate* factory;
+		string TRACKHIT_SOURCE;
 };
 
 #endif // _MYPROCESSOR_H_

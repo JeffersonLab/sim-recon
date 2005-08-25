@@ -19,10 +19,10 @@ using namespace std;
 #include "hdview.h"
 #include "hdv_mainframe.h"
 #include "MyProcessor.h"
-#include "DFactory_DMCCheatHit.h"
+#include "DFactory_DTrackHit.h"
 #include "DQuickFit.h"
 #include "DMagneticFieldStepper.h"
-#include "DFactory_DMCTrackCandidate_B.h"
+#include "DFactory_DTrackCandidate.h"
 
 extern TCanvas *maincanvas;
 extern hdv_mainframe *hdvmf;
@@ -62,7 +62,6 @@ MyProcessor::MyProcessor()
 
 	// Tell factory to keep around a few density histos	
 	dparms.SetParameter("TRK:MAX_DEBUG_BUFFERS",	16);
-	
 }
 
 //------------------------------------------------------------------
@@ -99,6 +98,8 @@ derror_t MyProcessor::init(void)
 {
 	// Make sure detectors have been drawn
 	if(!drew_detectors)DrawDetectors();
+	
+	dparms.GetParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
 
 	return NOERROR;
 }
@@ -110,11 +111,11 @@ derror_t MyProcessor::brun(DEventLoop *eventLoop, int runnumber)
 {
 	// Get a pointer to the MCTrackCandidates factory object so we can 
 	// access things not included in the normal _data container
-	DFactory_base *base = eventloop->GetFactory("DMCTrackCandidate", "B");
-	DFactory_DMCTrackCandidate_B* factory = dynamic_cast<DFactory_DMCTrackCandidate_B*>(base);
+	DFactory_base *base = eventloop->GetFactory("DTrackCandidate");
+	factory = dynamic_cast<DFactory_DTrackCandidate*>(base);
 	if(!factory){
 		cerr<<endl;
-		cerr<<"Unable to get pointer to DFactory_DMCTrackCandidate_B factory!"<<endl;
+		cerr<<"Unable to get pointer to DFactory_DTrackCandidate factory!"<<endl;
 		cerr<<"I can't do much without it! Exiting ..."<<endl;
 		cerr<<endl;
 		exit(-1);
@@ -122,8 +123,6 @@ derror_t MyProcessor::brun(DEventLoop *eventLoop, int runnumber)
 
 	// Read in Magnetic field map
 	if(Bfield)delete Bfield;
-	//Bfield = new DMagneticFieldMap(41,251);
-	//Bfield->readMap();
 	Bfield = new DMagneticFieldMap(-2.0);
 
 	return NOERROR;
@@ -143,45 +142,47 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	// Delete objects from last event
 	ClearEvent();
 	
-	// Get MCCheatHits
-	vector<const DMCCheatHit*> mccheathits;
-	eventLoop->Get(mccheathits);
+	// Get TrackHits
+	vector<const DTrackHit*> trackhits;
+	vector<const DMCTrackHit*> mctrackhits;
+	eventLoop->Get(trackhits, TRACKHIT_SOURCE.c_str());
+	eventLoop->Get(mctrackhits); // just in case we need it later
 	
 	// Loop over hits creating markers for all 3 views
-	for(unsigned int i=0;i<mccheathits.size();i++){
-		const DMCCheatHit *mccheathit = mccheathits[i];
+	for(unsigned int i=0;i<trackhits.size();i++){
+		const DTrackHit *trackhit = trackhits[i];
 		
 		// Skip hits from some detectors?
-		switch(mccheathit->system){
-			case 1:	break;		// CDC
-			case 2:					// FDC
-				if(mccheathit->z < FDC_Zpos[0]-FDC_Zlen/2.0){
-					float delta_z = FDC_Zpos[0]-FDC_Zlen/2.0 - mccheathit->z;
+		switch(trackhit->system){
+			case SYS_CDC:	break;		// CDC
+			case SYS_FDC:					// FDC
+				if(trackhit->z < FDC_Zpos[0]-FDC_Zlen/2.0){
+					float delta_z = FDC_Zpos[0]-FDC_Zlen/2.0 - trackhit->z;
 					for(int j=0;j<4;j++)FDC_Zpos[j] -= delta_z;
 					DrawDetectors();
 				}
 				break;
-			case 3:	break;		// BCAL
-			case 4:					// TOF
-				if(mccheathit->z < TOF_Zmid-TOF_Zlen/2.0){
-					TOF_Zmid = mccheathit->z + TOF_Zlen/2.0;
+			case SYS_BCAL:	break;		// BCAL
+			case SYS_TOF:					// TOF
+				if(trackhit->z < TOF_Zmid-TOF_Zlen/2.0){
+					TOF_Zmid = trackhit->z + TOF_Zlen/2.0;
 					DrawDetectors();
 				} 
 				break;
-			case 5:	break;		// Cherenkov
-			case 6:					// FCAL
-				if(mccheathit->z < FCAL_Zmid-FCAL_Zlen/2.0){
-					FCAL_Zmid = mccheathit->z + FCAL_Zlen/2.0;
+			case SYS_CHERENKOV:	break;		// Cherenkov
+			case SYS_FCAL:					// FCAL
+				if(trackhit->z < FCAL_Zmid-FCAL_Zlen/2.0){
+					FCAL_Zmid = trackhit->z + FCAL_Zlen/2.0;
 					DrawDetectors();
 				} 
 				break;
-			case 7:	break;		// UPV
+			case SYS_UPV:	break;		// UPV
 			default: continue;
 		}
 	
-		float x = mccheathit->r*cos(mccheathit->phi);
-		float y = mccheathit->r*sin(mccheathit->phi);
-		float z = mccheathit->z;
+		float x = trackhit->r*cos(trackhit->phi);
+		float y = trackhit->r*sin(trackhit->phi);
+		float z = trackhit->z;
 		float X,Y;
 		ConvertToTop(x,y,z,X,Y);
 		TMarker *top = new TMarker(X,Y,20);
@@ -190,12 +191,20 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 		ConvertToFront(x,y,z,X,Y);
 		TMarker *front = new TMarker(X,Y,20);
 
-		int color = colors[mccheathit->track%ncolors];
+		// If the hits came from the truth tags, then we can
+		// get the track number from the DMCTrackHit factory
+		// and use it to color the hits by thrown track
+		int color = kBlack;
+		if(TRACKHIT_SOURCE == "MC"){
+			const DMCTrackHit* mctrackhit = GetByID(mctrackhits, trackhit->id);
+			if(mctrackhit)color = colors[mctrackhit->track%ncolors];
+		}
+		
 		float size = 0.5;
-		switch(mccheathit->system){
-			case 6:	// FCAL
-			case 3:	// BCAL
-				size=1.0;
+		switch(trackhit->system){
+			case SYS_BCAL:	size=1.0;	break;// FCAL
+			case SYS_FCAL:	size=1.0;	break;// BCAL
+			default:							break;
 		}
 		top->SetMarkerColor(color);
 		top->SetMarkerSize(size);
@@ -210,10 +219,9 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	}
 	
 	// Draw all "found" tracks
-	vector<const DMCTrackCandidate*> mctc;
-	DFactory_DMCTrackCandidate_B *mctcfactory = (DFactory_DMCTrackCandidate_B *)eventLoop->Get(mctc,"B");
-	//vector<DQuickFit*> qfits = mctcfactory->GetDQuickFits();
-	vector<DQuickFit*> qfits = mctcfactory->Get_dbg_track_fit();
+	vector<const DTrackCandidate*> trackcandidates;
+	eventLoop->Get(trackcandidates);
+	vector<DQuickFit*> qfits = factory->Get_dbg_track_fit();
 	for(unsigned int i=0; i<qfits.size(); i++){
 		DrawHelicalTrack(qfits[i], kBlack);
 	}
