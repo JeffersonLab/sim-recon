@@ -71,7 +71,7 @@ const string DFactory_DTOFGeometry::toString(void)
 
     printheader("NLONGBARS:  NSHORTBARS:  LONGBARLENGTH:  SHORTBARLENGTH:  BARWIDTH:");
 	
-    for(int i=0; i<_data.size(); i++){
+    for(unsigned int i=0; i<_data.size(); i++){
         DTOFGeometry *myDTOFGeometry = _data[i];
         printnewrow();
         printcol("%d",myDTOFGeometry->NLONGBARS);
