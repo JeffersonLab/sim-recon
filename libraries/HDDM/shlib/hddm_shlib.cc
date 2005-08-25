@@ -32,7 +32,7 @@ using namespace std;
 #include "DFactory_DCHERENKOVHit.h"
 #include "DFactory_DFCALHit.h"
 #include "DFactory_DFDCHit.h"
-#include "DFactory_DMCCheatHit.h"
+#include "DFactory_DMCTrackHit.h"
 #include "DFactory_DMCThrown.h"
 #include "DFactory_DTOFHit.h"
 #include "DFactory_DUPVHit.h"
@@ -58,7 +58,7 @@ void InitFactories(DEventLoop* eventLoop)
 	eventLoop->AddFactory(new DFactory_DCHERENKOVHit());
 	eventLoop->AddFactory(new DFactory_DFCALHit());
 	eventLoop->AddFactory(new DFactory_DFDCHit());
-	eventLoop->AddFactory(new DFactory_DMCCheatHit());
+	eventLoop->AddFactory(new DFactory_DMCTrackHit());
 	eventLoop->AddFactory(new DFactory_DMCThrown());
 	eventLoop->AddFactory(new DFactory_DTOFHit());
 	eventLoop->AddFactory(new DFactory_DUPVHit());
