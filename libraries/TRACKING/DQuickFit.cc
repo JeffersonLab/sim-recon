@@ -550,33 +550,6 @@ derror_t DQuickFit::PruneOutliers(int n)
 }
 
 //-----------------
-// CopyToFitParms
-//-----------------
-derror_t DQuickFit::CopyToFitParms(FitParms_t *fit)
-{
-	/// Copy the results of the most recent fit into the specified FitParms_t
-	/// structure. This is mainly here for use by factories which
-	/// include a FitParms_t structure.
-
-	fit->x0 = x0;
-	fit->y0 = y0;
-	fit->q = q;
-	fit->p = p;
-	fit->p_trans = p_trans;
-	fit->phi = phi;
-	fit->theta = theta;
-	fit->chisq = chisq;
-	fit->nhits = 0;
-	for(unsigned int i=0; i<chisqv.size(); i++){
-		if(i>=MAX_CHISQV_HITS)break;
-		
-		fit->chisqv[fit->nhits++] = chisqv[i];
-	}
-
-	return NOERROR;
-}
-
-//-----------------
 // firstguess_curtis
 //-----------------
 derror_t DCDC::firstguess_curtis(s_Cdc_trackhit_t *hits, int Npoints
