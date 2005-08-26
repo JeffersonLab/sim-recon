@@ -26,6 +26,7 @@ derror_t DFactory_DMCThrown::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	/// from DEventSourceHDDM::GetObjects.
 	
 	v.clear();
+	identifier_t idcntr = 1;
 
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -58,6 +59,7 @@ derror_t DFactory_DMCThrown::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 							mcthrown->phi = atan2(product->momentum->py, product->momentum->px);
 							if(mcthrown->phi<0.0)mcthrown->phi += 2.0*M_PI;
 							mcthrown->theta = acos(product->momentum->pz/mcthrown->p);
+							mcthrown->id = idcntr++;
 							v.push_back((void*)mcthrown);
 						}
 					}
@@ -65,7 +67,7 @@ derror_t DFactory_DMCThrown::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 			}
 		}
 	}
-
+	
 
 	return NOERROR;
 }
@@ -79,14 +81,14 @@ const string DFactory_DMCThrown::toString(void)
 	GetNrows();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row: type:  q:    p:    E: theta:   phi:   mass:     x:     y:     z:");
+	printheader("id: type:  q:    p:    E: theta:   phi:   mass:     x:     y:     z:");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DMCThrown * mcthrown = _data[i];
 
 		printnewrow();
 		
-		printcol("%d", i);
+		printcol("%d", mcthrown->id);
 		printcol("%d", mcthrown->type);
 		printcol("%+d", (int)mcthrown->q);
 		printcol("%3.1f", mcthrown->p);
