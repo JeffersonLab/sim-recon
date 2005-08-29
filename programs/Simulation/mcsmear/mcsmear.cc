@@ -121,7 +121,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
 	ptr = strstr(path_stripped, ".hddm");
 	if(ptr)*ptr=0;
 	char str[256];
-	sprintf(str, "%s_smeared.hddm", path_stripped);
+	sprintf(str, "%s_%ssmeared.hddm", path_stripped, ADD_NOISE ? "n":"");
 	OUTFILENAME = strdup(str);
 }
 
