@@ -106,6 +106,10 @@ derror_t DEventProcessor_TrackHists::init(void)
 	
 	dir->cd("../");
 	
+	Nevents = 0;
+	Ncdchits = 0;
+	Nfdchits = 0;
+	
 	return NOERROR;
 }
 
@@ -119,10 +123,20 @@ derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DTrackEfficiency*> trackefficiencies;
 	
-	loop->Get(trackhits);
+	loop->Get(trackhits, "MC");
 	loop->Get(tracks);
 	loop->Get(mcthrowns);
 	loop->Get(trackefficiencies);
+	
+	// For calculating Occupancy
+	Nevents++;
+	for(unsigned int i=0; i<trackhits.size(); i++){
+		switch(trackhits[i]->system){
+			case SYS_CDC: Ncdchits++;	break;
+			case SYS_FDC: Nfdchits++;	break;
+			default:							break;
+		}
+	}
 
 	// There should be a one to one correspondance between DMCThrown
 	// and DTrackEfficiency
@@ -249,6 +263,13 @@ derror_t DEventProcessor_TrackHists::erun(void)
 		h[i] = stats->GetBinContent(i);
 		cout<<" h["<<i<<"] = "<<h[i]<<"\t"<<TrackHistsDescription[i]<<endl;
 	}
+	
+	// Occupancy (3240 is number of wires in CDC, 2856 in FDC)
+	double cdcoccupancy = 100.0*(double)Ncdchits/(double)Nevents/3240.0;
+	double fdcoccupancy = 100.0*(double)Nfdchits/(double)Nevents/2856.0;
+	cout<<endl;
+	cout<<" CDC Occupancy: "<<cdcoccupancy<<"%  Ncdchits="<<Ncdchits<<endl;
+	cout<<" FDC Occupancy: "<<fdcoccupancy<<"%  Nfdchits="<<Nfdchits<<endl;
 	
 	// Fill efficiency vs. X histos
 	EffVsX(eff_vs_theta, stats_vs_theta);
