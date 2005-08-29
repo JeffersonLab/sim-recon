@@ -56,6 +56,9 @@ class DEventProcessor_TrackHists:public DEventProcessor{
 		derror_t evnt(DEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 		derror_t erun(void);					///< Invoked via DEventProcessor virtual method
 
+		unsigned int Nevents;
+		unsigned int Ncdchits;
+		unsigned int Nfdchits;
 };
 
 #endif // _DEventProcessor_TrackHists_
