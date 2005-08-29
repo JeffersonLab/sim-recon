@@ -79,6 +79,8 @@ class DFactory_DTrackCandidate:public DFactory<DTrackCandidate>{
 		vector<float> dbg_z_vertex;
 		float MAX_SEED_DIST;
 		float MAX_SEED_DIST2;
+		float XY_NOISE_CUT;
+		float XY_NOISE_CUT2;
 		unsigned int MAX_SEED_HITS;
 		float MAX_CIRCLE_DIST;
 		float MAX_PHI_Z_DIST;
