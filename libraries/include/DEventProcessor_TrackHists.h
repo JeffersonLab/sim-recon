@@ -50,6 +50,7 @@ class DEventProcessor_TrackHists:public DEventProcessor{
 		TH2F *dp_over_p_vs_p, *dp_over_p_vs_theta;
 		TH1F *eff_vs_theta, *eff_vs_phi, *eff_vs_p, *eff_vs_nhits;
 		TH1F *eff_vs_theta_hm, *eff_vs_phi_hm, *eff_vs_p_hm, *eff_vs_nhits_hm;
+		TH1F *dist_same, *dist_diff;
 
 	private:
 		derror_t init(void);	///< Invoked via DEventProcessor virtual method
