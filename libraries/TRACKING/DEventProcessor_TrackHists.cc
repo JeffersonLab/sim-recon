@@ -15,6 +15,7 @@ using namespace std;
 #include "DEventLoop.h"
 #include "DTrackEfficiency.h"
 #include "DTrackHit.h"
+#include "DMCTrackHit.h"
 #include "DMCThrown.h"
 #include "DTrack.h"
 
@@ -70,6 +71,8 @@ derror_t DEventProcessor_TrackHists::init(void)
 	stats_vs_nhits	= new TH2F("stats_vs_nhits","MC Tracking Eff. vs. Nhits", 201, -0.5, 200.5, NBINS, 0.5, (float)NBINS + 0.5);
 	dp_over_p_vs_p	= new TH2F("dp_over_p_vs_p","dp/p vs. p",	200, 0.0, 10.0, 200, -0.500, 0.500);
 	dp_over_p_vs_theta	= new TH2F("dp_over_p_vs_theta","dp/p vs. theta",	200, 0.0, M_PI, 200, -0.500, 0.500);
+	dist_same = new TH1F("dist_same","Distance between closest hits from same track in X/Y plane(cm)", 400, 0.0, 200.0);
+	dist_diff = new TH1F("dist_diff","Distance between closest hits from different tracks in X/Y plane(cm)", 400, 0.0, 200.0);
 	
 	dir = new TDirectory("ParameterMatch","ParameterMatch");
 	dir->cd();
@@ -119,11 +122,13 @@ derror_t DEventProcessor_TrackHists::init(void)
 derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 {
 	vector<const DTrackHit*> trackhits;
+	vector<const DMCTrackHit*> mctrackhits;
 	vector<const DTrack*> tracks;
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DTrackEfficiency*> trackefficiencies;
 	
 	loop->Get(trackhits, "MC");
+	loop->Get(mctrackhits);
 	loop->Get(tracks);
 	loop->Get(mcthrowns);
 	loop->Get(trackefficiencies);
@@ -195,6 +200,26 @@ derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 		float p = track->p;
 		FillAll(NFOUND, 0, theta, phi, p);
 	}
+	
+	// Histogram distance between closest hits on same and different tracks.
+	for(unsigned int i=0;i<mctrackhits.size()-1; i++){
+		const DMCTrackHit *a = mctrackhits[i];
+		float min_d2 = 1000000.0;
+		bool same = false;
+		for(unsigned int j=i+1; j<mctrackhits.size(); j++){
+			const DMCTrackHit *b = mctrackhits[j];
+			float d2 = a->r*a->r +b->r*b->r - 2.0*a->r*b->r*cos(a->phi - b->phi);
+			if(d2<min_d2){
+				min_d2=d2;
+				same = (a->track == b->track) && (a->track>0);
+			}
+		}
+		if(same)
+			dist_same->Fill(sqrt(min_d2));
+		else
+			dist_diff->Fill(sqrt(min_d2));
+	}
+	
 
 	return NOERROR;
 }
