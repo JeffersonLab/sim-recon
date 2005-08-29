@@ -197,7 +197,9 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 		int color = kBlack;
 		if(TRACKHIT_SOURCE == "MC"){
 			const DMCTrackHit* mctrackhit = GetByID(mctrackhits, trackhit->id);
-			if(mctrackhit)color = colors[mctrackhit->track%ncolors];
+			if(mctrackhit){
+				if(mctrackhit->track>0)color = colors[mctrackhit->track%ncolors];
+			}
 		}
 		
 		float size = 0.5;
