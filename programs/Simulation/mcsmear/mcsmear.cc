@@ -20,6 +20,14 @@ char *INFILENAME = NULL;
 char *OUTFILENAME = NULL;
 int QUIT = 0;
 
+extern bool ADD_NOISE;
+extern float CDC_R;
+extern float CDC_Z_SIGMA;
+extern float CDC_AVG_NOISE_HITS;
+extern float FDC_R;
+extern float FDC_AVG_NOISE_HITS;
+
+
 //-----------
 // main
 //-----------
@@ -88,9 +96,13 @@ void ParseCommandLineArguments(int narg, char* argv[])
 		
 		if(ptr[0] == '-'){
 			switch(ptr[1]){
-				case 'h':
-					Usage();
-					break;
+				case 'h': Usage();													break;
+				case 'n': ADD_NOISE=true;											break;
+				case 'r': CDC_R=atof(&ptr[2]);									break;
+				case 'z': CDC_Z_SIGMA=atof(&ptr[2]);							break;
+				case 'j': CDC_AVG_NOISE_HITS=3240.0*atof(&ptr[2])/100.0;	break;
+				case 'R': FDC_R=atof(&ptr[2]);									break;
+				case 'J': CDC_AVG_NOISE_HITS=2856.0*atof(&ptr[2])/100.0;	break;
 			}
 		}else{
 			INFILENAME = argv[i];
@@ -113,6 +125,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
 	OUTFILENAME = strdup(str);
 }
 
+
 //-----------
 // Usage
 //-----------
@@ -122,9 +135,30 @@ void Usage(void)
 	cout<<"     mcsmear [options] file.hddm"<<endl;
 	cout<<endl;
 	cout<<" Read the given, Geant-produced HDDM file as input and smear"<<endl;
-	cout<<"the cheat codes before writing the data to a different output"<<endl;
-	cout<<"file. The smeared values can be used to test the robustness"<<endl;
-	cout<<"of reconstruction code."<<endl;
+	cout<<"the truth values for \"hit\" data before writing out to a"<<endl;
+	cout<<"separate file. The truth values for the thrown particles are"<<endl;
+	cout<<"not changed. Noise hits can also be added using the -n option."<<endl;
+	cout<<"Note that all smearing is done using Gaussians, with the "<<endl;
+	cout<<"sigmas configurable with the options below."<<endl;
+	cout<<endl;
+	cout<<"  options:"<<endl;
+	cout<<"    -n       Add noise hits to CDC and FDC (def:"<<ADD_NOISE<<")"<<endl;
+	cout<<"    -r       Sigma CDC r-direction (def:"<<CDC_R<<"cm)"<<endl;
+	cout<<"    -z       Sigma CDC z-direction (def:"<<CDC_Z_SIGMA<<"cm)"<<endl;
+	cout<<"    -j       CDC occupancy r-direction (def:"<<100.0*CDC_AVG_NOISE_HITS/3240.0<<"%)"<<endl;
+	cout<<"    -R       Sigma FDC r-direction (def:"<<FDC_R<<"cm)"<<endl;
+	cout<<"    -J       FDC occupancy r-direction (def:"<<100.0*FDC_AVG_NOISE_HITS/2856.0<<"%)"<<endl;
+	cout<<"    -h       Print this usage statement."<<endl;
+	cout<<endl;
+	cout<<" Example:"<<endl;
+	cout<<endl;
+	cout<<"     mcsmear -n -r1.2 -J5.5"<<endl;
+	cout<<endl;
+	cout<<" This will turn on CDC and FDC noise hits, set the r-direction"<<endl;
+	cout<<" sigma for CDC to 1.2cm, and set the noise hit occupancy level"<<endl;
+	cout<<" to 5.5%. Note that the occupancy values apply only to the"<<endl;
+	cout<<" noise hits so the actual occupancy will be higher due to the"<<endl;
+	cout<<" presence of the real hits."<<endl;
 	cout<<endl;
 
 	exit(0);

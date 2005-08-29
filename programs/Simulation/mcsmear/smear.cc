@@ -24,6 +24,8 @@ void SmearCherenkov(s_HDDM_t *hddm_s);
 double SampleGaussian(double sigma);
 double SampleRange(double x1, double x2);
 
+// Do we or do we not add noise hits
+bool ADD_NOISE = false;
 
 // The straw diameter is 1.6cm
 float CDC_R = 0.8;			// cm
@@ -60,9 +62,9 @@ float FDC_AVG_NOISE_HITS = 0.01*2856.0; // 0.01 = 1% occupancy
 void Smear(s_HDDM_t *hddm_s)
 {
 	SmearCDC(hddm_s);
-	AddNoiseHitsCDC(hddm_s);
+	if(ADD_NOISE)AddNoiseHitsCDC(hddm_s);
 	SmearFDC(hddm_s);
-	AddNoiseHitsFDC(hddm_s);
+	if(ADD_NOISE)AddNoiseHitsFDC(hddm_s);
 	SmearFCAL(hddm_s);
 	SmearBCAL(hddm_s);
 	SmearTOF(hddm_s);
