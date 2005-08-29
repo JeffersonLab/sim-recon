@@ -47,6 +47,7 @@ DFactory_DTrackCandidate::DFactory_DTrackCandidate()
 	TARGET_Z_MIN = 50.0;
 	TARGET_Z_MAX = 80.0;
 	TRACKHIT_SOURCE = "MC";
+	XY_NOISE_CUT = 2.0;
 	
 	dparms.SetDefaultParameter("TRK:MAX_SEED_DIST",		MAX_SEED_DIST);
 	dparms.SetDefaultParameter("TRK:MAX_SEED_HITS",		MAX_SEED_HITS);
@@ -56,8 +57,10 @@ DFactory_DTrackCandidate::DFactory_DTrackCandidate()
 	dparms.SetDefaultParameter("TRK:TARGET_Z_MIN",		TARGET_Z_MIN);
 	dparms.SetDefaultParameter("TRK:TARGET_Z_MAX",		TARGET_Z_MAX);
 	dparms.SetDefaultParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
+	dparms.SetDefaultParameter("TRK:XY_NOISE_CUT",		XY_NOISE_CUT);
 	
 	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
+	XY_NOISE_CUT2 = XY_NOISE_CUT*XY_NOISE_CUT;
 	
 	char suffix[32];
 	sprintf(suffix,"_%08x", (unsigned int)pthread_self());
@@ -192,6 +195,17 @@ void DFactory_DTrackCandidate::GetTrkHits(DEventLoop *loop)
 	// Order the track hits by z.
 	sort(trkhits.begin(), trkhits.end(), TrkHitZSort());
 
+	// Flag all "lone" hits to be ignored
+	for(unsigned int i=0; i<trkhits.size(); i++){
+		Dtrkhit *a = trkhits[i];
+		
+		// temporarily flag this hit to be ignored so FindClosestXY will work
+		a->flags |= Dtrkhit::IGNORE;
+		Dtrkhit *b = FindClosestXY(a);
+		if(b){
+			if(a->DistXY2(b) < XY_NOISE_CUT2)a->flags &= ~Dtrkhit::IGNORE;
+		}
+	}
 }
 
 //------------------
