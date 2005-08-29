@@ -71,7 +71,7 @@ derror_t DEventProcessor_TrackHists::init(void)
 	dp_over_p_vs_p	= new TH2F("dp_over_p_vs_p","dp/p vs. p",	200, 0.0, 10.0, 200, -0.500, 0.500);
 	dp_over_p_vs_theta	= new TH2F("dp_over_p_vs_theta","dp/p vs. theta",	200, 0.0, M_PI, 200, -0.500, 0.500);
 	
-	dir = new TDirectory("HitMatch","HitMatch");
+	dir = new TDirectory("ParameterMatch","ParameterMatch");
 	dir->cd();
 	eff_vs_theta = new TH1F("eff_vs_theta", "Tracking efficiency vs. theta (param match,all tracks)", 100, 0.0, M_PI);
 	eff_vs_phi = new TH1F("eff_vs_phi", "Tracking efficiency vs. phi (param match,all tracks)", 100, 0.0, 2.0*M_PI);
@@ -79,12 +79,12 @@ derror_t DEventProcessor_TrackHists::init(void)
 	eff_vs_nhits = new TH1F("eff_vs_nhits", "Tracking efficiency vs. nhits (param match,all tracks)", 201, -0.5, 200.5);
 	dir->cd("../");
 
-	dir = new TDirectory("ParameterMatch","ParameterMatch");
+	dir = new TDirectory("HitMatch","HitMatch");
 	dir->cd();
-	eff_vs_theta_hm = new TH1F("eff_vs_theta_hm", "Tracking efficiency vs. theta (hit match,all tracks)", 100, 0.0, M_PI);
-	eff_vs_phi_hm = new TH1F("eff_vs_phi_hm", "Tracking efficiency vs. phi (hit match,all tracks)", 100, 0.0, 2.0*M_PI);
-	eff_vs_p_hm = new TH1F("eff_vs_p_hm", "Tracking efficiency vs. p (hit match,all tracks)", 100, 0.0, 10.0);
-	eff_vs_nhits_hm = new TH1F("eff_vs_nhits_hm", "Tracking efficiency vs. nhits (hit match,all tracks)", 201, -0.5, 200.5);
+	eff_vs_theta_hm = new TH1F("eff_vs_theta", "Tracking efficiency vs. theta (hit match,all tracks)", 100, 0.0, M_PI);
+	eff_vs_phi_hm = new TH1F("eff_vs_phi", "Tracking efficiency vs. phi (hit match,all tracks)", 100, 0.0, 2.0*M_PI);
+	eff_vs_p_hm = new TH1F("eff_vs_p", "Tracking efficiency vs. p (hit match,all tracks)", 100, 0.0, 10.0);
+	eff_vs_nhits_hm = new TH1F("eff_vs_nhits", "Tracking efficiency vs. nhits (hit match,all tracks)", 201, -0.5, 200.5);
 	dir->cd("../");
 
 	stats->SetOption("B"); // bar chart
