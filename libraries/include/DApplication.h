@@ -40,7 +40,7 @@ class DApplication{
 		derror_t AddProcessor(DEventProcessor *processor);
 		derror_t RemoveProcessor(DEventProcessor *processor);
 		derror_t GetProcessors(vector<DEventProcessor*> &processors);
-		derror_t AddDEventLoop(DEventLoop *loop);
+		derror_t AddDEventLoop(DEventLoop *loop, double* &heartbeat);
 		derror_t RemoveDEventLoop(DEventLoop *loop);
 		derror_t GetDEventLoops(vector<DEventLoop*> &loops);
 		DGeometry* GetGeometry(unsigned int run_number);
@@ -69,7 +69,7 @@ class DApplication{
 	
 		vector<DEventProcessor*> processors;
 		vector<DEventLoop*> loops;
-		vector<pthread_t> threads;
+		vector<double*> heartbeats;
 		pthread_mutex_t app_mutex;
 		
 		vector<DGeometry*> geometries;

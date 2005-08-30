@@ -54,6 +54,7 @@ class DEventLoop{
 		vector<DFactory_base*> factories;
 		vector<DEventProcessor*> processors;
 		DApplication *app;
+		double *heartbeat;
 		int pause;
 		int quit;
 		int auto_free;

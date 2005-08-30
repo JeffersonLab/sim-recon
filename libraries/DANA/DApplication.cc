@@ -115,6 +115,8 @@ DApplication::~DApplication()
 {
 	for(unsigned int i=0; i<geometries.size(); i++)delete geometries[i];
 	geometries.clear();
+	for(unsigned int i=0; i<heartbeats.size(); i++)delete heartbeats[i];
+	heartbeats.clear();
 }
 
 //---------------------------------
@@ -194,17 +196,28 @@ derror_t DApplication::GetProcessors(vector<DEventProcessor*> &processors)
 //---------------------------------
 // AddDEventLoop
 //---------------------------------
-derror_t DApplication::AddDEventLoop(DEventLoop *loop)
+derror_t DApplication::AddDEventLoop(DEventLoop *loop, double* &heartbeat)
 {
+	pthread_mutex_lock(&app_mutex);
 	loops.push_back(loop);
 
 	// Call InitFactories routines from shared objects.
-	// This doing this here adds the factories from the
+	// Doing this here adds the factories from the
 	// shared object to the front of the list before the
 	// DEventLoop calls all of the subsystem Init_* routines
 	for(unsigned int i=0; i<InitFactoriesProcs.size();i++){
 		(*InitFactoriesProcs[i])(loop);
 	}
+	
+	// For the heartbeat, we use a double that the thread should
+	// set to zero each event. It will be added to periodically 
+	// in Run() below by the main thread so as to keep track of
+	// the amount of time in seconds the thread has been inactive.
+	heartbeat = new double;
+	*heartbeat = 0.0;
+	heartbeats.push_back(heartbeat);
+	
+	pthread_mutex_unlock(&app_mutex);
 
 	return NOERROR;
 }
@@ -215,9 +228,11 @@ derror_t DApplication::AddDEventLoop(DEventLoop *loop)
 derror_t DApplication::RemoveDEventLoop(DEventLoop *loop)
 {
 	vector<DEventLoop*>::iterator iter = loops.begin();
-	for(; iter!=loops.end(); iter++){
+	vector<double*>::iterator hbiter = heartbeats.begin();
+	for(; iter!=loops.end(); iter++, hbiter++){
 		if((*iter) == loop){
 			loops.erase(iter);
+			heartbeats.erase(hbiter);
 			break;
 		}
 	}
@@ -379,6 +394,21 @@ derror_t DApplication::Run(DEventProcessor *proc, int Nthreads)
 		if(show_ticker && loops.size()>0)PrintRate();
 		
 		if(SIGINT_RECEIVED)Quit();
+		
+		// Add time slept to all heartbeats
+		double rem_time = (double)rem.tv_sec + (1.0E-9)*(double)rem.tv_nsec;
+		double slept_time = sleep_time - rem_time;
+		for(unsigned int i=0;i<heartbeats.size();i++){
+			double *hb = heartbeats[i];
+			*hb += slept_time;
+			if(*hb > 2.0+sleep_time){
+				// Thread hasn't done anything for more than 2 seconds. 
+				// Remove it from lists.
+				cerr<<" Thread "<<i<<" hasn't responded in "<<*hb<<" seconds. Delisting it..."<<endl;
+				loops.erase(loops.begin()+i);
+				heartbeats.erase(heartbeats.begin()+i);
+			}
+		}
 
 		// When a DEventLoop runs out of events, it removes itself from
 		// the list before returning from the thread.

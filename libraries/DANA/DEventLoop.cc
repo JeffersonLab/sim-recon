@@ -27,7 +27,7 @@ jmp_buf SETJMP_ENV;
 DEventLoop::DEventLoop(DApplication *app)
 {
 	this->app = app;
-	app->AddDEventLoop(this);
+	app->AddDEventLoop(this, heartbeat);
 	event.SetDEventLoop(this);
 	pause = 0;
 	quit = 0;
@@ -251,8 +251,12 @@ derror_t DEventLoop::Loop(void)
 	/// out of events.
 	
 	do{
+		// Let main thread know we're alive
+		*heartbeat = 0.0;
+
 		// Handle pauses and quits
 		while(pause){
+			*heartbeat = 0.0;	// Let main thread know we're alive
 			usleep(500000);
 			if(quit)break;
 		}
