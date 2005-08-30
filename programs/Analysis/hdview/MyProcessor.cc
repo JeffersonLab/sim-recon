@@ -156,10 +156,24 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 		switch(trackhit->system){
 			case SYS_CDC:	break;		// CDC
 			case SYS_FDC:					// FDC
-				if(trackhit->z < FDC_Zpos[0]-FDC_Zlen/2.0){
-					float delta_z = FDC_Zpos[0]-FDC_Zlen/2.0 - trackhit->z;
-					for(int j=0;j<4;j++)FDC_Zpos[j] -= delta_z;
-					DrawDetectors();
+				//if(trackhit->z < FDC_Zpos[0]-FDC_Zlen/2.0){
+				//	float delta_z = FDC_Zpos[0]-FDC_Zlen/2.0 - trackhit->z;
+				//	for(int j=0;j<4;j++)FDC_Zpos[j] -= delta_z;
+				//	DrawDetectors();
+				//}
+				for(int j=0; j<4; j++){
+					float delta_z = FDC_Zpos[j]-FDC_Zlen/2.0 - trackhit->z;
+					if(delta_z > 0.0){
+						if(i==0){
+							FDC_Zpos[j] -= delta_z;
+							DrawDetectors();
+							break;
+						}else if(trackhit->z > FDC_Zpos[j-1]+FDC_Zlen/2.0){
+							FDC_Zpos[j] -= delta_z;
+							DrawDetectors();
+							break;
+						}
+					}
 				}
 				break;
 			case SYS_BCAL:	break;		// BCAL
