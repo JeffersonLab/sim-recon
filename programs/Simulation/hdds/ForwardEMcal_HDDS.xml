@@ -26,79 +26,79 @@
   </composition>
 
   <composition name="forwardEMcal" envelope="FCAL">
-    <posXYZ volume="LGDlower" X_Y_Z="  0.0 -60.0  0.0" />
-    <posXYZ volume="LGDleft"  X_Y_Z="-60.0   0.0  0.0" />
-    <posXYZ volume="LGDright" X_Y_Z="+60.0   0.0  0.0" />
-    <posXYZ volume="LGDupper" X_Y_Z="  0.0 +60.0  0.0" />
+    <posXYZ volume="LGDlower" X_Y_Z="  0.0 -56.0  0.0" />
+    <posXYZ volume="LGDleft"  X_Y_Z="-56.0   0.0  0.0" />
+    <posXYZ volume="LGDright" X_Y_Z="+56.0   0.0  0.0" />
+    <posXYZ volume="LGDupper" X_Y_Z="  0.0 +56.0  0.0" />
   </composition>
 
   <composition name="LGDlower" envelope="LGDB">
-    <mposY volume="LGDfullRow" ncopy="28" Z_X="0.0 0.0" Y0="-54.0" dY="4.0">
-      <row value="1" step="1" />
+    <mposY volume="LGDfullRow" ncopy="25" Z_X="0.0 0.0" Y0="-48.0" dY="4.0">
+      <row value="0" step="1" />
     </mposY>
   </composition>
 
   <composition name="LGDleft" envelope="LGDL">
-    <mposY volume="LGDhalfRowLeft" ncopy="2" Y0="-2.0" dY="4.0">
-      <row value="29" step="1" />
+    <mposY volume="LGDhalfRowLeft" ncopy="3" Y0="-4.0" dY="4.0">
+      <row value="25" step="1" />
     </mposY>
   </composition>
 
   <composition name="LGDright" envelope="LGDR">
-    <mposY volume="LGDhalfRowRight" ncopy="2" Y0="-2.0" dY="4.0">
-      <row value="29" step="1" />
+    <mposY volume="LGDhalfRowRight" ncopy="3" Y0="-4.0" dY="4.0">
+      <row value="25" step="1" />
     </mposY>
   </composition>
 
   <composition name="LGDupper" envelope="LGDT">
-    <mposY volume="LGDfullRow" ncopy="28" Z_X="0.0 0.0" Y0="-54.0" dY="4.0">
-      <row value="31" step="1" />
+    <mposY volume="LGDfullRow" ncopy="25" Z_X="0.0 0.0" Y0="-48.0" dY="4.0">
+      <row value="28" step="1" />
     </mposY>
   </composition>
   <composition name="LGDfullRow">
-    <mposX volume="LGBL" ncopy="58" Y_Z="0.0 0.0" X0="-114.0" dX="4.0">
-      <column value="1" step="1" />
+    <mposX volume="LGBL" ncopy="53" Y_Z="0.0 0.0" X0="-104.0" dX="4.0">
+      <column value="0" step="1" />
     </mposX>
   </composition>
 
   <composition name="LGDhalfRowLeft">
-    <mposX volume="LGBL" ncopy="28" Y_Z="0.0 0.0" X0="-54.0" dX="4.0">
-      <column value="1" step="1" />
+    <mposX volume="LGBL" ncopy="25" Y_Z="0.0 0.0" X0="-48.0" dX="4.0">
+      <column value="0" step="1" />
     </mposX>
   </composition>
 
   <composition name="LGDhalfRowRight">
-    <mposX volume="LGBL" ncopy="28" Y_Z="0.0 0.0" X0="-54.0" dX="4.0">
-      <column value="31" step="1" />
+    <mposX volume="LGBL" ncopy="25" Y_Z="0.0 0.0" X0="-48.0" dX="4.0">
+      <column value="28" step="1" />
     </mposX>
   </composition>
 
 
-  <box name="FCAL" X_Y_Z="232.0  232.0  45.0"  material="Air"
+  <box name="FCAL" X_Y_Z="212.0  212.0  45.0"  material="Air"
 	parameters="forwardEMcal_pars"	comment="forward EMcal mother" />
-  <box name="LGDB" X_Y_Z="232.0  112.0  45.0"  material="Air"
+  <box name="LGDB" X_Y_Z="212.0  100.0  45.0"  material="Air"
 					comment="LGD bottom section"   />
-  <box name="LGDT" X_Y_Z="232.0  112.0  45.0"  material="Air"
+  <box name="LGDT" X_Y_Z="212.0  100.0  45.0"  material="Air"
 					comment="LGD top section"      />
-  <box name="LGDL" X_Y_Z="112.0    8.0  45.0"  material="Air"
+  <box name="LGDL" X_Y_Z="100.0   12.0  45.0"  material="Air"
 					comment="LGD left section"     />
-  <box name="LGDR" X_Y_Z="112.0    8.0  45.0"  material="Air"
+  <box name="LGDR" X_Y_Z="100.0   12.0  45.0"  material="Air"
 					comment="LGD right section"    />
   <box name="LGBL" X_Y_Z="  4.0    4.0  45.0"  material="leadGlassSF3"
 		sensitive="true"	 comment="lead glass block"     />
 
   <parameters name="forwardEMcal_pars" type="mcfast">
     <real_array	name="xlimit"	comment="xmin  xmax limits of box"
-				values="-116.0  116.0"
+				values="-106.0  106.0"
 				unit="cm"	/>
     <real_array	name="ylimit"	comment="ymin  ymax limits of box"
-				values="-116.0  116.0"
+				values="-106.0  106.0"
 				unit="cm"	/>
     <real_array	name="xlimit_gap" comment="xmin  xmax of beam hole aperture"
-				values="   -4.0   4.0"
+				values="   -6.0   6.0"
 				unit="cm"	/>
     <real_array	name="ylimit_gap" comment="ymin  ymax of beam hole aperture"
-				values="   -4.0   4.0"
+				values="   -6.0   6.0"
 				unit="cm"	/>
     <real	name="z0"	value="620.07"	comment="z of midplane"
 				unit="cm"	/>
