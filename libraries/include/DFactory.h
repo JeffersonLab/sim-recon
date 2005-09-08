@@ -98,7 +98,7 @@ DFactory<T>::DFactory()
 
 	// make sure vector is empty
 	_data.clear(); // probably unnecessary
-
+	
 	// clear flags
 	flags = DFACTORY_NULL;
 	busy = 0;
@@ -224,8 +224,12 @@ derror_t DFactory<T>::Reset(void)
 {
 	/// Clear out the factories current contents unless the
 	/// PERSISTANT flag is set.
-	evnt_called = 0;
 	if(flags & PERSISTANT)return NOERROR;
+
+	// don't reset the evnt_called flag for persistent data because this
+	// will force evnt to be called next event therby regenerating
+	// the data
+	evnt_called = 0;
 	
 	return HardReset();
 }
@@ -236,6 +240,7 @@ derror_t DFactory<T>::Reset(void)
 template<class T>
 derror_t DFactory<T>::HardReset(void)
 {
+	
 	/// Clear out the factories current contents.
 	for(unsigned int i=0;i<_data.size();i++){
 		delete _data[i];
@@ -257,7 +262,7 @@ derror_t DFactory<T>::CopyExternal(vector<const T*> data)
 	// Set flag so subsequent calls for this event will return this
 	// data.
 	evnt_called = 1;
-	
+		
 	// Just copy into the _vdata vector since _data is not used outside
 	// of the factory.
 	_data.clear();
