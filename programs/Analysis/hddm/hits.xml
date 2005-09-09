@@ -14,7 +14,9 @@
    <forwardDC minOccurs="0">
       <chamber module="int" layer="int" maxOccurs="unbounded">
          <cathodePlane z="float" tau="float" minOccurs="0" maxOccurs="unbounded">
-            <strip u="float" maxOccurs="unbounded" />
+            <strip u="float" maxOccurs="unbounded"> 
+	       <hit t="float" dE="float" minOccurs="0" maxOccurs="unbounded" />
+	    </strip>
          </cathodePlane>
          <anodePlane z="float" tau="float" minOccurs="0" maxOccurs="unbounded">
             <wire u="float" maxOccurs="unbounded">
