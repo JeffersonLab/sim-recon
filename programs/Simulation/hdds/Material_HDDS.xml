@@ -504,6 +504,7 @@
 	<real name="dedx"	value="0.0"	unit="MeV/g/cm^2"	/>
   </element>
 
+
   <composite name="Scintillator">
 	<addmaterial material="Carbon">   <natoms n="9"	/> </addmaterial>
 	<addmaterial material="Hydrogen"> <natoms n="10" /></addmaterial>
@@ -559,6 +560,15 @@
 	<addmaterial material="Oxygen">   <natoms n="2"	/> </addmaterial>
 	<real name="density"	value="1.4"	unit="g/cm^3"	/>
   </composite>
+
+ <composite name="Nomex">
+  <addmaterial material="Hydrogen"> <natoms n="14" /> </addmaterial>
+  <addmaterial material="Oxygen"> <natoms n="4" /> </addmaterial>
+  <addmaterial material="Carbon"> <natoms n="14" /> </addmaterial>
+  <addmaterial material="Nitrogen"> <natoms n="2" /> </addmaterial>
+  <real name="density" value="0.029" unit="g/cm^3" />
+</composite>
+
 
   <composite name="Nylon">
 	<addmaterial material="Nitrogen"> <natoms n="1"	/> </addmaterial>
@@ -690,13 +700,19 @@
 
   <composite name="chamberGas">
 	<addmaterial material="Argon">
-		<fractionmass	fraction="0.50"	/>
+		<fractionmass	fraction="0.85"	/>
  	</addmaterial>
-	<addmaterial material="Ethane">
-		<fractionmass	fraction="0.20"	/>
+	<addmaterial material="CO2">
+		<fractionmass	fraction="0.15"	/>
  	</addmaterial>
-	<addmaterial material="Freon">
-		<fractionmass	fraction="0.30"	/>
+  </composite>
+
+  <composite name="CopperKapton">
+	<addmaterial material="Copper">
+		<fractionmass	fraction="0.89"	/>
+ 	</addmaterial>
+	<addmaterial material="Kapton">
+		<fractionmass	fraction="0.11"	/>
  	</addmaterial>
   </composite>
 
