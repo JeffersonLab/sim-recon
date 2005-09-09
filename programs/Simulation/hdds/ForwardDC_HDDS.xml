@@ -69,10 +69,10 @@
     <posXYZ volume="FDCA" X_Y_Z="0.0 0.0 0.0">
       <plane value="2" />
     </posXYZ>
-    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0 -0.996" rot="0   0   60">
+    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0 -0.5" rot="0   0  -45">
       <plane value="1" />
     </posXYZ>
-    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0 +0.996" rot="0   0  -60">
+    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0 +0.5" rot="0   0   45">
       <plane value="3" />
     </posXYZ>
   </composition>
@@ -80,16 +80,16 @@
   <tubs name="FDC" Rio_Z="3.5 62.0 178.0" material="Air"
                                           comment="forward drift chambers" />
 
-  <tubs name="FDCH" Rio_Z=" 3.5 61.0 6.0" material="Air"        />
+  <tubs name="FDCH" Rio_Z=" 3.5 61.0 6.0" material="chamberGas"        />
   <tubs name="FDMO" Rio_Z=" 3.5 61.0 2.0" material="Air"        />
-  <tubs name="FDCA" Rio_Z=" 3.5 60.0 1.984" material="chamberGas"
+  <tubs name="FDCA" Rio_Z=" 3.5 60.0 0.994" material="chamberGas"
 					    sensitive="true" 	/>
-  <tubs name="FDCC" Rio_Z=" 3.5 60.0 0.008" material="Mylar"
+  <tubs name="FDCC" Rio_Z=" 3.5 60.0 0.0059" material="CopperKapton"
 					    sensitive="true" 	/>
   <tubs name="FDCS" Rio_Z="60.0 61.0 6.0" material="Aluminum"   />
 
   <parameters name="forwardDC_pars" type="mcfast">
-    <int	name="nlyr"	value="9"	comment="number of layers" />
+    <int	name="nlyr"	value="3"	comment="number of layers" />
   </parameters>
 
   <parameters name="forwardDCanode_pars" type="mcfast">
@@ -116,7 +116,7 @@
 				unit="cm"	/>
     <real	name="stereo"	value="0.00"	comment="phi orientation"
 				unit="deg"	/>
-    <real	name="eff_hit"	value="0.96"	comment="hit efficiency"
+    <real	name="eff_hit"	value="1.0"	comment="hit efficiency"
 				unit="none"	/>
     <real	name="siga"	value="0.015"	comment="hit resolution"
 				unit="cm"	/>
@@ -127,9 +127,9 @@
   </parameters>
 
   <parameters name="forwardDCcathode_pars" type="mcfast">
-    <reference	name="mat"	value="Mylar" />
+    <reference	name="mat"	value="CopperKapton" />
     <int	name="nwed"	value="1"	comment="number of wedges" />
-    <real	name="thick"	value="0.008"	comment="layer thickness"
+    <real	name="thick"	value="0.0059"	comment="layer thickness"
 				unit="cm"	/>
     <real	name="rmin"	value="3.50"	comment="inner radius"
 				unit="cm"	/>
@@ -141,14 +141,14 @@
 				unit="deg"	/>
     <int	name="type"	value="3"	/>
     <string	name="speci"	value="ALL"	comment="SPC or ALL"	   />
-    <int	name="nstrip"	value="119"	comment="cathode strips"   />
+    <int	name="nstrip"	value="238"	comment="cathode strips"   />
     <real	name="c0_r"	value="0.00"
 				unit="cm"	/>
     <real	name="c0_phi"	value="0.00"
 				unit="deg"	/>
-    <real	name="pitch"	value="1.0"	comment="strip pitch"
+    <real	name="pitch"	value="0.50"	comment="strip pitch"
 				unit="cm"	/>
-    <real	name="eff_hit"	value="0.96"	comment="hit efficiency"
+    <real	name="eff_hit"	value="1.0"	comment="hit efficiency"
 				unit="none"	/>
     <real	name="siga"	value="0.015"	comment="hit resolution"
 				unit="cm"	/>
@@ -170,16 +170,63 @@
     <reference 	name="material"	value="Aluminum" comment="straw tube mockup" />
   </parameters>
 
+<parameters name="forwardDCgas_pars" type="mcfast">
+    <string	name="shape"	value="TUBE"	/>
+    <int	name="type"	value="41"	/>
+    <real_array name="rmin" 	values="3.5  3.5" comment="inner cone"
+				unit="cm"	/>
+    <real_array name="rmax" 	values="60.0  60.0" comment="outer cone"
+				unit="cm"	/>
+    <real	name="zlen" 	value="12.0"	comment="length of drum"
+				unit="cm"	/>
+    <reference 	name="material"	value="chamberGas" comment="gas volume" />
+  </parameters>
+
+ <parameters name="forwardDCwindow_pars" type="mcfast">
+     <string	name="shape"	value="TUBE"	/>
+    <int	name="type"	value="42"	/>
+    <real_array name="rmin" 	values="3.5  3.5" comment="inner cone"
+				unit="cm"	/>
+    <real_array name="rmax" 	values="60.0  60.0" comment="outer cone"
+				unit="cm"	/>
+    <real	name="zlen" 	value="0.0025"	comment="length of drum"
+				unit="cm"	/>
+    <reference 	name="material"	value="Mylar" comment="mylar windows" />
+  </parameters>
+
+  <parameters name="forwardDCNomex_pars" type="mcfast">
+     <string	name="shape"	value="TUBE"	/>
+    <int	name="type"	value="42"	/>
+    <real_array name="rmin" 	values="3.5  3.5" comment="inner cone"
+				unit="cm"	/>
+    <real_array name="rmax" 	values="60.0  60.0" comment="outer cone"
+				unit="cm"	/>
+    <real	name="zlen" 	value="0.5"	comment="length of drum"
+				unit="cm"	/>
+    <reference 	name="material"	value="Nomex" comment="Nomex honeycomb" />
+  </parameters>
+
   <mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
     <int	name="num"	value="1"	/>
     <string	name="name"	value="FDC1" 	/>
-    <real	name="zpos"	value="227.0"
+    <real	name="zpos"	value="225.0"
 				unit="cm"	/>
     <int	name="det"	value="1"	/>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value=" 45.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
 			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="1"	/>
-      <real	name="z_local"	value="-2.0"
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 				parameters="forwardDCanode_pars">
@@ -188,634 +235,244 @@
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="2"	/>
-      <real	name="z_local"	value=" 0.0"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="3"	/>
-      <real	name="z_local"	value=" 2.0"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="4"	/>
-      <real	name="z_local"	value="-2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="5"	/>
-      <real	name="z_local"	value="-1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="6"	/>
-      <real	name="z_local"	value="-0.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="120.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="7"	/>
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
       <real	name="z_local"	value=" 0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="8"	/>
-      <real	name="z_local"	value=" 1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="9"	/>
-      <real	name="z_local"	value=" 2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-120.0"
+        <real 	name="stereo"	value="-45.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
-  <mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+ 
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
     <int	name="num"	value="2"	/>
     <string	name="name"	value="FDC2" 	/>
-    <real	name="zpos"	value="233.0"
+    <real	name="zpos"	value="227.0"
 				unit="cm"	/>
     <int	name="det"	value="2"	/>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="1"	/>
-      <real	name="z_local"	value="-2.0"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
-				parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="0.0"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="105.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
 			      parameters="forwardDCanode_pars">
       <int	name="lyr"	value="2"	/>
-      <real	name="z_local"	value=" 0.0"
+      <real	name="z_local"	value="0.0"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
+				parameters="forwardDCanode_pars">
         <real	name="stereo"	value="60.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="3"	/>
-      <real	name="z_local"	value=" 2.0"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="4"	/>
-      <real	name="z_local"	value="-2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="5"	/>
-      <real	name="z_local"	value="-1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="6"	/>
-      <real	name="z_local"	value="-0.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="120.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="7"	/>
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
       <real	name="z_local"	value=" 0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="8"	/>
-      <real	name="z_local"	value=" 1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="9"	/>
-      <real	name="z_local"	value=" 2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-120.0"
+        <real 	name="stereo"	value=" 15.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
-  <mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
     <int	name="num"	value="3"	/>
     <string	name="name"	value="FDC3" 	/>
-    <real	name="zpos"	value="279.0"
+    <real	name="zpos"	value="229.0"
 				unit="cm"	/>
     <int	name="det"	value="3"	/>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="1"	/>
-      <real	name="z_local"	value="-2.0"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
-				parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="0.0"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value=" 165.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
 			      parameters="forwardDCanode_pars">
       <int	name="lyr"	value="2"	/>
-      <real	name="z_local"	value=" 0.0"
+      <real	name="z_local"	value="0.0"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="3"	/>
-      <real	name="z_local"	value=" 2.0"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="4"	/>
-      <real	name="z_local"	value="-2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="5"	/>
-      <real	name="z_local"	value="-1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="6"	/>
-      <real	name="z_local"	value="-0.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
+				parameters="forwardDCanode_pars">
         <real	name="stereo"	value="120.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="7"	/>
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
       <real	name="z_local"	value=" 0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="8"	/>
-      <real	name="z_local"	value=" 1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="9"	/>
-      <real	name="z_local"	value=" 2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-120.0"
+        <real 	name="stereo"	value="75.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
-  <mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
     <int	name="num"	value="4"	/>
     <string	name="name"	value="FDC4" 	/>
-    <real	name="zpos"	value="285.0"
+    <real	name="zpos"	value="231.0"
 				unit="cm"	/>
     <int	name="det"	value="4"	/>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="1"	/>
-      <real	name="z_local"	value="-2.0"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
-				parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="0.0"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="225.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
 			      parameters="forwardDCanode_pars">
       <int	name="lyr"	value="2"	/>
-      <real	name="z_local"	value=" 0.0"
+      <real	name="z_local"	value="0.0"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="60.0"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="180.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="3"	/>
-      <real	name="z_local"	value=" 2.0"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="4"	/>
-      <real	name="z_local"	value="-2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="5"	/>
-      <real	name="z_local"	value="-1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="6"	/>
-      <real	name="z_local"	value="-0.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="120.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="7"	/>
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
       <real	name="z_local"	value=" 0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="8"	/>
-      <real	name="z_local"	value=" 1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="9"	/>
-      <real	name="z_local"	value=" 2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-120.0"
+        <real 	name="stereo"	value="135.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
-  <mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
     <int	name="num"	value="5"	/>
     <string	name="name"	value="FDC5" 	/>
-    <real	name="zpos"	value="335.0"
+    <real	name="zpos"	value="233.0"
 				unit="cm"	/>
     <int	name="det"	value="5"	/>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="1"	/>
-      <real	name="z_local"	value="-2.0"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
-				parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="0.0"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="285.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
 			      parameters="forwardDCanode_pars">
       <int	name="lyr"	value="2"	/>
-      <real	name="z_local"	value=" 0.0"
+      <real	name="z_local"	value="0.0"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="60.0"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="240.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="3"	/>
-      <real	name="z_local"	value=" 2.0"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="4"	/>
-      <real	name="z_local"	value="-2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="5"	/>
-      <real	name="z_local"	value="-1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="6"	/>
-      <real	name="z_local"	value="-0.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="120.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="7"	/>
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
       <real	name="z_local"	value=" 0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="8"	/>
-      <real	name="z_local"	value=" 1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="9"	/>
-      <real	name="z_local"	value=" 2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-120.0"
+        <real 	name="stereo"	value="195.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
-  <mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
     <int	name="num"	value="6"	/>
     <string	name="name"	value="FDC6" 	/>
-    <real	name="zpos"	value="341.0"
+    <real	name="zpos"	value="235.0"
 				unit="cm"	/>
     <int	name="det"	value="6"	/>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="1"	/>
-      <real	name="z_local"	value="-2.0"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
-				parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="0.0"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="345.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
 			      parameters="forwardDCanode_pars">
       <int	name="lyr"	value="2"	/>
-      <real	name="z_local"	value=" 0.0"
+      <real	name="z_local"	value="0.0"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="60.0"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="300.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="3"	/>
-      <real	name="z_local"	value=" 2.0"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="4"	/>
-      <real	name="z_local"	value="-2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="5"	/>
-      <real	name="z_local"	value="-1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="6"	/>
-      <real	name="z_local"	value="-0.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="120.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="7"	/>
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
       <real	name="z_local"	value=" 0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="8"	/>
-      <real	name="z_local"	value=" 1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="9"	/>
-      <real	name="z_local"	value=" 2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-120.0"
+        <real 	name="stereo"	value="155.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
+
+
   <mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
     <int	name="num"	value="7"	/>
     <string	name="name"	value="FDC7" 	/>
-    <real	name="zpos"	value="391.0"
+    <real	name="zpos"	value="279.7"
 				unit="cm"	/>
     <int	name="det"	value="7"	/>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value=" 45.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
 			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="1"	/>
-      <real	name="z_local"	value="-2.0"
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 				parameters="forwardDCanode_pars">
@@ -824,104 +481,244 @@
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="2"	/>
-      <real	name="z_local"	value=" 0.0"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="3"	/>
-      <real	name="z_local"	value=" 2.0"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="4"	/>
-      <real	name="z_local"	value="-2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="5"	/>
-      <real	name="z_local"	value="-1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="6"	/>
-      <real	name="z_local"	value="-0.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="120.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="7"	/>
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
       <real	name="z_local"	value=" 0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="8"	/>
-      <real	name="z_local"	value=" 1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="9"	/>
-      <real	name="z_local"	value=" 2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-120.0"
+        <real 	name="stereo"	value="-45.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
-  <mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+ 
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
     <int	name="num"	value="8"	/>
     <string	name="name"	value="FDC8" 	/>
-    <real	name="zpos"	value="397.0"
+    <real	name="zpos"	value="281.7"
 				unit="cm"	/>
     <int	name="det"	value="8"	/>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="105.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
 			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="1"	/>
-      <real	name="z_local"	value="-2.0"
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="60.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value=" 15.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="9"	/>
+    <string	name="name"	value="FDC9" 	/>
+    <real	name="zpos"	value="283.7"
+				unit="cm"	/>
+    <int	name="det"	value="9"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="165.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="120.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="75.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="10"	/>
+    <string	name="name"	value="FDC10" 	/>
+    <real	name="zpos"	value="285.7"
+				unit="cm"	/>
+    <int	name="det"	value="10"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="225.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="180.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="135.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="11"	/>
+    <string	name="name"	value="FDC11" 	/>
+    <real	name="zpos"	value="287.7"
+				unit="cm"	/>
+    <int	name="det"	value="11"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="285.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="240.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="195.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="12"	/>
+    <string	name="name"	value="FDC12" 	/>
+    <real	name="zpos"	value="289.7"
+				unit="cm"	/>
+    <int	name="det"	value="12"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="345.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="300.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="255.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+
+
+  <mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="13"	/>
+    <string	name="name"	value="FDC13" 	/>
+    <real	name="zpos"	value="334.4"
+				unit="cm"	/>
+    <int	name="det"	value="13"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value=" 45.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 				parameters="forwardDCanode_pars">
@@ -930,94 +727,664 @@
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="2"	/>
-      <real	name="z_local"	value=" 0.0"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCanode_pars">
-      <int	name="lyr"	value="3"	/>
-      <real	name="z_local"	value=" 2.0"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCanode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="4"	/>
-      <real	name="z_local"	value="-2.5"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="60.0"
+        <real 	name="stereo"	value="-45.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="5"	/>
-      <real	name="z_local"	value="-1.5"
+  </mcfast>
+ 
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="14"	/>
+    <string	name="name"	value="FDC14" 	/>
+    <real	name="zpos"	value="336.4"
 				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-60.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
+    <int	name="det"	value="14"	/>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="6"	/>
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
       <real	name="z_local"	value="-0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="105.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="60.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value=" 15.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="15"	/>
+    <string	name="name"	value="FDC15" 	/>
+    <real	name="zpos"	value="338.4"
+				unit="cm"	/>
+    <int	name="det"	value="15"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="165.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
         <real	name="stereo"	value="120.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
     <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="7"	/>
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
       <real	name="z_local"	value=" 0.5"
 				unit="cm"	/>
       <mcfast model="Wedge" template="db/sidisk_wedge.db"
 			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="8"	/>
-      <real	name="z_local"	value=" 1.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="0.0"
-				unit="deg"	/>
-      </mcfast>
-    </mcfast>
-    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
-			      parameters="forwardDCcathode_pars">
-      <int	name="lyr"	value="9"	/>
-      <real	name="z_local"	value=" 2.5"
-				unit="cm"	/>
-      <mcfast model="Wedge" template="db/sidisk_wedge.db"
-			    parameters="forwardDCcathode_pars">
-        <real	name="stereo"	value="-120.0"
+        <real 	name="stereo"	value="75.0"
 				unit="deg"	/>
       </mcfast>
     </mcfast>
   </mcfast>
+
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="16"	/>
+    <string	name="name"	value="FDC16" 	/>
+    <real	name="zpos"	value="340.4"
+				unit="cm"	/>
+    <int	name="det"	value="16"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="225.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="180.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="135.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="17"	/>
+    <string	name="name"	value="FDC17" 	/>
+    <real	name="zpos"	value="342.4"
+				unit="cm"	/>
+    <int	name="det"	value="17"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="305.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="240.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="195.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="18"	/>
+    <string	name="name"	value="FDC18" 	/>
+    <real	name="zpos"	value="344.4"
+				unit="cm"	/>
+    <int	name="det"	value="18"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="345.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="300.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="255.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+
+
+  <mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="19"	/>
+    <string	name="name"	value="FDC19" 	/>
+    <real	name="zpos"	value="389.0"
+				unit="cm"	/>
+    <int	name="det"	value="19"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value=" 45.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="0.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="-45.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+ 
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="20"	/>
+    <string	name="name"	value="FDC20" 	/>
+    <real	name="zpos"	value="391.0"
+				unit="cm"	/>
+    <int	name="det"	value="20"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="105.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="60.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="15.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="21"	/>
+    <string	name="name"	value="FDC21" 	/>
+    <real	name="zpos"	value="393.0"
+				unit="cm"	/>
+    <int	name="det"	value="21"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="185.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="120.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="75.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="22"	/>
+    <string	name="name"	value="FDC22" 	/>
+    <real	name="zpos"	value="395.0"
+				unit="cm"	/>
+    <int	name="det"	value="22"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="225.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="180.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="155.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="23"	/>
+    <string	name="name"	value="FDC23" 	/>
+    <real	name="zpos"	value="397.0"
+				unit="cm"	/>
+    <int	name="det"	value="23"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="285.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="240.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="195.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+
+<mcfast model="SiDisk" template="db/sidisk.db" parameters="forwardDC_pars">
+    <int	name="num"	value="24"	/>
+    <string	name="name"	value="FDC24" 	/>
+    <real	name="zpos"	value="399.0"
+				unit="cm"	/>
+    <int	name="det"	value="24"	/>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="1" />
+      <real	name="z_local"	value="-0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="345.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+			      parameters="forwardDCanode_pars">
+      <int	name="lyr"	value="2"	/>
+      <real	name="z_local"	value="0.0"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+				parameters="forwardDCanode_pars">
+        <real	name="stereo"	value="300.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+    <mcfast model="LayerSiDi" template="db/sidisk_layer.db"
+                              parameters="forwardDCcathode_pars">
+      <int      name="lyr"      value="3" />
+      <real	name="z_local"	value=" 0.5"
+				unit="cm"	/>
+      <mcfast model="Wedge" template="db/sidisk_wedge.db"
+			    parameters="forwardDCcathode_pars">
+        <real 	name="stereo"	value="255.0"
+				unit="deg"	/>
+      </mcfast>
+    </mcfast>
+  </mcfast>
+
+
+
+  <mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN1" />
+    <real name="z0" value="224.0"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN2" />
+    <real name="z0" value="226.0"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN3" />
+    <real name="z0" value="228.0"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN4" />
+    <real name="z0" value="230.0"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN5" />
+    <real name="z0" value="232.0"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN6" />
+    <real name="z0" value="234.0"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN7" />
+    <real name="z0" value="236.0"  comment="z of midplane"
+                     unit="cm" />
+</mcfast> 
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN8" />
+    <real name="z0" value="278.7"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN9" />
+    <real name="z0" value="280.7"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN10"/>
+    <real name="z0" value="282.7"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN11"/>
+    <real name="z0" value="284.7"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN12"/>
+    <real name="z0" value="286.7"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN13" />
+    <real name="z0" value="288.7"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN14" />
+    <real name="z0" value="290.7"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN15" />
+    <real name="z0" value="333.4"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN16"/>
+    <real name="z0" value="335.4"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN17"/>
+    <real name="z0" value="337.4"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN18"/>
+    <real name="z0" value="339.4"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN19"/>
+    <real name="z0" value="341.4"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN20"/>
+    <real name="z0" value="343.4"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN21" />
+    <real name="z0" value="345.4"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN22" />
+    <real name="z0" value="388.0"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN23"/>
+    <real name="z0" value="390.0"  comment="z of midplane"
+                     unit="cm" />
+</mcfast><mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN24"/>
+    <real name="z0" value="392.0"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN25"/>
+    <real name="z0" value="394.0"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN26"/>
+    <real name="z0" value="396.0"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN27"/>
+    <real name="z0" value="398.0"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
+
+<mcfast model="Absorber" template="db/absorber.db"
+                           parameters="forwardDCwindow_pars">
+    <string name="name" value="WIN28" />
+    <real name="z0" value="400.0"  comment="z of midplane"
+                     unit="cm" />
+</mcfast>
 
   <mcfast model="Absorber" template="db/absorber.db"
 			   parameters="forwardDCsupport_pars">
@@ -1025,16 +1392,17 @@
     <real	name="z0"	value="230.0"	comment="z of midplane"
 				unit="cm"	/>
   </mcfast>
+
   <mcfast model="Absorber" template="db/absorber.db"
 			   parameters="forwardDCsupport_pars">
     <string	name="name"	value="SHL8"	/>
-    <real	name="z0"	value="282.0"	comment="z of midplane"
+    <real	name="z0"	value="284.7"	comment="z of midplane"
 				unit="cm"	/>
   </mcfast>
   <mcfast model="Absorber" template="db/absorber.db"
 			   parameters="forwardDCsupport_pars">
     <string	name="name"	value="SHL9"	/>
-    <real	name="z0"	value="338.0"	comment="z of midplane"
+    <real	name="z0"	value="339.4"	comment="z of midplane"
 				unit="cm"	/>
   </mcfast>
   <mcfast model="Absorber" template="db/absorber.db"
@@ -1042,7 +1410,7 @@
     <string	name="name"	value="SHL10"	/>
     <real	name="z0"	value="394.0"	comment="z of midplane"
 				unit="cm"	/>
-  </mcfast>
+  </mcfast> 
 
 </section>
 
