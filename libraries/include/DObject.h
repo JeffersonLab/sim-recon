@@ -21,7 +21,10 @@ class DObject{
 	/// factories.
 
 	public:
+	
 		DObject();
+   	    DObject( identifier_t aId ) : id( aId ) {}
+
 		virtual ~DObject();
 
 		identifier_t id;
