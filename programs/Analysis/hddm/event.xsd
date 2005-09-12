@@ -201,6 +201,9 @@
   <xs:element name="strip">
     <xs:complexType>
       <xs:attribute name="u" type="hddm:float" use="required"/>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:hit"/>
+      </xs:sequence>
     </xs:complexType>
   </xs:element>
 
