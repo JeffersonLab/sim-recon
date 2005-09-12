@@ -85,17 +85,23 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 				
 					for(unsigned int m=0;m<strips->mult;m++){
 						float u = strips->in[m].u;
+						s_Hits_t *hits=strips->in[m].hits;
+						if (!hits) continue;
+
+						for (unsigned int n=0;n<hits->mult;n++){
 					
-						DFDCHit *fdchit = new DFDCHit;
-						fdchit->layer = layer;
-						fdchit->module = module;
-						fdchit->tau = tau;
-						fdchit->z = z;
-						fdchit->u = u;
-						fdchit->dE = 0;
-						fdchit->t = 0;
-						fdchit->type = 1;
-						v.push_back(fdchit);
+						  DFDCHit *fdchit = new DFDCHit;
+						  fdchit->layer = layer;
+						  fdchit->module = module;
+						  fdchit->tau = tau;
+						  fdchit->z = z;
+						  fdchit->u = u;
+						  fdchit->dE = hits->in[n].dE;
+						  fdchit->t = 0;
+						  fdchit->type = 1;
+
+						  v.push_back(fdchit);
+						}
 					}
 				}
 			}
