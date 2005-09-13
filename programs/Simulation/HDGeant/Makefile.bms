@@ -2,6 +2,7 @@
 PACKAGES := CERNLIB
 MISC_LIBS = -L/sw/lib -lXm -L/usr/X11R6/lib -lXt -lgelhad
 FFLAGS = -Wno-globals
+ADDITIONAL_MODULES += HDDM
 
 LD = f77
 
