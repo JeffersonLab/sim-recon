@@ -202,6 +202,7 @@ typedef struct {
 
 typedef struct {
    float                u;
+   s_Hits_t*            hits;
 } s_Strip_t;
 
 typedef struct {

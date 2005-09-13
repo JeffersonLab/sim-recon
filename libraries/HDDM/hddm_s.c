@@ -476,7 +476,9 @@ char HDDM_s_DocumentString[] =
 "      <forwardDC minOccurs=\"0\">\n"
 "        <chamber layer=\"int\" maxOccurs=\"unbounded\" module=\"int\">\n"
 "          <cathodePlane maxOccurs=\"unbounded\" minOccurs=\"0\" tau=\"float\" z=\"float\">\n"
-"            <strip maxOccurs=\"unbounded\" u=\"float\" />\n"
+"            <strip maxOccurs=\"unbounded\" u=\"float\">\n"
+"              <hit dE=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" />\n"
+"            </strip>\n"
 "          </cathodePlane>\n"
 "          <anodePlane maxOccurs=\"unbounded\" minOccurs=\"0\" tau=\"float\" z=\"float\">\n"
 "            <wire maxOccurs=\"unbounded\" u=\"float\">\n"
@@ -1265,7 +1267,24 @@ static s_Strips_t* unpack_s_Strips(XDR* xdrs, popNode* pop)
       this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
+         int p;
+         void* (*ptr) = (void**) &this1->in[m].hits;
          xdr_float(xdrs,&this1->in[m].u);
+         for (p = 0; p < pop->popListLength; p++)
+         {
+            popNode* pnode = pop->popList[p];
+            if (pnode)
+            {
+               int kid = pnode->inParent;
+               ptr[kid] = pnode->unpacker(xdrs,pnode);
+            }
+            else
+            {
+               unsigned int skip;
+               xdr_u_int(xdrs,&skip);
+               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);
+            }
+         }
       }
       xdr_setpos(xdrs,start+size);
    }
@@ -3382,6 +3401,15 @@ static int pack_s_Strips(XDR* xdrs, s_Strips_t* this1)
    for (m = 0; m < this1->mult; m++)
    {
       xdr_float(xdrs,&this1->in[m].u);
+      if (this1->in[m].hits)
+      {
+         pack_s_Hits(xdrs,this1->in[m].hits);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
    }
    FREE(this1);
    end = xdr_getpos(xdrs);
