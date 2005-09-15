@@ -10,6 +10,7 @@
 #include <iomanip>
 using namespace std;
 
+#include <signal.h>
 #include <setjmp.h>
 #include <unistd.h>
 
@@ -20,18 +21,29 @@ using namespace std;
 
 jmp_buf SETJMP_ENV;
 
+// Thread commits suicide when it receives HUP signal
+void thread_HUP_sighandler(int sig)
+{
+	cerr<<"Caught HUP signal for thread 0x"<<hex<<pthread_self()<<dec<<" thread exiting..."<<endl;
+	pthread_exit(NULL);
+}
 
 //---------------------------------
 // DEventLoop    (Constructor)
 //---------------------------------
 DEventLoop::DEventLoop(DApplication *app)
 {
+	// Last Resort exit strategy: If this thread stops responding, the
+	// main thread will send it a HUP signal to tell it to exit immediately.
+	signal(SIGHUP, thread_HUP_sighandler);
+
 	this->app = app;
 	app->AddDEventLoop(this, heartbeat);
 	event.SetDEventLoop(this);
 	pause = 0;
 	quit = 0;
 	auto_free = 1;
+	pthread_id = pthread_self();
 	
 	// Let each detector system install factories
 	extern derror_t BCAL_init(DEventLoop*);
@@ -243,6 +255,41 @@ derror_t DEventLoop::Print(const string data_name)
 }
 
 //-------------
+// PrintCallStack
+//-------------
+void DEventLoop::PrintCallStack(void)
+{
+	// Create a list of the call strings while finding the longest one
+	vector<string> routines;
+	unsigned int max_length = 0;
+	for(unsigned int i=0; i<call_stack.size(); i++){
+		string routine = call_stack[i].factory_name;
+		if(call_stack[i].tag){
+			if(strlen(call_stack[i].tag)){
+				routine = routine + ":" + call_stack[i].tag;
+			}
+		}
+		if(routine.size()>max_length) max_length = routine.size();
+		routines.push_back(routine);
+	}
+
+	stringstream sstr;
+	sstr<<" Factory Call Stack"<<endl;
+	sstr<<"============================"<<endl;
+	for(unsigned int i=0; i<call_stack.size(); i++){
+		string routine = routines[i];
+		sstr<<" "<<routine<<string(max_length+2 - routine.size(),' ');
+		if(call_stack[i].filename){
+			sstr<<"--  "<<" line:"<<call_stack[i].line<<"  "<<call_stack[i].filename;
+		}
+		sstr<<endl;
+	}
+	sstr<<"----------------------------"<<endl;
+	
+	cout<<sstr.str();
+}
+
+//-------------
 // Loop
 //-------------
 derror_t DEventLoop::Loop(void)
@@ -295,7 +342,7 @@ derror_t DEventLoop::OneEvent(void)
 	// Try to read in an event
 	derror_t err = app->NextEvent(event);
 	
-	// Here is a bit of voodoo. Calling setjmp() records the etire stack
+	// Here is a bit of voodoo. Calling setjmp() records the entire stack
 	// so that a subsequent call to longjmp() will return us right here.
 	// If we're returning here from a longjmp() call, then the return
 	// value of setjmp() will be non-zero. The longjmp() call is made
@@ -344,8 +391,18 @@ derror_t DEventLoop::OneEvent(void)
 		}
 		proc->UnlockState();
 
+		// Initialize the factory call stack
+		call_stack.clear();
+
 		// Call the event routine
-		proc->evnt(this, event_number);
+		try{
+			proc->evnt(this, event_number);
+		}catch(DException *exception){
+			call_stack_t cs = {"DEventLoop", "OneEvent", __FILE__, __LINE__};
+			call_stack.push_back(cs);
+			PrintCallStack();
+			throw exception;
+		}
 	}
 
 	if(auto_free)event.FreeEvent();
