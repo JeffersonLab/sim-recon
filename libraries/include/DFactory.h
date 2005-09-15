@@ -242,8 +242,10 @@ derror_t DFactory<T>::HardReset(void)
 {
 	
 	/// Clear out the factories current contents.
-	for(unsigned int i=0;i<_data.size();i++){
-		delete _data[i];
+	if(!(flags & NOT_OBJECT_OWNER)){
+		for(unsigned int i=0;i<_data.size();i++){
+			delete _data[i];
+		}
 	}
 	_data.clear();
 	_vdata.clear();

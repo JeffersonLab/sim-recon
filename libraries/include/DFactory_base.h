@@ -83,7 +83,8 @@ class DFactory_base:public DEventProcessor{
 		enum DFactory_Flags_t{
 			DFACTORY_NULL		=0x00,
 			PERSISTANT			=0x01,
-			WRITE_TO_OUTPUT	=0x02
+			WRITE_TO_OUTPUT	=0x02,
+			NOT_OBJECT_OWNER	=0x04
 		};
 		
 		const DFactory_Flags_t& GetFactoryFlags(void){return flags;}
@@ -98,6 +99,9 @@ class DFactory_base:public DEventProcessor{
 		int _icol;
 		int _columns[100];
 		int header_width;
+
+		inline void SetObjectOwner(void){flags = (DFactory_Flags_t)(flags & ~NOT_OBJECT_OWNER);}
+		inline void SetNotObjectOwner(void){flags = (DFactory_Flags_t)(flags | NOT_OBJECT_OWNER);}
 
 		// Methods useful in help produce nicely formatted ASCII
 		void printheader(const char *header);
