@@ -309,8 +309,9 @@ void* LaunchThread(void* arg)
 	// Loop over events until done. Catch any derror_t's thrown
 	try{
 		eventLoop->Loop();
-	}catch(derror_t err){
-		cerr<<__FILE__<<":"<<__LINE__<<" ERROR ("<<err<<") caught for thread "<<pthread_self()<<endl;
+	}catch(DException *exception){
+		if(exception)delete exception;
+		cerr<<__FILE__<<":"<<__LINE__<<" EXCEPTION caught for thread "<<pthread_self()<<endl;
 	}
 
 	// Delete DEventLoop object. He automatically de-registers himself
@@ -403,10 +404,14 @@ derror_t DApplication::Run(DEventProcessor *proc, int Nthreads)
 			*hb += slept_time;
 			if(*hb > 2.0+sleep_time){
 				// Thread hasn't done anything for more than 2 seconds. 
-				// Remove it from lists.
+				// Remove it from monitoring lists.
 				cerr<<" Thread "<<i<<" hasn't responded in "<<*hb<<" seconds. Delisting it..."<<endl;
+				DEventLoop *loop = *(loops.begin()+i);
 				loops.erase(loops.begin()+i);
 				heartbeats.erase(heartbeats.begin()+i);
+				
+				// Signal the non-responsive thread to commit suicide
+				pthread_kill(loop->GetPThreadID(), SIGHUP);
 			}
 		}
 
