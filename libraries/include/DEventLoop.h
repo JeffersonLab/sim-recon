@@ -14,6 +14,7 @@ using namespace std;
 
 #include "DEvent.h"
 #include "DFactory_base.h"
+#include "DException.h"
 #include "derror.h"
 
 template<class T> class DFactory;
@@ -48,17 +49,28 @@ class DEventLoop{
 		inline DEvent& GetDEvent(void){return event;}
 		inline void SetDEvent(DEvent *event){this->event = *event;}
 		inline void SetAutoFree(int auto_free){this->auto_free = auto_free;}
+		inline pthread_t GetPThreadID(void){return pthread_id;}
 		
+		typedef struct{
+			const char* factory_name;
+			const char* tag;
+			const char* filename;
+			int line;
+		}call_stack_t;
+		inline vector<call_stack_t> GetCallStack(void){return call_stack;}
+		void PrintCallStack(void);
+
 	private:
 		DEvent event;
 		vector<DFactory_base*> factories;
 		vector<DEventProcessor*> processors;
+		vector<call_stack_t> call_stack;
 		DApplication *app;
 		double *heartbeat;
 		int pause;
 		int quit;
 		int auto_free;
-
+		pthread_t pthread_id;
 };
 
 
@@ -96,9 +108,25 @@ DFactory<T>* DEventLoop::Get(vector<const T*> &t, const char *tag)
 	/// it returns NULL, then the factory couldn't be
 	/// found so we automatically try the file.
 	
-	DFactory<T>* factory = GetFromFactory(t, tag);
-	if(!factory)GetFromSource(t, tag, NULL);
-	
+	DFactory<T>* factory=NULL;
+	try{
+		factory = GetFromFactory(t, tag);
+		if(!factory)GetFromSource(t, tag, NULL);
+	}catch(DException *exception){
+		// Uh-oh, an exception was thrown. Add us to the call stack
+		// and re-throw the exception
+		call_stack_t cs;
+		cs.factory_name = T::className();
+		cs.tag = tag;
+		if(exception!=NULL && call_stack.size()==0){
+			cs.filename = exception->filename;
+			cs.line = exception->line;
+		}else{
+			cs.filename = NULL;
+		}
+		call_stack.push_back(cs);
+		throw(exception);
+	}
 	return (DFactory<T>*)factory;
 }
 
