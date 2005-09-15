@@ -12,8 +12,18 @@
 #include "DFactory.h"
 
 class DFCALHit:public DObject{
+	
 	public:
 		HDCLASSDEF(DFCALHit);
+		
+	DFCALHit( identifier_t id, 
+			  float x, float y,
+			  float E, float t ) :
+		DObject( id ),
+		x( x ),
+		y( y ),
+		E( E ),
+		t( t ) {}
 		
 		float x;
 		float y;
