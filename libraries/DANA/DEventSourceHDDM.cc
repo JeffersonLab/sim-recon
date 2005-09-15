@@ -33,7 +33,7 @@ DEventSourceHDDM::DEventSourceHDDM(const char* source_name):DEventSource(source_
 //----------------
 DEventSourceHDDM::~DEventSourceHDDM()
 {
-	LockRead();
+	//LockRead();
 
 	if(event_buff.size() > 0){
 		cout<<__FILE__<<":"<<__LINE__<<" Hmmm... looks like "<<event_buff.size();
@@ -52,7 +52,7 @@ DEventSourceHDDM::~DEventSourceHDDM()
 	fin = NULL;
 	if(fin)close_s_HDDM(fin);
 
-	UnlockRead();
+	//UnlockRead();
 }
 
 //----------------
