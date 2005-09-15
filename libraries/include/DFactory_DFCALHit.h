@@ -11,14 +11,17 @@
 #include "DFactory.h"
 #include "DEventLoop.h"
 #include "DFCALHit.h"
+#include "units.h"
 
 class DFactory_DFCALHit:public DFactory<DFCALHit>{
-	public:
-		DFactory_DFCALHit(){};
-		~DFactory_DFCALHit(){};
-		derror_t Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v);
-		const string toString(void);
 	
+	public:
+	
+	    DFactory_DFCALHit(){};
+		~DFactory_DFCALHit(){};
+		
+		const string toString(void);
+		
 	protected:
 		//derror_t init(void);						///< Called once at program start.
 		//derror_t brun(DEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.

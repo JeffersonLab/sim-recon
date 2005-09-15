@@ -6,65 +6,44 @@
 //
 
 #include "DFactory_DFCALHit.h"
+#include "DFCALHit.h"
+#include "DFCALMCResponse.h"
+#include "DFCALGeometry.h"
 
 //------------------
 // evnt
 //------------------
 derror_t DFactory_DFCALHit::evnt(DEventLoop *eventLoop, int eventnumber)
 {
-	/// Place holder for now. 
-
-	return NOERROR;
-}
-
-//------------------
-// Extract_HDDM
-//------------------
-derror_t DFactory_DFCALHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
-{
-	/// Copies the data from the given hddm_s structure. This is called
-	/// from DEventSourceHDDM::GetObjects.
+	assert( _data.size() == 0 );
 	
-	v.clear();
-
-	// Loop over Physics Events
-	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-	if(!PE) return NOERROR;
-	
-	for(unsigned int i=0; i<PE->mult; i++){
-		s_Rows_t *rows = NULL;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->forwardEMcal)
-				rows = PE->in[i].hitView->forwardEMcal->rows;
-		if(!rows)continue;
+	vector<const DFCALMCResponse*> responseVect;
+	eventLoop->Get( responseVect );
 		
-		for(unsigned int j=0;j<rows->mult;j++){
-			float y = rows->in[j].y;
-			s_Columns_t *columns = rows->in[j].columns;
-			if(!columns)continue;
-			
-			for(unsigned int k=0;k<columns->mult;k++){
-				float x = columns->in[k].x;
-				s_Showers_t *showers = columns->in[k].showers;
-				if(!showers)continue;
-				
-				for(unsigned int m=0;m<showers->mult;m++){
-					float E = showers->in[m].E;
-					float t = showers->in[m].t;
-					
-					DFCALHit *fcalhit = new DFCALHit;
-					fcalhit->x = x;
-					fcalhit->y = y;
-					fcalhit->E = E;
-					fcalhit->t = t;
-					v.push_back(fcalhit);
-				}
-			}
-		}
+	// extract the FCAL Geometry
+	vector<const DFCALGeometry*> fcalGeomVect;
+	eventLoop->Get( fcalGeomVect );
+	const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
+		
+	for( vector<const DFCALMCResponse*>::const_iterator 
+		 aResponse = responseVect.begin();
+		 aResponse != responseVect.end();
+		 ++aResponse ){
+		
+		// temporary for now:
+	
+		float x = fcalGeom.positionOnFace( (**aResponse).channel() ).X();
+		float y = fcalGeom.positionOnFace( (**aResponse).channel() ).Y();
+		
+		_data.push_back( new DFCALHit( (**aResponse).id,
+									   x, y,
+									   (**aResponse).E(),
+									   (**aResponse).t() ) );
 	}
-
+	
 	return NOERROR;
 }
+
 
 //------------------
 // toString
