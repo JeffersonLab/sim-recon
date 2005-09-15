@@ -33,6 +33,7 @@ static int pointCount = 0;
 
 #define U0		100.
 
+void rnpssn_(float*,int*,int*); // avoid solaris compiler warnings
 
 /* register hits during tracking (from gustep) */
 
