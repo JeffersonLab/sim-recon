@@ -41,11 +41,12 @@ public:
 	static const int kBlocksTall      = 53;
 	static const int kMaxChannels     = kBlocksWide * kBlocksTall;
 	static const int kBeamHoleSize    =  3;
-	static const double kBlockSize    =    4 * k_cm;
-	static const double kRadius       = 1.08 * k_m;
 
 	DFCALGeometry();
 	~DFCALGeometry();
+
+	static double blockSize() { return 4*k_cm; }
+	static double radius() { return 1.08*k_m; }
 	
 	bool isBlockActive( int row, int column ) const;
 	int  numActiveBlocks() const { return m_numActiveBlocks; }
