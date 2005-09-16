@@ -5,6 +5,8 @@
 // Creator: shepherd (on Darwin 129-79-159-16.dhcp-bl.indiana.edu 8.2.0 powerpc)
 //
 
+#include <cassert>
+
 #include "DFactory_DFCALMCResponse.h"
 #include "DHDDMForwardShower.h"
 #include "DFCALGeometry.h"

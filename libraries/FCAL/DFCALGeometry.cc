@@ -5,16 +5,19 @@
 // Creator: shepherd (on Darwin 129-79-159-16.dhcp-bl.indiana.edu 8.2.0 powerpc)
 //
 
+#include <cassert>
+
 #include "DFCALGeometry.h"
 #include "TVector2.h"
 
 //---------------------------------
 // DFCALGeometry    (Constructor)
 //---------------------------------
-DFCALGeometry::DFCALGeometry() : m_numActiveBlocks( 0 )
+DFCALGeometry::DFCALGeometry() : 
+m_numActiveBlocks( 0 )
 {
 	
-	double innerRadius = ( kBeamHoleSize - 1 ) / 2. * kBlockSize * sqrt(2.);
+	double innerRadius = ( kBeamHoleSize - 1 ) / 2. * blockSize() * sqrt(2.);
 
 	// inflate the innner radius by 1% to for "safe" comparison
 	innerRadius *= 1.01;
@@ -24,12 +27,12 @@ DFCALGeometry::DFCALGeometry() : m_numActiveBlocks( 0 )
 			
 			// transform to beam axis
 			m_positionOnFace[row][col] = 
-			   TVector2( ( col + .5 - kBlocksWide / 2.0 ) * kBlockSize,
-					     ( row + .5 - kBlocksTall / 2.0 ) * kBlockSize );
+			   TVector2( ( col + .5 - kBlocksWide / 2.0 ) * blockSize(),
+					     ( row + .5 - kBlocksTall / 2.0 ) * blockSize() );
 			
-			double radius = m_positionOnFace[row][col].Mod();
+			double thisRadius = m_positionOnFace[row][col].Mod();
 			
-			if( ( radius < kRadius ) && ( radius > innerRadius ) ){
+			if( ( thisRadius < radius() ) && ( thisRadius > innerRadius ) ){
 
 				m_activeBlock[row][col] = true;
 				
@@ -71,13 +74,13 @@ DFCALGeometry::isBlockActive( int row, int column ) const
 int
 DFCALGeometry::row( float y ) const 
 {	
-	return static_cast<int>( y / kBlockSize + ( kBlocksTall - 1 ) / 2 );
+	return static_cast<int>( y / blockSize() + ( kBlocksTall - 1 ) / 2 );
 }
 
 int
 DFCALGeometry::column( float x ) const 
 {	
-	return static_cast<int>( x / kBlockSize + ( kBlocksWide - 1 ) / 2 );
+	return static_cast<int>( x / blockSize() + ( kBlocksWide - 1 ) / 2 );
 }
 
 TVector2

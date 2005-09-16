@@ -5,6 +5,8 @@
 // Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
+#include <cassert>
+
 #include "DFactory_DFCALHit.h"
 #include "DFCALHit.h"
 #include "DFCALMCResponse.h"
