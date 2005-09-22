@@ -475,12 +475,25 @@
     </xs:complexType>
   </xs:element>
 
+  <xs:element name="tofHit">
+    <xs:complexType>
+      <xs:attribute name="orientation" type="hddm:int" use="required"/>
+      <xs:attribute name="x" type="hddm:float" use="required"/>
+      <xs:attribute name="y" type="hddm:float" use="required"/>
+      <xs:attribute name="z" type="hddm:float" use="required"/>
+      <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="e" type="hddm:float" use="required"/>
+      <xs:attribute name="track" type="hddm:int" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
   <xs:element name="forwardTOF">
     <xs:complexType>
       <xs:sequence>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:hcounter"/>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:vcounter"/>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:tofPoint"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:tofHit"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>

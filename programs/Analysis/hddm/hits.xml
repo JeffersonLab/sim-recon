@@ -87,6 +87,9 @@
       <tofPoint t="float" x="float" y="float" z="float"
                 track="int" primary="boolean"
                 minOccurs="0" maxOccurs="unbounded" />
+      <tofHit orientation="int" x="float" y="float" z="float"
+                t="float" e="float" track="int"
+                minOccurs="0" maxOccurs="unbounded" />
    </forwardTOF>
 
    <forwardEMcal minOccurs="0">
