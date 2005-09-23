@@ -40,6 +40,7 @@ binTree_t* forwardTOFTree = 0;
 static int hcounterCount = 0;
 static int vcounterCount = 0;
 static int pointCount = 0;
+static int hitCount = 0;
 
 
 /* register hits during tracking (from gustep) */
@@ -186,6 +187,35 @@ void hitForwardTOF (float xin[4], float xout[4],
          pointCount++;
       }
    }
+
+   /**********  INFORMATION TO BE USED BY DANA **********/
+
+   {
+      int row = getrow_();
+      int plane = getplane_();
+      int column = getcolumn_();
+      int mark = (track << 20) + (row << 10) + (column << 1) + plane;
+      void** twig = getTwig(&forwardTOFTree, mark);
+      if (*twig == 0)
+      {
+         s_ForwardTOF_t* tof = *twig = make_s_ForwardTOF();
+         s_TofHits_t* tofhits = make_s_TofHits(1);
+         tof->tofHits = tofhits;
+         tofhits->in[0].orientation = (plane == 1) ? 1 : 0;
+         tofhits->in[0].track = track;
+         tofhits->in[0].x = x[0];
+         tofhits->in[0].y = x[1];
+         tofhits->in[0].z = x[2];
+         tofhits->in[0].t = t;
+         tofhits->in[0].e = dEsum;
+         tofhits->mult = 1;
+         hitCount++;
+      }
+   }
+
+   /***************************************************/
+
+
 }
 
 /* entry point from fortran */
@@ -214,6 +244,7 @@ s_ForwardTOF_t* pickForwardTOF ()
    box->hcounters = make_s_Hcounters(hcounterCount);
    box->vcounters = make_s_Vcounters(vcounterCount);
    box->tofPoints = make_s_TofPoints(pointCount);
+   box->tofHits = make_s_TofHits(hitCount);
    while (item = (s_ForwardTOF_t*) pickTwig(&forwardTOFTree))
    {
       if (item->hcounters)
@@ -248,14 +279,20 @@ s_ForwardTOF_t* pickForwardTOF ()
          box->vcounters->in[m] = item->vcounters->in[0];
          FREE(item->vcounters);
       }
-      else if (item->tofPoints)
+      if (item->tofPoints)
       {
          int m = box->tofPoints->mult++;
          box->tofPoints->in[m] = item->tofPoints->in[0];
          FREE(item->tofPoints);
       }
+      else if (item->tofHits)
+      {
+         int m = box->tofHits->mult++;
+         box->tofHits->in[m] = item->tofHits->in[0];
+         FREE(item->tofHits);
+      }
       FREE(item);
    }
-   vcounterCount = hcounterCount = pointCount = 0;
+   vcounterCount = hcounterCount = pointCount = hitCount = 0;
    return box;
 }
