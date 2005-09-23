@@ -581,6 +581,25 @@ typedef struct {
 } s_TofPoints_t;
 #endif /* s_TofPoint_t */
 
+#ifndef SAW_s_TofHit_t
+#define SAW_s_TofHit_t
+
+typedef struct {
+   float                e;
+   int                  orientation;
+   float                t;
+   int                  track;
+   float                x;
+   float                y;
+   float                z;
+} s_TofHit_t;
+
+typedef struct {
+   unsigned int mult;
+   s_TofHit_t in[1];
+} s_TofHits_t;
+#endif /* s_TofHit_t */
+
 #ifndef SAW_s_ForwardTOF_t
 #define SAW_s_ForwardTOF_t
 
@@ -588,6 +607,7 @@ typedef struct {
    s_Hcounters_t*       hcounters;
    s_Vcounters_t*       vcounters;
    s_TofPoints_t*       tofPoints;
+   s_TofHits_t*         tofHits;
 } s_ForwardTOF_t;
 #endif /* s_ForwardTOF_t */
 
@@ -857,6 +877,8 @@ s_Top_t* make_s_Top();
 s_Bottom_t* make_s_Bottom();
 
 s_TofPoints_t* make_s_TofPoints(int n);
+
+s_TofHits_t* make_s_TofHits(int n);
 
 s_ForwardEMcal_t* make_s_ForwardEMcal();
 
