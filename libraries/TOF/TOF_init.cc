@@ -5,6 +5,7 @@
 #include "DFactory_DTOFGeometry.h"
 #include "DFactory_DTOFMCResponse.h"
 #include "DFactory_DHDDMTOFTruth.h"
+#include "DFactory_DHDDMTOFHit.h"
 
 derror_t TOF_init(DEventLoop *loop)
 {
@@ -13,6 +14,7 @@ derror_t TOF_init(DEventLoop *loop)
 	loop->AddFactory(new DFactory_DTOFHit());
 	loop->AddFactory(new DFactory_DTOFGeometry());
 	loop->AddFactory(new DFactory_DHDDMTOFTruth());
+	loop->AddFactory(new DFactory_DHDDMTOFHit());
 
 	return NOERROR;
 }
