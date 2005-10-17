@@ -16,7 +16,6 @@ class DFactory_DTOFMCResponse:public DFactory<DTOFMCResponse>{
 	public:
 		DFactory_DTOFMCResponse(){};
 		~DFactory_DTOFMCResponse(){};
-		derror_t Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v);
 		const string toString(void);
 
 

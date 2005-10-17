@@ -22,12 +22,11 @@ derror_t DFactory_DTOFHit::evnt(DEventLoop *eventLoop, int eventnumber)
     const DTOFMCResponse *mcresponse = mcresponses[i];
     DTOFHit *hit = new DTOFHit;
 
-    hit->x           = mcresponse->x;
-    hit->y           = mcresponse->y;
-    hit->dE          = 0.0;
-    hit->t           = mcresponse->t;
     hit->orientation = mcresponse->orientation;
     hit->end         = mcresponse->end;
+    hit->y           = mcresponse->y;
+    hit->t           = mcresponse->t;
+    hit->E           = mcresponse->E;
 
     _data.push_back(hit);
 
@@ -47,7 +46,8 @@ const string DFactory_DTOFHit::toString(void)
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
 	printheader("row:   x(cm):   y(cm):  orientation:     end:     dE(MeV):   t(ns):");
-	
+
+/*	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DTOFHit *tofhit = _data[i];
 
@@ -63,6 +63,7 @@ const string DFactory_DTOFHit::toString(void)
 		
 		printrow();
 	}
+*/
 	
 	return _table;
 }

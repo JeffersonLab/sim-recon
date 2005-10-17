@@ -12,15 +12,14 @@
 #include "DFactory.h"
 
 class DTOFMCResponse:public DObject{
-	public:
-		HDCLASSDEF(DTOFMCResponse);
+    public:
+        HDCLASSDEF(DTOFMCResponse);
 		
-		float x;
-		float y;
-		float dE;
-		float t;
-		int orientation;	///< 0=vertical  1=horizontal
-		int end;				///< 0=left/top 1=right/bottom
+        int orientation;  // 0: vertical,  1: horizontal
+        int end;          // 0: left/top,  1: right/bottom
+        float y;          // x/y position of bar center
+        float t;          // time of light at end of bar  (smeared) 
+        float E;          // attenuated energy deposition  (smeared)
 };
 
 #endif // _DTOFMCResponse_

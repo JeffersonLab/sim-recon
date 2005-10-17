@@ -12,15 +12,14 @@
 #include "DFactory.h"
 
 class DTOFHit:public DObject{
-	public:
-		HDCLASSDEF(DTOFHit);
-		
-		float x;
-		float y;
-		float dE;
-		float t;
-		int orientation;	///< 0=vertical  1=horizontal
-		int end;				///< 0=left/top 1=right/bottom
+    public:
+        HDCLASSDEF(DTOFHit);
+
+        int orientation;  // 0: vertical,  1: horizontal
+        int end;          // 0: left/top,  1: right/bottom
+        float y;          // x/y position of bar center
+        float t;          // time of light at end of bar  (calibrated) 
+        float E;          // attenuated energy deposition  (calibrated)
 };
 
 #endif // _DTOFHit_
