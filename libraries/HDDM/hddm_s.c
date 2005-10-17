@@ -368,14 +368,6 @@ s_TofPoints_t* make_s_TofPoints(int n)
    return p;
 }
 
-s_TofHits_t* make_s_TofHits(int n)
-{
-   int rep = (n > 1) ? n-1 : 0;
-   int size = sizeof(s_TofHits_t) + rep * sizeof(s_TofHit_t);
-   s_TofHits_t* p = (s_TofHits_t*)CALLOC(size,"s_TofHits_t");
-   return p;
-}
-
 s_ForwardEMcal_t* make_s_ForwardEMcal()
 {
    int size = sizeof(s_ForwardEMcal_t);
@@ -541,7 +533,6 @@ char HDDM_s_DocumentString[] =
 "          </bottom>\n"
 "        </vcounter>\n"
 "        <tofPoint maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
-"        <tofHit e=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" orientation=\"int\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "      </forwardTOF>\n"
 "      <forwardEMcal minOccurs=\"0\">\n"
 "        <row maxOccurs=\"unbounded\" minOccurs=\"0\" y=\"float\">\n"
@@ -2248,37 +2239,6 @@ static s_TofPoints_t* unpack_s_TofPoints(XDR* xdrs, popNode* pop)
    return this1;
 }
 
-static s_TofHits_t* unpack_s_TofHits(XDR* xdrs, popNode* pop)
-{
-   s_TofHits_t* this1 = 0;
-   unsigned int size;
-   if (! xdr_u_int(xdrs,&size))
-   {
-       return 0;
-   }
-   else if (size > 0)
-   {
-      int start = xdr_getpos(xdrs);
-      int m;
-      unsigned int mult;
-      xdr_u_int(xdrs,&mult);
-      this1 = make_s_TofHits(mult);
-      this1->mult = mult;
-      for (m = 0; m < mult; m++ )
-      {
-         xdr_float(xdrs,&this1->in[m].e);
-         xdr_int(xdrs,&this1->in[m].orientation);
-         xdr_float(xdrs,&this1->in[m].t);
-         xdr_int(xdrs,&this1->in[m].track);
-         xdr_float(xdrs,&this1->in[m].x);
-         xdr_float(xdrs,&this1->in[m].y);
-         xdr_float(xdrs,&this1->in[m].z);
-      }
-      xdr_setpos(xdrs,start+size);
-   }
-   return this1;
-}
-
 static s_ForwardEMcal_t* unpack_s_ForwardEMcal(XDR* xdrs, popNode* pop)
 {
    s_ForwardEMcal_t* this1 = 0;
@@ -2705,7 +2665,6 @@ static int pack_s_Vcounters(XDR* xdrs, s_Vcounters_t* this1);
 static int pack_s_Top(XDR* xdrs, s_Top_t* this1);
 static int pack_s_Bottom(XDR* xdrs, s_Bottom_t* this1);
 static int pack_s_TofPoints(XDR* xdrs, s_TofPoints_t* this1);
-static int pack_s_TofHits(XDR* xdrs, s_TofHits_t* this1);
 static int pack_s_ForwardEMcal(XDR* xdrs, s_ForwardEMcal_t* this1);
 static int pack_s_Rows(XDR* xdrs, s_Rows_t* this1);
 static int pack_s_Columns(XDR* xdrs, s_Columns_t* this1);
@@ -4086,15 +4045,6 @@ static int pack_s_ForwardTOF(XDR* xdrs, s_ForwardTOF_t* this1)
          int zero=0;
          xdr_int(xdrs,&zero);
       }
-      if (this1->tofHits)
-      {
-         pack_s_TofHits(xdrs,this1->tofHits);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
    }
    FREE(this1);
    end = xdr_getpos(xdrs);
@@ -4320,35 +4270,6 @@ static int pack_s_TofPoints(XDR* xdrs, s_TofPoints_t* this1)
    for (m = 0; m < this1->mult; m++)
    {
       xdr_bool(xdrs,&this1->in[m].primary);
-      xdr_float(xdrs,&this1->in[m].t);
-      xdr_int(xdrs,&this1->in[m].track);
-      xdr_float(xdrs,&this1->in[m].x);
-      xdr_float(xdrs,&this1->in[m].y);
-      xdr_float(xdrs,&this1->in[m].z);
-   }
-   FREE(this1);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_TofHits(XDR* xdrs, s_TofHits_t* this1)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   xdr_u_int(xdrs,&this1->mult);
-   for (m = 0; m < this1->mult; m++)
-   {
-      xdr_float(xdrs,&this1->in[m].e);
-      xdr_int(xdrs,&this1->in[m].orientation);
       xdr_float(xdrs,&this1->in[m].t);
       xdr_int(xdrs,&this1->in[m].track);
       xdr_float(xdrs,&this1->in[m].x);
@@ -4985,10 +4906,6 @@ static popNode* matches(char* b, char* c)
          else if (strcmp(btag,"tofPoint") == 0)
          {
             this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_TofPoints;
-         }
-         else if (strcmp(btag,"tofHit") == 0)
-         {
-            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_TofHits;
          }
          else if (strcmp(btag,"forwardEMcal") == 0)
          {
