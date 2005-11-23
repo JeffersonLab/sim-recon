@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="iso-8859-1" standalone="no" ?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://www.gluex.org/hddm" xmlns="http://www.gluex.org/hddm" xmlns:hddm="http://www.gluex.org/hddm">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="http://www.gluex.org/hddm" xmlns:hddm="http://www.gluex.org/hddm">
 
   <xs:simpleType name="int">
     <xs:restriction base="xs:int"/>
@@ -200,10 +200,10 @@
 
   <xs:element name="strip">
     <xs:complexType>
-      <xs:attribute name="u" type="hddm:float" use="required"/>
       <xs:sequence>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:hit"/>
       </xs:sequence>
+      <xs:attribute name="u" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -321,7 +321,7 @@
     </xs:complexType>
   </xs:element>
 
-   <xs:element name="cone">
+  <xs:element name="cone">
     <xs:complexType>
       <xs:sequence>
         <xs:element minOccurs="0" ref="hddm:upstream"/>
@@ -334,22 +334,20 @@
   <xs:element name="shell">
     <xs:complexType>
       <xs:sequence>
-        <xs:element maxOccurs="unbounded" ref="hddm:cone"/>
+        <xs:element maxOccurs="4" minOccurs="0" ref="hddm:cone"/>
       </xs:sequence>
       <xs:attribute name="layer" type="hddm:int" use="required"/>
     </xs:complexType>
   </xs:element>
 
-
   <xs:element name="mod">
     <xs:complexType>
       <xs:sequence>
-        <xs:element maxOccurs="unbounded" ref="hddm:shell"/>
+        <xs:element maxOccurs="12" minOccurs="0" ref="hddm:shell"/>
       </xs:sequence>
       <xs:attribute name="module" type="hddm:int" use="required"/>
     </xs:complexType>
   </xs:element>
-
 
   <xs:element name="barrelShower">
     <xs:complexType>
@@ -603,7 +601,7 @@
     <xs:complexType>
       <xs:sequence>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:reaction"/>
-        <xs:element ref="hddm:hitView"/>
+        <xs:element minOccurs="0" ref="hddm:hitView"/>
       </xs:sequence>
       <xs:attribute name="eventNo" type="hddm:int" use="required"/>
       <xs:attribute name="runNo" type="hddm:int" use="required"/>

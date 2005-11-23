@@ -2,7 +2,6 @@
 <xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                xmlns:xs="http://www.w3.org/2001/XMLSchema"
                xmlns:hddm="http://www.gluex.org/hddm"
-               xmlns="http://www.gluex.org/hddm"
                version="1.0">
 <xsl:output method="xml" version="1.0" encoding="iso-8859-1" indent="no"/>
 
@@ -93,8 +92,8 @@
         <xs:enumeration value="omega"/>
         <xs:enumeration value="etaPrime"/>
         <xs:enumeration value="phi"/>
-        <xs:enumeration value="a0_980"/>
-        <xs:enumeration value="f0_980"/>
+        <xs:enumeration value="a0(980)"/>
+        <xs:enumeration value="f0(980)"/>
       </xs:restriction>
     </xs:simpleType>
 
