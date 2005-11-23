@@ -1,3 +1,5 @@
+BUILDS = $(HALLD_HOME)/src
+
 OStype = $(shell uname)
 ARCHtype = $(shell uname -m)
 BINDIR = $(BUILDS)/bin.$(OStype)
