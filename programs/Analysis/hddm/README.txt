@@ -38,22 +38,23 @@ bugs, please go to http://portal.gluex.org and look for "forums".
    halld> cat setup
    setenv CVS_RSH ssh
    setenv CVSROOT <userid>@login1.jlab.org:/halld/cvsroot
-   setenv CERN <your local cernlib path, contains pro, old, new, 2000...>
-   setenv CERN_ROOT ${CERN}/<pro or whatever you use>
+   setenv CERN <your local cernlib root, contains pro, old, new, 2000...>
+   setenv CERN_VERSION <your current cernlib release: pro, old, new, 2000...>
+   setenv CERN_ROOT ${CERN}/${CERN_VERSION}
    setenv HALLD_ROOT <your local source directory path>
    setenv PATH ${PATH}:${HALLD_ROOT}/bin.Linux:${CERN_ROOT}/bin
-   setenv BUILDS ${HALLD_ROOT}
-   setenv HALLDLIB ${HALLD_ROOT}/lib.Linux
-   setenv QQ_DIR ${HALLD_ROOT}/libmcfast/qq_v9_2b_Linux+2.2
-   setenv STDHEP_DIR ${HALLD_ROOT}/libmcfast/stdhep_v4_08_Linux+2.2
    setenv XERCESCROOT <your Xerces-C installation path>
    setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/${XERCESCROOT/lib
    setenv JAVAROOT <your java j2re or j2sdk installation path>
+   setenv XALANJROOT <your xalan-j installation path>
+   setenv CLASSPATH=${XALANJROOT}/bin/xalan.jar
 
    For the bash or ksh shells you should use the export command instead of
    setenv.  You will need to source this file before every session, (or
    invoke it with the . operator for ksh or bash).  Note that the JAVAROOT
    definition is not necessary if you do not intend to use java tools.
+   If you do use java, you should also make sure that the java command is
+   in your path, so that the command java is found.
 
 6) Now if everything was installed correctly, you can build the hddm tools
    by going to the hddm directory you created in step 1 and doing make.
