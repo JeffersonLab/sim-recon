@@ -102,13 +102,13 @@ inline static char *ParticleType(Particle_t p)
     strcpy(ret,"pi-");
     break;
   case KLong:
-    strcpy(ret,"KL");
+    strcpy(ret,"kL");
     break;
   case KPlus:
-    strcpy(ret,"K+");
+    strcpy(ret,"k+");
     break;
   case KMinus:
-    strcpy(ret,"K-");
+    strcpy(ret,"k-");
     break;
   case Neutron:
     strcpy(ret,"neutron");
@@ -117,25 +117,25 @@ inline static char *ParticleType(Particle_t p)
     strcpy(ret,"proton");
     break;
   case AntiProton:
-    strcpy(ret,"pbar");
+    strcpy(ret,"antiProton");
     break;
   case KShort:
-    strcpy(ret,"Ks");
+    strcpy(ret,"kS");
     break;
   case Eta:
     strcpy(ret,"eta");
     break;
   case Lambda:
-    strcpy(ret,"lambda");
+    strcpy(ret,"Lambda");
     break;
   case SigmaPlus:
-    strcpy(ret,"sigma+");
+    strcpy(ret,"Sigma+");
     break;
   case Sigma0:
-    strcpy(ret,"sigma0");
+    strcpy(ret,"Sigma0");
     break;
   case SigmaMinus:
-    strcpy(ret,"sigma-");
+    strcpy(ret,"Sigma-");
     break;
   case Xi0:
     strcpy(ret,"Xi0");
@@ -144,31 +144,31 @@ inline static char *ParticleType(Particle_t p)
     strcpy(ret,"Xi-");
     break;
   case OmegaMinus:
-    strcpy(ret,"omega-");
+    strcpy(ret,"Omega-");
     break;
   case AntiNeutron:
-    strcpy(ret,"nbar");
+    strcpy(ret,"antiNeutron");
     break;
   case AntiLambda:
-    strcpy(ret,"lambdabar");
+    strcpy(ret,"antiLambda");
     break;
   case AntiSigmaMinus:
-    strcpy(ret,"sigmabar-");
+    strcpy(ret,"antiSigma-");
     break;
   case AntiSigma0:
-    strcpy(ret,"sigmabar0");
+    strcpy(ret,"antiSigma0");
     break;
   case AntiSigmaPlus:
-    strcpy(ret,"sigmabar+");
+    strcpy(ret,"antiSigma+");
     break;
   case AntiXi0:
-    strcpy(ret,"Xibar0");
+    strcpy(ret,"antiXi0");
     break;
   case AntiXiPlus:
-    strcpy(ret,"Xibar+");
+    strcpy(ret,"antiXi+");
     break;
   case AntiOmegaPlus:
-    strcpy(ret,"omegabar+");
+    strcpy(ret,"antiOmega+");
     break;
   case Rho0:
     strcpy(ret,"rho0");
@@ -177,13 +177,13 @@ inline static char *ParticleType(Particle_t p)
     strcpy(ret,"rho+");
     break;
   case RhoMinus:
-    strcpy(ret,"rho;");
+    strcpy(ret,"rho-");
     break;
   case omega:
     strcpy(ret,"omega");
     break;
   case EtaPrime:
-    strcpy(ret,"etaprime");
+    strcpy(ret,"etaPrime");
     break;
   case phiMeson:
     strcpy(ret,"phi");
