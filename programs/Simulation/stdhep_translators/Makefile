@@ -3,6 +3,7 @@
 #
 
 BUILDS = $(HALLD_HOME)/src
+HALLDLIBS = $(HALLD_HOME)/lib/$(shell uname)
 
 UNAME = $(shell uname)
 
