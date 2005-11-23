@@ -2,6 +2,8 @@
 # makefile for stdhep translators
 #
 
+BUILDS = $(HALLD_HOME)/src
+
 UNAME = $(shell uname)
 
 ifndef BUILDS

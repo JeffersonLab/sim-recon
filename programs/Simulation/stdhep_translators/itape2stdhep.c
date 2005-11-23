@@ -25,7 +25,7 @@
 #include <ntypes.h>
 #include<esr.h>
 
-#include"particleType.h"
+#include<particleType.h>
 #include<stdhep.h>
 #include<stdlun.h>
 #include<stdcnt.h>
