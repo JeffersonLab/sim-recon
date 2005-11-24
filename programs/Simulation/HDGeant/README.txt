@@ -62,7 +62,7 @@ bugs, please go to http://portal.gluex.org and look for "forums".
 5) Now go to HDGeant and build the interactive version.
 
    halld> cd ../HDGeant
-   halld> make hdgeant++.x
+   halld> make hdgeant++
 
    Now find the start of the long string of errors that was just produced by
    make, and find out what you did wrong in steps 1..5.  Iterate until the
@@ -70,7 +70,7 @@ bugs, please go to http://portal.gluex.org and look for "forums".
 
 6) Start up interactive Geant and plot the detector.
 
-   halld> ./hdgeant++.x
+   halld> ./hdgeant++
    ... lots of output
    GEANT> exec ray#init
 halld
