@@ -7,7 +7,7 @@ HALLDLIBS = $(HALLD_HOME)/lib/$(shell uname)
 
 UNAME = $(shell uname)
 
-ifndef BUILDS
+ifneq ($(wildcard $(BUILDS)/hddm/mc.xml),$(BUILDS)/hddm/mc.xml)
     BUILDS = $(HALLD_HOME)/src/programs/Analysis
 endif
 
