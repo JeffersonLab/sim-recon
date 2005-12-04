@@ -17,6 +17,7 @@ class DFCALMCResponse : public DObject {
 public:
 
 	HDCLASSDEF(DFCALMCResponse);
+	DFCALMCResponse(){}
 	
 	DFCALMCResponse( identifier_t id, int channel, 
 					 double E, double t ) :

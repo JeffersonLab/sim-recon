@@ -15,6 +15,7 @@ class DFCALHit:public DObject{
 	
 	public:
 		HDCLASSDEF(DFCALHit);
+		DFCALHit(){}
 		
 	DFCALHit( identifier_t id, 
 			  float x, float y,

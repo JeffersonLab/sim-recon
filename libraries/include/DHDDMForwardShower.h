@@ -16,6 +16,7 @@ class DHDDMForwardShower : public DObject{
 public:
 
 	HDCLASSDEF(DHDDMForwardShower);
+	DHDDMForwardShower(){}
 	
 	DHDDMForwardShower( identifier_t id,
 						float x, float y,
