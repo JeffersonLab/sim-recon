@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<hitView version="1.0">
+<hitView minOccurs="0" version="1.0">
    <centralDC minOccurs="0">
       <ring radius="float" minOccurs="0" maxOccurs="unbounded">
          <straw phim="float" maxOccurs="unbounded">
@@ -40,21 +40,20 @@
 
    <barrelEMcal minOccurs="0">
      <mod module ="int" minOccurs="0" maxOccurs="unbounded">  
-      <shell  layer="int" minOccurs="0" maxOccurs="9">
-       <cone  sector="int" minOccurs="0" maxOccurs="4">
-         <upstream minOccurs="0">
-            <shower t="float" E="float" maxOccurs="unbounded" />
-         </upstream>
-         <downstream minOccurs="0">
-            <shower t="float" E="float" maxOccurs="unbounded" />
-         </downstream> 
-       </cone>
-      </shell>
+       <shell  layer="int" minOccurs="0" maxOccurs="12">
+         <cone  sector="int" minOccurs="0" maxOccurs="4">
+           <upstream minOccurs="0">
+              <shower t="float" E="float" maxOccurs="unbounded" />
+           </upstream>
+           <downstream minOccurs="0">
+              <shower t="float" E="float" maxOccurs="unbounded" />
+           </downstream> 
+         </cone>
+       </shell>
      </mod>
-
-      <barrelShower t="float" z="float" phi="float" r="float"
-                    E="float" track="int" primary="boolean"
-                    minOccurs="0" maxOccurs="unbounded" />
+     <barrelShower t="float" z="float" phi="float" r="float"
+                   E="float" track="int" primary="boolean"
+                   minOccurs="0" maxOccurs="unbounded" />
    </barrelEMcal>
       
    <Cerenkov minOccurs="0">
