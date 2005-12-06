@@ -26,7 +26,7 @@ class DEventSourceHDDM:public DEventSource
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DEventSourceHDDM";}
 
-		derror_t Goto(int eventno);
+		derror_t Goto(int runno, int eventno);
 		derror_t GetObjects(const char *name, vector<void*> &v, const char* tag, void* ref, DFactory_base *factory);
 		derror_t GetEvent(DEvent &event);
 		void FreeEvent(void *ref);
@@ -37,6 +37,7 @@ class DEventSourceHDDM:public DEventSource
 		
 	private:
 		typedef struct{
+			int run_number;
 			int event_number;
 			s_HDDM_t *hddm_s;
 		}event_buffer_t;
