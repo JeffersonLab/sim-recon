@@ -66,22 +66,19 @@ derror_t DEventSourceHDDM::GetEvent(DEvent &event)
 		return EVENT_SOURCE_NOT_OPEN;
 	}
 	hddm_s = read_s_HDDM(fin);
+	++Nevents_read;
 	
-	// --- HERE WE NEED TO EXTRACT THE EVENT AND RUN NUMBERS SOMEHOW! ---
-	int event_number = ++Nevents_read;
-	int run_number = 1;
-	
-	// Copy the reference info into the DEvent object
-	event.SetDEventSource(this);
-	event.SetEventNumber(event_number);
-	event.SetRunNumber(run_number);
-	event.SetRef(hddm_s);
-	
+        int event_number = -1;
+        int run_number = -1;
+
 	// Add this event to our private buffer
-	if(hddm_s){
+	if(hddm_s && hddm_s->physicsEvents->mult){
+		event_number = hddm_s->physicsEvents->in[0].eventNo;
+		run_number = hddm_s->physicsEvents->in[0].runNo;
 		event_buffer_t e;
 		e.hddm_s = hddm_s;
 		e.event_number = event_number;
+		e.run_number = run_number;
 		LockRead();
 		event_buff.push_back(e);
 		UnlockRead();
@@ -93,6 +90,12 @@ derror_t DEventSourceHDDM::GetEvent(DEvent &event)
 		if(fin)close_s_HDDM(fin);
 		fin = NULL;
 	}
+
+	// Copy the reference info into the DEvent object
+	event.SetDEventSource(this);
+	event.SetEventNumber(event_number);
+	event.SetRunNumber(run_number);
+	event.SetRef(hddm_s);
 
 	return hddm_s==NULL ? NO_MORE_EVENTS_IN_SOURCE:NOERROR;
 }
@@ -118,26 +121,8 @@ void DEventSourceHDDM::FreeEvent(void *ref)
 //----------------
 // Goto
 //----------------
-derror_t DEventSourceHDDM::Goto(int eventno)
+derror_t DEventSourceHDDM::Goto(int runno, int eventno)
 {
-	/// (This is only half written so it won't work right)
-	/// Look through the event buffer for the event with the
-	/// specified number and set the hddm_s attribute to 
-	/// point to it.
-
-	vector<event_buffer_t>::iterator iter = event_buff.begin();
-	for(; iter!=event_buff.end(); iter++){
-		if(iter->event_number == eventno){
-			
-			hddm_s = (*iter).hddm_s;
-			if(!hddm_s){
-				cerr<<__FILE__<<":"<<__LINE__<<" hddm_s is NULL!"<<endl;
-			}
-			
-			return NOERROR;
-		}
-	}
-
 	return EVENT_NOT_IN_MEMORY;
 }
 
