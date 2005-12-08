@@ -21,6 +21,11 @@
 #define HDCLASSDEF(T) \
 	static const char* className(){return #T;}
 
+#ifdef JILIO
+#include "hd_serializers.h"
+#include "JIL.h"
+#endif //JILIO
+
 #include "DObject.h"
 
 #ifndef __CINT__  // disable this file from ROOT interpreter
@@ -67,6 +72,12 @@ class DFactory:public DFactory_base{
 		inline int GetEventCalled(void){return evnt_called;}
 		inline int CheckSourceFirst(void){return !use_factory;}
 		derror_t CopyExternal(vector<const T*> data);
+#ifdef JILIO
+		void StreamToOutput(JILStream *jilstream){StreamToOutputT(jilstream);} ///< called through virtual method of DFactory_base
+		void StreamToOutputT(JILStream *jilstream);
+		void StreamFromInput(JILStream *jilstream, list<JILObjectRecord*> &objects, vector<void*> &v){StreamFromInputT(jilstream, objects, v);}
+		void StreamFromInputT(JILStream *jilstream, list<JILObjectRecord*> &objects, vector<void*> &v);
+#endif //JILIO
 		
 	protected:
 		vector<T*> _data;
@@ -277,6 +288,44 @@ derror_t DFactory<T>::CopyExternal(vector<const T*> data)
 	return NOERROR;
 }
 
+#ifdef JILIO
+//-------------
+// StreamToOutputT
+//-------------
+template<class T>
+void DFactory<T>::StreamToOutputT(JILStream *jilstream)
+{
+	jilstream->SetTag(Tag());
+	for(unsigned int i=0; i<_data.size(); i++){
+		(*jilstream)<<*_data[i];
+	}
+}
+
+//-------------
+// StreamFromInputT
+//-------------
+template<class T>
+void DFactory<T>::StreamFromInputT(JILStream *jilstream, list<JILObjectRecord*> &objects, vector<void*> &v)
+{
+	// Get a copy of the pointers to the objects from the list
+	// of object records passed.
+	jilstream->GetObjects(_data, Tag(), &objects);
+	
+	// We set the flag telling the framework not to delete these objects
+	// since that will be taken care of in DEventSourceJIL::FreeEvent()
+	flags = (DFactory_Flags_t)((int)flags | (int)NOT_OBJECT_OWNER);
+
+	// This part seems a little strange, but we need to copy the
+	// pointers as void* into the "v" vector and clear our _data
+	// vector. The framework will copy the pointers back into
+	// _data later. It is neccessary to do it this way because
+	// the DEventSource API was designed to allow objects to be
+	// introduced externally rather than always through calls
+	// to specialized methods of DFactory<T>
+	for(unsigned int i=0; i<_data.size(); i++)v.push_back((void*)_data[i]);
+	_data.clear();
+}
+#endif //JILIO
 
 #endif // __CINT__
 
