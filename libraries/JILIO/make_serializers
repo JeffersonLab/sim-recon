@@ -1,0 +1,17 @@
+#!/bin/tcsh
+
+rm -f classes.h
+touch classes.h
+foreach s (`cat classes`)
+	echo "#include <$s.h>" >> classes.h ;
+end
+foreach s (`cat classes`)
+	echo "class $s;" >> classes.h ;
+end
+
+${JILROOT}/scripts/jil_exe2xml -classes=classes `which hd_ana_d`
+${JILROOT}/scripts/jil_xml2cpp hd_ana_d.xml h=classes.h
+
+mv hd_ana_d_serializers.cc hd_serializers.cc
+mv hd_ana_d_serializers.h hd_serializers.h
+
