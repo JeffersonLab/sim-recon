@@ -11,6 +11,7 @@ using namespace std;
 
 #include "DEventSource.h"
 #include "DEventSourceHDDM.h"
+#include "DEventSourceJIL.h"
 
 //---------------------------------
 // DEventSource    (Constructor)
@@ -38,7 +39,10 @@ DEventSource::~DEventSource()
 const char* DEventSource::GuessSourceType(const char* source_name)
 {
 	/// Guesses type of event source
-	/// Only hddm is supported for now.
+#ifdef JILIO
+	if(strstr(source_name, ".jil"))return DEventSourceJIL::static_className();
+#endif // JILIO
+
 	return DEventSourceHDDM::static_className();
 }
 
@@ -49,9 +53,13 @@ DEventSource* DEventSource::OpenSource(const char* name)
 {
 	// Get the name of the subclass of DEventSource for this source
 	string type = GuessSourceType(name);
+	cout<<"Opening event source type \""<<type<<"\""<<endl;
 
 	// Create a new object of the appropriate class and return a pointer to it
-	if(type == DEventSourceHDDM::static_className())	return new DEventSourceHDDM(name);
+	if(type == DEventSourceHDDM::static_className()) return new DEventSourceHDDM(name);
+#ifdef JILIO
+	if(type == DEventSourceJIL::static_className())	return new DEventSourceJIL(name);
+#endif // JILIO
 
 	// Mmmm... Don't seem to know this source type.
 	cerr<<__FILE__<<":"<<__LINE__<<" Unknown source type for \""<<name<<"\"."<<endl;
