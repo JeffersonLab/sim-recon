@@ -22,7 +22,7 @@ class DEventSourceHDDM:public DEventSource
 {
 	public:
 		DEventSourceHDDM(const char* source_name);
-		~DEventSourceHDDM();		
+		virtual ~DEventSourceHDDM();		
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DEventSourceHDDM";}
 
