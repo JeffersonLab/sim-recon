@@ -63,6 +63,7 @@ DApplication::DApplication(int narg, char* argv[])
 	avg_time = 0.0;
 	rate_instantaneous = 0.0;
 	rate_average = 0.0;
+	monitor_heartbeat= true;
 	
 	// Sources
 	current_source = NULL;
@@ -402,7 +403,7 @@ derror_t DApplication::Run(DEventProcessor *proc, int Nthreads)
 		for(unsigned int i=0;i<heartbeats.size();i++){
 			double *hb = heartbeats[i];
 			*hb += slept_time;
-			if(*hb > 2.0+sleep_time){
+			if(monitor_heartbeat && (*hb > 2.0+sleep_time)){
 				// Thread hasn't done anything for more than 2 seconds. 
 				// Remove it from monitoring lists.
 				cerr<<" Thread "<<i<<" hasn't responded in "<<*hb<<" seconds. Delisting it..."<<endl;
