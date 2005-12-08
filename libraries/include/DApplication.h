@@ -55,6 +55,8 @@ class DApplication{
 		void PrintRate();
 		void SetShowTicker(int what){show_ticker = what;}
 		
+		bool monitor_heartbeat;
+		
 	private:
 	
 		string Val2StringWithPrefix(float val);
