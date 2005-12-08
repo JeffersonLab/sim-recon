@@ -109,6 +109,10 @@ else
 	CXXFLAGS	+= -O2
 endif
 
+ifdef JILIO
+	CXXFLAGS += -DJILIO
+endif
+
 ifndef MODULE_NAME
  MODULE_NAME = $(shell basename $(shell pwd))
 endif
