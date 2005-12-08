@@ -16,10 +16,10 @@ all:
 	make -C TRIGGER
 	make -C UPV
 	make -C TRACKING
-	make -C HDDM
 ifdef JILIO
 	make -C JILIO
 endif
+	make -C HDDM
 
 clean:
 	make -C include clean
