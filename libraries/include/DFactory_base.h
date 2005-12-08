@@ -19,12 +19,15 @@
 #define _DFACTORY_BASE_H_
 
 #include <vector>
+#include <list>
 #include <string>
 using namespace std;
 
 #include "DEventProcessor.h"
 
 class DEventLoop;
+class JILStream;
+class JILObjectRecord;
 #include "hddm_s.h"
 
 //-----------------------
@@ -76,6 +79,16 @@ class DFactory_base:public DEventProcessor{
 		/// The data tag string associated with this factory. Most factories
 		/// will not overide this.
 		virtual inline const char* Tag(void){return "";}
+
+#ifdef JILIO		
+		/// Access method to have the DFactory template class stream
+		/// the data objects to the output
+		virtual void StreamToOutput(JILStream *jilstream)=0;
+
+		/// Access method to have the DFactory template class read
+		/// the data objects from the input
+		virtual void StreamFromInput(JILStream *jilstream, list<JILObjectRecord*> &objects, vector<void*> &v)=0;
+#endif // JILIO
 
 		/// Used by DEventLoop to give a pointer back to itself
 		void SetDEventLoop(DEventLoop *loop){this->eventLoop=loop;}
