@@ -41,6 +41,7 @@ int main(int narg, char *argv[])
 
 	// Run though all events, calling our event processor's methods
 	app.SetShowTicker(0);
+	app.monitor_heartbeat = false;
 	app.Run(&myproc);
 	
 	return 0;
