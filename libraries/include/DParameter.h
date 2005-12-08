@@ -8,7 +8,6 @@
 #ifndef _DParameter_
 #define _DParameter_
 
-#include <Rtypes.h>
 
 #include <string>
 #include <stdlib.h>
@@ -16,12 +15,15 @@ using namespace std;
 
 #include "derror.h"
 
+class JILStream;
+
 class DParameter{
 
 	friend class DParameterManager;
 
 	public:
 		DParameter(string my_key, string my_value);
+		DParameter(){}
 		virtual ~DParameter();
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DParameter";}
@@ -72,6 +74,9 @@ class DParameter{
 		
 		static const char* DataName(dataType_t type);
 		
+		void Serialize(JILStream&) const;
+		void Deserialize(JILStream&);
+		
 	protected:
 		string key;
 		string value;
@@ -81,7 +86,6 @@ class DParameter{
 		dataType_t type;	///< data type used in last set
 	private:
 
-	ClassDef(DParameter,1)
 };
 
 #endif // _DParameter_
