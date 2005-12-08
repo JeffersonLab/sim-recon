@@ -4,7 +4,7 @@
 
 
 all:
-	make -C include
+	#make -C include
 	make -C BCAL
 	make -C CDC
 	make -C CHERENKOV
@@ -17,6 +17,9 @@ all:
 	make -C UPV
 	make -C TRACKING
 	make -C HDDM
+ifdef JILIO
+	make -C JILIO
+endif
 
 clean:
 	make -C include clean
@@ -32,4 +35,7 @@ clean:
 	make -C TRIGGER clean
 	make -C UPV clean
 	make -C TRACKING clean
+ifdef JILIO
+	make -C JILIO clean
+endif
 	
