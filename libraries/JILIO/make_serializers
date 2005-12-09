@@ -2,10 +2,10 @@
 
 rm -f hd_classes.h
 touch hd_classes.h
-foreach s (`cat classes`)
+foreach s (`cat classes | grep -v DetectorSystem_t`)
 	echo "#include <$s.h>" >> hd_classes.h ;
 end
-foreach s (`cat classes`)
+foreach s (`cat classes | grep -v DetectorSystem_t`)
 	echo "class $s;" >> hd_classes.h ;
 end
 
