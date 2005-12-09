@@ -1,12 +1,12 @@
 //
 // Auto-generated serializer methods:
 // This file was generated from the file hd_ana_d.xml
-// on Wed Dec  7 21:24:51 EST 2005
+// on Fri Dec  9 12:52:49 EST 2005
 //
-// Command line options: hd_ana_d.xml h=classes.h 
+// Command line options: hd_ana_d.xml h=hd_classes.h o=hd_serializers 
 //
 
-#include "hd_ana_d_serializers.h"
+#include "hd_serializers.h"
 
 
 // -------------------- typeid2name ----------------
@@ -171,8 +171,7 @@ JILStream& operator<<(JILStream &s, const DFCALGeometry &c){
 
 	// for(unsigned int i0=0; i0<53; i0++)
 	//	s.WriteArray(c.m_activeBlock[i0], 53);  // bool[53][53]   (private)
-	// for(unsigned int i0=0; i0<53; i0++)
-	//	s.WriteArray(c.m_positionOnFace[i0], 53);  // TVector2[53][53]   (private)
+	// s<<c.m_positionOnFace;  // TVector2   (private)
 	// for(unsigned int i0=0; i0<53; i0++)
 	//	s.WriteArray(c.m_channelNumber[i0], 53);  // int[53][53]   (private)
 	// s.WriteArray(c.m_row, 2809);  // int[2809]   (private)
@@ -194,8 +193,7 @@ JILStream& operator>>(JILStream &s, DFCALGeometry* &c){
 
 	// for(unsigned int i0=0; i0<53; i0++)
 	//	s.ReadArray(c->m_activeBlock[i0], 53);  // bool[53][53]   (private)
-	// for(unsigned int i0=0; i0<53; i0++)
-	//	s.ReadArray(c->m_positionOnFace[i0], 53);  // TVector2[53][53]   (private)
+	// s>>c->m_positionOnFace;  // TVector2   (private)
 	// for(unsigned int i0=0; i0<53; i0++)
 	//	s.ReadArray(c->m_channelNumber[i0], 53);  // int[53][53]   (private)
 	// s.ReadArray(c->m_row, 2809);  // int[2809]   (private)
@@ -559,7 +557,7 @@ JILStream& operator<<(JILStream &s, const DMCTrackHit &c){
 	s<<c.z;  // float   (public)
 	s<<c.track;  // int   (public)
 	s<<c.primary;  // int   (public)
-	s<<c.system;  // DetectorSystem_t   (public)
+	s<<(int)c.system;  // DetectorSystem_t   (public)
 
 	// Send end of object flag to stream
 	s<<JILStream::END_OBJECT;
@@ -579,7 +577,7 @@ JILStream& operator>>(JILStream &s, DMCTrackHit* &c){
 	s>>c->z;  // float   (public)
 	s>>c->track;  // int   (public)
 	s>>c->primary;  // int   (public)
-	s>>c->system;  // DetectorSystem_t   (public)
+	s>>*(int*)&c->system;  // DetectorSystem_t   (public)
 
 	return s;
 }
@@ -625,7 +623,6 @@ void DParameter::Serialize(JILStream &s) const
 	s<<hasdefault;  // bool   (protected)
 	s<<printme;  // bool   (protected)
 	s<<type;  // DParameter::dataType_t   (protected)
-	s<<fgIsA;  // TClass   (private)
 
 	// Send end of object flag to stream
 	s<<JILStream::END_OBJECT;
@@ -648,7 +645,6 @@ void DParameter::Deserialize(JILStream &s)
 	s>>hasdefault;  // bool   (protected)
 	s>>printme;  // bool   (protected)
 	s>>type;  // DParameter::dataType_t   (protected)
-	if(s.GetPointerFromStreamT(fgIsA))s>>fgIsA;  // TClass   (private)
 
 }
 
@@ -1014,7 +1010,7 @@ JILStream& operator<<(JILStream &s, const DTrackHit &c){
 	s<<c.z;  // float   (public)
 	s<<c.r;  // float   (public)
 	s<<c.phi;  // float   (public)
-	s<<c.system;  // DetectorSystem_t   (public)
+	s<<(int)c.system;  // DetectorSystem_t   (public)
 
 	// Send end of object flag to stream
 	s<<JILStream::END_OBJECT;
@@ -1034,7 +1030,7 @@ JILStream& operator>>(JILStream &s, DTrackHit* &c){
 	s>>c->z;  // float   (public)
 	s>>c->r;  // float   (public)
 	s>>c->phi;  // float   (public)
-	s>>c->system;  // DetectorSystem_t   (public)
+	s>>*(int*)&c->system;  // DetectorSystem_t   (public)
 
 	return s;
 }
@@ -1061,7 +1057,7 @@ const char* JILMyDictionary(void)
 "\n"
 "	<class name=\"DFCALGeometry\" baseclass=\"DObject\">\n"
 "		<typedef type=\"bool\" name=\"m_activeBlock\" section=\"private\" size=\"53,53\"/>\n"
-"		<typedef type=\"TVector2\" name=\"m_positionOnFace\" section=\"private\" size=\"53,53\"/>\n"
+"		<typedef type=\"TVector2\" name=\"m_positionOnFace\" section=\"private\" size=\",\"/>\n"
 "		<typedef type=\"int\" name=\"m_channelNumber\" section=\"private\" size=\"53,53\"/>\n"
 "		<typedef type=\"int\" name=\"m_row\" section=\"private\" size=\"2809\"/>\n"
 "		<typedef type=\"int\" name=\"m_column\" section=\"private\" size=\"2809\"/>\n"
@@ -1162,7 +1158,6 @@ const char* JILMyDictionary(void)
 "		<typedef type=\"bool\" name=\"hasdefault\" section=\"protected\"/>\n"
 "		<typedef type=\"bool\" name=\"printme\" section=\"protected\"/>\n"
 "		<typedef type=\"DParameter::dataType_t\" name=\"type\" section=\"protected\"/>\n"
-"		<typedef type=\"TClass\" name=\"fgIsA\" section=\"private\" static=\"true\" pointer=\"true\"/>\n"
 "	</class>\n"
 "\n"
 "	<class name=\"DQuickFit\">\n"
@@ -1267,6 +1262,7 @@ const char* JILMyDictionary(void)
 "		<typedef type=\"DetectorSystem_t\" name=\"system\" section=\"public\"/>\n"
 "	</class>\n"
 "\n"
+"	<enum name=\"DetectorSystem_t\"/>\n"
 "</JILDictionary>\n"
 ;
 }
