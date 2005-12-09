@@ -100,7 +100,24 @@ class DFactory_base:public DEventProcessor{
 			NOT_OBJECT_OWNER	=0x04
 		};
 		
+		/// Get all flags in the form of a single word
 		const DFactory_Flags_t& GetFactoryFlags(void){return flags;}
+		
+		/// Set a flag (or flags)
+		void SetFactoryFlag(DFactory_Flags_t f){
+			flags = (DFactory_Flags_t)((int)flags | (int)f);
+		}
+
+		/// Clear a flag (or flags)
+		void ClearFactoryFlag(DFactory_Flags_t f){
+			flags = (DFactory_Flags_t)((int)flags & ~(int)f);
+		}
+
+		/// Test if a flag (or set of flags) is set
+		bool TestFactoryFlag(DFactory_Flags_t f){
+			return ((int)flags & (int)f) != (int)f;
+		}
+		
 	
 	protected:
 		DEventLoop *eventLoop;
