@@ -7,7 +7,7 @@
 
 #ifdef JILIO
 
-#include "hd_ana_d_serializers.h"
+#include "hd_serializers.h"
 
 #include "DEventSourceJIL.h"
 #include "DFactory_base.h"
@@ -89,7 +89,7 @@ derror_t DEventSourceJIL::GetObjects(const char *name, vector<void*> &v, const c
 		if(e.event_id == event_id){
 			factory->StreamFromInput(jilstream, e.objects, v);
 			UnlockRead();
-			return NOERROR;
+			return v.size()>0 ? NOERROR:OBJECT_NOT_AVAILABLE;
 		}
 	}
 	UnlockRead();
@@ -118,5 +118,6 @@ void DEventSourceJIL::FreeEvent(void *ref)
 	UnlockRead();
 }
 
+#else	// JILIO
+bool DEventSourceJIL_is_not_used = true;
 #endif // JILIO
-
