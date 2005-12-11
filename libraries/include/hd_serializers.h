@@ -1,7 +1,7 @@
 //
 // Auto-generated serializer methods:
 // This file was generated from the file hd_ana_d.xml
-// on Fri Dec  9 12:52:49 EST 2005
+// on Fri Dec  9 22:27:09 EST 2005
 //
 // Command line options: hd_ana_d.xml h=hd_classes.h o=hd_serializers 
 //

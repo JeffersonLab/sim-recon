@@ -1,7 +1,7 @@
 //
 // Auto-generated serializer methods:
 // This file was generated from the file hd_ana_d.xml
-// on Fri Dec  9 12:52:49 EST 2005
+// on Fri Dec  9 22:27:09 EST 2005
 //
 // Command line options: hd_ana_d.xml h=hd_classes.h o=hd_serializers 
 //
@@ -171,7 +171,8 @@ JILStream& operator<<(JILStream &s, const DFCALGeometry &c){
 
 	// for(unsigned int i0=0; i0<53; i0++)
 	//	s.WriteArray(c.m_activeBlock[i0], 53);  // bool[53][53]   (private)
-	// s<<c.m_positionOnFace;  // TVector2   (private)
+	// for(unsigned int i0=0; i0<53; i0++)
+	//	s.WriteArray(c.m_positionOnFace[i0], 53);  // TVector2[53][53]   (private)
 	// for(unsigned int i0=0; i0<53; i0++)
 	//	s.WriteArray(c.m_channelNumber[i0], 53);  // int[53][53]   (private)
 	// s.WriteArray(c.m_row, 2809);  // int[2809]   (private)
@@ -193,7 +194,8 @@ JILStream& operator>>(JILStream &s, DFCALGeometry* &c){
 
 	// for(unsigned int i0=0; i0<53; i0++)
 	//	s.ReadArray(c->m_activeBlock[i0], 53);  // bool[53][53]   (private)
-	// s>>c->m_positionOnFace;  // TVector2   (private)
+	// for(unsigned int i0=0; i0<53; i0++)
+	//	s.ReadArray(c->m_positionOnFace[i0], 53);  // TVector2[53][53]   (private)
 	// for(unsigned int i0=0; i0<53; i0++)
 	//	s.ReadArray(c->m_channelNumber[i0], 53);  // int[53][53]   (private)
 	// s.ReadArray(c->m_row, 2809);  // int[2809]   (private)
@@ -1057,7 +1059,7 @@ const char* JILMyDictionary(void)
 "\n"
 "	<class name=\"DFCALGeometry\" baseclass=\"DObject\">\n"
 "		<typedef type=\"bool\" name=\"m_activeBlock\" section=\"private\" size=\"53,53\"/>\n"
-"		<typedef type=\"TVector2\" name=\"m_positionOnFace\" section=\"private\" size=\",\"/>\n"
+"		<typedef type=\"TVector2\" name=\"m_positionOnFace\" section=\"private\" size=\"53,53\"/>\n"
 "		<typedef type=\"int\" name=\"m_channelNumber\" section=\"private\" size=\"53,53\"/>\n"
 "		<typedef type=\"int\" name=\"m_row\" section=\"private\" size=\"2809\"/>\n"
 "		<typedef type=\"int\" name=\"m_column\" section=\"private\" size=\"2809\"/>\n"
