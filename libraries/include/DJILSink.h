@@ -23,7 +23,6 @@ class DJILSink:public DEventProcessor
 		derror_t erun(void){return NOERROR;}				///< Called everytime run number changes, provided brun has been called.
 		derror_t fini(void);										///< Called after last event of last event source has been processed.
 
-	protected:
 		JILStream *s;
 		const char* filename;
 	
