@@ -6,6 +6,7 @@
 //
 
 #include <cassert>
+#include <math.h>
 
 #include "DFCALGeometry.h"
 #include "TVector2.h"
