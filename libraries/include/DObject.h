@@ -25,7 +25,7 @@ class DObject{
 		DObject();
    	    DObject( identifier_t aId ) : id( aId ) {}
 
-		virtual ~DObject();
+		virtual ~DObject(){}
 
 		identifier_t id;
 		
