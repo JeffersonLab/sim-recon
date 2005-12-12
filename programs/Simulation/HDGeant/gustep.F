@@ -2,8 +2,21 @@
 * $Id$
 *
 * $Log$
+* Revision 1.21  2005/12/12 15:38:46  jonesrt
+* hitutil.F
+*    - removed from top-level, moved into new subdir hitutil [rtj]
+* hitBCal.c
+*    - increased the segmentation of the BCal readout [rtj]
+* cdcdump.c
+*    - added a check for the existence of certain groups [rtj]
+* gustep.F
+*    - added dispatch for additional BCal readout sections [rtj]
+* Makefile.orig
+*    - removed compilation of hitutil.F, added libhitutil.a linkage [rtj]
+*
 * Revision 1.20  2005/06/22 15:32:16  zisis
-* First draft of this routine to work with the new BCAL geometry and hits. CX.
+*
+* First draft of this routine to work with the new BCAL geometry and hits.  CX.
 *
 * Revision 1.19  2005/04/26 14:51:52  ostrov
 * Addition of UPV
@@ -235,7 +248,7 @@
 *   interaction sequence leading to the detected particle, iint=1...mint.
 ********************************************************************************
 
-**********   assignment of the value of 'det' to a particle   ******************
+**********   assignment of the value of 'det' to a particle ******************
     
       if (cnames(nlevel).eq.'DET1') then
         det = 1
@@ -255,7 +268,7 @@
         det = 0
       endif
 
-**********************      Defintion of ntuple     ****************************
+**********************      Defintion of ntuple ****************************
       
       if (inwvol.eq.1.and.det.gt.1
 c    +    .and.((ipart.eq.2).or.(ipart.eq.3))
@@ -360,7 +373,7 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
         endif
       endif
 #endif
-
+  
 #if defined WERNERS_VTX_NTUPLE
       if (.not.HEXIST(ntwerner)) then
         call HBNT(ntwerner,'vertex counter hits','')
@@ -462,22 +475,27 @@ c      write(*,*) 'volume name= ',cnames(NLEVEL)
         elseif ((cnames(NLEVEL).eq.'STRA').or.		! CDC straight straw
      +          (cnames(NLEVEL).eq.'STLA')) then	! CDC stereo straw
           call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
-c			 PRINT*,__FILE__,':',__LINE__,' CDC itra=',ITRA,' z=',xout(3),' ipart=',ipart,' GETOT=',GETOT
+c	  PRINT*,__FILE__,':',__LINE__,' CDC itra=',ITRA,'
+c    +           z=',xout(3),' ipart=',ipart,' GETOT=',GETOT
         elseif ((cnames(NLEVEL).eq.'FDCA').or.		! FDC anode drift cell
      +          (cnames(NLEVEL).eq.'FDCC')) then	! FDC cathode strip
           call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
-c			 PRINT*,__FILE__,':',__LINE__,' FDC itra=',ITRA,' z=',xout(3),' ipart=',ipart,' GETOT=',GETOT
+c	  PRINT*,__FILE__,':',__LINE__,' FDC itra=',ITRA,'
+c                z=',xout(3),' ipart=',ipart,' GETOT=',GETOT
         elseif (cnames(NLEVEL).eq.'CSEC') then		! Cerenkov counter
           call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
 #ifdef GENERALIZED_BCAL_NAME
-        elseif (cnames(NLEVEL)(1:ichar).eq.bcalstring(i:ichar)) then		! barrel calorimeter
+        elseif (cnames(NLEVEL)(1:ichar).eq.bcalstring(i:ichar)) then ! barrel calorimeter
 c	  write(*,*)'In GUSTEP: ',bcalstring,dEsum
 #else
         elseif ((cnames(NLEVEL).eq.'BCM1').or.
      +  (cnames(NLEVEL).eq.'BCM2').or.(cnames(NLEVEL).eq.'BCM3').or.
      +  (cnames(NLEVEL).eq.'BCM4').or.(cnames(NLEVEL).eq.'BCM5').or.
      +  (cnames(NLEVEL).eq.'BCM6').or.(cnames(NLEVEL).eq.'BCM7').or.
-     +  (cnames(NLEVEL).eq.'BCM8').or.(cnames(NLEVEL).eq.'BCM9')
+     +  (cnames(NLEVEL).eq.'BCM8').or.(cnames(NLEVEL).eq.'BCM9').or.
+     +  (cnames(NLEVEL).eq.'BM10').or.(cnames(NLEVEL).eq.'BM11').or.
+     +  (cnames(NLEVEL).eq.'BM12').or.(cnames(NLEVEL).eq.'BM13').or.
+     +  (cnames(NLEVEL).eq.'BM14')
      +  ) then
 
 #endif

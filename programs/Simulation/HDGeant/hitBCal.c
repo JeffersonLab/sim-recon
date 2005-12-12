@@ -231,7 +231,7 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
          if (n==0)
          {
             box->mods->in[0] = item->mods->in[0];
-            box->mods->in[0].shells = make_s_Shells(9);
+            box->mods->in[0].shells = make_s_Shells(12);
             box->mods->mult++;
          }
 
@@ -243,7 +243,7 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
                box->mods->mult--;
             }
             box->mods->in[n] = item->mods->in[0];
-            box->mods->in[n].shells = make_s_Shells(9);
+            box->mods->in[n].shells = make_s_Shells(12);
             box->mods->mult++;
            }
          else

@@ -8,7 +8,7 @@ BINDIR = ../bin.$(OStype)
 #NTUPLE_OPTIONS = -DBACKGROUND_STUDIES
 #NTUPLE_OPTIONS = -DBACKGROUND_PROFILING
 #NTUPLE_OPTIONS = -DWERNERS_VTX_NTUPLE
-NTUPLE_OPTIONS = -DCERENKOV_PID_NTUPLE
+#NTUPLE_OPTIONS = -DCERENKOV_PID_NTUPLE
 # Enable the following line to turn off writing out hddm data 
 #IO_OPTIONS = -DDISABLE_OUTPUT
 #--------------------------------------------------------------------
@@ -89,7 +89,7 @@ AUXF = gufld.o guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o \
        hddsGeant3.o goptimize.o cobrems.o
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
-       hitFCal.o hitUPV.o bintree.o hitutil.o memcheck.o timel.o trapfpe.o
+       hitFCal.o hitUPV.o bintree.o memcheck.o timel.o trapfpe.o 
 
 GXFIXED = gxcs.o gxphys.o
 GELHAD = gelhad/libgelhad.a
@@ -100,13 +100,14 @@ hdgeant++: gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXFIXED) \
            $(MISC_FIXES)
 	$(F77) -o $@ gxint.o uginit.o uglast.o \
 	   $(AUXF) $(AUXC) $(GXFIXED) $(MISC_FIXES) \
-	   -Lgelhad -lgelhad \
+	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
 	   `cernlib -v $(CERN_LEVEL) geant321 pawlib graflib/Motif packlib mathlib` \
 	   $(EXPORTDYNAMIC) $(GLIBS)
 
 hdgeant: hdgeant.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(MISC_FIXES)
 	$(F77) $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(STATIC) \
-	  hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC) -Lgelhad -lgelhad \
+	   hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC) \
+	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
 	  `$(CERNLIB) geant321 mathlib graflib grafX11` \
 	   $(NETLIB) $(XLIBS) $(GLIBS)
 
@@ -135,6 +136,9 @@ hddm_s.c:
 
 hddm_s.o: 	hddm_s.c
 	$(CC) $(COPTS) -I. -I../include -c -o $@ $<
+
+cdcdump: cdcdump.c hddm_s.o
+	$(CC) $(COPTS) -I. -I../include -o $@ $^ 
 
 $(GELHAD):
 	$(MAKE) -C gelhad

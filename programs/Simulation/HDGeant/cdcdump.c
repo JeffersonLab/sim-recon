@@ -39,14 +39,14 @@ int process_event(s_HDDM_t *event)
    s_Rings_t *rings;
    int ring;
    hits = event->physicsEvents->in[0].hitView;
-   if (hits->centralDC) {
-      rings = hits->centralDC->rings;
-   }
-   else {
+   if (hits == 0 ||
+       hits->centralDC == 0 ||
+       hits->centralDC->rings == 0) {
       return 0;
    }
    printf("New event number %d,",event->physicsEvents->in[0].eventNo);
    printf(" run number %d\n",event->physicsEvents->in[0].runNo);
+   rings = hits->centralDC->rings;
    for (ring=0; ring<rings->mult; ring++) {
       if (fabs(rings->in[ring].radius-19.5) < 0.5e5) {
          s_Straws_t *straws = rings->in[ring].straws;
