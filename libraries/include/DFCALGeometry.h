@@ -33,14 +33,19 @@ private:
 
 class DFCALGeometry : public DObject {
 
+#define kBlocksWide 53
+#define kBlocksTall 53
+#define kMaxChannels kBlocksWide * kBlocksTall
+#define kBeamHoleSize 3
+
 public:
 	
 	HDCLASSDEF(DFCALGeometry);
-	
-	static const int kBlocksWide      = 53;
-	static const int kBlocksTall      = 53;
-	static const int kMaxChannels     = kBlocksWide * kBlocksTall;
-	static const int kBeamHoleSize    =  3;
+
+	//static const int kBlocksWide      = 53;
+	//static const int kBlocksTall      = 53;
+	//static const int kMaxChannels     = kBlocksWide * kBlocksTall;
+	//static const int kBeamHoleSize    =  3;
 
 	DFCALGeometry();
 	~DFCALGeometry();
