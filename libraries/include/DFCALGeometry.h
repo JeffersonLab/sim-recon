@@ -48,7 +48,7 @@ public:
 	//static const int kBeamHoleSize    =  3;
 
 	DFCALGeometry();
-	~DFCALGeometry();
+	~DFCALGeometry(){}
 
 	static double blockSize() { return 4*k_cm; }
 	static double radius() { return 1.08*k_m; }
