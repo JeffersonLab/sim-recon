@@ -22,8 +22,8 @@ class DObject{
 
 	public:
 	
-		DObject();
-   	    DObject( identifier_t aId ) : id( aId ) {}
+		DObject(){}
+		DObject( identifier_t aId ) : id( aId ) {}
 
 		virtual ~DObject(){}
 
