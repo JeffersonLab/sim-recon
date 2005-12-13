@@ -1,5 +1,51 @@
 #!/usr/bin/env perl
 
+#
+# This script generates the serializer routines for the Hall-D
+# reconstruction software. It does so using a trick to avoid
+# having to compile all of the libraries that implement the
+# bulk of the class methods. The trick is to use #pragma interface
+# and #pragma implementation to instruct the g++ compiler to
+# keep debugging information about the classes defined in the
+# output executable, even if the classes are never actually used.
+#
+# For this to work, the #pragma interface directive must exist
+# in the actual header file where the class(es) are defined.
+# The file including them must declare the header files for
+# which to honor #pragma interface by explicitly issuing a 
+# #pragma implementation for the included header file in the
+# file that is including it and before it #includes it.
+# Got all that?
+#
+# So, what is done here is to actually copy all of the needed
+# header files into a temporary directory (tmpinc) and prepend
+# the string "#pragma interface" to each one. A temporary main
+# file (tmp.cc) is created that will #include all of the headers
+# and define a trivial main() routine. This is then compiled
+# into an executable with debugging symbols. The executable
+# can then be mined for data using the jil_exe2xml script which
+# results in an XML file containing the desired information.
+#
+# The generated XML file(a.out.xml) is compared to the existing
+# one (hd_serializers.xml) to see if any changes have occurred.
+# If any have, the a.out.xml file is renamed to hd_serializers.xml
+# overwriting the existing one. Makefiles can then use the
+# date of the hd_serializers.xml file to determine if new
+# serializer methods need to be generated.
+#
+# Note that if the hd_serializers.xml file is updated, a new
+# hd_classes.h file is left in the current directory. The
+# Makefile will actually copy it into the include directory
+# when it copies hd_serializers.h so that the two stay consistent.
+#
+# The list of header files used is generated from the ones
+# given in the file "headers" and ones found by looking for
+# header files that appear to have classes derived from DObject.
+# 
+# Classes are obtained from the "classes" file. At this time,
+# there is no auto-generated part of the class list.
+#
+
 $HALLD_HOME = $ENV{"HALLD_HOME"};
 $JILSCRIPTS = "$HALLD_HOME/src/BMS";
 $INCDIR = "$HALLD_HOME/src/libraries/include";
@@ -49,14 +95,10 @@ print FILE "\nint main(int narg, char *argv){return 0;}\n\n";
 close(FILE);
 
 # Add class declarations
-#open(FILE,"classes");
-#@classes = <FILE>;
-#chomp(@classes);
-#close(FILE);
-#foreach $class (@classes){
-#	print CLASSES_H "class $class;\n";
-#}
-close(CLASSES_H);
+open(FILE,"classes");
+@classes = <FILE>;
+chomp(@classes);
+close(FILE);
 
 # Create the dummy executable with debugging symbols
 $ROOT_CFLAGS = `root-config --cflags`;
@@ -67,6 +109,13 @@ print `g++ -g -Itmpinc -I$INCDIR -I$INCDIR/../../include $ROOT_CFLAGS tmp.cc`;
 $cmd = "$JILSCRIPTS/jil_exe2xml -classes=classes a.out";
 print "$cmd\n";
 print `$cmd`;
+
+# Add class declarations to hd_classes.h
+foreach $class (@classes){
+	if(`cat a.out.xml | grep enum | grep $class` ne ""){next;}
+	print CLASSES_H "class $class;\n";
+}
+close(CLASSES_H);
 
 # Compare the new XML file with the old
 my $changed = "false";
