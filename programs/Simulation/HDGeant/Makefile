@@ -6,10 +6,12 @@
 
 all:
 	make -C gelhad
+	make -C hitutil
 	make -f Makefile.bms
 
 clean:
 	make -C gelhad clean
+	make -C hitutil clean
 	make -f Makefile.bms clean
 
 exec_clean:

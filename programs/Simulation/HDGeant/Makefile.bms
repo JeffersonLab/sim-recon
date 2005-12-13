@@ -1,6 +1,6 @@
 
 PACKAGES := CERNLIB
-MISC_LIBS = -L/sw/lib -lXm -L/usr/X11R6/lib -lXt -lgelhad
+MISC_LIBS = -L/sw/lib -lXm -L/usr/X11R6/lib -lXt -lgelhad -lhitutil
 FFLAGS = -Wno-globals
 ADDITIONAL_MODULES += HDDM
 
