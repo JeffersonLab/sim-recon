@@ -22,11 +22,3 @@ DGeometry::DGeometry(unsigned int run_number)
 	/// (Placeholder for now. This should come from the database ...)
 	min_run_number = max_run_number = run_number;
 }
-
-//---------------------------------
-// ~DGeometry    (Destructor)
-//---------------------------------
-DGeometry::~DGeometry()
-{
-
-}

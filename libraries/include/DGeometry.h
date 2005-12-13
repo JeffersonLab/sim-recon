@@ -14,7 +14,7 @@ class DGeometry{
 	public:
 		DGeometry(){}
 		DGeometry(unsigned int run_number);
-		virtual ~DGeometry();
+		virtual ~DGeometry(){}
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DGeometry";}
 
