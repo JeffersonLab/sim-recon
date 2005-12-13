@@ -81,9 +81,11 @@ CXXSRC	+= $(wildcard *.cc *.cpp *.cxx)
 # Create ROOT dictionaries from C++ files containing ClassDef
 HSRC = $(wildcard *.h)
 ifneq ($(strip $(HSRC)),)
-DICT_IN = $(shell grep -l "ClassDef" $(HSRC))
-DICT_SRC = $(addsuffix _Dict.cc,$(basename $(DICT_IN)))
-DICT_FILES = $(DICT_SRC) $(DICT_SRC:.cc=.h)
+  DICT_IN = $(shell grep -l "ClassDef" $(HSRC))
+  ifneq ($(strip $(DICT_IN)),)
+    DICT_SRC = $(addsuffix _Dict.cc,$(basename $(DICT_IN)))
+    DICT_FILES = $(DICT_SRC) $(DICT_SRC:.cc=.h)
+  endif
 endif
 
 NON_DICT_OBJS		= $(addsuffix .o,$(basename $(FSRC) $(CSRC) $(CXXSRC)))
