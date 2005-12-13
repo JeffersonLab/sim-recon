@@ -1,16 +1,95 @@
-#!/bin/tcsh
+#!/usr/bin/env perl
 
-rm -f hd_classes.h
-touch hd_classes.h
-foreach s (`cat classes | grep -v DetectorSystem_t`)
-	echo "#include <$s.h>" >> hd_classes.h ;
-end
-foreach s (`cat classes | grep -v DetectorSystem_t`)
-	echo "class $s;" >> hd_classes.h ;
-end
+$HALLD_HOME = $ENV{"HALLD_HOME"};
+$JILROOT = $ENV{"JILROOT"};
+$INCDIR = "$HALLD_HOME/src/libraries/include";
 
-${JILROOT}/scripts/jil_exe2xml -classes=classes `which hd_ana_d`
-${JILROOT}/scripts/jil_xml2cpp hd_ana_d.xml h=hd_classes.h o=hd_serializers
+# Read in external list of header files we should include
+open(FILE,"headers");
+@headers = <FILE>;
+chomp(@headers);
+close(FILE);
 
-mv hd_classes.h hd_serializers.h ../include
+# Get list of files that have a class based on DObject
+foreach $file (`ls $INCDIR/*.h`){
+	chomp($file);
+	open(FILE, "$file");
+	my $keep = "false";
+	foreach (<FILE>){
+		if(/\:*public\s+DObject/){
+			$keep = "true";
+			last;
+		}
+	}
+	
+	if($keep eq "true"){
+		$file =~ s/$INCDIR\///;
+		push(@headers, $file);
+	}
+}
 
+# Copy all header files into a local directory, prepending
+# #pragma interface at the top. Also, create a dummy "main"
+# file to compile into an executable with debugging symbols
+`rm -rf tmpinc`;
+`mkdir tmpinc`;
+open(FILE, ">tmp.cc");
+foreach $file (@headers){
+	`echo "#pragma interface" > tmpinc/$file`;
+	`cat $INCDIR/$file >> tmpinc/$file`;
+	
+	print FILE "#pragma implementation \"$file\"\n";
+	print FILE "#include \"$file\"\n\n";
+}
+print FILE "\nint main(int narg, char *argv){return 0;}\n\n";
+
+
+# Create the dummy executable with debugging symbols
+$ROOT_CFLAGS = `root-config --cflags`;
+chomp($ROOT_CFLAGS);
+print `g++ -g -Itmpinc -I$INCDIR -I$INCDIR/../../include $ROOT_CFLAGS tmp.cc`;
+
+# Create XML file from dummy executable
+$cmd = "$JILROOT/scripts/jil_exe2xml -classes=classes a.out";
+print "$cmd\n";
+print `$cmd`;
+
+# Compare the new XML file with the old
+my $changed = "false";
+if(-e "hd_serializers.xml"){
+	# read in both files
+	open(NEW, "a.out.xml");
+	@new = <NEW>;
+	close(NEW);
+	open(OLD, "hd_serializers.xml");
+	@old = <OLD>;
+	close(OLD);
+	
+	# If file sizes are different, then we already know they're different
+	if(@new != @old){$changed = "true";}
+	
+	# loop over lines from the files comparing each. If the any
+	# (other than the first or last lines) are different, then
+	# set the$changed flag.
+	for($i=1 ; $i<@new; $i++){
+		if($new[$i] ne $old[$i]){$changed = "true";}
+	}
+}else{
+	print "hd_serializers.xml doesn't exist.\n";
+	$changed = "true";
+}
+
+# Replace old file with new if changes were found.
+if($changed eq "true"){
+	print "\nChanges found. Updating hd_serializers.xml file.\n\n";
+	$cmd = "mv a.out.xml hd_serializers.xml";
+	print "$cmd\n";
+	print `$cmd`;
+}else{
+	print "\nNo changes found. Serializers are already up-to-date\n\n";
+}
+
+# Clean up
+$cmd = "rm -rf tmpinc tmp.cc a.out*";
+print "$cmd\n";
+print `$cmd`;
