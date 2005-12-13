@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 $HALLD_HOME = $ENV{"HALLD_HOME"};
-$JILROOT = $ENV{"JILROOT"};
+$JILSCRIPTS = "$HALLD_HOME/src/BMS";
 $INCDIR = "$HALLD_HOME/src/libraries/include";
 
 # Read in external list of header files we should include
@@ -35,6 +35,8 @@ foreach $file (`ls $INCDIR/*.h`){
 `mkdir tmpinc`;
 open(FILE, ">tmp.cc");
 open(CLASSES_H, ">tmp_classes.h");
+print CLASSES_H "// \$Id\$\n";
+print CLASSES_H "//\n// This file is auto-generated for use with JILIO\n//\n\n";
 foreach $file (@headers){
 	`echo "#pragma interface" > tmpinc/$file`;
 	`cat $INCDIR/$file >> tmpinc/$file`;
@@ -62,7 +64,7 @@ chomp($ROOT_CFLAGS);
 print `g++ -g -Itmpinc -I$INCDIR -I$INCDIR/../../include $ROOT_CFLAGS tmp.cc`;
 
 # Create XML file from dummy executable
-$cmd = "$JILROOT/scripts/jil_exe2xml -classes=classes a.out";
+$cmd = "$JILSCRIPTS/jil_exe2xml -classes=classes a.out";
 print "$cmd\n";
 print `$cmd`;
 
@@ -87,7 +89,6 @@ if(-e "hd_serializers.xml"){
 		if($new[$i] ne $old[$i]){$changed = "true";}
 	}
 }else{
-	print "hd_serializers.xml doesn't exist.\n";
 	$changed = "true";
 }
 
@@ -97,7 +98,7 @@ if($changed eq "true"){
 	$cmd = "mv a.out.xml hd_serializers.xml";
 	print "$cmd\n";
 	print `$cmd`;
-	$cmd = "mv tmp_classes.h classes.h";
+	$cmd = "mv tmp_classes.h hd_classes.h";
 	print "$cmd\n";
 	print `$cmd`;
 }else{
