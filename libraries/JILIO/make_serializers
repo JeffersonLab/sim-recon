@@ -34,15 +34,27 @@ foreach $file (`ls $INCDIR/*.h`){
 `rm -rf tmpinc`;
 `mkdir tmpinc`;
 open(FILE, ">tmp.cc");
+open(CLASSES_H, ">tmp_classes.h");
 foreach $file (@headers){
 	`echo "#pragma interface" > tmpinc/$file`;
 	`cat $INCDIR/$file >> tmpinc/$file`;
 	
 	print FILE "#pragma implementation \"$file\"\n";
 	print FILE "#include \"$file\"\n\n";
+	print CLASSES_H "#include \"$file\"\n";
 }
 print FILE "\nint main(int narg, char *argv){return 0;}\n\n";
+close(FILE);
 
+# Add class declarations
+#open(FILE,"classes");
+#@classes = <FILE>;
+#chomp(@classes);
+#close(FILE);
+#foreach $class (@classes){
+#	print CLASSES_H "class $class;\n";
+#}
+close(CLASSES_H);
 
 # Create the dummy executable with debugging symbols
 $ROOT_CFLAGS = `root-config --cflags`;
@@ -85,11 +97,14 @@ if($changed eq "true"){
 	$cmd = "mv a.out.xml hd_serializers.xml";
 	print "$cmd\n";
 	print `$cmd`;
+	$cmd = "mv tmp_classes.h classes.h";
+	print "$cmd\n";
+	print `$cmd`;
 }else{
 	print "\nNo changes found. Serializers are already up-to-date\n\n";
 }
 
 # Clean up
-$cmd = "rm -rf tmpinc tmp.cc a.out*";
+$cmd = "rm -rf tmpinc tmp.cc a.out* tmp_classes.h";
 print "$cmd\n";
 print `$cmd`;
