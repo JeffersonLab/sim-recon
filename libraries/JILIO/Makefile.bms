@@ -1,0 +1,11 @@
+
+PACKAGES = ROOT
+
+CXXSRC += hd_serializers.cc
+
+include $(HALLD_HOME)/src/BMS/Makefile.lib
+
+hd_serializers.cc: hd_serializers.xml
+	$(JILROOT)/scripts/jil_xml2cpp hd_serializers.xml \
+	h=classes.h o=hd_serializers
+	mv hd_serializers.h classes.h ../include
