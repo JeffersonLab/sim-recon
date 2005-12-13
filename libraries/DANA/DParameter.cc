@@ -21,14 +21,6 @@ DParameter::DParameter(string my_key, string my_value)
 }
 
 //---------------------------------
-// ~DParameter    (Destructor)
-//---------------------------------
-DParameter::~DParameter()
-{
-
-}
-
-//---------------------------------
 // Dump
 //---------------------------------
 void DParameter::Dump(void)

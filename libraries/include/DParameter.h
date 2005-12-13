@@ -24,7 +24,7 @@ class DParameter{
 	public:
 		DParameter(string my_key, string my_value);
 		DParameter(){}
-		virtual ~DParameter();
+		virtual ~DParameter(){}
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DParameter";}
 		
