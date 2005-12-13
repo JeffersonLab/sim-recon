@@ -74,9 +74,9 @@ ifdef PACKAGES
 include $(PACKAGE_MAKEFILES)
 endif
 
-FSRC		= $(wildcard *.F)
-CSRC		= $(wildcard *.c)
-CXXSRC	= $(wildcard *.cc *.cpp *.cxx)
+FSRC		+= $(wildcard *.F)
+CSRC		+= $(wildcard *.c)
+CXXSRC	+= $(wildcard *.cc *.cpp *.cxx)
 
 # Create ROOT dictionaries from C++ files containing ClassDef
 HSRC = $(wildcard *.h)
