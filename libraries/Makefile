@@ -4,6 +4,9 @@
 
 
 all:
+ifdef JILIO
+	make -C JILIO
+endif
 	#make -C include
 	make -C BCAL
 	make -C CDC
@@ -16,12 +19,12 @@ all:
 	make -C TRIGGER
 	make -C UPV
 	make -C TRACKING
-ifdef JILIO
-	make -C JILIO
-endif
 	make -C HDDM
 
 clean:
+ifdef JILIO
+	make -C JILIO clean
+endif
 	make -C include clean
 	make -C BCAL clean
 	make -C CDC clean
@@ -35,7 +38,4 @@ clean:
 	make -C TRIGGER clean
 	make -C UPV clean
 	make -C TRACKING clean
-ifdef JILIO
-	make -C JILIO clean
-endif
 	
