@@ -17,7 +17,6 @@
 DFCALGeometry::DFCALGeometry() : 
 m_numActiveBlocks( 0 )
 {
-	
 	double innerRadius = ( kBeamHoleSize - 1 ) / 2. * blockSize() * sqrt(2.);
 
 	// inflate the innner radius by 1% to for "safe" comparison
@@ -55,17 +54,18 @@ m_numActiveBlocks( 0 )
 		<< " active blocks." << endl;
 }
 
-//---------------------------------
-// ~DFCALGeometry    (Destructor)
-//---------------------------------
-DFCALGeometry::~DFCALGeometry()
-{
-
-}
-
 bool
 DFCALGeometry::isBlockActive( int row, int column ) const
 {
+	// I'm inserting these lines to effectively disable the
+	// two assert calls below. They are causing all programs
+	// (hd_dump, hdview) to exit, even when I'm not interested
+	// in the FCAL. This does not fix the underlying problem
+	// of why we're getting invalid row/column values.
+	// 12/13/05  DL
+	if( row < 0 ||  row >= kBlocksTall )return false;
+	if( column < 0 ||  column >= kBlocksWide )return false;
+
 	assert(    row >= 0 &&    row < kBlocksTall );
 	assert( column >= 0 && column < kBlocksWide );
 	
