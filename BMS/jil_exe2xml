@@ -234,7 +234,7 @@ sub GetClassDefinitions()
 				# Some gdb versions will only print "typedef struct {",
 				# omitting the actual type name. We try and recover by
 				# using the name from the @classes array.
-				if($classname eq "\{"){
+				if($classname =~ /^\{/){
 					$classname = $classes[$classindex];
 				}
 				
