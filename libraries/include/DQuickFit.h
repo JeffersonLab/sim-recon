@@ -53,6 +53,7 @@ using namespace std;
 
 #include "derror.h"
 
+#include <math.h>
 #ifndef atan2f
 #define atan2f(x,y) atan2((double)x,(double)y)
 #endif
