@@ -194,7 +194,7 @@ class JILStreamPBF: public JILStream {
 
 	/// Called for all pointers. If it returns "true", then the members of
 	/// the object are streamed. Otherwise, they are not.
-	bool StartPointerWrite(const std::type_info* &t, void* ptr){
+	bool StartPointerWrite(const std::type_info* t, void* ptr){
 		pointer_depth++;
 	
 		// CacheObjectPointerWrite() will keep track of pointers for
@@ -212,7 +212,7 @@ class JILStreamPBF: public JILStream {
 	/// Set the stream position to that referred to by the given reference.
 	/// For the basic JILStreamASCII, we just use the file position.
 	bool SetStreamPosition(std::streamoff pos){
-		buff = (char*)((std::streamoff)buff_start + pos);
+		buff = &buff_start[(int)pos];
 		return true;
 	}
 

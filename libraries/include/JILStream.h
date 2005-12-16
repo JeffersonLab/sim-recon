@@ -302,7 +302,7 @@ class JILStream{
 	/// Called for all pointers. If it returns "true", then the thing being pointed
 	/// to is streamed. Otherwise, it is ignored and NO corresponding
 	/// END_POINTER manipulator will be streamed.
-	virtual bool StartPointerWrite(const std::type_info* &t, void* ptr)=0;
+	virtual bool StartPointerWrite(const std::type_info* t, void* ptr)=0;
 
 	/// Handle unknown data types. Generally, if this gets called
 	/// there's a problem since the user is trying to serialize

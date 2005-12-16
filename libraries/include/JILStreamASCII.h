@@ -160,7 +160,7 @@ class JILStreamASCII:public JILStream{
 	/// Called for all pointers. If it returns "true", then the thing being pointed
 	/// to is streamed. Otherwise, it is ignored and NO corresponding
 	/// END_POINTER manipulator will be streamed.
-	bool StartPointerWrite(const type_info* &t, void* ptr){
+	bool StartPointerWrite(const type_info* t, void* ptr){
 		pointer_depth++;
 
 		// CacheObjectPointerWrite() will keep track of pointers for
