@@ -234,8 +234,9 @@ sub PrintSerializerMethods()
 		# --------------- Deserializer routine(s) ---------------
 		print FILE "$stream_class& operator>>($stream_class &s, $classname* &c){\n";
 		$tabs .= "\t";
-		print FILE $tabs."// Create object if it doesn't already exist\n";
-		print FILE $tabs."if(c == NULL)c = new $classname();\n\n";
+		print FILE $tabs."// First, check that the object is here and hasn't already been read in\n";
+		print FILE $tabs."// This will also create an object and set c to point to it if c is NULL\n";
+		print FILE $tabs."if(!s.StartPointerReadT(c))return s;\n\n";
 
 		# If this class has a serializer method declared then we need to
 		# have the operator<< routine call it and define the Serialize()
@@ -296,22 +297,35 @@ sub PrintMembersToStream()
 	my $baseclass = $_[2];
 	my $prefix = $_[3];
 	
+	# Reference the object different depending upon whether
+	# we're in a method or global-scope routine
+	my $object_ptr = "this";
+	if(length($prefix)>0){
+		$object_ptr = "&c";
+	}
+	
 	# Write out the object type
 	print FILE "\n";
-	print FILE $tabs."// Send object type to stream\n";
-	print FILE $tabs."s<<&typeid($classname);\n\n";
+	print FILE $tabs."// Send object type and address to stream.\n";
+	print FILE $tabs."if(!s.WriteObject($object_ptr))";
+	if(length($prefix)>0){
+		print FILE "return s<<JILStream::END_OBJECT;\n\n";
+	}else{
+		print FILE "{s<<JILStream::END_OBJECT; return;}\n\n";	
+	}
 
 	# If this class has a base class, write that part out first
 	if(length($baseclass)>0){
 		print FILE "\n";
 		print FILE $tabs."// Write out base class first\n";
-		if(length($prefix)>0){
+		print FILE $tabs."s<<*(($baseclass*)$object_ptr);\n\n";
+		#if(length($prefix)>0){
 			# Inside operator<<, use "c"
-			print FILE $tabs."s<<*(($baseclass*)&c);\n\n";
-		}else{
+		#	print FILE $tabs."s<<*(($baseclass*)&c);\n\n";
+		#}else{
 			# Inside Serialize, use "this"
-			print FILE $tabs."s<<*(($baseclass*)this);\n\n";
-		}
+		#	print FILE $tabs."s<<*(($baseclass*)this);\n\n";
+		#}
 	}
 
 	# Loop over data members of the class.		
@@ -343,7 +357,7 @@ sub PrintMembersToStream()
 			# is then handled by WriteArray
 			@sizes = split(/\,/,$size_list);
 			my $mytabs = $tabs;
-			if($public_only == true){$mytabs .= "//";}
+			if($public_only == true && $section ne "public"){$mytabs .= "//";}
 			for(my $i=0; $i<@sizes-1; $i++){
 				print FILE "for(unsigned int i$i=0; i$i<".$sizes[$i]."; i$i++)\n";
 				$mytabs .= "\t";
@@ -427,7 +441,7 @@ sub PrintMembersFromStream()
 		}
 		
 		if($$memattr{"pointer"} eq "true"){
-			print FILE "if(s.GetPointerFromStreamT($varname))";
+			print FILE "if(s.StartPointerReadT($varname))";
 		}
 		
 		if($size_list>1){
