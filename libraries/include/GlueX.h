@@ -30,8 +30,8 @@ inline const char* SystemName(DetectorSystem_t sys)
 			case SYS_FCAL:			return "FCAL";			break;
 			case SYS_UPV:			return "UPV";			break;
 			case SYS_TAGGER:		return "TAGGER";		break;
-			default:					return "UNKNOWN";
 	}
+	return "UNKNOWN";
 }
 
 #endif // _GlueX_
