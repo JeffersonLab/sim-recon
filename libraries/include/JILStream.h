@@ -42,13 +42,13 @@ inline const char* JILMyDictionary(void){return "";}
 /// <li>void StartVectorWrite(const type_info &t, unsigned int size, unsigned int bytes_per_item)
 /// <li>void StartListWrite(const type_info &t, unsigned int size, unsigned int bytes_per_item)
 /// <li>void StartArrayWrite(const type_info &t, unsigned int size, unsigned int bytes_per_item)
-/// <li>bool StartPointerWrite(const type_info &t, void* ptr)
+/// <li>bool StartPointerWrite(const type_info* &t, void* ptr)
 /// </ul>
 ///
 /// For deserializing objects from a file:
 /// <ul>
 /// <li>bool GetNamed(const char *name)
-/// <li>void ClearNamed(void)
+/// <li>void FreeNamed(void)
 /// <li>bool GetPointerFromStream(const type_info* type, void* &ptr)
 /// <li>unsigned int StartVectorRead(const type_info &t)
 /// <li>unsigned int StartListRead(const type_info &t)
@@ -64,6 +64,11 @@ class JILStream{
 	enum JILStreamIOType_t{
 		STREAM_INPUT,
 		STREAM_OUTPUT
+	};
+
+	enum JILStreamPointerTracking_t{
+		PTR_AUTOMATIC,
+		PTR_NONE
 	};
 
 	/// These "manipulators" are sent into the stream to flag the
@@ -82,58 +87,22 @@ class JILStream{
 	/// below.
 	JILStream(string filename="", string mode="w"){
 
-		this->filename = filename;
-		if(mode == "r")JILStreamInit(STREAM_INPUT);
-		else if(mode == "w")JILStreamInit(STREAM_OUTPUT);
-		else{
-			cerr<<"Unknown mode for JILStream \""<<mode<<"\"  should be \"r\" or \"w\""<<endl;
-			exit(-1);
-		}
-		
-		if(iotype == STREAM_OUTPUT){
-			// Output to file
-			if(filename != ""){
-				fout = new ofstream(filename.c_str());
-				(*fout)<<"BasicJILStream"<<std::endl;
-				(*fout)<<JILMyDictionary();
-			}else{
-				fout = &std::cout;
-			}
-		}else{
-			// Input from file
-			if(filename != ""){
-				fin = new ifstream(filename.c_str());
-			}else{
-				fin = &std::cin;
-			}
-			char line[256];
-			fin->getline(line, 256);
-			if(strncmp(line, "BasicJILStream", strlen("BasicJILStream"))){
-				std::cerr<<"File is not a Basic JILStream file!!"<<std::endl;
-				exit(-1);
-			}
-			
-			// Read in the XML dictionary
-			GetDictionary(fin);
-		}
-	}
+		if(mode == "w")iotype = STREAM_OUTPUT;
+		else if(mode == "r")iotype = STREAM_INPUT;
+		else {std::cerr<<"Unknown mode \""<<mode<<"\". Aborting.."<<endl; exit(-1);}
 
-	/// This initializes the JILStream object and should
-	/// be called by all subclasses.
-	void JILStreamInit(JILStreamIOType_t iotype){
-		this->iotype = iotype;
+		this->filename = filename;
 		pointer_depth = 0;
 		type_depth = 0;
 		named_depth = 0;
 		vector_depth = 0;
 		list_depth = 0;
+		pointer_tracking = PTR_AUTOMATIC;
 	}
 
 	/// Destructor of basic JILStream object.
 	virtual ~JILStream(){
-		ClearNamed();
-		if(!fout && fout != &std::cout)delete fout;
-		if(!fin && fin != &std::cin)delete fin;
+		FreeNamed();
 	}
 	
 	/// Read in dictionary information from the stream. This will
@@ -159,54 +128,29 @@ class JILStream{
 		this->tag = tag;
 	}
 	
-	/// Atomic types. All atomic types (plus strings) are explicitly defined.
-	virtual JILStream& operator<<(short i){(*fout)<<i<<" short"<<std::endl; return *this;}
-	virtual JILStream& operator<<(int i){(*fout)<<i<<" int"<<std::endl; return *this;}
-	virtual JILStream& operator<<(long i){(*fout)<<i<<" long"<<std::endl; return *this;}
-	virtual JILStream& operator<<(unsigned short i){(*fout)<<i<<" unsigned short"<<std::endl; return *this;}
-	virtual JILStream& operator<<(unsigned int i){(*fout)<<i<<" unsigned int"<<std::endl; return *this;}
-	virtual JILStream& operator<<(unsigned long i){(*fout)<<i<<" unsigned long"<<std::endl; return *this;}
-	virtual JILStream& operator<<(float f){(*fout)<<f<<" float"<<std::endl; return *this;}
-	virtual JILStream& operator<<(double f){(*fout)<<f<<" double"<<std::endl; return *this;}
-	virtual JILStream& operator<<(std::string s){(*fout)<<s<<std::endl; return *this;}
-	virtual JILStream& operator<<(const std::type_info *t){
-		(*fout)<<"type="<<JILtypeid2name(t);
-		if(tag.size()>0)(*fout)<<" tag="<<tag;
-		(*fout)<<std::endl;
-		type_depth++;
-		return *this;
+	/// Set the pointer tracking mode
+	virtual void SetPointerTracking(JILStreamPointerTracking_t ptmode){
+		pointer_tracking = ptmode;
 	}
+	
+	// Return a value that can be used to refer to the current
+	// stream position. What this position is relative to is
+	// determined by the subclass
+	virtual std::streamoff GetStreamPosition(void)=0;
+	
+	/// Atomic types. All atomic types (plus strings) are explicitly defined.
+	virtual JILStream& operator<<(short i)=0;
+	virtual JILStream& operator<<(int i)=0;
+	virtual JILStream& operator<<(long i)=0;
+	virtual JILStream& operator<<(unsigned short i)=0;
+	virtual JILStream& operator<<(unsigned int i)=0;
+	virtual JILStream& operator<<(unsigned long i)=0;
+	virtual JILStream& operator<<(float f)=0;
+	virtual JILStream& operator<<(double f)=0;
+	virtual JILStream& operator<<(std::string s)=0;
 
 	/// Handle stream manipulators
-	virtual JILStream& operator<<(JILStreamManipulator_t m){
-		switch(m){
-			case END_NAMED:
-				named_depth--;
-				(*fout)<<"end_named"<<std::endl;
-				break;
-			case END_OBJECT:
-				type_depth--;
-				(*fout)<<"end_type"<<std::endl;
-				break;
-			case END_VECTOR:
-				vector_depth--;
-				(*fout)<<"end_vector"<<std::endl;
-				break;
-			case END_LIST:
-				list_depth--;
-				(*fout)<<"end_list"<<std::endl;
-				break;
-			case END_ARRAY:
-				array_depth--;
-				(*fout)<<"end_array"<<std::endl;
-				break;
-			case END_POINTER:
-				pointer_depth--;
-				(*fout)<<"end_pointer"<<std::endl;
-				break;
-		}
-		return (*this);
-	}
+	virtual JILStream& operator<<(JILStreamManipulator_t m)=0;
 
 	/// The first pass compilation will use this "catch-all" template
 	/// since no specific operator<< methods are defined for the custom
@@ -217,12 +161,79 @@ class JILStream{
 		return UnknownOut(&typeid(t));
 	}
 
+	/// This is called when an object is about to be written to the stream.
+	/// If it returns "true", then the object data is sent, otherwise, it
+	/// is not. This (optionally) keeps track of the pointers of the objects
+	/// written so that each object is recorded only once in the output stream.
+	template <typename T>
+	bool WriteObject(T *ptr){
+		return StartObjectWrite(&typeid(T), (void*)ptr);
+	}
+	
+	/// Keep and check a cache of pointers for the current named section.
+	/// This routine is used when serializing the object.
+	bool CacheObjectPointerWrite(std::streamoff &pos, const std::type_info *t, void *ptr)
+	{
+		// If the pointer_tracking model is not PTR_AUTOMATIC, then
+		// just tell the subclass to write out the object
+		if(pointer_tracking != PTR_AUTOMATIC)return true;
+		
+		// Look for pointer in cache
+		list<pointer_cache_t>::iterator iter = pointer_cache.begin();
+		for(;iter != pointer_cache.end(); iter++){
+			if((*iter).ptr == ptr && (*iter).type == t){
+				pos = (*iter).pos;
+				return false;
+			}
+		}
+		
+		AddObjectToCache(pos,t,ptr);
+		return true;
+	}
+	
+	/// Keep and check a cache of pointers for the current named section.
+	/// This routine is used when deserializing the object.
+	bool CacheFindObjectPointer(std::streamoff pos, void* &ptr)
+	{
+		// pointer tracking model only affects how objects are written
+		// so we ignore it here.
+		
+		// Look for pointer in cache
+		list<pointer_cache_t>::iterator iter = pointer_cache.begin();
+		for(;iter != pointer_cache.end(); iter++){
+			if((*iter).pos == pos){
+				ptr = (*iter).ptr;
+				return true; // pointer found in cache.
+			}
+		}
+		
+		return false; // pointer not in cache.
+	}
+
+	/// Add a pointer with corresponding stream position to the cache
+	void AddObjectToCache(std::streamoff pos, const std::type_info *t, void *ptr){
+		// Pointer wasn't found in cache. Add it and write out object
+		pointer_cache_t p;
+		p.ptr = ptr;
+		p.type = t;
+		p.pos = pos;
+		pointer_cache.push_back(p);
+	}
+	
+	// The StartObjectWrite() method is called just before the
+	// data members are streamed. If pointer_tracking is set to
+	// PTR_AUTOMATIC, then this is called only when an object that
+	// has not been written to this named section is about to be
+	// written. Otherwise, this is always called allowing the subclass
+	// to implement a pointer tracking scheme.
+	virtual bool StartObjectWrite(const std::type_info *t, void *ptr)=0;
+
 	/// Pointer types can be caught by this template
 	/// which can then either do something fancy, or just stream
 	/// the object pointed to.
 	template<typename T>
 	JILStream& operator<<(const T* tptr){
-		if(StartPointerWrite(typeid(T), (void*)tptr)){
+		if(StartPointerWrite(&typeid(T), (void*)tptr)){
 			if(tptr)(*this)<<*tptr;
 			(*this)<<END_POINTER;
 		}
@@ -270,58 +281,53 @@ class JILStream{
 		return (*this);
 	}
 
-	/// Allow user to insert object-like tags
-	virtual void StartNamedWrite(const char *name){
-		named_depth++;
-		(*fout)<<"named:"<<name<<std::endl;
+	/// Open a new named section
+	void StartNamed(const char *name){
+		pointer_cache.clear();
+		StartNamedWrite(name);
 	}
+
+	/// Open a new named section in the subclass
+	virtual void StartNamedWrite(const char *name)=0;
 	
 	/// Called before all items of a vector are streamed
-	virtual void StartVectorWrite(const type_info &t, unsigned int size, unsigned int bytes_per_item){
-		vector_depth++;
-		(*fout)<<"vector: size="<<size<<" bytes_per_item="<<bytes_per_item<<std::endl;
-	}
+	virtual void StartVectorWrite(const std::type_info &t, unsigned int size, unsigned int bytes_per_item)=0;
 
 	/// Called before all items of a list are streamed
-	virtual void StartListWrite(const type_info &t, unsigned int size, unsigned int bytes_per_item){
-		list_depth++;
-		(*fout)<<"list: size="<<size<<" bytes_per_item="<<bytes_per_item<<std::endl;
-	}
+	virtual void StartListWrite(const std::type_info &t, unsigned int size, unsigned int bytes_per_item)=0;
 
 	/// Called before all items of an array are streamed
-	virtual void StartArrayWrite(const type_info &t, unsigned int size, unsigned int bytes_per_item){
-		array_depth++;
-		(*fout)<<"array: size="<<size<<" bytes_per_item="<<bytes_per_item<<std::endl;
-	}
+	virtual void StartArrayWrite(const std::type_info &t, unsigned int size, unsigned int bytes_per_item)=0;
 	
 	/// Called for all pointers. If it returns "true", then the thing being pointed
 	/// to is streamed. Otherwise, it is ignored and NO corresponding
 	/// END_POINTER manipulator will be streamed.
-	virtual bool StartPointerWrite(const type_info &t, void* ptr){
-		pointer_depth++;
-		(*fout)<<"0x"<<hex<<(unsigned long)ptr<<dec<<" "<<JILtypeid2name(&t)<<std::endl;
-		return true;
-	}
+	virtual bool StartPointerWrite(const std::type_info* &t, void* ptr)=0;
 
 	/// Handle unknown data types. Generally, if this gets called
 	/// there's a problem since the user is trying to serialize
 	/// an object that has no serializer routine.
-	virtual JILStream& UnknownOut(const type_info* type){
-		(*fout)<<"Attempting to convert unknown object!! (type="<<type->name()<<")"<<endl;
+	virtual JILStream& UnknownOut(const std::type_info* type){
+		std::cerr<<"Attempting to convert unknown object!! (type="<<type->name()<<")"<<endl;
 		return *this;
 	}
 	
 	//-------------------- Deserialization -------------------------
+
+	// Set the stream position to that referred to by the given reference.
+	// Like GetStreamPosition() the exact meaning of this values is
+	// determined by the subclass
+	virtual bool SetStreamPosition(std::streamoff pos)=0;
 		
-	virtual JILStream& operator>>(short &i){if(!lines.empty()){i=atoi(lines.front().c_str()); lines.pop_front();} return *this;}
-	virtual JILStream& operator>>(int &i){if(!lines.empty()){ i=atoi(lines.front().c_str()); lines.pop_front();} return *this;}
-	virtual JILStream& operator>>(long &i){if(!lines.empty()){ i=atol(lines.front().c_str()); lines.pop_front();} return *this;}
-	virtual JILStream& operator>>(unsigned short &i){if(!lines.empty()){ i=atoi(lines.front().c_str()); lines.pop_front();} return *this;}
-	virtual JILStream& operator>>(unsigned int &i){if(!lines.empty()){ i=atoi(lines.front().c_str()); lines.pop_front();} return *this;};
-	virtual JILStream& operator>>(unsigned long &i){if(!lines.empty()){ i=atol(lines.front().c_str()); lines.pop_front();} return *this;}
-	virtual JILStream& operator>>(float &f){if(!lines.empty()){ f=atof(lines.front().c_str()); lines.pop_front();} return *this;}
-	virtual JILStream& operator>>(double &f){if(!lines.empty()){ f=atof(lines.front().c_str()); lines.pop_front();} return *this;}
-	virtual JILStream& operator>>(std::string &s){if(!lines.empty()){ s = lines.front(); lines.pop_front();} return *this;}
+	virtual JILStream& operator>>(short &i)=0;
+	virtual JILStream& operator>>(int &i)=0;
+	virtual JILStream& operator>>(long &i)=0;
+	virtual JILStream& operator>>(unsigned short &i)=0;
+	virtual JILStream& operator>>(unsigned int &i)=0;
+	virtual JILStream& operator>>(unsigned long &i)=0;
+	virtual JILStream& operator>>(float &f)=0;
+	virtual JILStream& operator>>(double &f)=0;
+	virtual JILStream& operator>>(std::string &s)=0;
 
 	/// Here we do something similar to the above, but for input streams.
 	/// There is an additional trick required here. Since the input
@@ -369,41 +375,28 @@ class JILStream{
 	}
 	
 	/// This template just converts the typed call to an un-typed one
-	/// to GetPointerFromStream (which can be overridden by the subclass).
+	/// to StartPointerRead (which can be overridden by the subclass).
 	template <typename T>
-	bool GetPointerFromStreamT(T* &t){
-		return GetPointerFromStream(&typeid(T), (void*&)t);
+	bool StartPointerReadT(T* &t){
+		std::streamoff pos = GetStreamPosition();
+		if(!StartPointerRead(&typeid(T), (void*&)t))return false;		
+
+		if(t == NULL) t = new T();
+		AddObjectToCache(pos, &typeid(T), (void*)t);
+
+		return true;
 	}
 	
 	/// returning false means we have handled  this object and
 	/// the deserializer routine should NOT try filling from the
 	/// stream.
-	virtual bool GetPointerFromStream(const type_info* type, void* &ptr){
-		if(lines.empty())return false;
-		unsigned long myptr = strtol(lines.front().c_str(), NULL, 0);
-		lines.pop_front();
-		return myptr!=0x0;
-	}
+	virtual bool StartPointerRead(const type_info* type, void* &ptr)=0;
 	
 	/// Get vector info from stream
-	virtual unsigned int StartVectorRead(const type_info &t){
-		if(lines.empty())return 0;
-		// next item in stream should be vector info
-		const char *ptr = lines.front().c_str();
-		lines.pop_front();
-		ptr += strlen("vector: size=");
-		return atoi(ptr);
-	}
+	virtual unsigned int StartVectorRead(const type_info &t)=0;
 	
 	/// Get list info from stream
-	virtual unsigned int StartListRead(const type_info &t){
-		if(lines.empty())return 0;
-		// next item in stream should be list info
-		const char *ptr = lines.front().c_str();
-		lines.pop_front();
-		ptr += strlen("list: size=");
-		return atoi(ptr);
-	}
+	virtual unsigned int StartListRead(const type_info &t)=0;
 
 	/// Template method to read in an array of items
    template<typename T>
@@ -415,14 +408,7 @@ class JILStream{
 	}
 
 	/// Get array info from stream
-	virtual unsigned int StartArrayRead(const type_info &t, unsigned int size){
-		if(lines.empty())return 0;
-		// next item in stream should be array info
-		const char *ptr = lines.front().c_str();
-		lines.pop_front();
-		ptr += strlen("array: size=");
-		return atoi(ptr);
-	}
+	virtual unsigned int StartArrayRead(const type_info &t, unsigned int size)=0;
 
 	virtual JILStream& UnknownIn(const type_info* type){
 		std::cerr<<"Attempting to convert unknown object!! (type="<<type->name()<<")"<<endl;
@@ -430,88 +416,14 @@ class JILStream{
 	}
 
 	/// When deserializing, the caller doesn't really know what objects are in the
-	/// file so they call this to read a "map" into memory. In this simple case,
+	/// file so they call this to read a "map" into memory. In the simple case,
 	/// the whole named section is read in and then parsed to create the objects
-	/// right away. A more sophisticated deserializer might read in only a header
+	/// right away. A more sophisticated method might read in only a header
 	/// for the section and save the I/O calls for when the objects are actually
-	/// requested. This returns true on success and false on failure.
-	virtual bool GetNamed(const char *name){
-		
-		// Clear anything we currently have in memory.
-		ClearNamed();
-	
-		// loop through lines of input, storing them when we come across the named section
-		char line[1024];
-		bool in_named = false;
-		int depth = 0;
-		char named_str[256];
-		sprintf(named_str, "named:%s", name);
-		do{
-			line[0] = 0;
-			fin->getline(line, 1024);
-			if(in_named==true){
-				if(!strcmp(line, "end_named"))depth--;
-				if(depth==0)break;
-				lines.push_back(string(line));
-			}
-			if(!strcmp(line, named_str))in_named=true;
-			if(!strncmp(line,"named:", strlen("named:")))depth++;
-		}while(strlen(line) != 0);
-		if(lines.empty())return false;
-
-		// Loop over the top-level objects in this named section. We need to remove
-		// all of the "type=XXX" lines since the object deserializer
-		// already has that information.
-		do{
-			if(lines.empty())break;
-			string s = lines.front();
-			lines.pop_front();
-			char *ptr = strstr(s.c_str(), "type=");
-			if(ptr){
-				// Remove all type=XXX and end_XXX
-				int depth = 1;
-				list<string>::iterator iter = lines.begin();
-				unsigned int stream_bytes_for_object = 0;
-				for(; iter!=lines.end(); iter++){
-					stream_bytes_for_object += (*iter).size();
-					if((*iter) == "end_type")depth--;
-					bool erase_line = false;
-					if(!strncmp((*iter).c_str(), "type=", strlen("type="))){
-						depth++;
-						erase_line = true;
-					}
-					if(!strncmp((*iter).c_str(), "end_", strlen("end_")))erase_line = true;
-					if(!strncmp((*iter).c_str(), "pointer:", strlen("pointer:")))erase_line = true;
-					if(erase_line){
-						lines.erase(iter);
-						iter--;
-					}
-					if(depth==0)break;
-				}
-				
-				// If a tag is present, extract it
-				ptr += strlen("type=");
-				char *tag_ptr = strstr(ptr,"tag=");
-				if(tag_ptr){
-					tag_ptr[-1] = 0; // change "space" between object type and tag into null 
-					tag_ptr+=strlen("tag=");
-				}else{
-					tag_ptr = "";
-				}
-
-				// At this point all type= and end_XXX should be removed from
-				// the "lines" list, including the end_type for this section.
-				// Ergo, "lines" should have all of the data for this object
-				JILObjectRecord *rec = JILMakeObject(ptr, this, tag_ptr);
-				if(rec)objects.push_back(rec);
-				
-				// Record some stat info about the object
-				AddToObjectStats(ptr, tag_ptr, rec ? rec->type:NULL, stream_bytes_for_object);
-			}
-		}while(1);
-		
-		return true;
-	}
+	/// requested. This returns true on success and false on failure. Failure
+	/// can mean there are simply no more of the requested named sections in the
+	/// file.
+	virtual bool GetNamed(const char *name)=0;
 	
 	/// Get a list of the objects of type T in the current named section.
 	/// The objects list is passed in so lists that have been "adopted" can be
@@ -530,25 +442,28 @@ class JILStream{
 	}
 	
 	/// Read the objects of the specified type and tag in and add them to the 
-	/// JILObjectRecord list. This is not needed for the file format used by
-	/// the base class, but is here for subclasses that implement a 
-	/// rich header format that can read in objects only when requested.
-	virtual void GetObjectsFromSource(const type_info *t, string tag, list<JILObjectRecord*> *objects_ptr){
-		return;
+	/// JILObjectRecord list. This may not be needed by all subclasses and
+	/// so a default empty routine is provided.
+	virtual void GetObjectsFromSource(const type_info *t, string tag, list<JILObjectRecord*> *objects_ptr){}
+	
+	/// Delete all objects allocated on last call to GetNamed()
+	void FreeNamedRecords(void){
+		DeleteObjectRecords(objects);
+		object_stats.clear();
+		pointer_cache.clear();
 	}
 	
-	/// Delete all objects allocated on last call to GetNamed() and
-	/// all strings in the "lines" list. Subclasses should include
-	/// a call to DeleteObjectRecords(objects);
-	virtual void ClearNamed(void){
-		DeleteObjectRecords(objects);
-		lines.clear();
-		object_stats.clear();
+	/// This should be called by the subclass at the begining of
+	/// GetNamed() to free any memory from the last named section
+	/// that was read in. If the subclass implements this method,
+	/// it needs to call FreeNamedRecords().
+	virtual void FreeNamed(void){
+		FreeNamedRecords();
 	}
 	
 	/// Delete all objects in the given list. The list is passed in
 	/// so lists that have been "adopted" can be easily freed.
-	virtual void DeleteObjectRecords(list<JILObjectRecord*> &objects){
+	void DeleteObjectRecords(list<JILObjectRecord*> &objects){
 		list<JILObjectRecord*>::iterator iter;
 		for(iter=objects.begin(); iter!=objects.end(); iter++)delete *iter;
 		objects.clear();
@@ -561,6 +476,16 @@ class JILStream{
 	{
 		objects = this->objects;
 		this->objects.clear();
+	}
+
+	/// Search the object records list for one with the given pointer.
+	/// if found, return it. Otherwise, return NULL
+	JILObjectRecord* FindObjectRecord(list<JILObjectRecord*> &objects, void* ptr){
+		list<JILObjectRecord*>::iterator iter;
+		for(iter=objects.begin(); iter!=objects.end(); iter++){
+			if((*iter)->ptr == ptr)return *iter;
+		}
+		return NULL;
 	}
 
 	void PrintObjectHisto(list<JILObjectRecord*> *objects_ptr=NULL){
@@ -615,6 +540,7 @@ class JILStream{
 		int list_depth;
 		int array_depth;
 		string tag;
+		JILStreamPointerTracking_t pointer_tracking;
 		
 		typedef struct{
 			string name;
@@ -624,9 +550,16 @@ class JILStream{
 			unsigned int total_size;
 		}object_stat_t;
 		
+		typedef struct{
+			std::streamoff pos;
+			const std::type_info *type;
+			void *ptr;
+		}pointer_cache_t;
+
 		list<JILObjectRecord*> objects;
 		list<object_stat_t> object_stats;
-		
+		list<pointer_cache_t> pointer_cache;
+
 		/// Used to keep track of objects found in file, even if the
 		/// classes aren't known (i.e. compiled into) the current program
 		void AddToObjectStats(string name, string tag, const std::type_info *type, unsigned int bytes){
@@ -650,9 +583,6 @@ class JILStream{
 		}
 		
 	private:
-		ostream *fout;
-		istream *fin;
-		list<string> lines;
 };
 
 #endif // _JILSTREAM_H_

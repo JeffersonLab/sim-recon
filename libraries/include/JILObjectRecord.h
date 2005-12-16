@@ -5,23 +5,15 @@
 #ifndef _JILOBJECTRECORD_
 #define _JILOBJECTRECORD_
 
-// This is a place holder for the real function that is placed in the
-// *_serializers.cc file. By using a template, it allows the initial
-// executable to be linked. When re-compiled with the serializers.h
-// file, that takes precendence and this is ignored. The only drawback
-// is that this has to use the template type in the argument to avoid
-// multiply-defined errors. This means the user could get confusing errors
-// if they pass something other than a type_info& in as T.
-template<typename T>
-const char* JILtypeid2name(const T* t){return t->name();}
-
-
-// Likewise, this is a template place holder for the actual generated
-// routine.
+// Declare a couple of classes
 class JILObjectRecord;
 class JILStream;
-template<typename T>
-JILObjectRecord* JILMakeObject(const char* type_name, T *s, string tag=""){return new JILObjectRecord();};
+
+// There are default, conditionally compiled versions of these
+// below , after the definition of class JILObjectRecord.
+const char* JILtypeid2name(const std::type_info* t);
+JILObjectRecord* JILMakeObject(const char* type_name, JILStream *s, string tag="");
+
 
 // JILObjectRecord
 //
@@ -77,6 +69,15 @@ class JILObjectRecordT:public JILObjectRecord{
 		
 		T* tptr;
 };
+
+#ifndef _JIL_SERIALIZERS_H_
+// These are dummy routines that are compiled only when the
+// serializer routines are not present to allow linking of
+// an initial exectuable.
+inline const char* JILtypeid2name(const std::type_info* t){return t->name();}
+inline JILObjectRecord* JILMakeObject(const char* type_name, JILStream *s, string tag){return new JILObjectRecord();};
+#endif
+
 
 #endif //_JILOBJECTRECORD_
 

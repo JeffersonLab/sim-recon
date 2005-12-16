@@ -8,8 +8,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include <JILStream.h>
-#include <JILStreamXML.h>
+#include <JILStreamASCII.h>
 #include <JILStreamPBF.h>
 
 #ifndef _JIL_H_
