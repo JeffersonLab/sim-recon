@@ -19,7 +19,7 @@
 //---------------------------------
 DEventSourceJIL::DEventSourceJIL(const char* source_name):DEventSource(source_name)
 {
-	jilstream = new JILStream(source_name, "r");
+	jilstream = new JILStreamPBF(source_name, "r");
 	event_id_counter=0;
 }
 
