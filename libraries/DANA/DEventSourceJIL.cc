@@ -9,6 +9,7 @@
 
 #include "hd_serializers.h"
 
+#include "JILStreamPBF.h"
 #include "DEventSourceJIL.h"
 #include "DFactory_base.h"
 #include "DEventLoop.h"

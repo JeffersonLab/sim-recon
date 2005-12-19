@@ -131,7 +131,7 @@ sub PrintHeaderFile()
 		$tmpname =~ s/\{/\</g;
 		$tmpname =~ s/\}/\>/g;
 		print FILE "$stream_class& operator<<($stream_class &s, const $tmpname &c);\n";
-		print FILE "$stream_class& operator>>($stream_class &s, $tmpname* &c);\n";
+		print FILE "$stream_class& operator>>($stream_class &s, $tmpname &c);\n";
 	}
 
 	print FILE "\n// -------------------- JILMyDictionary ----------------\n";
@@ -236,7 +236,9 @@ sub PrintSerializerMethods()
 		$tabs .= "\t";
 		print FILE $tabs."// First, check that the object is here and hasn't already been read in\n";
 		print FILE $tabs."// This will also create an object and set c to point to it if c is NULL\n";
-		print FILE $tabs."if(!s.StartPointerReadT(c))return s;\n\n";
+		print FILE $tabs."if(!s.ReadObject(c))return s;\n\n";
+		#print FILE $tabs."// Make sure object exists for us to stream to.\n";
+		#print FILE $tabs."if(c == NULL)c = new $classname();\n\n";
 
 		# If this class has a serializer method declared then we need to
 		# have the operator<< routine call it and define the Serialize()
@@ -440,9 +442,9 @@ sub PrintMembersFromStream()
 			if($section ne "public"){print FILE "// ";}
 		}
 		
-		if($$memattr{"pointer"} eq "true"){
-			print FILE "if(s.StartPointerReadT($varname))";
-		}
+		#if($$memattr{"pointer"} eq "true"){
+		#	print FILE "if(s.StartPointerReadT($varname))";
+		#}
 		
 		if($size_list>1){
 			# For multi-dimenisional arrays, we must write out the

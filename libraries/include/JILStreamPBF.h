@@ -132,27 +132,6 @@ class JILStreamPBF: public JILStream {
 		}
 		return *this;
 	}
-	
-	/// The StartObjectWrite() method is called just before the
-	/// data members are streamed. Returning true tells the
-	/// serializer method to go ahead and stream the members.
-	/// Returning false tells it to skip that and just send the
-	/// END_OBJECT manipulator right away.
-	bool StartObjectWrite(const std::type_info *t, void *ptr){
-		type_depth++;
-
-		// Write out object header only for top-level objects
-		if(type_depth==1){
-			object_sizes.push_front((unsigned int*)buff);
-			(*this)<<(unsigned int)0;		// place holder for object size
-			(*this)<<JILtypeid2name(t);	// name(type) of object
-			(*this)<<tag;						// tag of object
-		}
-
-		// Now write out the object as though it were streamed to us
-		// as a pointer.
-		return StartPointerWrite(t, ptr);
-	}
 
 	// Allow user to insert object-like tags
 	void StartNamedWrite(const char *name){
@@ -190,6 +169,27 @@ class JILStreamPBF: public JILStream {
 	/// Called before all items of an array are streamed
 	void StartArrayWrite(const type_info &t, unsigned int size, unsigned int bytes_per_item){
 		(*this)<<size;
+	}
+
+	/// The StartObjectWrite() method is called just before the
+	/// data members are streamed. Returning true tells the
+	/// serializer method to go ahead and stream the members.
+	/// Returning false tells it to skip that and just send the
+	/// END_OBJECT manipulator right away.
+	bool StartObjectWrite(const std::type_info *t, void *ptr){
+		type_depth++;
+
+		// Write out object header only for top-level objects
+		if(type_depth==1){
+			object_sizes.push_front((unsigned int*)buff);
+			(*this)<<(unsigned int)0;		// place holder for object size
+			(*this)<<JILtypeid2name(t);	// name(type) of object
+			(*this)<<tag;						// tag of object
+		}
+
+		// Now write out the object as though it were streamed to us
+		// as a pointer.
+		return StartPointerWrite(t, ptr);
 	}
 
 	/// Called for all pointers. If it returns "true", then the members of
@@ -235,6 +235,10 @@ class JILStreamPBF: public JILStream {
 		delete cstr;
 		buff+=size;
 		return *this;
+	}
+	
+	bool StartObjectRead(const std::type_info *t, void* &ptr){
+		return StartPointerRead(t, ptr);
 	}
 
 	/// This is called just before an object is read in from the

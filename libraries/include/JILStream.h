@@ -160,15 +160,6 @@ class JILStream{
    JILStream& operator<<(T t){
 		return UnknownOut(&typeid(t));
 	}
-
-	/// This is called when an object is about to be written to the stream.
-	/// If it returns "true", then the object data is sent, otherwise, it
-	/// is not. This (optionally) keeps track of the pointers of the objects
-	/// written so that each object is recorded only once in the output stream.
-	template <typename T>
-	bool WriteObject(T *ptr){
-		return StartObjectWrite(&typeid(T), (void*)ptr);
-	}
 	
 	/// Keep and check a cache of pointers for the current named section.
 	/// This routine is used when serializing the object.
@@ -177,6 +168,11 @@ class JILStream{
 		// If the pointer_tracking model is not PTR_AUTOMATIC, then
 		// just tell the subclass to write out the object
 		if(pointer_tracking != PTR_AUTOMATIC)return true;
+		
+		if(ptr == NULL){
+			pos = 0;
+			return false;
+		}
 		
 		// Look for pointer in cache
 		list<pointer_cache_t>::iterator iter = pointer_cache.begin();
@@ -220,24 +216,28 @@ class JILStream{
 		pointer_cache.push_back(p);
 	}
 	
+	/// This is called when an object is about to be written to the stream.
+	/// If it returns "true", then the object data is sent, otherwise, it
+	/// is not. 
+	template <typename T>
+	bool WriteObject(T *ptr){
+		return StartObjectWrite(&typeid(T), (void*)ptr);
+	}
+
 	// The StartObjectWrite() method is called just before the
-	// data members are streamed. If pointer_tracking is set to
-	// PTR_AUTOMATIC, then this is called only when an object that
-	// has not been written to this named section is about to be
-	// written. Otherwise, this is always called allowing the subclass
-	// to implement a pointer tracking scheme.
+	// data members are streamed. If it returns "true", then the
+	/// object data is sent, otherwise, it is not. 
 	virtual bool StartObjectWrite(const std::type_info *t, void *ptr)=0;
 
-	/// Pointer types can be caught by this template
-	/// which can then either do something fancy, or just stream
-	/// the object pointed to.
+	/// Pointer types are caught by this template. If a top-level
+	/// object(i.e. type_depth==0) is streamed as a pointer, then
+	/// the contents of the pointer are streamed (but only if the
+	/// pointer is non-NULL). Otherwise, StartPointerWrite() is
+	/// called to determine if the object's contents should be streamed.
 	template<typename T>
 	JILStream& operator<<(const T* tptr){
-		if(StartPointerWrite(&typeid(T), (void*)tptr)){
-			if(tptr)(*this)<<*tptr;
-			(*this)<<END_POINTER;
-		}
-		return (*this);
+		if(type_depth==0 && tptr==NULL)return *this;
+		return (*this)<<*tptr;
 	}
 	
 	/// Pass this over to the const version
@@ -329,23 +329,49 @@ class JILStream{
 	virtual JILStream& operator>>(double &f)=0;
 	virtual JILStream& operator>>(std::string &s)=0;
 
-	/// Here we do something similar to the above, but for input streams.
-	/// There is an additional trick required here. Since the input
-	/// operators take a pointer, we need to catch the stream calls
-	/// that use the object directly (not the pointer) and convert them
-	/// into calls using the pointer. The second template routine below
-	/// will catch all of the undefined objects for the first pass compilation.
-   template<typename T>
-   JILStream& operator>>(T &t){
-		T* tt= &t;
-		return (*this)>>tt;
+	template <typename T>
+	bool ReadObject(T* &ptr){
+		const std::type_info *t = &typeid(T);
+		std::streamoff pos = GetStreamPosition();
+		bool read_object = StartObjectRead(t, (void*&)ptr);
+		if(read_object){
+			if(ptr==NULL)ptr = new T();
+			AddObjectToCache(pos, t, (void *)ptr);
+		}
+		return read_object;
 	}
 	
+	virtual bool StartObjectRead(const std::type_info *t, void* &ptr)=0;
+
    template<typename T>
-   JILStream& operator>>(T* &t){
-		return UnknownIn(&typeid(t));
+   JILStream& operator>>(T &t){
+		T* tt = &t;
+		(*this)>>tt;
+		// The above call may actually change the value
+		// of tt. This should only occur for non-top-level objects.
+		// This will be the case when an object that is a member
+		// of one object is referred to as a member pointer of another
+		// object. Furthermore, it will only be a problem if
+		// the pointer member is read first from the file since that
+		// will create a new object and we can't set the address of
+		// the member object. To properly handle this would cause a
+		// major increase in complexity of the whole system. We try
+		// and get by here using the copy constructor.
+		
+		if(tt != &t){
+			std::cerr<<__FILE__<<":"<<__LINE__<<" Copying object contents for type "<<typeid(T).name()<<std::endl;
+			std::cerr<<__FILE__<<":"<<__LINE__<<" Only one object was written, but not there are two."<<std::endl;
+			std::cerr<<__FILE__<<":"<<__LINE__<<" This may not be what you want!!"<<std::endl;
+			t=*tt;
+		} 
+		return (*this);
 	}
 
+   template<typename T>
+   JILStream& operator>>(T* &t){
+		return UnknownIn(&typeid(T));
+	}
+	
 	/// Read a vector in from the stream
 	template<typename T>
    JILStream& operator>>(std::vector<T> &v){
@@ -373,24 +399,10 @@ class JILStream{
 		// end_list should already be removed.
 		return *this;
 	}
-	
-	/// This template just converts the typed call to an un-typed one
-	/// to StartPointerRead (which can be overridden by the subclass).
-	template <typename T>
-	bool StartPointerReadT(T* &t){
-		std::streamoff pos = GetStreamPosition();
-		if(!StartPointerRead(&typeid(T), (void*&)t))return false;		
-
-		if(t == NULL) t = new T();
-		AddObjectToCache(pos, &typeid(T), (void*)t);
-
-		return true;
-	}
-	
 	/// returning false means we have handled  this object and
 	/// the deserializer routine should NOT try filling from the
 	/// stream.
-	virtual bool StartPointerRead(const type_info* type, void* &ptr)=0;
+	virtual bool StartPointerRead(const std::type_info* type, void* &ptr)=0;
 	
 	/// Get vector info from stream
 	virtual unsigned int StartVectorRead(const type_info &t)=0;

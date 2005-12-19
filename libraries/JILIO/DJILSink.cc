@@ -9,6 +9,7 @@ using namespace std;
 
 #ifdef JILIO
 
+#include "JILStreamPBF.h"
 #include "DJILSink.h"
 #include "DFactory_base.h"
 #include "DEvent.h"
