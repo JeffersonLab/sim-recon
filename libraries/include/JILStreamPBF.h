@@ -135,6 +135,7 @@ class JILStreamPBF: public JILStream {
 
 	// Allow user to insert object-like tags
 	void StartNamedWrite(const char *name){
+		FreeNamed();
 		names.push_front(string(name));
 		if(names.size() > 1){
 			cerr<<__FILE__<<":"<<__LINE__<<" JILStreamPBF does not support nested named sections! This may not work how you want it to ..."<<std::endl;
@@ -367,6 +368,7 @@ class JILStreamPBF: public JILStream {
 		buff = NULL;
 		buff_start = NULL;
 	}
+
 	private:
 		ostream *pbfout;
 		istream *pbfin;
