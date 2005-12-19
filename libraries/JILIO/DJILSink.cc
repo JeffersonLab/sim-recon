@@ -20,6 +20,7 @@ using namespace std;
 derror_t DJILSink::init(void)
 {
 	s= new JILStreamPBF(filename, "w");
+	s->SetPointerTracking(JILStream::PTR_NONE);
 
 	return NOERROR;
 }
