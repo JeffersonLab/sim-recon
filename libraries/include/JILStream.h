@@ -542,6 +542,24 @@ class JILStream{
 			}
 	}
 
+	void PrintPointerCache(void){
+			list<pointer_cache_t>::iterator iter;
+			std::cout<<"Object Type                pos    ptr"<<std::endl;
+			std::cout<<"------------------------- ----    -----------"<<std::endl;
+			for(iter = pointer_cache.begin(); iter !=pointer_cache.end(); iter++){
+				string str(79,' ');
+				string type(JILtypeid2name((*iter).type));
+				str.replace(0, type.size(), type);
+				stringstream ss,st;
+				ss<<(*iter).pos;
+				str.replace(30-ss.str().size(), ss.str().size(), ss.str());
+				st<<hex<<"0x"<<(unsigned long)(*iter).ptr<<dec;
+				str.replace(45-st.str().size(), st.str().size(), st.str());
+				
+				std::cout<<str<<std::endl;
+			}
+	}
+
 	protected:
 		JILStreamIOType_t iotype;
 		string filename;
