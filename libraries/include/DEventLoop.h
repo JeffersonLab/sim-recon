@@ -142,12 +142,12 @@ DFactory<T>* DEventLoop::GetFromFactory(vector<const T*> &t, const char *tag)
 	// compare the pointers of the string and not the actual
 	// string contents.
 
-	const char* className = T::className();
+	string myclassName = T::className();
 	vector<DFactory_base*>::iterator iter=factories.begin();
 	DFactory<T> *factory = NULL;
 	for(; iter!=factories.end(); iter++){
-		const char *factory_name = (*iter)->dataClassName();
-		if(factory_name == className){
+		string factory_name = (*iter)->dataClassName();
+		if(factory_name == myclassName){
 			if(!strcmp((*iter)->Tag(), tag)){
 				factory = (DFactory<T>*)*iter;
 				break;
