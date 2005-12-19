@@ -83,7 +83,7 @@ class DFactory_base:public DEventProcessor{
 #ifdef JILIO		
 		/// Access method to have the DFactory template class stream
 		/// the data objects to the output
-		virtual void StreamToOutput(JILStream *jilstream)=0;
+		virtual int StreamToOutput(JILStream *jilstream)=0;
 
 		/// Access method to have the DFactory template class read
 		/// the data objects from the input

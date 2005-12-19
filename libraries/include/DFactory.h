@@ -73,8 +73,8 @@ class DFactory:public DFactory_base{
 		inline int CheckSourceFirst(void){return !use_factory;}
 		derror_t CopyExternal(vector<const T*> data);
 #ifdef JILIO
-		void StreamToOutput(JILStream *jilstream){StreamToOutputT(jilstream);} ///< called through virtual method of DFactory_base
-		void StreamToOutputT(JILStream *jilstream);
+		int StreamToOutput(JILStream *jilstream){return StreamToOutputT(jilstream);} ///< called through virtual method of DFactory_base
+		int StreamToOutputT(JILStream *jilstream);
 		void StreamFromInput(JILStream *jilstream, list<JILObjectRecord*> &objects, vector<void*> &v){StreamFromInputT(jilstream, objects, v);}
 		void StreamFromInputT(JILStream *jilstream, list<JILObjectRecord*> &objects, vector<void*> &v);
 #endif //JILIO
@@ -293,12 +293,13 @@ derror_t DFactory<T>::CopyExternal(vector<const T*> data)
 // StreamToOutputT
 //-------------
 template<class T>
-void DFactory<T>::StreamToOutputT(JILStream *jilstream)
+int DFactory<T>::StreamToOutputT(JILStream *jilstream)
 {
 	jilstream->SetTag(Tag());
 	for(unsigned int i=0; i<_data.size(); i++){
 		(*jilstream)<<*_data[i];
 	}
+	return _data.size();
 }
 
 //-------------
