@@ -131,7 +131,7 @@ sub PrintHeaderFile()
 		$tmpname =~ s/\{/\</g;
 		$tmpname =~ s/\}/\>/g;
 		print FILE "$stream_class& operator<<($stream_class &s, const $tmpname &c);\n";
-		print FILE "$stream_class& operator>>($stream_class &s, $tmpname &c);\n";
+		print FILE "$stream_class& operator>>($stream_class &s, $tmpname* &c);\n";
 	}
 
 	print FILE "\n// -------------------- JILMyDictionary ----------------\n";
