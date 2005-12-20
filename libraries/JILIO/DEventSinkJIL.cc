@@ -1,7 +1,7 @@
 // Author: David Lawrence  Dec. 9, 2005
 //
 //
-// DJILSink.cc
+// DEventSinkJIL.cc
 //
 
 #include <iostream>
@@ -10,14 +10,14 @@ using namespace std;
 #ifdef JILIO
 
 #include "JILStreamPBF.h"
-#include "DJILSink.h"
+#include "DEventSinkJIL.h"
 #include "DFactory_base.h"
 #include "DEvent.h"
 
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
 //------------------------------------------------------------------
-derror_t DJILSink::init(void)
+derror_t DEventSinkJIL::init(void)
 {
 	s= new JILStreamPBF(filename, "w");
 	s->SetPointerTracking(JILStream::PTR_NONE);
@@ -26,22 +26,35 @@ derror_t DJILSink::init(void)
 }
 
 //------------------------------------------------------------------
+// brun_sink
+//------------------------------------------------------------------
+derror_t DEventSinkJIL::brun_sink(DEventLoop *loop, int runnumber)
+{
+	AddAllToWriteList(loop);
+	RemoveFromWriteList("DFDCHit", "");
+	RemoveFromWriteList("DCDCHit", "");
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
 // evnt   -Fill histograms here
 //------------------------------------------------------------------
-derror_t DJILSink::evnt(DEventLoop *loop, int eventnumber)
+derror_t DEventSinkJIL::evnt(DEventLoop *loop, int eventnumber)
 {
 	// Get list of all factories
 	vector<DFactory_base*> factories = loop->GetFactories();
 
 	// Lock out other threads and write out the event
-	LockState();
+	LockSink();
 	s->StartNamedWrite("Event");
 	for(unsigned int i=0; i<factories.size(); i++){
-		if(!factories[i]->TestFactoryFlag(DFactory_base::WRITE_TO_OUTPUT))continue;
+		if(!IsInWriteList(factories[i]->dataClassName(), factories[i]->Tag()))continue;
+		if(factories[i]->GetNrows()==0)continue; // This actually invokes the factory
 		factories[i]->StreamToOutput(s);
 	}
 	(*s)<<JILStream::END_NAMED;
-	UnlockState();
+	UnlockSink();
 	
 	return NOERROR;
 }
@@ -49,7 +62,7 @@ derror_t DJILSink::evnt(DEventLoop *loop, int eventnumber)
 //------------------------------------------------------------------
 // fini   -Close output file here
 //------------------------------------------------------------------
-derror_t DJILSink::fini(void)
+derror_t DEventSinkJIL::fini(void)
 {
 	delete s;
 
@@ -57,6 +70,6 @@ derror_t DJILSink::fini(void)
 }
 
 #else // JILIO
-bool DJILSink_is_defined = false;   // avoids warnings about objects with no symbols!
+bool DEventSinkJIL_is_defined = false;   // avoids warnings about objects with no symbols!
 #endif // JILIO
 
