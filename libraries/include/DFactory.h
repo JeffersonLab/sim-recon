@@ -111,7 +111,7 @@ DFactory<T>::DFactory()
 	_data.clear(); // probably unnecessary
 	
 	// clear flags
-	flags = DFACTORY_NULL;
+	flags = WRITE_TO_OUTPUT;
 	busy = 0;
 
 	// Allow any factory to have its debug_level set via environment variable
@@ -235,7 +235,7 @@ derror_t DFactory<T>::Reset(void)
 {
 	/// Clear out the factories current contents unless the
 	/// PERSISTANT flag is set.
-	if(flags & PERSISTANT)return NOERROR;
+	if(flags & (unsigned int)PERSISTANT)return NOERROR;
 
 	// don't reset the evnt_called flag for persistent data because this
 	// will force evnt to be called next event therby regenerating
@@ -253,7 +253,7 @@ derror_t DFactory<T>::HardReset(void)
 {
 	
 	/// Clear out the factories current contents.
-	if(!(flags & NOT_OBJECT_OWNER)){
+	if(!TestFactoryFlag(NOT_OBJECT_OWNER)){
 		for(unsigned int i=0;i<_data.size();i++){
 			delete _data[i];
 		}
@@ -314,7 +314,7 @@ void DFactory<T>::StreamFromInputT(JILStream *jilstream, list<JILObjectRecord*> 
 	
 	// We set the flag telling the framework not to delete these objects
 	// since that will be taken care of in DEventSourceJIL::FreeEvent()
-	flags = (DFactory_Flags_t)((int)flags | (int)NOT_OBJECT_OWNER);
+	SetFactoryFlag(NOT_OBJECT_OWNER);
 
 	// This part seems a little strange, but we need to copy the
 	// pointers as void* into the "v" vector and clear our _data

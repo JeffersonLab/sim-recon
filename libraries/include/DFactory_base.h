@@ -101,27 +101,27 @@ class DFactory_base:public DEventProcessor{
 		};
 		
 		/// Get all flags in the form of a single word
-		const DFactory_Flags_t& GetFactoryFlags(void){return flags;}
+		inline unsigned int GetFactoryFlags(void){return flags;}
 		
 		/// Set a flag (or flags)
-		void SetFactoryFlag(DFactory_Flags_t f){
-			flags = (DFactory_Flags_t)((int)flags | (int)f);
+		inline void SetFactoryFlag(DFactory_Flags_t f){
+			flags |= (unsigned int)f;
 		}
 
 		/// Clear a flag (or flags)
-		void ClearFactoryFlag(DFactory_Flags_t f){
-			flags = (DFactory_Flags_t)((int)flags & ~(int)f);
+		inline void ClearFactoryFlag(DFactory_Flags_t f){
+			flags &= ~(unsigned int)f;
 		}
 
 		/// Test if a flag (or set of flags) is set
-		bool TestFactoryFlag(DFactory_Flags_t f){
-			return ((int)flags & (int)f) != (int)f;
+		inline bool TestFactoryFlag(DFactory_Flags_t f){
+			return (flags & (unsigned int)f) == (unsigned int)f;
 		}
 		
 	
 	protected:
 		DEventLoop *eventLoop;
-		DFactory_Flags_t flags;
+		unsigned int flags;
 		int debug_level;
 		int busy;
 		string _table;
@@ -129,9 +129,6 @@ class DFactory_base:public DEventProcessor{
 		int _icol;
 		int _columns[100];
 		int header_width;
-
-		inline void SetObjectOwner(void){flags = (DFactory_Flags_t)(flags & ~NOT_OBJECT_OWNER);}
-		inline void SetNotObjectOwner(void){flags = (DFactory_Flags_t)(flags | NOT_OBJECT_OWNER);}
 
 		// Methods useful in help produce nicely formatted ASCII
 		void printheader(const char *header);

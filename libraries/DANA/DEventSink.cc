@@ -62,7 +62,6 @@ void DEventSink::AddAllToWriteList(DEventLoop *loop)
 	// Get list of all factories
 	vector<DFactory_base*> factories = loop->GetFactories();
 	for(unsigned int i=0; i<factories.size(); i++){
-		if(factories[i]->GetNrows()==0)continue;
 		if(!factories[i]->TestFactoryFlag(DFactory_base::WRITE_TO_OUTPUT))continue;
 		AddToWriteList(factories[i]->dataClassName(), factories[i]->Tag());
 	}

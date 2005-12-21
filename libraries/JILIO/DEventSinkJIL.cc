@@ -31,9 +31,8 @@ derror_t DEventSinkJIL::init(void)
 derror_t DEventSinkJIL::brun_sink(DEventLoop *loop, int runnumber)
 {
 	AddAllToWriteList(loop);
-	RemoveFromWriteList("DFCALGeometry", "");
-	RemoveFromWriteList("DFDCHit", "");
-	RemoveFromWriteList("DCDCHit", "");
+	//RemoveFromWriteList("DFDCHit", "");
+	//RemoveFromWriteList("DCDCHit", "");
 
 	return NOERROR;
 }

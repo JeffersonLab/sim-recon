@@ -526,20 +526,37 @@ class JILStream{
 	// object it encounters in the file in order for this to be useful.
 	void PrintObjectStats(void){
 			list<object_stat_t>::iterator iter;
-			std::cout<<"Object Type               Num.    Total Bytes"<<std::endl;
-			std::cout<<"------------------------- ----    -----------"<<std::endl;
+			std::cout<<"Object Type               Num.    Total Bytes  Bytes/object"<<std::endl;
+			std::cout<<"------------------------- ----    -----------  ------------"<<std::endl;
+			unsigned long total_bytes=0, total_objects=0;
 			for(iter = object_stats.begin(); iter !=object_stats.end(); iter++){
 				string str(79,' ');
 				str.replace(0, (*iter).name.size(), (*iter).name);
 				str.replace(20, (*iter).tag.size(), (*iter).tag);
-				stringstream ss,st;
+				stringstream ss,st,su;
 				ss<<(*iter).num;
 				str.replace(30-ss.str().size(), ss.str().size(), ss.str());
 				st<<(*iter).total_size;
 				str.replace(45-st.str().size(), st.str().size(), st.str());
+				su<<(*iter).total_size/(*iter).num;
+				str.replace(45-su.str().size(), su.str().size(), su.str());
 				
 				std::cout<<str<<std::endl;
+				total_bytes += (*iter).total_size;
+				total_objects += (*iter).num;
 			}
+
+			std::cout<<std::endl;
+			string str(79,' ');
+			string total_str("Total");
+			str.replace(0, total_str.size(), total_str);
+			stringstream ss,st;
+			ss<<total_objects;
+			str.replace(30-ss.str().size(), ss.str().size(), ss.str());
+			st<<total_bytes;
+			str.replace(45-st.str().size(), st.str().size(), st.str());
+				
+			std::cout<<str<<std::endl;
 	}
 
 	void PrintPointerCache(void){
