@@ -32,6 +32,7 @@ derror_t DFactory_DTOFPoint::evnt(DEventLoop *loop, int eventnumber)
 
   unsigned int usedlist[MAXTOFHITS*4];
   for (unsigned int i = 0; i < hits.size(); i++){
+  	if(i>=MAXTOFHITS*4){cout<<__FILE__<<":"<<__LINE__<<" too many hits in TOF!!"<<endl; break;}
     usedlist[i] = 0;
   }
 
@@ -46,6 +47,7 @@ derror_t DFactory_DTOFPoint::evnt(DEventLoop *loop, int eventnumber)
       float y0 = hits[j]->y;
       if (((hits[j]->orientation == 0)&&(fabs(x-y0)<=1.0*BARWIDTH))||
           ((hits[j]->orientation == 1)&&(fabs(y-y0)<=1.0*BARWIDTH))){
+		  if(nhits>=16){cout<<__FILE__<<":"<<__LINE__<<" too many hits in TOF!!"<<endl; break;}
         hitlist[nhits] = j;
         nhits++;
       }
