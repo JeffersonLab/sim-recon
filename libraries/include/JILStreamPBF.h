@@ -196,7 +196,9 @@ class JILStreamPBF: public JILStream {
 	/// Called for all pointers. If it returns "true", then the members of
 	/// the object are streamed. Otherwise, they are not.
 	bool StartPointerWrite(const std::type_info* t, void* ptr){
-		pointer_depth++;
+		// pointer_depth++; // this isn't being decremented so why increment?
+		
+		if(max_buff_size-GetStreamPosition() < 8192)GrowBuffer();
 	
 		// CacheObjectPointerWrite() will keep track of pointers for
 		// the current named section modifying pos if needed according
@@ -380,6 +382,35 @@ class JILStreamPBF: public JILStream {
 		list<unsigned int*> object_sizes;
 		
 		JILStreamPBF(){} /// Don't allow calls to default constructor. Force a filename
+		
+		void GrowBuffer(void){
+			
+			// Create a new buffer with increased size and copy the current buffer's contents there
+			max_buff_size += 1024*50; // grow buffer in 50kB increments
+			char* new_buff = new char[max_buff_size];
+			if(!new_buff){
+				std::cerr<<"Unable to allocate "<<max_buff_size<<" byte buffer!"<<std::endl;
+				exit(-1);
+			}
+			cerr<<"JILStreamPBF buffer size too small. Increasing to "<<max_buff_size/1024<<"kB"<<endl;
+			unsigned int bytes_in_buff = (unsigned int)GetStreamPosition();
+			memcpy(new_buff, buff_start, bytes_in_buff);
+			
+			// The object_sizes need to be updated to reflect the positions in the new buffer
+			unsigned long ptr_diff = (unsigned long)buff_start - (unsigned long)new_buff;
+			list<unsigned int*>::iterator iter = object_sizes.begin();
+			list<unsigned int*> myobject_sizes;
+			for(; iter!=object_sizes.end(); iter++){
+				unsigned long new_ptr = (unsigned long)(*iter) - ptr_diff;
+				myobject_sizes.push_back((unsigned int*)new_ptr);
+			}
+			object_sizes = myobject_sizes;
+			
+			// Delete old buffer and update pointers
+			delete buff_start;
+			buff_start = new_buff;
+			buff = &new_buff[bytes_in_buff];
+		}
 };
 
 #endif //_JILSTREAMPBF_H_

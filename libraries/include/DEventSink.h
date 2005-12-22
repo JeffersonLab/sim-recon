@@ -38,6 +38,7 @@ class DEventSink:public DEventProcessor{
 		void AddAllToWriteList(DEventLoop *loop);
 		void RemoveFromWriteList(string name, string tag);
 		void ClearWriteList(void);
+		void PrintWriteList(void);
 
 		inline void LockSink(void){pthread_mutex_lock(&sink_mutex);}
 		inline void UnlockSink(void){pthread_mutex_unlock(&sink_mutex);}

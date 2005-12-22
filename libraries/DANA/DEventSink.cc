@@ -84,6 +84,23 @@ void DEventSink::RemoveFromWriteList(string name, string tag)
 }
 
 //---------------------------------
+// PrintWriteList
+//---------------------------------
+void DEventSink::PrintWriteList(void)
+{
+	cout<<endl;
+	cout<<"Factories to written to file (format is factory:tag)"<<endl;
+	cout<<"----------------------------------------------------"<<endl;
+	vector<factory_name_spec_t>::iterator iter = factories_to_write.begin();
+	for(; iter != factories_to_write.end(); iter++){
+		cout<<(*iter).name;
+		if((*iter).tag.size()>0)cout<<":"<<(*iter).tag;
+		cout<<endl;
+	}
+	cout<<endl;
+}
+
+//---------------------------------
 // ClearWriteList
 //---------------------------------
 void DEventSink::ClearWriteList(void)

@@ -33,6 +33,7 @@ derror_t DEventSinkJIL::brun_sink(DEventLoop *loop, int runnumber)
 	AddAllToWriteList(loop);
 	//RemoveFromWriteList("DFDCHit", "");
 	//RemoveFromWriteList("DCDCHit", "");
+	PrintWriteList();
 
 	return NOERROR;
 }

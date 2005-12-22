@@ -124,7 +124,7 @@ class JILStream{
 	//-------------------- Serialization -------------------------
 
 	/// Set the current tag to be written out with subsequent objects
-	void SetTag(string tag){
+	inline void SetTag(string tag){
 		this->tag = tag;
 	}
 	
@@ -163,7 +163,7 @@ class JILStream{
 	
 	/// Keep and check a cache of pointers for the current named section.
 	/// This routine is used when serializing the object.
-	bool CacheObjectPointerWrite(std::streamoff &pos, const std::type_info *t, void *ptr)
+	inline bool CacheObjectPointerWrite(std::streamoff &pos, const std::type_info *t, void *ptr)
 	{
 		// If the pointer_tracking model is not PTR_AUTOMATIC, then
 		// just tell the subclass to write out the object
@@ -175,7 +175,7 @@ class JILStream{
 		}
 		
 		// Look for pointer in cache
-		list<pointer_cache_t>::iterator iter = pointer_cache.begin();
+		vector<pointer_cache_t>::iterator iter = pointer_cache.begin();
 		for(;iter != pointer_cache.end(); iter++){
 			if((*iter).ptr == ptr && (*iter).type == t){
 				pos = (*iter).pos;
@@ -195,7 +195,7 @@ class JILStream{
 		// so we ignore it here.
 		
 		// Look for pointer in cache
-		list<pointer_cache_t>::iterator iter = pointer_cache.begin();
+		vector<pointer_cache_t>::iterator iter = pointer_cache.begin();
 		for(;iter != pointer_cache.end(); iter++){
 			if((*iter).pos == pos){
 				ptr = (*iter).ptr;
@@ -207,7 +207,7 @@ class JILStream{
 	}
 
 	/// Add a pointer with corresponding stream position to the cache
-	void AddObjectToCache(std::streamoff pos, const std::type_info *t, void *ptr){
+	inline void AddObjectToCache(std::streamoff pos, const std::type_info *t, void *ptr){
 		// Pointer wasn't found in cache. Add it and write out object
 		pointer_cache_t p;
 		p.ptr = ptr;
@@ -220,7 +220,7 @@ class JILStream{
 	/// If it returns "true", then the object data is sent, otherwise, it
 	/// is not. 
 	template <typename T>
-	bool WriteObject(T *ptr){
+	inline bool WriteObject(T *ptr){
 		return StartObjectWrite(&typeid(T), (void*)ptr);
 	}
 
@@ -235,14 +235,14 @@ class JILStream{
 	/// pointer is non-NULL). Otherwise, StartPointerWrite() is
 	/// called to determine if the object's contents should be streamed.
 	template<typename T>
-	JILStream& operator<<(const T* tptr){
+	inline JILStream& operator<<(const T* tptr){
 		if(type_depth==0 && tptr==NULL)return *this;
 		return (*this)<<*tptr;
 	}
 	
 	/// Pass this over to the const version
    template<typename T>
-   JILStream& operator<<(T* tptr){
+   inline JILStream& operator<<(T* tptr){
 		(*this)<<(const T*)tptr;
 		return (*this);
    }
@@ -282,7 +282,7 @@ class JILStream{
 	}
 
 	/// Open a new named section
-	void StartNamed(const char *name){
+	inline void StartNamed(const char *name){
 		pointer_cache.clear();
 		StartNamedWrite(name);
 	}
@@ -525,7 +525,7 @@ class JILStream{
 	/// JILStream is used, it must call AddToObjectStats() for each
 	// object it encounters in the file in order for this to be useful.
 	void PrintObjectStats(void){
-			list<object_stat_t>::iterator iter;
+			vector<object_stat_t>::iterator iter;
 			std::cout<<"Object Type               Num.    Total Bytes  Bytes/object"<<std::endl;
 			std::cout<<"------------------------- ----    -----------  ------------"<<std::endl;
 			unsigned long total_bytes=0, total_objects=0;
@@ -560,7 +560,7 @@ class JILStream{
 	}
 
 	void PrintPointerCache(void){
-			list<pointer_cache_t>::iterator iter;
+			vector<pointer_cache_t>::iterator iter;
 			std::cout<<"Object Type                pos    ptr"<<std::endl;
 			std::cout<<"------------------------- ----    -----------"<<std::endl;
 			for(iter = pointer_cache.begin(); iter !=pointer_cache.end(); iter++){
@@ -604,14 +604,14 @@ class JILStream{
 		}pointer_cache_t;
 
 		list<JILObjectRecord*> objects;
-		list<object_stat_t> object_stats;
-		list<pointer_cache_t> pointer_cache;
+		vector<object_stat_t> object_stats;
+		vector<pointer_cache_t> pointer_cache;
 
 		/// Used to keep track of objects found in file, even if the
 		/// classes aren't known (i.e. compiled into) the current program
 		void AddToObjectStats(string name, string tag, const std::type_info *type, unsigned int bytes){
 			// First, see if an object_stat_t exists for this object
-			list<object_stat_t>::iterator iter;
+			vector<object_stat_t>::iterator iter;
 			for(iter = object_stats.begin(); iter !=object_stats.end(); iter++){
 				if((*iter).name == name && (*iter).tag == tag && (*iter).type == type){
 					(*iter).num++;
