@@ -198,7 +198,7 @@ int storeInput (int runNo, int eventNo, int ntracks)
       gfvert_(&nvtx,vert,&ntbeam,&nttarg,&tofg,ubuf,&nubuf);
       or = vs->in[nvtx-1].origin;
       ps = vs->in[nvtx-1].products;
-      if (or == 0)
+      if (or == HDDM_NULL)
       {
          or = make_s_Origin();
          vs->in[nvtx-1].origin = or;
@@ -207,7 +207,7 @@ int storeInput (int runNo, int eventNo, int ntracks)
          or->vz = vert[2];
          or->t = tofg;
       }
-      if (ps == 0)
+      if (ps == HDDM_NULL)
       {
          ps = make_s_Products(ntracks);
          vs->in[nvtx-1].products = ps;
