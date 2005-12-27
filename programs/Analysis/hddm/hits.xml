@@ -1,124 +1,92 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<hitView minOccurs="0" version="1.0">
+<hitView minOccurs="0" version="2.0">
    <centralDC minOccurs="0">
-      <ring radius="float" minOccurs="0" maxOccurs="unbounded">
-         <straw phim="float" maxOccurs="unbounded">
-            <hit t="float" dE="float" minOccurs="0" maxOccurs="unbounded" />
-            <cdcPoint z="float" r="float" phi="float" dradius="float"
-                      track="int" primary="boolean" dEdx="float"
-                      minOccurs="0" maxOccurs="unbounded" />
-         </straw>
-      </ring>
+      <cdcStraw ring="int" straw="int" minOccurs="0" maxOccurs="unbounded">
+         <cdcStrawHit t="float" dE="float" maxOccurs="unbounded" />
+      </cdcStraw>
+      <cdcTruthPoint z="float" r="float" phi="float" dradius="float"
+			track="int" primary="boolean" dEdx="float"
+			minOccurs="0" maxOccurs="unbounded" />
    </centralDC>
 
    <forwardDC minOccurs="0">
-      <chamber module="int" layer="int" maxOccurs="unbounded">
-         <cathodePlane z="float" tau="float" minOccurs="0" maxOccurs="unbounded">
-            <strip u="float" maxOccurs="unbounded"> 
-	       <hit t="float" dE="float" minOccurs="0" maxOccurs="unbounded" />
-	    </strip>
-         </cathodePlane>
-         <anodePlane z="float" tau="float" minOccurs="0" maxOccurs="unbounded">
-            <wire u="float" maxOccurs="unbounded">
-               <hit t="float" dE="float" minOccurs="0" maxOccurs="unbounded" />
-               <fdcPoint z="float" x="float" y="float" dradius="float"
-                         track="int" primary="boolean" dEdx="float"
-                         minOccurs="0" maxOccurs="unbounded" />
-            </wire>
-         </anodePlane>
-      </chamber>
+      <fdcChamber module="int" layer="int" maxOccurs="unbounded">
+         <fdcAnodeWire wire="int" minOccurs="0" maxOccurs="unbounded">
+               <fdcAnodeHit t="float" dE="float" maxOccurs="unbounded" />
+         </fdcAnodeWire>
+         <fdcCathodeStrip plane="int" strip="int"
+			minOccurs="0" maxOccurs="unbounded">
+	    <fdcCathodeHit t="float" dE="float" maxOccurs="unbounded" />
+	 </fdcCathodeStrip>
+         <fdcTruthPoint z="float" x="float" y="float" dradius="float"
+			track="int" primary="boolean" dEdx="float"
+			minOccurs="0" maxOccurs="unbounded" />
+      </fdcChamber>
    </forwardDC>
 
    <startCntr minOccurs="0">
-      <paddle phim="float" minOccurs="0" maxOccurs="unbounded">
-         <hit t="float" dE="float" minOccurs="0" maxOccurs="unbounded" />
-      </paddle>
-      <startPoint t="float" z="float" r="float" phi="float"
-                  track="int" primary="boolean" dEdx="float"
-                  minOccurs="0" maxOccurs="unbounded" />
+      <stcPaddle sector="int" minOccurs="0" maxOccurs="unbounded">
+         <stcHit t="float" dE="float" maxOccurs="unbounded" />
+      </stcPaddle>
+      <stcTruthPoint t="float" z="float" r="float" phi="float"
+			track="int" primary="boolean" dEdx="float"
+			minOccurs="0" maxOccurs="unbounded" />
    </startCntr>
 
    <barrelEMcal minOccurs="0">
-     <mod module ="int" minOccurs="0" maxOccurs="unbounded">  
-       <shell  layer="int" minOccurs="0" maxOccurs="12">
-         <cone  sector="int" minOccurs="0" maxOccurs="4">
-           <upstream minOccurs="0">
-              <shower t="float" E="float" maxOccurs="unbounded" />
-           </upstream>
-           <downstream minOccurs="0">
-              <shower t="float" E="float" maxOccurs="unbounded" />
-           </downstream> 
-         </cone>
-       </shell>
-     </mod>
-     <barrelShower t="float" z="float" phi="float" r="float"
-                   E="float" track="int" primary="boolean"
-                   minOccurs="0" maxOccurs="unbounded" />
+      <bcalCell module="int" layer="int" sector="int"
+			minOccurs="0" maxOccurs="4">
+         <bcalUpstreamHit t="float" E="float"
+			minOccurs="0" maxOccurs="unbounded" />
+         <bcalDownstreamHit t="float" E="float"
+			minOccurs="0" maxOccurs="unbounded" />
+     </bcalCell>
+     <bcalTruthShower t="float" z="float" phi="float" r="float"
+			E="float" track="int" primary="boolean"
+			minOccurs="0" maxOccurs="unbounded" />
    </barrelEMcal>
       
    <Cerenkov minOccurs="0">
-      <section phim="float" maxOccurs="unbounded">
-         <flash t="float" pe="float" maxOccurs="unbounded" />
-      </section>
-      <cerenkovPoint t="float" z="float" x="float" y="float"
-                     E="float" px="float" py="float" pz="float"
-                     track="int" primary="boolean"
-                     minOccurs="0" maxOccurs="unbounded" />
+      <cereSection sector="int" minOccurs="0" maxOccurs="unbounded">
+         <cereHit t="float" pe="float" maxOccurs="unbounded" />
+      </cereSection>
+      <cereTruthPoint t="float" z="float" x="float" y="float"
+			E="float" px="float" py="float" pz="float"
+			track="int" primary="boolean"
+			minOccurs="0" maxOccurs="unbounded" />
    </Cerenkov>
 
    <forwardTOF minOccurs="0">
-      <hcounter y="float" minOccurs="0" maxOccurs="unbounded">
-         <left minOccurs="0">
-            <hit t="float" dE="float" maxOccurs="unbounded" />
-         </left>
-         <right minOccurs="0">
-            <hit t="float" dE="float" maxOccurs="unbounded" />
-         </right>
-      </hcounter>
-      <vcounter x="float" minOccurs="0" maxOccurs="unbounded">
-         <top minOccurs="0">
-            <hit t="float" dE="float" maxOccurs="unbounded" />
-         </top>
-         <bottom minOccurs="0">
-            <hit t="float" dE="float" maxOccurs="unbounded" />
-         </bottom>
-      </vcounter>
-      <tofPoint t="float" x="float" y="float" z="float"
-                track="int" primary="boolean"
-                minOccurs="0" maxOccurs="unbounded" />
+      <ftofCounter plane="int" paddle="int" minOccurs="0" maxOccurs="unbounded">
+         <ftofLeftHit t="float" dE="float"
+			minOccurs="0" maxOccurs="unbounded" />
+         <ftofRightHit t="float" dE="float"
+			minOccurs="0" maxOccurs="unbounded" />
+      </ftofCounter>
+      <ftofTruthPoint t="float" x="float" y="float" z="float"
+			track="int" primary="boolean"
+			minOccurs="0" maxOccurs="unbounded" />
    </forwardTOF>
 
    <forwardEMcal minOccurs="0">
-      <row y="float" minOccurs="0" maxOccurs="unbounded">
-         <column x="float" minOccurs="0" maxOccurs="unbounded">
-            <shower t="float" E="float" maxOccurs="unbounded" />
-         </column>
-      </row>
-      <forwardShower t="float" x="float" y="float" z="float"
-                     E="float" track="int" primary="boolean"
-                     minOccurs="0" maxOccurs="unbounded" />
+      <fcalBlock row="int" column="int" minOccurs="0" maxOccurs="unbounded">
+         <fcalHit t="float" E="float" maxOccurs="unbounded" />
+      </fcalBlock>
+      <fcalTruthShower t="float" x="float" y="float" z="float"
+			E="float" track="int" primary="boolean"
+			minOccurs="0" maxOccurs="unbounded" />
    </forwardEMcal>
 
    <upstreamEMveto minOccurs="0">
-      <upvRow y="float" minOccurs="0" maxOccurs="unbounded">
-         <upvLeft minOccurs="0">
-            <shower t="float" E="float" maxOccurs="unbounded" />
-         </upvLeft>
-         <upvRight minOccurs="0">
-            <shower t="float" E="float" maxOccurs="unbounded" />
-         </upvRight>
-      </upvRow>	 
-      <upvPaddle y="float" z="float" minOccurs="0" maxOccurs="unbounded" >
-         <upvLeft minOccurs="0">
-            <shower t="float" E="float" maxOccurs="unbounded" />
-         </upvLeft>
-         <upvRight minOccurs="0">
-	    <shower t="float" E="float" maxOccurs="unbounded" />
-         </upvRight>
+      <upvPaddle layer="int" row="int" minOccurs="0" maxOccurs="unbounded">
+         <upvLeftHit t="float" E="float"
+			minOccurs="0" maxOccurs="unbounded" />
+         <upvRightHit t="float" E="float"
+			minOccurs="0" maxOccurs="unbounded" />
       </upvPaddle>
-      <upvShower t="float" x="float" y="float" z="float" 
-                 E="float" track="int" primary="boolean"
-                 minOccurs="0" maxOccurs="unbounded" />
+      <upvTruthShower t="float" x="float" y="float" z="float" 
+			E="float" track="int" primary="boolean"
+			minOccurs="0" maxOccurs="unbounded" />
    </upstreamEMveto>
 
 </hitView>
