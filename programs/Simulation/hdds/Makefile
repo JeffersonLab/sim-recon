@@ -25,21 +25,18 @@ XML_SOURCE = BarrelEMcal_HDDS.xml BeamLine_HDDS.xml CentralDC_HDDS.xml\
              StartCntr_HDDS.xml Target_HDDS.xml UpstreamEMveto_HDDS.xml \
 	     main_HDDS.xml
 
-all: hddsGeant3.F hddsMCfast.db hddsroot.C
+all: hddsGeant3.F hddsroot.C
 
 hddsMCfast.db: hdds-mcfast $(XML_SOURCE)
 	ln -sf $(MCFAST_DIR)/db db
 	./hdds-mcfast main_HDDS.xml >$@
 	rm db
-	cp $@ $(BUILDS)/HDFast/HDFast.db
 
 hddsGeant3.F: hdds-geant $(XML_SOURCE)
 	./hdds-geant main_HDDS.xml >$@
-	cp $@ $(BUILDS)/HDGeant
 
 hddsroot.C: hdds-root $(XML_SOURCE)
 	./hdds-root main_HDDS.xml >$@
-	cp $@ $(BUILDS)/HDGeant
 
 hdds-geant: hdds-geant.cpp hdds-geant.hpp XParsers.cpp XParsers.hpp XString.cpp XString.hpp
 	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ hdds-geant.cpp \
