@@ -1032,6 +1032,38 @@ int Refsys::createSolid(DOMElement* el)
          par[npar++] = ro * tocm;
       }
    }
+   else if (shapeS.equals("pgon"))
+   {
+      shapeS = "PGON";
+      int segments;
+      XString segAttS("segments");
+      XString segS(el->getAttribute(X(segAttS)));
+      sscanf(S(segS), "%d", &segments);
+      double phi0, dphi;
+      XString profAttS("profile");
+      XString profS(el->getAttribute(X(profAttS)));
+      sscanf(S(profS), "%lf %lf", &phi0, &dphi);
+      XString planeTagS("polyplane");
+      DOMNodeList* planeList = el->getElementsByTagName(X(planeTagS));
+
+      npar = 4;
+      par[0] = phi0 * todeg;
+      par[1] = dphi * todeg;
+      par[2] = segments;
+      par[3] = planeList->getLength();
+      for (int p = 0; p < planeList->getLength(); p++)
+      {
+         double ri, ro, zl;
+         DOMNode* node = planeList->item(p);
+         DOMElement* elem = (DOMElement*) node;
+         XString riozAttS("Rio_Z");
+         XString riozS(elem->getAttribute(X(riozAttS)));
+         sscanf(S(riozS), "%lf %lf %lf", &ri, &ro, &zl);
+         par[npar++] = zl * tocm;
+         par[npar++] = ri * tocm;
+         par[npar++] = ro * tocm;
+      }
+   }
    else if (shapeS.equals("cons"))
    {
       shapeS = "CONS";
