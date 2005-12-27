@@ -27,45 +27,45 @@
   </composition>
 
   <composition name="forwardDC" envelope="FDC">
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -85.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -85.5">
       <module value="1" />
     </posXYZ>
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -79.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -79.5">
       <module value="2" />
     </posXYZ>
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -30.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -30.5">
       <module value="3" />
     </posXYZ>
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0  -24.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -24.5">
       <module value="4" />
     </posXYZ>
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   24.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   24.5">
       <module value="5" />
     </posXYZ>
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   30.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   30.5">
       <module value="6" />
     </posXYZ>
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   79.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   79.5">
       <module value="7" />
     </posXYZ>
-    <posXYZ volume="forwardDC_unit" X_Y_Z="0.0  0.0   85.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   85.5">
       <module value="8" />
     </posXYZ>
   </composition>
 
-  <composition name="forwardDC_unit" envelope="FDCH">
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0 0.0 -2.0" rot="0   0    0">
+  <composition name="forwardDC_module" envelope="FDMO">
+    <posXYZ volume="forwardDC_chamber" X_Y_Z="0.0 0.0 -2.0" rot="0   0    0">
       <layer value="1" />
     </posXYZ>
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0 0.0  0.0" rot="0   0   60">
+    <posXYZ volume="forwardDC_chamber" X_Y_Z="0.0 0.0  0.0" rot="0   0   60">
       <layer value="2" />
     </posXYZ>
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0 0.0  2.0" rot="0   0  -60">
+    <posXYZ volume="forwardDC_chamber" X_Y_Z="0.0 0.0  2.0" rot="0   0  -60">
       <layer value="3" />
     </posXYZ>
   </composition>
 
-  <composition name="forwardDC_module" envelope="FDMO">
+  <composition name="forwardDC_chamber" envelope="FDCH">
     <posXYZ volume="FDCA" X_Y_Z="0.0 0.0 0.0">
       <plane value="2" />
     </posXYZ>
@@ -80,12 +80,11 @@
   <tubs name="FDC" Rio_Z="3.5 62.0 178.0" material="Air"
                                           comment="forward drift chambers" />
 
-  <tubs name="FDCH" Rio_Z=" 3.5 61.0 6.0" material="chamberGas"        />
-  <tubs name="FDMO" Rio_Z=" 3.5 61.0 2.0" material="Air"        />
+  <tubs name="FDMO" Rio_Z=" 3.5 61.0 6.0" material="Air"        />
+  <tubs name="FDCH" Rio_Z=" 3.5 61.0 2.0" material="chamberGas" />
   <tubs name="FDCA" Rio_Z=" 3.5 60.0 0.994" material="chamberGas"
 					    sensitive="true" 	/>
-  <tubs name="FDCC" Rio_Z=" 3.5 60.0 0.0059" material="CopperKapton"
-					    sensitive="true" 	/>
+  <tubs name="FDCC" Rio_Z=" 3.5 60.0 0.0059" material="CopperKapton" />
   <tubs name="FDCS" Rio_Z="60.0 61.0 6.0" material="Aluminum"   />
 
   <parameters name="forwardDC_pars" type="mcfast">
