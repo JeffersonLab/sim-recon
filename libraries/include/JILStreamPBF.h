@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <zlib.h>
 
 #include <JILStream.h>
 
@@ -15,14 +16,18 @@
 
 class JILStreamPBF: public JILStream {
    public:
-	
-	JILStreamPBF(string filename="", string mode="w"):JILStream(filename,mode)
+		unsigned int max_object_size;
+
+	JILStreamPBF(string filename="", string mode="w", bool use_compression=false):JILStream(filename,mode)
 	{
 		pbfout = NULL;
 		pbfin = NULL;
 		buff = NULL;
 		buff_start = NULL;
 		max_buff_size = 1024*250; // default is 250kB
+		max_object_size = 1024*50; // default is 50kB
+		this->use_compression = use_compression;
+		byte_swap = false;
 	
 		// Open the output or input file		
 		if(iotype == STREAM_OUTPUT){
@@ -34,6 +39,8 @@ class JILStreamPBF: public JILStream {
 				exit(-1);
 			}
 			(*pbfout)<<"JILStreamPBF version=0.1"<<std::endl;
+			(*pbfout)<<"compressed="<<use_compression<<std::endl;
+			(*pbfout)<<"endian="<<"little"<<std::endl;
 			(*pbfout)<<JILMyDictionary();
 		}else{
 			// Input from file
@@ -43,6 +50,12 @@ class JILStreamPBF: public JILStream {
 				cerr<<"A filename MUST be supplied when instantiating a JILStreamPBF!"<<endl;
 				exit(-1);
 			}
+			
+			char line[256];
+			pbfin->getline(line,256); // First line with version info
+			pbfin->getline(line,256); // compressed=XXX
+			if(strcmp(&line[strlen("compressed=")], "0"))this->use_compression = true;
+			pbfin->getline(line,256); // endian=XXX
 			
 			// Read in the XML dictionary
 			GetDictionary(pbfin);
@@ -93,8 +106,29 @@ class JILStreamPBF: public JILStream {
 					names.pop_front();
 					
 					// Write the total size of this buffer to the front
-					// and then write it to the file
 					section_size = (unsigned int)buff - (unsigned int)buff_start;
+					
+					// If compression is on, then compress the buffer (after
+					// the section name) and set the section size to the compressed size
+					if(use_compression){
+						// Get pointer to start of data
+						unsigned int name_str_size = *(unsigned int*)&buff_start[sizeof(unsigned int)];
+						unsigned int header_size = 2*sizeof(unsigned int)+name_str_size;
+						char *ptr = &buff_start[header_size];
+						unsigned long uncompressed_size = (unsigned long)(section_size-header_size);
+						unsigned long compressed_size = compressBound(uncompressed_size);
+						char *dest = new char[header_size+compressed_size+sizeof(unsigned int)]; // compressed files keep uncompressed buffer size as extra word in header
+						memcpy(dest, buff_start, header_size);
+						int zerr = compress((Bytef*)&dest[header_size+sizeof(unsigned int)], &compressed_size, (Bytef*)ptr, uncompressed_size);
+						if(zerr != Z_OK)std::cerr<<__FILE__<<":"<<__LINE__<<" Error compressing event buffer "<<zerr<<std::endl;
+						*(unsigned int*)&dest[header_size] = (unsigned int)uncompressed_size;
+						delete buff_start;
+						buff_start = dest;
+						section_size = compressed_size+header_size+sizeof(unsigned int);
+					}
+					
+					// Set the size of the named section in the front of the
+					// buffer and write the whole thing to disk.
 					*(unsigned int*)buff_start = section_size - sizeof(unsigned int); // don't include size word
 					pbfout->write(buff_start, section_size);
 					
@@ -198,7 +232,7 @@ class JILStreamPBF: public JILStream {
 	bool StartPointerWrite(const std::type_info* t, void* ptr){
 		// pointer_depth++; // this isn't being decremented so why increment?
 		
-		if(max_buff_size-GetStreamPosition() < 8192)GrowBuffer();
+		if(max_buff_size-GetStreamPosition() < max_object_size)GrowBuffer();
 	
 		// CacheObjectPointerWrite() will keep track of pointers for
 		// the current named section modifying pos if needed according
@@ -308,18 +342,19 @@ class JILStreamPBF: public JILStream {
 			if(section_size==0)return false;
 
 			// Create buffer to hold section
+			if(buff_start)delete buff_start;
 			buff_start = new char[section_size+sizeof(unsigned int)];
 			buff = buff_start;
 			if(!buff){
 				std::cerr<<"Unable to allocate "<<section_size<<" byte buffer!"<<std::endl;
 				exit(-1);
 			}
-			
+
 			// Copy section size into front of buffer so that the buffer
 			// is identical to when it was written
 			*(unsigned int*)buff = section_size;
 			buff += sizeof(unsigned int);
-		
+
 			// Read in named section into buffer
 			pbfin->read(buff, section_size);
 			if(pbfin->gcount() != (int)section_size)return false;
@@ -327,7 +362,35 @@ class JILStreamPBF: public JILStream {
 			// Next item is name of the named section
 			string namestr;
 			(*this)>>namestr;
-			if(namestr==name)break;
+			if(namestr!=name)continue;
+					
+			if(use_compression){
+				// If compression was used then the first word (after section name)
+				// is the uncompressed data buffer size.
+				unsigned int header_size = (unsigned int)GetStreamPosition();
+				unsigned int uncompressed_size;
+				(*this)>>uncompressed_size;
+				unsigned int compressed_size = section_size - header_size;
+				
+				// Creat buffer to hold entire, uncompressed event.
+				char *dest = new char[uncompressed_size+header_size];
+				memcpy(dest, buff_start, header_size);
+				unsigned long size = (unsigned long)uncompressed_size;
+				int zerr = uncompress((Bytef*)&dest[header_size], &size, (Bytef*)buff, section_size-header_size);
+				if(zerr != Z_OK)std::cerr<<__FILE__<<":"<<__LINE__<<" Error uncompressing event buffer "<<zerr<<std::endl;
+				if(size != (unsigned long)uncompressed_size){
+					std::cerr<<__FILE__<<":"<<__LINE__<<" error uncompressing event buffer "<<size<<":"<<uncompressed_size<<std::endl;
+					exit(-1);
+				}
+				
+				// Swap the uncompressed event buffer for the compressed one
+				delete buff_start;
+				buff_start = dest;
+				buff = &buff_start[header_size];
+				*(unsigned int*)buff_start = section_size = uncompressed_size+header_size;
+			}
+			
+			break;
 		}while(1);
 		
 		// Read in the top-level objects
@@ -353,11 +416,11 @@ class JILStreamPBF: public JILStream {
 			// the correct value here so programs that don't know about
 			// this object type can still work.
 			buff = object_start + size;
-				
+
 			// Record some stat info about the object
 			AddToObjectStats(type, tag, rec ? rec->type:NULL, size);
 		}
-			
+
 		return true;
 	}
 	
@@ -380,13 +443,15 @@ class JILStreamPBF: public JILStream {
 		unsigned int max_buff_size;
 		unsigned int section_size;
 		list<unsigned int*> object_sizes;
+		bool byte_swap;
+		bool use_compression;
 		
 		JILStreamPBF(){} /// Don't allow calls to default constructor. Force a filename
 		
 		void GrowBuffer(void){
 			
 			// Create a new buffer with increased size and copy the current buffer's contents there
-			max_buff_size += 1024*50; // grow buffer in 50kB increments
+			max_buff_size += max_object_size; // grow buffer in max_object_size increments
 			char* new_buff = new char[max_buff_size];
 			if(!new_buff){
 				std::cerr<<"Unable to allocate "<<max_buff_size<<" byte buffer!"<<std::endl;

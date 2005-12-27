@@ -20,7 +20,7 @@ using namespace std;
 // defined so we can provide a dummy function
 const char* JILMyDictionary(void);
 #ifndef _JIL_SERIALIZERS_H_
-inline const char* JILMyDictionary(void){return "";}
+inline const char* JILMyDictionary(void){return "<JILDictionary>\n\tempty\n</JILDictionary>\n";}
 #endif
 
 /// The JILStream class is the base class used to derive classes
