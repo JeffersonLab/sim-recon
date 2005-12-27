@@ -140,6 +140,10 @@ hddm_s.o: 	hddm_s.c
 cdcdump: cdcdump.c hddm_s.o
 	$(CC) $(COPTS) -I. -I../include -o $@ $^ 
 
+bcal2nt: bcal2nt.c hddm_s.o
+	$(CC) $(COPTS) -I. -I../include -o $@ $^ \
+	  -L$(CERN_ROOT)/lib -lpacklib -lkernlib -lg2c
+
 $(GELHAD):
 	$(MAKE) -C gelhad
 
