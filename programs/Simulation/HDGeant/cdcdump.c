@@ -39,9 +39,9 @@ int process_event(s_HDDM_t *event)
    s_Rings_t *rings;
    int ring;
    hits = event->physicsEvents->in[0].hitView;
-   if (hits == 0 ||
-       hits->centralDC == 0 ||
-       hits->centralDC->rings == 0) {
+   if (hits == HDDM_NULL ||
+       hits->centralDC == HDDM_NULL ||
+       hits->centralDC->rings == HDDM_NULL) {
       return 0;
    }
    printf("New event number %d,",event->physicsEvents->in[0].eventNo);
@@ -53,21 +53,22 @@ int process_event(s_HDDM_t *event)
          int straw;
          for (straw=0; straw<straws->mult; straw++) {
             s_CdcPoints_t *points = straws->in[straw].cdcPoints;
-            if (points == 0) {
+            if (points == HDDM_NULL) {
                printf(" orphan found!\n");
             }
             else if (points->mult != 1) {
                printf(" found %d cdcPoints!\n",points->mult);
             }
-            else if (straws->in[straw].hits == 0) {
+            else if (straws->in[straw].hits == HDDM_NULL) {
                printf(" widow found!\n");
             }
             else {
                printf("  straw hit at phi=%f,",straws->in[straw].phim);
                printf("  drift time=%f,",straws->in[straw].hits->in[0].t);
-               printf("  dE/dx=%f\n",points->in[0].dEdx);
+               printf("  dE/dx=%f\n",points->in[0].dEdx * 1e6);
             }
          }
       }
    }
+   return 1;
 }
