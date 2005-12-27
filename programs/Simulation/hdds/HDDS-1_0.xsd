@@ -159,6 +159,7 @@
            |-> tubs	tube section
            |-> trd	trapezoid
            |-> pcon	poly-cone (sequence of joined cons)
+           |-> pgon	polyhedron (sequence of joined polygons)
            |-> cons 	cone section
            +-> sphere	sphere (or a section thereof)
 
@@ -295,7 +296,7 @@
                      PhiS    Starting angle phi
                      dPhi    Delta angle phi
 
-  The edges of the plycone are given by a series of XML element 'polyplane',
+  The edges of the polycone are given by a series of XML element 'polyplane',
   which are children of 'pcon'. The 'polyplane' dimensions are given
   by the attribute:
 
@@ -304,11 +305,48 @@
   with :
 
                      Ri     inside radius at  point Z
-                     Ro     inside radius at  point Z
+                     Ro     outside radius at  point Z
                      Z      position z
 
 
-1.4.1.6) Sphere segment (element tag "sphere" )
+1.4.1.6) Polyhedron solid (element tag "pgon" )
+
+  A pgon is similar to the polycone (element tag "pcon") except that
+  its boundaries are planar segments instead of conical ones.
+
+  The phi-segmentation is given by the attribute
+      
+                     profile="PhiS dPhi"               (defaulted to "0 360") 
+
+  with :
+
+                     PhiS    Starting angle phi
+                     dPhi    Delta angle phi
+
+  and by the number of phi-segments specified using the attribute
+
+                     segments="NNN"                   (no default)
+
+  with :
+
+                     NNN    number of (equal) phi segements
+
+  The edges of the polyhedron are given by a series of XML element 'polyplane',
+  which are children of 'pgon'. The 'polyplane' dimensions are given
+  by the attribute:
+
+                     Rio_Z="Ri Ro Z"
+
+  with :
+
+                     Ri     inside radius at  point Z
+                     Ro     outside radius at  point Z
+                     Z      position z
+
+  where "radius" of a planar boundary is defined to be the perpendicular
+  distance from the boundary to the z-axis.
+
+1.4.1.7) Sphere segment (element tag "sphere" )
 
   A sphere segment is a section of a sphere that is delimited by boundaries
   of fixed radius, polar angle and azimuthal angle.
@@ -809,6 +847,13 @@
     <polyplane Rio_Z="0 10 50" /> 
 </pcon>
 
+
+2.6) Using the polyhedron:
+
+<pgon name="TEST_polyhedron" segements="8" material="Air">
+    <polyplane Rio_Z="2 30 0"  />
+    <polyplane Rio_Z="2 30 10" />
+</pgon>
 
 (end of the documentation) -->
 
@@ -1428,7 +1473,7 @@
 <xs:element name="pcon">
   <xs:complexType>
     <xs:sequence>
-      <xs:element ref="polyplane" minOccurs="1" maxOccurs="unbounded"/>
+      <xs:element ref="polyplane" minOccurs="2" maxOccurs="unbounded"/>
     </xs:sequence>
 
     <xs:attribute name="comment" type="xs:string"/>
@@ -1439,6 +1484,43 @@
       <xs:simpleType>
         <xs:restriction base="floatList">
           <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="sensitive" default="false">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="true"/>
+          <xs:enumeration value="false"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="pgon">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="polyplane" minOccurs="2" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="material" use="required" type="xs:IDREF"/>
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+    <xs:attribute name="profile" default="0 360">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="2"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="segments" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:int">
+          <xs:minInclusive value="3"/>
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
@@ -1666,6 +1748,7 @@
       <xs:element ref="tubs"/>
       <xs:element ref="cons"/>
       <xs:element ref="pcon"/>
+      <xs:element ref="pgon"/>
       <xs:element ref="sphere"/>
       <xs:element ref="union"/>
       <xs:element ref="intersection"/>
