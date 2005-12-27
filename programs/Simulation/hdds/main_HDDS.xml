@@ -69,7 +69,7 @@
   </composition>
 
   <composition name="backwardPackage">
-    <posXYZ volume="UpstreamEMveto" X_Y_Z="0.0 0.0 -60.8" />
+    <posXYZ volume="UpstreamEMveto" X_Y_Z="0.0 0.0 -86.8" />
   </composition>
 
   <composition name="GlueXdetector">

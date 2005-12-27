@@ -22,15 +22,23 @@
 <!-- Origin of UpstreamEMVeto is center of the outside upstream
      surface of the UPV aluminum box -->
   <composition name="UpstreamEMveto">
-    <posXYZ volume="upstreamEMveto" X_Y_Z="0.0  0.0  -13.0" />
+    <posXYZ volume="upstreamEMveto" X_Y_Z="0.0  0.0  13.0" />
   </composition>
 
 <!-- Dimensions of the full UPV box:
      Depth(Z)  is  26cm: 18*1cm(Scint) + 24*0.25cm(Lead) + 2*1cm(Al)
      Height(Y) is 240cm: 56*4.25cm(Scint) + 2*1cm(Al) 
      Width(X)  is 240cm: 238cm(Scint) + 2*1cm(Al) -->
+  <!-- Replace the following box with a 4-sided PGON with the same
+       outer dimensions, but with the inner hole removed -rtj-
   <box name="UPV" X_Y_Z="240.0 240.0 26.0" material="Air" 
        parameters="upstreamEMveto_pars" comment="UPV mother" />
+  -->
+  <pgon name="UPV" segments="4" profile="-45 360" material="Air"
+       parameters="upstreamEMveto_pars" comment="UPV mother">
+    <polyplane Rio_Z="12.75 120 -13"  />
+    <polyplane Rio_Z="12.75 120 +13" />
+  </pgon>
 
   <composition name="upstreamEMveto" envelope="UPV">
     <posXYZ volume="UPUD"    X_Y_Z="    0.0    0.0 -12.5" />
