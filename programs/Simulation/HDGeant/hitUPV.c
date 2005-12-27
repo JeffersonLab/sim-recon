@@ -33,8 +33,7 @@
 
 #define ATTEN_LENGTH	150.
 #define C_EFFECTIVE	19.   /* Index of refraction for UPV is 1.58 */
-#define THRESH_ROW_MEV	5.
-#define THRESH_PADDLE_MEV 0.5
+#define THRESH_MEV      5.
 #define TWO_HIT_RESOL	50.
 #define MAX_HITS 	100
 
@@ -54,9 +53,9 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
   float xlocal[3];
   float xupv[3];
   float zeroHat[] = {0,0,0};
-  int nshot;
-  s_Showers_t* leftshots;
-  s_Showers_t* rightshots;
+  int nhit;
+  s_UpvLeftHits_t* leftHits;
+  s_UpvRightHits_t* rightHits;
 
   if (dEsum == 0) return;              /* only seen if it deposits energy */
 
@@ -92,139 +91,104 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
   float zcenter = (fabs(xupv[2]) < 1e-4) ? 0 : xupv[2];
 
   /* post the hit to the hits tree, mark upvPaddle as hit */
-  /* upvPaddles are used in MC studies only. They are not read separately in the data */
   {
-    int mark = (layer << 16) + row;
+    int mark = (layer<<16) + row;
     void** twig = getTwig(&upstreamEMvetoTree, mark);
     if (*twig == 0) {
       s_UpstreamEMveto_t* upv = *twig = make_s_UpstreamEMveto();
-      upv->upvPaddles = make_s_UpvPaddles(1);
-      upv->upvPaddles->mult = 1;
-      upv->upvPaddles->in[0].y = ycenter;
-      upv->upvPaddles->in[0].z = zcenter;
-      upv->upvPaddles->in[0].upvLeft = make_s_UpvLeft();
-      upv->upvPaddles->in[0].upvRight = make_s_UpvRight();
-      upv->upvPaddles->in[0].upvLeft->showers = leftshots = make_s_Showers(MAX_HITS);
-      upv->upvPaddles->in[0].upvRight->showers = rightshots = make_s_Showers(MAX_HITS);
+      s_UpvPaddles_t* paddles = make_s_UpvPaddles(1);
+      paddles->mult = 1;
+      paddles->in[0].row = row;
+      paddles->in[0].layer = layer;
+      leftHits = HDDM_NULL;
+      rightHits = HDDM_NULL;
+      if (column == 0 || column == 1)
+      {
+         paddles->in[0].upvLeftHits = leftHits
+                                    = make_s_UpvLeftHits(MAX_HITS);
+      }
+      if (column == 0 || column == 1)
+      {
+         paddles->in[0].upvRightHits = rightHits
+                                     = make_s_UpvRightHits(MAX_HITS);
+      }
+      upv->upvPaddles = paddles;
       paddleCount++;
     }
     else {
       s_UpstreamEMveto_t* upv = *twig;
-      leftshots = upv->upvPaddles->in[0].upvLeft->showers;
-      rightshots = upv->upvPaddles->in[0].upvRight->showers;
+      leftHits = upv->upvPaddles->in[0].upvLeftHits;
+      rightHits = upv->upvPaddles->in[0].upvRightHits;
     }
 
-    for (nshot = 0; nshot < leftshots->mult; nshot++)
-      if (fabs(leftshots->in[nshot].t - tleft) < TWO_HIT_RESOL)
-	break;
+    if (leftHits != HDDM_NULL)
+    {
+      for (nhit = 0; nhit < leftHits->mult; nhit++)
+      {
+        if (fabs(leftHits->in[nhit].t - tleft) < TWO_HIT_RESOL)
+        {
+          break;
+        }
+      }
 
-    if (nshot < leftshots->mult) {		/* merge with former hit */
-      leftshots->in[nshot].t =
-	(leftshots->in[nshot].t * leftshots->in[nshot].E + tleft * dEleft)
-	/ (leftshots->in[nshot].E += dEleft);
-    }
-    else if (nshot < MAX_HITS) {		/* create new hit */
-      leftshots->in[nshot].t =
-	(leftshots->in[nshot].t * leftshots->in[nshot].E + tleft * dEleft)
-	/ (leftshots->in[nshot].E += dEleft);
-      leftshots->mult++;
-    }
-    else {
-      fprintf(stderr,"HDGeant error in hitUpstreamEMveto: ");
-      fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
+      if (nhit < leftHits->mult)		/* merge with former hit */
+      {
+        leftHits->in[nhit].t =
+	  (leftHits->in[nhit].t * leftHits->in[nhit].E + tleft * dEleft)
+	  / (leftHits->in[nhit].E += dEleft);
+      }
+      else if (nhit < MAX_HITS)			/* create new hit */
+      {
+        leftHits->in[nhit].t =
+	  (leftHits->in[nhit].t * leftHits->in[nhit].E + tleft * dEleft)
+	  / (leftHits->in[nhit].E += dEleft);
+        leftHits->mult++;
+      }
+      else
+      {
+        fprintf(stderr,"HDGeant error in hitUpstreamEMveto: ");
+        fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
+      }
     }
 
-    for (nshot = 0; nshot < rightshots->mult; nshot++)
-      if (fabs(rightshots->in[nshot].t - tright) < TWO_HIT_RESOL)
-	break;
+    if (rightHits != HDDM_NULL)
+    {
+      for (nhit = 0; nhit < rightHits->mult; nhit++)
+      {
+        if (fabs(rightHits->in[nhit].t - tright) < TWO_HIT_RESOL)
+        {
+	  break;
+        }
+      }
         
-    if (nshot < rightshots->mult) {		/* merge with former hit */
-      rightshots->in[nshot].t =
-	(rightshots->in[nshot].t * rightshots->in[nshot].E + tright * dEright)
-	/ (rightshots->in[nshot].E += dEright);
-    }
-    else if (nshot < MAX_HITS) {		/* create new hit */
-      rightshots->in[nshot].t = 
-	(rightshots->in[nshot].t * rightshots->in[nshot].E +  tright * dEright)
-	/ (rightshots->in[nshot].E += dEright);
-      rightshots->mult++;
-    }
-    else {
-      fprintf(stderr,"HDGeant error in hitUpstreamEMveto: ");
-      fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
-    }
-  }
-
-  /* post the hit to the hits tree, mark upvRow as hit */
-  {
-    int mark = row;
-    void** twig = getTwig(&upstreamEMvetoTree, mark);
-    if (*twig == 0) {
-      s_UpstreamEMveto_t* upv = *twig = make_s_UpstreamEMveto();
-      upv->upvRows = make_s_UpvRows(1);
-      upv->upvRows->mult = 1;
-      upv->upvRows->in[0].y = ycenter;
-      upv->upvRows->in[0].upvLeft = make_s_UpvLeft();
-      upv->upvRows->in[0].upvRight = make_s_UpvRight();
-      upv->upvRows->in[0].upvLeft->showers = leftshots = make_s_Showers(MAX_HITS);
-      upv->upvRows->in[0].upvRight->showers = rightshots = make_s_Showers(MAX_HITS);
-      rowCount++;
-    }
-    else {
-      s_UpstreamEMveto_t* upv = *twig;
-      leftshots = upv->upvRows->in[0].upvLeft->showers;
-      rightshots = upv->upvRows->in[0].upvRight->showers;
-    }
-
-    for (nshot = 0; nshot < leftshots->mult; nshot++)
-      if (fabs(leftshots->in[nshot].t - tleft) < TWO_HIT_RESOL)
-	break;
-
-    if (nshot < leftshots->mult) {		/* merge with former hit */
-      leftshots->in[nshot].t =
-	(leftshots->in[nshot].t * leftshots->in[nshot].E + tleft * dEleft)
-	/ (leftshots->in[nshot].E += dEleft);
-    }
-    else if (nshot < MAX_HITS) {		/* create new hit */
-      leftshots->in[nshot].t =
-	(leftshots->in[nshot].t * leftshots->in[nshot].E + tleft * dEleft)
-	/ (leftshots->in[nshot].E += dEleft);
-      leftshots->mult++;
-    }
-    else {
-      fprintf(stderr,"HDGeant error in hitUpstreamEMveto: ");
-      fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
-    }
-
-    for (nshot = 0; nshot < rightshots->mult; nshot++)
-      if (fabs(rightshots->in[nshot].t - tright) < TWO_HIT_RESOL)
-	break;
-
-    if (nshot < rightshots->mult) {		/* merge with former hit */
-      rightshots->in[nshot].t =
-	(rightshots->in[nshot].t * rightshots->in[nshot].E + tright * dEright)
-	/ (rightshots->in[nshot].E += dEright);
-    }
-    else if (nshot < MAX_HITS) {		/* create new hit */
-      rightshots->in[nshot].t = 
-	(rightshots->in[nshot].t * rightshots->in[nshot].E +  tright * dEright)
-	/ (rightshots->in[nshot].E += dEright);
-      rightshots->mult++;
-    }
-    else {
-      fprintf(stderr,"HDGeant error in hitUpstreamEMveto: ");
-      fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
+      if (nhit < rightHits->mult) 		/* merge with former hit */
+      {
+        rightHits->in[nhit].t =
+	  (rightHits->in[nhit].t * rightHits->in[nhit].E + tright * dEright)
+	  / (rightHits->in[nhit].E += dEright);
+      }
+      else if (nhit < MAX_HITS) 		/* create new hit */
+      {
+        rightHits->in[nhit].t = 
+	  (rightHits->in[nhit].t * rightHits->in[nhit].E +  tright * dEright)
+	  / (rightHits->in[nhit].E += dEright);
+        rightHits->mult++;
+      }
+      else
+      {
+        fprintf(stderr,"HDGeant error in hitUpstreamEMveto: ");
+        fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
+      }
     }
   }
 
   /* post the hit to the truth tree, once per primary track */
   {
-    int mark = (track << 24);
+    int mark = (1<<30) + track;
     void** twig = getTwig(&upstreamEMvetoTree, mark);
     if (*twig == 0) {
       s_UpstreamEMveto_t* upv = *twig = make_s_UpstreamEMveto();
-      s_UpvShowers_t* showers = make_s_UpvShowers(1);
-      upv->upvShowers = showers;
+      s_UpvTruthShowers_t* showers = make_s_UpvTruthShowers(1);
       showers->in[0].primary = (stack == 0);
       showers->in[0].track = track;
       showers->in[0].x = x[0];
@@ -233,10 +197,12 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
       showers->in[0].t = t;
       showers->in[0].E = dEsum;
       showers->mult = 1;
+      upv->upvTruthShowers = showers;
       showerCount++;
     }
     else {
-      s_UpvShowers_t* showers = ((s_UpstreamEMveto_t*) *twig)->upvShowers;
+      s_UpvTruthShowers_t* showers = 
+                         ((s_UpstreamEMveto_t*) *twig)->upvTruthShowers;
       showers->in[0].x = (showers->in[0].x * showers->in[0].E + x[0]*dEsum)
 	/ (showers->in[0].E + dEsum);
       showers->in[0].y = (showers->in[0].y * showers->in[0].E + x[1]*dEsum)
@@ -269,50 +235,85 @@ s_UpstreamEMveto_t* pickUpstreamEMveto ()
   s_UpstreamEMveto_t* item;
 
   if ((paddleCount == 0) && (rowCount == 0) && (showerCount == 0))
-    return 0;
+    return HDDM_NULL;
 
   box = make_s_UpstreamEMveto();
-  box->upvRows = make_s_UpvRows(paddleCount);
   box->upvPaddles = make_s_UpvPaddles(paddleCount);
-  box->upvShowers = make_s_UpvShowers(showerCount);
-  while (item = (s_UpstreamEMveto_t*) pickTwig(&upstreamEMvetoTree)) {
-    if (item->upvPaddles) {
-      float Eleft  = item->upvPaddles->in[0].upvLeft->showers->in[0].E;
-      float Eright = item->upvPaddles->in[0].upvRight->showers->in[0].E;
-      if (Eleft + Eright > THRESH_PADDLE_MEV/1000) {
-	int m = box->upvPaddles->mult++;
-	box->upvPaddles->in[m] = item->upvPaddles->in[0];
+  box->upvTruthShowers = make_s_UpvTruthShowers(showerCount);
+  while (item = (s_UpstreamEMveto_t*) pickTwig(&upstreamEMvetoTree))
+  {
+    s_UpvPaddles_t* paddles = item->upvPaddles;
+    s_UpvTruthShowers_t* showers = item->upvTruthShowers;
+    
+    if (paddles != HDDM_NULL)
+    {
+      int m = box->upvPaddles->mult;
+      int mok = 0;
+
+      /* compress out the hits below threshold */
+      s_UpvLeftHits_t* leftHits = paddles->in[0].upvLeftHits;
+      s_UpvRightHits_t* rightHits = paddles->in[0].upvRightHits;
+      if (leftHits != HDDM_NULL)
+      {
+        int i,iok;
+        for (iok=i=0; i < leftHits->mult; i++)
+        {
+          if (leftHits->in[i].E >= THRESH_MEV/1e3)
+          {
+            if (iok < i)
+            {
+              leftHits->in[iok] = leftHits->in[i];
+            }
+            ++iok;
+            ++mok;
+          }
+          leftHits->mult = iok;
+          if (iok == 0)
+          {
+            paddles->in[0].upvLeftHits = HDDM_NULL;
+            FREE(leftHits);
+          }
+        }
       }
-      else {
-	FREE(item->upvPaddles->in[0].upvLeft->showers);
-	FREE(item->upvPaddles->in[0].upvRight->showers);
-	FREE(item->upvPaddles->in[0].upvLeft);
-	FREE(item->upvPaddles->in[0].upvRight);
+      if (rightHits != HDDM_NULL)
+      {
+        int i,iok;
+        for (iok=i=0; i < rightHits->mult; i++)
+        {
+          if (rightHits->in[i].E >= THRESH_MEV/1e3)
+          {
+            if (iok < i)
+            {
+              rightHits->in[iok] = rightHits->in[i];
+            }
+            ++iok;
+            ++mok;
+          }
+        }
+        rightHits->mult = iok;
+        if (iok == 0)
+        {
+          paddles->in[0].upvRightHits = HDDM_NULL;
+          FREE(rightHits);
+        }
       }
-      FREE(item->upvPaddles);
+
+      if (mok)
+      {
+        box->upvPaddles->in[m] = paddles->in[0];
+        box->upvPaddles->mult++;
+      }
+      FREE(paddles);
     }
-    else if (item->upvRows) {
-      float Eleft  = item->upvRows->in[0].upvLeft->showers->in[0].E;
-      float Eright = item->upvRows->in[0].upvRight->showers->in[0].E;
-      if (Eleft + Eright > THRESH_ROW_MEV/1000) {
-	int m = box->upvRows->mult++;
-	box->upvRows->in[m] = item->upvRows->in[0];
-      }
-      else {
-	FREE(item->upvRows->in[0].upvLeft->showers);
-	FREE(item->upvRows->in[0].upvRight->showers);
-	FREE(item->upvRows->in[0].upvLeft);
-	FREE(item->upvRows->in[0].upvRight);
-      }
-      FREE(item->upvRows);
-    }
-    else if (item->upvShowers) {
-      int m = box->upvShowers->mult++;
-      box->upvShowers->in[m] = item->upvShowers->in[0];
-      FREE(item->upvShowers);
+    else if (showers != HDDM_NULL)
+    {
+      int m = box->upvTruthShowers->mult++;
+      box->upvTruthShowers->in[m] = showers->in[0];
+      FREE(showers);
     }
     FREE(item);
   }
-  paddleCount = rowCount = showerCount = 0;
+  paddleCount = showerCount = 0;
+
   return box;
 }

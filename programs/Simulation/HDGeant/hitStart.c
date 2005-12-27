@@ -31,6 +31,7 @@
 #define C_EFFECTIVE	15.
 #define TWO_HIT_RESOL	25.
 #define MAX_HITS 	100
+#define THRESH_MEV      0.8
 
 binTree_t* startCntrTree = 0;
 static int paddleCount = 0;
@@ -74,26 +75,28 @@ void hitStartCntr (float xin[4], float xout[4],
    /* post the hit to the hits tree, mark sector as hit */
    {
       int nhit;
-      s_Hits_t* hits;
+      s_StcHits_t* hits;
       int sector = getsector_();
       float phim = atan2(xvrtx[1],xvrtx[0]);
       float dzup = xlocal[2];
       float tcorr = t + dzup/C_EFFECTIVE;
       float dEcorr = dEsum * exp(-dzup/ATTEN_LENGTH);
-      void** twig = getTwig(&startCntrTree, sector);
+      int mark = sector;
+      void** twig = getTwig(&startCntrTree, mark);
       if (*twig == 0)
       {
-         s_StartCntr_t* vtx = *twig = make_s_StartCntr();
-         vtx->paddles = make_s_Paddles(1);
-         vtx->paddles->mult = 1;
-         vtx->paddles->in[0].phim = phim;
-         vtx->paddles->in[0].hits = hits = make_s_Hits(MAX_HITS);
+         s_StartCntr_t* stc = *twig = make_s_StartCntr();
+         s_StcPaddles_t* paddles = make_s_StcPaddles(1);
+         paddles->mult = 1;
+         paddles->in[0].sector = sector;
+         paddles->in[0].stcHits = hits = make_s_StcHits(MAX_HITS);
+         stc->stcPaddles = paddles;
          paddleCount++;
       }
       else
       {
-         s_StartCntr_t* vtx = *twig;
-         hits = vtx->paddles->in[0].hits;
+         s_StartCntr_t* stc = *twig;
+         hits = stc->stcPaddles->in[0].stcHits;
       }
 
       for (nhit = 0; nhit < hits->mult; nhit++)
@@ -125,13 +128,13 @@ void hitStartCntr (float xin[4], float xout[4],
 
    /* post the hit to the truth tree, once per primary track */
    {
-      int mark = (track << 16);
+      int mark = (1<<30) + track;
       void** twig = getTwig(&startCntrTree, mark);
       if (*twig == 0)
       {
-         s_StartCntr_t* vtx = *twig = make_s_StartCntr();
-         s_StartPoints_t* points = make_s_StartPoints(1);
-         vtx->startPoints = points;
+         s_StartCntr_t* stc = *twig = make_s_StartCntr();
+         s_StcTruthPoints_t* points = make_s_StcTruthPoints(1);
+         stc->stcTruthPoints = points;
          points->in[0].primary = (stack == 0);
          points->in[0].track = track;
          points->in[0].t = t;
@@ -164,28 +167,61 @@ s_StartCntr_t* pickStartCntr ()
 
    if ((paddleCount == 0) && (pointCount == 0))
    {
-      return 0;
+      return HDDM_NULL;
    }
 
    box = make_s_StartCntr();
-   box->paddles = make_s_Paddles(paddleCount);
-   box->startPoints = make_s_StartPoints(pointCount);
+   box->stcPaddles = make_s_StcPaddles(paddleCount);
+   box->stcTruthPoints = make_s_StcTruthPoints(pointCount);
    while (item = (s_StartCntr_t*) pickTwig(&startCntrTree))
    {
-      if (item->paddles)
+      s_StcPaddles_t* paddles = item->stcPaddles;
+      s_StcTruthPoints_t* points = item->stcTruthPoints;
+
+      if (paddles != HDDM_NULL)
       {
-         int m = box->paddles->mult++;
-         box->paddles->in[m] = item->paddles->in[0];
-         FREE(item->paddles);
+         int m = box->stcPaddles->mult;
+         int mok = 0;
+
+         /* compress out the hits below threshold */
+         s_StcHits_t* hits = paddles->in[0].stcHits;
+         if (hits != HDDM_NULL)
+         {
+            int i;
+            for (i=0; i < hits->mult; i++)
+            {
+               if (hits->in[i].dE >= THRESH_MEV/1e3)
+               {
+                  if (mok < i)
+                  {
+                     hits->in[mok] = hits->in[i];
+                  }
+                  ++mok;
+               }
+            }
+            hits->mult = mok;
+
+            if (mok)
+            {
+               box->stcPaddles->in[m] = paddles->in[0];
+               box->stcPaddles->mult++;
+            }
+            else
+            {
+               FREE(hits);
+            }
+         }
+         FREE(paddles);
       }
-      else if (item->startPoints)
+      else if (points != HDDM_NULL)
       {
-         int m = box->startPoints->mult++;
-         box->startPoints->in[m] = item->startPoints->in[0];
-         FREE(item->startPoints);
+         int m = box->stcTruthPoints->mult++;
+         box->stcTruthPoints->in[m] = item->stcTruthPoints->in[0];
+         FREE(points);
       }
       FREE(item);
    }
    paddleCount = pointCount = 0;
+
    return box;
 }

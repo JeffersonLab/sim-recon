@@ -35,10 +35,10 @@
 #define C_EFFECTIVE	15
 #define TWO_HIT_RESOL   25.
 #define MAX_HITS        100
+#define THRESH_MEV      0.8
 
 binTree_t* forwardTOFTree = 0;
-static int hcounterCount = 0;
-static int vcounterCount = 0;
+static int counterCount = 0;
 static int pointCount = 0;
 
 
@@ -79,8 +79,8 @@ void hitForwardTOF (float xin[4], float xout[4],
    /* post the hit to the hits tree, mark slab as hit */
    {
       int nhit;
-      s_Hits_t* leftHits;
-      s_Hits_t* rightHits;
+      s_FtofLeftHits_t* leftHits;
+      s_FtofRightHits_t* rightHits;
       int row = getrow_();
       int plane = getplane_();
       int column = getcolumn_();
@@ -91,91 +91,103 @@ void hitForwardTOF (float xin[4], float xout[4],
       float dEleft  = (column == 2) ? 0 : dEsum * exp(-dxleft/ATTEN_LENGTH);
       float dEright = (column == 1) ? 0 : dEsum * exp(-dxright/ATTEN_LENGTH);
       float ycenter = (fabs(xftof[1]) < 1e-4) ? 0 : xftof[1];
-      int mark = (plane << 16) + (row << 8) + column;
+      int mark = (plane<<20) + (row<<10) + column;
       void** twig = getTwig(&forwardTOFTree, mark);
       if (*twig == 0)
       {
          s_ForwardTOF_t* tof = *twig = make_s_ForwardTOF();
-         if (plane == 1)
+         s_FtofCounters_t* counters = make_s_FtofCounters(1);
+         counters->mult = 1;
+         counters->in[0].plane = plane;
+         counters->in[0].paddle = row;
+         leftHits = HDDM_NULL;
+         rightHits = HDDM_NULL;
+         if (column == 0 || column == 1)
          {
-            tof->hcounters = make_s_Hcounters(1);
-            tof->hcounters->mult = 1;
-            tof->hcounters->in[0].y = ycenter;
-            tof->hcounters->in[0].left = make_s_Left();
-            tof->hcounters->in[0].left->hits = leftHits = make_s_Hits(MAX_HITS);
-            tof->hcounters->in[0].right = make_s_Right();
-            tof->hcounters->in[0].right->hits = rightHits = make_s_Hits(MAX_HITS);
-            hcounterCount++;
+           counters->in[0].ftofLeftHits = leftHits
+                                        = make_s_FtofLeftHits(MAX_HITS);
          }
-         else
+         if (column == 0 || column == 2)
          {
-            tof->vcounters = make_s_Vcounters(1);
-            tof->vcounters->mult = 1;
-            tof->vcounters->in[0].x = ycenter;
-            tof->vcounters->in[0].top = make_s_Top();
-            tof->vcounters->in[0].top->hits = leftHits = make_s_Hits(MAX_HITS);
-            tof->vcounters->in[0].bottom = make_s_Bottom();
-            tof->vcounters->in[0].bottom->hits = rightHits = make_s_Hits(MAX_HITS);
-            vcounterCount++;
+           counters->in[0].ftofRightHits = rightHits
+                                         = make_s_FtofRightHits(MAX_HITS);
          }
+         tof->ftofCounters = counters;
+         counterCount++;
       }
       else
       {
-         if (plane == 1)
+         s_ForwardTOF_t* tof = *twig;
+         leftHits = tof->ftofCounters->in[0].ftofLeftHits;
+         rightHits = tof->ftofCounters->in[0].ftofRightHits;
+      }
+
+      if (leftHits != HDDM_NULL)
+      {
+         for (nhit = 0; nhit < leftHits->mult; nhit++)
          {
-            s_ForwardTOF_t* tof = *twig;
-            leftHits = tof->hcounters->in[0].left->hits;
-            rightHits = tof->hcounters->in[0].right->hits;
+            if (fabs(leftHits->in[nhit].t - t) < TWO_HIT_RESOL)
+            {
+               break;
+            }
+         }
+         if (nhit < leftHits->mult)         /* merge with former hit */
+         {
+            leftHits->in[nhit].t = 
+               (leftHits->in[nhit].t * leftHits->in[nhit].dE + tleft * dEleft)
+                / (leftHits->in[nhit].dE += dEleft);
+         }
+         else if (nhit < MAX_HITS)         /* create new hit */
+         {
+            leftHits->in[nhit].t = tleft;
+            leftHits->in[nhit].dE = dEleft;
+            leftHits->mult++;
          }
          else
          {
-            s_ForwardTOF_t* tof = *twig;
-            leftHits = tof->vcounters->in[0].top->hits;
-            rightHits = tof->vcounters->in[0].bottom->hits;
+            fprintf(stderr,"HDGeant error in hitForwardTOF: ");
+            fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
          }
       }
 
-      for (nhit = 0; nhit < leftHits->mult; nhit++)
+      if (rightHits != HDDM_NULL)
       {
-         if (fabs(leftHits->in[nhit].t - t) < TWO_HIT_RESOL)
+         for (nhit = 0; nhit < rightHits->mult; nhit++)
          {
-            break;
+            if (fabs(rightHits->in[nhit].t - t) < TWO_HIT_RESOL)
+            {
+               break;
+            }
          }
-      }
-      if (nhit < leftHits->mult)         /* merge with former hit */
-      {
-         leftHits->in[nhit].t = 
-               (leftHits->in[nhit].t * leftHits->in[nhit].dE + tleft * dEleft)
-             / (leftHits->in[nhit].dE += dEleft);
-         rightHits->in[nhit].t = 
-               (rightHits->in[nhit].t * rightHits->in[nhit].dE + tright * dEsum)
+         if (nhit < rightHits->mult)         /* merge with former hit */
+         {
+            rightHits->in[nhit].t = 
+             (rightHits->in[nhit].t * rightHits->in[nhit].dE + tright * dEright)
              / (rightHits->in[nhit].dE += dEright);
-      }
-      else if (nhit < MAX_HITS)         /* create new hit */
-      {
-         leftHits->in[nhit].t = tleft;
-         leftHits->in[nhit].dE = dEleft;
-         leftHits->mult++;
-         rightHits->in[nhit].t = tright;
-         rightHits->in[nhit].dE = dEright;
-         rightHits->mult++;
-      }
-      else
-      {
-         fprintf(stderr,"HDGeant error in hitForwardTOF: ");
-         fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
+         }
+         else if (nhit < MAX_HITS)         /* create new hit */
+         {
+            rightHits->in[nhit].t = tright;
+            rightHits->in[nhit].dE = dEright;
+            rightHits->mult++;
+         }
+         else
+         {
+            fprintf(stderr,"HDGeant error in hitForwardTOF: ");
+            fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
+         }
       }
    }
 
    /* post the hit to the truth tree, once per primary track */
    {
-      int mark = (track << 16);
+      int mark = (1<<30) + track;
       void** twig = getTwig(&forwardTOFTree, mark);
       if (*twig == 0)
       {
          s_ForwardTOF_t* tof = *twig = make_s_ForwardTOF();
-         s_TofPoints_t* points = make_s_TofPoints(1);
-         tof->tofPoints = points;
+         s_FtofTruthPoints_t* points = make_s_FtofTruthPoints(1);
+         tof->ftofTruthPoints = points;
          points->in[0].primary = (stack == 0);
          points->in[0].track = track;
          points->in[0].x = x[0];
@@ -205,57 +217,84 @@ s_ForwardTOF_t* pickForwardTOF ()
    s_ForwardTOF_t* box;
    s_ForwardTOF_t* item;
 
-   if ((vcounterCount == 0) && (hcounterCount == 0) && (pointCount == 0))
+   if ((counterCount == 0) && (pointCount == 0))
    {
-      return 0;
+      return HDDM_NULL;
    }
 
    box = make_s_ForwardTOF();
-   box->hcounters = make_s_Hcounters(hcounterCount);
-   box->vcounters = make_s_Vcounters(vcounterCount);
-   box->tofPoints = make_s_TofPoints(pointCount);
+   box->ftofCounters = make_s_FtofCounters(counterCount);
+   box->ftofTruthPoints = make_s_FtofTruthPoints(pointCount);
    while (item = (s_ForwardTOF_t*) pickTwig(&forwardTOFTree))
    {
-      if (item->hcounters)
+      s_FtofCounters_t* counters = item->ftofCounters;
+      s_FtofTruthPoints_t* points = item->ftofTruthPoints;
+
+      if (counters != HDDM_NULL)
       {
-         int m = box->hcounters->mult++;
-         if (item->hcounters->in[0].left->hits->in[0].dE == 0)
+      /* compress out the hits below threshold */
+         s_FtofLeftHits_t* leftHits = counters->in[0].ftofLeftHits;
+         s_FtofRightHits_t* rightHits = counters->in[0].ftofRightHits;
+         int iok,i;
+         int mok=0;
+         if (leftHits != HDDM_NULL)
          {
-            FREE(item->hcounters->in[0].left);
-            item->hcounters->in[0].left = 0;
+            for (iok=i=0; i < leftHits->mult; i++)
+            {
+               if (leftHits->in[i].dE >= THRESH_MEV/1e3)
+               {
+                  if (iok < i)
+                  {
+                     leftHits->in[iok] = leftHits->in[i];
+                  }
+                  ++mok;
+                  ++iok;
+               }
+            }
+            leftHits->mult = iok;
+            if (iok == 0)
+            {
+               counters->in[0].ftofLeftHits = HDDM_NULL;
+               FREE(leftHits);
+            }
          }
-         if (item->hcounters->in[0].right->hits->in[0].dE == 0)
+         if (rightHits != HDDM_NULL) 
          {
-            FREE(item->hcounters->in[0].right);
-            item->hcounters->in[0].right = 0;
+            for (iok=i=0; i < rightHits->mult; i++)
+            {
+               if (rightHits->in[i].dE >= THRESH_MEV/1e3)
+               {
+                  if (iok < i)
+                  {
+                     rightHits->in[iok] = rightHits->in[i];
+                  }
+                  ++mok;
+                  ++iok;
+               }
+            }
+            rightHits->mult = iok;
+            if (iok == 0)
+            {
+               counters->in[0].ftofRightHits = HDDM_NULL;
+               FREE(rightHits);
+            }
          }
-         box->hcounters->in[m] = item->hcounters->in[0];
-         FREE(item->hcounters);
+         if (mok)
+         {
+            int m = box->ftofCounters->mult++;
+            box->ftofCounters->in[m] = counters->in[0];
+         }
+         FREE(counters);
       }
-      if (item->vcounters)
+      else if (points != HDDM_NULL)
       {
-         int m = box->vcounters->mult++;
-         if (item->vcounters->in[0].top->hits->in[0].dE == 0)
-         {
-            FREE(item->vcounters->in[0].top);
-            item->vcounters->in[0].top = 0;
-         }
-         if (item->vcounters->in[0].bottom->hits->in[0].dE == 0)
-         {
-            FREE(item->vcounters->in[0].bottom);
-            item->vcounters->in[0].bottom = 0;
-         }
-         box->vcounters->in[m] = item->vcounters->in[0];
-         FREE(item->vcounters);
-      }
-      else if (item->tofPoints)
-      {
-         int m = box->tofPoints->mult++;
-         box->tofPoints->in[m] = item->tofPoints->in[0];
-         FREE(item->tofPoints);
+         int m = box->ftofTruthPoints->mult++;
+         box->ftofTruthPoints->in[m] = points->in[0];
+         FREE(points);
       }
       FREE(item);
    }
-   vcounterCount = hcounterCount = pointCount = 0;
+   counterCount = pointCount = 0;
+
    return box;
 }

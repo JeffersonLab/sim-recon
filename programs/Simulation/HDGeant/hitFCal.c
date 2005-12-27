@@ -15,9 +15,10 @@
 #include <geant3.h>
 #include <bintree.h>
 
-#define THRESH_MEV	10.
 #define TWO_HIT_RESOL   75.
 #define MAX_HITS        100
+#define THRESH_MEV      30.
+
 
 binTree_t* forwardEMcalTree = 0;
 static int blockCount = 0;
@@ -44,51 +45,47 @@ void hitForwardEMcal (float xin[4], float xout[4],
 
    /* post the hit to the hits tree, mark block as hit */
    {
-      int nshot;
-      s_Showers_t* shots;
+      int nhit;
+      s_FcalHits_t* hits;
       int row = getrow_();
       int column = getcolumn_();
-      float xcol = xfcal[0];
-      float yrow = xfcal[1];
-      int mark = (row << 16) + column;
+      int mark = (row<<16) + column;
       void** twig = getTwig(&forwardEMcalTree, mark);
       if (*twig == 0)
       {
          s_ForwardEMcal_t* cal = *twig = make_s_ForwardEMcal();
-         cal->rows = make_s_Rows(1);
-         cal->rows->mult = 1;
-         cal->rows->in[0].y = yrow;
-         cal->rows->in[0].columns = make_s_Columns(1);
-         cal->rows->in[0].columns->mult = 1;
-         cal->rows->in[0].columns->in[0].x = xcol;
-         cal->rows->in[0].columns->in[0].showers =
-         shots = make_s_Showers(MAX_HITS);
+         s_FcalBlocks_t* blocks = make_s_FcalBlocks(1);
+         blocks->mult = 1;
+         blocks->in[0].row = row;
+         blocks->in[0].column = column;
+         blocks->in[0].fcalHits = hits = make_s_FcalHits(MAX_HITS);
+         cal->fcalBlocks = blocks;
          blockCount++;
       }
       else
       {
          s_ForwardEMcal_t* cal = *twig;
-         shots = cal->rows->in[0].columns->in[0].showers;
+         hits = cal->fcalBlocks->in[0].fcalHits;
       }
 
-      for (nshot = 0; nshot < shots->mult; nshot++)
+      for (nhit = 0; nhit < hits->mult; nhit++)
       {
-         if (fabs(shots->in[nshot].t - t) < TWO_HIT_RESOL)
+         if (fabs(hits->in[nhit].t - t) < TWO_HIT_RESOL)
          {
             break;
          }
       }
-      if (nshot < shots->mult)		/* merge with former hit */
+      if (nhit < hits->mult)		/* merge with former hit */
       {
-         shots->in[nshot].t =
-                       (shots->in[nshot].t * shots->in[nshot].E + t*dEsum)
-                     / (shots->in[nshot].E += dEsum);
+         hits->in[nhit].t =
+                       (hits->in[nhit].t * hits->in[nhit].E + t*dEsum)
+                     / (hits->in[nhit].E += dEsum);
       }
-      else if (nshot < MAX_HITS)         /* create new hit */
+      else if (nhit < MAX_HITS)         /* create new hit */
       {
-         shots->in[nshot].t = t;
-         shots->in[nshot].E = dEsum;
-         shots->mult++;
+         hits->in[nhit].t = t;
+         hits->in[nhit].E = dEsum;
+         hits->mult++;
       }
       else
       {
@@ -100,13 +97,13 @@ void hitForwardEMcal (float xin[4], float xout[4],
 
    /* post the hit to the truth tree, once per primary track */
    {
-      s_ForwardShowers_t* showers;
-      int mark = (track << 24);
+      s_FcalTruthShowers_t* showers;
+      int mark = (1<<30) + track;
       void** twig = getTwig(&forwardEMcalTree, mark);
       if (*twig == 0)
       {
          s_ForwardEMcal_t* cal = *twig = make_s_ForwardEMcal();
-         cal->forwardShowers = showers = make_s_ForwardShowers(1);
+         cal->fcalTruthShowers = showers = make_s_FcalTruthShowers(1);
          showers->in[0].primary = (stack == 0);
          showers->in[0].track = track;
          showers->in[0].t = t;
@@ -119,7 +116,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
       }
       else
       {
-         showers = ((s_ForwardEMcal_t*) *twig)->forwardShowers;
+         showers = ((s_ForwardEMcal_t*) *twig)->fcalTruthShowers;
          showers->in[0].x = (showers->in[0].x * showers->in[0].E + x[0]*dEsum)
                           / (showers->in[0].E + dEsum);
          showers->in[0].y = (showers->in[0].y * showers->in[0].E + x[1]*dEsum)
@@ -151,72 +148,61 @@ s_ForwardEMcal_t* pickForwardEMcal ()
 
    if ((blockCount == 0) && (showerCount == 0))
    {
-      return 0;
+      return HDDM_NULL;
    }
 
    box = make_s_ForwardEMcal();
-   box->rows = make_s_Rows(blockCount);
-   box->forwardShowers = make_s_ForwardShowers(showerCount);
+   box->fcalBlocks = make_s_FcalBlocks(blockCount);
+   box->fcalTruthShowers = make_s_FcalTruthShowers(showerCount);
    while (item = (s_ForwardEMcal_t*) pickTwig(&forwardEMcalTree))
    {
-      if (item->rows)
+      s_FcalBlocks_t* blocks = item->fcalBlocks;
+      s_FcalTruthShowers_t* showers = item->fcalTruthShowers;
+      if (blocks != HDDM_NULL)
       {
-         float E = item->rows->in[0].columns->in[0].showers->in[0].E;
-         float y = item->rows->in[0].y;
-         int m = box->rows->mult;
-         if (m == 0)
+         s_FcalHits_t* hits = blocks->in[0].fcalHits;
+	 int m = box->fcalBlocks->mult;
+         int mok = 0;
+
+         /* compress out the hits below threshold */
+         if (hits != HDDM_NULL)
          {
-            box->rows->in[0] = item->rows->in[0];
-            box->rows->in[0].columns = make_s_Columns(blockCount);
-            box->rows->mult++;
-         }
-         else if (y > box->rows->in[m-1].y + 0.5)
-         {
-            if (box->rows->in[m-1].columns->mult == 0)
+            int i;
+            for (i=0; i < hits->mult; i++)
             {
-               FREE(box->rows->in[--m].columns);
-               box->rows->mult--;
+               if (hits->in[i].E >= THRESH_MEV/1e3)
+               {
+                  if (mok < i)
+                  {
+                     hits->in[mok] = hits->in[i];
+                  }
+                  ++mok;
+               }
             }
-            box->rows->in[m] = item->rows->in[0];
-            box->rows->in[m].columns = make_s_Columns(blockCount);
-            box->rows->mult++;
+            hits->mult = mok;
+            if (mok == 0)
+            {
+               blocks->in[0].fcalHits = HDDM_NULL;
+               FREE(hits);
+            }
          }
-         else
+
+         if (mok)
          {
-            m--;
+            box->fcalBlocks->in[m] = blocks->in[0];
+            box->fcalBlocks->mult++;
          }
-         if (E > THRESH_MEV/1000)
-         {
-            int mm = box->rows->in[m].columns->mult++;
-            box->rows->in[m].columns->in[mm] = 
-                                      item->rows->in[0].columns->in[0];
-         }
-         else
-         {
-            FREE(item->rows->in[0].columns->in[0].showers);
-         }
-         FREE(item->rows->in[0].columns);
-         FREE(item->rows);
+         FREE(blocks);
       }
-      else if (item->forwardShowers)
+      else if (showers != HDDM_NULL)
       {
-         int m = box->forwardShowers->mult++;
-         box->forwardShowers->in[m] = item->forwardShowers->in[0];
-         FREE(item->forwardShowers);
+         int m = box->fcalTruthShowers->mult++;
+         box->fcalTruthShowers->in[m] = showers->in[0];
+         FREE(showers);
       }
       FREE(item);
    }
-
-   /* Reduce the last <row>...</row> if empty */
-   {
-      int m = box->rows->mult;
-      while ((m > 0) && box->rows->in[m-1].columns->mult == 0)
-      {
-         FREE(box->rows->in[--m].columns);
-         box->rows->mult--;
-      }
-   }
-
    blockCount = showerCount = 0;
+
    return box;
 }

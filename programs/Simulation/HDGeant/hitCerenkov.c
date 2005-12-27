@@ -19,6 +19,7 @@
 #define REFR_INDEX	1.0017
 #define TWO_HIT_RESOL   50.
 #define MAX_HITS        100
+#define THRESH_PE       2
 
 binTree_t* cerenkovTree = 0;
 static int sectionCount = 0;
@@ -55,44 +56,46 @@ void hitCerenkov (float xin[4], float xout[4],
    /* post the hit to the hits tree, mark sector as hit */
    {
       int nshot;
-      s_Flashes_t* shots;
+      s_CereHits_t* hits;
       int sector = getsector_();
       float phim = atan2(xcere[1],xcere[0]);
       double sintheta2 = 1 - costheta*costheta;
       float pe = N0_FIGURE * sintheta2 * dr;
-      void** twig = getTwig(&cerenkovTree, sector);
+      int mark = sector;
+      void** twig = getTwig(&cerenkovTree, mark);
       if (*twig == 0)
       {
-         s_Cerenkov_t* ckov = *twig = make_s_Cerenkov();
-         ckov->sections = make_s_Sections(1);
-         ckov->sections->mult = 1;
-         ckov->sections->in[0].phim = phim;
-         ckov->sections->in[0].flashes = shots = make_s_Flashes(MAX_HITS);
+         s_Cerenkov_t* cere = *twig = make_s_Cerenkov();
+         s_CereSections_t* sections = make_s_CereSections(1);
+         sections->mult = 1;
+         sections->in[0].sector = sector;
+         sections->in[0].cereHits = hits = make_s_CereHits(MAX_HITS);
+         cere->cereSections = sections;
          sectionCount++;
       }
       else
       {
-         s_Cerenkov_t* ckov = *twig;
-         shots = ckov->sections->in[0].flashes;
+         s_Cerenkov_t* cere = *twig;
+         hits = cere->cereSections->in[0].cereHits;
       }
 
-      for (nshot = 0; nshot < shots->mult; nshot++)
+      for (nshot = 0; nshot < hits->mult; nshot++)
       {
-         if (fabs(shots->in[nshot].t - t) < TWO_HIT_RESOL)
+         if (fabs(hits->in[nshot].t - t) < TWO_HIT_RESOL)
          {
             break;
          }
       }
-      if (nshot < shots->mult)            /* merge with former hit */
+      if (nshot < hits->mult)            /* merge with former hit */
       {
-         shots->in[nshot].t = (shots->in[nshot].t * shots->in[nshot].pe + t*pe)
-                            / (shots->in[nshot].pe += pe);
+         hits->in[nshot].t = (hits->in[nshot].t * hits->in[nshot].pe + t*pe)
+                            / (hits->in[nshot].pe += pe);
       }
       else if (nshot < MAX_HITS)         /* create new shot */
       {
-         shots->in[nshot].t = t;
-         shots->in[nshot].pe = pe;
-         shots->mult++;
+         hits->in[nshot].t = t;
+         hits->in[nshot].pe = pe;
+         hits->mult++;
       }
       else
       {
@@ -103,13 +106,13 @@ void hitCerenkov (float xin[4], float xout[4],
 
    /* post the hit to the truth tree, once per primary track */
    {
-      int mark = (track << 16);
+      int mark = (1<<30) + track;
       void** twig = getTwig(&cerenkovTree, mark);
       if (*twig == 0)
       {
          s_Cerenkov_t* cere = *twig = make_s_Cerenkov();
-         s_CerenkovPoints_t* points = make_s_CerenkovPoints(1);
-         cere->cerenkovPoints = points;
+         s_CereTruthPoints_t* points = make_s_CereTruthPoints(1);
+         cere->cereTruthPoints = points;
          float E = (pin[3]+pout[3])/2;
          float p = (pin[4]+pout[4])/2;
          points->in[0].primary = (stack == 0);
@@ -147,25 +150,53 @@ s_Cerenkov_t* pickCerenkov ()
 
    if ((sectionCount == 0) && (pointCount == 0))
    {
-      return 0;
+      return HDDM_NULL;
    }
 
    box = make_s_Cerenkov();
-   box->sections = make_s_Sections(sectionCount);
-   box->cerenkovPoints = make_s_CerenkovPoints(pointCount);
+   box->cereSections = make_s_CereSections(sectionCount);
+   box->cereTruthPoints = make_s_CereTruthPoints(pointCount);
    while (item = pickTwig(&cerenkovTree))
    {
-      if (item->sections)
+      s_CereSections_t* sections = item->cereSections;
+      s_CereTruthPoints_t* points = item->cereTruthPoints;
+
+      if (sections != HDDM_NULL)
       {
-         int m = box->sections->mult++;
-         box->sections->in[m] = item->sections->in[0];
-         FREE(item->sections);
+      /* compress out the hits below threshold */
+         s_CereHits_t* hits = sections->in[0].cereHits;
+         if (hits != HDDM_NULL)
+         {
+            int mok,i;
+            for (mok=i=0; i < hits->mult; i++)
+            {
+              if (hits->in[i].pe >= THRESH_PE)
+              {
+                if (mok < i)
+                {
+                   hits->in[mok] = hits->in[i];
+                }
+                ++mok;
+              }
+            }
+            hits->mult = mok;
+            if (mok)
+            {
+               int m = box->cereSections->mult++;
+               box->cereSections->in[m] = sections->in[0];
+            }
+            else
+            {
+               FREE(hits);
+            }
+         }
+         FREE(sections);
       }
-      else if (item->cerenkovPoints)
+      else if (points != HDDM_NULL)
       {
-         int m = box->cerenkovPoints->mult++;
-         box->cerenkovPoints->in[m] = item->cerenkovPoints->in[0];
-         FREE(item->cerenkovPoints);
+         int m = box->cereTruthPoints->mult++;
+         box->cereTruthPoints->in[m] = points->in[0];
+         FREE(points);
       }
       FREE(item);
    }
