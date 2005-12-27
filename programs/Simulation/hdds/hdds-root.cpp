@@ -206,6 +206,10 @@ class Refsys
 
 private:
    static int fRotations;	// non-trivial rotations defined so far
+   int defineElement(int im,
+                     int imate,
+                     DOMElement* el,
+                     double wgt);  // helps generate code for materials
 };
 
 void rootMacroHeader()
@@ -662,6 +666,8 @@ int Refsys::createMaterial(DOMElement* el)
    XString tagS(el->getTagName());
    XString nameAttS("name");
    XString matS(el->getAttribute(X(nameAttS)));
+   XString symbAttS("symbol");
+   XString symbS(el->getAttribute(X(symbAttS)));
 
    XString aAttS("a");
    XString aS(el->getAttribute(X(aAttS)));
@@ -705,6 +711,7 @@ int Refsys::createMaterial(DOMElement* el)
    double wList[999];
    double aList[999];
    double zList[999];
+   DOMElement* xList[999];
    DOMDocument* document = el->getOwnerDocument();
    XString addmaterialTagS("addmaterial");
    DOMNodeList* compList = el->getElementsByTagName(X(addmaterialTagS));
@@ -727,6 +734,7 @@ int Refsys::createMaterial(DOMElement* el)
 	iList[nList] = createMaterial(compEl);
       }
 
+      xList[nList] = compEl;
       aList[nList] = getMaterialA(compEl);
       zList[nList] = getMaterialZ(compEl);
       if ((aList[nList] == 0.0) || (zList[nList] == 0.0))
@@ -815,8 +823,8 @@ int Refsys::createMaterial(DOMElement* el)
               << " is missing a density specification." << endl;
          exit(1);
       }
-      if ((radl == -1) || (absl == -1))
-      {
+        //if ((radl == -1) || (absl == -1))
+        //{
 	//         cout << endl
         //      << "      imate = " << imate << endl
         //      << "      namate = \'" << S(matS) << "\'" << endl
@@ -827,14 +835,9 @@ int Refsys::createMaterial(DOMElement* el)
         //      << "      wmat(1) = 1" << endl
         //      << "      call gsmixt(imate,namate,a,z,dens,nlmat,wmat)"
         //      << endl;
-	// cout << endl
-	   cout << "TGeoMixture *mat" << imate << "= new TGeoMixture(\"" << S(matS) 
-	      << "\",1," << dens << ");" << endl;
-         cout << "mat" << imate << "->SetUniqueID(   " << imate << ");" << endl;
-         cout << "mat" << imate << "->DefineElement(0,"<< a << "," << z << ",1.000);" << endl;
-      }
-      else
-      {
+        //}
+        //else
+        //{
 	//cout << endl
 	//     << "      imate = " << imate << endl
 	//     << "      chnama = \'" << S(matS) << "\'" << endl
@@ -847,7 +850,9 @@ int Refsys::createMaterial(DOMElement* el)
 	//     << "      call gsmate(imate,chnama,a,z,dens,radl,absl,ubuf,nwbuf)"
 	//     << endl;
 	// cout << endl
-	   cout << "TGeoMaterial *mat" << imate << "= new TGeoMaterial(\"" << S(matS) 
+        //}
+      {
+	 cout << "TGeoMaterial *mat" << imate << "= new TGeoMaterial(\"" << S(matS) 
 	      << "\"," << a << "," << z << "," << dens << ");" << endl;
          cout << "mat" << imate << "->SetUniqueID(   " << imate << ");" << endl;
       }
@@ -879,15 +884,18 @@ int Refsys::createMaterial(DOMElement* el)
       //   << "      call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)"
       //   << endl;
       //cout << endl
-	cout << "TGeoMixture *mat" << imate << "= new TGeoMixture(\"" << S(matS) 
-	  //	   << "\"," << ((wList[0] < 1) ? nList : -nList) << "," << rho << ");" << endl;
-	  	   << "\"," << nList << "," << rho << ");" << endl;
-      cout << "mat" << imate << "->SetUniqueID(   " << imate << ");" << endl;
-
+      int nelem = 0;
       for (int im = 0; im < nList; im++)
       {
-	//cout << "Writing mixture list: " << im << ", " << iList[im] << ", " << aList[im]<< ", " << zList[im] << endl; 
-	cout << "mat" << imate << "->DefineElement(" << im << ","<< aList[im] << "," << zList[im] << "," << (wList[im]/wsum) << ");" << endl;
+        nelem += defineElement(nelem,-1,xList[im],wList[im]/wsum);
+      }
+      cout << "TGeoMixture *mat" << imate << "= new TGeoMixture(\"" << S(matS) 
+	   << "\"," << nelem << "," << rho << ");" << endl;
+      cout << "mat" << imate << "->SetUniqueID(   " << imate << ");" << endl;
+      nelem = 0;
+      for (int im = 0; im < nList; im++)
+      {
+        nelem += defineElement(nelem,imate,xList[im],wList[im]/wsum);
       }
    }
    
@@ -907,6 +915,76 @@ int Refsys::createMaterial(DOMElement* el)
    }
 
    return imate;
+}
+
+int Refsys::defineElement(int im, int imate, DOMElement* matEl, double wgt)
+{
+   int nelem = 0;
+   DOMDocument* document = matEl->getOwnerDocument();
+   XString typeS(matEl->getTagName());
+   if (typeS.equals("element"))
+   {
+      XString aAttS("a");
+      XString aS(matEl->getAttribute(X(aAttS)));
+      double A = atof(S(aS));
+      XString zAttS("z");
+      XString zS(matEl->getAttribute(X(zAttS)));
+      double Z = atof(S(zS));
+      if (imate >= 0)
+      {
+         cout << "mat" << imate << "->DefineElement(" << im << ","
+              << A << "," << Z << "," << wgt << ");" << endl;
+      }
+      nelem = 1;
+   }
+   else
+   {
+      int nList = 0;
+      double wList[999];
+      DOMElement* xList[999];
+      XString addmaterialTagS("addmaterial");
+      DOMNodeList* compList = matEl->getElementsByTagName(X(addmaterialTagS));
+      double wsum = 0;
+      for (int ic = 0; ic < compList->getLength(); ic++)
+      {
+         DOMNode* node = compList->item(ic);
+         DOMElement* elem = (DOMElement*) node;
+         XString compAttS("material");
+         XString compS(elem->getAttribute(X(compAttS)));
+         DOMElement* compEl = document->getElementById(X(compS));
+         xList[nList] = compEl;
+         XString natomsTagS("natoms");
+         XString frmassTagS("fractionmass");
+         DOMNodeList* atomList = elem->getElementsByTagName(X(natomsTagS));
+         DOMNodeList* fracList = elem->getElementsByTagName(X(frmassTagS));
+         if (atomList->getLength() == 1)
+         {
+            DOMNode* node = atomList->item(0);
+            DOMElement* elem = (DOMElement*) node;
+            XString nAttS("n");
+            XString nS(elem->getAttribute(X(nAttS)));
+            XString aAttS("a");
+            XString aS(elem->getAttribute(X(nAttS)));
+            wList[nList] = atoi(S(nS))*atof(S(aS));
+         }
+         else if (fracList->getLength() == 1)
+         {
+            DOMNode* node = fracList->item(0);
+            DOMElement* elem = (DOMElement*) node;
+            XString fractionAttS("fraction");
+            XString fS(elem->getAttribute(X(fractionAttS)));
+            wList[nList] = atof(S(fS));
+         }
+         wsum += wList[nList];
+         nList++;
+      }
+      nelem = 0;
+      for (int i=0; i < nList; i++)
+      {
+         nelem += defineElement(nelem+im,imate,xList[i],wgt*wList[i]/wsum);
+      }
+   }
+   return nelem;
 }
 
 void getConversions(DOMElement* el, double& tocm, double& todeg)
@@ -1121,6 +1199,47 @@ int Refsys::createSolid(DOMElement* el)
 	  cout << "  ((TGeoPcon*)" << S(nameS) << "->GetShape())->DefineSection(" << mycounter 
 	       << "," << par[3+3*mycounter] << "," << par[4+3*mycounter] << "," 
 	       << par[5+3*mycounter] << ");" << endl;
+	}
+   }
+   else if (shapeS.equals("pgon"))
+   {
+      shapeS = "PGON";
+      int segments;
+      XString segAttS("segments");
+      XString segS(el->getAttribute(X(segAttS)));
+      sscanf(S(segS), "%d", &segments);
+      double phi0, dphi;
+      XString profAttS("profile");
+      XString profS(el->getAttribute(X(profAttS)));
+      sscanf(S(profS), "%lf %lf", &phi0, &dphi);
+      XString planeTagS("polyplane");
+      DOMNodeList* planeList = el->getElementsByTagName(X(planeTagS));
+
+      npar = 4;
+      par[0] = phi0 * todeg;
+      par[1] = dphi * todeg;
+      par[2] = segments;
+      par[3] = planeList->getLength();
+      for (int p = 0; p < planeList->getLength(); p++)
+      {
+         double ri, ro, zl;
+         DOMNode* node = planeList->item(p);
+         DOMElement* elem = (DOMElement*) node;
+         XString riozAttS("Rio_Z");
+         XString riozS(elem->getAttribute(X(riozAttS)));
+         sscanf(S(riozS), "%lf %lf %lf", &ri, &ro, &zl);
+         par[npar++] = zl * tocm;
+         par[npar++] = ri * tocm;
+         par[npar++] = ro * tocm;
+      }
+
+      cout << "TGeoVolume *" << S(nameS) << "= gGeoManager->MakePgon(\"" << S(nameS) 
+	   << "\",med" << itmed << "," << par[0] << "," << par[1] << "," << par[2] << "," << par[3] << ");" << endl;
+      for (int mycounter=0; mycounter < par[3]; mycounter++)
+	{
+	  cout << "  ((TGeoPgon*)" << S(nameS) << "->GetShape())->DefineSection(" << mycounter 
+	       << "," << par[4+3*mycounter] << "," << par[5+3*mycounter] << "," 
+	       << par[6+3*mycounter] << ");" << endl;
 	}
    }
    else if (shapeS.equals("cons"))
