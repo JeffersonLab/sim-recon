@@ -314,9 +314,10 @@ void writeHeader(DOMElement* el)
 	 int rep = (repS.equals("unbounded"))? 9999 : atoi(S(repS));
          char* ctypeRef = (rep > 1) ? listStructType(S(nameS))
 	                            : simpleStructType(S(nameS));
+         int clen = strlen(ctypeRef);
 
-         hFile << "   " << ctypeRef << "*";
-         for (int i = 0; i < 20-strlen(ctypeRef); i++)
+         hFile << "   " << ctypeRef << "* ";
+         for (int i = 0; i < 19-clen; i++)
          {
             hFile << " ";
          }
@@ -411,12 +412,66 @@ void constructMakeFuncs()
          hFile << "(int n);" 					<< endl;
          cFile << "(int n)" 					<< endl
                << "{"						<< endl
+               << "   int i;"					<< endl
                << "   int rep = (n > 1) ? n-1 : 0;"		<< endl
                << "   int size = sizeof(" << listType
                << ") + rep * sizeof(" << simpleType << ");"	<< endl
                << "   " << listType
-               << "* p = (" << listType << "*)CALLOC(size,\""
-               << listType << "\");"				<< endl;
+               << "* p = (" << listType << "*)MALLOC(size,\""
+               << listType << "\");"				<< endl
+               << "   p->mult = 0;"				<< endl
+               << "   for (i=0; i<n; i++) {"			<< endl
+               << "      " << simpleType << "* pp = &p->in[i];" << endl;
+         DOMNamedNodeMap* varList = tagEl->getAttributes();
+         int varCount = varList->getLength();
+         for (int v = 0; v < varCount; v++)
+         {
+            DOMNode* var = varList->item(v);
+            XString typeS(var->getNodeValue());
+            XString nameS(var->getNodeName());
+            if (typeS.equals("string") || 
+                typeS.equals("anyURI"))
+            {
+               cFile << "      pp->" << S(nameS)
+                     << " = (" << S(typeS)
+                     << "*)&hddm_nullTarget;"			<< endl;
+            }
+            else if (typeS.equals("int") ||
+	             typeS.equals("long") ||
+                     typeS.equals("float") ||
+                     typeS.equals("double") ||
+                     typeS.equals("boolean") ||
+                     typeS.equals("Particle_t"))
+            {
+               cFile << "      pp->" << S(nameS) << " = 0;"	<< endl;
+            }
+         }
+         DOMNodeList* contList = tagEl->getChildNodes();
+         for (int c = 0; c < contList->getLength(); c++)
+         {
+            DOMNode* cont = contList->item(c);
+            short ctype = cont->getNodeType();
+            if (ctype == DOMNode::ELEMENT_NODE)
+            {
+               DOMElement* contEl = (DOMElement*) cont;
+               XString cnameS(contEl->getTagName());
+               XString crepS(contEl->getAttribute(X(repAttS)));
+	       int crep = (crepS.equals("unbounded"))? 9999 : atoi(S(crepS));
+               if (crep > 1)
+               {
+                  cFile << "   pp->" << plural(S(cnameS))
+                        << " = (" << listStructType(S(cnameS))
+                        << "*)&hddm_nullTarget;"		<< endl;
+               }
+               else
+               {
+                  cFile << "   pp->" << S(cnameS)
+                        << " = (" << simpleStructType(S(cnameS))
+                        << "*)&hddm_nullTarget;"		<< endl;
+               }
+            }
+         }
+         cFile << "   }"					<< endl;
       }
       else
       {
@@ -433,8 +488,57 @@ void constructMakeFuncs()
                << "{"						<< endl
                << "   int size = sizeof(" << simpleType << ");"	<< endl
                << "   " << simpleType << "* p = "
-               << "(" << simpleType << "*)CALLOC(size,\""
+               << "(" << simpleType << "*)MALLOC(size,\""
                << simpleType << "\");"				<< endl;
+         DOMNamedNodeMap* varList = tagEl->getAttributes();
+         int varCount = varList->getLength();
+         for (int v = 0; v < varCount; v++)
+         {
+            DOMNode* var = varList->item(v);
+            XString typeS(var->getNodeValue());
+            XString nameS(var->getNodeName());
+            if (typeS.equals("string") || 
+                typeS.equals("anyURI"))
+            {
+               cFile << "   p->" << S(nameS)
+                     << " = (" << S(typeS)
+                     << "*)&hddm_nullTarget;"			<< endl;
+            }
+            else if (typeS.equals("int") ||
+	             typeS.equals("long") ||
+                     typeS.equals("float") ||
+                     typeS.equals("double") ||
+                     typeS.equals("boolean") ||
+                     typeS.equals("Particle_t"))
+            {
+               cFile << "   p->" << S(nameS) << " = 0;"		<< endl;
+            }
+         }
+         DOMNodeList* contList = tagEl->getChildNodes();
+         for (int c = 0; c < contList->getLength(); c++)
+         {
+            DOMNode* cont = contList->item(c);
+            short ctype = cont->getNodeType();
+            if (ctype == DOMNode::ELEMENT_NODE)
+            {
+               DOMElement* contEl = (DOMElement*) cont;
+               XString cnameS(contEl->getTagName());
+               XString crepS(contEl->getAttribute(X(repAttS)));
+	       int crep = (crepS.equals("unbounded"))? 9999 : atoi(S(crepS));
+               if (crep > 1)
+               {
+                  cFile << "   p->" << plural(S(cnameS))
+                        << " = (" << listStructType(S(cnameS))
+                        << "*)&hddm_nullTarget;"		<< endl;
+               }
+               else
+               {
+                  cFile << "   p->" << S(cnameS)
+                        << " = (" << simpleStructType(S(cnameS))
+                        << "*)&hddm_nullTarget;"		<< endl;
+               }
+            }
+         }
       }
       cFile << "   return p;"					<< endl
             << "}"						<< endl;
@@ -475,11 +579,11 @@ void constructUnpackers()
             << "(XDR* xdrs, popNode* pop)"
 								<< endl
             << "{"						<< endl
-            << "   " << tagType << "* this1 = 0;"		<< endl
+            << "   " << tagType << "* this1 = HDDM_NULL;"	<< endl
             << "   unsigned int size;"				<< endl
 	    << "   if (! xdr_u_int(xdrs,&size))"		<< endl
             << "   {"						<< endl
-	    << "       return 0;"				<< endl
+	    << "       return this1;"				<< endl
             << "   }"						<< endl
             << "   else if (size > 0)"				<< endl
             << "   {"						<< endl
@@ -649,7 +753,9 @@ void constructReadFunc(DOMElement* topEl)
 	 << topType << "* read_" << topT
 	 << "(" << classPrefix << "_iostream_t* fp" << ")"		<< endl
 	 << "{"								<< endl
-	 << "   return unpack_" << topT << "(fp->xdrs,fp->popTop);"	<< endl
+         << "   " << topType << "* nextEvent = " 
+	 << "unpack_" << topT << "(fp->xdrs,fp->popTop);"		<< endl
+	 << "   return (nextEvent == HDDM_NULL)? 0 : nextEvent;"	<< endl
 	 << "}"								<< endl;
    delete [] topType;
 }
@@ -845,7 +951,8 @@ void constructPackers()
             *term = 0;
             cFile << "      if (this1->"
                   << ((rep > 1)? "in[m]." : "")
-                  << ((re > 1)? names : S(nameS)) << ")"		<< endl
+                  << ((re > 1)? names : S(nameS)) << " != ("
+                  << contType << "*)&hddm_nullTarget)"			<< endl
                   << "      {"						<< endl
                   << "         pack_" << contT << "(xdrs,this1->"
                   << ((rep > 1)? "in[m]." : "")
@@ -1492,11 +1599,13 @@ int main(int argC, char* argV[])
 	 << "#include <particleType.h>"				<< endl
 								<< endl
 	 << "#define MALLOC(N,S) malloc(N)"			<< endl
-	 << "#define CALLOC(N,S) calloc(N,1)"			<< endl
 	 << "#define FREE(P) free(P)"				<< endl;
 
-   cFile << "#include \"" << hname << "\"" 			<< endl;
-
+   cFile << "int hddm_nullTarget=0;"				<< endl
+         << "#define HDDM_NULL (void*)&hddm_nullTarget"         << endl
+                                                                << endl
+         << "#include \"" << hname << "\"" 			<< endl
+								<< endl;
    constructGroup(rootEl);
 
    hFile							<< endl
@@ -1566,6 +1675,11 @@ int main(int argC, char* argV[])
    hFile							<< endl
 	 << "#ifdef __cplusplus"				<< endl
 	 << "}"							<< endl
+	 << "#endif"						<< endl
+	            						<< endl
+	 << "#if !defined HDDM_NULL"				<< endl
+         << "extern int hddm_nullTarget;"			<< endl
+         << "# define HDDM_NULL (void*)&hddm_nullTarget"        << endl
 	 << "#endif"						<< endl;
 
    XMLPlatformUtils::Terminate();
