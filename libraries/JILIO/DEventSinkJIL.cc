@@ -9,6 +9,8 @@ using namespace std;
 
 #ifdef JILIO
 
+#include "hd_serializers.h"
+
 #include "JILStreamPBF.h"
 #include "DEventSinkJIL.h"
 #include "DFactory_base.h"
@@ -19,7 +21,7 @@ using namespace std;
 //------------------------------------------------------------------
 derror_t DEventSinkJIL::init(void)
 {
-	s= new JILStreamPBF(filename, "w");
+	s= new JILStreamPBF(filename, "w", false);
 	s->SetPointerTracking(JILStream::PTR_NONE);
 
 	return NOERROR;
