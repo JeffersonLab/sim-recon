@@ -2,6 +2,14 @@
 * $Id$
 *
 * $Log$
+* Revision 1.22  2005/12/27 01:14:28  jonesrt
+* gustep.F
+*    - removed FDC cathode strips from the list of sensitive volumes where
+*      hits can occur -- the cathode strips themselves are not sensitive,
+*      they just pick up signals from the anode wires, as in the statement
+*                    no anode hit => no cathode hit!
+*      --rtj--
+*
 * Revision 1.21  2005/12/12 15:38:46  jonesrt
 * hitutil.F
 *    - removed from top-level, moved into new subdir hitutil [rtj]
@@ -477,8 +485,7 @@ c      write(*,*) 'volume name= ',cnames(NLEVEL)
           call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
 c	  PRINT*,__FILE__,':',__LINE__,' CDC itra=',ITRA,'
 c    +           z=',xout(3),' ipart=',ipart,' GETOT=',GETOT
-        elseif ((cnames(NLEVEL).eq.'FDCA').or.		! FDC anode drift cell
-     +          (cnames(NLEVEL).eq.'FDCC')) then	! FDC cathode strip
+        elseif (cnames(NLEVEL).eq.'FDCA') then		! FDC anode drift cell
           call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
 c	  PRINT*,__FILE__,':',__LINE__,' FDC itra=',ITRA,'
 c                z=',xout(3),' ipart=',ipart,' GETOT=',GETOT
