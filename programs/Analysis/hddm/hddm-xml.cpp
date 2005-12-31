@@ -2,6 +2,11 @@
  *  hddm-xml :	tool that reads in a HDDM document (Hall D Data Model)
  *		and translates it into plain-text xml.
  *
+ *  Version 1.2 - Richard Jones, December 2005.
+ *  - Updated code to use STL strings and vectors instead of old c-style
+ *    pre-allocated arrays and strXXX functions.
+ *  - Moved functions into classes grouped by function for better clarity.
+ *
  *  Version 1.1 - Richard Jones, September 2003.
  *  - Updated code to work with the new DOM-2 implementation Xerces-c
  *    from apache.org.  Significant changes have taken place in the API
@@ -45,14 +50,24 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
-#include "hddm-xml.hpp"
 #include "particleType.h"
 
-#define X(XString) XString.unicodeForm()
-#define S(XString) XString.localForm()
+#define X(XString) XString.unicode_str()
+#define S(XString) XString.c_str()
 
-ofstream xout; 
+class XMLmaker
+{
+ public:
+   ofstream xout; 
+
+   XMLmaker() {};
+   ~XMLmaker() {};
+
+   void writeXML(const XString& s);
+   void constructXML(XDR* xdrs, DOMElement* el, int depth);
+};
 
 void usage()
 {
@@ -63,176 +78,23 @@ void usage()
         << endl;
 }
 
-int getline(char* buf, int lenbuf, FILE* stream)
+int getline(std::stringstream& buf, FILE* stream)
 {
-   int count = 0;
-   for (count = 0; count < lenbuf-1;)
+   int count;
+   for (count=0; 1; ++count)
    {
-      int c = fgetc(stream);
+      char c = fgetc(stream);
       if (c == EOF) break;
-      buf[count++] = c;
+      buf << c;
       if (c == '\n') break;
    }
-   buf[count] = 0;
    return count;
 }
 
-/* write a string to xml output stream, either stdout or a file */
-
-void writeXML(const char* s)
-{
-      if (xout.is_open())
-      {
-         xout << s;
-      }
-      else
-      {
-         cout << s;
-      }
-}
-
-/* Generate the output xml document according the DOM;
- * at entry the buffer pointer bp points the the word after the word count
- */
-
-void constructXML(XDR* xdrs, DOMElement* el, int depth)
-{
-   XString repAttS("maxOccurs");
-   XString repS(el->getAttribute(X(repAttS)));
-   int rep = (repS.equals("unbounded"))? 9999 : atoi(S(repS));
-   if (rep > 1)
-   {
-      xdr_int(xdrs,&rep);
-   }
-   else
-   {
-      rep = 1;
-   }
-
-   for (int r = 0; r < rep; r++)
-   {
-      XString tagS(el->getTagName());
-      for (int d = 0; d < depth; d++)
-      {
-         writeXML("  ");
-      }
-      writeXML("<");
-      writeXML(S(tagS));
-      DOMNamedNodeMap* attrList = el->getAttributes();
-      int listLength = attrList->getLength();
-      for (int a = 0; a < listLength; a++)
-      {
-         XString nameS(attrList->item(a)->getNodeName());
-         XString typeS(attrList->item(a)->getNodeValue());
-         char attrStr[500];
-         if (typeS.equals("int"))
-         {
-            int value;
-	    xdr_int(xdrs,&value);
-            sprintf(attrStr," %s=\"%d\"",S(nameS),value);
-         }
-	 else if (typeS.equals("long"))
-         {
-            long long value;
-#ifndef XDR_LONGLONG_MISSING
-	    xdr_longlong_t(xdrs,&value);
-#else
-            int* ival = (int*)&value;
-# if __BIG_ENDIAN__
-	    xdr_int(xdrs,&ival[0]);
-	    xdr_int(xdrs,&ival[1]);
-# else
-	    xdr_int(xdrs,&ival[0]);
-	    xdr_int(xdrs,&ival[1]);
-# endif
-#endif
-            sprintf(attrStr," %s=\"%lld\"",S(nameS),value);
-         }
-         else if (typeS.equals("float"))
-         {
-            float value;
-	    xdr_float(xdrs,&value);
-            sprintf(attrStr," %s=\"%g\"",S(nameS),value);
-         }
-         else if (typeS.equals("double"))
-         {
-            double value;
-	    xdr_double(xdrs,&value);
-            sprintf(attrStr," %s=\"%g\"",S(nameS),value);
-         }
-         else if (typeS.equals("boolean"))
-         {
-            bool_t value;
-	    xdr_bool(xdrs,&value);
-            sprintf(attrStr," %s=\"%d\"",S(nameS),value);
-         }
-         else if (typeS.equals("Particle_t"))
-         {
-            Particle_t value;
-            xdr_int(xdrs,(int*)&value);
-            sprintf(attrStr," %s=\"%s\"",S(nameS),ParticleType(value));
-         }
-         else if (typeS.equals("string") || typeS.equals("anyURI"))
-         {
-            char* value = new char [999];
-            xdr_string(xdrs,&value,999);
-            sprintf(attrStr," %s=\"%s\"",S(nameS),value);
-	    delete [] value;
-         }
-         else if (nameS.equals("minOccurs") || nameS.equals("maxOccurs"))
-         {
-            attrStr[0] = 0;
-         }
-         else
-         {
-            sprintf(attrStr," %s=\"%s\"",S(nameS),S(typeS));
-         }
-         writeXML(attrStr);
-      }
-
-      DOMNodeList* contList = el->getChildNodes();
-      int contLength = contList->getLength();
-      if (contLength > 1)
-      {
-         writeXML(">\n");
-      }
-      else
-      {
-         writeXML(" />\n");
-      }
-
-      for (int c = 0; c < contLength; c++)
-      {
-         DOMNode* cont = contList->item(c);
-         short type = cont->getNodeType();
-         if (type == DOMNode::ELEMENT_NODE)
-         {
-            DOMElement* contEl = (DOMElement*) cont;
-            int size;
-	    xdr_int(xdrs,&size);
-            if (size > 0)
-            {
-               constructXML(xdrs,contEl,depth +1);
-            }
-         }
-      }
-
-      if (contLength > 1)
-      {
-         for (int d = 0; d < depth; d++)
-         {
-            writeXML("  ");
-         }
-         char endTag[500];
-         sprintf(endTag,"</%s>\n",S(tagS));
-         writeXML(endTag);
-      }
-   }
-}
 
 int main(int argC, char* argV[])
 {
-   char* xFilename = 0;
+   XString xFilename;
 
    try
    {
@@ -269,18 +131,16 @@ int main(int argC, char* argV[])
       }
    }
 
-   char* hddmFile;
+   XString hddmFile;
    FILE* ifp;
    if (argInd == argC)
    {
-      hddmFile = new char[1];
-      *hddmFile = 0;
       ifp = stdin;
    }
    else if (argInd == argC - 1)
    {
-      hddmFile = argV[argInd];
-      ifp = fopen(hddmFile,"r");
+      hddmFile = XString(argV[argInd]);
+      ifp = fopen(hddmFile.c_str(),"r");
    }
    else
    {
@@ -292,29 +152,31 @@ int main(int argC, char* argV[])
       cerr << "hddm-xml: Error opening input stream " << hddmFile << endl;
       exit(1);
    }
-   char tmpFile[30];
-   sprintf(tmpFile,"tmp%d",getpid());
-   ofstream ofs(tmpFile);
+   std::ostringstream tmpFileStr;
+   tmpFileStr << "tmp" << getpid();
+   ofstream ofs(tmpFileStr.str().c_str());
    if (! ofs.is_open())
    {
-      cerr << "hddm-xml: Error opening temp file " << tmpFile << endl;
+      cerr << "hddm-xml: Error opening temp file " << tmpFileStr << endl;
       exit(2);
    }
 
    ofs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-   char xmlHeader[1000];
-   char* line = new char[1000];
-   if (getline(line,1000,ifp))
+   XString xmlHeader;
+   std::stringstream buf;
+   if (getline(buf,ifp))
    {
-      if (strstr(line,"<?xml") != 0)
+      XString line;
+      std::getline(buf,line);
+      if (line.substr(0,5) == "<?xml")
       {
          cerr << "hddm-xml: Error reading input stream " << hddmFile << endl;
          cerr << "Input file appears to be an xml document!" << endl;
          exit(1);
       }
-      else if (strstr(line,"<HDDM") == line)
+      else if (line.substr(0,5) == "<HDDM")
       {
-         strncpy(xmlHeader,line,999);
+         xmlHeader = line + "\n";
          ofs << line;
       }
       else
@@ -329,21 +191,22 @@ int main(int argC, char* argV[])
       cerr << "hddm-xml: Error reading from input stream " << hddmFile << endl;
       exit(1);
    }
-   while (getline(line,1000,ifp))
+   while (getline(buf,ifp))
    {
+      XString line;
+      std::getline(buf,line);
       ofs << line;
-      if (strstr(line,"</HDDM>") != 0)
+      if (line == "</HDDM>")
       {
          break;
       }
    }
    ofs.close();
-   delete [] line;
 
 #if defined OLD_STYLE_XERCES_PARSER
-   DOMDocument* document = parseInputDocument(tmpFile,false);
+   DOMDocument* document = parseInputDocument(tmpFileStr.str().c_str(),false);
 #else
-   DOMDocument* document = buildDOMDocument(tmpFile,false);
+   DOMDocument* document = buildDOMDocument(tmpFileStr.str().c_str(),false);
 #endif
    if (document == 0)
    {
@@ -351,11 +214,11 @@ int main(int argC, char* argV[])
            << "cannot continue" << endl;
       return 1;
    }
-   unlink(tmpFile);
+   unlink(tmpFileStr.str().c_str());
 
    DOMElement* rootEl = document->getDocumentElement();
    XString rootS(rootEl->getTagName());
-   if (!rootS.equals("HDDM"))
+   if (rootS != "HDDM")
    {
       cerr << "hddm-xml error: root element of input document is "
            << "\"" << S(rootS) << "\", expected \"HDDM\""
@@ -363,15 +226,15 @@ int main(int argC, char* argV[])
       return 1;
    }
 
-   if (xFilename)
+   XMLmaker builder;
+   if (xFilename.size())
    {
-      char fname[500];
-      sprintf(fname,"%s.xml",xFilename);
-      xout.open(fname);
+      XString fname(xFilename + ".xml");
+      builder.xout.open(fname.c_str());
    }
   
-   writeXML("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-   writeXML(xmlHeader);
+   builder.writeXML("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+   builder.writeXML(xmlHeader);
 
    XDR* xdrs = new XDR;
    xdrstdio_create(xdrs,ifp,XDR_DECODE);
@@ -391,14 +254,166 @@ int main(int argC, char* argV[])
 	    xdr_int(xdrs,&size);
             if (size > 0)
             {
-               constructXML(xdrs,contEl,1);
+               builder.constructXML(xdrs,contEl,1);
             }
          }
       }
    }
 
-   writeXML("</HDDM>\n");
+   builder.writeXML("</HDDM>\n");
 
    XMLPlatformUtils::Terminate();
    return 0;
+}
+
+/* write a string to xml output stream, either stdout or a file */
+
+void XMLmaker::writeXML(const XString& s)
+{
+      if (xout.is_open())
+      {
+         xout << s;
+      }
+      else
+      {
+         cout << s;
+      }
+}
+
+/* Generate the output xml document according the DOM;
+ * at entry the buffer pointer bp points the the word after the word count
+ */
+
+void XMLmaker::constructXML(XDR* xdrs, DOMElement* el, int depth)
+{
+   XString repAttS("maxOccurs");
+   XString repS(el->getAttribute(X(repAttS)));
+   int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
+   if (rep > 1)
+   {
+      xdr_int(xdrs,&rep);
+   }
+   else
+   {
+      rep = 1;
+   }
+
+   for (int r = 0; r < rep; r++)
+   {
+      XString tagS(el->getTagName());
+      for (int d = 0; d < depth; d++)
+      {
+         writeXML("  ");
+      }
+      writeXML("<");
+      writeXML(S(tagS));
+      DOMNamedNodeMap* attrList = el->getAttributes();
+      int listLength = attrList->getLength();
+      for (int a = 0; a < listLength; a++)
+      {
+         XString nameS(attrList->item(a)->getNodeName());
+         XString typeS(attrList->item(a)->getNodeValue());
+         std::ostringstream attrStr;
+         if (typeS == "int")
+         {
+            int value;
+	    xdr_int(xdrs,&value);
+            attrStr << " " << nameS << "=\"" << value << "\"";
+         }
+	 else if (typeS == "long")
+         {
+            long long value;
+#ifndef XDR_LONGLONG_MISSING
+	    xdr_longlong_t(xdrs,&value);
+#else
+            int* ival = (int*)&value;
+# if __BIG_ENDIAN__
+	    xdr_int(xdrs,&ival[0]);
+	    xdr_int(xdrs,&ival[1]);
+# else
+	    xdr_int(xdrs,&ival[0]);
+	    xdr_int(xdrs,&ival[1]);
+# endif
+#endif
+            attrStr << " " << nameS << "=\"" << value << "\"";
+         }
+         else if (typeS == "float")
+         {
+            float value;
+	    xdr_float(xdrs,&value);
+            attrStr << " " << nameS << "=\"" << value << "\"";
+         }
+         else if (typeS == "double")
+         {
+            double value;
+	    xdr_double(xdrs,&value);
+            attrStr << " " << nameS << "=\"" << value << "\"";
+         }
+         else if (typeS == "boolean")
+         {
+            bool_t value;
+	    xdr_bool(xdrs,&value);
+            attrStr << " " << nameS << "=\"" << value << "\"";
+         }
+         else if (typeS == "Particle_t")
+         {
+            Particle_t value;
+            xdr_int(xdrs,(int*)&value);
+            attrStr << " " << nameS << "=\"" << ParticleType(value) << "\"";
+         }
+         else if (typeS == "string" || typeS == "anyURI")
+         {
+            char* value = new char [999];
+            xdr_string(xdrs,&value,999);
+            attrStr << " " << nameS << "=\"" << value << "\"";
+	    delete [] value;
+         }
+         else if (nameS == "minOccurs" || nameS == "maxOccurs")
+         {
+            ;
+         }
+         else
+         {
+            attrStr << " " << nameS << "=\"" << typeS << "\"";
+         }
+         writeXML(attrStr.str());
+      }
+
+      DOMNodeList* contList = el->getChildNodes();
+      int contLength = contList->getLength();
+      if (contLength > 1)
+      {
+         writeXML(">\n");
+      }
+      else
+      {
+         writeXML(" />\n");
+      }
+
+      for (int c = 0; c < contLength; c++)
+      {
+         DOMNode* cont = contList->item(c);
+         short type = cont->getNodeType();
+         if (type == DOMNode::ELEMENT_NODE)
+         {
+            DOMElement* contEl = (DOMElement*) cont;
+            int size;
+	    xdr_int(xdrs,&size);
+            if (size > 0)
+            {
+               constructXML(xdrs,contEl,depth +1);
+            }
+         }
+      }
+
+      if (contLength > 1)
+      {
+         for (int d = 0; d < depth; d++)
+         {
+            writeXML("  ");
+         }
+         XString endTag("</"+tagS+">\n");
+         writeXML(endTag);
+      }
+   }
 }
