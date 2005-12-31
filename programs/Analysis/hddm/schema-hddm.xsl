@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                xmlns:xs="http://www.w3.org/2001/XMLSchema"
-               xmlns:hddm="http://www.gluex.org/hddm"
+               xmlns="http://www.gluex.org/hddm"
+               exclude-result-prefixes="xs xsl"
                version="1.0">
+
+              <!-- xmlns:hddm="http://www.gluex.org/hddm"-->
 <xsl:output method="xml" version="1.0" encoding="iso-8859-1" indent="no"/>
 
 <!-- Top-level processing: make sure document tag is xs:schema -->
