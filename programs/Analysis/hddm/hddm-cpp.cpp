@@ -34,8 +34,8 @@
 
 #define MAX_POPLIST_LENGTH 99
 
-#include "hddm-cpp.hpp"
-
+#include "XString.hpp"
+#include "XParsers.hpp"
 #include <assert.h>
 #include <string.h>
 #include <strings.h>
@@ -45,8 +45,8 @@
 
 #include <fstream>
 
-#define X(XString) XString.unicodeForm()
-#define S(XString) XString.localForm()
+#define X(XString) XString.unicode_str()
+#define S(XString) XString.c_str()
 
 char* hFilename = 0;
 ofstream hFile;
@@ -59,6 +59,24 @@ bool verifyOnly = false;
 char containerList[65536]="";
 char constructorCalls[65536]="";
 char destructorCalls[65536]="";
+
+void usage();
+char* plural(const char* str);
+char* simpleStructType(const char* tag);
+char* listStructType(const char* tag);
+void checkConsistency(DOMElement* el, int t);
+void writeHeader(DOMElement* el);
+int constructGroup(DOMElement* el);
+void constructMakeFuncs();
+void constructUnpackers();
+void constructReadFunc(DOMElement* topEl);
+void constructPackers();
+void constructFlushFunc(DOMElement* el);
+void writeMatcher();
+void constructOpenFunc(DOMElement* el);
+void constructInitFunc(DOMElement* el);
+void constructCloseFunc(DOMElement* el);
+void constructDocument(DOMElement* el);
 
 void usage()
 {
@@ -143,14 +161,14 @@ void checkConsistency(DOMElement* el, int t)
       XString nameS(oldAttr->item(n)->getNodeName());
       XString oldS(tagList[t]->getAttribute(X(nameS)));
       XString newS(el->getAttribute(X(nameS)));
-      if (nameS.equals("minOccurs"))
+      if (nameS == "minOccurs")
       {
          continue;
       }
-      else if (nameS.equals("maxOccurs"))
+      else if (nameS == "maxOccurs")
       {
-         int maxold = (oldS.equals("unbounded"))? 9999 : atoi(S(oldS));
-         int maxnew = (newS.equals("unbounded"))? 9999 : atoi(S(newS));
+         int maxold = (oldS == "unbounded")? 9999 : atoi(S(oldS));
+         int maxnew = (newS == "unbounded")? 9999 : atoi(S(newS));
 	 if (maxold*maxnew <= maxold)
          {
             cerr << "hddm-cpp error: inconsistent maxOccurs usage by tag "
@@ -158,7 +176,7 @@ void checkConsistency(DOMElement* el, int t)
             exit(1);
          }
       }
-      else if (! newS.equals(oldS))
+      else if (newS != oldS)
       {
          cerr << "hddm-cpp error: inconsistent usage of attribute "
               << "\"" << S(nameS) << "\" in tag "
@@ -172,14 +190,14 @@ void checkConsistency(DOMElement* el, int t)
       XString nameS(newAttr->item(n)->getNodeName());
       XString oldS(tagList[t]->getAttribute(X(nameS)));
       XString newS(el->getAttribute(X(nameS)));
-      if (nameS.equals("minOccurs"))
+      if (nameS == "minOccurs")
       {
          continue;
       }
-      else if (nameS.equals("maxOccurs"))
+      else if (nameS == "maxOccurs")
       {
-         int maxold = (oldS.equals("unbounded"))? 9999 : atoi(S(oldS));
-         int maxnew = (newS.equals("unbounded"))? 9999 : atoi(S(newS));
+         int maxold = (oldS == "unbounded")? 9999 : atoi(S(oldS));
+         int maxnew = (newS == "unbounded")? 9999 : atoi(S(newS));
 	 if (maxold*maxnew <= maxnew)
          {
             cerr << "hddm-cpp error: inconsistent maxOccurs usage by tag "
@@ -187,7 +205,7 @@ void checkConsistency(DOMElement* el, int t)
             exit(1);
          }
       }
-      else if (! newS.equals(oldS))
+      else if (newS != oldS)
       {
          cerr << "hddm-cpp error: inconsistent usage of attribute "
               << "\"" << S(nameS) << "\" in tag "
@@ -231,7 +249,7 @@ void writeHeader(DOMElement* el)
 
    XString repAttS("maxOccurs");
    XString repS(el->getAttribute(X(repAttS)));
-   int rep = (repS.equals("unbounded"))? 9999 : atoi(S(repS));
+   int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
    if (rep > 1)
    {
       char* ctypeRef = listStructType(S(tagS));
@@ -271,7 +289,8 @@ int constructGroup(DOMElement* el)
    int t;
    for (t = 0; t < tagListLength; t++)
    {
-      if (tagS.equals(tagList[t]->getTagName()))
+      XString targS(tagList[t]->getTagName());
+      if (tagS == targS)
       {
          checkConsistency(el,t);
          return t;
@@ -419,7 +438,7 @@ int main(int argC, char* argV[])
 
    DOMElement* rootEl = document->getDocumentElement();
    XString rootS(rootEl->getTagName());
-   if (!rootS.equals("HDDM"))
+   if (rootS != "HDDM")
    {
       cerr << "hddm-cpp error: root element of input document is "
            << "\"" << S(rootS) << "\", expected \"HDDM\""
