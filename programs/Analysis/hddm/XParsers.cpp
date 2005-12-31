@@ -57,8 +57,8 @@ static char * basename(const char *f)
  */
 //#define FIX_XERCES_getElementById_BUG true
 
-#define X(XString) XString.unicodeForm()
-#define S(XString) XString.localForm()
+#define X(XString) XString.unicode_str()
+#define S(XString) XString.c_str()
 
 DOMDocument* parseInputDocument(const char* xmlFile, bool keep)
 {
@@ -269,10 +269,10 @@ bool MyDOMErrorHandler::handleError(const DOMError& domError)
    else
        cerr << "\nFatal Error at file ";
 
-   cerr << XString(domError.getLocation()->getURI()).localForm()
+   cerr << XString(domError.getLocation()->getURI()).c_str()
         << ", line " << domError.getLocation()->getLineNumber()
         << ", char " << domError.getLocation()->getColumnNumber()
-        << "\n  Message: " << XString(domError.getMessage()).localForm()
+        << "\n  Message: " << XString(domError.getMessage()).c_str()
        	<< endl;
 
    return true;
