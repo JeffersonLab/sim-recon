@@ -6,6 +6,11 @@
  *		representation and a default binary representation that
  *		is suitable for passing over a pipe or storing on disk.
  *
+ *  Version 1.2 - Richard Jones, December 2005.
+ *  - Updated code to use STL strings and vectors instead of old c-style
+ *    pre-allocated arrays and strXXX functions.
+ *  - Moved functions into classes grouped by function for better clarity.
+ *
  *  Version 1.1 - Richard Jones, September 2003.
  *  - Updated code to work with the new DOM-2 implementation Xerces-c
  *    from apache.org.  Significant changes have taken place in the API
@@ -57,28 +62,22 @@
 
 #define MAX_POPLIST_LENGTH 99
 
-#include "hddm-c.hpp"
+#include "XString.hpp"
+#include "XParsers.hpp"
 
 #include <assert.h>
-#include <string.h>
-#include <strings.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <string>
+#include <vector>
 #include <fstream>
 
-#define X(XString) XString.unicodeForm()
-#define S(XString) XString.localForm()
+#define X(XString) XString.unicode_str()
+#define S(XString) XString.c_str()
 
-char* hFilename = 0;
-ofstream hFile;
-ofstream cFile;
-
-const char* classPrefix;
-int tagListLength = 0;
-DOMElement* tagList[100000];
-bool verifyOnly = false;
+XString classPrefix;
 
 void usage()
 {
@@ -90,144 +89,461 @@ void usage()
         << endl;
 }
 
-/* Generate the plural form of a noun */
-
-char* plural(const char* str)
+class XtString : public XString
 {
-   int len = strlen(str);
-   char* p = new char [len+10];
-   strcpy(p,str);
-   if ((len > 3) && (strcmp(&p[len-3],"tum")  == 0))
+/* XString class with a few extra methods for creating type
+ * strings that are useful in creating c structures
+ */
+ public:
+   XtString() {};
+   XtString(const char* s): XString(s) {};
+   XtString(const XMLCh* p): XString(p) {};
+   XtString(const std::string& s): XString(s) {};
+   XtString(const XString& x): XString(x) {};
+   XtString(const XtString& t): XString((XString&)t) {};
+
+   XtString& plural();
+   XtString& simpleStructType();
+   XtString& listStructType();
+};
+
+class CodeBuilder
+{
+/* The methods in this class are used to write the c code that
+ * implements the hddm structures i/o library.
+ */
+ public:
+   ofstream hFile;
+   ofstream cFile;
+
+   CodeBuilder() {};
+   ~CodeBuilder() {};
+
+   void checkConsistency(DOMElement* el, DOMElement* elref);
+   void writeHeader(DOMElement* el);
+   void constructGroup(DOMElement* el);
+   void constructMakeFuncs();
+   void constructUnpackers();
+   void constructReadFunc(DOMElement* topEl);
+   void constructPackers();
+   void constructFlushFunc(DOMElement* el);
+   void writeMatcher();
+   void constructOpenFunc(DOMElement* el);
+   void constructInitFunc(DOMElement* el);
+   void constructCloseFunc(DOMElement* el);
+   void constructDocument(DOMElement* el);
+
+ private:
+   std::vector<DOMElement*> tagList;
+};
+
+
+int main(int argC, char* argV[])
+{
+   try
    {
-      strcpy(&p[len-3],"ta");
+      XMLPlatformUtils::Initialize();
    }
-   else if ((len > 2) && (strcmp(&p[len-2],"ex")  == 0))
+   catch (const XMLException* toCatch)
    {
-      strcpy(&p[len-2],"ices");
+      XtString msg(toCatch->getMessage());
+      cerr << "hddm-c: Error during initialization! :\n"
+           << msg << endl;
+      return 1;
    }
-   else if ((len > 2) && (strcmp(&p[len-2],"sh")  == 0))
+
+   if (argC < 2)
    {
-      strcpy(&p[len-2],"shes");
+      usage();
+      return 1;
    }
-   else if ((len > 1) && (strcmp(&p[len-1],"s")  == 0))
+   else if ((argC == 2) && (strcmp(argV[1], "-?") == 0))
    {
-      strcpy(&p[len-1],"ses");
+      usage();
+      return 2;
+   }
+
+   XtString xmlFile;
+   XtString hFilename;
+   bool verifyOnly = false;
+   int argInd;
+   for (argInd = 1; argInd < argC; argInd++)
+   {
+      if (argV[argInd][0] != '-')
+      {
+         break;
+      }
+      if (strcmp(argV[argInd],"-v") == 0)
+      {
+         verifyOnly = true;
+      }
+      else if (strcmp(argV[argInd],"-o") == 0)
+      {
+         hFilename = XtString(argV[++argInd]);
+      }
+      else
+      {
+         cerr << "Unknown option \'" << argV[argInd]
+              << "\', ignoring it\n" << endl;
+      }
+   }
+
+   if (argInd != argC - 1)
+   {
+      usage();
+      return 1;
+   }
+   xmlFile = XtString(argV[argInd]);
+
+#if defined OLD_STYLE_XERCES_PARSER
+   DOMDocument* document = parseInputDocument(xmlFile.c_str(),false);
+#else
+   DOMDocument* document = buildDOMDocument(xmlFile.c_str(),false);
+#endif
+   if (document == 0)
+   {
+      cerr << "hddm-c : Error parsing HDDM document, "
+           << "cannot continue" << endl;
+      return 1;
+   }
+
+   DOMElement* rootEl = document->getDocumentElement();
+   XtString rootS(rootEl->getTagName());
+   if (rootS != "HDDM")
+   {
+      cerr << "hddm-c error: root element of input document is "
+           << "\"" << rootS << "\", expected \"HDDM\""
+           << endl;
+      return 1;
+   }
+
+   XtString classAttS("class");
+   XtString classS(rootEl->getAttribute(X(classAttS)));
+   classPrefix = classS;
+
+   XtString hname;
+   if (verifyOnly)
+   {
+      hname = "/dev/null";
+   }
+   else if (hFilename.size())
+   {
+      hname = hFilename + ".h";
+   }
+   else
+   {
+      hname = "hddm_" + classPrefix + ".h";
+   }
+
+   CodeBuilder builder;
+   builder.hFile.open(hname.c_str());
+   if (! builder.hFile.is_open())
+   {
+      cerr << "hddm-c error: unable to open output file "
+           << hname << endl;
+      return 1;
+   }
+
+   XtString cname;
+   if (verifyOnly)
+   {
+      cname = "/dev/null";
+   }
+   else if (hFilename.size())
+   {
+      cname = hFilename + ".c";
+   }
+   else
+   {
+      cname = "hddm_" + classPrefix + ".c";
+   }
+
+   builder.cFile.open(cname.c_str());
+   if (! builder.cFile.is_open())
+   {
+      cerr << "hddm-c error: unable to open output file "
+           << cname << endl;
+      return 1;
+   }
+
+   builder.hFile 
+         << "/*"						<< endl
+	 << " * " << hname << " - DO NOT EDIT THIS FILE"	<< endl
+	 << " *"						<< endl
+	 << " * This file was generated automatically by hddm-c"
+	 << " from the file"					<< endl
+         << " * " << xmlFile					<< endl
+         << " * This header file defines the c structures that"
+	 << " hold the data"					<< endl
+	 << " * described in the data model"
+         << " (from " << xmlFile << "). "			<< endl
+	 << " * Any program that needs access to the data"
+         << " described in the model"				<< endl
+         << " * can include this header file, and make use"
+	 << " of the input/output"				<< endl
+         << " * services provided in " << cname			<< endl
+	 << " *"						<< endl
+	 << " * The hddm data model tool set was written by"	<< endl
+	 << " * Richard Jones, University of Connecticut."	<< endl
+	 << " *"						<< endl
+	 << " * For more information see the following web site"<< endl
+	 << " *"						<< endl
+	 << " * http://zeus.phys.uconn.edu/halld/datamodel/doc"	<< endl
+	 << " *"						<< endl
+	 << " */"						<< endl
+	 							<< endl;
+
+   builder.cFile
+	 << "/*"						<< endl
+	 << " * " << cname << " - DO NOT EDIT THIS FILE"	<< endl
+	 << " *"						<< endl
+	 << " * This file was generated automatically by hddm-c"
+	 << " from the file"					<< endl
+         << " * " << xmlFile					<< endl
+         << " * This c file contains the i/o interface to"
+         << " the c structures"					<< endl
+	 << " * described in the data model"
+         << " (from " << xmlFile << "). "			<< endl
+	 << " * Any program that needs access to the data"
+         << " described in the model"				<< endl
+         << " * can compile this source file, and make use"
+	 << " of the input/output"				<< endl
+         << " * services provided."				<< endl
+	 << " *"						<< endl
+	 << " * The hddm data model tool set was written by"	<< endl
+	 << " * Richard Jones, University of Connecticut."	<< endl
+	 << " *"						<< endl
+	 << " * For more information see the following web site"<< endl
+	 << " *"						<< endl
+	 << " * http://zeus.phys.uconn.edu/halld/datamodel/doc"	<< endl
+	 << " */"						<< endl
+								<< endl;
+
+   builder.hFile
+	 << "#include <stdlib.h>"				<< endl
+	 << "#include <stdio.h>" 				<< endl
+	 << "#include <rpc/rpc.h>" 				<< endl
+	 << "#include <string.h>"				<< endl
+	 << "#include <strings.h>"				<< endl
+	 << "#include <particleType.h>"				<< endl
+								<< endl
+	 << "#define MALLOC(N,S) malloc(N)"			<< endl
+	 << "#define FREE(P) free(P)"				<< endl;
+
+   builder.cFile
+	 << "int hddm_nullTarget=0;"				<< endl
+         << "#define HDDM_NULL (void*)&hddm_nullTarget"         << endl
+                                                                << endl
+         << "#include \"" << hname << "\"" 			<< endl
+								<< endl;
+   builder.constructGroup(rootEl);
+
+   builder.hFile						<< endl
+	 << "#ifdef __cplusplus"				<< endl
+	 << "extern \"C\" {"					<< endl
+	 << "#endif"						<< endl;
+   builder.constructMakeFuncs();
+   builder.hFile						<< endl
+	 << "#ifdef __cplusplus"				<< endl
+	 << "}"							<< endl
+	 << "#endif"						<< endl;
+
+   builder.hFile 						<< endl
+	 << "#ifndef " << classPrefix << "_DocumentString" 	<< endl
+	 << "#define " << classPrefix << "_DocumentString" 	<< endl
+         							<< endl
+	 << "extern "
+	 << "char HDDM_" << classPrefix << "_DocumentString[];"	<< endl
+         							<< endl
+         << "#ifdef INLINE_PREPEND_UNDERSCORES"			<< endl
+         << "#define inline __inline"				<< endl
+         << "#endif"						<< endl
+								<< endl
+	 << "#endif /* " << classPrefix << "_DocumentString */"	<< endl;
+
+   builder.cFile						<< endl
+	 << "char HDDM_" << classPrefix << "_DocumentString[]"
+	 << " = "						<< endl;
+   builder.constructDocument(rootEl);
+   builder.cFile << ";"						<< endl;
+
+   builder.hFile 						<< endl
+	 << "#ifndef HDDM_STREAM_INPUT"				<< endl
+	 << "#define HDDM_STREAM_INPUT -91"			<< endl
+	 << "#define HDDM_STREAM_OUTPUT -92"			<< endl
+           							<< endl
+	 << "struct popNode_s {"				<< endl
+         << "   void* (*unpacker)(XDR*, struct popNode_s*);"	<< endl
+         << "   int inParent;"					<< endl
+         << "   int popListLength;"				<< endl
+         << "   struct popNode_s* popList["
+         << MAX_POPLIST_LENGTH << "];"				<< endl
+         << "};"						<< endl
+         << "typedef struct popNode_s popNode;"			<< endl
+                                                                << endl
+	 << "typedef struct {"					<< endl
+	 << "   FILE* fd;"					<< endl
+	 << "   int iomode;"					<< endl
+	 << "   char* filename;"				<< endl
+         << "   XDR* xdrs;"					<< endl
+	 << "   popNode* popTop;"				<< endl
+	 << "} " << classPrefix << "_iostream_t;"		<< endl
+								<< endl
+	 << "#endif /* HDDM_STREAM_INPUT */"			<< endl;
+
+   builder.constructUnpackers();
+
+   builder.hFile						<< endl
+	 << "#ifdef __cplusplus"				<< endl
+	 << "extern \"C\" {"					<< endl
+	 << "#endif"						<< endl;
+   builder.constructReadFunc(rootEl);
+   builder.constructFlushFunc(rootEl);
+   builder.constructOpenFunc(rootEl);
+   builder.constructInitFunc(rootEl);
+   builder.constructCloseFunc(rootEl);
+   builder.hFile						<< endl
+	 << "#ifdef __cplusplus"				<< endl
+	 << "}"							<< endl
+	 << "#endif"						<< endl
+	            						<< endl
+	 << "#if !defined HDDM_NULL"				<< endl
+         << "extern int hddm_nullTarget;"			<< endl
+         << "# define HDDM_NULL (void*)&hddm_nullTarget"        << endl
+	 << "#endif"						<< endl;
+
+   XMLPlatformUtils::Terminate();
+   return 0;
+}
+
+XtString& XtString::plural()
+{
+   XtString* p = new XtString(*this);
+   XtString::size_type len = p->size();
+   if (len > 3 && p->substr(len-3,3) == "tum")
+   {
+      p->replace(len-3,3,"ta");
+   }
+   else if (len > 2 && p->substr(len-2,2) == "ex")
+   {
+      p->replace(len-2,2,"ices");
+   }
+   else if (len > 2 && p->substr(len-2,2) == "sh")
+   {
+      p->replace(len-2,2,"shes");
+   }
+   else if (len > 1 && p->substr(len-1,1) == "s")
+   {
+      p->replace(len-1,1,"ses");
    }
    else if (len > 1)
    {
-      strcat(p,"s");
+      *p += "s";
    }
-   return p;
+   return *p;
 }
 
 /* Map from tag name to name of the corresponding c-structure
  * for the case of simple tags (those that do not repeat)
  */
-char* simpleStructType(const char* tag)
+XtString& XtString::simpleStructType()
 {
-   int len = strlen(tag) + strlen(classPrefix);
-   char* p = new char [len + 10];
-   char* q = new char [len];
-   strcpy(q,tag);
-   q[0] = toupper(q[0]);
-   sprintf(p,"%s_%s_t",classPrefix,q);
-   delete [] q;
-   return p;
+   XtString* p = new XtString(*this);
+   (*p)[0] = toupper((*p)[0]);
+   *p = classPrefix + "_" + *p + "_t";
+   return *p;
 }
 
 /* Map from tag name to name of the corresponding c-structure
  * for the case of list tags (those that may repeat)
  */
-char* listStructType(const char* tag)
+XtString& XtString::listStructType()
 {
-   int len = strlen(tag) + strlen(classPrefix);
-   char* p = new char [len + 10];
-   char* tags = plural(tag);
-   tags[0] = toupper(tags[0]);
-   sprintf(p,"%s_%s_t",classPrefix,tags);
-   delete [] tags;
-   return p;
+   XtString& r = plural();
+   r[0] = toupper(r[0]);
+   r = classPrefix + "_" + r + "_t";
+   return r;
 }
 
 /* Verify that the tag group under this element does not collide
- * with existing tag group t, otherwise exit with fatal error
+ * with existing tag group elref, otherwise exit with fatal error
  */
-void checkConsistency(DOMElement* el, int t)
+void CodeBuilder::checkConsistency(DOMElement* el, DOMElement* elref)
 {
-   XString tagS(el->getTagName());
-   DOMNamedNodeMap* oldAttr = tagList[t]->getAttributes();
+   XtString tagS(el->getTagName());
+   DOMNamedNodeMap* oldAttr = elref->getAttributes();
    DOMNamedNodeMap* newAttr = el->getAttributes();
    int listLength = oldAttr->getLength();
    for (int n = 0; n < listLength; n++)
    {
-      XString nameS(oldAttr->item(n)->getNodeName());
-      XString oldS(tagList[t]->getAttribute(X(nameS)));
-      XString newS(el->getAttribute(X(nameS)));
-      if (nameS.equals("minOccurs"))
+      XtString nameS(oldAttr->item(n)->getNodeName());
+      XtString oldS(elref->getAttribute(X(nameS)));
+      XtString newS(el->getAttribute(X(nameS)));
+      if (nameS == "minOccurs")
       {
          continue;
       }
-      else if (nameS.equals("maxOccurs"))
+      else if (nameS == "maxOccurs")
       {
-         int maxold = (oldS.equals("unbounded"))? 9999 : atoi(S(oldS));
-         int maxnew = (newS.equals("unbounded"))? 9999 : atoi(S(newS));
+         int maxold = (oldS == "unbounded")? 9999 : atoi(S(oldS));
+         int maxnew = (newS == "unbounded")? 9999 : atoi(S(newS));
 	 if (maxold*maxnew <= maxold)
          {
             cerr << "hddm-c error: inconsistent maxOccurs usage by tag "
-                 << "\"" << S(tagS) << "\" in xml document." << endl;
+                 << "\"" << tagS << "\" in xml document." << endl;
             exit(1);
          }
       }
-      else if (! newS.equals(oldS))
+      else if (newS != oldS)
       {
          cerr << "hddm-c error: inconsistent usage of attribute "
-              << "\"" << S(nameS) << "\" in tag "
-              << "\"" << S(tagS) << "\" in xml document." << endl;
+              << "\"" << nameS << "\" in tag "
+              << "\"" << tagS << "\" in xml document." << endl;
          exit(1);
       }
    }
    listLength = newAttr->getLength();
    for (int n = 0; n < listLength; n++)
    {
-      XString nameS(newAttr->item(n)->getNodeName());
-      XString oldS(tagList[t]->getAttribute(X(nameS)));
-      XString newS(el->getAttribute(X(nameS)));
-      if (nameS.equals("minOccurs"))
+      XtString nameS(newAttr->item(n)->getNodeName());
+      XtString oldS(elref->getAttribute(X(nameS)));
+      XtString newS(el->getAttribute(X(nameS)));
+      if (nameS == "minOccurs")
       {
          continue;
       }
-      else if (nameS.equals("maxOccurs"))
+      else if (nameS == "maxOccurs")
       {
-         int maxold = (oldS.equals("unbounded"))? 9999 : atoi(S(oldS));
-         int maxnew = (newS.equals("unbounded"))? 9999 : atoi(S(newS));
+         int maxold = (oldS == "unbounded")? 9999 : atoi(S(oldS));
+         int maxnew = (newS == "unbounded")? 9999 : atoi(S(newS));
 	 if (maxold*maxnew <= maxnew)
          {
             cerr << "hddm-c error: inconsistent maxOccurs usage by tag "
-                 << "\"" << S(tagS) << "\" in xml document." << endl;
+                 << "\"" << tagS << "\" in xml document." << endl;
             exit(1);
          }
       }
-      else if (! newS.equals(oldS))
+      else if (newS != oldS)
       {
          cerr << "hddm-c error: inconsistent usage of attribute "
-              << "\"" << S(nameS) << "\" in tag "
-              << "\"" << S(tagS) << "\" in xml document." << endl;
+              << "\"" << nameS << "\" in tag "
+              << "\"" << tagS << "\" in xml document." << endl;
          exit(1);
       }
    }
-   DOMNodeList* oldList = tagList[t]->getChildNodes();
+   DOMNodeList* oldList = elref->getChildNodes();
    DOMNodeList* newList = el->getChildNodes();
    listLength = oldList->getLength();
    if (newList->getLength() != listLength)
    {
       cerr << "hddm-c error: inconsistent usage of tag "
-           << "\"" << S(tagS) << "\" in xml document." << endl;
+           << "\"" << tagS << "\" in xml document." << endl;
    exit(1);
    }
    for (int n = 0; n < listLength; n++)
    {
       DOMNode* cont = oldList->item(n);
-      XString nameS(cont->getNodeName());
+      XtString nameS(cont->getNodeName());
       short type = cont->getNodeType();
       if (type == DOMNode::ELEMENT_NODE)
       {
@@ -235,7 +551,7 @@ void checkConsistency(DOMElement* el, int t)
          if (contList->getLength() != 1)
          {
              cerr << "hddm-c error: inconsistent usage of tag "
-                  << "\"" << S(tagS) << "\" in xml document." << endl;
+                  << "\"" << tagS << "\" in xml document." << endl;
              exit(1);
          }
       }
@@ -244,10 +560,10 @@ void checkConsistency(DOMElement* el, int t)
 
 /* Write declaration of c-structure for this tag to c-header file */
 
-void writeHeader(DOMElement* el)
+void CodeBuilder::writeHeader(DOMElement* el)
 {
-   XString tagS(el->getTagName());
-   char* ctypeDef = simpleStructType(S(tagS));
+   XtString tagS(el->getTagName());
+   XtString ctypeDef = tagS.simpleStructType();
    hFile << endl
 	 << "#ifndef SAW_" << ctypeDef 				<< endl
 	 << "#define SAW_" << ctypeDef				<< endl
@@ -259,39 +575,39 @@ void writeHeader(DOMElement* el)
    for (int v = 0; v < varCount; v++)
    {
       DOMNode* var = varList->item(v);
-      XString typeS(var->getNodeValue());
-      XString nameS(var->getNodeName());
-      if (typeS.equals("int"))
+      XtString typeS(var->getNodeValue());
+      XtString nameS(var->getNodeName());
+      if (typeS == "int")
       {
-         hFile << "   int                  " << S(nameS) << ";" << endl;
+         hFile << "   int                  " << nameS << ";" << endl;
       }
-      else if (typeS.equals("long"))
+      else if (typeS == "long")
       {
-         hFile << "   long long            " << S(nameS) << ";" << endl;
+         hFile << "   long long            " << nameS << ";" << endl;
       }
-      else if (typeS.equals("float"))
+      else if (typeS == "float")
       {
-         hFile << "   float                " << S(nameS) << ";" << endl;
+         hFile << "   float                " << nameS << ";" << endl;
       }
-      else if (typeS.equals("double"))
+      else if (typeS == "double")
       {
-         hFile << "   double               " << S(nameS) << ";" << endl;
+         hFile << "   double               " << nameS << ";" << endl;
       }
-      else if (typeS.equals("boolean"))
+      else if (typeS == "boolean")
       {
-         hFile << "   bool_t               " << S(nameS) << ";" << endl;
+         hFile << "   bool_t               " << nameS << ";" << endl;
       }
-      else if (typeS.equals("string"))
+      else if (typeS == "string")
       {
-         hFile << "   char*                " << S(nameS) << ";" << endl;
+         hFile << "   char*                " << nameS << ";" << endl;
       }
-      else if (typeS.equals("anyURI"))
+      else if (typeS == "anyURI")
       {
-         hFile << "   char*                " << S(nameS) << ";" << endl;
+         hFile << "   char*                " << nameS << ";" << endl;
       }
-      else if (typeS.equals("Particle_t"))
+      else if (typeS == "Particle_t")
       {
-         hFile << "   Particle_t           " << S(nameS) << ";" << endl;
+         hFile << "   Particle_t           " << nameS << ";" << endl;
       }
       else
       {
@@ -304,43 +620,39 @@ void writeHeader(DOMElement* el)
    for (int c = 0; c < contLength; c++)
    {
       DOMNode* cont = contList->item(c);
-      XString nameS(cont->getNodeName());
+      XtString nameS(cont->getNodeName());
       short type = cont->getNodeType();
       if (type == DOMNode::ELEMENT_NODE)
       {
          DOMElement* contEl = (DOMElement*) cont;
-	 XString repAttS("maxOccurs");
-         XString repS(contEl->getAttribute(X(repAttS)));
-	 int rep = (repS.equals("unbounded"))? 9999 : atoi(S(repS));
-         char* ctypeRef = (rep > 1) ? listStructType(S(nameS))
-	                            : simpleStructType(S(nameS));
-         int clen = strlen(ctypeRef);
+	 XtString repAttS("maxOccurs");
+         XtString repS(contEl->getAttribute(X(repAttS)));
+	 int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
+         XtString ctypeRef = (rep > 1) ? nameS.listStructType()
+	                              : nameS.simpleStructType();
+         XtString::size_type clen = ctypeRef.size();
 
          hFile << "   " << ctypeRef << "* ";
-         for (int i = 0; i < 19-clen; i++)
+         for (int i = 0; i < 19-(int)clen; i++)
          {
             hFile << " ";
          }
-         char* names = plural(S(nameS));
-         hFile <<  ((rep > 1) ? names : S(nameS)) << ";" << endl;
-         delete [] ctypeRef;
-         delete [] names;
+         hFile <<  ((rep > 1) ? nameS.plural() : nameS) << ";" << endl;
       }
    }
 
    hFile << "} " << ctypeDef << ";" << endl;
 
-   XString repAttS("maxOccurs");
-   XString repS(el->getAttribute(X(repAttS)));
-   int rep = (repS.equals("unbounded"))? 9999 : atoi(S(repS));
+   XtString repAttS("maxOccurs");
+   XtString repS(el->getAttribute(X(repAttS)));
+   int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
    if (rep > 1)
    {
-      char* ctypeRef = listStructType(S(tagS));
+      XtString ctypeRef = tagS.listStructType();
       hFile << endl << "typedef struct {" << endl
             << "   unsigned int mult;" << endl
             << "   " << ctypeDef << " in[1];" << endl
             << "} " << ctypeRef << ";" << endl;
-      delete [] ctypeRef;
    }
 
    hFile << "#endif /* " << ctypeDef << " */" 			<< endl;
@@ -349,21 +661,21 @@ void writeHeader(DOMElement* el)
 /* Generate c-structure declarations for this tag and its descendants;
  * this function calls itself recursively
  */
-int constructGroup(DOMElement* el)
+void CodeBuilder::constructGroup(DOMElement* el)
 {
-   XString tagS(el->getTagName());
-   int t;
-   for (t = 0; t < tagListLength; t++)
+   XtString tagS(el->getTagName());
+   std::vector<DOMElement*>::iterator iter;
+   for (iter = tagList.begin(); iter != tagList.end(); iter++)
    {
-      if (tagS.equals(tagList[t]->getTagName()))
+      XtString targS((*iter)->getTagName());
+      if (tagS == targS)
       {
-         checkConsistency(el,t);
-         return t;
+         checkConsistency(el,*iter);
+         return;
       }
    }
 
-   tagList[t] = el;
-   tagListLength++;
+   tagList.push_back(el);
 
    DOMNodeList* contList = el->getChildNodes();
    int contLength = contList->getLength();
@@ -379,34 +691,32 @@ int constructGroup(DOMElement* el)
    }
 
    writeHeader(el);
-   return t;
 }
 
 /* Generate c code for make_<class letter>_<group name> functions */
 
-void constructMakeFuncs()
+void CodeBuilder::constructMakeFuncs()
 {
-   for (int t = 0; t < tagListLength; t++)
+   std::vector<DOMElement*>::iterator iter;
+   for (iter = tagList.begin(); iter != tagList.end(); iter++)
    {
-      DOMElement* tagEl = tagList[t];
-      XString tagS(tagEl->getTagName());
-      char* listType = listStructType(S(tagS));
-      char* simpleType = simpleStructType(S(tagS));
+      DOMElement* tagEl = *iter;
+      XtString tagS(tagEl->getTagName());
+      XtString listType = tagS.listStructType();
+      XtString simpleType = tagS.simpleStructType();
 
       hFile << endl;
       cFile << endl;
 
-      XString repAttS("maxOccurs");
-      XString repS = tagEl->getAttribute(X(repAttS));
-      int rep = (repS.equals("unbounded"))? 9999 : atoi(S(repS));
+      XtString repAttS("maxOccurs");
+      XtString repS = tagEl->getAttribute(X(repAttS));
+      int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
       if (rep > 1)
       {
          hFile << listType << "* ";
          cFile << listType << "* ";
-         char listT[500];
-         strncpy(listT,listType,500);
-         char* term = rindex(listT,'_');
-         *term = 0;
+         XtString listT(listType);
+         listT.erase(listT.rfind('_'));
          hFile << "make_" << listT;
          cFile << "make_" << listT;
          hFile << "(int n);" 					<< endl;
@@ -427,23 +737,23 @@ void constructMakeFuncs()
          for (int v = 0; v < varCount; v++)
          {
             DOMNode* var = varList->item(v);
-            XString typeS(var->getNodeValue());
-            XString nameS(var->getNodeName());
-            if (typeS.equals("string") || 
-                typeS.equals("anyURI"))
+            XtString typeS(var->getNodeValue());
+            XtString nameS(var->getNodeName());
+            if (typeS == "string" || 
+                typeS == "anyURI")
             {
-               cFile << "      pp->" << S(nameS)
-                     << " = (" << S(typeS)
+               cFile << "      pp->" << nameS
+                     << " = (" << typeS
                      << "*)&hddm_nullTarget;"			<< endl;
             }
-            else if (typeS.equals("int") ||
-	             typeS.equals("long") ||
-                     typeS.equals("float") ||
-                     typeS.equals("double") ||
-                     typeS.equals("boolean") ||
-                     typeS.equals("Particle_t"))
+            else if (typeS == "int" ||
+	             typeS == "long" ||
+                     typeS == "float" ||
+                     typeS == "double" ||
+                     typeS == "boolean" ||
+                     typeS == "Particle_t")
             {
-               cFile << "      pp->" << S(nameS) << " = 0;"	<< endl;
+               cFile << "      pp->" << nameS << " = 0;"	<< endl;
             }
          }
          DOMNodeList* contList = tagEl->getChildNodes();
@@ -454,19 +764,19 @@ void constructMakeFuncs()
             if (ctype == DOMNode::ELEMENT_NODE)
             {
                DOMElement* contEl = (DOMElement*) cont;
-               XString cnameS(contEl->getTagName());
-               XString crepS(contEl->getAttribute(X(repAttS)));
-	       int crep = (crepS.equals("unbounded"))? 9999 : atoi(S(crepS));
+               XtString cnameS(contEl->getTagName());
+               XtString crepS(contEl->getAttribute(X(repAttS)));
+	       int crep = (crepS == "unbounded")? 9999 : atoi(S(crepS));
                if (crep > 1)
                {
-                  cFile << "   pp->" << plural(S(cnameS))
-                        << " = (" << listStructType(S(cnameS))
+                  cFile << "   pp->" << cnameS.plural()
+                        << " = (" << cnameS.listStructType()
                         << "*)&hddm_nullTarget;"		<< endl;
                }
                else
                {
-                  cFile << "   pp->" << S(cnameS)
-                        << " = (" << simpleStructType(S(cnameS))
+                  cFile << "   pp->" << cnameS
+                        << " = (" << cnameS.simpleStructType()
                         << "*)&hddm_nullTarget;"		<< endl;
                }
             }
@@ -477,10 +787,8 @@ void constructMakeFuncs()
       {
          hFile << simpleType << "* ";
          cFile << simpleType << "* ";
-         char simpleT[500];
-         strncpy(simpleT,simpleType,500);
-         char* term = rindex(simpleT,'_');
-         *term = 0;
+         XtString simpleT(simpleType);
+         simpleT.erase(simpleT.rfind('_'));
          hFile << "make_" << simpleT;
          cFile << "make_" << simpleT;
          hFile << "();"	 					<< endl;
@@ -495,23 +803,23 @@ void constructMakeFuncs()
          for (int v = 0; v < varCount; v++)
          {
             DOMNode* var = varList->item(v);
-            XString typeS(var->getNodeValue());
-            XString nameS(var->getNodeName());
-            if (typeS.equals("string") || 
-                typeS.equals("anyURI"))
+            XtString typeS(var->getNodeValue());
+            XtString nameS(var->getNodeName());
+            if (typeS == "string" || 
+                typeS == "anyURI")
             {
-               cFile << "   p->" << S(nameS)
-                     << " = (" << S(typeS)
+               cFile << "   p->" << nameS
+                     << " = (" << typeS
                      << "*)&hddm_nullTarget;"			<< endl;
             }
-            else if (typeS.equals("int") ||
-	             typeS.equals("long") ||
-                     typeS.equals("float") ||
-                     typeS.equals("double") ||
-                     typeS.equals("boolean") ||
-                     typeS.equals("Particle_t"))
+            else if (typeS == "int" ||
+	             typeS == "long" ||
+                     typeS == "float" ||
+                     typeS == "double" ||
+                     typeS == "boolean" ||
+                     typeS == "Particle_t")
             {
-               cFile << "   p->" << S(nameS) << " = 0;"		<< endl;
+               cFile << "   p->" << nameS << " = 0;"		<< endl;
             }
          }
          DOMNodeList* contList = tagEl->getChildNodes();
@@ -522,19 +830,19 @@ void constructMakeFuncs()
             if (ctype == DOMNode::ELEMENT_NODE)
             {
                DOMElement* contEl = (DOMElement*) cont;
-               XString cnameS(contEl->getTagName());
-               XString crepS(contEl->getAttribute(X(repAttS)));
-	       int crep = (crepS.equals("unbounded"))? 9999 : atoi(S(crepS));
+               XtString cnameS(contEl->getTagName());
+               XtString crepS(contEl->getAttribute(X(repAttS)));
+	       int crep = (crepS == "unbounded")? 9999 : atoi(S(crepS));
                if (crep > 1)
                {
-                  cFile << "   p->" << plural(S(cnameS))
-                        << " = (" << listStructType(S(cnameS))
+                  cFile << "   p->" << cnameS.plural()
+                        << " = (" << cnameS.listStructType()
                         << "*)&hddm_nullTarget;"		<< endl;
                }
                else
                {
-                  cFile << "   p->" << S(cnameS)
-                        << " = (" << simpleStructType(S(cnameS))
+                  cFile << "   p->" << cnameS
+                        << " = (" << cnameS.simpleStructType()
                         << "*)&hddm_nullTarget;"		<< endl;
                }
             }
@@ -547,34 +855,33 @@ void constructMakeFuncs()
 
 /* Generate c functions for unpacking binary stream into c-structures */
 
-void constructUnpackers()
+void CodeBuilder::constructUnpackers()
 {
    cFile << endl;
-   for (int t = 0; t < tagListLength; t++)
+   std::vector<DOMElement*>::iterator iter;
+   for (iter = tagList.begin(); iter != tagList.end(); iter++)
    {
-      DOMElement* tagEl = tagList[t];
-      XString tagS(tagEl->getTagName());
-      char* listType = listStructType(S(tagS));
-      char* simpleType = simpleStructType(S(tagS));
+      DOMElement* tagEl = *iter;
+      XtString tagS(tagEl->getTagName());
+      XtString listType = tagS.listStructType();
+      XtString simpleType = tagS.simpleStructType();
 
       cFile << endl << "static ";
 
-      char* tagType;
-      XString repAttS("maxOccurs");
-      XString repS = tagEl->getAttribute(X(repAttS));
-      int rep = (repS.equals("unbounded"))? 9999 : atoi(S(repS));
+      XtString tagType;
+      XtString repAttS("maxOccurs");
+      XtString repS = tagEl->getAttribute(X(repAttS));
+      int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
       if (rep > 1)
       {
-         tagType = listType;
+         tagType = tagS.listStructType();
       }
       else
       {
-         tagType = simpleType;
+         tagType = tagS.simpleStructType();
       }
-      char tagT[500];
-      strncpy(tagT,tagType,500);
-      char* term = rindex(tagT,'_');
-      *term = 0;
+      XtString tagT(tagType);
+      tagT.erase(tagT.rfind('_'));
       cFile << tagType << "* unpack_" << tagT
             << "(XDR* xdrs, popNode* pop)"
 								<< endl
@@ -615,15 +922,13 @@ void constructUnpackers()
          {
             hasContents = 1;
             DOMElement* contEl = (DOMElement*) cont;
-            XString nameS(contEl->getTagName());
-            XString reS(contEl->getAttribute(X(repAttS)));
-	    int re = (reS.equals("unbounded"))? 9999 : atoi(S(reS));
-            char* names = plural(S(nameS));
+            XtString nameS(contEl->getTagName());
+            XtString reS(contEl->getAttribute(X(repAttS)));
+	    int re = (reS == "unbounded")? 9999 : atoi(S(reS));
             cFile << "         int p;"				<< endl
                   << "         void* (*ptr) = (void**) &this1->"
                   << ((rep > 1) ? "in[m]." : "" )
-                  << ((re > 1) ? names : S(nameS)) << ";"	<< endl;
-            delete [] names;
+                  << ((re > 1) ? nameS.plural() : nameS) << ";"	<< endl;
             break;
          }
       }
@@ -632,23 +937,19 @@ void constructUnpackers()
       for (int a = 0; a < attList->getLength(); a++)
       {
          DOMNode* att = attList->item(a);
-         XString typeS(att->getNodeValue());
-         XString nameS(att->getNodeName());
-         char nameStr[500];
+         XtString typeS(att->getNodeValue());
+         XtString nameS(att->getNodeName());
+         XtString nameStr(nameS);
          if (rep > 1)
          {
-            sprintf(nameStr,"in[m].%s",S(nameS));
+            nameStr = "in[m]." + nameS;
          }
-         else
-         {
-            sprintf(nameStr,"%s",S(nameS));
-         }
-         if (typeS.equals("int"))
+         if (typeS == "int")
          {
             cFile << "         xdr_int(xdrs,&this1->"
 	          << nameStr << ");"				 << endl;
          }
-	 else if (typeS.equals("long"))
+	 else if (typeS == "long")
          {
             cFile << "#ifndef XDR_LONGLONG_MISSING"		 << endl
                   << "         xdr_longlong_t(xdrs,&this1->"
@@ -671,32 +972,32 @@ void constructUnpackers()
                   << "         }"				 << endl
                   << "#endif"					 << endl;
          }
-         else if (typeS.equals("float"))
+         else if (typeS == "float")
          {
             cFile << "         xdr_float(xdrs,&this1->"
 	          << nameStr << ");"				 << endl;
          }
-         else if (typeS.equals("double"))
+         else if (typeS == "double")
          {
             cFile << "         xdr_double(xdrs,&this1->"
 	          << nameStr << ");"				 << endl;
          }
-         else if (typeS.equals("boolean"))
+         else if (typeS == "boolean")
          {
             cFile << "         xdr_bool(xdrs,&this1->"
 	          << nameStr << ");"				 << endl;
          }
-         else if (typeS.equals("Particle_t"))
+         else if (typeS == "Particle_t")
          {
             cFile << "         xdr_int(xdrs,(int*)&this1->"
 	          << nameStr << ");"				 << endl;
          }
-         else if (typeS.equals("string"))
+         else if (typeS == "string")
          {
             cFile << "         xdr_string(xdrs,&this1->"
 	          << nameStr << ", 1000000);"			 << endl;
          }
-         else if (typeS.equals("anyURI"))
+         else if (typeS == "anyURI")
          {
             cFile << "         xdr_string(xdrs,&this1->"
 	          << nameStr << ", 1000000);"			 << endl;
@@ -737,14 +1038,12 @@ void constructUnpackers()
  
 /* Generate c function to read from binary stream into c-structures */
 
-void constructReadFunc(DOMElement* topEl)
+void CodeBuilder::constructReadFunc(DOMElement* topEl)
 {
-   XString topS(topEl->getTagName());
-   char* topType = simpleStructType(S(topS));
-   char topT[500];
-   strncpy(topT,topType,500);
-   char* term = rindex(topT,'_');
-   *term = 0;
+   XtString topS(topEl->getTagName());
+   XtString topType = topS.simpleStructType();
+   XtString topT(topType);
+   topT.erase(topT.rfind('_'));
    hFile								<< endl
 	 << topType << "* read_" << topT
 	 << "(" << classPrefix << "_iostream_t* fp" << ");"		<< endl;
@@ -757,29 +1056,29 @@ void constructReadFunc(DOMElement* topEl)
 	 << "unpack_" << topT << "(fp->xdrs,fp->popTop);"		<< endl
 	 << "   return (nextEvent == HDDM_NULL)? 0 : nextEvent;"	<< endl
 	 << "}"								<< endl;
-   delete [] topType;
 }
 
 /* Generate streamers for packing c-structures onto a binary stream
  * and deleting them from memory when output is complete
  */
 
-void constructPackers()
+void CodeBuilder::constructPackers()
 {
    cFile << endl;
-   for (int t = 0; t < tagListLength; t++)
+   std::vector<DOMElement*>::iterator iter;
+   for (iter = tagList.begin(); iter != tagList.end(); iter++)
    {
-      DOMElement* tagEl = tagList[t];
-      XString tagS(tagList[t]->getTagName());
-      char* listType = listStructType(S(tagS));
-      char* simpleType = simpleStructType(S(tagS));
+      DOMElement* tagEl = *iter;
+      XtString tagS(tagEl->getTagName());
+      XtString listType = tagS.listStructType();
+      XtString simpleType = tagS.simpleStructType();
 
       cFile << "static ";
 
-      char* tagType;
-      XString repAttS("maxOccurs");
-      XString repS(tagEl->getAttribute(X(repAttS)));
-      int rep = (repS.equals("unbounded"))? 9999 : atoi(S(repS));
+      XtString tagType;
+      XtString repAttS("maxOccurs");
+      XtString repS(tagEl->getAttribute(X(repAttS)));
+      int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
       if (rep > 1)
       {
          tagType = listType;
@@ -788,27 +1087,25 @@ void constructPackers()
       {
          tagType = simpleType;
       }
-      char tagT[500];
-      strncpy(tagT,tagType,500);
-      char* term = rindex(tagT,'_');
-      *term = 0;
+      XtString tagT(tagType);
+      tagT.erase(tagT.rfind('_'));
       cFile << "int pack_" << tagT << "(XDR* xdrs, "
             << tagType << "* this1);"				<< endl;
    }
 
-   for (int t = 0; t < tagListLength; t++)
+   for (iter = tagList.begin(); iter != tagList.end(); iter++)
    {
-      DOMElement* tagEl = tagList[t];
-      XString tagS(tagList[t]->getTagName());
-      char* listType = listStructType(S(tagS));
-      char* simpleType = simpleStructType(S(tagS));
+      DOMElement* tagEl = *iter;
+      XtString tagS(tagEl->getTagName());
+      XtString listType = tagS.listStructType();
+      XtString simpleType = tagS.simpleStructType();
 
       cFile << endl << "static ";
 
-      char* tagType;
-      XString repAttS("maxOccurs");
-      XString repS(tagEl->getAttribute(X(repAttS)));
-      int rep = (repS.equals("unbounded"))? 9999 : atoi(S(repS));
+      XtString tagType;
+      XtString repAttS("maxOccurs");
+      XtString repS(tagEl->getAttribute(X(repAttS)));
+      int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
       if (rep > 1)
       {
          tagType = listType;
@@ -817,10 +1114,8 @@ void constructPackers()
       {
          tagType = simpleType;
       }
-      char tagT[500];
-      strncpy(tagT,tagType,500);
-      char* term = rindex(tagT,'_');
-      *term = 0;
+      XtString tagT(tagType);
+      tagT.erase(tagT.rfind('_'));
       cFile << "int pack_" << tagT << "(XDR* xdrs, "
             << tagType << "* this1)"				<< endl
             << "{"						<< endl
@@ -839,31 +1134,27 @@ void constructPackers()
       }
       else
       {
-			cFile << "   m = 0; /* avoid warnings from -Wall */"<< endl
-         		<< "   {"					<< endl;
+	 cFile << "   m = 0; /* avoid warnings from -Wall */"	<< endl
+               << "   {"					<< endl;
       }
 
       DOMNamedNodeMap* attList = tagEl->getAttributes();
       for (int a = 0; a < attList->getLength(); a++)
       {
          DOMNode* att = attList->item(a);
-         XString typeS(att->getNodeValue());
-         XString nameS(att->getNodeName());
-         char nameStr[500];
+         XtString typeS(att->getNodeValue());
+         XtString nameS(att->getNodeName());
+         XtString nameStr(nameS);
          if (rep > 1)
          {
-            sprintf(nameStr,"in[m].%s",S(nameS));
+            nameStr = "in[m]." + nameS;
          }
-         else
-         {
-            sprintf(nameStr,"%s",S(nameS));
-         }
-         if (typeS.equals("int"))
+         if (typeS == "int")
          {
             cFile << "      xdr_int(xdrs,&this1->"
                   << nameStr << ");"				 << endl;
          }
-         if (typeS.equals("long"))
+         if (typeS == "long")
          {
             cFile << "#ifndef XDR_LONGLONG_MISSING"		 << endl
                   << "         xdr_longlong_t(xdrs,&this1->"
@@ -886,32 +1177,32 @@ void constructPackers()
                   << "         }"				 << endl
                   << "#endif"					 << endl;
          }
-         else if (typeS.equals("float"))
+         else if (typeS == "float")
          {
             cFile << "      xdr_float(xdrs,&this1->"
                   << nameStr << ");"				 << endl;
          }
-         else if (typeS.equals("double"))
+         else if (typeS == "double")
          {
             cFile << "      xdr_double(xdrs,&this1->" 
                   << nameStr << ");" 				 << endl;
          }
-         else if (typeS.equals("boolean"))
+         else if (typeS == "boolean")
          {
             cFile << "      xdr_bool(xdrs,&this1->"
                   << nameStr << ");"				 << endl;
          }
-         else if (typeS.equals("Particle_t"))
+         else if (typeS == "Particle_t")
          {
             cFile << "      xdr_int(xdrs,(int*)&this1->"
                   << nameStr << ");"  				 << endl;
          }
-         else if (typeS.equals("string"))
+         else if (typeS == "string")
          {
             cFile << "      xdr_string(xdrs,&this1->" 
                   << nameStr << ", 1000000);"			 << endl;
          }
-         else if (typeS.equals("anyURI"))
+         else if (typeS == "anyURI")
          {
             cFile << "      xdr_string(xdrs,&this1->" 
                   << nameStr << ", 1000000);" 			 << endl;
@@ -930,47 +1221,39 @@ void constructPackers()
          if (type == DOMNode::ELEMENT_NODE)
          {
             DOMElement* contEl = (DOMElement*) cont;
-            XString nameS(contEl->getTagName());
-            char* listType = listStructType(S(nameS));
-            char* simpleType = simpleStructType(S(nameS));
-            char* names = plural(S(nameS));
-            XString reS(contEl->getAttribute(X(repAttS)));
-	    int re = (reS.equals("unbounded"))? 9999 : atoi(S(reS));
-            char* contType;
+            XtString nameS(contEl->getTagName());
+            XtString reS(contEl->getAttribute(X(repAttS)));
+	    int re = (reS == "unbounded")? 9999 : atoi(S(reS));
+            XtString contType;
             if (re > 1)
             {
-               contType = listType;
+               contType = nameS.listStructType();
             }
             else
             {
-               contType = simpleType;
+               contType = nameS.simpleStructType();
             }
-            char contT[500];
-            strncpy(contT,contType,500);
-            char* term = rindex(contT,'_');
-            *term = 0;
+            XtString contT(contType);
+            contT.erase(contT.rfind('_'));
             cFile << "      if (this1->"
                   << ((rep > 1)? "in[m]." : "")
-                  << ((re > 1)? names : S(nameS)) << " != ("
+                  << ((re > 1)? nameS.plural(): nameS) << " != ("
                   << contType << "*)&hddm_nullTarget)"			<< endl
                   << "      {"						<< endl
                   << "         pack_" << contT << "(xdrs,this1->"
                   << ((rep > 1)? "in[m]." : "")
-                  << ((re > 1)? names : S(nameS)) << ");"		<< endl
+                  << ((re > 1)? nameS.plural() : nameS) << ");"			<< endl
                   << "      }"						<< endl
                   << "      else"					<< endl
                   << "      {"						<< endl
 		  << "         int zero=0;"				<< endl
                   << "         xdr_int(xdrs,&zero);"			<< endl
                   << "      }"						<< endl;
-            delete [] listType;
-            delete [] simpleType;
-            delete [] names;
          }
       }
 
       cFile << "   }"							<< endl
-            << "   FREE(this1);"						<< endl
+            << "   FREE(this1);"					<< endl
             << "   end = xdr_getpos(xdrs);"				<< endl
             << "   xdr_setpos(xdrs,base);"				<< endl
 	    << "   size = end-start;"					<< endl
@@ -983,15 +1266,13 @@ void constructPackers()
 
 /* Generate c functions for exporting c-structures onto a binary stream */
  
-void constructFlushFunc(DOMElement* el)
+void CodeBuilder::constructFlushFunc(DOMElement* el)
 {
    DOMElement* topEl = tagList[0];
-   XString topS(topEl->getTagName());
-   char* topType = simpleStructType(S(topS));
-   char topT[500];
-   strncpy(topT,topType,500);
-   char* term = rindex(topT,'_');
-   *term = 0;
+   XtString topS(topEl->getTagName());
+   XtString topType = topS.simpleStructType();
+   XtString topT(topType);
+   topT.erase(topT.rfind('_'));
 
    constructPackers();
 
@@ -1027,7 +1308,6 @@ void constructFlushFunc(DOMElement* el)
 	 << "   }"						<< endl
 	 << "   return 0;"			<< endl
 	 << "}"							<< endl;
-   delete [] topType;
 }
 
 /* Generate c functions that match up corresponding elements between
@@ -1046,7 +1326,7 @@ void constructFlushFunc(DOMElement* el)
  *     contents which appear in both models will be unpacked, however.
  */
 
-void writeMatcher()
+void CodeBuilder::writeMatcher()
 {
    cFile							<< endl
 	 << "static int getTag(char* d, char* tag)"		<< endl
@@ -1063,7 +1343,7 @@ void writeMatcher()
 	 << "      strncpy(tag,token,500);"			<< endl
 	 << "      return level/2;"				<< endl
 	 << "   }"						<< endl
-	 << "   return -1;"						<< endl
+	 << "   return -1;"					<< endl
 	 << "}"							<< endl
    								<< endl
 	 << "static char* getEndTag(char* d, char* tag)"	<< endl
@@ -1113,25 +1393,24 @@ void writeMatcher()
 	 << "         }"					<< endl;
 
    int firstTag = 1;
-   for (int t = 0; t < tagListLength; t++)
+   std::vector<DOMElement*>::iterator iter;
+   for (iter = tagList.begin(); iter != tagList.end(); iter++)
    {
-      XString tagS(tagList[t]->getTagName());
-      XString repAttS("maxOccurs");
-      XString repS(tagList[t]->getAttribute(X(repAttS)));
-      int rep = (repS.equals("unbounded"))? 9999 : atoi(S(repS));
-      char* tagType;
+      XtString tagS((*iter)->getTagName());
+      XtString repAttS("maxOccurs");
+      XtString repS((*iter)->getAttribute(X(repAttS)));
+      int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
+      XtString tagType;
       if (rep > 1)
       {
-         tagType = listStructType(S(tagS));
+         tagType = tagS.listStructType();
       }
       else
       {
-         tagType = simpleStructType(S(tagS));
+         tagType = tagS.simpleStructType();
       }
-      char tagT[500];
-      strncpy(tagT,tagType,500);
-      char* term = rindex(tagT,'_');
-      *term = 0;
+      XtString tagT(tagType);
+      tagT.erase(tagT.rfind('_'));
 
       if (firstTag)
       {
@@ -1142,7 +1421,7 @@ void writeMatcher()
       {
          cFile << "         else if ";
       }
-      cFile << "(strcmp(btag,\"" << S(tagS) << "\") == 0)"	<< endl
+      cFile << "(strcmp(btag,\"" << tagS << "\") == 0)"		<< endl
             << "         {"					<< endl
 	    << "            this1->unpacker = "
 	    << "(void*(*)(XDR*,popNode*))"
@@ -1189,14 +1468,12 @@ void writeMatcher()
 
 /* Generate c code to open a hddm file for reading */
 
-void constructOpenFunc(DOMElement* el)
+void CodeBuilder::constructOpenFunc(DOMElement* el)
 {
-   XString tagS(el->getTagName());
-   char* tagType = simpleStructType(S(tagS));
-   char tagT[500];
-   strncpy(tagT,tagType,500);
-   char* term = rindex(tagT,'_');
-   *term = 0;
+   XtString tagS(el->getTagName());
+   XtString tagType = tagS.simpleStructType();
+   XtString tagT(tagType);
+   tagT.erase(tagT.rfind('_'));
    hFile							<< endl
 	 << classPrefix << "_iostream_t* "
 	 << "open_" << tagT << "(char* filename);"		<< endl;
@@ -1259,19 +1536,16 @@ void constructOpenFunc(DOMElement* el)
          << "   xdrstdio_create(fp->xdrs,fp->fd,XDR_DECODE);"	<< endl
 	 << "   return fp;"					<< endl
 	 << "}"							<< endl;
-   delete [] tagType;
 }
 
 /* Generate the c code to open a hddm file for writing */
 
-void constructInitFunc(DOMElement* el)
+void CodeBuilder::constructInitFunc(DOMElement* el)
 {
-   XString tagS(el->getTagName());
-   char* tagType = simpleStructType(S(tagS));
-   char tagT[500];
-   strncpy(tagT,tagType,500);
-   char* term = rindex(tagT,'_');
-   *term = 0;
+   XtString tagS(el->getTagName());
+   XtString tagType = tagS.simpleStructType();
+   XtString tagT(tagType);
+   tagT.erase(tagT.rfind('_'));
    hFile							<< endl
 	 << classPrefix << "_iostream_t* "
 	 << "init_" << tagT << "(char* filename);"		<< endl;
@@ -1319,19 +1593,16 @@ void constructInitFunc(DOMElement* el)
 	 << "   free(head);"					<< endl
 	 << "   return fp;"					<< endl
 	 << "}"							<< endl;
-   delete [] tagType;
 }
 
 /* Generate the c code to close an open hddm file */
 
-void constructCloseFunc(DOMElement* el)
+void CodeBuilder::constructCloseFunc(DOMElement* el)
 {
-   XString tagS(el->getTagName());
-   char* tagType = simpleStructType(S(tagS));
-   char tagT[500];
-   strncpy(tagT,tagType,500);
-   char* term = rindex(tagT,'_');
-   *term = 0;
+   XtString tagS(el->getTagName());
+   XtString tagType = tagS.simpleStructType();
+   XtString tagT(tagType);
+   tagT.erase(tagT.rfind('_'));
    hFile							<< endl
 	 << "void close_" << tagT << "("
 	 << classPrefix << "_iostream_t* fp);"			<< endl;
@@ -1360,12 +1631,11 @@ void constructCloseFunc(DOMElement* el)
          << "   popaway(fp->popTop);"				<< endl
 	 << "   free(fp);"					<< endl	
 	 << "}"							<< endl;
-   delete [] tagType;
 }
 
 /* Generate the xml template in normal form and store in a string */
 
-void constructDocument(DOMElement* el)
+void CodeBuilder::constructDocument(DOMElement* el)
 {
    static int indent = 0;
    cFile << "\"";
@@ -1374,16 +1644,16 @@ void constructDocument(DOMElement* el)
       cFile << "  ";
    }
    
-   XString tagS(el->getTagName());
-   cFile << "<" << S(tagS);
+   XtString tagS(el->getTagName());
+   cFile << "<" << tagS;
    DOMNamedNodeMap* attrList = el->getAttributes();
    int attrListLength = attrList->getLength();
    for (int a = 0; a < attrListLength; a++)
    {
       DOMNode* node = attrList->item(a);
-      XString nameS(node->getNodeName());
-      XString valueS(node->getNodeValue());
-      cFile << " " << S(nameS) << "=\\\"" << S(valueS) << "\\\"";
+      XtString nameS(node->getNodeName());
+      XtString valueS(node->getNodeValue());
+      cFile << " " << nameS << "=\\\"" << valueS << "\\\"";
    }
 
    DOMNodeList* contList = el->getChildNodes();
@@ -1407,281 +1677,10 @@ void constructDocument(DOMElement* el)
       {
          cFile << "  ";
       }
-      cFile << "</" << S(tagS) << ">\\n\"" << endl;
+      cFile << "</" << tagS << ">\\n\"" << endl;
    }
    else
    {
       cFile << " />\\n\"" << endl;
    }
-}
-
-int main(int argC, char* argV[])
-{
-   try
-   {
-      XMLPlatformUtils::Initialize();
-   }
-   catch (const XMLException* toCatch)
-   {
-      XString msg(toCatch->getMessage());
-      cerr << "hddm-c: Error during initialization! :\n"
-           << S(msg) << endl;
-      return 1;
-   }
-
-   if (argC < 2)
-   {
-      usage();
-      return 1;
-   }
-   else if ((argC == 2) && (strcmp(argV[1], "-?") == 0))
-   {
-      usage();
-      return 2;
-   }
-
-   const char*  xmlFile = 0;
-   int argInd;
-   for (argInd = 1; argInd < argC; argInd++)
-   {
-      if (argV[argInd][0] != '-')
-      {
-         break;
-      }
-      if (strcmp(argV[argInd],"-v") == 0)
-      {
-         verifyOnly = true;
-      }
-      else if (strcmp(argV[argInd],"-o") == 0)
-      {
-         hFilename = argV[++argInd];
-      }
-      else
-      {
-         cerr << "Unknown option \'" << argV[argInd]
-              << "\', ignoring it\n" << endl;
-      }
-   }
-
-   if (argInd != argC - 1)
-   {
-      usage();
-      return 1;
-   }
-   xmlFile = argV[argInd];
-
-#if defined OLD_STYLE_XERCES_PARSER
-   DOMDocument* document = parseInputDocument(xmlFile,false);
-#else
-   DOMDocument* document = buildDOMDocument(xmlFile,false);
-#endif
-   if (document == 0)
-   {
-      cerr << "hddm-c : Error parsing HDDM document, "
-           << "cannot continue" << endl;
-      return 1;
-   }
-
-   DOMElement* rootEl = document->getDocumentElement();
-   XString rootS(rootEl->getTagName());
-   if (!rootS.equals("HDDM"))
-   {
-      cerr << "hddm-c error: root element of input document is "
-           << "\"" << S(rootS) << "\", expected \"HDDM\""
-           << endl;
-      return 1;
-   }
-
-   XString classAttS("class");
-   XString classS(rootEl->getAttribute(X(classAttS)));
-   classPrefix = S(classS);
-
-   char hname[510];
-   if (verifyOnly)
-   {
-      sprintf(hname,"/dev/null");
-   }
-   else if (hFilename)
-   {
-      sprintf(hname,"%s.h",hFilename);
-   }
-   else
-   {
-      sprintf(hname,"hddm_%s.h",classPrefix);
-   }
-
-   hFile.open(hname);
-   if (! hFile.is_open())
-   {
-      cerr << "hddm-c error: unable to open output file "
-           << hname << endl;
-      return 1;
-   }
-
-   char cname[510];
-   if (verifyOnly)
-   {
-      sprintf(cname,"/dev/null");
-   }
-   else if (hFilename)
-   {
-      sprintf(cname,"%s.c",hFilename);
-   }
-   else
-   {
-      sprintf(cname,"hddm_%s.c",classPrefix);
-   }
-
-   cFile.open(cname);
-   if (! cFile.is_open())
-   {
-      cerr << "hddm-c error: unable to open output file "
-           << cname << endl;
-      return 1;
-   }
-
-   hFile << "/*"						<< endl
-	 << " * " << hname << " - DO NOT EDIT THIS FILE"	<< endl
-	 << " *"						<< endl
-	 << " * This file was generated automatically by hddm-c"
-	 << " from the file"					<< endl
-         << " * " << xmlFile					<< endl
-         << " * This header file defines the c structures that"
-	 << " hold the data"					<< endl
-	 << " * described in the data model"
-         << " (from " << xmlFile << "). "			<< endl
-	 << " * Any program that needs access to the data"
-         << " described in the model"				<< endl
-         << " * can include this header file, and make use"
-	 << " of the input/output"				<< endl
-         << " * services provided in " << cname			<< endl
-	 << " *"						<< endl
-	 << " * The hddm data model tool set was written by"	<< endl
-	 << " * Richard Jones, University of Connecticut."	<< endl
-	 << " *"						<< endl
-	 << " * For more information see the following web site"<< endl
-	 << " *"						<< endl
-	 << " * http://zeus.phys.uconn.edu/halld/datamodel/doc"	<< endl
-	 << " *"						<< endl
-	 << " */"						<< endl
-	 							<< endl;
-
-   cFile << "/*"						<< endl
-	 << " * " << cname << " - DO NOT EDIT THIS FILE"	<< endl
-	 << " *"						<< endl
-	 << " * This file was generated automatically by hddm-c"
-	 << " from the file"					<< endl
-         << " * " << xmlFile					<< endl
-         << " * This c file contains the i/o interface to"
-         << " the c structures"					<< endl
-	 << " * described in the data model"
-         << " (from " << xmlFile << "). "			<< endl
-	 << " * Any program that needs access to the data"
-         << " described in the model"				<< endl
-         << " * can compile this source file, and make use"
-	 << " of the input/output"				<< endl
-         << " * services provided."				<< endl
-	 << " *"						<< endl
-	 << " * The hddm data model tool set was written by"	<< endl
-	 << " * Richard Jones, University of Connecticut."	<< endl
-	 << " *"						<< endl
-	 << " * For more information see the following web site"<< endl
-	 << " *"						<< endl
-	 << " * http://zeus.phys.uconn.edu/halld/datamodel/doc"	<< endl
-	 << " */"						<< endl
-								<< endl;
-
-   hFile << "#include <stdlib.h>" 				<< endl
-	 << "#include <stdio.h>" 				<< endl
-	 << "#include <rpc/rpc.h>" 				<< endl
-	 << "#include <string.h>"				<< endl
-	 << "#include <strings.h>"				<< endl
-	 << "#include <particleType.h>"				<< endl
-								<< endl
-	 << "#define MALLOC(N,S) malloc(N)"			<< endl
-	 << "#define FREE(P) free(P)"				<< endl;
-
-   cFile << "int hddm_nullTarget=0;"				<< endl
-         << "#define HDDM_NULL (void*)&hddm_nullTarget"         << endl
-                                                                << endl
-         << "#include \"" << hname << "\"" 			<< endl
-								<< endl;
-   constructGroup(rootEl);
-
-   hFile							<< endl
-	 << "#ifdef __cplusplus"				<< endl
-	 << "extern \"C\" {"					<< endl
-	 << "#endif"						<< endl;
-   constructMakeFuncs();
-   hFile							<< endl
-	 << "#ifdef __cplusplus"				<< endl
-	 << "}"							<< endl
-	 << "#endif"						<< endl;
-
-   hFile 							<< endl
-	 << "#ifndef " << classPrefix << "_DocumentString" 	<< endl
-	 << "#define " << classPrefix << "_DocumentString" 	<< endl
-         							<< endl
-	 << "extern "
-	 << "char HDDM_" << classPrefix << "_DocumentString[];"	<< endl
-         							<< endl
-         << "#ifdef INLINE_PREPEND_UNDERSCORES"			<< endl
-         << "#define inline __inline"				<< endl
-         << "#endif"						<< endl
-								<< endl
-	 << "#endif /* " << classPrefix << "_DocumentString */"	<< endl;
-
-   cFile							<< endl
-	 << "char HDDM_" << classPrefix << "_DocumentString[]"
-	 << " = "						<< endl;
-   constructDocument(rootEl);
-   cFile << ";"							<< endl;
-
-   hFile 							<< endl
-	 << "#ifndef HDDM_STREAM_INPUT"				<< endl
-	 << "#define HDDM_STREAM_INPUT -91"			<< endl
-	 << "#define HDDM_STREAM_OUTPUT -92"			<< endl
-           							<< endl
-	 << "struct popNode_s {"				<< endl
-         << "   void* (*unpacker)(XDR*, struct popNode_s*);"	<< endl
-         << "   int inParent;"					<< endl
-         << "   int popListLength;"				<< endl
-         << "   struct popNode_s* popList["
-         << MAX_POPLIST_LENGTH << "];"				<< endl
-         << "};"						<< endl
-         << "typedef struct popNode_s popNode;"			<< endl
-                                                                << endl
-	 << "typedef struct {"					<< endl
-	 << "   FILE* fd;"					<< endl
-	 << "   int iomode;"					<< endl
-	 << "   char* filename;"				<< endl
-         << "   XDR* xdrs;"					<< endl
-	 << "   popNode* popTop;"				<< endl
-	 << "} " << classPrefix << "_iostream_t;"		<< endl
-								<< endl
-	 << "#endif /* HDDM_STREAM_INPUT */"			<< endl;
-
-   constructUnpackers();
-
-   hFile							<< endl
-	 << "#ifdef __cplusplus"				<< endl
-	 << "extern \"C\" {"					<< endl
-	 << "#endif"						<< endl;
-   constructReadFunc(rootEl);
-   constructFlushFunc(rootEl);
-   constructOpenFunc(rootEl);
-   constructInitFunc(rootEl);
-   constructCloseFunc(rootEl);
-   hFile							<< endl
-	 << "#ifdef __cplusplus"				<< endl
-	 << "}"							<< endl
-	 << "#endif"						<< endl
-	            						<< endl
-	 << "#if !defined HDDM_NULL"				<< endl
-         << "extern int hddm_nullTarget;"			<< endl
-         << "# define HDDM_NULL (void*)&hddm_nullTarget"        << endl
-	 << "#endif"						<< endl;
-
-   XMLPlatformUtils::Terminate();
-   return 0;
 }
