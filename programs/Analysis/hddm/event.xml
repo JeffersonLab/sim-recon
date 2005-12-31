@@ -6,7 +6,7 @@
 
 ]>
 
-<HDDM class="s" version="1.0" xmlns:hddm="http://www.gluex.org/hddm" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<HDDM class="s" version="1.0" xmlns="http://www.gluex.org/hddm">
    <physicsEvent eventNo="int" runNo="int" maxOccurs="unbounded">
       &ReactionModel;
       &HitsModel;
