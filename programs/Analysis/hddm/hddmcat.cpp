@@ -2,12 +2,21 @@
  *  hddmcat :	tool that reads in a sequence of HDDM files
  *		and catenates them into a single HDDM stream
  *
+ *  Version 1.2 - Richard Jones, December 2005.
+ *  - Updated code to use STL strings and vectors instead of old c-style
+ *    pre-allocated arrays and strXXX functions.
+ *  - Moved functions into classes grouped by function for better clarity.
+ *
  *  Original version - Richard Jones, February 24 2004.
  *
  */
 
-#include <iostream>
 using namespace std;
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <list>
 
 #include <assert.h>
 #include <stdlib.h>
@@ -17,12 +26,6 @@ using namespace std;
 #include <string.h>
 #include <unistd.h>
 
-struct stringArray;
-struct stringArray
-{
-   char *line;
-   struct stringArray *next;
-};
 
 void usage()
 {
@@ -31,23 +34,9 @@ void usage()
         << endl;
 }
 
-int getline(char* buf, int lenbuf, FILE* stream)
-{
-   int count = 0;
-   for (count = 0; count < lenbuf-1;)
-   {
-      int c = fgetc(stream);
-      if (c == EOF) break;
-      buf[count++] = c;
-      if (c == '\n') break;
-   }
-   buf[count] = 0;
-   return count;
-}
-
 int main(int argC, char* argV[])
 {
-   char *xFilename = 0;
+   string xFilename;
 
    int argInd;
    for (argInd = 1; argInd < argC; argInd++)
@@ -63,44 +52,43 @@ int main(int argC, char* argV[])
       }
    }
 
-   char* hddmFile;
-   FILE* ifp;
+   string hddmFile;
+   istream* ifs;
    if (argInd == argC)
    {
-      hddmFile = new char[1];
-      *hddmFile = 0;
-      ifp = stdin;
+      ifs = &cin;
    }
    else if (argInd < argC)
    {
-      hddmFile = argV[argInd++];
-      ifp = fopen(hddmFile,"r");
+      hddmFile = string(argV[argInd++]);
+      ifs = new ifstream(hddmFile.c_str());
    }
    else
    {
       usage();
       return 1;
    }
-   if (!ifp)
+   if (!ifs->good())
    {
       cerr << "hddmcat: Error opening input stream " << hddmFile << endl;
       exit(1);
    }
 
-   struct stringArray* head = new struct stringArray;
-   struct stringArray* h = head;
-   h->line = new char[1000];
-   if (getline(h->line,1000,ifp))
+   list<std::string*> stringList;
+   stringList.push_back(new string);
+   list<std::string*>::iterator h;
+   h = stringList.begin();
+   if (std::getline(*ifs,**h))
    {
-      if (strstr(h->line,"<?xml") != 0)
+      if ((*h)->substr(0,5) == "<?xml")
       {
          cerr << "hddmcat: Error reading input stream " << hddmFile << endl;
          cerr << "Input file appears to be an xml document!" << endl;
          exit(1);
       }
-      else if (strstr(h->line,"<HDDM") == h->line)
+      else if ((*h)->substr(0,5) == "<HDDM")
       {
-         cout << h->line;
+         cout << **h << endl;
       }
       else
       {
@@ -114,54 +102,52 @@ int main(int argC, char* argV[])
       cerr << "hddmcat: Error reading from input stream " << hddmFile << endl;
       exit(1);
    }
-   h = h->next = new struct stringArray;
-   h->line = new char[1000];
-   while (getline(h->line,1000,ifp))
+   stringList.push_back(new string);
+   while (getline(*ifs,**(++h)))
    {
-      cout << h->line;
-      if (strstr(h->line,"</HDDM>") != 0)
+      cout << **h << endl;
+      if (**h == "</HDDM>")
       {
-	 h->next = 0;
          break;
       }
-      h = h->next = new struct stringArray;
-      h->line = new char[1000];
+      stringList.push_back(new string);
    }
 
    const int bufferSize = 65536;
    char buffer[bufferSize];
    int count;
-   while (count = fread(buffer,sizeof(char),bufferSize,ifp))
+   while (count = (ifs->read(buffer,bufferSize), ifs->gcount()))
    {
       cout.write(buffer,count);
    }
-   if (ifp != stdin)
+   if (ifs != &cin)
    {
-      fclose(ifp);
+      ((ifstream*)ifs)->close();
    }
 
    while (argInd < argC)
    {
+      ifstream* ifs;
       hddmFile = argV[argInd++];
-      ifp = fopen(hddmFile,"r");
-      if (!ifp)
+      ifs = new ifstream(hddmFile.c_str());
+      if (!ifs->good())
       {
          cerr << "hddmcat: Error opening input stream " << hddmFile << endl;
          exit(1);
       }
-      h = head;
-      char* line = new char[1000];
-      if (getline(line,1000,ifp))
+      h = stringList.begin();
+      string line;
+      if (getline(*ifs,line))
       {
-         if (strstr(line,"<?xml") != 0)
+         if (line.substr(0,5) == "<?xml")
          {
             cerr << "hddmcat: Error reading input stream " << hddmFile << endl;
             cerr << "Input file appears to be an xml document!" << endl;
             exit(1);
          }
-         else if (strstr(line,h->line) == line)
+         else if (**h == line)
          {
-	    h = h->next;
+	    ++h;
          }
          else
          {
@@ -176,25 +162,24 @@ int main(int argC, char* argV[])
               << endl;
          exit(1);
       }
-      while (getline(line,1000,ifp))
+      while (getline(*ifs,line))
       {
-         if (h == 0 || strstr(line,h->line) != line)
+         if (h == stringList.end() || **h != line)
          {
             cerr << "hddmcat: Input stream contains invalid hddm header"
                  << endl;
             exit(1);
 	 }
-	 else if (h->next == 0 && strstr(line,"</HDDM>") == line)
+	 else if (++h == stringList.end() && line == "</HDDM>")
          {
             break;
 	 }
-         h = h->next;
       }
 
-      while (count = fread(buffer,sizeof(char),bufferSize,ifp))
+      while (count = (ifs->read(buffer,bufferSize), ifs->gcount()))
       {
          cout.write(buffer,count);
       }
-      fclose(ifp);
+      delete ifs;
    }
 }
