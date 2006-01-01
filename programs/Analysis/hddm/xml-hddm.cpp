@@ -3,6 +3,11 @@
  *              and writes it out as a hddm (Hall D Data Model)
  *              following the template provided.
  *
+ *  Version 1.2 - Richard Jones, December 2005.
+ *  - Updated code to use STL strings and vectors instead of old c-style
+ *    pre-allocated arrays and strXXX functions.
+ *  - Moved functions into classes grouped by function for better clarity.
+ *
  *  Version 1.1 - Richard Jones, September 2003.
  *  - Updated code to work with the new DOM-2 implementation Xerces-c
  *    from apache.org.  Significant changes have taken place in the API
@@ -47,14 +52,28 @@
 #include <unistd.h>
 
 #include <fstream>
+#include <string>
+#include <sstream>
 
-#include "xml-hddm.hpp"
 #include "particleType.h"
 
-#define X(XString) XString.unicodeForm()
-#define S(XString) XString.localForm()
+#define X(XString) XString.unicode_str()
+#define S(XString) XString.c_str()
 
-FILE* ofd; 
+class HDDMmaker
+{
+ public:
+   FILE* ofd; 
+   HDDMmaker() {};
+   ~HDDMmaker() {};
+   
+   void constructDocument(DOMElement* el);
+   void outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs);
+   inline void writeOut(const XString& string)
+   {
+      fwrite(string.c_str(),1,string.size(),ofd);
+   }
+};
 
 void usage()
 {
@@ -66,14 +85,242 @@ void usage()
         << endl;
 }
 
-inline void writeOut(const char* string)
+
+int main(int argC, char* argV[])
 {
-   fwrite(string,1,strlen(string),ofd);
+   ifstream* ifs;
+   XString templFilename;
+   XString outFilename;
+
+   try
+   {
+      XMLPlatformUtils::Initialize();
+   }
+   catch (const XMLException* toCatch)
+   {
+      XString msg(toCatch->getMessage());
+      cerr << "hddm-xml: Error during initialization! :\n"
+           << S(msg) << endl;
+      return 1;
+   }
+
+   int argInd;
+   for (argInd = 1; argInd < argC; argInd++)
+   {
+      if (argV[argInd][0] != '-')
+      {
+         break;
+      }
+      else if (strcmp(argV[argInd],"-t") == 0)
+      {
+         templFilename = argV[++argInd];
+      }
+      else if (strcmp(argV[argInd],"-o") == 0)
+      {
+         outFilename = argV[++argInd];
+      }
+      else
+      {
+         usage();
+         return 1;
+      }
+   }
+
+   if (templFilename.size() == 0)
+   {
+      usage();
+      exit(1);
+   }
+
+   HDDMmaker builder;
+   if (outFilename.size())
+   {
+      XString fname(outFilename + ".hddm");
+      builder.ofd = fopen(fname.c_str(),"w");
+   }
+   else
+   {
+      builder.ofd = stdout;
+   }
+
+#if defined OLD_STYLE_XERCES_PARSER
+   DOMDocument* document = parseInputDocument(templFilename.c_str(),true);
+#else
+   DOMDocument* document = buildDOMDocument(templFilename.c_str(),true);
+#endif
+   if (document == 0)
+   {
+      cerr << "xml-hddm : Error parsing template HDDM document, "
+           << "cannot continue" << endl;
+      return 1;
+   }
+
+   DOMElement* rootEl = document->getDocumentElement();
+   XString rootS(rootEl->getTagName());
+   if (rootS != "HDDM")
+   {
+      cerr << "xml-hddm error: root element of input document is "
+           << "\"" << S(rootS) << "\", expected \"HDDM\""
+           << endl;
+      exit(1);
+   }
+
+   builder.constructDocument(rootEl);
+
+   XString xmlFile;
+   if (argInd == argC)
+   {
+      ifs = new ifstream(0);
+   }
+   else if (argInd == argC - 1)
+   {
+      xmlFile = XString(argV[argInd]);
+      ifs = new ifstream(xmlFile.c_str());
+   }
+   else
+   {
+      usage();
+      return 1;
+   }
+
+   if (! ifs->is_open())
+   {
+      cerr << "xml-hddm: Error opening input stream " << xmlFile << endl;
+      exit(1);
+   }
+
+   XString xmlHeader;
+   XString docHeader;
+   XString line;
+   if (std::getline(*ifs,line))
+   {
+      if (line.substr(0,5) != "<?xml")
+      {
+         cerr << "xml-hddm: Error reading input stream " << xmlFile << endl;
+         cerr << "Input file does not appear to be an xml document!" << endl;
+         exit(1);
+      }
+   }
+   else
+   {
+      cerr << "xml-hddm: Error reading from input stream " << xmlFile << endl;
+      exit(1);
+   }
+   xmlHeader = line;
+   if (std::getline(*ifs,line) && line.substr(0,5) != "<HDDM")
+   {
+      cerr << "xml-hddm: Input document tag is not HDDM!"
+           << endl;
+      exit(1);
+   }
+   docHeader = line;
+
+   XDR* xdrs = new XDR;
+   xdrstdio_create(xdrs,builder.ofd,XDR_ENCODE);
+   while (getline(*ifs,line))
+   {
+      if (line.size() > 500000)
+      {
+         cerr << "xml-hddm: line too long in input document" << endl;
+         exit(1);
+      }
+
+      XString text(line);
+
+      std::stringstream tmpFileStr;
+      tmpFileStr << "tmp" << getpid();
+      ofstream ofs(tmpFileStr.str().c_str());
+      if (! ofs.is_open())
+      {
+         cerr << "xml-hddm: Error opening temp file " << tmpFileStr << endl;
+         exit(2);
+      }
+      ofs << xmlHeader << endl;
+      ofs << docHeader << endl;
+
+      while (text.size())
+      {
+         XString::size_type start = text.find_first_of("<");
+         if (start == XString::npos)
+         {
+            break;
+         }
+         else if (text.substr(start,2) == "</")
+         {
+            break;
+         }
+         XString::size_type end = text.find_first_of('>');
+         while (end == XString::npos)
+         {
+            if (line.size() > 400000)
+            {
+               cerr << "xml-hddm: tag too long in input document" << endl;
+               exit(1);
+            }
+            else
+            {
+               std::getline(*ifs,line);
+               text += line;
+            }
+            end = text.find_first_of('>');
+         }
+         if (text.substr(end-1,2) == "/>")
+         {
+            ofs << text.substr(0,end+1) << endl;
+            text.erase(0,end+1);
+            end = 0;
+         }
+         else
+         {
+            XString endTag;
+            endTag = "</" + text.substr(start+1,
+                            text.find_first_of(" \t",start)-start-1);
+            while (text.find(endTag) == XString::npos)
+            {
+               ofs << text << endl;
+               std::getline(*ifs,text);
+            }
+            ofs << text << endl;
+         }
+         ofs << "</HDDM>" << endl;
+         ofs.close();
+
+#if defined OLD_STYLE_XERCES_PARSER
+         document = parseInputDocument(tmpFile.str().c_str(),false);
+#else
+         document = buildDOMDocument(tmpFileStr.str().c_str(),false);
+#endif
+         if (document == 0)
+         {
+            cerr << "xml-hddm : Error parsing HDDM document, "
+                 << "cannot continue" << endl;
+            return 1;
+         }
+         unlink(tmpFileStr.str().c_str());
+
+         DOMElement* thisEl = document->getDocumentElement();
+
+	 int base = xdr_getpos(xdrs);
+	 int first=0;
+	 xdr_int(xdrs,&first);
+	 first = xdr_getpos(xdrs);
+         builder.outputStream(thisEl,rootEl,xdrs);
+	 int last = xdr_getpos(xdrs);
+	 int size = last - first;
+	 xdr_setpos(xdrs,base);
+	 xdr_int(xdrs,&size);
+	 xdr_setpos(xdrs,last);
+      }
+   }
+   xdr_destroy(xdrs);
+
+   XMLPlatformUtils::Terminate();
+   return 0;
 }
 
 /* Generate the xml document template in normal form */
 
-void constructDocument(DOMElement* el)
+void HDDMmaker::constructDocument(DOMElement* el)
 {
    static int indent = 0;
    for (int n = 0; n < indent; n++)
@@ -124,7 +371,7 @@ void constructDocument(DOMElement* el)
 
 /* Generate the output binary stream according the HDDM template */
 
-void outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
+void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
 {
    XString modelS(modelEl->getTagName());
    XString thisS(thisEl->getTagName());
@@ -138,8 +385,8 @@ void outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
    XString minS(modelEl->getAttribute(X(minAttS)));
    XString maxS(modelEl->getAttribute(X(maxAttS)));
    int expectAttrCount = modelAttrList->getLength()
-                         - (minS.equals("")? 0 : 1)
-                         - (maxS.equals("")? 0 : 1);
+                         - (minS == ""? 0 : 1)
+                         - (maxS == ""? 0 : 1);
    if (thisAttrListLength != expectAttrCount)
    {
       cerr << "xml-hddm: Inconsistency in input xml document" << endl
@@ -154,24 +401,24 @@ void outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
       XString attrS(modelAttrList->item(a)->getNodeName());
       XString typeS(modelAttrList->item(a)->getNodeValue());
       XString valueS(thisEl->getAttribute(X(attrS)));
-      if (attrS.equals("maxOccurs") || attrS.equals("minOccurs"))
+      if (attrS == "maxOccurs" || attrS == "minOccurs")
       {
          continue;
       }
-      else if (valueS.equals(""))
+      else if (valueS == "")
       {
          cerr << "xml-hddm: Inconsistency in input xml document" << endl
               << "tag " << S(thisS) << " in input document is missing "
               << "attribute " << S(attrS) << endl;
          exit(1);
       }
-      if (typeS.equals("int"))
+      if (typeS == "int")
       {
          int val;
          sscanf(S(valueS),"%d",&val);
          xdr_int(xdrs,&val);
       }
-      if (typeS.equals("long"))
+      if (typeS == "long")
       {
          long long val;
          sscanf(S(valueS),"%lld",&val);
@@ -188,30 +435,30 @@ void outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
 # endif
 #endif
       }
-      else if (typeS.equals("float"))
+      else if (typeS == "float")
       {
          float val;
          sscanf(S(valueS),"%g",&val);
          xdr_float(xdrs,&val);
       }
-      else if (typeS.equals("double"))
+      else if (typeS == "double")
       {
          double val;
          sscanf(S(valueS),"%Lg",&val);
          xdr_double(xdrs,&val);
       }
-      else if (typeS.equals("boolean"))
+      else if (typeS == "boolean")
       {
          int val;
          sscanf(S(valueS),"%d",&val);
          xdr_int(xdrs,&val);
       }
-      else if (typeS.equals("Particle_t"))
+      else if (typeS == "Particle_t")
       {
          int val;
          for (val = 1; val < 99; val++)
          {
-            if (valueS.equals(ParticleType((Particle_t)val)))
+            if (valueS == ParticleType((Particle_t)val))
             {
                break;
             }
@@ -238,7 +485,7 @@ void outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
          XString modelS(model->getTagName());
 	 XString repAttS("maxOccurs");
          XString repS(model->getAttribute(X(repAttS)));
-	 int rep = (repS.equals("unbounded"))? 9999 : atoi(S(repS));
+	 int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
          int repCount=0;
          if (rep > 1)
          {
@@ -253,7 +500,7 @@ void outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
             {
                DOMElement* instanceEl = (DOMElement*) instance;
                XString nameS(instanceEl->getTagName());
-               if (nameS.equals(modelS))
+               if (nameS == modelS)
                {
                   outputStream(instanceEl,model,xdrs);
                   if (repCount++ && (rep == 0))
@@ -280,239 +527,4 @@ void outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
 	 xdr_setpos(xdrs,end);
       }
    }
-}
-
-int main(int argC, char* argV[])
-{
-   ifstream* ifs;
-   char* templFilename = 0;
-   char* outFilename = 0;
-
-   try
-   {
-      XMLPlatformUtils::Initialize();
-   }
-   catch (const XMLException* toCatch)
-   {
-      XString msg(toCatch->getMessage());
-      cerr << "hddm-xml: Error during initialization! :\n"
-           << S(msg) << endl;
-      return 1;
-   }
-
-   int argInd;
-   for (argInd = 1; argInd < argC; argInd++)
-   {
-      if (argV[argInd][0] != '-')
-      {
-         break;
-      }
-      else if (strcmp(argV[argInd],"-t") == 0)
-      {
-         templFilename = argV[++argInd];
-      }
-      else if (strcmp(argV[argInd],"-o") == 0)
-      {
-         outFilename = argV[++argInd];
-      }
-      else
-      {
-         usage();
-         return 1;
-      }
-   }
-
-   if (templFilename == 0)
-   {
-      usage();
-      exit(1);
-   }
-
-   if (outFilename)
-   {
-      char fname[500];
-      sprintf(fname,"%s.xml",outFilename);
-      ofd = fopen(fname,"w");
-   }
-   else
-   {
-      ofd = stdout;
-   }
-
-#if defined OLD_STYLE_XERCES_PARSER
-   DOMDocument* document = parseInputDocument(templFilename,true);
-#else
-   DOMDocument* document = buildDOMDocument(templFilename,true);
-#endif
-   if (document == 0)
-   {
-      cerr << "xml-hddm : Error parsing HDDM document, "
-           << "cannot continue" << endl;
-      return 1;
-   }
-
-   DOMElement* rootEl = document->getDocumentElement();
-   XString rootS(rootEl->getTagName());
-   if (!rootS.equals("HDDM"))
-   {
-      cerr << "xml-hddm error: root element of input document is "
-           << "\"" << S(rootS) << "\", expected \"HDDM\""
-           << endl;
-      exit(1);
-   }
-
-   constructDocument(rootEl);
-
-   char* hddmFile;
-   if (argInd == argC)
-   {
-      ifs = new ifstream(0);
-      hddmFile = new char[1];
-      *hddmFile = 0;
-   }
-   else if (argInd == argC - 1)
-   {
-      hddmFile = argV[argInd];
-      ifs = new ifstream(hddmFile);
-   }
-   else
-   {
-      usage();
-      return 1;
-   }
-
-   if (! *ifs)
-   {
-      cerr << "xml-hddm: Error opening input stream " << hddmFile << endl;
-      exit(1);
-   }
-
-   char xmlHeader[500];
-   char docHeader[500];
-   char* line = new char[500000];
-   if (ifs->getline(line,500))
-   {
-      if (strstr(line,"<?xml") == 0)
-      {
-         cerr << "xml-hddm: Error reading input stream " << hddmFile << endl;
-         cerr << "Input file does not appear to be an xml document!" << endl;
-         exit(1);
-      }
-   }
-   else
-   {
-      cerr << "xml-hddm: Error reading from input stream " << hddmFile << endl;
-      exit(1);
-   }
-   strncpy(xmlHeader,line,500);
-   if (ifs->getline(line,500) && (strstr(line,"<HDDM") != line))
-   {
-      cerr << "xml-hddm: Input document tag is not HDDM!"
-           << endl;
-      exit(1);
-   }
-   strncpy(docHeader,line,500);
-
-   XDR* xdrs = new XDR;
-   xdrstdio_create(xdrs,ofd,XDR_ENCODE);
-   while (ifs->getline(line,500000))
-   {
-      if (strlen(line) > 499990)
-      {
-         cerr << "xml-hddm: line too long in input document" << endl;
-         exit(1);
-      }
-
-      char* text = line;
-
-      char tmpFile[30];
-      sprintf(tmpFile,"tmp%d",getpid());
-      ofstream ofs(tmpFile);
-      if (! ofs.is_open())
-      {
-         cerr << "xml-hddm: Error opening temp file " << tmpFile << endl;
-         exit(2);
-      }
-      ofs << xmlHeader << endl;
-      ofs << docHeader << endl;
-
-      while (text)
-      {
-         if ((text = strstr(line,"<")) == 0)
-         {
-            break;
-         }
-         else if (strstr(text,"</") == text)
-         {
-            break;
-         }
-         char* end;
-         while ((end = strstr(text,">")) == 0)
-         {
-            int len = strlen(line);
-            if (len > 400000)
-            {
-               cerr << "xml-hddm: tag too long in input document" << endl;
-               exit(1);
-            }
-            else
-            {
-               ifs->getline(&line[len],100000);
-            }
-         }
-         if (strstr(end-1,"/>") == end-1)
-         {
-            *end = 0;
-            ofs << text << ">" << endl;
-            text = end + 1;
-         }
-         else
-         {
-            char endTag[500];
-            sprintf(endTag,"</%s>",strtok(text+1," \t"));
-            text[strlen(text)] = ' ';
-            while ((end = strstr(text,endTag)) == 0)
-            {
-               ofs << text << endl;
-               ifs->getline(line,500000);
-               text = line;
-            }
-            *end = 0;
-            ofs << text << endTag << endl;
-            text = end + strlen(endTag);
-         }
-         ofs << "</HDDM>" << endl;
-         ofs.close();
-
-#if defined OLD_STYLE_XERCES_PARSER
-         document = parseInputDocument(tmpFile,false);
-#else
-         document = buildDOMDocument(tmpFile,false);
-#endif
-         if (document == 0)
-         {
-            cerr << "xml-hddm : Error parsing HDDM document, "
-                 << "cannot continue" << endl;
-            return 1;
-         }
-         unlink(tmpFile);
-
-         DOMElement* thisEl = document->getDocumentElement();
-
-	 int base = xdr_getpos(xdrs);
-	 int first=0;
-	 xdr_int(xdrs,&first);
-	 first = xdr_getpos(xdrs);
-         outputStream(thisEl,rootEl,xdrs);
-	 int last = xdr_getpos(xdrs);
-	 int size = last - first;
-	 xdr_setpos(xdrs,base);
-	 xdr_int(xdrs,&size);
-	 xdr_setpos(xdrs,last);
-      }
-   }
-   xdr_destroy(xdrs);
-
-   XMLPlatformUtils::Terminate();
-   return 0;
 }
