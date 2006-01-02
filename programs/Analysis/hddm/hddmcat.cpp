@@ -23,7 +23,6 @@ using namespace std;
 #include <stdio.h>
 #include <fcntl.h>
 #include <rpc/rpc.h>
-#include <string.h>
 #include <unistd.h>
 
 
