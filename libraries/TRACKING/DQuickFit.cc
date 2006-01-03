@@ -22,27 +22,6 @@ class DQFHitLessThanZ{
 };
 
 //-----------------
-// DQuickFit
-//-----------------
-DQuickFit::DQuickFit()
-{	
-	x0 = y0 = 0;
-	chisq = 0;
-	chisq_source = NOFIT;
-	bfield = NULL;
-
-}
-
-//-----------------
-// ~DQuickFit
-//-----------------
-DQuickFit::~DQuickFit()
-{
-	for(unsigned int i=0; i<hits.size(); i++)delete hits[i];
-	hits.clear();
-}
-
-//-----------------
 // AddHit
 //-----------------
 derror_t DQuickFit::AddHit(float r, float phi, float z)

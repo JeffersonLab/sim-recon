@@ -68,8 +68,18 @@ typedef struct{
 
 class DQuickFit{
 	public:
-		DQuickFit();
-		~DQuickFit();
+		DQuickFit()
+		{	
+			x0 = y0 = 0;
+			chisq = 0;
+			chisq_source = NOFIT;
+			bfield = NULL;
+		}
+
+		~DQuickFit(){
+			for(unsigned int i=0; i<hits.size(); i++)delete hits[i];
+			hits.clear();
+		}
 
 		derror_t AddHit(float r, float phi, float z);
 		derror_t AddHitXYZ(float x, float y, float z);
