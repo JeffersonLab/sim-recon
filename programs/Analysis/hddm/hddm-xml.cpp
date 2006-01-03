@@ -6,6 +6,9 @@
  *  - Updated code to use STL strings and vectors instead of old c-style
  *    pre-allocated arrays and strXXX functions.
  *  - Moved functions into classes grouped by function for better clarity.
+ *  - Introduced the XStream class library instead of the direct interface
+ *    to the rpc/xdr c-library function.  This also gives access to a nice
+ *    integrated set of compression/decompression streambuf classes.
  *
  *  Version 1.1 - Richard Jones, September 2003.
  *  - Updated code to work with the new DOM-2 implementation Xerces-c
@@ -46,6 +49,7 @@
 #include <stdio.h>
 #include <rpc/rpc.h>
 #include <unistd.h>
+#include <xstream/xdr.h>
 
 #include <iostream>
 #include <fstream>
@@ -65,7 +69,7 @@ class XMLmaker
    ~XMLmaker() {};
 
    void writeXML(const XString& s);
-   void constructXML(XDR* xdrs, DOMElement* el, int depth);
+   void constructXML(xstream::xdr::istream& ifx, DOMElement* el, int depth);
 };
 
 void usage()
@@ -75,19 +79,6 @@ void usage()
         << "Options:\n"
         <<  "    -o <filename>	write to <filename>.xml"
         << endl;
-}
-
-int getline(std::stringstream& buf, FILE* stream)
-{
-   int count;
-   for (count=0; 1; ++count)
-   {
-      char c = fgetc(stream);
-      if (c == EOF) break;
-      buf << c;
-      if (c == '\n') break;
-   }
-   return count;
 }
 
 
@@ -131,22 +122,22 @@ int main(int argC, char* argV[])
    }
 
    XString hddmFile;
-   FILE* ifp;
+   istream* ifs;
    if (argInd == argC)
    {
-      ifp = stdin;
+      ifs = &cin;
    }
    else if (argInd == argC - 1)
    {
       hddmFile = XString(argV[argInd]);
-      ifp = fopen(hddmFile.c_str(),"r");
+      ifs = new ifstream(hddmFile.c_str());
    }
    else
    {
       usage();
       return 1;
    }
-   if (!ifp)
+   if (!ifs->good())
    {
       cerr << "hddm-xml: Error opening input stream " << hddmFile << endl;
       exit(1);
@@ -162,11 +153,9 @@ int main(int argC, char* argV[])
 
    ofs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
    XString xmlHeader;
-   std::stringstream buf;
-   if (getline(buf,ifp))
+   XString line;
+   if (getline(*ifs,line))
    {
-      XString line;
-      std::getline(buf,line);
       if (line.substr(0,5) == "<?xml")
       {
          cerr << "hddm-xml: Error reading input stream " << hddmFile << endl;
@@ -190,10 +179,8 @@ int main(int argC, char* argV[])
       cerr << "hddm-xml: Error reading from input stream " << hddmFile << endl;
       exit(1);
    }
-   while (getline(buf,ifp))
+   while (getline(*ifs,line))
    {
-      XString line;
-      std::getline(buf,line);
       ofs << line;
       if (line == "</HDDM>")
       {
@@ -235,13 +222,17 @@ int main(int argC, char* argV[])
    builder.writeXML("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
    builder.writeXML(xmlHeader);
 
-   XDR* xdrs = new XDR;
-   xdrstdio_create(xdrs,ifp,XDR_DECODE);
-   int icount;
-   while (--reqcount && xdr_int(xdrs,&icount))
+   xstream::xdr::istream ifx(*ifs);
+   while (--reqcount && ifs->good())
    {
       DOMNodeList* contList = rootEl->getChildNodes();
       int contLength = contList->getLength();
+      int size;
+      ifx >> size;
+      if (size < 0)
+      {
+         break;
+      }
       for (int c = 0; c < contLength; c++)
       {
          DOMNode* cont = contList->item(c);
@@ -249,11 +240,10 @@ int main(int argC, char* argV[])
          if (type == DOMNode::ELEMENT_NODE)
          {
             DOMElement* contEl = (DOMElement*) cont;
-            int size;
-	    xdr_int(xdrs,&size);
+            ifx >> size;
             if (size > 0)
             {
-               builder.constructXML(xdrs,contEl,1);
+               builder.constructXML(ifx,contEl,1);
             }
          }
       }
@@ -261,6 +251,10 @@ int main(int argC, char* argV[])
 
    builder.writeXML("</HDDM>\n");
 
+   if (ifs != &cin)
+   {
+      ((ifstream*)ifs)->close();
+   }
    XMLPlatformUtils::Terminate();
    return 0;
 }
@@ -283,18 +277,17 @@ void XMLmaker::writeXML(const XString& s)
  * at entry the buffer pointer bp points the the word after the word count
  */
 
-void XMLmaker::constructXML(XDR* xdrs, DOMElement* el, int depth)
+void XMLmaker::constructXML(xstream::xdr::istream& ifx,
+                            DOMElement* el, int depth)
 {
    XString repAttS("maxOccurs");
    XString repS(el->getAttribute(X(repAttS)));
-   int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
+   int rep = (repS == "unbounded")? 9999 :
+             (repS == "")? 1 :
+             atoi(S(repS));
    if (rep > 1)
    {
-      xdr_int(xdrs,&rep);
-   }
-   else
-   {
-      rep = 1;
+      ifx >> rep;
    }
 
    for (int r = 0; r < rep; r++)
@@ -316,56 +309,44 @@ void XMLmaker::constructXML(XDR* xdrs, DOMElement* el, int depth)
          if (typeS == "int")
          {
             int value;
-	    xdr_int(xdrs,&value);
+	    ifx >> value;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
 	 else if (typeS == "long")
          {
             long long value;
-#ifndef XDR_LONGLONG_MISSING
-	    xdr_longlong_t(xdrs,&value);
-#else
-            int* ival = (int*)&value;
-# if __BIG_ENDIAN__
-	    xdr_int(xdrs,&ival[0]);
-	    xdr_int(xdrs,&ival[1]);
-# else
-	    xdr_int(xdrs,&ival[0]);
-	    xdr_int(xdrs,&ival[1]);
-# endif
-#endif
+            ifx >> value;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
          else if (typeS == "float")
          {
             float value;
-	    xdr_float(xdrs,&value);
+            ifx >> value;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
          else if (typeS == "double")
          {
             double value;
-	    xdr_double(xdrs,&value);
+            ifx >> value;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
          else if (typeS == "boolean")
          {
             bool_t value;
-	    xdr_bool(xdrs,&value);
+            ifx >> value;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
          else if (typeS == "Particle_t")
          {
             Particle_t value;
-            xdr_int(xdrs,(int*)&value);
+            ifx >> (int)value;
             attrStr << " " << nameS << "=\"" << ParticleType(value) << "\"";
          }
          else if (typeS == "string" || typeS == "anyURI")
          {
-            char* value = new char [999];
-            xdr_string(xdrs,&value,999);
+            std::string value;
+            ifx >> value;
             attrStr << " " << nameS << "=\"" << value << "\"";
-	    delete [] value;
          }
          else if (nameS == "minOccurs" || nameS == "maxOccurs")
          {
@@ -397,10 +378,9 @@ void XMLmaker::constructXML(XDR* xdrs, DOMElement* el, int depth)
          {
             DOMElement* contEl = (DOMElement*) cont;
             int size;
-	    xdr_int(xdrs,&size);
-            if (size > 0)
-            {
-               constructXML(xdrs,contEl,depth +1);
+            ifx >> size;
+            if (size > 0) {
+               constructXML(ifx,contEl,depth +1);
             }
          }
       }

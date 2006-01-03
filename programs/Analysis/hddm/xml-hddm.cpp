@@ -7,6 +7,9 @@
  *  - Updated code to use STL strings and vectors instead of old c-style
  *    pre-allocated arrays and strXXX functions.
  *  - Moved functions into classes grouped by function for better clarity.
+ *  - Introduced the XStream class library instead of the direct interface
+ *    to the rpc/xdr c-library function.  This also gives access to a nice
+ *    integrated set of compression/decompression streambuf classes.
  *
  *  Version 1.1 - Richard Jones, September 2003.
  *  - Updated code to work with the new DOM-2 implementation Xerces-c
@@ -53,6 +56,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <xstream/xdr.h>
 
 #include "particleType.h"
 
@@ -62,16 +66,14 @@
 class HDDMmaker
 {
  public:
-   FILE* ofd; 
+   ostream* ofs; 
+
    HDDMmaker() {};
    ~HDDMmaker() {};
-   
+
    void constructDocument(DOMElement* el);
-   void outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs);
-   inline void writeOut(const XString& string)
-   {
-      fwrite(string.c_str(),1,string.size(),ofd);
-   }
+   void outputStream(DOMElement* thisEl, DOMElement* modelEl,
+                     ostream& ofs);
 };
 
 void usage()
@@ -135,11 +137,11 @@ int main(int argC, char* argV[])
    if (outFilename.size())
    {
       XString fname(outFilename + ".hddm");
-      builder.ofd = fopen(fname.c_str(),"w");
+      builder.ofs = new ofstream(fname.c_str());
    }
    else
    {
-      builder.ofd = stdout;
+      builder.ofs = &cout;
    }
 
 #if defined OLD_STYLE_XERCES_PARSER
@@ -214,8 +216,7 @@ int main(int argC, char* argV[])
    }
    docHeader = line;
 
-   XDR* xdrs = new XDR;
-   xdrstdio_create(xdrs,builder.ofd,XDR_ENCODE);
+   xstream::xdr::ostream ofx(*builder.ofs);
    while (getline(*ifs,line))
    {
       if (line.size() > 500000)
@@ -226,7 +227,7 @@ int main(int argC, char* argV[])
 
       XString text(line);
 
-      std::stringstream tmpFileStr;
+      stringstream tmpFileStr;
       tmpFileStr << "tmp" << getpid();
       ofstream ofs(tmpFileStr.str().c_str());
       if (! ofs.is_open())
@@ -299,20 +300,21 @@ int main(int argC, char* argV[])
 
          DOMElement* thisEl = document->getDocumentElement();
 
-	 int base = xdr_getpos(xdrs);
-	 int first=0;
-	 xdr_int(xdrs,&first);
-	 first = xdr_getpos(xdrs);
-         builder.outputStream(thisEl,rootEl,xdrs);
-	 int last = xdr_getpos(xdrs);
-	 int size = last - first;
-	 xdr_setpos(xdrs,base);
-	 xdr_int(xdrs,&size);
-	 xdr_setpos(xdrs,last);
+         ostringstream ofsbuf;
+         xstream::xdr::ostream ofxbuf(ofsbuf);
+         builder.outputStream(thisEl,rootEl,ofsbuf);
+         int size = (int)ofsbuf.tellp();
+         ofx << ((size > 0)? size : 0);
+         if (size > 0)
+         {
+            *builder.ofs << ofsbuf.str();
+         }
       }
    }
-   xdr_destroy(xdrs);
 
+   if (builder.ofs != &cout) {
+      ((ofstream*)builder.ofs)->close();
+   }
    XMLPlatformUtils::Terminate();
    return 0;
 }
@@ -324,11 +326,11 @@ void HDDMmaker::constructDocument(DOMElement* el)
    static int indent = 0;
    for (int n = 0; n < indent; n++)
    {
-      writeOut("  ");
+      *ofs << "  ";
    }
    
    XString tagS(el->getTagName());
-   writeOut("<"), writeOut(S(tagS));
+   *ofs << "<" << tagS;
    DOMNamedNodeMap* attrList = el->getAttributes();
    int attrListLength = attrList->getLength();
    for (int a = 0; a < attrListLength; a++)
@@ -336,15 +338,14 @@ void HDDMmaker::constructDocument(DOMElement* el)
       DOMNode* node = attrList->item(a);
       XString nameS(node->getNodeName());
       XString valueS(node->getNodeValue());
-      writeOut(" "), writeOut(S(nameS)),
-      writeOut("=\""), writeOut(S(valueS)), writeOut("\"");
+      *ofs << " " << nameS << "=\"" << valueS << "\"";
    }
 
    DOMNodeList* contList = el->getChildNodes();
    int contListLength = contList->getLength();
    if (contListLength > 0)
    {
-      writeOut(">"), writeOut("\n");
+      *ofs << ">" << endl;
       indent++;
       for (int c = 0; c < contListLength; c++)
       {
@@ -358,19 +359,20 @@ void HDDMmaker::constructDocument(DOMElement* el)
       indent--;
       for (int n = 0; n < indent; n++)
       {
-         writeOut("  ");
+         *ofs << "  ";
       }
-      writeOut("</"), writeOut(S(tagS)), writeOut(">\n");
+      *ofs << "</" << tagS << ">" << endl;
    }
    else
    {
-      writeOut(" />\n");
+      *ofs << " />" << endl;
    }
 }
 
 /* Generate the output binary stream according the HDDM template */
 
-void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
+void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
+                             ostream& ofs)
 {
    XString modelS(modelEl->getTagName());
    XString thisS(thisEl->getTagName());
@@ -395,6 +397,8 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
            << "with " << expectAttrCount << " attributes." << endl;
       exit(1);
    }
+
+   xstream::xdr::ostream ofx(ofs);
    for (int a = 0; a < modelAttrListLength; a++)
    {
       XString attrS(modelAttrList->item(a)->getNodeName());
@@ -411,46 +415,36 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
               << "attribute " << S(attrS) << endl;
          exit(1);
       }
+      stringstream valueStr(valueS);
       if (typeS == "int")
       {
          int val;
-         sscanf(S(valueS),"%d",&val);
-         xdr_int(xdrs,&val);
+         valueStr >> val;
+         ofx << val;
       }
       if (typeS == "long")
       {
          long long val;
-         sscanf(S(valueS),"%lld",&val);
-#ifndef XDR_LONGLONG_MISSING
-         xdr_longlong_t(xdrs,&val);
-#else
-         int* ival = (int*)&val;
-# if __BIG_ENDIAN__
-         xdr_int(xdrs,&ival[0]);
-         xdr_int(xdrs,&ival[1]);
-# else
-         xdr_int(xdrs,&ival[1]);
-         xdr_int(xdrs,&ival[0]);
-# endif
-#endif
+         valueStr >> val;
+         ofx << val;
       }
       else if (typeS == "float")
       {
          float val;
-         sscanf(S(valueS),"%g",&val);
-         xdr_float(xdrs,&val);
+         valueStr >> val;
+         ofx << val;
       }
       else if (typeS == "double")
       {
          double val;
-         sscanf(S(valueS),"%Lg",&val);
-         xdr_double(xdrs,&val);
+         valueStr >> val;
+         ofx << val;
       }
       else if (typeS == "boolean")
       {
          int val;
-         sscanf(S(valueS),"%d",&val);
-         xdr_int(xdrs,&val);
+         valueStr >> val;
+         ofx << val;
       }
       else if (typeS == "Particle_t")
       {
@@ -462,7 +456,7 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
                break;
             }
          }
-         xdr_int(xdrs,&val);
+         ofx << val;
       }
    }
 
@@ -477,20 +471,21 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
       if (type == DOMNode::ELEMENT_NODE)
       {
 	 int start=0;
-         int base = xdr_getpos(xdrs);
-	 xdr_int(xdrs,&start);
-         start = xdr_getpos(xdrs);
          DOMElement* model = (DOMElement*) mode;
          XString modelS(model->getTagName());
+	 XString reqAttS("minOccurs");
+         XString reqS(model->getAttribute(X(reqAttS)));
+	 int req = (reqS == "unbounded")? 9999 : 
+                   (reqS == "")? 1 :
+                   atoi(S(reqS));
 	 XString repAttS("maxOccurs");
          XString repS(model->getAttribute(X(repAttS)));
-	 int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
+	 int rep = (repS == "unbounded")? 9999 :
+                   (repS == "")? 1 :
+                   atoi(S(repS));
          int repCount=0;
-         if (rep > 1)
-         {
-            xdr_int(xdrs,&repCount);
-         }
-         repCount = 0;
+         stringstream ofsbuf;
+         xstream::xdr::ostream ofxbuf(ofsbuf);
          for (int i = 0; i < thisListLength; i++)
          {
             DOMNode* instance = thisList->item(i);
@@ -501,8 +496,8 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
                XString nameS(instanceEl->getTagName());
                if (nameS == modelS)
                {
-                  outputStream(instanceEl,model,xdrs);
-                  if (repCount++ && (rep == 0))
+                  outputStream(instanceEl,model,ofsbuf);
+                  if (repCount++ && (rep == 1))
                   {
                      cerr << "xml-hddm: Inconsistency in input xml document"
                           << endl
@@ -515,15 +510,20 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl, XDR* xdrs)
                }
             }
          }
-	 int end = xdr_getpos(xdrs);
-         int size = end - start;
-	 xdr_setpos(xdrs,base);
-	 xdr_int(xdrs,&size);
-	 if (rep > 1)
-	 {
-	    xdr_int(xdrs,&repCount);
-	 }
-	 xdr_setpos(xdrs,end);
+
+         int size = (int)ofsbuf.tellp();
+         if (rep > 1)
+         {
+            ofx << ((size > 0)? size+sizeof(int) : 0) << repCount;
+         }
+         else
+         {
+            ofx << ((size > 0)? size : 0);
+         }
+         if (size > 0)
+         {
+            ofs << ofsbuf.str();
+         }
       }
    }
 }
