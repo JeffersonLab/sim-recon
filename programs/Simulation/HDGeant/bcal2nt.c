@@ -14,17 +14,18 @@
 #include "hddm_s.h"
 
 struct bcalnt_struct {
+   int module;
+   int layer;
+   int sector;
    int nup;
-   float phiup[200];
    float tup[200];
    float Eup[200];
    int ndown;
-   float phidown[200];
    float tdown[200];
    float Edown[200];
 } bcalnt;
 
-#define BCALNT_FORM "nup[0,200]:i,phiup(nup):r,tup(nup):r,Eup(nup):r,ndown[0,200]:i,phidown(ndown):r,tdown(ndown):r,Edown(ndown):r"
+#define BCALNT_FORM "module:i,layer:i,sector:i,nup[0,200]:i,tup(nup):r,Eup(nup):r,ndown[0,200]:i,tdown(ndown):r,Edown(ndown):r"
 
 #define PAWC_SIZE 1000000
 struct pawc_struct {
@@ -109,36 +110,29 @@ int process_event(s_HDDM_t *event)
    }
    
    if (hits->barrelEMcal != HDDM_NULL) {
-      s_Mods_t *modules = hits->barrelEMcal->mods;
-      int mod;
+      s_BcalCells_t *cells = hits->barrelEMcal->bcalCells;
+      int cell;
       int nup, ndown;
       nup = ndown = 0;
-      for (mod=0; mod < modules->mult; mod++) {
-         s_Shells_t *shells = modules->in[mod].shells;
-         int shell;
-         for (shell=0; shell < shells->mult; shell++) {
-            s_Cones_t *cones = shells->in[shell].cones;
-            int cone;
-            for (cone=0; cone < cones->mult; cone++) {
-               s_Showers_t *showup = cones->in[cone].upstream->showers;
-               s_Showers_t *showdown = cones->in[cone].downstream->showers;
-               int show;
-               for (show=0; show < showup->mult; show++,nup++) {
-                  bcalnt.phiup[nup] = modules->in[mod].module;
-                  bcalnt.tup[nup] = showup->in[show].t; 
-                  bcalnt.Eup[nup] = showup->in[show].E; 
-               }
-               for (show=0; show < showdown->mult; show++,ndown++) {
-                  bcalnt.phidown[ndown] = modules->in[mod].module;
-                  bcalnt.tdown[ndown] = showdown->in[show].t; 
-                  bcalnt.Edown[ndown] = showdown->in[show].E; 
-               }
-            }
+      for (cell=0; cell < cells->mult; cell++) {
+         s_BcalUpstreamHits_t *hitsup = cells->in[cell].bcalUpstreamHits;
+         s_BcalDownstreamHits_t *hitsdown = cells->in[cell].bcalDownstreamHits;
+         int hit;
+         bcalnt.module = cells->in[cell].module;
+         bcalnt.layer = cells->in[cell].layer;
+         bcalnt.sector = cells->in[cell].sector;
+         for (hit=0; hit < hitsup->mult; hit++,nup++) {
+            bcalnt.tup[nup] = hitsup->in[hit].t; 
+            bcalnt.Eup[nup] = hitsup->in[hit].E; 
          }
+         for (hit=0; hit < hitsdown->mult; hit++,ndown++) {
+            bcalnt.tdown[ndown] = hitsdown->in[hit].t; 
+            bcalnt.Edown[ndown] = hitsdown->in[hit].E; 
+         }
+         bcalnt.nup = nup;
+         bcalnt.ndown = ndown;
+         hfnt(1);
       }
-      bcalnt.nup = nup;
-      bcalnt.ndown = ndown;
-      hfnt(1);
       return 1;
    }
    else {
