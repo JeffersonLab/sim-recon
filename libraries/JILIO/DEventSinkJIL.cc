@@ -21,7 +21,7 @@ using namespace std;
 //------------------------------------------------------------------
 derror_t DEventSinkJIL::init(void)
 {
-	s= new JILStreamPBF(filename, "w", false);
+	s= new JILStreamPBF(filename, "w", true);
 	s->SetPointerTracking(JILStream::PTR_NONE);
 
 	return NOERROR;
@@ -33,8 +33,15 @@ derror_t DEventSinkJIL::init(void)
 derror_t DEventSinkJIL::brun_sink(DEventLoop *loop, int runnumber)
 {
 	AddAllToWriteList(loop);
-	//RemoveFromWriteList("DFDCHit", "");
-	//RemoveFromWriteList("DCDCHit", "");
+	RemoveFromWriteList("DFCALShower", "");
+	RemoveFromWriteList("DFCALGeometry", "");
+	RemoveFromWriteList("DFCALMCResponse", "");
+	RemoveFromWriteList("DTOFGeometry", "");
+	RemoveFromWriteList("DTOFPoint", "");
+	RemoveFromWriteList("DTrack", "");
+	RemoveFromWriteList("DTrackHit", "MC");
+	RemoveFromWriteList("DTrackCandidate", "");
+	RemoveFromWriteList("DTrackEfficiency", "");
 	PrintWriteList();
 
 	return NOERROR;
