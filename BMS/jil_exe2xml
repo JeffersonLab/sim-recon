@@ -19,6 +19,8 @@ foreach (@ARGV){
 		foreach(<FILE>){chomp; if(length($_)>0){push(@clclasses, $_);}}
 		close(FILE);
 		$user_supplied_classes = "true";
+	}elsif(/methods=/){
+		if($' eq "yes"){$print_methods = true;}
 	}else{
 		$binary_file = $_;
 	}
@@ -66,6 +68,22 @@ open(FILE,"$xmlfilename");
 close(FILE);
 print @lines." lines\n";
 
+########################################################################
+
+sub Usage()
+{
+	print "\n";
+	print "Usage:\n";
+	print "       jil_exe2xml [options] executable_file\n";
+	print "\n";
+	print " This script is part of the JIL (JLab Introspection Library) package.\n";
+	print "jil_exe2xml takes an executable binary file created by the GNU compiler/\n";
+	print "linker. The executable must have debugging symbols included (see the -g\n";
+	print "option \n";
+	
+	print "\n";
+	exit(0);
+}
 
 ########################################################################
 
@@ -266,7 +284,18 @@ sub GetClassDefinitions()
 				
 				# If there is a round bracket, then it must be a method
 				if($line =~ /\(/){
-					push(@methods, $line);
+					# chop off leading white space and replace angle brackets
+					# with curly ones
+					my $method = $line;
+					$method =~ s/^\s+//g;
+					$method =~ s/\>/\}/g;
+					$method =~ s/\</\{/g;
+					$method =~ s/\&/\%/g;
+					$methoddef{"method"} = $method;
+					$methoddef{"section"} = $section;
+					%$methodref = %methoddef;
+					push(@methods, $methodref);
+					undef $methodref;
 					next;
 				}
 				
@@ -591,6 +620,18 @@ sub PrintClass()
 
 		# Write type definition
 		&PrintType($$dataref{"typedef_ref"}, $$dataref{"name"}, $$dataref{"section"});
+	}
+
+	# Add methods
+	if($print_methods eq true){
+		my $methodrefs = $$classref{"methods_arrayref"};
+		my $methodref;
+		foreach $methodref (@$methodrefs){
+			print FILE "$tabs<method";
+			print FILE " section=\"".$$methodref{"section"}."\"";
+			print FILE " method=\"".$$methodref{"method"}."\"";
+			print FILE "/>\n";
+		}
 	}
 	chop($tabs);
 
