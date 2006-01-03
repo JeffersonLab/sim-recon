@@ -379,7 +379,7 @@ class JILStreamPBF: public JILStream {
 				int zerr = uncompress((Bytef*)&dest[header_size], &size, (Bytef*)buff, section_size-header_size);
 				if(zerr != Z_OK)std::cerr<<__FILE__<<":"<<__LINE__<<" Error uncompressing event buffer "<<zerr<<std::endl;
 				if(size != (unsigned long)uncompressed_size){
-					std::cerr<<__FILE__<<":"<<__LINE__<<" error uncompressing event buffer "<<size<<":"<<uncompressed_size<<std::endl;
+					std::cerr<<__FILE__<<":"<<__LINE__<<" error uncompressing event buffer "<<size<<":"<<uncompressed_size<<" (compressed size:"<<compressed_size<<")"<<std::endl;
 					exit(-1);
 				}
 				
@@ -402,12 +402,13 @@ class JILStreamPBF: public JILStream {
 			(*this)>>size;
 			(*this)>>type;
 			(*this)>>tag;
+			current_object_is_new = false;
 			JILObjectRecord *rec = JILMakeObject(type.c_str(), this, tag.c_str());
 			if(rec){
 				// If this happens to be pointing to an object already
 				// owned by another JILObjectRecord, tell this one he's
 				// not the owner
-				if(FindObjectRecord(objects, rec->ptr))rec->am_owner = false;
+				if(!current_object_is_new)rec->am_owner = false;
 				objects.push_back(rec);
 			}
 
@@ -418,7 +419,7 @@ class JILStreamPBF: public JILStream {
 			buff = object_start + size;
 
 			// Record some stat info about the object
-			AddToObjectStats(type, tag, rec ? rec->type:NULL, size);
+			if(keep_object_stats)AddToObjectStats(type, tag, rec ? rec->type:NULL, size);
 		}
 
 		return true;
