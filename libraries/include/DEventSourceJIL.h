@@ -39,7 +39,7 @@ class DEventSourceJIL:public DEventSource
 	typedef struct{
 		int event_number;
 		unsigned long event_id;
-		list<JILObjectRecord*> objects;
+		vector<JILObjectRecord*> objects;
 	}event_buffer_t;
 	vector<event_buffer_t> event_buff;
 	unsigned long event_id_counter;

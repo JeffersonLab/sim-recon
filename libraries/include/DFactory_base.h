@@ -87,7 +87,7 @@ class DFactory_base:public DEventProcessor{
 
 		/// Access method to have the DFactory template class read
 		/// the data objects from the input
-		virtual void StreamFromInput(JILStream *jilstream, list<JILObjectRecord*> &objects, vector<void*> &v)=0;
+		virtual void StreamFromInput(JILStream *jilstream, vector<JILObjectRecord*> &objects, vector<void*> &v)=0;
 #endif // JILIO
 
 		/// Used by DEventLoop to give a pointer back to itself

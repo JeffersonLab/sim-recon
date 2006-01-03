@@ -74,8 +74,8 @@ class DFactory:public DFactory_base{
 #ifdef JILIO
 		int StreamToOutput(JILStream *jilstream){return StreamToOutputT(jilstream);} ///< called through virtual method of DFactory_base
 		int StreamToOutputT(JILStream *jilstream);
-		void StreamFromInput(JILStream *jilstream, list<JILObjectRecord*> &objects, vector<void*> &v){StreamFromInputT(jilstream, objects, v);}
-		void StreamFromInputT(JILStream *jilstream, list<JILObjectRecord*> &objects, vector<void*> &v);
+		void StreamFromInput(JILStream *jilstream, vector<JILObjectRecord*> &objects, vector<void*> &v){StreamFromInputT(jilstream, objects, v);}
+		void StreamFromInputT(JILStream *jilstream, vector<JILObjectRecord*> &objects, vector<void*> &v);
 #endif //JILIO
 		
 	protected:
@@ -305,7 +305,7 @@ int DFactory<T>::StreamToOutputT(JILStream *jilstream)
 // StreamFromInputT
 //-------------
 template<class T>
-void DFactory<T>::StreamFromInputT(JILStream *jilstream, list<JILObjectRecord*> &objects, vector<void*> &v)
+void DFactory<T>::StreamFromInputT(JILStream *jilstream, vector<JILObjectRecord*> &objects, vector<void*> &v)
 {
 	// Get a copy of the pointers to the objects from the list
 	// of object records passed.
