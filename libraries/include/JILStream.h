@@ -53,7 +53,7 @@ inline const char* JILMyDictionary(void){return "<JILDictionary>\n\tempty\n</JIL
 /// <li>unsigned int StartVectorRead(const type_info &t)
 /// <li>unsigned int StartListRead(const type_info &t)
 /// <li>unsigned int StartArrayRead(const type_info &t, unsigned int size)
-/// <li>void GetObjectsFromSource(const type_info *t, string tag, list<JILObjectRecord*> *objects_ptr)
+/// <li>void GetObjectsFromSource(const type_info *t, string tag, vector<JILObjectRecord*> *objects_ptr)
 /// </ul>
 /// <hr>
 
@@ -98,6 +98,7 @@ class JILStream{
 		vector_depth = 0;
 		list_depth = 0;
 		pointer_tracking = PTR_AUTOMATIC;
+		keep_object_stats = false;
 	}
 
 	/// Destructor of basic JILStream object.
@@ -133,6 +134,11 @@ class JILStream{
 		pointer_tracking = ptmode;
 	}
 	
+	/// Set the object statistics tracking mode
+	virtual void SetPointerTracking(bool keep_object_stats){
+		this->keep_object_stats = keep_object_stats;
+	}
+
 	// Return a value that can be used to refer to the current
 	// stream position. What this position is relative to is
 	// determined by the subclass
@@ -337,6 +343,7 @@ class JILStream{
 		if(read_object){
 			if(ptr==NULL)ptr = new T();
 			AddObjectToCache(pos, t, (void *)ptr);
+			if(type_depth==0)current_object_is_new=true;
 		}
 		return read_object;
 	}
@@ -441,13 +448,13 @@ class JILStream{
 	/// The objects list is passed in so lists that have been "adopted" can be
 	/// accessed in the same way that the internal list is.
 	template <typename T>
-	void GetObjects(vector<T*> &v, string tag = "", list<JILObjectRecord*> *objects_ptr=NULL){
+	void GetObjects(vector<T*> &v, string tag = "", vector<JILObjectRecord*> *objects_ptr=NULL){
 		// Look through all object records and copy the pointers of
 		// type T into the vector v.
 		if(objects_ptr==NULL)objects_ptr = &objects;
 		const type_info *t = &typeid(T);
 		GetObjectsFromSource(t, tag, objects_ptr);
-		list<JILObjectRecord*>::iterator iter;
+		vector<JILObjectRecord*>::iterator iter;
 		for(iter=objects_ptr->begin(); iter!=objects_ptr->end(); iter++){
 			if((*iter)->type == t && (*iter)->tag == tag)v.push_back((T*)(*iter)->ptr);
 		}
@@ -456,7 +463,7 @@ class JILStream{
 	/// Read the objects of the specified type and tag in and add them to the 
 	/// JILObjectRecord list. This may not be needed by all subclasses and
 	/// so a default empty routine is provided.
-	virtual void GetObjectsFromSource(const type_info *t, string tag, list<JILObjectRecord*> *objects_ptr){}
+	virtual void GetObjectsFromSource(const type_info *t, string tag, vector<JILObjectRecord*> *objects_ptr){}
 	
 	/// Delete all objects allocated on last call to GetNamed()
 	void FreeNamedRecords(void){
@@ -475,8 +482,8 @@ class JILStream{
 	
 	/// Delete all objects in the given list. The list is passed in
 	/// so lists that have been "adopted" can be easily freed.
-	void DeleteObjectRecords(list<JILObjectRecord*> &objects){
-		list<JILObjectRecord*>::iterator iter;
+	void DeleteObjectRecords(vector<JILObjectRecord*> &objects){
+		vector<JILObjectRecord*>::iterator iter;
 		for(iter=objects.begin(); iter!=objects.end(); iter++)delete *iter;
 		objects.clear();
 	}
@@ -484,7 +491,7 @@ class JILStream{
 	/// Allow object records (and the objects they point to)
 	/// to be adopted so that the objects are not deleted
 	/// by the JILStream and the stream forgets about them
-	void AdoptObjectRecords(list<JILObjectRecord*> &objects)
+	void AdoptObjectRecords(vector<JILObjectRecord*> &objects)
 	{
 		objects = this->objects;
 		this->objects.clear();
@@ -492,18 +499,18 @@ class JILStream{
 
 	/// Search the object records list for one with the given pointer.
 	/// if found, return it. Otherwise, return NULL
-	JILObjectRecord* FindObjectRecord(list<JILObjectRecord*> &objects, void* ptr){
-		list<JILObjectRecord*>::iterator iter;
+	inline JILObjectRecord* FindObjectRecord(vector<JILObjectRecord*> &objects, void* ptr){
+		vector<JILObjectRecord*>::iterator iter;
 		for(iter=objects.begin(); iter!=objects.end(); iter++){
 			if((*iter)->ptr == ptr)return *iter;
 		}
 		return NULL;
 	}
 
-	void PrintObjectHisto(list<JILObjectRecord*> *objects_ptr=NULL){
+	void PrintObjectHisto(vector<JILObjectRecord*> *objects_ptr=NULL){
 		if(!objects_ptr)objects_ptr = &objects;
 		map<string, int> h;
-		list<JILObjectRecord*>::iterator iter;
+		vector<JILObjectRecord*>::iterator iter;
 		for(iter=objects_ptr->begin(); iter!=objects_ptr->end(); iter++){
 			h[string((*iter)->type_name)]++;
 		}
@@ -587,7 +594,9 @@ class JILStream{
 		int list_depth;
 		int array_depth;
 		string tag;
+		bool current_object_is_new;
 		JILStreamPointerTracking_t pointer_tracking;
+		bool keep_object_stats;
 		
 		typedef struct{
 			string name;
@@ -603,13 +612,14 @@ class JILStream{
 			void *ptr;
 		}pointer_cache_t;
 
-		list<JILObjectRecord*> objects;
+		vector<JILObjectRecord*> objects;
 		vector<object_stat_t> object_stats;
 		vector<pointer_cache_t> pointer_cache;
 
 		/// Used to keep track of objects found in file, even if the
 		/// classes aren't known (i.e. compiled into) the current program
 		void AddToObjectStats(string name, string tag, const std::type_info *type, unsigned int bytes){
+			if(!keep_object_stats)return;
 			// First, see if an object_stat_t exists for this object
 			vector<object_stat_t>::iterator iter;
 			for(iter = object_stats.begin(); iter !=object_stats.end(); iter++){
