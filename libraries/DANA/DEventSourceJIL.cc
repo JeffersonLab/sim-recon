@@ -70,7 +70,9 @@ derror_t DEventSourceJIL::GetEvent(DEvent &event)
 	event.SetRunNumber(run_number);
 	event.SetRef((void*)e.event_id);
 	
+	LockRead();
 	event_buff.push_back(e);
+	UnlockRead();
 
 	return NOERROR;
 }
