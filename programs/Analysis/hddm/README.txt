@@ -56,13 +56,20 @@ bugs, please go to http://portal.gluex.org and look for "forums".
    If you do use java, you should also make sure that the java command is
    in your path, so that the command java is found.
 
-6) Now if everything was installed correctly, you can build the hddm tools
+6) Check out the xstream package from the halld cvs repository and build
+   and install it in your build area in the usual way.
+
+   halld> cd <directory-containing-hddm>
+   halld> cvs checkout xstream
+   halld> make install -C xstream
+
+7) Now if everything was installed correctly, you can build the hddm tools
    by going to the hddm directory you created in step 1 and doing make.
 
    halld> cd hddm
    halld> make hddm-c hddm-xml xml-hddm
 
-7) The tools hddm-schema, schema-hddm and xml-xml are written in perl and
+8) The tools hddm-schema, schema-hddm and xml-xml are written in perl and
    require Xerces-Perl from xml.apache.org to be installed if you want to
    use them.  Installation instructions are found at xml.apache.org.  By
    default these tools use the Xalan-j package.  If you installed the c++
@@ -70,5 +77,6 @@ bugs, please go to http://portal.gluex.org and look for "forums".
    comment out the line where xalan is started under java and remove the
    comment from the line where xalan-c is invoked.
 
-8) For information about the design and use of the hddm tools, see the
-   documentation in index.html.
+9) For information about the design and use of the hddm tools, see the
+   documentation in index.html.  For more information about the xstream
+   binary streams interface, see http://xstream.sourceforge.net .
