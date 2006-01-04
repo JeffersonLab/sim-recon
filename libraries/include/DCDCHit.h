@@ -15,6 +15,8 @@ class DCDCHit:public DObject{
 	public:
 		HDCLASSDEF(DCDCHit);
 		
+		int ring;
+		int straw;
 		float radius;
 		float phim;
 		float dE;
