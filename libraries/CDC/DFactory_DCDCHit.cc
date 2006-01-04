@@ -8,16 +8,6 @@
 #include "DFactory_DCDCHit.h"
 
 //------------------
-// evnt
-//------------------
-derror_t DFactory_DCDCHit::evnt(DEventLoop *eventLoop, int eventnumber)
-{
-	/// Place holder for now. 
-
-	return NOERROR;
-}
-
-//------------------
 // Extract_HDDM
 //------------------
 derror_t DFactory_DCDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
@@ -32,39 +22,30 @@ derror_t DFactory_DCDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	if(!PE) return NOERROR;
 	
 	for(unsigned int i=0; i<PE->mult; i++){
-		// ------------ CdcPoints, Hits --------------
-		s_Rings_t *rings=NULL;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->centralDC)
-				rings = PE->in[i].hitView->centralDC->rings;
-		if(rings){
-			for(unsigned int j=0;j<rings->mult;j++){
-				float radius = rings->in[j].radius;
-				s_Straws_t *straws = rings->in[j].straws;
-				if(straws){
-					for(unsigned int k=0;k<straws->mult;k++){
-						float phim = straws->in[k].phim;
-						s_Hits_t *hits = straws->in[k].hits;
-						if(hits){
-							for(unsigned int m=0;m<hits->mult;m++){
-								float dE = hits->in[m].dE;
-								float t = hits->in[m].t;
-								
-								// Add a row to the factory data
-								DCDCHit *cdchit = new DCDCHit;
-								cdchit->radius = radius;
-								cdchit->phim = phim;
-								cdchit->dE = dE;
-								cdchit->t = t;
-								v.push_back(cdchit);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->centralDC == HDDM_NULL ||
+			hits->centralDC->cdcStraws == HDDM_NULL)continue;
+
+		s_CdcStraws_t *straws = hits->centralDC->cdcStraws;
+		for(unsigned int j=0; j<straws->mult; j++){
+			s_CdcStraw_t *straw = &straws->in[j];
+			for(unsigned int k=0; k<straw->cdcStrawHits->mult; k++){
+				s_CdcStrawHit_t *strawHit = &straw->cdcStrawHits->in[k];
+				
+				// Add a row to the factory data
+				DCDCHit *cdchit = new DCDCHit;
+				cdchit->ring = straw->ring;
+				cdchit->straw = straw->straw;
+				cdchit->radius = 0.0; // need to get this from ring,straw
+				cdchit->phim = 0.0; // need to get this from ring,straw
+				cdchit->dE = strawHit->dE;
+				cdchit->t = strawHit->t;
+				v.push_back(cdchit);
+			} // k (strawHits)
+		} // j (straws)
+	} // i  (physicsEvents)
+
 	return NOERROR;
 }
 
@@ -77,13 +58,15 @@ const string DFactory_DCDCHit::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row: radius(cm):  phim(rad):   dE(MeV):   t(ns):");
+	printheader("row: ring:  straw:  radius(cm):  phim(rad):   dE(MeV):   t(ns):");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DCDCHit *cdchit = _data[i];
 
 		printnewrow();
 		printcol("%d",	i);
+		printcol("%d", cdchit->ring);
+		printcol("%d", cdchit->straw);
 		printcol("%3.1f", cdchit->radius);
 		printcol("%1.3f", cdchit->phim);
 		printcol("%2.3f", cdchit->dE);

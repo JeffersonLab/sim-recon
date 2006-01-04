@@ -32,63 +32,46 @@ derror_t DFactory_DBCALHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	if(!PE) return NOERROR;
 	
 	for(unsigned int i=0; i<PE->mult; i++){
-		s_Mods_t *mods = NULL;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->barrelEMcal)
-				mods = PE->in[i].hitView->barrelEMcal->mods;
-		if(!mods)continue;
-
-		for(unsigned int j=0;j<mods->mult;j++){
-			int module = mods->in[j].module;
-			s_Shells_t *shells = mods->in[j].shells;
-			for(unsigned int k=0;k<shells->mult;k++){
-				int layer = shells->in[k].layer;
-				s_Cones_t *cones = shells->in[k].cones;
-				for(unsigned int m=0;j<cones->mult;m++){
-					int sector = cones->in[m].sector;
-
-					s_Upstream_t *upstream = cones->in[m].upstream;
-					if(upstream){
-						s_Showers_t *showers = upstream->showers;
-						if(!showers)continue;
-				
-						for(unsigned int m=0;m<showers->mult;m++){
-							float E = showers->in[m].E;
-							float t = showers->in[m].t;
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->barrelEMcal == HDDM_NULL ||
+			hits->barrelEMcal->bcalCells == HDDM_NULL)continue;
+		
+		// Loop over BCAL cells
+		s_BcalCells_t *cells = hits->barrelEMcal->bcalCells;
+		for(unsigned int j=0;j<cells->mult;j++){
+			s_BcalCell_t *cell = &cells->in[j];
+			if(cell->bcalUpstreamHits != HDDM_NULL){
+				for(unsigned int k=0; k<cell->bcalUpstreamHits->mult; k++){
+					s_BcalUpstreamHit_t *upstreamhit = &cell->bcalUpstreamHits->in[k];
 					
-							DBCALHit *bcalhit = new DBCALHit();
-							bcalhit->module = module;
-							bcalhit->layer = layer;
-							bcalhit->sector = sector;
-							bcalhit->end = DBCALHit::UPSTREAM;
-							bcalhit->E = E;
-							bcalhit->t = t;
-							v.push_back(bcalhit);
-						}
-					}
-					s_Downstream_t *downstream = cones->in[m].downstream;
-					if(downstream){
-						s_Showers_t *showers = downstream->showers;
-						if(!showers)continue;
-				
-						for(unsigned int m=0;m<showers->mult;m++){
-						float E = showers->in[m].E;
-							float t = showers->in[m].t;
-					
-							DBCALHit *bcalhit = new DBCALHit();
-							bcalhit->module = module;
-							bcalhit->layer = layer;
-							bcalhit->sector = sector;
-							bcalhit->end = DBCALHit::DOWNSTREAM;
-							bcalhit->E = E;
-							bcalhit->t = t;
-							v.push_back(bcalhit);
-						}
-					}
+					DBCALHit *bcalhit = new DBCALHit();
+					bcalhit->module = cell->module;
+					bcalhit->layer = cell->layer;
+					bcalhit->sector = cell->sector;
+					bcalhit->end = DBCALHit::UPSTREAM;
+					bcalhit->E = upstreamhit->E;
+					bcalhit->t = upstreamhit->t;
+					v.push_back(bcalhit);
 				}
 			}
-		}
-	}
+
+			if(cell->bcalDownstreamHits != HDDM_NULL){
+				for(unsigned int k=0; k<cell->bcalDownstreamHits->mult; k++){
+					s_BcalDownstreamHit_t *downstreamhit = &cell->bcalDownstreamHits->in[k];
+					
+					DBCALHit *bcalhit = new DBCALHit();
+					bcalhit->module = cell->module;
+					bcalhit->layer = cell->layer;
+					bcalhit->sector = cell->sector;
+					bcalhit->end = DBCALHit::DOWNSTREAM;
+					bcalhit->E = downstreamhit->E;
+					bcalhit->t = downstreamhit->t;
+					v.push_back(bcalhit);
+				}
+			}
+		} // j   (cells)
+	} // i   (physicsEvents)
 
 	return NOERROR;
 }
