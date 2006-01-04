@@ -10,20 +10,20 @@
 #include "XString.hpp"
 
 XString::XString(void)
- : fUnicode_str(0)
+ : fStringCollection()
 {}
 
 XString::XString(const XMLCh* const x)
- : fUnicode_str(0)
+ : fStringCollection()
 {
    if (x)
    {
-      (std::string&)*this = XMLString::transcode(x);
+      (std::string&)*this = xercesc::XMLString::transcode(x);
    }
 }
 
 XString::XString(const char* const s)
- : fUnicode_str(0)
+ : fStringCollection()
 {
    if (s)
    {
@@ -32,7 +32,7 @@ XString::XString(const char* const s)
 }
 
 XString::XString(const std::string& s)
- : fUnicode_str(0)
+ : fStringCollection()
 {
    if (s.size())
    {
@@ -41,24 +41,39 @@ XString::XString(const std::string& s)
 }
 
 XString::XString(const XString& X)
- : fUnicode_str(0)
+ : fStringCollection()
 {
    (std::string&)*this = (std::string&)X;
 }
 
 XString::~XString()
 {
-   if (fUnicode_str)
+   std::list<XMLCh*>::iterator iter;
+   for (iter = fStringCollection.begin();
+        iter != fStringCollection.end();
+        ++iter)
    {
-      delete fUnicode_str;
+      delete [] *iter;
    }
 }
 
 const XMLCh* XString::unicode_str()
 {
-   if (fUnicode_str)
+   XMLCh* ustr = xercesc::XMLString::transcode(this->c_str());
+   if (ustr)
    {
-      delete fUnicode_str;
+      fStringCollection.push_back(ustr);
    }
-   return fUnicode_str = XMLString::transcode(this->c_str());
+   return ustr;
+}
+
+const XString XString::basename() const
+{
+   XString s(*this);
+   size_type p = s.find_last_of("/");
+   if (p != npos)
+   {
+      s = s.substr(p+1,s.size());
+   }
+   return s;
 }

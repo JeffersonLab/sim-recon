@@ -10,10 +10,11 @@
 #ifndef SAW_XSTRING_DEF
 #define SAW_XSTRING_DEF true
 
-#include <string>
+#include <xercesc/util/XercesDefs.hpp>
 #include <xercesc/util/XMLString.hpp>
 
-XERCES_CPP_NAMESPACE_USE
+#include <string>
+#include <list>
 
 
 class XString: public std::string
@@ -31,10 +32,12 @@ class XString: public std::string
    XString(const XString& X);
    ~XString();
 
-   const XMLCh* unicode_str();
+   const XString basename() const;  // implements basename() from strings.h
+   const XMLCh* unicode_str();      // must modify the object because it
+                                    // has to keep track of memory usage.
 
  private:
-   XMLCh* fUnicode_str;
+   std::list<XMLCh*> fStringCollection;
 };
 
 #endif

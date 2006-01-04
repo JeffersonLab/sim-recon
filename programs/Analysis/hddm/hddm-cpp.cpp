@@ -48,9 +48,11 @@
 #define X(XString) XString.unicode_str()
 #define S(XString) XString.c_str()
 
+using namespace xercesc;
+
 char* hFilename = 0;
-ofstream hFile;
-ofstream cFile;
+std::ofstream hFile;
+std::ofstream cFile;
 
 const char* classPrefix;
 int tagListLength = 0;
@@ -80,12 +82,13 @@ void constructDocument(DOMElement* el);
 
 void usage()
 {
-   cerr << "\nUsage:\n"
+   std::cerr
+        << "\nUsage:\n"
         << "    hddm-cpp [-v | -o <filename>] {HDDM file}\n\n"
         << "Options:\n"
         <<  "    -v			validate only\n"
         <<  "    -o <filename>	write to <filename>.h"
-        << endl;
+        << std::endl;
 }
 
 /* Generate the plural form of a noun */
@@ -171,16 +174,18 @@ void checkConsistency(DOMElement* el, int t)
          int maxnew = (newS == "unbounded")? 9999 : atoi(S(newS));
 	 if (maxold*maxnew <= maxold)
          {
-            cerr << "hddm-cpp error: inconsistent maxOccurs usage by tag "
-                 << "\"" << S(tagS) << "\" in xml document." << endl;
+            std::cerr
+                 << "hddm-cpp error: inconsistent maxOccurs usage by tag "
+                 << "\"" << S(tagS) << "\" in xml document." << std::endl;
             exit(1);
          }
       }
       else if (newS != oldS)
       {
-         cerr << "hddm-cpp error: inconsistent usage of attribute "
+         std::cerr
+              << "hddm-cpp error: inconsistent usage of attribute "
               << "\"" << S(nameS) << "\" in tag "
-              << "\"" << S(tagS) << "\" in xml document." << endl;
+              << "\"" << S(tagS) << "\" in xml document." << std::endl;
          exit(1);
       }
    }
@@ -200,16 +205,18 @@ void checkConsistency(DOMElement* el, int t)
          int maxnew = (newS == "unbounded")? 9999 : atoi(S(newS));
 	 if (maxold*maxnew <= maxnew)
          {
-            cerr << "hddm-cpp error: inconsistent maxOccurs usage by tag "
-                 << "\"" << S(tagS) << "\" in xml document." << endl;
+            std::cerr
+                 << "hddm-cpp error: inconsistent maxOccurs usage by tag "
+                 << "\"" << S(tagS) << "\" in xml document." << std::endl;
             exit(1);
          }
       }
       else if (newS != oldS)
       {
-         cerr << "hddm-cpp error: inconsistent usage of attribute "
+         std::cerr
+              << "hddm-cpp error: inconsistent usage of attribute "
               << "\"" << S(nameS) << "\" in tag "
-              << "\"" << S(tagS) << "\" in xml document." << endl;
+              << "\"" << S(tagS) << "\" in xml document." << std::endl;
          exit(1);
       }
    }
@@ -218,8 +225,9 @@ void checkConsistency(DOMElement* el, int t)
    listLength = oldList->getLength();
    if (newList->getLength() != listLength)
    {
-      cerr << "hddm-cpp error: inconsistent usage of tag "
-           << "\"" << S(tagS) << "\" in xml document." << endl;
+      std::cerr
+           << "hddm-cpp error: inconsistent usage of tag "
+           << "\"" << S(tagS) << "\" in xml document." << std::endl;
    exit(1);
    }
    for (int n = 0; n < listLength; n++)
@@ -232,8 +240,9 @@ void checkConsistency(DOMElement* el, int t)
          DOMNodeList* contList = el->getElementsByTagName(X(nameS));
          if (contList->getLength() != 1)
          {
-             cerr << "hddm-cpp error: inconsistent usage of tag "
-                  << "\"" << S(tagS) << "\" in xml document." << endl;
+             std::cerr
+                  << "hddm-cpp error: inconsistent usage of tag "
+                  << "\"" << S(tagS) << "\" in xml document." << std::endl;
              exit(1);
          }
       }
@@ -262,22 +271,22 @@ void writeHeader(DOMElement* el)
 		char cpptypeRef[256];
 		strcpy(cpptypeRef,ctypeRef);
 		cpptypeRef[strlen(cpptypeRef)-1] = 'c';
-		hFile << "//------------- "<<cpptypeRef<<" --------------"<<endl
-            << endl << "class "<<cpptypeRef<<":public DContainer"<<endl
-		      << "{" << endl
-				<< "	public:"<<endl
+		hFile << "//------------- "<<cpptypeRef<<" --------------"<<std::endl
+            << std::endl << "class "<<cpptypeRef<<":public DContainer"<<std::endl
+		      << "{" << std::endl
+				<< "	public:"<<std::endl
             << "		"<<cpptypeRef<<"(void)"
-				<< ":DContainer((void**)&"<<cDef<<", sizeof("<<ctypeDef<<"), \""<<cDef<<"\"){}" << endl
-            << "   	" << ctypeDef << " *"<<cDef<<";" << endl
-            << "};"<< endl
-				<< "//-------------------------------------------"<<endl;
+				<< ":DContainer((void**)&"<<cDef<<", sizeof("<<ctypeDef<<"), \""<<cDef<<"\"){}" << std::endl
+            << "   	" << ctypeDef << " *"<<cDef<<";" << std::endl
+            << "};"<< std::endl
+				<< "//-------------------------------------------"<<std::endl;
 		sprintf(containerList,"%s\n	%s *%s;",containerList,cpptypeRef, cRef);
 		sprintf(constructorCalls,"%s\n	hddm->%s 	= new %s();", constructorCalls, cRef, cpptypeRef);
 		sprintf(destructorCalls,"%s\n	delete hddm->%s;", destructorCalls, cRef);
       delete [] ctypeRef;
    }
 
-   //hFile << "#endif /* " << ctypeDef << " */" 			<< endl;
+   //hFile << "#endif /* " << ctypeDef << " */" 			<< std::endl;
 }
 
 /* Generate c-structure declarations for this tag and its descendants;
@@ -344,7 +353,7 @@ void constructDocument(DOMElement* el)
    int contListLength = contList->getLength();
    if (contListLength > 0)
    {
-      cFile << ">\\n\"" << endl;
+      cFile << ">\\n\"" << std::endl;
       indent++;
       for (int c = 0; c < contListLength; c++)
       {
@@ -361,11 +370,11 @@ void constructDocument(DOMElement* el)
       {
          cFile << "  ";
       }
-      cFile << "</" << S(tagS) << ">\\n\"" << endl;
+      cFile << "</" << S(tagS) << ">\\n\"" << std::endl;
    }
    else
    {
-      cFile << " />\\n\"" << endl;
+      cFile << " />\\n\"" << std::endl;
    }
 }
 
@@ -378,8 +387,9 @@ int main(int argC, char* argV[])
    catch (const XMLException* toCatch)
    {
       XString msg(toCatch->getMessage());
-      cerr << "hddm-cpp: Error during initialization! :\n"
-           << S(msg) << endl;
+      std::cerr
+           << "hddm-cpp: Error during initialization! :\n"
+           << S(msg) << std::endl;
       return 1;
    }
 
@@ -412,8 +422,9 @@ int main(int argC, char* argV[])
       }
       else
       {
-         cerr << "Unknown option \'" << argV[argInd]
-              << "\', ignoring it\n" << endl;
+         std::cerr
+              << "Unknown option \'" << argV[argInd]
+              << "\', ignoring it\n" << std::endl;
       }
    }
 
@@ -431,8 +442,9 @@ int main(int argC, char* argV[])
 #endif
    if (document == 0)
    {
-      cerr << "hddm-cpp : Error parsing HDDM document, "
-           << "cannot continue" << endl;
+      std::cerr
+           << "hddm-cpp : Error parsing HDDM document, "
+           << "cannot continue" << std::endl;
       return 1;
    }
 
@@ -440,9 +452,10 @@ int main(int argC, char* argV[])
    XString rootS(rootEl->getTagName());
    if (rootS != "HDDM")
    {
-      cerr << "hddm-cpp error: root element of input document is "
+      std::cerr
+           << "hddm-cpp error: root element of input document is "
            << "\"" << S(rootS) << "\", expected \"HDDM\""
-           << endl;
+           << std::endl;
       return 1;
    }
 
@@ -469,8 +482,9 @@ int main(int argC, char* argV[])
    hFile.open(hppname);
    if (! hFile.is_open())
    {
-      cerr << "hddm-cpp error: unable to open output file "
-           << hppname << endl;
+      std::cerr
+           << "hddm-cpp error: unable to open output file "
+           << hppname << std::endl;
       return 1;
    }
 
@@ -479,101 +493,102 @@ int main(int argC, char* argV[])
    cFile.open(cname);
    if (! cFile.is_open())
    {
-      cerr << "hddm-cpp error: unable to open output file "
-           << cname << endl;
+      std::cerr
+           << "hddm-cpp error: unable to open output file "
+           << cname << std::endl;
       return 1;
    }
 
-   hFile << "/*"						<< endl
-	 << " * " << hppname << " - DO NOT EDIT THIS FILE"	<< endl
-	 << " *"						<< endl
+   hFile << "/*"						<< std::endl
+	 << " * " << hppname << " - DO NOT EDIT THIS FILE"	<< std::endl
+	 << " *"						<< std::endl
 	 << " * This file was generated automatically by hddm-cpp"
-	 << " from the file"					<< endl
-    << " * " << xmlFile					<< endl
+	 << " from the file"					<< std::endl
+    << " * " << xmlFile					<< std::endl
     << " * This header file defines the c++ structures that"
-	 << " hold the data"					<< endl
+	 << " hold the data"					<< std::endl
 	 << " * described in the data model"
-    << " (from " << xmlFile << "). "			<< endl
-	 << " *"						<< endl
-	 << " * The hddm data model tool set was written by"	<< endl
-	 << " * Richard Jones, University of Connecticut."	<< endl
-	 << " *"						<< endl
-	 << " *"						<< endl
-	 << " * The C++ container system was written by"	<< endl
-	 << " * David Lawrence, Jefferson Lab."	<< endl
-	 << " *"						<< endl
-	 << " * For more information see the following web site"<< endl
-	 << " *"						<< endl
-	 << " * http://zeus.phys.uconn.edu/halld/datamodel/doc"	<< endl
-	 << " *"						<< endl
-	 << " */"						<< endl
-	 							<< endl;
+    << " (from " << xmlFile << "). "			<< std::endl
+	 << " *"						<< std::endl
+	 << " * The hddm data model tool set was written by"	<< std::endl
+	 << " * Richard Jones, University of Connecticut."	<< std::endl
+	 << " *"						<< std::endl
+	 << " *"						<< std::endl
+	 << " * The C++ container system was written by"	<< std::endl
+	 << " * David Lawrence, Jefferson Lab."	<< std::endl
+	 << " *"						<< std::endl
+	 << " * For more information see the following web site"<< std::endl
+	 << " *"						<< std::endl
+	 << " * http://zeus.phys.uconn.edu/halld/datamodel/doc"	<< std::endl
+	 << " *"						<< std::endl
+	 << " */"						<< std::endl
+	 							<< std::endl;
 
-   cFile	<< "/*"						<< endl
-			<< " * " << cname << " - DO NOT EDIT THIS FILE"	<< endl
-			<< " *"						<< endl
+   cFile	<< "/*"						<< std::endl
+			<< " * " << cname << " - DO NOT EDIT THIS FILE"	<< std::endl
+			<< " *"						<< std::endl
 			<< " * This file was generated automatically by hddm-cpp"
-			<< " from the file"					<< endl
-			<< " * " << xmlFile					<< endl
-			<< " *"						<< endl
-			<< " * The hddm data model tool set was written by"	<< endl
-			<< " * Richard Jones, University of Connecticut."	<< endl
-			<< " *"						<< endl
-			<< " *"						<< endl
-			<< " * The C++ container system was written by"	<< endl
-			<< " * David Lawrence, Jefferson Lab."	<< endl
-			<< " *"						<< endl
-			<< " * For more information see the following web site"<< endl
-			<< " *"						<< endl
-			<< " * http://zeus.phys.uconn.edu/halld/datamodel/doc"	<< endl
-			<< " */"						<< endl
-			<< endl;
+			<< " from the file"					<< std::endl
+			<< " * " << xmlFile					<< std::endl
+			<< " *"						<< std::endl
+			<< " * The hddm data model tool set was written by"	<< std::endl
+			<< " * Richard Jones, University of Connecticut."	<< std::endl
+			<< " *"						<< std::endl
+			<< " *"						<< std::endl
+			<< " * The C++ container system was written by"	<< std::endl
+			<< " * David Lawrence, Jefferson Lab."	<< std::endl
+			<< " *"						<< std::endl
+			<< " * For more information see the following web site"<< std::endl
+			<< " *"						<< std::endl
+			<< " * http://zeus.phys.uconn.edu/halld/datamodel/doc"	<< std::endl
+			<< " */"						<< std::endl
+			<< std::endl;
 
-   hFile << "#include \""<<hname<<"\"" 		<< endl
-			<< "#include \"DContainer.h\"" 		<< endl
-			<< endl
-			<< "#ifndef _HDDM_HPP_"<<endl
-			<< "#define _HDDM_HPP_"<<endl;
+   hFile << "#include \""<<hname<<"\"" 		<< std::endl
+			<< "#include \"DContainer.h\"" 		<< std::endl
+			<< std::endl
+			<< "#ifndef _HDDM_HPP_"<<std::endl
+			<< "#define _HDDM_HPP_"<<std::endl;
 
    constructGroup(rootEl);
 	
-	hFile	<< endl
-			<< endl
-			<< "//----------------------------------------------------------------------------"<<endl
-			<< "//------------------------------- hddm_containers_t -------------------------------"<<endl
-			<< "//----------------------------------------------------------------------------"<<endl
-			<< "typedef struct{"<<endl
-			<< endl
-			<< "	/// This struct should consist ONLY of class pointers derived from DContainer"<<endl
-			<< "	"<<containerList<<endl
-			<< "}"<<classPrefix<<"_hddm_containers_t;"<<endl
-			<< endl
-			<< "// in HDDM/hddm_containers.cc"<<endl
-			<< "derror_t init_hddm_containers("<<classPrefix<<"_hddm_containers_t *hddm);"<<endl
-			<< "derror_t delete_hddm_containers("<<classPrefix<<"_hddm_containers_t *hddm);"<<endl
-			<< endl
-			<< "#endif // _HDDM_HPP_"<<endl
-			<< endl;
+	hFile	<< std::endl
+			<< std::endl
+			<< "//----------------------------------------------------------------------------"<<std::endl
+			<< "//------------------------------- hddm_containers_t -------------------------------"<<std::endl
+			<< "//----------------------------------------------------------------------------"<<std::endl
+			<< "typedef struct{"<<std::endl
+			<< std::endl
+			<< "	/// This struct should consist ONLY of class pointers derived from DContainer"<<std::endl
+			<< "	"<<containerList<<std::endl
+			<< "}"<<classPrefix<<"_hddm_containers_t;"<<std::endl
+			<< std::endl
+			<< "// in HDDM/hddm_containers.cc"<<std::endl
+			<< "derror_t init_hddm_containers("<<classPrefix<<"_hddm_containers_t *hddm);"<<std::endl
+			<< "derror_t delete_hddm_containers("<<classPrefix<<"_hddm_containers_t *hddm);"<<std::endl
+			<< std::endl
+			<< "#endif // _HDDM_HPP_"<<std::endl
+			<< std::endl;
 
-   cFile << "#include \"" << hppname << "\"" 			<< endl
-			<< "//----------------------"<<endl
-			<< "// init_hddm_containers_t"<<endl
-			<< "//----------------------"<<endl
-			<< "derror_t init_hddm_containers("<<classPrefix<<"_hddm_containers_t *hddm)"<<endl
-			<< "{"<<endl
-			<< "	/// Call constructors for all DContainer derived classes"<<endl
-			<< constructorCalls<<endl
-			<< "}"<<endl
-			<< endl
-			<< "//----------------------"<<endl
-			<< "// delete_hddm_containers_t"<<endl
-			<< "//----------------------"<<endl
-			<< "derror_t delete_hddm_containers("<<classPrefix<<"_hddm_containers_t *hddm)"<<endl
-			<< "{"<<endl
-			<< "	/// Call destructors for all DContainer derived classes"<<endl
-			<< destructorCalls<<endl
-			<< "}"<<endl
-			<< endl;
+   cFile << "#include \"" << hppname << "\"" 			<< std::endl
+			<< "//----------------------"<<std::endl
+			<< "// init_hddm_containers_t"<<std::endl
+			<< "//----------------------"<<std::endl
+			<< "derror_t init_hddm_containers("<<classPrefix<<"_hddm_containers_t *hddm)"<<std::endl
+			<< "{"<<std::endl
+			<< "	/// Call constructors for all DContainer derived classes"<<std::endl
+			<< constructorCalls<<std::endl
+			<< "}"<<std::endl
+			<< std::endl
+			<< "//----------------------"<<std::endl
+			<< "// delete_hddm_containers_t"<<std::endl
+			<< "//----------------------"<<std::endl
+			<< "derror_t delete_hddm_containers("<<classPrefix<<"_hddm_containers_t *hddm)"<<std::endl
+			<< "{"<<std::endl
+			<< "	/// Call destructors for all DContainer derived classes"<<std::endl
+			<< destructorCalls<<std::endl
+			<< "}"<<std::endl
+			<< std::endl;
 
    XMLPlatformUtils::Terminate();
    return 0;

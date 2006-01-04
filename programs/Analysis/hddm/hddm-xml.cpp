@@ -60,10 +60,12 @@
 #define X(XString) XString.unicode_str()
 #define S(XString) XString.c_str()
 
+using namespace xercesc;
+
 class XMLmaker
 {
  public:
-   ofstream xout; 
+   std::ofstream xout; 
 
    XMLmaker() {};
    ~XMLmaker() {};
@@ -74,11 +76,12 @@ class XMLmaker
 
 void usage()
 {
-   cerr << "\nUsage:\n"
+   std::cerr
+        << "\nUsage:\n"
         << "    hddm-xml [-o <filename>] [HDDM file]\n\n"
         << "Options:\n"
         <<  "    -o <filename>	write to <filename>.xml"
-        << endl;
+        << std::endl;
 }
 
 
@@ -93,8 +96,9 @@ int main(int argC, char* argV[])
    catch (const XMLException* toCatch)
    {
       XString msg(toCatch->getMessage());
-      cerr << "hddm-xml: Error during initialization! :\n"
-           << S(msg) << endl;
+      std::cerr
+           << "hddm-xml: Error during initialization! :\n"
+           << S(msg) << std::endl;
       return 1;
    }
 
@@ -122,15 +126,15 @@ int main(int argC, char* argV[])
    }
 
    XString hddmFile;
-   istream* ifs;
+   std::istream* ifs;
    if (argInd == argC)
    {
-      ifs = &cin;
+      ifs = &std::cin;
    }
    else if (argInd == argC - 1)
    {
       hddmFile = XString(argV[argInd]);
-      ifs = new ifstream(hddmFile.c_str());
+      ifs = new std::ifstream(hddmFile.c_str());
    }
    else
    {
@@ -139,15 +143,17 @@ int main(int argC, char* argV[])
    }
    if (!ifs->good())
    {
-      cerr << "hddm-xml: Error opening input stream " << hddmFile << endl;
+      std::cerr
+           << "hddm-xml: Error opening input stream " << hddmFile << std::endl;
       exit(1);
    }
    std::ostringstream tmpFileStr;
    tmpFileStr << "tmp" << getpid();
-   ofstream ofs(tmpFileStr.str().c_str());
+   std::ofstream ofs(tmpFileStr.str().c_str());
    if (! ofs.is_open())
    {
-      cerr << "hddm-xml: Error opening temp file " << tmpFileStr << endl;
+      std::cerr
+           << "hddm-xml: Error opening temp file " << tmpFileStr << std::endl;
       exit(2);
    }
 
@@ -158,8 +164,11 @@ int main(int argC, char* argV[])
    {
       if (line.substr(0,5) == "<?xml")
       {
-         cerr << "hddm-xml: Error reading input stream " << hddmFile << endl;
-         cerr << "Input file appears to be an xml document!" << endl;
+         std::cerr
+              << "hddm-xml: Error reading input stream " << hddmFile
+              << std::endl;
+         std::cerr
+              << "Input file appears to be an xml document!" << std::endl;
          exit(1);
       }
       else if (line.substr(0,5) == "<HDDM")
@@ -169,14 +178,17 @@ int main(int argC, char* argV[])
       }
       else
       {
-         cerr << "hddm-xml: Input stream does not contain valid hddm header"
-              << endl;
+         std::cerr
+              << "hddm-xml: Input stream does not contain valid hddm header"
+              << std::endl;
          exit(1);
       }
    }
    else
    {
-      cerr << "hddm-xml: Error reading from input stream " << hddmFile << endl;
+      std::cerr
+           << "hddm-xml: Error reading from input stream " << hddmFile 
+           << std::endl;
       exit(1);
    }
    while (getline(*ifs,line))
@@ -196,8 +208,9 @@ int main(int argC, char* argV[])
 #endif
    if (document == 0)
    {
-      cerr << "hddm-xml : Error parsing HDDM document, "
-           << "cannot continue" << endl;
+      std::cerr
+           << "hddm-xml : Error parsing HDDM document, "
+           << "cannot continue" << std::endl;
       return 1;
    }
    unlink(tmpFileStr.str().c_str());
@@ -206,9 +219,10 @@ int main(int argC, char* argV[])
    XString rootS(rootEl->getTagName());
    if (rootS != "HDDM")
    {
-      cerr << "hddm-xml error: root element of input document is "
+      std::cerr
+           << "hddm-xml error: root element of input document is "
            << "\"" << S(rootS) << "\", expected \"HDDM\""
-           << endl;
+           << std::endl;
       return 1;
    }
 
@@ -251,9 +265,9 @@ int main(int argC, char* argV[])
 
    builder.writeXML("</HDDM>\n");
 
-   if (ifs != &cin)
+   if (ifs != &std::cin)
    {
-      ((ifstream*)ifs)->close();
+      ((std::ifstream*)ifs)->close();
    }
    XMLPlatformUtils::Terminate();
    return 0;
@@ -269,7 +283,7 @@ void XMLmaker::writeXML(const XString& s)
       }
       else
       {
-         cout << s;
+         std::cout << s;
       }
 }
 
