@@ -2,4 +2,3 @@ DObject.h
 DParameter.h
 DGeometry.h
 DQuickFit.h
-DHDDMForwardShower.h
