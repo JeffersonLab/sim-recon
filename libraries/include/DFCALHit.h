@@ -26,6 +26,8 @@ class DFCALHit:public DObject{
 		E( E ),
 		t( t ) {}
 		
+		int column;
+		int row;
 		float x;
 		float y;
 		float E;
