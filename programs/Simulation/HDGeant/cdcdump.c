@@ -36,38 +36,29 @@ int main(int argc, char **argv)
 int process_event(s_HDDM_t *event)
 {
    s_HitView_t *hits;
-   s_Rings_t *rings;
-   int ring;
+   s_CdcTruthPoints_t *points;
    hits = event->physicsEvents->in[0].hitView;
    if (hits == HDDM_NULL ||
        hits->centralDC == HDDM_NULL ||
-       hits->centralDC->rings == HDDM_NULL) {
+       hits->centralDC->cdcTruthPoints == HDDM_NULL) {
       return 0;
    }
    printf("New event number %d,",event->physicsEvents->in[0].eventNo);
    printf(" run number %d\n",event->physicsEvents->in[0].runNo);
-   rings = hits->centralDC->rings;
-   for (ring=0; ring<rings->mult; ring++) {
-      if (fabs(rings->in[ring].radius-19.5) < 0.5e5) {
-         s_Straws_t *straws = rings->in[ring].straws;
-         int straw;
-         for (straw=0; straw<straws->mult; straw++) {
-            s_CdcPoints_t *points = straws->in[straw].cdcPoints;
-            if (points == HDDM_NULL) {
-               printf(" orphan found!\n");
-            }
-            else if (points->mult != 1) {
-               printf(" found %d cdcPoints!\n",points->mult);
-            }
-            else if (straws->in[straw].hits == HDDM_NULL) {
-               printf(" widow found!\n");
-            }
-            else {
-               printf("  straw hit at phi=%f,",straws->in[straw].phim);
-               printf("  drift time=%f,",straws->in[straw].hits->in[0].t);
-               printf("  dE/dx=%f\n",points->in[0].dEdx * 1e6);
-            }
-         }
+   points = hits->centralDC->cdcTruthPoints;
+	printf(" found %d cdcTruthPoints!\n",points->mult);
+	int ipoint;
+   for (ipoint=0; ipoint<points->mult; ipoint++) {
+		s_CdcTruthPoint_t *point = &points->in[ipoint];
+      if (fabs(point->dradius-19.5) < 0.5e5) {
+			
+         printf("  dE/dx=%f\n",point->dEdx * 1e6);
+         printf("  dradius=%f,",point->dradius);
+         printf("  phi=%f,",point->phi);
+         printf("  primary=%s,",point->primary ? "true":"false");
+         printf("  r=%f,",point->r);
+         printf("  track=%f,",point->track);
+         printf("  z=%f,",point->z);
       }
    }
    return 1;
