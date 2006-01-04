@@ -5,9 +5,9 @@ DFCALGeometry
 DFCALHit
 DFCALMCResponse
 DFCALShower
+DFCALTruthShower
 DFDCHit
 DGeometry
-DHDDMForwardShower
 DHDDMTOFHit
 DHDDMTOFTruth
 DMCThrown
