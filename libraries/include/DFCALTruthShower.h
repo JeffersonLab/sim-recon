@@ -37,6 +37,9 @@ class DFCALTruthShower:public DObject{
 		bool primary() const { return m_primary; }
 		int track() const { return m_track; }
 
+		void Serialize(JILStream&) const;
+		void Deserialize(JILStream&);
+
 	private:
 		
 		float m_x;
