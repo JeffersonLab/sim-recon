@@ -12,36 +12,51 @@
 #include "DFCALMCResponse.h"
 #include "DFCALGeometry.h"
 
+
 //------------------
-// evnt
+// Extract_HDDM
 //------------------
-derror_t DFactory_DFCALHit::evnt(DEventLoop *eventLoop, int eventnumber)
+derror_t DFactory_DFCALHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 {
-	assert( _data.size() == 0 );
-	
-	vector<const DFCALMCResponse*> responseVect;
-	eventLoop->Get( responseVect );
-		
 	// extract the FCAL Geometry
 	vector<const DFCALGeometry*> fcalGeomVect;
 	eventLoop->Get( fcalGeomVect );
-	const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
-		
-	for( vector<const DFCALMCResponse*>::const_iterator 
-		 aResponse = responseVect.begin();
-		 aResponse != responseVect.end();
-		 ++aResponse ){
-		
-		// temporary for now:
-	
-		float x = fcalGeom.positionOnFace( (**aResponse).channel() ).X();
-		float y = fcalGeom.positionOnFace( (**aResponse).channel() ).Y();
-		
-		_data.push_back( new DFCALHit( (**aResponse).id,
-									   x, y,
-									   (**aResponse).E(),
-									   (**aResponse).t() ) );
+	if(fcalGeomVect.size() != 1){
+		cerr<<__FILE__<<":"<<__LINE__<<" Bad number of DFCALGeometry objects ("<<fcalGeomVect.size()<<")!"<<endl;
+		return VALUE_OUT_OF_RANGE;
 	}
+	const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
+
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+	
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->forwardEMcal == HDDM_NULL ||
+			hits->forwardEMcal->fcalBlocks == HDDM_NULL)continue;
+
+		s_FcalBlocks_t *blocks = hits->forwardEMcal->fcalBlocks;
+		for(unsigned int j=0; j<blocks->mult; j++){
+			s_FcalBlock_t *block = &blocks->in[j];
+			for(unsigned int k=0; k<block->fcalHits->mult; k++){
+				s_FcalHit_t *fcalhit = &block->fcalHits->in[k];
+				TVector2 position = fcalGeom.positionOnFace(block->row, block->column);
+				
+				DFCALHit *dfcalhit = new DFCALHit();
+				dfcalhit->column = block->column;
+				dfcalhit->row = block->row;
+				dfcalhit->x = position.X();
+				dfcalhit->y = position.Y();
+				dfcalhit->E = fcalhit->E;
+				dfcalhit->t = fcalhit->t;
+				
+				_data.push_back(dfcalhit);
+
+			} // k  (fcalhits)
+		} // j  (blocks)
+	} // i  (physicsEvents)
 	
 	return NOERROR;
 }
@@ -56,13 +71,15 @@ const string DFactory_DFCALHit::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row:   x(cm):   y(cm):   E(GeV):   t(ns):");
+	printheader("row:  column:   row:   x(cm):   y(cm):   E(GeV):   t(ns):");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DFCALHit *fcalhit = _data[i];
 
 		printnewrow();
 		printcol("%d",	i);
+		printcol("%d", fcalhit->column);
+		printcol("%d", fcalhit->row);
 		printcol("%3.1f", fcalhit->x);
 		printcol("%3.1f", fcalhit->y);
 		printcol("%2.3f", fcalhit->E);
