@@ -18,6 +18,7 @@ derror_t DFactory_DFCALTruthShower::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*>
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
 	
+	identifier_t id=1;
 	for(unsigned int i=0; i<PE->mult; i++){
 		s_HitView_t *hits = PE->in[i].hitView;
 		if (hits == HDDM_NULL ||
@@ -29,6 +30,7 @@ derror_t DFactory_DFCALTruthShower::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*>
 			s_FcalTruthShower_t *shower = &showers->in[j];
 			
 			DFCALTruthShower *dfcaltruthshower = new DFCALTruthShower(
+				id++,
 				shower->x,
 				shower->y,
 				shower->z,
