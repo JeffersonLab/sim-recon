@@ -26,7 +26,6 @@
 #include <particleType.h>
 
 #define MALLOC(N,S) malloc(N)
-#define CALLOC(N,S) calloc(N,1)
 #define FREE(P) free(P)
 
 #ifndef SAW_s_Momentum_t
@@ -127,22 +126,37 @@ typedef struct {
 } s_Reactions_t;
 #endif /* s_Reaction_t */
 
-#ifndef SAW_s_Hit_t
-#define SAW_s_Hit_t
+#ifndef SAW_s_CdcStrawHit_t
+#define SAW_s_CdcStrawHit_t
 
 typedef struct {
    float                dE;
    float                t;
-} s_Hit_t;
+} s_CdcStrawHit_t;
 
 typedef struct {
    unsigned int mult;
-   s_Hit_t in[1];
-} s_Hits_t;
-#endif /* s_Hit_t */
+   s_CdcStrawHit_t in[1];
+} s_CdcStrawHits_t;
+#endif /* s_CdcStrawHit_t */
 
-#ifndef SAW_s_CdcPoint_t
-#define SAW_s_CdcPoint_t
+#ifndef SAW_s_CdcStraw_t
+#define SAW_s_CdcStraw_t
+
+typedef struct {
+   int                  ring;
+   int                  straw;
+   s_CdcStrawHits_t*    cdcStrawHits;
+} s_CdcStraw_t;
+
+typedef struct {
+   unsigned int mult;
+   s_CdcStraw_t in[1];
+} s_CdcStraws_t;
+#endif /* s_CdcStraw_t */
+
+#ifndef SAW_s_CdcTruthPoint_t
+#define SAW_s_CdcTruthPoint_t
 
 typedef struct {
    float                dEdx;
@@ -152,82 +166,82 @@ typedef struct {
    float                r;
    int                  track;
    float                z;
-} s_CdcPoint_t;
+} s_CdcTruthPoint_t;
 
 typedef struct {
    unsigned int mult;
-   s_CdcPoint_t in[1];
-} s_CdcPoints_t;
-#endif /* s_CdcPoint_t */
-
-#ifndef SAW_s_Straw_t
-#define SAW_s_Straw_t
-
-typedef struct {
-   float                phim;
-   s_Hits_t*            hits;
-   s_CdcPoints_t*       cdcPoints;
-} s_Straw_t;
-
-typedef struct {
-   unsigned int mult;
-   s_Straw_t in[1];
-} s_Straws_t;
-#endif /* s_Straw_t */
-
-#ifndef SAW_s_Ring_t
-#define SAW_s_Ring_t
-
-typedef struct {
-   float                radius;
-   s_Straws_t*          straws;
-} s_Ring_t;
-
-typedef struct {
-   unsigned int mult;
-   s_Ring_t in[1];
-} s_Rings_t;
-#endif /* s_Ring_t */
+   s_CdcTruthPoint_t in[1];
+} s_CdcTruthPoints_t;
+#endif /* s_CdcTruthPoint_t */
 
 #ifndef SAW_s_CentralDC_t
 #define SAW_s_CentralDC_t
 
 typedef struct {
-   s_Rings_t*           rings;
+   s_CdcStraws_t*       cdcStraws;
+   s_CdcTruthPoints_t*  cdcTruthPoints;
 } s_CentralDC_t;
 #endif /* s_CentralDC_t */
 
-#ifndef SAW_s_Strip_t
-#define SAW_s_Strip_t
+#ifndef SAW_s_FdcAnodeHit_t
+#define SAW_s_FdcAnodeHit_t
 
 typedef struct {
-   float                u;
-   s_Hits_t*            hits;
-} s_Strip_t;
-
-typedef struct {
-   unsigned int mult;
-   s_Strip_t in[1];
-} s_Strips_t;
-#endif /* s_Strip_t */
-
-#ifndef SAW_s_CathodePlane_t
-#define SAW_s_CathodePlane_t
-
-typedef struct {
-   float                tau;
-   float                z;
-   s_Strips_t*          strips;
-} s_CathodePlane_t;
+   float                dE;
+   float                t;
+} s_FdcAnodeHit_t;
 
 typedef struct {
    unsigned int mult;
-   s_CathodePlane_t in[1];
-} s_CathodePlanes_t;
-#endif /* s_CathodePlane_t */
+   s_FdcAnodeHit_t in[1];
+} s_FdcAnodeHits_t;
+#endif /* s_FdcAnodeHit_t */
 
-#ifndef SAW_s_FdcPoint_t
-#define SAW_s_FdcPoint_t
+#ifndef SAW_s_FdcAnodeWire_t
+#define SAW_s_FdcAnodeWire_t
+
+typedef struct {
+   int                  wire;
+   s_FdcAnodeHits_t*    fdcAnodeHits;
+} s_FdcAnodeWire_t;
+
+typedef struct {
+   unsigned int mult;
+   s_FdcAnodeWire_t in[1];
+} s_FdcAnodeWires_t;
+#endif /* s_FdcAnodeWire_t */
+
+#ifndef SAW_s_FdcCathodeHit_t
+#define SAW_s_FdcCathodeHit_t
+
+typedef struct {
+   float                dE;
+   float                t;
+} s_FdcCathodeHit_t;
+
+typedef struct {
+   unsigned int mult;
+   s_FdcCathodeHit_t in[1];
+} s_FdcCathodeHits_t;
+#endif /* s_FdcCathodeHit_t */
+
+#ifndef SAW_s_FdcCathodeStrip_t
+#define SAW_s_FdcCathodeStrip_t
+
+typedef struct {
+   int                  plane;
+   int                  strip;
+   s_FdcCathodeHits_t*  fdcCathodeHits;
+} s_FdcCathodeStrip_t;
+
+typedef struct {
+   unsigned int mult;
+   s_FdcCathodeStrip_t in[1];
+} s_FdcCathodeStrips_t;
+#endif /* s_FdcCathodeStrip_t */
+
+#ifndef SAW_s_FdcTruthPoint_t
+#define SAW_s_FdcTruthPoint_t
 
 typedef struct {
    float                dEdx;
@@ -237,84 +251,69 @@ typedef struct {
    float                x;
    float                y;
    float                z;
-} s_FdcPoint_t;
+} s_FdcTruthPoint_t;
 
 typedef struct {
    unsigned int mult;
-   s_FdcPoint_t in[1];
-} s_FdcPoints_t;
-#endif /* s_FdcPoint_t */
+   s_FdcTruthPoint_t in[1];
+} s_FdcTruthPoints_t;
+#endif /* s_FdcTruthPoint_t */
 
-#ifndef SAW_s_Wire_t
-#define SAW_s_Wire_t
-
-typedef struct {
-   float                u;
-   s_Hits_t*            hits;
-   s_FdcPoints_t*       fdcPoints;
-} s_Wire_t;
-
-typedef struct {
-   unsigned int mult;
-   s_Wire_t in[1];
-} s_Wires_t;
-#endif /* s_Wire_t */
-
-#ifndef SAW_s_AnodePlane_t
-#define SAW_s_AnodePlane_t
-
-typedef struct {
-   float                tau;
-   float                z;
-   s_Wires_t*           wires;
-} s_AnodePlane_t;
-
-typedef struct {
-   unsigned int mult;
-   s_AnodePlane_t in[1];
-} s_AnodePlanes_t;
-#endif /* s_AnodePlane_t */
-
-#ifndef SAW_s_Chamber_t
-#define SAW_s_Chamber_t
+#ifndef SAW_s_FdcChamber_t
+#define SAW_s_FdcChamber_t
 
 typedef struct {
    int                  layer;
    int                  module;
-   s_CathodePlanes_t*   cathodePlanes;
-   s_AnodePlanes_t*     anodePlanes;
-} s_Chamber_t;
+   s_FdcAnodeWires_t*   fdcAnodeWires;
+   s_FdcCathodeStrips_t* fdcCathodeStrips;
+   s_FdcTruthPoints_t*  fdcTruthPoints;
+} s_FdcChamber_t;
 
 typedef struct {
    unsigned int mult;
-   s_Chamber_t in[1];
-} s_Chambers_t;
-#endif /* s_Chamber_t */
+   s_FdcChamber_t in[1];
+} s_FdcChambers_t;
+#endif /* s_FdcChamber_t */
 
 #ifndef SAW_s_ForwardDC_t
 #define SAW_s_ForwardDC_t
 
 typedef struct {
-   s_Chambers_t*        chambers;
+   s_FdcChambers_t*     fdcChambers;
 } s_ForwardDC_t;
 #endif /* s_ForwardDC_t */
 
-#ifndef SAW_s_Paddle_t
-#define SAW_s_Paddle_t
+#ifndef SAW_s_StcHit_t
+#define SAW_s_StcHit_t
 
 typedef struct {
-   float                phim;
-   s_Hits_t*            hits;
-} s_Paddle_t;
+   float                dE;
+   float                t;
+} s_StcHit_t;
 
 typedef struct {
    unsigned int mult;
-   s_Paddle_t in[1];
-} s_Paddles_t;
-#endif /* s_Paddle_t */
+   s_StcHit_t in[1];
+} s_StcHits_t;
+#endif /* s_StcHit_t */
 
-#ifndef SAW_s_StartPoint_t
-#define SAW_s_StartPoint_t
+#ifndef SAW_s_StcPaddle_t
+#define SAW_s_StcPaddle_t
+
+typedef struct {
+   int                  sector;
+   s_StcHits_t*         stcHits;
+} s_StcPaddle_t;
+
+typedef struct {
+   unsigned int mult;
+   s_StcPaddle_t in[1];
+} s_StcPaddles_t;
+#endif /* s_StcPaddle_t */
+
+#ifndef SAW_s_StcTruthPoint_t
+#define SAW_s_StcTruthPoint_t
 
 typedef struct {
    float                dEdx;
@@ -324,98 +323,70 @@ typedef struct {
    float                t;
    int                  track;
    float                z;
-} s_StartPoint_t;
+} s_StcTruthPoint_t;
 
 typedef struct {
    unsigned int mult;
-   s_StartPoint_t in[1];
-} s_StartPoints_t;
-#endif /* s_StartPoint_t */
+   s_StcTruthPoint_t in[1];
+} s_StcTruthPoints_t;
+#endif /* s_StcTruthPoint_t */
 
 #ifndef SAW_s_StartCntr_t
 #define SAW_s_StartCntr_t
 
 typedef struct {
-   s_Paddles_t*         paddles;
-   s_StartPoints_t*     startPoints;
+   s_StcPaddles_t*      stcPaddles;
+   s_StcTruthPoints_t*  stcTruthPoints;
 } s_StartCntr_t;
 #endif /* s_StartCntr_t */
 
-#ifndef SAW_s_Shower_t
-#define SAW_s_Shower_t
+#ifndef SAW_s_BcalUpstreamHit_t
+#define SAW_s_BcalUpstreamHit_t
 
 typedef struct {
    float                E;
    float                t;
-} s_Shower_t;
+} s_BcalUpstreamHit_t;
 
 typedef struct {
    unsigned int mult;
-   s_Shower_t in[1];
-} s_Showers_t;
-#endif /* s_Shower_t */
+   s_BcalUpstreamHit_t in[1];
+} s_BcalUpstreamHits_t;
+#endif /* s_BcalUpstreamHit_t */
 
-#ifndef SAW_s_Upstream_t
-#define SAW_s_Upstream_t
-
-typedef struct {
-   s_Showers_t*         showers;
-} s_Upstream_t;
-#endif /* s_Upstream_t */
-
-#ifndef SAW_s_Downstream_t
-#define SAW_s_Downstream_t
+#ifndef SAW_s_BcalDownstreamHit_t
+#define SAW_s_BcalDownstreamHit_t
 
 typedef struct {
-   s_Showers_t*         showers;
-} s_Downstream_t;
-#endif /* s_Downstream_t */
-
-#ifndef SAW_s_Cone_t
-#define SAW_s_Cone_t
-
-typedef struct {
-   int                  sector;
-   s_Upstream_t*        upstream;
-   s_Downstream_t*      downstream;
-} s_Cone_t;
+   float                E;
+   float                t;
+} s_BcalDownstreamHit_t;
 
 typedef struct {
    unsigned int mult;
-   s_Cone_t in[1];
-} s_Cones_t;
-#endif /* s_Cone_t */
+   s_BcalDownstreamHit_t in[1];
+} s_BcalDownstreamHits_t;
+#endif /* s_BcalDownstreamHit_t */
 
-#ifndef SAW_s_Shell_t
-#define SAW_s_Shell_t
+#ifndef SAW_s_BcalCell_t
+#define SAW_s_BcalCell_t
 
 typedef struct {
    int                  layer;
-   s_Cones_t*           cones;
-} s_Shell_t;
-
-typedef struct {
-   unsigned int mult;
-   s_Shell_t in[1];
-} s_Shells_t;
-#endif /* s_Shell_t */
-
-#ifndef SAW_s_Mod_t
-#define SAW_s_Mod_t
-
-typedef struct {
    int                  module;
-   s_Shells_t*          shells;
-} s_Mod_t;
+   int                  sector;
+   s_BcalUpstreamHits_t* bcalUpstreamHits;
+   s_BcalDownstreamHits_t* bcalDownstreamHits;
+} s_BcalCell_t;
 
 typedef struct {
    unsigned int mult;
-   s_Mod_t in[1];
-} s_Mods_t;
-#endif /* s_Mod_t */
+   s_BcalCell_t in[1];
+} s_BcalCells_t;
+#endif /* s_BcalCell_t */
 
-#ifndef SAW_s_BarrelShower_t
-#define SAW_s_BarrelShower_t
+#ifndef SAW_s_BcalTruthShower_t
+#define SAW_s_BcalTruthShower_t
 
 typedef struct {
    float                E;
@@ -425,53 +396,53 @@ typedef struct {
    float                t;
    int                  track;
    float                z;
-} s_BarrelShower_t;
+} s_BcalTruthShower_t;
 
 typedef struct {
    unsigned int mult;
-   s_BarrelShower_t in[1];
-} s_BarrelShowers_t;
-#endif /* s_BarrelShower_t */
+   s_BcalTruthShower_t in[1];
+} s_BcalTruthShowers_t;
+#endif /* s_BcalTruthShower_t */
 
 #ifndef SAW_s_BarrelEMcal_t
 #define SAW_s_BarrelEMcal_t
 
 typedef struct {
-   s_Mods_t*            mods;
-   s_BarrelShowers_t*   barrelShowers;
+   s_BcalCells_t*       bcalCells;
+   s_BcalTruthShowers_t* bcalTruthShowers;
 } s_BarrelEMcal_t;
 #endif /* s_BarrelEMcal_t */
 
-#ifndef SAW_s_Flash_t
-#define SAW_s_Flash_t
+#ifndef SAW_s_CereHit_t
+#define SAW_s_CereHit_t
 
 typedef struct {
    float                pe;
    float                t;
-} s_Flash_t;
+} s_CereHit_t;
 
 typedef struct {
    unsigned int mult;
-   s_Flash_t in[1];
-} s_Flashes_t;
-#endif /* s_Flash_t */
+   s_CereHit_t in[1];
+} s_CereHits_t;
+#endif /* s_CereHit_t */
 
-#ifndef SAW_s_Section_t
-#define SAW_s_Section_t
+#ifndef SAW_s_CereSection_t
+#define SAW_s_CereSection_t
 
 typedef struct {
-   float                phim;
-   s_Flashes_t*         flashes;
-} s_Section_t;
+   int                  sector;
+   s_CereHits_t*        cereHits;
+} s_CereSection_t;
 
 typedef struct {
    unsigned int mult;
-   s_Section_t in[1];
-} s_Sections_t;
-#endif /* s_Section_t */
+   s_CereSection_t in[1];
+} s_CereSections_t;
+#endif /* s_CereSection_t */
 
-#ifndef SAW_s_CerenkovPoint_t
-#define SAW_s_CerenkovPoint_t
+#ifndef SAW_s_CereTruthPoint_t
+#define SAW_s_CereTruthPoint_t
 
 typedef struct {
    float                E;
@@ -484,87 +455,69 @@ typedef struct {
    float                x;
    float                y;
    float                z;
-} s_CerenkovPoint_t;
+} s_CereTruthPoint_t;
 
 typedef struct {
    unsigned int mult;
-   s_CerenkovPoint_t in[1];
-} s_CerenkovPoints_t;
-#endif /* s_CerenkovPoint_t */
+   s_CereTruthPoint_t in[1];
+} s_CereTruthPoints_t;
+#endif /* s_CereTruthPoint_t */
 
 #ifndef SAW_s_Cerenkov_t
 #define SAW_s_Cerenkov_t
 
 typedef struct {
-   s_Sections_t*        sections;
-   s_CerenkovPoints_t*  cerenkovPoints;
+   s_CereSections_t*    cereSections;
+   s_CereTruthPoints_t* cereTruthPoints;
 } s_Cerenkov_t;
 #endif /* s_Cerenkov_t */
 
-#ifndef SAW_s_Left_t
-#define SAW_s_Left_t
+#ifndef SAW_s_FtofLeftHit_t
+#define SAW_s_FtofLeftHit_t
 
 typedef struct {
-   s_Hits_t*            hits;
-} s_Left_t;
-#endif /* s_Left_t */
-
-#ifndef SAW_s_Right_t
-#define SAW_s_Right_t
-
-typedef struct {
-   s_Hits_t*            hits;
-} s_Right_t;
-#endif /* s_Right_t */
-
-#ifndef SAW_s_Hcounter_t
-#define SAW_s_Hcounter_t
-
-typedef struct {
-   float                y;
-   s_Left_t*            left;
-   s_Right_t*           right;
-} s_Hcounter_t;
+   float                dE;
+   float                t;
+} s_FtofLeftHit_t;
 
 typedef struct {
    unsigned int mult;
-   s_Hcounter_t in[1];
-} s_Hcounters_t;
-#endif /* s_Hcounter_t */
+   s_FtofLeftHit_t in[1];
+} s_FtofLeftHits_t;
+#endif /* s_FtofLeftHit_t */
 
-#ifndef SAW_s_Top_t
-#define SAW_s_Top_t
-
-typedef struct {
-   s_Hits_t*            hits;
-} s_Top_t;
-#endif /* s_Top_t */
-
-#ifndef SAW_s_Bottom_t
-#define SAW_s_Bottom_t
+#ifndef SAW_s_FtofRightHit_t
+#define SAW_s_FtofRightHit_t
 
 typedef struct {
-   s_Hits_t*            hits;
-} s_Bottom_t;
-#endif /* s_Bottom_t */
-
-#ifndef SAW_s_Vcounter_t
-#define SAW_s_Vcounter_t
-
-typedef struct {
-   float                x;
-   s_Top_t*             top;
-   s_Bottom_t*          bottom;
-} s_Vcounter_t;
+   float                dE;
+   float                t;
+} s_FtofRightHit_t;
 
 typedef struct {
    unsigned int mult;
-   s_Vcounter_t in[1];
-} s_Vcounters_t;
-#endif /* s_Vcounter_t */
+   s_FtofRightHit_t in[1];
+} s_FtofRightHits_t;
+#endif /* s_FtofRightHit_t */
 
-#ifndef SAW_s_TofPoint_t
-#define SAW_s_TofPoint_t
+#ifndef SAW_s_FtofCounter_t
+#define SAW_s_FtofCounter_t
+
+typedef struct {
+   int                  paddle;
+   int                  plane;
+   s_FtofLeftHits_t*    ftofLeftHits;
+   s_FtofRightHits_t*   ftofRightHits;
+} s_FtofCounter_t;
+
+typedef struct {
+   unsigned int mult;
+   s_FtofCounter_t in[1];
+} s_FtofCounters_t;
+#endif /* s_FtofCounter_t */
+
+#ifndef SAW_s_FtofTruthPoint_t
+#define SAW_s_FtofTruthPoint_t
 
 typedef struct {
    bool_t               primary;
@@ -573,54 +526,54 @@ typedef struct {
    float                x;
    float                y;
    float                z;
-} s_TofPoint_t;
+} s_FtofTruthPoint_t;
 
 typedef struct {
    unsigned int mult;
-   s_TofPoint_t in[1];
-} s_TofPoints_t;
-#endif /* s_TofPoint_t */
+   s_FtofTruthPoint_t in[1];
+} s_FtofTruthPoints_t;
+#endif /* s_FtofTruthPoint_t */
 
 #ifndef SAW_s_ForwardTOF_t
 #define SAW_s_ForwardTOF_t
 
 typedef struct {
-   s_Hcounters_t*       hcounters;
-   s_Vcounters_t*       vcounters;
-   s_TofPoints_t*       tofPoints;
+   s_FtofCounters_t*    ftofCounters;
+   s_FtofTruthPoints_t* ftofTruthPoints;
 } s_ForwardTOF_t;
 #endif /* s_ForwardTOF_t */
 
-#ifndef SAW_s_Column_t
-#define SAW_s_Column_t
+#ifndef SAW_s_FcalHit_t
+#define SAW_s_FcalHit_t
 
 typedef struct {
-   float                x;
-   s_Showers_t*         showers;
-} s_Column_t;
-
-typedef struct {
-   unsigned int mult;
-   s_Column_t in[1];
-} s_Columns_t;
-#endif /* s_Column_t */
-
-#ifndef SAW_s_Row_t
-#define SAW_s_Row_t
-
-typedef struct {
-   float                y;
-   s_Columns_t*         columns;
-} s_Row_t;
+   float                E;
+   float                t;
+} s_FcalHit_t;
 
 typedef struct {
    unsigned int mult;
-   s_Row_t in[1];
-} s_Rows_t;
-#endif /* s_Row_t */
+   s_FcalHit_t in[1];
+} s_FcalHits_t;
+#endif /* s_FcalHit_t */
 
-#ifndef SAW_s_ForwardShower_t
-#define SAW_s_ForwardShower_t
+#ifndef SAW_s_FcalBlock_t
+#define SAW_s_FcalBlock_t
+
+typedef struct {
+   int                  column;
+   int                  row;
+   s_FcalHits_t*        fcalHits;
+} s_FcalBlock_t;
+
+typedef struct {
+   unsigned int mult;
+   s_FcalBlock_t in[1];
+} s_FcalBlocks_t;
+#endif /* s_FcalBlock_t */
+
+#ifndef SAW_s_FcalTruthShower_t
+#define SAW_s_FcalTruthShower_t
 
 typedef struct {
    float                E;
@@ -630,62 +583,59 @@ typedef struct {
    float                x;
    float                y;
    float                z;
-} s_ForwardShower_t;
+} s_FcalTruthShower_t;
 
 typedef struct {
    unsigned int mult;
-   s_ForwardShower_t in[1];
-} s_ForwardShowers_t;
-#endif /* s_ForwardShower_t */
+   s_FcalTruthShower_t in[1];
+} s_FcalTruthShowers_t;
+#endif /* s_FcalTruthShower_t */
 
 #ifndef SAW_s_ForwardEMcal_t
 #define SAW_s_ForwardEMcal_t
 
 typedef struct {
-   s_Rows_t*            rows;
-   s_ForwardShowers_t*  forwardShowers;
+   s_FcalBlocks_t*      fcalBlocks;
+   s_FcalTruthShowers_t* fcalTruthShowers;
 } s_ForwardEMcal_t;
 #endif /* s_ForwardEMcal_t */
 
-#ifndef SAW_s_UpvLeft_t
-#define SAW_s_UpvLeft_t
+#ifndef SAW_s_UpvLeftHit_t
+#define SAW_s_UpvLeftHit_t
 
 typedef struct {
-   s_Showers_t*         showers;
-} s_UpvLeft_t;
-#endif /* s_UpvLeft_t */
-
-#ifndef SAW_s_UpvRight_t
-#define SAW_s_UpvRight_t
-
-typedef struct {
-   s_Showers_t*         showers;
-} s_UpvRight_t;
-#endif /* s_UpvRight_t */
-
-#ifndef SAW_s_UpvRow_t
-#define SAW_s_UpvRow_t
-
-typedef struct {
-   float                y;
-   s_UpvLeft_t*         upvLeft;
-   s_UpvRight_t*        upvRight;
-} s_UpvRow_t;
+   float                E;
+   float                t;
+} s_UpvLeftHit_t;
 
 typedef struct {
    unsigned int mult;
-   s_UpvRow_t in[1];
-} s_UpvRows_t;
-#endif /* s_UpvRow_t */
+   s_UpvLeftHit_t in[1];
+} s_UpvLeftHits_t;
+#endif /* s_UpvLeftHit_t */
+
+#ifndef SAW_s_UpvRightHit_t
+#define SAW_s_UpvRightHit_t
+
+typedef struct {
+   float                E;
+   float                t;
+} s_UpvRightHit_t;
+
+typedef struct {
+   unsigned int mult;
+   s_UpvRightHit_t in[1];
+} s_UpvRightHits_t;
+#endif /* s_UpvRightHit_t */
 
 #ifndef SAW_s_UpvPaddle_t
 #define SAW_s_UpvPaddle_t
 
 typedef struct {
-   float                y;
-   float                z;
-   s_UpvLeft_t*         upvLeft;
-   s_UpvRight_t*        upvRight;
+   int                  layer;
+   int                  row;
+   s_UpvLeftHits_t*     upvLeftHits;
+   s_UpvRightHits_t*    upvRightHits;
 } s_UpvPaddle_t;
 
 typedef struct {
@@ -694,8 +644,8 @@ typedef struct {
 } s_UpvPaddles_t;
 #endif /* s_UpvPaddle_t */
 
-#ifndef SAW_s_UpvShower_t
-#define SAW_s_UpvShower_t
+#ifndef SAW_s_UpvTruthShower_t
+#define SAW_s_UpvTruthShower_t
 
 typedef struct {
    float                E;
@@ -705,21 +655,20 @@ typedef struct {
    float                x;
    float                y;
    float                z;
-} s_UpvShower_t;
+} s_UpvTruthShower_t;
 
 typedef struct {
    unsigned int mult;
-   s_UpvShower_t in[1];
-} s_UpvShowers_t;
-#endif /* s_UpvShower_t */
+   s_UpvTruthShower_t in[1];
+} s_UpvTruthShowers_t;
+#endif /* s_UpvTruthShower_t */
 
 #ifndef SAW_s_UpstreamEMveto_t
 #define SAW_s_UpstreamEMveto_t
 
 typedef struct {
-   s_UpvRows_t*         upvRows;
    s_UpvPaddles_t*      upvPaddles;
-   s_UpvShowers_t*      upvShowers;
+   s_UpvTruthShowers_t* upvTruthShowers;
 } s_UpstreamEMveto_t;
 #endif /* s_UpstreamEMveto_t */
 
@@ -790,93 +739,79 @@ s_HitView_t* make_s_HitView();
 
 s_CentralDC_t* make_s_CentralDC();
 
-s_Rings_t* make_s_Rings(int n);
+s_CdcStraws_t* make_s_CdcStraws(int n);
 
-s_Straws_t* make_s_Straws(int n);
+s_CdcStrawHits_t* make_s_CdcStrawHits(int n);
 
-s_Hits_t* make_s_Hits(int n);
-
-s_CdcPoints_t* make_s_CdcPoints(int n);
+s_CdcTruthPoints_t* make_s_CdcTruthPoints(int n);
 
 s_ForwardDC_t* make_s_ForwardDC();
 
-s_Chambers_t* make_s_Chambers(int n);
+s_FdcChambers_t* make_s_FdcChambers(int n);
 
-s_CathodePlanes_t* make_s_CathodePlanes(int n);
+s_FdcAnodeWires_t* make_s_FdcAnodeWires(int n);
 
-s_Strips_t* make_s_Strips(int n);
+s_FdcAnodeHits_t* make_s_FdcAnodeHits(int n);
 
-s_AnodePlanes_t* make_s_AnodePlanes(int n);
+s_FdcCathodeStrips_t* make_s_FdcCathodeStrips(int n);
 
-s_Wires_t* make_s_Wires(int n);
+s_FdcCathodeHits_t* make_s_FdcCathodeHits(int n);
 
-s_FdcPoints_t* make_s_FdcPoints(int n);
+s_FdcTruthPoints_t* make_s_FdcTruthPoints(int n);
 
 s_StartCntr_t* make_s_StartCntr();
 
-s_Paddles_t* make_s_Paddles(int n);
+s_StcPaddles_t* make_s_StcPaddles(int n);
 
-s_StartPoints_t* make_s_StartPoints(int n);
+s_StcHits_t* make_s_StcHits(int n);
+
+s_StcTruthPoints_t* make_s_StcTruthPoints(int n);
 
 s_BarrelEMcal_t* make_s_BarrelEMcal();
 
-s_Mods_t* make_s_Mods(int n);
+s_BcalCells_t* make_s_BcalCells(int n);
 
-s_Shells_t* make_s_Shells(int n);
+s_BcalUpstreamHits_t* make_s_BcalUpstreamHits(int n);
 
-s_Cones_t* make_s_Cones(int n);
+s_BcalDownstreamHits_t* make_s_BcalDownstreamHits(int n);
 
-s_Upstream_t* make_s_Upstream();
-
-s_Showers_t* make_s_Showers(int n);
-
-s_Downstream_t* make_s_Downstream();
-
-s_BarrelShowers_t* make_s_BarrelShowers(int n);
+s_BcalTruthShowers_t* make_s_BcalTruthShowers(int n);
 
 s_Cerenkov_t* make_s_Cerenkov();
 
-s_Sections_t* make_s_Sections(int n);
+s_CereSections_t* make_s_CereSections(int n);
 
-s_Flashes_t* make_s_Flashes(int n);
+s_CereHits_t* make_s_CereHits(int n);
 
-s_CerenkovPoints_t* make_s_CerenkovPoints(int n);
+s_CereTruthPoints_t* make_s_CereTruthPoints(int n);
 
 s_ForwardTOF_t* make_s_ForwardTOF();
 
-s_Hcounters_t* make_s_Hcounters(int n);
+s_FtofCounters_t* make_s_FtofCounters(int n);
 
-s_Left_t* make_s_Left();
+s_FtofLeftHits_t* make_s_FtofLeftHits(int n);
 
-s_Right_t* make_s_Right();
+s_FtofRightHits_t* make_s_FtofRightHits(int n);
 
-s_Vcounters_t* make_s_Vcounters(int n);
-
-s_Top_t* make_s_Top();
-
-s_Bottom_t* make_s_Bottom();
-
-s_TofPoints_t* make_s_TofPoints(int n);
+s_FtofTruthPoints_t* make_s_FtofTruthPoints(int n);
 
 s_ForwardEMcal_t* make_s_ForwardEMcal();
 
-s_Rows_t* make_s_Rows(int n);
+s_FcalBlocks_t* make_s_FcalBlocks(int n);
 
-s_Columns_t* make_s_Columns(int n);
+s_FcalHits_t* make_s_FcalHits(int n);
 
-s_ForwardShowers_t* make_s_ForwardShowers(int n);
+s_FcalTruthShowers_t* make_s_FcalTruthShowers(int n);
 
 s_UpstreamEMveto_t* make_s_UpstreamEMveto();
 
-s_UpvRows_t* make_s_UpvRows(int n);
-
-s_UpvLeft_t* make_s_UpvLeft();
-
-s_UpvRight_t* make_s_UpvRight();
-
 s_UpvPaddles_t* make_s_UpvPaddles(int n);
 
-s_UpvShowers_t* make_s_UpvShowers(int n);
+s_UpvLeftHits_t* make_s_UpvLeftHits(int n);
+
+s_UpvRightHits_t* make_s_UpvRightHits(int n);
+
+s_UpvTruthShowers_t* make_s_UpvTruthShowers(int n);
 
 #ifdef __cplusplus
 }
@@ -931,4 +866,9 @@ void close_s_HDDM(s_iostream_t* fp);
 
 #ifdef __cplusplus
 }
+#endif
+
+#if !defined HDDM_NULL
+extern int hddm_nullTarget;
+# define HDDM_NULL (void*)&hddm_nullTarget
 #endif
