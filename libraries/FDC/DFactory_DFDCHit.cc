@@ -30,7 +30,28 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
-	
+
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->forwardDC == HDDM_NULL ||
+			hits->forwardDC->fdcChambers == HDDM_NULL)continue;
+
+		s_FdcChambers_t* fdcChambers = hits->forwardDC->fdcChambers;
+		for(unsigned int j=0; j<fdcChambers->mult; j++){
+			s_FdcChamber_t *chamber = &fdcChambers->in[j];
+			//int  layer = chamber->layer;
+			//int  module = chamber->module;
+			
+			if(chamber->fdcAnodeWires != HDDM_NULL){
+				for(unsigned int k=0; k<chamber->fdcAnodeWires->mult; k++){
+				
+				} //  k  (fdcAnodeWires)
+			} // fdcAnodeWires!=NULL
+		} // j (fdcChambers)
+	} // i  (physicsEvents)
+
+#if 0
 	for(unsigned int i=0; i<PE->mult; i++){
 		s_Chambers_t *chambers = NULL;
 		if(PE->in[i].hitView)
@@ -107,6 +128,7 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 			}
 		}
 	}
+#endif
 
 	return NOERROR;
 }
