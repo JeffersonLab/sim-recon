@@ -10,112 +10,70 @@
 #include "XString.hpp"
 
 XString::XString(void)
-{
-   fUnicodeForm = XMLString::transcode("");
-   fLocalForm = XMLString::replicate("");
-}
+ : fStringCollection()
+{}
 
 XString::XString(const XMLCh* const x)
+ : fStringCollection()
 {
-   if (x) {
-      fUnicodeForm = XMLString::replicate(x);
-      fLocalForm = XMLString::transcode(x);
-   }
-   else {
-      fUnicodeForm = XMLString::transcode("");
-      fLocalForm = XMLString::replicate("");
+   if (x)
+   {
+      (std::string&)*this = xercesc::XMLString::transcode(x);
    }
 }
 
 XString::XString(const char* const s)
+ : fStringCollection()
 {
-   if (s) {
-      fUnicodeForm = XMLString::transcode(s);
-      fLocalForm = XMLString::replicate(s);
+   if (s)
+   {
+      (std::string&)*this = s;
    }
-   else {
-      fUnicodeForm = XMLString::transcode("");
-      fLocalForm = XMLString::replicate("");
+}
+
+XString::XString(const std::string& s)
+ : fStringCollection()
+{
+   if (s.size())
+   {
+      (std::string&)*this = s;
    }
 }
 
 XString::XString(const XString& X)
+ : fStringCollection()
 {
-   if (X.fUnicodeForm) {
-      fUnicodeForm = XMLString::replicate(X.fUnicodeForm);
-      fLocalForm = XMLString::transcode(X.fUnicodeForm);
-   }
-   else {
-      fUnicodeForm = XMLString::transcode("");
-      fLocalForm = XMLString::replicate("");
-   }
+   (std::string&)*this = (std::string&)X;
 }
 
 XString::~XString()
 {
-   XMLString::release(&fUnicodeForm);
-   XMLString::release(&fLocalForm);
+   std::list<XMLCh*>::iterator iter;
+   for (iter = fStringCollection.begin();
+        iter != fStringCollection.end();
+        ++iter)
+   {
+      delete [] *iter;
+   }
 }
 
-const char* XString::localForm() const
+const XMLCh* XString::unicode_str()
 {
-   return fLocalForm;
+   XMLCh* ustr = xercesc::XMLString::transcode(this->c_str());
+   if (ustr)
+   {
+      fStringCollection.push_back(ustr);
+   }
+   return ustr;
 }
 
-const XMLCh* XString::unicodeForm() const
+const XString XString::basename() const
 {
-   return fUnicodeForm;
-}
-
-bool XString::equals(const XString& X) const
-{
-   return XMLString::equals(fUnicodeForm,X.fUnicodeForm);
-}
-
-bool XString::equals(const char* const s) const
-{
-   return XMLString::equals(fLocalForm,s);
-}
-
-bool XString::equals(const XMLCh* const x) const
-{
-   return XMLString::equals(fUnicodeForm,x);
-}
-
-int XString::stringLen() const
-{
-   return XMLString::stringLen(fUnicodeForm);
-}
-
-bool XString::operator==(const int len) const
-{
-   return (stringLen() == len);
-}
-
-bool XString::operator!=(const int len) const
-{
-   return (stringLen() != len);
-}
-
-XString& XString::operator=(const XString& X)
-{
-   XMLString::release(&fUnicodeForm);
-   XMLString::release(&fLocalForm);
-   fUnicodeForm = XMLString::replicate(X.fUnicodeForm);
-   fLocalForm = XMLString::transcode(X.fUnicodeForm);
-   return *this;
-}
-
-XString& XString::operator+=(const XString& X)
-{
-   int len = stringLen() + X.stringLen();
-   XMLCh* sum = new XMLCh[len+1];
-   XMLString::copyString(sum,fUnicodeForm);
-   XMLString::catString(sum,X.fUnicodeForm);
-   XMLString::release(&fUnicodeForm);
-   XMLString::release(&fLocalForm);
-   fUnicodeForm = XMLString::replicate(sum);
-   fLocalForm = XMLString::transcode(sum);
-   delete [] sum;
-   return *this;
+   XString s(*this);
+   size_type p = s.find_last_of("/");
+   if (p != npos)
+   {
+      s = s.substr(p+1,s.size());
+   }
+   return s;
 }

@@ -10,34 +10,34 @@
 #ifndef SAW_XSTRING_DEF
 #define SAW_XSTRING_DEF true
 
+#include <xercesc/util/XercesDefs.hpp>
 #include <xercesc/util/XMLString.hpp>
 
-XERCES_CPP_NAMESPACE_USE
+#include <string>
+#include <list>
 
 
-class XString
+class XString: public std::string
 {
-public :
+
+/* The XString class extends the STL string class by adding
+ * unicode functionality required by the implementation of
+ * the Xerces xml library.
+ */
+ public :
    XString(void);
    XString(const XMLCh* const x);
    XString(const char* const s);
+   XString(const std::string& str);
    XString(const XString& X);
    ~XString();
 
-   const char* localForm() const;
-   const XMLCh* unicodeForm() const;
-   bool equals(const XString& X) const;
-   bool equals(const char* const s) const;
-   bool equals(const XMLCh* const x) const;
-   int stringLen() const;
-   bool operator==(const int len) const;
-   bool operator!=(const int len) const;
-   XString& operator=(const XString& X);
-   XString& operator+=(const XString& X);
+   const XString basename() const;  // implements basename() from strings.h
+   const XMLCh* unicode_str();      // must modify the object because it
+                                    // has to keep track of memory usage.
 
-private :
-    XMLCh* fUnicodeForm;	// string in XMLCh coding, eg. Unicode
-    char* fLocalForm;		// string in local coding, eg. ASCII
+ private:
+   std::list<XMLCh*> fStringCollection;
 };
 
 #endif

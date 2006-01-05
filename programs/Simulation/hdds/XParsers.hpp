@@ -13,15 +13,15 @@
 #include <xercesc/util/XercesDefs.hpp>
 #include <xercesc/sax/ErrorHandler.hpp>
 #include <xercesc/dom/DOM.hpp>
-#include <iostream>
-using namespace std;
 
-XERCES_CPP_NAMESPACE_USE
+#include <iostream>
+
+#include "XString.hpp"
 
 
 /* a simple error handler to install on XercesDOMParser */
 
-class MyOwnErrorHandler : public ErrorHandler
+class MyOwnErrorHandler : public xercesc::ErrorHandler
 {
 public:
    MyOwnErrorHandler();
@@ -30,9 +30,9 @@ public:
    bool getSawErrors() const;
 
 /* Implementation of the SAX ErrorHandler interface */
-   void warning(const SAXParseException& e);
-   void error(const SAXParseException& e);
-   void fatalError(const SAXParseException& e);
+   void warning(const xercesc::SAXParseException& e);
+   void error(const xercesc::SAXParseException& e);
+   void fatalError(const xercesc::SAXParseException& e);
    void resetErrors();
 
 private :
@@ -49,14 +49,14 @@ inline bool MyOwnErrorHandler::getSawErrors() const
 
 /* a simple error handler to install on DOMBuilder parser */
 
-class MyDOMErrorHandler : public DOMErrorHandler
+class MyDOMErrorHandler : public xercesc::DOMErrorHandler
 {
 public:
    MyDOMErrorHandler();
    ~MyDOMErrorHandler();
 
    bool getSawErrors() const;
-   bool handleError(const DOMError& domError);
+   bool handleError(const xercesc::DOMError& domError);
    void resetErrors();
 
 private :
@@ -70,7 +70,7 @@ inline bool MyDOMErrorHandler::getSawErrors() const
        return fSawErrors;
 }
 
-DOMDocument* parseInputDocument(const char* file, bool keep);
-DOMDocument* buildDOMDocument(const char* file, bool keep);
+xercesc::DOMDocument* parseInputDocument(const XString& file, bool keep);
+xercesc::DOMDocument* buildDOMDocument(const XString& file, bool keep);
 
 #endif

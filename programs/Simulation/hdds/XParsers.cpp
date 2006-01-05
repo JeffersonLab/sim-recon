@@ -26,23 +26,6 @@
  * the rest of the lifetime of the program.
  */ 
 
-#ifdef BASENAME_IN_LIBGEN
-#include <libgen.h>
-#elif defined BASENAME_USE_BUILTIN
-#undef basename
-#define basename _RC_basename
-static char * basename(const char *f)
-{ const char *base;
-
-  for(base = f; *f; f++)
-  { if (*f == '/')
-      base = f+1;
-  }
-
-  return (char *)base;
-}
-#endif
-
 #include <xercesc/sax/SAXParseException.hpp>
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/framework/LocalFileFormatTarget.hpp>
@@ -57,26 +40,26 @@ static char * basename(const char *f)
  */
 #define FIX_XERCES_getElementById_BUG true
 
-#define X(XString) XString.unicodeForm()
-#define S(XString) XString.localForm()
+#define X(XString) XString.unicode_str()
+#define S(XString) XString.c_str()
 
-DOMDocument* parseInputDocument(const char* xmlFile, bool keep)
+xercesc::DOMDocument* parseInputDocument(const XString& xmlFile, bool keep)
 {
-   static XercesDOMParser* scratchParser=0;
-   XercesDOMParser* parser;
+   static xercesc::XercesDOMParser* scratchParser=0;
+   xercesc::XercesDOMParser* parser;
    if (keep)
    {
-      parser = new XercesDOMParser;
+      parser = new xercesc::XercesDOMParser;
    }
    else if (scratchParser == 0)
    {
-      parser = scratchParser = new XercesDOMParser;
+      parser = scratchParser = new xercesc::XercesDOMParser;
    }
    else
    {
       parser = scratchParser;
    }
-   parser->setValidationScheme(XercesDOMParser::Val_Auto);
+   parser->setValidationScheme(xercesc::XercesDOMParser::Val_Auto);
    parser->setCreateEntityReferenceNodes(false);
    parser->setValidationSchemaFullChecking(true);
    parser->setDoNamespaces(true);
@@ -87,86 +70,89 @@ DOMDocument* parseInputDocument(const char* xmlFile, bool keep)
 
    try
    {
-      parser->parse(xmlFile);
+      parser->parse(xmlFile.c_str());
    }
-   catch (const XMLException& toCatch)
+   catch (const xercesc::XMLException& toCatch)
    {
       XString message(toCatch.getMessage());
-      cerr << "\nparseInputDocument: Error during parsing: '" << xmlFile
+      std::cerr
+           << "\nparseInputDocument: Error during parsing: '" << xmlFile
 	   << "'\n" << "Exception message is:  \n"
-           << S(message) << "\n" << endl;
+           << S(message) << "\n" << std::endl;
       return 0;
    }
-   catch (const DOMException& toCatch)
+   catch (const xercesc::DOMException& toCatch)
    {
       XString message(toCatch.msg);
-      cerr << "\nXParsers: Error during parsing: '" << xmlFile << "'\n"
+      std::cerr
+           << "\nXParsers: Error during parsing: '" << xmlFile << "'\n"
            << "Exception message is:  \n"
-           << S(message) << "\n" << endl;
-      XMLPlatformUtils::Terminate();
+           << S(message) << "\n" << std::endl;
+      xercesc::XMLPlatformUtils::Terminate();
       return 0;
    }
    catch (...)
    {
-      cerr << "\nparseInputDocument: Unexpected exception during parsing: '"
+      std::cerr
+           << "\nparseInputDocument: Unexpected exception during parsing: '"
            << xmlFile << "'\n";
-      XMLPlatformUtils::Terminate();
+      xercesc::XMLPlatformUtils::Terminate();
       return 0;
    }
 
    if (errorHandler.getSawErrors())
    {
-      cerr << "\nErrors occured, no output available\n" << endl;
+      std::cerr << "\nErrors occured, no output available\n" << std::endl;
       return 0;
    }
 
    return parser->getDocument();
 }
 
-DOMDocument* buildDOMDocument(const char* xmlFile, bool keep)
+xercesc::DOMDocument* buildDOMDocument(const XString& xmlFile, bool keep)
 {
    XString lsS("LS");
-   DOMImplementation *impl = DOMImplementationRegistry::getDOMImplementation(X(lsS));
-   static DOMBuilder* scratchBuilder=0;
-   DOMBuilder* builder;
+   xercesc::DOMImplementation *impl =
+         xercesc:: DOMImplementationRegistry::getDOMImplementation(X(lsS));
+   static xercesc::DOMBuilder* scratchBuilder=0;
+   xercesc::DOMBuilder* builder;
    if (keep)
    {
-      builder = ((DOMImplementationLS*)impl)->
-	        createDOMBuilder(DOMImplementationLS::MODE_SYNCHRONOUS, 0);
+      builder = ((xercesc::DOMImplementationLS*)impl)->createDOMBuilder(
+                  xercesc::DOMImplementationLS::MODE_SYNCHRONOUS, 0);
    }
    else if (scratchBuilder == 0)
    {
-      builder = scratchBuilder = ((DOMImplementationLS*)impl)->
-	        createDOMBuilder(DOMImplementationLS::MODE_SYNCHRONOUS, 0);
+      builder = scratchBuilder = ((xercesc::DOMImplementationLS*)impl)->
+	        createDOMBuilder(xercesc::DOMImplementationLS::MODE_SYNCHRONOUS,
+                 0);
    }
    else
    {
       builder = scratchBuilder;
    }
-   XString tmpFileS(".tmp-");
-   char fname[250];
-   strncpy(fname,xmlFile,250);
-   XString suffix(basename(fname));
-   tmpFileS += suffix;
+   XString tmpFileS = ".tmp-"+xmlFile.basename();
 
-   builder->setFeature(XMLUni::fgDOMValidation, true);
-   builder->setFeature(XMLUni::fgDOMNamespaces, true);
-   builder->setFeature(XMLUni::fgDOMDatatypeNormalization, true);
-   builder->setFeature(XMLUni::fgDOMEntities, false);
-   builder->setFeature(XMLUni::fgXercesSchemaFullChecking, true);
-   builder->setFeature(XMLUni::fgXercesSchema, true);
+   builder->setFeature(xercesc::XMLUni::fgDOMValidation, true);
+   builder->setFeature(xercesc::XMLUni::fgDOMNamespaces, true);
+   builder->setFeature(xercesc::XMLUni::fgDOMDatatypeNormalization, true);
+   builder->setFeature(xercesc::XMLUni::fgDOMEntities, false);
+   builder->setFeature(xercesc::XMLUni::fgXercesSchemaFullChecking, true);
+   builder->setFeature(xercesc::XMLUni::fgXercesSchema, true);
 
    MyDOMErrorHandler errHandler;
    builder->setErrorHandler(&errHandler);
 
-   DOMDocument* doc = 0;
+   xercesc::DOMDocument* doc = 0;
 
    try {
       builder->resetDocumentPool();
-      doc = builder->parseURI(xmlFile);
+      doc = builder->parseURI(xmlFile.c_str());
 #if defined FIX_XERCES_getElementById_BUG
-      DOMWriter* writer = ((DOMImplementationLS*)impl)->createDOMWriter();
-      LocalFileFormatTarget* lfft = new LocalFileFormatTarget(X(tmpFileS));
+      xercesc::DOMWriter* writer = ((xercesc::DOMImplementationLS*)impl)->
+                                    createDOMWriter();
+      xercesc::LocalFileFormatTarget* lfft =
+                     new xercesc::LocalFileFormatTarget(X(tmpFileS));
       writer->writeNode(lfft,*(doc->getDocumentElement()));
       delete lfft;
       delete writer;
@@ -174,26 +160,24 @@ DOMDocument* buildDOMDocument(const char* xmlFile, bool keep)
       doc = builder->parseURI(X(tmpFileS));
 #endif
    }
-   catch (const XMLException& toCatch) {
+   catch (const xercesc::XMLException& toCatch) {
       XString message(toCatch.getMessage());
-      cout << "Exception message is: \n"
-           << S(message) << "\n";
+      std::cout << "Exception message is: \n" << S(message) << "\n";
       return 0;
    }
-   catch (const DOMException& toCatch) {
+   catch (const xercesc::DOMException& toCatch) {
       XString message(toCatch.msg);
-      cout << "Exception message is: \n"
-           << S(message) << "\n";
+      std::cout << "Exception message is: \n" << S(message) << "\n";
       return 0;
    }
    catch (...) {
-      cout << "Unexpected Exception \n" ;
+      std::cout << "Unexpected Exception \n" ;
       return 0;
    }
 
    if (errHandler.getSawErrors())
    {
-      cerr << "\nErrors occured, no output available\n" << endl;
+      std::cerr << "\nErrors occured, no output available\n" << std::endl;
       return 0;
    }
 
@@ -211,36 +195,39 @@ MyOwnErrorHandler::~MyOwnErrorHandler()
 
 // Overrides of the SAX ErrorHandler interface
 
-void MyOwnErrorHandler::error(const SAXParseException& e)
+void MyOwnErrorHandler::error(const xercesc::SAXParseException& e)
 {
    fSawErrors = true;
    XString systemId(e.getSystemId());
    XString message(e.getMessage());
-   cerr << "\nparseInputDocument: Error at file " << S(systemId)
+   std::cerr
+        << "\nparseInputDocument: Error at file " << S(systemId)
         << ", line " << e.getLineNumber()
         << ", char " << e.getColumnNumber()
-        << "\n  Message: " << S(message) << endl;
+        << "\n  Message: " << S(message) << std::endl;
 }
 
-void MyOwnErrorHandler::fatalError(const SAXParseException& e)
+void MyOwnErrorHandler::fatalError(const xercesc::SAXParseException& e)
 {
    fSawErrors = true;
    XString systemId(e.getSystemId());
    XString message(e.getMessage());
-   cerr << "\nparseInputDocument: Fatal Error at file " << S(systemId)
+   std::cerr
+        << "\nparseInputDocument: Fatal Error at file " << S(systemId)
         << ", line " << e.getLineNumber()
         << ", char " << e.getColumnNumber()
-        << "\n  Message: " << S(message) << endl;
+        << "\n  Message: " << S(message) << std::endl;
 }
 
-void MyOwnErrorHandler::warning(const SAXParseException& e)
+void MyOwnErrorHandler::warning(const xercesc::SAXParseException& e)
 {
    XString systemId(e.getSystemId());
    XString message(e.getMessage());
-   cerr << "\nparseInputDocument: Warning at file " << S(systemId)
+   std::cerr
+        << "\nparseInputDocument: Warning at file " << S(systemId)
         << ", line " << e.getLineNumber()
         << ", char " << e.getColumnNumber()
-        << "\n  Message: " << S(message) << endl;
+        << "\n  Message: " << S(message) << std::endl;
 }
 
 void MyOwnErrorHandler::resetErrors()
@@ -259,21 +246,22 @@ MyDOMErrorHandler::~MyDOMErrorHandler()
 
 //  MyDOMHandlers: Overrides of the DOM ErrorHandler interface
 
-bool MyDOMErrorHandler::handleError(const DOMError& domError)
+bool MyDOMErrorHandler::handleError(const xercesc::DOMError& domError)
 {
    fSawErrors = true;
-   if (domError.getSeverity() == DOMError::DOM_SEVERITY_WARNING)
-      cerr << "\nWarning at file ";
-   else if (domError.getSeverity() == DOMError::DOM_SEVERITY_ERROR)
-       cerr << "\nError at file ";
+   if (domError.getSeverity() == xercesc::DOMError::DOM_SEVERITY_WARNING)
+      std::cerr << "\nWarning at file ";
+   else if (domError.getSeverity() == xercesc::DOMError::DOM_SEVERITY_ERROR)
+      std::cerr << "\nError at file ";
    else
-       cerr << "\nFatal Error at file ";
+      std::cerr << "\nFatal Error at file ";
 
-   cerr << XString(domError.getLocation()->getURI()).localForm()
+   std::cerr
+        << XString(domError.getLocation()->getURI()).c_str()
         << ", line " << domError.getLocation()->getLineNumber()
         << ", char " << domError.getLocation()->getColumnNumber()
-        << "\n  Message: " << XString(domError.getMessage()).localForm()
-       	<< endl;
+        << "\n  Message: " << XString(domError.getMessage()).c_str()
+       	<< std::endl;
 
    return true;
 }
