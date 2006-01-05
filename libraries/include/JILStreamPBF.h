@@ -40,7 +40,7 @@ class JILStreamPBF: public JILStream {
 			}
 			(*pbfout)<<"JILStreamPBF version=0.1"<<std::endl;
 			(*pbfout)<<"compressed="<<use_compression<<std::endl;
-			(*pbfout)<<"endian="<<"little"<<std::endl;
+			(*pbfout)<<"endian="<<GetEndian()<<std::endl;
 			(*pbfout)<<JILMyDictionary();
 		}else{
 			// Input from file
@@ -56,6 +56,11 @@ class JILStreamPBF: public JILStream {
 			pbfin->getline(line,256); // compressed=XXX
 			if(strcmp(&line[strlen("compressed=")], "0"))this->use_compression = true;
 			pbfin->getline(line,256); // endian=XXX
+			string file_endian(&line[strlen("endian=")]);
+			if(file_endian != GetEndian()){
+				this->byte_swap = true;
+				std::cout<<"Byte swapping enabled"<<std::endl;
+			}
 			
 			// Read in the XML dictionary
 			GetDictionary(pbfin);
@@ -66,6 +71,12 @@ class JILStreamPBF: public JILStream {
 		FreeNamed();
 		if(pbfout)delete pbfout;
 		if(pbfin)delete pbfin;
+	}
+	
+	string GetEndian(void){
+		unsigned int i = 0x01020304;
+		unsigned char *c = (unsigned char*)&i;
+		return string(c[0] == 0x04 ? "little" : "big");
 	}
 	
 	//-------------------- Serialization -------------------------
@@ -252,19 +263,93 @@ class JILStreamPBF: public JILStream {
 		buff = &buff_start[(int)pos];
 		return true;
 	}
+	
+	// Byte-swap a 2 byte value.
+	template<typename T>
+	inline void swap2(T &dest, void *source)
+	{
+		unsigned char *s = (unsigned char*)source;
+		unsigned char *d = ((unsigned char*)&dest) + 2;
 
-	JILStreamPBF& operator>>(short &i){i=*(short*)buff; buff+=sizeof(short); return *this;}
-   JILStreamPBF& operator>>(int &i){i=*(int*)buff; buff+=sizeof(int); return *this;}
-   JILStreamPBF& operator>>(long &i){i=*(long*)buff; buff+=sizeof(long); return *this;}
-   JILStreamPBF& operator>>(unsigned short &i){i=*(unsigned short*)buff; buff+=sizeof(unsigned short); return *this;}
-   JILStreamPBF& operator>>(unsigned int &i){i=*(unsigned int*)buff; buff+=sizeof(unsigned int); return *this;}
-   JILStreamPBF& operator>>(unsigned long &i){i=*(unsigned long*)buff; buff+=sizeof(unsigned long); return *this;}
-   JILStreamPBF& operator>>(float &f){f=*(float*)buff; buff+=sizeof(float); return *this;}
-   JILStreamPBF& operator>>(double &f){f=*(double*)buff; buff+=sizeof(double); return *this;}
+		*--d = *(s++);
+		*--d = *(s++);
+	}
+
+	// Byte-swap a 4 byte value.
+	template<typename T>
+	inline void swap4(T &dest, void *source)
+	{
+		unsigned char *s = (unsigned char*)source;
+		unsigned char *d = ((unsigned char*)&dest) + 4;
+
+		*--d = *(s++);
+		*--d = *(s++);
+		*--d = *(s++);
+		*--d = *(s++);
+	}
+	// Byte-swap a 8 byte value.
+	template<typename T>
+	inline void swap8(T &dest, void *source)
+	{
+		unsigned char *s = (unsigned char*)source;
+		unsigned char *d = ((unsigned char*)&dest) + 8;
+
+		*--d = *(s++);
+		*--d = *(s++);
+		*--d = *(s++);
+		*--d = *(s++);
+		*--d = *(s++);
+		*--d = *(s++);
+		*--d = *(s++);
+		*--d = *(s++);
+	}
+
+	JILStreamPBF& operator>>(short &i){
+		if(byte_swap) swap2(i,buff);	else	i=*(short*)buff;
+		buff+=sizeof(short);
+		return *this;
+	}
+   JILStreamPBF& operator>>(int &i){
+		if(byte_swap) swap4(i,buff);	else	i=*(int*)buff;
+		buff+=sizeof(int);
+		return *this;
+	}
+   JILStreamPBF& operator>>(long &i){
+		if(byte_swap) swap8(i,buff);	else	i=*(long*)buff;
+		buff+=sizeof(long);
+		return *this;
+	}
+   JILStreamPBF& operator>>(unsigned short &i){
+		if(byte_swap) swap2(i,buff);	else	i=*(unsigned short*)buff;
+		buff+=sizeof(unsigned short);
+		return *this;
+	}
+   JILStreamPBF& operator>>(unsigned int &i){
+		if(byte_swap) swap4(i,buff);	else	i=*(unsigned int*)buff;
+		buff+=sizeof(unsigned int);
+		return *this;
+	}
+   JILStreamPBF& operator>>(unsigned long &i){
+		if(byte_swap) swap8(i,buff);	else	i=*(unsigned long*)buff;
+		buff+=sizeof(unsigned long);
+		return *this;
+	}
+   JILStreamPBF& operator>>(float &f){
+		if(byte_swap) swap4(f,buff);	else	f=*(float*)buff;
+		buff+=sizeof(float);
+		return *this;
+	}
+   JILStreamPBF& operator>>(double &f){
+		if(byte_swap) swap8(f,buff);	else	f=*(double*)buff;
+		buff+=sizeof(double);
+		return *this;
+	}
    JILStreamPBF& operator>>(std::string &s){
 		// strings are prefixed by size
-		unsigned int size = *(unsigned int*)buff;
-		buff+=sizeof(unsigned int);
+		unsigned int size;
+		(*this)>>size;
+		// = *(unsigned int*)buff;
+		// buff+=sizeof(unsigned int);
 		char *cstr = new char[size+1];
 		memcpy(cstr, (char*)buff, size);
 		cstr[size] = 0;
@@ -339,6 +424,10 @@ class JILStreamPBF: public JILStream {
 			// First sizeof(unsigned int) bytes is buffer size
 			section_size=0;
 			pbfin->read((char*)&section_size, sizeof(unsigned int));
+			if(byte_swap){
+				unsigned int tmp = section_size;
+				swap4(section_size, &tmp);
+			}
 			if(section_size==0)return false;
 
 			// Create buffer to hold section
