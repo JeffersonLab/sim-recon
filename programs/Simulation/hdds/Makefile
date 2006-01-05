@@ -38,7 +38,7 @@ hddsGeant3.F: hdds-geant $(XML_SOURCE)
 hddsroot.C: hdds-root $(XML_SOURCE)
 	./hdds-root main_HDDS.xml >$@
 
-hdds-geant: hdds-geant.cpp hdds-geant.hpp XParsers.cpp XParsers.hpp XString.cpp XString.hpp
+hdds-geant: hdds-geant.cpp XParsers.cpp XParsers.hpp XString.cpp XString.hpp
 	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ hdds-geant.cpp \
 	XParsers.cpp XString.cpp \
 	-L$(XERCESCROOT)/lib -lxerces-c
