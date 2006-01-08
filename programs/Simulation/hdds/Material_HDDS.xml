@@ -562,11 +562,11 @@
   </composite>
 
  <composite name="Nomex">
-  <addmaterial material="Hydrogen"> <natoms n="14" /> </addmaterial>
-  <addmaterial material="Oxygen"> <natoms n="4" /> </addmaterial>
-  <addmaterial material="Carbon"> <natoms n="14" /> </addmaterial>
-  <addmaterial material="Nitrogen"> <natoms n="2" /> </addmaterial>
-  <real name="density" value="0.029" unit="g/cm^3" />
+ 	<addmaterial material="Hydrogen"> <natoms n="14" /> </addmaterial>
+ 	<addmaterial material="Oxygen"> <natoms n="4" /> </addmaterial>
+ 	<addmaterial material="Carbon"> <natoms n="14" /> </addmaterial>
+ 	<addmaterial material="Nitrogen"> <natoms n="2" /> </addmaterial>
+ 	<real name="density" value="0.029" unit="g/cm^3" />
 </composite>
 
 
