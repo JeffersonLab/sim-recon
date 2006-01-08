@@ -31,8 +31,11 @@
 #include <xercesc/parsers/XercesDOMParser.hpp>
 #include <xercesc/framework/LocalFileFormatTarget.hpp>
 #include <xercesc/dom/DOM.hpp>
+#include <xercesc/util/XercesDefs.hpp>
+#include <xercesc/sax/ErrorHandler.hpp>
 
-#include "hdds-mcfast.hpp"
+#include "XString.hpp"
+#include "XParsers.hpp"
 
 #include <assert.h>
 #include <string.h>
@@ -41,9 +44,49 @@
 
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
-#define X(XString) XString.unicodeForm()
-#define S(XString) XString.localForm()
+using namespace std;
+
+XERCES_CPP_NAMESPACE_USE
+
+#define X(XString) XString.unicode_str()
+#define S(XString) XString.c_str()
+
+
+class makeTargetTable
+{
+public :
+   makeTargetTable(const int capacity);
+   ~makeTargetTable();
+
+   int add(DOMElement* const targetEl,
+           DOMElement* const parentEl = 0);
+   DOMElement* lookup(const DOMElement* const targetEl,
+                      XString& type, const XString& name);
+
+private :
+   int fTableLen;
+   int fTableSize;
+   DOMElement** fTargetEl;
+   DOMElement** fParentEl;
+
+   int addElement(DOMElement* const targetEl);
+   int addComposite(DOMElement* const targetEl);
+   int addModel(DOMElement* const targetEl);
+
+   void set_name(DOMElement* const targetEl);
+   float set_a(DOMElement* const targetEl);
+   float set_z(DOMElement* const targetEl);
+   float set_density(DOMElement* const targetEl);
+   float set_radlen(DOMElement* const targetEl);
+   float set_collen(DOMElement* const targetEl);
+   float set_abslen(DOMElement* const targetEl);
+   float set_dedx(DOMElement* const targetEl);
+
+   void dump(const DOMElement* const targetEl);
+   void dump(DOMElement* const targetEl);
+};
 
 #ifdef BASENAME_IN_LIBGEN
 #include <libgen.h>
@@ -83,491 +126,18 @@ void usage()
          << endl;
 }
 
-void processTemplateFile(const DOMElement* const targetEl,
-                         const char* const fname)
+class DbMaker
 {
-   XString* processingTarget=0;
-   int processedTemplates=0;
-
-   const XString modelAttS("model");
-   const XString modelS = targetEl->getAttribute(X(modelAttS));
-   int model;
-   for (model=0; model < modelTableLen; model++)
-   {
-      if (modelS.equals(modelTable[model].model))
-         break;
-   }
-   if (model == modelTableLen)
-   {
-      char* str = new char[strlen(S(modelS))+1];
-      strcpy(str,S(modelS));
-      modelTable[model].model = str;
-      modelTable[model].refcount = 0;
-      modelTable[model].maxcount = 0;
-      modelTableLen++;
-   }
-   if (modelTable[model].refcount == 0)
-   {
-      modelTable[model].db << "include " << fname << endl;
-   }
-
-   ifstream dbFile(fname);
-   if (dbFile == 0)
-   {
-      cerr << "hdds-mcfast: Error opening input file " << fname << endl;
-      exit(2);
-   }
-   while (! dbFile.eof())
-   {
-      char line[250];
-      dbFile.getline(line,250);
-      if ((strlen(line) == 0) || (line[0] == '!'))
-      {
-         continue;
-      }
-      char token[250];
-      istringstream sline(line);
-      sline >> token;
-      if (strcasecmp(token,"end") == 0)
-      {
-         if (processingTarget)
-         {
-            delete processingTarget;
-            processingTarget = 0;
-         }
-         else
-         {
-            cerr << "hdds-mcfast: end statement without matching template"
-                 << " in input file " << fname << endl;
-            exit(2);
-         }
-         modelTable[model].db << endl;
-      }
-      else if (strcasecmp(token,"include") == 0)
-      {
-         char templFile[250];
-         sline >> templFile;
-         processTemplateFile(targetEl,templFile);
-      }
-      else if (strcasecmp(token,"template") == 0)
-      {
-         char tgt[250];
-         sline >> tgt;
-         processingTarget = new XString(strtok(tgt,", ("));
-         const char* maxcount = strtok(0,")");
-         int dim = (maxcount == 0) ? 0 : atoi(maxcount);
-         if (dim == 0)
-         {
-            cerr << "hdds-mcfast: bad format in template statement"
-                 << " in input file " << fname << endl;
-            exit(2);
-         }
-         else if (processingTarget && processingTarget->equals(modelS))
-         {
-            if (++modelTable[model].refcount > dim)
-            { 
-               cerr << "hdds-mcfast: number of objects of type " << S(modelS)
-                    << " exceeds maximum of " << dim << endl;
-               cerr << "defined in input file " << fname << endl;
-               cerr << "Increase the array size in the template statement"
-                    << " found in the above file" << endl;
-               cerr << "and try again." << endl;
-               exit(2);
-            }
-            modelTable[model].maxcount = dim;
-            modelTable[model].db << "make " << S(modelS);
-            ++processedTemplates;
-         }
-      }
-      else if (strcasecmp(token,"make") == 0)
-      {
-         char tgt[250];
-         sline >> tgt;
-         int m;
-         for (m=0; m < modelTableLen; m++)
-         {
-            if (strcmp(modelTable[m].model,tgt) == 0)
-               break;
-         }
-         if (m == modelTableLen)
-         { 
-            cerr << "hdds-mcfast: error in template file " << fname << endl;
-            cerr << "Statement template " << S(modelS)
-                 << " must appear before first make instance." << endl;
-            exit(2);
-         }
-         else if (modelTable[m].refcount > modelTable[m].maxcount)
-         {
-            cerr << "hdds-mcfast: number of objects of type " << tgt
-                 << " overflows table." << endl;
-            cerr << "Increase the array size in the template file"
-                 << " and try again." << endl;
-            exit(2);
-         }
-      }
-      else if (!(processingTarget && processingTarget->equals(modelS)))
-      {
-         continue;
-      }
-      else if (strcasecmp(token,"int") == 0)
-      {
-         char tgt[250];
-         sline >> tgt;
-         const char* var = strtok(tgt,", (");
-         const char* arg = strtok(0,")");
-         int dim = (arg == 0) ? 0 : atoi(arg);
-         const DOMElement* el;
-         XString valueS;
-         if (dim == 0)
-         {
-            const XString typeS("int");
-            const XString varS(var);
-            if (el = targetTable.lookup(targetEl,typeS,varS))
-            {
-	       const XString valAttS("value");
-               valueS = el->getAttribute(X(valAttS));
-            }
-         }
-         else
-         {
-            const XString typeS("int_array");
-            const XString varS(var);
-            if (el = targetTable.lookup(targetEl,typeS,varS))
-            {
-	       const XString valAttS("values");
-               valueS = el->getAttribute(X(valAttS));
-            }
-         }
-         if (valueS == 0)
-         {
-            cerr << "hdds-mcfast: Parameter \"" << var << "\""
-                 << " required in template file " << fname << endl
-                 << "is missing from HDDS" << endl;
-            exit(3);
-         }
-         char* intstr = strtok((char*)S(valueS)," ");
-         modelTable[model].db << " " << intstr;
-         for (int i=1; i < dim; i++)
-         {
-            if (intstr = strtok(0," "))
-            {
-               modelTable[model].db << " " << intstr;
-            }
-            else
-            {
-               modelTable[model].db << " 0";
-            }
-         }
-      }
-      else if (strcasecmp(token,"real") == 0)
-      {
-         char tgt[250];
-         sline >> tgt;
-         const char* var = strtok(tgt,", (");
-         const char* arg = strtok(0,")");
-         int dim = (arg == 0) ? 0 : atoi(arg);
-         const DOMElement* el;
-         XString valueS;
-         if (dim == 0)
-         {
-            const XString typeS("real");
-            const XString varS(var);
-            if (el = targetTable.lookup(targetEl,typeS,varS))
-            {
-	       const XString valAttS("value");
-               valueS = el->getAttribute(X(valAttS));
-            }
-         }
-         else
-         {
-            const XString typeS("real_array");
-            const XString varS(var);
-            if (el = targetTable.lookup(targetEl,typeS,varS))
-            {
-	       const XString valAttS("values");
-               valueS = el->getAttribute(X(valAttS));
-            }
-         }
-         if (valueS == 0)
-         {
-            cerr << "hdds-mcfast: Parameter \"" << var << "\""
-                 << " required in template file " << fname << endl
-                 << "is missing from HDDS" << endl;
-            exit(3);
-         }
-	 const XString unitAttS("unit");
-         const XString unitS = el->getAttribute(X(unitAttS));
-         float rho=1e-30;
-         DOMElement* densEl;
-         const XString realS("real");
-         const XString densAttS("density");
-         if (densEl = targetTable.lookup(targetEl,realS,densAttS))
-         {
-	    const XString uS = densEl->getAttribute(X(unitAttS));
-            if (! uS.equals("g/cm^3"))
-            {
-               cerr << "hdds-mcfast: density parameter found with"
-                    << " incorrect units " << S(uS) << endl;
-               exit(3);
-            }
-	    const XString valAttS("value");
-            const XString rhoS = densEl->getAttribute(X(valAttS));
-            if (rhoS != 0)
-            {
-               rho=atof(S(rhoS))+1e-30;
-            }
-         }
-         float fconvert=
-         /* standard unit for length in MCfast is cm */
-            (unitS.equals("m"))? 100
-          : (unitS.equals("cm"))? 1
-          : (unitS.equals("mm"))? 0.1
-         /* standard unit for angles in MCfast is radians */
-          : (unitS.equals("rad"))? 1
-          : (unitS.equals("mrad"))? 0.001
-          : (unitS.equals("deg"))? M_PI/180
-         /* standard unit for energy in MCfast is GeV */
-          : (unitS.equals("MeV"))? 0.001
-          : (unitS.equals("GeV"))? 1
-         /* standard unit for density in MCfast is g/cm^3 */
-          : (unitS.equals("g/cm^3"))? 1
-         /* standard unit for interaction lengths in MCfast is cm */
-          : (unitS.equals("g/cm^2"))? 1/rho
-         /* standard unit for dE/dx in MCfast is GeV/cm */
-          : (unitS.equals("MeV/g/cm^2"))? 0.001*rho
-          : (unitS.equals("MeV/cm"))? 0.001
-          : (unitS.equals("GeV/cm"))? 1
-         /* standard unit for magnetic field in MCfast is Tesla */
-          : (unitS.equals("Tesla"))? 1
-         /* fractions are always unit-normalized */
-          : (unitS.equals("percent"))? 0.01
-          : (unitS.equals("none") || unitS == 0)? 1
-         /* any other dimensions are not valid at this point */
-          : 0;
-         if (fconvert == 0)
-         {
-            cerr << "hdds-mcfast: Parameter \"" << var << "\""
-                 << " has unrecognized units " << S(unitS) << endl;
-            exit(3);
-         }
-         const char* fltstr = strtok((char*)S(valueS)," ");
-         float flt=atof(fltstr);
-         modelTable[model].db << " " << showpoint << atof(fltstr)*fconvert;
-         for (int i=1; i < dim; i++)
-         {
-            if (fltstr = strtok(0," "))
-            {
-               modelTable[model].db << " " << atof(fltstr)*fconvert;
-            }
-            else
-            {
-               modelTable[model].db << " 0";
-            }
-         }
-      }
-      else if (strcasecmp(token,"char") == 0)
-      {
-         char tgt[250];
-         sline >> tgt;
-         const char* var = strtok(tgt,", (");
-         const char* arg = strtok(0,")");
-         int dim = (arg == 0) ? 0 : atoi(arg);
-         const DOMElement* el;
-         XString valueS;
-         if (dim == 0)
-         {
-            const XString typeS("string");
-            const XString varS(var);
-            if ((el = targetTable.lookup(targetEl,typeS,varS)) == 0)
-            {
-               cerr << "hdds-mcfast: Parameter \"" << var << "\""
-                    << " required in template file " << fname << endl
-                    << "is missing from HDDS" << endl;
-               exit(3);
-            }
-	    const XString valAttS("value");
-            valueS = el->getAttribute(X(valAttS));
-            modelTable[model].db << " \"" << S(valueS) << "\"";
-         }
-         else
-         {
-            const XString typeS("string_vector");
-            const XString varS(var);
-            if ((el = targetTable.lookup(targetEl,typeS,varS)) == 0)
-            {
-               cerr << "hdds-mcfast: Parameter \"" << var << "\""
-                    << " required in template file " << fname << endl
-                    << "is missing from HDDS" << endl;
-               exit(3);
-            }
-            int vcount = 0;
-            const DOMNode* vect;
-            for ( vect = el->getFirstChild(); 
-                  vect != 0;
-                  vect = vect->getNextSibling() )
-            {
-               if (vect->getNodeType() != DOMNode::ELEMENT_NODE)
-                  continue;
-               const DOMElement* vectEl = (DOMElement*) vect;
-               const XString tagS(vectEl->getTagName());
-               if (tagS.equals("string_data"))
-               {
-	          const XString valAttS("value");
-                  const XString valueS(vectEl->getAttribute(X(valAttS)));
-                  modelTable[model].db << " \"" << S(valueS) << "\"";
-                  vcount++;
-               }
-            }
-            for ( ; vcount < dim; vcount++)
-            {
-               modelTable[model].db << " \"\"";
-            }
-            if (vcount != dim)
-            {
-	       const XString nameAttS("name");
-               const XString vnameS(el->getAttribute(X(nameAttS)));
-               cerr << "hdds-mcfast: mcfast array size of " << dim
-                    << " for variable " << S(vnameS) << " is too small"
-                    << " to hold " << vcount << " elements" << endl;
-               cerr << "Please increase array size in " << fname << endl;
-               exit(3);
-            }
-         }
-      }
-      else if ((strcasecmp(token,"parent") == 0) ||
-               (strcasecmp(token,"child") == 0))
-      {
-         continue;
-      }
-      else if (strcasecmp(token,"material") == 0)
-      {
-         char tgt[250];
-         sline >> tgt;
-         const char* var = strtok(tgt,", (");
-         const char* arg = strtok(0,")");
-         int dim = (arg == 0) ? 0 : atoi(arg);
-         const DOMElement* el;
-         if (dim == 0)
-         {
-            const XString typeS("reference");
-            const XString varS(var);
-            if ((el = targetTable.lookup(targetEl,typeS,varS)) == 0)
-            {
-               cerr << "hdds-mcfast: Parameter \"" << var << "\""
-                    << " required in template file " << fname << endl
-                    << "is missing from HDDS" << endl;
-               exit(3);
-            }
-	    const XString valAttS("value");
-            const XString valueS(el->getAttribute(X(valAttS)));
-            modelTable[model].db << " \"" << S(valueS) << "\"";
-         }
-         else
-         {
-            const XString typeS("reference_vector");
-            const XString varS(var);
-            if ((el = targetTable.lookup(targetEl,typeS,varS)) == 0)
-            {
-               cerr << "hdds-mcfast: Parameter \"" << var << "\""
-                    << " required in template file " << fname << endl
-                    << "is missing from HDDS" << endl;
-               exit(3);
-            }
-            const DOMNode* vect;
-            int vcount = 0;
-            for ( vect = el->getFirstChild();
-                  vect != 0;
-                  vect = vect->getNextSibling() )
-            {
-               if (vect->getNodeType() != DOMNode::ELEMENT_NODE)
-                  continue;
-               const DOMElement* vectEl = (DOMElement*) vect;
-               const XString tagS(vectEl->getTagName());
-               if (tagS.equals("reference_data"))
-               {
-	          const XString valAttS("value");
-                  const XString valueS(vectEl->getAttribute(X(valAttS)));
-                  modelTable[model].db << " \"" << S(valueS) << "\"";
-                  vcount++;
-               }
-            }
-            for ( ; vcount < dim; vcount++)
-            {
-               modelTable[model].db << " \"-\"";
-            }
-            if (vcount != dim)
-            {
-	       const XString nameAttS("name");
-               const XString vnameS(el->getAttribute(X(nameAttS)));
-               cerr << "hdds-mcfast: mcfast array size of " << dim
-                    << " for variable " << S(vnameS) << " is too small"
-                    << " to hold " << vcount << " elements" << endl;
-               cerr << "Please increase array size in " << fname << endl;
-               exit(3);
-            }
-         }
-      }
-      else if (strstr(token,"!") == token)
-      {
-         continue;
-      }
-      else
-      {
-         cerr << "hdds-mcfast: Template file " << fname
-              << " contains unknown parameter type " << token << endl;
-         exit(3);
-      }
-   }
-   if (processedTemplates == 0)
-   {
-      cerr << "hdds-mcfast: template for " << S(modelS)
-           << " not found in input file " << fname << endl;
-      exit(2);
-   }
-   else if (processingTarget)
-   {
-      cerr << "hdds-mcfast: template statement without matching end"
-           << " in input file " << fname << endl;
-      exit(2);
-   }
-}
-
-void makedb(DOMElement* el)
-{
-   DOMNode* cont;
-   for (cont = el->getLastChild();
-        cont != 0;
-        cont = cont->getPreviousSibling())
-   {
-      if (cont->getNodeType() != DOMNode::ELEMENT_NODE)
-         continue;
-      DOMElement* contEl = (DOMElement*)cont;
-      const XString tagS = contEl->getTagName();
-      if (tagS.equals("mcfast"))
-      {
-         targetTable.add(contEl);
-      }
-      else
-      {
-         makedb(contEl);
-      }
-   }
-}
-
-void printdb()
-{
-   char line[999];
-   for (int m=0; m < modelTableLen; m++)
-   {
-      istringstream idb(modelTable[m].db.str());
-      while (! idb.eof())
-      {
-         idb.getline(line,999);
-         cout << line << endl;
-      }
-   }
-   cout << "end" << endl;
-}
+/* This class contains the utility functions that read the
+ * MCFast materials and geometry db files and generate the
+ * output structure based on that information.
+ */ 
+ public:
+   static void DbMaker::processTemplateFile(const DOMElement* const targetEl,
+                                            const char* const fname);
+   static void DbMaker::makedb(DOMElement* el);
+   static void DbMaker::printdb();
+};
 
 int main(int argC, char* argV[])
 {
@@ -659,7 +229,7 @@ int main(int argC, char* argV[])
    modelTable[model].maxcount = 0;
 
    DOMElement* rootEl = doc->getDocumentElement();
-   makedb(rootEl);
+   DbMaker::makedb(rootEl);
 
    model=modelTableLen++;
    char hitsStr[] = "hitsontrack";         // last comes histontrack
@@ -668,7 +238,7 @@ int main(int argC, char* argV[])
    modelTable[model].maxcount = 1;
    modelTable[model].db << "include db/hitsontrack.db" << endl
                         << "make HitsOnTrack 4 0 0" << endl;
-   printdb();
+   DbMaker::printdb();
 
    XMLPlatformUtils::Terminate();
    return 0;
@@ -718,16 +288,16 @@ int makeTargetTable::add(DOMElement* const targetEl,
       fTargetEl[i] = targetEl;
       fParentEl[i] = parentEl;
       ++fTableLen;
-      const XString tagS = targetEl->getTagName();
-      if (tagS.equals("mcfast"))
+      XString tagS = targetEl->getTagName();
+      if (tagS == "mcfast")
       {
          addModel(targetEl);
       }
-      else if (tagS.equals("element"))
+      else if (tagS == "element")
       {
          addElement(targetEl);
       }
-      else if (tagS.equals("composite"))
+      else if (tagS == "composite")
       {
          addComposite(targetEl);
       }
@@ -745,24 +315,24 @@ int makeTargetTable::addElement(DOMElement* const targetEl)
    set_name(targetEl);
    set_a(targetEl);
    set_z(targetEl);
-   const XString modelAttS("model");
-   const XString materialS("Material");
+   XString modelAttS("model");
+   XString materialS("Material");
    targetEl->setAttribute(X(modelAttS),X(materialS));
-   const XString templAttS("template");
-   const XString dbS("db/materials.db");
+   XString templAttS("template");
+   XString dbS("db/materials.db");
    targetEl->setAttribute(X(templAttS),X(dbS));
-   processTemplateFile(targetEl,S(dbS));
+   DbMaker::processTemplateFile(targetEl,S(dbS));
    return 0;
 }
 
 int makeTargetTable::addComposite(DOMElement* const targetEl)
 {
-   const XString densityS("density");
-   const XString radlenS("radlen");
-   const XString collenS("collen");
-   const XString abslenS("abslen");
-   const XString dedxS("dedx");
-   const XString realS("real");
+   XString densityS("density");
+   XString radlenS("radlen");
+   XString collenS("collen");
+   XString abslenS("abslen");
+   XString dedxS("dedx");
+   XString realS("real");
    if (lookup(targetEl,realS,densityS) ||
        lookup(targetEl,realS,radlenS) ||
        lookup(targetEl,realS,collenS) ||
@@ -784,53 +354,53 @@ int makeTargetTable::addComposite(DOMElement* const targetEl)
       set_density(targetEl);
    }
 
-   const XString addmatS("addmaterial");
+   XString addmatS("addmaterial");
    DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
    const int matCount = matList->getLength();
    char nmatStr[10];
    sprintf(nmatStr,"%d",matCount);
-   const XString nmatS(nmatStr);
-   const XString nmatAttS("nmat");
-   const XString intS("int");
+   XString nmatS(nmatStr);
+   XString nmatAttS("nmat");
+   XString intS("int");
    DOMElement* nmatEl = targetEl->getOwnerDocument()->createElement(X(intS));
-   const XString nameAttS("name");
-   const XString valueAttS("value");
+   XString nameAttS("name");
+   XString valueAttS("value");
    nmatEl->setAttribute(X(nameAttS),X(nmatAttS));
    nmatEl->setAttribute(X(valueAttS),X(nmatS));
    targetEl->appendChild(nmatEl);
 
    float *fVol = new float[matCount];
    DOMElement** dataEl = new DOMElement*[matCount];
-   const XString refvecS("reference_vector");
+   XString refvecS("reference_vector");
    DOMElement* matVecEl = targetEl->getOwnerDocument()->createElement(X(refvecS));
-   const XString matnameS("matnames");
+   XString matnameS("matnames");
    matVecEl->setAttribute(X(nameAttS),X(matnameS));
    for (int m=0; m < matCount; m++)
    {
       DOMElement* matEl = (DOMElement*)matList->item(m);
-      const XString materialS("material");
-      const XString refIdS(matEl->getAttribute(X(materialS)));
-      const XString refdataS("reference_data");
+      XString materialS("material");
+      XString refIdS(matEl->getAttribute(X(materialS)));
+      XString refdataS("reference_data");
       dataEl[m] = targetEl->getOwnerDocument()->createElement(X(refdataS));
-      const XString valueAttS("value");
+      XString valueAttS("value");
       dataEl[m]->setAttribute(X(valueAttS),X(refIdS));
       matVecEl->appendChild(dataEl[m]);
       DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refIdS));
       add(refEl);
-      const XString fractionS("fractionmass");
+      XString fractionS("fractionmass");
       DOMNodeList* specList = matEl->getElementsByTagName(X(fractionS));
       if (specList->getLength() == 0)
       {
-         const XString nameAttS("name");
-         const XString nameS = matEl->getAttribute(X(nameAttS));
+         XString nameAttS("name");
+         XString nameS = matEl->getAttribute(X(nameAttS));
          cerr << "makeTargetTable::addComposite - "
               << "composite " << S(nameS) << " is missing information."
               << endl;
          exit(2);
       }
       DOMElement* specEl = (DOMElement*)specList->item(0);
-      const XString fracAttS("fraction");
-      const XString fS(specEl->getAttribute(X(fracAttS)));
+      XString fracAttS("fraction");
+      XString fS(specEl->getAttribute(X(fracAttS)));
       float fMass_m = atof(S(fS));
       float density_m = set_density(refEl);
       float density = set_density(targetEl);
@@ -838,9 +408,9 @@ int makeTargetTable::addComposite(DOMElement* const targetEl)
    }
    targetEl->appendChild(matVecEl);
 
-   const XString rarrayS("real_array");
+   XString rarrayS("real_array");
    DOMElement* fVolEl = targetEl->getOwnerDocument()->createElement(X(rarrayS));
-   const XString propS("prop");
+   XString propS("prop");
    fVolEl->setAttribute(X(nameAttS),X(propS));
    char str[20];
    sprintf(str,"%f",fVol[0]);
@@ -848,20 +418,20 @@ int makeTargetTable::addComposite(DOMElement* const targetEl)
    for (int m=1; m < matCount; m++)
    {
       sprintf(str," %f",fVol[m]);
-      const XString xS(str);
+      XString xS(str);
       fVolS += xS;
    }
-   const XString valuesAttS("values");
+   XString valuesAttS("values");
    fVolEl->setAttribute(X(valuesAttS),X(fVolS));
    targetEl->appendChild(fVolEl);
 
-   const XString modelAttS("model");
-   const XString templAttS("template");
-   const XString mixtureS("Mixture");
-   const XString dbS("db/mixtures.db");
+   XString modelAttS("model");
+   XString templAttS("template");
+   XString mixtureS("Mixture");
+   XString dbS("db/mixtures.db");
    targetEl->setAttribute(X(modelAttS),X(mixtureS));
    targetEl->setAttribute(X(templAttS),X(dbS));
-   processTemplateFile(targetEl,S(dbS));
+   DbMaker::processTemplateFile(targetEl,S(dbS));
 
    delete [] dataEl;
    delete [] fVol;
@@ -870,53 +440,53 @@ int makeTargetTable::addComposite(DOMElement* const targetEl)
 
 int makeTargetTable::addModel(DOMElement* const targetEl)
 {
-   const XString paramAttS("parameters");
-   const XString parS = targetEl->getAttribute(X(paramAttS));
-   if (parS != 0)
+   XString paramAttS("parameters");
+   XString parS = targetEl->getAttribute(X(paramAttS));
+   if (parS.size() != 0)
    {
       DOMElement* parEl = targetEl->getOwnerDocument()->getElementById(X(parS));
-      const XString refS("reference");
+      XString refS("reference");
       DOMNodeList* matList = parEl->getElementsByTagName(X(refS));
       int matCount = matList->getLength();
       for (int m=0; m < matCount; m++)
       {
          DOMElement* ptrEl = (DOMElement*)matList->item(m);
-         const XString valueAttrS("value");
-         const XString valueS = ptrEl->getAttribute(X(valueAttrS));
+         XString valueAttrS("value");
+         XString valueS = ptrEl->getAttribute(X(valueAttrS));
          DOMElement* matEl = ptrEl->getOwnerDocument()->getElementById(X(valueS));
          add(matEl);
       }
-      const XString refdatS("reference_data");
+      XString refdatS("reference_data");
       matList = parEl->getElementsByTagName(X(refdatS));
       matCount = matList->getLength();
       for (int m=0; m < matCount; m++)
       {
          DOMElement* ptrEl = (DOMElement*)matList->item(m);
-         const XString valueAttrS("value");
-         const XString valueS = ptrEl->getAttribute(X(valueAttrS));
+         XString valueAttrS("value");
+         XString valueS = ptrEl->getAttribute(X(valueAttrS));
          DOMElement* matEl = ptrEl->getOwnerDocument()->getElementById(X(valueS));
          add(matEl);
       }
    }
-   const XString refS("reference");
+   XString refS("reference");
    DOMNodeList* matList = targetEl->getElementsByTagName(X(refS));
    int matCount = matList->getLength();
    for (int m=0; m < matCount; m++)
    {
       DOMElement* ptrEl = (DOMElement*)matList->item(m);
-      const XString valueAttrS("value");
-      const XString valueS = ptrEl->getAttribute(X(valueAttrS));
+      XString valueAttrS("value");
+      XString valueS = ptrEl->getAttribute(X(valueAttrS));
       DOMElement* matEl = ptrEl->getOwnerDocument()->getElementById(X(valueS));
       add(matEl);
    }
-   const XString refdatS("reference_data");
+   XString refdatS("reference_data");
    matList = targetEl->getElementsByTagName(X(refdatS));
    matCount = matList->getLength();
    for (int m=0; m < matCount; m++)
    {
       DOMElement* ptrEl = (DOMElement*)matList->item(m);
-      const XString valueAttrS("value");
-      const XString valueS = ptrEl->getAttribute(X(valueAttrS));
+      XString valueAttrS("value");
+      XString valueS = ptrEl->getAttribute(X(valueAttrS));
       DOMElement* matEl = ptrEl->getOwnerDocument()->getElementById(X(valueS));
       add(matEl);
    }
@@ -927,27 +497,27 @@ int makeTargetTable::addModel(DOMElement* const targetEl)
       if (var->getNodeType() != DOMNode::ELEMENT_NODE)
          continue;
       DOMElement* varEl = (DOMElement*)var;
-      const XString varS = varEl->getTagName();
-      if (varS.equals("mcfast"))
+      XString varS = varEl->getTagName();
+      if (varS == "mcfast")
       {
          add(varEl,targetEl);
       }
    }
-   const XString templAttS("template");
-   const XString templS = targetEl->getAttribute(X(templAttS));
-   processTemplateFile(targetEl,S(templS));
+   XString templAttS("template");
+   XString templS = targetEl->getAttribute(X(templAttS));
+   DbMaker::processTemplateFile(targetEl,S(templS));
    return 0;
 }
 
 void makeTargetTable::set_name(DOMElement* const targetEl)
 {
-   const XString nameAttS("name");
-   const XString valueAttS("value");
-   const XString stringS("string");
+   XString nameAttS("name");
+   XString valueAttS("value");
+   XString stringS("string");
    DOMElement* nameEl = lookup(targetEl,stringS,nameAttS);
    if (nameEl == 0)
    {
-      const XString nameS = targetEl->getAttribute(X(nameAttS));
+      XString nameS = targetEl->getAttribute(X(nameAttS));
       nameEl = targetEl->getOwnerDocument()->createElement(X(stringS));
       nameEl->setAttribute(X(nameAttS),X(nameAttS));
       nameEl->setAttribute(X(valueAttS),X(nameS));
@@ -957,17 +527,17 @@ void makeTargetTable::set_name(DOMElement* const targetEl)
 
 float makeTargetTable::set_a(DOMElement* const targetEl)
 {
-   const XString nameAttS("name");
-   const XString valueAttS("value");
-   const XString realS("real");
-   const XString aAttS("a");
+   XString nameAttS("name");
+   XString valueAttS("value");
+   XString realS("real");
+   XString aAttS("a");
    XString aS = targetEl->getAttribute(X(aAttS));
    DOMElement* aEl = lookup(targetEl,realS,aAttS);
    if (aEl == 0)
    {
-      if (aS == 0)
+      if (aS.size() == 0)
       {
-         const XString addmatS("addmaterial");
+         XString addmatS("addmaterial");
          DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
          int matCount = matList->getLength();
          float a_sum=0;
@@ -975,28 +545,28 @@ float makeTargetTable::set_a(DOMElement* const targetEl)
          for (int m=0; m < matCount; m++)
          {
             DOMElement* matEl = (DOMElement*)matList->item(m);
-            const XString materialS("material");
-            const XString refS = matEl->getAttribute(X(materialS));
+            XString materialS("material");
+            XString refS = matEl->getAttribute(X(materialS));
             DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
             float a_m = set_a(refEl);
             float wgt_m=0;
-            const XString natomsS("natoms");
+            XString natomsS("natoms");
             DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
             if (wgtList->getLength())
             {
                DOMElement* natomsEl = (DOMElement*)wgtList->item(0);
-               const XString nAttS("n");
-               const XString nS = natomsEl->getAttribute(X(nAttS));
+               XString nAttS("n");
+               XString nS = natomsEl->getAttribute(X(nAttS));
                int n = atoi(S(nS));
                wgt_m = n*a_m;
             }
-            const XString fractionS("fractionmass");
+            XString fractionS("fractionmass");
             wgtList = matEl->getElementsByTagName(X(fractionS));
             if (wgtList->getLength())
             {
                DOMElement* fractionEl = (DOMElement*)wgtList->item(0);
-               const XString fractionAttS("fraction");
-               const XString fracS = fractionEl->getAttribute(X(fractionAttS));
+               XString fractionAttS("fraction");
+               XString fracS = fractionEl->getAttribute(X(fractionAttS));
                wgt_m = atof(S(fracS));
             }
             a_sum += a_m*wgt_m;
@@ -1004,7 +574,7 @@ float makeTargetTable::set_a(DOMElement* const targetEl)
          }
          char aStr[20];
          sprintf(aStr,"%g",a_sum/wgt_sum);
-         const XString aStrS(aStr);
+         XString aStrS(aStr);
          aS = aStrS;
       }
       DOMElement* aEl = targetEl->getOwnerDocument()->createElement(X(realS));
@@ -1017,17 +587,17 @@ float makeTargetTable::set_a(DOMElement* const targetEl)
 
 float makeTargetTable::set_z(DOMElement* const targetEl)
 {
-   const XString nameAttS("name");
-   const XString valueAttS("value");
-   const XString realS("real");
-   const XString zAttS("z");
+   XString nameAttS("name");
+   XString valueAttS("value");
+   XString realS("real");
+   XString zAttS("z");
    XString zS = targetEl->getAttribute(X(zAttS));
    DOMElement* zEl = lookup(targetEl,realS,zAttS);
    if (zEl == 0)
    {
-      if (zS == 0)
+      if (zS.size() == 0)
       {
-         const XString addmatS("addmaterial");
+         XString addmatS("addmaterial");
          DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
          int matCount = matList->getLength();
          float z_sum=0;
@@ -1035,31 +605,31 @@ float makeTargetTable::set_z(DOMElement* const targetEl)
          for (int m=0; m < matCount; m++)
          {
             DOMElement* matEl = (DOMElement*)matList->item(m);
-            const XString materialS("material");
-            const XString refS = matEl->getAttribute(X(materialS));
+            XString materialS("material");
+            XString refS = matEl->getAttribute(X(materialS));
             DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
             float z_m = set_z(refEl);
             float wgt_m=0;
-            const XString natomsS("natoms");
+            XString natomsS("natoms");
             DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
             if (wgtList->getLength())
             {
                DOMElement* natomsEl = (DOMElement*)wgtList->item(0);
-               const XString nAttS("n");
-               const XString nS = natomsEl->getAttribute(X(nAttS));
+               XString nAttS("n");
+               XString nS = natomsEl->getAttribute(X(nAttS));
                int n = atoi(S(nS));
-               const XString materialS("material");
-               const XString refIdS = matEl->getAttribute(X(materialS));
+               XString materialS("material");
+               XString refIdS = matEl->getAttribute(X(materialS));
                DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refIdS));
                wgt_m = n*set_a(refEl);
             }
-            const XString fractionS("fractionmass");
+            XString fractionS("fractionmass");
             wgtList = matEl->getElementsByTagName(X(fractionS));
             if (wgtList->getLength())
             {
                DOMElement* fractionEl = (DOMElement*)wgtList->item(0);
-               const XString fractionAttS("fraction");
-               const XString fracS = fractionEl->getAttribute(X(fractionAttS));
+               XString fractionAttS("fraction");
+               XString fracS = fractionEl->getAttribute(X(fractionAttS));
                wgt_m = atof(S(fracS));
             }
             z_sum += z_m*wgt_m;
@@ -1067,7 +637,7 @@ float makeTargetTable::set_z(DOMElement* const targetEl)
          }
          char zStr[20];
          sprintf(zStr,"%g",z_sum/wgt_sum);
-         const XString zStrS(zStr);
+         XString zStrS(zStr);
          zS = zStrS;
       }
       DOMElement* zEl = targetEl->getOwnerDocument()->createElement(X(realS));
@@ -1080,15 +650,15 @@ float makeTargetTable::set_z(DOMElement* const targetEl)
 
 float makeTargetTable::set_density(DOMElement* const targetEl)
 {
-   const XString nameAttS("name");
-   const XString valueAttS("value");
-   const XString realS("real");
-   const XString densityS("density");
-   const XString unitAttS("unit");
+   XString nameAttS("name");
+   XString valueAttS("value");
+   XString realS("real");
+   XString densityS("density");
+   XString unitAttS("unit");
    DOMElement* densityEl = lookup(targetEl,realS,densityS);
    if (densityEl == 0)
    {
-      const XString addmatS("addmaterial");
+      XString addmatS("addmaterial");
       DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
       int matCount = matList->getLength();
       float ohr_sum=0;
@@ -1096,28 +666,28 @@ float makeTargetTable::set_density(DOMElement* const targetEl)
       for (int m=0; m < matCount; m++)
       {
          DOMElement* matEl = (DOMElement*)matList->item(m);
-         const XString materialS("material");
-         const XString refS = matEl->getAttribute(X(materialS));
+         XString materialS("material");
+         XString refS = matEl->getAttribute(X(materialS));
          DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
          float rho_m = set_density(refEl);
          float wgt_m=0;
-         const XString natomsS("natoms");
+         XString natomsS("natoms");
          DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
          if (wgtList->getLength())
          {
-            const XString nameS = matEl->getAttribute(X(nameAttS));
+            XString nameS = matEl->getAttribute(X(nameAttS));
             cerr << "makeTargetTable::set_density - "
                  << "no automatic density calculation for atomic mixture "
                  << S(nameS) << endl;
             exit(2);
          }
-         const XString fractionS("fractionmass");
+         XString fractionS("fractionmass");
          wgtList = matEl->getElementsByTagName(X(fractionS));
          if (wgtList->getLength())
          {
             DOMElement* fractionEl = (DOMElement*)wgtList->item(0);
-            const XString fractionAttS("fraction");
-            const XString fracS = fractionEl->getAttribute(X(fractionAttS));
+            XString fractionAttS("fraction");
+            XString fracS = fractionEl->getAttribute(X(fractionAttS));
             wgt_m = atof(S(fracS));
          }
          ohr_sum += wgt_m/rho_m;
@@ -1125,17 +695,17 @@ float makeTargetTable::set_density(DOMElement* const targetEl)
       }
       char rhoStr[20];
       sprintf(rhoStr,"%g",wgt_sum/ohr_sum);
-      const XString rhoS(rhoStr);
+      XString rhoS(rhoStr);
       densityEl = targetEl->getOwnerDocument()->createElement(X(realS));
       densityEl->setAttribute(X(nameAttS),X(densityS));
       densityEl->setAttribute(X(valueAttS),X(rhoS));
-      const XString unitS("g/cm^3");
+      XString unitS("g/cm^3");
       densityEl->setAttribute(X(unitAttS),X(unitS));
       targetEl->appendChild(densityEl);
    }
-   const XString resultS = densityEl->getAttribute(X(valueAttS));
-   const XString unitS = densityEl->getAttribute(X(unitAttS));
-   if (! unitS.equals("g/cm^3"))
+   XString resultS = densityEl->getAttribute(X(valueAttS));
+   XString unitS = densityEl->getAttribute(X(unitAttS));
+   if (unitS != "g/cm^3")
    {
       cerr << "makeTargetTable::set_density - "
            << "unsupported density units " << S(unitS)
@@ -1147,15 +717,15 @@ float makeTargetTable::set_density(DOMElement* const targetEl)
 
 float makeTargetTable::set_radlen(DOMElement* const targetEl)
 {
-   const XString nameAttS("name");
-   const XString valueAttS("value");
-   const XString realS("real");
-   const XString unitAttS("unit");
-   const XString radlenS("radlen");
+   XString nameAttS("name");
+   XString valueAttS("value");
+   XString realS("real");
+   XString unitAttS("unit");
+   XString radlenS("radlen");
    DOMElement* radlenEl = lookup(targetEl,realS,radlenS);
    if (radlenEl == 0)
    {
-      const XString addmatS("addmaterial");
+      XString addmatS("addmaterial");
       DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
       int matCount = matList->getLength();
       float adbmal_sum=0;
@@ -1163,28 +733,28 @@ float makeTargetTable::set_radlen(DOMElement* const targetEl)
       for (int m=0; m < matCount; m++)
       {
          DOMElement* matEl = (DOMElement*)matList->item(m);
-         const XString materialS("material");
-         const XString refS = matEl->getAttribute(X(materialS));
+         XString materialS("material");
+         XString refS = matEl->getAttribute(X(materialS));
          DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
          float lambda_m = set_radlen(refEl);
          float wgt_m=0;
-         const XString natomsS("natoms");
+         XString natomsS("natoms");
          DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
          if (wgtList->getLength())
          {
             DOMElement* natomsEl = (DOMElement*)wgtList->item(0);
-            const XString nAttS("n");
-            const XString nS = natomsEl->getAttribute(X(nAttS));
+            XString nAttS("n");
+            XString nS = natomsEl->getAttribute(X(nAttS));
             int n = atoi(S(nS));
             wgt_m = n*set_a(refEl);
          }
-         const XString fractionS("fractionmass");
+         XString fractionS("fractionmass");
          wgtList = matEl->getElementsByTagName(X(fractionS));
          if (wgtList->getLength())
          {
             DOMElement* fractionEl = (DOMElement*)wgtList->item(0);
-            const XString fractionAttS("fraction");
-            const XString fracS = fractionEl->getAttribute(X(fractionAttS));
+            XString fractionAttS("fraction");
+            XString fracS = fractionEl->getAttribute(X(fractionAttS));
             wgt_m = atof(S(fracS));
          }
          adbmal_sum += wgt_m/lambda_m;
@@ -1192,17 +762,17 @@ float makeTargetTable::set_radlen(DOMElement* const targetEl)
       }
       char lambdaStr[20];
       sprintf(lambdaStr,"%g",wgt_sum/adbmal_sum);
-      const XString lambdaS(lambdaStr);
+      XString lambdaS(lambdaStr);
       radlenEl = targetEl->getOwnerDocument()->createElement(X(realS));
       radlenEl->setAttribute(X(nameAttS),X(radlenS));
       radlenEl->setAttribute(X(valueAttS),X(lambdaS));
-      const XString unitS("g/cm^2");
+      XString unitS("g/cm^2");
       radlenEl->setAttribute(X(unitAttS),X(unitS));
       targetEl->appendChild(radlenEl);
    }
-   const XString resultS = radlenEl->getAttribute(X(valueAttS));
-   const XString unitS = radlenEl->getAttribute(X(unitAttS));
-   if (! unitS.equals("g/cm^2"))
+   XString resultS = radlenEl->getAttribute(X(valueAttS));
+   XString unitS = radlenEl->getAttribute(X(unitAttS));
+   if (unitS != "g/cm^2")
    {
       cerr << "makeTargetTable::set_radlen - "
            << "unsupported radlen units " << S(unitS)
@@ -1214,15 +784,15 @@ float makeTargetTable::set_radlen(DOMElement* const targetEl)
 
 float makeTargetTable::set_collen(DOMElement* const targetEl)
 {
-   const XString nameAttS("name");
-   const XString valueAttS("value");
-   const XString realS("real");
-   const XString collenS("collen");
-   const XString unitAttS("unit");
+   XString nameAttS("name");
+   XString valueAttS("value");
+   XString realS("real");
+   XString collenS("collen");
+   XString unitAttS("unit");
    DOMElement* collenEl = lookup(targetEl,realS,collenS);
    if (collenEl == 0)
    {
-      const XString addmatS("addmaterial");
+      XString addmatS("addmaterial");
       DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
       int matCount = matList->getLength();
       float adbmal_sum=0;
@@ -1230,28 +800,28 @@ float makeTargetTable::set_collen(DOMElement* const targetEl)
       for (int m=0; m < matCount; m++)
       {
          DOMElement* matEl = (DOMElement*)matList->item(m);
-         const XString materialS("material");
-         const XString refS = matEl->getAttribute(X(materialS));
+         XString materialS("material");
+         XString refS = matEl->getAttribute(X(materialS));
          DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
          float lambda_m = set_collen(refEl);
          float wgt_m=0;
-         const XString natomsS("natoms");
+         XString natomsS("natoms");
          DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
          if (wgtList->getLength())
          {
             DOMElement* natomsEl = (DOMElement*)wgtList->item(0);
-            const XString nAttS("n");
-            const XString nS = natomsEl->getAttribute(X(nAttS));
+            XString nAttS("n");
+            XString nS = natomsEl->getAttribute(X(nAttS));
             int n = atoi(S(nS));
             wgt_m = n*set_a(refEl);
          }
-         const XString fractionS("fractionmass");
+         XString fractionS("fractionmass");
          wgtList = matEl->getElementsByTagName(X(fractionS));
          if (wgtList->getLength())
          {
             DOMElement* fractionEl = (DOMElement*)wgtList->item(0);
-            const XString fractionAttS("fraction");
-            const XString fracS = fractionEl->getAttribute(X(fractionAttS));
+            XString fractionAttS("fraction");
+            XString fracS = fractionEl->getAttribute(X(fractionAttS));
             wgt_m = atof(S(fracS));
          }
          adbmal_sum += (wgt_m/lambda_m);
@@ -1259,17 +829,17 @@ float makeTargetTable::set_collen(DOMElement* const targetEl)
       }
       char lambdaStr[20];
       sprintf(lambdaStr,"%g",wgt_sum/adbmal_sum);
-      const XString lambdaS(lambdaStr);
+      XString lambdaS(lambdaStr);
       collenEl = targetEl->getOwnerDocument()->createElement(X(realS));
       collenEl->setAttribute(X(nameAttS),X(collenS));
       collenEl->setAttribute(X(valueAttS),X(lambdaS));
-      const XString unitS("g/cm^2");
+      XString unitS("g/cm^2");
       collenEl->setAttribute(X(unitAttS),X(unitS));
       targetEl->appendChild(collenEl);
    }
-   const XString resultS = collenEl->getAttribute(X(valueAttS));
-   const XString unitS = collenEl->getAttribute(X(unitAttS));
-   if (! unitS.equals("g/cm^2"))
+   XString resultS = collenEl->getAttribute(X(valueAttS));
+   XString unitS = collenEl->getAttribute(X(unitAttS));
+   if (unitS != "g/cm^2")
    {
       cerr << "makeTargetTable::set_collen - "
            << "unsupported collen units " << S(unitS)
@@ -1281,15 +851,15 @@ float makeTargetTable::set_collen(DOMElement* const targetEl)
 
 float makeTargetTable::set_abslen(DOMElement* const targetEl)
 {
-   const XString nameAttS("name");
-   const XString valueAttS("value");
-   const XString realS("real");
-   const XString abslenS("abslen");
-   const XString unitAttS("unit");
+   XString nameAttS("name");
+   XString valueAttS("value");
+   XString realS("real");
+   XString abslenS("abslen");
+   XString unitAttS("unit");
    DOMElement* abslenEl = lookup(targetEl,realS,abslenS);
    if (abslenEl == 0)
    {
-      const XString addmatS("addmaterial");
+      XString addmatS("addmaterial");
       DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
       int matCount = matList->getLength();
       float adbmal_sum=0;
@@ -1297,28 +867,28 @@ float makeTargetTable::set_abslen(DOMElement* const targetEl)
       for (int m=0; m < matCount; m++)
       {
          DOMElement* matEl = (DOMElement*)matList->item(m);
-         const XString materialS("material");
-         const XString refS = matEl->getAttribute(X(materialS));
+         XString materialS("material");
+         XString refS = matEl->getAttribute(X(materialS));
          DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
          float lambda_m = set_abslen(refEl);
          float wgt_m=0;
-         const XString natomsS("natoms");
+         XString natomsS("natoms");
          DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
          if (wgtList->getLength())
          {
             DOMElement* natomsEl = (DOMElement*)wgtList->item(0);
-            const XString nAttS("n");
-            const XString nS = natomsEl->getAttribute(X(nAttS));
+            XString nAttS("n");
+            XString nS = natomsEl->getAttribute(X(nAttS));
             int n = atoi(S(nS));
             wgt_m = n*set_a(refEl);
          }
-         const XString fractionS("fractionmass");
+         XString fractionS("fractionmass");
          wgtList = matEl->getElementsByTagName(X(fractionS));
          if (wgtList->getLength())
          {
             DOMElement* fractionEl = (DOMElement*)wgtList->item(0);
-            const XString fractionAttS("fraction");
-            const XString fracS = fractionEl->getAttribute(X(fractionAttS));
+            XString fractionAttS("fraction");
+            XString fracS = fractionEl->getAttribute(X(fractionAttS));
             wgt_m = atof(S(fracS));
          }
          adbmal_sum += wgt_m/lambda_m;
@@ -1326,17 +896,17 @@ float makeTargetTable::set_abslen(DOMElement* const targetEl)
       }
       char lambdaStr[20];
       sprintf(lambdaStr,"%g",wgt_sum/adbmal_sum);
-      const XString lambdaS(lambdaStr);
+      XString lambdaS(lambdaStr);
       abslenEl = targetEl->getOwnerDocument()->createElement(X(realS));
       abslenEl->setAttribute(X(nameAttS),X(abslenS));
       abslenEl->setAttribute(X(valueAttS),X(lambdaS));
-      const XString unitS("g/cm^2");
+      XString unitS("g/cm^2");
       abslenEl->setAttribute(X(unitAttS),X(unitS));
       targetEl->appendChild(abslenEl);
    }
-   const XString resultS = abslenEl->getAttribute(X(valueAttS));
-   const XString unitS = abslenEl->getAttribute(X(unitAttS));
-   if (! unitS.equals("g/cm^2"))
+   XString resultS = abslenEl->getAttribute(X(valueAttS));
+   XString unitS = abslenEl->getAttribute(X(unitAttS));
+   if (unitS != "g/cm^2")
    {
       cerr << "makeTargetTable::set_abslen - "
            << "unsupported abslen units " << S(unitS)
@@ -1348,15 +918,15 @@ float makeTargetTable::set_abslen(DOMElement* const targetEl)
 
 float makeTargetTable::set_dedx(DOMElement* const targetEl)
 {
-   const XString nameAttS("name");
-   const XString valueAttS("value");
-   const XString realS("real");
-   const XString dedxS("dedx");
-   const XString unitAttS("unit");
+   XString nameAttS("name");
+   XString valueAttS("value");
+   XString realS("real");
+   XString dedxS("dedx");
+   XString unitAttS("unit");
    DOMElement* dedxEl = lookup(targetEl,realS,dedxS);
    if (dedxEl == 0)
    {
-      const XString addmatS("addmaterial");
+      XString addmatS("addmaterial");
       DOMNodeList* matList = targetEl->getElementsByTagName(X(addmatS));
       int matCount = matList->getLength();
       float dedx_sum=0;
@@ -1364,28 +934,28 @@ float makeTargetTable::set_dedx(DOMElement* const targetEl)
       for (int m=0; m < matCount; m++)
       {
          DOMElement* matEl = (DOMElement*)matList->item(m);
-         const XString materialS("material");
-         const XString refS = matEl->getAttribute(X(materialS));
+         XString materialS("material");
+         XString refS = matEl->getAttribute(X(materialS));
          DOMElement* refEl = matEl->getOwnerDocument()->getElementById(X(refS));
          float dedx_m = set_dedx(refEl);
          float wgt_m=0;
-         const XString natomsS("natoms");
+         XString natomsS("natoms");
          DOMNodeList* wgtList = matEl->getElementsByTagName(X(natomsS));
          if (wgtList->getLength())
          {
             DOMElement* natomsEl = (DOMElement*)wgtList->item(0);
-            const XString nAttS("n");
-            const XString nS = natomsEl->getAttribute(X(nAttS));
+            XString nAttS("n");
+            XString nS = natomsEl->getAttribute(X(nAttS));
             int n = atoi(S(nS));
             wgt_m = n*set_a(refEl);
          }
-         const XString fractionS("fractionmass");
+         XString fractionS("fractionmass");
          wgtList = matEl->getElementsByTagName(X(fractionS));
          if (wgtList->getLength())
          {
             DOMElement* fractionEl = (DOMElement*)wgtList->item(0);
-            const XString fractionAttS("fraction");
-            const XString fracS = fractionEl->getAttribute(X(fractionAttS));
+            XString fractionAttS("fraction");
+            XString fracS = fractionEl->getAttribute(X(fractionAttS));
             wgt_m = atof(S(fracS));
          }
          dedx_sum += wgt_m*dedx_m;
@@ -1393,17 +963,17 @@ float makeTargetTable::set_dedx(DOMElement* const targetEl)
       }
       char dedxStr[20];
       sprintf(dedxStr,"%g",dedx_sum/wgt_sum);
-      const XString dedxStrS(dedxStr);
+      XString dedxStrS(dedxStr);
       dedxEl = targetEl->getOwnerDocument()->createElement(X(realS));
       dedxEl->setAttribute(X(nameAttS),X(dedxS));
       dedxEl->setAttribute(X(valueAttS),X(dedxStrS));
-      const XString unitS("MeV/g/cm^2");
+      XString unitS("MeV/g/cm^2");
       dedxEl->setAttribute(X(unitAttS),X(unitS));
       targetEl->appendChild(dedxEl);
    }
-   const XString resultS = dedxEl->getAttribute(X(valueAttS));
-   const XString unitS = dedxEl->getAttribute(X(unitAttS));
-   if (! unitS.equals("MeV/g/cm^2"))
+   XString resultS = dedxEl->getAttribute(X(valueAttS));
+   XString unitS = dedxEl->getAttribute(X(unitAttS));
+   if (unitS != "MeV/g/cm^2")
    {
       cerr << "makeTargetTable::set_dedx - "
            << "unsupported dedx units " << S(unitS)
@@ -1414,25 +984,25 @@ float makeTargetTable::set_dedx(DOMElement* const targetEl)
 }
 
 DOMElement* makeTargetTable::lookup(const DOMElement* const targetEl,
-                                    const XString& type, const XString& name)
+                                    XString& type, const XString& name)
 {
    if (targetEl == 0)
       return 0;
 
-   const XString nameAttS("name");
+   XString nameAttS("name");
    DOMNodeList* varList = targetEl->getElementsByTagName(X(type));
    int varCount = varList->getLength();
    for (int v=0; v < varCount; v++)
    {
       DOMElement* varEl = (DOMElement*)varList->item(v);
-      const XString nameS = varEl->getAttribute(X(nameAttS));
-      if (nameS.equals(name))
+      XString nameS = varEl->getAttribute(X(nameAttS));
+      if (nameS == name)
          return varEl;
    }
 
-   const XString paramAttS("parameters");
-   const XString paramS = targetEl->getAttribute(X(paramAttS));
-   if (paramS != 0)
+   XString paramAttS("parameters");
+   XString paramS = targetEl->getAttribute(X(paramAttS));
+   if (paramS.size() != 0)
    {
       DOMElement* paramEl = targetEl->getOwnerDocument()->getElementById(X(paramS));
       varList = paramEl->getElementsByTagName(X(type));
@@ -1440,8 +1010,8 @@ DOMElement* makeTargetTable::lookup(const DOMElement* const targetEl,
       for (int v=0; v < varCount; v++)
       {
          DOMElement* varEl = (DOMElement*)varList->item(v);
-         const XString nameS = varEl->getAttribute(X(nameAttS));
-         if (nameS.equals(name))
+         XString nameS = varEl->getAttribute(X(nameAttS));
+         if (nameS == name)
             return varEl;
       }
    }
@@ -1507,4 +1077,490 @@ void makeTargetTable::dump(const DOMElement* const targetEl)
 void makeTargetTable::dump(DOMElement* const targetEl)
 {
    return dump((const DOMElement* const) targetEl);
+}
+
+void DbMaker::processTemplateFile(const DOMElement* const targetEl,
+                                  const char* const fname)
+{
+   XString* processingTarget=0;
+   int processedTemplates=0;
+
+   XString modelAttS("model");
+   XString modelS = targetEl->getAttribute(X(modelAttS));
+   int model;
+   for (model=0; model < modelTableLen; model++)
+   {
+      if (modelS == modelTable[model].model)
+         break;
+   }
+   if (model == modelTableLen)
+   {
+      char* str = new char[strlen(S(modelS))+1];
+      strcpy(str,S(modelS));
+      modelTable[model].model = str;
+      modelTable[model].refcount = 0;
+      modelTable[model].maxcount = 0;
+      modelTableLen++;
+   }
+   if (modelTable[model].refcount == 0)
+   {
+      modelTable[model].db << "include " << fname << endl;
+   }
+
+   ifstream dbFile(fname);
+   if (dbFile == 0)
+   {
+      cerr << "hdds-mcfast: Error opening input file " << fname << endl;
+      exit(2);
+   }
+   while (! dbFile.eof())
+   {
+      char line[250];
+      dbFile.getline(line,250);
+      if ((strlen(line) == 0) || (line[0] == '!'))
+      {
+         continue;
+      }
+      char token[250];
+      istringstream sline(line);
+      sline >> token;
+      if (strcasecmp(token,"end") == 0)
+      {
+         if (processingTarget)
+         {
+            delete processingTarget;
+            processingTarget = 0;
+         }
+         else
+         {
+            cerr << "hdds-mcfast: end statement without matching template"
+                 << " in input file " << fname << endl;
+            exit(2);
+         }
+         modelTable[model].db << endl;
+      }
+      else if (strcasecmp(token,"include") == 0)
+      {
+         char templFile[250];
+         sline >> templFile;
+         processTemplateFile(targetEl,templFile);
+      }
+      else if (strcasecmp(token,"template") == 0)
+      {
+         char tgt[250];
+         sline >> tgt;
+         processingTarget = new XString(strtok(tgt,", ("));
+         const char* maxcount = strtok(0,")");
+         int dim = (maxcount == 0) ? 0 : atoi(maxcount);
+         if (dim == 0)
+         {
+            cerr << "hdds-mcfast: bad format in template statement"
+                 << " in input file " << fname << endl;
+            exit(2);
+         }
+         else if (processingTarget && *processingTarget == modelS)
+         {
+            if (++modelTable[model].refcount > dim)
+            { 
+               cerr << "hdds-mcfast: number of objects of type " << S(modelS)
+                    << " exceeds maximum of " << dim << endl;
+               cerr << "defined in input file " << fname << endl;
+               cerr << "Increase the array size in the template statement"
+                    << " found in the above file" << endl;
+               cerr << "and try again." << endl;
+               exit(2);
+            }
+            modelTable[model].maxcount = dim;
+            modelTable[model].db << "make " << S(modelS);
+            ++processedTemplates;
+         }
+      }
+      else if (strcasecmp(token,"make") == 0)
+      {
+         char tgt[250];
+         sline >> tgt;
+         int m;
+         for (m=0; m < modelTableLen; m++)
+         {
+            if (strcmp(modelTable[m].model,tgt) == 0)
+               break;
+         }
+         if (m == modelTableLen)
+         { 
+            cerr << "hdds-mcfast: error in template file " << fname << endl;
+            cerr << "Statement template " << S(modelS)
+                 << " must appear before first make instance." << endl;
+            exit(2);
+         }
+         else if (modelTable[m].refcount > modelTable[m].maxcount)
+         {
+            cerr << "hdds-mcfast: number of objects of type " << tgt
+                 << " overflows table." << endl;
+            cerr << "Increase the array size in the template file"
+                 << " and try again." << endl;
+            exit(2);
+         }
+      }
+      else if (!(processingTarget && *processingTarget == modelS))
+      {
+         continue;
+      }
+      else if (strcasecmp(token,"int") == 0)
+      {
+         char tgt[250];
+         sline >> tgt;
+         const char* var = strtok(tgt,", (");
+         const char* arg = strtok(0,")");
+         int dim = (arg == 0) ? 0 : atoi(arg);
+         const DOMElement* el;
+         XString valueS;
+         if (dim == 0)
+         {
+            XString typeS("int");
+            XString varS(var);
+            if (el = targetTable.lookup(targetEl,typeS,varS))
+            {
+	       XString valAttS("value");
+               valueS = el->getAttribute(X(valAttS));
+            }
+         }
+         else
+         {
+            XString typeS("int_array");
+            XString varS(var);
+            if (el = targetTable.lookup(targetEl,typeS,varS))
+            {
+	       XString valAttS("values");
+               valueS = el->getAttribute(X(valAttS));
+            }
+         }
+         if (valueS.size() == 0)
+         {
+            cerr << "hdds-mcfast: Parameter \"" << var << "\""
+                 << " required in template file " << fname << endl
+                 << "is missing from HDDS" << endl;
+            exit(3);
+         }
+         char* intstr = strtok((char*)S(valueS)," ");
+         modelTable[model].db << " " << intstr;
+         for (int i=1; i < dim; i++)
+         {
+            if (intstr = strtok(0," "))
+            {
+               modelTable[model].db << " " << intstr;
+            }
+            else
+            {
+               modelTable[model].db << " 0";
+            }
+         }
+      }
+      else if (strcasecmp(token,"real") == 0)
+      {
+         char tgt[250];
+         sline >> tgt;
+         const char* var = strtok(tgt,", (");
+         const char* arg = strtok(0,")");
+         int dim = (arg == 0) ? 0 : atoi(arg);
+         const DOMElement* el;
+         XString valueS;
+         if (dim == 0)
+         {
+            XString typeS("real");
+            XString varS(var);
+            if (el = targetTable.lookup(targetEl,typeS,varS))
+            {
+	       XString valAttS("value");
+               valueS = el->getAttribute(X(valAttS));
+            }
+         }
+         else
+         {
+            XString typeS("real_array");
+            XString varS(var);
+            if (el = targetTable.lookup(targetEl,typeS,varS))
+            {
+	       XString valAttS("values");
+               valueS = el->getAttribute(X(valAttS));
+            }
+         }
+         if (valueS.size() == 0)
+         {
+            cerr << "hdds-mcfast: Parameter \"" << var << "\""
+                 << " required in template file " << fname << endl
+                 << "is missing from HDDS" << endl;
+            exit(3);
+         }
+	 XString unitAttS("unit");
+         XString unitS = el->getAttribute(X(unitAttS));
+         float rho=1e-30;
+         DOMElement* densEl;
+         XString realS("real");
+         XString densAttS("density");
+         if (densEl = targetTable.lookup(targetEl,realS,densAttS))
+         {
+	    XString uS = densEl->getAttribute(X(unitAttS));
+            if (uS != "g/cm^3")
+            {
+               cerr << "hdds-mcfast: density parameter found with"
+                    << " incorrect units " << S(uS) << endl;
+               exit(3);
+            }
+	    XString valAttS("value");
+            XString rhoS = densEl->getAttribute(X(valAttS));
+            if (rhoS.size() != 0)
+            {
+               rho=atof(S(rhoS))+1e-30;
+            }
+         }
+         float fconvert=
+         /* standard unit for length in MCfast is cm */
+            (unitS == "m")? 100
+          : (unitS == "cm")? 1
+          : (unitS == "mm")? 0.1
+         /* standard unit for angles in MCfast is radians */
+          : (unitS == "rad")? 1
+          : (unitS == "mrad")? 0.001
+          : (unitS == "deg")? M_PI/180
+         /* standard unit for energy in MCfast is GeV */
+          : (unitS == "MeV")? 0.001
+          : (unitS == "GeV")? 1
+         /* standard unit for density in MCfast is g/cm^3 */
+          : (unitS == "g/cm^3")? 1
+         /* standard unit for interaction lengths in MCfast is cm */
+          : (unitS == "g/cm^2")? 1/rho
+         /* standard unit for dE/dx in MCfast is GeV/cm */
+          : (unitS == "MeV/g/cm^2")? 0.001*rho
+          : (unitS == "MeV/cm")? 0.001
+          : (unitS == "GeV/cm")? 1
+         /* standard unit for magnetic field in MCfast is Tesla */
+          : (unitS == "Tesla")? 1
+         /* fractions are always unit-normalized */
+          : (unitS == "percent")? 0.01
+          : (unitS == "none" || unitS.size() == 0)? 1
+         /* any other dimensions are not valid at this point */
+          : 0;
+         if (fconvert == 0)
+         {
+            cerr << "hdds-mcfast: Parameter \"" << var << "\""
+                 << " has unrecognized units " << S(unitS) << endl;
+            exit(3);
+         }
+         const char* fltstr = strtok((char*)S(valueS)," ");
+         float flt=atof(fltstr);
+         modelTable[model].db << " " << showpoint << atof(fltstr)*fconvert;
+         for (int i=1; i < dim; i++)
+         {
+            if (fltstr = strtok(0," "))
+            {
+               modelTable[model].db << " " << atof(fltstr)*fconvert;
+            }
+            else
+            {
+               modelTable[model].db << " 0";
+            }
+         }
+      }
+      else if (strcasecmp(token,"char") == 0)
+      {
+         char tgt[250];
+         sline >> tgt;
+         const char* var = strtok(tgt,", (");
+         const char* arg = strtok(0,")");
+         int dim = (arg == 0) ? 0 : atoi(arg);
+         const DOMElement* el;
+         XString valueS;
+         if (dim == 0)
+         {
+            XString typeS("string");
+            XString varS(var);
+            if ((el = targetTable.lookup(targetEl,typeS,varS)) == 0)
+            {
+               cerr << "hdds-mcfast: Parameter \"" << var << "\""
+                    << " required in template file " << fname << endl
+                    << "is missing from HDDS" << endl;
+               exit(3);
+            }
+	    XString valAttS("value");
+            valueS = el->getAttribute(X(valAttS));
+            modelTable[model].db << " \"" << S(valueS) << "\"";
+         }
+         else
+         {
+            XString typeS("string_vector");
+            XString varS(var);
+            if ((el = targetTable.lookup(targetEl,typeS,varS)) == 0)
+            {
+               cerr << "hdds-mcfast: Parameter \"" << var << "\""
+                    << " required in template file " << fname << endl
+                    << "is missing from HDDS" << endl;
+               exit(3);
+            }
+            int vcount = 0;
+            const DOMNode* vect;
+            for ( vect = el->getFirstChild(); 
+                  vect != 0;
+                  vect = vect->getNextSibling() )
+            {
+               if (vect->getNodeType() != DOMNode::ELEMENT_NODE)
+                  continue;
+               const DOMElement* vectEl = (DOMElement*) vect;
+               XString tagS(vectEl->getTagName());
+               if (tagS == "string_data")
+               {
+	          XString valAttS("value");
+                  XString valueS(vectEl->getAttribute(X(valAttS)));
+                  modelTable[model].db << " \"" << S(valueS) << "\"";
+                  vcount++;
+               }
+            }
+            for ( ; vcount < dim; vcount++)
+            {
+               modelTable[model].db << " \"\"";
+            }
+            if (vcount != dim)
+            {
+	       XString nameAttS("name");
+               XString vnameS(el->getAttribute(X(nameAttS)));
+               cerr << "hdds-mcfast: mcfast array size of " << dim
+                    << " for variable " << S(vnameS) << " is too small"
+                    << " to hold " << vcount << " elements" << endl;
+               cerr << "Please increase array size in " << fname << endl;
+               exit(3);
+            }
+         }
+      }
+      else if ((strcasecmp(token,"parent") == 0) ||
+               (strcasecmp(token,"child") == 0))
+      {
+         continue;
+      }
+      else if (strcasecmp(token,"material") == 0)
+      {
+         char tgt[250];
+         sline >> tgt;
+         const char* var = strtok(tgt,", (");
+         const char* arg = strtok(0,")");
+         int dim = (arg == 0) ? 0 : atoi(arg);
+         const DOMElement* el;
+         if (dim == 0)
+         {
+            XString typeS("reference");
+            XString varS(var);
+            if ((el = targetTable.lookup(targetEl,typeS,varS)) == 0)
+            {
+               cerr << "hdds-mcfast: Parameter \"" << var << "\""
+                    << " required in template file " << fname << endl
+                    << "is missing from HDDS" << endl;
+               exit(3);
+            }
+	    XString valAttS("value");
+            XString valueS(el->getAttribute(X(valAttS)));
+            modelTable[model].db << " \"" << S(valueS) << "\"";
+         }
+         else
+         {
+            XString typeS("reference_vector");
+            XString varS(var);
+            if ((el = targetTable.lookup(targetEl,typeS,varS)) == 0)
+            {
+               cerr << "hdds-mcfast: Parameter \"" << var << "\""
+                    << " required in template file " << fname << endl
+                    << "is missing from HDDS" << endl;
+               exit(3);
+            }
+            const DOMNode* vect;
+            int vcount = 0;
+            for ( vect = el->getFirstChild();
+                  vect != 0;
+                  vect = vect->getNextSibling() )
+            {
+               if (vect->getNodeType() != DOMNode::ELEMENT_NODE)
+                  continue;
+               const DOMElement* vectEl = (DOMElement*) vect;
+               XString tagS(vectEl->getTagName());
+               if (tagS == "reference_data")
+               {
+	          XString valAttS("value");
+                  XString valueS(vectEl->getAttribute(X(valAttS)));
+                  modelTable[model].db << " \"" << S(valueS) << "\"";
+                  vcount++;
+               }
+            }
+            for ( ; vcount < dim; vcount++)
+            {
+               modelTable[model].db << " \"-\"";
+            }
+            if (vcount != dim)
+            {
+	       XString nameAttS("name");
+               XString vnameS(el->getAttribute(X(nameAttS)));
+               cerr << "hdds-mcfast: mcfast array size of " << dim
+                    << " for variable " << S(vnameS) << " is too small"
+                    << " to hold " << vcount << " elements" << endl;
+               cerr << "Please increase array size in " << fname << endl;
+               exit(3);
+            }
+         }
+      }
+      else if (strstr(token,"!") == token)
+      {
+         continue;
+      }
+      else
+      {
+         cerr << "hdds-mcfast: Template file " << fname
+              << " contains unknown parameter type " << token << endl;
+         exit(3);
+      }
+   }
+   if (processedTemplates == 0)
+   {
+      cerr << "hdds-mcfast: template for " << S(modelS)
+           << " not found in input file " << fname << endl;
+      exit(2);
+   }
+   else if (processingTarget)
+   {
+      cerr << "hdds-mcfast: template statement without matching end"
+           << " in input file " << fname << endl;
+      exit(2);
+   }
+}
+
+void DbMaker::makedb(DOMElement* el)
+{
+   DOMNode* cont;
+   for (cont = el->getLastChild();
+        cont != 0;
+        cont = cont->getPreviousSibling())
+   {
+      if (cont->getNodeType() != DOMNode::ELEMENT_NODE)
+         continue;
+      DOMElement* contEl = (DOMElement*)cont;
+      XString tagS = contEl->getTagName();
+      if (tagS == "mcfast")
+      {
+         targetTable.add(contEl);
+      }
+      else
+      {
+         makedb(contEl);
+      }
+   }
+}
+
+void DbMaker::printdb()
+{
+   char line[999];
+   for (int m=0; m < modelTableLen; m++)
+   {
+      istringstream idb(modelTable[m].db.str());
+      while (! idb.eof())
+      {
+         idb.getline(line,999);
+         cout << line << endl;
+      }
+   }
+   cout << "end" << endl;
 }
