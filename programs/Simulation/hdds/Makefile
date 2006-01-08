@@ -38,17 +38,20 @@ hddsGeant3.F: hdds-geant $(XML_SOURCE)
 hddsroot.C: hdds-root $(XML_SOURCE)
 	./hdds-root main_HDDS.xml >$@
 
-hdds-geant: hdds-geant.cpp XParsers.cpp XParsers.hpp XString.cpp XString.hpp
+hdds-geant: hdds-geant.cpp XParsers.cpp XParsers.hpp \
+            XString.cpp XString.hpp hddsCommon.cpp hddsCommon.hpp
 	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ hdds-geant.cpp \
-	XParsers.cpp XString.cpp \
+	hddsCommon.cpp XParsers.cpp XString.cpp \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
-hdds-root: hdds-root.cpp hdds-root.hpp XParsers.cpp XParsers.hpp XString.cpp XString.hpp
+hdds-root: hdds-root.cpp hdds-root.hpp XParsers.cpp XParsers.hpp \
+           XString.cpp XString.hpp hddsCommon.cpp hddsCommon.hpp
 	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ hdds-root.cpp \
-	XParsers.cpp XString.cpp \
+	hddsCommon.cpp XParsers.cpp XString.cpp \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
-hdds-mcfast: hdds-mcfast.cpp hdds-mcfast.hpp XParsers.cpp XParsers.hpp XString.cpp XString.hpp
+hdds-mcfast: hdds-mcfast.cpp XParsers.cpp XParsers.hpp\
+             XString.cpp XString.hpp
 	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ hdds-mcfast.cpp \
 	XParsers.cpp XString.cpp \
 	-L$(XERCESCROOT)/lib -lxerces-c
