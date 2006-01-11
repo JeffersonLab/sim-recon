@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--DOCTYPE HDDS SYSTEM "HDDS_1.0.dtd">
+<!--DOCTYPE HDDS>
 
   Hall D Geometry Data Base: Barrel EM calorimeter
   *************************************************
@@ -7,10 +7,7 @@
      version 1.0: Initial version  -rtj
      version 1.2: Initial SiPM subsectoring -cx,zp
  
-<HDDS specification="v1.0"
-      xmlns="http://www.gluex.org/hdds"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://www.gluex.org/hdds HDDS-1_0.xsd">
+<HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds">
 -->
 
 <section name = "BarrelEMcal"

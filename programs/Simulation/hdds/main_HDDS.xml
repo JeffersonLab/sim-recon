@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE HDDS SYSTEM "HDDS_1.0.dtd" [
+<!DOCTYPE HDDS [
 
+  <!ENTITY Fields_s SYSTEM "Fields_HDDS.xml">
   <!ENTITY Material_s SYSTEM "Material_HDDS.xml">
   <!ENTITY BeamLine_s SYSTEM "BeamLine_HDDS.xml">
   <!ENTITY Target_s SYSTEM "Target_HDDS.xml"  >
@@ -16,13 +17,15 @@
 
 ]>
 
-<HDDS specification="v1.0"
-      xmlns="http://www.gluex.org/hdds"
+<HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://www.gluex.org/hdds HDDS-1_0.xsd">
 
 <!-- Include materials -->
      &Material_s;
+
+<!-- Include magnetic fields -->
+     &Fields_s;
 
 <!-- Include spec files -->
      &ForwardEMcal_s;
@@ -73,6 +76,7 @@
   </composition>
 
   <composition name="GlueXdetector">
+    <apply region="solenoidBfield" />
     <posXYZ volume="Target" X_Y_Z="0.0 0.0 50.0" />
     <posXYZ volume="barrelPackage" />
     <posXYZ volume="forwardPackage" />
