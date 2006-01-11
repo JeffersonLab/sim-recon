@@ -25,7 +25,8 @@
   <!-- The tagger dipole field map -->
 
   <region name="taggerBfield" comment="tagging spectrometer field map">
-    <mappedBfield map="file://taggermap.dat" encoding="utf-8" unit="kG">
+    <mappedBfield map="file://taggermap.dat" encoding="utf-8"
+                  maxBfield="1.8" unit="kG">
       <grid type="cartesian">
         <samples axis="x" n="351" bounds="-340 10" unit_length="cm">
           <samples axis="z" n="1611" bounds="-10 1600" unit_length="cm">
@@ -46,7 +47,8 @@
   <!-- The main solenoid field map -->
 
   <region name="solenoidBfield" comment="LASS spectrometer field map">
-    <mappedBfield map="file://taggermap.dat" encoding="utf-8" unit="kG">
+    <mappedBfield map="file://taggermap.dat" encoding="utf-8"
+                  maxBfield="22.8" unit="kG">
       <grid type="cylindrical">
         <samples axis="phi" n="1" bounds="0 360" unit_angle="deg">
           <samples axis="r" n="41" bounds="0 40" unit_length="in">
