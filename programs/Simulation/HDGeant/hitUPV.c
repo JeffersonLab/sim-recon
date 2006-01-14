@@ -267,12 +267,12 @@ s_UpstreamEMveto_t* pickUpstreamEMveto ()
             ++iok;
             ++mok;
           }
-          leftHits->mult = iok;
-          if (iok == 0)
-          {
-            paddles->in[0].upvLeftHits = HDDM_NULL;
-            FREE(leftHits);
-          }
+        }
+        leftHits->mult = iok;
+        if (iok == 0)
+        {
+          paddles->in[0].upvLeftHits = HDDM_NULL;
+          FREE(leftHits);
         }
       }
       if (rightHits != HDDM_NULL)

@@ -2,7 +2,7 @@
  * memcheck - a simple memory management checking tool
  *
  *	Typically the management of a memory structure is restricted to
- *	a limited segement of code.  General malloc/free memory leak
+ *	a limited segment of code.  General malloc/free memory leak
  *	tools can be found that will trap every call to malloc or free.
  *	Often it is simpler just to insert some checkpoint calls around
  *	the relevant calls, and just study the behavior in that region.
@@ -15,8 +15,10 @@
  * Instructions:
  * -------------
  * 1) After each relevant malloc, insert a call to checkin(pointer) as 
- *	p = malloc();   	// old code
+ *	p = malloc(n);   	// old code
  *	checkin(p,string);	// user string helps trace memory leaks 
+ *    or the following more compact form will have the same effect
+ *	p = checkin(malloc(size_t),string);
  *
  * 2) Before each relevant free, insert a call to checkout(pointer) as
  *	checkout(p);		// new insertion

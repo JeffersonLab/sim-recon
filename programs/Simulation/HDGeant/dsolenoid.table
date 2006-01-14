@@ -1,5 +1,15 @@
-From: P. Brindza
-Date: September 21, 2001
+
+=head1 LASS solenoid field map
+
+=head2 Instructions
+
+ This file is a self-extracting script.  It will produce a field map
+ for use in the HDGeant simulation simply by typing the following:
+ 
+	perl dsolenoid.table >solenoid.map
+
+ From: P. Brindza
+ Date: September 21, 2001
 
    This file contains a field map of the LASS solenoid.  It was generated
    by P. Brindza from his 2D model of the magnet.  Here are Paul's notes.
@@ -50,7 +60,7 @@ Date: September 21, 2001
  drawings I estimate that the distance from that plane to the origin in
  Paul's model is about 26 inches, or 66 cm.
 
-=======================================================================
+ =======================================================================
           100         100           1
   1 X                                                                               
   2 Y                                                                               
@@ -10350,3 +10360,19 @@ Date: September 21, 2001
    40.000       0.0000       278.00     -0.58054E-03  0.62834E-17 -0.54226E-02
    40.000       0.0000       279.00     -0.37487E-03  0.11310E-16 -0.34508E-02
    40.000       0.0000       280.00     -0.16920E-03  0.16337E-16 -0.14789E-02
+
+=cut
+
+open(FD,"<$0");
+while (<FD>)
+{
+   if (/[^-.Ee0-9]$/)
+   {
+      @f = split(" ");
+      next if (@f != 6);
+      $f[3]=0 if (abs($f[3])<1e-10);
+      $f[4]=0 if (abs($f[4])<1e-10);
+      $f[5]=0 if (abs($f[5])<1e-10);
+      print "$f[3] $f[4] $f[5]\n";
+   }
+}
