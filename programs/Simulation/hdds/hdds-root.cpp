@@ -53,14 +53,6 @@ using namespace xercesc;
 #define X(XString) XString.unicode_str()
 #define S(XString) XString.c_str()
 
-double fieldStrength[] =
-{
-   0.0,   // zero field regions
-   0.0,   // inhomogenous field regions (unused)
-  22.4,   // mapped field regions: solenoid (kG, approximate)
-   2.0    // uniform field regions: sweep magnets (kG)
-};
-
 int first_volume_placement = 0;
 
 void usage()
@@ -77,16 +69,16 @@ class RootMacroWriter : public CodeWriter
    RootMacroWriter() {};
    void createHeader();
    void createTrailer();
-   int createMaterial(DOMElement* el);    // generate code for materials
+   int createMaterial(DOMElement* el);  // generate code for materials
    int createSolid(DOMElement* el,
-                   const Refsys& ref);    // generate code for solids
-   int createRotation(Refsys& ref);       // generate code for rotations
+                   Refsys& ref);    	// generate code for solids
+   int createRotation(Refsys& ref);     // generate code for rotations
    int createVolume(DOMElement* el,
-                    const Refsys& ref);   // generate code for placement
+                    Refsys& ref);   	// generate code for placement
    int createDivision(XString& divStr,
-                      Refsys& ref);	  // generate code for divisions
+                      Refsys& ref);	// generate code for divisions
    void createGetFunctions(DOMElement* el,
-                     XString& ident);     // generate code for identifiers
+                     XString& ident);   // generate code for identifiers
 };
 
 
@@ -265,10 +257,63 @@ int RootMacroWriter::createMaterial(DOMElement* el)
    return imate;
 }
 
-int RootMacroWriter::createSolid(DOMElement* el, const Refsys& ref)
+int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
 {
    int ivolu = CodeWriter::createSolid(el,ref);
    int imate = fSubst.fUniqueID;
+   int iregion = ref.fRegionID;
+
+   int ifield = 0;	// default values for tracking properties
+   double fieldm = 0;	// are overridden by values specified in region tag
+   double tmaxfd = 0;
+   double stemax = -1;
+   double deemax = -1;
+   XString epsil = "0.1000000E-02";
+   double stmin = -1;
+   if (ref.fRegion)
+   {
+      XString noBfieldS("noBfield");
+      DOMNodeList* noBfieldL = ref.fRegion->getElementsByTagName(X(noBfieldS));
+      XString uniBfieldS("uniformBfield");
+      DOMNodeList* uniBfieldL = ref.fRegion->getElementsByTagName(X(uniBfieldS));
+      XString mapBfieldS("mappedBfield");
+      DOMNodeList* mapBfieldL = ref.fRegion->getElementsByTagName(X(mapBfieldS));
+      XString swimS("swim");
+      DOMNodeList* swimL = ref.fRegion->getElementsByTagName(X(swimS));
+      if (noBfieldL->getLength() > 0)
+      {
+         ifield = 0;
+         fieldm = 0;
+      }
+      else if (uniBfieldL->getLength() > 0)
+      {
+         DOMElement* uniBfieldEl = (DOMElement*)uniBfieldL->item(0);
+         XString bvecAttS("Bx_By_Bz");
+         XString bvecS(uniBfieldEl->getAttribute(X(bvecAttS)));
+         std::stringstream str(S(bvecS));
+         double B[3];
+         str >> B[0] >> B[1] >> B[2];
+         fieldm = sqrt(B[0]*B[0] + B[1]*B[1] + B[2]*B[2]);
+         ifield = 2;
+         tmaxfd = 1;
+      }
+      else if (mapBfieldL->getLength() > 0)
+      {
+         DOMElement* mapBfieldEl = (DOMElement*)mapBfieldL->item(0);
+         XString bmaxAttS("maxBfield");
+         XString bmaxS(mapBfieldEl->getAttribute(X(bmaxAttS)));
+         fieldm = atof(S(bmaxS));
+         ifield = 2;
+         tmaxfd = 1;
+         if (swimL->getLength() > 0)
+         {
+            DOMElement* swimEl = (DOMElement*)swimL->item(0);
+            XString methodAttS("method");
+            XString methodS(swimEl->getAttribute(X(methodAttS)));
+            ifield = (methodS == "RungeKutta")? 1 : 2;
+         }
+      }
+   }
 
    static int itmedCount = 0;
    int itmed = ++itmedCount;
@@ -283,10 +328,8 @@ int RootMacroWriter::createSolid(DOMElement* el, const Refsys& ref)
         << " = new TGeoMedium(\"" << S(nameS)
         << " " << S(matS) << "\"," << itmed << "," << imate << ","
         << (sensiS == "true" ? 1 : 0) << "," 
-        << ((ref.fMagField == 0) ? 0 : 2) << "," 
-        << fieldStrength[ref.fMagField]
-        << "," << ((ref.fMagField == 0) ? 0 : 1) 
-        << ",-1,-1,0.1000000E-02,-1);"
+        << ifield << "," << fieldm << "," << tmaxfd << ","
+        << stemax << "," << deemax << "," << epsil << "," << stmin << ");"
         << std::endl;
 
    Units unit;
@@ -618,7 +661,7 @@ int RootMacroWriter::createDivision(XString& divStr, Refsys& ref)
    return ndiv;
 }
 
-int RootMacroWriter::createVolume(DOMElement* el, const Refsys& ref)
+int RootMacroWriter::createVolume(DOMElement* el, Refsys& ref)
 {
    int icopy = CodeWriter::createVolume(el,ref);
 
@@ -673,7 +716,9 @@ int RootMacroWriter::createVolume(DOMElement* el, const Refsys& ref)
 
 void RootMacroWriter::createHeader()
 {
-  std::cout
+   CodeWriter::createHeader();
+
+   std::cout
        << "void hddsroot()" << std::endl
        << "{" << std::endl
        << "//" << std::endl
@@ -694,7 +739,8 @@ void RootMacroWriter::createHeader()
 
 void RootMacroWriter::createTrailer()
 {
-  std::cout
+   CodeWriter::createTrailer();
+   std::cout
        << "gGeoManager->CloseGeometry();" << std::endl
        << "Double_t *origin = new Double_t[3];" << std::endl
        << "origin[0] = 450; origin[1] = -50; origin[2] = -200;" << std::endl
@@ -705,6 +751,3 @@ void RootMacroWriter::createTrailer()
        << "HALL->Raytrace();" << std::endl
        << "}" << std::endl;
 }
-
-void RootMacroWriter::createGetFunctions(DOMElement* el, XString& ident)
-{}

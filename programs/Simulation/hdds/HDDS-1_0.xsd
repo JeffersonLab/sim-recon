@@ -721,6 +721,8 @@
 	    map       : URL pointing to where the field map values are found.
 	    encoding  : indicates how the values are stored, eg. utf-8 for
 			a plain-text file, base-64, and so on.
+            maxBfield : maximum magnitude of the magnetic field within the
+                        range specified by the map
 	    unit      : units for specifying magnetic field, eg. kG, T
 			(default is kG).
 
@@ -793,7 +795,34 @@
   numerically less than the upper bound; the coordinate order must correspond
   to the order the data are stored in the map file.
 
-1.6.3) Region examples
+1.6.3) Region contents: tracking advisories
+============================================
+
+  The region element is supposed to contain any bits and pieces of advice
+  that the might be useful to the translator in deciding how to encode the
+  geometry for a particular simulation.  Besides electromagnetic fields,
+  the rest of this information is advisory only and does not need to be
+  heeded by a translator unless it is deemed useful for setting up the
+  simulation.  The following advisory tags are supported.
+
+1.6.3.1) Swim
+
+  The "swim" element only makes sense in the case of a region containing
+  a mappedBfield.  Its purpose is to advise the tracking code on how to
+  integrate the path of a charged particle in the magnetic field.  The
+  following attributes are provided.
+
+	    method    : can take on one of the following values
+
+            *) method="helix" [default] is appropriate if the field is close
+			enough to uniform that a charged particle path is 
+			approximated well by helical track segments.
+
+	    *) method="RungeKutta" is appropriate if the field is sufficiently
+			nonuniform that charged particle tracks should be
+			found by numerical integration of the Lorentz equation.
+
+1.6.4) Region examples
 =======================
 
   <region name="beamlineDipoles" comment="photon beam dipole field">
@@ -829,9 +858,10 @@
         </samples>
       </grid>
     </mappedBfield>
+    <swim method="RungeKutta"/>
   </region>
 
-1.6.4) Apply: associate a volume with a region
+1.6.5) Apply: associate a volume with a region
 ================================================
 
   Volumes are associated with regions at the time that the geometrical
@@ -1530,6 +1560,7 @@
 
     <xs:attribute name="map" use="required" type="xs:anyURI"/>
     <xs:attribute name="encoding" use="required" type="mapEncoding"/>
+    <xs:attribute name="maxBfield" use="required" type="xs:double"/>
     <xs:attribute name="unit" use="required" type="BfieldUnit"/>
   </xs:complexType>
 </xs:element>
@@ -1550,13 +1581,29 @@
 <xs:element name="noBfield">
 </xs:element>
 
+<xs:element name="swim">
+  <xs:complexType>
+    <xs:attribute name="method" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="RungeKutta"/>
+          <xs:enumeration value="helix"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+</xs:element>
+
 <xs:element name="region">
   <xs:complexType>
-    <xs:choice>
-      <xs:element ref="noBfield"/>
-      <xs:element ref="uniformBfield"/>
-      <xs:element ref="mappedBfield"/>
-    </xs:choice>
+   <xs:sequence>
+      <xs:choice minOccurs="0">
+        <xs:element ref="noBfield"/>
+        <xs:element ref="uniformBfield"/>
+        <xs:element ref="mappedBfield"/>
+      </xs:choice>
+      <xs:element ref="swim" minOccurs="0"/>
+    </xs:sequence>
 
     <xs:attribute name="comment" type="xs:string"/>
     <xs:attribute name="name" type="xs:ID"/>

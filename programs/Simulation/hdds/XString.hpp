@@ -36,8 +36,12 @@ class XString: public std::string
    const XMLCh* unicode_str();      // must modify the object because it
                                     // has to keep track of memory usage.
 
+   XString& operator=(const XString& src);
+
  private:
-   std::list<XMLCh*> fStringCollection;
+   std::list<char*> fStringCollection;
+  
+   void dump();
 };
 
 #endif

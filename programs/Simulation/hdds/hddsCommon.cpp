@@ -9,10 +9,14 @@
  * 1. The HDDS specification is an xml document in the standard W3C
  *    schema namespace http://www.gluex.org/hdds, as described by the
  *    HDDS-1_0.xsd schema document.
- * 2. Access by hdds-geant to the xml source is through the industry-
- *    standard DOM interface.
+ * 2. Access to the xml source is through the industry-standard DOM interface.
  * 3. The code has been tested with the xerces-c DOM implementation from
  *    Apache, and is intended to be used with the xerces-c library.
+ * 4. The common classes were created originally as tools for the hdds-geant
+ *    converter to write Fortran geometry definition code for the Geant3
+ *    simulation.  Later they were reused for other simulation packages,
+ *    but occasionally the original purpose is still visible in comments
+ *    and some of the implementation details.
  *
  *  Implementation:
  *  ---------------
@@ -55,19 +59,22 @@
  *
  * 2. How to recognize which media contain magnetic fields.
  *
- *  There is no provision in the hdds geometry model for magnetic field
- *  information.  Ultimately that is something that will be stored as a map
- *  somewhere in a database.  Geant needs to distinguish between 4 cases:
- *       (0) no magnetic field
- *       (1) general case of inhomogenous field (Runge-Kutta)
- *       (2) quasi-homogenous field with map (helical segments)
- *       (3) uniform field (helices along local z-axis)
- *  My solution is as follows.  By default, I assume case 0.  For all
- *  contents of a composition named "*fieldVolume" I assign case 2.  For
- *  all contents of a composition named "*Magnet*" I assign case 3.
- *  For the magnitude of the field, I simply store a constant field value
- *  (kG) for each case, and rely on the GUFLD user routine in Geant3 to
- *  handle the actual field values at tracking time.
+ *  There is was originally no provision in the AGDD geometry model for
+ *  magnetic field information.  This information was introduced in HDDS
+ *  through a new concept called a "region" and a new tag "apply" which
+ *  associates a volume in the geometry definition with a region.  For more
+ *  information about the meaning of regions in HDDS and the methods for
+ *  specifying a region's magnetic field, see the documentation in the
+ *  HDDS schema file.  Geant needs to distinguish between 4 cases:
+ *     ifield=0 : no magnetic field
+ *     ifield=1 : general case of inhomogenous field (Runge-Kutta)
+ *     ifield=2 : quasi-homogenous field with map (helical segments)
+ *     ifield=3 : uniform field (helices along local z-axis)
+ *  For detector regions with no magnetic field, the volume is created with
+ *  ifield=0.  If a field map is provided for the region, it is assigned
+ *  ifield=1 and the field interpolator is written as a part of the output
+ *  code.  If the field is uniform then it is assigned ifield=2 unless it
+ *  is along the z-axis, in which case it is assigned ifield=3.
  *
  * 3. What to do about stackX/stackY/stackZ tags
  *
@@ -79,7 +86,6 @@
  *  be implemented easily using compositions anyway, I decided not to include
  *  support for them in hdds-geant.
  */
-
 
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/util/XMLString.hpp>
@@ -123,25 +129,40 @@ using namespace xercesc;
  */
 
 int Refsys::fVolumes = 0;
+int Refsys::fRegions = 0;
 int Refsys::fRotations = 0;
-XString Refsys::fIdentifierList;
+std::map<std::string,Refsys::VolIdent> Refsys::fIdentifiers;
+std::vector<std::map<std::string,std::vector<int> > > Refsys::fIdentifierTable;
 
 Refsys::Refsys()			// empty constructor
  : fIdentifier(),
    fMother(0),
-   fMagField(0),
+   fRegion(0),
+   fRegionID(0),
    fPhiOffset(0)
 {
+   fMOrigin[0] = fMOrigin[1] = fMOrigin[2] = 0;
+   fMRmatrix[0][0] = fMRmatrix[1][1] = fMRmatrix[2][2] = 1;
+   fMRmatrix[0][1] = fMRmatrix[1][0] = fMRmatrix[1][2] =
+   fMRmatrix[0][2] = fMRmatrix[2][0] = fMRmatrix[2][1] = 0;
    reset();
 }
 
 Refsys::Refsys(const Refsys& src)	// copy constructor
  : fIdentifier(src.fIdentifier),
    fMother(src.fMother),
-   fMagField(src.fMagField),
+   fRegion(src.fRegion),
+   fRegionID(src.fRegionID),
    fPhiOffset(src.fPhiOffset),
    fPartition(src.fPartition)
 {
+   for (int i=0; i<3; i++)
+   {
+      fMOrigin[i] = src.fMOrigin[i];
+      fMRmatrix[i][0] = src.fMRmatrix[i][0];
+      fMRmatrix[i][1] = src.fMRmatrix[i][1];
+      fMRmatrix[i][2] = src.fMRmatrix[i][2];
+   }
    reset(src);
 }
 
@@ -149,9 +170,17 @@ Refsys& Refsys::operator=(Refsys& src)	// copy operator (deep sematics)
 {
    fIdentifier = src.fIdentifier;
    fMother = src.fMother;
-   fMagField = src.fMagField;
+   fRegion = src.fRegion;
+   fRegionID = src.fRegionID;
    fPhiOffset = src.fPhiOffset;
    fPartition = src.fPartition;
+   for (int i=0; i<3; i++)
+   {
+      fMOrigin[i] = src.fMOrigin[i];
+      fMRmatrix[i][0] = src.fMRmatrix[i][0];
+      fMRmatrix[i][1] = src.fMRmatrix[i][1];
+      fMRmatrix[i][2] = src.fMRmatrix[i][2];
+   }
    reset(src);
    return *this;
 }
@@ -186,6 +215,9 @@ Refsys& Refsys::shift(const double vector[3])  // translate origin
       fOrigin[i] += fRmatrix[i][0] * vector[0] +
                     fRmatrix[i][1] * vector[1] +
                     fRmatrix[i][2] * vector[2];
+      fMOrigin[i] += fMRmatrix[i][0] * vector[0] +
+                     fMRmatrix[i][1] * vector[1] +
+                     fMRmatrix[i][2] * vector[2];
    }
    return *this;
 }
@@ -195,6 +227,9 @@ Refsys& Refsys::shift(const Refsys& ref)      // copy origin from ref
    fOrigin[0] = ref.fOrigin[0];
    fOrigin[1] = ref.fOrigin[1];
    fOrigin[2] = ref.fOrigin[2];
+   fMOrigin[0] = ref.fMOrigin[0];
+   fMOrigin[1] = ref.fMOrigin[1];
+   fMOrigin[2] = ref.fMOrigin[2];
    return *this;
 }
 
@@ -221,6 +256,7 @@ Refsys& Refsys::rotate(const double omega[3]) // rotate by vector omega (rad)
       {
          double x[3];
          double xx[3];
+
          x[0] = fRmatrix[i][0] * cosz + fRmatrix[i][1] * sinz;
          x[1] = fRmatrix[i][1] * cosz - fRmatrix[i][0] * sinz;
          x[2] = fRmatrix[i][2];
@@ -230,6 +266,16 @@ Refsys& Refsys::rotate(const double omega[3]) // rotate by vector omega (rad)
          fRmatrix[i][0] = xx[0];
          fRmatrix[i][1] = xx[1] * cosx + xx[2] * sinx;
          fRmatrix[i][2] = xx[2] * cosx - xx[1] * sinx;
+
+         x[0] = fMRmatrix[i][0] * cosz + fMRmatrix[i][1] * sinz;
+         x[1] = fMRmatrix[i][1] * cosz - fMRmatrix[i][0] * sinz;
+         x[2] = fMRmatrix[i][2];
+         xx[0] = x[0] * cosy - x[2] * siny;
+         xx[1] = x[1];
+         xx[2] = x[2] * cosy + x[0] * siny;
+         fMRmatrix[i][0] = xx[0];
+         fMRmatrix[i][1] = xx[1] * cosx + xx[2] * sinx;
+         fMRmatrix[i][2] = xx[2] * cosx - xx[1] * sinx;
       }
 
       fRotation = -1;
@@ -245,6 +291,9 @@ Refsys& Refsys::rotate(const Refsys& ref)      // copy Rmatrix from ref
       fRmatrix[i][0] = ref.fRmatrix[i][0];
       fRmatrix[i][1] = ref.fRmatrix[i][1];
       fRmatrix[i][2] = ref.fRmatrix[i][2];
+      fMRmatrix[i][0] = ref.fMRmatrix[i][0];
+      fMRmatrix[i][1] = ref.fMRmatrix[i][1];
+      fMRmatrix[i][2] = ref.fMRmatrix[i][2];
    }
    fRotation = ref.fRotation;
    return *this;
@@ -258,6 +307,49 @@ Refsys& Refsys::rotate(const Refsys& ref,
    return rotate(myRef);
 }
 
+void Refsys::clearIdentifiers()
+{
+   fIdentifier.clear();
+}
+
+void Refsys::incrementIdentifiers()
+{
+   std::map<std::string,Refsys::VolIdent>::iterator iter;
+   for (iter = fIdentifier.begin(); iter != fIdentifier.end(); ++iter)
+   {
+      iter->second.value += iter->second.step;
+   }
+}
+
+void Refsys::addIdentifier(XString& ident, int value, int step)
+{
+   VolIdent id;
+   id.value = value;
+   id.step = step;
+   fIdentifier[ident] = id;
+   fIdentifiers[ident] = id;
+}
+
+int Refsys::nextRotationID()
+{
+   return ++fRotations;
+}
+
+int Refsys::nextVolumeID()
+{
+   int ivolu = ++fVolumes;
+   while (fIdentifierTable.size() <= ivolu)
+   {
+      std::map<std::string,std::vector<int> > unmarked;
+      fIdentifierTable.push_back(unmarked);
+   }
+   return ivolu;
+}
+
+int Refsys::nextRegionID()
+{
+   return ++fRegions;
+}
 
 /* Substance class:
  *	Computes and saves properties of materials that are used
@@ -272,6 +364,28 @@ Substance::Substance()
    fRadLen(0), fAbsLen(0), fColLen(0), fMIdEdx(0),
    fUniqueID(0),fBrewList(0)
 {}
+
+Substance::Substance(Substance& src)
+ : fMaterialEl(src.fMaterialEl),
+   fAtomicWeight(src.fAtomicWeight),
+   fAtomicNumber(src.fAtomicNumber),
+   fDensity(src.fDensity),
+   fRadLen(src.fRadLen),
+   fAbsLen(src.fAbsLen),
+   fColLen(src.fColLen),
+   fMIdEdx(src.fMIdEdx),
+   fUniqueID(src.fUniqueID)
+{
+   std::list<Brew>::iterator iter;
+   for (iter = src.fBrewList.begin();
+        iter != src.fBrewList.end();
+        ++iter)
+   {
+      Brew formula = *iter;
+      formula.sub = new Substance(*iter->sub);
+      fBrewList.push_back(formula);
+   }
+}
 
 Substance::Substance(DOMElement* elem)
  : fMaterialEl(elem),
@@ -454,6 +568,36 @@ Substance::Substance(DOMElement* elem)
    }
 }
 
+Substance::~Substance()
+{
+   std::list<Brew>::iterator iter;
+   for (iter = fBrewList.begin(); iter != fBrewList.end(); ++iter)
+   {
+      delete iter->sub;
+   }
+}
+
+Substance& Substance::operator=(const Substance& src)
+{
+   fMaterialEl = src.fMaterialEl;
+   fAtomicWeight = src.fAtomicWeight;
+   fAtomicNumber = src.fAtomicNumber;
+   fDensity = src.fDensity;
+   fRadLen = src.fRadLen;
+   fAbsLen = src.fAbsLen;
+   fColLen = src.fColLen;
+   fMIdEdx = src.fMIdEdx;
+   fUniqueID = src.fUniqueID;
+   fBrewList = src.fBrewList;
+   std::list<Brew>::iterator iter;
+   for (iter = fBrewList.begin();
+        iter != fBrewList.end();
+        ++iter)
+   {
+      iter->sub = new Substance(*iter->sub);
+   }
+}
+
 double Substance::getAtomicWeight()
 {
    return fAtomicWeight;
@@ -617,6 +761,30 @@ void Units::getConversions(DOMElement* el)
    {
       set_1cm(0.01);
    }
+   else if (unitlS == "km")
+   {
+      set_1cm(1e-5);
+   }
+   else if (unitlS == "um")
+   {
+      set_1cm(1e6);
+   }
+   else if (unitlS == "nm")
+   {
+      set_1cm(1e9);
+   }
+   else if (unitlS == "in")
+   {
+      set_1cm(1/2.54);
+   }
+   else if (unitlS == "ft")
+   {
+      set_1cm(1/(12*2.54));
+   }
+   else if (unitlS == "mil")
+   {
+      set_1cm(1000/2.54);
+   }
    else
    {
       XString tagS(el->getTagName());
@@ -670,6 +838,30 @@ void Units::getConversions(DOMElement* el)
    else if (unitS == "m")
    {
       set_1cm(0.01);
+   }
+   else if (unitlS == "km")
+   {
+      set_1cm(1e-5);
+   }
+   else if (unitlS == "um")
+   {
+      set_1cm(1e6);
+   }
+   else if (unitlS == "nm")
+   {
+      set_1cm(1e9);
+   }
+   else if (unitlS == "in")
+   {
+      set_1cm(1/2.54);
+   }
+   else if (unitlS == "ft")
+   {
+      set_1cm(1/(12*2.54));
+   }
+   else if (unitlS == "mil")
+   {
+      set_1cm(1000/2.54);
    }
    else if (unitaS == "deg")
    {
@@ -745,6 +937,105 @@ void Units::getConversions(DOMElement* el)
    }
 }
 
+#ifdef LINUX_CPUTIME_PROFILING
+CPUtimer::CPUtimer()
+{
+   getRusage();
+   gettimeofday(&fClock0,&fTZ);
+   fClockRef = fClock0;
+   fRef = fLast;
+}
+
+double CPUtimer::getUserTime()
+{
+   if (getRusage() == 0)
+   {
+      return fLast.ru_utime.tv_sec + fLast.ru_utime.tv_usec/1e6;
+   }
+   else
+   {
+      return -1;
+   }
+}
+
+double CPUtimer::getSystemTime()
+{
+   if (getRusage() == 0)
+   {
+      return fLast.ru_stime.tv_sec + fLast.ru_stime.tv_usec/1e6;
+   }
+   else
+   {
+      return -1;
+   }
+}
+
+double CPUtimer::getRealTime()
+{
+   if (getRusage() == 0)
+   {
+      return (fClock.tv_sec - fClock0.tv_sec)
+            +(fClock.tv_usec - fClock0.tv_usec)/1e6;
+   }
+   else
+   {
+      return -1;
+   }
+}
+
+double CPUtimer::getUserDelta()
+{
+   if (getRusage() == 0)
+   {
+      return fLast.ru_utime.tv_sec + fLast.ru_utime.tv_usec/1e6
+            -(fRef.ru_utime.tv_sec + fRef.ru_utime.tv_usec/1e6);
+   }
+   else
+   {
+      return -1;
+   }
+}
+
+double CPUtimer::getSystemDelta()
+{
+   if (getRusage() == 0)
+   {
+      return fLast.ru_stime.tv_sec + fLast.ru_stime.tv_usec/1e6
+            -(fRef.ru_stime.tv_sec + fRef.ru_stime.tv_usec/1e6);
+   }
+   else
+   {
+      return -1;
+   }
+}
+
+double CPUtimer::getRealDelta()
+{
+   if (getRusage() == 0)
+   {
+      return (fClock.tv_sec - fClockRef.tv_sec)
+            +(fClock.tv_usec - fClockRef.tv_usec)/1e6;
+   }
+   else
+   {
+      return -1;
+   }
+}
+
+void CPUtimer::resetClocks()
+{
+   getRusage();
+   fRef = fLast;
+   fClockRef = fClock;
+}
+
+int CPUtimer::getRusage()
+{
+   return getrusage(RUSAGE_SELF,&fLast) + gettimeofday(&fClock,&fTZ);
+}
+
+CPUtimer timer;
+#endif
 
 int CodeWriter::createMaterial(DOMElement* el)
 {
@@ -752,7 +1043,7 @@ int CodeWriter::createMaterial(DOMElement* el)
    int imate = ++imateCount;
    std::stringstream imateStr;
    imateStr << imate;
-   XString imateAttS("Geant3imate");
+   XString imateAttS("HDDSmate");
    XString imateS(imateStr.str());
    el->setAttribute(X(imateAttS),X(imateS));
 
@@ -773,7 +1064,7 @@ int CodeWriter::createMaterial(DOMElement* el)
    return imate;
 }
 
-int CodeWriter::createSolid(DOMElement* el, const Refsys& ref)
+int CodeWriter::createSolid(DOMElement* el, Refsys& ref)
 {
    XString nameTagS("name");
    XString matAttS("material");
@@ -782,7 +1073,7 @@ int CodeWriter::createSolid(DOMElement* el, const Refsys& ref)
 
    DOMDocument* document = el->getOwnerDocument();
    DOMElement* matEl = document->getElementById(X(matS));
-   XString imateAttS("Geant3imate");
+   XString imateAttS("HDDSmate");
    XString imateS(matEl->getAttribute(X(imateAttS)));
    if (imateS.size() != 0)
    {
@@ -793,11 +1084,11 @@ int CodeWriter::createSolid(DOMElement* el, const Refsys& ref)
       fSubst.fUniqueID = createMaterial(matEl);
    }
    
+   int ivolu = ref.nextVolumeID();
    std::stringstream ivoluStr;
-   int ivolu = ++Refsys::fVolumes;
    ivoluStr << ivolu;
-   XString ivoluAttS("Geant3ivolu");
-   XString icopyAttS("Geant3icopy");
+   XString ivoluAttS("HDDSvolu");
+   XString icopyAttS("HDDScopy");
    XString ivoluS(ivoluStr.str());
    XString icopyS("0");
    el->setAttribute(X(ivoluAttS),X(ivoluS));  
@@ -810,20 +1101,100 @@ int CodeWriter::createRotation(Refsys& ref)
 {
    if (ref.fRotation < 0)
    {
-      ref.fRotation = ++ref.fRotations;
+      ref.fRotation = ref.nextRotationID();
    }
    return ref.fRotation;
+}
+
+int CodeWriter::createRegion(DOMElement* el, Refsys& ref)
+{
+   int iregion = ref.nextRegionID();
+
+   XString regionAttS("region");
+   XString regionS(el->getAttribute(X(regionAttS)));
+   DOMDocument* document = el->getOwnerDocument();
+   ref.fRegion = document->getElementById(X(regionS));
+   ref.fRegionID = iregion;
+
+   double origin[3], angle[3];
+   XString rotAttS("rot");
+   XString rotS(el->getAttribute(X(rotAttS)));
+   std::stringstream listr(rotS);
+   listr >> angle[0] >> angle[1] >> angle[2];
+   Units unit;
+   unit.getConversions(el);
+   angle[0] *= unit.rad;
+   angle[1] *= unit.rad;
+   angle[2] *= unit.rad;
+   XString xyzAttS("origin");
+   XString xyzS(el->getAttribute(X(xyzAttS)));
+   listr.clear(), listr.str(xyzS);
+   listr >> origin[0] >> origin[1] >> origin[2];
+   origin[0] *= unit.cm;
+   origin[1] *= unit.cm;
+   origin[2] *= unit.cm;
+   ref.shift(origin);
+   ref.rotate(angle);
+
+   XString regTagS("HDDSregion");
+   std::stringstream attStr;
+   attStr << iregion;
+   XString idS(attStr.str());
+   el->setAttribute(X(regTagS),X(idS));
+
+   DOMElement* regEl = document->createElement(X(regTagS));
+   XString idAttS("id");
+   regEl->setAttribute(X(idAttS),X(idS));
+   attStr.clear(), attStr.str("");
+   attStr << ref.fMOrigin[0] << " "
+          << ref.fMOrigin[1] << " " 
+          << ref.fMOrigin[2];
+   XString origAttS("origin");
+   XString origS(attStr.str());
+   regEl->setAttribute(X(origAttS),X(origS));
+   attStr.clear(), attStr.str("");
+   attStr << ref.fMRmatrix[0][0] << " "
+          << ref.fMRmatrix[0][1] << " "
+          << ref.fMRmatrix[0][2] << " "
+          << ref.fMRmatrix[1][0] << " "
+          << ref.fMRmatrix[1][1] << " "
+          << ref.fMRmatrix[1][2] << " "
+          << ref.fMRmatrix[2][0] << " "
+          << ref.fMRmatrix[2][1] << " "
+          << ref.fMRmatrix[2][2];
+   XString rmatAttS("Rmatrix");
+   XString rmatS(attStr.str());
+   regEl->setAttribute(X(rmatAttS),X(rmatS));
+   ref.fRegion->appendChild(regEl);
+
+   for (DOMNode* cont = ref.fRegion->getFirstChild();
+        cont != 0;
+        cont = cont->getNextSibling())
+   {
+      if (cont->getNodeType() == DOMNode::ELEMENT_NODE)
+      {
+         XString tagS(((DOMElement*)cont)->getTagName());
+         if (tagS.find("Bfield") != XString::npos)
+         {
+            XString mapS("map");
+            ref.addIdentifier(mapS,iregion,0);
+            break;
+         }
+      }
+   }
+   return iregion;
 }
 
 int CodeWriter::createDivision(XString& divStr, Refsys& ref)
 {
    int ncopy = ref.fPartition.ncopy;
+   int ivolu = ref.nextVolumeID();
 
    assert (ref.fMother != 0);
 
    std::stringstream attStr;
    DOMDocument* document = ref.fMother->getOwnerDocument();
-   XString divTagS("Geant3division");
+   XString divTagS("HDDSdivision");
    DOMElement* divEl = document->createElement(X(divTagS));
    XString divS(divStr);
    XString nameAttS("name");
@@ -831,11 +1202,11 @@ int CodeWriter::createDivision(XString& divStr, Refsys& ref)
    XString motherS(ref.fMother->getAttribute(X(nameAttS)));
    XString voluAttS("volume");
    divEl->setAttribute(X(voluAttS),X(motherS));
-   XString ivoluAttS("Geant3ivolu");
-   attStr << ++Refsys::fVolumes;
+   attStr << ivolu;
+   XString ivoluAttS("HDDSvolu");
    XString ivoluS(attStr.str());
    divEl->setAttribute(X(ivoluAttS),X(ivoluS));  
-   XString icopyAttS("Geant3icopy");
+   XString icopyAttS("HDDScopy");
    std::stringstream copyStr;
    copyStr << ncopy;
    XString icopyS(copyStr.str());
@@ -843,26 +1214,27 @@ int CodeWriter::createDivision(XString& divStr, Refsys& ref)
    ref.fMother->appendChild(divEl);
    ref.fPartition.divEl = divEl;
 
-   std::list<Refsys::VolIdent>::iterator iter;
-   for (iter = ref.fIdentifier.begin(); iter != ref.fIdentifier.end(); ++iter)
+   std::map<std::string,Refsys::VolIdent>::iterator iter;
+   for (iter = ref.fIdentifier.begin();
+        iter != ref.fIdentifier.end();
+        ++iter)
    {
-      XString fieldS(iter->fieldS);
-      int value = iter->value;
-      int step = iter->step;
-      std::stringstream idlistStr;
+      int value = iter->second.value;
+      int step = iter->second.step;
+      XString fieldS(iter->first);
+      std::vector<int>* idlist = &Refsys::fIdentifierTable[ivolu][fieldS];
       for (int ic = 0; ic < ncopy; ic++)
       {
-         idlistStr << value << " ";
+         idlist->push_back(value);
          value += step;
       }
-      XString idlistS(idlistStr.str());
-      divEl->setAttribute(X(fieldS),X(idlistS));
    }
-   ref.fIdentifier.clear();
+   Refsys::fIdentifierTable[ivolu]["copy counter"].push_back(ncopy);
+   ref.clearIdentifiers();
    return ncopy;
 }
 
-int CodeWriter::createVolume(DOMElement* el, const Refsys& ref)
+int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
 {
    fPending = false;
    int icopy = 0;
@@ -871,14 +1243,6 @@ int CodeWriter::createVolume(DOMElement* el, const Refsys& ref)
    XString tagS(el->getTagName());
    XString nameAttS("name");
    XString nameS(el->getAttribute(X(nameAttS)));
-   if (nameS.find("fieldVolume") != XString::npos)
-   {
-      myRef.fMagField = 2;
-   }
-   else if (nameS.find("Magnet") != XString::npos)
-   {
-      myRef.fMagField = 3;
-   }
 
    DOMElement* env = 0;
    DOMDocument* document = el->getOwnerDocument();
@@ -897,14 +1261,29 @@ int CodeWriter::createVolume(DOMElement* el, const Refsys& ref)
       {
          std::cerr
               << APP_NAME << " error: re-use of shape " << S(envS)
-              << " is not allowed by Geant3." << std::endl;
+              << " is not allowed by " << APP_NAME << std::endl;
          exit(1);
       }
       env->setAttribute(X(contAttS),X(nameS));
       icopy = createVolume(env,myRef);
-      myRef.fIdentifier.clear();
+      myRef.clearIdentifiers();
       myRef.fMother = env;
       myRef.reset();
+
+   // Make containers inherit any region specified in their envelope
+
+      XString applyAttS("apply");
+      DOMNodeList* nodeL = env->getElementsByTagName(X(applyAttS));
+      if (nodeL->getLength() > 0)
+      {
+         DOMElement* applyEl = (DOMElement*)nodeL->item(0);
+         XString regionAttS("region");
+         XString regionS(applyEl->getAttribute(X(regionAttS)));
+         myRef.fRegion = document->getElementById(X(regionS));
+         XString idAttS("HDDSregion");
+         XString idS(applyEl->getAttribute(X(idAttS)));
+         myRef.fRegionID = atoi(S(idS));
+      }
    }
 
    if (tagS == "intersection" ||
@@ -913,7 +1292,7 @@ int CodeWriter::createVolume(DOMElement* el, const Refsys& ref)
    {
       std::cerr
            << APP_NAME << " error: boolean " << S(tagS)
-           << " operator is not supported by Geant3." << std::endl;
+           << " operator is not supported by "<< APP_NAME << std::endl;
       exit(1);
    }
    else if (tagS == "composition")
@@ -975,19 +1354,7 @@ int CodeWriter::createVolume(DOMElement* el, const Refsys& ref)
             XString fieldS(identEl->getAttribute(X(fieldAttS)));
             XString valueS(identEl->getAttribute(X(valueAttS)));
             XString stepS(identEl->getAttribute(X(stepAttS)));
-            Refsys::VolIdent id;
-            id.fieldS = fieldS;
-            id.value = atoi(S(valueS));
-            id.step = atoi(S(stepS));
-            drs.fIdentifier.push_back(id);
-            if (ref.fIdentifierList.find(fieldS) == XString::npos)
-            {
-               if (ref.fIdentifierList.size() > 0)
-               {
-                  ref.fIdentifierList += " ";
-               }
-               ref.fIdentifierList += fieldS;
-            }
+            drs.addIdentifier(fieldS,atoi(S(valueS)),atoi(S(stepS)));
          }
 
          if (comdS == "posXYZ")
@@ -1153,13 +1520,7 @@ int CodeWriter::createVolume(DOMElement* el, const Refsys& ref)
                      drs.rotate(drs0, angle);
                   }
                   createVolume(targEl,drs);
-                  std::list<Refsys::VolIdent>::iterator iter;
-                  for (iter = drs.fIdentifier.begin();
-                       iter != drs.fIdentifier.end();
-                       ++iter)
-                  {
-                     iter->value += iter->step;
-                  }
+                  drs.incrementIdentifiers();
                }
             }
          }
@@ -1245,13 +1606,7 @@ int CodeWriter::createVolume(DOMElement* el, const Refsys& ref)
                   origin[2] = z;
                   drs.shift(drs0, origin);
                   createVolume(targEl,drs);
-                  std::list<Refsys::VolIdent>::iterator iter;
-                  for (iter = drs.fIdentifier.begin();
-                       iter != drs.fIdentifier.end();
-                       ++iter)
-                  {
-                     iter->value += iter->step;
-                  }
+                  drs.incrementIdentifiers();
                }
             }
          }
@@ -1335,13 +1690,7 @@ int CodeWriter::createVolume(DOMElement* el, const Refsys& ref)
                   origin[2] = z;
                   drs.shift(drs0, origin);
                   createVolume(targEl,drs);
-                  std::list<Refsys::VolIdent>::iterator iter;
-                  for (iter = drs.fIdentifier.begin();
-                       iter != drs.fIdentifier.end();
-                       ++iter)
-                  {
-                     iter->value += iter->step;
-                  }
+                  drs.incrementIdentifiers();
                }
             }
          }
@@ -1426,13 +1775,7 @@ int CodeWriter::createVolume(DOMElement* el, const Refsys& ref)
                   origin[2] = z;
                   drs.shift(drs0, origin);
                   createVolume(targEl,drs);
-                  std::list<Refsys::VolIdent>::iterator iter;
-                  for (iter = drs.fIdentifier.begin();
-                       iter != drs.fIdentifier.end();
-                       ++iter)
-                  {
-                     iter->value += iter->step;
-                  }
+                  drs.incrementIdentifiers();
                }
             }
          }
@@ -1532,15 +1875,16 @@ int CodeWriter::createVolume(DOMElement* el, const Refsys& ref)
                   origin[2] = z;
                   drs.shift(drs0, origin);
                   createVolume(targEl,drs);
-                  std::list<Refsys::VolIdent>::iterator iter;
-                  for (iter = drs.fIdentifier.begin();
-                       iter != drs.fIdentifier.end();
-                       ++iter)
-                  {
-                     iter->value += iter->step;
-                  }
+                  drs.incrementIdentifiers();
                }
             }
+         }
+         else if (comdS == "apply")
+         {
+            myRef.fRegionID = createRegion(contEl,drs);
+            XString mapS("map");
+            myRef.fIdentifier[mapS] = drs.fIdentifier[mapS];
+            myRef.fRegion = drs.fRegion;
          }
          else
          {
@@ -1556,14 +1900,14 @@ int CodeWriter::createVolume(DOMElement* el, const Refsys& ref)
             tagS == "stackZ")
    {
       std::cerr
-           << APP_NAME << " error: stacks are not supported by Geant3."
+           << APP_NAME << " error: stacks are not supported by " << APP_NAME
            << std::endl
            << "Use compositions instead." << std::endl;
       exit(1);
    }
    else
    {
-      XString icopyAttS("Geant3icopy");
+      XString icopyAttS("HDDScopy");
       XString icopyS(el->getAttribute(X(icopyAttS)));
       if (icopyS.size() != 0)
       {
@@ -1571,6 +1915,27 @@ int CodeWriter::createVolume(DOMElement* el, const Refsys& ref)
       }
       else
       {
+         DOMNode* cont;
+         for (cont = el->getFirstChild(); 
+              cont != 0;
+              cont = cont->getNextSibling())
+         {
+            if (cont->getNodeType() != DOMNode::ELEMENT_NODE)
+            {
+               continue;
+            }
+            DOMElement* contEl = (DOMElement*) cont;
+            XString comdS(contEl->getTagName());
+            if (comdS == "apply")
+            {
+               Refsys drs(myRef);
+               myRef.fRegionID = createRegion(contEl,drs);
+               XString mapS("map");
+               myRef.fIdentifier[mapS] = drs.fIdentifier[mapS];
+               myRef.fRegion = drs.fRegion;
+            }
+         }
+
          XString profAttS("profile");
          XString profS(el->getAttribute(X(profAttS)));
          if (profS.size() != 0)
@@ -1606,46 +1971,44 @@ int CodeWriter::createVolume(DOMElement* el, const Refsys& ref)
       std::stringstream icopyStr;
       icopyStr << icopy;
       XString copyS(icopyStr.str());
-      XString copyAttS("Geant3icopy");
+      XString copyAttS("HDDScopy");
       el->setAttribute(X(copyAttS),X(copyS));
-      std::list<Refsys::VolIdent>::iterator iter;
+      XString voluAttS("HDDSvolu");
+      XString voluS(el->getAttribute(X(voluAttS)));
+      int ivolu = atoi(S(voluS));
+      std::map<std::string,Refsys::VolIdent>::iterator iter;
       for (iter = myRef.fIdentifier.begin();
            iter != myRef.fIdentifier.end();
            ++iter)
       {
-         XString fieldS(iter->fieldS);
-         XString idlistS(el->getAttribute(X(fieldS)));
-         XString spaceS(" ");
-         XMLStringTokenizer picker(X(idlistS),X(spaceS));
-         int count = icopy;
-         XString idS;
-         for (idS = picker.nextToken(); idS.size() != 0;
-                                        idS = picker.nextToken())
+         XString fieldS(iter->first);
+         std::vector<int>* idlist = &Refsys::fIdentifierTable[ivolu][fieldS];
+         while (idlist->size() < icopy-1)
          {
-            count--;
+            idlist->push_back(0);
          }
-         XString mylistS(idlistS);
-         for ( ; count > 1; --count)
-         {
-            mylistS += "0 ";
-         }
-         std::stringstream str;
-         str << iter->value << " ";
-         mylistS += str.str();
-         el->setAttribute(X(fieldS),X(mylistS));
+         idlist->push_back(iter->second.value);
       }
+      Refsys::fIdentifierTable[ivolu]["copy counter"].push_back(icopy);
    }
    return icopy;
 }
 
 void CodeWriter::createHeader()
-{}
+{
+}
 
 void CodeWriter::createTrailer()
-{}
+{
+}
 
-void CodeWriter::createGetFunctions(DOMElement* el, XString& ident)
-{}
+void CodeWriter::createGetFunctions(DOMElement* el, const XString& ident)
+{
+}
+
+void CodeWriter::createMapFunctions(DOMElement* el, const XString& ident)
+{
+}
 
 void CodeWriter::translate(DOMElement* topel)
 {
@@ -1656,11 +2019,65 @@ void CodeWriter::translate(DOMElement* topel)
 
    XString::size_type start;
    XString::size_type stop;
-   for (start = 0; start < mrs.fIdentifierList.size(); start = stop+1)
+   std::map<std::string,Refsys::VolIdent>::iterator iter;
+   for (iter = mrs.fIdentifiers.begin();
+        iter != mrs.fIdentifiers.end(); ++iter)
    {
-      stop = mrs.fIdentifierList.find(" ",start);
-      stop = (stop == XString::npos)? mrs.fIdentifierList.size() : stop;
-      XString identStr = mrs.fIdentifierList.substr(start,stop-start);
-      createGetFunctions(topel, identStr);
+      createGetFunctions(topel, iter->first);
+   }
+
+   XString regionsAttS("regions");
+   DOMNodeList* regionsL = topel->getOwnerDocument()
+                                ->getElementsByTagName(X(regionsAttS));
+   XString mapS("map");
+   createMapFunctions((DOMElement*)regionsL->item(0),mapS);
+}
+
+void CodeWriter::dump(DOMElement* el, int level=0) // useful debug function
+{
+   XString tagS(el->getTagName());
+   for (int i=0; i<level; i++)
+   {
+      std::cerr << "  ";
+   }
+   std::cerr << "<" << tagS;
+   DOMNamedNodeMap* attribL = el->getAttributes();
+   for (int i=0; i < attribL->getLength(); i++)
+   {
+      XString nameS(attribL->item(i)->getNodeName());
+      XString valueS(attribL->item(i)->getNodeValue());
+      std::cerr << " " << nameS << "=\"" << valueS << "\"";
+   }
+   int n=0;
+   for (DOMNode* cont = el->getFirstChild(); 
+        cont != 0;
+        cont = cont->getNextSibling())
+   {
+      if (cont->getNodeType() == DOMNode::ELEMENT_NODE)
+      {
+         ++n;
+      }
+   }
+   if (n > 0)
+   {
+      std::cerr << ">" << std::endl;
+      for (DOMNode* cont = el->getFirstChild(); 
+           cont != 0;
+           cont = cont->getNextSibling())
+      {
+         if (cont->getNodeType() == DOMNode::ELEMENT_NODE)
+         {
+            dump((DOMElement*)cont,level+1);
+         }
+      }
+      for (int i=0; i<level; i++)
+      {
+         std::cerr << "  ";
+      }
+      std::cerr << "</" << tagS << ">" << std::endl;
+   }
+   else
+   {
+      std::cerr << "/>" << std::endl;
    }
 }

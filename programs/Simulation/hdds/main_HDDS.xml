@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE HDDS [
 
-  <!ENTITY Fields_s SYSTEM "Fields_HDDS.xml">
+  <!ENTITY Regions_s SYSTEM "Regions_HDDS.xml">
   <!ENTITY Material_s SYSTEM "Material_HDDS.xml">
   <!ENTITY BeamLine_s SYSTEM "BeamLine_HDDS.xml">
   <!ENTITY Target_s SYSTEM "Target_HDDS.xml"  >
@@ -25,7 +25,7 @@
      &Material_s;
 
 <!-- Include magnetic fields -->
-     &Fields_s;
+     &Regions_s;
 
 <!-- Include spec files -->
      &ForwardEMcal_s;
@@ -55,7 +55,9 @@
   <box name="SITE" X_Y_Z="5000. 5000. 5000." material="Air"
        				comment="master volume for description" />
   <box name="HALL" X_Y_Z="1700. 1500. 3000." material="Air"
-       				comment="master volume for description" />
+       				comment="master volume for description">
+    <apply region="solenoidBfield" origin="150.0 -350.0 -500.0" />
+  </box>
 
   <composition name="barrelPackage" envelope="LASS">
     <posXYZ volume="Solenoid" />
@@ -76,7 +78,6 @@
   </composition>
 
   <composition name="GlueXdetector">
-    <apply region="solenoidBfield" />
     <posXYZ volume="Target" X_Y_Z="0.0 0.0 50.0" />
     <posXYZ volume="barrelPackage" />
     <posXYZ volume="forwardPackage" />

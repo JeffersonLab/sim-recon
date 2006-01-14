@@ -53,14 +53,6 @@ using namespace xercesc;
 #define X(XString) XString.unicode_str()
 #define S(XString) XString.c_str()
 
-double fieldStrength[] =
-{
-   0.0,          // zero field regions
-   0.0,   // inhomogenous field regions (unused)
-   22.4,  // mapped field regions: solenoid (kG, approximate)
-   2.0    // uniform field regions: sweep magnets (kG)
-};
-
 void usage()
 {
     std::cerr
@@ -74,16 +66,18 @@ class FortranWriter : public CodeWriter
  public:
    void createHeader();
    void createTrailer();
-   int createMaterial(DOMElement* el);    // generate code for materials
+   int createMaterial(DOMElement* el);   // generate code for materials
    int createSolid(DOMElement* el,
-                   const Refsys& ref);    // generate code for solids
-   int createRotation(Refsys& ref);       // generate code for rotations
+                   Refsys& ref);    	 // generate code for solids
+   int createRotation(Refsys& ref);      // generate code for rotations
    int createVolume(DOMElement* el,
-                    const Refsys& ref);   // generate code for placement
+                    Refsys& ref);  	 // generate code for placement
    int createDivision(XString& divStr,
-                      Refsys& ref);	  // generate code for divisions
+                      Refsys& ref);	 // generate code for divisions
    void createGetFunctions(DOMElement* el,
-                     XString& ident);     // generate code for identifiers
+                  const XString& ident); // generate code for identifiers
+   void createMapFunctions(DOMElement* el,
+                  const XString& ident); // generate code for field maps
 };
 
 
@@ -179,9 +173,18 @@ int main(int argC, char* argV[])
    return 0;
 }
 
+#ifdef LINUX_CPUTIME_PROFILING
+extern CPUtimer timer;
+#endif
 
 int FortranWriter::createMaterial(DOMElement* el)
 {
+#ifdef LINUX_CPUTIME_PROFILING
+   std::stringstream timestr;
+   timestr << "createMaterial: " << timer.getUserTime() << ", "
+           << timer.getSystemTime() << ", " << timer.getRealTime();
+   timer.resetClocks();
+#endif
    int imate = CodeWriter::createMaterial(el);
 
    double a = fSubst.getAtomicWeight();
@@ -250,13 +253,78 @@ int FortranWriter::createMaterial(DOMElement* el)
            << "      call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)"
            << std::endl;
    }
+#ifdef LINUX_CPUTIME_PROFILING
+   timestr << " ( " << timer.getUserDelta() << " ) ";
+   std::cerr << timestr.str() << std::endl;
+#endif
    return imate;
 }
 
-int FortranWriter::createSolid(DOMElement* el, const Refsys& ref)
+int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
 {
+#ifdef LINUX_CPUTIME_PROFILING
+   std::stringstream timestr;
+   timestr << "createSolid: " << timer.getUserTime() << ", "
+           << timer.getSystemTime() << ", " << timer.getRealTime();
+   timer.resetClocks();
+#endif
    int ivolu = CodeWriter::createSolid(el,ref);
    int imate = fSubst.fUniqueID;
+   int iregion = ref.fRegionID;
+
+   int ifield = 0;	// default values for tracking properties
+   double fieldm = 0;	// are overridden by values specified in region tag
+   double tmaxfd = 0;
+   double stemax = 0;
+   double deemax = 0;
+   XString epsil = "1e-3";
+   double stmin = 0;
+   double ubuf[99];
+   int nwbuf = 0;
+   if (ref.fRegion)
+   {
+      XString noBfieldS("noBfield");
+      DOMNodeList* noBfieldL = ref.fRegion->getElementsByTagName(X(noBfieldS));
+      XString uniBfieldS("uniformBfield");
+      DOMNodeList* uniBfieldL = ref.fRegion->getElementsByTagName(X(uniBfieldS));
+      XString mapBfieldS("mappedBfield");
+      DOMNodeList* mapBfieldL = ref.fRegion->getElementsByTagName(X(mapBfieldS));
+      XString swimS("swim");
+      DOMNodeList* swimL = ref.fRegion->getElementsByTagName(X(swimS));
+      if (noBfieldL->getLength() > 0)
+      {
+         ifield = 0;
+         fieldm = 0;
+      }
+      else if (uniBfieldL->getLength() > 0)
+      {
+         DOMElement* uniBfieldEl = (DOMElement*)uniBfieldL->item(0);
+         XString bvecAttS("Bx_By_Bz");
+         XString bvecS(uniBfieldEl->getAttribute(X(bvecAttS)));
+         std::stringstream str(S(bvecS));
+         double B[3];
+         str >> B[0] >> B[1] >> B[2];
+         fieldm = sqrt(B[0]*B[0] + B[1]*B[1] + B[2]*B[2]);
+         ifield = 2;
+         tmaxfd = 1;
+      }
+      else if (mapBfieldL->getLength() > 0)
+      {
+         DOMElement* mapBfieldEl = (DOMElement*)mapBfieldL->item(0);
+         XString bmaxAttS("maxBfield");
+         XString bmaxS(mapBfieldEl->getAttribute(X(bmaxAttS)));
+         fieldm = atof(S(bmaxS));
+         ifield = 2;
+         tmaxfd = 1;
+         if (swimL->getLength() > 0)
+         {
+            DOMElement* swimEl = (DOMElement*)swimL->item(0);
+            XString methodAttS("method");
+            XString methodS(swimEl->getAttribute(X(methodAttS)));
+            ifield = (methodS == "RungeKutta")? 1 : 2;
+         }
+      }
+   }
 
    static int itmedCount = 0;
    int itmed = ++itmedCount;
@@ -273,14 +341,20 @@ int FortranWriter::createSolid(DOMElement* el, const Refsys& ref)
         << std::endl
         << "      nmat = " << imate << std::endl
         << "      isvol = " << (sensiS == "true" ? 1 : 0) << std::endl
-        << "      ifield = " << ((ref.fMagField == 0) ? 0 : 2) << std::endl
-        << "      fieldm = " << fieldStrength[ref.fMagField] << std::endl
-        << "      tmaxfd = " << ((ref.fMagField == 0) ? 0 : 1) << std::endl
-        << "      stemax = 0" << std::endl
-        << "      deemax = 0" << std::endl
-        << "      epsil = 1e-3" << std::endl
-        << "      stmin = 0" << std::endl
-        << "      nwbuf = 0" << std::endl
+        << "      ifield = " << ifield << std::endl
+        << "      fieldm = " << fieldm << std::endl
+        << "      tmaxfd = " << tmaxfd << std::endl
+        << "      stemax = " << stemax << std::endl
+        << "      deemax = " << deemax << std::endl
+        << "      epsil = " << epsil << std::endl
+        << "      stmin = " << stmin << std::endl;
+   for (int iu = 0; iu < nwbuf; iu++)
+   {
+      std::cout
+        << "      ubuf(" << iu << ") = " << ubuf[iu] << std::endl;
+   }
+   std::cout
+        << "      nwbuf = " << nwbuf << std::endl
         << "      call gstmed(itmed,natmed,nmat,isvol,ifield,fieldm,tmaxfd,"
         << std::endl
         << "     +            stemax,deemax,epsil,stmin,ubuf,nwbuf)"
@@ -521,11 +595,21 @@ int FortranWriter::createSolid(DOMElement* el, const Refsys& ref)
         << "      if (ivolu.ne." << ivolu << ")"
         << " stop \'consistency check #1 failed\'" << std::endl;
 
+#ifdef LINUX_CPUTIME_PROFILING
+   timestr << " ( " << timer.getUserDelta() << " ) ";
+   std::cerr << timestr.str() << std::endl;
+#endif
    return ivolu;
 }
 
 int FortranWriter::createRotation(Refsys& ref)
 {
+#ifdef LINUX_CPUTIME_PROFILING
+   std::stringstream timestr;
+   timestr << "createRotation: " << timer.getUserTime() << ", "
+           << timer.getSystemTime() << ", " << timer.getRealTime();
+   timer.resetClocks();
+#endif
    int irot = CodeWriter::createRotation(ref);
 
    if (irot > 0)
@@ -550,11 +634,21 @@ int FortranWriter::createRotation(Refsys& ref)
            << "call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)"
            << std::endl;
    }
+#ifdef LINUX_CPUTIME_PROFILING
+   timestr << " ( " << timer.getUserDelta() << " ) ";
+   std::cerr << timestr.str() << std::endl;
+#endif
    return irot;
 }
 
 int FortranWriter::createDivision(XString& divStr, Refsys& ref)
 {
+#ifdef LINUX_CPUTIME_PROFILING
+   std::stringstream timestr;
+   timestr << "createDivision: " << timer.getUserTime() << ", "
+           << timer.getSystemTime() << ", " << timer.getRealTime();
+   timer.resetClocks();
+#endif
    divStr[0] = toupper(divStr[0]);
    divStr[1] = toupper(divStr[1]);
    divStr[2] = toupper(divStr[2]);
@@ -578,10 +672,20 @@ int FortranWriter::createDivision(XString& divStr, Refsys& ref)
         << std::endl;
 
    return ndiv;
+#ifdef LINUX_CPUTIME_PROFILING
+   timestr << " ( " << timer.getUserDelta() << " ) ";
+   std::cerr << timestr.str() << std::endl;
+#endif
 }
 
-int FortranWriter::createVolume(DOMElement* el, const Refsys& ref)
+int FortranWriter::createVolume(DOMElement* el, Refsys& ref)
 {
+#ifdef LINUX_CPUTIME_PROFILING
+   std::stringstream timestr;
+   timestr << "createVolume: " << timer.getUserTime() << ", "
+           << timer.getSystemTime() << ", " << timer.getRealTime();
+   timer.resetClocks();
+#endif
    int icopy = CodeWriter::createVolume(el,ref);
 
    if (fPending)
@@ -605,11 +709,23 @@ int FortranWriter::createVolume(DOMElement* el, const Refsys& ref)
       fPending = false;
    }
 
+#ifdef LINUX_CPUTIME_PROFILING
+   timestr << " ( " << timer.getUserDelta() << " ) ";
+   std::cerr << timestr.str() << std::endl;
+#endif
    return icopy;
 }
 
 void FortranWriter::createHeader()
 {
+#ifdef LINUX_CPUTIME_PROFILING
+   std::stringstream timestr;
+   timestr << "createHeader: " << timer.getUserTime() << ", "
+           << timer.getSystemTime() << ", " << timer.getRealTime();
+   timer.resetClocks();
+#endif
+   CodeWriter::createHeader();
+
    std::cout
         << "*"                                                    << std::endl
         << "* HDDSgeant3 - fortran geometry definition package"   << std::endl
@@ -645,60 +761,79 @@ void FortranWriter::createHeader()
         << "      real step,c0"                                   << std::endl
         << "      real x,y"                                       << std::endl
         << "      character*4 chonly"                             << std::endl;
+#ifdef LINUX_CPUTIME_PROFILING
+   timestr << " ( " << timer.getUserDelta() << " ) ";
+   std::cerr << timestr.str() << std::endl;
+#endif
 }
 
 void FortranWriter::createTrailer()
 {
+#ifdef LINUX_CPUTIME_PROFILING
+   std::stringstream timestr;
+   timestr << "createTrailer: " << timer.getUserTime() << ", "
+           << timer.getSystemTime() << ", " << timer.getRealTime();
+   timer.resetClocks();
+#endif
+   CodeWriter::createTrailer();
+
    std::cout << "      end"                                       << std::endl;
+#ifdef LINUX_CPUTIME_PROFILING
+   timestr << " ( " << timer.getUserDelta() << " ) ";
+   std::cerr << timestr.str() << std::endl;
+#endif
 }
 
-void FortranWriter::createGetFunctions(DOMElement* el, XString& ident)
+void FortranWriter::createGetFunctions(DOMElement* el, const XString& ident)
 {
+#ifdef LINUX_CPUTIME_PROFILING
+   std::stringstream timestr;
+   timestr << "createGetFunctions: " << timer.getUserTime() << ", "
+           << timer.getSystemTime() << ", " << timer.getRealTime();
+   timer.resetClocks();
+#endif
+   CodeWriter::createGetFunctions(el,ident);
+
    std::vector<int> table;
-   int* start = new int[Refsys::fVolumes + 1];
+   std::vector<int> start;
+   start.push_back(0);
 
    XString funcNameStr;
    XString identCaps(ident);
    identCaps[0] = toupper(identCaps[0]);
    funcNameStr = "get" + identCaps;
-   XString identS(ident);
-   XString wildS("*");
-   DOMNodeList* alltagsList = el->getOwnerDocument()
-                                ->getElementsByTagName(X(wildS));
-   for (int itag = 0; itag < alltagsList->getLength(); itag++)
+   for (int ivolu = 1; ivolu <= Refsys::fVolumes; ivolu++)
    {
-      DOMNode* node = alltagsList->item(itag);
-      DOMElement* elem = (DOMElement*) node;
-      XString icopyAttS("Geant3icopy");
-      XString ivoluAttS("Geant3ivolu");
-      XString icopyS(elem->getAttribute(X(icopyAttS)));
-      XString ivoluS(elem->getAttribute(X(ivoluAttS)));
-      if (ivoluS.size() != 0)
+      start.push_back(0);
+      int ncopy = Refsys::fIdentifierTable[ivolu]["copy counter"].back();
+      std::map<std::string,std::vector<int> >::iterator idlist = 
+                  Refsys::fIdentifierTable[ivolu].find(ident);
+      if (idlist != Refsys::fIdentifierTable[ivolu].end())
       {
-         int ivolu = atoi(S(ivoluS));
-         int icopy = atoi(S(icopyS));
-         XString idlistS(elem->getAttribute(X(identS)));
-         if (idlistS.size() != 0)
+         if (ncopy != idlist->second.size())
          {
-            XString spaceS(" ");
-            XMLStringTokenizer picker(X(idlistS),X(spaceS));
-            start[ivolu] = table.size() + 1;
-            XString idS;
-            for (idS = picker.nextToken(); idS.size() != 0;
-                 idS = picker.nextToken())
+            std::cerr
+                  << APP_NAME << " warning: volume " << ivolu
+                  << " has " << ncopy << " copies, but "
+                  << idlist->second.size() << " " 
+                  << ident << " identifiers!" << std::endl;
+            for (int idx = 0; idx < idlist->second.size(); idx++)
             {
-               table.push_back(atoi(S(idS)));
-               --icopy;
+               std::cerr << idlist->second[idx]  << " ";
+               if (idx/20*20 == idx)
+                  std::cerr << std::endl;
             }
-            for (; icopy > 0; --icopy)
-            {
-               table.push_back(0);
-            }
+            std::cerr << std::endl;
          }
-         else
+         start[ivolu] = table.size() + 1;
+         for (int icopy = 0; icopy < ncopy; icopy++)
          {
-            start[ivolu] = 0;
+            table.push_back(idlist->second[icopy]);
          }
+      }
+      else
+      {
+         start[ivolu] = 0;
       }
    }
 
@@ -808,5 +943,503 @@ void FortranWriter::createGetFunctions(DOMElement* el, XString& ident)
       std::cout << "      " << funcNameStr << " = 0" << std::endl;
    }
    std::cout << "      end" << std::endl;
-   delete [] start;
+#ifdef LINUX_CPUTIME_PROFILING
+   timestr << " ( " << timer.getUserDelta() << " ) ";
+   std::cerr << timestr.str() << std::endl;
+#endif
+}
+
+void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
+{
+#ifdef LINUX_CPUTIME_PROFILING
+   std::stringstream timestr;
+   timestr << "createMapFunctions: " << timer.getUserTime() << ", "
+           << timer.getSystemTime() << ", " << timer.getRealTime();
+   timer.resetClocks();
+#endif
+   CodeWriter::createMapFunctions(el,ident);
+
+   XString regionsS("regions");
+   DOMNodeList* regionsL = el->getOwnerDocument()->getDocumentElement()
+                             ->getElementsByTagName(X(regionsS));
+   if (regionsL->getLength() == 0)
+   {
+      return;
+   }
+
+   std::cout
+        << std::endl
+        << "      subroutine gufld(r,B)" << std::endl
+        << "      implicit none" << std::endl
+        << "      real r(3),B(3)" << std::endl
+        << "      real rr(3),rs(3),BB(3)" << std::endl
+        << "      integer iregion" << std::endl
+        << "      integer getMap" << std::endl
+        << "      external getMap" << std::endl
+        << std::endl;
+
+   DOMElement* regionsEl = (DOMElement*)regionsL->item(0);
+   XString regionS("region");
+   DOMNodeList* regionL = regionsEl->getElementsByTagName(X(regionS));
+   for (int ireg=0; ireg < regionL->getLength(); ++ireg)
+   {
+      DOMElement* regionEl = (DOMElement*)regionL->item(ireg);
+      XString mapTagS("HDDSregion");
+      DOMNodeList* mapL = regionEl->getElementsByTagName(X(mapTagS));
+      for (int imap=0; imap < mapL->getLength(); ++imap)
+      {
+         DOMElement* mapEl = (DOMElement*)mapL->item(imap);
+         XString idAttS("id");
+         XString origAttS("origin");
+         XString rmatAttS("Rmatrix");
+         XString idS(mapEl->getAttribute(X(idAttS)));
+         XString origS(mapEl->getAttribute(X(origAttS)));
+         XString rmatS(mapEl->getAttribute(X(rmatAttS)));
+         int id = atoi(S(idS));
+         double origin[3];
+         std::stringstream listr(S(origS));
+         listr >> origin[0] >> origin[1] >> origin[2];
+         double Rmatrix[3][3];
+         listr.clear(), listr.str(S(rmatS));
+         listr >> Rmatrix[0][0] >> Rmatrix[0][1] >> Rmatrix[0][2]
+               >> Rmatrix[1][0] >> Rmatrix[1][1] >> Rmatrix[1][2]
+               >> Rmatrix[2][0] >> Rmatrix[2][1] >> Rmatrix[2][2];
+         std::cout
+           << "      real orig" << id << "(3),rmat" << id << "(3,3)"
+           << std::endl
+           << "      data orig" << id << "/"
+           << origin[0] << "," << origin[1] << "," << origin[2] << "/"
+           << std::endl
+           << "      data rmat" << id << "/"
+           << Rmatrix[0][0] << "," << Rmatrix[0][1] << "," << Rmatrix[0][2]
+           << "," << std::endl << "     +          "
+           << Rmatrix[1][0] << "," << Rmatrix[1][1] << "," << Rmatrix[1][2]
+           << "," << std::endl << "     +          "
+           << Rmatrix[2][0] << "," << Rmatrix[2][1] << "," << Rmatrix[2][2]
+           << "/" << std::endl;
+      }
+   }
+
+   std::cout
+        << std::endl
+        << "      iregion = getMap()" << std::endl
+        << "      if (iregion.eq.0) then" << std::endl
+        << "        B(1) = 0" << std::endl
+        << "        B(2) = 0" << std::endl
+        << "        B(3) = 0" << std::endl;
+
+   std::list<DOMElement*> fieldMap;
+   for (int ireg=0; ireg < regionL->getLength(); ++ireg)
+   {
+      DOMElement* regionEl = (DOMElement*)regionL->item(ireg);
+      XString unifTagS("uniformBfield");
+      DOMNodeList* unifTagL = regionEl->getElementsByTagName(X(unifTagS));
+      XString mapfTagS("mappedBfield");
+      DOMNodeList* mapfTagL = regionEl->getElementsByTagName(X(mapfTagS));
+      XString mapTagS("HDDSregion");
+      DOMNodeList* mapL = regionEl->getElementsByTagName(X(mapTagS));
+      for (int imap=0; imap < mapL->getLength(); ++imap)
+      {
+         DOMElement* mapEl = (DOMElement*)mapL->item(imap);
+         XString idAttS("id");
+         XString origAttS("origin");
+         XString rmatAttS("Rmatrix");
+         XString idS(mapEl->getAttribute(X(idAttS)));
+         XString origS(mapEl->getAttribute(X(origAttS)));
+         XString rmatS(mapEl->getAttribute(X(rmatAttS)));
+         int id = atoi(S(idS));
+         double origin[3];
+         std::stringstream listr(S(origS));
+         listr >> origin[0] >> origin[1] >> origin[2];
+         double Rmatrix[3][3];
+         listr.clear(), listr.str(S(rmatS));
+         listr >> Rmatrix[0][0] >> Rmatrix[0][1] >> Rmatrix[0][2]
+               >> Rmatrix[1][0] >> Rmatrix[1][1] >> Rmatrix[1][2]
+               >> Rmatrix[2][0] >> Rmatrix[2][1] >> Rmatrix[2][2];
+         if (unifTagL->getLength() > 0)
+         {
+            DOMElement* unifEl = (DOMElement*)unifTagL->item(0);
+            XString bvecAttS("Bx_By_Bz");
+            XString bvecS(unifEl->getAttribute(X(bvecAttS)));
+            std::stringstream listr(S(bvecS));
+
+            double b[3];
+            listr >> b[0] >> b[1] >> b[2];
+            Units unit;
+            unit.getConversions(unifEl);
+            b[0] *= unit.kG;
+            b[1] *= unit.kG;
+            b[2] *= unit.kG;
+
+            std::cout
+             << "      else if (iregion.eq." << id << ") then" << std::endl
+             << "        B(1) = "
+             << Rmatrix[0][0]*b[0] + Rmatrix[0][1]*b[1] + Rmatrix[0][2]*b[2]
+             << std::endl
+             << "        B(2) = "
+             << Rmatrix[1][0]*b[0] + Rmatrix[1][1]*b[1] + Rmatrix[1][2]*b[2]
+             << std::endl
+             << "        B(3) = "
+             << Rmatrix[2][0]*b[0] + Rmatrix[2][1]*b[1] + Rmatrix[2][2]*b[2]
+             << std::endl;
+         }
+         else if (mapfTagL->getLength() > 0)
+         {
+            DOMElement* mapfEl = (DOMElement*)mapfTagL->item(0);
+            fieldMap.push_back(mapfEl);
+            int map = fieldMap.size();
+
+            Units unit;
+            unit.getConversions(mapfEl);
+
+            std::cout
+             << "      else if (iregion.eq." << id << ") then" << std::endl
+             << "        rs(1) = r(1)-orig" << id << "(1)" << std::endl
+             << "        rs(2) = r(2)-orig" << id << "(2)" << std::endl
+             << "        rs(3) = r(3)-orig" << id << "(3)" << std::endl
+             << "        rr(1) = r(1)*rmat" << id << "(1,1)"
+             <<                "+r(2)*rmat" << id << "(1,2)"
+             <<                "+r(3)*rmat" << id << "(1,3)" << std::endl
+             << "        rr(2) = r(1)*rmat" << id << "(2,1)"
+             <<                "+r(2)*rmat" << id << "(2,2)"
+             <<                "+r(3)*rmat" << id << "(2,3)" << std::endl
+             << "        rr(3) = r(1)*rmat" << id << "(3,1)"
+             <<                "+r(2)*rmat" << id << "(3,2)"
+             <<                "+r(3)*rmat" << id << "(3,3)" << std::endl
+             << "        call gufld" << map << "(rr,BB)"     << std::endl
+             << "        B(1) = BB(1)*rmat" << id << "(1,1)"
+             <<               "+BB(2)*rmat" << id << "(2,1)"
+             <<               "+BB(3)*rmat" << id << "(3,1)" << std::endl
+             << "        B(2) = BB(1)*rmat" << id << "(1,2)"
+             <<               "+BB(2)*rmat" << id << "(2,2)"
+             <<               "+BB(3)*rmat" << id << "(3,2)" << std::endl
+             << "        B(3) = BB(1)*rmat" << id << "(1,3)"
+             <<               "+BB(2)*rmat" << id << "(2,3)"
+             <<               "+BB(3)*rmat" << id << "(3,3)" << std::endl;
+
+             if (unit.kG != 1)
+             {
+                std::cout
+                   << "        B(1) = B(1)*" << unit.kG << std::endl
+                   << "        B(2) = B(2)*" << unit.kG << std::endl
+                   << "        B(3) = B(3)*" << unit.kG << std::endl;
+             }
+         }
+      }
+   }
+   std::cout
+        << "      endif" << std::endl
+        << "      end" << std::endl;
+
+   int map = 1;
+   std::list<DOMElement*>::iterator iter;
+   for (iter = fieldMap.begin(); iter != fieldMap.end(); ++iter, ++map)
+   {
+      DOMElement* regionEl = (DOMElement*)(*iter)->getParentNode();
+      XString nameAttS("name");
+      XString nameS(regionEl->getAttribute(X(nameAttS)));
+
+      std::cout
+        << std::endl
+        << "      subroutine gufld" << map << "(r,B)" << std::endl
+        << "      implicit none" << std::endl
+        << "      real r(3),B(3)" << std::endl
+        << "      real rho,phi,alpha" << std::endl
+        << "      real u(3)" << std::endl
+        << "      real twopi" << std::endl
+        << "      parameter (twopi=6.28318530717959)" << std::endl
+        << std::endl;
+
+      Units unit;
+      unit.getConversions(*iter);
+
+      int axorder[] = {0,0,0,0};
+      int axsamples[] = {0,0,0,0};
+      double axlower[4], axupper[4];
+
+      XString gridtype;
+      XString gridTagS("grid");
+      DOMNodeList* gridL = (*iter)->getElementsByTagName(X(gridTagS));
+      int ngrid;
+      for (ngrid = 0; ngrid < gridL->getLength(); ++ngrid)
+      {
+         DOMElement* gridEl = (DOMElement*)gridL->item(ngrid);
+         XString typeAttS("type");
+         XString typeS(gridEl->getAttribute(X(typeAttS)));
+         if (gridtype.size() > 0 && typeS != gridtype)
+         {
+            std::cerr
+               << APP_NAME << " error: mappedBfield in region " << S(nameS)
+               << " superimposes incompatible grid types." << std::endl;
+            exit(1);
+         }
+         gridtype = typeS;
+
+         XString samplesS("samples");
+         DOMNodeList* samplesL = gridEl->getElementsByTagName(X(samplesS));
+         if (samplesL->getLength() != 3)
+         {
+            std::cerr
+              << APP_NAME << " error: mappedBfield in region " << S(nameS)
+              << " does not have samples for three axes." << std::endl;
+            exit(1);
+         }
+
+         for (int iax = 1; iax <= 3; ++iax)
+         {
+            DOMElement* sampleEl = (DOMElement*)samplesL->item(iax-1);
+            XString nAttS("n");
+            XString axisAttS("axis");
+            XString boundsAttS("bounds");
+            XString nS(sampleEl->getAttribute(X(nAttS)));
+            XString axisS(sampleEl->getAttribute(X(axisAttS)));
+            XString boundsS(sampleEl->getAttribute(X(boundsAttS)));
+            Units sunit;
+            double bounds[2];
+            sunit.getConversions(sampleEl);
+            std::stringstream listr(boundsS);
+            listr >> bounds[0] >> bounds[1];
+            int iaxis;
+            if (gridtype == "cartesian")
+            {
+               if (axisS == "x" && 
+                  (axorder[0] == 0 || axorder[0] == iax))
+               {
+                  iaxis = 1;
+                  axorder[0] = iax;
+                  bounds[0] *= sunit.cm;
+                  bounds[1] *= sunit.cm;
+               }
+               else if (axisS == "y" && 
+                       (axorder[1] == 0 || axorder[1] == iax))
+               {
+                  iaxis = 2;
+                  axorder[1] = iax;
+                  bounds[0] *= sunit.cm;
+                  bounds[1] *= sunit.cm;
+               }
+               else if (axisS == "z" &&
+                       (axorder[2] == 0 || axorder[2] == iax))
+               {
+                  iaxis = 3;
+                  axorder[2] = iax;
+                  bounds[0] *= sunit.cm;
+                  bounds[1] *= sunit.cm;
+               }
+               else
+               {
+                  std::cerr
+                  << APP_NAME << " error: grid in region " << S(nameS)
+                  << " contains an incompatible set of samples." << std::endl;
+                  exit(1);
+               }
+            }
+            else if (gridtype == "cylindrical")
+            {
+               if (axisS == "r" && axorder[0] == 0)
+               {
+                  iaxis = 1;
+                  axorder[0] = iax;
+                  bounds[0] *= sunit.cm;
+                  bounds[1] *= sunit.cm;
+               }
+               else if (axisS == "phi" && axorder[1] == 0)
+               {
+                  iaxis = 2;
+                  axorder[1] = iax;
+                  bounds[0] *= sunit.rad;
+                  bounds[1] *= sunit.rad;
+               }
+               else if (axisS == "z" && axorder[2] == 0)
+               {
+                  iaxis = 3;
+                  axorder[2] = iax;
+                  bounds[0] *= sunit.cm;
+                  bounds[1] *= sunit.cm;
+               }
+               else
+               {
+                  std::cerr
+                  << APP_NAME << " error: grid in region " << S(nameS)
+                  << " contains an incompatible set of samples." << std::endl;
+                  exit(1);
+               }
+            }
+
+            int n = atoi(S(nS));
+            if (axsamples[iaxis] == 0 ||
+                axsamples[iaxis] == n)
+            {
+               axsamples[iaxis] = n;
+            }
+            else
+            {
+               std::cerr
+                 << APP_NAME << " error: mappedBfield in region " << S(nameS)
+                 << " combines incompatible grid elements." << std::endl;
+               exit(1);
+            }
+
+            axlower[iaxis] = bounds[0];
+            axupper[iaxis] = bounds[1];
+         }
+         std::cout
+              << "      real bounds" << ngrid << "(3,2)" << std::endl
+              << "      data bounds" << ngrid << "/"
+              << axlower[1] << "," << axlower[2] << "," << axlower[3] << ","
+              << std::endl << "     +            "
+              << axupper[1] << "," << axupper[2] << "," << axupper[3] << "/"
+              << std::endl;
+      }
+      std::cout
+           << "      real Bmap(3,"
+           << axsamples[1] << "," << axsamples[2] << "," << axsamples[3]
+           << ")" << std::endl
+           << "      integer nsites(3)" << std::endl
+           << "      data nsites/" 
+           << axsamples[1] << "," << axsamples[2] << "," << axsamples[3]
+           << "/" << std::endl
+           << "      logical loaded" << std::endl
+           << "      data loaded/.false./" << std::endl
+           << "      save Bmap,nsites,loaded" << std::endl
+           << "      integer i,i1,i2,i3" << std::endl
+           << std::endl;
+
+      XString mapAttS("map");
+      XString mapS((*iter)->getAttribute(X(mapAttS)));
+      XString encAttS("encoding");
+      XString encS((*iter)->getAttribute(X(encAttS)));
+      if (encS != "utf-8")
+      {
+         std::cerr
+              << APP_NAME << " error: mappedBfield in region " << S(nameS)
+              << " uses unsupported encoding " << encS << std::endl;
+         exit(1);
+      }
+      else if (mapS.substr(0,7) != "file://")
+      {
+         std::cerr
+              << APP_NAME << " error: mappedBfield in region " << S(nameS)
+              << " uses unsupported map URL " << mapS << std::endl;
+         exit(1);
+      }
+      mapS.erase(0,7);
+
+      std::cout
+           << "      if (.not.loaded) then" << std::endl
+           << "        open(unit=78,file='" << mapS << "',status='old',err=7)"
+           << std::endl
+           << "        read(unit=78,fmt=*,err=5,end=6)" << std::endl
+           << "     +      ((((Bmap(i,i1,i2,i3),i=1,3)," << std::endl
+           << "     +         i" << axorder[2] << "=1," 
+           << axsamples[axorder[2]] << ")," << std::endl
+           << "     +        i" << axorder[1] << "=1," 
+           << axsamples[axorder[1]] << ")," << std::endl
+           << "     +       i" << axorder[0] << "=1," 
+           << axsamples[axorder[0]] << ")" << std::endl
+           << "        go to 8" << std::endl
+           << "    5   stop 'error reading magnetic field map, stop'"
+           << std::endl
+           << "    6   stop 'EOF encountered reading magnetic field map, stop'"
+           << std::endl
+           << "    7   stop 'error opening magnetic field map, stop'"
+           << std::endl
+           << "    8   loaded=.true." << std::endl
+           << "      endif" << std::endl
+           << std::endl;
+
+      for (int igrid = 0; igrid < ngrid; igrid++)
+      {
+         if (gridtype == "cylindrical")
+         {
+            std::cout
+              << "      rho = sqrt(r(1)**2+r(2)**2)" << std::endl
+              << "      phi = atan2(r(2),r(1))" << std::endl
+              << "      u(1) = (rho-" << axlower[1] << ")/("
+              << axupper[1] << "-" << axlower[1] << ")" << std::endl
+              << "      u(2) = (phi-" << axlower[2] << ")/("
+              << axupper[2] << "-" << axlower[2] << ")" << std::endl
+              << "      alpha = abs(twopi/("
+              << axupper[2] << "-" << axlower[2] << "))" << std::endl
+              << "      u(2) = u(2)-int(u(2)/alpha)*alpha" << std::endl
+              << "      if (u(2).lt.0) then" <<std::endl
+              << "        u(2) = u(2)+alpha" << std::endl
+              << "      endif" <<std::endl
+              << "      u(3) = (r(3)-" << axlower[3] << ")/("
+              << axupper[3] << "-" << axlower[3] << ")" << std::endl;
+         }
+         else
+         {
+            std::cout
+              << "      u(1) = (r(1)-" << axlower[1] << ")/("
+              << axupper[1] << "-" << axlower[1] << ")" << std::endl
+              << "      u(2) = (r(2)-" << axlower[2] << ")/("
+              << axupper[2] << "-" << axlower[2] << ")" << std::endl
+              << "      u(3) = (r(3)-" << axlower[3] << ")/("
+              << axupper[3] << "-" << axlower[3] << ")" << std::endl;
+         }
+         std::cout
+              << "      if ((u(1).ge.0.and.u(1).le.1).and." << std::endl
+              << "     +    (u(2).ge.0.and.u(2).le.1).and." << std::endl
+              << "     +    (u(3).ge.0.and.u(3).le.1)) then" << std::endl
+              << "        go to 100" << std::endl
+              << "      endif" << std::endl
+              << std::endl;
+      }
+      std::cout
+           << "      B(1) = 0" << std::endl
+           << "      B(2) = 0" << std::endl
+           << "      B(3) = 0" << std::endl
+           << "      return" << std::endl
+           << "  100 call interpol3(Bmap,nsites,u,B)" << std::endl
+           << "      end" << std::endl
+           << std::endl
+           << "      subroutine interpol3(Bmap,nsites,u,B)" << std::endl
+           << "      implicit none" << std::endl
+           << "      integer nsites(3)" << std::endl
+           << "      real Bmap(3,nsites(1),nsites(2),nsites(3))" << std::endl
+           << "      real u(3),B(3)" << std::endl
+           << "      integer ir(3),ir0(3),ir1(3)" << std::endl
+           << "      real ur(3),dur(3),ugrad(3,3)" << std::endl
+           << "      integer i" << std::endl
+           << "      do i=1,3" << std::endl
+           << "        ur(i)=u(i)*(nsites(i)-1)+1" << std::endl
+           << "        ir(i)=nint(ur(i))" << std::endl
+           << "        ir0(i)=max(ir(i)-1,1)" << std::endl
+           << "        ir1(i)=min(ir(i)+1,nsites(i))" << std::endl
+           << "        dur(i)=(ur(i)-ir(i))/(ir1(i)-ir0(i)+1e-20)" << std::endl
+           << "      enddo" << std::endl
+           << "      ugrad(1,1)=(Bmap(1,ir1(1),ir(2),ir(3))"
+           <<                  "-Bmap(1,ir0(1),ir(2),ir(3)))" << std::endl
+           << "      ugrad(2,1)=(Bmap(2,ir1(1),ir(2),ir(3))"
+           <<                  "-Bmap(2,ir0(1),ir(2),ir(3)))" << std::endl
+           << "      ugrad(3,1)=(Bmap(3,ir1(1),ir(2),ir(3))"
+           <<                  "-Bmap(3,ir0(1),ir(2),ir(3)))" << std::endl
+           << "      ugrad(1,2)=(Bmap(1,ir(1),ir1(2),ir(3))"
+           <<                  "-Bmap(1,ir(1),ir0(2),ir(3)))" << std::endl
+           << "      ugrad(2,2)=(Bmap(2,ir(1),ir1(2),ir(3))"
+           <<                  "-Bmap(2,ir(1),ir0(2),ir(3)))" << std::endl
+           << "      ugrad(3,2)=(Bmap(3,ir(1),ir1(2),ir(3))"
+           <<                  "-Bmap(3,ir(1),ir0(2),ir(3)))" << std::endl
+           << "      ugrad(1,3)=(Bmap(1,ir(1),ir(2),ir1(3))"
+           <<                  "-Bmap(1,ir(1),ir(2),ir0(3)))" << std::endl
+           << "      ugrad(2,3)=(Bmap(2,ir(1),ir(2),ir1(3))"
+           <<                  "-Bmap(2,ir(1),ir(2),ir0(3)))" << std::endl
+           << "      ugrad(3,3)=(Bmap(3,ir(1),ir(2),ir1(3))"
+           <<                  "-Bmap(3,ir(1),ir(2),ir0(3)))" << std::endl
+           << "      B(1)=Bmap(1,ir(1),ir(2),ir(3))" << std::endl
+           << "     +       +ugrad(1,1)*dur(1)+ugrad(1,2)*dur(2)"
+           <<              "+ugrad(1,3)*dur(3)" << std::endl
+           << "      B(2)=Bmap(2,ir(1),ir(2),ir(3))" << std::endl
+           << "     +       +ugrad(2,1)*dur(1)+ugrad(2,2)*dur(2)"
+           <<              "+ugrad(2,3)*dur(3)" << std::endl
+           << "      B(3)=Bmap(3,ir(1),ir(2),ir(3))" << std::endl
+           << "     +       +ugrad(3,1)*dur(1)+ugrad(3,2)*dur(2)"
+           <<              "+ugrad(3,3)*dur(3)" << std::endl
+           << "      end" << std::endl;
+   }
+#ifdef LINUX_CPUTIME_PROFILING
+   timestr << " ( " << timer.getUserDelta() << " ) ";
+   std::cerr << timestr.str() << std::endl;
+#endif
 }

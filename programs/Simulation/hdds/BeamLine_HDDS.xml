@@ -101,7 +101,6 @@
   </composition>
   
   <composition name="sweepMagnet1" envelope="MAG1">
-    <apply region="sweepDipoleBfield" />
     <posXYZ volume="POL1" X_Y_Z="0.0 0.0 -8.0" />
     <posXYZ volume="POL1" X_Y_Z="0.0 0.0 +8.0" />
     <posXYZ volume="GAP1" X_Y_Z="-5.5 0.0 0.0" />
@@ -109,7 +108,6 @@
   </composition>
 
   <composition name="sweepMagnet2" envelope="MAG2">
-    <apply region="sweepDipoleBfield" />
     <posXYZ volume="POL2" X_Y_Z="0.0 0.0 -8.75" />
     <posXYZ volume="POL2" X_Y_Z="0.0 0.0 +8.75" />
     <posXYZ volume="GAP2" X_Y_Z="-6.25 0.0 0.0" />
@@ -173,11 +171,15 @@
   <tubs name="COL1" Rio_Z="0.17 10.0  30.0" material="Tungsten" />
   <tubs name="COL2" Rio_Z="0.50 10.0  50.0" material="Nickel" />
   
-  <box name="MAG1" X_Y_Z="20.0 50.0 30.0" material="Air" />
+  <box name="MAG1" X_Y_Z="20.0 50.0 30.0" material="Air">
+    <apply region="sweepDipoleBfield" />
+  </box>
   <box name="POL1" X_Y_Z="20.0 50.0 14.0" material="Iron" />
   <box name="GAP1" X_Y_Z=" 9.0 50.0  2.0" material="Lead" />
   
-  <box name="MAG2" X_Y_Z="20.0 50.0 30.0" material="Air" />
+  <box name="MAG2" X_Y_Z="20.0 50.0 30.0" material="Air">
+    <apply region="sweepDipoleBfield" />
+  </box>
   <box name="POL2" X_Y_Z="20.0 50.0 12.5" material="Iron" />
   <box name="GAP2" X_Y_Z=" 7.5 50.0  5.0" material="Lead" />
   <tubs name="IMHO" Rio_Z="0.0 2.2 50.0"  material="Vacuum" />

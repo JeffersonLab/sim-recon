@@ -45,6 +45,8 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <vector>
+#include <map>
 
 using namespace std;
 
@@ -57,19 +59,13 @@ XERCES_CPP_NAMESPACE_USE
 class makeTargetTable
 {
 public :
-   makeTargetTable(const int capacity);
-   ~makeTargetTable();
-
    int add(DOMElement* const targetEl,
            DOMElement* const parentEl = 0);
    DOMElement* lookup(const DOMElement* const targetEl,
                       XString& type, const XString& name);
 
 private :
-   int fTableLen;
-   int fTableSize;
-   DOMElement** fTargetEl;
-   DOMElement** fParentEl;
+   std::map<const DOMElement*,DOMElement*> fParentElList;
 
    int addElement(DOMElement* const targetEl);
    int addComposite(DOMElement* const targetEl);
@@ -105,16 +101,31 @@ static char* basename(const char *f)
 }
 #endif
 
-struct _modelTableEntry
+class modelTableEntry
 {
-   char* model;
+ public:
    int refcount;
    int maxcount;
    ostringstream db;
-} modelTable[999];
-int modelTableLen=0;
 
-makeTargetTable targetTable(999);
+   modelTableEntry() : refcount(0), maxcount(0) {};
+   modelTableEntry(const modelTableEntry& src)
+   {
+      refcount = src.refcount;
+      maxcount = src.maxcount;
+      db.str(src.db.str());
+   }
+   modelTableEntry& operator=(const modelTableEntry& src)
+   {
+      refcount = src.refcount;
+      maxcount = src.maxcount;
+      db.str(src.db.str());
+   }
+};
+
+std::map<const std::string,modelTableEntry> modelTable;
+
+makeTargetTable targetTable;
 
 
 void usage()
@@ -203,66 +214,45 @@ int main(int argC, char* argV[])
       return 0;
    }
 
-   int model=modelTableLen++;
-   char hdrStr[] = "database";             // header line must come first
-   modelTable[model].model = hdrStr;
-   modelTable[model].refcount = 1;
-   modelTable[model].maxcount = 1;
-   modelTable[model].db << "database mcfast 0000" << endl;
+   modelTableEntry entry;
 
-   model=modelTableLen++;
-   char detStr[] = "detector";             // detector is first declaration
-   modelTable[model].model = detStr;
-   modelTable[model].refcount = 0;
-   modelTable[model].maxcount = 0;
+   entry.refcount = 1;
+   entry.maxcount = 1;
+   entry.db.str("");
+   entry.db << "database mcfast 0000" << endl;
+   modelTable["database"] = entry;         // header line must come first
 
-   model=modelTableLen++;
-   char matStr[] = "Material";             // force materials next
-   modelTable[model].model = matStr;
-   modelTable[model].refcount = 0;
-   modelTable[model].maxcount = 0;
+   entry.refcount = 0;
+   entry.maxcount = 0;
+   entry.db.str("");
+   modelTable["detector"] = entry;         // detector is first declaration
 
-   model=modelTableLen++;
-   char mixStr[] = "Mixture";              // then mixtures
-   modelTable[model].model = mixStr;
-   modelTable[model].refcount = 0;
-   modelTable[model].maxcount = 0;
+   entry.refcount = 0;
+   entry.maxcount = 0;
+   entry.db.str("");
+   modelTable["Material"] = entry;         // force materials next
+
+   entry.refcount = 0;
+   entry.maxcount = 0;
+   entry.db.str("");
+   modelTable["Mixture"] = entry;          // then mixtures
 
    DOMElement* rootEl = doc->getDocumentElement();
    DbMaker::makedb(rootEl);
 
-   model=modelTableLen++;
-   char hitsStr[] = "hitsontrack";         // last comes histontrack
-   modelTable[model].model = hitsStr;
-   modelTable[model].refcount = 1;
-   modelTable[model].maxcount = 1;
-   modelTable[model].db << "include db/hitsontrack.db" << endl
-                        << "make HitsOnTrack 4 0 0" << endl;
+   entry.refcount = 1;
+   entry.maxcount = 1;
+   entry.db.str("");
+   entry.db << "include db/hitsontrack.db" << endl
+            << "make HitsOnTrack 4 0 0" << endl;
+   modelTable["hitsontrack"] = entry;      // last comes histontrack
+
    DbMaker::printdb();
 
    XMLPlatformUtils::Terminate();
    return 0;
 }
 
-
-makeTargetTable::makeTargetTable(const int capacity)
-{
-   if (capacity > 0) {
-      fTargetEl = new DOMElement*[capacity];
-      fParentEl = new DOMElement*[capacity];
-      fTableSize = capacity;
-   }
-   else {
-      fTableSize = 0;
-   }
-   fTableLen = 0;
-}
-
-makeTargetTable::~makeTargetTable()
-{
-   delete [] fTargetEl;
-   delete [] fParentEl;
-}
 
 int makeTargetTable::add(DOMElement* const targetEl,
                          DOMElement* const parentEl)
@@ -272,22 +262,12 @@ int makeTargetTable::add(DOMElement* const targetEl,
       cerr << "makeTargetTable::add - called with null pointer" << endl;
       return 0;
    }
-   int i;
-   for (i=0; i < fTableLen; i++)
+
+   std::map<const DOMElement*,DOMElement*>::iterator iter;
+   iter = fParentElList.find(targetEl);
+   if (iter == fParentElList.end())
    {
-      if (fTargetEl[i] == targetEl)
-         break;
-   }
-   if (i >= fTableSize) {
-      cerr << "makeTargetTable::add - internal table overflow, "
-           << "please increase table size." << endl;
-      return 0;
-   }
-   else if (i == fTableLen)
-   {
-      fTargetEl[i] = targetEl;
-      fParentEl[i] = parentEl;
-      ++fTableLen;
+      fParentElList[targetEl] = parentEl;
       XString tagS = targetEl->getTagName();
       if (tagS == "mcfast")
       {
@@ -369,8 +349,8 @@ int makeTargetTable::addComposite(DOMElement* const targetEl)
    nmatEl->setAttribute(X(valueAttS),X(nmatS));
    targetEl->appendChild(nmatEl);
 
-   float *fVol = new float[matCount];
-   DOMElement** dataEl = new DOMElement*[matCount];
+   std::vector<float> fVol;
+   std::vector<DOMElement*> dataEl;
    XString refvecS("reference_vector");
    DOMElement* matVecEl = targetEl->getOwnerDocument()->createElement(X(refvecS));
    XString matnameS("matnames");
@@ -433,8 +413,6 @@ int makeTargetTable::addComposite(DOMElement* const targetEl)
    targetEl->setAttribute(X(templAttS),X(dbS));
    DbMaker::processTemplateFile(targetEl,S(dbS));
 
-   delete [] dataEl;
-   delete [] fVol;
    return 0;
 }
 
@@ -1016,12 +994,11 @@ DOMElement* makeTargetTable::lookup(const DOMElement* const targetEl,
       }
    }
 
-   for (int i=0; i < fTableLen; i++)
+   std::map<const DOMElement*,DOMElement*>::iterator iter;
+   iter = fParentElList.find(targetEl);
+   if (iter != fParentElList.end())
    {
-      if (fTargetEl[i] == targetEl)
-      {
-         return lookup(fParentEl[i],type,name);
-      }
+      return lookup(iter->second,type,name);
    }
    return 0;
 }
@@ -1087,24 +1064,19 @@ void DbMaker::processTemplateFile(const DOMElement* const targetEl,
 
    XString modelAttS("model");
    XString modelS = targetEl->getAttribute(X(modelAttS));
-   int model;
-   for (model=0; model < modelTableLen; model++)
+
+   std::map<const std::string,modelTableEntry>::iterator iter;
+   iter = modelTable.find(modelS);
+   if (iter == modelTable.end())
    {
-      if (modelS == modelTable[model].model)
-         break;
+      modelTableEntry entry;
+      entry.refcount = 0;
+      entry.maxcount = 0;
+      modelTable[modelS] = entry;
    }
-   if (model == modelTableLen)
+   if (modelTable[modelS].refcount == 0)
    {
-      char* str = new char[strlen(S(modelS))+1];
-      strcpy(str,S(modelS));
-      modelTable[model].model = str;
-      modelTable[model].refcount = 0;
-      modelTable[model].maxcount = 0;
-      modelTableLen++;
-   }
-   if (modelTable[model].refcount == 0)
-   {
-      modelTable[model].db << "include " << fname << endl;
+      modelTable[modelS].db << "include " << fname << endl;
    }
 
    ifstream dbFile(fname);
@@ -1137,7 +1109,7 @@ void DbMaker::processTemplateFile(const DOMElement* const targetEl,
                  << " in input file " << fname << endl;
             exit(2);
          }
-         modelTable[model].db << endl;
+         modelTable[modelS].db << endl;
       }
       else if (strcasecmp(token,"include") == 0)
       {
@@ -1160,7 +1132,7 @@ void DbMaker::processTemplateFile(const DOMElement* const targetEl,
          }
          else if (processingTarget && *processingTarget == modelS)
          {
-            if (++modelTable[model].refcount > dim)
+            if (++modelTable[modelS].refcount > dim)
             { 
                cerr << "hdds-mcfast: number of objects of type " << S(modelS)
                     << " exceeds maximum of " << dim << endl;
@@ -1170,31 +1142,25 @@ void DbMaker::processTemplateFile(const DOMElement* const targetEl,
                cerr << "and try again." << endl;
                exit(2);
             }
-            modelTable[model].maxcount = dim;
-            modelTable[model].db << "make " << S(modelS);
+            modelTable[modelS].maxcount = dim;
+            modelTable[modelS].db << "make " << S(modelS);
             ++processedTemplates;
          }
       }
       else if (strcasecmp(token,"make") == 0)
       {
-         char tgt[250];
-         sline >> tgt;
-         int m;
-         for (m=0; m < modelTableLen; m++)
-         {
-            if (strcmp(modelTable[m].model,tgt) == 0)
-               break;
-         }
-         if (m == modelTableLen)
+         std::map<const std::string,modelTableEntry>::iterator iter;
+         iter = modelTable.find(sline.str());
+         if (iter == modelTable.end())
          { 
             cerr << "hdds-mcfast: error in template file " << fname << endl;
             cerr << "Statement template " << S(modelS)
                  << " must appear before first make instance." << endl;
             exit(2);
          }
-         else if (modelTable[m].refcount > modelTable[m].maxcount)
+         else if (iter->second.refcount > iter->second.maxcount)
          {
-            cerr << "hdds-mcfast: number of objects of type " << tgt
+            cerr << "hdds-mcfast: number of objects of type " << sline.str()
                  << " overflows table." << endl;
             cerr << "Increase the array size in the template file"
                  << " and try again." << endl;
@@ -1242,16 +1208,16 @@ void DbMaker::processTemplateFile(const DOMElement* const targetEl,
             exit(3);
          }
          char* intstr = strtok((char*)S(valueS)," ");
-         modelTable[model].db << " " << intstr;
+         modelTable[modelS].db << " " << intstr;
          for (int i=1; i < dim; i++)
          {
             if (intstr = strtok(0," "))
             {
-               modelTable[model].db << " " << intstr;
+               modelTable[modelS].db << " " << intstr;
             }
             else
             {
-               modelTable[model].db << " 0";
+               modelTable[modelS].db << " 0";
             }
          }
       }
@@ -1348,16 +1314,16 @@ void DbMaker::processTemplateFile(const DOMElement* const targetEl,
          }
          const char* fltstr = strtok((char*)S(valueS)," ");
          float flt=atof(fltstr);
-         modelTable[model].db << " " << showpoint << atof(fltstr)*fconvert;
+         modelTable[modelS].db << " " << showpoint << atof(fltstr)*fconvert;
          for (int i=1; i < dim; i++)
          {
             if (fltstr = strtok(0," "))
             {
-               modelTable[model].db << " " << atof(fltstr)*fconvert;
+               modelTable[modelS].db << " " << atof(fltstr)*fconvert;
             }
             else
             {
-               modelTable[model].db << " 0";
+               modelTable[modelS].db << " 0";
             }
          }
       }
@@ -1383,7 +1349,7 @@ void DbMaker::processTemplateFile(const DOMElement* const targetEl,
             }
 	    XString valAttS("value");
             valueS = el->getAttribute(X(valAttS));
-            modelTable[model].db << " \"" << S(valueS) << "\"";
+            modelTable[modelS].db << " \"" << S(valueS) << "\"";
          }
          else
          {
@@ -1410,13 +1376,13 @@ void DbMaker::processTemplateFile(const DOMElement* const targetEl,
                {
 	          XString valAttS("value");
                   XString valueS(vectEl->getAttribute(X(valAttS)));
-                  modelTable[model].db << " \"" << S(valueS) << "\"";
+                  modelTable[modelS].db << " \"" << S(valueS) << "\"";
                   vcount++;
                }
             }
             for ( ; vcount < dim; vcount++)
             {
-               modelTable[model].db << " \"\"";
+               modelTable[modelS].db << " \"\"";
             }
             if (vcount != dim)
             {
@@ -1456,7 +1422,7 @@ void DbMaker::processTemplateFile(const DOMElement* const targetEl,
             }
 	    XString valAttS("value");
             XString valueS(el->getAttribute(X(valAttS)));
-            modelTable[model].db << " \"" << S(valueS) << "\"";
+            modelTable[modelS].db << " \"" << S(valueS) << "\"";
          }
          else
          {
@@ -1483,13 +1449,13 @@ void DbMaker::processTemplateFile(const DOMElement* const targetEl,
                {
 	          XString valAttS("value");
                   XString valueS(vectEl->getAttribute(X(valAttS)));
-                  modelTable[model].db << " \"" << S(valueS) << "\"";
+                  modelTable[modelS].db << " \"" << S(valueS) << "\"";
                   vcount++;
                }
             }
             for ( ; vcount < dim; vcount++)
             {
-               modelTable[model].db << " \"-\"";
+               modelTable[modelS].db << " \"-\"";
             }
             if (vcount != dim)
             {
@@ -1553,9 +1519,12 @@ void DbMaker::makedb(DOMElement* el)
 void DbMaker::printdb()
 {
    char line[999];
-   for (int m=0; m < modelTableLen; m++)
+   std::map<const std::string,modelTableEntry>::iterator iter;
+   for (iter = modelTable.begin();
+        iter != modelTable.end();
+        ++iter)
    {
-      istringstream idb(modelTable[m].db.str());
+      istringstream idb(iter->second.db.str());
       while (! idb.eof())
       {
          idb.getline(line,999);
