@@ -8,6 +8,9 @@
  */
 
 #include "XString.hpp"
+#include <iostream>
+
+int dumper = 0;
 
 XString::XString(void)
  : fStringCollection()
@@ -18,7 +21,9 @@ XString::XString(const XMLCh* const x)
 {
    if (x)
    {
-      (std::string&)*this = xercesc::XMLString::transcode(x);
+      char* str = xercesc::XMLString::transcode(x);
+      fStringCollection.push_back(str);
+      (std::string&)*this = str;
    }
 }
 
@@ -48,7 +53,7 @@ XString::XString(const XString& X)
 
 XString::~XString()
 {
-   std::list<XMLCh*>::iterator iter;
+   std::list<char*>::iterator iter;
    for (iter = fStringCollection.begin();
         iter != fStringCollection.end();
         ++iter)
@@ -57,13 +62,16 @@ XString::~XString()
    }
 }
 
+XString& XString::operator=(const XString& X)
+{
+   (std::string&)*this = (std::string&)X;
+   return *this;
+}
+
 const XMLCh* XString::unicode_str()
 {
    XMLCh* ustr = xercesc::XMLString::transcode(this->c_str());
-   if (ustr)
-   {
-      fStringCollection.push_back(ustr);
-   }
+   fStringCollection.push_back((char*)ustr);
    return ustr;
 }
 
@@ -76,4 +84,29 @@ const XString XString::basename() const
       s = s.substr(p+1,s.size());
    }
    return s;
+}
+
+void XString::dump()
+{
+   std::cerr << ">>> XString dump:" << std::endl
+             << "  >first the addresses: ";
+   std::list<char*>::iterator iter;
+   for (iter = fStringCollection.begin();
+        iter != fStringCollection.end();
+        ++iter)
+   {
+      void* x = *iter;
+      std::cerr << x << ",";
+   }
+   std::cerr << std::endl
+             << "  >and now the strings: ";
+   for (iter = fStringCollection.begin();
+        iter != fStringCollection.end();
+        ++iter)
+   {
+      XMLCh* x = (XMLCh*)(*iter);
+      char* str = xercesc::XMLString::transcode(x);
+      std::cerr << str << ",";
+   }
+   std::cerr << std::endl;
 }

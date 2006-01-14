@@ -133,12 +133,12 @@ xercesc::DOMDocument* buildDOMDocument(const XString& xmlFile, bool keep)
    }
    XString tmpFileS = ".tmp-"+xmlFile.basename();
 
-   builder->setFeature(xercesc::XMLUni::fgDOMValidation, true);
+   builder->setFeature(xercesc::XMLUni::fgDOMValidation, false);
    builder->setFeature(xercesc::XMLUni::fgDOMNamespaces, true);
    builder->setFeature(xercesc::XMLUni::fgDOMDatatypeNormalization, true);
    builder->setFeature(xercesc::XMLUni::fgDOMEntities, false);
-   builder->setFeature(xercesc::XMLUni::fgXercesSchemaFullChecking, true);
-   builder->setFeature(xercesc::XMLUni::fgXercesSchema, true);
+   builder->setFeature(xercesc::XMLUni::fgXercesSchemaFullChecking, false);
+   builder->setFeature(xercesc::XMLUni::fgXercesSchema, false);
 
    MyDOMErrorHandler errHandler;
    builder->setErrorHandler(&errHandler);
