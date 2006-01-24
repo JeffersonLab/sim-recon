@@ -640,11 +640,13 @@
   to share a common set of tracking properties without requiring that they
   have a common ancestor that also belongs to the region.  Once a volume
   is assigned to a region, all of its descendents in the geometry tree
-  inherit the assignment by default, with nearer ancestors taking priority
-  over more remote ones, and explicit assignment overriding inheritance.
-  The top node in the geometry tree belongs to the implicit default region,
-  which has no magnetic field and has default values of all tracking
-  properties.  Any given volume may belong to at most one region.
+  inherit those properties as their default values, with nearer ancestors
+  taking precedence over more remote ones.  These inherited defaults can
+  be overridden in a child by joining a region of its own where they are
+  explicitly assigned.  The top node in the geometry tree belongs to the
+  implicit default region, which has no magnetic field and global default
+  values for all tracking properties.  Any given volume may itself belong
+  to at most one region.
 
   The association of a volume to a region occurs in the place where the
   volume is declared, i.e. "box", "tube", etc.  This is done using the
@@ -689,6 +691,7 @@
   material names and identifier names so that it can be referenced by
   volumes through the region="XXX" attribute.  The properties of a region
   are specified using the content elements described in the next section.
+  Any properties that are not specified obtain their default values.
 
 1.6.2) Region contents: Bfield descriptions
 ============================================
@@ -696,8 +699,8 @@
   It is foreseen that the region element may be expanded in the future to
   contain a more general description of tracking properties.  At present,
   only magnetic field specifiers are defined.  Only properties that are
-  explicitly declared within the region definition are modified by the
-  assignment.  Magnetic fields are described using either a uniformBfield
+  explicitly declared within the region definition are modified from their
+  defaults.  Magnetic fields are described using either a uniformBfield
   or a mappedBfield element.  A region that has no magnetic field is defined
   using the noBfield tag.  Assigning a region with noBfield to a volume
   results in the same tracking behavior as if the volume had no region
@@ -705,9 +708,6 @@
   has been introduced to enable volumes that inherit a region with a
   magnetic field from an ancestor to override that behavior by specifying
   their own region with noBfield.  The noBfield tag has no attributes.
-  Note: a region without any Bfield specifier is different from one with
-  a noBfield tag because leaving out any Bfield specifier indicates that
-  the inherited magnetic properties should be retained, whatever they are.
 
   The uniformBfield tag supports the following attributes.
 
@@ -763,6 +763,9 @@
 	    n         	: number of samples along the given axis.
             bounds    	: space-separated list of the lower and upper bounds
 			  of the sampled grid along the given axis.
+            sense       : whether the sign of the field component corresponding
+                          to this axis in the map is "forward" or "reverse",
+                          introduced to fold maps with mirror symmetry. 
             unit_length : length unit for bounds attribute [default: cm]
                           for grid points within the cartesian grid box.
 
@@ -813,14 +816,16 @@
   following attributes are provided.
 
 	    method    : can take on one of the following values
-
             *) method="helix" [default] is appropriate if the field is close
 			enough to uniform that a charged particle path is 
 			approximated well by helical track segments.
-
 	    *) method="RungeKutta" is appropriate if the field is sufficiently
 			nonuniform that charged particle tracks should be
 			found by numerical integration of the Lorentz equation.
+            maxArcStep: maximum step size before needing to sample the field
+                        again, specified in terms of the angle subtended by
+                        the arc segment, default is 1.
+            unit_angle: units for maxArcStep [degrees].
 
 1.6.4) Region examples
 =======================
@@ -834,6 +839,15 @@
       <grid type="cartesian">
         <samples axis="x" n="351" bounds="-340 10" unit_length="cm">
           <samples axis="z" n="1611" bounds="-10 1600" unit_length="cm">
+            <samples axis="y" n="16" bounds="0 -1.5" unit_length="cm"/>
+          </sequence>
+        </sequence>
+      </grid>
+      <grid type="cartesian">
+        <samples axis="x" n="351" bounds="-340 10" 
+                                  sense="reverse" unit_length="cm">
+          <samples axis="z" n="1611" bounds="-10 1600"
+                                     sense="reverse" unit_length="cm">
             <samples axis="y" n="16" bounds="0 -1.5" unit_length="cm"/>
           </sequence>
         </sequence>
@@ -859,6 +873,10 @@
       </grid>
     </mappedBfield>
     <swim method="RungeKutta"/>
+  </region>
+
+  <region name="quadrupoleCenter" comment="rapidly varying magnetic region">
+    <swim method="RungeKutta" maxArcStep="0.1"/>
   </region>
 
 1.6.5) Apply: associate a volume with a region
@@ -1208,6 +1226,13 @@
   </xs:restriction>
 </xs:simpleType>
 
+<xs:simpleType name="forwardReverse">
+  <xs:restriction base="xs:token">
+    <xs:enumeration value="forward"/>
+    <xs:enumeration value="reverse"/>
+  </xs:restriction>
+</xs:simpleType>
+
 <xs:simpleType name="indexType">
   <xs:restriction base="xs:token">
     <xs:enumeration value="layer"/>
@@ -1537,6 +1562,7 @@
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
+    <xs:attribute name="sense" default="forward" type="forwardReverse"/>
     <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
     <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
   </xs:complexType>
@@ -1591,12 +1617,14 @@
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
+    <xs:attribute name="maxArcStep" default="1" type="xs:double"/>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
   </xs:complexType>
 </xs:element>
 
 <xs:element name="region">
   <xs:complexType>
-   <xs:sequence>
+    <xs:sequence>
       <xs:choice minOccurs="0">
         <xs:element ref="noBfield"/>
         <xs:element ref="uniformBfield"/>
@@ -1605,8 +1633,8 @@
       <xs:element ref="swim" minOccurs="0"/>
     </xs:sequence>
 
-    <xs:attribute name="comment" type="xs:string"/>
-    <xs:attribute name="name" type="xs:ID"/>
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="comment" use="optional" type="xs:string"/>
   </xs:complexType>
 </xs:element>
 
