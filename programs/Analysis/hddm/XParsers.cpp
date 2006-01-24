@@ -85,7 +85,7 @@ xercesc::DOMDocument* parseInputDocument(const XString& xmlFile, bool keep)
       std::cerr
            << "\nXParsers: Error during parsing: '" << xmlFile << "'\n"
            << "Exception message is:  \n"
-           << toCatch.getMessage() << "\n" << std::endl;
+           << toCatch.msg << "\n" << std::endl;
       xercesc::XMLPlatformUtils::Terminate();
       return 0;
    }
