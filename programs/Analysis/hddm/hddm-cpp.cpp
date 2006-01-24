@@ -45,8 +45,8 @@
 
 #include <fstream>
 
-#define X(XString) XString.unicode_str()
-#define S(XString) XString.c_str()
+#define X(str) XString(str).unicode_str()
+#define S(str) str.c_str()
 
 using namespace xercesc;
 
@@ -256,8 +256,7 @@ void writeHeader(DOMElement* el)
    XString tagS(el->getTagName());
    char* ctypeDef = simpleStructType(S(tagS));
 
-   XString repAttS("maxOccurs");
-   XString repS(el->getAttribute(X(repAttS)));
+   XString repS(el->getAttribute(X("maxOccurs")));
    int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
    if (rep > 1)
    {
@@ -459,8 +458,7 @@ int main(int argC, char* argV[])
       return 1;
    }
 
-   XString classAttS("class");
-   XString classS(rootEl->getAttribute(X(classAttS)));
+   XString classS(rootEl->getAttribute(X("class")));
    classPrefix = S(classS);
 
    char hname[510];

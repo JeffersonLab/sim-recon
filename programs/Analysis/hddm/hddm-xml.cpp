@@ -57,8 +57,8 @@
 
 #include "particleType.h"
 
-#define X(XString) XString.unicode_str()
-#define S(XString) XString.c_str()
+#define X(str) XString(str).unicode_str()
+#define S(str) str.c_str()
 
 using namespace xercesc;
 
@@ -294,8 +294,7 @@ void XMLmaker::writeXML(const XString& s)
 void XMLmaker::constructXML(xstream::xdr::istream& ifx,
                             DOMElement* el, int depth)
 {
-   XString repAttS("maxOccurs");
-   XString repS(el->getAttribute(X(repAttS)));
+   XString repS(el->getAttribute(X("maxOccurs")));
    int rep = (repS == "unbounded")? 9999 :
              (repS == "")? 1 :
              atoi(S(repS));

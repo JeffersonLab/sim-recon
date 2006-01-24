@@ -62,8 +62,8 @@
 
 using namespace xercesc;
 
-#define X(XString) XString.unicode_str()
-#define S(XString) XString.c_str()
+#define X(str) XString(str).unicode_str()
+#define S(str) str.c_str()
 
 class HDDMmaker
 {
@@ -102,10 +102,9 @@ int main(int argC, char* argV[])
    }
    catch (const XMLException* toCatch)
    {
-      XString msg(toCatch->getMessage());
       std::cerr
            << "hddm-xml: Error during initialization! :\n"
-           << S(msg) << std::endl;
+           << toCatch->getMessage() << std::endl;
       return 1;
    }
 
@@ -401,10 +400,8 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
    int modelAttrListLength = modelAttrList->getLength();
    DOMNamedNodeMap* thisAttrList = thisEl->getAttributes();
    int thisAttrListLength = thisAttrList->getLength();
-   XString minAttS("minOccurs");
-   XString maxAttS("maxOccurs");
-   XString minS(modelEl->getAttribute(X(minAttS)));
-   XString maxS(modelEl->getAttribute(X(maxAttS)));
+   XString minS(modelEl->getAttribute(X("minOccurs")));
+   XString maxS(modelEl->getAttribute(X("maxOccurs")));
    int expectAttrCount = modelAttrList->getLength()
                          - (minS == ""? 0 : 1)
                          - (maxS == ""? 0 : 1);
@@ -495,13 +492,11 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
 	 int start=0;
          DOMElement* model = (DOMElement*) mode;
          XString modelS(model->getTagName());
-	 XString reqAttS("minOccurs");
-         XString reqS(model->getAttribute(X(reqAttS)));
+         XString reqS(model->getAttribute(X("minOccurs")));
 	 int req = (reqS == "unbounded")? 9999 : 
                    (reqS == "")? 1 :
                    atoi(S(reqS));
-	 XString repAttS("maxOccurs");
-         XString repS(model->getAttribute(X(repAttS)));
+         XString repS(model->getAttribute(X("maxOccurs")));
 	 int rep = (repS == "unbounded")? 9999 :
                    (repS == "")? 1 :
                    atoi(S(repS));

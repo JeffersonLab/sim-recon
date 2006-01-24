@@ -74,8 +74,8 @@
 #include <vector>
 #include <fstream>
 
-#define X(XString) XString.unicode_str()
-#define S(XString) XString.c_str()
+#define X(str) XString(str).unicode_str()
+#define S(str) str.c_str()
 
 using namespace xercesc;
 
@@ -224,8 +224,7 @@ int main(int argC, char* argV[])
       return 1;
    }
 
-   XtString classAttS("class");
-   XtString classS(rootEl->getAttribute(X(classAttS)));
+   XtString classS(rootEl->getAttribute(X("class")));
    classPrefix = classS;
 
    XtString hname;
@@ -640,11 +639,10 @@ void CodeBuilder::writeHeader(DOMElement* el)
       if (type == DOMNode::ELEMENT_NODE)
       {
          DOMElement* contEl = (DOMElement*) cont;
-	 XtString repAttS("maxOccurs");
-         XtString repS(contEl->getAttribute(X(repAttS)));
+         XtString repS(contEl->getAttribute(X("maxOccurs")));
 	 int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
          XtString ctypeRef = (rep > 1) ? nameS.listStructType()
-	                              : nameS.simpleStructType();
+	                               : nameS.simpleStructType();
          XtString::size_type clen = ctypeRef.size();
 
          hFile << "   " << ctypeRef << "* ";
@@ -658,8 +656,7 @@ void CodeBuilder::writeHeader(DOMElement* el)
 
    hFile << "} " << ctypeDef << ";" << std::endl;
 
-   XtString repAttS("maxOccurs");
-   XtString repS(el->getAttribute(X(repAttS)));
+   XtString repS(el->getAttribute(X("maxOccurs")));
    int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
    if (rep > 1)
    {
@@ -723,8 +720,7 @@ void CodeBuilder::constructMakeFuncs()
       hFile << std::endl;
       cFile << std::endl;
 
-      XtString repAttS("maxOccurs");
-      XtString repS = tagEl->getAttribute(X(repAttS));
+      XtString repS = tagEl->getAttribute(X("maxOccurs"));
       int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
       if (rep > 1)
       {
@@ -780,7 +776,7 @@ void CodeBuilder::constructMakeFuncs()
             {
                DOMElement* contEl = (DOMElement*) cont;
                XtString cnameS(contEl->getTagName());
-               XtString crepS(contEl->getAttribute(X(repAttS)));
+               XtString crepS(contEl->getAttribute(X("maxOccurs")));
 	       int crep = (crepS == "unbounded")? 9999 : atoi(S(crepS));
                if (crep > 1)
                {
@@ -846,7 +842,7 @@ void CodeBuilder::constructMakeFuncs()
             {
                DOMElement* contEl = (DOMElement*) cont;
                XtString cnameS(contEl->getTagName());
-               XtString crepS(contEl->getAttribute(X(repAttS)));
+               XtString crepS(contEl->getAttribute(X("maxOccurs")));
 	       int crep = (crepS == "unbounded")? 9999 : atoi(S(crepS));
                if (crep > 1)
                {
@@ -884,8 +880,7 @@ void CodeBuilder::constructUnpackers()
       cFile << std::endl << "static ";
 
       XtString tagType;
-      XtString repAttS("maxOccurs");
-      XtString repS = tagEl->getAttribute(X(repAttS));
+      XtString repS = tagEl->getAttribute(X("maxOccurs"));
       int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
       if (rep > 1)
       {
@@ -938,7 +933,7 @@ void CodeBuilder::constructUnpackers()
             hasContents = 1;
             DOMElement* contEl = (DOMElement*) cont;
             XtString nameS(contEl->getTagName());
-            XtString reS(contEl->getAttribute(X(repAttS)));
+            XtString reS(contEl->getAttribute(X("maxOccurs")));
 	    int re = (reS == "unbounded")? 9999 : atoi(S(reS));
             cFile << "         int p;"				<< std::endl
                   << "         void* (*ptr) = (void**) &this1->"
@@ -1091,8 +1086,7 @@ void CodeBuilder::constructPackers()
       cFile << "static ";
 
       XtString tagType;
-      XtString repAttS("maxOccurs");
-      XtString repS(tagEl->getAttribute(X(repAttS)));
+      XtString repS(tagEl->getAttribute(X("maxOccurs")));
       int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
       if (rep > 1)
       {
@@ -1118,8 +1112,7 @@ void CodeBuilder::constructPackers()
       cFile << std::endl << "static ";
 
       XtString tagType;
-      XtString repAttS("maxOccurs");
-      XtString repS(tagEl->getAttribute(X(repAttS)));
+      XtString repS(tagEl->getAttribute(X("maxOccurs")));
       int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
       if (rep > 1)
       {
@@ -1237,7 +1230,7 @@ void CodeBuilder::constructPackers()
          {
             DOMElement* contEl = (DOMElement*) cont;
             XtString nameS(contEl->getTagName());
-            XtString reS(contEl->getAttribute(X(repAttS)));
+            XtString reS(contEl->getAttribute(X("maxOccurs")));
 	    int re = (reS == "unbounded")? 9999 : atoi(S(reS));
             XtString contType;
             if (re > 1)
@@ -1412,8 +1405,7 @@ void CodeBuilder::writeMatcher()
    for (iter = tagList.begin(); iter != tagList.end(); iter++)
    {
       XtString tagS((*iter)->getTagName());
-      XtString repAttS("maxOccurs");
-      XtString repS((*iter)->getAttribute(X(repAttS)));
+      XtString repS((*iter)->getAttribute(X("maxOccurs")));
       int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
       XtString tagType;
       if (rep > 1)
