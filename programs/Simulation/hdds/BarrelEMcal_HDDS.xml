@@ -31,6 +31,7 @@
   </composition>
 
   <composition name="barrelModule" envelope="BCAM">
+    <apply region="nullBfield"/>
     <posXYZ volume="BCALlayer_1" />
     <posXYZ volume="BCALlayer_2" />
     <posXYZ volume="BCALlayer_3" />

@@ -19,6 +19,7 @@
 <!-- Origin of ForwardEMcal is center of upstream face of LGD -->
 
   <composition name="ForwardEMcal">
+    <apply region="nullBfield"/>
     <posXYZ volume="forwardEMcal" X_Y_Z="0.0  0.0  22.5" />
   </composition>
 

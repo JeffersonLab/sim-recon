@@ -61,4 +61,11 @@
     <swim method="helix"/>
   </region>
 
+  <!-- This region can be used to force tracking in calorimeter
+       modules to ignore the magnetic field that they are imbedded in -->
+
+  <region name="nullBfield" comment="zero field regions for calorimeters">
+    <noBfield/>
+  </region>
+
 </regions>
