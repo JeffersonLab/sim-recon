@@ -49,9 +49,10 @@ using namespace xercesc;
 #include <iomanip>
 #include <vector>
 #include <list>
+#include <map>
 
-#define X(XString) XString.unicode_str()
-#define S(XString) XString.c_str()
+#define X(str) XString(str).unicode_str()
+#define S(str) str.c_str()
 
 void usage()
 {
@@ -70,6 +71,8 @@ class FortranWriter : public CodeWriter
    int createSolid(DOMElement* el,
                    Refsys& ref);    	 // generate code for solids
    int createRotation(Refsys& ref);      // generate code for rotations
+   int createRegion(DOMElement* el,
+                    Refsys& ref);        // generate code for regions
    int createVolume(DOMElement* el,
                     Refsys& ref);  	 // generate code for placement
    int createDivision(XString& divStr,
@@ -148,13 +151,11 @@ int main(int argC, char* argV[])
       docEl = document->getDocumentElement();
    }
    catch (DOMException& e) {
-      XString msgS(e.msg);
-      std::cerr << "Woops " << S(msgS) << std::endl;
+      std::cerr << "Woops " << e.msg << std::endl;
       return 1;
    }
 
-   XString everythingS("everything");
-   DOMElement* rootEl = document->getElementById(X(everythingS));
+   DOMElement* rootEl = document->getElementById(X("everything"));
    if (rootEl == 0)
    {
       std::cerr
@@ -270,70 +271,29 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
 #endif
    int ivolu = CodeWriter::createSolid(el,ref);
    int imate = fSubst.fUniqueID;
-   int iregion = ref.fRegionID;
+   static int itmedCount = 0;
 
-   int ifield = 0;	// default values for tracking properties
-   double fieldm = 0;	// are overridden by values specified in region tag
-   double tmaxfd = 0;
-   double stemax = 0;
-   double deemax = 0;
-   XString epsil = "1e-3";
-   double stmin = 0;
-   double ubuf[99];
-   int nwbuf = 0;
-   if (ref.fRegion)
+   std::map<std::string,double> defaultPar;
+   defaultPar["ifield"] = 0;	// default values for tracking properties
+   defaultPar["fieldm"] = 0;	// are overridden by values in region tag
+   defaultPar["tmaxfd"] = 0;
+   defaultPar["stemax"] = 0;
+   defaultPar["deemax"] = 0;
+   defaultPar["epsil"] = 1e-3;
+   defaultPar["stmin"] = 0;
+   std::map<std::string,double>::iterator iter;
+   for (iter = defaultPar.begin(); iter != defaultPar.end(); ++iter)
    {
-      XString noBfieldS("noBfield");
-      DOMNodeList* noBfieldL = ref.fRegion->getElementsByTagName(X(noBfieldS));
-      XString uniBfieldS("uniformBfield");
-      DOMNodeList* uniBfieldL = ref.fRegion->getElementsByTagName(X(uniBfieldS));
-      XString mapBfieldS("mappedBfield");
-      DOMNodeList* mapBfieldL = ref.fRegion->getElementsByTagName(X(mapBfieldS));
-      XString swimS("swim");
-      DOMNodeList* swimL = ref.fRegion->getElementsByTagName(X(swimS));
-      if (noBfieldL->getLength() > 0)
+      if (ref.fPar.find(iter->first) == ref.fPar.end())
       {
-         ifield = 0;
-         fieldm = 0;
-      }
-      else if (uniBfieldL->getLength() > 0)
-      {
-         DOMElement* uniBfieldEl = (DOMElement*)uniBfieldL->item(0);
-         XString bvecAttS("Bx_By_Bz");
-         XString bvecS(uniBfieldEl->getAttribute(X(bvecAttS)));
-         std::stringstream str(S(bvecS));
-         double B[3];
-         str >> B[0] >> B[1] >> B[2];
-         fieldm = sqrt(B[0]*B[0] + B[1]*B[1] + B[2]*B[2]);
-         ifield = 2;
-         tmaxfd = 1;
-      }
-      else if (mapBfieldL->getLength() > 0)
-      {
-         DOMElement* mapBfieldEl = (DOMElement*)mapBfieldL->item(0);
-         XString bmaxAttS("maxBfield");
-         XString bmaxS(mapBfieldEl->getAttribute(X(bmaxAttS)));
-         fieldm = atof(S(bmaxS));
-         ifield = 2;
-         tmaxfd = 1;
-         if (swimL->getLength() > 0)
-         {
-            DOMElement* swimEl = (DOMElement*)swimL->item(0);
-            XString methodAttS("method");
-            XString methodS(swimEl->getAttribute(X(methodAttS)));
-            ifield = (methodS == "RungeKutta")? 1 : 2;
-         }
+         ref.fPar[iter->first] = defaultPar[iter->first];
       }
    }
 
-   static int itmedCount = 0;
    int itmed = ++itmedCount;
-   XString nameAttS("name");
-   XString nameS(el->getAttribute(X(nameAttS)));
-   XString matAttS("material");
-   XString matS(el->getAttribute(X(matAttS)));
-   XString sensiAttS("sensitive");
-   XString sensiS(el->getAttribute(X(sensiAttS)));
+   XString nameS(el->getAttribute(X("name")));
+   XString matS(el->getAttribute(X("material")));
+   XString sensiS(el->getAttribute(X("sensitive")));
    std::cout
         << std::endl
         << "      itmed = " << itmed << std::endl
@@ -341,20 +301,14 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
         << std::endl
         << "      nmat = " << imate << std::endl
         << "      isvol = " << (sensiS == "true" ? 1 : 0) << std::endl
-        << "      ifield = " << ifield << std::endl
-        << "      fieldm = " << fieldm << std::endl
-        << "      tmaxfd = " << tmaxfd << std::endl
-        << "      stemax = " << stemax << std::endl
-        << "      deemax = " << deemax << std::endl
-        << "      epsil = " << epsil << std::endl
-        << "      stmin = " << stmin << std::endl;
-   for (int iu = 0; iu < nwbuf; iu++)
-   {
-      std::cout
-        << "      ubuf(" << iu << ") = " << ubuf[iu] << std::endl;
-   }
-   std::cout
-        << "      nwbuf = " << nwbuf << std::endl
+        << "      ifield = " << ref.fPar["ifield"] << std::endl
+        << "      fieldm = " << ref.fPar["fieldm"] << std::endl
+        << "      tmaxfd = " << ref.fPar["tmaxfd"] << std::endl
+        << "      stemax = " << ref.fPar["stemax"] << std::endl
+        << "      deemax = " << ref.fPar["deemax"] << std::endl
+        << "      epsil = " << ref.fPar["epsil"] << std::endl
+        << "      stmin = " << ref.fPar["stmin"] << std::endl
+        << "      nwbuf = 0" << std::endl
         << "      call gstmed(itmed,natmed,nmat,isvol,ifield,fieldm,tmaxfd,"
         << std::endl
         << "     +            stemax,deemax,epsil,stmin,ubuf,nwbuf)"
@@ -370,8 +324,7 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
    {
       shapeS = "BOX ";
       double xl, yl, zl;
-      XString xyzAttS("X_Y_Z");
-      XString xyzS(el->getAttribute(X(xyzAttS)));
+      XString xyzS(el->getAttribute(X("X_Y_Z")));
       std::stringstream listr(xyzS);
       listr >> xl >> yl >> zl;
 
@@ -384,12 +337,10 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
    {
       shapeS = "TUBS";
       double ri, ro, zl, phi0, dphi;
-      XString riozAttS("Rio_Z");
-      XString riozS(el->getAttribute(X(riozAttS)));
+      XString riozS(el->getAttribute(X("Rio_Z")));
       std::stringstream listr(riozS);
       listr >> ri >> ro >> zl;
-      XString profAttS("profile");
-      XString profS(el->getAttribute(X(profAttS)));
+      XString profS(el->getAttribute(X("profile")));
       listr.clear(), listr.str(profS);
       listr >> phi0 >> dphi;
 
@@ -409,13 +360,11 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
    {
       shapeS = "TRAP";
       double xm, ym, xp, yp, zl;
-      XString xyzAttS("Xmp_Ymp_Z");
-      XString xyzS(el->getAttribute(X(xyzAttS)));
+      XString xyzS(el->getAttribute(X("Xmp_Ymp_Z")));
       std::stringstream listr(xyzS);
       listr >> xm >> xp >> ym >> yp >> zl;
       double alph_xz, alph_yz;
-      XString incAttS("inclination");
-      XString incS(el->getAttribute(X(incAttS)));
+      XString incS(el->getAttribute(X("inclination")));
       listr.clear(), listr.str(incS);
       listr >> alph_xz >> alph_yz;
 
@@ -439,12 +388,10 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
    {
       shapeS = "PCON";
       double phi0, dphi;
-      XString profAttS("profile");
-      XString profS(el->getAttribute(X(profAttS)));
+      XString profS(el->getAttribute(X("profile")));
       std::stringstream listr(profS);
       listr >> phi0 >> dphi;
-      XString planeTagS("polyplane");
-      DOMNodeList* planeList = el->getElementsByTagName(X(planeTagS));
+      DOMNodeList* planeList = el->getElementsByTagName(X("polyplane"));
 
       npar = 3;
       par[0] = phi0 * unit.deg;
@@ -455,8 +402,7 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
          double ri, ro, zl;
          DOMNode* node = planeList->item(p);
          DOMElement* elem = (DOMElement*) node;
-         XString riozAttS("Rio_Z");
-         XString riozS(elem->getAttribute(X(riozAttS)));
+         XString riozS(elem->getAttribute(X("Rio_Z")));
          std::stringstream listr1(riozS);
          listr1 >> ri >> ro >> zl;
          par[npar++] = zl * unit.cm;
@@ -468,16 +414,13 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
    {
       shapeS = "PGON";
       int segments;
-      XString segAttS("segments");
-      XString segS(el->getAttribute(X(segAttS)));
+      XString segS(el->getAttribute(X("segments")));
       segments = atoi(S(segS));
       double phi0, dphi;
-      XString profAttS("profile");
-      XString profS(el->getAttribute(X(profAttS)));
+      XString profS(el->getAttribute(X("profile")));
       std::stringstream listr(profS);
       listr >> phi0 >> dphi;
-      XString planeTagS("polyplane");
-      DOMNodeList* planeList = el->getElementsByTagName(X(planeTagS));
+      DOMNodeList* planeList = el->getElementsByTagName(X("polyplane"));
 
       npar = 4;
       par[0] = phi0 * unit.deg;
@@ -489,8 +432,7 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
          double ri, ro, zl;
          DOMNode* node = planeList->item(p);
          DOMElement* elem = (DOMElement*) node;
-         XString riozAttS("Rio_Z");
-         XString riozS(elem->getAttribute(X(riozAttS)));
+         XString riozS(elem->getAttribute(X("Rio_Z")));
          std::stringstream listr1(riozS);
          listr1 >> ri >> ro >> zl;
          par[npar++] = zl * unit.cm;
@@ -502,13 +444,11 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
    {
       shapeS = "CONS";
       double rim, rip, rom, rop, zl;
-      XString riozAttS("Rio1_Rio2_Z");
-      XString riozS(el->getAttribute(X(riozAttS)));
+      XString riozS(el->getAttribute(X("Rio1_Rio2_Z")));
       std::stringstream listr(riozS);
       listr >> rim >> rom >> rip >> rop >> zl;
       double phi0, dphi;
-      XString profAttS("profile");
-      XString profS(el->getAttribute(X(profAttS)));
+      XString profS(el->getAttribute(X("profile")));
       listr.clear(), listr.str(profS);
       listr >> phi0 >> dphi;
 
@@ -530,18 +470,15 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
    {
       shapeS = "SPHE";
       double ri, ro;
-      XString rioAttS("Rio");
-      XString rioS(el->getAttribute(X(rioAttS)));
+      XString rioS(el->getAttribute(X("Rio")));
       std::stringstream listr(rioS);
       listr >> ri >> ro;
       double theta0, theta1;
-      XString polarAttS("polar_bounds");
-      XString polarS(el->getAttribute(X(polarAttS)));
+      XString polarS(el->getAttribute(X("polar_bounds")));
       listr.clear(), listr.str(polarS);
       listr >> theta0 >> theta1;
       double phi0, dphi;
-      XString profAttS("profile");
-      XString profS(el->getAttribute(X(profAttS)));
+      XString profS(el->getAttribute(X("profile")));
       listr.clear(), listr.str(profS);
       listr >> phi0 >> dphi;
 
@@ -641,6 +578,72 @@ int FortranWriter::createRotation(Refsys& ref)
    return irot;
 }
 
+int FortranWriter::createRegion(DOMElement* el, Refsys& ref)
+{
+#ifdef LINUX_CPUTIME_PROFILING
+   std::stringstream timestr;
+   timestr << "createRegion: " << timer.getUserTime() << ", "
+           << timer.getSystemTime() << ", " << timer.getRealTime();
+   timer.resetClocks();
+#endif
+   int iregion = CodeWriter::createRegion(el,ref);
+
+   if (ref.fRegion)
+   {
+      DOMNodeList* noBfieldL = ref.fRegion->getElementsByTagName(X("noBfield"));
+      DOMNodeList* uniBfieldL = ref.fRegion->getElementsByTagName(X("uniformBfield"));
+      DOMNodeList* mapBfieldL = ref.fRegion->getElementsByTagName(X("mappedBfield"));
+      DOMNodeList* swimL = ref.fRegion->getElementsByTagName(X("swim"));
+      if (noBfieldL->getLength() > 0)
+      {
+         ref.fPar["ifield"] = 0;
+         ref.fPar["fieldm"] = 0;
+         ref.fPar["tmaxfd"] = 0;
+      }
+      else if (uniBfieldL->getLength() > 0)
+      {
+         Units funit;
+         DOMElement* uniBfieldEl = (DOMElement*)uniBfieldL->item(0);
+         funit.getConversions(uniBfieldEl);
+         XString bvecS(uniBfieldEl->getAttribute(X("Bx_By_Bz")));
+         std::stringstream str(S(bvecS));
+         double B[3];
+         str >> B[0] >> B[1] >> B[2];
+         ref.fPar["fieldm"] = sqrt(B[0]*B[0] + B[1]*B[1] + B[2]*B[2]);
+         ref.fPar["fieldm"] *= funit.kG;
+         ref.fPar["ifield"] = 2;
+         ref.fPar["tmaxfd"] = 1;
+      }
+      else if (mapBfieldL->getLength() > 0)
+      {
+         Units funit;
+         DOMElement* mapBfieldEl = (DOMElement*)mapBfieldL->item(0);
+         funit.getConversions(mapBfieldEl);
+         XString bmaxS(mapBfieldEl->getAttribute(X("maxBfield")));
+         ref.fPar["fieldm"] = atof(S(bmaxS));
+         ref.fPar["fieldm"] *= funit.kG;
+         ref.fPar["ifield"] = 2;
+         ref.fPar["tmaxfd"] = 1;
+      }
+      if (swimL->getLength() > 0)
+      {
+         DOMElement* swimEl = (DOMElement*)swimL->item(0);
+         XString methodS(swimEl->getAttribute(X("method")));
+         ref.fPar["ifield"] = (methodS == "RungeKutta")? 1 : 2;
+         Units unit;
+         unit.getConversions(swimEl);
+         XString stepS(swimEl->getAttribute(X("maxArcStep")));
+         ref.fPar["tmaxfd"] = atof(S(stepS)) * unit.deg;
+      }
+   }
+
+#ifdef LINUX_CPUTIME_PROFILING
+   timestr << " ( " << timer.getUserDelta() << " ) ";
+   std::cerr << timestr.str() << std::endl;
+#endif
+   return iregion;
+}
+
 int FortranWriter::createDivision(XString& divStr, Refsys& ref)
 {
 #ifdef LINUX_CPUTIME_PROFILING
@@ -656,8 +659,7 @@ int FortranWriter::createDivision(XString& divStr, Refsys& ref)
 
    int ndiv = CodeWriter::createDivision(divStr,ref);
 
-   XString nameAttS("name");
-   XString motherS(ref.fMother->getAttribute(X(nameAttS)));
+   XString motherS(ref.fMother->getAttribute(X("name")));
    std::cout
         << std::endl
         << "      chname = \'" << divStr << "\'" << std::endl
@@ -690,9 +692,8 @@ int FortranWriter::createVolume(DOMElement* el, Refsys& ref)
 
    if (fPending)
    {
-      XString nameAttS("name");
-      XString nameS(el->getAttribute(X(nameAttS)));
-      XString motherS(fRef.fMother->getAttribute(X(nameAttS)));
+      XString nameS(el->getAttribute(X("name")));
+      XString motherS(fRef.fMother->getAttribute(X("name")));
       int irot = fRef.fRotation;
       std::cout
            << std::endl
@@ -959,9 +960,8 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
 #endif
    CodeWriter::createMapFunctions(el,ident);
 
-   XString regionsS("regions");
    DOMNodeList* regionsL = el->getOwnerDocument()->getDocumentElement()
-                             ->getElementsByTagName(X(regionsS));
+                             ->getElementsByTagName(X("regions"));
    if (regionsL->getLength() == 0)
    {
       return;
@@ -979,22 +979,17 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
         << std::endl;
 
    DOMElement* regionsEl = (DOMElement*)regionsL->item(0);
-   XString regionS("region");
-   DOMNodeList* regionL = regionsEl->getElementsByTagName(X(regionS));
+   DOMNodeList* regionL = regionsEl->getElementsByTagName(X("region"));
    for (int ireg=0; ireg < regionL->getLength(); ++ireg)
    {
       DOMElement* regionEl = (DOMElement*)regionL->item(ireg);
-      XString mapTagS("HDDSregion");
-      DOMNodeList* mapL = regionEl->getElementsByTagName(X(mapTagS));
+      DOMNodeList* mapL = regionEl->getElementsByTagName(X("HDDSregion"));
       for (int imap=0; imap < mapL->getLength(); ++imap)
       {
          DOMElement* mapEl = (DOMElement*)mapL->item(imap);
-         XString idAttS("id");
-         XString origAttS("origin");
-         XString rmatAttS("Rmatrix");
-         XString idS(mapEl->getAttribute(X(idAttS)));
-         XString origS(mapEl->getAttribute(X(origAttS)));
-         XString rmatS(mapEl->getAttribute(X(rmatAttS)));
+         XString idS(mapEl->getAttribute(X("id")));
+         XString origS(mapEl->getAttribute(X("origin")));
+         XString rmatS(mapEl->getAttribute(X("Rmatrix")));
          int id = atoi(S(idS));
          double origin[3];
          std::stringstream listr(S(origS));
@@ -1032,21 +1027,15 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
    for (int ireg=0; ireg < regionL->getLength(); ++ireg)
    {
       DOMElement* regionEl = (DOMElement*)regionL->item(ireg);
-      XString unifTagS("uniformBfield");
-      DOMNodeList* unifTagL = regionEl->getElementsByTagName(X(unifTagS));
-      XString mapfTagS("mappedBfield");
-      DOMNodeList* mapfTagL = regionEl->getElementsByTagName(X(mapfTagS));
-      XString mapTagS("HDDSregion");
-      DOMNodeList* mapL = regionEl->getElementsByTagName(X(mapTagS));
+      DOMNodeList* unifTagL = regionEl->getElementsByTagName(X("uniformBfield"));
+      DOMNodeList* mapfTagL = regionEl->getElementsByTagName(X("mappedBfield"));
+      DOMNodeList* mapL = regionEl->getElementsByTagName(X("HDDSregion"));
       for (int imap=0; imap < mapL->getLength(); ++imap)
       {
          DOMElement* mapEl = (DOMElement*)mapL->item(imap);
-         XString idAttS("id");
-         XString origAttS("origin");
-         XString rmatAttS("Rmatrix");
-         XString idS(mapEl->getAttribute(X(idAttS)));
-         XString origS(mapEl->getAttribute(X(origAttS)));
-         XString rmatS(mapEl->getAttribute(X(rmatAttS)));
+         XString idS(mapEl->getAttribute(X("id")));
+         XString origS(mapEl->getAttribute(X("origin")));
+         XString rmatS(mapEl->getAttribute(X("Rmatrix")));
          int id = atoi(S(idS));
          double origin[3];
          std::stringstream listr(S(origS));
@@ -1059,8 +1048,7 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
          if (unifTagL->getLength() > 0)
          {
             DOMElement* unifEl = (DOMElement*)unifTagL->item(0);
-            XString bvecAttS("Bx_By_Bz");
-            XString bvecS(unifEl->getAttribute(X(bvecAttS)));
+            XString bvecS(unifEl->getAttribute(X("Bx_By_Bz")));
             std::stringstream listr(S(bvecS));
 
             double b[3];
@@ -1097,15 +1085,15 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
              << "        rs(1) = r(1)-orig" << id << "(1)" << std::endl
              << "        rs(2) = r(2)-orig" << id << "(2)" << std::endl
              << "        rs(3) = r(3)-orig" << id << "(3)" << std::endl
-             << "        rr(1) = r(1)*rmat" << id << "(1,1)"
-             <<                "+r(2)*rmat" << id << "(1,2)"
-             <<                "+r(3)*rmat" << id << "(1,3)" << std::endl
-             << "        rr(2) = r(1)*rmat" << id << "(2,1)"
-             <<                "+r(2)*rmat" << id << "(2,2)"
-             <<                "+r(3)*rmat" << id << "(2,3)" << std::endl
-             << "        rr(3) = r(1)*rmat" << id << "(3,1)"
-             <<                "+r(2)*rmat" << id << "(3,2)"
-             <<                "+r(3)*rmat" << id << "(3,3)" << std::endl
+             << "        rr(1) = rs(1)*rmat" << id << "(1,1)"
+             <<                "+rs(2)*rmat" << id << "(1,2)"
+             <<                "+rs(3)*rmat" << id << "(1,3)" << std::endl
+             << "        rr(2) = rs(1)*rmat" << id << "(2,1)"
+             <<                "+rs(2)*rmat" << id << "(2,2)"
+             <<                "+rs(3)*rmat" << id << "(2,3)" << std::endl
+             << "        rr(3) = rs(1)*rmat" << id << "(3,1)"
+             <<                "+rs(2)*rmat" << id << "(3,2)"
+	    <<                 "+rs(3)*rmat" << id << "(3,3)" << std::endl
              << "        call gufld" << map << "(rr,BB)"     << std::endl
              << "        B(1) = BB(1)*rmat" << id << "(1,1)"
              <<               "+BB(2)*rmat" << id << "(2,1)"
@@ -1136,8 +1124,7 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
    for (iter = fieldMap.begin(); iter != fieldMap.end(); ++iter, ++map)
    {
       DOMElement* regionEl = (DOMElement*)(*iter)->getParentNode();
-      XString nameAttS("name");
-      XString nameS(regionEl->getAttribute(X(nameAttS)));
+      XString nameS(regionEl->getAttribute(X("name")));
 
       std::cout
         << std::endl
@@ -1155,17 +1142,16 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
 
       int axorder[] = {0,0,0,0};
       int axsamples[] = {0,0,0,0};
-      double axlower[4], axupper[4];
 
       XString gridtype;
-      XString gridTagS("grid");
-      DOMNodeList* gridL = (*iter)->getElementsByTagName(X(gridTagS));
+      DOMNodeList* gridL = (*iter)->getElementsByTagName(X("grid"));
       int ngrid;
       for (ngrid = 0; ngrid < gridL->getLength(); ++ngrid)
       {
+         int axsense[] = {1,1,1,1};
+         double axlower[4], axupper[4];
          DOMElement* gridEl = (DOMElement*)gridL->item(ngrid);
-         XString typeAttS("type");
-         XString typeS(gridEl->getAttribute(X(typeAttS)));
+         XString typeS(gridEl->getAttribute(X("type")));
          if (gridtype.size() > 0 && typeS != gridtype)
          {
             std::cerr
@@ -1175,8 +1161,7 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
          }
          gridtype = typeS;
 
-         XString samplesS("samples");
-         DOMNodeList* samplesL = gridEl->getElementsByTagName(X(samplesS));
+         DOMNodeList* samplesL = gridEl->getElementsByTagName(X("samples"));
          if (samplesL->getLength() != 3)
          {
             std::cerr
@@ -1188,17 +1173,15 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
          for (int iax = 1; iax <= 3; ++iax)
          {
             DOMElement* sampleEl = (DOMElement*)samplesL->item(iax-1);
-            XString nAttS("n");
-            XString axisAttS("axis");
-            XString boundsAttS("bounds");
-            XString nS(sampleEl->getAttribute(X(nAttS)));
-            XString axisS(sampleEl->getAttribute(X(axisAttS)));
-            XString boundsS(sampleEl->getAttribute(X(boundsAttS)));
+            XString nS(sampleEl->getAttribute(X("n")));
+            XString axisS(sampleEl->getAttribute(X("axis")));
+            XString boundsS(sampleEl->getAttribute(X("bounds")));
+            XString senseS(sampleEl->getAttribute(X("sense")));
             Units sunit;
-            double bounds[2];
+            double bound[2];
             sunit.getConversions(sampleEl);
             std::stringstream listr(boundsS);
-            listr >> bounds[0] >> bounds[1];
+            listr >> bound[0] >> bound[1];
             int iaxis;
             if (gridtype == "cartesian")
             {
@@ -1207,24 +1190,24 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
                {
                   iaxis = 1;
                   axorder[0] = iax;
-                  bounds[0] *= sunit.cm;
-                  bounds[1] *= sunit.cm;
+                  bound[0] *= sunit.cm;
+                  bound[1] *= sunit.cm;
                }
                else if (axisS == "y" && 
                        (axorder[1] == 0 || axorder[1] == iax))
                {
                   iaxis = 2;
                   axorder[1] = iax;
-                  bounds[0] *= sunit.cm;
-                  bounds[1] *= sunit.cm;
+                  bound[0] *= sunit.cm;
+                  bound[1] *= sunit.cm;
                }
                else if (axisS == "z" &&
                        (axorder[2] == 0 || axorder[2] == iax))
                {
                   iaxis = 3;
                   axorder[2] = iax;
-                  bounds[0] *= sunit.cm;
-                  bounds[1] *= sunit.cm;
+                  bound[0] *= sunit.cm;
+                  bound[1] *= sunit.cm;
                }
                else
                {
@@ -1240,22 +1223,22 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
                {
                   iaxis = 1;
                   axorder[0] = iax;
-                  bounds[0] *= sunit.cm;
-                  bounds[1] *= sunit.cm;
+                  bound[0] *= sunit.cm;
+                  bound[1] *= sunit.cm;
                }
                else if (axisS == "phi" && axorder[1] == 0)
                {
                   iaxis = 2;
                   axorder[1] = iax;
-                  bounds[0] *= sunit.rad;
-                  bounds[1] *= sunit.rad;
+                  bound[0] *= sunit.rad;
+                  bound[1] *= sunit.rad;
                }
                else if (axisS == "z" && axorder[2] == 0)
                {
                   iaxis = 3;
                   axorder[2] = iax;
-                  bounds[0] *= sunit.cm;
-                  bounds[1] *= sunit.cm;
+                  bound[0] *= sunit.cm;
+                  bound[1] *= sunit.cm;
                }
                else
                {
@@ -1280,15 +1263,23 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
                exit(1);
             }
 
-            axlower[iaxis] = bounds[0];
-            axupper[iaxis] = bounds[1];
+            axlower[iaxis] = bound[0];
+            axupper[iaxis] = bound[1];
+            if (senseS == "reverse")
+            {
+               axsense[iaxis] = -1;
+            }
          }
          std::cout
-              << "      real bounds" << ngrid << "(3,2)" << std::endl
-              << "      data bounds" << ngrid << "/"
+              << "      real bound" << ngrid << "(3,2)" << std::endl
+              << "      data bound" << ngrid << "/"
               << axlower[1] << "," << axlower[2] << "," << axlower[3] << ","
               << std::endl << "     +            "
               << axupper[1] << "," << axupper[2] << "," << axupper[3] << "/"
+              << std::endl
+              << "      integer reverse" << ngrid << "(3)" << std::endl
+              << "      data reverse" << ngrid << "/"
+              << axsense[1] << "," << axsense[2] << "," << axsense[3] << "/"
               << std::endl;
       }
       std::cout
@@ -1305,10 +1296,8 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
            << "      integer i,i1,i2,i3" << std::endl
            << std::endl;
 
-      XString mapAttS("map");
-      XString mapS((*iter)->getAttribute(X(mapAttS)));
-      XString encAttS("encoding");
-      XString encS((*iter)->getAttribute(X(encAttS)));
+      XString mapS((*iter)->getAttribute(X("map")));
+      XString encS((*iter)->getAttribute(X("encoding")));
       if (encS != "utf-8")
       {
          std::cerr
@@ -1355,34 +1344,44 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
             std::cout
               << "      rho = sqrt(r(1)**2+r(2)**2)" << std::endl
               << "      phi = atan2(r(2),r(1))" << std::endl
-              << "      u(1) = (rho-" << axlower[1] << ")/("
-              << axupper[1] << "-" << axlower[1] << ")" << std::endl
-              << "      u(2) = (phi-" << axlower[2] << ")/("
-              << axupper[2] << "-" << axlower[2] << ")" << std::endl
-              << "      alpha = abs(twopi/("
-              << axupper[2] << "-" << axlower[2] << "))" << std::endl
+              << "      u(1) = (rho-bound" << igrid << "(1,1))/"
+              << "(bound" << igrid << "(1,2)" << "-bound" << igrid << "(1,1))"
+              << std::endl
+              << "      u(2) = (phi-bound" << igrid << "(2,1))/"
+              << "(bound" << igrid << "(2,2)" << "-bound" << igrid << "(2,1))"
+              << std::endl
+              << "      alpha = abs(twopi/(bound" << igrid << "(2,2)"
+              << "-bound" << igrid << "(2,1)))" << std::endl
               << "      u(2) = u(2)-int(u(2)/alpha)*alpha" << std::endl
               << "      if (u(2).lt.0) then" <<std::endl
               << "        u(2) = u(2)+alpha" << std::endl
               << "      endif" <<std::endl
-              << "      u(3) = (r(3)-" << axlower[3] << ")/("
-              << axupper[3] << "-" << axlower[3] << ")" << std::endl;
+              << "      u(3) = (r(3)-bound" << igrid << "(3,1))/"
+              << "(bound" << igrid << "(3,2)" << "-bound" << igrid << "(3,1))"
+              << std::endl;
          }
          else
          {
             std::cout
-              << "      u(1) = (r(1)-" << axlower[1] << ")/("
-              << axupper[1] << "-" << axlower[1] << ")" << std::endl
-              << "      u(2) = (r(2)-" << axlower[2] << ")/("
-              << axupper[2] << "-" << axlower[2] << ")" << std::endl
-              << "      u(3) = (r(3)-" << axlower[3] << ")/("
-              << axupper[3] << "-" << axlower[3] << ")" << std::endl;
+              << "      u(1) = (r(1)-bound" << igrid << "(1,1))/"
+              << "(bound" << igrid << "(1,2)" << "-bound" << igrid << "(1,1))"
+              << std::endl
+              << "      u(2) = (r(2)-bound" << igrid << "(2,1))/"
+              << "(bound" << igrid << "(2,2)" << "-bound" << igrid << "(2,1))"
+              << std::endl
+              << "      u(3) = (r(3)-bound" << igrid << "(3,1))/"
+              << "(bound" << igrid << "(3,2)" << "-bound" << igrid << "(3,1))"
+              << std::endl;
          }
          std::cout
               << "      if ((u(1).ge.0.and.u(1).le.1).and." << std::endl
               << "     +    (u(2).ge.0.and.u(2).le.1).and." << std::endl
               << "     +    (u(3).ge.0.and.u(3).le.1)) then" << std::endl
-              << "        go to 100" << std::endl
+              << "        call interpol3(Bmap,nsites,u,B)" << std::endl
+              << "        B(1)=B(1)*reverse" << igrid << "(1)" << std::endl
+              << "        B(2)=B(2)*reverse" << igrid << "(2)" << std::endl
+              << "        B(3)=B(3)*reverse" << igrid << "(3)" << std::endl
+              << "        return" << std::endl
               << "      endif" << std::endl
               << std::endl;
       }
@@ -1391,7 +1390,6 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
            << "      B(2) = 0" << std::endl
            << "      B(3) = 0" << std::endl
            << "      return" << std::endl
-           << "  100 call interpol3(Bmap,nsites,u,B)" << std::endl
            << "      end" << std::endl
            << std::endl
            << "      subroutine interpol3(Bmap,nsites,u,B)" << std::endl

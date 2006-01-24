@@ -80,7 +80,7 @@ class Refsys
    double fPhiOffset;        	// azimuthal angle of volume origin (deg)
    double fOrigin[3];        	// x,y,z coordinate of volume origin (cm)
    double fRmatrix[3][3];       // rotation matrix (daughter -> mother)
-   int fRotation;        	// unique Rmatrix flag
+   int fRotation;        	// unique Rmatrix identifier
    int fRegionID;        	// unique region identifier
 
    double fMOrigin[3];        	// same as fOrigin, but with MRS as mother
@@ -121,7 +121,7 @@ class Refsys
    Refsys& rotate(const Refsys& ref,
                   const double omega[3]); // rotate by omega in ref frame
 
-   void addIdentifier(XString& ident,
+   void addIdentifier(XString ident,
                       int value,
                       int step);// adds a new identifier to the current list
    void incrementIdentifiers(); // increments all identifiers by one step
@@ -130,6 +130,8 @@ class Refsys
    int nextRotationID();	// generate unique rotation index sequence
    int nextRegionID();		// generate unique region index sequence
    int nextVolumeID();		// generate unique volume index sequence
+
+   std::map<std::string,double> fPar; // key-value table for user needs
 
    static int fRotations;	// non-trivial rotations defined so far
    static int fRegions;        	// total number of regions so far

@@ -119,8 +119,8 @@ using namespace xercesc;
 
 #define APP_NAME "hddsCommon"
 
-#define X(XString) XString.unicode_str()
-#define S(XString) XString.c_str()
+#define X(str) XString(str).unicode_str()
+#define S(str) str.c_str()
 
 /*  Refsys class:
  *	Stores persistent information about coordinate
@@ -163,6 +163,11 @@ Refsys::Refsys(const Refsys& src)	// copy constructor
       fMRmatrix[i][1] = src.fMRmatrix[i][1];
       fMRmatrix[i][2] = src.fMRmatrix[i][2];
    }
+   std::map<std::string,double>::const_iterator iter;
+   for (iter = src.fPar.begin(); iter != src.fPar.end(); ++iter)
+   {
+      fPar[iter->first] = iter->second;
+   }
    reset(src);
 }
 
@@ -180,6 +185,11 @@ Refsys& Refsys::operator=(Refsys& src)	// copy operator (deep sematics)
       fMRmatrix[i][0] = src.fMRmatrix[i][0];
       fMRmatrix[i][1] = src.fMRmatrix[i][1];
       fMRmatrix[i][2] = src.fMRmatrix[i][2];
+   }
+   std::map<std::string,double>::iterator iter;
+   for (iter = src.fPar.begin(); iter != src.fPar.end(); ++iter)
+   {
+      fPar[iter->first] = iter->second;
    }
    reset(src);
    return *this;
@@ -321,7 +331,7 @@ void Refsys::incrementIdentifiers()
    }
 }
 
-void Refsys::addIdentifier(XString& ident, int value, int step)
+void Refsys::addIdentifier(XString ident, int value, int step)
 {
    VolIdent id;
    id.value = value;
@@ -393,11 +403,9 @@ Substance::Substance(DOMElement* elem)
    fRadLen(0), fAbsLen(0), fColLen(0), fMIdEdx(0),
    fUniqueID(0),fBrewList(0)
 {
-   XString aAttS("a");
-   XString aS(fMaterialEl->getAttribute(X(aAttS)));
+   XString aS(fMaterialEl->getAttribute(X("a")));
    fAtomicWeight = atof(S(aS));
-   XString zAttS("z");
-   XString zS(fMaterialEl->getAttribute(X(zAttS)));
+   XString zS(fMaterialEl->getAttribute(X("z")));
    fAtomicNumber = atof(S(zS));
 
    double wfactSum = 0;
@@ -414,10 +422,8 @@ Substance::Substance(DOMElement* elem)
          {
             Units unit;
             unit.getConversions(contEl);
-            XString nameAttS("name");
-            XString nameS(contEl->getAttribute(X(nameAttS)));
-            XString valueAttS("value");
-            XString valueS(contEl->getAttribute(X(valueAttS)));
+            XString nameS(contEl->getAttribute(X("name")));
+            XString valueS(contEl->getAttribute(X("value")));
             if (nameS == "density")
             {
                fDensity = atof(S(valueS)) * unit.g/unit.cm3;
@@ -441,8 +447,7 @@ Substance::Substance(DOMElement* elem)
          }
          else if (tagS == "addmaterial")
          {
-            XString matAttS("material");
-            XString matS(contEl->getAttribute(X(matAttS)));
+            XString matS(contEl->getAttribute(X("material")));
             DOMDocument* document = fMaterialEl->getOwnerDocument();
             DOMElement* targEl = document->getElementById(X(matS));
             XString typeS(targEl->getTagName());
@@ -469,15 +474,13 @@ Substance::Substance(DOMElement* elem)
                              << std::endl;
                         exit(1);
                      }
-                     XString nAttS("n");
-                     XString nS(mixEl->getAttribute(X(nAttS)));
+                     XString nS(mixEl->getAttribute(X("n")));
                      formula.natoms = atoi(S(nS));
                      formula.wfact = formula.natoms * formula.sub->getAtomicWeight();
                   }
                   else if (mixS == "fractionmass")
                   {
-                     XString fAttS("fraction");
-                     XString fS(mixEl->getAttribute(X(fAttS)));
+                     XString fS(mixEl->getAttribute(X("fraction")));
                      formula.wfact = atof(S(fS));
                   }
                }
@@ -557,8 +560,7 @@ Substance::Substance(DOMElement* elem)
    if (fDensity < 0)
    {
       XString tagS(fMaterialEl->getTagName());
-      XString nameAttS("name");
-      XString nameS(fMaterialEl->getAttribute(X(nameAttS)));
+      XString nameS(fMaterialEl->getAttribute(X("name")));
       std::cerr
            << APP_NAME << " error: " << S(tagS) << " " << S(nameS)
            << ", atomic number " << fAtomicNumber
@@ -635,14 +637,12 @@ double Substance::getMIdEdx()
 
 XString Substance::getName()
 {
-   XString nameAttS("name");
-   return XString(fMaterialEl->getAttribute(X(nameAttS)));
+   return XString(fMaterialEl->getAttribute(X("name")));
 }
 
 XString Substance::getSymbol()
 {
-   XString nameAttS("symbol");
-   return XString(fMaterialEl->getAttribute(X(nameAttS)));
+   return XString(fMaterialEl->getAttribute(X("symbol")));
 }
 
 DOMElement* Substance::getDOMElement()
@@ -743,8 +743,7 @@ void Units::set_1G(double bfu)
 
 void Units::getConversions(DOMElement* el)
 {
-   XString unitlAttS("unit_length");
-   XString unitlS(el->getAttribute(X(unitlAttS)));
+   XString unitlS(el->getAttribute(X("unit_length")));
    if (unitlS.size() == 0)
    {
       ;
@@ -794,8 +793,7 @@ void Units::getConversions(DOMElement* el)
       exit(1);
    }
 
-   XString unitaAttS("unit_angle");
-   XString unitaS = el->getAttribute(X(unitaAttS));
+   XString unitaS = el->getAttribute(X("unit_angle"));
    if (unitaS.size() == 0)
    {
       ;
@@ -821,8 +819,7 @@ void Units::getConversions(DOMElement* el)
       exit(1);
    }
 
-   XString unitAttS("unit");
-   XString unitS = el->getAttribute(X(unitAttS));
+   XString unitS = el->getAttribute(X("unit"));
    if (unitS.size() == 0)
    {
       ;
@@ -1043,9 +1040,7 @@ int CodeWriter::createMaterial(DOMElement* el)
    int imate = ++imateCount;
    std::stringstream imateStr;
    imateStr << imate;
-   XString imateAttS("HDDSmate");
-   XString imateS(imateStr.str());
-   el->setAttribute(X(imateAttS),X(imateS));
+   el->setAttribute(X("HDDSmate"),X(imateStr.str()));
 
    Substance subst(el);
    std::list<Substance::Brew>::iterator iter;
@@ -1053,7 +1048,7 @@ int CodeWriter::createMaterial(DOMElement* el)
         iter != subst.fBrewList.end(); ++iter)
    {
       DOMElement* subEl = iter->sub->getDOMElement();
-      XString subS(subEl->getAttribute(X(imateAttS)));
+      XString subS(subEl->getAttribute(X("HDDSmate")));
       iter->sub->fUniqueID = atoi(S(subS));
       if (iter->sub->fUniqueID == 0)
       {
@@ -1066,15 +1061,12 @@ int CodeWriter::createMaterial(DOMElement* el)
 
 int CodeWriter::createSolid(DOMElement* el, Refsys& ref)
 {
-   XString nameTagS("name");
-   XString matAttS("material");
-   XString nameS(el->getAttribute(X(nameTagS)));
-   XString matS(el->getAttribute(X(matAttS)));
+   XString nameS(el->getAttribute(X("name")));
+   XString matS(el->getAttribute(X("material")));
 
    DOMDocument* document = el->getOwnerDocument();
    DOMElement* matEl = document->getElementById(X(matS));
-   XString imateAttS("HDDSmate");
-   XString imateS(matEl->getAttribute(X(imateAttS)));
+   XString imateS(matEl->getAttribute(X("HDDSmate")));
    if (imateS.size() != 0)
    {
       fSubst.fUniqueID = atoi(S(imateS));
@@ -1087,12 +1079,8 @@ int CodeWriter::createSolid(DOMElement* el, Refsys& ref)
    int ivolu = ref.nextVolumeID();
    std::stringstream ivoluStr;
    ivoluStr << ivolu;
-   XString ivoluAttS("HDDSvolu");
-   XString icopyAttS("HDDScopy");
-   XString ivoluS(ivoluStr.str());
-   XString icopyS("0");
-   el->setAttribute(X(ivoluAttS),X(ivoluS));  
-   el->setAttribute(X(icopyAttS),X(icopyS));  
+   el->setAttribute(X("HDDSvolu"),X(ivoluStr.str()));  
+   el->setAttribute(X("HDDScopy"),X("0"));  
 
    return ivolu;
 }
@@ -1110,15 +1098,13 @@ int CodeWriter::createRegion(DOMElement* el, Refsys& ref)
 {
    int iregion = ref.nextRegionID();
 
-   XString regionAttS("region");
-   XString regionS(el->getAttribute(X(regionAttS)));
+   XString regionS(el->getAttribute(X("region")));
    DOMDocument* document = el->getOwnerDocument();
    ref.fRegion = document->getElementById(X(regionS));
    ref.fRegionID = iregion;
 
    double origin[3], angle[3];
-   XString rotAttS("rot");
-   XString rotS(el->getAttribute(X(rotAttS)));
+   XString rotS(el->getAttribute(X("rot")));
    std::stringstream listr(rotS);
    listr >> angle[0] >> angle[1] >> angle[2];
    Units unit;
@@ -1126,8 +1112,7 @@ int CodeWriter::createRegion(DOMElement* el, Refsys& ref)
    angle[0] *= unit.rad;
    angle[1] *= unit.rad;
    angle[2] *= unit.rad;
-   XString xyzAttS("origin");
-   XString xyzS(el->getAttribute(X(xyzAttS)));
+   XString xyzS(el->getAttribute(X("origin")));
    listr.clear(), listr.str(xyzS);
    listr >> origin[0] >> origin[1] >> origin[2];
    origin[0] *= unit.cm;
@@ -1136,22 +1121,17 @@ int CodeWriter::createRegion(DOMElement* el, Refsys& ref)
    ref.shift(origin);
    ref.rotate(angle);
 
-   XString regTagS("HDDSregion");
    std::stringstream attStr;
    attStr << iregion;
-   XString idS(attStr.str());
-   el->setAttribute(X(regTagS),X(idS));
+   el->setAttribute(X("HDDSregion"),X(attStr.str()));
+   DOMElement* regEl = document->createElement(X("HDDSregion"));
+   regEl->setAttribute(X("id"),X(attStr.str()));
 
-   DOMElement* regEl = document->createElement(X(regTagS));
-   XString idAttS("id");
-   regEl->setAttribute(X(idAttS),X(idS));
    attStr.clear(), attStr.str("");
    attStr << ref.fMOrigin[0] << " "
           << ref.fMOrigin[1] << " " 
           << ref.fMOrigin[2];
-   XString origAttS("origin");
-   XString origS(attStr.str());
-   regEl->setAttribute(X(origAttS),X(origS));
+   regEl->setAttribute(X("origin"),X(attStr.str()));
    attStr.clear(), attStr.str("");
    attStr << ref.fMRmatrix[0][0] << " "
           << ref.fMRmatrix[0][1] << " "
@@ -1162,9 +1142,7 @@ int CodeWriter::createRegion(DOMElement* el, Refsys& ref)
           << ref.fMRmatrix[2][0] << " "
           << ref.fMRmatrix[2][1] << " "
           << ref.fMRmatrix[2][2];
-   XString rmatAttS("Rmatrix");
-   XString rmatS(attStr.str());
-   regEl->setAttribute(X(rmatAttS),X(rmatS));
+   regEl->setAttribute(X("Rmatrix"),X(attStr.str()));
    ref.fRegion->appendChild(regEl);
 
    for (DOMNode* cont = ref.fRegion->getFirstChild();
@@ -1176,8 +1154,7 @@ int CodeWriter::createRegion(DOMElement* el, Refsys& ref)
          XString tagS(((DOMElement*)cont)->getTagName());
          if (tagS.find("Bfield") != XString::npos)
          {
-            XString mapS("map");
-            ref.addIdentifier(mapS,iregion,0);
+            ref.addIdentifier(XString("map"),iregion,0);
             break;
          }
       }
@@ -1194,23 +1171,15 @@ int CodeWriter::createDivision(XString& divStr, Refsys& ref)
 
    std::stringstream attStr;
    DOMDocument* document = ref.fMother->getOwnerDocument();
-   XString divTagS("HDDSdivision");
-   DOMElement* divEl = document->createElement(X(divTagS));
-   XString divS(divStr);
-   XString nameAttS("name");
-   divEl->setAttribute(X(nameAttS),X(divS));
-   XString motherS(ref.fMother->getAttribute(X(nameAttS)));
-   XString voluAttS("volume");
-   divEl->setAttribute(X(voluAttS),X(motherS));
+   DOMElement* divEl = document->createElement(X("HDDSdivision"));
+   divEl->setAttribute(X("name"),X(divStr));
+   XString motherS(ref.fMother->getAttribute(X("name")));
+   divEl->setAttribute(X("volume"),X(motherS));
    attStr << ivolu;
-   XString ivoluAttS("HDDSvolu");
-   XString ivoluS(attStr.str());
-   divEl->setAttribute(X(ivoluAttS),X(ivoluS));  
-   XString icopyAttS("HDDScopy");
+   divEl->setAttribute(X("HDDSvolu"),X(attStr.str()));  
    std::stringstream copyStr;
    copyStr << ncopy;
-   XString icopyS(copyStr.str());
-   divEl->setAttribute(X(icopyAttS),X(icopyS));  
+   divEl->setAttribute(X("HDDScopy"),X(copyStr.str()));  
    ref.fMother->appendChild(divEl);
    ref.fPartition.divEl = divEl;
 
@@ -1239,20 +1208,17 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
    fPending = false;
    int icopy = 0;
 
-   Refsys myRef(ref);
    XString tagS(el->getTagName());
-   XString nameAttS("name");
-   XString nameS(el->getAttribute(X(nameAttS)));
+   XString nameS(el->getAttribute(X("name")));
 
+   Refsys myRef(ref);
    DOMElement* env = 0;
    DOMDocument* document = el->getOwnerDocument();
-   XString envAttS("envelope");
-   XString envS(el->getAttribute(X(envAttS)));
+   XString envS(el->getAttribute(X("envelope")));
    if (envS.size() != 0)
    {
       env = document->getElementById(X(envS));
-      XString contAttS("contains");
-      XString containS(env->getAttribute(X(contAttS)));
+      XString containS(env->getAttribute(X("contains")));
       if (containS == nameS)
       {
          return createVolume(env,myRef);
@@ -1264,26 +1230,33 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
               << " is not allowed by " << APP_NAME << std::endl;
          exit(1);
       }
-      env->setAttribute(X(contAttS),X(nameS));
+
+      DOMNode* cont;
+      for (cont = env->getFirstChild(); 
+           cont != 0;
+           cont = cont->getNextSibling())
+      {
+         if (cont->getNodeType() != DOMNode::ELEMENT_NODE)
+         {
+            continue;
+         }
+         DOMElement* contEl = (DOMElement*) cont;
+         XString comdS(contEl->getTagName());
+         if (comdS == "apply")
+         {
+            Refsys drs(myRef);
+            myRef.fRegionID = createRegion(contEl,drs);
+            myRef.fIdentifier["map"] = drs.fIdentifier["map"];
+            myRef.fRegion = drs.fRegion;
+            myRef.fPar = drs.fPar;
+         }
+      }
+
+      env->setAttribute(X("contains"),X(nameS));
       icopy = createVolume(env,myRef);
       myRef.clearIdentifiers();
       myRef.fMother = env;
       myRef.reset();
-
-   // Make containers inherit any region specified in their envelope
-
-      XString applyAttS("apply");
-      DOMNodeList* nodeL = env->getElementsByTagName(X(applyAttS));
-      if (nodeL->getLength() > 0)
-      {
-         DOMElement* applyEl = (DOMElement*)nodeL->item(0);
-         XString regionAttS("region");
-         XString regionS(applyEl->getAttribute(X(regionAttS)));
-         myRef.fRegion = document->getElementById(X(regionS));
-         XString idAttS("HDDSregion");
-         XString idS(applyEl->getAttribute(X(idAttS)));
-         myRef.fRegionID = atoi(S(idS));
-      }
    }
 
    if (tagS == "intersection" ||
@@ -1319,14 +1292,12 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
          }
          DOMElement* contEl = (DOMElement*) cont;
          XString comdS(contEl->getTagName());
-         XString voluAttS("volume");
-         XString targS(contEl->getAttribute(X(voluAttS)));
+         XString targS(contEl->getAttribute(X("volume")));
          DOMElement* targEl = document->getElementById(X(targS));
 
          Refsys drs(myRef);
          double origin[3], angle[3];
-         XString rotAttS("rot");
-         XString rotS(contEl->getAttribute(X(rotAttS)));
+         XString rotS(contEl->getAttribute(X("rot")));
          std::stringstream listr1(rotS);
          listr1 >> angle[0] >> angle[1] >> angle[2];
          Units unit;
@@ -1348,19 +1319,15 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
                continue;
             }
             DOMElement* identEl = (DOMElement*) ident;
-            XString fieldAttS("field");
-            XString valueAttS("value");
-            XString stepAttS("step");
-            XString fieldS(identEl->getAttribute(X(fieldAttS)));
-            XString valueS(identEl->getAttribute(X(valueAttS)));
-            XString stepS(identEl->getAttribute(X(stepAttS)));
+            XString fieldS(identEl->getAttribute(X("field")));
+            XString valueS(identEl->getAttribute(X("value")));
+            XString stepS(identEl->getAttribute(X("step")));
             drs.addIdentifier(fieldS,atoi(S(valueS)),atoi(S(stepS)));
          }
 
          if (comdS == "posXYZ")
          {
-            XString xyzAttS("X_Y_Z");
-            XString xyzS(contEl->getAttribute(X(xyzAttS)));
+            XString xyzS(contEl->getAttribute(X("X_Y_Z")));
             std::stringstream listr(xyzS);
             listr >> origin[0] >> origin[1] >> origin[2];
             origin[0] *= unit.cm;
@@ -1373,13 +1340,11 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
          else if (comdS == "posRPhiZ")
          {
             double r, phi, z;
-            XString rphizAttS("R_Phi_Z");
-            XString rphizS(contEl->getAttribute(X(rphizAttS)));
+            XString rphizS(contEl->getAttribute(X("R_Phi_Z")));
             std::stringstream listr(rphizS);
             listr >> r >> phi >> z;
             double s;
-            XString sAttS("S");
-            XString sS(contEl->getAttribute(X(sAttS)));
+            XString sS(contEl->getAttribute(X("S")));
             s = atof(S(sS));
             phi *= unit.rad;
             r *= unit.cm;
@@ -1388,8 +1353,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             origin[0] = r * cos(phi) - s * sin(phi);
             origin[1] = r * sin(phi) + s * cos(phi);
             origin[2] = z;
-            XString irotAttS("impliedRot");
-            XString implrotS(contEl->getAttribute(X(irotAttS)));
+            XString implrotS(contEl->getAttribute(X("impliedRot")));
             if (implrotS == "true" && (phi != 0))
             {
                angle[2] += phi;
@@ -1400,8 +1364,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
          }
          else if (comdS == "mposPhi")
          {
-            XString ncopyAttS("ncopy");
-            XString ncopyS(contEl->getAttribute(X(ncopyAttS)));
+            XString ncopyS(contEl->getAttribute(X("ncopy")));
             int ncopy = atoi(S(ncopyS));
             if (ncopy <= 0)
             {
@@ -1413,11 +1376,9 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             }
 
             double phi0, dphi;
-            XString phi0AttS("Phi0");
-            XString phi0S(contEl->getAttribute(X(phi0AttS)));
+            XString phi0S(contEl->getAttribute(X("Phi0")));
             phi0 = atof(S(phi0S)) * unit.rad;
-            XString dphiAttS("dPhi");
-            XString dphiS(contEl->getAttribute(X(dphiAttS)));
+            XString dphiS(contEl->getAttribute(X("dPhi")));
             if (dphiS.size() != 0)
             {
                dphi = atof(S(dphiS)) * unit.rad;
@@ -1428,12 +1389,10 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             }
 
             double r, s, z;
-            XString rzAttS("R_Z");
-            XString rzS(contEl->getAttribute(X(rzAttS)));
+            XString rzS(contEl->getAttribute(X("R_Z")));
             std::stringstream listr(rzS);
             listr >> r >> z;
-            XString sAttS("S");
-            XString sS(contEl->getAttribute(X(sAttS)));
+            XString sS(contEl->getAttribute(X("S")));
             s = atof(S(sS));
             r *= unit.cm;
             z *= unit.cm;
@@ -1446,11 +1405,9 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             }
             else
             {
-               XString divAttS("divides");
-               containerS = el->getAttribute(X(divAttS));
+               containerS = el->getAttribute(X("divides"));
             }
-            XString irotAttS("impliedRot");
-            XString implrotS(contEl->getAttribute(X(irotAttS)));
+            XString implrotS(contEl->getAttribute(X("impliedRot")));
             if (noRotation && (nSiblings == 1) &&
                 (containerS == "pcon" ||
                  containerS == "cons" ||
@@ -1463,8 +1420,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
                       << ++phiDivisions;
                phi0 *= unit.deg/unit.rad;
                dphi *= unit.deg/unit.rad;
-               XString envAttS("envelope");
-               XString targEnvS(targEl->getAttribute(X(envAttS)));
+               XString targEnvS(targEl->getAttribute(X("envelope")));
                DOMElement* targEnv;
                if (targEnvS.size() != 0)
                {
@@ -1474,8 +1430,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
                {
                   targEnv = targEl;
                }
-               XString profAttS("profile");
-               XString profS(targEnv->getAttribute(X(profAttS)));
+               XString profS(targEnv->getAttribute(X("profile")));
                if ((r == 0) && (profS.size() != 0))
                {
                   double phi1, dphi1;
@@ -1494,8 +1449,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
                XString divS(divStr.str());
                createDivision(divS, drs);
                drs.fMother = drs.fPartition.divEl;
-               XString divAttS("divides");
-               targEl->setAttribute(X(divAttS),X(containerS));
+               targEl->setAttribute(X("divides"),X(containerS));
                origin[0] = r;
                origin[1] = s;
                origin[2] = z;
@@ -1526,8 +1480,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
          }
          else if (comdS == "mposR")
          {
-            XString ncopyAttS("ncopy");
-            XString ncopyS(contEl->getAttribute(X(ncopyAttS)));
+            XString ncopyS(contEl->getAttribute(X("ncopy")));
             int ncopy = atoi(S(ncopyS));
             if (ncopy <= 0)
             {
@@ -1539,20 +1492,16 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             }
 
             double r0, dr;
-            XString r0AttS("R0");
-            XString r0S(contEl->getAttribute(X(r0AttS)));
+            XString r0S(contEl->getAttribute(X("R0")));
             r0 = atof(S(r0S)) * unit.cm;
-            XString drAttS("dR");
-            XString drS(contEl->getAttribute(X(drAttS)));
+            XString drS(contEl->getAttribute(X("dR")));
             dr = atof(S(drS)) * unit.cm;
 
             double phi, z, s;
-            XString zphiAttS("Z_Phi");
-            XString zphiS(contEl->getAttribute(X(zphiAttS)));
+            XString zphiS(contEl->getAttribute(X("Z_Phi")));
             std::stringstream listr(zphiS);
             listr >> z >> phi;
-            XString sAttS("S");
-            XString sS(contEl->getAttribute(X(sAttS)));
+            XString sS(contEl->getAttribute(X("S")));
             s = atof(S(sS));
             phi *= unit.rad;
             z *= unit.cm;
@@ -1565,8 +1514,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             }
             else
             {
-               XString divAttS("divides");
-               containerS = el->getAttribute(X(divAttS));
+               containerS = el->getAttribute(X("divides"));
             }
             if (noRotation && (nSiblings == 1) &&
                 (containerS == "pcon" ||
@@ -1584,8 +1532,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
                XString divS(divStr.str());
                createDivision(divS, drs);
                drs.fMother = drs.fPartition.divEl;
-               XString divAttS("divides");
-               targEl->setAttribute(X(divAttS),X(containerS));
+               targEl->setAttribute(X("divides"),X(containerS));
                origin[0] = r0 * cos(phi) - s * sin(phi);
                origin[1] = r0 * sin(phi) + s * cos(phi);
                origin[2] = z;
@@ -1612,8 +1559,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
          }
          else if (comdS == "mposX")
          {
-            XString ncopyAttS("ncopy");
-            XString ncopyS(contEl->getAttribute(X(ncopyAttS)));
+            XString ncopyS(contEl->getAttribute(X("ncopy")));
             int ncopy = atoi(S(ncopyS));
             if (ncopy <= 0)
             {
@@ -1625,20 +1571,16 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             }
 
             double x0, dx;
-            XString x0AttS("X0");
-            XString x0S(contEl->getAttribute(X(x0AttS)));
+            XString x0S(contEl->getAttribute(X("X0")));
             x0 = atof(S(x0S)) * unit.cm;
-            XString dxAttS("dX");
-            XString dxS(contEl->getAttribute(X(dxAttS)));
+            XString dxS(contEl->getAttribute(X("dX")));
             dx = atof(S(dxS)) * unit.cm;
 
             double y, z, s;
-            XString yzAttS("Y_Z");
-            XString yzS(contEl->getAttribute(X(yzAttS)));
+            XString yzS(contEl->getAttribute(X("Y_Z")));
             std::stringstream listr(yzS);
             listr >> y >> z;
-            XString sAttS("S");
-            XString sS(contEl->getAttribute(X(sAttS)));
+            XString sS(contEl->getAttribute(X("S")));
             s = atof(S(sS));
             y *= unit.cm;
             z *= unit.cm;
@@ -1651,8 +1593,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             }
             else
             {
-               XString divAttS("divides");
-               containerS = el->getAttribute(X(divAttS));
+               containerS = el->getAttribute(X("divides"));
             }
             if (noRotation && (nSiblings == 1) && 
                 containerS == "box")
@@ -1668,8 +1609,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
                XString divS(divStr.str());
                createDivision(divS, drs);
                drs.fMother = drs.fPartition.divEl;
-               XString divAttS("divides");
-               targEl->setAttribute(X(divAttS),X(containerS));
+               targEl->setAttribute(X("divides"),X(containerS));
                origin[0] = 0;
                origin[1] = y + s;
                origin[2] = z;
@@ -1696,8 +1636,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
          }
          else if (comdS == "mposY")
          {
-            XString ncopyAttS("ncopy");
-            XString ncopyS(contEl->getAttribute(X(ncopyAttS)));
+            XString ncopyS(contEl->getAttribute(X("ncopy")));
             int ncopy = atoi(S(ncopyS));
             if (ncopy <= 0)
             {
@@ -1709,20 +1648,16 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             }
 
             double y0, dy;
-            XString y0AttS("Y0");
-            XString y0S(contEl->getAttribute(X(y0AttS)));
+            XString y0S(contEl->getAttribute(X("Y0")));
             y0 = atof(S(y0S)) * unit.cm;
-            XString dyAttS("dY");
-            XString dyS(contEl->getAttribute(X(dyAttS)));
+            XString dyS(contEl->getAttribute(X("dY")));
             dy = atof(S(dyS)) * unit.cm;
 
             double x, z, s;
-            XString zxAttS("Z_X");
-            XString zxS(contEl->getAttribute(X(zxAttS)));
+            XString zxS(contEl->getAttribute(X("Z_X")));
             std::stringstream listr(zxS);
             listr >> z >> x;
-            XString sAttS("S");
-            XString sS(contEl->getAttribute(X(sAttS)));
+            XString sS(contEl->getAttribute(X("S")));
             s = atof(S(sS));
             x *= unit.cm;
             z *= unit.cm;
@@ -1735,8 +1670,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             }
             else
             {
-               XString divAttS("divides");
-               containerS = el->getAttribute(X(divAttS));
+               containerS = el->getAttribute(X("divides"));
             }
             if (noRotation && (nSiblings == 1) && 
                 containerS == "box")
@@ -1752,8 +1686,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
                XString divS(divStr.str());
                createDivision(divS, drs);
                drs.fMother = drs.fPartition.divEl;
-               XString divAttS("divides");
-               targEl->setAttribute(X(divAttS),X(containerS));
+               targEl->setAttribute(X("divides"),X(containerS));
                origin[0] = x + s;
                origin[1] = 0;
                origin[2] = z;
@@ -1781,8 +1714,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
          }
          else if (comdS == "mposZ")
          {
-            XString ncopyAttS("ncopy");
-            XString ncopyS(contEl->getAttribute(X(ncopyAttS)));
+            XString ncopyS(contEl->getAttribute(X("ncopy")));
             int ncopy = atoi(S(ncopyS));
             if (ncopy <= 0)
             {
@@ -1794,16 +1726,13 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             }
 
             double z0, dz;
-            XString z0AttS("Z0");
-            XString z0S(contEl->getAttribute(X(z0AttS)));
+            XString z0S(contEl->getAttribute(X("Z0")));
             z0 = atof(S(z0S)) * unit.cm;
-            XString dzAttS("dZ");
-            XString dzS(contEl->getAttribute(X(dzAttS)));
+            XString dzS(contEl->getAttribute(X("dZ")));
             dz = atof(S(dzS)) * unit.cm;
 
             double x, y, s;
-            XString xyAttS("X_Y");
-            XString xyS(contEl->getAttribute(X(xyAttS)));
+            XString xyS(contEl->getAttribute(X("X_Y")));
             if (xyS.size() > 0)
             {
                std::stringstream listr(xyS);
@@ -1812,16 +1741,14 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             else
             {
                double r, phi;
-               XString rphiAttS("R_Phi");
-               XString rphiS(contEl->getAttribute(X(rphiAttS)));
+               XString rphiS(contEl->getAttribute(X("R_Phi")));
                std::stringstream listr(rphiS);
                listr >> r >> phi;
                phi *= unit.rad;
                x = r * cos(phi);
                y = r * sin(phi);
             }
-            XString sAttS("S");
-            XString sS(contEl->getAttribute(X(sAttS)));
+            XString sS(contEl->getAttribute(X("S")));
             s = atof(S(sS));
             x *= unit.cm;
             y *= unit.cm;
@@ -1834,8 +1761,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             }
             else
             {
-               XString divAttS("divides");
-               containerS = el->getAttribute(X(divAttS));
+               containerS = el->getAttribute(X("divides"));
             }
             if (noRotation && (nSiblings == 1) &&
                 (containerS.size() != 0))
@@ -1851,8 +1777,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
                XString divS(divStr.str());
                createDivision(divS, drs);
                drs.fMother = drs.fPartition.divEl;
-               XString divAttS("divides");
-               targEl->setAttribute(X(divAttS),X(containerS));
+               targEl->setAttribute(X("divides"),X(containerS));
                double phi = atan2(y,x);
                origin[0] = x - s * sin(phi);
                origin[1] = y + s * cos(phi);
@@ -1882,9 +1807,9 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
          else if (comdS == "apply")
          {
             myRef.fRegionID = createRegion(contEl,drs);
-            XString mapS("map");
-            myRef.fIdentifier[mapS] = drs.fIdentifier[mapS];
+            myRef.fIdentifier["map"] = drs.fIdentifier["map"];
             myRef.fRegion = drs.fRegion;
+            myRef.fPar = drs.fPar;
          }
          else
          {
@@ -1907,37 +1832,14 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
    }
    else
    {
-      XString icopyAttS("HDDScopy");
-      XString icopyS(el->getAttribute(X(icopyAttS)));
+      XString icopyS(el->getAttribute(X("HDDScopy")));
       if (icopyS.size() != 0)
       {
          icopy = atoi(S(icopyS));
       }
       else
       {
-         DOMNode* cont;
-         for (cont = el->getFirstChild(); 
-              cont != 0;
-              cont = cont->getNextSibling())
-         {
-            if (cont->getNodeType() != DOMNode::ELEMENT_NODE)
-            {
-               continue;
-            }
-            DOMElement* contEl = (DOMElement*) cont;
-            XString comdS(contEl->getTagName());
-            if (comdS == "apply")
-            {
-               Refsys drs(myRef);
-               myRef.fRegionID = createRegion(contEl,drs);
-               XString mapS("map");
-               myRef.fIdentifier[mapS] = drs.fIdentifier[mapS];
-               myRef.fRegion = drs.fRegion;
-            }
-         }
-
-         XString profAttS("profile");
-         XString profS(el->getAttribute(X(profAttS)));
+         XString profS(el->getAttribute(X("profile")));
          if (profS.size() != 0)
          {
             double phi0, dphi;
@@ -1953,8 +1855,7 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             }
             std::stringstream pStr;
             pStr << phi0 << " " << dphi;
-            XString pS(pStr.str());
-            el->setAttribute(X(profAttS),X(pS));
+            el->setAttribute(X("profile"),X(pStr.str()));
          }
          createSolid(el,myRef);
          icopy = 0;
@@ -1970,11 +1871,8 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
 
       std::stringstream icopyStr;
       icopyStr << icopy;
-      XString copyS(icopyStr.str());
-      XString copyAttS("HDDScopy");
-      el->setAttribute(X(copyAttS),X(copyS));
-      XString voluAttS("HDDSvolu");
-      XString voluS(el->getAttribute(X(voluAttS)));
+      el->setAttribute(X("HDDScopy"),X(icopyStr.str()));
+      XString voluS(el->getAttribute(X("HDDSvolu")));
       int ivolu = atoi(S(voluS));
       std::map<std::string,Refsys::VolIdent>::iterator iter;
       for (iter = myRef.fIdentifier.begin();
@@ -2026,11 +1924,9 @@ void CodeWriter::translate(DOMElement* topel)
       createGetFunctions(topel, iter->first);
    }
 
-   XString regionsAttS("regions");
    DOMNodeList* regionsL = topel->getOwnerDocument()
-                                ->getElementsByTagName(X(regionsAttS));
-   XString mapS("map");
-   createMapFunctions((DOMElement*)regionsL->item(0),mapS);
+                                ->getElementsByTagName(X("regions"));
+   createMapFunctions((DOMElement*)regionsL->item(0),XString("map"));
 }
 
 void CodeWriter::dump(DOMElement* el, int level=0) // useful debug function

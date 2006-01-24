@@ -50,8 +50,8 @@ using namespace xercesc;
 #include <vector>
 #include <list>
 
-#define X(XString) XString.unicode_str()
-#define S(XString) XString.c_str()
+#define X(str) XString(str).unicode_str()
+#define S(str) str.c_str()
 
 int first_volume_placement = 0;
 
@@ -149,13 +149,11 @@ int main(int argC, char* argV[])
       docEl = document->getDocumentElement();
    }
    catch (DOMException& e) {
-      XString msgS(e.msg);
-      std::cerr << "Woops " << S(msgS) << std::endl;
+      std::cerr << "Woops " << e.msg << std::endl;
       return 1;
    }
 
-   XString everythingS("everything");
-   DOMElement* rootEl = document->getElementById(X(everythingS));
+   DOMElement* rootEl = document->getElementById(X("everything"));
    if (rootEl == 0)
    {
       std::cerr
@@ -268,18 +266,14 @@ int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
    double tmaxfd = 0;
    double stemax = -1;
    double deemax = -1;
-   XString epsil = "0.1000000E-02";
+   XString epsil = "0.001";
    double stmin = -1;
    if (ref.fRegion)
    {
-      XString noBfieldS("noBfield");
-      DOMNodeList* noBfieldL = ref.fRegion->getElementsByTagName(X(noBfieldS));
-      XString uniBfieldS("uniformBfield");
-      DOMNodeList* uniBfieldL = ref.fRegion->getElementsByTagName(X(uniBfieldS));
-      XString mapBfieldS("mappedBfield");
-      DOMNodeList* mapBfieldL = ref.fRegion->getElementsByTagName(X(mapBfieldS));
-      XString swimS("swim");
-      DOMNodeList* swimL = ref.fRegion->getElementsByTagName(X(swimS));
+      DOMNodeList* noBfieldL = ref.fRegion->getElementsByTagName(X("noBfield"));
+      DOMNodeList* uniBfieldL = ref.fRegion->getElementsByTagName(X("uniformBfield"));
+      DOMNodeList* mapBfieldL = ref.fRegion->getElementsByTagName(X("mappedBfield"));
+      DOMNodeList* swimL = ref.fRegion->getElementsByTagName(X("swim"));
       if (noBfieldL->getLength() > 0)
       {
          ifield = 0;
@@ -288,8 +282,7 @@ int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
       else if (uniBfieldL->getLength() > 0)
       {
          DOMElement* uniBfieldEl = (DOMElement*)uniBfieldL->item(0);
-         XString bvecAttS("Bx_By_Bz");
-         XString bvecS(uniBfieldEl->getAttribute(X(bvecAttS)));
+         XString bvecS(uniBfieldEl->getAttribute(X("Bx_By_Bz")));
          std::stringstream str(S(bvecS));
          double B[3];
          str >> B[0] >> B[1] >> B[2];
@@ -300,16 +293,14 @@ int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
       else if (mapBfieldL->getLength() > 0)
       {
          DOMElement* mapBfieldEl = (DOMElement*)mapBfieldL->item(0);
-         XString bmaxAttS("maxBfield");
-         XString bmaxS(mapBfieldEl->getAttribute(X(bmaxAttS)));
+         XString bmaxS(mapBfieldEl->getAttribute(X("maxBfield")));
          fieldm = atof(S(bmaxS));
          ifield = 2;
          tmaxfd = 1;
          if (swimL->getLength() > 0)
          {
             DOMElement* swimEl = (DOMElement*)swimL->item(0);
-            XString methodAttS("method");
-            XString methodS(swimEl->getAttribute(X(methodAttS)));
+            XString methodS(swimEl->getAttribute(X("method")));
             ifield = (methodS == "RungeKutta")? 1 : 2;
          }
       }
@@ -317,12 +308,9 @@ int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
 
    static int itmedCount = 0;
    int itmed = ++itmedCount;
-   XString nameAttS("name");
-   XString nameS(el->getAttribute(X(nameAttS)));
-   XString matAttS("material");
-   XString matS(el->getAttribute(X(matAttS)));
-   XString sensiAttS("sensitive");
-   XString sensiS(el->getAttribute(X(sensiAttS)));
+   XString nameS(el->getAttribute(X("name")));
+   XString matS(el->getAttribute(X("material")));
+   XString sensiS(el->getAttribute(X("sensitive")));
    std::cout
         << "TGeoMedium *med" << itmed 
         << " = new TGeoMedium(\"" << S(nameS)
@@ -342,8 +330,7 @@ int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
    {
       shapeS = "BOX ";
       double xl, yl, zl;
-      XString xyzAttS("X_Y_Z");
-      XString xyzS(el->getAttribute(X(xyzAttS)));
+      XString xyzS(el->getAttribute(X("X_Y_Z")));
       std::stringstream listr(xyzS);
       listr >> xl >> yl >> zl;
 
@@ -362,12 +349,10 @@ int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
    {
       shapeS = "TUBS";
       double ri, ro, zl, phi0, dphi;
-      XString riozAttS("Rio_Z");
-      XString riozS(el->getAttribute(X(riozAttS)));
+      XString riozS(el->getAttribute(X("Rio_Z")));
       std::stringstream listr(riozS);
       listr >> ri >> ro >> zl;
-      XString profAttS("profile");
-      XString profS(el->getAttribute(X(profAttS)));
+      XString profS(el->getAttribute(X("profile")));
       listr.clear(), listr.str(profS);
       listr >> phi0 >> dphi;
 
@@ -401,13 +386,11 @@ int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
    {
       shapeS = "TRAP";
       double xm, ym, xp, yp, zl;
-      XString xyzAttS("Xmp_Ymp_Z");
-      XString xyzS(el->getAttribute(X(xyzAttS)));
+      XString xyzS(el->getAttribute(X("Xmp_Ymp_Z")));
       std::stringstream listr(xyzS);
       listr >> xm >> xp >> ym >> yp >> zl;
       double alph_xz, alph_yz;
-      XString incAttS("inclination");
-      XString incS(el->getAttribute(X(incAttS)));
+      XString incS(el->getAttribute(X("inclination")));
       listr.clear(), listr.str(incS);
       listr >> alph_xz >> alph_yz;
 
@@ -439,12 +422,10 @@ int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
    {
       shapeS = "PCON";
       double phi0, dphi;
-      XString profAttS("profile");
-      XString profS(el->getAttribute(X(profAttS)));
+      XString profS(el->getAttribute(X("profile")));
       std::stringstream listr(profS);
       listr >> phi0 >> dphi;
-      XString planeTagS("polyplane");
-      DOMNodeList* planeList = el->getElementsByTagName(X(planeTagS));
+      DOMNodeList* planeList = el->getElementsByTagName(X("polyplane"));
 
       npar = 3;
       par[0] = phi0 * unit.deg;
@@ -455,8 +436,7 @@ int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
          double ri, ro, zl;
          DOMNode* node = planeList->item(p);
          DOMElement* elem = (DOMElement*) node;
-         XString riozAttS("Rio_Z");
-         XString riozS(elem->getAttribute(X(riozAttS)));
+         XString riozS(elem->getAttribute(X("Rio_Z")));
          std::stringstream listr1(riozS);
          listr1 >> ri >> ro >> zl;
          par[npar++] = zl * unit.cm;
@@ -481,16 +461,13 @@ int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
    {
       shapeS = "PGON";
       int segments;
-      XString segAttS("segments");
-      XString segS(el->getAttribute(X(segAttS)));
+      XString segS(el->getAttribute(X("segments")));
       segments = atoi(S(segS));
       double phi0, dphi;
-      XString profAttS("profile");
-      XString profS(el->getAttribute(X(profAttS)));
+      XString profS(el->getAttribute(X("profile")));
       std::stringstream listr(profS);
       listr >> phi0 >> dphi;
-      XString planeTagS("polyplane");
-      DOMNodeList* planeList = el->getElementsByTagName(X(planeTagS));
+      DOMNodeList* planeList = el->getElementsByTagName(X("polyplane"));
 
       npar = 4;
       par[0] = phi0 * unit.deg;
@@ -502,8 +479,7 @@ int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
          double ri, ro, zl;
          DOMNode* node = planeList->item(p);
          DOMElement* elem = (DOMElement*) node;
-         XString riozAttS("Rio_Z");
-         XString riozS(elem->getAttribute(X(riozAttS)));
+         XString riozS(elem->getAttribute(X("Rio_Z")));
          std::stringstream listr1(riozS);
          listr1 >> ri >> ro >> zl;
          par[npar++] = zl * unit.cm;
@@ -528,13 +504,11 @@ int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
    {
       shapeS = "CONS";
       double rim, rip, rom, rop, zl;
-      XString riozAttS("Rio1_Rio2_Z");
-      XString riozS(el->getAttribute(X(riozAttS)));
+      XString riozS(el->getAttribute(X("Rio1_Rio2_Z")));
       std::stringstream listr(riozS);
       listr >> rim >> rom >> rip >> rop >> zl;
       double phi0, dphi;
-      XString profAttS("profile");
-      XString profS(el->getAttribute(X(profAttS)));
+      XString profS(el->getAttribute(X("profile")));
       listr.clear(), listr.str(profS);
       listr >> phi0 >> dphi;
 
@@ -571,18 +545,15 @@ int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
    {
       shapeS = "SPHE";
       double ri, ro;
-      XString rioAttS("Rio");
-      XString rioS(el->getAttribute(X(rioAttS)));
+      XString rioS(el->getAttribute(X("Rio")));
       std::stringstream listr(rioS);
       listr >> ri >> ro;
       double theta0, theta1;
-      XString polarAttS("polar_bounds");
-      XString polarS(el->getAttribute(X(polarAttS)));
+      XString polarS(el->getAttribute(X("polar_bounds")));
       listr.clear(), listr.str(polarS);
       listr >> theta0 >> theta1;
       double phi0, dphi;
-      XString profAttS("profile");
-      XString profS(el->getAttribute(X(profAttS)));
+      XString profS(el->getAttribute(X("profile")));
       listr.clear(), listr.str(profS);
       listr >> phi0 >> dphi;
 
@@ -649,8 +620,7 @@ int RootMacroWriter::createDivision(XString& divStr, Refsys& ref)
 {
    int ndiv = CodeWriter::createDivision(divStr,ref);
 
-   XString nameAttS("name");
-   XString motherS(ref.fMother->getAttribute(X(nameAttS)));
+   XString motherS(ref.fMother->getAttribute(X("name")));
    std::cout
         << "TGeoVolume *" << divStr << "= "
         << S(motherS) << "->Divide(\"" << divStr << "\","
@@ -667,9 +637,8 @@ int RootMacroWriter::createVolume(DOMElement* el, Refsys& ref)
 
    if (fPending)
    {
-      XString nameAttS("name");
-      XString nameS(el->getAttribute(X(nameAttS)));
-      XString motherS(fRef.fMother->getAttribute(X(nameAttS)));
+      XString nameS(el->getAttribute(X("name")));
+      XString motherS(fRef.fMother->getAttribute(X("name")));
       int irot = fRef.fRotation;
       if (first_volume_placement == 0) 
       {
