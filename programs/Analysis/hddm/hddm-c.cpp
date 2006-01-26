@@ -780,13 +780,13 @@ void CodeBuilder::constructMakeFuncs()
 	       int crep = (crepS == "unbounded")? 9999 : atoi(S(crepS));
                if (crep > 1)
                {
-                  cFile << "   pp->" << cnameS.plural()
+                  cFile << "      pp->" << cnameS.plural()
                         << " = (" << cnameS.listStructType()
                         << "*)&hddm_nullTarget;"		<< std::endl;
                }
                else
                {
-                  cFile << "   pp->" << cnameS
+                  cFile << "      pp->" << cnameS
                         << " = (" << cnameS.simpleStructType()
                         << "*)&hddm_nullTarget;"		<< std::endl;
                }
@@ -1371,14 +1371,27 @@ void CodeBuilder::writeMatcher()
 	 << "   return strstr(d,endTag);"			<< std::endl
 	 << "}"							<< std::endl
         							<< std::endl
-	 << "static void collide(char* tag)"			<< std::endl
-	 << "   {"						<< std::endl
-	 << "      fprintf(stderr,\"HDDM Error: \");"		<< std::endl
-	 << "      fprintf(stderr,\"input template model for tag \");"	<< std::endl
-	 << "      fprintf(stderr,\"%s does not match c code.\", tag);"	<< std::endl
-	 << "      fprintf(stderr,\"\\nPlease recompile.\\n\");"	<< std::endl
-	 << "      exit(9);"					<< std::endl
-	 << "   }"						<< std::endl
+         << "static void collide(char* b, char* c)"		<< std::endl
+	 << "{"							<< std::endl
+         << "   char btag[500];"				<< std::endl
+         << "   getTag(b,btag);"				<< std::endl
+         << "   b = index(b,'<');"				<< std::endl
+         << "   c = index(c,'<');"				<< std::endl
+         << "   *(index(b,'\\n')) = 0;"				<< std::endl
+         << "   *(index(c,'\\n')) = 0;"				<< std::endl
+         << "   fprintf(stderr,\"HDDM warning: \");"		<< std::endl
+         << "   fprintf(stderr,\"tag %s in input file \", btag);" << std::endl
+         << "   fprintf(stderr,\"does not match c header hddm_"
+         << classPrefix << ".h\\n\");"				<< std::endl
+         << "   fprintf(stderr,\"  input file: %s\\n\", b);"	<< std::endl
+         << "   fprintf(stderr,\"  c header: %s\\n\", c);"	<< std::endl
+         << "   fprintf(stderr,\"  === Tag %s will be ignored,\", btag);"
+								<< std::endl
+         << "   fprintf(stderr,\" rebuild to cure the problem ===\\n\");"
+								<< std::endl
+         << "   *(index(b,0)) = '\\n';"				<< std::endl
+         << "   *(index(c,0)) = '\\n';"				<< std::endl
+         << "}"							<< std::endl
 								<< std::endl
 	 << "static popNode* matches(char* b, char* c)"		<< std::endl
 	 << "{"							<< std::endl
@@ -1397,10 +1410,10 @@ void CodeBuilder::writeMatcher()
 	 << "         int len = index(c+1,'\\n') - c;"		<< std::endl
 	 << "         if (strncmp(c,b,len) != 0)"		<< std::endl
 	 << "         {"					<< std::endl
-         << "            collide(btag);"			<< std::endl
+         << "            collide(b,c);"				<< std::endl
+         << "            return 0;"				<< std::endl
 	 << "         }"					<< std::endl;
 
-   int firstTag = 1;
    std::vector<DOMElement*>::iterator iter;
    for (iter = tagList.begin(); iter != tagList.end(); iter++)
    {
@@ -1419,16 +1432,8 @@ void CodeBuilder::writeMatcher()
       XtString tagT(tagType);
       tagT.erase(tagT.rfind('_'));
 
-      if (firstTag)
-      {
-         firstTag = 0;
-         cFile << "         if ";
-      }
-      else
-      {
-         cFile << "         else if ";
-      }
-      cFile << "(strcmp(btag,\"" << tagS << "\") == 0)"		<< std::endl
+      cFile << "         else if "
+            << "(strcmp(btag,\"" << tagS << "\") == 0)"		<< std::endl
             << "         {"					<< std::endl
 	    << "            this1->unpacker = "
 	    << "(void*(*)(XDR*,popNode*))"
@@ -1436,11 +1441,7 @@ void CodeBuilder::writeMatcher()
             << "         }"					<< std::endl;
    }
 
-   cFile << "         else"					<< std::endl
-	 << "         {"					<< std::endl
-         << "            collide(btag);"			<< std::endl
-	 << "         }"					<< std::endl
-         << "         this1->inParent = ptrSeqNo;"		<< std::endl
+   cFile << "         this1->inParent = ptrSeqNo;"		<< std::endl
          << "         this1->popListLength = 0;"		<< std::endl
 	 << "         c = index(c+1,'\\n');"			<< std::endl
 	 << "         b = index(b+1,'\\n');"			<< std::endl
@@ -1528,11 +1529,11 @@ void CodeBuilder::constructOpenFunc(DOMElement* el)
 	 << "   fp->popTop = matches(head,HDDM_" << classPrefix
 	 << "_DocumentString);"					<< std::endl
 	 << "   free(head);" 					<< std::endl
-         << "   if (fp->popTop == 0)"				<< std::endl
+         << "   if (fp->popTop->popListLength == 0)"		<< std::endl
 	 << "   {"						<< std::endl
 	 << "      fprintf(stderr,\"HDDM Error: \");"		<< std::endl
 	 << "      fprintf(stderr,\"input template model \");"	<< std::endl
-	 << "      fprintf(stderr,\"does not match c code.\");"	<< std::endl
+	 << "      fprintf(stderr,\"does not match c header.\");"<< std::endl
 	 << "      fprintf(stderr,\"  Please recompile.\\n\");"	<< std::endl
 	 << "      exit(9);"					<< std::endl
 	 << "   }"						<< std::endl
