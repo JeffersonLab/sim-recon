@@ -19,6 +19,9 @@ derror_t DFactory_DTOFMCResponse::evnt(DEventLoop *loop, int eventnumber)
 
   for (unsigned int i = 0; i < hddmhits.size(); i++){
 
+#if 0		// The definition of DHDDMTOFHit has changed and I'm not sure
+			// if response needs to be changed as well  1/29/2006 DL
+
     const DHDDMTOFHit *hddmhit = hddmhits[i];
     DTOFMCResponse *response = new DTOFMCResponse;
 
@@ -29,6 +32,7 @@ derror_t DFactory_DTOFMCResponse::evnt(DEventLoop *loop, int eventnumber)
     response->E           = hddmhit->E;
 
     _data.push_back(response);
+#endif
 
   }
 

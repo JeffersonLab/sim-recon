@@ -29,22 +29,23 @@ const string DFactory_DHDDMTOFTruth::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	// Put the class specific code to produce nicely formatted ASCII here.
-	// The DFactory_base class has several methods defined to help. They
-	// rely on positions of colons (:) in the header. Here's an example:
-	//
-	//		printheader("row:    x:     y:");
-	//
-	// 	for(int i=0; i<_data.size(); i++){
-	//			DHDDMTOFTruth *myDHDDMTOFTruth = _data[i];
-	//
-	//			printnewrow();
-	//			printcol("%d",	i);
-	//			printcol("%1.3f",	myDHDDMTOFTruth->x);
-	//			printcol("%3.2f",	myDHDDMTOFTruth->y);
-	//			printrow();
-	//		}
-	//
+	printheader("row:  primary: track: t:       x:     y:     z:      orientation:");
+
+	for(unsigned int i=0; i<_data.size(); i++){
+		DHDDMTOFTruth *truth = _data[i];
+
+		printnewrow();
+		printcol("%d",	i);
+		printcol("%d",	truth->primary);
+		printcol("%d",	truth->track);
+		printcol("%1.3f",	truth->t);
+		printcol("%1.3f",	truth->x);
+		printcol("%1.3f",	truth->y);
+		printcol("%1.3f",	truth->z);
+		printcol("%d",	truth->orientation);
+		printrow();
+	}
+
 	return _table;
 
 }
@@ -70,30 +71,30 @@ derror_t DFactory_DHDDMTOFTruth::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v
     identifier_t identifier = 0;
 	
     for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->forwardTOF == HDDM_NULL ||
+			hits->forwardTOF->ftofTruthPoints == HDDM_NULL)continue;
 
-        s_TofPoints_t*  tofpoints = NULL;
-        if(PE->in[i].hitView)
-            if(PE->in[i].hitView->forwardTOF)
-                tofpoints = PE->in[i].hitView->forwardTOF->tofPoints;
-        if(!tofpoints)continue;
-        
-        for(unsigned int j=0;j<tofpoints->mult;j++){
+		s_FtofTruthPoints_t* ftofTruthPoints = hits->forwardTOF->ftofTruthPoints;
 
-            DHDDMTOFTruth *toftruth = new DHDDMTOFTruth;
-            toftruth->orientation = 0;
-            toftruth->track       = tofpoints->in[j].track;
-            toftruth->primary     = tofpoints->in[j].primary ? 1 : 0;
-            toftruth->x           = tofpoints->in[j].x;
-            toftruth->y           = tofpoints->in[j].y;
-            toftruth->z           = tofpoints->in[j].z;
-            toftruth->t           = tofpoints->in[j].t;
-            identifier++;
-            v.push_back(toftruth);
+		// Loop truth hits
+		s_FtofTruthPoint_t *ftofTruthPoint = ftofTruthPoints->in;
+		for(unsigned int j=0;j<ftofTruthPoints->mult; j++, ftofTruthPoint++){
+			DHDDMTOFTruth *toftruth = new DHDDMTOFTruth;
+		
+			toftruth->orientation = 1;
+			toftruth->primary     = ftofTruthPoint->primary;
+			toftruth->t           = ftofTruthPoint->t;
+			toftruth->track       = ftofTruthPoint->track;
+			toftruth->x           = ftofTruthPoint->x;
+			toftruth->y           = ftofTruthPoint->y;
+			toftruth->z           = ftofTruthPoint->z;
+			identifier++;
+			v.push_back(toftruth);
+		}
+	}
 
-        }
-    }
-
-    return NOERROR;
-
+	return NOERROR;
 }
 

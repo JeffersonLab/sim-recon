@@ -29,22 +29,21 @@ const string DFactory_DHDDMTOFHit::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	// Put the class specific code to produce nicely formatted ASCII here.
-	// The DFactory_base class has several methods defined to help. They
-	// rely on positions of colons (:) in the header. Here's an example:
-	//
-	//		printheader("row:    x:     y:");
-	//
-	// 	for(int i=0; i<_data.size(); i++){
-	//			DHDDMTOFHit *myDHDDMTOFHit = _data[i];
-	//
-	//			printnewrow();
-	//			printcol("%d",	i);
-	//			printcol("%1.3f",	myDHDDMTOFHit->x);
-	//			printcol("%3.2f",	myDHDDMTOFHit->y);
-	//			printrow();
-	//		}
-	//
+	printheader("row:   paddle: plane: end:    t:        dE:      id:");
+
+	for(unsigned int i=0; i<_data.size(); i++){
+		DHDDMTOFHit *hit = _data[i];
+
+		printnewrow();
+		printcol("%d",		hit->paddle);
+		printcol("%d",		hit->plane);
+		printcol("%d",		hit->end);
+		printcol("%1.3f",	hit->t);
+		printcol("%1.3f",	hit->dE);
+		printcol("%d",		hit->id);
+		printrow();
+	}
+
 	return _table;
 
 }
@@ -68,99 +67,47 @@ derror_t DFactory_DHDDMTOFHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	
     identifier_t identifier = 0;
 
-    for(unsigned int i=0; i<PE->mult; i++){
-
-        s_Vcounters_t *vcounters = NULL;
-        s_Hcounters_t *hcounters = NULL;
-        if(PE->in[i].hitView){
-            if(PE->in[i].hitView->forwardTOF){
-                vcounters = PE->in[i].hitView->forwardTOF->vcounters;
-                hcounters = PE->in[i].hitView->forwardTOF->hcounters;
-            }
-        }
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->forwardTOF == HDDM_NULL ||
+			hits->forwardTOF->ftofCounters == HDDM_NULL)continue;
 		
-        if(vcounters){
-
-            for(unsigned int j=0;j<vcounters->mult;j++){
-
-                s_Top_t *top = vcounters->in[j].top;
-                s_Bottom_t *bottom = vcounters->in[j].bottom;
-
-                float y = vcounters->in[j].x;
-
-                if(top){
-                    s_Hits_t *hits = top->hits;
-                    for(unsigned int k=0;k<hits->mult;k++){		
-                        DHDDMTOFHit *tofhit = new DHDDMTOFHit;
-                        tofhit->orientation = 0;
-                        tofhit->end         = 0;
-                        tofhit->y           = y;
-                        tofhit->t           = hits->in[k].t;
-                        tofhit->E           = hits->in[k].dE;
-                        identifier++;
-                        v.push_back(tofhit);
-                    }
-                }
-
-                if(bottom){
-                    s_Hits_t *hits = bottom->hits;
-                    for(unsigned int k=0;k<hits->mult;k++){		
-                        DHDDMTOFHit *tofhit = new DHDDMTOFHit;
-                        tofhit->orientation = 0;
-                        tofhit->end         = 1;
-                        tofhit->y           = y;
-                        tofhit->t           = hits->in[k].t;
-                        tofhit->E           = hits->in[k].dE;
-                        identifier++;
-                        v.push_back(tofhit);
-                    }
-                }
-
-            }
-        }
-
-
-        if(hcounters){
-
-            for(unsigned int j=0;j<hcounters->mult;j++){
-
-                s_Left_t *left = hcounters->in[j].left;
-                s_Right_t *right = hcounters->in[j].right;
-
-                float y = hcounters->in[j].y;
-
-                if(left){
-                    s_Hits_t *hits = left->hits;
-                    for(unsigned int k=0;k<hits->mult;k++){		
-                        DHDDMTOFHit *tofhit = new DHDDMTOFHit;
-                        tofhit->orientation = 1;
-                        tofhit->end         = 0;
-                        tofhit->y           = y;
-                        tofhit->t           = hits->in[k].t;
-                        tofhit->E           = hits->in[k].dE;
-                        identifier++;
-                        v.push_back(tofhit);
-                    }
-                }
-
-                if(right){
-                    s_Hits_t *hits = right->hits;
-                    for(unsigned int k=0;k<hits->mult;k++){		
-                        DHDDMTOFHit *tofhit = new DHDDMTOFHit;
-                        tofhit->orientation = 1;
-                        tofhit->end         = 1;
-                        tofhit->y           = y;
-                        tofhit->t           = hits->in[k].t;
-                        tofhit->E           = hits->in[k].dE;
-                        identifier++;
-                        v.push_back(tofhit);
-                    }
-                }
-
-            }
-        }
-
-    }
+		s_FtofCounters_t* ftofCounters = hits->forwardTOF->ftofCounters;
+		
+		// Loop over counters
+		s_FtofCounter_t *ftofCounter = ftofCounters->in;
+		for(unsigned int j=0;j<ftofCounters->mult; j++, ftofCounter++){
+			 
+			// Loop over left hits
+			s_FtofLeftHits_t *ftofLeftHits = ftofCounter->ftofLeftHits;
+			s_FtofLeftHit_t *ftofLeftHit = ftofLeftHits->in;
+			for(unsigned int k=0;k<ftofLeftHits->mult; k++, ftofLeftHit++){
+				DHDDMTOFHit *tofhit = new DHDDMTOFHit;
+				tofhit->paddle	= ftofCounter->paddle;
+				tofhit->plane	= ftofCounter->plane;
+				tofhit->end		= 0;
+				tofhit->t		= ftofLeftHit->t;
+				tofhit->dE		= ftofLeftHit->dE;
+				tofhit->id		= identifier++;
+				v.push_back(tofhit);
+			}
+			 
+			 // Loop over right hits
+			s_FtofRightHits_t *ftofRightHits = ftofCounter->ftofRightHits;
+			s_FtofRightHit_t *ftofRightHit = ftofRightHits->in;
+			for(unsigned int k=0;k<ftofRightHits->mult; k++, ftofRightHit++){
+				DHDDMTOFHit *tofhit = new DHDDMTOFHit;
+				tofhit->paddle	= ftofCounter->paddle;
+				tofhit->plane	= ftofCounter->plane;
+				tofhit->end		= 0;
+				tofhit->t		= ftofRightHit->t;
+				tofhit->dE		= ftofRightHit->dE;
+				tofhit->id		= identifier++;
+				v.push_back(tofhit);
+			}
+		}
+	}
 
     return NOERROR;
 

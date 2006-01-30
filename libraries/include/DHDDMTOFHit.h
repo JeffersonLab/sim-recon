@@ -15,11 +15,11 @@ class DHDDMTOFHit:public DObject{
     public:
         HDCLASSDEF(DHDDMTOFHit);
 
-        int orientation;  // 0: vertical,  1: horizontal
-        int end;          // 0: left/top,  1: right/bottom
-        float y;          // x/y position of bar center
-        float t;          // time of light at end of bar
-        float E;          // attenuated energy deposition
+			int paddle;		// paddle number
+			int plane;		// plane
+			int end;			// 0: left/top,  1: right/bottom
+			float t;			// time of light at end of bar
+			float dE;		// attenuated energy deposition
 
 };
 
