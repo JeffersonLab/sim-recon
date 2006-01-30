@@ -46,6 +46,7 @@ derror_t DFactory_DMCTrackHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	// _data will be overwritten by the contents of v later by DEvent::Get()
 	// but the contents will be identical. This somewhat convoluted way
 	// of doing things is needed to implement a generic API for event sources.
+	identifier = 0;
 	GetCDCHits(hddm_s);
 	GetFDCHits(hddm_s);
 	GetBCALHits(hddm_s);
@@ -82,37 +83,26 @@ derror_t DFactory_DMCTrackHit::GetCDCHits(s_HDDM_t *hddm_s)
 	if(!PE) return NOERROR;
 	
 	for(unsigned int i=0; i<PE->mult; i++){
-		// ------------ CdcPoints, Hits --------------
-		s_Rings_t *rings=NULL;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->centralDC)
-				rings = PE->in[i].hitView->centralDC->rings;
-		if(rings){
-			for(unsigned int j=0;j<rings->mult;j++){
-				//float radius = rings->in[j].radius;
-				s_Straws_t *straws = rings->in[j].straws;
-				if(straws){
-					for(unsigned int k=0;k<straws->mult;k++){
-						//float phim = straws->in[k].phim;
-						s_CdcPoints_t *cdcpoints = straws->in[k].cdcPoints;
-						if(cdcpoints){
-							for(unsigned int m=0;m<cdcpoints->mult;m++){
-								DMCTrackHit *mctrackhit = new DMCTrackHit;
-								mctrackhit->r			= cdcpoints->in[m].r;
-								mctrackhit->phi		= cdcpoints->in[m].phi;
-								mctrackhit->z			= cdcpoints->in[m].z;
-								mctrackhit->track		= cdcpoints->in[m].track;
-								mctrackhit->primary	= cdcpoints->in[m].primary;
-								mctrackhit->system	= SYS_CDC;
-								_data.push_back(mctrackhit);
-							}
-						}
-					}
-				}
-			}
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->centralDC == HDDM_NULL ||
+			hits->centralDC->cdcTruthPoints == HDDM_NULL)continue;
+		
+		s_CdcTruthPoints_t *cdctruthpoints = hits->centralDC->cdcTruthPoints;
+		s_CdcTruthPoint_t *cdctruthpoint = cdctruthpoints->in;
+		for(unsigned int j=0; j<cdctruthpoints->mult; j++, cdctruthpoint++){
+			DMCTrackHit *mctrackhit = new DMCTrackHit;
+			mctrackhit->r			= cdctruthpoint->r;
+			mctrackhit->phi		= cdctruthpoint->phi;
+			mctrackhit->z			= cdctruthpoint->z;
+			mctrackhit->track		= cdctruthpoint->track;
+			mctrackhit->primary	= cdctruthpoint->primary;
+			mctrackhit->system	= SYS_CDC;
+			mctrackhit->id			= identifier++;
+			_data.push_back(mctrackhit);
 		}
 	}
-
+		
 	return NOERROR;
 }
 
@@ -126,53 +116,30 @@ derror_t DFactory_DMCTrackHit::GetFDCHits(s_HDDM_t *hddm_s)
 	if(!PE) return NOERROR;
 	
 	for(unsigned int i=0; i<PE->mult; i++){
-		s_Chambers_t *chambers = NULL;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->forwardDC)
-				chambers = PE->in[i].hitView->forwardDC->chambers;
-		if(!chambers)continue;
-		
-		for(unsigned int j=0;j<chambers->mult;j++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->forwardDC == HDDM_NULL ||
+			hits->forwardDC->fdcChambers == HDDM_NULL)continue;
 
-			s_AnodePlanes_t *anodeplanes = chambers->in[j].anodePlanes;
-			if(anodeplanes){
+		s_FdcChambers_t* fdcChambers = hits->forwardDC->fdcChambers;
+		s_FdcChamber_t *fdcChamber = fdcChambers->in;
+		for(unsigned int j=0; j<fdcChambers->mult; j++, fdcChamber++){
+			s_FdcTruthPoints_t *fdcTruthPoints = fdcChamber->fdcTruthPoints;
+			if(fdcTruthPoints == HDDM_NULL)continue;
 			
-				for(unsigned int k=0;k<anodeplanes->mult;k++){
-					s_Wires_t *wires = anodeplanes->in[k].wires;
-					if(!wires)continue;
-				
-					for(unsigned int m=0;m<wires->mult;m++){
-						s_FdcPoints_t *fdcPoints = wires->in[m].fdcPoints;
-						if(!fdcPoints)continue;
-						for(unsigned int n=0;n<fdcPoints->mult;n++){
-							DMCTrackHit *mctrackhit = new DMCTrackHit;
-							float x = fdcPoints->in[n].x;
-							float y = fdcPoints->in[n].y;
-							mctrackhit->r			= sqrt(x*x + y*y);
-							mctrackhit->phi		= atan2(y,x);
-							mctrackhit->z			= fdcPoints->in[n].z;
-							mctrackhit->track		= fdcPoints->in[n].track;
-							mctrackhit->primary	= fdcPoints->in[n].primary;
-							mctrackhit->system	= SYS_FDC;
-							_data.push_back(mctrackhit);
-						}
-					}
-				}
-			}
-
-			s_CathodePlanes_t *cathodeplanes = chambers->in[j].cathodePlanes;
-			if(cathodeplanes){
-			
-				for(unsigned int k=0;k<cathodeplanes->mult;k++){
-					//float tau = cathodeplanes->in[k].tau;
-					//float z = cathodeplanes->in[k].z;
-					s_Strips_t *strips = cathodeplanes->in[k].strips;
-					if(!strips)continue;
-				
-					for(unsigned int m=0;m<strips->mult;m++){
-						// Just skip cathode hits
-					}
-				}
+			s_FdcTruthPoint_t *truth = fdcTruthPoints->in;
+			for(unsigned int k=0; k<fdcTruthPoints->mult; k++, truth++){
+				float x = truth->x;
+				float y = truth->y;
+				DMCTrackHit *mctrackhit = new DMCTrackHit;
+				mctrackhit->r			= sqrt(x*x + y*y);
+				mctrackhit->phi		= atan2(y,x);
+				mctrackhit->z			= truth->z;
+				mctrackhit->track		= truth->track;
+				mctrackhit->primary	= truth->primary;
+				mctrackhit->system	= SYS_FDC;
+				mctrackhit->id			= identifier++;
+				_data.push_back(mctrackhit);
 			}
 		}
 	}
@@ -190,20 +157,22 @@ derror_t DFactory_DMCTrackHit::GetBCALHits(s_HDDM_t *hddm_s)
 	if(!PE) return NOERROR;
 	
 	for(unsigned int i=0; i<PE->mult; i++){
-		s_BarrelShowers_t *barrelShowers = NULL;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->barrelEMcal)
-				barrelShowers = PE->in[i].hitView->barrelEMcal->barrelShowers;
-		if(!barrelShowers)continue;
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->barrelEMcal == HDDM_NULL ||
+			hits->barrelEMcal->bcalTruthShowers == HDDM_NULL)continue;
 		
-		for(unsigned int j=0;j<barrelShowers->mult;j++){
+		s_BcalTruthShowers_t *bcalTruthShowers = hits->barrelEMcal->bcalTruthShowers;
+		s_BcalTruthShower_t *bcalTruthShower = bcalTruthShowers->in;
+		for(unsigned int j=0; j<bcalTruthShowers->mult; j++, bcalTruthShower++){
 			DMCTrackHit *mctrackhit = new DMCTrackHit;
-			mctrackhit->r			= barrelShowers->in[j].r;
-			mctrackhit->phi		= barrelShowers->in[j].phi;
-			mctrackhit->z			= barrelShowers->in[j].z;
-			mctrackhit->track		= barrelShowers->in[j].track;
-			mctrackhit->primary	= barrelShowers->in[j].primary;
+			mctrackhit->r			= bcalTruthShower->r;
+			mctrackhit->phi		= bcalTruthShower->phi;
+			mctrackhit->z			= bcalTruthShower->z;
+			mctrackhit->track		= bcalTruthShower->track;
+			mctrackhit->primary	= bcalTruthShower->primary;
 			mctrackhit->system	= SYS_BCAL;
+			mctrackhit->id			= identifier++;
 			_data.push_back(mctrackhit);
 		}
 	}
@@ -221,27 +190,28 @@ derror_t DFactory_DMCTrackHit::GetTOFHits(s_HDDM_t *hddm_s)
 	if(!PE) return NOERROR;
 	
 	for(unsigned int i=0; i<PE->mult; i++){
-		s_TofPoints_t *tofPoints = NULL;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->forwardTOF)
-				tofPoints = PE->in[i].hitView->forwardTOF->tofPoints;
-		if(!tofPoints)continue;
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->forwardTOF == HDDM_NULL ||
+			hits->forwardTOF->ftofTruthPoints == HDDM_NULL)continue;
 		
-		for(unsigned int j=0;j<tofPoints->mult;j++){
+		s_FtofTruthPoints_t *ftoftruthpoints = hits->forwardTOF->ftofTruthPoints;
+		s_FtofTruthPoint_t *ftoftruthpoint = ftoftruthpoints->in;
+		for(unsigned int j=0; j<ftoftruthpoints->mult; j++, ftoftruthpoint++){
+			float x = ftoftruthpoint->x;
+			float y = ftoftruthpoint->y;
 			DMCTrackHit *mctrackhit = new DMCTrackHit;
-			float x = tofPoints->in[j].x;
-			float y = tofPoints->in[j].y;
 			mctrackhit->r			= sqrt(x*x + y*y);
 			mctrackhit->phi		= atan2(y,x);
-			if(mctrackhit->phi<0.0)mctrackhit->phi += 2.0*M_PI;
-			mctrackhit->z			= tofPoints->in[j].z;
-			mctrackhit->track		= tofPoints->in[j].track;
-			mctrackhit->primary	= tofPoints->in[j].primary;
+			mctrackhit->z			= ftoftruthpoint->z;
+			mctrackhit->track		= ftoftruthpoint->track;
+			mctrackhit->primary	= ftoftruthpoint->primary;
 			mctrackhit->system	= SYS_TOF;
+			mctrackhit->id			= identifier++;
 			_data.push_back(mctrackhit);
 		}
 	}
-
+		
 	return NOERROR;
 }
 
@@ -264,23 +234,24 @@ derror_t DFactory_DMCTrackHit::GetFCALHits(s_HDDM_t *hddm_s)
 	if(!PE) return NOERROR;
 	
 	for(unsigned int i=0; i<PE->mult; i++){
-		s_ForwardShowers_t *forwardShowers = NULL;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->forwardEMcal)
-				forwardShowers = PE->in[i].hitView->forwardEMcal->forwardShowers;
-		if(!forwardShowers)continue;
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->forwardEMcal == HDDM_NULL ||
+			hits->forwardEMcal->fcalTruthShowers == HDDM_NULL)continue;
 		
-		for(unsigned int j=0;j<forwardShowers->mult;j++){
+		s_FcalTruthShowers_t *fcalTruthShowers = hits->forwardEMcal->fcalTruthShowers;
+		s_FcalTruthShower_t *fcalTruthShower = fcalTruthShowers->in;
+		for(unsigned int j=0; j<fcalTruthShowers->mult; j++, fcalTruthShowers++){
+			float x = fcalTruthShower->x;
+			float y = fcalTruthShower->y;
 			DMCTrackHit *mctrackhit = new DMCTrackHit;
-			float x = forwardShowers->in[j].x;
-			float y = forwardShowers->in[j].y;
 			mctrackhit->r			= sqrt(x*x + y*y);
 			mctrackhit->phi		= atan2(y,x);
-			if(mctrackhit->phi<0.0)mctrackhit->phi += 2.0*M_PI;
-			mctrackhit->z			= forwardShowers->in[j].z;
-			mctrackhit->track		= forwardShowers->in[j].track;
-			mctrackhit->primary	= forwardShowers->in[j].primary;
-			mctrackhit->system	= SYS_FCAL;
+			mctrackhit->z			= fcalTruthShower->z;
+			mctrackhit->track		= fcalTruthShower->track;
+			mctrackhit->primary	= fcalTruthShower->primary;
+			mctrackhit->system	= SYS_TOF;
+			mctrackhit->id			= identifier++;
 			_data.push_back(mctrackhit);
 		}
 	}

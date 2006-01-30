@@ -20,6 +20,7 @@ endif
 	make -C UPV
 	make -C TRACKING
 	make -C HDDM
+	make -C xstream/src install
 
 clean:
 ifdef JILIO
@@ -38,4 +39,5 @@ endif
 	make -C TRIGGER clean
 	make -C UPV clean
 	make -C TRACKING clean
+	make -C xstream/src clean
 	
