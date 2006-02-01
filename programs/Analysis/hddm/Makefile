@@ -28,7 +28,7 @@ install: hddm-c xml-hddm hddm-xml hddm-c xml-xml hddm-schema schema-hddm hddmcat
 	mkdir -p $(HALLD_HOME)/bin
 	cp hddm-schema schema-hddm xml-xml $(HALLD_HOME)/bin
 	mkdir -p $(HALLD_HOME)/bin/$(OStype)
-	cp hddm-c hddm-xml xml-hddm hddmcat $(HALLD_HOME)/bin/$(OStype)
+	cp hddm-c hddm-cpp hddm-xml xml-hddm hddmcat $(HALLD_HOME)/bin/$(OStype)
 
 xml-hddm: xml-hddm.cpp XString.o XParsers.o
 	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include -o $@ $^ \
