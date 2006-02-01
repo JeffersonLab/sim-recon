@@ -22,6 +22,8 @@
 
 #include <streambuf>
 #include <iostream>
+#include <istream>
+#include <ostream>
 
 namespace{
 	
