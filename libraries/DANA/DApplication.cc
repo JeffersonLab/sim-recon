@@ -620,8 +620,14 @@ derror_t DApplication::RegisterSharedObject(const char *soname)
 		cout<<"Adding InitFactories from "<<soname<<endl;
 		InitFactoriesProcs.push_back(InitFactories);
 		things_found++;
-	}else{
-		//cerr<<dlerror()<<endl;
+	}
+
+	// Look for InitProcessors
+	InitProcessors_t *InitProcessors = (InitProcessors_t*)dlsym(handle, "InitProcessors");
+	if(InitProcessors){
+		cout<<"Calling InitProcessors from "<<soname<<endl;
+		(*InitProcessors)(this);
+		things_found++;
 	}
 	
 	if(!things_found)cout<<" --- Nothing useful found in "<<soname<<" ---"<<endl;

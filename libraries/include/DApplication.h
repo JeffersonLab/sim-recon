@@ -17,7 +17,7 @@ using namespace std;
 #include "derror.h"
 #include "DParameter.h"
 
-
+class DApplication;
 class DEventProcessor;
 class DEventSource;
 class DEventLoop;
@@ -28,6 +28,7 @@ class DGeometry;
 typedef const char* GetDEventSourceType_t(void);
 typedef DEventSource* MakeDEventSource_t(const char* name);
 typedef void InitFactories_t(DEventLoop* eventLoop);
+typedef void InitProcessors_t(DApplication* app);
 
 class DApplication{
 	public:
