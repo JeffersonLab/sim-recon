@@ -17,6 +17,14 @@ ifdef DEBUG
 	LD_FLAGS	+= -g -pg
 endif
 
+ifndef SOLIB_DIR
+   SOLIB_DIR = $(LIB_DIR)
+endif
+
+ifndef SOLIB_NAME
+   SOLIB_NAME = lib$(MODULE_NAME).so
+endif
+
 # Redefine OBJS to include debug suffixes
 DOBJS = $(addsuffix $(DEBUG_SUFFIX).o,$(basename $(OBJS)))
 
@@ -28,7 +36,6 @@ LINK_OBJS += $(addprefix $(OBJ_DIR)/,$(DOBJS))
 LD_LIBS = $(addsuffix $(DEBUG_SUFFIX),$(addprefix -l,$(ADDITIONAL_MODULES)))
 
 
-SOLIB_NAME = lib$(MODULE_NAME).so
 
 .PHONY:  mkdirs
 
@@ -37,7 +44,7 @@ all: mkdirs $(DEPS) $(SOLIB_NAME)
 
 $(SOLIB_NAME): $(DOBJS)
 	$(CXX) $(LD_SO_FLAGS) $(LINK_OBJS) -L$(LIB_DIR) $(LD_LIBS) $(MISC_LIBS) \
-		 -o $(LIB_DIR)/$@
+		 -o $(SOLIB_DIR)/$@
 
 mkdirs:
 	@mkdir -p $(BIN_DIR)
@@ -45,7 +52,7 @@ mkdirs:
 	@mkdir -p $(DEP_DIR)
 
 clean:
-	rm -rf $(OBJ_DIR) .depends *.o $(SOLIB_NAME) $(DICT_FILES) *.bak *~ core last.kumac*  #*# 
+	rm -rf $(OBJ_DIR) .depends *.o $(SOLIB_DIR)/$(SOLIB_NAME) $(DICT_FILES) *.bak *~ core last.kumac*  #*# 
 
 exec_clean:
 	rm -f $(SOLIB_NAME)
