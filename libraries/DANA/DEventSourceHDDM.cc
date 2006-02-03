@@ -153,9 +153,9 @@ derror_t DEventSourceHDDM::GetObjects(const char *name, vector<void*> &v, const 
 		throw RESOURCE_UNAVAILABLE;
 	}
 	
-	derror_t err = factory->Extract_HDDM(my_hddm_s, v);
-	
 	UnlockRead();
+	
+	derror_t err = factory->Extract_HDDM(my_hddm_s, v);
 	
 	return err;
 }
