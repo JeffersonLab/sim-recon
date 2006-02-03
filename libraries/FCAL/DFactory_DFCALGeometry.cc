@@ -11,14 +11,25 @@
 #include "DFCALGeometry.h"
 
 //------------------
-// evnt
+// brun
 //------------------
-derror_t DFactory_DFCALGeometry::evnt(DEventLoop *loop, int eventnumber)
+derror_t DFactory_DFCALGeometry::brun(DEventLoop *loop, int runnumber)
 {
-
 	assert( _data.size() == 0 );
-		
+
+	flags = PERSISTANT;
 	_data.push_back( new DFCALGeometry() );
+	
+	return NOERROR;
+}
+
+//------------------
+// erun
+//------------------
+derror_t DFactory_DFCALGeometry::erun(DEventLoop *loop)
+{
+	for(unsigned int i=0; i<_data.size(); i++)delete _data[i];
+	_data.clear();
 	
 	return NOERROR;
 }

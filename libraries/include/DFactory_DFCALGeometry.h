@@ -15,13 +15,14 @@ class DFactory_DFCALGeometry : public DFactory<DFCALGeometry> {
 
 public:
 	
-	DFactory_DFCALGeometry() { flags = PERSISTANT; }
+	DFactory_DFCALGeometry() {}
 	~DFactory_DFCALGeometry(){}
 	const string toString(void);
 
 private:
 	
-	derror_t evnt(DEventLoop *loop, int eventnumber);	
+	derror_t brun(DEventLoop *loop, int runnumber);	
+	derror_t erun(DEventLoop *loop);	
 };
 
 #endif // _DFactory_DFCALGeometry_
