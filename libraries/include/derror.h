@@ -10,6 +10,7 @@
 #ifndef _DERROR_H_
 #define _DERROR_H_
 
+#define _DBG_ cerr<<__FILE__<<":"<<__LINE__<<endl
 
 enum derror_t{
 	NOERROR = 0,
