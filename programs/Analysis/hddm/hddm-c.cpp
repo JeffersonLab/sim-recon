@@ -110,10 +110,14 @@ class XtString : public XString
    XtString(const std::string& s): XString(s) {};
    XtString(const XString& x): XString(x) {};
    XtString(const XtString& t): XString((XString&)t) {};
+   ~XtString();
 
    XtString& plural();
    XtString& simpleType();
    XtString& listType();
+
+ private:
+   std::list<XtString*> fStringCollection;
 };
 
 class CodeBuilder
@@ -422,9 +426,21 @@ int main(int argC, char* argV[])
    return 0;
 }
 
+XtString::~XtString()
+{
+   std::list<XtString*>::iterator iter;
+   for (iter = fStringCollection.begin();
+        iter != fStringCollection.end();
+        ++iter)
+   {
+      delete *iter;
+   }
+}
+
 XtString& XtString::plural()
 {
    XtString* p = new XtString(*this);
+   fStringCollection.push_back(p);
    XtString::size_type len = p->size();
    if (len > 3 && p->substr(len-3,3) == "tum")
    {
@@ -459,6 +475,7 @@ XtString& XtString::plural()
 XtString& XtString::simpleType()
 {
    XtString* p = new XtString(*this);
+   fStringCollection.push_back(p);
    (*p)[0] = toupper((*p)[0]);
    *p = classPrefix + "_" + *p + "_t";
    return *p;
