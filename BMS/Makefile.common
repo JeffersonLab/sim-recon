@@ -59,6 +59,7 @@ DEP_DIR		= .depends/$(OSNAME)
 # go. If HALLD_MY is not set, then everything defaults to HALLD_HOME.
 ifdef HALLD_MY
 	BIN_DIR		= $(HALLD_MY)/bin/$(OSNAME)
+	LIB_DIR		= $(HALLD_MY)/lib/$(OSNAME)
 endif
 
 FFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
