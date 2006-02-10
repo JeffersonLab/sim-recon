@@ -121,14 +121,10 @@ class CodeBuilder
    void writeHeader(DOMElement* el);
    void constructDocument(DOMElement* el);
    void constructGroup(DOMElement* el);
-   void constructConstructors(DOMElement* el);
-   void constructOperators(DOMElement* el);
+   void constructMethods(DOMElement* el);
    void constructIOstreams(DOMElement* el);
    void constructUnpackers(DOMElement* el);
    void constructPackers(DOMElement* el);
-   void constructInitFunc(DOMElement* el);
-   void constructFlushFunc(DOMElement* el);
-   void constructCloseFunc(DOMElement* el);
    void writeMatcher();
 
  private:
@@ -332,9 +328,11 @@ int main(int argC, char* argV[])
    builder.cFile
          << "#include <sstream>"	 			<< std::endl
          << "#include \"" << hname << "\"" 			<< std::endl
-								<< std::endl;
+								<< std::endl
+         << "using namespace hddm_s;"				<< std::endl;
+
    builder.constructGroup(rootEl);
-   builder.constructConstructors(rootEl);
+   builder.constructMethods(rootEl);
    builder.constructIOstreams(rootEl);
    builder.constructUnpackers(rootEl);
    builder.constructPackers(rootEl);
@@ -558,71 +556,77 @@ void CodeBuilder::writeHeader(DOMElement* el)
       else
       {
          hFile << "   " << tagS.listType() 
-               << "(const " << hostS.listType() << "::iterator& "
-               << "host);" << std::endl;
+               << "(const " << hostS.listType() << "* "
+               << "host, int index);" << std::endl;
       }
    }
-   hFile << "   friend class iterator;" 		<< std::endl
+   hFile << "   friend class iterator;" 			<< std::endl
    	 << "   class iterator: public std::vector<"
-         << tagS.simpleType() << ">::iterator"		<< std::endl
-	 << "   {"					<< std::endl
-	 << "    public:"				<< std::endl
-      	 << "      iterator() {};"			<< std::endl
-      	 << "      iterator(const iterator& src);"	<< std::endl
-      	 << "      iterator(const "
-         << tagS.listType() << "& host);"		<< std::endl
-      	 << "      iterator& operator++();"		<< std::endl
-      	 << "      iterator operator++(int);"		<< std::endl
-      	 << "      iterator& operator--();"		<< std::endl
-      	 << "      iterator operator--(int);"		<< std::endl
-         << "      const " << tagS.listType() << "* list;" << std::endl;
+         << tagS.simpleType() << ">::iterator"			<< std::endl
+	 << "   {"						<< std::endl
+	 << "    public:"					<< std::endl
+         << "      friend class " << tagS.listType() << ";" 	<< std::endl
+         << "      friend class const_iterator;"	 	<< std::endl
+      	 << "      iterator() {};"				<< std::endl
+      	 << "      iterator(const iterator& src);"		<< std::endl
+      	 << "      iterator& operator="
+         << "(const iterator& src);"				<< std::endl
+      	 << "      iterator& operator++();"			<< std::endl
+      	 << "      iterator operator++(int);"			<< std::endl
+      	 << "      iterator& operator--();"			<< std::endl
+      	 << "      iterator operator--(int);"			<< std::endl
+         << "    //private: /* gcc compiler bug */"		<< std::endl
+         << "      " << tagS.listType() << "* list;"		<< std::endl;
    for (iter = parentNames.begin(); iter != parentNames.end(); ++iter)
    {
       XtString hostS(iter->first);
       hFile << "      " << hostS.listType() << "::iterator "
             << hostS << ";" << std::endl;
    }
-   hFile << "   };" 					<< std::endl
-	 << "   friend class const_iterator;"		<< std::endl
+   hFile << "   };" 						<< std::endl
+	 << "   friend class const_iterator;"			<< std::endl
 	 << "   class const_iterator: public std::vector<"
-         << tagS.simpleType() << ">::const_iterator"	<< std::endl
-   	 << "   {"					<< std::endl
-    	 << "    public:"				<< std::endl
-      	 << "      const_iterator() {};"		<< std::endl
-	 << "      const_iterator(const iterator& src);" << std::endl
-	 << "      const_iterator(const const_iterator& src);"<< std::endl
-      	 << "      const_iterator(const "
-         << tagS.listType() << "& host);"		<< std::endl
-	 << "      const_iterator& operator++();"	<< std::endl
-	 << "      const_iterator operator++(int);"	<< std::endl
-	 << "      const_iterator& operator--();"	<< std::endl
-	 << "      const_iterator operator--(int);"	<< std::endl
-         << "      const " << tagS.listType() << "* list;" << std::endl;
+         << tagS.simpleType() << ">::const_iterator"		<< std::endl
+   	 << "   {"						<< std::endl
+    	 << "    public:"					<< std::endl
+         << "      friend class " << tagS.listType() << ";" 	<< std::endl
+      	 << "      const_iterator() {};"			<< std::endl
+	 << "      const_iterator(const iterator& src);" 	<< std::endl
+	 << "      const_iterator(const const_iterator& src);"	<< std::endl
+      	 << "      const_iterator& operator="
+         << "(const iterator& src);"				<< std::endl
+      	 << "      const_iterator& operator="
+         << "(const const_iterator& src);"			<< std::endl
+	 << "      const_iterator& operator++();"		<< std::endl
+	 << "      const_iterator operator++(int);"		<< std::endl
+	 << "      const_iterator& operator--();"		<< std::endl
+	 << "      const_iterator operator--(int);"		<< std::endl
+         << "    //private: /* gcc compiler bug */"		<< std::endl
+         << "      const " << tagS.listType() << "* list;"	<< std::endl;
    for (iter = parentNames.begin(); iter != parentNames.end(); ++iter)
    {
       XtString hostS(iter->first);
-      hFile << "      " << hostS.listType() << "::iterator "
+      hFile << "      " << hostS.listType() << "::const_iterator "
             << hostS << ";" << std::endl;
    }
-   hFile << "   };" 					<< std::endl
-	 << "   iterator beginChain() const;"		<< std::endl
-	 << "   iterator create();"			<< std::endl
-	 << " protected:"				<< std::endl;
+   hFile << "   };" 						<< std::endl
+	 << "   " << tagS.simpleType() << "& create();"		<< std::endl
+	 << " private:"						<< std::endl;
    for (iter = parentNames.begin(); iter != parentNames.end(); ++iter)
    {
       XtString hostS(iter->first);
-      hFile << "   const " << hostS.listType() << "::iterator "
-            << "host_" << hostS << ";" << std::endl;
+      hFile << "   const " << hostS.listType()
+            << "* host_" << hostS.plural() << ";"		<< std::endl
+            << "   const int host_" << hostS << ";"		<< std::endl;
    }
-   hFile << "};"					<< std::endl;
+   hFile << "};"						<< std::endl;
 
    hFile << std::endl
 	 << "class " << tagS.simpleType()			<< std::endl
 	 << "{"							<< std::endl
 	 << " public:"						<< std::endl
-	 << "   " << tagS.simpleType()
-         << "(const " << tagS.listType() << "::iterator& host);"
-								<< std::endl;
+         << "   friend class " << tagS.listType() << ";"	<< std::endl;
+
    DOMNodeList* contList = el->getChildNodes();
    if (contList->getLength() > 0)
    {
@@ -692,6 +696,11 @@ void CodeBuilder::writeHeader(DOMElement* el)
                << ";" << std::endl;
       }
    }
+
+   hFile << " private:"						<< std::endl
+	 << "   " << tagS.simpleType()
+         << "(const " << tagS.listType() 
+         << "* host, int index);"				<< std::endl;
    hFile << "};" << std::endl;
 }
 
@@ -775,20 +784,41 @@ void CodeBuilder::constructGroup(DOMElement* el)
       for (iter = tagList.begin(); iter != tagList.end(); iter++)
       {
          XtString tagS((*iter)->getTagName());
-         hFile << "   int get(" << tagS.listType()
-               << "::iterator& p);" << std::endl;
+         hFile << "   " << tagS.listType() << "::iterator&"
+               << " begin(" << tagS.listType()
+               << "::iterator& p);" << std::endl
+               << "   " << tagS.listType() << "::iterator&"
+               << " end(" << tagS.listType()
+               << "::iterator& p);" << std::endl
+               << "   " << tagS.listType() << "::const_iterator&"
+               << " begin(" << tagS.listType()
+               << "::const_iterator& p) const;" << std::endl
+               << "   " << tagS.listType() << "::const_iterator&"
+               << " end(" << tagS.listType()
+               << "::const_iterator& p) const;" << std::endl;
       }
       hFile << std::endl
             << "   void clear();" << std::endl
-            << "};" << std::endl;
+            << std::endl
+            << " private:" << std::endl;
+      for (iter = tagList.begin(); iter != tagList.end(); iter++)
+      {
+         XtString tagS((*iter)->getTagName());
+         parentList_t parentNames = parents[*iter];
+         if (parentNames.find("HDDM") == parentNames.end())
+         {
+            hFile << "   " << tagS.listType() 
+                  << " null_" << tagS.plural() << ";" << std::endl;
+         }
+      }
+      hFile << "};" << std::endl;
    }
 }
 
-/* Generate code for class constructors/destructors */
+/* Generate implementation code for data model classes */
 
-void CodeBuilder::constructConstructors(DOMElement* el)
+void CodeBuilder::constructMethods(DOMElement* el)
 {
-   cFile << "using namespace hddm_s;"<< std::endl;
 
 // list type constructors
 
@@ -806,38 +836,39 @@ void CodeBuilder::constructConstructors(DOMElement* el)
          if (nameS == "HDDM")
          {
             cFile << tagS.listType() << "::"
-                  << tagS.listType() << "() {}" 		<< std::endl;
+                  << tagS.listType() << "() {}" << std::endl;
          }
          else
          {
             cFile << tagS.listType() << "::"
                   << tagS.listType() << "(const "
-                  << nameS.listType() << "::iterator& host)"	<< std::endl
-                  << ": host_" << nameS << "(host)" << " {}"	<< std::endl;
+                  << nameS.listType() << "* host, int index)"	<< std::endl
+                  << ": host_" << nameS.plural() << "(host)"
+                  << ", host_" << nameS << "(index)";
+            parentList_t::iterator ppiter;
+            for (ppiter = parentNames.begin();
+                 ppiter != parentNames.end(); ++ppiter)
+            {
+               XtString ptagS(ppiter->first);
+               if (ptagS != "HDDM" && ptagS != nameS)
+               {
+                  cFile << ",\n  host_" << ptagS.plural() << "(0)"
+                        << ", host_" << ptagS << "(0)";
+               }
+            }
+         cFile << " {}" << std::endl;
          }
       }
 
-// list type member function beginChain()
-
-      cFile << tagS.listType() << "::iterator "
-            << tagS.listType() << "::beginChain() const"	<< std::endl
-	    << "{"						<< std::endl
-	    << "   return " << tagS.listType()
-            << "::iterator(*this);"				<< std::endl
-	    << "}"						<< std::endl;
-
 // list type member function create()
 
-      cFile << tagS.listType() << "::iterator "
+      cFile << tagS.simpleType() << "& "
             << tagS.listType() << "::create()"			<< std::endl
 	    << "{"						<< std::endl
-	    << "   " << tagS.listType()
-            << "::iterator iter(*this);"			<< std::endl
-	    << "   (std::vector<" << tagS.simpleType()
-            << ">::iterator)iter ="				<< std::endl
-	    << "      this->insert(end()," << tagS.simpleType()
-            << "(*this));"					<< std::endl
-	    << "   return iter;"				<< std::endl
+            << "   int index = size();"				<< std::endl
+            << "   " << tagS.simpleType() << " s(this,index);"	<< std::endl
+	    << "   push_back(s);"				<< std::endl
+	    << "   return back();"				<< std::endl
 	    << "}"						<< std::endl;
 
 // list iterator constructors
@@ -849,23 +880,16 @@ void CodeBuilder::constructConstructors(DOMElement* el)
       {
          if (piter->first != "HDDM")
          {
-            XtString typeS(piter->first);
-            cFile << ",\n  " << typeS << "(src." << typeS << ")";
+            XtString ptagS(piter->first);
+            cFile << ",\n  " << ptagS << "(src." << ptagS << ")";
          }
       }
-      cFile << " {}"						<< std::endl;
-      cFile << tagS.listType() << "::iterator::iterator(const "
-            << tagS.listType() << "& host)"			<< std::endl
-	    << ": list(&host)";
-      for (piter = parentNames.begin(); piter != parentNames.end(); ++piter)
-      {
-         if (piter->first != "HDDM")
-         {
-            XtString typeS(piter->first);
-            cFile << ",\n  " << typeS << "(host.host_" << typeS << ")";
-         }
-      }
-      cFile << " {}"						<< std::endl;
+      cFile << std::endl << "{"					<< std::endl
+            << "   (std::vector<"
+            << tagS.simpleType() << ">::iterator)*this ="	<< std::endl
+            << "        (std::vector<"
+            << tagS.simpleType() << ">::iterator)src;"		<< std::endl
+            << "}"						<< std::endl;
 
 // list const_iterator constructors
 
@@ -876,11 +900,17 @@ void CodeBuilder::constructConstructors(DOMElement* el)
       {
          if (piter->first != "HDDM")
          {
-            XtString typeS(piter->first);
-            cFile << ",\n  " << typeS << "(src." << typeS << ")";
+            XtString ptagS(piter->first);
+            cFile << ",\n  " << ptagS << "(src." << ptagS << ")";
          }
       }
-      cFile << " {}"						<< std::endl;
+      cFile << std::endl << "{"					<< std::endl
+            << "   (std::vector<"
+            << tagS.simpleType() << ">::const_iterator)*this ="	<< std::endl
+            << "        (std::vector<"
+            << tagS.simpleType() << ">::iterator)src;"		<< std::endl
+            << "}"						<< std::endl;
+
       cFile << tagS.listType() << "::const_iterator::const_iterator(const "
             << tagS.listType() << "::const_iterator& src)"	<< std::endl
 	    << ": list(src.list)";
@@ -888,57 +918,91 @@ void CodeBuilder::constructConstructors(DOMElement* el)
       {
          if (piter->first != "HDDM")
          {
-            XtString typeS(piter->first);
-            cFile << ",\n  " << typeS << "(src." << typeS << ")";
+            XtString ptagS(piter->first);
+            cFile << ",\n  " << ptagS << "(src." << ptagS << ")";
          }
       }
-      cFile << " {}"						<< std::endl;
-      cFile << tagS.listType() << "::const_iterator::const_iterator(const "
-            << tagS.listType() << "& host)"			<< std::endl
-	    << ": list(&host)";
+      cFile << std::endl << "{"					<< std::endl
+            << "   (std::vector<"
+            << tagS.simpleType() << ">::const_iterator)*this ="	<< std::endl
+            << "        (std::vector<"
+            << tagS.simpleType() << ">::const_iterator)src;"	<< std::endl
+            << "}"						<< std::endl;
+
+// list iterator assignment operator
+
+      cFile << tagS.listType() << "::iterator& "
+            << tagS.listType() << "::iterator::operator=(const "
+            << tagS.listType() << "::iterator& src)"		<< std::endl
+            << "{"						<< std::endl
+            << "   list = src.list;"				<< std::endl;
       for (piter = parentNames.begin(); piter != parentNames.end(); ++piter)
       {
          if (piter->first != "HDDM")
          {
-            XtString typeS(piter->first);
-            cFile << ",\n  " << typeS << "(host.host_" << typeS << ")";
+            XtString ptagS(piter->first);
+            cFile << "   " << ptagS << " = src." << ptagS << ";" << std::endl;
          }
       }
-      cFile << " {}"						<< std::endl;
+      cFile << "   (std::vector<"
+            << tagS.simpleType() << ">::iterator)*this =" 	<< std::endl
+            << "        (std::vector<"
+            << tagS.simpleType() << ">::iterator)src;"		<< std::endl
+            << "   return *this;"				<< std::endl
+            << "}"						<< std::endl;
 
 // list iterator pre-increment operator
 
       cFile << tagS.listType() << "::iterator& "
             << tagS.listType() << "::iterator::operator++()"	<< std::endl
-	    << "{"						<< std::endl;
+	    << "{"						<< std::endl
+            << "   ++(std::vector<" << tagS.simpleType()
+            << ">::iterator)*this;"				<< std::endl;
+      int hasParents = 0;
       for (piter = parentNames.begin(); piter != parentNames.end(); ++piter)
       {
-         if (piter->first == "HDDM")
+         if (piter->first != "HDDM")
          {
-            cFile << "   ++(std::vector<" << tagS.simpleType()
-                  << ">::iterator)*this;"			<< std::endl
-                  << "   return *this;"				<< std::endl;
-         }
-         else
-         {
-            cFile << "   if (++(std::vector<" << tagS.simpleType()
-                  << ">::iterator)*this == list->end() &&"	<< std::endl
-                  << "       " << piter->first << " != "
-                  << piter->first << ".list->end() &&"          << std::endl
-                  << "        ++" << piter->first << " != "
+            if (hasParents == 0) {
+               cFile << "   while (*this == list->end())"	<< std::endl
+                     << "   {"					<< std::endl;
+            }
+            cFile << "      " << ((++hasParents == 1)? "if" : "else if")
+                  << " (" << piter->first << " != "
                   << piter->first << ".list->end())"		<< std::endl
-                  << "   {"					<< std::endl
-                  << "      list = " << piter->first
-                  << "->" << tagS.plural() << ";"		<< std::endl
-                  << "      (std::vector<" << tagS.simpleType()
-                  << ">::iterator)*this ="			<< std::endl
-                  << "                     " << piter->first
-                  << "->" << tagS.plural() << "->begin();"	<< std::endl
-                  << "   }"					<< std::endl
-                  << "   return *this;"				<< std::endl;
+                  << "      {"					<< std::endl
+                  << "        ++" << piter->first << ";"	<< std::endl
+                  << "      }"					<< std::endl;
          }
       }
-      cFile << "}"						<< std::endl;
+      hasParents = 0;
+      for (piter = parentNames.begin(); piter != parentNames.end(); ++piter)
+      {
+         if (piter->first != "HDDM")
+         {
+            cFile << "      " << ((++hasParents == 1)? "if" : "else if")
+                  << " (" << piter->first << " != "
+                  << piter->first << ".list->end())"		<< std::endl
+                  << "      {"					<< std::endl
+                  << "         list = " << piter->first
+                  << "->" << tagS.plural() << ";"		<< std::endl
+                  << "         (std::vector<" << tagS.simpleType()
+                  << ">::iterator)*this ="			<< std::endl
+                  << "                " << piter->first
+                  << "->" << tagS.plural() << "->begin();"	<< std::endl
+                  << "      }"					<< std::endl;
+         }
+      }
+      if (hasParents)
+      {
+         cFile << "      else"					<< std::endl
+               << "      {"					<< std::endl
+               << "         break;"				<< std::endl
+               << "      }"					<< std::endl
+               << "   }"					<< std::endl;
+      }
+      cFile << "   return *this;"				<< std::endl
+            << "}"						<< std::endl;
 
 // list iterator post-increment operator
 
@@ -956,34 +1020,43 @@ void CodeBuilder::constructConstructors(DOMElement* el)
       cFile << tagS.listType() << "::iterator& "
             << tagS.listType() << "::iterator::operator--()"	<< std::endl
 	    << "{"						<< std::endl;
-      for (piter = parentNames.begin(); piter != parentNames.end(); ++piter)
+      hasParents = 0;
+      for (piter = parentNames.end(); piter != parentNames.begin();)
       {
+         --piter;
          XtString parS(piter->first);
-         if (parS == "HDDM")
-         {
-            cFile << "   --(std::vector<" << tagS.simpleType()
-                  << ">::iterator)*this;"			<< std::endl
-                  << "   return *this;"				<< std::endl;
-         }
-         else
+         if (parS != "HDDM")
          {   
-            cFile << "   if (*this == list->begin() && "
-                  << parS << " != "
+            if (hasParents == 0)
+            {
+               cFile << "   while (*this == list->begin())"	<< std::endl
+                     << "   {"					<< std::endl;
+            }
+            cFile << "      " << ((++hasParents == 1)? "if" : "else if")
+                  << " (" << parS << " != "
                   << parS << ".list->begin())"			<< std::endl
-                  << "   {"					<< std::endl
-                  << "      list = (--" << piter->first
+                  << "      {"					<< std::endl
+                  << "         list = (--" << piter->first
                   << ")->" << tagS.plural() << ";"		<< std::endl
-                  << "      (std::vector<" << tagS.simpleType()
+                  << "         (std::vector<" << tagS.simpleType()
                   << ">::iterator)*this ="			<< std::endl
                   << "                 " << parS << "->"
                   << tagS.plural() << "->end();"		<< std::endl
-                  << "   }"					<< std::endl
-                  << "   --(std::vector<"
-                  << tagS.simpleType() << ">::iterator)*this;"	<< std::endl
-                  << "   return *this;"				<< std::endl;
+                  << "      }"					<< std::endl;
          }
       }
-      cFile << "}"						<< std::endl;
+      if (hasParents)
+      {
+         cFile << "      else"					<< std::endl
+               << "      {"					<< std::endl
+               << "         break;"				<< std::endl
+               << "      }"					<< std::endl
+               << "   }"					<< std::endl;
+      }
+      cFile << "   --(std::vector<"
+            << tagS.simpleType() << ">::iterator)*this;"	<< std::endl
+            << "   return *this;"				<< std::endl
+            << "}"						<< std::endl;
 
 // list iterator post-decrement operator
 
@@ -996,40 +1069,101 @@ void CodeBuilder::constructConstructors(DOMElement* el)
 	    << "   return copy;"				<< std::endl
 	    << "}"						<< std::endl;
 
+// list const_iterator assignment operators
+
+      cFile << tagS.listType() << "::const_iterator& " 
+            << tagS.listType() << "::const_iterator::operator=(const "
+            << tagS.listType() << "::iterator& src)"		<< std::endl
+            << "{"						<< std::endl
+	    << "   list = src.list;"				<< std::endl;
+      for (piter = parentNames.begin(); piter != parentNames.end(); ++piter)
+      {
+         if (piter->first != "HDDM")
+         {
+            XtString ptagS(piter->first);
+            cFile << "   " << ptagS << " = src." << ptagS << ";" << std::endl;
+         }
+      }
+      cFile << "   (std::vector<"
+            << tagS.simpleType() << ">::const_iterator)*this =" << std::endl
+            << "        (std::vector<"
+            << tagS.simpleType() << ">::iterator)src;"		<< std::endl
+            << "   return *this;"				<< std::endl
+            << "}"						<< std::endl;
+
+      cFile << tagS.listType() << "::const_iterator& "
+            << tagS.listType() << "::const_iterator::operator=(const "
+            << tagS.listType() << "::const_iterator& src)"	<< std::endl
+            << "{"						<< std::endl
+	    << "   list = src.list;"				<< std::endl;
+      for (piter = parentNames.begin(); piter != parentNames.end(); ++piter)
+      {
+         if (piter->first != "HDDM")
+         {
+            XtString ptagS(piter->first);
+            cFile << "   " << ptagS << " = src." << ptagS << ";" << std::endl;
+         }
+      }
+      cFile << "   (std::vector<"
+            << tagS.simpleType() << ">::const_iterator)*this ="	<< std::endl
+            << "        (std::vector<"
+            << tagS.simpleType() << ">::const_iterator)src;"	<< std::endl
+            << "   return *this;"				<< std::endl
+            << "}"						<< std::endl;
+
 // list const_iterator pre-increment operator
 
       cFile << tagS.listType() << "::const_iterator& "
             << tagS.listType() 
             << "::const_iterator::operator++()"			<< std::endl
-	    << "{"						<< std::endl;
+	    << "{"						<< std::endl
+            << "   ++(std::vector<" << tagS.simpleType()
+            << ">::const_iterator)*this;"			<< std::endl;
+      hasParents = 0;
       for (piter = parentNames.begin(); piter != parentNames.end(); ++piter)
       {
-         if (piter->first == "HDDM")
+         if (piter->first != "HDDM")
          {
-            cFile << "   ++(std::vector<" << tagS.simpleType()
-                  << ">::const_iterator)*this;"			<< std::endl
-                  << "   return *this;"				<< std::endl;
-         }
-         else
-         {
-            cFile << "   if (++(std::vector<" << tagS.simpleType()
-                  << ">::const_iterator)*this == list->end() &&"<< std::endl
-                  << "       " << piter->first << " != "
-                  << piter->first << ".list->end() &&"          << std::endl
-                  << "        ++" << piter->first << " != "
+            if (hasParents == 0) {
+               cFile << "   while (*this == list->end())"	<< std::endl
+                     << "   {"					<< std::endl;
+            }
+            cFile << "      " << ((++hasParents == 1)? "if" : "else if")
+                  << " (" << piter->first << " != "
                   << piter->first << ".list->end())"		<< std::endl
-                  << "   {"					<< std::endl
-                  << "      list = " << piter->first
-                  << "->" << tagS.plural() << ";"		<< std::endl
-                  << "      (std::vector<" << tagS.simpleType()
-                  << ">::const_iterator)*this ="		<< std::endl
-                  << "                     " << piter->first
-                  << "->" << tagS.plural() << "->begin();"	<< std::endl
-                  << "   }"					<< std::endl
-                  << "   return *this;"				<< std::endl;
+                  << "      {"					<< std::endl
+                  << "        ++" << piter->first << ";"	<< std::endl
+                  << "      }"					<< std::endl;
          }
       }
-      cFile << "}"						<< std::endl;
+      hasParents = 0;
+      for (piter = parentNames.begin(); piter != parentNames.end(); ++piter)
+      {
+         if (piter->first != "HDDM")
+         {
+            cFile << "      " << ((++hasParents == 1)? "if" : "else if")
+                  << " (" << piter->first << " != "
+                  << piter->first << ".list->end())"		<< std::endl
+                  << "      {"					<< std::endl
+                  << "         list = " << piter->first
+                  << "->" << tagS.plural() << ";"		<< std::endl
+                  << "         (std::vector<" << tagS.simpleType()
+                  << ">::const_iterator)*this ="		<< std::endl
+                  << "                " << piter->first
+                  << "->" << tagS.plural() << "->begin();"	<< std::endl
+                  << "      }"					<< std::endl;
+         }
+      }
+      if (hasParents)
+      {
+         cFile << "      else"					<< std::endl
+               << "      {"					<< std::endl
+               << "         break;"				<< std::endl
+               << "      }"					<< std::endl
+               << "   }"					<< std::endl;
+      }
+      cFile << "   return *this;"				<< std::endl
+            << "}"						<< std::endl;
 
 // list const_iterator post-increment operator
 
@@ -1049,34 +1183,43 @@ void CodeBuilder::constructConstructors(DOMElement* el)
             << tagS.listType() 
             << "::const_iterator::operator--()"	<< std::endl
 	    << "{"						<< std::endl;
-      for (piter = parentNames.begin(); piter != parentNames.end(); ++piter)
+      hasParents = 0;
+      for (piter = parentNames.end(); piter != parentNames.begin();)
       {
+         --piter;
          XtString parS(piter->first);
-         if (parS == "HDDM")
-         {
-            cFile << "   --(std::vector<" << tagS.simpleType()
-                  << ">::const_iterator)*this;"			<< std::endl
-                  << "   return *this;"				<< std::endl;
-         }
-         else
-         {
-            cFile << "   if (*this == list->begin() && "
-                  << parS << " != "
+         if (parS != "HDDM")
+         {   
+            if (hasParents == 0)
+            {
+               cFile << "   while (*this == list->begin())"	<< std::endl
+                     << "   {"					<< std::endl;
+            }
+            cFile << "      " << ((++hasParents == 1)? "if" : "else if")
+                  << " (" << parS << " != "
                   << parS << ".list->begin())"			<< std::endl
-                  << "   {"					<< std::endl
-                  << "      list = (--" << piter->first
+                  << "      {"					<< std::endl
+                  << "         list = (--" << piter->first
                   << ")->" << tagS.plural() << ";"		<< std::endl
-                  << "      (std::vector<" << tagS.simpleType()
+                  << "         (std::vector<" << tagS.simpleType()
                   << ">::const_iterator)*this ="		<< std::endl
-                  << "               " << parS << "->"
+                  << "                 " << parS << "->"
                   << tagS.plural() << "->end();"		<< std::endl
-                  << "   }"					<< std::endl
-                  << "   --(std::vector<" << tagS.simpleType() 
-                  << ">::const_iterator)*this;"			<< std::endl
-                  << "   return *this;"				<< std::endl;
+                  << "      }"					<< std::endl;
          }
       }
-      cFile << "}"						<< std::endl;
+      if (hasParents)
+      {
+         cFile << "      else"					<< std::endl
+               << "      {"					<< std::endl
+               << "         break;"				<< std::endl
+               << "      }"					<< std::endl
+               << "   }"					<< std::endl;
+      }
+      cFile << "   --(std::vector<"
+            << tagS.simpleType() << ">::const_iterator)*this;"	<< std::endl
+            << "   return *this;"				<< std::endl
+            << "}"						<< std::endl;
 
 // list const_iterator post-decrement operator
 
@@ -1097,7 +1240,7 @@ void CodeBuilder::constructConstructors(DOMElement* el)
       int varCount = varList->getLength();
       cFile << tagS.simpleType() << "::"
             << tagS.simpleType() << "(const "
-            << tagS.listType() << "::iterator& host)";
+            << tagS.listType() << "* host, int index)";
       int first=0;
       for (int v = 0; v < varCount; v++)
       {
@@ -1136,7 +1279,7 @@ void CodeBuilder::constructConstructors(DOMElement* el)
             DOMElement* contEl = (DOMElement*) cont;
             XtString cnameS(contEl->getTagName());
             cFile << "   " << cnameS.plural() << " = new "
-                  << cnameS.listType() << "(host);" << std::endl;
+                  << cnameS.listType() << "(host, index);" << std::endl;
          }
       }
       cFile << "}" << std::endl;
@@ -1220,6 +1363,285 @@ void CodeBuilder::constructConstructors(DOMElement* el)
             }
          }
       }
+   }
+
+// Record_t class constructor
+
+   XtString tagS("record");
+   DOMNamedNodeMap* varList = el->getAttributes();
+   int varCount = varList->getLength();
+   cFile << std::endl
+         << "Record_t::Record_t()";
+   int first=0;
+   for (iter = tagList.begin(); iter != tagList.end(); iter++)
+   {
+      XtString nameS((*iter)->getTagName());
+      parentList_t parentNames = parents[*iter];
+      if (parentNames.find("HDDM") == parentNames.end())
+      {
+         XtString parentS(parentNames.begin()->first);
+         cFile << ((first++ == 0)? "\n: " : ",\n  ")
+               << "null_" << nameS.plural() 
+               << "((" << parentS.listType() << "*)0,0)";
+      }
+   }
+   for (int v = 0; v < varCount; v++)
+   {
+      DOMNode* var = varList->item(v);
+      XtString typeS(var->getNodeValue());
+      XtString nameS(var->getNodeName());
+      if (typeS == "string" || 
+          typeS == "anyURI")
+      {
+         cFile << ((first++ == 0)? "\n: " : ",\n  ")
+               << nameS << "(\"\")";
+      }
+      else if (typeS == "int" ||
+               typeS == "long" ||
+               typeS == "float" ||
+               typeS == "double" ||
+               typeS == "boolean")
+      {
+         cFile << ((first++ == 0)? "\n: " : ",\n  ")
+               << nameS << "(0)";
+      }
+      else if (typeS == "Particle_t")
+      {
+         cFile << ((first++ == 0)? "\n: " : ",\n  ")
+               << nameS << "(Unknown)";
+      }
+   }
+   cFile << std::endl << "{" << std::endl;
+   DOMNodeList* contList = el->getChildNodes();
+   for (int c = 0; c < contList->getLength(); c++)
+   {
+      DOMNode* cont = contList->item(c);
+      short ctype = cont->getNodeType();
+      if (ctype == DOMNode::ELEMENT_NODE)
+      {
+         DOMElement* contEl = (DOMElement*) cont;
+         XtString cnameS(contEl->getTagName());
+         cFile << "   " << cnameS.plural() << " = new "
+               << cnameS.listType() << "();" << std::endl;
+      }
+   }
+   cFile << "}" << std::endl;
+
+// Record_t class destructor
+
+   cFile << "Record_t::~Record_t()" << std::endl
+         << "{" << std::endl;
+   for (int c = 0; c < contList->getLength(); c++)
+   {
+      DOMNode* cont = contList->item(c);
+      short ctype = cont->getNodeType();
+      if (ctype == DOMNode::ELEMENT_NODE)
+      {
+         DOMElement* contEl = (DOMElement*) cont;
+         XtString cnameS(contEl->getTagName());
+         cFile << "   delete " << cnameS.plural() 
+               << ";" << std::endl;
+      }
+   }
+   cFile << "}" << std::endl;
+
+// Record_t member function clear()
+
+   cFile << "void Record_t::clear()" << std::endl
+         << "{" << std::endl;
+   for (int c = 0; c < contList->getLength(); c++)
+   {
+      DOMNode* cont = contList->item(c);
+      short ctype = cont->getNodeType();
+      if (ctype == DOMNode::ELEMENT_NODE)
+      {
+         DOMElement* contEl = (DOMElement*) cont;
+         XtString cnameS(contEl->getTagName());
+         cFile << "   " << cnameS.plural() << "->clear();" << std::endl;
+      }
+   }
+   cFile << "}" << std::endl;
+
+// member lookup functions
+
+   for (int c = 0; c < contList->getLength(); c++)
+   {
+      DOMNode* cont = contList->item(c);
+      short ctype = cont->getNodeType();
+      if (ctype == DOMNode::ELEMENT_NODE)
+      {
+         DOMElement* contEl = (DOMElement*) cont;
+         XtString cnameS(contEl->getTagName());
+         cFile << cnameS.simpleType() << "* "
+               << tagS.simpleType() << "::" << cnameS;
+         XtString repS = contEl->getAttribute(X("maxOccurs"));
+         int rep = (repS == "unbounded")? 9999 : atoi(S(repS));
+         cFile << ((rep > 1)? "(int n)" : "()") 		<< std::endl
+               << "{"						<< std::endl;
+         if (rep > 1)
+         {
+            cFile << "   int max = " << cnameS.plural()
+                  << "->size()-1;"				<< std::endl
+                  << "   if (n < 0 || n > max)"			<< std::endl
+                  << "   {"					<< std::endl
+      	          << "      std::stringstream err;"		<< std::endl
+      	          << "      err << \"" << tagS.simpleType()
+                  << "::" << cnameS << "(n)"
+                  << " called with n=\" << n"			<< std::endl
+      	          << "          << \", valid range is [\";"	<< std::endl
+      	          << "      if (max >= 0)"			<< std::endl
+      	          << "      {"					<< std::endl
+      	          << "        err << \"0,\" << max;"		<< std::endl
+      	          << "      }"					<< std::endl
+      	          << "      err << \"]\";"			<< std::endl
+      	          << "      throw err.str();"			<< std::endl
+      	          << "   }"					<< std::endl
+      	          << "   return &(*" << cnameS.plural()
+                  << ")[n];"					<< std::endl
+      	          << "}"					<< std::endl;
+         }
+         else
+         {
+            cFile << "   if (" << cnameS.plural()
+                  << "->size() != 1)"				<< std::endl
+     	          << "   {"					<< std::endl
+      	          << "      std::stringstream err;"		<< std::endl
+      	          << "      err << \"" << tagS.simpleType()
+                  << "::" << cnameS << "()"
+                  << " expecting one entry,\""			<< std::endl
+      	          << "          << \" found \" << "
+                  << cnameS.plural() << "->size();"		<< std::endl
+      	          << "      throw err.str();"			<< std::endl
+      	          << "   }"					<< std::endl
+      	          << "   return &(*" << cnameS.plural()
+                  << ")[0];"					<< std::endl
+      	          << "}"					<< std::endl;
+         }
+      }
+   }
+
+// iterator creation member functions for Record_t
+
+   cFile << std::endl;
+   for (iter = tagList.begin(); iter != tagList.end(); iter++)
+   {
+      DOMElement* tagEl = *iter;
+      XtString nameS(tagEl->getTagName());
+      parentList_t parentNames = parents[tagEl];
+      if (parentNames.find("HDDM") != parentNames.end())
+      {
+         cFile << nameS.listType() << "::iterator& Record_t::begin(" 
+               << nameS.listType() << "::iterator& p)" 		<< std::endl
+               << "{"						<< std::endl
+               << "   p.list = " << nameS.plural() << ";"	<< std::endl
+               << "   (std::vector<" << nameS.simpleType()
+               << ">::iterator)p = " << nameS.plural()
+               << "->begin();"					<< std::endl
+               << "   return p;"				<< std::endl
+               << "}"						<< std::endl;
+         cFile << nameS.listType() << "::iterator& Record_t::end(" 
+               << nameS.listType() << "::iterator& p)" 		<< std::endl
+               << "{"						<< std::endl
+               << "   p.list = " << nameS.plural() << ";"	<< std::endl
+               << "   (std::vector<" << nameS.simpleType()
+               << ">::iterator)p = " << nameS.plural()
+               << "->end();"					<< std::endl
+               << "   return p;"				<< std::endl
+               << "}"						<< std::endl;
+         cFile << nameS.listType() << "::const_iterator& Record_t::begin(" 
+               << nameS.listType() << "::const_iterator& p) const"<< std::endl
+               << "{"						<< std::endl
+               << "   p.list = " << nameS.plural() << ";"	<< std::endl
+               << "   (std::vector<" << nameS.simpleType()
+               << ">::const_iterator)p = " << nameS.plural()
+               << "->begin();"					<< std::endl
+               << "   return p;"				<< std::endl
+               << "}"						<< std::endl;
+         cFile << nameS.listType() << "::const_iterator& Record_t::end(" 
+               << nameS.listType() << "::const_iterator& p) const"<< std::endl
+               << "{"						<< std::endl
+               << "   p.list = " << nameS.plural() << ";"	<< std::endl
+               << "   (std::vector<" << nameS.simpleType()
+               << ">::const_iterator)p = " << nameS.plural()
+               << "->end();"					<< std::endl
+               << "   return p;"				<< std::endl
+               << "}"						<< std::endl;
+         continue;
+      }
+
+      cFile << nameS.listType() << "::iterator& Record_t::begin(" 
+            << nameS.listType() << "::iterator& p)" 		<< std::endl
+            << "{"						<< std::endl
+            << "   " << nameS.listType() << "::iterator it;"	<< std::endl;
+      parentList_t::iterator piter;
+      for (piter = parentNames.begin(); piter != parentNames.end(); ++piter)
+      {
+         cFile << "   p." << piter->first 
+               << " = begin(it." << piter->first << ");"	<< std::endl;
+      }
+      cFile << "   p.list = &null_" << nameS.plural() << ";"	<< std::endl
+            << "   (std::vector<" << nameS.simpleType()
+            << ">::iterator)p = p.list->begin();"		<< std::endl
+            << "   --(std::vector<" << nameS.simpleType()
+            << ">::iterator)p;"					<< std::endl
+            << "   --p." << parentNames.begin()->first
+            << ";"						<< std::endl
+            << "   return ++p;"					<< std::endl
+            << "}"						<< std::endl;
+   
+      cFile << nameS.listType() << "::iterator& Record_t::end(" 
+            << nameS.listType() << "::iterator& p)" 		<< std::endl
+            << "{"						<< std::endl
+            << "   " << nameS.listType() << "::iterator it;"	<< std::endl;
+      for (piter = parentNames.begin(); piter != parentNames.end(); ++piter)
+      {
+         cFile << "   p." << piter->first 
+               << " = end(it." << piter->first << ");"	<< std::endl;
+      }
+      cFile << "   p.list = &null_" << nameS.plural() << ";"	<< std::endl
+            << "   (std::vector<" << nameS.simpleType()
+            << ">::iterator)p = p.list->end();"			<< std::endl
+            << "   --p;"					<< std::endl
+            << "   return ++p;"					<< std::endl
+            << "}"						<< std::endl;
+
+      cFile << nameS.listType() << "::const_iterator& Record_t::begin(" 
+            << nameS.listType() << "::const_iterator& p) const"	<< std::endl
+            << "{"						<< std::endl
+            << "   " << nameS.listType() 
+            << "::const_iterator it;"				<< std::endl;
+      for (piter = parentNames.begin(); piter != parentNames.end(); ++piter)
+      {
+         cFile << "   p." << piter->first 
+               << " = begin(it." << piter->first << ");"	<< std::endl;
+      }
+      cFile << "   p.list = &null_" << nameS.plural() << ";"	<< std::endl
+            << "   (std::vector<" << nameS.simpleType()
+            << ">::const_iterator)p = p.list->begin();"		<< std::endl
+            << "   --(std::vector<" << nameS.simpleType()
+            << ">::const_iterator)p;	"			<< std::endl
+            << "   --p." << parentNames.begin()->first
+            << ";"						<< std::endl
+            << "   return ++p;"					<< std::endl
+            << "}"						<< std::endl;
+
+      cFile << nameS.listType() << "::const_iterator& Record_t::end(" 
+            << nameS.listType() 
+            << "::const_iterator& p) const" 			<< std::endl
+            << "{"						<< std::endl
+            << "   " << nameS.listType() 
+            << "::const_iterator it;"				<< std::endl;
+      for (piter = parentNames.begin(); piter != parentNames.end(); ++piter)
+      {
+         cFile << "   p." << piter->first 
+               << " = end(it." << piter->first << ");"		<< std::endl;
+      }
+      cFile << "   p.list = &null_" << nameS.plural() << ";"	<< std::endl
+            << "   (std::vector<" << nameS.simpleType()
+            << ">::const_iterator)p = p.list->end();"		<< std::endl
+            << "   --p;"					<< std::endl
+            << "   return ++p;"					<< std::endl
+            << "}"						<< std::endl;
    }
 }
 
@@ -1834,6 +2256,7 @@ void CodeBuilder::writeMatcher()
 
 /* Generate code to open a hddm file for reading */
 
+#if 0
 void CodeBuilder::constructOperators(DOMElement* el)
 {
    XtString tagS(el->getTagName());
@@ -1989,6 +2412,7 @@ void CodeBuilder::constructCloseFunc(DOMElement* el)
 	 << "   free(fp);"					<< std::endl	
 	 << "}"							<< std::endl;
 }
+#endif
 
 /* Generate the xml template in normal form and store in a string */
 
