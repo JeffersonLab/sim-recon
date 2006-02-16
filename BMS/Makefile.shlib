@@ -21,8 +21,12 @@ ifndef SOLIB_DIR
    SOLIB_DIR = $(LIB_DIR)
 endif
 
+ifndef SOLIB_SUFFIX
+	SOLIB_SUFFIX = so
+endif
+
 ifndef SOLIB_NAME
-   SOLIB_NAME = lib$(MODULE_NAME).so
+   SOLIB_NAME = lib$(MODULE_NAME).$(SOLIB_SUFFIX)
 endif
 
 # Redefine OBJS to include debug suffixes
