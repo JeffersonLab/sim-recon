@@ -563,7 +563,7 @@ void DFactory_DBCALShower::CeleToArray(void)
 	     float   ta  = tcel_a[k][i][j];
 	     float   tb  = tcel_b[k][i][j];
 
-	     if(min(ea,eb)>ethr_cell & abs(ta-tb)<35.&ta!=0.&tb!=0.) 
+	     if(min(ea,eb)>ethr_cell & fabs(ta-tb)<35.&ta!=0.&tb!=0.) 
                celtot=celtot+1;             
              else {
 	       continue;
@@ -1093,13 +1093,13 @@ void DFactory_DBCALShower::ClusAnalysis()
           float delta_z=z_cls[ix]-z_cls[iy];  
           float dist=sqrt(delta_x*delta_x+delta_y*delta_y+delta_z*delta_z);
 
-          float  tdif=abs(t_cls[ix]-t_cls[iy]);
+          float  tdif=fabs(t_cls[ix]-t_cls[iy]);
 
 //	  float  distz=abs(z_cls[ix]-z_cls[iy]);
 //         cout<<"dist="<<dist<<" distz="<<distz<<" tdif="<<tdif<<"\n";    
 
 	    if(dist<r_thr & tdif<t_thr){
-	          float zdif=abs(z_cls[ix]-z_cls[iy]);
+	          float zdif=fabs(z_cls[ix]-z_cls[iy]);
 		  float distran=sqrt(delta_x*delta_x+delta_y*delta_y);
 
 	        if(zdif<z_thr & distran<rt_thr){
@@ -1621,7 +1621,7 @@ void DFactory_DBCALShower::Gser(float &gamser,float a_gser,float x_gser)
               del=del*x_gser/ap;
               sum=sum+del;
 
-	      if(abs(del)<abs(sum)*eps) {
+	      if(fabs(del)<fabs(sum)*eps) {
 	       gamser=sum*exp(-x_gser+a_gser*log(x_gser)-gln);
 	       return;
 	      }
@@ -1668,13 +1668,13 @@ void DFactory_DBCALShower::Gcf(float &gammcf,float a_gcf,float x_gcf)
 	   an=-i*(i-a_gcf);
 	   b=b+2.0;
 	   d=an*d+b;
-	   if(abs(d)<fpmin)d=fpmin;
+	   if(fabs(d)<fpmin)d=fpmin;
 	   c=b+an/c;
-	   if(abs(c)<fpmin)c=fpmin;
+	   if(fabs(c)<fpmin)c=fpmin;
 	   d=1.0/d;
 	   del=d*c;
 	   h=h*del;
-	   if(abs(del-1.0)<eps) {	 
+	   if(fabs(del-1.0)<eps) {	 
            gammcf=exp(-x_gcf+a_gcf*log(x_gcf)-gln)*h; // Put factors in front 
 	   return;
          }
