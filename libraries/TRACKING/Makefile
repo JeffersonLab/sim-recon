@@ -1,5 +1,5 @@
 
-PACKAGES = 
+PACKAGES = ROOT
 
 ifdef HALLD_SHARED
 include $(HALLD_HOME)/src/BMS/Makefile.shlib
