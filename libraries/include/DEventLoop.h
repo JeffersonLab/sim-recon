@@ -57,6 +57,7 @@ class DEventLoop{
 			const char* filename;
 			int line;
 		}call_stack_t;
+		inline void AddToCallStack(call_stack_t &cs){call_stack.push_back(cs);}
 		inline vector<call_stack_t> GetCallStack(void){return call_stack;}
 		void PrintCallStack(void);
 
