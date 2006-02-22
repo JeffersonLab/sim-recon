@@ -9,6 +9,10 @@
 #include <iomanip>
 using namespace std;
 
+#ifdef __linux__
+#include <execinfo.h>
+#endif
+
 #include <signal.h>
 #include <dlfcn.h>
 #include <dirent.h>
@@ -25,8 +29,10 @@ using namespace std;
 void* LaunchThread(void* arg);
 
 DLog dlog;
+DApplication *dapp = NULL;
 
 int SIGINT_RECEIVED = 0;
+int SIGUSR1_RECEIVED = 0;
 int NTHREADS_COMMAND_LINE = 0;
 
 //-----------------------------------------------------------------
@@ -41,6 +47,62 @@ void ctrlCHandle(int x)
 	}
 }
 
+//-----------------------------------------------------------------
+// USR1_Handle
+//-----------------------------------------------------------------
+void USR1_Handle(int x)
+{
+	// This handles when the program receives a USR1(=30) signal.
+	// This will dispatch the signal to all processing threads,
+	// by sending a SIGUSR2 signal to them
+	// causing a DException to be thrown which will be caught
+	// and re-thrown while recording the factory stack info which is
+	// eventually printed out.
+	SIGUSR1_RECEIVED++;
+	cerr<<endl<<"SIGUSR1 received ("<<SIGUSR1_RECEIVED<<").....(thread=0x"<<hex<<pthread_self()<<dec<<")"<<endl;
+	if(dapp)dapp->SignalThreads(SIGUSR2);
+}
+
+//-----------------------------------------------------------------
+// USR2_Handle
+//-----------------------------------------------------------------
+void USR2_Handle(int x)
+{
+	// This handles when the program receives a USR2(=31) signal.
+	// This will dispatch the signal to all processing threads,
+	// Causing a DException to be thrown which will be caught
+	// and re-thrown while recording the factory stack info which is
+	// eventually printed out.
+	dapp->Lock();
+	cerr<<endl<<"SIGUSR2 received .....(thread=0x"<<hex<<pthread_self()<<dec<<")"<<endl;
+
+#ifdef __linux__
+	void * array[50];
+	int nSize = backtrace(array, 50);
+	char ** symbols = backtrace_symbols(array, nSize);
+
+	cout<<endl;
+	cout<<"--- Stack trace for thread=0x"<<hex<<pthread_self()<<dec<<"): ---"<<endl;
+	string cmd("c++filt ");
+	for (int i = 0; i < nSize; i++){
+		char *ptr = strstr(symbols[i], "(");
+		if(!ptr)continue;
+		char symbol[255];
+		strcpy(symbol, ++ptr);
+		ptr = strstr(symbol,"+");
+		if(!ptr)continue;
+		*ptr =0;		
+		cmd += symbol;
+		cmd += " ";
+	}
+	system(cmd.c_str());
+	cout<<endl;
+#else
+	cerr<<"Stack trace only supported on Linux at this time"<<endl;
+#endif
+	dapp->Unlock();
+	exit(0);
+}
 
 //---------------------------------
 // DApplication    (Constructor)
@@ -49,6 +111,20 @@ DApplication::DApplication(int narg, char* argv[])
 {
 	// Set up to catch SIGINTs for graceful exits
 	signal(SIGINT,ctrlCHandle);
+
+	// Set up to catch SIGUSR1s for stack dumps
+	struct sigaction sigaction_usr1;
+	sigaction_usr1.sa_handler = USR1_Handle;
+	sigemptyset(&sigaction_usr1.sa_mask);
+	sigaction_usr1.sa_flags = 0;
+	sigaction(SIGUSR1, &sigaction_usr1, NULL);
+
+	// Set up to catch SIGUSR2s for stack dumps
+	struct sigaction sigaction_usr2;
+	sigaction_usr2.sa_handler = USR2_Handle;
+	sigemptyset(&sigaction_usr2.sa_mask);
+	sigaction_usr2.sa_flags = 0;
+	sigaction(SIGUSR2, &sigaction_usr2, NULL);
 
 	// Initialize application level mutexes
 	pthread_mutex_init(&app_mutex, NULL);
@@ -107,6 +183,9 @@ DApplication::DApplication(int narg, char* argv[])
 		if(argv[i][0] == '-')continue;
 		source_names.push_back(argv[i]);
 	}
+	
+	// Global variable
+	dapp = this;
 }
 
 //---------------------------------
@@ -303,6 +382,13 @@ void* LaunchThread(void* arg)
 	/// This is a global function that is used to create
 	/// a new DEventLoop object which runs in its own thread.
 
+	// We don't want event processing threads handling
+	// the SIGUSR1 signals. They should be handled by the main thread
+	//sigset_t set;
+	//sigemptyset(&set);
+	//sigaddset(&set, SIGUSR2);
+	//pthread_sigmask(SIG_BLOCK, &set, NULL);
+
 	// Create DEventLoop object. He automatically registers himself
 	// with the DApplication object. 
 	DEventLoop *eventLoop = new DEventLoop((DApplication*)arg);
@@ -365,6 +451,7 @@ derror_t DApplication::Run(DEventProcessor *proc, int Nthreads)
 	for(int i=0; i<Nthreads; i++){
 		pthread_t thr;
 		pthread_create(&thr, NULL, LaunchThread, this);
+		threads.push_back(thr);
 		cout<<".";cout.flush();
 	}
 	cout<<endl;
@@ -655,3 +742,13 @@ derror_t DApplication::RegisterSharedObjectDirectory(const char *sodirname)
 	return NOERROR;
 }
 
+//---------------------------------
+// SignalThreads
+//---------------------------------
+void DApplication::SignalThreads(int signo)
+{
+	// Send signal "signo" to all processing threads.
+	for(unsigned int i=0; i<threads.size(); i++){
+		pthread_kill(threads[i], signo);
+	}
+}
