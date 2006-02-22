@@ -48,6 +48,15 @@ float CDC_AVG_NOISE_HITS = 0.03*3240.0; // 0.03 = 3% occupancy
 // At any rate, this should probably be an over estimate.
 float FDC_R = 0.25;			// cm
 
+// The z-coordinate of the wire and cathode planes are well
+// known, but the hit will have some error on it. This should
+// come primarily from the fact that the reconstructed x/y
+// coordinates are at the DOCA point which will be off-plane.
+// The actual error will come from the error on the track angle
+// at the anode plane and the DOCA value measured by drift time.
+// For here, we'll just use sigma=1mm.
+float FDC_Z = 0.1;			// cm
+
 // The occupancy of the FDC is used to determine how many noise
 // hits to add per event. There are 2856 anode wires in the FDC.
 // Each anode plane will have two cathode planes that will be
@@ -137,42 +146,34 @@ void AddNoiseHitsCDC(s_HDDM_t *hddm_s)
 	if(!PE) return;
 	
 	for(unsigned int i=0; i<PE->mult; i++){
-		// ------------ CdcPoints, Hits --------------
-		s_Rings_t *rings=NULL;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->centralDC)
-				rings = PE->in[i].hitView->centralDC->rings;
-		if(!rings)return;
-		if(!rings->mult)return;
-		s_Straws_t *straws = rings->in[0].straws;
-		if(!straws)return;
-		if(!straws->mult)return;
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->centralDC == HDDM_NULL ||
+			hits->centralDC->cdcTruthPoints == HDDM_NULL)continue;
+		
 		
 		// Get existing hits
-		int Nold = 0;
-		s_CdcPoints_t *old_cdcpoints = straws->in[0].cdcPoints;
-		if(old_cdcpoints)Nold = old_cdcpoints->mult;
+		s_CdcTruthPoints_t *old_cdctruthpoints = hits->centralDC->cdcTruthPoints;
+		unsigned int Nold = old_cdctruthpoints->mult;
 		
 		// How many noise hits to add
-		int Nhits = (int)(CDC_AVG_NOISE_HITS + SampleGaussian(sqrt(CDC_AVG_NOISE_HITS)));
-		s_CdcPoints_t* cdcpoints = make_s_CdcPoints(Nhits + Nold);
-		cdcpoints->mult = 0;
-		
+		unsigned int Nhits = (int)(CDC_AVG_NOISE_HITS + SampleGaussian(sqrt(CDC_AVG_NOISE_HITS)));
+		s_CdcTruthPoints_t* cdctruthpoints = make_s_CdcTruthPoints(Nhits + Nold);
+
 		// Add real hits back in first
-		if(old_cdcpoints){
-			for(unsigned int i=0; i<old_cdcpoints->mult; i++){
-				cdcpoints->in[cdcpoints->mult++] = old_cdcpoints->in[i];
-			}
+		cdctruthpoints->mult = 0;
+		for(unsigned int j=0; j<Nold; j++){
+			cdctruthpoints->in[cdctruthpoints->mult++] = old_cdctruthpoints->in[j];
 		}
 		
 		// Delete memory used for old hits structure and
 		// replace pointer in HDDM tree with ours
-		free(old_cdcpoints);
-		straws->in[0].cdcPoints = cdcpoints;
+		free(old_cdctruthpoints);
+		hits->centralDC->cdcTruthPoints = cdctruthpoints;
 		
 		// Add noise hits
-		for(int i=0; i<Nhits; i++){
-			s_CdcPoint_t *cdc = &cdcpoints->in[cdcpoints->mult++];
+		for(unsigned int j=0; j<Nhits; j++){
+			s_CdcTruthPoint_t *cdc = &cdctruthpoints->in[cdctruthpoints->mult++];
 			cdc->dEdx = 0.0;
 			cdc->dradius = 0.0;
 			
@@ -204,39 +205,27 @@ void SmearFDC(s_HDDM_t *hddm_s)
 	if(!PE) return;
 	
 	for(unsigned int i=0; i<PE->mult; i++){
-		s_Chambers_t *chambers = NULL;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->forwardDC)
-				chambers = PE->in[i].hitView->forwardDC->chambers;
-		if(!chambers)continue;
-		
-		for(unsigned int j=0;j<chambers->mult;j++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->forwardDC == HDDM_NULL ||
+			hits->forwardDC->fdcChambers == HDDM_NULL)continue;
 
-			s_AnodePlanes_t *anodeplanes = chambers->in[j].anodePlanes;
-			if(anodeplanes){
+		s_FdcChambers_t* fdcChambers = hits->forwardDC->fdcChambers;
+		s_FdcChamber_t *fdcChamber = fdcChambers->in;
+		for(unsigned int j=0; j<fdcChambers->mult; j++, fdcChamber++){
+			s_FdcTruthPoints_t *fdcTruthPoints = fdcChamber->fdcTruthPoints;
+			if(fdcTruthPoints == HDDM_NULL)continue;
 			
-				for(unsigned int k=0;k<anodeplanes->mult;k++){
-					s_Wires_t *wires = anodeplanes->in[k].wires;
-					if(!wires)continue;
-				
-					for(unsigned int m=0;m<wires->mult;m++){
-						s_FdcPoints_t *fdcPoints = wires->in[m].fdcPoints;
-						if(!fdcPoints)continue;
-						for(unsigned int n=0;n<fdcPoints->mult;n++){
-							float x = fdcPoints->in[n].x;
-							float y = fdcPoints->in[n].y;
+			s_FdcTruthPoint_t *truth = fdcTruthPoints->in;
+			for(unsigned int k=0; k<fdcTruthPoints->mult; k++, truth++){
 							
-							// Take the simple approach here since
-							// we don't know the orientation of the plane
-							x += 2.0*((float)random()/RANDOM_MAX-0.5)*FDC_R;
-							y += 2.0*((float)random()/RANDOM_MAX-0.5)*FDC_R;
+				// Take the simple approach here since
+				// we don't know the orientation of the plane
+				truth->x += 2.0*((float)random()/RANDOM_MAX-0.5)*FDC_R;
+				truth->y += 2.0*((float)random()/RANDOM_MAX-0.5)*FDC_R;
 							
-							// Z should be well known for the FDC
-							fdcPoints->in[n].x = x;
-							fdcPoints->in[n].y = y;
-						}
-					}
-				}
+				// Z should be well known for the FDC, but smear it slightly anyway
+				truth->z += SampleGaussian(FDC_Z);
 			}
 		}
 	}
@@ -258,61 +247,57 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 	if(!PE) return;
 	
 	for(unsigned int i=0; i<PE->mult; i++){
-		s_Chambers_t *chambers = NULL;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->forwardDC)
-				chambers = PE->in[i].hitView->forwardDC->chambers;
-		if(!chambers)continue;
-		if(!chambers->mult)return;
-		s_AnodePlanes_t *anodeplanes = chambers->in[0].anodePlanes;
-		if(!anodeplanes)return;
-		if(!anodeplanes->mult)return;
-		s_Wires_t *wires = anodeplanes->in[0].wires;
-		if(!wires)continue;
-		if(!wires->mult)continue;
-		
-		// Get existing hits
-		int Nold = 0;
-		s_FdcPoints_t *old_fdcpoints = wires->in[0].fdcPoints;
-		if(old_fdcpoints)Nold = old_fdcpoints->mult;
-		
-		// How many noise hits to add
-		int Nhits = (int)(FDC_AVG_NOISE_HITS + SampleGaussian(sqrt(FDC_AVG_NOISE_HITS)));
-		s_FdcPoints_t* fdcpoints = make_s_FdcPoints(Nhits + Nold);
-		fdcpoints->mult = 0;
-		
-		// Add real hits back in first
-		if(old_fdcpoints){
-			for(unsigned int i=0; i<old_fdcpoints->mult; i++){
-				fdcpoints->in[fdcpoints->mult++] = old_fdcpoints->in[i];
-			}
-		}
-		
-		// Delete memory used for old hits structure and
-		// replace pointer in HDDM tree with ours
-		free(old_fdcpoints);
-		wires->in[0].fdcPoints = fdcpoints;
-		
-		// Add noise hits
-		for(int i=0; i<Nhits; i++){
-			s_FdcPoint_t *fdc = &fdcpoints->in[fdcpoints->mult++];
-			fdc->dEdx = 0.0;
-			fdc->dradius = 0.0;
-			fdc->primary = 1;
-			fdc->track = 0;
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->forwardDC == HDDM_NULL ||
+			hits->forwardDC->fdcChambers == HDDM_NULL)continue;
+
+		s_FdcChambers_t* fdcChambers = hits->forwardDC->fdcChambers;
+		s_FdcChamber_t *fdcChamber = fdcChambers->in;
+		for(unsigned int j=0; j<fdcChambers->mult; j++, fdcChamber++){
+			s_FdcTruthPoints_t *old_fdcTruthPoints = fdcChamber->fdcTruthPoints;
+			if(old_fdcTruthPoints == HDDM_NULL)continue;
 			
-			// To get a uniform sampling, we have to sample evenly in X/Y
-			// until we find a point in the CDC fiducial area
-			double x,y,r = 0.0;
-			while(r<3.5 || r>59.0){
-				x = SampleRange(-60.0, 60.0);
-				y = SampleRange(-60.0, 60.0);
-				r = sqrt(x*x + y*y);
+			// Get existing hits
+			unsigned int Nold = old_fdcTruthPoints->mult;
+			
+			// How many noise hits to add
+			unsigned int Nhits = (int)(FDC_AVG_NOISE_HITS + SampleGaussian(sqrt(FDC_AVG_NOISE_HITS)));
+			s_FdcTruthPoints_t* fdcTruthPoints = make_s_FdcTruthPoints(Nhits + Nold);
+			fdcTruthPoints->mult = 0;
+	
+			// Add real hits back in first
+			s_FdcTruthPoint_t *truth = fdcTruthPoints->in;
+			for(unsigned int k=0; k<Nold; k++, truth++){
+				fdcTruthPoints->in[fdcTruthPoints->mult++] = old_fdcTruthPoints->in[k];
 			}
-			fdc->x = x;
-			fdc->y = y;
-			fdc->z = 240.0 + SampleRange(-6.0, +6.0);
-			fdc->z += ((float)(random()%4)) * 52.0;
+		
+			// Delete memory used for old hits structure and
+			// replace pointer in HDDM tree with ours
+			free(old_fdcTruthPoints);
+			fdcChamber->fdcTruthPoints = fdcTruthPoints;
+
+			// Add noise hits
+			for(unsigned int k=0; k<Nhits; k++){
+				s_FdcTruthPoint_t *fdc = &fdcTruthPoints->in[fdcTruthPoints->mult++];
+				fdc->dEdx = 0.0;
+				fdc->dradius = 0.0;
+				fdc->primary = 1;
+				fdc->track = 0;
+			
+				// To get a uniform sampling, we have to sample evenly in X/Y
+				// until we find a point in the FDC fiducial area
+				double x,y,r = 0.0;
+				while(r<3.5 || r>59.0){
+					x = SampleRange(-60.0, 60.0);
+					y = SampleRange(-60.0, 60.0);
+					r = sqrt(x*x + y*y);
+				}
+				fdc->x = x;
+				fdc->y = y;
+				fdc->z = 240.0 + SampleRange(-6.0, +6.0);
+				fdc->z += ((float)(random()%4)) * 52.0;
+			}
 		}
 	}
 }
