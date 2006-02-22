@@ -55,6 +55,9 @@ class DApplication{
 		inline float GetRate(void){return rate_instantaneous;}
 		void PrintRate();
 		void SetShowTicker(int what){show_ticker = what;}
+		void SignalThreads(int signo);
+		inline void Lock(void){pthread_mutex_lock(&app_mutex);}
+		inline void Unlock(void){pthread_mutex_unlock(&app_mutex);}
 		
 		bool monitor_heartbeat;
 		
@@ -93,6 +96,7 @@ class DApplication{
 		double avg_time;
 		double rate_instantaneous;
 		double rate_average;
+		vector<pthread_t> threads;
 };
 
 
