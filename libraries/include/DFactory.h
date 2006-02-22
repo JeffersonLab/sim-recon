@@ -191,7 +191,17 @@ vector<void*>& DFactory<T>::Get()
 	}
 	
 	// Call evnt routine to generate data
-	evnt(eventLoop, event_number);
+	try{
+		evnt(eventLoop, event_number);
+	}catch(DException *exception){
+		DEventLoop::call_stack_t cs;
+		cs.factory_name = dataClassName();
+		cs.tag = Tag();
+		cs.filename = __FILE__;
+		cs.line = __LINE__;
+		eventLoop->AddToCallStack(cs);
+		throw exception;
+	}
 	evnt_called = 1;
 	busy=0;
 	
