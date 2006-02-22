@@ -82,50 +82,41 @@ void SmearCDC(s_HDDM_t *hddm_s)
 	if(!PE) return;
 	
 	for(unsigned int i=0; i<PE->mult; i++){
-		// ------------ CdcPoints, Hits --------------
-		s_Rings_t *rings=NULL;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->centralDC)
-				rings = PE->in[i].hitView->centralDC->rings;
-		if(rings){
-			for(unsigned int j=0;j<rings->mult;j++){
-				s_Straws_t *straws = rings->in[j].straws;
-				if(straws){
-					for(unsigned int k=0;k<straws->mult;k++){
-						s_CdcPoints_t *cdcpoints = straws->in[k].cdcPoints;
-						if(cdcpoints){
-							for(unsigned int m=0;m<cdcpoints->mult;m++){
-								// Here we want to move the point to a position
-								// randomly sampled from a disc in the x/y
-								// plane centered on the actual point.
-								float r = cdcpoints->in[m].r;
-								float phi = cdcpoints->in[m].phi;
-								float z = cdcpoints->in[m].z;
-								float x = r*cos(phi);
-								float y = r*sin(phi);
-								
-								// since this needs to be evenly distributed over
-								// the disc of radius CDC_R, we may try several times
-								float deltaX, deltaY;
-								do{
-									float sx = (float)random()/RANDOM_MAX;
-									deltaX = 2.0*(sx-0.5)*CDC_R;
-									float sy = (float)random()/RANDOM_MAX;
-									deltaY = 2.0*(sy-0.5)*CDC_R;
-								}while(sqrt(deltaX*deltaX + deltaY*deltaY)>CDC_R);
-								x+=deltaX;
-								y+=deltaY;
-								z+= SampleGaussian(CDC_Z_SIGMA);
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->centralDC == HDDM_NULL ||
+			hits->centralDC->cdcTruthPoints == HDDM_NULL)continue;
+		
+		s_CdcTruthPoints_t *cdctruthpoints = hits->centralDC->cdcTruthPoints;
+		s_CdcTruthPoint_t *cdctruthpoint = cdctruthpoints->in;
+		for(unsigned int j=0; j<cdctruthpoints->mult; j++, cdctruthpoint++){
 
-								cdcpoints->in[m].r = sqrt(x*x + y*y);
-								cdcpoints->in[m].phi = atan2(y,x);
-								if(cdcpoints->in[m].phi<0.0)cdcpoints->in[m].phi += 2.0*M_PI;
-								cdcpoints->in[m].z = z;
-							}
-						}
-					}
-				}
-			}
+			// Here we want to move the point to a position
+			// randomly sampled from a disc in the x/y
+			// plane centered on the actual point.
+			float r = cdctruthpoint->r;
+			float phi = cdctruthpoint->phi;
+			float z = cdctruthpoint->z;
+			float x = r*cos(phi);
+			float y = r*sin(phi);
+								
+			// since this needs to be evenly distributed over
+			// the disc of radius CDC_R, we may try several times
+			float deltaX, deltaY;
+			do{
+				float sx = (float)random()/RANDOM_MAX;
+				deltaX = 2.0*(sx-0.5)*CDC_R;
+				float sy = (float)random()/RANDOM_MAX;
+				deltaY = 2.0*(sy-0.5)*CDC_R;
+			}while(sqrt(deltaX*deltaX + deltaY*deltaY)>CDC_R);
+			x+=deltaX;
+			y+=deltaY;
+			z+= SampleGaussian(CDC_Z_SIGMA);
+
+			cdctruthpoint->r = sqrt(x*x + y*y);
+			cdctruthpoint->phi = atan2(y,x);
+			if(cdctruthpoint->phi<0.0)cdctruthpoint->phi += 2.0*M_PI;
+			cdctruthpoint->z = z;
 		}
 	}
 }
