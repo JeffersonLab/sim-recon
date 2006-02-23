@@ -20,6 +20,11 @@ class MCTrackHitSort{
 		}
 };
 
+bool MCTrackHitSort_C(DMCTrackHit* const &thit1, DMCTrackHit* const &thit2) {
+	return thit1->z < thit2->z;
+}
+
+
 //------------------
 // evnt
 //------------------
@@ -56,7 +61,7 @@ derror_t DFactory_DMCTrackHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	GetUPVHits(hddm_s);
 	
 	// sort hits by z
-	sort(_data.begin(), _data.end(), MCTrackHitSort());
+	sort(_data.begin(), _data.end(), MCTrackHitSort_C);
 	
 	// Set id values of all hits to be unique. At the same time ...
 	// Some systems will use negative phis. Force them all to

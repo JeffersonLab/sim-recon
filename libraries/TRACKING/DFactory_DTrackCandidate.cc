@@ -33,6 +33,15 @@ class TrkHitZSort{
 		}
 };
 
+bool TrkHitSort_C(Dtrkhit* const &hit1, Dtrkhit* const &hit2) {
+	return hit1->r > hit2->r;
+}
+
+bool TrkHitZSort_C(Dtrkhit* const &hit1, Dtrkhit* const &hit2) {
+	return hit1->z < hit2->z;
+}
+
+
 //------------------
 // DFactory_DTrackCandidate
 //------------------
@@ -190,10 +199,10 @@ void DFactory_DTrackCandidate::GetTrkHits(DEventLoop *loop)
 	
 	// Sort hits by r in X/Y plane
 	trkhits_r_sorted = trkhits;
-	sort(trkhits_r_sorted.begin(), trkhits_r_sorted.end(), TrkHitSort());
+	sort(trkhits_r_sorted.begin(), trkhits_r_sorted.end(), TrkHitSort_C);
 
 	// Order the track hits by z.
-	sort(trkhits.begin(), trkhits.end(), TrkHitZSort());
+	sort(trkhits.begin(), trkhits.end(), TrkHitZSort_C);
 
 	// Flag all "lone" hits to be ignored
 	for(unsigned int i=0; i<trkhits.size(); i++){

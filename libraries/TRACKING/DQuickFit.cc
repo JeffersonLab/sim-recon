@@ -21,6 +21,10 @@ class DQFHitLessThanZ{
 		}
 };
 
+bool DQFHitLessThanZ_C(DQFHit_t* const &a, DQFHit_t* const &b) {
+	return a->z < b->z;
+}
+
 //-----------------
 // AddHit
 //-----------------
@@ -184,7 +188,7 @@ derror_t DQuickFit::FitTrack(void)
 	/// vertex z position.
 
 	// Points must be in order of increasing Z
-	sort(hits.begin(), hits.end(), DQFHitLessThanZ());
+	sort(hits.begin(), hits.end(), DQFHitLessThanZ_C);
 
 	// Fit to circle to get circle's center
 	FitCircle();
@@ -250,7 +254,7 @@ derror_t DQuickFit::FitTrack_FixedZvertex(float z_vertex)
 	/// square weighting.
 	
 	 // Points must be in order of increasing Z
-	sort(hits.begin(), hits.end(), DQFHitLessThanZ());
+	sort(hits.begin(), hits.end(), DQFHitLessThanZ_C);
 	
 	// Fit is being done for a fixed Z-vertex
 	this->z_vertex = z_vertex;
