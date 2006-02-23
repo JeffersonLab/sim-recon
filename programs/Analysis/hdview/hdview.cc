@@ -10,7 +10,7 @@
 int GO = 0; // 1=continuously display events 0=wait for user
 
 TCanvas *maincanvas=NULL;
-DApplication *dapp = NULL;
+extern DApplication *dapp;
 DEventLoop *eventloop =NULL;
 MyProcessor *myproc = NULL;
 hdv_mainframe *hdvmf=NULL;
