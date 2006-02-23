@@ -135,12 +135,6 @@ void SmearCDC(s_HDDM_t *hddm_s)
 //-----------
 void AddNoiseHitsCDC(s_HDDM_t *hddm_s)
 {
-	// Since the current pattern finding algorithm only uses values
-	// in the s_CdcPoint_t structure, it doesn't really matter what
-	// ring,straw we put the noise hits under. Thus, we put them under
-	// the first straw of the first ring. If there is no ring/straw, then
-	// no hits are added.
-
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return;
@@ -157,8 +151,9 @@ void AddNoiseHitsCDC(s_HDDM_t *hddm_s)
 		unsigned int Nold = old_cdctruthpoints->mult;
 		
 		// How many noise hits to add
-		unsigned int Nhits = (int)(CDC_AVG_NOISE_HITS + SampleGaussian(sqrt(CDC_AVG_NOISE_HITS)));
-		s_CdcTruthPoints_t* cdctruthpoints = make_s_CdcTruthPoints(Nhits + Nold);
+		int Nhits = (int)(CDC_AVG_NOISE_HITS + SampleGaussian(sqrt(CDC_AVG_NOISE_HITS)));
+		if(Nhits<0)Nhits=0;
+		s_CdcTruthPoints_t* cdctruthpoints = make_s_CdcTruthPoints((unsigned int)Nhits + Nold);
 
 		// Add real hits back in first
 		cdctruthpoints->mult = 0;
@@ -236,12 +231,6 @@ void SmearFDC(s_HDDM_t *hddm_s)
 //-----------
 void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 {
-	// Since the current pattern finding algorithm only uses values
-	// in the s_FdcPoint_t structure, it doesn't really matter what
-	// plane,wire we put the noise hits under. Thus, we put them under
-	// the first wire of the first plane. If there is no plane/wire, then
-	// no hits are added.
-
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return;
@@ -262,8 +251,10 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 			unsigned int Nold = old_fdcTruthPoints->mult;
 			
 			// How many noise hits to add
-			unsigned int Nhits = (int)(FDC_AVG_NOISE_HITS + SampleGaussian(sqrt(FDC_AVG_NOISE_HITS)));
-			s_FdcTruthPoints_t* fdcTruthPoints = make_s_FdcTruthPoints(Nhits + Nold);
+			float Nchamber_noise_hits = FDC_AVG_NOISE_HITS/fdcChambers->mult;
+			int Nhits = (int)(Nchamber_noise_hits + SampleGaussian(sqrt(Nchamber_noise_hits)));
+			if(Nhits<0)Nhits = 0;
+			s_FdcTruthPoints_t* fdcTruthPoints = make_s_FdcTruthPoints((unsigned int)Nhits + Nold);
 			fdcTruthPoints->mult = 0;
 	
 			// Add real hits back in first
