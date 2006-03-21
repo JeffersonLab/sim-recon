@@ -8,7 +8,7 @@
 #include "DFactory_DFDCHit.h"
 
 // z-positions of modules (3 chambers each)
-float fdc_zmodule[8]={228.0,240.0,283.0,295.0,338.0,350.0,393.0,405.0};
+float fdc_zmodule[8]={231.0,237.0,286.0,292.0,341.0,347.0,396.0,402.0};
 
 
 //------------------
@@ -59,7 +59,7 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 				    fdchit->u=chamber->fdcAnodeWires->in[k].wire;
 				    fdchit->dE=hits->in[n].dE;
 				    fdchit->t=hits->in[n].t;
-				    fdchit->z=fdc_zmodule[module-1]+4.0*float(layer-2);
+				    fdchit->z=fdc_zmodule[module-1]+2.0*float(layer-2);
 				    fdchit->tau=60.0*float(layer-2);
 				    fdchit->type = 0;
 
@@ -81,7 +81,7 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 			      fdchit->u=chamber->fdcCathodeStrips->in[k].strip;
 			      fdchit->dE=hits->in[n].dE;
 			      fdchit->t=hits->in[n].t;
-			      fdchit->z=fdc_zmodule[module-1]+4.0*float(layer-2);
+			      fdchit->z=fdc_zmodule[module-1]+2.0*float(layer-2);
 			      fdchit->tau=60.0*float(layer-2)+45.0*float(plane-2);
 			      fdchit->type = 1;
 
