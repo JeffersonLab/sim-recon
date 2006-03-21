@@ -7,6 +7,10 @@
 
 #include "DFactory_DFDCHit.h"
 
+// z-positions of modules (3 chambers each)
+float fdc_zmodule[8]={228.0,240.0,283.0,295.0,338.0,350.0,393.0,405.0};
+
+
 //------------------
 // evnt
 //------------------
@@ -40,95 +44,54 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 		s_FdcChambers_t* fdcChambers = hits->forwardDC->fdcChambers;
 		for(unsigned int j=0; j<fdcChambers->mult; j++){
 			s_FdcChamber_t *chamber = &fdcChambers->in[j];
-			//int  layer = chamber->layer;
-			//int  module = chamber->module;
+			int  layer = chamber->layer;
+			int  module = chamber->module;
 			
 			if(chamber->fdcAnodeWires != HDDM_NULL){
-				for(unsigned int k=0; k<chamber->fdcAnodeWires->mult; k++){
-				
+				for(unsigned int k=0; k<chamber->fdcAnodeWires->mult; k++){ 
+				  s_FdcAnodeHits_t *hits=chamber->fdcAnodeWires->in[k].fdcAnodeHits;
+				  for (unsigned int n=0;n<hits->mult;n++){
+				    DFDCHit *fdchit = new DFDCHit;
+				    
+				    fdchit->layer=layer;
+				    fdchit->module=module;
+				    fdchit->plane=2;
+				    fdchit->u=chamber->fdcAnodeWires->in[k].wire;
+				    fdchit->dE=hits->in[n].dE;
+				    fdchit->t=hits->in[n].t;
+				    fdchit->z=fdc_zmodule[module-1]+4.0*float(layer-2);
+				    fdchit->tau=60.0*float(layer-2);
+				    fdchit->type = 0;
+
+				    v.push_back(fdchit);
+				  }//  n (anode hits) 
 				} //  k  (fdcAnodeWires)
 			} // fdcAnodeWires!=NULL
+
+			if(chamber->fdcCathodeStrips != HDDM_NULL){
+			  for(unsigned int k=0; k<chamber->fdcCathodeStrips->mult; k++){ 
+			    s_FdcCathodeHits_t *hits=chamber->fdcCathodeStrips->in[k].fdcCathodeHits;
+			    for (unsigned int n=0;n<hits->mult;n++){
+			      DFDCHit *fdchit = new DFDCHit;
+			      int plane=chamber->fdcCathodeStrips->in[k].plane;
+			      
+			      fdchit->layer=layer;
+			      fdchit->module=module;
+			      fdchit->plane=plane;
+			      fdchit->u=chamber->fdcCathodeStrips->in[k].strip;
+			      fdchit->dE=hits->in[n].dE;
+			      fdchit->t=hits->in[n].t;
+			      fdchit->z=fdc_zmodule[module-1]+4.0*float(layer-2);
+			      fdchit->tau=60.0*float(layer-2)+45.0*float(plane-2);
+			      fdchit->type = 1;
+
+			      v.push_back(fdchit);
+			    }//  n (cathode hits) 
+			  } //  k  (fdcCathodeStrips)
+			} // fdcAnodeWires!=NULL
+
 		} // j (fdcChambers)
 	} // i  (physicsEvents)
-
-#if 0
-	for(unsigned int i=0; i<PE->mult; i++){
-		s_Chambers_t *chambers = NULL;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->forwardDC)
-				chambers = PE->in[i].hitView->forwardDC->chambers;
-		if(!chambers)continue;
-		
-		for(unsigned int j=0;j<chambers->mult;j++){
-			int  layer = chambers->in[j].layer;
-			int  module = chambers->in[j].module;
-
-			s_AnodePlanes_t *anodeplanes = chambers->in[j].anodePlanes;
-			if(anodeplanes){
-			
-				for(unsigned int k=0;k<anodeplanes->mult;k++){
-					float tau = anodeplanes->in[k].tau;
-					float z = anodeplanes->in[k].z;
-					s_Wires_t *wires = anodeplanes->in[k].wires;
-					if(!wires)continue;
-				
-					for(unsigned int m=0;m<wires->mult;m++){
-						float u = wires->in[m].u;
-						s_Hits_t *hits = wires->in[m].hits;
-						if(!hits)continue;
-						for(unsigned int n=0;n<hits->mult;n++){
-							float dE = hits->in[n].dE;
-							float t = hits->in[n].t;
-					
-							DFDCHit *fdchit = new DFDCHit;
-							fdchit->layer = layer;
-							fdchit->module = module;
-							fdchit->tau = tau;
-							fdchit->z = z;
-							fdchit->u = u;
-							fdchit->dE = dE;
-							fdchit->t = t;
-							fdchit->type = 0;
-							v.push_back(fdchit);
-						}
-					}
-				}
-			}
-
-			s_CathodePlanes_t *cathodeplanes = chambers->in[j].cathodePlanes;
-			if(cathodeplanes){
-			
-				for(unsigned int k=0;k<cathodeplanes->mult;k++){
-					float tau = cathodeplanes->in[k].tau;
-					float z = cathodeplanes->in[k].z;
-					s_Strips_t *strips = cathodeplanes->in[k].strips;
-					if(!strips)continue;
-				
-					for(unsigned int m=0;m<strips->mult;m++){
-						float u = strips->in[m].u;
-						s_Hits_t *hits=strips->in[m].hits;
-						if (!hits) continue;
-
-						for (unsigned int n=0;n<hits->mult;n++){
-					
-						  DFDCHit *fdchit = new DFDCHit;
-						  fdchit->layer = layer;
-						  fdchit->module = module;
-						  fdchit->tau = tau;
-						  fdchit->z = z;
-						  fdchit->u = u;
-						  fdchit->dE = hits->in[n].dE;
-						  fdchit->t = 0;
-						  fdchit->type = 1;
-
-						  v.push_back(fdchit);
-						}
-					}
-				}
-			}
-		}
-	}
-#endif
 
 	return NOERROR;
 }
@@ -142,7 +105,7 @@ const string DFactory_DFDCHit::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row: layer: module: tau(rad):    z(cm):  u(cm):  dE(MeV):   t(ns):   type:");
+	printheader("row: layer: module: tau(rad):    z(cm):  local index:  dE(MeV):   t(ns):   type:");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DFDCHit *fdchit = _data[i];
@@ -153,7 +116,7 @@ const string DFactory_DFDCHit::toString(void)
 		printcol("%d", fdchit->module);
 		printcol("%3.1f", fdchit->tau);
 		printcol("%3.1f", fdchit->z);
-		printcol("%2.3f", fdchit->u);
+		printcol("%d", fdchit->u);
 		if(!fdchit->type){
 			printcol("%1.3f", fdchit->dE*1000.0);
 			printcol("%4.0f", fdchit->t);

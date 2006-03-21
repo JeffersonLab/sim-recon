@@ -17,9 +17,10 @@ class DFDCHit:public DObject{
 		
 		int layer;
 		int module;
+	        int plane;
+		int u;
 		float tau;
 		float z;
-		float u;
 		float dE;
 		float t;
 		int type; ///< 0=anode, 1=cathode
