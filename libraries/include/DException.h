@@ -20,8 +20,8 @@
 ///	  - protect against executables that cannot be located
 ///   - respond intelligently to executables not compiled with debug info
 ///   - test and adapt to Solaris platform
+///	  - make it thread-safe 	
 ///
-
 #ifndef DEXCEPTION_H
 #define DEXCEPTION_H
 
@@ -29,19 +29,18 @@
 #include <exception>
 #include <cstdlib>
 #include <string>
-#include <string>
 #include <sstream>
 #include <new>
 
 #include <execinfo.h>
 #include <unistd.h>
 #include <limits.h>
-#include <dirent.h>
 
 class DException : public std::exception 
 {
 	public :
 		DException(std::string msg="");
 };	
+
 	
 #endif //DEXCEPTION_H
