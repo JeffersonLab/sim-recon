@@ -8,7 +8,8 @@
 
 #include "DException.h"
 
-DException::DException(std::string msg) {
+DException::DException(std::string msg)
+{
 	void* traces[25];
 	FILE* psOutput;
 	FILE* addr2lineOutput;
@@ -33,11 +34,6 @@ DException::DException(std::string msg) {
 		// Put in global error log message here
 	
 	// All of this output is subject to redirection to error logs.	
-	if (msg != "")
-		std::cout	<< "Exception (\"" << msg << "\") caught at:"
-					<< std::endl;
-	else
-		std::cout 	<< "Exception caught at:" << std::endl;
 	
 	
 	// First, we need to get the name of this executable. Apparently, there is no 
@@ -57,14 +53,13 @@ DException::DException(std::string msg) {
 	// Now, we have to figure out the path of the executable, using "which" and 
 	// a few shenanigans with environment variables. Note that if you're doing
 	// something funny on the command line, you'll likely fool this algorithm.
-	
 	sstemp << getenv("PATH");
 	path = sstemp.str();
 	sstemp.str("");
 	sstemp << "PATH=.:" << path; 
 	setenv("PATH",sstemp.str().c_str(),1);
 	sstemp.str("");
-	sstemp << "which " << myName << std::endl;
+	sstemp << "which " << myName;
 	whichOutput = popen(sstemp.str().c_str(), "r");
 	for (int i=0; ((temp_ch = getc(whichOutput)) != EOF) || i > NAME_MAX; i++)
 		myName[i] = temp_ch;
@@ -72,8 +67,7 @@ DException::DException(std::string msg) {
 	myName[strlen(myName)-1] = '\0';
 	pclose(whichOutput);
 	sstemp.str("");
-
-
+	
 	// Next, we ask "addr2line" of the GNU binary utilities package for 
 	// information about the names of the addresses we got from backtrace().
 
@@ -81,7 +75,6 @@ DException::DException(std::string msg) {
 		
 	for (int i=0; i < nLevels; i++) 
 		sstemp << traces[i] << " ";
-
 	addr2lineOutput	= popen(sstemp.str().c_str(), "r");
 	sstemp.str("");
 	
@@ -112,6 +105,13 @@ DException::DException(std::string msg) {
 		sstemp << temp_ch;
 	}
 	
+	if (msg != "")
+		std::cout	<< "Exception (\"" << msg << "\") caught at:"
+					<< std::endl;
+	else
+		std::cout 	<< "Exception caught at:" << std::endl;
+
+		
 	std::cout 	<< "\t" << prim_loc << std::endl;
 	std::cout 	<< "referenced by: " << std::endl 
 				<< "\t" << sstemp.str(); 
