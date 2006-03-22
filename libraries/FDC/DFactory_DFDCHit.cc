@@ -28,7 +28,7 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 {
 	/// Copies the data from the given hddm_s structure. This is called
 	/// from DEventSourceHDDM::GetObjects.
-	
+/*	
 	v.clear();
 
 	// Loop over Physics Events
@@ -92,7 +92,7 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 
 		} // j (fdcChambers)
 	} // i  (physicsEvents)
-
+*/
 	return NOERROR;
 }
 
@@ -102,7 +102,7 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 const string DFactory_DFDCHit::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
-	Get();
+/*	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
 	printheader("row: layer: module: tau(rad):    z(cm):  local index:  dE(MeV):   t(ns):   type:");
@@ -129,4 +129,6 @@ const string DFactory_DFDCHit::toString(void)
 	}
 
 	return _table;
+	*/
+	return "";
 }
