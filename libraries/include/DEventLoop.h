@@ -120,8 +120,8 @@ DFactory<T>* DEventLoop::Get(vector<const T*> &t, const char *tag)
 		cs.factory_name = T::className();
 		cs.tag = tag;
 		if(exception!=NULL && call_stack.size()==0){
-			cs.filename = exception->filename;
-			cs.line = exception->line;
+			//cs.filename = exception->filename;
+			//cs.line = exception->line;
 		}else{
 			cs.filename = NULL;
 		}
