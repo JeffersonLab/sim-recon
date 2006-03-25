@@ -15,7 +15,11 @@
 ///   - you must compile with the -g option (g++) to get readable output
 ///	  - you must be running an executable in the current directory or from
 ///	  some directory on your path in order for exceptions to function fully
-///
+///	  - you must catch the exception to view the stack trace (using the
+///   what() method). This encourages proper try/catch structure. 
+///	  - you can write DExceptions to any stream, including DLogStreams if
+///   you wish to keep a log of exceptions. 
+/// 
 ///	 To do:
 ///	  - protect against executables that cannot be located
 ///   - respond intelligently to executables not compiled with debug info
