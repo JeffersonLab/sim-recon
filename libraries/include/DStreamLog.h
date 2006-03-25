@@ -29,21 +29,25 @@
 /// int main() {
 ///		DStreamLog info(cout, "INFO");
 ///			
-///		info << "Some information. " << endl;
+///		info << "Some information. " << endMsg;
 ///		
 ///		ofstream f("errors.log");		
 ///		DStreamLog err(f, "ERR");
 ///		
-///		err << "There was an error. " << endl;
+///		err << "There was " << endl << "an error." << endMsg;
 /// 	return 0;
 /// }
 ///
 ///	Some details:
-/// The instantiation of a DStreamLog requires that an output
+///  - The instantiation of a DStreamLog requires that an output
 /// stream and a tag be provided. To write a single message to
-/// a DLogStream object, be sure to pass in std::endl at the end
-/// of your text so that the buffer is flushed. 
-/// 
+/// a DLogStream object, be sure to pass in endMsg to make sure
+/// the buffer is flushed.
+///  - The endMsg manipulator uses a sentinel value from the ASCII table,
+/// namely the ACK character, because it's not often used. If it should
+/// somehow sneak into your message, it will split your message at the point
+/// where ACK entered the stream.
+///
 
 class DStreamLog : public std::ostream
 {
@@ -52,6 +56,10 @@ class DStreamLog : public std::ostream
 		DStreamLog(const std::ostream& os, const std::string& tag);
 		DStreamLog(std::streambuf* buf, const char* tag);
 		virtual ~DStreamLog();
+		DStreamLog& endMsg(DStreamLog& dSL);
+
 };
+
+DStreamLog& endMsg(DStreamLog& os); 
 
 #endif //_DSTREAMLOG_H_
