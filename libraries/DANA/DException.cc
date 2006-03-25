@@ -8,7 +8,8 @@
 
 #include "DException.h"
 
-DException::DException(std::string msg)
+DException::DException(std::string msg) :
+_msg(msg)
 {
 	void* traces[25];
 	FILE* psOutput;
@@ -17,6 +18,7 @@ DException::DException(std::string msg)
 	std::stringstream sstemp; 
 	std::string path;
 	std::string prim_loc = "";
+	std::string fullTrace;
 	int nLevels;
 	char temp_ch;
 	char* myName = new(std::nothrow) char [NAME_MAX];	// NAME_MAX is defined in limits.h
@@ -56,7 +58,7 @@ DException::DException(std::string msg)
 	sstemp << getenv("PATH");
 	path = sstemp.str();
 	sstemp.str("");
-	sstemp << "PATH=.:" << path; 
+	sstemp << ".:" << path;
 	setenv("PATH",sstemp.str().c_str(),1);
 	sstemp.str("");
 	sstemp << "which " << myName;
@@ -105,19 +107,33 @@ DException::DException(std::string msg)
 		sstemp << temp_ch;
 	}
 	
-	if (msg != "")
-		std::cout	<< "Exception (\"" << msg << "\") caught at:"
-					<< std::endl;
-	else
-		std::cout 	<< "Exception caught at:" << std::endl;
-
-		
-	std::cout 	<< "\t" << prim_loc << std::endl;
-	std::cout 	<< "referenced by: " << std::endl 
-				<< "\t" << sstemp.str(); 
-	std::cout.flush();
+	fullTrace = sstemp.str();
+	sstemp.str("");
 	
-	delete[] myName; 
+	if (msg != "")
+		sstemp		<< "Exception (\"" << msg << "\") thrown at:\n";
+	else
+		sstemp 		<< "Exception thrown at:\n";
+
+			
+	sstemp		<< "\t" << prim_loc << "\n";
+	sstemp 		<< "referenced by: " << "\n" 
+				<< "\t" << fullTrace << std::endl; 
+	
+	_trace = sstemp.str();
+	delete myName;	
 	pclose(addr2lineOutput);
 	setenv("PATH", path.c_str(), 1);
+	
+}
+
+DException::~DException() throw () {}
+
+const char* DException::what() const throw() {
+	return _msg.c_str();
+}
+
+std::ostream& operator<<(std::ostream& os, const DException& d) {
+	os << d._trace;
+	return os;
 }

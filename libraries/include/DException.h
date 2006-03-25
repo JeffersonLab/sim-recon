@@ -22,6 +22,7 @@
 ///   - test and adapt to Solaris platform
 ///	  - make it thread-safe 	
 ///
+
 #ifndef DEXCEPTION_H
 #define DEXCEPTION_H
 
@@ -40,7 +41,13 @@ class DException : public std::exception
 {
 	public :
 		DException(std::string msg="");
+		virtual	~DException() throw();
+		const char* what() const throw();
+		friend std::ostream& 
+			operator<<(std::ostream& os, const DException& d);
+	private:
+		std::string _msg;
+		std::string _trace;
 };	
-
 	
 #endif //DEXCEPTION_H
