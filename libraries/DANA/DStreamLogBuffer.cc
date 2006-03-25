@@ -1,3 +1,9 @@
+//
+// DStreamLogBuffer.cc - implementation of the streambuf used by DStreamLog
+// Author: Craig Bookwalter
+// Date: Aug 2005
+//
+
 #include "DStreamLogBuffer.h"
 #include <sstream>
 
@@ -21,16 +27,21 @@ int DStreamLogBuffer::overflow(int c) {
 	stamp_str << "<" << __tag << " @ " << getTimeStamp() << "> : ";
 	const char* stamp = stamp_str.str().c_str();
 	int len = strlen(stamp);
+	int rc = 0;
 	if (c != EOF) {
-		if (__newline)
+		if (__newline) {
 			if (__sbuf->sputn(stamp, len) != len)
 				return EOF;
 			else
 				__newline = false;
-			
-		int rc = __sbuf->sputc(c);
-		if (c == '\n')
+		}
+		if (c == 6) {
+			rc = __sbuf->sputc('\n');
 			__newline = true;
+		}
+		else
+			rc = __sbuf->sputc(c);
+			
 		return rc;
 	}
 	return 0;
