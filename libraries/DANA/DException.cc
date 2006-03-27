@@ -9,8 +9,21 @@
 #include "DException.h"
 
 DException::DException(std::string msg) :
-_msg(msg)
+_msg(msg),
+_trace("")
 {
+	#ifdef __linux__	
+		getTrace();
+	#endif
+}
+
+DException::~DException() throw () {}
+
+const char* DException::what() const throw() {
+	return _msg.c_str();
+}
+
+void DException::getTrace() throw() {
 	void* traces[25];
 	FILE* psOutput;
 	FILE* addr2lineOutput;
@@ -110,8 +123,8 @@ _msg(msg)
 	fullTrace = sstemp.str();
 	sstemp.str("");
 	
-	if (msg != "")
-		sstemp		<< "Exception (\"" << msg << "\") thrown at:\n";
+	if (_msg != "")
+		sstemp		<< "Exception (\"" << _msg << "\") thrown at:\n";
 	else
 		sstemp 		<< "Exception thrown at:\n";
 
@@ -124,16 +137,14 @@ _msg(msg)
 	delete myName;	
 	pclose(addr2lineOutput);
 	setenv("PATH", path.c_str(), 1);
-	
 }
 
-DException::~DException() throw () {}
-
-const char* DException::what() const throw() {
-	return _msg.c_str();
+const char* DException::trace() const throw() {
+	return _trace.c_str();
 }
 
 std::ostream& operator<<(std::ostream& os, const DException& d) {
 	os << d._trace;
 	return os;
 }
+
