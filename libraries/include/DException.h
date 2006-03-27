@@ -37,7 +37,10 @@
 #include <sstream>
 #include <new>
 
+#ifdef __linux__
 #include <execinfo.h>
+#endif
+
 #include <unistd.h>
 #include <limits.h>
 
@@ -47,9 +50,12 @@ class DException : public std::exception
 		DException(std::string msg="");
 		virtual	~DException() throw();
 		const char* what() const throw();
+		const char* trace() const throw();
 		friend std::ostream& 
 			operator<<(std::ostream& os, const DException& d);
+		
 	private:
+		void getTrace() throw();
 		std::string _msg;
 		std::string _trace;
 };	
