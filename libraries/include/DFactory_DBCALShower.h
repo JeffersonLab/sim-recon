@@ -14,7 +14,7 @@
 
 class DFactory_DBCALShower:public DFactory<DBCALShower>{
 	public:
-		DFactory_DBCALShower(){};
+		DFactory_DBCALShower();
 		~DFactory_DBCALShower(){};
 		const string toString(void);
 
@@ -43,11 +43,11 @@ class DFactory_DBCALShower:public DFactory<DBCALShower>{
           float Gammln(float xx_gln);
 
 
-       const static int modulemax_bcal=48;
-       const static int layermax_bcal=12;
-       const static int colmax_bcal=4;
-       const static int cellmax_bcal=modulemax_bcal*layermax_bcal*colmax_bcal;
-       const static int clsmax_bcal =modulemax_bcal*layermax_bcal*colmax_bcal;
+#define modulemax_bcal 48
+#define layermax_bcal 12
+#define colmax_bcal 4
+#define cellmax_bcal modulemax_bcal*layermax_bcal*colmax_bcal
+#define clsmax_bcal modulemax_bcal*layermax_bcal*colmax_bcal
 
 
 // the following data member are used bu function CellRecon()
@@ -74,7 +74,7 @@ class DFactory_DBCALShower:public DFactory<DBCALShower>{
 
 
 // The following data are used by function CeleToArray();
-       const static float ethr_cell=0.00001;// MIN ENERGY THRESD OF cel in GeV
+       static float ethr_cell;// MIN ENERGY THRESD OF cel in GeV
        int celtot;  //----- TOTAL NUMBER OF CELLS with readout --
        int narr[4][cellmax_bcal+1]; 
        int   nclus[cellmax_bcal+1];  
@@ -119,11 +119,11 @@ class DFactory_DBCALShower:public DFactory<DBCALShower>{
 //********************for fitting****************************************
        int  nlrtot[clsmax_bcal+1]; //----total layers of the cluster
 
-       const static int  elyr = 1;
-       const static int  xlyr = 2; 
-       const static int  ylyr = 3; 
-       const static int  zlyr = 4; 
-       const static int  tlyr = 5; 
+       static int  elyr;
+       static int  xlyr; 
+       static int  ylyr; 
+       static int  zlyr; 
+       static int  tlyr; 
        
 
        float clslyr[6][layermax_bcal+1][clsmax_bcal];
@@ -165,12 +165,12 @@ class DFactory_DBCALShower:public DFactory<DBCALShower>{
 
 //***threshold used in ClusAnalysis()
 
-     const static float r_thr = 40.0;  // CENTROID DISTANCE THRESHOLD
-     const static float t_thr = 2.5;   // CENTROID TIME THRESHOLD
-     const static float z_thr = 30.0;    // FIBER DISTANCE THRESHOLD
-     const static float rt_thr= 40.0; // CENTROID TRANSVERSE DISTANCE THRESHOLD
-     const static float ecmin = 0.007;  // MIN ENERGY THRESD OF CLUSTER IN GEV
-     const static float rmsmax= 5.0;    // T RMS THRESHOLD
+     static float r_thr;  // CENTROID DISTANCE THRESHOLD
+     static float t_thr;   // CENTROID TIME THRESHOLD
+     static float z_thr;    // FIBER DISTANCE THRESHOLD
+     static float rt_thr; // CENTROID TRANSVERSE DISTANCE THRESHOLD
+     static float ecmin;  // MIN ENERGY THRESD OF CLUSTER IN GEV
+     static float rmsmax;    // T RMS THRESHOLD
 
 //***the above threshold are used in ClusAnalysis()
 
@@ -178,15 +178,15 @@ class DFactory_DBCALShower:public DFactory<DBCALShower>{
 
 // Constants for attenuation 
 // attenuation factor =f_att*exp(-x/lmbda1)+(1.0-f_att)*exp(-x/lmbda2)
-     const static float f_att= 1.0;
-     const static float lmbda1=150.; // Attenuation lenth and other parameters
-     const static float lmbda2=700.; // used in formula  attenuation factor
+     static float f_att;
+     static float lmbda1; // Attenuation lenth and other parameters
+     static float lmbda2; // used in formula  attenuation factor
 //   mcprod=0 for MC data and mcprod=1 for real data
-     const static int  mcprod=0;
+     static int  mcprod;
 
 // some calibration constants
-   const static float C_EFFECTIVE=15.0; //Effective v of light in scintillator
-   const static float ECORR=0.13; // ECORR actually could be a function of E
+   static float C_EFFECTIVE; //Effective v of light in scintillator
+   static float ECORR; // ECORR actually could be a function of E
 
 
 };

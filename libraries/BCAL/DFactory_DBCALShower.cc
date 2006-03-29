@@ -11,6 +11,36 @@
 #include "DFactory_DBCALShower.h"
 
 //------------------
+// DFactory_DBCALShower
+//------------------
+DFactory_DBCALShower::DFactory_DBCALShower()
+{
+	ethr_cell=0.00001;// MIN ENERGY THRESD OF cel in GeV
+
+	elyr = 1;
+	xlyr = 2; 
+	ylyr = 3; 
+	zlyr = 4; 
+	tlyr = 5; 
+
+	r_thr = 40.0;  // CENTROID DISTANCE THRESHOLD
+	t_thr = 2.5;   // CENTROID TIME THRESHOLD
+	z_thr = 30.0;    // FIBER DISTANCE THRESHOLD
+	rt_thr= 40.0; // CENTROID TRANSVERSE DISTANCE THRESHOLD
+	ecmin = 0.007;  // MIN ENERGY THRESD OF CLUSTER IN GEV
+	rmsmax= 5.0;    // T RMS THRESHOLD
+
+	f_att= 1.0;
+	lmbda1=150.; // Attenuation lenth and other parameters
+	lmbda2=700.; // used in formula  attenuation factor
+	mcprod=0;	//   mcprod=0 for MC data and mcprod=1 for real data
+
+	C_EFFECTIVE=15.0; //Effective v of light in scintillator
+	ECORR=0.13; // ECORR actually could be a function of E
+}
+
+
+//------------------
 // evnt
 //------------------
 derror_t DFactory_DBCALShower::evnt(DEventLoop *loop, int eventnumber)
