@@ -14,6 +14,19 @@ bool unsorted(vector<const DFDCHit*>& v) {
 	return false; 
 }
 
+bool DFDCHit_dE_cmp(const DFDCHit* a, const DFDCHit* b) {
+	return a->dE < b->dE;
+}
+
+bool DFDCHit_layer_cmp(const DFDCHit* a, const DFDCHit* b) {
+	return a->globalLayer < b->globalLayer;
+}
+
+bool DFDCHit_plane_cmp(const DFDCHit* a, const DFDCHit* b) {
+	return a->globalPlane < b->globalPlane;
+}
+
+
 DFactory_DFDCGhost::DFactory_DFDCGhost() {}
 
 DFactory_DFDCGhost::~DFactory_DFDCGhost() {}
