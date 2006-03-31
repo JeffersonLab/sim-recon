@@ -1,15 +1,15 @@
-#ifndef DFACTORY_DHDDMFDCHIT_H
-#define DFACTORY_DHDDMFDCHIT_H
+#ifndef DFACTORY_DFDCTRUTH_H
+#define DFACTORY_DFDCTRUTH_H
 
 #include "DFactory.h"
 #include "DEventLoop.h"
-#include "DHDDMFDCHit.h"
+#include "DFDCTruth.h"
 #include "DException.h"
 
-class DFactory_DHDDMFDCHit : public DFactory<DHDDMFDCHit>{
+class DFactory_DFDCTruth : public DFactory<DFDCTruth>{
 	public:
-		DFactory_DHDDMFDCHit();
-		~DFactory_DHDDMFDCHit();
+		DFactory_DFDCTruth();
+		~DFactory_DFDCTruth();
 		derror_t Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v);
 		const string toString(void);
 	
@@ -21,5 +21,5 @@ class DFactory_DHDDMFDCHit : public DFactory<DHDDMFDCHit>{
 		//derror_t fini(void);						///< Called after last event of last event source has been processed.
 };
 
-#endif // DFACTORY_DHDDMFDCHIT_H
+#endif // DFACTORY_DFDCTRUTH_H
 

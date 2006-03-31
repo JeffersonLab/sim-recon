@@ -5,16 +5,16 @@
 /// Date:	March 2006
 ///
 
-#ifndef DHDDMFDCTRUTH_H
-#define DHDDMFDCTRUTH_H
+#ifndef DFDCTRUTH_H
+#define DFDCTRUTH_H
 
 #include "DObject.h"
 #include "DFactory.h"
-#include "DHDDMFDCHit.h"
+#include "DFDCHit.h"
 
-class DHDDMFDCTruth : public DHDDMFDCHit {
+class DFDCTruth : public DObject {
 	public:
-		HDCLASSDEF(DHDDMFDCTruth);		
+		HDCLASSDEF(DFDCTruth);		
 		float dEdx;
 		float dradius;
 		bool primary;
@@ -24,9 +24,7 @@ class DHDDMFDCTruth : public DHDDMFDCHit {
 		float y;
 		float z;
 		
-		float tau; 
-		float u;
 };
 
-#endif // DHDDMFDCTRUTH_H
+#endif // DFDCTRUTH_H
 
