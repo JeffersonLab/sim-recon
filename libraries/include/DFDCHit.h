@@ -26,18 +26,5 @@ class DFDCHit : public DObject{
 	    int type;				// cathode=1, anode=0
 };
 
-bool DFDCHit_dE_cmp(const DFDCHit* a, const DFDCHit* b) {
-	return a->dE < b->dE;
-}
-
-bool DFDCHit_layer_cmp(const DFDCHit* a, const DFDCHit* b) {
-	return a->globalLayer < b->globalLayer;
-}
-
-bool DFDCHit_plane_cmp(const DFDCHit* a, const DFDCHit* b) {
-	return a->globalPlane < b->globalPlane;
-}
-
-
 #endif // _DFDCHit_
 
