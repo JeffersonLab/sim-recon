@@ -74,7 +74,7 @@ class DFactory_DBCALShower:public DFactory<DBCALShower>{
 
 
 // The following data are used by function CeleToArray();
-       static float ethr_cell;// MIN ENERGY THRESD OF cel in GeV
+       float ethr_cell;// MIN ENERGY THRESD OF cel in GeV
        int celtot;  //----- TOTAL NUMBER OF CELLS with readout --
        int narr[4][cellmax_bcal+1]; 
        int   nclus[cellmax_bcal+1];  
@@ -116,14 +116,14 @@ class DFactory_DBCALShower:public DFactory<DBCALShower>{
        int ntopol[clsmax_bcal+1];
 
 
-//********************for fitting****************************************
+// ********************for fitting****************************************
        int  nlrtot[clsmax_bcal+1]; //----total layers of the cluster
 
-       static int  elyr;
-       static int  xlyr; 
-       static int  ylyr; 
-       static int  zlyr; 
-       static int  tlyr; 
+       int  elyr;
+       int  xlyr; 
+       int  ylyr; 
+       int  zlyr; 
+       int  tlyr; 
        
 
        float clslyr[6][layermax_bcal+1][clsmax_bcal];
@@ -150,7 +150,7 @@ class DFactory_DBCALShower:public DFactory<DBCALShower>{
        float sigy[layermax_bcal+1];  // cm
        float sigz[layermax_bcal+1];  // cm
       
-//************************************************************************
+// ************************************************************************
 
 
 
@@ -163,30 +163,30 @@ class DFactory_DBCALShower:public DFactory<DBCALShower>{
 // some thresholds
  
 
-//***threshold used in ClusAnalysis()
+// ***threshold used in ClusAnalysis()
 
-     static float r_thr;  // CENTROID DISTANCE THRESHOLD
-     static float t_thr;   // CENTROID TIME THRESHOLD
-     static float z_thr;    // FIBER DISTANCE THRESHOLD
-     static float rt_thr; // CENTROID TRANSVERSE DISTANCE THRESHOLD
-     static float ecmin;  // MIN ENERGY THRESD OF CLUSTER IN GEV
-     static float rmsmax;    // T RMS THRESHOLD
+     float r_thr;  // CENTROID DISTANCE THRESHOLD
+     float t_thr;   // CENTROID TIME THRESHOLD
+     float z_thr;    // FIBER DISTANCE THRESHOLD
+     float rt_thr; // CENTROID TRANSVERSE DISTANCE THRESHOLD
+     float ecmin;  // MIN ENERGY THRESD OF CLUSTER IN GEV
+     float rmsmax;    // T RMS THRESHOLD
 
-//***the above threshold are used in ClusAnalysis()
+// ***the above threshold are used in ClusAnalysis()
 
 
 
 // Constants for attenuation 
 // attenuation factor =f_att*exp(-x/lmbda1)+(1.0-f_att)*exp(-x/lmbda2)
-     static float f_att;
-     static float lmbda1; // Attenuation lenth and other parameters
-     static float lmbda2; // used in formula  attenuation factor
+     float f_att;
+     float lmbda1; // Attenuation lenth and other parameters
+     float lmbda2; // used in formula  attenuation factor
 //   mcprod=0 for MC data and mcprod=1 for real data
-     static int  mcprod;
+     int  mcprod;
 
 // some calibration constants
-   static float C_EFFECTIVE; //Effective v of light in scintillator
-   static float ECORR; // ECORR actually could be a function of E
+   float C_EFFECTIVE; //Effective v of light in scintillator
+   float ECORR; // ECORR actually could be a function of E
 
 
 };
