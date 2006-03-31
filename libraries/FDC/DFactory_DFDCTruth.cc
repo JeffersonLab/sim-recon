@@ -1,14 +1,16 @@
+///
+/// DFactory_DFDCTruth.cc - implementation for pulling truth data out of HDDM
+/// Author:		Craig Bookwalter (craigb at jlab.org)
+/// Date:		March 2006
 
-#include "DFactory_DHDDMFDCTruth.h"
-#include "DHDDMFDCTruth.h"
+#include "DFactory_DFDCTruth.h"
+#include "DFDCTruth.h"
 
+DFactory_DFDCTruth::DFactory_DFDCTruth() {}
 
+DFactory_DFDCTruth::~DFactory_DFDCTruth() {}
 
-DFactory_DHDDMFDCTruth::DFactory_DHDDMFDCTruth() {}
-
-DFactory_DHDDMFDCTruth::~DFactory_DHDDMFDCTruth() {}
-
-derror_t DFactory_DHDDMFDCTruth::evnt(DEventLoop *eventLoop, int eventnumber)
+derror_t DFactory_DFDCTruth::evnt(DEventLoop *eventLoop, int eventnumber)
 {
 	/// Place holder for now. 
 
@@ -18,7 +20,7 @@ derror_t DFactory_DHDDMFDCTruth::evnt(DEventLoop *eventLoop, int eventnumber)
 //------------------
 // Extract_HDDM
 //------------------
-derror_t DFactory_DHDDMFDCTruth::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
+derror_t DFactory_DFDCTruth::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 {
 	/// Copies the data from the given hddm_s structure. This is called
 	/// from DEventSourceHDDM::GetObjects.		
@@ -59,7 +61,7 @@ derror_t DFactory_DHDDMFDCTruth::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v
 				continue;
 			for (unsigned int j=0; j < fdcTruthPoints->mult; j++) {
 				s_FdcTruthPoint_t truthPoint = fdcTruthPoints->in[j];
-				DHDDMFDCTruth* newPoint = new DHDDMFDCTruth();
+				DFDCTruth* newPoint 	= new DFDCTruth();
 				newPoint->x				= truthPoint.x;
 				newPoint->y				= truthPoint.y;
 				newPoint->z				= truthPoint.z;
@@ -71,14 +73,13 @@ derror_t DFactory_DHDDMFDCTruth::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v
 			}
 		}
 	}		
-	std::cout << "OKAY! " << v.size() << std::endl;
 	return NOERROR;
 }
 
 //------------------
 // toString
 //------------------
-const string DFactory_DHDDMFDCTruth::toString(void)
+const string DFactory_DFDCTruth::toString(void)
 {
 /*	// Ensure our Get method has been called so _data is up to date
 	Get();
