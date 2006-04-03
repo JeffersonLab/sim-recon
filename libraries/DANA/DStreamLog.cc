@@ -19,5 +19,6 @@ DStreamLog::~DStreamLog() {
 
 std::ostream& endMsg(std::ostream& dSL) {
 	dSL << static_cast<char>(6); 
+	dSL << std::flush;
 	return dSL;
 }
