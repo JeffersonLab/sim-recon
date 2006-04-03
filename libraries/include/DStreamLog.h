@@ -13,6 +13,7 @@
 #define _DSTREAMLOG_H_
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include "DStreamLogBuffer.h"
 
@@ -52,14 +53,12 @@
 class DStreamLog : public std::ostream
 {
 	public:
-		DStreamLog(const std::ostream& os, const char* tag);
+		DStreamLog(const std::ostream& os=std::cout, const char* tag="INFO");
 		DStreamLog(const std::ostream& os, const std::string& tag);
 		DStreamLog(std::streambuf* buf, const char* tag);
 		virtual ~DStreamLog();
-		DStreamLog& endMsg(DStreamLog& dSL);
 
 };
 
-DStreamLog& endMsg(DStreamLog& os); 
-
+std::ostream& endMsg(std::ostream& os);
 #endif //_DSTREAMLOG_H_
