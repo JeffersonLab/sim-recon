@@ -5,9 +5,7 @@
 ///
 
 #include "DFactory_DFDCHit.h"
-#include "DFDCHit.h"
 #include "DStreamLog.h"
-#include "DFDCGeometry.h"
 #include <fstream>
 
 DFactory_DFDCHit::DFactory_DFDCHit() {}
@@ -106,6 +104,7 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 			}	
 		}
 	}
+
 
 	return NOERROR;
 }

@@ -1,11 +1,11 @@
 //********************************************************
-// DFactory_DFDCGhost.cc - factory producing first-order 
+// DFactory_DFDCPseudo.cc - factory producing first-order 
 // reconstructed points for the FDC
 // Author: Craig Bookwalter (craigb at jlab.org)
 // Date:   March 2006
 //********************************************************
 
-#include "DFactory_DFDCGhost.h"
+#include "DFactory_DFDCPseudo.h"
 
 bool unsorted(vector<const DFDCHit*>& v) {
 	for (unsigned int i=0; i < v.size(); i++)
@@ -27,20 +27,19 @@ bool DFDCHit_plane_cmp(const DFDCHit* a, const DFDCHit* b) {
 }
 
 
-DFactory_DFDCGhost::DFactory_DFDCGhost() {}
+DFactory_DFDCPseudo::DFactory_DFDCPseudo() {}
 
-DFactory_DFDCGhost::~DFactory_DFDCGhost() {}
+DFactory_DFDCPseudo::~DFactory_DFDCPseudo() {}
 
-derror_t DFactory_DFDCGhost::evnt(DEventLoop* eventLoop, int eventNo) {
+derror_t DFactory_DFDCPseudo::evnt(DEventLoop* eventLoop, int eventNo) {
 	vector<const DFDCHit*> fdcHits;
 	vector<const DFDCHit*> uHits;
 	vector<const DFDCHit*> vHits;
 	map<const int, const DFDCHit*> anodeHits;
 	float angle = 0.0;
 	float pi	= 3.1415926;
-	
+	cout << "here" << endl;
 	try {
-		eventLoop->Get(fdcHits);
 		if (unsorted(fdcHits))
 			std::sort(fdcHits.begin(), fdcHits.end(), DFDCHit_layer_cmp);
 		
@@ -75,11 +74,7 @@ derror_t DFactory_DFDCGhost::evnt(DEventLoop* eventLoop, int eventNo) {
 	return NOERROR;
 }
 
-derror_t DFactory_DFDCGhost::Extract_HDDM(s_HDDM_t* hddm_s, vector<void*> &v) {
-	return NOERROR;
-}	
-
-void DFactory_DFDCGhost::conjure(	const vector<const DFDCHit*>& u, 
+void DFactory_DFDCPseudo::conjure(	const vector<const DFDCHit*>& u, 
 									const vector<const DFDCHit*>& v,
 									const map<const int, const DFDCHit*>& x,
 									float angle) {	
@@ -117,10 +112,10 @@ void DFactory_DFDCGhost::conjure(	const vector<const DFDCHit*>& u,
 				xCoordReal = xCoordUV*cos(angle) - yCoordUV*sin(angle);
 				yCoordReal = xCoordUV*sin(angle) + yCoordUV*sin(angle);
 				zCoordReal = _geo.getLayerZ(u[i]);
-				DFDCGhost* newGhost = new DFDCGhost(xCoordReal, yCoordReal,
+				DFDCPseudo* newPseudo = new DFDCPseudo(xCoordReal, yCoordReal,
 													 zCoordReal);
-				// Add hits to DFDCGhost::members?
-				_data.push_back(newGhost);
+				// Add hits to DFDCPseudo::members?
+				_data.push_back(newPseudo);
 			}
 		}
 	}
