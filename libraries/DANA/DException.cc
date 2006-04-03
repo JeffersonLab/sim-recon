@@ -24,6 +24,7 @@ const char* DException::what() const throw() {
 }
 
 void DException::getTrace() throw() {
+#ifdef __linux__
 	void* traces[25];
 	FILE* psOutput;
 	FILE* addr2lineOutput;
@@ -137,6 +138,9 @@ void DException::getTrace() throw() {
 	delete myName;	
 	pclose(addr2lineOutput);
 	setenv("PATH", path.c_str(), 1);
+#else // __linux__
+	_trace = std::string("backtrace available only on Linux platforms");
+#endif // __linux__
 }
 
 const char* DException::trace() const throw() {
