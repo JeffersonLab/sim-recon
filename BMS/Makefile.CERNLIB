@@ -12,6 +12,6 @@ endif
 MISC_LIBS += $(CERNLIBS) $(EXTRA_LIBS)
 
 ifeq "$(OSNAME)" "Darwin"
-  MISC_LIBS += -lcompat /usr/lib/libgcc.a
+  MISC_LIBS += -L/usr/local/lib -lgfortran
 endif
 
