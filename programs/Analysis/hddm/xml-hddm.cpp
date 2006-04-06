@@ -533,11 +533,11 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
          int size = (int)ofsbuf.tellp();
          if (rep > 1)
          {
-            ofx << ((size > 0)? size+sizeof(int) : 0) << repCount;
+            ofx << (int32_t)((size > 0)? size+sizeof(int) : 0) << (int32_t)repCount;
          }
          else
          {
-            ofx << ((size > 0)? size : 0);
+            ofx << (int32_t)((size > 0)? size : 0);
          }
          if (size > 0)
          {
