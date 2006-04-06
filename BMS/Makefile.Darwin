@@ -5,7 +5,7 @@ OSXFLAGS = -DBASENAME_IN_LIBGEN -DXDR_LONGLONG_MISSING -Wno-long-double
 
 CFLAGS += $(OSXFLAGS)
 CXXFLAGS += $(OSXFLAGS)
-LD_FLAGS += -multiply_defined suppress
+LD_FLAGS += -multiply_defined suppress -bind_at_load
 
 LD_SO_FLAGS += -dynamiclib -r -multiply_defined suppress -flat_namespace -undefined suppress
 
