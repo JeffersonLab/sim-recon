@@ -31,6 +31,7 @@ install: $(lib_LIBRARIES)
 	cp -r ../include ./tmpinc
 	rm -rf `find ./tmpinc -name ".svn"`
 	cp -r tmpinc/* $(HALLD_HOME)/src/include
+	rm -rf tmpinc
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
