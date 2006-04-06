@@ -1,0 +1,43 @@
+OSname = $(shell uname)
+
+AR = ar
+RANLIB = ranlib
+
+top_srcdir = $(HALLD_HOME)/src
+INCLUDES = -I$(top_srcdir)/include
+EXTRA_DIST = debug.h md5_t.pl md5_t.h
+libxstream_a_SOURCES = debug.cpp common.cpp xdr.cpp base64.cpp \
+	digest.cpp tee.cpp md5.cpp bz.cpp dater.cpp fd.cpp \
+	posix.cpp z_digest.cpp
+libxstream_a_OBJECTS = debug.o common.o xdr.o base64.o \
+	digest.o tee.o md5.o bz.o dater.o fd.o \
+	posix.o z_digest.o
+lib_LIBRARIES = libxstream.a
+
+all: libxstream.a
+
+.SUFFIXES:
+.SUFFIXES: .cpp .o .obj
+
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+libxstream.a: $(libxstream_a_OBJECTS) $(libxstream_a_DEPENDENCIES) 
+	-rm -f libxstream.a
+	$(AR) cru libxstream.a $(libxstream_a_OBJECTS) $(libxstream_a_LIBADD)
+	$(RANLIB) libxstream.a
+
+install: $(lib_LIBRARIES)
+	cp $^ $(HALLD_HOME)/lib/$(OSname)
+	cp -p $^ $(HALLD_HOME)/src/include
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+clean:
+	rm -f *.o *.a $(HALLD_HOME)/lib/$(OSname)/$(lib_LIBRARIES)
+
+%.o: %.cpp
+	g++ $(INCLUDES) -c -o $@ $^
