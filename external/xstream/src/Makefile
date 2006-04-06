@@ -28,7 +28,9 @@ libxstream.a: $(libxstream_a_OBJECTS) $(libxstream_a_DEPENDENCIES)
 
 install: $(lib_LIBRARIES)
 	cp $^ $(HALLD_HOME)/lib/$(OSname)
-	cp -p $^ $(HALLD_HOME)/src/include
+	cp -r ../include ./tmpinc
+	rm -rf `find ./tmpinc -name ".svn"`
+	cp -r tmpinc/* $(HALLD_HOME)/src/include
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
