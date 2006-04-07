@@ -20,7 +20,7 @@ class DFactory_DFDCPseudo : public DFactory<DFDCPseudo> {
 						vector<const DFDCHit*>& v,
 						map<const int, const DFDCHit*>& x,
 						float angle);
-		void crap(	vector<const DFDCHit*>& u, 
+		void dummy(	vector<const DFDCHit*>& u, 
 		  			vector<const DFDCHit*>& v,
 					map<const int, const DFDCHit*>& x,
 					float angle,

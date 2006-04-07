@@ -7,7 +7,7 @@
 
 #include "DFactory_DFDCPseudo.h"
 
-void DFactory_DFDCPseudo::crap(	vector<const DFDCHit*>& u, 
+void DFactory_DFDCPseudo::dummy(	vector<const DFDCHit*>& u, 
 		  						vector<const DFDCHit*>& v,
 								map<const int, const DFDCHit*>& x,
 								float angle,
@@ -19,7 +19,7 @@ void DFactory_DFDCPseudo::crap(	vector<const DFDCHit*>& u,
 	int wireCandidateLow(0), wireCandidateHigh(0);
 	ofstream UVofs("uv.dat", ios::app);
 	ofstream Xofs("x.dat", ios::app);
-	*_log << "In crap, layer: " << layerNo << " u: " << u.size() << " v: " 
+	*_log << "In dummy, layer: " << layerNo << " u: " << u.size() << " v: " 
 		  << v.size() << " x: " << x.size() << endMsg;	
 	for (vector<const DFDCHit*>::iterator i = u.begin(); i != u.end(); ++i) {
 		for (vector<const DFDCHit*>::iterator j = v.begin(); j != v.end(); ++j) {
@@ -122,7 +122,7 @@ derror_t DFactory_DFDCPseudo::evnt(DEventLoop* eventLoop, int eventNo) {
 			std::stable_sort(uHits.begin(), uHits.end(), DFDCHit_dE_cmp);
 			std::stable_sort(vHits.begin(), vHits.end(), DFDCHit_dE_cmp);
 //			conjure(uHits, vHits, anodeHits, angle);
-			crap(uHits,vHits,anodeHits,angle,eventNo,iLayer);
+			dummy(uHits,vHits,anodeHits,angle,eventNo,iLayer);
 			uHits.clear();
 			vHits.clear();
 			anodeHits.clear();
@@ -149,8 +149,8 @@ void DFactory_DFDCPseudo::conjure(	vector<const DFDCHit*>& u,
 	int wireCandidateLow(0), wireCandidateHigh(0);
 	for (vector<const DFDCHit*>::iterator i = u.begin(); i != u.end(); ++i) {
 		for (vector<const DFDCHit*>::iterator j = v.begin(); j != v.end(); ++j) {
-			uYdist = sqrt(2)*(*i)->r;
-			vYdist = sqrt(2)*(*j)->r;
+			uYdist = sqrt(2.0)*(*i)->r;
+			vYdist = sqrt(2.0)*(*j)->r;
 			
 			if ((*i)->r > 0)
 				uYint = uYdist;
