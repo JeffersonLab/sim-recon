@@ -9,16 +9,17 @@
 #ifndef DFDCPSEUDO_H
 #define DFDCPSEUDO_H
 
-#include <DFDCHit.h>
-#include <DObject.h>
+#include "DFDCHit.h"
+#include "DObject.h"
 #include <vector>
 
 class DFDCPseudo : public DObject {
 	public :
-		DFDCPseudo(float iX, float iY, float iZ) : x(iX), y(iY), z(iZ) {}
-		HDCLASSDEF(DFDCGhost);
+		DFDCPseudo(float iX, float iY, int gL) : x(iX), y(iY), gLayer(gL) {}
+		HDCLASSDEF(DFDCPseudo);
 		std::vector<DFDCHit*> members;	/// Hits that constitute this point
-		float x, y, z;					/// Coordinates of this point
+		float x, y;						/// Coordinates of this point
+		int gLayer;						/// global layer of point (1-24)
 };
 
 #endif //DFDCPSEUDO_H
