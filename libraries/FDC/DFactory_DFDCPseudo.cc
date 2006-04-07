@@ -23,8 +23,8 @@ void DFactory_DFDCPseudo::dummy(	vector<const DFDCHit*>& u,
 		  << v.size() << " x: " << x.size() << endMsg;	
 	for (vector<const DFDCHit*>::iterator i = u.begin(); i != u.end(); ++i) {
 		for (vector<const DFDCHit*>::iterator j = v.begin(); j != v.end(); ++j) {
-			uYdist = sqrt(2)*(*i)->r;
-			vYdist = sqrt(2)*(*j)->r;
+			uYdist = sqrt(2.0)*(*i)->r;
+			vYdist = sqrt(2.0)*(*j)->r;
 			
 			if ((*i)->r > 0)
 				uYint = uYdist;
