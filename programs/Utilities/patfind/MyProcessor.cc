@@ -157,7 +157,7 @@ void MyProcessor::DrawCircle(float x0, float y0, float r0, int color, int width)
 //------------------------------------------------------------------
 // DrawXYDot
 //------------------------------------------------------------------
-void MyProcessor::DrawXYDot(Dtrkhit *hit, float size, int style, int color)
+void MyProcessor::DrawXYDot(Dtrk_hit *hit, float size, int style, int color)
 {
 	TMarker *marker = new TMarker(hit->x, hit->y, style);
 	marker->SetMarkerColor(color);
@@ -169,7 +169,7 @@ void MyProcessor::DrawXYDot(Dtrkhit *hit, float size, int style, int color)
 //------------------------------------------------------------------
 // DrawXYDots
 //------------------------------------------------------------------
-void MyProcessor::DrawXYDots(vector<Dtrkhit*> hits, float size, int style, int color)
+void MyProcessor::DrawXYDots(vector<Dtrk_hit*> hits, float size, int style, int color)
 {
 	for(unsigned int i=0; i<hits.size(); i++){
 		DrawXYDot(hits[i], size, style, color);
@@ -179,7 +179,7 @@ void MyProcessor::DrawXYDots(vector<Dtrkhit*> hits, float size, int style, int c
 //------------------------------------------------------------------
 // DrawPhiZDots
 //------------------------------------------------------------------
-void MyProcessor::DrawPhiZDots(vector<Dtrkhit *> hits, DQuickFit *fit, float size, int style, int color)
+void MyProcessor::DrawPhiZDots(vector<Dtrk_hit *> hits, DQuickFit *fit, float size, int style, int color)
 {
 	
 	// Order the track hits by z.
@@ -191,7 +191,7 @@ void MyProcessor::DrawPhiZDots(vector<Dtrkhit *> hits, DQuickFit *fit, float siz
 	DFactory_DTrackCandidate::Fill_phi_circle(hits, x0, y0);
 
 	for(unsigned int i=0; i<hits.size(); i++){
-		Dtrkhit *a = hits[i];
+		Dtrk_hit *a = hits[i];
 
 		//cout<<__FILE__<<":"<<__LINE__<<" z="<<a->z<<" dphi="<<a->phi_circle<<endl;
 
@@ -326,20 +326,20 @@ derror_t MyProcessor::PlotPhiVsZ(void)
 	}
 		
 	// Draw seed hits for selected trk as big green dots
-	vector<Dtrkhit*> is_trkhits = dbg_in_seed[seed_index];
+	vector<Dtrk_hit*> is_trkhits = dbg_in_seed[seed_index];
 	DrawPhiZDots(is_trkhits, seed_fit, 2.0, 20, kGreen);
 		
 	// Draw on-circle hits for selected seed as large magenta dots
-	vector<Dtrkhit*> oc_trkhits = dbg_hoc[seed_index];
+	vector<Dtrk_hit*> oc_trkhits = dbg_hoc[seed_index];
 	DrawPhiZDots(oc_trkhits, seed_fit, 1.5, 20, kMagenta);
 		
 	if(trk_index>=0){
 		// Draw on-line hits for selected seed as blue dots
-		vector<Dtrkhit*> ol_trkhits = dbg_hol[trk_index];
+		vector<Dtrk_hit*> ol_trkhits = dbg_hol[trk_index];
 		DrawPhiZDots(ol_trkhits, seed_fit, 1.0, 20, kBlue);
 		
 		// Draw on-track hits for selected seed as tiny red dots
-		vector<Dtrkhit*> ot_trkhits = dbg_hot[trk_index];
+		vector<Dtrk_hit*> ot_trkhits = dbg_hot[trk_index];
 		DrawPhiZDots(ot_trkhits, trk_fit, 0.5, 20, kRed);
 	}
 	

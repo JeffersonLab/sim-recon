@@ -28,17 +28,77 @@ patfind.o: patfind.cc /usr/local/root/PRO/include/TApplication.h \
   /usr/local/root/PRO/include/TDatime.h \
   /usr/local/root/PRO/include/Htypes.h \
   /usr/local/root/PRO/include/TUUID.h \
-  /usr/local/root/PRO/include/TInetAddress.h \
   /usr/local/root/PRO/include/TObjArray.h \
-  /usr/local/root/PRO/include/TApplicationImp.h MyProcessor.h \
-  /Users/davidl/HallD/builds/latest/src/libraries/include/DEventProcessor.h \
-  /Users/davidl/HallD/builds/latest/src/libraries/include/DContainer.h \
+  /usr/local/root/PRO/include/TStreamerInfo.h \
+  /usr/local/root/PRO/include/TApplicationImp.h MyMainFrame.h \
+  /usr/local/root/PRO/include/TGApplication.h \
+  /usr/local/root/PRO/include/TGFrame.h \
+  /usr/local/root/PRO/include/TGWindow.h \
+  /usr/local/root/PRO/include/TGObject.h \
+  /usr/local/root/PRO/include/GuiTypes.h \
+  /usr/local/root/PRO/include/TGClient.h \
+  /usr/local/root/PRO/include/TVirtualX.h \
+  /usr/local/root/PRO/include/TAttLine.h \
+  /usr/local/root/PRO/include/Gtypes.h \
+  /usr/local/root/PRO/include/TAttFill.h \
+  /usr/local/root/PRO/include/TAttText.h \
+  /usr/local/root/PRO/include/TAttMarker.h \
+  /usr/local/root/PRO/include/TGDimension.h \
+  /usr/local/root/PRO/include/TGGC.h /usr/local/root/PRO/include/TGFont.h \
+  /usr/local/root/PRO/include/TGLayout.h \
+  /usr/local/root/PRO/include/TGString.h \
+  /usr/local/root/PRO/include/TCanvas.h \
+  /usr/local/root/PRO/include/TPad.h \
+  /usr/local/root/PRO/include/TVirtualPad.h \
+  /usr/local/root/PRO/include/TAttPad.h \
+  /usr/local/root/PRO/include/Buttons.h \
+  /usr/local/root/PRO/include/TAttCanvas.h \
+  /usr/local/root/PRO/include/TCanvasImp.h \
+  /usr/local/root/PRO/include/TGComboBox.h \
+  /usr/local/root/PRO/include/TGListBox.h \
+  /usr/local/root/PRO/include/TGCanvas.h \
+  /usr/local/root/PRO/include/TGScrollBar.h \
+  /usr/local/root/PRO/include/TGButton.h \
+  /usr/local/root/PRO/include/TGWidget.h \
+  /usr/local/root/PRO/include/WidgetMessageTypes.h \
+  /usr/local/root/PRO/include/TGButtonGroup.h \
+  /usr/local/root/PRO/include/TMap.h \
+  /usr/local/root/PRO/include/THashTable.h \
+  /usr/local/root/PRO/include/TGLabel.h \
+  /usr/local/root/PRO/include/TThread.h \
+  /usr/local/root/PRO/include/TMutex.h \
+  /usr/local/root/PRO/include/TVirtualMutex.h \
+  /usr/local/root/PRO/include/TMutexImp.h \
+  /usr/local/root/PRO/include/TCondition.h \
+  /usr/local/root/PRO/include/TConditionImp.h \
+  /usr/local/root/PRO/include/TSystem.h \
+  /usr/local/root/PRO/include/G__ci.h \
+  /usr/local/root/PRO/include/TInetAddress.h \
+  /usr/local/root/PRO/include/TTimer.h \
+  /usr/local/root/PRO/include/TSysEvtHandler.h \
+  /usr/local/root/PRO/include/TTime.h MyProcessor.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DApplication.h \
   /Users/davidl/HallD/builds/latest/src/libraries/include/derror.h \
-  /Users/davidl/HallD/builds/latest/src/libraries/include/hddm_s.h \
-  /Users/davidl/HallD/builds/latest/src/include/particleType.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DParameter.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/derror.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DEventProcessor.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/derror.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DParameterManager.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DParameter.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/derror.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DObject.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/derror.h \
   /Users/davidl/HallD/builds/latest/src/libraries/include/DEventLoop.h \
   /Users/davidl/HallD/builds/latest/src/libraries/include/DEvent.h \
-  /Users/davidl/HallD/builds/latest/src/libraries/include/DFactory.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/derror.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DEventSource.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/derror.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DFactory_base.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DEventProcessor.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/hddm_s.h \
+  /Users/davidl/HallD/builds/latest/src/include/particleType.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DException.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/derror.h \
   /usr/local/root/PRO/include/TFile.h \
   /usr/local/root/PRO/include/TCache.h \
   /usr/local/root/PRO/include/THashList.h \
@@ -46,52 +106,60 @@ patfind.o: patfind.cc /usr/local/root/PRO/include/TApplication.h \
   /usr/local/root/PRO/include/TVirtualHistPainter.h \
   /usr/local/root/PRO/include/TAxis.h \
   /usr/local/root/PRO/include/TAttAxis.h \
-  /usr/local/root/PRO/include/Gtypes.h \
   /usr/local/root/PRO/include/TArrayD.h \
   /usr/local/root/PRO/include/TArray.h \
-  /usr/local/root/PRO/include/TAttLine.h \
-  /usr/local/root/PRO/include/TAttFill.h \
-  /usr/local/root/PRO/include/TAttMarker.h \
   /usr/local/root/PRO/include/TArrayC.h \
   /usr/local/root/PRO/include/TArrayS.h \
   /usr/local/root/PRO/include/TArrayI.h \
   /usr/local/root/PRO/include/TArrayF.h \
-  /usr/local/root/PRO/include/Foption.h /usr/local/root/PRO/include/TH2.h \
+  /usr/local/root/PRO/include/Foption.h \
+  /usr/local/root/PRO/include/TVectorFfwd.h \
+  /usr/local/root/PRO/include/TVectorDfwd.h \
+  /usr/local/root/PRO/include/TH2.h \
+  /usr/local/root/PRO/include/TMatrixFBasefwd.h \
+  /usr/local/root/PRO/include/TMatrixDBasefwd.h \
   /usr/local/root/PRO/include/TTree.h \
   /usr/local/root/PRO/include/TClonesArray.h \
   /usr/local/root/PRO/include/TBranch.h \
   /usr/local/root/PRO/include/TStringLong.h \
   /usr/local/root/PRO/include/TVirtualTreePlayer.h \
+  /usr/local/root/PRO/include/TDataType.h \
   /usr/local/root/PRO/include/TLine.h \
   /usr/local/root/PRO/include/TEllipse.h \
-  /usr/local/root/PRO/include/TCanvas.h \
-  /usr/local/root/PRO/include/TPad.h \
-  /usr/local/root/PRO/include/TVirtualPad.h \
-  /usr/local/root/PRO/include/TAttPad.h \
-  /usr/local/root/PRO/include/TVirtualX.h \
-  /usr/local/root/PRO/include/TAttText.h \
-  /usr/local/root/PRO/include/GuiTypes.h \
-  /usr/local/root/PRO/include/Buttons.h \
-  /usr/local/root/PRO/include/TAttCanvas.h \
-  /usr/local/root/PRO/include/TCanvasImp.h hdv_mainframe.h \
-  /usr/local/root/PRO/include/TGClient.h \
-  /usr/local/root/PRO/include/TGButton.h \
-  /usr/local/root/PRO/include/TGFrame.h \
-  /usr/local/root/PRO/include/TGWindow.h \
-  /usr/local/root/PRO/include/TGObject.h \
-  /usr/local/root/PRO/include/TGDimension.h \
-  /usr/local/root/PRO/include/TGGC.h /usr/local/root/PRO/include/TGFont.h \
-  /usr/local/root/PRO/include/TGLayout.h \
-  /usr/local/root/PRO/include/TGString.h \
-  /usr/local/root/PRO/include/TGWidget.h \
-  /usr/local/root/PRO/include/WidgetMessageTypes.h \
-  /usr/local/root/PRO/include/TRootEmbeddedCanvas.h \
-  /usr/local/root/PRO/include/TGCanvas.h \
-  /usr/local/root/PRO/include/TTUBE.h \
-  /usr/local/root/PRO/include/TShape.h \
-  /usr/local/root/PRO/include/TMaterial.h \
-  /usr/local/root/PRO/include/TAtt3D.h \
-  /usr/local/root/PRO/include/X3DBuffer.h \
-  /usr/local/root/PRO/include/TPolyLine3D.h \
-  /usr/local/root/PRO/include/TNode.h \
-  /usr/local/root/PRO/include/TRotMatrix.h
+  /usr/local/root/PRO/include/TMarker.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/../TRACKING/Dtrk_hit.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DTrackHit.h \
+  /usr/local/root/PRO/include/TMatrixD.h \
+  /usr/local/root/PRO/include/TMatrixT.h \
+  /usr/local/root/PRO/include/TMatrixTBase.h \
+  /usr/local/root/PRO/include/TPluginManager.h \
+  /usr/local/root/PRO/include/TVirtualUtilHist.h \
+  /usr/local/root/PRO/include/TError.h \
+  /usr/local/root/PRO/include/TMatrixTUtils.h \
+  /usr/local/root/PRO/include/TMatrixDfwd.h \
+  /usr/local/root/PRO/include/TMatrixDUtils.h \
+  /usr/local/root/PRO/include/TMatrixDUtilsfwd.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DObject.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DFactory.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DObject.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DFactory_base.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DEvent.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DEventLoop.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/GlueX.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DMCTrackHit.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DObject.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DFactory.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/GlueX.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/DQuickFit.h \
+  /usr/local/root/PRO/include/TVector3.h \
+  /usr/local/root/PRO/include/TMath.h \
+  /usr/local/root/PRO/include/TError.h \
+  /usr/local/root/PRO/include/TVector2.h \
+  /usr/local/root/PRO/include/TMath.h \
+  /usr/local/root/PRO/include/TObject.h \
+  /usr/local/root/PRO/include/TMatrix.h \
+  /usr/local/root/PRO/include/TMatrixF.h \
+  /usr/local/root/PRO/include/TMatrixFfwd.h \
+  /usr/local/root/PRO/include/TMatrixFUtils.h \
+  /usr/local/root/PRO/include/TMatrixFUtilsfwd.h \
+  /Users/davidl/HallD/builds/latest/src/libraries/include/derror.h

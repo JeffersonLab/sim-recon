@@ -20,7 +20,7 @@
 #include <TCanvas.h>
 #include <TMarker.h>
 
-#include "../TRACKING/Dtrkhit.h"
+#include "../TRACKING/Dtrk_hit.h"
 #include "DQuickFit.h"
 
 class DMagneticFieldMap;
@@ -41,9 +41,9 @@ class MyProcessor:public DEventProcessor
 		derror_t PlotStats(void);
 		void DrawXYFit(DQuickFit *fit, int color, int width);
 		void DrawCircle(float x0, float y0, float r0, int color, int width);
-		void DrawXYDot(Dtrkhit *hit, float size, int style, int color);
-		void DrawXYDots(vector<Dtrkhit *> hits, float size, int style, int color);
-		void DrawPhiZDots(vector<Dtrkhit *> hits, DQuickFit *fit, float size, int style, int color);
+		void DrawXYDot(Dtrk_hit *hit, float size, int style, int color);
+		void DrawXYDots(vector<Dtrk_hit *> hits, float size, int style, int color);
+		void DrawPhiZDots(vector<Dtrk_hit *> hits, DQuickFit *fit, float size, int style, int color);
 		void DrawPhiZFit(DQuickFit *fit, int color, int width);
 		void DrawPhiZLine(float dphidz, float z_vertex, int color, int width);
 
@@ -53,11 +53,11 @@ class MyProcessor:public DEventProcessor
 		
 		vector<TObject*> graphics;
 
-		vector<Dtrkhit*> trkhits;
-		vector<vector<Dtrkhit*> > dbg_in_seed;
-		vector<vector<Dtrkhit*> > dbg_hoc;
-		vector<vector<Dtrkhit*> > dbg_hol;
-		vector<vector<Dtrkhit*> > dbg_hot;
+		vector<Dtrk_hit*> trkhits;
+		vector<vector<Dtrk_hit*> > dbg_in_seed;
+		vector<vector<Dtrk_hit*> > dbg_hoc;
+		vector<vector<Dtrk_hit*> > dbg_hol;
+		vector<vector<Dtrk_hit*> > dbg_hot;
 		vector<DQuickFit*> dbg_seed_fit;
 		vector<DQuickFit*> dbg_track_fit;
 		vector<int> dbg_seed_index;
