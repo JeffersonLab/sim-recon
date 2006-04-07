@@ -154,6 +154,11 @@ void ParseCommandLineArguments(int narg, char *argv[])
 				histnames.push_back(argv[i+1]);
 				i++;
 			}
+		}else if(string(argv[i]) == "-if"){
+			if(i<narg-1){
+				filename = argv[i+1];
+				i++;
+			}
 		}else if(string(argv[i]) == "-h"){
 			Usage();
 		}else{
@@ -182,6 +187,7 @@ void Usage(void)
 	cout<<"   -H histogram         name of histogram. If histogram"<<endl;
 	cout<<"                        is in a TDirectory, include the"<<endl;
 	cout<<"                        path. (can be given multiple times)"<<endl;
+	cout<<"   -if rootfile         name of ROOT file to use"<<endl;
 	cout<<"   -h                   print this help message."<<endl;
 	
 	cout<<endl;
