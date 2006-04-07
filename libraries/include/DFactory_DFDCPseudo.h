@@ -2,25 +2,30 @@
 #define DFACTORY_DFDCPSEUDO_H
 
 #include "DFactory.h"
-#include "DEventLoop.h"
 #include "DFDCPseudo.h"
 #include "DFDCHit.h"
 #include "DException.h"
 #include "DFDCGeometry.h"
+#include "DStreamLog.h"
 
 #include <algorithm>
 #include <map>
-#include <queue>
 #include <cmath>
 
 class DFactory_DFDCPseudo : public DFactory<DFDCPseudo> {
 	public:
 		DFactory_DFDCPseudo();
 		~DFactory_DFDCPseudo();
-		void conjure(	const vector<const DFDCHit*>& u, 
-						const vector<const DFDCHit*>& v,
-						const map<const int, const DFDCHit*>& x,
+		void conjure(	vector<const DFDCHit*>& u, 
+						vector<const DFDCHit*>& v,
+						map<const int, const DFDCHit*>& x,
 						float angle);
+		void crap(	vector<const DFDCHit*>& u, 
+		  			vector<const DFDCHit*>& v,
+					map<const int, const DFDCHit*>& x,
+					float angle,
+					int evNo,
+					int layerNo);
 		const string toString(void) {return "";}
 	
 	protected:
@@ -32,7 +37,8 @@ class DFactory_DFDCPseudo : public DFactory<DFDCPseudo> {
 		
 	private:
 		DFDCGeometry _geo;
-			
+		DStreamLog* _log;
+		ofstream* logFile;
 };
 
 #endif // DFACTORY_DFDCPSEUDO_H
