@@ -7,7 +7,7 @@
 
 #include "DFactory_DTrackHit_MC.h"
 #include "DMCTrackHit.h"
-#include "Dtrkhit.h"
+#include "Dtrk_hit.h"
 
 //------------------
 // evnt
@@ -15,10 +15,10 @@
 derror_t DFactory_DTrackHit_MC::evnt(DEventLoop *loop, int eventnumber)
 {
 	/// Here we just copy the data from the DMCTrackHit factory.
-	/// Note that we create objects of type Dtrkhit which is derived
+	/// Note that we create objects of type Dtrk_hit which is derived
 	/// from the DTrackHit class. We store them and the factory
 	/// presents them as DTrackHit objects. The reason for this is
-	/// that the attributes added by Dtrkhit are used internally
+	/// that the attributes added by Dtrk_hit are used internally
 	/// by the DTrackCandidate factory and so are normally "hidden".
 	/// This saves creating and deleting a whole other set of objects
 	/// in the DTrackCandidate factory which hold the same
@@ -27,7 +27,7 @@ derror_t DFactory_DTrackHit_MC::evnt(DEventLoop *loop, int eventnumber)
 	vector<const DMCTrackHit*> dmctrackhits;
 	loop->Get(dmctrackhits);
 	for(unsigned int i=0;i<dmctrackhits.size(); i++){
-		_data.push_back(new Dtrkhit(dmctrackhits[i]));
+		_data.push_back(new Dtrk_hit(dmctrackhits[i]));
 	}
 
 	return NOERROR;

@@ -22,22 +22,22 @@ using namespace std;
 
 class TrkHitSort{
 	public:
-		bool operator()(Dtrkhit* const &hit1, Dtrkhit* const &hit2) const {
+		bool operator()(Dtrk_hit* const &hit1, Dtrk_hit* const &hit2) const {
 			return hit1->r > hit2->r;
 		}
 };
 class TrkHitZSort{
 	public:
-		bool operator()(Dtrkhit* const &hit1, Dtrkhit* const &hit2) const {
+		bool operator()(Dtrk_hit* const &hit1, Dtrk_hit* const &hit2) const {
 			return hit1->z < hit2->z;
 		}
 };
 
-bool TrkHitSort_C(Dtrkhit* const &hit1, Dtrkhit* const &hit2) {
+bool TrkHitSort_C(Dtrk_hit* const &hit1, Dtrk_hit* const &hit2) {
 	return hit1->r > hit2->r;
 }
 
-bool TrkHitZSort_C(Dtrkhit* const &hit1, Dtrkhit* const &hit2) {
+bool TrkHitZSort_C(Dtrk_hit* const &hit1, Dtrk_hit* const &hit2) {
 	return hit1->z < hit2->z;
 }
 
@@ -186,12 +186,12 @@ void DFactory_DTrackCandidate::ClearEvent(void)
 void DFactory_DTrackCandidate::GetTrkHits(DEventLoop *loop)
 {
 	// Copy Hits into trkhits vector. The objects returned as
-	// DTrackHit should really be Dtrkhit types. Dynamically
+	// DTrackHit should really be Dtrk_hit types. Dynamically
 	// cast them back
 	vector<const DTrackHit*> trackhits;
 	loop->Get(trackhits, TRACKHIT_SOURCE.c_str());
 	for(unsigned int i=0; i<trackhits.size(); i++){
-		Dtrkhit *hit = (Dtrkhit*)dynamic_cast<const Dtrkhit*>(trackhits[i]);
+		Dtrk_hit *hit = (Dtrk_hit*)dynamic_cast<const Dtrk_hit*>(trackhits[i]);
 		if(hit){
 			if(hit->system&&(SYS_CDC|SYS_FDC))trkhits.push_back(hit);
 		}
@@ -206,13 +206,13 @@ void DFactory_DTrackCandidate::GetTrkHits(DEventLoop *loop)
 
 	// Flag all "lone" hits to be ignored
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		Dtrkhit *a = trkhits[i];
+		Dtrk_hit *a = trkhits[i];
 		
 		// temporarily flag this hit to be ignored so FindClosestXY will work
-		a->flags |= Dtrkhit::IGNORE;
-		Dtrkhit *b = FindClosestXY(a);
+		a->flags |= Dtrk_hit::IGNORE;
+		Dtrk_hit *b = FindClosestXY(a);
 		if(b){
-			if(a->DistXY2(b) < XY_NOISE_CUT2)a->flags &= ~Dtrkhit::IGNORE;
+			if(a->DistXY2(b) < XY_NOISE_CUT2)a->flags &= ~Dtrk_hit::IGNORE;
 		}
 	}
 }
@@ -228,12 +228,12 @@ int DFactory_DTrackCandidate::FindSeed(void)
 	// more hits is found, return a 1 so a track can
 	// be searched for.
 	for(unsigned int i=0; i<trkhits_r_sorted.size(); i++){
-		Dtrkhit *a = trkhits_r_sorted[i];
-		if(!(a->flags & (Dtrkhit::USED | Dtrkhit::IGNORE))){
+		Dtrk_hit *a = trkhits_r_sorted[i];
+		if(!(a->flags & (Dtrk_hit::USED | Dtrk_hit::IGNORE))){
 		
 			// Clear IN_SEED bit flag all hits
 			for(unsigned int j=0; j<trkhits.size(); j++){
-				trkhits[j]->flags &= ~(Dtrkhit::IN_SEED);
+				trkhits[j]->flags &= ~(Dtrk_hit::IN_SEED);
 			}
 
 			// We call TraceSeed twice here on purpose! The first
@@ -257,21 +257,21 @@ int DFactory_DTrackCandidate::FindSeed(void)
 //------------------
 // TraceSeed
 //------------------
-int DFactory_DTrackCandidate::TraceSeed(Dtrkhit *hit)
+int DFactory_DTrackCandidate::TraceSeed(Dtrk_hit *hit)
 {
 	// Starting with "hit", look for nearest neighbors to
 	// trace the seed out on one side as far as possible
 	// until we find a hit that is either too far away, or
 	// changes directions by too large an angle
 	int N = 0;
-	Dtrkhit *current_hit = hit;
-	Dtrkhit *last_hit = NULL;
+	Dtrk_hit *current_hit = hit;
+	Dtrk_hit *last_hit = NULL;
 	do{
 		N++;
-		current_hit->flags |= Dtrkhit::IN_SEED;
+		current_hit->flags |= Dtrk_hit::IN_SEED;
 		hits_in_seed.push_back(current_hit);
 		if(hits_in_seed.size() >= MAX_SEED_HITS)break;
-		Dtrkhit *a = FindClosestXY(current_hit);
+		Dtrk_hit *a = FindClosestXY(current_hit);
 		if(!a)break;
 		if(a->DistXY2(current_hit) > MAX_SEED_DIST2)break;
 		if(last_hit){
@@ -289,13 +289,13 @@ int DFactory_DTrackCandidate::TraceSeed(Dtrkhit *hit)
 //------------------
 // FindClosestXY
 //------------------
-Dtrkhit* DFactory_DTrackCandidate::FindClosestXY(Dtrkhit *hit)
+Dtrk_hit* DFactory_DTrackCandidate::FindClosestXY(Dtrk_hit *hit)
 {
-	Dtrkhit *closest_hit = NULL;
-	unsigned int mask = Dtrkhit::USED | Dtrkhit::IN_SEED | Dtrkhit::IGNORE;
+	Dtrk_hit *closest_hit = NULL;
+	unsigned int mask = Dtrk_hit::USED | Dtrk_hit::IN_SEED | Dtrk_hit::IGNORE;
 	float d2_min = 1000.0;
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		Dtrkhit *a = trkhits[i];
+		Dtrk_hit *a = trkhits[i];
 		if(a->flags & mask)continue;
 		float d2 = hit->DistXY2(a);
 		if(d2<d2_min){
@@ -315,8 +315,8 @@ int DFactory_DTrackCandidate::FitSeed(void)
 	// Do a quick circle fit to find the center of the seed
 	DQuickFit *fit = new DQuickFit();
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		Dtrkhit *a = trkhits[i];
-		if(!(a->flags&Dtrkhit::IN_SEED))continue;
+		Dtrk_hit *a = trkhits[i];
+		if(!(a->flags&Dtrk_hit::IN_SEED))continue;
 		fit->AddHitXYZ(a->x, a->y, a->z);
 	}
 	fit->FitCircle();
@@ -328,18 +328,18 @@ int DFactory_DTrackCandidate::FitSeed(void)
 	int N_in_seed_and_on_circle = 0;
 	hits_on_circle.clear();
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		Dtrkhit *a = trkhits[i];
-		a->flags &= ~(Dtrkhit::ON_CIRCLE | Dtrkhit::ON_LINE | Dtrkhit::ON_TRACK);
-		if(a->flags&Dtrkhit::USED)continue;
+		Dtrk_hit *a = trkhits[i];
+		a->flags &= ~(Dtrk_hit::ON_CIRCLE | Dtrk_hit::ON_LINE | Dtrk_hit::ON_TRACK);
+		if(a->flags&Dtrk_hit::USED)continue;
 
 		float dx = a->x - x0;
 		float dy = a->y - y0;
 		float r = sqrt(dx*dx + dy*dy);
 			
 		if(fabs(r0-r) <= MAX_CIRCLE_DIST){
-			a->flags |= Dtrkhit::ON_CIRCLE;
+			a->flags |= Dtrk_hit::ON_CIRCLE;
 			hits_on_circle.push_back(a);
-			if(a->flags & Dtrkhit::IN_SEED)N_in_seed_and_on_circle++;
+			if(a->flags & Dtrk_hit::IN_SEED)N_in_seed_and_on_circle++;
 		}
 	}
 	
@@ -386,7 +386,7 @@ int DFactory_DTrackCandidate::FindLineHits(void)
 	hits_on_line.clear();
 	//cout<<__FILE__<<":"<<__LINE__<<" phizangle="<<phizangle<<"  z_vertex="<<z_vertex<<" r0="<<r0<<endl;
 	for(unsigned int i=0; i<hits_on_circle.size(); i++){
-		Dtrkhit *a = hits_on_circle[i];
+		Dtrk_hit *a = hits_on_circle[i];
 		float dphi = a->phi_circle;
 		float dz = a->z-z_vertex;
 		float dr = sqrt(dphi*dphi + dz*dz);
@@ -395,7 +395,7 @@ int DFactory_DTrackCandidate::FindLineHits(void)
 		//cout<<__FILE__<<":"<<__LINE__<<" d="<<d<<" z="<<a->z<<" dphi="<<dphi<<" dz="<<dz<<" dr="<<dr<<" sin_rel="<<sin_rel<<endl;
 		if(fabs(d)<MAX_PHI_Z_DIST){
 			// Flags hits as "ON_LINE" and push onto hits_on_line vector
-			a->flags |= Dtrkhit::ON_LINE;
+			a->flags |= Dtrk_hit::ON_LINE;
 			hits_on_line.push_back(a);
 		}
 	}
@@ -422,7 +422,7 @@ int DFactory_DTrackCandidate::FindPhiZAngle(void)
 	// Loop over all hits on circle and fill the phizangle histo.
 	phizangle_hist->Reset();
 	for(unsigned int i=0; i<hits_on_circle.size(); i++){
-		Dtrkhit *a = hits_on_circle[i];
+		Dtrk_hit *a = hits_on_circle[i];
 
 		float theta1 = atan2f((a->phi_circle - 0.0), a->z - TARGET_Z_MIN);
 		float theta2 = atan2f((a->phi_circle - 0.0), a->z - TARGET_Z_MAX);
@@ -477,19 +477,19 @@ int DFactory_DTrackCandidate::FindPhiZAngle(void)
 //------------------
 // Fill_phi_circle
 //------------------
-void DFactory_DTrackCandidate::Fill_phi_circle(vector<Dtrkhit*> hits, float X, float Y)
+void DFactory_DTrackCandidate::Fill_phi_circle(vector<Dtrk_hit*> hits, float X, float Y)
 {
-	/// Fill in the phi_circle attribute for all Dtrkhits in "hits" by
+	/// Fill in the phi_circle attribute for all Dtrk_hits in "hits" by
 	/// calculating phi measured about the axis at x0,y0. Hits with either
 	/// the IGNORE or USED flags set will be ignored.
 	float r0 = sqrt(X*X + Y*Y);
 	float x_last = -X;
 	float y_last = -Y;
 	float phi_last = 0.0;
-	//unsigned int mask = Dtrkhit::IGNORE | Dtrkhit::USED;
+	//unsigned int mask = Dtrk_hit::IGNORE | Dtrk_hit::USED;
 //cout<<__FILE__<<":"<<__LINE__<<"  ------ x0="<<X<<" y0="<<Y<<" -----"<<endl;
 	for(unsigned int i=0; i<hits.size(); i++){
-		Dtrkhit *a = hits[i];
+		Dtrk_hit *a = hits[i];
 		//if(a->flags & mask)continue;
 
 		float dx = a->x - X;
@@ -519,7 +519,7 @@ int DFactory_DTrackCandidate::FindZvertex(void)
 	float cot_phizangle_max = cos(phizangle_max)/sin(phizangle_max);
 
 	for(unsigned int i=0; i<hits_on_circle.size(); i++){
-		Dtrkhit *a = hits_on_circle[i];
+		Dtrk_hit *a = hits_on_circle[i];
 
 		// Find intersections with Z-axis for lines with min and
 		// max phizangle going through point (a->z, a->phi_circle).
@@ -581,7 +581,7 @@ int DFactory_DTrackCandidate::FitTrack(void)
 	DTrackCandidate *trackcandidate = new DTrackCandidate;
 	DQuickFit *fit = new DQuickFit();
 	for(unsigned int i=0; i<hits_on_line.size(); i++){
-		Dtrkhit *a = hits_on_line[i];
+		Dtrk_hit *a = hits_on_line[i];
 		
 		// Add hit to fit
 		fit->AddHitXYZ(a->x, a->y, a->z);
@@ -642,7 +642,7 @@ my_phizangle = phizangle;
 	float r0_2pi_cos_phizangle = 2.0*M_PI*r0*cos_phizangle;
 	hits_on_track.clear();
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		Dtrkhit *a = trkhits[i];
+		Dtrk_hit *a = trkhits[i];
 
 		float x = a->x - x0;
 		float y = a->y - y0;
@@ -662,7 +662,7 @@ my_phizangle = phizangle;
 		if(fabs(dr)>MAX_CIRCLE_DIST)continue;
 		
 		// Flags hits as "ON_TRACK" and "USED" and push onto hits_on_track vector
-		a->flags |= Dtrkhit::ON_TRACK | Dtrkhit::USED;
+		a->flags |= Dtrk_hit::ON_TRACK | Dtrk_hit::USED;
 		hits_on_track.push_back(a);
 
 		// Add hit index to track in factory data
@@ -734,12 +734,12 @@ void DFactory_DTrackCandidate::DebugMessage(int line)
 	int oc_hist[5]={0,0,0,0,0};
 	int is_hist[5]={0,0,0,0,0};
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		const Dtrkhit *a = trkhits[i];
+		const Dtrk_hit *a = trkhits[i];
 		Nhits++;
-		if(a->flags&Dtrkhit::IN_SEED)in_seed++;
-		if(a->flags&Dtrkhit::USED)used++;
-		if(a->flags&Dtrkhit::ON_CIRCLE)on_circle++;
-		if(a->flags&Dtrkhit::IGNORE)ignore++;
+		if(a->flags&Dtrk_hit::IN_SEED)in_seed++;
+		if(a->flags&Dtrk_hit::USED)used++;
+		if(a->flags&Dtrk_hit::ON_CIRCLE)on_circle++;
+		if(a->flags&Dtrk_hit::IGNORE)ignore++;
 	}
 	
 	int oc_hits=0, oc_max_content=0;
@@ -767,8 +767,8 @@ int DFactory_DTrackCandidate::SeedTrack(void)
 	// Find the track which most of the seed hits come from
 	int is_hist[5]={0,0,0,0,0};
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		//const Dtrkhit *a = trkhits[i];		
-		//if(a->flags&Dtrkhit::IN_SEED)is_hist[a->track]++;
+		//const Dtrk_hit *a = trkhits[i];		
+		//if(a->flags&Dtrk_hit::IN_SEED)is_hist[a->track]++;
 	}
 	
 	int track = 1;

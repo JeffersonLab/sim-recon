@@ -71,6 +71,7 @@ derror_t DFactory_DMCTrackHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 		DMCTrackHit *mctrackhit = _data[i];
 		if(mctrackhit->phi<0.0)mctrackhit->phi += 2.0*M_PI;
 		mctrackhit->id = idcntr++;
+		//mctrackhit->InitCovarianceMatrix();
 	}
 	
 	// Copy into v
