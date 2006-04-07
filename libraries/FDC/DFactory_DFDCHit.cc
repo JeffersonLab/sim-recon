@@ -75,8 +75,8 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 					newHit->t					= wireHit.t;
 					newHit->plane				= 2;
 					newHit->type				= 0;
-					newHit->globalPlane			= _geo.globalPlane(newHit);
-					newHit->globalLayer			= _geo.globalLayer(newHit);
+					newHit->gPlane			= _geo.gPlane(newHit);
+					newHit->gLayer			= _geo.gLayer(newHit);
 					newHit->r					= _geo.getWireR(newHit); 
 					v.push_back(newHit);
 				}
@@ -96,8 +96,8 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 					newHit->dE					= stripHit.dE;
 					newHit->t					= stripHit.t;
 					newHit->type				= 1;
-					newHit->globalPlane			= _geo.globalPlane(newHit);	 
-					newHit->globalLayer			= _geo.globalLayer(newHit);
+					newHit->gPlane			= _geo.gPlane(newHit);	 
+					newHit->gLayer			= _geo.gLayer(newHit);
 					newHit->r					= _geo.getStripR(newHit);
 					v.push_back(newHit);
 				}
