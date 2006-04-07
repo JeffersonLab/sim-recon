@@ -13,7 +13,7 @@
 #include "DFactory.h"
 #include "DQuickFit.h"
 #include "DTrackCandidate.h"
-#include "../TRACKING/Dtrkhit.h"
+#include "../TRACKING/Dtrk_hit.h"
 
 
 class DFactory_DTrackCandidate:public DFactory<DTrackCandidate>{
@@ -21,13 +21,13 @@ class DFactory_DTrackCandidate:public DFactory<DTrackCandidate>{
 		DFactory_DTrackCandidate();
 		~DFactory_DTrackCandidate(){};
 		const string toString(void);
-		static void Fill_phi_circle(vector<Dtrkhit*> hits, float x0, float y0);
+		static void Fill_phi_circle(vector<Dtrk_hit*> hits, float x0, float y0);
 		
-		vector<Dtrkhit*>& Get_trkhits(void){return trkhits;}
-		vector<vector<Dtrkhit*> >& Get_dbg_in_seed(void){return dbg_in_seed;}
-		vector<vector<Dtrkhit*> >& Get_dbg_hoc(void){return dbg_hoc;}
-		vector<vector<Dtrkhit*> >& Get_dbg_hol(void){return dbg_hol;}
-		vector<vector<Dtrkhit*> >& Get_dbg_hot(void){return dbg_hot;}
+		vector<Dtrk_hit*>& Get_trkhits(void){return trkhits;}
+		vector<vector<Dtrk_hit*> >& Get_dbg_in_seed(void){return dbg_in_seed;}
+		vector<vector<Dtrk_hit*> >& Get_dbg_hoc(void){return dbg_hoc;}
+		vector<vector<Dtrk_hit*> >& Get_dbg_hol(void){return dbg_hol;}
+		vector<vector<Dtrk_hit*> >& Get_dbg_hot(void){return dbg_hot;}
 		vector<DQuickFit*>& Get_dbg_seed_fit(void){return dbg_seed_fit;}
 		vector<DQuickFit*>& Get_dbg_track_fit(void){return dbg_track_fit;}
 		vector<int>& Get_dbg_seed_index(void){return dbg_seed_index;}
@@ -44,30 +44,30 @@ class DFactory_DTrackCandidate:public DFactory<DTrackCandidate>{
 		void ClearEvent(void);
 		void GetTrkHits(DEventLoop *loop);
 		int FindSeed(void);
-		int TraceSeed(Dtrkhit *hit);
-		Dtrkhit* FindClosestXY(Dtrkhit *hit);
+		int TraceSeed(Dtrk_hit *hit);
+		Dtrk_hit* FindClosestXY(Dtrk_hit *hit);
 		int FitSeed(void);
 		int FindLineHits(void);
 		int FindPhiZAngle(void);
 		int FindZvertex(void);
 		int FitTrack(void);
 		int MarkTrackHits(DTrackCandidate* trackcandidate, DQuickFit *fit);
-		inline void ChopSeed(void){if(hits_in_seed.size()>0)hits_in_seed[0]->flags |= Dtrkhit::IGNORE;}
+		inline void ChopSeed(void){if(hits_in_seed.size()>0)hits_in_seed[0]->flags |= Dtrk_hit::IGNORE;}
 
 
 		void DebugMessage(int line);
 		int SeedTrack(void);
 
-		vector<Dtrkhit*> trkhits; // sorted by z
-		vector<Dtrkhit*> trkhits_r_sorted; // sorted by dist. from beam line
-		vector<Dtrkhit*> hits_in_seed;
-		vector<Dtrkhit*> hits_on_circle;
-		vector<Dtrkhit*> hits_on_line;
-		vector<Dtrkhit*> hits_on_track;
-		vector<vector<Dtrkhit*> > dbg_in_seed;
-		vector<vector<Dtrkhit*> > dbg_hoc;
-		vector<vector<Dtrkhit*> > dbg_hol;
-		vector<vector<Dtrkhit*> > dbg_hot;
+		vector<Dtrk_hit*> trkhits; // sorted by z
+		vector<Dtrk_hit*> trkhits_r_sorted; // sorted by dist. from beam line
+		vector<Dtrk_hit*> hits_in_seed;
+		vector<Dtrk_hit*> hits_on_circle;
+		vector<Dtrk_hit*> hits_on_line;
+		vector<Dtrk_hit*> hits_on_track;
+		vector<vector<Dtrk_hit*> > dbg_in_seed;
+		vector<vector<Dtrk_hit*> > dbg_hoc;
+		vector<vector<Dtrk_hit*> > dbg_hol;
+		vector<vector<Dtrk_hit*> > dbg_hot;
 		vector<DQuickFit*> dbg_seed_fit;
 		vector<DQuickFit*> dbg_track_fit;
 		vector<int> dbg_seed_index;

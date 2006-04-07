@@ -8,6 +8,8 @@
 #ifndef _DTrackHit_
 #define _DTrackHit_
 
+#include <TMatrixD.h>
+
 #include "DObject.h"
 #include "DFactory.h"
 #include "GlueX.h"
@@ -18,6 +20,7 @@ class DTrackHit:public DObject{
 
 		float x,y,z,r,phi;
 		DetectorSystem_t system;
+		TMatrixD cov; // covariance matrix rotated into lab x,y,z
 };
 
 #endif // _DTrackHit_
