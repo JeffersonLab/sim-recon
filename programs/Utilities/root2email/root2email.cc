@@ -105,7 +105,7 @@ void AddPlot(TFile &f, string histname)
 		c1.Print("tmp.eps");
 		
 		// Convert EPS to PPM using ghostscript(gs)
-		system("echo quit | gs -sDEVICE=ppm -r72x72 -g565x395 -sOutputFile=tmp.ppm -dNOPAUSE tmp.eps > /dev/null");
+		system("echo quit | gs -sDEVICE=ppm -r72x72 -g565x405 -sOutputFile=tmp.ppm -dNOPAUSE tmp.eps > /dev/null");
 
 		// Generate unique name of GIF file
 		stringstream outfile;
