@@ -170,7 +170,7 @@ void DFactory_DFDCPseudo::conjure(	vector<const DFDCHit*>& u,
 			wireCandidateHigh = static_cast<int>(ceil(xCoordUV) + 60);
 			if ((x.count(wireCandidateLow)) || (x.count(wireCandidateHigh))) {
 				float yCoordUV(0.0);
-				float xCoordReal(0.0), yCoordReal(0.0), zCoordReal(0.0);
+				float xCoordReal(0.0), yCoordReal(0.0);
 				yCoordUV = (vYint - uYint) / 2;
 				xCoordReal = xCoordUV*cos(angle) - yCoordUV*sin(angle);
 				yCoordReal = xCoordUV*sin(angle) + yCoordUV*sin(angle);
