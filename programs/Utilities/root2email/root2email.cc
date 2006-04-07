@@ -100,6 +100,7 @@ void AddPlot(TFile &f, string histname)
 		// Generate EPS file using ROOT
 		TCanvas c1("c1",histname.c_str(),200,10,700,500);
    	c1.SetGrid();
+		c1.SetFillColor(19);
 		hist->SetLineColor(colors[plots.size()%Ncolors]);
 		hist->Draw();
 		c1.Print("tmp.eps");
