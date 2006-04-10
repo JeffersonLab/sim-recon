@@ -55,10 +55,14 @@ derror_t DFactory_DMCThrown::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 							mcthrown->q = (float)ParticleCharge(product->type);
 							mcthrown->mass = ParticleMass(product->type);
 							mcthrown->E = product->momentum->E;
-							mcthrown->p = sqrt(mcthrown->E*mcthrown->E - mcthrown->mass*mcthrown->mass);
-							mcthrown->phi = atan2(product->momentum->py, product->momentum->px);
+							double px = product->momentum->px;
+							double py = product->momentum->py;
+							double pz = product->momentum->pz;
+							mcthrown->p = sqrt(px*px + py*py + pz*pz);
+							mcthrown->phi = atan2(py, px);
 							if(mcthrown->phi<0.0)mcthrown->phi += 2.0*M_PI;
-							mcthrown->theta = acos(product->momentum->pz/mcthrown->p);
+							mcthrown->theta = acos(pz/mcthrown->p);
+cout<<mcthrown->theta<<"  pz="<<product->momentum->pz<<" p="<<mcthrown->p<<"  mass="<<mcthrown->mass<<endl;
 							mcthrown->id = idcntr++;
 							v.push_back((void*)mcthrown);
 						}
