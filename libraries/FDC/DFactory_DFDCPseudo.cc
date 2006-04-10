@@ -9,7 +9,7 @@
 
 void DFactory_DFDCPseudo::dummy(	vector<const DFDCHit*>& u, 
 		  						vector<const DFDCHit*>& v,
-								map<const int, const DFDCHit*>& x,
+								map<int, const DFDCHit*>& x,
 								float angle,
 								int evNo,
 								int layerNo) {	
@@ -89,7 +89,7 @@ derror_t DFactory_DFDCPseudo::evnt(DEventLoop* eventLoop, int eventNo) {
 	vector<const DFDCHit*> fdcHits;
 	vector<const DFDCHit*> uHits;
 	vector<const DFDCHit*> vHits;
-	map<const int, const DFDCHit*> anodeHits;
+	map<int, const DFDCHit*> anodeHits;
 	float angle = 0.0;
 	float pi	= 3.1415926;
 	unsigned int uHitsTot(0), vHitsTot(0), xHitsTot(0);
@@ -138,7 +138,7 @@ derror_t DFactory_DFDCPseudo::evnt(DEventLoop* eventLoop, int eventNo) {
 
 void DFactory_DFDCPseudo::conjure(	vector<const DFDCHit*>& u, 
 									vector<const DFDCHit*>& v,
-									map<const int, const DFDCHit*>& x,
+									map<int, const DFDCHit*>& x,
 									float angle) {	
 									
 	// TODO: Use the pulse thingy to associate hits. For real.
