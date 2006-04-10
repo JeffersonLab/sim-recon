@@ -62,7 +62,6 @@ derror_t DFactory_DMCThrown::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 							mcthrown->phi = atan2(py, px);
 							if(mcthrown->phi<0.0)mcthrown->phi += 2.0*M_PI;
 							mcthrown->theta = acos(pz/mcthrown->p);
-cout<<mcthrown->theta<<"  pz="<<product->momentum->pz<<" p="<<mcthrown->p<<"  mass="<<mcthrown->mass<<endl;
 							mcthrown->id = idcntr++;
 							v.push_back((void*)mcthrown);
 						}
