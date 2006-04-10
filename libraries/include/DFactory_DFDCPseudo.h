@@ -18,11 +18,11 @@ class DFactory_DFDCPseudo : public DFactory<DFDCPseudo> {
 		~DFactory_DFDCPseudo();
 		void conjure(	vector<const DFDCHit*>& u, 
 						vector<const DFDCHit*>& v,
-						map<const int, const DFDCHit*>& x,
+						map<int, const DFDCHit*>& x,
 						float angle);
 		void dummy(	vector<const DFDCHit*>& u, 
 		  			vector<const DFDCHit*>& v,
-					map<const int, const DFDCHit*>& x,
+					map<int, const DFDCHit*>& x,
 					float angle,
 					int evNo,
 					int layerNo);
