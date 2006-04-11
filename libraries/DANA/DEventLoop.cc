@@ -205,16 +205,20 @@ derror_t DEventLoop::PrintFactories(int sparsify)
 	for(unsigned int i=0; i<factories.size(); i++){
 		DFactory_base *factory = factories[i];
 		
-		if(sparsify)
-			if(factory->GetNrows()<1)continue;
+		try{
+			if(sparsify)
+				if(factory->GetNrows()<1)continue;
+		}catch(...){}
 		
 		// To make things look pretty, copy all values into the buffer "str"
 		string str(79,' ');
 		string name = factory->dataClassName();
 		str.replace(0, name.size(), name);
 
-		char num[32];
-		sprintf(num, "%d", factory->GetNrows());
+		char num[32]="";
+		try{
+			sprintf(num, "%d", factory->GetNrows());
+		}catch(...){}
 		str.replace(22-strlen(num), strlen(num), num);
 
 		const char *tag = factory->Tag();
