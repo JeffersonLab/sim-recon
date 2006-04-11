@@ -15,7 +15,7 @@ int main(int narg, char *argv[])
 	DApplication app(narg, argv);
 
 	// Run though all events, calling our event processor's methods
-	app.Run(NULL, 10);
+	app.Run(NULL, 1);
 	
 	return 0;
 }
