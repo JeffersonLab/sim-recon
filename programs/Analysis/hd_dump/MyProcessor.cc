@@ -92,9 +92,13 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 			DFactory_base *factory = eventLoop->GetFactory(toprint[i]);
 			if(!factory)factory = eventLoop->GetFactory("D" + toprint[i]);
 			if(factory){
-				if(factory->GetNrows()>0){
-					event_is_boring=0;
-					break;
+				try{
+					if(factory->GetNrows()>0){
+						event_is_boring=0;
+						break;
+					}
+				}catch(...){
+					// someone threw an exception
 				}
 			}
 		}
@@ -113,7 +117,11 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	
 	// Print data for all specified factories
 	for(unsigned int i=0;i<toprint.size();i++){
-		eventLoop->Print(toprint[i]);
+		try{
+			eventLoop->Print(toprint[i]);
+		}catch(...){
+			// exception thrown
+		}
 	}
 	
 	// Wait for user input if pausing
