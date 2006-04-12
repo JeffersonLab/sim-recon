@@ -24,6 +24,10 @@
  *	BEAM_DIAMETER, and TARGET_CENTER defined below.
  *
  * Revision history:
+ * > Apr 10, 2006 - David Lawrence
+ * Added comments to explain a little what each of these routines is doing.
+ * No functional changes.
+ *
  * >  Dec 15, 2004 - Richard Jones
  *	Changed former behaviour of simulation to overwrite the vertex
  *	coordinates from the input record, if the simulation decides to
@@ -49,14 +53,23 @@
 s_iostream_t* thisInputStream = 0;
 s_HDDM_t* thisInputEvent = 0;
 
+/*-------------------------
+/* openInput
+/*-------------------------*/
 int openInput (char* filename)
 {
+	/* Open HDDM file for reading in "thrown" particle kinematics */
    thisInputStream = open_s_HDDM(filename);
    return (thisInputStream == 0);
 }
 
+/*-------------------------
+/* skipInput
+/*-------------------------*/
 int skipInput (int count)
 {
+	/* Skip over the specified number of events in the input file */
+	/* NOTE: This is NOT safe for cross-platform use!! */
    int* buff = (int*) malloc(1000000);
    while (thisInputStream && (count > 0))
    {
@@ -76,8 +89,14 @@ int skipInput (int count)
    return count;
 }
 
+/*-------------------------
+/* nextInput
+/*-------------------------*/
 int nextInput ()
 {
+	/* Read in the next HDDM event. This only reads it into the
+	   HDDM buffer "thisInputEvent" and does not yet define the
+		particles to GEANT. See loadInput for that. */
    if (thisInputStream == 0)
    {
       return 9;		/* input stream was never opened */
@@ -90,8 +109,14 @@ int nextInput ()
    return (thisInputEvent == 0);
 }
 
+/*-------------------------
+/* loadInput
+/*-------------------------*/
 int loadInput ()
 {
+	/* Extracts the "thrown" particle 4-vectors and types from the
+	   current HDDM buffer "thisInputEvent" and creates a vertex for
+		them(gsvert) and defines the GEANT (gskine) for tracking. */
    s_Reactions_t* reacts;
    int reactCount, ir;
 
@@ -162,8 +187,18 @@ int loadInput ()
    return 0;
 }
 
+/*-------------------------
+/* storeInput
+/*-------------------------*/
 int storeInput (int runNo, int eventNo, int ntracks)
 {
+	/* This is called by the built-in generators (coherent brem. and
+	   single track) in order to store the "thrown" particle parameters
+		in the output HDDM file. What this actually does is free the 
+		input buffer "thisInputEvent" if it exists and creates a new
+		one. When an external generator is used, the thisInputEvent
+		buffer is kept unmodified and this routine is never called.*/
+printf("%s:%d\n",__FILE__,__LINE__);
    s_PhysicsEvents_t* pes;
    s_Reactions_t* rs;
    s_Vertices_t* vs;
@@ -226,8 +261,12 @@ int storeInput (int runNo, int eventNo, int ntracks)
    return 0;
 }
 
+/*-------------------------
+/* closeInput
+/*-------------------------*/
 int closeInput ()
 {
+	/* Close the HDDM input file */
    if (thisInputStream)
    {
       close_s_HDDM(thisInputStream);
