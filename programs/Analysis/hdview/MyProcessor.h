@@ -16,6 +16,7 @@ class DFactory_DTrackCandidate;
 
 #include <TPolyLine.h>
 #include <TEllipse.h>
+#include <TVector3.h>
 #include <TMarker.h>
 #include <TFile.h>
 #include <TH1.h>
@@ -39,6 +40,7 @@ class MyProcessor:public DEventProcessor
 		derror_t ConvertToFront(float x, float y, float z, float &X, float &Y);
 
 		derror_t DrawHelicalTrack(DQuickFit *qf, int color);
+		derror_t DrawStraightTrack(TVector3 p, TVector3 vertex, int color, int style);
 		derror_t DrawTrack(DQuickFit *qf, int color);
 		derror_t DrawDetectors(void);
 

@@ -23,6 +23,7 @@ using namespace std;
 #include "DQuickFit.h"
 #include "DMagneticFieldStepper.h"
 #include "DFactory_DTrackCandidate.h"
+#include "DMCThrown.h"
 
 extern TCanvas *maincanvas;
 extern hdv_mainframe *hdvmf;
@@ -145,8 +146,10 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	// Get TrackHits
 	vector<const DTrackHit*> trackhits;
 	vector<const DMCTrackHit*> mctrackhits;
+	vector<const DMCThrown*> mcthrowns;
 	eventLoop->Get(trackhits, TRACKHIT_SOURCE.c_str());
 	eventLoop->Get(mctrackhits); // just in case we need it later
+	eventLoop->Get(mcthrowns); // used for straight tracks
 	
 	// Loop over hits creating markers for all 3 views
 	for(unsigned int i=0;i<trackhits.size();i++){
@@ -234,6 +237,20 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 		markers.push_back(front);
 	}
 	
+	// Draw all thrown neutral particles as straight tracks
+	for(unsigned int i=0; i<mcthrowns.size(); i++){
+		const DMCThrown *t = mcthrowns[i];
+		if(t->q != 0)return NOERROR;
+		
+		TVector3 vertex(t->x, t->y, t->z);
+		double px = t->p*cos(t->phi)*sin(t->theta);
+		double py = t->p*sin(t->phi)*sin(t->theta);
+		double pz = t->p*cos(t->theta);
+		TVector3 p(px,py,pz);
+		DrawStraightTrack(p ,vertex, colors[(i+1)%ncolors], i%8+2);
+		
+	}
+	
 	// Draw all "found" tracks
 	vector<const DTrackCandidate*> trackcandidates;
 	eventLoop->Get(trackcandidates);
@@ -300,6 +317,64 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 		float r = sqrt(dX*dX + dY*dY);
 		circles.push_back(new TEllipse(X,Y,r,r));
 	}
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// DrawStraightTrack 
+//------------------------------------------------------------------
+derror_t MyProcessor::DrawStraightTrack(TVector3 p, TVector3 vertex, int color, int style)
+{
+	if(lines.size()>MAX_LINES-3)return NOERROR;
+
+	// Note: Rather than calculate just the end points of the straight
+	// line here, we just follow the method of a helical track and step
+	// the track through. This takes a little for CPU power, but no
+	// one will notice and the code is a little simpler.
+	
+	TVector3 pos = vertex;
+	TVector3 p_step = 2.0*p.Unit();// advance track in 2cm steps
+
+	TPolyLine *line_top = new TPolyLine();
+	TPolyLine *line_side = new TPolyLine();
+
+	for(int i=0; i<500; i++){
+
+		float X,Y;
+		ConvertToSide(pos.x(),pos.y(),pos.z(),X,Y);
+		line_side->SetNextPoint(X,Y);
+		ConvertToTop(pos.x(),pos.y(),pos.z(),X,Y);
+		line_top->SetNextPoint(X,Y);
+
+		pos += p_step;
+		
+		if(pos.z() < BCAL_Zmid+BCAL_Zlen/2.0){
+			if(pos.Pt()>BCAL_Rmin)break;
+		}else{
+			if(pos.z() > FCAL_Zmid-FCAL_Zlen/2.0)break;
+		}
+	}
+	line_side->SetLineColor(color);
+	line_side->SetLineStyle(style);
+	line_side->Draw();
+	line_top->SetLineColor(color);
+	line_top->SetLineStyle(style);
+	line_top->Draw();
+	lines.push_back(line_side);
+	lines.push_back(line_top);
+	
+	// Draw Line on front view
+	float X,Y;
+	TPolyLine *line_front = new TPolyLine();
+	ConvertToFront(vertex.x(), vertex.y(), vertex.z(), X, Y);
+	line_front->SetNextPoint(X,Y);
+	ConvertToFront(pos.x(), pos.y(),pos.z(), X, Y);
+	line_front->SetNextPoint(X,Y);
+	line_front->SetLineColor(color);
+	line_front->SetLineStyle(style);
+	line_front->Draw();
+	lines.push_back(line_front);
 
 	return NOERROR;
 }
@@ -389,7 +464,7 @@ derror_t MyProcessor::ConvertToFront(float x, float y, float z, float &X, float 
 }
 
 //------------------------------------------------------------------
-// init 
+// DrawDetectors 
 //------------------------------------------------------------------
 derror_t MyProcessor::DrawDetectors(void)
 {
