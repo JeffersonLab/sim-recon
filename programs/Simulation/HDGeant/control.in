@@ -19,15 +19,24 @@ C process the following 100 input events and stop.  If the end of the file is
 C reached before the event count specified in card TRIG is exhausted then the
 C processing will stop at the end of file.
 
-TRIG 1000
-c INFILE 'rhop.hddm'
-INFILE 'events.hddm'
+TRIG 10
+INFILE 'rhop.hddm'
+BEAM 12. 9.
 RUNG 9999
 
 C The following card enables single-track generation (for testing)
 C    particle  energy  theta  phi  vertex(x y z)
 KINE    3        1.0     80.  45.    0. 0. 65.
 
+C The following card seeds the random number generator so it must be unique
+C for each run.  There are two ways to specify the random see for a run.
+C  1. One argument, must be an integer in the range [1,215]
+C  2. Two arguments, must be a pair of positive Integer*4 numbers
+C In the first case, one of a limited set of prepared starting seeds is
+C chosen from a list.  These seeds have been certified to produce random
+C sequences that do not repeat within the first 10^9 or so random numbers.
+C For cases where more choices are needed, the two-argument form gives
+C access to a total of 2^62 choices, with no guarantees about closed loops.
 RNDM 121
 
 CUTS 1e-4 1e-4
@@ -42,4 +51,5 @@ CKOV 1
 LABS 1
 ABAN 0
 
+debug 0 0 1
 END

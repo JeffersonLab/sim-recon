@@ -51,14 +51,13 @@ int process_event(s_HDDM_t *event)
    for (ipoint=0; ipoint<points->mult; ipoint++) {
 		s_CdcTruthPoint_t *point = &points->in[ipoint];
       if (fabs(point->dradius-19.5) < 0.5e5) {
-			
-         printf("  dE/dx=%f\n",point->dEdx * 1e6);
          printf("  dradius=%f,",point->dradius);
          printf("  phi=%f,",point->phi);
          printf("  primary=%s,",point->primary ? "true":"false");
          printf("  r=%f,",point->r);
          printf("  track=%f,",point->track);
          printf("  z=%f,",point->z);
+         printf("  dE/dx=%f\n",point->dEdx * 1e6);
       }
    }
    return 1;

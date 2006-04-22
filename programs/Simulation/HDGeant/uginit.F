@@ -1,7 +1,7 @@
 *
 * $Id$
 *
-* $Log$
+* $Log: uginit.F,v $
 * Revision 1.12  2005/01/29 19:25:30  jonesrt
 * hitLGD.c
 *   - renamed to hitFCal.c [rtj]
@@ -191,8 +191,8 @@ C..geant..
       call ffkey('skip',iskip,1,'INTEGER')
       call ffkey('outfile',outfile,20,'MIXED')
       call ffkey('beam',beamE0,3,'REAL')
-		call ffkey('bfield', bfield,1,'REAL')
-		call ffkey('nosecondaries', nosecondaries,1,'INTEGER')
+      call ffkey('bfield', bfield,1,'REAL')
+      call ffkey('nosecondaries', nosecondaries,1,'INTEGER')
       call gtgamaff()
       CALL GFFGO
 *
