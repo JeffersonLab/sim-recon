@@ -17,18 +17,21 @@
 
 const float Tau[] = {0,-45,0,45,15,60,105,-105,-60,-15};
 
-#define DRIFT_SPEED        .0022
-#define STRIP_SPACING        0.5
-#define STRIP_GAP       0.1
+#define DRIFT_SPEED         .0022
 #define ANODE_CATHODE_SPACING 0.5
-#define TWO_HIT_RESOL        250.
-#define WIRE_SPACING         1.0
-#define MAX_HITS         100
-#define K2              1.15
-#define STRIP_NODES     3
-#define MAX_STRIPS      240
-#define THRESH_KEV        1.
-#define THRESH_STRIPS     5.      /* mV */
+#define TWO_HIT_RESOL         250.
+#define WIRES_PER_PLANE       121
+#define WIRE_SPACING          1.0
+#define U_OF_WIRE_ZERO        (-(WIRES_PER_PLANE-1.)/2)
+#define STRIPS_PER_PLANE      238
+#define STRIP_SPACING         0.5
+#define U_OF_STRIP_ZERO       (-(STRIPS_PER_PLANE-1.)/2)
+#define STRIP_GAP             0.1
+#define MAX_HITS             100
+#define K2                  1.15
+#define STRIP_NODES           3
+#define THRESH_KEV           1.
+#define THRESH_STRIPS        5.   /* mV */
 #define ELECTRON_CHARGE 1.6022e-4 /* fC */
 
 binTree_t* forwardDCTree = 0;
@@ -36,7 +39,6 @@ static int stripCount = 0;
 static int wireCount = 0;
 static int pointCount = 0;
 
-#define U0                100.
 
 void rnpssn_(float*,int*,int*); // avoid solaris compiler warnings
 
@@ -90,8 +92,9 @@ void hitForwardDC (float xin[4], float xout[4],
       int nhit;
       s_FdcAnodeHits_t* ahits;    
       s_FdcCathodeHits_t* chits;    
-      int wire = (xlocal[0] + U0)/WIRE_SPACING +1;
-      float dradius = fabs((xlocal[0] + U0) - (wire - 0.5)*WIRE_SPACING);
+      int wire = ceil((xlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
+      float dradius = fabs((xlocal[0] - U_OF_WIRE_ZERO)
+                                - (wire-1)*WIRE_SPACING);
       float tdrift = t + dradius/DRIFT_SPEED;
 
       /* first record the anode wire hit */
@@ -159,8 +162,8 @@ void hitForwardDC (float xin[4], float xout[4],
         {
           float theta = (plane == 1)? -M_PI/4 : +M_PI/4;
           float cathode_u = avalanche_x*cos(theta)+avalanche_y*sin(theta);
-          int strip1 = ceil((cathode_u + U0)/STRIP_SPACING);
-          float cathode_u1 = (strip1 - 0.5)*STRIP_SPACING - U0;
+          int strip1 = ceil((cathode_u - U_OF_STRIP_ZERO)/STRIP_SPACING +0.5);
+          float cathode_u1 = (strip1-1)*STRIP_SPACING + U_OF_STRIP_ZERO;
           float delta = cathode_u-cathode_u1;
 
           /* Variables for approximating number of ion pairs  */ 
@@ -211,7 +214,7 @@ void hitForwardDC (float xin[4], float xout[4],
                        *(tanh(M_PI*K2*lambda2/4.)-tanh(M_PI*K2*lambda1/4.))/4.;
 
             int strip = strip1+node;
-            if ((strip > 0) && (strip <= MAX_STRIPS))
+            if ((strip > 0) && (strip <= STRIPS_PER_PLANE))
             {
 	      int mark = (chamber<<20) + (plane<<10) + strip;
               void** twig = getTwig(&forwardDCTree, mark);
@@ -273,8 +276,9 @@ void hitForwardDC (float xin[4], float xout[4],
  /* post the hit to the truth tree, once per primary track per anode plane */
  
     {
-      int wire = (xlocal[0] + U0)/WIRE_SPACING +1;
-      float dradius = fabs((xlocal[0] + U0) - (wire - 0.5)*WIRE_SPACING);
+      int wire = ceil((xlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
+      float dradius = fabs((xlocal[0] - U_OF_WIRE_ZERO)
+                                - (wire-1)*WIRE_SPACING);
       int mark = (chamber<<20) + (track<<14);
       void** twig = getTwig(&forwardDCTree, mark);
       if (*twig == 0)
