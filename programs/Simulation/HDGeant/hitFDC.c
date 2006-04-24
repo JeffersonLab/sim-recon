@@ -22,10 +22,10 @@ const float Tau[] = {0,-45,0,45,15,60,105,-105,-60,-15};
 #define TWO_HIT_RESOL         250.
 #define WIRES_PER_PLANE       121
 #define WIRE_SPACING          1.0
-#define U_OF_WIRE_ZERO        (-(WIRES_PER_PLANE-1.)/2)
+#define U_OF_WIRE_ZERO        (-(WIRES_PER_PLANE*WIRE_SPACING-1.)/2)
 #define STRIPS_PER_PLANE      238
 #define STRIP_SPACING         0.5
-#define U_OF_STRIP_ZERO       (-(STRIPS_PER_PLANE-1.)/2)
+#define U_OF_STRIP_ZERO		  (-(STRIPS_PER_PLANE*STRIP_SPACING)/2)
 #define STRIP_GAP             0.1
 #define MAX_HITS             100
 #define K2                  1.15
