@@ -160,7 +160,8 @@ c conserve energy and charge and all /gheish/
       call gelpcalc(temp(7),vect(4),temp)
       call gamate(1.0,1.0,goth)
       if(goth) then
-         call gelfill(alias,vect,mprod,nprod,iprod,tprod,pprod)
+*        call gelfill(alias,vect,mprod,nprod,iprod,tprod,pprod)
+         call gelfill(alias,temp,mprod,nprod,iprod,tprod,pprod)
          go to 99
       endif
 c
@@ -214,7 +215,9 @@ c conserve energy and charge and all /gheish/
 
       call gamate(1.0,1.0,goth)      
       if(goth) then
-         call gelfill(alias,vect,mprod,nprod,iprod,tprod,pprod)
+*        call gelfill(alias,vect,mprod,nprod,iprod,tprod,pprod)
+         call gelpcalc(vect(7),vect(4),temp)
+         call gelfill(alias,temp,mprod,nprod,iprod,tprod,pprod)
          go to 99
       endif
 
@@ -325,8 +328,11 @@ c
 
       call gamate(1.0,2.0,goth)      
       if(goth) then
-         call gelfill(iprot,vect,mprod,nprod,iprod,tprod,pprod)
-         call gelfill(ineut,vect,mprod,nprod,iprod,tprod,pprod)
+*        call gelfill(iprot,vect,mprod,nprod,iprod,tprod,pprod)
+*        call gelfill(ineut,vect,mprod,nprod,iprod,tprod,pprod)
+         call gelpcalc(vect(7),vect(4),temp)
+         call gelfill(iprot,temp,mprod,nprod,iprod,tprod,pprod)
+         call gelfill(ineut,temp,mprod,nprod,iprod,tprod,pprod)
          go to 99
       endif
 
