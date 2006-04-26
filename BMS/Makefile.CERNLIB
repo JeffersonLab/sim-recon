@@ -6,7 +6,7 @@ CXXFLAGS += -I$(CERN)/$(CERN_LEVEL)/include
 CERNLIBS = $(shell cernlib geant321 pawlib graflib grafX11 packlib mathlib kernlib)
 
 ifneq "$(OSNAME)" "SunOS"
- MISC_LIBS += -lg2c
+# MISC_LIBS += -lg2c
 endif
 
 MISC_LIBS += $(CERNLIBS) $(EXTRA_LIBS)
