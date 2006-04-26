@@ -178,7 +178,8 @@ derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 				}
 			}
 		
-			const DTrack *track = GetByID(tracks, trkeff->trackid);
+			const DObject *obj = loop->FindByID(trkeff->trackid);
+			const DTrack *track = dynamic_cast<typeof(track)>(obj);
 			if(track){				
 				float dp_over_p = (track->p - mcthrown->p)/mcthrown->p;
 

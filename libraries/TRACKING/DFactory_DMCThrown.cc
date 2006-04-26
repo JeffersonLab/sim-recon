@@ -26,7 +26,6 @@ derror_t DFactory_DMCThrown::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	/// from DEventSourceHDDM::GetObjects.
 	
 	v.clear();
-	identifier_t idcntr = 1;
 
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -62,7 +61,6 @@ derror_t DFactory_DMCThrown::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 							mcthrown->phi = atan2(py, px);
 							if(mcthrown->phi<0.0)mcthrown->phi += 2.0*M_PI;
 							mcthrown->theta = acos(pz/mcthrown->p);
-							mcthrown->id = idcntr++;
 							v.push_back((void*)mcthrown);
 						}
 					}
@@ -91,7 +89,7 @@ const string DFactory_DMCThrown::toString(void)
 
 		printnewrow();
 		
-		printcol("%d", mcthrown->id);
+		printcol("%x", mcthrown->id);
 		printcol("%d", mcthrown->type);
 		printcol("%+d", (int)mcthrown->q);
 		printcol("%3.1f", mcthrown->p);

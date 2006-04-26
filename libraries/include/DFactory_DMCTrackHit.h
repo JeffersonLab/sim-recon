@@ -28,7 +28,6 @@ class DFactory_DMCTrackHit:public DFactory<DMCTrackHit>{
 
 	private:
 		derror_t evnt(DEventLoop *eventLoop, int eventnumber);	///< Invoked via DEventProcessor virtual method
-		identifier_t identifier;
 };
 
 #endif // _DFactory_DMCTrackHit_

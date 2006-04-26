@@ -16,7 +16,7 @@ class DFCALTruthShower:public DObject{
 		HDCLASSDEF(DFCALTruthShower);
 		DFCALTruthShower(){}
 		
-		DFCALTruthShower( identifier_t id,
+		DFCALTruthShower( oid_t id,
 						float x, float y, float z,
 						float E, float t,
 						bool primary, int track) :

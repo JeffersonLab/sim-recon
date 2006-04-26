@@ -70,8 +70,6 @@ derror_t DFactory_DHDDMBCALTruth::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &
   if(!PE) 
     return NOERROR;
 	
-  identifier_t identifier = 0;
-	
   for(unsigned int i = 0; i < PE->mult; i++) {
     s_BcalTruthShowers_t* bcalTruthShowers = NULL;
     if(PE->in[i].hitView)
@@ -88,7 +86,6 @@ derror_t DFactory_DHDDMBCALTruth::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &
       bcaltruth->z = bcalTruthShowers->in[j].z;
       bcaltruth->t = bcalTruthShowers->in[j].t;
       bcaltruth->E = bcalTruthShowers->in[j].E;
-      identifier++;
       v.push_back(bcaltruth);
     }
   }

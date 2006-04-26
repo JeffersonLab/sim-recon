@@ -71,13 +71,16 @@ class DFactory:public DFactory_base{
 		inline int GetEventCalled(void){return evnt_called;}
 		inline int CheckSourceFirst(void){return !use_factory;}
 		derror_t CopyExternal(vector<const T*> data);
+		const T* GetByIDT(oid_t id);
+		const DObject* GetByID(oid_t id){return dynamic_cast<const DObject*>(GetByIDT(id));}
+		
 #ifdef JILIO
 		int StreamToOutput(JILStream *jilstream){return StreamToOutputT(jilstream);} ///< called through virtual method of DFactory_base
 		int StreamToOutputT(JILStream *jilstream);
 		void StreamFromInput(JILStream *jilstream, vector<JILObjectRecord*> &objects, vector<void*> &v){StreamFromInputT(jilstream, objects, v);}
 		void StreamFromInputT(JILStream *jilstream, vector<JILObjectRecord*> &objects, vector<void*> &v);
 #endif //JILIO
-		
+
 	protected:
 		vector<T*> _data;
 		vector<void*>_vdata;
@@ -296,6 +299,18 @@ derror_t DFactory<T>::CopyExternal(vector<const T*> data)
 
 	return NOERROR;
 }
+
+//-------------
+// GetByID
+//-------------
+template<class T>
+const T* DFactory<T>::GetByIDT(oid_t id)
+{
+	for(unsigned int i=0;i<_data.size();i++)
+		if(_data[i]->id == id)return (const T*)_data[i];
+	return NULL;
+}
+
 
 #ifdef JILIO
 //-------------

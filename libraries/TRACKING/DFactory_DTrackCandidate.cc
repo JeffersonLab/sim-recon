@@ -128,9 +128,7 @@ derror_t DFactory_DTrackCandidate::evnt(DEventLoop *loop, int eventnumber)
 		if(!FitTrack())continue;
 	}
 	
-	// Filter out "bad" track candidates and set
-	// unique id values
-	identifier_t idcntr = 1;
+	// Filter out "bad" track candidates
 	for(unsigned int i=0; i<_data.size(); i++){
 		DTrackCandidate *trackcandidate = _data[i];
 
@@ -142,8 +140,6 @@ derror_t DFactory_DTrackCandidate::evnt(DEventLoop *loop, int eventnumber)
 				dbg_track_fit.erase(dbg_track_fit.begin()+i);
 			}
 			i--;
-		}else{
-			trackcandidate->id = idcntr++;
 		}
 	}
 
@@ -698,7 +694,7 @@ const string DFactory_DTrackCandidate::toString(void)
 
 		printnewrow();
 		
-		printcol("%d",    trackcandidate->id);
+		printcol("%x",    trackcandidate->id);
 		printcol("%d",    trackcandidate->hitid.size());
 		printcol("%3.1f", trackcandidate->x0);
 		printcol("%3.1f", trackcandidate->y0);

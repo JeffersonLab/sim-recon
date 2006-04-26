@@ -17,8 +17,6 @@ class DFactory_DTrackHit:public DFactory<DTrackHit>{
 		~DFactory_DTrackHit(){};
 		const string toString(void);
 
-		void InitCovarianceMatrix(void);
-
 	private:
 		derror_t evnt(DEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 };

@@ -19,7 +19,6 @@ derror_t DFactory_DTrack::evnt(DEventLoop *eventLoop, int eventnumber)
 	vector<const DTrackCandidate*> trackcandidates;
 	eventLoop->Get(trackcandidates);
 	
-	identifier_t idcntr = 1;
 	for(unsigned int i=0; i<trackcandidates.size(); i++){
 		const DTrackCandidate *trackcandidate = trackcandidates[i];
 		DTrack *track = new DTrack;
@@ -32,7 +31,6 @@ derror_t DFactory_DTrack::evnt(DEventLoop *eventLoop, int eventnumber)
 		track->y = 0.0;
 		track->z = trackcandidate->z_vertex;
 		track->candidateid = trackcandidate->id;
-		track->id = idcntr++;
 		
 		_data.push_back(track);
 	}
@@ -57,7 +55,7 @@ const string DFactory_DTrack::toString(void)
 
 		printnewrow();
 		
-		printcol("%d", i);
+		printcol("%x", i);
 		printcol("%+d", (int)track->q);
 		printcol("%3.1f", track->p);
 		printcol("%1.3f", track->theta);

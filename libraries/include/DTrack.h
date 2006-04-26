@@ -21,7 +21,7 @@ class DTrack:public DObject{
 		float p;				///< Total momentum in GeV/c
 		float theta,phi;	///< Inital theta and phi angles in radians
 		float x,y,z;		///< Vertex position in cm
-		identifier_t candidateid;	///< id of DTrackCandidate this came from
+		oid_t candidateid;	///< id of DTrackCandidate this came from
 };
 
 #endif // _DTrack_

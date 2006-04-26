@@ -19,7 +19,7 @@ public:
 	HDCLASSDEF(DFCALMCResponse);
 	DFCALMCResponse(){}
 	
-	DFCALMCResponse( identifier_t id, int channel, 
+	DFCALMCResponse( oid_t id, int channel, 
 					 double E, double t ) :
 		DObject( id ),
 		m_channel( channel ),

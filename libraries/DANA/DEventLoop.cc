@@ -414,3 +414,50 @@ derror_t DEventLoop::OneEvent(void)
 	return NOERROR;
 }
 
+//-------------
+// FindByID
+//-------------
+const DObject* DEventLoop::FindByID(oid_t id)
+{
+	// Loop over all factories and all objects until the one
+	// with the speficied id is found. Return NULL if it is not found
+	for(uint i=0; i<factories.size(); i++){
+		const DObject *obj = factories[i]->GetByID(id);
+		if(obj)return obj;
+	}
+
+	return NULL;
+}
+
+//-------------
+// FindOwner
+//-------------
+DFactory_base* DEventLoop::FindOwner(const DObject *obj)
+{
+	// Loop over all factories and all objects until
+	// the specified one is found. Return NULL if it is not found
+	if(!obj)return NULL;
+	for(uint i=0; i<factories.size(); i++){
+		const DObject *my_obj = factories[i]->GetByID(obj->id);
+		if(my_obj)return factories[i];
+	}
+
+	return NULL;
+}
+
+//-------------
+// FindOwner
+//-------------
+DFactory_base* DEventLoop::FindOwner(oid_t id)
+{
+	// Loop over all factories and all objects until
+	// the speficied one is found. Return NULL if it is not found
+	for(uint i=0; i<factories.size(); i++){
+		const DObject *my_obj = factories[i]->GetByID(id);
+		if(my_obj)return factories[i];
+	}
+
+	return NULL;
+}
+
+

@@ -18,7 +18,7 @@ derror_t DFactory_DFCALTruthShower::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*>
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
 	
-	identifier_t id=1;
+	oid_t id=1;
 	for(unsigned int i=0; i<PE->mult; i++){
 		s_HitView_t *hits = PE->in[i].hitView;
 		if (hits == HDDM_NULL ||

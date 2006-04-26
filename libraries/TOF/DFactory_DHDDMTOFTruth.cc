@@ -68,8 +68,6 @@ derror_t DFactory_DHDDMTOFTruth::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v
     s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
     if(!PE) return NOERROR;
 	
-    identifier_t identifier = 0;
-	
     for(unsigned int i=0; i<PE->mult; i++){
 		s_HitView_t *hits = PE->in[i].hitView;
 		if (hits == HDDM_NULL ||
@@ -90,7 +88,6 @@ derror_t DFactory_DHDDMTOFTruth::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v
 			toftruth->x           = ftofTruthPoint->x;
 			toftruth->y           = ftofTruthPoint->y;
 			toftruth->z           = ftofTruthPoint->z;
-			identifier++;
 			v.push_back(toftruth);
 		}
 	}

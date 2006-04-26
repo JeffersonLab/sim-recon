@@ -18,8 +18,8 @@ using namespace std;
 
 class Dthrown_found{
 	public:
-		identifier_t id; 			///< thrown id
-		identifier_t trackid;	///< found id
+		oid_t id; 			///< thrown id
+		oid_t trackid;	///< found id
 		int Nhits_thrown_and_found;
 };
 
@@ -38,11 +38,11 @@ derror_t DFactory_DTrackEfficiency::evnt(DEventLoop *loop, int eventnumber)
 	string TRACKHIT_SOURCE;
 	dparms.GetParameter("TRK:TRACKHIT_SOURCE", TRACKHIT_SOURCE);
 	
-	loop->Get(trackcandidates);
-	loop->Get(mctrackhits);
+	DFactory<DTrackCandidate> *factory_tc = loop->Get(trackcandidates);
+	DFactory<DMCTrackHit> *factory_mcth = loop->Get(mctrackhits);
 	loop->Get(trackhits, TRACKHIT_SOURCE.c_str());
 	loop->Get(mcthrowns);
-	loop->Get(tracks);
+	DFactory<DTrack> *factory_trk = loop->Get(tracks);
 	
 	// First, we need to loop over all found tracks and figure out
 	// which thrown track (if any) they correspond to. We record the
@@ -53,22 +53,23 @@ derror_t DFactory_DTrackEfficiency::evnt(DEventLoop *loop, int eventnumber)
 	// To make it easier below, this is stored in such a way that
 	// it can be indexed via thrown id. This is done by
 	// using the special Dthrown_found class that includes an
-	// identifier_t id member so we can use GetByID. (Actually,
+	// oid_t id member so we can use GetByID. (Actually,
 	// since it's possible to have more than one found track
 	// correponding to the same thrown track, we use GetVectorByID
 	// and pick the one with the most hits)
 	vector<const Dthrown_found*> thrown_founds;
 	for(unsigned int i=0;i<tracks.size();i++){
 		const DTrack *track = tracks[i];
-		const DTrackCandidate *trackcandidate = GetByID(trackcandidates, track->candidateid);
+		const DTrackCandidate *trackcandidate = factory_tc->GetByIDT(track->candidateid);
+		if(!trackcandidate)continue;
 
 		// Loop over hits on this track. The hit ids for DMCTrackHit
 		// and DTrackHit:MC are one-to-one so just use the hit ids
 		// to reference the DMCTrackHit
 		int hist[10] = {0,0,0,0,0,0,0,0,0,0};
-		vector<identifier_t> hitid = trackcandidate->hitid;
+		vector<oid_t> hitid = trackcandidate->hitid;
 		for(unsigned int k=0; k<hitid.size(); k++){
-			const DMCTrackHit *mctrackhit = GetByID(mctrackhits, hitid[k]);
+			const DMCTrackHit *mctrackhit = factory_mcth->GetByIDT(hitid[k]);
 			if(!mctrackhit)continue;
 			if(!mctrackhit->primary)continue;
 			if((mctrackhit->system&&(SYS_CDC|SYS_FDC)) == 0)continue;
@@ -114,14 +115,18 @@ derror_t DFactory_DTrackEfficiency::evnt(DEventLoop *loop, int eventnumber)
 			// filled with) corresponds to the position of the thrown
 			// track in HDDM. This seems to be true, though I'm not
 			// sure if it's guaranteed.
-			if(mctrackhit->track == mcthrown->id)trkeff->Nhits_thrown++;
+			if(mctrackhit->track == (int)i+1)trkeff->Nhits_thrown++;
 		}
 
 		// Find reconstructed track (if any) corresponding to this one
 		// There may be several reconstructed tracks corresponding to
 		// this. Pick the one with the most hits from this track.
 		// (Should we use the largest fraction of hits?)
-		vector<const Dthrown_found*> my_thrown_founds = GetVectorByID(thrown_founds, mcthrown->id);
+		vector<const Dthrown_found*> my_thrown_founds;
+		for(uint j=0; j<thrown_founds.size(); j++){
+			if(thrown_founds[j]->id == mcthrown->id)my_thrown_founds.push_back(thrown_founds[j]);
+		}		
+		
 		const Dthrown_found *my_thrown_found = NULL;
 		for(unsigned int j=0; j<my_thrown_founds.size(); j++){
 			if(my_thrown_found){
@@ -136,10 +141,10 @@ derror_t DFactory_DTrackEfficiency::evnt(DEventLoop *loop, int eventnumber)
 		// Fill in some values. Use defaults if no track found.
 		trkeff->Nhits_thrown_and_found = 0;
 		trkeff->Nhits_found = 0;
-		trkeff->trackid = -1;
+		trkeff->trackid = 0;
 		if(my_thrown_found){
-			const DTrack *track = GetByID(tracks, my_thrown_found->trackid); // this HAS to succeed
-			const DTrackCandidate *trackcandidate = GetByID(trackcandidates, track->candidateid);
+			const DTrack *track = factory_trk->GetByIDT(my_thrown_found->trackid); // this HAS to succeed
+			const DTrackCandidate *trackcandidate = factory_tc->GetByIDT(track->candidateid);
 			trkeff->Nhits_thrown_and_found = my_thrown_found->Nhits_thrown_and_found;
 			trkeff->Nhits_found = trackcandidate->hitid.size();
 			trkeff->trackid = track->id;
@@ -177,13 +182,13 @@ const string DFactory_DTrackEfficiency::toString(void)
 		
 		printnewrow();
 		
-		printcol("%d", trkeff->id);
+		printcol("%x", trkeff->id);
 		printcol("%d", trkeff->Nhits_thrown);
 		printcol("%d", trkeff->Nhits_found);
 		printcol("%d", trkeff->Nhits_thrown_and_found);
 		printcol("%3.0f%%", 100.0*(float)trkeff->Nhits_thrown_and_found/(float)trkeff->Nhits_thrown);
 		printcol("%s", trkeff->fittable ? "Y":"N");
-		printcol("%d", trkeff->trackid);
+		printcol("%x", trkeff->trackid);
 
 		printrow();
 	}

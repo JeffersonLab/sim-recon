@@ -40,7 +40,7 @@ const string DFactory_DHDDMTOFHit::toString(void)
 		printcol("%d",		hit->end);
 		printcol("%1.3f",	hit->t);
 		printcol("%1.3f",	hit->dE);
-		printcol("%d",		hit->id);
+		printcol("%x",		hit->id);
 		printrow();
 	}
 
@@ -65,8 +65,6 @@ derror_t DFactory_DHDDMTOFHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
     s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
     if(!PE) return NOERROR;
 	
-    identifier_t identifier = 0;
-
 	for(unsigned int i=0; i<PE->mult; i++){
 		s_HitView_t *hits = PE->in[i].hitView;
 		if (hits == HDDM_NULL ||
@@ -89,7 +87,6 @@ derror_t DFactory_DHDDMTOFHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 				tofhit->end		= 0;
 				tofhit->t		= ftofLeftHit->t;
 				tofhit->dE		= ftofLeftHit->dE;
-				tofhit->id		= identifier++;
 				v.push_back(tofhit);
 			}
 			 
@@ -103,7 +100,6 @@ derror_t DFactory_DHDDMTOFHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 				tofhit->end		= 0;
 				tofhit->t		= ftofRightHit->t;
 				tofhit->dE		= ftofRightHit->dE;
-				tofhit->id		= identifier++;
 				v.push_back(tofhit);
 			}
 		}

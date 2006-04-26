@@ -17,7 +17,7 @@ class DFCALHit:public DObject{
 		HDCLASSDEF(DFCALHit);
 		DFCALHit(){}
 		
-	DFCALHit( identifier_t id, 
+	DFCALHit( oid_t id, 
 			  float x, float y,
 			  float E, float t ) :
 		DObject( id ),

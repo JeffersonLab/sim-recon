@@ -51,7 +51,6 @@ derror_t DFactory_DMCTrackHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	// _data will be overwritten by the contents of v later by DEvent::Get()
 	// but the contents will be identical. This somewhat convoluted way
 	// of doing things is needed to implement a generic API for event sources.
-	identifier = 0;
 	GetCDCHits(hddm_s);
 	GetFDCHits(hddm_s);
 	GetBCALHits(hddm_s);
@@ -63,15 +62,11 @@ derror_t DFactory_DMCTrackHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	// sort hits by z
 	sort(_data.begin(), _data.end(), MCTrackHitSort_C);
 	
-	// Set id values of all hits to be unique. At the same time ...
 	// Some systems will use negative phis. Force them all to
 	// be in the 0 to 2pi range
-	identifier_t idcntr = 1;
 	for(unsigned int i=0;i<_data.size();i++){
 		DMCTrackHit *mctrackhit = _data[i];
 		if(mctrackhit->phi<0.0)mctrackhit->phi += 2.0*M_PI;
-		mctrackhit->id = idcntr++;
-		//mctrackhit->InitCovarianceMatrix();
 	}
 	
 	// Copy into v
@@ -104,7 +99,6 @@ derror_t DFactory_DMCTrackHit::GetCDCHits(s_HDDM_t *hddm_s)
 			mctrackhit->track		= cdctruthpoint->track;
 			mctrackhit->primary	= cdctruthpoint->primary;
 			mctrackhit->system	= SYS_CDC;
-			mctrackhit->id			= identifier++;
 			_data.push_back(mctrackhit);
 		}
 	}
@@ -144,7 +138,6 @@ derror_t DFactory_DMCTrackHit::GetFDCHits(s_HDDM_t *hddm_s)
 				mctrackhit->track		= truth->track;
 				mctrackhit->primary	= truth->primary;
 				mctrackhit->system	= SYS_FDC;
-				mctrackhit->id			= identifier++;
 				_data.push_back(mctrackhit);
 			}
 		}
@@ -178,7 +171,6 @@ derror_t DFactory_DMCTrackHit::GetBCALHits(s_HDDM_t *hddm_s)
 			mctrackhit->track		= bcalTruthShower->track;
 			mctrackhit->primary	= bcalTruthShower->primary;
 			mctrackhit->system	= SYS_BCAL;
-			mctrackhit->id			= identifier++;
 			_data.push_back(mctrackhit);
 		}
 	}
@@ -213,7 +205,6 @@ derror_t DFactory_DMCTrackHit::GetTOFHits(s_HDDM_t *hddm_s)
 			mctrackhit->track		= ftoftruthpoint->track;
 			mctrackhit->primary	= ftoftruthpoint->primary;
 			mctrackhit->system	= SYS_TOF;
-			mctrackhit->id			= identifier++;
 			_data.push_back(mctrackhit);
 		}
 	}
@@ -257,7 +248,6 @@ derror_t DFactory_DMCTrackHit::GetFCALHits(s_HDDM_t *hddm_s)
 			mctrackhit->track		= fcalTruthShower->track;
 			mctrackhit->primary	= fcalTruthShower->primary;
 			mctrackhit->system	= SYS_TOF;
-			mctrackhit->id			= identifier++;
 			_data.push_back(mctrackhit);
 		}
 	}
@@ -290,7 +280,7 @@ const string DFactory_DMCTrackHit::toString(void)
 
 		printnewrow();
 		
-		printcol("%d", mctrackhit->id);
+		printcol("%x", mctrackhit->id);
 		printcol("%3.1f", mctrackhit->r);
 		printcol("%1.3f", mctrackhit->phi);
 		printcol("%3.1f", mctrackhit->z);

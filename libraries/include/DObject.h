@@ -11,7 +11,7 @@
 #include "derror.h"
 
 
-typedef int identifier_t;
+typedef unsigned long oid_t;
 
 
 class DObject{
@@ -22,12 +22,15 @@ class DObject{
 
 	public:
 	
-		DObject(){}
-		DObject( identifier_t aId ) : id( aId ) {}
+		DObject(){id = (oid_t)this;}
+		DObject( oid_t aId ) : id( aId ) {}
 
 		virtual ~DObject(){}
+		
+		template<typename T>
+		bool IsA(const T *t){return dynamic_cast<const T*>(this)!=0L;}
 
-		identifier_t id;
+		oid_t id;
 		
 };
 

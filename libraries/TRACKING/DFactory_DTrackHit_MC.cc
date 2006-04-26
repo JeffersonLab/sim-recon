@@ -27,7 +27,9 @@ derror_t DFactory_DTrackHit_MC::evnt(DEventLoop *loop, int eventnumber)
 	vector<const DMCTrackHit*> dmctrackhits;
 	loop->Get(dmctrackhits);
 	for(unsigned int i=0;i<dmctrackhits.size(); i++){
-		_data.push_back(new Dtrk_hit(dmctrackhits[i]));
+		Dtrk_hit *t = new Dtrk_hit(dmctrackhits[i]);
+		t->InitCovarianceMatrix();
+		_data.push_back(t);
 	}
 
 	return NOERROR;
@@ -42,13 +44,14 @@ const string DFactory_DTrackHit_MC::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 	
-	printheader("id:    x:     y:     z:    r:    phi:   system:");
+	printheader("row:    id:    x:     y:     z:    r:    phi:   system:");
 
 	for(unsigned int i=0; i<_data.size(); i++){
 		DTrackHit *trackhit = _data[i];
 
 		printnewrow();
-		printcol("%d",	trackhit->id);
+		printcol("%d",i);
+		printcol("%x",	trackhit->id);
 		printcol("%1.3f",	trackhit->x);
 		printcol("%1.3f",	trackhit->y);
 		printcol("%1.3f",	trackhit->z);

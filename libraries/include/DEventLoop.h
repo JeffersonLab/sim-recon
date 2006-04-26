@@ -60,6 +60,11 @@ class DEventLoop{
 		inline void AddToCallStack(call_stack_t &cs){call_stack.push_back(cs);}
 		inline vector<call_stack_t> GetCallStack(void){return call_stack;}
 		void PrintCallStack(void);
+		
+		const DObject* FindByID(oid_t id);
+		template<class T> const T* FindByID(oid_t id);
+		DFactory_base* FindOwner(const DObject *t);
+		DFactory_base* FindOwner(oid_t id);
 
 	private:
 		DEvent event;
@@ -214,6 +219,39 @@ derror_t DEventLoop::GetFromSource(vector<const T*> &t, const char *tag, DFactor
 	/// value for factory set.
 	
 	return event.GetObjects(t, tag, factory);
+}
+
+//-------------
+// FindByID
+//-------------
+template<class T> 
+const T* DEventLoop::FindByID(oid_t id)
+{
+	/// This is a templated method that can be used in place
+	/// of the non-templated FindByID(oid_t) method if one knows
+	/// the class of the object with the specified id.
+	/// This method is faster than calling the non-templated
+	/// FindByID and dynamic_cast-ing the DObject since
+	/// this will only search the objects of factories that
+	/// produce the desired data type.
+	/// This method will cast the DObject pointer to one
+	/// of the specified type. To use this method,
+	/// a type is specified in the call as follows:
+	///
+	/// const DMyType *t = loop->FindByID<DMyType>(id);
+	
+	// Loop over factories looking for ones that provide
+	// specified data type.
+	for(uint i=0; i<factories.size(); i++){
+		if(factories[i]->className() != T::className())continue;
+
+		// This factory provides data of type T. Search it for
+		// the object with the specified id.
+		const DObject *my_obj = factories[i]->GetByID(id);
+		if(my_obj)return dynamic_cast<const T*>(my_obj);
+	}
+
+	return NULL;
 }
 
 

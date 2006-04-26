@@ -23,7 +23,7 @@ class DTrackEfficiency:public DObject{
 		int Nhits_thrown_unused;		///< Nthrown - Nhits_thrown_and_found
 		int fittable;						///< non-zero if more than 3 pimary hits
 
-		identifier_t trackid;			///< id of DTrack (if any)
+		oid_t trackid;			///< id of DTrack (if any)
 };
 
 #endif // _DTrackEfficiency_

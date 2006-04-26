@@ -17,6 +17,8 @@
 class DTrackHit:public DObject{
 	public:
 		HDCLASSDEF(DTrackHit);
+		
+		void InitCovarianceMatrix(void);
 
 		float x,y,z,r,phi;
 		DetectorSystem_t system;

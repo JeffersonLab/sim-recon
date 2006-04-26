@@ -79,6 +79,9 @@ class DFactory_base:public DEventProcessor{
 		/// The data tag string associated with this factory. Most factories
 		/// will not overide this.
 		virtual inline const char* Tag(void){return "";}
+		
+		/// Find object pointer in factory's _data vector and return it
+		virtual const DObject* GetByID(oid_t id)=0;
 
 #ifdef JILIO		
 		/// Access method to have the DFactory template class stream
