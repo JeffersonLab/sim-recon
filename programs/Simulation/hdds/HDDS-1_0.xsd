@@ -840,8 +840,8 @@
         <samples axis="x" n="351" bounds="-340 10" unit_length="cm">
           <samples axis="z" n="1611" bounds="-10 1600" unit_length="cm">
             <samples axis="y" n="16" bounds="0 -1.5" unit_length="cm"/>
-          </sequence>
-        </sequence>
+          </samples>
+        </samples>
       </grid>
       <grid type="cartesian">
         <samples axis="x" n="351" bounds="-340 10" 
@@ -849,8 +849,8 @@
           <samples axis="z" n="1611" bounds="-10 1600"
                                      sense="reverse" unit_length="cm">
             <samples axis="y" n="16" bounds="0 -1.5" unit_length="cm"/>
-          </sequence>
-        </sequence>
+          </samples>
+        </samples>
       </grid>
       <grid type="cartesian">
         <samples axis="x" n="351" bounds="-340 10" unit_length="cm">

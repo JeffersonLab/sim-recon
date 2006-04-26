@@ -40,8 +40,8 @@
  */
 #define FIX_XERCES_getElementById_BUG true
 
-#define X(XString) XString.unicode_str()
-#define S(XString) XString.c_str()
+#define X(str) XString(str).unicode_str()
+#define S(str) str.c_str()
 
 xercesc::DOMDocument* parseInputDocument(const XString& xmlFile, bool keep)
 {
@@ -74,20 +74,18 @@ xercesc::DOMDocument* parseInputDocument(const XString& xmlFile, bool keep)
    }
    catch (const xercesc::XMLException& toCatch)
    {
-      XString message(toCatch.getMessage());
       std::cerr
            << "\nparseInputDocument: Error during parsing: '" << xmlFile
 	   << "'\n" << "Exception message is:  \n"
-           << S(message) << "\n" << std::endl;
+           << toCatch.getMessage() << "\n" << std::endl;
       return 0;
    }
    catch (const xercesc::DOMException& toCatch)
    {
-      XString message(toCatch.msg);
       std::cerr
            << "\nXParsers: Error during parsing: '" << xmlFile << "'\n"
            << "Exception message is:  \n"
-           << S(message) << "\n" << std::endl;
+           << toCatch.msg << "\n" << std::endl;
       xercesc::XMLPlatformUtils::Terminate();
       return 0;
    }
@@ -111,9 +109,8 @@ xercesc::DOMDocument* parseInputDocument(const XString& xmlFile, bool keep)
 
 xercesc::DOMDocument* buildDOMDocument(const XString& xmlFile, bool keep)
 {
-   XString lsS("LS");
    xercesc::DOMImplementation *impl =
-         xercesc:: DOMImplementationRegistry::getDOMImplementation(X(lsS));
+         xercesc:: DOMImplementationRegistry::getDOMImplementation(X("LS"));
    static xercesc::DOMBuilder* scratchBuilder=0;
    xercesc::DOMBuilder* builder;
    if (keep)
@@ -161,13 +158,11 @@ xercesc::DOMDocument* buildDOMDocument(const XString& xmlFile, bool keep)
 #endif
    }
    catch (const xercesc::XMLException& toCatch) {
-      XString message(toCatch.getMessage());
-      std::cout << "Exception message is: \n" << S(message) << "\n";
+      std::cout << "Exception message is: \n" << toCatch.getMessage() << "\n";
       return 0;
    }
    catch (const xercesc::DOMException& toCatch) {
-      XString message(toCatch.msg);
-      std::cout << "Exception message is: \n" << S(message) << "\n";
+      std::cout << "Exception message is: \n" << toCatch.msg << "\n";
       return 0;
    }
    catch (...) {
