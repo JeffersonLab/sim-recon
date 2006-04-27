@@ -23,6 +23,7 @@ using namespace std;
 #include "DQuickFit.h"
 #include "DMagneticFieldStepper.h"
 #include "DFactory_DTrackCandidate.h"
+#include "DFactory_DMCTrackHit.h"
 #include "DMCThrown.h"
 
 extern TCanvas *maincanvas;
@@ -148,7 +149,7 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	vector<const DMCTrackHit*> mctrackhits;
 	vector<const DMCThrown*> mcthrowns;
 	eventLoop->Get(trackhits, TRACKHIT_SOURCE.c_str());
-	eventLoop->Get(mctrackhits); // just in case we need it later
+	DFactory<DMCTrackHit> *fac_mcth = eventLoop->Get(mctrackhits); // just in case we need it later
 	eventLoop->Get(mcthrowns); // used for straight tracks
 	
 	// Loop over hits creating markers for all 3 views
@@ -213,7 +214,7 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 		// and use it to color the hits by thrown track
 		int color = kBlack;
 		if(TRACKHIT_SOURCE == "MC"){
-			const DMCTrackHit* mctrackhit = GetByID(mctrackhits, trackhit->id);
+			const DMCTrackHit* mctrackhit = fac_mcth->GetByIDT(trackhit->id);
 			if(mctrackhit){
 				if(mctrackhit->track>0)color = colors[mctrackhit->track%ncolors];
 			}
