@@ -28,7 +28,7 @@ derror_t DFactory_DTrackHit_MC::evnt(DEventLoop *loop, int eventnumber)
 	loop->Get(dmctrackhits);
 	for(unsigned int i=0;i<dmctrackhits.size(); i++){
 		Dtrk_hit *t = new Dtrk_hit(dmctrackhits[i]);
-		t->InitCovarianceMatrix();
+		//t->InitCovarianceMatrix();
 		_data.push_back(t);
 	}
 
