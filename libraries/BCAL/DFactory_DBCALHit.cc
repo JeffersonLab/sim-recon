@@ -85,7 +85,7 @@ const string DFactory_DBCALHit::toString(void)
 	GetNrows();
 	if(_data.size()==0)return string(); // don't print anything if we have no data!
 
-	printheader("row:   module:  layer:  sector:   end:     E(GeV):   t(ns):");
+	printheader("row:   module:  layer:  sector:         end:     E(GeV):   t(ns):");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DBCALHit *bcalhit = _data[i];

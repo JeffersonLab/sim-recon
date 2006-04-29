@@ -1768,27 +1768,21 @@ const string DFactory_DBCALShower::toString(void)
 	if(_data.size()<=0)
         return string(); // don't print anything if we have no data!
 
-  printheader("  x:    y:    z:    t:   E_seen:    E_corr:");
+  printheader("row:      x:      y:      z:       t:     E_seen:     E_corr:");
 
   for(unsigned int i = 0; i < _data.size(); i++) {
-    DBCALShower *s = _data[i];
+		DBCALShower *s = _data[i];
     
-
-//////////////////////////////////////////
-   printf("%f  %f  %f  %f  %f  %f\n",s->x,s->y,s->z,s->t,s->E,s->Ecorr);
-// Commented out until all core dumps in this printing method are gone
-//      printnewrow();
-//      printcol("%6.3f",	s->x);
-//      printcol("%6.3f",	s->y);
-//      printcol("%6.3f",	s->z);
-//      printcol("%6.3f",	s->t);
-//      printcol("%6.3f",	s->E);
-//      printcol("%6.3f",	s->Ecorr);
-//      printrow();
-  }
-
-  printnewrow();
-  printrow();
+		printnewrow();
+		printcol("%d",	i);
+		printcol("%5.2f",	s->x);
+		printcol("%5.2f",	s->y);
+		printcol("%5.2f",	s->z);
+		printcol("%5.3f",	s->t);
+		printcol("%5.3f",	s->E);
+		printcol("%5.3f",	s->Ecorr);
+		printrow();
+	}
 
 	return _table;
 
