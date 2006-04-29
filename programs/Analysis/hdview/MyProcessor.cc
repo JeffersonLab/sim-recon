@@ -155,7 +155,7 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	// Loop over hits creating markers for all 3 views
 	for(unsigned int i=0;i<trackhits.size();i++){
 		const DTrackHit *trackhit = trackhits[i];
-		
+
 		// Skip hits from some detectors?
 		switch(trackhit->system){
 			case SYS_CDC:	break;		// CDC
@@ -217,6 +217,8 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 			const DMCTrackHit* mctrackhit = fac_mcth->GetByIDT(trackhit->id);
 			if(mctrackhit){
 				if(mctrackhit->track>0)color = colors[mctrackhit->track%ncolors];
+			}else{
+				cout<<__FILE__<<":"<<__LINE__<<" Unable to find mctrackhit!"<<endl;
 			}
 		}
 		
@@ -237,11 +239,11 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 		markers.push_back(side);
 		markers.push_back(front);
 	}
-	
+
 	// Draw all thrown neutral particles as straight tracks
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
 		const DMCThrown *t = mcthrowns[i];
-		if(t->q != 0)return NOERROR;
+		if(t->q != 0)continue;
 		
 		TVector3 vertex(t->x, t->y, t->z);
 		double px = t->p*cos(t->phi)*sin(t->theta);
