@@ -149,9 +149,12 @@ template<typename T>
 void DFactory_base::printcol(const char *format, T val)
 {
 	/// Print a formatted value to "str". Used by Print()
-	char str[256];
-	sprintf(str, format, val);
-	_row.replace(_columns[_icol++]-strlen(str), strlen(str), str);
+	char mystr[256]="";
+	sprintf(mystr, format, val);
+	ulong pos = _columns[_icol]-strlen(mystr);
+	if((ulong)_columns[_icol]<strlen(mystr))pos = 0;
+	_row.replace(pos, strlen(mystr), mystr);
+	_icol++;
 }
 
 #endif // _DFACTORY_BASE_H_
