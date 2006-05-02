@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <vector>
+#include <map>
 using namespace std;
 
 #include "DFactory_DTrackEfficiency.h"
@@ -66,7 +67,8 @@ derror_t DFactory_DTrackEfficiency::evnt(DEventLoop *loop, int eventnumber)
 		// Loop over hits on this track. The hit ids for DMCTrackHit
 		// and DTrackHit:MC are one-to-one so just use the hit ids
 		// to reference the DMCTrackHit
-		int hist[10] = {0,0,0,0,0,0,0,0,0,0};
+		map<oid_t,int> hist;
+		//int hist[10] = {0,0,0,0,0,0,0,0,0,0};
 		vector<oid_t> hitid = trackcandidate->hitid;
 		for(unsigned int k=0; k<hitid.size(); k++){
 			const DMCTrackHit *mctrackhit = factory_mcth->GetByIDT(hitid[k]);
@@ -74,22 +76,35 @@ derror_t DFactory_DTrackEfficiency::evnt(DEventLoop *loop, int eventnumber)
 			if(!mctrackhit->primary)continue;
 			if((mctrackhit->system&&(SYS_CDC|SYS_FDC)) == 0)continue;
 
-			int trackno = mctrackhit->track;
-			if(trackno>=0 && trackno<10)hist[trackno]++;
+			if(hist.find(mctrackhit->track)==hist.end())
+				hist[mctrackhit->track]=1;
+			else
+				hist[mctrackhit->track]++;
 		}
 		
-		// The track number for which this track had the most hits 
-		// in common is the thrown track corresponding to this found one. 
-		int thrownid = 0;
-		for(int j=1; j<10; j++){
-			if(hist[j]>hist[thrownid])thrownid=j;
+		// At this point the "hist" map is filled but is indexed by the GEANT
+		// track number. We need to find the DANA id of the DMCThrown object
+		// corresponding to the track number in hist with the most hits.
+		// First, we get the GEANT track number, then we have to assume that
+		// the order of the DMCThrown objects is by track number since they
+		// do not have the track info in them anywhere.
+		int trackno = 0;
+		map<oid_t,int>::const_iterator iter;
+		for(iter=hist.begin(); iter!=hist.end(); iter++){
+			if(trackno){
+				if(iter->second > hist[trackno])trackno = iter->first;
+			}else{
+				trackno = iter->first;
+			}
 		}
+		oid_t thrownid = 0;
+		if(mcthrowns.size()>=(unsigned int)trackno)thrownid = mcthrowns[trackno-1]->id;
 		
 		// Remember this result
 		Dthrown_found *tf = new Dthrown_found;
 		thrown_founds.push_back(tf);
-		tf->id = thrownid;
-		tf->Nhits_thrown_and_found = hist[thrownid];
+		tf->id = thrownid; // thrown track's DANA id
+		tf->Nhits_thrown_and_found = hist[trackno];
 		tf->trackid = track->id;
 	}
 	
