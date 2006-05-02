@@ -238,7 +238,7 @@ derror_t DFactory_DMCTrackHit::GetFCALHits(s_HDDM_t *hddm_s)
 		
 		s_FcalTruthShowers_t *fcalTruthShowers = hits->forwardEMcal->fcalTruthShowers;
 		s_FcalTruthShower_t *fcalTruthShower = fcalTruthShowers->in;
-		for(unsigned int j=0; j<fcalTruthShowers->mult; j++, fcalTruthShowers++){
+		for(unsigned int j=0; j<fcalTruthShowers->mult; j++, fcalTruthShower++){
 			float x = fcalTruthShower->x;
 			float y = fcalTruthShower->y;
 			DMCTrackHit *mctrackhit = new DMCTrackHit;
