@@ -32,7 +32,7 @@
 
 #include <fstream>
 
-#define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
+#define qBr2p 0.000271  // conversion for converting q*B*r to GeV/c
 
 using std::ifstream;
 
