@@ -126,6 +126,16 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 		default:
 			cout<<__FILE__<<":"<<__LINE__<<" Unknown display type ("<<mmf->GetDisplayType()<<")"<<endl;
 	}
+	
+	// Dump Quickfit object for selected track
+	Int_t option = mmf->GetRadioOption();
+	if(option>=1 && option<=(int)dbg_track_fit.size()){
+		cout<<"SEED FIT:"<<endl;
+		dbg_seed_fit[option-1]->Print();
+		cout<<"TRACK FIT:"<<endl;
+		dbg_track_fit[option-1]->Print();
+		cout<<endl<<endl;
+	}
 
 	return NOERROR;
 }

@@ -11,7 +11,7 @@
 #include "DEventLoop.h"
 
 
-DApplication *dapp = NULL;
+extern DApplication *dapp;
 DEventLoop *eventloop = NULL;
 MyProcessor *myproc = NULL;
 MyMainFrame *mmf = NULL;
