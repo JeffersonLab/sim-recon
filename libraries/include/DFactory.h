@@ -301,7 +301,7 @@ derror_t DFactory<T>::CopyExternal(vector<const T*> data)
 }
 
 //-------------
-// GetByID
+// GetByIDT
 //-------------
 template<class T>
 const T* DFactory<T>::GetByIDT(oid_t id)
