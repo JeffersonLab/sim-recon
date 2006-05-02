@@ -358,7 +358,7 @@ derror_t DQuickFit::FillTrackParams(void)
 	
 	// Up to now, the fit has assumed a forward going particle. In
 	// other words, if the particle is going backwards, the helix does
-	// actually go still go through the points, but only if extended
+	// actually still go through the points, but only if extended
 	// backward in time. We use the average z of the hits compared
 	// to the reconstructed vertex to determine if it was back-scattered.
 	if(z_mean<z_vertex){
