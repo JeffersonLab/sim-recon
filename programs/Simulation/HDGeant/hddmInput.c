@@ -198,7 +198,6 @@ int storeInput (int runNo, int eventNo, int ntracks)
 		input buffer "thisInputEvent" if it exists and creates a new
 		one. When an external generator is used, the thisInputEvent
 		buffer is kept unmodified and this routine is never called.*/
-printf("%s:%d\n",__FILE__,__LINE__);
    s_PhysicsEvents_t* pes;
    s_Reactions_t* rs;
    s_Vertices_t* vs;
