@@ -58,58 +58,66 @@ MyMainFrame::MyMainFrame(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p,w,
 	int canvas_size = w/2;
 	TGHorizontalFrame *middleframe = new TGHorizontalFrame(this, w, canvas_size);
 	AddFrame(middleframe, defHintsX);
+
+		// Left side - middle frame
+		TGVerticalFrame *leftmiddleframe = new TGVerticalFrame(middleframe, w/3, canvas_size);
+		middleframe->AddFrame(leftmiddleframe, defHints);
 	
-		// Statistics frame
-		TGGroupFrame *statsframe = new TGGroupFrame(middleframe,"Stats", kHorizontalFrame);
-		middleframe->AddFrame(statsframe, noHints);
-			TGVerticalFrame *statleft = new TGVerticalFrame(statsframe, 100, canvas_size);
-			TGVerticalFrame *statright = new TGVerticalFrame(statsframe, 100, canvas_size);
-			statsframe->AddFrame(statleft, noHints);
-			statsframe->AddFrame(statright, noHints);
+			// Statistics frame
+			TGGroupFrame *statsframe = new TGGroupFrame(leftmiddleframe,"Stats", kHorizontalFrame);
+			leftmiddleframe->AddFrame(statsframe, defHintsX);
+				TGVerticalFrame *statleft = new TGVerticalFrame(statsframe, 100, canvas_size);
+				TGVerticalFrame *statright = new TGVerticalFrame(statsframe, 100, canvas_size);
+				statsframe->AddFrame(statleft, noHints);
+				statsframe->AddFrame(statright, noHints);
 			
-			TGLabel *spacerL = new TGLabel(statleft, " ");
-			TGLabel *spacerR = new TGLabel(statright, " ");
+				TGLabel *spacerL = new TGLabel(statleft, " ");
+				TGLabel *spacerR = new TGLabel(statright, " ");
 
-			TGLabel *filelab = new TGLabel(statleft, "File:");
-						filename = new TGLabel(statright, "----- <none> -----");
-			TGLabel *eventlab = new TGLabel(statleft, "Event:");
-			         eventno = new TGLabel(statright, "--------");
+				TGLabel *filelab = new TGLabel(statleft, "File:");
+							filename = new TGLabel(statright, "----- <none> -----");
+				TGLabel *eventlab = new TGLabel(statleft, "Event:");
+				         eventno = new TGLabel(statright, "--------");
 
-			TGLabel *foundlab = new TGLabel(statleft, "Found Tracks:");
-			         foundtrks = new TGLabel(statright, "--------");
-			TGLabel *thrownlab = new TGLabel(statleft, "Thrown Tracks:");
-			         throwntrks = new TGLabel(statright, "--------");
-			TGLabel *correctlab = new TGLabel(statleft, "Fraction ID'ed:");
-			         correcttrks = new TGLabel(statright, "--------");
+				TGLabel *foundlab = new TGLabel(statleft, "Found Tracks:");
+				         foundtrks = new TGLabel(statright, "--------");
+				TGLabel *thrownlab = new TGLabel(statleft, "Thrown Tracks:");
+				         throwntrks = new TGLabel(statright, "--------");
+				TGLabel *correctlab = new TGLabel(statleft, "Fraction ID'ed:");
+				         correcttrks = new TGLabel(statright, "--------");
 
-			TGLabel *tot_foundlab = new TGLabel(statleft, "Tot. Found Tracks:");
-			         tot_foundtrks = new TGLabel(statright, "--------");
-			TGLabel *tot_thrownlab = new TGLabel(statleft, "Tot. Thrown Tracks:");
-			         tot_throwntrks = new TGLabel(statright, "--------");
-			TGLabel *tot_correctlab = new TGLabel(statleft, "Tot. Fraction ID'ed:");
-			         tot_correcttrks = new TGLabel(statright, "--------");
+				TGLabel *tot_foundlab = new TGLabel(statleft, "Tot. Found Tracks:");
+				         tot_foundtrks = new TGLabel(statright, "--------");
+				TGLabel *tot_thrownlab = new TGLabel(statleft, "Tot. Thrown Tracks:");
+				         tot_throwntrks = new TGLabel(statright, "--------");
+				TGLabel *tot_correctlab = new TGLabel(statleft, "Tot. Fraction ID'ed:");
+				         tot_correcttrks = new TGLabel(statright, "--------");
 	
-			statleft->AddFrame(filelab, defHintsRight);
-			statleft->AddFrame(eventlab, defHintsRight);
-			statleft->AddFrame(spacerL, defHintsRight);
-			statleft->AddFrame(foundlab, defHintsRight);
-			statleft->AddFrame(thrownlab, defHintsRight);
-			statleft->AddFrame(correctlab, defHintsRight);
-			statleft->AddFrame(spacerL, defHintsRight);
-			statleft->AddFrame(tot_foundlab, defHintsRight);
-			statleft->AddFrame(tot_thrownlab, defHintsRight);
-			statleft->AddFrame(tot_correctlab, defHintsRight);
+				statleft->AddFrame(filelab, defHintsRight);
+				statleft->AddFrame(eventlab, defHintsRight);
+				statleft->AddFrame(spacerL, defHintsRight);
+				statleft->AddFrame(foundlab, defHintsRight);
+				statleft->AddFrame(thrownlab, defHintsRight);
+				statleft->AddFrame(correctlab, defHintsRight);
+				statleft->AddFrame(spacerL, defHintsRight);
+				statleft->AddFrame(tot_foundlab, defHintsRight);
+				statleft->AddFrame(tot_thrownlab, defHintsRight);
+				statleft->AddFrame(tot_correctlab, defHintsRight);
 
-			statright->AddFrame(filename, defHintsLeft);
-			statright->AddFrame(eventno, defHintsLeft);
-			statright->AddFrame(spacerR, defHintsLeft);
-			statright->AddFrame(foundtrks, defHintsLeft);
-			statright->AddFrame(throwntrks, defHintsLeft);
-			statright->AddFrame(correcttrks, defHintsLeft);
-			statright->AddFrame(spacerR, defHintsLeft);
-			statright->AddFrame(tot_foundtrks, defHintsLeft);
-			statright->AddFrame(tot_throwntrks, defHintsLeft);
-			statright->AddFrame(tot_correcttrks, defHintsLeft);
+				statright->AddFrame(filename, defHintsLeft);
+				statright->AddFrame(eventno, defHintsLeft);
+				statright->AddFrame(spacerR, defHintsLeft);
+				statright->AddFrame(foundtrks, defHintsLeft);
+				statright->AddFrame(throwntrks, defHintsLeft);
+				statright->AddFrame(correcttrks, defHintsLeft);
+				statright->AddFrame(spacerR, defHintsLeft);
+				statright->AddFrame(tot_foundtrks, defHintsLeft);
+				statright->AddFrame(tot_throwntrks, defHintsLeft);
+				statright->AddFrame(tot_correcttrks, defHintsLeft);
+
+			// Thrown/Found values frame
+			TGGroupFrame *tfvalsframe = new TGGroupFrame(leftmiddleframe,"Thrown/Found", kHorizontalFrame);
+			leftmiddleframe->AddFrame(tfvalsframe, noHints);
 
 		// Main Canvas
 		TRootEmbeddedCanvas *emcanvas = new TRootEmbeddedCanvas("Main Canvas",middleframe,canvas_size, canvas_size, kSunkenFrame, GetWhitePixel());
@@ -119,7 +127,7 @@ MyMainFrame::MyMainFrame(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p,w,
 
 		// Options frame
 		optionsframe = new TGButtonGroup(middleframe, "Seed", kVerticalFrame);
-		middleframe->AddFrame(optionsframe, defHints);
+		middleframe->AddFrame(optionsframe, noHints);
 
 
 	//------------------ Bottom Frame ------------------
