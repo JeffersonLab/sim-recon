@@ -47,7 +47,9 @@ class DEventProcessor_TrackHists:public DEventProcessor{
 		TH1F *stats;
 		TH1F *frac_from_thrown;
 		TH2F *stats_vs_theta, *stats_vs_phi, *stats_vs_p, *stats_vs_nhits;
-		TH2F *dp_over_p_vs_p, *dp_over_p_vs_theta, *pthrown_over_pfound_vs_p;
+		TH2F *dp_over_p_vs_p, *dp_over_p_vs_theta;
+		TH2F *pthrown_over_pfound_vs_p, *sinthrown_over_sinfound_vs_sin;
+		TH2F *phithrown_over_phifound_vs_phi;
 		TH1F *eff_vs_theta, *eff_vs_phi, *eff_vs_p, *eff_vs_nhits;
 		TH1F *eff_vs_theta_hm, *eff_vs_phi_hm, *eff_vs_p_hm, *eff_vs_nhits_hm;
 		TH1F *dist_same, *dist_diff;
