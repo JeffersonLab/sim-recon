@@ -904,15 +904,15 @@ void Units::getConversions(DOMElement* el)
       set_1g(1);
       set_1cm2(1);
    }
-   else if (unitS == "Tesla")
+   else if (unitS == "Tesla" || unitS == "T")
    {
       set_1G(1e-4);
    }
-   else if (unitS == "kG")
+   else if (unitS == "kG" || unitS == "kGs")
    {
       set_1G(1e-3);
    }
-   else if (unitS == "G")
+   else if (unitS == "G" || unitS == "Gs")
    {
       set_1G(1);
    }

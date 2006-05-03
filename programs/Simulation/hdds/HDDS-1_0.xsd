@@ -863,7 +863,7 @@
   </region>
 
   <region name="solenoidBfield" comment="LASS spectrometer field map">
-    <mappedBfield map="file://taggermap.dat" encoding="utf-8" unit="kG">
+    <mappedBfield map="file://taggermap.dat" encoding="utf-8" unit="Tesla">
       <grid type="cylindrical">
         <samples axis="phi" n="1" bounds="0 360" unit_angle="deg"/>
           <samples axis="r" n="41" bounds="0 40" unit_length="in"/>
@@ -1164,6 +1164,9 @@
   <xs:restriction base="xs:token">
     <xs:enumeration value="G"/>
     <xs:enumeration value="kG"/>
+    <xs:enumeration value="Gs"/>
+    <xs:enumeration value="kGs"/>
+    <xs:enumeration value="T"/>
     <xs:enumeration value="Telsa"/>
   </xs:restriction>
 </xs:simpleType>

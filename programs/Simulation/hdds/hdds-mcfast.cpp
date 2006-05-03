@@ -1302,6 +1302,11 @@ void DbMaker::processTemplateFile(const DOMElement* const targetEl,
           : (unitS == "GeV/cm")? 1
          /* standard unit for magnetic field in MCfast is Tesla */
           : (unitS == "Tesla")? 1
+          : (unitS == "T")? 1
+          : (unitS == "kG")? 0.1
+          : (unitS == "kGs")? 0.1
+          : (unitS == "G")? 0.0001
+          : (unitS == "Gs")? 0.0001
          /* fractions are always unit-normalized */
           : (unitS == "percent")? 0.01
           : (unitS == "none" || unitS.size() == 0)? 1
