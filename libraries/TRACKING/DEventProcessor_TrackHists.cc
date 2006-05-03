@@ -72,6 +72,8 @@ derror_t DEventProcessor_TrackHists::init(void)
 	dp_over_p_vs_p	= new TH2F("dp_over_p_vs_p","dp/p vs. p",	200, 0.0, 10.0, 200, -0.500, 0.500);
 	dp_over_p_vs_theta	= new TH2F("dp_over_p_vs_theta","dp/p vs. theta",	200, 0.0, M_PI, 200, -0.500, 0.500);
 	pthrown_over_pfound_vs_p	= new TH2F("pthrown_over_pfound_vs_p","pthrown/pfound vs. p",	200, 0.0, 10.0, 200, 0.0, 5.0);
+	sinthrown_over_sinfound_vs_sin	= new TH2F("sinthrown_over_sinfound_vs_sin","sin(theta)/sin(theta_found) vs. sin(theta)",	200, 0.0, 1.0, 200, 0.0, 5.0);
+	phithrown_over_phifound_vs_phi	= new TH2F("phithrown_over_phifound_vs_phi","phi/phi_found vs. phi",	200, 0.0, 2.0*M_PI, 200, 0.0, 5.0);
 	dist_same = new TH1F("dist_same","Distance between closest hits from same track in X/Y plane(cm)", 400, 0.0, 200.0);
 	dist_diff = new TH1F("dist_diff","Distance between closest hits from different tracks in X/Y plane(cm)", 400, 0.0, 200.0);
 	
@@ -185,7 +187,12 @@ derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 				dp_over_p_vs_p->Fill(p, dp_over_p);
 				dp_over_p_vs_theta->Fill(theta, dp_over_p);
 				if(track->p != 0.0)
-					pthrown_over_pfound_vs_p->Fill(mcthrown->p/track->p, mcthrown->p);
+					pthrown_over_pfound_vs_p->Fill(mcthrown->p,mcthrown->p/track->p);
+				
+				double sthrown = sin(mcthrown->theta);
+				double sfound = sin(track->theta);
+				sinthrown_over_sinfound_vs_sin->Fill(sthrown, sthrown/sfound);
+				phithrown_over_phifound_vs_phi->Fill(mcthrown->phi, mcthrown->phi/track->phi);
 
 				if(fabs(dp_over_p) <=0.2){
 					FillAll(NMATCHED, Nhits, theta, phi, p);
