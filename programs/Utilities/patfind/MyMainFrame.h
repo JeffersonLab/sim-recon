@@ -54,6 +54,8 @@ class MyMainFrame:public TGMainFrame {
 		TGLabel *foundtrks, *throwntrks, *correcttrks;
 		TGLabel *tot_foundtrks, *tot_throwntrks, *tot_correcttrks;
 		TGLabel *ratio_p, *ratio_sintheta, *delta_phi;
+		TGLabel *tfvals_pthrown, *tfvals_thetathrown, *tfvals_phithrown;
+		TGLabel *tfvals_pfound, *tfvals_thetafound, *tfvals_phifound;
 		const char* sourcename;
 		TGButtonGroup *optionsframe;
 		vector<TGRadioButton*> radiobuttons;

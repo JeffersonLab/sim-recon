@@ -13,6 +13,7 @@ using namespace std;
 #include "DEventLoop.h"
 #include "DTrack.h"
 #include "DMCThrown.h"
+#include "DTrackEfficiency.h"
 
 extern MyProcessor *myproc;
 extern DEventLoop *eventloop;
@@ -146,6 +147,41 @@ MyMainFrame::MyMainFrame(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p,w,
 				TGHorizontalFrame *tfvals = new TGHorizontalFrame(tfvalsframe, 100, canvas_size);
 				tfvalsframe->AddFrame(tfvals, noHints);
 
+					TGVerticalFrame *tfvalsleft = new TGVerticalFrame(tfvals, 100, canvas_size);
+					TGVerticalFrame *tfvalsmiddle = new TGVerticalFrame(tfvals, 100, canvas_size);
+					TGVerticalFrame *tfvalsright = new TGVerticalFrame(tfvals, 100, canvas_size);
+					tfvals->AddFrame(tfvalsleft, noHints);
+					tfvals->AddFrame(tfvalsmiddle, noHints);
+					tfvals->AddFrame(tfvalsright, noHints);
+					
+					TGLabel *tfvals_none = new TGLabel(tfvalsleft, " ");
+					TGLabel *tfvals_thrownlab = new TGLabel(tfvalsmiddle, "THROWN");
+					TGLabel *tfvals_foundlab = new TGLabel(tfvalsright, "FOUND");
+					tfvalsleft->AddFrame(tfvals_none, defHints);
+					tfvalsmiddle->AddFrame(tfvals_thrownlab, defHints);
+					tfvalsright->AddFrame(tfvals_foundlab, defHints);
+
+					TGLabel *tfvals_plab = new TGLabel(tfvalsleft, "p:");
+					TGLabel *tfvals_thetalab = new TGLabel(tfvalsleft, "theta:");
+					TGLabel *tfvals_philab = new TGLabel(tfvalsleft, "phi:");
+					tfvalsleft->AddFrame(tfvals_plab, defHintsRight);
+					tfvalsleft->AddFrame(tfvals_thetalab, defHintsRight);
+					tfvalsleft->AddFrame(tfvals_philab, defHintsRight);
+					
+					tfvals_pthrown = new TGLabel(tfvalsmiddle, "------");
+					tfvals_thetathrown = new TGLabel(tfvalsmiddle, "------");
+					tfvals_phithrown = new TGLabel(tfvalsmiddle, "------");
+					tfvalsmiddle->AddFrame(tfvals_pthrown, defHints);
+					tfvalsmiddle->AddFrame(tfvals_thetathrown, defHints);
+					tfvalsmiddle->AddFrame(tfvals_phithrown, defHints);
+
+					tfvals_pfound = new TGLabel(tfvalsright, "------");
+					tfvals_thetafound = new TGLabel(tfvalsright, "------");
+					tfvals_phifound = new TGLabel(tfvalsright, "------");
+					tfvalsright->AddFrame(tfvals_pfound, defHints);
+					tfvalsright->AddFrame(tfvals_thetafound, defHints);
+					tfvalsright->AddFrame(tfvals_phifound, defHints);
+
 		// Main Canvas
 		TRootEmbeddedCanvas *emcanvas = new TRootEmbeddedCanvas("Main Canvas",middleframe,canvas_size, canvas_size, kSunkenFrame, GetWhitePixel());
 		emcanvas->SetScrolling(TGCanvas::kCanvasNoScroll);
@@ -213,7 +249,7 @@ void MyMainFrame::Update(void)
 	// Update event number
 	static unsigned int last_event_number = 0;
 	unsigned int event_number = eventloop->GetDEvent().GetEventNumber();
-	char str[32];
+	char str[256];
 	sprintf(str, "%d", event_number);
 	eventno->SetText(str);
 
@@ -234,22 +270,59 @@ void MyMainFrame::Update(void)
 	sprintf(str, "%d", Ntot_foundtrks);
 	tot_foundtrks->SetText(str);
 
-	vector<const DMCThrown*> mcthrown;
-	eventloop->Get(mcthrown);
-	sprintf(str, "%d", (int)mcthrown.size());
+	vector<const DMCThrown*> mcthrowns;
+	eventloop->Get(mcthrowns);
+	sprintf(str, "%d", (int)mcthrowns.size());
 	throwntrks->SetText(str);
 	if(event_number != last_event_number)
-		Ntot_throwntrks += mcthrown.size();
+		Ntot_throwntrks += mcthrowns.size();
 	sprintf(str, "%d", Ntot_throwntrks);
 	tot_throwntrks->SetText(str);
 	
 	last_event_number = event_number;
 	
-	// Update thrown/found values
+	//------- Update thrown/found values -------
+	const DTrack *track = tracks[radiooption-1];
+	const DMCThrown *thrown=NULL;
+
+	// find thrown value (if any) that corresponds to this track
 	vector<const DTrackEfficiency*> trkeffs;
 	eventloop->Get(trkeffs);
+	for(unsigned int i=0; i<trkeffs.size(); i++){
+		if(trkeffs[i]->trackid == track->id){
+			thrown = mcthrowns[i];
+			break;
+		}
+	}
 	
-	
+	sprintf(str,"%5.3f", track->p);			tfvals_pfound->SetText(str);
+	sprintf(str,"%5.3f", track->theta);		tfvals_thetafound->SetText(str);
+	sprintf(str,"%5.3f", track->phi);		tfvals_phifound->SetText(str);
+		
+	if(thrown){
+		sprintf(str,"%5.3f", thrown->p/track->p);
+		ratio_p->SetText(str);
+		sprintf(str,"%5.3f", sin(thrown->theta)/sin(track->theta));
+		ratio_sintheta->SetText(str);
+		sprintf(str,"%5.3f", thrown->phi - track->phi);
+		delta_phi->SetText(str);
+		
+		sprintf(str,"%5.3f", thrown->p);			tfvals_pthrown->SetText(str);
+		sprintf(str,"%5.3f", thrown->theta);	tfvals_thetathrown->SetText(str);
+		sprintf(str,"%5.3f", thrown->phi);		tfvals_phithrown->SetText(str);
+
+	}else{
+		strcpy(str,"------");
+		ratio_p->SetText(str);
+		ratio_sintheta->SetText(str);
+		delta_phi->SetText(str);
+		tfvals_pthrown->SetText(str);
+		tfvals_thetathrown->SetText(str);
+		tfvals_phithrown->SetText(str);
+		tfvals_pfound->SetText(str);
+		tfvals_thetafound->SetText(str);
+		tfvals_phifound->SetText(str);
+	}
 	
 //	int Ncorrecttrks = 0;
 //	for(unsigned int i=0; i<tracks.size(); i++){
