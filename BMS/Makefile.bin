@@ -19,13 +19,15 @@ ifdef DEBUG
 	LD_FLAGS	+= -g -pg
 endif
 
-ifneq ($(strip $(CSRC) $(CXXSRC)),)
-MAIN_FILES = $(shell grep -l " main" $(CSRC) $(CXXSRC))
-endif
+MAIN_FILES = $(shell $(HALLD_HOME)/src/BMS/main_files.sh)
 
-ifneq ($(strip $(FSRC)),)
-MAIN_FILES += $(shell grep -l -i "      PROGRAM " $(FSRC))
-endif
+#ifneq ($(strip $(CSRC) $(CXXSRC)),)
+#MAIN_FILES = $(shell grep -l " main" $(CSRC) $(CXXSRC))
+#endif
+
+#ifneq ($(strip $(FSRC)),)
+#MAIN_FILES += $(shell grep -l -i "      PROGRAM " $(FSRC))
+#endif
 
 EXE_NAMES = $(addsuffix $(DEBUG_SUFFIX),$(basename $(MAIN_FILES)))
 EXE_PATHNAMES = $(foreach s,$(EXE_NAMES),$(BIN_DIR)/$s)
