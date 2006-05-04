@@ -116,8 +116,35 @@ MyMainFrame::MyMainFrame(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p,w,
 				statright->AddFrame(tot_correcttrks, defHintsLeft);
 
 			// Thrown/Found values frame
-			TGGroupFrame *tfvalsframe = new TGGroupFrame(leftmiddleframe,"Thrown/Found", kHorizontalFrame);
+			TGGroupFrame *tfvalsframe = new TGGroupFrame(leftmiddleframe,"Thrown/Found", kVerticalFrame);
 			leftmiddleframe->AddFrame(tfvalsframe, noHints);
+				// Ratios/deltas of thrown and found values
+				TGHorizontalFrame *tfratios = new TGHorizontalFrame(tfvalsframe, 100, canvas_size);
+				tfvalsframe->AddFrame(tfratios, noHints);
+				
+					TGVerticalFrame *tfratioleft = new TGVerticalFrame(tfratios, 100, canvas_size);
+					TGVerticalFrame *tfratioright = new TGVerticalFrame(tfratios, 100, canvas_size);
+					tfratios->AddFrame(tfratioleft, noHints);
+					tfratios->AddFrame(tfratioright, noHints);
+
+					TGLabel *ratio_plab = new TGLabel(tfratioleft, "pthown/pfound:");
+								ratio_p = new TGLabel(tfratioright, "--------");
+					TGLabel *ratio_sinthetalab = new TGLabel(tfratioleft, "sin(theta_thr)/sin(theta_fnd):");
+								ratio_sintheta = new TGLabel(tfratioright, "--------");
+					TGLabel *delta_philab = new TGLabel(tfratioleft, "phi_thrown - phi_found:");
+								delta_phi = new TGLabel(tfratioright, "--------");
+
+					tfratioleft->AddFrame(ratio_plab, defHintsRight);
+					tfratioleft->AddFrame(ratio_sinthetalab, defHintsRight);
+					tfratioleft->AddFrame(delta_philab, defHintsRight);
+
+					tfratioright->AddFrame(ratio_p, defHintsLeft);
+					tfratioright->AddFrame(ratio_sintheta, defHintsLeft);
+					tfratioright->AddFrame(delta_phi, defHintsLeft);
+
+				// Actual values of thrown and found
+				TGHorizontalFrame *tfvals = new TGHorizontalFrame(tfvalsframe, 100, canvas_size);
+				tfvalsframe->AddFrame(tfvals, noHints);
 
 		// Main Canvas
 		TRootEmbeddedCanvas *emcanvas = new TRootEmbeddedCanvas("Main Canvas",middleframe,canvas_size, canvas_size, kSunkenFrame, GetWhitePixel());
@@ -184,8 +211,10 @@ void MyMainFrame::Update(void)
 	maincanvas->Update();
 	
 	// Update event number
+	static unsigned int last_event_number = 0;
+	unsigned int event_number = eventloop->GetDEvent().GetEventNumber();
 	char str[32];
-	sprintf(str, "%d", eventloop->GetDEvent().GetEventNumber());
+	sprintf(str, "%d", event_number);
 	eventno->SetText(str);
 
 	// Update filename (if needed)
@@ -200,7 +229,8 @@ void MyMainFrame::Update(void)
 	eventloop->Get(tracks);
 	sprintf(str, "%d", (int)tracks.size());
 	foundtrks->SetText(str);
-	Ntot_foundtrks += tracks.size();
+	if(event_number != last_event_number)
+		Ntot_foundtrks += tracks.size();
 	sprintf(str, "%d", Ntot_foundtrks);
 	tot_foundtrks->SetText(str);
 
@@ -208,9 +238,18 @@ void MyMainFrame::Update(void)
 	eventloop->Get(mcthrown);
 	sprintf(str, "%d", (int)mcthrown.size());
 	throwntrks->SetText(str);
-	Ntot_throwntrks += mcthrown.size();
+	if(event_number != last_event_number)
+		Ntot_throwntrks += mcthrown.size();
 	sprintf(str, "%d", Ntot_throwntrks);
 	tot_throwntrks->SetText(str);
+	
+	last_event_number = event_number;
+	
+	// Update thrown/found values
+	vector<const DTrackEfficiency*> trkeffs;
+	eventloop->Get(trkeffs);
+	
+	
 	
 //	int Ncorrecttrks = 0;
 //	for(unsigned int i=0; i<tracks.size(); i++){

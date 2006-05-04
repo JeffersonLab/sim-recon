@@ -53,6 +53,7 @@ class MyMainFrame:public TGMainFrame {
 		TGLabel *eventno, *filename;
 		TGLabel *foundtrks, *throwntrks, *correcttrks;
 		TGLabel *tot_foundtrks, *tot_throwntrks, *tot_correcttrks;
+		TGLabel *ratio_p, *ratio_sintheta, *delta_phi;
 		const char* sourcename;
 		TGButtonGroup *optionsframe;
 		vector<TGRadioButton*> radiobuttons;
