@@ -1,35 +1,45 @@
-///
-///	DFactory_DFDCHit.cc - Implementation for the basic FDC hit factory.
-/// Author:		Craig Bookwalter (craigb at jlab.org)
-/// Date:		March 2006
-///
+//***********************************************************************
+// DFactory_DFDCHit.cc - Implementation for the basic FDC hit factory.
+// Author:		Craig Bookwalter (craigb at jlab.org)
+// Date:		March 2006
+//***********************************************************************
 
 #include "DFactory_DFDCHit.h"
-#include "DStreamLog.h"
-#include <fstream>
 
+///
+/// DFactory_DFDCHit::DFactory_DFDCHit():
+/// default constructor -- empty, for now.
+///
 DFactory_DFDCHit::DFactory_DFDCHit() {}
 
+///
+/// DFactory_DFDCHit::~DFactory_DFDCHit()
+/// default destructor -- also empty for now.
+///
 DFactory_DFDCHit::~DFactory_DFDCHit() {}
 
+///
+/// DFactory_DFDCHit::evnt():
+/// This would be used if this factory was going to process data currently exisiting in
+/// memory; since this factory's role is to read events from the data file and put them
+/// into memory, this is not used. See DFactory_DFDCHit::Extract_HDDM().
+///
 derror_t DFactory_DFDCHit::evnt(DEventLoop *eventLoop, int eventnumber)
 {
-	/// Place holder for now. 
-
 	return NOERROR;
 }
 
-//------------------
-// Extract_HDDM
-//------------------
+///
+/// DFactory_DFDCHit::Extract_HDDM():
+/// Reads an event from the data file and distills out the FDC information, creating a new
+/// DFDCHit object for each FDC hit encountered in the data. If you wish to understand the 
+/// s_Blah_t structures, see the documentation for hddm_s.h.
+///
 derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
-{
-	/// Copies the data from the given hddm_s structure. This is called
-	/// from DEventSourceHDDM::GetObjects.		
-	
+{		
 	v.clear();
 	
-	// Loop over Physics Events
+	// Acquire the pointer to the physics events
 	s_PhysicsEvents_t* allEvents = hddm_s->physicsEvents;
 	if(!allEvents) {
 		throw DException("Attempt to get physics events from HDDM source failed.");
@@ -37,6 +47,7 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	}
 	
 	for (unsigned int i=0; i < allEvents->mult; i++) {
+		// Acquire the pointer to the overall hits section of the data
 		s_HitView_t *hits = allEvents->in[i].hitView;
 		
 		if (hits == HDDM_NULL) {
@@ -54,14 +65,18 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 			return NOERROR;
 		}
 		
+		// Acquire the pointer to the beginning of the FDC hit tree
 		s_FdcChambers_t* fdcChamberSet = hits->forwardDC->fdcChambers;
 		
 		for (unsigned int i=0; i < fdcChamberSet->mult; i++) {
+			// Each chamber in the ChamberSet has a wire set and a strip set
 			s_FdcChamber_t fdcChamber 		= fdcChamberSet->in[i];		
 			s_FdcAnodeWires_t* wireSet 		= fdcChamber.fdcAnodeWires;
 			s_FdcCathodeStrips_t* stripSet 	= fdcChamber.fdcCathodeStrips;
 		
-			// Pull out anode data.
+			// Each set of wires has (obviously) wires inside of it, and each wire
+			// may have one or more hits on it. Make a DFDCHit object for each one
+			// of these hits.
 			for (unsigned int j=0; j < wireSet->mult; j++) {
 				s_FdcAnodeWire_t anodeWire		= wireSet->in[j];
 				s_FdcAnodeHits_t* wireHitSet	= anodeWire.fdcAnodeHits;
@@ -75,14 +90,14 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 					newHit->t					= wireHit.t;
 					newHit->plane				= 2;
 					newHit->type				= 0;
-					newHit->gPlane			= _geo.gPlane(newHit);
-					newHit->gLayer			= _geo.gLayer(newHit);
+					newHit->gPlane				= _geo.gPlane(newHit);
+					newHit->gLayer				= _geo.gLayer(newHit);
 					newHit->r					= _geo.getWireR(newHit); 
 					v.push_back(newHit);
 				}
 			}
-			
-			// Pull out cathode data.
+		
+			// Ditto for the cathodes.
 			for (unsigned int j=0; j < stripSet->mult; j++) {
 				s_FdcCathodeStrip_t cathodeStrip = stripSet->in[j];
 				s_FdcCathodeHits_t* stripHitSet = cathodeStrip.fdcCathodeHits;
@@ -96,8 +111,8 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 					newHit->dE					= stripHit.dE;
 					newHit->t					= stripHit.t;
 					newHit->type				= 1;
-					newHit->gPlane			= _geo.gPlane(newHit);	 
-					newHit->gLayer			= _geo.gLayer(newHit);
+					newHit->gPlane				= _geo.gPlane(newHit);	 
+					newHit->gLayer				= _geo.gLayer(newHit);
 					newHit->r					= _geo.getStripR(newHit);
 					v.push_back(newHit);
 				}
@@ -105,43 +120,27 @@ derror_t DFactory_DFDCHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 		}
 	}
 
-
 	return NOERROR;
 }
 
-//------------------
-// toString
-//------------------
+///
+/// DFactory_DFDCHit::toString(): 
+/// Provides a sensible std::string representation of all of the data in the factory.
+///
 const string DFactory_DFDCHit::toString(void)
 {
-/*	// Ensure our Get method has been called so _data is up to date
 	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("row: layer: module: tau(rad):    z(cm):  u(cm):  dE(MeV):   t(ns):   type:");
-	
-	for(unsigned int i=0; i<_data.size(); i++){
-		DFDCHit *fdchit = _data[i];
+	if( _data.size() <= 0) 
+		return ""; 
 		
-		printnewrow();
-		printcol("%d",	i);
-		printcol("%d", fdchit->layer);
-		printcol("%d", fdchit->module);
-		printcol("%3.1f", fdchit->tau);
-		printcol("%3.1f", fdchit->z);
-		printcol("%2.3f", fdchit->u);
-//		if(!fdchit->type){
-			printcol("%1.3f", fdchit->dE*1000.0);
-			printcol("%4.0f", fdchit->t);
-		}else{
-			printcol("");
-			printcol("");
-		}
-//		printcol("%s", fdchit->type ? "cathode":"anode");
-		printrow();
-	}
-
-	return _table;
-*/
-	return "";
+	stringstream s;
+	
+	s << (*_data.begin())->header() << endl;
+	
+	// Simply call the toString() method of each DFDCHit object and stream it into s.
+	for (unsigned int i=0; i < _data.size(); ++i)
+		s << _data[i]->toString() << endl;
+	
+	return s.str();
 }
+	
