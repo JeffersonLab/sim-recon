@@ -7,180 +7,166 @@
 
 #include "DFactory_DFDCPseudo.h"
 
-void DFactory_DFDCPseudo::dummy(	vector<const DFDCHit*>& u, 
-		  						vector<const DFDCHit*>& v,
-								map<int, const DFDCHit*>& x,
-								float angle,
-								int evNo,
-								int layerNo) {	
-	float uYdist(0.0), vYdist(0.0);
-	float uYint(0.0), vYint(0.0); 	
-	float xCoordUV(0.0);
-	int wireCandidateLow(0), wireCandidateHigh(0);
-	ofstream UVofs("uv.dat", ios::app);
-	ofstream Xofs("x.dat", ios::app);
-	*_log << "In dummy, layer: " << layerNo << " u: " << u.size() << " v: " 
-		  << v.size() << " x: " << x.size() << endMsg;	
-	for (vector<const DFDCHit*>::iterator i = u.begin(); i != u.end(); ++i) {
-		for (vector<const DFDCHit*>::iterator j = v.begin(); j != v.end(); ++j) {
-			uYdist = sqrt(2.0)*(*i)->r;
-			vYdist = sqrt(2.0)*(*j)->r;
-			
-			if ((*i)->r > 0)
-				uYint = uYdist;
-			else if ((*i)->r < 0)
-				uYint = -uYdist;
-			else
-				uYint = 0.0;
-			
-			if ((*j)->r > 0)
-				vYint = -vYdist;
-			else if ((*j)->r < 0)
-				vYint = vYdist;
-			else
-				vYint = 0.0;
-			xCoordUV = (uYint - vYint) / 2;
-			wireCandidateLow = static_cast<int>(floor(xCoordUV) + 60);
-			wireCandidateHigh = static_cast<int>(ceil(xCoordUV) + 60);
-			
-			UVofs << "(" << wireCandidateLow << "," << wireCandidateHigh << ")" << " ";
-		}
-	}
-	for (map<int, const DFDCHit*>::iterator i = x.begin(); i != x.end(); ++i) {
-		Xofs << (*i).second->r << "\t";
-	}
-	
-	UVofs << endl << endl;
-	Xofs << endl << endl;
-	UVofs.close();
-	Xofs.close();
-}
-
-
-bool unsorted(vector<const DFDCHit*>& v) {
-	for (unsigned int i=0; i < v.size(); i++)
-		if (v[i+1]->gPlane < v[i]->gPlane)	
-			return true;
-	return false; 
-}
-
-bool DFDCHit_dE_cmp(const DFDCHit* a, const DFDCHit* b) {
-	return a->dE < b->dE;
-}
-
-bool DFDCHit_layer_cmp(const DFDCHit* a, const DFDCHit* b) {
+///
+/// DFDCCathodeCluster_gLayer_cmp(): 
+/// non-member function passed to std::sort() to sort DFDCCathodeCluster pointers 
+/// by their gLayer attributes.
+///
+bool DFDCCathodeCluster_gLayer_cmp(const DFDCCathodeCluster* a, 
+								   const DFDCCathodeCluster* b) {
 	return a->gLayer < b->gLayer;
 }
 
-
+///
+/// DFactory_DFDCPseudo::DFactory_DFDCPseudo():
+/// default constructor -- initializes log file
+///
 DFactory_DFDCPseudo::DFactory_DFDCPseudo() {
 	logFile = new ofstream("DFactory_DFDCPseudo.log");
 	_log = new DStreamLog(*logFile, "PSEUDO");
 	*_log << "File initialized." << endMsg;
 }
 
+///
+/// DFactory_DFDCPseudo::~DFactory_DFDCPseudo():
+/// default destructor -- closes log file
+///
 DFactory_DFDCPseudo::~DFactory_DFDCPseudo() {
 	logFile->close();
 	delete logFile;
 	delete _log;
 }
 
+///
+/// DFactory_DFDCPseudo::evnt():
+/// this is the place that anode hits and DFDCCathodeClusters are organized into pseudopoints.
+/// For now, this is done purely by geometry, with no drift or peak-finding. See also
+/// DFactory_DFDCPseudo::makePseudo().
+///
 derror_t DFactory_DFDCPseudo::evnt(DEventLoop* eventLoop, int eventNo) {
 	vector<const DFDCHit*> fdcHits;
-	vector<const DFDCHit*> uHits;
-	vector<const DFDCHit*> vHits;
-	map<int, const DFDCHit*> anodeHits;
+	vector<const DFDCHit*> xHits;
+	vector<const DFDCCathodeCluster*> cathClus;
+	vector<const DFDCCathodeCluster*> uClus;
+	vector<const DFDCCathodeCluster*> oneLayerU;
+	vector<const DFDCCathodeCluster*> vClus;
+	vector<const DFDCCathodeCluster*> oneLayerV;
+	std::map<const int, const DFDCHit*> oneLayerX;
+	DFDCGeometry geo;
 	float angle = 0.0;
 	float pi	= 3.1415926;
-	unsigned int uHitsTot(0), vHitsTot(0), xHitsTot(0);
 	
 	eventLoop->Get(fdcHits);
-	*_log << "fdcHits.size() = " << fdcHits.size() << endMsg;
-	try {
-		if (unsorted(fdcHits))
-			std::sort(fdcHits.begin(), fdcHits.end(), DFDCHit_layer_cmp);
-		
-		vector<const DFDCHit*>::iterator iHit = fdcHits.begin(); 
-		for (int iLayer = 1; iLayer <= 24; ++iLayer) {
-			while ((iHit != fdcHits.end()) && (iLayer == (*iHit)->gLayer)) {
-				const DFDCHit* aHit = *iHit;
-				if (aHit->type) {
-					if (aHit->plane == 1)
-						uHits.push_back(aHit);	
-					else
-						vHits.push_back(aHit);
-				}
-				else
-					anodeHits.insert(pair<const int, const DFDCHit*>(aHit->element, aHit));
-				iHit++;
-				
-			}
-			uHitsTot += uHits.size();
-			vHitsTot += vHits.size();
-			xHitsTot += anodeHits.size();
-				  
-			std::stable_sort(uHits.begin(), uHits.end(), DFDCHit_dE_cmp);
-			std::stable_sort(vHits.begin(), vHits.end(), DFDCHit_dE_cmp);
-//			conjure(uHits, vHits, anodeHits, angle);
-			dummy(uHits,vHits,anodeHits,angle,eventNo,iLayer);
-			uHits.clear();
-			vHits.clear();
-			anodeHits.clear();
-			angle += (pi/3);
-		}	
+	eventLoop->Get(cathClus);
+	
+	// Ensure clusters are in order of ascending Z position.
+	std::sort(cathClus.begin(), cathClus.end(), DFDCCathodeCluster_gLayer_cmp);
+	
+	// Sift through hits and select out anode hits.
+	for (unsigned int i=0; i < fdcHits.size(); i++)
+		if (fdcHits[i]->type == 0)
+			xHits.push_back(fdcHits[i]);
+			
+	// Sift through clusters and put U and V clusters into respective vectors.
+	for (unsigned int i=0; i < cathClus.size(); i++) {
+		if (cathClus[i]->plane == 1)
+			vClus.push_back(cathClus[i]);
+		else
+			uClus.push_back(cathClus[i]);
+	}
 
+	vector<const DFDCCathodeCluster*>::iterator uIt = uClus.begin();
+	vector<const DFDCCathodeCluster*>::iterator vIt = vClus.begin();
+	vector<const DFDCHit*>::iterator xIt = xHits.begin();
+	
+	// For each layer, get its sets of V, X, and U hits, and then pass them to the geometrical
+	// organization routine, DFactory_DFDCPseudo::makePseudo()
+	for (int iLayer=1; iLayer <= 24; iLayer++) {
+		for (; ((uIt != uClus.end() && (*uIt)->gLayer == iLayer)); uIt++)
+			oneLayerU.push_back(*uIt);
+		for (; ((vIt != vClus.end() && (*vIt)->gLayer == iLayer)); vIt++)
+			oneLayerV.push_back(*vIt);
+		for (; ((xIt != xHits.end() && (*xIt)->gLayer == iLayer)); xIt++)
+			oneLayerX.insert(std::pair<const int, const DFDCHit*>((*xIt)->element,
+																  *xIt));
+		makePseudo(oneLayerX, oneLayerU, oneLayerV, geo.getLayerRotation(iLayer), 	
+					iLayer);
+		angle += pi/3.0;
+		oneLayerU.clear();
+		oneLayerV.clear();
+		oneLayerX.clear();
 	}
-	catch (exception e) {
-		cerr << e.what() << endl;
-	}
+	
 	return NOERROR;
 }
 
-void DFactory_DFDCPseudo::conjure(	vector<const DFDCHit*>& u, 
-									vector<const DFDCHit*>& v,
-									map<int, const DFDCHit*>& x,
-									float angle) {	
-									
-	// TODO: Use the pulse thingy to associate hits. For real.
+/// 
+/// DFactory_DFDCPseudo::makePseudo():
+/// performs UV+X matching to create pseudopoints
+///
+void DFactory_DFDCPseudo::makePseudo(	map<const int, const DFDCHit*>& x,
+										vector<const DFDCCathodeCluster*>& u,
+										vector<const DFDCCathodeCluster*>& v,
+										float angle,
+										int layer)
+{
+	if ((u.size() == 0) || (v.size() == 0) || (x.size() == 0))
+		return;
+	map<const int, const DFDCHit*>::iterator xIt;
+	vector<const DFDCCathodeCluster*>::iterator uIt;
+	vector<const DFDCCathodeCluster*>::iterator vIt;
 	
-	float uYdist(0.0), vYdist(0.0);
-	float uYint(0.0), vYint(0.0); 	
-	float xCoordUV(0.0);
-	int wireCandidateLow(0), wireCandidateHigh(0);
-	for (vector<const DFDCHit*>::iterator i = u.begin(); i != u.end(); ++i) {
-		for (vector<const DFDCHit*>::iterator j = v.begin(); j != v.end(); ++j) {
-			uYdist = sqrt(2.0)*(*i)->r;
-			vYdist = sqrt(2.0)*(*j)->r;
+	// Loop over all U and V clusters
+	for (uIt = u.begin(); uIt != u.end(); uIt++) {
+		for (vIt = v.begin(); vIt != v.end(); vIt++) {
+			// Find the left and right edges of the cluster
+			float leftX 	= intersectX((*uIt)->beginStrip, (*vIt)->beginStrip);
+			float rightX 	= intersectX((*uIt)->endStrip, (*vIt)->endStrip);
+
+			// Find the Y coordinate of the U and V strips with maxmimum dE
+			float y			= intersectY((*uIt)->maxStrip, (*vIt)->maxStrip);
+			float res 		= ((*uIt)->width + (*vIt)->width / 2) / 2;
+
+			// Since wire numbers are integers, cast left and right bounds to integers.
+			int left 		= static_cast<int>(floor(leftX + 60.0));
+			int right 		= static_cast<int>(ceil(rightX + 60.0));
 			
-			if ((*i)->r > 0)
-				uYint = uYdist;
-			else if ((*i)->r < 0)
-				uYint = -uYdist;
-			else
-				uYint = 0.0;
-			
-			if ((*j)->r > 0)
-				vYint = -vYdist;
-			else if ((*j)->r < 0)
-				vYint = vYdist;
-			else
-				vYint = 0.0;
-			xCoordUV = (uYint - vYint) / 2;
-			wireCandidateLow = static_cast<int>(floor(xCoordUV) + 60);
-			wireCandidateHigh = static_cast<int>(ceil(xCoordUV) + 60);
-			if ((x.count(wireCandidateLow)) || (x.count(wireCandidateHigh))) {
-				float yCoordUV(0.0);
-				float xCoordReal(0.0), yCoordReal(0.0);
-				yCoordUV = (vYint - uYint) / 2;
-				xCoordReal = xCoordUV*cos(angle) - yCoordUV*sin(angle);
-				yCoordReal = xCoordUV*sin(angle) + yCoordUV*sin(angle);
-				DFDCPseudo* newPseudo = new DFDCPseudo(xCoordReal, yCoordReal,
-													 (*i)->gLayer);
-				// Add hits to DFDCPseudo::members?
-				_data.push_back(newPseudo);
-				
+			// Ask the map if it has a hit for wire numbers between left and right;
+			// if it does, create a new pseudopoint.			
+			for (int i = left; i <= right; i++) 
+			{
+				xIt = x.find(i);
+				if (xIt == x.end())
+					continue;
+				float xc = (*xIt).first - 60;
+				xc = xc*cos(angle) - y*sin(angle);
+				y = xc*sin(angle) + y*sin(angle);
+				DFDCPseudo* newPseu = new DFDCPseudo(xc, y, layer, res);
+				_data.push_back(newPseu);
 			}
 		}
 	}
+}			
+
+///
+/// DFactory_DFDCPseudo::intersectX():
+/// finds the X coordinate of a U-V intersection
+///
+float DFactory_DFDCPseudo::intersectX(int u, int v) {	
+	float uYint = (119 - u)*sqrt(2.0) + (1/sqrt(2.0));
+	float vYint = (v - 119)*sqrt(2.0) - (1/sqrt(2.0)); 	
+
+	return (uYint - vYint) / 2;
+}			
+
+///
+/// DFactory_DFDCPseudo::intersectY():
+/// finds the Y coordinate of a U-V intersection
+///
+float DFactory_DFDCPseudo::intersectY(int u, int v) {
+	float uYint = (119 - u)*sqrt(2.0) + (1/sqrt(2.0));
+	float vYint = (v - 119)*sqrt(2.0) - (1/sqrt(2.0));
+	
+	return (uYint + vYint) / 2;
 }
-			
+
