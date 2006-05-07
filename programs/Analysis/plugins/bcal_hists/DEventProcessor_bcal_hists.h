@@ -32,6 +32,8 @@ class DEventProcessor_bcal_hists:public DEventProcessor{
 		TH1F* two_gamma_mass;
 		TH2F* xy_shower;
 		TH1F* z_shower;
+		TH1F* E_shower;
+		TH2F* E_over_Erec_vs_z;
 };
 
 #endif // _DEventProcessor_bcal_hists_
