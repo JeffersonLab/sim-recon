@@ -1,33 +1,46 @@
-///
-/// DFactory_DFDCTruth.cc - implementation for pulling truth data out of HDDM
-/// Author:		Craig Bookwalter (craigb at jlab.org)
-/// Date:		March 2006
+//*****************************************************************************
+// DFactory_DFDCTruth.cc - implementation for pulling truth data out of HDDM files
+// Author:		Craig Bookwalter (craigb at jlab.org)
+// Date:		March 2006
+//*****************************************************************************
 
 #include "DFactory_DFDCTruth.h"
-#include "DFDCTruth.h"
 
+///
+/// DFactory_DFDCTruth::DFactory_DFDCTruth():
+/// default constructor -- empty for now
+///
 DFactory_DFDCTruth::DFactory_DFDCTruth() {}
 
+///
+/// DFactory_DFDCTruth::~DFactory_DFDCTruth():
+/// default destructor -- empty for now as well
+///
 DFactory_DFDCTruth::~DFactory_DFDCTruth() {}
 
+///
+/// DFactory_DFDCTruth::evnt():
+/// this function would be defined if this factory was processing data
+/// already in memory; since this factory reads an HDDM file and puts
+/// truth data into memory, the DFactory_DFDCTruth::Extract_HDDM() method
+/// is used.
+///
 derror_t DFactory_DFDCTruth::evnt(DEventLoop *eventLoop, int eventnumber)
 {
-	/// Place holder for now. 
-
 	return NOERROR;
 }
 
-//------------------
-// Extract_HDDM
-//------------------
+///
+/// DFactory_DFDCTruth::Extract_HDDM():
+/// reads an event from a data file and converts FDC truth information into 
+/// DFDCTruth objects. For more detail on the s_Blah_t structures, see
+/// the documentation for hddm_s.h.
+///
 derror_t DFactory_DFDCTruth::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
-{
-	/// Copies the data from the given hddm_s structure. This is called
-	/// from DEventSourceHDDM::GetObjects.		
-	
+{	
 	v.clear();
 	
-	// Loop over Physics Events
+	// Acquire the pointer to the entire event
 	s_PhysicsEvents_t* allEvents = hddm_s->physicsEvents;
 	if(!allEvents) {
 		throw DException("Attempt to get physics events from HDDM source failed.");
@@ -35,6 +48,7 @@ derror_t DFactory_DFDCTruth::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	}
 	
 	for (unsigned int i=0; i < allEvents->mult; i++) {
+		// Acquire the pointer to all of the hits for this event
 		s_HitView_t *hits = allEvents->in[i].hitView;
 		
 		if (hits == HDDM_NULL) {
@@ -52,9 +66,12 @@ derror_t DFactory_DFDCTruth::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 			return NOERROR;
 		}
 		
+		// Acquire the pointer to the top of the FDC hit tree
 		s_FdcChambers_t* fdcChamberSet = hits->forwardDC->fdcChambers;
 		
 		for (unsigned int i=0; i < fdcChamberSet->mult; i++) {
+			// For each chamber, extract its truth points and turn them into 
+			// DFDCTruth objects.
 			s_FdcChamber_t fdcChamber = fdcChamberSet->in[i];
 			s_FdcTruthPoints_t* fdcTruthPoints = fdcChamber.fdcTruthPoints;
 			if (fdcTruthPoints == HDDM_NULL)
@@ -76,39 +93,21 @@ derror_t DFactory_DFDCTruth::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 	return NOERROR;
 }
 
-//------------------
-// toString
-//------------------
+///
+/// DFactory_DFDCTruth::toString():
+/// Print a sensible std::string representation of the contents of this factory.
+///
 const string DFactory_DFDCTruth::toString(void)
 {
-/*	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("row: layer: module: tau(rad):    z(cm):  u(cm):  dE(MeV):   t(ns):   type:");
+	if (_data.size() <= 0)
+		return "";
 	
-	for(unsigned int i=0; i<_data.size(); i++){
-		DFDCHit *fdchit = _data[i];
-		
-		printnewrow();
-		printcol("%d",	i);
-		printcol("%d", fdchit->layer);
-		printcol("%d", fdchit->module);
-		printcol("%3.1f", fdchit->tau);
-		printcol("%3.1f", fdchit->z);
-		printcol("%2.3f", fdchit->u);
-//		if(!fdchit->type){
-			printcol("%1.3f", fdchit->dE*1000.0);
-			printcol("%4.0f", fdchit->t);
-		}else{
-			printcol("");
-			printcol("");
-		}
-//		printcol("%s", fdchit->type ? "cathode":"anode");
-		printrow();
-	}
-
-	return _table;
-*/
-	return "";
+	stringstream s;
+	
+	s << _data[0]->header() << endl;
+	// Simply stream the string representation of each point into "s"	
+	for (unsigned int i=0; i < _data.size(); i++)
+		s << _data[i]->toString() << endl;
+	
+	return s.str();
 }
