@@ -98,7 +98,8 @@ derror_t DFactory_DTrackEfficiency::evnt(DEventLoop *loop, int eventnumber)
 			}
 		}
 		oid_t thrownid = 0;
-		if(mcthrowns.size()>=(unsigned int)trackno)thrownid = mcthrowns[trackno-1]->id;
+		if(mcthrowns.size()>=(unsigned int)trackno)
+			if(trackno>0 && trackno<(int)mcthrowns.size())thrownid = mcthrowns[trackno-1]->id;
 		
 		// Remember this result
 		Dthrown_found *tf = new Dthrown_found;
