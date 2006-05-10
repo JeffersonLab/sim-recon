@@ -7,6 +7,8 @@
 
 #include "DGeometry.h"
 
+#include <DMagneticFieldMap.h>
+
 //---------------------------------
 // DGeometry    (Constructor)
 //---------------------------------
@@ -21,4 +23,17 @@ DGeometry::DGeometry(unsigned int run_number)
 
 	/// (Placeholder for now. This should come from the database ...)
 	min_run_number = max_run_number = run_number;
+	
+	// This is also a placeholder. We may want to create a mechanism
+	// where DMagneticFieldMap objects are shared (where appropriate)
+	// between DGeometry objects.
+	bfieldmap = new DMagneticFieldMap();
+}
+
+//---------------------------------
+// DGeometry    (Destructor)
+//---------------------------------
+DGeometry::~DGeometry()
+{
+	if(bfieldmap)delete bfieldmap;
 }

@@ -15,6 +15,8 @@
 #include "DTrackCandidate.h"
 #include "../TRACKING/Dtrk_hit.h"
 
+class DGeometry;
+class DMagneticFieldMap;
 
 class DFactory_DTrackCandidate:public DFactory<DTrackCandidate>{
 	public:
@@ -39,6 +41,7 @@ class DFactory_DTrackCandidate:public DFactory<DTrackCandidate>{
 		vector<float>& Get_dbg_phizangle(void){return dbg_phizangle;}
 
 	private:
+		derror_t brun(DEventLoop *loop, int runnumber);
 		derror_t evnt(DEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 		derror_t fini(void);	///< Invoked via DEventProcessor virtual method
 		void ClearEvent(void);
@@ -57,6 +60,9 @@ class DFactory_DTrackCandidate:public DFactory<DTrackCandidate>{
 
 		void DebugMessage(int line);
 		int SeedTrack(void);
+		
+		const DGeometry* dgeom;
+		const DMagneticFieldMap *bfield;
 
 		vector<Dtrk_hit*> trkhits; // sorted by z
 		vector<Dtrk_hit*> trkhits_r_sorted; // sorted by dist. from beam line

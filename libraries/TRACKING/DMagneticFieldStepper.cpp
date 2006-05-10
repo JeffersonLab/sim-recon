@@ -6,6 +6,7 @@ using namespace std;
 #include "DMagneticFieldMap.h"
 #include "DMagneticFieldStepper.h"
 
+#if 0 // disabling for now 5/9/06  D.L.
 //-----------------------
 // DMagneticFieldStepper
 //-----------------------
@@ -158,3 +159,5 @@ TVector3 DMagneticFieldStepper::GetBField(void)
 	
 	return B;
 }
+
+#endif

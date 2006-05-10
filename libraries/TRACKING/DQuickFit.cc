@@ -138,9 +138,9 @@ derror_t DQuickFit::FitCircle(void)
 		deltay += y*(x*x+y*y)/2.0;
 		
 		if(bfield){
-			D3Vector_t tmp;
+			const DBfieldPoint_t *tmp;
 			tmp = bfield->getQuick(a->x/2.54, a->y/2.54, 26.0+a->z/2.54);
-			Bz += tmp.z;
+			Bz += tmp->Bz;
 		}
 	}
 	

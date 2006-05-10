@@ -18,6 +18,7 @@ using namespace std;
 #include "DTrack.h"
 #include "DQuickFit.h"
 #include "DGeometry.h"
+#include "DMagneticFieldMap.h"
 
 
 class TrkHitSort{
@@ -71,6 +72,9 @@ DFactory_DTrackCandidate::DFactory_DTrackCandidate()
 	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
 	XY_NOISE_CUT2 = XY_NOISE_CUT*XY_NOISE_CUT;
 	
+	dgeom = NULL;
+	bfield = NULL;
+	
 	char suffix[32];
 	sprintf(suffix,"_%08x", (unsigned int)pthread_self());
 	
@@ -83,6 +87,17 @@ DFactory_DTrackCandidate::DFactory_DTrackCandidate()
 	sprintf(title,"z_vertex%s",suffix);
 	zvertex_hist = new TH1F(title,"z_vertex", 140, TARGET_Z_MIN, TARGET_Z_MAX);
 	z_vertex_bin_size = zvertex_hist->GetBinCenter(2)-zvertex_hist->GetBinCenter(1);
+}
+
+//------------------
+// brun
+//------------------
+derror_t DFactory_DTrackCandidate::brun(DEventLoop *loop, int runnumber)
+{
+	dgeom = loop->GetDApplication()->GetDGeometry(runnumber);
+	bfield = dgeom->GetDMagneticFieldMap();
+	
+	return NOERROR;
 }
 
 //------------------
@@ -310,6 +325,7 @@ int DFactory_DTrackCandidate::FitSeed(void)
 {
 	// Do a quick circle fit to find the center of the seed
 	DQuickFit *fit = new DQuickFit();
+	fit->SetMagneticFieldMap(bfield);
 	for(unsigned int i=0; i<trkhits.size(); i++){
 		Dtrk_hit *a = trkhits[i];
 		if(!(a->flags&Dtrk_hit::IN_SEED))continue;
@@ -576,6 +592,7 @@ int DFactory_DTrackCandidate::FitTrack(void)
 	// values as we loop over hits below.
 	DTrackCandidate *trackcandidate = new DTrackCandidate;
 	DQuickFit *fit = new DQuickFit();
+	fit->SetMagneticFieldMap(bfield);
 	for(unsigned int i=0; i<hits_on_line.size(); i++){
 		Dtrk_hit *a = hits_on_line[i];
 		

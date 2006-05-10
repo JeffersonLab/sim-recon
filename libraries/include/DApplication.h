@@ -44,7 +44,7 @@ class DApplication{
 		derror_t AddDEventLoop(DEventLoop *loop, double* &heartbeat);
 		derror_t RemoveDEventLoop(DEventLoop *loop);
 		derror_t GetDEventLoops(vector<DEventLoop*> &loops);
-		DGeometry* GetGeometry(unsigned int run_number);
+		DGeometry* GetDGeometry(unsigned int run_number);
 		derror_t Init(void);
 		derror_t Run(DEventProcessor *proc=NULL, int Nthreads=0);
 		derror_t Fini(void);

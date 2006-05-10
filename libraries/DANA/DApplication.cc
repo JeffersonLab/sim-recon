@@ -331,9 +331,9 @@ derror_t DApplication::GetDEventLoops(vector<DEventLoop*> &loops)
 }
 
 //---------------------------------
-// GetGeometry
+// GetDGeometry
 //---------------------------------
-DGeometry* DApplication::GetGeometry(unsigned int run_number)
+DGeometry* DApplication::GetDGeometry(unsigned int run_number)
 {
 	/// Return a pointer a DGeometry object that is valid for the
 	/// given run number.

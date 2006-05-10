@@ -93,7 +93,7 @@ class DQuickFit{
 		derror_t PrintChiSqVector(void);
 		derror_t Print(void);
 		derror_t Dump(void);
-		inline void SetMagneticFieldMap(DMagneticFieldMap *map){bfield=map;};
+		inline void SetMagneticFieldMap(const DMagneticFieldMap *map){bfield=map;};
 
 		enum ChiSqSourceType_t{
 			NOFIT,
@@ -112,7 +112,7 @@ class DQuickFit{
 
 	protected:
 		vector<DQFHit_t*> hits;
-		DMagneticFieldMap *bfield; ///< pointer to magnetic field map
+		const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
 		float Bz_avg;
 		float z_mean, phi_mean;
 		
