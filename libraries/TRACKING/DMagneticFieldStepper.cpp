@@ -6,29 +6,30 @@ using namespace std;
 #include "DMagneticFieldMap.h"
 #include "DMagneticFieldStepper.h"
 
-#if 0 // disabling for now 5/9/06  D.L.
 //-----------------------
 // DMagneticFieldStepper
 //-----------------------
-DMagneticFieldStepper::DMagneticFieldStepper(DMagneticFieldMap *map)
+DMagneticFieldStepper::DMagneticFieldStepper(DMagneticFieldMap *bfield)
 {
-	bfield = map;
+	this->bfield = bfield;
 	q = 1.0;
 	start_pos = pos = TVector3(0.0,0.0,0.0);
 	start_mom = mom = TVector3(0.0,0.0,1.0);
-	stepsize = 10.0; // in cm
+	stepsize = 1.0; // in cm
+	z_offset = 65.0; // in cm
 }
 
 //-----------------------
 // DMagneticFieldStepper
 //-----------------------
-DMagneticFieldStepper::DMagneticFieldStepper(DMagneticFieldMap *map, double q, TVector3 *x, TVector3 *p)
+DMagneticFieldStepper::DMagneticFieldStepper(DMagneticFieldMap *bfield, double q, TVector3 *x, TVector3 *p)
 {
-	bfield = map;
+	this->bfield = bfield;
 	this->q = q;
 	start_pos = pos = *x;
 	start_mom = mom = *p;
-	stepsize = 10.0; // in cm
+	stepsize = 1.0; // in cm
+	z_offset = 65.0; // in cm
 }
 
 //-----------------------
@@ -54,9 +55,9 @@ derror_t DMagneticFieldStepper::SetStartingParams(double q, TVector3 *x, TVector
 //-----------------------
 // SetMagneticFieldMap
 //-----------------------
-derror_t DMagneticFieldStepper::SetMagneticFieldMap(DMagneticFieldMap *map)
+derror_t DMagneticFieldStepper::SetMagneticFieldMap(DMagneticFieldMap *bfield)
 {
-	this->bfield = map;
+	this->bfield = bfield;
 
 	return NOERROR;
 }
@@ -81,18 +82,18 @@ derror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	// The idea here is to work in the coordinate system whose
 	// axes point in directions defined in the following way:
 	// z-axis is along direction of B-field
-	// x-axis is in direction of perpendicular to both B and p (particle momentum)
+	// x-axis is in direction perpendicular to both B and p (particle momentum)
 	// y-axis is then just cross product of z and x axes.
 	//
 	// These coordinates are referred to as the natual coordinates below.
 	// The step is calculated based on moving along a perfect helix a distance
 	// of "stepsize". This means that the new position will actually be
-	// closer that stepsize to the current position (unless the magnetic field
+	// closer than stepsize to the current position (unless the magnetic field
 	// is zero).
 	
 	// Get B-field
-	D3Vector_t tmp = bfield->getQuick(pos.x()/2.54, pos.y()/2.54, 26.0+(pos.z())/2.54);
-	TVector3 B(tmp.x, tmp.y, tmp.z);
+	const DBfieldPoint_t* tmp = bfield->getQuick(pos.x()/2.54, pos.y()/2.54, (z_offset+pos.z())/2.54);
+	TVector3 B(tmp->Bx, tmp->By, tmp->Bz);
 
 	// If the magnetic field is zero or the charge is zero, then our job is easy
 	if(B.Mag()==0.0 || q==0.0){
@@ -152,12 +153,8 @@ derror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 //-----------------------
 // GetBField
 //-----------------------
-TVector3 DMagneticFieldStepper::GetBField(void)
+const DBfieldPoint_t* DMagneticFieldStepper::GetDBfieldPoint(void)
 {
-	D3Vector_t tmp = bfield->getQuick(pos.x()/2.54, pos.y()/2.54, 26.0+(pos.z())/2.54);
-	TVector3 B(tmp.x, tmp.y, tmp.z);
-	
-	return B;
+	return bfield->getQuick(pos.x()/2.54, pos.y()/2.54, (z_offset+pos.z())/2.54);
 }
 
-#endif

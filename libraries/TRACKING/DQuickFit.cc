@@ -126,33 +126,38 @@ derror_t DQuickFit::FitCircle(void)
 	
 	// Loop over hits to calculate alpha, beta, gamma, and delta
 	// if a magnetic field map was given, use it to find average Z B-field
-	float Bz = 0.0;
+	DQFHit_t *a = NULL;
 	for(unsigned int i=0;i<hits.size();i++){
-		DQFHit_t *a = hits[i];
+		a = hits[i];
 		float x=a->x;
 		float y=a->y;
 		alpha += x*x;
 		beta += y*y;
 		gamma += x*y;
 		deltax += x*(x*x+y*y)/2.0;
-		deltay += y*(x*x+y*y)/2.0;
-		
-		if(bfield){
-			const DBfieldPoint_t *tmp;
-			tmp = bfield->getQuick(a->x/2.54, a->y/2.54, 26.0+a->z/2.54);
-			Bz += tmp->Bz;
-		}
+		deltay += y*(x*x+y*y)/2.0;		
 	}
 	
 	// Calculate x0,y0 - the center of the circle
 	x0 = (deltax*beta-deltay*gamma)/(alpha*beta-gamma*gamma);
 	y0 = (deltay-gamma*x0)/beta;
+	
+	// Calculate the phi angle traversed by the track from the
+	// origin to the last hit. NOTE: this can be off by a multiple
+	// of 2pi!
+	double delta_phi=0.0;
+	if(a){ // a should be pointer to last hit from above loop
+		delta_phi = atan2(a->y-y0, a->x-x0);
+		if(delta_phi<0.0)delta_phi += 2.0*M_PI;
+	}
 
-	// Momentum depends on magnetic field. Assume 2T for now.
+	// Momentum depends on magnetic field. If bfield has been
+	// set, use it to determine an average value of Bz for this
+	// track. Otherwise, assume -2T.
 	// Also assume a singly charged track (i.e. q=+/-1)
 	// The sign of the charge will be determined below.
 	Bz_avg=-2.0; 
-	if(bfield)Bz_avg = Bz/(float)hits.size();
+	if(bfield)Bz_avg = bfield->Bz_avg(0.0, 0.0, x0, y0, delta_phi);
 	q = +1.0;
 	float r0 = sqrt(x0*x0 + y0*y0);
 	p_trans = q*Bz_avg*r0*qBr2p; // qBr2p converts to GeV/c

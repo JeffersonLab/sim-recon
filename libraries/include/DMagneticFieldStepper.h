@@ -7,7 +7,8 @@
 #include <TVector3.h>
 #include "derror.h"
 
-class DMagneticFieldMap;
+#include "DMagneticFieldMap.h"
+
 
 /// DMagneticFieldStepper class
 ///
@@ -28,7 +29,9 @@ class DMagneticFieldStepper
 		derror_t SetMagneticFieldMap(DMagneticFieldMap *map);
 		derror_t SetStepSize(double step);
 		derror_t Step(TVector3 *newpos);
-		TVector3 GetBField(void);
+		const DBfieldPoint_t* GetDBfieldPoint(void);
+		
+		inline double GetStepSize(void) const{return stepsize;}
 	
 	private:
 		DMagneticFieldMap *bfield; ///< pointer to magnetic field map
@@ -38,6 +41,8 @@ class DMagneticFieldStepper
 		TVector3 mom;			///< current location of particle
 		TVector3 start_pos;	///< starting position of track
 		TVector3 start_mom;	///< starting momentum of track
+		
+		double z_offset;
 };
 
 #endif // __DMAGNETICFIELDSTEPPER_H__

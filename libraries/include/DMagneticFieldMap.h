@@ -27,21 +27,8 @@ class DMagneticFieldMap
 		~DMagneticFieldMap();	/*!< Destructor  */
 
 		const DBfieldPoint_t* getQuick(double x, double y, double z) const;
-
-    /*!
-     * A utility function to return nearest indices.
-     * @param r - a double radius
-     * @param z - a double z value
-     * @param ind - a 2D int vector of return indices
-     * @param rho - amount to interpolate in the radial direction
-     * @param zeta - amount to interpolte in the z direction
-     *
-     *  This will be used for the trilinear interpolation in order 
-     *  to fetch the closest indices from which to interpolate.
-     */
-    
-		void getInds(const double &r, const double &z, int ind[2],
-                          double &rho, double &zeta);
+		
+		double Bz_avg(double x, double y, double x0, double y0, double delta_phi) const;
     
 	private:
 

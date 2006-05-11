@@ -2,8 +2,10 @@
 #include "DMagneticFieldMap.h"
 #include <iostream>
 #include <fstream>
+using std::cout;
+using std::endl;
 
-
+#include <TVector3.h>
 #include <math.h>
 
 static int default_rDim=41;
@@ -81,6 +83,51 @@ const DBfieldPoint_t* DMagneticFieldMap::getQuick(const double x, const double y
 	
 	return &Bmap[index];
 }
+
+//---------------------
+// Bz_avg
+//---------------------
+double DMagneticFieldMap::Bz_avg(double x, double y, double x0, double y0, double delta_phi) const
+{
+	/// Calculate the average z-component of the B-field along a
+	/// circular path with the given parameters. The path starts
+	/// at the point x,y and follows a circle centered at x0,y0
+	/// for delta_phi radians (which may be more than 2pi). 
+	/// The magnetic field map is accessed 
+	/// at a z-position of 65.0, the nominal center of the target.
+	///
+	/// This is used by DQuickFit when fitting a circle in the X/Y
+	/// plane to convert the circle's parameters into transverse 
+	/// momentum in GeV/c. When information about the helix in the
+	/// z-direction is known, then Bz_avg3D should be used.
+	
+	double dphi = M_PI/180.0; // use 1 degree steps
+	double dx = x-x0;
+	double dy = y-y0;
+	double r = sqrt(dx*dx + dy*dy);
+	double phi = atan2(dy,dx);
+	
+	if(delta_phi<0.0)dphi = -dphi;
+	
+	double Bzavg = 0.0;
+	int Nsteps = (int)fabs(delta_phi/dphi);
+	int Ndone = 0;
+	double Rmax2 = 65.0*65.0; // if track goes beyond this, we are out of range
+	for(; Ndone<Nsteps; phi+=dphi){
+		x = r*cos(phi) + x0;
+		y = r*sin(phi) + y0;
+		
+		if(x*x + y*y > Rmax2)break;
+		const DBfieldPoint_t *point = getQuick(x/2.54, y/2.54, 50.0);
+		Bzavg+= point->Bz;
+		Ndone++;
+	}
+	
+	Bzavg /= (double)Ndone;
+
+	return Bzavg;
+}
+
 
 // ======================= Below here is auto-generated code ===================
 
