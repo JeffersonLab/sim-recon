@@ -29,6 +29,7 @@ class DMagneticFieldMap
 		const DBfieldPoint_t* getQuick(double x, double y, double z) const;
 		
 		double Bz_avg(double x, double y, double x0, double y0, double delta_phi) const;
+		double Bz_avg(double x, double y, double z, double x0, double y0, double theta, double zmax) const;
     
 	private:
 
