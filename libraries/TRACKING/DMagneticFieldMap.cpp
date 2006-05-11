@@ -128,6 +128,63 @@ double DMagneticFieldMap::Bz_avg(double x, double y, double x0, double y0, doubl
 	return Bzavg;
 }
 
+//---------------------
+// Bz_avg
+//---------------------
+double DMagneticFieldMap::Bz_avg(double x, double y, double z, double x0, double y0, double theta, double zmax) const
+{
+	/// Calculate the average z-component of the B-field along a
+	/// helical path with the given parameters. The path starts
+	/// at the point x,y,z and follows a helix centered at x0,y0
+	/// with axis along the z-direction with the given theta.
+	/// (tan(theta) is just Ro*dphi/dz). The helix is followed
+	/// until it crosses zmax. Note that if zmax is less than z,
+	/// then the helix is followed backwards.
+	///
+	/// This is used by DQuickFit when fitting a 3-D track and is
+	/// used to convert the helix's parameters into transverse 
+	/// momentum in GeV/c.
+#if 0	
+	double stepsize = 5.0; // in cm
+	double dx = x-x0;
+	double dy = y-y0;
+	double r = sqrt(dx*dx + dy*dy);
+	double phi = atan2(dy,dx);
+	
+	// find dphi and dz step sizes that correspond to an arclength
+	// of stepsize along the helix. For tracks close to 90 degrees,
+	// tan(theta) will be large and dz will be quite small. In these
+	// cases, we need to limit the number of steps by the phi angle.
+	// We do this by only going around one 2pi circle, but breaking
+	// early if we run into the BCAL.
+	double tan_theta = tan(theta);
+	if(tan_theta > 1.0E2){
+		double dz = stepsize/sqrt(pow(tan_theta,2.0) + 1);
+		double dphi = tan_theta*dz/r;
+	}else{
+		double dphi = M_PI/180.0; // use 1 degree steps
+	}
+	if(delta_phi<0.0)dphi = -dphi;
+	
+	double Bzavg = 0.0;
+	int Nsteps = (int)fabs(delta_phi/dphi);
+	int Ndone = 0;
+	double Rmax2 = 65.0*65.0; // if track goes beyond this, we are out of range
+	for(; Ndone<Nsteps; phi+=dphi){
+		x = r*cos(phi) + x0;
+		y = r*sin(phi) + y0;
+		
+		if(x*x + y*y > Rmax2)break;
+		const DBfieldPoint_t *point = getQuick(x/2.54, y/2.54, 50.0);
+		Bzavg+= point->Bz;
+		Ndone++;
+	}
+	
+	Bzavg /= (double)Ndone;
+#endif
+	return Bzavg;
+}
+
 
 // ======================= Below here is auto-generated code ===================
 
