@@ -211,7 +211,7 @@ derror_t DEventProcessor_TrackHists::evnt(DEventLoop *loop, int eventnumber)
 	}
 	
 	// Histogram distance between closest hits on same and different tracks.
-	for(unsigned int i=0;i<mctrackhits.size()-1; i++){
+	for(unsigned int i=0;i<mctrackhits.size(); i++){
 		const DMCTrackHit *a = mctrackhits[i];
 		float min_d2 = 1000000.0;
 		bool same = false;
