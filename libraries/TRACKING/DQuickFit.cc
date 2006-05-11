@@ -230,7 +230,7 @@ derror_t DQuickFit::FitTrack(void)
 	z_vertex = z_mean - phi_mean*dzdphi;
 //cout<<__FILE__<<":"<<__LINE__<<" z_mean="<<z_mean<<" phi_mean="<<phi_mean<<" dphidz="<<dphidz<<" Sxy="<<Sxy<<" Syy="<<Syy<<" z_vertex="<<z_vertex<<endl;
 	
-	// Fill in the rest of the paramters
+	// Fill in the rest of the parameters
 	return FillTrackParams();
 }
 
@@ -321,7 +321,7 @@ derror_t DQuickFit::Fill_phi_circle(vector<DQFHit_t*> hits, float x0, float y0)
 		float dphi = atan2f(dx*y_last - dy*x_last, dx*x_last + dy*y_last);
 		float my_phi = phi_last +dphi;
 		a->phi_circle = my_phi;
-//cout<<__FILE__<<":"<<__LINE__<<" a.x="<<a.x<<" a.y="<<a.y<<" dphi="<<dphi<<" my_phi="<<my_phi<<endl;
+
 		z_mean += a->z;
 		phi_mean += my_phi;
 		
@@ -346,8 +346,19 @@ derror_t DQuickFit::FillTrackParams(void)
 
 	float r0 = sqrt(x0*x0 + y0*y0);
 	theta = atan(r0*fabs(dphidz));
+	
+	// p_trans was calculated using a B-field at a single value
+	// of z. Now we can average the B-field over the path of
+	// the helix in 3 dimensions to get a more accurate value.
+	if(bfield){
+		double zmax = hits[hits.size()-1]->z;
+		if(zmax < z_vertex)zmax=hits[0]->z;
+		double Bz_avg = bfield->Bz_avg(0.0, 0.0, z_vertex, x0, y0, theta, zmax);
+		p_trans *= Bz_avg/this->Bz_avg;
+	}
+	
 	p = fabs(p_trans/sin(theta));
-//cout<<__FILE__<<":"<<__LINE__<<" theta="<<theta<<" dphidz="<<dphidz<<" p_trans="<<p_trans<<" p="<<p<<" r0="<<r0<<endl;
+
 	// The sign of the electric charge will be opposite that
 	// of dphi/dz. Also, the value of phi will be PI out of phase
 	if(dphidz<0.0){

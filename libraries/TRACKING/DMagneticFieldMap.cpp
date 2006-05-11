@@ -1,9 +1,11 @@
 
-#include "DMagneticFieldMap.h"
 #include <iostream>
 #include <fstream>
 using std::cout;
 using std::endl;
+
+#include "DMagneticFieldMap.h"
+#include "DParameterManager.h"
 
 #include <TVector3.h>
 #include <math.h>
@@ -14,20 +16,18 @@ static int default_zDim=201;
 extern DBfieldPoint_t default_mag_field[];
 
 
-//------------------------------------------------------------------
-// NOTE:
-//   
-//   I make the constructor take input dimensions because 
-//   as far as I can tell this information is not in the document.
-//   I would think that it would be better to have this information 
-//   in the file itself.
-//-------------------------------------------------------------------
-
 //---------------------
 // DMagneticFieldMap
 //---------------------
 DMagneticFieldMap::DMagneticFieldMap()
 {
+	// Set defaults
+	BMAP_Z_OFFSET = 10.0; // in cm
+	BZ_AVG_Z = 57.6; // in inches
+
+	dparms.SetDefaultParameter("GEOM:BMAP_Z_OFFSET",  BMAP_Z_OFFSET);
+	dparms.SetDefaultParameter("GEOM:BZ_AVG_Z",  BZ_AVG_Z);
+
 	/// Initialize with the hardwired, default field map for now.
 	/// We'll go back to reading the map from an external source
 	/// once the primary players can agree on one!
@@ -118,7 +118,7 @@ double DMagneticFieldMap::Bz_avg(double x, double y, double x0, double y0, doubl
 		y = r*sin(phi) + y0;
 		
 		if(x*x + y*y > Rmax2)break;
-		const DBfieldPoint_t *point = getQuick(x/2.54, y/2.54, 50.0);
+		const DBfieldPoint_t *point = getQuick(x/2.54, y/2.54, BZ_AVG_Z);
 		Bzavg+= point->Bz;
 		Ndone++;
 	}
@@ -144,44 +144,51 @@ double DMagneticFieldMap::Bz_avg(double x, double y, double z, double x0, double
 	/// This is used by DQuickFit when fitting a 3-D track and is
 	/// used to convert the helix's parameters into transverse 
 	/// momentum in GeV/c.
-#if 0	
-	double stepsize = 5.0; // in cm
+	
+	// While it should never happen, it's possible that we could get
+	// passed a track that is going down the beam line. For these,
+	// we just say the average field is -2.2T.
+	if(fabs(theta)<1.0E-5 || fabs(fabs(theta)-M_PI)<1.0E-5)return -2.2;
+
 	double dx = x-x0;
 	double dy = y-y0;
 	double r = sqrt(dx*dx + dy*dy);
 	double phi = atan2(dy,dx);
 	
 	// find dphi and dz step sizes that correspond to an arclength
-	// of stepsize along the helix. For tracks close to 90 degrees,
-	// tan(theta) will be large and dz will be quite small. In these
-	// cases, we need to limit the number of steps by the phi angle.
-	// We do this by only going around one 2pi circle, but breaking
-	// early if we run into the BCAL.
-	double tan_theta = tan(theta);
-	if(tan_theta > 1.0E2){
-		double dz = stepsize/sqrt(pow(tan_theta,2.0) + 1);
-		double dphi = tan_theta*dz/r;
-	}else{
-		double dphi = M_PI/180.0; // use 1 degree steps
+	// of stepsize along the helix. We calculate this using cot(theta)
+	// since it has a pole only at theta=0,pi and we should never reconstruct
+	// a track there since then we wouldn't have any hits! We set up
+	// to step along 3 meters of path length so there is an absolute limit.
+	// If we run into the BCAL (R>65.0cm) or go past zmax, then we break
+	// the loop early. This will happen often.
+	double stepsize = 5.0; // in cm
+	double cot_theta = cos(theta)/sin(theta);
+	double dphi = stepsize/r/sqrt(1.0+cot_theta*cot_theta);
+	double dz = r*dphi*cot_theta;
+	int Nsteps = (int)(300.0/stepsize);
+	
+	// make sure we're stepping in the right z-direction
+	if(zmax<z){
+		dz = -dz;
+		dphi = -dphi;
 	}
-	if(delta_phi<0.0)dphi = -dphi;
 	
 	double Bzavg = 0.0;
-	int Nsteps = (int)fabs(delta_phi/dphi);
 	int Ndone = 0;
 	double Rmax2 = 65.0*65.0; // if track goes beyond this, we are out of range
-	for(; Ndone<Nsteps; phi+=dphi){
+	for(; Ndone<Nsteps; phi+=dphi, z+=dz){
 		x = r*cos(phi) + x0;
 		y = r*sin(phi) + y0;
 		
 		if(x*x + y*y > Rmax2)break;
-		const DBfieldPoint_t *point = getQuick(x/2.54, y/2.54, 50.0);
+		const DBfieldPoint_t *point = getQuick(x/2.54, y/2.54, (BMAP_Z_OFFSET+z)/2.54);
 		Bzavg+= point->Bz;
 		Ndone++;
 	}
 	
 	Bzavg /= (double)Ndone;
-#endif
+
 	return Bzavg;
 }
 
