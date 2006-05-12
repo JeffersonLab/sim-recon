@@ -21,12 +21,12 @@ class DMagneticFieldStepper
 {
 	public:
 
-		DMagneticFieldStepper(DMagneticFieldMap *map);
-		DMagneticFieldStepper(DMagneticFieldMap *map, double q, TVector3 *x, TVector3 *p);
+		DMagneticFieldStepper(const DMagneticFieldMap *map);
+		DMagneticFieldStepper(const DMagneticFieldMap *map, double q, TVector3 *x, TVector3 *p);
 		~DMagneticFieldStepper();
 	
 		derror_t SetStartingParams(double q, TVector3 *x, TVector3 *p);
-		derror_t SetMagneticFieldMap(DMagneticFieldMap *map);
+		derror_t SetMagneticFieldMap(const DMagneticFieldMap *map);
 		derror_t SetStepSize(double step);
 		derror_t Step(TVector3 *newpos);
 		const DBfieldPoint_t* GetDBfieldPoint(void);
@@ -34,7 +34,7 @@ class DMagneticFieldStepper
 		inline double GetStepSize(void) const{return stepsize;}
 	
 	private:
-		DMagneticFieldMap *bfield; ///< pointer to magnetic field map
+		const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
 		double stepsize;		///< distance(cm) to move particle when Step() is called
 		double q;				///< electric charge in units of e
 		TVector3 pos;			///< current position of particle

@@ -9,7 +9,7 @@ using namespace std;
 //-----------------------
 // DMagneticFieldStepper
 //-----------------------
-DMagneticFieldStepper::DMagneticFieldStepper(DMagneticFieldMap *bfield)
+DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield)
 {
 	this->bfield = bfield;
 	q = 1.0;
@@ -22,7 +22,7 @@ DMagneticFieldStepper::DMagneticFieldStepper(DMagneticFieldMap *bfield)
 //-----------------------
 // DMagneticFieldStepper
 //-----------------------
-DMagneticFieldStepper::DMagneticFieldStepper(DMagneticFieldMap *bfield, double q, TVector3 *x, TVector3 *p)
+DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield, double q, TVector3 *x, TVector3 *p)
 {
 	this->bfield = bfield;
 	this->q = q;
@@ -55,7 +55,7 @@ derror_t DMagneticFieldStepper::SetStartingParams(double q, TVector3 *x, TVector
 //-----------------------
 // SetMagneticFieldMap
 //-----------------------
-derror_t DMagneticFieldStepper::SetMagneticFieldMap(DMagneticFieldMap *bfield)
+derror_t DMagneticFieldStepper::SetMagneticFieldMap(const DMagneticFieldMap *bfield)
 {
 	this->bfield = bfield;
 
