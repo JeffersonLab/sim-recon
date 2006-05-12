@@ -42,7 +42,7 @@ class DMagneticFieldMap
 		int    rDim;   /*!< radial dimension of internal data structure  */
 		int    zDim;   /*!< z dimension of internal data structure  */
 		int    phiDim; /*!< phi dimension of internal data structure */
-		float  constBz;/*!< Use this (in tesla) for homogeneous field if gt -100 */
+		float  BZ_CONST;/*!< Use this (in tesla) for homogeneous field if gt -100 */
 
 		DBfieldPoint_t null_point;
 		float BMAP_Z_OFFSET;

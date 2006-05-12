@@ -24,9 +24,11 @@ DMagneticFieldMap::DMagneticFieldMap()
 	// Set defaults
 	BMAP_Z_OFFSET = 10.0; // in cm
 	BZ_AVG_Z = 57.6; // in inches
+	BZ_CONST = -1000.0; // in Tesla (only used if less than +/-100 T
 
 	dparms.SetDefaultParameter("GEOM:BMAP_Z_OFFSET",  BMAP_Z_OFFSET);
 	dparms.SetDefaultParameter("GEOM:BZ_AVG_Z",  BZ_AVG_Z);
+	dparms.SetDefaultParameter("GEOM:BZ_CONST",  BZ_CONST);
 
 	/// Initialize with the hardwired, default field map for now.
 	/// We'll go back to reading the map from an external source
@@ -71,7 +73,16 @@ DMagneticFieldMap::~DMagneticFieldMap()
 //---------------------
 const DBfieldPoint_t* DMagneticFieldMap::getQuick(const double x, const double y, const double z) const
 {
-	/// Elements are stored first x, then z. We use x for r
+	// If a (reasonable) value for BZ_CONST is set, then just return it
+	if(fabs(BZ_CONST)<100){
+		static DBfieldPoint_t bpoint;
+		bpoint.x=bpoint.y=bpoint.z=0.0;
+		bpoint.Bx=bpoint.By=0.0;
+		bpoint.Bz = BZ_CONST;
+		return &bpoint;
+	}
+
+	// Elements are stored first x, then z. We use x for r
 	double r = sqrt(x*x+y*y);
 	int index_r = (int)((double)rDim*(r-rMin)/(rMax-rMin));
 	int index_z = (int)((double)zDim*(z-zMin)/(zMax-zMin));
@@ -101,6 +112,9 @@ double DMagneticFieldMap::Bz_avg(double x, double y, double x0, double y0, doubl
 	/// momentum in GeV/c. When information about the helix in the
 	/// z-direction is known, then Bz_avg3D should be used.
 	
+	// If a (reasonable) value for BZ_CONST is set, then just return it
+	if(fabs(BZ_CONST)<100)return BZ_CONST;
+
 	double dphi = M_PI/180.0; // use 1 degree steps
 	double dx = x-x0;
 	double dy = y-y0;
@@ -144,6 +158,9 @@ double DMagneticFieldMap::Bz_avg(double x, double y, double z, double x0, double
 	/// This is used by DQuickFit when fitting a 3-D track and is
 	/// used to convert the helix's parameters into transverse 
 	/// momentum in GeV/c.
+	
+	// If a (reasonable) value for BZ_CONST is set, then just return it
+	if(fabs(BZ_CONST)<100)return BZ_CONST;
 	
 	// While it should never happen, it's possible that we could get
 	// passed a track that is going down the beam line. For these,
