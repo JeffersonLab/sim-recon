@@ -209,6 +209,15 @@ double DMagneticFieldMap::Bz_avg(double x, double y, double z, double x0, double
 	return Bzavg;
 }
 
+//---------------------
+// GetTable
+//---------------------
+void DMagneticFieldMap::GetTable(const DBfieldPoint_t* &Bmap, int &Npoints)
+{
+	Bmap = this->Bmap;
+	Npoints = this->Npoints;
+}
+
 
 // ======================= Below here is auto-generated code ===================
 

@@ -31,6 +31,8 @@ class DMagneticFieldMap
 		double Bz_avg(double x, double y, double x0, double y0, double delta_phi) const;
 		double Bz_avg(double x, double y, double z, double x0, double y0, double theta, double zmax) const;
     
+	 	void GetTable(const DBfieldPoint_t* &Bmap, int &Npoints);
+	 
 	private:
 
 		DBfieldPoint_t *Bmap;	/*!< serialized array for Mag Field values  */
