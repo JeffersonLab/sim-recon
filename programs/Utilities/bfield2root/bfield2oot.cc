@@ -39,9 +39,9 @@ int main(int narg, char *argv[])
 	// Loop over all points in the map
 	const DBfieldPoint_t* B = Bmap;
 	for(int i=0; i<Npoints; i++, B++){
-		double x = B->x/2.54;
-		double y = B->x/2.54;
-		double z = B->x/2.54;
+		double x = B->x*2.54;
+		double y = B->y*2.54;
+		double z = B->z*2.54;
 		double Bx = B->Bx;
 		double By = B->By;
 		double Bz = B->Bz;
