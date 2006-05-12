@@ -44,7 +44,7 @@ class MyProcessor:public DEventProcessor
 		derror_t DrawTrack(DQuickFit *qf, int color);
 		derror_t DrawDetectors(void);
 
-		DMagneticFieldMap *Bfield;
+		const DMagneticFieldMap *Bfield;
 		int eventNo;
 		vector<TMarker*> markers;
 		vector<TEllipse*> circles;

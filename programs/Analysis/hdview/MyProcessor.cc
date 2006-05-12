@@ -25,6 +25,7 @@ using namespace std;
 #include "DFactory_DTrackCandidate.h"
 #include "DFactory_DMCTrackHit.h"
 #include "DMCThrown.h"
+#include "DGeometry.h"
 
 extern TCanvas *maincanvas;
 extern hdv_mainframe *hdvmf;
@@ -124,8 +125,9 @@ derror_t MyProcessor::brun(DEventLoop *eventLoop, int runnumber)
 	}
 
 	// Read in Magnetic field map
-	if(Bfield)delete Bfield;
-	Bfield = new DMagneticFieldMap(-2.0);
+	Bfield = eventLoop->GetDApplication()->GetDGeometry(runnumber)->GetDMagneticFieldMap();
+	//if(Bfield)delete Bfield;
+	//Bfield = new DMagneticFieldMap(-2.0);
 
 	return NOERROR;
 }
@@ -415,8 +417,6 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 		line_top->SetNextPoint(X,Y);
 		ConvertToFront(x, y, 0, X, Y);
 		line_beam->SetNextPoint(X,Y);
-		
-		TVector3 B = stepper->GetBField();
 	}
 	delete stepper;
 	
