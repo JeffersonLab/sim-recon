@@ -10,6 +10,7 @@ using namespace std;
 #include "MyProcessor.h"
 
 #include "DTrackHit.h"
+#include "DTrackCandidate.h"
 #include "GlueX.h"
 
 
@@ -29,13 +30,16 @@ derror_t MyProcessor::init(void)
 	FDC_r = new TH1F("FDC_r","FDC r-hits", 1100,0.0, 100.0);
 	CDC_r = new TH1F("CDC_r","CDC r-hits", 1100, 0.0, 100.0);
 	
+	R_vs_theta = new TH2F("R_vs_theta","R_vs_theta", 180, 0.0, M_PI, 1500, 0.0, 1500.0);
+	R_over_sintheta_vs_theta = new TH2F("R_over_sintheta_vs_theta","R_over_sintheta_vs_theta", 180, 0.0, M_PI, 1500, 0.0, 1500.0);
+	
 	return NOERROR;
 }
 
 //------------------------------------------------------------------
 // evnt   -Fill histograms here
 //------------------------------------------------------------------
-derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
+derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 {
 	// Histograms are created and filled in DEventProcessor_TrackHists
 	// Automatically since it was added to the app in mctrk_ana.cc
@@ -43,7 +47,7 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 
 	// Histograms to determine angles from geometry
 	vector<const DTrackHit*> trackhits;
-	eventLoop->Get(trackhits, "MC");
+	loop->Get(trackhits, "MC");
 	for(unsigned int i=0; i<trackhits.size(); i++){
 		const DTrackHit *hit = trackhits[i];
 		if(hit->system==SYS_CDC){
@@ -54,6 +58,16 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 			FDC_z->Fill(hit->z);
 			FDC_r->Fill(hit->r);
 		}
+	}
+	
+	vector<const DTrackCandidate*> trackcandidates;
+	loop->Get(trackcandidates);
+	for(unsigned int i=0; i<trackcandidates.size(); i++){
+		const DTrackCandidate *tc = trackcandidates[i];
+		
+		double R = sqrt(tc->x0*tc->x0 + tc->y0*tc->y0);
+		R_vs_theta->Fill(tc->theta,R);
+		R_over_sintheta_vs_theta->Fill(tc->theta,R/sin(tc->theta));
 	}
 	
 	return NOERROR;

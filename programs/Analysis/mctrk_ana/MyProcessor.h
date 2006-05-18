@@ -25,6 +25,8 @@ class MyProcessor:public DEventProcessor
 		TH1F *stats, *frac, *h4_dist, *h4_dist_primary;
 		TH2F *delta_p;
 		TH1F *delta_p_over_p;
-		TH1F *hits_per_thrown_track; 
+		TH1F *hits_per_thrown_track;
+		
+		TH2F *R_vs_theta, *R_over_sintheta_vs_theta;
 		
 };

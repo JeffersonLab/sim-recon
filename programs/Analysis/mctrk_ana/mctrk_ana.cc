@@ -25,8 +25,8 @@ int main(int narg, char *argv[])
 	// Run though all events, calling our event processor's methods
 	app.AddProcessor(&myproc);
 	app.AddProcessor(&trkHists);
-	//app.monitor_heartbeat = false;
-	app.Run(NULL,4);
+	app.monitor_heartbeat = false;
+	app.Run(NULL,1);
 	
 	return 0;
 }
