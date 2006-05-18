@@ -41,7 +41,7 @@ int main(int narg, char *argv[])
 	for(int i=0; i<Npoints; i++, B++){
 		double x = B->x*2.54;
 		double y = B->y*2.54;
-		double z = B->z*2.54;
+		double z = (B->z-26.0)*2.54;
 		double Bx = B->Bx;
 		double By = B->By;
 		double Bz = B->Bz;
