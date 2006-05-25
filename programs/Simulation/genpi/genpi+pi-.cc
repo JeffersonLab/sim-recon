@@ -11,8 +11,8 @@ using namespace std;
 
 double PI_CHARGED_MASS = 0.139568;
 uint MAX_EVENTS=10000;
-int NUM_TO_GEN=1;
-double E_BEAM_MIN=PI_CHARGED_MASS;
+int NUM_TO_GEN=2;
+double E_BEAM_MIN=4.0*PI_CHARGED_MASS;
 double E_BEAM_MAX=1.0;
 int RUN_NUMBER=100;
 string OUTPUT_FILENAME="genpiX.ascii";
@@ -57,6 +57,11 @@ int main(int narg, char* argv[])
 		// Determine inicident photon energy. (This is just
 		// evenly sampled from the specified range.)
 		double Etot = (double)random()/(double)RAND_MAX*(E_BEAM_MAX-E_BEAM_MIN) + E_BEAM_MIN;
+
+		// 4-vector of first pion. Pick a random direction.
+		// subsequent ones will be distributed evenly abot phi
+		double phi_piX = 2.0*M_PI*((double)random()/(double)RAND_MAX);
+		double theta_piX = M_PI*((double)random()/(double)RAND_MAX);
 	
 		// Generate piXs
 		vector<piX> piXs;
@@ -75,30 +80,32 @@ int main(int narg, char* argv[])
 			}
 			Etot -= E_piX; // subtract this from beam energy available
 		
-			// 4-vector of piX. Pick a random direction.
-			double phi_piX = 2.0*M_PI*((double)random()/(double)RAND_MAX);
-			double theta_piX = M_PI*((double)random()/(double)RAND_MAX);
 			double p_piX = sqrt(E_piX*E_piX - PI_CHARGED_MASS*PI_CHARGED_MASS);
+
 			piX p;
 			p.E = E_piX;
 			p.px = p_piX*cos(theta_piX)*cos(phi_piX);
 			p.py = p_piX*cos(theta_piX)*sin(phi_piX);
 			p.pz = p_piX*sin(theta_piX);
+			
+			phi_piX += 2.0*M_PI/(double)NUM_TO_GEN;
+			if(phi_piX>2.0*M_PI)phi_piX-=2.0*M_PI;
 		
 			piXs.push_back(p);
 		}
 		
 		// Write event to file
-		of<<RUN_NUMBER<<" "<<nevents<<" "<<piXs.size()*2<<endl;
+		uint type = PI_PLUS_TYPE;
+		of<<RUN_NUMBER<<" "<<nevents<<" "<<piXs.size()<<endl;
 		for(uint j=0; j<piXs.size(); j++){
 			piX &p = piXs[j];
-			uint index = 2*j+1;
+			uint index = j+1;
 			
-			of<<index<<" "<<PI_PLUS_TYPE<<" "<<0<<endl;
+			of<<index<<" "<<type<<" "<<0<<endl;
 			of<<"   "<<0<<" "<<p.px<<" "<<p.py<<" "<<p.pz<<" "<<p.E<<endl;
-			index++;
-			of<<index<<" "<<PI_MINUS_TYPE<<" "<<0<<endl;
-			of<<"   "<<0<<" "<<p.px<<" "<<p.py<<" "<<p.pz<<" "<<p.E<<endl;
+			
+			// alternate bewtween pi+ and pi-
+			type = type==PI_PLUS_TYPE ? PI_MINUS_TYPE:PI_PLUS_TYPE;
 			
 #if 0			
 			double m2 = pow(p.E1+p.E2, 2.0)
