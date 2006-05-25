@@ -291,6 +291,7 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 	TPolyLine *line_side = new TPolyLine();
 	//qf->Print();
 	float Z=z;
+	float z_step = Z<qf->GetZMean() ? +10.0:-10.0;
 	for(int i=0; i<500; i++){
 		float delta_z = Z-qf->z_vertex;
 		float phi = phi0 + delta_z*dphidz;
@@ -302,8 +303,8 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 		ConvertToTop(x,y,Z,X,Y);
 		line_top->SetNextPoint(X,Y);
 		
-		Z+=10.0;
-		if(Z>620.0)break;
+		Z+=z_step;
+		if(Z>620.0 || Z<-10.0)break;
 	}
 	line_side->SetLineColor(color);
 	line_side->Draw();
