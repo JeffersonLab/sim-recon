@@ -57,11 +57,6 @@ int main(int narg, char* argv[])
 		// Determine inicident photon energy. (This is just
 		// evenly sampled from the specified range.)
 		double Etot = (double)random()/(double)RAND_MAX*(E_BEAM_MAX-E_BEAM_MIN) + E_BEAM_MIN;
-
-		// 4-vector of first pion. Pick a random direction.
-		// subsequent ones will be distributed evenly abot phi
-		double phi_piX = 2.0*M_PI*((double)random()/(double)RAND_MAX);
-		double theta_piX = M_PI*((double)random()/(double)RAND_MAX);
 	
 		// Generate piXs
 		vector<piX> piXs;
@@ -82,6 +77,10 @@ int main(int narg, char* argv[])
 		
 			double p_piX = sqrt(E_piX*E_piX - PI_CHARGED_MASS*PI_CHARGED_MASS);
 
+			// 4-vector of first pion. Pick a random direction.
+			double phi_piX = 2.0*M_PI*((double)random()/(double)RAND_MAX);
+			double theta_piX = M_PI*((double)random()/(double)RAND_MAX);
+			
 			piX p;
 			p.E = E_piX;
 			p.px = p_piX*sin(theta_piX)*cos(phi_piX);
@@ -89,9 +88,9 @@ int main(int narg, char* argv[])
 			p.pz = p_piX*cos(theta_piX);
 			
 			// Move angles to keep tracks apart
-			phi_piX += 2.0*M_PI/(double)NUM_TO_GEN;
-			if(phi_piX>2.0*M_PI)phi_piX-=2.0*M_PI;
-			theta_piX += 2.0*(M_PI_2 - theta_piX);
+			//phi_piX += 2.0*M_PI/(double)NUM_TO_GEN;
+			//if(phi_piX>2.0*M_PI)phi_piX-=2.0*M_PI;
+			//theta_piX += 2.0*(M_PI_2 - theta_piX);
 		
 			piXs.push_back(p);
 		}
