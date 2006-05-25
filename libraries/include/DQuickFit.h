@@ -90,6 +90,7 @@ class DQuickFit{
 		derror_t Fill_phi_circle(vector<DQFHit_t*> hits, float x0, float y0);
 		inline const vector<DQFHit_t*> GetHits(){return hits;};
 		inline int GetNhits(){return hits.size();};
+		inline float GetZMean(){return z_mean;}
 		derror_t PrintChiSqVector(void);
 		derror_t Print(void);
 		derror_t Dump(void);
