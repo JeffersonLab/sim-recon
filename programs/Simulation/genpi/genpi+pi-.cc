@@ -88,8 +88,10 @@ int main(int narg, char* argv[])
 			p.py = p_piX*sin(theta_piX)*sin(phi_piX);
 			p.pz = p_piX*cos(theta_piX);
 			
+			// Move angles to keep tracks apart
 			phi_piX += 2.0*M_PI/(double)NUM_TO_GEN;
 			if(phi_piX>2.0*M_PI)phi_piX-=2.0*M_PI;
+			theta_piX += 2.0*(M_PI_2 - theta_piX);
 		
 			piXs.push_back(p);
 		}
