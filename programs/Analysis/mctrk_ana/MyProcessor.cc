@@ -7,6 +7,8 @@
 #include <iostream>
 using namespace std;
 
+#include <TThread.h>
+
 #include "MyProcessor.h"
 
 #include "DTrack.h"
@@ -55,6 +57,7 @@ derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 	// Histograms to determine angles from geometry
 	vector<const DTrackHit*> trackhits;
 	loop->Get(trackhits, "MC");
+	TThread::Lock();
 	for(unsigned int i=0; i<trackhits.size(); i++){
 		const DTrackHit *hit = trackhits[i];
 		if(hit->system==SYS_CDC){
@@ -66,6 +69,7 @@ derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 			FDC_r->Fill(hit->r);
 		}
 	}
+	TThread::UnLock();
 	
 	vector<const DTrack*> tracks;
 	vector<const DTrackEfficiency*> trackeffs;
@@ -100,7 +104,9 @@ derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 		val[11] = thrown->phi;
 		val[12] = thrown->theta;
 		
+		TThread::Lock();
 		fit_parms->Fill();
+		TThread::UnLock();
 	}
 	
 #if 0
