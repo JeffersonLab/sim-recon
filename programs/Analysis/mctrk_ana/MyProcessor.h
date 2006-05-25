@@ -12,6 +12,7 @@
 #include <TFile.h>
 #include <TH1.h>
 #include <TH2.h>
+#include <TTree.h>
 
 
 class MyProcessor:public DEventProcessor
@@ -29,4 +30,6 @@ class MyProcessor:public DEventProcessor
 		
 		TH2F *R_vs_theta, *R_over_sintheta_vs_theta;
 		
+		TTree *fit_parms;
+		float val[100]; // holds values used to fill fit_parms
 };

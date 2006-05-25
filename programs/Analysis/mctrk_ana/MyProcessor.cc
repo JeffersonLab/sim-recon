@@ -9,8 +9,11 @@ using namespace std;
 
 #include "MyProcessor.h"
 
+#include "DTrack.h"
 #include "DTrackHit.h"
 #include "DTrackCandidate.h"
+#include "DTrackEfficiency.h"
+#include "DMCThrown.h"
 #include "GlueX.h"
 
 
@@ -30,9 +33,13 @@ derror_t MyProcessor::init(void)
 	FDC_r = new TH1F("FDC_r","FDC r-hits", 1100,0.0, 100.0);
 	CDC_r = new TH1F("CDC_r","CDC r-hits", 1100, 0.0, 100.0);
 	
-	R_vs_theta = new TH2F("R_vs_theta","R_vs_theta", 180, 0.0, M_PI, 1500, 0.0, 1500.0);
-	R_over_sintheta_vs_theta = new TH2F("R_over_sintheta_vs_theta","R_over_sintheta_vs_theta", 180, 0.0, M_PI, 1500, 0.0, 1500.0);
+	//R_vs_theta = new TH2F("R_vs_theta","R_vs_theta", 180, 0.0, M_PI, 1500, 0.0, 1500.0);
+	//R_over_sintheta_vs_theta = new TH2F("R_over_sintheta_vs_theta","R_over_sintheta_vs_theta", 180, 0.0, M_PI, 1500, 0.0, 1500.0);
 	
+	// Create Tree
+	fit_parms = new TTree("fitp","Helical Fit parameters");
+	fit_parms->Branch("F",val,"p/F:px:py:pz:Ro:phi:theta:p_thrn:px_thrn:py_thrn:pz_thrn:phi_thrn:theta_thrn");
+
 	return NOERROR;
 }
 
@@ -60,8 +67,43 @@ derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 		}
 	}
 	
+	vector<const DTrack*> tracks;
+	vector<const DTrackEfficiency*> trackeffs;
+	vector<const DMCThrown*> mcthrowns;
 	vector<const DTrackCandidate*> trackcandidates;
-	loop->Get(trackcandidates);
+	DFactory<DTrack> *fac_track = loop->Get(tracks);
+	loop->Get(trackeffs);
+	loop->Get(mcthrowns);
+	DFactory<DTrackCandidate> *fac_tc = loop->Get(trackcandidates);
+	
+	
+	// Loop over DMCThrown and DTrackEfficiency objects
+	for(unsigned int i=0; i<mcthrowns.size(); i++){
+		const DMCThrown *thrown = mcthrowns[i];
+		const DTrackEfficiency *trackeff = trackeffs[i];
+		const DTrack *track = fac_track->GetByIDT(trackeff->trackid);
+		if(!track)continue;
+		const DTrackCandidate *tc = fac_tc->GetByIDT(track->candidateid);
+		if(!tc)continue;
+		
+		val[ 0] = tc->p;
+		val[ 1] = tc->p_trans*cos(tc->phi);
+		val[ 2] = tc->p_trans*sin(tc->phi);
+		val[ 3] = tc->p*cos(tc->theta);
+		val[ 4] = sqrt(tc->x0*tc->x0 + tc->y0*tc->y0);
+		val[ 5] = tc->phi;
+		val[ 6] = tc->theta;
+		val[ 7] = thrown->p;
+		val[ 8] = thrown->p*sin(thrown->theta)*cos(thrown->phi);
+		val[ 9] = thrown->p*sin(thrown->theta)*sin(thrown->phi);
+		val[10] = thrown->p*cos(thrown->theta);
+		val[11] = thrown->phi;
+		val[12] = thrown->theta;
+		
+		fit_parms->Fill();
+	}
+	
+#if 0
 	for(unsigned int i=0; i<trackcandidates.size(); i++){
 		const DTrackCandidate *tc = trackcandidates[i];
 		
@@ -69,7 +111,7 @@ derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 		R_vs_theta->Fill(tc->theta,R);
 		R_over_sintheta_vs_theta->Fill(tc->theta,R/sin(tc->theta));
 	}
-	
+#endif	
 	return NOERROR;
 }
 
