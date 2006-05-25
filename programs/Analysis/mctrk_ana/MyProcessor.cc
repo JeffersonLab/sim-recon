@@ -53,7 +53,6 @@ derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 	// Histograms are created and filled in DEventProcessor_TrackHists
 	// Automatically since it was added to the app in mctrk_ana.cc
 
-
 	// Histograms to determine angles from geometry
 	vector<const DTrackHit*> trackhits;
 	loop->Get(trackhits, "MC");
@@ -89,7 +88,8 @@ derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 		if(!track)continue;
 		const DTrackCandidate *tc = fac_tc->GetByIDT(track->candidateid);
 		if(!tc)continue;
-		
+
+		LockState();
 		val[ 0] = tc->p;
 		val[ 1] = tc->p_trans*cos(tc->phi);
 		val[ 2] = tc->p_trans*sin(tc->phi);
@@ -104,9 +104,8 @@ derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 		val[11] = thrown->phi;
 		val[12] = thrown->theta;
 		
-		TThread::Lock();
 		fit_parms->Fill();
-		TThread::UnLock();
+		UnlockState();
 	}
 	
 #if 0
