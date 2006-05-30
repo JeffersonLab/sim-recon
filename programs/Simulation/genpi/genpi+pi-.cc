@@ -50,18 +50,22 @@ int main(int narg, char* argv[])
 	// Seed random number generator
 	srandom(time(NULL));
 
+	double pmax = sqrt(E_BEAM_MAX*E_BEAM_MAX - PI_CHARGED_MASS*PI_CHARGED_MASS);
+	double pmin = sqrt(E_BEAM_MIN*E_BEAM_MIN - PI_CHARGED_MASS*PI_CHARGED_MASS);
+
 	// Loop over events
 	uint nevents;
 	for(nevents=1; nevents<=MAX_EVENTS; nevents++){
 	
 		// Determine inicident photon energy. (This is just
 		// evenly sampled from the specified range.)
-		double Etot = (double)random()/(double)RAND_MAX*(E_BEAM_MAX-E_BEAM_MIN) + E_BEAM_MIN;
+		//double Etot = (double)random()/(double)RAND_MAX*(E_BEAM_MAX-E_BEAM_MIN) + E_BEAM_MIN;
 	
 		// Generate piXs
 		vector<piX> piXs;
 		for(int i=0; i<NUM_TO_GEN; i++){
-		
+
+#if 0		
 			// Beam energy is semi-randomly distributed over all pions.
 			// If this is the last pion it just gets the energy left
 			// in Etot. Otherwise, it gets between 1/4 and 3/4 of the
@@ -74,8 +78,13 @@ int main(int narg, char* argv[])
 				E_piX = Etot*(0.25+0.5*(double)random()/(double)RAND_MAX);
 			}
 			Etot -= E_piX; // subtract this from beam energy available
-		
 			double p_piX = sqrt(E_piX*E_piX - PI_CHARGED_MASS*PI_CHARGED_MASS);
+#else
+			// This is changed from the above. For most studies, we actually
+			// want an iso-momentum distribution of pions.
+			double p_piX = (double)random()/(double)RAND_MAX*(pmax-pmin) + pmin;
+			double E_piX = sqrt(PI_CHARGED_MASS*PI_CHARGED_MASS + p_piX*p_piX);
+#endif		
 
 			// 4-vector of first pion. Pick a random direction.
 			double phi_piX = 2.0*M_PI*((double)random()/(double)RAND_MAX);
