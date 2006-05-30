@@ -7,6 +7,7 @@ all:
 	make -C hdds
 	make -C HDGeant
 	make -C mcsmear
+	make -C genpi
 
 
 clean:
@@ -15,3 +16,5 @@ clean:
 	make -C hdds clean
 	make -C HDGeant clean
 	make -C mcsmear clean
+	make -C genpi clean
+
