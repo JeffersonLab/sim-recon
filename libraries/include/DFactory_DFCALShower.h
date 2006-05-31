@@ -14,12 +14,14 @@
 
 class DFactory_DFCALShower:public DFactory<DFCALShower>{
 	public:
-		DFactory_DFCALShower(){};
+		DFactory_DFCALShower();
 		~DFactory_DFCALShower(){};
 		const string toString(void);
 	
 	private:
 		derror_t evnt(DEventLoop *eventLoop, int eventnumber);	///< Invoked via DEventProcessor virtual method
+
+		float MAX_SHOWER_DIST;
 };
 
 #endif // _DFactory_DFCALShower_

@@ -52,7 +52,7 @@ derror_t DFactory_DFCALHit::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 				dfcalhit->E = fcalhit->E;
 				dfcalhit->t = fcalhit->t;
 				
-				_data.push_back(dfcalhit);
+				v.push_back((void*)dfcalhit);
 
 			} // k  (fcalhits)
 		} // j  (blocks)

@@ -99,6 +99,7 @@ class DFactory_DTrackCandidate:public DFactory<DTrackCandidate>{
 		float phizangle, z_vertex;
 		float phizangle_min, phizangle_max;
 		string TRACKHIT_SOURCE;
+		float MIN_HIT_Z, MAX_HIT_Z;
 		
 		TH1F *phizangle_hist, *zvertex_hist, *phi_relative;
 		

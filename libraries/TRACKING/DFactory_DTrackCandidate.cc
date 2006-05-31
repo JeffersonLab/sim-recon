@@ -58,6 +58,8 @@ DFactory_DTrackCandidate::DFactory_DTrackCandidate()
 	TARGET_Z_MAX = 80.0;
 	TRACKHIT_SOURCE = "MC";
 	XY_NOISE_CUT = 2.0;
+	MIN_HIT_Z = -100.0;
+	MAX_HIT_Z = +1000.0;
 	
 	dparms.SetDefaultParameter("TRK:MAX_SEED_DIST",		MAX_SEED_DIST);
 	dparms.SetDefaultParameter("TRK:MAX_SEED_HITS",		MAX_SEED_HITS);
@@ -68,6 +70,8 @@ DFactory_DTrackCandidate::DFactory_DTrackCandidate()
 	dparms.SetDefaultParameter("TRK:TARGET_Z_MAX",		TARGET_Z_MAX);
 	dparms.SetDefaultParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
 	dparms.SetDefaultParameter("TRK:XY_NOISE_CUT",		XY_NOISE_CUT);
+	dparms.SetDefaultParameter("TRK:MIN_HIT_Z",			MIN_HIT_Z);
+	dparms.SetDefaultParameter("TRK:MAX_HIT_Z",			MAX_HIT_Z);
 	
 	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
 	XY_NOISE_CUT2 = XY_NOISE_CUT*XY_NOISE_CUT;
@@ -204,7 +208,11 @@ void DFactory_DTrackCandidate::GetTrkHits(DEventLoop *loop)
 	for(unsigned int i=0; i<trackhits.size(); i++){
 		Dtrk_hit *hit = (Dtrk_hit*)dynamic_cast<const Dtrk_hit*>(trackhits[i]);
 		if(hit){
-			if(hit->system&&(SYS_CDC|SYS_FDC))trkhits.push_back(hit);
+			if(hit->system&&(SYS_CDC|SYS_FDC)){
+				if(hit->z>=MIN_HIT_Z && hit->z<=MAX_HIT_Z){
+					trkhits.push_back(hit);
+				}
+			}
 		}
 	}
 	
