@@ -67,8 +67,8 @@ derror_t DFactory_DFDCCathodeCluster::evnt(DEventLoop *eventLoop, int eventNo) {
 	vector<const DFDCHit*> uHits;
 	vector<const DFDCHit*> vHits;
 	vector<const DFDCHit*> thisLayer;
-	vector<const DFDCHit*>::iterator planeBegin;
-	vector<const DFDCHit*>::iterator planeEnd;
+	//vector<const DFDCHit*>::iterator planeBegin;
+	//vector<const DFDCHit*>::iterator planeEnd;
 	int iLayer = 1;
 	
 	try {
