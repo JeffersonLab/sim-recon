@@ -29,7 +29,7 @@ static int showerCount = 0;
 
 void hitForwardEMcal (float xin[4], float xout[4],
                       float pin[5], float pout[5], float dEsum,
-                      int track, int stack)
+                      int track, int stack, int history)
 {
    float x[3], t;
    float xfcal[3];
@@ -95,10 +95,10 @@ void hitForwardEMcal (float xin[4], float xout[4],
       }
    }
 
-   /* post the hit to the truth tree, once per primary track */
-   {
+   /* post the hit to the truth tree */
+   if (history == 0) {
       s_FcalTruthShowers_t* showers;
-      int mark = (1<<30) + track;
+      int mark = (1<<30) + showerCount;
       void** twig = getTwig(&forwardEMcalTree, mark);
       if (*twig == 0)
       {
@@ -133,9 +133,9 @@ void hitForwardEMcal (float xin[4], float xout[4],
 
 void hitforwardemcal_(float* xin, float* xout,
                       float* pin, float* pout, float* dEsum,
-                      int* track, int* stack)
+                      int* track, int* stack, int* history)
 {
-   hitForwardEMcal(xin,xout,pin,pout,*dEsum,*track,*stack);
+   hitForwardEMcal(xin,xout,pin,pout,*dEsum,*track,*stack,*history);
 }
 
 

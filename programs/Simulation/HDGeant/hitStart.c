@@ -42,7 +42,7 @@ static int pointCount = 0;
 
 void hitStartCntr (float xin[4], float xout[4],
                    float pin[5], float pout[5], float dEsum,
-                   int track, int stack)
+                   int track, int stack, int history)
 {
    float x[3], t;
    float dx[3], dr;
@@ -126,9 +126,9 @@ void hitStartCntr (float xin[4], float xout[4],
       }
    }
 
-   /* post the hit to the truth tree, once per primary track */
+   /* post the hit to the truth tree */
    {
-      int mark = (1<<30) + track;
+      int mark = (1<<30) + pointCount;
       void** twig = getTwig(&startCntrTree, mark);
       if (*twig == 0)
       {
@@ -152,9 +152,9 @@ void hitStartCntr (float xin[4], float xout[4],
 
 void hitstartcntr_(float* xin, float* xout,
                    float* pin, float* pout, float* dEsum,
-                   int* track, int* stack)
+                   int* track, int* stack, int* history)
 {
-   hitStartCntr(xin,xout,pin,pout,*dEsum,*track,*stack);
+   hitStartCntr(xin,xout,pin,pout,*dEsum,*track,*stack,*history);
 }
 
 

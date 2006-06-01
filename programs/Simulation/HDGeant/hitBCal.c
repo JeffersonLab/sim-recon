@@ -46,7 +46,7 @@ static int showerCount = 0;
 
 void hitBarrelEMcal (float xin[4], float xout[4],
                      float pin[5], float pout[5], float dEsum,
-                     int track, int stack)
+                     int track, int stack, int history)
 {
    float x[3], t;
    float dx[3], dr;
@@ -137,12 +137,12 @@ void hitBarrelEMcal (float xin[4], float xout[4],
    }
 
 
-   /* post the hit to the truth tree, once per primary track */
-   {
+   /* post the hit to the truth tree */
+   if (history == 0) {
       s_BcalTruthShowers_t* showers;
       float r = sqrt(x[0]*x[0]+x[1]*x[1]);
       float phi = atan2(x[1],x[0]);
-      int mark = (1<<30) + track;
+      int mark = (1<<30) + showerCount;
       void** twig = getTwig(&barrelEMcalTree, mark);
       if (*twig == 0) 
       {
@@ -180,9 +180,9 @@ void hitBarrelEMcal (float xin[4], float xout[4],
 
 void hitbarrelemcal_(float* xin, float* xout,
                      float* pin, float* pout, float* dEsum,
-                     int* track, int* stack)
+                     int* track, int* stack, int* history)
 {
-   hitBarrelEMcal(xin,xout,pin,pout,*dEsum,*track,*stack);
+   hitBarrelEMcal(xin,xout,pin,pout,*dEsum,*track,*stack,*history);
 }
 
 

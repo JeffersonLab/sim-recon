@@ -46,7 +46,7 @@ void rnpssn_(float*,int*,int*); // avoid solaris compiler warnings
 
 void hitForwardDC (float xin[4], float xout[4],
                    float pin[5], float pout[5], float dEsum,
-                   int track, int stack)
+                   int track, int stack, int history)
 {
   float x[3], t;
   float dx[3], dr;
@@ -273,13 +273,13 @@ void hitForwardDC (float xin[4], float xout[4],
       }
     }
 
- /* post the hit to the truth tree, once per primary track per anode plane */
+ /* post the hit to the truth tree */
  
     {
       int wire = ceil((xlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
       float dradius = fabs((xlocal[0] - U_OF_WIRE_ZERO)
                                 - (wire-1)*WIRE_SPACING);
-      int mark = (chamber<<20) + (track<<14);
+      int mark = (chamber<<20) + pointCount;
       void** twig = getTwig(&forwardDCTree, mark);
       if (*twig == 0)
       {
@@ -309,9 +309,9 @@ void hitForwardDC (float xin[4], float xout[4],
 
 void hitforwarddc_(float* xin, float* xout,
                    float* pin, float* pout, float* dEsum,
-                   int* track, int* stack)
+                   int* track, int* stack, int* history)
 {
-   hitForwardDC(xin,xout,pin,pout,*dEsum,*track,*stack);
+   hitForwardDC(xin,xout,pin,pout,*dEsum,*track,*stack,*history);
 }
 
 

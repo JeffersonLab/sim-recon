@@ -47,7 +47,7 @@ static int showerCount = 0;
 
 void hitUpstreamEMveto (float xin[4], float xout[4],
 			float pin[5], float pout[5], float dEsum,
-			int track, int stack)
+			int track, int stack, int history)
 {
   float x[3], t;
   float xlocal[3];
@@ -182,9 +182,9 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
     }
   }
 
-  /* post the hit to the truth tree, once per primary track */
-  {
-    int mark = (1<<30) + track;
+  /* post the hit to the truth tree */
+  if (history == 0) {
+    int mark = (1<<30) + showerCount;
     void** twig = getTwig(&upstreamEMvetoTree, mark);
     if (*twig == 0) {
       s_UpstreamEMveto_t* upv = *twig = make_s_UpstreamEMveto();
@@ -219,9 +219,9 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
 
 void hitupstreamemveto_(float* xin, float* xout,
 			float* pin, float* pout, float* dEsum,
-			int* track, int* stack)
+			int* track, int* stack, int* history)
 {
-  hitUpstreamEMveto(xin,xout,pin,pout,*dEsum,*track,*stack);
+  hitUpstreamEMveto(xin,xout,pin,pout,*dEsum,*track,*stack,*history);
 }
 
 

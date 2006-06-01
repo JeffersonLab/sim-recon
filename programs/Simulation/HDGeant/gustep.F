@@ -479,18 +479,18 @@ c      write(*,*) 'volume name= ',cnames(NLEVEL)
 
         if ((cnames(NLEVEL).eq.'STRC').or.		! vertex cylinder
      +      (cnames(NLEVEL).eq.'STRP')) then		! vertex endcap
-          call hitStartCntr(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
+          call hitStartCntr(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
         elseif ((cnames(NLEVEL).eq.'STRA').or.		! CDC straight straw
      +          (cnames(NLEVEL).eq.'STLA')) then	! CDC stereo straw
-          call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
+          call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
 c	  PRINT*,__FILE__,':',__LINE__,' CDC itra=',ITRA,'
 c    +           z=',xout(3),' ipart=',ipart,' GETOT=',GETOT
         elseif (cnames(NLEVEL).eq.'FDCA') then		! FDC anode drift cell
-          call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
+          call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
 c	  PRINT*,__FILE__,':',__LINE__,' FDC itra=',ITRA,'
 c                z=',xout(3),' ipart=',ipart,' GETOT=',GETOT
         elseif (cnames(NLEVEL).eq.'CSEC') then		! Cerenkov counter
-          call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
+          call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
 #ifdef GENERALIZED_BCAL_NAME
         elseif (cnames(NLEVEL)(1:ichar).eq.bcalstring(i:ichar)) then ! barrel calorimeter
 c	  write(*,*)'In GUSTEP: ',bcalstring,dEsum
@@ -506,15 +506,20 @@ c	  write(*,*)'In GUSTEP: ',bcalstring,dEsum
      +  ) then
 
 #endif
-          call hitBarrelEMcal(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
+          call hitBarrelEMcal(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
+          ISTORY = 1  ! this particle has entered the BCal (inherited trait)
         elseif ((cnames(NLEVEL).eq.'FTOC').or.		! forward TOF counter
      +          (cnames(NLEVEL).eq.'FTOS')) then
-          call hitForwardTOF(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
+          call hitForwardTOF(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
         elseif (cnames(NLEVEL).eq.'LGBL') then		! forward calorimeter
-          call hitForwardEMcal(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
+          call hitForwardEMcal
+     +                      (xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
+          ISTORY = 2  ! this particle has entered the FCal (inherited trait)
         elseif ((cnames(NLEVEL).eq.'UPVP').or.		! UPV
      +          (cnames(NLEVEL).eq.'UPVC')) then
-          call hitUpstreamEMveto(xin,xout,pin,pout,dEsum,ITRA,ISTAK)
+          call hitUpstreamEMveto
+     +                      (xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
+          ISTORY = 3  ! this particle has entered the UPV (inherited trait)
         endif
       endif
       END

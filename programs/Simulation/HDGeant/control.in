@@ -20,13 +20,13 @@ C reached before the event count specified in card TRIG is exhausted then the
 C processing will stop at the end of file.
 
 TRIG 10
-cINFILE 'rhop.hddm'
-BEAM 12. 9.
+INFILE 'rhop.hddm'
+cBEAM 12. 9.
 RUNG 9999
 
 C The following card enables single-track generation (for testing)
 C    particle  energy  theta  phi  vertex(x y z)
-KINE    3        1.0     80.  45.    0. 0. 65.
+KINE   108       1.0     30.  45.    0. 0. 65.
 
 C The following card seeds the random number generator so it must be unique
 C for each run.  There are two ways to specify the random see for a run.

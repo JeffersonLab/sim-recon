@@ -46,7 +46,7 @@ static int pointCount = 0;
 
 void hitForwardTOF (float xin[4], float xout[4],
                     float pin[5], float pout[5], float dEsum,
-                    int track, int stack)
+                    int track, int stack, int history)
 {
    float x[3], t;
    float dx[3], dr;
@@ -179,9 +179,9 @@ void hitForwardTOF (float xin[4], float xout[4],
       }
    }
 
-   /* post the hit to the truth tree, once per primary track */
+   /* post the hit to the truth tree */
    {
-      int mark = (1<<30) + track;
+      int mark = (1<<30) + pointCount;
       void** twig = getTwig(&forwardTOFTree, mark);
       if (*twig == 0)
       {
@@ -204,9 +204,9 @@ void hitForwardTOF (float xin[4], float xout[4],
 
 void hitforwardtof_ (float* xin, float* xout,
                      float* pin, float* pout, float* dEsum,
-                     int* track, int* stack)
+                     int* track, int* stack, int* history)
 {
-   hitForwardTOF(xin,xout,pin,pout,*dEsum,*track,*stack);
+   hitForwardTOF(xin,xout,pin,pout,*dEsum,*track,*stack,*history);
 }
 
 

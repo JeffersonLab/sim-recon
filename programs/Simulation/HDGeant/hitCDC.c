@@ -30,7 +30,7 @@ static int stripCount = 0;
 
 void hitCentralDC (float xin[4], float xout[4],
                    float pin[5], float pout[5], float dEsum,
-                   int track, int stack)
+                   int track, int stack, int history)
 {
    float x[3], t;
    float dx[3], dr;
@@ -120,9 +120,9 @@ void hitCentralDC (float xin[4], float xout[4],
             fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
          }
 
-      /* post the hit to the truth tree, once per primary track per ring */
+      /* post the hit to the truth tree */
 
-         mark = (1<<30) + (ring<<20) + track;
+         mark = (1<<30) + pointCount;
          twig = getTwig(&centralDCTree, mark);
          if (*twig == 0)
          {
@@ -199,9 +199,9 @@ void hitCentralDC (float xin[4], float xout[4],
 
 void hitcentraldc_(float* xin, float* xout,
                    float* pin, float* pout, float* dEsum,
-                   int* track, int* stack)
+                   int* track, int* stack, int* history)
 {
-   hitCentralDC(xin,xout,pin,pout,*dEsum,*track,*stack);
+   hitCentralDC(xin,xout,pin,pout,*dEsum,*track,*stack,*history);
 }
 
 

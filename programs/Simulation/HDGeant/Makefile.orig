@@ -84,7 +84,7 @@ else
 	MISC_FIXES :=
 endif
 
-AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o \
+AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o gsstak.o gltrac.o \
        gelhad/gtgama.o gelhad/caspim.o gelhad/caspip.o gpairg.o \
        hddsGeant3.o goptimize.o cobrems.o
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
