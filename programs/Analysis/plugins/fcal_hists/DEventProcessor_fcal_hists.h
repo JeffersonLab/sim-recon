@@ -30,11 +30,13 @@ class DEventProcessor_fcal_hists:public DEventProcessor{
 		TFile *ROOTfile;
 		
 		TH1F* two_gamma_mass, *two_gamma_mass_corr;
+		TH1F* pi0_zdiff;
 		TH2F* xy_shower;
 		TH1F* z_shower;
 		TH1F* E_shower;
-		TH2F* E_over_Erec_vs_z;
-		TH2F* Ecorr_over_Erec_vs_z;
+		TH2F* E_over_Erec_vs_E;
+		TH2F* E_over_Erec_vs_R;
+		TH2F* E_over_Ereccorr_vs_z;
 };
 
 #endif // _DEventProcessor_fcal_hists_

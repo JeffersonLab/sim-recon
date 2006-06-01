@@ -20,7 +20,9 @@ void InitProcessors(DApplication *app){
 } // "C"
 
 
-#define FCAL_Z_OFFSET 650.0 // I don't know what this value is ???
+#define FCAL_Z_OFFSET 640.0-65.0 // I don't know what this value is ???
+//#define FCAL_Z_OFFSET 170.0 // I don't know what this value is ???
+#define PI_ZERO_MASS 0.13497
 
 //------------------
 // init
@@ -33,12 +35,13 @@ derror_t DEventProcessor_fcal_hists::init(void)
 	
 	two_gamma_mass = new TH1F("two_gamma_mass","two_gamma_mass",100, 0.0, 0.300);
 	two_gamma_mass_corr = new TH1F("two_gamma_mass_corr","two_gamma_mass_corr",100, 0.0, 0.300);
+	pi0_zdiff = new TH1F("pi0_zdiff","Calculated z assuming 2 gammas from pi0",1000, 0.0, 1000.0);
 	xy_shower = new TH2F("xy_shower","xy_shower",100, -100.0, 100., 100 , -100.0, 100.0);
-	z_shower = new TH1F("z_shower","z_shower",450, -50.0, 400);
 	E_shower = new TH1F("E_shower","E_shower", 200, 0.0, 6.0);
 	
-	E_over_Erec_vs_z = new TH2F("E_over_Erec_vs_z","E_over_Erec_vs_z", 200, -50.0, 600.0, 200, 0.0, 4.0);
-	Ecorr_over_Erec_vs_z = new TH2F("Ecorr_over_Erec_vs_z","Ecorr_over_Erec_vs_z", 200, -50.0, 600.0, 200, 0.0, 4.0);
+	E_over_Erec_vs_E = new TH2F("E_over_Erec_vs_E","E_over_Erec_vs_E", 200, 0.0, 10.0, 200, 0.0, 4.0);
+	E_over_Erec_vs_R = new TH2F("E_over_Erec_vs_R","E_over_Erec_vs_R", 200, 0.0, 110.0, 200, 0.0, 4.0);
+	E_over_Ereccorr_vs_z = new TH2F("E_over_Ereccorr_vs_z","E_over_Ereccorr_vs_z", 200, 0.0, 10.0, 200, 0.0, 4.0);
 
 	return NOERROR;
 }
@@ -63,37 +66,48 @@ derror_t DEventProcessor_fcal_hists::evnt(DEventLoop *loop, int eventnumber)
 	for(unsigned int i=0; i<showers.size(); i++){
 		const DFCALShower *s = showers[i];
 		xy_shower->Fill(s->x, s->y);
-		//z_shower->Fill(s->z);
 		E_shower->Fill(s->E);
 	}
 	
 	// 2-gamma inv. mass
 	for(unsigned int i=0; i<showers.size(); i++){
 		const DFCALShower *s1 = showers[i];
-		double dx = s1->x;
-		double dy = s1->y;
+		double x1 = s1->x;
+		double y1 = s1->y;
 		double dz = FCAL_Z_OFFSET;
-		double R = sqrt(dx*dx + dy*dy + dz*dz);
-		double E = s1->E;
-		//double Edave = s1->E*(1.106+(dz+65.0-208.4)*(dz+65.0-208.4)*6.851E-6);
-		TLorentzVector p1(E*dx/R, E*dy/R, E*dz/R, E);		
-		//TLorentzVector p1dave(Edave*dx/R, Edave*dy/R, Edave*dz/R, Edave);		
+		double R = sqrt(x1*x1 + y1*y1 + dz*dz);
+		double E1 = s1->E*1.245;
+		TLorentzVector p1(E1*x1/R, E1*y1/R, E1*dz/R, E1);		
 		
 		for(unsigned int j=i+1; j<showers.size(); j++){
 			const DFCALShower *s2 = showers[j];
-			dx = s2->x;
-			dy = s2->y;
-			dz = FCAL_Z_OFFSET; // shift to coordinate relative to center of target
-			R = sqrt(dx*dx + dy*dy + dz*dz);
-			double E = s1->E;
-			//double Edave = s2->Ecorr*(1.106+(dz+65.0-208.4)*(dz+65.0-208.4)*6.851E-6);
-			TLorentzVector p2(E*dx/R, E*dy/R, E*dz/R, E);		
-			//TLorentzVector p2dave(Edave*dx/R, Edave*dy/R, Edave*dz/R, Edave);		
+			double x2 = s2->x;
+			double y2 = s2->y;
+			R = sqrt(x2*x2 + y2*y2 + dz*dz);
+			double E2 = s2->E*1.245;
+			TLorentzVector p2(E2*x2/R, E2*y2/R, E2*dz/R, E2);		
 			
 			TLorentzVector ptot = p1+p2;
 			two_gamma_mass->Fill(ptot.M());
-			//TLorentzVector ptotdave = p1dave+p2dave;
-			//two_gamma_mass_corr->Fill(ptotdave.M());
+			
+			// Calculate Z dist. to vertex assuming these photons came
+			// from a pi0 decay. Cylindrical coordinates are used here.
+			double cos_theta = 1.0 - PI_ZERO_MASS*PI_ZERO_MASS/2.0/E1/E2;
+			double cos_theta2 = cos_theta*cos_theta;
+			double sin_theta2 = 1.0 - cos_theta2;
+			double r1 = sqrt(x1*x1 + y1*y1);
+			double r2 = sqrt(x2*x2 + y2*y2);
+			double cos_deltaPhi = (x1*x2 + y1*y2)/r1/r2;
+			double cos_deltaPhi2 = cos_deltaPhi*cos_deltaPhi;
+			
+			double A = sin_theta2;
+			double B = 2.0*r1*r2*cos_deltaPhi - cos_theta2*(r1*r1 + r2*r2);
+			double C = -r1*r1*r2*r2*(cos_theta2 - cos_deltaPhi2);
+
+			double z2 = (-B+sqrt(B*B-4.0*A*C))/2.0/A;
+			double z = sqrt(z2);
+			pi0_zdiff->Fill(z);
+
 		}
 	}
 	
@@ -102,13 +116,54 @@ derror_t DEventProcessor_fcal_hists::evnt(DEventLoop *loop, int eventnumber)
 	loop->Get(mcthrowns);
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
 		for(unsigned int j=0; j<showers.size(); j++){
-			double z = FCAL_Z_OFFSET;
-			E_over_Erec_vs_z->Fill(z, mcthrowns[i]->E/showers[j]->E);
-
-			//double Ecorr = showers[j]->Ecorr*(1.106+(z-208.4)*(z-208.4)*6.851E-6);
-			//Ecorr_over_Erec_vs_z->Fill(z, mcthrowns[i]->E/Ecorr);
+			E_over_Erec_vs_E->Fill(showers[j]->E, mcthrowns[i]->E/showers[j]->E);
+			double R = sqrt(showers[j]->x*showers[j]->x + showers[j]->y*showers[j]->y);
+			E_over_Erec_vs_R->Fill(R, mcthrowns[i]->E/showers[j]->E);
 		}
 	}
+
+#if 0
+	// Calculate z from thrown values
+	for(unsigned int i=0; i<mcthrowns.size(); i++){
+		const DMCThrown *t1 = mcthrowns[i];
+		double E1 = t1->E;
+		double z1 = FCAL_Z_OFFSET;
+		double R = z1/cos(t1->theta);
+		double x1 = R*sin(t1->theta)*cos(t1->phi);
+		double y1 = R*sin(t1->theta)*sin(t1->phi);
+		TLorentzVector p1(E1*x1/R, E1*y1/R, E1*z1/R, E1);		
+
+		for(unsigned int j=i+1; j<mcthrowns.size(); j++){
+			const DMCThrown *t2 = mcthrowns[j];
+			double E2 = t2->E;
+			double z2 = FCAL_Z_OFFSET;
+			R = z2/cos(t2->theta);
+			double x2 = R*sin(t2->theta)*cos(t2->phi);
+			double y2 = R*sin(t2->theta)*sin(t2->phi);
+			TLorentzVector p2(E2*x2/R, E2*y2/R, E2*z2/R, E2);		
+			
+			TLorentzVector ptot = p1+p2;
+			cout<<__FILE__<<":"<<__LINE__<<" thrown inv. mass = "<<ptot.M()<<endl;
+			
+			double cos_theta = 1.0 - PI_ZERO_MASS*PI_ZERO_MASS/2.0/E1/E2;
+			double cos_theta2 = cos_theta*cos_theta;
+			double sin_theta2 = 1.0 - cos_theta2;
+			double r1 = sqrt(x1*x1 + y1*y1);
+			double r2 = sqrt(x2*x2 + y2*y2);
+			double cos_deltaPhi = (x1*x2 + y1*y2)/r1/r2;
+			double cos_deltaPhi2 = cos_deltaPhi*cos_deltaPhi;
+			
+			double A = sin_theta2;
+			double B = 2.0*r1*r2*cos_deltaPhi - cos_theta2*(r1*r1 + r2*r2);
+			double C = -r1*r1*r2*r2*(cos_theta2 - cos_deltaPhi2);
+
+			double z_2 = (-B+sqrt(B*B-4.0*A*C))/2.0/A;
+			double z = sqrt(z_2);
+			cout<<__FILE__<<":"<<__LINE__<<" z="<<z<<endl;
+		}
+	}
+cout<<__FILE__<<":"<<__LINE__<<endl;
+#endif
 
 	return NOERROR;
 }
