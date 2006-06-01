@@ -12,8 +12,8 @@
 #include <TFile.h>
 #include <TTree.h>
 
-#include "CDCHitCopy.h"
-#include "FCALHitCopy.h"
+//#include "CDCHitCopy.h"
+//#include "FCALHitCopy.h"
 
 class MyProcessor:public DEventProcessor
 {
@@ -26,6 +26,6 @@ class MyProcessor:public DEventProcessor
 
 		TFile *ROOTfile;
 		TTree *ROOTtree;
-		CDCHitCopy *ROOTcdchit;
-		FCALHitCopy *ROOTfcalhit;
+		//CDCHitCopy *ROOTcdchit;
+		//FCALHitCopy *ROOTfcalhit;
 };

@@ -20,10 +20,7 @@ using namespace std;
 #include "DTAGGERHit.h"
 #include "DTOFHit.h"
 #include "DUPVHit.h"
-#include "DMCCheatHit.h"
-#include "DMCTrackCandidate.h"
-#include "DMCReconstructed.h"
-#include "DMCTrackCandidate.h"
+#include "DTrackCandidate.h"
 #include "DQuickFit.h"
 #include "DTrackFit.h"
 #include "DMCThrown.h"
@@ -33,9 +30,6 @@ using namespace std;
 //------------------------------------------------------------------
 derror_t MyProcessor::init(void)
 {
-	// Print list of factories
-	eventLoop->PrintFactories();
-
 	// open ROOT file
 	ROOTfile = new TFile("hd_tree.root","RECREATE","Produced by hd_root");
 	cout<<"Opened ROOT file \"hd_tree.root\" ..."<<endl;
@@ -45,6 +39,7 @@ derror_t MyProcessor::init(void)
 	ROOTtree = new TTree("ROOTtree","HDGeant Hits Tree");
 	cout<<"Created Root Tree ..."<<endl;
 
+#if 0
 	ROOTcdchit = new CDCHitCopy;
 	ROOTfcalhit = new FCALHitCopy;
 
@@ -52,6 +47,7 @@ derror_t MyProcessor::init(void)
 	cout<<"Created CDCHits Branch ..."<<endl;
 	ROOTtree->Branch("FCALHits","FCALHitCopy",&ROOTfcalhit);
 	cout<<"Created FCALHits Branch ..."<<endl;
+#endif
 
 	return NOERROR;
 }
@@ -61,6 +57,7 @@ derror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 derror_t MyProcessor::evnt(int eventnumber)
 {
+#if 0
 	vector<const DCDCHit*> cdchits;
 	vector<const DFCALHit*> fcalhits;
 	eventLoop->Get(cdchits);
@@ -90,7 +87,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 	}
 
 	eventLoop->PrintRate();
-
+#endif
 	return NOERROR;
 }
 
