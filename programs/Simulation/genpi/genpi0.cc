@@ -17,6 +17,9 @@ double E_BEAM_MAX=1.0;
 int RUN_NUMBER=100;
 string OUTPUT_FILENAME="genpi0.ascii";
 
+double FORCE_THETA = -1000.0;
+double FORCE_PHI = -1000.0;
+
 #define GAMMA_TYPE 1
 #define PI_TYPE 7
 
@@ -80,11 +83,15 @@ int main(int narg, char* argv[])
 			double phi_pi0 = 2.0*M_PI*((double)random()/(double)RAND_MAX);
 			double theta_pi0 = M_PI*((double)random()/(double)RAND_MAX);
 			double p_pi0 = sqrt(E_pi0*E_pi0 - PI_ZERO_MASS*PI_ZERO_MASS);
+			
+			// If user specified angles, use them instead
+			if(FORCE_THETA>-1000.0)theta_pi0=FORCE_THETA;
+			if(FORCE_PHI>-1000.0)phi_pi0=FORCE_PHI;
 			pi0 p;
 			p.E = E_pi0;
-			p.px = p_pi0*cos(theta_pi0)*cos(phi_pi0);
-			p.py = p_pi0*cos(theta_pi0)*sin(phi_pi0);
-			p.pz = p_pi0*sin(theta_pi0);
+			p.px = p_pi0*sin(theta_pi0)*cos(phi_pi0);
+			p.py = p_pi0*sin(theta_pi0)*sin(phi_pi0);
+			p.pz = p_pi0*cos(theta_pi0);
 
 			// 4-vectors of 2 decay photons in rest frame of pi0
 			// where they are isotropic and back to back.
@@ -178,6 +185,12 @@ void ParseCommandLineArguments(int narg, char* argv[])
 		}else if(arg=="-o"){
 			if(i==narg-1){cout<<"-o requires an argument!"<<endl; Usage();}
 			OUTPUT_FILENAME = argv[++i];
+		}else if(arg=="-theta"){
+			if(i==narg-1){cout<<"-theta requires an argument!"<<endl; Usage();}
+			FORCE_THETA = atof(argv[++i]);
+		}else if(arg=="-phi"){
+			if(i==narg-1){cout<<"-phi requires an argument!"<<endl; Usage();}
+			FORCE_PHI = atof(argv[++i]);
 		}else if(arg=="-m"){
 			if(i==narg-1){cout<<"-m requires an argument!"<<endl; Usage();}
 			PI_ZERO_MASS = atof(argv[++i]);
@@ -189,6 +202,12 @@ void ParseCommandLineArguments(int narg, char* argv[])
 	cout<<"NUM_TO_GEN      = "<<NUM_TO_GEN<<endl;
 	cout<<"E_BEAM_MIN      = "<<E_BEAM_MIN<<endl;
 	cout<<"E_BEAM_MAX      = "<<E_BEAM_MAX<<endl;
+	cout<<"THETA           = ";
+		if(FORCE_THETA>-1000.0)cout<<FORCE_THETA; else cout<<"random";
+		cout<<endl;
+	cout<<"PHI             = ";
+		if(FORCE_PHI>-1000.0)cout<<FORCE_PHI; else cout<<"random";
+		cout<<endl;
 	cout<<"PI_ZERO_MASS    = "<<PI_ZERO_MASS<<endl;
 	cout<<"OUTPUT_FILENAME = \""<<OUTPUT_FILENAME<<"\""<<endl;
 	cout<<"-------------------------------------------------"<<endl;
@@ -205,13 +224,15 @@ void Usage(void)
 	cout<<"      genpi0 -M numEvents [options]"<<endl;
 	cout<<endl;
 	cout<<"  options:"<<endl;
-	cout<<"    -h            print this help message"<<endl;
-	cout<<"    -M numEvents  set the number of events to produced (required)"<<endl;
-	cout<<"    -N numPi0s    set the number of pi0s to generate per event."<<endl;
-	cout<<"    -Emin E       set the lower beam energy limit in GeV"<<endl;
-	cout<<"    -Emax E       set the upper beam energy limit in GeV"<<endl;
-	cout<<"    -o filename   set the output filename"<<endl;
-	cout<<"    -m mass       set the rest mass of the pi0(GeV) (e.g. make it an eta!)"<<endl;
+	cout<<"    -h                print this help message"<<endl;
+	cout<<"    -M     numEvents  set the number of events to produced (required)"<<endl;
+	cout<<"    -N     numPi0s    set the number of pi0s to generate per event."<<endl;
+	cout<<"    -Emin  E          set the lower beam energy limit in GeV"<<endl;
+	cout<<"    -Emax  E          set the upper beam energy limit in GeV"<<endl;
+	cout<<"    -theta angle      set theta angle in rad (default: random)"<<endl;
+	cout<<"    -phi   angle      set phi angle in rad (default: random)"<<endl;
+	cout<<"    -o     filename   set the output filename"<<endl;
+	cout<<"    -m     mass       set the rest mass of the pi0(GeV) (e.g. make it an eta!)"<<endl;
 	cout<<endl;
 	cout<<"This program will produce events with one or more pi0s and write"<<endl;
 	cout<<"out the resulting decay photons in an ASCII file of the same"<<endl;
