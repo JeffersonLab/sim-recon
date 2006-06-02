@@ -12,10 +12,17 @@
 #include <DApplication.h>
 #include <DBCALShower.h>
 #include <DMCThrown.h>
+
+static TFile **tfilePtr = NULL;
+
 // Routine used to create our DEventProcessor
 extern "C"{
 void InitProcessors(DApplication *app){
 	app->AddProcessor(new DEventProcessor_bcal_hists());
+}
+
+void SetTFilePtrAddress(TFile **h){
+	tfilePtr = h;
 }
 } // "C"
 
@@ -28,17 +35,23 @@ void InitProcessors(DApplication *app){
 derror_t DEventProcessor_bcal_hists::init(void)
 {
 	// open ROOT file
-	ROOTfile = new TFile("bcal_hists.root","RECREATE","Produced by hd_ana");
-	cout<<"Opened ROOT file \"bcal_hists.root\""<<endl;
+	ROOTfile = NULL;
+	if(tfilePtr == NULL)tfilePtr = &ROOTfile;
+	if(*tfilePtr == NULL){
+		*tfilePtr = ROOTfile = new TFile("bcal_hists.root","RECREATE","Produced by hd_ana");
+		cout<<"Opened ROOT file \"bcal_hists.root\""<<endl;
+	}else{
+		(*tfilePtr)->cd();
+	}
 	
-	two_gamma_mass = new TH1F("two_gamma_mass","two_gamma_mass",100, 0.0, 0.300);
-	two_gamma_mass_corr = new TH1F("two_gamma_mass_corr","two_gamma_mass_corr",100, 0.0, 0.300);
-	xy_shower = new TH2F("xy_shower","xy_shower",100, -100.0, 100., 100 , -100.0, 100.0);
-	z_shower = new TH1F("z_shower","z_shower",450, -50.0, 400);
-	E_shower = new TH1F("E_shower","E_shower", 200, 0.0, 6.0);
+	two_gamma_mass = new TH1F("bcal_two_gamma_mass","two_gamma_mass",100, 0.0, 0.300);
+	two_gamma_mass_corr = new TH1F("bcal_two_gamma_mass_corr","two_gamma_mass_corr",100, 0.0, 0.300);
+	xy_shower = new TH2F("bcal_xy_shower","xy_shower",100, -100.0, 100., 100 , -100.0, 100.0);
+	z_shower = new TH1F("bcal_z_shower","z_shower",450, -50.0, 400);
+	E_shower = new TH1F("bcal_E_shower","E_shower", 200, 0.0, 6.0);
 	
-	E_over_Erec_vs_z = new TH2F("E_over_Erec_vs_z","E_over_Erec_vs_z", 200, -50.0, 600.0, 200, 0.0, 4.0);
-	Ecorr_over_Erec_vs_z = new TH2F("Ecorr_over_Erec_vs_z","Ecorr_over_Erec_vs_z", 200, -50.0, 600.0, 200, 0.0, 4.0);
+	E_over_Erec_vs_z = new TH2F("bcal_E_over_Erec_vs_z","E_over_Erec_vs_z", 200, -50.0, 600.0, 200, 0.0, 4.0);
+	Ecorr_over_Erec_vs_z = new TH2F("bcal_Ecorr_over_Erec_vs_z","Ecorr_over_Erec_vs_z", 200, -50.0, 600.0, 200, 0.0, 4.0);
 
 	return NOERROR;
 }
@@ -58,6 +71,8 @@ derror_t DEventProcessor_bcal_hists::evnt(DEventLoop *loop, int eventnumber)
 {
 	vector<const DBCALShower*> showers;
 	loop->Get(showers);
+	
+	LockState();
 	
 	// Single shower params
 	for(unsigned int i=0; i<showers.size(); i++){
@@ -110,6 +125,8 @@ derror_t DEventProcessor_bcal_hists::evnt(DEventLoop *loop, int eventnumber)
 		}
 	}
 
+	UnlockState();	
+
 	return NOERROR;
 }
 
@@ -129,9 +146,11 @@ derror_t DEventProcessor_bcal_hists::erun(void)
 derror_t DEventProcessor_bcal_hists::fini(void)
 {
 
-	ROOTfile->Write();
-	delete ROOTfile;
-	cout<<endl<<"Closed ROOT file"<<endl;
+	if(ROOTfile){
+		ROOTfile->Write();
+		delete ROOTfile;
+		cout<<endl<<"Closed ROOT file"<<endl;
+	}
 
 	return NOERROR;
 }
