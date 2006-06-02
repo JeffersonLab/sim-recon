@@ -53,6 +53,7 @@ class DApplication{
 		void Quit(void);
 		inline int GetNEvents(void){return NEvents;}
 		inline float GetRate(void){return rate_instantaneous;}
+		inline vector<void*> GetSharedObjectHandles(void){return sohandles;}
 		void PrintRate();
 		void SetShowTicker(int what){show_ticker = what;}
 		void SignalThreads(int signo);
@@ -88,6 +89,7 @@ class DApplication{
 		}EventSourceSharedObject_t;
 		vector<EventSourceSharedObject_t> EventSourceSharedObjects;
 		vector<InitFactories_t*> InitFactoriesProcs;
+		vector<void*> sohandles;
 
 		int show_ticker;
 		int NEvents;

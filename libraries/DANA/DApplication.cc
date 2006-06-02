@@ -680,6 +680,7 @@ derror_t DApplication::RegisterSharedObject(const char *soname)
 		cerr<<dlerror()<<endl;
 		return NOERROR;
 	}
+	sohandles.push_back(handle);
 	
 	int things_found = 0;
 	
