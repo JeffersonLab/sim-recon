@@ -29,7 +29,7 @@ class DEventProcessor_fcal_hists:public DEventProcessor{
 
 		TFile *ROOTfile;
 		
-		TH1F* two_gamma_mass, *two_gamma_mass_corr;
+		TH1F* two_gamma_mass, *two_gamma_mass_cut;
 		TH1F* pi0_zdiff;
 		TH2F* xy_shower;
 		TH1F* z_shower;

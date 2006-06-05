@@ -47,7 +47,7 @@ derror_t DEventProcessor_fcal_hists::init(void)
 	}
 	
 	two_gamma_mass = new TH1F("fcal_two_gamma_mass","two_gamma_mass",100, 0.0, 0.300);
-	two_gamma_mass_corr = new TH1F("fcal_two_gamma_mass_corr","two_gamma_mass_corr",100, 0.0, 0.300);
+	two_gamma_mass_cut = new TH1F("fcal_two_gamma_mass_cut","two_gamma_mass_cut",100, 0.0, 0.300);
 	pi0_zdiff = new TH1F("fcal_pi0_zdiff","Calculated z assuming 2 gammas from pi0",1000, 0.0, 1000.0);
 	xy_shower = new TH2F("fcal_xy_shower","xy_shower",100, -100.0, 100., 100 , -100.0, 100.0);
 	E_shower = new TH1F("fcal_E_shower","E_shower", 200, 0.0, 6.0);
@@ -91,7 +91,7 @@ derror_t DEventProcessor_fcal_hists::evnt(DEventLoop *loop, int eventnumber)
 		double y1 = s1->y;
 		double dz = FCAL_Z_OFFSET;
 		double R = sqrt(x1*x1 + y1*y1 + dz*dz);
-		double E1 = s1->E*1.245;
+		double E1 = s1->E;
 		TLorentzVector p1(E1*x1/R, E1*y1/R, E1*dz/R, E1);		
 		
 		for(unsigned int j=i+1; j<showers.size(); j++){
@@ -99,11 +99,12 @@ derror_t DEventProcessor_fcal_hists::evnt(DEventLoop *loop, int eventnumber)
 			double x2 = s2->x;
 			double y2 = s2->y;
 			R = sqrt(x2*x2 + y2*y2 + dz*dz);
-			double E2 = s2->E*1.245;
+			double E2 = s2->E;
 			TLorentzVector p2(E2*x2/R, E2*y2/R, E2*dz/R, E2);		
 			
 			TLorentzVector ptot = p1+p2;
 			two_gamma_mass->Fill(ptot.M());
+			if(showers.size()==2)two_gamma_mass_cut->Fill(ptot.M());
 			
 			// Calculate Z dist. to vertex assuming these photons came
 			// from a pi0 decay. Cylindrical coordinates are used here.
