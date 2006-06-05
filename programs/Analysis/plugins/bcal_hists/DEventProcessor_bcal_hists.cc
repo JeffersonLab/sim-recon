@@ -11,6 +11,7 @@
 
 #include <DApplication.h>
 #include <DBCALShower.h>
+#include <DFCALShower.h>
 #include <DMCThrown.h>
 
 static TFile **tfilePtr = NULL;
@@ -28,6 +29,7 @@ void SetTFilePtrAddress(TFile **h){
 
 
 #define BCAL_Z_OFFSET 26.03+123.4+65.0 //convert regina's coordinated to HDGeant's
+#define FCAL_Z_OFFSET 640.0-65.0 // I don't know what this value is ???
 
 //------------------
 // init
@@ -47,6 +49,8 @@ derror_t DEventProcessor_bcal_hists::init(void)
 	two_gamma_mass = new TH1F("bcal_two_gamma_mass","two_gamma_mass",100, 0.0, 0.300);
 	two_gamma_mass_corr = new TH1F("bcal_two_gamma_mass_corr","two_gamma_mass_corr",100, 0.0, 0.300);
 	two_gamma_mass_cut = new TH1F("bcal_two_gamma_mass_cut","two_gamma_mass_cut",100, 0.0, 0.300);
+	bcal_fcal_two_gamma_mass = new TH1F("bcal_fcal_two_gamma_mass","bcal_fcal_two_gamma_mass",100, 0.0, 0.300);
+	bcal_fcal_two_gamma_mass_cut = new TH1F("bcal_fcal_two_gamma_mass_cut","bcal_fcal_two_gamma_mass_cut",100, 0.0, 0.300);
 	xy_shower = new TH2F("bcal_xy_shower","xy_shower",100, -100.0, 100., 100 , -100.0, 100.0);
 	z_shower = new TH1F("bcal_z_shower","z_shower",450, -50.0, 400);
 	E_shower = new TH1F("bcal_E_shower","E_shower", 200, 0.0, 6.0);
@@ -71,7 +75,9 @@ derror_t DEventProcessor_bcal_hists::brun(DEventLoop *eventLoop, int runnumber)
 derror_t DEventProcessor_bcal_hists::evnt(DEventLoop *loop, int eventnumber)
 {
 	vector<const DBCALShower*> showers;
+	vector<const DFCALShower*> fcal_showers;
 	loop->Get(showers);
+	loop->Get(fcal_showers);
 	
 	LockState();
 	
@@ -101,7 +107,7 @@ derror_t DEventProcessor_bcal_hists::evnt(DEventLoop *loop, int eventnumber)
 			dy = s2->y;
 			dz = s2->z +BCAL_Z_OFFSET- 65.0; // shift to coordinate relative to center of target
 			R = sqrt(dx*dx + dy*dy + dz*dz);
-			double E = s1->Ecorr;
+			double E = s2->Ecorr;
 			double Edave = s2->Ecorr*(1.106+(dz+65.0-208.4)*(dz+65.0-208.4)*6.851E-6);
 			TLorentzVector p2(E*dx/R, E*dy/R, E*dz/R, E);		
 			TLorentzVector p2dave(Edave*dx/R, Edave*dy/R, Edave*dz/R, Edave);		
@@ -113,6 +119,24 @@ derror_t DEventProcessor_bcal_hists::evnt(DEventLoop *loop, int eventnumber)
 			
 			if(showers.size()==2)two_gamma_mass_cut->Fill(ptotdave.M());
 		}
+		
+		for(unsigned int j=0; j<fcal_showers.size(); j++){
+			const DFCALShower *s2 = fcal_showers[j];
+			dx = s2->x;
+			dy = s2->y;
+			dz = FCAL_Z_OFFSET; // shift to coordinate relative to center of target
+			R = sqrt(dx*dx + dy*dy + dz*dz);
+			double E = s2->E;
+			TLorentzVector p2(E*dx/R, E*dy/R, E*dz/R, E);		
+			
+			TLorentzVector ptot = p1dave+p2;
+			bcal_fcal_two_gamma_mass->Fill(ptot.M());
+
+			if(showers.size()==1 && fcal_showers.size()==1){
+				bcal_fcal_two_gamma_mass_cut->Fill(ptot.M());
+			}
+		}
+		
 	}
 	
 	// Compare to thrown values
