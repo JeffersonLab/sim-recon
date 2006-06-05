@@ -46,6 +46,7 @@ derror_t DEventProcessor_bcal_hists::init(void)
 	
 	two_gamma_mass = new TH1F("bcal_two_gamma_mass","two_gamma_mass",100, 0.0, 0.300);
 	two_gamma_mass_corr = new TH1F("bcal_two_gamma_mass_corr","two_gamma_mass_corr",100, 0.0, 0.300);
+	two_gamma_mass_cut = new TH1F("bcal_two_gamma_mass_cut","two_gamma_mass_cut",100, 0.0, 0.300);
 	xy_shower = new TH2F("bcal_xy_shower","xy_shower",100, -100.0, 100., 100 , -100.0, 100.0);
 	z_shower = new TH1F("bcal_z_shower","z_shower",450, -50.0, 400);
 	E_shower = new TH1F("bcal_E_shower","E_shower", 200, 0.0, 6.0);
@@ -109,6 +110,8 @@ derror_t DEventProcessor_bcal_hists::evnt(DEventLoop *loop, int eventnumber)
 			two_gamma_mass->Fill(ptot.M());
 			TLorentzVector ptotdave = p1dave+p2dave;
 			two_gamma_mass_corr->Fill(ptotdave.M());
+			
+			if(showers.size()==2)two_gamma_mass_cut->Fill(ptotdave.M());
 		}
 	}
 	
