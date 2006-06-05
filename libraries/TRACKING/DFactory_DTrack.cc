@@ -9,6 +9,8 @@
 #include "DFactory_DTrack.h"
 #include "DEventLoop.h"
 
+extern double MomentumFromTable(double Ro, double theta);
+
 //------------------
 // evnt
 //------------------
@@ -22,9 +24,11 @@ derror_t DFactory_DTrack::evnt(DEventLoop *eventLoop, int eventnumber)
 	for(unsigned int i=0; i<trackcandidates.size(); i++){
 		const DTrackCandidate *trackcandidate = trackcandidates[i];
 		DTrack *track = new DTrack;
+		
+		double Ro = sqrt(trackcandidate->x0*trackcandidate->x0 + trackcandidate->y0*trackcandidate->y0);
 
 		track->q = trackcandidate->q;
-		track->p = trackcandidate->p;
+		track->p = MomentumFromTable(Ro, trackcandidate->theta);
 		track->theta = trackcandidate->theta;
 		track->phi = trackcandidate->phi;
 		track->x = 0.0;

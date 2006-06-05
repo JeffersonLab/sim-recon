@@ -712,15 +712,13 @@ const string DFactory_DTrackCandidate::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("id: Nhits: x0(cm): y0(cm): z_vertex: dphi/dz:  q:   p: p_trans:   phi: theta:");
+	printheader("        id: Nhits: x0(cm): y0(cm): z_vertex: dphi/dz:  q:   p: p_trans:   phi: theta:");
 
 	for(unsigned int i=0; i<_data.size(); i++){
 		DTrackCandidate *trackcandidate = _data[i];
-cout<<__FILE__<<":"<<__LINE__<<" trackcandidate->id="<<trackcandidate->id<<endl;
 		printnewrow();
 		
-		//printcol("%d",    trackcandidate->id);
-continue;
+		printcol("%d",    trackcandidate->id);
 		printcol("%d",    trackcandidate->hitid.size());
 		printcol("%3.1f", trackcandidate->x0);
 		printcol("%3.1f", trackcandidate->y0);
