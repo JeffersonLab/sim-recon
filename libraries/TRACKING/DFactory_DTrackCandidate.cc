@@ -59,7 +59,7 @@ DFactory_DTrackCandidate::DFactory_DTrackCandidate()
 	TRACKHIT_SOURCE = "MC";
 	XY_NOISE_CUT = 2.0;
 	MIN_HIT_Z = -100.0;
-	MAX_HIT_Z = +1000.0;
+	MAX_HIT_Z = +300.0;
 	
 	dparms.SetDefaultParameter("TRK:MAX_SEED_DIST",		MAX_SEED_DIST);
 	dparms.SetDefaultParameter("TRK:MAX_SEED_HITS",		MAX_SEED_HITS);
