@@ -45,7 +45,7 @@ derror_t DFactory_DFCALShower::evnt(DEventLoop *eventLoop, int eventnumber)
 
 	// Look for showers. Take first, unused hit and assume he is
 	// center of shower. Consider all hits within 9 cm(about 2.5
-	// Moliere radii).
+	// Moliere radii) part of the same shower.
 	do{
 		// Unused hit with largest energy is center of shower
 		unsigned int center_index = 0;
@@ -83,7 +83,7 @@ derror_t DFactory_DFCALShower::evnt(DEventLoop *eventLoop, int eventnumber)
 
 		fcalshower->x = X;
 		fcalshower->y = Y;
-		fcalshower->E = E;
+		fcalshower->E = E*1.245; // the 1.245 is empirical and should be a calibration constant
 		fcalshower->t = fcalhits[center_index]->t;
 
 		_data.push_back(fcalshower);
