@@ -45,6 +45,8 @@ class DApplication{
 		derror_t RemoveDEventLoop(DEventLoop *loop);
 		derror_t GetDEventLoops(vector<DEventLoop*> &loops);
 		DGeometry* GetDGeometry(unsigned int run_number);
+		derror_t RegisterSharedObject(const char *soname);
+		derror_t RegisterSharedObjectDirectory(const char *sodirname);
 		derror_t Init(void);
 		derror_t Run(DEventProcessor *proc=NULL, int Nthreads=0);
 		derror_t Fini(void);
@@ -66,8 +68,6 @@ class DApplication{
 	
 		string Val2StringWithPrefix(float val);
 		derror_t OpenNext(void);
-		derror_t RegisterSharedObject(const char *soname);
-		derror_t RegisterSharedObjectDirectory(const char *sodirname);
 
 		vector<const char*> source_names;
 		vector<DEventSource*> sources;
