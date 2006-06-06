@@ -47,6 +47,7 @@ class DApplication{
 		DGeometry* GetDGeometry(unsigned int run_number);
 		derror_t RegisterSharedObject(const char *soname);
 		derror_t RegisterSharedObjectDirectory(const char *sodirname);
+		derror_t AddPlugin(const char *name);
 		derror_t Init(void);
 		derror_t Run(DEventProcessor *proc=NULL, int Nthreads=0);
 		derror_t Fini(void);

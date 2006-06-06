@@ -18,6 +18,7 @@ using namespace std;
 #include "DMCThrown.h"
 #include "GlueX.h"
 
+extern TFile* tfilePtr;
 
 TH1F *FDC_z, *FDC_r, *CDC_z, *CDC_r;
 
@@ -27,7 +28,7 @@ TH1F *FDC_z, *FDC_r, *CDC_z, *CDC_r;
 derror_t MyProcessor::init(void)
 {
 	// open ROOT file
-	ROOTfile = new TFile("mctrk_ana.root","RECREATE","Produced by hd_ana");
+	ROOTfile = tfilePtr = new TFile("mctrk_ana.root","RECREATE","Produced by hd_ana");
 	cout<<"Opened ROOT file \"mctrk_ana.root\""<<endl;
 	
 	FDC_z = new TH1F("FDC_z","FDC z-hits", 6510, 0.0, 650.0);

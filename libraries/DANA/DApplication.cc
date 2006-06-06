@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 using namespace std;
 
 #ifdef __linux__
@@ -15,6 +16,7 @@ using namespace std;
 
 #include <signal.h>
 #include <dlfcn.h>
+#include <stdlib.h>
 #include <dirent.h>
 
 #include "DApplication.h"
@@ -741,6 +743,58 @@ derror_t DApplication::RegisterSharedObjectDirectory(const char *sodirname)
 	}
 
 	return NOERROR;
+}
+
+//---------------------------------
+// AddPlugin
+//---------------------------------
+derror_t DApplication::AddPlugin(const char *name)
+{
+	/// Add the specified plugin to the shared objects list. The value
+	/// of "name" should be something like "bcal_hists" or "track_hists".
+	/// This will look for a file with the given name and a ".so" extension
+	/// first as: 
+	/// <p>${HALLD_MY}/src/programs/Analysis/plugins/<i>name</i>/<i>name.so</i></p>
+	/// and then in:
+	/// <p>${HALLD_HOME}/src/programs/Analysis/plugins/<i>name</i>/<i>name.so</i></p>
+	/// and finally in the current directory.
+	/// If neither are found, then a warning message is printed, and a value
+	/// of RESOURCE_UNAVAILABLE is returned.
+	const char *ptr = getenv("HALLD_MY");
+	string HALLD_MY = ptr==NULL ? string(""):ptr;
+	ptr = getenv("HALLD_HOME");
+	string HALLD_HOME = ptr==NULL ? string(""):ptr;
+	
+	string s;
+	if(HALLD_MY != ""){
+		s = HALLD_MY + "/src/programs/Analysis/plugins/" + name + "/" + name + ".so";
+		cout<<"Checking if \""<<s<<"\" exists ....";
+		ifstream f(s.c_str());
+		if(f.is_open()) f.close(); else s = "";
+	}
+	if( (s=="") && (HALLD_HOME!="") ){
+		cout<<"no"<<endl;
+		s = HALLD_HOME + "/src/programs/Analysis/plugins/" + name + "/" + name + ".so";
+		cout<<"Checking if \""<<s<<"\" exists ....";
+		ifstream f(s.c_str());
+		if(f.is_open()) f.close(); else s = "";
+	}
+	if(s==""){
+		cout<<"no"<<endl;
+		s = string("") + name + ".so";
+		ifstream f(s.c_str());
+		if(f.is_open()) f.close(); else s = "";
+	}
+	
+	if(s != ""){
+		cout<<"YES!"<<endl;
+		RegisterSharedObject(s.c_str());
+		return NOERROR;
+	}else{
+		cout<<"no"<<endl;
+	}
+	
+	return RESOURCE_UNAVAILABLE;
 }
 
 //---------------------------------
