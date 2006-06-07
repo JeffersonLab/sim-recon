@@ -9,7 +9,6 @@
 #include "DFactory_DTrack.h"
 #include "DEventLoop.h"
 
-extern double MomentumFromTable(double Ro, double theta);
 
 //------------------
 // evnt
@@ -27,8 +26,13 @@ derror_t DFactory_DTrack::evnt(DEventLoop *eventLoop, int eventnumber)
 		
 		double Ro = sqrt(trackcandidate->x0*trackcandidate->x0 + trackcandidate->y0*trackcandidate->y0);
 
+		// The following is from a fit of Ro/sin(theta)/p_thrn vs. theta
+		double par[] = {180.618178, -77.646922, 290.502314, -318.531368, 145.897184, -24.017713};
+		double s = sin(trackcandidate->theta);
+		double fun = par[0]+s*(par[1]+s*(par[2]+s*(par[3]+s*(par[4]+s*(par[5])))));
+
 		track->q = trackcandidate->q;
-		track->p = MomentumFromTable(Ro, trackcandidate->theta);
+		track->p = Ro/s/fun;
 		track->theta = trackcandidate->theta;
 		track->phi = trackcandidate->phi;
 		track->x = 0.0;
