@@ -86,7 +86,7 @@ derror_t DFactory_DTrack::evnt(DEventLoop *loop, int eventnumber)
 		double dfdpar[6];
 		double chisq;
 		int iflag = 2;
-		FCN(npar, dfdpar, chisq, par, iflag);
+		//FCN(npar, dfdpar, chisq, par, iflag);
 		
 		// Unlock mutex so only one thread at a time accesses minuit
 		pthread_mutex_unlock(&trk_mutex);
