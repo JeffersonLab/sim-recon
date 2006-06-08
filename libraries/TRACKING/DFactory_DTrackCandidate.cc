@@ -109,9 +109,10 @@ derror_t DFactory_DTrackCandidate::brun(DEventLoop *loop, int runnumber)
 //------------------
 derror_t DFactory_DTrackCandidate::fini(void)
 {
-	delete phizangle_hist;
-	delete phi_relative;
-	delete zvertex_hist;
+	// seems errors are sometimes caused by deleting these ???
+	//delete phizangle_hist;
+	//delete phi_relative;
+	//delete zvertex_hist;
 	
 	return NOERROR;
 }
@@ -616,10 +617,15 @@ int DFactory_DTrackCandidate::FitTrack(void)
 	trackcandidate->y0 = y0 = fit->y0;
 	r0 = sqrt(x0*x0 + y0*y0);
 		
+	// The following is from a fit of Ro/sin(theta)/p_thrn vs. theta
+	double par[] = {180.618178, -77.646922, 290.502314, -318.531368, 145.897184, -24.017713};
+	double s = sin(fit->theta);
+	double fun = par[0]+s*(par[1]+s*(par[2]+s*(par[3]+s*(par[4]+s*(par[5])))));
+
 	trackcandidate->z_vertex = fit->z_vertex;
 	trackcandidate->dphidz = fit->theta/r0;
-	trackcandidate->p = fit->p;
-	trackcandidate->p_trans = fit->p_trans;
+	trackcandidate->p = r0/s/fun;
+	trackcandidate->p_trans = trackcandidate->p*s;
 	trackcandidate->q = fit->q;
 	trackcandidate->phi = fit->phi;
 	trackcandidate->theta = fit->theta;

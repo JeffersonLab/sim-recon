@@ -10,6 +10,9 @@
 
 #include "DFactory.h"
 #include "DTrack.h"
+#include "DMagneticFieldMap.h"
+#include "DGeometry.h"
+
 
 class DFactory_DTrack:public DFactory<DTrack>{
 	public:
@@ -18,7 +21,11 @@ class DFactory_DTrack:public DFactory<DTrack>{
 		const string toString(void);
 	
 	private:
+		derror_t brun(DEventLoop *loop, int runnumber);
 		derror_t evnt(DEventLoop *eventLoop, int eventnumber);	///< Invoked via DEventProcessor virtual method
+
+		const DGeometry *dgeom;
+		const DMagneticFieldMap *bfield;
 };
 
 #endif // _DFactory_DTrack_
