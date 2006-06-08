@@ -65065,6 +65065,15 @@
       subroutine gufld(r,B)
       implicit none
       real r(3),B(3)
+		B(1) = 0.0
+		B(2) = 0.0
+		B(3) = -22.0
+		end
+
+      subroutine gufld2(r,B)
+      implicit none
+      real r(3),B(3)
+
       real rr(3),rs(3),BB(3)
       integer iregion
       integer getMap

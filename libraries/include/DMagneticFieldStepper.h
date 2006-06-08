@@ -41,8 +41,6 @@ class DMagneticFieldStepper
 		TVector3 mom;			///< current location of particle
 		TVector3 start_pos;	///< starting position of track
 		TVector3 start_mom;	///< starting momentum of track
-		
-		double z_offset;
 };
 
 #endif // __DMAGNETICFIELDSTEPPER_H__

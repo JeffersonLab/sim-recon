@@ -22,8 +22,8 @@ extern DBfieldPoint_t default_mag_field[];
 DMagneticFieldMap::DMagneticFieldMap()
 {
 	// Set defaults
-	BMAP_Z_OFFSET = 10.0; // in cm
-	BZ_AVG_Z = 57.6; // in inches
+	BMAP_Z_OFFSET = 26.0; // offset between map and GEANT z-coord. in inches
+	BZ_AVG_Z = 65.0; // in cm in GEANT coordinates
 	BZ_CONST = -1000.0; // in Tesla (only used if less than +/-100 T
 
 	dparms.SetDefaultParameter("GEOM:BMAP_Z_OFFSET",  BMAP_Z_OFFSET);
@@ -83,9 +83,10 @@ const DBfieldPoint_t* DMagneticFieldMap::getQuick(const double x, const double y
 	}
 
 	// Elements are stored first x, then z. We use x for r
-	double r = sqrt(x*x+y*y);
+	double r = sqrt(x*x+y*y)/2.54;
+	double zprime = z/2.54 - BMAP_Z_OFFSET;
 	int index_r = (int)((double)rDim*(r-rMin)/(rMax-rMin));
-	int index_z = (int)((double)zDim*(z-zMin)/(zMax-zMin));
+	int index_z = (int)((double)zDim*(zprime-zMin)/(zMax-zMin));
 	
 	int index = index_r*zDim + index_z;
 	if(index<0 || index>=Npoints){
@@ -132,7 +133,7 @@ double DMagneticFieldMap::Bz_avg(double x, double y, double x0, double y0, doubl
 		y = r*sin(phi) + y0;
 		
 		if(x*x + y*y > Rmax2)break;
-		const DBfieldPoint_t *point = getQuick(x/2.54, y/2.54, BZ_AVG_Z);
+		const DBfieldPoint_t *point = getQuick(x, y, BZ_AVG_Z);
 		Bzavg+= point->Bz;
 		Ndone++;
 	}
@@ -154,6 +155,8 @@ double DMagneticFieldMap::Bz_avg(double x, double y, double z, double x0, double
 	/// (tan(theta) is just Ro*dphi/dz). The helix is followed
 	/// until it crosses zmax. Note that if zmax is less than z,
 	/// then the helix is followed backwards.
+	///
+	/// All values passed in are in cm using the GEANT coordinate system.
 	///
 	/// This is used by DQuickFit when fitting a 3-D track and is
 	/// used to convert the helix's parameters into transverse 
@@ -199,7 +202,7 @@ double DMagneticFieldMap::Bz_avg(double x, double y, double z, double x0, double
 		y = r*sin(phi) + y0;
 		
 		if(x*x + y*y > Rmax2)break;
-		const DBfieldPoint_t *point = getQuick(x/2.54, y/2.54, (BMAP_Z_OFFSET+z)/2.54);
+		const DBfieldPoint_t *point = getQuick(x, y, z);
 		Bzavg+= point->Bz;
 		Ndone++;
 	}

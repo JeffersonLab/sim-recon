@@ -16,7 +16,6 @@ DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield)
 	start_pos = pos = TVector3(0.0,0.0,0.0);
 	start_mom = mom = TVector3(0.0,0.0,1.0);
 	stepsize = 1.0; // in cm
-	z_offset = 65.0; // in cm
 }
 
 //-----------------------
@@ -29,7 +28,6 @@ DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield, do
 	start_pos = pos = *x;
 	start_mom = mom = *p;
 	stepsize = 1.0; // in cm
-	z_offset = 65.0; // in cm
 }
 
 //-----------------------
@@ -92,7 +90,7 @@ derror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	// is zero).
 	
 	// Get B-field
-	const DBfieldPoint_t* tmp = bfield->getQuick(pos.x()/2.54, pos.y()/2.54, (z_offset+pos.z())/2.54);
+	const DBfieldPoint_t* tmp = bfield->getQuick(pos.x(), pos.y(), pos.z());
 	TVector3 B(tmp->Bx, tmp->By, tmp->Bz);
 
 	// If the magnetic field is zero or the charge is zero, then our job is easy
@@ -155,6 +153,6 @@ derror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 //-----------------------
 const DBfieldPoint_t* DMagneticFieldStepper::GetDBfieldPoint(void)
 {
-	return bfield->getQuick(pos.x()/2.54, pos.y()/2.54, (z_offset+pos.z())/2.54);
+	return bfield->getQuick(pos.x(), pos.y(), pos.z());
 }
 

@@ -5,8 +5,10 @@
 // Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
 //
 
+#include <TMinuit.h>
 #include <TVector3.h>
 
+#include "GlueX.h"
 #include "DApplication.h"
 #include "DTrackCandidate.h"
 #include "DFactory_DTrack.h"
@@ -23,6 +25,7 @@ static DEventLoop *g_loop = NULL;
 static const DMagneticFieldMap *g_bfield = NULL;
 static DFactory<DTrackHit> *g_fac_trackhit;
 static const DTrackCandidate *g_trackcandidate;
+static double min_chisq, min_par[6];
 
 typedef struct{
 	double x,y,z;
@@ -86,8 +89,44 @@ derror_t DFactory_DTrack::evnt(DEventLoop *loop, int eventnumber)
 		double dfdpar[6];
 		double chisq;
 		int iflag = 2;
-		//FCN(npar, dfdpar, chisq, par, iflag);
+		FCN(npar, dfdpar, chisq, par, iflag);
 		
+		// Create and use TMinuit object
+		int icondn;
+		TMinuit minuit;
+		static bool initialized = false;
+		if(!initialized){
+			minuit.mninit(0,0,0);
+			minuit.SetFCN(FCN);
+			minuit.mncomd("CLEAR", icondn);
+			minuit.mncomd("SET PRI -1", icondn);
+			minuit.mncomd("SET NOWARNINGS", icondn);
+			minuit.mncomd("SET BATCH", icondn);
+			minuit.mncomd("SET STRATEGY 2", icondn);
+			initialized=true;
+		}
+		
+		minuit.DefineParameter(0,"p",track->p, track->p*0.02, track->p-1.0, track->p+1.0);
+		minuit.DefineParameter(1,"theta",track->theta, 0.05, 0.0, 0.0);
+		minuit.DefineParameter(2,"phi",track->phi, 0.05, 0.0, 0.0);
+		minuit.DefineParameter(3,"x",track->x, 0.25, 0.0, 0.0);
+		minuit.DefineParameter(4,"y",track->y, 0.25, 0.0, 0.0);
+		minuit.DefineParameter(5,"z",track->z, 2.0, 0.0, 0.0);
+		
+		minuit.mncomd("FIX 4", icondn);
+		minuit.mncomd("FIX 5", icondn);
+		//minuit.mncomd("FIX 6", icondn);
+		
+		min_chisq = 1000.0;
+		for(int i=0;i<6;i++)min_par[i] = par[i];
+		minuit.Migrad();
+		//minuit.mncomd("MINIMIZE 100", icondn);
+
+cout<<__FILE__<<":"<<__LINE__<<" initial:"<<chisq<<"  final:"<<min_chisq<<endl;
+for(int i=0; i<6; i++){
+	cout<<__FILE__<<":"<<__LINE__<<" -- p"<<i<<"  initial:"<<par[i]<<"  final:"<<min_par[i]<<endl;
+}
+
 		// Unlock mutex so only one thread at a time accesses minuit
 		pthread_mutex_unlock(&trk_mutex);
 	
@@ -109,15 +148,19 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 	// the trajectory. We will first step through field from vertex 
 	// until we either hit the approximate BCAL, UPV, or FCAL positions.
 	
+	// Minuit will sometimes try zero momentum tracks. Immediately return
+	// a large ChiSq when that happens
+	if(par[0] < 0.050){chisq=1000.0; return;}
+	
 	vector<double> chisqv;
-	TVector3 p,pos;
+	TVector3 p;
 	p.SetMagThetaPhi(par[0],par[1],par[2]);
-	pos.SetMagThetaPhi(par[3],par[4],par[5]);
-	DMagneticFieldStepper *stepper = new DMagneticFieldStepper(g_bfield, 1.0, &pos, &p);
+	TVector3 pos(par[3],par[4],par[5]);
+	DMagneticFieldStepper *stepper = new DMagneticFieldStepper(g_bfield, g_trackcandidate->q, &pos, &p);
 	
 	// Step until we hit a boundary
 	vector<trk_step_t> trk_steps;
-	do{
+	for(int i=0; i<1000; i++){
 		stepper->Step(&pos);
 		trk_step_t trk_step;
 		trk_step.x = pos.X();
@@ -125,10 +168,13 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 		trk_step.z = pos.Z();
 		trk_steps.push_back(trk_step);
 		
-		if(pos.Perp()>65.0){cout<<__FILE__<<":"<<__LINE__<<" hit BCAL"<<endl;break;} // ran into BCAL
-		if(pos.Z()>650.0){cout<<__FILE__<<":"<<__LINE__<<" hit FCAL"<<endl;break;} // ran into FCAL
-		if(pos.Z()<-50.0){cout<<__FILE__<<":"<<__LINE__<<" hit UPV"<<endl;break;} // ran into UPV
-	}while(true);
+		//if(pos.Perp()>65.0){cout<<__FILE__<<":"<<__LINE__<<" hit BCAL"<<endl;break;} // ran into BCAL
+		//if(pos.Z()>650.0){cout<<__FILE__<<":"<<__LINE__<<" hit FCAL"<<endl;break;} // ran into FCAL
+		//if(pos.Z()<-50.0){cout<<__FILE__<<":"<<__LINE__<<" hit UPV"<<endl;break;} // ran into UPV
+		if(pos.Perp()>65.0){break;} // ran into BCAL
+		if(pos.Z()>650.0){break;} // ran into FCAL
+		if(pos.Z()<-50.0){break;} // ran into UPV
+	}
 	
 	// Calculate first derivatives in trk_steps
 	for(unsigned int i=1; i<trk_steps.size()-1; i++){
@@ -164,6 +210,20 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 		const DTrackHit *trackhit = g_fac_trackhit->GetByIDT(hitid[i]);
 		if(!trackhit)continue;
 		
+		// We don't really want the hit closest physically in space.
+		// Rather, we want the distance measured in standard deviations
+		// of detector resolutions. This depends upon the detector type
+		// from which the hit came. Note that this also depends on the
+		// step size used in the stepper. The FDC in particular needs
+		// much larger sigma values than due to detector resolution alone.
+		double sigmaxy;
+		double sigmaz;
+		switch(trackhit->system){
+			case SYS_CDC:	sigmaxy = 0.80;	sigmaz = 7.50;	break;
+			case SYS_FDC:	sigmaxy = 2.00;	sigmaz = 2.00;	break;
+			default:			sigmaxy = 1.00;	sigmaz = 1.00;
+		}
+
 		// Loop over all steps to find the closest one to this hit
 		double xh = trackhit->x;
 		double yh = trackhit->y;
@@ -176,31 +236,42 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 			double ys = trk_step->y;
 			double zs = trk_step->z;
 			
-			double r2 = pow(xh-xs,2.0) + pow(yh-ys,2.0) + pow(zh-zs,2.0);
-cout<<__FILE__<<":"<<__LINE__<<" dx="<<xh-xs<<" dy="<<yh-ys<<" dz="<<zh-zs<<"   z="<<zs<<endl;
+			double r2 = pow((xh-xs)/sigmaxy,2.0) + pow((yh-ys)/sigmaxy,2.0) + pow((zh-zs)/sigmaz,2.0);
+//cout<<__FILE__<<":"<<__LINE__<<" dx="<<xh-xs<<" dy="<<yh-ys<<" dz="<<zh-zs<<"   z="<<zs<<endl;
 			if(r2<r2_min){
 				r2_min = r2;
 				trk_step_min = trk_step;
 			}
 		}
-cout<<__FILE__<<":"<<__LINE__<<" ##### r_min= "<<sqrt(r2_min)<<"  z="<<trk_step_min->z<<endl;
+//cout<<__FILE__<<":"<<__LINE__<<" ##### r_min= "<<sqrt(r2_min)<<"  z="<<trk_step_min->z<<endl;
 		
 		// Now calculate the distance from the track to the hit
-		double d2 = sqrt(r2_min); // use the distance to the step for now
+		double d = sqrt(r2_min); // use the distance to the step for now
 		
-		// Set the error of the hit
-		double err2 = 1.0;
+		// If the hit and the step are more than 3 sigma apart, then
+		// don't include this hit in the ChiSq.
+		if(d>3.0)continue;
 
 		// Add this hit to the chisq vector
-		chisqv.push_back(d2/err2);
+		chisqv.push_back(d);
 	}
 	
 	// Sum up total chisq/dof for this event
 	chisq = 0.0;
 	for(unsigned int i=0; i<chisqv.size(); i++)chisq += chisqv[i];
 	chisq /= (double)chisqv.size();
+	
+	// If NO hits were close to this track (how does that even happen?)
+	// then the size of chisqv will be zero and chisq will now be
+	// "nan". In this case, set the chisq to a very large value to
+	// indicate a bad fit.
+	if(chisqv.size() == 0)chisq=1000.0;
 
-cout<<__FILE__<<":"<<__LINE__<<" chisq= "<<chisq<<endl;
+	if(chisq<min_chisq){
+		min_chisq = chisq;
+		for(int i=0;i<6;i++)min_par[i] = par[i];
+	}
+//cout<<__FILE__<<":"<<__LINE__<<" chisq= "<<chisq<<endl;
 }
 
 
