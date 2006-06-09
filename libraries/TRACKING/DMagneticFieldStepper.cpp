@@ -142,6 +142,12 @@ derror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	// Update momentum by rotating it by delta_phi about B
 	mom.Rotate(-delta_phi, B);
 	
+	// Energy loss for 1.0GeV pions in Air is roughly 2.4keV/cm
+	double m = 0.13957;
+	double p = mom.Mag();
+	double E = sqrt(m*m + p*p) - 0.0000024*stepsize;
+	mom.SetMag(sqrt(E*E-m*m));
+	
 	// return new position 
 	if(newpos)*newpos = pos;
 
