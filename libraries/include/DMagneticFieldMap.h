@@ -32,6 +32,9 @@ class DMagneticFieldMap
 		double Bz_avg(double x, double y, double z, double x0, double y0, double theta, double zmax) const;
     
 	 	void GetTable(const DBfieldPoint_t* &Bmap, int &Npoints);
+		
+		/// Set this map to use a constant B-field in the z- direction. Bz is in Tesla.
+		void SetConstField(float Bz){BZ_CONST = Bz;}
 	 
 	private:
 
