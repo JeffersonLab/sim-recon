@@ -12,6 +12,7 @@ using namespace std;
 #include <TLorentzVector.h>
 #include <TLorentzRotation.h>
 #include <TEllipse.h>
+#include <TArc.h>
 #include <TBox.h>
 #include <TLine.h>
 #include <TText.h>
@@ -37,23 +38,24 @@ extern hdv_mainframe *hdvmf;
 static float BCAL_Rmin=65.0;
 static float BCAL_Rmax = 90.0;
 static float BCAL_Zlen = 390.0;
-static float BCAL_Zmid = 195.0;
+static float BCAL_Zmid = 17.0 + BCAL_Zlen/2.0;
 static float FCAL_Zlen = 45.0;
-static float FCAL_Zmid = 675.0;
-static float FCAL_Rmin = 2.0;
-static float FCAL_Rmax = 122.0;
+static float FCAL_Zmid = 622.8+FCAL_Zlen/2.0;
+static float FCAL_Rmin = 6.0;
+static float FCAL_Rmax = 212.0/2.0;
 static float CDC_Rmin = 15.0;
 static float CDC_Rmax = 60.0;
 static float CDC_Zlen = 200.0;
-static float CDC_Zmid = 117.0;
+static float CDC_Zmid = 17.0 + CDC_Zlen/2.0;
 static float TOF_width = 250.0;
 static float TOF_Rmin = 6.0;
-static float TOF_Zmid = FCAL_Zmid - FCAL_Zlen/2.0 - 0.30;
 static float TOF_Zlen = 2.54;
+static float TOF_Zmid = 618.8 + TOF_Zlen/2.0;
 static float FDC_Rmin = 3.5;
 static float FDC_Rmax = 60.0;
 static float FDC_Zlen = 12.0;
-static float FDC_Zpos[4] = {240.0, 292.0, 348.0, 404.0};
+//static float FDC_Zpos[4] = {240.0, 292.0, 348.0, 404.0};
+static float FDC_Zpos[4] = {234.0, 289.0, 344.0, 399.0};
 
 //------------------------------------------------------------------
 // MyProcessor 
@@ -76,8 +78,6 @@ MyProcessor::~MyProcessor()
 
 	for(unsigned int i=0;i<graphics.size();i++)delete graphics[i];
 	graphics.clear();
-	
-	delete Bfield;
 }
 
 //------------------------------------------------------------------
@@ -126,8 +126,9 @@ derror_t MyProcessor::brun(DEventLoop *eventLoop, int runnumber)
 
 	// Read in Magnetic field map
 	Bfield = eventLoop->GetDApplication()->GetDGeometry(runnumber)->GetDMagneticFieldMap();
-	//if(Bfield)delete Bfield;
-	//Bfield = new DMagneticFieldMap(-2.0);
+//DMagneticFieldMap *tmp = new DMagneticFieldMap();
+//tmp->SetConstField(-2.2);
+//Bfield=tmp;
 
 	return NOERROR;
 }
@@ -158,15 +159,11 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	for(unsigned int i=0;i<trackhits.size();i++){
 		const DTrackHit *trackhit = trackhits[i];
 
+#if 0 // The following was used to adjust detector positions. Disabled 6/8/06 D.L.
 		// Skip hits from some detectors?
 		switch(trackhit->system){
 			case SYS_CDC:	break;		// CDC
 			case SYS_FDC:					// FDC
-				//if(trackhit->z < FDC_Zpos[0]-FDC_Zlen/2.0){
-				//	float delta_z = FDC_Zpos[0]-FDC_Zlen/2.0 - trackhit->z;
-				//	for(int j=0;j<4;j++)FDC_Zpos[j] -= delta_z;
-				//	DrawDetectors();
-				//}
 				for(int j=0; j<4; j++){
 					float delta_z = FDC_Zpos[j]-FDC_Zlen/2.0 - trackhit->z;
 					if(delta_z > 0.0){
@@ -199,6 +196,7 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 			case SYS_UPV:	break;		// UPV
 			default: continue;
 		}
+#endif
 	
 		float x = trackhit->r*cos(trackhit->phi);
 		float y = trackhit->r*sin(trackhit->phi);
@@ -219,6 +217,7 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 			const DMCTrackHit* mctrackhit = fac_mcth->GetByIDT(trackhit->id);
 			if(mctrackhit){
 				if(mctrackhit->track>0)color = colors[mctrackhit->track%ncolors];
+				if(!mctrackhit->primary)color = kBlack; // Don't draw secondaries with color!
 			}else{
 				cout<<__FILE__<<":"<<__LINE__<<" Unable to find mctrackhit!"<<endl;
 			}
@@ -261,12 +260,13 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	eventLoop->Get(trackcandidates);
 	vector<DQuickFit*> qfits = factory->Get_dbg_track_fit();
 	for(unsigned int i=0; i<qfits.size(); i++){
-		DrawHelicalTrack(qfits[i], kBlack);
+		DrawHelicalTrack(qfits[i], colors[(i+1)%ncolors]+100);
+		DrawTrack(qfits[i], colors[(i+1)%ncolors]);
 	}
 
 	// Draw all markers and update canvas
 	for(unsigned int i=0;i<markers.size();i++)markers[i]->Draw();
-	for(unsigned int i=0;i<circles.size();i++)circles[i]->Draw();
+	//for(unsigned int i=0;i<circles.size();i++)circles[i]->Draw();
 	maincanvas->Update();
 
 	return NOERROR;
@@ -292,7 +292,7 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 	//qf->Print();
 	float Z=z;
 	float z_step = Z<qf->GetZMean() ? +10.0:-10.0;
-	for(int i=0; i<500; i++){
+	for(int i=0; i<1000; i++){
 		float delta_z = Z-qf->z_vertex;
 		float phi = phi0 + delta_z*dphidz;
 		x = qf->x0 + r*cos(phi);
@@ -304,11 +304,15 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 		line_top->SetNextPoint(X,Y);
 		
 		Z+=z_step;
-		if(Z>620.0 || Z<-10.0)break;
+		if(Z>=TOF_Zmid || Z<-10.0)break;
+		float r = sqrt((double)(x*x) + (double)(y*y));
+		if((r>=BCAL_Rmin) && (fabs(Z-BCAL_Zmid)<BCAL_Zlen/2.0))break;
 	}
 	line_side->SetLineColor(color);
+	line_side->SetLineWidth(3);
 	line_side->Draw();
 	line_top->SetLineColor(color);
+	line_top->SetLineWidth(3);
 	line_top->Draw();
 	lines.push_back(line_side);
 	lines.push_back(line_top);
@@ -321,7 +325,23 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 		float dX = X-x_center;
 		float dY = Y-y_center;
 		float r = sqrt(dX*dX + dY*dY);
-		circles.push_back(new TEllipse(X,Y,r,r));
+
+		double phimin = atan2(dY,dX)-M_PI;
+		double delta_phi = dphidz*(Z-qf->z_vertex);
+		if(delta_phi > 2.0*M_PI)delta_phi=2.0*M_PI;
+		if(delta_phi < -2.0*M_PI)delta_phi=-2.0*M_PI;
+		double phimax = phimin + delta_phi;
+		if(delta_phi<0.0){
+			double tmp = phimax;
+			phimax=phimin;
+			phimin = tmp;
+		}
+		TArc *circle = new TArc(X,Y,r,phimin*57.3, phimax*57.3);
+		circle->SetLineColor(color);
+		circle->SetLineWidth(3);
+		circle->Draw("only");
+		circle->SetFillStyle(0);
+		circles.push_back(circle);
 	}
 
 	return NOERROR;
@@ -396,13 +416,13 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 	TVector3 mom;
 	mom.SetMagThetaPhi(qf->p, qf->theta, qf->phi);
 	DMagneticFieldStepper *stepper = new DMagneticFieldStepper(Bfield, qf->q, &pos, &mom);
-	stepper->SetStepSize(0.1);
+	stepper->SetStepSize(0.05);
 
 	TPolyLine *line_top = new TPolyLine();
 	TPolyLine *line_side = new TPolyLine();
 	TPolyLine *line_beam = new TPolyLine();
 	//qf->Print();
-	for(int i=0;i<500;i++){
+	for(int i=0;i<100000;i++){
 	
 		stepper->Step(&pos);
 		float x = pos.x();
@@ -410,7 +430,9 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 		float z = pos.z();
 		float X,Y;
 	
-		if(z>=620.0 || z<-10.0)break;
+		if(z>=TOF_Zmid || z<-10.0)break;
+		float r = sqrt((double)(x*x) + (double)(y*y));
+		if(r>=BCAL_Rmax && fabs(z-BCAL_Zmid)<BCAL_Zlen/2.0)break;
 		
 		ConvertToSide(x,y,z,X,Y);
 		line_side->SetNextPoint(X,Y);
@@ -418,6 +440,9 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 		line_top->SetNextPoint(X,Y);
 		ConvertToFront(x, y, 0, X, Y);
 		line_beam->SetNextPoint(X,Y);
+		
+//const DBfieldPoint_t* tmp = stepper->GetDBfieldPoint();
+//cout<<__FILE__<<":"<<__LINE__<<" x:"<<x<<" y:"<<y<<" z:"<<z<<" Bz:"<<tmp->Bz<<endl;
 	}
 	delete stepper;
 	
@@ -515,10 +540,10 @@ derror_t MyProcessor::DrawDetectors(void)
 	graphics.push_back(bcal1);
 	graphics.push_back(bcal2);
 	graphics.push_back(bcal3);
-	bcal1->SetLineColor(14); // 16= light grey
-	bcal2->SetLineColor(14); // 16= light grey
+	bcal1->SetLineColor(14);
+	bcal2->SetLineColor(14);
 	bcal3->SetLineColor(16); // 16= light grey
-	bcal3->SetLineWidth(48); // 16= light grey
+	bcal3->SetLineWidth(60); // 16= light grey
 	bcal3->Draw();
 	bcal1->Draw();
 	bcal2->Draw();
