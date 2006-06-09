@@ -84,7 +84,7 @@ const DBfieldPoint_t* DMagneticFieldMap::getQuick(const double x, const double y
 
 	// Elements are stored first x, then z. We use x for r
 	double r = sqrt(x*x+y*y)/2.54;
-	double zprime = z/2.54 - BMAP_Z_OFFSET;
+	double zprime = z/2.54 + BMAP_Z_OFFSET;
 	int index_r = (int)((double)rDim*(r-rMin)/(rMax-rMin));
 	int index_z = (int)((double)zDim*(zprime-zMin)/(zMax-zMin));
 	
