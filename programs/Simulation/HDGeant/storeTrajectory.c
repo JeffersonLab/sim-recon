@@ -65,8 +65,8 @@ s_McTrajectory_t* pickMCTrajectory(void)
 {
 	unsigned int i;
 	
+	if(Npoints==0)return HDDM_NULL;
 	printf("%s:%d Npoints=%d\n",__FILE__,__LINE__,Npoints);
-	if(Npoints==0)return NULL;
 	
 	s_McTrajectory_t* McTrajectory = make_s_McTrajectory();
 	s_McTrajectoryPoints_t *points = make_s_McTrajectoryPoints(Npoints);
