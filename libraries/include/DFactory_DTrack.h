@@ -21,6 +21,7 @@ class DFactory_DTrack:public DFactory<DTrack>{
 		const string toString(void);
 	
 	private:
+		derror_t init(void);
 		derror_t brun(DEventLoop *loop, int runnumber);
 		derror_t evnt(DEventLoop *eventLoop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 

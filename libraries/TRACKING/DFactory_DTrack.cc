@@ -26,12 +26,51 @@ static const DMagneticFieldMap *g_bfield = NULL;
 static DFactory<DTrackHit> *g_fac_trackhit;
 static const DTrackCandidate *g_trackcandidate;
 static double min_chisq, min_par[6];
+static TMinuit *minuit=NULL;
 
 typedef struct{
 	double x,y,z;
 	double dxdz, dydz;
 	double d2xdz2, d2ydz2;
 }trk_step_t;
+
+//------------------
+// init
+//------------------
+derror_t DFactory_DTrack::init(void)
+{
+	pthread_mutex_lock(&trk_mutex);
+	if(minuit==NULL){
+		int icondn;
+		minuit = new TMinuit();
+		minuit->mninit(0,0,0);
+		minuit->SetFCN(FCN);
+		minuit->mncomd("CLEAR", icondn);
+		minuit->mncomd("SET PRI -1", icondn);
+		minuit->mncomd("SET NOWARNINGS", icondn);
+		minuit->mncomd("SET BATCH", icondn);
+		minuit->mncomd("SET STRATEGY 2", icondn);
+		
+		minuit->mncomd("SET PRI -1", icondn);
+		minuit->mncomd("SET NOWARNINGS", icondn);
+		minuit->mncomd("SET BATCH", icondn);
+		minuit->mncomd("SET STRATEGY 2", icondn);
+
+		minuit->DefineParameter(0,"p",		0.0, 0.02, 0.0, 0.0);
+		minuit->DefineParameter(1,"theta",	0.0, 0.17, 0.0, 0.0);
+		minuit->DefineParameter(2,"phi",		0.0, 0.17, 0.0, 0.0);
+		minuit->DefineParameter(3,"x",		0.0, 0.50, 0.0, 0.0);
+		minuit->DefineParameter(4,"y",		0.0, 0.50, 0.0, 0.0);
+		minuit->DefineParameter(5,"z",		0.0, 15.0, 0.0, 0.0);
+
+		minuit->mncomd("FIX 4", icondn);
+		minuit->mncomd("FIX 5", icondn);
+		//minuit->mncomd("FIX 6", icondn);
+	}
+	pthread_mutex_unlock(&trk_mutex);
+	
+	return NOERROR;
+}
 
 //------------------
 // brun
@@ -91,44 +130,37 @@ derror_t DFactory_DTrack::evnt(DEventLoop *loop, int eventnumber)
 		int iflag = 2;
 		FCN(npar, dfdpar, chisq, par, iflag);
 		
-		// Create and use TMinuit object
-		int icondn;
-		TMinuit minuit;
-		static bool initialized = false;
-		if(!initialized){
-			minuit.mninit(0,0,0);
-			minuit.SetFCN(FCN);
-			minuit.mncomd("CLEAR", icondn);
-			minuit.mncomd("SET PRI -1", icondn);
-			minuit.mncomd("SET NOWARNINGS", icondn);
-			minuit.mncomd("SET BATCH", icondn);
-			minuit.mncomd("SET STRATEGY 2", icondn);
-			initialized=true;
-		}
-		
-		minuit.DefineParameter(0,"p",track->p, track->p*0.02, track->p-1.0, track->p+1.0);
-		minuit.DefineParameter(1,"theta",track->theta, 0.05, 0.0, 0.0);
-		minuit.DefineParameter(2,"phi",track->phi, 0.05, 0.0, 0.0);
-		minuit.DefineParameter(3,"x",track->x, 0.25, 0.0, 0.0);
-		minuit.DefineParameter(4,"y",track->y, 0.25, 0.0, 0.0);
-		minuit.DefineParameter(5,"z",track->z, 2.0, 0.0, 0.0);
-		
-		minuit.mncomd("FIX 4", icondn);
-		minuit.mncomd("FIX 5", icondn);
-		//minuit.mncomd("FIX 6", icondn);
+		// Set the initial parameter values
+		for(int i=0;i<6;i++){
+			int icondn;
+			char cmd[256];
+			sprintf(cmd, "SET PAR %d %f", i+1, par[i]);
+			min_par[i] = par[i];
+			minuit->mncomd(cmd, icondn);
+		}		
 		
 		min_chisq = 1000.0;
-		for(int i=0;i<6;i++)min_par[i] = par[i];
-		minuit.Migrad();
-		//minuit.mncomd("MINIMIZE 100", icondn);
+		//minuit->Migrad();
+		//minuit->mncomd("MINIMIZE 100", icondn);
+		int icondn;
+		//minuit->mncomd("SEEK 100 2", icondn);
 
-cout<<__FILE__<<":"<<__LINE__<<" initial:"<<chisq<<"  final:"<<min_chisq<<endl;
-for(int i=0; i<6; i++){
-	cout<<__FILE__<<":"<<__LINE__<<" -- p"<<i<<"  initial:"<<par[i]<<"  final:"<<min_par[i]<<endl;
-}
+//cout<<__FILE__<<":"<<__LINE__<<" initial:"<<chisq<<"  final:"<<min_chisq<<endl;
+//for(int i=0; i<6; i++){
+//	cout<<__FILE__<<":"<<__LINE__<<" -- p"<<i<<"  initial:"<<par[i]<<"  final:"<<min_par[i]<<endl;
+//}
 
 		// Unlock mutex so only one thread at a time accesses minuit
 		pthread_mutex_unlock(&trk_mutex);
+		
+		if(min_chisq < chisq){
+			track->p = min_par[0];
+			track->theta = min_par[1];
+			track->phi = min_par[2];
+			track->x = min_par[3];
+			track->y = min_par[4];
+			track->z = min_par[5];
+		}
 	
 		_data.push_back(track);
 	}
@@ -147,7 +179,7 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 	// positions and first and second derivatives of each step along
 	// the trajectory. We will first step through field from vertex 
 	// until we either hit the approximate BCAL, UPV, or FCAL positions.
-	
+
 	// Minuit will sometimes try zero momentum tracks. Immediately return
 	// a large ChiSq when that happens
 	if(par[0] < 0.050){chisq=1000.0; return;}
@@ -175,7 +207,8 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 		if(pos.Z()>650.0){break;} // ran into FCAL
 		if(pos.Z()<-50.0){break;} // ran into UPV
 	}
-	
+	delete stepper;
+
 	// Calculate first derivatives in trk_steps
 	for(unsigned int i=1; i<trk_steps.size()-1; i++){
 		// We do this by averaging the slopes of the lines connecting
@@ -205,9 +238,10 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 	// Loop over the track hits for this candidate using
 	// the closest trk_step to determine the distance
 	// from the hit to the track.
-	const vector<oid_t> &hitid = g_trackcandidate->hitid;
-	for(unsigned int i=0; i<hitid.size(); i++){
-		const DTrackHit *trackhit = g_fac_trackhit->GetByIDT(hitid[i]);
+	vector<const DTrackHit*> trackhits;
+	vector<void*>& vptrs = g_fac_trackhit->Get();
+	for(unsigned int i=0; i<vptrs.size(); i++){
+		const DTrackHit *trackhit = (const DTrackHit*)vptrs[i];
 		if(!trackhit)continue;
 		
 		// We don't really want the hit closest physically in space.
@@ -253,9 +287,9 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 		if(d>3.0)continue;
 
 		// Add this hit to the chisq vector
-		chisqv.push_back(d);
+		chisqv.push_back(d*d);
 	}
-	
+
 	// Sum up total chisq/dof for this event
 	chisq = 0.0;
 	for(unsigned int i=0; i<chisqv.size(); i++)chisq += chisqv[i];
@@ -271,6 +305,7 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 		min_chisq = chisq;
 		for(int i=0;i<6;i++)min_par[i] = par[i];
 	}
+
 //cout<<__FILE__<<":"<<__LINE__<<" chisq= "<<chisq<<endl;
 }
 
