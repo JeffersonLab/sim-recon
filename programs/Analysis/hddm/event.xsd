@@ -508,6 +508,30 @@
     </xs:complexType>
   </xs:element>
 
+  <xs:element name="mcTrajectoryPoint">
+    <xs:complexType>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
+      <xs:attribute name="px" type="hddm:float" use="required"/>
+      <xs:attribute name="py" type="hddm:float" use="required"/>
+      <xs:attribute name="pz" type="hddm:float" use="required"/>
+      <xs:attribute name="x" type="hddm:float" use="required"/>
+      <xs:attribute name="y" type="hddm:float" use="required"/>
+      <xs:attribute name="z" type="hddm:float" use="required"/>
+      <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="dE" type="hddm:float" use="required"/>
+      <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="part" type="hddm:int" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="mcTrajectory">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:mcTrajectoryPoint"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
   <xs:element name="hitView">
     <xs:complexType>
       <xs:sequence>
@@ -519,6 +543,7 @@
         <xs:element minOccurs="0" ref="hddm:forwardTOF"/>
         <xs:element minOccurs="0" ref="hddm:forwardEMcal"/>
         <xs:element minOccurs="0" ref="hddm:upstreamEMveto"/>
+        <xs:element minOccurs="0" ref="hddm:mcTrajectory"/>
       </xs:sequence>
       <xs:attribute fixed="2.0" name="version" type="xs:string" use="required"/>
     </xs:complexType>

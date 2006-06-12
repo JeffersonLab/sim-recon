@@ -148,6 +148,7 @@
       data beamPars,beamEpeak,radColDist/0,0,76.0/
       data bfield/-999.0/
       data nosecondaries/0/
+		data storetraj/0/
 
 *
 *     -----------------------------------------------------------------
@@ -193,6 +194,7 @@ C..geant..
       call ffkey('beam',beamE0,3,'REAL')
       call ffkey('bfield', bfield,1,'REAL')
       call ffkey('nosecondaries', nosecondaries,1,'INTEGER')
+      call ffkey('storetraj', storetraj,1,'INTEGER')
       call gtgamaff()
       CALL GFFGO
 *

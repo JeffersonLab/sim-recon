@@ -8,6 +8,7 @@
 #include "DFactory_DMCTrackHit.h"
 #include "DFactory_DTrackEfficiency.h"
 #include "DFactory_DMCThrown.h"
+#include "DFactory_DMCTrajectoryPoint.h"
 
 derror_t TRACKING_init(DEventLoop *loop)
 {
@@ -19,6 +20,7 @@ derror_t TRACKING_init(DEventLoop *loop)
 	loop->AddFactory(new DFactory_DMCTrackHit());
 	loop->AddFactory(new DFactory_DTrackEfficiency());
 	loop->AddFactory(new DFactory_DMCThrown());
+	loop->AddFactory(new DFactory_DMCTrajectoryPoint());
 
 	return NOERROR;
 }

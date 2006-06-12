@@ -435,6 +435,12 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
       endif
 #endif
 
+* Optionally store particle trajectory
+      if (storetraj.ne.0) then
+		    call addtrajectorypoint(VECT,TOFG,DESTEP,GETOT,ITRA,ISTAK
+     +         ,IPART)
+		endif
+
 * If not a sensitive volume then exit here
 
       if (ISVOL.eq.0) return

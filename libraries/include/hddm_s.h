@@ -3,11 +3,9 @@
  *
  * This file was generated automatically by hddm-c from the file
  * event.xml
+
  * This header file defines the c structures that hold the data
  * described in the data model (from event.xml). 
- * Any program that needs access to the data described in the model
- * can include this header file, and make use of the input/output
- * services provided in hddm_s.c
  *
  * The hddm data model tool set was written by
  * Richard Jones, University of Connecticut.
@@ -672,6 +670,37 @@ typedef struct {
 } s_UpstreamEMveto_t;
 #endif /* s_UpstreamEMveto_t */
 
+#ifndef SAW_s_McTrajectoryPoint_t
+#define SAW_s_McTrajectoryPoint_t
+
+typedef struct {
+   float                E;
+   float                dE;
+   int                  part;
+   float                px;
+   float                py;
+   float                pz;
+   float                t;
+   int                  track;
+   float                x;
+   float                y;
+   float                z;
+} s_McTrajectoryPoint_t;
+
+typedef struct {
+   unsigned int mult;
+   s_McTrajectoryPoint_t in[1];
+} s_McTrajectoryPoints_t;
+#endif /* s_McTrajectoryPoint_t */
+
+#ifndef SAW_s_McTrajectory_t
+#define SAW_s_McTrajectory_t
+
+typedef struct {
+   s_McTrajectoryPoints_t* mcTrajectoryPoints;
+} s_McTrajectory_t;
+#endif /* s_McTrajectory_t */
+
 #ifndef SAW_s_HitView_t
 #define SAW_s_HitView_t
 
@@ -684,6 +713,7 @@ typedef struct {
    s_ForwardTOF_t*      forwardTOF;
    s_ForwardEMcal_t*    forwardEMcal;
    s_UpstreamEMveto_t*  upstreamEMveto;
+   s_McTrajectory_t*    mcTrajectory;
 } s_HitView_t;
 #endif /* s_HitView_t */
 
@@ -812,6 +842,10 @@ s_UpvLeftHits_t* make_s_UpvLeftHits(int n);
 s_UpvRightHits_t* make_s_UpvRightHits(int n);
 
 s_UpvTruthShowers_t* make_s_UpvTruthShowers(int n);
+
+s_McTrajectory_t* make_s_McTrajectory();
+
+s_McTrajectoryPoints_t* make_s_McTrajectoryPoints(int n);
 
 #ifdef __cplusplus
 }

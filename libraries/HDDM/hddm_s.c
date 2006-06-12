@@ -3,11 +3,9 @@
  *
  * This file was generated automatically by hddm-c from the file
  * event.xml
+
  * This c file contains the i/o interface to the c structures
  * described in the data model (from event.xml). 
- * Any program that needs access to the data described in the model
- * can compile this source file, and make use of the input/output
- * services provided.
  *
  * The hddm data model tool set was written by
  * Richard Jones, University of Connecticut.
@@ -42,8 +40,8 @@ s_PhysicsEvents_t* make_s_PhysicsEvents(int n)
       s_PhysicsEvent_t* pp = &p->in[i];
       pp->eventNo = 0;
       pp->runNo = 0;
-   pp->reactions = (s_Reactions_t*)&hddm_nullTarget;
-   pp->hitView = (s_HitView_t*)&hddm_nullTarget;
+      pp->reactions = (s_Reactions_t*)&hddm_nullTarget;
+      pp->hitView = (s_HitView_t*)&hddm_nullTarget;
    }
    return p;
 }
@@ -59,9 +57,9 @@ s_Reactions_t* make_s_Reactions(int n)
       s_Reaction_t* pp = &p->in[i];
       pp->type = 0;
       pp->weight = 0;
-   pp->beam = (s_Beam_t*)&hddm_nullTarget;
-   pp->target = (s_Target_t*)&hddm_nullTarget;
-   pp->vertices = (s_Vertices_t*)&hddm_nullTarget;
+      pp->beam = (s_Beam_t*)&hddm_nullTarget;
+      pp->target = (s_Target_t*)&hddm_nullTarget;
+      pp->vertices = (s_Vertices_t*)&hddm_nullTarget;
    }
    return p;
 }
@@ -115,8 +113,8 @@ s_Vertices_t* make_s_Vertices(int n)
    p->mult = 0;
    for (i=0; i<n; i++) {
       s_Vertex_t* pp = &p->in[i];
-   pp->products = (s_Products_t*)&hddm_nullTarget;
-   pp->origin = (s_Origin_t*)&hddm_nullTarget;
+      pp->products = (s_Products_t*)&hddm_nullTarget;
+      pp->origin = (s_Origin_t*)&hddm_nullTarget;
    }
    return p;
 }
@@ -132,8 +130,8 @@ s_Products_t* make_s_Products(int n)
       s_Product_t* pp = &p->in[i];
       pp->decayVertex = 0;
       pp->type = 0;
-   pp->momentum = (s_Momentum_t*)&hddm_nullTarget;
-   pp->properties = (s_Properties_t*)&hddm_nullTarget;
+      pp->momentum = (s_Momentum_t*)&hddm_nullTarget;
+      pp->properties = (s_Properties_t*)&hddm_nullTarget;
    }
    return p;
 }
@@ -161,6 +159,7 @@ s_HitView_t* make_s_HitView()
    p->forwardTOF = (s_ForwardTOF_t*)&hddm_nullTarget;
    p->forwardEMcal = (s_ForwardEMcal_t*)&hddm_nullTarget;
    p->upstreamEMveto = (s_UpstreamEMveto_t*)&hddm_nullTarget;
+   p->mcTrajectory = (s_McTrajectory_t*)&hddm_nullTarget;
    return p;
 }
 
@@ -184,7 +183,7 @@ s_CdcStraws_t* make_s_CdcStraws(int n)
       s_CdcStraw_t* pp = &p->in[i];
       pp->ring = 0;
       pp->straw = 0;
-   pp->cdcStrawHits = (s_CdcStrawHits_t*)&hddm_nullTarget;
+      pp->cdcStrawHits = (s_CdcStrawHits_t*)&hddm_nullTarget;
    }
    return p;
 }
@@ -243,9 +242,9 @@ s_FdcChambers_t* make_s_FdcChambers(int n)
       s_FdcChamber_t* pp = &p->in[i];
       pp->layer = 0;
       pp->module = 0;
-   pp->fdcAnodeWires = (s_FdcAnodeWires_t*)&hddm_nullTarget;
-   pp->fdcCathodeStrips = (s_FdcCathodeStrips_t*)&hddm_nullTarget;
-   pp->fdcTruthPoints = (s_FdcTruthPoints_t*)&hddm_nullTarget;
+      pp->fdcAnodeWires = (s_FdcAnodeWires_t*)&hddm_nullTarget;
+      pp->fdcCathodeStrips = (s_FdcCathodeStrips_t*)&hddm_nullTarget;
+      pp->fdcTruthPoints = (s_FdcTruthPoints_t*)&hddm_nullTarget;
    }
    return p;
 }
@@ -260,7 +259,7 @@ s_FdcAnodeWires_t* make_s_FdcAnodeWires(int n)
    for (i=0; i<n; i++) {
       s_FdcAnodeWire_t* pp = &p->in[i];
       pp->wire = 0;
-   pp->fdcAnodeHits = (s_FdcAnodeHits_t*)&hddm_nullTarget;
+      pp->fdcAnodeHits = (s_FdcAnodeHits_t*)&hddm_nullTarget;
    }
    return p;
 }
@@ -291,7 +290,7 @@ s_FdcCathodeStrips_t* make_s_FdcCathodeStrips(int n)
       s_FdcCathodeStrip_t* pp = &p->in[i];
       pp->plane = 0;
       pp->strip = 0;
-   pp->fdcCathodeHits = (s_FdcCathodeHits_t*)&hddm_nullTarget;
+      pp->fdcCathodeHits = (s_FdcCathodeHits_t*)&hddm_nullTarget;
    }
    return p;
 }
@@ -350,7 +349,7 @@ s_StcPaddles_t* make_s_StcPaddles(int n)
    for (i=0; i<n; i++) {
       s_StcPaddle_t* pp = &p->in[i];
       pp->sector = 0;
-   pp->stcHits = (s_StcHits_t*)&hddm_nullTarget;
+      pp->stcHits = (s_StcHits_t*)&hddm_nullTarget;
    }
    return p;
 }
@@ -411,8 +410,8 @@ s_BcalCells_t* make_s_BcalCells(int n)
       pp->layer = 0;
       pp->module = 0;
       pp->sector = 0;
-   pp->bcalUpstreamHits = (s_BcalUpstreamHits_t*)&hddm_nullTarget;
-   pp->bcalDownstreamHits = (s_BcalDownstreamHits_t*)&hddm_nullTarget;
+      pp->bcalUpstreamHits = (s_BcalUpstreamHits_t*)&hddm_nullTarget;
+      pp->bcalDownstreamHits = (s_BcalDownstreamHits_t*)&hddm_nullTarget;
    }
    return p;
 }
@@ -486,7 +485,7 @@ s_CereSections_t* make_s_CereSections(int n)
    for (i=0; i<n; i++) {
       s_CereSection_t* pp = &p->in[i];
       pp->sector = 0;
-   pp->cereHits = (s_CereHits_t*)&hddm_nullTarget;
+      pp->cereHits = (s_CereHits_t*)&hddm_nullTarget;
    }
    return p;
 }
@@ -549,8 +548,8 @@ s_FtofCounters_t* make_s_FtofCounters(int n)
       s_FtofCounter_t* pp = &p->in[i];
       pp->paddle = 0;
       pp->plane = 0;
-   pp->ftofLeftHits = (s_FtofLeftHits_t*)&hddm_nullTarget;
-   pp->ftofRightHits = (s_FtofRightHits_t*)&hddm_nullTarget;
+      pp->ftofLeftHits = (s_FtofLeftHits_t*)&hddm_nullTarget;
+      pp->ftofRightHits = (s_FtofRightHits_t*)&hddm_nullTarget;
    }
    return p;
 }
@@ -624,7 +623,7 @@ s_FcalBlocks_t* make_s_FcalBlocks(int n)
       s_FcalBlock_t* pp = &p->in[i];
       pp->column = 0;
       pp->row = 0;
-   pp->fcalHits = (s_FcalHits_t*)&hddm_nullTarget;
+      pp->fcalHits = (s_FcalHits_t*)&hddm_nullTarget;
    }
    return p;
 }
@@ -684,8 +683,8 @@ s_UpvPaddles_t* make_s_UpvPaddles(int n)
       s_UpvPaddle_t* pp = &p->in[i];
       pp->layer = 0;
       pp->row = 0;
-   pp->upvLeftHits = (s_UpvLeftHits_t*)&hddm_nullTarget;
-   pp->upvRightHits = (s_UpvRightHits_t*)&hddm_nullTarget;
+      pp->upvLeftHits = (s_UpvLeftHits_t*)&hddm_nullTarget;
+      pp->upvRightHits = (s_UpvRightHits_t*)&hddm_nullTarget;
    }
    return p;
 }
@@ -731,6 +730,38 @@ s_UpvTruthShowers_t* make_s_UpvTruthShowers(int n)
       s_UpvTruthShower_t* pp = &p->in[i];
       pp->E = 0;
       pp->primary = 0;
+      pp->t = 0;
+      pp->track = 0;
+      pp->x = 0;
+      pp->y = 0;
+      pp->z = 0;
+   }
+   return p;
+}
+
+s_McTrajectory_t* make_s_McTrajectory()
+{
+   int size = sizeof(s_McTrajectory_t);
+   s_McTrajectory_t* p = (s_McTrajectory_t*)MALLOC(size,"s_McTrajectory_t");
+   p->mcTrajectoryPoints = (s_McTrajectoryPoints_t*)&hddm_nullTarget;
+   return p;
+}
+
+s_McTrajectoryPoints_t* make_s_McTrajectoryPoints(int n)
+{
+   int i;
+   int rep = (n > 1) ? n-1 : 0;
+   int size = sizeof(s_McTrajectoryPoints_t) + rep * sizeof(s_McTrajectoryPoint_t);
+   s_McTrajectoryPoints_t* p = (s_McTrajectoryPoints_t*)MALLOC(size,"s_McTrajectoryPoints_t");
+   p->mult = 0;
+   for (i=0; i<n; i++) {
+      s_McTrajectoryPoint_t* pp = &p->in[i];
+      pp->E = 0;
+      pp->dE = 0;
+      pp->part = 0;
+      pp->px = 0;
+      pp->py = 0;
+      pp->pz = 0;
       pp->t = 0;
       pp->track = 0;
       pp->x = 0;
@@ -817,6 +848,9 @@ char HDDM_s_DocumentString[] =
 "        </upvPaddle>\n"
 "        <upvTruthShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "      </upstreamEMveto>\n"
+"      <mcTrajectory minOccurs=\"0\">\n"
+"        <mcTrajectoryPoint E=\"float\" dE=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" part=\"int\" px=\"float\" py=\"float\" pz=\"float\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
+"      </mcTrajectory>\n"
 "    </hitView>\n"
 "  </physicsEvent>\n"
 "</HDDM>\n"
@@ -2484,6 +2518,77 @@ static s_UpvTruthShowers_t* unpack_s_UpvTruthShowers(XDR* xdrs, popNode* pop)
    return this1;
 }
 
+static s_McTrajectory_t* unpack_s_McTrajectory(XDR* xdrs, popNode* pop)
+{
+   s_McTrajectory_t* this1 = HDDM_NULL;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return this1;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      this1 = make_s_McTrajectory();
+      {
+         int p;
+         void* (*ptr) = (void**) &this1->mcTrajectoryPoints;
+         for (p = 0; p < pop->popListLength; p++)
+         {
+            popNode* pnode = pop->popList[p];
+            if (pnode)
+            {
+               int kid = pnode->inParent;
+               ptr[kid] = pnode->unpacker(xdrs,pnode);
+            }
+            else
+            {
+               unsigned int skip;
+               xdr_u_int(xdrs,&skip);
+               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);
+            }
+         }
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
+static s_McTrajectoryPoints_t* unpack_s_McTrajectoryPoints(XDR* xdrs, popNode* pop)
+{
+   s_McTrajectoryPoints_t* this1 = HDDM_NULL;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return this1;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      int m;
+      unsigned int mult;
+      xdr_u_int(xdrs,&mult);
+      this1 = make_s_McTrajectoryPoints(mult);
+      this1->mult = mult;
+      for (m = 0; m < mult; m++ )
+      {
+         xdr_float(xdrs,&this1->in[m].E);
+         xdr_float(xdrs,&this1->in[m].dE);
+         xdr_int(xdrs,&this1->in[m].part);
+         xdr_float(xdrs,&this1->in[m].px);
+         xdr_float(xdrs,&this1->in[m].py);
+         xdr_float(xdrs,&this1->in[m].pz);
+         xdr_float(xdrs,&this1->in[m].t);
+         xdr_int(xdrs,&this1->in[m].track);
+         xdr_float(xdrs,&this1->in[m].x);
+         xdr_float(xdrs,&this1->in[m].y);
+         xdr_float(xdrs,&this1->in[m].z);
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
 s_HDDM_t* read_s_HDDM(s_iostream_t* fp)
 {
    s_HDDM_t* nextEvent = unpack_s_HDDM(fp->xdrs,fp->popTop);
@@ -2539,6 +2644,8 @@ static int pack_s_UpvPaddles(XDR* xdrs, s_UpvPaddles_t* this1);
 static int pack_s_UpvLeftHits(XDR* xdrs, s_UpvLeftHits_t* this1);
 static int pack_s_UpvRightHits(XDR* xdrs, s_UpvRightHits_t* this1);
 static int pack_s_UpvTruthShowers(XDR* xdrs, s_UpvTruthShowers_t* this1);
+static int pack_s_McTrajectory(XDR* xdrs, s_McTrajectory_t* this1);
+static int pack_s_McTrajectoryPoints(XDR* xdrs, s_McTrajectoryPoints_t* this1);
 
 static int pack_s_HDDM(XDR* xdrs, s_HDDM_t* this1)
 {
@@ -2975,6 +3082,15 @@ static int pack_s_HitView(XDR* xdrs, s_HitView_t* this1)
       if (this1->upstreamEMveto != (s_UpstreamEMveto_t*)&hddm_nullTarget)
       {
          pack_s_UpstreamEMveto(xdrs,this1->upstreamEMveto);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->mcTrajectory != (s_McTrajectory_t*)&hddm_nullTarget)
+      {
+         pack_s_McTrajectory(xdrs,this1->mcTrajectory);
       }
       else
       {
@@ -4189,6 +4305,69 @@ static int pack_s_UpvTruthShowers(XDR* xdrs, s_UpvTruthShowers_t* this1)
    return size;
 }
 
+static int pack_s_McTrajectory(XDR* xdrs, s_McTrajectory_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   m = 0; /* avoid warnings from -Wall */
+   {
+      if (this1->mcTrajectoryPoints != (s_McTrajectoryPoints_t*)&hddm_nullTarget)
+      {
+         pack_s_McTrajectoryPoints(xdrs,this1->mcTrajectoryPoints);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_McTrajectoryPoints(XDR* xdrs, s_McTrajectoryPoints_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].E);
+      xdr_float(xdrs,&this1->in[m].dE);
+      xdr_int(xdrs,&this1->in[m].part);
+      xdr_float(xdrs,&this1->in[m].px);
+      xdr_float(xdrs,&this1->in[m].py);
+      xdr_float(xdrs,&this1->in[m].pz);
+      xdr_float(xdrs,&this1->in[m].t);
+      xdr_int(xdrs,&this1->in[m].track);
+      xdr_float(xdrs,&this1->in[m].x);
+      xdr_float(xdrs,&this1->in[m].y);
+      xdr_float(xdrs,&this1->in[m].z);
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
 int flush_s_HDDM(s_HDDM_t* this1,s_iostream_t* fp)
 {
    if (this1 == 0)
@@ -4249,14 +4428,24 @@ static char* getEndTag(char* d, char* tag)
    return strstr(d,endTag);
 }
 
-static void collide(char* tag)
-   {
-      fprintf(stderr,"HDDM Error: ");
-      fprintf(stderr,"input template model for tag ");
-      fprintf(stderr,"%s does not match c code.", tag);
-      fprintf(stderr,"\nPlease recompile.\n");
-      exit(9);
-   }
+static void collide(char* b, char* c)
+{
+   char btag[500];
+   getTag(b,btag);
+   b = index(b,'<');
+   c = index(c,'<');
+   *(index(b,'\n')) = 0;
+   *(index(c,'\n')) = 0;
+   fprintf(stderr,"HDDM warning: ");
+   fprintf(stderr,"tag %s in input file ", btag);
+   fprintf(stderr,"does not match c header hddm_s.h\n");
+   fprintf(stderr,"  input file: %s\n", b);
+   fprintf(stderr,"  c header: %s\n", c);
+   fprintf(stderr,"  === Tag %s will be ignored,", btag);
+   fprintf(stderr," rebuild to cure the problem ===\n");
+   *(index(b,0)) = '\n';
+   *(index(c,0)) = '\n';
+}
 
 static popNode* matches(char* b, char* c)
 {
@@ -4273,9 +4462,10 @@ static popNode* matches(char* b, char* c)
          int len = index(c+1,'\n') - c;
          if (strncmp(c,b,len) != 0)
          {
-            collide(btag);
+            collide(b,c);
+            return 0;
          }
-         if (strcmp(btag,"HDDM") == 0)
+         else if (strcmp(btag,"HDDM") == 0)
          {
             this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_HDDM;
          }
@@ -4471,9 +4661,13 @@ static popNode* matches(char* b, char* c)
          {
             this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_UpvTruthShowers;
          }
-         else
+         else if (strcmp(btag,"mcTrajectory") == 0)
          {
-            collide(btag);
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_McTrajectory;
+         }
+         else if (strcmp(btag,"mcTrajectoryPoint") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_McTrajectoryPoints;
          }
          this1->inParent = ptrSeqNo;
          this1->popListLength = 0;
@@ -4539,11 +4733,11 @@ s_iostream_t* open_s_HDDM(char* filename)
    }
    fp->popTop = matches(head,HDDM_s_DocumentString);
    free(head);
-   if (fp->popTop == 0)
+   if (fp->popTop->popListLength == 0)
    {
       fprintf(stderr,"HDDM Error: ");
       fprintf(stderr,"input template model ");
-      fprintf(stderr,"does not match c code.");
+      fprintf(stderr,"does not match c header.");
       fprintf(stderr,"  Please recompile.\n");
       exit(9);
    }

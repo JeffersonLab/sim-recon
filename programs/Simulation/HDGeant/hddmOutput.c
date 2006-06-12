@@ -90,6 +90,9 @@ int loadOutput ()
       					forwardEMcal = pickForwardEMcal();
    thisOutputEvent->physicsEvents->in[0].hitView->
       					upstreamEMveto = pickUpstreamEMveto();
+   thisOutputEvent->physicsEvents->in[0].hitView->
+      					mcTrajectory = pickMCTrajectory();
+							
    return 0;
 }
 

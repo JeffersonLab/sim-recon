@@ -109,6 +109,7 @@ c #define BEAM_BOX_SIZE 6
 #include "geant321/gconsp.inc"
 #include "geant321/gcscan.inc"
 #include "geant321/gcomis.inc"
+#include "hdtrackparams.inc"
 *
       DIMENSION VERTEX(3),PLAB(3)
       DIMENSION RNDM(20)
@@ -271,4 +272,9 @@ c #define BEAM_BOX_SIZE 6
         CALL GPRINT('KINE',0)
       ENDIF
 *
+* If storing particle trajectories, clear the buffers
+      if (storetraj.ne.0) then
+		    call cleartrajectories()
+		endif
+
       END
