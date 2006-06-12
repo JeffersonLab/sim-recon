@@ -27,6 +27,7 @@ using namespace std;
 #include "DFactory_DMCTrackHit.h"
 #include "DMCThrown.h"
 #include "DGeometry.h"
+#include "DMCTrajectoryPoint.h"
 
 extern TCanvas *maincanvas;
 extern hdv_mainframe *hdvmf;
@@ -151,9 +152,39 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	vector<const DTrackHit*> trackhits;
 	vector<const DMCTrackHit*> mctrackhits;
 	vector<const DMCThrown*> mcthrowns;
+	vector<const DMCTrajectoryPoint*> mctrajectories;
 	eventLoop->Get(trackhits, TRACKHIT_SOURCE.c_str());
 	DFactory<DMCTrackHit> *fac_mcth = eventLoop->Get(mctrackhits); // just in case we need it later
 	eventLoop->Get(mcthrowns); // used for straight tracks
+	eventLoop->Get(mctrajectories);
+	
+	// Draw trajectory info first if it is available
+	for(unsigned int i=0;i<mctrajectories.size();i++){
+		const DMCTrajectoryPoint *pt = mctrajectories[i];
+		
+		TMarker *top = NULL;
+		TMarker *side = NULL;
+		TMarker *front = NULL;
+		
+		float X,Y;
+		ConvertToTop(pt->x, pt->y, pt->z,X,Y);
+		if(X<-0.1 && X>-2.0 && Y>0.0 && Y<1.0)top = new TMarker(X,Y,20);
+		ConvertToSide(pt->x, pt->y, pt->z,X,Y);
+		if(X<-0.1 && X>-2.0 && Y<0.0 && Y>-1.0)side = new TMarker(X,Y,20);
+		ConvertToFront(pt->x, pt->y, pt->z,X,Y);
+		if(X>-0.1 && Y<1.0 && Y>-1.0)front = new TMarker(X,Y,20);
+
+		if(top)top->SetMarkerColor(kBlack);
+		if(top)top->SetMarkerSize(0.25);
+		if(side)side->SetMarkerColor(kBlack);
+		if(side)side->SetMarkerSize(0.25);
+		if(front)front->SetMarkerColor(kBlack);
+		if(front)front->SetMarkerSize(0.25);
+		
+		if(top)markers.push_back(top);
+		if(side)markers.push_back(side);
+		if(front)markers.push_back(front);
+	}
 	
 	// Loop over hits creating markers for all 3 views
 	for(unsigned int i=0;i<trackhits.size();i++){
@@ -260,13 +291,12 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	eventLoop->Get(trackcandidates);
 	vector<DQuickFit*> qfits = factory->Get_dbg_track_fit();
 	for(unsigned int i=0; i<qfits.size(); i++){
-		DrawHelicalTrack(qfits[i], colors[(i+1)%ncolors]+100);
+		//DrawHelicalTrack(qfits[i], colors[(i+1)%ncolors]+100);
 		DrawTrack(qfits[i], colors[(i+1)%ncolors]);
 	}
 
 	// Draw all markers and update canvas
 	for(unsigned int i=0;i<markers.size();i++)markers[i]->Draw();
-	//for(unsigned int i=0;i<circles.size();i++)circles[i]->Draw();
 	maincanvas->Update();
 
 	return NOERROR;
@@ -435,11 +465,14 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 		if(r>=BCAL_Rmax && fabs(z-BCAL_Zmid)<BCAL_Zlen/2.0)break;
 		
 		ConvertToSide(x,y,z,X,Y);
-		line_side->SetNextPoint(X,Y);
+		if(X<0.0 && X>-2.0 && Y<0.0 && Y>-1.0)
+			line_side->SetNextPoint(X,Y);
 		ConvertToTop(x,y,z,X,Y);
-		line_top->SetNextPoint(X,Y);
+		if(X<0.0 && X>-2.0 && Y>0.0 && Y<1.0)
+			line_top->SetNextPoint(X,Y);
 		ConvertToFront(x, y, 0, X, Y);
-		line_beam->SetNextPoint(X,Y);
+		if(X>0.0 && Y<1.0 && Y>-1.0)
+			line_beam->SetNextPoint(X,Y);
 		
 //const DBfieldPoint_t* tmp = stepper->GetDBfieldPoint();
 //cout<<__FILE__<<":"<<__LINE__<<" x:"<<x<<" y:"<<y<<" z:"<<z<<" Bz:"<<tmp->Bz<<endl;

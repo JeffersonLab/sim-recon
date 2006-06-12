@@ -56,7 +56,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	// so events can be automatically advanced.
 	TTimer *timer = new TTimer();
 	timer->Connect("Timeout()", "hdv_mainframe", this, "DoTimer()");
-	timer->Start(2000, kFALSE);
+	timer->Start(100, kFALSE);
 	
 	SetWindowName("Hall-D Event Viewer");
 	SetIconName("HDView");
