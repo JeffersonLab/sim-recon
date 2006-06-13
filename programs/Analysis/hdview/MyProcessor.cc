@@ -159,8 +159,20 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	eventLoop->Get(mctrajectories);
 	
 	// Draw trajectory info first if it is available
+	const DMCTrajectoryPoint *last_pt = NULL;
 	for(unsigned int i=0;i<mctrajectories.size();i++){
 		const DMCTrajectoryPoint *pt = mctrajectories[i];
+		
+		// Since the trajectory points can be very dense, only
+		// draw when one is at least 1cm apart from the last one
+		// drawn.
+		if(last_pt){
+			float r2 = pow(pt->x-last_pt->x,2.0)
+							+pow(pt->y-last_pt->y,2.0)
+								+pow(pt->z-last_pt->z,2.0);
+			if(r2<4.0)continue;
+		}
+		last_pt = pt;
 		
 		TMarker *top = NULL;
 		TMarker *side = NULL;
@@ -336,13 +348,13 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 		Z+=z_step;
 		if(Z>=TOF_Zmid || Z<-10.0)break;
 		float r = sqrt((double)(x*x) + (double)(y*y));
-		if((r>=BCAL_Rmin) && (fabs(Z-BCAL_Zmid)<BCAL_Zlen/2.0))break;
+		if((r>BCAL_Rmin) && (fabs(Z-BCAL_Zmid)<BCAL_Zlen/2.0))break;
 	}
 	line_side->SetLineColor(color);
-	line_side->SetLineWidth(3);
+	line_side->SetLineWidth(2);
 	line_side->Draw();
 	line_top->SetLineColor(color);
-	line_top->SetLineWidth(3);
+	line_top->SetLineWidth(2);
 	line_top->Draw();
 	lines.push_back(line_side);
 	lines.push_back(line_top);
@@ -462,7 +474,7 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 	
 		if(z>=TOF_Zmid || z<-10.0)break;
 		float r = sqrt((double)(x*x) + (double)(y*y));
-		if(r>=BCAL_Rmax && fabs(z-BCAL_Zmid)<BCAL_Zlen/2.0)break;
+		if(r>BCAL_Rmin && fabs(z-BCAL_Zmid)<BCAL_Zlen/2.0)break;
 		
 		ConvertToSide(x,y,z,X,Y);
 		if(X<0.0 && X>-2.0 && Y<0.0 && Y>-1.0)
@@ -497,8 +509,8 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 //------------------------------------------------------------------
 derror_t MyProcessor::ConvertToTop(float x, float y, float z, float &X, float &Y)
 {
-	X = z/400.0 - 2.0;
-	Y = x/400.0 + 0.5;
+	X = z/350.0 - 2.1;
+	Y = x/350.0 + 0.5;
 
 	return NOERROR;
 }
@@ -508,8 +520,8 @@ derror_t MyProcessor::ConvertToTop(float x, float y, float z, float &X, float &Y
 //------------------------------------------------------------------
 derror_t MyProcessor::ConvertToSide(float x, float y, float z, float &X, float &Y)
 {
-	X = z/400.0 - 2.0;
-	Y = y/400.0 - 0.5;
+	X = z/350.0 - 2.1;
+	Y = y/350.0 - 0.5;
 
 	return NOERROR;
 }
