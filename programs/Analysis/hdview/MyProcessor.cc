@@ -167,9 +167,9 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 		// draw when one is at least 1cm apart from the last one
 		// drawn.
 		if(last_pt){
-			float r2 = pow(pt->x-last_pt->x,2.0)
-							+pow(pt->y-last_pt->y,2.0)
-								+pow(pt->z-last_pt->z,2.0);
+			float r2 = pow((double)pt->x-last_pt->x,2.0)
+							+pow((double)pt->y-last_pt->y,2.0)
+								+pow((double)pt->z-last_pt->z,2.0);
 			if(r2<4.0)continue;
 		}
 		last_pt = pt;
@@ -303,7 +303,7 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	eventLoop->Get(trackcandidates);
 	vector<DQuickFit*> qfits = factory->Get_dbg_track_fit();
 	for(unsigned int i=0; i<qfits.size(); i++){
-		//DrawHelicalTrack(qfits[i], colors[(i+1)%ncolors]+100);
+		DrawHelicalTrack(qfits[i], colors[(i+1)%ncolors]+100);
 		DrawTrack(qfits[i], colors[(i+1)%ncolors]);
 	}
 
