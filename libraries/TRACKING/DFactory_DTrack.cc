@@ -16,6 +16,9 @@
 #include "DMagneticFieldStepper.h"
 #include "DTrackHit.h"
 
+#define USE_MINUIT 0
+
+#if USE_MINUIT
 // This is for MINUIT which is really not suited for a multi-threaded
 // event processing environment. We do a few backflips here ...
 static void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag);
@@ -34,11 +37,14 @@ typedef struct{
 	double d2xdz2, d2ydz2;
 }trk_step_t;
 
+#endif
+
 //------------------
 // init
 //------------------
 derror_t DFactory_DTrack::init(void)
 {
+#if USE_MINUIT
 	pthread_mutex_lock(&trk_mutex);
 	if(minuit==NULL){
 		int icondn;
@@ -68,7 +74,9 @@ derror_t DFactory_DTrack::init(void)
 		minuit->mncomd("FIX 6", icondn);
 	}
 	pthread_mutex_unlock(&trk_mutex);
-	
+
+#endif
+
 	return NOERROR;
 }
 
@@ -93,7 +101,10 @@ derror_t DFactory_DTrack::evnt(DEventLoop *loop, int eventnumber)
 	vector<const DTrackCandidate*> trackcandidates;
 	vector<const DTrackHit*> trackhits;
 	loop->Get(trackcandidates);
-	DFactory<DTrackHit> *fac_trackhit = loop->Get(trackhits,"MC");
+#if USE_MINUIT
+	DFactory<DTrackHit> *fac_trackhit =
+#endif
+	loop->Get(trackhits,"MC");
 		
 	for(unsigned int i=0; i<trackcandidates.size(); i++){
 		const DTrackCandidate *trackcandidate = trackcandidates[i];
@@ -109,6 +120,7 @@ derror_t DFactory_DTrack::evnt(DEventLoop *loop, int eventnumber)
 		track->z = trackcandidate->z_vertex;
 		track->candidateid = trackcandidate->id;
 		
+#if USE_MINUIT
 		// Lock mutex so only one thread at a time accesses minuit
 		pthread_mutex_lock(&trk_mutex);
 		g_loop = loop;
@@ -126,7 +138,7 @@ derror_t DFactory_DTrack::evnt(DEventLoop *loop, int eventnumber)
 		par[5] = track->z;
 		int npar=6;
 		double dfdpar[6];
-		double chisq;
+		double chisq=0.0;;
 		int iflag = 2;
 		FCN(npar, dfdpar, chisq, par, iflag);
 		
@@ -143,7 +155,7 @@ derror_t DFactory_DTrack::evnt(DEventLoop *loop, int eventnumber)
 		//minuit->Migrad();
 		//minuit->mncomd("MINIMIZE 100", icondn);
 		//int icondn;
-		//minuit->mncomd("SEEK 100 1", icondn);
+		minuit->mncomd("SEEK 100 1", icondn);
 
 //cout<<__FILE__<<":"<<__LINE__<<" initial:"<<chisq<<"  final:"<<min_chisq<<endl;
 //for(int i=0; i<6; i++){
@@ -161,13 +173,17 @@ derror_t DFactory_DTrack::evnt(DEventLoop *loop, int eventnumber)
 			track->y = min_par[4];
 			track->z = min_par[5];
 		}
-	
+
+#endif
+
 		_data.push_back(track);
 	}
 
 	return NOERROR;
 }
 
+
+#if USE_MINUIT
 //------------------
 // FCN   -- for MINUIT
 //------------------
@@ -320,7 +336,7 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 
 //cout<<__FILE__<<":"<<__LINE__<<" chisq= "<<chisq<<"  chisqv.size()="<<chisqv.size()<<endl;
 }
-
+#endif
 
 //------------------
 // toString
