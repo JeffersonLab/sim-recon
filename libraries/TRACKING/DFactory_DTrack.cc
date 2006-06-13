@@ -61,11 +61,11 @@ derror_t DFactory_DTrack::init(void)
 		minuit->DefineParameter(2,"phi",		0.0, 0.17, 0.0, 0.0);
 		minuit->DefineParameter(3,"x",		0.0, 0.50, 0.0, 0.0);
 		minuit->DefineParameter(4,"y",		0.0, 0.50, 0.0, 0.0);
-		minuit->DefineParameter(5,"z",		0.0, 15.0, 0.0, 0.0);
+		minuit->DefineParameter(5,"z",		0.0, 7.0, 0.0, 0.0);
 
 		minuit->mncomd("FIX 4", icondn);
 		minuit->mncomd("FIX 5", icondn);
-		//minuit->mncomd("FIX 6", icondn);
+		minuit->mncomd("FIX 6", icondn);
 	}
 	pthread_mutex_unlock(&trk_mutex);
 	
@@ -143,7 +143,7 @@ derror_t DFactory_DTrack::evnt(DEventLoop *loop, int eventnumber)
 		//minuit->Migrad();
 		//minuit->mncomd("MINIMIZE 100", icondn);
 		int icondn;
-		//minuit->mncomd("SEEK 100 2", icondn);
+		//minuit->mncomd("SEEK 100 1", icondn);
 
 //cout<<__FILE__<<":"<<__LINE__<<" initial:"<<chisq<<"  final:"<<min_chisq<<endl;
 //for(int i=0; i<6; i++){
@@ -189,10 +189,11 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 	p.SetMagThetaPhi(par[0],par[1],par[2]);
 	TVector3 pos(par[3],par[4],par[5]);
 	DMagneticFieldStepper *stepper = new DMagneticFieldStepper(g_bfield, g_trackcandidate->q, &pos, &p);
+	stepper->SetStepSize(0.1);
 	
 	// Step until we hit a boundary
 	vector<trk_step_t> trk_steps;
-	for(int i=0; i<1000; i++){
+	for(int i=0; i<10000; i++){
 		stepper->Step(&pos);
 		trk_step_t trk_step;
 		trk_step.x = pos.X();
@@ -209,6 +210,7 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 	}
 	delete stepper;
 
+#if 0
 	// Calculate first derivatives in trk_steps
 	for(unsigned int i=1; i<trk_steps.size()-1; i++){
 		// We do this by averaging the slopes of the lines connecting
@@ -234,6 +236,7 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 		curr->d2xdz2 = ((curr->dxdz-prev->dxdz)/(curr->z-prev->z) + (next->dxdz-curr->dxdz)/(next->z-curr->z))/2.0;
 		curr->d2ydz2 = ((curr->dydz-prev->dydz)/(curr->z-prev->z) + (next->dydz-curr->dydz)/(next->z-curr->z))/2.0;
 	}
+#endif
 	
 	// Loop over the track hits for this candidate using
 	// the closest trk_step to determine the distance
@@ -244,27 +247,34 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 		const DTrackHit *trackhit = (const DTrackHit*)vptrs[i];
 		if(!trackhit)continue;
 		
+		// Ignore hits outside of the CDC and FDC for now
+		if(trackhit->z <= 0.0)continue;
+		if(trackhit->z > 405.0)continue;
+		double r = sqrt(pow(trackhit->x,2.0) + pow(trackhit->y,2.0));
+		if(r >= 65.0)continue;
+		
 		// We don't really want the hit closest physically in space.
 		// Rather, we want the distance measured in standard deviations
 		// of detector resolutions. This depends upon the detector type
 		// from which the hit came. Note that this also depends on the
 		// step size used in the stepper. The FDC in particular needs
-		// much larger sigma values than due to detector resolution alone.
+		// much larger sigma values due to detector resolution alone.
 		double sigmaxy;
 		double sigmaz;
 		switch(trackhit->system){
 			case SYS_CDC:	sigmaxy = 0.80;	sigmaz = 7.50;	break;
-			case SYS_FDC:	sigmaxy = 2.00;	sigmaz = 2.00;	break;
-			default:			sigmaxy = 1.00;	sigmaz = 1.00;
+			case SYS_FDC:	sigmaxy = 0.50;	sigmaz = 0.50;	break;
+			default:			sigmaxy = 10.00;	sigmaz = 10.00;
 		}
 
-		// Loop over all steps to find the closest one to this hit
 		double xh = trackhit->x;
 		double yh = trackhit->y;
 		double zh = trackhit->z;
+
+		// Loop over all steps to find the closest one to this hit
 		double r2_min = 1.0E6;
 		trk_step_t *trk_step_min=NULL;
-		for(unsigned int j=2; j<trk_steps.size()-2; j++){
+		for(unsigned int j=0; j<trk_steps.size(); j++){
 			trk_step_t *trk_step = &trk_steps[j];
 			double xs = trk_step->x;
 			double ys = trk_step->y;
@@ -293,20 +303,22 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 	// Sum up total chisq/dof for this event
 	chisq = 0.0;
 	for(unsigned int i=0; i<chisqv.size(); i++)chisq += chisqv[i];
-	chisq /= (double)chisqv.size();
-	
+	chisq /= (double)chisqv.size() - 4.0;
+
+//chisq = pow((par[0]-1.0)/0.100,2.0) + pow((par[5]-65.0)/7.0,2.0);
+
 	// If NO hits were close to this track (how does that even happen?)
 	// then the size of chisqv will be zero and chisq will now be
 	// "nan". In this case, set the chisq to a very large value to
 	// indicate a bad fit.
-	if(chisqv.size() == 0)chisq=1000.0;
+	if(chisqv.size() < 5)chisq=1000.0;
 
 	if(chisq<min_chisq){
 		min_chisq = chisq;
 		for(int i=0;i<6;i++)min_par[i] = par[i];
 	}
 
-//cout<<__FILE__<<":"<<__LINE__<<" chisq= "<<chisq<<endl;
+//cout<<__FILE__<<":"<<__LINE__<<" chisq= "<<chisq<<"  chisqv.size()="<<chisqv.size()<<endl;
 }
 
 
@@ -319,7 +331,7 @@ const string DFactory_DTrack::toString(void)
 	GetNrows();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row: q:     p:   theta:   phi:    x:    y:    z:");
+	printheader("row: q:       p:   theta:   phi:    x:    y:    z:");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 
@@ -329,7 +341,7 @@ const string DFactory_DTrack::toString(void)
 		
 		printcol("%x", i);
 		printcol("%+d", (int)track->q);
-		printcol("%3.1f", track->p);
+		printcol("%3.3f", track->p);
 		printcol("%1.3f", track->theta);
 		printcol("%1.3f", track->phi);
 		printcol("%2.2f", track->x);

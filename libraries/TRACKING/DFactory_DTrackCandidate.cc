@@ -211,6 +211,11 @@ void DFactory_DTrackCandidate::GetTrkHits(DEventLoop *loop)
 		if(hit){
 			if(hit->system&&(SYS_CDC|SYS_FDC)){
 				if(hit->z>=MIN_HIT_Z && hit->z<=MAX_HIT_Z){
+					// Don't include hits from stereo layers in CDC
+					if(hit->system==SYS_CDC){
+						if(hit->r>22.5 && hit->r<31.5)continue;
+						if(hit->r>40.5 && hit->r<48.5)continue;
+					}
 					trkhits.push_back(hit);
 				}
 			}
@@ -718,7 +723,7 @@ const string DFactory_DTrackCandidate::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("        id: Nhits: x0(cm): y0(cm): z_vertex: dphi/dz:  q:   p: p_trans:   phi: theta:");
+	printheader("        id: Nhits: x0(cm): y0(cm): z_vertex: dphi/dz:  q:     p: p_trans:   phi: theta:");
 
 	for(unsigned int i=0; i<_data.size(); i++){
 		DTrackCandidate *trackcandidate = _data[i];
@@ -731,7 +736,7 @@ const string DFactory_DTrackCandidate::toString(void)
 		printcol("%3.1f", trackcandidate->z_vertex);
 		printcol("%1.3f", trackcandidate->dphidz);
 		printcol("%+1.0f", trackcandidate->q);
-		printcol("%3.1f", trackcandidate->p);
+		printcol("%3.3f", trackcandidate->p);
 		printcol("%3.2f", trackcandidate->p_trans);
 		printcol("%1.3f", trackcandidate->phi);
 		printcol("%1.3f", trackcandidate->theta);

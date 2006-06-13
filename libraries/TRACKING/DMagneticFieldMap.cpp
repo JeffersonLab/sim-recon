@@ -88,6 +88,9 @@ const DBfieldPoint_t* DMagneticFieldMap::getQuick(const double x, const double y
 	int index_r = (int)((double)rDim*(r-rMin)/(rMax-rMin));
 	int index_z = (int)((double)zDim*(zprime-zMin)/(zMax-zMin));
 	
+	if(index_r<0 || index_r>=rDim)return &null_point;
+	if(index_z<0 || index_z>=zDim)return &null_point;
+
 	int index = index_r*zDim + index_z;
 	if(index<0 || index>=Npoints){
 		return &null_point;
