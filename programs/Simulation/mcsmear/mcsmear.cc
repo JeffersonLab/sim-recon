@@ -21,6 +21,7 @@ char *OUTFILENAME = NULL;
 int QUIT = 0;
 
 extern bool ADD_NOISE;
+extern bool SMEAR_HITS;
 extern float CDC_R;
 extern float CDC_Z_SIGMA;
 extern float CDC_AVG_NOISE_HITS;
@@ -98,6 +99,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
 			switch(ptr[1]){
 				case 'h': Usage();													break;
 				case 'n': ADD_NOISE=true;											break;
+				case 's': SMEAR_HITS=false;										break;
 				case 'r': CDC_R=atof(&ptr[2]);									break;
 				case 'z': CDC_Z_SIGMA=atof(&ptr[2]);							break;
 				case 'j': CDC_AVG_NOISE_HITS=3240.0*atof(&ptr[2])/100.0;	break;
@@ -143,11 +145,12 @@ void Usage(void)
 	cout<<endl;
 	cout<<"  options:"<<endl;
 	cout<<"    -n       Add noise hits to CDC and FDC (def:"<<ADD_NOISE<<")"<<endl;
+	cout<<"    -s       Don't smear real hits (def:"<<SMEAR_HITS<<")"<<endl;
 	cout<<"    -r       Sigma CDC r-direction (def:"<<CDC_R<<"cm)"<<endl;
 	cout<<"    -z       Sigma CDC z-direction (def:"<<CDC_Z_SIGMA<<"cm)"<<endl;
-	cout<<"    -j       CDC occupancy r-direction (def:"<<100.0*CDC_AVG_NOISE_HITS/3240.0<<"%)"<<endl;
+	cout<<"    -j       CDC occupancy (def:"<<100.0*CDC_AVG_NOISE_HITS/3240.0<<"%)"<<endl;
 	cout<<"    -R       Sigma FDC r-direction (def:"<<FDC_R<<"cm)"<<endl;
-	cout<<"    -J       FDC occupancy r-direction (def:"<<100.0*FDC_AVG_NOISE_HITS/2856.0<<"%)"<<endl;
+	cout<<"    -J       FDC occupancy (def:"<<100.0*FDC_AVG_NOISE_HITS/2856.0<<"%)"<<endl;
 	cout<<"    -h       Print this usage statement."<<endl;
 	cout<<endl;
 	cout<<" Example:"<<endl;

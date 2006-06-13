@@ -27,6 +27,9 @@ double SampleRange(double x1, double x2);
 // Do we or do we not add noise hits
 bool ADD_NOISE = false;
 
+// Do we or do we not smear real hits
+bool SMEAR_HITS = true;
+
 // The straw diameter is 1.6cm
 float CDC_R = 0.8;			// cm
 
@@ -70,15 +73,15 @@ float FDC_AVG_NOISE_HITS = 0.01*2856.0; // 0.01 = 1% occupancy
 //-----------
 void Smear(s_HDDM_t *hddm_s)
 {
-	SmearCDC(hddm_s);
+	if(SMEAR_HITS)SmearCDC(hddm_s);
 	if(ADD_NOISE)AddNoiseHitsCDC(hddm_s);
-	SmearFDC(hddm_s);
+	if(SMEAR_HITS)SmearFDC(hddm_s);
 	if(ADD_NOISE)AddNoiseHitsFDC(hddm_s);
-	SmearFCAL(hddm_s);
-	SmearBCAL(hddm_s);
-	SmearTOF(hddm_s);
-	SmearUPV(hddm_s);
-	SmearCherenkov(hddm_s);
+	if(SMEAR_HITS)SmearFCAL(hddm_s);
+	if(SMEAR_HITS)SmearBCAL(hddm_s);
+	if(SMEAR_HITS)SmearTOF(hddm_s);
+	if(SMEAR_HITS)SmearUPV(hddm_s);
+	if(SMEAR_HITS)SmearCherenkov(hddm_s);
 }
 
 //-----------
@@ -141,11 +144,21 @@ void AddNoiseHitsCDC(s_HDDM_t *hddm_s)
 	
 	for(unsigned int i=0; i<PE->mult; i++){
 		s_HitView_t *hits = PE->in[i].hitView;
-		if (hits == HDDM_NULL ||
-			hits->centralDC == HDDM_NULL ||
-			hits->centralDC->cdcTruthPoints == HDDM_NULL)continue;
+		if (hits == HDDM_NULL)continue;
 		
+		// If no CDC hits were produced by HDGeant, then we need to add
+		// the branches needed to the HDDM tree
+		if(hits->centralDC == HDDM_NULL){
+			hits->centralDC = make_s_CentralDC();
+			hits->centralDC->cdcStraws = (s_CdcStraws_t*)HDDM_NULL;
+			hits->centralDC->cdcTruthPoints = (s_CdcTruthPoints_t*)HDDM_NULL;
+		}
 		
+		if(hits->centralDC->cdcTruthPoints == HDDM_NULL){
+			hits->centralDC->cdcTruthPoints = make_s_CdcTruthPoints(0);
+			hits->centralDC->cdcTruthPoints->mult=0;
+		}
+
 		// Get existing hits
 		s_CdcTruthPoints_t *old_cdctruthpoints = hits->centralDC->cdcTruthPoints;
 		unsigned int Nold = old_cdctruthpoints->mult;
@@ -166,8 +179,12 @@ void AddNoiseHitsCDC(s_HDDM_t *hddm_s)
 		free(old_cdctruthpoints);
 		hits->centralDC->cdcTruthPoints = cdctruthpoints;
 		
-		// Add noise hits
-		for(unsigned int j=0; j<Nhits; j++){
+		// Add noise hits. We add 1/3 of the hits evenly distributed
+		// throughout the volume. The remaining 2/3 of the noise hits
+		// will be distributed evenly in r and phi which gives a 
+		// 1/r density distribution
+		int j;
+		for(j=0; j<Nhits/3; j++){
 			s_CdcTruthPoint_t *cdc = &cdctruthpoints->in[cdctruthpoints->mult++];
 			cdc->dEdx = 0.0;
 			cdc->dradius = 0.0;
@@ -184,6 +201,16 @@ void AddNoiseHitsCDC(s_HDDM_t *hddm_s)
 			cdc->phi = M_PI + atan2(y,x);
 			cdc->primary = 1;
 			cdc->r = r;
+			cdc->track = 0;
+			cdc->z = SampleRange(17.0, 217.0);
+		}
+		for(; j<Nhits; j++){
+			s_CdcTruthPoint_t *cdc = &cdctruthpoints->in[cdctruthpoints->mult++];
+			cdc->dEdx = 0.0;
+			cdc->dradius = 0.0;
+			cdc->phi = SampleRange(0.0, 2.0*M_PI);
+			cdc->primary = 1;
+			cdc->r = SampleRange(0.0, 59.0);
 			cdc->track = 0;
 			cdc->z = SampleRange(17.0, 217.0);
 		}
@@ -237,9 +264,27 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 	
 	for(unsigned int i=0; i<PE->mult; i++){
 		s_HitView_t *hits = PE->in[i].hitView;
-		if (hits == HDDM_NULL ||
-			hits->forwardDC == HDDM_NULL ||
-			hits->forwardDC->fdcChambers == HDDM_NULL)continue;
+		if (hits == HDDM_NULL)continue;
+		
+		// If no FDC hits were produced by HDGeant, then we need to add
+		// the branches needed to the HDDM tree
+		if(hits->forwardDC == HDDM_NULL){
+			hits->forwardDC = make_s_ForwardDC();
+			hits->forwardDC->fdcChambers = (s_FdcChambers_t*)HDDM_NULL;
+		}
+		
+		if(hits->forwardDC->fdcChambers == HDDM_NULL){
+			hits->forwardDC->fdcChambers = make_s_FdcChambers(1);
+			hits->forwardDC->fdcChambers->mult=1;
+			hits->forwardDC->fdcChambers->in[0].fdcAnodeWires = (s_FdcAnodeWires_t*)HDDM_NULL;
+			hits->forwardDC->fdcChambers->in[0].fdcCathodeStrips = (s_FdcCathodeStrips_t*)HDDM_NULL;
+			hits->forwardDC->fdcChambers->in[0].fdcTruthPoints = (s_FdcTruthPoints_t*)HDDM_NULL;
+		}
+
+		if(hits->forwardDC->fdcChambers->in[0].fdcTruthPoints == HDDM_NULL){
+			hits->forwardDC->fdcChambers->in[0].fdcTruthPoints = make_s_FdcTruthPoints(0);
+			hits->forwardDC->fdcChambers->in[0].fdcTruthPoints->mult=0;
+		}
 
 		s_FdcChambers_t* fdcChambers = hits->forwardDC->fdcChambers;
 		s_FdcChamber_t *fdcChamber = fdcChambers->in;
@@ -268,8 +313,12 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 			free(old_fdcTruthPoints);
 			fdcChamber->fdcTruthPoints = fdcTruthPoints;
 
-			// Add noise hits
-			for(unsigned int k=0; k<Nhits; k++){
+			// Add noise hits. We add 1/3 of the hits evenly distributed
+			// throughout the volume. The remaining 2/3 of the noise hits
+			// will be distributed evenly in r and phi which gives a 
+			// 1/r density distribution
+			int k;
+			for(k=0; k<Nhits/3; k++){
 				s_FdcTruthPoint_t *fdc = &fdcTruthPoints->in[fdcTruthPoints->mult++];
 				fdc->dEdx = 0.0;
 				fdc->dradius = 0.0;
@@ -286,6 +335,22 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 				}
 				fdc->x = x;
 				fdc->y = y;
+				fdc->z = 240.0 + SampleRange(-6.0, +6.0);
+				fdc->z += ((float)(random()%4)) * 52.0;
+			}
+			// 1/r distributed noise hits
+			for(; k<Nhits; k++){
+				s_FdcTruthPoint_t *fdc = &fdcTruthPoints->in[fdcTruthPoints->mult++];
+				fdc->dEdx = 0.0;
+				fdc->dradius = 0.0;
+				fdc->primary = 1;
+				fdc->track = 0;
+
+				double phi = SampleRange(0.0, 2.0*M_PI);
+				double r = SampleRange(0.0, 60.0);
+
+				fdc->x = r*cos(phi);
+				fdc->y = r*sin(phi);
 				fdc->z = 240.0 + SampleRange(-6.0, +6.0);
 				fdc->z += ((float)(random()%4)) * 52.0;
 			}
