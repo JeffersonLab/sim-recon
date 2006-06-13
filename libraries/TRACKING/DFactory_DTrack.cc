@@ -142,7 +142,7 @@ derror_t DFactory_DTrack::evnt(DEventLoop *loop, int eventnumber)
 		min_chisq = 1000.0;
 		//minuit->Migrad();
 		//minuit->mncomd("MINIMIZE 100", icondn);
-		int icondn;
+		//int icondn;
 		//minuit->mncomd("SEEK 100 1", icondn);
 
 //cout<<__FILE__<<":"<<__LINE__<<" initial:"<<chisq<<"  final:"<<min_chisq<<endl;
@@ -250,7 +250,7 @@ void FCN(int &npar, double *derivatives, double &chisq, double *par, int iflag)
 		// Ignore hits outside of the CDC and FDC for now
 		if(trackhit->z <= 0.0)continue;
 		if(trackhit->z > 405.0)continue;
-		double r = sqrt(pow(trackhit->x,2.0) + pow(trackhit->y,2.0));
+		double r = sqrt(pow((double)trackhit->x,2.0) + pow((double)trackhit->y,2.0));
 		if(r >= 65.0)continue;
 		
 		// We don't really want the hit closest physically in space.
