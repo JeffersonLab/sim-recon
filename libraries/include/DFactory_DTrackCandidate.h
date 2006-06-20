@@ -58,6 +58,7 @@ class DFactory_DTrackCandidate:public DFactory<DTrackCandidate>{
 		inline void ChopSeed(void){if(hits_in_seed.size()>0)hits_in_seed[0]->flags |= Dtrk_hit::IGNORE;}
 
 
+		void DumpHits(int current_seed_number, string stage);
 		void DebugMessage(int line);
 		int SeedTrack(void);
 		

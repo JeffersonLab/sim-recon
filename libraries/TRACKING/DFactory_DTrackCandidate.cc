@@ -131,21 +131,31 @@ derror_t DFactory_DTrackCandidate::evnt(DEventLoop *loop, int eventnumber)
 	// Loop as long as we keep finding tracks
 	for(int i=0;i<100;i++){
 		// Find a seed (group of hits that appear to be a clean track segment)
-		if(!FindSeed())break;
+		if(!FindSeed()){
+			if(debug_level>3)DumpHits(i, "FindSeed");
+			break;
+		}
 		
 		// Fit the seed hits to a circle and flag all unused hits
 		// which fall close to the circle. If the fit fails, the
 		// first IN_SEED hit automatically has it's IGNORE flag set
 		// so we can just jump to the next iteration of the loop.
-		if(!FitSeed())continue;
-
+		if(!FitSeed()){
+			if(debug_level>3)DumpHits(i, "FitSeed");
+			continue;
+		}
+		
 		// Using results of X/Y fit, find phi-z angle and z_vertex
 		// Make a list of hits consistent with the values found.
-		if(!FindLineHits())continue;
+		if(!FindLineHits()){
+			if(debug_level>3)DumpHits(i,"FindLineHits");
+			continue;
+		}
 		
 		// Fit the hits in the list created by above. Use result
 		// to make a new DTrackCandidate
-		if(!FitTrack())continue;
+		FitTrack();
+		if(debug_level>3)DumpHits(i,"FitTrack");
 	}
 	
 	// Filter out "bad" track candidates
@@ -209,7 +219,7 @@ void DFactory_DTrackCandidate::GetTrkHits(DEventLoop *loop)
 	for(unsigned int i=0; i<trackhits.size(); i++){
 		Dtrk_hit *hit = (Dtrk_hit*)dynamic_cast<const Dtrk_hit*>(trackhits[i]);
 		if(hit){
-			if(hit->system&&(SYS_CDC|SYS_FDC)){
+			if(hit->system & (SYS_CDC|SYS_FDC)){
 				if(hit->z>=MIN_HIT_Z && hit->z<=MAX_HIT_Z){
 					// Don't include hits from stereo layers in CDC
 					if(hit->system==SYS_CDC){
@@ -753,6 +763,48 @@ const string DFactory_DTrackCandidate::toString(void)
 // ----------------------- DEBUGGING ROUTINES ---------------------
 // ----------------------------------------------------------------
 // ----------------------------------------------------------------
+
+//------------------
+// DumpHits
+//------------------
+void DFactory_DTrackCandidate::DumpHits(int current_seed_number, string stage)
+{
+	cout<<endl;
+	cout<<"----------- DUMPING TRACK CANDIDATE HITS ------------"<<endl;
+	cout<<"SEED NUMBER: "<<current_seed_number<<endl;
+	cout<<"      STAGE: "<<stage<<endl;
+	cout<<endl;
+	cout<<"hits:"<<endl;
+	for(unsigned int i=0; i<trkhits.size(); i++){
+		Dtrk_hit *t = trkhits[i];
+		
+		cout<<i<<" flags:"<<t->flags<<" = ";
+		if(t->flags == 0x0)cout<<" NONE";
+		if(t->flags & Dtrk_hit::USED)cout<<" USED";
+		if(t->flags & Dtrk_hit::IN_SEED)cout<<" IN_SEED";
+		if(t->flags & Dtrk_hit::ON_CIRCLE)cout<<" ON_CIRCLE";
+		if(t->flags & Dtrk_hit::ON_LINE)cout<<" ON_LINE";
+		if(t->flags & Dtrk_hit::ON_TRACK)cout<<" ON_TRACK";
+		if(t->flags & Dtrk_hit::IGNORE)cout<<" IGNORE";
+		cout<<endl;
+		cout<<i<<" phi_circle: "<<t->phi_circle<<endl;
+		cout<<i<<" x y z: "<<t->x<<" "<<t->y<<" "<<t->z<<endl;
+		cout<<i<<" r phi: "<<t->r<<" "<<t->phi<<endl;
+		cout<<i<<" system:"<<t->system;
+		if(t->system == 0x0)cout<<" NONE";
+		if(t->system & SYS_CDC)cout<<" CDC";
+		if(t->system & SYS_FDC)cout<<" FDC";
+		if(t->system & SYS_BCAL)cout<<" BCAL";
+		if(t->system & SYS_FCAL)cout<<" FCAL";
+		if(t->system & SYS_TOF)cout<<" TOF";
+		if(t->system & SYS_UPV)cout<<" UPV";
+		if(t->system & SYS_CHERENKOV)cout<<" CHERENKOV";
+		if(t->system & SYS_TAGGER)cout<<" TAGGER";
+		cout<<endl;
+		cout<<endl;		
+	}
+}
+
 
 //------------------
 // DebugMessage  -- BROKEN !!! --
