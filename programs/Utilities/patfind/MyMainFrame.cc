@@ -282,24 +282,27 @@ void MyMainFrame::Update(void)
 	last_event_number = event_number;
 	
 	//------- Update thrown/found values -------
-	const DTrack *track = tracks[radiooption-1];
+	const DTrack *track = NULL;
+	if(radiooption>0 && radiooption<=(int)tracks.size())track = tracks[radiooption-1];
 	const DMCThrown *thrown=NULL;
 
 	// find thrown value (if any) that corresponds to this track
-	vector<const DTrackEfficiency*> trkeffs;
-	eventloop->Get(trkeffs);
-	for(unsigned int i=0; i<trkeffs.size(); i++){
-		if(trkeffs[i]->trackid == track->id){
-			thrown = mcthrowns[i];
-			break;
+	if(track){
+		vector<const DTrackEfficiency*> trkeffs;
+		eventloop->Get(trkeffs);
+		for(unsigned int i=0; i<trkeffs.size(); i++){
+			if(trkeffs[i]->trackid == track->id){
+				thrown = mcthrowns[i];
+				break;
+			}
 		}
-	}
 	
-	sprintf(str,"%5.3f", track->p);			tfvals_pfound->SetText(str);
-	sprintf(str,"%5.3f", track->theta);		tfvals_thetafound->SetText(str);
-	sprintf(str,"%5.3f", track->phi);		tfvals_phifound->SetText(str);
+		sprintf(str,"%5.3f", track->p);			tfvals_pfound->SetText(str);
+		sprintf(str,"%5.3f", track->theta);		tfvals_thetafound->SetText(str);
+		sprintf(str,"%5.3f", track->phi);		tfvals_phifound->SetText(str);
+	}
 		
-	if(thrown){
+	if(thrown && track){
 		sprintf(str,"%5.3f", thrown->p/track->p);
 		ratio_p->SetText(str);
 		sprintf(str,"%5.3f", sin(thrown->theta)/sin(track->theta));
