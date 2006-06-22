@@ -22,6 +22,7 @@ class DFactory_DTrackHit_MC:public DFactory<DTrackHit>{
 		derror_t evnt(DEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 
 		bool EXCLUDE_SECONDARIES;
+		double MAX_HIT_R_FDC;
 };
 
 #endif // _DFactory_DTrackHit_MC_

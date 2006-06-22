@@ -16,8 +16,10 @@ DFactory_DTrackHit_MC::DFactory_DTrackHit_MC()
 {
 	// Set defaults
 	EXCLUDE_SECONDARIES = false;
+	MAX_HIT_R_FDC = 65.0; // cm
 
 	dparms.SetDefaultParameter("TRK:EXCLUDE_SECONDARIES",		EXCLUDE_SECONDARIES);
+	dparms.SetDefaultParameter("TRK:MAX_HIT_R_FDC",				MAX_HIT_R_FDC);
 
 }
 
@@ -39,9 +41,13 @@ derror_t DFactory_DTrackHit_MC::evnt(DEventLoop *loop, int eventnumber)
 	vector<const DMCTrackHit*> dmctrackhits;
 	loop->Get(dmctrackhits);
 	for(unsigned int i=0;i<dmctrackhits.size(); i++){
+		const DMCTrackHit *dmctrackhit = dmctrackhits[i];
 		if(EXCLUDE_SECONDARIES)
-			if(!dmctrackhits[i]->primary)continue;
-		Dtrk_hit *t = new Dtrk_hit(dmctrackhits[i]);
+			if(!dmctrackhit->primary)continue;
+		if(dmctrackhit->system == SYS_FDC)
+			if(dmctrackhit->r>MAX_HIT_R_FDC)continue;
+
+		Dtrk_hit *t = new Dtrk_hit(dmctrackhit);
 		//t->InitCovarianceMatrix();
 		_data.push_back(t);
 	}
