@@ -12,6 +12,18 @@
 //------------------
 // evnt
 //------------------
+DFactory_DTrackHit_MC::DFactory_DTrackHit_MC()
+{
+	// Set defaults
+	EXCLUDE_SECONDARIES = false;
+
+	dparms.SetDefaultParameter("TRK:EXCLUDE_SECONDARIES",		EXCLUDE_SECONDARIES);
+
+}
+
+//------------------
+// evnt
+//------------------
 derror_t DFactory_DTrackHit_MC::evnt(DEventLoop *loop, int eventnumber)
 {
 	/// Here we just copy the data from the DMCTrackHit factory.
@@ -27,6 +39,8 @@ derror_t DFactory_DTrackHit_MC::evnt(DEventLoop *loop, int eventnumber)
 	vector<const DMCTrackHit*> dmctrackhits;
 	loop->Get(dmctrackhits);
 	for(unsigned int i=0;i<dmctrackhits.size(); i++){
+		if(EXCLUDE_SECONDARIES)
+			if(!dmctrackhits[i]->primary)continue;
 		Dtrk_hit *t = new Dtrk_hit(dmctrackhits[i]);
 		//t->InitCovarianceMatrix();
 		_data.push_back(t);

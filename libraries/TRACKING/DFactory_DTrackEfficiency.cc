@@ -190,11 +190,12 @@ const string DFactory_DTrackEfficiency::toString(void)
 	GetNrows();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("id: Nthrown: Nfound: Nthrown_and_found: fraction_found: fittable: trackid:");
+	printheader("id: Nthrown: Nfound: Nthrown_and_found: frac_found: frac_thrown: fittable: found: trackid:");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 
 		DTrackEfficiency *trkeff = _data[i];
+		float fraction_from_thrown = (float)trkeff->Nhits_thrown_and_found/(float)trkeff->Nhits_found;
 		
 		printnewrow();
 		
@@ -202,8 +203,10 @@ const string DFactory_DTrackEfficiency::toString(void)
 		printcol("%d", trkeff->Nhits_thrown);
 		printcol("%d", trkeff->Nhits_found);
 		printcol("%d", trkeff->Nhits_thrown_and_found);
+		printcol("%3.0f%%", 100.0*(float)trkeff->Nhits_thrown_and_found/(float)trkeff->Nhits_found);
 		printcol("%3.0f%%", 100.0*(float)trkeff->Nhits_thrown_and_found/(float)trkeff->Nhits_thrown);
 		printcol("%s", trkeff->fittable ? "Y":"N");
+		printcol("%s", fraction_from_thrown>=0.70 ? "Y":"N");
 		printcol("%x", trkeff->trackid);
 
 		printrow();

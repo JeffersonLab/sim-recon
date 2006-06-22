@@ -13,13 +13,15 @@
 
 class DFactory_DTrackHit_MC:public DFactory<DTrackHit>{
 	public:
-		DFactory_DTrackHit_MC(){};
+		DFactory_DTrackHit_MC();
 		~DFactory_DTrackHit_MC(){};
 		const string toString(void);
 		const char* Tag(void){return "MC";}
 
 	private:
 		derror_t evnt(DEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
+
+		bool EXCLUDE_SECONDARIES;
 };
 
 #endif // _DFactory_DTrackHit_MC_
