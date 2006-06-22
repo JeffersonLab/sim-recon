@@ -60,6 +60,7 @@ DFactory_DTrackCandidate::DFactory_DTrackCandidate()
 	XY_NOISE_CUT = 2.0;
 	MIN_HIT_Z = -100.0;
 	MAX_HIT_Z = +360.0;
+	EXCLUDE_STEREO = true;
 	
 	dparms.SetDefaultParameter("TRK:MAX_SEED_DIST",		MAX_SEED_DIST);
 	dparms.SetDefaultParameter("TRK:MAX_SEED_HITS",		MAX_SEED_HITS);
@@ -72,7 +73,8 @@ DFactory_DTrackCandidate::DFactory_DTrackCandidate()
 	dparms.SetDefaultParameter("TRK:XY_NOISE_CUT",		XY_NOISE_CUT);
 	dparms.SetDefaultParameter("TRK:MIN_HIT_Z",			MIN_HIT_Z);
 	dparms.SetDefaultParameter("TRK:MAX_HIT_Z",			MAX_HIT_Z);
-	
+	dparms.SetDefaultParameter("TRK:EXCLUDE_STEREO",	EXCLUDE_STEREO);
+
 	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
 	XY_NOISE_CUT2 = XY_NOISE_CUT*XY_NOISE_CUT;
 	
@@ -225,9 +227,11 @@ void DFactory_DTrackCandidate::GetTrkHits(DEventLoop *loop)
 			if(hit->system & (SYS_CDC|SYS_FDC)){
 				if(hit->z>=MIN_HIT_Z && hit->z<=MAX_HIT_Z){
 					// Don't include hits from stereo layers in CDC
-					if(hit->system==SYS_CDC){
-						if(hit->r>22.5 && hit->r<31.5)continue;
-						if(hit->r>40.5 && hit->r<48.5)continue;
+					if(EXCLUDE_STEREO){
+						if(hit->system==SYS_CDC){
+							if(hit->r>22.5 && hit->r<31.5)continue;
+							if(hit->r>40.5 && hit->r<48.5)continue;
+						}
 					}
 					trkhits.push_back(hit);
 				}

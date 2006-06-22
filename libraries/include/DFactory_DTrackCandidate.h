@@ -101,6 +101,7 @@ class DFactory_DTrackCandidate:public DFactory<DTrackCandidate>{
 		float phizangle_min, phizangle_max;
 		string TRACKHIT_SOURCE;
 		float MIN_HIT_Z, MAX_HIT_Z;
+		bool EXCLUDE_STEREO;
 		
 		TH1F *phizangle_hist, *zvertex_hist, *phi_relative;
 		
