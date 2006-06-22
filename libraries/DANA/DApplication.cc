@@ -407,6 +407,8 @@ void* LaunchThread(void* arg)
 	// with the DEventLoop Object
 	delete eventLoop;
 
+	pthread_exit(arg);
+
 	return arg;
 }
 
@@ -511,6 +513,19 @@ derror_t DApplication::Run(DEventProcessor *proc, int Nthreads)
 	
 	// Call erun() and fini() methods and delete event sources
 	Fini();
+	
+	// Merge up all the threads
+	for(unsigned int i=0; i<threads.size(); i++){
+		void *ret;
+		cout<<"Merging thread "<<i<<" ..."<<endl; cout.flush();
+		pthread_join(threads[i], &ret);
+	}
+	
+	// Close any open dll's
+	for(unsigned int i=0; i<sohandles.size(); i++){
+		cout<<"Closing shared object handle "<<i<<" ..."<<endl; cout.flush();
+		dlclose(sohandles[i]);
+	}
 	
 	cout<<" "<<NEvents<<" events processed. Average rate: "
 		<<Val2StringWithPrefix(rate_average)<<"Hz"<<endl;
