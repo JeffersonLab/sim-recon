@@ -204,7 +204,7 @@ derror_t DEventProcessor_track_hists::evnt(DEventLoop *loop, int eventnumber)
 			if(trkeff->Nhits_found){
 				float fraction_from_thrown = (float)trkeff->Nhits_thrown_and_found/(float)trkeff->Nhits_found;
 				frac_from_thrown->Fill(fraction_from_thrown);
-				if(fraction_from_thrown >=0.70){
+				if(fraction_from_thrown >=0.65){
 					FillAll(NHITMATCHED, Nhits, theta, phi, p);
 				}
 			}
