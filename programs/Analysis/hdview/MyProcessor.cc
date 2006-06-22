@@ -303,7 +303,7 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	eventLoop->Get(trackcandidates);
 	vector<DQuickFit*> qfits = factory->Get_dbg_track_fit();
 	for(unsigned int i=0; i<qfits.size(); i++){
-		DrawHelicalTrack(qfits[i], colors[(i+1)%ncolors]+100);
+		//DrawHelicalTrack(qfits[i], colors[(i+1)%ncolors]+100);
 		DrawTrack(qfits[i], colors[(i+1)%ncolors]);
 	}
 
