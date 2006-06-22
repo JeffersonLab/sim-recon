@@ -59,8 +59,6 @@ class DFactory_DTrackCandidate:public DFactory<DTrackCandidate>{
 
 
 		void DumpHits(int current_seed_number, string stage);
-		void DebugMessage(int line);
-		int SeedTrack(void);
 		
 		const DGeometry* dgeom;
 		const DMagneticFieldMap *bfield;
@@ -84,6 +82,8 @@ class DFactory_DTrackCandidate:public DFactory<DTrackCandidate>{
 		vector<int> dbg_zvertex_hist_seed;
 		vector<float> dbg_phizangle;
 		vector<float> dbg_z_vertex;
+		int runnumber;
+		int eventnumber;
 		float MAX_SEED_DIST;
 		float MAX_SEED_DIST2;
 		float XY_NOISE_CUT;

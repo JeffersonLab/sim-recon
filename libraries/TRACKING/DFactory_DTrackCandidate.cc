@@ -98,6 +98,7 @@ DFactory_DTrackCandidate::DFactory_DTrackCandidate()
 //------------------
 derror_t DFactory_DTrackCandidate::brun(DEventLoop *loop, int runnumber)
 {
+	this->runnumber = runnumber;
 	dgeom = loop->GetDApplication()->GetDGeometry(runnumber);
 	bfield = dgeom->GetDMagneticFieldMap();
 	
@@ -122,6 +123,8 @@ derror_t DFactory_DTrackCandidate::fini(void)
 //------------------
 derror_t DFactory_DTrackCandidate::evnt(DEventLoop *loop, int eventnumber)
 {
+	this->eventnumber = eventnumber;
+
 	// Clear previous event from internal buffers
 	ClearEvent();
 
@@ -683,6 +686,7 @@ my_phizangle = phizangle;
 	float sin_phizangle = sin(my_phizangle);
 	float r0_2pi_cos_phizangle = 2.0*M_PI*r0*cos_phizangle;
 	hits_on_track.clear();
+	int N_in_seed_and_on_track = 0;
 	for(unsigned int i=0; i<trkhits.size(); i++){
 		Dtrk_hit *a = trkhits[i];
 
@@ -706,6 +710,7 @@ my_phizangle = phizangle;
 		// Flags hits as "ON_TRACK" and "USED" and push onto hits_on_track vector
 		a->flags |= Dtrk_hit::ON_TRACK | Dtrk_hit::USED;
 		hits_on_track.push_back(a);
+		if(a->flags & Dtrk_hit::IN_SEED)N_in_seed_and_on_track++;
 
 		// Add hit index to track in factory data
 		trackcandidate->hitid.push_back(a->id);
@@ -716,7 +721,11 @@ my_phizangle = phizangle;
 		dbg_hot.push_back(hits_on_track);
 	}
 	
-	if(hits_on_track.size()<3){
+	// It's possible that none of the seed hits are included in the
+	// final track, when that happens, we have to ignore the first
+	// seed hit on the next loop or else we'll keep getting the same
+	// seed and the same result.
+	if(hits_on_track.size()<3 || N_in_seed_and_on_track<1){
 		ChopSeed();
 		return 0;
 	}
@@ -769,11 +778,35 @@ const string DFactory_DTrackCandidate::toString(void)
 //------------------
 void DFactory_DTrackCandidate::DumpHits(int current_seed_number, string stage)
 {
+	// Count statistics for flags
+	int Nhits = 0;
+	int in_seed=0, used=0, on_circle=0, ignore=0 ,on_line=0, on_track=0;
+	for(unsigned int i=0; i<trkhits.size(); i++){
+		const Dtrk_hit *a = trkhits[i];
+		Nhits++;
+		if(a->flags&Dtrk_hit::IN_SEED)in_seed++;
+		if(a->flags&Dtrk_hit::USED)used++;
+		if(a->flags&Dtrk_hit::ON_CIRCLE)on_circle++;
+		if(a->flags&Dtrk_hit::IGNORE)ignore++;
+		if(a->flags&Dtrk_hit::ON_LINE)on_line++;
+		if(a->flags&Dtrk_hit::ON_TRACK)on_track++;
+	}
+
+	// Print message
 	cout<<endl;
 	cout<<"----------- DUMPING TRACK CANDIDATE HITS ------------"<<endl;
+	cout<<"RUN / EVENT: "<<runnumber<<" / "<<eventnumber<<endl;
 	cout<<"SEED NUMBER: "<<current_seed_number<<endl;
 	cout<<"      STAGE: "<<stage<<endl;
-	cout<<endl;
+	cout<<"    IN_SEED: "<<in_seed<<endl;
+	cout<<"  ON_CIRCLE: "<<on_circle<<endl;
+	cout<<"    ON_LINE: "<<on_line<<endl;
+	cout<<"   ON_TRACK: "<<on_track<<endl;
+	cout<<"       USED: "<<used<<endl;
+	cout<<"     IGNORE: "<<ignore<<endl;
+	
+	// Print more verbose info
+	if(debug_level<5)return;
 	cout<<"hits:"<<endl;
 	for(unsigned int i=0; i<trkhits.size(); i++){
 		Dtrk_hit *t = trkhits[i];
@@ -803,62 +836,6 @@ void DFactory_DTrackCandidate::DumpHits(int current_seed_number, string stage)
 		cout<<endl;
 		cout<<endl;		
 	}
-}
-
-
-//------------------
-// DebugMessage  -- BROKEN !!! --
-//------------------
-void DFactory_DTrackCandidate::DebugMessage(int line)
-{
-	// Find how many seed hits are from the same track
-	int Nhits = 0;
-	int in_seed=0, used=0, on_circle=0, ignore=0;
-	int oc_hist[5]={0,0,0,0,0};
-	int is_hist[5]={0,0,0,0,0};
-	for(unsigned int i=0; i<trkhits.size(); i++){
-		const Dtrk_hit *a = trkhits[i];
-		Nhits++;
-		if(a->flags&Dtrk_hit::IN_SEED)in_seed++;
-		if(a->flags&Dtrk_hit::USED)used++;
-		if(a->flags&Dtrk_hit::ON_CIRCLE)on_circle++;
-		if(a->flags&Dtrk_hit::IGNORE)ignore++;
-	}
-	
-	int oc_hits=0, oc_max_content=0;
-	int is_hits=0, is_max_content=0;
-	for(int i=1; i<=4; i++){
-		oc_hits += oc_hist[i];
-		is_hits += is_hist[i];
-		if(oc_hist[i] > oc_max_content)oc_max_content = oc_hist[i];
-		if(is_hist[i] > is_max_content)is_max_content = is_hist[i];
-	}
-
-	cout<<__FILE__<<":"<<line;
-	cout<<" IN_SEED(good,bad)="<<in_seed<<"("<<is_max_content<<","<<is_hits-is_max_content<<")";
-	cout<<" ON_CIRCLE(good,bad)="<<on_circle<<"("<<oc_max_content<<","<<oc_hits-oc_max_content<<")";
-	cout<<" USED="<<used<<" IGNORE="<<ignore;
-	cout<<" unused="<<trkhits.size()-used;
-	cout<<endl;
-}
-
-//------------------
-// SeedTrack -- BROKEN! --
-//------------------
-int DFactory_DTrackCandidate::SeedTrack(void)
-{
-	// Find the track which most of the seed hits come from
-	int is_hist[5]={0,0,0,0,0};
-	for(unsigned int i=0; i<trkhits.size(); i++){
-		//const Dtrk_hit *a = trkhits[i];		
-		//if(a->flags&Dtrk_hit::IN_SEED)is_hist[a->track]++;
-	}
-	
-	int track = 1;
-	for(int i=2; i<=4; i++){
-		if(is_hist[i] > is_hist[track])track = i;
-	}
-	return track;
 }
 
 
