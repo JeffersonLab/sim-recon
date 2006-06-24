@@ -17,12 +17,17 @@ class DFactory_DTrackHit_MC:public DFactory<DTrackHit>{
 		~DFactory_DTrackHit_MC(){};
 		const string toString(void);
 		const char* Tag(void){return "MC";}
+		
+		const vector<int>& GetTrackNumbers(void){return tracknumber;}
+		const vector<bool>& GetPrimaryFlags(void){return primaryflag;}
 
 	private:
 		derror_t evnt(DEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 
 		bool EXCLUDE_SECONDARIES;
 		double MAX_HIT_R_FDC;
+		vector<int> tracknumber;
+		vector<bool> primaryflag;
 };
 
 #endif // _DFactory_DTrackHit_MC_
