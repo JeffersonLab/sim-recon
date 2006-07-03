@@ -46,6 +46,7 @@ int main(int narg, char *argv[])
 	while(!file->eof()){
 		int runNumber=0, eventNumber=0, nParticles=0;
 		(*file)>> runNumber >> eventNumber >> nParticles;
+		if(runNumber==0 && eventNumber==0 && nParticles==0)break;
 	
 		// Start a new event
 		s_PhysicsEvents_t* pes;
