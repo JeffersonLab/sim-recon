@@ -28,7 +28,7 @@ bool DQFHitLessThanZ_C(DQFHit_t* const &a, DQFHit_t* const &b) {
 //-----------------
 // AddHit
 //-----------------
-derror_t DQuickFit::AddHit(float r, float phi, float z)
+jerror_t DQuickFit::AddHit(float r, float phi, float z)
 {
 	/// Add a hit to the list of hits using cylindrical coordinates
 
@@ -38,7 +38,7 @@ derror_t DQuickFit::AddHit(float r, float phi, float z)
 //-----------------
 // AddHitXYZ
 //-----------------
-derror_t DQuickFit::AddHitXYZ(float x, float y, float z)
+jerror_t DQuickFit::AddHitXYZ(float x, float y, float z)
 {
 	/// Add a hit to the list of hits useing Cartesian coordinates
 	DQFHit_t *hit = new DQFHit_t;
@@ -54,7 +54,7 @@ derror_t DQuickFit::AddHitXYZ(float x, float y, float z)
 //-----------------
 // PruneHit
 //-----------------
-derror_t DQuickFit::PruneHit(int idx)
+jerror_t DQuickFit::PruneHit(int idx)
 {
 	/// Remove the hit specified by idx from the list
 	/// of hits. The value of idx can be anywhere from
@@ -70,7 +70,7 @@ derror_t DQuickFit::PruneHit(int idx)
 //-----------------
 // PrintChiSqVector
 //-----------------
-derror_t DQuickFit::PrintChiSqVector(void)
+jerror_t DQuickFit::PrintChiSqVector(void)
 {
 	/// Dump the latest chi-squared vector to the screen.
 	/// This prints the individual hits' chi-squared
@@ -97,7 +97,7 @@ derror_t DQuickFit::PrintChiSqVector(void)
 //-----------------
 // FitCircle
 //-----------------
-derror_t DQuickFit::FitCircle(void)
+jerror_t DQuickFit::FitCircle(void)
 {
 	/// Fit the current set of hits to a circle
 	///
@@ -187,7 +187,7 @@ derror_t DQuickFit::FitCircle(void)
 //-----------------
 // FitTrack
 //-----------------
-derror_t DQuickFit::FitTrack(void)
+jerror_t DQuickFit::FitTrack(void)
 {
 	/// Find theta, sign of electric charge, total momentum and
 	/// vertex z position.
@@ -237,7 +237,7 @@ derror_t DQuickFit::FitTrack(void)
 //-----------------
 // FitTrack_FixedZvertex
 //-----------------
-derror_t DQuickFit::FitTrack_FixedZvertex(float z_vertex)
+jerror_t DQuickFit::FitTrack_FixedZvertex(float z_vertex)
 {
 	/// Fit the points, but hold the z_vertex fixed at the specified value.
 	///
@@ -307,7 +307,7 @@ derror_t DQuickFit::FitTrack_FixedZvertex(float z_vertex)
 //------------------------------------------------------------------
 // Fill_phi_circle
 //------------------------------------------------------------------
-derror_t DQuickFit::Fill_phi_circle(vector<DQFHit_t*> hits, float x0, float y0)
+jerror_t DQuickFit::Fill_phi_circle(vector<DQFHit_t*> hits, float x0, float y0)
 {
 	float x_last = -x0;
 	float y_last = -y0;
@@ -338,7 +338,7 @@ derror_t DQuickFit::Fill_phi_circle(vector<DQFHit_t*> hits, float x0, float y0)
 //------------------------------------------------------------------
 // FillTrackParams
 //------------------------------------------------------------------
-derror_t DQuickFit::FillTrackParams(void)
+jerror_t DQuickFit::FillTrackParams(void)
 {
 	/// Fill in and tweak some parameters like q, phi, theta using
 	/// other values already set in the class. This is used by
@@ -392,7 +392,7 @@ derror_t DQuickFit::FillTrackParams(void)
 //------------------------------------------------------------------
 // Print
 //------------------------------------------------------------------
-derror_t DQuickFit::Print(void)
+jerror_t DQuickFit::Print(void)
 {
 	cout<<"-- DQuickFit Params ---------------"<<endl;
 	cout<<"          x0 = "<<x0<<endl;
@@ -420,7 +420,7 @@ derror_t DQuickFit::Print(void)
 //------------------------------------------------------------------
 // Dump
 //------------------------------------------------------------------
-derror_t DQuickFit::Dump(void)
+jerror_t DQuickFit::Dump(void)
 {
 	Print();
 
@@ -445,7 +445,7 @@ derror_t DQuickFit::Dump(void)
 //-----------------
 // AddHits
 //-----------------
-derror_t DQuickFit::AddHits(int N, TVector3 *v)
+jerror_t DQuickFit::AddHits(int N, TVector3 *v)
 {
 	/// Append a list of hits to the current list of hits using
 	/// TVector3 objects. The TVector3 objects are copied internally
@@ -466,7 +466,7 @@ derror_t DQuickFit::AddHits(int N, TVector3 *v)
 //-----------------
 // PruneHits
 //-----------------
-derror_t DQuickFit::PruneHits(float chisq_limit)
+jerror_t DQuickFit::PruneHits(float chisq_limit)
 {
 	/// Remove hits whose individual contribution to the chi-squared
 	/// value exceeds <i>chisq_limit</i>. The value of the individual
@@ -495,7 +495,7 @@ derror_t DQuickFit::PruneHits(float chisq_limit)
 //-----------------
 // PruneOutliers
 //-----------------
-derror_t DQuickFit::PruneOutlier(void)
+jerror_t DQuickFit::PruneOutlier(void)
 {
 	/// Remove the point which is furthest from the geometric
 	/// center of all the points in the X/Y plane.
@@ -534,7 +534,7 @@ derror_t DQuickFit::PruneOutlier(void)
 //-----------------
 // PruneOutliers
 //-----------------
-derror_t DQuickFit::PruneOutliers(int n)
+jerror_t DQuickFit::PruneOutliers(int n)
 {
 	/// Remove the n points which are furthest from the geometric
 	/// center of all the points in the X/Y plane.
@@ -551,7 +551,7 @@ derror_t DQuickFit::PruneOutliers(int n)
 //-----------------
 // firstguess_curtis
 //-----------------
-derror_t DCDC::firstguess_curtis(s_Cdc_trackhit_t *hits, int Npoints
+jerror_t DCDC::firstguess_curtis(s_Cdc_trackhit_t *hits, int Npoints
 	, float &theta ,float &phi, float &p, float &q)
 {
 	if(Npoints<3)return NOERROR;

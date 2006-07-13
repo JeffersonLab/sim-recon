@@ -12,25 +12,23 @@ using namespace std;
 
 #include "DEventProcessor_track_hists.h"
 
-#include "DApplication.h"
-#include "DEventLoop.h"
-#include "DTrackEfficiency.h"
-#include "DTrackHit.h"
-#include "DMCTrackHit.h"
-#include "DMCThrown.h"
-#include "DTrack.h"
-#include "DTrackCandidate.h"
+#include <JANA/JApplication.h>
+#include <JANA/JEventLoop.h>
+#include "TRACKING/DTrackEfficiency.h"
+#include "TRACKING/DTrackHit.h"
+#include "TRACKING/DMCTrackHit.h"
+#include "TRACKING/DMCThrown.h"
+#include "TRACKING/DTrack.h"
+#include "TRACKING/DTrackCandidate.h"
 
-static TFile **tfilePtr = NULL;
+// The executable should define the ROOTfile global variable. It will
+// be automatically linked when dlopen is called.
+extern TFile *ROOTfile;
 
 // Routine used to create our DEventProcessor
 extern "C"{
-void InitProcessors(DApplication *app){
+void InitPlugin(JApplication *app){
 	app->AddProcessor(new DEventProcessor_track_hists());
-}
-
-void SetTFilePtrAddress(TFile **h){
-	tfilePtr = h;
 }
 } // "C"
 
@@ -71,17 +69,10 @@ DEventProcessor_track_hists::~DEventProcessor_track_hists()
 //------------------
 // init
 //------------------
-derror_t DEventProcessor_track_hists::init(void)
+jerror_t DEventProcessor_track_hists::init(void)
 {
 	// open ROOT file (if needed)
-	ROOTfile = NULL;
-	if(tfilePtr == NULL)tfilePtr = &ROOTfile;
-	if(*tfilePtr == NULL){
-		*tfilePtr = ROOTfile = new TFile("track_hists.root","RECREATE","Produced by hd_ana");
-		cout<<"Opened ROOT file \"track_hists.root\""<<endl;
-	}else{
-		(*tfilePtr)->cd();
-	}
+	if(ROOTfile != NULL) ROOTfile->cd();
 
 	// Create TRACKING directory
 	TDirectory *dir = new TDirectory("TRACKING","TRACKING");
@@ -148,7 +139,7 @@ derror_t DEventProcessor_track_hists::init(void)
 //------------------
 // evnt
 //------------------
-derror_t DEventProcessor_track_hists::evnt(DEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DTrackHit*> trackhits;
 	vector<const DMCTrackHit*> mctrackhits;
@@ -159,8 +150,8 @@ derror_t DEventProcessor_track_hists::evnt(DEventLoop *loop, int eventnumber)
 	
 	loop->Get(trackhits, "MC");
 	loop->Get(mctrackhits);
-	DFactory<DTrack> *factory_trk = loop->Get(tracks);
-	DFactory<DTrackCandidate> *factory_trkcandidate = loop->Get(trackcandidates);
+	JFactory<DTrack> *factory_trk = loop->Get(tracks);
+	JFactory<DTrackCandidate> *factory_trkcandidate = loop->Get(trackcandidates);
 	loop->Get(mcthrowns);
 	loop->Get(trackefficiencies);
 	
@@ -308,7 +299,7 @@ void DEventProcessor_track_hists::EffVsX(TH1F *out, TH2F* in, int numerator)
 //------------------
 // erun
 //------------------
-derror_t DEventProcessor_track_hists::erun(void)
+jerror_t DEventProcessor_track_hists::erun(void)
 {
 	// Fill the fractions histo with ratios
 	float h[NBINS];
@@ -353,14 +344,7 @@ derror_t DEventProcessor_track_hists::erun(void)
 //------------------
 // fini
 //------------------
-derror_t DEventProcessor_track_hists::fini(void)
+jerror_t DEventProcessor_track_hists::fini(void)
 {
-
-	if(ROOTfile){
-		ROOTfile->Write();
-		delete ROOTfile;
-		cout<<endl<<"Closed ROOT file"<<endl;
-	}
-
 	return NOERROR;
 }

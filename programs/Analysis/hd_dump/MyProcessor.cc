@@ -11,7 +11,6 @@ using namespace std;
 #include <unistd.h>
 
 #include "MyProcessor.h"
-#include "hddm_s.h"
 
 
 int PAUSE_BETWEEN_EVENTS = 1;
@@ -35,7 +34,7 @@ vector<string> toprint;
 //------------------------------------------------------------------
 // brun
 //------------------------------------------------------------------
-derror_t MyProcessor::brun(DEventLoop *eventLoop, int runnumber)
+jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 {
 	vector<string> factory_names = eventLoop->GetFactoryNames();
 
@@ -80,7 +79,7 @@ derror_t MyProcessor::brun(DEventLoop *eventLoop, int runnumber)
 //------------------------------------------------------------------
 // evnt
 //------------------------------------------------------------------
-derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 {
 
 	// If we're skipping boring events (events with no rows for any of
@@ -89,7 +88,7 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	int event_is_boring = 1;
 	if(SKIP_BORING_EVENTS){
 		for(unsigned int i=0;i<toprint.size();i++){
-			DFactory_base *factory = eventLoop->GetFactory(toprint[i]);
+			JFactory_base *factory = eventLoop->GetFactory(toprint[i]);
 			if(!factory)factory = eventLoop->GetFactory("D" + toprint[i]);
 			if(factory){
 				try{

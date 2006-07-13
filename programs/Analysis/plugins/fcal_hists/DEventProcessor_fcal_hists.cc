@@ -9,20 +9,18 @@
 
 #include <TLorentzVector.h>
 
-#include <DApplication.h>
-#include <DFCALShower.h>
-#include <DMCThrown.h>
+#include "DANA/DApplication.h"
+#include "FCAL/DFCALShower.h"
+#include "TRACKING/DMCThrown.h"
 
-static TFile **tfilePtr = NULL;
+// The executable should define the ROOTfile global variable. It will
+// be automatically linked when dlopen is called.
+extern TFile *ROOTfile;
 
 // Routine used to create our DEventProcessor
 extern "C"{
 void InitProcessors(DApplication *app){
 	app->AddProcessor(new DEventProcessor_fcal_hists());
-}
-
-void SetTFilePtrAddress(TFile **h){
-	tfilePtr = h;
 }
 } // "C"
 
@@ -34,17 +32,10 @@ void SetTFilePtrAddress(TFile **h){
 //------------------
 // init
 //------------------
-derror_t DEventProcessor_fcal_hists::init(void)
+jerror_t DEventProcessor_fcal_hists::init(void)
 {
 	// open ROOT file (if needed)
-	ROOTfile = NULL;
-	if(tfilePtr == NULL)tfilePtr = &ROOTfile;
-	if(*tfilePtr == NULL){
-		*tfilePtr = ROOTfile = new TFile("fcal_hists.root","RECREATE","Produced by hd_ana");
-		cout<<"Opened ROOT file \"fcal_hists.root\""<<endl;
-	}else{
-		(*tfilePtr)->cd();
-	}
+	if(ROOTfile != NULL) ROOTfile->cd();
 	
 	two_gamma_mass = new TH1F("fcal_two_gamma_mass","two_gamma_mass",100, 0.0, 0.300);
 	two_gamma_mass_cut = new TH1F("fcal_two_gamma_mass_cut","two_gamma_mass_cut",100, 0.0, 0.300);
@@ -62,7 +53,7 @@ derror_t DEventProcessor_fcal_hists::init(void)
 //------------------
 // brun
 //------------------
-derror_t DEventProcessor_fcal_hists::brun(DEventLoop *eventLoop, int runnumber)
+jerror_t DEventProcessor_fcal_hists::brun(JEventLoop *eventLoop, int runnumber)
 {
 	return NOERROR;
 }
@@ -70,7 +61,7 @@ derror_t DEventProcessor_fcal_hists::brun(DEventLoop *eventLoop, int runnumber)
 //------------------
 // evnt
 //------------------
-derror_t DEventProcessor_fcal_hists::evnt(DEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_fcal_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DFCALShower*> showers;
 	loop->Get(showers);
@@ -146,7 +137,7 @@ derror_t DEventProcessor_fcal_hists::evnt(DEventLoop *loop, int eventnumber)
 //------------------
 // erun
 //------------------
-derror_t DEventProcessor_fcal_hists::erun(void)
+jerror_t DEventProcessor_fcal_hists::erun(void)
 {
 	// Any final calculations on histograms (like dividing them)
 	// should be done here. This may get called more than once.
@@ -156,15 +147,8 @@ derror_t DEventProcessor_fcal_hists::erun(void)
 //------------------
 // fini
 //------------------
-derror_t DEventProcessor_fcal_hists::fini(void)
+jerror_t DEventProcessor_fcal_hists::fini(void)
 {
-
-	if(ROOTfile){
-		ROOTfile->Write();
-		delete ROOTfile;
-		cout<<endl<<"Closed ROOT file"<<endl;
-	}
-
 	return NOERROR;
 }
 

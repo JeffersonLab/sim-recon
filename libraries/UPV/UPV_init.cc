@@ -1,12 +1,12 @@
 // $Id$
 
-#include "DEventLoop.h"
-#include "DFactory_DUPVHit.h"
+#include "JANA/JEventLoop.h"
+#include "DUPVHit_factory.h"
 
-derror_t UPV_init(DEventLoop *loop)
+jerror_t UPV_init(JEventLoop *loop)
 {
 	/// Create and register UPV data factories
-	loop->AddFactory(new DFactory_DUPVHit());
+	loop->AddFactory(new DUPVHit_factory());
 
 	return NOERROR;
 }

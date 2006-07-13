@@ -1,5 +1,5 @@
 
-PACKAGES = ROOT:DANA
+PACKAGES = ROOT:JANA
 
 MODULE_NAME = hddm_shlib
 

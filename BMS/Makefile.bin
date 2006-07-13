@@ -77,6 +77,9 @@ mkdirs:
 
 exec_relink: exec_clean all
 
+# an alias for exec_relink
+relink: exec_relink
+
 clean:
 	rm -rf $(OBJ_DIR) .depends *.o $(EXE_PATHNAMES) $(DICT_FILES) *.bak *~ core last.kumac*  #*# 
 

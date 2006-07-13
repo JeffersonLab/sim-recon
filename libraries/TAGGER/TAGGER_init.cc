@@ -1,12 +1,12 @@
 // $Id$
 
-#include "DEventLoop.h"
-#include "DFactory_DTAGGERHit.h"
+#include "JANA/JEventLoop.h"
+#include "DTAGGERHit_factory.h"
 
-derror_t TAGGER_init(DEventLoop *loop)
+jerror_t TAGGER_init(JEventLoop *loop)
 {
 	/// Create and register TAGGER data factories
-	loop->AddFactory(new DFactory_DTAGGERHit());
+	loop->AddFactory(new DTAGGERHit_factory());
 
 	return NOERROR;
 }

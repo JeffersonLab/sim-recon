@@ -66,9 +66,9 @@ ifdef HALLD_MY
 	CXXFLAGS += -I. -I$(HALLD_MY)/src/include -I$(HALLD_MY)/src/libraries/include
 endif
 
-FFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
-CFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
-CXXFLAGS += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
+FFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include -I$(HALLD_HOME)/src/libraries
+CFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include -I$(HALLD_HOME)/src/libraries
+CXXFLAGS += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include -I$(HALLD_HOME)/src/libraries
 
 
 # Include user specified package makefiles

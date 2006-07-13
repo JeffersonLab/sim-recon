@@ -37,6 +37,19 @@ OUTPUT_OPTION = -o $(OBJ_DIR)/$@
 VPATH = $(OBJ_DIR):$(BIN_DIR)
 LINK_OBJS += $(addprefix $(OBJ_DIR)/,$(DOBJS))
 
+# If the HALLD_MY variable is set, then the user wants to use at
+# least some libraries from the directory it specifies. In that
+# case, make sure the directory tree specified by HALLD_HOME also
+# gets added to the library search path, but after the one
+# specified by HALLD_MY so that it takes precidence
+ifdef HALLD_MY
+  LIB_DIRS += $(LIB_DIR) $(HALLD_HOME)/lib/$(OSNAME)
+else
+  LIB_DIRS += $(LIB_DIR)
+endif
+
+LD_DIRS = $(addprefix -L,$(LIB_DIRS))
+
 LD_LIBS = $(addsuffix $(DEBUG_SUFFIX),$(addprefix -l,$(ADDITIONAL_MODULES)))
 
 
@@ -47,7 +60,7 @@ all: mkdirs $(DEPS) $(SOLIB_NAME)
 	@rm -f $(DICT_FILES)
 
 $(SOLIB_NAME): $(DOBJS)
-	$(CXX) $(LD_SO_FLAGS) $(LINK_OBJS) -L$(LIB_DIR) $(LD_LIBS) $(MISC_LIBS) \
+	$(CXX) $(LD_SO_FLAGS) $(LINK_OBJS) $(LD_DIRS) $(LD_LIBS) $(MISC_LIBS) \
 		 -o $(SOLIB_DIR)/$@
 
 mkdirs:

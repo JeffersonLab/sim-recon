@@ -11,24 +11,24 @@ using namespace std;
 
 #include "MyProcessor.h"
 
-#include "DTrack.h"
-#include "DTrackHit.h"
-#include "DTrackCandidate.h"
-#include "DTrackEfficiency.h"
-#include "DMCThrown.h"
+#include "TRACKING/DTrack.h"
+#include "TRACKING/DTrackHit.h"
+#include "TRACKING/DTrackCandidate.h"
+#include "TRACKING/DTrackEfficiency.h"
+#include "TRACKING/DMCThrown.h"
 #include "GlueX.h"
 
-extern TFile* tfilePtr;
+TFile *ROOTfile = NULL;
 
 TH1F *FDC_z, *FDC_r, *CDC_z, *CDC_r;
 
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
 //------------------------------------------------------------------
-derror_t MyProcessor::init(void)
+jerror_t MyProcessor::init(void)
 {
 	// open ROOT file
-	ROOTfile = tfilePtr = new TFile("mctrk_ana.root","RECREATE","Produced by hd_ana");
+	ROOTfile = new TFile("mctrk_ana.root","RECREATE","Produced by hd_ana");
 	cout<<"Opened ROOT file \"mctrk_ana.root\""<<endl;
 	
 	FDC_z = new TH1F("FDC_z","FDC z-hits", 6510, 0.0, 650.0);
@@ -49,7 +49,7 @@ derror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // evnt   -Fill histograms here
 //------------------------------------------------------------------
-derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
 {
 	// Histograms are created and filled in DEventProcessor_TrackHists
 	// Automatically since it was added to the app in mctrk_ana.cc
@@ -75,10 +75,10 @@ derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 	vector<const DTrackEfficiency*> trackeffs;
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DTrackCandidate*> trackcandidates;
-	DFactory<DTrack> *fac_track = loop->Get(tracks);
+	JFactory<DTrack> *fac_track = loop->Get(tracks);
 	loop->Get(trackeffs);
 	loop->Get(mcthrowns);
-	DFactory<DTrackCandidate> *fac_tc = loop->Get(trackcandidates);
+	JFactory<DTrackCandidate> *fac_tc = loop->Get(trackcandidates);
 	
 	
 	// Loop over DMCThrown and DTrackEfficiency objects
@@ -128,7 +128,7 @@ derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 //------------------------------------------------------------------
 // fini   -Close output file here
 //------------------------------------------------------------------
-derror_t MyProcessor::fini(void)
+jerror_t MyProcessor::fini(void)
 {
 	ROOTfile->Write();
 	delete ROOTfile;

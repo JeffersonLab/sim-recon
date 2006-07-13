@@ -9,10 +9,10 @@
 #ifndef _MYPROCESSOR_H_
 #define _MYPROCESSOR_H_
 
-#include "DEventProcessor.h"
-#include "DMagneticFieldMap.h"
+#include <JANA/JEventProcessor.h>
+#include "TRACKING/DMagneticFieldMap.h"
 class DQuickFit;
-class DFactory_DTrackCandidate;
+class DTrackCandidate_factory;
 
 #include <TPolyLine.h>
 #include <TEllipse.h>
@@ -25,24 +25,24 @@ class DFactory_DTrackCandidate;
 #define MAX_LINES 100
 #define MAX_CIRCLES 100
 
-class MyProcessor:public DEventProcessor
+class MyProcessor:public JEventProcessor
 {
 	public:
 		MyProcessor();
 		~MyProcessor();
 	
-		derror_t init(void);						///< Called once at program start.
-		derror_t brun(DEventLoop *eventLoop, int runnumber);			///< Called everytime a new run number is detected.
-		derror_t evnt(DEventLoop *eventLoop, int eventnumber);		///< Called every event.
+		jerror_t init(void);						///< Called once at program start.
+		jerror_t brun(JEventLoop *eventLoop, int runnumber);			///< Called everytime a new run number is detected.
+		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);		///< Called every event.
 
-		derror_t ConvertToTop(float x, float y, float z, float &X, float &Y);
-		derror_t ConvertToSide(float x, float y, float z, float &X, float &Y);
-		derror_t ConvertToFront(float x, float y, float z, float &X, float &Y);
+		jerror_t ConvertToTop(float x, float y, float z, float &X, float &Y);
+		jerror_t ConvertToSide(float x, float y, float z, float &X, float &Y);
+		jerror_t ConvertToFront(float x, float y, float z, float &X, float &Y);
 
-		derror_t DrawHelicalTrack(DQuickFit *qf, int color);
-		derror_t DrawStraightTrack(TVector3 p, TVector3 vertex, int color, int style);
-		derror_t DrawTrack(DQuickFit *qf, int color);
-		derror_t DrawDetectors(void);
+		jerror_t DrawHelicalTrack(DQuickFit *qf, int color);
+		jerror_t DrawStraightTrack(TVector3 p, TVector3 vertex, int color, int style);
+		jerror_t DrawTrack(DQuickFit *qf, int color);
+		jerror_t DrawDetectors(void);
 
 		const DMagneticFieldMap *Bfield;
 		int eventNo;
@@ -55,7 +55,7 @@ class MyProcessor:public DEventProcessor
 		void ClearEvent(void);
 	
 		int drew_detectors;
-		DFactory_DTrackCandidate* factory;
+		DTrackCandidate_factory* factory;
 		string TRACKHIT_SOURCE;
 };
 

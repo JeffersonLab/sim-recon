@@ -1,20 +1,20 @@
 // $Id$
 
-#include "DEventLoop.h"
-#include "DFactory_DBCALHit.h"
-#include "DFactory_DHDDMBCALHit.h"
-#include "DFactory_DBCALMCResponse.h"
-#include "DFactory_DBCALGeometry.h"
-#include "DFactory_DBCALShower.h"
+#include "JANA/JEventLoop.h"
+#include "DBCALHit_factory.h"
+#include "DHDDMBCALHit_factory.h"
+#include "DBCALMCResponse_factory.h"
+#include "DBCALGeometry_factory.h"
+#include "DBCALShower_factory.h"
 
-derror_t BCAL_init(DEventLoop *loop)
+jerror_t BCAL_init(JEventLoop *loop)
 {
 	/// Create and register BCAL data factories
-	loop->AddFactory(new DFactory_DBCALHit());
-	loop->AddFactory(new DFactory_DHDDMBCALHit());
-	loop->AddFactory(new DFactory_DBCALMCResponse());
-	loop->AddFactory(new DFactory_DBCALGeometry());
-	loop->AddFactory(new DFactory_DBCALShower());
+	loop->AddFactory(new DBCALHit_factory());
+	loop->AddFactory(new DHDDMBCALHit_factory());
+	loop->AddFactory(new DBCALMCResponse_factory());
+	loop->AddFactory(new DBCALGeometry_factory());
+	loop->AddFactory(new DBCALShower_factory());
 
 	return NOERROR;
 }

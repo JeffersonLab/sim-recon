@@ -9,11 +9,9 @@
 
 #include <TFile.h>
 
-#include "MyProcessor.h"
-#include "DApplication.h"
+#include "DANA/DApplication.h"
 
-typedef void SetTFilePtrAddress_t(TFile **);
-TFile* tfilePtr = NULL;
+#include "MyProcessor.h"
 
 //-----------
 // main
@@ -29,15 +27,6 @@ int main(int narg, char *argv[])
 	
 	// Always use the track_hists.so plugin
 	app.AddPlugin("track_hists");
-
-	// Get the list of shared objects (if any) and try setting their
-	// TFile pointer address globals so that they use the same
-	// ROOT file for output.
-	vector<void*> sohandles = app.GetSharedObjectHandles();
-	for(unsigned int i=0; i<sohandles.size(); i++){
-		SetTFilePtrAddress_t *SetTFilePtrAddress = (SetTFilePtrAddress_t*)dlsym(sohandles[i], "SetTFilePtrAddress");
-		if(SetTFilePtrAddress)(*SetTFilePtrAddress)(&tfilePtr);
-	}
 
 	// Run though all events, calling our event processor's methods
 	app.monitor_heartbeat = false;

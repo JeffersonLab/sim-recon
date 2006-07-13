@@ -1,12 +1,12 @@
 // $Id$
 
-#include "DEventLoop.h"
-#include "DFactory_DTRIGGER.h"
+#include "JANA/JEventLoop.h"
+#include "DTRIGGER_factory.h"
 
-derror_t TRIGGER_init(DEventLoop *loop)
+jerror_t TRIGGER_init(JEventLoop *loop)
 {
 	/// Create and register TRIGGER data factories
-	loop->AddFactory(new DFactory_DTRIGGER());
+	loop->AddFactory(new DTRIGGER_factory());
 
 	return NOERROR;
 }

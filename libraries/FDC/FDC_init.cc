@@ -5,19 +5,19 @@
 // Date: Apr 2006
 //***********************************************
 
-#include "DEventLoop.h"
-#include "DFactory_DFDCHit.h"
-#include "DFactory_DFDCTruth.h"
-#include "DFactory_DFDCPseudo.h"
-#include "DFactory_DFDCCathodeCluster.h"
+#include "JANA/JEventLoop.h"
+#include "DFDCHit_factory.h"
+#include "DFDCTruth_factory.h"
+#include "DFDCPseudo_factory.h"
+#include "DFDCCathodeCluster_factory.h"
 
-derror_t FDC_init(DEventLoop *loop)
+jerror_t FDC_init(JEventLoop *loop)
 {
 	/// Create and register FDC data factories
-	loop->AddFactory(new DFactory_DFDCHit());
-	loop->AddFactory(new DFactory_DFDCTruth());
-	loop->AddFactory(new DFactory_DFDCPseudo());
-	loop->AddFactory(new DFactory_DFDCCathodeCluster());
+	loop->AddFactory(new DFDCHit_factory());
+	loop->AddFactory(new DFDCTruth_factory());
+	loop->AddFactory(new DFDCPseudo_factory());
+	loop->AddFactory(new DFDCCathodeCluster_factory());
 
 	return NOERROR;
 }

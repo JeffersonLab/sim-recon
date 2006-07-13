@@ -11,13 +11,14 @@ using namespace std;
 
 #include <TThread.h>
 
+#include <JANA/JEventLoop.h>
+
 #include "DEventProcessor_acceptance_hists.h"
 
-#include "DApplication.h"
-#include "DEventLoop.h"
-#include "DMCThrown.h"
-#include "DTrackHit.h"
-#include "DFactory_DTrackHit_MC.h"
+#include "DANA/DApplication.h"
+#include "TRACKING/DMCThrown.h"
+#include "TRACKING/DTrackHit.h"
+#include "TRACKING/DTrackHit_factory_MC.h"
 
 #define MIN_CDC_HITS 8
 #define MIN_FDC_HITS 8
@@ -27,16 +28,14 @@ using namespace std;
 #define MIN_TOF_HITS 1
 #define MIN_UPV_HITS 4
 
-static TFile **tfilePtr = NULL;
+// The executable should define the ROOTfile global variable. It will
+// be automatically linked when dlopen is called.
+extern TFile *ROOTfile;
 
 // Routine used to create our DEventProcessor
 extern "C"{
-void InitProcessors(DApplication *app){
+void InitPlugin(JApplication *app){
 	app->AddProcessor(new DEventProcessor_acceptance_hists());
-}
-
-void SetTFilePtrAddress(TFile **h){
-	tfilePtr = h;
 }
 } // "C"
 
@@ -58,17 +57,10 @@ DEventProcessor_acceptance_hists::~DEventProcessor_acceptance_hists()
 //------------------
 // init
 //------------------
-derror_t DEventProcessor_acceptance_hists::init(void)
+jerror_t DEventProcessor_acceptance_hists::init(void)
 {
 	// open ROOT file (if needed)
-	ROOTfile = NULL;
-	if(tfilePtr == NULL)tfilePtr = &ROOTfile;
-	if(*tfilePtr == NULL){
-		*tfilePtr = ROOTfile = new TFile("acceptance_hists.root","RECREATE","Produced by hd_ana");
-		cout<<"Opened ROOT file \"acceptance_hists.root\""<<endl;
-	}else{
-		(*tfilePtr)->cd();
-	}
+	if(ROOTfile != NULL) ROOTfile->cd();
 
 	// Create ACCEPTANCE directory
 	TDirectory *dir = new TDirectory("ACCEPTANCE","ACCEPTANCE");
@@ -99,13 +91,13 @@ derror_t DEventProcessor_acceptance_hists::init(void)
 //------------------
 // evnt
 //------------------
-derror_t DEventProcessor_acceptance_hists::evnt(DEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DTrackHit*> trackhits;
 	loop->Get(mcthrowns);
-	DFactory_base *fac = loop->Get(trackhits, "MC");
-	DFactory_DTrackHit_MC *factory = dynamic_cast<DFactory_DTrackHit_MC*>(fac);
+	JFactory_base *fac = loop->Get(trackhits, "MC");
+	DTrackHit_factory_MC *factory = dynamic_cast<DTrackHit_factory_MC*>(fac);
 	
 	// Loop over thrown tracks
 	for(unsigned int i=0;i<mcthrowns.size();i++){
@@ -193,7 +185,7 @@ derror_t DEventProcessor_acceptance_hists::evnt(DEventLoop *loop, int eventnumbe
 //------------------
 // erun
 //------------------
-derror_t DEventProcessor_acceptance_hists::erun(void)
+jerror_t DEventProcessor_acceptance_hists::erun(void)
 {
 	CDC->Divide(thrown_charged);
 	FDC->Divide(thrown_charged);
@@ -205,14 +197,8 @@ derror_t DEventProcessor_acceptance_hists::erun(void)
 //------------------
 // fini
 //------------------
-derror_t DEventProcessor_acceptance_hists::fini(void)
+jerror_t DEventProcessor_acceptance_hists::fini(void)
 {
-
-	if(ROOTfile){
-		ROOTfile->Write();
-		delete ROOTfile;
-		cout<<endl<<"Closed ROOT file"<<endl;
-	}
 
 	return NOERROR;
 }

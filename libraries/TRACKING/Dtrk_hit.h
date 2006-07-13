@@ -12,7 +12,7 @@
 
 #include "DTrackHit.h"
 #include "DMCTrackHit.h"
-#include "derror.h"
+#include "JANA/jerror.h"
 #include "GlueX.h"
 
 class Dtrk_hit:public DTrackHit{

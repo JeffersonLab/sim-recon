@@ -1,26 +1,26 @@
 // $Id$
 
-#include "DEventLoop.h"
-#include "DFactory_DTrack.h"
-#include "DFactory_DTrackCandidate.h"
-#include "DFactory_DTrackHit.h"
-#include "DFactory_DTrackHit_MC.h"
-#include "DFactory_DMCTrackHit.h"
-#include "DFactory_DTrackEfficiency.h"
-#include "DFactory_DMCThrown.h"
-#include "DFactory_DMCTrajectoryPoint.h"
+#include "JANA/JEventLoop.h"
+#include "DTrack_factory.h"
+#include "DTrackCandidate_factory.h"
+#include "DTrackHit_factory.h"
+#include "DTrackHit_factory_MC.h"
+#include "DMCTrackHit_factory.h"
+#include "DTrackEfficiency_factory.h"
+#include "DMCThrown_factory.h"
+#include "DMCTrajectoryPoint_factory.h"
 
-derror_t TRACKING_init(DEventLoop *loop)
+jerror_t TRACKING_init(JEventLoop *loop)
 {
 	/// Create and register TRACKING data factories
-	loop->AddFactory(new DFactory_DTrack());
-	loop->AddFactory(new DFactory_DTrackCandidate());
-	loop->AddFactory(new DFactory_DTrackHit());
-	loop->AddFactory(new DFactory_DTrackHit_MC());
-	loop->AddFactory(new DFactory_DMCTrackHit());
-	loop->AddFactory(new DFactory_DTrackEfficiency());
-	loop->AddFactory(new DFactory_DMCThrown());
-	loop->AddFactory(new DFactory_DMCTrajectoryPoint());
+	loop->AddFactory(new DTrack_factory());
+	loop->AddFactory(new DTrackCandidate_factory());
+	loop->AddFactory(new DTrackHit_factory());
+	loop->AddFactory(new DTrackHit_factory_MC());
+	loop->AddFactory(new DMCTrackHit_factory());
+	loop->AddFactory(new DTrackEfficiency_factory());
+	loop->AddFactory(new DMCThrown_factory());
+	loop->AddFactory(new DMCTrajectoryPoint_factory());
 
 	return NOERROR;
 }

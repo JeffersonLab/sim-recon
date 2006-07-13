@@ -6,8 +6,8 @@
 /// Example program for a Hall-D analyzer which uses DANA
 ///
 
-#include "DEventProcessor.h"
-#include "DEventLoop.h"
+#include <JANA/JEventProcessor.h>
+#include <JANA/JEventLoop.h>
 
 #include <TFile.h>
 #include <TH1.h>
@@ -15,14 +15,13 @@
 #include <TTree.h>
 
 
-class MyProcessor:public DEventProcessor
+class MyProcessor:public JEventProcessor
 {
 	public:
-		derror_t init(void);					///< Called once at program start.
-		derror_t evnt(DEventLoop *eventLoop, int eventnumber);	///< Called every event.
-		derror_t fini(void);					///< Called after last event of last event source has been processed.
+		jerror_t init(void);					///< Called once at program start.
+		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Called every event.
+		jerror_t fini(void);					///< Called after last event of last event source has been processed.
 
-		TFile *ROOTfile;
 		TH1F *stats, *frac, *h4_dist, *h4_dist_primary;
 		TH2F *delta_p;
 		TH1F *delta_p_over_p;

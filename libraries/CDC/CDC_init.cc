@@ -1,12 +1,12 @@
 // $Id$
 
-#include "DEventLoop.h"
-#include "DFactory_DCDCHit.h"
+#include "JANA/JEventLoop.h"
+#include "DCDCHit_factory.h"
 
-derror_t CDC_init(DEventLoop *loop)
+jerror_t CDC_init(JEventLoop *loop)
 {
 	/// Create and register CDC data factories
-	loop->AddFactory(new DFactory_DCDCHit());
+	loop->AddFactory(new DCDCHit_factory());
 
 	return NOERROR;
 }

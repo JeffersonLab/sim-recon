@@ -12,11 +12,11 @@
 #include <TH1.h>
 #include <TH2.h>
 
-#include "DFactory.h"
-#include "DEventProcessor.h"
-#include "DEventLoop.h"
+#include "JANA/JFactory.h"
+#include "JANA/JEventProcessor.h"
+#include "JANA/JEventLoop.h"
 
-class DEventProcessor_track_hists:public DEventProcessor{
+class DEventProcessor_track_hists:public JEventProcessor{
 
 	public:
 		DEventProcessor_track_hists();
@@ -45,7 +45,6 @@ class DEventProcessor_track_hists:public DEventProcessor{
 			NBINS
 		};
 		
-		TFile* ROOTfile;
 		TH1F *stats;
 		TH1F *frac_from_thrown;
 		TH2F *stats_vs_theta, *stats_vs_phi, *stats_vs_p, *stats_vs_nhits;
@@ -58,10 +57,10 @@ class DEventProcessor_track_hists:public DEventProcessor{
 		TH1F *dist_same, *dist_diff;
 
 	private:
-		derror_t init(void);	///< Invoked via DEventProcessor virtual method
-		derror_t evnt(DEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
-		derror_t erun(void);					///< Invoked via DEventProcessor virtual method
-		derror_t fini(void);					///< Invoked via DEventProcessor virtual method
+		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
+		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
+		jerror_t erun(void);					///< Invoked via DEventProcessor virtual method
+		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
 
 		unsigned int Nevents;
 		unsigned int Ncdchits;

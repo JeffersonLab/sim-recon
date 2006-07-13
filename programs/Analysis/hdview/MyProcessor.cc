@@ -20,14 +20,14 @@ using namespace std;
 #include "hdview.h"
 #include "hdv_mainframe.h"
 #include "MyProcessor.h"
-#include "DFactory_DTrackHit.h"
-#include "DQuickFit.h"
-#include "DMagneticFieldStepper.h"
-#include "DFactory_DTrackCandidate.h"
-#include "DFactory_DMCTrackHit.h"
-#include "DMCThrown.h"
-#include "DGeometry.h"
-#include "DMCTrajectoryPoint.h"
+#include "TRACKING/DTrackHit_factory.h"
+#include "TRACKING/DQuickFit.h"
+#include "TRACKING/DMagneticFieldStepper.h"
+#include "TRACKING/DTrackCandidate_factory.h"
+#include "TRACKING/DMCTrackHit_factory.h"
+#include "TRACKING/DMCThrown.h"
+#include "JANA/JGeometry.h"
+#include "TRACKING/DMCTrajectoryPoint.h"
 
 extern TCanvas *maincanvas;
 extern hdv_mainframe *hdvmf;
@@ -98,7 +98,7 @@ void MyProcessor::ClearEvent(void)
 //------------------------------------------------------------------
 // init 
 //------------------------------------------------------------------
-derror_t MyProcessor::init(void)
+jerror_t MyProcessor::init(void)
 {
 	// Make sure detectors have been drawn
 	if(!drew_detectors)DrawDetectors();
@@ -111,25 +111,25 @@ derror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // brun 
 //------------------------------------------------------------------
-derror_t MyProcessor::brun(DEventLoop *eventLoop, int runnumber)
+jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 {
 	// Get a pointer to the MCTrackCandidates factory object so we can 
 	// access things not included in the normal _data container
-	DFactory_base *base = eventloop->GetFactory("DTrackCandidate");
-	factory = dynamic_cast<DFactory_DTrackCandidate*>(base);
+	JFactory_base *base = eventloop->GetFactory("DTrackCandidate");
+	factory = dynamic_cast<DTrackCandidate_factory*>(base);
 	if(!factory){
 		cerr<<endl;
-		cerr<<"Unable to get pointer to DFactory_DTrackCandidate factory!"<<endl;
+		cerr<<"Unable to get pointer to DTrackCandidate_factory!"<<endl;
 		cerr<<"I can't do much without it! Exiting ..."<<endl;
 		cerr<<endl;
 		exit(-1);
 	}
 
 	// Read in Magnetic field map
-	Bfield = eventLoop->GetDApplication()->GetDGeometry(runnumber)->GetDMagneticFieldMap();
-//DMagneticFieldMap *tmp = new DMagneticFieldMap();
+	//Bfield = eventLoop->GetJApplication()->GetJGeometry(runnumber)->GetDMagneticFieldMap();
+	DMagneticFieldMap *tmp = new DMagneticFieldMap();
 //tmp->SetConstField(-2.2);
-//Bfield=tmp;
+	Bfield=tmp;
 
 	return NOERROR;
 }
@@ -137,7 +137,7 @@ derror_t MyProcessor::brun(DEventLoop *eventLoop, int runnumber)
 //------------------------------------------------------------------
 // evnt 
 //------------------------------------------------------------------
-derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 {
 	int colors[] = {kBlack,kRed,kBlue,kCyan,kGreen};
 	int ncolors = 5;
@@ -154,7 +154,7 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrajectoryPoint*> mctrajectories;
 	eventLoop->Get(trackhits, TRACKHIT_SOURCE.c_str());
-	DFactory<DMCTrackHit> *fac_mcth = eventLoop->Get(mctrackhits); // just in case we need it later
+	JFactory<DMCTrackHit> *fac_mcth = eventLoop->Get(mctrackhits); // just in case we need it later
 	eventLoop->Get(mcthrowns); // used for straight tracks
 	eventLoop->Get(mctrajectories);
 	
@@ -317,7 +317,7 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 //------------------------------------------------------------------
 // DrawHelicalTrack 
 //------------------------------------------------------------------
-derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
+jerror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 {
 	if(lines.size()>MAX_LINES-2)return NOERROR;
 
@@ -392,7 +392,7 @@ derror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
 //------------------------------------------------------------------
 // DrawStraightTrack 
 //------------------------------------------------------------------
-derror_t MyProcessor::DrawStraightTrack(TVector3 p, TVector3 vertex, int color, int style)
+jerror_t MyProcessor::DrawStraightTrack(TVector3 p, TVector3 vertex, int color, int style)
 {
 	if(lines.size()>MAX_LINES-3)return NOERROR;
 
@@ -450,7 +450,7 @@ derror_t MyProcessor::DrawStraightTrack(TVector3 p, TVector3 vertex, int color, 
 //------------------------------------------------------------------
 // DrawTrack 
 //------------------------------------------------------------------
-derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
+jerror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 {
 	if(lines.size()>MAX_LINES-2)return NOERROR;
 	
@@ -507,7 +507,7 @@ derror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 //------------------------------------------------------------------
 // ConvertToTop 
 //------------------------------------------------------------------
-derror_t MyProcessor::ConvertToTop(float x, float y, float z, float &X, float &Y)
+jerror_t MyProcessor::ConvertToTop(float x, float y, float z, float &X, float &Y)
 {
 	X = z/350.0 - 2.1;
 	Y = x/350.0 + 0.5;
@@ -518,7 +518,7 @@ derror_t MyProcessor::ConvertToTop(float x, float y, float z, float &X, float &Y
 //------------------------------------------------------------------
 // ConvertToSide 
 //------------------------------------------------------------------
-derror_t MyProcessor::ConvertToSide(float x, float y, float z, float &X, float &Y)
+jerror_t MyProcessor::ConvertToSide(float x, float y, float z, float &X, float &Y)
 {
 	X = z/350.0 - 2.1;
 	Y = y/350.0 - 0.5;
@@ -529,7 +529,7 @@ derror_t MyProcessor::ConvertToSide(float x, float y, float z, float &X, float &
 //------------------------------------------------------------------
 // ConvertToFront 
 //------------------------------------------------------------------
-derror_t MyProcessor::ConvertToFront(float x, float y, float z, float &X, float &Y)
+jerror_t MyProcessor::ConvertToFront(float x, float y, float z, float &X, float &Y)
 {
 	X = x/100.0 + 1.0;
 	Y = y/100.0 + 0.0;
@@ -540,7 +540,7 @@ derror_t MyProcessor::ConvertToFront(float x, float y, float z, float &X, float 
 //------------------------------------------------------------------
 // DrawDetectors 
 //------------------------------------------------------------------
-derror_t MyProcessor::DrawDetectors(void)
+jerror_t MyProcessor::DrawDetectors(void)
 {
 	float X,Y,R1,R2,xx,yy;
 	float X2,Y2;

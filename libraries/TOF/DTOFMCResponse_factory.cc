@@ -1,0 +1,70 @@
+// $Id$
+//
+//    File: DTOFMCResponse_factory.cc
+// Created: Mon Aug 15 11:33:45 EST 2005
+// Creator: remitche (on Linux mantrid00 2.4.20-18.8 i686)
+//
+
+#include "DTOFMCResponse_factory.h"
+#include "DHDDMTOFHit.h"
+
+//------------------
+// evnt
+//------------------
+jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
+{
+
+  vector<const DHDDMTOFHit*> hddmhits;
+  eventLoop->Get(hddmhits);
+
+  for (unsigned int i = 0; i < hddmhits.size(); i++){
+
+#if 0		// The definition of DHDDMTOFHit has changed and I'm not sure
+			// if response needs to be changed as well  1/29/2006 DL
+
+    const DHDDMTOFHit *hddmhit = hddmhits[i];
+    DTOFMCResponse *response = new DTOFMCResponse;
+
+    response->orientation = hddmhit->orientation;
+    response->end         = hddmhit->end;
+    response->y           = hddmhit->y;
+    response->t           = hddmhit->t;
+    response->E           = hddmhit->E;
+
+    _data.push_back(response);
+#endif
+
+  }
+
+  return NOERROR;
+}
+
+
+//------------------
+// toString
+//------------------
+const string DTOFMCResponse_factory::toString(void)
+{
+	// Ensure our Get method has been called so _data is up to date
+	Get();
+	if(_data.size()<=0)return string(); // don't print anything if we have no data!
+
+	// Put the class specific code to produce nicely formatted ASCII here.
+	// The JFactory_base class has several methods defined to help. They
+	// rely on positions of colons (:) in the header. Here's an example:
+	//
+	//		printheader("row:    x:     y:");
+	//
+	// 	for(int i=0; i<_data.size(); i++){
+	//			DTOFMCResponse *myDTOFMCResponse = _data[i];
+	//
+	//			printnewrow();
+	//			printcol("%d",	i);
+	//			printcol("%1.3f",	myDTOFMCResponse->x);
+	//			printcol("%3.2f",	myDTOFMCResponse->y);
+	//			printrow();
+	//		}
+	//
+	return _table;
+
+}

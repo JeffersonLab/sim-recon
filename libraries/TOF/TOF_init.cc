@@ -1,22 +1,22 @@
 // $Id$
 
-#include "DEventLoop.h"
-#include "DFactory_DTOFHit.h"
-#include "DFactory_DTOFGeometry.h"
-#include "DFactory_DTOFMCResponse.h"
-#include "DFactory_DHDDMTOFTruth.h"
-#include "DFactory_DHDDMTOFHit.h"
-#include "DFactory_DTOFPoint.h"
+#include "JANA/JEventLoop.h"
+#include "DTOFHit_factory.h"
+#include "DTOFGeometry_factory.h"
+#include "DTOFMCResponse_factory.h"
+#include "DHDDMTOFTruth_factory.h"
+#include "DHDDMTOFHit_factory.h"
+#include "DTOFPoint_factory.h"
 
-derror_t TOF_init(DEventLoop *loop)
+jerror_t TOF_init(JEventLoop *loop)
 {
 	/// Create and register TOF data factories
-	loop->AddFactory(new DFactory_DTOFMCResponse());
-	loop->AddFactory(new DFactory_DTOFHit());
-	loop->AddFactory(new DFactory_DTOFGeometry());
-	loop->AddFactory(new DFactory_DHDDMTOFTruth());
-	loop->AddFactory(new DFactory_DHDDMTOFHit());
-	loop->AddFactory(new DFactory_DTOFPoint());
+	loop->AddFactory(new DTOFMCResponse_factory());
+	loop->AddFactory(new DTOFHit_factory());
+	loop->AddFactory(new DTOFGeometry_factory());
+	loop->AddFactory(new DHDDMTOFTruth_factory());
+	loop->AddFactory(new DHDDMTOFHit_factory());
+	loop->AddFactory(new DTOFPoint_factory());
 
 	return NOERROR;
 }

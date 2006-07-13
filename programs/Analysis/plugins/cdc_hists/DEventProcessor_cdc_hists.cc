@@ -8,22 +8,21 @@ using namespace std;
 
 #include <TThread.h>
 
+#include <JANA/JEventLoop.h>
+
 #include "DEventProcessor_cdc_hists.h"
 
-#include "DApplication.h"
-#include "DEventLoop.h"
-#include "DCDCHit.h"
+#include "DANA/DApplication.h"
+#include "CDC/DCDCHit.h"
 
-static TFile **tfilePtr = NULL;
+// The executable should define the ROOTfile global variable. It will
+// be automatically linked when dlopen is called.
+extern TFile *ROOTfile;
 
 // Routine used to create our DEventProcessor
 extern "C"{
 void InitProcessors(DApplication *app){
 	app->AddProcessor(new DEventProcessor_cdc_hists());
-}
-
-void SetTFilePtrAddress(TFile **h){
-	tfilePtr = h;
 }
 } // "C"
 
@@ -45,18 +44,11 @@ DEventProcessor_cdc_hists::~DEventProcessor_cdc_hists()
 //------------------
 // init
 //------------------
-derror_t DEventProcessor_cdc_hists::init(void)
+jerror_t DEventProcessor_cdc_hists::init(void)
 {
 	// open ROOT file (if needed)
-	ROOTfile = NULL;
-	if(tfilePtr == NULL)tfilePtr = &ROOTfile;
-	if(*tfilePtr == NULL){
-		*tfilePtr = ROOTfile = new TFile("cdc_hists.root","RECREATE","Produced by hd_ana");
-		cout<<"Opened ROOT file \"cdc_hists.root\""<<endl;
-	}else{
-		(*tfilePtr)->cd();
-	}
-
+	if(ROOTfile != NULL) ROOTfile->cd();
+	
 	// Create THROWN directory
 	TDirectory *dir = new TDirectory("CDC","CDC");
 	dir->cd();
@@ -73,7 +65,7 @@ derror_t DEventProcessor_cdc_hists::init(void)
 //------------------
 // evnt
 //------------------
-derror_t DEventProcessor_cdc_hists::evnt(DEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DCDCHit*> cdchits;
 	loop->Get(cdchits);
@@ -91,7 +83,7 @@ derror_t DEventProcessor_cdc_hists::evnt(DEventLoop *loop, int eventnumber)
 //------------------
 // erun
 //------------------
-derror_t DEventProcessor_cdc_hists::erun(void)
+jerror_t DEventProcessor_cdc_hists::erun(void)
 {
 
 	return NOERROR;
@@ -100,14 +92,7 @@ derror_t DEventProcessor_cdc_hists::erun(void)
 //------------------
 // fini
 //------------------
-derror_t DEventProcessor_cdc_hists::fini(void)
+jerror_t DEventProcessor_cdc_hists::fini(void)
 {
-
-	if(ROOTfile){
-		ROOTfile->Write();
-		delete ROOTfile;
-		cout<<endl<<"Closed ROOT file"<<endl;
-	}
-
 	return NOERROR;
 }

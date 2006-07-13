@@ -10,25 +10,22 @@ using namespace std;
 
 #include <TThread.h>
 
+#include <JANA/JApplication.h>
+#include <JANA/JEventLoop.h>
+
 #include "DEventProcessor_mcthrown_hists.h"
+#include "TRACKING/DMCThrown.h"
 
-#include "DApplication.h"
-#include "DEventLoop.h"
-#include "DMCThrown.h"
+// The executable should define the ROOTfile global variable. It will
+// be automatically linked when dlopen is called.
+extern TFile *ROOTfile;
 
-static TFile **tfilePtr = NULL;
-
-// Routine used to create our DEventProcessor
+// Routine used to create our JEventProcessor
 extern "C"{
-void InitProcessors(DApplication *app){
+void InitProcessors(JApplication *app){
 	app->AddProcessor(new DEventProcessor_mcthrown_hists());
 }
-
-void SetTFilePtrAddress(TFile **h){
-	tfilePtr = h;
 }
-} // "C"
-
 
 //------------------
 // DEventProcessor_mcthrown_hists
@@ -47,17 +44,10 @@ DEventProcessor_mcthrown_hists::~DEventProcessor_mcthrown_hists()
 //------------------
 // init
 //------------------
-derror_t DEventProcessor_mcthrown_hists::init(void)
+jerror_t DEventProcessor_mcthrown_hists::init(void)
 {
 	// open ROOT file (if needed)
-	ROOTfile = NULL;
-	if(tfilePtr == NULL)tfilePtr = &ROOTfile;
-	if(*tfilePtr == NULL){
-		*tfilePtr = ROOTfile = new TFile("mcthrown_hists.root","RECREATE","Produced by hd_ana");
-		cout<<"Opened ROOT file \"mcthrown_hists.root\""<<endl;
-	}else{
-		(*tfilePtr)->cd();
-	}
+	if(ROOTfile != NULL) ROOTfile->cd();
 
 	// Create THROWN directory
 	TDirectory *dir = new TDirectory("THROWN","THROWN");
@@ -81,7 +71,7 @@ derror_t DEventProcessor_mcthrown_hists::init(void)
 //------------------
 // evnt
 //------------------
-derror_t DEventProcessor_mcthrown_hists::evnt(DEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_mcthrown_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DMCThrown*> mcthrowns;
 	loop->Get(mcthrowns);
@@ -106,7 +96,7 @@ derror_t DEventProcessor_mcthrown_hists::evnt(DEventLoop *loop, int eventnumber)
 //------------------
 // erun
 //------------------
-derror_t DEventProcessor_mcthrown_hists::erun(void)
+jerror_t DEventProcessor_mcthrown_hists::erun(void)
 {
 
 	return NOERROR;
@@ -115,14 +105,7 @@ derror_t DEventProcessor_mcthrown_hists::erun(void)
 //------------------
 // fini
 //------------------
-derror_t DEventProcessor_mcthrown_hists::fini(void)
+jerror_t DEventProcessor_mcthrown_hists::fini(void)
 {
-
-	if(ROOTfile){
-		ROOTfile->Write();
-		delete ROOTfile;
-		cout<<endl<<"Closed ROOT file"<<endl;
-	}
-
 	return NOERROR;
 }

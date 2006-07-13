@@ -23,43 +23,34 @@
 #include <iostream>
 using namespace std;
 
-#include <DApplication.h>
-#include <DEventSourceHDDM.h>
-#include <DEventLoop.h>
+#include <JANA/JApplication.h>
+#include <JANA/JEventLoop.h>
 
-#include "DFactory_DBCALHit.h"
-#include "DFactory_DCDCHit.h"
-#include "DFactory_DCHERENKOVHit.h"
-#include "DFactory_DFCALHit.h"
-#include "DFactory_DFDCHit.h"
-#include "DFactory_DMCTrackHit.h"
-#include "DFactory_DMCThrown.h"
-#include "DFactory_DTOFHit.h"
-#include "DFactory_DUPVHit.h"
+#include "HDDM/JEventSource_HDDM.h"
+#include "BCAL/JFactory_DBCALHit.h"
+#include "CDC/JFactory_DCDCHit.h"
+#include "CHERENKOV/JFactory_DCHERENKOVHit.h"
+#include "FCAL/JFactory_DFCALHit.h"
+#include "FDC/JFactory_DFDCHit.h"
+#include "TRACKING/JFactory_DMCTrackHit.h"
+#include "TRACKING/JFactory_DMCThrown.h"
+#include "TOF/JFactory_DTOFHit.h"
+#include "UPV/JFactory_DUPVHit.h"
 
 extern "C" {
-extern GetDEventSourceType_t GetDEventSourceType;
-extern MakeDEventSource_t MakeDEventSource;
-extern InitFactories_t InitFactories;
+extern InitPlugin_t InitPlugin;
 }
 
-const char* GetDEventSourceType(void){return "DEventSourceHDDM";}
-
-DEventSource* MakeDEventSource(const char* name)
-{
-	return new DEventSourceHDDM(name);
-}
-
-void InitFactories(DEventLoop* eventLoop)
+void InitPlugin(JApplication *app)
 {
 	cout<<"Adding factories from shared object ..."<<endl;	
-	eventLoop->AddFactory(new DFactory_DBCALHit());
-	eventLoop->AddFactory(new DFactory_DCDCHit());
-	eventLoop->AddFactory(new DFactory_DCHERENKOVHit());
-	eventLoop->AddFactory(new DFactory_DFCALHit());
-	eventLoop->AddFactory(new DFactory_DFDCHit());
-	eventLoop->AddFactory(new DFactory_DMCTrackHit());
-	eventLoop->AddFactory(new DFactory_DMCThrown());
-	eventLoop->AddFactory(new DFactory_DTOFHit());
-	eventLoop->AddFactory(new DFactory_DUPVHit());
+	eventLoop->AddFactory(new JFactory_DBCALHit());
+	eventLoop->AddFactory(new JFactory_DCDCHit());
+	eventLoop->AddFactory(new JFactory_DCHERENKOVHit());
+	eventLoop->AddFactory(new JFactory_DFCALHit());
+	eventLoop->AddFactory(new JFactory_DFDCHit());
+	eventLoop->AddFactory(new JFactory_DMCTrackHit());
+	eventLoop->AddFactory(new JFactory_DMCThrown());
+	eventLoop->AddFactory(new JFactory_DTOFHit());
+	eventLoop->AddFactory(new JFactory_DUPVHit());
 }

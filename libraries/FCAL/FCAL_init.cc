@@ -1,20 +1,20 @@
 // $Id$
 
-#include "DEventLoop.h"
-#include "DFactory_DFCALHit.h"
-#include "DFactory_DFCALShower.h"
-#include "DFactory_DFCALGeometry.h"
-#include "DFactory_DFCALTruthShower.h"
-#include "DFactory_DFCALMCResponse.h"
+#include "JANA/JEventLoop.h"
+#include "DFCALHit_factory.h"
+#include "DFCALShower_factory.h"
+#include "DFCALGeometry_factory.h"
+#include "DFCALTruthShower_factory.h"
+#include "DFCALMCResponse_factory.h"
 
-derror_t FCAL_init(DEventLoop *loop)
+jerror_t FCAL_init(JEventLoop *loop)
 {
 	/// Create and register FCAL data factories
-	loop->AddFactory(new DFactory_DFCALHit());
-	loop->AddFactory(new DFactory_DFCALShower());
-	loop->AddFactory(new DFactory_DFCALGeometry());
-	loop->AddFactory(new DFactory_DFCALTruthShower());
-	loop->AddFactory(new DFactory_DFCALMCResponse());
+	loop->AddFactory(new DFCALHit_factory());
+	loop->AddFactory(new DFCALShower_factory());
+	loop->AddFactory(new DFCALGeometry_factory());
+	loop->AddFactory(new DFCALTruthShower_factory());
+	loop->AddFactory(new DFCALMCResponse_factory());
 
 	return NOERROR;
 }

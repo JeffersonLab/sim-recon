@@ -23,6 +23,7 @@ int main(int narg, char *argv[])
 
 	// open ROOT file
 	TFile* ROOTfile = new TFile("bfield.root","RECREATE","Produced by bfield2root");
+	ROOTfile->SetCompressionLevel(6);
 	cout<<"Opened ROOT file \"bfield.root\""<<endl;
 
 	// Create Magnetic Field Map

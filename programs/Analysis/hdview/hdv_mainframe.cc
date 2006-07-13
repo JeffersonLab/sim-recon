@@ -15,6 +15,7 @@ using namespace std;
 #include <TGeoVolume.h>
 #include <TGeoManager.h>
 
+extern JApplication *japp;
 TGeoVolume *MOTHER = NULL;
 TGeoCombiTrans *MotherRotTrans = NULL;
 
@@ -78,7 +79,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 //-------------------
 void hdv_mainframe::DoQuit(void)
 {
-	dapp->Quit();
+	japp->Quit();
 	gApplication->Terminate(0);
 }
 
