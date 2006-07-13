@@ -1,5 +1,5 @@
 
-PACKAGES = ROOT:DANA
+PACKAGES = ROOT:JANA
 
 include $(HALLD_HOME)/src/BMS/Makefile.bin
 
