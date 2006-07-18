@@ -9,7 +9,7 @@
 #include <TFile.h>
 
 #include "MyProcessor.h"
-#include "DApplication.h"
+#include "DANA/DApplication.h"
 
 typedef void SetTFilePtrAddress_t(TFile **);
 TFile* tfilePtr = NULL;

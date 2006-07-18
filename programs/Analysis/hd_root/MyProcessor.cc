@@ -10,25 +10,11 @@ using namespace std;
 #include <TTree.h>
 
 #include "MyProcessor.h"
-#include "hddm_s.h"
-
-#include "DBCALHit.h"
-#include "DCDCHit.h"
-#include "DCHERENKOVHit.h"
-#include "DFCALHit.h"
-#include "DFDCHit.h"
-#include "DTAGGERHit.h"
-#include "DTOFHit.h"
-#include "DUPVHit.h"
-#include "DTrackCandidate.h"
-#include "DQuickFit.h"
-#include "DTrackFit.h"
-#include "DMCThrown.h"
 
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
 //------------------------------------------------------------------
-derror_t MyProcessor::init(void)
+jerror_t MyProcessor::init(void)
 {
 	// open ROOT file
 	ROOTfile = new TFile("hd_tree.root","RECREATE","Produced by hd_root");
@@ -55,7 +41,7 @@ derror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // evnt   -Fill tree here
 //------------------------------------------------------------------
-derror_t MyProcessor::evnt(int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 {
 #if 0
 	vector<const DCDCHit*> cdchits;
@@ -94,7 +80,7 @@ derror_t MyProcessor::evnt(int eventnumber)
 //------------------------------------------------------------------
 // fini   -Close output file here
 //------------------------------------------------------------------
-derror_t MyProcessor::fini(void)
+jerror_t MyProcessor::fini(void)
 {
 	ROOTfile->Write();
 	delete ROOTfile;
