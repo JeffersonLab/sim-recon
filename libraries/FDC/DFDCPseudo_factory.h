@@ -53,7 +53,7 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		/// DFDCPseudo_factory::makePseudo():
 		/// performs UV+X matching to create pseudopoints
 		///
-		void makePseudo(	map<const int, const DFDCHit*>& x,
+		void makePseudo(	std::map<int, const DFDCHit*>& x,
 							vector<const DFDCCathodeCluster*>& u,
 							vector<const DFDCCathodeCluster*>& v,
 							float angle,

@@ -51,7 +51,7 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	vector<const DFDCCathodeCluster*> oneLayerU;
 	vector<const DFDCCathodeCluster*> vClus;
 	vector<const DFDCCathodeCluster*> oneLayerV;
-	std::map<const int, const DFDCHit*> oneLayerX;
+	std::map<int, const DFDCHit*> oneLayerX;
 	DFDCGeometry geo;
 	float angle = 0.0;
 	float pi	= 3.1415926;
@@ -104,7 +104,7 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 /// DFDCPseudo_factory::makePseudo():
 /// performs UV+X matching to create pseudopoints
 ///
-void DFDCPseudo_factory::makePseudo(	map<const int, const DFDCHit*>& x,
+void DFDCPseudo_factory::makePseudo(	std::map<int, const DFDCHit*>& x,
 										vector<const DFDCCathodeCluster*>& u,
 										vector<const DFDCCathodeCluster*>& v,
 										float angle,
@@ -112,7 +112,7 @@ void DFDCPseudo_factory::makePseudo(	map<const int, const DFDCHit*>& x,
 {
 	if ((u.size() == 0) || (v.size() == 0) || (x.size() == 0))
 		return;
-	map<const int, const DFDCHit*>::iterator xIt;
+	std::map<int, const DFDCHit*>::iterator xIt;
 	vector<const DFDCCathodeCluster*>::iterator uIt;
 	vector<const DFDCCathodeCluster*>::iterator vIt;
 	
