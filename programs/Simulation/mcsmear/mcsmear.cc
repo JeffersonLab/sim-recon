@@ -9,7 +9,7 @@ using namespace std;
 #include <signal.h>
 #include <time.h>
 
-#include "hddm_s.h"
+#include "HDDM/hddm_s.h"
 
 void Smear(s_HDDM_t *hddm_s);
 void ParseCommandLineArguments(int narg, char* argv[]);

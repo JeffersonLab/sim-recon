@@ -7,7 +7,7 @@
 using namespace std;
 
 #include <math.h>
-#include "hddm_s.h"
+#include "HDDM/hddm_s.h"
 
 float RANDOM_MAX = (float)(0x7FFFFFFF);
 
