@@ -4,7 +4,7 @@
 #include <fstream>
 using namespace std;
 
-#include "hddm_s.h"
+#include "HDDM/hddm_s.h"
 #include "particleType.h"
 
 char *INPUT_FILE=NULL;
