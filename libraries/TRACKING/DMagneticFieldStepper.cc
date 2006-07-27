@@ -16,6 +16,7 @@ DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield)
 	start_pos = pos = TVector3(0.0,0.0,0.0);
 	start_mom = mom = TVector3(0.0,0.0,1.0);
 	stepsize = 1.0; // in cm
+	CalcDirs();
 }
 
 //-----------------------
@@ -45,7 +46,8 @@ jerror_t DMagneticFieldStepper::SetStartingParams(double q, TVector3 *x, TVector
 {
 	this->q = q;
 	start_pos = pos = *x;
-	start_mom = mom = *p;	
+	start_mom = mom = *p;
+	CalcDirs();
 
 	return NOERROR;
 }
@@ -71,6 +73,48 @@ jerror_t DMagneticFieldStepper::SetStepSize(double step)
 }
 
 //-----------------------
+// CalcDirs
+//-----------------------
+void DMagneticFieldStepper::CalcDirs(void)
+{
+	/// This just accesses the magnetic field map
+	/// at the current position and passes it on
+	/// to CalcDirs(TVector3 *B). See there for
+	/// more details.
+
+	// Get B-field
+	const DBfieldPoint_t* tmp = bfield->getQuick(pos.x(), pos.y(), pos.z());
+	TVector3 B(tmp->Bx, tmp->By, tmp->Bz);
+
+	CalcDirs(&B);
+}
+
+//-----------------------
+// CalcDirs
+//-----------------------
+void DMagneticFieldStepper::CalcDirs(TVector3 *B)
+{
+	/// Calculate the directions of the "natural coordinates"
+	/// (aka reference trajectory coordinate system) in the
+	/// lab frame using the current momentum and the specified
+	/// magnetic field vector B. The results are left in the
+	/// private member fields, copies of which may be obtained
+	/// by a subsequent call to the GetDirs(...) method.
+
+	// cross product of p and B (natural x-direction)
+	xdir = mom.Cross(*B);
+	xdir.SetMag(1.0);
+	
+	// cross product of B and pxB (natural y-direction)
+	ydir = B->Cross(xdir);
+	ydir.SetMag(1.0);
+	
+	// B-field is natural z-direction
+	zdir = *B;
+	zdir.SetMag(1.0);
+}
+
+//-----------------------
 // Step
 //-----------------------
 jerror_t DMagneticFieldStepper::Step(TVector3 *newpos)
@@ -83,7 +127,7 @@ jerror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	// x-axis is in direction perpendicular to both B and p (particle momentum)
 	// y-axis is then just cross product of z and x axes.
 	//
-	// These coordinates are referred to as the natual coordinates below.
+	// These coordinates are referred to as the natural coordinates below.
 	// The step is calculated based on moving along a perfect helix a distance
 	// of "stepsize". This means that the new position will actually be
 	// closer than stepsize to the current position (unless the magnetic field
@@ -102,23 +146,14 @@ jerror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 
 		return NOERROR;
 	}
-
-	// cross product of p and B (natural x-direction)
-	TVector3 xdir = mom.Cross(B);
-	xdir.SetMag(1.0);
-	
-	// cross product of B and pxB (natural y-direction)
-	TVector3 ydir = B.Cross(xdir);
-	ydir.SetMag(1.0);
-	
-	// B-field is natural z-direction
-	TVector3 zdir = B;
-	zdir.SetMag(1.0);
 	
 	// cosine of angle between p and B
 	double theta = B.Angle(mom);
 	double cos_theta = cos(theta);
 	double sin_theta = sin(theta);
+
+	// Note that xdir, ydir, and zdir should already be valid for the
+	// starting point of this step. They are set via a call to CalcDirs(...)
 
 	// delta_z is step size in z direction
 	TVector3 delta_z = zdir*stepsize*cos_theta;
@@ -148,6 +183,9 @@ jerror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	double E = sqrt(m*m + p*p) - 0.0000024*stepsize;
 	mom.SetMag(sqrt(E*E-m*m));
 	
+	// Calculate directions of natural coordinates at the new position
+	CalcDirs(&B);
+	
 	// return new position 
 	if(newpos)*newpos = pos;
 
@@ -161,4 +199,23 @@ const DBfieldPoint_t* DMagneticFieldStepper::GetDBfieldPoint(void)
 {
 	return bfield->getQuick(pos.x(), pos.y(), pos.z());
 }
+
+//-----------------------
+// GetDirs
+//-----------------------
+void DMagneticFieldStepper::GetDirs(TVector3 &xdir, TVector3 &ydir, TVector3 &zdir)
+{
+	xdir = this->xdir;
+	ydir = this->ydir;
+	zdir = this->zdir;
+}
+
+//-----------------------
+// GetMomentum
+//-----------------------
+void DMagneticFieldStepper::GetMomentum(TVector3 &mom)
+{
+	mom = this->mom;
+}
+
 

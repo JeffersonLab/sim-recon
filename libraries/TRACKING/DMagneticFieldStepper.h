@@ -30,6 +30,8 @@ class DMagneticFieldStepper
 		jerror_t SetStepSize(double step);
 		jerror_t Step(TVector3 *newpos);
 		const DBfieldPoint_t* GetDBfieldPoint(void);
+		void GetDirs(TVector3 &xdir, TVector3 &ydir, TVector3 &zdir);
+		void GetMomentum(TVector3 &mom);
 		
 		inline double GetStepSize(void) const{return stepsize;}
 	
@@ -41,6 +43,11 @@ class DMagneticFieldStepper
 		TVector3 mom;			///< current location of particle
 		TVector3 start_pos;	///< starting position of track
 		TVector3 start_mom;	///< starting momentum of track
+		
+		TVector3 xdir, ydir, zdir;
+		
+		void CalcDirs(void);
+		void CalcDirs(TVector3 *B);
 };
 
 #endif // __DMAGNETICFIELDSTEPPER_H__

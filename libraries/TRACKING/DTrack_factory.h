@@ -8,11 +8,19 @@
 #ifndef _DTrack_factory_
 #define _DTrack_factory_
 
-#include "JANA/JFactory.h"
-#include "JANA/JGeometry.h"
+#include <vector>
+
+#include <TVector3.h>
+
+#include <JANA/JFactory.h>
+#include <JANA/JGeometry.h>
 #include "DMagneticFieldMap.h"
 #include "DTrack.h"
+#include "DReferenceTrajectory.h"
 
+class DTrackCandidate;
+class DTrack;
+class DTrackHit;
 
 class DTrack_factory:public JFactory<DTrack>{
 	public:
@@ -25,8 +33,16 @@ class DTrack_factory:public JFactory<DTrack>{
 		jerror_t brun(JEventLoop *loop, int runnumber);
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
+		typedef DReferenceTrajectory::swim_step_t swim_step_t;
+
+		DTrack* FitTrack(const DTrackCandidate *trackcandidate, std::vector<const DTrackHit* > trackhits);
+		void TransformToRTframe(TVector3 &v, swim_step_t *swim_step);
+		TVector3 GetDistToRT(TVector3 &hit, swim_step_t *s2);
+
 		const JGeometry *dgeom;
 		const DMagneticFieldMap *bfield;
+		string TRACKHIT_SOURCE;
+		double MAX_HIT_DIST;
 };
 
 #endif // _DTrack_factory_
