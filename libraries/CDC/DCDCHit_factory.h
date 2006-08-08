@@ -8,16 +8,15 @@
 #ifndef _DCDCHit_factory_
 #define _DCDCHit_factory_
 
-#include "JANA/JFactory.h"
-#include "JANA/JEventLoop.h"
-#include "HDDM/hddm_s.h"
+#include <JANA/JFactory.h>
+#include <JANA/JEventLoop.h>
+
 #include "DCDCHit.h"
 
 class DCDCHit_factory:public JFactory<DCDCHit>{
 	public:
 		DCDCHit_factory(){};
 		~DCDCHit_factory(){};
-		jerror_t Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v);
 		const string toString(void);
 	
 	protected:

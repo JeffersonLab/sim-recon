@@ -35,14 +35,6 @@ class DFDCHit_factory:public JFactory<DFDCHit>{
 		~DFDCHit_factory();
 
 		///
-		/// DFDCHit_factory::Extract_HDDM():
-		/// Reads an event from the data file and distills out the FDC information, creating a new
-		/// DFDCHit object for each FDC hit encountered in the data. If you wish to understand the 
-		/// s_Blah_t structures, see the documentation for hddm_s.h.
-		///
-		jerror_t Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v);
-
-		///
 		/// DFDCHit_factory::toString(): 
 		/// Provides a sensible std::string representation of all of the data in the factory.
 		///

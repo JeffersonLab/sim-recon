@@ -7,47 +7,6 @@
 
 #include "DCDCHit_factory.h"
 
-//------------------
-// Extract_HDDM
-//------------------
-jerror_t DCDCHit_factory::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
-{
-	/// Copies the data from the given hddm_s structure. This is called
-	/// from JEventSourceHDDM::GetObjects.
-	
-	v.clear();
-
-	// Loop over Physics Events
-	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-	if(!PE) return NOERROR;
-	
-	for(unsigned int i=0; i<PE->mult; i++){
-		s_HitView_t *hits = PE->in[i].hitView;
-		if (hits == HDDM_NULL ||
-			hits->centralDC == HDDM_NULL ||
-			hits->centralDC->cdcStraws == HDDM_NULL)continue;
-
-		s_CdcStraws_t *straws = hits->centralDC->cdcStraws;
-		for(unsigned int j=0; j<straws->mult; j++){
-			s_CdcStraw_t *straw = &straws->in[j];
-			for(unsigned int k=0; k<straw->cdcStrawHits->mult; k++){
-				s_CdcStrawHit_t *strawHit = &straw->cdcStrawHits->in[k];
-				
-				// Add a row to the factory data
-				DCDCHit *cdchit = new DCDCHit;
-				cdchit->ring = straw->ring;
-				cdchit->straw = straw->straw;
-				cdchit->radius = 0.0; // need to get this from ring,straw
-				cdchit->phim = 0.0; // need to get this from ring,straw
-				cdchit->dE = strawHit->dE;
-				cdchit->t = strawHit->t;
-				v.push_back(cdchit);
-			} // k (strawHits)
-		} // j (straws)
-	} // i  (physicsEvents)
-
-	return NOERROR;
-}
 
 //------------------
 // toString

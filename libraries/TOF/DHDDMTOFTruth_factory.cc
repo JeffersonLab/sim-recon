@@ -9,16 +9,6 @@
 
 #include "DHDDMTOFTruth_factory.h"
 
-//------------------
-// evnt
-//------------------
-jerror_t DHDDMTOFTruth_factory::evnt(JEventLoop *loop, int eventnumber)
-{
-	// no code should be here -- this factory is used strictly for reading in
-	// HDDM data
-	
-	return NOERROR;
-}
 
 //------------------
 // toString

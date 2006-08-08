@@ -20,7 +20,7 @@ class DFDCGeometry : public JObject {
 		/// DFDCGeometry::gLayer():
 		/// Compute the global layer (detection layer 1-24) number based on module and layer
 		///
-		inline int gLayer(const DFDCHit* h) {
+		static inline int gLayer(const DFDCHit* h) {
 			return 3*(h->module - 1) + (h->layer - 1) + 1;
 		}		
 		
@@ -28,7 +28,7 @@ class DFDCGeometry : public JObject {
 		/// DFDCGeometry::gPlane():
 		/// Compute the global plane (1-74) number based on module, layer, and plane
 		///
-		inline int gPlane(const DFDCHit* h) {
+		static inline int gPlane(const DFDCHit* h) {
 			return 9*(h->module-1) + 3*(h->layer-1) + (h->plane-1) + 1;
 		}
 		
@@ -36,7 +36,7 @@ class DFDCGeometry : public JObject {
 		/// DFDCGeometry::getLayerZ():
 		/// Get the Z position of a layer
 		///
-		float getLayerZ(const DFDCHit* h) {
+		static float getLayerZ(const DFDCHit* h) {
 			if (h->gPlane <= 18)  
 				return 227.5 + h->gPlane*0.5;			// Thing 1
 			if (h->gPlane <= 36)	   
@@ -50,7 +50,7 @@ class DFDCGeometry : public JObject {
 		/// DFDCGeometry::getWireR():
 		/// Return X coordinate of a wire
 		/// 
-		inline float getWireR(const DFDCHit* h) {
+		static inline float getWireR(const DFDCHit* h) {
 			return h->element - 60.0;
 		}
 		
@@ -58,7 +58,7 @@ class DFDCGeometry : public JObject {
 		/// DFDCGeometry::getStripR():
 		/// Return coordinate in U or V space of a strip
 		///
-		inline float getStripR(const DFDCHit* h) {
+		static inline float getStripR(const DFDCHit* h) {
 			return (h->element - 119.5)*0.5;
 		}
 		
@@ -66,7 +66,7 @@ class DFDCGeometry : public JObject {
 		/// DFDCGeometry::getLayerRotation():
 		/// Compute the rotation of a detection layer (0, 60, -60)
 		///
-		inline float getLayerRotation(const int gLayer) {
+		static inline float getLayerRotation(const int gLayer) {
 			switch ((gLayer-1) % 3) {
 				case 0:
 					return 0.0;
