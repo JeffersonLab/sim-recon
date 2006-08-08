@@ -136,6 +136,7 @@ jerror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	// Get B-field
 	const DBfieldPoint_t* tmp = bfield->getQuick(pos.x(), pos.y(), pos.z());
 	TVector3 B(tmp->Bx, tmp->By, tmp->Bz);
+//TVector3 B(0.0, 0.0,-2.0);
 
 	// If the magnetic field is zero or the charge is zero, then our job is easy
 	if(B.Mag()==0.0 || q==0.0){
@@ -178,10 +179,10 @@ jerror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	mom.Rotate(-delta_phi, B);
 	
 	// Energy loss for 1.0GeV pions in Air is roughly 2.4keV/cm
-	double m = 0.13957;
-	double p = mom.Mag();
-	double E = sqrt(m*m + p*p) - 0.0000024*stepsize;
-	mom.SetMag(sqrt(E*E-m*m));
+//	double m = 0.13957;
+//	double p = mom.Mag();
+//	double E = sqrt(m*m + p*p) - 0.0000024*stepsize;
+//	mom.SetMag(sqrt(E*E-m*m));
 	
 	// Calculate directions of natural coordinates at the new position
 	CalcDirs(&B);
