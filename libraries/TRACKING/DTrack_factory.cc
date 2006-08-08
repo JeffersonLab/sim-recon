@@ -8,6 +8,8 @@
 #include <math.h>
 
 #include <TVector3.h>
+#include <TMatrixD.h>
+
 #include <JANA/JEventLoop.h>
 
 #include "GlueX.h"
@@ -23,6 +25,9 @@
 //------------------
 jerror_t DTrack_factory::init(void)
 {
+	max_swim_steps = 2000;
+	swim_steps = new DReferenceTrajectory::swim_step_t[max_swim_steps];
+		
 	return NOERROR;
 }
 
@@ -53,15 +58,17 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 {
 	// Get the track candidates and hits
 	vector<const DTrackCandidate*> trackcandidates;
-	vector<const DTrackHit*> trackhits;
 	loop->Get(trackcandidates);
+	trackhits.clear();
 	loop->Get(trackhits,TRACKHIT_SOURCE.c_str());
+
+	return NOERROR;
 
 	// Loop over track candidates
 	for(unsigned int i=0; i<trackcandidates.size(); i++){
 
 		// Fit the track		
-		DTrack *track = FitTrack(trackcandidates[i], trackhits);
+		DTrack *track = FitTrack(trackcandidates[i]);
 		
 		// If fit is successful, then store the track
 		if(track)_data.push_back(track);
@@ -71,16 +78,93 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 }
 
 //------------------
+// fini
+//------------------
+jerror_t DTrack_factory::fini(void)
+{
+	delete[] swim_steps;
+
+	return NOERROR;
+}
+
+//------------------
 // FitTrack
 //------------------
-DTrack* DTrack_factory::FitTrack(const DTrackCandidate *trackcandidate, vector<const DTrackHit*> trackhits)
+DTrack* DTrack_factory::FitTrack(const DTrackCandidate *trackcandidate)
 {
-	// Generate reference trajectory for this track
-	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, trackcandidate);
+	/// Fit a track candidate using the Kalman filter technique.
+	
+	// Generate reference trajectory and use it to find the initial
+	// set of hits for this track. Some of these will be dropped by
+	// the filter in the loop below.
+	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, trackcandidate, swim_steps, max_swim_steps);
+	GetTrackHits(rt); //Hits are left in private member data "hits_on_track"
+	if(hits_on_track.size()<4){
+		delete rt;
+		return NULL;
+	}
+
+	// State vector for Kalman filter. This is kept as a TMatrixD so
+	// we can use the ROOT linear algebra package. We index the
+	// elements via enum for readability.
+	TMatrixD state(5,1);
+	state[state_p		] = trackcandidate->p;
+	state[state_theta	] = trackcandidate->theta;
+	state[state_phi	] = trackcandidate->phi;
+	state[state_x		] = 0.0;
+	state[state_y		] = 0.0;
+
+	// The covariance matrix for the state vector. Assume all of
+	// the parameters are independent. The values are initialized
+	// using the resolutions of the parameters obtained from 
+	// track candidates. NOTE: right now, they are just guesses!
+	// This will need to be changed!
+	TMatrixD P(5,5);
+	P.UnitMatrix();
+	P[state_p		][state_p		] = pow(0.1*state[state_p][0], 2.0);
+	P[state_theta	][state_theta	] = pow( 5.0/57.3 , 2.0);	// 5s degrees
+	P[state_phi		][state_phi		] = pow(10.0/57.3 , 2.0);	// 10 degrees
+	P[state_x		][state_x		] = pow(1.0 , 2.0);	// cm
+	P[state_y		][state_y		] = pow(1.0 , 2.0);	// cm
+
+	// Since we have to use the Extended Kalman Filter (EKF) which
+	// linearizes what are likely some very non-linear functions, we may
+	// need to iterate a few times.
+	do{
+		KalmanFilter(state, P, rt);
+	}while(false);
+
+	// Delete utility objects
+	delete rt;
 		
-	// Determine the distance of each hit to the reference trajectory
+	// Create new DTrack object and initialize parameters with those
+	// from track candidate
+	DTrack *track = new DTrack;
+	track->q = trackcandidate->q;
+	track->p = trackcandidate->p;
+	track->theta = trackcandidate->theta;
+	track->phi = trackcandidate->phi;
+	track->x = 0.0;
+	track->y = 0.0;
+	track->z = trackcandidate->z_vertex;
+	track->candidateid = trackcandidate->id;
+
+	return track;
+}
+
+//------------------
+// GetTrackHits
+//------------------
+void DTrack_factory::GetTrackHits(DReferenceTrajectory *rt)
+{
+	/// Determine the distance of each hit to the reference trajectory.
+	/// Ones less than TRK:MAX_HIT_DIST are added to hits_on_track as
+	/// possibly being associated with the track.
+	
 	// This is not an efficient way of doing this, but it will work for
 	// now and should be optimized later.
+	hits_on_track.clear();
+	hit_dists.clear();
 	for(unsigned int j=0; j<trackhits.size(); j++){
 		const DTrackHit *trackhit = trackhits[j];
 		double min_delta2 = 1.0E6;
@@ -89,8 +173,9 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *trackcandidate, vector<c
 		// Loop over swim steps. Don't allow the first or last points 
 		// to be considered as the closest so we're guaranteed to
 		// have points on either side of the closest swim point.
-		swim_step_t *swim_step = rt->swim_steps;
+		swim_step_t *swim_step = swim_steps;
 		swim_step++;
+
 		for(int i=1; i<rt->Nswim_steps-1; i++, swim_step++){
 			double deltaZ = swim_step->pos.z() - trackhit->z;
 			if(fabs(deltaZ) > MAX_HIT_DIST)continue;
@@ -116,35 +201,16 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *trackcandidate, vector<c
 		TVector3 hit(trackhit->x, trackhit->y, trackhit->z);
 		TVector3 delta = GetDistToRT(hit, &rt->swim_steps[min_step_index]);
 		
+		// Check if this hit is close enough to the RT to be on
+		// the track. This should be a function of both the distance
+		// along the track and the errors of the measurement in 3D.
+		// For now, we use a single distance which may be sufficient
+		// for finding hits that belong to the track.
+		if(delta.Mag()>MAX_HIT_DIST)continue;
+		
+		hits_on_track.push_back(trackhit);
+		hit_dists.push_back(delta);
 	}
-		
-	// Delete DReferenceTrajectory object
-	delete rt;
-
-	// Create new DTrack object
-	DTrack *track = new DTrack;
-		
-	// Copy in starting values
-	track->q = trackcandidate->q;
-	track->p = trackcandidate->p;
-	track->theta = trackcandidate->theta;
-	track->phi = trackcandidate->phi;
-	track->x = 0.0;
-	track->y = 0.0;
-	track->z = trackcandidate->z_vertex;
-	track->candidateid = trackcandidate->id;
-		
-	return track;
-}
-
-//------------------
-// DTrack_factory::
-//------------------
-void DTrack_factory::TransformToRTframe(TVector3 &v, swim_step_t *swim_step)
-{
-	/// Transforms the given vector (replacing its contents) with
-	/// values pointing to the same point in the R.T. frame at the
-	/// given swim step.
 
 }
 
@@ -278,7 +344,7 @@ TVector3 DTrack_factory::GetDistToRT(TVector3 &hit, swim_step_t *s2)
 	// s2 and s_nn as a line or a parabola. We do this by checking the
 	// angle between the two momenta.
 	double y;
-	if(s2->mom.Angle(s_nn->mom) <= 1.0E-5){
+	if(s2->mom.Angle(s_nn->mom) <= 0.03){ // 0.03rad = 1.7 degrees
 		// momentum doesn't really change between these two points.
 		// use linear approximation
 		y = -D/C;
@@ -333,7 +399,92 @@ TVector3 DTrack_factory::GetDistToRT(TVector3 &hit, swim_step_t *s2)
 	return hit_rt - doca_point;
 }
 
+//------------------
+// KalmanFilter
+//------------------
+void DTrack_factory::KalmanFilter(TMatrixD &state, TMatrixD &P, DReferenceTrajectory *rt)
+{
+	/// Apply the Kalman filter to the current track starting
+	/// with the given initial state and the reference trajectory.
+
+	// The A matrix propagates the state of the particle from one
+	// point to the next. This is recalculated for each.
+	TMatrixD A(5, 5);
+	
+	// The covariance matrix representing the measurement errors.
+	// For the CDC we have just one measurement "r". For the FDC
+	// we have two: "r" and "w", the distance along the wire.
+	TMatrixD R_cdc(1,1);
+	TMatrixD R_fdc(2,2);
+	
+	// The Q matrix represents the "process noise" in our case,
+	// this is where multiple scattering comes in. It will need
+	// to be calculated at each step to include M.S. for the
+	// materials traversed since the last step. To start with,
+	// we will set this to zero indicating no M.S., just to keep
+	// it as a place holder.
+	TMatrixD Q(5,5);
+	Q = 0.0*A;
+	
+	// K is the Kalman "gain matrix"
+	TMatrixD K(5,5);
+	
+	// H is the matrix that converts the state vector values
+	// into (predicted) measurement values.
+	TMatrixD H_cdc(1,5);
+	TMatrixD H_fdc(1,5);
+
+	// DMagneticFieldStepper is used to swim the particle
+	// through the magnetic field. Use the first swim step
+	// as the starting point
+	DMagneticFieldStepper stepper(bfield, rt->q, &swim_steps->pos, &swim_steps->mom);
+
+	// Loop over hits
+	for(unsigned int i=0; i<hits_on_track.size(); i++){
+		const DTrackHit *track_hit = hits_on_track[i];
+		TVector3 *hit_dist = &hit_dists[i];
 		
+		// The current values of "track_hit" and "hit_dist"
+		// correspond to the next measurement point i.e. the
+		// place we need to project the current state to.
+		// At this point, we need to extract the information
+		// that defines where to project the current state to.
+		// Specifically, the x/z plane on the reference trajectory
+		// at which this hit
+		
+		// Swim particle from current location/state
+		// to next location/state.
+		TMatrixD state_next(5,1);
+		//GetStateFromStepper(state_next);
+		
+		// Since the relation between the current state and
+		// the next is non-linear, we have to estimate it as
+		// a linear transformation. This is not trivally calculated
+		// especially considering the non-uniform material
+		// the track passes through as it goes through the detector.
+		// Thus, we do this numerically by tweaking each of the state
+		// parameters one at a time and re-swimming to see how it
+		// affects the state parameters at the end of the step.
+		
+		
+	}
+}
+
+//------------------
+// KalmanStep
+//------------------
+void DTrack_factory::KalmanStep(TMatrixD &x, TMatrixD &P_prev, TMatrixD &A, TMatrixD &H, TMatrixD &Q, TMatrixD &R, TMatrixD &W, TMatrixD &V)
+{
+	
+	TMatrixD At(TMatrixD::kTransposed, A);
+	TMatrixD Ht(TMatrixD::kTransposed, H);
+	TMatrixD Vt(TMatrixD::kTransposed, V);
+	TMatrixD Wt(TMatrixD::kTransposed, W);
+	
+	TMatrixD P = A*P_prev*At + W*Q*Wt;
+	
+}
+
 //------------------
 // toString
 //------------------
