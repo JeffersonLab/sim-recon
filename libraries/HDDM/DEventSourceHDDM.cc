@@ -10,10 +10,12 @@
 #include <iomanip>
 using namespace std;
 
+#include <JANA/JFactory_base.h>
+#include <JANA/JEventLoop.h>
+#include <JANA/JEvent.h>
+
 #include "DEventSourceHDDM.h"
-#include "JANA/JFactory_base.h"
-#include "JANA/JEventLoop.h"
-#include "JANA/JEvent.h"
+#include "FDC/DFDCGeometry.h"
 
 //------------------------------------------------------------------
 // Binary predicate used to sort hits
@@ -102,7 +104,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 {
 	/// This gets called through the virtual method of the
 	/// JEventSource base class. It creates the objects of the type
-	/// which factory is based. It uses the s_HDDM_t object
+	/// on which factory is based. It uses the s_HDDM_t object
 	/// kept in the ref field of the JEvent object passed.
 
 	// We must have a factory to hold the data
@@ -124,6 +126,12 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DMCThrown")
 		return Extract_DMCThrown(my_hddm_s, dynamic_cast<JFactory<DMCThrown>*>(factory));
 
+	if(dataClassName =="DCDCHit")
+		return Extract_DCDCHit(my_hddm_s, dynamic_cast<JFactory<DCDCHit>*>(factory));
+
+	if(dataClassName =="DFDCHit")
+		return Extract_DFDCHit(my_hddm_s, dynamic_cast<JFactory<DFDCHit>*>(factory));
+
 	
 	return OBJECT_NOT_AVAILABLE;
 }
@@ -143,13 +151,13 @@ jerror_t DEventSourceHDDM::Extract_DMCTrackHit(s_HDDM_t *hddm_s, JFactory<DMCTra
 	// The following routines will create DMCTrackHit objects and add them
 	// to data.
 	vector<DMCTrackHit*> data;
-	GetCDCHits(hddm_s, data);
-	GetFDCHits(hddm_s, data);
-	GetBCALHits(hddm_s, data);
-	GetTOFHits(hddm_s, data);
-	GetCherenkovHits(hddm_s, data);
-	GetFCALHits(hddm_s, data);
-	GetUPVHits(hddm_s, data);
+	GetCDCTruthHits(hddm_s, data);
+	GetFDCTruthHits(hddm_s, data);
+	GetBCALTruthHits(hddm_s, data);
+	GetTOFTruthHits(hddm_s, data);
+	GetCherenkovTruthHits(hddm_s, data);
+	GetFCALTruthHits(hddm_s, data);
+	GetUPVTruthHits(hddm_s, data);
 	
 	// sort hits by z
 	sort(data.begin(), data.end(), MCTrackHitSort_C);
@@ -167,9 +175,9 @@ jerror_t DEventSourceHDDM::Extract_DMCTrackHit(s_HDDM_t *hddm_s, JFactory<DMCTra
 	return NOERROR;
 }
 //-------------------
-// GetCDCHits
+// GetCDCTruthHits
 //-------------------
-jerror_t DEventSourceHDDM::GetCDCHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
+jerror_t DEventSourceHDDM::GetCDCTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -199,9 +207,9 @@ jerror_t DEventSourceHDDM::GetCDCHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& da
 }
 
 //-------------------
-// GetFDCHits
+// GetFDCTruthHits
 //-------------------
-jerror_t DEventSourceHDDM::GetFDCHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
+jerror_t DEventSourceHDDM::GetFDCTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -239,9 +247,9 @@ jerror_t DEventSourceHDDM::GetFDCHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& da
 }
 
 //-------------------
-// GetBCALHits
+// GetBCALTruthHits
 //-------------------
-jerror_t DEventSourceHDDM::GetBCALHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
+jerror_t DEventSourceHDDM::GetBCALTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -271,9 +279,9 @@ jerror_t DEventSourceHDDM::GetBCALHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& d
 }
 
 //-------------------
-// GetTOFHits
+// GetTOFTruthHits
 //-------------------
-jerror_t DEventSourceHDDM::GetTOFHits(s_HDDM_t *hddm_s,  vector<DMCTrackHit*>& data)
+jerror_t DEventSourceHDDM::GetTOFTruthHits(s_HDDM_t *hddm_s,  vector<DMCTrackHit*>& data)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -305,18 +313,18 @@ jerror_t DEventSourceHDDM::GetTOFHits(s_HDDM_t *hddm_s,  vector<DMCTrackHit*>& d
 }
 
 //-------------------
-// GetCherenkovHits
+// GetCherenkovTruthHits
 //-------------------
-jerror_t DEventSourceHDDM::GetCherenkovHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
+jerror_t DEventSourceHDDM::GetCherenkovTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
 {
 
 	return NOERROR;
 }
 
 //-------------------
-// GetFCALHits
+// GetFCALTruthHits
 //-------------------
-jerror_t DEventSourceHDDM::GetFCALHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
+jerror_t DEventSourceHDDM::GetFCALTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
 {
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -348,9 +356,9 @@ jerror_t DEventSourceHDDM::GetFCALHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& d
 }
 
 //-------------------
-// GetUPVHits
+// GetUPVTruthHits
 //-------------------
-jerror_t DEventSourceHDDM::GetUPVHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
+jerror_t DEventSourceHDDM::GetUPVTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
 {
 
 	return NOERROR;
@@ -417,4 +425,124 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(s_HDDM_t *hddm_s,  JFactory<DMCThro
 	return NOERROR;
 }
 
+//------------------
+// Extract_DCDCHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DCDCHit(s_HDDM_t *hddm_s,  JFactory<DCDCHit> *factory)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+	
+	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+	
+	vector<DCDCHit*> data;
+
+	
+	// Copy into factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
+
+
+//------------------
+// Extract_DFDCHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> *factory)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+	
+	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+	
+	vector<DFDCHit*> data;
+
+	// Acquire the pointer to the physics events
+	s_PhysicsEvents_t* allEvents = hddm_s->physicsEvents;
+	if(!allEvents) {
+		throw JException("Attempt to get physics events from HDDM source failed.");
+		return NOERROR;
+	}
+	
+	for (unsigned int i=0; i < allEvents->mult; i++) {
+		// Acquire the pointer to the overall hits section of the data
+		s_HitView_t *hits = allEvents->in[i].hitView;
+		
+		if (hits == HDDM_NULL) {
+			throw JException("HDDM source has no hits.");
+			return NOERROR;
+		}
+		
+		if (hits->forwardDC == HDDM_NULL) {
+			throw JException("HDDM source has no forwardDC information.");
+			return NOERROR;
+		}
+		
+		if (hits->forwardDC->fdcChambers == HDDM_NULL) {
+			throw JException("HDDM source has no hits in the FDC.");		
+			return NOERROR;
+		}
+		
+		// Acquire the pointer to the beginning of the FDC hit tree
+		s_FdcChambers_t* fdcChamberSet = hits->forwardDC->fdcChambers;
+		
+		for (unsigned int i=0; i < fdcChamberSet->mult; i++) {
+			// Each chamber in the ChamberSet has a wire set and a strip set
+			s_FdcChamber_t fdcChamber 		= fdcChamberSet->in[i];		
+			s_FdcAnodeWires_t* wireSet 		= fdcChamber.fdcAnodeWires;
+			s_FdcCathodeStrips_t* stripSet 	= fdcChamber.fdcCathodeStrips;
+		
+			// Each set of wires has (obviously) wires inside of it, and each wire
+			// may have one or more hits on it. Make a DFDCHit object for each one
+			// of these hits.
+			for (unsigned int j=0; j < wireSet->mult; j++) {
+				s_FdcAnodeWire_t anodeWire		= wireSet->in[j];
+				s_FdcAnodeHits_t* wireHitSet	= anodeWire.fdcAnodeHits;
+				for (unsigned int k=0; k < wireHitSet->mult; k++) {
+					s_FdcAnodeHit_t wireHit		= wireHitSet->in[k];
+					DFDCHit* newHit				= new DFDCHit();
+					newHit->layer		 		= fdcChamber.layer;
+					newHit->module		 		= fdcChamber.module;
+					newHit->element				= anodeWire.wire;
+					newHit->dE					= wireHit.dE;
+					newHit->t					= wireHit.t;
+					newHit->plane				= 2;
+					newHit->type				= 0;
+					newHit->gPlane				= DFDCGeometry::gPlane(newHit);
+					newHit->gLayer				= DFDCGeometry::gLayer(newHit);
+					newHit->r					= DFDCGeometry::getWireR(newHit); 
+					data.push_back(newHit);
+				}
+			}
+		
+			// Ditto for the cathodes.
+			for (unsigned int j=0; j < stripSet->mult; j++) {
+				s_FdcCathodeStrip_t cathodeStrip = stripSet->in[j];
+				s_FdcCathodeHits_t* stripHitSet = cathodeStrip.fdcCathodeHits;
+				for (unsigned int k=0; k < stripHitSet->mult; k++) {
+					s_FdcCathodeHit_t stripHit	= stripHitSet->in[k];
+					DFDCHit* newHit				= new DFDCHit();
+					newHit->layer				= fdcChamber.layer;
+					newHit->module				= fdcChamber.module;
+					newHit->element				= cathodeStrip.strip;
+					newHit->plane				= cathodeStrip.plane;
+					newHit->dE					= stripHit.dE;
+					newHit->t					= stripHit.t;
+					newHit->type				= 1;
+					newHit->gPlane				= DFDCGeometry::gPlane(newHit);	 
+					newHit->gLayer				= DFDCGeometry::gLayer(newHit);
+					newHit->r					= DFDCGeometry::getStripR(newHit);
+					data.push_back(newHit);
+				}
+			}	
+		}
+	}
+	
+	// Copy into factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
 
