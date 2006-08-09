@@ -186,6 +186,10 @@ void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H) {
 			newCluster->gLayer		= (*i)->gLayer;
 			newCluster->gPlane		= (*i)->gPlane;
 			newCluster->plane		= (*i)->plane;
+			for (vector<const DFDCHit*>::iterator j = i-width+1; 
+			     j <=i ; ++j){
+			  newCluster->members.push_back(*j);
+			}
 			_data.push_back(newCluster);
 			width 		= 1;
 			maxStrip 	= 0;
