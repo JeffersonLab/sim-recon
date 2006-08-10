@@ -42,7 +42,7 @@ const string DHDDMTOFTruth_factory::toString(void)
 
 
 
-
+#if 0
 //------------------
 // Extract_HDDM
 //------------------
@@ -84,4 +84,4 @@ jerror_t DHDDMTOFTruth_factory::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 
 	return NOERROR;
 }
-
+#endif
