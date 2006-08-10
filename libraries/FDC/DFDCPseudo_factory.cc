@@ -287,5 +287,5 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
       }
     }
   }
-  return NOERROR;
+  return UNKNOWN_ERROR; // error placeholder
 }
