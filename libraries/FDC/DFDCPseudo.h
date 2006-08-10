@@ -13,6 +13,12 @@
 
 #include <sstream>
 
+typedef struct {
+  double pos;
+  double q;
+}centroid_t;
+
+
 ///
 /// class DFDCPseudo: definition for a reconstructed point in the FDC
 /// 
@@ -26,11 +32,13 @@ class DFDCPseudo : public JObject {
 		///
 		DFDCPseudo(float iX, float iY, int gL, float fuzz) : 
 		x(iX), y(iY), gLayer(gL), res(fuzz) {}
-		
+	
+
 		std::vector<DFDCHit*> members;	/// Hits that constitute this point
 		float x, y;						/// Coordinates of this point
 		int gLayer;						/// global layer of point (1-24)
 		float res;						/// "fuzziness" parameter
+		
 		
 		///
 		/// DFDCPseudo::header():

@@ -71,7 +71,14 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		///
 		float intersectY(int u, int v);
 
+		jerror_t FindCentroid(const vector<const DFDCHit*>& H, 
+				   vector<const DFDCHit *>::const_iterator peak,
+				      vector<centroid_t> &centroids);
+
 	private:
+				
+		std::vector<centroid_t>upeaks;
+		std::vector<centroid_t>vpeaks;
 		DFDCGeometry _geo;
 		JStreamLog* _log;
 		ofstream* logFile;

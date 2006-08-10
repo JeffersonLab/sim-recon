@@ -7,6 +7,17 @@
 
 #include "DFDCPseudo_factory.h"
 
+#include <TMatrixD.h>
+
+#define X0 0
+#define QA 1
+#define K2 2
+#define ITER_MAX 100
+#define TOLX 1e-4
+#define TOLF 1e-4
+#define A_OVER_H 0.475
+
+
 ///
 /// DFDCCathodeCluster_gLayer_cmp(): 
 /// non-member function passed to std::sort() to sort DFDCCathodeCluster pointers 
@@ -115,10 +126,32 @@ void DFDCPseudo_factory::makePseudo(	std::map<int, const DFDCHit*>& x,
 	std::map<int, const DFDCHit*>::iterator xIt;
 	vector<const DFDCCathodeCluster*>::iterator uIt;
 	vector<const DFDCCathodeCluster*>::iterator vIt;
-	
+
+	// Loop over all U and V clusters looking for peaks
+	upeaks.clear();
+	for (uIt = u.begin(); uIt != u.end(); uIt++){
+	  vector<const DFDCHit*>::const_iterator strip;
+	  for (strip=(*uIt)->members.begin();
+	       strip!=(*uIt)->members.end();strip++){
+	    FindCentroid((*uIt)->members,strip,upeaks);
+	  }
+	}	
+	vpeaks.clear();
+	for (vIt = v.begin(); vIt != v.end(); vIt++){
+	  vector<const DFDCHit*>::const_iterator strip;
+	  for (strip=(*vIt)->members.begin();
+	       strip!=(*vIt)->members.end();strip++){
+	    FindCentroid((*vIt)->members,strip,vpeaks);
+	  }
+	}
+
+
 	// Loop over all U and V clusters
 	for (uIt = u.begin(); uIt != u.end(); uIt++) {
 		for (vIt = v.begin(); vIt != v.end(); vIt++) {
+		 
+	  
+
 			// Find the left and right edges of the cluster
 			float leftX 	= intersectX((*uIt)->beginStrip, (*vIt)->beginStrip);
 			float rightX 	= intersectX((*uIt)->endStrip, (*vIt)->endStrip);
@@ -170,3 +203,89 @@ float DFDCPseudo_factory::intersectY(int u, int v) {
 	return (uYint + vYint) / 2;
 }
 
+
+
+//
+/// DFDCPseudo_factory::FindCentroid()
+//   Uses the Newton-Raphson method for solving the set of non-linear
+// equations describing the charge distribution over 3 strips for the peak 
+// position x0, the anode charge qa, and the "width" parameter k2.  
+// See Numerical Recipes in C p.379-383.
+// Updates list of centroids. 
+///
+
+jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H, 
+		       vector<const DFDCHit *>::const_iterator peak,
+                       vector<centroid_t>&centroids){
+
+  // Check for a peak with charge on adjacent strips 
+  if (peak>H.begin() && peak+1!=H.end() && (*peak)->dE > (*(peak-1))->dE 
+      && (*peak)->dE>(*(peak+1))->dE){
+    // Define some matrices for use in the Newton-Raphson iteration
+    TMatrixD J(3,3);  //Jacobean matrix
+    TMatrixD F(3,1),N(3,1),X(3,1),par(3,1),dpar(3,1);
+    int i=0;
+    double sum=0.;
+ 
+    // Initialize the matrices to some suitable starting values
+    par(X0,0)=double((*peak)->element);
+    par(K2,0)=1.;
+    for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
+      X(i,0)=double((*j)->element);
+      N(i++,0)=double((*j)->dE);
+      sum+=double((*j)->dE);
+    }
+    par(QA,0)=2.*sum;
+
+    // Newton-Raphson procedure
+    double errf=0.,errx=0.;
+    for (int iter=1;iter<=ITER_MAX;iter++){
+      errf=0.;
+      errx=0.;
+      for (i=0;i<3;i++){
+	 double argp=par(K2,0)*(par(X0,0)-X(i,0)+A_OVER_H);
+	 double argm=par(K2,0)*(par(X0,0)-X(i,0)-A_OVER_H);
+
+	 //Find the Jacobian matrix:  J_ij = dF_i/dx_j. 
+	 J(i,QA)=-(tanh(argp)-tanh(argm))/4.;
+	 J(i,K2)=-par(QA,0)/4.*(argp/par(K2,0)*(1.-tanh(argp)*tanh(argp))
+				-argm/par(K2,0)*(1.-tanh(argm)*tanh(argm)));
+	 J(i,X0)=-par(QA,0)*par(K2,0)/4.
+	   *(tanh(argm)*tanh(argm)-tanh(argp)*tanh(argp));
+	 
+	 // update F_i
+	 F(i,0)=N(i,0)-par(QA,0)/4.*(tanh(argp)-tanh(argm));
+
+	 errf+=fabs(F(i,0));
+      }
+      // Check for convergence
+      if (errf<TOLF){
+	centroid_t temp;
+	temp.pos=par(X0,0);
+	temp.q=par(QA,0);
+	centroids.push_back(temp);
+	
+	return NOERROR;
+      }
+      // Find the corrections to the vector par:
+      TMatrixD InvJ(TMatrixD::kInverted,J);      
+      dpar=(-1)*InvJ*F;
+      // calculate the improved values of the parameters
+      par+=dpar;
+      
+      //Check for convergence
+      for (i=0;i<3;i++){
+	errx+=fabs(dpar(i,0));
+      }
+      if (errx<TOLX){	
+	centroid_t temp;
+	temp.pos=par(X0,0);
+	temp.q=par(QA,0);
+	centroids.push_back(temp);
+	
+	return NOERROR;
+      }
+    }
+  }
+  return NOERROR;
+}
