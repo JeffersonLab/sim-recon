@@ -20,6 +20,9 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	AddEventSourceGenerator(new DEventSourceHDDMGenerator());
 	AddFactoryGenerator(new DFactoryGenerator());
 	
+	if(const char *ptr = getenv("DANA_PLUGIN_PATH")){
+		AddPluginPath(string(ptr));
+	}
 	if(const char *ptr = getenv("HALLD_MY")){
 		AddPluginPath(string(ptr) + "/src/programs/Analysis/plugins");
 	}
