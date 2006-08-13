@@ -3,9 +3,11 @@
 // reconstructed points for the FDC
 // Author: Craig Bookwalter (craigb at jlab.org)
 // Date:   March 2006
+// UVX cathode-wire matching revised by Simon Taylor, Aug 2006
 //********************************************************
 
 #include "DFDCPseudo_factory.h"
+#include "DFDCGeometry.h"
 
 #include <TMatrixD.h>
 
@@ -62,7 +64,7 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	vector<const DFDCCathodeCluster*> oneLayerU;
 	vector<const DFDCCathodeCluster*> vClus;
 	vector<const DFDCCathodeCluster*> oneLayerV;
-	std::map<int, const DFDCHit*> oneLayerX;
+	vector<const DFDCHit*> oneLayerX;
 	DFDCGeometry geo;
 	float angle = 0.0;
 	float pi	= 3.1415926;
@@ -98,8 +100,7 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 		for (; ((vIt != vClus.end() && (*vIt)->gLayer == iLayer)); vIt++)
 			oneLayerV.push_back(*vIt);
 		for (; ((xIt != xHits.end() && (*xIt)->gLayer == iLayer)); xIt++)
-			oneLayerX.insert(std::pair<const int, const DFDCHit*>((*xIt)->element,
-																  *xIt));
+			oneLayerX.push_back(*xIt);
 		makePseudo(oneLayerX, oneLayerU, oneLayerV, geo.getLayerRotation(iLayer), 	
 					iLayer);
 		angle += pi/3.0;
@@ -115,103 +116,68 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 /// DFDCPseudo_factory::makePseudo():
 /// performs UV+X matching to create pseudopoints
 ///
-void DFDCPseudo_factory::makePseudo(	std::map<int, const DFDCHit*>& x,
-										vector<const DFDCCathodeCluster*>& u,
-										vector<const DFDCCathodeCluster*>& v,
-										float angle,
-										int layer)
+void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
+				    vector<const DFDCCathodeCluster*>& u,
+				    vector<const DFDCCathodeCluster*>& v,
+				    float angle,
+				    int layer)
 {
-	if ((u.size() == 0) || (v.size() == 0) || (x.size() == 0))
-		return;
-	std::map<int, const DFDCHit*>::iterator xIt;
-	vector<const DFDCCathodeCluster*>::iterator uIt;
-	vector<const DFDCCathodeCluster*>::iterator vIt;
-
-	// Loop over all U and V clusters looking for peaks
-	upeaks.clear();
-	for (uIt = u.begin(); uIt != u.end(); uIt++){
-	  vector<const DFDCHit*>::const_iterator strip;
-	  for (strip=(*uIt)->members.begin();
-	       strip!=(*uIt)->members.end();strip++){
-	    FindCentroid((*uIt)->members,strip,upeaks);
-	  }
-	}	
-	vpeaks.clear();
-	for (vIt = v.begin(); vIt != v.end(); vIt++){
-	  vector<const DFDCHit*>::const_iterator strip;
-	  for (strip=(*vIt)->members.begin();
-	       strip!=(*vIt)->members.end();strip++){
-	    FindCentroid((*vIt)->members,strip,vpeaks);
-	  }
-	}
-
-
-	// Loop over all U and V clusters
-	for (uIt = u.begin(); uIt != u.end(); uIt++) {
-		for (vIt = v.begin(); vIt != v.end(); vIt++) {
-		 
+  if ((u.size() == 0) || (v.size() == 0) || (x.size() == 0))
+    return;
+  vector<const DFDCHit*>::iterator xIt;
+  vector<const DFDCCathodeCluster*>::iterator uIt;
+  vector<const DFDCCathodeCluster*>::iterator vIt;
+  
+  // Loop over all U and V clusters looking for peaks
+  upeaks.clear();
+  for (uIt = u.begin(); uIt != u.end(); uIt++){
+    vector<const DFDCHit*>::const_iterator strip;
+    for (strip=(*uIt)->members.begin();
+	 strip!=(*uIt)->members.end();strip++){
+      FindCentroid((*uIt)->members,strip,upeaks);
+    }
+  }	
+  vpeaks.clear();
+  for (vIt = v.begin(); vIt != v.end(); vIt++){
+    vector<const DFDCHit*>::const_iterator strip;
+    for (strip=(*vIt)->members.begin();
+	 strip!=(*vIt)->members.end();strip++){
+      FindCentroid((*vIt)->members,strip,vpeaks);
+    }
+  }
+  
+  //Loop over all u and v centroids looking for matches with wires
+  for (unsigned int i=0;i<upeaks.size();i++){
+    for (unsigned int j=0;j<vpeaks.size();j++){
+      // In the layer local coordinate system, wires are quantized 
+	    // in the x-direction and y is along the wire.
+      float x_from_strips=DFDCGeometry::getXLocalStrips(upeaks[i].pos,
+							vpeaks[j].pos);
+      float y_from_strips=DFDCGeometry::getYLocalStrips(upeaks[i].pos,
+							vpeaks[j].pos);
+      for(xIt=x.begin();xIt!=x.end();xIt++){
+	float x_from_wire=DFDCGeometry::getWireR(*xIt);
+	if (fabs(x_from_wire-x_from_strips)<WIRE_SPACING/2.){
+	  float global_x=x_from_wire*cos(angle)-y_from_strips*sin(angle);
+	  float global_y=x_from_wire*sin(angle)+y_from_strips*cos(angle);
+	  float res=0.;
 	  
-
-			// Find the left and right edges of the cluster
-			float leftX 	= intersectX((*uIt)->beginStrip, (*vIt)->beginStrip);
-			float rightX 	= intersectX((*uIt)->endStrip, (*vIt)->endStrip);
-
-			// Find the Y coordinate of the U and V strips with maxmimum dE
-			float y			= intersectY((*uIt)->maxStrip, (*vIt)->maxStrip);
-			float res 		= ((*uIt)->width + (*vIt)->width / 2) / 2;
-
-			// Since wire numbers are integers, cast left and right bounds to integers.
-			int left 		= static_cast<int>(floor(leftX + 60.0));
-			int right 		= static_cast<int>(ceil(rightX + 60.0));
-			
-			// Ask the map if it has a hit for wire numbers between left and right;
-			// if it does, create a new pseudopoint.			
-			for (int i = left; i <= right; i++) 
-			{
-				xIt = x.find(i);
-				if (xIt == x.end())
-					continue;
-				float xc = (*xIt).first - 60;
-				xc = xc*cos(angle) - y*sin(angle);
-				y = xc*sin(angle) + y*sin(angle);
-				DFDCPseudo* newPseu = new DFDCPseudo(xc, y, layer, res);
-				_data.push_back(newPseu);
-			}
-		}
+	  DFDCPseudo* newPseu = new DFDCPseudo(global_x,global_y, layer, 
+					       res);
+	  _data.push_back(newPseu);
 	}
+      }
+    }
+  }
 }			
-
-///
-/// DFDCPseudo_factory::intersectX():
-/// finds the X coordinate of a U-V intersection
-///
-float DFDCPseudo_factory::intersectX(int u, int v) {	
-	float uYint = (119 - u)*sqrt(2.0) + (1/sqrt(2.0));
-	float vYint = (v - 119)*sqrt(2.0) - (1/sqrt(2.0)); 	
-
-	return (uYint - vYint) / 2;
-}			
-
-///
-/// DFDCPseudo_factory::intersectY():
-/// finds the Y coordinate of a U-V intersection
-///
-float DFDCPseudo_factory::intersectY(int u, int v) {
-	float uYint = (119 - u)*sqrt(2.0) + (1/sqrt(2.0));
-	float vYint = (v - 119)*sqrt(2.0) - (1/sqrt(2.0));
-	
-	return (uYint + vYint) / 2;
-}
-
-
 
 //
 /// DFDCPseudo_factory::FindCentroid()
-//   Uses the Newton-Raphson method for solving the set of non-linear
-// equations describing the charge distribution over 3 strips for the peak 
-// position x0, the anode charge qa, and the "width" parameter k2.  
-// See Numerical Recipes in C p.379-383.
-// Updates list of centroids. 
+///   Uses the Newton-Raphson method for solving the set of non-linear
+/// equations describing the charge distribution over 3 strips for the peak 
+/// position x0, the anode charge qa, and the "width" parameter k2.  
+/// See Numerical Recipes in C p.379-383.
+/// Updates list of centroids. 
 ///
 
 jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H, 

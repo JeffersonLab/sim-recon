@@ -43,8 +43,10 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 	protected:
 		///
 		/// DFDCPseudo_factory::evnt():
-		/// this is the place that anode hits and DFDCCathodeClusters are organized into pseudopoints.
-		/// For now, this is done purely by geometry, with no drift or peak-finding. See also
+		/// this is the place that anode hits and DFDCCathodeClusters 
+		/// are organized into pseudopoints.
+		/// For now, this is done purely by geometry, with no drift
+		/// information. See also
 		/// DFDCPseudo_factory::makePseudo().
 		///
 		jerror_t evnt(JEventLoop *eventLoop, int eventNo);
@@ -53,24 +55,16 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		/// DFDCPseudo_factory::makePseudo():
 		/// performs UV+X matching to create pseudopoints
 		///
-		void makePseudo(	std::map<int, const DFDCHit*>& x,
-							vector<const DFDCCathodeCluster*>& u,
-							vector<const DFDCCathodeCluster*>& v,
-							float angle,
-							int layer);
-
+		void makePseudo( vector<const DFDCHit*>& x,
+				 vector<const DFDCCathodeCluster*>& u,
+				 vector<const DFDCCathodeCluster*>& v,
+				 float angle,
+				 int layer);
 		///
-		/// DFDCPseudo_factory::intersectX():
-		/// finds the X coordinate of a U-V intersection
+		/// DFDCPseudo_factory::FindCentroid()
+		/// Calculates the centroids of groups of three adjacent strips
+		/// containing a peak.
 		///
-		float intersectX(int u, int v);
-		
-		///
-		/// DFDCPseudo_factory::intersectY():
-		/// finds the Y coordinate of a U-V intersection
-		///
-		float intersectY(int u, int v);
-
 		jerror_t FindCentroid(const vector<const DFDCHit*>& H, 
 				   vector<const DFDCHit *>::const_iterator peak,
 				      vector<centroid_t> &centroids);

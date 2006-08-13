@@ -14,8 +14,8 @@
 #include <sstream>
 
 typedef struct {
-  double pos;
-  double q;
+  float pos;
+  float q;
 }centroid_t;
 
 
