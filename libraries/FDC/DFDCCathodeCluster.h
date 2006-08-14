@@ -15,6 +15,8 @@
 #include "DFDCHit.h"
 #include "JANA/JObject.h"
 
+#define HIT_TIME_DIFF_MIN 10.0
+
 class DFDCCathodeCluster : public JObject {
 	public:
 		vector<const DFDCHit*> members;		/// DFDCHits that make up this cluster

@@ -28,6 +28,19 @@ bool DFDCHit_element_cmp(const DFDCHit* a, const DFDCHit* b) {
 }
 
 ///
+/// DFDCHit_time_cmp()
+///    a non-member function passed to std::stable_sort() for sorting DFDCHit 
+/// pointers in order of increasing time, provided that the time difference is
+/// significant.
+///
+
+bool DFDCHit_time_cmp(const DFDCHit* a, const DFDCHit* b) {
+  if (fabs(a->t-b->t)>HIT_TIME_DIFF_MIN && (a->t < b->t))
+    return true;
+  return false;
+}
+
+///
 /// DFDCCathodeCluster_gPlane_cmp():
 /// a non-member function passed to std::sort() for sorting DFDCCathodeCluster pointers
 /// by their gPlane (plane number over all modules, 1-74) attributes.
@@ -151,53 +164,60 @@ void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H) {
 	
 	// Ensure the hits are in ascending strip number order
 	std::sort(H.begin(), H.end(), DFDCHit_element_cmp);
+	// separate clusters in time
+	std::stable_sort(H.begin(), H.end(), DFDCHit_time_cmp);
 	
 	beginStrip = (*(H.begin()))->element;
 
 	// For all hits in this layer, associate consecutively-numbered strips into a 
 	// DFDCCathodeCluster object. 
 	for (vector<const DFDCHit*>::iterator i = H.begin(); i != H.end(); i++) {
-		// If we're not at the end of the array, and the strip number of the next hit is
-		// equal to the strip number + 1 of this hit, then we continue our cluster.
-		if ((i+1 != H.end()) && ((*i)->element + 1 == (*(i+1))->element)) {
-			width++;
-			dEtot += (*i)->dE;
-			if ((*i)->dE > dEmax) {
-				dEmax = (*i)->dE;
-				maxStrip = (*i)->element;
-			}
-		}
-		// If not, our cluster must have ended, so we record the information into a new
-		// DFDCCathodeCluster object and reset for the next cluster.
-		else {
-			DFDCCathodeCluster* newCluster = new DFDCCathodeCluster();
-			if (width > 1) {
-				newCluster->beginStrip  = beginStrip;
-				newCluster->maxStrip 	= maxStrip;
-				newCluster->dEtot 		= dEtot;
-			}
-			else {
-				newCluster->beginStrip  = (*i)->element;
-				newCluster->maxStrip	= (*i)->element;
-				newCluster->dEtot		= (*i)->dE;
-			}
-			newCluster->width 		= width;
-			newCluster->endStrip	= (*i)->element;
-			newCluster->gLayer		= (*i)->gLayer;
-			newCluster->gPlane		= (*i)->gPlane;
-			newCluster->plane		= (*i)->plane;
-			for (vector<const DFDCHit*>::iterator j = i-width+1; 
-			     j <=i ; ++j){
-			  newCluster->members.push_back(*j);
-			}
-			_data.push_back(newCluster);
-			width 		= 1;
-			maxStrip 	= 0;
-			dEtot 		= 0.0;
-			dEmax		= 0.0;
-			if (i+1 != H.end())
-				beginStrip  = (*(i+1))->element;
-		}
+	 
+	  // If we're not at the end of the array, and the strip number of the 
+	  // next hit is equal to the strip number + 1 of this hit, then we 
+	  // continue our cluster.
+	  if ((i+1 != H.end()) && ((*i)->element + 1 == (*(i+1))->element)
+	      ) {
+	    width++;
+	    dEtot += (*i)->dE;
+	    if ((*i)->dE > dEmax) {
+	      dEmax = (*i)->dE;
+	      maxStrip = (*i)->element;
+	    }
+	  }
+		
+	  // If not, our cluster must have ended, so we record the information 
+	  // into a new DFDCCathodeCluster object and reset for the next 
+	  // cluster.
+	  else {
+	    DFDCCathodeCluster* newCluster = new DFDCCathodeCluster();
+	    if (width > 1) {
+	      newCluster->beginStrip  = beginStrip;
+	      newCluster->maxStrip 	= maxStrip;
+	      newCluster->dEtot 		= dEtot;
+	    }
+	    else {
+	      newCluster->beginStrip  = (*i)->element;
+	      newCluster->maxStrip	= (*i)->element;
+	      newCluster->dEtot		= (*i)->dE;
+	    }
+	    newCluster->width 		= width;
+	    newCluster->endStrip	= (*i)->element;
+	    newCluster->gLayer		= (*i)->gLayer;
+	    newCluster->gPlane		= (*i)->gPlane;
+	    newCluster->plane		= (*i)->plane;
+	    for (vector<const DFDCHit*>::iterator j = i-width+1; 
+		 j <=i ; ++j){
+	      newCluster->members.push_back(*j);
+	    }
+	    _data.push_back(newCluster);
+	    width 		= 1;
+	    maxStrip 	= 0;
+	    dEtot 		= 0.0;
+	    dEmax		= 0.0;
+	    if (i+1 != H.end())
+	      beginStrip  = (*(i+1))->element;
+	  }
 	}
 }
 
