@@ -9,7 +9,7 @@
 
 #define WIRES_PER_PLANE       121
 #define WIRE_SPACING          1.0
-#define U_OF_WIRE_ZERO        (-(WIRES_PER_PLANE*WIRE_SPACING)/2)
+#define U_OF_WIRE_ZERO        (-(WIRES_PER_PLANE-1.)*WIRE_SPACING/2)
 
 #include "JANA/JObject.h"
 #include "DFDCHit.h"
@@ -55,7 +55,7 @@ class DFDCGeometry : public JObject {
 		/// Return X coordinate of a wire
 		/// 
 		static inline float getWireR(const DFDCHit* h) {
-		  return WIRE_SPACING*(h->element-1.)+U_OF_WIRE_ZERO;
+		  return WIRE_SPACING*(h->element-0.5)+U_OF_WIRE_ZERO;
 	  
 		}
 		
@@ -69,7 +69,7 @@ class DFDCGeometry : public JObject {
 
 		///
 		/// DFDCGeometry::getXLocalStrips()
-		///  Compute the x-coordiante in the layer coordinate system
+		///  Compute the x-coordinate in the layer coordinate system
 		/// from the strip data.
 		///
 		static inline float getXLocalStrips(float u, float v){
@@ -78,7 +78,7 @@ class DFDCGeometry : public JObject {
 
 		///
 		/// DFDCGeometry::getYLocalStrips()
-		///  Compute the y-coordiante in the layer coordinate system
+		///  Compute the y-coordinate in the layer coordinate system
 		/// from the strip data
 		///
 		static inline float getYLocalStrips(float u, float v){
