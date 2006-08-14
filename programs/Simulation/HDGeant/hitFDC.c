@@ -92,7 +92,7 @@ void hitForwardDC (float xin[4], float xout[4],
       int nhit;
       s_FdcAnodeHits_t* ahits;    
       s_FdcCathodeHits_t* chits;    
-      int wire = ceil((xlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
+      int wire = floor((xlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +1.0);
       float dradius = fabs((xlocal[0] - U_OF_WIRE_ZERO)
                                 - (wire-1)*WIRE_SPACING);
       float tdrift = t + dradius/DRIFT_SPEED;
