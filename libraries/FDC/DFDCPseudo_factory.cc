@@ -127,22 +127,65 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
   vector<const DFDCHit*>::iterator xIt;
   vector<const DFDCCathodeCluster*>::iterator uIt;
   vector<const DFDCCathodeCluster*>::iterator vIt;
+  centroid_t temp;
+  float E1,E2,pos1,pos2;
   
   // Loop over all U and V clusters looking for peaks
   upeaks.clear();
   for (uIt = u.begin(); uIt != u.end(); uIt++){
-    vector<const DFDCHit*>::const_iterator strip;
-    for (strip=(*uIt)->members.begin();
-	 strip!=(*uIt)->members.end();strip++){
-      FindCentroid((*uIt)->members,strip,upeaks);
+    vector<const DFDCHit*>::const_iterator strip=(*uIt)->members.begin();
+    switch((*uIt)->members.size()){
+    case 0: // Make sure we have data!!
+      break;
+    case 1: // One isolated hit in the cluster:  use element number itself
+      temp.pos=(*strip)->element;
+      temp.q=2.*((*strip)->dE);  // Each cathode view should see half the 
+                                 // anode charge
+      upeaks.push_back(temp);
+      break;
+    case 2: //Two adjacent hits: use average for the centroid
+      pos1=(*strip)->element;
+      pos2=(*(strip+1))->element;
+      E1=(*strip)->dE;
+      E2=(*(strip+1))->dE;      
+      temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
+      temp.q=2.*(E1+E2);
+      upeaks.push_back(temp);
+      break;
+    default:      
+      for (strip=(*uIt)->members.begin();
+	   strip!=(*uIt)->members.end();strip++){
+	FindCentroid((*uIt)->members,strip,upeaks);
+      }
+      break;
     }
   }	
   vpeaks.clear();
   for (vIt = v.begin(); vIt != v.end(); vIt++){
-    vector<const DFDCHit*>::const_iterator strip;
-    for (strip=(*vIt)->members.begin();
-	 strip!=(*vIt)->members.end();strip++){
-      FindCentroid((*vIt)->members,strip,vpeaks);
+    vector<const DFDCHit*>::const_iterator strip=(*vIt)->members.begin();
+    switch((*vIt)->members.size()){
+    case 0: // Make sure we have data!!
+      break;
+    case 1: // One isolated hit in the cluster:  use element number itself
+      temp.pos=(*strip)->element;
+      temp.q=2.*((*strip)->dE);
+      vpeaks.push_back(temp);
+      break;
+    case 2: //Two adjacent hits: use average for the centroid
+      pos1=(*strip)->element;
+      pos2=(*(strip+1))->element;
+      E1=(*strip)->dE;
+      E2=(*(strip+1))->dE;      
+      temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
+      temp.q=2.*(E1+E2);
+      vpeaks.push_back(temp);
+      break;
+    default:      
+      for (strip=(*vIt)->members.begin();
+	   strip!=(*vIt)->members.end();strip++){
+	FindCentroid((*vIt)->members,strip,vpeaks);
+      }
+      break;
     }
   }
   
@@ -165,10 +208,10 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	  DFDCPseudo* newPseu = new DFDCPseudo(global_x,global_y, layer, 
 					       res);
 	  _data.push_back(newPseu);
-	}
-      }
-    }
-  }
+	} // match in x
+      } // xIt loop
+    } // vpeaks loop
+  } // upeaks loop
 }			
 
 //
@@ -183,7 +226,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H, 
 		       vector<const DFDCHit *>::const_iterator peak,
                        vector<centroid_t>&centroids){
-
+  centroid_t temp; 
   // Check for a peak with charge on adjacent strips 
   if (peak>H.begin() && peak+1!=H.end() && (*peak)->dE > (*(peak-1))->dE 
       && (*peak)->dE>(*(peak+1))->dE){
@@ -192,7 +235,7 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
     TMatrixD F(3,1),N(3,1),X(3,1),par(3,1),dpar(3,1);
     int i=0;
     double sum=0.;
- 
+    
     // Initialize the matrices to some suitable starting values
     par(X0,0)=double((*peak)->element);
     par(K2,0)=1.;
@@ -202,35 +245,34 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
       sum+=double((*j)->dE);
     }
     par(QA,0)=2.*sum;
-
+    
     // Newton-Raphson procedure
     double errf=0.,errx=0.;
     for (int iter=1;iter<=ITER_MAX;iter++){
       errf=0.;
       errx=0.;
       for (i=0;i<3;i++){
-	 double argp=par(K2,0)*(par(X0,0)-X(i,0)+A_OVER_H);
-	 double argm=par(K2,0)*(par(X0,0)-X(i,0)-A_OVER_H);
-
-	 //Find the Jacobian matrix:  J_ij = dF_i/dx_j. 
-	 J(i,QA)=-(tanh(argp)-tanh(argm))/4.;
-	 J(i,K2)=-par(QA,0)/4.*(argp/par(K2,0)*(1.-tanh(argp)*tanh(argp))
-				-argm/par(K2,0)*(1.-tanh(argm)*tanh(argm)));
-	 J(i,X0)=-par(QA,0)*par(K2,0)/4.
-	   *(tanh(argm)*tanh(argm)-tanh(argp)*tanh(argp));
-	 
-	 // update F_i
-	 F(i,0)=N(i,0)-par(QA,0)/4.*(tanh(argp)-tanh(argm));
-
-	 errf+=fabs(F(i,0));
+	double argp=par(K2,0)*(par(X0,0)-X(i,0)+A_OVER_H);
+	double argm=par(K2,0)*(par(X0,0)-X(i,0)-A_OVER_H);
+	
+	//Find the Jacobian matrix:  J_ij = dF_i/dx_j. 
+	J(i,QA)=-(tanh(argp)-tanh(argm))/4.;
+	J(i,K2)=-par(QA,0)/4.*(argp/par(K2,0)*(1.-tanh(argp)*tanh(argp))
+				 -argm/par(K2,0)*(1.-tanh(argm)*tanh(argm)));
+	J(i,X0)=-par(QA,0)*par(K2,0)/4.
+	    *(tanh(argm)*tanh(argm)-tanh(argp)*tanh(argp));
+	
+	// update F_i
+	F(i,0)=N(i,0)-par(QA,0)/4.*(tanh(argp)-tanh(argm));
+	
+	errf+=fabs(F(i,0));
       }
       // Check for convergence
-      if (errf<TOLF){
-	centroid_t temp;
+      if (errf<TOLF){	
 	temp.pos=par(X0,0);
 	temp.q=par(QA,0);
 	centroids.push_back(temp);
-	
+	  
 	return NOERROR;
       }
       // Find the corrections to the vector par:
@@ -244,7 +286,6 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 	errx+=fabs(dpar(i,0));
       }
       if (errx<TOLX){	
-	centroid_t temp;
 	temp.pos=par(X0,0);
 	temp.q=par(QA,0);
 	centroids.push_back(temp);
@@ -252,6 +293,7 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 	return NOERROR;
       }
     }
+    
   }
   return UNKNOWN_ERROR; // error placeholder
 }
