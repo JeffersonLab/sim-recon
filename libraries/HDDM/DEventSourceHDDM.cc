@@ -211,6 +211,9 @@ jerror_t DEventSourceHDDM::GetCDCTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*
 //-------------------
 jerror_t DEventSourceHDDM::GetFDCTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
 {
+  printf("DEventSourceHDDM::GetFDCHit\n");
+  
+
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
@@ -462,35 +465,36 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 	// Acquire the pointer to the physics events
 	s_PhysicsEvents_t* allEvents = hddm_s->physicsEvents;
 	if(!allEvents) {
-		throw JException("Attempt to get physics events from HDDM source failed.");
+	  //throw JException("Attempt to get physics events from HDDM source failed.");
 		return NOERROR;
 	}
+       
+	for (unsigned int m=0; m < allEvents->mult; m++) {
 	
-	for (unsigned int i=0; i < allEvents->mult; i++) {
 		// Acquire the pointer to the overall hits section of the data
-		s_HitView_t *hits = allEvents->in[i].hitView;
+		s_HitView_t *hits = allEvents->in[m].hitView;
 		
 		if (hits == HDDM_NULL) {
-			throw JException("HDDM source has no hits.");
+		  //throw JException("HDDM source has no hits.");
 			return NOERROR;
 		}
-		
+
 		if (hits->forwardDC == HDDM_NULL) {
-			throw JException("HDDM source has no forwardDC information.");
+		  //throw JException("HDDM source has no forwardDC information.");
 			return NOERROR;
 		}
-		
+
 		if (hits->forwardDC->fdcChambers == HDDM_NULL) {
-			throw JException("HDDM source has no hits in the FDC.");		
+		  // throw JException("HDDM source has no hits in the FDC.");		
 			return NOERROR;
 		}
-		
+
 		// Acquire the pointer to the beginning of the FDC hit tree
 		s_FdcChambers_t* fdcChamberSet = hits->forwardDC->fdcChambers;
-		
+
 		for (unsigned int i=0; i < fdcChamberSet->mult; i++) {
 			// Each chamber in the ChamberSet has a wire set and a strip set
-			s_FdcChamber_t fdcChamber 		= fdcChamberSet->in[i];		
+			s_FdcChamber_t &fdcChamber 		= fdcChamberSet->in[i];		
 			s_FdcAnodeWires_t* wireSet 		= fdcChamber.fdcAnodeWires;
 			s_FdcCathodeStrips_t* stripSet 	= fdcChamber.fdcCathodeStrips;
 		
