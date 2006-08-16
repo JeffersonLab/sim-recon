@@ -22,7 +22,7 @@ DFDCHit_factory::~DFDCHit_factory() {}
 /// DFDCHit_factory::evnt():
 /// This would be used if this factory was going to process data currently exisiting in
 /// memory; since this factory's role is to read events from the data file and put them
-/// into memory, this is not used. See DFDCHit_factory::Extract_HDDM().
+/// into memory, this is not used. See DEventSourceHDDM::Extract_DFDCHit().
 ///
 jerror_t DFDCHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 {
