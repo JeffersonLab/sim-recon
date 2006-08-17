@@ -72,21 +72,19 @@ DFDCCathodeCluster_factory::~DFDCCathodeCluster_factory() {
 ///
 /// DFDCCathodeCluster_factory::evnt():
 /// This (along with DFDCCathodeCluster_factory::pique()) 
-/// is the place cathode hits are associated into cathode clusters. This function 
-/// should eventually be modified to do more sophisticated peak finding. 
+/// is the place cathode hits are associated into cathode clusters.  
 ///
 jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, int eventNo) {
 	vector<const DFDCHit*> allHits;
 	vector<const DFDCHit*> uHits;
 	vector<const DFDCHit*> vHits;
 	vector<const DFDCHit*> thisLayer;
-	//vector<const DFDCHit*>::iterator planeBegin;
-	//vector<const DFDCHit*>::iterator planeEnd;
+
 	int iLayer = 1;
 	
 	try {
 		eventLoop->Get(allHits);
-
+			
 		// Sift through all hits and select out U and V hits.
 		for (vector<const DFDCHit*>::iterator i = allHits.begin(); 
 			 i != allHits.end(); ++i)
@@ -149,8 +147,9 @@ jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, int eventNo) {
 
 ///
 /// DFDCCathodeCluster_factory::pique():
-/// takes a single layer's worth of cathode hits and attempts to create DFDCCathodeClusters
-/// by grouping together hits with consecutive strip numbers.
+/// takes a single layer's worth of cathode hits and attempts to create 
+/// DFDCCathodeClusters by grouping together hits with consecutive strip 
+/// numbers.
 ///
 void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H) {
 	if (H.size() == 0)
@@ -169,8 +168,8 @@ void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H) {
 	
 	beginStrip = (*(H.begin()))->element;
 
-	// For all hits in this layer, associate consecutively-numbered strips into a 
-	// DFDCCathodeCluster object. 
+	// For all hits in this layer, associate consecutively-numbered strips 
+        // into a DFDCCathodeCluster object. 
 	for (vector<const DFDCHit*>::iterator i = H.begin(); i != H.end(); i++) {
 	 
 	  // If we're not at the end of the array, and the strip number of the 
