@@ -65,9 +65,6 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	vector<const DFDCCathodeCluster*> vClus;
 	vector<const DFDCCathodeCluster*> oneLayerV;
 	vector<const DFDCHit*> oneLayerX;
-	DFDCGeometry geo;
-	float angle = 0.0;
-	float pi	= 3.1415926;
 	
 	eventLoop->Get(fdcHits);
 	eventLoop->Get(cathClus);
@@ -101,9 +98,7 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 			oneLayerV.push_back(*vIt);
 		for (; ((xIt != xHits.end() && (*xIt)->gLayer == iLayer)); xIt++)
 			oneLayerX.push_back(*xIt);
-		makePseudo(oneLayerX, oneLayerU, oneLayerV, geo.getLayerRotation(iLayer), 	
-					iLayer);
-		angle += pi/3.0;
+		makePseudo(oneLayerX, oneLayerU, oneLayerV,iLayer);
 		oneLayerU.clear();
 		oneLayerV.clear();
 		oneLayerX.clear();
@@ -119,7 +114,6 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 				    vector<const DFDCCathodeCluster*>& u,
 				    vector<const DFDCCathodeCluster*>& v,
-				    float angle,
 				    int layer)
 {
   if ((u.size() == 0) || (v.size() == 0) || (x.size() == 0))
@@ -201,12 +195,12 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       for(xIt=x.begin();xIt!=x.end();xIt++){
 	float x_from_wire=DFDCGeometry::getWireR(*xIt);
 	if (fabs(x_from_wire-x_from_strips)<WIRE_SPACING/2.){
-	  float global_x=x_from_wire*cos(angle)-y_from_strips*sin(angle);
-	  float global_y=x_from_wire*sin(angle)+y_from_strips*cos(angle);
-	  float res=0.;
-	  
-	  DFDCPseudo* newPseu = new DFDCPseudo(global_x,global_y, layer, 
-					       res);
+	  float xres=WIRE_SPACING/2./sqrt(12.);
+	  float yres=fabs(x_from_wire-x_from_strips);
+	 
+	  DFDCPseudo* newPseu = new DFDCPseudo(x_from_wire,xres,y_from_strips,
+					       yres,layer,(*xIt)->element,
+					       (*xIt)->t);
 	  _data.push_back(newPseu);
 	} // match in x
       } // xIt loop

@@ -30,14 +30,20 @@ class DFDCPseudo : public JObject {
 		/// DFDCPseudo::DFDCPseudo():
 		/// Default constructor-- provide the X, Y, global layer #, and resolution
 		///
-		DFDCPseudo(float iX, float iY, int gL, float fuzz) : 
-		x(iX), y(iY), gLayer(gL), res(fuzz) {}
+		DFDCPseudo(float iX, float idX,float iY, float idY, int gL,
+			   int wireNumber, float t) : 
+		w(iX), dw(idX), s(iY), ds(idY), gLayer(gL), wire(wireNumber),
+		  time(t){}
 	
 
 		std::vector<DFDCHit*> members;	/// Hits that constitute this point
-		float x, y;						/// Coordinates of this point
-		int gLayer;						/// global layer of point (1-24)
-		float res;						/// "fuzziness" parameter
+		float w,dw; //local coordinate of pseudopoint in the direction 
+		            //perpendicular to the wires and its uncertainty
+		float s,ds; //local coordinate of pseudopoint in the direction 
+		            // along the wire and its uncertainty
+		int gLayer;  // global layer of point (1-24)
+		int wire; // anode wire corresponding to this pseudopoint
+		float time; // time corresponding to this pseudopoint.
 		
 		
 		///
@@ -47,9 +53,9 @@ class DFDCPseudo : public JObject {
 		const string header() const {
 			stringstream s;
 			s.width(7);
-			s << "x" << " ";
+			s << "w" << " ";
 			s.width(7);
-			s << "y" << " ";
+			s << "s" << " ";
 			s.width(7);
 			s << "gLay:" << " ";	// gLayer
 			return s.str();
@@ -63,9 +69,9 @@ class DFDCPseudo : public JObject {
 			stringstream s;
 			s.precision(4);
 			s.width(7);
-			s << x << " ";
+			s << w << "+/-" << dw << " ";
 			s.width(7);
-			s << y << " ";
+			s << s << "+/- "<< ds << " ";
 			s.width(7);
 			s << gLayer << " ";
 			return s.str();
