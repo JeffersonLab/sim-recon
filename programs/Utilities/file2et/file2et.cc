@@ -97,9 +97,9 @@ int main(int narg,char **argv)
 			char buff[max_event_size];
 			while(evRead(handle, (unsigned long*)buff, max_event_size)==S_SUCCESS){
 				// Event size in words should be first word in buffer
-				int event_size = *(int*)buff;
+				int event_size = *(int*)buff + 1;
 				if(event_size>max_event_size)event_size = max_event_size;
-				InsertEventIntoET(buff, event_size/sizeof(int));
+				InsertEventIntoET(buff, event_size);
 			}
 
 			// Close EVIO file
