@@ -61,9 +61,9 @@ ifdef HALLD_MY
 	BIN_DIR		= $(HALLD_MY)/bin/$(OSNAME)
 	LIB_DIR		= $(HALLD_MY)/lib/$(OSNAME)
 
-	FFLAGS   += -I. -I$(HALLD_MY)/src/include -I$(HALLD_MY)/src/libraries/include
-	CFLAGS   += -I. -I$(HALLD_MY)/src/include -I$(HALLD_MY)/src/libraries/include
-	CXXFLAGS += -I. -I$(HALLD_MY)/src/include -I$(HALLD_MY)/src/libraries/include
+	FFLAGS   += -I. -I$(HALLD_MY)/src/include -I$(HALLD_MY)/src/libraries/include -I$(HALLD_MY)/src/libraries
+	CFLAGS   += -I. -I$(HALLD_MY)/src/include -I$(HALLD_MY)/src/libraries/include -I$(HALLD_MY)/src/libraries
+	CXXFLAGS += -I. -I$(HALLD_MY)/src/include -I$(HALLD_MY)/src/libraries/include -I$(HALLD_MY)/src/libraries
 endif
 
 FFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include -I$(HALLD_HOME)/src/libraries
