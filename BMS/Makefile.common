@@ -48,32 +48,32 @@ ifndef DCXX
 DCXX	= g++
 endif
 
-LIB_DIR		= $(HALLD_HOME)/lib/$(OSNAME)
-BIN_DIR		= $(HALLD_HOME)/bin/$(OSNAME)
+LIB_DIR		= .lib/$(OSNAME)
+BIN_DIR		= .bin/$(OSNAME)
 DEP_DIR		= .depends/$(OSNAME)
+INSTALL_DIR = $(HALLD_HOME)# (gets overwritten with HALLD_MY below)
 
-# Sometimes, one wants to build executables by linking to the common
-# area libraries, but putting the executables in a local or private
-# directory. This is handled by defining the HALLD_MY environment
-# variable to point to the top level directory where the output should
-# go. If HALLD_MY is not set, then everything defaults to HALLD_HOME.
+# include working directory and parent directory first
+FFLAGS   += -I. -I.. -I../include
+CFLAGS   += -I. -I.. -I../include
+CXXFLAGS += -I. -I.. -I../include
+
+# include HALLD_MY include directory (if HALLD_MY) is defined
 ifdef HALLD_MY
-	BIN_DIR		= $(HALLD_MY)/bin/$(OSNAME)
-	LIB_DIR		= $(HALLD_MY)/lib/$(OSNAME)
-
-	FFLAGS   += -I. -I$(HALLD_MY)/src/include -I$(HALLD_MY)/src/libraries/include -I$(HALLD_MY)/src/libraries
-	CFLAGS   += -I. -I$(HALLD_MY)/src/include -I$(HALLD_MY)/src/libraries/include -I$(HALLD_MY)/src/libraries
-	CXXFLAGS += -I. -I$(HALLD_MY)/src/include -I$(HALLD_MY)/src/libraries/include -I$(HALLD_MY)/src/libraries
+FFLAGS   += -I$(HALLD_MY)/include
+CFLAGS   += -I$(HALLD_MY)/include
+CXXFLAGS += -I$(HALLD_MY)/include
+INSTALL_DIR = $(HALLD_MY)
 endif
 
-FFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include -I$(HALLD_HOME)/src/libraries
-CFLAGS   += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include -I$(HALLD_HOME)/src/libraries
-CXXFLAGS += -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include -I$(HALLD_HOME)/src/libraries
+# include HALLD_HOME include directory
+FFLAGS   += -I$(HALLD_HOME)/include
+CFLAGS   += -I$(HALLD_HOME)/include
+CXXFLAGS += -I$(HALLD_HOME)/include
 
 
 # Include user specified package makefiles
-BMS_PATH = $(HALLD_HOME)/src/BMS
-PACKAGE_MAKEFILES = $(foreach name,$(subst :, ,$(PACKAGES)),$(BMS_PATH)/Makefile.$(name))
+PACKAGE_MAKEFILES = $(foreach name,$(subst :, ,$(PACKAGES)),$(HALLD_HOME)/src/BMS/Makefile.$(name))
 
 ifdef PACKAGES
 include $(PACKAGE_MAKEFILES)
@@ -83,27 +83,11 @@ FSRC		+= $(wildcard *.F)
 CSRC		+= $(wildcard *.c)
 CXXSRC	+= $(wildcard *.cc *.cpp *.cxx)
 
-# Create ROOT dictionaries from C++ files containing ClassDef
-HSRC = $(wildcard *.h)
-ifneq ($(strip $(HSRC)),)
-  DICT_IN = $(shell grep -l "ClassDef" $(HSRC))
-  ifneq ($(strip $(DICT_IN)),)
-    DICT_SRC = $(addsuffix _Dict.cc,$(basename $(DICT_IN)))
-    DICT_FILES = $(DICT_SRC) $(DICT_SRC:.cc=.h)
-  endif
-endif
-
-NON_DICT_OBJS		= $(addsuffix .o,$(basename $(FSRC) $(CSRC) $(CXXSRC)))
-DEPS		= $(NON_DICT_OBJS:.o=.d)
 
 # Note: we use sort here just to remove duplicates
-OBJS  = $(sort $(NON_DICT_OBJS) $(addsuffix .o,$(basename $(DICT_SRC))))
-
-ifdef ONLINE
-	CFLAGS += -DONLINE
-	CXXFLAGS += -DONLINE
-	LIBS += -let -lposix4 -lpthread
-endif
+OBJS	+= $(NO_DEP_OBJS)
+OBJS  += $(sort $(addsuffix .o,$(basename $(FSRC) $(CSRC) $(CXXSRC))))
+DEPS	+= $($(filter-out $(OBJS),$(NO_DEP_OBJS)):.o=.d)
 
 ifdef DEBUG
 	DEBUG_SUFFIX = _d
@@ -114,10 +98,6 @@ else
 #	Do NOT turn on optimization in FFLAGS. Compilation will fail on hddsGeant3.F
 	CFLAGS	+= -O2
 	CXXFLAGS	+= -O2
-endif
-
-ifdef JILIO
-	CXXFLAGS += -DJILIO
 endif
 
 ifndef MODULE_NAME
