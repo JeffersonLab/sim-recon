@@ -87,7 +87,8 @@ CXXSRC	+= $(wildcard *.cc *.cpp *.cxx)
 # Note: we use sort here just to remove duplicates
 OBJS	+= $(NO_DEP_OBJS)
 OBJS  += $(sort $(addsuffix .o,$(basename $(FSRC) $(CSRC) $(CXXSRC))))
-DEPS	+= $($(filter-out $(OBJS),$(NO_DEP_OBJS)):.o=.d)
+ODEPS = $(filter-out $(NO_DEP_OBJS),$(OBJS))
+DEPS	+= $(ODEPS:.o=.d)
 
 ifdef DEBUG
 	DEBUG_SUFFIX = _d
