@@ -24,7 +24,7 @@ DFCALShower_factory::DFCALShower_factory()
 	// Set defaults
 	MAX_SHOWER_DIST = 9.0; // cm
 	
-	dparms.SetDefaultParameter("FCAL:MAX_SHOWER_DIST",		MAX_SHOWER_DIST);
+	jparms.SetDefaultParameter("FCAL:MAX_SHOWER_DIST",		MAX_SHOWER_DIST);
 
 }
 

@@ -31,21 +31,21 @@ install: hddm-c xml-hddm hddm-xml hddm-c xml-xml hddm-schema schema-hddm hddmcat
 	cp hddm-c hddm-cpp hddm-xml xml-hddm hddmcat $(HALLD_HOME)/bin/$(OStype)
 
 xml-hddm: xml-hddm.cpp XString.o XParsers.o
-	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include -o $@ $^ \
+	$(CPP) -I$(HALLD_HOME)/include -I$(XERCESCROOT)/include -o $@ $^ \
 	-L$(HALLD_HOME)/lib/$(OStype) -lxstream \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 hddm-xml: hddm-xml.cpp XString.o XParsers.o
-	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include -o $@ $^ \
+	$(CPP) -I$(HALLD_HOME)/include -I$(XERCESCROOT)/include -o $@ $^ \
 	-L$(HALLD_HOME)/lib/$(OStype) -lxstream \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 hddm-c: hddm-c.cpp XString.o XParsers.o
-	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include -o $@ $^ \
+	$(CPP) -I$(HALLD_HOME)/include -I$(XERCESCROOT)/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
 hddm-cpp: hddm-cpp.cpp XString.o XParsers.o
-	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include -o $@ $^ \
+	$(CPP) -I$(HALLD_HOME)/include -I$(XERCESCROOT)/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
 hddmcat: hddmcat.cpp

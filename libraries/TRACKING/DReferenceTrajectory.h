@@ -36,6 +36,7 @@ class DReferenceTrajectory{
 			TVector3 pos;
 			TVector3 mom;
 			TVector3 xdir, ydir, zdir;
+			double Ro;
 		}swim_step_t;
 
 		DReferenceTrajectory(const DMagneticFieldMap *

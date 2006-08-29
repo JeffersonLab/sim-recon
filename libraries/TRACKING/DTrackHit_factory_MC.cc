@@ -18,8 +18,8 @@ DTrackHit_factory_MC::DTrackHit_factory_MC()
 	EXCLUDE_SECONDARIES = false;
 	MAX_HIT_R_FDC = 65.0; // cm
 
-	dparms.SetDefaultParameter("TRK:EXCLUDE_SECONDARIES",		EXCLUDE_SECONDARIES);
-	dparms.SetDefaultParameter("TRK:MAX_HIT_R_FDC",				MAX_HIT_R_FDC);
+	jparms.SetDefaultParameter("TRK:EXCLUDE_SECONDARIES",		EXCLUDE_SECONDARIES);
+	jparms.SetDefaultParameter("TRK:MAX_HIT_R_FDC",				MAX_HIT_R_FDC);
 
 }
 

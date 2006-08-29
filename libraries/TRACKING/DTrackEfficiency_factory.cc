@@ -37,7 +37,7 @@ jerror_t DTrackEfficiency_factory::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DTrack*> tracks;
 
 	string TRACKHIT_SOURCE;
-	dparms.GetParameter("TRK:TRACKHIT_SOURCE", TRACKHIT_SOURCE);
+	jparms.GetParameter("TRK:TRACKHIT_SOURCE", TRACKHIT_SOURCE);
 	
 	JFactory<DTrackCandidate> *factory_tc = loop->Get(trackcandidates);
 	JFactory<DMCTrackHit> *factory_mcth = loop->Get(mctrackhits);

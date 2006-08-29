@@ -4,6 +4,8 @@
 #ifndef __DMAGNETICFIELDSTEPPER_H__
 #define __DMAGNETICFIELDSTEPPER_H__
 
+#include <math.h>
+
 #include <TVector3.h>
 #include "JANA/jerror.h"
 
@@ -32,6 +34,7 @@ class DMagneticFieldStepper
 		const DBfieldPoint_t* GetDBfieldPoint(void);
 		void GetDirs(TVector3 &xdir, TVector3 &ydir, TVector3 &zdir);
 		void GetMomentum(TVector3 &mom);
+		inline double GetRo(void){return fabs(Ro);}
 		
 		inline double GetStepSize(void) const{return stepsize;}
 	
@@ -43,6 +46,7 @@ class DMagneticFieldStepper
 		TVector3 mom;			///< current location of particle
 		TVector3 start_pos;	///< starting position of track
 		TVector3 start_mom;	///< starting momentum of track
+		double Ro;
 		
 		TVector3 xdir, ydir, zdir;
 		

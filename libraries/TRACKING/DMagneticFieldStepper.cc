@@ -161,7 +161,7 @@ jerror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	
 	// The ratio p/qB appears in a few places.
 	double Rp = mom.Mag()/(q*B.Mag()*qBr2p); // qBr2p converts to GeV/c/cm so Rp will be in cm
-	double Ro = Rp*sin_theta;
+	Ro = Rp*sin_theta;
 
 	// delta_phi is angle of rotation in natural x/y plane
 	double delta_phi = stepsize/Rp;

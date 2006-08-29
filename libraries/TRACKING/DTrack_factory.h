@@ -49,7 +49,7 @@ class DTrack_factory:public JFactory<DTrack>{
 		void GetTrackHits(DReferenceTrajectory *rt);
 		TVector3 GetDistToRT(TVector3 &hit, swim_step_t *s2);
 		void KalmanFilter(TMatrixD &state, TMatrixD &P, DReferenceTrajectory *rt);
-		void KalmanStep(TMatrixD &x, TMatrixD &P_prev, TMatrixD &A, TMatrixD &H, TMatrixD &Q, TMatrixD &R, TMatrixD &W, TMatrixD &V);
+		void KalmanStep(TMatrixD &x, TMatrixD &P, TMatrixD &z_minus_h, TMatrixD &A, TMatrixD &H, TMatrixD &Q, TMatrixD &R, TMatrixD &W, TMatrixD &V);
 
 		std::vector<const DTrackHit* > trackhits;
 		std::vector<const DTrackHit* > hits_on_track;

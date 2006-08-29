@@ -44,9 +44,9 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 	
 	MAX_HIT_DIST = 10.0; // cm
 	
-	dparms.SetDefaultParameter("TRK:MAX_HIT_DIST",	MAX_HIT_DIST);
+	jparms.SetDefaultParameter("TRK:MAX_HIT_DIST",	MAX_HIT_DIST);
 	
-	dparms.GetParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
+	jparms.GetParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
 
 	return NOERROR;
 }
@@ -473,16 +473,63 @@ void DTrack_factory::KalmanFilter(TMatrixD &state, TMatrixD &P, DReferenceTrajec
 //------------------
 // KalmanStep
 //------------------
-void DTrack_factory::KalmanStep(TMatrixD &x, TMatrixD &P_prev, TMatrixD &A, TMatrixD &H, TMatrixD &Q, TMatrixD &R, TMatrixD &W, TMatrixD &V)
+void DTrack_factory::KalmanStep(	TMatrixD &x,
+											TMatrixD &P,
+											TMatrixD &z_minus_h,
+											TMatrixD &A,
+											TMatrixD &H,
+											TMatrixD &Q,
+											TMatrixD &R,
+											TMatrixD &W,
+											TMatrixD &V)
 {
+	/// Update the state vector x and its covariance matrix P
+	/// to include one more measurement point using the Extended
+	/// Kalman filter equations. The symbols follow the notation
+	/// of Welch and Bishop TR95-041. The notation used in Mankel
+	/// Rep. Prog. Phys. 67 (2004) 553-622 uses the following:
+	///
+	///  Mankel    W.B.  Description
+	///  ------   -----  -------------
+	///   F         A    Propagation matrix
+	///   C         P    Covariance of state
+	///   R         -
+	///   H         H    Projection matrix (state onto measurement space)
+	///   K         K    "Gain" matrix
+	///   V         R    Covariance of measurement
+	///   Q         Q    Process noise
+	///
+	///
+	/// Upon entry, x should already represent the state projected
+	/// up to this measurement point. P, however, should contain
+	/// the covariance at the previous measurement point. This is
+	/// because we're using the EKF and the calculation of x is
+	/// done through a non-linear function. P, however is propagated
+	/// using linear transformations.
+	///
+	/// The value of z_minus_h should be the "residual" between the 
+	/// measurement vector and the predicted measurement vector.
+	/// This also contains a non-linear transformation (in the
+	/// predicted measurement).
+	///
+	/// The values of A, H, W, and V are all Jacobian matrices.
+	/// 
+	/// Q and R represent process noise and measurement covariance
+	/// respectively. Under ideal conditions, both of these could
+	/// be NULL matrices.
 	
 	TMatrixD At(TMatrixD::kTransposed, A);
 	TMatrixD Ht(TMatrixD::kTransposed, H);
 	TMatrixD Vt(TMatrixD::kTransposed, V);
 	TMatrixD Wt(TMatrixD::kTransposed, W);
 	
-	TMatrixD P = A*P_prev*At + W*Q*Wt;
+	P = A*P*At + W*Q*Wt;
 	
+	TMatrixD B(TMatrixD::kInverted, H*P*Ht + V*R*Vt);
+	TMatrixD K = P*Ht*B;
+	TMatrixD I(TMatrixD::kUnit, P);
+	x = x + K*(z_minus_h);
+	P = (I - K*H)*P;
 }
 
 //------------------

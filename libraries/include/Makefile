@@ -1,7 +1,7 @@
 
-PACKAGES = ROOT
+include $(HALLD_HOME)/src/BMS/Makefile.common
 
-MODULE_NAME = HDDICT
-
-include $(HALLD_HOME)/src/BMS/Makefile.lib
+install:
+	mkdir -p $(INSTALL_DIR)/include
+	install -p *.h $(INSTALL_DIR)/include
 

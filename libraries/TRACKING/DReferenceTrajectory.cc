@@ -65,6 +65,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 		stepper.Step(&swim_step->pos);
 		stepper.GetDirs(swim_step->xdir, swim_step->ydir, swim_step->zdir);
 		stepper.GetMomentum(swim_step->mom);
+		swim_step->Ro = stepper.GetRo();
 		
 		// Exit loop if we leave the tracking volume
 		if(swim_step->pos.Perp()>65.0){break;} // ran into BCAL

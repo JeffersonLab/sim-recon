@@ -18,3 +18,12 @@ clean:
 	make -C mctrk_ana clean
 	make -C plugins clean
 	make -C hdview clean
+
+pristine:
+	make -C hd_ana pristine
+	make -C hd_dump pristine
+	make -C hd_root pristine
+	make -C mctrk_ana pristine
+	make -C plugins pristine
+	make -C hdview pristine
+

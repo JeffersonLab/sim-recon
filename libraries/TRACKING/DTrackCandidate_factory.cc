@@ -62,18 +62,18 @@ DTrackCandidate_factory::DTrackCandidate_factory()
 	MAX_HIT_Z = +360.0;
 	EXCLUDE_STEREO = true;
 	
-	dparms.SetDefaultParameter("TRK:MAX_SEED_DIST",		MAX_SEED_DIST);
-	dparms.SetDefaultParameter("TRK:MAX_SEED_HITS",		MAX_SEED_HITS);
-	dparms.SetDefaultParameter("TRK:MAX_CIRCLE_DIST",	MAX_CIRCLE_DIST);
-	dparms.SetDefaultParameter("TRK:MAX_PHI_Z_DIST",	MAX_PHI_Z_DIST);
-	dparms.SetDefaultParameter("TRK:MAX_DEBUG_BUFFERS",MAX_DEBUG_BUFFERS);
-	dparms.SetDefaultParameter("TRK:TARGET_Z_MIN",		TARGET_Z_MIN);
-	dparms.SetDefaultParameter("TRK:TARGET_Z_MAX",		TARGET_Z_MAX);
-	dparms.SetDefaultParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
-	dparms.SetDefaultParameter("TRK:XY_NOISE_CUT",		XY_NOISE_CUT);
-	dparms.SetDefaultParameter("TRK:MIN_HIT_Z",			MIN_HIT_Z);
-	dparms.SetDefaultParameter("TRK:MAX_HIT_Z",			MAX_HIT_Z);
-	dparms.SetDefaultParameter("TRK:EXCLUDE_STEREO",	EXCLUDE_STEREO);
+	jparms.SetDefaultParameter("TRK:MAX_SEED_DIST",		MAX_SEED_DIST);
+	jparms.SetDefaultParameter("TRK:MAX_SEED_HITS",		MAX_SEED_HITS);
+	jparms.SetDefaultParameter("TRK:MAX_CIRCLE_DIST",	MAX_CIRCLE_DIST);
+	jparms.SetDefaultParameter("TRK:MAX_PHI_Z_DIST",	MAX_PHI_Z_DIST);
+	jparms.SetDefaultParameter("TRK:MAX_DEBUG_BUFFERS",MAX_DEBUG_BUFFERS);
+	jparms.SetDefaultParameter("TRK:TARGET_Z_MIN",		TARGET_Z_MIN);
+	jparms.SetDefaultParameter("TRK:TARGET_Z_MAX",		TARGET_Z_MAX);
+	jparms.SetDefaultParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
+	jparms.SetDefaultParameter("TRK:XY_NOISE_CUT",		XY_NOISE_CUT);
+	jparms.SetDefaultParameter("TRK:MIN_HIT_Z",			MIN_HIT_Z);
+	jparms.SetDefaultParameter("TRK:MAX_HIT_Z",			MAX_HIT_Z);
+	jparms.SetDefaultParameter("TRK:EXCLUDE_STEREO",	EXCLUDE_STEREO);
 
 	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
 	XY_NOISE_CUT2 = XY_NOISE_CUT*XY_NOISE_CUT;
