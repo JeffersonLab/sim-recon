@@ -11,7 +11,9 @@
 #define WIRE_SPACING          1.0
 #define U_OF_WIRE_ZERO        (-(WIRES_PER_PLANE-1.)*WIRE_SPACING/2)
 
-#include "JANA/JObject.h"
+#include <math.h>
+
+#include <JANA/JObject.h>
 #include "DFDCHit.h"
 
 ///
