@@ -271,9 +271,9 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
       }
       // Find the corrections to the vector par:
       TMatrixD InvJ(TMatrixD::kInverted,J);      
-      dpar=(-1)*InvJ*F;
+      dpar=InvJ*F;
       // calculate the improved values of the parameters
-      par+=dpar;
+      par-=dpar;
       
       //Check for convergence
       for (i=0;i<3;i++){
