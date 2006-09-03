@@ -58,7 +58,6 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		void makePseudo( vector<const DFDCHit*>& x,
 				 vector<const DFDCCathodeCluster*>& u,
 				 vector<const DFDCCathodeCluster*>& v,
-				 float angle,
 				 int layer);
 		///
 		/// DFDCPseudo_factory::FindCentroid()
