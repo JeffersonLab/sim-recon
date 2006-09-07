@@ -1,4 +1,6 @@
-OSname = $(shell uname)
+ifndef OSNAME
+OSNAME = $(shell uname)-$(shell uname -s)
+endif
 
 AR = ar
 RANLIB = ranlib
@@ -27,9 +29,10 @@ libxstream.a: $(libxstream_a_OBJECTS) $(libxstream_a_DEPENDENCIES)
 	$(RANLIB) libxstream.a
 
 install: $(lib_LIBRARIES)
-	cp $^ $(HALLD_HOME)/lib/$(OSname)
+	cp $^ $(HALLD_HOME)/lib/$(OSNAME)
 	cp -r ../include ./tmpinc
 	rm -rf `find ./tmpinc -name ".svn"`
+	mkdir -p $(HALLD_HOME)/include
 	cp -r tmpinc/* $(HALLD_HOME)/include
 	rm -rf tmpinc
 
@@ -40,7 +43,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 clean:
-	rm -f *.o *.a $(HALLD_HOME)/lib/$(OSname)/$(lib_LIBRARIES)
+	rm -f *.o *.a $(HALLD_HOME)/lib/$(OSNAME)/$(lib_LIBRARIES)
 
 %.o: %.cpp
 	g++ $(INCLUDES) -c -o $@ $^
