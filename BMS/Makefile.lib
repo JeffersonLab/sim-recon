@@ -6,7 +6,7 @@
 # Things common to both library and executable builds live in Makefile.common
 include $(HALLD_HOME)/src/BMS/Makefile.common
 
-.PHONY: mkdirs clean env
+.PHONY: all mkdirs clean env
 
 VPATH = $(DEP_DIR)
 
