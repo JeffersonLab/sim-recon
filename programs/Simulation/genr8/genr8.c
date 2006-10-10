@@ -1129,6 +1129,7 @@ double randm(double low, double high)
   return ((high - low) * drand48() + low);
 }
 
+#if 0
 char *ParticleType(Particle_t p)
 {
   static char ret[20];
@@ -1258,7 +1259,7 @@ char *ParticleType(Particle_t p)
   return(ret);
 }
 
-
+#endif
 /*
  ***********************
  *                     *
