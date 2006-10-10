@@ -67,7 +67,7 @@ MyProcessor::MyProcessor()
 	Bfield = NULL;
 
 	// Tell factory to keep around a few density histos	
-	dparms.SetParameter("TRK:MAX_DEBUG_BUFFERS",	16);
+	jparms.SetParameter("TRK:MAX_DEBUG_BUFFERS",	16);
 }
 
 //------------------------------------------------------------------
@@ -103,7 +103,7 @@ jerror_t MyProcessor::init(void)
 	// Make sure detectors have been drawn
 	if(!drew_detectors)DrawDetectors();
 	
-	dparms.GetParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
+	jparms.GetParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
 
 	return NOERROR;
 }
