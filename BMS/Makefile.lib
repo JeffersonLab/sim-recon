@@ -17,6 +17,16 @@ ifeq ($(OSNAME),Darwin)
 	ranlib $(LIBNAME)
 endif
 
+# To avoid errors if there are NO headers in a libraries source directory
+# (this happened with a FORTRAN library) we have to define the command
+# here.
+HEADERS := $(wildcard *.h)
+ifeq ($(HEADERS),)
+  HEADER_CP_CMD = @echo "No Header Files to copy."
+else
+  HEADER_CP_CMD = install -p $(HEADERS) $(INSTALL_DIR)/include/$(MODULE_NAME)
+endif
+
 mkdirs:
 	@mkdir -p $(LIB_DIR)
 	@mkdir -p $(DEP_DIR)
@@ -25,7 +35,7 @@ install: all
 	mkdir -p $(INSTALL_DIR)/lib/$(OSNAME)
 	mkdir -p $(INSTALL_DIR)/include/$(MODULE_NAME)
 	install -p $(LIBNAME) $(INSTALL_DIR)/lib/$(OSNAME)
-	install -p *.h $(INSTALL_DIR)/include/$(MODULE_NAME)
+	$(HEADER_CP_CMD)
 
 uninstall: 
 	rm -f $(INSTALL_DIR)/lib/$(OSNAME)/$(shell basename $(LIBNAME))
@@ -62,6 +72,8 @@ env:
 	@echo FSRC		   = $(FSRC)
 	@echo CSRC		   = $(CSRC)
 	@echo CXXSRC	   = $(CXXSRC)
+	@echo HEADERS	   = $(HEADERS)
+	@echo HEADER_CP_CMD	   = $(HEADER_CP_CMD)
 	@echo LIBS	   	= $(LIBS)
 	@echo OSNAME	   = $(OSNAME)
 	@echo OBJS		   = $(OBJS)

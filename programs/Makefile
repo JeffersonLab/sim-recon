@@ -1,13 +1,20 @@
 
 
+DIRS += Utilities Simulation Analysis
+
+.PHONY: all install clean pristine relink
 
 all:
-	make -C Analysis
-	make -C Simulation
-	make -C Utilities
+	$(foreach dir,$(DIRS),make -C $(dir);)
 
+install:
+	$(foreach dir,$(DIRS),make -C $(dir) install;)
 
 clean:
-	make -C Analysis clean
-	make -C Simulation clean
-	make -C Utilities clean
+	$(foreach dir,$(DIRS),make -C $(dir) clean;)
+
+pristine:
+	$(foreach dir,$(DIRS),make -C $(dir) pristine;)
+
+relink:
+	$(foreach dir,$(DIRS),make -C $(dir) relink;)

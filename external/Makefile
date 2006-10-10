@@ -1,8 +1,21 @@
 
 
+DIRS += xstream/src
+
+.PHONY: all install clean pristine relink
+
 all:
-	make -C xstream/src install
+	$(foreach dir,$(DIRS),make -C $(dir);)
+
+install:
+	$(foreach dir,$(DIRS),make -C $(dir) install;)
 
 clean:
-	make -C xstream/src clean
+	$(foreach dir,$(DIRS),make -C $(dir) clean;)
+
+pristine:
+	$(foreach dir,$(DIRS),make -C $(dir) pristine;)
+
+relink:
+	$(foreach dir,$(DIRS),make -C $(dir) relink;)
 

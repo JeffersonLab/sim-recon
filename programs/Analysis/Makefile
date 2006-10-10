@@ -1,29 +1,21 @@
 
 
+DIRS += hddm hd_ana hd_dump hd_root mctrk_ana plugins hdview
+
+.PHONY: all install clean pristine relink
 
 all:
-	make -C hddm
-	make -C hd_ana
-	make -C hd_dump
-	make -C hd_root
-	make -C mctrk_ana
-	make -C plugins
-	make -C hdview
+	$(foreach dir,$(DIRS),make -C $(dir);)
+
+install:
+	$(foreach dir,$(DIRS),make -C $(dir) install;)
 
 clean:
-	make -C hddm clean
-	make -C hd_ana clean
-	make -C hd_dump clean
-	make -C hd_root clean
-	make -C mctrk_ana clean
-	make -C plugins clean
-	make -C hdview clean
+	$(foreach dir,$(DIRS),make -C $(dir) clean;)
 
 pristine:
-	make -C hd_ana pristine
-	make -C hd_dump pristine
-	make -C hd_root pristine
-	make -C mctrk_ana pristine
-	make -C plugins pristine
-	make -C hdview pristine
+	$(foreach dir,$(DIRS),make -C $(dir) pristine;)
+
+relink:
+	$(foreach dir,$(DIRS),make -C $(dir) relink;)
 

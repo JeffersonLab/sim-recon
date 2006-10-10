@@ -1,20 +1,20 @@
 
+DIRS += genr8 genr8_2_hddm hdds HDGeant mcsmear genpi
 
+.PHONY: all install clean pristine relink
 
 all:
-	make -C genr8 install
-	make -C genr8_2_hddm
-	make -C hdds
-	make -C HDGeant
-	make -C mcsmear
-	make -C genpi
+	$(foreach dir,$(DIRS),make -C $(dir);)
 
+install:
+	$(foreach dir,$(DIRS),make -C $(dir) install;)
 
 clean:
-	make -C genr8 clean
-	make -C genr8_2_hddm clean
-	make -C hdds clean
-	make -C HDGeant clean
-	make -C mcsmear clean
-	make -C genpi clean
+	$(foreach dir,$(DIRS),make -C $(dir) clean;)
+
+pristine:
+	$(foreach dir,$(DIRS),make -C $(dir) pristine;)
+
+relink:
+	$(foreach dir,$(DIRS),make -C $(dir) relink;)
 

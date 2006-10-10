@@ -1,8 +1,22 @@
 
 
+DIRS += root2email
+# DIRS += bfield2root file2et hddm2cMsg patfind
+
+.PHONY: all install clean pristine relink
 
 all:
-	make -C root2email
+	$(foreach dir,$(DIRS),make -C $(dir);)
+
+install:
+	$(foreach dir,$(DIRS),make -C $(dir) install;)
 
 clean:
-	make -C root2email clean
+	$(foreach dir,$(DIRS),make -C $(dir) clean;)
+
+pristine:
+	$(foreach dir,$(DIRS),make -C $(dir) pristine;)
+
+relink:
+	$(foreach dir,$(DIRS),make -C $(dir) relink;)
+

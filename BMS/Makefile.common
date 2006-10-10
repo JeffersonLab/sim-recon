@@ -23,7 +23,10 @@
 first: all
 
 ifndef OSNAME
-OSNAME = $(shell uname)
+OSNAME = $(shell uname)-$(shell uname -p)
+endif
+ifndef OS
+OS = $(shell uname)
 endif
 
 ifndef FC
@@ -109,6 +112,7 @@ LIBNAME = $(LIB_DIR)/lib$(MODULE_NAME)$(DEBUG_SUFFIX).a
 # Include platform specific definitions
 # (the "-" at the front means don't error if the file doesn't exist)
 -include $(HALLD_HOME)/src/BMS/Makefile.$(OSNAME)
+-include $(HALLD_HOME)/src/BMS/Makefile.$(OS)
 
 # For GNU compilers, add verbose warnings
 ifeq ($(FC),g77)
