@@ -62,14 +62,12 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 	trackhits.clear();
 	loop->Get(trackhits,TRACKHIT_SOURCE.c_str());
 
-	return NOERROR;
-
 	// Loop over track candidates
 	for(unsigned int i=0; i<trackcandidates.size(); i++){
 
 		// Fit the track		
 		DTrack *track = FitTrack(trackcandidates[i]);
-		
+
 		// If fit is successful, then store the track
 		if(track)_data.push_back(track);
 	}
@@ -97,12 +95,9 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *trackcandidate)
 	// Generate reference trajectory and use it to find the initial
 	// set of hits for this track. Some of these will be dropped by
 	// the filter in the loop below.
-	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, trackcandidate, swim_steps, max_swim_steps);
+	//DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, trackcandidate, swim_steps, max_swim_steps);
+	DReferenceTrajectory *rt = NULL;
 	GetTrackHits(rt); //Hits are left in private member data "hits_on_track"
-	if(hits_on_track.size()<4){
-		delete rt;
-		return NULL;
-	}
 
 	// State vector for Kalman filter. This is kept as a TMatrixD so
 	// we can use the ROOT linear algebra package. We index the
@@ -131,11 +126,11 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *trackcandidate)
 	// linearizes what are likely some very non-linear functions, we may
 	// need to iterate a few times.
 	do{
-		KalmanFilter(state, P, rt);
+		if(hits_on_track.size()>=4)KalmanFilter(state, P, rt);
 	}while(false);
 
 	// Delete utility objects
-	delete rt;
+	//delete rt;
 		
 	// Create new DTrack object and initialize parameters with those
 	// from track candidate
@@ -165,6 +160,7 @@ void DTrack_factory::GetTrackHits(DReferenceTrajectory *rt)
 	// now and should be optimized later.
 	hits_on_track.clear();
 	hit_dists.clear();
+return;
 	for(unsigned int j=0; j<trackhits.size(); j++){
 		const DTrackHit *trackhit = trackhits[j];
 		double min_delta2 = 1.0E6;
