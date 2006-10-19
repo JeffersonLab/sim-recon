@@ -10,6 +10,7 @@
 #include "DFDCGeometry.h"
 
 #include <TMatrixD.h>
+#include <TDecompLU.h>
 
 #define X0 0
 #define QA 1
@@ -18,7 +19,6 @@
 #define TOLX 1e-4
 #define TOLF 1e-4
 #define A_OVER_H 0.475
-
 
 ///
 /// DFDCCathodeCluster_gLayer_cmp(): 
@@ -53,8 +53,6 @@ DFDCPseudo_factory::~DFDCPseudo_factory() {
 ///
 /// DFDCPseudo_factory::evnt():
 /// this is the place that anode hits and DFDCCathodeClusters are organized into pseudopoints.
-/// For now, this is done purely by geometry, with no drift or peak-finding. See also
-/// DFDCPseudo_factory::makePseudo().
 ///
 jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	vector<const DFDCHit*> fdcHits;
@@ -163,6 +161,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
     case 1: // One isolated hit in the cluster:  use element number itself
       temp.pos=(*strip)->element;
       temp.q=2.*((*strip)->dE);
+      temp.numstrips=1;
       vpeaks.push_back(temp);
       break;
     case 2: //Two adjacent hits: use average for the centroid
@@ -172,40 +171,46 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       E2=(*(strip+1))->dE;      
       temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
       temp.q=2.*(E1+E2);
+      temp.numstrips=2;
       vpeaks.push_back(temp);
       break;
     default:      
       for (strip=(*vIt)->members.begin();
-	   strip!=(*vIt)->members.end();strip++){
+	   strip!=(*vIt)->members.end();strip++){	
 	FindCentroid((*vIt)->members,strip,vpeaks);
       }
       break;
     }
   }
-  
-  //Loop over all u and v centroids looking for matches with wires
-  for (unsigned int i=0;i<upeaks.size();i++){
-    for (unsigned int j=0;j<vpeaks.size();j++){
-      // In the layer local coordinate system, wires are quantized 
-	    // in the x-direction and y is along the wire.
-      float x_from_strips=DFDCGeometry::getXLocalStrips(upeaks[i].pos,
-							vpeaks[j].pos);
-      float y_from_strips=DFDCGeometry::getYLocalStrips(upeaks[i].pos,
-							vpeaks[j].pos);
-      for(xIt=x.begin();xIt!=x.end();xIt++){
-	float x_from_wire=DFDCGeometry::getWireR(*xIt);
-	if (fabs(x_from_wire-x_from_strips)<WIRE_SPACING/2.){
-	  float xres=WIRE_SPACING/2./sqrt(12.);
-	  float yres=fabs(x_from_wire-x_from_strips);
-	 
-	  DFDCPseudo* newPseu = new DFDCPseudo(x_from_wire,xres,y_from_strips,
-					       yres,layer,(*xIt)->element,
-					       (*xIt)->t);
-	  _data.push_back(newPseu);
-	} // match in x
-      } // xIt loop
-    } // vpeaks loop
-  } // upeaks loop
+  if (upeaks.size()*vpeaks.size()>0){
+    //Loop over all u and v centroids looking for matches with wires
+    for (unsigned int i=0;i<upeaks.size();i++){
+      for (unsigned int j=0;j<vpeaks.size();j++){
+	// In the layer local coordinate system, wires are quantized 
+	// in the x-direction and y is along the wire.
+	float x_from_strips=DFDCGeometry::getXLocalStrips(upeaks[i].pos,
+							  vpeaks[j].pos);
+	float y_from_strips=DFDCGeometry::getYLocalStrips(upeaks[i].pos,
+							  vpeaks[j].pos);
+	for(xIt=x.begin();xIt!=x.end();xIt++){
+	  float x_from_wire=DFDCGeometry::getWireR(*xIt);
+	  if (fabs(x_from_wire-x_from_strips)<WIRE_SPACING/2.){
+	    int status=upeaks[i].numstrips+vpeaks[j].numstrips;
+	    float xres=WIRE_SPACING/2./sqrt(12.);
+	    float yres=fabs(x_from_wire-x_from_strips);
+	    
+	    yres=x_from_wire-x_from_strips;
+	   
+	    DFDCPseudo* newPseu = new DFDCPseudo(x_from_wire,xres,
+						 y_from_strips,
+						 yres,layer,(*xIt)->element,
+						 (*xIt)->t,status);
+	    _data.push_back(newPseu);
+	  } // match in x
+	} // xIt loop
+      } // vpeaks loop
+    } // upeaks loop
+  } // if we have peaks in both u and v views
 }			
 
 //
@@ -221,73 +226,94 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 		       vector<const DFDCHit *>::const_iterator peak,
                        vector<centroid_t>&centroids){
   centroid_t temp; 
-  // Check for a peak with charge on adjacent strips 
-  if (peak>H.begin() && peak+1!=H.end() && (*peak)->dE > (*(peak-1))->dE 
-      && (*peak)->dE>(*(peak+1))->dE){
-    // Define some matrices for use in the Newton-Raphson iteration
-    TMatrixD J(3,3);  //Jacobean matrix
-    TMatrixD F(3,1),N(3,1),X(3,1),par(3,1),dpar(3,1);
-    int i=0;
-    double sum=0.;
-    
-    // Initialize the matrices to some suitable starting values
-    par(X0,0)=double((*peak)->element);
-    par(K2,0)=1.;
-    for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
-      X(i,0)=double((*j)->element);
-      N(i++,0)=double((*j)->dE);
-      sum+=double((*j)->dE);
-    }
-    par(QA,0)=2.*sum;
-    
-    // Newton-Raphson procedure
-    double errf=0.,errx=0.;
-    for (int iter=1;iter<=ITER_MAX;iter++){
-      errf=0.;
-      errx=0.;
-      for (i=0;i<3;i++){
-	double argp=par(K2,0)*(par(X0,0)-X(i,0)+A_OVER_H);
-	double argm=par(K2,0)*(par(X0,0)-X(i,0)-A_OVER_H);
-	
-	//Find the Jacobian matrix:  J_ij = dF_i/dx_j. 
-	J(i,QA)=-(tanh(argp)-tanh(argm))/4.;
-	J(i,K2)=-par(QA,0)/4.*(argp/par(K2,0)*(1.-tanh(argp)*tanh(argp))
-				 -argm/par(K2,0)*(1.-tanh(argm)*tanh(argm)));
-	J(i,X0)=-par(QA,0)*par(K2,0)/4.
-	    *(tanh(argm)*tanh(argm)-tanh(argp)*tanh(argp));
-	
-	// update F_i
-	F(i,0)=N(i,0)-par(QA,0)/4.*(tanh(argp)-tanh(argm));
-	
-	errf+=fabs(F(i,0));
-      }
-      // Check for convergence
-      if (errf<TOLF){	
-	temp.pos=par(X0,0);
-	temp.q=par(QA,0);
-	centroids.push_back(temp);
-	  
-	return NOERROR;
-      }
-      // Find the corrections to the vector par:
-      TMatrixD InvJ(TMatrixD::kInverted,J);      
-      dpar=InvJ*F;
-      // calculate the improved values of the parameters
-      par-=dpar;
+  // Make sure we do not exceed the range of the vector
+  if (peak>H.begin() && peak+1!=H.end()){
+    float err_diff1=0.,err_diff2=0.;
+
+    // Some code for checking for significance of fluctuations.
+    // Currently disabled.
+    //float dq1=(*(peak-1))->dq;
+    //float dq2=(*peak)->dq;
+    //float dq3=(*(peak+1))->dq;
+    //err_diff1=sqrt(dq1*dq1+dq2*dq2);
+    //err_diff2=sqrt(dq2*dq2+dq3*dq3);
+  
+    // Check for a peak in three adjacent strips
+    if ((*peak)->dE-(*(peak-1))->dE > err_diff1
+		&& (*peak)->dE-(*(peak+1))->dE > err_diff2){
+      // Define some matrices for use in the Newton-Raphson iteration
+      TMatrixD J(3,3);  //Jacobean matrix
+      TMatrixD F(3,1),N(3,1),X(3,1),par(3,1),dpar(3,1);
+      int i=0;
+      double sum=0.;
       
-      //Check for convergence
-      for (i=0;i<3;i++){
-	errx+=fabs(dpar(i,0));
+      // Initialize the matrices to some suitable starting values
+      par(X0,0)=double((*peak)->element);
+      par(K2,0)=1.;
+      for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
+	X(i,0)=double((*j)->element);
+	N(i++,0)=double((*j)->dE);
+	sum+=double((*j)->dE);
       }
-      if (errx<TOLX){	
-	temp.pos=par(X0,0);
-	temp.q=par(QA,0);
-	centroids.push_back(temp);
+      par(QA,0)=2.*sum;
+      
+      // Newton-Raphson procedure
+      double errf=0.,errx=0.;
+      for (int iter=1;iter<=ITER_MAX;iter++){
+	errf=0.;
+	errx=0.;
+	for (i=0;i<3;i++){
+	  double argp=par(K2,0)*(par(X0,0)-X(i,0)+A_OVER_H);
+	  double argm=par(K2,0)*(par(X0,0)-X(i,0)-A_OVER_H);
+	  
+	  //Find the Jacobian matrix:  J_ij = dF_i/dx_j. 
+	  J(i,QA)=-(tanh(argp)-tanh(argm))/4.;
+	  J(i,K2)=-par(QA,0)/4.*(argp/par(K2,0)*(1.-tanh(argp)*tanh(argp))
+				 -argm/par(K2,0)*(1.-tanh(argm)*tanh(argm)));
+	  J(i,X0)=-par(QA,0)*par(K2,0)/4.
+	    *(tanh(argm)*tanh(argm)-tanh(argp)*tanh(argp));
+	  
+	  // update F_i
+	  F(i,0)=N(i,0)-par(QA,0)/4.*(tanh(argp)-tanh(argm));
+	  
+	  errf+=fabs(F(i,0));
+	}
 	
-	return NOERROR;
+	// Check for convergence
+	if (errf<TOLF){	
+	  temp.pos=par(X0,0);
+	  temp.q=par(QA,0);
+	  temp.numstrips=3;
+	  centroids.push_back(temp);
+	  
+	  return NOERROR;
+	}
+	// Check that J is invertible
+	TDecompLU lu(J);
+	if (lu.Decompose()==false) return UNRECOVERABLE_ERROR; // error placeholder
+
+	// Invert the J matrix
+	TMatrixD InvJ(TMatrixD::kInverted,J);
+	
+	// Find the corrections to the vector par:
+	dpar=InvJ*F;
+	// calculate the improved values of the parameters
+	par-=dpar;
+	
+	//Check for convergence
+	for (i=0;i<3;i++){
+	  errx+=fabs(dpar(i,0));
+	}
+	if (errx<TOLX){	
+	  temp.pos=par(X0,0);
+	  temp.q=par(QA,0);
+	  temp.numstrips=3;
+	  centroids.push_back(temp);
+	  
+	  return NOERROR;
+	}
       }
     }
-    
   }
-  return UNKNOWN_ERROR; // error placeholder
+  return INFINITE_RECURSION; // error placeholder
 }
