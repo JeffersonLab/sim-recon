@@ -79,22 +79,19 @@ jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, int eventNo) {
 	vector<const DFDCHit*> uHits;
 	vector<const DFDCHit*> vHits;
 	vector<const DFDCHit*> thisLayer;
-
-	int iLayer = 1;
 	
 	try {
 		eventLoop->Get(allHits);
 			
 		// Sift through all hits and select out U and V hits.
 		for (vector<const DFDCHit*>::iterator i = allHits.begin(); 
-			 i != allHits.end(); ++i)
-		{
-			if ((*i)->type) {
-				if ((*i)->plane == 1)
-					vHits.push_back(*i);
-				else
-					uHits.push_back(*i);
-			}
+			 i != allHits.end(); ++i){
+		  if ((*i)->type) {
+		    if ((*i)->plane == 1)
+		      vHits.push_back(*i);
+		    else
+		      uHits.push_back(*i);
+		  }
 		}
 		
 		// Ensure all cathode hits are in order of increasing Z position.
@@ -102,34 +99,30 @@ jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, int eventNo) {
 		std::sort(vHits.begin(), vHits.end(), DFDCHit_gLayer_cmp);
 		thisLayer.clear();
 
-		// Layer by layer, create clusters of U hits. 		
-		for (vector<const DFDCHit*>::iterator i = uHits.begin(); 
-			 i != uHits.end(); ++i)
-		{
-			if ((*i)->gLayer == iLayer)		
-				thisLayer.push_back(*i);
-			else {
-				++iLayer;
-				pique(thisLayer);
-				thisLayer.clear();
-			}
+		// Layer by layer, create clusters of U hits.
+		if (uHits.size()>0){
+		  vector<const DFDCHit*>::iterator i = uHits.begin();
+		  for (int iLayer=1;iLayer<25;iLayer++){
+		    while((i!=uHits.end()) && ((*i)->gLayer == iLayer)){
+		      thisLayer.push_back(*i);
+		      i++;
+		    }
+		    pique(thisLayer);
+		    thisLayer.clear();
+		  }
 		}
-		
-		// Set up for V layers.				
-		iLayer = 1;
-		thisLayer.clear();
-
-		// Layer by layer, create clusters of V hits.		
-		for (vector<const DFDCHit*>::iterator i = vHits.begin(); 
-			 i != vHits.end(); ++i)
-		{
-			if ((*i)->gLayer == iLayer)		
-				thisLayer.push_back(*i);
-			else {
-				++iLayer;
-				pique(thisLayer);
-				thisLayer.clear();
-			}
+			
+		// Layer by layer, create clusters of V hits.	
+		if (vHits.size()>0){
+		  vector<const DFDCHit*>::iterator i = vHits.begin();
+		  for (int iLayer=1;iLayer<25;iLayer++){
+		    while((i!=vHits.end()) && ((*i)->gLayer == iLayer)){
+		      thisLayer.push_back(*i);
+		      i++;
+		    }
+		    pique(thisLayer);
+		    thisLayer.clear();
+		  }
 		}
 		
 		// Ensure that the data are still in order of Z position.
