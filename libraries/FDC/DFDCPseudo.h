@@ -16,6 +16,7 @@
 typedef struct {
   float pos;
   float q;
+  int numstrips;
 }centroid_t;
 
 
@@ -31,9 +32,9 @@ class DFDCPseudo : public JObject {
 		/// Default constructor-- provide the X, Y, global layer #, and resolution
 		///
 		DFDCPseudo(float iX, float idX,float iY, float idY, int gL,
-			   int wireNumber, float t) : 
+			   int wireNumber, float t,int stat) : 
 		w(iX), dw(idX), s(iY), ds(idY), gLayer(gL), wire(wireNumber),
-		  time(t){}
+		  time(t), status(stat){}
 	
 
 		std::vector<DFDCHit*> members;	/// Hits that constitute this point
@@ -44,7 +45,7 @@ class DFDCPseudo : public JObject {
 		int gLayer;  // global layer of point (1-24)
 		int wire; // anode wire corresponding to this pseudopoint
 		float time; // time corresponding to this pseudopoint.
-		
+		int status; // status word for pseudopoint
 		
 		///
 		/// DFDCPseudo::header():
