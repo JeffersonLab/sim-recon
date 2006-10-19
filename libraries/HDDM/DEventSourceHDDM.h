@@ -19,6 +19,7 @@ using namespace std;
 #include "hddm_s.h"
 #include "TRACKING/DMCTrackHit.h"
 #include "TRACKING/DMCThrown.h"
+#include "BCAL/DBCALHit.h"
 #include "CDC/DCDCHit.h"
 #include "FDC/DFDCHit.h"
 
@@ -44,8 +45,8 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t GetFCALTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
 		jerror_t GetUPVTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data);
 
+		jerror_t Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit> *factory);
 		jerror_t Extract_DMCThrown(s_HDDM_t *hddm_s, JFactory<DMCThrown> *factory);
-
 		jerror_t Extract_DCDCHit(s_HDDM_t *hddm_s, JFactory<DCDCHit> *factory);
 		jerror_t Extract_DFDCHit(s_HDDM_t *hddm_s, JFactory<DFDCHit> *factory);
 
