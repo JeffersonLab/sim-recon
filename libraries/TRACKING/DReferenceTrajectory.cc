@@ -48,7 +48,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	stepper.SetStepSize(step_size);
 		
 	// First step is starting position
-	swim_step_t *swim_step = &swim_steps[Nswim_steps++];
+	swim_step_t *swim_step = swim_steps;
 	stepper.GetDirs(swim_step->xdir, swim_step->ydir, swim_step->zdir);
 	stepper.GetMomentum(swim_step->mom);
 
@@ -77,7 +77,6 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	// frame have been recorded along with the momentum of the
 	// particle and the directions of reference trajectory
 	// coordinate system at each point.
-	
 }
 
 //---------------------------------

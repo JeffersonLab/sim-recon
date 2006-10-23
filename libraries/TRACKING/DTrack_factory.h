@@ -12,6 +12,7 @@
 
 #include <TVector3.h>
 #include <TMatrixD.h>
+#include <TH2.h>
 
 #include <JANA/JFactory.h>
 #include <JANA/JGeometry.h>
@@ -21,7 +22,7 @@
 
 class DTrackCandidate;
 class DTrack;
-class DTrackHit;
+class DCDCTrackHit;
 
 class DTrack_factory:public JFactory<DTrack>{
 	public:
@@ -46,21 +47,30 @@ class DTrack_factory:public JFactory<DTrack>{
 		typedef DReferenceTrajectory::swim_step_t swim_step_t;
 
 		DTrack* FitTrack(const DTrackCandidate *trackcandidate);
-		void GetTrackHits(DReferenceTrajectory *rt);
-		TVector3 GetDistToRT(TVector3 &hit, swim_step_t *s2);
+		void GetCDCTrackHits(DReferenceTrajectory *rt);
+		double GetDistToRT(const DCDCTrackHit *cdchit, const swim_step_t *step);
 		void KalmanFilter(TMatrixD &state, TMatrixD &P, DReferenceTrajectory *rt);
 		void KalmanStep(TMatrixD &x, TMatrixD &P, TMatrixD &z_minus_h, TMatrixD &A, TMatrixD &H, TMatrixD &Q, TMatrixD &R, TMatrixD &W, TMatrixD &V);
 
-		std::vector<const DTrackHit* > trackhits;
-		std::vector<const DTrackHit* > hits_on_track;
-		std::vector<TVector3> hit_dists;
+		typedef struct{
+			const DCDCTrackHit* cdchit;
+			const swim_step_t *swim_step;
+			float dist_to_rt2;
+		}hit_on_track_t;
+
+		std::vector<const DCDCTrackHit* > cdctrackhits;
+		std::vector<hit_on_track_t > cdchits_on_track;
 
 		const JGeometry *dgeom;
 		const DMagneticFieldMap *bfield;
 		string TRACKHIT_SOURCE;
 		double MAX_HIT_DIST;
-		DReferenceTrajectory::swim_step_t *swim_steps;
+		double CDC_Z_MIN;
+		double CDC_Z_MAX;
+		swim_step_t *swim_steps;
 		int max_swim_steps;
+		
+		TH1F *cdcdocart,*cdcdocaswim, *cdcdocatdrift;
 };
 
 #endif // _DTrack_factory_

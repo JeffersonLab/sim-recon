@@ -17,7 +17,7 @@
 #include "DMagneticFieldStepper.h"
 #include "DTrackCandidate.h"
 #include "DTrack_factory.h"
-#include "DTrackHit.h"
+#include "CDC/DCDCTrackHit.h"
 #include "DReferenceTrajectory.h"
 
 //------------------
@@ -47,6 +47,13 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 	jparms.SetDefaultParameter("TRK:MAX_HIT_DIST",	MAX_HIT_DIST);
 	
 	jparms.GetParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
+	
+	CDC_Z_MIN = 17.0;
+	CDC_Z_MAX = CDC_Z_MIN + 200.0;
+	
+	cdcdocart = new TH1F("cdcdocart","DOCA for CDC wires from reference trajectory",1000,0.0,10.0);
+	cdcdocaswim = new TH1F("cdcdocaswim","DOCA for CDC wires from swim point on RT",1000,0.0,10.0);
+	cdcdocatdrift = new TH1F("cdcdocatdrift","DOCA from drift time",1000,0.0,10.0);
 
 	return NOERROR;
 }
@@ -59,8 +66,8 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 	// Get the track candidates and hits
 	vector<const DTrackCandidate*> trackcandidates;
 	loop->Get(trackcandidates);
-	trackhits.clear();
-	loop->Get(trackhits,TRACKHIT_SOURCE.c_str());
+	cdctrackhits.clear();
+	loop->Get(cdctrackhits);
 
 	// Loop over track candidates
 	for(unsigned int i=0; i<trackcandidates.size(); i++){
@@ -95,9 +102,8 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *trackcandidate)
 	// Generate reference trajectory and use it to find the initial
 	// set of hits for this track. Some of these will be dropped by
 	// the filter in the loop below.
-	//DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, trackcandidate, swim_steps, max_swim_steps);
-	DReferenceTrajectory *rt = NULL;
-	GetTrackHits(rt); //Hits are left in private member data "hits_on_track"
+	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, trackcandidate, swim_steps, max_swim_steps);
+	GetCDCTrackHits(rt); //Hits are left in private member data "cdchits_on_track"
 
 	// State vector for Kalman filter. This is kept as a TMatrixD so
 	// we can use the ROOT linear algebra package. We index the
@@ -117,7 +123,7 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *trackcandidate)
 	TMatrixD P(5,5);
 	P.UnitMatrix();
 	P[state_p		][state_p		] = pow(0.1*state[state_p][0], 2.0);
-	P[state_theta	][state_theta	] = pow( 5.0/57.3 , 2.0);	// 5s degrees
+	P[state_theta	][state_theta	] = pow( 5.0/57.3 , 2.0);	//  5 degrees
 	P[state_phi		][state_phi		] = pow(10.0/57.3 , 2.0);	// 10 degrees
 	P[state_x		][state_x		] = pow(1.0 , 2.0);	// cm
 	P[state_y		][state_y		] = pow(1.0 , 2.0);	// cm
@@ -126,11 +132,11 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *trackcandidate)
 	// linearizes what are likely some very non-linear functions, we may
 	// need to iterate a few times.
 	do{
-		if(hits_on_track.size()>=4)KalmanFilter(state, P, rt);
+		if(cdchits_on_track.size()>=4)KalmanFilter(state, P, rt);
 	}while(false);
 
 	// Delete utility objects
-	//delete rt;
+	delete rt;
 		
 	// Create new DTrack object and initialize parameters with those
 	// from track candidate
@@ -148,67 +154,522 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *trackcandidate)
 }
 
 //------------------
-// GetTrackHits
+// GetCDCTrackHits
 //------------------
-void DTrack_factory::GetTrackHits(DReferenceTrajectory *rt)
+void DTrack_factory::GetCDCTrackHits(DReferenceTrajectory *rt)
 {
-	/// Determine the distance of each hit to the reference trajectory.
-	/// Ones less than TRK:MAX_HIT_DIST are added to hits_on_track as
+	/// Determine the distance of each CDC hit to the reference trajectory.
+	/// Ones less than TRK:MAX_HIT_DIST are added to cdchits_on_track as
 	/// possibly being associated with the track.
+	///
+	/// We use the wire position here without considering the drift time
+	/// (the drift time will be used later when applying the Kalman filter).
+	/// The value of TRK:MAX_HIT_DIST should at least be larger than the
+	/// straw tube radius and should probably be 2 or 3 times that.
 	
-	// This is not an efficient way of doing this, but it will work for
-	// now and should be optimized later.
-	hits_on_track.clear();
-	hit_dists.clear();
-return;
-	for(unsigned int j=0; j<trackhits.size(); j++){
-		const DTrackHit *trackhit = trackhits[j];
-		double min_delta2 = 1.0E6;
-		int min_step_index = -1;
+	cdchits_on_track.clear();
+	for(unsigned int j=0; j<cdctrackhits.size(); j++){
+		const DCDCTrackHit *hit = cdctrackhits[j];
+		
+		// To find the closest point in the reference trajectory, we
+		// loop over all R.T. points inside the range CDC_Z_MIN to
+		// CDC_Z_MAX and find the one closest to the wire. For stereo
+		// wires, we adjust the X/Y position using the Z position
+		// of the trajectory point. The adjustments use slopes
+		// calculated at program start in DCDCTrackHit_factory.cc.
+		// See note in that file for more details.
+		
+		// The adjustment needed for stereo layers is just a linear
+		// transformation in both X and Y. According to the HDDS note,
+		// the stereo layers should be thought of as though they were
+		// axial straws, rotated by the stereo angle about the axis
+		// that runs from the beamline through the center of the wire,
+		// (perpendicular to both). The slope of the x adjustment
+		// as a function of z is proportional to sin(phi) and the
+		// y adjustment proportional to cos(phi) where phi is the
+		// phi angle of the wire mid-plane position in lab coordinates.
+		// The maximum amplitude of the adjustment is L/2*sin(alpha)
+		// where L is the CDC length(175cm) and alpha is the stereo
+		// angle.		
+		hit_on_track_t closest_hit;
+		closest_hit.cdchit = hit;
+		closest_hit.swim_step = NULL;
+		closest_hit.dist_to_rt2 = 1.0E6;
 
-		// Loop over swim steps. Don't allow the first or last points 
-		// to be considered as the closest so we're guaranteed to
-		// have points on either side of the closest swim point.
+		// Loop over swim steps over z-range covered by CDC
 		swim_step_t *swim_step = swim_steps;
 		swim_step++;
-
 		for(int i=1; i<rt->Nswim_steps-1; i++, swim_step++){
-			double deltaZ = swim_step->pos.z() - trackhit->z;
-			if(fabs(deltaZ) > MAX_HIT_DIST)continue;
-
-			double deltaX = swim_step->pos.x() - trackhit->x;
-			if(fabs(deltaX) > MAX_HIT_DIST)continue;
-
-			double deltaY = swim_step->pos.y() - trackhit->y;
-			if(fabs(deltaY) > MAX_HIT_DIST)continue;
-
-			double delta2 = deltaX*deltaX + deltaY*deltaY + deltaZ*deltaZ;
+			if(swim_step->pos.z()<CDC_Z_MIN)continue;
+			if(swim_step->pos.z()>CDC_Z_MAX)continue;
 			
-			if(delta2 < min_delta2){
-				min_delta2 = delta2;
-				min_step_index = i;
+			// Note that here, we only need to find the closest
+			// RT point to the wire. We impose a loose cut on the
+			// distance of the RT point to the wire just to exclude
+			// obviously incompatibles. However, because the RT points
+			// can be very sparse (e.g. uniform field areas), then
+			// the distance to the RT point can be much larger than
+			// the distance to the RT curve. Thus, we shouldn't cut
+			// too aggressively.
+			
+			// Project vector pointing from center of wire to RT
+			// point onto S/T plane of wire coordinate system.
+			// Magnitude of vector on that plane is distance of
+			// point to wire.
+			TVector3 pos_diff = swim_step->pos - hit->wire->wpos;
+			double D = hit->wire->sdir.Dot(pos_diff);
+			double H = hit->wire->tdir.Dot(pos_diff);
+			double delta2 = D*D + H*H;
+			
+			if(delta2 < closest_hit.dist_to_rt2){
+				closest_hit.dist_to_rt2 = delta2;
+				closest_hit.swim_step = swim_step;
 			}
 		}
 		
 		// If we didn't find a qualifying step, skip to the next hit
-		if(min_step_index == -1)continue;
+		if(closest_hit.swim_step == NULL)continue;
 
-		// Get the distance of the hit to the R.T.
-		TVector3 hit(trackhit->x, trackhit->y, trackhit->z);
-		TVector3 delta = GetDistToRT(hit, &rt->swim_steps[min_step_index]);
-		
+		// Now, find the distance of the wire to the RT curve. This
+		// distance should be very accurate.
+		double dist = GetDistToRT(hit, closest_hit.swim_step);
+
 		// Check if this hit is close enough to the RT to be on
 		// the track. This should be a function of both the distance
 		// along the track and the errors of the measurement in 3D.
 		// For now, we use a single distance which may be sufficient
 		// for finding hits that belong to the track.
-		if(delta.Mag()>MAX_HIT_DIST)continue;
+		if(!finite(dist))continue;
+		if(dist>MAX_HIT_DIST)continue;
 		
-		hits_on_track.push_back(trackhit);
-		hit_dists.push_back(delta);
+		cdchits_on_track.push_back(closest_hit);
+		
+		// Temporary debugging histos
+		cdcdocart->Fill(dist);
+		cdcdocaswim->Fill(sqrt(closest_hit.dist_to_rt2));
+		cdcdocatdrift->Fill(hit->tdrift*22E-4);
 	}
 
 }
+
+//------------------
+// GetDistToRT
+//------------------
+double DTrack_factory::GetDistToRT(const DCDCTrackHit *cdchit, const swim_step_t *step)
+{
+	/// Calculate the distance of the given wire(in the lab
+	/// reference frame) to the Reference Trajectory which the
+	/// given swim step belongs to. This uses the momentum directions
+	/// and positions of the swim step
+	/// to define a curve and calculate the distance of the hit
+	/// from it. The swim step should be the closest one to the wire.
+	/// IMPORTANT: This approximates the helix locally by a parabola.
+	/// This means the swim step should be fairly close
+	/// to the wire so that this approximation is valid. If the
+	/// reference trajectory from which the swim step came is too
+	/// sparse, the results will not be nearly as good.
+	
+	// Interestingly enough, this is one of the harder things to figure
+	// out in the tracking code which is why the explanations may be
+	// a bit long.
+
+	// The general idea is to define the helix in a coordinate system
+	// in which the wire runs along the z-axis. The distance to the
+	// wire is then defined just in the X/Y plane of this coord. system.
+	// The distance is expressed as a function of the phi angle in the
+	// natural coordinate system of the helix. This way, phi=0 corresponds
+	// to the swim step point itself and the DOCA point should be
+	// at a small phi angle.
+	//
+	// The minimum distance between the helical segment and the wire
+	// will be a function of sin(phi), cos(phi) and phi. Approximating
+	// sin(phi) by phi and cos(phi) by (1-phi^2) leaves a 4th order
+	// polynomial in phi. Taking the derivative leaves a 3rd order
+	// polynomial whose root is the phi corresponding to the 
+	// Distance Of Closest Approach(DOCA) point on the helix. Plugging
+	// that value of phi back into the distance formula gives
+	// us the minimum distance between the track and the wire.
+
+	// First, we need to define the coordinate system in which the 
+	// wire runs along the z-axis. This is actually done already
+	// in the CDC package for each wire once, at program start.
+	// The directions of the axes are defined in wire->sdir,
+	// wire->tdir, and wire->udir.
+	
+	// Next, define a point on the helical segment defined by the
+	// swim step it the RT coordinate system. The directions of
+	// the RT coordinate system are defined by step->xdir, step->ydir,
+	// and step->zdir. The coordinates of a point on the helix
+	// in this coordinate system are:
+	//
+	//   x = Ro*(cos(phi) - 1)
+	//   y = Ro*sin(phi)
+	//   z = phi*(dz/dphi)
+	//
+	// where phi is the phi angle of the point in this coordinate system.
+	
+	// Now, a vector describing the helical point in the LAB coordinate
+	// system is:
+	//
+	//  h = x*xdir + y*ydir + z*zdir + pos
+	//
+	// where h,xdir,ydir,zdir and pos are all 3-vectors.
+	// xdir,ydir,zdir are unit vectors defining the directions
+	// of the RT coord. system axes in the lab coord. system.
+	// pos is a vector defining the position of the swim step
+	// in the lab coord.system 
+	
+	// Now we just need to find the extent of "h" in the wire's
+	// coordinate system (period . means dot product):
+	//
+	// s = (h-wpos).sdir
+	// t = (h-wpos).tdir
+	// u = (h-wpos).udir
+	//
+	// where wpos is the position of the center of the wire in
+	// the lab coord. system and is given by wire->wpos.
+
+	// At this point, the values of s,t, and u repesent a point
+	// on the helix in the coord. system of the wire with the
+	// wire in the "u" direction and positioned at the origin.
+	// The distance(squared) from the wire to the point on the helix
+	// is given by:
+	//
+	// d^2 = s^2 + t^2
+	//
+	// where s and t are both functions of phi.
+
+	// So, we'll define the values of "s" and "t" above as:
+	//
+	//   s = A*x + B*y + C*z + D
+	//   t = E*x + F*y + G*z + H
+	//
+	// where A,B,C,D,E,F,G, and H are constants defined below
+	// and x,y,z are all functions of phi defined above.
+	// (period . means dot product)
+	//
+	// A = sdir.xdir
+	// B = sdir.ydir
+	// C = sdir.zdir
+	// D = sdir.(pos-wpos)
+	//
+	// E = tdir.xdir
+	// F = tdir.ydir
+	// G = tdir.zdir
+	// H = tdir.(pos-wpos)
+	const TVector3 &xdir = step->xdir;
+	const TVector3 &ydir = step->ydir;
+	const TVector3 &zdir = step->zdir;
+	const TVector3 &sdir = cdchit->wire->sdir;
+	const TVector3 &tdir = cdchit->wire->tdir;
+	TVector3 pos_diff = step->pos - cdchit->wire->wpos;
+	
+	double A = sdir.Dot(xdir);
+	double B = sdir.Dot(ydir);
+	double C = sdir.Dot(zdir);
+	double D = sdir.Dot(pos_diff);
+
+	double E = tdir.Dot(xdir);
+	double F = tdir.Dot(ydir);
+	double G = tdir.Dot(zdir);
+	double H = tdir.Dot(pos_diff);
+
+	// OK, here is the dirty part. Using the approximations given above
+	// to write the x and functions in terms of phi and phi^2 (instead
+	// of cos and sin) we put them into the equations for s and t above.
+	// Then, inserting those into the equation for d^2 above that, we
+	// get a very long equation in terms of the constants A,...H and
+	// phi up to 4th order. Combining coefficients for similar powers
+	// of phi yields an equation of the form:
+	//
+	// d^2 = Q*phi^4 + R*phi^3 + S*phi^2 + T*phi + U
+	//
+	// The dirty part is that it takes the better part of a sheet of
+	// paper to work out the relations for Q,...U in terms of
+	// A,...H, and Ro, dz/dphi. You can work it out yourself on
+	// paper to verify that the equations below are correct.
+	double Ro = step->Ro;
+	double Ro2 = Ro*Ro;
+	double delta_z = step->mom.Dot(step->zdir);
+	double delta_phi = step->mom.Dot(step->ydir)/Ro;
+	double dz_dphi = delta_z/delta_phi;
+
+	double Q = pow(A*Ro, 2.0) + pow(E*Ro, 2.0);
+	double R = 2.0*A*B*Ro2 + 2.0*A*C*Ro*dz_dphi + 2.0*E*F*Ro2 + 2.0*E*G*Ro*dz_dphi;
+	double S = B*B*Ro2 + pow(C*dz_dphi,2.0) + 2.0*B*C*Ro*dz_dphi + 2.0*A*D*Ro
+					+ F*F*Ro2 + pow(G*dz_dphi,2.0) + 2.0*F*G*Ro*dz_dphi + 2.0*E*H*Ro;
+	double T = 2.0*B*D*Ro + 2.0*C*D*dz_dphi + 2.0*F*H*Ro + 2.0*G*H*dz_dphi;
+	double U = D*D + H*H;
+	
+	// Aaarghh! my fingers hurt just from typing all of that!
+	//
+	// OK, now we differentiate the above equation for d^2 to get:
+	//
+	// d(d^2)/dphi = 4*Q*phi^3 + 3*R*phi^2 + 2*S*phi + T
+	//
+	// NOTE: don't confuse "R" with "Ro" in the above equations!
+	//
+	// Now we have to solve the 3rd order polynomial for the phi value of
+	// the point of closest approach on the RT. This is a well documented
+	// procedure. Essentially, when you have an equation of the form:
+	//
+	//  x^3 + a2*x^2 + a1*x + a0 = 0;
+	//
+	// a change of variables is made such that w = x + a2/3 which leads
+	// to a third order poly with no w^2 term:
+	//
+	//  w^3 + 3.0*b*w + 2*c = 0 
+	//
+	// where:
+	//    b = a1/3 - (a2^2)/9
+	//    c = a0/2 - a1*a2/6  + (a2^3)/27
+	//
+	// The one real root of this is:
+	//
+	//  w0 = q - p
+	//
+	// where:
+	//    q^3 = d - c
+	//    p^3 = d + c
+	//    d^2 = b^3 + c^2
+	//
+	// For us this means that:
+	//    a2 = 3*R/(4*Q)
+	//    a1 = 2*S/(4*Q)
+	//    a0 =   T/(4*Q)
+	//
+	// A potential problem could occur if Q is at or very close to zero.
+	// This situation occurs when both A and E are zero. This would mean
+	// that both sdir and tdir are perpendicular to xdir which means
+	// xdir is in the same direction as udir (got that?). Physically,
+	// this corresponds to the situation when both the momentum and
+	// the magnetic field are perpendicular to the wire (though not
+	// necessarily perpendicular to each other). This situation can't
+	// really occur in the CDC detector where the chambers are well
+	// contained in a region where the field is essentially along z as
+	// are the wires.
+	//
+	// Just to be safe, we check that Q is greater than
+	// some minimum before solving for phi. If it is too small, we fall
+	// back to solving the quadratic equation for phi.
+	double phi =0.0;
+	if(fabs(Q)>1.0E-6){
+		double fourQ = 4.0*Q;
+		double a2 = 3.0*R/fourQ;
+		double a1 = 2.0*S/fourQ;
+		double a0 =     T/fourQ;
+
+		double b = a1/3.0 - a2*a2/9.0;
+		double c = a0/2.0 - a1*a2/6.0 + a2*a2*a2/27.0;
+
+		double d = sqrt(pow(b, 3.0) + pow(c, 2.0)); // occasionally, this is zero. See below
+		double q = pow(d - c, 1.0/3.0);
+		double p = pow(d + c, 1.0/3.0);
+
+		double w0 = q - p;
+		phi = w0 - a2/3.0;
+	}else{
+		double a = 3.0*R;
+		double b = 2.0*S;
+		double c = 1.0*T;
+		phi = (-b + sqrt(b*b - 4.0*a*c))/(2.0*a); 
+	}
+	
+	// Sometimes the "d" used in solving the 3rd order polynmial above 
+	// can be nan due to the sqrt argument being negative. I'm not sure
+	// exactly what this means (e.g. is this due to round-off, are there
+	// no roots, ...) Also unclear is how to handle it. The only two choices
+	// I can think of are : 1.) set phi to zero or 2.) return the nan
+	// value. Option 1.) tries to keep the hit while option 2 ties to ignore
+	// it. Both options should probably be studied at some point. For now
+	// though, it looks (at least preliminarily) like this occurs slightly
+	// less than 1% of the time on valid hits so we go ahead with option 2.
+
+	// Use phi to calculate DOCA
+	double d2 = U + phi*(T + phi*(S + phi*(R + phi*Q)));
+	double d = sqrt(d2);
+
+	return d; // WARNING: This could return nan!
+}
+
+//------------------
+// KalmanFilter
+//------------------
+void DTrack_factory::KalmanFilter(TMatrixD &state, TMatrixD &P, DReferenceTrajectory *rt)
+{
+	/// Apply the Kalman filter to the current track starting
+	/// with the given initial state and the reference trajectory.
+
+	// The A matrix propagates the state of the particle from one
+	// point to the next. This is recalculated for each.
+	TMatrixD A(5, 5);
+	
+	// The covariance matrix representing the measurement errors.
+	// For the CDC we have just one measurement "r". For the FDC
+	// we have two: "r" and "w", the distance along the wire.
+	TMatrixD R_cdc(1,1);
+	TMatrixD R_fdc(2,2);
+	
+	// The Q matrix represents the "process noise" in our case,
+	// this is where multiple scattering comes in. It will need
+	// to be calculated at each step to include M.S. for the
+	// materials traversed since the last step. To start with,
+	// we will set this to zero indicating no M.S., just to keep
+	// it as a place holder.
+	TMatrixD Q(5,5);
+	Q = 0.0*A;
+	
+	// K is the Kalman "gain matrix"
+	TMatrixD K(5,5);
+	
+	// H is the matrix that converts the state vector values
+	// into (predicted) measurement values.
+	TMatrixD H_cdc(1,5);
+	TMatrixD H_fdc(1,5);
+
+	// DMagneticFieldStepper is used to swim the particle
+	// through the magnetic field. Use the first swim step
+	// as the starting point
+	DMagneticFieldStepper stepper(bfield, rt->q, &swim_steps->pos, &swim_steps->mom);
+
+	// Loop over hits
+#if 0
+	for(unsigned int i=0; i<cdchits_on_track.size(); i++){
+		const DTrackHit *track_hit = hits_on_track[i];
+		TVector3 *hit_dist = &hit_dists[i];
+		
+		// The current values of "track_hit" and "hit_dist"
+		// correspond to the next measurement point i.e. the
+		// place we need to project the current state to.
+		// At this point, we need to extract the information
+		// that defines where to project the current state to.
+		// Specifically, the x/z plane on the reference trajectory
+		// at which this hit
+		
+		// Swim particle from current location/state
+		// to next location/state.
+		TMatrixD state_next(5,1);
+		//GetStateFromStepper(state_next);
+		
+		// Since the relation between the current state and
+		// the next is non-linear, we have to estimate it as
+		// a linear transformation. This is not trivally calculated
+		// especially considering the non-uniform material
+		// the track passes through as it goes through the detector.
+		// Thus, we do this numerically by tweaking each of the state
+		// parameters one at a time and re-swimming to see how it
+		// affects the state parameters at the end of the step.
+		
+		
+	}
+#endif
+}
+
+//------------------
+// KalmanStep
+//------------------
+void DTrack_factory::KalmanStep(	TMatrixD &x,
+											TMatrixD &P,
+											TMatrixD &z_minus_h,
+											TMatrixD &A,
+											TMatrixD &H,
+											TMatrixD &Q,
+											TMatrixD &R,
+											TMatrixD &W,
+											TMatrixD &V)
+{
+	/// Update the state vector x and its covariance matrix P
+	/// to include one more measurement point using the Extended
+	/// Kalman filter equations. The symbols follow the notation
+	/// of Welch and Bishop TR95-041. The notation used in Mankel
+	/// Rep. Prog. Phys. 67 (2004) 553-622 uses the following:
+	///
+	///  Mankel    W.B.  Description
+	///  ------   -----  -------------
+	///   F         A    Propagation matrix
+	///   C         P    Covariance of state
+	///   R         -
+	///   H         H    Projection matrix (state onto measurement space)
+	///   K         K    "Gain" matrix
+	///   V         R    Covariance of measurement
+	///   Q         Q    Process noise
+	///
+	///
+	/// Upon entry, x should already represent the state projected
+	/// up to this measurement point. P, however, should contain
+	/// the covariance at the previous measurement point. This is
+	/// because we're using the EKF and the calculation of x is
+	/// done through a non-linear function. P, however is propagated
+	/// using linear transformations.
+	///
+	/// The value of z_minus_h should be the "residual" between the 
+	/// measurement vector and the predicted measurement vector.
+	/// This also contains a non-linear transformation (in the
+	/// predicted measurement).
+	///
+	/// The values of A, H, W, and V are all Jacobian matrices.
+	/// 
+	/// Q and R represent process noise and measurement covariance
+	/// respectively. Under ideal conditions, both of these could
+	/// be NULL matrices.
+	
+	TMatrixD At(TMatrixD::kTransposed, A);
+	TMatrixD Ht(TMatrixD::kTransposed, H);
+	TMatrixD Vt(TMatrixD::kTransposed, V);
+	TMatrixD Wt(TMatrixD::kTransposed, W);
+	
+	P = A*P*At + W*Q*Wt;
+	
+	TMatrixD B(TMatrixD::kInverted, H*P*Ht + V*R*Vt);
+	TMatrixD K = P*Ht*B;
+	TMatrixD I(TMatrixD::kUnit, P);
+	x = x + K*(z_minus_h);
+	P = (I - K*H)*P;
+}
+
+//------------------
+// toString
+//------------------
+const string DTrack_factory::toString(void)
+{
+	// Ensure our Get method has been called so _data is up to date
+	GetNrows();
+	if(_data.size()<=0)return string(); // don't print anything if we have no data!
+
+	printheader("row: q:       p:   theta:   phi:    x:    y:    z:");
+	
+	for(unsigned int i=0; i<_data.size(); i++){
+
+		DTrack *track = _data[i];
+
+		printnewrow();
+		
+		printcol("%x", i);
+		printcol("%+d", (int)track->q);
+		printcol("%3.3f", track->p);
+		printcol("%1.3f", track->theta);
+		printcol("%1.3f", track->phi);
+		printcol("%2.2f", track->x);
+		printcol("%2.2f", track->y);
+		printcol("%2.2f", track->z);
+
+		printrow();
+	}
+	
+	return _table;
+}
+
+
+
+
+//======================================================================
+//======================================================================
+//           UNUSED CODEBELOW HERE
+//======================================================================
+//======================================================================
+
+#if 0
+
 
 //------------------
 // GetDistToRT
@@ -394,182 +855,6 @@ TVector3 DTrack_factory::GetDistToRT(TVector3 &hit, swim_step_t *s2)
 
 	return hit_rt - doca_point;
 }
-
-//------------------
-// KalmanFilter
-//------------------
-void DTrack_factory::KalmanFilter(TMatrixD &state, TMatrixD &P, DReferenceTrajectory *rt)
-{
-	/// Apply the Kalman filter to the current track starting
-	/// with the given initial state and the reference trajectory.
-
-	// The A matrix propagates the state of the particle from one
-	// point to the next. This is recalculated for each.
-	TMatrixD A(5, 5);
-	
-	// The covariance matrix representing the measurement errors.
-	// For the CDC we have just one measurement "r". For the FDC
-	// we have two: "r" and "w", the distance along the wire.
-	TMatrixD R_cdc(1,1);
-	TMatrixD R_fdc(2,2);
-	
-	// The Q matrix represents the "process noise" in our case,
-	// this is where multiple scattering comes in. It will need
-	// to be calculated at each step to include M.S. for the
-	// materials traversed since the last step. To start with,
-	// we will set this to zero indicating no M.S., just to keep
-	// it as a place holder.
-	TMatrixD Q(5,5);
-	Q = 0.0*A;
-	
-	// K is the Kalman "gain matrix"
-	TMatrixD K(5,5);
-	
-	// H is the matrix that converts the state vector values
-	// into (predicted) measurement values.
-	TMatrixD H_cdc(1,5);
-	TMatrixD H_fdc(1,5);
-
-	// DMagneticFieldStepper is used to swim the particle
-	// through the magnetic field. Use the first swim step
-	// as the starting point
-	DMagneticFieldStepper stepper(bfield, rt->q, &swim_steps->pos, &swim_steps->mom);
-
-	// Loop over hits
-	for(unsigned int i=0; i<hits_on_track.size(); i++){
-		const DTrackHit *track_hit = hits_on_track[i];
-		TVector3 *hit_dist = &hit_dists[i];
-		
-		// The current values of "track_hit" and "hit_dist"
-		// correspond to the next measurement point i.e. the
-		// place we need to project the current state to.
-		// At this point, we need to extract the information
-		// that defines where to project the current state to.
-		// Specifically, the x/z plane on the reference trajectory
-		// at which this hit
-		
-		// Swim particle from current location/state
-		// to next location/state.
-		TMatrixD state_next(5,1);
-		//GetStateFromStepper(state_next);
-		
-		// Since the relation between the current state and
-		// the next is non-linear, we have to estimate it as
-		// a linear transformation. This is not trivally calculated
-		// especially considering the non-uniform material
-		// the track passes through as it goes through the detector.
-		// Thus, we do this numerically by tweaking each of the state
-		// parameters one at a time and re-swimming to see how it
-		// affects the state parameters at the end of the step.
-		
-		
-	}
-}
-
-//------------------
-// KalmanStep
-//------------------
-void DTrack_factory::KalmanStep(	TMatrixD &x,
-											TMatrixD &P,
-											TMatrixD &z_minus_h,
-											TMatrixD &A,
-											TMatrixD &H,
-											TMatrixD &Q,
-											TMatrixD &R,
-											TMatrixD &W,
-											TMatrixD &V)
-{
-	/// Update the state vector x and its covariance matrix P
-	/// to include one more measurement point using the Extended
-	/// Kalman filter equations. The symbols follow the notation
-	/// of Welch and Bishop TR95-041. The notation used in Mankel
-	/// Rep. Prog. Phys. 67 (2004) 553-622 uses the following:
-	///
-	///  Mankel    W.B.  Description
-	///  ------   -----  -------------
-	///   F         A    Propagation matrix
-	///   C         P    Covariance of state
-	///   R         -
-	///   H         H    Projection matrix (state onto measurement space)
-	///   K         K    "Gain" matrix
-	///   V         R    Covariance of measurement
-	///   Q         Q    Process noise
-	///
-	///
-	/// Upon entry, x should already represent the state projected
-	/// up to this measurement point. P, however, should contain
-	/// the covariance at the previous measurement point. This is
-	/// because we're using the EKF and the calculation of x is
-	/// done through a non-linear function. P, however is propagated
-	/// using linear transformations.
-	///
-	/// The value of z_minus_h should be the "residual" between the 
-	/// measurement vector and the predicted measurement vector.
-	/// This also contains a non-linear transformation (in the
-	/// predicted measurement).
-	///
-	/// The values of A, H, W, and V are all Jacobian matrices.
-	/// 
-	/// Q and R represent process noise and measurement covariance
-	/// respectively. Under ideal conditions, both of these could
-	/// be NULL matrices.
-	
-	TMatrixD At(TMatrixD::kTransposed, A);
-	TMatrixD Ht(TMatrixD::kTransposed, H);
-	TMatrixD Vt(TMatrixD::kTransposed, V);
-	TMatrixD Wt(TMatrixD::kTransposed, W);
-	
-	P = A*P*At + W*Q*Wt;
-	
-	TMatrixD B(TMatrixD::kInverted, H*P*Ht + V*R*Vt);
-	TMatrixD K = P*Ht*B;
-	TMatrixD I(TMatrixD::kUnit, P);
-	x = x + K*(z_minus_h);
-	P = (I - K*H)*P;
-}
-
-//------------------
-// toString
-//------------------
-const string DTrack_factory::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	GetNrows();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("row: q:       p:   theta:   phi:    x:    y:    z:");
-	
-	for(unsigned int i=0; i<_data.size(); i++){
-
-		DTrack *track = _data[i];
-
-		printnewrow();
-		
-		printcol("%x", i);
-		printcol("%+d", (int)track->q);
-		printcol("%3.3f", track->p);
-		printcol("%1.3f", track->theta);
-		printcol("%1.3f", track->phi);
-		printcol("%2.2f", track->x);
-		printcol("%2.2f", track->y);
-		printcol("%2.2f", track->z);
-
-		printrow();
-	}
-	
-	return _table;
-}
-
-
-
-
-//======================================================================
-//======================================================================
-//           UNUSED CODEBELOW HERE
-//======================================================================
-//======================================================================
-
-#if 0
 
 #define USE_MINUIT 0
 
