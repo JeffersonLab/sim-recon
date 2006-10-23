@@ -1,5 +1,5 @@
 
-PACKAGES = JANA
+PACKAGES = JANA:ROOT
 
 ifdef HALLD_SHARED
 include $(HALLD_HOME)/src/BMS/Makefile.shlib

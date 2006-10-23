@@ -17,8 +17,6 @@ class DCDCHit:public JObject{
 		
 		int ring;
 		int straw;
-		float radius;
-		float phim;
 		float dE;
 		float t;
 };

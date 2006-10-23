@@ -17,7 +17,7 @@ const string DCDCHit_factory::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row: ring:  straw:  radius(cm):  phim(rad):   dE(MeV):   t(ns):");
+	printheader("row: ring:  straw:  dE(MeV):   t(ns):");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DCDCHit *cdchit = _data[i];
@@ -26,8 +26,6 @@ const string DCDCHit_factory::toString(void)
 		printcol("%d",	i);
 		printcol("%d", cdchit->ring);
 		printcol("%d", cdchit->straw);
-		printcol("%3.1f", cdchit->radius);
-		printcol("%1.3f", cdchit->phim);
 		printcol("%2.3f", cdchit->dE);
 		printcol("%4.0f", cdchit->t);
 		printrow();
