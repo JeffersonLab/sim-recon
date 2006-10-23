@@ -507,6 +507,32 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(s_HDDM_t *hddm_s,  JFactory<DCDCHit> 
 	
 	vector<DCDCHit*> data;
 
+	// Acquire the pointer to the physics events
+	s_PhysicsEvents_t* allEvents = hddm_s->physicsEvents;
+	if(!allEvents)return NOERROR;
+       
+	for (unsigned int m=0; m < allEvents->mult; m++) {
+		// Acquire the pointer to the overall hits section of the data
+		s_HitView_t *hits = allEvents->in[m].hitView;
+		
+		if (hits == HDDM_NULL)return NOERROR;
+		if (hits->centralDC == HDDM_NULL)return NOERROR;
+		if (hits->centralDC->cdcStraws == HDDM_NULL)return NOERROR;
+		for(unsigned int k=0; k<hits->centralDC->cdcStraws->mult; k++){
+			s_CdcStraw_t *cdcstraw = &hits->centralDC->cdcStraws->in[k];
+			for(unsigned int j=0; j<cdcstraw->cdcStrawHits->mult; j++){
+				s_CdcStrawHit_t *strawhit = &cdcstraw->cdcStrawHits->in[j];
+				
+				DCDCHit *hit = new DCDCHit;
+				hit->ring = cdcstraw->ring;
+				hit->straw = cdcstraw->straw;
+				hit->dE = strawhit->dE;
+				hit->t = strawhit->t;
+
+				data.push_back(hit);
+			}
+		}
+	}
 	
 	// Copy into factory
 	factory->CopyTo(data);
