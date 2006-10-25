@@ -27,14 +27,18 @@ class DMagneticFieldStepper
 		DMagneticFieldStepper(const DMagneticFieldMap *map, double q, TVector3 *x, TVector3 *p);
 		~DMagneticFieldStepper();
 	
-		jerror_t SetStartingParams(double q, TVector3 *x, TVector3 *p);
+		jerror_t SetStartingParams(double q, const TVector3 *x, const TVector3 *p);
 		jerror_t SetMagneticFieldMap(const DMagneticFieldMap *map);
 		jerror_t SetStepSize(double step);
-		jerror_t Step(TVector3 *newpos);
+		double Step(TVector3 *newpos=NULL);
 		const DBfieldPoint_t* GetDBfieldPoint(void);
 		void GetDirs(TVector3 &xdir, TVector3 &ydir, TVector3 &zdir);
-		void GetMomentum(TVector3 &mom);
+		void GetMomentum(TVector3 &mom){mom = this->mom;}
+		void GetPosition(TVector3 &pos){pos = this->pos;}
+		double GetCharge(void){return q;}
+		void GetPosMom(TVector3 &pos, TVector3 &mom){pos=this->pos; mom=this->mom;}
 		inline double GetRo(void){return fabs(Ro);}
+		inline double Getdz_dphi(void){return Ro*mom.Dot(zdir)/mom.Dot(ydir);}
 		
 		inline double GetStepSize(void) const{return stepsize;}
 	

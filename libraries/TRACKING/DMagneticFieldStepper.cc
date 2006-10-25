@@ -42,7 +42,7 @@ DMagneticFieldStepper::~DMagneticFieldStepper()
 //-----------------------
 // SetStartingParams
 //-----------------------
-jerror_t DMagneticFieldStepper::SetStartingParams(double q, TVector3 *x, TVector3 *p)
+jerror_t DMagneticFieldStepper::SetStartingParams(double q, const TVector3 *x, const TVector3 *p)
 {
 	this->q = q;
 	start_pos = pos = *x;
@@ -101,6 +101,14 @@ void DMagneticFieldStepper::CalcDirs(TVector3 *B)
 	/// private member fields, copies of which may be obtained
 	/// by a subsequent call to the GetDirs(...) method.
 
+	// If the B-field is zero, then default to lab system
+	if(B->Mag2()==0.0){
+		xdir.SetXYZ(1.0,0.0,0.0);
+		ydir.SetXYZ(0.0,1.0,0.0);
+		zdir.SetXYZ(0.0,0.0,1.0);
+		return;
+	}
+
 	// cross product of p and B (natural x-direction)
 	xdir = mom.Cross(*B);
 	xdir.SetMag(1.0);
@@ -117,9 +125,11 @@ void DMagneticFieldStepper::CalcDirs(TVector3 *B)
 //-----------------------
 // Step
 //-----------------------
-jerror_t DMagneticFieldStepper::Step(TVector3 *newpos)
+double DMagneticFieldStepper::Step(TVector3 *newpos)
 {
-	/// Advance the track one step and return the new position
+	/// Advance the track one step. Copy the new position into the
+	/// TVector3 pointer (if given). Returns distance along path
+	/// traversed in step.
 	
 	// The idea here is to work in the coordinate system whose
 	// axes point in directions defined in the following way:
@@ -145,7 +155,7 @@ jerror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 		pos += pstep;
 		if(newpos)*newpos = pos;
 
-		return NOERROR;
+		return stepsize;
 	}
 	
 	// cosine of angle between p and B
@@ -190,7 +200,7 @@ jerror_t DMagneticFieldStepper::Step(TVector3 *newpos)
 	// return new position 
 	if(newpos)*newpos = pos;
 
-	return NOERROR;
+	return stepsize;
 }
 
 //-----------------------
@@ -209,14 +219,6 @@ void DMagneticFieldStepper::GetDirs(TVector3 &xdir, TVector3 &ydir, TVector3 &zd
 	xdir = this->xdir;
 	ydir = this->ydir;
 	zdir = this->zdir;
-}
-
-//-----------------------
-// GetMomentum
-//-----------------------
-void DMagneticFieldStepper::GetMomentum(TVector3 &mom)
-{
-	mom = this->mom;
 }
 
 

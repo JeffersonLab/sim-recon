@@ -49,23 +49,28 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 		
 	// First step is starting position
 	swim_step_t *swim_step = swim_steps;
+	swim_step->pos = pos;
 	stepper.GetDirs(swim_step->xdir, swim_step->ydir, swim_step->zdir);
 	stepper.GetMomentum(swim_step->mom);
+	swim_step->Ro = 1.0E6; // essentially a straight line
+	swim_step->s = 0.0;
 
 	// Step until we hit a boundary
 	int max_steps = (int)(2000.0/step_size); // don't track more than 20 meters along path
 	Nswim_steps = 0;
+	double s=0;
 	for(int i=0; i<max_steps; i++){
-		//swim_step_t swim_step;
-		if(Nswim_steps>max_swim_steps){
+
+		if(Nswim_steps>=max_swim_steps){
 			cerr<<__FILE__<<":"<<__LINE__<<" Too many steps in trajectory. Truncating..."<<endl;
 			break;
 		}
-		swim_step_t *swim_step = &swim_steps[Nswim_steps++];
-		stepper.Step(&swim_step->pos);
+		swim_step_t *swim_step = &swim_steps[++Nswim_steps];
+		s += stepper.Step(&swim_step->pos);
 		stepper.GetDirs(swim_step->xdir, swim_step->ydir, swim_step->zdir);
 		stepper.GetMomentum(swim_step->mom);
 		swim_step->Ro = stepper.GetRo();
+		swim_step->s = s;
 		
 		// Exit loop if we leave the tracking volume
 		if(swim_step->pos.Perp()>65.0){break;} // ran into BCAL
