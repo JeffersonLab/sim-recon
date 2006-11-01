@@ -15,6 +15,17 @@ class DUPVHit:public JObject{
 	public:
 		HDCLASSDEF(DUPVHit);
 		
+		enum UPV_side_t{
+			UPV_LEFT = 0,
+			UPV_RIGHT = 1
+		};
+		
+		int layer;
+		int row;
+		float E;		// GeV
+		float t;		// ns
+		int side;	// 0=left 1=right
+		
 };
 
 #endif // _DUPVHit_

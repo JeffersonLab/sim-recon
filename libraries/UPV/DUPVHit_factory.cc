@@ -8,22 +8,15 @@
 #include "DUPVHit_factory.h"
 
 //------------------
-// evnt
+// Etotal
 //------------------
-jerror_t DUPVHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
+double DUPVHit_factory::Etotal(void)
 {
-	// Code to generate factory data goes here. Add it like:
-	//
-	// DUPVHit *myDUPVHit = new DUPVHit;
-	// myDUPVHit->x = x;
-	// myDUPVHit->y = y;
-	// ...
-	// _data.push_back(myDUPVHit);
-	//
-	// Note that the objects you create here will be deleted later
-	// by the system and the _data vector will be cleared automatically.
-
-	return NOERROR;
+	// Assume the objects have already been retrieved
+	double E=0.0;
+	for(unsigned int i=0; _data.size(); i++)E+=_data[i]->E;
+	
+	return E;
 }
 
 //------------------
@@ -41,18 +34,19 @@ const string DUPVHit_factory::toString(void)
 	// The JFactory_base class has several methods defined to help. They
 	// rely on positions of colons (:) in the header. Here's an example:
 	//
-	//		printheader("row:    x:     y:");
-	//
-	// 	for(int i=0; i<_data.size(); i++){
-	//			DUPVHit *myDUPVHit = _data[i];
-	//
-	//			printnewrow();
-	//			printcol("%d",	i);
-	//			printcol("%1.3f",	myDUPVHit->x);
-	//			printcol("%3.2f",	myDUPVHit->y);
-	//			printrow();
-	//		}
-	//
-	return _table;
+	printheader("layer:    row:      E(MeV):      t(ns):    side:");
+	
+	for(unsigned int i=0; i<_data.size(); i++){
+		DUPVHit *hit = _data[i];
+	
+		printnewrow();
+		printcol("%d",	hit->layer);
+		printcol("%d",	hit->row);
+		printcol("%1.4f",	hit->E*1000.0);
+		printcol("%3.2f",	hit->t);
+		printcol("%s",	hit->side==DUPVHit::UPV_LEFT ? "left":"right");
+		printrow();
+	}
 
+	return _table;
 }
