@@ -19,9 +19,11 @@ using namespace std;
 #include "hddm_s.h"
 #include "TRACKING/DMCTrackHit.h"
 #include "TRACKING/DMCThrown.h"
+#include "TRACKING/DMCTrajectoryPoint.h"
 #include "BCAL/DBCALHit.h"
 #include "CDC/DCDCHit.h"
 #include "FDC/DFDCHit.h"
+#include "UPV/DUPVHit.h"
 
 
 class DEventSourceHDDM:public JEventSource
@@ -49,6 +51,9 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t Extract_DMCThrown(s_HDDM_t *hddm_s, JFactory<DMCThrown> *factory);
 		jerror_t Extract_DCDCHit(s_HDDM_t *hddm_s, JFactory<DCDCHit> *factory);
 		jerror_t Extract_DFDCHit(s_HDDM_t *hddm_s, JFactory<DFDCHit> *factory);
+		jerror_t Extract_DUPVHit(s_HDDM_t *hddm_s, JFactory<DUPVHit> *factory);
+		//jerror_t Extract_DUPVTruthHit(s_HDDM_t *hddm_s, JFactory<DUPVTruthHit> *factory);
+		jerror_t Extract_DMCTrajectoryPoint(s_HDDM_t *hddm_s, JFactory<DMCTrajectoryPoint> *factory);
 
 		s_iostream_t *fin;
 		s_HDDM_t *hddm_s;

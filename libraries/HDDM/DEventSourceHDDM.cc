@@ -135,6 +135,12 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DFDCHit")
 		return Extract_DFDCHit(my_hddm_s, dynamic_cast<JFactory<DFDCHit>*>(factory));
 
+	if(dataClassName =="DUPVHit")
+		return Extract_DUPVHit(my_hddm_s, dynamic_cast<JFactory<DUPVHit>*>(factory));
+
+	if(dataClassName =="DMCTrajectoryPoint")
+		return Extract_DMCTrajectoryPoint(my_hddm_s, dynamic_cast<JFactory<DMCTrajectoryPoint>*>(factory));
+
 	
 	return OBJECT_NOT_AVAILABLE;
 }
@@ -642,3 +648,139 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 	return NOERROR;
 }
 
+//------------------
+// Extract_DUPVHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DUPVHit(s_HDDM_t *hddm_s,  JFactory<DUPVHit> *factory)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+	
+	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+	
+	vector<DUPVHit*> data;
+
+	// Acquire the pointer to the physics events
+	s_PhysicsEvents_t* allEvents = hddm_s->physicsEvents;
+	if(!allEvents) {
+	  //throw JException("Attempt to get physics events from HDDM source failed.");
+		return NOERROR;
+	}
+       
+	for (unsigned int m=0; m < allEvents->mult; m++) {
+	
+		// Acquire the pointer to the overall hits section of the data
+		s_HitView_t *hits = allEvents->in[m].hitView;
+		
+		if (hits == HDDM_NULL) {
+		  //throw JException("HDDM source has no hits.");
+			return NOERROR;
+		}
+
+		if (hits->upstreamEMveto == HDDM_NULL) {
+		  //throw JException("HDDM source has no forwardDC information.");
+			return NOERROR;
+		}
+
+		if (hits->upstreamEMveto->upvPaddles == HDDM_NULL) {
+		  // throw JException("HDDM source has no hits in the UPV.");		
+			return NOERROR;
+		}
+
+		// Acquire the pointer to the beginning of the UPV hit tree
+		s_UpvPaddles_t* upvPaddles = hits->upstreamEMveto->upvPaddles;
+
+		for (unsigned int i=0; i < upvPaddles->mult; i++) {
+			// Each chamber in the ChamberSet has a wire set and a strip set
+			s_UpvPaddle_t &upvPaddle 		   = upvPaddles->in[i];		
+			s_UpvLeftHits_t* upvLeftHits 		= upvPaddle.upvLeftHits;
+			s_UpvRightHits_t* upvRightHits 	= upvPaddle.upvRightHits;
+			
+			int &layer = upvPaddle.layer;
+			int &row   = upvPaddle.row;
+		
+			// Loop over "left" hits
+			for (unsigned int j=0; j < upvLeftHits->mult; j++) {
+				s_UpvLeftHit_t &hit		= upvLeftHits->in[j];
+				
+				DUPVHit* newHit			= new DUPVHit();
+				newHit->layer		 		= layer;
+				newHit->row		 			= row;
+				newHit->E					= hit.E;
+				newHit->t					= hit.t;
+				newHit->side				= DUPVHit::UPV_LEFT;
+				data.push_back(newHit);
+			}
+		
+			// Loop over "right" hits
+			for (unsigned int j=0; j < upvRightHits->mult; j++) {
+				s_UpvRightHit_t &hit		= upvRightHits->in[j];
+				
+				DUPVHit* newHit			= new DUPVHit();
+				newHit->layer		 		= layer;
+				newHit->row		 			= row;
+				newHit->E					= hit.E;
+				newHit->t					= hit.t;
+				newHit->side				= DUPVHit::UPV_RIGHT;
+				data.push_back(newHit);
+			}
+		}
+	}
+	
+	// Copy into factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
+
+
+//------------------
+// Extract_DMCTrajectoryPoint
+//------------------
+jerror_t DEventSourceHDDM::Extract_DMCTrajectoryPoint(s_HDDM_t *hddm_s,  JFactory<DMCTrajectoryPoint> *factory)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+	
+	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+	
+	vector<DMCTrajectoryPoint*> data;
+
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+	
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->mcTrajectory == HDDM_NULL ||
+			hits->mcTrajectory->mcTrajectoryPoints == HDDM_NULL)continue;
+
+		s_McTrajectoryPoints_t *points = hits->mcTrajectory->mcTrajectoryPoints;
+		for(unsigned int i=0; i<points->mult; i++){
+			DMCTrajectoryPoint *p = new DMCTrajectoryPoint;
+			
+			p->x = points->in[i].x;
+			p->y = points->in[i].y;
+			p->z = points->in[i].z;
+			p->t = points->in[i].t;
+			p->px = points->in[i].px;
+			p->py = points->in[i].py;
+			p->pz = points->in[i].pz;
+			p->E = points->in[i].E;
+
+			p->dE = points->in[i].dE;
+			p->track = points->in[i].track;
+			p->part = points->in[i].part;
+			
+			data.push_back(p);
+		}		
+	}
+	
+	// Copy into factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
