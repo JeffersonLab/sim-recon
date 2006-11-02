@@ -24,7 +24,7 @@ class DMagneticFieldStepper
 	public:
 
 		DMagneticFieldStepper(const DMagneticFieldMap *map);
-		DMagneticFieldStepper(const DMagneticFieldMap *map, double q, TVector3 *x, TVector3 *p);
+		DMagneticFieldStepper(const DMagneticFieldMap *map, double q, const TVector3 *x, const TVector3 *p);
 		~DMagneticFieldStepper();
 	
 		jerror_t SetStartingParams(double q, const TVector3 *x, const TVector3 *p);

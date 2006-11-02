@@ -27,6 +27,8 @@ class DMagneticFieldMap
 		~DMagneticFieldMap();	/*!< Destructor  */
 
 		const DBfieldPoint_t* getQuick(double x, double y, double z) const;
+		int GetIndices(double x, double y, double z, int &index_r, int &index_z) const;
+		void GetBilinear(double x, double y, double z, double &Bx, double &By, double &Bz) const;
 		
 		double Bz_avg(double x, double y, double x0, double y0, double delta_phi) const;
 		double Bz_avg(double x, double y, double z, double x0, double y0, double theta, double zmax) const;
@@ -48,6 +50,8 @@ class DMagneticFieldMap
 		int    zDim;   /*!< z dimension of internal data structure  */
 		int    phiDim; /*!< phi dimension of internal data structure */
 		float  BZ_CONST;/*!< Use this (in tesla) for homogeneous field if gt -100 */
+		double dr;		/*!< change in r between map points */
+		double dz;		/*!< change in z between map points */
 
 		DBfieldPoint_t null_point;
 		float BMAP_Z_OFFSET;

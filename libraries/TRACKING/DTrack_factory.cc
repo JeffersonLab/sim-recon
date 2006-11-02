@@ -32,7 +32,7 @@ bool CDCTrkHitSort_C(DTrack_factory::hit_on_track_t const &hit1, DTrack_factory:
 //------------------
 jerror_t DTrack_factory::init(void)
 {
-	max_swim_steps = 2000;
+	max_swim_steps = 50000;
 	swim_steps = new DReferenceTrajectory::swim_step_t[max_swim_steps];
 		
 	return NOERROR;
@@ -57,10 +57,17 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 	
 	CDC_Z_MIN = 17.0;
 	CDC_Z_MAX = CDC_Z_MIN + 200.0;
+	hit_based = true;
+cout<<__FILE__<<":"<<__LINE__<<"-------------- Helical Fitter TRACKING --------------"<<endl;
 	
 	cdcdocart = new TH1F("cdcdocart","DOCA for CDC wires from reference trajectory",1000,0.0,10.0);
 	cdcdocaswim = new TH1F("cdcdocaswim","DOCA for CDC wires from swim point on RT",1000,0.0,10.0);
 	cdcdocatdrift = new TH1F("cdcdocatdrift","DOCA from drift time",1000,0.0,10.0);
+	cdcdoca_vs_dist = new TH2F("cdcdoca_vs_dist","DOCA calculated vs. DOCA from tdrift",300, 0.0, 3.0, 300, 0.0, 3.0);
+	dist_axial = new TH1F("dist_axial","Distance from drift time for axial CDC wires",300,0.0,3.0);
+	doca_axial = new TH1F("doca_axial","DOCA of track for axial CDC wires",300,0.0,3.0);
+	dist_stereo = new TH1F("dist_stereo","Distance from drift time for stereo CDC wires",300,0.0,3.0);
+	doca_stereo = new TH1F("doca_stereo","DOCA of track for axial CDC wires",300,0.0,3.0);
 
 	return NOERROR;
 }
@@ -79,9 +86,31 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 	// Loop over track candidates
 	for(unsigned int i=0; i<trackcandidates.size(); i++){
 
-		// Fit the track		
+#if 1
+		// Fit the track
 		DTrack *track = FitTrack(trackcandidates[i]);
+#else
+// Test that the swimmer, magnetic field, and reference trajectory
+// mechanisms are all working
+DTrack *track=NULL;	
+const DTrackCandidate *tc = trackcandidates[i];
+DReferenceTrajectory *rt1 = new DReferenceTrajectory(bfield, tc);
+swim_step_t *step1 = &rt1->swim_steps[rt1->Nswim_steps-1];
+DReferenceTrajectory *rt2 = new DReferenceTrajectory(bfield, -tc->q, step1->pos, -step1->mom);
+swim_step_t *step2 = rt2->swim_steps;
+for(int i=0; i<20000; i++){
+	if(i>=rt1->Nswim_steps)break;
+	if(i>=rt2->Nswim_steps)break;
+	cout<<"step "<<i<<":"<<endl;
+	cout<<"  rt1:"; step1->pos.Print();
+	cout<<"  rt2:"; step2->pos.Print();
+	step1--;
+	step2++;
+}
+#endif
 
+//cout<<__FILE__<<":"<<__LINE__<<" EXITING EARLY"<<endl;
+//exit(-1);
 		// If fit is successful, then store the track
 		if(track)_data.push_back(track);
 	}
@@ -102,65 +131,43 @@ jerror_t DTrack_factory::fini(void)
 //------------------
 // FitTrack
 //------------------
-DTrack* DTrack_factory::FitTrack(const DTrackCandidate *trackcandidate)
+DTrack* DTrack_factory::FitTrack(const DTrackCandidate *tc)
 {
-	/// Fit a track candidate using the Kalman filter technique.
+	/// Fit a track candidate
 	
+	// Get starting position and momentum from track candidate
+	double q = tc->q;
+	TVector3 mom;
+	mom.SetMagThetaPhi(tc->p, tc->theta, tc->phi);
+	TVector3 pos(0.0, 0.0, tc->z_vertex);
+
 	// Generate reference trajectory and use it to find the initial
-	// set of hits for this track. Some of these will be dropped by
-	// the filter in the loop below.
-	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, trackcandidate, swim_steps, max_swim_steps);
-	GetCDCTrackHits(rt); //Hits are left in private member data "cdchits_on_track"
-	if(cdchits_on_track.size()<4)return NULL; // can't fit a track with less than 4 hits!
+	// set of hits for this track. Some of these could be dropped by
+	// the fitter.
+//	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, q, pos, mom, swim_steps, max_swim_steps);
+//	GetCDCTrackHits(rt); //Hits are left in private member data "cdchits_on_track"
+//	if(cdchits_on_track.size()<4)return NULL; // can't fit a track with less than 4 hits!
 
-	// State vector for Kalman filter. This is kept as a TMatrixD so
-	// we can use the ROOT linear algebra package. We index the
-	// elements via enum for readability.
-	// We start at the last point on the reference trajectory so we can
-	// swim in towards the target to get the state at the vertex.
-	swim_step_t *step = &rt->swim_steps[rt->Nswim_steps-1];
-	TMatrixD state(5,1);
-	state[state_p		][0] = step->mom.Mag();
-	state[state_theta	][0] = step->mom.Theta();
-	state[state_phi	][0] = step->mom.Phi();
-	state[state_x		][0] = 0.0;
-	state[state_y		][0] = 0.0;
+	// Fit the track and get the results in the form of the
+	// position/momentum when the track was closest to the beamline
+	TVector3 vertex_pos=pos; // to hold fitted values on return
+	TVector3 vertex_mom=mom; // to hold fitted values on return
+	//double chisq = LeastSquares(pos, mom, rt, vertex_pos, vertex_mom);
 
-	// The covariance matrix for the state vector. Assume all of
-	// the parameters are independent. The values are initialized
-	// using the resolutions of the parameters obtained from 
-	// track candidates. NOTE: right now, they are just guesses!
-	// This will need to be changed!
-	TMatrixD P(5,5);
-	P.UnitMatrix();
-	P[state_p		][state_p		] = pow(0.1*state[state_p][0], 2.0);
-	P[state_theta	][state_theta	] = pow( 5.0/57.3 , 2.0);	//  5 degrees
-	P[state_phi		][state_phi		] = pow(10.0/57.3 , 2.0);	// 10 degrees
-	P[state_x		][state_x		] = pow(5.0 , 2.0);	// cm
-	P[state_y		][state_y		] = pow(5.0 , 2.0);	// cm
+	// Delete reference trajectory
+//	delete rt;
 
-	// Since we have to use the Extended Kalman Filter (EKF) which
-	// linearizes what are likely some very non-linear functions, we may
-	// need to iterate a few times.
-	do{
-		step = KalmanFilter(state, P, rt);
-	}while(false);// (for now, just do it call it once.)
-	if(!step)step = &rt->swim_steps[0];
-
-	// Delete utility objects
-	delete rt;
-		
 	// Create new DTrack object and initialize parameters with those
 	// from track candidate
 	DTrack *track = new DTrack;
-	track->q			= trackcandidate->q;
-	track->p			= state[state_p		][0];
-	track->theta	= state[state_theta	][0];
-	track->phi		= state[state_phi	][0];
-	track->x = step->pos.X();
-	track->y = step->pos.Y();
-	track->z = step->pos.Z();
-	track->candidateid = trackcandidate->id;
+	track->q			= tc->q;
+	track->p			= vertex_mom.Mag();
+	track->theta	= vertex_mom.Theta();
+	track->phi		= vertex_mom.Phi();
+	track->x = vertex_pos.X();
+	track->y = vertex_pos.Y();
+	track->z = vertex_pos.Z();
+	track->candidateid = tc->id;
 
 	return track;
 }
@@ -168,7 +175,7 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *trackcandidate)
 //------------------
 // GetCDCTrackHits
 //------------------
-void DTrack_factory::GetCDCTrackHits(DReferenceTrajectory *rt)
+void DTrack_factory::GetCDCTrackHits(DReferenceTrajectory *rt, double max_hit_dist)
 {
 	/// Determine the distance of each CDC hit to the reference trajectory.
 	/// Ones less than TRK:MAX_HIT_DIST are added to cdchits_on_track as
@@ -178,6 +185,9 @@ void DTrack_factory::GetCDCTrackHits(DReferenceTrajectory *rt)
 	/// (the drift time will be used later when applying the Kalman filter).
 	/// The value of TRK:MAX_HIT_DIST should at least be larger than the
 	/// straw tube radius and should probably be 2 or 3 times that.
+	
+	// allow caller to override default value.
+	if(max_hit_dist==0.0)max_hit_dist=MAX_HIT_DIST;
 	
 	cdchits_on_track.clear();
 	for(unsigned int j=0; j<cdctrackhits.size(); j++){
@@ -253,7 +263,7 @@ void DTrack_factory::GetCDCTrackHits(DReferenceTrajectory *rt)
 		// For now, we use a single distance which may be sufficient
 		// for finding hits that belong to the track.
 		if(!finite(closest_hit.dist))continue;
-		if(closest_hit.dist>MAX_HIT_DIST)continue;
+		if(closest_hit.dist>max_hit_dist)continue;
 		
 		cdchits_on_track.push_back(closest_hit);
 		
@@ -261,6 +271,14 @@ void DTrack_factory::GetCDCTrackHits(DReferenceTrajectory *rt)
 		cdcdocart->Fill(closest_hit.dist);
 		cdcdocaswim->Fill(sqrt(closest_hit.dist_to_rt2));
 		cdcdocatdrift->Fill(hit->tdrift*22E-4);
+		cdcdoca_vs_dist->Fill(hit->tdrift*22E-4, closest_hit.dist);
+		if(hit->wire->stereo==0.0){
+			dist_axial->Fill(hit->tdrift*22E-4);
+			doca_axial->Fill(closest_hit.dist);
+		}else{
+			dist_stereo->Fill(hit->tdrift*22E-4);
+			doca_stereo->Fill(closest_hit.dist);
+		}
 	}
 
 	// We want the hits to be ordered by the distance along the 
@@ -410,10 +428,10 @@ double DTrack_factory::GetDistToRT(const DCDCWire *wire, const swim_step_t *step
 	double delta_phi = step->mom.Dot(step->ydir)/Ro;
 	double dz_dphi = delta_z/delta_phi;
 
-	double Q = pow(A*Ro, 2.0) + pow(E*Ro, 2.0);
-	double R = 2.0*A*B*Ro2 + 2.0*A*C*Ro*dz_dphi + 2.0*E*F*Ro2 + 2.0*E*G*Ro*dz_dphi;
-	double S = B*B*Ro2 + pow(C*dz_dphi,2.0) + 2.0*B*C*Ro*dz_dphi + 2.0*A*D*Ro
-					+ F*F*Ro2 + pow(G*dz_dphi,2.0) + 2.0*F*G*Ro*dz_dphi + 2.0*E*H*Ro;
+	double Q = pow(A*Ro/2.0, 2.0) + pow(E*Ro/2.0, 2.0);
+	double R = -(2.0*A*B*Ro2 + 2.0*A*C*Ro*dz_dphi + 2.0*E*F*Ro2 + 2.0*E*G*Ro*dz_dphi)/2.0;
+	double S = pow(B*Ro, 2.0) + pow(C*dz_dphi,2.0) + 2.0*B*C*Ro*dz_dphi - 2.0*A*D*Ro/2.0
+					+ pow(F*Ro, 2.0) + pow(G*dz_dphi,2.0) + 2.0*F*G*Ro*dz_dphi - 2.0*E*H*Ro/2.0;
 	double T = 2.0*B*D*Ro + 2.0*C*D*dz_dphi + 2.0*F*H*Ro + 2.0*G*H*dz_dphi;
 	double U = D*D + H*H;
 	
@@ -447,7 +465,7 @@ double DTrack_factory::GetDistToRT(const DCDCWire *wire, const swim_step_t *step
 	// where:
 	//    q^3 = d - c
 	//    p^3 = d + c
-	//    d^2 = b^3 + c^2
+	//    d^2 = b^3 + c^2      (don't confuse with d^2 above!)
 	//
 	// For us this means that:
 	//    a2 = 3*R/(4*Q)
@@ -490,7 +508,30 @@ double DTrack_factory::GetDistToRT(const DCDCWire *wire, const swim_step_t *step
 		double c = 1.0*T;
 		phi = (-b + sqrt(b*b - 4.0*a*c))/(2.0*a); 
 	}
+
+#if 0
+// Brute force
+//cout<<__FILE__<<":"<<__LINE__<<" phi_poly:"<<phi;
+double min_d2 = 1.0E6;
+phi=M_PI;
+for(int i=-2000; i<2000; i++){
+	double myphi=(double)i*0.000005;
+	TVector3 d = Ro*(cos(myphi)-1.0)*xdir
+	            + Ro*sin(myphi)*ydir
+					+ dz_dphi*myphi*zdir
+					+ pos_diff;
 	
+	double d2 = pow(d.Dot(sdir),2.0) + pow(d.Dot(tdir),2.0);
+	if(d2<min_d2){
+		min_d2 = d2;
+		phi = myphi;
+	}
+	U=1.0; // avoid compiler warnings
+}
+double d2 = min_d2;
+//cout<<"  phi_brute:"<<phi<<endl;
+#else
+
 	// Sometimes the "d" used in solving the 3rd order polynmial above 
 	// can be nan due to the sqrt argument being negative. I'm not sure
 	// exactly what this means (e.g. is this due to round-off, are there
@@ -503,6 +544,8 @@ double DTrack_factory::GetDistToRT(const DCDCWire *wire, const swim_step_t *step
 
 	// Use phi to calculate DOCA
 	double d2 = U + phi*(T + phi*(S + phi*(R + phi*Q)));
+//cout<<__FILE__<<":"<<__LINE__<<" d2="<<d2<<"  U="<<U<<"  phi="<<phi<<endl;
+#endif
 	double d = sqrt(d2);
 	
 	// Calculate distance along track ("s")
@@ -515,12 +558,380 @@ double DTrack_factory::GetDistToRT(const DCDCWire *wire, const swim_step_t *step
 }
 
 //------------------
+// ChiSq
+//------------------
+double DTrack_factory::ChiSq(double q, TMatrixD &state, swim_step_t *start_step, DReferenceTrajectory *rt)
+{
+	TVector3 pos =   start_step->pos
+						+ state[state_x ][0]*start_step->xdir
+						+ state[state_y ][0]*start_step->ydir
+						+ state[state_z ][0]*start_step->zdir;
+	TVector3 mom =   state[state_px][0]*start_step->xdir
+						+ state[state_py][0]*start_step->ydir
+						+ state[state_pz][0]*start_step->zdir;
+
+	return ChiSq(q, pos, mom,rt);
+}
+
+//------------------
+// ChiSq
+//------------------
+double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom, DReferenceTrajectory *rt)
+{
+//cout<<__FILE__<<":"<<__LINE__<<" pos: "; pos.Print();
+//cout<<__FILE__<<":"<<__LINE__<<" mom: "; mom.Print();
+
+	// Swim a reference trajectory using the state defined by
+	// "state" at "start_step" if one is not provided.
+	bool own_rt = false;
+	if(!rt){
+		rt = new DReferenceTrajectory(bfield, q, pos, mom);
+		own_rt = true;
+	}
+
+	// Loop over hits.
+	chisqv.clear();
+	for(unsigned int i=0; i<cdchits_on_track.size(); i++){
+		hit_on_track_t &hit = cdchits_on_track[i];
+		const DCDCWire *wire = hit.cdchit->wire;
+	
+		// Loop over swim steps over z-range covered by CDC
+		hit_on_track_t closest_hit;
+		closest_hit.cdchit = hit.cdchit;
+		closest_hit.swim_step = NULL;
+		closest_hit.dist_to_rt2 = 1.0E6;
+		swim_step_t *swim_step = rt->swim_steps;
+		for(int j=0; j<rt->Nswim_steps; j++, swim_step++){
+			//if(swim_step->pos.z()<CDC_Z_MIN)continue;
+			//if(swim_step->pos.z()>CDC_Z_MAX)continue;
+			
+			// Note that here, we only need to find the closest
+			// RT point to the wire. 
+			
+			// Project vector pointing from center of wire to RT
+			// point onto S/T plane of wire coordinate system.
+			// Magnitude of vector on that plane is distance of
+			// point to wire.
+			TVector3 pos_diff = swim_step->pos - wire->wpos;
+			double D = wire->sdir.Dot(pos_diff);
+			double H = wire->tdir.Dot(pos_diff);
+			double delta2 = D*D + H*H;
+			if(delta2 < closest_hit.dist_to_rt2){
+				closest_hit.dist_to_rt2 = delta2;
+				closest_hit.swim_step = swim_step;
+			}
+		}
+		
+		// If we didn't find a qualifying step, skip to the next hit
+		if(closest_hit.swim_step == NULL){
+			cout<<__FILE__<<":"<<__LINE__<<" rt->Nswim_steps="<<rt->Nswim_steps<<endl;
+			swim_step = rt->swim_steps;
+			for(int j=0; j<rt->Nswim_steps; j++, swim_step++){
+				//if(swim_step->pos.z()<CDC_Z_MIN)continue;
+				//if(swim_step->pos.z()>CDC_Z_MAX)continue;
+
+				// Note that here, we only need to find the closest
+				// RT point to the wire. 
+
+				// Project vector pointing from center of wire to RT
+				// point onto S/T plane of wire coordinate system.
+				// Magnitude of vector on that plane is distance of
+				// point to wire.
+				TVector3 pos_diff = swim_step->pos - wire->wpos;
+				double D = wire->sdir.Dot(pos_diff);
+				double H = wire->tdir.Dot(pos_diff);
+				double delta2 = D*D + H*H;
+				cout<<__FILE__<<":"<<__LINE__<<" delta2="<<delta2<<endl;
+			}
+			continue;
+		}
+
+		// Now, find the distance of the wire to the RT curve. This
+		// distance should be very accurate.
+		closest_hit.dist = GetDistToRT(wire, closest_hit.swim_step, closest_hit.s);
+		
+		// Distance from drift time. Hardwired for simulation for now
+		double tdrift_dist = hit.cdchit->tdrift*22.0E-4;
+		if(hit_based)tdrift_dist=0.400; // Middle of the tube is best guess when no time info is present
+
+		// NOTE: Sometimes we push nan or large values on here
+		chisqv.push_back(tdrift_dist - closest_hit.dist);
+	}
+
+	double chisq = 0;
+	double Nused=0.0;
+	for(unsigned int i=0; i<chisqv.size(); i++){
+		// Check if this hit is close enough to the RT to be on
+		// the track. This should be a function of both the distance
+		// along the track and the errors of the measurement in 3D.
+		// For now, we use a single distance which may be sufficient
+		// for finding hits that belong to the track.
+		if(!finite(chisqv[i]))continue;
+		if(fabs(chisqv[i])>(hit_based ? 1.5:1.0))continue;
+
+		chisq+=pow(chisqv[i]/(hit_based ? 0.460:0.200),2.0);
+		Nused += 1.0;
+	}
+	chisq/=Nused;
+if(Nused==0.0)cout<<__FILE__<<":"<<__LINE__<<" Nused=0!! chisqv.size()="<<chisqv.size()<<"  cdchits_on_track.size()="<<cdchits_on_track.size()<<endl;
+
+	// If we created the reference trajectory, then delete
+	if(own_rt)delete rt;
+//cout<<__FILE__<<":"<<__LINE__<<" chisq="<<chisq<<endl;
+	return chisq;
+}
+
+//------------------
+// LeastSquares
+//------------------
+double DTrack_factory::LeastSquares(const TVector3 &pos, const TVector3 &mom, DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom)
+{
+	// Determine the best fit of the track using the least squares method
+	// described by R. Mankel Rep. Prog. Phys. 67 (2004) 553-622 pg 565
+	
+	// Because we have a non-linear system, we must take the derivatives
+	// numerically.
+	unsigned int Nhits = cdchits_on_track.size();
+	swim_step_t *start_step = &rt->swim_steps[0];
+	double deltas[5];
+
+	TVector3 pos_diff = pos-start_step->pos;
+	TMatrixD state(6,1);
+	state[state_px	][0] = mom.Dot(start_step->xdir);
+	state[state_py	][0] = mom.Dot(start_step->ydir);
+	state[state_pz	][0] = mom.Dot(start_step->zdir);
+	state[state_x	][0] = pos_diff.Dot(start_step->xdir);
+	state[state_y	][0] = pos_diff.Dot(start_step->ydir);
+	state[state_z	][0] = pos_diff.Dot(start_step->zdir);
+	
+	// Best-guess
+	double chisq = ChiSq(rt->q, pos, mom, rt); // Just use RT generated for gathering hits
+	vector<double> dists = chisqv;
+
+	// dpx : tweak by 10% + 1MeV/c
+	TMatrixD state_dpx = state;
+	deltas[state_px] = (0.001 + fabs(0.10*state_dpx[state_px][0]));
+	state_dpx[state_px][0] += deltas[state_px];
+	ChiSq(rt->q, state_dpx, start_step);
+	vector<double> dists_dpx = chisqv;
+
+	// dpy : tweak by 10% + 1MeV/c
+	TMatrixD state_dpy = state;
+	deltas[state_py] = (0.001 + fabs(0.10*state_dpy[state_py][0]));
+	state_dpy[state_py][0] += deltas[state_py];
+	ChiSq(rt->q, state_dpy, start_step);
+	vector<double> dists_dpy = chisqv;
+
+	// dpz : tweak by 10% + 1MeV/c
+	TMatrixD state_dpz = state;
+	deltas[state_pz] = (0.001 + fabs(0.10*state_dpz[state_pz][0]));
+	state_dpz[state_pz][0] += deltas[state_pz];
+	ChiSq(rt->q, state_dpz, start_step);
+	vector<double> dists_dpz = chisqv;
+
+	// dx : tweak by 5 mm
+	TMatrixD state_dx = state;
+	deltas[state_x] = (0.500);
+	state_dx[state_x][0] += deltas[state_x];
+	ChiSq(rt->q, state_dx, start_step);
+	vector<double> dists_dx = chisqv;
+
+	// dy : tweak by 5 mm
+	TMatrixD state_dy = state;
+	deltas[state_y] = (0.500);
+	state_dy[state_y][0] += deltas[state_y];
+	ChiSq(rt->q, state_dy, start_step);
+	vector<double> dists_dy = chisqv;
+
+	// dz : tweak by 5 mm
+	TMatrixD state_dz = state;
+	deltas[state_z] = (0.500);
+	state_dz[state_z][0] += deltas[state_z];
+	ChiSq(rt->q, state_dz, start_step);
+	vector<double> dists_dz = chisqv;
+	
+	// Make a list of "clean" hits. Ones with reasonably
+	// small, residuals that are not "nan" for the
+	// best-guess as well as the tweaked  cases.
+	vector<bool> good;
+	unsigned int Ngood=0;
+	for(unsigned int i=0; i<Nhits; i++){
+		double res;
+		double max=1.0;
+		res =     dists[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		res = dists_dpx[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		res = dists_dpy[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		res = dists_dpz[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		res =  dists_dx[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		res =  dists_dy[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		res =  dists_dz[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+
+		good.push_back(true);
+		Ngood++;
+	}
+	if(Ngood<3){
+		cout<<__FILE__<<":"<<__LINE__<<" Bad number of good distance calculations!"<<endl;
+		return 1.0E6;
+	}
+
+	// Build "F" matrix of derivatives
+	TMatrixD F(Ngood,6);
+	for(unsigned int i=0,j=0; j<Nhits; j++){
+		if(!good[j])continue; // skip bad hits
+		F[i][state_px] = (dists_dpx[j]-dists[j])/deltas[state_px];
+		F[i][state_py] = (dists_dpy[j]-dists[j])/deltas[state_py];
+		F[i][state_pz] = (dists_dpz[j]-dists[j])/deltas[state_pz];
+		F[i][state_x ] = ( dists_dx[j]-dists[j])/deltas[state_x ];
+		F[i][state_y ] = ( dists_dy[j]-dists[j])/deltas[state_y ];
+		F[i][state_z ] = ( dists_dz[j]-dists[j])/deltas[state_z ];
+		i++;
+	}
+	TMatrixD Ft(TMatrixD::kTransposed, F);
+
+	// V is a diagonal matrix of the measurement errors. In
+	// principle, we could fold in the multiple scattering
+	// here, but for now, consider it constant.
+	TMatrixD V(Ngood,Ngood);
+	V.Zero();
+	for(unsigned int i=0; i<Ngood; i++)V[i][i] = pow(hit_based ? 0.460:0.200, 2.0);
+	
+	// Measurement vector. In the case of hit-based tracking
+	// it is tempting to just set all of the measurements to
+	// zero. This will, however, lead to the trivial result
+	// of each element of the state vector being zero. In the
+	// absence of real time measurements, we should use the 
+	// distances from the "best-guess" trajectory.
+	TMatrixD m(Ngood,1);
+	for(unsigned int i=0,j=0; j<Nhits; j++){
+		if(!good[j])continue; // skip bad hits
+		m[i][0] = -dists[j]; // drift time is already subtracted in ChiSq(...)
+		i++;
+	}
+	
+	TMatrixD Vinv(TMatrixD::kInverted, V);
+	TMatrixD B(TMatrixD::kInverted, Ft*Vinv*F);
+	
+	// The "B" matrix happens to be the covariance matrix of the
+	// state parameters. A problem sometimes occurs where one or
+	// more elements of B are very large and the resulting
+	// delta_state will be unreliable in this case. At this time,
+	// I'm not sure why this happens or how to prevent it. We
+	// can, however, check for it and punt rather than return a
+	// nonsensical value.
+	TMatrixD original_state = state;
+	if(B.E2Norm() < 5.0E4){
+		state = state + B*Ft*Vinv*m;
+	}else{
+		cout<<__FILE__<<":"<<__LINE__<<" Fit failed!"<<endl;
+	}
+
+	// Calculate initial particle position/momentum. We should
+	// probably swim this to the DOCA with the beamline
+	vertex_pos =     start_step->pos
+						+ state[state_x ][0]*start_step->xdir
+						+ state[state_y ][0]*start_step->ydir;
+						+ state[state_z ][0]*start_step->zdir;
+	vertex_mom =     state[state_px][0]*start_step->xdir
+						+ state[state_py][0]*start_step->ydir
+						+ state[state_pz][0]*start_step->zdir;
+
+	// Check that the chi-squared has actually decreased!
+	double new_chisq = ChiSq(rt->q, vertex_pos, vertex_mom);
+	if(new_chisq >	chisq){
+		// Fit seems to have failed. Revert to original parameters.
+		state = original_state;
+		vertex_pos =  pos;
+		vertex_mom =  mom;
+		new_chisq = chisq;
+		cout<<__FILE__<<":"<<__LINE__<<" Fit failed! Keeping candidate parameters"<<endl;
+	}
+	
+cout<<__FILE__<<":"<<__LINE__<<" Ngood="<<Ngood<<endl;
+cout<<__FILE__<<":"<<__LINE__<<" Before p="<<start_step->mom.Mag()<<"  ChiSq="<<chisq<<endl;
+cout<<__FILE__<<":"<<__LINE__<<" After p="<<vertex_mom.Mag()<<"  Chisq="<<new_chisq<<endl;
+cout<<__FILE__<<":"<<__LINE__<<" B.E2Norm()="<<sqrt(B.E2Norm())<<endl;
+	return new_chisq;
+}
+
+//------------------
+// toString
+//------------------
+const string DTrack_factory::toString(void)
+{
+	// Ensure our Get method has been called so _data is up to date
+	GetNrows();
+	if(_data.size()<=0)return string(); // don't print anything if we have no data!
+
+	printheader("row: q:       p:   theta:   phi:    x:    y:    z:");
+	
+	for(unsigned int i=0; i<_data.size(); i++){
+
+		DTrack *track = _data[i];
+
+		printnewrow();
+		
+		printcol("%x", i);
+		printcol("%+d", (int)track->q);
+		printcol("%3.3f", track->p);
+		printcol("%1.3f", track->theta);
+		printcol("%1.3f", track->phi);
+		printcol("%2.2f", track->x);
+		printcol("%2.2f", track->y);
+		printcol("%2.2f", track->z);
+
+		printrow();
+	}
+	
+	return _table;
+}
+
+
+
+
+//======================================================================
+//======================================================================
+//           UNUSED CODEBELOW HERE
+//======================================================================
+//======================================================================
+
+#if 0
+//------------------
 // KalmanFilter
 //------------------
-DReferenceTrajectory::swim_step_t* DTrack_factory::KalmanFilter(TMatrixD &state, TMatrixD &P, DReferenceTrajectory *rt)
+void DTrack_factory::KalmanFilter(TMatrixD &state
+											, TMatrixD &P
+											, DReferenceTrajectory *rt
+											, TVector3 &vertex_pos
+											, TVector3 &vertex_mom)
 {
 	/// Apply the Kalman filter to the current track starting
 	/// with the given initial state and the reference trajectory.
+
+	// State vector for Kalman filter. This is kept as a TMatrixD so
+	// we can use the ROOT linear algebra package. We index the
+	// elements via enum for readability.
+	// We start at the last point on the reference trajectory so we can
+	// swim in towards the target to get the state at the vertex.
+	swim_step_t *step = &rt->swim_steps[rt->Nswim_steps-1];
+	TMatrixD state(5,1);
+	state[state_px	][0] = step->mom.Dot(step->xdir);
+	state[state_py	][0] = step->mom.Dot(step->ydir);
+	state[state_pz	][0] = step->mom.Dot(step->zdir);
+	state[state_x	][0] = 0.0;
+	state[state_y	][0] = 0.0;
+
+	// The covariance matrix for the state vector. Assume all of
+	// the parameters are independent. The values are initialized
+	// using the resolutions of the parameters obtained from 
+	// track candidates. NOTE: right now, they are just guesses!
+	// This will need to be changed!
+	TMatrixD P(5,5);
+	P.UnitMatrix();
+	P[state_px ][state_px ] = pow(0.1*fabs(state[state_px][0]) + 0.010 , 2.0);
+	P[state_py ][state_py ] = pow(0.1*fabs(state[state_py][0]) + 0.010 , 2.0);
+	P[state_pz ][state_pz ] = pow(0.1*fabs(state[state_pz][0]) + 0.010 , 2.0);
+	P[state_x  ][state_x  ] = pow(5.0 , 2.0);  // cm
+	P[state_y  ][state_y  ] = pow(5.0 , 2.0);  // cm
 
 	// The A matrix propagates the state of the particle from one
 	// point to the next. This is recalculated for each.
@@ -550,15 +961,12 @@ DReferenceTrajectory::swim_step_t* DTrack_factory::KalmanFilter(TMatrixD &state,
 	TMatrixD H_fdc(2,5);
 
 	// DMagneticFieldStepper is used to swim the particle
-	// through the magnetic field. Use the last point of the
-	// reference trajectory as the starting point. Flip both 
-	// the momentum vector and the sign of the charge in order
-	// to swim back towards the target.
-	double q = -rt->q;
+	// through the magnetic field. Instantiate it here so
+	// it doesn't need to be done each time through the loop
+	// below.
+	double q = rt->q;
 	swim_step_t step_prev = rt->swim_steps[rt->Nswim_steps-1];
-	TVector3 &start_pos   = step_prev.pos;
-	TVector3 start_mom    = -step_prev.mom;
-	DMagneticFieldStepper stepper(bfield, q, &start_pos, &start_mom);
+	DMagneticFieldStepper stepper(bfield);
 
 	// Loop over hits. They should already be in order of
 	// distance along RT from largest to smallest.
@@ -592,7 +1000,9 @@ DReferenceTrajectory::swim_step_t* DTrack_factory::KalmanFilter(TMatrixD &state,
 		// of the "s" where the step is at and the "s" where we 
 		// want it to be and then taking one step. This may seem
 		// a bit convoluted, but it at least guarantees we swim
-		// in the same way as everywhere else.
+		// in the same way as everywhere else. Note that the momentum
+		// and charge of the particle at hit.swim_step correspond
+		// to the particle being swum forward from the target.
 		swim_step_t step_docaRT;
 		double ds = hit.s - hit.swim_step->s;
 		stepper.SetStepSize(ds);
@@ -603,11 +1013,11 @@ DReferenceTrajectory::swim_step_t* DTrack_factory::KalmanFilter(TMatrixD &state,
 		step_docaRT.Ro = stepper.GetRo();
 		step_docaRT.s = hit.s;
 		
-		// Project to get a'priori prediction of state here
+		// Project to get a'priori prediction of state at "s" of step_docaRT
 		TMatrixD mystate = state;
-		double dist = ProjectState(q, mystate, &step_prev, &step_docaRT, wire);
+		double dist = ProjectStateBackwards(q, mystate, &step_prev, &step_docaRT, wire);
 		if(!finite(dist))continue; // skip this hit if there's a problem
-		
+#if 1
 		// Since the relation between the current state and
 		// the next is non-linear, we have to estimate it as
 		// a linear transformation. This is not trivally calculated
@@ -618,39 +1028,39 @@ DReferenceTrajectory::swim_step_t* DTrack_factory::KalmanFilter(TMatrixD &state,
 		// affects the state parameters at the end of the step.
 		double deltas[5], dists[5];
 		
-		// dp : tweak by 0.5% + 100keV/c
-		TMatrixD state_dp = state;
-		deltas[state_p] = 0.0001 + 0.005*state_dp[state_p][0];
-		state_dp[state_p][0] += deltas[state_p];
-		dists[state_p] = ProjectState(q, state_dp, &step_prev, &step_docaRT, wire);
-		if(!finite(dists[state_p]))continue; // skip this hit if there's a problem
+		// dpx : tweak by 10% + 1MeV/c
+		TMatrixD state_dpx = state;
+		deltas[state_px] = 0.001 + 0.10*state_dpx[state_px][0];
+		state_dpx[state_px][0] += deltas[state_px];
+		dists[state_px] = ProjectStateBackwards(q, state_dpx, &step_prev, &step_docaRT, wire);
+		if(!finite(dists[state_px]))continue; // skip this hit if there's a problem
 
-		// dtheta : tweak by 10mrad towards pi/2
-		TMatrixD state_dtheta = state;
-		deltas[state_theta] = state[state_theta][0]<M_PI_2 ? 0.010:-0.010;
-		state_dtheta[state_theta][0] += deltas[state_theta];
-		dists[state_theta] = ProjectState(q, state_dtheta, &step_prev, &step_docaRT, wire);
-		if(!finite(dists[state_theta]))continue; // skip this hit if there's a problem
+		// dpy : tweak by 10% + 1MeV/c
+		TMatrixD state_dpy = state;
+		deltas[state_py] = 0.001 + 0.10*state_dpy[state_py][0];
+		state_dpy[state_py][0] += deltas[state_py];
+		dists[state_py] = ProjectStateBackwards(q, state_dpy, &step_prev, &step_docaRT, wire);
+		if(!finite(dists[state_py]))continue; // skip this hit if there's a problem
 
-		// dphi : tweak by 100mrad towards pi
-		TMatrixD state_dphi = state;
-		deltas[state_phi] = state[state_phi][0]<M_PI ? 0.100:-0.100;
-		state_dphi[state_phi][0] += deltas[state_phi];
-		dists[state_phi] = ProjectState(q, state_dphi, &step_prev, &step_docaRT, wire);
-		if(!finite(dists[state_phi]))continue; // skip this hit if there's a problem
+		// dpz : tweak by 10% + 1MeV/c
+		TMatrixD state_dpz = state;
+		deltas[state_pz] = 0.001 + 0.10*state_dpz[state_pz][0];
+		state_dpz[state_pz][0] += deltas[state_pz];
+		dists[state_pz] = ProjectStateBackwards(q, state_dpz, &step_prev, &step_docaRT, wire);
+		if(!finite(dists[state_pz]))continue; // skip this hit if there's a problem
 
-		// dx : tweak by 100 microns
+		// dx : tweak by 250 microns
 		TMatrixD state_dx = state;
-		deltas[state_x] = 0.0100;
+		deltas[state_x] = 0.0250;
 		state_dx[state_x][0] += deltas[state_x];
-		dists[state_x] = ProjectState(q, state_dx, &step_prev, &step_docaRT, wire);
+		dists[state_x] = ProjectStateBackwards(q, state_dx, &step_prev, &step_docaRT, wire);
 		if(!finite(dists[state_x]))continue; // skip this hit if there's a problem
 
-		// dy : tweak by 100 microns
+		// dy : tweak by 500 microns
 		TMatrixD state_dy = state;
-		deltas[state_y] = 0.0100;
+		deltas[state_y] = 0.0250;
 		state_dy[state_y][0] += deltas[state_y];
-		dists[state_y] = ProjectState(q, state_dy, &step_prev, &step_docaRT, wire);
+		dists[state_y] = ProjectStateBackwards(q, state_dy, &step_prev, &step_docaRT, wire);
 		if(!finite(dists[state_y]))continue; // skip this hit if there's a problem
 		
 		// Phew!! Believe it or not, it has taken a *very* long
@@ -658,23 +1068,25 @@ DReferenceTrajectory::swim_step_t* DTrack_factory::KalmanFilter(TMatrixD &state,
 		
 		// Calculate "A" and "H" matrices as well as residual
 		for(int j=0; j<5; j++){
-			A[j][state_p    ] = (    state_dp[j][0] - state[j][0])/deltas[state_p];
-			A[j][state_theta] = (state_dtheta[j][0] - state[j][0])/deltas[state_theta];
-			A[j][state_phi  ] = (  state_dphi[j][0] - state[j][0])/deltas[state_phi];
-			A[j][state_x    ] = (    state_dx[j][0] - state[j][0])/deltas[state_x];
-			A[j][state_y    ] = (    state_dy[j][0] - state[j][0])/deltas[state_y];
+			A[j][state_px ] = (state_dpx[j][0] - state[j][0])/deltas[state_px];
+			A[j][state_py ] = (state_dpy[j][0] - state[j][0])/deltas[state_py];
+			A[j][state_pz ] = (state_dpz[j][0] - state[j][0])/deltas[state_pz];
+			A[j][state_x  ] = ( state_dx[j][0] - state[j][0])/deltas[state_x ];
+			A[j][state_y  ] = ( state_dy[j][0] - state[j][0])/deltas[state_y ];
 			
 			H_cdc[0][j] = (dists[j]-dist)/deltas[j];
+cout<<__FILE__<<":"<<__LINE__<<" dists[j]="<<dists[j]<<" dist="<<dist<<" H_cdc[]="<<H_cdc[0][j]<<endl;
+			//H_cdc[0][j]=0.0;
 		}
 
 		// For Monte Carlo, dist = 22um*tdrift
-		// Hit-based tracking is equivalent to tdrift=0
 		TMatrixD z_minus_h(1,1);
 		double z = hit.cdchit->tdrift*22.0E-4;
+		z=0.0; // Hit-based tracking is equivalent to tdrift=0
 		z_minus_h[0][0] = z - dist;
 		
 		// Measurement error on drift distance
-		R_cdc[0][0] = 200E-4; // use constant 100um measurement error for now
+		R_cdc[0][0] = pow(200.0E-4,2.0); // use constant 400um measurement error for now
 		
 		// Hmmm... it seems like V should be a unit matrix, but then, whay have it?
 		TMatrixD V(TMatrixD::kUnit, R_cdc);
@@ -683,17 +1095,45 @@ DReferenceTrajectory::swim_step_t* DTrack_factory::KalmanFilter(TMatrixD &state,
 		// identity matrix, but it is only used to multiply Q which
 		// is a NULL matrix so this doesn't really matter.
 		TMatrixD W(TMatrixD::kUnit, Q);
-		
+
 		// Apply Kalman filter equations to include this measurement point.
 		KalmanStep(mystate, P, z_minus_h, A, H_cdc, Q, R_cdc, W, V);
+#endif
 		state = mystate;
-//cout<<__FILE__<<":"<<__LINE__<<" p="<<state[state_p][0]<<endl;
 
 		// Make current step_docaRT next iterations step_prev.
 		step_prev = step_docaRT;
 	}
+	
+	// Swim particle backwards to the beamline
+	TVector3 pos = step_prev.pos
+						+ state[state_x ][0]*step_prev.xdir
+						+ state[state_y ][0]*step_prev.ydir;
+	TVector3 mom =   state[state_px][0]*step_prev.xdir
+						+ state[state_py][0]*step_prev.ydir
+						+ state[state_pz][0]*step_prev.zdir;
+	mom = -mom;
+	stepper.SetStepSize(0.1);
+	stepper.SetStartingParams(-q, &pos, &mom);
+_DBG_;
+pos.Print();
+mom.Print();
+	double min_diff2 = 1.0E6;
+	for(int i=0; i<1000; i++){  // for loop guarantees no infinite loop
+		stepper.GetPosition(vertex_pos);
+		stepper.GetMomentum(vertex_mom);
+		stepper.Step(&pos);
+		double diff2 = pos.Perp2();
+cout<<__FILE__<<":"<<__LINE__<<" diff2="<<diff2<<endl;
+		if(diff2>min_diff2)break;
+		min_diff2 = diff2;
+	}
+	vertex_mom = -vertex_mom; // flip momentum back to forward direction
+	
+cout<<__FILE__<<":"<<__LINE__<<"Before p="<<rt->swim_steps[0].mom.Mag()<<"  ChiSq="<<ChiSq(rt->q, rt->swim_steps[0].pos, rt->swim_steps[0].mom)<<endl;
+_DBG_;
+cout<<__FILE__<<":"<<__LINE__<<"After p="<<vertex_mom.Mag()<<"  Chisq="<<ChiSq(q, vertex_pos, vertex_mom)<<endl;
 
-	return &swim_steps[0]; // temporary
 }
 
 //------------------
@@ -748,37 +1188,58 @@ void DTrack_factory::KalmanStep(	TMatrixD &x,
 	TMatrixD Ht(TMatrixD::kTransposed, H);
 	TMatrixD Vt(TMatrixD::kTransposed, V);
 	TMatrixD Wt(TMatrixD::kTransposed, W);
-	
+
+_DBG_;	
+TMatrixD HPHt = H*P*Ht;
+A.Print();
+P.Print();
+H.Print();
+HPHt.Print();
+
+TMatrixD Atmp(TMatrixD::kUnit, A);
+A=Atmp;
+At=Atmp;
+
 	P = A*P*At + W*Q*Wt;
 	
 	TMatrixD B(TMatrixD::kInverted, H*P*Ht + V*R*Vt);
+cout<<__FILE__<<":"<<__LINE__<<" B[0][0] = "<<B[0][0]<<"  sqrt(1/B[0][0])="<<sqrt(1/B[0][0])<<endl;
+
 	TMatrixD K = P*Ht*B;
+K.Print();
 	TMatrixD I(TMatrixD::kUnit, P);
+x.Print();
 	x = x + K*(z_minus_h);
+x.Print();
 	P = (I - K*H)*P;
 }
 
 //------------------
-// ProjectState
+// ProjectStateBackwards
 //------------------
-double DTrack_factory::ProjectState(double q, TMatrixD &state
+double DTrack_factory::ProjectStateBackwards(double q, TMatrixD &state
 											, const swim_step_t *stepRT_prev
 											, const swim_step_t *stepRT
 											, const DCDCWire *wire)
 {
 	/// Swim a particle defined by q/state at the given swim step
-	/// (stepRT_prev) on the RT to the point corresponding to "s"
-	/// at stepRT. The values in the state vector are updated to  
-	/// reflect the state of the paticle at the "s" value of stepRT.
+	/// (stepRT_prev) on the RT backwards to the point corresponding to
+	/// "s" at stepRT. The values in the state vector are updated to  
+	/// reflect the state of the particle at the "s" value of stepRT.
+	/// Note that stepRT_prev should be at a larger "s" value than
+	/// stepRT.
 
-	// First, set up a stepper at the starting point.
+	// First, set up a stepper at the starting point. We need to flip
+	// both q and mom to swim backwards
 	swim_step_t step;
-	step.pos = stepRT_prev->pos
-						+ state[state_x][0]*stepRT_prev->xdir
-						+ state[state_y][0]*stepRT_prev->ydir;
-	step.mom.SetMagThetaPhi(state[state_p][0], state[state_theta][0], state[state_phi][0]);
-	DMagneticFieldStepper stepper(bfield, q, &step.pos, &step.mom);
-	
+	step.pos =    stepRT_prev->pos
+					+ state[state_x ][0]*stepRT_prev->xdir
+					+ state[state_y ][0]*stepRT_prev->ydir;
+	step.mom =	  state[state_px][0]*stepRT_prev->xdir
+					+ state[state_py][0]*stepRT_prev->ydir
+					+ state[state_pz][0]*stepRT_prev->zdir;
+	step.mom = -step.mom;
+	DMagneticFieldStepper stepper(bfield, -q, &step.pos, &step.mom);
 	// Swim until we go just past the point at stepRT
 	double min_diff2 = 1.0E6;
 	double dz_dphi;
@@ -789,7 +1250,7 @@ double DTrack_factory::ProjectState(double q, TMatrixD &state
 		stepper.GetPosition(step.pos);
 		dz_dphi = stepper.Getdz_dphi();
 		step.Ro = stepper.GetRo();
-		
+
 		// Step to next point and check if we've started to go away.
 		TVector3 mypos;
 		stepper.Step(&mypos);
@@ -801,26 +1262,26 @@ double DTrack_factory::ProjectState(double q, TMatrixD &state
 	
 	// At this point, xdir,ydir,zdir,pos,Ro, and dz_dphi should
 	// contain the step on the track we're swimming that is
-	// closest to swimRT.
+	// closest to stepRT point.
 	
 	// Find the point on the current track at "s". In other words,
 	// we need to find the point on the track we're swimming that
 	// is at the same "s" value as stepRT. This is so we can
-	// define the state of the track in terms of the RT.
+	// define the state of the track's x/y values in terms of the RT.
 	//
 	// This "s" value is represented by a plane defined by the origin
-	// of the stepRT and normal to the momentum of stepRT.
+	// of the stepRT with the momentum (of stepRT) defining its normal.
 	// To define the state at "s", we need to find the point
 	// where the track we're swimming intersects this plane.
 	// We do this using a similar trick to what is done in
 	// GetDistToRT(...) above. Namely, define a point on the helical
 	// track segment in terms of the phi angle of the helix
-	// such that phi=0 corresponds to step itself. Call this point
+	// such that phi=0 corresponds to track step itself. Call this point
 	// h. 
 	//
-	//  h = Ro*(cos(phi) -1)*xdir  ~=    Ro*phi^2 *xdir
+	//  h = Ro*(cos(phi) -1)*xdir  ~= -Ro*phi^2/2 *xdir
 	//     + Ro*sin(phi)*ydir      ~=    Ro*phi   *ydir
-	//     + dz/dphi*phi*zdir      ~= dz/dphi*phi *zdir
+	//     + dz/dphi*phi*zdir       = dz/dphi*phi *zdir
 	//     + hpos
 	//
 	// where the xdir, ydir, zdir, hpos vectors define the
@@ -835,14 +1296,13 @@ double DTrack_factory::ProjectState(double q, TMatrixD &state
 	// where the period(.) means dot product, and pos is from
 	// stepRT. Using the above definition of h, we get:
 	//
-	// p.(h-pos) = 0 = Ro*(p.xdir)*phi^2
+	// p.(h-pos) = 0 = -(Ro/2)*(p.xdir)*phi^2
 	//                + (Ro*p.ydir + dz/dphi*p.zdir)*phi
 	//                + p.(hpos-pos)
 	//
-	// This formula is quadratic in phi which can be solved
-	// using the quadratic equation.
+	// This formula is quadratic in phi (yea!)
 	const TVector3 &p = stepRT->mom;
-	double a = step.Ro*p.Dot(step.xdir);
+	double a = -(step.Ro/2.0)*p.Dot(step.xdir);
 	double b = step.Ro*p.Dot(step.ydir) + dz_dphi*p.Dot(step.zdir);
 	double c = p.Dot(step.pos - stepRT->pos);
 	double phi1 = (-b + sqrt(b*b - 4.0*a*c))/(2.0*a);
@@ -854,77 +1314,35 @@ double DTrack_factory::ProjectState(double q, TMatrixD &state
 	double phi = !finite(phi2) ? phi1:!finite(phi1) ? phi2:fabs(phi1)<fabs(phi2) ? phi1:phi2;
 
 	// Now, use phi to calculate the point's coordinates
-	// in the stepRT coordinate system.
-	TVector3 doca_pos(step.Ro*phi*phi, step.Ro*phi, dz_dphi*phi);
-	doca_pos = doca_pos + step.pos - stepRT->pos;
-	state[state_x][0] = doca_pos.Dot(stepRT->xdir); 
-	state[state_y][0] = doca_pos.Dot(stepRT->ydir);
-
+	// in the stepRT coordinate system at "s".
 	// To get the momentum vector at "s", we need to
 	// swim the particle from the "closest" swim
-	// step to the actual point.
+	// step to the actual point. Note that phi is defined
+	// in the "step" coordinate system which is taken from
+	// a backwards swimming negative particle.
 	double dz = dz_dphi*phi;
 	double Rodphi = step.Ro*phi;
 	double ds = sqrt(dz*dz + Rodphi*Rodphi);
 	if(phi<0.0)ds = -ds;
-	stepper.SetStartingParams(q, &step.pos, &step.mom);
+	stepper.SetStartingParams(-q, &step.pos, &step.mom);
 	stepper.SetStepSize(ds);
 	stepper.Step(&step.pos);
 	stepper.GetMomentum(step.mom);
-	
-	state[state_p][0] = step.mom.Mag();
-	state[state_theta][0] = step.mom.Theta();
-	state[state_phi][0] = step.mom.Phi();
+
+	// Flip momentum to get it in the "forward" direction for the state
+	step.mom = -step.mom;
+	TVector3 pos_diff = step.pos - stepRT->pos;
+	state[state_px][0] = step.mom.Dot(stepRT->xdir);
+	state[state_py][0] = step.mom.Dot(stepRT->ydir);
+	state[state_pz][0] = step.mom.Dot(stepRT->zdir);
+	state[state_x ][0] = pos_diff.Dot(stepRT->xdir);
+	state[state_y ][0] = pos_diff.Dot(stepRT->ydir);
 
 	// Return the distance from the wire
 	step.Ro = stepper.GetRo();
 
 	return GetDistToRT(wire, &step, step.s);
 }
-
-//------------------
-// toString
-//------------------
-const string DTrack_factory::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	GetNrows();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("row: q:       p:   theta:   phi:    x:    y:    z:");
-	
-	for(unsigned int i=0; i<_data.size(); i++){
-
-		DTrack *track = _data[i];
-
-		printnewrow();
-		
-		printcol("%x", i);
-		printcol("%+d", (int)track->q);
-		printcol("%3.3f", track->p);
-		printcol("%1.3f", track->theta);
-		printcol("%1.3f", track->phi);
-		printcol("%2.2f", track->x);
-		printcol("%2.2f", track->y);
-		printcol("%2.2f", track->z);
-
-		printrow();
-	}
-	
-	return _table;
-}
-
-
-
-
-//======================================================================
-//======================================================================
-//           UNUSED CODEBELOW HERE
-//======================================================================
-//======================================================================
-
-#if 0
-
 
 //------------------
 // GetDistToRT

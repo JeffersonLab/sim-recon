@@ -15,6 +15,15 @@ static int default_phiDim=1;
 static int default_zDim=201;
 extern DBfieldPoint_t default_mag_field[];
 
+// IMPORTANT:
+//
+// The table at the
+// bottom is not exactly the same as what is being used by HDGeant.
+// I seem to recall getting a more detailed map from Paul Brindza than
+// what is being used by HDGeant which I think this may be from.
+// I cannot seem to find the map used to generate this table nor
+// whatever script was used to convert it.
+
 
 //---------------------
 // DMagneticFieldMap
@@ -58,6 +67,10 @@ DMagneticFieldMap::DMagneticFieldMap()
 	// is out of the map's area.
 	null_point.x=null_point.y=null_point.z =0.0;
 	null_point.Bx=null_point.By=null_point.Bz =0.0;
+	
+	// Distance between map points for r and z
+	dr = (rMax-rMin)/(double)rDim;
+	dz = (zMax-zMin)/(double)zDim;
 }
 
 //---------------------
@@ -81,22 +94,129 @@ const DBfieldPoint_t* DMagneticFieldMap::getQuick(const double x, const double y
 		bpoint.Bz = BZ_CONST;
 		return &bpoint;
 	}
+	
+	int index_r, index_z;
+	int index = GetIndices(x, y, z, index_r, index_z);
+	if(index<0)return &null_point;
+	
+	return &Bmap[index];
+}
 
+//---------------------
+// GetIndices
+//---------------------
+int DMagneticFieldMap::GetIndices(double x, double y, double z, int &index_r, int &index_z) const
+{
 	// Elements are stored first x, then z. We use x for r
 	double r = sqrt(x*x+y*y)/2.54;
 	double zprime = z/2.54 + BMAP_Z_OFFSET;
-	int index_r = (int)((double)rDim*(r-rMin)/(rMax-rMin));
-	int index_z = (int)((double)zDim*(zprime-zMin)/(zMax-zMin));
+	index_r = (int)((r-rMin)/dr);
+	index_z = (int)((zprime-zMin)/dz);
 	
-	if(index_r<0 || index_r>=rDim)return &null_point;
-	if(index_z<0 || index_z>=zDim)return &null_point;
+	if(index_r<0 || index_r>=rDim)return -1;
+	if(index_z<0 || index_z>=zDim)return -1;
 
 	int index = index_r*zDim + index_z;
 	if(index<0 || index>=Npoints){
-		return &null_point;
+		return -1;
 	}
 	
-	return &Bmap[index];
+	return index;
+}
+
+//---------------------------------------------------------------
+// calculate a bi-linear  interpolated field 
+// (only good for the same phi-value)
+//---------------------------------------------------------------
+
+//---------------------
+// GetBilinear
+//---------------------
+void DMagneticFieldMap::GetBilinear(double x, double y, double z, double &Bx, double &By, double &Bz) const
+{
+	// This has been modified from Werner's original algorithm. 
+	// In the original algorithm, the three points (00, 10, 01)
+	// were used to define a plane for each of Bx, By, and Bz
+	// such that the field varied linearly in x,y,z. This was
+	// good in that it gave some representation of the gradient
+	// of the field. The drawbacks were 1.) if the point were
+	// actually closest to the "11" corner, the field at "11"
+	// was not used and 2.) the second derivative of the field
+	// was discontinuous. (These may be fairly minor drawbacks.)
+	//
+	// The current algorithm uses all 4 points (00,10,01,11)
+	// and determines the field components via weighted average
+	// of the field at the corners. The weight is essentially
+	// 1/d where d is the distance of the point from the corner.
+	// While this does use information from the "11" corner and
+	// has a continuous second derivative, it is still problematic
+	// in that the first derivative is always 0 at the map points
+	// themselves. This leads to a micro-stucture in the field 
+	// that is a kind of smoothed step pattern. Field gradients
+	// derived from points that are far apart relative to the 
+	// grid spacing will still be valid, but gradients derived
+	// from points spaced smaller than the grid points will be
+	// completely wrong.
+
+	//  z  ^
+	// 10  |         | 11
+	//   --+---------+--
+	//     |         |
+	//     |         |
+	//     |         |
+	//   --+---------+--> r
+	// 00  |         | 01
+
+	if(fabs(BZ_CONST)<100){
+		Bx=By=0.0;
+		Bz = BZ_CONST;
+		return;
+	}
+	Bx = By = Bz = 0.0;
+
+	// Find index in map of each corner
+	int index_r, index_z;
+	int index[4];
+	index[0] = GetIndices(x, y, z, index_r, index_z);
+	if(index[0]<0)return;
+	index[1] = (index_z+0) + (index_r+1)*zDim;
+	index[2] = (index_z+1) + (index_r+0)*zDim;
+	index[3] = (index_z+1) + (index_r+1)*zDim;
+
+	// Get pointers to field map elements for each corner.
+	// If a corner is outside the map, use null_point
+	const DBfieldPoint_t *B[4];
+	B[0] = &Bmap[index[0]];
+	B[1] = index_r<(rDim-1) ? &Bmap[index[1]]:&null_point;
+	B[2] = index_z<(zDim-1) ? &Bmap[index[2]]:&null_point;
+	B[3] = ((index_r<(rDim-1)) && (index_z<(zDim-1))) ? &Bmap[index[3]]:&null_point;
+
+	// Find relative distance of each corner from x,y,z
+	double r = sqrt(x*x+y*y)/2.54;
+	double zprime = z/2.54 + BMAP_Z_OFFSET;
+	double t = (r - B[0]->x)/dr;
+	double u = (zprime - B[0]->z)/dz;
+	double d[4];
+	d[0] = sqrt(t*t + u*u);
+	d[1] = sqrt((1.0-t)*(1.0-t) + u*u);
+	d[2] = sqrt(t*t + (1.0-u)*(1.0-u));
+	d[3] = sqrt((1.0-t)*(1.0-t) + (1.0-u)*(1.0-u));
+		
+	// Determine weight of field from each corner. Weight goes
+	// like 1/(d+epsilon) where epsilon avoids poles at corners. 
+	double epsilon = 0.001;
+	double w[4], sum_w=0.0;
+	for(int i=0; i<4; i++){
+		w[i] = 1.0/(d[0]+epsilon);
+		sum_w += w[i];
+
+		Bx+=w[i]*B[i]->Bx;
+		By+=w[i]*B[i]->By;
+		Bz+=w[i]*B[i]->Bz;
+	}
+	Bx /= sum_w;
+	By /= sum_w;
+	Bz /= sum_w;
 }
 
 //---------------------

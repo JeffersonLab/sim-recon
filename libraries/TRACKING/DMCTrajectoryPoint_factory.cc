@@ -21,51 +21,6 @@ jerror_t DMCTrajectoryPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 }
 
 //------------------
-// Extract_HDDM
-//------------------
-jerror_t DMCTrajectoryPoint_factory::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
-{
-	/// Copies the data from the given hddm_s structure. This is called
-	/// from JEventSourceHDDM::GetObjects.
-	
-	v.clear();
-
-	// Loop over Physics Events
-	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-	if(!PE) return NOERROR;
-	
-	for(unsigned int i=0; i<PE->mult; i++){
-		s_HitView_t *hits = PE->in[i].hitView;
-		if (hits == HDDM_NULL ||
-			hits->mcTrajectory == HDDM_NULL ||
-			hits->mcTrajectory->mcTrajectoryPoints == HDDM_NULL)continue;
-
-		s_McTrajectoryPoints_t *points = hits->mcTrajectory->mcTrajectoryPoints;
-		for(unsigned int i=0; i<points->mult; i++){
-			DMCTrajectoryPoint *p = new DMCTrajectoryPoint;
-			
-			p->x = points->in[i].x;
-			p->y = points->in[i].y;
-			p->z = points->in[i].z;
-			p->t = points->in[i].t;
-			p->px = points->in[i].px;
-			p->py = points->in[i].py;
-			p->pz = points->in[i].pz;
-			p->E = points->in[i].E;
-
-			p->dE = points->in[i].dE;
-			p->track = points->in[i].track;
-			p->part = points->in[i].part;
-			
-			
-			v.push_back(p);
-		}		
-	}
-
-	return NOERROR;
-}
-
-//------------------
 // toString
 //------------------
 const string DMCTrajectoryPoint_factory::toString(void)

@@ -15,20 +15,21 @@ DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield)
 	q = 1.0;
 	start_pos = pos = TVector3(0.0,0.0,0.0);
 	start_mom = mom = TVector3(0.0,0.0,1.0);
-	stepsize = 1.0; // in cm
+	stepsize = 0.02; // in cm
 	CalcDirs();
 }
 
 //-----------------------
 // DMagneticFieldStepper
 //-----------------------
-DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield, double q, TVector3 *x, TVector3 *p)
+DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield, double q, const TVector3 *x, const TVector3 *p)
 {
 	this->bfield = bfield;
 	this->q = q;
 	start_pos = pos = *x;
 	start_mom = mom = *p;
-	stepsize = 1.0; // in cm
+	stepsize = 0.02; // in cm
+	CalcDirs();
 }
 
 //-----------------------
@@ -83,8 +84,9 @@ void DMagneticFieldStepper::CalcDirs(void)
 	/// more details.
 
 	// Get B-field
-	const DBfieldPoint_t* tmp = bfield->getQuick(pos.x(), pos.y(), pos.z());
-	TVector3 B(tmp->Bx, tmp->By, tmp->Bz);
+	double Bx,By,Bz;
+	bfield->GetBilinear(pos.x(), pos.y(), pos.z(), Bx, By, Bz);
+	TVector3 B(Bx, By, Bz);
 
 	CalcDirs(&B);
 }
@@ -144,8 +146,9 @@ double DMagneticFieldStepper::Step(TVector3 *newpos)
 	// is zero).
 	
 	// Get B-field
-	const DBfieldPoint_t* tmp = bfield->getQuick(pos.x(), pos.y(), pos.z());
-	TVector3 B(tmp->Bx, tmp->By, tmp->Bz);
+	double Bx,By,Bz;
+	bfield->GetBilinear(pos.x(), pos.y(), pos.z(), Bx, By, Bz);
+	TVector3 B(Bx, By, Bz);
 //TVector3 B(0.0, 0.0,-2.0);
 
 	// If the magnetic field is zero or the charge is zero, then our job is easy
@@ -184,15 +187,15 @@ double DMagneticFieldStepper::Step(TVector3 *newpos)
 	
 	// Step to new position
 	pos += delta_x + delta_y + delta_z;
-	
+
 	// Update momentum by rotating it by delta_phi about B
 	mom.Rotate(-delta_phi, B);
 	
 	// Energy loss for 1.0GeV pions in Air is roughly 2.4keV/cm
-//	double m = 0.13957;
-//	double p = mom.Mag();
-//	double E = sqrt(m*m + p*p) - 0.0000024*stepsize;
-//	mom.SetMag(sqrt(E*E-m*m));
+	//double m = 0.13957;
+	//double p = mom.Mag();
+	//double E = sqrt(m*m + p*p) - 0.0000024*stepsize;
+	//mom.SetMag(sqrt(E*E-m*m));
 	
 	// Calculate directions of natural coordinates at the new position
 	CalcDirs(&B);

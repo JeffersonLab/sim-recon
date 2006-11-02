@@ -43,11 +43,12 @@ class DTrack_factory:public JFactory<DTrack>{
 
 	private:
 		enum state_types{
-			state_p,			// Total momentum in GeV/c
-			state_theta,	// theta-angle of momentum in lab coordinate system
-			state_phi,		// phi-angle of momentum in lab coordinate system
-			state_x,			// x-coordinate in RT coordinate system
-			state_y			// y-coordinate in RT coordinate system
+			state_px,		// x-momentum in RT coordinate system in GeV/c
+			state_py,		// y-momentum in RT coordinate system in GeV/c
+			state_pz,		// z-momentum in RT coordinate system in GeV/c
+			state_x,			// x-coordinate in RT coordinate system in cm
+			state_y,			// y-coordinate in RT coordinate system in cm
+			state_z			// z-coordinate in RT coordinate system in cm
 		};
 
 		jerror_t init(void);
@@ -55,15 +56,20 @@ class DTrack_factory:public JFactory<DTrack>{
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 		jerror_t fini(void);
 
-		DTrack* FitTrack(const DTrackCandidate *trackcandidate);
-		void GetCDCTrackHits(DReferenceTrajectory *rt);
+		DTrack* FitTrack(const DTrackCandidate *tc);
+		void GetCDCTrackHits(DReferenceTrajectory *rt, double max_hit_dist=0.0);
 		double GetDistToRT(const DCDCWire *wire, const swim_step_t *step, double &s);
-		swim_step_t* KalmanFilter(TMatrixD &state, TMatrixD &P, DReferenceTrajectory *rt);
-		void KalmanStep(TMatrixD &x, TMatrixD &P, TMatrixD &z_minus_h, TMatrixD &A, TMatrixD &H, TMatrixD &Q, TMatrixD &R, TMatrixD &W, TMatrixD &V);
-		double ProjectState(double q, TMatrixD &state, const swim_step_t *step, const swim_step_t *stepRT, const DCDCWire *wire);
+		//void KalmanFilter(TMatrixD &state, TMatrixD &P, DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom);
+		//void KalmanStep(TMatrixD &x, TMatrixD &P, TMatrixD &z_minus_h, TMatrixD &A, TMatrixD &H, TMatrixD &Q, TMatrixD &R, TMatrixD &W, TMatrixD &V);
+		//double ProjectStateBackwards(double q, TMatrixD &state, const swim_step_t *step, const swim_step_t *stepRT, const DCDCWire *wire);
+		double ChiSq(double q, TMatrixD &state, swim_step_t *start_step, DReferenceTrajectory *rt=NULL);
+		double ChiSq(double q, const TVector3 &pos, const TVector3 &mom, DReferenceTrajectory *rt=NULL);
+		double LeastSquares(const TVector3 &pos, const TVector3 &mom, DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom);
 
 		std::vector<const DCDCTrackHit* > cdctrackhits;
 		std::vector<hit_on_track_t > cdchits_on_track;
+		
+		std::vector<double> chisqv;
 
 		const JGeometry *dgeom;
 		const DMagneticFieldMap *bfield;
@@ -73,8 +79,12 @@ class DTrack_factory:public JFactory<DTrack>{
 		double CDC_Z_MAX;
 		swim_step_t *swim_steps;
 		int max_swim_steps;
+		bool hit_based;
 		
 		TH1F *cdcdocart,*cdcdocaswim, *cdcdocatdrift;
+		TH2F *cdcdoca_vs_dist;
+		TH1F *dist_stereo, *dist_axial;
+		TH1F *doca_stereo, *doca_axial;
 };
 
 #endif // _DTrack_factory_

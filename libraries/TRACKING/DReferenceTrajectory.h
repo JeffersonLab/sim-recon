@@ -44,6 +44,10 @@ class DReferenceTrajectory{
 									, const DTrackCandidate*
 									, swim_step_t *swim_steps=NULL
 									, int max_swim_steps=0);
+		DReferenceTrajectory(const DMagneticFieldMap *
+									, double q, const TVector3 &pos, const TVector3 &p
+									, swim_step_t *swim_steps=NULL
+									, int max_swim_steps=0);
 
 		virtual ~DReferenceTrajectory();
 		virtual const char* className(void){return static_className();}
@@ -62,6 +66,10 @@ class DReferenceTrajectory{
 	private:
 		DReferenceTrajectory(){} // force use of constructor with arguments.
 
+		void SwimRT(const DMagneticFieldMap *
+					, double q, const TVector3 &pos, const TVector3 &p
+					, swim_step_t *swim_steps=NULL
+					, int max_swim_steps=0);
 };
 
 #endif // _DReferenceTrajectory_
