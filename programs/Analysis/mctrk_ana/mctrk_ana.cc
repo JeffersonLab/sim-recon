@@ -20,6 +20,7 @@ int main(int narg, char *argv[])
 {	
 	// Instantiate an event loop object
 	DApplication app(narg, argv);
+	//app.SetShowTicker(0);
 
 	// Instantiate our event processor
 	MyProcessor myproc;

@@ -41,7 +41,7 @@ jerror_t MyProcessor::init(void)
 	
 	// Create Tree
 	fit_parms = new TTree("fitp","Helical Fit parameters");
-	fit_parms->Branch("F",val,"p/F:px:py:pz:pcan:pcanx:pcany:pcanz:Ro:phi:theta:p_thrn:px_thrn:py_thrn:pz_thrn:phi_thrn:theta_thrn");
+	fit_parms->Branch("F",val,"p/F:px:py:pz:x:y:z:pcan:pcanx:pcany:pcanz:canz:Ro:phi:theta:p_thrn:px_thrn:py_thrn:pz_thrn:phi_thrn:theta_thrn");
 
 	return NOERROR;
 }
@@ -95,19 +95,23 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
 		val[ 1] = track->p*sin(track->theta)*cos(track->phi);
 		val[ 2] = track->p*sin(track->theta)*sin(track->phi);
 		val[ 3] = track->p*cos(track->theta);
-		val[ 4] = tc->p;
-		val[ 5] = tc->p_trans*cos(tc->phi);
-		val[ 6] = tc->p_trans*sin(tc->phi);
-		val[ 7] = tc->p*cos(tc->theta);
-		val[ 8] = sqrt(tc->x0*tc->x0 + tc->y0*tc->y0);
-		val[ 9] = tc->phi;
-		val[10] = tc->theta;
-		val[11] = thrown->p;
-		val[12] = thrown->p*sin(thrown->theta)*cos(thrown->phi);
-		val[13] = thrown->p*sin(thrown->theta)*sin(thrown->phi);
-		val[14] = thrown->p*cos(thrown->theta);
-		val[15] = thrown->phi;
-		val[16] = thrown->theta;
+		val[ 4] = track->x;
+		val[ 5] = track->y;
+		val[ 6] = track->z;
+		val[ 7] = tc->p;
+		val[ 8] = tc->p_trans*cos(tc->phi);
+		val[ 9] = tc->p_trans*sin(tc->phi);
+		val[10] = tc->p*cos(tc->theta);
+		val[11] = tc->z_vertex;
+		val[12] = sqrt(tc->x0*tc->x0 + tc->y0*tc->y0);
+		val[13] = tc->phi;
+		val[14] = tc->theta;
+		val[15] = thrown->p;
+		val[16] = thrown->p*sin(thrown->theta)*cos(thrown->phi);
+		val[17] = thrown->p*sin(thrown->theta)*sin(thrown->phi);
+		val[18] = thrown->p*cos(thrown->theta);
+		val[19] = thrown->phi;
+		val[20] = thrown->theta;
 		
 		fit_parms->Fill();
 		UnlockState();
