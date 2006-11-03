@@ -10,13 +10,13 @@ using namespace std;
 
 #include "MyProcessor.h"
 #include "MyMainFrame.h"
-#include "DEventLoop.h"
-#include "DTrack.h"
-#include "DMCThrown.h"
-#include "DTrackEfficiency.h"
+#include "JANA/JEventLoop.h"
+#include "TRACKING/DTrack.h"
+#include "TRACKING/DMCThrown.h"
+#include "TRACKING/DTrackEfficiency.h"
 
 extern MyProcessor *myproc;
-extern DEventLoop *eventloop;
+extern JEventLoop *eventloop;
 extern int DONE;
 
 //-------------------
@@ -248,13 +248,13 @@ void MyMainFrame::Update(void)
 	
 	// Update event number
 	static unsigned int last_event_number = 0;
-	unsigned int event_number = eventloop->GetDEvent().GetEventNumber();
+	unsigned int event_number = eventloop->GetJEvent().GetEventNumber();
 	char str[256];
 	sprintf(str, "%d", event_number);
 	eventno->SetText(str);
 
 	// Update filename (if needed)
-	const char* sname = eventloop->GetDEvent().GetDEventSource()->GetSourceName();
+	const char* sname = eventloop->GetJEvent().GetJEventSource()->GetSourceName();
 	if(sname != sourcename){
 		sourcename = sname;
 		filename->SetText(sourcename);
@@ -399,7 +399,7 @@ void MyMainFrame::DoNext(void)
 //-------------------
 void MyMainFrame::DoPrev(void)
 {
-	//eventloop->GotoEvent(eventloop->GetDEvent().GetEventNumber()-1);
+	//eventloop->GotoEvent(eventloop->GetJEvent().GetEventNumber()-1);
 	DoNext();
 }
 
@@ -408,8 +408,8 @@ void MyMainFrame::DoPrev(void)
 //-------------------
 void MyMainFrame::DoSetDisplay(Int_t id)
 {
-	if(eventloop->GetDEvent().GetEventNumber()>0) 
-		myproc->evnt(eventloop, eventloop->GetDEvent().GetEventNumber());
+	if(eventloop->GetJEvent().GetEventNumber()>0) 
+		myproc->evnt(eventloop, eventloop->GetJEvent().GetEventNumber());
 }
 
 //-------------------
@@ -428,7 +428,7 @@ void MyMainFrame::DoSetOption(Int_t id)
 {
 	if(radiooption != id){
 		radiooption = id;
-		myproc->evnt(eventloop, eventloop->GetDEvent().GetEventNumber());
+		myproc->evnt(eventloop, eventloop->GetJEvent().GetEventNumber());
 	}
 }
 

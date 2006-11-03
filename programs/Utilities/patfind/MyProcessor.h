@@ -7,9 +7,9 @@
 ///
 
 
-#include "DApplication.h"
-#include "DEventProcessor.h"
-#include "DEventLoop.h"
+#include "JANA/JEventProcessor.h"
+#include "JANA/JEventLoop.h"
+#include "DANA/DApplication.h"
 
 #include <TFile.h>
 #include <TH1.h>
@@ -20,25 +20,25 @@
 #include <TCanvas.h>
 #include <TMarker.h>
 
-#include "../TRACKING/Dtrk_hit.h"
-#include "DQuickFit.h"
+#include "TRACKING/Dtrk_hit.h"
+#include "TRACKING/DQuickFit.h"
 
 class DMagneticFieldMap;
-class DFactory_DTrackCandidate;
+class DTrackCandidate_factory;
 
-class MyProcessor:public DEventProcessor
+class MyProcessor:public JEventProcessor
 {
 	public:
 		MyProcessor();
-		derror_t init(void);					///< Called once at program start.
-		derror_t evnt(DEventLoop *eventLoop, int eventnumber);	///< Called every event.
-		derror_t fini(void);					///< Called after last event of last event source has been processed.
+		jerror_t init(void);					///< Called once at program start.
+		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Called every event.
+		jerror_t fini(void);					///< Called after last event of last event source has been processed.
 
-		derror_t PlotXYHits(void);
-		derror_t PlotPhiVsZ(void);
-		derror_t PlotPhiZSlope(void);
-		derror_t PlotZVertex(void);
-		derror_t PlotStats(void);
+		jerror_t PlotXYHits(void);
+		jerror_t PlotPhiVsZ(void);
+		jerror_t PlotPhiZSlope(void);
+		jerror_t PlotZVertex(void);
+		jerror_t PlotStats(void);
 		void DrawXYFit(DQuickFit *fit, int color, int width);
 		void DrawCircle(float x0, float y0, float r0, int color, int width);
 		void DrawXYDot(Dtrk_hit *hit, float size, int style, int color);
@@ -48,8 +48,8 @@ class MyProcessor:public DEventProcessor
 		void DrawPhiZLine(float dphidz, float z_vertex, int color, int width);
 
 		TH2F *axes, *axes_phiz, *axes_hits;
-		DFactory_DTrackCandidate *factory;
-		DEventLoop *eventLoop;
+		DTrackCandidate_factory *factory;
+		JEventLoop *eventLoop;
 		
 		vector<TObject*> graphics;
 

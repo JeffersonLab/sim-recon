@@ -12,19 +12,19 @@ using namespace std;
 #include "MyProcessor.h"
 #include "MyMainFrame.h"
 
-#include "DApplication.h"
-#include "DEventLoop.h"
-#include "DMagneticFieldMap.h"
-#include "DQuickFit.h"
-#include "DFactory_DTrackHit.h"
-#include "DFactory_DTrackCandidate.h"
+#include "DANA/DApplication.h"
+#include "JANA/JEventLoop.h"
+#include "TRACKING/DMagneticFieldMap.h"
+#include "TRACKING/DQuickFit.h"
+#include "TRACKING/DTrackHit_factory.h"
+#include "TRACKING/DTrackCandidate_factory.h"
 
 #define rad2deg 57.3
 #define PI_MASS 0.139568
 
 //static int colors[] = {kRed,kBlue,kCyan,kGreen,kBlack};
 
-extern DEventLoop *eventloop;
+extern JEventLoop *eventloop;
 extern MyMainFrame *mmf;
 
 class TrkHitZSort{
@@ -40,21 +40,21 @@ class TrkHitZSort{
 MyProcessor::MyProcessor(void)
 {
 	// Tell factory to keep around a few density histos	
-	dparms.SetParameter("TRK:MAX_DEBUG_BUFFERS",	16);
+	jparms.SetParameter("TRK:MAX_DEBUG_BUFFERS",	16);
 }
 
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
 //------------------------------------------------------------------
-derror_t MyProcessor::init(void)
+jerror_t MyProcessor::init(void)
 {
 	// Get a pointer to the MCTrackCandidates factory object so we can 
 	// access things not included in the normal _data container
-	DFactory_base *base = eventloop->GetFactory("DTrackCandidate");
-	factory = dynamic_cast<DFactory_DTrackCandidate*>(base);
+	JFactory_base *base = eventloop->GetFactory("DTrackCandidate");
+	factory = dynamic_cast<DTrackCandidate_factory*>(base);
 	if(!factory){
 		cerr<<endl;
-		cerr<<"Unable to get pointer to DFactory_DTrackCandidate factory!"<<endl;
+		cerr<<"Unable to get pointer to DTrackCandidate_factory factory!"<<endl;
 		cerr<<"I can't do much without it! Exiting ..."<<endl;
 		cerr<<endl;
 		exit(-1);
@@ -82,7 +82,7 @@ derror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // evnt
 //------------------------------------------------------------------
-derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 {
 	// Copy eventLoop pointer to object for use by other methods
 	this->eventLoop = eventLoop;
@@ -198,7 +198,7 @@ void MyProcessor::DrawPhiZDots(vector<Dtrk_hit *> hits, DQuickFit *fit, float si
 	float x0 = fit->x0;
 	float y0 = fit->y0;
 	float r0 = sqrt(x0*x0 + y0*y0);
-	DFactory_DTrackCandidate::Fill_phi_circle(hits, x0, y0);
+	DTrackCandidate_factory::Fill_phi_circle(hits, x0, y0);
 
 	for(unsigned int i=0; i<hits.size(); i++){
 		Dtrk_hit *a = hits[i];
@@ -246,7 +246,7 @@ void MyProcessor::DrawPhiZLine(float dphidz, float z_vertex, int color, int widt
 //------------------------------------------------------------------
 // PlotXYHits
 //------------------------------------------------------------------
-derror_t MyProcessor::PlotXYHits(void)
+jerror_t MyProcessor::PlotXYHits(void)
 {
 	// Radio buttons select the XY seed
 	mmf->EnableRadioButtons(dbg_seed_fit.size());
@@ -305,7 +305,7 @@ derror_t MyProcessor::PlotXYHits(void)
 //------------------------------------------------------------------
 // PlotPhiVsZ
 //------------------------------------------------------------------
-derror_t MyProcessor::PlotPhiVsZ(void)
+jerror_t MyProcessor::PlotPhiVsZ(void)
 {
 	// Radio buttons select the XY seed
 	mmf->EnableRadioButtons(dbg_seed_fit.size());
@@ -363,7 +363,7 @@ derror_t MyProcessor::PlotPhiVsZ(void)
 //------------------------------------------------------------------
 // PlotPhiZSlope
 //------------------------------------------------------------------
-derror_t MyProcessor::PlotPhiZSlope(void)
+jerror_t MyProcessor::PlotPhiZSlope(void)
 {
 	// Radio buttons select the XY seed
 	mmf->EnableRadioButtons(dbg_phiz_hist.size(), &dbg_phiz_hist_seed);
@@ -380,7 +380,7 @@ derror_t MyProcessor::PlotPhiZSlope(void)
 //------------------------------------------------------------------
 // PlotZVertex
 //------------------------------------------------------------------
-derror_t MyProcessor::PlotZVertex(void)
+jerror_t MyProcessor::PlotZVertex(void)
 {
 	// Radio buttons select the XY seed
 	mmf->EnableRadioButtons(dbg_zvertex_hist.size(), &dbg_zvertex_hist_seed);
@@ -397,7 +397,7 @@ derror_t MyProcessor::PlotZVertex(void)
 //------------------------------------------------------------------
 // PlotStats
 //------------------------------------------------------------------
-derror_t MyProcessor::PlotStats(void)
+jerror_t MyProcessor::PlotStats(void)
 {
 
 	return NOERROR;
@@ -406,7 +406,7 @@ derror_t MyProcessor::PlotStats(void)
 //------------------------------------------------------------------
 // fini   -Close output file here
 //------------------------------------------------------------------
-derror_t MyProcessor::fini(void)
+jerror_t MyProcessor::fini(void)
 {
 	delete axes;
 	delete axes_phiz;
@@ -425,7 +425,7 @@ derror_t MyProcessor::fini(void)
 //------------------------------------------------------------------
 // PlotLines
 //------------------------------------------------------------------
-derror_t MyProcessor::PlotLines(void)
+jerror_t MyProcessor::PlotLines(void)
 {
 	axes->Draw();
 
@@ -486,7 +486,7 @@ derror_t MyProcessor::PlotLines(void)
 //------------------------------------------------------------------
 // PlotDensity
 //------------------------------------------------------------------
-derror_t MyProcessor::PlotDensity(void)
+jerror_t MyProcessor::PlotDensity(void)
 {
 	vector<TEllipse*> circles = factory->GetCircles();
 	mmf->EnableRadioButtons(circles.size());
@@ -519,7 +519,7 @@ derror_t MyProcessor::PlotDensity(void)
 //------------------------------------------------------------------
 // PlotDensityX
 //------------------------------------------------------------------
-derror_t MyProcessor::PlotDensityX(void)
+jerror_t MyProcessor::PlotDensityX(void)
 {
 	int ndensity = factory->GetNIntDensityX();
 	mmf->EnableRadioButtons(ndensity);
@@ -538,7 +538,7 @@ derror_t MyProcessor::PlotDensityX(void)
 //------------------------------------------------------------------
 // PlotDensityY
 //------------------------------------------------------------------
-derror_t MyProcessor::PlotDensityY(void)
+jerror_t MyProcessor::PlotDensityY(void)
 {
 	int ndensity = factory->GetNIntDensityY();
 	mmf->EnableRadioButtons(ndensity);
@@ -557,7 +557,7 @@ derror_t MyProcessor::PlotDensityY(void)
 //------------------------------------------------------------------
 // PlotSlope
 //------------------------------------------------------------------
-derror_t MyProcessor::PlotSlope(void)
+jerror_t MyProcessor::PlotSlope(void)
 {
 	int Nhistos = factory->GetNumSlopeHistograms();
 	mmf->EnableRadioButtons(Nhistos-1);
@@ -585,7 +585,7 @@ derror_t MyProcessor::PlotSlope(void)
 //------------------------------------------------------------------
 // PlotIntercept
 //------------------------------------------------------------------
-derror_t MyProcessor::PlotIntercept(void)
+jerror_t MyProcessor::PlotIntercept(void)
 {
 	int Nhistos = factory->GetNumOffsetHistograms();
 	mmf->EnableRadioButtons(Nhistos-1);

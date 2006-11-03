@@ -8,11 +8,11 @@
 
 #include "MyMainFrame.h"
 #include "MyProcessor.h"
-#include "DEventLoop.h"
+#include "JANA/JEventLoop.h"
 
 
-extern DApplication *dapp;
-DEventLoop *eventloop = NULL;
+extern DApplication *japp;
+JEventLoop *eventloop = NULL;
 MyProcessor *myproc = NULL;
 MyMainFrame *mmf = NULL;
 
@@ -23,7 +23,7 @@ int main(int narg, char *argv[])
 {
 	// Instantiate a DApplication object this has to be done BEFORE
 	// creating the TApplication object since that modifes the argument list.
-	dapp = new DApplication(narg, argv);
+	japp = new DApplication(narg, argv);
 	
 	// Open Window
 	TApplication app("PatFind", &narg, argv);
@@ -31,20 +31,20 @@ int main(int narg, char *argv[])
 	
 	// Create a MyProcessor
 	myproc = new MyProcessor();
-	dapp->AddProcessor(myproc);
-	eventloop = new DEventLoop(dapp);
-	dapp->Init();
+	japp->AddProcessor(myproc);
+	eventloop = new JEventLoop(japp);
+	japp->Init();
 
 	// Hand control to ROOT event loop
 	app.Run();
 	
 	// Close out event loop
-	dapp->Fini();
+	japp->Fini();
 	
 	// clean up
 	delete myproc;
 	delete mmf;
-	delete dapp;
+	delete japp;
 	
 	return 0;
 }
