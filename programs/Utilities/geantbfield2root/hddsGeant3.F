@@ -54,6 +54,7 @@
       implicit none
       real r(3),B(3)
       real rr(3),rs(3),BB(3)
+		real phi, cos_phi, sin_phi
       integer iregion
       integer getMap
       external getMap
@@ -98,6 +99,14 @@
         B(2) = -2
         B(3) = 1.22461e-16
       else if (iregion.eq.3) then
+			phi=atan2(r(2),r(1));
+			cos_phi=cos(phi)
+			sin_phi=sin(phi)
+			rmat3(1,1) = cos_phi
+			rmat3(1,2) = sin_phi
+			rmat3(2,1) = -sin_phi
+			rmat3(2,2) = cos_phi
+		
         rs(1) = r(1)-orig3(1)
         rs(2) = r(2)-orig3(2)
         rs(3) = r(3)-orig3(3)
