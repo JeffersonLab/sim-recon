@@ -41,7 +41,8 @@ C.    *   Authors   : R.Brun, F.Bruyant                                *
 C.    *                                                                *
 C.    ******************************************************************
 C.
-#define USE_UPWGHT_AS_REPEAT_COUNT 1
+*** Comment out next line 11/6/2006 D.Lawrence (see note below)
+C. #define USE_UPWGHT_AS_REPEAT_COUNT 1
 *
 #include "geant321/gcbank.inc"
 #include "geant321/gckine.inc"
@@ -60,6 +61,16 @@ C.
       PARAMETER (ONE=1)
 C.
 C.    ------------------------------------------------------------------
+*** Disabled use of UPWGHT November 6,2006
+*** I have commented out the #define of USE_UPWGHT_AS_REPEAT_COUNT
+*** above because there appears to be a problem with it turned on.
+*** The symptom is that after the first dozen events or so, every
+*** single call to hitUpstreamEMveto(...) passes ISTORY=3 thereby
+*** disabling the UPVTruthShowers in the output. Disabling the
+*** UPWGHT feature results in consistent generation of UPVTruthShowers.
+*** I will leave it to Richard to track down the true source of
+*** the problem so that use of UPWGHT can be re-enabled.
+*** David Lawrence
 
 *** Modification introduced March 26, 2006
 ***  There is a  "user word" UPWGHT that is associated with each particle
