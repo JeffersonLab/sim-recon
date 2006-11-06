@@ -646,9 +646,11 @@ int DTrackCandidate_factory::FitTrack(void)
 	double fun = par[0]+s*(par[1]+s*(par[2]+s*(par[3]+s*(par[4]+s*(par[5])))));
 
 	trackcandidate->z_vertex = fit->z_vertex;
-	trackcandidate->dphidz = fit->theta/r0;
+	trackcandidate->dzdphi = r0/fit->theta;
 	trackcandidate->p = r0/s/fun;
 	trackcandidate->p_trans = trackcandidate->p*s;
+trackcandidate->p_trans = fit->p_trans;
+trackcandidate->p=fit->p_trans/s;
 	trackcandidate->q = fit->q;
 	trackcandidate->phi = fit->phi;
 	trackcandidate->theta = fit->theta;
@@ -747,7 +749,7 @@ const string DTrackCandidate_factory::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("        id: Nhits: x0(cm): y0(cm): z_vertex: dphi/dz:  q:     p: p_trans:   phi: theta:");
+	printheader("        id: Nhits: x0(cm): y0(cm): z_vertex: dz/dphi:  q:     p: p_trans:   phi: theta:");
 
 	for(unsigned int i=0; i<_data.size(); i++){
 		DTrackCandidate *trackcandidate = _data[i];
@@ -758,7 +760,7 @@ const string DTrackCandidate_factory::toString(void)
 		printcol("%3.1f", trackcandidate->x0);
 		printcol("%3.1f", trackcandidate->y0);
 		printcol("%3.1f", trackcandidate->z_vertex);
-		printcol("%1.3f", trackcandidate->dphidz);
+		printcol("%1.3f", trackcandidate->dzdphi);
 		printcol("%+1.0f", trackcandidate->q);
 		printcol("%3.3f", trackcandidate->p);
 		printcol("%3.2f", trackcandidate->p_trans);

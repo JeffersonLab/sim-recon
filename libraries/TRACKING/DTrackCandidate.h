@@ -20,7 +20,7 @@ class DTrackCandidate:public JObject{
 		vector<oid_t> hitid;	///< ids of hits in DTrackHit factory
 		float x0,y0;			///< center of circle
 		float z_vertex;		///< z coordinate of vertex
-		float dphidz;			///< dphi/dz in radians per cm
+		float dzdphi;			///< dz/dphi in cm per radian
 		float q;					///< electric charge 
 		float p, p_trans;		///< total and transverse momenta in GeV/c
 		float phi, theta;		///< theta and phi in radians

@@ -108,7 +108,7 @@ class DQuickFit{
 		float phi, theta;
 		float z_vertex;
 		float chisq;
-		float dphidz;
+		float dzdphi;
 		ChiSqSourceType_t chisq_source;
 
 	protected:

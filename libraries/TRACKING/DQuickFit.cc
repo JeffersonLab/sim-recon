@@ -140,7 +140,8 @@ jerror_t DQuickFit::FitCircle(void)
 	
 	// Calculate x0,y0 - the center of the circle
 	x0 = (deltax*beta-deltay*gamma)/(alpha*beta-gamma*gamma);
-	y0 = (deltay-gamma*x0)/beta;
+	//y0 = (deltay-gamma*x0)/beta;
+	y0 = (deltay*alpha-deltax*gamma)/(alpha*beta-gamma*gamma);
 	
 	// Calculate the phi angle traversed by the track from the
 	// origin to the last hit. NOTE: this can be off by a multiple
@@ -226,7 +227,7 @@ jerror_t DQuickFit::FitTrack(void)
 		//cout<<__FILE__<<":"<<__LINE__<<" deltaZ="<<deltaZ<<" deltaPhi="<<deltaPhi<<" Sxy(i)="<<deltaZ*deltaPhi<<endl;
 	}
 	float dzdphi = Syy/Sxy;
-	dphidz = Sxy/Syy;
+	dzdphi = Syy/Sxy;
 	z_vertex = z_mean - phi_mean*dzdphi;
 //cout<<__FILE__<<":"<<__LINE__<<" z_mean="<<z_mean<<" phi_mean="<<phi_mean<<" dphidz="<<dphidz<<" Sxy="<<Sxy<<" Syy="<<Syy<<" z_vertex="<<z_vertex<<endl;
 	
@@ -273,16 +274,17 @@ jerror_t DQuickFit::FitTrack_FixedZvertex(float z_vertex)
 	// Do linear regression on phi-Z
 	float Sx=0, Sy=0;
 	float Sxx=0, Syy=0, Sxy = 0;
+	float r0 = sqrt(x0*x0 + y0*y0);
 	for(unsigned int i=0; i<hits.size(); i++){
 		DQFHit_t *a = hits[i];
 
 		float dz = a->z - z_vertex;
 		float dphi = a->phi_circle;
 		Sx  += dz;
-		Sy  += dphi;
-		Syy += dphi*dphi;
+		Sy  += r0*dphi;
+		Syy += r0*dphi*r0*dphi;
 		Sxx += dz*dz;
-		Sxy += dphi*dz;
+		Sxy += r0*dphi*dz;
 	}
 	
 	float k = (Syy-Sxx)/(2.0*Sxy);
@@ -297,8 +299,8 @@ jerror_t DQuickFit::FitTrack_FixedZvertex(float z_vertex)
 		cot_theta = cot_theta2;
 	}
 	
-	//dphidz = 1.0/cot_theta;
-	dphidz = Sy/Sx;
+	dzdphi = r0*cot_theta;
+	//dzdphi = r0*Sx/Sy;
 	
 	// Fill in the rest of the paramters
 	return FillTrackParams();
@@ -345,7 +347,7 @@ jerror_t DQuickFit::FillTrackParams(void)
 	/// both FitTrack() and FitTrack_FixedZvertex(). 
 
 	float r0 = sqrt(x0*x0 + y0*y0);
-	theta = atan(r0*fabs(dphidz));
+	theta = atan(r0/fabs(dzdphi));
 	
 	// p_trans was calculated using a B-field at a single value
 	// of z. Now we can average the B-field over the path of
@@ -357,11 +359,9 @@ jerror_t DQuickFit::FillTrackParams(void)
 		p_trans *= Bz_avg/this->Bz_avg;
 	}
 	
-	p = fabs(p_trans/sin(theta));
-
 	// The sign of the electric charge will be opposite that
 	// of dphi/dz. Also, the value of phi will be PI out of phase
-	if(dphidz<0.0){
+	if(dzdphi<0.0){
 		phi += M_PI;
 		if(phi<0)phi+=2.0*M_PI;
 		if(phi>=2.0*M_PI)phi-=2.0*M_PI;
@@ -385,6 +385,13 @@ jerror_t DQuickFit::FillTrackParams(void)
 		if(phi>=2.0*M_PI)phi-=2.0*M_PI;
 		q = -q;
 	}
+
+	// There is a problem with theta for data generated with a uniform
+	// field. The following factor is emprical until I can figure out
+	// what the source of the descrepancy is.
+	theta += 0.1*pow(sin(theta),2.0);
+	
+	p = fabs(p_trans/sin(theta));
 	
 	return NOERROR;
 }
@@ -610,22 +617,22 @@ jerror_t DCDC::firstguess_curtis(s_Cdc_trackhit_t *hits, int Npoints
 	// get these is by a simple average (I guess).
 	v = hits;
 	v2=&v[1];
-	float dphidz =0.0;
-	int Ndphidzpoints = 0;
+	float dzdphi =0.0;
+	int Ndzdphipoints = 0;
 	for(int i=0;i<Npoints-1;i++, v++, v2++){
 		float myphi1 = atan2(v->y-y0,  v->x-x0);
 		float myphi2 = atan2(v2->y-y0, v2->x-x0);
-		float mydphidz = (myphi2-myphi1)/(v2->z-v->z);
-		if(finite(mydphidz)){
-			dphidz+=mydphidz;
-			Ndphidzpoints++;
+		float mydzdphi = (v2->z-v->z)/(myphi2-myphi1);
+		if(finite(mydzdphi)){
+			dzdphi+=mydzdphi;
+			Ndzdphipoints++;
 		}
 	}
-	if(Ndphidzpoints){
-		dphidz/=(float)Ndphidzpoints;
+	if(Ndzdphipoints){
+		dzdphi/=(float)Ndzdphipoints;
 	}
 	
-	theta = atan(r0*fabs(dphidz));
+	theta = atan(r0/fabs(dzdphi));
 	p = -p_trans/sin(theta);
 
 	return NOERROR;
