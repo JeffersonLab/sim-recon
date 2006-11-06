@@ -97,7 +97,7 @@ jerror_t DHDDMTOFHit_factory::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
 				DHDDMTOFHit *tofhit = new DHDDMTOFHit;
 				tofhit->paddle	= ftofCounter->paddle;
 				tofhit->plane	= ftofCounter->plane;
-				tofhit->end		= 0;
+				tofhit->end		= 1;
 				tofhit->t		= ftofRightHit->t;
 				tofhit->dE		= ftofRightHit->dE;
 				v.push_back(tofhit);
