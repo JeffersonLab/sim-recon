@@ -138,6 +138,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DUPVHit")
 		return Extract_DUPVHit(my_hddm_s, dynamic_cast<JFactory<DUPVHit>*>(factory));
 
+	if(dataClassName =="DUPVTruthHit")
+		return Extract_DUPVTruthHit(my_hddm_s, dynamic_cast<JFactory<DUPVTruthHit>*>(factory));
+
 	if(dataClassName =="DMCTrajectoryPoint")
 		return Extract_DMCTrajectoryPoint(my_hddm_s, dynamic_cast<JFactory<DMCTrajectoryPoint>*>(factory));
 
@@ -734,6 +737,59 @@ jerror_t DEventSourceHDDM::Extract_DUPVHit(s_HDDM_t *hddm_s,  JFactory<DUPVHit> 
 	return NOERROR;
 }
 
+//------------------
+// Extract_DUPVTruthHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DUPVTruthHit(s_HDDM_t *hddm_s,  JFactory<DUPVTruthHit> *factory)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+	
+	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+	
+	vector<DUPVTruthHit*> data;
+
+	// Acquire the pointer to the physics events
+	s_PhysicsEvents_t* allEvents = hddm_s->physicsEvents;
+	if(!allEvents) {
+	  //throw JException("Attempt to get physics events from HDDM source failed.");
+		return NOERROR;
+	}
+       
+	for (unsigned int m=0; m < allEvents->mult; m++) {
+	
+		// Acquire the pointer to the overall hits section of the data
+		s_HitView_t *hits = allEvents->in[m].hitView;
+		
+		if (hits == HDDM_NULL)return NOERROR;
+		if (hits->upstreamEMveto == HDDM_NULL)return NOERROR;
+		if (hits->upstreamEMveto->upvTruthShowers == HDDM_NULL)return NOERROR;
+
+		// Acquire the pointer to the beginning of the UPV hit tree
+		s_UpvTruthShowers_t* upvTruthShowers = hits->upstreamEMveto->upvTruthShowers;
+
+		for (unsigned int i=0; i < upvTruthShowers->mult; i++) {
+			s_UpvTruthShower_t &shower = upvTruthShowers->in[i];
+			
+			DUPVTruthHit *hit = new DUPVTruthHit();
+			hit->E			= shower.E;
+			hit->primary	= shower.primary;
+			hit->t			= shower.t;
+			hit->track		= shower.track;
+			hit->x			= shower.x;
+			hit->y			= shower.y;
+			hit->z			= shower.z;
+
+			data.push_back(hit);
+		}
+	}
+	
+	// Copy into factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
 
 //------------------
 // Extract_DMCTrajectoryPoint
