@@ -8,8 +8,8 @@
 #include <iomanip>
 using namespace std;
 
-#include "DMagneticFieldMap.h"
-#include "DParameterManager.h"
+#include "TRACKING/DMagneticFieldMap.h"
+#include "JANA/JParameterManager.h"
 
 #include <TFile.h>
 #include <TTree.h>
@@ -39,7 +39,7 @@ int main(int narg, char *argv[])
 	bfield->GetTable(Bmap, Npoints);
 	
 	double BMAP_Z_OFFSET;
-	dparms.GetParameter("GEOM:BMAP_Z_OFFSET", BMAP_Z_OFFSET);
+	jparms.GetParameter("GEOM:BMAP_Z_OFFSET", BMAP_Z_OFFSET);
 	
 
 	// Loop over all points in the map
