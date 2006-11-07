@@ -640,24 +640,23 @@ int DTrackCandidate_factory::FitTrack(void)
 	trackcandidate->y0 = y0 = fit->y0;
 	r0 = sqrt(x0*x0 + y0*y0);
 		
-	// The following is from a fit of Ro/sin(theta)/p_thrn vs. theta
-	double par[] = {180.618178, -77.646922, 290.502314, -318.531368, 145.897184, -24.017713};
-	double s = sin(fit->theta);
-	double fun = par[0]+s*(par[1]+s*(par[2]+s*(par[3]+s*(par[4]+s*(par[5])))));
+	// The following is from a fit of ratio of thrown to reconstructed
+	// transverse momentum vs. theta
+	double par[] = {0.984463, 0.150759, -0.414933, 0.257472, -0.055801};
+	double theta = fit->theta;
+	double ff = par[0]+theta*(par[1]+theta*(par[2]+theta*(par[3]+theta*par[4])));
+	double sin_theta = sin(fit->theta);
 
 	trackcandidate->z_vertex = fit->z_vertex;
-	trackcandidate->dzdphi = r0/fit->theta;
-	trackcandidate->p = r0/s/fun;
-	trackcandidate->p_trans = trackcandidate->p*s;
-trackcandidate->p_trans = fit->p_trans;
-trackcandidate->p=fit->p_trans/s;
+	trackcandidate->dzdphi = r0/theta;
+	trackcandidate->p_trans = fit->p_trans*ff;
+	trackcandidate->p = trackcandidate->p_trans/sin_theta;
 	trackcandidate->q = fit->q;
 	trackcandidate->phi = fit->phi;
 	trackcandidate->theta = fit->theta;
 
 	// Do one last pass over the hits, marking all 
 	// that are consistent with these parameters as used.
-//cout<<__FILE__<<":"<<__LINE__<<" theta"<<fit->theta<<endl;
 	MarkTrackHits(trackcandidate, fit);
 	
 	_data.push_back(trackcandidate);
