@@ -10,45 +10,6 @@
 #include "DFCALTruthShower_factory.h"
 
 //------------------
-// Extract_HDDM
-//------------------
-jerror_t DFCALTruthShower_factory::Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v)
-{
-	// Loop over Physics Events
-	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-	if(!PE) return NOERROR;
-	
-	oid_t id=1;
-	for(unsigned int i=0; i<PE->mult; i++){
-		s_HitView_t *hits = PE->in[i].hitView;
-		if (hits == HDDM_NULL ||
-			hits->forwardEMcal == HDDM_NULL ||
-			hits->forwardEMcal->fcalTruthShowers == HDDM_NULL)continue;
-
-		s_FcalTruthShowers_t *showers = hits->forwardEMcal->fcalTruthShowers;
-		for(unsigned int j=0; j<showers->mult; j++){
-			s_FcalTruthShower_t *shower = &showers->in[j];
-			
-			DFCALTruthShower *dfcaltruthshower = new DFCALTruthShower(
-				id++,
-				shower->x,
-				shower->y,
-				shower->z,
-				shower->E,
-				shower->t,
-				shower->primary,
-				shower->track
-				);
-			
-			_data.push_back(dfcaltruthshower);
-		}
-
-	} // i  (physicsEvents)
-
-	return NOERROR;
-}
-
-//------------------
 // toString
 //------------------
 const string DFCALTruthShower_factory::toString(void)

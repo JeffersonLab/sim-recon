@@ -10,7 +10,6 @@
 
 #include "JANA/JFactory.h"
 #include "JANA/JEventLoop.h"
-#include "HDDM/hddm_s.h"
 #include "DFCALHit.h"
 #include "units.h"
 
@@ -20,7 +19,6 @@ class DFCALHit_factory:public JFactory<DFCALHit>{
 	
 	    DFCALHit_factory(){};
 		~DFCALHit_factory(){};
-		jerror_t Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v);
 		const string toString(void);
 		
 	protected:
