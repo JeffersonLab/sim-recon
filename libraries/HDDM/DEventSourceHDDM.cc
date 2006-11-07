@@ -16,6 +16,7 @@ using namespace std;
 
 #include "DEventSourceHDDM.h"
 #include "FDC/DFDCGeometry.h"
+#include "FCAL/DFCALGeometry.h"
 
 //------------------------------------------------------------------
 // Binary predicate used to sort hits
@@ -135,6 +136,12 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DFDCHit")
 		return Extract_DFDCHit(my_hddm_s, dynamic_cast<JFactory<DFDCHit>*>(factory));
 
+	if(dataClassName == "DFCALTruthShower" )
+	  return Extract_DFCALTruthShower(my_hddm_s, dynamic_cast<JFactory<DFCALTruthShower>*>(factory));
+
+	if(dataClassName == "DFCALHit" )
+	  return Extract_DFCALHit(my_hddm_s, dynamic_cast<JFactory<DFCALHit>*>(factory), event.GetJEventLoop() );
+
 	if(dataClassName =="DUPVHit")
 		return Extract_DUPVHit(my_hddm_s, dynamic_cast<JFactory<DUPVHit>*>(factory));
 
@@ -144,7 +151,6 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DMCTrajectoryPoint")
 		return Extract_DMCTrajectoryPoint(my_hddm_s, dynamic_cast<JFactory<DMCTrajectoryPoint>*>(factory));
 
-	
 	return OBJECT_NOT_AVAILABLE;
 }
 
@@ -649,6 +655,115 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 	factory->CopyTo(data);
 
 	return NOERROR;
+}
+
+//------------------
+// Extract_DFCALTruthShower
+//------------------
+jerror_t DEventSourceHDDM::Extract_DFCALTruthShower(s_HDDM_t *hddm_s,  JFactory<DFCALTruthShower> *factory)
+{
+  	/// Copies the data from the given hddm_s structure. This is called
+	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+	
+	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+	
+	vector<DFCALTruthShower*> data;
+
+		// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+	
+	oid_t id=1;
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->forwardEMcal == HDDM_NULL ||
+			hits->forwardEMcal->fcalTruthShowers == HDDM_NULL)continue;
+
+		s_FcalTruthShowers_t *showers = hits->forwardEMcal->fcalTruthShowers;
+		for(unsigned int j=0; j<showers->mult; j++){
+			s_FcalTruthShower_t *shower = &showers->in[j];
+			
+			DFCALTruthShower *dfcaltruthshower = new DFCALTruthShower(
+				id++,
+				shower->x,
+				shower->y,
+				shower->z,
+				shower->E,
+				shower->t,
+				shower->primary,
+				shower->track
+				);
+			
+			data.push_back(dfcaltruthshower);
+		}
+
+	} // i  (physicsEvents)
+
+	// Copy into factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
+
+//------------------
+// Extract_DFCALHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DFCALHit(s_HDDM_t *hddm_s,  JFactory<DFCALHit> *factory, JEventLoop* eventLoop )
+{
+  /// Copies the data from the given hddm_s structure. This is called
+  /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+  /// returns OBJECT_NOT_AVAILABLE immediately.
+	
+  if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+
+  vector<DFCALHit*> data;
+  
+  // extract the FCAL Geometry
+  vector<const DFCALGeometry*> fcalGeomVect;
+  eventLoop->Get( fcalGeomVect );
+  if(fcalGeomVect.size() != 1){
+    cerr<<__FILE__<<":"<<__LINE__<<" Bad number of DFCALGeometry objects ("<<fcalGeomVect.size()<<")!"<<endl;
+    return VALUE_OUT_OF_RANGE;
+  }
+  const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
+
+  // Loop over Physics Events
+  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+  if(!PE) return NOERROR;
+	
+  for(unsigned int i=0; i<PE->mult; i++){
+    s_HitView_t *hits = PE->in[i].hitView;
+    if (hits == HDDM_NULL ||
+	hits->forwardEMcal == HDDM_NULL ||
+	hits->forwardEMcal->fcalBlocks == HDDM_NULL)continue;
+
+    s_FcalBlocks_t *blocks = hits->forwardEMcal->fcalBlocks;
+    for(unsigned int j=0; j<blocks->mult; j++){
+      s_FcalBlock_t *block = &blocks->in[j];
+      for(unsigned int k=0; k<block->fcalHits->mult; k++){
+	s_FcalHit_t *fcalhit = &block->fcalHits->in[k];
+	TVector2 position = fcalGeom.positionOnFace(block->row, block->column);
+				
+	DFCALHit *dfcalhit = new DFCALHit();
+	dfcalhit->column = block->column;
+	dfcalhit->row = block->row;
+	dfcalhit->x = position.X();
+	dfcalhit->y = position.Y();
+	dfcalhit->E = fcalhit->E;
+	dfcalhit->t = fcalhit->t;
+				
+	data.push_back(dfcalhit);
+
+      } // k  (fcalhits)
+    } // j  (blocks)
+  } // i  (physicsEvents)
+
+  // Copy into factory
+  factory->CopyTo(data);
+
+  return NOERROR;
 }
 
 //------------------
