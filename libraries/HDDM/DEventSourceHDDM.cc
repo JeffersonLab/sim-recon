@@ -151,6 +151,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DMCTrajectoryPoint")
 		return Extract_DMCTrajectoryPoint(my_hddm_s, dynamic_cast<JFactory<DMCTrajectoryPoint>*>(factory));
 
+	if(dataClassName =="DTOFTruth")
+	  return Extract_DTOFTruth(my_hddm_s, dynamic_cast<JFactory<DTOFTruth>*>(factory));
+
 	return OBJECT_NOT_AVAILABLE;
 }
 
@@ -954,4 +957,52 @@ jerror_t DEventSourceHDDM::Extract_DMCTrajectoryPoint(s_HDDM_t *hddm_s,  JFactor
 	factory->CopyTo(data);
 
 	return NOERROR;
+}
+
+//------------------
+// Extract_DHDDMTOFTruth
+//------------------
+
+jerror_t DEventSourceHDDM::Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTruth> *factory)
+{
+  /// Copies the data from the given hddm_s structure. This is called
+  /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+  /// returns OBJECT_NOT_AVAILABLE immediately.
+	
+  if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+  
+  vector<DTOFTruth*> data;
+
+  // Loop over Physics Events
+  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+  if(!PE) return NOERROR;
+	
+  for(unsigned int i=0; i<PE->mult; i++){
+    s_HitView_t *hits = PE->in[i].hitView;
+    if (hits == HDDM_NULL ||
+	hits->forwardTOF == HDDM_NULL ||
+	hits->forwardTOF->ftofTruthPoints == HDDM_NULL)continue;
+
+    s_FtofTruthPoints_t* ftofTruthPoints = hits->forwardTOF->ftofTruthPoints;
+
+    // Loop truth hits
+    s_FtofTruthPoint_t *ftofTruthPoint = ftofTruthPoints->in;
+    for(unsigned int j=0;j<ftofTruthPoints->mult; j++, ftofTruthPoint++){
+      DTOFTruth *toftruth = new DTOFTruth;
+		
+      toftruth->orientation = 1;
+      toftruth->primary     = ftofTruthPoint->primary;
+      toftruth->t           = ftofTruthPoint->t;
+      toftruth->track       = ftofTruthPoint->track;
+      toftruth->x           = ftofTruthPoint->x;
+      toftruth->y           = ftofTruthPoint->y;
+      toftruth->z           = ftofTruthPoint->z;
+      data.push_back(toftruth);
+    }
+  }
+
+  // Copy into factory
+  factory->CopyTo(data);
+
+  return NOERROR;
 }

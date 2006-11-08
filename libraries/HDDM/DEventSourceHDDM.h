@@ -27,6 +27,7 @@ using namespace std;
 #include "FCAL/DFCALHit.h"
 #include "UPV/DUPVHit.h"
 #include "UPV/DUPVTruthHit.h"
+#include "TOF/DTOFTruth.h"
 
 class DEventSourceHDDM:public JEventSource
 {
@@ -58,7 +59,7 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t Extract_DUPVHit(s_HDDM_t *hddm_s, JFactory<DUPVHit> *factory);
 		jerror_t Extract_DUPVTruthHit(s_HDDM_t *hddm_s, JFactory<DUPVTruthHit> *factory);
 		jerror_t Extract_DMCTrajectoryPoint(s_HDDM_t *hddm_s, JFactory<DMCTrajectoryPoint> *factory);
-
+		jerror_t Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTruth> *factory);
 		s_iostream_t *fin;
 		s_HDDM_t *hddm_s;
 		bool flush_on_free;
