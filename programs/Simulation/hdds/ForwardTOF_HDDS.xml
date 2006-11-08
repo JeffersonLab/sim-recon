@@ -10,20 +10,23 @@
 -->
 
 <section name        = "ForwardTOF"
-         version     = "1.1"
-         date        = "2005-01-25"
-         author      = "R.T. Jones"
+         version     = "1.2"
+         date        = "2006-11-08"
+         author      = "M. Shepherd"
          top_volume  = "FTOF"
          specification = "v1.0">
 
 <!-- Origin of ForwardTOF is center of entrance plane of detector -->
 
+<!-- upstream plane has vertical oriented bars -->
+<!-- downstream plane has horizontal oriented bars -->
+
   <composition name="ForwardTOF">
-    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 -0.635">
-      <plane value="1" />
+    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 -0.635" rot="0 0 -90">
+      <plane value="0" />
     </posXYZ>
-    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 +0.635" rot="0 0 -90">
-      <plane value="2" />
+    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 +0.635">
+      <plane value="1" />
     </posXYZ>
   </composition>
 
