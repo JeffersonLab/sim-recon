@@ -123,7 +123,7 @@ void SmearCDC(s_HDDM_t *hddm_s)
 			}while(sqrt(deltaX*deltaX + deltaY*deltaY)>CDC_R);
 			x+=deltaX;
 			y+=deltaY;
-			z+= SampleGaussian(CDC_Z_SIGMA);
+			if(CDC_Z_SIGMA!=0.0)z+= SampleGaussian(CDC_Z_SIGMA);
 
 			cdctruthpoint->r = sqrt(x*x + y*y);
 			cdctruthpoint->phi = atan2(y,x);
@@ -247,7 +247,7 @@ void SmearFDC(s_HDDM_t *hddm_s)
 				truth->y += 2.0*((float)random()/RANDOM_MAX-0.5)*FDC_R;
 							
 				// Z should be well known for the FDC, but smear it slightly anyway
-				truth->z += SampleGaussian(FDC_Z);
+				if(FDC_Z!=0.0)truth->z += SampleGaussian(FDC_Z);
 			}
 		}
 	}
