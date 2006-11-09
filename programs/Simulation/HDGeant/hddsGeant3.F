@@ -60763,13 +60763,22 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.169) stop 'consistency check #1 failed'
 
+      irot = 2903
+      theta1 = 90
+      phi1 = -90
+      theta2 = 90
+      phi2 = 3.50824e-15
+      theta3 = 0
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
       chname = 'FTOF'
       nr = 1
       chmoth = 'HALL'
       x = 150
       y = -350
       z = 118.165
-      irot = 0
+      irot = 2903
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -61023,11 +61032,11 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 2903
+      irot = 2904
       theta1 = 90
-      phi1 = -90
+      phi1 = 180
       theta2 = 90
-      phi2 = 3.50824e-15
+      phi2 = -90
       theta3 = 0
       phi3 = 0
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
@@ -61038,7 +61047,7 @@
       x = 150
       y = -350
       z = 119.435
-      irot = 2903
+      irot = 2904
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -64141,7 +64150,7 @@
      +     0,    0,    0,    0,    0/
       integer lookup(5)
       data (lookup(i),i=1,5) /
-     +     2,    1,    3,    1,    2/
+     +     2,    1,    3,    0,    1/
       integer level,index
       integer plane
       getPlane = 0
@@ -64606,9 +64615,9 @@
       data (lookup(i),i=1,100) /
      +     1,    2,    3,    4,    5,    6,    7,    8,    9,   10,
      +    11,   12,   13,   14,   15,   16,   17,   18,   19,   20,
-     +    21,   22,   22,   23,   24,   25,   26,   27,   28,   29,
-     +    30,   31,   32,   33,   34,   35,   36,   37,   38,   39,
-     +    40,   41,   42,   43,    0,    1,    2,    3,    4,    5,
+     +    21,   44,   43,   21,   22,   23,   24,   25,   26,   27,
+     +    28,   29,   30,   31,   32,   33,   34,   35,   36,   37,
+     +    38,   39,   40,   41,    0,    1,    2,    3,    4,    5,
      +     6,    7,    8,    9,   10,   11,   12,   13,   14,   15,
      +    16,   17,   18,   19,   20,   21,   22,   23,   24,   25,
      +    26,   27,   25,   26,   27,   28,   29,   30,   31,   32,
@@ -65066,7 +65075,6 @@
       implicit none
       real r(3),B(3)
       real rr(3),rs(3),BB(3)
-		real phi, cos_phi, sin_phi
       integer iregion
       integer getMap
       external getMap
@@ -65111,14 +65119,6 @@
         B(2) = -2
         B(3) = 1.22461e-16
       else if (iregion.eq.3) then
-			phi=atan2(r(2),r(1));
-			cos_phi=cos(phi)
-			sin_phi=sin(phi)
-			rmat3(1,1) = cos_phi
-			rmat3(1,2) = sin_phi
-			rmat3(2,1) = -sin_phi
-			rmat3(2,2) = cos_phi
-
         rs(1) = r(1)-orig3(1)
         rs(2) = r(2)-orig3(2)
         rs(3) = r(3)-orig3(3)
