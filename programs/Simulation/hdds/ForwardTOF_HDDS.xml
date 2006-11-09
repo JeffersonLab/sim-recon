@@ -25,7 +25,7 @@
     <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 -0.635" rot="0 0 -90">
       <plane value="0" />
     </posXYZ>
-    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 +0.635">
+    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 +0.635" rot="0 0 180">
       <plane value="1" />
     </posXYZ>
   </composition>
@@ -37,6 +37,7 @@
     <posXYZ volume="forwardTOF_top" X_Y_Z="0.0 +66.0 0.0" />
   </composition>
 
+<!-- the attribute 'row' is synonymous with 'bar' and 'paddle'-->
   <composition name="forwardTOF_bottom" envelope="FTOB">
     <mposY volume="FTOC" ncopy="21" Z_X="0.0 0.0" Y0="-60.00" dY="6.00">
       <row value="1" step="1" />
@@ -45,18 +46,18 @@
   <composition name="forwardTOF_left" envelope="FTOL">
     <posXYZ volume="FTOS">
       <column value="1" />
-      <row value="22" />
+      <row value="44" />
     </posXYZ>
   </composition>
   <composition name="forwardTOF_right" envelope="FTOR">
     <posXYZ volume="FTOS">
       <column value="2" />
-      <row value="22" />
+      <row value="43" />
     </posXYZ>
   </composition>
   <composition name="forwardTOF_top" envelope="FTOT">
     <mposY volume="FTOC" ncopy="21" Z_X="0.0 0.0" Y0="-60.0" dY="6.00">
-      <row value="23" step="1" />
+      <row value="21" step="1" />
     </mposY>
   </composition>
 
