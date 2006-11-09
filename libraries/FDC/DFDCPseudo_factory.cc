@@ -26,7 +26,16 @@
 /// by their gLayer attributes.
 ///
 bool DFDCCathodeCluster_gLayer_cmp(const DFDCCathodeCluster* a, 
-								   const DFDCCathodeCluster* b) {
+				   const DFDCCathodeCluster* b) {
+	return a->gLayer < b->gLayer;
+}
+
+///
+/// DFDCAnode_gLayer_cmp(): 
+/// non-member function passed to std::sort() to sort DFDCHit pointers 
+/// for the anode wires by their gLayer attributes.
+///
+bool DFDCAnode_gLayer_cmp(const DFDCHit* a, const DFDCHit* b) {
 	return a->gLayer < b->gLayer;
 }
 
@@ -74,6 +83,8 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	for (unsigned int i=0; i < fdcHits.size(); i++)
 		if (fdcHits[i]->type == 0)
 			xHits.push_back(fdcHits[i]);
+	// Make sure the wires are also in order of ascending z position
+	std::sort(xHits.begin(), xHits.end(), DFDCAnode_gLayer_cmp);
 			
 	// Sift through clusters and put U and V clusters into respective vectors.
 	for (unsigned int i=0; i < cathClus.size(); i++) {
