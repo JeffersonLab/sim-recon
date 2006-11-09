@@ -28,6 +28,7 @@ using namespace std;
 #include "TRACKING/DMCThrown.h"
 #include "JANA/JGeometry.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
+#include "FCAL/DFCALHit.h"
 
 extern TCanvas *maincanvas;
 extern hdv_mainframe *hdvmf;
@@ -41,7 +42,8 @@ static float BCAL_Rmax = 90.0;
 static float BCAL_Zlen = 390.0;
 static float BCAL_Zmid = 17.0 + BCAL_Zlen/2.0;
 static float FCAL_Zlen = 45.0;
-static float FCAL_Zmid = 622.8+FCAL_Zlen/2.0;
+static float FCAL_Zmin = 622.8;
+static float FCAL_Zmid = FCAL_Zmin+FCAL_Zlen/2.0;
 static float FCAL_Rmin = 6.0;
 static float FCAL_Rmax = 212.0/2.0;
 static float CDC_Rmin = 15.0;
@@ -150,11 +152,13 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	
 	// Get TrackHits
 	vector<const DTrackHit*> trackhits;
+	vector<const DFCALHit*> fcalHits;
 	vector<const DMCTrackHit*> mctrackhits;
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrajectoryPoint*> mctrajectories;
 	eventLoop->Get(trackhits, TRACKHIT_SOURCE.c_str());
 	JFactory<DMCTrackHit> *fac_mcth = eventLoop->Get(mctrackhits); // just in case we need it later
+	eventLoop->Get(fcalHits);
 	eventLoop->Get(mcthrowns); // used for straight tracks
 	eventLoop->Get(mctrajectories);
 	
@@ -196,6 +200,44 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 		if(top)markers.push_back(top);
 		if(side)markers.push_back(side);
 		if(front)markers.push_back(front);
+	}
+
+	// loop over FCAL hits creating square markers with size proportional to energy
+
+	for( vector<const DFCALHit*>::const_iterator hitPtr = fcalHits.begin();
+	     hitPtr != fcalHits.end(); ++hitPtr ){
+	  
+	  const DFCALHit& fcalHit = **hitPtr;
+
+	  float x = fcalHit.x;
+	  float y = fcalHit.y;
+	  float z = FCAL_Zmin;
+
+	  TMarker *top = NULL;
+	  TMarker *side = NULL;
+	  TMarker *front = NULL;
+		
+	  float X,Y;
+	  ConvertToTop(x, y, z,X,Y);
+	  if(X<-0.1 && X>-2.0 && Y>0.0 && Y<1.0)top = new TMarker(X,Y,25);
+	  ConvertToSide(x, y, z,X,Y);
+	  if(X<-0.1 && X>-2.0 && Y<0.0 && Y>-1.0)side = new TMarker(X,Y,25);
+	  ConvertToFront(x, y, z,X,Y);
+	  if(X>-0.1 && Y<1.0 && Y>-1.0)front = new TMarker(X,Y,25);
+
+	  // adjust size of hits to be representative of energy
+	  float size = fcalHit.E * 1.0;
+
+	  if(top)top->SetMarkerColor(kBlue);
+	  if(top)top->SetMarkerSize(size);
+	  if(side)side->SetMarkerColor(kBlue);
+	  if(side)side->SetMarkerSize(size);
+	  if(front)front->SetMarkerColor(kBlue);
+	  if(front)front->SetMarkerSize(size);
+	  
+	  if(top)markers.push_back(top);
+	  if(side)markers.push_back(side);
+	  if(front)markers.push_back(front);
 	}
 	
 	// Loop over hits creating markers for all 3 views
@@ -244,6 +286,10 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 		float x = trackhit->r*cos(trackhit->phi);
 		float y = trackhit->r*sin(trackhit->phi);
 		float z = trackhit->z;
+
+		// don't draw hits in FCAL -- since display gets cluttered with secondaries
+		if( z > FCAL_Zmin ) continue;
+
 		float X,Y;
 		ConvertToTop(x,y,z,X,Y);
 		TMarker *top = new TMarker(X,Y,20);
