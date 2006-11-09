@@ -9,7 +9,7 @@
 #include <math.h>
 
 #include "DTOFPoint_factory.h"
-#include "DHDDMTOFTruth.h"
+#include "DTOFTruth.h"
 #include "DTOFHit.h"
 
 #define MAXTOFHITS 50
@@ -28,7 +28,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
   vector<const DTOFHit*> hits;
   eventLoop->Get(hits);
 
-  vector<const DHDDMTOFTruth*> tracks;
+  vector<const DTOFTruth*> tracks;
   eventLoop->Get(tracks);
 
   unsigned int usedlist[MAXTOFHITS*4];

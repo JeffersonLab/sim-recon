@@ -1,21 +1,21 @@
 // $Id$
 //
-//    File: DHDDMTOFTruth.h
+//    File: DTOFTruth.h
 // Created: Mon Oct 17 13:58:02 EST 2005
 // Creator: remitche (on Linux mantrid00 2.4.20-18.8smp i686)
 //
 
-#ifndef _DHDDMTOFTruth_
-#define _DHDDMTOFTruth_
+#ifndef _DTOFTruth_
+#define _DTOFTruth_
 
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
 
-class DHDDMTOFTruth:public JObject{
-    public:
-        HDCLASSDEF(DHDDMTOFTruth);
+class DTOFTruth:public JObject{
 
-        int orientation;   //  0: vertical, 1: horizontal
+    public:
+        HDCLASSDEF(DTOFTruth);
+
         int track;         //  track index
         int primary;       //  0: secondary, 1: primary
         float x, y, z;     //  true point of intersection
@@ -23,5 +23,5 @@ class DHDDMTOFTruth:public JObject{
 
 };
 
-#endif // _DHDDMTOFTruth_
+#endif // _DTOFTruth_
 

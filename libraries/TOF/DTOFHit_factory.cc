@@ -22,6 +22,9 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
     const DTOFMCResponse *mcresponse = mcresponses[i];
     DTOFHit *hit = new DTOFHit;
 
+    // do any run dependent calibration here
+
+    hit->id          = mcresponse->id;
     hit->orientation = mcresponse->orientation;
     hit->end         = mcresponse->end;
     hit->y           = mcresponse->y;
@@ -41,29 +44,26 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 //------------------
 const string DTOFHit_factory::toString(void)
 {
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
+  // Ensure our Get method has been called so _data is up to date
+  Get();
+  if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row:   x(cm):   y(cm):  orientation:     end:     dE(MeV):   t(ns):");
+  printheader( "id: orientation: end:    t [ns]:    x/y (orth.):   dE [MeV]:" );
 
-/*	
-	for(unsigned int i=0; i<_data.size(); i++){
-		DTOFHit *tofhit = _data[i];
-
-		printnewrow();
-		
-		printcol("%d", i);
-		printcol("%3.1f", tofhit->x);
-		printcol("%3.1f", tofhit->y);
-		printcol(tofhit->orientation ? "horizontal":"vertical");
-		printcol(tofhit->end ? "right":"left");
-		printcol("%2.3f", tofhit->dE*1000.0);
-		printcol("%4.3f", tofhit->t);
-		
-		printrow();
-	}
-*/
 	
-	return _table;
+  for(unsigned int i=0; i<_data.size(); i++){
+    DTOFHit *tofhit = _data[i];
+
+    printnewrow();
+    printcol("%d",	tofhit->id );
+    printcol("%d",	tofhit->orientation );
+    printcol("%d",	tofhit->end );
+    printcol("%1.3f",	tofhit->t );
+    printcol("%2.3f",	tofhit->y );
+    printcol("%1.3f",	tofhit->E );    
+    printrow();
+  }
+  
+	
+  return _table;
 }

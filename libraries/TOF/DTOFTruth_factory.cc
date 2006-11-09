@@ -19,21 +19,20 @@ const string DTOFTruth_factory::toString(void)
   Get();
   if(_data.size()<=0)return string(); // don't print anything if we have no data!
   
-  printheader("row:  primary: track: t:       x:     y:     z:      orientation:");
+  printheader("id:  primary: track:      x:         y:         z:        t:");
 	
   for(unsigned int i=0; i<_data.size(); i++){
 
     DTOFTruth *truth = _data[i];
 
     printnewrow();
-    printcol("%d",	i);
+    printcol("%d",	truth->id);
     printcol("%d",	truth->primary);
     printcol("%d",	truth->track);
-    printcol("%1.3f",	truth->t);
     printcol("%1.3f",	truth->x);
     printcol("%1.3f",	truth->y);
     printcol("%1.3f",	truth->z);
-    printcol("%d",	truth->orientation);
+    printcol("%1.3f",	truth->t);
     printrow();
   }
 

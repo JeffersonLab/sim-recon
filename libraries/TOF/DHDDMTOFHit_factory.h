@@ -15,13 +15,11 @@
 
 class DHDDMTOFHit_factory:public JFactory<DHDDMTOFHit>{
     public:
+
         DHDDMTOFHit_factory(){};
         ~DHDDMTOFHit_factory(){};
-
-        jerror_t Extract_HDDM(s_HDDM_t *hddm_s, vector<void*> &v);
 		
         const string toString(void);
-
 
     private:
         jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method

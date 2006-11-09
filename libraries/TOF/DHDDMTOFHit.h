@@ -12,15 +12,15 @@
 #include "JANA/JFactory.h"
 
 class DHDDMTOFHit:public JObject{
+
     public:
         HDCLASSDEF(DHDDMTOFHit);
-
-			int paddle;		// paddle number
-			int plane;		// plane
-			int end;			// 0: left/top,  1: right/bottom
-			float t;			// time of light at end of bar
-			float dE;		// attenuated energy deposition
-
+	
+	int plane;		// plane (0: vertical, 1: horizontal)
+	int end;		// 0: north/top,  1: south/bottom
+	int paddle;		// paddle number
+	float t;		// time of light at end of bar
+	float dE;		// attenuated energy deposition
 };
 
 #endif // _DHDDMTOFHit_

@@ -10,29 +10,31 @@
 jerror_t DTOFGeometry_factory::init(void)
 {
 
-//   This is the geometry as it currently stands inside HDGeant.
-//   This does not represent the current design, but will be
-//   used just to get things going.  Eventually these will be changed
-//   to:
-//
-//     nlongbars=40
-//     nshortbars=4
-//     longbarlength=252.0
-//     shortbarlength=120.0
-//     barwidth=6.0
+  flags = PERSISTANT;
 
+  //   This is the geometry as it currently stands inside HDGeant.
+  //   This does not represent the current design, but will be
+  //   used just to get things going.  Eventually these will be changed
+  //   to:
+  //
+  //     nlongbars=40
+  //     nshortbars=4
+  //     longbarlength=252.0
+  //     shortbarlength=120.0
+  //     barwidth=6.0
+  
 
-    DTOFGeometry *myDTOFGeometry = new DTOFGeometry;
+  DTOFGeometry *myDTOFGeometry = new DTOFGeometry;
 
-    myDTOFGeometry->NLONGBARS        = 42;
-    myDTOFGeometry->NSHORTBARS       = 2;
-    myDTOFGeometry->LONGBARLENGTH    = 258.0;
-    myDTOFGeometry->SHORTBARLENGTH   = 126.0;
-    myDTOFGeometry->BARWIDTH         = 6.0;
-
-    _data.push_back(myDTOFGeometry);
-
-    return NOERROR;
+  myDTOFGeometry->NLONGBARS        = 42;
+  myDTOFGeometry->NSHORTBARS       = 2;
+  myDTOFGeometry->LONGBARLENGTH    = 258.0;
+  myDTOFGeometry->SHORTBARLENGTH   = 126.0;
+  myDTOFGeometry->BARWIDTH         = 6.0;
+  
+  _data.push_back(myDTOFGeometry);
+    
+  return NOERROR;
 }  
 
 
