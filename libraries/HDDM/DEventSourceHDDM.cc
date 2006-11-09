@@ -154,6 +154,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DTOFTruth")
 	  return Extract_DTOFTruth(my_hddm_s, dynamic_cast<JFactory<DTOFTruth>*>(factory));
 
+	if(dataClassName =="DHDDMTOFHit")
+	  return Extract_DHDDMTOFHit(my_hddm_s, dynamic_cast<JFactory<DHDDMTOFHit>*>(factory));
+
 	return OBJECT_NOT_AVAILABLE;
 }
 
@@ -960,10 +963,9 @@ jerror_t DEventSourceHDDM::Extract_DMCTrajectoryPoint(s_HDDM_t *hddm_s,  JFactor
 }
 
 //------------------
-// Extract_DHDDMTOFTruth
+// Extract_DTOFTruth
 //------------------
-
-jerror_t DEventSourceHDDM::Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTruth> *factory)
+jerror_t DEventSourceHDDM::Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTruth>* factory)
 {
   /// Copies the data from the given hddm_s structure. This is called
   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -977,6 +979,7 @@ jerror_t DEventSourceHDDM::Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTru
   s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
   if(!PE) return NOERROR;
 	
+  int id = 0;
   for(unsigned int i=0; i<PE->mult; i++){
     s_HitView_t *hits = PE->in[i].hitView;
     if (hits == HDDM_NULL ||
@@ -990,14 +993,80 @@ jerror_t DEventSourceHDDM::Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTru
     for(unsigned int j=0;j<ftofTruthPoints->mult; j++, ftofTruthPoint++){
       DTOFTruth *toftruth = new DTOFTruth;
 		
-      toftruth->orientation = 1;
+      toftruth->id          = id++;
       toftruth->primary     = ftofTruthPoint->primary;
-      toftruth->t           = ftofTruthPoint->t;
       toftruth->track       = ftofTruthPoint->track;
       toftruth->x           = ftofTruthPoint->x;
       toftruth->y           = ftofTruthPoint->y;
       toftruth->z           = ftofTruthPoint->z;
+      toftruth->t           = ftofTruthPoint->t;
       data.push_back(toftruth);
+    }
+  }
+
+  // Copy into factory
+  factory->CopyTo(data);
+
+  return NOERROR;
+}
+
+//------------------
+// Extract_DHDDMTOFHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DHDDMTOFHit( s_HDDM_t *hddm_s,  JFactory<DHDDMTOFHit>* factory)
+{
+  /// Copies the data from the given hddm_s structure. This is called
+  /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+  /// returns OBJECT_NOT_AVAILABLE immediately.
+	
+  if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+
+  vector<DHDDMTOFHit*> data;
+  
+  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+  if(!PE) return NOERROR;
+  
+  int id = 0;
+
+  for(unsigned int i=0; i<PE->mult; i++){
+    s_HitView_t *hits = PE->in[i].hitView;
+    if (hits == HDDM_NULL ||
+	hits->forwardTOF == HDDM_NULL ||
+	hits->forwardTOF->ftofCounters == HDDM_NULL)continue;
+		
+    s_FtofCounters_t* ftofCounters = hits->forwardTOF->ftofCounters;
+		
+    // Loop over counters
+    s_FtofCounter_t *ftofCounter = ftofCounters->in;
+    for(unsigned int j=0;j<ftofCounters->mult; j++, ftofCounter++){
+			 
+      // Loop over left (north) hits
+      s_FtofLeftHits_t *ftofLeftHits = ftofCounter->ftofLeftHits;
+      s_FtofLeftHit_t *ftofLeftHit = ftofLeftHits->in;
+      for(unsigned int k=0;k<ftofLeftHits->mult; k++, ftofLeftHit++){
+	DHDDMTOFHit *tofhit = new DHDDMTOFHit;
+	tofhit->paddle	= ftofCounter->paddle;
+	tofhit->plane	= ftofCounter->plane;
+	tofhit->end		= 0;
+	tofhit->t		= ftofLeftHit->t;
+	tofhit->dE		= ftofLeftHit->dE;
+	tofhit->id              = id++;
+	data.push_back(tofhit);
+      }
+			 
+      // Loop over right (south) hits
+      s_FtofRightHits_t *ftofRightHits = ftofCounter->ftofRightHits;
+      s_FtofRightHit_t *ftofRightHit = ftofRightHits->in;
+      for(unsigned int k=0;k<ftofRightHits->mult; k++, ftofRightHit++){
+	DHDDMTOFHit *tofhit = new DHDDMTOFHit;
+	tofhit->paddle	= ftofCounter->paddle;
+	tofhit->plane	= ftofCounter->plane;
+	tofhit->end		= 1;
+	tofhit->t		= ftofRightHit->t;
+	tofhit->dE		= ftofRightHit->dE;
+	tofhit->id              = id++;
+	data.push_back(tofhit);
+      }
     }
   }
 
