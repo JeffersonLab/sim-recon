@@ -31,21 +31,25 @@ install: hddm-c xml-hddm hddm-xml hddm-c xml-xml hddm-schema schema-hddm hddmcat
 	cp hddm-c hddm-cpp hddm-xml xml-hddm hddmcat $(HALLD_HOME)/bin/$(OSNAME)
 
 xml-hddm: xml-hddm.cpp XString.o XParsers.o
-	$(CPP) -I$(HALLD_HOME)/include -I$(XERCESCROOT)/include -o $@ $^ \
+	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
+	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ \
 	-L$(HALLD_HOME)/lib/$(OSNAME) -lxstream \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 hddm-xml: hddm-xml.cpp XString.o XParsers.o
-	$(CPP) -I$(HALLD_HOME)/include -I$(XERCESCROOT)/include -o $@ $^ \
+	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
+	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ \
 	-L$(HALLD_HOME)/lib/$(OSNAME) -lxstream \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 hddm-c: hddm-c.cpp XString.o XParsers.o
-	$(CPP) -I$(HALLD_HOME)/include -I$(XERCESCROOT)/include -o $@ $^ \
+	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
+	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
 hddm-cpp: hddm-cpp.cpp XString.o XParsers.o
-	$(CPP) -I$(HALLD_HOME)/include -I$(XERCESCROOT)/include -o $@ $^ \
+	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
+	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
 hddmcat: hddmcat.cpp
@@ -53,8 +57,9 @@ hddmcat: hddmcat.cpp
 
 test: hddm-c hddm-xml test.xml
 	./hddm-c test.xml
-	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include -o testhddm \
-		testhddm.cpp hddm_v.c $(LIBXDR)
+	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
+	-I$(HALLD_HOME)/src/libraries/include -o testhddm \
+	testhddm.cpp hddm_v.c $(LIBXDR)
 	./testhddm
 	hddm-xml test.hddm
 
@@ -62,7 +67,8 @@ test: hddm-c hddm-xml test.xml
 	./hddm-schema $< >$@
 
 %.o: %.cpp
-	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include -c $^ 
+	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
+	-I$(HALLD_HOME)/src/libraries/include -c $^ 
 
 clean:
 	/bin/rm -f *.o core *.depend
