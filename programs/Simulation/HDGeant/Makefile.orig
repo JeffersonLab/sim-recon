@@ -89,7 +89,8 @@ AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o gsstak.o gltrac.o \
        hddsGeant3.o goptimize.o cobrems.o
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
-       hitFCal.o hitUPV.o bintree.o memcheck.o timel.o trapfpe.o 
+       hitFCal.o hitUPV.o bintree.o memcheck.o timel.o trapfpe.o \
+       storeTrajectory.o
 
 GXFIXED = gxcs.o gxphys.o
 GELHAD = gelhad/libgelhad.a
