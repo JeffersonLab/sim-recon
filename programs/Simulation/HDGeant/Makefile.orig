@@ -122,12 +122,15 @@ install: hdgeant hdgeant++
 	$(F77) $(FOPTS) -I. -I$(CERN_ROOT)/include -c -o $@ $<
 
 .c.o:
-	$(CC) $(COPTS) -I. -I../include -I$(CERN_ROOT)/include -c -o $@ $<
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include \
+	-I$(HALLD_HOME)/src/libraries/include -I$(CERN_ROOT)/include \
+	-c -o $@ $<
 
 $(AUXC): hddm_s.h bintree.h geant3.h hddmOutput.h 
 
 .cpp.o:
-	$(CPP) $(COPTS) -I. -I../include -c -o $@ $<
+	$(CPP) $(COPTS) -I. -I$(HALLD_HOME)/src/include \
+	-I$(HALLD_HOME)/src/libraries/include -c -o $@ $<
 
 hddm_s.h:
 	$(HDDM)/hddm-c $(HDDM)/event.xml
@@ -136,14 +139,17 @@ hddm_s.c:
 	$(HDDM)/hddm-c $(HDDM)/event.xml
 
 hddm_s.o: 	hddm_s.c
-	$(CC) $(COPTS) -I. -I../include -c -o $@ $<
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include \
+	-I$(HALLD_HOME)/src/libraries/include -c -o $@ $<
 
 cdcdump: cdcdump.c hddm_s.o
-	$(CC) $(COPTS) -I. -I../include -o $@ $^ 
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include \
+	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ 
 
 bcal2nt: bcal2nt.c hddm_s.o
-	$(CC) $(COPTS) -I. -I../include -o $@ $^ \
-	  -L$(CERN_ROOT)/lib -lpacklib -lkernlib -lg2c
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include \
+	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ \
+	-L$(CERN_ROOT)/lib -lpacklib -lkernlib -lg2c
 
 $(GELHAD):
 	$(MAKE) -C gelhad
