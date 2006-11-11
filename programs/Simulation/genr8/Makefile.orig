@@ -6,7 +6,7 @@
 #
 
 
-INCLUDE := -I. -Iinc  
+INCLUDE := -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
 CC = cc
 
 ifndef UNAME
