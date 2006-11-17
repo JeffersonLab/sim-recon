@@ -325,7 +325,7 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
           if (itypa.ne.4) call GSKING(i)
         enddo
       endif
-	
+
 * For explicit Cerenkov generation, apply an inefficiency factor
 
       if (NGPHOT.gt.100) then
@@ -437,9 +437,16 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
 
 * Optionally store particle trajectory
       if (storetraj.ne.0) then
-		    call addtrajectorypoint(VECT,TOFG,DESTEP,GETOT,ITRA,ISTAK
+        call addtrajectorypoint(VECT,TOFG,DESTEP,GETOT,ITRA,ISTAK
      +         ,IPART)
-		endif
+      endif
+
+#ifndef TRACK_SHOWERS_IN_COLLIMATOR
+      if ((cnames(NLEVEL).eq.'INSU').or.
+     +    (cnames(NLEVEL).eq.'COL1')) then
+        ISTOP=1
+      endif
+#endif
 
 * If not a sensitive volume then exit here
 
@@ -501,15 +508,8 @@ c                z=',xout(3),' ipart=',ipart,' GETOT=',GETOT
         elseif (cnames(NLEVEL)(1:ichar).eq.bcalstring(i:ichar)) then ! barrel calorimeter
 c	  write(*,*)'In GUSTEP: ',bcalstring,dEsum
 #else
-        elseif ((cnames(NLEVEL).eq.'BCM1').or.
-     +  (cnames(NLEVEL).eq.'BCM2').or.(cnames(NLEVEL).eq.'BCM3').or.
-     +  (cnames(NLEVEL).eq.'BCM4').or.(cnames(NLEVEL).eq.'BCM5').or.
-     +  (cnames(NLEVEL).eq.'BCM6').or.(cnames(NLEVEL).eq.'BCM7').or.
-     +  (cnames(NLEVEL).eq.'BCM8').or.(cnames(NLEVEL).eq.'BCM9').or.
-     +  (cnames(NLEVEL).eq.'BM10').or.(cnames(NLEVEL).eq.'BM11').or.
-     +  (cnames(NLEVEL).eq.'BM12').or.(cnames(NLEVEL).eq.'BM13').or.
-     +  (cnames(NLEVEL).eq.'BM14')
-     +  ) then
+        elseif ((cnames(NLEVEL)(1:3).eq.'BCM').or.
+     +          (cnames(NLEVEL)(1:3).eq.'BM1')) then
 
 #endif
           call hitBarrelEMcal(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)

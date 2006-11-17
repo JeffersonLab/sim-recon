@@ -3,15 +3,16 @@ ARCHtype = $(shell uname -m)
 BINDIR = ../bin.$(OStype)
 
 #--------------------------------------------------------------------
-# The symbol SPECIAL is used to active any of the following switches
+# The symbol SWITCHES is used to active any of the following switches
 # to enable custom versions of the simulation program.
 #NTUPLE_OPTIONS = -DBACKGROUND_STUDIES
 #NTUPLE_OPTIONS = -DBACKGROUND_PROFILING
 #NTUPLE_OPTIONS = -DWERNERS_VTX_NTUPLE
 #NTUPLE_OPTIONS = -DCERENKOV_PID_NTUPLE
+#SIM_OPTIONS = TRACK_SHOWERS_IN_COLLIMATOR
 #--------------------------------------------------------------------
 
-SWITCHES = $(IO_OPTIONS) $(NTUPLE_OPTIONS)
+SWITCHES = $(SIM_OPTIONS) $(NTUPLE_OPTIONS)
 
 ifeq ($(OStype),Linux)
 	ifeq ($(ARCHtype),alpha)
