@@ -22,11 +22,18 @@
  *	position from the generator is (0,0,0) then the simulation vertex is
  *	generated uniformly inside the cylinder specified by TARGET_LENGTH,
  *	BEAM_DIAMETER, and TARGET_CENTER defined below.
+ * 2)   The start time for the event in HDGeant is defined to be the
+ *      instant the beam photon passes through the midplane of the target,
+ *      or would have passed through the midplane if it had gotten that far.
  *
  * Revision history:
+ * > Nov 17, 2006 - Richard Jones
+ * 	Added code to load_event that sets the Geant tofg parameter so
+ *      that the start time of the event conforms to note (2) above.
+ * 
  * > Apr 10, 2006 - David Lawrence
- * Added comments to explain a little what each of these routines is doing.
- * No functional changes.
+ *	Added comments to explain a little what each of these routines is 
+ *	doing.  No functional changes.
  *
  * >  Dec 15, 2004 - Richard Jones
  *	Changed former behaviour of simulation to overwrite the vertex
@@ -50,12 +57,15 @@
 #include <hddm_s.h>
 #include <geant3.h>
 
+void settofg_(float origin[3], float *time0);
+
 s_iostream_t* thisInputStream = 0;
 s_HDDM_t* thisInputEvent = 0;
 
 /*-------------------------
-/* openInput
-/*-------------------------*/
+ * openInput
+ *-------------------------
+ */
 int openInput (char* filename)
 {
 	/* Open HDDM file for reading in "thrown" particle kinematics */
@@ -64,8 +74,9 @@ int openInput (char* filename)
 }
 
 /*-------------------------
-/* skipInput
-/*-------------------------*/
+ * skipInput
+ *-------------------------
+ */
 int skipInput (int count)
 {
 	/* Skip over the specified number of events in the input file */
@@ -90,13 +101,15 @@ int skipInput (int count)
 }
 
 /*-------------------------
-/* nextInput
-/*-------------------------*/
+ * nextInput
+ *-------------------------
+ */
 int nextInput ()
 {
 	/* Read in the next HDDM event. This only reads it into the
-	   HDDM buffer "thisInputEvent" and does not yet define the
-		particles to GEANT. See loadInput for that. */
+	 * HDDM buffer "thisInputEvent" and does not yet define the
+	 * particles to GEANT. See loadInput for that.
+	 */
    if (thisInputStream == 0)
    {
       return 9;		/* input stream was never opened */
@@ -110,13 +123,15 @@ int nextInput ()
 }
 
 /*-------------------------
-/* loadInput
-/*-------------------------*/
+ * loadInput
+ *-------------------------
+ */
 int loadInput ()
 {
 	/* Extracts the "thrown" particle 4-vectors and types from the
-	   current HDDM buffer "thisInputEvent" and creates a vertex for
-		them(gsvert) and defines the GEANT (gskine) for tracking. */
+	 * current HDDM buffer "thisInputEvent" and creates a vertex for
+	 * them (gsvert) and defines the GEANT (gskine) for tracking.
+	 */
    s_Reactions_t* reacts;
    int reactCount, ir;
 
@@ -132,6 +147,7 @@ int loadInput ()
       for (iv = 0; iv < vertCount; iv++)
       {
          float v[3];
+         float time0;
          int ntbeam = 0;
          int nttarg = 0;
          int nubuf = 0;
@@ -164,6 +180,8 @@ int loadInput ()
             vert->origin->vy = v[1];
             vert->origin->vz = v[2];
          }
+         time0 = 0;
+         settofg_(v,&time0);
          gsvert_(v, &ntbeam, &nttarg, &ubuf, &nubuf, &nvtx);
          prods = vert->products;
          prodCount = prods->mult;
@@ -188,16 +206,18 @@ int loadInput ()
 }
 
 /*-------------------------
-/* storeInput
-/*-------------------------*/
+ * storeInput
+ *-------------------------
+ */
 int storeInput (int runNo, int eventNo, int ntracks)
 {
 	/* This is called by the built-in generators (coherent brem. and
-	   single track) in order to store the "thrown" particle parameters
-		in the output HDDM file. What this actually does is free the 
-		input buffer "thisInputEvent" if it exists and creates a new
-		one. When an external generator is used, the thisInputEvent
-		buffer is kept unmodified and this routine is never called.*/
+	 * single track) in order to store the "thrown" particle parameters
+	 * in the output HDDM file. What this actually does is free the 
+	 * input buffer "thisInputEvent" if it exists and creates a new
+	 * one. When an external generator is used, the thisInputEvent
+	 * buffer is kept unmodified and this routine is never called.
+         */
    s_PhysicsEvents_t* pes;
    s_Reactions_t* rs;
    s_Vertices_t* vs;
@@ -261,8 +281,9 @@ int storeInput (int runNo, int eventNo, int ntracks)
 }
 
 /*-------------------------
-/* closeInput
-/*-------------------------*/
+ * closeInput
+ *-------------------------
+ */
 int closeInput ()
 {
 	/* Close the HDDM input file */
