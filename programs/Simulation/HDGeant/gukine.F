@@ -110,22 +110,15 @@ c #define BEAM_BOX_SIZE 6
 #include "geant321/gcscan.inc"
 #include "geant321/gcomis.inc"
 #include "hdtrackparams.inc"
+#include "backgrounds.inc"
+#include "cobrems.inc"
 *
       DIMENSION VERTEX(3),PLAB(3)
       DIMENSION RNDM(20)
-*
-      include 'cobrems.inc'
-      integer coSwitch
-      real freqMaximum
-      common /coherentGen/coSwitch,freqMaximum
-      data coSwitch,freqMaximum/0,0/
-      save /coherentGen/
-      real xMinimum,Theta02,CollimPos
-      parameter (xMinimum=1e-2)
-      parameter (Theta02=1.8)
-      parameter (CollimPos=-2200.0)
-      integer nubuf
-      real ubuf(10)
+
+      real tgen
+      real unif01(100)
+      integer i,j
 *
 *     -----------------------------------------------------------------
 *
@@ -142,7 +135,28 @@ c #define BEAM_BOX_SIZE 6
 *
       itry = nextInput()
       if (itry .eq. 0) then
-         itry = loadInput()
+        itry = loadInput()
+        if (bgrate.gt.0) then
+*
+* 	Superimpose background in the form of coherent bremsstrahlung
+* 	beam photons sent down the photon beam line.  They are generated
+*	with a random time distribution over the duration of the gate
+*	to simulate the actual conditions of a bremsstrahlung beam.
+*
+          ngen=0
+          tgen=bggate(1)
+          do i=1,99999
+            call grndm(unif01,100)
+            do j=1,100
+              tgen=tgen-log(unif01(j))/bgrate
+              if (tgen.gt.bggate(2)) goto 10
+              call beamgen(tgen*1e-9)
+              ngen=ngen+1
+            enddo
+          enddo
+   10     continue
+          print *, ngen,' background photons generated this event'
+        endif
       elseif (itry .ne. 9) then
          ieorun = 1
          ieotri = 1
@@ -151,95 +165,14 @@ c #define BEAM_BOX_SIZE 6
 *              Try coherent bremsstrahlung beam generation next
 *
       elseif (E.gt.0) then
-         call GRNDM(RNDM,7)
-         phim = RNDM(1)*TWOPI
-         rhom = mospread*sqrt(-2*log(RNDM(2)))
-         thxMosaic = rhom*cos(phim)
-         thyMosaic = rhom*sin(phim)
-         phib = RNDM(3)*TWOPI
-         varBeam = (emit/spot)**2
-         rhob = sqrt(-2*varBeam*log(RNDM(4)))
-         thxBeam = rhob*cos(phib)
-         thyBeam = rhob*sin(phib)
-         phis = RNDM(5)*TWOPI
-         varMS = sigma2MS(t*RNDM(6))
-         rhos = sqrt(-2*varMS*log(RNDM(7)))
-         thxMS = rhos*cos(phis)
-         thyMS = rhos*sin(phis)
-         cos45 = 1/sqrt(2d0)
-         rotate(1,1) = 0
-         rotate(1,2) = cos45			!point (1,0,0) along beam
-         rotate(1,3) = -cos45			!point (0,1,1) vertically
-         rotate(2,1) = 0
-         rotate(2,2) = cos45
-         rotate(2,3) = cos45
-         rotate(3,1) = 1
-         rotate(3,2) = 0
-         rotate(3,3) = 0
-         call rotmat(rotate,thxBeam+thxMS-thx-thxMosaic,0d0,0d0)
-         call rotmat(rotate,0d0,thyBeam+thyMS-thy-thyMosaic,0d0)
-         do i=1,10000
-            call GRNDM(RNDM,4)
-            phi = RNDM(1)*TWOPI
-            x = xMinimum**RNDM(2)
-            theta2 = Theta02*RNDM(3)/(1-RNDM(3)+1e-30)
-            coSwitch = coSwitch+1
-            if (coSwitch/2*2.eq.coSwitch) then    !try coherent generation
-               freq = dNcdxdp(x,phi)
-               f = freq*RNDM(3)
-               do ip=1,q2points
-                  if (f.le.q2weight(ip)) then
-                     theta2 = q2theta2(ip)
-                     goto 5
-                  endif
-               enddo
-    5          continue
-               ppol = polarization(x,theta2)
-            else                                  !try incoherent generation
-               freq = dNidxdt2(x,theta2)
-               freq = freq*(Theta02+theta2)**2/(TWOPI*Theta02)
-               ppol = 0
-            endif
-            freq = x*freq
-            if (freq.gt.freqMaximum) then
-               freqMaximum = freq*1.2
-            elseif (freq.ge.freqMaximum*RNDM(4)) then
-               goto 50
-            endif
-         enddo
-         write(5,*) 'Gukine: photon beam generator failed, giving up'
-
-   50    continue
-         theta = sqrt(theta2)*(me/E)
-         thetaX = thxMS+theta*cos(phi)
-         thetaY = thyMS+theta*sin(phi)
-         PLAB(3) = E*x
-         PLAB(1) = PLAB(3)*thetaX
-         PLAB(2) = PLAB(3)*thetaY
-         call GRNDM(RNDM,2)
-         phic = RNDM(1)*TWOPI
-         rhoc = spot*sqrt(-2*log(RNDM(2)))
-         VERTEX(1) = (rhoc*cos(phic) + D*thetaX)*100
-         VERTEX(2) = (rhoc*sin(phic) + D*thetaY)*100
-         VERTEX(3) = CollimPos
-         ubuf(1) = ppol
-         nubuf = 1
-#if defined BEAM_BOX_SIZE
-         call GRNDM(RNDM,2)
-         ubuf(2) = RNDM(1)*BEAM_BOX_SIZE
-         ubuf(3) = RNDM(2)*BEAM_BOX_SIZE
-         VERTEX(1) = VERTEX(1) + ubuf(2)
-         VERTEX(2) = VERTEX(2) + ubuf(3)
-         nubuf = 3
-#endif
-         call GSVERT(VERTEX,0,0,ubuf,nubuf,NVERT)
-         call GSKINE(PLAB,1,NVERT,0,0,NT)
-         call storeInput(IDRUN,IDEVT,NT);
+         call beamgen(0.)
+         call storeInput(IDRUN,IDEVT,1);
 *
 *              If all else fails, do automatic single-track generation
 *
       else
 
+         TOFG=0
          VERTEX(1)=PKINE(4)
          VERTEX(2)=PKINE(5)
          VERTEX(3)=PKINE(6)
@@ -274,7 +207,7 @@ c #define BEAM_BOX_SIZE 6
 *
 * If storing particle trajectories, clear the buffers
       if (storetraj.ne.0) then
-		    call cleartrajectories()
-		endif
+        call cleartrajectories()
+      endif
 
       END
