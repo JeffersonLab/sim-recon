@@ -242,7 +242,7 @@ void hitForwardDC (float xin[4], float xout[4],
                                         ->in[0].fdcCathodeHits;
               }
           
-              for (nhit = 0; nhit < ahits->mult; nhit++)
+              for (nhit = 0; nhit < chits->mult; nhit++)
               {
                 if (fabs(chits->in[nhit].t - tdrift) < TWO_HIT_RESOL)
                 {
@@ -279,7 +279,7 @@ void hitForwardDC (float xin[4], float xout[4],
       int wire = ceil((xlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
       float dradius = fabs((xlocal[0] - U_OF_WIRE_ZERO)
                                 - (wire-1)*WIRE_SPACING);
-      int mark = (chamber<<20) + pointCount;
+      int mark = (1<<16) + (chamber<<20) + pointCount;
       void** twig = getTwig(&forwardDCTree, mark);
       if (*twig == 0)
       {
