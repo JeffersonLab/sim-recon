@@ -133,6 +133,7 @@
 #include "geant321/gcunit.inc"
 #include "geant321/gcphys.inc"
 #include "hdtrackparams.inc"
+#include "backgrounds.inc"
 *
       integer iskip
       integer infile(20)
@@ -145,10 +146,11 @@
       external openInput, skipInput, openOutput
       real beamE0, beamEpeak, radColDist
       common /beamPars/ beamE0,beamEpeak,radColDist
-      data beamPars,beamEpeak,radColDist/0,0,76.0/
-      data bfield/-999.0/
+      data beamE0,beamEpeak,radColDist/0,0,76.0/
+
+c The following parameters are declared in hdtrackparams.inc above.
       data nosecondaries/0/
-		data storetraj/0/
+      data storetraj/0/
 
 *
 *     -----------------------------------------------------------------
@@ -194,7 +196,9 @@ C..geant..
       call ffkey('beam',beamE0,3,'REAL')
       call ffkey('bfield', bfield,1,'REAL')
       call ffkey('nosecondaries', nosecondaries,1,'INTEGER')
-      call ffkey('storetraj', storetraj,1,'INTEGER')
+      call ffkey('trajectories', storetraj,1,'INTEGER')
+      CALL FFKEY('bgrate',bgrate,1,'REAL')
+      CALL FFKEY('bggate',bggate,2,'REAL')
       call gtgamaff()
       CALL GFFGO
 *
@@ -226,14 +230,13 @@ C..geant..
 *
 *             Open the output stream
 *
-      if (outfile(1) .eq. 0) then
-        call UCTOH('hdgeant.hddm',outfile,4,12)
-      endif
-      ifail = openOutput(outfile)
-      if (ifail .ne. 0) then
-        write(lout,9010) outfile
- 9010   format('GUKINE ERROR - Could not open output stream ',20a4)
-        stop
+      if (outfile(1) .ne. 0) then
+        ifail = openOutput(outfile)
+        if (ifail .ne. 0) then
+          write(lout,9010) outfile
+ 9010     format('GUKINE ERROR - Could not open output stream ',20a4)
+          stop
+        endif
       endif
 *
 *             Assign the beam parameters
