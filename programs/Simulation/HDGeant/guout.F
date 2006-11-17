@@ -65,13 +65,8 @@ C.
 #include "geant321/gcomis.inc"
 C.    ------------------------------------------------------------------
 C.
-
       integer iskip
       call gelh_outp(iskip)
-
-#ifndef DISABLE_OUTPUT
       call loadOutput();
       call flushOutput();
-#endif
-
       END
