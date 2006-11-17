@@ -9,8 +9,6 @@ BINDIR = ../bin.$(OStype)
 #NTUPLE_OPTIONS = -DBACKGROUND_PROFILING
 #NTUPLE_OPTIONS = -DWERNERS_VTX_NTUPLE
 #NTUPLE_OPTIONS = -DCERENKOV_PID_NTUPLE
-# Enable the following line to turn off writing out hddm data 
-#IO_OPTIONS = -DDISABLE_OUTPUT
 #--------------------------------------------------------------------
 
 SWITCHES = $(IO_OPTIONS) $(NTUPLE_OPTIONS)
@@ -86,7 +84,7 @@ endif
 
 AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o gsstak.o gltrac.o \
        gelhad/gtgama.o gelhad/caspim.o gelhad/caspip.o gpairg.o \
-       hddsGeant3.o goptimize.o cobrems.o
+       hddsGeant3.o goptimize.o cobrems.o beamgen.o
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
        hitFCal.o hitUPV.o bintree.o memcheck.o timel.o trapfpe.o \
