@@ -1,4 +1,2 @@
-
-        real bfield
-		  integer nosecondaries, ISTORETRAJ
-        common /hdtrackparams/ bfield, nosecondaries, storetraj
+      integer nosecondaries, storetraj
+      common /hdtrackparams/ nosecondaries, storetraj
