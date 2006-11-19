@@ -1,13 +1,14 @@
       subroutine beamgen(t0)
-      real t0
+      real t0                   ! beam bucket, ns
 *
 * Generates a single beam photon according to the coherent bremsstrahlung
 * model in cobrems.F using beam energy and primary coherent edge energies
 * specified by the user.  The photon begins its lifetime just upstream of
 * the primary collimator (WARNING: position hard-wired in the code below)
-* and is tracked by the simulation from there forward.  The time of the
-* photon is generated so that it will reach the midplane of the GlueX
-* target at TOF=t0 if it makes it that far.
+* and is tracked by the simulation from there forward, but its time t0 
+* identifies its beam bucket, ie. the time the photon would reach the time-
+* reference plane at the middle of the target.  Beam bucket t0=0 is the
+* one that generates the event and defines the time origin for all hit times.
 *
 #include "geant321/gcunit.inc"
 #include "geant321/gcflag.inc"
@@ -15,9 +16,10 @@
 #include "geant321/gconsp.inc"
 #include "geant321/gcscan.inc"
 #include "geant321/gcomis.inc"
+#include "geant321/gctrak.inc"
 #include "cobrems.inc"
  
-      real vertex(3),plab(3)
+      real vertex(4),plab(5)
       integer nvert,nt
       real rndm(20)
  
@@ -95,9 +97,11 @@
       theta = sqrt(theta2)*(me/E)
       thetaX = thxMS+theta*cos(phi)
       thetaY = thyMS+theta*sin(phi)
-      plab(3) = E*x
-      plab(1) = plab(3)*thetaX
-      plab(2) = plab(3)*thetaY
+      plab(5) = E*x
+      plab(1) = plab(5)*thetaX
+      plab(2) = plab(5)*thetaY
+      plab(3) = sqrt(plab(5)**2-plab(1)**2-plab(2)**2)
+      plab(4) = plab(5)
       call GRNDM(rndm,2)
       phic = rndm(1)*TWOPI
       rhoc = spot*sqrt(-2*log(rndm(2)))
@@ -117,14 +121,6 @@
       call settofg(vertex,t0)
       call GSVERT(vertex,0,0,ubuf,nubuf,nvert)
       call GSKINE(plab,1,nvert,0,0,nt)
-      end
-
-      subroutine settofg(vertex,time0)
-      real vertex(3)
-      real time0
-#include "geant321/gconst.inc"
-#include "geant321/gctrak.inc"
-      real target_center
-      parameter (target_center=65.0)
-      TOFG=time0*1e-9+(vertex(3)-target_center)/CLIGHT
+      vertex(4) = TOFG
+      call hitTagger(vertex,vertex,plab,plab,0.,nt,0,0)
       end
