@@ -38,8 +38,7 @@ void hitCentralDC (float xin[4], float xout[4],
    float xlocal[3];
    float xcdc[3];
    float xHat[] = {1,0,0};
-
-   if (dEsum == 0) return;              /* only seen if it deposits energy */
+   float dradius;
 
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
@@ -48,6 +47,7 @@ void hitCentralDC (float xin[4], float xout[4],
    transformCoord(x,"global",xlocal,"local");
    transformCoord(xHat,"local",xcdc,"CDC ");
 
+   dradius = sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
    dx[0] = xin[0] - xout[0];
    dx[1] = xin[1] - xout[1];
    dx[2] = xin[2] - xout[2];
@@ -61,7 +61,32 @@ void hitCentralDC (float xin[4], float xout[4],
       dEdx = 0;
    }
 
+   /* post the hit to the truth tree */
+
+   if (history == 0)
+   {
+      int mark = (1<<30) + pointCount;
+      void** twig = getTwig(&centralDCTree, mark);
+      if (*twig == 0)
+      {
+         s_CentralDC_t* cdc = *twig = make_s_CentralDC();
+         s_CdcTruthPoints_t* points = make_s_CdcTruthPoints(1);
+         points->in[0].primary = (stack == 0);
+         points->in[0].track = track;
+         points->in[0].z = x[2];
+         points->in[0].r = sqrt(x[0]*x[0] + x[1]*x[1]);
+         points->in[0].phi = atan2(x[1],x[0]);
+         points->in[0].dradius = dradius;
+         points->in[0].dEdx = dEdx;
+         points->mult = 1;
+         cdc->cdcTruthPoints = points;
+         pointCount++;
+      }
+   }
+
    /* post the hit to the hits tree, mark sector as hit */
+
+   if (dEsum > 0)
    {
       int nhit;
       s_CdcStrawHits_t* hits;
@@ -72,7 +97,6 @@ void hitCentralDC (float xin[4], float xout[4],
       int layer = getlayer_();
       int ring = getring_();
       int sector = getsector_();
-      float dradius = sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
       float tdrift = t + dradius/DRIFT_SPEED;
       if (layer == 0)		/* in a straw */
       {
@@ -119,28 +143,7 @@ void hitCentralDC (float xin[4], float xout[4],
             fprintf(stderr,"HDGeant error in hitCentralDC: ");
             fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
          }
-
-      /* post the hit to the truth tree */
-
-         mark = (1<<30) + pointCount;
-         twig = getTwig(&centralDCTree, mark);
-         if (*twig == 0)
-         {
-            s_CentralDC_t* cdc = *twig = make_s_CentralDC();
-            s_CdcTruthPoints_t* points = make_s_CdcTruthPoints(1);
-            points->in[0].primary = (stack == 0);
-            points->in[0].track = track;
-            points->in[0].z = x[2];
-            points->in[0].r = sqrt(x[0]*x[0] + x[1]*x[1]);
-            points->in[0].phi = atan2(x[1],x[0]);
-            points->in[0].dradius = dradius;
-            points->in[0].dEdx = dEdx;
-            points->mult = 1;
-            cdc->cdcTruthPoints = points;
-            pointCount++;
-         }
       }
-
 #if CATHODE_STRIPS_IN_CDC
       else			/* in one of the z-readout (strip) layers */
       {
