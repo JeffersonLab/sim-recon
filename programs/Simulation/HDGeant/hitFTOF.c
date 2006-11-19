@@ -55,8 +55,6 @@ void hitForwardTOF (float xin[4], float xout[4],
    float xftof[3];
    float zeroHat[] = {0,0,0};
 
-   if (dEsum == 0) return;              /* only seen if it deposits energy */
-
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
@@ -76,7 +74,31 @@ void hitForwardTOF (float xin[4], float xout[4],
       dEdx = 0;
    }
 
+   /* post the hit to the truth tree */
+
+   if (history == 0)
+   {
+      int mark = (1<<30) + pointCount;
+      void** twig = getTwig(&forwardTOFTree, mark);
+      if (*twig == 0)
+      {
+         s_ForwardTOF_t* tof = *twig = make_s_ForwardTOF();
+         s_FtofTruthPoints_t* points = make_s_FtofTruthPoints(1);
+         tof->ftofTruthPoints = points;
+         points->in[0].primary = (stack == 0);
+         points->in[0].track = track;
+         points->in[0].x = x[0];
+         points->in[0].y = x[1];
+         points->in[0].z = x[2];
+         points->in[0].t = t;
+         points->mult = 1;
+         pointCount++;
+      }
+   }
+
    /* post the hit to the hits tree, mark slab as hit */
+
+   if (dEsum > 0)
    {
       int nhit;
       s_FtofLeftHits_t* leftHits;
@@ -176,26 +198,6 @@ void hitForwardTOF (float xin[4], float xout[4],
             fprintf(stderr,"HDGeant error in hitForwardTOF: ");
             fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
          }
-      }
-   }
-
-   /* post the hit to the truth tree */
-   {
-      int mark = (1<<30) + pointCount;
-      void** twig = getTwig(&forwardTOFTree, mark);
-      if (*twig == 0)
-      {
-         s_ForwardTOF_t* tof = *twig = make_s_ForwardTOF();
-         s_FtofTruthPoints_t* points = make_s_FtofTruthPoints(1);
-         tof->ftofTruthPoints = points;
-         points->in[0].primary = (stack == 0);
-         points->in[0].track = track;
-         points->in[0].x = x[0];
-         points->in[0].y = x[1];
-         points->in[0].z = x[2];
-         points->in[0].t = t;
-         points->mult = 1;
-         pointCount++;
       }
    }
 }

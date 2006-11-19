@@ -51,8 +51,6 @@ void hitStartCntr (float xin[4], float xout[4],
    float xvrtx[3];
    float xHat[] = {1,0,0};
 
-   if (dEsum == 0) return;		/* only seen if it deposits energy */
-
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
@@ -72,7 +70,32 @@ void hitStartCntr (float xin[4], float xout[4],
       dEdx = 0;
    }
 
+   /* post the hit to the truth tree */
+
+   if (history == 0)
+   {
+      int mark = (1<<30) + pointCount;
+      void** twig = getTwig(&startCntrTree, mark);
+      if (*twig == 0)
+      {
+         s_StartCntr_t* stc = *twig = make_s_StartCntr();
+         s_StcTruthPoints_t* points = make_s_StcTruthPoints(1);
+         stc->stcTruthPoints = points;
+         points->in[0].primary = (stack == 0);
+         points->in[0].track = track;
+         points->in[0].t = t;
+         points->in[0].z = x[2];
+         points->in[0].r = sqrt(x[0]*x[0]+x[1]*x[1]);
+         points->in[0].phi = atan2(x[1],x[0]);
+         points->in[0].dEdx = dEdx;
+         points->mult = 1;
+         pointCount++;
+      }
+   }
+
    /* post the hit to the hits tree, mark sector as hit */
+
+   if (dEsum > 0)
    {
       int nhit;
       s_StcHits_t* hits;
@@ -123,27 +146,6 @@ void hitStartCntr (float xin[4], float xout[4],
          fprintf(stderr,"HDGeant error in hitStart: ");
          fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
          exit(2);
-      }
-   }
-
-   /* post the hit to the truth tree */
-   {
-      int mark = (1<<30) + pointCount;
-      void** twig = getTwig(&startCntrTree, mark);
-      if (*twig == 0)
-      {
-         s_StartCntr_t* stc = *twig = make_s_StartCntr();
-         s_StcTruthPoints_t* points = make_s_StcTruthPoints(1);
-         stc->stcTruthPoints = points;
-         points->in[0].primary = (stack == 0);
-         points->in[0].track = track;
-         points->in[0].t = t;
-         points->in[0].z = x[2];
-         points->in[0].r = sqrt(x[0]*x[0]+x[1]*x[1]);
-         points->in[0].phi = atan2(x[1],x[0]);
-         points->in[0].dEdx = dEdx;
-         points->mult = 1;
-         pointCount++;
       }
    }
 }
