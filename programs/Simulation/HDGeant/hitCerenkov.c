@@ -41,8 +41,6 @@ void hitCerenkov (float xin[4], float xout[4],
    double beta = pave/Eave;
    double costheta = 1/(beta*REFR_INDEX);
 
-   if (costheta > 1) return;		/* no light below threshold */
-
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
@@ -53,7 +51,35 @@ void hitCerenkov (float xin[4], float xout[4],
    dx[2] = xin[2] - xout[2];
    dr = sqrt(dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
 
+   /* post the hit to the truth tree */
+
+   if (history == 0)
+   {
+      int mark = (1<<30) + pointCount;
+      void** twig = getTwig(&cerenkovTree, mark);
+      if (*twig == 0)
+      {
+         s_Cerenkov_t* cere = *twig = make_s_Cerenkov();
+         s_CereTruthPoints_t* points = make_s_CereTruthPoints(1);
+         cere->cereTruthPoints = points;
+         points->in[0].primary = (stack == 0);
+         points->in[0].track = track;
+         points->in[0].x = xin[0];
+         points->in[0].y = xin[1];
+         points->in[0].z = xin[2];
+         points->in[0].t = xin[3]*1e9;
+         points->in[0].px = pin[4]*pin[0];
+         points->in[0].py = pin[4]*pin[1];
+         points->in[0].pz = pin[4]*pin[2];
+         points->in[0].E = pin[3];
+         points->mult = 1;
+         pointCount++;
+      }
+   }
+
    /* post the hit to the hits tree, mark sector as hit */
+
+   if (costheta <= 1)		/* no light below threshold */
    {
       int nshot;
       s_CereHits_t* hits;
@@ -101,32 +127,6 @@ void hitCerenkov (float xin[4], float xout[4],
       {
          fprintf(stderr,"HDGeant error in hitCerenkov: ");
          fprintf(stderr,"max shot count %d exceeded, truncating!\n",MAX_HITS);
-      }
-   }
-
-   /* post the hit to the truth tree */
-   {
-      int mark = (1<<30) + pointCount;
-      void** twig = getTwig(&cerenkovTree, mark);
-      if (*twig == 0)
-      {
-         s_Cerenkov_t* cere = *twig = make_s_Cerenkov();
-         s_CereTruthPoints_t* points = make_s_CereTruthPoints(1);
-         cere->cereTruthPoints = points;
-         float E = (pin[3]+pout[3])/2;
-         float p = (pin[4]+pout[4])/2;
-         points->in[0].primary = (stack == 0);
-         points->in[0].track = track;
-         points->in[0].x = x[0];
-         points->in[0].y = x[1];
-         points->in[0].z = x[2];
-         points->in[0].t = t;
-         points->in[0].px = p*(pin[0]+pout[0])/2;
-         points->in[0].py = p*(pin[1]+pout[1])/2;
-         points->in[0].pz = p*(pin[2]+pout[2])/2;
-         points->in[0].E = E;
-         points->mult = 1;
-         pointCount++;
       }
    }
 }
