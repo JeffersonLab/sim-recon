@@ -91,6 +91,8 @@ int loadOutput ()
    thisOutputEvent->physicsEvents->in[0].hitView->
       					upstreamEMveto = pickUpstreamEMveto();
    thisOutputEvent->physicsEvents->in[0].hitView->
+      					tagger = pickTagger();
+   thisOutputEvent->physicsEvents->in[0].hitView->
       					mcTrajectory = pickMCTrajectory();
 							
    return 0;
