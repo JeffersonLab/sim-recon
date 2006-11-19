@@ -41,8 +41,7 @@ C.    *   Authors   : R.Brun, F.Bruyant                                *
 C.    *                                                                *
 C.    ******************************************************************
 C.
-*** Comment out next line 11/6/2006 D.Lawrence (see note below)
-C. #define USE_UPWGHT_AS_REPEAT_COUNT 1
+#define USE_UPWGHT_AS_REPEAT_COUNT 1
 *
 #include "geant321/gcbank.inc"
 #include "geant321/gckine.inc"
@@ -61,6 +60,12 @@ C. #define USE_UPWGHT_AS_REPEAT_COUNT 1
       PARAMETER (ONE=1)
 C.
 C.    ------------------------------------------------------------------
+*** Restore USE_UPWGHT_AS_REPEAT_COUNT November 18 2006
+***  I added a reset ISTORY=3 to the top of gukine() and turned the
+***  USE_UPWGHT_AS_REPEAT_COUNT back on.  Notice to other users: if you
+***  turn this off, you will get hundreds of truth tags per event.
+*** richard.t.jones@uconn.edu
+***
 *** Disabled use of UPWGHT November 6,2006
 *** I have commented out the #define of USE_UPWGHT_AS_REPEAT_COUNT
 *** above because there appears to be a problem with it turned on.

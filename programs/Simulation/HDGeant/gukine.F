@@ -109,19 +109,28 @@ c #define BEAM_BOX_SIZE 6
 #include "geant321/gconsp.inc"
 #include "geant321/gcscan.inc"
 #include "geant321/gcomis.inc"
+#include "geant321/gctrak.inc"
+#include "geant321/gcnum.inc"
 #include "hdtrackparams.inc"
 #include "backgrounds.inc"
 #include "cobrems.inc"
 *
-      DIMENSION VERTEX(3),PLAB(3)
+      DIMENSION VERTEX(4),PLAB(5)
       DIMENSION RNDM(20)
 
       real tgen
       real unif01(100)
       integer i,j
+      character*20 pname
+      integer nubuf
+      real ubuf(99)
+
 *
 *     -----------------------------------------------------------------
 *
+      UPWGHT = 1
+      ISTORY = 0
+
       ev = IDEVT
       do i=1,10
         ev = ev/10.
@@ -136,6 +145,30 @@ c #define BEAM_BOX_SIZE 6
       itry = nextInput()
       if (itry .eq. 0) then
         itry = loadInput()
+*
+*	Fake a tagger hit of the correct energy by adding up the energy
+*	of all generated tracks and assigning them to the trigger time.
+*
+        PLAB(1) = 0
+        PLAB(2) = 0
+        PLAB(3) = 0
+        PLAB(4) = -PMASS
+        do nt=1,NTRACK
+          call GFKINE(nt,VERT,PVERT,IPART,IVERT,ubuf,nubuf)
+          call GFPART(IPART,pname,ITRTYP,AMASS,CHARGE,TLIFE,ubuf,nubuf)
+          PLAB(1) = PLAB(1) + PVERT(1)
+          PLAB(2) = PLAB(2) + PVERT(2)
+          PLAB(3) = PLAB(3) + PVERT(3)
+          PLAB(4) = PLAB(4)
+     +            + sqrt(AMASS**2+PVERT(1)**2+PVERT(2)**2+PVERT(3)**2)
+        enddo
+        PLAB(5) = PLAB(4)
+        VERTEX(1) = VERT(1)
+        VERTEX(2) = VERT(2)
+        VERTEX(3) = VERT(3)
+        VERTEX(4) = TOFG
+        call hitTagger(VERTEX,VERTEX,PLAB,PLAB,0.,nt,0,0)
+
         if (bgrate.gt.0) then
 *
 * 	Superimpose background in the form of coherent bremsstrahlung
@@ -150,12 +183,12 @@ c #define BEAM_BOX_SIZE 6
             do j=1,100
               tgen=tgen-log(unif01(j))/bgrate
               if (tgen.gt.bggate(2)) goto 10
-              call beamgen(tgen*1e-9)
+              call beamgen(tgen)
               ngen=ngen+1
             enddo
           enddo
    10     continue
-          print *, ngen,' background photons generated this event'
+c         print *, ngen,' background photons generated this event'
         endif
       elseif (itry .ne. 9) then
          ieorun = 1
