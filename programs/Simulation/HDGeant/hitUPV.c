@@ -57,8 +57,6 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
   s_UpvLeftHits_t* leftHits;
   s_UpvRightHits_t* rightHits;
 
-  if (dEsum == 0) return;              /* only seen if it deposits energy */
-
   x[0] = (xin[0] + xout[0])/2;
   x[1] = (xin[1] + xout[1])/2;
   x[2] = (xin[2] + xout[2])/2;
@@ -90,11 +88,36 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
   float ycenter = (fabs(xupv[1]) < 1e-4) ? 0 : xupv[1];
   float zcenter = (fabs(xupv[2]) < 1e-4) ? 0 : xupv[2];
 
+  /* post the hit to the truth tree */
+
+  if ((history == 0) && (pin[3] > THRESH_MEV/1e3))
+  {
+    int mark = (1<<30) + showerCount;
+    void** twig = getTwig(&upstreamEMvetoTree, mark);
+    if (*twig == 0) {
+      s_UpstreamEMveto_t* upv = *twig = make_s_UpstreamEMveto();
+      s_UpvTruthShowers_t* showers = make_s_UpvTruthShowers(1);
+      showers->in[0].primary = (stack == 0);
+      showers->in[0].track = track;
+      showers->in[0].x = xin[0];
+      showers->in[0].y = xin[1];
+      showers->in[0].z = xin[2];
+      showers->in[0].t = xin[3]*1e9;
+      showers->in[0].E = pin[3];
+      showers->mult = 1;
+      upv->upvTruthShowers = showers;
+      showerCount++;
+    }
+  }
+
   /* post the hit to the hits tree, mark upvPaddle as hit */
+
+  if (dEsum > 0)
   {
     int mark = (layer<<16) + row;
     void** twig = getTwig(&upstreamEMvetoTree, mark);
-    if (*twig == 0) {
+    if (*twig == 0)
+    {
       s_UpstreamEMveto_t* upv = *twig = make_s_UpstreamEMveto();
       s_UpvPaddles_t* paddles = make_s_UpvPaddles(1);
       paddles->mult = 1;
@@ -115,7 +138,8 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
       upv->upvPaddles = paddles;
       paddleCount++;
     }
-    else {
+    else
+    {
       s_UpstreamEMveto_t* upv = *twig;
       leftHits = upv->upvPaddles->in[0].upvLeftHits;
       rightHits = upv->upvPaddles->in[0].upvRightHits;
@@ -179,38 +203,6 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
         fprintf(stderr,"HDGeant error in hitUpstreamEMveto: ");
         fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
       }
-    }
-  }
-
-  /* post the hit to the truth tree */
-  if (history == 0) {
-    int mark = (1<<30) + showerCount;
-    void** twig = getTwig(&upstreamEMvetoTree, mark);
-    if (*twig == 0) {
-      s_UpstreamEMveto_t* upv = *twig = make_s_UpstreamEMveto();
-      s_UpvTruthShowers_t* showers = make_s_UpvTruthShowers(1);
-      showers->in[0].primary = (stack == 0);
-      showers->in[0].track = track;
-      showers->in[0].x = x[0];
-      showers->in[0].y = x[1];
-      showers->in[0].z = x[2];
-      showers->in[0].t = t;
-      showers->in[0].E = dEsum;
-      showers->mult = 1;
-      upv->upvTruthShowers = showers;
-      showerCount++;
-    }
-    else {
-      s_UpvTruthShowers_t* showers = 
-                         ((s_UpstreamEMveto_t*) *twig)->upvTruthShowers;
-      showers->in[0].x = (showers->in[0].x * showers->in[0].E + x[0]*dEsum)
-	/ (showers->in[0].E + dEsum);
-      showers->in[0].y = (showers->in[0].y * showers->in[0].E + x[1]*dEsum)
-	/ (showers->in[0].E + dEsum);
-      showers->in[0].z = (showers->in[0].z * showers->in[0].E + x[2]*dEsum)
-	/ (showers->in[0].E + dEsum);
-      showers->in[0].t = (showers->in[0].t * showers->in[0].E + t*dEsum)
-	/ (showers->in[0].E += dEsum);
     }
   }
 }

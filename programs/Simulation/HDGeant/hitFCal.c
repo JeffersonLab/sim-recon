@@ -35,15 +35,38 @@ void hitForwardEMcal (float xin[4], float xout[4],
    float xfcal[3];
    float zeroHat[] = {0,0,0};
 
-   if (dEsum == 0) return;              /* only seen if it deposits energy */
-
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
    transformCoord(zeroHat,"local",xfcal,"FCAL");
 
+   /* post the hit to the truth tree */
+
+   if ((history == 0) && (pin[3] > THRESH_MEV/1e3))
+   {
+      s_FcalTruthShowers_t* showers;
+      int mark = (1<<30) + showerCount;
+      void** twig = getTwig(&forwardEMcalTree, mark);
+      if (*twig == 0)
+      {
+         s_ForwardEMcal_t* cal = *twig = make_s_ForwardEMcal();
+         cal->fcalTruthShowers = showers = make_s_FcalTruthShowers(1);
+         showers->in[0].primary = (stack == 0);
+         showers->in[0].track = track;
+         showers->in[0].t = xin[3]*1e9;
+         showers->in[0].x = xin[0];
+         showers->in[0].y = xin[1];
+         showers->in[0].z = xin[2];
+         showers->in[0].E = pin[3];
+         showers->mult = 1;
+         showerCount++;
+      }
+   }
+
    /* post the hit to the hits tree, mark block as hit */
+
+   if (dEsum > 0)
    {
       int nhit;
       s_FcalHits_t* hits;
@@ -92,39 +115,6 @@ void hitForwardEMcal (float xin[4], float xout[4],
          fprintf(stderr,"HDGeant error in hitforwardEMcal: ");
          fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
          exit(2);
-      }
-   }
-
-   /* post the hit to the truth tree */
-   if (history == 0) {
-      s_FcalTruthShowers_t* showers;
-      int mark = (1<<30) + showerCount;
-      void** twig = getTwig(&forwardEMcalTree, mark);
-      if (*twig == 0)
-      {
-         s_ForwardEMcal_t* cal = *twig = make_s_ForwardEMcal();
-         cal->fcalTruthShowers = showers = make_s_FcalTruthShowers(1);
-         showers->in[0].primary = (stack == 0);
-         showers->in[0].track = track;
-         showers->in[0].t = t;
-         showers->in[0].x = x[0];
-         showers->in[0].y = x[1];
-         showers->in[0].z = x[2];
-         showers->in[0].E = dEsum;
-         showers->mult = 1;
-         showerCount++;
-      }
-      else
-      {
-         showers = ((s_ForwardEMcal_t*) *twig)->fcalTruthShowers;
-         showers->in[0].x = (showers->in[0].x * showers->in[0].E + x[0]*dEsum)
-                          / (showers->in[0].E + dEsum);
-         showers->in[0].y = (showers->in[0].y * showers->in[0].E + x[1]*dEsum)
-                          / (showers->in[0].E + dEsum);
-         showers->in[0].z = (showers->in[0].z * showers->in[0].E + x[2]*dEsum)
-                          / (showers->in[0].E + dEsum);
-         showers->in[0].t = (showers->in[0].t * showers->in[0].E + t*dEsum)
-                          / (showers->in[0].E += dEsum);
       }
    }
 }

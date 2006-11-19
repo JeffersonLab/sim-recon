@@ -54,8 +54,6 @@ void hitBarrelEMcal (float xin[4], float xout[4],
    float xbcal[3];
    float xHat[] = {1,0,0};
 
-   if (dEsum == 0) return;              /* only seen if it deposits energy */
-
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
@@ -63,7 +61,33 @@ void hitBarrelEMcal (float xin[4], float xout[4],
    transformCoord(x,"global",xlocal,"BCAL");
    transformCoord(xHat,"local",xbcal,"BCAL");
 
+   /* post the hit to the truth tree */
+
+   if ((history == 0) && (pin[3] > THRESH_MEV/1e3)) {
+      s_BcalTruthShowers_t* showers;
+      float r = sqrt(xin[0]*xin[0]+xin[1]*xin[1]);
+      float phi = atan2(xin[1],xin[0]);
+      int mark = (1<<30) + showerCount;
+      void** twig = getTwig(&barrelEMcalTree, mark);
+      if (*twig == 0) 
+      {
+         s_BarrelEMcal_t* bcal = *twig = make_s_BarrelEMcal();
+         bcal->bcalTruthShowers = showers = make_s_BcalTruthShowers(1);
+         showers->in[0].primary = (stack == 0);
+         showers->in[0].track = track;
+         showers->in[0].z = xin[2];
+         showers->in[0].r = r;
+         showers->in[0].phi = phi;
+         showers->in[0].t = xin[3]*1e9;
+         showers->in[0].E = pin[3];
+         showers->mult = 1;
+         showerCount++;
+      }
+   }
+
    /* post the hit to the hits tree, mark sector as hit */
+
+   if (dEsum > 0)
    {
       int nshot;
       s_BcalUpstreamHits_t* upshots;
@@ -133,45 +157,6 @@ void hitBarrelEMcal (float xin[4], float xout[4],
       {
          fprintf(stderr,"HDGeant error in hitBarrelEMcal: ");
          fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
-      }
-   }
-
-
-   /* post the hit to the truth tree */
-   if (history == 0) {
-      s_BcalTruthShowers_t* showers;
-      float r = sqrt(x[0]*x[0]+x[1]*x[1]);
-      float phi = atan2(x[1],x[0]);
-      int mark = (1<<30) + showerCount;
-      void** twig = getTwig(&barrelEMcalTree, mark);
-      if (*twig == 0) 
-      {
-         s_BarrelEMcal_t* bcal = *twig = make_s_BarrelEMcal();
-         bcal->bcalTruthShowers = showers = make_s_BcalTruthShowers(1);
-         showers->in[0].primary = (stack == 0);
-         showers->in[0].track = track;
-         showers->in[0].z = x[2];
-         showers->in[0].r = r;
-         showers->in[0].phi = phi;
-         showers->in[0].t = t;
-         showers->in[0].E = dEsum;
-         showers->mult = 1;
-         showerCount++;
-      }
-      else
-      {
-         showers = ((s_BarrelEMcal_t*) *twig)->bcalTruthShowers;
-         showers->in[0].z =
-                        (showers->in[0].z * showers->in[0].E + x[2]*dEsum)
-                      / (showers->in[0].E + dEsum);
-         showers->in[0].r =
-                        (showers->in[0].r * showers->in[0].E + r*dEsum)
-                      / (showers->in[0].E + dEsum);
-         showers->in[0].phi =
-                            (showers->in[0].phi * showers->in[0].E + phi*dEsum)
-                          / (showers->in[0].E + dEsum);
-         showers->in[0].t = (showers->in[0].t * showers->in[0].E + t*dEsum)
-                          / (showers->in[0].E += dEsum);
       }
    }
 }
