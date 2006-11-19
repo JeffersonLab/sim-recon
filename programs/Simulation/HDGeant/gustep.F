@@ -205,15 +205,6 @@
       equivalence (NAMES(1),cnames(1))
       real rnd(100)
 
-#ifdef GENERALIZED_BCAL_NAME
-      integer ichar
-      character*4 bcalstring
-      common /bcalblk/ichar,bcalstring
-#endif
-
-      real xin(4),xout(4),pin(5),pout(5),dEsum
-      save xin,xout,pin,pout,dEsum
-
 #ifdef BACKGROUND_PROFILING
       integer det
       real vertx(3),tofgx,ubuf(99),xint(3,999)
@@ -316,6 +307,12 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
 #endif
  
       CALL GDEBUG
+
+* Register hits in sensitive detectors here
+
+      if (ISVOL.ne.0) then
+        call savehits
+      endif
 
 * Place any secondaries generated during this step onto the stack
 
@@ -447,85 +444,4 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
         ISTOP=1
       endif
 #endif
-
-* If not a sensitive volume then exit here
-
-      if (ISVOL.eq.0) return
-
-* Inside sensitive medium: accumulate info about track segment
-
-      if (ISTOP.ne.0) then		! particle stops
-        continue
-      elseif (INWVOL.eq.2) then		! particle exits current volume
-        continue
-      elseif (INWVOL.eq.1) then		! particle enters new volume
-        xin(1) = VECT(1)
-        xin(2) = VECT(2)
-        xin(3) = VECT(3)
-        xin(4) = TOFG
-        pin(1) = VECT(4)
-        pin(2) = VECT(5)
-        pin(3) = VECT(6)
-        pin(4) = GETOT
-        pin(5) = VECT(7)
-        dEsum = 0
-        return
-      else
-        dEsum = dEsum + DESTEP
-        return
-      endif
-
-* At end of track segment in sensitive medium: register hit
-
-      dEsum = dEsum + DESTEP
-      xout(1) = VECT(1)
-      xout(2) = VECT(2)
-      xout(3) = VECT(3)
-      xout(4) = TOFG
-      pout(1) = VECT(4)
-      pout(2) = VECT(5)
-      pout(3) = VECT(6)
-      pout(4) = GETOT
-      pout(5) = VECT(7)
-      if (CHARGE.ne.0) then
-c      write(*,*) 'volume name= ',cnames(NLEVEL)
-
-        if ((cnames(NLEVEL).eq.'STRC').or.		! vertex cylinder
-     +      (cnames(NLEVEL).eq.'STRP')) then		! vertex endcap
-          call hitStartCntr(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
-        elseif ((cnames(NLEVEL).eq.'STRA').or.		! CDC straight straw
-     +          (cnames(NLEVEL).eq.'STLA')) then	! CDC stereo straw
-          call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
-c	  PRINT*,__FILE__,':',__LINE__,' CDC itra=',ITRA,'
-c    +           z=',xout(3),' ipart=',ipart,' GETOT=',GETOT
-        elseif (cnames(NLEVEL).eq.'FDCA') then		! FDC anode drift cell
-          call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
-c	  PRINT*,__FILE__,':',__LINE__,' FDC itra=',ITRA,'
-c                z=',xout(3),' ipart=',ipart,' GETOT=',GETOT
-        elseif (cnames(NLEVEL).eq.'CSEC') then		! Cerenkov counter
-          call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
-#ifdef GENERALIZED_BCAL_NAME
-        elseif (cnames(NLEVEL)(1:ichar).eq.bcalstring(i:ichar)) then ! barrel calorimeter
-c	  write(*,*)'In GUSTEP: ',bcalstring,dEsum
-#else
-        elseif ((cnames(NLEVEL)(1:3).eq.'BCM').or.
-     +          (cnames(NLEVEL)(1:3).eq.'BM1')) then
-
-#endif
-          call hitBarrelEMcal(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
-          ISTORY = 1  ! this particle has entered the BCal (inherited trait)
-        elseif ((cnames(NLEVEL).eq.'FTOC').or.		! forward TOF counter
-     +          (cnames(NLEVEL).eq.'FTOS')) then
-          call hitForwardTOF(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
-        elseif (cnames(NLEVEL).eq.'LGBL') then		! forward calorimeter
-          call hitForwardEMcal
-     +                      (xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
-          ISTORY = 2  ! this particle has entered the FCal (inherited trait)
-        elseif ((cnames(NLEVEL).eq.'UPVP').or.		! UPV
-     +          (cnames(NLEVEL).eq.'UPVC')) then
-          call hitUpstreamEMveto
-     +                      (xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
-          ISTORY = 3  ! this particle has entered the UPV (inherited trait)
-        endif
-      endif
       END
