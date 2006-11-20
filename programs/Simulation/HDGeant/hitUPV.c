@@ -305,7 +305,15 @@ s_UpstreamEMveto_t* pickUpstreamEMveto ()
     }
     FREE(item);
   }
-  paddleCount = showerCount = 0;
 
+  if ((box->upvPaddles->mult == 0) &&
+      (box->upvTruthShowers->mult == 0))
+  {
+    FREE(box->upvPaddles);
+    FREE(box->upvTruthShowers);
+    FREE(box);
+    box = HDDM_NULL;
+  }
+  paddleCount = showerCount = 0;
   return box;
 }

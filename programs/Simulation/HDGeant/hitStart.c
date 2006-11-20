@@ -223,7 +223,15 @@ s_StartCntr_t* pickStartCntr ()
       }
       FREE(item);
    }
-   paddleCount = pointCount = 0;
 
+   if ((box->stcPaddles->mult == 0) &&
+       (box->stcTruthPoints->mult == 0))
+   {
+      FREE(box->stcPaddles);
+      FREE(box->stcTruthPoints);
+      FREE(box);
+      box = HDDM_NULL;
+   }
+   paddleCount = pointCount = 0;
    return box;
 }

@@ -315,7 +315,25 @@ s_CentralDC_t* pickCentralDC ()
       }
       FREE(item);
    }
-   strawCount = stripCount = pointCount = 0;
 
+   box = make_s_CentralDC();
+   if ((box->cdcStraws->mult == 0) &&
+       (box->cdcTruthPoints->mult == 0))
+   {
+#if CATHODE_STRIPS_IN_CDC
+    if (box->cdcCathodeStrips->mult == 0) {
+#endif
+      FREE(box->cdcStraws);
+      FREE(box->cdcTruthPoints);
+#if CATHODE_STRIPS_IN_CDC
+      FREE(box->cdcCathodeStrips);
+#endif
+      FREE(box);
+      box = HDDM_NULL;
+#if CATHODE_STRIPS_IN_CDC
+    }
+#endif
+   }
+   strawCount = stripCount = pointCount = 0;
    return box;
 }

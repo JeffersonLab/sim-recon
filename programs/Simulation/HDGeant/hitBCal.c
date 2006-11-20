@@ -265,6 +265,14 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
       FREE(item);
    }
 
+   if ((box->bcalCells->mult == 0) &&
+       (box->bcalTruthShowers->mult == 0))
+   {
+      FREE(box->bcalCells);
+      FREE(box->bcalTruthShowers);
+      FREE(box);
+      box = HDDM_NULL;
+   }
    cellCount = showerCount = 0;
    return box;
 }

@@ -169,7 +169,13 @@ s_Tagger_t* pickTagger ()
       }
       FREE(item);
    }
-   channelCount = 0;
 
+   if (box->microChannels->mult == 0)
+   {
+      FREE(box->microChannels);
+      FREE(box);
+      box = HDDM_NULL;
+   }
+   channelCount = 0;
    return box;
 }

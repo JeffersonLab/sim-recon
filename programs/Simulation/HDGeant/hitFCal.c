@@ -192,7 +192,15 @@ s_ForwardEMcal_t* pickForwardEMcal ()
       }
       FREE(item);
    }
-   blockCount = showerCount = 0;
 
+   if ((box->fcalBlocks->mult == 0) &&
+       (box->fcalTruthShowers->mult == 0))
+   {
+      FREE(box->fcalBlocks);
+      FREE(box->fcalTruthShowers);
+      FREE(box);
+      box = HDDM_NULL;
+   }
+   blockCount = showerCount = 0;
    return box;
 }
