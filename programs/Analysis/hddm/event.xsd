@@ -77,10 +77,10 @@
 
   <xs:element name="momentum">
     <xs:complexType>
-      <xs:attribute name="E" type="hddm:float" use="required"/>
       <xs:attribute name="px" type="hddm:float" use="required"/>
       <xs:attribute name="py" type="hddm:float" use="required"/>
       <xs:attribute name="pz" type="hddm:float" use="required"/>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -117,17 +117,17 @@
         <xs:element ref="hddm:momentum"/>
         <xs:element ref="hddm:properties"/>
       </xs:sequence>
-      <xs:attribute name="decayVertex" type="hddm:int" use="required"/>
       <xs:attribute name="type" type="hddm:Particle_t" use="required"/>
+      <xs:attribute name="decayVertex" type="hddm:int" use="required"/>
     </xs:complexType>
   </xs:element>
 
   <xs:element name="origin">
     <xs:complexType>
-      <xs:attribute name="t" type="hddm:float" use="required"/>
       <xs:attribute name="vx" type="hddm:float" use="required"/>
       <xs:attribute name="vy" type="hddm:float" use="required"/>
       <xs:attribute name="vz" type="hddm:float" use="required"/>
+      <xs:attribute name="t" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -154,8 +154,8 @@
 
   <xs:element name="cdcStrawHit">
     <xs:complexType>
-      <xs:attribute name="dE" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="dE" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -171,13 +171,13 @@
 
   <xs:element name="cdcTruthPoint">
     <xs:complexType>
-      <xs:attribute name="dEdx" type="hddm:float" use="required"/>
-      <xs:attribute name="dradius" type="hddm:float" use="required"/>
-      <xs:attribute name="phi" type="hddm:float" use="required"/>
-      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
-      <xs:attribute name="r" type="hddm:float" use="required"/>
-      <xs:attribute name="track" type="hddm:int" use="required"/>
       <xs:attribute name="z" type="hddm:float" use="required"/>
+      <xs:attribute name="r" type="hddm:float" use="required"/>
+      <xs:attribute name="phi" type="hddm:float" use="required"/>
+      <xs:attribute name="dradius" type="hddm:float" use="required"/>
+      <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
+      <xs:attribute name="dEdx" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -192,8 +192,8 @@
 
   <xs:element name="fdcAnodeHit">
     <xs:complexType>
-      <xs:attribute name="dE" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="dE" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -208,8 +208,8 @@
 
   <xs:element name="fdcCathodeHit">
     <xs:complexType>
-      <xs:attribute name="dE" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="dE" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -225,13 +225,13 @@
 
   <xs:element name="fdcTruthPoint">
     <xs:complexType>
-      <xs:attribute name="dEdx" type="hddm:float" use="required"/>
-      <xs:attribute name="dradius" type="hddm:float" use="required"/>
-      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
-      <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="z" type="hddm:float" use="required"/>
       <xs:attribute name="x" type="hddm:float" use="required"/>
       <xs:attribute name="y" type="hddm:float" use="required"/>
-      <xs:attribute name="z" type="hddm:float" use="required"/>
+      <xs:attribute name="dradius" type="hddm:float" use="required"/>
+      <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
+      <xs:attribute name="dEdx" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -242,8 +242,8 @@
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:fdcCathodeStrip"/>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:fdcTruthPoint"/>
       </xs:sequence>
-      <xs:attribute name="layer" type="hddm:int" use="required"/>
       <xs:attribute name="module" type="hddm:int" use="required"/>
+      <xs:attribute name="layer" type="hddm:int" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -257,8 +257,8 @@
 
   <xs:element name="stcHit">
     <xs:complexType>
-      <xs:attribute name="dE" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="dE" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -273,13 +273,13 @@
 
   <xs:element name="stcTruthPoint">
     <xs:complexType>
-      <xs:attribute name="dEdx" type="hddm:float" use="required"/>
-      <xs:attribute name="phi" type="hddm:float" use="required"/>
-      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
-      <xs:attribute name="r" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
-      <xs:attribute name="track" type="hddm:int" use="required"/>
       <xs:attribute name="z" type="hddm:float" use="required"/>
+      <xs:attribute name="r" type="hddm:float" use="required"/>
+      <xs:attribute name="phi" type="hddm:float" use="required"/>
+      <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
+      <xs:attribute name="dEdx" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -294,15 +294,15 @@
 
   <xs:element name="bcalUpstreamHit">
     <xs:complexType>
-      <xs:attribute name="E" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
   <xs:element name="bcalDownstreamHit">
     <xs:complexType>
-      <xs:attribute name="E" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -312,21 +312,21 @@
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:bcalUpstreamHit"/>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:bcalDownstreamHit"/>
       </xs:sequence>
-      <xs:attribute name="layer" type="hddm:int" use="required"/>
       <xs:attribute name="module" type="hddm:int" use="required"/>
+      <xs:attribute name="layer" type="hddm:int" use="required"/>
       <xs:attribute name="sector" type="hddm:int" use="required"/>
     </xs:complexType>
   </xs:element>
 
   <xs:element name="bcalTruthShower">
     <xs:complexType>
-      <xs:attribute name="E" type="hddm:float" use="required"/>
-      <xs:attribute name="phi" type="hddm:float" use="required"/>
-      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
-      <xs:attribute name="r" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
-      <xs:attribute name="track" type="hddm:int" use="required"/>
       <xs:attribute name="z" type="hddm:float" use="required"/>
+      <xs:attribute name="phi" type="hddm:float" use="required"/>
+      <xs:attribute name="r" type="hddm:float" use="required"/>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
+      <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -341,8 +341,8 @@
 
   <xs:element name="cereHit">
     <xs:complexType>
-      <xs:attribute name="pe" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="pe" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -357,16 +357,16 @@
 
   <xs:element name="cereTruthPoint">
     <xs:complexType>
+      <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="z" type="hddm:float" use="required"/>
+      <xs:attribute name="x" type="hddm:float" use="required"/>
+      <xs:attribute name="y" type="hddm:float" use="required"/>
       <xs:attribute name="E" type="hddm:float" use="required"/>
-      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
       <xs:attribute name="px" type="hddm:float" use="required"/>
       <xs:attribute name="py" type="hddm:float" use="required"/>
       <xs:attribute name="pz" type="hddm:float" use="required"/>
-      <xs:attribute name="t" type="hddm:float" use="required"/>
       <xs:attribute name="track" type="hddm:int" use="required"/>
-      <xs:attribute name="x" type="hddm:float" use="required"/>
-      <xs:attribute name="y" type="hddm:float" use="required"/>
-      <xs:attribute name="z" type="hddm:float" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -381,15 +381,15 @@
 
   <xs:element name="ftofLeftHit">
     <xs:complexType>
-      <xs:attribute name="dE" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="dE" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
   <xs:element name="ftofRightHit">
     <xs:complexType>
-      <xs:attribute name="dE" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="dE" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -399,19 +399,19 @@
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:ftofLeftHit"/>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:ftofRightHit"/>
       </xs:sequence>
-      <xs:attribute name="paddle" type="hddm:int" use="required"/>
       <xs:attribute name="plane" type="hddm:int" use="required"/>
+      <xs:attribute name="paddle" type="hddm:int" use="required"/>
     </xs:complexType>
   </xs:element>
 
   <xs:element name="ftofTruthPoint">
     <xs:complexType>
-      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
-      <xs:attribute name="track" type="hddm:int" use="required"/>
       <xs:attribute name="x" type="hddm:float" use="required"/>
       <xs:attribute name="y" type="hddm:float" use="required"/>
       <xs:attribute name="z" type="hddm:float" use="required"/>
+      <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -426,8 +426,8 @@
 
   <xs:element name="fcalHit">
     <xs:complexType>
-      <xs:attribute name="E" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -436,20 +436,20 @@
       <xs:sequence>
         <xs:element maxOccurs="unbounded" ref="hddm:fcalHit"/>
       </xs:sequence>
-      <xs:attribute name="column" type="hddm:int" use="required"/>
       <xs:attribute name="row" type="hddm:int" use="required"/>
+      <xs:attribute name="column" type="hddm:int" use="required"/>
     </xs:complexType>
   </xs:element>
 
   <xs:element name="fcalTruthShower">
     <xs:complexType>
-      <xs:attribute name="E" type="hddm:float" use="required"/>
-      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
-      <xs:attribute name="track" type="hddm:int" use="required"/>
       <xs:attribute name="x" type="hddm:float" use="required"/>
       <xs:attribute name="y" type="hddm:float" use="required"/>
       <xs:attribute name="z" type="hddm:float" use="required"/>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
+      <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -464,15 +464,15 @@
 
   <xs:element name="upvLeftHit">
     <xs:complexType>
-      <xs:attribute name="E" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
   <xs:element name="upvRightHit">
     <xs:complexType>
-      <xs:attribute name="E" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -489,13 +489,13 @@
 
   <xs:element name="upvTruthShower">
     <xs:complexType>
-      <xs:attribute name="E" type="hddm:float" use="required"/>
-      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
-      <xs:attribute name="track" type="hddm:int" use="required"/>
       <xs:attribute name="x" type="hddm:float" use="required"/>
       <xs:attribute name="y" type="hddm:float" use="required"/>
       <xs:attribute name="z" type="hddm:float" use="required"/>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
+      <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -508,19 +508,44 @@
     </xs:complexType>
   </xs:element>
 
+  <xs:element name="taggerHit">
+    <xs:complexType>
+      <xs:attribute name="t" type="hddm:float" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="microChannel">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:taggerHit"/>
+      </xs:sequence>
+      <xs:attribute name="column" type="hddm:int" use="required"/>
+      <xs:attribute name="row" type="hddm:int" use="required"/>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="tagger">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:microChannel"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
   <xs:element name="mcTrajectoryPoint">
     <xs:complexType>
       <xs:attribute name="E" type="hddm:float" use="required"/>
+      <xs:attribute name="dE" type="hddm:float" use="required"/>
+      <xs:attribute name="part" type="hddm:int" use="required"/>
       <xs:attribute name="px" type="hddm:float" use="required"/>
       <xs:attribute name="py" type="hddm:float" use="required"/>
       <xs:attribute name="pz" type="hddm:float" use="required"/>
+      <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="track" type="hddm:int" use="required"/>
       <xs:attribute name="x" type="hddm:float" use="required"/>
       <xs:attribute name="y" type="hddm:float" use="required"/>
       <xs:attribute name="z" type="hddm:float" use="required"/>
-      <xs:attribute name="t" type="hddm:float" use="required"/>
-      <xs:attribute name="dE" type="hddm:float" use="required"/>
-      <xs:attribute name="track" type="hddm:int" use="required"/>
-      <xs:attribute name="part" type="hddm:int" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -543,6 +568,7 @@
         <xs:element minOccurs="0" ref="hddm:forwardTOF"/>
         <xs:element minOccurs="0" ref="hddm:forwardEMcal"/>
         <xs:element minOccurs="0" ref="hddm:upstreamEMveto"/>
+        <xs:element minOccurs="0" ref="hddm:tagger"/>
         <xs:element minOccurs="0" ref="hddm:mcTrajectory"/>
       </xs:sequence>
       <xs:attribute fixed="2.0" name="version" type="xs:string" use="required"/>

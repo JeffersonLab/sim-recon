@@ -89,6 +89,13 @@
 			minOccurs="0" maxOccurs="unbounded" />
    </upstreamEMveto>
 
+   <tagger minOccurs="0">
+      <microChannel column="int" row="int" E="float" 
+			minOccurs="0" maxOccurs="unbounded">
+         <taggerHit t="float" minOccurs="0" maxOccurs="unbounded" />
+      </microChannel>
+   </tagger>
+
    <mcTrajectory minOccurs="0">
          <mcTrajectoryPoint E="float" dE="float" maxOccurs="unbounded" minOccurs="0" part="int" px="float" py="float" pz="float" t="float" track="int" x="float" y="float" z="float"/>
    </mcTrajectory>
