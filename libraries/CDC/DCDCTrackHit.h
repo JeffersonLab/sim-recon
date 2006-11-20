@@ -17,7 +17,7 @@ class DCDCTrackHit:public JObject{
 	public:
 		HDCLASSDEF(DCDCTrackHit);
 
-		const DCDCWire *wire;	// stereo angle of tube in radians
+		const DCDCWire *wire;	// DCDCWire structure for this hit
 		float tdrift;				// Drift time of hit in ns
 		float dist;					// Measured DOCA in cm
 };

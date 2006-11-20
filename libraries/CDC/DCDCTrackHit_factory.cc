@@ -105,9 +105,9 @@ jerror_t DCDCTrackHit_factory::init(void)
 			w->ring = ring;
 			w->straw = straw;
 			w->stereo = stereo;
-			w->wpos.SetX(radius*cos(phi));
-			w->wpos.SetY(radius*sin(phi));
-			w->wpos.SetZ((Z_MAX + Z_MIN)/2.0);
+			w->origin.SetX(radius*cos(phi));
+			w->origin.SetY(radius*sin(phi));
+			w->origin.SetZ((Z_MAX + Z_MIN)/2.0);
 			w->phi = phi;
 			
 			// Here, we need to define a coordinate system for the wire
@@ -186,8 +186,8 @@ const string DCDCTrackHit_factory::toString(void)
 		printnewrow();
 		printcol("%d",	w->ring);
 		printcol("%d",	w->straw);
-		printcol("%3.1f",	w->wpos.x());
-		printcol("%3.1f",	w->wpos.y());
+		printcol("%3.1f",	w->origin.x());
+		printcol("%3.1f",	w->origin.y());
 		printcol("%1.4f",	w->stereo);
 		printcol("%3.1f",	hit->tdrift);
 		printcol("%3.1f",	hit->dist);
