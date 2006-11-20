@@ -19,7 +19,7 @@
 #include "DMagneticFieldMap.h"
 #include "DTrack.h"
 #include "DReferenceTrajectory.h"
-#include "CDC/DCDCWire.h"
+#include "DCoordinateSystem.h"
 
 class DTrackCandidate;
 class DTrack;
@@ -58,13 +58,13 @@ class DTrack_factory:public JFactory<DTrack>{
 
 		DTrack* FitTrack(const DTrackCandidate *tc);
 		void GetCDCTrackHits(DReferenceTrajectory *rt, double max_hit_dist=0.0);
-		double GetDistToRT(const DCDCWire *wire, const swim_step_t *step, double &s);
+		double GetDistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double &s);
 		//void KalmanFilter(TMatrixD &state, TMatrixD &P, DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom);
 		//void KalmanStep(TMatrixD &x, TMatrixD &P, TMatrixD &z_minus_h, TMatrixD &A, TMatrixD &H, TMatrixD &Q, TMatrixD &R, TMatrixD &W, TMatrixD &V);
 		//double ProjectStateBackwards(double q, TMatrixD &state, const swim_step_t *step, const swim_step_t *stepRT, const DCDCWire *wire);
 		double ChiSq(double q, TMatrixD &state, swim_step_t *start_step, DReferenceTrajectory *rt=NULL);
 		double ChiSq(double q, const TVector3 &pos, const TVector3 &mom, DReferenceTrajectory *rt=NULL);
-		double LeastSquares(const TVector3 &pos, const TVector3 &mom, DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom);
+		double LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom);
 
 		std::vector<const DCDCTrackHit* > cdctrackhits;
 		std::vector<hit_on_track_t > cdchits_on_track;
@@ -85,6 +85,7 @@ class DTrack_factory:public JFactory<DTrack>{
 		TH2F *cdcdoca_vs_dist;
 		TH1F *dist_stereo, *dist_axial;
 		TH1F *doca_stereo, *doca_axial;
+		TH2F *fit_chisq_vs_chisq;
 };
 
 #endif // _DTrack_factory_
