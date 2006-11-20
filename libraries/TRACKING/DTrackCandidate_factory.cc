@@ -599,7 +599,7 @@ int DTrackCandidate_factory::FindZvertex(void)
 	int Nbins = zvertex_hist->GetXaxis()->GetNbins();
 	int xbin_right = xbin;
 	for(int i=xbin+1; i<Nbins; i++){
-		if(phizangle_hist->GetBinContent(i) != height)break;
+		if(zvertex_hist->GetBinContent(i) != height)break;
 		xbin_right = i;
 	}
 	float z_vertex_min = z_vertex - z_vertex_bin_size/2.0;
