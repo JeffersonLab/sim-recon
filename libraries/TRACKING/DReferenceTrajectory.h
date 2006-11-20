@@ -15,6 +15,8 @@ using std::vector;
 
 #include <JANA/jerror.h>
 
+#include <DCoordinateSystem.h>
+
 class DMagneticFieldMap;
 class DTrackCandidate;
 
@@ -32,28 +34,33 @@ class DReferenceTrajectory{
 
 	public:
 
-		typedef struct{
-			TVector3 pos;
-			TVector3 mom;
-			TVector3 xdir, ydir, zdir;
-			double Ro;
-			double s; // distance along RT
-		}swim_step_t;
+
+		class swim_step_t:public DCoordinateSystem{
+			public:
+				TVector3 mom;
+				double Ro;
+				double s; // distance along RT
+		};
 
 		DReferenceTrajectory(const DMagneticFieldMap *
-									, const DTrackCandidate*
+									, double q, const TVector3 &pos, const TVector3 &mom
 									, swim_step_t *swim_steps=NULL
-									, int max_swim_steps=0);
-		DReferenceTrajectory(const DMagneticFieldMap *
-									, double q, const TVector3 &pos, const TVector3 &p
-									, swim_step_t *swim_steps=NULL
-									, int max_swim_steps=0);
+									, int max_swim_steps=0
+									, double step_size=-1.0);
 
 		virtual ~DReferenceTrajectory();
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DReferenceTrajectory";}
 		
-		//vector<swim_step_t> swim_steps;
+		double DistToRT(double x, double y, double z){return DistToRT(TVector3(x,y,z));}
+		double DistToRT(TVector3 hit);
+		double DistToRT(const DCoordinateSystem *wire, double L, double *s=NULL);
+		double DistToRTBruteForce(const DCoordinateSystem *wire, double L, double *s=NULL);
+		double DistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
+		double DistToRTBruteForce(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
+		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire, double L);
+		void Reswim(const TVector3 &pos, const TVector3 &mom);
+
 		swim_step_t *swim_steps;
 		int Nswim_steps;
 		float q;
@@ -62,14 +69,12 @@ class DReferenceTrajectory{
 	
 		int max_swim_steps;
 		bool own_swim_steps;
+		double step_size;
+		const DMagneticFieldMap *bfield;
 	
 	private:
 		DReferenceTrajectory(){} // force use of constructor with arguments.
 
-		void SwimRT(const DMagneticFieldMap *
-					, double q, const TVector3 &pos, const TVector3 &p
-					, swim_step_t *swim_steps=NULL
-					, int max_swim_steps=0);
 };
 
 #endif // _DReferenceTrajectory_
