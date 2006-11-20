@@ -7,7 +7,7 @@
 /*! \file DMagneticFieldMap.h
  *  \brief A class that holds the magnetic field map for the detector.
  */
-
+#include <cmath>
 #include <fstream>
 
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
@@ -37,6 +37,7 @@ class DMagneticFieldMap
 		
 		/// Set this map to use a constant B-field in the z- direction. Bz is in Tesla.
 		void SetConstField(float Bz){BZ_CONST = Bz;}
+		bool isConst(void){return fabs(BZ_CONST)<100.0;}
 	 
 	private:
 
