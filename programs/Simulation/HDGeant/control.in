@@ -19,17 +19,25 @@ C process the following 100 input events and stop.  If the end of the file is
 C reached before the event count specified in card TRIG is exhausted then the
 C processing will stop at the end of file.
 
-TRIG 100
+TRIG 1000
 cINFILE 'rhop.hddm'
-BEAM 12. 9.
+cBEAM 12. 9.
 RUNG 9999
 
 c Commenting out the following line will disable simulated hits output.
 OUTFILE 'hdgeant.hddm'
 
-C The following card enables single-track generation (for testing)
-C    particle  energy  theta  phi  vertex(x y z)
-KINE   108       1.0     30.  45.    0. 0. 65.
+c The following card enables single-track generation (for testing).
+c For a single-particle gun, set the momentum (GeV/c), direction
+c theta,phi (degrees) and vertex position (cm), and for the particle
+c type insert the Geant particle type code plus 100 (eg. 101=gamma,
+c 103=electron, 107=pi0, 108=pi+, 109=pi-, 114=proton).  If you use
+c the particle code but do not add 100 then theta,phi are ignored
+c and the particle direction is generated randomly over 4pi sr.
+c For a listing of the Geant particle types, see the following URL.
+c http://wwwasdoc.web.cern.ch/wwwasdoc/geant_html3/node72.html
+c   particle  momentum  theta  phi  vertex(x y z)
+KINE   1         1.5       10.   0.    0. 0. 65.
 
 c The following lines control the rate (GHz) of background beam photons
 c that are overlayed on each event in the simulation, in addition to the
