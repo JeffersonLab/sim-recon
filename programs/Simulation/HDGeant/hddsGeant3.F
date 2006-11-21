@@ -65094,16 +65094,6 @@
       data rmat3/1,0,0,
      +          0,1,0,
      +          0,0,1/
-      real orig4(3),rmat4(3,3)
-      data orig4/0,0,212/
-      data rmat4/1,0,0,
-     +          0,1,0,
-     +          0,0,1/
-      real orig5(3),rmat5(3,3)
-      data orig5/0,0,622.8/
-      data rmat5/1,0,0,
-     +          0,1,0,
-     +          0,0,1/
 
       iregion = getMap()
       if (iregion.eq.0) then
@@ -65137,7 +65127,7 @@
 
       subroutine gufld1(r,B)
       implicit none
-      real r(3),B(3)
+      real r(3),B(3),Br(3)
       real rho,phi,alpha
       real u(3)
       real twopi
@@ -65183,10 +65173,12 @@
       if ((u(1).ge.0.and.u(1).le.1).and.
      +    (u(2).ge.0.and.u(2).le.1).and.
      +    (u(3).ge.0.and.u(3).le.1)) then
-        call interpol3(Bmap,nsites,u,B)
-        B(1)=B(1)*reverse0(1)
-        B(2)=B(2)*reverse0(2)
-        B(3)=B(3)*reverse0(3)
+        call interpol3(Bmap,nsites,u,Br)
+        Br(1)=Br(1)*reverse0(1)
+        Br(2)=Br(2)*reverse0(2)
+        B(1)=Br(1)*cos(phi)-Br(2)*sin(phi)
+        B(2)=Br(2)*cos(phi)+Br(1)*sin(phi)
+        B(3)=Br(3)*reverse0(3)
         return
       endif
 
