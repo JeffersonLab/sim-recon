@@ -267,12 +267,14 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 
    cellCount = showerCount = 0;
 
-   if (box->bcalCells != HDDM_NULL)
+   if ((box->bcalCells != HDDM_NULL) &&
+       (box->bcalCells->mult == 0))
    {
       FREE(box->bcalCells);
       box->bcalCells = HDDM_NULL;
    }
-   if (box->bcalTruthShowers != HDDM_NULL)
+   if ((box->bcalTruthShowers != HDDM_NULL) &&
+       (box->bcalTruthShowers->mult == 0))
    {
       FREE(box->bcalTruthShowers);
       box->bcalTruthShowers = HDDM_NULL;

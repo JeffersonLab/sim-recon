@@ -308,12 +308,14 @@ s_UpstreamEMveto_t* pickUpstreamEMveto ()
 
   paddleCount = showerCount = 0;
 
-  if (box->upvPaddles != HDDM_NULL)
+  if ((box->upvPaddles != HDDM_NULL) &&
+      (box->upvPaddles->mult == 0))
   {
     FREE(box->upvPaddles);
     box->upvPaddles = HDDM_NULL;
   }
-  if (box->upvTruthShowers != HDDM_NULL)
+  if ((box->upvTruthShowers != HDDM_NULL) &&
+      (box->upvTruthShowers->mult == 0))
   {
     FREE(box->upvTruthShowers);
     box->upvTruthShowers = HDDM_NULL;

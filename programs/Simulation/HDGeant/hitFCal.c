@@ -195,12 +195,14 @@ s_ForwardEMcal_t* pickForwardEMcal ()
 
    blockCount = showerCount = 0;
 
-   if (box->fcalBlocks != HDDM_NULL)
+   if ((box->fcalBlocks != HDDM_NULL) &&
+       (box->fcalBlocks->mult == 0))
    {
       FREE(box->fcalBlocks);
       box->fcalBlocks = HDDM_NULL;
    }
-   if (box->fcalTruthShowers != HDDM_NULL)
+   if ((box->fcalTruthShowers != HDDM_NULL) &&
+       (box->fcalTruthShowers->mult == 0))
    {
       FREE(box->fcalTruthShowers);
       box->fcalTruthShowers = HDDM_NULL;

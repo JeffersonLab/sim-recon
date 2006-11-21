@@ -20,8 +20,8 @@ C reached before the event count specified in card TRIG is exhausted then the
 C processing will stop at the end of file.
 
 TRIG 1000
-cINFILE 'rhop.hddm'
-cBEAM 12. 9.
+INFILE 'rhop.hddm'
+BEAM 12. 9.
 RUNG 9999
 
 c Commenting out the following line will disable simulated hits output.

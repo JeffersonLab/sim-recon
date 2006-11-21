@@ -299,12 +299,14 @@ s_ForwardTOF_t* pickForwardTOF ()
 
    counterCount = pointCount = 0;
 
-   if (box->ftofCounters != HDDM_NULL)
+   if ((box->ftofCounters != HDDM_NULL) &&
+       (box->ftofCounters->mult == 0))
    {
       FREE(box->ftofCounters);
       box->ftofCounters = HDDM_NULL;
    }
-   if (box->ftofTruthPoints != HDDM_NULL)
+   if ((box->ftofTruthPoints != HDDM_NULL) &&
+       (box->ftofTruthPoints->mult == 0))
    {
       FREE(box->ftofTruthPoints);
       box->ftofTruthPoints = HDDM_NULL;

@@ -203,12 +203,14 @@ s_Cerenkov_t* pickCerenkov ()
 
    sectionCount = pointCount = 0;
 
-   if (box->cereSections != HDDM_NULL)
+   if ((box->cereSections != HDDM_NULL) &&
+       (box->cereSections->mult == 0))
    {
       FREE(box->cereSections);
       box->cereSections = HDDM_NULL;
    }
-   if (box->cereTruthPoints != HDDM_NULL)
+   if ((box->cereTruthPoints != HDDM_NULL) &&
+       (box->cereTruthPoints->mult == 0))
    {
       FREE(box->cereTruthPoints);
       box->cereTruthPoints = HDDM_NULL;

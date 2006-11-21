@@ -437,7 +437,8 @@ s_ForwardDC_t* pickForwardDC ()
 
    stripCount = wireCount = pointCount = 0;
 
-   if (box->fdcChambers != HDDM_NULL)
+   if ((box->fdcChambers != HDDM_NULL) &&
+       (box->fdcChambers->mult == 0))
    {
       FREE(box->fdcChambers);
       box->fdcChambers = HDDM_NULL;

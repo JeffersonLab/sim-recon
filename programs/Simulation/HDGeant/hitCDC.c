@@ -319,18 +319,21 @@ s_CentralDC_t* pickCentralDC ()
    strawCount = stripCount = pointCount = 0;
 
 #if CATHODE_STRIPS_IN_CDC
-   if (box->cdcCathodeStrips != HDDM_NULL)
+   if ((box->cdcCathodeStrips != HDDM_NULL) &&
+       (box->cdcCathodeStrips->mult == 0))
    {
       FREE(box->cdcCathodeStrips);
       box->cdcCathodeStrips = HDDM_NULL;
    }
 #endif
-   if (box->cdcStraws != HDDM_NULL)
+   if ((box->cdcStraws != HDDM_NULL) &&
+       (box->cdcStraws->mult == 0))
    {
       FREE(box->cdcStraws);
       box->cdcStraws = HDDM_NULL;
    }
-   if (box->cdcTruthPoints != HDDM_NULL)
+   if ((box->cdcTruthPoints != HDDM_NULL) &&
+       (box->cdcTruthPoints->mult == 0))
    {
       FREE(box->cdcTruthPoints);
       box->cdcTruthPoints = HDDM_NULL;

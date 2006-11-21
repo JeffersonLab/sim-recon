@@ -172,7 +172,8 @@ s_Tagger_t* pickTagger ()
 
    channelCount = 0;
 
-   if (box->microChannels != HDDM_NULL)
+   if ((box->microChannels != HDDM_NULL) &&
+       (box->microChannels->mult == 0))
    {
       FREE(box->microChannels);
       box->microChannels = HDDM_NULL;

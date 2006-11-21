@@ -226,12 +226,14 @@ s_StartCntr_t* pickStartCntr ()
 
    paddleCount = pointCount = 0;
 
-   if (box->stcPaddles != HDDM_NULL)
+   if ((box->stcPaddles != HDDM_NULL) &&
+       (box->stcPaddles->mult == 0))
    {
       FREE(box->stcPaddles);
       box->stcPaddles = HDDM_NULL;
    }
-   if (box->stcTruthPoints != HDDM_NULL)
+   if ((box->stcTruthPoints != HDDM_NULL) &&
+       (box->stcTruthPoints->mult == 0))
    {
       FREE(box->stcTruthPoints);
       box->stcTruthPoints = HDDM_NULL;
