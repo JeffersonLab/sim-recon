@@ -798,6 +798,19 @@
   numerically less than the upper bound; the coordinate order must correspond
   to the order the data are stored in the map file.
 
+1.6.2.2) Field data
+
+  The field map metadata are stored in hdds, but the data themselves are
+  not.  Instead they are saved either in a database or a flat file external
+  to hdds.  The field data are represented in the encoding specified in the
+  mappedBfield element (see section 1.6.2 above) with one grid point per
+  line.  Each line contains three space-separated numbers in free floating
+  point format, eg. "6 -2.176 3.4e-5".  The meaning of these three components
+  depends upon the grid type.  For a Cartesian grid, they are interpreted as
+  B_x B_y B_z.  For a cylindrical grid, they are B_rho, B_phi, B_z.  Note
+  that the order of the components is the same regardless of the nesting
+  order of the grid points.
+
 1.6.3) Region contents: tracking advisories
 ============================================
 

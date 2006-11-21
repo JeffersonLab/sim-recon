@@ -983,6 +983,11 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
    for (int ireg=0; ireg < regionL->getLength(); ++ireg)
    {
       DOMElement* regionEl = (DOMElement*)regionL->item(ireg);
+      DOMNodeList* noTagL = regionEl->getElementsByTagName(X("noBfield"));
+      if (noTagL->getLength())
+      {
+         continue;
+      }
       DOMNodeList* mapL = regionEl->getElementsByTagName(X("HDDSregion"));
       for (int imap=0; imap < mapL->getLength(); ++imap)
       {
@@ -1130,7 +1135,7 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
         << std::endl
         << "      subroutine gufld" << map << "(r,B)" << std::endl
         << "      implicit none" << std::endl
-        << "      real r(3),B(3)" << std::endl
+        << "      real r(3),B(3),Br(3)" << std::endl
         << "      real rho,phi,alpha" << std::endl
         << "      real u(3)" << std::endl
         << "      real twopi" << std::endl
@@ -1358,7 +1363,16 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
               << "      endif" <<std::endl
               << "      u(3) = (r(3)-bound" << igrid << "(3,1))/"
               << "(bound" << igrid << "(3,2)" << "-bound" << igrid << "(3,1))"
-              << std::endl;
+              << std::endl
+              << "      if ((u(1).ge.0.and.u(1).le.1).and." << std::endl
+              << "     +    (u(2).ge.0.and.u(2).le.1).and." << std::endl
+              << "     +    (u(3).ge.0.and.u(3).le.1)) then" << std::endl
+              << "        call interpol3(Bmap,nsites,u,Br)" << std::endl
+              << "        Br(1)=Br(1)*reverse" << igrid << "(1)" << std::endl
+              << "        Br(2)=Br(2)*reverse" << igrid << "(2)" << std::endl
+              << "        B(1)=Br(1)*cos(phi)-Br(2)*sin(phi)" << std::endl
+              << "        B(2)=Br(2)*cos(phi)+Br(1)*sin(phi)" << std::endl
+              << "        B(3)=Br(3)*reverse" << igrid << "(3)" << std::endl;
          }
          else
          {
@@ -1371,16 +1385,16 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
               << std::endl
               << "      u(3) = (r(3)-bound" << igrid << "(3,1))/"
               << "(bound" << igrid << "(3,2)" << "-bound" << igrid << "(3,1))"
-              << std::endl;
-         }
-         std::cout
+              << std::endl
               << "      if ((u(1).ge.0.and.u(1).le.1).and." << std::endl
               << "     +    (u(2).ge.0.and.u(2).le.1).and." << std::endl
               << "     +    (u(3).ge.0.and.u(3).le.1)) then" << std::endl
               << "        call interpol3(Bmap,nsites,u,B)" << std::endl
               << "        B(1)=B(1)*reverse" << igrid << "(1)" << std::endl
               << "        B(2)=B(2)*reverse" << igrid << "(2)" << std::endl
-              << "        B(3)=B(3)*reverse" << igrid << "(3)" << std::endl
+              << "        B(3)=B(3)*reverse" << igrid << "(3)" << std::endl;
+         }
+         std::cout
               << "        return" << std::endl
               << "      endif" << std::endl
               << std::endl;
