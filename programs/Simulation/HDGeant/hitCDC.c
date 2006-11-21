@@ -316,17 +316,30 @@ s_CentralDC_t* pickCentralDC ()
       FREE(item);
    }
 
-   box = make_s_CentralDC();
+   strawCount = stripCount = pointCount = 0;
+
+#if CATHODE_STRIPS_IN_CDC
+   if (box->cdcCathodeStrips != HDDM_NULL)
+   {
+      FREE(box->cdcCathodeStrips);
+      box->cdcCathodeStrips = HDDM_NULL;
+   }
+#endif
+   if (box->cdcStraws != HDDM_NULL)
+   {
+      FREE(box->cdcStraws);
+      box->cdcStraws = HDDM_NULL;
+   }
+   if (box->cdcTruthPoints != HDDM_NULL)
+   {
+      FREE(box->cdcTruthPoints);
+      box->cdcTruthPoints = HDDM_NULL;
+   }
    if ((box->cdcStraws->mult == 0) &&
        (box->cdcTruthPoints->mult == 0))
    {
 #if CATHODE_STRIPS_IN_CDC
     if (box->cdcCathodeStrips->mult == 0) {
-#endif
-      FREE(box->cdcStraws);
-      FREE(box->cdcTruthPoints);
-#if CATHODE_STRIPS_IN_CDC
-      FREE(box->cdcCathodeStrips);
 #endif
       FREE(box);
       box = HDDM_NULL;
@@ -334,6 +347,5 @@ s_CentralDC_t* pickCentralDC ()
     }
 #endif
    }
-   strawCount = stripCount = pointCount = 0;
    return box;
 }

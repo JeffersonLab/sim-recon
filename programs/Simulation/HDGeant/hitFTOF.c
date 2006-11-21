@@ -297,14 +297,23 @@ s_ForwardTOF_t* pickForwardTOF ()
       FREE(item);
    }
 
+   counterCount = pointCount = 0;
+
+   if (box->ftofCounters != HDDM_NULL)
+   {
+      FREE(box->ftofCounters);
+      box->ftofCounters = HDDM_NULL;
+   }
+   if (box->ftofTruthPoints != HDDM_NULL)
+   {
+      FREE(box->ftofTruthPoints);
+      box->ftofTruthPoints = HDDM_NULL;
+   }
    if ((box->ftofCounters->mult == 0) &&
        (box->ftofTruthPoints->mult == 0))
    {
-      FREE(box->ftofCounters);
-      FREE(box->ftofTruthPoints);
       FREE(box);
       box = HDDM_NULL;
    }
-   counterCount = pointCount = 0;
    return box;
 }
