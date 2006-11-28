@@ -13,6 +13,7 @@
 #include <TVector3.h>
 #include <TMatrixD.h>
 #include <TH2.h>
+#include <TH3.h>
 
 #include <JANA/JFactory.h>
 #include <JANA/JGeometry.h>
@@ -79,13 +80,17 @@ class DTrack_factory:public JFactory<DTrack>{
 		double CDC_Z_MAX;
 		swim_step_t *swim_steps;
 		int max_swim_steps;
+		swim_step_t *swim_steps_ls;
+		int max_swim_steps_ls;
 		bool hit_based;
 		
 		TH1F *cdcdocart,*cdcdocaswim, *cdcdocatdrift;
+		TH3F *cdcdoca_vs_dist_vs_ring;
 		TH2F *cdcdoca_vs_dist;
 		TH1F *dist_stereo, *dist_axial;
 		TH1F *doca_stereo, *doca_axial;
 		TH2F *fit_chisq_vs_chisq;
+		TH1F *residuals;
 };
 
 #endif // _DTrack_factory_
