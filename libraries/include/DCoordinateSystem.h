@@ -19,7 +19,7 @@ class DCoordinateSystem{
 		TVector3 sdir;		//< direction of s-axis in lab coordinates
 		TVector3 tdir;		//< direction of t-axis in lab coordinates
 		TVector3 udir;		//< direction of u-axis in lab coordinates
-		
+		double L;			//< length of wire (if this represents a wire)
 		
 		inline void ToLab(double &x, double &y, double &z);
 		inline void FromLab(double &x, double &y, double &z);
