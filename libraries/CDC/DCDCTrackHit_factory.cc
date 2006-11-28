@@ -61,7 +61,8 @@ jerror_t DCDCTrackHit_factory::init(void)
 	// all other layers are zero degrees
 
 	float degrees6 = 6.0*M_PI/180.0;
-	float degrees0 = 0.0;	
+	float degrees0 = 0.0;
+	double L = Z_MAX - Z_MIN; // full length of wire
 	for(int ring=1; ring<=CDC_MAX_RINGS; ring++){
 		int myNstraws=0;
 		float radius = 0.0;
@@ -109,6 +110,7 @@ jerror_t DCDCTrackHit_factory::init(void)
 			w->origin.SetY(radius*sin(phi));
 			w->origin.SetZ((Z_MAX + Z_MIN)/2.0);
 			w->phi = phi;
+			w->L = L/cos(stereo);
 			
 			// Here, we need to define a coordinate system for the wire
 			// in which the wire runs along one axis. We call the directions
@@ -126,7 +128,7 @@ jerror_t DCDCTrackHit_factory::init(void)
 			w->tdir.SetMag(1.0); // This isn't really needed
 		}
 	}
-	
+
 	// Flag table as initialized and release the lock so other threads
 	// can continue.
 	wire_table_initialized=true;
