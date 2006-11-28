@@ -54,11 +54,11 @@ class DReferenceTrajectory{
 		
 		double DistToRT(double x, double y, double z){return DistToRT(TVector3(x,y,z));}
 		double DistToRT(TVector3 hit);
-		double DistToRT(const DCoordinateSystem *wire, double L, double *s=NULL);
-		double DistToRTBruteForce(const DCoordinateSystem *wire, double L, double *s=NULL);
+		double DistToRT(const DCoordinateSystem *wire, double *s=NULL);
+		double DistToRTBruteForce(const DCoordinateSystem *wire, double *s=NULL);
 		double DistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
 		double DistToRTBruteForce(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
-		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire, double L);
+		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire);
 		void Reswim(const TVector3 &pos, const TVector3 &mom);
 
 		swim_step_t *swim_steps;

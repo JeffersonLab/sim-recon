@@ -203,7 +203,7 @@ double DReferenceTrajectory::DistToRT(TVector3 hit)
 //---------------------------------
 // FindClosestSwimStep
 //---------------------------------
-DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(const DCoordinateSystem *wire, double L)
+DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(const DCoordinateSystem *wire)
 {
 	/// Find the closest swim step to the given wire. The value of
 	/// "L" should be the active wire length. The coordinate system
@@ -214,7 +214,7 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 	swim_step_t *swim_step = swim_steps;
 	swim_step_t *step=NULL;
 	double min_delta2 = 1.0E6;
-	double L_over_2 = L/2.0; // half-length of wire in cm
+	double L_over_2 = wire->L/2.0; // half-length of wire in cm
 	for(int i=0; i<Nswim_steps; i++, swim_step++){
 		// Find the point's position along the wire. Skip this
 		// swim step if it is past the end of the wire
@@ -239,13 +239,13 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 //---------------------------------
 // DistToRT
 //---------------------------------
-double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, double L, double *s)
+double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, double *s)
 {
 	/// Find the closest distance to the given wire in cm. The value of
 	/// "L" should be the active wire length (in cm). The coordinate system
 	/// defined by "wire" should have its origin at the center of
 	/// the wire with the wire running in the direction of udir.
-	swim_step_t *step=FindClosestSwimStep(wire, L);
+	swim_step_t *step=FindClosestSwimStep(wire);
 	
 	return step ? DistToRT(wire, step, s):std::numeric_limits<double>::quiet_NaN();
 }
@@ -253,13 +253,13 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, double L, d
 //---------------------------------
 // DistToRTBruteForce
 //---------------------------------
-double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, double L, double *s)
+double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, double *s)
 {
 	/// Find the closest distance to the given wire in cm. The value of
 	/// "L" should be the active wire length (in cm). The coordinate system
 	/// defined by "wire" should have its origin at the center of
 	/// the wire with the wire running in the direction of udir.
-	swim_step_t *step=FindClosestSwimStep(wire, L);
+	swim_step_t *step=FindClosestSwimStep(wire);
 	
 	return step ? DistToRTBruteForce(wire, step, s):std::numeric_limits<double>::quiet_NaN();
 }
@@ -374,6 +374,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	const TVector3 &zdir = step->udir;
 	const TVector3 &sdir = wire->sdir;
 	const TVector3 &tdir = wire->tdir;
+	const TVector3 &udir = wire->udir;
 	TVector3 pos_diff = step->origin - wire->origin;
 	
 	double A = sdir.Dot(xdir);
@@ -485,6 +486,29 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 		double b = 2.0*S;
 		double c = 1.0*T;
 		phi = (-b + sqrt(b*b - 4.0*a*c))/(2.0*a); 
+	}
+	
+	// It is possible at this point that the value of phi corresponds to
+	// a point past the end of the wire. We should check for this here and
+	// recalculate, if necessary, the DOCA at the end of the wire. First,
+	// calculate h (the vector defined way up above) and dot it into the
+	// wire's u-direction to get the position of the DOCA point along the
+	// wire.
+	double x = -Ro*phi*phi/2.0;
+	double y = Ro*phi;
+	double z = dz_dphi*phi;
+	TVector3 h = pos_diff + x*xdir + y*ydir + z*zdir;
+	double u = h.Dot(udir);
+	if(fabs(u) > wire->L/2.0){
+		// Looks like our DOCA point is past the end of the wire.
+		// Find phi corresponding to the end of the wire.
+		double L_over_2 = u>0.0 ? wire->L/2.0:-wire->L/2.0;
+		double a = -Ro*udir.Dot(xdir)/2.0;
+		double b = Ro*udir.Dot(ydir) + dz_dphi*udir.Dot(zdir);
+		double c = udir.Dot(pos_diff) - L_over_2;
+		double phi1 = (-b + sqrt(b*b - 4.0*a*c))/(2.0*a); 
+		double phi2 = (-b - sqrt(b*b - 4.0*a*c))/(2.0*a);
+		phi = fabs(phi1)<fabs(phi2) ? phi1:phi2;
 	}
 
 	// Sometimes the "d" used in solving the 3rd order polynmial above 
