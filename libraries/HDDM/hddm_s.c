@@ -159,6 +159,7 @@ s_HitView_t* make_s_HitView()
    p->forwardTOF = (s_ForwardTOF_t*)&hddm_nullTarget;
    p->forwardEMcal = (s_ForwardEMcal_t*)&hddm_nullTarget;
    p->upstreamEMveto = (s_UpstreamEMveto_t*)&hddm_nullTarget;
+   p->tagger = (s_Tagger_t*)&hddm_nullTarget;
    p->mcTrajectory = (s_McTrajectory_t*)&hddm_nullTarget;
    return p;
 }
@@ -739,6 +740,45 @@ s_UpvTruthShowers_t* make_s_UpvTruthShowers(int n)
    return p;
 }
 
+s_Tagger_t* make_s_Tagger()
+{
+   int size = sizeof(s_Tagger_t);
+   s_Tagger_t* p = (s_Tagger_t*)MALLOC(size,"s_Tagger_t");
+   p->microChannels = (s_MicroChannels_t*)&hddm_nullTarget;
+   return p;
+}
+
+s_MicroChannels_t* make_s_MicroChannels(int n)
+{
+   int i;
+   int rep = (n > 1) ? n-1 : 0;
+   int size = sizeof(s_MicroChannels_t) + rep * sizeof(s_MicroChannel_t);
+   s_MicroChannels_t* p = (s_MicroChannels_t*)MALLOC(size,"s_MicroChannels_t");
+   p->mult = 0;
+   for (i=0; i<n; i++) {
+      s_MicroChannel_t* pp = &p->in[i];
+      pp->E = 0;
+      pp->column = 0;
+      pp->row = 0;
+      pp->taggerHits = (s_TaggerHits_t*)&hddm_nullTarget;
+   }
+   return p;
+}
+
+s_TaggerHits_t* make_s_TaggerHits(int n)
+{
+   int i;
+   int rep = (n > 1) ? n-1 : 0;
+   int size = sizeof(s_TaggerHits_t) + rep * sizeof(s_TaggerHit_t);
+   s_TaggerHits_t* p = (s_TaggerHits_t*)MALLOC(size,"s_TaggerHits_t");
+   p->mult = 0;
+   for (i=0; i<n; i++) {
+      s_TaggerHit_t* pp = &p->in[i];
+      pp->t = 0;
+   }
+   return p;
+}
+
 s_McTrajectory_t* make_s_McTrajectory()
 {
    int size = sizeof(s_McTrajectory_t);
@@ -848,6 +888,11 @@ char HDDM_s_DocumentString[] =
 "        </upvPaddle>\n"
 "        <upvTruthShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "      </upstreamEMveto>\n"
+"      <tagger minOccurs=\"0\">\n"
+"        <microChannel E=\"float\" column=\"int\" maxOccurs=\"unbounded\" minOccurs=\"0\" row=\"int\">\n"
+"          <taggerHit maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" />\n"
+"        </microChannel>\n"
+"      </tagger>\n"
 "      <mcTrajectory minOccurs=\"0\">\n"
 "        <mcTrajectoryPoint E=\"float\" dE=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" part=\"int\" px=\"float\" py=\"float\" pz=\"float\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "      </mcTrajectory>\n"
@@ -2518,6 +2563,111 @@ static s_UpvTruthShowers_t* unpack_s_UpvTruthShowers(XDR* xdrs, popNode* pop)
    return this1;
 }
 
+static s_Tagger_t* unpack_s_Tagger(XDR* xdrs, popNode* pop)
+{
+   s_Tagger_t* this1 = HDDM_NULL;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return this1;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      this1 = make_s_Tagger();
+      {
+         int p;
+         void* (*ptr) = (void**) &this1->microChannels;
+         for (p = 0; p < pop->popListLength; p++)
+         {
+            popNode* pnode = pop->popList[p];
+            if (pnode)
+            {
+               int kid = pnode->inParent;
+               ptr[kid] = pnode->unpacker(xdrs,pnode);
+            }
+            else
+            {
+               unsigned int skip;
+               xdr_u_int(xdrs,&skip);
+               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);
+            }
+         }
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
+static s_MicroChannels_t* unpack_s_MicroChannels(XDR* xdrs, popNode* pop)
+{
+   s_MicroChannels_t* this1 = HDDM_NULL;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return this1;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      int m;
+      unsigned int mult;
+      xdr_u_int(xdrs,&mult);
+      this1 = make_s_MicroChannels(mult);
+      this1->mult = mult;
+      for (m = 0; m < mult; m++ )
+      {
+         int p;
+         void* (*ptr) = (void**) &this1->in[m].taggerHits;
+         xdr_float(xdrs,&this1->in[m].E);
+         xdr_int(xdrs,&this1->in[m].column);
+         xdr_int(xdrs,&this1->in[m].row);
+         for (p = 0; p < pop->popListLength; p++)
+         {
+            popNode* pnode = pop->popList[p];
+            if (pnode)
+            {
+               int kid = pnode->inParent;
+               ptr[kid] = pnode->unpacker(xdrs,pnode);
+            }
+            else
+            {
+               unsigned int skip;
+               xdr_u_int(xdrs,&skip);
+               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);
+            }
+         }
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
+static s_TaggerHits_t* unpack_s_TaggerHits(XDR* xdrs, popNode* pop)
+{
+   s_TaggerHits_t* this1 = HDDM_NULL;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return this1;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      int m;
+      unsigned int mult;
+      xdr_u_int(xdrs,&mult);
+      this1 = make_s_TaggerHits(mult);
+      this1->mult = mult;
+      for (m = 0; m < mult; m++ )
+      {
+         xdr_float(xdrs,&this1->in[m].t);
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
 static s_McTrajectory_t* unpack_s_McTrajectory(XDR* xdrs, popNode* pop)
 {
    s_McTrajectory_t* this1 = HDDM_NULL;
@@ -2644,6 +2794,9 @@ static int pack_s_UpvPaddles(XDR* xdrs, s_UpvPaddles_t* this1);
 static int pack_s_UpvLeftHits(XDR* xdrs, s_UpvLeftHits_t* this1);
 static int pack_s_UpvRightHits(XDR* xdrs, s_UpvRightHits_t* this1);
 static int pack_s_UpvTruthShowers(XDR* xdrs, s_UpvTruthShowers_t* this1);
+static int pack_s_Tagger(XDR* xdrs, s_Tagger_t* this1);
+static int pack_s_MicroChannels(XDR* xdrs, s_MicroChannels_t* this1);
+static int pack_s_TaggerHits(XDR* xdrs, s_TaggerHits_t* this1);
 static int pack_s_McTrajectory(XDR* xdrs, s_McTrajectory_t* this1);
 static int pack_s_McTrajectoryPoints(XDR* xdrs, s_McTrajectoryPoints_t* this1);
 
@@ -3082,6 +3235,15 @@ static int pack_s_HitView(XDR* xdrs, s_HitView_t* this1)
       if (this1->upstreamEMveto != (s_UpstreamEMveto_t*)&hddm_nullTarget)
       {
          pack_s_UpstreamEMveto(xdrs,this1->upstreamEMveto);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->tagger != (s_Tagger_t*)&hddm_nullTarget)
+      {
+         pack_s_Tagger(xdrs,this1->tagger);
       }
       else
       {
@@ -4305,6 +4467,93 @@ static int pack_s_UpvTruthShowers(XDR* xdrs, s_UpvTruthShowers_t* this1)
    return size;
 }
 
+static int pack_s_Tagger(XDR* xdrs, s_Tagger_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   m = 0; /* avoid warnings from -Wall */
+   {
+      if (this1->microChannels != (s_MicroChannels_t*)&hddm_nullTarget)
+      {
+         pack_s_MicroChannels(xdrs,this1->microChannels);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_MicroChannels(XDR* xdrs, s_MicroChannels_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].E);
+      xdr_int(xdrs,&this1->in[m].column);
+      xdr_int(xdrs,&this1->in[m].row);
+      if (this1->in[m].taggerHits != (s_TaggerHits_t*)&hddm_nullTarget)
+      {
+         pack_s_TaggerHits(xdrs,this1->in[m].taggerHits);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_TaggerHits(XDR* xdrs, s_TaggerHits_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].t);
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
 static int pack_s_McTrajectory(XDR* xdrs, s_McTrajectory_t* this1)
 {
    int m;
@@ -4660,6 +4909,18 @@ static popNode* matches(char* b, char* c)
          else if (strcmp(btag,"upvTruthShower") == 0)
          {
             this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_UpvTruthShowers;
+         }
+         else if (strcmp(btag,"tagger") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_Tagger;
+         }
+         else if (strcmp(btag,"microChannel") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_MicroChannels;
+         }
+         else if (strcmp(btag,"taggerHit") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_TaggerHits;
          }
          else if (strcmp(btag,"mcTrajectory") == 0)
          {

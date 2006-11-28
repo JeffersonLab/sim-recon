@@ -670,6 +670,43 @@ typedef struct {
 } s_UpstreamEMveto_t;
 #endif /* s_UpstreamEMveto_t */
 
+#ifndef SAW_s_TaggerHit_t
+#define SAW_s_TaggerHit_t
+
+typedef struct {
+   float                t;
+} s_TaggerHit_t;
+
+typedef struct {
+   unsigned int mult;
+   s_TaggerHit_t in[1];
+} s_TaggerHits_t;
+#endif /* s_TaggerHit_t */
+
+#ifndef SAW_s_MicroChannel_t
+#define SAW_s_MicroChannel_t
+
+typedef struct {
+   float                E;
+   int                  column;
+   int                  row;
+   s_TaggerHits_t*      taggerHits;
+} s_MicroChannel_t;
+
+typedef struct {
+   unsigned int mult;
+   s_MicroChannel_t in[1];
+} s_MicroChannels_t;
+#endif /* s_MicroChannel_t */
+
+#ifndef SAW_s_Tagger_t
+#define SAW_s_Tagger_t
+
+typedef struct {
+   s_MicroChannels_t*   microChannels;
+} s_Tagger_t;
+#endif /* s_Tagger_t */
+
 #ifndef SAW_s_McTrajectoryPoint_t
 #define SAW_s_McTrajectoryPoint_t
 
@@ -713,6 +750,7 @@ typedef struct {
    s_ForwardTOF_t*      forwardTOF;
    s_ForwardEMcal_t*    forwardEMcal;
    s_UpstreamEMveto_t*  upstreamEMveto;
+   s_Tagger_t*          tagger;
    s_McTrajectory_t*    mcTrajectory;
 } s_HitView_t;
 #endif /* s_HitView_t */
@@ -842,6 +880,12 @@ s_UpvLeftHits_t* make_s_UpvLeftHits(int n);
 s_UpvRightHits_t* make_s_UpvRightHits(int n);
 
 s_UpvTruthShowers_t* make_s_UpvTruthShowers(int n);
+
+s_Tagger_t* make_s_Tagger();
+
+s_MicroChannels_t* make_s_MicroChannels(int n);
+
+s_TaggerHits_t* make_s_TaggerHits(int n);
 
 s_McTrajectory_t* make_s_McTrajectory();
 
