@@ -33,8 +33,8 @@ private:
 
 class DFCALGeometry : public JObject {
 
-#define kBlocksWide 53
-#define kBlocksTall 53
+#define kBlocksWide 59
+#define kBlocksTall 59
 #define kMaxChannels kBlocksWide * kBlocksTall
 #define kBeamHoleSize 3
 
@@ -51,7 +51,7 @@ public:
 	~DFCALGeometry(){}
 
 	static double blockSize() { return 4*k_cm; }
-	static double radius() { return 1.08*k_m; }
+	static double radius() { return 1.2*k_m; }
 	
 	bool isBlockActive( int row, int column ) const;
 	int  numActiveBlocks() const { return m_numActiveBlocks; }
