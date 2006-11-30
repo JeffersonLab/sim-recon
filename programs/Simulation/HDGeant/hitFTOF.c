@@ -54,6 +54,7 @@ void hitForwardTOF (float xin[4], float xout[4],
    float xlocal[3];
    float xftof[3];
    float zeroHat[] = {0,0,0};
+   int plane = getplane_();
 
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
@@ -76,7 +77,7 @@ void hitForwardTOF (float xin[4], float xout[4],
 
    /* post the hit to the truth tree */
 
-   if (history == 0)
+   if ((history == 0) && (plane == 0))
    {
       int mark = (1<<30) + pointCount;
       void** twig = getTwig(&forwardTOFTree, mark);
@@ -101,17 +102,16 @@ void hitForwardTOF (float xin[4], float xout[4],
    if (dEsum > 0)
    {
       int nhit;
-      s_FtofLeftHits_t* leftHits;
-      s_FtofRightHits_t* rightHits;
+      s_FtofNorthHits_t* northHits;
+      s_FtofSouthHits_t* southHits;
       int row = getrow_();
-      int plane = getplane_();
       int column = getcolumn_();
-      float dxleft = xlocal[0];
-      float dxright = -xlocal[0];
-      float tleft  = (column == 2) ? 0 : t + dxleft/C_EFFECTIVE;
-      float tright = (column == 1) ? 0 : t + dxright/C_EFFECTIVE;
-      float dEleft  = (column == 2) ? 0 : dEsum * exp(-dxleft/ATTEN_LENGTH);
-      float dEright = (column == 1) ? 0 : dEsum * exp(-dxright/ATTEN_LENGTH);
+      float dxnorth = xlocal[0];
+      float dxsouth = -xlocal[0];
+      float tnorth  = (column == 2) ? 0 : t + dxnorth/C_EFFECTIVE;
+      float tsouth = (column == 1) ? 0 : t + dxsouth/C_EFFECTIVE;
+      float dEnorth  = (column == 2) ? 0 : dEsum * exp(-dxnorth/ATTEN_LENGTH);
+      float dEsouth = (column == 1) ? 0 : dEsum * exp(-dxsouth/ATTEN_LENGTH);
       float ycenter = (fabs(xftof[1]) < 1e-4) ? 0 : xftof[1];
       int mark = (plane<<20) + (row<<10) + column;
       void** twig = getTwig(&forwardTOFTree, mark);
@@ -121,18 +121,18 @@ void hitForwardTOF (float xin[4], float xout[4],
          s_FtofCounters_t* counters = make_s_FtofCounters(1);
          counters->mult = 1;
          counters->in[0].plane = plane;
-         counters->in[0].paddle = row;
-         leftHits = HDDM_NULL;
-         rightHits = HDDM_NULL;
+         counters->in[0].bar = row;
+         northHits = HDDM_NULL;
+         southHits = HDDM_NULL;
          if (column == 0 || column == 1)
          {
-           counters->in[0].ftofLeftHits = leftHits
-                                        = make_s_FtofLeftHits(MAX_HITS);
+           counters->in[0].ftofNorthHits = northHits
+                                        = make_s_FtofNorthHits(MAX_HITS);
          }
          if (column == 0 || column == 2)
          {
-           counters->in[0].ftofRightHits = rightHits
-                                         = make_s_FtofRightHits(MAX_HITS);
+           counters->in[0].ftofSouthHits = southHits
+                                         = make_s_FtofSouthHits(MAX_HITS);
          }
          tof->ftofCounters = counters;
          counterCount++;
@@ -140,30 +140,31 @@ void hitForwardTOF (float xin[4], float xout[4],
       else
       {
          s_ForwardTOF_t* tof = *twig;
-         leftHits = tof->ftofCounters->in[0].ftofLeftHits;
-         rightHits = tof->ftofCounters->in[0].ftofRightHits;
+         northHits = tof->ftofCounters->in[0].ftofNorthHits;
+         southHits = tof->ftofCounters->in[0].ftofSouthHits;
       }
 
-      if (leftHits != HDDM_NULL)
+      if (northHits != HDDM_NULL)
       {
-         for (nhit = 0; nhit < leftHits->mult; nhit++)
+         for (nhit = 0; nhit < northHits->mult; nhit++)
          {
-            if (fabs(leftHits->in[nhit].t - t) < TWO_HIT_RESOL)
+            if (fabs(northHits->in[nhit].t - t) < TWO_HIT_RESOL)
             {
                break;
             }
          }
-         if (nhit < leftHits->mult)         /* merge with former hit */
+         if (nhit < northHits->mult)         /* merge with former hit */
          {
-            leftHits->in[nhit].t = 
-               (leftHits->in[nhit].t * leftHits->in[nhit].dE + tleft * dEleft)
-                / (leftHits->in[nhit].dE += dEleft);
+            northHits->in[nhit].t = 
+               (northHits->in[nhit].t * northHits->in[nhit].dE 
+                                      + tnorth * dEnorth)
+                / (northHits->in[nhit].dE += dEnorth);
          }
          else if (nhit < MAX_HITS)         /* create new hit */
          {
-            leftHits->in[nhit].t = tleft;
-            leftHits->in[nhit].dE = dEleft;
-            leftHits->mult++;
+            northHits->in[nhit].t = tnorth;
+            northHits->in[nhit].dE = dEnorth;
+            northHits->mult++;
          }
          else
          {
@@ -172,26 +173,26 @@ void hitForwardTOF (float xin[4], float xout[4],
          }
       }
 
-      if (rightHits != HDDM_NULL)
+      if (southHits != HDDM_NULL)
       {
-         for (nhit = 0; nhit < rightHits->mult; nhit++)
+         for (nhit = 0; nhit < southHits->mult; nhit++)
          {
-            if (fabs(rightHits->in[nhit].t - t) < TWO_HIT_RESOL)
+            if (fabs(southHits->in[nhit].t - t) < TWO_HIT_RESOL)
             {
                break;
             }
          }
-         if (nhit < rightHits->mult)         /* merge with former hit */
+         if (nhit < southHits->mult)         /* merge with former hit */
          {
-            rightHits->in[nhit].t = 
-             (rightHits->in[nhit].t * rightHits->in[nhit].dE + tright * dEright)
-             / (rightHits->in[nhit].dE += dEright);
+            southHits->in[nhit].t = 
+             (southHits->in[nhit].t * southHits->in[nhit].dE
+             + tsouth * dEsouth) / (southHits->in[nhit].dE += dEsouth);
          }
          else if (nhit < MAX_HITS)         /* create new hit */
          {
-            rightHits->in[nhit].t = tright;
-            rightHits->in[nhit].dE = dEright;
-            rightHits->mult++;
+            southHits->in[nhit].t = tsouth;
+            southHits->in[nhit].dE = dEsouth;
+            southHits->mult++;
          }
          else
          {
@@ -235,50 +236,50 @@ s_ForwardTOF_t* pickForwardTOF ()
       if (counters != HDDM_NULL)
       {
       /* compress out the hits below threshold */
-         s_FtofLeftHits_t* leftHits = counters->in[0].ftofLeftHits;
-         s_FtofRightHits_t* rightHits = counters->in[0].ftofRightHits;
+         s_FtofNorthHits_t* northHits = counters->in[0].ftofNorthHits;
+         s_FtofSouthHits_t* southHits = counters->in[0].ftofSouthHits;
          int iok,i;
          int mok=0;
-         if (leftHits != HDDM_NULL)
+         if (northHits != HDDM_NULL)
          {
-            for (iok=i=0; i < leftHits->mult; i++)
+            for (iok=i=0; i < northHits->mult; i++)
             {
-               if (leftHits->in[i].dE >= THRESH_MEV/1e3)
+               if (northHits->in[i].dE >= THRESH_MEV/1e3)
                {
                   if (iok < i)
                   {
-                     leftHits->in[iok] = leftHits->in[i];
+                     northHits->in[iok] = northHits->in[i];
                   }
                   ++mok;
                   ++iok;
                }
             }
-            leftHits->mult = iok;
+            northHits->mult = iok;
             if (iok == 0)
             {
-               counters->in[0].ftofLeftHits = HDDM_NULL;
-               FREE(leftHits);
+               counters->in[0].ftofNorthHits = HDDM_NULL;
+               FREE(northHits);
             }
          }
-         if (rightHits != HDDM_NULL) 
+         if (southHits != HDDM_NULL) 
          {
-            for (iok=i=0; i < rightHits->mult; i++)
+            for (iok=i=0; i < southHits->mult; i++)
             {
-               if (rightHits->in[i].dE >= THRESH_MEV/1e3)
+               if (southHits->in[i].dE >= THRESH_MEV/1e3)
                {
                   if (iok < i)
                   {
-                     rightHits->in[iok] = rightHits->in[i];
+                     southHits->in[iok] = southHits->in[i];
                   }
                   ++mok;
                   ++iok;
                }
             }
-            rightHits->mult = iok;
+            southHits->mult = iok;
             if (iok == 0)
             {
-               counters->in[0].ftofRightHits = HDDM_NULL;
-               FREE(rightHits);
+               counters->in[0].ftofSouthHits = HDDM_NULL;
+               FREE(southHits);
             }
          }
          if (mok)
