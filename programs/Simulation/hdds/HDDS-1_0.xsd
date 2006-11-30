@@ -1470,7 +1470,7 @@
     <xs:attribute name="Rio1_Rio2_Z" use="required">
       <xs:simpleType>
         <xs:restriction base="floatList">
-          <xs:length value="3"/>
+          <xs:length value="5"/>
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
@@ -2005,7 +2005,7 @@
     <xs:attribute name="segments" use="required">
       <xs:simpleType>
         <xs:restriction base="xs:int">
-          <xs:minInclusive value="1"/>
+          <xs:minInclusive value="3"/>
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
