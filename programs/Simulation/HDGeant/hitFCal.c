@@ -15,9 +15,16 @@
 #include <geant3.h>
 #include <bintree.h>
 
+#define ATTEN_LENGTH	100.
+#define C_EFFECTIVE	15.
+#define WIDTH_OF_BLOCK  4.
+#define LENGTH_OF_BLOCK 45.
 #define TWO_HIT_RESOL   75.
 #define MAX_HITS        100
 #define THRESH_MEV      30.
+#define ACTIVE_RADIUS   120.
+#define CENTRAL_ROW     29
+#define CENTRAL_COLUMN  29
 
 
 binTree_t* forwardEMcalTree = 0;
@@ -72,7 +79,10 @@ void hitForwardEMcal (float xin[4], float xout[4],
       s_FcalHits_t* hits;
       int row = getrow_();
       int column = getcolumn_();
-      int mark = (row<<16) + column;
+      float dist = LENGTH_OF_BLOCK-xfcal[2];
+      float dEcorr = dEsum * exp(-dist/ATTEN_LENGTH);
+      float tcorr = t + dist/C_EFFECTIVE;
+      int mark = ((row+1)<<16) + (column+1);
       void** twig = getTwig(&forwardEMcalTree, mark);
       if (*twig == 0)
       {
@@ -93,7 +103,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
 
       for (nhit = 0; nhit < hits->mult; nhit++)
       {
-         if (fabs(hits->in[nhit].t - t) < TWO_HIT_RESOL)
+         if (fabs(hits->in[nhit].t - tcorr) < TWO_HIT_RESOL)
          {
             break;
          }
@@ -101,13 +111,13 @@ void hitForwardEMcal (float xin[4], float xout[4],
       if (nhit < hits->mult)		/* merge with former hit */
       {
          hits->in[nhit].t =
-                       (hits->in[nhit].t * hits->in[nhit].E + t*dEsum)
-                     / (hits->in[nhit].E += dEsum);
+                       (hits->in[nhit].t * hits->in[nhit].E + tcorr*dEcorr)
+                     / (hits->in[nhit].E += dEcorr);
       }
       else if (nhit < MAX_HITS)         /* create new hit */
       {
-         hits->in[nhit].t = t;
-         hits->in[nhit].E = dEsum;
+         hits->in[nhit].t = tcorr;
+         hits->in[nhit].E = dEcorr;
          hits->mult++;
       }
       else
@@ -150,39 +160,49 @@ s_ForwardEMcal_t* pickForwardEMcal ()
       s_FcalTruthShowers_t* showers = item->fcalTruthShowers;
       if (blocks != HDDM_NULL)
       {
-         s_FcalHits_t* hits = blocks->in[0].fcalHits;
-	 int m = box->fcalBlocks->mult;
-         int mok = 0;
+         int row = blocks->in[0].row;
+         int column = blocks->in[0].column;
+         float x0 = (row - CENTRAL_ROW)*WIDTH_OF_BLOCK;
+         float y0 = (column - CENTRAL_COLUMN)*WIDTH_OF_BLOCK;
+         float dist = sqrt(x0*x0+y0*y0);
+
+         /* compress out the hits outside the active region */
+         if (dist < ACTIVE_RADIUS)
+         {
+            s_FcalHits_t* hits = blocks->in[0].fcalHits;
+	    int m = box->fcalBlocks->mult;
+            int mok = 0;
 
          /* compress out the hits below threshold */
-         if (hits != HDDM_NULL)
-         {
-            int i;
-            for (i=0; i < hits->mult; i++)
+            if (hits != HDDM_NULL)
             {
-               if (hits->in[i].E >= THRESH_MEV/1e3)
+               int i;
+               for (i=0; i < hits->mult; i++)
                {
-                  if (mok < i)
+                  if (hits->in[i].E >= THRESH_MEV/1e3)
                   {
-                     hits->in[mok] = hits->in[i];
+                     if (mok < i)
+                     {
+                        hits->in[mok] = hits->in[i];
+                     }
+                     ++mok;
                   }
-                  ++mok;
+               }
+               hits->mult = mok;
+               if (mok == 0)
+               {
+                  blocks->in[0].fcalHits = HDDM_NULL;
+                  FREE(hits);
                }
             }
-            hits->mult = mok;
-            if (mok == 0)
-            {
-               blocks->in[0].fcalHits = HDDM_NULL;
-               FREE(hits);
-            }
-         }
 
-         if (mok)
-         {
-            box->fcalBlocks->in[m] = blocks->in[0];
-            box->fcalBlocks->mult++;
+            if (mok)
+            {
+               box->fcalBlocks->in[m] = blocks->in[0];
+               box->fcalBlocks->mult++;
+            }
+            FREE(blocks);
          }
-         FREE(blocks);
       }
       else if (showers != HDDM_NULL)
       {

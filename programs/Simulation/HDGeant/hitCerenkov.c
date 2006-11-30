@@ -15,45 +15,32 @@
 #include <geant3.h>
 #include <bintree.h>
 
-#define N0_FIGURE	60
-#define REFR_INDEX	1.0017
 #define TWO_HIT_RESOL   50.
 #define MAX_HITS        100
 #define THRESH_PE       2
+#define OPTICAL_PHOTON  50
 
 binTree_t* cerenkovTree = 0;
 static int sectionCount = 0;
 static int pointCount = 0;
 
 
-/* register hits during tracking (from gustep) */
+/* register truth points during tracking (from gustep) */
 
 void hitCerenkov (float xin[4], float xout[4],
                   float pin[5], float pout[5], float dEsum,
                   int track, int stack, int history)
 {
    float x[3], t;
-   float dx[3], dr;
-   float xcere[3];
-   float xHat[] = {1,0,0};
-   double Eave = (pin[3] + pout[3])/2;
-   double pave = (pin[4] + pout[4])/2;
-   double beta = pave/Eave;
-   double costheta = 1/(beta*REFR_INDEX);
 
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
-   transformCoord(xHat,"local",xcere,"CERE");
-   dx[0] = xin[0] - xout[0];
-   dx[1] = xin[1] - xout[1];
-   dx[2] = xin[2] - xout[2];
-   dr = sqrt(dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
 
    /* post the hit to the truth tree */
 
-   if (history == 0)
+   if ((history == 0) && (dEsum > 0))
    {
       int mark = (1<<30) + pointCount;
       void** twig = getTwig(&cerenkovTree, mark);
@@ -79,14 +66,12 @@ void hitCerenkov (float xin[4], float xout[4],
 
    /* post the hit to the hits tree, mark sector as hit */
 
-   if (costheta <= 1)		/* no light below threshold */
+   if (dEsum < 0)  		/* indicates a detector Cerenkov photon */
    {
       int nshot;
       s_CereHits_t* hits;
       int sector = getsector_();
-      float phim = atan2(xcere[1],xcere[0]);
-      double sintheta2 = 1 - costheta*costheta;
-      float pe = N0_FIGURE * sintheta2 * dr;
+      float pe = 1;
       int mark = sector;
       void** twig = getTwig(&cerenkovTree, mark);
       if (*twig == 0)
@@ -131,7 +116,7 @@ void hitCerenkov (float xin[4], float xout[4],
    }
 }
 
-/* entry point from fortran */
+/* entry points from fortran */
 
 void hitcerenkov_(float* xin, float* xout,
                   float* pin, float* pout, float* dEsum,

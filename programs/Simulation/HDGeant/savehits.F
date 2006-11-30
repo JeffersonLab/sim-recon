@@ -65,9 +65,13 @@
         if (dEsum.gt.0) then
           call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
         endif
-      elseif (cnames(NLEVEL).eq.'CSEC') then		! Cerenkov counter
+      elseif (cnames(NLEVEL).eq.'CERW') then		! Cerenkov truth
         if (dEsum.gt.0) then
           call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
+        endif
+      elseif (cnames(NLEVEL).eq.'CPMT') then		! Cerenkov counter
+        if ((dEsum.gt.0).and.(IPART.eq.50)) then
+          call hitCerenkov(xin,xout,pin,pout,-dEsum,ITRA,ISTAK,ISTORY)
         endif
       elseif ((cnames(NLEVEL).eq.'FTOC').or.		! forward TOF counter
      +        (cnames(NLEVEL).eq.'FTOS')) then

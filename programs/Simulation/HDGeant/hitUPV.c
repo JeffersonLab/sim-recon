@@ -32,7 +32,7 @@
 #include <bintree.h>
 
 #define ATTEN_LENGTH	150.
-#define C_EFFECTIVE	19.   /* Index of refraction for UPV is 1.58 */
+#define C_EFFECTIVE	19.   /* This assumes a single linear fiber path */
 #define THRESH_MEV      5.
 #define TWO_HIT_RESOL	50.
 #define MAX_HITS 	100

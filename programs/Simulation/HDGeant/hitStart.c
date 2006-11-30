@@ -31,7 +31,7 @@
 #define C_EFFECTIVE	15.
 #define TWO_HIT_RESOL	25.
 #define MAX_HITS 	100
-#define THRESH_MEV      0.8
+#define THRESH_MEV      0.150
 
 binTree_t* startCntrTree = 0;
 static int paddleCount = 0;
@@ -49,14 +49,12 @@ void hitStartCntr (float xin[4], float xout[4],
    float dEdx;
    float xlocal[3];
    float xvrtx[3];
-   float xHat[] = {1,0,0};
 
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
    transformCoord(x,"global",xlocal,"local");
-   transformCoord(xHat,"local",xvrtx,"global");
    dx[0] = xin[0] - xout[0];
    dx[1] = xin[1] - xout[1];
    dx[2] = xin[2] - xout[2];
@@ -101,9 +99,9 @@ void hitStartCntr (float xin[4], float xout[4],
       s_StcHits_t* hits;
       int sector = getsector_();
       float phim = atan2(xvrtx[1],xvrtx[0]);
-      float dzup = xlocal[2];
-      float tcorr = t + dzup/C_EFFECTIVE;
-      float dEcorr = dEsum * exp(-dzup/ATTEN_LENGTH);
+      float dpath = xlocal[2]+(10.2-xlocal[0])*0.4;
+      float tcorr = t + dpath/C_EFFECTIVE;
+      float dEcorr = dEsum * exp(-dpath/ATTEN_LENGTH);
       int mark = sector;
       void** twig = getTwig(&startCntrTree, mark);
       if (*twig == 0)
