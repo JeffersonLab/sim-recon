@@ -2005,7 +2005,7 @@
     <xs:attribute name="segments" use="required">
       <xs:simpleType>
         <xs:restriction base="xs:int">
-          <xs:minInclusive value="3"/>
+          <xs:minInclusive value="1"/>
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
