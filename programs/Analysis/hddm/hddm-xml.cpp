@@ -57,6 +57,7 @@
 
 #include "particleType.h"
 
+
 #define X(str) XString(str).unicode_str()
 #define S(str) str.c_str()
 
@@ -351,9 +352,9 @@ void XMLmaker::constructXML(xstream::xdr::istream& ifx,
          }
          else if (typeS == "Particle_t")
          {
-            Particle_t value;
-            ifx >> (int)value;
-            attrStr << " " << nameS << "=\"" << ParticleType(value) << "\"";
+            int32_t value;
+            ifx >> value;
+            attrStr << " " << nameS << "=\"" << ParticleType((Particle_t)value) << "\"";
          }
          else if (typeS == "string" || typeS == "anyURI")
          {
