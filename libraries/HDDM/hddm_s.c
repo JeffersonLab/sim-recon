@@ -547,38 +547,38 @@ s_FtofCounters_t* make_s_FtofCounters(int n)
    p->mult = 0;
    for (i=0; i<n; i++) {
       s_FtofCounter_t* pp = &p->in[i];
-      pp->paddle = 0;
+      pp->bar = 0;
       pp->plane = 0;
-      pp->ftofLeftHits = (s_FtofLeftHits_t*)&hddm_nullTarget;
-      pp->ftofRightHits = (s_FtofRightHits_t*)&hddm_nullTarget;
+      pp->ftofNorthHits = (s_FtofNorthHits_t*)&hddm_nullTarget;
+      pp->ftofSouthHits = (s_FtofSouthHits_t*)&hddm_nullTarget;
    }
    return p;
 }
 
-s_FtofLeftHits_t* make_s_FtofLeftHits(int n)
+s_FtofNorthHits_t* make_s_FtofNorthHits(int n)
 {
    int i;
    int rep = (n > 1) ? n-1 : 0;
-   int size = sizeof(s_FtofLeftHits_t) + rep * sizeof(s_FtofLeftHit_t);
-   s_FtofLeftHits_t* p = (s_FtofLeftHits_t*)MALLOC(size,"s_FtofLeftHits_t");
+   int size = sizeof(s_FtofNorthHits_t) + rep * sizeof(s_FtofNorthHit_t);
+   s_FtofNorthHits_t* p = (s_FtofNorthHits_t*)MALLOC(size,"s_FtofNorthHits_t");
    p->mult = 0;
    for (i=0; i<n; i++) {
-      s_FtofLeftHit_t* pp = &p->in[i];
+      s_FtofNorthHit_t* pp = &p->in[i];
       pp->dE = 0;
       pp->t = 0;
    }
    return p;
 }
 
-s_FtofRightHits_t* make_s_FtofRightHits(int n)
+s_FtofSouthHits_t* make_s_FtofSouthHits(int n)
 {
    int i;
    int rep = (n > 1) ? n-1 : 0;
-   int size = sizeof(s_FtofRightHits_t) + rep * sizeof(s_FtofRightHit_t);
-   s_FtofRightHits_t* p = (s_FtofRightHits_t*)MALLOC(size,"s_FtofRightHits_t");
+   int size = sizeof(s_FtofSouthHits_t) + rep * sizeof(s_FtofSouthHit_t);
+   s_FtofSouthHits_t* p = (s_FtofSouthHits_t*)MALLOC(size,"s_FtofSouthHits_t");
    p->mult = 0;
    for (i=0; i<n; i++) {
-      s_FtofRightHit_t* pp = &p->in[i];
+      s_FtofSouthHit_t* pp = &p->in[i];
       pp->dE = 0;
       pp->t = 0;
    }
@@ -869,9 +869,9 @@ char HDDM_s_DocumentString[] =
 "        <cereTruthPoint E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" px=\"float\" py=\"float\" pz=\"float\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "      </Cerenkov>\n"
 "      <forwardTOF minOccurs=\"0\">\n"
-"        <ftofCounter maxOccurs=\"unbounded\" minOccurs=\"0\" paddle=\"int\" plane=\"int\">\n"
-"          <ftofLeftHit dE=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" />\n"
-"          <ftofRightHit dE=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" />\n"
+"        <ftofCounter bar=\"int\" maxOccurs=\"unbounded\" minOccurs=\"0\" plane=\"int\">\n"
+"          <ftofNorthHit dE=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" />\n"
+"          <ftofSouthHit dE=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" />\n"
 "        </ftofCounter>\n"
 "        <ftofTruthPoint maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "      </forwardTOF>\n"
@@ -2159,8 +2159,8 @@ static s_FtofCounters_t* unpack_s_FtofCounters(XDR* xdrs, popNode* pop)
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this1->in[m].ftofLeftHits;
-         xdr_int(xdrs,&this1->in[m].paddle);
+         void* (*ptr) = (void**) &this1->in[m].ftofNorthHits;
+         xdr_int(xdrs,&this1->in[m].bar);
          xdr_int(xdrs,&this1->in[m].plane);
          for (p = 0; p < pop->popListLength; p++)
          {
@@ -2183,9 +2183,9 @@ static s_FtofCounters_t* unpack_s_FtofCounters(XDR* xdrs, popNode* pop)
    return this1;
 }
 
-static s_FtofLeftHits_t* unpack_s_FtofLeftHits(XDR* xdrs, popNode* pop)
+static s_FtofNorthHits_t* unpack_s_FtofNorthHits(XDR* xdrs, popNode* pop)
 {
-   s_FtofLeftHits_t* this1 = HDDM_NULL;
+   s_FtofNorthHits_t* this1 = HDDM_NULL;
    unsigned int size;
    if (! xdr_u_int(xdrs,&size))
    {
@@ -2197,7 +2197,7 @@ static s_FtofLeftHits_t* unpack_s_FtofLeftHits(XDR* xdrs, popNode* pop)
       int m;
       unsigned int mult;
       xdr_u_int(xdrs,&mult);
-      this1 = make_s_FtofLeftHits(mult);
+      this1 = make_s_FtofNorthHits(mult);
       this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
@@ -2209,9 +2209,9 @@ static s_FtofLeftHits_t* unpack_s_FtofLeftHits(XDR* xdrs, popNode* pop)
    return this1;
 }
 
-static s_FtofRightHits_t* unpack_s_FtofRightHits(XDR* xdrs, popNode* pop)
+static s_FtofSouthHits_t* unpack_s_FtofSouthHits(XDR* xdrs, popNode* pop)
 {
-   s_FtofRightHits_t* this1 = HDDM_NULL;
+   s_FtofSouthHits_t* this1 = HDDM_NULL;
    unsigned int size;
    if (! xdr_u_int(xdrs,&size))
    {
@@ -2223,7 +2223,7 @@ static s_FtofRightHits_t* unpack_s_FtofRightHits(XDR* xdrs, popNode* pop)
       int m;
       unsigned int mult;
       xdr_u_int(xdrs,&mult);
-      this1 = make_s_FtofRightHits(mult);
+      this1 = make_s_FtofSouthHits(mult);
       this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
@@ -2782,8 +2782,8 @@ static int pack_s_CereHits(XDR* xdrs, s_CereHits_t* this1);
 static int pack_s_CereTruthPoints(XDR* xdrs, s_CereTruthPoints_t* this1);
 static int pack_s_ForwardTOF(XDR* xdrs, s_ForwardTOF_t* this1);
 static int pack_s_FtofCounters(XDR* xdrs, s_FtofCounters_t* this1);
-static int pack_s_FtofLeftHits(XDR* xdrs, s_FtofLeftHits_t* this1);
-static int pack_s_FtofRightHits(XDR* xdrs, s_FtofRightHits_t* this1);
+static int pack_s_FtofNorthHits(XDR* xdrs, s_FtofNorthHits_t* this1);
+static int pack_s_FtofSouthHits(XDR* xdrs, s_FtofSouthHits_t* this1);
 static int pack_s_FtofTruthPoints(XDR* xdrs, s_FtofTruthPoints_t* this1);
 static int pack_s_ForwardEMcal(XDR* xdrs, s_ForwardEMcal_t* this1);
 static int pack_s_FcalBlocks(XDR* xdrs, s_FcalBlocks_t* this1);
@@ -4078,20 +4078,20 @@ static int pack_s_FtofCounters(XDR* xdrs, s_FtofCounters_t* this1)
    xdr_u_int(xdrs,&this1->mult);
    for (m = 0; m < this1->mult; m++)
    {
-      xdr_int(xdrs,&this1->in[m].paddle);
+      xdr_int(xdrs,&this1->in[m].bar);
       xdr_int(xdrs,&this1->in[m].plane);
-      if (this1->in[m].ftofLeftHits != (s_FtofLeftHits_t*)&hddm_nullTarget)
+      if (this1->in[m].ftofNorthHits != (s_FtofNorthHits_t*)&hddm_nullTarget)
       {
-         pack_s_FtofLeftHits(xdrs,this1->in[m].ftofLeftHits);
+         pack_s_FtofNorthHits(xdrs,this1->in[m].ftofNorthHits);
       }
       else
       {
          int zero=0;
          xdr_int(xdrs,&zero);
       }
-      if (this1->in[m].ftofRightHits != (s_FtofRightHits_t*)&hddm_nullTarget)
+      if (this1->in[m].ftofSouthHits != (s_FtofSouthHits_t*)&hddm_nullTarget)
       {
-         pack_s_FtofRightHits(xdrs,this1->in[m].ftofRightHits);
+         pack_s_FtofSouthHits(xdrs,this1->in[m].ftofSouthHits);
       }
       else
       {
@@ -4108,7 +4108,7 @@ static int pack_s_FtofCounters(XDR* xdrs, s_FtofCounters_t* this1)
    return size;
 }
 
-static int pack_s_FtofLeftHits(XDR* xdrs, s_FtofLeftHits_t* this1)
+static int pack_s_FtofNorthHits(XDR* xdrs, s_FtofNorthHits_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -4132,7 +4132,7 @@ static int pack_s_FtofLeftHits(XDR* xdrs, s_FtofLeftHits_t* this1)
    return size;
 }
 
-static int pack_s_FtofRightHits(XDR* xdrs, s_FtofRightHits_t* this1)
+static int pack_s_FtofSouthHits(XDR* xdrs, s_FtofSouthHits_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -4862,13 +4862,13 @@ static popNode* matches(char* b, char* c)
          {
             this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_FtofCounters;
          }
-         else if (strcmp(btag,"ftofLeftHit") == 0)
+         else if (strcmp(btag,"ftofNorthHit") == 0)
          {
-            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_FtofLeftHits;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_FtofNorthHits;
          }
-         else if (strcmp(btag,"ftofRightHit") == 0)
+         else if (strcmp(btag,"ftofSouthHit") == 0)
          {
-            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_FtofRightHits;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_FtofSouthHits;
          }
          else if (strcmp(btag,"ftofTruthPoint") == 0)
          {

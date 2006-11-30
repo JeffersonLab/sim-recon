@@ -470,42 +470,42 @@ typedef struct {
 } s_Cerenkov_t;
 #endif /* s_Cerenkov_t */
 
-#ifndef SAW_s_FtofLeftHit_t
-#define SAW_s_FtofLeftHit_t
+#ifndef SAW_s_FtofNorthHit_t
+#define SAW_s_FtofNorthHit_t
 
 typedef struct {
    float                dE;
    float                t;
-} s_FtofLeftHit_t;
+} s_FtofNorthHit_t;
 
 typedef struct {
    unsigned int mult;
-   s_FtofLeftHit_t in[1];
-} s_FtofLeftHits_t;
-#endif /* s_FtofLeftHit_t */
+   s_FtofNorthHit_t in[1];
+} s_FtofNorthHits_t;
+#endif /* s_FtofNorthHit_t */
 
-#ifndef SAW_s_FtofRightHit_t
-#define SAW_s_FtofRightHit_t
+#ifndef SAW_s_FtofSouthHit_t
+#define SAW_s_FtofSouthHit_t
 
 typedef struct {
    float                dE;
    float                t;
-} s_FtofRightHit_t;
+} s_FtofSouthHit_t;
 
 typedef struct {
    unsigned int mult;
-   s_FtofRightHit_t in[1];
-} s_FtofRightHits_t;
-#endif /* s_FtofRightHit_t */
+   s_FtofSouthHit_t in[1];
+} s_FtofSouthHits_t;
+#endif /* s_FtofSouthHit_t */
 
 #ifndef SAW_s_FtofCounter_t
 #define SAW_s_FtofCounter_t
 
 typedef struct {
-   int                  paddle;
+   int                  bar;
    int                  plane;
-   s_FtofLeftHits_t*    ftofLeftHits;
-   s_FtofRightHits_t*   ftofRightHits;
+   s_FtofNorthHits_t*   ftofNorthHits;
+   s_FtofSouthHits_t*   ftofSouthHits;
 } s_FtofCounter_t;
 
 typedef struct {
@@ -857,9 +857,9 @@ s_ForwardTOF_t* make_s_ForwardTOF();
 
 s_FtofCounters_t* make_s_FtofCounters(int n);
 
-s_FtofLeftHits_t* make_s_FtofLeftHits(int n);
+s_FtofNorthHits_t* make_s_FtofNorthHits(int n);
 
-s_FtofRightHits_t* make_s_FtofRightHits(int n);
+s_FtofSouthHits_t* make_s_FtofSouthHits(int n);
 
 s_FtofTruthPoints_t* make_s_FtofTruthPoints(int n);
 
