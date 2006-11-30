@@ -74,8 +74,8 @@ ifeq ($(OStype),Darwin)
 	GLIBS	:= -L$(CERN_ROOT)/lib -lcompat /usr/lib/libgcc.a
 endif
 
-HDDS = ../hdds
-HDDM = ../hddm
+HDDS = $(HALLD_HOME)/src/programs/Simulation/hdds
+HDDM = $(HALLD_HOME)/src/libraries/HDDM
 
 ifeq ($(OStype),OSF1)
  	MISC_FIXES := vunit.o gsrotm.o fint.o gthion.o
@@ -121,32 +121,26 @@ install: hdgeant hdgeant++
 	$(F77) $(FOPTS) -I. -I$(CERN_ROOT)/include -c -o $@ $<
 
 .c.o:
-	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include \
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include -I$(CERN_ROOT)/include \
 	-c -o $@ $<
 
-$(AUXC): hddm_s.h bintree.h geant3.h hddmOutput.h 
+$(AUXC): $(HDDM)/hddm_s.h bintree.h geant3.h hddmOutput.h 
 
 .cpp.o:
-	$(CPP) $(COPTS) -I. -I$(HALLD_HOME)/src/include \
+	$(CPP) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include -c -o $@ $<
 
-hddm_s.h:
-	$(HDDM)/hddm-c $(HDDM)/event.xml
-
-hddm_s.c:
-	$(HDDM)/hddm-c $(HDDM)/event.xml
-
-hddm_s.o: 	hddm_s.c
-	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include \
+hddm_s.o: $(HDDM)/hddm_s.c
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include -c -o $@ $<
 
 cdcdump: cdcdump.c hddm_s.o
-	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include \
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ 
 
 bcal2nt: bcal2nt.c hddm_s.o
-	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include \
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ \
 	-L$(CERN_ROOT)/lib -lpacklib -lkernlib -lg2c
 
