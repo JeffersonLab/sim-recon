@@ -165,6 +165,7 @@ MACRO draw
   sigma wcz2=wcz1
   u=$sigma([u0]-(wcx2*[su]))
   v=$sigma([v0]-(wcy2*[sv]))
+  satt * lsty 7
   draw [1] [theta] [phi] [psio] [u] [v] [su] [sv]
   exec setview [theta] [phi] [psio] [u0] [v0] [su] [sv]
   exec setcutplane [theta] [phi] 0
@@ -248,6 +249,7 @@ MACRO dcut
     message Error: argument 2=[caxis] must be either x, y or z
     exitm
   endif
+  satt * lsty 7
   dcut [1] [caxis] [h] [u] [v] [su] [sv]
   global/create wcaxis [caxis] 'cut axis for wc'
   global/create wcxing [cxing] 'cut axis crossing value for wc'
@@ -350,6 +352,7 @@ MACRO dxcut
   u=$sigma([u0]-(wcx2*[su]))
   v=$sigma([v0]-(wcy2*[sv]))
   cut=$sigma([cutval]+([wcoriginx]*wcnx)+([wcoriginy]*wcny)+([wcoriginz]*wcnz))
+  satt * lsty 7
   dxcut [1] [cutthe] [cutphi] [cut] [theta] [phi] [u] [v] [su] [sv]
   exec setview [theta] [phi] 0 [u0] [v0] [su] [sv]
   exec setcutplane [cutthe] [cutphi] [cutval]
@@ -439,6 +442,7 @@ MACRO dvolume
   sigma wcz2=wcz1
   u=$sigma([u0]-(wcx2*[su]))
   v=$sigma([v0]-(wcy2*[sv]))
+  satt * lsty 7
   dvolume [1] [2] [chnrs] [theta] [phi] [psi] [u] [v] [su] [sv]
   exec setview [theta] [phi] [psi] [u0] [v0] [su] [sv]
   exec setcutplane [theta] [phi] 0
