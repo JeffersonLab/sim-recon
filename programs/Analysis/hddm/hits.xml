@@ -57,10 +57,10 @@
    </Cerenkov>
 
    <forwardTOF minOccurs="0">
-      <ftofCounter plane="int" paddle="int" minOccurs="0" maxOccurs="unbounded">
-         <ftofLeftHit t="float" dE="float"
+      <ftofCounter plane="int" bar="int" minOccurs="0" maxOccurs="unbounded">
+         <ftofNorthHit t="float" dE="float"
 			minOccurs="0" maxOccurs="unbounded" />
-         <ftofRightHit t="float" dE="float"
+         <ftofSouthHit t="float" dE="float"
 			minOccurs="0" maxOccurs="unbounded" />
       </ftofCounter>
       <ftofTruthPoint t="float" x="float" y="float" z="float"
