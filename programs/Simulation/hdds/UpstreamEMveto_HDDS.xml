@@ -10,9 +10,9 @@
 -->
 
 <section name        = "UpstreamEMveto"
-         version     = "1.1"
-         date        = "2005-03-07"
-         author      = "A. Ostrovidov"
+         version     = "2.0"
+         date        = "2006-11-28"
+         author      = "A. Ostrovidov, R.T. Jones"
          top_volume  = "UPV"
          specification = "v1.0">
 
@@ -25,67 +25,38 @@
 <!-- Dimensions of the full UPV box:
      Depth(Z)  is  26cm: 18*1cm(Scint) + 24*0.25cm(Lead) + 2*1cm(Al)
      Height(Y) is 240cm: 56*4.25cm(Scint) + 2*1cm(Al) 
-     Width(X)  is 240cm: 238cm(Scint) + 2*1cm(Al) -->
-  <!-- Replace the following box with a 4-sided PGON with the same
-       outer dimensions, but with the inner hole removed -rtj-
-  <box name="UPV" X_Y_Z="240.0 240.0 26.0" material="Air" 
-       parameters="upstreamEMveto_pars" comment="UPV mother" />
-  -->
-  <pgon name="UPV" segments="4" profile="-45 360" material="Air"
-       parameters="upstreamEMveto_pars" comment="UPV mother">
-    <polyplane Rio_Z="12.75 120 -13"  />
-    <polyplane Rio_Z="12.75 120 +13" />
-  </pgon>
-
-  <composition name="upstreamEMveto" envelope="UPV">
-    <posXYZ volume="UPUD"    X_Y_Z="    0.0    0.0 -12.5" />
-    <posXYZ volume="UPUD"    X_Y_Z="    0.0    0.0 +12.5" />
-    <posXYZ volume="UPTB"    X_Y_Z="    0.0 -119.5   0.0" />
-    <posXYZ volume="UPTB"    X_Y_Z="    0.0 +119.5   0.0" />
-    <posXYZ volume="UPLR"    X_Y_Z=" -119.5    0.0   0.0" />
-    <posXYZ volume="UPLR"    X_Y_Z=" +119.5    0.0   0.0" />
-    <posXYZ volume="UPVbody" X_Y_Z="    0.0    0.0   0.0" />
-  </composition>
-
-<!-- UPV box is made of 1cm thick Aluminum. Upstream/Downstream,
+     Width(X)  is 240cm: 238cm(Scint) + 2*1cm(Al)
+     The UPV box is made of 1cm thick Aluminum. Upstream/Downstream,
      Top/Bottom and Left/Right walls are identical. U/D walls have
      a square 25.5x25.5 beam hole, equal to 6 scint. heights -->
-  <composition name="UPUD">
-    <posXYZ volume="UPW1" X_Y_Z="   0.0   -66.375  0.0" />
-    <posXYZ volume="UPW1" X_Y_Z="   0.0   +66.375  0.0" />
-    <posXYZ volume="UPW2" X_Y_Z=" -66.375   0.0    0.0" />
-    <posXYZ volume="UPW2" X_Y_Z=" +66.375   0.0    0.0" />
-  </composition>
-  <box name="UPW1"  X_Y_Z="240.0  107.25 1.0"   material="Aluminum"
-     comment="top or bottom part of upstream or downstream UPV wall"/>
-  <box name="UPW2"  X_Y_Z="107.25  25.5  1.0"   material="Aluminum"
-     comment="left or right part of upstream or downstream UPV wall"/>
-  <box name="UPTB"  X_Y_Z="240.0 1.0 24.0" material="Aluminum"
-                           comment="top or bottom UPV wall" />
-  <box name="UPLR"  X_Y_Z="1.0 238.0 24.0" material="Aluminum"
-                           comment="left or right UPV wall" />
 
-
+  <pgon name="UPV" segments="4" profile="-45 360" material="Aluminum"
+                                                  comment="UPV mother">
+    <polyplane Rio_Z="11.75 120 -13"  />
+    <polyplane Rio_Z="11.75 120 +13" />
+  </pgon>
 
 <!-- UPV body has 12 single-width layers downstream and 
      6 double-width layers upstream -->
-  <composition name="UPVbody">
-    <mposZ volume="UPVsingleLayer" ncopy="12" X_Y="0.0 0.0" Z0="11.375" dZ="-1.25">
-      <layer value="1" step="1" />    
+  
+  <composition name="upstreamEMveto" envelope="UPV">
+    <mposZ volume="UPVsingleLayer" ncopy="12" Z0="-2.375" dZ="1.25">
+      <layer value="12" step="-1" />    
     </mposZ>
-    <mposZ volume="UPVdoubleLayer" ncopy="6" X_Y="0.0 0.0" Z0="-3.75" dZ="-1.50">
-      <layer value="13" step="1" />    
+    <mposZ volume="UPVdoubleLayer" ncopy="6" Z0="-11.25" dZ="1.50">
+      <layer value="18" step="-1" />    
     </mposZ>
   </composition>
-  
 
 <!-- UPV single layer has 1 plane of scintillators and 1 sheet of lead -->
+
   <composition name="UPVsingleLayer">
     <posXYZ volume="UPVleadSheet"          X_Y_Z="0.0 0.0 +0.5"   />
     <posXYZ volume="UPVscintillatorPlane"  X_Y_Z="0.0 0.0 -0.125" />
   </composition>
 
 <!-- UPV double layer has 1 plane of scintillators and 2 sheets of lead -->
+
   <composition name="UPVdoubleLayer">
     <posXYZ volume="UPVleadSheet"          X_Y_Z="0.0 0.0 +0.625" />
     <posXYZ volume="UPVleadSheet"          X_Y_Z="0.0 0.0 +0.375" />
@@ -95,6 +66,7 @@
 
 <!-- UPV lead sheet is assumed to be 0.25cm thick. It's a 238x238 square with
      25.5x25.5 square beam hole in it -->
+
   <composition name="UPVleadSheet">
     <posXYZ volume="UPL1" X_Y_Z="   0.0   -65.875  0.0" />
     <posXYZ volume="UPL1" X_Y_Z="   0.0   +65.875  0.0" />
@@ -103,12 +75,12 @@
   </composition>
   <box name="UPL1"  X_Y_Z="238.0  106.25 0.25"   material="Lead" />
   <box name="UPL2"  X_Y_Z="106.25  25.5  0.25"   material="Lead" />
- 
 
 <!-- UPV scintillator plane has 56 vertically stacked paddles. However,
      6 middle  paddles are cut for a beam hole. Therefore, it is
      25uncut + 6cut + 25uncut channels. First, we divide it into
      4 parts to accomodate a square beam hole -->
+
   <composition name="UPVscintillatorPlane">
     <posXYZ volume="UPVscintillatorBottom" X_Y_Z="   0.0   -65.875  0.0" />
     <posXYZ volume="UPVscintillatorTop"    X_Y_Z="   0.0   +65.875  0.0" />
@@ -117,6 +89,7 @@
   </composition>
 
 <!-- 25 long paddles in the Top or Bottom parts -->
+
   <composition name="UPVscintillatorBottom" envelope="UPE1">
     <mposY volume="UPVP" ncopy="25" Z_X="0.0 0.0" Y0="-51.0" dY="4.25">
       <row  value="1" step="1" />
@@ -133,6 +106,7 @@
   <box name="UPE2" X_Y_Z="238.0 106.25 1.0" material="Air" />
 
 <!-- 6 short paddles in the Left or Right parts -->
+
   <composition name="UPVscintillatorLeft" envelope="UPE3">
     <mposY volume="UPVC" ncopy="6" Z_X="0.0 0.0" Y0="-10.625" dY="4.25">
       <row  value="26" step="1" />
@@ -154,6 +128,9 @@
   <box name="UPVC" X_Y_Z="106.25 4.25 1.0" material="Scintillator"
       sensitive="true"    comment="UPV short scintillator channel" />
 
+  <!-- The following elements describe an early rendition of the GlueX
+       detector simulated using a fast Monte Carlo program MCFast.  They
+       are retained for future reference, do not rely on their values. -->
 
   <parameters name="upstreamEMveto_pars" type="mcfast">
 <!-- To be defined later, if ever -->

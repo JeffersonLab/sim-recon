@@ -10,8 +10,8 @@
 -->
 
 <section name        = "Target"
-         version     = "1.1"
-         date        = "2005-01-26"
+         version     = "2.0"
+         date        = "2006-11-22"
          author      = "R.T. Jones"
          top_volume  = "TARG"
          specification = "v1.0">
@@ -21,46 +21,43 @@
      liquid hydrogen target - not the start of the vacuum vessel.  -->
 
   <composition name="Target">
-    <posXYZ volume="BerylliumPipe" X_Y_Z="0. 0. -48.5" />
+    <posXYZ volume="targetVessel" X_Y_Z="0. 0. 12.5" />
   </composition>
 
-  <composition name="BerylliumPipe" envelope="TARG">
-    <posXYZ volume="CYLW" X_Y_Z="0. 0. -4.75"/>
-    <posXYZ volume="UWIT" X_Y_Z="0. 0. -91.47"/>
-    <posXYZ volume="targetCap" X_Y_Z="0. 0. 86.75"/>
-    <posXYZ volume="targetVessel" X_Y_Z="0. 0. 63.5" />
+  <composition name="targetVessel" envelope="TARG">
+    <posXYZ volume="CYLW" X_Y_Z="0. 0. 0." />
+    <posXYZ volume="UWIT" X_Y_Z="0. 0. -27.495"/>
+    <posXYZ volume="DWIT" X_Y_Z="0. 0. +27.495"/>
+    <posXYZ volume="UFLT" X_Y_Z="0. 0. -27.25"/>
+    <posXYZ volume="DFLT" X_Y_Z="0. 0. +27.00"/>
+    <posXYZ volume="targetTube" X_Y_Z="0. 0. 2.5" />
   </composition>
 
-  <composition name="targetVessel" envelope="TGTV">
+  <composition name="targetTube" envelope="TGTV">
     <posXYZ volume="LIH2" X_Y_Z="0. 0. 0."/>
   </composition>
 
-  <tubs name="TGTV" Rio_Z="0.00 2.50 30.00" material="Aluminum"
-	parameters="target_pars"	comment="target vessel mother"      />
-  <tubs name="LIH2" Rio_Z="0.00 2.48 29.98" material="LiqHydrogen"
-	                         	comment="target vessel mother"      />
+  <tubs name="TARG" Rio_Z="0.00 4.00 55.0" material="Vacuum"
+	                        comment="target vessel mother volume" />
+  <tubs name="TGTV" Rio_Z="0.00 1.515 30.030" material="Kapton"
+	                        comment="target cell"      />
+  <tubs name="LIH2" Rio_Z="0.00 1.500 30.000" material="LiqHydrogen"
+	                        comment="target contents"  />
+  <tubs name="CYLW" Rio_Z="3.00 4.00 55.0" material="HighDensityROHACELL"
+				comment="target vessel cylindrical wall"  />
+  <tubs name="UFLT" Rio_Z="2.00 3.00 0.5" material="Aluminum"
+				comment="target vessel entrance flange"  />
+  <tubs name="DFLT" Rio_Z="2.00 3.00 1.0" material="HighDensityROHACELL"
+				comment="target vessel exit flange"  />
+  <tubs name="UWIT" Rio_Z="0.00 2.00 0.007" material="Aluminum"
+				comment="target vessel entrance window"   />
+  <tubs name="DWIT" Rio_Z="0.00 2.00 0.007" material="Aluminum"
+                                comment="target vessel exit window" />
 
-  <tubs name="TARG" Rio_Z="0.00 9.50 183.0" material="Vacuum"
-	parameters="targetTube_pars" 	comment="target tube mother volume" />
-  <tubs name="CYLW" Rio_Z="9.40 9.50 173.5" material="Beryllium"
-					comment="cylindrical wall of tube"  />
-  <tubs name="UWIT" Rio_Z="0.00 9.50 0.050" material="Kapton"
-					comment="upstream window of tube"   />
-  <tubs name="DWIT" Rio_Z="0.00 9.50 9.50" material="Air"
-                                        comment="downstream cap of tube" />
+  <!-- The following elements describe an early rendition of the GlueX
+       detector simulated using a fast Monte Carlo program MCFast.  They
+       are retained for future reference, do not rely on their values. -->
 
-  <composition name="targetCap" envelope="DWIT">
-    <posXYZ volume="targetDome" X_Y_Z="0. 0. -4.75"/>
-  </composition>
-  <composition name="targetDome" envelope="DWIC">
-    <posXYZ volume="DWID" X_Y_Z="0. 0. 0."/>
-  </composition>
-
-  <sphere name="DWIC" Rio="0.00 9.50" material="Beryllium"
-                    polar_bounds="0 90" comment="downstream cap of tube" />
-  <sphere name="DWID" Rio="0.00 9.40" material="Vacuum"
-                    polar_bounds="0 90" comment="vacuum inside cap of tube" />
- 
   <parameters name="targetTube_pars" type="mcfast">
     <real name="rmin" value="0.00"  unit="cm" comment="inner radius" />
     <real name="rmax" value="9.50"  unit="cm" comment="outer radius" />

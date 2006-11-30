@@ -13,40 +13,83 @@
 -->
 
 <section name        = "StartCntr"
-         version     = "1.1"
-         date        = "2005-01-26"
+         version     = "2.0"
+         date        = "2006-11-22"
          author      = "R.T. Jones"
          top_volume  = "STRT"
          specification = "v1.0">
 
 
-<!-- Origin of StartCntr is center of the cylinder at the upstream limit
-     of the sensitive region.                                             -->
+<!-- Origin of StartCntr is on the axis of the cylinder
+     at the upstream limit of the sensitive region.        -->
 
   <composition name="StartCntr">
-    <posXYZ volume="startCntr" X_Y_Z="0.0  0.0  25.0">
-    </posXYZ>
-    <!--posXYZ volume="STRP" X_Y_Z="0.0  0.0  55.0">
-    </posXYZ-->
+     <posXYZ volume="startCntr" X_Y_Z="0.0  0.0  0.0" />
   </composition>
 
   <composition name="startCntr" envelope="STRT">
-     <mposPhi volume="STRC" ncopy="40" Phi0="0.0" R_Z="10.10  0.0"
+     <mposPhi volume="STRC" ncopy="24" Phi0="7.5" R_Z="0.0  0.0"
               impliedRot="true">
          <sector value="1" step="1" />
      </mposPhi>
+     <posXYZ volume="STSU" />
+     <posXYZ volume="STWR" />
+     <posXYZ volume="STWR" />
+     <posXYZ volume="startCntrSupport" X_Y_Z="0.0 0.0 -70.0" />
   </composition>
 
-  <tubs name="STRT" Rio_Z="10.00  10.30 50.0" unit_length="cm" material="Air"
-	parameters="startCntr_pars"     comment="start counter cylinder" />
-  <tubs name="STRS" Rio_Z="10.00  10.30 50.0" profile="-4.5  4.5"
-                    unit_length="cm"          unit_angle="deg"
-                    material="Air"      comment="start counter sector" />
-  <box  name="STRC" X_Y_Z="0.20  1.58  50.0" material="Scintillator"
-              	     sensitive="true"   comment="start counter stave"    />
-  <tubs name="STRP" Rio_Z="0.80  12.00  0.2" material="Scintillator"
-	parameters="startCntr_pars"	     sensitive="true"
-					comment="start counter endcap" />
+  <composition name="startCntrSupport" envelope="TARM">
+     <posXYZ volume="STLG" />
+  </composition>
+
+  <tubs name="TARM" Rio_Z="9.5 11.32 140" material="Aluminum"
+                                  comment="target region support arm" />
+  <tubs name="STLG" Rio_Z="10.0 11.32 140" material="Plexiglas"
+                                  comment="start counter light guides" />
+  <pgon name="STRT" segments="24" material="LowDensityROHACELL"
+				  comment="start counter assembly">
+     <polyplane Rio_Z="9.500 11.400 -140.0" />
+     <polyplane Rio_Z="9.500 11.400 50.200" />
+     <polyplane Rio_Z="9.343 11.400 50.578" />
+     <polyplane Rio_Z="8.012 10.069 53.792" />
+     <polyplane Rio_Z="6.936  9.623 54.868" />
+     <polyplane Rio_Z="1.604  4.291 60.200" />
+     <polyplane Rio_Z="2.948  2.948 61.544" />
+  </pgon>
+  <pgon name="STRC" segments="1" profile="-7.5 15" material="Scintillator"
+		sensitive="true" comment="start counter scintillator">
+     <polyplane Rio_Z="10.030 10.245  0.000"  />
+     <polyplane Rio_Z="10.030 10.245 50.420" />
+     <polyplane Rio_Z="10.012 10.245 50.463" />
+     <polyplane Rio_Z=" 8.542  8.775 54.012" />
+     <polyplane Rio_Z=" 8.420  8.724 54.134" />
+     <polyplane Rio_Z=" 2.154  2.458 60.400" />
+     <polyplane Rio_Z=" 2.306  2.306 60.552" />
+  </pgon>
+  <pgon name="STSU" segments="24" material="HighDensityROHACELL"
+				  comment="start counter support cylinder">
+     <polyplane Rio_Z="9.500 10.030  0.000" />
+     <polyplane Rio_Z="9.500 10.030 50.200" />
+     <polyplane Rio_Z="9.456 10.030 50.305" />
+     <polyplane Rio_Z="8.012  8.586 53.792" />
+     <polyplane Rio_Z="7.712  8.461 54.092" />
+     <polyplane Rio_Z="1.604  2.354 60.200" />
+     <polyplane Rio_Z="1.979  1.979 60.575" />
+  </pgon>
+  <pgon name="STWR" segments="24" material="Cellulose"
+				  comment="start counter wrapping tape">
+     <polyplane Rio_Z="11.320 11.400 -140.0" />
+     <polyplane Rio_Z="11.320 11.400 50.562" />
+     <polyplane Rio_Z="11.313 11.400 50.578" />
+     <polyplane Rio_Z=" 9.555  9.642 54.823" />
+     <polyplane Rio_Z=" 9.510  9.623 54.868" />
+     <polyplane Rio_Z=" 2.891  3.004 61.487" />
+     <polyplane Rio_Z=" 2.948  2.948 61.544" />
+  </pgon>
+
+  <!-- The following elements describe an early rendition of the GlueX
+       detector simulated using a fast Monte Carlo program MCFast.  They
+       are retained for future reference, do not rely on their values. -->
 
   <parameters name="startCntr_pars" type="mcfast">
     <real       name="rmin"	value="10.00"	comment="inner radius"

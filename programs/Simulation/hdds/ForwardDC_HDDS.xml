@@ -10,8 +10,8 @@
 -->
 
 <section name        = "ForwardDC"
-         version     = "1.1"
-         date        = "2005-01-25"
+         version     = "2.0"
+         date        = "2006-11-22"
          author      = "R.T. Jones"
          top_volume  = "FDC"
          specification = "v1.0">
@@ -20,34 +20,48 @@
      of the most upstream chamber.                        -->
 
   <composition name="ForwardDC">
-    <posXYZ volume="forwardDC" X_Y_Z="0.0  0.0  88.5" />
+    <posXYZ volume="forwardDC" X_Y_Z="0.0  0.0  100.5" />
+    <mposPhi volume="FDSC" ncopy="3" Phi0="30" R_Z="0.0 100.5"
+                                                impliedRot="true" />
   </composition>
 
   <composition name="forwardDC" envelope="FDC">
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -85.5">
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0  -100.6" />
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -97.5">
       <module value="1" />
     </posXYZ>
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -79.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -91.5">
       <module value="2" />
     </posXYZ>
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -30.5">
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0  -88.4" />
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0  -37.6" />
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -34.5">
       <module value="3" />
     </posXYZ>
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -24.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -28.5">
       <module value="4" />
     </posXYZ>
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   24.5">
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0  -25.4" />
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0   25.4" />
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   28.5">
       <module value="5" />
     </posXYZ>
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   30.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   34.5">
       <module value="6" />
     </posXYZ>
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   79.5">
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0   37.6" />
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0   88.4" />
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   91.5">
       <module value="7" />
     </posXYZ>
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   85.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   97.5">
       <module value="8" />
     </posXYZ>
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0   100.6" />
+    <posXYZ volume="FDSR"  X_Y_Z=" 41.0  41.0   0.0" />
+    <posXYZ volume="FDSR"  X_Y_Z="-41.0  41.0   0.0" />
+    <posXYZ volume="FDSR"  X_Y_Z="-41.0 -41.0   0.0" />
+    <posXYZ volume="FDSR"  X_Y_Z=" 41.0 -41.0   0.0" />
   </composition>
 
   <composition name="forwardDC_module" envelope="FDMO">
@@ -60,29 +74,67 @@
     <posXYZ volume="forwardDC_chamber" X_Y_Z="0.0 0.0  2.0" rot="0   0  -60">
       <layer value="3" />
     </posXYZ>
+    <posXYZ volume="FDSF" />
+    <posXYZ volume="FDCE" />
   </composition>
 
   <composition name="forwardDC_chamber" envelope="FDCH">
-    <posXYZ volume="FDCA" X_Y_Z="0.0 0.0 0.0">
-      <plane value="2" />
-    </posXYZ>
-    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0 -0.5" rot="0   0  -45">
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 -0.9975" />
+    <posXYZ volume="FDCB" X_Y_Z="0.0 0.0 -0.7515" />
+    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0 -0.5040" rot="0   0  -45">
       <plane value="1" />
     </posXYZ>
-    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0 +0.5" rot="0   0   45">
+    <posXYZ volume="FDCA">
+      <plane value="2" />
+    </posXYZ>
+    <posXYZ volume="FDCC" X_Y_Z="0.0 0.0 +0.5040" rot="0   0   45">
       <plane value="3" />
     </posXYZ>
+    <posXYZ volume="FDCB" X_Y_Z="0.0 0.0 0.7515" />
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 0.9975" />
   </composition>
 
-  <tubs name="FDC" Rio_Z="3.5 62.0 178.0" material="Air"
+  <tubs name="FDC" Rio_Z="0.0 62.0 202.0" material="Air"
                                           comment="forward drift chambers" />
-
-  <tubs name="FDMO" Rio_Z=" 3.5 61.0 6.0" material="Air"        />
-  <tubs name="FDCH" Rio_Z=" 3.5 61.0 2.0" material="chamberGas" />
-  <tubs name="FDCA" Rio_Z=" 3.5 60.0 0.994" material="chamberGas"
+  <tubs name="FDMO" Rio_Z="0.0 61.0 6.0" material="Air" 
+                                          comment="fdc module container" />
+  <tubs name="FDCH" Rio_Z=" 0.0 53.6 2.0" material="chamberGas"
+                                          comment="fdc chamber container" />
+  <tubs name="FDCA" Rio_Z=" 0.0 53.6 1.00" material="chamberGas"
 					    sensitive="true" 	/>
-  <tubs name="FDCC" Rio_Z=" 3.5 60.0 0.0059" material="CopperKapton" />
-  <tubs name="FDCS" Rio_Z="60.0 61.0 6.0" material="Aluminum"   />
+  <tubs name="FDCC" Rio_Z=" 0.0 53.6 0.0080" material="CopperKapton"
+                                          comment="cathode strip plane" />
+  <tubs name="FDCG" Rio_Z=" 0.0 53.6 0.0050" material="MylarFilm"
+                                          comment="fdc ground plane" />
+  <tubs name="FDCB" Rio_Z=" 3.5 53.6 0.4870" material="LowDensityROHACELL"
+                                          comment="cathode support plane" />
+  <tubs name="FDSP" Rio_Z="53.6 60.0 0.2" material="StainlessSteel"
+                                          comment="fdc end plates" />
+  <tubs name="FDSR" Rio_Z="0.0 1.0 202.0" material="CarbonFiber"
+                                          comment="fdc support rods" />
+  <tubs name="FDSF" Rio_Z="53.6 60.0 6.0" material="FR-4"
+                                          comment="fdc chamber frames" />
+  <tubs name="FDCE" Rio_Z="60.5 60.61 6.0" material="CircuitBoards"
+                                          comment="fdc preamplifiers" />
+
+  <pcon name="FDSC" profile="-58.0 116.0"  material="SignalCables"
+                                          comment="fdc signal, HV cables">
+    <polyplane Rio_Z="64.5 65.0 -100.5" />
+    <polyplane Rio_Z="64.5 65.0 -37.5" />
+    <polyplane Rio_Z="64.0 65.0 -37.5" />
+    <polyplane Rio_Z="64.0 65.0  25.5" />
+    <polyplane Rio_Z="63.5 65.0  25.5" />
+    <polyplane Rio_Z="63.5 65.0  88.5" />
+    <polyplane Rio_Z="63.0 65.0  88.5" />
+    <polyplane Rio_Z="63.0 65.0  135.0" />
+    <polyplane Rio_Z="63.0 65.8  135.8" />
+    <polyplane Rio_Z="64.0 66.8  136.8" />
+    <polyplane Rio_Z="65.4 65.4  138.2" />
+  </pcon>
+
+  <!-- The following elements describe an early rendition of the GlueX
+       detector simulated using a fast Monte Carlo program MCFast.  They
+       are retained for future reference, do not rely on their values. -->
 
   <parameters name="forwardDC_pars" type="mcfast">
     <int	name="nlyr"	value="3"	comment="number of layers" />

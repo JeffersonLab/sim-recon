@@ -10,8 +10,8 @@
 -->
 
 <section name        = "Solenoid"
-         version     = "1.1"
-         date        = "2005-01-25"
+         version     = "2.0"
+         date        = "2006-11-22"
          author      = "R.T. Jones"
          top_volume  = "LASS"
          specification = "v1.0">
@@ -30,8 +30,8 @@
   </composition>
 
   <pcon name="LASS" material="Air">
-    <polyplane Rio_Z="10.0  188.0  -50.8" />
-    <polyplane Rio_Z="10.0  188.0  100.0" />
+    <polyplane Rio_Z="11.5  188.0  -50.8" />
+    <polyplane Rio_Z="11.5  188.0  100.0" />
     <polyplane Rio_Z="0.0   188.0  100.0" />
     <polyplane Rio_Z="0.0   188.0  406.0" />
     <polyplane Rio_Z="62.0  188.0  406.0" />
@@ -41,6 +41,10 @@
   <tubs name="IYUP" Rio_Z=" 92.71 187.96  50.8" material="Iron" />
   <tubs name="IYOK" Rio_Z=" 95.0 187.96  377.8" material="Iron" />
   <tubs name="IYDN" Rio_Z=" 92.71 187.96  66.0" material="Iron" />
+
+  <!-- The following elements describe an early rendition of the GlueX
+       detector simulated using a fast Monte Carlo program MCFast.  They
+       are retained for future reference, do not rely on their values. -->
 
   <parameters name="solenoid_pars" type="mcfast">
     <string name="name" value="LASS"   comment="name of magnetic volume" />

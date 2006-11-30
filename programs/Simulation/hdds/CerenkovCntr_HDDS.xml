@@ -10,8 +10,8 @@
 -->
 
 <section name        = "CerenkovCntr"
-         version     = "1.1"
-         date        = "2005-01-25"
+         version     = "2.0"
+         date        = "2006-11-25"
          author      = "R.T. Jones"
          top_volume  = "CERE"
          specification = "v1.0">
@@ -23,30 +23,64 @@
   </composition>
 
   <composition name="cerenkovCntr" envelope="CERE">
-     <posXYZ volume="CERI" X_Y_Z="0.0 0.0 27.23" />
-     <posXYZ volume="cerenkovDrum" X_Y_Z="0.0 0.0 132.0" />
+     <posXYZ volume="CERW" X_Y_Z="0.0 0.0 0.0020" />
+     <posXYZ volume="CERI" X_Y_Z="0.0 0.0 27.20" />
+     <posXYZ volume="cerenkovDrum" X_Y_Z="0.0 0.0 131.80" />
   </composition>
   <composition name="cerenkovDrum" envelope="CGAS">
-     <mposPhi volume="CSEC" ncopy="16" Phi0="0.0" impliedRot="true">
+     <mposPhi volume="cerenkovSector" ncopy="16" Phi0="11.25"
+                                                 impliedRot="true">
          <sector value="1" step="1" />
      </mposPhi>
   </composition>
 
-  <pcon name="CERE" material="Aluminum" comment="Cerenkov counter"
-		    parameters="cerenkovCntr_pars">
+  <pcon name="CERE" material="Aluminum" comment="Cerenkov counter">
      <polyplane Rio_Z="5.0  58.0   0.0" />
      <polyplane Rio_Z="5.0  58.0  54.3" />
      <polyplane Rio_Z="5.0 280.4  54.3" />
      <polyplane Rio_Z="5.0 280.4 209.3" />
   </pcon>
-  <tubs name="CERI" material="CerenkovGas" Rio_Z="5.1  57.9  54.34"
-                    sensitive="true"       parameters="cerenkovCntr_pars"
-                                           comment="Cerenkov insert" />
-  <tubs name="CGAS" material="CerenkovGas" Rio_Z="5.1 280.3 154.8"
-		    sensitive="true"	   comment="Cerenkov gas volume" />
-  <tubs name="CSEC" material="CerenkovGas" Rio_Z="5.1 280.3 154.8"
-                    sensitive="true"       profile="-11.25 22.50"
+
+  <composition name="cerenkovSector" envelope="CSEC">
+     <posXYZ volume="CMI1" X_Y_Z="0.0 0.0 +14.20" />
+     <posXYZ volume="CMI2" X_Y_Z="0.0 0.0 -68.09" />
+     <posXYZ volume="CPMT" X_Y_Z="0.0 0.0 +32.90" />
+  </composition>
+
+  <tubs name="CERW" material="Tedlar" Rio_Z="5.1  57.9  0.0040"
+                    sensitive="true"       comment="Cerenkov entrance window" />
+  <tubs name="CERI" material="CerenkovGas" Rio_Z="5.1  57.9  54.40"
+                                       	   comment="Cerenkov insert" />
+  <tubs name="CGAS" material="CerenkovGas" Rio_Z="5.1 280.3 154.80"
+		                    	   comment="Cerenkov gas volume" />
+  <tubs name="CSEC" material="CerenkovGas" Rio_Z="5.1 280.3 154.80"
+                                           profile="-11.25 22.5"
                                            comment="Cerenkov gas volume" />
+  <pgon name="CMI1" segments="1" profile="-11.25 22.5"
+        material="ThinCerenkovMirror"      comment="inner Cerenkov mirrors">
+     <polyplane Rio_Z="  7.50   7.50  0.0" />
+     <polyplane Rio_Z="  5.10  16.06  4.45" />
+     <polyplane Rio_Z="109.04 120.00 58.50" />
+     <polyplane Rio_Z="117.60 117.60 62.95" />
+  </pgon>
+  <pgon name="CMI2" segments="1" profile="-5.5125 11.25"
+        material="ThickCerenkovMirror"     comment="outer Cerenkov mirrors">
+     <polyplane Rio_Z="119.00 119.00  0.0" />
+     <polyplane Rio_Z="116.00 128.88  4.22" />
+     <polyplane Rio_Z="251.12 264.00 61.92" />
+     <polyplane Rio_Z="261.00 261.00 66.13" />
+  </pgon>
+  <pgon name="CPMT" segments="1" profile="-11.25 22.5" sensitive="true"
+        material="CerenkovPMT"             comment="Cerenkov photomultipliers">
+     <polyplane Rio_Z="142.3 142.3  0.0" />
+     <polyplane Rio_Z="133.3 151.3  9.0" />
+     <polyplane Rio_Z="119.0 137.0 23.3" />
+     <polyplane Rio_Z="128.0 128.0 32.3" />
+  </pgon>
+
+  <!-- The following elements describe an early rendition of the GlueX
+       detector simulated using a fast Monte Carlo program MCFast.  They
+       are retained for future reference, do not rely on their values. -->
 
   <parameters name="cerenkovCntr_pars" type="mcfast">
     <real 	name="Rmin"	value="5.0"

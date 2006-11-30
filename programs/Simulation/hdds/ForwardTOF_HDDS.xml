@@ -10,9 +10,9 @@
 -->
 
 <section name        = "ForwardTOF"
-         version     = "1.2"
-         date        = "2006-11-08"
-         author      = "M. Shepherd"
+         version     = "2.0"
+         date        = "2006-11-22"
+         author      = "M. Shepherd, R.T. Jones"
          top_volume  = "FTOF"
          specification = "v1.0">
 
@@ -22,54 +22,60 @@
 <!-- downstream plane has horizontal oriented bars -->
 
   <composition name="ForwardTOF">
-    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 -0.635" rot="0 0 -90">
+    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 1.27" rot="0 0 -90">
       <plane value="0" />
     </posXYZ>
-    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 +0.635" rot="0 0 180">
+    <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 3.85" rot="0 0 0">
       <plane value="1" />
     </posXYZ>
   </composition>
 
   <composition name="forwardTOF" envelope="FTOF">
     <posXYZ volume="forwardTOF_bottom" X_Y_Z="0.0 -66.0 0.0" />
-    <posXYZ volume="forwardTOF_left" X_Y_Z="-66.0 0.0 0.0" />
-    <posXYZ volume="forwardTOF_right" X_Y_Z="+66.0 0.0 0.0" />
+    <posXYZ volume="forwardTOF_north" X_Y_Z="+66.0 0.0 0.0" />
+    <posXYZ volume="forwardTOF_south" X_Y_Z="-66.0 0.0 0.0" />
     <posXYZ volume="forwardTOF_top" X_Y_Z="0.0 +66.0 0.0" />
   </composition>
 
-<!-- the attribute 'row' is synonymous with 'bar' and 'paddle'-->
-  <composition name="forwardTOF_bottom" envelope="FTOB">
-    <mposY volume="FTOC" ncopy="21" Z_X="0.0 0.0" Y0="-60.00" dY="6.00">
-      <row value="1" step="1" />
+<!-- the attribute 'row' is synonymous with 'bar' -->
+  <composition name="forwardTOF_top" envelope="FTOT">
+    <mposY volume="FTOC" ncopy="20" Z_X="0.0 0.0" Y0="-57.0" dY="6.00">
+      <row value="20" step="-1" />
+      <column value="0" />
     </mposY>
   </composition>
-  <composition name="forwardTOF_left" envelope="FTOL">
-    <posXYZ volume="FTOS">
+  <composition name="forwardTOF_bottom" envelope="FTOB">
+    <mposY volume="FTOC" ncopy="20" Z_X="0.0 0.0" Y0="-57.00" dY="6.00">
+      <row value="40" step="-1" />
+      <column value="0" />
+    </mposY>
+  </composition>
+  <composition name="forwardTOF_north" envelope="FTON">
+    <mposY volume="FTOH" ncopy="2" Z_X = "0.0 0.0" Y0="-3.0" dY="6.0">
+      <row value="43" step="-2" />
       <column value="1" />
-      <row value="44" />
-    </posXYZ>
+    </mposY>
   </composition>
-  <composition name="forwardTOF_right" envelope="FTOR">
-    <posXYZ volume="FTOS">
+  <composition name="forwardTOF_south" envelope="FTOS">
+    <mposY volume="FTOH" ncopy="2" Z_X="0.0 0.0" Y0="-3.0" dY="6.0">
+      <row value="44" step="-2" />
       <column value="2" />
-      <row value="43" />
-    </posXYZ>
-  </composition>
-  <composition name="forwardTOF_top" envelope="FTOT">
-    <mposY volume="FTOC" ncopy="21" Z_X="0.0 0.0" Y0="-60.0" dY="6.00">
-      <row value="21" step="1" />
     </mposY>
   </composition>
 
-  <box name="FTOF" X_Y_Z="258.0 258.0 1.27" material="Air" />
-  <box name="FTOB" X_Y_Z="258.0 126.0 1.27" material="Air" />
-  <box name="FTOT" X_Y_Z="258.0 126.0 1.27" material="Air" />
-  <box name="FTOL" X_Y_Z="126.0   6.0 1.27" material="Air" />
-  <box name="FTOR" X_Y_Z="126.0   6.0 1.27" material="Air" />
-  <box name="FTOC" X_Y_Z="258.0   6.0 1.27" material="Scintillator"
+  <box name="FTOF" X_Y_Z="252.0 252.0 2.55" material="Air" />
+  <box name="FTOB" X_Y_Z="252.0 120.0 2.55" material="Air" />
+  <box name="FTOT" X_Y_Z="252.0 120.0 2.55" material="Air" />
+  <box name="FTON" X_Y_Z="120.0  12.0 2.55" material="Air" />
+  <box name="FTOS" X_Y_Z="120.0  12.0 2.55" material="Air" />
+  <box name="FTOC" X_Y_Z="252.0   6.0 2.54" material="Scintillator"
 					    sensitive="true" />
-  <box name="FTOS" X_Y_Z="126.0   6.0 1.27" material="Scintillator"
+  <box name="FTOH" X_Y_Z="120.0   6.0 2.54" material="Scintillator"
 					    sensitive="true" />
+
+  <!-- The following elements describe an early rendition of the GlueX
+       detector simulated using a fast Monte Carlo program MCFast.  They
+       are retained for future reference, do not rely on their values. -->
 
   <parameters name="forwardTOF_pars" type="mcfast">
     <real_array	name="xlimit"	values="-126.0 126.0" comment="x dimensions"

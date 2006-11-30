@@ -46,8 +46,8 @@
      ******************************************
 -->
 <section name        = "HallD"
-         version     = "1.1"
-         date        = "2005-01-25"
+         version     = "2.0"
+         date        = "2006-11-22"
          author      = "R.T. Jones"
          top_volume  = "HALL"
          specification = "v1.0">
@@ -62,15 +62,14 @@
   <composition name="barrelPackage" envelope="LASS">
     <posXYZ volume="Solenoid" />
     <posXYZ volume="CentralDC" X_Y_Z="0.0 0.0 17.0" />
-    <posXYZ volume="ForwardDC" X_Y_Z="0.0 0.0 228.0" />
-    <posXYZ volume="StartCntr" X_Y_Z="0.0 0.0 47.5" />
+    <posXYZ volume="ForwardDC" X_Y_Z="0.0 0.0 203.0" />
     <posXYZ volume="BarrelEMcal" X_Y_Z="0.0 0.0 17.0" />
   </composition>
 
   <composition name="forwardPackage">
-    <posXYZ volume="CerenkovCntr" X_Y_Z="0.0 0.0 406.9" />
+    <posXYZ volume="CerenkovCntr" X_Y_Z="0.0 0.0 407.0" />
     <posXYZ volume="ForwardTOF" X_Y_Z="0.0 0.0 618.8" />
-    <posXYZ volume="ForwardEMcal" X_Y_Z="0.0 0.0 622.8" />
+    <posXYZ volume="ForwardEMcal" X_Y_Z="0.0 0.0 628.0" />
   </composition>
 
   <composition name="backwardPackage">
@@ -79,6 +78,7 @@
 
   <composition name="GlueXdetector">
     <posXYZ volume="Target" X_Y_Z="0.0 0.0 50.0" />
+    <posXYZ volume="StartCntr" X_Y_Z="0.0 0.0 37.5" />
     <posXYZ volume="barrelPackage" />
     <posXYZ volume="forwardPackage" />
     <posXYZ volume="backwardPackage" />
@@ -97,6 +97,10 @@
     <posXYZ volume="collimatorPackage" X_Y_Z="0.0 0.0 -2050." />
     <posXYZ volume="LASSfieldVolume" X_Y_Z="0. 0. 0." />
   </composition>
+
+  <!-- The following elements describe an early rendition of the GlueX
+       detector simulated using a fast Monte Carlo program MCFast.  They
+       are retained for future reference, do not rely on their values. -->
 
   <mcfast model="detector" template="db/detector.db">
     <string name="name" value="GLUEX" />

@@ -10,8 +10,8 @@
 <HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds">
 -->
 
-<materials version="1.0"
-	   date="2001-04-15"
+<materials version="2.0"
+	   date="2006-11-22"
 	   author="R.T. Jones"
            specification="v1.0" >
 
@@ -503,8 +503,8 @@
 
 
   <composite name="Scintillator">
-	<addmaterial material="Carbon">   <natoms n="9"	/> </addmaterial>
-	<addmaterial material="Hydrogen"> <natoms n="10" /></addmaterial>
+	<addmaterial material="Carbon">   <natoms n="8"	/> </addmaterial>
+	<addmaterial material="Hydrogen"> <natoms n="9" /></addmaterial>
 	<real name="density"	value="1.032"	unit="g/cm^3"	/>
 	<real name="radlen"	value="43.72"	unit="g/cm^2"	/>
 	<real name="collen"	value="58.5"	unit="g/cm^2"	/>
@@ -644,6 +644,20 @@
 	<real name="dedx"	value="1.936"	unit="MeV/g/cm^2"	/>
   </composite>
 
+  <composite name="Tedlar">
+	<addmaterial material="Carbon">   <natoms n="2" /></addmaterial>
+	<addmaterial material="Hydrogen"> <natoms n="3" /></addmaterial>
+	<addmaterial material="Fluorine"> <natoms n="1"	/> </addmaterial>
+	<real name="density"	value="1.49"	unit="g/cm^3"	/>
+  </composite>
+
+  <composite name="PVC">
+	<addmaterial material="Carbon">   <natoms n="2"	/> </addmaterial>
+	<addmaterial material="Hydrogen"> <natoms n="3"	/> </addmaterial>
+	<addmaterial material="Chlorine"> <natoms n="1"	/> </addmaterial>
+	<real name="density"	value="1.32"	unit="g/cm^3"	/>
+  </composite>
+
   <composite name="Teflon">
 	<addmaterial material="Carbon">   <natoms n="1"	/> </addmaterial>
 	<addmaterial material="Fluorine"> <natoms n="2"	/> </addmaterial>
@@ -706,11 +720,25 @@
 
   <composite name="CopperKapton">
 	<addmaterial material="Copper">
-		<fractionmass	fraction="0.89"	/>
+		<fractionmass	fraction="0.30"	/>
  	</addmaterial>
 	<addmaterial material="Kapton">
-		<fractionmass	fraction="0.11"	/>
+		<fractionmass	fraction="0.48"	/>
  	</addmaterial>
+	<addmaterial material="EpoxyResin">
+		<fractionmass	fraction="0.22"	/>
+ 	</addmaterial>
+	<real name="density"	value="1.98"	unit="g/cm^3" />
+  </composite>
+
+  <composite name="MylarFilm">
+	<addmaterial material="Mylar">
+		<fractionmass	fraction="0.52"	/>
+ 	</addmaterial>
+	<addmaterial material="EpoxyResin">
+		<fractionmass	fraction="0.48"	/>
+ 	</addmaterial>
+	<real name="density"	value="1.35"	unit="g/cm^3" />
   </composite>
 
   <composite name="chamberMix">
@@ -728,12 +756,23 @@
  	</addmaterial>
   </composite>
 
+  <composite name="BC600epoxy">
+        <addmaterial material="Carbon"> <natoms n="60" /> </addmaterial>
+        <addmaterial material="Hydrogen"> <natoms n="79" /> </addmaterial>
+        <addmaterial material="Oxygen"> <natoms n="3" /> </addmaterial>
+        <addmaterial material="Nitrogen"> <natoms n="2" /> </addmaterial>
+	<real name="density"	value="1.20"	unit="g/cm^3" />
+  </composite>
+
   <composite name="leadScint">
 	<addmaterial material="Scintillator">
-		<fractionmass	fraction="0.15"	/>
+		<fractionmass	fraction="0.104"	/>
  	</addmaterial>
 	<addmaterial material="Lead">
-		<fractionmass	fraction="0.85"	/>
+		<fractionmass	fraction="0.862"	/>
+ 	</addmaterial>
+	<addmaterial material="BC600epoxy">
+		<fractionmass	fraction="0.034"	/>
  	</addmaterial>
   </composite>
 
@@ -756,11 +795,184 @@
 	<real name="density"	value="3.60"	unit="g/cm^3" />
   </composite>
 
-  <composite name="CerenkovGas">          <!-- right now just nitrogen -->
-	<addmaterial material="Nitrogen">
-		<fractionmass	fraction="1.00"	/>
+  <composite name="SiliconDioxide">
+        <addmaterial material="Silicon">  <natoms n="1" /> </addmaterial>
+        <addmaterial material="Oxygen">   <natoms n="2" /> </addmaterial>
+	<real name="density"	value="2.60"	unit="g/cm^3"	/>
+  </composite>
+
+  <composite name="BoricOxide">
+        <addmaterial material="Boron">  <natoms n="2" /> </addmaterial>
+        <addmaterial material="Oxygen"> <natoms n="3" /> </addmaterial>
+	<real name="density"	value="2.46"	unit="g/cm^3"	/>
+  </composite>
+
+  <composite name="SodiumOxide">
+        <addmaterial material="Sodium"> <natoms n="2" /> </addmaterial>
+        <addmaterial material="Oxygen"> <natoms n="1" /> </addmaterial>
+	<real name="density"	value="2.27"	unit="g/cm^3"	/>
+  </composite>
+
+  <composite name="AluminumOxide">
+        <addmaterial material="Aluminum"> <natoms n="2" /> </addmaterial>
+        <addmaterial material="Oxygen">   <natoms n="3" /> </addmaterial>
+	<real name="density"	value="3.97"	unit="g/cm^3"	/>
+  </composite>
+
+  <composite name="IronOxide">
+        <addmaterial material="Iron">    <natoms n="1" /> </addmaterial>
+        <addmaterial material="Oxygen">  <natoms n="1" /> </addmaterial>
+	<real name="density"	value="5.70"	unit="g/cm^3"	/>
+  </composite>
+
+  <composite name="PotassiumOxide">
+        <addmaterial material="Potassium"> <natoms n="2" /> </addmaterial>
+        <addmaterial material="Oxygen">    <natoms n="1" /> </addmaterial>
+	<real name="density"	value="2.35"	unit="g/cm^3"	/>
+  </composite>
+
+  <composite name="BorosilicateGlass">
+	<addmaterial material="SiliconDioxide">
+		<fractionmass	fraction="0.70" />
  	</addmaterial>
-	<real name="density"	value="0.001214"	unit="g/cm^3" />
+        <addmaterial material="BoricOxide">
+		<fractionmass	fraction="0.10" />
+ 	</addmaterial>
+        <addmaterial material="SodiumOxide">
+		<fractionmass	fraction="0.08" />
+ 	</addmaterial>
+        <addmaterial material="PotassiumOxide">
+		<fractionmass	fraction="0.08" />
+ 	</addmaterial>
+        <addmaterial material="AluminumOxide">
+		<fractionmass	fraction="0.025" />
+ 	</addmaterial>
+        <addmaterial material="IronOxide">
+		<fractionmass	fraction="0.015" />
+ 	</addmaterial>
+	<real name="density"	value="2.30"		unit="g/cm^3" />
+  </composite>
+
+  <composite name="EpoxyResin">
+        <addmaterial material="Carbon">   <natoms n="18" /> </addmaterial>
+        <addmaterial material="Hydrogen"> <natoms n="20" /> </addmaterial>
+        <addmaterial material="Oxygen">   <natoms n="3" /> </addmaterial>
+	<real name="density"	value="1.3"		unit="g/cm^3" />
+  </composite>
+
+  <composite name="CerenkovGas">
+	<addmaterial material="Carbon"> <natoms n="4" /> </addmaterial>
+	<addmaterial material="Fluorine"> <natoms n="10" /> </addmaterial>
+	<real name="density"	value="0.01012"	unit="g/cm^3" />
+        <optical_properties>
+	  <specify E="1.50" refindex="1.001331" abslen="10000" effic="0.0" />
+	  <specify E="2.00" refindex="1.001340" abslen="10000" effic="0.0" />
+	  <specify E="2.50" refindex="1.001353" abslen="10000" effic="0.0" />
+	  <specify E="3.00" refindex="1.001368" abslen="10000" effic="0.0" />
+	  <specify E="3.50" refindex="1.001386" abslen="10000" effic="0.0" />
+	  <specify E="4.00" refindex="1.001407" abslen="3000" effic="0.0" />
+	  <specify E="4.50" refindex="1.001430" abslen="2000" effic="0.0" />
+	  <specify E="5.00" refindex="1.001456" abslen="150" effic="0.0" />
+        </optical_properties>
+  </composite>
+
+  <composite name="ThinCerenkovMirror">
+	<addmaterial material="Hydrogen">
+		<natoms n="11"/>
+ 	</addmaterial>
+	<addmaterial material="Carbon">
+		<natoms n="8"/>
+ 	</addmaterial>
+	<addmaterial material="Nitrogen">
+		<natoms n="1"/>
+ 	</addmaterial>
+	<addmaterial material="Oxygen">
+		<natoms n="2"/>
+ 	</addmaterial>
+	<real name="density"	value="0.04"	unit="g/cm^3" />
+        <optical_properties>
+	  <specify E="1.50" reflect="0.98" smooth="1" effic="0.0" />
+	  <specify E="2.00" reflect="0.98" smooth="1" effic="0.0" />
+	  <specify E="2.50" reflect="0.98" smooth="1" effic="0.0" />
+	  <specify E="3.00" reflect="0.95" smooth="1" effic="0.0" />
+	  <specify E="3.50" reflect="0.93" smooth="1" effic="0.0" />
+	  <specify E="4.00" reflect="0.89" smooth="1" effic="0.0" />
+	  <specify E="4.50" reflect="0.80" smooth="1" effic="0.0" />
+	  <specify E="5.00" reflect="0.30" smooth="1" effic="0.0" />
+        </optical_properties>
+  </composite>
+
+  <composite name="ThickCerenkovMirror">
+	<addmaterial material="Hydrogen">
+		<natoms n="11"/>
+ 	</addmaterial>
+	<addmaterial material="Carbon">
+		<natoms n="8"/>
+ 	</addmaterial>
+	<addmaterial material="Nitrogen">
+		<natoms n="1"/>
+ 	</addmaterial>
+	<addmaterial material="Oxygen">
+		<natoms n="2"/>
+ 	</addmaterial>
+	<real name="density"	value="0.20"	unit="g/cm^3" />
+        <optical_properties>
+	  <specify E="1.50" reflect="0.98" smooth="1" effic="0.0" />
+	  <specify E="2.00" reflect="0.98" smooth="1" effic="0.0" />
+	  <specify E="2.50" reflect="0.98" smooth="1" effic="0.0" />
+	  <specify E="3.00" reflect="0.95" smooth="1" effic="0.0" />
+	  <specify E="3.50" reflect="0.93" smooth="1" effic="0.0" />
+	  <specify E="4.00" reflect="0.89" smooth="1" effic="0.0" />
+	  <specify E="4.50" reflect="0.80" smooth="1" effic="0.0" />
+	  <specify E="5.00" reflect="0.30" smooth="1" effic="0.0" />
+        </optical_properties>
+  </composite>
+
+  <composite name="CerenkovPMT">
+	<addmaterial material="BorosilicateGlass">
+		<fractionmass fraction="0.999" />
+ 	</addmaterial>
+	<addmaterial material="Cesium">
+		<fractionmass fraction="0.001" />
+ 	</addmaterial>
+        <optical_properties>
+	  <specify E="1.50" refindex="1.52" abslen="0.001" effic="0.001" />
+	  <specify E="1.60" refindex="1.52" abslen="0.001" effic="0.004" />
+	  <specify E="1.70" refindex="1.52" abslen="0.001" effic="0.008" />
+	  <specify E="1.80" refindex="1.52" abslen="0.001" effic="0.012" />
+	  <specify E="1.90" refindex="1.52" abslen="0.001" effic="0.016" />
+	  <specify E="2.00" refindex="1.52" abslen="0.001" effic="0.019" />
+	  <specify E="2.10" refindex="1.52" abslen="0.001" effic="0.030" />
+	  <specify E="2.20" refindex="1.52" abslen="0.001" effic="0.060" />
+	  <specify E="2.30" refindex="1.52" abslen="0.001" effic="0.090" />
+	  <specify E="2.40" refindex="1.52" abslen="0.001" effic="0.130" />
+	  <specify E="2.50" refindex="1.52" abslen="0.001" effic="0.160" />
+	  <specify E="2.60" refindex="1.52" abslen="0.001" effic="0.190" />
+	  <specify E="2.70" refindex="1.52" abslen="0.001" effic="0.220" />
+	  <specify E="2.80" refindex="1.52" abslen="0.001" effic="0.230" />
+	  <specify E="2.90" refindex="1.52" abslen="0.001" effic="0.240" />
+	  <specify E="3.00" refindex="1.52" abslen="0.001" effic="0.260" />
+	  <specify E="3.10" refindex="1.52" abslen="0.001" effic="0.270" />
+	  <specify E="3.20" refindex="1.52" abslen="0.001" effic="0.270" />
+	  <specify E="3.30" refindex="1.52" abslen="0.001" effic="0.270" />
+	  <specify E="3.40" refindex="1.52" abslen="0.001" effic="0.260" />
+	  <specify E="3.50" refindex="1.52" abslen="0.001" effic="0.250" />
+	  <specify E="3.60" refindex="1.52" abslen="0.001" effic="0.240" />
+	  <specify E="3.70" refindex="1.52" abslen="0.001" effic="0.220" />
+	  <specify E="3.80" refindex="1.52" abslen="0.001" effic="0.190" />
+	  <specify E="3.90" refindex="1.52" abslen="0.001" effic="0.160" />
+	  <specify E="4.00" refindex="1.52" abslen="0.001" effic="0.130" />
+	  <specify E="4.10" refindex="1.52" abslen="0.001" effic="0.100" />
+	  <specify E="4.20" refindex="1.52" abslen="0.001" effic="0.070" />
+	  <specify E="4.30" refindex="1.52" abslen="0.001" effic="0.040" />
+	  <specify E="4.40" refindex="1.52" abslen="0.001" effic="0.030" />
+	  <specify E="4.50" refindex="1.52" abslen="0.001" effic="0.025" />
+	  <specify E="4.60" refindex="1.52" abslen="0.001" effic="0.020" />
+	  <specify E="4.70" refindex="1.52" abslen="0.001" effic="0.015" />
+	  <specify E="4.80" refindex="1.52" abslen="0.001" effic="0.010" />
+	  <specify E="4.90" refindex="1.52" abslen="0.001" effic="0.005" />
+	  <specify E="5.00" refindex="1.52" abslen="0.001" effic="0.002" />
+        </optical_properties>
   </composite>
 
   <composite name="BoronNitride"> 
@@ -802,6 +1014,118 @@
 	<addmaterial material="Copper">
 		<fractionmass	fraction="0.05"	/>
  	</addmaterial>
+  </composite>
+
+  <composite name="StainlessSteel">
+	<addmaterial material="Iron">
+		<fractionmass fraction="0.6996"/>
+ 	</addmaterial>
+	<addmaterial material="Carbon">
+		<fractionmass fraction="0.0004"/>
+ 	</addmaterial>
+	<addmaterial material="Manganese">
+		<fractionmass fraction="0.01"/>
+ 	</addmaterial>
+	<addmaterial material="Chromium">
+		<fractionmass fraction="0.19"/>
+ 	</addmaterial>
+	<addmaterial material="Nickel">
+		<fractionmass fraction="0.10"/>
+ 	</addmaterial>
+        <real name="density"	value="8.02"	unit="g/cm^3"/>
+  </composite>
+
+  <composite name="LowDensityROHACELL">
+	<addmaterial material="Hydrogen">
+		<natoms n="11"/>
+ 	</addmaterial>
+	<addmaterial material="Carbon">
+		<natoms n="8"/>
+ 	</addmaterial>
+	<addmaterial material="Nitrogen">
+		<natoms n="1"/>
+ 	</addmaterial>
+	<addmaterial material="Oxygen">
+		<natoms n="2"/>
+ 	</addmaterial>
+        <real name="density"	value="0.032"	unit="g/cm^3"/>
+  </composite>
+
+  <composite name="HighDensityROHACELL">
+	<addmaterial material="Hydrogen">
+		<natoms n="11"/>
+ 	</addmaterial>
+	<addmaterial material="Carbon">
+		<natoms n="8"/>
+ 	</addmaterial>
+	<addmaterial material="Nitrogen">
+		<natoms n="1"/>
+ 	</addmaterial>
+	<addmaterial material="Oxygen">
+		<natoms n="2"/>
+ 	</addmaterial>
+        <real name="density"	value="0.110"	unit="g/cm^3"/>
+  </composite>
+
+  <composite name="Cellulose">
+	<addmaterial material="Hydrogen">
+		<natoms n="10"/>
+ 	</addmaterial>
+	<addmaterial material="Carbon">
+		<natoms n="6"/>
+ 	</addmaterial>
+	<addmaterial material="Oxygen">
+		<natoms n="5"/>
+ 	</addmaterial>
+        <real name="density"	value="1.10"	unit="g/cm^3"/>
+  </composite>
+
+  <composite name="Delrin">
+	<addmaterial material="Carbon">   <natoms n="1" /></addmaterial>
+	<addmaterial material="Hydrogen"> <natoms n="2" /></addmaterial>
+	<addmaterial material="Oxygen">   <natoms n="1"	/> </addmaterial>
+	<real name="density"	value="1.42"	unit="g/cm^3"	/>
+  </composite>
+
+  <composite name="FR-4">
+	<addmaterial material="BorosilicateGlass">
+                <fractionmass   fraction="0.70"/>
+        </addmaterial>
+	<addmaterial material="EpoxyResin">
+                <fractionmass   fraction="0.30"/>
+        </addmaterial>
+	<real name="density"	value="1.91"	unit="g/cm^3"	/>
+  </composite>
+
+  <composite name="SignalCables">
+	<addmaterial material="Copper">
+                <fractionmass   fraction="0.33" />
+        </addmaterial>
+	<addmaterial material="PVC">
+                <fractionmass   fraction="0.67" />
+        </addmaterial>
+  </composite>
+
+  <composite name="CircuitBoards">
+	<addmaterial material="Polyethylene">
+                <fractionmass   fraction="0.60" />
+        </addmaterial>
+	<addmaterial material="FR-4">
+                <fractionmass   fraction="0.26" />
+        </addmaterial>
+	<addmaterial material="Silicon">
+                <fractionmass   fraction="0.14" />
+        </addmaterial>
+  </composite>
+
+  <composite name="WirePlaneComposite">
+	<addmaterial material="Tungsten">
+                <fractionmass   fraction="0.22" />
+        </addmaterial>
+	<addmaterial material="Aluminum">
+                <fractionmass   fraction="0.78" />
+        </addmaterial>
+	<real name="density"	value="0.0244"	unit="g/cm^3"	/>
   </composite>
 
 </materials>
