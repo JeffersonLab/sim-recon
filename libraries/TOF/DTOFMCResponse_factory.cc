@@ -33,7 +33,7 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
     response->id          = hddmhit->id;
     response->orientation = hddmhit->plane;
     response->end         = hddmhit->end;
-    response->y           = tofGeom.bar2y( hddmhit->paddle, hddmhit->plane );
+    response->y           = tofGeom.bar2y( hddmhit->bar, hddmhit->plane );
     response->t           = hddmhit->t;
     response->E           = hddmhit->dE;
 

@@ -29,14 +29,14 @@ const string DHDDMTOFHit_factory::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("id:  paddle:  plane:   end:        t:     dE:   ");
+	printheader("id:  bar:  plane:   end:        t:     dE:   ");
 
 	for(unsigned int i=0; i<_data.size(); i++){
        	  DHDDMTOFHit *hit = _data[i];
 
 		printnewrow();
 		printcol("%d",		hit->id);
-		printcol("%d",		hit->paddle);
+		printcol("%d",		hit->bar);
 		printcol("%d",		hit->plane);
 		printcol("%d",		hit->end);
 		printcol("%1.3f",	hit->t);

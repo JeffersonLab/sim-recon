@@ -18,7 +18,7 @@ class DHDDMTOFHit:public JObject{
 	
 	int plane;		// plane (0: vertical, 1: horizontal)
 	int end;		// 0: north/top,  1: south/bottom
-	int paddle;		// paddle number
+	int bar;		// bar number
 	float t;		// time of light at end of bar
 	float dE;		// attenuated energy deposition
 };

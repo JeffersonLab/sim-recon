@@ -1040,30 +1040,30 @@ jerror_t DEventSourceHDDM::Extract_DHDDMTOFHit( s_HDDM_t *hddm_s,  JFactory<DHDD
     s_FtofCounter_t *ftofCounter = ftofCounters->in;
     for(unsigned int j=0;j<ftofCounters->mult; j++, ftofCounter++){
 			 
-      // Loop over left (north) hits
-      s_FtofLeftHits_t *ftofLeftHits = ftofCounter->ftofLeftHits;
-      s_FtofLeftHit_t *ftofLeftHit = ftofLeftHits->in;
-      for(unsigned int k=0;k<ftofLeftHits->mult; k++, ftofLeftHit++){
+      // Loop over north hits
+      s_FtofNorthHits_t *ftofNorthHits = ftofCounter->ftofNorthHits;
+      s_FtofNorthHit_t *ftofNorthHit = ftofNorthHits->in;
+      for(unsigned int k=0;k<ftofNorthHits->mult; k++, ftofNorthHit++){
 	DHDDMTOFHit *tofhit = new DHDDMTOFHit;
-	tofhit->paddle	= ftofCounter->paddle;
+	tofhit->bar	= ftofCounter->bar;
 	tofhit->plane	= ftofCounter->plane;
 	tofhit->end		= 0;
-	tofhit->t		= ftofLeftHit->t;
-	tofhit->dE		= ftofLeftHit->dE;
+	tofhit->t		= ftofNorthHit->t;
+	tofhit->dE		= ftofNorthHit->dE;
 	tofhit->id              = id++;
 	data.push_back(tofhit);
       }
 			 
-      // Loop over right (south) hits
-      s_FtofRightHits_t *ftofRightHits = ftofCounter->ftofRightHits;
-      s_FtofRightHit_t *ftofRightHit = ftofRightHits->in;
-      for(unsigned int k=0;k<ftofRightHits->mult; k++, ftofRightHit++){
+      // Loop over south hits
+      s_FtofSouthHits_t *ftofSouthHits = ftofCounter->ftofSouthHits;
+      s_FtofSouthHit_t *ftofSouthHit = ftofSouthHits->in;
+      for(unsigned int k=0;k<ftofSouthHits->mult; k++, ftofSouthHit++){
 	DHDDMTOFHit *tofhit = new DHDDMTOFHit;
-	tofhit->paddle	= ftofCounter->paddle;
+	tofhit->bar	= ftofCounter->bar;
 	tofhit->plane	= ftofCounter->plane;
 	tofhit->end		= 1;
-	tofhit->t		= ftofRightHit->t;
-	tofhit->dE		= ftofRightHit->dE;
+	tofhit->t		= ftofSouthHit->t;
+	tofhit->dE		= ftofSouthHit->dE;
 	tofhit->id              = id++;
 	data.push_back(tofhit);
       }
