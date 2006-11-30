@@ -1408,52 +1408,59 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
                containerS = el->getAttribute(X("divides"));
             }
             XString implrotS(contEl->getAttribute(X("impliedRot")));
+            XString targTagS(targEl->getTagName());
+            XString targEnvS(targEl->getAttribute(X("envelope")));
+            DOMElement* targEnv;
+            if (targEnvS.size() != 0)
+            {
+               targEnv = document->getElementById(X(targEnvS));
+            }
+            else
+            {
+               targEnv = targEl;
+            }
+            XString targProfS(targEnv->getAttribute(X("profile")));
             if (noRotation && (nSiblings == 1) &&
                 (containerS == "pcon" ||
                  containerS == "cons" ||
                  containerS == "tubs") &&
-                 implrotS == "true")
+                (targProfS.size() > 0) &&
+                (implrotS == "true"))
             {
+               double phi1, dphi1;
+               std::stringstream profstr(targProfS);
+               profstr >> phi1 >> dphi1;
+               Units tunit;
+               tunit.getConversions(targEnv);
+               phi1 *= tunit.deg;
+               dphi1 *= tunit.deg;
                static int phiDivisions = 0xd00;
                std::stringstream divStr;
                divStr << "s" << std::setfill('0') << std::setw(3) << std::hex
                       << ++phiDivisions;
                phi0 *= unit.deg/unit.rad;
                dphi *= unit.deg/unit.rad;
-               XString targEnvS(targEl->getAttribute(X("envelope")));
-               DOMElement* targEnv;
-               if (targEnvS.size() != 0)
-               {
-                  targEnv = document->getElementById(X(targEnvS));
-               }
-               else
-               {
-                  targEnv = targEl;
-               }
-               XString profS(targEnv->getAttribute(X("profile")));
-               if ((r == 0) && (profS.size() != 0))
-               {
-                  double phi1, dphi1;
-                  std::stringstream listr(profS);
-                  listr >> phi1 >> dphi1;
-                  Units tunit(unit);
-                  tunit.getConversions(targEnv);
-                  double phiOffset = (phi1 + dphi1/2) * tunit.deg;
-                  drs.fPhiOffset = phiOffset;
-                  phi0 += phiOffset;
-               }
                drs.fPartition.ncopy = ncopy;
                drs.fPartition.iaxis = 2;
-               drs.fPartition.start = phi0 - dphi/2 - myRef.fPhiOffset;
+               drs.fPartition.start = phi0 + phi1 - myRef.fPhiOffset;
                drs.fPartition.step = dphi;
                XString divS(divStr.str());
                createDivision(divS, drs);
                drs.fMother = drs.fPartition.divEl;
                targEl->setAttribute(X("divides"),X(containerS));
+               drs.reset();
+
+               double phioffset = phi1 + dphi/2;
+               if (fabs(phioffset) > 0.001)
+               {
+                  angle[0] = 0;
+                  angle[1] = 0;
+                  angle[2] = -phioffset*unit.rad/unit.deg;
+                  drs.rotate(angle);
+               }
                origin[0] = r;
                origin[1] = s;
                origin[2] = z;
-               drs.reset();
                drs.shift(origin);
                createVolume(targEl,drs);
             }
@@ -1900,11 +1907,19 @@ void CodeWriter::createTrailer()
 {
 }
 
+void CodeWriter::createSetFunctions(DOMElement* el, const XString& ident)
+{
+}
+
 void CodeWriter::createGetFunctions(DOMElement* el, const XString& ident)
 {
 }
 
 void CodeWriter::createMapFunctions(DOMElement* el, const XString& ident)
+{
+}
+
+void CodeWriter::createUtilityFunctions(DOMElement* el, const XString& ident)
 {
 }
 
@@ -1915,8 +1930,19 @@ void CodeWriter::translate(DOMElement* topel)
    createVolume(topel,mrs);
    createTrailer();
 
-   XString::size_type start;
-   XString::size_type stop;
+   DOMNodeList* propL = topel->getOwnerDocument()
+                             ->getElementsByTagName(X("optical_properties"));
+   for (int iprop=0; iprop < propL->getLength(); ++iprop)
+   {
+      DOMElement* propEl = (DOMElement*)propL->item(iprop);
+      DOMElement* matEl = (DOMElement*)propEl->getParentNode();
+      XString imateS(matEl->getAttribute(X("HDDSmate")));
+      if (imateS.size() > 0)
+      {
+         createSetFunctions(propEl,imateS);
+      }
+   }
+
    std::map<std::string,Refsys::VolIdent>::iterator iter;
    for (iter = mrs.fIdentifiers.begin();
         iter != mrs.fIdentifiers.end(); ++iter)
@@ -1927,6 +1953,8 @@ void CodeWriter::translate(DOMElement* topel)
    DOMNodeList* regionsL = topel->getOwnerDocument()
                                 ->getElementsByTagName(X("regions"));
    createMapFunctions((DOMElement*)regionsL->item(0),XString("map"));
+
+   createUtilityFunctions(topel,XString("user"));
 }
 
 void CodeWriter::dump(DOMElement* el, int level=0) // useful debug function
