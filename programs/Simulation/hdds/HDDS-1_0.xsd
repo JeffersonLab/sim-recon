@@ -7,9 +7,9 @@
 <!-- HDDS: HALL D Geometric Detector Specification
      =============================================
 
-     Version:   1.0
+     Version:   1.1
      Release:   1.0
-     Date   :   January 25, 2005
+     Date   :   November 25, 2006
      
      This xml schema defines the structure and syntax for
      Hall D Geometric Detector Specification xml files. 
@@ -62,12 +62,12 @@
             specification : version of the materials tag schema
 
   o Materials can be elements or composites.
-  o elements are identified using a long name. Attributes are
+  o Elements are identified using a long name. Attributes are
 
             symbol      : the conventional symbol name
             z           : mean number of protons
             a           : atomic weight
-  o composites are identified using a long name and provide a density (g/ml).
+  o Composites are identified using a long name and provide a density (g/ml).
     They are made of a set of addmaterial elements, each with attributes
 
             material     : an IDREF to an already defined material or element
@@ -75,7 +75,7 @@
                            (use for both materials and elements).
             natoms       : the number of atoms of this element in the composite
                            (elements only).  Use either natoms or fractionmass.
-  o contents of elements and composites are a sequence of parameters with
+  o Contents of elements and composites are a sequence of parameters with
     names taken from the following list.  Any element that is valid within
     a parameter block (see section 1.3) is allowed.
 
@@ -84,6 +84,19 @@
             collen      : nuclear collision length   (g/cm^2)
             abslen      : nuclear interaction length (g/cm^2)
             dedx        : minimum-ionization dE/dx   (MeV/g/cm^2)
+  o Elements and composites may have optical properties associated with
+    them which indicate how optical photons (ie. visible light) interacts
+    with the  material.  Optical properties are enclosed within the
+    optical_properties container element.  They are specified as a list of
+    specify elements.  If optical_properties is present, it must enclose at
+    least two specify elements.  The arguments to specify are as follows.
+
+           E        : photon energy (eV, required)
+           refindex : refractive index (required for dielectrics, default 0)
+           abslen   : absorption length (cm, dielectrics only, default 0)
+           effic    : detection efficiency (meaning is user defined, default 0)
+           reflect  : reflection coefficient (metals only, default 0)
+           smooth   : smoothness parameter (1=perfect, 0=rough, default 1)
 
 1.2) Sections
 ==============
@@ -1270,6 +1283,12 @@
   <xs:list itemType="xs:float"/>
 </xs:simpleType>
 
+<xs:simpleType name="positiveFloat">
+  <xs:restriction base="xs:float">
+    <xs:minExclusive value="0"/>
+  </xs:restriction>
+</xs:simpleType>
+
 <xs:element name="HDDS">
   <xs:complexType>
     <xs:sequence>
@@ -1413,6 +1432,7 @@
     <xs:sequence>
       <xs:element ref="addmaterial" minOccurs="1" maxOccurs="unbounded"/>
       <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element ref="optical_properties" minOccurs="0"/>
     </xs:sequence>
 
     <xs:attribute name="name" use="required" type="xs:ID"/>
@@ -1474,7 +1494,10 @@
 
 <xs:element name="element">
   <xs:complexType>
-    <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    <xs:sequence>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element ref="optical_properties" minOccurs="0"/>
+    </xs:sequence>
 
     <xs:attribute name="a" use="required" type="xs:float"/>
     <xs:attribute name="name" use="required" type="xs:ID"/>
@@ -1745,7 +1768,7 @@
       </xs:simpleType>
     </xs:attribute>
     <xs:attribute name="S" default="0" type="xs:float"/>
-    <xs:attribute name="dPhi" type="xs:float"/>
+    <xs:attribute name="dPhi" type="positiveFloat"/>
     <xs:attribute name="impliedRot" default="true" type="trueFalse"/>
     <xs:attribute name="ncopy" use="required" type="xs:positiveInteger"/>
     <xs:attribute name="rot" default="0 0 0">
@@ -1784,7 +1807,7 @@
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
-    <xs:attribute name="dR" use="required" type="xs:float"/>
+    <xs:attribute name="dR" use="required" type="positiveFloat"/>
     <xs:attribute name="ncopy" use="required" type="xs:positiveInteger"/>
     <xs:attribute name="rot" default="0 0 0">
       <xs:simpleType>
@@ -1822,7 +1845,7 @@
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
-    <xs:attribute name="dX" use="required" type="xs:float"/>
+    <xs:attribute name="dX" use="required" type="positiveFloat"/>
     <xs:attribute name="ncopy" use="required" type="xs:positiveInteger"/>
     <xs:attribute name="rot" default="0 0 0">
       <xs:simpleType>
@@ -1860,7 +1883,7 @@
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
-    <xs:attribute name="dY" use="required" type="xs:float"/>
+    <xs:attribute name="dY" use="required" type="positiveFloat"/>
     <xs:attribute name="ncopy" use="required" type="xs:positiveInteger"/>
     <xs:attribute name="rot" default="0 0 0">
       <xs:simpleType>
@@ -1899,7 +1922,7 @@
       </xs:simpleType>
     </xs:attribute>
     <xs:attribute name="Z0" default="0" type="xs:float"/>
-    <xs:attribute name="dZ" use="required" type="xs:float"/>
+    <xs:attribute name="dZ" use="required" type="positiveFloat"/>
     <xs:attribute name="ncopy" use="required" type="xs:positiveInteger"/>
     <xs:attribute name="rot" default="0 0 0">
       <xs:simpleType>
@@ -1983,7 +2006,7 @@
     <xs:attribute name="segments" use="required">
       <xs:simpleType>
         <xs:restriction base="xs:int">
-          <xs:minInclusive value="3"/>
+          <xs:minInclusive value="1"/>
         </xs:restriction>
       </xs:simpleType>
     </xs:attribute>
@@ -2166,6 +2189,66 @@
     <xs:element ref="reference_vector"/>
   </xs:choice>
 </xs:group>
+
+<xs:element name="specify">
+  <xs:complexType>
+    <xs:attribute name="E" use="required">
+      <xs:simpleType>
+        <xs:restriction base="xs:float">
+          <xs:minInclusive value="0"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="refindex" default="0">
+      <xs:simpleType>
+        <xs:restriction base="xs:float">
+          <xs:minInclusive value="0"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="abslen" default="0">
+      <xs:simpleType>
+        <xs:restriction base="xs:float">
+          <xs:minInclusive value="0"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="effic" default="0">
+      <xs:simpleType>
+        <xs:restriction base="xs:float">
+          <xs:minInclusive value="0"/>
+          <xs:maxInclusive value="1"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="reflect" default="0">
+      <xs:simpleType>
+        <xs:restriction base="xs:float">
+          <xs:minInclusive value="0"/>
+          <xs:maxInclusive value="1"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="smooth" default="0">
+      <xs:simpleType>
+        <xs:restriction base="xs:float">
+          <xs:minInclusive value="0"/>
+          <xs:maxInclusive value="1"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="optical_properties">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="specify" minOccurs="2" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="comment" type="xs:string"/>
+  </xs:complexType>
+</xs:element>
 
 <xs:element name="reference">
   <xs:complexType>
