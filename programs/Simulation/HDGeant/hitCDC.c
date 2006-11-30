@@ -36,10 +36,10 @@ void hitCentralDC (float xin[4], float xout[4],
    float x[3], t;
    float dx[3], dr;
    float dEdx;
-   float xlocal[3]
-   float xinlocal[3]
-   float xoutlocal[3]
-   float dradius,drin,drout
+   float xlocal[3];
+   float xinlocal[3];
+   float xoutlocal[3];
+   float dradius,drin,drout;
 
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
@@ -79,7 +79,7 @@ void hitCentralDC (float xin[4], float xout[4],
       dradius = drout;
       t = xout[3]*1e9;
    }
-   else if (fabs(docaout-docain) > 0.01)
+   else if (fabs(drout-drin) > 0.01)
    {
    /* Particle exited from end of the straw.
     *
@@ -98,41 +98,41 @@ void hitCentralDC (float xin[4], float xout[4],
     * is to be calculated once alpha is determined.
     *
     * We solve for alpha by setting the transverse
-    * distance of xout_local to docain, the radius
+    * distance of xout_local to drin, the radius
     * of the tube. This leads to an equation quadratic
     * in alpha.  */
 
-      float alpha
+      float alpha;
       float A,B,C;
       float trackdir[3];
       float xoutlocal_i[3], xout_i[3];
-      float docaout_i;
+      float docaout;
       transformCoord(dx,"global",trackdir,"local");
       A = trackdir[0]*trackdir[0] + trackdir[1]*trackdir[1];
       B = 2.0*(trackdir[0]*xinlocal[0] + trackdir[1]*xinlocal[1]);
-      C = docain*docain + xinlocal[0]*xinlocal[0] + xinlocal[1]*xinlocal[1];
+      C = drin*drin + xinlocal[0]*xinlocal[0] + xinlocal[1]*xinlocal[1];
       
       alpha = (-B + sqrt(B*B - 4.0*A*C))/(2.0*A);
       xoutlocal_i[0] = xinlocal[0] + alpha*trackdir[0];
       xoutlocal_i[1] = xinlocal[1] + alpha*trackdir[1];
       xoutlocal_i[2] = xinlocal[2] + alpha*trackdir[2];
-      docaout_i = sqrt(xoutlocal_i[0]*xoutlocal_i[0]
+      docaout = sqrt(xoutlocal_i[0]*xoutlocal_i[0]
                      + xoutlocal_i[1]*xoutlocal_i[1]);
       transformCoord(xoutlocal_i,"local",xout_i,"global");
       
     /* Check which is the smallest DOCA and copy that into
      * dradius so it will be used for the drift time below.  */
-      if (docaout < dradius)
+      if (drout < dradius)
       {
-         dradius = docaout;
+         dradius = drout;
          x[0]=xoutlocal[0];
          x[1]=xoutlocal[1];
          x[2]=xoutlocal[2];
          t = xout[3]*1e9;
       }
-      if (docaout_i < dradius)
+      if (docaout < dradius)
       {
-         dradius = docaout_i;
+         dradius = docaout;
          x[0]=xoutlocal_i[0];
          x[1]=xoutlocal_i[1];
          x[2]=xoutlocal_i[2];
