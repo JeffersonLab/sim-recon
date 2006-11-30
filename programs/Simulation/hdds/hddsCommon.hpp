@@ -254,10 +254,14 @@ class CodeWriter
                             Refsys& ref);	// generate code for placement
    virtual int createDivision(XString& divStr,
                               Refsys& ref);	// generate code for divisions
+   virtual void createSetFunctions(DOMElement* el,
+                         const XString& ident);	// generate property setters
    virtual void createGetFunctions(DOMElement* el,
                          const XString& ident);	// generate identifier lookups
    virtual void createMapFunctions(DOMElement* el,
                          const XString& ident);	// generate field map functions
+   virtual void createUtilityFunctions(DOMElement* el,
+			 const XString& ident);	// generate utility functions
 
  protected:
    bool fPending;       // indicates a volume positioning request is pending
