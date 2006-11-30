@@ -4,6 +4,10 @@
  *                   GEANT-3 geometry description in the form of a
  *                   fortran subroutine.
  *
+ *  Revision - Richard Jones, November 25, 2006.
+ *   -added output of optical properties for materials with optical
+ *    properties defined
+ *
  *  Revision - Richard Jones, January 25, 2005.
  *   -added the sphere section as a new supported volume type
  *
@@ -77,10 +81,14 @@ class FortranWriter : public CodeWriter
                     Refsys& ref);  	 // generate code for placement
    int createDivision(XString& divStr,
                       Refsys& ref);	 // generate code for divisions
+   void createSetFunctions(DOMElement* el,
+                  const XString& ident); // generate code for properties
    void createGetFunctions(DOMElement* el,
                   const XString& ident); // generate code for identifiers
    void createMapFunctions(DOMElement* el,
                   const XString& ident); // generate code for field maps
+   void createUtilityFunctions(DOMElement* el,
+                  const XString& ident); // generate utility functions
 };
 
 
@@ -313,6 +321,13 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
         << std::endl
         << "     +            stemax,deemax,epsil,stmin,ubuf,nwbuf)"
         << std::endl;
+
+   DOMElement* matEl = el->getOwnerDocument()->getElementById(X(matS));
+   DOMNodeList* propList = matEl->getElementsByTagName(X("optical_properties"));
+   if (propList->getLength() > 0)
+   {
+      std::cout << "      call setoptical" << imate << "(itmed)" << std::endl;
+   }
 
    Units unit;
    unit.getConversions(el);
@@ -779,6 +794,184 @@ void FortranWriter::createTrailer()
    CodeWriter::createTrailer();
 
    std::cout << "      end"                                       << std::endl;
+#ifdef LINUX_CPUTIME_PROFILING
+   timestr << " ( " << timer.getUserDelta() << " ) ";
+   std::cerr << timestr.str() << std::endl;
+#endif
+}
+
+void FortranWriter::createSetFunctions(DOMElement* el, const XString& ident)
+{
+#ifdef LINUX_CPUTIME_PROFILING
+   std::stringstream timestr;
+   timestr << "createSetFunctions: " << timer.getUserTime() << ", "
+           << timer.getSystemTime() << ", " << timer.getRealTime();
+   timer.resetClocks();
+#endif
+   CodeWriter::createSetFunctions(el,ident);
+
+   DOMNodeList* specL = el->getElementsByTagName(X("specify"));
+   int len = specL->getLength();
+   XString subNameStr;
+   subNameStr = "setoptical" + ident;
+   std::cout
+        << std::endl
+        << "      subroutine " << subNameStr << "(itmed)" << std::endl
+        << "      implicit none" << std::endl
+        << "      integer itmed" << std::endl
+        << "      integer nbins" << std::endl
+        << "      real Ephot(" << len << ")" << std::endl
+        << "      real abslen(" << len << ")" << std::endl
+        << "      real effic(" << len << ")" << std::endl
+        << "      real rindex(" << len << ")" << std::endl
+        << "      real smooth(" << len << ")" << std::endl
+        << "      real refloss(" << len << ")" << std::endl
+        << "      common /optical" << ident
+        << "/nbins,Ephot,rindex,abslen,refloss,smooth,effic" << std::endl
+        << "      integer i" << std::endl
+        << "      data nbins/" << len << "/" << std::endl;
+
+   std::vector<double> Ephot;
+   std::vector<double> abslen;
+   std::vector<double> effic;
+   std::vector<double> rindex;
+   std::vector<double> smooth;
+   std::vector<double> reflect;
+   for (int i=0; i < len; ++i)
+   {
+      DOMElement* specEl = (DOMElement*)specL->item(i);
+      XString valS;
+      valS = specEl->getAttribute(X("E"));
+      Ephot.push_back(atof(S(valS)));
+      valS = specEl->getAttribute(X("refindex"));
+      rindex.push_back(atof(S(valS)));
+      valS = specEl->getAttribute(X("abslen"));
+      abslen.push_back(atof(S(valS)));
+      valS = specEl->getAttribute(X("smooth"));
+      smooth.push_back(atof(S(valS)));
+      valS = specEl->getAttribute(X("reflect"));
+      reflect.push_back(atof(S(valS)));
+      valS = specEl->getAttribute(X("effic"));
+      effic.push_back(atof(S(valS)));
+   }
+   std::stringstream Ephotstr;
+   std::stringstream rindexstr;
+   std::stringstream abslenstr;
+   std::stringstream smoothstr;
+   std::stringstream reflosstr;
+   std::stringstream efficstr;
+   for (int i=0; i < len; ++i)
+   {
+      if (i % 60 == 0)
+      {
+         int ilimit = i + 60;
+         ilimit = (ilimit > len)? len : ilimit;
+         Ephotstr  << "      data (Ephot(i),i=" << i + 1 << "," << ilimit
+                   << ") /" << std::endl;
+         rindexstr << "      data (rindex(i),i=" << i + 1 << "," << ilimit
+                   << ") /" << std::endl;
+         abslenstr << "      data (abslen(i),i=" << i + 1 << "," << ilimit
+                   << ") /" << std::endl;
+         smoothstr << "      data (smooth(i),i=" << i + 1 << "," << ilimit
+                   << ") /" << std::endl;
+         reflosstr << "      data (refloss(i),i=" << i + 1 << "," << ilimit
+                   << ") /" << std::endl;
+         efficstr  << "      data (effic(i),i=" << i + 1 << "," << ilimit
+                   << ") /" << std::endl;
+      }
+      if (i % 6 == 0)
+      {
+         Ephotstr  << "     + ";
+         rindexstr << "     + ";
+         abslenstr << "     + ";
+         smoothstr << "     + ";
+         reflosstr << "     + ";
+         efficstr  << "     + ";
+      }
+      Ephotstr  << Ephot[i]*1e-9;
+      rindexstr << rindex[i];
+      abslenstr << abslen[i];
+      smoothstr << smooth[i];
+      reflosstr << 1-reflect[i];
+      efficstr  << effic[i];
+      if ((i == len-1) || (i % 60 == 59))
+      {
+         Ephotstr  << "/" << std::endl;
+         rindexstr << "/" << std::endl;
+         abslenstr << "/" << std::endl;
+         smoothstr << "/" << std::endl;
+         reflosstr << "/" << std::endl;
+         efficstr  << "/" << std::endl;
+      }
+      else if (i % 6 == 5)
+      {
+         Ephotstr  << "," << std::endl;
+         rindexstr << "," << std::endl;
+         abslenstr << "," << std::endl;
+         smoothstr << "," << std::endl;
+         reflosstr << "," << std::endl;
+         efficstr  << "," << std::endl;
+      }
+      else
+      {
+         Ephotstr  << ",";
+         rindexstr << ",";
+         abslenstr << ",";
+         smoothstr << ",";
+         reflosstr << ",";
+         efficstr  << ",";
+      }
+   }
+   std::cout << Ephotstr.str()
+             << rindexstr.str()
+             << abslenstr.str()
+             << smoothstr.str()
+             << reflosstr.str()
+             << efficstr.str()
+             << "      call GSCKOV(itmed,nbins,Ephot,"
+             << ((rindex[0] < 1)? "refloss" : "abslen")
+             << ",effic,rindex)" << std::endl
+             << "      end"
+             << std::endl;
+
+   subNameStr = "getoptical" + ident;
+   std::cout
+        << std::endl
+        << "      subroutine " << subNameStr
+        << "(E,refl,absl,rind,plsh,eff)" << std::endl
+        << "      implicit none" << std::endl
+        << "      real E,refl,absl,rind,plsh,eff" << std::endl
+        << "      integer n" << std::endl
+        << "      real x" << std::endl
+        << "      integer nbins" << std::endl
+        << "      real Ephot(" << len << ")" << std::endl
+        << "      real abslen(" << len << ")" << std::endl
+        << "      real effic(" << len << ")" << std::endl
+        << "      real rindex(" << len << ")" << std::endl
+        << "      real smooth(" << len << ")" << std::endl
+        << "      real refloss(" << len << ")" << std::endl
+        << "      common /optical" << ident
+        << "/nbins,Ephot,rindex,abslen,refloss,smooth,effic" << std::endl
+        << "      do n=1,nbins" << std::endl
+        << "        if (E.lt.Ephot(n)) go to 10" << std::endl
+        << "      enddo" << std::endl
+        << "   10 continue" << std::endl
+        << "      if (n.eq.1.or.n.gt.nbins) then" << std::endl
+        << "        refl = 0" << std::endl
+        << "        absl = 0" << std::endl
+        << "        rind = 0" << std::endl
+        << "        plsh = 1" << std::endl
+        << "        eff = 0" << std::endl
+        << "      else" << std::endl
+        << "        x = (E-Ephot(n-1))/(Ephot(n)-Ephot(n-1))" << std::endl
+        << "        refl = (1-x)*refloss(n-1)+x*refloss(n)" << std::endl
+        << "        absl = (1-x)*abslen(n-1)+x*abslen(n)" << std::endl
+        << "        rind = (1-x)*rindex(n-1)+x*rindex(n)" << std::endl
+        << "        plsh = (1-x)*smooth(n-1)+x*smooth(n)" << std::endl
+        << "        eff = (1-x)*effic(n-1)+x*effic(n)" << std::endl
+        << "      endif" << std::endl
+        << "      end" << std::endl;
+
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
    std::cerr << timestr.str() << std::endl;
@@ -1450,6 +1643,77 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
            <<              "+ugrad(3,3)*dur(3)" << std::endl
            << "      end" << std::endl;
    }
+#ifdef LINUX_CPUTIME_PROFILING
+   timestr << " ( " << timer.getUserDelta() << " ) ";
+   std::cerr << timestr.str() << std::endl;
+#endif
+}
+
+void FortranWriter::createUtilityFunctions(DOMElement* el, const XString& ident)
+{
+#ifdef LINUX_CPUTIME_PROFILING
+   std::stringstream timestr;
+   timestr << "createUtilityFunctions: " << timer.getUserTime() << ", "
+           << timer.getSystemTime() << ", " << timer.getRealTime();
+   timer.resetClocks();
+#endif
+   CodeWriter::createUtilityFunctions(el, ident);
+
+   std::cout
+        << std::endl
+        << "      subroutine getoptical"
+        << "(imat,E,refl,absl,rind,plsh,eff)" << std::endl
+        << "      implicit none" << std::endl
+        << "      integer imat" << std::endl
+        << "      real E,refl,absl,rind,plsh,eff" << std::endl
+        << "      ";
+
+   DOMNodeList* propL = el->getOwnerDocument()
+                          ->getElementsByTagName(X("optical_properties"));
+   for (int iprop=0; iprop < propL->getLength(); ++iprop)
+   {
+      DOMElement* propEl = (DOMElement*)propL->item(iprop);
+      DOMElement* matEl = (DOMElement*)propEl->getParentNode();
+      XString imateS(matEl->getAttribute(X("HDDSmate")));
+      if (imateS.size() > 0)
+      {
+         int imate = atoi(S(imateS));
+         std::cout
+            << "if (imat.eq." << imate << ") then" << std::endl
+            << "        call getoptical" << imate
+            << "(E,refl,absl,rind,plsh,eff)" << std::endl
+            << "      else";
+      }
+   }
+   std::cout
+        << std::endl
+        << "        refl = 0" << std::endl
+        << "        absl = 0" << std::endl
+        << "        rind = 0" << std::endl
+        << "        plsh = 1" << std::endl
+        << "        eff = 0" << std::endl
+        << "      endif" << std::endl
+        << "      end" << std::endl;
+
+   std::cout
+        << std::endl
+        << "      subroutine guplsh(medi0,medi1)" << std::endl
+        << "      implicit none" << std::endl
+        << "      integer medi0,medi1" << std::endl
+        << "      real E,refl,absl,rind,plsh,eff" << std::endl
+        << "      integer nmat" << std::endl
+        << "      character*20 natmed" << std::endl
+        << "      integer isvol,ifield" << std::endl
+        << "      real fieldm,tmaxfd,stemax,deemax,epsil,stmin" << std::endl
+        << "      integer nwbuf" << std::endl
+        << "      real ubuf(99)" << std::endl
+        << "      call GFTMED(medi1,"
+        << "natmed,nmat,isvol,ifield,fieldm," << std::endl
+        << "     +  tmaxfd,stemax,deemax,epsil,stmin,ubuf,nwbuf)" << std::endl
+        << "      E = 2.5" << std::endl
+        << "      call getoptical(nmat,E,refl,absl,rind,plsh,eff)" << std::endl
+        << "      end" << std::endl;
+
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
    std::cerr << timestr.str() << std::endl;
