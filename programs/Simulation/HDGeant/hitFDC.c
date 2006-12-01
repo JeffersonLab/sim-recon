@@ -24,10 +24,10 @@ const float Tau[] = {0,-45,0,45,15,60,105,-105,-60,-15};
 #define TWO_HIT_RESOL         250.
 #define WIRES_PER_PLANE       96
 #define WIRE_SPACING          1.116
-#define U_OF_WIRE_ZERO        (-(WIRES_PER_PLANE*WIRE_SPACING-1.)/2)
-#define STRIPS_PER_PLANE      192
-#define STRIP_SPACING         0.558
-#define U_OF_STRIP_ZERO		  (-(STRIPS_PER_PLANE*STRIP_SPACING)/2)
+#define U_OF_WIRE_ZERO        (-((WIRES_PER_PLANE-1.)*WIRE_SPACING)/2)
+#define STRIPS_PER_PLANE      216
+#define STRIP_SPACING         0.5
+#define U_OF_STRIP_ZERO		  (-((STRIPS_PER_PLANE-1.)*STRIP_SPACING)/2)
 #define STRIP_GAP             0.1
 #define MAX_HITS             100
 #define K2                  1.15
@@ -168,7 +168,7 @@ void hitForwardDC (float xin[4], float xout[4],
       if (fabs(x1[2]-xinlocal[2]) > fabs(xoutlocal[2]-xinlocal[2]))
       {
         x1[0] = xoutlocal[0];
-        x1[1] = xoutlocal[0];
+        x1[1] = xoutlocal[1];
         x1[2] = xoutlocal[2];
       }
       u[0] = xinlocal[2];
