@@ -65,7 +65,7 @@ install: all
 	mkdir -p $(INSTALL_DIR)/bin/$(OSNAME)
 	install -p $(EXE_PATHNAMES) $(INSTALL_DIR)/bin/$(OSNAME)
 
-relink: exec_clean all
+relink: exec_clean install
 
 clean:
 	rm -rf $(BIN_DIR) $(OBJ_DIR) $(DEP_DIR) $(DICT_FILES) *.o *.bak *~ core last.kumac*  #*# 
