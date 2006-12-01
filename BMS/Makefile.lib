@@ -10,7 +10,10 @@ include $(HALLD_HOME)/src/BMS/Makefile.common
 
 VPATH = $(DEP_DIR)
 
-# First rule. Make sure directories and dependancy files exist
+# First rule. 
+first: install
+
+#Make sure directories and dependancy files exist
 all: mkdirs $(DEPS) $(LIBNAME)($(OBJS))
 	@rm -f $(DICT_FILES)
 ifeq ($(OSNAME),Darwin)
