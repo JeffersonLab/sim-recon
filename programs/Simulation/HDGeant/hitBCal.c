@@ -31,8 +31,8 @@
 #include <geant3.h>
 #include <bintree.h>
 
-#define ATTEN_LENGTH	150.
-#define C_EFFECTIVE	15.
+#define ATTEN_LENGTH	300.
+#define C_EFFECTIVE	16.75
 #define THRESH_MEV	10.
 #define TWO_HIT_RESOL	50.
 #define MAX_HITS 	100
