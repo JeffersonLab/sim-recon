@@ -27,7 +27,7 @@ m_numActiveBlocks( 0 )
 			
 			// transform to beam axis
 			m_positionOnFace[row][col] = 
-			   TVector2( ( col + .5 - kBlocksWide / 2.0 ) * blockSize(),
+			   TVector2( - ( col + .5 - kBlocksWide / 2.0 ) * blockSize(),
 					     ( row + .5 - kBlocksTall / 2.0 ) * blockSize() );
 			
 			double thisRadius = m_positionOnFace[row][col].Mod();
