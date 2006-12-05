@@ -98,6 +98,9 @@ class DTrack_factory:public JFactory<DTrack>{
 		int max_swim_steps_ls;
 		bool hit_based;
 		bool DEBUG_HISTS;
+		bool USE_CDC;
+		bool USE_FDC_ANODE;
+		bool USE_FDC_CATHODE;
 		
 		TH3F *cdcdoca_vs_dist_vs_ring;
 		TH2F *cdcdoca_vs_dist;

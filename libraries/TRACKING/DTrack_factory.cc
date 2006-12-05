@@ -21,6 +21,8 @@
 #include "FDC/DFDCPseudo.h"
 #include "DReferenceTrajectory.h"
 
+#define NaN std::numeric_limits<double>::quiet_NaN()
+
 bool CDCTrkHitSort_C(DTrack_factory::cdc_hit_on_track_t const &hit1, DTrack_factory::cdc_hit_on_track_t const &hit2) {
 	// These swim steps come from the same array so the addresses of the swim_step
 	// structures should be sequential, starting with closest to the target.
@@ -58,9 +60,15 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 	
 	MAX_HIT_DIST = 10.0; // cm
 	DEBUG_HISTS = false;
+	USE_CDC = true;
+	USE_FDC_ANODE = true;
+	USE_FDC_CATHODE = true;
 	
 	jparms.SetDefaultParameter("TRK:MAX_HIT_DIST",	MAX_HIT_DIST);
 	jparms.SetDefaultParameter("TRK:DEBUG_HISTS",	DEBUG_HISTS);
+	jparms.SetDefaultParameter("TRK:USE_CDC",			USE_CDC);
+	jparms.SetDefaultParameter("TRK:USE_FDC_ANODE",	USE_FDC_ANODE);
+	jparms.SetDefaultParameter("TRK:USE_FDC_CATHODE",USE_FDC_CATHODE);
 	
 	jparms.GetParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
 	
@@ -348,7 +356,8 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 		}
 
 		// NOTE: Sometimes we push nan or large values on here
-		chisqv.push_back(dist - doca);
+		double resi = dist - doca;
+		chisqv.push_back(USE_CDC ? resi:NaN);
 		sigmav.push_back(sigma);
 	}
 	
@@ -375,16 +384,15 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 		}
 
 		// NOTE: Sometimes we push nan or large values on here
-		//chisqv.push_back(dist - doca);
-		chisqv.push_back(dist - doca);
-//chisqv.push_back(std::numeric_limits<double>::quiet_NaN());
+		double resi = dist - doca;
+		chisqv.push_back(USE_FDC_ANODE ? resi:NaN);
 		sigmav.push_back(sigma);
 		
 		// For the FDC we also have a measurement along the wire
 		// which we include as a separate measurement
 		double u = rt->GetLastDistAlongWire();
-		chisqv.push_back(u - hit.fdchit->s);
-//chisqv.push_back(std::numeric_limits<double>::quiet_NaN());
+		resi = u - hit.fdchit->s;
+		chisqv.push_back(USE_FDC_CATHODE ? resi:NaN);
 		sigmav.push_back(0.0200); // 200 um
 		
 	}
@@ -495,7 +503,7 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 		Ngood++;
 	}
 	if(Ngood<3){
-		cout<<__FILE__<<":"<<__LINE__<<" Bad number of good distance calculations!"<<endl;
+		//cout<<__FILE__<<":"<<__LINE__<<" Bad number of good distance calculations!"<<endl;
 		return 1.0E6;
 	}
 
