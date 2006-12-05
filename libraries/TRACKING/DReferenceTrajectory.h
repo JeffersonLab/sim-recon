@@ -60,6 +60,8 @@ class DReferenceTrajectory{
 		double DistToRTBruteForce(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
 		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire);
 		void Reswim(const TVector3 &pos, const TVector3 &mom);
+		TVector3 GetLastDOCAPoint(void);
+		double GetLastDistAlongWire(void){return last_dist_along_wire;}
 
 		swim_step_t *swim_steps;
 		int Nswim_steps;
@@ -71,6 +73,10 @@ class DReferenceTrajectory{
 		bool own_swim_steps;
 		double step_size;
 		const DMagneticFieldMap *bfield;
+		
+		double last_phi;							///< last phi found in DistToRT
+		const swim_step_t* last_swim_step;	///< last swim step used in DistToRT
+		double last_dist_along_wire;
 	
 	private:
 		DReferenceTrajectory(){} // force use of constructor with arguments.

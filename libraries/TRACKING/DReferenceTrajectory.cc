@@ -509,7 +509,9 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 		double phi1 = (-b + sqrt(b*b - 4.0*a*c))/(2.0*a); 
 		double phi2 = (-b - sqrt(b*b - 4.0*a*c))/(2.0*a);
 		phi = fabs(phi1)<fabs(phi2) ? phi1:phi2;
+		u=L_over_2;
 	}
+	this->last_dist_along_wire = u;
 
 	// Sometimes the "d" used in solving the 3rd order polynmial above 
 	// can be nan due to the sqrt argument being negative. I'm not sure
@@ -530,6 +532,10 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	double Rodphi = Ro*phi;
 	double ds = sqrt(dz*dz + Rodphi*Rodphi);
 	if(s)*s=step->s + (phi>0.0 ? ds:-ds);
+	
+	// Remember phi and step so additional info on the point can be obtained
+	this->last_phi = phi;
+	this->last_swim_step = step;
 
 	return d; // WARNING: This could return nan!
 }
@@ -576,10 +582,12 @@ double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, c
 		if(d2<min_d2){
 			min_d2 = d2;
 			phi = myphi;
+			this->last_phi = myphi;
 		}
 	}
 	double d2 = min_d2;
 	double d = sqrt(d2);
+	this->last_swim_step = step;
 	
 	// Calculate distance along track ("s")
 	double dz = dz_dphi*phi;
@@ -590,4 +598,25 @@ double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, c
 	return d;
 }
 
+//------------------
+// GetLastDOCAPoint
+//------------------
+TVector3 DReferenceTrajectory::GetLastDOCAPoint(void)
+{
+	/// Use values saved by the last call to one of the DistToRT functions
+	/// to calculate the 3-D DOCA position in lab coordinates. This is
+	/// mainly intended for debugging.
+	const TVector3 &xdir = last_swim_step->sdir;
+	const TVector3 &ydir = last_swim_step->tdir;
+	const TVector3 &zdir = last_swim_step->udir;
+	double Ro = last_swim_step->Ro;
+	double delta_z = last_swim_step->mom.Dot(zdir);
+	double delta_phi = last_swim_step->mom.Dot(ydir)/Ro;
+	double dz_dphi = delta_z/delta_phi;
 
+	double x = -(Ro/2.0)*last_phi*last_phi;
+	double y = Ro*last_phi;
+	double z = dz_dphi*last_phi;
+
+	return last_swim_step->origin + x*xdir + y*ydir + z*zdir;
+}

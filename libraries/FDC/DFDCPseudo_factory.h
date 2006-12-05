@@ -40,6 +40,8 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		///
 		~DFDCPseudo_factory();	
 							
+		const string toString(void);
+
 	protected:
 		///
 		/// DFDCPseudo_factory::evnt():

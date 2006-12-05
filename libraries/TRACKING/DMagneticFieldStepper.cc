@@ -15,7 +15,7 @@ DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield)
 	q = 1.0;
 	start_pos = pos = TVector3(0.0,0.0,0.0);
 	start_mom = mom = TVector3(0.0,0.0,1.0);
-	stepsize = 0.5; // in cm
+	stepsize = 5.0; // in cm
 	CalcDirs();
 }
 
@@ -28,7 +28,7 @@ DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield, do
 	this->q = q;
 	start_pos = pos = *x;
 	start_mom = mom = *p;
-	stepsize = 0.5; // in cm
+	stepsize = 5.0; // in cm
 	CalcDirs();
 }
 

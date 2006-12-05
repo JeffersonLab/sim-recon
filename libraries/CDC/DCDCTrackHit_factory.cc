@@ -31,7 +31,7 @@ jerror_t DCDCTrackHit_factory::init(void)
 	// during event time.
 	
 	Z_MIN = 17.0;
-	Z_MAX = Z_MIN + 200.0;
+	Z_MAX = Z_MIN + 175.0;
 	
 	jparms.SetDefaultParameter("CDC:Z_MIN",Z_MIN);
 	jparms.SetDefaultParameter("CDC:Z_MAX",Z_MAX);
@@ -110,7 +110,8 @@ jerror_t DCDCTrackHit_factory::init(void)
 			w->origin.SetY(radius*sin(phi));
 			w->origin.SetZ((Z_MAX + Z_MIN)/2.0);
 			w->phi = phi;
-			w->L = L/cos(stereo);
+			//w->L = L/cos(stereo);
+			w->L = L + (stereo==degrees0 ? 0.0:1.5); // to make consistent with HDDS
 			
 			// Here, we need to define a coordinate system for the wire
 			// in which the wire runs along one axis. We call the directions
@@ -161,7 +162,7 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		DCDCTrackHit *hit = new DCDCTrackHit;
 		hit->wire = &wire[cdchit->ring-1][cdchit->straw-1];
 		hit->tdrift = cdchit->t;
-		hit->dist = 0.0; // This will require a lot more work ...
+		hit->dist = hit->tdrift*22.0E-4; // Use number hardwired in simulation for now
 		
 		_data.push_back(hit);
 	}

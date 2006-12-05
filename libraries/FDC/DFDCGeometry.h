@@ -7,14 +7,34 @@
 #ifndef DFDCGEOMETRY_H
 #define DFDCGEOMETRY_H
 
-#define WIRES_PER_PLANE       121
-#define WIRE_SPACING          1.0
-#define U_OF_WIRE_ZERO        (-(WIRES_PER_PLANE-1.)*WIRE_SPACING/2)
+#define FDC_NUM_LAYERS			24
+#define FDC_ACTIVE_RADIUS		53.6
+
+//----- These were cut from HDGeant/hitFDC.c -----
+#define DRIFT_SPEED           .0022
+#define WIRE_DEAD_ZONE_RADIUS 3.5
+#define ANODE_CATHODE_SPACING 0.5
+#define TWO_HIT_RESOL         250.
+#define WIRES_PER_PLANE       96
+#define WIRE_SPACING          1.116
+#define U_OF_WIRE_ZERO        (-((WIRES_PER_PLANE-1)*WIRE_SPACING)/2)
+#define STRIPS_PER_PLANE      216
+#define STRIP_SPACING         0.5
+#define U_OF_STRIP_ZERO		   (-((STRIPS_PER_PLANE-1)*STRIP_SPACING)/2)
+#define STRIP_GAP             0.1
+#define MAX_HITS             100
+//#define K2                  1.15
+#define STRIP_NODES           3
+#define THRESH_KEV           1.
+#define THRESH_STRIPS        5.   /* mV */
+#define ELECTRON_CHARGE 1.6022e-4 /* fC */
+//------------------------------------------------
 
 #include <math.h>
 
 #include <JANA/JObject.h>
 #include "DFDCHit.h"
+#include "DFDCWire.h"
 
 ///
 /// class DFDCGeometry: definition of a class providing basic geometry
@@ -22,6 +42,11 @@
 ///
 class DFDCGeometry : public JObject {
 	public:
+	
+		DFDCGeometry(void);
+		
+		static const DFDCWire* GetDFDCWire(int layer, int wire);
+	
 		///
 		/// DFDCGeometry::gLayer():
 		/// Compute the global layer (detection layer 1-24) number based on module and layer
@@ -57,7 +82,7 @@ class DFDCGeometry : public JObject {
 		/// Return X coordinate of a wire
 		/// 
 		static inline float getWireR(const DFDCHit* h) {
-		  return WIRE_SPACING*(h->element-0.5)+U_OF_WIRE_ZERO;
+		  return WIRE_SPACING*(h->element-1)+U_OF_WIRE_ZERO;
 	  
 		}
 		
@@ -66,7 +91,7 @@ class DFDCGeometry : public JObject {
 		/// Return coordinate in U or V space of a strip
 		///
 		static inline float getStripR(const DFDCHit* h) {
-			return (h->element - 119.5)*0.5;
+			return STRIP_SPACING*(h->element-1)+U_OF_STRIP_ZERO;
 		}
 
 		///
@@ -75,7 +100,7 @@ class DFDCGeometry : public JObject {
 		/// from the strip data.
 		///
 		static inline float getXLocalStrips(float u, float v){
-		  return 0.5*(u+v-240.0)/sqrt(2.);
+		  return STRIP_SPACING*(u-1 + v-1 - (STRIPS_PER_PLANE-1))/sqrt(2.);
 		}
 
 		///
@@ -84,7 +109,7 @@ class DFDCGeometry : public JObject {
 		/// from the strip data
 		///
 		static inline float getYLocalStrips(float u, float v){
-		  return  0.5*(u-v)/sqrt(2.);
+		  return  STRIP_SPACING*(u-v)/sqrt(2.);
 		} 
 	
 		///
@@ -96,9 +121,9 @@ class DFDCGeometry : public JObject {
 				case 0:
 					return 0.0;
 				case 1:
-					return 3.1415926 / 3;
+					return +M_PI / 3; // +60 degrees
 				case 2:
-					return -3.1415926 / 3;
+					return -M_PI / 3; // -60 degrees
 				return 0.0;
 			}
 		}

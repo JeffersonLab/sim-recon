@@ -9,6 +9,7 @@
 #define DFDCPSEUDO_H
 
 #include "DFDCHit.h"
+#include "DFDCWire.h"
 #include "JANA/JObject.h"
 
 #include <sstream>
@@ -18,7 +19,6 @@ typedef struct {
   float q;
   int numstrips;
 }centroid_t;
-
 
 ///
 /// class DFDCPseudo: definition for a reconstructed point in the FDC
@@ -31,10 +31,7 @@ class DFDCPseudo : public JObject {
 		/// DFDCPseudo::DFDCPseudo():
 		/// Default constructor-- provide the X, Y, global layer #, and resolution
 		///
-		DFDCPseudo(float iX, float idX,float iY, float idY, int gL,
-			   int wireNumber, float t,int stat) : 
-		w(iX), dw(idX), s(iY), ds(idY), gLayer(gL), wire(wireNumber),
-		  time(t), status(stat){}
+		DFDCPseudo(){}
 	
 
 		std::vector<DFDCHit*> members;	/// Hits that constitute this point
@@ -42,11 +39,12 @@ class DFDCPseudo : public JObject {
 		            //perpendicular to the wires and its uncertainty
 		float s,ds; //local coordinate of pseudopoint in the direction 
 		            // along the wire and its uncertainty
-		int gLayer;  // global layer of point (1-24)
-		int wire; // anode wire corresponding to this pseudopoint
+		const DFDCWire* wire; ///< DFDCWire for this wire 
 		float time; // time corresponding to this pseudopoint.
+		float dist;	// drift distance from time
 		int status; // status word for pseudopoint
 		
+#if 0
 		///
 		/// DFDCPseudo::header():
 		/// Print a sensible header for a table of DFDCPseudos
@@ -76,7 +74,8 @@ class DFDCPseudo : public JObject {
 			s.width(7);
 			s << gLayer << " ";
 			return s.str();
-		}			
+		}
+#endif
 };
 
 #endif //DFDCPSEUDO_H

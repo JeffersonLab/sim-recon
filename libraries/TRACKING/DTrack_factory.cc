@@ -18,9 +18,15 @@
 #include "DTrackCandidate.h"
 #include "DTrack_factory.h"
 #include "CDC/DCDCTrackHit.h"
+#include "FDC/DFDCPseudo.h"
 #include "DReferenceTrajectory.h"
 
-bool CDCTrkHitSort_C(DTrack_factory::hit_on_track_t const &hit1, DTrack_factory::hit_on_track_t const &hit2) {
+bool CDCTrkHitSort_C(DTrack_factory::cdc_hit_on_track_t const &hit1, DTrack_factory::cdc_hit_on_track_t const &hit2) {
+	// These swim steps come from the same array so the addresses of the swim_step
+	// structures should be sequential, starting with closest to the target.
+	return (unsigned long)hit1.swim_step > (unsigned long)hit2.swim_step;
+}
+bool FDCTrkHitSort_C(DTrack_factory::fdc_hit_on_track_t const &hit1, DTrack_factory::fdc_hit_on_track_t const &hit2) {
 	// These swim steps come from the same array so the addresses of the swim_step
 	// structures should be sequential, starting with closest to the target.
 	return (unsigned long)hit1.swim_step > (unsigned long)hit2.swim_step;
@@ -51,29 +57,31 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 	bfield = new DMagneticFieldMap(); // temporary until new geometry scheme is worked out
 	
 	MAX_HIT_DIST = 10.0; // cm
+	DEBUG_HISTS = false;
 	
 	jparms.SetDefaultParameter("TRK:MAX_HIT_DIST",	MAX_HIT_DIST);
+	jparms.SetDefaultParameter("TRK:DEBUG_HISTS",	DEBUG_HISTS);
 	
 	jparms.GetParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
 	
 	CDC_Z_MIN = 17.0;
-	CDC_Z_MAX = CDC_Z_MIN + 200.0;
+	CDC_Z_MAX = CDC_Z_MIN + 175.0;
 	hit_based = false;
-//cout<<__FILE__<<":"<<__LINE__<<"-------------- Helical Fitter TRACKING --------------"<<endl;
-cout<<__FILE__<<":"<<__LINE__<<"-------------- Least Squares TRACKING --------------"<<endl;
+	//cout<<__FILE__<<":"<<__LINE__<<"-------------- Helical Fitter TRACKING --------------"<<endl;
+	cout<<__FILE__<<":"<<__LINE__<<"-------------- Least Squares TRACKING --------------"<<endl;
 	
-	cdcdocart = new TH1F("cdcdocart","DOCA for CDC wires from reference trajectory",1000,0.0,10.0);
-	cdcdocaswim = new TH1F("cdcdocaswim","DOCA for CDC wires from swim point on RT",1000,0.0,10.0);
-	cdcdocatdrift = new TH1F("cdcdocatdrift","DOCA from drift time",1000,0.0,10.0);
-	cdcdoca_vs_dist = new TH2F("cdcdoca_vs_dist","DOCA vs. DIST",300, 0.0, 1.2, 300, 0.0, 1.2);
-	cdcdoca_vs_dist_vs_ring = new TH3F("cdcdoca_vs_dist_vs_ring","DOCA vs. DIST vs. ring",300, 0.0, 1.2, 300, 0.0, 1.2,23,0.5,23.5);
-	dist_axial = new TH1F("dist_axial","Distance from drift time for axial CDC wires",300,0.0,3.0);
-	doca_axial = new TH1F("doca_axial","DOCA of track for axial CDC wires",300,0.0,3.0);
-	dist_stereo = new TH1F("dist_stereo","Distance from drift time for stereo CDC wires",300,0.0,3.0);
-	doca_stereo = new TH1F("doca_stereo","DOCA of track for axial CDC wires",300,0.0,3.0);
-	fit_chisq_vs_chisq = new TH2F("fit_chisq_vs_chisq","New chi-sq. vs. starting chi-sq.",100, 0.0, 5.0, 100, 0.0, 5.0);
-	residuals = new TH1F("residuals","Residuals",1000,0.0,2.0);
-	
+	if(DEBUG_HISTS){
+		cdcdoca_vs_dist = new TH2F("cdcdoca_vs_dist","DOCA vs. DIST",300, 0.0, 1.2, 300, 0.0, 1.2);
+		fdcdoca_vs_dist = new TH2F("fdcdoca_vs_dist","DOCA vs. DIST",500, 0.0, 2.0, 500, 0.0, 2.0);
+		cdcdoca_vs_dist_vs_ring = new TH3F("cdcdoca_vs_dist_vs_ring","DOCA vs. DIST vs. ring",300, 0.0, 1.2, 300, 0.0, 1.2,23,0.5,23.5);
+		dist_axial = new TH1F("dist_axial","Distance from drift time for axial CDC wires",300,0.0,3.0);
+		doca_axial = new TH1F("doca_axial","DOCA of track for axial CDC wires",300,0.0,3.0);
+		dist_stereo = new TH1F("dist_stereo","Distance from drift time for stereo CDC wires",300,0.0,3.0);
+		doca_stereo = new TH1F("doca_stereo","DOCA of track for axial CDC wires",300,0.0,3.0);
+		fit_chisq = new TH1F("fit_chisq","Fit chi-sq.",100, 0.0, 5.0);
+		residuals = new TH1F("residuals","Residuals",1000,0.0,2.0);
+	}
+
 	return NOERROR;
 }
 
@@ -85,8 +93,11 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 	// Get the track candidates and hits
 	vector<const DTrackCandidate*> trackcandidates;
 	loop->Get(trackcandidates);
+
 	cdctrackhits.clear();
+	fdctrackhits.clear();
 	loop->Get(cdctrackhits);
+	loop->Get(fdctrackhits);
 
 	// Loop over track candidates
 	for(unsigned int i=0; i<trackcandidates.size(); i++){
@@ -124,12 +135,16 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *tc)
 	mom.SetMagThetaPhi(tc->p, tc->theta, tc->phi);
 	TVector3 pos(0.0, 0.0, tc->z_vertex);
 
+//mom.SetMagThetaPhi(6.0,6.0*M_PI/180.0,90.0*M_PI/180.0);
+//pos.SetXYZ(0.0,0.0,65.0);
+
 	// Generate reference trajectory and use it to find the initial
 	// set of hits for this track. Some of these could be dropped by
 	// the fitter.
 	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, tc->q, pos, mom, swim_steps, max_swim_steps,5.0);
 	GetCDCTrackHits(rt); //Hits are left in private member data "cdchits_on_track"
-	if(cdchits_on_track.size()<4)return NULL; // can't fit a track with less than 4 hits!
+	GetFDCTrackHits(rt); //Hits are left in private member data "fdchits_on_track"
+	if((cdchits_on_track.size() + fdchits_on_track.size())<4)return NULL; // can't fit a track with less than 4 hits!
 
 	// Fit the track and get the results in the form of the
 	// position/momentum when the track was closest to the beamline
@@ -137,53 +152,14 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *tc)
 	TVector3 vertex_mom=mom; // to hold fitted values on return
 	double chisq=1.0E6, last_chisq;
 	int Niterations;
-	for(Niterations=0; Niterations<50; Niterations++){
+	for(Niterations=0; Niterations<20; Niterations++){
 		last_chisq = chisq;
 		chisq = LeastSquares(pos, mom, rt, vertex_pos, vertex_mom);
 		if(vertex_pos==pos && vertex_mom==mom)break;
-		//cout<<__FILE__<<":"<<__LINE__<<" ### chisq="<<chisq<<"  last_chisq="<<last_chisq<<endl;
-		//cout<<__FILE__<<":"<<__LINE__<<" ### After p="<<vertex_mom.Mag()<<endl;
-		if((last_chisq-chisq) < 0.0001)break;
+		if(fabs(last_chisq-chisq) < 1.0E-6)break;
 		pos = vertex_pos;
 		mom = vertex_mom;
 	}
-
-if(Niterations>-1){
-//vertex_mom.SetMagThetaPhi(6.0, 17.2*M_PI/180.0, 90.0*M_PI/180.0);
-//vertex_pos.SetXYZ(0.0,0.0,65.0);
-rt->Reswim(vertex_pos, vertex_mom);
-for(unsigned int j=0; j<cdctrackhits.size(); j++){
-	const DCDCTrackHit *hit = cdctrackhits[j];
-
-	hit_on_track_t closest_hit;
-	closest_hit.swim_step = rt->FindClosestSwimStep(hit->wire);
-	if(!closest_hit.swim_step)continue;
-	closest_hit.cdchit = hit;
-	closest_hit.dist = rt->DistToRT(hit->wire, closest_hit.swim_step, &closest_hit.s);
-
-	// Check if this hit is close enough to the RT to be on
-	// the track. This should be a function of both the distance
-	// along the track and the errors of the measurement in 3D.
-	// For now, we use a single distance which may be sufficient
-	// for finding hits that belong to the track.
-	if(!finite(closest_hit.dist))continue;
-	if(closest_hit.dist>MAX_HIT_DIST)continue;
-
-	// Temporary debugging histos
-	cdcdocart->Fill(closest_hit.dist);
-	cdcdocaswim->Fill(sqrt(closest_hit.dist_to_rt2));
-	cdcdocatdrift->Fill(hit->tdrift*22E-4);
-	cdcdoca_vs_dist->Fill(hit->tdrift*22E-4, closest_hit.dist);
-	cdcdoca_vs_dist_vs_ring->Fill(hit->tdrift*22E-4, closest_hit.dist, hit->wire->ring);
-	if(hit->wire->stereo==0.0){
-		dist_axial->Fill(hit->tdrift*22E-4);
-		doca_axial->Fill(closest_hit.dist);
-	}else{
-		dist_stereo->Fill(hit->tdrift*22E-4);
-		doca_stereo->Fill(closest_hit.dist);
-	}
-}
-}
 
 	// Delete reference trajectory
 	delete rt;
@@ -245,7 +221,7 @@ void DTrack_factory::GetCDCTrackHits(DReferenceTrajectory *rt, double max_hit_di
 		// The maximum amplitude of the adjustment is L/2*sin(alpha)
 		// where L is the CDC length(175cm) and alpha is the stereo
 		// angle.		
-		hit_on_track_t closest_hit;
+		cdc_hit_on_track_t closest_hit;
 		closest_hit.swim_step = rt->FindClosestSwimStep(hit->wire);
 		if(!closest_hit.swim_step)continue;
 		closest_hit.cdchit = hit;
@@ -265,6 +241,52 @@ void DTrack_factory::GetCDCTrackHits(DReferenceTrajectory *rt, double max_hit_di
 	// We want the hits to be ordered by the distance along the 
 	// reference trajectory starting from the outside.
 	sort(cdchits_on_track.begin(), cdchits_on_track.end(), CDCTrkHitSort_C);
+}
+
+//------------------
+// GetFDCTrackHits
+//------------------
+void DTrack_factory::GetFDCTrackHits(DReferenceTrajectory *rt, double max_hit_dist)
+{
+	/// Determine the distance of each CDC hit to the reference trajectory.
+	/// Ones less than TRK:MAX_HIT_DIST are added to cdchits_on_track as
+	/// possibly being associated with the track.
+	///
+	/// We use the wire position here without considering the drift time
+	/// (the drift time will be used later when applying the Kalman filter).
+	/// The value of TRK:MAX_HIT_DIST should at least be larger than the
+	/// straw tube radius and should probably be 2 or 3 times that.
+	
+	// allow caller to override default value.
+	if(max_hit_dist==0.0)max_hit_dist=MAX_HIT_DIST;
+	
+	fdchits_on_track.clear();
+	for(unsigned int j=0; j<fdctrackhits.size(); j++){
+		const DFDCPseudo *hit = fdctrackhits[j];
+		
+		// To find the closest point in the reference trajectory, we
+		// loop over all R.T. points and find the one closest to the
+		// wire.
+		fdc_hit_on_track_t closest_hit;
+		closest_hit.swim_step = rt->FindClosestSwimStep(hit->wire);
+		if(!closest_hit.swim_step)continue;
+		closest_hit.fdchit = hit;
+		closest_hit.dist = rt->DistToRT(hit->wire, closest_hit.swim_step, &closest_hit.s);
+
+		// Check if this hit is close enough to the RT to be on
+		// the track. This should be a function of both the distance
+		// along the track and the errors of the measurement in 3D.
+		// For now, we use a single distance which may be sufficient
+		// for finding hits that belong to the track.
+		if(!finite(closest_hit.dist))continue;
+		if(closest_hit.dist>max_hit_dist)continue;
+
+		fdchits_on_track.push_back(closest_hit);
+	}
+
+	// We want the hits to be ordered by the distance along the 
+	// reference trajectory starting from the outside.
+	sort(fdchits_on_track.begin(), fdchits_on_track.end(), FDCTrkHitSort_C);
 }
 
 //------------------
@@ -299,21 +321,72 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 		own_rt = true;
 	}
 
-	// Loop over hits.
+	// Clear chisq and sigma vector
 	chisqv.clear();
+	sigmav.clear();
+	
+	// Add CDC hits (if any)
 	for(unsigned int i=0; i<cdchits_on_track.size(); i++){
-		hit_on_track_t &hit = cdchits_on_track[i];
+		cdc_hit_on_track_t &hit = cdchits_on_track[i];
 		const DCoordinateSystem *wire = hit.cdchit->wire;
 		
 		// Distance of closest approach for track to wire
-		double doca = rt->DistToRT(wire);
+		double s;
+		double doca = rt->DistToRT(wire, &s);
 			
 		// Distance from drift time. Hardwired for simulation for now
-		double dist = hit.cdchit->tdrift*22.0E-4;
-		if(hit_based)dist=0.400; // Middle of the tube is best guess when no time info is present
+		double dist, sigma;
+		if(hit_based){
+			dist=0.400; // Middle of the tube is best guess when no time info is present
+			sigma = 2.0*dist/3.464; // sigma of flat distr. is W/sqrt(12) where W is total width
+		}else{
+			// Calculate time of flight (TOF) so we can subtract it
+			double beta = 0.8; // use average beta for now. This should eventually come from outer detectors
+			double tof = s/(beta*3E10*1E-9);
+			dist = (hit.cdchit->tdrift-tof)*22E-4;
+			sigma = 0.0200; // 200 um
+		}
 
 		// NOTE: Sometimes we push nan or large values on here
 		chisqv.push_back(dist - doca);
+		sigmav.push_back(sigma);
+	}
+	
+	// Add FDC hits (if any)
+	for(unsigned int i=0; i<fdchits_on_track.size(); i++){
+		fdc_hit_on_track_t &hit = fdchits_on_track[i];
+		const DCoordinateSystem *wire = hit.fdchit->wire;
+		
+		// Distance of closest approach for track to wire
+		double s;
+		double doca = rt->DistToRT(wire,&s);
+
+		// Distance from drift time. Hardwired for simulation for now.
+		double dist, sigma;
+		if(hit_based){
+			dist = 1.116/4.0; // 1/4 of wire spacing is best guess when no time info is present
+			sigma = 2.0*dist/3.464; // sigma of flat distr. is W/sqrt(12) where W is total width
+		}else{
+			// Calculate time of flight (TOF) so we can subtract it
+			double beta = 0.8;
+			double tof = s/(beta*3E10*1E-9);
+			dist = (hit.fdchit->time-tof)*22E-4;
+			sigma = 0.0200; // 200 um
+		}
+
+		// NOTE: Sometimes we push nan or large values on here
+		//chisqv.push_back(dist - doca);
+		chisqv.push_back(dist - doca);
+//chisqv.push_back(std::numeric_limits<double>::quiet_NaN());
+		sigmav.push_back(sigma);
+		
+		// For the FDC we also have a measurement along the wire
+		// which we include as a separate measurement
+		double u = rt->GetLastDistAlongWire();
+		chisqv.push_back(u - hit.fdchit->s);
+//chisqv.push_back(std::numeric_limits<double>::quiet_NaN());
+		sigmav.push_back(0.0200); // 200 um
+		
 	}
 
 	// Add "good" hits together to get the chi-squared
@@ -325,10 +398,10 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 		// along the track and the errors of the measurement in 3D.
 		// For now, we use a single distance which may be sufficient.
 		if(!finite(chisqv[i]))continue;
-residuals->Fill(chisqv[i]);
-		if(fabs(chisqv[i])>0.8)continue;
+		if(DEBUG_HISTS)residuals->Fill(chisqv[i]);
+		if(fabs(chisqv[i]/sigmav[i])>5.0)continue;
 
-		chisq+=pow(chisqv[i]/(hit_based ? 0.460:0.200),2.0);
+		chisq+=pow(chisqv[i]/sigmav[i], 2.0);
 		Nused += 1.0;
 	}
 	chisq/=Nused;
@@ -349,7 +422,7 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	
 	// Because we have a non-linear system, we must take the derivatives
 	// numerically.
-	unsigned int Nhits = cdchits_on_track.size();
+	unsigned int Nhits = cdchits_on_track.size() + 2.0*fdchits_on_track.size();
 	swim_step_t *start_step = &rt->swim_steps[0];
 	double deltas[6];
 
@@ -366,51 +439,39 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	DReferenceTrajectory *myrt = new DReferenceTrajectory(bfield, rt->q, pos, mom, swim_steps_ls, max_swim_steps_ls,5.0);
 
 	// Best-guess
-	double chisq = ChiSq(rt->q, pos, mom, myrt); // Just use RT generated for gathering hits
-	vector<double> dists = chisqv;
+	ChiSq(rt->q, pos, mom, myrt);
+	vector<double> resi = chisqv;
+	vector<double> errs = sigmav;
 
-	// dpx : tweak by 4% + 1MeV/c
+	// Note that in the calculations of the deltas below,
+	// the change in state should be set first and the value
+	// of deltas[...] calculated from that. See Numerical
+	// Recipes in C 2nd ed. section 5.7 ppg. 186-189.
+
+	// dpx : tweak by +/- 0.01
 	TMatrixD state_dpx = state;
-	deltas[state_px] = (0.001 + fabs(0.04*state_dpx[state_px][0]));
-	state_dpx[state_px][0] += deltas[state_px];
+	state_dpx[state_px][0] += 0.001;
+	deltas[state_px] = state_dpx[state_px][0] - state[state_px][0];
 	ChiSq(rt->q, state_dpx, start_step,myrt);
-	vector<double> dists_dpx = chisqv;
+	vector<double> resi_dpx_hi = chisqv;
+	vector<double> &resi_dpx_lo = resi;
 
-	// dpy : tweak by 4% + 1MeV/c
+	// dpy : tweak by +/- 0.01
 	TMatrixD state_dpy = state;
-	deltas[state_py] = (0.001 + fabs(0.04*state_dpy[state_py][0]));
-	state_dpy[state_py][0] += deltas[state_py];
+	state_dpy[state_py][0] += 0.001;
+	deltas[state_py] = state_dpx[state_px][0] - state[state_px][0];
 	ChiSq(rt->q, state_dpy, start_step,myrt);
-	vector<double> dists_dpy = chisqv;
+	vector<double> resi_dpy_hi = chisqv;
+	vector<double> &resi_dpy_lo = resi;
 
-	// dpz : tweak by 4% + 1MeV/c
+	// dpz : tweak by +/- 0.01
 	TMatrixD state_dpz = state;
-	deltas[state_pz] = (0.001 + fabs(0.04*state_dpz[state_pz][0]));
-	state_dpz[state_pz][0] += deltas[state_pz];
+	state_dpz[state_pz][0] += 0.001;
+	deltas[state_pz] = state_dpz[state_pz][0] - state[state_pz][0];
 	ChiSq(rt->q, state_dpz, start_step,myrt);
-	vector<double> dists_dpz = chisqv;
+	vector<double> resi_dpz_hi = chisqv;
+	vector<double> &resi_dpz_lo = resi;
 
-	// dx : tweak by 5 mm
-	//TMatrixD state_dx = state;
-	//deltas[state_x] = (0.500);
-	//state_dx[state_x][0] += deltas[state_x];
-	//ChiSq(rt->q, state_dx, start_step);
-	//vector<double> dists_dx = chisqv;
-
-	// dy : tweak by 5 mm
-	//TMatrixD state_dy = state;
-	//deltas[state_y] = (0.500);
-	//state_dy[state_y][0] += deltas[state_y];
-	//ChiSq(rt->q, state_dy, start_step);
-	//vector<double> dists_dy = chisqv;
-
-	// dz : tweak by 5 cm
-	//TMatrixD state_dz = state;
-	//deltas[state_z] = (5.000);
-	//state_dz[state_z][0] += deltas[state_z];
-	//ChiSq(rt->q, state_dz, start_step);
-	//vector<double> dists_dz = chisqv;
-	
 	// Finished with local reference trajectory
 	delete myrt;
 	
@@ -421,14 +482,14 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	unsigned int Ngood=0;
 	for(unsigned int i=0; i<Nhits; i++){
 		double res;
-		double max=1.0;
-		res =     dists[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-		res = dists_dpx[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-		res = dists_dpy[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-		res = dists_dpz[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-		//res =  dists_dx[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-		//res =  dists_dy[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-		//res =  dists_dz[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		double max=5.0;
+		res =        resi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		res = resi_dpx_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		//res = resi_dpx_lo[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		res = resi_dpy_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		//res = resi_dpy_lo[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		res = resi_dpz_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		//res = resi_dpz_lo[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
 
 		good.push_back(true);
 		Ngood++;
@@ -442,39 +503,32 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	TMatrixD F(Ngood,3);
 	for(unsigned int i=0,j=0; j<Nhits; j++){
 		if(!good[j])continue; // skip bad hits
-		F[i][state_px] = (dists_dpx[j]-dists[j])/deltas[state_px];
-		F[i][state_py] = (dists_dpy[j]-dists[j])/deltas[state_py];
-		F[i][state_pz] = (dists_dpz[j]-dists[j])/deltas[state_pz];
-		//F[i][state_x ] = ( dists_dx[j]-dists[j])/deltas[state_x ];
-		//F[i][state_y ] = ( dists_dy[j]-dists[j])/deltas[state_y ];
-		//F[i][state_z ] = ( dists_dz[j]-dists[j])/deltas[state_z ];
+		F[i][state_px] = (resi_dpx_hi[j]-resi_dpx_lo[j])/deltas[state_px];
+		F[i][state_py] = (resi_dpy_hi[j]-resi_dpy_lo[j])/deltas[state_py];
+		F[i][state_pz] = (resi_dpz_hi[j]-resi_dpz_lo[j])/deltas[state_pz];
 		i++;
 	}
 	TMatrixD Ft(TMatrixD::kTransposed, F);
 
 	// V is a diagonal matrix of the measurement errors. In
 	// principle, we could fold in the multiple scattering
-	// here, but for now, consider it constant.
+	// here, but for now, we don't. This is filled in the
+	// loop below.
 	TMatrixD V(Ngood,Ngood);
 	V.Zero();
-	for(unsigned int i=0; i<Ngood; i++)V[i][i] = pow(hit_based ? 0.460:0.200, 2.0);
 	
-	// Measurement vector. In the case of hit-based tracking
-	// it is tempting to just set all of the measurements to
-	// zero. This will, however, lead to the trivial result
-	// of each element of the state vector being zero. In the
-	// absence of real time measurements, we should use the 
-	// distances from the "best-guess" trajectory.
+	// Measurement vector. This contains the residuals between
+	// DOCAs and DISTs.
 	TMatrixD m(Ngood,1);
 	for(unsigned int i=0,j=0; j<Nhits; j++){
 		if(!good[j])continue; // skip bad hits
-		m[i][0] = -dists[j]; // drift time is already subtracted in ChiSq(...)
+		m[i][0] = -resi[j]; // drift time is already subtracted in ChiSq(...)
+		V[i][i] = pow(errs[j], 2.0);
 		i++;
 	}
-	
 	TMatrixD Vinv(TMatrixD::kInverted, V);
 	TMatrixD B(TMatrixD::kInverted, Ft*Vinv*F);
-	
+
 	// The "B" matrix happens to be the covariance matrix of the
 	// state parameters. A problem sometimes occurs where one or
 	// more elements of B are very large. This tends to happen
@@ -485,7 +539,7 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	// I don't want to introduce quite yet. What we do now
 	// is check for it and punt rather than return a nonsensical
 	// value.
-	if(B.E2Norm() < 1.0E5){
+	if(B.E2Norm() < 1.0E6){
 		TMatrixD delta_state = B*Ft*Vinv*m;
 		for(int i=0; i<3; i++)state[i] += delta_state[i];
 	}else{
@@ -505,20 +559,72 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	// Check that the chi-squared has actually decreased!
 	rt->Reswim(vertex_pos, vertex_mom);
 	double new_chisq = ChiSq(rt->q, vertex_pos, vertex_mom, rt);
-//cout<<__FILE__<<":"<<__LINE__<<" Ngood="<<Ngood<<endl;
-//cout<<__FILE__<<":"<<__LINE__<<" Before p="<<mom.Mag()<<"  ChiSq="<<chisq<<endl;
-//cout<<__FILE__<<":"<<__LINE__<<" After p="<<vertex_mom.Mag()<<"  Chisq="<<new_chisq<<endl;
-//cout<<__FILE__<<":"<<__LINE__<<" B.E2Norm()="<<sqrt(B.E2Norm())<<endl;
-fit_chisq_vs_chisq->Fill(chisq, new_chisq);
-	if(new_chisq >	chisq){
-		// Fit seems to have failed. Revert to original parameters.
-		new_chisq = chisq;
-		vertex_pos = pos;
-		vertex_mom = mom;
-		//cout<<__FILE__<<":"<<__LINE__<<" Fit failed! Keeping candidate parameters"<<endl;
-	}
 	
 	return new_chisq;
+}
+
+//------------------
+// FillDebugHists
+//------------------
+void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom)
+{
+	//vertex_mom.SetMagThetaPhi(6.0, 17.2*M_PI/180.0, 90.0*M_PI/180.0);
+	//vertex_pos.SetXYZ(0.0,0.0,65.0);
+	rt->Reswim(vertex_pos, vertex_mom);
+
+	fit_chisq->Fill(ChiSq(rt->q, vertex_pos, vertex_mom, rt));
+
+	for(unsigned int j=0; j<cdctrackhits.size(); j++){
+		const DCDCTrackHit *hit = cdctrackhits[j];
+
+		cdc_hit_on_track_t closest_hit;
+		closest_hit.swim_step = rt->FindClosestSwimStep(hit->wire);
+		if(!closest_hit.swim_step)continue;
+		closest_hit.cdchit = hit;
+		closest_hit.dist = rt->DistToRT(hit->wire, closest_hit.swim_step, &closest_hit.s);
+
+		// Check if this hit is close enough to the RT to be on
+		// the track. This should be a function of both the distance
+		// along the track and the errors of the measurement in 3D.
+		// For now, we use a single distance which may be sufficient
+		// for finding hits that belong to the track.
+		if(!finite(closest_hit.dist))continue;
+		if(closest_hit.dist>MAX_HIT_DIST)continue;
+
+		// Temporary debugging histos
+		cdcdoca_vs_dist->Fill(hit->dist, closest_hit.dist);
+		cdcdoca_vs_dist_vs_ring->Fill(hit->dist, closest_hit.dist, hit->wire->ring);
+		if(hit->wire->stereo==0.0){
+			dist_axial->Fill(hit->dist);
+			doca_axial->Fill(closest_hit.dist);
+		}else{
+			dist_stereo->Fill(hit->dist);
+			doca_stereo->Fill(closest_hit.dist);
+		}
+	}
+	for(unsigned int j=0; j<fdctrackhits.size(); j++){
+		const DFDCPseudo *hit = fdctrackhits[j];
+
+		fdc_hit_on_track_t closest_hit;
+		closest_hit.swim_step = rt->FindClosestSwimStep(hit->wire);
+		if(!closest_hit.swim_step)continue;
+		closest_hit.fdchit = hit;
+		closest_hit.dist = rt->DistToRT(hit->wire, closest_hit.swim_step, &closest_hit.s);
+
+		// Check if this hit is close enough to the RT to be on
+		// the track. This should be a function of both the distance
+		// along the track and the errors of the measurement in 3D.
+		// For now, we use a single distance which may be sufficient
+		// for finding hits that belong to the track.
+		if(!finite(closest_hit.dist))continue;
+		if(closest_hit.dist>MAX_HIT_DIST)continue;
+
+		// Temporary debugging histos
+		double beta = 0.8;
+		double tof = closest_hit.s/(beta*3E10*1E-9);
+		double dist = (hit->time-tof)*22E-4;
+		fdcdoca_vs_dist->Fill(dist, closest_hit.dist);
+	}
 }
 
 //------------------
@@ -639,7 +745,7 @@ void DTrack_factory::KalmanFilter(TMatrixD &state
 	// Loop over hits. They should already be in order of
 	// distance along RT from largest to smallest.
 	for(unsigned int i=0; i<cdchits_on_track.size(); i++){
-		hit_on_track_t &hit = cdchits_on_track[i];
+		cdc_hit_on_track_t &hit = cdchits_on_track[i];
 		const DCoordinateSystem *wire = hit.cdchit->wire;
 
 		// The curent hit corresponds to the next measurement point
@@ -661,7 +767,7 @@ void DTrack_factory::KalmanFilter(TMatrixD &state
 		// 1.)
 		//------------------
 		// During the hit finding, the value of "s" of the DOCA was
-		// stored in the hit_on_track_t structure. What we really
+		// stored in the cdc_hit_on_track_t structure. What we really
 		// want is a swim step at the DOCA point. We get this by
 		// setting up the stepper at the swim step from the 
 		// hit, setting the step size to the difference
