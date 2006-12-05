@@ -68,6 +68,9 @@ float FDC_Z = 0.1;			// cm
 // number of anode wires.
 float FDC_AVG_NOISE_HITS = 0.01*2856.0; // 0.01 = 1% occupancy
 
+// Pedestal noise for FDC strips
+float FDC_PED_NOISE=1.0; // pC
+
 //-----------
 // Smear
 //-----------
@@ -249,6 +252,20 @@ void SmearFDC(s_HDDM_t *hddm_s)
 				// Z should be well known for the FDC, but smear it slightly anyway
 				if(FDC_Z!=0.0)truth->z += SampleGaussian(FDC_Z);
 			}
+			
+			// Add pedestal noise to strip charge data
+			s_FdcCathodeStrips_t *strips= fdcChamber->fdcCathodeStrips;
+			if (strips==HDDM_NULL)continue;
+			s_FdcCathodeStrip_t *strip=strips->in;
+			for (unsigned int k=0;k<strips->mult;k++,strip++){
+			  s_FdcCathodeHits_t *hits=strip->fdcCathodeHits;
+			  if (hits==HDDM_NULL)continue;
+			  s_FdcCathodeHit_t *hit=hits->in;
+			  for (unsigned int s=0;s<hits->mult;s++,hit++){
+			    hit->dE+=SampleGaussian(FDC_PED_NOISE);
+			  }
+			}
+			
 		}
 	}
 }
