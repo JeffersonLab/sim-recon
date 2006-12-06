@@ -389,7 +389,7 @@ jerror_t DQuickFit::FillTrackParams(void)
 	// There is a problem with theta for data generated with a uniform
 	// field. The following factor is emprical until I can figure out
 	// what the source of the descrepancy is.
-	theta += 0.1*pow((double)sin(theta),2.0);
+	//theta += 0.1*pow((double)sin(theta),2.0);
 	
 	p = fabs(p_trans/sin(theta));
 	

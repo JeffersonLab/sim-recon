@@ -40,7 +40,7 @@ bool FDCTrkHitSort_C(DTrack_factory::fdc_hit_on_track_t const &hit1, DTrack_fact
 //------------------
 jerror_t DTrack_factory::init(void)
 {
-	max_swim_steps = 50000;
+	max_swim_steps = 5000;
 	swim_steps = new DReferenceTrajectory::swim_step_t[max_swim_steps];
 
 	max_swim_steps_ls = max_swim_steps;
@@ -67,7 +67,7 @@ jerror_t DTrack_factory::init(void)
 jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 {
 
-	jparms.SetParameter("GEOM:BZ_CONST",  -2.0);	
+	//jparms.SetParameter("GEOM:BZ_CONST",  -2.0);	
 	bfield = new DMagneticFieldMap(); // temporary until new geometry scheme is worked out
 		
 	jparms.GetParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
@@ -149,7 +149,7 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *tc)
 	// Generate reference trajectory and use it to find the initial
 	// set of hits for this track. Some of these could be dropped by
 	// the fitter.
-	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, tc->q, pos, mom, swim_steps, max_swim_steps,5.0);
+	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, tc->q, pos, mom, swim_steps, max_swim_steps,0.5);
 	GetCDCTrackHits(rt); //Hits are left in private member data "cdchits_on_track"
 	GetFDCTrackHits(rt); //Hits are left in private member data "fdchits_on_track"
 	if((cdchits_on_track.size() + fdchits_on_track.size())<4)return NULL; // can't fit a track with less than 4 hits!
@@ -168,6 +168,8 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *tc)
 		pos = vertex_pos;
 		mom = vertex_mom;
 	}
+	
+	if(DEBUG_HISTS)FillDebugHists(rt, vertex_pos, vertex_mom);
 
 	// Delete reference trajectory
 	delete rt;
@@ -444,7 +446,7 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	state[state_z	][0] = pos_diff.Dot(start_step->udir);
 	
 	// Create reference trajectory to use in calculating derivatives
-	DReferenceTrajectory *myrt = new DReferenceTrajectory(bfield, rt->q, pos, mom, swim_steps_ls, max_swim_steps_ls,5.0);
+	DReferenceTrajectory *myrt = new DReferenceTrajectory(bfield, rt->q, pos, mom, swim_steps_ls, max_swim_steps_ls,0.5);
 
 	// Best-guess
 	ChiSq(rt->q, pos, mom, myrt);
