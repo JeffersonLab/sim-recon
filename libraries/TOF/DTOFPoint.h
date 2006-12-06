@@ -22,7 +22,6 @@ class DTOFPoint:public JObject{
         unsigned int nhits;    //number of hits in this point
         unsigned int hits[16]; //indices to DTOFHit (temporary form)
         float chisq;           //chisquare of this point
-
 };
 
 #endif // _DTOFPoint_
