@@ -69,7 +69,11 @@ float FDC_Z = 0.1;			// cm
 float FDC_AVG_NOISE_HITS = 0.01*2856.0; // 0.01 = 1% occupancy
 
 // Pedestal noise for FDC strips
-float FDC_PED_NOISE=1.0; // pC
+float FDC_PED_NOISE=2.7; // pC
+
+// Drift time variation for FDC anode wires
+float FDC_DRIFT_SIGMA=200.0/50.0; // 200 microns/ (50 microns/ns)
+
 
 //-----------
 // Smear
@@ -255,17 +259,32 @@ void SmearFDC(s_HDDM_t *hddm_s)
 			
 			// Add pedestal noise to strip charge data
 			s_FdcCathodeStrips_t *strips= fdcChamber->fdcCathodeStrips;
-			if (strips==HDDM_NULL)continue;
-			s_FdcCathodeStrip_t *strip=strips->in;
-			for (unsigned int k=0;k<strips->mult;k++,strip++){
-			  s_FdcCathodeHits_t *hits=strip->fdcCathodeHits;
-			  if (hits==HDDM_NULL)continue;
-			  s_FdcCathodeHit_t *hit=hits->in;
-			  for (unsigned int s=0;s<hits->mult;s++,hit++){
-			    hit->dE+=SampleGaussian(FDC_PED_NOISE);
+			if (strips!=HDDM_NULL){
+			  s_FdcCathodeStrip_t *strip=strips->in;
+			  for (unsigned int k=0;k<strips->mult;k++,strip++){
+			    s_FdcCathodeHits_t *hits=strip->fdcCathodeHits;
+			    if (hits==HDDM_NULL)continue;
+			    s_FdcCathodeHit_t *hit=hits->in;
+			    for (unsigned int s=0;s<hits->mult;s++,hit++){
+			      hit->dE+=SampleGaussian(FDC_PED_NOISE);
+			    }
 			  }
 			}
+
+			// Add drift time varation to the anode data 
+			s_FdcAnodeWires_t *wires=fdcChamber->fdcAnodeWires;
 			
+			if (wires!=HDDM_NULL){
+			  s_FdcAnodeWire_t *wire=wires->in;
+			  for (unsigned int k=0;k<wires->mult;k++,wire++){
+			    s_FdcAnodeHits_t *hits=wire->fdcAnodeHits;
+			    if (hits==HDDM_NULL)continue;
+			    s_FdcAnodeHit_t *hit=hits->in;
+			    for (unsigned int s=0;s<hits->mult;s++,hit++){
+			      hit->t+=SampleGaussian(FDC_DRIFT_SIGMA);
+			    }
+			  }
+			}
 		}
 	}
 }
