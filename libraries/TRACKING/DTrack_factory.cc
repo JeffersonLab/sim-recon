@@ -45,6 +45,18 @@ jerror_t DTrack_factory::init(void)
 
 	max_swim_steps_ls = max_swim_steps;
 	swim_steps_ls = new DReferenceTrajectory::swim_step_t[max_swim_steps];
+
+	MAX_HIT_DIST = 10.0; // cm
+	DEBUG_HISTS = false;
+	USE_CDC = true;
+	USE_FDC_ANODE = true;
+	USE_FDC_CATHODE = true;
+	
+	jparms.SetDefaultParameter("TRK:MAX_HIT_DIST",	MAX_HIT_DIST);
+	jparms.SetDefaultParameter("TRK:DEBUG_HISTS",	DEBUG_HISTS);
+	jparms.SetDefaultParameter("TRK:USE_CDC",			USE_CDC);
+	jparms.SetDefaultParameter("TRK:USE_FDC_ANODE",	USE_FDC_ANODE);
+	jparms.SetDefaultParameter("TRK:USE_FDC_CATHODE",USE_FDC_CATHODE);
 		
 	return NOERROR;
 }
@@ -57,19 +69,7 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 
 	jparms.SetParameter("GEOM:BZ_CONST",  -2.0);	
 	bfield = new DMagneticFieldMap(); // temporary until new geometry scheme is worked out
-	
-	MAX_HIT_DIST = 10.0; // cm
-	DEBUG_HISTS = false;
-	USE_CDC = true;
-	USE_FDC_ANODE = true;
-	USE_FDC_CATHODE = true;
-	
-	jparms.SetDefaultParameter("TRK:MAX_HIT_DIST",	MAX_HIT_DIST);
-	jparms.SetDefaultParameter("TRK:DEBUG_HISTS",	DEBUG_HISTS);
-	jparms.SetDefaultParameter("TRK:USE_CDC",			USE_CDC);
-	jparms.SetDefaultParameter("TRK:USE_FDC_ANODE",	USE_FDC_ANODE);
-	jparms.SetDefaultParameter("TRK:USE_FDC_CATHODE",USE_FDC_CATHODE);
-	
+		
 	jparms.GetParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
 	
 	CDC_Z_MIN = 17.0;
