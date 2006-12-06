@@ -99,6 +99,14 @@ C The following card enables the GelHad package (from BaBar)
 C   on/off  ecut   scale   mode   thresh
 GELH  1     0.2     1.0     4     0.160
 
+C The following card selects the hadronic physics package
+C   HADR 0	no hadronic interactions
+C   HADR 1	GHEISHA only (default)
+C   HADR 2	GHEISHA only, with no generation of secondaries
+C   HADR 3      FLUKA (with GHEISHA for neutrons below 20MeV)
+C   HADR 4	FLUKA (with MICAP for neutrons below 20MeV)
+HADR 4
+
 c The following cards are needed if optical photons are being
 c being generated and tracked in the simulation.  The CKOV directive
 c enables Cerenkov generation in materials for which the refractive
@@ -114,6 +122,14 @@ c Cerenkov photons (eg. in a lead glass calorimeter) at the end of
 c a particle track.  If this might be important, set ABAN to 0.
 CKOV 1
 LABS 1
+
+C The following card prevents GEANT tracking code from abandoning the
+C tracking of particles near the end of their range, once it determines
+C that their fate is just to stop (i.e. electrons and protons).  This
+C behaviour is normal in most cases, but in the case of Cerenkov light
+C generation it leads to an underestimate for the yields.
+C   ABAN 1	abandon stopping tracks (default)
+C   ABAN 0	do not abandon stopping tracks
 ABAN 0
 
 c The following card sets up the simulation to perform debugging on
