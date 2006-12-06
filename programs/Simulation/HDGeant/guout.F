@@ -67,6 +67,7 @@ C.    ------------------------------------------------------------------
 C.
       integer iskip
       call gelh_outp(iskip)
-      call loadOutput();
-      call flushOutput();
+      call loadOutput()
+      call flushOutput()
+      call fdpree()
       END
