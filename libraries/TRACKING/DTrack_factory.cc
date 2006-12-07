@@ -52,11 +52,11 @@ jerror_t DTrack_factory::init(void)
 	USE_FDC_ANODE = true;
 	USE_FDC_CATHODE = true;
 	
-	jparms.SetDefaultParameter("TRK:MAX_HIT_DIST",	MAX_HIT_DIST);
-	jparms.SetDefaultParameter("TRK:DEBUG_HISTS",	DEBUG_HISTS);
-	jparms.SetDefaultParameter("TRK:USE_CDC",			USE_CDC);
-	jparms.SetDefaultParameter("TRK:USE_FDC_ANODE",	USE_FDC_ANODE);
-	jparms.SetDefaultParameter("TRK:USE_FDC_CATHODE",USE_FDC_CATHODE);
+	gPARMS->SetDefaultParameter("TRK:MAX_HIT_DIST",	MAX_HIT_DIST);
+	gPARMS->SetDefaultParameter("TRK:DEBUG_HISTS",	DEBUG_HISTS);
+	gPARMS->SetDefaultParameter("TRK:USE_CDC",			USE_CDC);
+	gPARMS->SetDefaultParameter("TRK:USE_FDC_ANODE",	USE_FDC_ANODE);
+	gPARMS->SetDefaultParameter("TRK:USE_FDC_CATHODE",USE_FDC_CATHODE);
 		
 	return NOERROR;
 }
@@ -67,10 +67,10 @@ jerror_t DTrack_factory::init(void)
 jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 {
 
-	//jparms.SetParameter("GEOM:BZ_CONST",  -2.0);	
+	//gPARMS->SetParameter("GEOM:BZ_CONST",  -2.0);	
 	bfield = new DMagneticFieldMap(); // temporary until new geometry scheme is worked out
 		
-	jparms.GetParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
+	gPARMS->GetParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
 	
 	CDC_Z_MIN = 17.0;
 	CDC_Z_MAX = CDC_Z_MIN + 175.0;

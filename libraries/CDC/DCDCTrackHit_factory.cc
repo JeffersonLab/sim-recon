@@ -33,8 +33,8 @@ jerror_t DCDCTrackHit_factory::init(void)
 	Z_MIN = 17.0;
 	Z_MAX = Z_MIN + 175.0;
 	
-	jparms.SetDefaultParameter("CDC:Z_MIN",Z_MIN);
-	jparms.SetDefaultParameter("CDC:Z_MAX",Z_MAX);
+	gPARMS->SetDefaultParameter("CDC:Z_MIN",Z_MIN);
+	gPARMS->SetDefaultParameter("CDC:Z_MAX",Z_MAX);
 	
 	// We use the mutex and wire_table_initialized flag to
 	// make sure the table is initialized only once.

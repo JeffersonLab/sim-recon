@@ -35,9 +35,9 @@ DMagneticFieldMap::DMagneticFieldMap()
 	BZ_AVG_Z = 65.0; // in cm in GEANT coordinates
 	BZ_CONST = -1000.0; // in Tesla (only used if less than +/-100 T
 
-	jparms.SetDefaultParameter("GEOM:BMAP_Z_OFFSET",  BMAP_Z_OFFSET);
-	jparms.SetDefaultParameter("GEOM:BZ_AVG_Z",  BZ_AVG_Z);
-	jparms.SetDefaultParameter("GEOM:BZ_CONST",  BZ_CONST);
+	gPARMS->SetDefaultParameter("GEOM:BMAP_Z_OFFSET",  BMAP_Z_OFFSET);
+	gPARMS->SetDefaultParameter("GEOM:BZ_AVG_Z",  BZ_AVG_Z);
+	gPARMS->SetDefaultParameter("GEOM:BZ_CONST",  BZ_CONST);
 
 	/// Initialize with the hardwired, default field map for now.
 	/// We'll go back to reading the map from an external source

@@ -28,6 +28,7 @@ extern TFile *ROOTfile;
 // Routine used to create our DEventProcessor
 extern "C"{
 void InitPlugin(JApplication *app){
+	InitJANAPlugin(app);
 	app->AddProcessor(new DEventProcessor_track_hists());
 }
 } // "C"
