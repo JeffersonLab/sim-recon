@@ -35,6 +35,7 @@ int main(int narg, char *argv[])
 	japp->AddProcessor(myproc);
 	eventloop = new JEventLoop(japp);
 	japp->Init();
+	eventloop->OneEvent();
 
 	// Hand control to ROOT event loop
 	app.Run();

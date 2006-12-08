@@ -26,6 +26,7 @@ using namespace std;
 #include "TRACKING/DTrackCandidate_factory.h"
 #include "TRACKING/DMCTrackHit_factory.h"
 #include "TRACKING/DMCThrown.h"
+#include "TRACKING/DTrack.h"
 #include "JANA/JGeometry.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
 #include "FCAL/DFCALHit.h"
@@ -48,17 +49,21 @@ static float FCAL_Rmin = 6.0;
 static float FCAL_Rmax = 212.0/2.0;
 static float CDC_Rmin = 15.0;
 static float CDC_Rmax = 60.0;
-static float CDC_Zlen = 200.0;
+static float CDC_Zlen = 175.0;
 static float CDC_Zmid = 17.0 + CDC_Zlen/2.0;
 static float TOF_width = 250.0;
 static float TOF_Rmin = 6.0;
 static float TOF_Zlen = 2.54;
 static float TOF_Zmid = 618.8 + TOF_Zlen/2.0;
 static float FDC_Rmin = 3.5;
-static float FDC_Rmax = 60.0;
+static float FDC_Rmax = 53.6;
 static float FDC_Zlen = 12.0;
 //static float FDC_Zpos[4] = {240.0, 292.0, 348.0, 404.0};
-static float FDC_Zpos[4] = {234.0, 289.0, 344.0, 399.0};
+//static float FDC_Zpos[4] = {234.0, 289.0, 344.0, 399.0};
+static float FDC_Zpos[4] = {209.0, 272.0, 335.0, 398.0};
+
+
+MyProcessor *gMYPROC=NULL;
 
 //------------------------------------------------------------------
 // MyProcessor 
@@ -68,8 +73,10 @@ MyProcessor::MyProcessor()
 	drew_detectors=0;
 	Bfield = NULL;
 
-	// Tell factory to keep around a few density histos	
+	// Tell factory to keep around a few density histos
 	gPARMS->SetParameter("TRK:MAX_DEBUG_BUFFERS",	16);
+	
+	gMYPROC = this;
 }
 
 //------------------------------------------------------------------
@@ -144,6 +151,8 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	int colors[] = {kBlack,kRed,kBlue,kCyan,kGreen};
 	int ncolors = 5;
 	
+	if(!eventLoop)return NOERROR;
+	
 	cout<<"----------- New Event -------------"<<endl;
 	hdvmf->SetEvent(eventnumber);
 	
@@ -156,6 +165,8 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	vector<const DMCTrackHit*> mctrackhits;
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrajectoryPoint*> mctrajectories;
+	vector<const DTrack*> tracks;
+	eventLoop->Get(tracks);
 	eventLoop->Get(trackhits, TRACKHIT_SOURCE.c_str());
 	JFactory<DMCTrackHit> *fac_mcth = eventLoop->Get(mctrackhits); // just in case we need it later
 	eventLoop->Get(fcalHits);
@@ -163,43 +174,45 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	eventLoop->Get(mctrajectories);
 	
 	// Draw trajectory info first if it is available
-	const DMCTrajectoryPoint *last_pt = NULL;
-	for(unsigned int i=0;i<mctrajectories.size();i++){
-		const DMCTrajectoryPoint *pt = mctrajectories[i];
-		
-		// Since the trajectory points can be very dense, only
-		// draw when one is at least 1cm apart from the last one
-		// drawn.
-		if(last_pt){
-			float r2 = pow((double)pt->x-last_pt->x,2.0)
-							+pow((double)pt->y-last_pt->y,2.0)
-								+pow((double)pt->z-last_pt->z,2.0);
-			if(r2<4.0)continue;
-		}
-		last_pt = pt;
-		
-		TMarker *top = NULL;
-		TMarker *side = NULL;
-		TMarker *front = NULL;
-		
-		float X,Y;
-		ConvertToTop(pt->x, pt->y, pt->z,X,Y);
-		if(X<-0.1 && X>-2.0 && Y>0.0 && Y<1.0)top = new TMarker(X,Y,20);
-		ConvertToSide(pt->x, pt->y, pt->z,X,Y);
-		if(X<-0.1 && X>-2.0 && Y<0.0 && Y>-1.0)side = new TMarker(X,Y,20);
-		ConvertToFront(pt->x, pt->y, pt->z,X,Y);
-		if(X>-0.1 && Y<1.0 && Y>-1.0)front = new TMarker(X,Y,20);
+	if(hdvmf->GetDrawTrajectories()){
+		const DMCTrajectoryPoint *last_pt = NULL;
+		for(unsigned int i=0;i<mctrajectories.size();i++){
+			const DMCTrajectoryPoint *pt = mctrajectories[i];
 
-		if(top)top->SetMarkerColor(kBlack);
-		if(top)top->SetMarkerSize(0.25);
-		if(side)side->SetMarkerColor(kBlack);
-		if(side)side->SetMarkerSize(0.25);
-		if(front)front->SetMarkerColor(kBlack);
-		if(front)front->SetMarkerSize(0.25);
-		
-		if(top)markers.push_back(top);
-		if(side)markers.push_back(side);
-		if(front)markers.push_back(front);
+			// Since the trajectory points can be very dense, only
+			// draw when one is at least 1cm apart from the last one
+			// drawn.
+			if(last_pt){
+				float r2 = pow((double)pt->x-last_pt->x,2.0)
+								+pow((double)pt->y-last_pt->y,2.0)
+									+pow((double)pt->z-last_pt->z,2.0);
+				if(r2<1.0)continue;
+			}
+			last_pt = pt;
+
+			TMarker *top = NULL;
+			TMarker *side = NULL;
+			TMarker *front = NULL;
+
+			float X,Y;
+			ConvertToTop(pt->x, pt->y, pt->z,X,Y);
+			if(X<-0.1 && X>-2.0 && Y>0.0 && Y<1.0)top = new TMarker(X,Y,20);
+			ConvertToSide(pt->x, pt->y, pt->z,X,Y);
+			if(X<-0.1 && X>-2.0 && Y<0.0 && Y>-1.0)side = new TMarker(X,Y,20);
+			ConvertToFront(pt->x, pt->y, pt->z,X,Y);
+			if(X>-0.1 && Y<1.0 && Y>-1.0)front = new TMarker(X,Y,20);
+
+			if(top)top->SetMarkerColor(kBlack);
+			if(top)top->SetMarkerSize(0.25);
+			if(side)side->SetMarkerColor(kBlack);
+			if(side)side->SetMarkerSize(0.25);
+			if(front)front->SetMarkerColor(kBlack);
+			if(front)front->SetMarkerSize(0.25);
+
+			if(top)markers.push_back(top);
+			if(side)markers.push_back(side);
+			if(front)markers.push_back(front);
+		}
 	}
 
 	// loop over FCAL hits creating square markers with size proportional to energy
@@ -243,45 +256,6 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	// Loop over hits creating markers for all 3 views
 	for(unsigned int i=0;i<trackhits.size();i++){
 		const DTrackHit *trackhit = trackhits[i];
-
-#if 0 // The following was used to adjust detector positions. Disabled 6/8/06 D.L.
-		// Skip hits from some detectors?
-		switch(trackhit->system){
-			case SYS_CDC:	break;		// CDC
-			case SYS_FDC:					// FDC
-				for(int j=0; j<4; j++){
-					float delta_z = FDC_Zpos[j]-FDC_Zlen/2.0 - trackhit->z;
-					if(delta_z > 0.0){
-						if(i==0){
-							FDC_Zpos[j] -= delta_z;
-							DrawDetectors();
-							break;
-						}else if(trackhit->z > FDC_Zpos[j-1]+FDC_Zlen/2.0){
-							FDC_Zpos[j] -= delta_z;
-							DrawDetectors();
-							break;
-						}
-					}
-				}
-				break;
-			case SYS_BCAL:	break;		// BCAL
-			case SYS_TOF:					// TOF
-				if(trackhit->z < TOF_Zmid-TOF_Zlen/2.0){
-					TOF_Zmid = trackhit->z + TOF_Zlen/2.0;
-					DrawDetectors();
-				} 
-				break;
-			case SYS_CHERENKOV:	break;		// Cherenkov
-			case SYS_FCAL:					// FCAL
-				if(trackhit->z < FCAL_Zmid-FCAL_Zlen/2.0){
-					FCAL_Zmid = trackhit->z + FCAL_Zlen/2.0;
-					DrawDetectors();
-				} 
-				break;
-			case SYS_UPV:	break;		// UPV
-			default: continue;
-		}
-#endif
 	
 		float x = trackhit->r*cos(trackhit->phi);
 		float y = trackhit->r*sin(trackhit->phi);
@@ -331,26 +305,57 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	}
 
 	// Draw all thrown neutral particles as straight tracks
-	for(unsigned int i=0; i<mcthrowns.size(); i++){
-		const DMCThrown *t = mcthrowns[i];
-		if(t->q != 0)continue;
-		
-		TVector3 vertex(t->x, t->y, t->z);
-		double px = t->p*cos(t->phi)*sin(t->theta);
-		double py = t->p*sin(t->phi)*sin(t->theta);
-		double pz = t->p*cos(t->theta);
-		TVector3 p(px,py,pz);
-		DrawStraightTrack(p ,vertex, colors[(i+1)%ncolors], i%8+2);
-		
+	if(hdvmf->GetDrawThrowns()){
+		for(unsigned int i=0; i<mcthrowns.size(); i++){
+			const DMCThrown *t = mcthrowns[i];
+			if(t->q != 0)continue;
+
+			TVector3 vertex(t->x, t->y, t->z);
+			double px = t->p*cos(t->phi)*sin(t->theta);
+			double py = t->p*sin(t->phi)*sin(t->theta);
+			double pz = t->p*cos(t->theta);
+			TVector3 p(px,py,pz);
+			DrawStraightTrack(p ,vertex, colors[(i+1)%ncolors], i%8+2);
+
+		}
+	}
+
+	// Draw all thrown particles (if this is MC data)
+	if(hdvmf->GetDrawThrowns()){
+		for(unsigned int i=0; i<mcthrowns.size(); i++){
+			const DMCThrown *thrown = mcthrowns[i];
+			
+			TVector3 pos(thrown->x, thrown->y, thrown->z);
+			TVector3 mom;
+			mom.SetMagThetaPhi(thrown->p, thrown->theta, thrown->phi);
+			DrawTrack(thrown->q, pos, mom, colors[(i+1)%ncolors]);
+		}
 	}
 	
-	// Draw all "found" tracks
-	vector<const DTrackCandidate*> trackcandidates;
-	eventLoop->Get(trackcandidates);
-	vector<DQuickFit*> qfits = factory->Get_dbg_track_fit();
-	for(unsigned int i=0; i<qfits.size(); i++){
-		//DrawHelicalTrack(qfits[i], colors[(i+1)%ncolors]+100);
-		DrawTrack(qfits[i], colors[(i+1)%ncolors]);
+	// Draw all track candidates
+	if(hdvmf->GetDrawCandidates()){
+		vector<const DTrackCandidate*> trackcandidates;
+		eventLoop->Get(trackcandidates);
+		for(unsigned int i=0; i<trackcandidates.size(); i++){
+			const DTrackCandidate *can = trackcandidates[i];
+			
+			TVector3 pos(0.0, 0.0, can->z_vertex);
+			TVector3 mom;
+			mom.SetMagThetaPhi(can->p, can->theta, can->phi);
+			DrawTrack(can->q, pos, mom, colors[(i+1)%ncolors]);
+		}
+	}
+	
+	// Draw all fit tracks
+	if(hdvmf->GetDrawTracks()){
+		for(unsigned int i=0; i<tracks.size(); i++){
+			const DTrack *track = tracks[i];
+			
+			TVector3 pos(track->x, track->y, track->z);
+			TVector3 mom;
+			mom.SetMagThetaPhi(track->p, track->theta, track->phi);
+			DrawTrack(track->q, pos, mom, colors[(i+1)%ncolors]);
+		}
 	}
 
 	// Draw all markers and update canvas
@@ -496,20 +501,17 @@ jerror_t MyProcessor::DrawStraightTrack(TVector3 p, TVector3 vertex, int color, 
 //------------------------------------------------------------------
 // DrawTrack 
 //------------------------------------------------------------------
-jerror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
+jerror_t MyProcessor::DrawTrack(double q, TVector3 pos, TVector3 mom, int color)
 {
 	if(lines.size()>MAX_LINES-2)return NOERROR;
 	
-	TVector3 pos(0.0, 0.0, qf->z_vertex);
-	TVector3 mom;
-	mom.SetMagThetaPhi(qf->p, qf->theta, qf->phi);
-	DMagneticFieldStepper *stepper = new DMagneticFieldStepper(Bfield, qf->q, &pos, &mom);
+	DMagneticFieldStepper *stepper = new DMagneticFieldStepper(Bfield, q, &pos, &mom);
 	stepper->SetStepSize(0.05);
 
 	TPolyLine *line_top = new TPolyLine();
 	TPolyLine *line_side = new TPolyLine();
 	TPolyLine *line_beam = new TPolyLine();
-	//qf->Print();
+
 	for(int i=0;i<100000;i++){
 	
 		stepper->Step(&pos);
@@ -518,7 +520,7 @@ jerror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 		float z = pos.z();
 		float X,Y;
 	
-		if(z>=TOF_Zmid || z<-10.0)break;
+		//if(z>=TOF_Zmid || z<-10.0)break;
 		float r = sqrt((double)(x*x) + (double)(y*y));
 		if(r>BCAL_Rmin && fabs(z-BCAL_Zmid)<BCAL_Zlen/2.0)break;
 		
@@ -531,9 +533,6 @@ jerror_t MyProcessor::DrawTrack(DQuickFit *qf, int color)
 		ConvertToFront(x, y, 0, X, Y);
 		if(X>0.0 && Y<1.0 && Y>-1.0)
 			line_beam->SetNextPoint(X,Y);
-		
-//const DBfieldPoint_t* tmp = stepper->GetDBfieldPoint();
-//cout<<__FILE__<<":"<<__LINE__<<" x:"<<x<<" y:"<<y<<" z:"<<z<<" Bz:"<<tmp->Bz<<endl;
 	}
 	delete stepper;
 	

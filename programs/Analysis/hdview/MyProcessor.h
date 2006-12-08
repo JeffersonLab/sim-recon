@@ -41,7 +41,7 @@ class MyProcessor:public JEventProcessor
 
 		jerror_t DrawHelicalTrack(DQuickFit *qf, int color);
 		jerror_t DrawStraightTrack(TVector3 p, TVector3 vertex, int color, int style);
-		jerror_t DrawTrack(DQuickFit *qf, int color);
+		jerror_t DrawTrack(double q, TVector3 pos, TVector3 mom, int color);
 		jerror_t DrawDetectors(void);
 
 		const DMagneticFieldMap *Bfield;
@@ -58,5 +58,7 @@ class MyProcessor:public JEventProcessor
 		DTrackCandidate_factory* factory;
 		string TRACKHIT_SOURCE;
 };
+
+extern MyProcessor* gMYPROC;
 
 #endif // _MYPROCESSOR_H_
