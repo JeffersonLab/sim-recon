@@ -23,10 +23,21 @@
       integer nvert,nt
       real rndm(20)
  
-      integer coSwitch
+c  freqMaximum = probability density cutoff for coherent/incoherent 
+c  bremsstrahlung generator, defined on the measure [dx dphi dy] where
+c    x = E_gamma/E_end_point
+c    phi = azimuthal angle (radians)
+c    y = a normalized polar angle parameter defined by the relation
+c    dy = theta0^2 dtheta^2 / (theta0^2 + theta^2)^2 with 0<=y<=1.
+c  The probability is for a single electron, so the scale is that of
+c  the target thickness (radiation lengths) divided by 2pi.  A good
+c  choice for freqMaximum is the target thickness in radiation lengths.
+c  A warning is printed in the simulation output log each time a value
+c  freq > freqMaximum is generated; a few ppm of these is no problem.
       real freqMaximum
-      common /coherentGen/coSwitch,freqMaximum
-      data coSwitch,freqMaximum/0,0/
+      common /coherentGen/freqMaximum
+      data freqMaximum/1.0e-4/
+
       save /coherentGen/
       real xMinimum,Theta02,CollimPos
       parameter (xMinimum=1e-2)
@@ -63,12 +74,10 @@
       call rotmat(rotate,thxBeam+thxMS-thx-thxMosaic,0d0,0d0)
       call rotmat(rotate,0d0,thyBeam+thyMS-thy-thyMosaic,0d0)
       do i=1,10000
-         call GRNDM(rndm,4)
+         call GRNDM(rndm,5)
          phi = rndm(1)*TWOPI
          x = xMinimum**rndm(2)
-         theta2 = Theta02*rndm(3)/(1-rndm(3)+1e-30)
-         coSwitch = coSwitch+1
-         if (coSwitch/2*2.eq.coSwitch) then    !try coherent generation
+         if (rndm(4).lt.0.5) then              !try coherent generation
             freq = dNcdxdp(x,phi)
             f = freq*rndm(3)
             do ip=1,q2points
@@ -80,14 +89,17 @@
  5          continue
             ppol = polarization(x,theta2)
          else                                  !try incoherent generation
+            theta2 = Theta02*rndm(3)/(1-rndm(3)+1e-30)
             freq = dNidxdt2(x,theta2)
             freq = freq*(Theta02+theta2)**2/(TWOPI*Theta02)
             ppol = 0
          endif
          freq = x*freq
          if (freq.gt.freqMaximum) then
-            freqMaximum = freq*1.2
-         elseif (freq.ge.freqMaximum*rndm(4)) then
+            print *, 'Warning from beamgen: freq=',freq,
+     +               ' is greater than freqMaximum=',freqMaximum
+         endif
+         if (freq.ge.freqMaximum*rndm(5)) then
             goto 50
          endif
       enddo
