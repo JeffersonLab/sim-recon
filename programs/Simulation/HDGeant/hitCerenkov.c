@@ -144,43 +144,50 @@ s_Cerenkov_t* pickCerenkov ()
    while (item = pickTwig(&cerenkovTree))
    {
       s_CereSections_t* sections = item->cereSections;
+      int section;
       s_CereTruthPoints_t* points = item->cereTruthPoints;
+      int point;
 
+      for (section=0; section < sections->mult; ++section)
+      {
+         s_CereHits_t* hits = sections->in[section].cereHits;
+
+      /* compress out the hits below threshold */
+         int iok,i;
+         for (iok=i=0; i < hits->mult; i++)
+         {
+           if (hits->in[i].pe >= THRESH_PE)
+           {
+             if (iok < i)
+             {
+                hits->in[iok] = hits->in[i];
+             }
+             ++iok;
+           }
+         }
+         if (iok)
+         {
+            hits->mult = iok;
+            int m = box->cereSections->mult++;
+            box->cereSections->in[m] = sections->in[section];
+         }
+         else if (hits != HDDM_NULL)
+         {
+            FREE(hits);
+         }
+      }
       if (sections != HDDM_NULL)
       {
-      /* compress out the hits below threshold */
-         s_CereHits_t* hits = sections->in[0].cereHits;
-         if (hits != HDDM_NULL)
-         {
-            int mok,i;
-            for (mok=i=0; i < hits->mult; i++)
-            {
-              if (hits->in[i].pe >= THRESH_PE)
-              {
-                if (mok < i)
-                {
-                   hits->in[mok] = hits->in[i];
-                }
-                ++mok;
-              }
-            }
-            hits->mult = mok;
-            if (mok)
-            {
-               int m = box->cereSections->mult++;
-               box->cereSections->in[m] = sections->in[0];
-            }
-            else
-            {
-               FREE(hits);
-            }
-         }
          FREE(sections);
       }
-      else if (points != HDDM_NULL)
+
+      for (point=0; point < points->mult; ++point)
       {
          int m = box->cereTruthPoints->mult++;
-         box->cereTruthPoints->in[m] = points->in[0];
+         box->cereTruthPoints->in[m] = points->in[point];
+      }
+      if (points != HDDM_NULL)
+      {
          FREE(points);
       }
       FREE(item);

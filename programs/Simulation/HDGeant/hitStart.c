@@ -176,47 +176,52 @@ s_StartCntr_t* pickStartCntr ()
    while (item = (s_StartCntr_t*) pickTwig(&startCntrTree))
    {
       s_StcPaddles_t* paddles = item->stcPaddles;
+      int paddle;
       s_StcTruthPoints_t* points = item->stcTruthPoints;
+      int point;
 
-      if (paddles != HDDM_NULL)
+      for (paddle=0; paddle < paddles->mult; ++paddle)
       {
          int m = box->stcPaddles->mult;
-         int mok = 0;
+
+         s_StcHits_t* hits = paddles->in[paddle].stcHits;
 
          /* compress out the hits below threshold */
-         s_StcHits_t* hits = paddles->in[0].stcHits;
-         if (hits != HDDM_NULL)
+         int i,iok;
+         for (iok=i=0; i < hits->mult; i++)
          {
-            int i;
-            for (i=0; i < hits->mult; i++)
+            if (hits->in[i].dE >= THRESH_MEV/1e3)
             {
-               if (hits->in[i].dE >= THRESH_MEV/1e3)
+               if (iok < i)
                {
-                  if (mok < i)
-                  {
-                     hits->in[mok] = hits->in[i];
-                  }
-                  ++mok;
+                  hits->in[iok] = hits->in[i];
                }
-            }
-            hits->mult = mok;
-
-            if (mok)
-            {
-               box->stcPaddles->in[m] = paddles->in[0];
-               box->stcPaddles->mult++;
-            }
-            else
-            {
-               FREE(hits);
+               ++iok;
             }
          }
+         if (iok)
+         {
+            hits->mult = iok;
+            box->stcPaddles->in[m] = paddles->in[paddle];
+            box->stcPaddles->mult++;
+         }
+         else if (hits != HDDM_NULL)
+         {
+            FREE(hits);
+         }
+      }
+      if (paddles != HDDM_NULL)
+      {
          FREE(paddles);
       }
-      else if (points != HDDM_NULL)
+
+      for (point=0; point < points->mult; ++point)
       {
          int m = box->stcTruthPoints->mult++;
-         box->stcTruthPoints->in[m] = item->stcTruthPoints->in[0];
+         box->stcTruthPoints->in[m] = item->stcTruthPoints->in[point];
+      }
+      if (points != HDDM_NULL)
+      {
          FREE(points);
       }
       FREE(item);

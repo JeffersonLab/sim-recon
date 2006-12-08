@@ -223,108 +223,118 @@ void hitupstreamemveto_(float* xin, float* xout,
 
 s_UpstreamEMveto_t* pickUpstreamEMveto ()
 {
-  s_UpstreamEMveto_t* box;
-  s_UpstreamEMveto_t* item;
+   s_UpstreamEMveto_t* box;
+   s_UpstreamEMveto_t* item;
 
-  if ((paddleCount == 0) && (rowCount == 0) && (showerCount == 0))
-    return HDDM_NULL;
+   if ((paddleCount == 0) && (rowCount == 0) && (showerCount == 0))
+      return HDDM_NULL;
 
-  box = make_s_UpstreamEMveto();
-  box->upvPaddles = make_s_UpvPaddles(paddleCount);
-  box->upvTruthShowers = make_s_UpvTruthShowers(showerCount);
-  while (item = (s_UpstreamEMveto_t*) pickTwig(&upstreamEMvetoTree))
-  {
-    s_UpvPaddles_t* paddles = item->upvPaddles;
-    s_UpvTruthShowers_t* showers = item->upvTruthShowers;
+   box = make_s_UpstreamEMveto();
+   box->upvPaddles = make_s_UpvPaddles(paddleCount);
+   box->upvTruthShowers = make_s_UpvTruthShowers(showerCount);
+   while (item = (s_UpstreamEMveto_t*) pickTwig(&upstreamEMvetoTree))
+   {
+      s_UpvPaddles_t* paddles = item->upvPaddles;
+      int paddle;
+      s_UpvTruthShowers_t* showers = item->upvTruthShowers;
+      int shower;
     
-    if (paddles != HDDM_NULL)
-    {
-      int m = box->upvPaddles->mult;
-      int mok = 0;
-
-      /* compress out the hits below threshold */
-      s_UpvLeftHits_t* leftHits = paddles->in[0].upvLeftHits;
-      s_UpvRightHits_t* rightHits = paddles->in[0].upvRightHits;
-      if (leftHits != HDDM_NULL)
+      for (paddle=0; paddle < paddles->mult; ++paddle)
       {
-        int i,iok;
-        for (iok=i=0; i < leftHits->mult; i++)
-        {
-          if (leftHits->in[i].E >= THRESH_MEV/1e3)
-          {
-            if (iok < i)
+         int m = box->upvPaddles->mult;
+         int mok = 0;
+
+         s_UpvLeftHits_t* leftHits = paddles->in[paddle].upvLeftHits;
+         s_UpvRightHits_t* rightHits = paddles->in[paddle].upvRightHits;
+
+       /* compress out the hits below threshold */
+         int i,iok;
+         for (iok=i=0; i < leftHits->mult; i++)
+         {
+            if (leftHits->in[i].E >= THRESH_MEV/1e3)
             {
-              leftHits->in[iok] = leftHits->in[i];
+               if (iok < i)
+               {
+                  leftHits->in[iok] = leftHits->in[i];
+               }
+               ++iok;
+               ++mok;
             }
-            ++iok;
-            ++mok;
-          }
-        }
-        leftHits->mult = iok;
-        if (iok == 0)
-        {
-          paddles->in[0].upvLeftHits = HDDM_NULL;
-          FREE(leftHits);
-        }
-      }
-      if (rightHits != HDDM_NULL)
-      {
-        int i,iok;
-        for (iok=i=0; i < rightHits->mult; i++)
-        {
-          if (rightHits->in[i].E >= THRESH_MEV/1e3)
-          {
-            if (iok < i)
+         }
+         if (iok)
+         {
+            leftHits->mult = iok;
+         }
+         else if (leftHits != HDDM_NULL)
+         {
+             paddles->in[paddle].upvLeftHits = HDDM_NULL;
+             FREE(leftHits);
+         }
+
+         for (iok=i=0; i < rightHits->mult; i++)
+         {
+            if (rightHits->in[i].E >= THRESH_MEV/1e3)
             {
-              rightHits->in[iok] = rightHits->in[i];
+              if (iok < i)
+              {
+                rightHits->in[iok] = rightHits->in[i];
+              }
+              ++iok;
+              ++mok;
             }
-            ++iok;
-            ++mok;
-          }
-        }
-        rightHits->mult = iok;
-        if (iok == 0)
-        {
-          paddles->in[0].upvRightHits = HDDM_NULL;
-          FREE(rightHits);
-        }
-      }
+         }
+         if (iok)
+         {
+            rightHits->mult = iok;
+         }
+         else if (rightHits != HDDM_NULL)
+         {
+            paddles->in[0].upvRightHits = HDDM_NULL;
+            FREE(rightHits);
+         }
 
-      if (mok)
+         if (mok)
+         {
+            box->upvPaddles->in[m] = paddles->in[paddle];
+            box->upvPaddles->mult++;
+         }
+      }
+      if (paddles != HDDM_NULL)
       {
-        box->upvPaddles->in[m] = paddles->in[0];
-        box->upvPaddles->mult++;
+         FREE(paddles);
       }
-      FREE(paddles);
-    }
-    else if (showers != HDDM_NULL)
-    {
-      int m = box->upvTruthShowers->mult++;
-      box->upvTruthShowers->in[m] = showers->in[0];
-      FREE(showers);
-    }
-    FREE(item);
-  }
 
-  paddleCount = showerCount = 0;
+      for (shower=0; shower < showers->mult; ++shower)
+      {
+         int m = box->upvTruthShowers->mult++;
+         box->upvTruthShowers->in[m] = showers->in[shower];
+      }
+      if (showers != HDDM_NULL)
+      {
+         FREE(showers);
+      }
+      FREE(item);
+   }
 
-  if ((box->upvPaddles != HDDM_NULL) &&
-      (box->upvPaddles->mult == 0))
-  {
-    FREE(box->upvPaddles);
-    box->upvPaddles = HDDM_NULL;
-  }
-  if ((box->upvTruthShowers != HDDM_NULL) &&
-      (box->upvTruthShowers->mult == 0))
-  {
-    FREE(box->upvTruthShowers);
-    box->upvTruthShowers = HDDM_NULL;
-  }
-  if ((box->upvPaddles->mult == 0) &&
-      (box->upvTruthShowers->mult == 0))
-  {
-    FREE(box);
-    box = HDDM_NULL;
-  }
-  return box;
+   paddleCount = showerCount = 0;
+
+   if ((box->upvPaddles != HDDM_NULL) &&
+       (box->upvPaddles->mult == 0))
+   {
+      FREE(box->upvPaddles);
+      box->upvPaddles = HDDM_NULL;
+   }
+   if ((box->upvTruthShowers != HDDM_NULL) &&
+       (box->upvTruthShowers->mult == 0))
+   {
+      FREE(box->upvTruthShowers);
+      box->upvTruthShowers = HDDM_NULL;
+   }
+   if ((box->upvPaddles->mult == 0) &&
+       (box->upvTruthShowers->mult == 0))
+   {
+      FREE(box);
+      box = HDDM_NULL;
+   }
+   return box;
 }

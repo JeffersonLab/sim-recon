@@ -157,57 +157,65 @@ s_ForwardEMcal_t* pickForwardEMcal ()
    while (item = (s_ForwardEMcal_t*) pickTwig(&forwardEMcalTree))
    {
       s_FcalBlocks_t* blocks = item->fcalBlocks;
+      int block;
       s_FcalTruthShowers_t* showers = item->fcalTruthShowers;
-      if (blocks != HDDM_NULL)
+      int shower;
+      for (block=0; block < blocks->mult; ++block)
       {
-         int row = blocks->in[0].row;
-         int column = blocks->in[0].column;
+         int row = blocks->in[block].row;
+         int column = blocks->in[block].column;
          float x0 = (row - CENTRAL_ROW)*WIDTH_OF_BLOCK;
          float y0 = (column - CENTRAL_COLUMN)*WIDTH_OF_BLOCK;
          float dist = sqrt(x0*x0+y0*y0);
 
+         s_FcalHits_t* hits = blocks->in[block].fcalHits;
+
          /* compress out the hits outside the active region */
          if (dist < ACTIVE_RADIUS)
          {
-            s_FcalHits_t* hits = blocks->in[0].fcalHits;
 	    int m = box->fcalBlocks->mult;
-            int mok = 0;
 
          /* compress out the hits below threshold */
-            if (hits != HDDM_NULL)
+            int i,iok;
+            for (iok=i=0; i < hits->mult; i++)
             {
-               int i;
-               for (i=0; i < hits->mult; i++)
+               if (hits->in[i].E >= THRESH_MEV/1e3)
                {
-                  if (hits->in[i].E >= THRESH_MEV/1e3)
+                  if (iok < i)
                   {
-                     if (mok < i)
-                     {
-                        hits->in[mok] = hits->in[i];
-                     }
-                     ++mok;
+                     hits->in[iok] = hits->in[i];
                   }
-               }
-               hits->mult = mok;
-               if (mok == 0)
-               {
-                  blocks->in[0].fcalHits = HDDM_NULL;
-                  FREE(hits);
+                  ++iok;
                }
             }
-
-            if (mok)
+            if (iok)
             {
-               box->fcalBlocks->in[m] = blocks->in[0];
+               hits->mult = iok;
+               box->fcalBlocks->in[m] = blocks->in[block];
                box->fcalBlocks->mult++;
             }
-            FREE(blocks);
+            else if (hits != HDDM_NULL)
+            {
+               FREE(hits);
+            }
+         }
+         else if (hits != HDDM_NULL)
+         {
+            FREE(hits);
          }
       }
-      else if (showers != HDDM_NULL)
+
+      for (shower=0; shower < showers->mult; ++shower)
       {
          int m = box->fcalTruthShowers->mult++;
-         box->fcalTruthShowers->in[m] = showers->in[0];
+         box->fcalTruthShowers->in[m] = showers->in[shower];
+      }
+      if (blocks != HDDM_NULL)
+      {
+         FREE(blocks);
+      }
+      if (showers != HDDM_NULL)
+      {
          FREE(showers);
       }
       FREE(item);

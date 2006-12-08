@@ -231,68 +231,79 @@ s_ForwardTOF_t* pickForwardTOF ()
    while (item = (s_ForwardTOF_t*) pickTwig(&forwardTOFTree))
    {
       s_FtofCounters_t* counters = item->ftofCounters;
+      int counter;
       s_FtofTruthPoints_t* points = item->ftofTruthPoints;
+      int point;
 
-      if (counters != HDDM_NULL)
+      for (counter=0; counter < counters->mult; ++counter)
       {
+         s_FtofNorthHits_t* northHits = counters->in[counter].ftofNorthHits;
+         s_FtofSouthHits_t* southHits = counters->in[counter].ftofSouthHits;
+
       /* compress out the hits below threshold */
-         s_FtofNorthHits_t* northHits = counters->in[0].ftofNorthHits;
-         s_FtofSouthHits_t* southHits = counters->in[0].ftofSouthHits;
          int iok,i;
          int mok=0;
-         if (northHits != HDDM_NULL)
+         for (iok=i=0; i < northHits->mult; i++)
          {
-            for (iok=i=0; i < northHits->mult; i++)
+            if (northHits->in[i].dE >= THRESH_MEV/1e3)
             {
-               if (northHits->in[i].dE >= THRESH_MEV/1e3)
+               if (iok < i)
                {
-                  if (iok < i)
-                  {
-                     northHits->in[iok] = northHits->in[i];
-                  }
-                  ++mok;
-                  ++iok;
+                  northHits->in[iok] = northHits->in[i];
                }
-            }
-            northHits->mult = iok;
-            if (iok == 0)
-            {
-               counters->in[0].ftofNorthHits = HDDM_NULL;
-               FREE(northHits);
+               ++mok;
+               ++iok;
             }
          }
-         if (southHits != HDDM_NULL) 
+         if (iok)
          {
-            for (iok=i=0; i < southHits->mult; i++)
+            northHits->mult = iok;
+         }
+         else if (northHits != HDDM_NULL)
+         {
+            counters->in[counter].ftofNorthHits = HDDM_NULL;
+            FREE(northHits);
+         }
+
+         for (iok=i=0; i < southHits->mult; i++)
+         {
+            if (southHits->in[i].dE >= THRESH_MEV/1e3)
             {
-               if (southHits->in[i].dE >= THRESH_MEV/1e3)
+               if (iok < i)
                {
-                  if (iok < i)
-                  {
-                     southHits->in[iok] = southHits->in[i];
-                  }
-                  ++mok;
-                  ++iok;
+                  southHits->in[iok] = southHits->in[i];
                }
+               ++mok;
+               ++iok;
             }
+         }
+         if (iok)
+         {
             southHits->mult = iok;
-            if (iok == 0)
-            {
-               counters->in[0].ftofSouthHits = HDDM_NULL;
-               FREE(southHits);
-            }
+         }
+         else if (southHits != HDDM_NULL) 
+         {
+            counters->in[counter].ftofSouthHits = HDDM_NULL;
+            FREE(southHits);
          }
          if (mok)
          {
             int m = box->ftofCounters->mult++;
-            box->ftofCounters->in[m] = counters->in[0];
+            box->ftofCounters->in[m] = counters->in[counter];
          }
+      }
+      if (counters != HDDM_NULL)
+      {
          FREE(counters);
       }
-      else if (points != HDDM_NULL)
+
+      for (point=0; point < points->mult; ++point)
       {
          int m = box->ftofTruthPoints->mult++;
-         box->ftofTruthPoints->in[m] = points->in[0];
+         box->ftofTruthPoints->in[m] = points->in[point];
+      }
+      if (points != HDDM_NULL)
+      {
          FREE(points);
       }
       FREE(item);

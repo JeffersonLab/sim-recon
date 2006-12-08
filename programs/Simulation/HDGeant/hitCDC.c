@@ -323,88 +323,92 @@ s_CentralDC_t* pickCentralDC ()
    while (item = (s_CentralDC_t*) pickTwig(&centralDCTree))
    {
       s_CdcStraws_t* straws = item->cdcStraws;
+      int straw;
 #if CATHODE_STRIPS_IN_CDC
       s_CdcCathodetrips_t* strips = item->cdcCathodeStrips;
+      int strip;
 #endif
       s_CdcTruthPoints_t* points = item->cdcTruthPoints;
-      if (straws != HDDM_NULL)
+      int point;
+      for (straw=0; straw < straws->mult; ++straw)
       {
          int m = box->cdcStraws->mult;
-         int mok=0;
+
+         s_CdcStrawHits_t* hits = straws->in[straw].cdcStrawHits;
 
          /* compress out the hits below threshold */
-         s_CdcStrawHits_t* hits = straws->in[0].cdcStrawHits;
-         if (hits != HDDM_NULL)
+         int i,iok;
+         for (iok=i=0; i < hits->mult; i++)
          {
-            int i,iok;
-            for (iok=i=0; i < hits->mult; i++)
+            if (hits->in[i].dE >= THRESH_KEV/1e6)
             {
-               if (hits->in[i].dE >= THRESH_KEV/1e6)
+               if (iok < i)
                {
-                  if (iok < i)
-                  {
-                     hits->in[iok] = hits->in[i];
-                  }
-                  ++iok;
-                  ++mok;
+                  hits->in[iok] = hits->in[i];
                }
-            }
-            hits->mult = iok;
-
-            if (mok)
-            {
-               box->cdcStraws->in[m] = straws->in[0];
-               box->cdcStraws->mult++;
-            }
-            else
-            {
-               FREE(hits);
+               ++iok;
             }
          }
+
+         if (iok)
+         {
+            hits->mult = iok;
+            box->cdcStraws->in[m] = straws->in[straw];
+            box->cdcStraws->mult++;
+         }
+         else if (hits != HDDM_NULL)
+         {
+            FREE(hits);
+         }
+      }
+      if (straws != HDDM_NULL)
+      {
          FREE(straws);
       }
 #if CATHODE_STRIPS_IN_CDC
-      else if (strips != HDDM_NULL)
+      for (strip=0; strip < strips->mult; ++strip)
       {
          int m = box->cdcCathodeStrips->mult;
-         int mok=0;
+
+         s_CdcCathodeHits* hits = strips->in[strip].cdcCathodeHits;
 
          /* compress out the hits below threshold */
-         s_CdcCathodeHits* hits = strips->in[0].cdcCathodeHits;
-         if (hits != HDDM_NULL)
+         int i,iok;
+         for (iok=i=0; i < hits->mult; i++)
          {
-            int i,iok;
-            for (iok=i=0; i < hits->mult; i++)
+            if (hits->in[i].dE >= THRESH_KEV/1e6)
             {
-               if (hits->in[i].dE >= THRESH_KEV/1e6)
+               if (iok < i)
                {
-                  if (iok < i)
-                  {
-                     hits->in[iok] = hits->in[i];
-                  }
-                  ++iok;
-                  ++mok;
+                  hits->in[iok] = hits->in[i];
                }
-            }
-            hits->mult = mok;
-
-            if (mok)
-            {
-               box->cdcCathodeStrips->in[m] = strips->in[0];
-               box->cdcCathodeStrips->mult++;
-            }
-            else
-            {
-               FREE(hits);
+               ++iok;
             }
          }
-         FREE(item->cdcCathodeStrips);
+
+         if (iok)
+         {
+            hits->mult = iok;
+            box->cdcCathodeStrips->in[m] = strips->in[strip];
+            box->cdcCathodeStrips->mult++;
+         }
+         else if (hits != HDDM_NULL)
+         {
+            FREE(hits);
+         }
+      }
+      if (strips != HDDM_NULL)
+      {
+         FREE(strips);
       }
 #endif
-      else if (points != HDDM_NULL)
+      for (point=0; point < points->mult; ++point)
       {
          int m = box->cdcTruthPoints->mult++;
-         box->cdcTruthPoints->in[m] = points->in[0];
+         box->cdcTruthPoints->in[m] = points->in[point];
+      }
+      if (points != HDDM_NULL)
+      {
          FREE(points);
       }
       FREE(item);

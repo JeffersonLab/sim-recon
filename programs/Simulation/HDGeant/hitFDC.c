@@ -42,7 +42,7 @@ static int wireCount = 0;
 static int pointCount = 0;
 
 
-void rnpssn_(float*,int*,int*); // avoid solaris compiler warnings
+void gpoiss_(float*,int*,const int*); // avoid solaris compiler warnings
 
 /* register hits during tracking (from gustep) */
 
@@ -255,7 +255,8 @@ void hitForwardDC (float xin[4], float xout[4],
           const float n_s_per_p=2.2; // average number of secondary ion pairs
                                      // per primary ionization
           float n_p_mean,n_s_mean;
-          int n_p,n_t,n_s,err;
+          int n_p,n_t,n_s;
+          const int one=1;
       
           /* variables for gain approximation */
           const float k=1.81;   // empirical constant related to first
@@ -275,12 +276,12 @@ void hitForwardDC (float xin[4], float xout[4],
           /* Total number of ion pairs.  On average for each primary ion 
              pair produced there are n_s secondary ion pairs produced.  The
              probability distribution is a compound poisson distribution
-             that requires calling rnpssn_ twice.
+             that requires generating two Poisson variables.
            */
           n_p_mean = dE/w_eff/(1.+n_s_per_p)*1e9;
-          rnpssn_(&n_p_mean,&n_p,&err);
+          gpoiss_(&n_p_mean,&n_p,&one);
           n_s_mean = ((float)n_p)*n_s_per_p;
-          rnpssn_(&n_s_mean,&n_s,&err);
+          gpoiss_(&n_s_mean,&n_s,&one);
           n_t = n_s+n_p;
           q_anode=((float)n_t)*gain*ELECTRON_CHARGE;
   
@@ -392,67 +393,79 @@ s_ForwardDC_t* pickForwardDC ()
 
       /* compress out the hits below threshold */
       s_FdcAnodeWires_t* wires = chambers->in[0].fdcAnodeWires;
+      int wire;
       s_FdcCathodeStrips_t* strips = chambers->in[0].fdcCathodeStrips;
+      int strip;
       s_FdcTruthPoints_t* points = chambers->in[0].fdcTruthPoints;
-      int iwire,istrip;
+      int point;
       int mok=0;
-      for (iwire=0; iwire < wires->mult; iwire++)
+      for (wire=0; wire < wires->mult; wire++)
       {
-         s_FdcAnodeHits_t* ahits = wires->in[0].fdcAnodeHits;
-         if (ahits != HDDM_NULL)
+         s_FdcAnodeHits_t* ahits = wires->in[wire].fdcAnodeHits;
+
+         int i,iok;
+         for (iok=i=0; i < ahits->mult; i++)
          {
-            int i,iok;
-            for (iok=i=0; i < ahits->mult; i++)
+            if (ahits->in[i].dE >= THRESH_KEV/1e6)
             {
-               if (ahits->in[i].dE >= THRESH_KEV/1e6)
+               if (iok < i)
                {
-                  if (iok < i)
-                  {
-                     ahits->in[iok] = ahits->in[i];
-                  }
-                  ++iok;
-                  ++mok;
+                  ahits->in[iok] = ahits->in[i];
                }
+               ++iok;
+               ++mok;
             }
+         }
+         if (iok)
+         {
             ahits->mult = iok;
-            if (iok == 0)
-            {
-              FREE(ahits);
-              FREE(wires);
-              wires = HDDM_NULL;
-            }
+         }
+         else if (ahits != HDDM_NULL)
+         {
+            FREE(ahits);
          }
       }
-      for (istrip=0; istrip < strips->mult; istrip++)
+      if ((wires != HDDM_NULL) && (mok == 0))
       {
-         s_FdcCathodeHits_t* chits = strips->in[0].fdcCathodeHits;
-         if (chits != HDDM_NULL)
-         {
-            int i,iok;
-            for (iok=i=0; i < chits->mult; i++)
-            {
-               if (chits->in[i].dE >= THRESH_STRIPS)
-               {
-                  if (iok < i)
-                  {
-                     chits->in[iok] = chits->in[i];
-                  }
-                  ++iok;
-                  ++mok;
-               }
-            }
-            chits->mult = iok;
-            mok += iok;
-            if (iok == 0)
-            {
-              FREE(chits);
-              FREE(strips);
-              strips = HDDM_NULL;
-            }
-         }
+         FREE(wires);
+         wires = HDDM_NULL;
       }
 
-      if (mok || points != HDDM_NULL)
+      mok = 0;
+      for (strip=0; strip < strips->mult; strip++)
+      {
+         s_FdcCathodeHits_t* chits = strips->in[strip].fdcCathodeHits;
+         int i,iok;
+         for (iok=i=0; i < chits->mult; i++)
+         {
+            if (chits->in[i].dE >= THRESH_STRIPS)
+            {
+               if (iok < i)
+               {
+                  chits->in[iok] = chits->in[i];
+               }
+               ++iok;
+               ++mok;
+            }
+         }
+         if (iok)
+         {
+            chits->mult = iok;
+         }
+         else if (chits != HDDM_NULL)
+         {
+           FREE(chits);
+         }
+      }
+      if ((strips != HDDM_NULL) && (mok == 0))
+      {
+         FREE(strips);
+         strips = HDDM_NULL;
+      }
+
+      if ((wires != HDDM_NULL) || 
+          (strips != HDDM_NULL) ||
+          (points != HDDM_NULL))
       {
         if ((m == 0) || (module > box->fdcChambers->in[m-1].module)
                      || (layer  > box->fdcChambers->in[m-1].layer))
@@ -470,24 +483,33 @@ s_ForwardDC_t* pickForwardDC ()
         {
           m--;
         }
+        for (strip=0; strip < strips->mult; ++strip)
+        {
+           int mm = box->fdcChambers->in[m].fdcCathodeStrips->mult++;
+           box->fdcChambers->in[m].fdcCathodeStrips->in[mm] = strips->in[strip];
+        }
         if (strips != HDDM_NULL)
         {
-          int mm = box->fdcChambers->in[m].fdcCathodeStrips->mult++;
-          box->fdcChambers->in[m].fdcCathodeStrips->in[mm] = strips->in[0];
-          FREE(strips);
+           FREE(strips);
         }
-        else if (wires != HDDM_NULL)
+        for (wire=0; wire < wires->mult; ++wire)
         {
-          int mm = box->fdcChambers->in[m].fdcAnodeWires->mult++;
-          box->fdcChambers->in[m].fdcAnodeWires->in[mm] = wires->in[0];
-          FREE(wires);
-       }
-       else if (points != HDDM_NULL)
-       {
-         int mm = box->fdcChambers->in[m].fdcTruthPoints->mult++;
-         box->fdcChambers->in[m].fdcTruthPoints->in[mm] = points->in[0];
-         FREE(points);
-       }
+           int mm = box->fdcChambers->in[m].fdcAnodeWires->mult++;
+           box->fdcChambers->in[m].fdcAnodeWires->in[mm] = wires->in[wire];
+        }
+        if (wires != HDDM_NULL)
+        {
+           FREE(wires);
+        }
+        for (point=0; point < points->mult; ++point)
+        {
+           int mm = box->fdcChambers->in[m].fdcTruthPoints->mult++;
+           box->fdcChambers->in[m].fdcTruthPoints->in[mm] = points->in[point];
+        }
+        if (points != HDDM_NULL)
+        {
+           FREE(points);
+        }
      }
      FREE(chambers);
      FREE(item);

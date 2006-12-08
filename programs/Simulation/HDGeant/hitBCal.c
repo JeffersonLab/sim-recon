@@ -191,74 +191,80 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
    while (item = (s_BarrelEMcal_t*) pickTwig(&barrelEMcalTree))
    {
       s_BcalCells_t* cells = item->bcalCells;
+      int cell;
       s_BcalTruthShowers_t* showers = item->bcalTruthShowers;
-
-      if (cells != HDDM_NULL)
+      int shower;
+      for (cell=0; cell < cells->mult; ++cell)
       {
 	 int m = box->bcalCells->mult;
          int mok = 0;
 
-         /* compress out the hits below threshold */
-         s_BcalUpstreamHits_t* upshots = cells->in[0].bcalUpstreamHits;
-         s_BcalDownstreamHits_t* downshots = cells->in[0].bcalDownstreamHits;
+         s_BcalUpstreamHits_t* upshots = cells->in[cell].bcalUpstreamHits;
+         s_BcalDownstreamHits_t* downshots = cells->in[cell].bcalDownstreamHits;
           
-         if (upshots != HDDM_NULL)
-         {         
-            int i,iok;
-            for (iok=i=0; i < upshots->mult; i++)
+         /* compress out the hits below threshold */
+         int i,iok;
+         for (iok=i=0; i < upshots->mult; i++)
+         {
+            if (upshots->in[i].E >= THRESH_MEV/1e3)
             {
-               if (upshots->in[i].E >= THRESH_MEV/1e3)
+               if (iok < i)
                {
-                  if (iok < i)
-                  {
-                     upshots->in[iok] = upshots->in[i];
-                  }
-                  ++iok;
-                  ++mok;
+                  upshots->in[iok] = upshots->in[i];
                }
+               ++iok;
+               ++mok;
             }
+         }
+         if (upshots != HDDM_NULL)
+         {
             upshots->mult = iok;
             if (iok == 0)
             {
-               cells->in[0].bcalUpstreamHits = HDDM_NULL;
+               cells->in[cell].bcalUpstreamHits = HDDM_NULL;
                FREE(upshots);
+            }
+         }
+         for (iok=i=0; i < downshots->mult; i++)
+         {
+            if (downshots->in[i].E >= THRESH_MEV/1e3)
+            {
+               if (iok < i)
+               {
+                  downshots->in[iok] = downshots->in[i];
+               }
+               ++iok;
+               ++mok;
             }
          }
          if (downshots != HDDM_NULL)
          {
-            int i,iok;
-            for (iok=i=0; i < downshots->mult; i++)
-            {
-               if (downshots->in[i].E >= THRESH_MEV/1e3)
-               {
-                  if (iok < i)
-                  {
-                     downshots->in[iok] = downshots->in[i];
-                  }
-                  ++iok;
-                  ++mok;
-               }
-            }
             downshots->mult = iok;
             if (iok == 0)
             {
-               cells->in[0].bcalDownstreamHits = HDDM_NULL;
+               cells->in[cell].bcalDownstreamHits = HDDM_NULL;
                FREE(downshots);
             }
          }
 
          if (mok)
          {
-            box->bcalCells->in[m] = cells->in[0];
+            box->bcalCells->in[m] = cells->in[cell];
             box->bcalCells->mult++;
          }
+      }
+      if (cells != HDDM_NULL)
+      {
          FREE(cells);
       }
 
-      else if (showers != HDDM_NULL)
+      for (shower=0; shower < showers->mult; ++shower)
       {
          int m = box->bcalTruthShowers->mult++;
-         box->bcalTruthShowers->in[m] = showers->in[0];
+         box->bcalTruthShowers->in[m] = showers->in[shower];
+      }
+      if (showers != HDDM_NULL)
+      {
          FREE(showers);
       }
 

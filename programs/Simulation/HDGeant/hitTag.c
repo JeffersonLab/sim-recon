@@ -136,35 +136,39 @@ s_Tagger_t* pickTagger ()
    while (item = (s_Tagger_t*) pickTwig(&taggerTree))
    {
       s_MicroChannels_t* channels = item->microChannels;
-      if (channels != HDDM_NULL) {
-         s_TaggerHits_t* hits = channels->in[0].taggerHits;
+      int channel;
+      for (channel=0; channel < channels->mult; ++channel)
+      {
+         s_TaggerHits_t* hits = channels->in[channel].taggerHits;
+
+         /* constraint t values to lie within time range */
          int i;
-         int mok=0;
-         if (hits != HDDM_NULL)
+         int iok=0;
+         for (iok=i=0; i < hits->mult; i++)
          {
-            for (mok=i=0; i < hits->mult; i++)
+            if ((hits->in[i].t >= TAGMS_T_MIN) &&
+                (hits->in[i].t <= (TAGMS_T_MIN+TAGMS_T_RANGE)))
             {
-               if ((hits->in[i].t >= TAGMS_T_MIN) &&
-                   (hits->in[i].t <= (TAGMS_T_MIN+TAGMS_T_RANGE)))
+               if (iok < i)
                {
-                  if (mok < i)
-                  {
-                     hits->in[mok] = hits->in[i];
-                  }
-                  ++mok;
+                  hits->in[iok] = hits->in[i];
                }
+               ++iok;
             }
-            hits->mult = mok;
          }
-         if (mok > 0)
+         if (iok)
          {
+            hits->mult = iok;
             int m = box->microChannels->mult++;
             box->microChannels->in[m] = channels->in[0];
          }
-         else 
+         else if (hits != HDDM_NULL)
          {
             FREE(hits);
          }
+      }
+      if (channels != HDDM_NULL)
+      {
          FREE(channels);
       }
       FREE(item);
