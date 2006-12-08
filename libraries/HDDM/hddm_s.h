@@ -23,8 +23,27 @@
 #include <strings.h>
 #include <particleType.h>
 
-#define MALLOC(N,S) malloc(N)
-#define FREE(P) free(P)
+/* Note to users: The option MALLOC_FREE_WITH_MEMCHECK
+ * was created for debugging this hddm library, but it
+ * is also useful for finding memory leaks in user
+ * code.  To use it, replace malloc(n) everywhere in
+ * your code with MALLOC(n,"some descriptive string")
+ * and free(p) with FREE(p) and include this header
+ * and compile with -DMALLOC_FREE_WITH_MEMCHECK set.
+ * Any attempt to malloc memory already malloc'ed or
+ * to free memory that has not yet been malloc'ed is
+ * immediately flagged with an error message.  A call
+ * to checkpoint() anywhere in the user code reports
+ * any memory that has been malloc'ed not freed.
+ */
+#if defined MALLOC_FREE_WITH_MEMCHECK
+#  include <memcheck.h>
+#  define MALLOC(N,S) (checkin(malloc(N),S))
+#  define FREE(P) (checkout(P),free(P))
+#else
+#  define MALLOC(N,S) malloc(N)
+#  define FREE(P) free(P)
+#endif
 
 #ifndef SAW_s_Momentum_t
 #define SAW_s_Momentum_t
@@ -933,6 +952,8 @@ extern "C" {
 #endif
 
 s_HDDM_t* read_s_HDDM(s_iostream_t* fp);
+
+int skip_s_HDDM(s_iostream_t* fp, int nskip);
 
 int flush_s_HDDM(s_HDDM_t* this1,s_iostream_t* fp);
 

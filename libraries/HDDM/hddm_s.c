@@ -2745,6 +2745,25 @@ s_HDDM_t* read_s_HDDM(s_iostream_t* fp)
    return (nextEvent == HDDM_NULL)? 0 : nextEvent;
 }
 
+int skip_s_HDDM(s_iostream_t* fp, int nskip)
+{
+   int skipped;
+   for (skipped=0; skipped < nskip; ++skipped)
+   {
+      unsigned int size;
+      if (! xdr_u_int(fp->xdrs,&size))
+      {
+          return skipped;
+      }
+      else if (size > 0)
+      {
+         int start = xdr_getpos(fp->xdrs);
+         xdr_setpos(fp->xdrs,start+size);
+      }
+   }
+   return skipped;
+}
+
 static int pack_s_HDDM(XDR* xdrs, s_HDDM_t* this1);
 static int pack_s_PhysicsEvents(XDR* xdrs, s_PhysicsEvents_t* this1);
 static int pack_s_Reactions(XDR* xdrs, s_Reactions_t* this1);
@@ -5047,7 +5066,7 @@ s_iostream_t* init_s_HDDM(char* filename)
    return fp;
 }
 
-void popaway(popNode* p)
+static void popaway(popNode* p)
 {
    if (p)
    {
