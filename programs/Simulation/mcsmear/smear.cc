@@ -72,7 +72,10 @@ float FDC_AVG_NOISE_HITS = 0.01*2856.0; // 0.01 = 1% occupancy
 float FDC_PED_NOISE=2.7; // pC
 
 // Drift time variation for FDC anode wires
-float FDC_DRIFT_SIGMA=200.0/50.0; // 200 microns/ (50 microns/ns)
+float FDC_DRIFT_SIGMA=200.0/22.0; // 200 microns/ (22 microns/ns)
+
+// Drift time variation for CDC anode wires
+float CDC_DRIFT_SIGMA=200.0/22.0; // 200 microns/ (22 microns/ns)
 
 
 //-----------
@@ -136,6 +139,18 @@ void SmearCDC(s_HDDM_t *hddm_s)
 			cdctruthpoint->phi = atan2(y,x);
 			if(cdctruthpoint->phi<0.0)cdctruthpoint->phi += 2.0*M_PI;
 			cdctruthpoint->z = z;
+		}
+
+		// Add drift time varation to the anode data 
+		if (hits->centralDC->cdcStraws != HDDM_NULL){
+			for(unsigned int k=0; k<hits->centralDC->cdcStraws->mult; k++){
+				s_CdcStraw_t *cdcstraw = &hits->centralDC->cdcStraws->in[k];
+				for(unsigned int j=0; j<cdcstraw->cdcStrawHits->mult; j++){
+					s_CdcStrawHit_t *strawhit = &cdcstraw->cdcStrawHits->in[j];
+
+					strawhit->t+=SampleGaussian(CDC_DRIFT_SIGMA);
+				}
+			}
 		}
 	}
 }
