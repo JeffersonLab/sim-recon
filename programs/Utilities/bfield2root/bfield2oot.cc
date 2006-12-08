@@ -27,6 +27,7 @@ int main(int narg, char *argv[])
 	cout<<"Opened ROOT file \"bfield.root\""<<endl;
 
 	// Create Magnetic Field Map
+	new JParameterManager(); // normally, this is created by JApplication!
 	DMagneticFieldMap *bfield = new DMagneticFieldMap();
 
 	// Create Tree
@@ -39,7 +40,7 @@ int main(int narg, char *argv[])
 	bfield->GetTable(Bmap, Npoints);
 	
 	double BMAP_Z_OFFSET;
-	jparms.GetParameter("GEOM:BMAP_Z_OFFSET", BMAP_Z_OFFSET);
+	gPARMS->GetParameter("GEOM:BMAP_Z_OFFSET", BMAP_Z_OFFSET);
 	
 
 	// Loop over all points in the map
