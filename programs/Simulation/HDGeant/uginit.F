@@ -163,6 +163,7 @@ C..geant..
 *             Prints version number
 *
       WRITE(LOUT,1000)
+ 1000 FORMAT(/,'  MODE VERSION 1.00 : ',/)
 *
 *             IKINE  = particle type (default=1=gamma)
 *             PKINE(1)=particle energy
@@ -265,7 +266,13 @@ C..geant..
       CALL GRFILE(3,'hdgeant.rz','ON')
       CALL HCDIR('//RZfile',' ')
 *
+*             Initialize the GELHAD package and verify parameters
+*
       call gelh_vrfy()
 *
- 1000 FORMAT(/,'  MODE VERSION 1.00 : ',/)
+*             Load FLUKA and MICAP cross section data if selected
+*
+      if (IHADR.ge.3) call FLINIT
+      if (IHADR.eq.4) call GMORIN
+
       END
