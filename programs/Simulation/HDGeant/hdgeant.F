@@ -3,7 +3,7 @@
       implicit none
       real q,hq
       integer ispace,hspace
-      parameter (ispace=2000000)
+      parameter (ispace=2500000)
       parameter (hspace=5000000)
       common /gcbank/ q(ispace)
       common /pawc/ hq(hspace)
