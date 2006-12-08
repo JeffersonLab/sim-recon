@@ -206,17 +206,25 @@ void DMagneticFieldMap::GetBilinear(double x, double y, double z, double &Bx, do
 	// like 1/(d+epsilon) where epsilon avoids poles at corners. 
 	double epsilon = 0.001;
 	double w[4], sum_w=0.0;
+	double Br=0.0, Bphi=0.0;;
 	for(int i=0; i<4; i++){
 		w[i] = 1.0/(d[0]+epsilon);
 		sum_w += w[i];
 
-		Bx+=w[i]*B[i]->Bx;
-		By+=w[i]*B[i]->By;
+		Br+=w[i]*B[i]->Bx;
+		Bphi+=w[i]*B[i]->By;
 		Bz+=w[i]*B[i]->Bz;
 	}
-	Bx /= sum_w;
-	By /= sum_w;
+	Br /= sum_w;
+	Bphi /= sum_w;
 	Bz /= sum_w;
+	
+	double theta = atan2(y,x);
+	double cos_theta = cos(theta);
+	double sin_theta = sin(theta);
+	
+	Bx = Br*cos_theta - Bphi*sin_theta;
+	By = Br*sin_theta + Bphi*cos_theta;
 }
 
 //---------------------
