@@ -79,25 +79,7 @@ int openInput (char* filename)
  */
 int skipInput (int count)
 {
-	/* Skip over the specified number of events in the input file */
-	/* NOTE: This is NOT safe for cross-platform use!! */
-   int* buff = (int*) malloc(1000000);
-   while (thisInputStream && (count > 0))
-   {
-      int ret = fread(buff, sizeof(int), 1, thisInputStream->fd);
-      if (ret == 1)
-      {
-         int nw = *buff;
-         ret = fread(buff, sizeof(int), nw, thisInputStream->fd);
-         --count;
-      }
-      else
-      {
-         break;
-      }
-   }
-   free(buff);
-   return count;
+   return count - skip_s_HDDM(thisInputStream,count);
 }
 
 /*-------------------------
@@ -134,7 +116,9 @@ int loadInput ()
 	 */
    s_Reactions_t* reacts;
    int reactCount, ir;
-
+   int runNo = thisInputEvent->physicsEvents->in[0].runNo;
+   int eventNo = thisInputEvent->physicsEvents->in[0].eventNo;
+   seteventid_(&runNo,&eventNo);
    reacts = thisInputEvent ->physicsEvents->in[0].reactions;
    reactCount = reacts->mult;
    for (ir = 0; ir < reactCount; ir++)
