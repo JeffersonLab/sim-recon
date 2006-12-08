@@ -138,6 +138,7 @@ class CodeBuilder
    void constructConstructors();
    void constructUnpackers();
    void constructReadFunc(DOMElement* topEl);
+   void constructSkipFunc();
    void constructPackers();
    void constructFlushFunc(DOMElement* el);
    void writeMatcher();
@@ -337,8 +338,27 @@ int main(int argC, char* argV[])
 	 << "#include <strings.h>"				<< std::endl
 	 << "#include <particleType.h>"				<< std::endl
 								<< std::endl
-	 << "#define MALLOC(N,S) malloc(N)"			<< std::endl
-	 << "#define FREE(P) free(P)"				<< std::endl;
+	 << "/* Note to users: The option MALLOC_FREE_WITH_MEMCHECK" << std::endl
+	 << " * was created for debugging this hddm library, but it" << std::endl
+	 << " * is also useful for finding memory leaks in user" << std::endl
+	 << " * code.  To use it, replace malloc(n) everywhere in" << std::endl
+	 << " * your code with MALLOC(n,\"some descriptive string\")" << std::endl
+	 << " * and free(p) with FREE(p) and include this header" << std::endl
+	 << " * and compile with -DMALLOC_FREE_WITH_MEMCHECK set." << std::endl
+	 << " * Any attempt to malloc memory already malloc'ed or" << std::endl
+	 << " * to free memory that has not yet been malloc'ed is" << std::endl
+	 << " * immediately flagged with an error message.  A call" << std::endl
+	 << " * to checkpoint() anywhere in the user code reports" << std::endl
+	 << " * any memory that has been malloc'ed not freed." 	<< std::endl
+	 << " */"						<< std::endl
+	 << "#if defined MALLOC_FREE_WITH_MEMCHECK"		<< std::endl
+         << "#  include <memcheck.h>"				<< std::endl
+         << "#  define MALLOC(N,S) (checkin(malloc(N),S))"	<< std::endl
+         << "#  define FREE(P) (checkout(P),free(P))"		<< std::endl
+         << "#else"						<< std::endl
+	 << "#  define MALLOC(N,S) malloc(N)"			<< std::endl
+	 << "#  define FREE(P) free(P)"				<< std::endl
+         << "#endif"						<< std::endl;
 
    builder.cFile
 	 << "int hddm_nullTarget=0;"				<< std::endl
@@ -408,6 +428,7 @@ int main(int argC, char* argV[])
 	 << "extern \"C\" {"					<< std::endl
 	 << "#endif"						<< std::endl;
    builder.constructReadFunc(rootEl);
+   builder.constructSkipFunc();
    builder.constructFlushFunc(rootEl);
    builder.constructOpenFunc(rootEl);
    builder.constructInitFunc(rootEl);
@@ -1096,6 +1117,36 @@ void CodeBuilder::constructReadFunc(DOMElement* topEl)
 	 << "}"								<< std::endl;
 }
 
+/* Generate c function to skip over events in the binary stream */
+
+void CodeBuilder::constructSkipFunc()
+{
+   hFile								<< std::endl
+	 << "int skip_" << classPrefix << "_HDDM"
+	 << "(" << classPrefix << "_iostream_t* fp, int nskip);"	<< std::endl;
+
+   cFile								<< std::endl
+	 << "int skip_" << classPrefix << "_HDDM"
+	 << "(" << classPrefix << "_iostream_t* fp, int nskip)"		<< std::endl
+	 << "{"								<< std::endl
+         << "   int skipped;"						<< std::endl
+         << "   for (skipped=0; skipped < nskip; ++skipped)"		<< std::endl
+         << "   {"							<< std::endl
+         << "      unsigned int size;"					<< std::endl
+         << "      if (! xdr_u_int(fp->xdrs,&size))"			<< std::endl
+         << "      {"							<< std::endl
+         << "          return skipped;"					<< std::endl
+         << "      }"							<< std::endl
+         << "      else if (size > 0)"					<< std::endl
+         << "      {"							<< std::endl
+         << "         int start = xdr_getpos(fp->xdrs);"		<< std::endl
+         << "         xdr_setpos(fp->xdrs,start+size);"			<< std::endl
+         << "      }"							<< std::endl
+         << "   }"							<< std::endl
+         << "   return skipped;"					<< std::endl
+         << "}"								<< std::endl;
+}
+
 /* Generate streamers for packing c-structures onto a binary stream
  * and deleting them from memory when output is complete
  */
@@ -1644,7 +1695,7 @@ void CodeBuilder::constructCloseFunc(DOMElement* el)
 	 << classPrefix << "_iostream_t* fp);"			<< std::endl;
 
    cFile							<< std::endl
-         << "void popaway(popNode* p)"				<< std::endl
+         << "static void popaway(popNode* p)"			<< std::endl
          << "{"							<< std::endl
          << "   if (p)"						<< std::endl
          << "   {"						<< std::endl
