@@ -16,7 +16,7 @@
 #include <bintree.h>
 
 // Drift speed 2.2cm/us is appropriate for a 90/10 Argon/Methane mixture
-#define DRIFT_SPEED	.0022
+#define DRIFT_SPEED	.0055
 #define TWO_HIT_RESOL	250.
 #define MAX_HITS 	100
 #define THRESH_KEV	1.
