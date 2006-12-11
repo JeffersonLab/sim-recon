@@ -11,7 +11,7 @@
 #define FDC_ACTIVE_RADIUS		53.6
 
 //----- These were cut from HDGeant/hitFDC.c -----
-#define DRIFT_SPEED           .0022
+#define DRIFT_SPEED           .0055
 #define WIRE_DEAD_ZONE_RADIUS 3.5
 #define ANODE_CATHODE_SPACING 0.5
 #define TWO_HIT_RESOL         250.

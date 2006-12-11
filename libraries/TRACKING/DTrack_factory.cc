@@ -360,7 +360,7 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 			// Calculate time of flight (TOF) so we can subtract it
 			double beta = 0.8; // use average beta for now. This should eventually come from outer detectors
 			double tof = s/(beta*3E10*1E-9);
-			dist = (hit.cdchit->tdrift-tof)*22E-4;
+			dist = (hit.cdchit->tdrift-tof)*55E-4;
 			sigma = 0.0200; // 200 um
 		}
 
@@ -388,7 +388,7 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 			// Calculate time of flight (TOF) so we can subtract it
 			double beta = 0.8;
 			double tof = s/(beta*3E10*1E-9);
-			dist = (hit.fdchit->time-tof)*22E-4;
+			dist = (hit.fdchit->time-tof)*55E-4;
 			sigma = 0.0200; // 200 um
 		}
 
@@ -638,7 +638,7 @@ void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_p
 		// Temporary debugging histos
 		double beta = 0.8;
 		double tof = closest_hit.s/(beta*3E10*1E-9);
-		double dist = (hit->time-tof)*22E-4;
+		double dist = (hit->time-tof)*55E-4;
 		fdcdoca_vs_dist->Fill(dist, closest_hit.dist);
 	}
 	
@@ -882,9 +882,9 @@ cout<<__FILE__<<":"<<__LINE__<<" dists[j]="<<dists[j]<<" dist="<<dist<<" H_cdc[]
 			//H_cdc[0][j]=0.0;
 		}
 
-		// For Monte Carlo, dist = 22um*tdrift
+		// For Monte Carlo, dist = 55um*tdrift
 		TMatrixD z_minus_h(1,1);
-		double z = hit.cdchit->tdrift*22.0E-4;
+		double z = hit.cdchit->tdrift*55.0E-4;
 		z=0.0; // Hit-based tracking is equivalent to tdrift=0
 		z_minus_h[0][0] = z - dist;
 		
