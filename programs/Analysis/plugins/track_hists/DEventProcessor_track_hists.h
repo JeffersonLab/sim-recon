@@ -48,7 +48,7 @@ class DEventProcessor_track_hists:public JEventProcessor{
 		TH1F *stats;
 		TH1F *frac_from_thrown;
 		TH2F *stats_vs_theta, *stats_vs_phi, *stats_vs_p, *stats_vs_nhits;
-		TH2F *dp_over_p_vs_p, *dp_over_p_vs_theta;
+		TH2F *dp_over_p_vs_p, *dp_over_p_vs_theta, *dpcandidate_over_p_vs_theta;
 		TH2F *pthrown_over_pfound_vs_p, *sinthrown_over_sinfound_vs_sin;
 		TH2F *pcandidatethrown_over_pfound_vs_p;
 		TH2F *phithrown_over_phifound_vs_phi;

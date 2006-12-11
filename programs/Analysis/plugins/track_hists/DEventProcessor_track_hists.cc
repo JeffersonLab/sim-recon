@@ -88,6 +88,7 @@ jerror_t DEventProcessor_track_hists::init(void)
 	stats_vs_nhits	= new TH2F("stats_vs_nhits","MC Tracking Eff. vs. Nhits", 201, -0.5, 200.5, NBINS, 0.5, (float)NBINS + 0.5);
 	dp_over_p_vs_p	= new TH2F("dp_over_p_vs_p","dp/p vs. p",	200, 0.0, 10.0, 200, -0.500, 0.500);
 	dp_over_p_vs_theta	= new TH2F("dp_over_p_vs_theta","dp/p vs. theta",	200, 0.0, M_PI, 200, -0.500, 0.500);
+	dpcandidate_over_p_vs_theta	= new TH2F("dpcandidate_over_p_vs_theta","dpcan/p vs. theta",	200, 0.0, M_PI, 200, -0.500, 0.500);
 	pthrown_over_pfound_vs_p	= new TH2F("pthrown_over_pfound_vs_p","pthrown/pfound vs. p",	200, 0.0, 10.0, 200, 0.0, 5.0);
 	pcandidatethrown_over_pfound_vs_p	= new TH2F("pcandidatethrown_over_pfound_vs_p","pthrown/pfound vs. p",	200, 0.0, 10.0, 200, 0.0, 5.0);
 	sinthrown_over_sinfound_vs_sin	= new TH2F("sinthrown_over_sinfound_vs_sin","sin(theta)/sin(theta_found) vs. sin(theta)",	200, 0.0, 1.0, 200, 0.0, 5.0);
@@ -209,6 +210,8 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 				if(track->p != 0.0)
 					pthrown_over_pfound_vs_p->Fill(mcthrown->p,mcthrown->p/track->p);
 				const DTrackCandidate *trackcandidate = factory_trkcandidate->GetByIDT(track->candidateid);
+				float dpcan_over_p = (trackcandidate->p - mcthrown->p)/mcthrown->p;
+				dpcandidate_over_p_vs_theta->Fill(theta, dpcan_over_p);
 				if(trackcandidate->p != 0.0)
 					pcandidatethrown_over_pfound_vs_p->Fill(mcthrown->p,mcthrown->p/trackcandidate->p);
 				
