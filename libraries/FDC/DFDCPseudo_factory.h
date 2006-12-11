@@ -3,6 +3,7 @@
 // pseudopoints from anode hits and cathode clusters.
 // Author: Craig Bookwalter
 // Date: Apr 2006
+// Several revisions made by Simon Taylor, Fall 2006
 //******************************************************************
 #ifndef DFACTORY_DFDCPSEUDO_H
 #define DFACTORY_DFDCPSEUDO_H
@@ -15,6 +16,9 @@
 #include "DFDCCathodeCluster.h"
 #include "DFDCHit.h"
 #include "DFDCGeometry.h"
+
+#include <TMatrixD.h>
+#include <TDecompLU.h>
 
 #include <algorithm>
 #include <map>
@@ -67,11 +71,16 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		/// containing a peak.
 		///
 		jerror_t FindCentroid(const vector<const DFDCHit*>& H, 
-				   vector<const DFDCHit *>::const_iterator peak,
-				      vector<centroid_t> &centroids);
-
+				 vector<const DFDCHit *>::const_iterator peak,
+				 vector<centroid_t> &centroids);
+		// Backtracking routine needed by FindCentroid 
+		jerror_t DFDCPseudo_factory::FindNewParmVec(TMatrixD N,
+						       TMatrixD X,
+						       TMatrixD F,
+						       TMatrixD J,TMatrixD par,
+						       TMatrixD &newpar);
+ 		
 	private:
-				
 		std::vector<centroid_t>upeaks;
 		std::vector<centroid_t>vpeaks;
 		DFDCGeometry _geo;

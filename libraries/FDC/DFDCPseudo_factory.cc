@@ -7,10 +7,6 @@
 //********************************************************
 
 #include "DFDCPseudo_factory.h"
-#include "DFDCGeometry.h"
-
-#include <TMatrixD.h>
-#include <TDecompLU.h>
 
 #define X0 0
 #define QA 1
@@ -19,6 +15,7 @@
 #define TOLX 1e-4
 #define TOLF 1e-4
 #define A_OVER_H 0.475
+#define ALPHA 1e-4 // rate parameter for Newton step backtracking algorithm
 
 ///
 /// DFDCCathodeCluster_gLayer_cmp(): 
@@ -72,7 +69,7 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	vector<const DFDCCathodeCluster*> vClus;
 	vector<const DFDCCathodeCluster*> oneLayerV;
 	vector<const DFDCHit*> oneLayerX;
-	
+
 	eventLoop->Get(fdcHits);
 	eventLoop->Get(cathClus);
 	
@@ -237,11 +234,10 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 /// See Numerical Recipes in C p.379-383.
 /// Updates list of centroids. 
 ///
-
-jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H, 
-		       vector<const DFDCHit *>::const_iterator peak,
+jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
+                       vector<const DFDCHit *>::const_iterator peak,
                        vector<centroid_t>&centroids){
-  centroid_t temp; 
+  centroid_t temp;
   // Make sure we do not exceed the range of the vector
   if (peak>H.begin() && peak+1!=H.end()){
     float err_diff1=0.,err_diff2=0.;
@@ -253,85 +249,176 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
     //float dq3=(*(peak+1))->dq;
     //err_diff1=sqrt(dq1*dq1+dq2*dq2);
     //err_diff2=sqrt(dq2*dq2+dq3*dq3);
-  
+   
     // Check for a peak in three adjacent strips
     if ((*peak)->dE-(*(peak-1))->dE > err_diff1
-		&& (*peak)->dE-(*(peak+1))->dE > err_diff2){
+                && (*peak)->dE-(*(peak+1))->dE > err_diff2){
       // Define some matrices for use in the Newton-Raphson iteration
       TMatrixD J(3,3);  //Jacobean matrix
-      TMatrixD F(3,1),N(3,1),X(3,1),par(3,1),dpar(3,1);
+      TMatrixD F(3,1),N(3,1),X(3,1),par(3,1);
+      TMatrixD newpar(3,1);
       int i=0;
       double sum=0.;
-      
+ 
       // Initialize the matrices to some suitable starting values
       par(X0,0)=double((*peak)->element);
       par(K2,0)=1.;
       for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
-	X(i,0)=double((*j)->element);
-	N(i++,0)=double((*j)->dE);
-	sum+=double((*j)->dE);
+        X(i,0)=double((*j)->element);
+        N(i++,0)=double((*j)->dE);
+        sum+=double((*j)->dE);
       }
       par(QA,0)=2.*sum;
-      
+      newpar=par;
+    
       // Newton-Raphson procedure
-      double errf=0.,errx=0.;
+      double errf=0.,errx=0;
       for (int iter=1;iter<=ITER_MAX;iter++){
-	errf=0.;
-	errx=0.;
-	for (i=0;i<3;i++){
-	  double argp=par(K2,0)*(par(X0,0)-X(i,0)+A_OVER_H);
-	  double argm=par(K2,0)*(par(X0,0)-X(i,0)-A_OVER_H);
-	  
-	  //Find the Jacobian matrix:  J_ij = dF_i/dx_j. 
-	  J(i,QA)=-(tanh(argp)-tanh(argm))/4.;
-	  J(i,K2)=-par(QA,0)/4.*(argp/par(K2,0)*(1.-tanh(argp)*tanh(argp))
-				 -argm/par(K2,0)*(1.-tanh(argm)*tanh(argm)));
-	  J(i,X0)=-par(QA,0)*par(K2,0)/4.
-	    *(tanh(argm)*tanh(argm)-tanh(argp)*tanh(argp));
-	  
-	  // update F_i
+        errf=0.;
+        errx=0.;
+
+        // Compute Jacobian matrix: J_ij = dF_i/dx_j.
+        for (i=0;i<3;i++){
+          double argp=par(K2,0)*(par(X0,0)-X(i,0)+A_OVER_H);
+          double argm=par(K2,0)*(par(X0,0)-X(i,0)-A_OVER_H);
+           
+          J(i,QA)=-(tanh(argp)-tanh(argm))/4.;
+          J(i,K2)=-par(QA,0)/4.*(argp/par(K2,0)*(1.-tanh(argp)*tanh(argp))
+                                 -argm/par(K2,0)*(1.-tanh(argm)*tanh(argm)));
+          J(i,X0)=-par(QA,0)*par(K2,0)/4.
+            *(tanh(argm)*tanh(argm)-tanh(argp)*tanh(argp)); 
 	  F(i,0)=N(i,0)-par(QA,0)/4.*(tanh(argp)-tanh(argm));
-	  
-	  errf+=fabs(F(i,0));
-	}
-	
+	  if (fabs(F(i,0))>errf) errf=fabs(F(i,0));
+        }
 	// Check for convergence
 	if (errf<TOLF){	
 	  temp.pos=par(X0,0);
 	  temp.q=par(QA,0);
 	  temp.numstrips=3;
 	  centroids.push_back(temp);
-	  
+  
 	  return NOERROR;
 	}
-	// Check that J is invertible
-	TDecompLU lu(J);
-	if (lu.Decompose()==false) return UNRECOVERABLE_ERROR; // error placeholder
 
-	// Invert the J matrix
-	TMatrixD InvJ(TMatrixD::kInverted,J);
-	
-	// Find the corrections to the vector par:
-	dpar=InvJ*F;
-	// calculate the improved values of the parameters
-	par-=dpar;
-	
-	//Check for convergence
-	for (i=0;i<3;i++){
-	  errx+=fabs(dpar(i,0));
+        // Check that J is invertible
+        TDecompLU lu(J);
+        if (lu.Decompose()==false){
+          *_log << ":FindCentroid: Singular matrix"<< endMsg;
+           
+          return UNRECOVERABLE_ERROR; // error placeholder
+        }
+
+	// Find the new set of parameters
+        jerror_t error;
+	if ((error=FindNewParmVec(N,X,F,J,par,newpar))!=NOERROR){
+	  *_log << ":FindNewParmVec:  error=" << error << endMsg;
+
+	  return error;
 	}
-	if (errx<TOLX){	
-	  temp.pos=par(X0,0);
-	  temp.q=par(QA,0);
-	  temp.numstrips=3;
-	  centroids.push_back(temp);
-	  
-	  return NOERROR;
+
+        //Check for convergence
+        for (i=0;i<3;i++){
+          if (fabs(par(i,0)-newpar(i,0))>errx) errx=fabs(par(i,0)-newpar(i,0));
 	}
+        if (errx<TOLX){
+          temp.pos=par(X0,0);
+          temp.q=par(QA,0);
+          temp.numstrips=3;
+          centroids.push_back(temp);
+        
+          return NOERROR;
+        }
+	par=newpar;
       }
     }
   }
+  else return VALUE_OUT_OF_RANGE;
+    
   return INFINITE_RECURSION; // error placeholder
+}
+     
+
+
+///
+/// DFDCPseudo_factory::FindNewParmVec()
+///   Routine used by FindCentroid to backtrack along the direction
+/// of the Newton step if the step is too large in order to avoid conditions
+/// where the iteration procedure starts to diverge.
+/// The procedure uses a scalar quantity f= 1/2 F.F for this purpose.
+/// Algorithm described in Numerical Recipes in C, pp. 383-389.
+///
+ 
+jerror_t DFDCPseudo_factory::FindNewParmVec(TMatrixD N,TMatrixD X,TMatrixD F,
+				       TMatrixD J,TMatrixD par,
+				       TMatrixD &newpar){
+  // Invert the J matrix
+  TMatrixD InvJ(TMatrixD::kInverted,J);
+  
+  // Find the full Newton step
+  TMatrixD fullstep(3,1);
+  fullstep=InvJ*F; fullstep*=-1;
+
+  // find the rate of decrease for the Newton-Raphson step
+  TMatrixD slope(1,1);
+  slope=(-1.0)*TMatrixD(TMatrixD::kTransposed,F)*F; //dot product
+
+  // This should be a negative number...
+  if (slope(0,0)>=0){
+    return VALUE_OUT_OF_RANGE;
+  }
+  
+  double lambda=1.0;  // Start out with full Newton step
+  double lambda_temp,lambda2=lambda;
+  TMatrixD f(1,1),f2(1,1),newF(3,1),newf(1,1);
+
+  // Compute starting values for f=1/2 F.F 
+  f=0.5*(TMatrixD(TMatrixD::kTransposed,F)*F); // dot product
+
+  for (;;){
+    newpar=par+lambda*fullstep;
+
+    // Compute the value of the vector F and f=1/2 F.F with the current step
+    for (int i=0;i<3;i++){
+      double argp=newpar(K2,0)*(newpar(X0,0)-X(i,0)+A_OVER_H);
+      double argm=newpar(K2,0)*(newpar(X0,0)-X(i,0)-A_OVER_H);
+      newF(i,0)=N(i,0)-newpar(QA,0)/4.*(tanh(argp)-tanh(argm));
+    }
+    newf=0.5*(TMatrixD(TMatrixD::kTransposed,newF)*newF); // dot product
+ 
+    if (lambda<0.1) {  // make sure the step is not too small
+      newpar=par;
+      return NOERROR;
+    } // Check if we have sufficient function decrease
+    else if (newf(0,0)<=f(0,0)+ALPHA*lambda*slope(0,0)){
+      return NOERROR;
+    }
+    else{
+      // g(lambda)=f(par+lambda*fullstep)
+      if (lambda==1.0){//first attempt: quadratic approximation for g(lambda)
+        lambda_temp=-slope(0,0)/2./(newf(0,0)-f(0,0)-slope(0,0));
+      }
+      else{ // cubic approximation for g(lambda)
+        double temp1=newf(0,0)-f(0,0)-lambda*slope(0,0);
+        double temp2=f2(0,0)-f(0,0)-lambda2*slope(0,0);
+        double a=(temp1/lambda/lambda-temp2/lambda2/lambda2)/(lambda-lambda2);
+        double b=(-lambda2*temp1/lambda/lambda+lambda*temp2/lambda2/lambda2)
+          /(lambda-lambda2);
+        if (a==0.0) lambda_temp=-slope(0,0)/2./b;
+        else{
+          double disc=b*b-3.0*a*slope(0,0);
+          if (disc<0.0) lambda_temp=0.5*lambda;
+          else if (b<=0.0) lambda_temp=(-b+sqrt(disc))/3./a;
+          else lambda_temp=-slope(0,0)/(b+sqrt(disc));
+        }
+        // ensure that we are headed in the right direction...
+        if (lambda_temp>0.5*lambda) lambda_temp=0.5*lambda;
+      }
+    }
+    lambda2=lambda;
+    f2=newf;
+    // Make sure that new version of lambda is not too small
+    lambda=(lambda_temp>0.1*lambda ? lambda_temp : 0.1*lambda);
+  } 
 }
 
 //------------------
