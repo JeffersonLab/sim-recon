@@ -86,8 +86,11 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 		doca_axial = new TH1F("doca_axial","DOCA of track for axial CDC wires",300,0.0,3.0);
 		dist_stereo = new TH1F("dist_stereo","Distance from drift time for stereo CDC wires",300,0.0,3.0);
 		doca_stereo = new TH1F("doca_stereo","DOCA of track for axial CDC wires",300,0.0,3.0);
-		fit_chisq = new TH1F("fit_chisq","Fit chi-sq.",100, 0.0, 5.0);
+		chisq_final_vs_initial = new TH2F("chisq_final_vs_initial","Final vs. initial chi-sq.",200, 0.0, 10.0,50, 0.0, 2.5);
+		nhits_final_vs_initial = new TH2F("nhits_final_vs_initial","Final vs. initial nhits used in chi-sq.",30, -0.5, 29.5, 30, -0.5, 29.5);
 		residuals = new TH1F("residuals","Residuals",1000,0.0,2.0);
+		Npasses = new TH1F("Npasses","Npasses", 21, -0.5, 20.5);
+		ptotal = new TH1F("ptotal","ptotal",1000, 0.1, 8.0);
 	}
 
 	return NOERROR;
@@ -169,7 +172,11 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *tc)
 		mom = vertex_mom;
 	}
 	
-	if(DEBUG_HISTS)FillDebugHists(rt, vertex_pos, vertex_mom);
+	if(DEBUG_HISTS)Npasses->Fill(Niterations);
+
+	if(Niterations==0)return NULL;
+	
+	if(DEBUG_HISTS)FillDebugHists(rt, vertex_pos, vertex_mom, tc);
 
 	// Delete reference trajectory
 	delete rt;
@@ -401,7 +408,7 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 
 	// Add "good" hits together to get the chi-squared
 	double chisq = 0;
-	double Nused=0.0;
+	Ngood_chisq_hits=0.0;
 	for(unsigned int i=0; i<chisqv.size(); i++){
 		// Check if this hit is close enough to the RT to be on
 		// the track. This should be a function of both the distance
@@ -412,9 +419,9 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 		if(fabs(chisqv[i]/sigmav[i])>5.0)continue;
 
 		chisq+=pow(chisqv[i]/sigmav[i], 2.0);
-		Nused += 1.0;
+		Ngood_chisq_hits += 1.0;
 	}
-	chisq/=Nused;
+	chisq/=Ngood_chisq_hits;
 
 	// If we created the reference trajectory, then delete
 	if(own_rt)delete rt;
@@ -432,7 +439,7 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	
 	// Because we have a non-linear system, we must take the derivatives
 	// numerically.
-	unsigned int Nhits = cdchits_on_track.size() + 2.0*fdchits_on_track.size();
+	unsigned int Nhits = cdchits_on_track.size() + 2*fdchits_on_track.size();
 	swim_step_t *start_step = &rt->swim_steps[0];
 	double deltas[6];
 
@@ -576,13 +583,12 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 //------------------
 // FillDebugHists
 //------------------
-void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom)
+void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom, const DTrackCandidate* tc)
 {
 	//vertex_mom.SetMagThetaPhi(6.0, 17.2*M_PI/180.0, 90.0*M_PI/180.0);
 	//vertex_pos.SetXYZ(0.0,0.0,65.0);
 	rt->Reswim(vertex_pos, vertex_mom);
-
-	fit_chisq->Fill(ChiSq(rt->q, vertex_pos, vertex_mom, rt));
+	ptotal->Fill(vertex_mom.Mag());
 
 	for(unsigned int j=0; j<cdctrackhits.size(); j++){
 		const DCDCTrackHit *hit = cdctrackhits[j];
@@ -635,6 +641,19 @@ void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_p
 		double dist = (hit->time-tof)*22E-4;
 		fdcdoca_vs_dist->Fill(dist, closest_hit.dist);
 	}
+	
+	// Find chi-sq for both initial and final values
+	double chisq_final = ChiSq(rt->q, vertex_pos, vertex_mom, rt);
+	double nhits_final = Ngood_chisq_hits;
+	TVector3 mom;
+	mom.SetMagThetaPhi(tc->p, tc->theta, tc->phi);
+	TVector3 pos(0.0, 0.0, tc->z_vertex);
+	rt->Reswim(pos, mom);
+	double chisq_initial = ChiSq(rt->q, pos, mom, rt);
+	double nhits_initial = Ngood_chisq_hits;
+	chisq_final_vs_initial->Fill(chisq_initial,chisq_final);
+	nhits_final_vs_initial->Fill(nhits_initial, nhits_final);
+
 }
 
 //------------------

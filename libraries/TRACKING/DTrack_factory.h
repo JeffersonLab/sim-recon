@@ -76,7 +76,7 @@ class DTrack_factory:public JFactory<DTrack>{
 		double ChiSq(double q, TMatrixD &state, swim_step_t *start_step, DReferenceTrajectory *rt=NULL);
 		double ChiSq(double q, const TVector3 &pos, const TVector3 &mom, DReferenceTrajectory *rt=NULL);
 		double LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom);
-		void FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom);
+		void FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom, const DTrackCandidate* tc);
 
 		std::vector<const DCDCTrackHit* > cdctrackhits;
 		std::vector<const DFDCPseudo* > fdctrackhits;
@@ -85,6 +85,7 @@ class DTrack_factory:public JFactory<DTrack>{
 		
 		std::vector<double> chisqv;
 		std::vector<double> sigmav;
+		double Ngood_chisq_hits;
 
 		const JGeometry *dgeom;
 		const DMagneticFieldMap *bfield;
@@ -107,8 +108,11 @@ class DTrack_factory:public JFactory<DTrack>{
 		TH2F *fdcdoca_vs_dist;
 		TH1F *dist_stereo, *dist_axial;
 		TH1F *doca_stereo, *doca_axial;
-		TH1F *fit_chisq;
+		TH2F *chisq_final_vs_initial;
+		TH2F *nhits_final_vs_initial;
 		TH1F *residuals;
+		TH1F *Npasses;
+		TH1F *ptotal;
 };
 
 #endif // _DTrack_factory_
