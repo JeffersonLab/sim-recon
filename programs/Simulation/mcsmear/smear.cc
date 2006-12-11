@@ -72,10 +72,10 @@ float FDC_AVG_NOISE_HITS = 0.01*2856.0; // 0.01 = 1% occupancy
 float FDC_PED_NOISE=2.7; // pC
 
 // Drift time variation for FDC anode wires
-float FDC_DRIFT_SIGMA=200.0/22.0; // 200 microns/ (22 microns/ns)
+float FDC_DRIFT_SIGMA=200.0/55.0; // 200 microns/ (55 microns/ns)
 
 // Drift time variation for CDC anode wires
-float CDC_DRIFT_SIGMA=200.0/22.0; // 200 microns/ (22 microns/ns)
+float CDC_DRIFT_SIGMA=200.0/55.0; // 200 microns/ (55 microns/ns)
 
 
 //-----------
