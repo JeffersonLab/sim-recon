@@ -71,6 +71,24 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 		toprint = really_toprint;
 	}
 	
+	// At this point, toprint should contain a list of all factories
+	// in dataClassName:tag format, that both exist and were requested.
+	// Seperate the tag from the name and fill the fac_info vector.
+	fac_info.clear();
+	for(unsigned int i=0;i<toprint.size();i++){
+		string name = toprint[i];
+		string tag = "";
+		unsigned int pos = name.rfind(":",name.size()-1);
+		if(pos != string::npos){
+			tag = name.substr(pos+1,name.size());
+			name.erase(pos);
+		}
+		factory_info_t f;
+		f.dataClassName = name;
+		f.tag = tag;
+		fac_info.push_back(f);
+	}
+	
 	cout<<endl;
 
 	return NOERROR;
@@ -88,8 +106,11 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	int event_is_boring = 1;
 	if(SKIP_BORING_EVENTS){
 		for(unsigned int i=0;i<toprint.size();i++){
-			JFactory_base *factory = eventLoop->GetFactory(toprint[i]);
-			if(!factory)factory = eventLoop->GetFactory("D" + toprint[i]);
+			
+			string name =fac_info[i].dataClassName;
+			string tag = fac_info[i].tag;
+			JFactory_base *factory = eventLoop->GetFactory(name,tag.c_str());
+			if(!factory)factory = eventLoop->GetFactory("D" + name,tag.c_str());
 			if(factory){
 				try{
 					if(factory->GetNrows()>0){
@@ -117,7 +138,9 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	// Print data for all specified factories
 	for(unsigned int i=0;i<toprint.size();i++){
 		try{
-			eventLoop->Print(toprint[i]);
+			string name =fac_info[i].dataClassName;
+			string tag = fac_info[i].tag;
+			eventLoop->Print(name,tag.c_str());
 		}catch(...){
 			// exception thrown
 		}

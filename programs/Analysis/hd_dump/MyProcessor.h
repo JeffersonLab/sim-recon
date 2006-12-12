@@ -26,4 +26,9 @@ class MyProcessor:public JEventProcessor
 		jerror_t erun(void){return NOERROR;};				///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void){return NOERROR;};				///< Called after last event of last event source has been processed.
 
+		typedef struct{
+			string dataClassName;
+			string tag;
+		}factory_info_t;
+		vector<factory_info_t> fac_info;
 };
