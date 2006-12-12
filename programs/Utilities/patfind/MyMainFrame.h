@@ -60,6 +60,7 @@ class MyMainFrame:public TGMainFrame {
 		TGButtonGroup *optionsframe;
 		vector<TGRadioButton*> radiobuttons;
 		Int_t radiooption;
+		bool first_event_read;
 		
 		int Ntot_foundtrks, Ntot_throwntrks, Ntot_correcttrks;
 			

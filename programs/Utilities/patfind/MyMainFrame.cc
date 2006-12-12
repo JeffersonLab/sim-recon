@@ -24,6 +24,8 @@ extern int DONE;
 //-------------------
 MyMainFrame::MyMainFrame(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p,w,h)
 {
+	first_event_read = false;
+
 	TGLayoutHints *defHints = new TGLayoutHints(kLHintsCenterX | kLHintsCenterY | kLHintsExpandX | kLHintsExpandY ,2,2,2,2);
 	TGLayoutHints *defHintsX = new TGLayoutHints(kLHintsExpandX ,2,2,2,2);
 	TGLayoutHints *defHintsLeft = new TGLayoutHints(kLHintsLeft ,2,2,2,2);
@@ -391,6 +393,7 @@ void MyMainFrame::DoQuit(void)
 //-------------------
 void MyMainFrame::DoNext(void)
 {
+	first_event_read = true;
 	eventloop->OneEvent();
 }
 
@@ -400,7 +403,7 @@ void MyMainFrame::DoNext(void)
 void MyMainFrame::DoPrev(void)
 {
 	//eventloop->GotoEvent(eventloop->GetJEvent().GetEventNumber()-1);
-	DoNext();
+	//DoNext();
 }
 
 //-------------------
@@ -408,7 +411,7 @@ void MyMainFrame::DoPrev(void)
 //-------------------
 void MyMainFrame::DoSetDisplay(Int_t id)
 {
-	if(eventloop->GetJEvent().GetEventNumber()>0) 
+	if(first_event_read) 
 		myproc->evnt(eventloop, eventloop->GetJEvent().GetEventNumber());
 }
 
