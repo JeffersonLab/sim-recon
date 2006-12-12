@@ -65,21 +65,21 @@ DTrackCandidate_factory::DTrackCandidate_factory()
 	EXCLUDE_STEREO = true;
 	MIN_CANDIDATE_HITS = 6;
 	
-	gPARMS->SetDefaultParameter("TRK:MAX_SEED_DIST",		MAX_SEED_DIST);
-	gPARMS->SetDefaultParameter("TRK:MAX_SEED_HITS",		MAX_SEED_HITS);
-	gPARMS->SetDefaultParameter("TRK:MIN_SEED_HITS",		MIN_SEED_HITS);
-	gPARMS->SetDefaultParameter("TRK:MAX_CIRCLE_DIST",		MAX_CIRCLE_DIST);
-	gPARMS->SetDefaultParameter("TRK:MAX_PHI_Z_DIST",		MAX_PHI_Z_DIST);
-	gPARMS->SetDefaultParameter("TRK:MIN_PHI_Z_HITS",		MIN_PHI_Z_HITS);
-	gPARMS->SetDefaultParameter("TRK:MAX_DEBUG_BUFFERS",	MAX_DEBUG_BUFFERS);
-	gPARMS->SetDefaultParameter("TRK:TARGET_Z_MIN",			TARGET_Z_MIN);
-	gPARMS->SetDefaultParameter("TRK:TARGET_Z_MAX",			TARGET_Z_MAX);
-	gPARMS->SetDefaultParameter("TRK:TRACKHIT_SOURCE",		TRACKHIT_SOURCE);
-	gPARMS->SetDefaultParameter("TRK:XY_NOISE_CUT",			XY_NOISE_CUT);
-	gPARMS->SetDefaultParameter("TRK:MIN_HIT_Z",				MIN_HIT_Z);
-	gPARMS->SetDefaultParameter("TRK:MAX_HIT_Z",				MAX_HIT_Z);
-	gPARMS->SetDefaultParameter("TRK:EXCLUDE_STEREO",		EXCLUDE_STEREO);
-	gPARMS->SetDefaultParameter("TRK:MIN_CANDIDATE_HITS",	MIN_CANDIDATE_HITS);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_SEED_DIST",		MAX_SEED_DIST);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_SEED_HITS",		MAX_SEED_HITS);
+	gPARMS->SetDefaultParameter("TRKFIND:MIN_SEED_HITS",		MIN_SEED_HITS);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_CIRCLE_DIST",		MAX_CIRCLE_DIST);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_PHI_Z_DIST",		MAX_PHI_Z_DIST);
+	gPARMS->SetDefaultParameter("TRKFIND:MIN_PHI_Z_HITS",		MIN_PHI_Z_HITS);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_DEBUG_BUFFERS",	MAX_DEBUG_BUFFERS);
+	gPARMS->SetDefaultParameter("TRKFIND:TARGET_Z_MIN",			TARGET_Z_MIN);
+	gPARMS->SetDefaultParameter("TRKFIND:TARGET_Z_MAX",			TARGET_Z_MAX);
+	gPARMS->SetDefaultParameter("TRKFIND:TRACKHIT_SOURCE",		TRACKHIT_SOURCE);
+	gPARMS->SetDefaultParameter("TRKFIND:XY_NOISE_CUT",			XY_NOISE_CUT);
+	gPARMS->SetDefaultParameter("TRKFIND:MIN_HIT_Z",				MIN_HIT_Z);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_HIT_Z",				MAX_HIT_Z);
+	gPARMS->SetDefaultParameter("TRKFIND:EXCLUDE_STEREO",		EXCLUDE_STEREO);
+	gPARMS->SetDefaultParameter("TRKFIND:MIN_CANDIDATE_HITS",	MIN_CANDIDATE_HITS);
 
 	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
 	XY_NOISE_CUT2 = XY_NOISE_CUT*XY_NOISE_CUT;
@@ -689,7 +689,7 @@ int DTrackCandidate_factory::MarkTrackHits(DTrackCandidate *trackcandidate, DQui
 	// Find all hits consistent with phizangle and zvertex
 	float my_phizangle = -fit->q/fabs(fit->q)*tan(fit->theta);
 //cout<<__FILE__<<":"<<__LINE__<<" my_phizangle/phizangle="<<my_phizangle/phizangle<<endl;
-//my_phizangle = phizangle;
+my_phizangle = phizangle;
 	float cos_phizangle = cos(my_phizangle);
 	float sin_phizangle = sin(my_phizangle);
 	float r0_2pi_cos_phizangle = 2.0*M_PI*r0*cos_phizangle;

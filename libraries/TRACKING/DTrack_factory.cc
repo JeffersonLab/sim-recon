@@ -36,9 +36,9 @@ bool FDCTrkHitSort_C(DTrack_factory::fdc_hit_on_track_t const &hit1, DTrack_fact
 
 
 //------------------
-// init
+// DTrack_factory   (Constructor)
 //------------------
-jerror_t DTrack_factory::init(void)
+DTrack_factory::DTrack_factory()
 {
 	max_swim_steps = 5000;
 	swim_steps = new DReferenceTrajectory::swim_step_t[max_swim_steps];
@@ -61,21 +61,27 @@ jerror_t DTrack_factory::init(void)
 	LEAST_SQUARES_MIN_HITS = 3;
 	LEAST_SQUARES_MAX_E2NORM = 1.0E6;
 	
-	gPARMS->SetDefaultParameter("TRK:MAX_HIT_DIST",				MAX_HIT_DIST);
-	gPARMS->SetDefaultParameter("TRK:DEBUG_HISTS",				DEBUG_HISTS);
-	gPARMS->SetDefaultParameter("TRK:USE_CDC",					USE_CDC);
-	gPARMS->SetDefaultParameter("TRK:USE_FDC_ANODE",			USE_FDC_ANODE);
-	gPARMS->SetDefaultParameter("TRK:USE_FDC_CATHODE",			USE_FDC_CATHODE);
-	gPARMS->SetDefaultParameter("TRK:MAX_CHISQ_DIFF",			MAX_CHISQ_DIFF);
-	gPARMS->SetDefaultParameter("TRK:MAX_FIT_ITERATIONS",		MAX_FIT_ITERATIONS);
-	gPARMS->SetDefaultParameter("TRK:SIGMA_CDC",					SIGMA_CDC);
-	gPARMS->SetDefaultParameter("TRK:SIGMA_FDC_ANODE",			SIGMA_FDC_ANODE);
-	gPARMS->SetDefaultParameter("TRK:SIGMA_FDC_CATHODE",		SIGMA_FDC_CATHODE);
-	gPARMS->SetDefaultParameter("TRK:CHISQ_MAX_RESI_SIGMAS",	CHISQ_MAX_RESI_SIGMAS);
-	gPARMS->SetDefaultParameter("TRK:LEAST_SQUARES_DP",		LEAST_SQUARES_DP);
-	gPARMS->SetDefaultParameter("TRK:LEAST_SQUARES_MIN_HITS",LEAST_SQUARES_MIN_HITS);
-	gPARMS->SetDefaultParameter("TRK:LEAST_SQUARES_MAX_E2NORM",LEAST_SQUARES_MAX_E2NORM);
-		
+	gPARMS->SetDefaultParameter("TRKFIT:MAX_HIT_DIST",				MAX_HIT_DIST);
+	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",				DEBUG_HISTS);
+	gPARMS->SetDefaultParameter("TRKFIT:USE_CDC",					USE_CDC);
+	gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_ANODE",			USE_FDC_ANODE);
+	gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_CATHODE",			USE_FDC_CATHODE);
+	gPARMS->SetDefaultParameter("TRKFIT:MAX_CHISQ_DIFF",			MAX_CHISQ_DIFF);
+	gPARMS->SetDefaultParameter("TRKFIT:MAX_FIT_ITERATIONS",		MAX_FIT_ITERATIONS);
+	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_CDC",					SIGMA_CDC);
+	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_ANODE",			SIGMA_FDC_ANODE);
+	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_CATHODE",		SIGMA_FDC_CATHODE);
+	gPARMS->SetDefaultParameter("TRKFIT:CHISQ_MAX_RESI_SIGMAS",	CHISQ_MAX_RESI_SIGMAS);
+	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_DP",		LEAST_SQUARES_DP);
+	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MIN_HITS",LEAST_SQUARES_MIN_HITS);
+	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MAX_E2NORM",LEAST_SQUARES_MAX_E2NORM);		
+}
+
+//------------------
+// init
+//------------------
+jerror_t DTrack_factory::init(void)
+{
 	return NOERROR;
 }
 

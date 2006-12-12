@@ -29,7 +29,7 @@ class DFDCPseudo;
 
 class DTrack_factory:public JFactory<DTrack>{
 	public:
-		DTrack_factory(){};
+		DTrack_factory();
 		~DTrack_factory(){};
 		const string toString(void);
 	

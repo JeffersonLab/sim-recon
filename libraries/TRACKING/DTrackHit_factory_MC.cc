@@ -16,10 +16,10 @@ DTrackHit_factory_MC::DTrackHit_factory_MC()
 {
 	// Set defaults
 	EXCLUDE_SECONDARIES = false;
-	MAX_HIT_R_FDC = 65.0; // cm
+	MAX_HIT_R_FDC = 56.3; // cm
 
-	gPARMS->SetDefaultParameter("TRK:EXCLUDE_SECONDARIES",		EXCLUDE_SECONDARIES);
-	gPARMS->SetDefaultParameter("TRK:MAX_HIT_R_FDC",				MAX_HIT_R_FDC);
+	gPARMS->SetDefaultParameter("TRKMC:EXCLUDE_SECONDARIES",		EXCLUDE_SECONDARIES);
+	gPARMS->SetDefaultParameter("TRKMC:MAX_HIT_R_FDC",				MAX_HIT_R_FDC);
 
 }
 
