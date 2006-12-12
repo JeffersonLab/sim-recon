@@ -520,7 +520,7 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	unsigned int Ngood=0;
 	for(unsigned int i=0; i<Nhits; i++){
 		double res;
-		double max=5.0;
+		double max=CHISQ_MAX_RESI_SIGMAS;
 		res =        resi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
 		res = resi_dpx_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
 		//res = resi_dpx_lo[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
