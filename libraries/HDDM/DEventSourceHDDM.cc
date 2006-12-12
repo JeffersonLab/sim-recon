@@ -79,6 +79,13 @@ jerror_t DEventSourceHDDM::GetEvent(JEvent &event)
 
 	int event_number = -1;
 	int run_number = -1;
+	
+	// Get event/run numbers from HDDM
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(PE && PE->mult>0){
+		event_number = PE->in[0].eventNo;
+		run_number = PE->in[0].runNo;
+	}
 
 	// Copy the reference info into the JEvent object
 	event.SetJEventSource(this);
