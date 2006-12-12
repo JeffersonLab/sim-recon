@@ -102,6 +102,15 @@ class DTrack_factory:public JFactory<DTrack>{
 		bool USE_CDC;
 		bool USE_FDC_ANODE;
 		bool USE_FDC_CATHODE;
+		double MAX_CHISQ_DIFF;
+		int MAX_FIT_ITERATIONS;
+		double SIGMA_CDC;
+		double SIGMA_FDC_ANODE;
+		double SIGMA_FDC_CATHODE;
+		double CHISQ_MAX_RESI_SIGMAS;
+		double LEAST_SQUARES_DP;
+		unsigned int LEAST_SQUARES_MIN_HITS;
+		double LEAST_SQUARES_MAX_E2NORM;
 		
 		TH3F *cdcdoca_vs_dist_vs_ring;
 		TH2F *cdcdoca_vs_dist;

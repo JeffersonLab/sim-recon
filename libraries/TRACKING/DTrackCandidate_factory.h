@@ -89,8 +89,10 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		float XY_NOISE_CUT;
 		float XY_NOISE_CUT2;
 		unsigned int MAX_SEED_HITS;
+		unsigned int MIN_SEED_HITS;
 		float MAX_CIRCLE_DIST;
 		float MAX_PHI_Z_DIST;
+		unsigned int MIN_PHI_Z_HITS;
 		unsigned int MAX_DEBUG_BUFFERS;
 		float TARGET_Z_MIN;
 		float TARGET_Z_MAX;
@@ -102,6 +104,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		string TRACKHIT_SOURCE;
 		float MIN_HIT_Z, MAX_HIT_Z;
 		bool EXCLUDE_STEREO;
+		unsigned int MIN_CANDIDATE_HITS;
 		
 		TH1F *phizangle_hist, *zvertex_hist, *phi_relative;
 		

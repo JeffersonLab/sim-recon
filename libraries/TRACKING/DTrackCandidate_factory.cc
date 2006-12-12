@@ -51,8 +51,10 @@ DTrackCandidate_factory::DTrackCandidate_factory()
 	// Set defaults
 	MAX_SEED_DIST = 5.0;
 	MAX_SEED_HITS = 10;
+	MIN_SEED_HITS = 4;
 	MAX_CIRCLE_DIST = 2.0;
 	MAX_PHI_Z_DIST = 10.0;
+	MIN_PHI_Z_HITS = 4;
 	MAX_DEBUG_BUFFERS = 0;
 	TARGET_Z_MIN = 50.0;
 	TARGET_Z_MAX = 80.0;
@@ -61,19 +63,23 @@ DTrackCandidate_factory::DTrackCandidate_factory()
 	MIN_HIT_Z = -100.0;
 	MAX_HIT_Z = +360.0;
 	EXCLUDE_STEREO = true;
+	MIN_CANDIDATE_HITS = 6;
 	
 	gPARMS->SetDefaultParameter("TRK:MAX_SEED_DIST",		MAX_SEED_DIST);
 	gPARMS->SetDefaultParameter("TRK:MAX_SEED_HITS",		MAX_SEED_HITS);
-	gPARMS->SetDefaultParameter("TRK:MAX_CIRCLE_DIST",	MAX_CIRCLE_DIST);
-	gPARMS->SetDefaultParameter("TRK:MAX_PHI_Z_DIST",	MAX_PHI_Z_DIST);
-	gPARMS->SetDefaultParameter("TRK:MAX_DEBUG_BUFFERS",MAX_DEBUG_BUFFERS);
-	gPARMS->SetDefaultParameter("TRK:TARGET_Z_MIN",		TARGET_Z_MIN);
-	gPARMS->SetDefaultParameter("TRK:TARGET_Z_MAX",		TARGET_Z_MAX);
-	gPARMS->SetDefaultParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
-	gPARMS->SetDefaultParameter("TRK:XY_NOISE_CUT",		XY_NOISE_CUT);
-	gPARMS->SetDefaultParameter("TRK:MIN_HIT_Z",			MIN_HIT_Z);
-	gPARMS->SetDefaultParameter("TRK:MAX_HIT_Z",			MAX_HIT_Z);
-	gPARMS->SetDefaultParameter("TRK:EXCLUDE_STEREO",	EXCLUDE_STEREO);
+	gPARMS->SetDefaultParameter("TRK:MIN_SEED_HITS",		MIN_SEED_HITS);
+	gPARMS->SetDefaultParameter("TRK:MAX_CIRCLE_DIST",		MAX_CIRCLE_DIST);
+	gPARMS->SetDefaultParameter("TRK:MAX_PHI_Z_DIST",		MAX_PHI_Z_DIST);
+	gPARMS->SetDefaultParameter("TRK:MIN_PHI_Z_HITS",		MIN_PHI_Z_HITS);
+	gPARMS->SetDefaultParameter("TRK:MAX_DEBUG_BUFFERS",	MAX_DEBUG_BUFFERS);
+	gPARMS->SetDefaultParameter("TRK:TARGET_Z_MIN",			TARGET_Z_MIN);
+	gPARMS->SetDefaultParameter("TRK:TARGET_Z_MAX",			TARGET_Z_MAX);
+	gPARMS->SetDefaultParameter("TRK:TRACKHIT_SOURCE",		TRACKHIT_SOURCE);
+	gPARMS->SetDefaultParameter("TRK:XY_NOISE_CUT",			XY_NOISE_CUT);
+	gPARMS->SetDefaultParameter("TRK:MIN_HIT_Z",				MIN_HIT_Z);
+	gPARMS->SetDefaultParameter("TRK:MAX_HIT_Z",				MAX_HIT_Z);
+	gPARMS->SetDefaultParameter("TRK:EXCLUDE_STEREO",		EXCLUDE_STEREO);
+	gPARMS->SetDefaultParameter("TRK:MIN_CANDIDATE_HITS",	MIN_CANDIDATE_HITS);
 
 	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
 	XY_NOISE_CUT2 = XY_NOISE_CUT*XY_NOISE_CUT;
@@ -168,12 +174,16 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	for(unsigned int i=0; i<_data.size(); i++){
 		DTrackCandidate *trackcandidate = _data[i];
 
-		if(trackcandidate->hitid.size()<10){
+		if(trackcandidate->hitid.size()<MIN_CANDIDATE_HITS){
 			delete trackcandidate;
 			_data.erase(_data.begin()+i);
 			if(dbg_track_fit.size()<MAX_DEBUG_BUFFERS){
 				delete dbg_track_fit[i];
 				dbg_track_fit.erase(dbg_track_fit.begin()+i);
+				dbg_hol.erase(dbg_hol.begin()+i);
+				dbg_phizangle.erase(dbg_phizangle.begin()+i);
+				dbg_z_vertex.erase(dbg_z_vertex.begin()+i);
+				dbg_seed_index.erase(dbg_seed_index.begin()+i);
 			}
 			i--;
 		}
@@ -287,7 +297,7 @@ int DTrackCandidate_factory::FindSeed(void)
 			hits_in_seed.clear();
 			int N = TraceSeed(a);
 			N += TraceSeed(a);
-			if(N>=4)return 1;
+			if(N>=(int)MIN_SEED_HITS)return 1;
 			ChopSeed();
 		}
 	}
@@ -428,7 +438,6 @@ int DTrackCandidate_factory::FindLineHits(void)
 	float cos_phizangle = cos(phizangle);
 	float sin_phizangle = sin(phizangle);
 	hits_on_line.clear();
-	//cout<<__FILE__<<":"<<__LINE__<<" phizangle="<<phizangle<<"  z_vertex="<<z_vertex<<" r0="<<r0<<endl;
 	for(unsigned int i=0; i<hits_on_circle.size(); i++){
 		Dtrk_hit *a = hits_on_circle[i];
 		float dphi = a->phi_circle;
@@ -436,17 +445,14 @@ int DTrackCandidate_factory::FindLineHits(void)
 		float dr = sqrt(dphi*dphi + dz*dz);
 		float sin_rel = (dphi*cos_phizangle - dz*sin_phizangle)/dr;
 		float d = sin_rel*dr;
-		//cout<<__FILE__<<":"<<__LINE__<<" d="<<d<<" z="<<a->z<<" dphi="<<dphi<<" dz="<<dz<<" dr="<<dr<<" sin_rel="<<sin_rel<<endl;
 		if(fabs(d)<MAX_PHI_Z_DIST){
 			// Flags hits as "ON_LINE" and push onto hits_on_line vector
 			a->flags |= Dtrk_hit::ON_LINE;
 			hits_on_line.push_back(a);
 		}
 	}
-//cout<<__FILE__<<":"<<__LINE__<<" phizangle="<<phizangle<<" z_vertex="<<z_vertex<<endl;	
-//cout<<__FILE__<<":"<<__LINE__<<" Nhits_on_line="<<hits_on_line.size()<<endl;
 
-	if(hits_on_line.size()<4){
+	if(hits_on_line.size()<MIN_PHI_Z_HITS){
 		ChopSeed();
 		return 0;
 	}
@@ -530,18 +536,14 @@ void DTrackCandidate_factory::Fill_phi_circle(vector<Dtrk_hit*> hits, float X, f
 	float x_last = -X;
 	float y_last = -Y;
 	float phi_last = 0.0;
-	//unsigned int mask = Dtrk_hit::IGNORE | Dtrk_hit::USED;
-//cout<<__FILE__<<":"<<__LINE__<<"  ------ x0="<<X<<" y0="<<Y<<" -----"<<endl;
 	for(unsigned int i=0; i<hits.size(); i++){
 		Dtrk_hit *a = hits[i];
-		//if(a->flags & mask)continue;
 
 		float dx = a->x - X;
 		float dy = a->y - Y;
 		float dphi = atan2f(dx*y_last - dy*x_last, dx*x_last + dy*y_last);
 		float phi = phi_last +dphi;
 		a->phi_circle = phi*r0;
-//cout<<__FILE__<<":"<<__LINE__<<" z="<<a->z<<" dphi="<<a->phi_circle<<endl;
 		x_last = dx;
 		y_last = dy;
 		phi_last = phi;
@@ -687,7 +689,7 @@ int DTrackCandidate_factory::MarkTrackHits(DTrackCandidate *trackcandidate, DQui
 	// Find all hits consistent with phizangle and zvertex
 	float my_phizangle = -fit->q/fabs(fit->q)*tan(fit->theta);
 //cout<<__FILE__<<":"<<__LINE__<<" my_phizangle/phizangle="<<my_phizangle/phizangle<<endl;
-my_phizangle = phizangle;
+//my_phizangle = phizangle;
 	float cos_phizangle = cos(my_phizangle);
 	float sin_phizangle = sin(my_phizangle);
 	float r0_2pi_cos_phizangle = 2.0*M_PI*r0*cos_phizangle;
@@ -709,7 +711,7 @@ my_phizangle = phizangle;
 		float d = dphi*cos_phizangle - dz*sin_phizangle;
 		float n = floor(0.5 + d/r0_2pi_cos_phizangle);
 		d -= n*r0_2pi_cos_phizangle;
-//cout<<__FILE__<<":"<<__LINE__<<" z="<<a->z<<" d="<<d<<" d0="<<d+n*r0_2pi_cos_phizangle<<" dphi="<<dphi<<" n="<<d/r0_2pi_cos_phizangle<<" r0="<<r0<<endl;
+
 		if(fabs(d)>MAX_PHI_Z_DIST)continue;
 		if(fabs(dr)>MAX_CIRCLE_DIST)continue;
 		

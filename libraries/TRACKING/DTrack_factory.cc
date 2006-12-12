@@ -51,12 +51,30 @@ jerror_t DTrack_factory::init(void)
 	USE_CDC = true;
 	USE_FDC_ANODE = true;
 	USE_FDC_CATHODE = true;
+	MAX_CHISQ_DIFF = 1.0E-6;
+	MAX_FIT_ITERATIONS = 20;
+	SIGMA_CDC = 0.0200;
+	SIGMA_FDC_ANODE = 0.0200;
+	SIGMA_FDC_CATHODE = 0.0200;
+	CHISQ_MAX_RESI_SIGMAS = 5.0;
+	LEAST_SQUARES_DP = 0.001;
+	LEAST_SQUARES_MIN_HITS = 3;
+	LEAST_SQUARES_MAX_E2NORM = 1.0E6;
 	
-	gPARMS->SetDefaultParameter("TRK:MAX_HIT_DIST",	MAX_HIT_DIST);
-	gPARMS->SetDefaultParameter("TRK:DEBUG_HISTS",	DEBUG_HISTS);
-	gPARMS->SetDefaultParameter("TRK:USE_CDC",			USE_CDC);
-	gPARMS->SetDefaultParameter("TRK:USE_FDC_ANODE",	USE_FDC_ANODE);
-	gPARMS->SetDefaultParameter("TRK:USE_FDC_CATHODE",USE_FDC_CATHODE);
+	gPARMS->SetDefaultParameter("TRK:MAX_HIT_DIST",				MAX_HIT_DIST);
+	gPARMS->SetDefaultParameter("TRK:DEBUG_HISTS",				DEBUG_HISTS);
+	gPARMS->SetDefaultParameter("TRK:USE_CDC",					USE_CDC);
+	gPARMS->SetDefaultParameter("TRK:USE_FDC_ANODE",			USE_FDC_ANODE);
+	gPARMS->SetDefaultParameter("TRK:USE_FDC_CATHODE",			USE_FDC_CATHODE);
+	gPARMS->SetDefaultParameter("TRK:MAX_CHISQ_DIFF",			MAX_CHISQ_DIFF);
+	gPARMS->SetDefaultParameter("TRK:MAX_FIT_ITERATIONS",		MAX_FIT_ITERATIONS);
+	gPARMS->SetDefaultParameter("TRK:SIGMA_CDC",					SIGMA_CDC);
+	gPARMS->SetDefaultParameter("TRK:SIGMA_FDC_ANODE",			SIGMA_FDC_ANODE);
+	gPARMS->SetDefaultParameter("TRK:SIGMA_FDC_CATHODE",		SIGMA_FDC_CATHODE);
+	gPARMS->SetDefaultParameter("TRK:CHISQ_MAX_RESI_SIGMAS",	CHISQ_MAX_RESI_SIGMAS);
+	gPARMS->SetDefaultParameter("TRK:LEAST_SQUARES_DP",		LEAST_SQUARES_DP);
+	gPARMS->SetDefaultParameter("TRK:LEAST_SQUARES_MIN_HITS",LEAST_SQUARES_MIN_HITS);
+	gPARMS->SetDefaultParameter("TRK:LEAST_SQUARES_MAX_E2NORM",LEAST_SQUARES_MAX_E2NORM);
 		
 	return NOERROR;
 }
@@ -146,9 +164,6 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *tc)
 	mom.SetMagThetaPhi(tc->p, tc->theta, tc->phi);
 	TVector3 pos(0.0, 0.0, tc->z_vertex);
 
-//mom.SetMagThetaPhi(6.0,6.0*M_PI/180.0,90.0*M_PI/180.0);
-//pos.SetXYZ(0.0,0.0,65.0);
-
 	// Generate reference trajectory and use it to find the initial
 	// set of hits for this track. Some of these could be dropped by
 	// the fitter.
@@ -163,11 +178,11 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *tc)
 	TVector3 vertex_mom=mom; // to hold fitted values on return
 	double chisq=1.0E6, last_chisq;
 	int Niterations;
-	for(Niterations=0; Niterations<20; Niterations++){
+	for(Niterations=0; Niterations<MAX_FIT_ITERATIONS; Niterations++){
 		last_chisq = chisq;
 		chisq = LeastSquares(pos, mom, rt, vertex_pos, vertex_mom);
 		if(vertex_pos==pos && vertex_mom==mom)break;
-		if(fabs(last_chisq-chisq) < 1.0E-6)break;
+		if(fabs(last_chisq-chisq) < MAX_CHISQ_DIFF)break;
 		pos = vertex_pos;
 		mom = vertex_mom;
 	}
@@ -361,7 +376,7 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 			double beta = 0.8; // use average beta for now. This should eventually come from outer detectors
 			double tof = s/(beta*3E10*1E-9);
 			dist = (hit.cdchit->tdrift-tof)*55E-4;
-			sigma = 0.0200; // 200 um
+			sigma = SIGMA_CDC; // 200 um
 		}
 
 		// NOTE: Sometimes we push nan or large values on here
@@ -389,7 +404,7 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 			double beta = 0.8;
 			double tof = s/(beta*3E10*1E-9);
 			dist = (hit.fdchit->time-tof)*55E-4;
-			sigma = 0.0200; // 200 um
+			sigma = SIGMA_FDC_ANODE; // 200 um
 		}
 
 		// NOTE: Sometimes we push nan or large values on here
@@ -402,7 +417,7 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 		double u = rt->GetLastDistAlongWire();
 		resi = u - hit.fdchit->s;
 		chisqv.push_back(USE_FDC_CATHODE ? resi:NaN);
-		sigmav.push_back(0.0200); // 200 um
+		sigmav.push_back(SIGMA_FDC_CATHODE); // 200 um
 		
 	}
 
@@ -416,7 +431,7 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 		// For now, we use a single distance which may be sufficient.
 		if(!finite(chisqv[i]))continue;
 		if(DEBUG_HISTS)residuals->Fill(chisqv[i]);
-		if(fabs(chisqv[i]/sigmav[i])>5.0)continue;
+		if(fabs(chisqv[i]/sigmav[i])>CHISQ_MAX_RESI_SIGMAS)continue;
 
 		chisq+=pow(chisqv[i]/sigmav[i], 2.0);
 		Ngood_chisq_hits += 1.0;
@@ -467,7 +482,7 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 
 	// dpx : tweak by +/- 0.01
 	TMatrixD state_dpx = state;
-	state_dpx[state_px][0] += 0.001;
+	state_dpx[state_px][0] += LEAST_SQUARES_DP;
 	deltas[state_px] = state_dpx[state_px][0] - state[state_px][0];
 	ChiSq(rt->q, state_dpx, start_step,myrt);
 	vector<double> resi_dpx_hi = chisqv;
@@ -475,7 +490,7 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 
 	// dpy : tweak by +/- 0.01
 	TMatrixD state_dpy = state;
-	state_dpy[state_py][0] += 0.001;
+	state_dpy[state_py][0] += LEAST_SQUARES_DP;
 	deltas[state_py] = state_dpx[state_px][0] - state[state_px][0];
 	ChiSq(rt->q, state_dpy, start_step,myrt);
 	vector<double> resi_dpy_hi = chisqv;
@@ -483,7 +498,7 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 
 	// dpz : tweak by +/- 0.01
 	TMatrixD state_dpz = state;
-	state_dpz[state_pz][0] += 0.001;
+	state_dpz[state_pz][0] += LEAST_SQUARES_DP;
 	deltas[state_pz] = state_dpz[state_pz][0] - state[state_pz][0];
 	ChiSq(rt->q, state_dpz, start_step,myrt);
 	vector<double> resi_dpz_hi = chisqv;
@@ -511,7 +526,7 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 		good.push_back(true);
 		Ngood++;
 	}
-	if(Ngood<3){
+	if(Ngood<LEAST_SQUARES_MIN_HITS){
 		//cout<<__FILE__<<":"<<__LINE__<<" Bad number of good distance calculations!"<<endl;
 		return 1.0E6;
 	}
@@ -556,7 +571,7 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	// I don't want to introduce quite yet. What we do now
 	// is check for it and punt rather than return a nonsensical
 	// value.
-	if(B.E2Norm() < 1.0E6){
+	if(B.E2Norm() < LEAST_SQUARES_MAX_E2NORM){
 		TMatrixD delta_state = B*Ft*Vinv*m;
 		for(int i=0; i<3; i++)state[i] += delta_state[i];
 	}else{
