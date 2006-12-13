@@ -27,4 +27,6 @@ class MyProcessor:public JEventProcessor
 		
 		TTree *fit_parms;
 		float val[100]; // holds values used to fill fit_parms
+		
+		string CANDIDATE_TAG;
 };

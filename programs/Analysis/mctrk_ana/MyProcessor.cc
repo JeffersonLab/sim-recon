@@ -48,6 +48,8 @@ jerror_t MyProcessor::init(void)
 	fit_parms = new TTree("fitp","Helical Fit parameters");
 	fit_parms->Branch("F",val,"p/F:px:py:pz:x:y:z:pcan:pcanx:pcany:pcanz:canz:Ro:x0:y0:phi:theta:p_thrn:px_thrn:py_thrn:pz_thrn:phi_thrn:theta_thrn");
 
+	gPARMS->GetParameter("TRKFIT:CANDIDATE_TAG", CANDIDATE_TAG);
+
 	return NOERROR;
 }
 
@@ -81,7 +83,7 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
 	JFactory<DTrack> *fac_track = loop->Get(tracks);
 	loop->Get(trackeffs);
 	loop->Get(mcthrowns);
-	JFactory<DTrackCandidate> *fac_tc = loop->Get(trackcandidates);
+	JFactory<DTrackCandidate> *fac_tc = loop->Get(trackcandidates, CANDIDATE_TAG.c_str());
 	
 	
 	// Loop over DMCThrown and DTrackEfficiency objects
