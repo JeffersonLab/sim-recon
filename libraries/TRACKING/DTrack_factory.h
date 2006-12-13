@@ -111,6 +111,7 @@ class DTrack_factory:public JFactory<DTrack>{
 		double LEAST_SQUARES_DP;
 		unsigned int LEAST_SQUARES_MIN_HITS;
 		double LEAST_SQUARES_MAX_E2NORM;
+		string CANDIDATE_TAG;
 		
 		TH3F *cdcdoca_vs_dist_vs_ring;
 		TH2F *cdcdoca_vs_dist;

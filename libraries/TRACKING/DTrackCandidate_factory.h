@@ -23,6 +23,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		DTrackCandidate_factory();
 		~DTrackCandidate_factory(){};
 		const string toString(void);
+		virtual const char* Tag(void){return "";}
 		static void Fill_phi_circle(vector<Dtrk_hit*> hits, float x0, float y0);
 		
 		vector<Dtrk_hit*>& Get_trkhits(void){return trkhits;}
@@ -40,10 +41,10 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		vector<float>& Get_dbg_z_vertex(void){return dbg_z_vertex;}
 		vector<float>& Get_dbg_phizangle(void){return dbg_phizangle;}
 
-	private:
-		jerror_t brun(JEventLoop *loop, int runnumber);
-		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
-		jerror_t fini(void);	///< Invoked via JEventProcessor virtual method
+	protected:
+		virtual jerror_t brun(JEventLoop *loop, int runnumber);
+		virtual jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+		virtual jerror_t fini(void);	///< Invoked via JEventProcessor virtual method
 		void ClearEvent(void);
 		void GetTrkHits(JEventLoop *loop);
 		int FindSeed(void);

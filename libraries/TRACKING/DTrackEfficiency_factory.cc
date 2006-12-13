@@ -26,6 +26,16 @@ class Dthrown_found{
 
 
 //------------------
+// init
+//------------------
+jerror_t DTrackEfficiency_factory::init(void)
+{
+	gPARMS->GetParameter("TRKFIT:CANDIDATE_TAG", CANDIDATE_TAG);
+
+	return NOERROR;
+}
+
+//------------------
 // evnt
 //------------------
 jerror_t DTrackEfficiency_factory::evnt(JEventLoop *loop, int eventnumber)
@@ -39,7 +49,7 @@ jerror_t DTrackEfficiency_factory::evnt(JEventLoop *loop, int eventnumber)
 	string TRACKHIT_SOURCE;
 	gPARMS->GetParameter("TRK:TRACKHIT_SOURCE", TRACKHIT_SOURCE);
 	
-	JFactory<DTrackCandidate> *factory_tc = loop->Get(trackcandidates);
+	JFactory<DTrackCandidate> *factory_tc = loop->Get(trackcandidates, CANDIDATE_TAG.c_str());
 	JFactory<DMCTrackHit> *factory_mcth = loop->Get(mctrackhits);
 	loop->Get(trackhits, TRACKHIT_SOURCE.c_str());
 	loop->Get(mcthrowns);

@@ -20,8 +20,11 @@ class DTrackEfficiency_factory:public JFactory<DTrackEfficiency>{
 		const string toString(void);
 	
 	private:
+		jerror_t init(void);
 		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
+
+		string CANDIDATE_TAG;
 };
 
 #endif // _DTrackEfficiency_factory_

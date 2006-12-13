@@ -60,6 +60,7 @@ DTrack_factory::DTrack_factory()
 	LEAST_SQUARES_DP = 0.001;
 	LEAST_SQUARES_MIN_HITS = 3;
 	LEAST_SQUARES_MAX_E2NORM = 1.0E6;
+	CANDIDATE_TAG = "";
 	
 	gPARMS->SetDefaultParameter("TRKFIT:MAX_HIT_DIST",				MAX_HIT_DIST);
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",				DEBUG_HISTS);
@@ -75,6 +76,7 @@ DTrack_factory::DTrack_factory()
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_DP",		LEAST_SQUARES_DP);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MIN_HITS",LEAST_SQUARES_MIN_HITS);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MAX_E2NORM",LEAST_SQUARES_MAX_E2NORM);		
+	gPARMS->SetDefaultParameter("TRKFIT:CANDIDATE_TAG",			CANDIDATE_TAG);		
 }
 
 //------------------
@@ -127,7 +129,7 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 {
 	// Get the track candidates and hits
 	vector<const DTrackCandidate*> trackcandidates;
-	loop->Get(trackcandidates);
+	loop->Get(trackcandidates,CANDIDATE_TAG.c_str());
 
 	cdctrackhits.clear();
 	fdctrackhits.clear();
