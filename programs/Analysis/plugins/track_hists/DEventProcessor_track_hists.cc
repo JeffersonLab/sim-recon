@@ -134,6 +134,8 @@ jerror_t DEventProcessor_track_hists::init(void)
 	Nevents = 0;
 	Ncdchits = 0;
 	Nfdchits = 0;
+
+	gPARMS->GetParameter("TRKFIT:CANDIDATE_TAG", CANDIDATE_TAG);
 	
 	return NOERROR;
 }
@@ -153,7 +155,7 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 	loop->Get(trackhits, "MC");
 	loop->Get(mctrackhits);
 	JFactory<DTrack> *factory_trk = loop->Get(tracks);
-	JFactory<DTrackCandidate> *factory_trkcandidate = loop->Get(trackcandidates);
+	JFactory<DTrackCandidate> *factory_trkcandidate = loop->Get(trackcandidates, CANDIDATE_TAG.c_str());
 	loop->Get(mcthrowns);
 	loop->Get(trackefficiencies);
 	

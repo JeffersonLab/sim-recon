@@ -65,6 +65,8 @@ class DEventProcessor_track_hists:public JEventProcessor{
 		unsigned int Nevents;
 		unsigned int Ncdchits;
 		unsigned int Nfdchits;
+		
+		string CANDIDATE_TAG;
 };
 
 #endif // _DEventProcessor_track_hists_
