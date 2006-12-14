@@ -23,10 +23,8 @@ using namespace std;
 // Routine used to create our JEventProcessor
 extern "C"{
 void InitPlugin(JApplication *app){
-_DBG__;
 	InitJANAPlugin(app);
 	app->AddProcessor(new DEventProcessor_mcthrown_hists());
-_DBG__;
 }
 }
 
