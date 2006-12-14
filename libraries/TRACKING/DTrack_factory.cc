@@ -61,6 +61,7 @@ DTrack_factory::DTrack_factory()
 	LEAST_SQUARES_MIN_HITS = 3;
 	LEAST_SQUARES_MAX_E2NORM = 1.0E6;
 	CANDIDATE_TAG = "";
+	DEFAULT_STEP_SIZE = 0.5;
 	
 	gPARMS->SetDefaultParameter("TRKFIT:MAX_HIT_DIST",				MAX_HIT_DIST);
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",				DEBUG_HISTS);
@@ -76,7 +77,9 @@ DTrack_factory::DTrack_factory()
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_DP",		LEAST_SQUARES_DP);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MIN_HITS",LEAST_SQUARES_MIN_HITS);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MAX_E2NORM",LEAST_SQUARES_MAX_E2NORM);		
-	gPARMS->SetDefaultParameter("TRKFIT:CANDIDATE_TAG",			CANDIDATE_TAG);		
+	gPARMS->SetDefaultParameter("TRKFIT:CANDIDATE_TAG",			CANDIDATE_TAG);
+	gPARMS->SetDefaultParameter("TRKFIT:DEFAULT_STEP_SIZE",		DEFAULT_STEP_SIZE);
+	
 }
 
 //------------------
@@ -175,7 +178,7 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *tc)
 	// Generate reference trajectory and use it to find the initial
 	// set of hits for this track. Some of these could be dropped by
 	// the fitter.
-	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, tc->q, pos, mom, swim_steps, max_swim_steps,0.5);
+	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, tc->q, pos, mom, swim_steps, max_swim_steps,DEFAULT_STEP_SIZE);
 	GetCDCTrackHits(rt); //Hits are left in private member data "cdchits_on_track"
 	GetFDCTrackHits(rt); //Hits are left in private member data "fdchits_on_track"
 	if((cdchits_on_track.size() + fdchits_on_track.size())<4)return NULL; // can't fit a track with less than 4 hits!
@@ -357,7 +360,7 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 	// "state" at "start_step" if one is not provided.
 	bool own_rt = false;
 	if(!rt){
-		rt = new DReferenceTrajectory(bfield, q, pos, mom);
+		rt = new DReferenceTrajectory(bfield, q, pos, mom,DEFAULT_STEP_SIZE);
 		own_rt = true;
 	}
 
@@ -476,7 +479,7 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	state[state_z	][0] = pos_diff.Dot(start_step->udir);
 	
 	// Create reference trajectory to use in calculating derivatives
-	DReferenceTrajectory *myrt = new DReferenceTrajectory(bfield, rt->q, pos, mom, swim_steps_ls, max_swim_steps_ls,0.5);
+	DReferenceTrajectory *myrt = new DReferenceTrajectory(bfield, rt->q, pos, mom, swim_steps_ls, max_swim_steps_ls, DEFAULT_STEP_SIZE);
 
 	// Best-guess
 	ChiSq(rt->q, pos, mom, myrt);
