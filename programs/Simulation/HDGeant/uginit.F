@@ -242,22 +242,24 @@ C..geant..
 *
 *             Assign the beam parameters
 *
-      if (beamE0.gt.0) then
+      if (bgrate .lt. 0) then
+        print *
+        print *, 'Error in uginit:',
+     +           ' BGRATE specified with negative value,',
+     +           ' cannot continue.'
+        stop
+      elseif (bggate(1) .gt. bggate(2)) then
+        print *
+        print *, 'Error in uginit:',
+     +           ' BGGATE specified with negative interval,',
+     +           ' cannot continue.'
+        stop
+      endif
+      if (beamE0 .gt. 0) then
         call cobrems(beamE0,beamEpeak,radColDist)
-        if (bgrate.lt.0) then
-          print *
-          print *, 'Error in uginit:',
-     +             ' BGRATE specified with negative value,',
-     +             ' cannot continue.'
-          stop
-        elseif (bggate(1).gt.bggate(2)) then
-          print *
-          print *, 'Error in uginit:',
-     +             ' BGGATE specified with negative interval,',
-     +             ' cannot continue.'
-          stop
-        endif
-      elseif (bgrate.gt.0) then
+      elseif (infile(1) .eq. 0) then
+        continue    ! single-particle gun (mode 1), ignore background gen.
+      elseif (bgrate .gt. 0) then
         print *
         print *, 'Error in uginit:',
      +           ' BGRATE specified without BEAM card,',
