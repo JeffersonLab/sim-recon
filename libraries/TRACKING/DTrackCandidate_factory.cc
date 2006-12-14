@@ -83,6 +83,10 @@ DTrackCandidate_factory::DTrackCandidate_factory()
 
 	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
 	XY_NOISE_CUT2 = XY_NOISE_CUT*XY_NOISE_CUT;
+	
+	phizangle_hist = NULL;
+	phi_relative = NULL;
+	zvertex_hist = NULL;
 }
 
 //------------------
@@ -140,9 +144,9 @@ jerror_t DTrackCandidate_factory::fini(void)
 {
 	// seems errors are sometimes caused by deleting these ???
 	eventLoop->GetJApplication()->Lock();
-	delete phizangle_hist;
-	delete phi_relative;
-	delete zvertex_hist;
+	if(phizangle_hist)delete phizangle_hist;
+	if(phi_relative)delete phi_relative;
+	if(zvertex_hist)delete zvertex_hist;
 	eventLoop->GetJApplication()->Unlock();
 	
 	return NOERROR;
