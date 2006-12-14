@@ -319,8 +319,8 @@
 	                           comment="CDC upstream cables" />
   <pcon name="CDCB" material="SignalCables" comment="CDC readout cables">
     <polyplane Rio_Z="15.0 60.0 0.0" />
-    <polyplane Rio_Z="23.0 68.0 -0.53" />
-    <polyplane Rio_Z="65.0 68.0 -3.31" />
+    <polyplane Rio_Z="23.0 60.0 -0.53" />
+    <polyplane Rio_Z="56.4 60.0 -3.31" />
     <polyplane Rio_Z="65.0 68.0 -55.0" />
     <polyplane Rio_Z="65.0 69.2 -56.2" />
     <polyplane Rio_Z="71.0 75.2 -62.2" />

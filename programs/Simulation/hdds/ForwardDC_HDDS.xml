@@ -126,10 +126,10 @@
     <polyplane Rio_Z="63.5 65.0  25.5" />
     <polyplane Rio_Z="63.5 65.0  88.5" />
     <polyplane Rio_Z="63.0 65.0  88.5" />
-    <polyplane Rio_Z="63.0 65.0  135.0" />
-    <polyplane Rio_Z="63.0 65.8  135.8" />
-    <polyplane Rio_Z="64.0 66.8  136.8" />
-    <polyplane Rio_Z="65.4 65.4  138.2" />
+    <polyplane Rio_Z="63.0 65.0  120.0" />
+    <polyplane Rio_Z="63.0 65.8  120.8" />
+    <polyplane Rio_Z="64.0 66.8  121.8" />
+    <polyplane Rio_Z="65.4 65.4  123.2" />
   </pcon>
 
   <!-- The following elements describe an early rendition of the GlueX
