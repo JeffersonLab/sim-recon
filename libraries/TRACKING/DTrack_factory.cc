@@ -360,7 +360,7 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 	// "state" at "start_step" if one is not provided.
 	bool own_rt = false;
 	if(!rt){
-		rt = new DReferenceTrajectory(bfield, q, pos, mom,DEFAULT_STEP_SIZE);
+		rt = new DReferenceTrajectory(bfield, q, pos, mom, NULL, 0, DEFAULT_STEP_SIZE);
 		own_rt = true;
 	}
 
