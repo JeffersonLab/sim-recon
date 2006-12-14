@@ -112,8 +112,6 @@ jerror_t MyProcessor::init(void)
 	// Make sure detectors have been drawn
 	if(!drew_detectors)DrawDetectors();
 	
-	gPARMS->GetParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
-
 	return NOERROR;
 }
 
@@ -133,6 +131,8 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 		cerr<<endl;
 		exit(-1);
 	}
+
+	gPARMS->GetParameter("TRKFIND:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
 
 	// Read in Magnetic field map
 	//Bfield = eventLoop->GetJApplication()->GetJGeometry(runnumber)->GetDMagneticFieldMap();
