@@ -103,7 +103,9 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
             goto 50
          endif
       enddo
-      write(5,*) 'Gukine: photon beam generator failed, giving up'
+      print *, 'Error in gukine:',
+     +         ' photon beam generator failed, giving up!'
+      stop
 
 50    continue
       theta = sqrt(theta2)*(me/E)
