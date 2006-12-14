@@ -28,6 +28,14 @@ DTrackCandidate_factory_THROWN::DTrackCandidate_factory_THROWN()
 }
 
 //------------------
+// init
+//------------------
+jerror_t DTrackCandidate_factory_THROWN::init(void)
+{	
+	return NOERROR;
+}
+
+//------------------
 // brun
 //------------------
 jerror_t DTrackCandidate_factory_THROWN::brun(JEventLoop *eventLoop, int runnumber)

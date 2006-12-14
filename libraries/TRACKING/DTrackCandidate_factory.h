@@ -42,6 +42,7 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		vector<float>& Get_dbg_phizangle(void){return dbg_phizangle;}
 
 	protected:
+		virtual jerror_t init(void);
 		virtual jerror_t brun(JEventLoop *loop, int runnumber);
 		virtual jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 		virtual jerror_t fini(void);	///< Invoked via JEventProcessor virtual method

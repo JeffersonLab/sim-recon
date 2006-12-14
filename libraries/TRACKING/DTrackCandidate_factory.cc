@@ -83,22 +83,41 @@ DTrackCandidate_factory::DTrackCandidate_factory()
 
 	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
 	XY_NOISE_CUT2 = XY_NOISE_CUT*XY_NOISE_CUT;
-	
+}
+
+//------------------
+// init
+//------------------
+jerror_t DTrackCandidate_factory::init(void)
+{
 	dgeom = NULL;
 	bfield = NULL;
 	
 	char suffix[32];
 	sprintf(suffix,"_%08x", (unsigned int)pthread_self());
 	
-	char title[64];
-	sprintf(title,"phi_z_angle%s",suffix);
-	phizangle_hist = new TH1F(title,"phi_z_angle", 1000, -M_PI, M_PI);
-	phizangle_bin_size = phizangle_hist->GetBinCenter(2)-phizangle_hist->GetBinCenter(1);
-	sprintf(title,"phi_relative%s",suffix);
-	phi_relative = new TH1F(title,"phi_relative", 1000, -M_PI, M_PI);
-	sprintf(title,"z_vertex%s",suffix);
-	zvertex_hist = new TH1F(title,"z_vertex", 140, TARGET_Z_MIN, TARGET_Z_MAX);
-	z_vertex_bin_size = zvertex_hist->GetBinCenter(2)-zvertex_hist->GetBinCenter(1);
+	// Since there is a subclass of this one (DTrackCandidate_factory__THROWN)
+	// that does not need these histograms, we check if we are a true 
+	// DTrackCandidate_factory object or not before creating them. If we
+	// don't then the DTrackCandidate_factory__THROWN class will recreate
+	// them leading to warning messages from ROOT.
+	if(typeid(this) == typeid(DTrackCandidate_factory*)){
+		char title[64];
+_DBG__;
+		eventLoop->GetJApplication()->Lock();
+_DBG__;
+		sprintf(title,"phi_z_angle%s",suffix);
+		phizangle_hist = new TH1F(title,"phi_z_angle", 1000, -M_PI, M_PI);
+		phizangle_bin_size = phizangle_hist->GetBinCenter(2)-phizangle_hist->GetBinCenter(1);
+		sprintf(title,"phi_relative%s",suffix);
+		phi_relative = new TH1F(title,"phi_relative", 1000, -M_PI, M_PI);
+		sprintf(title,"z_vertex%s",suffix);
+		zvertex_hist = new TH1F(title,"z_vertex", 140, TARGET_Z_MIN, TARGET_Z_MAX);
+		z_vertex_bin_size = zvertex_hist->GetBinCenter(2)-zvertex_hist->GetBinCenter(1);
+		eventLoop->GetJApplication()->Unlock();
+	}
+	
+	return NOERROR;
 }
 
 //------------------
@@ -120,9 +139,11 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop *loop, int runnumber)
 jerror_t DTrackCandidate_factory::fini(void)
 {
 	// seems errors are sometimes caused by deleting these ???
-	//delete phizangle_hist;
-	//delete phi_relative;
-	//delete zvertex_hist;
+	eventLoop->GetJApplication()->Lock();
+	delete phizangle_hist;
+	delete phi_relative;
+	delete zvertex_hist;
+	eventLoop->GetJApplication()->Unlock();
 	
 	return NOERROR;
 }
