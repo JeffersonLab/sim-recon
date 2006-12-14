@@ -17,13 +17,14 @@
          top_volume = "BCAL"
          specification = "v1.0">
 
-<!-- Origin of BarrelEMcal is center of upstream end. -->
+<!-- Origin of BarrelEMcal is center of upstream end
+     of the active region, not including the light guides. -->
 
 
   <composition name="BarrelEMcal">
-    <posXYZ volume="barrelEMcal" X_Y_Z="0.0 0.0 210.0" />
-    <posXYZ volume="BCSU" X_Y_Z="0.0 0.0 0.0" />
-    <posXYZ volume="BCSD" X_Y_Z="0.0 0.0 420." />
+    <posXYZ volume="barrelEMcal" X_Y_Z="0.0 0.0 195.0" />
+    <posXYZ volume="BCSU" X_Y_Z="0.0 0.0 -15.0" />
+    <posXYZ volume="BCSD" X_Y_Z="0.0 0.0 405." />
   </composition>
 
   <composition name="barrelEMcal" envelope="BCAL">
