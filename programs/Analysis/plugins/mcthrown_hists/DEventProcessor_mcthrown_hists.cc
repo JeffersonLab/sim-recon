@@ -18,12 +18,15 @@ using namespace std;
 
 // The executable should define the ROOTfile global variable. It will
 // be automatically linked when dlopen is called.
-extern TFile *ROOTfile;
+//extern TFile *ROOTfile;
 
 // Routine used to create our JEventProcessor
 extern "C"{
-void InitProcessors(JApplication *app){
+void InitPlugin(JApplication *app){
+_DBG__;
+	InitJANAPlugin(app);
 	app->AddProcessor(new DEventProcessor_mcthrown_hists());
+_DBG__;
 }
 }
 
@@ -47,7 +50,7 @@ DEventProcessor_mcthrown_hists::~DEventProcessor_mcthrown_hists()
 jerror_t DEventProcessor_mcthrown_hists::init(void)
 {
 	// open ROOT file (if needed)
-	if(ROOTfile != NULL) ROOTfile->cd();
+	//if(ROOTfile != NULL) ROOTfile->cd();
 
 	// Create THROWN directory
 	TDirectory *dir = new TDirectory("THROWN","THROWN");
@@ -58,6 +61,7 @@ jerror_t DEventProcessor_mcthrown_hists::init(void)
 	theta	= new TH1F("theta","Thrown theta in radians",200, 0.0, M_PI);
 	phi	= new TH1F("phi","Thrown phi in radians",200, 0.0, 2.0*M_PI);
 	energy	= new TH1F("energy","Thrown energy in GeV",1200, 0.0, 12.0);
+	vertex = new TH3F("vertex", "Position of vertex from which thrown particles were thrown", 50, -5.0, 5.0, 50, -5.0, 5.0, 150, 0.0, 150.0);
 
 	Nparticles_per_event	= new TH1F("Nparticles_per_event","Number of thrown particles per event",21, -0.5, 20.5);
 	particle_type	= new TH1F("particle_type","GEANT3 particle type of thrown particles",101, -0.5, 100.5);
