@@ -107,9 +107,7 @@ jerror_t DTrackCandidate_factory::init(void)
 	// them leading to warning messages from ROOT.
 	if(typeid(this) == typeid(DTrackCandidate_factory*)){
 		char title[64];
-_DBG__;
 		eventLoop->GetJApplication()->Lock();
-_DBG__;
 		sprintf(title,"phi_z_angle%s",suffix);
 		phizangle_hist = new TH1F(title,"phi_z_angle", 1000, -M_PI, M_PI);
 		phizangle_bin_size = phizangle_hist->GetBinCenter(2)-phizangle_hist->GetBinCenter(1);
