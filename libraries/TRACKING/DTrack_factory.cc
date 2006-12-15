@@ -586,7 +586,7 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 		TMatrixD delta_state = B*Ft*Vinv*m;
 		for(int i=0; i<3; i++)state[i] += delta_state[i];
 	}else{
-		cout<<__FILE__<<":"<<__LINE__<<" Fit failed! (B.E2Norm()="<<B.E2Norm()<<")"<<endl;
+		//cout<<__FILE__<<":"<<__LINE__<<" Fit failed! (B.E2Norm()="<<B.E2Norm()<<")"<<endl;
 	}
 
 	// Calculate initial particle position/momentum. We should
