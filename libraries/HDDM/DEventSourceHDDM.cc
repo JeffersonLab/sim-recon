@@ -68,15 +68,17 @@ jerror_t DEventSourceHDDM::GetEvent(JEvent &event)
 		return EVENT_SOURCE_NOT_OPEN;
 	}
 	hddm_s = read_s_HDDM(fin);
-	++Nevents_read;
-	
-	// each open HDDM file takes up about 1M of memeory so it's
+
+	// each open HDDM file takes up about 1M of memory so it's
 	// worthwhile to close it as soon as we can
 	if(!hddm_s){
 		if(fin)close_s_HDDM(fin);
 		fin = NULL;
+		return NO_MORE_EVENTS_IN_SOURCE;
 	}
-
+	
+	++Nevents_read;
+	
 	int event_number = -1;
 	int run_number = -1;
 	
@@ -93,7 +95,7 @@ jerror_t DEventSourceHDDM::GetEvent(JEvent &event)
 	event.SetRunNumber(run_number);
 	event.SetRef(hddm_s);
 
-	return hddm_s==NULL ? NO_MORE_EVENTS_IN_SOURCE:NOERROR;
+	return NOERROR;
 }
 
 //----------------
