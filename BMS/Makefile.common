@@ -22,11 +22,14 @@
 # Makefile.lib
 first: all
 
-ifndef OSNAME
-OSNAME = $(shell uname)-$(shell uname -p)
-endif
 ifndef OS
 OS = $(shell uname)
+endif
+ifndef ARCH
+ARCH = $(shell uname -p)
+endif
+ifndef OSNAME
+OSNAME = $(OS)-$(ARCH)
 endif
 
 ifndef FC
@@ -111,8 +114,9 @@ LIBNAME = $(LIB_DIR)/lib$(MODULE_NAME)$(DEBUG_SUFFIX).a
 
 # Include platform specific definitions
 # (the "-" at the front means don't error if the file doesn't exist)
--include $(HALLD_HOME)/src/BMS/Makefile.$(OSNAME)
 -include $(HALLD_HOME)/src/BMS/Makefile.$(OS)
+-include $(HALLD_HOME)/src/BMS/Makefile.$(ARCH)
+-include $(HALLD_HOME)/src/BMS/Makefile.$(OSNAME)
 
 # For GNU compilers, add verbose warnings
 ifeq ($(FC),g77)
