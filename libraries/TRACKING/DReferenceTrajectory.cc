@@ -210,6 +210,9 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 	/// defined by "wire" should have its origin at the center of
 	/// the wire with the wire running in the direction of udir.
 	
+	// Make sure we have a wire first!
+	if(!wire)return NULL;
+	
 	// Loop over swim steps and find the one closest to the wire
 	swim_step_t *swim_step = swim_steps;
 	swim_step_t *step=NULL;

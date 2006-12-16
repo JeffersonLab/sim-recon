@@ -291,7 +291,7 @@ void DTrack_factory::GetCDCTrackHits(DReferenceTrajectory *rt, double max_hit_di
 //------------------
 void DTrack_factory::GetFDCTrackHits(DReferenceTrajectory *rt, double max_hit_dist)
 {
-	/// Determine the distance of each CDC hit to the reference trajectory.
+	/// Determine the distance of each FDC hit to the reference trajectory.
 	/// Ones less than TRK:MAX_HIT_DIST are added to cdchits_on_track as
 	/// possibly being associated with the track.
 	///
