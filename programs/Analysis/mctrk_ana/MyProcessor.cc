@@ -46,7 +46,7 @@ jerror_t MyProcessor::init(void)
 	
 	// Create Tree
 	fit_parms = new TTree("fitp","Helical Fit parameters");
-	fit_parms->Branch("F",val,"p/F:px:py:pz:x:y:z:pcan:pcanx:pcany:pcanz:canz:Ro:x0:y0:phi:theta:p_thrn:px_thrn:py_thrn:pz_thrn:phi_thrn:theta_thrn:fittable/I:nhits");
+	fit_parms->Branch("F",val,"p/F:px:py:pz:x:y:z:pcan:pcanx:pcany:pcanz:canz:Ro:x0:y0:phi:theta:p_thrn:px_thrn:py_thrn:pz_thrn:phi_thrn:theta_thrn:fittable:nhits");
 
 	gPARMS->GetParameter("TRKFIT:CANDIDATE_TAG", CANDIDATE_TAG);
 
@@ -119,8 +119,8 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
 		val[20] = thrown->p*cos(thrown->theta);
 		val[21] = thrown->phi;
 		val[22] = thrown->theta;
-		val[23] = trackeff->fittable;
-		val[24] = trackeff->Nhits_thrown;
+		val[23] = (float)trackeff->fittable;
+		val[24] = (float)trackeff->Nhits_thrown;
 		
 		fit_parms->Fill();
 		UnlockState();
