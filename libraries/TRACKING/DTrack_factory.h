@@ -121,9 +121,9 @@ class DTrack_factory:public JFactory<DTrack>{
 		TH1F *doca_stereo, *doca_axial;
 		TH2F *chisq_final_vs_initial;
 		TH2F *nhits_final_vs_initial;
-		TH1F *residuals;
 		TH1F *Npasses;
 		TH1F *ptotal;
+		TH1F *residuals_cdc, *residuals_fdc_anode, *residuals_fdc_cathode;
 };
 
 #endif // _DTrack_factory_

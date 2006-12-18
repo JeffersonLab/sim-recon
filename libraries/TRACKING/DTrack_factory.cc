@@ -117,9 +117,11 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 		doca_stereo = new TH1F("doca_stereo","DOCA of track for axial CDC wires",300,0.0,3.0);
 		chisq_final_vs_initial = new TH2F("chisq_final_vs_initial","Final vs. initial chi-sq.",200, 0.0, 10.0,50, 0.0, 2.5);
 		nhits_final_vs_initial = new TH2F("nhits_final_vs_initial","Final vs. initial nhits used in chi-sq.",30, -0.5, 29.5, 30, -0.5, 29.5);
-		residuals = new TH1F("residuals","Residuals",1000,0.0,2.0);
 		Npasses = new TH1F("Npasses","Npasses", 21, -0.5, 20.5);
 		ptotal = new TH1F("ptotal","ptotal",1000, 0.1, 8.0);
+		residuals_cdc = new TH1F("residuals_cdc","Residuals in CDC",1000,0.0,2.0);
+		residuals_fdc_anode = new TH1F("residuals_fdc_anode","Residuals in FDC anodes",1000,0.0,2.0);
+		residuals_fdc_cathode = new TH1F("residuals_fdc_cathode","Residuals in FDC cathode",1000,0.0,2.0);
 	}
 
 	return NOERROR;
@@ -392,6 +394,9 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 
 		// NOTE: Sometimes we push nan or large values on here
 		double resi = dist - doca;
+		if(DEBUG_HISTS)
+			if(finite(resi))residuals_cdc->Fill(resi);
+
 		chisqv.push_back(USE_CDC ? resi:NaN);
 		sigmav.push_back(sigma);
 	}
@@ -420,6 +425,8 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 
 		// NOTE: Sometimes we push nan or large values on here
 		double resi = dist - doca;
+		if(DEBUG_HISTS)
+			if(finite(resi))residuals_fdc_anode->Fill(resi);
 		chisqv.push_back(USE_FDC_ANODE ? resi:NaN);
 		sigmav.push_back(sigma);
 		
@@ -427,6 +434,8 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 		// which we include as a separate measurement
 		double u = rt->GetLastDistAlongWire();
 		resi = u - hit.fdchit->s;
+		if(DEBUG_HISTS)
+			if(finite(resi))residuals_fdc_cathode->Fill(resi);
 		chisqv.push_back(USE_FDC_CATHODE ? resi:NaN);
 		sigmav.push_back(SIGMA_FDC_CATHODE); // 200 um
 		
@@ -441,7 +450,6 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 		// along the track and the errors of the measurement in 3D.
 		// For now, we use a single distance which may be sufficient.
 		if(!finite(chisqv[i]))continue;
-		if(DEBUG_HISTS)residuals->Fill(chisqv[i]);
 		if(fabs(chisqv[i]/sigmav[i])>CHISQ_MAX_RESI_SIGMAS)continue;
 
 		chisq+=pow(chisqv[i]/sigmav[i], 2.0);
