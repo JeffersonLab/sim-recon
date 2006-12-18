@@ -20,44 +20,44 @@
      of the most upstream chamber.                        -->
 
   <composition name="ForwardDC">
-    <posXYZ volume="forwardDC" X_Y_Z="0.0  0.0  100.5" />
-    <mposPhi volume="FDSC" ncopy="3" Phi0="30" R_Z="0.0 100.5"
+    <posXYZ volume="forwardDC" X_Y_Z="0.0  0.0  95.5" />
+    <mposPhi volume="FDSC" ncopy="3" Phi0="30" R_Z="0.0 95.5"
                                                 impliedRot="true" />
   </composition>
 
   <composition name="forwardDC" envelope="FDC">
-    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0  -100.6" />
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -97.5">
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0  -95.6" />
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -92.5">
       <module value="1" />
     </posXYZ>
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -91.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -86.5">
       <module value="2" />
     </posXYZ>
-    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0  -88.4" />
-    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0  -37.6" />
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -34.5">
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0  -83.4" />
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0  -35.6" />
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -32.5">
       <module value="3" />
     </posXYZ>
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -28.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0  -26.5">
       <module value="4" />
     </posXYZ>
-    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0  -25.4" />
-    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0   25.4" />
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   28.5">
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0  -23.4" />
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0   23.4" />
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   26.5">
       <module value="5" />
     </posXYZ>
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   34.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   32.5">
       <module value="6" />
     </posXYZ>
-    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0   37.6" />
-    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0   88.4" />
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   91.5">
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0   35.6" />
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0   83.4" />
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   86.5">
       <module value="7" />
     </posXYZ>
-    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   97.5">
+    <posXYZ volume="forwardDC_module" X_Y_Z="0.0  0.0   92.5">
       <module value="8" />
     </posXYZ>
-    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0   100.6" />
+    <posXYZ volume="FDSP"  X_Y_Z="0.0  0.0   95.6" />
     <posXYZ volume="FDSR"  X_Y_Z=" 41.0  41.0   0.0" />
     <posXYZ volume="FDSR"  X_Y_Z="-41.0  41.0   0.0" />
     <posXYZ volume="FDSR"  X_Y_Z="-41.0 -41.0   0.0" />
@@ -94,7 +94,7 @@
     <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 0.9975" />
   </composition>
 
-  <tubs name="FDC" Rio_Z="0.0 62.0 202.0" material="Air"
+  <tubs name="FDC" Rio_Z="0.0 62.0 196.0" material="Air"
                                           comment="forward drift chambers" />
   <tubs name="FDMO" Rio_Z="0.0 61.0 6.0" material="Air" 
                                           comment="fdc module container" />
@@ -110,7 +110,7 @@
                                           comment="cathode support plane" />
   <tubs name="FDSP" Rio_Z="53.6 60.0 0.2" material="StainlessSteel"
                                           comment="fdc end plates" />
-  <tubs name="FDSR" Rio_Z="0.0 1.0 202.0" material="CarbonFiber"
+  <tubs name="FDSR" Rio_Z="0.0 1.0 196.0" material="CarbonFiber"
                                           comment="fdc support rods" />
   <tubs name="FDSF" Rio_Z="53.6 60.0 6.0" material="FR-4"
                                           comment="fdc chamber frames" />
@@ -119,13 +119,13 @@
 
   <pcon name="FDSC" profile="-58.0 116.0"  material="SignalCables"
                                           comment="fdc signal, HV cables">
-    <polyplane Rio_Z="64.5 65.0 -100.5" />
-    <polyplane Rio_Z="64.5 65.0 -37.5" />
-    <polyplane Rio_Z="64.0 65.0 -37.5" />
-    <polyplane Rio_Z="64.0 65.0  25.5" />
-    <polyplane Rio_Z="63.5 65.0  25.5" />
-    <polyplane Rio_Z="63.5 65.0  88.5" />
-    <polyplane Rio_Z="63.0 65.0  88.5" />
+    <polyplane Rio_Z="64.5 65.0 -95.5" />
+    <polyplane Rio_Z="64.5 65.0 -35.5" />
+    <polyplane Rio_Z="64.0 65.0 -35.5" />
+    <polyplane Rio_Z="64.0 65.0  23.5" />
+    <polyplane Rio_Z="63.5 65.0  23.5" />
+    <polyplane Rio_Z="63.5 65.0  83.5" />
+    <polyplane Rio_Z="63.0 65.0  83.5" />
     <polyplane Rio_Z="63.0 65.0  120.0" />
     <polyplane Rio_Z="63.0 65.8  120.8" />
     <polyplane Rio_Z="64.0 66.8  121.8" />
