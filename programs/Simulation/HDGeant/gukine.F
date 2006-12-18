@@ -206,20 +206,21 @@ c         print *, ngen,' background photons generated this event'
       else
 
          TOFG=0
-         VERTEX(1)=PKINE(4)
-         VERTEX(2)=PKINE(5)
-         VERTEX(3)=PKINE(6)
-         IF(IKINE.GT.100)THEN
+         VERTEX(1)=VSCAN(1)
+         VERTEX(2)=VSCAN(2)
+         VERTEX(3)=VSCAN(3)
+         IF (IKINE.GT.100)THEN
             IK=IKINE-100
-            THETA=PKINE(2)*DEGRAD
-            PHI=PKINE(3)*DEGRAD
+            CALL GRNDM(RNDM,3)
+            PABS=PKINE(1)+PKINE(4)*(RNDM(1)-0.5)
+            THETA=(PKINE(2)+PKINE(5)*(RNDM(2)-0.5))*DEGRAD
+            PHI=(PKINE(3)+PKINE(6)*(RNDM(3)-0.5))*DEGRAD
          ELSE
             IK=IKINE
             CALL GRNDM(RNDM,2)
             THETA=PI*RNDM(1)
             PHI=TWOPI*RNDM(2)
          ENDIF
-
          PLAB(1) = PKINE(1)*SIN(THETA)*COS(PHI)
          PLAB(2) = PKINE(1)*SIN(THETA)*SIN(PHI)
          PLAB(3) = PKINE(1)*COS(THETA)
