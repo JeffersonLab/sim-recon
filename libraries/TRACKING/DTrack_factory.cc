@@ -590,11 +590,13 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	// I don't want to introduce quite yet. What we do now
 	// is check for it and punt rather than return a nonsensical
 	// value.
-	if(B.E2Norm() < LEAST_SQUARES_MAX_E2NORM){
-		TMatrixD delta_state = B*Ft*Vinv*m;
-		for(int i=0; i<3; i++)state[i] += delta_state[i];
-	}else{
-		//cout<<__FILE__<<":"<<__LINE__<<" Fit failed! (B.E2Norm()="<<B.E2Norm()<<")"<<endl;
+	if(B.IsValid()){
+		if(B.E2Norm() < LEAST_SQUARES_MAX_E2NORM){
+			TMatrixD delta_state = B*Ft*Vinv*m;
+			for(int i=0; i<3; i++)state[i] += delta_state[i];
+		}else{
+			//cout<<__FILE__<<":"<<__LINE__<<" Fit failed! (B.E2Norm()="<<B.E2Norm()<<")"<<endl;
+		}
 	}
 
 	// Calculate initial particle position/momentum. We should
