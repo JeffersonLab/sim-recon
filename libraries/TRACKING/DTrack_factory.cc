@@ -201,8 +201,8 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *tc)
 		chisq = LeastSquares(pos, mom, rt, vertex_pos, vertex_mom);
 		if(Niterations==0)initial_chisq = chisq;
 		if(DEBUG_HISTS){
-			chisq_vs_pass->Fill(Niterations, chisq);
-			dchisq_vs_pass->Fill(Niterations, last_chisq-chisq);			
+			chisq_vs_pass->Fill(Niterations+1, chisq);
+			dchisq_vs_pass->Fill(Niterations+1, last_chisq-chisq);			
 		}
 		if(vertex_pos==pos && vertex_mom==mom)break;
 		if(fabs(last_chisq-chisq) < MAX_CHISQ_DIFF)break;
