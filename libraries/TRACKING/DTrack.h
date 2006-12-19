@@ -22,6 +22,7 @@ class DTrack:public JObject{
 		float theta,phi;	///< Inital theta and phi angles in radians
 		float x,y,z;		///< Vertex position in cm
 		oid_t candidateid;	///< id of DTrackCandidate this came from
+		float chisq;			///< reduced Chi-squared for the track
 };
 
 #endif // _DTrack_
