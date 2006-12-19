@@ -29,7 +29,7 @@ C
       emit=1.0e-8	!electron beam emittance (m r)
       spot=0.0005	!electron beam spot size at collimator
       D=Dist		!distance from radiator to collimator
-      t=14.7e-6		!thickness of radiator (m)
+      t=20.0e-6		!thickness of radiator (m)
       collim=0.0034	!collimator diameter (m)
       thx=-0.0300/E	!rotation of crystal about x (first)
       thy=0.100		!rotation of crystal about y (second)
