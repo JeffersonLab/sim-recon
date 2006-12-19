@@ -384,6 +384,9 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 	chisqv.clear();
 	sigmav.clear();
 	
+	// Calculate particle beta
+	double beta = 1.0/sqrt(1.0+0.14*0.14/mom.Mag2()); // assume this is a pion for now. This should eventually come from outer detectors
+	
 	// Add CDC hits (if any)
 	for(unsigned int i=0; i<cdchits_on_track.size(); i++){
 		cdc_hit_on_track_t &hit = cdchits_on_track[i];
@@ -400,7 +403,6 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 			sigma = 2.0*dist/3.464; // sigma of flat distr. is W/sqrt(12) where W is total width
 		}else{
 			// Calculate time of flight (TOF) so we can subtract it
-			double beta = 0.8; // use average beta for now. This should eventually come from outer detectors
 			double tof = s/(beta*3E10*1E-9);
 			dist = (hit.cdchit->tdrift-tof)*55E-4;
 			sigma = SIGMA_CDC; // 200 um
@@ -429,7 +431,6 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 			sigma = 2.0*dist/3.464; // sigma of flat distr. is W/sqrt(12) where W is total width
 		}else{
 			// Calculate time of flight (TOF) so we can subtract it
-			double beta = 0.8;
 			double tof = s/(beta*3E10*1E-9);
 			dist = (hit.fdchit->time-tof)*55E-4;
 			sigma = SIGMA_FDC_ANODE; // 200 um
@@ -634,6 +635,9 @@ void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_p
 	rt->Reswim(vertex_pos, vertex_mom);
 	ptotal->Fill(vertex_mom.Mag());
 
+	// Calculate particle beta
+	double beta = 1.0/sqrt(1.0+0.14*0.14/vertex_mom.Mag2()); // assume this is a pion for now. This should eventually come from outer detectors
+
 	for(unsigned int j=0; j<cdchits_on_track.size(); j++){
 		cdc_hit_on_track_t &hit = cdchits_on_track[j];
 		const DCDCWire *wire = hit.cdchit->wire;
@@ -643,7 +647,6 @@ void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_p
 		double doca = rt->DistToRT(wire, &s);
 			
 		// Distance from drift time. Hardwired for simulation for now
-		double beta = 0.8;
 		double tof = s/(beta*3E10*1E-9);
 		double dist = (hit.cdchit->tdrift-tof)*55E-4;
 
@@ -673,7 +676,6 @@ void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_p
 		double s;
 		double doca = rt->DistToRT(wire,&s);
 
-		double beta = 0.8;
 		double tof = s/(beta*3E10*1E-9);
 		double dist = (hit.fdchit->time-tof)*55E-4;
 
