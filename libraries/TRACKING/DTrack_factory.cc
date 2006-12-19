@@ -109,8 +109,9 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 	
 	if(DEBUG_HISTS){
 		cdcdoca_vs_dist = new TH2F("cdcdoca_vs_dist","DOCA vs. DIST",300, 0.0, 1.2, 300, 0.0, 1.2);
-		fdcdoca_vs_dist = new TH2F("fdcdoca_vs_dist","DOCA vs. DIST",500, 0.0, 2.0, 500, 0.0, 2.0);
 		cdcdoca_vs_dist_vs_ring = new TH3F("cdcdoca_vs_dist_vs_ring","DOCA vs. DIST vs. ring",300, 0.0, 1.2, 300, 0.0, 1.2,23,0.5,23.5);
+		fdcdoca_vs_dist = new TH2F("fdcdoca_vs_dist","DOCA vs. DIST",500, 0.0, 2.0, 500, 0.0, 2.0);
+		fdcu_vs_s = new TH2F("fdcu_vs_s","DOCA vs. DIST along wire",500, 0.0, 2.0, 500, 0.0, 2.0);
 		dist_axial = new TH1F("dist_axial","Distance from drift time for axial CDC wires",300,0.0,3.0);
 		doca_axial = new TH1F("doca_axial","DOCA of track for axial CDC wires",300,0.0,3.0);
 		dist_stereo = new TH1F("dist_stereo","Distance from drift time for stereo CDC wires",300,0.0,3.0);
@@ -119,9 +120,13 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 		nhits_final_vs_initial = new TH2F("nhits_final_vs_initial","Final vs. initial nhits used in chi-sq.",30, -0.5, 29.5, 30, -0.5, 29.5);
 		Npasses = new TH1F("Npasses","Npasses", 21, -0.5, 20.5);
 		ptotal = new TH1F("ptotal","ptotal",1000, 0.1, 8.0);
-		residuals_cdc = new TH1F("residuals_cdc","Residuals in CDC",1000,0.0,2.0);
-		residuals_fdc_anode = new TH1F("residuals_fdc_anode","Residuals in FDC anodes",1000,0.0,2.0);
-		residuals_fdc_cathode = new TH1F("residuals_fdc_cathode","Residuals in FDC cathode",1000,0.0,2.0);
+		residuals_cdc = new TH1F("residuals_cdc","Residuals in CDC",1000,-2.0,2.0);
+		residuals_fdc_anode = new TH1F("residuals_fdc_anode","Residuals in FDC anodes",1000,-2.0,2.0);
+		residuals_fdc_cathode = new TH1F("residuals_fdc_cathode","Residuals in FDC cathode",1000,-2.0,2.0);
+		initial_chisq_vs_Npasses = new TH2F("initial_chisq_vs_Npasses","Initial chi-sq vs. number of iterations", 25, -0.5, 24.5, 400, 0.0, 40.0);
+		chisq_vs_pass = new TH2F("chisq_vs_pass","Chi-sq vs. fit iteration", 25, -0.5, 24.5, 400, 0.0, 40.0);
+		dchisq_vs_pass = new TH2F("dchisq_vs_pass","Change in Chi-sq vs. fit iteration", 25, -0.5, 24.5, 400, 0.0, 8.0);
+		
 	}
 
 	return NOERROR;
@@ -189,18 +194,26 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *tc)
 	// position/momentum when the track was closest to the beamline
 	TVector3 vertex_pos=pos; // to hold fitted values on return
 	TVector3 vertex_mom=mom; // to hold fitted values on return
-	double chisq=1.0E6, last_chisq;
+	double initial_chisq=1.0E6, chisq=1.0E6, last_chisq;
 	int Niterations;
 	for(Niterations=0; Niterations<MAX_FIT_ITERATIONS; Niterations++){
 		last_chisq = chisq;
 		chisq = LeastSquares(pos, mom, rt, vertex_pos, vertex_mom);
+		if(Niterations==0)initial_chisq = chisq;
+		if(DEBUG_HISTS){
+			chisq_vs_pass->Fill(Niterations, chisq);
+			dchisq_vs_pass->Fill(Niterations, last_chisq-chisq);			
+		}
 		if(vertex_pos==pos && vertex_mom==mom)break;
 		if(fabs(last_chisq-chisq) < MAX_CHISQ_DIFF)break;
 		pos = vertex_pos;
 		mom = vertex_mom;
 	}
 	
-	if(DEBUG_HISTS)Npasses->Fill(Niterations);
+	if(DEBUG_HISTS){
+		Npasses->Fill(Niterations);
+		initial_chisq_vs_Npasses->Fill(Niterations, initial_chisq);
+	}
 
 	if(Niterations==0)return NULL;
 	
@@ -221,6 +234,7 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *tc)
 	track->y			= vertex_pos.Y();
 	track->z			= vertex_pos.Z();
 	track->candidateid = tc->id;
+	track->chisq	= chisq;
 
 	return track;
 }
@@ -394,8 +408,6 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 
 		// NOTE: Sometimes we push nan or large values on here
 		double resi = dist - doca;
-		if(DEBUG_HISTS)
-			if(finite(resi))residuals_cdc->Fill(resi);
 
 		chisqv.push_back(USE_CDC ? resi:NaN);
 		sigmav.push_back(sigma);
@@ -425,8 +437,6 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 
 		// NOTE: Sometimes we push nan or large values on here
 		double resi = dist - doca;
-		if(DEBUG_HISTS)
-			if(finite(resi))residuals_fdc_anode->Fill(resi);
 		chisqv.push_back(USE_FDC_ANODE ? resi:NaN);
 		sigmav.push_back(sigma);
 		
@@ -434,8 +444,6 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 		// which we include as a separate measurement
 		double u = rt->GetLastDistAlongWire();
 		resi = u - hit.fdchit->s;
-		if(DEBUG_HISTS)
-			if(finite(resi))residuals_fdc_cathode->Fill(resi);
 		chisqv.push_back(USE_FDC_CATHODE ? resi:NaN);
 		sigmav.push_back(SIGMA_FDC_CATHODE); // 200 um
 		
@@ -626,58 +634,64 @@ void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_p
 	rt->Reswim(vertex_pos, vertex_mom);
 	ptotal->Fill(vertex_mom.Mag());
 
-	for(unsigned int j=0; j<cdctrackhits.size(); j++){
-		const DCDCTrackHit *hit = cdctrackhits[j];
+	for(unsigned int j=0; j<cdchits_on_track.size(); j++){
+		cdc_hit_on_track_t &hit = cdchits_on_track[j];
+		const DCDCWire *wire = hit.cdchit->wire;
+		
+		// Distance of closest approach for track to wire
+		double s;
+		double doca = rt->DistToRT(wire, &s);
+			
+		// Distance from drift time. Hardwired for simulation for now
+		double beta = 0.8;
+		double tof = s/(beta*3E10*1E-9);
+		double dist = (hit.cdchit->tdrift-tof)*55E-4;
 
-		cdc_hit_on_track_t closest_hit;
-		closest_hit.swim_step = rt->FindClosestSwimStep(hit->wire);
-		if(!closest_hit.swim_step)continue;
-		closest_hit.cdchit = hit;
-		closest_hit.dist = rt->DistToRT(hit->wire, closest_hit.swim_step, &closest_hit.s);
+		// NOTE: Sometimes this could be nan
+		double resi = dist - doca;
+		if(!finite(resi))continue;
+		
+		// Fill histos
+		residuals_cdc->Fill(resi);
 
-		// Check if this hit is close enough to the RT to be on
-		// the track. This should be a function of both the distance
-		// along the track and the errors of the measurement in 3D.
-		// For now, we use a single distance which may be sufficient
-		// for finding hits that belong to the track.
-		if(!finite(closest_hit.dist))continue;
-		if(closest_hit.dist>MAX_HIT_DIST)continue;
-
-		// Temporary debugging histos
-		cdcdoca_vs_dist->Fill(hit->dist, closest_hit.dist);
-		cdcdoca_vs_dist_vs_ring->Fill(hit->dist, closest_hit.dist, hit->wire->ring);
-		if(hit->wire->stereo==0.0){
-			dist_axial->Fill(hit->dist);
-			doca_axial->Fill(closest_hit.dist);
+		cdcdoca_vs_dist->Fill(dist, doca);
+		cdcdoca_vs_dist_vs_ring->Fill(dist, doca, wire->ring);
+		if(wire->stereo==0.0){
+			dist_axial->Fill(dist);
+			doca_axial->Fill(doca);
 		}else{
-			dist_stereo->Fill(hit->dist);
-			doca_stereo->Fill(closest_hit.dist);
+			dist_stereo->Fill(dist);
+			doca_stereo->Fill(doca);
 		}
 	}
-	for(unsigned int j=0; j<fdctrackhits.size(); j++){
-		const DFDCPseudo *hit = fdctrackhits[j];
-
-		fdc_hit_on_track_t closest_hit;
-		closest_hit.swim_step = rt->FindClosestSwimStep(hit->wire);
-		if(!closest_hit.swim_step)continue;
-		closest_hit.fdchit = hit;
-		closest_hit.dist = rt->DistToRT(hit->wire, closest_hit.swim_step, &closest_hit.s);
-
-		// Check if this hit is close enough to the RT to be on
-		// the track. This should be a function of both the distance
-		// along the track and the errors of the measurement in 3D.
-		// For now, we use a single distance which may be sufficient
-		// for finding hits that belong to the track.
-		if(!finite(closest_hit.dist))continue;
-		if(closest_hit.dist>MAX_HIT_DIST)continue;
-
-		// Temporary debugging histos
-		double beta = 0.8;
-		double tof = closest_hit.s/(beta*3E10*1E-9);
-		double dist = (hit->time-tof)*55E-4;
-		fdcdoca_vs_dist->Fill(dist, closest_hit.dist);
-	}
 	
+	for(unsigned int j=0; j<fdchits_on_track.size(); j++){
+		fdc_hit_on_track_t &hit = fdchits_on_track[j];
+		const DFDCWire *wire = hit.fdchit->wire;
+
+		// Distance of closest approach for track to wire
+		double s;
+		double doca = rt->DistToRT(wire,&s);
+
+		double beta = 0.8;
+		double tof = s/(beta*3E10*1E-9);
+		double dist = (hit.fdchit->time-tof)*55E-4;
+
+		// NOTE: Sometimes this is nan
+		double resi = dist - doca;
+		if(finite(resi)){
+			fdcdoca_vs_dist->Fill(dist, doca);
+			residuals_fdc_anode->Fill(resi);
+		}
+		
+		double u = rt->GetLastDistAlongWire();
+		resi = u - hit.fdchit->s;
+		if(finite(resi)){
+			fdcu_vs_s->Fill(u, hit.fdchit->s);
+			residuals_fdc_cathode->Fill(resi);
+		}
+	}
+
 	// Find chi-sq for both initial and final values
 	double chisq_final = ChiSq(rt->q, vertex_pos, vertex_mom, rt);
 	double nhits_final = Ngood_chisq_hits;

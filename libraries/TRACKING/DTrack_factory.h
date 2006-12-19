@@ -116,7 +116,7 @@ class DTrack_factory:public JFactory<DTrack>{
 		
 		TH3F *cdcdoca_vs_dist_vs_ring;
 		TH2F *cdcdoca_vs_dist;
-		TH2F *fdcdoca_vs_dist;
+		TH2F *fdcdoca_vs_dist, *fdcu_vs_s;
 		TH1F *dist_stereo, *dist_axial;
 		TH1F *doca_stereo, *doca_axial;
 		TH2F *chisq_final_vs_initial;
@@ -124,6 +124,7 @@ class DTrack_factory:public JFactory<DTrack>{
 		TH1F *Npasses;
 		TH1F *ptotal;
 		TH1F *residuals_cdc, *residuals_fdc_anode, *residuals_fdc_cathode;
+		TH2F *initial_chisq_vs_Npasses, *chisq_vs_pass, *dchisq_vs_pass;
 };
 
 #endif // _DTrack_factory_
