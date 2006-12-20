@@ -490,7 +490,7 @@
       chname = 'DIV1'
       nr = 2
       chmoth = 'AIRH'
-      x = 2.06652e-16
+      x = 2.06659e-16
       y = 3.375
       z = 0
       irot = 1
@@ -510,7 +510,7 @@
       nr = 3
       chmoth = 'AIRH'
       x = -3.375
-      y = 4.13305e-16
+      y = 4.13318e-16
       z = 0
       irot = 2
       chonly = 'ONLY'
@@ -520,7 +520,7 @@
       theta1 = 90
       phi1 = -90
       theta2 = 90
-      phi2 = -1.05247e-14
+      phi2 = -1.05251e-14
       theta3 = 0
       phi3 = 0
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
@@ -528,7 +528,7 @@
       chname = 'DIV1'
       nr = 4
       chmoth = 'AIRH'
-      x = -6.19957e-16
+      x = -6.19977e-16
       y = -3.375
       z = 0
       irot = 3
@@ -2708,7 +2708,7 @@
       irot = 20
       theta1 = 90
       phi1 = 0
-      theta2 = 3.50824e-15
+      theta2 = 3.50835e-15
       phi2 = 90
       theta3 = 90
       phi3 = -90
@@ -3036,7 +3036,7 @@
       irot = 21
       theta1 = 90
       phi1 = 0
-      theta2 = 3.50824e-15
+      theta2 = 3.50835e-15
       phi2 = 90
       theta3 = 90
       phi3 = -90
@@ -3170,7 +3170,7 @@
       irot = 22
       theta1 = 90
       phi1 = 0
-      theta2 = 3.50824e-15
+      theta2 = 3.50835e-15
       phi2 = 90
       theta3 = 90
       phi3 = -90
@@ -8739,7 +8739,7 @@
       nr = 141
       chmoth = 'DC5'
       x = -24.96
-      y = 3.05662e-15
+      y = 3.05672e-15
       z = 0
       irot = 187
       chonly = 'ONLY'
@@ -12190,13 +12190,13 @@
       theta2 = 84
       phi2 = 180
       theta3 = 6
-      phi3 = -3.50824e-15
+      phi3 = -3.50835e-15
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 323
       chmoth = 'DC5'
-      x = 1.74653e-15
+      x = 1.74659e-15
       y = 28.524
       z = 0
       irot = 369
@@ -12729,7 +12729,7 @@
       nr = 351
       chmoth = 'DC5'
       x = -28.524
-      y = 3.49307e-15
+      y = 3.49318e-15
       z = 0
       irot = 397
       chonly = 'ONLY'
@@ -13260,7 +13260,7 @@
       chname = 'STLA'
       nr = 379
       chmoth = 'DC5'
-      x = -5.2396e-15
+      x = -5.23977e-15
       y = -28.524
       z = 0
       irot = 425
@@ -18264,7 +18264,7 @@
       chname = 'STLA'
       nr = 610
       chmoth = 'DC14'
-      x = 2.61962e-15
+      x = 2.6197e-15
       y = 42.783
       z = 0
       irot = 656
@@ -19063,7 +19063,7 @@
       nr = 652
       chmoth = 'DC14'
       x = -42.783
-      y = 5.23923e-15
+      y = 5.23941e-15
       z = 0
       irot = 698
       chonly = 'ONLY'
@@ -19852,15 +19852,15 @@
       theta1 = 90
       phi1 = -90
       theta2 = 96
-      phi2 = 4.03642e-14
+      phi2 = 4.03638e-14
       theta3 = 6
-      phi3 = 4.03642e-14
+      phi3 = 4.03638e-14
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 694
       chmoth = 'DC14'
-      x = -7.85885e-15
+      x = -7.85911e-15
       y = -42.783
       z = 0
       irot = 740
@@ -25713,7 +25713,7 @@
       nr = 1002
       chmoth = 'DC14'
       x = -46.348
-      y = 5.67581e-15
+      y = 5.67599e-15
       z = 0
       irot = 1048
       chonly = 'ONLY'
@@ -28571,10 +28571,10 @@
       par(6) = 60
       par(7) = -0.53
       par(8) = 23
-      par(9) = 68
+      par(9) = 60
       par(10) = -3.31
-      par(11) = 65
-      par(12) = 68
+      par(11) = 56.4
+      par(12) = 60
       par(13) = -55
       par(14) = 65
       par(15) = 68
@@ -28624,7 +28624,7 @@
       npar = 3
       par(1) = 0
       par(2) = 62
-      par(3) = 101
+      par(3) = 98
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.186) stop 'consistency check #1 failed'
 
@@ -28633,7 +28633,7 @@
       chmoth = 'LASS'
       x = 0
       y = 0
-      z = 303.5
+      z = 307.5
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -28702,7 +28702,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = -100.6
+      z = -95.6
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -28737,7 +28737,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = -97.5
+      z = -92.5
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29122,7 +29122,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = -91.5
+      z = -86.5
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29132,7 +29132,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = -88.4
+      z = -83.4
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29142,7 +29142,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = -37.6
+      z = -35.6
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29152,7 +29152,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = -34.5
+      z = -32.5
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29162,7 +29162,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = -28.5
+      z = -26.5
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29172,7 +29172,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = -25.4
+      z = -23.4
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29182,7 +29182,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = 25.4
+      z = 23.4
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29192,7 +29192,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = 28.5
+      z = 26.5
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29202,7 +29202,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = 34.5
+      z = 32.5
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29212,7 +29212,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = 37.6
+      z = 35.6
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29222,7 +29222,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = 88.4
+      z = 83.4
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29232,7 +29232,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = 91.5
+      z = 86.5
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29242,7 +29242,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = 97.5
+      z = 92.5
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29252,7 +29252,7 @@
       chmoth = 'FDC'
       x = 0
       y = 0
-      z = 100.6
+      z = 95.6
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29286,7 +29286,7 @@
       npar = 3
       par(1) = 0
       par(2) = 1
-      par(3) = 101
+      par(3) = 98
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.196) stop 'consistency check #1 failed'
 
@@ -29352,37 +29352,37 @@
       par(1) = -58
       par(2) = 116
       par(3) = 11
-      par(4) = -100.5
+      par(4) = -95.5
       par(5) = 64.5
       par(6) = 65
-      par(7) = -37.5
+      par(7) = -35.5
       par(8) = 64.5
       par(9) = 65
-      par(10) = -37.5
+      par(10) = -35.5
       par(11) = 64
       par(12) = 65
-      par(13) = 25.5
+      par(13) = 23.5
       par(14) = 64
       par(15) = 65
-      par(16) = 25.5
+      par(16) = 23.5
       par(17) = 63.5
       par(18) = 65
-      par(19) = 88.5
+      par(19) = 83.5
       par(20) = 63.5
       par(21) = 65
-      par(22) = 88.5
+      par(22) = 83.5
       par(23) = 63
       par(24) = 65
-      par(25) = 135
+      par(25) = 120
       par(26) = 63
       par(27) = 65
-      par(28) = 135.8
+      par(28) = 120.8
       par(29) = 63
       par(30) = 65.8
-      par(31) = 136.8
+      par(31) = 121.8
       par(32) = 64
       par(33) = 66.8
-      par(34) = 138.2
+      par(34) = 123.2
       par(35) = 65.4
       par(36) = 65.4
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -29402,7 +29402,7 @@
       chmoth = 'LASS'
       x = 0
       y = 0
-      z = 303.5
+      z = 307.5
       irot = 1144
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29421,7 +29421,7 @@
       chmoth = 'LASS'
       x = 0
       y = 0
-      z = 303.5
+      z = 307.5
       irot = 1145
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29430,7 +29430,7 @@
       theta1 = 90
       phi1 = -90
       theta2 = 90
-      phi2 = -1.05247e-14
+      phi2 = -1.05251e-14
       theta3 = 0
       phi3 = 0
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
@@ -29440,7 +29440,7 @@
       chmoth = 'LASS'
       x = 0
       y = 0
-      z = 303.5
+      z = 307.5
       irot = 1146
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29475,7 +29475,7 @@
       chmoth = 'LASS'
       x = 0
       y = 0
-      z = 227
+      z = 212
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -31551,19 +31551,19 @@
       par(7) = -10
       par(8) = 85
       par(9) = 88
-      par(10) = -64
+      par(10) = -49
       par(11) = 85
       par(12) = 88
-      par(13) = -65.2
+      par(13) = -50.2
       par(14) = 85
       par(15) = 89.2
-      par(16) = -69
+      par(16) = -54
       par(17) = 88.8
       par(18) = 93
-      par(19) = -69
+      par(19) = -54
       par(20) = 88.8
       par(21) = 120
-      par(22) = -72
+      par(22) = -57
       par(23) = 91.8
       par(24) = 120
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -31574,7 +31574,7 @@
       chmoth = 'LASS'
       x = 0
       y = 0
-      z = 17
+      z = 2
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -31607,7 +31607,7 @@
       par(7) = 10
       par(8) = 85
       par(9) = 88
-      par(10) = 15
+      par(10) = 30
       par(11) = 85
       par(12) = 88
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -31618,7 +31618,7 @@
       chmoth = 'LASS'
       x = 0
       y = 0
-      z = 437
+      z = 422
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -32080,7 +32080,7 @@
       theta1 = 90
       phi1 = -90
       theta2 = 90
-      phi2 = 3.50824e-15
+      phi2 = 3.50835e-15
       theta3 = 0
       phi3 = 0
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
@@ -36543,13 +36543,13 @@
       real orig1(3),rmat1(3,3)
       data orig1/0,0,-1975/
       data rmat1/1,0,0,
-     +          0,6.12303e-17,-1,
-     +          0,1,6.12303e-17/
+     +          0,6.12323e-17,-1,
+     +          0,1,6.12323e-17/
       real orig2(3),rmat2(3,3)
       data orig2/0,0,-1345/
       data rmat2/1,0,0,
-     +          0,6.12303e-17,-1,
-     +          0,1,6.12303e-17/
+     +          0,6.12323e-17,-1,
+     +          0,1,6.12323e-17/
       real orig3(3),rmat3(3,3)
       data orig3/0,0,0/
       data rmat3/1,0,0,
@@ -36564,11 +36564,11 @@
       else if (iregion.eq.1) then
         B(1) = 0
         B(2) = -2
-        B(3) = 1.22461e-16
+        B(3) = 1.22465e-16
       else if (iregion.eq.2) then
         B(1) = 0
         B(2) = -2
-        B(3) = 1.22461e-16
+        B(3) = 1.22465e-16
       else if (iregion.eq.3) then
         rs(1) = r(1)-orig3(1)
         rs(2) = r(2)-orig3(2)
