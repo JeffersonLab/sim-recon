@@ -79,7 +79,7 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 		string name = toprint[i];
 		string tag = "";
 		unsigned int pos = name.rfind(":",name.size()-1);
-		if(pos != string::npos){
+		if(pos != (unsigned int)string::npos){
 			tag = name.substr(pos+1,name.size());
 			name.erase(pos);
 		}
