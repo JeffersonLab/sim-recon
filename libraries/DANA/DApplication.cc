@@ -7,6 +7,7 @@
 
 #include "DApplication.h"
 #include "HDDM/DEventSourceHDDMGenerator.h"
+#include "TRACKING/DMagneticFieldMapGlueX.h"
 #include "DFactoryGenerator.h"
 
 //---------------------------------
@@ -29,6 +30,9 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	if(const char *ptr = getenv("HALLD_HOME")){
 		AddPluginPath(string(ptr) + "/src/programs/Analysis/plugins");
 	}
+	
+	// Create magnetic field object for use by everyone
+	bfield = new DMagneticFieldMapGlueX();
 }
 
 //---------------------------------

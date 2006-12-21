@@ -1,34 +1,38 @@
+// $Id$
+//
+// This originally defined the DMagneticFieldMap class but was converted 
+// over to be a specific implementation of a virtual class of the same name.
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 
-#ifndef __DMAGNETICFIELDMAP_H__
-#define __DMAGNETICFIELDMAP_H__
+#ifndef __DMAGNETICFIELDMAPGLUEX_H__
+#define __DMAGNETICFIELDMAPGLUEX_H__
 
-/*! \file DMagneticFieldMap.h
+/*! \file DMagneticFieldMapGlueX.h
  *  \brief A class that holds the magnetic field map for the detector.
  */
 #include <cmath>
 #include <fstream>
 
-#define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
 
+#include "DMagneticFieldMap.h"
  
 typedef struct{
 	float x,y,z,Bx,By,Bz;
 }DBfieldPoint_t;
 
 
-class DMagneticFieldMap
+class DMagneticFieldMapGlueX:public DMagneticFieldMap
 {
 
 	public:
 
-		DMagneticFieldMap();	/*!< Constructor */
-		~DMagneticFieldMap();	/*!< Destructor  */
+		DMagneticFieldMapGlueX();	/*!< Constructor */
+		~DMagneticFieldMapGlueX();	/*!< Destructor  */
 
 		const DBfieldPoint_t* getQuick(double x, double y, double z) const;
 		int GetIndices(double x, double y, double z, int &index_r, int &index_z) const;
-		void GetBilinear(double x, double y, double z, double &Bx, double &By, double &Bz) const;
+		void GetField(double x, double y, double z, double &Bx, double &By, double &Bz, int method=0) const;
 		
 		double Bz_avg(double x, double y, double x0, double y0, double delta_phi) const;
 		double Bz_avg(double x, double y, double z, double x0, double y0, double theta, double zmax) const;

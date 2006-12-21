@@ -6,6 +6,8 @@ using namespace std;
 #include "DMagneticFieldMap.h"
 #include "DMagneticFieldStepper.h"
 
+#define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
+
 //-----------------------
 // DMagneticFieldStepper
 //-----------------------
@@ -85,7 +87,7 @@ void DMagneticFieldStepper::CalcDirs(void)
 
 	// Get B-field
 	double Bx,By,Bz;
-	bfield->GetBilinear(pos.x(), pos.y(), pos.z(), Bx, By, Bz);
+	bfield->GetField(pos.x(), pos.y(), pos.z(), Bx, By, Bz);
 	TVector3 B(Bx, By, Bz);
 
 	CalcDirs(&B);
@@ -147,7 +149,7 @@ double DMagneticFieldStepper::Step(TVector3 *newpos)
 	
 	// Get B-field
 	double Bx,By,Bz;
-	bfield->GetBilinear(pos.x(), pos.y(), pos.z(), Bx, By, Bz);
+	bfield->GetField(pos.x(), pos.y(), pos.z(), Bx, By, Bz);
 	TVector3 B(Bx, By, Bz);
 //TVector3 B(0.0, 0.0,-2.0);
 
@@ -204,14 +206,6 @@ double DMagneticFieldStepper::Step(TVector3 *newpos)
 	if(newpos)*newpos = pos;
 
 	return stepsize;
-}
-
-//-----------------------
-// GetBField
-//-----------------------
-const DBfieldPoint_t* DMagneticFieldStepper::GetDBfieldPoint(void)
-{
-	return bfield->getQuick(pos.x(), pos.y(), pos.z());
 }
 
 //-----------------------

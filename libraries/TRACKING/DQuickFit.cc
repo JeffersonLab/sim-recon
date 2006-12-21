@@ -10,7 +10,7 @@ using namespace std;
 #include <math.h>
 
 #include "DQuickFit.h"
-#include "DMagneticFieldMap.h"
+#define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
 
 
 // The following is for sorting hits by z
@@ -153,12 +153,11 @@ jerror_t DQuickFit::FitCircle(void)
 	}
 
 	// Momentum depends on magnetic field. If bfield has been
-	// set, use it to determine an average value of Bz for this
-	// track. Otherwise, assume -2T.
+	// set, we should use it to determine an average value of Bz
+	// for this track. Otherwise, assume -2T.
 	// Also assume a singly charged track (i.e. q=+/-1)
 	// The sign of the charge will be determined below.
 	Bz_avg=-2.0; 
-	if(bfield)Bz_avg = bfield->Bz_avg(0.0, 0.0, x0, y0, delta_phi);
 	q = +1.0;
 	float r0 = sqrt(x0*x0 + y0*y0);
 	p_trans = q*Bz_avg*r0*qBr2p; // qBr2p converts to GeV/c
@@ -348,16 +347,6 @@ jerror_t DQuickFit::FillTrackParams(void)
 
 	float r0 = sqrt(x0*x0 + y0*y0);
 	theta = atan(r0/fabs(dzdphi));
-	
-	// p_trans was calculated using a B-field at a single value
-	// of z. Now we can average the B-field over the path of
-	// the helix in 3 dimensions to get a more accurate value.
-	if(bfield){
-		double zmax = hits[hits.size()-1]->z;
-		if(zmax < z_vertex)zmax=hits[0]->z;
-		double Bz_avg = bfield->Bz_avg(0.0, 0.0, z_vertex, x0, y0, theta, zmax);
-		p_trans *= Bz_avg/this->Bz_avg;
-	}
 	
 	// The sign of the electric charge will be opposite that
 	// of dphi/dz. Also, the value of phi will be PI out of phase

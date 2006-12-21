@@ -11,6 +11,8 @@
 #include "JANA/jerror.h"
 #include "JANA/JApplication.h"
 
+class DMagneticFieldMap;
+
 class DApplication:public JApplication{
 
 /// The DApplication class extends the JApplication class
@@ -23,9 +25,10 @@ class DApplication:public JApplication{
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DApplication";}
 		
+		DMagneticFieldMap* GetBfield(void){return bfield;}
 	protected:
 	
-	
+		DMagneticFieldMap *bfield;
 	private:
 
 };

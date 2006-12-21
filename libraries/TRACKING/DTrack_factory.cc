@@ -97,7 +97,8 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 {
 
 	//gPARMS->SetParameter("GEOM:BZ_CONST",  -2.0);	
-	bfield = new DMagneticFieldMap(); // temporary until new geometry scheme is worked out
+	DApplication* dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+	bfield = dapp->GetBfield(); // temporary until new geometry scheme is worked out
 		
 	gPARMS->GetParameter("TRK:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
 	

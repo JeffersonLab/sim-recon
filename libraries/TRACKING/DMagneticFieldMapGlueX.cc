@@ -4,7 +4,7 @@
 using std::cout;
 using std::endl;
 
-#include "DMagneticFieldMap.h"
+#include "DMagneticFieldMapGlueX.h"
 #include "JANA/JParameterManager.h"
 
 #include <TVector3.h>
@@ -15,20 +15,11 @@ static int default_phiDim=1;
 static int default_zDim=251;
 extern DBfieldPoint_t default_mag_field[];
 
-// IMPORTANT:
-//
-// The table at the
-// bottom is not exactly the same as what is being used by HDGeant.
-// I seem to recall getting a more detailed map from Paul Brindza than
-// what is being used by HDGeant which I think this may be from.
-// I cannot seem to find the map used to generate this table nor
-// whatever script was used to convert it.
-
 
 //---------------------
-// DMagneticFieldMap
+// DMagneticFieldMapGlueX
 //---------------------
-DMagneticFieldMap::DMagneticFieldMap()
+DMagneticFieldMapGlueX::DMagneticFieldMapGlueX()
 {
 	// Set defaults
 	BMAP_Z_OFFSET = 26.0; // offset between map and GEANT z-coord. in inches
@@ -74,9 +65,9 @@ DMagneticFieldMap::DMagneticFieldMap()
 }
 
 //---------------------
-// ~DMagneticFieldMap
+// ~DMagneticFieldMapGlueX
 //---------------------
-DMagneticFieldMap::~DMagneticFieldMap()
+DMagneticFieldMapGlueX::~DMagneticFieldMapGlueX()
 {
 
 }
@@ -84,7 +75,7 @@ DMagneticFieldMap::~DMagneticFieldMap()
 //---------------------
 // getQuick
 //---------------------
-const DBfieldPoint_t* DMagneticFieldMap::getQuick(const double x, const double y, const double z) const
+const DBfieldPoint_t* DMagneticFieldMapGlueX::getQuick(const double x, const double y, const double z) const
 {
 	// If a (reasonable) value for BZ_CONST is set, then just return it
 	if(fabs(BZ_CONST)<100){
@@ -105,7 +96,7 @@ const DBfieldPoint_t* DMagneticFieldMap::getQuick(const double x, const double y
 //---------------------
 // GetIndices
 //---------------------
-int DMagneticFieldMap::GetIndices(double x, double y, double z, int &index_r, int &index_z) const
+int DMagneticFieldMapGlueX::GetIndices(double x, double y, double z, int &index_r, int &index_z) const
 {
 	// Elements are stored first x, then z. We use x for r
 	double r = sqrt(x*x+y*y)/2.54;
@@ -130,9 +121,9 @@ int DMagneticFieldMap::GetIndices(double x, double y, double z, int &index_r, in
 //---------------------------------------------------------------
 
 //---------------------
-// GetBilinear
+// GetField
 //---------------------
-void DMagneticFieldMap::GetBilinear(double x, double y, double z, double &Bx, double &By, double &Bz) const
+void DMagneticFieldMapGlueX::GetField(double x, double y, double z, double &Bx, double &By, double &Bz, int method) const
 {
 	// This has been modified from Werner's original algorithm. 
 	// In the original algorithm, the three points (00, 10, 01)
@@ -230,7 +221,7 @@ void DMagneticFieldMap::GetBilinear(double x, double y, double z, double &Bx, do
 //---------------------
 // Bz_avg
 //---------------------
-double DMagneticFieldMap::Bz_avg(double x, double y, double x0, double y0, double delta_phi) const
+double DMagneticFieldMapGlueX::Bz_avg(double x, double y, double x0, double y0, double delta_phi) const
 {
 	/// Calculate the average z-component of the B-field along a
 	/// circular path with the given parameters. The path starts
@@ -277,7 +268,7 @@ double DMagneticFieldMap::Bz_avg(double x, double y, double x0, double y0, doubl
 //---------------------
 // Bz_avg
 //---------------------
-double DMagneticFieldMap::Bz_avg(double x, double y, double z, double x0, double y0, double theta, double zmax) const
+double DMagneticFieldMapGlueX::Bz_avg(double x, double y, double z, double x0, double y0, double theta, double zmax) const
 {
 	/// Calculate the average z-component of the B-field along a
 	/// helical path with the given parameters. The path starts
@@ -346,7 +337,7 @@ double DMagneticFieldMap::Bz_avg(double x, double y, double z, double x0, double
 //---------------------
 // GetTable
 //---------------------
-void DMagneticFieldMap::GetTable(const DBfieldPoint_t* &Bmap, int &Npoints)
+void DMagneticFieldMapGlueX::GetTable(const DBfieldPoint_t* &Bmap, int &Npoints)
 {
 	Bmap = this->Bmap;
 	Npoints = this->Npoints;

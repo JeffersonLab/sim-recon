@@ -31,7 +31,6 @@ class DMagneticFieldStepper
 		jerror_t SetMagneticFieldMap(const DMagneticFieldMap *map);
 		jerror_t SetStepSize(double step);
 		double Step(TVector3 *newpos=NULL);
-		const DBfieldPoint_t* GetDBfieldPoint(void);
 		void GetDirs(TVector3 &xdir, TVector3 &ydir, TVector3 &zdir);
 		void GetMomentum(TVector3 &mom){mom = this->mom;}
 		void GetPosition(TVector3 &pos){pos = this->pos;}

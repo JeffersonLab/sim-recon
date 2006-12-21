@@ -7,8 +7,8 @@
 
 #include <cmath>
 
+#include "DANA/DApplication.h"
 #include "DTrackCandidate_factory_THROWN.h"
-
 #include "DMCThrown.h"
 #include "DMagneticFieldMap.h"
 
@@ -18,12 +18,6 @@
 //------------------
 DTrackCandidate_factory_THROWN::DTrackCandidate_factory_THROWN()
 {
-	// Create a reference trajectory object to use later.
-	// Initialize it with dummy values.
-	DMagneticFieldMap *bfield = new DMagneticFieldMap();
-	TVector3 pos(0.0,0.0,65.0);
-	TVector3 mom(0.0,0.0,1000.0);
-	rt = new DReferenceTrajectory(bfield, 0.0, pos, mom);
 
 }
 
@@ -32,6 +26,15 @@ DTrackCandidate_factory_THROWN::DTrackCandidate_factory_THROWN()
 //------------------
 jerror_t DTrackCandidate_factory_THROWN::init(void)
 {	
+	// Create a reference trajectory object to use later.
+	// Initialize it with dummy values.
+	DApplication* dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+	
+	DMagneticFieldMap *bfield = dapp->GetBfield();
+	TVector3 pos(0.0,0.0,65.0);
+	TVector3 mom(0.0,0.0,1000.0);
+	rt = new DReferenceTrajectory(bfield, 0.0, pos, mom);
+
 	return NOERROR;
 }
 
@@ -120,6 +123,7 @@ jerror_t DTrackCandidate_factory_THROWN::fini(void)
 //------------------
 double DTrackCandidate_factory_THROWN::SampleGaussian(double sigma)
 {
+return 0.0;
 	double epsilon = 1.0E-10;
 	double r1 = epsilon+((double)random()/(double)RAND_MAX);
 	double r2 = (double)random()/(double)RAND_MAX;
