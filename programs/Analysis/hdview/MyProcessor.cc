@@ -30,6 +30,7 @@ using namespace std;
 #include "JANA/JGeometry.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
 #include "FCAL/DFCALHit.h"
+#include "FDC/DFDCGeometry.h"
 
 extern TCanvas *maincanvas;
 extern hdv_mainframe *hdvmf;
@@ -135,10 +136,8 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 	gPARMS->GetParameter("TRKFIND:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
 
 	// Read in Magnetic field map
-	//Bfield = eventLoop->GetJApplication()->GetJGeometry(runnumber)->GetDMagneticFieldMap();
-	DMagneticFieldMap *tmp = new DMagneticFieldMap();
-//tmp->SetConstField(-2.2);
-	Bfield=tmp;
+	DApplication* dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+	Bfield = dapp->GetBfield();
 
 	return NOERROR;
 }
@@ -754,6 +753,15 @@ jerror_t MyProcessor::DrawDetectors(void)
 	cdc_side2->Draw();
 
 	// ----- FDC ------
+	
+	// Get FDC package positions from FDC library
+	for(int i=0; i<4; i++){
+		float zu = (DFDCGeometry::GetDFDCWire(1+i*6,1))->origin.z();
+		float zd = (DFDCGeometry::GetDFDCWire(1+i*6+5,1))->origin.z();
+		FDC_Zpos[i] = (zu+zd)/2.0;
+		FDC_Zlen = fabs(zd-zu)*6.0/5.0;
+	}
+	
 	// Side
 	TBox *fdc_side, *fdc_side2;
 	for(int i=0;i<4;i++){
