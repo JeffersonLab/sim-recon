@@ -123,7 +123,7 @@ class DTrack_factory:public JFactory<DTrack>{
 		TH2F *nhits_final_vs_initial;
 		TH1F *Npasses;
 		TH1F *ptotal;
-		TH1F *residuals_cdc, *residuals_fdc_anode, *residuals_fdc_cathode;
+		TH2F *residuals_cdc, *residuals_fdc_anode, *residuals_fdc_cathode;
 		TH2F *initial_chisq_vs_Npasses, *chisq_vs_pass, *dchisq_vs_pass;
 };
 

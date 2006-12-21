@@ -40,7 +40,7 @@ bool FDCTrkHitSort_C(DTrack_factory::fdc_hit_on_track_t const &hit1, DTrack_fact
 //------------------
 DTrack_factory::DTrack_factory()
 {
-	max_swim_steps = 5000;
+	max_swim_steps = 75000;
 	swim_steps = new DReferenceTrajectory::swim_step_t[max_swim_steps];
 
 	max_swim_steps_ls = max_swim_steps;
@@ -111,7 +111,7 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 		cdcdoca_vs_dist = new TH2F("cdcdoca_vs_dist","DOCA vs. DIST",300, 0.0, 1.2, 300, 0.0, 1.2);
 		cdcdoca_vs_dist_vs_ring = new TH3F("cdcdoca_vs_dist_vs_ring","DOCA vs. DIST vs. ring",300, 0.0, 1.2, 300, 0.0, 1.2,23,0.5,23.5);
 		fdcdoca_vs_dist = new TH2F("fdcdoca_vs_dist","DOCA vs. DIST",500, 0.0, 2.0, 500, 0.0, 2.0);
-		fdcu_vs_s = new TH2F("fdcu_vs_s","DOCA vs. DIST along wire",500, 0.0, 2.0, 500, 0.0, 2.0);
+		fdcu_vs_s = new TH2F("fdcu_vs_s","DOCA vs. DIST along wire",500, -60.0, 60.0, 500, -60.0, 60.0);
 		dist_axial = new TH1F("dist_axial","Distance from drift time for axial CDC wires",300,0.0,3.0);
 		doca_axial = new TH1F("doca_axial","DOCA of track for axial CDC wires",300,0.0,3.0);
 		dist_stereo = new TH1F("dist_stereo","Distance from drift time for stereo CDC wires",300,0.0,3.0);
@@ -120,9 +120,9 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 		nhits_final_vs_initial = new TH2F("nhits_final_vs_initial","Final vs. initial nhits used in chi-sq.",30, -0.5, 29.5, 30, -0.5, 29.5);
 		Npasses = new TH1F("Npasses","Npasses", 21, -0.5, 20.5);
 		ptotal = new TH1F("ptotal","ptotal",1000, 0.1, 8.0);
-		residuals_cdc = new TH1F("residuals_cdc","Residuals in CDC",1000,-2.0,2.0);
-		residuals_fdc_anode = new TH1F("residuals_fdc_anode","Residuals in FDC anodes",1000,-2.0,2.0);
-		residuals_fdc_cathode = new TH1F("residuals_fdc_cathode","Residuals in FDC cathode",1000,-2.0,2.0);
+		residuals_cdc = new TH2F("residuals_cdc","Residuals in CDC",1000,-2.0,2.0,24,0.5,24.5);
+		residuals_fdc_anode = new TH2F("residuals_fdc_anode","Residuals in FDC anodes",1000,-2.0,2.0,24,0.5,24.5);
+		residuals_fdc_cathode = new TH2F("residuals_fdc_cathode","Residuals in FDC cathode",1000,-2.0,2.0,24,0.5,24.5);
 		initial_chisq_vs_Npasses = new TH2F("initial_chisq_vs_Npasses","Initial chi-sq vs. number of iterations", 25, -0.5, 24.5, 400, 0.0, 40.0);
 		chisq_vs_pass = new TH2F("chisq_vs_pass","Chi-sq vs. fit iteration", 25, -0.5, 24.5, 400, 0.0, 40.0);
 		dchisq_vs_pass = new TH2F("dchisq_vs_pass","Change in Chi-sq vs. fit iteration", 25, -0.5, 24.5, 400, 0.0, 8.0);
@@ -215,7 +215,7 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *tc)
 		initial_chisq_vs_Npasses->Fill(Niterations, initial_chisq);
 	}
 
-	if(Niterations==0)return NULL;
+	if(Niterations==0 && MAX_FIT_ITERATIONS>0)return NULL;
 	
 	if(DEBUG_HISTS)FillDebugHists(rt, vertex_pos, vertex_mom, tc);
 
@@ -655,7 +655,7 @@ void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_p
 		if(!finite(resi))continue;
 		
 		// Fill histos
-		residuals_cdc->Fill(resi);
+		residuals_cdc->Fill(resi, wire->ring);
 
 		cdcdoca_vs_dist->Fill(dist, doca);
 		cdcdoca_vs_dist_vs_ring->Fill(dist, doca, wire->ring);
@@ -683,14 +683,14 @@ void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_p
 		double resi = dist - doca;
 		if(finite(resi)){
 			fdcdoca_vs_dist->Fill(dist, doca);
-			residuals_fdc_anode->Fill(resi);
+			residuals_fdc_anode->Fill(resi, wire->layer);
 		}
 		
 		double u = rt->GetLastDistAlongWire();
 		resi = u - hit.fdchit->s;
 		if(finite(resi)){
 			fdcu_vs_s->Fill(u, hit.fdchit->s);
-			residuals_fdc_cathode->Fill(resi);
+			residuals_fdc_cathode->Fill(resi, wire->layer);
 		}
 	}
 
