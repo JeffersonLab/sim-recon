@@ -338,9 +338,6 @@ int main(int argC, char* argV[])
    builder.constructPackers(rootEl);
 
    builder.hFile						<< std::endl
-	 << "extern std::string documentString;"		<< std::endl
-	 << "extern int nullTarget;"				<< std::endl
-								<< std::endl
 	 << "}"							<< std::endl
 	 << "#endif /* SAW_s_HDDM */"				<< std::endl;
 
@@ -642,11 +639,11 @@ void CodeBuilder::writeHeader(DOMElement* el)
       XtString nameS(var->getNodeName());
       if (typeS == "int")
       {
-         hFile << "   int " << nameS << ";" << std::endl;
+         hFile << "   int32_t " << nameS << ";" << std::endl;
       }
       else if (typeS == "long")
       {
-         hFile << "   long long " << nameS << ";" << std::endl;
+         hFile << "   int64_t " << nameS << ";" << std::endl;
       }
       else if (typeS == "float")
       {
@@ -1645,7 +1642,7 @@ void CodeBuilder::constructMethods(DOMElement* el)
    }
 }
 
-/* Generate c functions for unpacking binary stream into c-structures */
+/* Generate methods for unpacking binary stream into classes */
 
 void CodeBuilder::constructUnpackers(DOMElement* el)
 {
@@ -1827,7 +1824,7 @@ void CodeBuilder::constructUnpackers(DOMElement* el)
    }
 }
  
-/* Generate c function to read from binary stream into c-structures */
+/* Generate methods to read from binary stream into classes */
 
 void CodeBuilder::constructIOstreams(DOMElement* el)
 {
@@ -2098,8 +2095,8 @@ void CodeBuilder::constructPackers(DOMElement* el)
    }
 }
 
-/* Generate c functions that match up corresponding elements between
- * the c structures and the data model that appears on the input
+/* Generate methods that match up corresponding elements between
+ * the class members and the data model that appears on the input
  * binary stream.  If successful, these routines build a hierarchical
  * structure (the "pop tree") that gives directions to the unpackers.
  *

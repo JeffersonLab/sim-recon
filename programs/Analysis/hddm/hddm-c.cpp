@@ -642,11 +642,11 @@ void CodeBuilder::writeHeader(DOMElement* el)
       XtString nameS(var->getNodeName());
       if (typeS == "int")
       {
-         hFile << "   int                  " << nameS << ";" << std::endl;
+         hFile << "   int32_t              " << nameS << ";" << std::endl;
       }
       else if (typeS == "long")
       {
-         hFile << "   long long            " << nameS << ";" << std::endl;
+         hFile << "   int64_t              " << nameS << ";" << std::endl;
       }
       else if (typeS == "float")
       {

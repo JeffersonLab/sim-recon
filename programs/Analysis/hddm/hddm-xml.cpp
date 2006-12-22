@@ -322,13 +322,13 @@ void XMLmaker::constructXML(xstream::xdr::istream& ifx,
          std::ostringstream attrStr;
          if (typeS == "int")
          {
-            int value;
+            int32_t value;
 	    ifx >> value;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }
 	 else if (typeS == "long")
          {
-            long long value;
+            int64_t value;
             ifx >> value;
             attrStr << " " << nameS << "=\"" << value << "\"";
          }

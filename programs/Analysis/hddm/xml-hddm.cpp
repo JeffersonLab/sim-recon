@@ -437,13 +437,13 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
       std::stringstream valueStr(valueS);
       if (typeS == "int")
       {
-         int val;
+         int32_t val;
          valueStr >> val;
          ofx << val;
       }
       if (typeS == "long")
       {
-         long long val;
+         int64_t val;
          valueStr >> val;
          ofx << val;
       }
@@ -467,7 +467,7 @@ void HDDMmaker::outputStream(DOMElement* thisEl, DOMElement* modelEl,
       }
       else if (typeS == "Particle_t")
       {
-         int val;
+         int32_t val;
          for (val = 1; val < 99; val++)
          {
             if (valueS == ParticleType((Particle_t)val))
