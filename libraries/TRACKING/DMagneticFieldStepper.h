@@ -30,7 +30,7 @@ class DMagneticFieldStepper
 		jerror_t SetStartingParams(double q, const TVector3 *x, const TVector3 *p);
 		jerror_t SetMagneticFieldMap(const DMagneticFieldMap *map);
 		jerror_t SetStepSize(double step);
-		double Step(TVector3 *newpos=NULL);
+		double Step(TVector3 *newpos=NULL, double stepsize=0.0);
 		void GetDirs(TVector3 &xdir, TVector3 &ydir, TVector3 &zdir);
 		void GetMomentum(TVector3 &mom){mom = this->mom;}
 		void GetPosition(TVector3 &pos){pos = this->pos;}
@@ -43,18 +43,20 @@ class DMagneticFieldStepper
 	
 	private:
 		const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
-		double stepsize;		///< distance(cm) to move particle when Step() is called
+		double stepsize;		///< maximum distance(cm) to move particle when Step() is called
+		double last_stepsize;///< stepsize (cm) used for last step
 		double q;				///< electric charge in units of e
 		TVector3 pos;			///< current position of particle
 		TVector3 mom;			///< current location of particle
 		TVector3 start_pos;	///< starting position of track
 		TVector3 start_mom;	///< starting momentum of track
-		double Ro;
+		TVector3 B;
+		double Ro, Rp;
+		double cos_theta, sin_theta;
 		
 		TVector3 xdir, ydir, zdir;
 		
 		void CalcDirs(void);
-		void CalcDirs(TVector3 *B);
 };
 
 #endif // __DMAGNETICFIELDSTEPPER_H__

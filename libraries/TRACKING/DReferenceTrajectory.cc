@@ -15,7 +15,7 @@
 // DReferenceTrajectory    (Constructor)
 //---------------------------------
 DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
-														, double q, const TVector3 &pos, const TVector3 &mom
+														, double q
 														, swim_step_t *swim_steps
 														, int max_swim_steps
 														, double step_size)
@@ -39,15 +39,13 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	this->q = q;
 	this->step_size = step_size;
 	this->bfield = bfield;
-	
-	// Swim the trajectory
-	Reswim(pos, mom);
+	this->Nswim_steps = 0;
 }
 
 //---------------------------------
-// Reswim
+// Swim
 //---------------------------------
-void DReferenceTrajectory::Reswim(const TVector3 &pos, const TVector3 &mom)
+void DReferenceTrajectory::Swim(const TVector3 &pos, const TVector3 &mom)
 {
 	/// (Re)Swim the trajectory starting from pos with momentum mom.
 	/// This will use the charge and step size (if given) passed to
@@ -81,6 +79,9 @@ void DReferenceTrajectory::Reswim(const TVector3 &pos, const TVector3 &mom)
 		// Swim to next
 		s += stepper.Step(NULL);
 	}
+if(Nswim_steps<2){
+_DBG_<<"Too few swim steps."<<endl;
+}
 
 	// OK. At this point the positions of the trajectory in the lab
 	// frame have been recorded along with the momentum of the
@@ -103,6 +104,7 @@ DReferenceTrajectory::~DReferenceTrajectory()
 //---------------------------------
 double DReferenceTrajectory::DistToRT(TVector3 hit)
 {
+if(Nswim_steps<1)_DBG__;
 	// First, find closest step to point
 	swim_step_t *swim_step = swim_steps;
 	swim_step_t *step=NULL;
@@ -111,7 +113,6 @@ double DReferenceTrajectory::DistToRT(TVector3 hit)
 
 		TVector3 pos_diff = swim_step->origin - hit;
 		double delta2 = pos_diff.Mag2();
-
 		if(delta2 < min_delta2){
 			min_delta2 = delta2;
 			step = swim_step;
@@ -211,6 +212,9 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 	/// the wire with the wire running in the direction of udir.
 	
 	// Make sure we have a wire first!
+if(Nswim_steps<1){
+_DBG__;
+}
 	if(!wire)return NULL;
 	
 	// Loop over swim steps and find the one closest to the wire

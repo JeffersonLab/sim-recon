@@ -43,7 +43,7 @@ class DReferenceTrajectory{
 		};
 
 		DReferenceTrajectory(const DMagneticFieldMap *
-									, double q, const TVector3 &pos, const TVector3 &mom
+									, double q
 									, swim_step_t *swim_steps=NULL
 									, int max_swim_steps=0
 									, double step_size=-1.0);
@@ -59,9 +59,10 @@ class DReferenceTrajectory{
 		double DistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
 		double DistToRTBruteForce(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
 		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire);
-		void Reswim(const TVector3 &pos, const TVector3 &mom);
+		void Swim(const TVector3 &pos, const TVector3 &mom);
 		TVector3 GetLastDOCAPoint(void);
 		double GetLastDistAlongWire(void){return last_dist_along_wire;}
+		void SetStepSize(double step_size){this->step_size=step_size;}
 
 		swim_step_t *swim_steps;
 		int Nswim_steps;

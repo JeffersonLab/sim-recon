@@ -186,7 +186,8 @@ DTrack* DTrack_factory::FitTrack(const DTrackCandidate *tc)
 	// Generate reference trajectory and use it to find the initial
 	// set of hits for this track. Some of these could be dropped by
 	// the fitter.
-	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, tc->q, pos, mom, swim_steps, max_swim_steps,DEFAULT_STEP_SIZE);
+	DReferenceTrajectory *rt = new DReferenceTrajectory(bfield, tc->q, swim_steps, max_swim_steps,DEFAULT_STEP_SIZE);
+	rt->Swim(pos,mom);
 	GetCDCTrackHits(rt); //Hits are left in private member data "cdchits_on_track"
 	GetFDCTrackHits(rt); //Hits are left in private member data "fdchits_on_track"
 	if((cdchits_on_track.size() + fdchits_on_track.size())<4)return NULL; // can't fit a track with less than 4 hits!
@@ -362,7 +363,7 @@ double DTrack_factory::ChiSq(double q, TMatrixD &state, swim_step_t *start_step,
 						+ state[state_py][0]*start_step->tdir
 						+ state[state_pz][0]*start_step->udir;
 
-	if(rt)rt->Reswim(pos,mom);
+	if(rt)rt->Swim(pos,mom);
 
 	return ChiSq(q, pos, mom,rt);
 }
@@ -377,7 +378,8 @@ double DTrack_factory::ChiSq(double q, const TVector3 &pos, const TVector3 &mom,
 	// "state" at "start_step" if one is not provided.
 	bool own_rt = false;
 	if(!rt){
-		rt = new DReferenceTrajectory(bfield, q, pos, mom, NULL, 0, DEFAULT_STEP_SIZE);
+		rt = new DReferenceTrajectory(bfield, q, NULL, 0, DEFAULT_STEP_SIZE);
+		rt->Swim(pos,mom);
 		own_rt = true;
 	}
 
@@ -497,7 +499,8 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	state[state_z	][0] = pos_diff.Dot(start_step->udir);
 	
 	// Create reference trajectory to use in calculating derivatives
-	DReferenceTrajectory *myrt = new DReferenceTrajectory(bfield, rt->q, pos, mom, swim_steps_ls, max_swim_steps_ls, DEFAULT_STEP_SIZE);
+	DReferenceTrajectory *myrt = new DReferenceTrajectory(bfield, rt->q, swim_steps_ls, max_swim_steps_ls, DEFAULT_STEP_SIZE);
+	myrt->Swim(pos,mom);
 
 	// Best-guess
 	ChiSq(rt->q, pos, mom, myrt);
@@ -620,7 +623,7 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 						+ state[state_pz][0]*start_step->udir;
 
 	// Check that the chi-squared has actually decreased!
-	rt->Reswim(vertex_pos, vertex_mom);
+	rt->Swim(vertex_pos, vertex_mom);
 	double new_chisq = ChiSq(rt->q, vertex_pos, vertex_mom, rt);
 	
 	return new_chisq;
@@ -633,7 +636,7 @@ void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_p
 {
 	//vertex_mom.SetMagThetaPhi(6.0, 17.2*M_PI/180.0, 90.0*M_PI/180.0);
 	//vertex_pos.SetXYZ(0.0,0.0,65.0);
-	rt->Reswim(vertex_pos, vertex_mom);
+	rt->Swim(vertex_pos, vertex_mom);
 	ptotal->Fill(vertex_mom.Mag());
 
 	// Calculate particle beta
@@ -701,7 +704,7 @@ void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_p
 	TVector3 mom;
 	mom.SetMagThetaPhi(tc->p, tc->theta, tc->phi);
 	TVector3 pos(0.0, 0.0, tc->z_vertex);
-	rt->Reswim(pos, mom);
+	rt->Swim(pos, mom);
 	double chisq_initial = ChiSq(rt->q, pos, mom, rt);
 	double nhits_initial = Ngood_chisq_hits;
 	chisq_final_vs_initial->Fill(chisq_initial,chisq_final);

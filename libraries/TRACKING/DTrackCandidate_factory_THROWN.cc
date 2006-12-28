@@ -29,11 +29,13 @@ jerror_t DTrackCandidate_factory_THROWN::init(void)
 	// Create a reference trajectory object to use later.
 	// Initialize it with dummy values.
 	DApplication* dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
-	
 	DMagneticFieldMap *bfield = dapp->GetBfield();
-	TVector3 pos(0.0,0.0,65.0);
-	TVector3 mom(0.0,0.0,1000.0);
-	rt = new DReferenceTrajectory(bfield, 0.0, pos, mom);
+
+	double DEFAULT_STEP_SIZE;
+	gPARMS->GetParameter("TRKFIT:DEFAULT_STEP_SIZE",		DEFAULT_STEP_SIZE);
+
+	rt = new DReferenceTrajectory(bfield, 0.0);
+	rt->SetStepSize(DEFAULT_STEP_SIZE);
 
 	return NOERROR;
 }
@@ -93,7 +95,7 @@ jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		TVector3 pos(0.0, 0.0, can->z_vertex);
 		TVector3 mom;
 		mom.SetMagThetaPhi(can->p, can->theta, can->phi);
-		rt->Reswim(pos, mom);
+		rt->Swim(pos, mom);
 
 		// Loop over hits and add ones close to this track to the hitid list
 		can->hitid.clear();
