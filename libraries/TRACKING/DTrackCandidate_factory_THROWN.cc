@@ -125,7 +125,6 @@ jerror_t DTrackCandidate_factory_THROWN::fini(void)
 //------------------
 double DTrackCandidate_factory_THROWN::SampleGaussian(double sigma)
 {
-return 0.0;
 	double epsilon = 1.0E-10;
 	double r1 = epsilon+((double)random()/(double)RAND_MAX);
 	double r2 = (double)random()/(double)RAND_MAX;

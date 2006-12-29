@@ -13,7 +13,7 @@ using std::endl;
 static int default_rDim=41;
 static int default_phiDim=1;
 static int default_zDim=251;
-extern DBfieldPoint_t default_mag_field[];
+extern DMagneticFieldMapGlueX::DBfieldPoint_t default_mag_field[];
 
 
 //---------------------
@@ -48,10 +48,16 @@ DMagneticFieldMapGlueX::DMagneticFieldMapGlueX()
 	rMin = zMin = +1.0E6;
 	rMax = zMax = -1.0E6;
 	for(int i=0; i<Npoints; i++, B++){
+		// Convert to cm and shift from the TOSCA coordinates to the lab coord.
+		B->x *= 2.54;
+		B->y *= 2.54;
+		B->z -= BMAP_Z_OFFSET;
+		B->z *= 2.54;
+
 		if(B->x < rMin)rMin=B->x;
 		if(B->x > rMax)rMax=B->x;
 		if(B->z < zMin)zMin=B->z;
-		if(B->z > zMin)zMax=B->z;
+		if(B->z > zMin)zMax=B->z;		
 	}
 	
 	// Initialize null_point which is returned when the requested point
@@ -62,6 +68,37 @@ DMagneticFieldMapGlueX::DMagneticFieldMapGlueX()
 	// Distance between map points for r and z
 	dr = (rMax-rMin)/(double)rDim;
 	dz = (zMax-zMin)/(double)zDim;
+	
+	// Calculate gradient at every point in the map.
+	// The derivatives are calculated wrt to the *index* of the
+	// field map, not the physical unit. This is because
+	// the fractions used in interpolation are fractions
+	// between indices.
+	GradMap = new DGradient_t[rDim*zDim*phiDim];
+	for(int index_r=0; index_r<rDim; index_r++){
+		// Get r-values for points before and after
+		int index_r0 = index_r>0 ? index_r-1:0;
+		int index_r1 = index_r<(rDim-1) ? index_r+1:(rDim-1);
+		
+		for(int index_z=0; index_z<zDim; index_z++){
+			int index_z0 = index_z>0 ? index_z-1:0;
+			int index_z1 = index_z<(zDim-1) ? index_z+1:(zDim-1);
+
+			int index = index_r*zDim + index_z;
+			DGradient_t *g = &GradMap[index];
+
+			DBfieldPoint_t *Br0 = &Bmap[index_r0*zDim + index_z ];
+			DBfieldPoint_t *Br1 = &Bmap[index_r1*zDim + index_z ];
+			DBfieldPoint_t *Bz0 = &Bmap[index_r *zDim + index_z0];
+			DBfieldPoint_t *Bz1 = &Bmap[index_r *zDim + index_z1];
+
+			g->dBrdr = (Br1->Bx -Br0->Bx)/(double)(index_r1-index_r0);
+			g->dBrdz = (Bz1->Bx -Bz0->Bx)/(double)(index_z1-index_z0);
+			g->dBzdr = (Br1->Bz -Br0->Bz)/(double)(index_r1-index_r0);
+			g->dBzdz = (Bz1->Bz -Bz0->Bz)/(double)(index_z1-index_z0);
+		}	
+	}
+	
 }
 
 //---------------------
@@ -69,28 +106,7 @@ DMagneticFieldMapGlueX::DMagneticFieldMapGlueX()
 //---------------------
 DMagneticFieldMapGlueX::~DMagneticFieldMapGlueX()
 {
-
-}
-
-//---------------------
-// getQuick
-//---------------------
-const DBfieldPoint_t* DMagneticFieldMapGlueX::getQuick(const double x, const double y, const double z) const
-{
-	// If a (reasonable) value for BZ_CONST is set, then just return it
-	if(fabs(BZ_CONST)<100){
-		static DBfieldPoint_t bpoint;
-		bpoint.x=bpoint.y=bpoint.z=0.0;
-		bpoint.Bx=bpoint.By=0.0;
-		bpoint.Bz = BZ_CONST;
-		return &bpoint;
-	}
-	
-	int index_r, index_z;
-	int index = GetIndices(x, y, z, index_r, index_z);
-	if(index<0)return &null_point;
-	
-	return &Bmap[index];
+	delete[] GradMap;
 }
 
 //---------------------
@@ -125,38 +141,11 @@ int DMagneticFieldMapGlueX::GetIndices(double x, double y, double z, int &index_
 //---------------------
 void DMagneticFieldMapGlueX::GetField(double x, double y, double z, double &Bx, double &By, double &Bz, int method) const
 {
-	// This has been modified from Werner's original algorithm. 
-	// In the original algorithm, the three points (00, 10, 01)
-	// were used to define a plane for each of Bx, By, and Bz
-	// such that the field varied linearly in x,y,z. This was
-	// good in that it gave some representation of the gradient
-	// of the field. The drawbacks were 1.) if the point were
-	// actually closest to the "11" corner, the field at "11"
-	// was not used and 2.) the second derivative of the field
-	// was discontinuous. (These may be fairly minor drawbacks.)
-	//
-	// The current algorithm uses all 4 points (00,10,01,11)
-	// and determines the field components via weighted average
-	// of the field at the corners. The weight is essentially
-	// 1/d where d is the distance of the point from the corner.
-	// While this does use information from the "11" corner and
-	// has a continuous second derivative, it is still problematic
-	// in that the first derivative is always 0 at the map points
-	// themselves. This leads to a micro-stucture in the field 
-	// that is a kind of smoothed step pattern. Field gradients
-	// derived from points that are far apart relative to the 
-	// grid spacing will still be valid, but gradients derived
-	// from points spaced smaller than the grid points will be
-	// completely wrong.
-
-	//  z  ^
-	// 10  |         | 11
-	//   --+---------+--
-	//     |         |
-	//     |         |
-	//     |         |
-	//   --+---------+--> r
-	// 00  |         | 01
+	/// This calculates the magnetic field at an arbitrary point
+	/// in space using the TOSCA generated field map. It interpolates
+	/// between grid points using the gradient values calculated in
+	/// the constructor. This method of interpolation is what is used
+	/// by hdgeant so it should match pretty closely to that.
 
 	if(fabs(BZ_CONST)<100){
 		Bx=By=0.0;
@@ -165,173 +154,35 @@ void DMagneticFieldMapGlueX::GetField(double x, double y, double z, double &Bx, 
 	}
 	Bx = By = Bz = 0.0;
 
-	// Find index in map of each corner
-	int index_r, index_z;
-	int index[4];
-	index[0] = GetIndices(x, y, z, index_r, index_z);
-	if(index[0]<0)return;
-	index[1] = (index_z+0) + (index_r+1)*zDim;
-	index[2] = (index_z+1) + (index_r+0)*zDim;
-	index[3] = (index_z+1) + (index_r+1)*zDim;
+	// Get closest indices for this point
+	double r = sqrt(x*x + y*y);
+	int index_r = (int)((r-rMin)/dr);
+	if(index_r<0 || index_r>=rDim)return;
+	int index_z = (int)((z-zMin)/dz);	
+	if(index_z<0 || index_z>=zDim)return;
 
-	// Get pointers to field map elements for each corner.
-	// If a corner is outside the map, use null_point
-	const DBfieldPoint_t *B[4];
-	B[0] = &Bmap[index[0]];
-	B[1] = index_r<(rDim-1) ? &Bmap[index[1]]:&null_point;
-	B[2] = index_z<(zDim-1) ? &Bmap[index[2]]:&null_point;
-	B[3] = ((index_r<(rDim-1)) && (index_z<(zDim-1))) ? &Bmap[index[3]]:&null_point;
+	int index = index_r*zDim + index_z;
+	const DBfieldPoint_t *B = &Bmap[index];
+	const DGradient_t *g = &GradMap[index];
 
-	// Find relative distance of each corner from x,y,z
-	double r = sqrt(x*x+y*y)/2.54;
-	double zprime = z/2.54 + BMAP_Z_OFFSET;
-	double t = (r - B[0]->x)/dr;
-	double u = (zprime - B[0]->z)/dz;
-	double d[4];
-	d[0] = sqrt(t*t + u*u);
-	d[1] = sqrt((1.0-t)*(1.0-t) + u*u);
-	d[2] = sqrt(t*t + (1.0-u)*(1.0-u));
-	d[3] = sqrt((1.0-t)*(1.0-t) + (1.0-u)*(1.0-u));
-		
-	// Determine weight of field from each corner. Weight goes
-	// like 1/(d+epsilon) where epsilon avoids poles at corners. 
-	double epsilon = 0.001;
-	double w[4], sum_w=0.0;
-	double Br=0.0, Bphi=0.0;;
-	for(int i=0; i<4; i++){
-		w[i] = 1.0/(d[0]+epsilon);
-		sum_w += w[i];
+	// Fractional distance between map points.
+	double ur = (r - B->x)/dr;
+	double uz = (z - B->z)/dz;
 
-		Br+=w[i]*B[i]->Bx;
-		Bphi+=w[i]*B[i]->By;
-		Bz+=w[i]*B[i]->Bz;
-	}
-	Br /= sum_w;
-	Bphi /= sum_w;
-	Bz /= sum_w;
-	
-	double theta = atan2(y,x);
-	double cos_theta = cos(theta);
-	double sin_theta = sin(theta);
-	
-	Bx = Br*cos_theta - Bphi*sin_theta;
-	By = Br*sin_theta + Bphi*cos_theta;
-}
+	// Use gradient to project grid point to requested position
+	double Br = B->Bx + g->dBrdr*ur + g->dBrdz*uz;
+	Bz = B->Bz + g->dBzdr*ur + g->dBzdz*uz;
 
-//---------------------
-// Bz_avg
-//---------------------
-double DMagneticFieldMapGlueX::Bz_avg(double x, double y, double x0, double y0, double delta_phi) const
-{
-	/// Calculate the average z-component of the B-field along a
-	/// circular path with the given parameters. The path starts
-	/// at the point x,y and follows a circle centered at x0,y0
-	/// for delta_phi radians (which may be more than 2pi). 
-	/// The magnetic field map is accessed 
-	/// at a z-position of 65.0, the nominal center of the target.
-	///
-	/// This is used by DQuickFit when fitting a circle in the X/Y
-	/// plane to convert the circle's parameters into transverse 
-	/// momentum in GeV/c. When information about the helix in the
-	/// z-direction is known, then Bz_avg3D should be used.
-	
-	// If a (reasonable) value for BZ_CONST is set, then just return it
-	if(fabs(BZ_CONST)<100)return BZ_CONST;
-
-	double dphi = M_PI/180.0; // use 1 degree steps
-	double dx = x-x0;
-	double dy = y-y0;
-	double r = sqrt(dx*dx + dy*dy);
-	double phi = atan2(dy,dx);
-	
-	if(delta_phi<0.0)dphi = -dphi;
-	
-	double Bzavg = 0.0;
-	int Nsteps = (int)fabs(delta_phi/dphi);
-	int Ndone = 0;
-	double Rmax2 = 65.0*65.0; // if track goes beyond this, we are out of range
-	for(; Ndone<Nsteps; phi+=dphi){
-		x = r*cos(phi) + x0;
-		y = r*sin(phi) + y0;
-		
-		if(x*x + y*y > Rmax2)break;
-		const DBfieldPoint_t *point = getQuick(x, y, BZ_AVG_Z);
-		Bzavg+= point->Bz;
-		Ndone++;
+	// Convert r back to x,y components
+	double cos_theta = x/r;
+	double sin_theta = y/r;
+	if(r==0.0){
+		cos_theta=1.0;
+		sin_theta=0.0;
 	}
 	
-	Bzavg /= (double)Ndone;
-
-	return Bzavg;
-}
-
-//---------------------
-// Bz_avg
-//---------------------
-double DMagneticFieldMapGlueX::Bz_avg(double x, double y, double z, double x0, double y0, double theta, double zmax) const
-{
-	/// Calculate the average z-component of the B-field along a
-	/// helical path with the given parameters. The path starts
-	/// at the point x,y,z and follows a helix centered at x0,y0
-	/// with axis along the z-direction with the given theta.
-	/// (tan(theta) is just Ro*dphi/dz). The helix is followed
-	/// until it crosses zmax. Note that if zmax is less than z,
-	/// then the helix is followed backwards.
-	///
-	/// All values passed in are in cm using the GEANT coordinate system.
-	///
-	/// This is used by DQuickFit when fitting a 3-D track and is
-	/// used to convert the helix's parameters into transverse 
-	/// momentum in GeV/c.
-	
-	// If a (reasonable) value for BZ_CONST is set, then just return it
-	if(fabs(BZ_CONST)<100)return BZ_CONST;
-	
-	// While it should never happen, it's possible that we could get
-	// passed a track that is going down the beam line. For these,
-	// we just say the average field is -2.2T.
-	if(fabs(theta)<1.0E-5 || fabs(fabs(theta)-M_PI)<1.0E-5)return -2.2;
-
-	double dx = x-x0;
-	double dy = y-y0;
-	double r = sqrt(dx*dx + dy*dy);
-	double phi = atan2(dy,dx);
-	
-	// find dphi and dz step sizes that correspond to an arclength
-	// of stepsize along the helix. We calculate this using cot(theta)
-	// since it has a pole only at theta=0,pi and we should never reconstruct
-	// a track there since then we wouldn't have any hits! We set up
-	// to step along 3 meters of path length so there is an absolute limit.
-	// If we run into the BCAL (R>65.0cm) or go past zmax, then we break
-	// the loop early. This will happen often.
-	double stepsize = 5.0; // in cm
-	double cot_theta = cos(theta)/sin(theta);
-	double dphi = stepsize/r/sqrt(1.0+cot_theta*cot_theta);
-	double dz = r*dphi*cot_theta;
-	int Nsteps = (int)(300.0/stepsize);
-	
-	// make sure we're stepping in the right z-direction
-	if(zmax<z){
-		dz = -dz;
-		dphi = -dphi;
-	}
-	
-	double Bzavg = 0.0;
-	int Ndone = 0;
-	double Rmax2 = 65.0*65.0; // if track goes beyond this, we are out of range
-	for(; Ndone<Nsteps; phi+=dphi, z+=dz){
-		x = r*cos(phi) + x0;
-		y = r*sin(phi) + y0;
-		
-		if(x*x + y*y > Rmax2)break;
-		const DBfieldPoint_t *point = getQuick(x, y, z);
-		Bzavg+= point->Bz;
-		Ndone++;
-	}
-	
-	Bzavg /= (double)Ndone;
-
-	return Bzavg;
+	Bx = Br*cos_theta;
+	By = Br*sin_theta;
 }
 
 //---------------------
@@ -346,7 +197,7 @@ void DMagneticFieldMapGlueX::GetTable(const DBfieldPoint_t* &Bmap, int &Npoints)
 // ======================= Below here is auto-generated code ===================
 
 
-DBfieldPoint_t default_mag_field[] = {
+DMagneticFieldMapGlueX::DBfieldPoint_t default_mag_field[] = {
 {0.0000, 0.0000, 30.000, 0, 0, -1.1451},
 {0.0000, 0.0000, 31.000, 0, 0, -1.1795},
 {0.0000, 0.0000, 32.000, 0, 0, -1.2125},

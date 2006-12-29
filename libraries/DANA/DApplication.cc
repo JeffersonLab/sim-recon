@@ -33,7 +33,7 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	}
 	
 	// Create magnetic field object for use by everyone
-	bfield = new DMagneticFieldMapHDGEANT();
+	bfield = new DMagneticFieldMapGlueX();
 }
 
 //---------------------------------

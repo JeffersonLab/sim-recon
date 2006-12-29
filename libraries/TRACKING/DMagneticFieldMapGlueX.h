@@ -17,9 +17,6 @@
 
 #include "DMagneticFieldMap.h"
  
-typedef struct{
-	float x,y,z,Bx,By,Bz;
-}DBfieldPoint_t;
 
 
 class DMagneticFieldMapGlueX:public DMagneticFieldMap
@@ -27,25 +24,28 @@ class DMagneticFieldMapGlueX:public DMagneticFieldMap
 
 	public:
 
+		typedef struct{
+			float x,y,z,Bx,By,Bz;
+		}DBfieldPoint_t;
+
+		typedef struct{
+			double dBrdr, dBrdz;
+			double dBzdr, dBzdz;
+		}DGradient_t;
+
 		DMagneticFieldMapGlueX();	/*!< Constructor */
 		~DMagneticFieldMapGlueX();	/*!< Destructor  */
 
-		const DBfieldPoint_t* getQuick(double x, double y, double z) const;
 		int GetIndices(double x, double y, double z, int &index_r, int &index_z) const;
 		void GetField(double x, double y, double z, double &Bx, double &By, double &Bz, int method=0) const;
-		
-		double Bz_avg(double x, double y, double x0, double y0, double delta_phi) const;
-		double Bz_avg(double x, double y, double z, double x0, double y0, double theta, double zmax) const;
     
 	 	void GetTable(const DBfieldPoint_t* &Bmap, int &Npoints);
 		
-		/// Set this map to use a constant B-field in the z- direction. Bz is in Tesla.
-		void SetConstField(float Bz){BZ_CONST = Bz;}
-		bool isConst(void){return fabs(BZ_CONST)<100.0;}
-	 
 	private:
 
+
 		DBfieldPoint_t *Bmap;	/*!< serialized array for Mag Field values  */
+		DGradient_t *GradMap;	/*!< array of gradients (numerically calculated) */
 		int Npoints;
 		double rMin;   /*!< minimum double radius coordinate  */
 		double rMax;   /*!< maximum double radius coordinate  */

@@ -12,11 +12,11 @@
 
 class DMagneticFieldMap{
 	public:
+	
 		DMagneticFieldMap(){}
 		virtual ~DMagneticFieldMap(){}
 		
 		virtual void GetField(double x, double y, double z, double &Bx, double &By, double &Bz, int method=0) const = 0;
-		virtual void GetGradient(double x, double y, double z, double &dBdx, double &dBdy, double &dBdz, int method=0) const;
 
 };
 
