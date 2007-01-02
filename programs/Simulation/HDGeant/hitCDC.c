@@ -25,13 +25,13 @@ binTree_t* centralDCTree = 0;
 static int strawCount = 0;
 static int pointCount = 0;
 static int stripCount = 0;
-
+static int ILOSS = -1; /* (so pickCentralDC can use it) */
 
 /* register hits during tracking (from gustep) */
 
 void hitCentralDC (float xin[4], float xout[4],
                    float pin[5], float pout[5], float dEsum,
-                   int track, int stack, int history)
+                   int track, int stack, int history, int iloss)
 {
    float x[3], t;
    float dx[3], dr;
@@ -40,6 +40,8 @@ void hitCentralDC (float xin[4], float xout[4],
    float xinlocal[3];
    float xoutlocal[3];
    float dradius,drin,drout;
+	
+	ILOSS = iloss;
 
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
@@ -180,7 +182,7 @@ void hitCentralDC (float xin[4], float xout[4],
 
    /* post the hit to the hits tree, mark sector as hit */
 
-   if (dEsum > 0)
+   if (dEsum > 0.0 || iloss==0)
    {
       int nhit;
       s_CdcStrawHits_t* hits;
@@ -296,9 +298,9 @@ void hitCentralDC (float xin[4], float xout[4],
 
 void hitcentraldc_(float* xin, float* xout,
                    float* pin, float* pout, float* dEsum,
-                   int* track, int* stack, int* history)
+                   int* track, int* stack, int* history, int* iloss)
 {
-   hitCentralDC(xin,xout,pin,pout,*dEsum,*track,*stack,*history);
+   hitCentralDC(xin,xout,pin,pout,*dEsum,*track,*stack,*history, *iloss);
 }
 
 
@@ -340,7 +342,7 @@ s_CentralDC_t* pickCentralDC ()
          int i,iok;
          for (iok=i=0; i < hits->mult; i++)
          {
-            if (hits->in[i].dE >= THRESH_KEV/1e6)
+            if (hits->in[i].dE >= THRESH_KEV/1e6 || ILOSS==0)
             {
                if (iok < i)
                {
@@ -376,7 +378,7 @@ s_CentralDC_t* pickCentralDC ()
          int i,iok;
          for (iok=i=0; i < hits->mult; i++)
          {
-            if (hits->in[i].dE >= THRESH_KEV/1e6)
+            if (hits->in[i].dE >= THRESH_KEV/1e6 || iloss==0)
             {
                if (iok < i)
                {

@@ -11,6 +11,7 @@
 #include "geant321/gcvolu.inc"
 #include "geant321/gctmed.inc"
 #include "geant321/gctrak.inc"
+#include "geant321/gcphys.inc"
 
       character*4 cnames(15)
       equivalence (NAMES(1),cnames(1))
@@ -58,12 +59,14 @@
         endif
       elseif ((cnames(NLEVEL).eq.'STRA').or.		! CDC straight straw
      +        (cnames(NLEVEL).eq.'STLA')) then	! CDC stereo straw
-        if (dEsum.gt.0) then
-          call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
+        if ((dEsum.gt.0).or.(ILOSS.eq.0)) then
+          call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY
+     +     ,ILOSS)
         endif
       elseif (cnames(NLEVEL).eq.'FDCA') then		! FDC anode drift cell
-        if (dEsum.gt.0) then
-          call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
+        if ((dEsum.gt.0).or.(ILOSS.eq.0)) then
+          call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY
+     +    ,ILOSS)
         endif
       elseif (cnames(NLEVEL).eq.'CERW') then		! Cerenkov truth
         if (dEsum.gt.0) then
