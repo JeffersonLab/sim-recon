@@ -32,24 +32,24 @@ install: hddm-c xml-hddm hddm-xml hddm-c xml-xml hddm-schema schema-hddm hddmcat
 
 xml-hddm: xml-hddm.cpp XString.o XParsers.o
 	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
-	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ \
+	-I$(HALLD_HOME)/include -o $@ $^ \
 	-L$(HALLD_HOME)/lib/$(OSNAME) -lxstream \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 hddm-xml: hddm-xml.cpp XString.o XParsers.o
 	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
-	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ \
+	-I$(HALLD_HOME)/include -o $@ $^ \
 	-L$(HALLD_HOME)/lib/$(OSNAME) -lxstream \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 hddm-c: hddm-c.cpp XString.o XParsers.o
 	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
-	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ \
+	-I$(HALLD_HOME)/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
 hddm-cpp: hddm-cpp.cpp XString.o XParsers.o
 	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
-	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ \
+	-I$(HALLD_HOME)/include -o $@ $^ \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
 hddmcat: hddmcat.cpp
@@ -58,7 +58,7 @@ hddmcat: hddmcat.cpp
 test: hddm-c hddm-xml test.xml
 	./hddm-c test.xml
 	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
-	-I$(HALLD_HOME)/src/libraries/include -o testhddm \
+	-I$(HALLD_HOME)/include -o testhddm \
 	testhddm.cpp hddm_v.c $(LIBXDR)
 	./testhddm
 	hddm-xml test.hddm
@@ -68,7 +68,7 @@ test: hddm-c hddm-xml test.xml
 
 %.o: %.cpp
 	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
-	-I$(HALLD_HOME)/src/libraries/include -c $^ 
+	-I$(HALLD_HOME)/include -c $^ 
 
 clean:
 	/bin/rm -f *.o core *.depend
