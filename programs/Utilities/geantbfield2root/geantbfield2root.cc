@@ -9,7 +9,7 @@
 #include <iomanip>
 using namespace std;
 
-#include "TRACKING/DMagneticFieldMap.h"
+#include "TRACKING/DMagneticFieldMapGlueX.h"
 #include "JANA/JParameterManager.h"
 
 #include <TFile.h>
@@ -33,7 +33,7 @@ int main(int narg, char *argv[])
 
 	// Create Magnetic Field Map
 	new JParameterManager(); // normally, this is created by JApplication!
-	DMagneticFieldMap *bfield = new DMagneticFieldMap();
+	DMagneticFieldMap *bfield = new DMagneticFieldMapGlueX();
 
 	// Create Trees
 	TTree *gtree = new TTree("gfield","HDGeant Magnetic Field");
@@ -76,7 +76,7 @@ int main(int narg, char *argv[])
 				
 				// Access DANA field map at the same point
 				double x,y,z,Bx,By,Bz;
-				bfield->GetBilinear(x=val[0], y=val[1], z=val[2], Bx, By, Bz);
+				bfield->GetField(x=val[0], y=val[1], z=val[2], Bx, By, Bz);
 				B[0] = Bx;
 				B[1] = By;
 				B[2] = Bz;
