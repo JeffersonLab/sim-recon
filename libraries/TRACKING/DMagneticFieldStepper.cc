@@ -109,6 +109,7 @@ void DMagneticFieldStepper::CalcDirs(void)
 
 	// cross product of p and B (natural x-direction)
 	xdir = mom.Cross(B);
+	if(xdir.Mag2()<1.0E-6)xdir = mom.Orthogonal();
 	xdir.SetMag(1.0);
 	
 	// cross product of B and pxB (natural y-direction)
