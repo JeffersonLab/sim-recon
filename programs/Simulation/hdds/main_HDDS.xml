@@ -68,8 +68,8 @@
 
   <composition name="forwardPackage">
     <posXYZ volume="CerenkovCntr" X_Y_Z="0.0 0.0 407.0" />
-    <posXYZ volume="ForwardTOF" X_Y_Z="0.0 0.0 618.8" />
-    <posXYZ volume="ForwardEMcal" X_Y_Z="0.0 0.0 628.0" />
+    <posXYZ volume="ForwardTOF" X_Y_Z="0.0 0.0 616.25" />
+    <posXYZ volume="ForwardEMcal" X_Y_Z="0.0 0.0 625.3" />
   </composition>
 
   <composition name="backwardPackage">
