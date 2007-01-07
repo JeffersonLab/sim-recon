@@ -184,6 +184,7 @@
 #include "geant321/gctmed.inc"
 #include "geant321/gctrak.inc"
 #include "geant321/gcflag.inc"
+#include "geant321/gcphys.inc"
 #include "hdtrackparams.inc"
 *
 *     -----------------------------------------------------------------
@@ -342,7 +343,8 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
 
 * Stop wimpy charged particles that are taking forever to range out
 
-      if ((NSTEP.ge.9999).and.(CHARGE.ne.0)) then
+      if ((NSTEP.ge.9999).and.(CHARGE.ne.0).or.
+     +    (ILOSS.eq.0).and.(GEKIN.lt.1e-3)) then
         DESTEP = GEKIN
         ISTOP = 1
       endif
