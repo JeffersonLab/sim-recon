@@ -13,6 +13,8 @@
 #include "geant321/gctrak.inc"
 #include "geant321/gcphys.inc"
 
+#define MAKE_HITS_WHEN_ILOSS_0    1
+
       character*4 cnames(15)
       equivalence (NAMES(1),cnames(1))
 
@@ -54,19 +56,32 @@
       pout(5) = VECT(7)
       if ((cnames(NLEVEL).eq.'STRC').or.		! vertex cylinder
      +    (cnames(NLEVEL).eq.'STRP')) then		! vertex endcap
+#ifdef MAKE_HITS_WHEN_ILOSS_0
+        if (ILOSS.eq.0) then
+          dEsum = 1e-3   ! 1 MeV in plastic
+        endif
+#endif
         if (dEsum.gt.0) then
           call hitStartCntr(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
         endif
       elseif ((cnames(NLEVEL).eq.'STRA').or.		! CDC straight straw
      +        (cnames(NLEVEL).eq.'STLA')) then	! CDC stereo straw
-        if ((dEsum.gt.0).or.(ILOSS.eq.0)) then
-          call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY
-     +     ,ILOSS)
+#ifdef MAKE_HITS_WHEN_ILOSS_0
+        if (ILOSS.eq.0) then
+          dEsum = 1e-5   ! 10 KeV in gas
+        endif
+#endif
+        if (dEsum.gt.0) then
+          call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
         endif
       elseif (cnames(NLEVEL).eq.'FDCA') then		! FDC anode drift cell
-        if ((dEsum.gt.0).or.(ILOSS.eq.0)) then
-          call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY
-     +    ,ILOSS)
+#ifdef MAKE_HITS_WHEN_ILOSS_0
+        if (ILOSS.eq.0) then
+          dEsum = 1e-5   ! 10 KeV in gas
+        endif
+#endif
+        if (dEsum.gt.0) then
+          call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
         endif
       elseif (cnames(NLEVEL).eq.'CERW') then		! Cerenkov truth
         if (dEsum.gt.0) then
@@ -78,16 +93,31 @@
         endif
       elseif ((cnames(NLEVEL).eq.'FTOC').or.		! forward TOF counter
      +        (cnames(NLEVEL).eq.'FTOS')) then
+#ifdef MAKE_HITS_WHEN_ILOSS_0
+        if (ILOSS.eq.0) then
+          dEsum = 1e-2   ! 10 MeV in plastic
+        endif
+#endif
         if (dEsum.gt.0) then
           call hitForwardTOF(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
         endif
       elseif ((cnames(NLEVEL)(1:3).eq.'BCM').or.	! BCal segment
      +        (cnames(NLEVEL)(1:3).eq.'BM1')) then
+#ifdef MAKE_HITS_WHEN_ILOSS_0
+        if (ILOSS.eq.0) then
+          dEsum = 1e-2  ! 10 MeV in the calorimeter module
+        endif
+#endif
         if ((dEsum.gt.0).or.(ISTORY.ne.1)) then
           call hitBarrelEMcal(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
           ISTORY = 1  ! this particle has entered the BCal (inherited trait)
         endif
       elseif (cnames(NLEVEL).eq.'LGBL') then		! forward calorimeter
+#ifdef MAKE_HITS_WHEN_ILOSS_0
+        if (ILOSS.eq.0) then
+          dEsum = 1e-2   ! 10 MeV in the calorimeter block
+        endif
+#endif
         if ((dEsum.ne.0).or.(ISTORY.ne.2)) then
           call hitForwardEMcal
      +                       (xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
@@ -95,6 +125,11 @@
         endif
       elseif ((cnames(NLEVEL).eq.'UPVP').or.		! UPV channel
      +        (cnames(NLEVEL).eq.'UPVC')) then
+#ifdef MAKE_HITS_WHEN_ILOSS_0
+        if (ILOSS.eq.0) then
+          dEsum = 1e-2   ! 10 MeV in the calorimeter paddle
+        endif
+#endif
         if ((dEsum.ne.0).or.(ISTORY.ne.3)) then
           call hitUpstreamEMveto
      +                       (xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
