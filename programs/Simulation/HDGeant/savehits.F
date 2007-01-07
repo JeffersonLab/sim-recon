@@ -57,7 +57,7 @@
       if ((cnames(NLEVEL).eq.'STRC').or.		! vertex cylinder
      +    (cnames(NLEVEL).eq.'STRP')) then		! vertex endcap
 #ifdef MAKE_HITS_WHEN_ILOSS_0
-        if (ILOSS.eq.0) then
+        if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-3   ! 1 MeV in plastic
         endif
 #endif
@@ -67,7 +67,7 @@
       elseif ((cnames(NLEVEL).eq.'STRA').or.		! CDC straight straw
      +        (cnames(NLEVEL).eq.'STLA')) then	! CDC stereo straw
 #ifdef MAKE_HITS_WHEN_ILOSS_0
-        if (ILOSS.eq.0) then
+        if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-5   ! 10 KeV in gas
         endif
 #endif
@@ -76,7 +76,7 @@
         endif
       elseif (cnames(NLEVEL).eq.'FDCA') then		! FDC anode drift cell
 #ifdef MAKE_HITS_WHEN_ILOSS_0
-        if (ILOSS.eq.0) then
+        if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-5   ! 10 KeV in gas
         endif
 #endif
@@ -94,7 +94,7 @@
       elseif ((cnames(NLEVEL).eq.'FTOC').or.		! forward TOF counter
      +        (cnames(NLEVEL).eq.'FTOS')) then
 #ifdef MAKE_HITS_WHEN_ILOSS_0
-        if (ILOSS.eq.0) then
+        if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-2   ! 10 MeV in plastic
         endif
 #endif
@@ -104,7 +104,7 @@
       elseif ((cnames(NLEVEL)(1:3).eq.'BCM').or.	! BCal segment
      +        (cnames(NLEVEL)(1:3).eq.'BM1')) then
 #ifdef MAKE_HITS_WHEN_ILOSS_0
-        if (ILOSS.eq.0) then
+        if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-2  ! 10 MeV in the calorimeter module
         endif
 #endif
@@ -114,7 +114,7 @@
         endif
       elseif (cnames(NLEVEL).eq.'LGBL') then		! forward calorimeter
 #ifdef MAKE_HITS_WHEN_ILOSS_0
-        if (ILOSS.eq.0) then
+        if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-2   ! 10 MeV in the calorimeter block
         endif
 #endif
@@ -126,7 +126,7 @@
       elseif ((cnames(NLEVEL).eq.'UPVP').or.		! UPV channel
      +        (cnames(NLEVEL).eq.'UPVC')) then
 #ifdef MAKE_HITS_WHEN_ILOSS_0
-        if (ILOSS.eq.0) then
+        if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-2   ! 10 MeV in the calorimeter paddle
         endif
 #endif
