@@ -56,7 +56,7 @@ SCAP    0.       0.      65.
 c The following lines control the rate (GHz) of background beam photons
 c that are overlayed on each event in the simulation, in addition to the
 c particles produced by the standard generation mechanism.  A value of
-c 1.25 corresponds to nominal GlueX running conditions at an intensity of
+c 1.10 corresponds to nominal GlueX running conditions at an intensity of
 c 10^7 tagged photons on target per second.  To disable the generation of
 c random beam background, comment this line out or set the value of BGRATE
 c to zero.  Background beam photons are generated during the time interval
@@ -66,7 +66,7 @@ c the event) that a random beam photon could produce background hits
 c somewhere in the detector.  Note that for this to work, the BEAM card
 c must be present (see above).  This means that background generation is
 c disabled when the simulation operates in particle gun mode.
-BGRATE 1.25
+BGRATE 1.10
 BGGATE -200. 200.
 
 c The following card seeds the random number generator so it must be unique
