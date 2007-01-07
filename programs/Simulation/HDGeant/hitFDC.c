@@ -40,7 +40,6 @@ binTree_t* forwardDCTree = 0;
 static int stripCount = 0;
 static int wireCount = 0;
 static int pointCount = 0;
-static int ILOSS = -1; /* (so pickForwardDC can use it) */
 
 
 void gpoiss_(float*,int*,const int*); // avoid solaris compiler warnings
@@ -49,7 +48,7 @@ void gpoiss_(float*,int*,const int*); // avoid solaris compiler warnings
 
 void hitForwardDC (float xin[4], float xout[4],
                    float pin[5], float pout[5], float dEsum,
-                   int track, int stack, int history, int iloss)
+                   int track, int stack, int history)
 {
   float x[3], t;
   float dx[3], dr;
@@ -68,8 +67,6 @@ void hitForwardDC (float xin[4], float xout[4],
   int wire1,wire2;
   int wire,dwire;
 
-  ILOSS = iloss;
-	
   transformCoord(xin,"global",xinlocal,"local");
   wire1 = ceil((xinlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
   transformCoord(xout,"global",xoutlocal,"local");
@@ -140,7 +137,7 @@ void hitForwardDC (float xin[4], float xout[4],
 
   /* post the hit to the hits tree, mark cell as hit */
 
-  if (dEsum > 0 || iloss==0)
+  if (dEsum > 0)
   {
     int nhit;
     s_FdcAnodeHits_t* ahits;    
@@ -182,7 +179,7 @@ void hitForwardDC (float xin[4], float xout[4],
 
     /* first record the anode wire hit */
 
-      if (dE > 0 || iloss==0)
+      if (dE > 0)
       {
         int mark = (chamber<<20) + (2<<10) + wire;
         void** twig = getTwig(&forwardDCTree, mark);
@@ -235,7 +232,7 @@ void hitForwardDC (float xin[4], float xout[4],
       }
 
     /* then generate hits in the two surrounding cathode planes */
-		if(dE==0.0 && iloss==0)dE=1.5E-6; /* special case when LOSS flag is set to 0 */
+
       if (dE > 0)
       {
         float avalanche_x = xwire;
@@ -366,9 +363,9 @@ void hitForwardDC (float xin[4], float xout[4],
 
 void hitforwarddc_(float* xin, float* xout,
                    float* pin, float* pout, float* dEsum,
-                   int* track, int* stack, int* history, int* iloss)
+                   int* track, int* stack, int* history)
 {
-   hitForwardDC(xin,xout,pin,pout,*dEsum,*track,*stack,*history,*iloss);
+   hitForwardDC(xin,xout,pin,pout,*dEsum,*track,*stack,*history);
 }
 
 
@@ -409,7 +406,7 @@ s_ForwardDC_t* pickForwardDC ()
          int i,iok;
          for (iok=i=0; i < ahits->mult; i++)
          {
-            if (ahits->in[i].dE >= THRESH_KEV/1e6 || ILOSS==0)
+            if (ahits->in[i].dE >= THRESH_KEV/1e6)
             {
                if (iok < i)
                {
