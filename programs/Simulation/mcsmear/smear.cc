@@ -69,7 +69,8 @@ float FDC_Z = 0.1;			// cm
 float FDC_AVG_NOISE_HITS = 0.01*2856.0; // 0.01 = 1% occupancy
 
 // Pedestal noise for FDC strips
-float FDC_PED_NOISE=2.7; // pC
+float FDC_CATHODE_SIGMA= 200. ; // microns
+float FDC_PED_NOISE=-0.004594+0.008711*FDC_CATHODE_SIGMA+0.000010*FDC_CATHODE_SIGMA*FDC_CATHODE_SIGMA; //pC
 
 // Drift time variation for FDC anode wires
 float FDC_DRIFT_SIGMA=200.0/55.0; // 200 microns/ (55 microns/ns)
