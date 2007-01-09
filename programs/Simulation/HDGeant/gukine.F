@@ -218,12 +218,13 @@ c         print *, ngen,' background photons generated this event'
          ELSE
             IK=IKINE
             CALL GRNDM(RNDM,2)
+				PABS=PKINE(1)
             THETA=PI*RNDM(1)
             PHI=TWOPI*RNDM(2)
          ENDIF
-         PLAB(1) = PKINE(1)*SIN(THETA)*COS(PHI)
-         PLAB(2) = PKINE(1)*SIN(THETA)*SIN(PHI)
-         PLAB(3) = PKINE(1)*COS(THETA)
+         PLAB(1) = PABS*SIN(THETA)*COS(PHI)
+         PLAB(2) = PABS*SIN(THETA)*SIN(PHI)
+         PLAB(3) = PABS*COS(THETA)
 
          CALL GSVERT(VERTEX,0,0,0.0,0,NVERT)
          CALL GSKINE(PLAB,IK,NVERT,0,0,NT)
