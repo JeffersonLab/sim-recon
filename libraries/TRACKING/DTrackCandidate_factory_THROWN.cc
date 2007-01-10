@@ -18,6 +18,9 @@
 //------------------
 DTrackCandidate_factory_THROWN::DTrackCandidate_factory_THROWN()
 {
+	CANDIDATE_THROWN_SMEAR = 1;
+	gPARMS->SetDefaultParameter("TRKFIT:CANDIDATE_THROWN_SMEAR",		CANDIDATE_THROWN_SMEAR);
+
 
 }
 
@@ -125,6 +128,8 @@ jerror_t DTrackCandidate_factory_THROWN::fini(void)
 //------------------
 double DTrackCandidate_factory_THROWN::SampleGaussian(double sigma)
 {
+	if(!CANDIDATE_THROWN_SMEAR)return 0;
+
 	double epsilon = 1.0E-10;
 	double r1 = epsilon+((double)random()/(double)RAND_MAX);
 	double r2 = (double)random()/(double)RAND_MAX;

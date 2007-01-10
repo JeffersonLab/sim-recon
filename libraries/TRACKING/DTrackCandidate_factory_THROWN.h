@@ -28,6 +28,8 @@ class DTrackCandidate_factory_THROWN:public DTrackCandidate_factory{
 		double SampleGaussian(double sigma);
 		
 		DReferenceTrajectory *rt;
+		
+		bool CANDIDATE_THROWN_SMEAR;
 };
 
 #endif // _DTrackCandidate_factory_THROWN_
