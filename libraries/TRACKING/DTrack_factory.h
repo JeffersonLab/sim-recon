@@ -109,6 +109,7 @@ class DTrack_factory:public JFactory<DTrack>{
 		double SIGMA_FDC_CATHODE;
 		double CHISQ_MAX_RESI_SIGMAS;
 		double LEAST_SQUARES_DP;
+		double LEAST_SQUARES_DX;
 		unsigned int LEAST_SQUARES_MIN_HITS;
 		double LEAST_SQUARES_MAX_E2NORM;
 		string CANDIDATE_TAG;
@@ -125,6 +126,8 @@ class DTrack_factory:public JFactory<DTrack>{
 		TH1F *ptotal;
 		TH2F *residuals_cdc, *residuals_fdc_anode, *residuals_fdc_cathode;
 		TH2F *initial_chisq_vs_Npasses, *chisq_vs_pass, *dchisq_vs_pass;
+		TH3F *residuals_cdc_vs_s, *residuals_fdc_anode_vs_s, *residuals_fdc_cathode_vs_s;
+		
 };
 
 #endif // _DTrack_factory_

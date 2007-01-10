@@ -58,6 +58,7 @@ DTrack_factory::DTrack_factory()
 	SIGMA_FDC_CATHODE = 0.0200;
 	CHISQ_MAX_RESI_SIGMAS = 5.0;
 	LEAST_SQUARES_DP = 0.001;
+	LEAST_SQUARES_DX = 0.100;
 	LEAST_SQUARES_MIN_HITS = 3;
 	LEAST_SQUARES_MAX_E2NORM = 1.0E6;
 	CANDIDATE_TAG = "";
@@ -75,6 +76,7 @@ DTrack_factory::DTrack_factory()
 	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_CATHODE",		SIGMA_FDC_CATHODE);
 	gPARMS->SetDefaultParameter("TRKFIT:CHISQ_MAX_RESI_SIGMAS",	CHISQ_MAX_RESI_SIGMAS);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_DP",		LEAST_SQUARES_DP);
+	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_DX",		LEAST_SQUARES_DX);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MIN_HITS",LEAST_SQUARES_MIN_HITS);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MAX_E2NORM",LEAST_SQUARES_MAX_E2NORM);		
 	gPARMS->SetDefaultParameter("TRKFIT:CANDIDATE_TAG",			CANDIDATE_TAG);
@@ -109,25 +111,55 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 	cout<<__FILE__<<":"<<__LINE__<<"-------------- Least Squares TRACKING --------------"<<endl;
 	
 	if(DEBUG_HISTS){
-		cdcdoca_vs_dist = new TH2F("cdcdoca_vs_dist","DOCA vs. DIST",300, 0.0, 1.2, 300, 0.0, 1.2);
-		cdcdoca_vs_dist_vs_ring = new TH3F("cdcdoca_vs_dist_vs_ring","DOCA vs. DIST vs. ring",300, 0.0, 1.2, 300, 0.0, 1.2,23,0.5,23.5);
-		fdcdoca_vs_dist = new TH2F("fdcdoca_vs_dist","DOCA vs. DIST",500, 0.0, 2.0, 500, 0.0, 2.0);
-		fdcu_vs_s = new TH2F("fdcu_vs_s","DOCA vs. DIST along wire",500, -60.0, 60.0, 500, -60.0, 60.0);
-		dist_axial = new TH1F("dist_axial","Distance from drift time for axial CDC wires",300,0.0,3.0);
-		doca_axial = new TH1F("doca_axial","DOCA of track for axial CDC wires",300,0.0,3.0);
-		dist_stereo = new TH1F("dist_stereo","Distance from drift time for stereo CDC wires",300,0.0,3.0);
-		doca_stereo = new TH1F("doca_stereo","DOCA of track for axial CDC wires",300,0.0,3.0);
-		chisq_final_vs_initial = new TH2F("chisq_final_vs_initial","Final vs. initial chi-sq.",200, 0.0, 10.0,50, 0.0, 2.5);
-		nhits_final_vs_initial = new TH2F("nhits_final_vs_initial","Final vs. initial nhits used in chi-sq.",30, -0.5, 29.5, 30, -0.5, 29.5);
-		Npasses = new TH1F("Npasses","Npasses", 21, -0.5, 20.5);
-		ptotal = new TH1F("ptotal","ptotal",1000, 0.1, 8.0);
-		residuals_cdc = new TH2F("residuals_cdc","Residuals in CDC",1000,-2.0,2.0,24,0.5,24.5);
-		residuals_fdc_anode = new TH2F("residuals_fdc_anode","Residuals in FDC anodes",1000,-2.0,2.0,24,0.5,24.5);
-		residuals_fdc_cathode = new TH2F("residuals_fdc_cathode","Residuals in FDC cathode",1000,-2.0,2.0,24,0.5,24.5);
-		initial_chisq_vs_Npasses = new TH2F("initial_chisq_vs_Npasses","Initial chi-sq vs. number of iterations", 25, -0.5, 24.5, 400, 0.0, 40.0);
-		chisq_vs_pass = new TH2F("chisq_vs_pass","Chi-sq vs. fit iteration", 25, -0.5, 24.5, 400, 0.0, 40.0);
-		dchisq_vs_pass = new TH2F("dchisq_vs_pass","Change in Chi-sq vs. fit iteration", 25, -0.5, 24.5, 400, 0.0, 8.0);
+		dapp->Lock();
 		
+		// Histograms may already exist. (Another thread may have created them)
+		// Try and get pointers to the existing ones.
+		cdcdoca_vs_dist = (TH2F*)gROOT->FindObject("cdcdoca_vs_dist");
+		cdcdoca_vs_dist_vs_ring = (TH3F*)gROOT->FindObject("cdcdoca_vs_dist_vs_ring");
+		fdcdoca_vs_dist = (TH2F*)gROOT->FindObject("fdcdoca_vs_dist");
+		fdcu_vs_s = (TH2F*)gROOT->FindObject("fdcu_vs_s");
+		dist_axial = (TH1F*)gROOT->FindObject("dist_axial");
+		doca_axial = (TH1F*)gROOT->FindObject("doca_axial");
+		dist_stereo = (TH1F*)gROOT->FindObject("dist_stereo");
+		doca_stereo = (TH1F*)gROOT->FindObject("doca_stereo");
+		chisq_final_vs_initial = (TH2F*)gROOT->FindObject("chisq_final_vs_initial");
+		nhits_final_vs_initial = (TH2F*)gROOT->FindObject("nhits_final_vs_initial");
+		Npasses = (TH1F*)gROOT->FindObject("Npasses");
+		ptotal = (TH1F*)gROOT->FindObject("ptotal");
+		residuals_cdc = (TH2F*)gROOT->FindObject("residuals_cdc");
+		residuals_fdc_anode = (TH2F*)gROOT->FindObject("residuals_fdc_anode");
+		residuals_fdc_cathode = (TH2F*)gROOT->FindObject("residuals_fdc_cathode");
+		residuals_cdc_vs_s = (TH3F*)gROOT->FindObject("residuals_cdc_vs_s");
+		residuals_fdc_anode_vs_s = (TH3F*)gROOT->FindObject("residuals_fdc_anode_vs_s");
+		residuals_fdc_cathode_vs_s = (TH3F*)gROOT->FindObject("residuals_fdc_cathode_vs_s");
+		initial_chisq_vs_Npasses = (TH2F*)gROOT->FindObject("initial_chisq_vs_Npasses");
+		chisq_vs_pass = (TH2F*)gROOT->FindObject("chisq_vs_pass");
+		dchisq_vs_pass = (TH2F*)gROOT->FindObject("dchisq_vs_pass");
+
+		if(!cdcdoca_vs_dist)cdcdoca_vs_dist = new TH2F("cdcdoca_vs_dist","DOCA vs. DIST",300, 0.0, 1.2, 300, 0.0, 1.2);
+		if(!cdcdoca_vs_dist_vs_ring)cdcdoca_vs_dist_vs_ring = new TH3F("cdcdoca_vs_dist_vs_ring","DOCA vs. DIST vs. ring",300, 0.0, 1.2, 300, 0.0, 1.2,23,0.5,23.5);
+		if(!fdcdoca_vs_dist)fdcdoca_vs_dist = new TH2F("fdcdoca_vs_dist","DOCA vs. DIST",500, 0.0, 2.0, 500, 0.0, 2.0);
+		if(!fdcu_vs_s)fdcu_vs_s = new TH2F("fdcu_vs_s","DOCA vs. DIST along wire",500, -60.0, 60.0, 500, -60.0, 60.0);
+		if(!dist_axial)dist_axial = new TH1F("dist_axial","Distance from drift time for axial CDC wires",300,0.0,3.0);
+		if(!doca_axial)doca_axial = new TH1F("doca_axial","DOCA of track for axial CDC wires",300,0.0,3.0);
+		if(!dist_stereo)dist_stereo = new TH1F("dist_stereo","Distance from drift time for stereo CDC wires",300,0.0,3.0);
+		if(!doca_stereo)doca_stereo = new TH1F("doca_stereo","DOCA of track for axial CDC wires",300,0.0,3.0);
+		if(!chisq_final_vs_initial)chisq_final_vs_initial = new TH2F("chisq_final_vs_initial","Final vs. initial chi-sq.",200, 0.0, 10.0,50, 0.0, 2.5);
+		if(!nhits_final_vs_initial)nhits_final_vs_initial = new TH2F("nhits_final_vs_initial","Final vs. initial nhits used in chi-sq.",30, -0.5, 29.5, 30, -0.5, 29.5);
+		if(!Npasses)Npasses = new TH1F("Npasses","Npasses", 21, -0.5, 20.5);
+		if(!ptotal)ptotal = new TH1F("ptotal","ptotal",1000, 0.1, 8.0);
+		if(!residuals_cdc)residuals_cdc = new TH2F("residuals_cdc","Residuals in CDC",1000,-2.0,2.0,24,0.5,24.5);
+		if(!residuals_fdc_anode)residuals_fdc_anode = new TH2F("residuals_fdc_anode","Residuals in FDC anodes",1000,-2.0,2.0,24,0.5,24.5);
+		if(!residuals_fdc_cathode)residuals_fdc_cathode = new TH2F("residuals_fdc_cathode","Residuals in FDC cathode",1000,-2.0,2.0,24,0.5,24.5);
+		if(!residuals_cdc_vs_s)residuals_cdc_vs_s = new TH3F("residuals_cdc_vs_s","Residuals in CDC vs. pathlength",1000,-2.0,2.0,24,0.5,24.5,100, 0.0, 800);
+		if(!residuals_fdc_anode_vs_s)residuals_fdc_anode_vs_s = new TH3F("residuals_fdc_anode_vs_s","Residuals in FDC anode vs. pathlength",1000,-2.0,2.0,24,0.5,24.5,100, 0.0, 800);
+		if(!residuals_fdc_cathode_vs_s)residuals_fdc_cathode_vs_s = new TH3F("residuals_fdc_cathode_vs_s","Residuals in FDC cathode vs. pathlength",1000,-2.0,2.0,24,0.5,24.5,100, 0.0, 800);
+		if(!initial_chisq_vs_Npasses)initial_chisq_vs_Npasses = new TH2F("initial_chisq_vs_Npasses","Initial chi-sq vs. number of iterations", 25, -0.5, 24.5, 400, 0.0, 40.0);
+		if(!chisq_vs_pass)chisq_vs_pass = new TH2F("chisq_vs_pass","Chi-sq vs. fit iteration", 25, -0.5, 24.5, 400, 0.0, 40.0);
+		if(!dchisq_vs_pass)dchisq_vs_pass = new TH2F("dchisq_vs_pass","Change in Chi-sq vs. fit iteration", 25, -0.5, 24.5, 400, 0.0, 8.0);
+
+		dapp->Unlock();		
 	}
 
 	return NOERROR;
@@ -536,6 +568,30 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	vector<double> resi_dpz_hi = chisqv;
 	vector<double> &resi_dpz_lo = resi;
 
+	// dx : tweak by +/- 0.01
+	TMatrixD state_dx = state;
+	state_dx[state_x][0] += LEAST_SQUARES_DX;
+	deltas[state_x] = state_dx[state_x][0] - state[state_x][0];
+	ChiSq(rt->q, state_dx, start_step,myrt);
+	vector<double> resi_dx_hi = chisqv;
+	vector<double> &resi_dx_lo = resi;
+
+	// dy : tweak by +/- 0.01
+	TMatrixD state_dy = state;
+	state_dy[state_y][0] += LEAST_SQUARES_DX;
+	deltas[state_y] = state_dx[state_x][0] - state[state_x][0];
+	ChiSq(rt->q, state_dy, start_step,myrt);
+	vector<double> resi_dy_hi = chisqv;
+	vector<double> &resi_dy_lo = resi;
+
+	// dz : tweak by +/- 0.01
+	TMatrixD state_dz = state;
+	state_dz[state_z][0] += LEAST_SQUARES_DX;
+	deltas[state_z] = state_dz[state_z][0] - state[state_z][0];
+	ChiSq(rt->q, state_dz, start_step,myrt);
+	vector<double> resi_dz_hi = chisqv;
+	vector<double> &resi_dz_lo = resi;
+
 	// Finished with local reference trajectory
 	delete myrt;
 	
@@ -549,11 +605,12 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 		double max=CHISQ_MAX_RESI_SIGMAS;
 		res =        resi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
 		res = resi_dpx_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-		//res = resi_dpx_lo[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
 		res = resi_dpy_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-		//res = resi_dpy_lo[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
 		res = resi_dpz_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-		//res = resi_dpz_lo[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+
+		res = resi_dx_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		res = resi_dy_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
+		res = resi_dz_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
 
 		good.push_back(true);
 		Ngood++;
@@ -564,12 +621,19 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	}
 
 	// Build "F" matrix of derivatives
-	TMatrixD F(Ngood,3);
+	int Nparameters = 5;
+	TMatrixD F(Ngood,Nparameters);
 	for(unsigned int i=0,j=0; j<Nhits; j++){
 		if(!good[j])continue; // skip bad hits
-		F[i][state_px] = (resi_dpx_hi[j]-resi_dpx_lo[j])/deltas[state_px];
-		F[i][state_py] = (resi_dpy_hi[j]-resi_dpy_lo[j])/deltas[state_py];
-		F[i][state_pz] = (resi_dpz_hi[j]-resi_dpz_lo[j])/deltas[state_pz];
+		switch(Nparameters){
+			// Note: This is a funny way to use a switch!
+			case 6: F[i][state_z] = (resi_dz_hi[j]-resi_dz_lo[j])/deltas[state_z];
+			case 5: F[i][state_y] = (resi_dy_hi[j]-resi_dy_lo[j])/deltas[state_y];
+			case 4: F[i][state_x] = (resi_dx_hi[j]-resi_dx_lo[j])/deltas[state_x];
+			case 3: F[i][state_pz] = (resi_dpz_hi[j]-resi_dpz_lo[j])/deltas[state_pz];
+			case 2: F[i][state_py] = (resi_dpy_hi[j]-resi_dpy_lo[j])/deltas[state_py];
+			case 1: F[i][state_px] = (resi_dpx_hi[j]-resi_dpx_lo[j])/deltas[state_px];
+		}
 		i++;
 	}
 	TMatrixD Ft(TMatrixD::kTransposed, F);
@@ -606,9 +670,9 @@ double DTrack_factory::LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTraj
 	if(B.IsValid()){
 		if(B.E2Norm() < LEAST_SQUARES_MAX_E2NORM){
 			TMatrixD delta_state = B*Ft*Vinv*m;
-			for(int i=0; i<3; i++)state[i] += delta_state[i];
+			for(int i=0; i<Nparameters; i++)state[i] += delta_state[i];
 		}else{
-			//cout<<__FILE__<<":"<<__LINE__<<" Fit failed! (B.E2Norm()="<<B.E2Norm()<<")"<<endl;
+			cout<<__FILE__<<":"<<__LINE__<<" Fit failed! (B.E2Norm()="<<B.E2Norm()<<")"<<endl;
 		}
 	}
 
@@ -660,6 +724,7 @@ void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_p
 		
 		// Fill histos
 		residuals_cdc->Fill(resi, wire->ring);
+		residuals_cdc_vs_s->Fill(resi, wire->ring, s);
 
 		cdcdoca_vs_dist->Fill(dist, doca);
 		cdcdoca_vs_dist_vs_ring->Fill(dist, doca, wire->ring);
@@ -688,6 +753,7 @@ void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_p
 		if(finite(resi)){
 			fdcdoca_vs_dist->Fill(dist, doca);
 			residuals_fdc_anode->Fill(resi, wire->layer);
+			residuals_fdc_anode_vs_s->Fill(resi, wire->layer,s);
 		}
 		
 		double u = rt->GetLastDistAlongWire();
@@ -695,6 +761,7 @@ void DTrack_factory::FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_p
 		if(finite(resi)){
 			fdcu_vs_s->Fill(u, hit.fdchit->s);
 			residuals_fdc_cathode->Fill(resi, wire->layer);
+			residuals_fdc_cathode_vs_s->Fill(resi, wire->layer,s);
 		}
 	}
 
