@@ -70,7 +70,7 @@ float FDC_AVG_NOISE_HITS = 0.01*2856.0; // 0.01 = 1% occupancy
 
 // Pedestal noise for FDC strips
 float FDC_CATHODE_SIGMA= 200. ; // microns
-float FDC_PED_NOISE=-0.004594+0.008711*FDC_CATHODE_SIGMA+0.000010*FDC_CATHODE_SIGMA*FDC_CATHODE_SIGMA; //pC
+float FDC_PED_NOISE; //pC (calculated from FDC_CATHODE_SIGMA in SmearFDC)
 
 // Drift time variation for FDC anode wires
 float FDC_DRIFT_SIGMA=200.0/55.0; // 200 microns/ (55 microns/ns)
@@ -245,6 +245,9 @@ void AddNoiseHitsCDC(s_HDDM_t *hddm_s)
 //-----------
 void SmearFDC(s_HDDM_t *hddm_s)
 {
+	// Calculate ped noise level based on position resolution
+	FDC_PED_NOISE=-0.004594+0.008711*FDC_CATHODE_SIGMA+0.000010*FDC_CATHODE_SIGMA*FDC_CATHODE_SIGMA; //pC
+
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return;

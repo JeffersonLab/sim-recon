@@ -27,7 +27,8 @@ extern float CDC_Z_SIGMA;
 extern float CDC_AVG_NOISE_HITS;
 extern float FDC_R;
 extern float FDC_AVG_NOISE_HITS;
-
+extern float FDC_DRIFT_SIGMA;
+extern float FDC_CATHODE_SIGMA;
 
 //-----------
 // main
@@ -104,6 +105,8 @@ void ParseCommandLineArguments(int narg, char* argv[])
 				case 'z': CDC_Z_SIGMA=atof(&ptr[2]);							break;
 				case 'j': CDC_AVG_NOISE_HITS=3240.0*atof(&ptr[2])/100.0;	break;
 				case 'R': FDC_R=atof(&ptr[2]);									break;
+				case 'u': FDC_DRIFT_SIGMA=atof(&ptr[2])/55.0;				break;
+				case 't': FDC_CATHODE_SIGMA=atof(&ptr[2]);				break;
 				case 'J': CDC_AVG_NOISE_HITS=2856.0*atof(&ptr[2])/100.0;	break;
 			}
 		}else{
@@ -150,6 +153,8 @@ void Usage(void)
 	cout<<"    -z       Sigma CDC z-direction (def:"<<CDC_Z_SIGMA<<"cm)"<<endl;
 	cout<<"    -j       CDC occupancy (def:"<<100.0*CDC_AVG_NOISE_HITS/3240.0<<"%)"<<endl;
 	cout<<"    -R       Sigma FDC r-direction (def:"<<FDC_R<<"cm)"<<endl;
+	cout<<"    -u       Sigma FDC anode drift time in microns (def:"<<FDC_DRIFT_SIGMA*55.0<<"um)"<<endl;
+	cout<<"    -t       Sigma FDC cathode resoultion in microns (def:"<<FDC_CATHODE_SIGMA<<"um)"<<endl;
 	cout<<"    -J       FDC occupancy (def:"<<100.0*FDC_AVG_NOISE_HITS/2856.0<<"%)"<<endl;
 	cout<<"    -h       Print this usage statement."<<endl;
 	cout<<endl;
