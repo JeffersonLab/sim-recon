@@ -97,7 +97,7 @@ void hitForwardDC (float xin[4], float xout[4],
   /* Make a fuzzy boundary around the forward dead region 
    * by killing any track segment whose midpoint is within the boundary */
 
-  if (fabs(xlocal[0]*xlocal[0]+xlocal[1]*xlocal[1]) < WIRE_DEAD_ZONE_RADIUS)
+  if (sqrt(xlocal[0]*xlocal[0]+xlocal[1]*xlocal[1]) < WIRE_DEAD_ZONE_RADIUS)
   {
     return;
   }
