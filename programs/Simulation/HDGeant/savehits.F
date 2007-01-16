@@ -92,7 +92,7 @@
           call hitCerenkov(xin,xout,pin,pout,-dEsum,ITRA,ISTAK,ISTORY)
         endif
       elseif ((cnames(NLEVEL).eq.'FTOC').or.		! forward TOF counter
-     +        (cnames(NLEVEL).eq.'FTOS')) then
+     +        (cnames(NLEVEL).eq.'FTOH')) then
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-2   ! 10 MeV in plastic
