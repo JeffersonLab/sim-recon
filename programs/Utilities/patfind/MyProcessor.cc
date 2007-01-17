@@ -40,7 +40,7 @@ class TrkHitZSort{
 MyProcessor::MyProcessor(void)
 {
 	// Tell factory to keep around a few density histos	
-	gPARMS->SetParameter("TRK:MAX_DEBUG_BUFFERS",	16);
+	gPARMS->SetParameter("TRKFIND:MAX_DEBUG_BUFFERS",	16);
 }
 
 //------------------------------------------------------------------
