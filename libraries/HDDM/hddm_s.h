@@ -60,7 +60,7 @@ typedef struct {
 #define SAW_s_Properties_t
 
 typedef struct {
-   int                  charge;
+   int32_t              charge;
    float                mass;
 } s_Properties_t;
 #endif /* s_Properties_t */
@@ -89,7 +89,7 @@ typedef struct {
 #define SAW_s_Product_t
 
 typedef struct {
-   int                  decayVertex;
+   int32_t              decayVertex;
    Particle_t           type;
    s_Momentum_t*        momentum;
    s_Properties_t*      properties;
@@ -130,7 +130,7 @@ typedef struct {
 #define SAW_s_Reaction_t
 
 typedef struct {
-   int                  type;
+   int32_t              type;
    float                weight;
    s_Beam_t*            beam;
    s_Target_t*          target;
@@ -161,8 +161,8 @@ typedef struct {
 #define SAW_s_CdcStraw_t
 
 typedef struct {
-   int                  ring;
-   int                  straw;
+   int32_t              ring;
+   int32_t              straw;
    s_CdcStrawHits_t*    cdcStrawHits;
 } s_CdcStraw_t;
 
@@ -181,7 +181,7 @@ typedef struct {
    float                phi;
    bool_t               primary;
    float                r;
-   int                  track;
+   int32_t              track;
    float                z;
 } s_CdcTruthPoint_t;
 
@@ -218,7 +218,7 @@ typedef struct {
 #define SAW_s_FdcAnodeWire_t
 
 typedef struct {
-   int                  wire;
+   int32_t              wire;
    s_FdcAnodeHits_t*    fdcAnodeHits;
 } s_FdcAnodeWire_t;
 
@@ -232,7 +232,7 @@ typedef struct {
 #define SAW_s_FdcCathodeHit_t
 
 typedef struct {
-   float                dE;
+   float                q;
    float                t;
 } s_FdcCathodeHit_t;
 
@@ -246,8 +246,8 @@ typedef struct {
 #define SAW_s_FdcCathodeStrip_t
 
 typedef struct {
-   int                  plane;
-   int                  strip;
+   int32_t              plane;
+   int32_t              strip;
    s_FdcCathodeHits_t*  fdcCathodeHits;
 } s_FdcCathodeStrip_t;
 
@@ -264,7 +264,7 @@ typedef struct {
    float                dEdx;
    float                dradius;
    bool_t               primary;
-   int                  track;
+   int32_t              track;
    float                x;
    float                y;
    float                z;
@@ -280,8 +280,8 @@ typedef struct {
 #define SAW_s_FdcChamber_t
 
 typedef struct {
-   int                  layer;
-   int                  module;
+   int32_t              layer;
+   int32_t              module;
    s_FdcAnodeWires_t*   fdcAnodeWires;
    s_FdcCathodeStrips_t* fdcCathodeStrips;
    s_FdcTruthPoints_t*  fdcTruthPoints;
@@ -319,7 +319,7 @@ typedef struct {
 #define SAW_s_StcPaddle_t
 
 typedef struct {
-   int                  sector;
+   int32_t              sector;
    s_StcHits_t*         stcHits;
 } s_StcPaddle_t;
 
@@ -338,7 +338,7 @@ typedef struct {
    bool_t               primary;
    float                r;
    float                t;
-   int                  track;
+   int32_t              track;
    float                z;
 } s_StcTruthPoint_t;
 
@@ -389,9 +389,9 @@ typedef struct {
 #define SAW_s_BcalCell_t
 
 typedef struct {
-   int                  layer;
-   int                  module;
-   int                  sector;
+   int32_t              layer;
+   int32_t              module;
+   int32_t              sector;
    s_BcalUpstreamHits_t* bcalUpstreamHits;
    s_BcalDownstreamHits_t* bcalDownstreamHits;
 } s_BcalCell_t;
@@ -411,7 +411,7 @@ typedef struct {
    bool_t               primary;
    float                r;
    float                t;
-   int                  track;
+   int32_t              track;
    float                z;
 } s_BcalTruthShower_t;
 
@@ -448,7 +448,7 @@ typedef struct {
 #define SAW_s_CereSection_t
 
 typedef struct {
-   int                  sector;
+   int32_t              sector;
    s_CereHits_t*        cereHits;
 } s_CereSection_t;
 
@@ -468,7 +468,7 @@ typedef struct {
    float                py;
    float                pz;
    float                t;
-   int                  track;
+   int32_t              track;
    float                x;
    float                y;
    float                z;
@@ -521,8 +521,8 @@ typedef struct {
 #define SAW_s_FtofCounter_t
 
 typedef struct {
-   int                  bar;
-   int                  plane;
+   int32_t              bar;
+   int32_t              plane;
    s_FtofNorthHits_t*   ftofNorthHits;
    s_FtofSouthHits_t*   ftofSouthHits;
 } s_FtofCounter_t;
@@ -539,7 +539,7 @@ typedef struct {
 typedef struct {
    bool_t               primary;
    float                t;
-   int                  track;
+   int32_t              track;
    float                x;
    float                y;
    float                z;
@@ -578,8 +578,8 @@ typedef struct {
 #define SAW_s_FcalBlock_t
 
 typedef struct {
-   int                  column;
-   int                  row;
+   int32_t              column;
+   int32_t              row;
    s_FcalHits_t*        fcalHits;
 } s_FcalBlock_t;
 
@@ -596,7 +596,7 @@ typedef struct {
    float                E;
    bool_t               primary;
    float                t;
-   int                  track;
+   int32_t              track;
    float                x;
    float                y;
    float                z;
@@ -649,8 +649,8 @@ typedef struct {
 #define SAW_s_UpvPaddle_t
 
 typedef struct {
-   int                  layer;
-   int                  row;
+   int32_t              layer;
+   int32_t              row;
    s_UpvLeftHits_t*     upvLeftHits;
    s_UpvRightHits_t*    upvRightHits;
 } s_UpvPaddle_t;
@@ -668,7 +668,7 @@ typedef struct {
    float                E;
    bool_t               primary;
    float                t;
-   int                  track;
+   int32_t              track;
    float                x;
    float                y;
    float                z;
@@ -707,8 +707,8 @@ typedef struct {
 
 typedef struct {
    float                E;
-   int                  column;
-   int                  row;
+   int32_t              column;
+   int32_t              row;
    s_TaggerHits_t*      taggerHits;
 } s_MicroChannel_t;
 
@@ -732,12 +732,12 @@ typedef struct {
 typedef struct {
    float                E;
    float                dE;
-   int                  part;
+   int32_t              part;
    float                px;
    float                py;
    float                pz;
    float                t;
-   int                  track;
+   int32_t              track;
    float                x;
    float                y;
    float                z;
@@ -778,8 +778,8 @@ typedef struct {
 #define SAW_s_PhysicsEvent_t
 
 typedef struct {
-   int                  eventNo;
-   int                  runNo;
+   int32_t              eventNo;
+   int32_t              runNo;
    s_Reactions_t*       reactions;
    s_HitView_t*         hitView;
 } s_PhysicsEvent_t;

@@ -305,7 +305,7 @@ s_FdcCathodeHits_t* make_s_FdcCathodeHits(int n)
    p->mult = 0;
    for (i=0; i<n; i++) {
       s_FdcCathodeHit_t* pp = &p->in[i];
-      pp->dE = 0;
+      pp->q = 0;
       pp->t = 0;
    }
    return p;
@@ -844,7 +844,7 @@ char HDDM_s_DocumentString[] =
 "            <fdcAnodeHit dE=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
 "          </fdcAnodeWire>\n"
 "          <fdcCathodeStrip maxOccurs=\"unbounded\" minOccurs=\"0\" plane=\"int\" strip=\"int\">\n"
-"            <fdcCathodeHit dE=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
+"            <fdcCathodeHit maxOccurs=\"unbounded\" q=\"float\" t=\"float\" />\n"
 "          </fdcCathodeStrip>\n"
 "          <fdcTruthPoint dEdx=\"float\" dradius=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "        </fdcChamber>\n"
@@ -1629,7 +1629,7 @@ static s_FdcCathodeHits_t* unpack_s_FdcCathodeHits(XDR* xdrs, popNode* pop)
       this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
-         xdr_float(xdrs,&this1->in[m].dE);
+         xdr_float(xdrs,&this1->in[m].q);
          xdr_float(xdrs,&this1->in[m].t);
       }
       xdr_setpos(xdrs,start+size);
@@ -3595,7 +3595,7 @@ static int pack_s_FdcCathodeHits(XDR* xdrs, s_FdcCathodeHits_t* this1)
    xdr_u_int(xdrs,&this1->mult);
    for (m = 0; m < this1->mult; m++)
    {
-      xdr_float(xdrs,&this1->in[m].dE);
+      xdr_float(xdrs,&this1->in[m].q);
       xdr_float(xdrs,&this1->in[m].t);
    }
    FREE(this1);
