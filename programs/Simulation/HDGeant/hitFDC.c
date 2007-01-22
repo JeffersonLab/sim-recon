@@ -33,7 +33,7 @@ const float Tau[] = {0,-45,0,45,15,60,105,-105,-60,-15};
 #define K2                  1.15
 #define STRIP_NODES           3
 #define THRESH_KEV           1.
-#define THRESH_STRIPS        5.   /* mV */
+#define THRESH_STRIPS        5.   /* pC */
 #define ELECTRON_CHARGE 1.6022e-4 /* fC */
 
 binTree_t* forwardDCTree = 0;
@@ -294,8 +294,8 @@ void hitForwardDC (float xin[4], float xout[4],
                           -delta)/ANODE_CATHODE_SPACING;
             float lambda2=(((float)node+0.5)*STRIP_SPACING-STRIP_GAP/2.
                            -delta)/ANODE_CATHODE_SPACING;
-            float dE = q_anode*amp_gain/1000.
-                       *(tanh(M_PI*K2*lambda2/4.)-tanh(M_PI*K2*lambda1/4.))/4.;
+            float q = q_anode*amp_gain/1000.
+                      *(tanh(M_PI*K2*lambda2/4.)-tanh(M_PI*K2*lambda1/4.))/4.;
   
             int strip = strip1+node;
             if ((strip > 0) && (strip <= STRIPS_PER_PLANE))
@@ -336,13 +336,13 @@ void hitForwardDC (float xin[4], float xout[4],
               if (nhit < chits->mult)          /* merge with former hit */
               {
                 chits->in[nhit].t = 
-                    (chits->in[nhit].t * chits->in[nhit].dE + tdrift * dE)
-                    / (chits->in[nhit].dE += dE);
+                    (chits->in[nhit].t * chits->in[nhit].q + tdrift * q)
+                    / (chits->in[nhit].q += q);
               }
               else if (nhit < MAX_HITS)        /* create new hit */
               {
                 chits->in[nhit].t = tdrift;
-                chits->in[nhit].dE = dE;
+                chits->in[nhit].q = q;
                 chits->mult++;
               }
               else
@@ -438,7 +438,7 @@ s_ForwardDC_t* pickForwardDC ()
          int i,iok;
          for (iok=i=0; i < chits->mult; i++)
          {
-            if (chits->in[i].dE >= THRESH_STRIPS)
+            if (chits->in[i].q >= THRESH_STRIPS)
             {
                if (iok < i)
                {
