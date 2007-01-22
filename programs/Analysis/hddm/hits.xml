@@ -16,7 +16,7 @@
          </fdcAnodeWire>
          <fdcCathodeStrip plane="int" strip="int"
 			minOccurs="0" maxOccurs="unbounded">
-	    <fdcCathodeHit t="float" dE="float" maxOccurs="unbounded" />
+	    <fdcCathodeHit t="float" q="float" maxOccurs="unbounded" />
 	 </fdcCathodeStrip>
          <fdcTruthPoint z="float" x="float" y="float" dradius="float"
 			track="int" primary="boolean" dEdx="float"
