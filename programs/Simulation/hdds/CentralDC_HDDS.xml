@@ -379,7 +379,7 @@
                                               profile="-1.169 2.338" />
   <!--tubs name="DS14" Rio_Z="40.2  48.3  176.5" material="Air" /-->
   <tubs name="DS18" Rio_Z="48.3  50.0  176.5" material="Air"
-                                              profile="-1.933 1.866" />
+                                              profile="-0.933 1.866" />
   <tubs name="DS19" Rio_Z="50.0  51.8  176.5" material="Air"
                                               profile="-0.900 1.800" />
   <tubs name="DS20" Rio_Z="51.8  53.6  176.5" material="Air"
