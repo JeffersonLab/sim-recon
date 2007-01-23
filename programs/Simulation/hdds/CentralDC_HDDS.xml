@@ -337,7 +337,7 @@
 
   <tubs name="STLA" Rio_Z="0.000  0.800  177.5" material="chamberGas"
 						sensitive="true" />
-  <tubs name="STLW" Rio_Z="0.789  0.800  177.5" material="Aluminum" />
+  <tubs name="STLW" Rio_Z="0.789  0.800  177.5" material="Kapton" />
   <tubs name="WILE" Rio_Z="0.000  0.0015  176.0" material="Tungsten" />
 
   <tubs name="DC1"  Rio_Z="15.2  16.9  176.5" material="Air" />
