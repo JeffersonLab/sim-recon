@@ -139,7 +139,7 @@ cdcdump: cdcdump.c hddm_s.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ 
 
-bcal2nt: bcal2nt.c hddm_s.o
+%2nt: %2nt.c hddm_s.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ \
 	-L$(CERN_ROOT)/lib -lpacklib -lkernlib -lg2c
