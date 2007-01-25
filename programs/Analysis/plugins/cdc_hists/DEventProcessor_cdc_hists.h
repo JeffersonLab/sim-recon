@@ -22,6 +22,7 @@ class DEventProcessor_cdc_hists:public JEventProcessor{
 		~DEventProcessor_cdc_hists();
 		
 		TH1F *dE;
+		TH2F *cdc_layer1_theta_vs_p, *cdc_layer23_theta_vs_p;
 
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method

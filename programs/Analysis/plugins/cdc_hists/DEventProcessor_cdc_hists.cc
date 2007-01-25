@@ -14,6 +14,7 @@ using namespace std;
 
 #include "DANA/DApplication.h"
 #include "CDC/DCDCHit.h"
+#include "TRACKING/DMCThrown.h"
 
 // The executable should define the ROOTfile global variable. It will
 // be automatically linked when dlopen is called.
@@ -21,7 +22,8 @@ extern TFile *ROOTfile;
 
 // Routine used to create our DEventProcessor
 extern "C"{
-void InitProcessors(DApplication *app){
+void InitPlugin(JApplication *app){
+	InitJANAPlugin(app);
 	app->AddProcessor(new DEventProcessor_cdc_hists());
 }
 } // "C"
@@ -47,7 +49,7 @@ DEventProcessor_cdc_hists::~DEventProcessor_cdc_hists()
 jerror_t DEventProcessor_cdc_hists::init(void)
 {
 	// open ROOT file (if needed)
-	if(ROOTfile != NULL) ROOTfile->cd();
+	//if(ROOTfile != NULL) ROOTfile->cd();
 	
 	// Create THROWN directory
 	TDirectory *dir = new TDirectory("CDC","CDC");
@@ -55,6 +57,8 @@ jerror_t DEventProcessor_cdc_hists::init(void)
 
 	// Create histograms
 	dE	= new TH1F("dE","Energy loss in staw tube in keV",1000, 0.0, 100.0);
+	cdc_layer1_theta_vs_p = new TH2F("cdc_layer1_theta_vs_p","#theta vs. momentum for tracks hitting CDC layer 1",25, 0.1, 5.1, 200, 0.0, 40.0);
+	cdc_layer23_theta_vs_p = new TH2F("cdc_layer23_theta_vs_p","#theta vs. momentum for tracks hitting CDC layer 23",25, 0.1, 5.1, 200, 0.0, 40.0);
 	
 	// Go back up to the parent directory
 	dir->cd("../");
@@ -68,13 +72,27 @@ jerror_t DEventProcessor_cdc_hists::init(void)
 jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DCDCHit*> cdchits;
+	vector<const DMCThrown*> mcthrowns;
 	loop->Get(cdchits);
+	loop->Get(mcthrowns);
 	
-	// Loop over thrown tracks
+	// Loop over CDC hits
+	bool ishit1 = false;
+	bool ishit23 = false;
 	for(unsigned int i=0;i<cdchits.size();i++){
 		const DCDCHit *cdchit = cdchits[i];
 
 		dE->Fill(cdchit->dE*1.0E6);
+		
+		if(cdchit->ring == 1)ishit1 = true;
+		if(cdchit->ring == 23)ishit23 = true;
+	}
+	
+	if(mcthrowns.size()==1){
+		double p = mcthrowns[0]->p;
+		double theta = mcthrowns[0]->theta*57.3;
+		if(ishit1)cdc_layer1_theta_vs_p->Fill(p,theta);
+		if(ishit23)cdc_layer23_theta_vs_p->Fill(p,theta);
 	}
 
 	return NOERROR;
