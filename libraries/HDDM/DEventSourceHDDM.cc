@@ -632,7 +632,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 					newHit->layer		 		= fdcChamber.layer;
 					newHit->module		 		= fdcChamber.module;
 					newHit->element				= anodeWire.wire;
-					newHit->dE					= wireHit.dE;
+					newHit->q					= wireHit.dE;
 					newHit->t					= wireHit.t;
 					newHit->plane				= 2;
 					newHit->type				= 0;
@@ -654,7 +654,7 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 					newHit->module				= fdcChamber.module;
 					newHit->element				= cathodeStrip.strip;
 					newHit->plane				= cathodeStrip.plane;
-					newHit->dE					= stripHit.dE;
+					newHit->q					= stripHit.q;
 					newHit->t					= stripHit.t;
 					newHit->type				= 1;
 					newHit->gPlane				= DFDCGeometry::gPlane(newHit);	 

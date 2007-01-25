@@ -151,8 +151,8 @@ void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H) {
 	int width(1);
 	int beginStrip(0);
 	int maxStrip(0);
-	float dEtot(0.0);
-	float dEmax(0.0);
+	float q_tot(0.0);
+	float q_max(0.0);
 	
 	// Ensure the hits are in ascending strip number order
 	std::sort(H.begin(), H.end(), DFDCHit_element_cmp);
@@ -171,9 +171,9 @@ void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H) {
 	  if ((i+1 != H.end()) && ((*i)->element + 1 == (*(i+1))->element)
 	      ) {
 	    width++;
-	    dEtot += (*i)->dE;
-	    if ((*i)->dE > dEmax) {
-	      dEmax = (*i)->dE;
+	    q_tot += (*i)->q;
+	    if ((*i)->q > q_max) {
+	      q_max = (*i)->q;
 	      maxStrip = (*i)->element;
 	    }
 	  }
@@ -186,12 +186,12 @@ void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H) {
 	    if (width > 1) {
 	      newCluster->beginStrip  = beginStrip;
 	      newCluster->maxStrip 	= maxStrip;
-	      newCluster->dEtot 		= dEtot;
+	      newCluster->q_tot 		= q_tot;
 	    }
 	    else {
 	      newCluster->beginStrip  = (*i)->element;
 	      newCluster->maxStrip	= (*i)->element;
-	      newCluster->dEtot		= (*i)->dE;
+	      newCluster->q_tot		= (*i)->q;
 	    }
 	    newCluster->width 		= width;
 	    newCluster->endStrip	= (*i)->element;
@@ -205,8 +205,8 @@ void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H) {
 	    _data.push_back(newCluster);
 	    width 		= 1;
 	    maxStrip 	= 0;
-	    dEtot 		= 0.0;
-	    dEmax		= 0.0;
+	    q_tot 		= 0.0;
+	    q_max		= 0.0;
 	    if (i+1 != H.end())
 	      beginStrip  = (*(i+1))->element;
 	  }

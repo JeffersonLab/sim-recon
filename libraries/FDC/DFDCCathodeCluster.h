@@ -28,7 +28,7 @@ class DFDCCathodeCluster : public JObject {
 		int endStrip;						/// Strip # of last cluster member
 		int maxStrip;						/// Strip # number with highest dE
 		int width;							/// beginStrip - endStrip
-		float dEtot;						/// total energy/charge deposited in the cluster
+		float q_tot;						/// total energy/charge deposited in the cluster
 		
 		/// Return a sensible string representation of this object
 		const string toString() const {
@@ -47,7 +47,7 @@ class DFDCCathodeCluster : public JObject {
 			s.width(7);
 			s << width << " ";
 			s.width(7);
-			s << dEtot;
+			s << q_tot;
 			return s.str();
 		}
 		
@@ -67,7 +67,7 @@ class DFDCCathodeCluster : public JObject {
 			s.width(7);
 			s << "width:" << " ";	// duh
 			s.width(7);
-			s << "dEtot:" << " ";	// duh
+			s << "q_tot:" << " ";	// duh
 			
 			return s.str();
 		}	

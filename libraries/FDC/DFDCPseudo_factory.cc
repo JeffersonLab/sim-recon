@@ -139,15 +139,15 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       break;
     case 1: // One isolated hit in the cluster:  use element number itself
       temp.pos=(*strip)->element;
-      temp.q=2.*((*strip)->dE);  // Each cathode view should see half the 
+      temp.q=2.*((*strip)->q);  // Each cathode view should see half the 
                                  // anode charge
       upeaks.push_back(temp);
       break;
     case 2: //Two adjacent hits: use average for the centroid
       pos1=(*strip)->element;
       pos2=(*(strip+1))->element;
-      E1=(*strip)->dE;
-      E2=(*(strip+1))->dE;      
+      E1=(*strip)->q;
+      E2=(*(strip+1))->q;      
       temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
       temp.q=2.*(E1+E2);
       upeaks.push_back(temp);
@@ -168,15 +168,15 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       break;
     case 1: // One isolated hit in the cluster:  use element number itself
       temp.pos=(*strip)->element;
-      temp.q=2.*((*strip)->dE);
+      temp.q=2.*((*strip)->q);
       temp.numstrips=1;
       vpeaks.push_back(temp);
       break;
     case 2: //Two adjacent hits: use average for the centroid
       pos1=(*strip)->element;
       pos2=(*(strip+1))->element;
-      E1=(*strip)->dE;
-      E2=(*(strip+1))->dE;      
+      E1=(*strip)->q;
+      E2=(*(strip+1))->q;      
       temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
       temp.q=2.*(E1+E2);
       temp.numstrips=2;
@@ -251,8 +251,8 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
     //err_diff2=sqrt(dq2*dq2+dq3*dq3);
    
     // Check for a peak in three adjacent strips
-    if ((*peak)->dE-(*(peak-1))->dE > err_diff1
-                && (*peak)->dE-(*(peak+1))->dE > err_diff2){
+    if ((*peak)->q-(*(peak-1))->q > err_diff1
+                && (*peak)->q-(*(peak+1))->q > err_diff2){
       // Define some matrices for use in the Newton-Raphson iteration
       TMatrixD J(3,3);  //Jacobean matrix
       TMatrixD F(3,1),N(3,1),X(3,1),par(3,1);
@@ -265,8 +265,8 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
       par(K2,0)=1.;
       for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
         X(i,0)=double((*j)->element);
-        N(i++,0)=double((*j)->dE);
-        sum+=double((*j)->dE);
+        N(i++,0)=double((*j)->q);
+        sum+=double((*j)->q);
       }
       par(QA,0)=2.*sum;
       newpar=par;

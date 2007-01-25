@@ -24,7 +24,7 @@ class DFDCHit : public JObject{
 	    int plane;				// for cathodes only: u(3) or v(1) plane, u@+45,v@-45  
 	    int gPlane;				// 1 through 72
 	    int gLayer;				// 1 through 24
-	    float dE;				// charge deposited
+	    float q;				// charge deposited
 	    float t;				// drift time
 	    float r;				// perpendicular distance from 
 	    						// center of chamber to wire/strip center
@@ -45,7 +45,7 @@ class DFDCHit : public JObject{
 			s.width(7);
 			s << "gLay:" << " ";	// gLayer
 			s.width(7);
-			s << "dE:" << " ";		
+			s << "q:" << " ";		
 			s.width(7);
 			s << "t:" << " ";		
 			return s.str();
@@ -72,7 +72,7 @@ class DFDCHit : public JObject{
 	    	s.width(7);
 	    	s << gLayer << " ";
 	    	s.width(7);
-	    	s << dE << " ";
+	    	s << q << " ";
 	    	s.width(7);
 	    	s << t << " ";
 	    	
