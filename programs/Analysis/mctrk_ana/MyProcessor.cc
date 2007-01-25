@@ -111,8 +111,8 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
 		val[12] = sqrt(tc->x0*tc->x0 + tc->y0*tc->y0);
 		val[13] = tc->x0;
 		val[14] = tc->y0;
-		val[15] = tc->phi;
-		val[16] = tc->theta;
+		val[15] = track->phi;
+		val[16] = track->theta;
 		val[17] = thrown->p;
 		val[18] = thrown->p*sin(thrown->theta)*cos(thrown->phi);
 		val[19] = thrown->p*sin(thrown->theta)*sin(thrown->phi);
