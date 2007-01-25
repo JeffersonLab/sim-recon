@@ -26,7 +26,8 @@ C
       betaFF=111*Z**(-1/3.)/me	!cutoff for atomic form-factor (/GeV)
       mospread=50e-6	!crystal r.m.s. mosaic spread
       E=Emax		!electron beam energy (GeV)
-      emit=1.0e-8	!electron beam emittance (m r)
+      emitx=1.0e-8	!electron beam emittance in x (m r)
+      emity=0.5e-8	!electron beam emittance in y (m r)
       spot=0.0005	!electron beam spot size at collimator
       D=Dist		!distance from radiator to collimator
       t=20.0e-6		!thickness of radiator (m)
@@ -445,7 +446,7 @@ C   with rotations understood in the passive sense
       integer i,ii,j
       x0=hisx(1)
       x1=hisx(nbins)
-      var0=(mospread**2+(emit/spot)**2)
+      var0=(mospread**2+(emitx/spot)**2)
       varMS=sigma2MS(t)
       sig(3)=sqrt(var0)*E/me
       sig(4)=sqrt(varMS)*E/me
