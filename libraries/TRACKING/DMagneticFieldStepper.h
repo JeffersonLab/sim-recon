@@ -23,7 +23,7 @@ class DMagneticFieldStepper
 {
 	public:
 
-		DMagneticFieldStepper(const DMagneticFieldMap *map);
+		DMagneticFieldStepper(const DMagneticFieldMap *map, double q=1.0);
 		DMagneticFieldStepper(const DMagneticFieldMap *map, double q, const TVector3 *x, const TVector3 *p);
 		~DMagneticFieldStepper();
 	
@@ -36,9 +36,13 @@ class DMagneticFieldStepper
 		void GetPosition(TVector3 &pos){pos = this->pos;}
 		double GetCharge(void){return q;}
 		void GetPosMom(TVector3 &pos, TVector3 &mom){pos=this->pos; mom=this->mom;}
+		bool SwimToPlane(TVector3 &pos, TVector3 &mom, const TVector3 &origin, const TVector3 &norm);
+		bool DistToPlane(TVector3 &pos, const TVector3 &origin, const TVector3 &norm);
+		bool SwimToRadius(TVector3 &pos, TVector3 &mom, double R);
+		bool DistToRadius(TVector3 &pos, double R);
+
 		inline double GetRo(void){return fabs(Ro);}
 		inline double Getdz_dphi(void){return Ro*mom.Dot(zdir)/mom.Dot(ydir);}
-		
 		inline double GetStepSize(void) const{return stepsize;}
 	
 	private:

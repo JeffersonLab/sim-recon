@@ -80,7 +80,9 @@ void DReferenceTrajectory::Swim(const TVector3 &pos, const TVector3 &mom)
 		s += stepper.Step(NULL);
 	}
 if(Nswim_steps<2){
-_DBG_<<"Too few swim steps."<<endl;
+//_DBG_<<"Too few swim steps."<<endl;
+//_DBG_; pos.Print();
+//_DBG_; mom.Print();
 }
 
 	// OK. At this point the positions of the trajectory in the lab
@@ -543,6 +545,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	// Remember phi and step so additional info on the point can be obtained
 	this->last_phi = phi;
 	this->last_swim_step = step;
+	this->last_dz_dphi = dz_dphi;
 
 	return d; // WARNING: This could return nan!
 }
@@ -595,6 +598,7 @@ double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, c
 	double d2 = min_d2;
 	double d = sqrt(d2);
 	this->last_swim_step = step;
+	this->last_dz_dphi = dz_dphi;
 	
 	// Calculate distance along track ("s")
 	double dz = dz_dphi*phi;
@@ -603,6 +607,27 @@ double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, c
 	if(s)*s=step->s + (phi>0.0 ? ds:-ds);
 
 	return d;
+}
+
+//------------------
+// GetLastDOCAPoint
+//------------------
+void DReferenceTrajectory::GetLastDOCAPoint(TVector3 &pos, TVector3 &mom)
+{
+	/// Use values saved by the last call to one of the DistToRT functions
+	/// to calculate the 3-D DOCA position in lab coordinates and momentum
+	/// in GeV/c.
+	const TVector3 &xdir = last_swim_step->sdir;
+	const TVector3 &ydir = last_swim_step->tdir;
+	const TVector3 &zdir = last_swim_step->udir;
+
+	double x = -(last_swim_step->Ro/2.0)*last_phi*last_phi;
+	double y = last_swim_step->Ro*last_phi;
+	double z = last_dz_dphi*last_phi;
+
+	pos = last_swim_step->origin + x*xdir + y*ydir + z*zdir;
+	mom = last_swim_step->mom;
+	mom.Rotate(-last_phi, zdir);
 }
 
 //------------------

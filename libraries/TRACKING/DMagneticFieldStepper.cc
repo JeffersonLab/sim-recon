@@ -8,13 +8,15 @@ using namespace std;
 
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
 
+#define MAX_SWIM_DIST 2000.0 // Maximum distance to swim a track in cm
+
 //-----------------------
 // DMagneticFieldStepper
 //-----------------------
-DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield)
+DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield, double q)
 {
 	this->bfield = bfield;
-	q = 1.0;
+	this->q = q;
 	start_pos = pos = TVector3(0.0,0.0,0.0);
 	start_mom = mom = TVector3(0.0,0.0,1.0);
 	last_stepsize = stepsize = 1.0; // in cm
@@ -292,4 +294,138 @@ void DMagneticFieldStepper::GetDirs(TVector3 &xdir, TVector3 &ydir, TVector3 &zd
 	zdir = this->zdir;
 }
 
+//-----------------------
+// SwimToPlane
+//-----------------------
+bool DMagneticFieldStepper::SwimToPlane(TVector3 &pos, TVector3 &mom, const TVector3 &origin, const TVector3 &norm)
+{
+	/// Swim the particle from the given position/momentum to
+	/// the plane defined by origin and norm. "origin" should define a point
+	/// somewhere in the plane and norm a vector normal to the plane.
+	/// The charge of the particle is set by the constructor or last
+	/// call to SetStartingParameters(...).
+	///
+	/// Note that a check is made that the particle is initially going
+	/// toward the plane. If the particle appears to be going away
+	/// from the plane, then the momentum is temporarily flipped as
+	/// well as the charge so that the particle is swum backwards.
+	///
+	/// Particles will only be swum a distance of
+	/// MAX_SWIM_DIST (currently hardwired to 20 meters) along their
+	/// trajectory before returning boolean true indicating failure
+	/// to intersect the plane.
+	///
+	/// On success, a value of false is returned and the values in
+	/// pos and mom will be updated with the position and momentum at
+	/// the point of intersection with the plane.
+	
+	// The method here is to step until we cross the plane.
+	// This is indicated by the value k flipping its sign where
+	// k is defined by:
+	//
+	//  k = (pos-origin).norm
+	//
+	// where pos, origin, and norm are all vectors and the "."
+	// indicates a dot product.
+	//
+	// Once the plane is crossed, we know the intersection point is
+	// less than one step away from the current step.
+	
+	// First, we determine whether we are going toward or away from
+	// the plane for the given position/momentum. Note that we could
+	// make the wrong choice here for certain geometries where the
+	// curvature of the swimming changes direction enough.
+
+_DBG_<<"This routine is not debugged!!!"<<endl;
+	double b = norm.Dot(mom)*norm.Dot(pos-origin);
+	bool momentum_and_charge_flipped = false;
+	if(b<0.0){
+		momentum_and_charge_flipped = true;
+		//mom = -mom;
+		//q = -q;
+	}
+
+	// Set the starting parameters and start stepping!
+	SetStartingParams(q, &pos, &mom);
+	double k, start_k = norm.Dot(pos-origin);
+	double s = 0.0;
+	do{
+		s += Step(&pos);
+		if(s>MAX_SWIM_DIST){
+			if(momentum_and_charge_flipped){
+				//mom = -mom;
+				//q = -q;
+			}
+			return true;
+		}
+		k = norm.Dot(pos-origin);
+	}while(k/start_k > 0.0);
+	
+	// OK, now pos should define a point
+	// close enough to the plane that we can approximate the position
+	// along the helix as a function of phi. phi is defined as the
+	// phi angle about the center of the helix such that phi=0 points
+	// to the current step position itself. This is similar to,
+	// but not as complicated as, how the distance from the tracjectory
+	// to a wire is calculated in DReferenceTrajectory::DistToRT.
+	// See the comments there for more details.
+	double dz_dphi = Ro*mom.Dot(zdir)/mom.Dot(ydir);
+	TVector3 pos_diff = pos - origin;
+	double A = xdir.Dot(norm);
+	double B = ydir.Dot(norm);
+	double C = zdir.Dot(norm);
+	double D = pos_diff.Dot(norm);
+
+	double alpha = -A*Ro/2.0;
+	double beta = B*Ro + C*dz_dphi;
+	
+	// now we solve the quadratic equation for phi. It's not obvious
+	// a priori which root will be correct so we calculate both and
+	// choose the one closer to phi=0
+	double d = sqrt(beta*beta - 4.0*alpha*D);
+	double phi1 = (-beta + d)/(2.0*alpha);
+	double phi2 = (-beta - d)/(2.0*alpha);
+	double phi = fabs(phi1)<fabs(phi2) ? phi1:phi2;
+	
+	// Calculate position in plane
+	pos += -Ro*phi*phi/2.0*xdir + Ro*phi*ydir + dz_dphi*phi*zdir;
+
+	// Calculate momentum in plane
+	mom.Rotate(phi, zdir);
+
+	// If we had to flip the particle in order to hit the plane, flip it back
+	if(momentum_and_charge_flipped){
+		//mom = -mom;
+		//q = -q;
+	}
+
+	return false;
+}
+
+//-----------------------
+// DistToPlane
+//-----------------------
+bool DMagneticFieldStepper::DistToPlane(TVector3 &pos, const TVector3 &origin, const TVector3 &norm)
+{
+
+	return false;
+}
+
+//-----------------------
+// SwimToRadius
+//-----------------------
+bool DMagneticFieldStepper::SwimToRadius(TVector3 &pos, TVector3 &mom, double R)
+{
+
+	return false;
+}
+
+//-----------------------
+// DistToRadius
+//-----------------------
+bool DMagneticFieldStepper::DistToRadius(TVector3 &pos, double R)
+{
+
+	return false;
+}
 

@@ -82,8 +82,8 @@ jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		can->x0 = 0.0;
 		can->y0 = 0.0;
 		can->dzdphi = 0.0;
-		can->z_vertex	= thrown->z;//+SampleGaussian(1.0);
-		can->p			= thrown->p*(1.0+SampleGaussian(0.07));
+		can->z_vertex	= thrown->z+SampleGaussian(1.0);
+		can->p			= thrown->p*(1.0+SampleGaussian(0.05));
 		can->phi			= thrown->phi+SampleGaussian(1.0/57.3);
 		if(can->phi<0.0)can->phi+=2.0*M_PI;
 		if(can->phi>=2.0*M_PI)can->phi-=2.0*M_PI;
@@ -130,9 +130,14 @@ double DTrackCandidate_factory_THROWN::SampleGaussian(double sigma)
 {
 	if(!CANDIDATE_THROWN_SMEAR)return 0;
 
-	double epsilon = 1.0E-10;
-	double r1 = epsilon+((double)random()/(double)RAND_MAX);
-	double r2 = (double)random()/(double)RAND_MAX;
-	
-	return sigma*sqrt(-2.0*log(r1))*cos(2.0*M_PI*r2);
+	// We loop to ensure not to return values greater than 3sigma away
+	double val;
+	do{
+		double epsilon = 1.0E-10;
+		double r1 = epsilon+((double)random()/(double)RAND_MAX);
+		double r2 = (double)random()/(double)RAND_MAX;
+		val = sigma*sqrt(-2.0*log(r1))*cos(2.0*M_PI*r2);
+	}while(fabs(val/sigma) > 3.0);
+
+	return val;
 }

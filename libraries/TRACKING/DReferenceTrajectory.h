@@ -61,6 +61,7 @@ class DReferenceTrajectory{
 		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire);
 		void Swim(const TVector3 &pos, const TVector3 &mom);
 		TVector3 GetLastDOCAPoint(void);
+		void GetLastDOCAPoint(TVector3 &pos, TVector3 &mom);
 		double GetLastDistAlongWire(void){return last_dist_along_wire;}
 		void SetStepSize(double step_size){this->step_size=step_size;}
 
@@ -78,6 +79,7 @@ class DReferenceTrajectory{
 		double last_phi;							///< last phi found in DistToRT
 		const swim_step_t* last_swim_step;	///< last swim step used in DistToRT
 		double last_dist_along_wire;
+		double last_dz_dphi;
 	
 	private:
 		DReferenceTrajectory(){} // force use of constructor with arguments.
