@@ -89,9 +89,6 @@
 *
 *
 
-c To enable beam motion spreading, define the beam box size below (cm)
-c #define BEAM_BOX_SIZE 6
-
 #include "geant321/pilot.h"
 *CMZ :  3.21/02 29/03/94  15.41.35  by  S.Giani
 *-- Author :
@@ -204,12 +201,11 @@ c         print *, ngen,' background photons generated this event'
 *              If all else fails, do automatic single-track generation
 *
       else
-
          TOFG=0
          VERTEX(1)=VSCAN(1)
          VERTEX(2)=VSCAN(2)
          VERTEX(3)=VSCAN(3)
-         IF (IKINE.GT.100)THEN
+         IF (IKINE.GT.100) THEN
             IK=IKINE-100
             CALL GRNDM(RNDM,3)
             PABS=PKINE(1)+PKINE(4)*(RNDM(1)-0.5)
@@ -218,7 +214,7 @@ c         print *, ngen,' background photons generated this event'
          ELSE
             IK=IKINE
             CALL GRNDM(RNDM,2)
-				PABS=PKINE(1)
+            PABS=PKINE(1)
             THETA=PI*RNDM(1)
             PHI=TWOPI*RNDM(2)
          ENDIF
