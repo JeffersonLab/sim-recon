@@ -57,6 +57,7 @@ class MyProcessor:public JEventProcessor
 		int drew_detectors;
 		DTrackCandidate_factory* factory;
 		string TRACKHIT_SOURCE;
+		string CANDIDATE_TAG;
 };
 
 extern MyProcessor* gMYPROC;

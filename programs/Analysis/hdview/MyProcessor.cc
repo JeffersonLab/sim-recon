@@ -75,7 +75,7 @@ MyProcessor::MyProcessor()
 	Bfield = NULL;
 
 	// Tell factory to keep around a few density histos
-	gPARMS->SetParameter("TRK:MAX_DEBUG_BUFFERS",	16);
+	gPARMS->SetParameter("TRKFIND:MAX_DEBUG_BUFFERS",	16);
 	
 	gMYPROC = this;
 }
@@ -113,6 +113,8 @@ jerror_t MyProcessor::init(void)
 	// Make sure detectors have been drawn
 	if(!drew_detectors)DrawDetectors();
 	
+
+	
 	return NOERROR;
 }
 
@@ -134,6 +136,7 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 	}
 
 	gPARMS->GetParameter("TRKFIND:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
+	gPARMS->GetParameter("TRKFIT:CANDIDATE_TAG",	CANDIDATE_TAG);
 
 	// Read in Magnetic field map
 	DApplication* dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
@@ -152,7 +155,7 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	
 	if(!eventLoop)return NOERROR;
 	
-	cout<<"----------- New Event -------------"<<endl;
+	cout<<"----------- New Event "<<eventnumber<<" -------------"<<endl;
 	hdvmf->SetEvent(eventnumber);
 	
 	// Delete objects from last event
@@ -334,7 +337,7 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	// Draw all track candidates
 	if(hdvmf->GetDrawCandidates()){
 		vector<const DTrackCandidate*> trackcandidates;
-		eventLoop->Get(trackcandidates);
+		eventLoop->Get(trackcandidates, CANDIDATE_TAG.c_str());
 		for(unsigned int i=0; i<trackcandidates.size(); i++){
 			const DTrackCandidate *can = trackcandidates[i];
 			
@@ -615,7 +618,16 @@ jerror_t MyProcessor::DrawDetectors(void)
 	label = new TText(0.0, 0.87, "Upstream View");
 	graphics.push_back(label);
 	label->Draw();
-	
+
+	// ------ Target ------	
+	ConvertToFront(0, 0, 0, X, Y);
+	ConvertToFront(0, 1.0, 0, xx, yy);
+	R1 = fabs(yy-Y);
+	TEllipse *target = new TEllipse(X,Y,R1,R1);
+	graphics.push_back(target);
+	target->SetLineColor(13);
+	target->Draw();
+
 	// ----- BCAL ------
 	// front
 	ConvertToFront(0,0,0,X,Y);
