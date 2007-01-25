@@ -10,6 +10,9 @@
 * reference plane at the middle of the target.  Beam bucket t0=0 is the
 * one that generates the event and defines the time origin for all hit times.
 *
+* To enable beam motion spreading, define the beam box size below (cm)
+* #define BEAM_BOX_SIZE 5
+
 #include "geant321/gcunit.inc"
 #include "geant321/gcflag.inc"
 #include "geant321/gckine.inc"
@@ -39,9 +42,10 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       data freqMaximum/1.0e-4/
 
       save /coherentGen/
-      real xMinimum,Theta02,CollimPos
+      real xMinimum,Theta02
       parameter (xMinimum=1e-2)
       parameter (Theta02=1.8)
+      real CollimPos
       parameter (CollimPos=-2200.0)
       integer nubuf
       real ubuf(10)
@@ -52,10 +56,9 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       thxMosaic = rhom*cos(phim)
       thyMosaic = rhom*sin(phim)
       phib = rndm(3)*TWOPI
-      varBeam = (emit/spot)**2
-      rhob = sqrt(-2*varBeam*log(rndm(4)))
-      thxBeam = rhob*cos(phib)
-      thyBeam = rhob*sin(phib)
+      rhob = sqrt(-2*log(rndm(4)))
+      thxBeam = (emitx/spot)*rhob*cos(phib)
+      thyBeam = (emity/spot)*rhob*sin(phib)
       phis = rndm(5)*TWOPI
       varMS = sigma2MS(t*rndm(6))
       rhos = sqrt(-2*varMS*log(rndm(7)))
@@ -103,14 +106,14 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
             goto 50
          endif
       enddo
-      print *, 'Error in gukine:',
+      print *, 'Error in beamgen:',
      +         ' photon beam generator failed, giving up!'
       stop
 
 50    continue
       theta = sqrt(theta2)*(me/E)
-      thetaX = thxMS+theta*cos(phi)
-      thetaY = thyMS+theta*sin(phi)
+      thetaX = thxBeam+thxMS+theta*cos(phi)
+      thetaY = thyBeam+thyMS+theta*sin(phi)
       plab(5) = E*x
       plab(1) = plab(5)*thetaX
       plab(2) = plab(5)*thetaY
@@ -119,8 +122,8 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       call GRNDM(rndm,2)
       phic = rndm(1)*TWOPI
       rhoc = spot*sqrt(-2*log(rndm(2)))
-      vertex(1) = (rhoc*cos(phic) + D*thetaX)*100
-      vertex(2) = (rhoc*sin(phic) + D*thetaY)*100
+      vertex(1) = rhoc*cos(phic)*100
+      vertex(2) = rhoc*sin(phic)*100
       vertex(3) = CollimPos
       ubuf(1) = ppol
       nubuf = 1
@@ -134,7 +137,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
 #endif
       call settofg(vertex,t0)
       call GSVERT(vertex,0,0,ubuf,nubuf,nvert)
-      call GSKINE(plab,1,nvert,0,0,nt)
+      call GSKINE(plab,1,nvert,0,0,nt) ! push the beam photon on the stack
       vertex(4) = TOFG
       call hitTagger(vertex,vertex,plab,plab,0.,nt,0,0)
       end
