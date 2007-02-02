@@ -22,7 +22,10 @@
 #include "geant321/gctrak.inc"
 #include "cobrems.inc"
  
-      real vertex(4),plab(5)
+      real vertex(4),plab(5),pbeam
+      real rhom,phim
+      real rhop,phip
+      real rhoc,phic
       integer nvert,nt
       real rndm(20)
  
@@ -111,10 +114,14 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       stop
 
 50    continue
+      call GRNDM(rndm,2)
+      phip = rndm(1)*TWOPI
+      rhop = sqrt(-2*log(rndm(2)))
+      pbeam = E+Erms*rhop*cos(phip)
       theta = sqrt(theta2)*(me/E)
       thetaX = thxBeam+thxMS+theta*cos(phi)
       thetaY = thyBeam+thyMS+theta*sin(phi)
-      plab(5) = E*x
+      plab(5) = pbeam*x
       plab(1) = plab(5)*thetaX
       plab(2) = plab(5)*thetaY
       plab(3) = sqrt(plab(5)**2-plab(1)**2-plab(2)**2)
@@ -122,8 +129,8 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       call GRNDM(rndm,2)
       phic = rndm(1)*TWOPI
       rhoc = spot*sqrt(-2*log(rndm(2)))
-      vertex(1) = rhoc*cos(phic)*100
-      vertex(2) = rhoc*sin(phic)*100
+      vertex(1) = (rhoc*cos(phic)-D*thxBeam+D*thetaX)*100
+      vertex(2) = (rhoc*sin(phic)-D*thyBeam+D*thetaY)*100
       vertex(3) = CollimPos
       ubuf(1) = ppol
       nubuf = 1
