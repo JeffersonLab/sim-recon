@@ -18,8 +18,8 @@ c instructs HDGeant to open ./phi-1680.hddm, skip the first 25 events and then
 c process the following 100 input events and stop.  If the end of the file is
 c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
-TRIG 100
-INFILE 'rhop.hddm'
+TRIG 100000
+cINFILE 'rhop.hddm'
 BEAM 12. 9.
 RUNG 9999
 
@@ -45,13 +45,25 @@ c  - delta_theta = spread in initial track polar angle, full width (degrees)
 c  - delta_phi = spread in initial track azimuthal angle, full width (degrees)
 c
 c   particle  momentum  theta  phi  delta_momentum delta_theta delta_phi
-KINE   109      1.5        0.   0.      0.              0.        0.
+KINE   101      9.0       10.   0.      0.              3.        360.
 
 c The SCAP card determines the vertex position for the particle gun.  It
 c supports the following three arguments, all of which default to 0.
 c
 c    vertex_x vertex_y vertex_z
 SCAP    0.       0.      65.
+
+c If you specify a non-zero value for vertex_x and/or vertex_y above then
+c all tracks will emerge from the given point.  If you leave them at zero,
+c you have the option of specifying the HALO card which causes the simulation
+c to generate events with a transverse profile modeled after the 12 GeV
+c electron beam.  The argument only argument to HALO is fhalo, the fraction
+c of the beam that lies in the halo region surrounding the core gaussian.
+c The nominal value taken from CASA technical note JLAB-TN-06-048 is 5e-5.
+c This card is only effective for electron beam simulations with gxtwist.
+c
+c    fhalo
+HALO  5e-5
 
 c The following lines control the rate (GHz) of background beam photons
 c that are overlayed on each event in the simulation, in addition to the
@@ -152,7 +164,7 @@ c DEBUG first last step
 c  - first (int) = event number of first event to debug
 c  - last (int) = event number of last event to debug
 c  - step (int) = only debug one event every step events
-DEBUG 0 0 1
+DEBUG 1 10 1000
 
 c The following card can be used to turn off generation of secondary
 c particles in the simulation, ordinarily it should be 0 (or omitted).
