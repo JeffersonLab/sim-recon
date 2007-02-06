@@ -98,7 +98,8 @@ void ParseCommandLineArguments(int narg, char* argv[])
 		if(argv[i][0] == '-'){
 			switch(argv[i][1]){
 				case 'o':
-					OUTPUT_FILENAME = argv[i+1];
+					i++;
+					OUTPUT_FILENAME = argv[i];
 					break;
 				case 'h':
 					Usage();
