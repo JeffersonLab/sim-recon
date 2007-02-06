@@ -285,7 +285,7 @@ void SmearFDC(s_HDDM_t *hddm_s)
 			    if (hits==HDDM_NULL)continue;
 			    s_FdcCathodeHit_t *hit=hits->in;
 			    for (unsigned int s=0;s<hits->mult;s++,hit++){
-			      hit->dE+=SampleGaussian(FDC_PED_NOISE);
+			      hit->q+=SampleGaussian(FDC_PED_NOISE);
 			    }
 			  }
 			}
