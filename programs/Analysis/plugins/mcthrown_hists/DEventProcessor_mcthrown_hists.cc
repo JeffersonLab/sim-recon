@@ -56,9 +56,10 @@ jerror_t DEventProcessor_mcthrown_hists::init(void)
 
 	// Create histograms
 	pmom	= new TH1F("pmom","Thrown momentum in GeV/c",1200, 0.0, 12.0);
-	theta	= new TH1F("theta","Thrown theta in radians",200, 0.0, M_PI);
+	theta	= new TH1F("theta","Thrown theta in degrees",1000, 0.0, 180.0);
 	phi	= new TH1F("phi","Thrown phi in radians",200, 0.0, 2.0*M_PI);
 	energy	= new TH1F("energy","Thrown energy in GeV",1200, 0.0, 12.0);
+	pmom_vs_theta = new TH2F("pmom_vs_theta","Thrown momentum (GeV/c) vs. theta (degrees)",200, 0.0, 20.0, 100, 0.0, 10.0);
 	vertex = new TH3F("vertex", "Position of vertex from which thrown particles were thrown", 50, -5.0, 5.0, 50, -5.0, 5.0, 150, 0.0, 150.0);
 
 	Nparticles_per_event	= new TH1F("Nparticles_per_event","Number of thrown particles per event",21, -0.5, 20.5);
@@ -84,9 +85,10 @@ jerror_t DEventProcessor_mcthrown_hists::evnt(JEventLoop *loop, int eventnumber)
 		const DMCThrown *mcthrown = mcthrowns[i];
 
 		pmom->Fill(mcthrown->p);
-		theta->Fill(mcthrown->theta);
+		theta->Fill(mcthrown->theta*57.3);
 		phi->Fill(mcthrown->phi);
 		energy->Fill(mcthrown->E);
+		pmom_vs_theta->Fill(mcthrown->theta*57.3, mcthrown->p);
 		vertex->Fill(mcthrown->x, mcthrown->y, mcthrown->z);
 		
 		particle_type->Fill(mcthrown->type);

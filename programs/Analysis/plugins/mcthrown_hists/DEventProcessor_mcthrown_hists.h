@@ -24,6 +24,7 @@ class DEventProcessor_mcthrown_hists:public JEventProcessor{
 		~DEventProcessor_mcthrown_hists();
 		
 		TH1F *pmom, *theta, *phi, *energy;
+		TH2F *pmom_vs_theta;
 		TH1F *Nparticles_per_event, *particle_type;
 		TH3F *vertex;
 
