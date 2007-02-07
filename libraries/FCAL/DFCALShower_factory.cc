@@ -85,7 +85,7 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 		fcalshower->x = X;
 		fcalshower->y = Y;
-		fcalshower->E = E*1.245; // the 1.245 is empirical and should be a calibration constant
+		fcalshower->E = E*1.90; // this number is empirical and should be a calibration constant
 		fcalshower->t = fcalhits[center_index]->t;
 
 		_data.push_back(fcalshower);

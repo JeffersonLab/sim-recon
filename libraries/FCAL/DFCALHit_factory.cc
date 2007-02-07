@@ -20,7 +20,7 @@ const string DFCALHit_factory::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row:  column:   row:   x(cm):   y(cm):   E(GeV):   t(ns):");
+	printheader("hit:  column:   row:   x(cm):   y(cm):   E(MeV):   t(ns):");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DFCALHit *fcalhit = _data[i];
@@ -31,7 +31,7 @@ const string DFCALHit_factory::toString(void)
 		printcol("%d", fcalhit->row);
 		printcol("%3.1f", fcalhit->x);
 		printcol("%3.1f", fcalhit->y);
-		printcol("%2.3f", fcalhit->E);
+		printcol("%2.3f", fcalhit->E*1000.0);
 		printcol("%4.0f", fcalhit->t);
 		printrow();
 	}
