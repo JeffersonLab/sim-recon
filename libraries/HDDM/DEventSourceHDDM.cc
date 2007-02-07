@@ -166,6 +166,12 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DHDDMTOFHit")
 	  return Extract_DHDDMTOFHit(my_hddm_s, dynamic_cast<JFactory<DHDDMTOFHit>*>(factory));
 
+	if(dataClassName =="DSCHit")
+	  return Extract_DSCHit(my_hddm_s, dynamic_cast<JFactory<DSCHit>*>(factory));
+
+	if(dataClassName =="DSCTruthHit")
+	  return Extract_DSCTruthHit(my_hddm_s, dynamic_cast<JFactory<DSCTruthHit>*>(factory));
+
 	return OBJECT_NOT_AVAILABLE;
 }
 
@@ -1078,6 +1084,101 @@ jerror_t DEventSourceHDDM::Extract_DHDDMTOFHit( s_HDDM_t *hddm_s,  JFactory<DHDD
       }
     }
   }
+
+  // Copy into factory
+  factory->CopyTo(data);
+
+  return NOERROR;
+}
+
+//------------------
+// Extract_DSCHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DSCHit( s_HDDM_t *hddm_s,  JFactory<DSCHit>* factory)
+{
+  /// Copies the data from the given hddm_s structure. This is called
+  /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+  /// returns OBJECT_NOT_AVAILABLE immediately.
+	
+  if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+
+  vector<DSCHit*> data;
+  
+  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+  if(!PE) return NOERROR;
+  
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->startCntr == HDDM_NULL)continue;
+		
+		s_StcPaddles_t* stcPaddles = hits->startCntr->stcPaddles;
+		if(stcPaddles==HDDM_NULL)continue;
+		//s_StcTruthPoints_t* stcTruthPoints = hits->startCntr->stcTruthPoints;
+		
+		// Loop over counters
+		s_StcPaddle_t *stcPaddle = stcPaddles->in;
+		for(unsigned int j=0;j<stcPaddles->mult; j++, stcPaddle++){
+			s_StcHits_t *stcHits = stcPaddle->stcHits;
+			if(stcHits==HDDM_NULL)continue;
+			
+			s_StcHit_t *stchit = stcHits->in;
+			for(unsigned int k=0; k<stcHits->mult; k++, stchit++){
+				DSCHit *hit = new DSCHit;
+				hit->sector = stcPaddle->sector;
+				hit->dE = stchit->dE;
+				hit->t = stchit->t;
+				data.push_back(hit);
+			}
+		}
+	}
+
+  // Copy into factory
+  factory->CopyTo(data);
+
+  return NOERROR;
+}
+
+
+//------------------
+// Extract_DSCTruthHit
+//------------------
+jerror_t DEventSourceHDDM::Extract_DSCTruthHit( s_HDDM_t *hddm_s,  JFactory<DSCTruthHit>* factory)
+{
+  /// Copies the data from the given hddm_s structure. This is called
+  /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+  /// returns OBJECT_NOT_AVAILABLE immediately.
+	
+  if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+
+  vector<DSCTruthHit*> data;
+  
+  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+  if(!PE) return NOERROR;
+  
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			hits->startCntr == HDDM_NULL)continue;
+		
+		s_StcTruthPoints_t* stcTruthPoints = hits->startCntr->stcTruthPoints;
+		if(stcTruthPoints==HDDM_NULL)continue;
+		
+		// Loop over counters
+		s_StcTruthPoint_t *stcTruthPoint = stcTruthPoints->in;
+		for(unsigned int j=0;j<stcTruthPoints->mult; j++, stcTruthPoint++){
+
+			DSCTruthHit *hit = new DSCTruthHit;
+			hit->dEdx = stcTruthPoint->dEdx;
+			hit->phi = stcTruthPoint->phi;
+			hit->primary = stcTruthPoint->primary;
+			hit->r = stcTruthPoint->r;
+			hit->t = stcTruthPoint->t;
+			hit->z = stcTruthPoint->z;
+			hit->track = stcTruthPoint->track;
+			data.push_back(hit);
+		}
+	}
 
   // Copy into factory
   factory->CopyTo(data);
