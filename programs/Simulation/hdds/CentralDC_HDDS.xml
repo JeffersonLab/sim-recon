@@ -34,10 +34,17 @@
 
   <composition name="CentralDC">
     <posXYZ volume="centralDC" X_Y_Z="0.0  0.0  87.5" />
+    <posXYZ volume="CDCA" X_Y_Z="0.0 0.0 -2.50" />
     <posXYZ volume="CDCB" X_Y_Z="0.0  0.0 -12.0" />
   </composition>
 
   <composition name="centralDC" envelope="CDC">
+<!-- This is a set of inner layers introduced for testing [rtj 1-18-2007]
+    <posXYZ volume="CDCinsert_1" />
+    <posXYZ volume="CDCinsert_2" />
+    <posXYZ volume="CDCinsert_3" />
+    <posXYZ volume="CDCinsert_4" />
+-->
     <posXYZ volume="CDClayer_1" />
     <posXYZ volume="CDClayer_2" />
     <posXYZ volume="CDClayer_3" />
@@ -63,7 +70,51 @@
     <posXYZ volume="CDBD" X_Y_Z="0.0 0.0 +89.00" />
     <posXYZ volume="CDGU" X_Y_Z="0.0 0.0 -96.00" />
     <posXYZ volume="CDGD" X_Y_Z="0.0 0.0 +96.00" />
-    <posXYZ volume="CDCA" X_Y_Z="0.0 0.0 -90.00" />
+  </composition>
+
+  <composition name="CDCinsert_1" envelope="DCI1">
+    <mposPhi volume="CDCinsect_1" ncopy="24">
+      <ring value="101" />
+      <sector value="1" step="1" />
+    </mposPhi>
+  </composition>
+  <composition name="CDCinsect_1" envelope="DSI1">
+    <posXYZ volume="CDCstrawShort" X_Y_Z="6.120 0.0 0.0" />
+    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+  </composition>
+  <composition name="CDCinsert_2" envelope="DCI2">
+    <mposPhi volume="CDCinsect_2" ncopy="32">
+      <ring value="102" />
+      <sector value="1" step="1" />
+    </mposPhi>
+  </composition>
+  <composition name="CDCinsect_2" envelope="DSI2">
+    <posXYZ volume="CDCstrawShort" X_Y_Z="8.150 0.0 0.0" />
+    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+  </composition>
+  <composition name="CDCinsert_3" envelope="DCI3">
+    <mposPhi volume="CDCinsect_3" ncopy="40">
+      <ring value="103" />
+      <sector value="1" step="1" />
+    </mposPhi>
+  </composition>
+  <composition name="CDCinsect_3" envelope="DSI3">
+    <posXYZ volume="CDCstrawShort" X_Y_Z="10.190 0.0 0.0" />
+    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+  </composition>
+  <composition name="CDCinsert_4" envelope="DCI4">
+    <mposPhi volume="CDCinsect_4" ncopy="47">
+      <ring value="104" />
+      <sector value="1" step="1" />
+    </mposPhi>
+  </composition>
+  <composition name="CDCinsect_4" envelope="DSI4">
+    <posXYZ volume="CDCstrawShort" X_Y_Z="12.020 0.0 0.0" />
+    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
   </composition>
 
   <composition name="CDClayer_1" envelope="DC1">
@@ -297,6 +348,8 @@
     <posXYZ volume="DPLG" X_Y_Z="0. 0. +88.25"> </posXYZ>
   </composition>
 
+<!-- If you want to install the inner cdc layers CDI1-CDI4 (the cdc insert)
+     then replac every instance of 15.0cm inner radius with 5.0cm below -->
   <tubs name="CDC" Rio_Z="15.0   60.0   195.0" material="Air"
 	                           comment="CDC mother volume"      />
   <tubs name="CDCI" Rio_Z="15.00  15.06 176.5" material="Aluminum"
@@ -318,26 +371,26 @@
   <tubs name="CDCA" Rio_Z="15.0   60.0    0.5" material="SignalCables"
 	                           comment="CDC upstream cables" />
   <pcon name="CDCB" material="SignalCables" comment="CDC readout cables">
-    <polyplane Rio_Z="15.0 60.0 0.0" />
-    <polyplane Rio_Z="23.0 60.0 -0.53" />
-    <polyplane Rio_Z="56.4 60.0 -3.31" />
-    <polyplane Rio_Z="65.0 68.0 -55.0" />
-    <polyplane Rio_Z="65.0 69.2 -56.2" />
-    <polyplane Rio_Z="71.0 75.2 -62.2" />
-    <polyplane Rio_Z="71.0 120. -62.2" />
     <polyplane Rio_Z="74.0 120. -65.2" />
+    <polyplane Rio_Z="71.0 120. -62.2" />
+    <polyplane Rio_Z="71.0 75.2 -62.2" />
+    <polyplane Rio_Z="65.0 69.2 -56.2" />
+    <polyplane Rio_Z="65.0 68.0 -55.0" />
+    <polyplane Rio_Z="56.4 60.0 -3.31" />
+    <polyplane Rio_Z="23.0 60.0 -0.53" />
+    <polyplane Rio_Z="15.0 60.0 0.0" />
   </pcon>
 
   <tubs name="STRA" Rio_Z="0.000  0.800  176.5" material="chamberGas"
 						sensitive="true" />
-  <tubs name="STRW" Rio_Z="0.789  0.800  176.5" material="Kapton" />
+  <tubs name="STRW" Rio_Z="0.7895  0.8000  176.5" material="AluminizedKapton" />
   <tubs name="WIRE" Rio_Z="0.000  0.0015  175.0" material="Tungsten" />
   <tubs name="UPLG" Rio_Z="0.000  0.800  1.0" material="Aluminum" />
   <tubs name="DPLG" Rio_Z="0.000  0.800  1.0" material="Delrin" />
 
   <tubs name="STLA" Rio_Z="0.000  0.800  177.5" material="chamberGas"
 						sensitive="true" />
-  <tubs name="STLW" Rio_Z="0.789  0.800  177.5" material="Kapton" />
+  <tubs name="STLW" Rio_Z="0.7895  0.8000  177.5" material="AluminizedKapton" />
   <tubs name="WILE" Rio_Z="0.000  0.0015  176.0" material="Tungsten" />
 
   <tubs name="DC1"  Rio_Z="15.2  16.9  176.5" material="Air" />
@@ -357,6 +410,19 @@
   <tubs name="DC21" Rio_Z="53.6  55.4  176.5" material="Air" />
   <tubs name="DC22" Rio_Z="55.4  57.2  176.5" material="Air" />
   <tubs name="DC23" Rio_Z="57.2  58.9  176.5" material="Air" />
+
+  <tubs name="DCI1" Rio_Z="5.3  7.0  176.5" material="Air" />
+  <tubs name="DSI1" Rio_Z="5.3  7.0  176.5" material="Air" 
+                                            profile="-7.5 15.0" />
+  <tubs name="DCI2" Rio_Z="7.3  9.0  176.5" material="Air" />
+  <tubs name="DSI2" Rio_Z="7.3  9.0  176.5" material="Air" 
+                                            profile="-5.625 11.25" />
+  <tubs name="DCI3" Rio_Z="9.3  11.0 176.5" material="Air" />
+  <tubs name="DSI3" Rio_Z="9.3  11.0 176.5" material="Air" 
+                                            profile="-4.5 9.0" />
+  <tubs name="DCI4" Rio_Z="11.2 12.9 176.5" material="Air" />
+  <tubs name="DSI4" Rio_Z="11.2 12.9 176.5" material="Air" 
+                                            profile="-3.83 7.66" />
 
   <tubs name="DS1"  Rio_Z="15.2  16.9  176.5" material="Air" 
                                               profile="-2.857 5.714" />
