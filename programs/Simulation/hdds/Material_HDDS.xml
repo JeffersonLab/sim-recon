@@ -731,6 +731,16 @@
 	<real name="density"	value="1.98"	unit="g/cm^3" />
   </composite>
 
+  <composite name="AluminizedKapton">
+	<addmaterial material="Aluminum">
+		<fractionmass	fraction="0.087"	/>
+ 	</addmaterial>
+	<addmaterial material="Kapton">
+		<fractionmass	fraction="0.913"	/>
+ 	</addmaterial>
+	<real name="density"	value="1.48"	unit="g/cm^3" />
+  </composite>
+
   <composite name="MylarFilm">
 	<addmaterial material="Mylar">
 		<fractionmass	fraction="0.52"	/>
