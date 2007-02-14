@@ -61,6 +61,7 @@
 
   <composition name="barrelPackage" envelope="LASS">
     <posXYZ volume="Solenoid" />
+    <posXYZ volume="StartCntr" X_Y_Z="0.0 0.0 37.5" />
     <posXYZ volume="CentralDC" X_Y_Z="0.0 0.0 17.0" />
     <posXYZ volume="ForwardDC" X_Y_Z="0.0 0.0 212.0" />
     <posXYZ volume="BarrelEMcal" X_Y_Z="0.0 0.0 17.0" />
@@ -78,7 +79,6 @@
 
   <composition name="GlueXdetector">
     <posXYZ volume="Target" X_Y_Z="0.0 0.0 50.0" />
-    <posXYZ volume="StartCntr" X_Y_Z="0.0 0.0 37.5" />
     <posXYZ volume="barrelPackage" />
     <posXYZ volume="forwardPackage" />
     <posXYZ volume="backwardPackage" />
