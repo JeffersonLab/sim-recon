@@ -25,15 +25,15 @@ void cdc_fdc_bfield(void)
 	TFile *f = new TFile("bfield.root");
 	TTree *bfield = (TTree*)gROOT->FindObject("bfield");
 
-	bfield->SetMarkerStyle(8);
-	bfield->SetMarkerSize(0.4);
-	bfield->Draw("Bz:z", "r<65.0 && z<450.0","same");
+	bfield->SetMarkerStyle(20);
+	bfield->SetMarkerSize(1.0);
+	bfield->Draw("Bz:z", "r<1.0 && z<5000.0","LP same");
 	
 	// CDC
 	bfield->SetMarkerColor(kRed);
 	char cut[256];
-	sprintf(cut, "r<65.0 && z>%f && z<%f", cdc_start, cdc_start+cdc_length);
-	bfield->Draw("Bz:z", cut, "same");
+	sprintf(cut, "r<1.0 && z>%f && z<%f", cdc_start, cdc_start+cdc_length);
+	bfield->Draw("Bz:z", cut, "P same");
 	TLatex *l = new TLatex(100.0, -1.0, "CDC");
 	l->Draw();
 	TArrow *a = new TArrow(cdc_start, -1.2, cdc_start+cdc_length, -1.2, 0.02, "|<|-|>|");
@@ -46,12 +46,12 @@ void cdc_fdc_bfield(void)
 	TLatex *l = new TLatex(300.0, -0.3, "FDC");
 	l->Draw();
 	
-	double fdc_ypos[]={-1.9, -1.9, -1.5, -0.5};
+	double fdc_ypos[]={-1.9, -1.9, -1.5, -0.70};
 
 	for(int i=0; i<4; i++){
 		double start = fdc_start + i*(fdc_length+fdc_space);
-		sprintf(cut, "r<65.0 && z>%f && z<%f", start, start+fdc_length);
-		bfield->Draw("Bz:z", cut, "same");
+		sprintf(cut, "r<1.0 && z>%f && z<%f", start, start+fdc_length);
+		bfield->Draw("Bz:z", cut, "P same");
 
 		TArrow *a = new TArrow(320.0, -0.35, start+fdc_length/2.0, fdc_ypos[i], 0.02, "-|>|");
 		a->SetLineColor(kBlue);
