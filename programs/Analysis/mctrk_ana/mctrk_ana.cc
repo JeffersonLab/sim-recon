@@ -5,6 +5,9 @@
 // mctrk_ana.cc
 //
 
+#include <string>
+using namespace std;
+
 #include <dlfcn.h>
 
 #include <TFile.h>
@@ -13,11 +16,29 @@
 
 #include "MyProcessor.h"
 
+const char* OUTPUTFILE = "mctrk_ana.root";
+
 //-----------
 // main
 //-----------
 int main(int narg, char *argv[])
-{	
+{
+	// Parse command line
+	for(int i=1; i<narg; i++){
+		if(string("-o") == argv[i]){
+			i++;
+			if(i>=narg){
+				cout<<"You must supply an output filename when using \"-o\"!"<<endl;
+				exit(-1);
+			}
+			if(argv[i][0]=='-'){
+				cout<<"You must supply an output filename when using \"-o\"!"<<endl;
+				exit(-1);
+			}
+			OUTPUTFILE = argv[i];
+		}
+	}
+
 	// Instantiate an event loop object
 	DApplication app(narg, argv);
 	//app.SetShowTicker(0);

@@ -25,14 +25,16 @@ TFile *ROOTfile = NULL;
 TH1F *FDC_z, *FDC_r, *CDC_z, *CDC_r;
 TH3F *FDC_pseudo;
 
+extern const char* OUTPUTFILE;
+
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
 //------------------------------------------------------------------
 jerror_t MyProcessor::init(void)
 {
 	// open ROOT file
-	ROOTfile = new TFile("mctrk_ana.root","RECREATE","Produced by hd_ana");
-	cout<<"Opened ROOT file \"mctrk_ana.root\""<<endl;
+	ROOTfile = new TFile(OUTPUTFILE,"RECREATE","Produced by hd_ana");
+	cout<<"Opened ROOT file \""<<OUTPUTFILE<<"\""<<endl;
 	
 	FDC_z = new TH1F("FDC_z","FDC z-hits", 6510, 0.0, 650.0);
 	CDC_z = new TH1F("CDC_z","CDC z-hits", 6510, 0.0, 650.0);
