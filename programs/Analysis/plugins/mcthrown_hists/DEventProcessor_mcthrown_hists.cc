@@ -64,6 +64,9 @@ jerror_t DEventProcessor_mcthrown_hists::init(void)
 
 	Nparticles_per_event	= new TH1F("Nparticles_per_event","Number of thrown particles per event",21, -0.5, 20.5);
 	particle_type	= new TH1F("particle_type","GEANT3 particle type of thrown particles",101, -0.5, 100.5);
+
+	p_vs_theta_pion = new TH2F("p_vs_theta_pion","Momentum vs. #theta for charged #pis (from thrown values)",140, 0.0, 140.0, 100, 0.0, 6.0);
+	p_vs_theta_p = new TH2F("p_vs_theta_p","Momentum vs. #theta for protons (from thrown values)",140, 0.0, 140.0, 100, 0.0, 6.0);
 	
 	// Go back up to the parent directory
 	dir->cd("../");
@@ -92,6 +95,16 @@ jerror_t DEventProcessor_mcthrown_hists::evnt(JEventLoop *loop, int eventnumber)
 		vertex->Fill(mcthrown->x, mcthrown->y, mcthrown->z);
 		
 		particle_type->Fill(mcthrown->type);
+		
+		switch(mcthrown->type){
+			case 8:
+			case 9:
+				p_vs_theta_pion->Fill(mcthrown->theta*57.3, mcthrown->p);
+				break;
+			case 14:
+				p_vs_theta_p->Fill(mcthrown->theta*57.3, mcthrown->p);
+				break;
+		}
 	}
 
 	return NOERROR;
