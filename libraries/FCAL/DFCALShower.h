@@ -19,6 +19,7 @@ class DFCALShower:public JObject{
                 float y;  ///< y position of the shower center
                 float E;  ///< Energy of the shower
                 float t;  ///< Time of the shower
+                float rms; //< size in cm
 		
 };
 

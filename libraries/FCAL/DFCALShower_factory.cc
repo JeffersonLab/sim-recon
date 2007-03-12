@@ -22,7 +22,7 @@ bool FCALHitSort_C(const DFCALHit* const &thit1, const DFCALHit* const &thit2) {
 DFCALShower_factory::DFCALShower_factory()
 {
 	// Set defaults
-	MAX_SHOWER_DIST = 9.0; // cm
+	MAX_SHOWER_DIST = 25.0; // cm
 	
 	gPARMS->SetDefaultParameter("FCAL:MAX_SHOWER_DIST",		MAX_SHOWER_DIST);
 
@@ -63,6 +63,7 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 		double logEsum = logE;
 		double X = fcalhits[center_index]->x*logE;
 		double Y = fcalhits[center_index]->y*logE;
+                double rms =0.;
 		for(unsigned int i=center_index+1; i<fcalhits.size(); i++){
 			if(used[i])continue;
 			double deltaX = fcalhits[center_index]->x - fcalhits[i]->x;
@@ -76,16 +77,20 @@ jerror_t DFCALShower_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 			logEsum += logE;
 			X += fcalhits[i]->x*logE;
 			Y += fcalhits[i]->y*logE;
+                        rms += fcalhits[i]->E*r2;
+                        
 		}
 		
 		X/=logEsum;
 		Y/=logEsum;
+                rms = sqrt(rms)/E;
 
 		DFCALShower *fcalshower = new DFCALShower;
 
 		fcalshower->x = X;
 		fcalshower->y = Y;
-		fcalshower->E = E*1.90; // this number is empirical and should be a calibration constant
+		fcalshower->E = E; // this number is empirical and should be a calibration constant
+		fcalshower->rms = rms; 
 		fcalshower->t = fcalhits[center_index]->t;
 
 		_data.push_back(fcalshower);
@@ -104,7 +109,7 @@ const string DFCALShower_factory::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row:   x(cm):   y(cm):   E(GeV):   t(ns):");
+	printheader("row:   x(cm):   y(cm):   E(GeV):   rms(cm):   t(ns):");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DFCALShower *fcalhit = _data[i];
@@ -114,6 +119,7 @@ const string DFCALShower_factory::toString(void)
 		printcol("%3.1f", fcalhit->x);
 		printcol("%3.1f", fcalhit->y);
 		printcol("%2.3f", fcalhit->E);
+		printcol("%4.0f", fcalhit->rms);
 		printcol("%4.0f", fcalhit->t);
 		printrow();
 	}
