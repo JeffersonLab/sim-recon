@@ -576,7 +576,7 @@ DTrack_factory::fit_status_t DTrack_factory::LeastSquares(TVector3 &start_pos, T
 {
 	// Determine the best fit of the track using the least squares method
 	// described by R. Mankel Rep. Prog. Phys. 67 (2004) 553-622 pg 565
-	int Nparameters = 5;
+	const int Nparameters = 5;
 	double deltas[Nparameters];
 
 	// For fitting, we want to define a coordinate system very similar to the
