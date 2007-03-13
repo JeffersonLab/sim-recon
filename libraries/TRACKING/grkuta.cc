@@ -258,7 +258,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
 /* Geant */
 
 #include "DMagneticFieldMap.h"
-#include "cmath"
+//#include "cmath"
 using namespace std;
 
 /* #include "geant321/pilot.h" */
@@ -271,7 +271,7 @@ using namespace std;
     /*static*/ double equiv_2[3], equiv_5[3];
 
     /* Builtin functions */
-    //double sqrt(double), sin(double);
+    double sqrt(double), sin(double);
 
     /* Local variables */
     /*static*/ double a, b, c__;
