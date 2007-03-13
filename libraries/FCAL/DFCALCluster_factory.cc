@@ -75,7 +75,7 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
         }
         hits->nhits = nhits;
         
-        unsigned int max = 999;
+        const unsigned int max = 999;
 	DFCALCluster::setHitlist(hits);
 	DFCALCluster* clusterList[max];
 	unsigned int clusterCount = 0;
