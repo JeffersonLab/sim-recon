@@ -30,7 +30,7 @@ using namespace std;
 
 // The executable should define the ROOTfile global variable. It will
 // be automatically linked when dlopen is called.
-extern TFile *ROOTfile;
+//extern TFile *ROOTfile;
 
 // Routine used to create our DEventProcessor
 extern "C"{
@@ -61,7 +61,7 @@ DEventProcessor_acceptance_hists::~DEventProcessor_acceptance_hists()
 jerror_t DEventProcessor_acceptance_hists::init(void)
 {
 	// open ROOT file (if needed)
-	if(ROOTfile != NULL) ROOTfile->cd();
+	//if(ROOTfile != NULL) ROOTfile->cd();
 
 	// Create ACCEPTANCE directory
 	TDirectory *dir = new TDirectory("ACCEPTANCE","ACCEPTANCE");
@@ -71,9 +71,9 @@ jerror_t DEventProcessor_acceptance_hists::init(void)
 	int N_p_bins = 100;
 	float p_lo = 0.0;
 	float p_hi = 12.0;
-	int N_theta_bins = 100;
+	int N_theta_bins = 400;
 	float theta_lo = 0.0;
-	float theta_hi = M_PI;
+	float theta_hi = M_PI*57.3;
 	CDC	= new TH2F("CDC","CDC acceptance",N_p_bins, p_lo, p_hi, N_theta_bins, theta_lo, theta_hi);
 	FDC	= new TH2F("FDC","FDC acceptance",N_p_bins, p_lo, p_hi, N_theta_bins, theta_lo, theta_hi);
 	CDC_FDC	= new TH2F("CDC_FDC","CDC_FDC acceptance",N_p_bins, p_lo, p_hi, N_theta_bins, theta_lo, theta_hi);
@@ -105,9 +105,9 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumbe
 		const DMCThrown *mcthrown = mcthrowns[i];
 		
 		if(mcthrown->q != 0.0){
-			thrown_charged->Fill(mcthrown->p, mcthrown->theta);
+			thrown_charged->Fill(mcthrown->p, mcthrown->theta*57.3);
 		}else if(mcthrown->type == 1){
-			thrown_photon->Fill(mcthrown->p, mcthrown->theta);
+			thrown_photon->Fill(mcthrown->p, mcthrown->theta*57.3);
 		}
 	}
 	
@@ -160,7 +160,7 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumbe
 		if(iter->first<=0 || iter->first>(int)mcthrowns.size())continue;
 		const DMCThrown *mcthrown = mcthrowns[iter->first-1];
 		
-		if(iter->second >= MIN_CDC_HITS)CDC->Fill(mcthrown->p, mcthrown->theta);
+		if(iter->second >= MIN_CDC_HITS)CDC->Fill(mcthrown->p, mcthrown->theta*57.3);
 	}
 
 	// Loop over tracks in the FDC
@@ -170,13 +170,13 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumbe
 		if(iter->first<=0 || iter->first>(int)mcthrowns.size())continue;
 		const DMCThrown *mcthrown = mcthrowns[iter->first-1];
 		
-		if(iter->second >= MIN_FDC_HITS)FDC->Fill(mcthrown->p, mcthrown->theta);
+		if(iter->second >= MIN_FDC_HITS)FDC->Fill(mcthrown->p, mcthrown->theta*57.3);
 		
 		// Fill CDC + FDC histo
 		if(cdchits.find(iter->first) != cdchits.end()){
 			int cdc_fdc_hits = cdchits.find(iter->first)->second + iter->second;
 			if(cdc_fdc_hits >= MIN_CDC_FDC_HITS)
-				CDC_FDC->Fill(mcthrown->p, mcthrown->theta);
+				CDC_FDC->Fill(mcthrown->p, mcthrown->theta*57.3);
 		}
 	}
 
