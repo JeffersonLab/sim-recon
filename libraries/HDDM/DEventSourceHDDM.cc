@@ -405,7 +405,7 @@ jerror_t DEventSourceHDDM::GetUPVTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*
 }
 
 //------------------
-// Extract_DMCThrown
+// Extract_DBCALHit
 //------------------
 jerror_t DEventSourceHDDM::Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit> *factory)
 {
@@ -644,7 +644,8 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 					newHit->type				= 0;
 					newHit->gPlane				= DFDCGeometry::gPlane(newHit);
 					newHit->gLayer				= DFDCGeometry::gLayer(newHit);
-					newHit->r					= DFDCGeometry::getWireR(newHit); 
+					newHit->r					= DFDCGeometry::getWireR(newHit);
+					
 					data.push_back(newHit);
 				}
 			}
@@ -966,6 +967,9 @@ jerror_t DEventSourceHDDM::Extract_DMCTrajectoryPoint(s_HDDM_t *hddm_s,  JFactor
 			p->dE = points->in[i].dE;
 			p->track = points->in[i].track;
 			p->part = points->in[i].part;
+
+			p->radlen = points->in[i].radlen;
+			p->step = points->in[i].step;
 			
 			data.push_back(p);
 		}		
