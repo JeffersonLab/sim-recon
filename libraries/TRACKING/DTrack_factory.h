@@ -31,11 +31,11 @@ class DMCThrown;
 class DTrack_factory:public JFactory<DTrack>{
 	public:
 		DTrack_factory();
-		~DTrack_factory(){};
+		~DTrack_factory();
 		const string toString(void);
 	
 		typedef DReferenceTrajectory::swim_step_t swim_step_t;
-
+#if 0
 		typedef struct{
 			const DCDCTrackHit* cdchit;
 			const swim_step_t *swim_step;
@@ -51,7 +51,7 @@ class DTrack_factory:public JFactory<DTrack>{
 			double dist;
 			double s;
 		}fdc_hit_on_track_t;
-
+#endif
 	private:
 		enum state_types{
 			state_px,		///< x-momentum in RT coordinate system in GeV/c
@@ -71,9 +71,10 @@ class DTrack_factory:public JFactory<DTrack>{
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 		jerror_t fini(void);
 
-		DTrack* FitTrack(const DTrackCandidate *tc, const DMCThrown *thrown);
-		void GetCDCTrackHits(DReferenceTrajectory *rt, double max_hit_dist=0.0);
-		void GetFDCTrackHits(DReferenceTrajectory *rt, double max_hit_dist=0.0);
+		void AssignHitsToCandidates(void);
+		DTrack* FitTrack(DReferenceTrajectory* rt, int candidateid, const DMCThrown *thrown);
+		void GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob);
+		void GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob);
 		double GetDistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double &s);
 		//void KalmanFilter(TMatrixD &state, TMatrixD &P, DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom);
 		//void KalmanStep(TMatrixD &x, TMatrixD &P, TMatrixD &z_minus_h, TMatrixD &A, TMatrixD &H, TMatrixD &Q, TMatrixD &R, TMatrixD &W, TMatrixD &V);
@@ -82,12 +83,15 @@ class DTrack_factory:public JFactory<DTrack>{
 		double ChiSq(double q, const TVector3 &pos, const TVector3 &mom, DReferenceTrajectory *rt=NULL);
 		double ChiSq(double q, DReferenceTrajectory *rt);
 		fit_status_t LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom, double &chisq);
-		void FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom, const DTrackCandidate* tc);
+		void FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom);
 
-		std::vector<const DCDCTrackHit* > cdctrackhits;
-		std::vector<const DFDCPseudo* > fdctrackhits;
-		std::vector<cdc_hit_on_track_t > cdchits_on_track;
-		std::vector<fdc_hit_on_track_t > fdchits_on_track;
+		std::vector<const DTrackCandidate*>	trackcandidates;
+		std::vector<const DCDCTrackHit* >	cdctrackhits;
+		std::vector<const DFDCPseudo* >		fdctrackhits;
+		std::vector<const DCDCTrackHit* >	cdchits_on_track;
+		std::vector<const DFDCPseudo* >		fdchits_on_track;
+		std::vector<int> trackassignmentcdc;
+		std::vector<int> trackassignmentfdc;
 		
 		std::vector<double> chisqv;
 		std::vector<double> sigmav;
@@ -96,14 +100,15 @@ class DTrack_factory:public JFactory<DTrack>{
 
 		const JGeometry *dgeom;
 		const DMagneticFieldMap *bfield;
-		string TRACKHIT_SOURCE;
 		double MAX_HIT_DIST;
 		double CDC_Z_MIN;
 		double CDC_Z_MAX;
-		swim_step_t *swim_steps;
-		int max_swim_steps;
-		swim_step_t *swim_steps_ls;
-		int max_swim_steps_ls;
+		vector<DReferenceTrajectory*>rtv;
+		DReferenceTrajectory *tmprt;
+		//swim_step_t *swim_steps;
+		//int max_swim_steps;
+		//swim_step_t *swim_steps_ls;
+		//int max_swim_steps_ls;
 		bool hit_based;
 		bool DEBUG_HISTS;
 		bool USE_CDC;
@@ -115,12 +120,18 @@ class DTrack_factory:public JFactory<DTrack>{
 		double SIGMA_FDC_ANODE;
 		double SIGMA_FDC_CATHODE;
 		double CHISQ_MAX_RESI_SIGMAS;
+		double CHISQ_GOOD_LIMIT;
 		double LEAST_SQUARES_DP;
 		double LEAST_SQUARES_DX;
 		unsigned int LEAST_SQUARES_MIN_HITS;
 		double LEAST_SQUARES_MAX_E2NORM;
 		string CANDIDATE_TAG;
 		double DEFAULT_STEP_SIZE;
+		double MIN_CDC_HIT_PROB;
+		double MAX_CDC_DOUBLE_HIT_PROB;
+		double MIN_FDC_HIT_PROB;
+		double MAX_FDC_DOUBLE_HIT_PROB;
+		double TOF_MASS;
 		
 		TH3F *cdcdoca_vs_dist_vs_ring;
 		TH2F *cdcdoca_vs_dist;
@@ -134,7 +145,8 @@ class DTrack_factory:public JFactory<DTrack>{
 		TH2F *residuals_cdc, *residuals_fdc_anode, *residuals_fdc_cathode;
 		TH2F *initial_chisq_vs_Npasses, *chisq_vs_pass, *dchisq_vs_pass;
 		TH3F *residuals_cdc_vs_s, *residuals_fdc_anode_vs_s, *residuals_fdc_cathode_vs_s;
-		
+		TH1F *cdc_single_hit_prob, *cdc_double_hit_prob;
+		TH1F *fdc_single_hit_prob, *fdc_double_hit_prob;
 };
 
 #endif // _DTrack_factory_
