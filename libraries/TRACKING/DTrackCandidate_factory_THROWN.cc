@@ -83,11 +83,11 @@ jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		can->y0 = 0.0;
 		can->dzdphi = 0.0;
 		can->z_vertex	= thrown->z+SampleGaussian(1.0);
-		can->p			= thrown->p*(1.0+SampleGaussian(0.05));
-		can->phi			= thrown->phi+SampleGaussian(1.0/57.3);
+		can->p			= thrown->p*(1.0+SampleGaussian(0.04));
+		can->phi			= thrown->phi;//+SampleGaussian(0.5/57.3);
 		if(can->phi<0.0)can->phi+=2.0*M_PI;
 		if(can->phi>=2.0*M_PI)can->phi-=2.0*M_PI;
-		can->theta		= thrown->theta+SampleGaussian(0.5/57.3);
+		can->theta		= thrown->theta;//+SampleGaussian(0.1/57.3);
 		if(can->theta<0.0)can->theta=0.0;
 		if(can->theta>M_PI)can->theta=M_PI;
 		can->q			= thrown->q;
