@@ -185,6 +185,7 @@
 #include "geant321/gctrak.inc"
 #include "geant321/gcflag.inc"
 #include "geant321/gcphys.inc"
+#include "geant321/gcmate.inc"
 #include "hdtrackparams.inc"
 *
 *     -----------------------------------------------------------------
@@ -437,7 +438,7 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
 * Optionally store particle trajectory
       if (storetraj.ne.0) then
         call addtrajectorypoint(VECT,TOFG,DESTEP,GETOT,ITRA,ISTAK
-     +         ,IPART)
+     +         ,IPART, RADL, STEP)
       endif
 
 #ifndef TRACK_SHOWERS_IN_COLLIMATOR

@@ -28,7 +28,8 @@ void cleartrajectories_(void)
 // addtrajectorypoint_
 //--------------------*/
 void addtrajectorypoint_(float *VECT, float *TOFG, float *DESTEP
-									,float *GETOT, int *ITRA, int *ISTAK, int *IPART)
+									,float *GETOT, int *ITRA, int *ISTAK, int *IPART
+									,float *RADL, float *STEP)
 {
 	/* Only keep points from primary track */
 	if(*ISTAK != 0)return;
@@ -56,6 +57,8 @@ void addtrajectorypoint_(float *VECT, float *TOFG, float *DESTEP
 	p->pz = VECT[6]*VECT[5];
 	p->t = *TOFG;
 	p->track = *ITRA;
+	p->radlen = *RADL;
+	p->step = *STEP;
 }
 
 /*---------------------
