@@ -48,6 +48,7 @@ jerror_t DEventProcessor_bcal_hists::init(void)
 	
 	E_over_Erec_vs_z = new TH2F("bcal_E_over_Erec_vs_z","E_over_Erec_vs_z", 200, -50.0, 600.0, 200, 0.0, 4.0);
 	Ecorr_over_Erec_vs_z = new TH2F("bcal_Ecorr_over_Erec_vs_z","Ecorr_over_Erec_vs_z", 200, -50.0, 600.0, 200, 0.0, 4.0);
+	Esum_over_Ethrown_vs_z = new TH2F("Esum_over_Ethrown_vs_z","BCAL ratio of detected E to thrown E vs z", 200, -50.0, 600.0, 240, 0.0, 1.2);
 
 	return NOERROR;
 }
@@ -67,8 +68,18 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DBCALShower*> showers;
 	vector<const DFCALShower*> fcal_showers;
-	loop->Get(showers);
-	loop->Get(fcal_showers);
+	vector<const DHDDMBCALTruth*> truthhits;	
+	//loop->Get(showers);
+	//loop->Get(fcal_showers);
+	loop->Get(hits);
+	
+	double Etot = 0.0;
+	double z = 0.0;
+	for(unsigned int i=0; i<truthhits.size(); i++){
+		Etot += truthhits[i]->E;
+		z += truthhits[i]->E*truthhits[i]->z;
+	}
+	z/=Etot;
 	
 	LockState();
 	
