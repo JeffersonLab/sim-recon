@@ -45,12 +45,16 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 //---------------------------------
 // Swim
 //---------------------------------
-void DReferenceTrajectory::Swim(const TVector3 &pos, const TVector3 &mom)
+void DReferenceTrajectory::Swim(const TVector3 &pos, const TVector3 &mom, double q)
 {
 	/// (Re)Swim the trajectory starting from pos with momentum mom.
 	/// This will use the charge and step size (if given) passed to
 	/// the constructor when the object was created. It will also
 	/// (re)use the sim_step buffer, replacing it's contents.
+	if(fabs(q)>10)
+		q = this->q;
+	else
+		this->q = q;
 
 	DMagneticFieldStepper stepper(bfield, q, &pos, &mom);
 	if(step_size>0.0)stepper.SetStepSize(step_size);
