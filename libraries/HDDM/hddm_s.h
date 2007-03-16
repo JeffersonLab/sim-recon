@@ -736,6 +736,8 @@ typedef struct {
    float                px;
    float                py;
    float                pz;
+   float                radlen;
+   float                step;
    float                t;
    int32_t              track;
    float                x;
