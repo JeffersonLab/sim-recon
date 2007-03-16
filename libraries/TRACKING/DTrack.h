@@ -11,7 +11,7 @@
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
 
-class DMCThrown;
+class DReferenceTrajectory;
 
 class DTrack:public JObject{
 	public:
@@ -23,6 +23,7 @@ class DTrack:public JObject{
 		float x,y,z;		///< Vertex position in cm
 		oid_t candidateid;	///< id of DTrackCandidate this came from
 		float chisq;			///< reduced Chi-squared for the track
+		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
 };
 
 #endif // _DTrack_
