@@ -94,6 +94,7 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 	vector<TLorentzVector> v;
 	for(unsigned int i=0;i<tracks.size();i++){
 		TLorentzVector myv;
+		if(tracks[i]->chisq>1.0)continue;
 		MakeTLorentz(tracks[i], myv);
 		v.push_back(myv);
 	}
@@ -105,9 +106,12 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 		mass2_1part->Fill(v1.M2());
 		
 		for(unsigned int j=i+1;j<v.size();j++){
-			TLorentzVector v2 = v1 + v[j];		
-			mass_2part->Fill(v2.M());
-			mass2_2part->Fill(v2.M2());
+			TLorentzVector v2 = v1 + v[j];
+			if(tracks[i]->q*tracks[j]->q<0.0){
+				// Only fill for opposite charge tracks	
+				mass_2part->Fill(v2.M());
+				mass2_2part->Fill(v2.M2());
+			}
 
 			TLorentzVector mm = incident - v2;
 			missing_mass->Fill(mm.M2());
@@ -130,7 +134,7 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 		v.push_back(myv);
 	}
 
-	// Loop over reconstructed tracks
+	// Loop over thrown tracks
 	for(unsigned int i=0;i<v.size();i++){
 		TLorentzVector v1 = v[i];
 		thrown_mass_1part->Fill(v1.M());
@@ -138,8 +142,11 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 
 		for(unsigned int j=i+1;j<v.size();j++){
 			TLorentzVector v2 = v1 + v[j];		
-			thrown_mass_2part->Fill(v2.M());
-			thrown_mass2_2part->Fill(v2.M2());
+			if(tracks[i]->q*tracks[j]->q<0.0){
+				// Only fill for opposite charge tracks	
+				thrown_mass_2part->Fill(v2.M());
+				thrown_mass2_2part->Fill(v2.M2());
+			}
 			
 			TLorentzVector mm = incident - v2;
 			thrown_missing_mass->Fill(mm.M2());
