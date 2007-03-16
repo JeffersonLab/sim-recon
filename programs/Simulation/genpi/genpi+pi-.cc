@@ -9,17 +9,26 @@
 #include <vector>
 using namespace std;
 
+#include <TVector3.h>
+#include <TLorentzVector.h>
+
 double PI_CHARGED_MASS = 0.139568;
+double PROTON_MASS = 0.938;
+double MESON_MASS = 0.770;
 uint MAX_EVENTS=10000;
 int NUM_TO_GEN=2;
 double E_BEAM_MIN=4.0*PI_CHARGED_MASS;
 double E_BEAM_MAX=1.0;
 int RUN_NUMBER=100;
 string OUTPUT_FILENAME="genpiX.ascii";
+double gINTEGRAL_FRACTION;
 
 #define GAMMA_TYPE 1
 #define PI_PLUS_TYPE 8
 #define PI_MINUS_TYPE 9
+
+#define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
+#define _DBG__ _DBG_<<endl
 
 class piX{
 	public:
@@ -27,6 +36,15 @@ class piX{
 };
 
 
+extern "C"{
+double rtsafe(void (*funcd)(double, double *, double *), double x1, double x2, double xacc);
+double rtnewt(void (*funcd)(double, double *, double *), double x1, double x2, double xacc);
+double zbrent(double (*func)(double), double x1, double x2, double tol);
+void funcd(double, double *f, double *df);
+double func(double);
+}
+
+double SampleSin2Theta(void);
 void ParseCommandLineArguments(int narg, char* argv[]);
 void Usage(void);
 
@@ -49,61 +67,81 @@ int main(int narg, char* argv[])
 
 	// Seed random number generator
 	srandom(time(NULL));
-
-	double pmax = sqrt(E_BEAM_MAX*E_BEAM_MAX - PI_CHARGED_MASS*PI_CHARGED_MASS);
-	double pmin = sqrt(E_BEAM_MIN*E_BEAM_MIN - PI_CHARGED_MASS*PI_CHARGED_MASS);
+	
 
 	// Loop over events
 	uint nevents;
 	for(nevents=1; nevents<=MAX_EVENTS; nevents++){
 	
-		// Determine inicident photon energy. (This is just
+		// Determine incident photon energy. (This is just
 		// evenly sampled from the specified range.)
-		//double Etot = (double)random()/(double)RAND_MAX*(E_BEAM_MAX-E_BEAM_MIN) + E_BEAM_MIN;
-	
+		double Eg = (double)random()/(double)RAND_MAX*(E_BEAM_MAX-E_BEAM_MIN) + E_BEAM_MIN;
+
+
+#if 0
+		// tmin occurs when the target proton goes out perpendicular to
+		// the beam. This corresponds to the smallest theta angle the
+		// rho can go to. Calculate th rho angle and momentum here.
+		double rho_mom = 2.0*pow(Eg, 2.0);
+		rho_mom -= pow(PROTON_MASS,2.0) - pow(MESON_MASS, 2.0);
+		rho_mom /= 2.0*Eg;
+		rho_mom = sqrt(pow(rho_mom, 2.0) - pow(MESON_MASS, 2.0));
+#endif
+
+		// Calculate rho theta and phi angles
+		double rho_theta = 0.0;
+		double rho_phi = 2.0*M_PI*((double)random()/(double)RAND_MAX);
+#if 1
+		// Calculate rho momentum based on angle
+		double M_N = 938.0;
+		double L = Eg/(Eg + M_N);
+		double K = (Eg*M_N + pow(MESON_MASS,2.0)/2.0)/(Eg + M_N);
+		double A = pow(L*cos(rho_theta),2.0) - 1.0;
+		double B = 2.0*K*L*cos(rho_theta);
+		double C = pow(K,2.0) - pow(MESON_MASS,2.0);
+		double rho_mom = ((-B) - sqrt(B*B - 4.0*A*C))/(2.0*A);
+#endif
+		TVector3 rho_p;
+		rho_p.SetMagThetaPhi(rho_mom, rho_theta, rho_phi);
+		
+		// Find decay angle of pions in rest frame of rho
+		double pi1_theta = SampleSin2Theta();
+		double pi1_phi = 2.0*M_PI*((double)random()/(double)RAND_MAX);
+		double pi2_theta = M_PI - pi1_theta;
+		double pi2_phi = pi1_phi + M_PI;
+		if(pi2_phi>2.0*M_PI)pi2_phi-=2.0*M_PI;
+		double pi_E = MESON_MASS/2.0;
+		double pi_mom = sqrt(pow(pi_E,2.0) - pow(PI_CHARGED_MASS,2.0));
+		TLorentzVector pi1( pi_mom*sin(pi1_theta)*cos(pi1_phi)
+								, pi_mom*sin(pi1_theta)*sin(pi1_phi)
+								, pi_mom*cos(pi1_theta)
+								, pi_E);
+		TLorentzVector pi2( pi_mom*sin(pi2_theta)*cos(pi2_phi)
+								, pi_mom*sin(pi2_theta)*sin(pi2_phi)
+								, pi_mom*cos(pi2_theta)
+								, pi_E);
+
+		// Boost the pions into the lab frame
+		TVector3 beta = (1.0/sqrt(rho_p.Mag2() + pow(MESON_MASS,2.0)))*rho_p;
+		pi1.Boost(beta);
+		pi2.Boost(beta);
+
 		// Generate piXs
 		vector<piX> piXs;
-		for(int i=0; i<NUM_TO_GEN; i++){
-
-#if 0		
-			// Beam energy is semi-randomly distributed over all pions.
-			// If this is the last pion it just gets the energy left
-			// in Etot. Otherwise, it gets between 1/4 and 3/4 of the
-			// remaining energy. (This needs something more sophisticated,
-			// but for now it will do).
-			double E_piX = 0.0;
-			if(i==NUM_TO_GEN-1){
-				E_piX = Etot;
-			}else{
-				E_piX = Etot*(0.25+0.5*(double)random()/(double)RAND_MAX);
-			}
-			Etot -= E_piX; // subtract this from beam energy available
-			double p_piX = sqrt(E_piX*E_piX - PI_CHARGED_MASS*PI_CHARGED_MASS);
-#else
-			// This is changed from the above. For most studies, we actually
-			// want an iso-momentum distribution of pions.
-			double p_piX = (double)random()/(double)RAND_MAX*(pmax-pmin) + pmin;
-			double E_piX = sqrt(PI_CHARGED_MASS*PI_CHARGED_MASS + p_piX*p_piX);
-#endif		
-
-			// 4-vector of first pion. Pick a random direction.
-			double phi_piX = 2.0*M_PI*((double)random()/(double)RAND_MAX);
-			double theta_piX = M_PI*((double)random()/(double)RAND_MAX);
-			
-			piX p;
-			p.E = E_piX;
-			p.px = p_piX*sin(theta_piX)*cos(phi_piX);
-			p.py = p_piX*sin(theta_piX)*sin(phi_piX);
-			p.pz = p_piX*cos(theta_piX);
-			
-			// Move angles to keep tracks apart
-			//phi_piX += 2.0*M_PI/(double)NUM_TO_GEN;
-			//if(phi_piX>2.0*M_PI)phi_piX-=2.0*M_PI;
-			//theta_piX += 2.0*(M_PI_2 - theta_piX);
 		
-			piXs.push_back(p);
-		}
-		
+		piX p;
+		p.E = pi1.E();
+		p.px = pi1.Px();
+		p.py = pi1.Py();
+		p.pz = pi1.Pz();
+		piXs.push_back(p);
+
+		p.E = pi2.E();
+		p.px = pi2.Px();
+		p.py = pi2.Py();
+		p.pz = pi2.Pz();
+		piXs.push_back(p);
+			
 		// Write event to file
 		uint type = PI_PLUS_TYPE;
 		of<<RUN_NUMBER<<" "<<nevents<<" "<<piXs.size()<<endl;
@@ -116,15 +154,6 @@ int main(int narg, char* argv[])
 			
 			// alternate bewtween pi+ and pi-
 			type = type==PI_PLUS_TYPE ? PI_MINUS_TYPE:PI_PLUS_TYPE;
-			
-#if 0			
-			double m2 = pow(p.E1+p.E2, 2.0)
-						- pow(p.px1+p.px2, 2.0)
-						- pow(p.py1+p.py2, 2.0)
-						- pow(p.pz1+p.pz2, 2.0);
-			cout<<"m="<<sqrt(m2)<<endl;
-#endif
-
 		}
 		
 		// Update screen
@@ -139,6 +168,48 @@ int main(int narg, char* argv[])
 	cout<<endl<<""<<nevents-1<<" events written to "<<OUTPUT_FILENAME<<endl;
 	
 	return 0;
+}
+
+
+//----------------------------
+// SampleSin2Theta
+//----------------------------
+double SampleSin2Theta(void)
+{
+	// Randomly sample a value of theta between 0 and pi
+	// such than the distributions goes like sin^2.
+	
+	// Get random number evenly sampled from 0 to 1
+	gINTEGRAL_FRACTION = (double)random()/(double)RAND_MAX;
+	
+	// The integral fraction of sin^2 as a function
+	// of theta over the range zero pi is given by
+	//
+	// f = (theta - sin(2*theta))/pi
+	//
+	// Unfortunately, this is a trancendental equation
+	// so we must find the root numerically.
+	// We use the numerical recipes routine rtsafe
+	// and define the function and derivative in
+	// funcd.
+	return zbrent(func, 0.0, M_PI, 1.0E-5);
+}
+
+//----------------------------
+// funcd
+//----------------------------
+void funcd(double theta, double *f, double *df)
+{
+	*f = gINTEGRAL_FRACTION - (theta - sin(2.0*theta))/M_PI;
+	*df = -(1.0 - 2.0*cos(2.0*theta))/M_PI;
+}
+
+//----------------------------
+// func
+//----------------------------
+double func(double theta)
+{
+	return gINTEGRAL_FRACTION - (theta - 0.5*sin(2.0*theta))/M_PI;
 }
 
 //----------------------------
