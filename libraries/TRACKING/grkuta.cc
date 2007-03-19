@@ -261,6 +261,9 @@ typedef doublereal E_f;	/* real function with -R not specified */
 //#include "cmath"
 using namespace std;
 
+/* Builtin functions */
+extern "C" {double sqrt(double), sin(double);}
+
 /* #include "geant321/pilot.h" */
 /* CMZ :  3.21/02 29/03/94  15.41.23  by  S.Giani */
 /* -- Author : */
@@ -270,8 +273,6 @@ using namespace std;
     double d__1, d__2, d__3;
     /*static*/ double equiv_2[3], equiv_5[3];
 
-    /* Builtin functions */
-    double sqrt(double), sin(double);
 
     /* Local variables */
     /*static*/ double a, b, c__;
