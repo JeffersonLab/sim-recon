@@ -21,7 +21,8 @@ extern TFile *ROOTfile;
 
 // Routine used to create our DEventProcessor
 extern "C"{
-void InitProcessors(DApplication *app){
+void InitPlugin(JApplication *app){
+	InitJANAPlugin(app);
 	app->AddProcessor(new DEventProcessor_bcal_hists());
 }
 } // "C"
@@ -36,7 +37,7 @@ void InitProcessors(DApplication *app){
 jerror_t DEventProcessor_bcal_hists::init(void)
 {
 	// open ROOT file
-	if(ROOTfile != NULL) ROOTfile->cd();
+	//if(ROOTfile != NULL) ROOTfile->cd();
 	
 	two_gamma_mass = new TH1F("bcal_two_gamma_mass","two_gamma_mass",100, 0.0, 0.300);
 	two_gamma_mass_corr = new TH1F("bcal_two_gamma_mass_corr","two_gamma_mass_corr",100, 0.0, 0.300);
@@ -49,7 +50,7 @@ jerror_t DEventProcessor_bcal_hists::init(void)
 	
 	E_over_Erec_vs_z = new TH2F("bcal_E_over_Erec_vs_z","E_over_Erec_vs_z", 200, -50.0, 600.0, 200, 0.0, 4.0);
 	Ecorr_over_Erec_vs_z = new TH2F("bcal_Ecorr_over_Erec_vs_z","Ecorr_over_Erec_vs_z", 200, -50.0, 600.0, 200, 0.0, 4.0);
-	Esum_over_Ethrown_vs_z = new TH2F("Esum_over_Ethrown_vs_z","BCAL ratio of detected E to thrown E vs z", 200, -50.0, 600.0, 240, 0.0, 1.2);
+	Ereconstructed_vs_Ethrown = new TH2F("Ereconstructed_vs_Ethrown","BCAL total reconstructed E to total thrown E", 200, 0.0, 6.0, 200, 0.0, 6.0);
 
 	return NOERROR;
 }
@@ -70,7 +71,7 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DBCALShower*> showers;
 	vector<const DFCALShower*> fcal_showers;
 	vector<const DHDDMBCALTruth*> truthhits;	
-	//loop->Get(showers);
+	loop->Get(showers);
 	//loop->Get(fcal_showers);
 	loop->Get(truthhits);
 	
@@ -85,11 +86,13 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 	LockState();
 	
 	// Single shower params
+	double Etot_reconstructed = 0.0;
 	for(unsigned int i=0; i<showers.size(); i++){
 		const DBCALShower *s = showers[i];
 		xy_shower->Fill(s->x, s->y);
 		z_shower->Fill(s->z);
 		E_shower->Fill(s->Ecorr);
+		Etot_reconstructed += s->Ecorr;
 	}
 	
 	// 2-gamma inv. mass
@@ -97,7 +100,7 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 		const DBCALShower *s1 = showers[i];
 		double dx = s1->x;
 		double dy = s1->y;
-		double dz = s1->z+BCAL_Z_OFFSET - 65.0;
+		double dz = s1->z - 65.0;
 		double R = sqrt(dx*dx + dy*dy + dz*dz);
 		double E = s1->Ecorr;
 		double Edave = s1->Ecorr*(1.106+(dz+65.0-208.4)*(dz+65.0-208.4)*6.851E-6);
@@ -108,7 +111,7 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 			const DBCALShower *s2 = showers[j];
 			dx = s2->x;
 			dy = s2->y;
-			dz = s2->z +BCAL_Z_OFFSET- 65.0; // shift to coordinate relative to center of target
+			dz = s2->z - 65.0; // shift to coordinate relative to center of target
 			R = sqrt(dx*dx + dy*dy + dz*dz);
 			double E = s2->Ecorr;
 			double Edave = s2->Ecorr*(1.106+(dz+65.0-208.4)*(dz+65.0-208.4)*6.851E-6);
@@ -145,15 +148,19 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 	// Compare to thrown values
 	vector<const DMCThrown*> mcthrowns;
 	loop->Get(mcthrowns);
+	double Etot_thrown=0.0;
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
+		Etot_thrown += mcthrowns[i]->E;
 		for(unsigned int j=0; j<showers.size(); j++){
-			double z = showers[j]->z+BCAL_Z_OFFSET;
+			double z = showers[j]->z;
 			E_over_Erec_vs_z->Fill(z, mcthrowns[i]->E/showers[j]->Ecorr);
 
 			double Ecorr = showers[j]->Ecorr*(1.106+(z-208.4)*(z-208.4)*6.851E-6);
 			Ecorr_over_Erec_vs_z->Fill(z, mcthrowns[i]->E/Ecorr);
 		}
 	}
+	
+	Ereconstructed_vs_Ethrown->Fill(Etot_thrown, Etot_reconstructed);
 
 	UnlockState();	
 
