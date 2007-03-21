@@ -1,4 +1,5 @@
 // Author: Edward Brash February 15, 2005
+// revised severely 2006-2007  David Lawrence
 //
 //
 // MyProcessor.cc
@@ -11,29 +12,98 @@ using namespace std;
 
 #include "MyProcessor.h"
 
+vector<string> toprint;
+bool ACTIVATE_ALL=false;
+
+#define ansi_escape		((char)0x1b)
+#define ansi_bold 		ansi_escape<<"[1m"
+#define ansi_black		ansi_escape<<"[30m"
+#define ansi_red			ansi_escape<<"[31m"
+#define ansi_green		ansi_escape<<"[32m"
+#define ansi_blue			ansi_escape<<"[34m"
+#define ansi_normal		ansi_escape<<"[0m"
+#define ansi_up(A)		ansi_escape<<"["<<(A)<<"A"
+#define ansi_down(A)		ansi_escape<<"["<<(A)<<"B"
+#define ansi_forward(A)	ansi_escape<<"["<<(A)<<"C"
+#define ansi_back(A)		ansi_escape<<"["<<(A)<<"D"
+
+
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
 //------------------------------------------------------------------
 jerror_t MyProcessor::init(void)
 {
 	// open ROOT file
-	ROOTfile = new TFile("hd_tree.root","RECREATE","Produced by hd_root");
-	cout<<"Opened ROOT file \"hd_tree.root\" ..."<<endl;
+	ROOTfile = new TFile("hd_root.root","RECREATE","Produced by hd_root");
+	cout<<"Opened ROOT file \"hd_root.root\" ..."<<endl;
 
 	// Create tree
 
 	ROOTtree = new TTree("ROOTtree","HDGeant Hits Tree");
 	cout<<"Created Root Tree ..."<<endl;
 
-#if 0
-	ROOTcdchit = new CDCHitCopy;
-	ROOTfcalhit = new FCALHitCopy;
 
-	ROOTtree->Branch("CDCHits","CDCHitCopy",&ROOTcdchit);
-	cout<<"Created CDCHits Branch ..."<<endl;
-	ROOTtree->Branch("FCALHits","FCALHitCopy",&ROOTfcalhit);
-	cout<<"Created FCALHits Branch ..."<<endl;
-#endif
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// brun
+//------------------------------------------------------------------
+jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
+{
+	vector<string> factory_names = eventLoop->GetFactoryNames();
+
+	usleep(100000); //this just gives the Main thread a chance to finish printing the "Launching threads" message
+	cout<<endl;
+
+	// If ACTIVATE_ALL is set then add EVERYTHING.
+	if(ACTIVATE_ALL){
+		toprint = factory_names;
+	}else{
+		// make sure factories exist for all requested data types
+		// If a factory isn't found, but one with a "D" prefixed
+		// is, go ahead and correct the name.
+		vector<string> really_toprint;
+		for(unsigned int i=0; i<toprint.size();i++){
+			int found = 0;
+			int dfound = 0;
+			for(unsigned int j=0;j<factory_names.size();j++){
+				if(factory_names[j] == toprint[i])found = 1;
+				if(factory_names[j] == "D" + toprint[i])dfound = 1;
+			}
+			if(found)
+				really_toprint.push_back(toprint[i]);
+			else if(dfound)
+				really_toprint.push_back("D" + toprint[i]);
+			else
+				cout<<ansi_red<<"WARNING:"<<ansi_normal
+					<<" Couldn't find factory for \""
+					<<ansi_bold<<toprint[i]<<ansi_normal
+					<<"\"!"<<endl;
+		}
+		
+		toprint = really_toprint;
+	}
+	
+	// At this point, toprint should contain a list of all factories
+	// in dataClassName:tag format, that both exist and were requested.
+	// Seperate the tag from the name and fill the fac_info vector.
+	fac_info.clear();
+	for(unsigned int i=0;i<toprint.size();i++){
+		string name = toprint[i];
+		string tag = "";
+		unsigned int pos = name.rfind(":",name.size()-1);
+		if(pos != (unsigned int)string::npos){
+			tag = name.substr(pos+1,name.size());
+			name.erase(pos);
+		}
+		factory_info_t f;
+		f.dataClassName = name;
+		f.tag = tag;
+		fac_info.push_back(f);
+	}
+	
+	cout<<endl;
 
 	return NOERROR;
 }
@@ -43,37 +113,20 @@ jerror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 {
-#if 0
-	vector<const DCDCHit*> cdchits;
-	vector<const DFCALHit*> fcalhits;
-	eventLoop->Get(cdchits);
-	eventLoop->Get(fcalhits);
-		
-	for(unsigned int i=0;i<cdchits.size();i++){
-	  const DCDCHit *cdchit = cdchits[i];
-	  ROOTcdchit->x=cdchit->radius*cos(cdchit->phim);
-	  ROOTcdchit->y = cdchit->radius*sin(cdchit->phim);
-	  ROOTcdchit->radius = cdchit->radius;
-	  ROOTcdchit->phim = cdchit->phim;
-	  ROOTcdchit->dE=cdchit->dE;
-	  ROOTcdchit->t=cdchit->t;
-	  
-	  ROOTtree->Fill();
-
+	// Loop over factories explicitly mentioned on command line
+	for(unsigned int i=0;i<toprint.size();i++){
+		string name =fac_info[i].dataClassName;
+		string tag = fac_info[i].tag;
+		JFactory_base *factory = eventLoop->GetFactory(name,tag.c_str());
+		if(!factory)factory = eventLoop->GetFactory("D" + name,tag.c_str());
+		if(factory){
+			try{
+				factory->GetNrows();
+			}catch(...){
+				// someone threw an exception
+			}
+		}
 	}
-
-	for(unsigned int i=0;i<fcalhits.size();i++){
-	  const DFCALHit *fcalhit = fcalhits[i];
-      	  ROOTfcalhit->x=fcalhit->y;
-	  ROOTfcalhit->y=fcalhit->y;
-	  ROOTfcalhit->E=fcalhit->E;
-	  ROOTfcalhit->t=fcalhit->t;
-
-	  ROOTtree->Fill();
-	}
-
-	eventLoop->PrintRate();
-#endif
 	return NOERROR;
 }
 
