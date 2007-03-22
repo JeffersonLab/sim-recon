@@ -23,7 +23,7 @@ bool pshowerSort_C(const DBCALShower_factory_SIMPLE::pshower_t &hit1, const DBCA
 DBCALShower_factory_SIMPLE::DBCALShower_factory_SIMPLE()
 {
 	UP_DOWN_COINCIDENCE_WINDOW = 50.0; // in ns
-	ENERGY_SCALE_FACTOR = 1.1; // scale factor for converting energy to GeV (1.1 is empirical)
+	ENERGY_SCALE_FACTOR = 1.0; // scale factor for converting energy to GeV (1.1 is empirical)
 	SIGNAL_VELOCITY = 16.82; // in cm/ns
 	Z_CENTER = 17.0+0.5+390.0/2.0; // in cm (0.5 is empirical)
 	MIN_CLUSTER_SPACING = 50.0; // in cm
