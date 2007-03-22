@@ -71,7 +71,7 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DBCALShower*> showers;
 	vector<const DFCALShower*> fcal_showers;
 	vector<const DHDDMBCALTruth*> truthhits;	
-	loop->Get(showers);
+	loop->Get(showers, "SIMPLE");
 	//loop->Get(fcal_showers);
 	loop->Get(truthhits);
 	
