@@ -136,6 +136,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DMCThrown")
 		return Extract_DMCThrown(my_hddm_s, dynamic_cast<JFactory<DMCThrown>*>(factory));
 
+	if(dataClassName == "DBCALTruthShower" )
+	  return Extract_DBCALTruthShower(my_hddm_s, dynamic_cast<JFactory<DBCALTruthShower>*>(factory));
+
 	if(dataClassName =="DBCALHit")
 		return Extract_DBCALHit(my_hddm_s, dynamic_cast<JFactory<DBCALHit>*>(factory));
 
@@ -673,6 +676,49 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 		}
 	}
 	
+	// Copy into factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
+
+//------------------
+// Extract_DBCALTruthShower
+//------------------
+jerror_t DEventSourceHDDM::Extract_DBCALTruthShower(s_HDDM_t *hddm_s,  JFactory<DBCALTruthShower> *factory)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+
+	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+
+	vector<DBCALTruthShower*> data;
+
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+	
+	for(unsigned int i = 0; i < PE->mult; i++) {
+		s_BcalTruthShowers_t* bcalTruthShowers = NULL;
+		if(PE->in[i].hitView)
+			if(PE->in[i].hitView->barrelEMcal)
+				bcalTruthShowers= PE->in[i].hitView->barrelEMcal->bcalTruthShowers;
+		if(!bcalTruthShowers)continue;
+        
+		for(unsigned int j = 0; j < bcalTruthShowers->mult; j++) {
+			DBCALTruthShower *bcaltruth = new DBCALTruthShower;
+			bcaltruth->track = bcalTruthShowers->in[j].track;
+			bcaltruth->primary = bcalTruthShowers->in[j].primary ? 1 : 0;
+			bcaltruth->phi = bcalTruthShowers->in[j].phi;
+			bcaltruth->r = bcalTruthShowers->in[j].r;
+			bcaltruth->z = bcalTruthShowers->in[j].z;
+			bcaltruth->t = bcalTruthShowers->in[j].t;
+			bcaltruth->E = bcalTruthShowers->in[j].E;
+			data.push_back(bcaltruth);
+		}
+	}
+
 	// Copy into factory
 	factory->CopyTo(data);
 
