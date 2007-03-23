@@ -2,6 +2,7 @@
 
 #include "JANA/JEventLoop.h"
 #include "DBCALHit_factory.h"
+#include "DBCALTruthShower_factory.h"
 #include "DHDDMBCALHit_factory.h"
 #include "DBCALMCResponse_factory.h"
 #include "DBCALGeometry_factory.h"
@@ -17,6 +18,7 @@ jerror_t BCAL_init(JEventLoop *loop)
 	loop->AddFactory(new DBCALGeometry_factory());
 	loop->AddFactory(new DBCALShower_factory());
 	loop->AddFactory(new DBCALShower_factory_SIMPLE());
+	loop->AddFactory(new DBCALTruthShower_factory());
 
 	return NOERROR;
 }
