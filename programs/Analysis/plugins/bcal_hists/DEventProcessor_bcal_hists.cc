@@ -28,7 +28,6 @@ void InitPlugin(JApplication *app){
 } // "C"
 
 
-#define BCAL_Z_OFFSET 26.03+123.4+65.0 //convert regina's coordinated to HDGeant's
 #define FCAL_Z_OFFSET 640.0-65.0 // I don't know what this value is ???
 
 //------------------
@@ -48,9 +47,12 @@ jerror_t DEventProcessor_bcal_hists::init(void)
 	z_shower = new TH1F("bcal_z_shower","z_shower",450, -50.0, 400);
 	E_shower = new TH1F("bcal_E_shower","E_shower", 200, 0.0, 6.0);
 	
-	E_over_Erec_vs_z = new TH2F("bcal_E_over_Erec_vs_z","E_over_Erec_vs_z", 200, -50.0, 600.0, 200, 0.0, 4.0);
+	Erec_over_Ethrown_vs_z = new TH2F("bcal_Erec_over_Ethrown_vs_z","Erec_over_Ethrown_vs_z", 200, -50.0, 600.0, 200, 0.0, 2.0);
 	Ecorr_over_Erec_vs_z = new TH2F("bcal_Ecorr_over_Erec_vs_z","Ecorr_over_Erec_vs_z", 200, -50.0, 600.0, 200, 0.0, 4.0);
 	Ereconstructed_vs_Ethrown = new TH2F("Ereconstructed_vs_Ethrown","BCAL total reconstructed E to total thrown E", 200, 0.0, 6.0, 200, 0.0, 6.0);
+
+	Etot_truth = new TH1F("Etot_truth", "Sum of all truth showers (GeV)", 200, 0.0, 6.0);
+	Etruth_over_Ethrown_vs_z = new TH2F("bcal_Etruth_over_Ethrown_vs_z","Etruth_over_Ethrown_vs_z", 200, -50.0, 600.0, 200, 0.0, 2.0);
 
 	return NOERROR;
 }
@@ -70,18 +72,12 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DBCALShower*> showers;
 	vector<const DFCALShower*> fcal_showers;
-	vector<const DBCALTruthShower*> truthhits;	
-	loop->Get(showers, "SIMPLE");
+	vector<const DBCALTruthShower*> truthshowers;	
+	vector<const DMCThrown*> mcthrowns;
+	loop->Get(showers);
 	//loop->Get(fcal_showers);
-	loop->Get(truthhits);
-	
-	double Etot = 0.0;
-	double z = 0.0;
-	for(unsigned int i=0; i<truthhits.size(); i++){
-		Etot += truthhits[i]->E;
-		z += truthhits[i]->E*truthhits[i]->z;
-	}
-	z/=Etot;
+	loop->Get(truthshowers);
+	loop->Get(mcthrowns);
 	
 	LockState();
 	
@@ -145,15 +141,23 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 		
 	}
 	
+	// Truth values
+	double Etruth_tot = 0.0;
+	double z_truth = 0.0;
+	for(unsigned int i=0; i<truthshowers.size(); i++){
+		Etruth_tot += truthshowers[i]->E;
+		z_truth += truthshowers[i]->E*truthshowers[i]->z;
+	}
+	z_truth/=Etruth_tot;
+	Etot_truth->Fill(Etruth_tot);
+
 	// Compare to thrown values
-	vector<const DMCThrown*> mcthrowns;
-	loop->Get(mcthrowns);
 	double Etot_thrown=0.0;
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
 		Etot_thrown += mcthrowns[i]->E;
 		for(unsigned int j=0; j<showers.size(); j++){
 			double z = showers[j]->z;
-			E_over_Erec_vs_z->Fill(z, mcthrowns[i]->E/showers[j]->Ecorr);
+			Erec_over_Ethrown_vs_z->Fill(z, showers[j]->Ecorr/mcthrowns[i]->E);
 
 			double Ecorr = showers[j]->Ecorr*(1.106+(z-208.4)*(z-208.4)*6.851E-6);
 			Ecorr_over_Erec_vs_z->Fill(z, mcthrowns[i]->E/Ecorr);
@@ -161,6 +165,7 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 	}
 	
 	Ereconstructed_vs_Ethrown->Fill(Etot_thrown, Etot_reconstructed);
+	Etruth_over_Ethrown_vs_z->Fill(z_truth, Etruth_tot/Etot_thrown);
 
 	UnlockState();	
 
