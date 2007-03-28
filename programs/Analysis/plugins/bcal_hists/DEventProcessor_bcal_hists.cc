@@ -11,7 +11,7 @@
 
 #include "DANA/DApplication.h"
 #include "BCAL/DBCALShower.h"
-#include "BCAL/DHDDMBCALTruth.h"
+#include "BCAL/DBCALTruthShower.h"
 #include "FCAL/DFCALShower.h"
 #include "TRACKING/DMCThrown.h"
 
@@ -70,7 +70,7 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DBCALShower*> showers;
 	vector<const DFCALShower*> fcal_showers;
-	vector<const DHDDMBCALTruth*> truthhits;	
+	vector<const DBCALTruthShower*> truthhits;	
 	loop->Get(showers, "SIMPLE");
 	//loop->Get(fcal_showers);
 	loop->Get(truthhits);
