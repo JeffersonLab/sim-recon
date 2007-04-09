@@ -8,23 +8,23 @@
 #ifndef _DCoordinateSystem_
 #define _DCoordinateSystem_
 
-#include <TVector3.h>
+#include <DVector3.h>
 
 class DCoordinateSystem{
 	public:
 		DCoordinateSystem(){}
 		virtual ~DCoordinateSystem(){}
 		
-		TVector3 origin;	//< x,y,z-coordinate of origin in lab coordinates
-		TVector3 sdir;		//< direction of s-axis in lab coordinates
-		TVector3 tdir;		//< direction of t-axis in lab coordinates
-		TVector3 udir;		//< direction of u-axis in lab coordinates
+		DVector3 origin;	//< x,y,z-coordinate of origin in lab coordinates
+		DVector3 sdir;		//< direction of s-axis in lab coordinates
+		DVector3 tdir;		//< direction of t-axis in lab coordinates
+		DVector3 udir;		//< direction of u-axis in lab coordinates
 		double L;			//< length of wire (if this represents a wire)
 		
 		inline void ToLab(double &x, double &y, double &z);
 		inline void FromLab(double &x, double &y, double &z);
-		inline void ToLab(TVector3 &pos);
-		inline void FromLab(TVector3 &pos);
+		inline void ToLab(DVector3 &pos);
+		inline void FromLab(DVector3 &pos);
 };
 
 //---------------------------------
@@ -34,7 +34,7 @@ inline void DCoordinateSystem::ToLab(double &x, double &y, double &z)
 {
 	/// Transform the given vector from this coordinate
 	/// system into the lab coordinate system.
-	TVector3 pos(x,y,z);
+	DVector3 pos(x,y,z);
 	ToLab(pos);
 	x= pos.x();
 	y= pos.y();
@@ -48,7 +48,7 @@ inline void DCoordinateSystem::FromLab(double &x, double &y, double &z)
 {
 	/// Transform the given vector from the lab coordinate
 	/// system into this coordinate system.
-	TVector3 pos(x,y,z);
+	DVector3 pos(x,y,z);
 	FromLab(pos);
 	x= pos.x();
 	y= pos.y();
@@ -58,7 +58,7 @@ inline void DCoordinateSystem::FromLab(double &x, double &y, double &z)
 //---------------------------------
 // ToLab
 //---------------------------------
-inline void DCoordinateSystem::ToLab(TVector3 &pos)
+inline void DCoordinateSystem::ToLab(DVector3 &pos)
 {
 	/// Transform the given vector from this coordinate
 	/// system into the lab coordinate system.
@@ -68,7 +68,7 @@ inline void DCoordinateSystem::ToLab(TVector3 &pos)
 //---------------------------------
 // FromLab
 //---------------------------------
-inline void DCoordinateSystem::FromLab(TVector3 &pos)
+inline void DCoordinateSystem::FromLab(DVector3 &pos)
 {
 	/// Transform the given vector from the lab coordinate
 	/// system into this coordinate system.
