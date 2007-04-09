@@ -8,7 +8,7 @@
 #ifndef _DFCALPhoton_
 #define _DFCALPhoton_
 
-#include <TVector3.h>
+#include <DVector3.h>
 #include <TLorentzVector.h>
 #include "DFCALCluster.h"
 
@@ -23,24 +23,24 @@ class DFCALPhoton:public JObject{
 		~DFCALPhoton();
 
 		const double getEnergy() const;  // get photon energy and momentum
-		const TVector3 get3Mom() const; 
+		const DVector3 get3Mom() const; 
 
 		// fix photon energy and momentu from cluster energy and position
                 void setEnergy(const double energy);  
-                void set3Mom(const double energy, const TVector3 pos);    
+                void set3Mom(const double energy, const DVector3 pos);    
 // just a placeholder right now
                 static void makePhoton(); 
 
 	private:
 
                 double fEnergy; 
-                TVector3 fMom;  // Photon 3-momentum
+                DVector3 fMom;  // Photon 3-momentum
 //                TLorentzVector fPos;  // Photon 4-position
 
 };
 
 
-inline const TVector3 DFCALPhoton::get3Mom() const
+inline const DVector3 DFCALPhoton::get3Mom() const
 {
       return fMom;
 }

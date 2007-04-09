@@ -6,7 +6,7 @@
 //
 
 #include <math.h>
-#include <TVector3.h>
+#include <DVector3.h>
 
 #include "DFCALPhoton_factory.h"
 #include "DFCALPhoton.h"
@@ -48,7 +48,7 @@ jerror_t DFCALPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	        // Apply simple non-linear and depth corrections to clusters
                
                 const double Ein = (**cluster).getEnergy();
-                const TVector3 pos( (**cluster).getCentroid().x, 
+                const DVector3 pos( (**cluster).getCentroid().x, 
                                     (**cluster).getCentroid().y,
                                     (**cluster).getCentroid().z);
 
@@ -122,7 +122,7 @@ void DFCALPhoton::setEnergy(const double energy)
 }
 
 // Simple depth correction: parameters imported from Radphi. 
-void DFCALPhoton::set3Mom(const double energy, const TVector3 pos) 
+void DFCALPhoton::set3Mom(const double energy, const DVector3 pos) 
 {
 
 	double x = pos.X();

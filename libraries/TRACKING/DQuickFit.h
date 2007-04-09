@@ -49,7 +49,7 @@
 #include <vector>
 using namespace std;
 
-#include <TVector3.h>
+#include <DVector3.h>
 
 #include "JANA/jerror.h"
 

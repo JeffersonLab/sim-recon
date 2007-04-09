@@ -11,7 +11,7 @@
 #include <vector>
 using std::vector;
 
-#include <TVector3.h>
+#include <DVector3.h>
 
 #include <JANA/jerror.h>
 
@@ -37,7 +37,7 @@ class DReferenceTrajectory{
 
 		class swim_step_t:public DCoordinateSystem{
 			public:
-				TVector3 mom;
+				DVector3 mom;
 				double Ro;
 				double s; // distance along RT
 		};
@@ -52,16 +52,16 @@ class DReferenceTrajectory{
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DReferenceTrajectory";}
 		
-		double DistToRT(double x, double y, double z){return DistToRT(TVector3(x,y,z));}
-		double DistToRT(TVector3 hit);
+		double DistToRT(double x, double y, double z){return DistToRT(DVector3(x,y,z));}
+		double DistToRT(DVector3 hit);
 		double DistToRT(const DCoordinateSystem *wire, double *s=NULL);
 		double DistToRTBruteForce(const DCoordinateSystem *wire, double *s=NULL);
 		double DistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
 		double DistToRTBruteForce(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
 		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire);
-		void Swim(const TVector3 &pos, const TVector3 &mom, double q=-1000.0);
-		TVector3 GetLastDOCAPoint(void);
-		void GetLastDOCAPoint(TVector3 &pos, TVector3 &mom);
+		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0);
+		DVector3 GetLastDOCAPoint(void);
+		void GetLastDOCAPoint(DVector3 &pos, DVector3 &mom);
 		double GetLastDistAlongWire(void){return last_dist_along_wire;}
 		void SetStepSize(double step_size){this->step_size=step_size;}
 

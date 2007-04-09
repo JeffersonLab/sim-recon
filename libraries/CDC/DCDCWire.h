@@ -8,7 +8,6 @@
 #ifndef _DCDCWire_
 #define _DCDCWire_
 
-#include <TVector3.h>
 #include <DCoordinateSystem.h>
 
 

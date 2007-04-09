@@ -441,15 +441,15 @@ jerror_t DQuickFit::Dump(void)
 //-----------------
 // AddHits
 //-----------------
-jerror_t DQuickFit::AddHits(int N, TVector3 *v)
+jerror_t DQuickFit::AddHits(int N, DVector3 *v)
 {
 	/// Append a list of hits to the current list of hits using
-	/// TVector3 objects. The TVector3 objects are copied internally
+	/// DVector3 objects. The DVector3 objects are copied internally
 	/// so it is safe to delete the objects after calling AddHits()
 	/// For 2D hits, the value of z will be ignored.
 
 	for(int i=0; i<N; i++, v++){
-		TVector3 *vec = new TVector3(*v);
+		DVector3 *vec = new DVector3(*v);
 		if(vec)
 			hits.push_back(vec);
 		else
@@ -503,7 +503,7 @@ jerror_t DQuickFit::PruneOutlier(void)
 	
 	float X=0, Y=0;
 	for(unsigned int i=0;i<hits.size();i++){
-		TVector3 *v = hits[i];
+		DVector3 *v = hits[i];
 		X += v->x();
 		Y += v->y();
 	}
@@ -513,7 +513,7 @@ jerror_t DQuickFit::PruneOutlier(void)
 	float max =0.0;
 	int idx = -1;
 	for(unsigned int i=0;i<hits.size();i++){
-		TVector3 *v = hits[i];
+		DVector3 *v = hits[i];
 		float x = v->x()-X;
 		float y = v->y()-Y;
 		float dist_sq = x*x + y*y; // we don't need to take sqrt just to find max

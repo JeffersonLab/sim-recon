@@ -17,8 +17,8 @@ DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield, do
 {
 	this->bfield = bfield;
 	this->q = q;
-	start_pos = pos = TVector3(0.0,0.0,0.0);
-	start_mom = mom = TVector3(0.0,0.0,1.0);
+	start_pos = pos = DVector3(0.0,0.0,0.0);
+	start_mom = mom = DVector3(0.0,0.0,1.0);
 	last_stepsize = stepsize = 1.0; // in cm
 	CalcDirs();
 }
@@ -26,7 +26,7 @@ DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield, do
 //-----------------------
 // DMagneticFieldStepper
 //-----------------------
-DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield, double q, const TVector3 *x, const TVector3 *p)
+DMagneticFieldStepper::DMagneticFieldStepper(const DMagneticFieldMap *bfield, double q, const DVector3 *x, const DVector3 *p)
 {
 	this->bfield = bfield;
 	this->q = q;
@@ -47,7 +47,7 @@ DMagneticFieldStepper::~DMagneticFieldStepper()
 //-----------------------
 // SetStartingParams
 //-----------------------
-jerror_t DMagneticFieldStepper::SetStartingParams(double q, const TVector3 *x, const TVector3 *p)
+jerror_t DMagneticFieldStepper::SetStartingParams(double q, const DVector3 *x, const DVector3 *p)
 {
 	this->q = q;
 	start_pos = pos = *x;
@@ -140,7 +140,7 @@ void grkuta_(double *CHARGE, double *STEP, double *VECT, double *VOUT,const DMag
 //-----------------------
 // Step
 //-----------------------
-double DMagneticFieldStepper::Step(TVector3 *newpos, double stepsize)
+double DMagneticFieldStepper::Step(DVector3 *newpos, double stepsize)
 {
 	double VECT[7], VOUT[7];
 	VECT[0] = pos.x();
@@ -173,10 +173,10 @@ double DMagneticFieldStepper::Step(TVector3 *newpos, double stepsize)
 //-----------------------
 // Step
 //-----------------------
-double DMagneticFieldStepper::Step(TVector3 *newpos, double stepsize)
+double DMagneticFieldStepper::Step(DVector3 *newpos, double stepsize)
 {
 	/// Advance the track one step. Copy the new position into the
-	/// TVector3 pointer (if given). Returns distance along path
+	/// DVector3 pointer (if given). Returns distance along path
 	/// traversed in step.
 	
 	// The idea here is to work in the coordinate system whose
@@ -209,7 +209,7 @@ double DMagneticFieldStepper::Step(TVector3 *newpos, double stepsize)
 
 	// If the magnetic field is zero or the charge is zero, then our job is easy
 	if(B.Mag2()==0.0 || q==0.0){
-		TVector3 pstep = mom;
+		DVector3 pstep = mom;
 		pstep.SetMag(stepsize);
 		pos += pstep;
 		if(newpos)*newpos = pos;
@@ -223,19 +223,19 @@ double DMagneticFieldStepper::Step(TVector3 *newpos, double stepsize)
 	// They are set via a call to CalcDirs()
 
 	// delta_z is step size in z direction
-	TVector3 delta_z = zdir*stepsize*cos_theta;
+	DVector3 delta_z = zdir*stepsize*cos_theta;
 
 	// delta_phi is angle of rotation in natural x/y plane
 	double delta_phi = stepsize/Rp;
 
 	// delta_x is magnitude of step in natural x direction
-	TVector3 delta_x = Ro*(1.0-cos(delta_phi))*xdir;
+	DVector3 delta_x = Ro*(1.0-cos(delta_phi))*xdir;
 	
 	// delta_y is magnitude of step in natural y direction
-	TVector3 delta_y = Ro*sin(delta_phi)*ydir;
+	DVector3 delta_y = Ro*sin(delta_phi)*ydir;
 	
 	// Calculate new position
-	TVector3 mypos = pos + delta_x + delta_y + delta_z;
+	DVector3 mypos = pos + delta_x + delta_y + delta_z;
 
 	// Adjust the step size if needed.
 	// Check that the field hasn't changed too much here. If it has,
@@ -250,8 +250,8 @@ double DMagneticFieldStepper::Step(TVector3 *newpos, double stepsize)
 		if(fabs(stepsize/Ro) > 1.0E-4){
 			double Bx,By,Bz;
 			bfield->GetField(mypos.x(), mypos.y(), mypos.z(), Bx, By, Bz);
-			TVector3 Bnew(Bx, By, Bz);
-			TVector3 Bdiff = B-Bnew;
+			DVector3 Bnew(Bx, By, Bz);
+			DVector3 Bdiff = B-Bnew;
 			double f = Bdiff.Mag()/B.Mag();
 			if(f > 1.0E-4){
 				return Step(newpos, stepsize/2.0);
@@ -287,7 +287,7 @@ double DMagneticFieldStepper::Step(TVector3 *newpos, double stepsize)
 //-----------------------
 // GetDirs
 //-----------------------
-void DMagneticFieldStepper::GetDirs(TVector3 &xdir, TVector3 &ydir, TVector3 &zdir)
+void DMagneticFieldStepper::GetDirs(DVector3 &xdir, DVector3 &ydir, DVector3 &zdir)
 {
 	xdir = this->xdir;
 	ydir = this->ydir;
@@ -297,7 +297,7 @@ void DMagneticFieldStepper::GetDirs(TVector3 &xdir, TVector3 &ydir, TVector3 &zd
 //-----------------------
 // SwimToPlane
 //-----------------------
-bool DMagneticFieldStepper::SwimToPlane(TVector3 &pos, TVector3 &mom, const TVector3 &origin, const TVector3 &norm)
+bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVector3 &origin, const DVector3 &norm)
 {
 	/// Swim the particle from the given position/momentum to
 	/// the plane defined by origin and norm. "origin" should define a point
@@ -370,7 +370,7 @@ _DBG_<<"This routine is not debugged!!!"<<endl;
 	// to a wire is calculated in DReferenceTrajectory::DistToRT.
 	// See the comments there for more details.
 	double dz_dphi = Ro*mom.Dot(zdir)/mom.Dot(ydir);
-	TVector3 pos_diff = pos - origin;
+	DVector3 pos_diff = pos - origin;
 	double A = xdir.Dot(norm);
 	double B = ydir.Dot(norm);
 	double C = zdir.Dot(norm);
@@ -405,7 +405,7 @@ _DBG_<<"This routine is not debugged!!!"<<endl;
 //-----------------------
 // DistToPlane
 //-----------------------
-bool DMagneticFieldStepper::DistToPlane(TVector3 &pos, const TVector3 &origin, const TVector3 &norm)
+bool DMagneticFieldStepper::DistToPlane(DVector3 &pos, const DVector3 &origin, const DVector3 &norm)
 {
 
 	return false;
@@ -414,7 +414,7 @@ bool DMagneticFieldStepper::DistToPlane(TVector3 &pos, const TVector3 &origin, c
 //-----------------------
 // SwimToRadius
 //-----------------------
-bool DMagneticFieldStepper::SwimToRadius(TVector3 &pos, TVector3 &mom, double R)
+bool DMagneticFieldStepper::SwimToRadius(DVector3 &pos, DVector3 &mom, double R)
 {
 
 	return false;
@@ -423,7 +423,7 @@ bool DMagneticFieldStepper::SwimToRadius(TVector3 &pos, TVector3 &mom, double R)
 //-----------------------
 // DistToRadius
 //-----------------------
-bool DMagneticFieldStepper::DistToRadius(TVector3 &pos, double R)
+bool DMagneticFieldStepper::DistToRadius(DVector3 &pos, double R)
 {
 
 	return false;

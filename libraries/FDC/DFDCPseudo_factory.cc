@@ -254,9 +254,9 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
     if ((*peak)->q-(*(peak-1))->q > err_diff1
                 && (*peak)->q-(*(peak+1))->q > err_diff2){
       // Define some matrices for use in the Newton-Raphson iteration
-      TMatrixD J(3,3);  //Jacobean matrix
-      TMatrixD F(3,1),N(3,1),X(3,1),par(3,1);
-      TMatrixD newpar(3,1);
+      DMatrix J(3,3);  //Jacobean matrix
+      DMatrix F(3,1),N(3,1),X(3,1),par(3,1);
+      DMatrix newpar(3,1);
       int i=0;
       double sum=0.;
  
@@ -348,19 +348,19 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 /// Algorithm described in Numerical Recipes in C, pp. 383-389.
 ///
  
-jerror_t DFDCPseudo_factory::FindNewParmVec(TMatrixD N,TMatrixD X,TMatrixD F,
-				       TMatrixD J,TMatrixD par,
-				       TMatrixD &newpar){
+jerror_t DFDCPseudo_factory::FindNewParmVec(DMatrix N,DMatrix X,DMatrix F,
+				       DMatrix J,DMatrix par,
+				       DMatrix &newpar){
   // Invert the J matrix
-  TMatrixD InvJ(TMatrixD::kInverted,J);
+  DMatrix InvJ(DMatrix::kInverted,J);
   
   // Find the full Newton step
-  TMatrixD fullstep(3,1);
+  DMatrix fullstep(3,1);
   fullstep=InvJ*F; fullstep*=-1;
 
   // find the rate of decrease for the Newton-Raphson step
-  TMatrixD slope(1,1);
-  slope=(-1.0)*TMatrixD(TMatrixD::kTransposed,F)*F; //dot product
+  DMatrix slope(1,1);
+  slope=(-1.0)*DMatrix(DMatrix::kTransposed,F)*F; //dot product
 
   // This should be a negative number...
   if (slope(0,0)>=0){
@@ -369,10 +369,10 @@ jerror_t DFDCPseudo_factory::FindNewParmVec(TMatrixD N,TMatrixD X,TMatrixD F,
   
   double lambda=1.0;  // Start out with full Newton step
   double lambda_temp,lambda2=lambda;
-  TMatrixD f(1,1),f2(1,1),newF(3,1),newf(1,1);
+  DMatrix f(1,1),f2(1,1),newF(3,1),newf(1,1);
 
   // Compute starting values for f=1/2 F.F 
-  f=0.5*(TMatrixD(TMatrixD::kTransposed,F)*F); // dot product
+  f=0.5*(DMatrix(DMatrix::kTransposed,F)*F); // dot product
 
   for (;;){
     newpar=par+lambda*fullstep;
@@ -383,7 +383,7 @@ jerror_t DFDCPseudo_factory::FindNewParmVec(TMatrixD N,TMatrixD X,TMatrixD F,
       double argm=newpar(K2,0)*(newpar(X0,0)-X(i,0)-A_OVER_H);
       newF(i,0)=N(i,0)-newpar(QA,0)/4.*(tanh(argp)-tanh(argm));
     }
-    newf=0.5*(TMatrixD(TMatrixD::kTransposed,newF)*newF); // dot product
+    newf=0.5*(DMatrix(DMatrix::kTransposed,newF)*newF); // dot product
  
     if (lambda<0.1) {  // make sure the step is not too small
       newpar=par;

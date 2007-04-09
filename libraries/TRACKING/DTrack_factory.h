@@ -10,8 +10,8 @@
 
 #include <vector>
 
-#include <TVector3.h>
-#include <TMatrixD.h>
+#include <DVector3.h>
+#include <DMatrix.h>
 #include <TH2.h>
 #include <TH3.h>
 
@@ -76,14 +76,14 @@ class DTrack_factory:public JFactory<DTrack>{
 		void GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob);
 		void GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob);
 		double GetDistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double &s);
-		//void KalmanFilter(TMatrixD &state, TMatrixD &P, DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom);
-		//void KalmanStep(TMatrixD &x, TMatrixD &P, TMatrixD &z_minus_h, TMatrixD &A, TMatrixD &H, TMatrixD &Q, TMatrixD &R, TMatrixD &W, TMatrixD &V);
-		//double ProjectStateBackwards(double q, TMatrixD &state, const swim_step_t *step, const swim_step_t *stepRT, const DCDCWire *wire);
-		double ChiSq(double q, TMatrixD &state, const swim_step_t *start_step, DReferenceTrajectory *rt=NULL);
-		double ChiSq(double q, const TVector3 &pos, const TVector3 &mom, DReferenceTrajectory *rt=NULL);
+		//void KalmanFilter(DMatrix &state, DMatrix &P, DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom);
+		//void KalmanStep(DMatrix &x, DMatrix &P, DMatrix &z_minus_h, DMatrix &A, DMatrix &H, DMatrix &Q, DMatrix &R, DMatrix &W, DMatrix &V);
+		//double ProjectStateBackwards(double q, DMatrix &state, const swim_step_t *step, const swim_step_t *stepRT, const DCDCWire *wire);
+		double ChiSq(double q, DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt=NULL);
+		double ChiSq(double q, const DVector3 &pos, const DVector3 &mom, DReferenceTrajectory *rt=NULL);
 		double ChiSq(double q, DReferenceTrajectory *rt);
-		fit_status_t LeastSquares(TVector3 &pos, TVector3 &mom, DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom, double &chisq);
-		void FillDebugHists(DReferenceTrajectory *rt, TVector3 &vertex_pos, TVector3 &vertex_mom);
+		fit_status_t LeastSquares(DVector3 &pos, DVector3 &mom, DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom, double &chisq);
+		void FillDebugHists(DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom);
 
 		std::vector<const DTrackCandidate*>	trackcandidates;
 		std::vector<const DCDCTrackHit* >	cdctrackhits;

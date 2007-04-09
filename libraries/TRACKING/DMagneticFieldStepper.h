@@ -6,7 +6,7 @@
 
 #include <math.h>
 
-#include <TVector3.h>
+#include <DVector3.h>
 #include "JANA/jerror.h"
 
 #include "DMagneticFieldMap.h"
@@ -24,22 +24,22 @@ class DMagneticFieldStepper
 	public:
 
 		DMagneticFieldStepper(const DMagneticFieldMap *map, double q=1.0);
-		DMagneticFieldStepper(const DMagneticFieldMap *map, double q, const TVector3 *x, const TVector3 *p);
+		DMagneticFieldStepper(const DMagneticFieldMap *map, double q, const DVector3 *x, const DVector3 *p);
 		~DMagneticFieldStepper();
 	
-		jerror_t SetStartingParams(double q, const TVector3 *x, const TVector3 *p);
+		jerror_t SetStartingParams(double q, const DVector3 *x, const DVector3 *p);
 		jerror_t SetMagneticFieldMap(const DMagneticFieldMap *map);
 		jerror_t SetStepSize(double step);
-		double Step(TVector3 *newpos=NULL, double stepsize=0.0);
-		void GetDirs(TVector3 &xdir, TVector3 &ydir, TVector3 &zdir);
-		void GetMomentum(TVector3 &mom){mom = this->mom;}
-		void GetPosition(TVector3 &pos){pos = this->pos;}
+		double Step(DVector3 *newpos=NULL, double stepsize=0.0);
+		void GetDirs(DVector3 &xdir, DVector3 &ydir, DVector3 &zdir);
+		void GetMomentum(DVector3 &mom){mom = this->mom;}
+		void GetPosition(DVector3 &pos){pos = this->pos;}
 		double GetCharge(void){return q;}
-		void GetPosMom(TVector3 &pos, TVector3 &mom){pos=this->pos; mom=this->mom;}
-		bool SwimToPlane(TVector3 &pos, TVector3 &mom, const TVector3 &origin, const TVector3 &norm);
-		bool DistToPlane(TVector3 &pos, const TVector3 &origin, const TVector3 &norm);
-		bool SwimToRadius(TVector3 &pos, TVector3 &mom, double R);
-		bool DistToRadius(TVector3 &pos, double R);
+		void GetPosMom(DVector3 &pos, DVector3 &mom){pos=this->pos; mom=this->mom;}
+		bool SwimToPlane(DVector3 &pos, DVector3 &mom, const DVector3 &origin, const DVector3 &norm);
+		bool DistToPlane(DVector3 &pos, const DVector3 &origin, const DVector3 &norm);
+		bool SwimToRadius(DVector3 &pos, DVector3 &mom, double R);
+		bool DistToRadius(DVector3 &pos, double R);
 
 		inline double GetRo(void){return fabs(Ro);}
 		inline double Getdz_dphi(void){return Ro*mom.Dot(zdir)/mom.Dot(ydir);}
@@ -50,15 +50,15 @@ class DMagneticFieldStepper
 		double stepsize;		///< maximum distance(cm) to move particle when Step() is called
 		double last_stepsize;///< stepsize (cm) used for last step
 		double q;				///< electric charge in units of e
-		TVector3 pos;			///< current position of particle
-		TVector3 mom;			///< current location of particle
-		TVector3 start_pos;	///< starting position of track
-		TVector3 start_mom;	///< starting momentum of track
-		TVector3 B;
+		DVector3 pos;			///< current position of particle
+		DVector3 mom;			///< current location of particle
+		DVector3 start_pos;	///< starting position of track
+		DVector3 start_mom;	///< starting momentum of track
+		DVector3 B;
 		double Ro, Rp;
 		double cos_theta, sin_theta;
 		
-		TVector3 xdir, ydir, zdir;
+		DVector3 xdir, ydir, zdir;
 		
 		void CalcDirs(void);
 };

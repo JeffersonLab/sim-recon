@@ -17,7 +17,7 @@
 #include "DFDCHit.h"
 #include "DFDCGeometry.h"
 
-#include <TMatrixD.h>
+#include <DMatrix.h>
 #include <TDecompLU.h>
 
 #include <algorithm>
@@ -74,11 +74,11 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 				 vector<const DFDCHit *>::const_iterator peak,
 				 vector<centroid_t> &centroids);
 		// Backtracking routine needed by FindCentroid 
-		jerror_t DFDCPseudo_factory::FindNewParmVec(TMatrixD N,
-						       TMatrixD X,
-						       TMatrixD F,
-						       TMatrixD J,TMatrixD par,
-						       TMatrixD &newpar);
+		jerror_t DFDCPseudo_factory::FindNewParmVec(DMatrix N,
+						       DMatrix X,
+						       DMatrix F,
+						       DMatrix J,DMatrix par,
+						       DMatrix &newpar);
  		
 	private:
 		std::vector<centroid_t>upeaks;

@@ -8,7 +8,7 @@
 #ifndef _DTrackHit_
 #define _DTrackHit_
 
-#include <TMatrixD.h>
+#include <DMatrix.h>
 
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
@@ -22,7 +22,7 @@ class DTrackHit:public JObject{
 
 		float x,y,z,r,phi;
 		DetectorSystem_t system;
-		TMatrixD cov; // covariance matrix rotated into lab x,y,z
+		DMatrix cov; // covariance matrix rotated into lab x,y,z
 };
 
 #endif // _DTrackHit_

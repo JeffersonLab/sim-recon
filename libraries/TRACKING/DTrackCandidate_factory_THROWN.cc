@@ -95,8 +95,8 @@ jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 
 		// Swim track using these parameters.
 		rt->q = can->q;
-		TVector3 pos(0.0, 0.0, can->z_vertex);
-		TVector3 mom;
+		DVector3 pos(0.0, 0.0, can->z_vertex);
+		DVector3 mom;
 		mom.SetMagThetaPhi(can->p, can->theta, can->phi);
 		rt->Swim(pos, mom);
 

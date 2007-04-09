@@ -5,7 +5,7 @@
 // Creator: davidl (on Darwin swire-b241.jlab.org 8.7.0 powerpc)
 //
 
-#include <TVector3.h>
+#include <DVector3.h>
 
 #include "DReferenceTrajectory.h"
 #include "DTrackCandidate.h"
@@ -45,7 +45,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 //---------------------------------
 // Swim
 //---------------------------------
-void DReferenceTrajectory::Swim(const TVector3 &pos, const TVector3 &mom, double q)
+void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q)
 {
 	/// (Re)Swim the trajectory starting from pos with momentum mom.
 	/// This will use the charge and step size (if given) passed to
@@ -108,7 +108,7 @@ DReferenceTrajectory::~DReferenceTrajectory()
 //---------------------------------
 // DistToRT
 //---------------------------------
-double DReferenceTrajectory::DistToRT(TVector3 hit)
+double DReferenceTrajectory::DistToRT(DVector3 hit)
 {
 if(Nswim_steps<1)_DBG__;
 	// First, find closest step to point
@@ -117,7 +117,7 @@ if(Nswim_steps<1)_DBG__;
 	double min_delta2 = 1.0E6;
 	for(int i=0; i<Nswim_steps; i++, swim_step++){
 
-		TVector3 pos_diff = swim_step->origin - hit;
+		DVector3 pos_diff = swim_step->origin - hit;
 		double delta2 = pos_diff.Mag2();
 		if(delta2 < min_delta2){
 			min_delta2 = delta2;
@@ -231,7 +231,7 @@ _DBG__;
 	for(int i=0; i<Nswim_steps; i++, swim_step++){
 		// Find the point's position along the wire. Skip this
 		// swim step if it is past the end of the wire
-		TVector3 pos_diff = swim_step->origin - wire->origin;
+		DVector3 pos_diff = swim_step->origin - wire->origin;
 		double u = wire->udir.Dot(pos_diff);
 		if(fabs(u)>L_over_2)continue;
 		
@@ -382,13 +382,13 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	// F = tdir.ydir
 	// G = tdir.zdir
 	// H = tdir.(pos-wpos)
-	const TVector3 &xdir = step->sdir;
-	const TVector3 &ydir = step->tdir;
-	const TVector3 &zdir = step->udir;
-	const TVector3 &sdir = wire->sdir;
-	const TVector3 &tdir = wire->tdir;
-	const TVector3 &udir = wire->udir;
-	TVector3 pos_diff = step->origin - wire->origin;
+	const DVector3 &xdir = step->sdir;
+	const DVector3 &ydir = step->tdir;
+	const DVector3 &zdir = step->udir;
+	const DVector3 &sdir = wire->sdir;
+	const DVector3 &tdir = wire->tdir;
+	const DVector3 &udir = wire->udir;
+	DVector3 pos_diff = step->origin - wire->origin;
 	
 	double A = sdir.Dot(xdir);
 	double B = sdir.Dot(ydir);
@@ -510,7 +510,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	double x = -Ro*phi*phi/2.0;
 	double y = Ro*phi;
 	double z = dz_dphi*phi;
-	TVector3 h = pos_diff + x*xdir + y*ydir + z*zdir;
+	DVector3 h = pos_diff + x*xdir + y*ydir + z*zdir;
 	double u = h.Dot(udir);
 	if(fabs(u) > wire->L/2.0){
 		// Looks like our DOCA point is past the end of the wire.
@@ -570,12 +570,12 @@ double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, c
 	/// It is vey SLOW and you should be using DistToRT(...) instead.
 	/// This is only here to provide an independent check of DistToRT(...).
 	
-	const TVector3 &xdir = step->sdir;
-	const TVector3 &ydir = step->tdir;
-	const TVector3 &zdir = step->udir;
-	const TVector3 &sdir = wire->sdir;
-	const TVector3 &tdir = wire->tdir;
-	TVector3 pos_diff = step->origin - wire->origin;
+	const DVector3 &xdir = step->sdir;
+	const DVector3 &ydir = step->tdir;
+	const DVector3 &zdir = step->udir;
+	const DVector3 &sdir = wire->sdir;
+	const DVector3 &tdir = wire->tdir;
+	DVector3 pos_diff = step->origin - wire->origin;
 	
 	double Ro = step->Ro;
 	double delta_z = step->mom.Dot(step->udir);
@@ -587,7 +587,7 @@ double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, c
 	double phi=M_PI;
 	for(int i=-2000; i<2000; i++){
 		double myphi=(double)i*0.000005;
-		TVector3 d = Ro*(cos(myphi)-1.0)*xdir
+		DVector3 d = Ro*(cos(myphi)-1.0)*xdir
 	            	+ Ro*sin(myphi)*ydir
 						+ dz_dphi*myphi*zdir
 						+ pos_diff;
@@ -616,14 +616,14 @@ double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, c
 //------------------
 // GetLastDOCAPoint
 //------------------
-void DReferenceTrajectory::GetLastDOCAPoint(TVector3 &pos, TVector3 &mom)
+void DReferenceTrajectory::GetLastDOCAPoint(DVector3 &pos, DVector3 &mom)
 {
 	/// Use values saved by the last call to one of the DistToRT functions
 	/// to calculate the 3-D DOCA position in lab coordinates and momentum
 	/// in GeV/c.
-	const TVector3 &xdir = last_swim_step->sdir;
-	const TVector3 &ydir = last_swim_step->tdir;
-	const TVector3 &zdir = last_swim_step->udir;
+	const DVector3 &xdir = last_swim_step->sdir;
+	const DVector3 &ydir = last_swim_step->tdir;
+	const DVector3 &zdir = last_swim_step->udir;
 
 	double x = -(last_swim_step->Ro/2.0)*last_phi*last_phi;
 	double y = last_swim_step->Ro*last_phi;
@@ -637,14 +637,14 @@ void DReferenceTrajectory::GetLastDOCAPoint(TVector3 &pos, TVector3 &mom)
 //------------------
 // GetLastDOCAPoint
 //------------------
-TVector3 DReferenceTrajectory::GetLastDOCAPoint(void)
+DVector3 DReferenceTrajectory::GetLastDOCAPoint(void)
 {
 	/// Use values saved by the last call to one of the DistToRT functions
 	/// to calculate the 3-D DOCA position in lab coordinates. This is
 	/// mainly intended for debugging.
-	const TVector3 &xdir = last_swim_step->sdir;
-	const TVector3 &ydir = last_swim_step->tdir;
-	const TVector3 &zdir = last_swim_step->udir;
+	const DVector3 &xdir = last_swim_step->sdir;
+	const DVector3 &ydir = last_swim_step->tdir;
+	const DVector3 &zdir = last_swim_step->udir;
 	double Ro = last_swim_step->Ro;
 	double delta_z = last_swim_step->mom.Dot(zdir);
 	double delta_phi = last_swim_step->mom.Dot(ydir)/Ro;
