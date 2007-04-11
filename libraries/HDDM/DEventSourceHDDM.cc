@@ -701,11 +701,10 @@ jerror_t DEventSourceHDDM::Extract_DBCALTruthShower(s_HDDM_t *hddm_s,  JFactory<
 	
 	for(unsigned int i = 0; i < PE->mult; i++) {
 		s_BcalTruthShowers_t* bcalTruthShowers = NULL;
-		if(PE->in[i].hitView)
-			if(PE->in[i].hitView->barrelEMcal)
-				bcalTruthShowers= PE->in[i].hitView->barrelEMcal->bcalTruthShowers;
-		if(!bcalTruthShowers)continue;
-        
+		if(PE->in[i].hitView == HDDM_NULL)continue;
+		if(PE->in[i].hitView->barrelEMcal == HDDM_NULL)continue;
+		if((bcalTruthShowers = PE->in[i].hitView->barrelEMcal->bcalTruthShowers) == HDDM_NULL)continue;
+       
 		for(unsigned int j = 0; j < bcalTruthShowers->mult; j++) {
 			DBCALTruthShower *bcaltruth = new DBCALTruthShower;
 			bcaltruth->track = bcalTruthShowers->in[j].track;
