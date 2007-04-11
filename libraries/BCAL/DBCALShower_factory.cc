@@ -12,6 +12,8 @@
 #include "DBCALGeometry.h"
 #include "DBCALShower_factory.h"
 
+#define BCAL_Z_OFFSET 26.03+123.4+65.0 //convert regina's coordinated to HDGeant's
+
 //------------------
 // DBCALShower_factory
 //------------------
@@ -33,11 +35,13 @@ DBCALShower_factory::DBCALShower_factory()
 	rmsmax= 5.0;    // T RMS THRESHOLD
 
 	f_att= 1.0;
-	lmbda1=150.; // Attenuation lenth and other parameters
+	//lmbda1=150.; // Attenuation lenth and other parameters
+	lmbda1=300.; // Attenuation lenth and other parameters DL 3/27/07
 	lmbda2=700.; // used in formula  attenuation factor
 	mcprod=0;	//   mcprod=0 for MC data and mcprod=1 for real data
 
-	C_EFFECTIVE=15.0; //Effective v of light in scintillator
+	// C_EFFECTIVE=15.0; //Effective v of light in scintillator
+	C_EFFECTIVE=16.75; //Effective v of light in scintillator DL 3/27/07
 	ECORR=0.13; // ECORR actually could be a function of E
 }
 
@@ -87,7 +91,7 @@ jerror_t DBCALShower_factory::evnt(JEventLoop *loop, int eventnumber)
     shower->Ecorr=shower->E*(1+ECORR);
     shower->x = X_cluster;
     shower->y = Y_cluster;
-    shower->z = Z_cluster;   
+    shower->z = Z_cluster + BCAL_Z_OFFSET;   
     shower->t = T_cluster;
     shower->N_cell=Nclus_tot;
     shower->total_layer_cluster=total_layer_cluster;

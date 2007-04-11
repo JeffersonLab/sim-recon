@@ -18,14 +18,17 @@ jerror_t DBCALGeometry_factory::evnt(JEventLoop *loop, int eventnumber)
   DBCALGeometry *bcalGeom = new DBCALGeometry;
 
    bcalGeom->NBCALMODS  =48; 
-   bcalGeom->NBCALLAYS1 =8;  
+   //bcalGeom->NBCALLAYS1 =8;  
+   bcalGeom->NBCALLAYS1 =5;  // DL 3/27/07
    bcalGeom->NBCALLAYS2 =4;  
    bcalGeom->NBCALSECS1 =4;  
    bcalGeom->NBCALSECS2 =3; 
    bcalGeom->BCALINNERRAD =65.0;   
    bcalGeom->BCALMIDRAD   =75.0;   
-   bcalGeom->BCALOUTERRAD =90.0;   
-   bcalGeom->BCALFIBERLENTH =395.0;   
+   //bcalGeom->BCALOUTERRAD =90.0;   
+   bcalGeom->BCALOUTERRAD =87.46;  // DL 3/27/07   
+   //bcalGeom->BCALFIBERLENTH =395.0;   
+   bcalGeom->BCALFIBERLENTH =390.0;    // DL 3/27/07 
 
   _data.push_back(bcalGeom);
 

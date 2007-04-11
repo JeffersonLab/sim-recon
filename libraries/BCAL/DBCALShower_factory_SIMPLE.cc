@@ -24,7 +24,7 @@ DBCALShower_factory_SIMPLE::DBCALShower_factory_SIMPLE()
 {
 	UP_DOWN_COINCIDENCE_WINDOW = 50.0; // in ns
 	ENERGY_SCALE_FACTOR = 1.0; // scale factor for converting energy to GeV (1.1 is empirical)
-	SIGNAL_VELOCITY = 16.82; // in cm/ns
+	SIGNAL_VELOCITY = 16.75; // in cm/ns
 	Z_CENTER = 17.0+0.5+390.0/2.0; // in cm (0.5 is empirical)
 	MIN_CLUSTER_SPACING = 50.0; // in cm
 	MIN_SHOWER_ENERGY = 0.001; // in GeV
@@ -109,6 +109,8 @@ jerror_t DBCALShower_factory_SIMPLE::evnt(JEventLoop *loop, int eventnumber)
 
 	// Loop over hits finding coincidences between upstream and downstream
 	// hits. Put them in pshower_t objects.
+	vector<bool> up_used(upstream_bcalhits.size(), false);
+	vector<bool> down_used(downstream_bcalhits.size(), false);
 	vector<pshower_t> pshowers;
 	for(unsigned int i=0; i<upstream_bcalhits.size(); i++){
 		const DBCALHit *up = upstream_bcalhits[i];
@@ -123,6 +125,9 @@ jerror_t DBCALShower_factory_SIMPLE::evnt(JEventLoop *loop, int eventnumber)
 			// Check timing
 			double tdiff = up->t - down->t;
 			if(fabs(tdiff)>UP_DOWN_COINCIDENCE_WINDOW)continue;
+			
+			up_used[i] = true;
+			down_used[j] = true;
 
 			// Looks like a match! Add to list of coincidences
 			pshower_t pshower;
@@ -145,7 +150,44 @@ jerror_t DBCALShower_factory_SIMPLE::evnt(JEventLoop *loop, int eventnumber)
 			}
 		}
 	}
+	
+	// Some hits are not used because a matching hit on the other end
+	// was not found. This can represent a signifacnt amount of energy
+	// in the cluster. Here, we loop over the hits and turn any un-used
+	// single end hits into pshowers. Note that for now, we assume
+	// knowledge of the attenutation length, signal propagation velocity,
+	// and time offset. All of these should be known to some degree for
+	// real data.
+	for(unsigned int i=0; i<upstream_bcalhits.size(); i++){
+		if(up_used[i])continue; // skip hits already used above
+		const DBCALHit *up = upstream_bcalhits[i];
+		
+		pshower_t pshower;
+		pshower.upstream_hit = up;
+		pshower.downstream_hit = NULL;
+		pshower.E = up->E*ENERGY_SCALE_FACTOR;
+		pshower.t = up->t;
+		pshower.z = Z_CENTER + SIGNAL_VELOCITY*up->t;
+		ModuleLayerSectorToPhiR(up->module, up->layer, up->sector, pshower.phi, pshower.R);
+		pshower.used = false;
 
+		pshowers.push_back(pshower);
+	}
+	for(unsigned int i=0; i<downstream_bcalhits.size(); i++){
+		if(down_used[i])continue; // skip hits already used above
+		const DBCALHit *down = downstream_bcalhits[i];
+		
+		pshower_t pshower;
+		pshower.upstream_hit = NULL;
+		pshower.downstream_hit = down;
+		pshower.E = down->E*ENERGY_SCALE_FACTOR;
+		pshower.t = down->t;
+		pshower.z = Z_CENTER - SIGNAL_VELOCITY*down->t;
+		ModuleLayerSectorToPhiR(down->module, down->layer, down->sector, pshower.phi, pshower.R);
+		pshower.used = false;
+
+		pshowers.push_back(pshower);
+	}
 
 	// Sort pshowers by energy
 	sort(pshowers.begin(), pshowers.end(), pshowerSort_C);
