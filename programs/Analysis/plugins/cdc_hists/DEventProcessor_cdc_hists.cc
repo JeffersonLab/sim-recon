@@ -60,6 +60,8 @@ jerror_t DEventProcessor_cdc_hists::init(void)
 	cdc_layer1_theta_vs_p = new TH2F("cdc_layer1_theta_vs_p","#theta vs. momentum for tracks hitting CDC layer 1",25, 0.1, 5.1, 200, 0.0, 40.0);
 	cdc_layer23_theta_vs_p = new TH2F("cdc_layer23_theta_vs_p","#theta vs. momentum for tracks hitting CDC layer 23",25, 0.1, 5.1, 200, 0.0, 40.0);
 	
+	cdc_nhits_per_event = new TH1F("cdc_nhits_per_event", "CDC hits per event", 501, 0.0, 500.0);
+
 	// Go back up to the parent directory
 	dir->cd("../");
 	
@@ -75,6 +77,8 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DMCThrown*> mcthrowns;
 	loop->Get(cdchits);
 	loop->Get(mcthrowns);
+	
+	cdc_nhits_per_event->Fill((double)cdchits.size());
 	
 	// Loop over CDC hits
 	bool ishit1 = false;
