@@ -51,6 +51,7 @@ typedef enum {
   AntiXi0        = 30,
   AntiXiPlus     = 31,
   AntiOmegaPlus  = 32,
+  Geantino       = 48,
 
   /* the constants defined by GEANT end here */
 
@@ -170,6 +171,9 @@ inline static char *ParticleType(Particle_t p)
   case AntiOmegaPlus:
     strcpy(ret,"antiOmega+");
     break;
+  case Geantino:
+    strcpy(ret,"geantino");
+    break;
   case Rho0:
     strcpy(ret,"rho0");
     break;  
@@ -241,6 +245,7 @@ inline static double ParticleMass(Particle_t p)
   case AntiXi0:		return 1.31483;
   case AntiXiPlus:	return 1.32131;
   case AntiOmegaPlus:	return 1.67245;
+  case Geantino:		return 0.0;
   case Rho0:		return 0.7693;
   case RhoPlus:		return 0.7693;
   case RhoMinus:	return 0.7693;
@@ -292,6 +297,7 @@ inline static int ParticleCharge(Particle_t p)
   case AntiXi0:		return  0;
   case AntiXiPlus:	return +1;
   case AntiOmegaPlus:	return +1;
+  case Geantino:		return  0;
   case Rho0:		return  0;
   case RhoPlus:		return +1;
   case RhoMinus:	return -1;
