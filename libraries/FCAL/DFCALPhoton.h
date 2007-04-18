@@ -23,26 +23,26 @@ class DFCALPhoton:public JObject{
 		~DFCALPhoton();
 
 		const double getEnergy() const;  // get photon energy and momentum
-		const DVector3 get3Mom() const; 
+		const DVector3 getMom3() const; 
+                const TLorentzVector getMom4() const;
 
 		// fix photon energy and momentu from cluster energy and position
                 void setEnergy(const double energy);  
-                void set3Mom(const double energy, const DVector3 pos);    
-// just a placeholder right now
-                static void makePhoton(); 
+                void setMom3(const double energy, const DVector3 mom);    
+                void setMom4();  
 
 	private:
 
                 double fEnergy; 
-                DVector3 fMom;  // Photon 3-momentum
-//                TLorentzVector fPos;  // Photon 4-position
+                DVector3 fMom3;  // Photon 3-momentum
+                TLorentzVector fMom4;  // Photon 4-momentum
 
 };
 
 
-inline const DVector3 DFCALPhoton::get3Mom() const
+inline const DVector3 DFCALPhoton::getMom3() const
 {
-      return fMom;
+      return fMom3;
 }
 
 inline const double DFCALPhoton::getEnergy() const
@@ -51,11 +51,10 @@ inline const double DFCALPhoton::getEnergy() const
 }
 
 
-/*
-inline TLorentzVector DFCALPhoton::get4Position()
+inline const TLorentzVector DFCALPhoton::getMom4() const
 {
-      return fPos;
-}*/
+      return fMom4;
+}
 
 
 #endif // _DFCALPhoton_

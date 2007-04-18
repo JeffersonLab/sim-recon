@@ -12,13 +12,13 @@
 #include "JANA/JEventLoop.h"
 #include "DFCALCluster.h"
 
-
 class DFCALCluster_factory:public JFactory<DFCALCluster>{
 	public:
 		DFCALCluster_factory();
 		~DFCALCluster_factory(){};
 		
 		const string toString(void);
+//	        userhits_t* hits;
 	
 	private:
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	

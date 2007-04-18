@@ -6,6 +6,7 @@
 //
 
 #include <math.h>
+#include <DVector3.h>
 
 #include "DFCALCluster_factory.h"
 #include "DFCALCluster.h"
@@ -16,9 +17,11 @@
 # define SQR(x) (x)*(x)
 #endif
 
+userhits_t* hits = NULL;
+
 /* uncomment below to enable log-weighting method for cluster centroid
    (imported from IU clusterizer, it was default method for Radphi) - MK */
-#define LOG2_WEIGHTING 
+// #define LOG2_WEIGHTING 
 
 // Used to sort hits by Energy
 bool FCALHitsSort_C(const DFCALHit* const &thit1, const DFCALHit* const &thit2) {
@@ -57,8 +60,9 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 	// fill user's hit list
         int nhits = 0;
-        userhits_t* hits = 0;
-        hits = (userhits_t*) malloc(sizeof(userhits_t)*3333);
+        if (hits == 0) {
+           hits = (userhits_t*) malloc(sizeof(userhits_t)*FCAL_USER_HITS_MAX);
+        }
 
 // Fill the structure that used to be used by clusterizers in Radphi 
 	for (vector<const DFCALHit*>::const_iterator hit  = fcalhits.begin(); 
@@ -70,7 +74,11 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
            hits->hit[nhits].E = (**hit).E; // adjust a hit energy either in the hit or photon factory
            hits->hit[nhits].t = (**hit).t;
            nhits++;
-           if (nhits >= 3333)  break;
+           
+           if (nhits >= (int) FCAL_USER_HITS_MAX)  { 
+              cout << "nhits gt nhmax" << endl;
+              break;
+           }
 
         }
         hits->nhits = nhits;
@@ -158,17 +166,23 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	}
 
         for ( unsigned int c = 0; c < clusterCount; c++) {
-           int hitlist[3333];
+           int hitlist[FCAL_USER_HITS_MAX];
            unsigned int blockCount = clusterList[c]->getHits(hitlist,hits->nhits);
 	   if (blockCount < MIN_CLUSTER_BLOCK_COUNT) {
+              delete clusterList[c];
 	      continue;
 	   }
 	   else {
               _data.push_back( clusterList[c] );
 	   }
         }
+  
 
-        free(hits);
+        if (hits) {
+           free(hits);
+           hits=0;
+        }
+
 	return NOERROR;
 
 }
@@ -190,8 +204,8 @@ const string DFCALCluster_factory::toString(void)
 
 		printnewrow();
 		printcol("%d",	i);
-		printcol("%3.1f", fcalclust->getCentroid().x);
-		printcol("%3.1f", fcalclust->getCentroid().y);
+		printcol("%3.1f", fcalclust->getCentroid().x());
+		printcol("%3.1f", fcalclust->getCentroid().y());
 		printcol("%2.3f", fcalclust->getEnergy());
 
 		printrow();
@@ -201,15 +215,16 @@ const string DFCALCluster_factory::toString(void)
 }
 
 const userhits_t* DFCALCluster::fHitlist = 0;
+//const DFCALHit* DFCALCluster::fHitlist = 0;
 int* DFCALCluster::fHitused = 0;
 
 DFCALCluster::DFCALCluster()
 {
    fEnergy = 0;
    fEmax = 0;
-   fCentroid.x = 0;
-   fCentroid.y = 0;
-   fCentroid.z = 0;
+   fCentroid.SetX(0);
+   fCentroid.SetY(0);
+   fCentroid.SetZ(0);
    fRMS = 0;
    fRMS_u = 0;
    fRMS_v = 0;
@@ -237,7 +252,8 @@ DFCALCluster::~DFCALCluster()
    if (fEexpected) delete [] fEexpected;
 }
 
-void DFCALCluster::setHitlist( const userhits_t* const hits)
+ void DFCALCluster::setHitlist( const userhits_t* const hits)
+//void DFCALCluster::setHitlist( const DFCALHits* const hits, const )
 {
    fHitlist = hits;
    if (fHitused) {
@@ -251,6 +267,20 @@ void DFCALCluster::setHitlist( const userhits_t* const hits)
       }
    }
 }
+
+/* not needed to solve memory leak
+void DFCALCluster::unsetHitlist()
+{
+   if (fHitused) {
+      delete [] fHitused;
+      fHitused = 0;
+   }
+   if (fHitlist) {
+       delete [] fHitlist;
+       fHitlist = 0;
+   }   
+}
+*/
 
 int DFCALCluster::addHit(const int ihit, const double frac)
 {
@@ -293,14 +323,16 @@ bool DFCALCluster::update()
    double Emax=0;
    if (fNhits > 0) Emax = fHitlist->hit[fHit[0]].E;
 
+   DVector3 centroid;
+   centroid.SetX(0);
+   centroid.SetY(0);
+   centroid.SetZ(0);
+   double xc=0;
+   double yc=0;
 #ifdef LOG2_WEIGHTING
   /* This complicated centroid algorithm was copied from
    * Scott Teige's lgdClusterIU.c code -- don't ask [rtj]
    */
-   vector3_t centroid;
-   centroid.x = 0;
-   centroid.y = 0;
-   centroid.z = 0;
    double weight = 0.0;
    double weightSum = 0.0;
    double centerWeight = 0.0;
@@ -325,8 +357,8 @@ bool DFCALCluster::update()
                (neighborMaxWeight < weight)? weight:neighborMaxWeight;
       }
       if (weight > 0) {
-         centroid.x += fHitlist->hit[ih].x*weight;
-         centroid.y += fHitlist->hit[ih].y*weight;
+         xc  += fHitlist->hit[ih].x*weight;
+         yc  += fHitlist->hit[ih].y*weight;
          weightSum += weight;
       }
    }
@@ -335,28 +367,24 @@ bool DFCALCluster::update()
     * in the cluster that had positive weight
     */
    if (neighborMaxWeight > 0) {
-      centroid.x += (logFraction-1)*(centerWeight-neighborMaxWeight)
+      xc += (logFraction-1)*(centerWeight-neighborMaxWeight)
                              *fHitlist->hit[0].x;
-      centroid.y += (logFraction-1)*(centerWeight-neighborMaxWeight)
+      yc += (logFraction-1)*(centerWeight-neighborMaxWeight)
                              *fHitlist->hit[0].y;
       weightSum += (logFraction-1)*(centerWeight-neighborMaxWeight);
    }
-   centroid.x /= weightSum;
-   centroid.y /= weightSum;
+   centroid.SetX(xc/weightSum);
+   centroid.SetY(yc/weightSum);
 #else
-   vector3_t centroid;
-   centroid.x = 0;
-   centroid.y = 0;
-   centroid.z = 0;
    for (int h = 0; h < fNhits; h++) {
       int ih = fHit[h];
       double frac = fHitf[h];
-      centroid.x += fHitlist->hit[ih].x*(fHitlist->hit[ih].E*frac);
-      centroid.y += fHitlist->hit[ih].y*(fHitlist->hit[ih].E*frac);
+      xc += fHitlist->hit[ih].x*(fHitlist->hit[ih].E*frac);
+      yc += fHitlist->hit[ih].y*(fHitlist->hit[ih].E*frac);
 
    }
-   centroid.x /= energy;
-   centroid.y /= energy;
+   centroid.SetX(xc/energy);
+   centroid.SetY(yc/energy);
 #endif
 
    double MOM1x = 0;
@@ -378,7 +406,7 @@ bool DFCALCluster::update()
       MOM2 += fHitlist->hit[ih].E*frac*(SQR(x)+SQR(y));
 //      double u0 = sqrt(SQR(centroid.x) + SQR(centroid.y));
 //      double v0 = 0;
-      double phi = atan2(centroid.y,centroid.x);
+      double phi = atan2(centroid.y(),centroid.x());
       double u = x*cos(phi) + y*sin(phi);
       double v =-x*sin(phi) + y*cos(phi);
       MOM1u += fHitlist->hit[ih].E*frac*u;
@@ -400,8 +428,8 @@ bool DFCALCluster::update()
       fEmax = Emax;
       something_changed = true;
    }
-   if (fabs(centroid.x-fCentroid.x) > 0.1 ||
-       fabs(centroid.y-fCentroid.y) > 0.1) {
+   if (fabs(centroid.x()-fCentroid.x()) > 0.1 ||
+       fabs(centroid.y()-fCentroid.y()) > 0.1) {
       fCentroid = centroid;
       something_changed = true;
    }
@@ -414,7 +442,7 @@ bool DFCALCluster::update()
 }
 
 #define MOLIER_RADIUS 3.696
-#define MAX_SHOWER_RADIUS 30
+#define MAX_SHOWER_RADIUS 25
 
 void DFCALCluster::shower_profile(const int ihit,
                                 double& Eallowed, double& Eexpected) const
@@ -423,11 +451,11 @@ void DFCALCluster::shower_profile(const int ihit,
    if (fEnergy == 0) return;
    double x = fHitlist->hit[ihit].x;
    double y = fHitlist->hit[ihit].y;
-   double dist = sqrt(SQR(x - fCentroid.x) + SQR(y - fCentroid.y));
+   double dist = sqrt(SQR(x - fCentroid.x()) + SQR(y - fCentroid.y()));
    if (dist > MAX_SHOWER_RADIUS) return;
-   double theta = atan2(sqrt(SQR(fCentroid.x) + SQR(fCentroid.y)),FCAL_Zmid);
-   double phi = atan2(fCentroid.y,fCentroid.x);
-   double u0 = sqrt(SQR(fCentroid.x)+SQR(fCentroid.y));
+   double theta = atan2(sqrt(SQR(fCentroid.x()) + SQR(fCentroid.y())),FCAL_Zmid);
+   double phi = atan2(fCentroid.y(),fCentroid.x());
+   double u0 = sqrt(SQR(fCentroid.x())+SQR(fCentroid.y()));
    double v0 = 0;
    double u = x*cos(phi) + y*sin(phi);
    double v =-x*sin(phi) + y*cos(phi);

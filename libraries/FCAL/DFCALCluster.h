@@ -9,11 +9,29 @@
 #define _DFCALCluster_
 
 //#include <ntypes.h>
-#include <userhits.h>
-#include "DFCALHit.h"
+//#include "userhits.h"
+#include <DVector3.h>
+//#include "DFCALHit.h"
 
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
+
+#define FCAL_USER_HITS_MAX 2800
+
+// hits structures taken from radphi
+	typedef struct {
+	   int col;	
+	   int row;
+	   float x;
+	   float y;
+	   float E;
+	   float t;
+	} userhit_t;
+
+	typedef struct {
+	   int nhits;
+	   userhit_t hit[1];
+	} userhits_t;
 
 
 /* Define FCAL mid plane for the cluster angle determination 
@@ -43,12 +61,14 @@ class DFCALCluster:public JObject{
 */
 
 		static void setHitlist(const userhits_t* const hits);
+//		static void setHitlist(const DFCALHit* const hits);
+//		static void unsetHitlist();
 
 		double getEexpected(const int ihit) const;
 		double getEallowed(const int ihit) const;
 		double getEnergy() const;
 		double getEmax() const;
-		vector3_t getCentroid() const;
+		DVector3 getCentroid() const;
 		double getRMS() const;
 		double getRMS_u() const;
 		double getRMS_v() const;
@@ -65,7 +85,7 @@ class DFCALCluster:public JObject{
 		                    double& Eallowed, double& Eexpected) const ;
 		double fEnergy;              // total cluster energy (GeV) or 0 if stale
 		double fEmax;                // energy in the first block of the cluster
-		vector3_t fCentroid;         // cluster centroid position (cm)
+		DVector3 fCentroid;         // cluster centroid position (cm)
 		double fRMS;                 // cluster r.m.s. size (cm)
 		double fRMS_u;               // cluster r.m.s. size in radial direction (cm)
 		double fRMS_v;               // cluster r.m.s. size in azimuth direction (cm)
@@ -73,6 +93,8 @@ class DFCALCluster:public JObject{
 		int *fHit;                   // index list of hits owned by this cluster
 		double *fHitf;               // list of hit fractions owned by this cluster
 		static const userhits_t* fHitlist;   // pointer to user's hit list
+//		static const DFCALHit* fHitlist;   // pointer to user's hit list
+//                static const int fHitsNum; // number of FCAL hits 
 		static int *fHitused;        // number of clusters that use hit,
 					     // or -1 if it is a cluster seed
 		double *fEexpected;          // expected energy of hit by cluster (GeV)
@@ -84,6 +106,7 @@ inline double DFCALCluster::getEexpected(const int ihit) const
 {
 
    if ( (ihit >= 0) && (fHitlist) && (ihit < fHitlist->nhits) ) 
+   //if ( (ihit >= 0) && (fHitlist) && (ihit < fHitsNum) ) 
       return fEexpected[ihit];
    else
       return 0;
@@ -93,6 +116,7 @@ inline double DFCALCluster::getEallowed(const int ihit) const
 {
 
    if (ihit >= 0 && fHitlist && ihit < fHitlist->nhits) 
+   //if (ihit >= 0 && fHitlist && ihit < fHitsNum) 
       return fEallowed[ihit];
    else
       return 0;
@@ -108,7 +132,7 @@ inline double DFCALCluster::getEmax() const
    return fEmax;
 }
 
-inline vector3_t DFCALCluster::getCentroid() const
+inline DVector3 DFCALCluster::getCentroid() const
 {
    return fCentroid;
 }

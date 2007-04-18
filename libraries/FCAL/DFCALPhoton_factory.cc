@@ -7,9 +7,10 @@
 
 #include <math.h>
 #include <DVector3.h>
+#include <TLorentzVector.h>
 
 #include "DFCALPhoton_factory.h"
-#include "DFCALPhoton.h"
+//#include "DFCALPhoton.h"
 #include "DFCALCluster.h"
 #include "DFCALHit.h"
 #include "JANA/JEvent.h"
@@ -42,20 +43,21 @@ jerror_t DFCALPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
                                                         cluster != fcalClusters.end(); 
 							cluster++) {
 
-
-		DFCALPhoton *fcalPhoton = new DFCALPhoton;
+//		DFCALPhoton *fcalPhoton = new DFCALPhoton;
 
 	        // Apply simple non-linear and depth corrections to clusters
                
-                const double Ein = (**cluster).getEnergy();
-                const DVector3 pos( (**cluster).getCentroid().x, 
-                                    (**cluster).getCentroid().y,
-                                    (**cluster).getCentroid().z);
+/*                const double Ein = (**cluster).getEnergy();
+                const DVector3 mom( (**cluster).getCentroid().x(), 
+                                    (**cluster).getCentroid().y(),
+                                    (**cluster).getCentroid().z());
+                    
+                fcalPhoton->setEnergy( (**cluster).getEnergy() );
+                fcalPhoton->set3Mom( fcalPhoton->getEnergy(), (**cluster).getCentroid() );
+                */
 
-                fcalPhoton->setEnergy(Ein);
-                fcalPhoton->set3Mom(Ein,pos);
-
-//                DFCALPhoton::makePhoton(); // Apply corrections 
+                TLorentzVector gamma( (**cluster).getCentroid(), (**cluster).getEnergy() );
+                DFCALPhoton* fcalPhoton = makePhoton( gamma );
 
 		_data.push_back(fcalPhoton);
 
@@ -82,68 +84,25 @@ const string DFCALPhoton_factory::toString(void)
 		printnewrow();
 		printcol("%d",	i);
 		printcol("%3.1f", fcalphot->getEnergy());
-		printcol("%3.1f", fcalphot->get3Mom().x());
-		printcol("%3.1f", fcalphot->get3Mom().y());
-		printcol("%3.1f", fcalphot->get3Mom().z());
+		printcol("%3.1f", fcalphot->getMom4().X());
+		printcol("%3.1f", fcalphot->getMom4().Y());
+		printcol("%3.1f", fcalphot->getMom4().Z());
 		printrow();
 	}
 
 	return _table;
 }
 
-
-DFCALPhoton::DFCALPhoton()
-{
-   fEnergy = 0;
-   fMom.SetY(0) ;
-   fMom.SetX(0) ;
-   fMom.SetZ(0) ;
-}
-
-DFCALPhoton::~DFCALPhoton()
-{
-}
-
-#define	FCAL_RADIATION_LENGTH  3.1
-#define	FCAL_CRITICAL_ENERGY  0.01455
-#define	FCAL_SHOWER_OFFSET   3.0 
-
-// These change with the FCAL attenuation length (L=166cm)
-#define	EGAMMA_NORM 0.6348
-#define	EGAMMA_EPSILON   0.029
- 
-// Simple non-linear correction
-void DFCALPhoton::setEnergy(const double energy) 
+// Non-linear and depth corrections should be fixed within DFCALPhoton member functions
+DFCALPhoton* DFCALPhoton_factory::makePhoton(const TLorentzVector gamma) 
 {
 
-	double const A=1/EGAMMA_NORM; 				// Normalization factor 
-        double const power = 1/(1+EGAMMA_EPSILON); 	        // Non-linear factor
- 	fEnergy = pow(A*energy,power);
+        DFCALPhoton* photon = new DFCALPhoton;
+        
+	photon->setEnergy( gamma.T() );   
+	photon->setMom3(photon->getEnergy(), gamma.Vect());   
+        photon->setMom4();
+
+        return photon;
 }
 
-// Simple depth correction: parameters imported from Radphi. 
-void DFCALPhoton::set3Mom(const double energy, const DVector3 pos) 
-{
-
-	double x = pos.X();
-	double y = pos.Y();
-
-//  estimate shower depth based on shower maximum
-        double zMax = (FCAL_RADIATION_LENGTH*( 
-			FCAL_SHOWER_OFFSET + log(energy/FCAL_CRITICAL_ENERGY)));
-
-	double z = FCAL_Zmin - Shower_Vertex_Z + zMax;
-
-// normalization factor to momenta [GeV]
-        double f = energy/sqrt(pow(x,2)+pow(y,2)+pow(z,2)); 
-        fMom.SetX(x*f) ;
-    	fMom.SetY(y*f) ;
-	fMom.SetZ(z*f) ;
-}
-
-// Non-linear and depth corrections should be fixed together
-void DFCALPhoton::makePhoton() {
-
-// Apply final non-linear and depth corrections;
-
-}
