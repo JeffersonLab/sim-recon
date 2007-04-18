@@ -14,7 +14,7 @@
 	Use the links at the top to help navigate through this documentation.
 	Use the search form to search the documentation.
 
-	To view CVS statistics, <A href="CVSstats">look here</A>.
+	To view repository statistics, <A href="SVNstats">look here</A>.
 
 	\section starting Getting Started
 
