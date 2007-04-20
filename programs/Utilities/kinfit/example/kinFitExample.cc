@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
   string inFile;
   int max = (int)1E9;
   int verbose = 0;
-  int trackConv = 0;
+  string trackConv = "EASY";
   extern char* optarg;
   extern int optind;
   int isMC = 0;
@@ -75,8 +75,7 @@ int main(int argc, char *argv[]) {
           cout << "Input file name: " << inFile << endl;
           break;
         case 't':
-          trackConv = atoi(optarg);
-          cout << "Tracking conversion: " << trackConv << endl;
+          trackConv = optarg;
           break;
         case 'v':
           verbose++;
@@ -87,6 +86,7 @@ int main(int argc, char *argv[]) {
     }
   } 
 
+  cout << "Tracking conversion: " << trackConv << endl;
   // Set up the ROOT environment
   TROOT simple("simple","");
   TFile rfile(outFile,"RECREATE");
@@ -129,6 +129,10 @@ int main(int argc, char *argv[]) {
   double EphotError= 0.0;
   vector<TLorentzVector> preKfitP4(3);
   vector<TLorentzVector> postKfitP4(3);
+  vector<string> reconstruction(3);
+  reconstruction[0] = "DC";
+  reconstruction[1] = "DC";
+  reconstruction[2] = "DC";
 
   // Open the input file
   cerr << "Processing file: " << inFile << endl;
@@ -190,11 +194,12 @@ int main(int argc, char *argv[]) {
       // Set up the kimatic fit
       kfit->SetPhotonEnergy(preKfitPhoton.E());
       kfit->SetP4(preKfitP4);
+      kfit->SetReconstruction(reconstruction); // Tells how the track was reconstructed (DC, Calorimetry, etc)
       kfit->SetCovMatrix(cov_matrix);
       kfit->SetTargetMass(target.M());
       kfit->SetTrackingConversion(trackConv);
       // Could also call
-      //kfit->SetEvent(preKfitPhoton.E(), preKfitP4, cov_matrix, target.M(), 1);
+      //kfit->SetEvent(preKfitPhoton.E(), preKfitP4, reconstruction, cov_matrix, target.M(), reconstruction);
       // Start the fits!
       if(trial==1) 
       {
@@ -278,6 +283,7 @@ void PrintOptions(const char *name) {
   cout << "\t-m[#] Max number of events to be processed." << endl;
   cout << "\t-i<inFile> Input file name." << endl;
   cout << "\t-o<outFile> Output file name." << endl;
+  cout << "\t-t<trackingConversion> How to convert momentum to tracking parameters. (EASY, CLAS)" << endl;
   cout << "\t-v  Verbose (prints to screen events written to output TTree)" << endl;
   cout << "\t-h  Print this message." << endl;
   cout << endl;

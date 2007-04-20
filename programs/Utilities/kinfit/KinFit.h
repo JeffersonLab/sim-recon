@@ -35,9 +35,11 @@ private:
   double _ephot_out; /// < Photon energy (out)
   std::vector<TLorentzVector> _p4in; ///< Particle 4-momenta (in)
   std::vector<TLorentzVector> _p4out; ///< Particle 4-momenta (out)
+  std::vector<string> _reconstruction; ///< Particle reconstruction 0 - Drift chamber
+                                    ///                          1 - Calorimeter
   double _targetMass; ///< Target mass
 
-  int _trackingConversion; ///< Tracking conversion (Default is 0)
+  string _trackingConversion; ///< Tracking conversion 
 
   /* covariance matrix info */
   TMatrixD _cov; ///< Covariance matrix
@@ -87,6 +89,7 @@ public:
     /// Destructor
     _pulls.clear();
     _p4in.clear();
+    _reconstruction.clear();
     _p4out.clear();
     _extraC_meas.clear();
   }
@@ -110,6 +113,11 @@ public:
     _p4in = __p4;
   }
   
+  inline void SetReconstruction(const std::vector<string> &__rec){
+    /// Set the input 4-momenta.
+    _reconstruction = __rec;
+  }
+  
   inline void SetPhotonEnergy(double __erg){ 
     /// Set the input tagged photon energy.
     _ephot_in = __erg;
@@ -120,13 +128,13 @@ public:
     _targetMass = __mass;
   }
 
-  inline void SetTrackingConversion(int __tc){
+  inline void SetTrackingConversion(string __tc){
     /// Tells the fit how to convert 4-vectors to the tracking parameters.
     _trackingConversion = __tc;
   }
 
-  inline void SetEvent(double __ephot,const std::vector<TLorentzVector> &__p4,
-		       const TMatrixD &__covMat,double __targMass = -1., int __trackingConversion=0){
+  inline void SetEvent(double __ephot,const std::vector<TLorentzVector> &__p4,const std::vector<string> &__reconstruction,
+		       const TMatrixD &__covMat,double __targMass = -1., string __trackingConversion="EASY"){
     /// Set all input quantities.
     /** @param ephot Input tagged photon energy
      *  @param p4 Vector of detected particle 4-momenta
@@ -140,6 +148,7 @@ public:
     if(__targMass > 0.) _targetMass = __targMass;
     _ephot_in = __ephot;
     _p4in = __p4;
+    _reconstruction = __reconstruction;
     _cov.ResizeTo(__covMat);
     _cov = __covMat;
     _trackingConversion = __trackingConversion;

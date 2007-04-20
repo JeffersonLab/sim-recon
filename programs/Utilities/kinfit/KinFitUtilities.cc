@@ -75,7 +75,7 @@ double PhiTrack(const TLorentzVector &__p4) {
 
 //_____________________________________________________________________________
 // Convert from 4-momenta to tracking parameters
-double *momentum2tracking(const TLorentzVector &__p4, int __flag)
+double *momentum2tracking(const TLorentzVector &__p4, const string __reconstruction, const string __trackingConversion)
 {
   double *trackingParameters = new double[6]; 
   for(int i = 0; i < 6; ++i) 
@@ -83,18 +83,24 @@ double *momentum2tracking(const TLorentzVector &__p4, int __flag)
     trackingParameters[i] = 0.0;
   }
 
-  if(__flag == 0) // momentum = tracking parameters
+  if(__reconstruction=="DC" && __trackingConversion=="EASY") // momentum = tracking parameters
   {
     trackingParameters[0] = __p4.X(); // x
     trackingParameters[1] = __p4.Y(); // y
     trackingParameters[2] = __p4.Z(); // z
   }
-  else if(__flag == 1) // CLAS
+  else if(__reconstruction=="DC" && __trackingConversion=="CLAS") // CLAS Drift Chambers
   {
     trackingParameters[0] = __p4.P(); // |p|
     trackingParameters[1] = LambdaTrack(__p4); // tracking angle lambda
     trackingParameters[2] = PhiTrack(__p4); // tracking angle phi
     trackingParameters[4] = AlphaTrack(__p4); // this angle doesn't change
+  }
+  else
+  {
+    cerr << "Not set up for this reconstruction with this tracking converstion!!!!" << endl;
+    cerr << "Fit values are meaningless!!!" << endl;
+    exit(-1);
   }
   trackingParameters[3] = __p4.M(); // Store the mass for later use
   return trackingParameters;
@@ -103,17 +109,17 @@ double *momentum2tracking(const TLorentzVector &__p4, int __flag)
 
 //_____________________________________________________________________________
 // Convert from tracking parameters to 4-momenta
-double *tracking2momentum(const double *__currentTrackingParameters, const double *__origTrackingParameters, int __flag)
+double *tracking2momentum(const double *__currentTrackingParameters, const double *__origTrackingParameters, const string __reconstruction, const string __trackingConversion)
 {
   double *p3return = new double[3];
 
-  if(__flag == 0) // momentum = tracking parameters
+  if(__reconstruction=="DC" && __trackingConversion=="EASY") // momentum = tracking parameters
   {
     p3return[0] = __currentTrackingParameters[0]; // x
     p3return[1] = __currentTrackingParameters[1]; // y
     p3return[2] = __currentTrackingParameters[2]; // z
   }
-  else if(__flag == 1) // CLAS
+  else if(__reconstruction=="DC" && __trackingConversion=="CLAS") // CLAS Drift Chambers
   {
     double p = __currentTrackingParameters[0];
     double lambda = __currentTrackingParameters[1];
@@ -125,12 +131,18 @@ double *tracking2momentum(const double *__currentTrackingParameters, const doubl
     p3return[1] = p*(cos(lambda)*sin(phi)*sin(alpha) + sin(lambda)*cos(alpha));
     p3return[2] = p*cos(lambda)*cos(phi);
   }
+  else
+  {
+    cerr << "Not set up for this reconstruction with this tracking converstion!!!!" << endl;
+    cerr << "Fit values are meaningless!!!" << endl;
+    exit(-1);
+  }
   return p3return;
 }
 
 //_____________________________________________________________________________
 // Get the derivs of the constraint eqn wrt tracking paramaters
-double **constraintDerivs(const double *__currentTrackingParameters, const double *__origTrackingParameters, int __flag)
+double **constraintDerivs(const double *__currentTrackingParameters, const double *__origTrackingParameters, const string __reconstruction, const string __trackingConversion)
 {
   //double derivs[4][3];
   double **derivs;
@@ -138,7 +150,7 @@ double **constraintDerivs(const double *__currentTrackingParameters, const doubl
   for(int i = 0; i < 4; ++i) 
            derivs[i] = new double[3]; 
 
-  if(__flag == 0) // momentum = tracking parameters
+  if(__reconstruction=="DC" && __trackingConversion=="EASY") // momentum = tracking parameters
   {
     double px = __currentTrackingParameters[0];
     double py = __currentTrackingParameters[1];
@@ -165,7 +177,7 @@ double **constraintDerivs(const double *__currentTrackingParameters, const doubl
     derivs[3][2]=1;
 
   }
-  else if(__flag == 1) // CLAS
+  else if(__reconstruction=="DC" && __trackingConversion=="CLAS") // CLAS Drift Chambers
   {
     double p = __currentTrackingParameters[0];
     double lambda = __currentTrackingParameters[1];
@@ -192,6 +204,12 @@ double **constraintDerivs(const double *__currentTrackingParameters, const doubl
     derivs[2][2] = p*cos(lambda)*cos(phi)*sin(alpha);
     derivs[3][2] = p*cos(lambda)*(-sin(phi));
 
+  }
+  else
+  {
+    cerr << "Not set up for this reconstruction with this tracking converstion!!!!" << endl;
+    cerr << "Fit values are meaningless!!!" << endl;
+    exit(-1);
   }
   return derivs;
 }

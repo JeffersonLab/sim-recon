@@ -48,7 +48,7 @@ KinFit::KinFit(){
   _extraC = false;
   _invariantMass = -1.;
   _extraC_miss = false;
-  _trackingConversion = 0;
+  _trackingConversion = "EASY";
 }
 //_____________________________________________________________________________
 
@@ -61,6 +61,7 @@ void KinFit::_Copy(const KinFit &__kfit){
   _ephot_out = __kfit._ephot_out;
   _p4in = __kfit._p4in;
   _p4out = __kfit._p4out;
+  _reconstruction = __kfit._reconstruction;
   _targetMass = __kfit._targetMass;
   _cov.ResizeTo(__kfit._cov);
   _cov = __kfit._cov;
@@ -144,7 +145,7 @@ void KinFit::_MainFitter(){
   for(i = 0; i < numParts; i++){
     // each particle has 3 measured quantites, group them together in y
     mass[i] = _p4in[i].M(); // particle's mass
-    double *tempPars = momentum2tracking(_p4in[i], _trackingConversion);
+    double *tempPars = momentum2tracking(_p4in[i], _reconstruction[i], _trackingConversion);
     for(int j=0;j<6;j++) originalTrackingParameters[i][j] = tempPars[j];
     for(int j=0;j<3;j++)
     {
@@ -182,7 +183,7 @@ void KinFit::_MainFitter(){
     for(i = 0; i < numParts; i++)
     {
       double currentTrackingParameters[3] = {y(3*i+1,0), y(3*i+2,0), y(3*i+3,0)};
-      double *p3temp = tracking2momentum(currentTrackingParameters, originalTrackingParameters[i], _trackingConversion);
+      double *p3temp = tracking2momentum(currentTrackingParameters, originalTrackingParameters[i], _reconstruction[i], _trackingConversion);
       
       px[i] = p3temp[0];
       py[i] = p3temp[1];
@@ -275,7 +276,7 @@ void KinFit::_MainFitter(){
 
       // derivatives for particle i
       double currentTrackingParameters[3] = {y(3*i+1,0), y(3*i+2,0), y(3*i+3,0)};
-      double **derivs = constraintDerivs(currentTrackingParameters, originalTrackingParameters[i], _trackingConversion);
+      double **derivs = constraintDerivs(currentTrackingParameters, originalTrackingParameters[i], _reconstruction[i], _trackingConversion);
       for(j=0;j<4;j++)
       {
         for(k=0;k<3;k++)
