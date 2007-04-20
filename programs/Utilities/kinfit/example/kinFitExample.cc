@@ -27,6 +27,7 @@ int main(int argc, char *argv[]) {
   string inFile;
   int max = (int)1E9;
   int verbose = 0;
+  int trackConv = 0;
   extern char* optarg;
   extern int optind;
   int isMC = 0;
@@ -55,7 +56,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   else{   
-    while((c = getopt(argc,argv,"hm:o:vi:")) != -1){
+    while((c = getopt(argc,argv,"hm:o:vi:t:")) != -1){
       switch(c){
         case 'h':
           PrintOptions(progName);
@@ -72,6 +73,10 @@ int main(int argc, char *argv[]) {
         case 'i': 
           inFile = optarg;
           cout << "Input file name: " << inFile << endl;
+          break;
+        case 't':
+          trackConv = atoi(optarg);
+          cout << "Tracking conversion: " << trackConv << endl;
           break;
         case 'v':
           verbose++;
@@ -187,7 +192,7 @@ int main(int argc, char *argv[]) {
       kfit->SetP4(preKfitP4);
       kfit->SetCovMatrix(cov_matrix);
       kfit->SetTargetMass(target.M());
-      kfit->SetTrackingConversion(1);
+      kfit->SetTrackingConversion(trackConv);
       // Could also call
       //kfit->SetEvent(preKfitPhoton.E(), preKfitP4, cov_matrix, target.M(), 1);
       // Start the fits!
@@ -199,7 +204,7 @@ int main(int argc, char *argv[]) {
       else if(trial==2) 
       {
         // Fit to a missing pi0. 1-C fit
-        kfit->Fit(0.13498);
+        kfit->Fit("pi0");
       }
       else if(trial==3) 
       {
@@ -227,6 +232,7 @@ int main(int argc, char *argv[]) {
         postKfitP4[i] = kfit->FitP4(i);
       }
       double prob = kfit->Prob(); // Confidence level.
+      if(verbose && trial==1) cerr << "prob: " << prob << endl;
 
       // Calculate a few post-fit quantities
       postKfitPhoton.SetXYZT(0, 0, fitPhotonE, fitPhotonE);

@@ -99,11 +99,12 @@ void KinFit::_MainFitter(){
   if(_missingParticle) _ndf -= 3;
   if(_extraC) _ndf += 1;
 
-  int i,j;
+  int i,j, k;
   double alpha[numParts],mass[numParts],lambda[numParts],phi[numParts];
   double p[numParts],erg[numParts],px[numParts],py[numParts],pz[numParts];
   double e_miss=0.,e_inv=0.,px_inv=0.,py_inv=0.,pz_inv=0.;
   double dumt, dumx, dumy, dumz;
+  double originalTrackingParameters[numParts][6];
   TVector3 p3_miss;
 
   /*********** Define matricies needed to perform kinematic fitting **********/
@@ -142,23 +143,14 @@ void KinFit::_MainFitter(){
   yi(0,0) = _ephot_in; // y(0,0) is the photon energy
   for(i = 0; i < numParts; i++){
     // each particle has 3 measured quantites, group them together in y
-    if(_trackingConversion == 0)
-    {
-      // if px, py and px are the fit parameters.
-      yi(3*i+1,0) = _p4in[i].X(); // px
-      yi(3*i+2,0) = _p4in[i].Y(); // py
-      yi(3*i+3,0) = _p4in[i].Z(); // pz
-    }
-    if(_trackingConversion == 1)
-    {
-      // Use the tracking parameters pmag, lambda and phi
-      // as defined in the CLAS tracking system.
-      yi(3*i+1,0) = _p4in[i].P(); // |p|
-      yi(3*i+2,0) = LambdaTrack(_p4in[i]); // tracking angle lambda
-      yi(3*i+3,0) = PhiTrack(_p4in[i]); // tracking angle phi
-      alpha[i] = AlphaTrack(_p4in[i]); // this angle doesn't change
-    }
     mass[i] = _p4in[i].M(); // particle's mass
+    double *tempPars = momentum2tracking(_p4in[i], _trackingConversion);
+    for(int j=0;j<6;j++) originalTrackingParameters[i][j] = tempPars[j];
+    for(int j=0;j<3;j++)
+    {
+      yi(3*i+(j+1),0) = originalTrackingParameters[i][j];
+    }
+    //alpha[i] = AlphaTrack(_p4in[i]); // this angle doesn't change
   }
   y = yi; // start off y to be yi
 
@@ -187,30 +179,16 @@ void KinFit::_MainFitter(){
     xsi.Zero();
 
     // set kinematic quantities for this iteration:
-    for(i = 0; i < numParts; i++){
-      if(_trackingConversion==0)
-      {
-        px[i] = y(3*i+1,0);
-        py[i] = y(3*i+2,0);
-        pz[i] = y(3*i+3,0);
+    for(i = 0; i < numParts; i++)
+    {
+      double currentTrackingParameters[3] = {y(3*i+1,0), y(3*i+2,0), y(3*i+3,0)};
+      double *p3temp = tracking2momentum(currentTrackingParameters, originalTrackingParameters[i], _trackingConversion);
+      
+      px[i] = p3temp[0];
+      py[i] = p3temp[1];
+      pz[i] = p3temp[2];
+      erg[i] = sqrt(px[i]*px[i] + py[i]*py[i] + pz[i]*pz[i] + mass[i]*mass[i]);
 
-        erg[i] = sqrt(px[i]*px[i] + py[i]*py[i] + pz[i]*pz[i] + mass[i]*mass[i]);
-      }
-      else if(_trackingConversion==1)
-      {
-        // Use the tracking parameters pmag, lambda and phi
-        // as defined in the CLAS tracking system.
-        lambda[i] = y(3*i+2,0);
-        phi[i] = y(3*i+3,0);
-        p[i] = y(3*i+1,0);
-        erg[i] = sqrt(p[i]*p[i] + mass[i]*mass[i]);
-
-        px[i] = p[i]*(cos(lambda[i])*sin(phi[i])*cos(alpha[i]) 
-            - sin(lambda[i])*sin(alpha[i]));
-        py[i] = p[i]*(cos(lambda[i])*sin(phi[i])*sin(alpha[i]) 
-            + sin(lambda[i])*cos(alpha[i]));
-        pz[i] = p[i]*cos(lambda[i])*cos(phi[i]);
-      }
     }
     if(_missingParticle){
       p3_miss.SetXYZ(x(0,0),x(1,0),x(2,0)); // p3 missing
@@ -238,7 +216,7 @@ void KinFit::_MainFitter(){
 
 #ifdef __DEBUG__    
     if(iter == 0)
-      std::cout << std::endl << "<KinFit::_MainFitter> Contraint equation " 
+      std::cout << std::endl << "<KinFit::_MainFitter> Constraint equation " 
         << "values (e,px,py,pz): " << std::endl;
 
     std::cout << c(0,0) << " " << c(1,0) << " " << c(2,0) << " " << c(3,0)
@@ -292,56 +270,18 @@ void KinFit::_MainFitter(){
     // 1st get the tagged photon energy derivatives 
     b(0,0) = 1.;
     b(3,0) = -1;    
-    for(i = 0; i < numParts; i++){
+    for(i = 0; i < numParts; i++)
+    {
+
       // derivatives for particle i
-      /* derivatives of constraint eq's w/r to p */
-      if(_trackingConversion==0)
+      double currentTrackingParameters[3] = {y(3*i+1,0), y(3*i+2,0), y(3*i+3,0)};
+      double **derivs = constraintDerivs(currentTrackingParameters, originalTrackingParameters[i], _trackingConversion);
+      for(j=0;j<4;j++)
       {
-        //px[i] = y(3*i+1,0);
-        //py[i] = y(3*i+2,0);
-        //pz[i] = y(3*i+3,0);
-        //E[i] = sqrt(mass[i]*mass[i] + y(3*i+1,0)*y(3*i+1,0)  +  y(3*i+2,0)*y(3*i+2,0) +  y(3*i+3,0)*y(3*i+3,0));
-
-        b(0,(3*i+1))=-1.0*y((3*i)+1,0)/sqrt( y((3*i)+1,0)*y((3*i)+1,0) + mass[i]);
-
-        b(1,(3*i+1))=1;
-        b(1,(3*i+1)+1)=0;
-        b(1,(3*i+1)+2)=0;
-
-        b(2,(3*i+1))=0;
-        b(2,(3*i+1)+1)=1;
-        b(2,(3*i+1)+2)=0;
-
-        b(3,(3*i+1))=0;
-        b(3,(3*i+1)+1)=0;
-        b(3,(3*i+1)+2)=1;
-
-        dumt += erg[i];
-        dumx += y(3*i+1,0);
-        dumy += y(3*i+2,0);
-        dumz += y(3*i+3,0);
-
-      }
-      else if(_trackingConversion==1)
-      {
-        b(0,3*i+1) = -p[i]/erg[i];
-        b(1,3*i+1) = cos(lambda[i])*sin(phi[i])*cos(alpha[i]) 
-          - sin(lambda[i])*sin(alpha[i]);
-        b(2,3*i+1) = cos(lambda[i])*sin(phi[i])*sin(alpha[i]) 
-          + sin(lambda[i])*cos(alpha[i]);
-        b(3,3*i+1) = cos(lambda[i])*cos(phi[i]);
-        /* derivatives of constraint eq's w/r to lambda */
-        b(0,3*i+2) = 0.;
-        b(1,3*i+2) = p[i]*(-sin(lambda[i])*sin(phi[i])*cos(alpha[i])
-            - cos(lambda[i])*sin(alpha[i]));
-        b(2,3*i+2) = p[i]*(-sin(lambda[i])*sin(phi[i])*sin(alpha[i])
-            + cos(lambda[i])*cos(alpha[i]));
-        b(3,3*i+2) = p[i]*(-sin(lambda[i])*cos(phi[i]));
-        /* derivatives of constraint eq's w/r to phi */
-        b(0,3*i+3) = 0.;
-        b(1,3*i+3) = p[i]*cos(lambda[i])*cos(phi[i])*cos(alpha[i]);
-        b(2,3*i+3) = p[i]*cos(lambda[i])*cos(phi[i])*sin(alpha[i]);
-        b(3,3*i+3) = p[i]*cos(lambda[i])*(-sin(phi[i]));
+        for(k=0;k<3;k++)
+        {
+          b(j,3*i+(k+1)) = derivs[j][k];
+        }
       }
 
       if(_extraC_meas[i]){
@@ -651,7 +591,7 @@ void KinFit::_FitToMissingTaggedPhoton(){
 
 #ifdef __DEBUG__    
     if(iter == 0) 
-      std::cout << std::endl << "<KinFit::_MainFitter> Contraint equation " 
+      std::cout << std::endl << "<KinFit::_MainFitter> Constraint equation " 
         << "values (e,px,py,pz): " << std::endl;
     std::cout << c(0,0) << " " << c(1,0) << " " << c(2,0) << " " << c(3,0)
       << std::endl;

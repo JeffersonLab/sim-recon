@@ -11,7 +11,8 @@ void lookAtKinFitResults(char *filename)
   float max = 1.0;
 
   TCanvas *can[3];
-  for(int i=0;i<3;i++)
+  //for(int i=0;i<3;i++)
+  for(int i=0;i<1;i++)
   {
     sprintf(name,"can%d",i);
     if(i==0) sprintf(title,"Fit to nothing missing");
@@ -134,7 +135,8 @@ void lookAtKinFitResults(char *filename)
     }
   }
 
-  for(int i=1;i<=3;i++) 
+  //for(int i=1;i<=3;i++) 
+  for(int i=1;i<=1;i++) 
   {
     can[i-1]->cd(1);
     hprob[i]->Draw();
