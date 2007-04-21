@@ -452,7 +452,7 @@
   <tubs name="AIS8" Rio_Z="0.78 0.85 1.7" profile="-3.0 6.0" material="Air" />
 
   <tubs name="AOR1" Rio_Z="3.00 3.08 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AOS1" Rio_Z="3.00 3.20 1.7" profile="-0.732 1.463" material="Air" />
+  <tubs name="AOS1" Rio_Z="3.00 3.08 1.7" profile="-0.732 1.463" material="Air" />
   <tubs name="AOR2" Rio_Z="3.08 3.16 1.7" profile="-30. 60." material="Air" />
   <tubs name="AOS2" Rio_Z="3.08 3.16 1.7" profile="-0.715 1.429" material="Air" />
   <tubs name="AOR3" Rio_Z="3.16 3.24 1.7" profile="-30. 60." material="Air" />
