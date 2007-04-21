@@ -78,8 +78,8 @@
   </composition>
 
   <composition name="collimatorStack">
-    <posXYZ volume="ColDetector" X_Y_Z="0.0  0.0  -1.7"/>
-    <posXYZ volume="DET1" X_Y_Z="0.0  0.0  -5.0" />
+    <posXYZ volume="ColDetector" X_Y_Z="0.0  0.0  -2.2"/>
+    <posXYZ volume="DET1" X_Y_Z="0.0  0.0  -5.5" />
     <posXYZ volume="COL1" X_Y_Z="0.0  0.0  15.0" />
     <posXYZ volume="sweepMagnet1" X_Y_Z="0.0 0.0 75." rot="90 0 0" />
     <posXYZ volume="shieldingBlock1" X_Y_Z="0.0  0.0  210." />
@@ -462,7 +462,7 @@
   <tubs name="AOR5" Rio_Z="3.32 3.38 1.7" profile="-30. 60." material="Air" />
   <tubs name="AOS5" Rio_Z="3.32 3.38 1.7" profile="-0.667 1.333" material="Air" />
   <tubs name="AOR6" Rio_Z="3.38 3.46 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AOS6" Rio_Z="3.38 0.46 1.7" profile="-0.652 1.304" material="Air" />
+  <tubs name="AOS6" Rio_Z="3.38 3.46 1.7" profile="-0.652 1.304" material="Air" />
   <tubs name="AOR7" Rio_Z="3.46 3.54 1.7" profile="-30. 60." material="Air" />
   <tubs name="AOS7" Rio_Z="3.46 3.54 1.7" profile="-0.639 1.277" material="Air" />
   <tubs name="AOR8" Rio_Z="3.54 3.62 1.7" profile="-30. 60." material="Air" />
