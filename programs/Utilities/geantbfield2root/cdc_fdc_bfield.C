@@ -27,7 +27,7 @@ void cdc_fdc_bfield(void)
 
 	bfield->SetMarkerStyle(20);
 	bfield->SetMarkerSize(1.0);
-	bfield->Draw("Bz:z", "r<1.0 && z<5000.0","LP same");
+	bfield->Draw("Bz:z", "r<1.0 && z<5000.0 && abs(Bz)>0.0","P same");
 	
 	// CDC
 	bfield->SetMarkerColor(kRed);
@@ -42,7 +42,7 @@ void cdc_fdc_bfield(void)
 	a->Draw();
  
 	// FDC
-	bfield->SetMarkerColor(kBlue);
+	bfield->SetMarkerColor(kGreen);
 	TLatex *l = new TLatex(300.0, -0.3, "FDC");
 	l->Draw();
 	
@@ -54,8 +54,8 @@ void cdc_fdc_bfield(void)
 		bfield->Draw("Bz:z", cut, "P same");
 
 		TArrow *a = new TArrow(320.0, -0.35, start+fdc_length/2.0, fdc_ypos[i], 0.02, "-|>|");
-		a->SetLineColor(kBlue);
-		a->SetFillColor(kBlue);
+		a->SetLineColor(kGreen+150);
+		a->SetFillColor(kGreen+150);
 		a->Draw();
 	}
 	
