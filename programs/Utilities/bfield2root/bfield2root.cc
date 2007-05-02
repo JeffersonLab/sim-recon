@@ -8,7 +8,7 @@
 #include <iomanip>
 using namespace std;
 
-#include "TRACKING/DMagneticFieldMap.h"
+#include "TRACKING/DMagneticFieldMapGlueX.h"
 #include "JANA/JParameterManager.h"
 
 #include <TFile.h>
@@ -28,27 +28,62 @@ int main(int narg, char *argv[])
 
 	// Create Magnetic Field Map
 	new JParameterManager(); // normally, this is created by JApplication!
-	DMagneticFieldMap *bfield = new DMagneticFieldMap();
+	DMagneticFieldMapGlueX *bfield = new DMagneticFieldMapGlueX();
 
 	// Create Tree
 	TTree *tree = new TTree("Bfield","Magnetic Field");
 	tree->Branch("B",val,"x/F:y:z:r:phi:Bx:By:Bz:Br:Bphi");
 	
 	// Get the field map
-	const DBfieldPoint_t* Bmap;
+	const DMagneticFieldMapGlueX::DBfieldPoint_t* Bmap;
 	int Npoints;
 	bfield->GetTable(Bmap, Npoints);
-	
+
+#if 0
+	// Space grid
+	for(float r=0.0; r<100.0; r+=2.0){
+		for(float phi=0.0; phi<2.0*M_PI; phi+=M_PI/50.0){
+			for(float z=-1000.0; z<1000.0; z+=5.0){
+				float u[3], B[3];
+				u[0] = r*cos(phi);
+				u[1] = r*sin(phi);
+				u[2] = z;
+				gufld_(u,B);
+				//B[0]=B[1]=B[2] = 0.0;
+			
+				double Br = (B[0]*u[0] + B[1]*u[1])/(r+1.0E-20);
+				double Bphi = (B[1]*u[0] - B[0]*u[1])/(r+1.0E-20);
+				double Btot = sqrt(Br*Br + B[2]*B[2]);
+				if(Btot==0.0)continue;
+
+				val[0] = u[0];
+				val[1] = u[1];
+				val[2] = u[2];
+				val[3] = r;
+				val[4] = phi;
+				val[5] = B[0];
+				val[6] = B[1];
+				val[7] = B[2];
+				val[8] = Br;
+				val[9] = Bphi;
+
+				tree->Fill();
+			}
+		}
+	}
+
+#else
+
 	double BMAP_Z_OFFSET;
 	gPARMS->GetParameter("GEOM:BMAP_Z_OFFSET", BMAP_Z_OFFSET);
 	
 
 	// Loop over all points in the map
-	const DBfieldPoint_t* B = Bmap;
+	const DMagneticFieldMapGlueX::DBfieldPoint_t* B = Bmap;
 	for(int i=0; i<Npoints; i++, B++){
-		double x = B->x*2.54;
-		double y = B->y*2.54;
-		double z = (B->z-BMAP_Z_OFFSET)*2.54;
+		double x = B->x;
+		double y = B->y;
+		double z = B->z;
 		double Bx = B->Bx;
 		double By = B->By;
 		double Bz = B->Bz;
@@ -70,6 +105,7 @@ int main(int narg, char *argv[])
 		
 		tree->Fill();
 	}
+#endif
 		
 	ROOTfile->Write();
 	delete ROOTfile;
