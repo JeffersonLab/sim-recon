@@ -5,7 +5,7 @@ MISC_LIBS = -L/sw/lib -lXm -L/usr/X11R6/lib -lXt -lgelhad -lhitutil
 CFLAGS += -I$(HALLD_HOME)/src/libraries/HDDM
 ADDITIONAL_MODULES += HDDM
 
-LD = f77
+LD = $(FC)
 
 include $(HALLD_HOME)/src/BMS/Makefile.bin
 
