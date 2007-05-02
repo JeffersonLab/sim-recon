@@ -7,6 +7,8 @@
 
 #include <math.h>
 
+#include <TROOT.h>
+
 #include <DVector3.h>
 #include <DMatrix.h>
 

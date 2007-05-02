@@ -8,6 +8,8 @@
 #include <cmath>
 using namespace std;
 
+#include <TROOT.h>
+
 #include <DANA/DApplication.h>
 #include "DBCALShower_factory_SIMPLE.h"
 
