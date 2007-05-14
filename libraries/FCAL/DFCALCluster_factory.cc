@@ -453,7 +453,7 @@ void DFCALCluster::shower_profile(const int ihit,
    double y = fHitlist->hit[ihit].y;
    double dist = sqrt(SQR(x - fCentroid.x()) + SQR(y - fCentroid.y()));
    if (dist > MAX_SHOWER_RADIUS) return;
-   double theta = atan2(sqrt(SQR(fCentroid.x()) + SQR(fCentroid.y())),FCAL_Zmid);
+   double theta = atan2((double)sqrt(SQR(fCentroid.x()) + SQR(fCentroid.y())),(double)FCAL_Zmid);
    double phi = atan2(fCentroid.y(),fCentroid.x());
    double u0 = sqrt(SQR(fCentroid.x())+SQR(fCentroid.y()));
    double v0 = 0;
