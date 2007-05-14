@@ -26,6 +26,17 @@
 
 #define NaN std::numeric_limits<double>::quiet_NaN()
 
+// The GNU implementation of STL includes definitions of "greater" and "less"
+// but the SunOS implementation does not. Since it is a bit of a pain to
+// define this only for SunOS, we just define "greaterthan" and use it for
+// all platforms/compilers. Note that this is essentially the same as the
+// GNU definition from stl_function.h, except it does not derive from the
+// templated "binary_function" class.
+template<typename T>
+class greaterthan{
+	public: bool operator()(const T &a, const T &b) const {return a>b;}
+};
+
 #if 0
 bool CDCTrkHitSort_C(DTrack_factory::cdc_hit_on_track_t const &hit1, DTrack_factory::cdc_hit_on_track_t const &hit2) {
 	// These swim steps come from the same array so the addresses of the swim_step
@@ -412,7 +423,7 @@ void DTrack_factory::AssignHitsToCandidates(void)
 		// preserved. We make a copy of the vector
 		// to sort.
 		vector<double> prob = cdcprobs[i];
-		sort(prob.begin(), prob.end(), greater<double>()); // sort in *descending* order
+		sort(prob.begin(), prob.end(), greaterthan<double>()); // sort in *descending* order
 
 		// get most likely probability
 		double p_single = prob.size()>0 ? prob[0]:0.0;
@@ -448,7 +459,7 @@ void DTrack_factory::AssignHitsToCandidates(void)
 		// preserved. We make a copy of the vector
 		// to sort.
 		vector<double> prob = fdcprobs[i];
-		sort(prob.begin(), prob.end(), greater<double>()); // sort in *descending* order
+		sort(prob.begin(), prob.end(), greaterthan<double>()); // sort in *descending* order
 
 		// get most likely probability
 		double p_single = prob.size()>0 ? prob[0]:0.0;
