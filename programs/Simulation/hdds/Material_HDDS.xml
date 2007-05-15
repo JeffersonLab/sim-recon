@@ -720,15 +720,14 @@
 
   <composite name="CopperKapton">
 	<addmaterial material="Copper">
-		<fractionmass	fraction="0.30"	/>
+		<fractionmass	fraction="0.34"	/>
  	</addmaterial>
 	<addmaterial material="Kapton">
-		<fractionmass	fraction="0.48"	/>
+		<fractionmass	fraction="0.66"	/>
  	</addmaterial>
 	<addmaterial material="EpoxyResin">
-		<fractionmass	fraction="0.22"	/>
+		<fractionmass	fraction="0.00"	/>
  	</addmaterial>
-	<real name="density"	value="1.98"	unit="g/cm^3" />
   </composite>
 
   <composite name="AluminizedKapton">
@@ -738,28 +737,37 @@
 	<addmaterial material="Kapton">
 		<fractionmass	fraction="0.913"	/>
  	</addmaterial>
-	<real name="density"	value="1.48"	unit="g/cm^3" />
   </composite>
 
   <composite name="MylarFilm">
 	<addmaterial material="Mylar">
-		<fractionmass	fraction="0.52"	/>
+		<fractionmass	fraction="0.835" />
+ 	</addmaterial>
+	<addmaterial material="Aluminum">
+		<fractionmass	fraction="0.162" />
  	</addmaterial>
 	<addmaterial material="EpoxyResin">
-		<fractionmass	fraction="0.48"	/>
+		<fractionmass	fraction="0.000" />
  	</addmaterial>
-	<real name="density"	value="1.35"	unit="g/cm^3" />
+	<addmaterial material="Air">
+		<fractionmass	fraction="0.003" />
+ 	</addmaterial>
+   <!-- The density here is deliberately depressed so that the thickness
+        of the mylar volume mocks up the following structure:
+              1. 5 microns of mylar
+              2. 0.5 microns of aluminum
+              3. 20 microns of air
+        The air is there to make the layer thick enough for the Geant
+        tracking code not to miss it due to fp rounding errors.  -->
+	<real name="density"	value="0.32"	unit="g/cm^3" />
   </composite>
 
   <composite name="chamberMix">
 	<addmaterial material="Argon">
-		<fractionmass	fraction="0.49"	/>
+		<fractionmass	fraction="0.39"	/>
  	</addmaterial>
-	<addmaterial material="Ethane">
-		<fractionmass	fraction="0.20"	/>
- 	</addmaterial>
-	<addmaterial material="Freon">
-		<fractionmass	fraction="0.30"	/>
+	<addmaterial material="CO2">
+		<fractionmass	fraction="0.60"	/>
  	</addmaterial>
 	<addmaterial material="Aluminum">
 		<fractionmass	fraction="0.01"	/>
@@ -841,6 +849,18 @@
 	<real name="density"	value="2.35"	unit="g/cm^3"	/>
   </composite>
 
+  <composite name="CalciumOxide">
+        <addmaterial material="Calcium"> <natoms n="1" /> </addmaterial>
+        <addmaterial material="Oxygen">  <natoms n="1" /> </addmaterial>
+	<real name="density"	value="3.35"	unit="g/cm^3"	/>
+  </composite>
+
+  <composite name="MagnesiumOxide">
+        <addmaterial material="Magnesium"> <natoms n="1" /> </addmaterial>
+        <addmaterial material="Oxygen">    <natoms n="1" /> </addmaterial>
+	<real name="density"	value="3.58"	unit="g/cm^3"	/>
+  </composite>
+
   <composite name="BorosilicateGlass">
 	<addmaterial material="SiliconDioxide">
 		<fractionmass	fraction="0.70" />
@@ -863,11 +883,51 @@
 	<real name="density"	value="2.30"		unit="g/cm^3" />
   </composite>
 
+  <composite name="E-glass">
+	<addmaterial material="SiliconDioxide">
+		<fractionmass	fraction="0.54" />
+ 	</addmaterial>
+        <addmaterial material="AluminumOxide">
+		<fractionmass	fraction="0.14" />
+ 	</addmaterial>
+        <addmaterial material="BoricOxide">
+		<fractionmass	fraction="0.10" />
+ 	</addmaterial>
+        <addmaterial material="CalciumOxide">
+		<fractionmass	fraction="0.12" />
+ 	</addmaterial>
+        <addmaterial material="MagnesiumOxide">
+		<fractionmass	fraction="0.10" />
+ 	</addmaterial>
+	<real name="density"	value="2.61"		unit="g/cm^3" />
+  </composite>
+
   <composite name="EpoxyResin">
         <addmaterial material="Carbon">   <natoms n="18" /> </addmaterial>
         <addmaterial material="Hydrogen"> <natoms n="20" /> </addmaterial>
         <addmaterial material="Oxygen">   <natoms n="3" /> </addmaterial>
 	<real name="density"	value="1.3"		unit="g/cm^3" />
+  </composite>
+
+  <composite name="E-fiberGlass">
+        <addmaterial material="EpoxyResin">
+		<fractionmass	fraction="0.327" />
+	</addmaterial>
+        <addmaterial material="E-glass">
+		<fractionmass	fraction="0.673" />
+	</addmaterial>
+  </composite>
+
+  <composite name="CarbonFiberEpoxy">
+        <addmaterial material="CarbonFiber">
+		<fractionmass	fraction="0.60" />
+	</addmaterial>
+        <addmaterial material="EpoxyResin">
+		<fractionmass	fraction="0.40" />
+	</addmaterial>
+        <addmaterial material="CarbonFiber">
+		<fractionmass	fraction="0.60" />
+	</addmaterial>
   </composite>
 
   <composite name="CerenkovGas">
@@ -1059,6 +1119,22 @@
 		<natoms n="2"/>
  	</addmaterial>
         <real name="density"	value="0.032"	unit="g/cm^3"/>
+  </composite>
+
+  <composite name="MediumDensityROHACELL">
+	<addmaterial material="Hydrogen">
+		<natoms n="11"/>
+ 	</addmaterial>
+	<addmaterial material="Carbon">
+		<natoms n="8"/>
+ 	</addmaterial>
+	<addmaterial material="Nitrogen">
+		<natoms n="1"/>
+ 	</addmaterial>
+	<addmaterial material="Oxygen">
+		<natoms n="2"/>
+ 	</addmaterial>
+        <real name="density"	value="0.075"	unit="g/cm^3"/>
   </composite>
 
   <composite name="HighDensityROHACELL">

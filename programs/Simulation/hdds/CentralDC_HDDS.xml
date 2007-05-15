@@ -65,11 +65,11 @@
     <posXYZ volume="CDCI" />
     <posXYZ volume="CDCO" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
     <posXYZ volume="CDBU" X_Y_Z="0.0 0.0 -97.00" />
     <posXYZ volume="CDBD" X_Y_Z="0.0 0.0 +89.00" />
-    <posXYZ volume="CDGU" X_Y_Z="0.0 0.0 -96.00" />
-    <posXYZ volume="CDGD" X_Y_Z="0.0 0.0 +96.00" />
+    <posXYZ volume="CDGU" X_Y_Z="0.0 0.0 -98.10" />
+    <posXYZ volume="CDGD" X_Y_Z="0.0 0.0 +93.10" />
   </composition>
 
   <composition name="CDCinsert_1" envelope="DCI1">
@@ -81,7 +81,7 @@
   <composition name="CDCinsect_1" envelope="DSI1">
     <posXYZ volume="CDCstrawShort" X_Y_Z="6.120 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDCinsert_2" envelope="DCI2">
     <mposPhi volume="CDCinsect_2" ncopy="32">
@@ -92,7 +92,7 @@
   <composition name="CDCinsect_2" envelope="DSI2">
     <posXYZ volume="CDCstrawShort" X_Y_Z="8.150 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDCinsert_3" envelope="DCI3">
     <mposPhi volume="CDCinsect_3" ncopy="40">
@@ -103,7 +103,7 @@
   <composition name="CDCinsect_3" envelope="DSI3">
     <posXYZ volume="CDCstrawShort" X_Y_Z="10.190 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDCinsert_4" envelope="DCI4">
     <mposPhi volume="CDCinsect_4" ncopy="47">
@@ -114,7 +114,7 @@
   <composition name="CDCinsect_4" envelope="DSI4">
     <posXYZ volume="CDCstrawShort" X_Y_Z="12.020 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
 
   <composition name="CDClayer_1" envelope="DC1">
@@ -126,7 +126,7 @@
   <composition name="CDCsector_1" envelope="DS1">
     <posXYZ volume="CDCstrawShort" X_Y_Z="16.049 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDClayer_2" envelope="DC2">
     <mposPhi volume="CDCsector_2" ncopy="70">
@@ -137,7 +137,7 @@
   <composition name="CDCsector_2" envelope="DS2">
     <posXYZ volume="CDCstrawShort" X_Y_Z="17.831 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDClayer_3" envelope="DC3">
     <mposPhi volume="CDCsector_3" ncopy="77">
@@ -148,7 +148,7 @@
   <composition name="CDCsector_3" envelope="DS3">
     <posXYZ volume="CDCstrawShort" X_Y_Z="19.613 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDClayer_4" envelope="DC4">
     <mposPhi volume="CDCsector_4" ncopy="84">
@@ -159,7 +159,7 @@
   <composition name="CDCsector_4" envelope="DS4">
     <posXYZ volume="CDCstrawShort" X_Y_Z="21.395 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
 
   <composition name="CDClayer_5-8" envelope="DC5">
@@ -184,7 +184,7 @@
       <sector value="1" step="1" />
     </mposPhi>
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
 
   <composition name="CDClayer_9" envelope="DC9">
@@ -196,7 +196,7 @@
   <composition name="CDCsector_9" envelope="DS9">
     <posXYZ volume="CDCstrawShort" X_Y_Z="32.089 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDClayer_10" envelope="DC10">
     <mposPhi volume="CDCsector_10" ncopy="133">
@@ -207,7 +207,7 @@
   <composition name="CDCsector_10" envelope="DS10">
     <posXYZ volume="CDCstrawShort" X_Y_Z="33.871 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDClayer_11" envelope="DC11">
     <mposPhi volume="CDCsector_11" ncopy="140">
@@ -218,7 +218,7 @@
   <composition name="CDCsector_11" envelope="DS11">
     <posXYZ volume="CDCstrawShort" X_Y_Z="35.654 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDClayer_12" envelope="DC12">
     <mposPhi volume="CDCsector_12" ncopy="147">
@@ -229,7 +229,7 @@
   <composition name="CDCsector_12" envelope="DS12">
     <posXYZ volume="CDCstrawShort" X_Y_Z="37.435 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDClayer_13" envelope="DC13">
     <mposPhi volume="CDCsector_13" ncopy="154">
@@ -240,7 +240,7 @@
   <composition name="CDCsector_13" envelope="DS13">
     <posXYZ volume="CDCstrawShort" X_Y_Z="39.218 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
 
   <composition name="CDClayer_14-17" envelope="DC14">
@@ -265,7 +265,7 @@
       <sector value="1" step="1" />
     </mposPhi>
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
 
   <composition name="CDClayer_18" envelope="DC18">
@@ -277,7 +277,7 @@
   <composition name="CDCsector_18" envelope="DS18">
     <posXYZ volume="CDCstrawShort" X_Y_Z="49.149 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDClayer_19" envelope="DC19">
     <mposPhi volume="CDCsector_19" ncopy="200">
@@ -288,7 +288,7 @@
   <composition name="CDCsector_19" envelope="DS19">
     <posXYZ volume="CDCstrawShort" X_Y_Z="50.932 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDClayer_20" envelope="DC20">
     <mposPhi volume="CDCsector_20" ncopy="207">
@@ -299,7 +299,7 @@
   <composition name="CDCsector_20" envelope="DS20">
     <posXYZ volume="CDCstrawShort" X_Y_Z="52.714 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDClayer_21" envelope="DC21">
     <mposPhi volume="CDCsector_21" ncopy="214">
@@ -310,7 +310,7 @@
   <composition name="CDCsector_21" envelope="DS21">
     <posXYZ volume="CDCstrawShort" X_Y_Z="54.497 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDClayer_22" envelope="DC22">
     <mposPhi volume="CDCsector_22" ncopy="221">
@@ -321,7 +321,7 @@
   <composition name="CDCsector_22" envelope="DS22">
     <posXYZ volume="CDCstrawShort" X_Y_Z="56.279 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
   <composition name="CDClayer_23" envelope="DC23">
     <mposPhi volume="CDCsector_23" ncopy="228">
@@ -332,7 +332,7 @@
   <composition name="CDCsector_23" envelope="DS23">
     <posXYZ volume="CDCstrawShort" X_Y_Z="58.062 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -87.80" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +87.95" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +88.05" />
   </composition>
 
   <composition name="CDCstrawShort" envelope="STRA">
@@ -348,27 +348,25 @@
     <posXYZ volume="DPLG" X_Y_Z="0. 0. +88.25"> </posXYZ>
   </composition>
 
-<!-- If you want to install the inner cdc layers CDI1-CDI4 (the cdc insert)
-     then replac every instance of 15.0cm inner radius with 5.0cm below -->
-  <tubs name="CDC" Rio_Z="15.0   60.0   195.0" material="Air"
+  <tubs name="CDC" Rio_Z="9.0   59.0   195.0" material="Air"
 	                           comment="CDC mother volume"      />
-  <tubs name="CDCI" Rio_Z="15.00  15.06 176.5" material="Aluminum"
+  <tubs name="CDCI" Rio_Z="9.00  9.06 176.5" material="Aluminum"
 	                           comment="CDC inner cylinder"     />
-  <tubs name="CDCO" Rio_Z="59.80  60.00 176.5" material="Aluminum"
+  <tubs name="CDCO" Rio_Z="59.80  59.00 176.5" material="Aluminum"
 	                           comment="CDC outer cylinder"     />
-  <tubs name="CDPU" Rio_Z="15.0   60.0    0.9" material="Aluminum"
+  <tubs name="CDPU" Rio_Z="9.0   59.0    0.9" material="Aluminum"
 	                           comment="CDC upstream endplate"   />
-  <tubs name="CDPD" Rio_Z="15.0   60.0    0.6" material="Aluminum"
+  <tubs name="CDPD" Rio_Z="9.0   59.0    0.4" material="CarbonFiberEpoxy"
 	                           comment="CDC downstream endplate" />
-  <tubs name="CDBU" Rio_Z="15.0   60.0    0.2" material="FR-4"
+  <tubs name="CDBU" Rio_Z="9.0   59.0    0.2" material="FR-4"
 	                           comment="CDC upstream circuit board" />
-  <tubs name="CDBD" Rio_Z="15.0   60.0    0.1" material="FR-4"
+  <tubs name="CDBD" Rio_Z="9.0   59.0    0.1" material="FR-4"
 	                           comment="CDC downstream circuit board" />
-  <tubs name="CDGU" Rio_Z="15.0   60.0    0.3" material="Plexiglas"
+  <tubs name="CDGU" Rio_Z="9.0   59.0    0.3" material="Plexiglas"
 	                           comment="CDC upstream gas plenum" />
-  <tubs name="CDGD" Rio_Z="15.0   60.0    0.3" material="Plexiglas"
+  <tubs name="CDGD" Rio_Z="9.0   59.0    0.3" material="Plexiglas"
 	                           comment="CDC downstream gas plenum" />
-  <tubs name="CDCA" Rio_Z="15.0   60.0    0.5" material="SignalCables"
+  <tubs name="CDCA" Rio_Z="9.0   59.0    0.5" material="SignalCables"
 	                           comment="CDC upstream cables" />
   <pcon name="CDCB" material="SignalCables" comment="CDC readout cables">
     <polyplane Rio_Z="74.0 120. -65.2" />
@@ -376,9 +374,9 @@
     <polyplane Rio_Z="71.0 75.2 -62.2" />
     <polyplane Rio_Z="65.0 69.2 -56.2" />
     <polyplane Rio_Z="65.0 68.0 -55.0" />
-    <polyplane Rio_Z="56.4 60.0 -3.31" />
-    <polyplane Rio_Z="23.0 60.0 -0.53" />
-    <polyplane Rio_Z="15.0 60.0 0.0" />
+    <polyplane Rio_Z="56.4 59.0 -3.31" />
+    <polyplane Rio_Z="23.0 59.0 -0.53" />
+    <polyplane Rio_Z="9.0 59.0 0.0" />
   </pcon>
 
   <tubs name="STRA" Rio_Z="0.000  0.800  176.5" material="chamberGas"
