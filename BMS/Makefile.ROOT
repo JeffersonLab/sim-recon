@@ -6,7 +6,12 @@ ROOTINC      := $(shell root-config --incdir)
 
 CFLAGS		+= -D_ROOT_ $(ROOTCFLAGS) -I$(ROOTINC)
 CXXFLAGS		+= -D_ROOT_ $(ROOTCFLAGS) -I$(ROOTINC)
+
+ifeq ($(OS),SunOS)
+MISC_LIBS 	+= $(ROOTGLIBS) -lMinuit
+else
 MISC_LIBS 	+= $(ROOTGLIBS) -lThread -lMinuit
+endif
 
 # Create ROOT dictionaries from C++ files containing ClassDef
 HSRC = $(wildcard *.h)
