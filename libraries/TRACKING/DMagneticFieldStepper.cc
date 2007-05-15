@@ -134,7 +134,7 @@ void DMagneticFieldStepper::CalcDirs(void)
 
 #if 1
 //extern "C" {
-void grkuta_(double *CHARGE, double *STEP, double *VECT, double *VOUT,const DMagneticFieldMap *bfield);
+int grkuta_(double *CHARGE, double *STEP, double *VECT, double *VOUT,const DMagneticFieldMap *bfield);
 //}
 
 //-----------------------
