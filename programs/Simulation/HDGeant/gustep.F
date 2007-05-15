@@ -185,11 +185,18 @@
 #include "geant321/gctrak.inc"
 #include "geant321/gcflag.inc"
 #include "geant321/gcphys.inc"
+#include "geant321/gcbank.inc"
 #include "geant321/gcmate.inc"
 #include "hdtrackparams.inc"
 *
 *     -----------------------------------------------------------------
 *
+
+#define TOP_CERENKOV_EFFICIENCY 0.25
+
+      character*4 cnames(15)
+      equivalence (NAMES(1),cnames(1))
+      real rnd(100)
 
 #ifdef BACKGROUND_STUDIES
       integer type
@@ -200,12 +207,6 @@
       integer bgnt
       parameter (bgnt=10)
 #endif
-
-#define TOP_CERENKOV_EFFICIENCY 0.25
-
-      character*4 cnames(15)
-      equivalence (NAMES(1),cnames(1))
-      real rnd(100)
 
 #ifdef BACKGROUND_PROFILING
       integer det
@@ -234,6 +235,29 @@
       parameter (ntckovdef='ev:I,xv(3):R,xt(3):R,p(3):R,part:I,vid:I')
       integer ntckov
       parameter (ntckov=10)
+#elif defined FCAL_SPLASH_NTUPLE
+      integer evno,part
+      real xconv(6),pconv
+      integer nfcal
+      real xfcal(999),yfcal(999),Efcal(999)
+      common /fsplNtuple/evno,part,xconv,pconv,nfcal,xfcal,yfcal,Efcal
+      save /fsplNtuple/
+      character*160 ntfspldef
+      parameter (ntfspldef='ev:I,part:I,xconv(6):R,pconv:R,'
+     + //'nfcal[0,999]:I,xfcal(nfcal):R,yfcal(nfcal):R,Efcal(nfcal):R')
+      integer ntfspl
+      parameter (ntfspl=10)
+      integer getrow,getcolumn
+      external getrow,getcolumn
+#elif defined BCAL_RESOLUTION_NTUPLE
+      integer evno
+      real pphot(4),dE,xdep(3)
+      common /bcalresnt/evno,pphot,dE,xdep
+      save /bcalresnt/
+      character*80 ntbcaldef
+      parameter (ntbcaldef='evno:I,pphot(4):R,dE:R,xdep(3):R')
+      integer ntbcal
+      parameter (ntbcal=33)
 #endif
 
       logical hexist
@@ -432,6 +456,61 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
           evno = IDEVT
           call HFNT(ntckov)
         endif
+      endif
+#elif defined FCAL_SPLASH_NTUPLE
+      if (.not.HEXIST(ntfspl)) then
+        call HBNT(ntfspl,'FCal splash hits','')
+        call HBNAME(ntfspl,'hits',evno,ntfspldef)
+      endif
+      if (ISTAK.eq.0.and.NSTEP.eq.0) then
+        part = IPART
+        evno = IDEVT
+        nfcal = 0
+      elseif (ISTAK.eq.0.and.ISTOP.ne.0) then
+        xconv(1) = vect(1)
+        xconv(2) = vect(2)
+        xconv(3) = vect(3)
+        xconv(4) = vect(4)
+        xconv(5) = vect(5)
+        xconv(6) = vect(6)
+        pconv = vect(7)
+      elseif (cnames(NLEVEL).eq.'LGBL'.and.DESTEP.gt.1e-3) then
+        row = getrow()
+        col = getcolumn()
+        do i=1,nfcal
+          if (col.eq.xfcal(i).and.row.eq.yfcal(i)) then
+            goto 810
+          endif
+        enddo
+        nfcal = nfcal+1
+        i = nfcal
+        xfcal(i) = col
+        yfcal(i) = row
+        Efcal(i) = 0
+  810   continue
+        Efcal(i) = Efcal(i)+DESTEP
+      endif
+      if (ISTOP.ne.0.and.IQ(JSTAK+1).eq.0) then
+        call HFNT(ntfspl)
+      endif
+#elif defined BCAL_RESOLUTION_NTUPLE
+      if (.not.HEXIST(ntbcal)) then
+        call HBNT(ntbcal,'BCal shower energy deposition','')
+        call HBNAME(ntbcal,'deposits',evno,ntbcaldef)
+      endif
+      if (ITRA.eq.1.and.ISTAK.eq.0.and.NSTEP.eq.0) then
+        evno=IDEVT
+        pphot(1) = VECT(4)*VECT(7)
+        pphot(2) = VECT(5)*VECT(7)
+        pphot(3) = VECT(6)*VECT(7)
+        pphot(4) = VECT(7)
+      elseif (DESTEP.gt.0.and.
+     +        NLEVEL.gt.6.and.cnames(6).eq.'BCAM') then
+        dE=DESTEP
+        xdep(1)=vect(1)
+        xdep(2)=vect(2)
+        xdep(3)=vect(3)
+        call HFNT(ntbcal)
       endif
 #endif
 
