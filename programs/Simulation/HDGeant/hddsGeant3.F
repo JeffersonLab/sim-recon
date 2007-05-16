@@ -28739,7 +28739,7 @@
       call gfmate(34,chnama,amat(3),zmat(3),dens,radl,absl,ubuf,nwbuf)
       wmat(4) = 0.003
       call gfmate(1,chnama,amat(4),zmat(4),dens,radl,absl,ubuf,nwbuf)
-      dens = 0.32
+      dens = 0.36
       nlmat = 4
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
