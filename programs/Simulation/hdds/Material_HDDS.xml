@@ -754,12 +754,12 @@
  	</addmaterial>
    <!-- The density here is deliberately depressed so that the thickness
         of the mylar volume mocks up the following structure:
-              1. 5 microns of mylar
-              2. 0.5 microns of aluminum
+              1. 6.3 microns of mylar
+              2. 0.2 microns of aluminum
               3. 20 microns of air
         The air is there to make the layer thick enough for the Geant
         tracking code not to miss it due to fp rounding errors.  -->
-	<real name="density"	value="0.32"	unit="g/cm^3" />
+	<real name="density"	value="0.36"	unit="g/cm^3" />
   </composite>
 
   <composite name="chamberMix">
