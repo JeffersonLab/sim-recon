@@ -158,6 +158,11 @@ void hitForwardDC (float xin[4], float xout[4],
       }
       initialized=1;
     }
+    else{
+      fprintf(stderr,"HDGeant error in hitFDC.c: ");
+      fprintf(stderr,"no deflection parameterization file found.\n");
+      exit(1);
+    }
   }  
 
   transformCoord(xin,"global",xinlocal,"local");
