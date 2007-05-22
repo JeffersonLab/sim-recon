@@ -20,6 +20,7 @@ const float Tau[] = {0,-45,0,45,15,60,105,-105,-60,-15};
 // Drift speed 2.2cm/us is appropriate for a 90/10 Argon/Methane mixture
 #define DRIFT_SPEED           .0055
 #define WIRE_DEAD_ZONE_RADIUS 3.5
+#define ACTIVE_AREA_OUTER_RADIUS 48.5
 #define ANODE_CATHODE_SPACING 0.5
 #define TWO_HIT_RESOL         250.
 #define WIRES_PER_PLANE       96
@@ -35,14 +36,85 @@ const float Tau[] = {0,-45,0,45,15,60,105,-105,-60,-15};
 #define THRESH_KEV           1.
 #define THRESH_STRIPS        5.   /* pC */
 #define ELECTRON_CHARGE 1.6022e-4 /* fC */
+/* The folowing are for interpreting grid of Lorentz deflection data */
+#define PACKAGE_Z_POINTS 7
+#define LORENTZ_X_POINTS 21
+#define LORENTZ_Z_POINTS 4*PACKAGE_Z_POINTS
 
 binTree_t* forwardDCTree = 0;
 static int stripCount = 0;
 static int wireCount = 0;
 static int pointCount = 0;
+static int initialized=0;
 
+// Variables for implementing lorentz effect (deflections of avalanche position
+// due to the magnetic field).
+float lorentz_x[LORENTZ_X_POINTS];
+float lorentz_z[LORENTZ_Z_POINTS];
+float lorentz_nx[LORENTZ_X_POINTS][LORENTZ_Z_POINTS];
+float lorentz_nz[LORENTZ_X_POINTS][LORENTZ_Z_POINTS];
 
 void gpoiss_(float*,int*,const int*); // avoid solaris compiler warnings
+
+// Locate a position in array xx given x
+void locate(float *xx,int n,float x,int *j){
+  int ju,jm,jl;
+  int ascnd;
+  
+  jl=-1;
+  ju=n;
+  ascnd=(xx[n-1]>=xx[0]);
+  while(ju-jl>1){
+    jm=(ju+jl)>>1;
+    if (x>=xx[jm]==ascnd)
+      jl=jm;
+    else
+      ju=jm;
+  }
+  if (x==xx[0]) *j=0;
+  else if (x==xx[n-1]) *j=n-2;
+  else *j=jl; 
+}
+
+// Polynomial interpolation on a grid.
+// Adapted from Numerical Recipes in C (2nd Edition), pp. 121-122.
+void polint(float *xa, float *ya,int n,float x, float *y,float *dy){
+  int i,m,ns=0;
+  float den,dif,dift,ho,hp,w;
+
+  float *c=(float *)calloc(n,sizeof(float));
+  float *d=(float *)calloc(n,sizeof(float));
+
+  dif=fabs(x-xa[0]);
+  for (i=0;i<n;i++){
+    if ((dift=fabs(x-xa[i]))<dif){
+      ns=i;
+      dif=dift;
+    }
+    c[i]=ya[i];
+    d[i]=ya[i];
+  }
+  *y=ya[ns--];
+
+  for (m=1;m<n;m++){
+    for (i=1;i<=n-m;i++){
+      ho=xa[i-1]-x;
+      hp=xa[i+m-1]-x;
+      w=c[i+1-1]-d[i-1];
+      if ((den=ho-hp)==0.0) return;
+      
+      den=w/den;
+      d[i-1]=hp*den;
+      c[i-1]=ho*den;
+      
+    }
+    
+    *y+=(*dy=(2*ns<(n-m) ?c[ns+1]:d[ns--]));
+  }
+  free(c);
+  free(d);
+}
+
 
 /* register hits during tracking (from gustep) */
 
@@ -58,7 +130,7 @@ void hitForwardDC (float xin[4], float xout[4],
   float xoutlocal[3];
   float dradius;
   float alpha;
-  int i;
+  int i,j;
 
   /* Get chamber information */
   int module = getmodule_();
@@ -66,6 +138,27 @@ void hitForwardDC (float xin[4], float xout[4],
   int chamber = (module*10)+layer;
   int wire1,wire2;
   int wire,dwire;
+
+  // Initialize arrays of deflection data from the Lorentz effect
+  if (!initialized){
+    FILE *fp=fopen("fdc_deflections.dat","r");
+    if (fp){
+      char dummy[80];
+      float fdummy;
+      size_t len=0;
+      getline(dummy,&len,fp); // Skip header line
+   
+      // Read deflection plane data
+      for (i=0;i<LORENTZ_X_POINTS;i++){
+	for (j=0;j<LORENTZ_Z_POINTS;j++){
+	  fscanf(fp,"%f %f %f %f %f %f\n",&lorentz_x[i],&lorentz_z[j],
+		 &fdummy, &fdummy,
+		 &lorentz_nx[i][j],&lorentz_nz[i][j]);
+	}
+      }
+      initialized=1;
+    }
+  }  
 
   transformCoord(xin,"global",xinlocal,"local");
   wire1 = ceil((xinlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
@@ -145,9 +238,11 @@ void hitForwardDC (float xin[4], float xout[4],
     float tdrift;
     for (wire=wire1; wire-dwire != wire2; wire+=dwire)
     {
+      int valid_hit=1;
       float dE;
       float u[2];
       float x0[3],x1[3];
+      float avalanche_y;
       float xwire = U_OF_WIRE_ZERO + (wire-1)*WIRE_SPACING;
       x0[0] = xwire-0.5*dwire*WIRE_SPACING;
       x0[1] = xinlocal[1] + (x0[0]-xinlocal[0]+1e-20)*
@@ -177,9 +272,51 @@ void hitForwardDC (float xin[4], float xout[4],
       tdrift = t + dradius/DRIFT_SPEED;
       dE = dEsum*(x1[2]-x0[2])/(xoutlocal[2]-xinlocal[2]);
 
+       /* Compute Lorentz deflection of avalanche position */
+      /* Checks to see if deflection would push avalanche out of active area */
+      if (dE > 0){
+	float tanr,tanz,r;
+	float dist_to_wire=xlocal[0]-xwire;
+	float phi=atan2(x0[1]+x1[1],x0[0]+x1[0]);
+	float ytemp[LORENTZ_X_POINTS],ytemp2[LORENTZ_X_POINTS],dy;
+	int imin,imax,ind,ind2;
+	
+	avalanche_y = (x0[1]+x1[1])/2;
+	r=sqrt((x0[0]+x1[0])*(x0[0]+x1[0])+(x0[1]+x1[1])*(x0[1]+x1[1]))/2.;
+
+	// Locate positions in x and z arrays given r and z=x[2]
+	locate(lorentz_x,LORENTZ_X_POINTS,r,&ind);
+	locate(lorentz_z,25,x[2],&ind2);
+	
+	// First do interpolation in z direction 
+	imin=PACKAGE_Z_POINTS*(ind2/PACKAGE_Z_POINTS); // Integer division...
+	for (j=0;j<LORENTZ_X_POINTS;j++){
+	  polint(&lorentz_z[imin],&lorentz_nx[j][imin],PACKAGE_Z_POINTS,x[2],
+		 &ytemp[j],&dy);
+	  polint(&lorentz_z[imin],&lorentz_nz[j][imin],PACKAGE_Z_POINTS,x[2],
+		 &ytemp2[j],&dy);
+	}
+	// Then do final interpolation in x direction 
+	imin=(ind>0)?(ind-1):0;
+	imax=(ind<LORENTZ_X_POINTS-2)?(ind+2):(LORENTZ_X_POINTS-1);
+	polint(&lorentz_x[imin],ytemp,imax-imin+1,r,&tanr,&dy);
+	polint(&lorentz_x[imin],ytemp2,imax-imin+1,r,&tanz,&dy);
+
+	// Correct avalanche position with deflection along wire	
+	avalanche_y+=-tanz*dist_to_wire*sin(alpha)*cos(phi)
+	  +tanr*dist_to_wire*cos(alpha);
+	
+	/* If the Lorentz effect would deflect the avalanche out of the active 
+	   region, mark as invalid hit */
+	r=sqrt(avalanche_y*avalanche_y+xwire*xwire);
+	if (r>ACTIVE_AREA_OUTER_RADIUS || r<WIRE_DEAD_ZONE_RADIUS){
+	  valid_hit=0;
+	}
+      }
+
     /* first record the anode wire hit */
 
-      if (dE > 0)
+      if (dE > 0 && valid_hit)
       {
         int mark = (chamber<<20) + (2<<10) + wire;
         void** twig = getTwig(&forwardDCTree, mark);
@@ -233,10 +370,9 @@ void hitForwardDC (float xin[4], float xout[4],
 
     /* then generate hits in the two surrounding cathode planes */
 
-      if (dE > 0)
+      if (dE > 0 && valid_hit)
       {
         float avalanche_x = xwire;
-        float avalanche_y = (x0[1]+x1[1])/2;
   
         /* Mock-up of cathode strip charge distribution */
   
