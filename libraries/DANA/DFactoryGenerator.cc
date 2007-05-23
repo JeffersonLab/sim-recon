@@ -18,6 +18,7 @@ extern jerror_t TOF_init(JEventLoop *loop);
 extern jerror_t TRACKING_init(JEventLoop *loop);
 extern jerror_t TRIGGER_init(JEventLoop *loop);
 extern jerror_t UPV_init(JEventLoop *loop);
+extern jerror_t PID_init(JEventLoop *loop);
 
 //---------------------------------
 // DFactoryGenerator    (Constructor)
@@ -51,6 +52,7 @@ jerror_t DFactoryGenerator::GenerateFactories(JEventLoop *loop)
 	TRACKING_init(loop);
 	TRIGGER_init(loop);
 	UPV_init(loop);
+	PID_init(loop);
 	
 	return NOERROR;
 }
