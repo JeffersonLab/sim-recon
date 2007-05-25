@@ -44,7 +44,30 @@ class DFDCGeometry : public JObject {
 	public:
 	
 		DFDCGeometry(void);
-		
+				
+
+		// Get z-coordinate for first wire plane in a package
+		static inline float GetZpackage(int layer){
+		  int package_number=(layer-1)/6;
+		  float z=212.0+95.5;
+		  switch (package_number){
+		  case 0:
+		    z+=-92.5-2.0;
+		    break;
+		  case 1:
+		    z+= -32.5-2.0;
+		    break;
+		  case 2:
+		    z+=+26.5-2.0;
+		    break;
+		  case 3:
+		    z+=+86.5-2.0;
+		    break;		    
+		  }
+		  return z;
+		}
+
+
 		static const DFDCWire* GetDFDCWire(int layer, int wire);
 	
 		///
