@@ -1,5 +1,5 @@
 ifndef OSNAME
-OSNAME = $(shell uname)-$(shell uname -s)
+OSNAME = $(shell uname)-$(shell uname -p)
 endif
 
 AR = ar
