@@ -126,7 +126,7 @@ DPIDPhoton* DPIDPhoton_factory::makeBCalPhoton(const TLorentzVector shower)
            float B2 = 7.784E-7;
            float A = A0 - A2*(z-A1)*(z-A1);
            float B = B0 + B2*(z-B1)*(z-B1);
-        float E = pow(shower.E()/A,1/(1+B)); 
+        float E = pow((double)(shower.E()/A),(double)(1/(1+B))); 
         float f = E/sqrt(pow(shower.X(),2)+pow(shower.Y(),2)+pow(z,2));        
         TLorentzVector gamma(shower.X()*f,shower.Y()*f,z*f,E);        
         photon->setMom4(gamma);
