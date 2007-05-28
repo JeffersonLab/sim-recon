@@ -10,14 +10,18 @@
 #include "DFDCTruth_factory.h"
 #include "DFDCPseudo_factory.h"
 #include "DFDCCathodeCluster_factory.h"
+#include "DFDCPoint_factory.h"
 
 jerror_t FDC_init(JEventLoop *loop)
 {
+  printf("Registering FDC factories");
+  
 	/// Create and register FDC data factories
 	loop->AddFactory(new DFDCHit_factory());
 	loop->AddFactory(new DFDCTruth_factory());
 	loop->AddFactory(new DFDCPseudo_factory());
 	loop->AddFactory(new DFDCCathodeCluster_factory());
+	loop->AddFactory(new DFDCPoint_factory());
 
 	return NOERROR;
 }
