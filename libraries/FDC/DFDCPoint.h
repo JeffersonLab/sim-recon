@@ -10,7 +10,7 @@
 #include "DFDCWire.h"
 #include "DFDCPseudo.h"
 #include "JANA/JObject.h"
-
+#include <DMatrix.h>
 #include <sstream>
 
 ///
@@ -25,15 +25,14 @@ class DFDCPoint : public JObject {
 		/// Default constructor
 		///
 		DFDCPoint(){}
-	
-		// Space point coordinates and uncertainties
-		float x,dx;             
-		float y,dy; 	
- 
-		const DFDCWire* wire; ///< DFDCWire for this wire 
-		float time; // time corresponding to this space point.
-		float dist;	// drift distance from time
-		int status; // status word for space point
+
+		DVector3 pos;
+		DVector3 dir;
+		DMatrix cov;
+
+		// List of pseudopoints belonging to this track segment
+		vector<DFDCPseudo *>hits;
+
 };
 
 #endif //DFDCPOINT_H
