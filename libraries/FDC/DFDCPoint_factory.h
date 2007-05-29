@@ -14,12 +14,17 @@
 #include "DFDCHit.h"
 #include "DFDCGeometry.h"
 
-#include <DMatrix.h>
 #include <TDecompLU.h>
 
 #include <algorithm>
 #include <map>
 #include <cmath>
+
+/* The folowing are for interpreting grid of Lorentz deflection data */
+#define PACKAGE_Z_POINTS 7
+#define LORENTZ_X_POINTS 21
+#define LORENTZ_Z_POINTS 4*PACKAGE_Z_POINTS
+
 
 ///
 /// class DFDCPoint_factory: definition for a JFactory that
@@ -40,13 +45,17 @@ class DFDCPoint_factory : public JFactory<DFDCPoint> {
 		///
 		~DFDCPoint_factory();	
 
-		jerror_t KalmanFilter(vector <const DFDCPoint*>points);
-		jerror_t CorrectPointY(float z0,DMatrix S,
-				       const DFDCPoint *point);
+		jerror_t KalmanFilter(vector <DFDCPseudo*>points);
+		jerror_t CorrectPointY(float z0,DMatrix S,DFDCPseudo *point);
 							
 		const string toString(void);
 
 	protected:
+		///
+		/// DFDCPoint_factory::brun():
+		///
+		jerror_t brun(JEventLoop *eventLoop, int eventNo);
+
 		///
 		/// DFDCPoint_factory::evnt():
 		/// this is the place that finds track segments and  
@@ -58,6 +67,15 @@ class DFDCPoint_factory : public JFactory<DFDCPoint> {
 		DFDCGeometry _geo;
 		JStreamLog* _log;
 		ofstream* logFile;
+		vector<DMatrix>segments;
+
+		// Variables for implementing lorentz effect
+		// due to the magnetic field).
+		float lorentz_x[LORENTZ_X_POINTS];
+		float lorentz_z[LORENTZ_Z_POINTS];
+		float lorentz_nx[LORENTZ_X_POINTS][LORENTZ_Z_POINTS];
+		float lorentz_nz[LORENTZ_X_POINTS][LORENTZ_Z_POINTS];
+
 };
 
 #endif // DFACTORY_DFDCPOINT_H
