@@ -67,7 +67,6 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		DFDCGeometry _geo;
 		JStreamLog* _log;
 		ofstream* logFile;
-		vector<DMatrix>segments;
 
 		// Variables for implementing lorentz effect
 		// due to the magnetic field).
