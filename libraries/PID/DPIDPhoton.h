@@ -19,8 +19,8 @@ class DPIDPhoton:public JObject{
                 DPIDPhoton();
 		~DPIDPhoton();
 
-		const TLorentzVector getMom4() const; 
-                const unsigned int getTag() const;
+		TLorentzVector getMom4() const; 
+                unsigned int getTag() const;
                 void setMom4(const TLorentzVector gamma);  
                 void setTag(const unsigned int tag);  
       
@@ -32,12 +32,12 @@ class DPIDPhoton:public JObject{
 };
 
 
-inline const TLorentzVector DPIDPhoton::getMom4() const
+inline TLorentzVector DPIDPhoton::getMom4() const
 {
       return fMom4;
 }
 
-inline const unsigned int DPIDPhoton::getTag() const
+inline unsigned int DPIDPhoton::getTag() const
 {
       return fTag;
 }

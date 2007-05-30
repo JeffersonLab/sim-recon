@@ -20,9 +20,9 @@ class DPIDPi0:public JObject{
                 DPIDPi0();
 		~DPIDPi0();
 
-		const TLorentzVector getMom4() const; 
-                const unsigned int getTag1() const; // the origin of the 1st photon (FCAL, BCAL)
-                const unsigned int getTag2() const; 
+		TLorentzVector getMom4() const; 
+                unsigned int getTag1() const; // the origin of the 1st photon (FCAL, BCAL)
+                unsigned int getTag2() const; 
 
 		// form pi0 candidate from two photons 
                 void setMom4(const TLorentzVector gamma1, const TLorentzVector gamma2); 
@@ -38,18 +38,18 @@ class DPIDPi0:public JObject{
 
 
 // return origin of pi0 kids (Fcal=0, Bcal=1)
-inline const unsigned int DPIDPi0::getTag1() const
+inline unsigned int DPIDPi0::getTag1() const
 {
       return fTag1;
 }
 
-inline const unsigned int DPIDPi0::getTag2() const
+inline unsigned int DPIDPi0::getTag2() const
 {
       return fTag2;
 }
 
 
-inline const TLorentzVector DPIDPi0::getMom4() const
+inline TLorentzVector DPIDPi0::getMom4() const
 {
       return fMom4;
 }
