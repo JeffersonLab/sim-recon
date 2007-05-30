@@ -1,15 +1,15 @@
 //************************************************************************
-// DFDCPoint_factory.cc - factory producing track segments from pseudopoints
+// DFDCSegment_factory.cc - factory producing track segments from pseudopoints
 //************************************************************************
 
-#include "DFDCPoint_factory.h"
+#include "DFDCSegment_factory.h"
 #define HALF_CELL 0.5
 #define MAX_DEFLECTION 0.15
 #define EPS 1e-3
 #define KILL_RADIUS 1
 #define NOT_CORRECTED 0x8
 
-bool DFDCPoint_package_cmp(const DFDCPseudo* a, const DFDCPseudo* b) {
+bool DFDCSegment_package_cmp(const DFDCPseudo* a, const DFDCPseudo* b) {
   return a->wire->layer>b->wire->layer;
 }
 
@@ -74,27 +74,27 @@ void polint(float *xa, float *ya,int n,float x, float *y,float *dy){
 
 
 
-DFDCPoint_factory::DFDCPoint_factory() {
-        logFile = new ofstream("DFDCPoint_factory.log");
+DFDCSegment_factory::DFDCSegment_factory() {
+        logFile = new ofstream("DFDCSegment_factory.log");
         _log = new JStreamLog(*logFile, "POINT");
         *_log << "File initialized." << endMsg;
 }
 
 
 ///
-/// DFDCPoint_factory::~DFDCPoint_factory():
+/// DFDCSegment_factory::~DFDCSegment_factory():
 /// default destructor -- closes log file
 ///
-DFDCPoint_factory::~DFDCPoint_factory() {
+DFDCSegment_factory::~DFDCSegment_factory() {
         logFile->close();
         delete logFile;
         delete _log;
 }
 ///
-/// DFDCPoint_factory::brun():
+/// DFDCSegment_factory::brun():
 /// Initialization: read in deflection map
 ///
-jerror_t DFDCPoint_factory::brun(JEventLoop* eventLoop, int eventNo) { 
+jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int eventNo) { 
   ifstream fdc_deflection_file;
 
   fdc_deflection_file.open("fdc_deflections.dat");
@@ -124,10 +124,10 @@ jerror_t DFDCPoint_factory::brun(JEventLoop* eventLoop, int eventNo) {
 }
 
 ///
-/// DFDCPoint_factory::evnt():
+/// DFDCSegment_factory::evnt():
 /// Routine where pseudopoints are converted into space points
 ///
-jerror_t DFDCPoint_factory::evnt(JEventLoop* eventLoop, int eventNo) {
+jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
   vector<const DFDCPseudo*>pseudopoints;
   eventLoop->Get(pseudopoints);  
 
@@ -139,7 +139,7 @@ jerror_t DFDCPoint_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 
   }
   for (int j=0;j<4;j++){
-    std::sort(package[j].begin(), package[j].end(), DFDCPoint_package_cmp);
+    std::sort(package[j].begin(), package[j].end(), DFDCSegment_package_cmp);
     KalmanFilter(package[j]);
   
   }
@@ -150,7 +150,7 @@ jerror_t DFDCPoint_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 //
 // Kalman Filter
 //
-jerror_t DFDCPoint_factory::KalmanFilter(vector<DFDCPseudo*>points){
+jerror_t DFDCSegment_factory::KalmanFilter(vector<DFDCPseudo*>points){
   // Check that we have data to fit
   if (points.size()<2) return OBJECT_NOT_AVAILABLE;
 
@@ -179,7 +179,7 @@ jerror_t DFDCPoint_factory::KalmanFilter(vector<DFDCPseudo*>points){
   
   // Now loop over the list of track segment end points
   for (unsigned int i=0;i<x_list.size();i++){
-    DFDCPoint *segment = new DFDCPoint;
+    DFDCSegment *segment = new DFDCSegment;
     // Put first point in list of hits
     segment->hits.push_back(points[i]); 
 
@@ -276,7 +276,7 @@ jerror_t DFDCPoint_factory::KalmanFilter(vector<DFDCPseudo*>points){
 }
 
 // Correct avalanche position along wire from doca data
-jerror_t DFDCPoint_factory::CorrectPointY(float z0, DMatrix S,
+jerror_t DFDCSegment_factory::CorrectPointY(float z0, DMatrix S,
 					  DFDCPseudo *point){
   DVector3 P1,P2,P3,R;
   float z=point->wire->origin(2);
@@ -342,7 +342,7 @@ jerror_t DFDCPoint_factory::CorrectPointY(float z0, DMatrix S,
 //------------------
 // toString
 //------------------
-const string DFDCPoint_factory::toString(void)
+const string DFDCSegment_factory::toString(void)
 {
         // Ensure our Get method has been called so _data is up to date
         Get();

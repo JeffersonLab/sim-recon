@@ -1,15 +1,15 @@
 //******************************************************************
-// DFDCPoint_factory.h: class definition for a factory creating
-// space points from pseudopoints
+// DFDCSegment_factory.h: class definition for a factory creating
+// track segments from pseudopoints
 //******************************************************************
-#ifndef DFACTORY_DFDCPOINT_H
-#define DFACTORY_DFDCPOINT_H
+#ifndef DFACTORY_DFDCSEGMENT_H
+#define DFACTORY_DFDCSEGMENT_H
 
 #include "JANA/JFactory.h"
 #include "JANA/JException.h"
 #include "JANA/JStreamLog.h"
 
-#include "DFDCPoint.h"
+#include "DFDCSegment.h"
 #include "DFDCPseudo.h"
 #include "DFDCHit.h"
 #include "DFDCGeometry.h"
@@ -27,23 +27,23 @@
 
 
 ///
-/// class DFDCPoint_factory: definition for a JFactory that
+/// class DFDCSegment_factory: definition for a JFactory that
 /// produces space points from pseudopoints.
 /// 
-class DFDCPoint_factory : public JFactory<DFDCPoint> {
+class DFDCSegment_factory : public JFactory<DFDCSegment> {
 	public:
 		
 		///
-		/// DFDCPoint_factory::DFDCPoint_factory():
+		/// DFDCSegment_factory::DFDCSegment_factory():
 		/// default constructor -- initializes log file
 		///
-		DFDCPoint_factory();
+		DFDCSegment_factory();
 		
 		///
-		/// DFDCPoint_factory::~DFDCPoint_factory():
+		/// DFDCSegment_factory::~DFDCSegment_factory():
 		/// default destructor -- closes log file
 		///
-		~DFDCPoint_factory();	
+		~DFDCSegment_factory();	
 
 		jerror_t KalmanFilter(vector <DFDCPseudo*>points);
 		jerror_t CorrectPointY(float z0,DMatrix S,DFDCPseudo *point);
@@ -52,12 +52,12 @@ class DFDCPoint_factory : public JFactory<DFDCPoint> {
 
 	protected:
 		///
-		/// DFDCPoint_factory::brun():
+		/// DFDCSegment_factory::brun():
 		///
 		jerror_t brun(JEventLoop *eventLoop, int eventNo);
 
 		///
-		/// DFDCPoint_factory::evnt():
+		/// DFDCSegment_factory::evnt():
 		/// this is the place that finds track segments and  
 		/// converts pseudopoints into space points.
 		///
@@ -78,5 +78,5 @@ class DFDCPoint_factory : public JFactory<DFDCPoint> {
 
 };
 
-#endif // DFACTORY_DFDCPOINT_H
+#endif // DFACTORY_DFDCSEGMENT_H
 

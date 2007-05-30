@@ -1,10 +1,9 @@
 //***********************************************************************
-// DFDCPoint.h : definition for a set of FDCPseudo Hits that have been 
-// converted to actual space points. 
+// DFDCSegment.h : definition for a track segment built from pseudopoints
 //***********************************************************************
 
-#ifndef DFDCPOINT_H
-#define DFDCPOINT_H
+#ifndef DFDCSEGMENT_H
+#define DFDCSEGMENT_H
 
 #include "DFDCHit.h"
 #include "DFDCWire.h"
@@ -14,17 +13,17 @@
 #include <sstream>
 
 ///
-/// class DFDCPoint: definition for a reconstructed space point in the FDC
+/// class DFDCSegment: definition for a track segment in the FDC
 /// 
-class DFDCPoint : public JObject {
+class DFDCSegment : public JObject {
 	public :
-		HDCLASSDEF(DFDCPoint);			/// DANA identifier
+		HDCLASSDEF(DFDCSegment);			/// DANA identifier
 		
 		/// 
-		/// DFDCPoint::DFDCPoint():
+		/// DFDCSegment::DFDCSegment():
 		/// Default constructor
 		///
-		DFDCPoint(){}
+		DFDCSegment(){}
 
 		DVector3 pos;
 		DVector3 dir;
@@ -35,4 +34,4 @@ class DFDCPoint : public JObject {
 
 };
 
-#endif //DFDCPOINT_H
+#endif //DFDCSEGMENT_H

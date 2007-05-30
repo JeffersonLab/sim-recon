@@ -10,7 +10,7 @@
 #include "DFDCTruth_factory.h"
 #include "DFDCPseudo_factory.h"
 #include "DFDCCathodeCluster_factory.h"
-#include "DFDCPoint_factory.h"
+#include "DFDCSegment_factory.h"
 
 jerror_t FDC_init(JEventLoop *loop)
 {
@@ -21,7 +21,7 @@ jerror_t FDC_init(JEventLoop *loop)
 	loop->AddFactory(new DFDCTruth_factory());
 	loop->AddFactory(new DFDCPseudo_factory());
 	loop->AddFactory(new DFDCCathodeCluster_factory());
-	loop->AddFactory(new DFDCPoint_factory());
+	loop->AddFactory(new DFDCSegment_factory());
 
 	return NOERROR;
 }
