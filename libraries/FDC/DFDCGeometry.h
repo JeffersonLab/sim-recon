@@ -147,8 +147,8 @@ class DFDCGeometry : public JObject {
 					return +M_PI / 3; // +60 degrees
 				case 2:
 					return -M_PI / 3; // -60 degrees
-				return 0.0;
 			}
+			return 0.0;
 		}
 };
 
