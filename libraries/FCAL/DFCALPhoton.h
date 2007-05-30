@@ -19,39 +19,38 @@ class DFCALPhoton:public JObject{
 	public:
 		HDCLASSDEF(DFCALPhoton);
                 
-                DFCALPhoton();
-		~DFCALPhoton();
+			DFCALPhoton();
+			~DFCALPhoton();
 
-		const double getEnergy() const;  // get photon energy and momentum
-		const DVector3 getMom3() const; 
-                const TLorentzVector getMom4() const;
+			double getEnergy() const;  // get photon energy and momentum
+			DVector3 getMom3() const; 
+			TLorentzVector getMom4() const;
 
 		// fix photon energy and momentu from cluster energy and position
-                void setEnergy(const double energy);  
-                void setMom3(const double energy, const DVector3 mom);    
-                void setMom4();  
+			void setEnergy(const double energy);  
+			void setMom3(const double energy, const DVector3 mom);    
+			void setMom4();  
 
 	private:
 
-                double fEnergy; 
-                DVector3 fMom3;  // Photon 3-momentum
-                TLorentzVector fMom4;  // Photon 4-momentum
-
+			double fEnergy; 
+			DVector3 fMom3;  // Photon 3-momentum
+			TLorentzVector fMom4;  // Photon 4-momentum
 };
 
 
-inline const DVector3 DFCALPhoton::getMom3() const
+inline DVector3 DFCALPhoton::getMom3() const
 {
       return fMom3;
 }
 
-inline const double DFCALPhoton::getEnergy() const
+inline double DFCALPhoton::getEnergy() const
 {
       return fEnergy;
 }
 
 
-inline const TLorentzVector DFCALPhoton::getMom4() const
+inline TLorentzVector DFCALPhoton::getMom4() const
 {
       return fMom4;
 }
