@@ -74,7 +74,7 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 				 vector<const DFDCHit *>::const_iterator peak,
 				 vector<centroid_t> &centroids);
 		// Backtracking routine needed by FindCentroid 
-		jerror_t DFDCPseudo_factory::FindNewParmVec(DMatrix N,
+		jerror_t FindNewParmVec(DMatrix N,
 						       DMatrix X,
 						       DMatrix F,
 						       DMatrix J,DMatrix par,
