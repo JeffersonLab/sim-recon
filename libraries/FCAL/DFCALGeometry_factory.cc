@@ -26,7 +26,7 @@ jerror_t DFCALGeometry_factory::brun(JEventLoop *loop, int runnumber)
 //------------------
 // erun
 //------------------
-jerror_t DFCALGeometry_factory::erun(JEventLoop *loop)
+jerror_t DFCALGeometry_factory::erun(void)
 {
 	for(unsigned int i=0; i<_data.size(); i++)delete _data[i];
 	_data.clear();

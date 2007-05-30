@@ -22,7 +22,7 @@ public:
 private:
 	
 	jerror_t brun(JEventLoop *loop, int runnumber);	
-	jerror_t erun(JEventLoop *loop);	
+	jerror_t erun(void);	
 };
 
 #endif // _DFCALGeometry_factory_
