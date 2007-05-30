@@ -9,6 +9,9 @@
 #define KILL_RADIUS 1
 #define NOT_CORRECTED 0x8
 
+static bool got_deflection_file=true;
+static bool warn=true;
+
 bool DFDCSegment_package_cmp(const DFDCPseudo* a, const DFDCPseudo* b) {
   return a->wire->layer>b->wire->layer;
 }
@@ -100,6 +103,7 @@ jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int eventNo) {
   fdc_deflection_file.open("fdc_deflections.dat");
   if (!fdc_deflection_file.is_open()){ 
     *_log << "Failed to open fdc_deflection file." << endMsg;
+    got_deflection_file=false;
     return RESOURCE_UNAVAILABLE;
   }
 
@@ -263,12 +267,21 @@ jerror_t DFDCSegment_factory::KalmanFilter(vector<DFDCPseudo*>points){
     }
 
     // Correct for the Lorentz effect given DOCAs
-    for (unsigned int k=0;k<segment->hits.size();k++){
-      CorrectPointY(z0,S,segment->hits[k]);
+    if (got_deflection_file)
+      for (unsigned int k=0;k<segment->hits.size();k++){
+	CorrectPointY(z0,S,segment->hits[k]);
+      }
+    else if (warn){
+      fprintf(stderr,
+	      "DFDCSegment_factory: No Lorentz deflection file found!\n");
+      fprintf(stderr,"DFDCSegment_factory: --> Pseudo-points will not be corrected for Lorentz effect.");
+      warn=false;      
     }
     
     segment->pos.SetXYZ(S(0,0),S(1,0),z0);
     segment->dir.SetXYZ(S(2,0),S(3,0),0);
+    segment->cov.ResizeTo(C);
+    segment->cov=C;
     
     _data.push_back(segment);
   }
