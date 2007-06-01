@@ -116,12 +116,12 @@
   <tubs name="FDCC" Rio_Z=" 5.0 53.6 0.0027" material="CopperKapton"
                                           comment="cathode strip plane" />
 	<!-- Set the following to "Air" for option 1 or "Kapton" for option 2 -->
-  <tubs name="FDCK" Rio_Z=" 0.0 5.0 0.0025" material="Air"
+  <tubs name="FDCK" Rio_Z=" 0.0 5.0 0.0025" material="Kapton"
                                           comment="Kapton plane covering beam hole" />
   <tubs name="FDCG" Rio_Z=" 0.0 53.6 0.0026" material="MylarFilm"
                                           comment="fdc ground plane" />
 	<!-- Set the following to "LowDensityROHACELL" for option 1 or "Air" for option 2 -->
-  <tubs name="FDCB" Rio_Z=" 5.0 53.6 0.4947" material="LowDensityROHACELL"
+  <tubs name="FDCB" Rio_Z=" 5.0 53.6 0.4947" material="Air"
                                           comment="cathode support plane" />
   <tubs name="FDSR" Rio_Z="0.0 1.0 196.0" material="CarbonFiber"
                                           comment="fdc support rods" />
