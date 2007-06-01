@@ -20,6 +20,7 @@ const float Tau[] = {0,-45,0,45,15,60,105,-105,-60,-15};
 // Drift speed 2.2cm/us is appropriate for a 90/10 Argon/Methane mixture
 #define DRIFT_SPEED           .0055
 #define WIRE_DEAD_ZONE_RADIUS 3.5
+#define STRIP_DEAD_ZONE_RADIUS 5.0
 #define ACTIVE_AREA_OUTER_RADIUS 48.5
 #define ANODE_CATHODE_SPACING 0.5
 #define TWO_HIT_RESOL         250.
@@ -439,7 +440,16 @@ void hitForwardDC (float xin[4], float xout[4],
                       *(tanh(M_PI*K2*lambda2/4.)-tanh(M_PI*K2*lambda1/4.))/4.;
   
             int strip = strip1+node;
-            if ((strip > 0) && (strip <= STRIPS_PER_PLANE))
+	    /* Throw away hits on strips falling within a certain dead-zone
+	       radius */
+	    float strip_outer_u=cathode_u1
+	      +(STRIP_SPACING+STRIP_GAP/2.)*(int)node;
+	    float cathode_v=-avalanche_x*sin(theta)+avalanche_y*cos(theta);
+	    float check_radius=sqrt(strip_outer_u*strip_outer_u
+				    +cathode_v*cathode_v);
+
+            if ((strip > 0) && (check_radius>STRIP_DEAD_ZONE_RADIUS) 
+		&& (strip <= STRIPS_PER_PLANE))
             {
   	      int mark = (chamber<<20) + (plane<<10) + strip;
               void** twig = getTwig(&forwardDCTree, mark);
