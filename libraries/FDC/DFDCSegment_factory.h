@@ -47,6 +47,10 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 
 		jerror_t KalmanFilter(vector <DFDCPseudo*>points);
 		jerror_t CorrectPointY(float z0,DMatrix S,DFDCPseudo *point);
+		jerror_t GetProcessNoiseCovariance(DMatrix S, 
+	                  vector<DFDCPseudo*>points,DMatrix &Q);
+	        jerror_t GetHelicalTrackPosition(float z, DMatrix S,
+	                    float &xpos,float &ypos);
 							
 		const string toString(void);
 
@@ -68,13 +72,16 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		JStreamLog* _log;
 		ofstream* logFile;
 
+	        // Average magnetic field in each package
+	        float BField[4];
+
 		// Variables for implementing lorentz effect
 		// due to the magnetic field).
 		float lorentz_x[LORENTZ_X_POINTS];
 		float lorentz_z[LORENTZ_Z_POINTS];
 		float lorentz_nx[LORENTZ_X_POINTS][LORENTZ_Z_POINTS];
 		float lorentz_nz[LORENTZ_X_POINTS][LORENTZ_Z_POINTS];
-
+	
 };
 
 #endif // DFACTORY_DFDCSEGMENT_H
