@@ -10,6 +10,8 @@
 #include "JANA/JFactory.h"
 #include "JANA/JEventLoop.h"
 #include "DPIDPhoton.h"
+#include "TRACKING/DTrack.h"
+#include "TRACKING/DReferenceTrajectory.h"
 
 
 class DPIDPhoton_factory:public JFactory<DPIDPhoton>{
@@ -24,6 +26,7 @@ class DPIDPhoton_factory:public JFactory<DPIDPhoton>{
                 DPIDPhoton* makeFCalPhoton(const TLorentzVector gamma); 
                 DPIDPhoton* makeBCalPhoton(const TLorentzVector shower); 
 
+		double MinDistToRT(const DPIDPhoton* photon, vector<const DTrack*> tracks);
 };
 
 
