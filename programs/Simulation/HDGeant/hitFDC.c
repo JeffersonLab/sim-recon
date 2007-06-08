@@ -169,7 +169,7 @@ void hitForwardDC (float xin[4], float xout[4],
   transformCoord(xin,"global",xinlocal,"local");
   wire1 = ceil((xinlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
   transformCoord(xout,"global",xoutlocal,"local");
-  wire2 = ceil((xinlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
+  wire2 = ceil((xoutlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
   dwire = (wire1 < wire2)? 1 : -1;
   alpha = atan2(xoutlocal[0]-xinlocal[0],xoutlocal[2]-xinlocal[2]);
   xlocal[0] = (xinlocal[0] + xoutlocal[0])/2;
