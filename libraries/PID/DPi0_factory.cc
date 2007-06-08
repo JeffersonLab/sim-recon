@@ -37,8 +37,8 @@ jerror_t DPi0_factory::evnt(JEventLoop *eventLoop, int eventnumber)
         for (unsigned int i = 0; i < photons.size() ; i++) {
           for (unsigned int j = i+1; j < photons.size() ; j++) {
 
-                TLorentzVector P1 = photons[i]->getMom4();
-                TLorentzVector P2 = photons[j]->getMom4();
+                DLorentzVector P1 = photons[i]->getMom4();
+                DLorentzVector P2 = photons[j]->getMom4();
                 const unsigned int tag1 = photons[i]->getTag();
                 const unsigned int tag2 = photons[j]->getTag();
 		DPi0 *pi0 =  makePi0(P1, P2, tag1, tag2);
@@ -60,17 +60,18 @@ const string DPi0_factory::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row:   E(GeV):   x(cm):   y(cm):   z(cm):	M(GeV):   t(ns):");
+	printheader("row:   E(GeV):   Px(cm):   Py(cm):   Pz(cm):   M(GeV):");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DPi0 *pions = _data[i];
 
 		printnewrow();
 		printcol("%d",	i);
-		printcol("%5.2f", pions->getMom4().T());
-		printcol("%5.2f", pions->getMom4().X());
-		printcol("%5.2f", pions->getMom4().Y());
-		printcol("%5.2f", pions->getMom4().Z());
+		printcol("%6.2f", pions->getMom4().T());
+		printcol("%6.2f", pions->getMom4().X());
+		printcol("%6.2f", pions->getMom4().Y());
+		printcol("%6.2f", pions->getMom4().Z());
+		printcol("%6.2f", pions->getMom4().M());
 //		printcol("%5.2f", pi0s->getM());
 //		printcol("%4.0f", fcalhit->t);
 		printrow();
@@ -86,7 +87,7 @@ DPi0* DPi0_factory::makePi0(const TLorentzVector gamma1, const TLorentzVector ga
         DPi0* pi0 = new DPi0;
         
         pi0->setMom4(gamma1, gamma2);
-        pi0->setOrig(tag1, tag2);
+        pi0->setTags(tag1, tag2);
 
         return pi0;
 }

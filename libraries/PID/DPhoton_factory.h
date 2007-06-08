@@ -10,6 +10,8 @@
 #include "JANA/JFactory.h"
 #include "JANA/JEventLoop.h"
 #include "DPhoton.h"
+#include "FCAL/DFCALPhoton.h"
+#include "BCAL/DBCALShower.h"
 #include "TRACKING/DTrack.h"
 #include "TRACKING/DReferenceTrajectory.h"
 
@@ -23,8 +25,9 @@ class DPhoton_factory:public JFactory<DPhoton>{
 	private:
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
-                DPhoton* makeFCalPhoton(const TLorentzVector gamma); 
-                DPhoton* makeBCalPhoton(const TLorentzVector shower); 
+                DPhoton* makeFCalPhoton(const DFCALPhoton* gamma); 
+//                DPhoton* makeBCalPhoton(const TLorentzVector shower); 
+                DPhoton* makeBCalPhoton(const DBCALShower* shower); 
 
 		double MinDistToRT(const DPhoton* photon, vector<const DTrack*> tracks);
 };

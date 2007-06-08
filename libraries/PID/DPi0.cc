@@ -14,13 +14,13 @@ DPi0::~DPi0()
 
 
 // Set pi0 four momentum
-void DPi0::setMom4(const TLorentzVector gamma1, const TLorentzVector gamma2)
+void DPi0::setMom4(const DLorentzVector gamma1, const DLorentzVector gamma2)
 {
    fMom4 = gamma1 + gamma2;
 }
 
 // set Pi0 bits with respect to the photon detection 
-void DPi0::setOrig(const unsigned int tag1, const unsigned int tag2 )
+void DPi0::setTags(const unsigned int tag1, const unsigned int tag2 )
 {
    fTag1 = tag1;
    fTag2 = tag2;

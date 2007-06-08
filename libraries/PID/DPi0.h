@@ -13,31 +13,32 @@
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
 
-class DPi0:public JObject{
+class DPi0:public DKinematicData {
 	public:
 		HDCLASSDEF(DPi0);
                 
                 DPi0();
 		~DPi0();
 
-		TLorentzVector getMom4() const; 
+		DLorentzVector getMom4() const; 
                 unsigned int getTag1() const; // the origin of the 1st photon (FCAL, BCAL)
                 unsigned int getTag2() const; 
 
-		// form pi0 candidate from two photons 
-                void setMom4(const TLorentzVector gamma1, const TLorentzVector gamma2); 
-                void setOrig(const unsigned int tag1, const unsigned int tag2 ); // set Pi0 bits regarding detected photons  
+// form pi0 candidate from two photons 
+                void setMom4(const DLorentzVector gamma1, const DLorentzVector gamma2); 
+// set Pi0 bits regarding detected photons  
+                void setTags(const unsigned int tag1, const unsigned int tag2 ); 
 
 	private:
 
                unsigned int fTag1; 
                unsigned int fTag2; 
-               TLorentzVector fMom4;  // pi0 4-momentum
+               DLorentzVector fMom4;  // pi0 4-momentum
 
 };
 
 
-// return origin of pi0 kids (Fcal=0, Bcal=1)
+// return origin of pi0  (Fcal=0, Bcal=1)
 inline unsigned int DPi0::getTag1() const
 {
       return fTag1;
@@ -49,7 +50,7 @@ inline unsigned int DPi0::getTag2() const
 }
 
 
-inline TLorentzVector DPi0::getMom4() const
+inline DLorentzVector DPi0::getMom4() const
 {
       return fMom4;
 }
