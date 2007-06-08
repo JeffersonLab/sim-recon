@@ -25,8 +25,7 @@ class DFDCSegment : public JObject {
 		///
 		DFDCSegment(){}
 
-		DVector3 pos;
-		DVector3 dir;
+	        DMatrix S;
 		DMatrix cov;
 
 		// List of pseudopoints belonging to this track segment
