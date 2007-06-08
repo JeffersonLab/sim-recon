@@ -45,13 +45,15 @@ void hitCentralDC (float xin[4], float xout[4],
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
+   dx[0] = xin[0] - xout[0];
+   dx[1] = xin[1] - xout[1];
+   dx[2] = xin[2] - xout[2];
    transformCoord(xin,"global",xinlocal,"local");
    transformCoord(xout,"global",xoutlocal,"local");
    xlocal[0] = (xinlocal[0] + xoutlocal[0])/2;
    xlocal[1] = (xinlocal[1] + xoutlocal[1])/2;
    xlocal[2] = (xinlocal[2] + xoutlocal[2])/2;
 
-   dradius = sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
    dradius = sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
    drin = sqrt(xinlocal[0]*xinlocal[0] + xinlocal[1]*xinlocal[1]);
    drout = sqrt(xoutlocal[0]*xoutlocal[0] + xoutlocal[1]*xoutlocal[1]);
@@ -142,9 +144,6 @@ void hitCentralDC (float xin[4], float xout[4],
 
    /* Calculate dE/dx */
 
-   dx[0] = xin[0] - xout[0];
-   dx[1] = xin[1] - xout[1];
-   dx[2] = xin[2] - xout[2];
    dr = sqrt(dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
    if (dr > 1e-3)
    {
