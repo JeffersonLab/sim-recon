@@ -24,7 +24,7 @@ DFCALPhoton::~DFCALPhoton()
 #define	EGAMMA_EPSILON   0.029
  
 // Simple non-linear correction
-void DFCALPhoton::setEnergy(const double energy) 
+void DFCALPhoton::fixEnergy(const double energy) 
 {
 
 	double const A=1/EGAMMA_NORM; 				// Normalization factor 
@@ -32,24 +32,31 @@ void DFCALPhoton::setEnergy(const double energy)
  	fEnergy = pow(A*energy,power);
 }
 
-// Simple depth correction: parameters imported from Radphi. 
-void DFCALPhoton::setMom3(const double energy, const DVector3 pos) 
-{
+// Simple depth correction: estimate shower depth based on shower maximum
+// 			    parameters imported from Radphi. 
+void DFCALPhoton::fixDepth(const double energy, const DVector3 pos) {
 
-	double x = pos.X();
-	double y = pos.Y();
-
-//  estimate shower depth based on shower maximum
         double zMax = (FCAL_RADIATION_LENGTH*( 
 			FCAL_SHOWER_OFFSET + log(energy/FCAL_CRITICAL_ENERGY)));
 
 	double z = FCAL_Zmin - Shower_Vertex_Z + zMax;
 
+        fPosition.SetXYZ(pos.X(), pos.Y(), z);
+
+}
+
+// Set photon momentum:
+// make sure that energy and shower depth are already taken care off.
+void DFCALPhoton::setMom3(const double energy, const DVector3 pos) 
+{
+
+	double x = pos.X();
+	double y = pos.Y();
+	double z = pos.Z();
+
 // normalization factor to momenta [GeV]
         double f = energy/sqrt(pow(x,2)+pow(y,2)+pow(z,2)); 
-        fMom3.SetX(x*f) ;
-    	fMom3.SetY(y*f) ;
-	fMom3.SetZ(z*f) ;
+        fMom3.SetXYZ(x*f, y*f, z*f);
 }
 
 // Set photon four momentum

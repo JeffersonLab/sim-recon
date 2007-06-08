@@ -43,19 +43,6 @@ jerror_t DFCALPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
                                                         cluster != fcalClusters.end(); 
 							cluster++) {
 
-//		DFCALPhoton *fcalPhoton = new DFCALPhoton;
-
-	        // Apply simple non-linear and depth corrections to clusters
-               
-/*                const double Ein = (**cluster).getEnergy();
-                const DVector3 mom( (**cluster).getCentroid().x(), 
-                                    (**cluster).getCentroid().y(),
-                                    (**cluster).getCentroid().z());
-                    
-                fcalPhoton->setEnergy( (**cluster).getEnergy() );
-                fcalPhoton->set3Mom( fcalPhoton->getEnergy(), (**cluster).getCentroid() );
-                */
-
                 TLorentzVector gamma( (**cluster).getCentroid(), (**cluster).getEnergy() );
                 DFCALPhoton* fcalPhoton = makePhoton( gamma );
 
@@ -76,17 +63,20 @@ const string DFCALPhoton_factory::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("row:   E(GeV):   Px(GeV):	  Py(GeV):    Pz(GeV):");
+	printheader("row:   E(GeV):   Px(GeV):   Py(GeV):   Pz(GeV):   X(cm):   Y(cm):   Z(cm):");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DFCALPhoton *fcalphot = _data[i];
                
 		printnewrow();
 		printcol("%d",	i);
-		printcol("%3.1f", fcalphot->getEnergy());
-		printcol("%3.1f", fcalphot->getMom4().X());
-		printcol("%3.1f", fcalphot->getMom4().Y());
-		printcol("%3.1f", fcalphot->getMom4().Z());
+		printcol("%6.2f", fcalphot->getEnergy());
+		printcol("%6.2f", fcalphot->getMom3().X());
+		printcol("%6.2f", fcalphot->getMom3().Y());
+		printcol("%6.2f", fcalphot->getMom3().Z());
+		printcol("%7.2f", fcalphot->getPosition().X());
+		printcol("%7.2f", fcalphot->getPosition().Y());
+		printcol("%7.2f", fcalphot->getPosition().Z());
 		printrow();
 	}
 
@@ -98,9 +88,15 @@ DFCALPhoton* DFCALPhoton_factory::makePhoton(const TLorentzVector gamma)
 {
 
         DFCALPhoton* photon = new DFCALPhoton;
-        
-	photon->setEnergy( gamma.T() );   
-	photon->setMom3(photon->getEnergy(), gamma.Vect());   
+       
+// Do non-linar energy correction first,
+	photon->fixEnergy( gamma.T() );
+
+// than depth. Idealy, the two previous steps should be done simultaneously.
+	photon->fixDepth(photon->getEnergy(), gamma.Vect());   
+
+// Than set momentum to units of GeV.
+	photon->setMom3(photon->getEnergy(), photon->getPosition());   
         photon->setMom4();
 
         return photon;
