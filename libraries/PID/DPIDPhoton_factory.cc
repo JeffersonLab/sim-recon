@@ -1,5 +1,5 @@
 //
-//    File: DPhoton_factory.cc
+//    File: DPIDPhoton_factory.cc
 // Created: Tue Aprl 17 11:57:50 EST 2007
 // Creator: kornicer (on Linux stan)
 //
@@ -11,15 +11,15 @@
 #include "BCAL/DBCALShower.h"
 //#include "TRACKING/DTrack.h"
 //#include "TRACKING/DReferenceTrajectory.h"
-#include "DPhoton.h"
-#include "DPhoton_factory.h"
+#include "DPIDPhoton.h"
+#include "DPIDPhoton_factory.h"
 #include "JANA/JEvent.h"
 
 
 //----------------
 // Constructor
 //----------------
-DPhoton_factory::DPhoton_factory()
+DPIDPhoton_factory::DPIDPhoton_factory()
 {
 	// Set defaults
 	
@@ -33,7 +33,7 @@ DPhoton_factory::DPhoton_factory()
 //              x-dependant energy corrections (right now based on 10 MeV
 //		hit threshold in HDGent. (MK)
 //------------------
-jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
+jerror_t DPIDPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 {
 
         vector<const DTrack*> tracks;
@@ -48,7 +48,7 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 							gamma++) {
 
              
-		DPhoton *photon =  makeFCalPhoton((**gamma).getMom4());
+		DPIDPhoton *photon =  makeFCalPhoton((**gamma).getMom4());
                 
                 double mdtrt = MinDistToRT(photon,tracks); 
                 photon->setDtRT(mdtrt); 
@@ -72,7 +72,7 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 #else
                 TLorentzVector bcalShower((**shower).x,(**shower).y,(**shower).z,(**shower).Ecorr);
 #endif
-		DPhoton *photon =  makeBCalPhoton(bcalShower);
+		DPIDPhoton *photon =  makeBCalPhoton(bcalShower);
 
                 double mdtrt = MinDistToRT(photon,tracks); 
                 photon->setDtRT(mdtrt); 
@@ -92,7 +92,7 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 //------------------
 // toString
 //------------------
-const string DPhoton_factory::toString(void)
+const string DPIDPhoton_factory::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
 	Get();
@@ -101,7 +101,7 @@ const string DPhoton_factory::toString(void)
 	printheader("row:   E(GeV):   Px(GeV):	  Py(GeV):    Pz(GeV):");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
-		DPhoton *phot = _data[i];
+		DPIDPhoton *phot = _data[i];
                
 		printnewrow();
 		printcol("%d",	i);
@@ -117,10 +117,10 @@ const string DPhoton_factory::toString(void)
 
 
 // at this time just copy data from DFCALPhoton and set 'tag' to zero
-DPhoton* DPhoton_factory::makeFCalPhoton(const TLorentzVector gamma) 
+DPIDPhoton* DPIDPhoton_factory::makeFCalPhoton(const TLorentzVector gamma) 
 {
 
-        DPhoton* photon = new DPhoton;
+        DPIDPhoton* photon = new DPIDPhoton;
         
         photon->setMom4(gamma);
         photon->setTag(0);
@@ -129,10 +129,10 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const TLorentzVector gamma)
 }
 
 // for BCAL photons do energy correction here:
-DPhoton* DPhoton_factory::makeBCalPhoton(const TLorentzVector shower) 
+DPIDPhoton* DPIDPhoton_factory::makeBCalPhoton(const TLorentzVector shower) 
 {
 
-        DPhoton* photon = new DPhoton;
+        DPIDPhoton* photon = new DPIDPhoton;
 
         float z = shower.Z() - 65;
 #ifdef ECORR_Z
@@ -160,7 +160,7 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const TLorentzVector shower)
 
 // loop over tracks and find the distance of its reference point from the photon
 // return photon distance from the closest track
-double DPhoton_factory::MinDistToRT(const DPhoton* photon, vector<const DTrack*> tracks) 
+double DPIDPhoton_factory::MinDistToRT(const DPIDPhoton* photon, vector<const DTrack*> tracks) 
 {
 
    double dmin = 1000.; // cm

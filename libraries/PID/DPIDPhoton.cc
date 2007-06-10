@@ -1,31 +1,31 @@
 // DFCALPhoton member functions
 
-#include "DPhoton.h"
+#include "DPIDPhoton.h"
 
 
-DPhoton::DPhoton()
+DPIDPhoton::DPIDPhoton()
 {
    fMom4.SetXYZT(0., 0., 0., 0.) ;
 }
 
-DPhoton::~DPhoton()
+DPIDPhoton::~DPIDPhoton()
 {
 }
 
 // Set photon four momentum
-void DPhoton::setMom4(const TLorentzVector gamma)
+void DPIDPhoton::setMom4(const TLorentzVector gamma)
 {
      fMom4 = gamma;
 }
 
 // Tag photon origin: 0/1 for FCAL/BCAL
-void DPhoton::setTag(const unsigned int tag)
+void DPIDPhoton::setTag(const unsigned int tag)
 {
    fTag = tag;
 }
 
 // Distance to track's ReferenceTrajectory
-void DPhoton::setDtRT(const double dtrt)
+void DPIDPhoton::setDtRT(const double dtrt)
 {
    fDtRT = dtrt;
 }
