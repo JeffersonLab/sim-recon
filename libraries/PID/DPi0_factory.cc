@@ -37,10 +37,10 @@ jerror_t DPi0_factory::evnt(JEventLoop *eventLoop, int eventnumber)
         for (unsigned int i = 0; i < photons.size() ; i++) {
           for (unsigned int j = i+1; j < photons.size() ; j++) {
 
-                DLorentzVector P1 = photons[i]->getMom4();
-                DLorentzVector P2 = photons[j]->getMom4();
-                const unsigned int tag1 = photons[i]->getTag();
-                const unsigned int tag2 = photons[j]->getTag();
+                DLorentzVector P1 = photons[i]->lorentzMomentum();
+                DLorentzVector P2 = photons[j]->lorentzMomentum();
+                unsigned int tag1 = photons[i]->getTag();
+                unsigned int tag2 = photons[j]->getTag();
 		DPi0 *pi0 =  makePi0(P1, P2, tag1, tag2);
 
 		_data.push_back(pi0);
@@ -67,11 +67,11 @@ const string DPi0_factory::toString(void)
 
 		printnewrow();
 		printcol("%d",	i);
-		printcol("%6.2f", pions->getMom4().T());
-		printcol("%6.2f", pions->getMom4().X());
-		printcol("%6.2f", pions->getMom4().Y());
-		printcol("%6.2f", pions->getMom4().Z());
-		printcol("%6.2f", pions->getMom4().M());
+		printcol("%6.2f", pions->lorentzMomentum().T());
+		printcol("%6.2f", pions->lorentzMomentum().X());
+		printcol("%6.2f", pions->lorentzMomentum().Y());
+		printcol("%6.2f", pions->lorentzMomentum().Z());
+		printcol("%6.2f", pions->lorentzMomentum().M());
 //		printcol("%5.2f", pi0s->getM());
 //		printcol("%4.0f", fcalhit->t);
 		printrow();
@@ -81,13 +81,17 @@ const string DPi0_factory::toString(void)
 }
 
 // create pi0 candidate from two photons 
-DPi0* DPi0_factory::makePi0(const TLorentzVector gamma1, const TLorentzVector gamma2, const unsigned int tag1, const unsigned int tag2) 
+DPi0* DPi0_factory::makePi0(const DLorentzVector& gamma1, const DLorentzVector& gamma2, unsigned int tag1, unsigned int tag2) 
 {
 
         DPi0* pi0 = new DPi0;
-        
-        pi0->setMom4(gamma1, gamma2);
-        pi0->setTags(tag1, tag2);
+        DLorentzVector mom4 = gamma1+gamma2;
+        DVector3 vertex(0.,0.,65.);
+
+        pi0->setMass( mom4.M() );
+        pi0->setMomentum( mom4.Vect() );
+        pi0->setPosition( vertex );
+        pi0->setChildrenTag(tag1, tag2);
 
         return pi0;
 }

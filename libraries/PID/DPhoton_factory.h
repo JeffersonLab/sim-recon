@@ -26,7 +26,6 @@ class DPhoton_factory:public JFactory<DPhoton>{
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
                 DPhoton* makeFCalPhoton(const DFCALPhoton* gamma); 
-//                DPhoton* makeBCalPhoton(const TLorentzVector shower); 
                 DPhoton* makeBCalPhoton(const DBCALShower* shower); 
 
 		double MinDistToRT(const DPhoton* photon, vector<const DTrack*> tracks);

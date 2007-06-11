@@ -21,7 +21,7 @@ class DPi0_factory:public JFactory<DPi0>{
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
 		float MIN_SHOWER_DIST; // not used tight now
-                DPi0* makePi0(const TLorentzVector gamma1, const TLorentzVector gamma2, const unsigned int t1, const unsigned int t2); 
+                DPi0* makePi0(const DLorentzVector& gamma1, const DLorentzVector& gamma2, unsigned int t1, unsigned int t2); 
 };
 
 #endif // _DPi0_factory_

@@ -20,20 +20,25 @@ class DPi0:public DKinematicData {
                 DPi0();
 		~DPi0();
 
-		DLorentzVector getMom4() const; 
+//		DLorentzVector getMom4() const; 
                 unsigned int getTag1() const; // the origin of the 1st photon (FCAL, BCAL)
                 unsigned int getTag2() const; 
+                unsigned int getID1() const; // JANA id's of children
+                unsigned int getID2() const; 
 
 // form pi0 candidate from two photons 
-                void setMom4(const DLorentzVector gamma1, const DLorentzVector gamma2); 
+//                void setMom4(const DLorentzVector gamma1, const DLorentzVector gamma2); 
 // set Pi0 bits regarding detected photons  
-                void setTags(const unsigned int tag1, const unsigned int tag2 ); 
+                void setChildrenTag(unsigned int tag1, unsigned int tag2 ); 
+                void setChildrenID(oid_t id1, oid_t id2 ); 
 
 	private:
 
                unsigned int fTag1; 
                unsigned int fTag2; 
-               DLorentzVector fMom4;  // pi0 4-momentum
+               oid_t fID1;  
+               oid_t fID2; 
+//               DLorentzVector fMom4;  // pi0 4-momentum
 
 };
 
@@ -49,12 +54,21 @@ inline unsigned int DPi0::getTag2() const
       return fTag2;
 }
 
+// return child ID's
+inline unsigned int DPi0::getID1() const
+{
+      return fID1;
+}
+inline unsigned int DPi0::getID2() const
+{
+      return fID2;
+}
 
-inline DLorentzVector DPi0::getMom4() const
+/*inline DLorentzVector DPi0::getMom4() const
 {
       return fMom4;
 }
-
+*/
 
 #endif // _DPi0_
 
