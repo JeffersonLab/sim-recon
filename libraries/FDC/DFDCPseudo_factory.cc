@@ -206,7 +206,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	    int status=upeaks[i].numstrips+vpeaks[j].numstrips;
 	    float xres=WIRE_SPACING/2./sqrt(12.);
 	    float yres=fabs(x_from_wire-x_from_strips);
-	    
+            float cosangle,sinangle;	   
+ 
 	    yres=x_from_wire-x_from_strips;
 	   
 	    DFDCPseudo* newPseu = new DFDCPseudo;
@@ -218,6 +219,10 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	    newPseu->time   = (*xIt)->t;
 	    newPseu->dist   = newPseu->time*DRIFT_SPEED;
 	    newPseu->status = status;
+		sinangle=newPseu->wire->udir(0);
+		cosangle=newPseu->wire->udir(1);
+		newPseu->x=(newPseu->w)*cosangle+(newPseu->s)*sinangle;
+		newPseu->y=-(newPseu->w)*sinangle+(newPseu->s)*cosangle;
 	    _data.push_back(newPseu);
 	  } // match in x
 	} // xIt loop

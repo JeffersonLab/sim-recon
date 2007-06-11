@@ -43,6 +43,7 @@ class DFDCPseudo : public JObject {
 		float time; // time corresponding to this pseudopoint.
 		float dist;	// drift distance from time
 		int status; // status word for pseudopoint
+		float x,y;  // coordinates rotated into lab coordinate system
 		
 #if 0
 		///
