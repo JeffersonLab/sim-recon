@@ -798,7 +798,9 @@ s_McTrajectoryPoints_t* make_s_McTrajectoryPoints(int n)
       s_McTrajectoryPoint_t* pp = &p->in[i];
       pp->E = 0;
       pp->dE = 0;
+      pp->mech = 0;
       pp->part = 0;
+      pp->primary_track = 0;
       pp->px = 0;
       pp->py = 0;
       pp->pz = 0;
@@ -896,7 +898,7 @@ char HDDM_s_DocumentString[] =
 "        </microChannel>\n"
 "      </tagger>\n"
 "      <mcTrajectory minOccurs=\"0\">\n"
-"        <mcTrajectoryPoint E=\"float\" dE=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" part=\"int\" px=\"float\" py=\"float\" pz=\"float\" radlen=\"float\" step=\"float\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
+"        <mcTrajectoryPoint E=\"float\" dE=\"float\" maxOccurs=\"unbounded\" mech=\"int\" minOccurs=\"0\" part=\"int\" primary_track=\"int\" px=\"float\" py=\"float\" pz=\"float\" radlen=\"float\" step=\"float\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "      </mcTrajectory>\n"
 "    </hitView>\n"
 "  </physicsEvent>\n"
@@ -2726,7 +2728,9 @@ static s_McTrajectoryPoints_t* unpack_s_McTrajectoryPoints(XDR* xdrs, popNode* p
       {
          xdr_float(xdrs,&this1->in[m].E);
          xdr_float(xdrs,&this1->in[m].dE);
+         xdr_int(xdrs,&this1->in[m].mech);
          xdr_int(xdrs,&this1->in[m].part);
+         xdr_int(xdrs,&this1->in[m].primary_track);
          xdr_float(xdrs,&this1->in[m].px);
          xdr_float(xdrs,&this1->in[m].py);
          xdr_float(xdrs,&this1->in[m].pz);
@@ -4621,7 +4625,9 @@ static int pack_s_McTrajectoryPoints(XDR* xdrs, s_McTrajectoryPoints_t* this1)
    {
       xdr_float(xdrs,&this1->in[m].E);
       xdr_float(xdrs,&this1->in[m].dE);
+      xdr_int(xdrs,&this1->in[m].mech);
       xdr_int(xdrs,&this1->in[m].part);
+      xdr_int(xdrs,&this1->in[m].primary_track);
       xdr_float(xdrs,&this1->in[m].px);
       xdr_float(xdrs,&this1->in[m].py);
       xdr_float(xdrs,&this1->in[m].pz);

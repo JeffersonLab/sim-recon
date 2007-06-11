@@ -732,7 +732,9 @@ typedef struct {
 typedef struct {
    float                E;
    float                dE;
+   int32_t              mech;
    int32_t              part;
+   int32_t              primary_track;
    float                px;
    float                py;
    float                pz;

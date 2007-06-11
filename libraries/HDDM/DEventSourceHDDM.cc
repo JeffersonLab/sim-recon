@@ -227,9 +227,9 @@ jerror_t DEventSourceHDDM::GetCDCTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*
 	
 	for(unsigned int i=0; i<PE->mult; i++){
 		s_HitView_t *hits = PE->in[i].hitView;
-		if (hits == HDDM_NULL ||
-			hits->centralDC == HDDM_NULL ||
-			hits->centralDC->cdcTruthPoints == HDDM_NULL)continue;
+		if (hits == HDDM_NULL)continue;
+		if(hits->centralDC == HDDM_NULL)continue;
+		if(hits->centralDC->cdcTruthPoints == HDDM_NULL)continue;
 		
 		s_CdcTruthPoints_t *cdctruthpoints = hits->centralDC->cdcTruthPoints;
 		s_CdcTruthPoint_t *cdctruthpoint = cdctruthpoints->in;
@@ -260,9 +260,9 @@ jerror_t DEventSourceHDDM::GetFDCTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*
 	
 	for(unsigned int i=0; i<PE->mult; i++){
 		s_HitView_t *hits = PE->in[i].hitView;
-		if (hits == HDDM_NULL ||
-			hits->forwardDC == HDDM_NULL ||
-			hits->forwardDC->fdcChambers == HDDM_NULL)continue;
+		if(hits == HDDM_NULL)continue;
+		if(hits->forwardDC == HDDM_NULL)continue;
+		if(hits->forwardDC->fdcChambers == HDDM_NULL)continue;
 
 		s_FdcChambers_t* fdcChambers = hits->forwardDC->fdcChambers;
 		s_FdcChamber_t *fdcChamber = fdcChambers->in;
@@ -1010,11 +1010,13 @@ jerror_t DEventSourceHDDM::Extract_DMCTrajectoryPoint(s_HDDM_t *hddm_s,  JFactor
 			p->E = points->in[i].E;
 
 			p->dE = points->in[i].dE;
+			p->primary_track = points->in[i].primary_track;
 			p->track = points->in[i].track;
 			p->part = points->in[i].part;
 
 			p->radlen = points->in[i].radlen;
 			p->step = points->in[i].step;
+			p->mech = points->in[i].mech;
 			
 			data.push_back(p);
 		}		
