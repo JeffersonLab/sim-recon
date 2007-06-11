@@ -36,12 +36,13 @@ jerror_t DPi0_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	// Loop over all photons and make pi0 candidates 
         for (unsigned int i = 0; i < photons.size() ; i++) {
           for (unsigned int j = i+1; j < photons.size() ; j++) {
-
+/*
                 DLorentzVector P1 = photons[i]->lorentzMomentum();
                 DLorentzVector P2 = photons[j]->lorentzMomentum();
                 unsigned int tag1 = photons[i]->getTag();
-                unsigned int tag2 = photons[j]->getTag();
-		DPi0 *pi0 =  makePi0(P1, P2, tag1, tag2);
+                unsigned int tag2 = photons[j]->getTag();*/
+                
+		DPi0 *pi0 =  makePi0( photons[i], photons[j] );
 
 		_data.push_back(pi0);
 
@@ -80,19 +81,23 @@ const string DPi0_factory::toString(void)
 	return _table;
 }
 
+
+
 // create pi0 candidate from two photons 
-DPi0* DPi0_factory::makePi0(const DLorentzVector& gamma1, const DLorentzVector& gamma2, unsigned int tag1, unsigned int tag2) 
+DPi0* DPi0_factory::makePi0(const DPhoton* gamma1, const DPhoton* gamma2) 
 {
 
         DPi0* pi0 = new DPi0;
-        DLorentzVector mom4 = gamma1+gamma2;
-        DVector3 vertex(0.,0.,65.);
+        DLorentzVector mom4 = gamma1->lorentzMomentum() + gamma2->lorentzMomentum();
+        DVector3 vertex = 0.5*(gamma1->position() + gamma2->position());
 
         pi0->setMass( mom4.M() );
         pi0->setMomentum( mom4.Vect() );
         pi0->setPosition( vertex );
-        pi0->setChildrenTag(tag1, tag2);
+        pi0->setChildrenTag(gamma1->getTag(), gamma1->getTag());
+        pi0->setChildrenID(gamma1->getID(), gamma2->getID());
 
         return pi0;
 }
+
 
