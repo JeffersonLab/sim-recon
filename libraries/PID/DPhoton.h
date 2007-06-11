@@ -22,34 +22,27 @@ class DPhoton: public DKinematicData {
 		~DPhoton();
                 
 		// getters             
-//		DVector3 getPosition() const; 
-//		DVector3 getMomentum() const; 
-//		double getEnergy() const; 
-//		DLorentzVector getMom4() const; 
-//		DMatrixDSym* getErrorMatrix() const; 
+// Intrioducing detection point in calorimeter to avoid confusion between 
+// measured cluster position and vertex, 
+// which is position() in terms of DKinemtaicData.
+		DVector3 positionCal() const; 
+
                 oid_t getID() const;  // returns JANA object ID
                 unsigned int getTag() const; 
 		double getDtRT() const; 
-//		DVector3 getVertex() const; // this is position now
 
 		// setters
-//                void setEnergy(const double aEnergy);  
-//                void setPosition(const DVector3 aPosition);  
-//                void setMomentum(const DVector3 aMom);  
-//                void setVertex(const DVector3& aVertex);  
                 void setTag(unsigned int tag);  
                 void setDtRT(double aDtRT);  
+                void setPositionCal( const DVector3& aPosition );
                 void makeErrorMatrix( const DMatrixDSym& aSigmas );  
       
 	private:
 
-//                double fEnergy;  // Photon energy
-//                DVector3 fPosition;  // Photon position
-//                DVector3 fMomentum;  // Photon 3-momentum
-//		DMatrixDSym fErrorMatrix; 
 //                DVector3 fVertex;  // Photon vertex (set to 0,0,0 for the moment)
                 unsigned int fTag; //Photon origin (FCAL/BCAL 0/1))
                 double fDtRT; //Distance to closest track's RefenceTrajectory
+                DVector3 fPositionCal; // position in calorimeter
 
 };
 

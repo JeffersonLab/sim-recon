@@ -45,8 +45,7 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	
         for ( unsigned int i=0; i < fcalPhotons.size(); i++ ) {
 
-                const DFCALPhoton *gamma = fcalPhotons[i];
-		DPhoton *photon =  makeFCalPhoton( gamma );
+		DPhoton *photon =  makeFCalPhoton(fcalPhotons[i]);
                 
                 double mdtrt = MinDistToRT(photon,tracks); 
                 photon->setDtRT(mdtrt); 
@@ -63,13 +62,6 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	
        for (unsigned int i=0; i< bcalShowers.size(); i++) {
 
-		
-/*#ifdef ECORR_Z
-                TLorentzVector bcalShower((**shower).x,(**shower).y,(**shower).z,(**shower).E);
-#else
-                TLorentzVector bcalShower((**shower).x,(**shower).y,(**shower).z,(**shower).Ecorr);
-#endif*/
-                
 		DPhoton *photon =  makeBCalPhoton(bcalShowers[i]);
 
                 double mdtrt = MinDistToRT(photon,tracks); 
@@ -97,7 +89,7 @@ const string DPhoton_factory::toString(void)
 		DPhoton *phot = _data[i];
                
 		printnewrow();
-		printcol("%d",	i);
+		printcol("%d",	phot->getID());
 		printcol("%5.2f", phot->energy());
 		printcol("%5.2f", phot->momentum().X());
 		printcol("%5.2f", phot->momentum().Y());
@@ -127,14 +119,15 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma)
 // default vertex is (0,0,65) and this has been taken into account in FCAL libraries
 // during MC calibration, make sure FCALPhoton returns centroid position in 
 // GlueX coordinates in the future..., in case we need it
-//        DVector3 centroid = gamma->getPosition();  
-//        centroid.SetZ(centroid.Z()+65.);
+        DVector3 centroid = gamma->getPosition();  
+        centroid.SetZ(centroid.Z()+65.);
 
         DVector3 momentum = gamma->getMom3();
         DVector3 vertex(0., 0., 65.);
 
         photon->setPosition( vertex );
         photon->setMomentum( momentum );
+        photon->setPositionCal( centroid );
         photon->setMass( 0. );
         photon->setTag(0);
 
@@ -171,10 +164,10 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALShower* shower)
         DPhoton* photon = new DPhoton;
 
         DVector3 vertex(0.,0.,65.);
-        DVector3 showerPosition(shower->x, shower->y, shower->z);        
-        DVector3 position = showerPosition - vertex;
+        DVector3 showerCentroid(shower->x, shower->y, shower->z);        
+        DVector3 r = showerCentroid - vertex;
 #ifdef ECORR_Z
-        double Z =  position.Z();
+        double Z =  r.Z();
            float A0 = 0.87971;
            float A1 = 134.52;
            float A2 = 1.822E-6;
@@ -187,13 +180,15 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALShower* shower)
 #else
         float E = shower->Ecorr; 
 #endif
-        float f = E/sqrt(pow(position.X(),2) + pow(position.Y(),2) + pow(position.Z(),2));        
-        DVector3 momentum = f*position;        
+        float f = E/sqrt(pow(r.X(),2) + pow(r.Y(),2) + pow(r.Z(),2));        
            
-        photon->setMomentum( f*position );
+        photon->setMomentum( f*r );
         photon->setPosition( vertex );
+        photon->setPositionCal( showerCentroid );
         photon->setMass( 0 );
         photon->setTag(1);
+// make errorMatrix here ....
+
         return photon;
 }
 
@@ -204,13 +199,13 @@ double DPhoton_factory::MinDistToRT(const DPhoton* photon, vector<const DTrack*>
 {
 
    double dmin = 10000.; // cm
-   DVector3 photonPosition( photon->position().X(), photon->position().Y(), photon->position().Z() );
+   DVector3 photonPoint( photon->positionCal().X(), photon->positionCal().Y(), photon->positionCal().Z() );
 
    for (vector<const DTrack*>::const_iterator track  = tracks.begin(); 
     					      track != tracks.end(); 
 					 			track++) {
 	DReferenceTrajectory* rt = const_cast<DReferenceTrajectory*>((**track).rt);
-        double dtrt = rt->DistToRT(photonPosition); 
+        double dtrt = rt->DistToRT(photonPoint); 
         if (dtrt < dmin ) {
             dmin = dtrt;
         }

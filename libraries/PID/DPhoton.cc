@@ -8,37 +8,19 @@ DPhoton::DPhoton()
 {
    fTag = 0; // default is FCAL
    fDtRT = 10000; // in a galaxy far far away...
+   fPositionCal.SetXYZ(0.,0.,0.);
 }
 
 DPhoton::~DPhoton()
 {
 }
 
-// obsolite functions
-/* Set photon momentum
-void DPhoton::setMomentum(const DVector3 aMom)
-{
-     fMomentum = aMom;
-}
-
 // Set photon position
-void DPhoton::setPosition(const DVector3 aPosition)
+void DPhoton::setPositionCal(const DVector3& aPosition)
 {
-     fPosition = aPosition;
+     fPositionCal = aPosition;
 }
 
-// Set photon vertex
-void DPhoton::setVertex(const DVector3& aVertex)
-{
-     fVertex = aVertex;
-}
-
- Set photon energy
-void DPhoton::setEnergy(const double aEnergy)
-{
-     fEnergy = aEnergy;
-}
-*/
 // Tag photon origin: 0/1 for FCAL/BCAL
 void DPhoton::setTag(unsigned int aTag)
 {
@@ -60,18 +42,54 @@ void DPhoton::setDtRT(double aDtRT)
 // where A is the matrix of first derivatives, with coeficients like 
 //      pd_Px/pd_x_c ... 
 // where pd_ standas for partial derivative.
-// For example pd_Px/pd_x_c = E (r^2 - r_x^2) / |r|^3
-// with r = r_c - r_v and p = E r /|r| being vectors of photon position and momentum. 
+// For example pd_Px/pd_x_c = E (r^2 - r_x^2) / R^3  = - pd_Px/pd_x_v
+// with r = r_c - r_v and p = E r /R being vectors of photon position and momentum
+// and R magnitude of r.
 //
+#define DELTA(i,j) ((i==j) ? 1 : 0)
 void DPhoton::makeErrorMatrix( const DMatrixDSym& aSigmas )
 {
-//   DVector3 r_c = getPosition();
-   DVector3 r = position();
+   DVector3 r_c = positionCal();
+   DVector3 r_v = position();
+   DVector3 r = r_c - r_v;
+   double R = r.Mag();
+   double R2= r.Mag2();
+   double R3 = R*R2;
    double E = energy();
-// init and do nothing ....
-   DMatrix A(7,1);
-   DMatrix At(A);
-   At.T();
+   double f = E/R3;
+
+// init to zeros
+   DMatrix A(7,0);
+
+// fill momentum derivatives
+   for (int i = 0; i < 3; i++) {
+	for ( int j = 0; j <3; j++) {
+		
+		A(i,j) = f*( R2*DELTA(i,j) - r(i)*r(j) );
+                A(j,i) = A(i,j);
+                A(i,j+4) = - A(i,j);
+
+ 	}
+  }
+
+// fill energy part and remember: relation between energy and photon 
+// position in calorimeter is neglected!
+    A(3,3) = 1.;
+    for (int j=0; j<3; j++) {
+	A(3,j) = r(j)/R;
+    } 
+
+// fill spatial part where: dp_r_x/dp_x_c = - dp_r_x/dp_x_v ....
+   for (int i = 4; i < 7; i++) {
+	for ( int j = 0; j <3; j++) {
+		int k=j+4;
+		A(i,j) = DELTA(i,k);
+                A(j,i) = A(i,j);
+                A(i,j+4) = - A(i,j);
+
+ 	}
+  }
+
    DMatrixDSym result = aSigmas; 
    result = result.Similarity(A); 
    
