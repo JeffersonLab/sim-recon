@@ -172,6 +172,15 @@ NOSECONDARIES 0
 
 c The following card tells the simulation to store particle trajectories
 c in the output file.  This output can be verbose, use with caution.
+c The value set here determines the amount of output recorded:
+c
+c TRAJECTORIES = 0  don't store trajectory info
+c TRAJECTORIES = 1  store birth and death points of primary tracks
+c TRAJECTORIES = 2  store birth and death points of all particles
+c TRAJECTORIES = 3  store full trajectory of primary tracks
+c TRAJECTORIES = 4  store full trajectory of primary tracks and birth/death points of secondaries
+c TRAJECTORIES = 5  store full trajectory for all particles
+c
 TRAJECTORIES 0
 
 END
