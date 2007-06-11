@@ -72,9 +72,10 @@ void DPhoton::makeErrorMatrix( const DMatrixDSym& aSigmas )
    DMatrix A(7,1);
    DMatrix At(A);
    At.T();
+   DMatrixDSym result = aSigmas; 
+   result = result.Similarity(A); 
    
-
-   setErrorMatrix( aSigmas );
+   setErrorMatrix( result );
 
 }
 
