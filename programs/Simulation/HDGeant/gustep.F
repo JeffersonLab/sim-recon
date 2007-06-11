@@ -517,7 +517,7 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
 * Optionally store particle trajectory
       if (storetraj.ne.0) then
         call addtrajectorypoint(VECT,TOFG,DESTEP,GETOT,ITRA,ISTAK
-     +         ,IPART, RADL, STEP)
+     +         ,IPART, RADL, STEP, NMEC, LMEC, storetraj)
       endif
 
 #ifndef TRACK_SHOWERS_IN_COLLIMATOR
