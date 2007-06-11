@@ -18,10 +18,12 @@ class DMCTrajectoryPoint:public JObject{
 		float x,y,z,t;
 		float px,py,pz;
 		float E, dE;
+		int primary_track;
 		int track;
 		int part;
 		float radlen;
 		float step;
+		int mech;
 };
 
 #endif // _DMCTrajectoryPoint_
