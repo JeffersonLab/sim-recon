@@ -543,11 +543,13 @@
       <xs:attribute name="pz" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
       <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary_track" type="hddm:int" use="required"/>
       <xs:attribute name="x" type="hddm:float" use="required"/>
       <xs:attribute name="y" type="hddm:float" use="required"/>
       <xs:attribute name="z" type="hddm:float" use="required"/>
       <xs:attribute name="radlen" type="hddm:float" use="required"/>
       <xs:attribute name="step" type="hddm:float" use="required"/>
+      <xs:attribute name="mech" type="hddm:int" use="required"/>
     </xs:complexType>
   </xs:element>
 
