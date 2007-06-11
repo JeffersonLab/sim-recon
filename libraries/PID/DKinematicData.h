@@ -124,6 +124,10 @@ class DKinematicData : public JObject
     
 public:
     
+	//virtual const char* className(void){return "DKinematicData"; }
+//	virtual const char* className(void){return static_className();}
+//	static const char* static_className(void){return "DKinematicData";}
+
     // constants, enums and typedefs
     typedef double ValueType;
     
