@@ -137,15 +137,17 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma)
 // L=target lenght, r0 = targer radius...
 // This means that energy-depth-polar angle relation  is neglected.
 // the order of sigmas is:  x_c, y_c, z_c, E, x_t, y_t, z_t
-        DMatrixDSym sigmas(7,0);
-        sigmas(1,1) = sigmas(2,2) = FCAL_BLOCK_WIDTH/sqrt(12); // x_c, y_c
-        sigmas(3,3) = 2.54; //  z_c = rms of average depth for photons from 0-5 GeV
+        DMatrixDSym sigmas(7);
+        sigmas[0][0] = FCAL_BLOCK_WIDTH/sqrt(12); // x_c, y_c
+        sigmas[1][1] = FCAL_BLOCK_WIDTH/sqrt(12); // x_c, y_c
+        sigmas[2][2] = 2.54; //  z_c = rms of average depth for photons from 0-5 GeV
 
-        sigmas(4,4) = 1.; // right now energy is 4.2%/sqrt(E)
-        if (energy>0) sigmas(4,4) = 0.042/sqrt(energy);
+        sigmas[3][3] = 1.; // right now energy is 4.2%/sqrt(E)
+        if (energy>0) sigmas[4][4] = 0.042/sqrt(energy);
 
-        sigmas(5,5) = sigmas(6,6) = 0.5*TARGET_RADIUS; // x_t, y_t
-        sigmas(7,7)  = TARGET_LENGTH/sqrt(12); // z_t
+        sigmas[4][4] = 0.5*TARGET_RADIUS; // x_t, y_t
+        sigmas[5][5] = 0.5*TARGET_RADIUS; // x_t, y_t
+        sigmas[6][6]  = TARGET_LENGTH/sqrt(12); // z_t
 
         photon->makeErrorMatrix( sigmas );
 
@@ -199,7 +201,7 @@ double DPhoton_factory::MinDistToRT(const DPhoton* photon, vector<const DTrack*>
 {
 
    double dmin = 10000.; // cm
-   DVector3 photonPoint( photon->positionCal().X(), photon->positionCal().Y(), photon->positionCal().Z() );
+   DVector3 photonPoint( photon->getPositionCal().X(), photon->getPositionCal().Y(), photon->getPositionCal().Z() );
 
    for (vector<const DTrack*>::const_iterator track  = tracks.begin(); 
     					      track != tracks.end(); 

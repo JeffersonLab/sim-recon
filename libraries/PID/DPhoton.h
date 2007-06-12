@@ -25,7 +25,7 @@ class DPhoton: public DKinematicData {
 // Intrioducing detection point in calorimeter to avoid confusion between 
 // measured cluster position and vertex, 
 // which is position() in terms of DKinemtaicData.
-		DVector3 positionCal() const; 
+		DVector3 getPositionCal() const; 
 
                 oid_t getID() const;  // returns JANA object ID
                 unsigned int getTag() const; 
@@ -46,21 +46,11 @@ class DPhoton: public DKinematicData {
 
 };
 
-/*inline double DPhoton::getEnergy() const
-{
-      return fEnergy;
-}
 
-inline DVector3 DPhoton::getPosition() const
+inline DVector3 DPhoton::getPositionCal() const
 {
-      return fPosition;
+      return fPositionCal;
 }
-
-inline DVector3 DPhoton::getMomentum() const
-{
-      return fMomentum;
-}
-*/
 
 inline oid_t DPhoton::getID() const
 {

@@ -49,7 +49,7 @@ void DPhoton::setDtRT(double aDtRT)
 #define DELTA(i,j) ((i==j) ? 1 : 0)
 void DPhoton::makeErrorMatrix( const DMatrixDSym& aSigmas )
 {
-   DVector3 r_c = positionCal();
+   DVector3 r_c = getPositionCal();
    DVector3 r_v = position();
    DVector3 r = r_c - r_v;
    double R = r.Mag();
@@ -59,41 +59,41 @@ void DPhoton::makeErrorMatrix( const DMatrixDSym& aSigmas )
    double f = E/R3;
 
 // init to zeros
-   DMatrix A(7,0);
+   DMatrix A(7,7);
 
 // fill momentum derivatives
    for (int i = 0; i < 3; i++) {
 	for ( int j = 0; j <3; j++) {
 		
-		A(i,j) = f*( R2*DELTA(i,j) - r(i)*r(j) );
-                A(j,i) = A(i,j);
-                A(i,j+4) = - A(i,j);
+		A[i][j] = f*( R2*DELTA(i,j) - r(i)*r(j) );
+                A[j][i] = A[i][j];
+                A[i][j+4] = - A[i][j];
 
  	}
   }
 
 // fill energy part and remember: relation between energy and photon 
 // position in calorimeter is neglected!
-    A(3,3) = 1.;
+    A[3][3] = 1.;
     for (int j=0; j<3; j++) {
-	A(3,j) = r(j)/R;
+	A[3][j] = r(j)/R;
     } 
 
 // fill spatial part where: dp_r_x/dp_x_c = - dp_r_x/dp_x_v ....
    for (int i = 4; i < 7; i++) {
 	for ( int j = 0; j <3; j++) {
 		int k=j+4;
-		A(i,j) = DELTA(i,k);
-                A(j,i) = A(i,j);
-                A(i,j+4) = - A(i,j);
+		A[i][j] = DELTA(i,k);
+                A[j][i] = A[i][j];
+                A[i][j+4] = - A[i][j];
 
  	}
   }
 
    DMatrixDSym result = aSigmas; 
-   result = result.Similarity(A); 
+//   result = result.Similarity(A); 
    
-   setErrorMatrix( result );
+   setErrorMatrix( result.Similarity(A) );
 
 }
 
