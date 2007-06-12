@@ -12,6 +12,7 @@
 #define NOT_CORRECTED 0x8
 #define Z_TARGET 65.0
 #define MATCH_RADIUS 5.0
+#define SIGN_CHANGE_CHISQ_CUT 10.0
 
 static bool got_deflection_file=true;
 static bool warn=true;
@@ -153,7 +154,6 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
   for (int j=0;j<4;j++){
     std::sort(package[j].begin(), package[j].end(), DFDCSegment_package_cmp);
     KalmanFilter(package[j]);
-  
   }
 
   // Correct for the Lorentz effect given DOCAs
@@ -220,13 +220,12 @@ jerror_t DFDCSegment_factory::KalmanFilter(vector<DFDCPseudo*>points){
     double y=points[i]->y; 
     double z=points[i]->wire->origin(2);
     double r=sqrt(x*x+y*y);
-    double Phi0=atan2(y,x),Phi1;
   
     // Create list of nearest neighbors
     vector<DFDCPseudo*>neighbors;
     neighbors.push_back(points[i]);
     unsigned int match=0;
-    double delta,delta_min=1000.,y1=0,x1=0,xtemp,ytemp;
+    double delta,delta_min=1000.,xtemp,ytemp;
     for (unsigned int k=0;k<x_list.size()-1;k++){
       delta_min=1000.;
       match=0;
@@ -245,13 +244,39 @@ jerror_t DFDCSegment_factory::KalmanFilter(vector<DFDCPseudo*>points){
         neighbors.push_back(points[match]);
       }
     }
-    x1=neighbors[neighbors.size()-1]->x;
-    y1=neighbors[neighbors.size()-1]->y;
-    Phi1=atan2(y1,x1);
+    
+    // Linear regression to find charge  
+    double sigx2=HALF_CELL*HALF_CELL/3.;
+    double sigy2=MAX_DEFLECTION*MAX_DEFLECTION/3.;
+    double var=0.; 
+    double sumv=0.;
+    double sumy=0.;
+    double sumx=0.;
+    double sumxx=0.,sumxy=0,Delta;
+    double cosangle,sinangle,slope;
+    for (unsigned int k=0;k<neighbors.size();k++){   
+      double tempz=neighbors[k]->wire->origin(2);
+      double phi_z=atan2(neighbors[k]->y,neighbors[k]->x);
+      double r2=neighbors[k]->x*neighbors[k]->x
+	+neighbors[k]->y*neighbors[k]->y;
+      cosangle=neighbors[k]->wire->udir(1);
+      sinangle=neighbors[k]->wire->udir(0);
+      var=(neighbors[k]->x*neighbors[k]->x
+	   *(sigx2*cosangle*cosangle+sigy2*sinangle*sinangle)
+	   +neighbors[k]->y*neighbors[k]->y
+	   *(sigy2*cosangle*cosangle+sigx2*sinangle*sinangle))/r2/r2;
+      sumv+=1./var;
+      sumy+=phi_z/var;
+      sumx+=tempz/var;
+      sumxx+=tempz*tempz/var;
+      sumxy+=phi_z*tempz/var;
+    }
+    Delta=sumv*sumxx-sumx*sumx;
+    slope=(sumv*sumxy-sumy*sumx)/Delta; 
 
     // Guess particle charge (+/-1);
-    double q=1.;     
-    if (Phi0-Phi1<0) q=-1.;
+    double q=1.;   
+    if (slope<0.) q=-1.;
     
     // Guess for the center and radius of the circle from the projection of 
     // the helical path
@@ -265,11 +290,6 @@ jerror_t DFDCSegment_factory::KalmanFilter(vector<DFDCPseudo*>points){
     xc=fit->x0;
     yc=fit->y0;
     rc=sqrt(xc*xc+yc*yc);
-  
-    // Initialization of covariance matrix 
-    for (int j=0;j<5;j++){
-      C(j,j)=1.;
-    }
     
     // Initial guess for state vector
     double kappa,phi,tanl=0.,sperp,z0;
@@ -278,14 +298,11 @@ jerror_t DFDCSegment_factory::KalmanFilter(vector<DFDCPseudo*>points){
     if (q<0) phi+=M_PI;
     
     // Linear regression to find z0, tanl   
-    double sigx2=HALF_CELL*HALF_CELL/3.;
-    double sigy2=MAX_DEFLECTION*MAX_DEFLECTION/3.;
-    double var_s=sigx2+sigy2; 
-    double sum_var=1./var_s;
-    double sum_s=0;
-    double sum_z=Z_TARGET/var_s;
-    double sum_zz=Z_TARGET*Z_TARGET/var_s,sum_sz=0,Delta;
-    double cosangle,sinangle;
+    var=sigx2+sigy2; 
+    sumv=1./var;
+    sumxy=sumy=0;
+    sumx=Z_TARGET/var;
+    sumxx=Z_TARGET*Z_TARGET/var;
     for (unsigned int k=0;k<neighbors.size();k++){   
       double tempz=neighbors[k]->wire->origin(2);
       r=sqrt(neighbors[k]->x*neighbors[k]->x+neighbors[k]->y*neighbors[k]->y);
@@ -297,24 +314,51 @@ jerror_t DFDCSegment_factory::KalmanFilter(vector<DFDCPseudo*>points){
 	sperp=2.*rc*asin(ratio);
       // Assume errors in sperp domininated by errors in x and y at the current
       // z-position.
-      var_s=(neighbors[k]->w*neighbors[k]->w*sigx2
+      var=(neighbors[k]->w*neighbors[k]->w*sigx2
 	     +neighbors[k]->s*neighbors[k]->s*sigy2)/r/r/(1.-r*r/4./rc/rc);
-      sum_var+=1./var_s;
-      sum_s+=sperp/var_s;
-      sum_z+=tempz/var_s;
-      sum_zz+=tempz*tempz/var_s;
-      sum_sz+=sperp*tempz/var_s;
+      sumv+=1./var;
+      sumy+=sperp/var;
+      sumx+=tempz/var;
+      sumxx+=tempz*tempz/var;
+      sumxy+=sperp*tempz/var;
     }
-    Delta=sum_var*sum_zz-sum_z*sum_z;
-    tanl=Delta/(sum_var*sum_sz-sum_s*sum_z); 
-    z0=-(sum_zz*sum_s-sum_z*sum_sz)/Delta*tanl;
-
-    Seed(0,0)=kappa;    // Curvature (kappa)
+    Delta=sumv*sumxx-sumx*sumx;
+    tanl=Delta/(sumv*sumxy-sumy*sumx); 
+    z0=-(sumxx*sumy-sumx*sumxy)/Delta*tanl;
+    
+    // Initialize seed track parameters
+    Seed(0,0)=kappa;    // Curvature 
     Seed(1,0)=phi;      // Phi
-    Seed(2,0)=0.;       // D   
-    Seed(3,0)=tanl;     // tan(lambda)
-    Seed(4,0)=z0; // z0
+    Seed(2,0)=0.;       // D=distance of closest approach to origin   
+    Seed(3,0)=tanl;     // tan(lambda), lambda=dip angle
+    Seed(4,0)=z0;       // z-position at closest approach to origin
+    
+    // Check for consistency between measured points and helical path.
+    // If the guessed charge is wrong, the points on the path will not match
+    // the measured points.  Use a chi2 test to tell whether or not we should
+    // change the sign of kappa.
+    double xpos,ypos,chisq=0.;
+    for (unsigned int k=0;k<neighbors.size();k++){
+      cosangle=neighbors[k]->wire->udir(1);
+      sinangle=neighbors[k]->wire->udir(0);
+      var=sigx2*cosangle*cosangle+sigy2*sinangle*sinangle;
+      GetHelicalTrackPosition(neighbors[k]->wire->origin(2),Seed,xpos,ypos);
+      chisq+=(neighbors[k]->x-xpos)*(neighbors[k]->x-xpos)/var;
+    }
+    // Compute reduced chi2
+    chisq/=double(neighbors.size());
+    if (chisq>SIGN_CHANGE_CHISQ_CUT){
+      Seed(0,0)*=-1.;
+      Seed(1,0)+=q*M_PI;
+    }
+
+    // First guess for state vector comes from the seed track
     S=Seed;
+    
+    // Initialization of state vector covariance matrix 
+    for (int j=0;j<5;j++){
+      C(j,j)=1.;
+    }
     
     // Loop over list of neighboring points, updating the state vector at each
     // step using the Kalman algorithm
@@ -378,7 +422,7 @@ jerror_t DFDCSegment_factory::KalmanFilter(vector<DFDCPseudo*>points){
 	*_log << "Singular matrix"<< endMsg;
 	continue;
       }
-      
+
       // Compute Kalman gain matrix
       K=C*(H_T*DMatrix(DMatrix::kInverted,V_new));
 
