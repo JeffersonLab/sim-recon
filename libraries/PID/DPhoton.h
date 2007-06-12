@@ -8,69 +8,69 @@
 #define _DPhoton_
 
 //#include <TLorentzVector.h>
-#include <DKinematicData.h>
+#include "DKinematicData.h"
 
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
 
 //class DPhoton: public JObject {
 class DPhoton: public DKinematicData {
-	public:
-		HDCLASSDEF(DPhoton);
-                
-                DPhoton();
-		~DPhoton();
-                
-		// getters             
-// Intrioducing detection point in calorimeter to avoid confusion between 
-// measured cluster position and vertex, 
-// which is position() in terms of DKinemtaicData.
-		DVector3 getPositionCal() const; 
+  public:
+    HDCLASSDEF(DPhoton);
 
-                oid_t getID() const;  // returns JANA object ID
-                unsigned int getTag() const; 
-		double getDtRT() const; 
+    DPhoton();
+    ~DPhoton();
 
-		// setters
-                void setTag(unsigned int tag);  
-                void setDtRT(double aDtRT);  
-                void setPositionCal( const DVector3& aPosition );
-                void makeErrorMatrix( const DMatrixDSym& aSigmas );  
-      
-	private:
+    // getters             
+    // Intrioducing detection point in calorimeter to avoid confusion between 
+    // measured cluster position and vertex, 
+    // which is position() in terms of DKinemtaicData.
+    DVector3 getPositionCal() const; 
 
-//                DVector3 fVertex;  // Photon vertex (set to 0,0,0 for the moment)
-                unsigned int fTag; //Photon origin (FCAL/BCAL 0/1))
-                double fDtRT; //Distance to closest track's RefenceTrajectory
-                DVector3 fPositionCal; // position in calorimeter
+    oid_t getID() const;  // returns JANA object ID
+    unsigned int getTag() const; 
+    double getDtRT() const; 
+
+    // setters
+    void setTag(unsigned int tag);  
+    void setDtRT(double aDtRT);  
+    void setPositionCal( const DVector3& aPosition );
+    void makeErrorMatrix( const DMatrixDSym& aSigmas );  
+
+  private:
+
+    //                DVector3 fVertex;  // Photon vertex (set to 0,0,0 for the moment)
+    unsigned int fTag; //Photon origin (FCAL/BCAL 0/1))
+    double fDtRT; //Distance to closest track's RefenceTrajectory
+    DVector3 fPositionCal; // position in calorimeter
 
 };
 
 
 inline DVector3 DPhoton::getPositionCal() const
 {
-      return fPositionCal;
+  return fPositionCal;
 }
 
 inline oid_t DPhoton::getID() const
 {
-      return id;
+  return id;
 }
 
 
 /*inline DVector3 DPhoton::getVertex() const
-{
-      return fVertex;
-}*/
+  {
+  return fVertex;
+  }*/
 
 inline unsigned int DPhoton::getTag() const
 {
-      return fTag;
+  return fTag;
 }
 
 inline double DPhoton::getDtRT() const
 {
-      return fDtRT;
+  return fDtRT;
 }
 
 #endif // _DPhoton_
