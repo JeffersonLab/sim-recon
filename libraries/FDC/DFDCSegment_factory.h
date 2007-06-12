@@ -46,12 +46,19 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		~DFDCSegment_factory();	
 
 		jerror_t KalmanFilter(vector <DFDCPseudo*>points);
-		jerror_t CorrectPointY(float z0,DMatrix S,DFDCPseudo *point);
+		jerror_t CorrectPointY(DMatrix S,DFDCPseudo *point);
 		jerror_t GetProcessNoiseCovariance(DMatrix S, 
 	                  vector<DFDCPseudo*>points,DMatrix &Q);
-	        jerror_t GetHelicalTrackPosition(float z, DMatrix S,
-	                    float &xpos,float &ypos);
-							
+	        jerror_t GetHelicalTrackPosition(double z, DMatrix S,
+	                  double &xpos,double &ypos);
+		jerror_t GetTrackProjectionMatrix(double z,DMatrix S,
+						  DMatrix &H);
+		jerror_t GetStateTransportMatrix(double oldx, double oldy,
+	                  double x,double y, DMatrix S, DMatrix &F);
+		jerror_t GetStateVector(double oldx, double oldy,
+	                  double old_z,double x, double y,double z,
+			  DMatrix S,DMatrix &S1);
+
 		const string toString(void);
 
 	protected:
@@ -73,14 +80,14 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		ofstream* logFile;
 
 	        // Average magnetic field in each package
-	        float BField[4];
+	        double BField[4];
 
 		// Variables for implementing lorentz effect
 		// due to the magnetic field).
-		float lorentz_x[LORENTZ_X_POINTS];
-		float lorentz_z[LORENTZ_Z_POINTS];
-		float lorentz_nx[LORENTZ_X_POINTS][LORENTZ_Z_POINTS];
-		float lorentz_nz[LORENTZ_X_POINTS][LORENTZ_Z_POINTS];
+		double lorentz_x[LORENTZ_X_POINTS];
+		double lorentz_z[LORENTZ_Z_POINTS];
+		double lorentz_nx[LORENTZ_X_POINTS][LORENTZ_Z_POINTS];
+		double lorentz_nz[LORENTZ_X_POINTS][LORENTZ_Z_POINTS];
 	
 };
 
