@@ -28,6 +28,11 @@ class DEventProcessor_radlen_hists:public JEventProcessor{
 		TH2F *inXo_vs_r_vs_theta;
 		TH2F *inXo_vs_z_vs_theta;
 		TH1F *theta_nevents;
+
+		TH1F *nXo_vs_r;
+		TH1F *nXo_vs_z;
+		TH1F *inXo_vs_r;
+		TH1F *inXo_vs_z;
 		
 		TH2F *dE_vs_r, *dE_vs_z;
 

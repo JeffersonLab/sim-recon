@@ -78,6 +78,24 @@ jerror_t DEventProcessor_radlen_hists::init(void)
 	inXo_vs_r_vs_theta->SetXTitle("Radial distance from beamline (cm)");
 	inXo_vs_r_vs_theta->SetYTitle("Thrown #theta angle (deg)");
 
+	nXo_vs_z = new TH1F("nXo_vs_z","Radiation lengths vs. z", 650, 0.0, 650.0);
+	inXo_vs_z = new TH1F("inXo_vs_z","Integrated radiation lengths vs. z", 650, 0.0, 650.0);
+	nXo_vs_r = new TH1F("nXo_vs_r","Radiation lengths vs. r", 180, 0.0, 90.0);
+	inXo_vs_r = new TH1F("inXo_vs_r","Integrated radiation lengths vs. r", 180, 0.0, 90.0);
+
+	nXo_vs_z->SetStats(0);
+	nXo_vs_z->SetFillStyle(3000);
+	nXo_vs_z->SetFillColor(kMagenta);
+	inXo_vs_z->SetStats(0);
+	inXo_vs_z->SetFillStyle(3000);
+	inXo_vs_z->SetFillColor(kMagenta);
+	nXo_vs_r->SetStats(0);
+	nXo_vs_r->SetFillStyle(3000);
+	nXo_vs_r->SetFillColor(kMagenta);
+	inXo_vs_r->SetStats(0);
+	inXo_vs_r->SetFillStyle(3000);
+	inXo_vs_r->SetFillColor(kMagenta);
+
 	// Go back up to the parent directory
 	dir->cd("../");
 	
@@ -115,6 +133,8 @@ jerror_t DEventProcessor_radlen_hists::evnt(JEventLoop *loop, int eventnumber)
 		double dnXo = traj->step/traj->radlen;
 		nXo_vs_r_vs_theta->Fill(r, theta, dnXo);
 		nXo_vs_z_vs_theta->Fill(traj->z, theta, dnXo);
+		nXo_vs_r->Fill(r, dnXo);
+		nXo_vs_z->Fill(traj->z, dnXo);
 	}
 
 	return NOERROR;
@@ -132,13 +152,13 @@ jerror_t DEventProcessor_radlen_hists::erun(void)
 	TH2F *h = nXo_vs_r_vs_theta;
 	for(int i=1; i<=h->GetNbinsY(); i++){
 		double N = theta_nevents->GetBinContent(i);
-		double nXo_vs_r=0.0;
+		double nXo_vs_r_sum=0.0;
 		for(int j=1; j<=h->GetNbinsX(); j++){
 			double v = nXo_vs_r_vs_theta->GetBinContent(j,i);
 			double nXo = N==0.0 ? 0.0:v/N;
-			nXo_vs_r += nXo;
+			nXo_vs_r_sum += nXo;
 			nXo_vs_r_vs_theta->SetBinContent(j,i, nXo);
-			inXo_vs_r_vs_theta->SetBinContent(j,i, nXo_vs_r);
+			inXo_vs_r_vs_theta->SetBinContent(j,i, nXo_vs_r_sum);
 		}
 	}
 
@@ -153,6 +173,18 @@ jerror_t DEventProcessor_radlen_hists::erun(void)
 			nXo_vs_z_vs_theta->SetBinContent(j,i, nXo);
 			inXo_vs_z_vs_theta->SetBinContent(j,i, nXo_vs_z);
 		}
+	}
+	
+	double N = theta_nevents->Integral();
+	nXo_vs_r->Scale(1.0/N);
+	nXo_vs_z->Scale(1.0/N);
+	inXo_vs_r->SetBinContent(1,nXo_vs_r->GetBinContent(1));
+	for(int j=2; j<=nXo_vs_r->GetNbinsX(); j++){
+		inXo_vs_r->SetBinContent(j, nXo_vs_r->GetBinContent(j)+inXo_vs_r->GetBinContent(j-1));
+	}
+	inXo_vs_z->SetBinContent(1,nXo_vs_z->GetBinContent(1));
+	for(int j=2; j<=nXo_vs_z->GetNbinsX(); j++){
+		inXo_vs_z->SetBinContent(j, nXo_vs_z->GetBinContent(j)+inXo_vs_z->GetBinContent(j-1));
 	}
 	
 	return NOERROR;
