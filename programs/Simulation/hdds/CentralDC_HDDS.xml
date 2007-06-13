@@ -348,25 +348,25 @@
     <posXYZ volume="DPLG" X_Y_Z="0. 0. +88.25"> </posXYZ>
   </composition>
 
-  <tubs name="CDC" Rio_Z="9.0   59.0   195.0" material="Air"
+  <tubs name="CDC" Rio_Z="15.0   60.0   195.0" material="Air"
 	                           comment="CDC mother volume"      />
-  <tubs name="CDCI" Rio_Z="9.00  9.06 176.5" material="Aluminum"
+  <tubs name="CDCI" Rio_Z="15.00  15.06 176.5" material="Aluminum"
 	                           comment="CDC inner cylinder"     />
-  <tubs name="CDCO" Rio_Z="59.80  59.00 176.5" material="Aluminum"
+  <tubs name="CDCO" Rio_Z="59.80  60.00 176.5" material="Aluminum"
 	                           comment="CDC outer cylinder"     />
-  <tubs name="CDPU" Rio_Z="9.0   59.0    0.9" material="Aluminum"
+  <tubs name="CDPU" Rio_Z="15.0   60.0    0.9" material="Aluminum"
 	                           comment="CDC upstream endplate"   />
-  <tubs name="CDPD" Rio_Z="9.0   59.0    0.4" material="CarbonFiberEpoxy"
+  <tubs name="CDPD" Rio_Z="15.0   60.0    0.4" material="CarbonFiberEpoxy"
 	                           comment="CDC downstream endplate" />
-  <tubs name="CDBU" Rio_Z="9.0   59.0    0.2" material="FR-4"
+  <tubs name="CDBU" Rio_Z="15.0   60.0    0.2" material="FR-4"
 	                           comment="CDC upstream circuit board" />
-  <tubs name="CDBD" Rio_Z="9.0   59.0    0.1" material="FR-4"
+  <tubs name="CDBD" Rio_Z="15.0   60.0    0.1" material="FR-4"
 	                           comment="CDC downstream circuit board" />
-  <tubs name="CDGU" Rio_Z="9.0   59.0    0.3" material="Plexiglas"
+  <tubs name="CDGU" Rio_Z="15.0   60.0    0.3" material="Plexiglas"
 	                           comment="CDC upstream gas plenum" />
-  <tubs name="CDGD" Rio_Z="9.0   59.0    0.3" material="Plexiglas"
+  <tubs name="CDGD" Rio_Z="15.0   60.0    0.3" material="Plexiglas"
 	                           comment="CDC downstream gas plenum" />
-  <tubs name="CDCA" Rio_Z="9.0   59.0    0.5" material="SignalCables"
+  <tubs name="CDCA" Rio_Z="15.0   60.0    0.5" material="SignalCables"
 	                           comment="CDC upstream cables" />
   <pcon name="CDCB" material="SignalCables" comment="CDC readout cables">
     <polyplane Rio_Z="74.0 120. -65.2" />
@@ -379,14 +379,14 @@
     <polyplane Rio_Z="9.0 59.0 0.0" />
   </pcon>
 
-  <tubs name="STRA" Rio_Z="0.000  0.800  176.5" material="chamberGas"
+  <tubs name="STRA" Rio_Z="0.000  0.800  176.5" material="CDchamberGas"
 						sensitive="true" />
   <tubs name="STRW" Rio_Z="0.7895  0.8000  176.5" material="AluminizedKapton" />
   <tubs name="WIRE" Rio_Z="0.000  0.0015  175.0" material="Tungsten" />
   <tubs name="UPLG" Rio_Z="0.000  0.800  1.0" material="Aluminum" />
   <tubs name="DPLG" Rio_Z="0.000  0.800  1.0" material="Delrin" />
 
-  <tubs name="STLA" Rio_Z="0.000  0.800  177.5" material="chamberGas"
+  <tubs name="STLA" Rio_Z="0.000  0.800  177.5" material="CDchamberGas"
 						sensitive="true" />
   <tubs name="STLW" Rio_Z="0.7895  0.8000  177.5" material="AluminizedKapton" />
   <tubs name="WILE" Rio_Z="0.000  0.0015  176.0" material="Tungsten" />
@@ -472,7 +472,7 @@
 				unit="cm"	/>
     <int	name="num_anode"    value="23"	comment="anode layers" />
     <int	name="num_cathode"  value="0"	/>
-    <reference  name="material"	    value="chamberGas" />
+    <reference  name="material"	    value="CDchamberGas" />
     <real_array name="thick_boun"   comment="inner outer upstream downstream
 		window thicknesses" values="0.20  0.50    0.90     0.60"
 				    unit="cm"	/>
@@ -534,7 +534,7 @@
     <string     name="name"	value="CDC"	/>
     <int	name="num_anode"    value="23"	comment="anode layers" />
     <int	name="num_cathode"  value="0"		 />
-    <reference  name="material"	    value="chamberGas" />
+    <reference  name="material"	    value="CDchamberGas" />
     <real_array name="thick_boun"   comment="inner outer upstream downstream
 		window thicknesses" values="0.20  0.50    0.90     0.60"
 				    unit="cm"	/>
