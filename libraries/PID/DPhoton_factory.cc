@@ -89,7 +89,7 @@ const string DPhoton_factory::toString(void)
 		DPhoton *phot = _data[i];
                
 		printnewrow();
-		printcol("%d",	phot->getID());
+		printcol("%x",	phot->getID());
 		printcol("%5.2f", phot->energy());
 		printcol("%5.2f", phot->momentum().X());
 		printcol("%5.2f", phot->momentum().Y());
