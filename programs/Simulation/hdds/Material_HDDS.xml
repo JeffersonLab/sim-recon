@@ -709,7 +709,7 @@
 	<real name="dedx"	value="1.675"	unit="MeV/g/cm^2"	/>
   </composite>
 
-  <composite name="chamberGas">
+  <composite name="CDchamberGas">
 	<addmaterial material="Argon">
 		<fractionmass	fraction="0.85"	/>
  	</addmaterial>
@@ -741,10 +741,10 @@
 
   <composite name="MylarFilm">
 	<addmaterial material="Mylar">
-		<fractionmass	fraction="0.835" />
+		<fractionmass	fraction="0.967" />
  	</addmaterial>
 	<addmaterial material="Aluminum">
-		<fractionmass	fraction="0.162" />
+		<fractionmass	fraction="0.030" />
  	</addmaterial>
 	<addmaterial material="EpoxyResin">
 		<fractionmass	fraction="0.000" />
@@ -755,23 +755,21 @@
    <!-- The density here is deliberately depressed so that the thickness
         of the mylar volume mocks up the following structure:
               1. 6.3 microns of mylar
-              2. 0.2 microns of aluminum
-              3. 20 microns of air
+              2. 0.1 microns of aluminum
+              3. 19.6 microns of air
         The air is there to make the layer thick enough for the Geant
         tracking code not to miss it due to fp rounding errors.  -->
-	<real name="density"	value="0.36"	unit="g/cm^3" />
+	<real name="density"	value="0.35"	unit="g/cm^3" />
   </composite>
 
-  <composite name="chamberMix">
+  <composite name="FDchamberGas">
 	<addmaterial material="Argon">
-		<fractionmass	fraction="0.39"	/>
+		<fractionmass	fraction="0.38"	/>
  	</addmaterial>
 	<addmaterial material="CO2">
-		<fractionmass	fraction="0.60"	/>
+		<fractionmass	fraction="0.62"	/>
  	</addmaterial>
-	<addmaterial material="Aluminum">
-		<fractionmass	fraction="0.01"	/>
- 	</addmaterial>
+	<real name="density"	value="1.899e-3"  unit="g/cm^3" />
   </composite>
 
   <composite name="BC600epoxy">
@@ -1204,14 +1202,24 @@
         </addmaterial>
   </composite>
 
-  <composite name="WirePlaneComposite">
+  <!-- The density here is adjusted so that the thickness
+       of the effective wire plane volume mocks up the following structure:
+             1. one 20 micron tungsten sense wire per cell
+             2. one 100 micron aluminum field wire per cell
+             3. 100 microns of chamber gas
+       The air is there to make the layer thick enough for the Geant
+       tracking code not to miss it due to fp rounding errors.  -->
+  <composite name="FDCwirePlaneComposite">
 	<addmaterial material="Tungsten">
-                <fractionmass   fraction="0.22" />
+                <fractionmass   fraction="0.21" />
         </addmaterial>
 	<addmaterial material="Aluminum">
-                <fractionmass   fraction="0.78" />
+                <fractionmass   fraction="0.72" />
         </addmaterial>
-	<real name="density"	value="0.0244"	unit="g/cm^3"	/>
+	<addmaterial material="FDchamberGas">
+                <fractionmass   fraction="0.07" />
+        </addmaterial>
+	<real name="density"	value="0.0263"	unit="g/cm^3"	/>
   </composite>
 
 </materials>
