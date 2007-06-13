@@ -194,6 +194,7 @@
 
 #define TOP_CERENKOV_EFFICIENCY 0.25
 
+      character*80 title
       character*4 cnames(15)
       equivalence (NAMES(1),cnames(1))
       real rnd(100)
@@ -526,4 +527,18 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
         ISTOP=1
       endif
 #endif
+
+#ifdef HISTOGRAM_MATERIAL_SEEN_BY_FIRST_TRACK
+      if (ITRA.eq.1.and.ISTAK.eq.0) then
+        if (NSTEP.eq.0) then
+          title = 'material in g/cm2 seen by first track'
+          call HBOOK1(IDEVT,title,1000,0.,200.,0)
+          title = 'radiation lengths seen by first track'
+          call HBOOK1(IDEVT+1000000,title,700,0.,700.,0)
+        endif
+        call HFILL(IDEVT,SLENG,0.,STEP*DENS)
+        call HFILL(IDEVT+1000000,VECT(3),0.,STEP/RADL)
+      endif
+#endif
+
       END
