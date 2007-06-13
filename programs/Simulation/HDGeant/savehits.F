@@ -21,6 +21,26 @@
       real xin(4),xout(4),pin(5),pout(5),dEsum
       save xin,xout,pin,pout,dEsum
 
+      integer nlevel_in,inwvol_in
+      nlevel_in = NLEVEL
+      inwvol_in = INWVOL
+
+* At this point we hide any inner volumes that should not interrupt the
+* formation of a single hit by pretending that we are still in the mother;
+* the true geometry information is restored before we exit.
+
+      if (cnames(NLEVEL).eq.'FDCA') then ! do not split hits around wire plane
+        if (INWVOL.eq.2.and.INFROM.eq.0) then
+          INWVOL = 0 ! continue, do not finalize hit
+        elseif (INWVOL.eq.1.and.INFROM.eq.1) then
+          INWVOL = 0 ! append to previous hit segment
+        endif
+      elseif (cnames(NLEVEL).eq.'FDCW') then ! discard energy lost in wires
+        goto 9
+      endif
+
+* Accumulate hit information and save it when particle exits the volume
+
       if (ISTOP.ne.0) then		! particle stops
         continue
       elseif (INWVOL.eq.2) then		! particle exits current volume
@@ -36,10 +56,10 @@
         pin(4) = GETOT
         pin(5) = VECT(7)
         dEsum = 0
-        return
+        goto 9
       else
         dEsum = dEsum + DESTEP
-        return
+        goto 9
       endif
 
 * At end of track segment in sensitive medium: register hit
@@ -136,4 +156,9 @@
           ISTORY = 3  ! this particle has entered the UPV (inherited trait)
         endif
       endif
+
+* Restore the true geometry flags and return
+
+    9 NLEVEL = nlevel_in
+      INWVOL = inwvol_in
       END
