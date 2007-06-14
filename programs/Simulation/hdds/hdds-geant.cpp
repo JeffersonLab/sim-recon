@@ -285,7 +285,7 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
    defaultPar["ifield"] = 0;	// default values for tracking properties
    defaultPar["fieldm"] = 0;	// are overridden by values in region tag
    defaultPar["tmaxfd"] = 0;
-   defaultPar["stemax"] = 0;
+   defaultPar["stemax"] = 1;
    defaultPar["deemax"] = 0;
    defaultPar["epsil"] = 1e-3;
    defaultPar["stmin"] = 0;
