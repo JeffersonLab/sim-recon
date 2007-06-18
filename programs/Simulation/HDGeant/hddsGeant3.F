@@ -94,7 +94,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -176,7 +176,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -211,7 +211,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -246,7 +246,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -291,7 +291,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -345,7 +345,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -380,7 +380,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -415,7 +415,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -450,7 +450,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -542,7 +542,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -577,7 +577,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -653,7 +653,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -690,7 +690,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -737,7 +737,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -783,7 +783,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -818,7 +818,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -865,7 +865,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -921,7 +921,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -968,7 +968,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1024,7 +1024,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1071,7 +1071,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1127,7 +1127,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1174,7 +1174,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1230,7 +1230,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1277,7 +1277,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1333,7 +1333,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1380,7 +1380,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1436,7 +1436,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1483,7 +1483,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1596,7 +1596,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1642,7 +1642,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1679,7 +1679,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1726,7 +1726,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1773,7 +1773,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1820,7 +1820,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1867,7 +1867,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1914,7 +1914,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -1961,7 +1961,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2008,7 +2008,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2055,7 +2055,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2102,7 +2102,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2149,7 +2149,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2196,7 +2196,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2243,7 +2243,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2290,7 +2290,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2337,7 +2337,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2384,7 +2384,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2431,7 +2431,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2478,7 +2478,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2582,7 +2582,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2617,7 +2617,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2652,7 +2652,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2687,7 +2687,7 @@
       ifield = 2
       fieldm = 2
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2731,7 +2731,7 @@
       ifield = 2
       fieldm = 2
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2786,7 +2786,7 @@
       ifield = 2
       fieldm = 2
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2831,7 +2831,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2866,7 +2866,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2901,7 +2901,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2936,7 +2936,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -2980,7 +2980,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3015,7 +3015,7 @@
       ifield = 2
       fieldm = 2
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3059,7 +3059,7 @@
       ifield = 2
       fieldm = 2
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3104,7 +3104,7 @@
       ifield = 2
       fieldm = 2
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3149,7 +3149,7 @@
       ifield = 2
       fieldm = 2
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3193,7 +3193,7 @@
       ifield = 2
       fieldm = 2
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3250,7 +3250,7 @@
       ifield = 2
       fieldm = 2
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3285,7 +3285,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3320,7 +3320,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3355,7 +3355,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3390,7 +3390,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3425,7 +3425,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3460,7 +3460,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3495,7 +3495,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3530,7 +3530,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3565,7 +3565,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3600,7 +3600,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3635,7 +3635,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3670,7 +3670,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3705,7 +3705,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3740,7 +3740,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3775,7 +3775,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3810,7 +3810,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3845,7 +3845,7 @@
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3880,7 +3880,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3915,7 +3915,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3964,7 +3964,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -3999,7 +3999,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -4034,7 +4034,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -4069,7 +4069,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -4104,7 +4104,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -4153,7 +4153,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -4198,7 +4198,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -4233,7 +4233,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -4286,7 +4286,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -4321,7 +4321,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -4356,7 +4356,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -4405,7 +4405,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -4472,7 +4472,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -4975,7 +4975,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5044,7 +5044,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5111,7 +5111,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5158,7 +5158,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5193,7 +5193,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5205,8 +5205,8 @@
       chshap = 'TUBE'
       nmed = 103
       npar = 3
-      par(1) = 9
-      par(2) = 59
+      par(1) = 15
+      par(2) = 60
       par(3) = 97.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.120) stop 'consistency check #1 failed'
@@ -5228,7 +5228,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5273,7 +5273,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5314,7 +5314,7 @@
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
       imate = 28
-      namate = 'chamberGas'
+      namate = 'CDchamberGas'
       wmat(1) = 0.85
       call gfmate(4,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
       wmat(2) = 0.15
@@ -5324,13 +5324,13 @@
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
       itmed = 106
-      natmed = 'STRA chamberGas'
+      natmed = 'STRA CDchamberGas'
       nmat = 28
       isvol = 1
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5375,7 +5375,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5410,7 +5410,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5445,7 +5445,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5492,7 +5492,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5527,7 +5527,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5539,8 +5539,8 @@
       chshap = 'TUBE'
       nmed = 111
       npar = 3
-      par(1) = 9
-      par(2) = 59
+      par(1) = 15
+      par(2) = 60
       par(3) = 0.45
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.129) stop 'consistency check #1 failed'
@@ -5594,7 +5594,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5606,8 +5606,8 @@
       chshap = 'TUBE'
       nmed = 112
       npar = 3
-      par(1) = 9
-      par(2) = 59
+      par(1) = 15
+      par(2) = 60
       par(3) = 0.2
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.130) stop 'consistency check #1 failed'
@@ -5629,7 +5629,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5674,7 +5674,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5741,7 +5741,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5786,7 +5786,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5853,7 +5853,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5898,7 +5898,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5965,7 +5965,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -5994,13 +5994,13 @@
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
       itmed = 120
-      natmed = 'STLA chamberGas'
+      natmed = 'STLA CDchamberGas'
       nmat = 28
       isvol = 1
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -6044,7 +6044,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -6079,7 +6079,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -13849,7 +13849,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -13894,7 +13894,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -13961,7 +13961,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -14006,7 +14006,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -14073,7 +14073,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -14118,7 +14118,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -14185,7 +14185,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -14230,7 +14230,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -14297,7 +14297,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -14342,7 +14342,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -14409,7 +14409,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -27498,7 +27498,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -27543,7 +27543,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -27610,7 +27610,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -27655,7 +27655,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -27722,7 +27722,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -27767,7 +27767,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -27834,7 +27834,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -27879,7 +27879,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -27946,7 +27946,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -27991,7 +27991,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28058,7 +28058,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28103,7 +28103,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28170,7 +28170,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28182,8 +28182,8 @@
       chshap = 'TUBE'
       nmed = 146
       npar = 3
-      par(1) = 9
-      par(2) = 9.06
+      par(1) = 15
+      par(2) = 15.06
       par(3) = 88.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.178) stop 'consistency check #1 failed'
@@ -28205,7 +28205,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28218,7 +28218,7 @@
       nmed = 147
       npar = 3
       par(1) = 59.8
-      par(2) = 59
+      par(2) = 60
       par(3) = 88.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.179) stop 'consistency check #1 failed'
@@ -28366,7 +28366,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28378,8 +28378,8 @@
       chshap = 'TUBE'
       nmed = 148
       npar = 3
-      par(1) = 9
-      par(2) = 59
+      par(1) = 15
+      par(2) = 60
       par(3) = 0.1
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.180) stop 'consistency check #1 failed'
@@ -28401,7 +28401,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28413,8 +28413,8 @@
       chshap = 'TUBE'
       nmed = 149
       npar = 3
-      par(1) = 9
-      par(2) = 59
+      par(1) = 15
+      par(2) = 60
       par(3) = 0.05
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.181) stop 'consistency check #1 failed'
@@ -28436,7 +28436,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28448,8 +28448,8 @@
       chshap = 'TUBE'
       nmed = 150
       npar = 3
-      par(1) = 9
-      par(2) = 59
+      par(1) = 15
+      par(2) = 60
       par(3) = 0.15
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.182) stop 'consistency check #1 failed'
@@ -28471,7 +28471,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28483,8 +28483,8 @@
       chshap = 'TUBE'
       nmed = 151
       npar = 3
-      par(1) = 9
-      par(2) = 59
+      par(1) = 15
+      par(2) = 60
       par(3) = 0.15
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.183) stop 'consistency check #1 failed'
@@ -28537,7 +28537,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28549,8 +28549,8 @@
       chshap = 'TUBE'
       nmed = 152
       npar = 3
-      par(1) = 9
-      par(2) = 59
+      par(1) = 15
+      par(2) = 60
       par(3) = 0.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.184) stop 'consistency check #1 failed'
@@ -28572,7 +28572,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28631,7 +28631,7 @@
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28659,14 +28659,63 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
+      imate = 48
+      namate = 'MylarFilm'
+      wmat(1) = 0.967
+      call gfmate(19,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
+      wmat(2) = 0.03
+      call gfmate(7,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
+      wmat(3) = 0
+      call gfmate(34,chnama,amat(3),zmat(3),dens,radl,absl,ubuf,nwbuf)
+      wmat(4) = 0.003
+      call gfmate(1,chnama,amat(4),zmat(4),dens,radl,absl,ubuf,nwbuf)
+      dens = 0.35
+      nlmat = 4
+      call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
+
       itmed = 155
+      natmed = 'FDCG MylarFilm'
+      nmat = 48
+      isvol = 0
+      ifield = 2
+      fieldm = 22.4
+      tmaxfd = 1
+      stemax = 1
+      deemax = 0
+      epsil = 0.001
+      stmin = 0
+      nwbuf = 0
+      call gstmed(itmed,natmed,nmat,isvol,ifield,fieldm,tmaxfd,
+     +            stemax,deemax,epsil,stmin,ubuf,nwbuf)
+
+      chname = 'FDCG'
+      chshap = 'TUBE'
+      nmed = 155
+      npar = 3
+      par(1) = 0
+      par(2) = 53.6
+      par(3) = 0.0013
+      call gsvolu(chname,chshap,nmed,par,npar,ivolu)
+      if (ivolu.ne.187) stop 'consistency check #1 failed'
+
+      chname = 'FDCG'
+      nr = 1
+      chmoth = 'FDC'
+      x = 0
+      y = 0
+      z = -95.5
+      irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      itmed = 156
       natmed = 'FDMO Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28676,13 +28725,13 @@
 
       chname = 'FDMO'
       chshap = 'TUBE'
-      nmed = 155
+      nmed = 156
       npar = 3
       par(1) = 0
       par(2) = 61
       par(3) = 3
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.187) stop 'consistency check #1 failed'
+      if (ivolu.ne.188) stop 'consistency check #1 failed'
 
       chname = 'FDMO'
       nr = 1
@@ -28694,14 +28743,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 156
+      itmed = 157
       natmed = 'FDCH Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28711,13 +28760,13 @@
 
       chname = 'FDCH'
       chshap = 'TUBE'
-      nmed = 156
+      nmed = 157
       npar = 3
       par(1) = 0
       par(2) = 53.6
-      par(3) = 1
+      par(3) = 0.9974
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.188) stop 'consistency check #1 failed'
+      if (ivolu.ne.189) stop 'consistency check #1 failed'
 
       chname = 'FDCH'
       nr = 1
@@ -28729,63 +28778,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      imate = 48
-      namate = 'MylarFilm'
-      wmat(1) = 0.835
-      call gfmate(19,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
-      wmat(2) = 0.162
-      call gfmate(7,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
-      wmat(3) = 0
-      call gfmate(34,chnama,amat(3),zmat(3),dens,radl,absl,ubuf,nwbuf)
-      wmat(4) = 0.003
-      call gfmate(1,chnama,amat(4),zmat(4),dens,radl,absl,ubuf,nwbuf)
-      dens = 0.36
-      nlmat = 4
-      call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
-
-      itmed = 157
-      natmed = 'FDCG MylarFilm'
-      nmat = 48
-      isvol = 0
-      ifield = 2
-      fieldm = 22.4
-      tmaxfd = 1
-      stemax = 0
-      deemax = 0
-      epsil = 0.001
-      stmin = 0
-      nwbuf = 0
-      call gstmed(itmed,natmed,nmat,isvol,ifield,fieldm,tmaxfd,
-     +            stemax,deemax,epsil,stmin,ubuf,nwbuf)
-
-      chname = 'FDCG'
-      chshap = 'TUBE'
-      nmed = 157
-      npar = 3
-      par(1) = 0
-      par(2) = 53.6
-      par(3) = 0.0013
-      call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.189) stop 'consistency check #1 failed'
-
-      chname = 'FDCG'
-      nr = 1
-      chmoth = 'FDCH'
-      x = 0
-      y = 0
-      z = -0.9987
-      irot = 0
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
       itmed = 158
-      natmed = 'FDCB Air'
-      nmat = 1
+      natmed = 'FDCB LowDensityROHACELL'
+      nmat = 24
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28797,9 +28797,9 @@
       chshap = 'TUBE'
       nmed = 158
       npar = 3
-      par(1) = 0
+      par(1) = 5
       par(2) = 53.6
-      par(3) = 0.2475
+      par(3) = 0.24735
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.190) stop 'consistency check #1 failed'
 
@@ -28808,8 +28808,52 @@
       chmoth = 'FDCH'
       x = 0
       y = 0
-      z = -0.75
+      z = -0.75005
       irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      itmed = 159
+      natmed = 'FDCK Air'
+      nmat = 1
+      isvol = 0
+      ifield = 2
+      fieldm = 22.4
+      tmaxfd = 1
+      stemax = 1
+      deemax = 0
+      epsil = 0.001
+      stmin = 0
+      nwbuf = 0
+      call gstmed(itmed,natmed,nmat,isvol,ifield,fieldm,tmaxfd,
+     +            stemax,deemax,epsil,stmin,ubuf,nwbuf)
+
+      chname = 'FDCK'
+      chshap = 'TUBE'
+      nmed = 159
+      npar = 3
+      par(1) = 0
+      par(2) = 5
+      par(3) = 0.00125
+      call gsvolu(chname,chshap,nmed,par,npar,ivolu)
+      if (ivolu.ne.191) stop 'consistency check #1 failed'
+
+      irot = 1139
+      theta1 = 90
+      phi1 = -45
+      theta2 = 90
+      phi2 = 45
+      theta3 = 0
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'FDCK'
+      nr = 1
+      chmoth = 'FDCH'
+      x = 0
+      y = 0
+      z = -0.50145
+      irot = 1139
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -28825,14 +28869,14 @@
       nlmat = 3
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      itmed = 159
+      itmed = 160
       natmed = 'FDCC CopperKapton'
       nmat = 49
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28842,15 +28886,15 @@
 
       chname = 'FDCC'
       chshap = 'TUBE'
-      nmed = 159
+      nmed = 160
       npar = 3
-      par(1) = 0
+      par(1) = 5
       par(2) = 53.6
-      par(3) = 0.0013
+      par(3) = 0.00135
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.191) stop 'consistency check #1 failed'
+      if (ivolu.ne.192) stop 'consistency check #1 failed'
 
-      irot = 1139
+      irot = 1140
       theta1 = 90
       phi1 = -45
       theta2 = 90
@@ -28864,31 +28908,29 @@
       chmoth = 'FDCH'
       x = 0
       y = 0
-      z = -0.5013
-      irot = 1139
+      z = -0.50135
+      irot = 1140
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
       imate = 50
-      namate = 'chamberMix'
-      wmat(1) = 0.39
+      namate = 'FDchamberGas'
+      wmat(1) = 0.38
       call gfmate(4,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
-      wmat(2) = 0.6
+      wmat(2) = 0.62
       call gfmate(29,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
-      wmat(3) = 0.01
-      call gfmate(7,chnama,amat(3),zmat(3),dens,radl,absl,ubuf,nwbuf)
-      dens = 0.00185724
-      nlmat = 3
+      dens = 0.001899
+      nlmat = 2
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      itmed = 160
-      natmed = 'FDCA chamberMix'
+      itmed = 161
+      natmed = 'FDCA FDchamberGas'
       nmat = 50
       isvol = 1
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -28898,13 +28940,13 @@
 
       chname = 'FDCA'
       chshap = 'TUBE'
-      nmed = 160
+      nmed = 161
       npar = 3
       par(1) = 0
       par(2) = 53.6
       par(3) = 0.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.192) stop 'consistency check #1 failed'
+      if (ivolu.ne.193) stop 'consistency check #1 failed'
 
       chname = 'FDCA'
       nr = 1
@@ -28916,7 +28958,73 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1140
+      imate = 51
+      namate = 'FDCwirePlaneComposite'
+      wmat(1) = 0.21
+      call gfmate(15,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
+      wmat(2) = 0.72
+      call gfmate(7,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
+      wmat(3) = 0.07
+      call gfmate(50,chnama,amat(3),zmat(3),dens,radl,absl,ubuf,nwbuf)
+      dens = 0.0263
+      nlmat = 3
+      call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
+
+      itmed = 162
+      natmed = 'FDCW FDCwirePlaneComposite'
+      nmat = 51
+      isvol = 1
+      ifield = 2
+      fieldm = 22.4
+      tmaxfd = 1
+      stemax = 1
+      deemax = 0
+      epsil = 0.001
+      stmin = 0
+      nwbuf = 0
+      call gstmed(itmed,natmed,nmat,isvol,ifield,fieldm,tmaxfd,
+     +            stemax,deemax,epsil,stmin,ubuf,nwbuf)
+
+      chname = 'FDCW'
+      chshap = 'TUBE'
+      nmed = 162
+      npar = 3
+      par(1) = 0
+      par(2) = 53.6
+      par(3) = 0.005
+      call gsvolu(chname,chshap,nmed,par,npar,ivolu)
+      if (ivolu.ne.194) stop 'consistency check #1 failed'
+
+      chname = 'FDCW'
+      nr = 1
+      chmoth = 'FDCA'
+      x = 0
+      y = 0
+      z = 0
+      irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1141
+      theta1 = 90
+      phi1 = 45
+      theta2 = 90
+      phi2 = 135
+      theta3 = 0
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'FDCK'
+      nr = 2
+      chmoth = 'FDCH'
+      x = 0
+      y = 0
+      z = 0.50145
+      irot = 1141
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1142
       theta1 = 90
       phi1 = 45
       theta2 = 90
@@ -28930,8 +29038,8 @@
       chmoth = 'FDCH'
       x = 0
       y = 0
-      z = 0.5013
-      irot = 1140
+      z = 0.50135
+      irot = 1142
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -28940,22 +29048,22 @@
       chmoth = 'FDCH'
       x = 0
       y = 0
-      z = 0.75
+      z = 0.75005
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
       chname = 'FDCG'
       nr = 2
-      chmoth = 'FDCH'
+      chmoth = 'FDMO'
       x = 0
       y = 0
-      z = 0.9987
+      z = -1
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1141
+      irot = 1143
       theta1 = 90
       phi1 = 60
       theta2 = 90
@@ -28970,11 +29078,21 @@
       x = 0
       y = 0
       z = 0
-      irot = 1141
+      irot = 1143
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1142
+      chname = 'FDCG'
+      nr = 3
+      chmoth = 'FDMO'
+      x = 0
+      y = 0
+      z = 1
+      irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1144
       theta1 = 90
       phi1 = -60
       theta2 = 90
@@ -28989,18 +29107,18 @@
       x = 0
       y = 0
       z = 2
-      irot = 1142
+      irot = 1144
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 161
+      itmed = 163
       natmed = 'FDSF Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29010,13 +29128,13 @@
 
       chname = 'FDSF'
       chshap = 'TUBE'
-      nmed = 161
+      nmed = 163
       npar = 3
       par(1) = 53.6
       par(2) = 60
       par(3) = 1
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.193) stop 'consistency check #1 failed'
+      if (ivolu.ne.195) stop 'consistency check #1 failed'
 
       chname = 'FDSF'
       nr = 1
@@ -29028,7 +29146,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      imate = 53
+      imate = 54
       namate = 'CalciumOxide'
       wmat(1) = 1
       call gfmate(8,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
@@ -29038,7 +29156,7 @@
       nlmat = -2
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      imate = 55
+      imate = 56
       namate = 'Magnesium'
       a = 24.305
       z = 12
@@ -29047,17 +29165,17 @@
       wmat(1) = 1
       call gsmixt(imate,namate,a,z,dens,nlmat,wmat)
 
-      imate = 54
+      imate = 55
       namate = 'MagnesiumOxide'
       wmat(1) = 1
-      call gfmate(55,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
+      call gfmate(56,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
       wmat(2) = 1
       call gfmate(3,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
       dens = 3.58
       nlmat = -2
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      imate = 52
+      imate = 53
       namate = 'E-glass'
       wmat(1) = 0.54
       call gfmate(37,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
@@ -29066,31 +29184,31 @@
       wmat(3) = 0.1
       call gfmate(38,chnama,amat(3),zmat(3),dens,radl,absl,ubuf,nwbuf)
       wmat(4) = 0.12
-      call gfmate(53,chnama,amat(4),zmat(4),dens,radl,absl,ubuf,nwbuf)
+      call gfmate(54,chnama,amat(4),zmat(4),dens,radl,absl,ubuf,nwbuf)
       wmat(5) = 0.1
-      call gfmate(54,chnama,amat(5),zmat(5),dens,radl,absl,ubuf,nwbuf)
+      call gfmate(55,chnama,amat(5),zmat(5),dens,radl,absl,ubuf,nwbuf)
       dens = 2.61
       nlmat = 5
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      imate = 51
+      imate = 52
       namate = 'E-fiberGlass'
       wmat(1) = 0.327
       call gfmate(34,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
       wmat(2) = 0.673
-      call gfmate(52,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
+      call gfmate(53,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
       dens = 1.96312
       nlmat = 2
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      itmed = 162
+      itmed = 164
       natmed = 'FDSE E-fiberGlass'
-      nmat = 51
+      nmat = 52
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29100,13 +29218,13 @@
 
       chname = 'FDSE'
       chshap = 'TUBE'
-      nmed = 162
+      nmed = 164
       npar = 3
       par(1) = 53.6
       par(2) = 60
       par(3) = 0.0125
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.194) stop 'consistency check #1 failed'
+      if (ivolu.ne.196) stop 'consistency check #1 failed'
 
       chname = 'FDSE'
       nr = 1
@@ -29118,14 +29236,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 163
+      itmed = 165
       natmed = 'FDSI CarbonFiberEpoxy'
       nmat = 32
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29135,13 +29253,13 @@
 
       chname = 'FDSI'
       chshap = 'TUBE'
-      nmed = 163
+      nmed = 165
       npar = 3
       par(1) = 53.6
       par(2) = 60
       par(3) = 0.025
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.195) stop 'consistency check #1 failed'
+      if (ivolu.ne.197) stop 'consistency check #1 failed'
 
       chname = 'FDSI'
       nr = 1
@@ -29153,7 +29271,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      imate = 56
+      imate = 57
       namate = 'MediumDensityROHACELL'
       wmat(1) = 11
       call gfmate(5,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
@@ -29167,14 +29285,14 @@
       nlmat = -4
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      itmed = 164
+      itmed = 166
       natmed = 'FDSH MediumDensityROHACELL'
-      nmat = 56
+      nmat = 57
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29184,13 +29302,13 @@
 
       chname = 'FDSH'
       chshap = 'TUBE'
-      nmed = 164
+      nmed = 166
       npar = 3
       par(1) = 53.6
       par(2) = 60
       par(3) = 0.175
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.196) stop 'consistency check #1 failed'
+      if (ivolu.ne.198) stop 'consistency check #1 failed'
 
       chname = 'FDSH'
       nr = 1
@@ -29222,14 +29340,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 165
+      itmed = 167
       natmed = 'FDSG FR-4'
       nmat = 35
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29239,13 +29357,13 @@
 
       chname = 'FDSG'
       chshap = 'TUBE'
-      nmed = 165
+      nmed = 167
       npar = 3
       par(1) = 53.6
       par(2) = 60
       par(3) = 0.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.197) stop 'consistency check #1 failed'
+      if (ivolu.ne.199) stop 'consistency check #1 failed'
 
       chname = 'FDSG'
       nr = 1
@@ -29257,7 +29375,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      imate = 57
+      imate = 58
       namate = 'Polyethylene'
       wmat(1) = 1
       call gfmate(20,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
@@ -29267,14 +29385,14 @@
       nlmat = -2
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      itmed = 166
+      itmed = 168
       natmed = 'FDSP Polyethylene'
-      nmat = 57
+      nmat = 58
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29284,13 +29402,13 @@
 
       chname = 'FDSP'
       chshap = 'TUBE'
-      nmed = 166
+      nmed = 168
       npar = 3
       par(1) = 53.6
       par(2) = 60
       par(3) = 0.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.198) stop 'consistency check #1 failed'
+      if (ivolu.ne.200) stop 'consistency check #1 failed'
 
       chname = 'FDSP'
       nr = 1
@@ -29372,10 +29490,10 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      imate = 58
+      imate = 59
       namate = 'CircuitBoards'
       wmat(1) = 0.6
-      call gfmate(57,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
+      call gfmate(58,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
       wmat(2) = 0.26
       call gfmate(35,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
       wmat(3) = 0.14
@@ -29384,14 +29502,14 @@
       nlmat = 3
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      itmed = 167
+      itmed = 169
       natmed = 'FDCE CircuitBoards'
-      nmat = 58
+      nmat = 59
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29401,13 +29519,13 @@
 
       chname = 'FDCE'
       chshap = 'TUBE'
-      nmed = 167
+      nmed = 169
       npar = 3
       par(1) = 60.5
       par(2) = 60.61
       par(3) = 3
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.199) stop 'consistency check #1 failed'
+      if (ivolu.ne.201) stop 'consistency check #1 failed'
 
       chname = 'FDCE'
       nr = 1
@@ -29415,6 +29533,16 @@
       x = 0
       y = 0
       z = 0
+      irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      chname = 'FDCG'
+      nr = 4
+      chmoth = 'FDC'
+      x = 0
+      y = 0
+      z = -89.5
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29429,12 +29557,42 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
+      chname = 'FDCG'
+      nr = 5
+      chmoth = 'FDC'
+      x = 0
+      y = 0
+      z = -83.5
+      irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      chname = 'FDCG'
+      nr = 6
+      chmoth = 'FDC'
+      x = 0
+      y = 0
+      z = -35.5
+      irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
       chname = 'FDMO'
       nr = 3
       chmoth = 'FDC'
       x = 0
       y = 0
       z = -32.5
+      irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      chname = 'FDCG'
+      nr = 7
+      chmoth = 'FDC'
+      x = 0
+      y = 0
+      z = -29.5
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29449,12 +29607,42 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
+      chname = 'FDCG'
+      nr = 8
+      chmoth = 'FDC'
+      x = 0
+      y = 0
+      z = -23.5
+      irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      chname = 'FDCG'
+      nr = 9
+      chmoth = 'FDC'
+      x = 0
+      y = 0
+      z = 23.5
+      irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
       chname = 'FDMO'
       nr = 5
       chmoth = 'FDC'
       x = 0
       y = 0
       z = 26.5
+      irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      chname = 'FDCG'
+      nr = 10
+      chmoth = 'FDC'
+      x = 0
+      y = 0
+      z = 29.5
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29469,12 +29657,42 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
+      chname = 'FDCG'
+      nr = 11
+      chmoth = 'FDC'
+      x = 0
+      y = 0
+      z = 35.5
+      irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      chname = 'FDCG'
+      nr = 12
+      chmoth = 'FDC'
+      x = 0
+      y = 0
+      z = 83.5
+      irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
       chname = 'FDMO'
       nr = 7
       chmoth = 'FDC'
       x = 0
       y = 0
       z = 86.5
+      irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      chname = 'FDCG'
+      nr = 13
+      chmoth = 'FDC'
+      x = 0
+      y = 0
+      z = 89.5
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29489,14 +29707,24 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 168
+      chname = 'FDCG'
+      nr = 14
+      chmoth = 'FDC'
+      x = 0
+      y = 0
+      z = 95.5
+      irot = 0
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      itmed = 170
       natmed = 'FDSR CarbonFiber'
       nmat = 33
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29506,13 +29734,13 @@
 
       chname = 'FDSR'
       chshap = 'TUBE'
-      nmed = 168
+      nmed = 170
       npar = 3
       par(1) = 0
       par(2) = 1
       par(3) = 98
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.200) stop 'consistency check #1 failed'
+      if (ivolu.ne.202) stop 'consistency check #1 failed'
 
       chname = 'FDSR'
       nr = 1
@@ -29554,14 +29782,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 169
+      itmed = 171
       natmed = 'FDSC SignalCables'
       nmat = 45
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29571,7 +29799,7 @@
 
       chname = 'FDSC'
       chshap = 'PCON'
-      nmed = 169
+      nmed = 171
       npar = 36
       par(1) = -58
       par(2) = 116
@@ -29610,9 +29838,9 @@
       par(35) = 65.4
       par(36) = 65.4
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.201) stop 'consistency check #1 failed'
+      if (ivolu.ne.203) stop 'consistency check #1 failed'
 
-      irot = 1143
+      irot = 1145
       theta1 = 90
       phi1 = 30
       theta2 = 90
@@ -29627,11 +29855,11 @@
       x = 0
       y = 0
       z = 307.5
-      irot = 1143
+      irot = 1145
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1144
+      irot = 1146
       theta1 = 90
       phi1 = 150
       theta2 = 90
@@ -29646,11 +29874,11 @@
       x = 0
       y = 0
       z = 307.5
-      irot = 1144
+      irot = 1146
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1145
+      irot = 1147
       theta1 = 90
       phi1 = -90
       theta2 = 90
@@ -29665,18 +29893,18 @@
       x = 0
       y = 0
       z = 307.5
-      irot = 1145
+      irot = 1147
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 170
+      itmed = 172
       natmed = 'BCAL Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29686,13 +29914,13 @@
 
       chname = 'BCAL'
       chshap = 'TUBE'
-      nmed = 170
+      nmed = 172
       npar = 3
       par(1) = 65
       par(2) = 90
       par(3) = 210
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.202) stop 'consistency check #1 failed'
+      if (ivolu.ne.204) stop 'consistency check #1 failed'
 
       chname = 'BCAL'
       nr = 1
@@ -29714,14 +29942,14 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 171
+      itmed = 173
       natmed = 'BCAM Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29731,7 +29959,7 @@
 
       chname = 'BCAM'
       chshap = 'TUBS'
-      nmed = 171
+      nmed = 173
       npar = 5
       par(1) = 65
       par(2) = 90
@@ -29739,7 +29967,7 @@
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.204) stop 'consistency check #1 failed'
+      if (ivolu.ne.206) stop 'consistency check #1 failed'
 
       chname = 'BCAM'
       nr = 1
@@ -29751,14 +29979,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 172
+      itmed = 174
       natmed = 'BCL1 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29768,7 +29996,7 @@
 
       chname = 'BCL1'
       chshap = 'TUBS'
-      nmed = 172
+      nmed = 174
       npar = 5
       par(1) = 65
       par(2) = 67
@@ -29776,7 +30004,7 @@
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.205) stop 'consistency check #1 failed'
+      if (ivolu.ne.207) stop 'consistency check #1 failed'
 
       chname = 'BCL1'
       nr = 1
@@ -29798,14 +30026,14 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 173
+      itmed = 175
       natmed = 'BCS1 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29815,7 +30043,7 @@
 
       chname = 'BCS1'
       chshap = 'TUBS'
-      nmed = 173
+      nmed = 175
       npar = 5
       par(1) = 65
       par(2) = 67
@@ -29823,7 +30051,7 @@
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.207) stop 'consistency check #1 failed'
+      if (ivolu.ne.209) stop 'consistency check #1 failed'
 
       chname = 'BCS1'
       nr = 1
@@ -29835,7 +30063,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      imate = 60
+      imate = 61
       namate = 'BC600epoxy'
       wmat(1) = 60
       call gfmate(20,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
@@ -29849,26 +30077,26 @@
       nlmat = -4
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      imate = 59
+      imate = 60
       namate = 'leadScint'
       wmat(1) = 0.104
       call gfmate(25,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
       wmat(2) = 0.862
       call gfmate(17,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
       wmat(3) = 0.034
-      call gfmate(60,chnama,amat(3),zmat(3),dens,radl,absl,ubuf,nwbuf)
+      call gfmate(61,chnama,amat(3),zmat(3),dens,radl,absl,ubuf,nwbuf)
       dens = 4.87672
       nlmat = 3
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      itmed = 174
+      itmed = 176
       natmed = 'BCM1 leadScint'
-      nmat = 59
+      nmat = 60
       isvol = 1
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29878,7 +30106,7 @@
 
       chname = 'BCM1'
       chshap = 'TUBS'
-      nmed = 174
+      nmed = 176
       npar = 5
       par(1) = 65
       par(2) = 67
@@ -29886,7 +30114,7 @@
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.208) stop 'consistency check #1 failed'
+      if (ivolu.ne.210) stop 'consistency check #1 failed'
 
       chname = 'BCM1'
       nr = 1
@@ -29898,14 +30126,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 175
+      itmed = 177
       natmed = 'BCN1 Plexiglas'
       nmat = 27
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29915,7 +30143,7 @@
 
       chname = 'BCN1'
       chshap = 'TRAP'
-      nmed = 175
+      nmed = 177
       npar = 11
       par(1) = 2.5
       par(2) = 0
@@ -29929,7 +30157,7 @@
       par(10) = 0.65
       par(11) = 0
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.209) stop 'consistency check #1 failed'
+      if (ivolu.ne.211) stop 'consistency check #1 failed'
 
       chname = 'BCN1'
       nr = 1
@@ -29941,7 +30169,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1146
+      irot = 1148
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -29956,18 +30184,18 @@
       x = 66
       y = 0
       z = -197.5
-      irot = 1146
+      irot = 1148
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 176
+      itmed = 178
       natmed = 'BCPM Aluminum'
       nmat = 7
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -29977,13 +30205,13 @@
 
       chname = 'BCPM'
       chshap = 'BOX '
-      nmed = 176
+      nmed = 178
       npar = 3
       par(1) = 1
       par(2) = 1
       par(3) = 1
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.210) stop 'consistency check #1 failed'
+      if (ivolu.ne.212) stop 'consistency check #1 failed'
 
       chname = 'BCPM'
       nr = 1
@@ -29995,7 +30223,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1147
+      irot = 1149
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30010,18 +30238,18 @@
       x = 66
       y = 0
       z = -201
-      irot = 1147
+      irot = 1149
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 177
+      itmed = 179
       natmed = 'BCL2 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30031,7 +30259,7 @@
 
       chname = 'BCL2'
       chshap = 'TUBS'
-      nmed = 177
+      nmed = 179
       npar = 5
       par(1) = 67
       par(2) = 69
@@ -30039,7 +30267,7 @@
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.211) stop 'consistency check #1 failed'
+      if (ivolu.ne.213) stop 'consistency check #1 failed'
 
       chname = 'BCL2'
       nr = 1
@@ -30061,14 +30289,14 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 178
+      itmed = 180
       natmed = 'BCS2 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30078,7 +30306,7 @@
 
       chname = 'BCS2'
       chshap = 'TUBS'
-      nmed = 178
+      nmed = 180
       npar = 5
       par(1) = 67
       par(2) = 69
@@ -30086,7 +30314,7 @@
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.213) stop 'consistency check #1 failed'
+      if (ivolu.ne.215) stop 'consistency check #1 failed'
 
       chname = 'BCS2'
       nr = 1
@@ -30098,14 +30326,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 179
+      itmed = 181
       natmed = 'BCM2 leadScint'
-      nmat = 59
+      nmat = 60
       isvol = 1
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30115,7 +30343,7 @@
 
       chname = 'BCM2'
       chshap = 'TUBS'
-      nmed = 179
+      nmed = 181
       npar = 5
       par(1) = 67
       par(2) = 69
@@ -30123,7 +30351,7 @@
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.214) stop 'consistency check #1 failed'
+      if (ivolu.ne.216) stop 'consistency check #1 failed'
 
       chname = 'BCM2'
       nr = 1
@@ -30135,14 +30363,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 180
+      itmed = 182
       natmed = 'BCN2 Plexiglas'
       nmat = 27
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30152,7 +30380,7 @@
 
       chname = 'BCN2'
       chshap = 'TRAP'
-      nmed = 180
+      nmed = 182
       npar = 11
       par(1) = 2.5
       par(2) = 0
@@ -30166,7 +30394,7 @@
       par(10) = 0.65
       par(11) = 0
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.215) stop 'consistency check #1 failed'
+      if (ivolu.ne.217) stop 'consistency check #1 failed'
 
       chname = 'BCN2'
       nr = 1
@@ -30178,7 +30406,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1148
+      irot = 1150
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30193,7 +30421,7 @@
       x = 68
       y = 0
       z = -197.5
-      irot = 1148
+      irot = 1150
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -30207,7 +30435,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1149
+      irot = 1151
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30222,18 +30450,18 @@
       x = 68
       y = 0
       z = -201
-      irot = 1149
+      irot = 1151
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 181
+      itmed = 183
       natmed = 'BCL3 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30243,7 +30471,7 @@
 
       chname = 'BCL3'
       chshap = 'TUBS'
-      nmed = 181
+      nmed = 183
       npar = 5
       par(1) = 69
       par(2) = 71
@@ -30251,7 +30479,7 @@
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.216) stop 'consistency check #1 failed'
+      if (ivolu.ne.218) stop 'consistency check #1 failed'
 
       chname = 'BCL3'
       nr = 1
@@ -30273,14 +30501,14 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 182
+      itmed = 184
       natmed = 'BCS3 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30290,7 +30518,7 @@
 
       chname = 'BCS3'
       chshap = 'TUBS'
-      nmed = 182
+      nmed = 184
       npar = 5
       par(1) = 69
       par(2) = 71
@@ -30298,7 +30526,7 @@
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.218) stop 'consistency check #1 failed'
+      if (ivolu.ne.220) stop 'consistency check #1 failed'
 
       chname = 'BCS3'
       nr = 1
@@ -30310,14 +30538,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 183
+      itmed = 185
       natmed = 'BCM3 leadScint'
-      nmat = 59
+      nmat = 60
       isvol = 1
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30327,7 +30555,7 @@
 
       chname = 'BCM3'
       chshap = 'TUBS'
-      nmed = 183
+      nmed = 185
       npar = 5
       par(1) = 69
       par(2) = 71
@@ -30335,7 +30563,7 @@
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.219) stop 'consistency check #1 failed'
+      if (ivolu.ne.221) stop 'consistency check #1 failed'
 
       chname = 'BCM3'
       nr = 1
@@ -30347,14 +30575,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 184
+      itmed = 186
       natmed = 'BCN3 Plexiglas'
       nmat = 27
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30364,7 +30592,7 @@
 
       chname = 'BCN3'
       chshap = 'TRAP'
-      nmed = 184
+      nmed = 186
       npar = 11
       par(1) = 2.5
       par(2) = 0
@@ -30378,7 +30606,7 @@
       par(10) = 0.65
       par(11) = 0
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.220) stop 'consistency check #1 failed'
+      if (ivolu.ne.222) stop 'consistency check #1 failed'
 
       chname = 'BCN3'
       nr = 1
@@ -30390,7 +30618,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1150
+      irot = 1152
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30405,7 +30633,7 @@
       x = 70
       y = 0
       z = -197.5
-      irot = 1150
+      irot = 1152
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -30419,7 +30647,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1151
+      irot = 1153
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30434,18 +30662,18 @@
       x = 70
       y = 0
       z = -201
-      irot = 1151
+      irot = 1153
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 185
+      itmed = 187
       natmed = 'BCL4 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30455,7 +30683,7 @@
 
       chname = 'BCL4'
       chshap = 'TUBS'
-      nmed = 185
+      nmed = 187
       npar = 5
       par(1) = 71
       par(2) = 73
@@ -30463,7 +30691,7 @@
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.221) stop 'consistency check #1 failed'
+      if (ivolu.ne.223) stop 'consistency check #1 failed'
 
       chname = 'BCL4'
       nr = 1
@@ -30485,14 +30713,14 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 186
+      itmed = 188
       natmed = 'BCS4 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30502,7 +30730,7 @@
 
       chname = 'BCS4'
       chshap = 'TUBS'
-      nmed = 186
+      nmed = 188
       npar = 5
       par(1) = 71
       par(2) = 73
@@ -30510,7 +30738,7 @@
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.223) stop 'consistency check #1 failed'
+      if (ivolu.ne.225) stop 'consistency check #1 failed'
 
       chname = 'BCS4'
       nr = 1
@@ -30522,14 +30750,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 187
+      itmed = 189
       natmed = 'BCM4 leadScint'
-      nmat = 59
+      nmat = 60
       isvol = 1
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30539,7 +30767,7 @@
 
       chname = 'BCM4'
       chshap = 'TUBS'
-      nmed = 187
+      nmed = 189
       npar = 5
       par(1) = 71
       par(2) = 73
@@ -30547,7 +30775,7 @@
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.224) stop 'consistency check #1 failed'
+      if (ivolu.ne.226) stop 'consistency check #1 failed'
 
       chname = 'BCM4'
       nr = 1
@@ -30559,14 +30787,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 188
+      itmed = 190
       natmed = 'BCN4 Plexiglas'
       nmat = 27
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30576,7 +30804,7 @@
 
       chname = 'BCN4'
       chshap = 'TRAP'
-      nmed = 188
+      nmed = 190
       npar = 11
       par(1) = 2.5
       par(2) = 0
@@ -30590,7 +30818,7 @@
       par(10) = 0.65
       par(11) = 0
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.225) stop 'consistency check #1 failed'
+      if (ivolu.ne.227) stop 'consistency check #1 failed'
 
       chname = 'BCN4'
       nr = 1
@@ -30602,7 +30830,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1152
+      irot = 1154
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30617,7 +30845,7 @@
       x = 72
       y = 0
       z = -197.5
-      irot = 1152
+      irot = 1154
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -30631,7 +30859,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1153
+      irot = 1155
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30646,18 +30874,18 @@
       x = 72
       y = 0
       z = -201
-      irot = 1153
+      irot = 1155
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 189
+      itmed = 191
       natmed = 'BCL5 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30667,7 +30895,7 @@
 
       chname = 'BCL5'
       chshap = 'TUBS'
-      nmed = 189
+      nmed = 191
       npar = 5
       par(1) = 73
       par(2) = 75
@@ -30675,7 +30903,7 @@
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.226) stop 'consistency check #1 failed'
+      if (ivolu.ne.228) stop 'consistency check #1 failed'
 
       chname = 'BCL5'
       nr = 1
@@ -30697,14 +30925,14 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 190
+      itmed = 192
       natmed = 'BCS5 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30714,7 +30942,7 @@
 
       chname = 'BCS5'
       chshap = 'TUBS'
-      nmed = 190
+      nmed = 192
       npar = 5
       par(1) = 73
       par(2) = 75
@@ -30722,7 +30950,7 @@
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.228) stop 'consistency check #1 failed'
+      if (ivolu.ne.230) stop 'consistency check #1 failed'
 
       chname = 'BCS5'
       nr = 1
@@ -30734,14 +30962,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 191
+      itmed = 193
       natmed = 'BCM5 leadScint'
-      nmat = 59
+      nmat = 60
       isvol = 1
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30751,7 +30979,7 @@
 
       chname = 'BCM5'
       chshap = 'TUBS'
-      nmed = 191
+      nmed = 193
       npar = 5
       par(1) = 73
       par(2) = 75
@@ -30759,7 +30987,7 @@
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.229) stop 'consistency check #1 failed'
+      if (ivolu.ne.231) stop 'consistency check #1 failed'
 
       chname = 'BCM5'
       nr = 1
@@ -30771,14 +30999,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 192
+      itmed = 194
       natmed = 'BCN5 Plexiglas'
       nmat = 27
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30788,7 +31016,7 @@
 
       chname = 'BCN5'
       chshap = 'TRAP'
-      nmed = 192
+      nmed = 194
       npar = 11
       par(1) = 2.5
       par(2) = 0
@@ -30802,7 +31030,7 @@
       par(10) = 0.65
       par(11) = 0
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.230) stop 'consistency check #1 failed'
+      if (ivolu.ne.232) stop 'consistency check #1 failed'
 
       chname = 'BCN5'
       nr = 1
@@ -30814,7 +31042,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1154
+      irot = 1156
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30829,7 +31057,7 @@
       x = 74
       y = 0
       z = -197.5
-      irot = 1154
+      irot = 1156
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -30843,7 +31071,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1155
+      irot = 1157
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30858,18 +31086,18 @@
       x = 74
       y = 0
       z = -201
-      irot = 1155
+      irot = 1157
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 193
+      itmed = 195
       natmed = 'BCL6 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30879,7 +31107,7 @@
 
       chname = 'BCL6'
       chshap = 'TUBS'
-      nmed = 193
+      nmed = 195
       npar = 5
       par(1) = 75
       par(2) = 78.12
@@ -30887,7 +31115,7 @@
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.231) stop 'consistency check #1 failed'
+      if (ivolu.ne.233) stop 'consistency check #1 failed'
 
       chname = 'BCL6'
       nr = 1
@@ -30909,14 +31137,14 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 194
+      itmed = 196
       natmed = 'BCS6 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30926,7 +31154,7 @@
 
       chname = 'BCS6'
       chshap = 'TUBS'
-      nmed = 194
+      nmed = 196
       npar = 5
       par(1) = 75
       par(2) = 78.12
@@ -30934,7 +31162,7 @@
       par(4) = -1.25
       par(5) = 1.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.233) stop 'consistency check #1 failed'
+      if (ivolu.ne.235) stop 'consistency check #1 failed'
 
       chname = 'BCS6'
       nr = 1
@@ -30946,14 +31174,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 195
+      itmed = 197
       natmed = 'BCM6 leadScint'
-      nmat = 59
+      nmat = 60
       isvol = 1
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -30963,7 +31191,7 @@
 
       chname = 'BCM6'
       chshap = 'TUBS'
-      nmed = 195
+      nmed = 197
       npar = 5
       par(1) = 75
       par(2) = 78.12
@@ -30971,7 +31199,7 @@
       par(4) = -1.25
       par(5) = 1.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.234) stop 'consistency check #1 failed'
+      if (ivolu.ne.236) stop 'consistency check #1 failed'
 
       chname = 'BCM6'
       nr = 1
@@ -30983,14 +31211,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 196
+      itmed = 198
       natmed = 'BCN6 Plexiglas'
       nmat = 27
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31000,7 +31228,7 @@
 
       chname = 'BCN6'
       chshap = 'TRAP'
-      nmed = 196
+      nmed = 198
       npar = 11
       par(1) = 5
       par(2) = 0
@@ -31014,7 +31242,7 @@
       par(10) = 0.65
       par(11) = 0
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.235) stop 'consistency check #1 failed'
+      if (ivolu.ne.237) stop 'consistency check #1 failed'
 
       chname = 'BCN6'
       nr = 1
@@ -31026,7 +31254,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1156
+      irot = 1158
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -31041,7 +31269,7 @@
       x = 76.558
       y = 0
       z = -200
-      irot = 1156
+      irot = 1158
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31055,7 +31283,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1157
+      irot = 1159
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -31070,18 +31298,18 @@
       x = 76.558
       y = 0
       z = -206
-      irot = 1157
+      irot = 1159
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 197
+      itmed = 199
       natmed = 'BCL7 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31091,7 +31319,7 @@
 
       chname = 'BCL7'
       chshap = 'TUBS'
-      nmed = 197
+      nmed = 199
       npar = 5
       par(1) = 78.12
       par(2) = 81.23
@@ -31099,7 +31327,7 @@
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.236) stop 'consistency check #1 failed'
+      if (ivolu.ne.238) stop 'consistency check #1 failed'
 
       chname = 'BCL7'
       nr = 1
@@ -31121,14 +31349,14 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 198
+      itmed = 200
       natmed = 'BCS7 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31138,7 +31366,7 @@
 
       chname = 'BCS7'
       chshap = 'TUBS'
-      nmed = 198
+      nmed = 200
       npar = 5
       par(1) = 78.12
       par(2) = 81.23
@@ -31146,7 +31374,7 @@
       par(4) = -1.25
       par(5) = 1.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.238) stop 'consistency check #1 failed'
+      if (ivolu.ne.240) stop 'consistency check #1 failed'
 
       chname = 'BCS7'
       nr = 1
@@ -31158,14 +31386,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 199
+      itmed = 201
       natmed = 'BCM7 leadScint'
-      nmat = 59
+      nmat = 60
       isvol = 1
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31175,7 +31403,7 @@
 
       chname = 'BCM7'
       chshap = 'TUBS'
-      nmed = 199
+      nmed = 201
       npar = 5
       par(1) = 78.12
       par(2) = 81.23
@@ -31183,7 +31411,7 @@
       par(4) = -1.25
       par(5) = 1.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.239) stop 'consistency check #1 failed'
+      if (ivolu.ne.241) stop 'consistency check #1 failed'
 
       chname = 'BCM7'
       nr = 1
@@ -31195,14 +31423,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 200
+      itmed = 202
       natmed = 'BCN7 Plexiglas'
       nmat = 27
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31212,7 +31440,7 @@
 
       chname = 'BCN7'
       chshap = 'TRAP'
-      nmed = 200
+      nmed = 202
       npar = 11
       par(1) = 5
       par(2) = 0
@@ -31226,7 +31454,7 @@
       par(10) = 0.65
       par(11) = 0
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.240) stop 'consistency check #1 failed'
+      if (ivolu.ne.242) stop 'consistency check #1 failed'
 
       chname = 'BCN7'
       nr = 1
@@ -31238,7 +31466,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1158
+      irot = 1160
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -31253,7 +31481,7 @@
       x = 79.673
       y = 0
       z = -200
-      irot = 1158
+      irot = 1160
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31267,7 +31495,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1159
+      irot = 1161
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -31282,18 +31510,18 @@
       x = 79.673
       y = 0
       z = -206
-      irot = 1159
+      irot = 1161
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 201
+      itmed = 203
       natmed = 'BCL8 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31303,7 +31531,7 @@
 
       chname = 'BCL8'
       chshap = 'TUBS'
-      nmed = 201
+      nmed = 203
       npar = 5
       par(1) = 81.23
       par(2) = 84.35
@@ -31311,7 +31539,7 @@
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.241) stop 'consistency check #1 failed'
+      if (ivolu.ne.243) stop 'consistency check #1 failed'
 
       chname = 'BCL8'
       nr = 1
@@ -31333,14 +31561,14 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 202
+      itmed = 204
       natmed = 'BCS8 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31350,7 +31578,7 @@
 
       chname = 'BCS8'
       chshap = 'TUBS'
-      nmed = 202
+      nmed = 204
       npar = 5
       par(1) = 81.23
       par(2) = 84.35
@@ -31358,7 +31586,7 @@
       par(4) = -1.25
       par(5) = 1.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.243) stop 'consistency check #1 failed'
+      if (ivolu.ne.245) stop 'consistency check #1 failed'
 
       chname = 'BCS8'
       nr = 1
@@ -31370,14 +31598,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 203
+      itmed = 205
       natmed = 'BCM8 leadScint'
-      nmat = 59
+      nmat = 60
       isvol = 1
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31387,7 +31615,7 @@
 
       chname = 'BCM8'
       chshap = 'TUBS'
-      nmed = 203
+      nmed = 205
       npar = 5
       par(1) = 81.23
       par(2) = 84.35
@@ -31395,7 +31623,7 @@
       par(4) = -1.25
       par(5) = 1.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.244) stop 'consistency check #1 failed'
+      if (ivolu.ne.246) stop 'consistency check #1 failed'
 
       chname = 'BCM8'
       nr = 1
@@ -31407,14 +31635,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 204
+      itmed = 206
       natmed = 'BCN8 Plexiglas'
       nmat = 27
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31424,7 +31652,7 @@
 
       chname = 'BCN8'
       chshap = 'TRAP'
-      nmed = 204
+      nmed = 206
       npar = 11
       par(1) = 5
       par(2) = 0
@@ -31438,7 +31666,7 @@
       par(10) = 0.65
       par(11) = 0
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.245) stop 'consistency check #1 failed'
+      if (ivolu.ne.247) stop 'consistency check #1 failed'
 
       chname = 'BCN8'
       nr = 1
@@ -31450,7 +31678,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1160
+      irot = 1162
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -31465,7 +31693,7 @@
       x = 82.787
       y = 0
       z = -200
-      irot = 1160
+      irot = 1162
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31479,7 +31707,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1161
+      irot = 1163
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -31494,18 +31722,18 @@
       x = 82.787
       y = 0
       z = -206
-      irot = 1161
+      irot = 1163
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 205
+      itmed = 207
       natmed = 'BCL9 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31515,7 +31743,7 @@
 
       chname = 'BCL9'
       chshap = 'TUBS'
-      nmed = 205
+      nmed = 207
       npar = 5
       par(1) = 84.35
       par(2) = 87.46
@@ -31523,7 +31751,7 @@
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.246) stop 'consistency check #1 failed'
+      if (ivolu.ne.248) stop 'consistency check #1 failed'
 
       chname = 'BCL9'
       nr = 1
@@ -31545,14 +31773,14 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 206
+      itmed = 208
       natmed = 'BCS9 Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31562,7 +31790,7 @@
 
       chname = 'BCS9'
       chshap = 'TUBS'
-      nmed = 206
+      nmed = 208
       npar = 5
       par(1) = 84.35
       par(2) = 87.46
@@ -31570,7 +31798,7 @@
       par(4) = -1.25
       par(5) = 1.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.248) stop 'consistency check #1 failed'
+      if (ivolu.ne.250) stop 'consistency check #1 failed'
 
       chname = 'BCS9'
       nr = 1
@@ -31582,14 +31810,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 207
+      itmed = 209
       natmed = 'BCM9 leadScint'
-      nmat = 59
+      nmat = 60
       isvol = 1
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31599,7 +31827,7 @@
 
       chname = 'BCM9'
       chshap = 'TUBS'
-      nmed = 207
+      nmed = 209
       npar = 5
       par(1) = 84.35
       par(2) = 87.46
@@ -31607,7 +31835,7 @@
       par(4) = -1.25
       par(5) = 1.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.249) stop 'consistency check #1 failed'
+      if (ivolu.ne.251) stop 'consistency check #1 failed'
 
       chname = 'BCM9'
       nr = 1
@@ -31619,14 +31847,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 208
+      itmed = 210
       natmed = 'BCN9 Plexiglas'
       nmat = 27
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31636,7 +31864,7 @@
 
       chname = 'BCN9'
       chshap = 'TRAP'
-      nmed = 208
+      nmed = 210
       npar = 11
       par(1) = 5
       par(2) = 0
@@ -31650,7 +31878,7 @@
       par(10) = 0.65
       par(11) = 0
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.250) stop 'consistency check #1 failed'
+      if (ivolu.ne.252) stop 'consistency check #1 failed'
 
       chname = 'BCN9'
       nr = 1
@@ -31662,7 +31890,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1162
+      irot = 1164
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -31677,7 +31905,7 @@
       x = 85.903
       y = 0
       z = -200
-      irot = 1162
+      irot = 1164
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31691,7 +31919,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1163
+      irot = 1165
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -31706,18 +31934,18 @@
       x = 85.903
       y = 0
       z = -206
-      irot = 1163
+      irot = 1165
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 209
+      itmed = 211
       natmed = 'BCAS Aluminum'
       nmat = 7
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31727,7 +31955,7 @@
 
       chname = 'BCAS'
       chshap = 'TUBS'
-      nmed = 209
+      nmed = 211
       npar = 5
       par(1) = 87.46
       par(2) = 90
@@ -31735,7 +31963,7 @@
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.251) stop 'consistency check #1 failed'
+      if (ivolu.ne.253) stop 'consistency check #1 failed'
 
       chname = 'BCAS'
       nr = 1
@@ -31747,14 +31975,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 210
+      itmed = 212
       natmed = 'BCSU SignalCables'
       nmat = 45
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31764,7 +31992,7 @@
 
       chname = 'BCSU'
       chshap = 'PCON'
-      nmed = 210
+      nmed = 212
       npar = 24
       par(1) = 0
       par(2) = 360
@@ -31791,7 +32019,7 @@
       par(23) = 65
       par(24) = 88
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.252) stop 'consistency check #1 failed'
+      if (ivolu.ne.254) stop 'consistency check #1 failed'
 
       chname = 'BCSU'
       nr = 1
@@ -31803,14 +32031,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 211
+      itmed = 213
       natmed = 'BCSD SignalCables'
       nmat = 45
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31820,7 +32048,7 @@
 
       chname = 'BCSD'
       chshap = 'PCON'
-      nmed = 211
+      nmed = 213
       npar = 12
       par(1) = 0
       par(2) = 360
@@ -31835,7 +32063,7 @@
       par(11) = 85
       par(12) = 88
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.253) stop 'consistency check #1 failed'
+      if (ivolu.ne.255) stop 'consistency check #1 failed'
 
       chname = 'BCSD'
       nr = 1
@@ -31847,14 +32075,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 212
+      itmed = 214
       natmed = 'CERE Aluminum'
       nmat = 7
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31864,7 +32092,7 @@
 
       chname = 'CERE'
       chshap = 'PCON'
-      nmed = 212
+      nmed = 214
       npar = 15
       par(1) = 0
       par(2) = 360
@@ -31882,7 +32110,7 @@
       par(14) = 5
       par(15) = 280
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.254) stop 'consistency check #1 failed'
+      if (ivolu.ne.256) stop 'consistency check #1 failed'
 
       chname = 'CERE'
       nr = 1
@@ -31894,7 +32122,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      imate = 62
+      imate = 63
       chnama = 'Fluorine'
       a = 18.9984
       z = 9
@@ -31904,26 +32132,26 @@
       nwbuf = 0
       call gsmate(imate,chnama,a,z,dens,radl,absl,ubuf,nwbuf)
 
-      imate = 61
+      imate = 62
       namate = 'Tedlar'
       wmat(1) = 2
       call gfmate(20,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
       wmat(2) = 3
       call gfmate(5,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
       wmat(3) = 1
-      call gfmate(62,chnama,amat(3),zmat(3),dens,radl,absl,ubuf,nwbuf)
+      call gfmate(63,chnama,amat(3),zmat(3),dens,radl,absl,ubuf,nwbuf)
       dens = 1.49
       nlmat = -3
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      itmed = 213
+      itmed = 215
       natmed = 'CERW Tedlar'
-      nmat = 61
+      nmat = 62
       isvol = 1
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -31933,13 +32161,13 @@
 
       chname = 'CERW'
       chshap = 'TUBE'
-      nmed = 213
+      nmed = 215
       npar = 3
       par(1) = 5.1
       par(2) = 59.9
       par(3) = 0.002
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.255) stop 'consistency check #1 failed'
+      if (ivolu.ne.257) stop 'consistency check #1 failed'
 
       chname = 'CERW'
       nr = 1
@@ -31951,41 +32179,41 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      imate = 63
+      imate = 64
       namate = 'CerenkovGas'
       wmat(1) = 4
       call gfmate(20,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
       wmat(2) = 10
-      call gfmate(62,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
+      call gfmate(63,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
       dens = 0.01012
       nlmat = -2
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      itmed = 214
+      itmed = 216
       natmed = 'CERI CerenkovGas'
-      nmat = 63
+      nmat = 64
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
       nwbuf = 0
       call gstmed(itmed,natmed,nmat,isvol,ifield,fieldm,tmaxfd,
      +            stemax,deemax,epsil,stmin,ubuf,nwbuf)
-      call setoptical63(itmed)
+      call setoptical64(itmed)
 
       chname = 'CERI'
       chshap = 'TUBE'
-      nmed = 214
+      nmed = 216
       npar = 3
       par(1) = 5.1
       par(2) = 59.9
       par(3) = 29
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.256) stop 'consistency check #1 failed'
+      if (ivolu.ne.258) stop 'consistency check #1 failed'
 
       chname = 'CERI'
       nr = 1
@@ -31997,31 +32225,31 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 215
+      itmed = 217
       natmed = 'CGAS CerenkovGas'
-      nmat = 63
+      nmat = 64
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
       nwbuf = 0
       call gstmed(itmed,natmed,nmat,isvol,ifield,fieldm,tmaxfd,
      +            stemax,deemax,epsil,stmin,ubuf,nwbuf)
-      call setoptical63(itmed)
+      call setoptical64(itmed)
 
       chname = 'CGAS'
       chshap = 'TUBE'
-      nmed = 215
+      nmed = 217
       npar = 3
       par(1) = 5.1
       par(2) = 279.9
       par(3) = 72.95
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.257) stop 'consistency check #1 failed'
+      if (ivolu.ne.259) stop 'consistency check #1 failed'
 
       chname = 'CGAS'
       nr = 1
@@ -32043,25 +32271,25 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 216
+      itmed = 218
       natmed = 'CSEC CerenkovGas'
-      nmat = 63
+      nmat = 64
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
       nwbuf = 0
       call gstmed(itmed,natmed,nmat,isvol,ifield,fieldm,tmaxfd,
      +            stemax,deemax,epsil,stmin,ubuf,nwbuf)
-      call setoptical63(itmed)
+      call setoptical64(itmed)
 
       chname = 'CSEC'
       chshap = 'TUBS'
-      nmed = 216
+      nmed = 218
       npar = 5
       par(1) = 5.1
       par(2) = 279.9
@@ -32069,7 +32297,7 @@
       par(4) = -11.25
       par(5) = 11.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.259) stop 'consistency check #1 failed'
+      if (ivolu.ne.261) stop 'consistency check #1 failed'
 
       chname = 'CSEC'
       nr = 1
@@ -32081,7 +32309,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      imate = 64
+      imate = 65
       namate = 'ThinCerenkovMirror'
       wmat(1) = 11
       call gfmate(5,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
@@ -32095,25 +32323,25 @@
       nlmat = -4
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      itmed = 217
+      itmed = 219
       natmed = 'CMI1 ThinCerenkovMirror'
-      nmat = 64
+      nmat = 65
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
       nwbuf = 0
       call gstmed(itmed,natmed,nmat,isvol,ifield,fieldm,tmaxfd,
      +            stemax,deemax,epsil,stmin,ubuf,nwbuf)
-      call setoptical64(itmed)
+      call setoptical65(itmed)
 
       chname = 'CMI1'
       chshap = 'PGON'
-      nmed = 217
+      nmed = 219
       npar = 16
       par(1) = -11.25
       par(2) = 22.5
@@ -32132,7 +32360,7 @@
       par(15) = 107.5
       par(16) = 107.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.260) stop 'consistency check #1 failed'
+      if (ivolu.ne.262) stop 'consistency check #1 failed'
 
       chname = 'CMI1'
       nr = 1
@@ -32144,7 +32372,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      imate = 65
+      imate = 66
       namate = 'ThickCerenkovMirror'
       wmat(1) = 11
       call gfmate(5,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
@@ -32158,25 +32386,25 @@
       nlmat = -4
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      itmed = 218
+      itmed = 220
       natmed = 'CMI2 ThickCerenkovMirror'
-      nmat = 65
+      nmat = 66
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
       nwbuf = 0
       call gstmed(itmed,natmed,nmat,isvol,ifield,fieldm,tmaxfd,
      +            stemax,deemax,epsil,stmin,ubuf,nwbuf)
-      call setoptical65(itmed)
+      call setoptical66(itmed)
 
       chname = 'CMI2'
       chshap = 'PGON'
-      nmed = 218
+      nmed = 220
       npar = 16
       par(1) = -5.5125
       par(2) = 11.25
@@ -32195,7 +32423,7 @@
       par(15) = 215
       par(16) = 215
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.261) stop 'consistency check #1 failed'
+      if (ivolu.ne.263) stop 'consistency check #1 failed'
 
       chname = 'CMI2'
       nr = 1
@@ -32207,7 +32435,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      imate = 67
+      imate = 68
       namate = 'Cesium'
       a = 132.905
       z = 55
@@ -32216,35 +32444,35 @@
       wmat(1) = 1
       call gsmixt(imate,namate,a,z,dens,nlmat,wmat)
 
-      imate = 66
+      imate = 67
       namate = 'CerenkovPMT'
       wmat(1) = 0.999
       call gfmate(36,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
       wmat(2) = 0.001
-      call gfmate(67,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
+      call gfmate(68,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
       dens = 2.29947
       nlmat = 2
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      itmed = 219
+      itmed = 221
       natmed = 'CPMT CerenkovPMT'
-      nmat = 66
+      nmat = 67
       isvol = 1
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
       nwbuf = 0
       call gstmed(itmed,natmed,nmat,isvol,ifield,fieldm,tmaxfd,
      +            stemax,deemax,epsil,stmin,ubuf,nwbuf)
-      call setoptical66(itmed)
+      call setoptical67(itmed)
 
       chname = 'CPMT'
       chshap = 'PGON'
-      nmed = 219
+      nmed = 221
       npar = 16
       par(1) = -11.25
       par(2) = 22.5
@@ -32263,7 +32491,7 @@
       par(15) = 128
       par(16) = 128
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.262) stop 'consistency check #1 failed'
+      if (ivolu.ne.264) stop 'consistency check #1 failed'
 
       chname = 'CPMT'
       nr = 1
@@ -32275,14 +32503,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 220
+      itmed = 222
       natmed = 'FTOF Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32292,15 +32520,15 @@
 
       chname = 'FTOF'
       chshap = 'BOX '
-      nmed = 220
+      nmed = 222
       npar = 3
       par(1) = 126
       par(2) = 126
       par(3) = 1.275
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.263) stop 'consistency check #1 failed'
+      if (ivolu.ne.265) stop 'consistency check #1 failed'
 
-      irot = 1164
+      irot = 1166
       theta1 = 90
       phi1 = -90
       theta2 = 90
@@ -32315,18 +32543,18 @@
       x = 150
       y = -350
       z = 117.52
-      irot = 1164
+      irot = 1166
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 221
+      itmed = 223
       natmed = 'FTOB Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32336,13 +32564,13 @@
 
       chname = 'FTOB'
       chshap = 'BOX '
-      nmed = 221
+      nmed = 223
       npar = 3
       par(1) = 126
       par(2) = 60
       par(3) = 1.275
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.264) stop 'consistency check #1 failed'
+      if (ivolu.ne.266) stop 'consistency check #1 failed'
 
       chname = 'FTOB'
       nr = 1
@@ -32364,14 +32592,14 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 222
+      itmed = 224
       natmed = 'FTOC Scintillator'
       nmat = 25
       isvol = 1
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32381,13 +32609,13 @@
 
       chname = 'FTOC'
       chshap = 'BOX '
-      nmed = 222
+      nmed = 224
       npar = 3
       par(1) = 126
       par(2) = 3
       par(3) = 1.27
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.266) stop 'consistency check #1 failed'
+      if (ivolu.ne.268) stop 'consistency check #1 failed'
 
       chname = 'FTOC'
       nr = 1
@@ -32399,14 +32627,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 223
+      itmed = 225
       natmed = 'FTON Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32416,13 +32644,13 @@
 
       chname = 'FTON'
       chshap = 'BOX '
-      nmed = 223
+      nmed = 225
       npar = 3
       par(1) = 60
       par(2) = 6
       par(3) = 1.275
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.267) stop 'consistency check #1 failed'
+      if (ivolu.ne.269) stop 'consistency check #1 failed'
 
       chname = 'FTON'
       nr = 1
@@ -32444,14 +32672,14 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 224
+      itmed = 226
       natmed = 'FTOH Scintillator'
       nmat = 25
       isvol = 1
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32461,13 +32689,13 @@
 
       chname = 'FTOH'
       chshap = 'BOX '
-      nmed = 224
+      nmed = 226
       npar = 3
       par(1) = 60
       par(2) = 3
       par(3) = 1.27
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.269) stop 'consistency check #1 failed'
+      if (ivolu.ne.271) stop 'consistency check #1 failed'
 
       chname = 'FTOH'
       nr = 1
@@ -32479,14 +32707,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 225
+      itmed = 227
       natmed = 'FTOS Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32496,13 +32724,13 @@
 
       chname = 'FTOS'
       chshap = 'BOX '
-      nmed = 225
+      nmed = 227
       npar = 3
       par(1) = 60
       par(2) = 6
       par(3) = 1.275
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.270) stop 'consistency check #1 failed'
+      if (ivolu.ne.272) stop 'consistency check #1 failed'
 
       chname = 'FTOS'
       nr = 1
@@ -32534,14 +32762,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 226
+      itmed = 228
       natmed = 'FTOT Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32551,13 +32779,13 @@
 
       chname = 'FTOT'
       chshap = 'BOX '
-      nmed = 226
+      nmed = 228
       npar = 3
       par(1) = 126
       par(2) = 60
       par(3) = 1.275
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.272) stop 'consistency check #1 failed'
+      if (ivolu.ne.274) stop 'consistency check #1 failed'
 
       chname = 'FTOT'
       nr = 1
@@ -32599,14 +32827,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 227
+      itmed = 229
       natmed = 'FCAL Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32616,13 +32844,13 @@
 
       chname = 'FCAL'
       chshap = 'BOX '
-      nmed = 227
+      nmed = 229
       npar = 3
       par(1) = 118
       par(2) = 118
       par(3) = 22.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.274) stop 'consistency check #1 failed'
+      if (ivolu.ne.276) stop 'consistency check #1 failed'
 
       chname = 'FCAL'
       nr = 1
@@ -32634,14 +32862,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 228
+      itmed = 230
       natmed = 'LGDB Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32651,13 +32879,13 @@
 
       chname = 'LGDB'
       chshap = 'BOX '
-      nmed = 228
+      nmed = 230
       npar = 3
       par(1) = 118
       par(2) = 56
       par(3) = 22.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.275) stop 'consistency check #1 failed'
+      if (ivolu.ne.277) stop 'consistency check #1 failed'
 
       chname = 'LGDB'
       nr = 1
@@ -32689,7 +32917,7 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      imate = 68
+      imate = 69
       namate = 'leadGlassSF3'
       wmat(1) = 0.42
       call gfmate(17,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
@@ -32705,14 +32933,14 @@
       nlmat = 5
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
-      itmed = 229
+      itmed = 231
       natmed = 'LGBL leadGlassSF3'
-      nmat = 68
+      nmat = 69
       isvol = 1
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32722,13 +32950,13 @@
 
       chname = 'LGBL'
       chshap = 'BOX '
-      nmed = 229
+      nmed = 231
       npar = 3
       par(1) = 2
       par(2) = 2
       par(3) = 22.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.278) stop 'consistency check #1 failed'
+      if (ivolu.ne.280) stop 'consistency check #1 failed'
 
       chname = 'LGBL'
       nr = 1
@@ -32740,14 +32968,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 230
+      itmed = 232
       natmed = 'LGDS Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32757,13 +32985,13 @@
 
       chname = 'LGDS'
       chshap = 'BOX '
-      nmed = 230
+      nmed = 232
       npar = 3
       par(1) = 56
       par(2) = 6
       par(3) = 22.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.279) stop 'consistency check #1 failed'
+      if (ivolu.ne.281) stop 'consistency check #1 failed'
 
       chname = 'LGDS'
       nr = 1
@@ -32805,14 +33033,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 231
+      itmed = 233
       natmed = 'LGDN Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32822,13 +33050,13 @@
 
       chname = 'LGDN'
       chshap = 'BOX '
-      nmed = 231
+      nmed = 233
       npar = 3
       par(1) = 56
       par(2) = 6
       par(3) = 22.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.282) stop 'consistency check #1 failed'
+      if (ivolu.ne.284) stop 'consistency check #1 failed'
 
       chname = 'LGDN'
       nr = 1
@@ -32870,14 +33098,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 232
+      itmed = 234
       natmed = 'LGDT Air'
       nmat = 1
       isvol = 0
       ifield = 0
       fieldm = 0
       tmaxfd = 0
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32887,13 +33115,13 @@
 
       chname = 'LGDT'
       chshap = 'BOX '
-      nmed = 232
+      nmed = 234
       npar = 3
       par(1) = 118
       par(2) = 56
       par(3) = 22.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.285) stop 'consistency check #1 failed'
+      if (ivolu.ne.287) stop 'consistency check #1 failed'
 
       chname = 'LGDT'
       nr = 1
@@ -32935,14 +33163,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 233
+      itmed = 235
       natmed = 'UPV Aluminum'
       nmat = 7
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32952,7 +33180,7 @@
 
       chname = 'UPV'
       chshap = 'PGON'
-      nmed = 233
+      nmed = 235
       npar = 10
       par(1) = -45
       par(2) = 360
@@ -32965,7 +33193,7 @@
       par(9) = 11.75
       par(10) = 120
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.288) stop 'consistency check #1 failed'
+      if (ivolu.ne.290) stop 'consistency check #1 failed'
 
       chname = 'UPV'
       nr = 1
@@ -32977,14 +33205,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 234
+      itmed = 236
       natmed = 'UPL1 Lead'
       nmat = 17
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -32994,13 +33222,13 @@
 
       chname = 'UPL1'
       chshap = 'BOX '
-      nmed = 234
+      nmed = 236
       npar = 3
       par(1) = 119
       par(2) = 53.125
       par(3) = 0.125
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.289) stop 'consistency check #1 failed'
+      if (ivolu.ne.291) stop 'consistency check #1 failed'
 
       chname = 'UPL1'
       nr = 1
@@ -33022,14 +33250,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 235
+      itmed = 237
       natmed = 'UPL2 Lead'
       nmat = 17
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -33039,13 +33267,13 @@
 
       chname = 'UPL2'
       chshap = 'BOX '
-      nmed = 235
+      nmed = 237
       npar = 3
       par(1) = 53.125
       par(2) = 12.75
       par(3) = 0.125
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.290) stop 'consistency check #1 failed'
+      if (ivolu.ne.292) stop 'consistency check #1 failed'
 
       chname = 'UPL2'
       nr = 1
@@ -33067,14 +33295,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 236
+      itmed = 238
       natmed = 'UPE1 Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -33084,13 +33312,13 @@
 
       chname = 'UPE1'
       chshap = 'BOX '
-      nmed = 236
+      nmed = 238
       npar = 3
       par(1) = 119
       par(2) = 53.125
       par(3) = 0.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.291) stop 'consistency check #1 failed'
+      if (ivolu.ne.293) stop 'consistency check #1 failed'
 
       chname = 'UPE1'
       nr = 1
@@ -33112,14 +33340,14 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 237
+      itmed = 239
       natmed = 'UPVP Scintillator'
       nmat = 25
       isvol = 1
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -33129,13 +33357,13 @@
 
       chname = 'UPVP'
       chshap = 'BOX '
-      nmed = 237
+      nmed = 239
       npar = 3
       par(1) = 119
       par(2) = 2.125
       par(3) = 0.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.293) stop 'consistency check #1 failed'
+      if (ivolu.ne.295) stop 'consistency check #1 failed'
 
       chname = 'UPVP'
       nr = 1
@@ -33147,14 +33375,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 238
+      itmed = 240
       natmed = 'UPE2 Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -33164,13 +33392,13 @@
 
       chname = 'UPE2'
       chshap = 'BOX '
-      nmed = 238
+      nmed = 240
       npar = 3
       par(1) = 119
       par(2) = 53.125
       par(3) = 0.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.294) stop 'consistency check #1 failed'
+      if (ivolu.ne.296) stop 'consistency check #1 failed'
 
       chname = 'UPE2'
       nr = 1
@@ -33202,14 +33430,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 239
+      itmed = 241
       natmed = 'UPE3 Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -33219,13 +33447,13 @@
 
       chname = 'UPE3'
       chshap = 'BOX '
-      nmed = 239
+      nmed = 241
       npar = 3
       par(1) = 53.125
       par(2) = 12.75
       par(3) = 0.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.296) stop 'consistency check #1 failed'
+      if (ivolu.ne.298) stop 'consistency check #1 failed'
 
       chname = 'UPE3'
       nr = 1
@@ -33247,14 +33475,14 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      itmed = 240
+      itmed = 242
       natmed = 'UPVC Scintillator'
       nmat = 25
       isvol = 1
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -33264,13 +33492,13 @@
 
       chname = 'UPVC'
       chshap = 'BOX '
-      nmed = 240
+      nmed = 242
       npar = 3
       par(1) = 53.125
       par(2) = 2.125
       par(3) = 0.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.298) stop 'consistency check #1 failed'
+      if (ivolu.ne.300) stop 'consistency check #1 failed'
 
       chname = 'UPVC'
       nr = 1
@@ -33282,14 +33510,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 241
+      itmed = 243
       natmed = 'UPE4 Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -33299,13 +33527,13 @@
 
       chname = 'UPE4'
       chshap = 'BOX '
-      nmed = 241
+      nmed = 243
       npar = 3
       par(1) = 53.125
       par(2) = 12.75
       par(3) = 0.5
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.299) stop 'consistency check #1 failed'
+      if (ivolu.ne.301) stop 'consistency check #1 failed'
 
       chname = 'UPE4'
       nr = 1
@@ -34937,14 +35165,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 242
+      itmed = 244
       natmed = 'DET4 Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -34954,13 +35182,13 @@
 
       chname = 'DET4'
       chshap = 'BOX '
-      nmed = 242
+      nmed = 244
       npar = 3
       par(1) = 850
       par(2) = 600
       par(3) = 1
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.301) stop 'consistency check #1 failed'
+      if (ivolu.ne.303) stop 'consistency check #1 failed'
 
       chname = 'DET4'
       nr = 1
@@ -34972,14 +35200,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 243
+      itmed = 245
       natmed = 'DET5 Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -34989,13 +35217,13 @@
 
       chname = 'DET5'
       chshap = 'BOX '
-      nmed = 243
+      nmed = 245
       npar = 3
       par(1) = 850
       par(2) = 600
       par(3) = 1
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.302) stop 'consistency check #1 failed'
+      if (ivolu.ne.304) stop 'consistency check #1 failed'
 
       chname = 'DET5'
       nr = 1
@@ -35007,14 +35235,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 244
+      itmed = 246
       natmed = 'DET6 Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -35024,13 +35252,13 @@
 
       chname = 'DET6'
       chshap = 'BOX '
-      nmed = 244
+      nmed = 246
       npar = 3
       par(1) = 850
       par(2) = 1
       par(3) = 1500
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.303) stop 'consistency check #1 failed'
+      if (ivolu.ne.305) stop 'consistency check #1 failed'
 
       chname = 'DET6'
       nr = 1
@@ -35042,14 +35270,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 245
+      itmed = 247
       natmed = 'DET7 Air'
       nmat = 1
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -35059,13 +35287,13 @@
 
       chname = 'DET7'
       chshap = 'BOX '
-      nmed = 245
+      nmed = 247
       npar = 3
       par(1) = 850
       par(2) = 600
       par(3) = 1
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.304) stop 'consistency check #1 failed'
+      if (ivolu.ne.306) stop 'consistency check #1 failed'
 
       chname = 'DET7'
       nr = 1
@@ -35077,14 +35305,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 246
+      itmed = 248
       natmed = 'OHPI Iron'
       nmat = 10
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -35094,13 +35322,13 @@
 
       chname = 'OHPI'
       chshap = 'TUBE'
-      nmed = 246
+      nmed = 248
       npar = 3
       par(1) = 0
       par(2) = 2.5
       par(3) = 454
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.305) stop 'consistency check #1 failed'
+      if (ivolu.ne.307) stop 'consistency check #1 failed'
 
       chname = 'OHPI'
       nr = 1
@@ -35112,14 +35340,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 247
+      itmed = 249
       natmed = 'IHPI Vacuum'
       nmat = 11
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -35129,13 +35357,13 @@
 
       chname = 'IHPI'
       chshap = 'TUBE'
-      nmed = 247
+      nmed = 249
       npar = 3
       par(1) = 0
       par(2) = 2.2
       par(3) = 454
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.306) stop 'consistency check #1 failed'
+      if (ivolu.ne.308) stop 'consistency check #1 failed'
 
       chname = 'IHPI'
       nr = 1
@@ -35147,14 +35375,14 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      itmed = 248
+      itmed = 250
       natmed = 'CAP2 Mylar'
       nmat = 19
       isvol = 0
       ifield = 2
       fieldm = 22.4
       tmaxfd = 1
-      stemax = 0
+      stemax = 1
       deemax = 0
       epsil = 0.001
       stmin = 0
@@ -35164,13 +35392,13 @@
 
       chname = 'CAP2'
       chshap = 'TUBE'
-      nmed = 248
+      nmed = 250
       npar = 3
       par(1) = 0
       par(2) = 2.2
       par(3) = 0.025
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
-      if (ivolu.ne.307) stop 'consistency check #1 failed'
+      if (ivolu.ne.309) stop 'consistency check #1 failed'
 
       chname = 'CAP2'
       nr = 1
@@ -35183,7 +35411,7 @@
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
       end
 
-      subroutine setoptical63(itmed)
+      subroutine setoptical64(itmed)
       implicit none
       integer itmed
       integer nbins
@@ -35193,7 +35421,7 @@
       real rindex(8)
       real smooth(8)
       real refloss(8)
-      common /optical63/nbins,Ephot,rindex,abslen,refloss,smooth,effic
+      common /optical64/nbins,Ephot,rindex,abslen,refloss,smooth,effic
       integer i
       data nbins/8/
       data (Ephot(i),i=1,8) /
@@ -35215,73 +35443,6 @@
      + 0,0,0,0,0,0,
      + 0,0/
       call GSCKOV(itmed,nbins,Ephot,abslen,effic,rindex)
-      end
-
-      subroutine getoptical63(E,refl,absl,rind,plsh,eff)
-      implicit none
-      real E,refl,absl,rind,plsh,eff
-      integer n
-      real x
-      integer nbins
-      real Ephot(8)
-      real abslen(8)
-      real effic(8)
-      real rindex(8)
-      real smooth(8)
-      real refloss(8)
-      common /optical63/nbins,Ephot,rindex,abslen,refloss,smooth,effic
-      do n=1,nbins
-        if (E.lt.Ephot(n)) go to 10
-      enddo
-   10 continue
-      if (n.eq.1.or.n.gt.nbins) then
-        refl = 0
-        absl = 0
-        rind = 0
-        plsh = 1
-        eff = 0
-      else
-        x = (E-Ephot(n-1))/(Ephot(n)-Ephot(n-1))
-        refl = (1-x)*refloss(n-1)+x*refloss(n)
-        absl = (1-x)*abslen(n-1)+x*abslen(n)
-        rind = (1-x)*rindex(n-1)+x*rindex(n)
-        plsh = (1-x)*smooth(n-1)+x*smooth(n)
-        eff = (1-x)*effic(n-1)+x*effic(n)
-      endif
-      end
-
-      subroutine setoptical64(itmed)
-      implicit none
-      integer itmed
-      integer nbins
-      real Ephot(8)
-      real abslen(8)
-      real effic(8)
-      real rindex(8)
-      real smooth(8)
-      real refloss(8)
-      common /optical64/nbins,Ephot,rindex,abslen,refloss,smooth,effic
-      integer i
-      data nbins/8/
-      data (Ephot(i),i=1,8) /
-     + 1.5e-09,2e-09,2.5e-09,3e-09,3.5e-09,4e-09,
-     + 4.5e-09,5e-09/
-      data (rindex(i),i=1,8) /
-     + 0,0,0,0,0,0,
-     + 0,0/
-      data (abslen(i),i=1,8) /
-     + 0,0,0,0,0,0,
-     + 0,0/
-      data (smooth(i),i=1,8) /
-     + 1,1,1,1,1,1,
-     + 1,1/
-      data (refloss(i),i=1,8) /
-     + 0.02,0.02,0.02,0.05,0.07,0.11,
-     + 0.2,0.7/
-      data (effic(i),i=1,8) /
-     + 0,0,0,0,0,0,
-     + 0,0/
-      call GSCKOV(itmed,nbins,Ephot,refloss,effic,rindex)
       end
 
       subroutine getoptical64(E,refl,absl,rind,plsh,eff)
@@ -35388,13 +35549,80 @@
       implicit none
       integer itmed
       integer nbins
+      real Ephot(8)
+      real abslen(8)
+      real effic(8)
+      real rindex(8)
+      real smooth(8)
+      real refloss(8)
+      common /optical66/nbins,Ephot,rindex,abslen,refloss,smooth,effic
+      integer i
+      data nbins/8/
+      data (Ephot(i),i=1,8) /
+     + 1.5e-09,2e-09,2.5e-09,3e-09,3.5e-09,4e-09,
+     + 4.5e-09,5e-09/
+      data (rindex(i),i=1,8) /
+     + 0,0,0,0,0,0,
+     + 0,0/
+      data (abslen(i),i=1,8) /
+     + 0,0,0,0,0,0,
+     + 0,0/
+      data (smooth(i),i=1,8) /
+     + 1,1,1,1,1,1,
+     + 1,1/
+      data (refloss(i),i=1,8) /
+     + 0.02,0.02,0.02,0.05,0.07,0.11,
+     + 0.2,0.7/
+      data (effic(i),i=1,8) /
+     + 0,0,0,0,0,0,
+     + 0,0/
+      call GSCKOV(itmed,nbins,Ephot,refloss,effic,rindex)
+      end
+
+      subroutine getoptical66(E,refl,absl,rind,plsh,eff)
+      implicit none
+      real E,refl,absl,rind,plsh,eff
+      integer n
+      real x
+      integer nbins
+      real Ephot(8)
+      real abslen(8)
+      real effic(8)
+      real rindex(8)
+      real smooth(8)
+      real refloss(8)
+      common /optical66/nbins,Ephot,rindex,abslen,refloss,smooth,effic
+      do n=1,nbins
+        if (E.lt.Ephot(n)) go to 10
+      enddo
+   10 continue
+      if (n.eq.1.or.n.gt.nbins) then
+        refl = 0
+        absl = 0
+        rind = 0
+        plsh = 1
+        eff = 0
+      else
+        x = (E-Ephot(n-1))/(Ephot(n)-Ephot(n-1))
+        refl = (1-x)*refloss(n-1)+x*refloss(n)
+        absl = (1-x)*abslen(n-1)+x*abslen(n)
+        rind = (1-x)*rindex(n-1)+x*rindex(n)
+        plsh = (1-x)*smooth(n-1)+x*smooth(n)
+        eff = (1-x)*effic(n-1)+x*effic(n)
+      endif
+      end
+
+      subroutine setoptical67(itmed)
+      implicit none
+      integer itmed
+      integer nbins
       real Ephot(36)
       real abslen(36)
       real effic(36)
       real rindex(36)
       real smooth(36)
       real refloss(36)
-      common /optical66/nbins,Ephot,rindex,abslen,refloss,smooth,effic
+      common /optical67/nbins,Ephot,rindex,abslen,refloss,smooth,effic
       integer i
       data nbins/36/
       data (Ephot(i),i=1,36) /
@@ -35442,7 +35670,7 @@
       call GSCKOV(itmed,nbins,Ephot,abslen,effic,rindex)
       end
 
-      subroutine getoptical66(E,refl,absl,rind,plsh,eff)
+      subroutine getoptical67(E,refl,absl,rind,plsh,eff)
       implicit none
       real E,refl,absl,rind,plsh,eff
       integer n
@@ -35454,7 +35682,7 @@
       real rindex(36)
       real smooth(36)
       real refloss(36)
-      common /optical66/nbins,Ephot,rindex,abslen,refloss,smooth,effic
+      common /optical67/nbins,Ephot,rindex,abslen,refloss,smooth,effic
       do n=1,nbins
         if (E.lt.Ephot(n)) go to 10
       enddo
@@ -35480,7 +35708,7 @@
       integer getColumn
       integer nlevel,names,number,lvolum
       common /gcvolu/nlevel,names(15),number(15),lvolum(15)
-      integer i,istart(307)
+      integer i,istart(309)
       data (istart(i),i=1,100) /
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
@@ -35510,12 +35738,12 @@
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-     +     0,    0,    0,    0,    1,    0,    0,   21,    0,    0,
-     +    23,    0,   25,    0,    0,    0,   45,    0,    0,    0,
-     +   104,    0,    0,  132,    0,    0,  160,    0,    0,    0,
-     +     0,  219,    0,    0,  244,    0,  269,    0,    0,  275/
-      data (istart(i),i=301,307) /
-     +     0,    0,    0,    0,    0,    0,    0/
+     +     0,    0,    0,    0,    0,    0,    1,    0,    0,   21,
+     +     0,    0,   23,    0,   25,    0,    0,    0,   45,    0,
+     +     0,    0,  104,    0,    0,  132,    0,    0,  160,    0,
+     +     0,    0,    0,  219,    0,    0,  244,    0,  269,    0/
+      data (istart(i),i=301,309) /
+     +     0,  275,    0,    0,    0,    0,    0,    0,    0/
       integer lookup(280)
       data (lookup(i),i=1,100) /
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
@@ -35567,7 +35795,7 @@
       integer getLayer
       integer nlevel,names,number,lvolum
       common /gcvolu/nlevel,names(15),number(15),lvolum(15)
-      integer i,istart(307)
+      integer i,istart(309)
       data (istart(i),i=1,100) /
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
@@ -35588,21 +35816,21 @@
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-     +     0,    0,    0,    0,    0,    0,    0,    1,    0,    0,
+     +     0,    0,    0,    0,    0,    0,    0,    0,    1,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0/
       data (istart(i),i=201,300) /
-     +     0,    0,    0,    0,    0,    4,    0,    0,    0,    0,
-     +     0,    8,    0,    0,    0,    0,   12,    0,    0,    0,
-     +     0,   16,    0,    0,    0,    0,   20,    0,    0,    0,
-     +     0,   24,    0,    0,    0,    0,   27,    0,    0,    0,
-     +     0,   30,    0,    0,    0,    0,   33,    0,    0,    0,
+     +     0,    0,    0,    0,    0,    0,    0,    4,    0,    0,
+     +     0,    0,    0,    8,    0,    0,    0,    0,   12,    0,
+     +     0,    0,    0,   16,    0,    0,    0,    0,   20,    0,
+     +     0,    0,    0,   24,    0,    0,    0,    0,   27,    0,
+     +     0,    0,    0,   30,    0,    0,    0,    0,   33,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-     +     0,    0,    0,    0,    0,    0,    0,    0,   36,   84,
-     +   132,    0,    0,  150,    0,  168,    0,    0,  186,    0/
-      data (istart(i),i=301,307) /
-     +     0,    0,    0,    0,    0,    0,    0/
+     +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+     +    36,   84,  132,    0,    0,  150,    0,  168,    0,    0/
+      data (istart(i),i=301,309) /
+     +   186,    0,    0,    0,    0,    0,    0,    0,    0/
       integer lookup(203)
       data (lookup(i),i=1,100) /
      +     1,    2,    3,    1,    1,    1,    1,    2,    2,    2,
@@ -35647,7 +35875,7 @@
       integer getMap
       integer nlevel,names,number,lvolum
       common /gcvolu/nlevel,names(15),number(15),lvolum(15)
-      integer i,istart(307)
+      integer i,istart(309)
       data (istart(i),i=1,100) /
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
@@ -35671,18 +35899,18 @@
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0/
       data (istart(i),i=201,300) /
-     +     0,    0,    0,    0,    4,    0,    0,    0,    0,    0,
-     +     5,    0,    0,    0,    0,    6,    0,    0,    0,    0,
-     +     7,    0,    0,    0,    0,    8,    0,    0,    0,    0,
-     +     9,    0,    0,    0,    0,   10,    0,    0,    0,    0,
-     +    11,    0,    0,    0,    0,   12,    0,    0,    0,    0,
-     +    13,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+     +     0,    0,    0,    0,    0,    0,    4,    0,    0,    0,
+     +     0,    0,    5,    0,    0,    0,    0,    6,    0,    0,
+     +     0,    0,    7,    0,    0,    0,    0,    8,    0,    0,
+     +     0,    0,    9,    0,    0,    0,    0,   10,    0,    0,
+     +     0,    0,   11,    0,    0,    0,    0,   12,    0,    0,
+     +     0,    0,   13,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-     +     0,    0,    0,   14,    0,    0,    0,    0,    0,    0,
+     +     0,    0,    0,    0,    0,   14,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0/
-      data (istart(i),i=301,307) /
-     +     0,    0,    0,    0,    0,    0,    0/
+      data (istart(i),i=301,309) /
+     +     0,    0,    0,    0,    0,    0,    0,    0,    0/
       integer lookup(14)
       data (lookup(i),i=1,14) /
      +     1,    2,    3,    4,    4,    4,    4,    4,    4,    4,
@@ -35706,7 +35934,7 @@
       integer getModule
       integer nlevel,names,number,lvolum
       common /gcvolu/nlevel,names(15),number(15),lvolum(15)
-      integer i,istart(307)
+      integer i,istart(309)
       data (istart(i),i=1,100) /
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
@@ -35727,10 +35955,10 @@
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-     +     0,    0,    0,    0,    0,    0,    1,    0,    0,    0,
+     +     0,    0,    0,    0,    0,    0,    0,    1,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0/
       data (istart(i),i=201,300) /
-     +     0,    0,    9,    0,    0,    0,    0,    0,    0,    0,
+     +     0,    0,    0,    0,    9,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
@@ -35740,8 +35968,8 @@
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0/
-      data (istart(i),i=301,307) /
-     +     0,    0,    0,    0,    0,    0,    0/
+      data (istart(i),i=301,309) /
+     +     0,    0,    0,    0,    0,    0,    0,    0,    0/
       integer lookup(56)
       data (lookup(i),i=1,56) /
      +     1,    2,    3,    4,    5,    6,    7,    8,    1,    2,
@@ -35769,7 +35997,7 @@
       integer getPlane
       integer nlevel,names,number,lvolum
       common /gcvolu/nlevel,names(15),number(15),lvolum(15)
-      integer i,istart(307)
+      integer i,istart(309)
       data (istart(i),i=1,100) /
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
@@ -35791,7 +36019,7 @@
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-     +     1,    3,    0,    0,    0,    0,    0,    0,    0,    0/
+     +     0,    1,    3,    0,    0,    0,    0,    0,    0,    0/
       data (istart(i),i=201,300) /
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
@@ -35799,12 +36027,12 @@
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-     +     0,    0,    4,    0,    0,    0,    0,    0,    0,    0,
+     +     0,    0,    0,    0,    4,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0/
-      data (istart(i),i=301,307) /
-     +     0,    0,    0,    0,    0,    0,    0/
+      data (istart(i),i=301,309) /
+     +     0,    0,    0,    0,    0,    0,    0,    0,    0/
       integer lookup(5)
       data (lookup(i),i=1,5) /
      +     1,    3,    2,    0,    1/
@@ -35827,7 +36055,7 @@
       integer getRing
       integer nlevel,names,number,lvolum
       common /gcvolu/nlevel,names(15),number(15),lvolum(15)
-      integer i,istart(307)
+      integer i,istart(309)
       data (istart(i),i=1,100) /
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
@@ -35861,8 +36089,8 @@
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0/
-      data (istart(i),i=301,307) /
-     +     0,    0,    0,    0,    0,    0,    0/
+      data (istart(i),i=301,309) /
+     +     0,    0,    0,    0,    0,    0,    0,    0,    0/
       integer lookup(3349)
       data (lookup(i),i=1,100) /
      +     1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -36252,7 +36480,7 @@
       integer getRow
       integer nlevel,names,number,lvolum
       common /gcvolu/nlevel,names(15),number(15),lvolum(15)
-      integer i,istart(307)
+      integer i,istart(309)
       data (istart(i),i=1,100) /
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
@@ -36282,12 +36510,12 @@
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-     +     0,    0,    0,    0,    1,    0,    0,   21,    0,    0,
-     +    23,    0,   25,    0,    0,   45,    0,    0,    0,   73,
-     +     0,    0,   76,    0,    0,   79,    0,    0,    0,    0,
-     +     0,  107,    0,    0,  132,    0,  157,    0,    0,  163/
-      data (istart(i),i=301,307) /
-     +     0,    0,    0,    0,    0,    0,    0/
+     +     0,    0,    0,    0,    0,    0,    1,    0,    0,   21,
+     +     0,    0,   23,    0,   25,    0,    0,   45,    0,    0,
+     +     0,   73,    0,    0,   76,    0,    0,   79,    0,    0,
+     +     0,    0,    0,  107,    0,    0,  132,    0,  157,    0/
+      data (istart(i),i=301,309) /
+     +     0,  163,    0,    0,    0,    0,    0,    0,    0/
       integer lookup(168)
       data (lookup(i),i=1,100) /
      +    40,   39,   38,   37,   36,   35,   34,   33,   32,   31,
@@ -36327,7 +36555,7 @@
       integer getSector
       integer nlevel,names,number,lvolum
       common /gcvolu/nlevel,names(15),number(15),lvolum(15)
-      integer i,istart(307)
+      integer i,istart(309)
       data (istart(i),i=1,100) /
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
@@ -36351,18 +36579,18 @@
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0/
       data (istart(i),i=201,300) /
-     +     0,    0,    0,    0,    0, 3374,    0,    0,    0,    0,
-     +     0, 3378,    0,    0,    0,    0, 3382,    0,    0,    0,
-     +     0, 3386,    0,    0,    0,    0, 3390,    0,    0,    0,
-     +     0, 3394,    0,    0,    0,    0, 3397,    0,    0,    0,
-     +     0, 3400,    0,    0,    0,    0, 3403,    0,    0,    0,
-     +     0,    0,    0,    0,    0,    0,    0, 3406,    0,    0,
+     +     0,    0,    0,    0,    0,    0,    0, 3374,    0,    0,
+     +     0,    0,    0, 3378,    0,    0,    0,    0, 3382,    0,
+     +     0,    0,    0, 3386,    0,    0,    0,    0, 3390,    0,
+     +     0,    0,    0, 3394,    0,    0,    0,    0, 3397,    0,
+     +     0,    0,    0, 3400,    0,    0,    0,    0, 3403,    0,
+     +     0,    0,    0,    0,    0,    0,    0,    0,    0, 3406,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0/
-      data (istart(i),i=301,307) /
-     +     0,    0,    0,    0,    0,    0,    0/
+      data (istart(i),i=301,309) /
+     +     0,    0,    0,    0,    0,    0,    0,    0,    0/
       integer lookup(3421)
       data (lookup(i),i=1,100) /
      +     1,    2,    3,    4,    5,    6,    7,    8,    9,   10,
@@ -36909,14 +37137,14 @@
       implicit none
       integer imat
       real E,refl,absl,rind,plsh,eff
-      if (imat.eq.63) then
-        call getoptical63(E,refl,absl,rind,plsh,eff)
-      elseif (imat.eq.64) then
+      if (imat.eq.64) then
         call getoptical64(E,refl,absl,rind,plsh,eff)
       elseif (imat.eq.65) then
         call getoptical65(E,refl,absl,rind,plsh,eff)
       elseif (imat.eq.66) then
         call getoptical66(E,refl,absl,rind,plsh,eff)
+      elseif (imat.eq.67) then
+        call getoptical67(E,refl,absl,rind,plsh,eff)
       else
         refl = 0
         absl = 0
