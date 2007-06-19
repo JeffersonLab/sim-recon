@@ -14,6 +14,7 @@
 #include "DFDCHit.h"
 #include "DFDCGeometry.h"
 
+#include "TRACKING/DMagneticFieldMap.h"
 #include <TDecompLU.h>
 
 #include <algorithm>
@@ -45,10 +46,16 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		///
 		~DFDCSegment_factory();	
 
+		jerror_t FindSegments(vector<DFDCPseudo*>points);
 		jerror_t KalmanFilter(vector <DFDCPseudo*>points);
+		jerror_t KalmanLoop(vector<DFDCPseudo*>points, double mass_hyp,
+				    DMatrix Seed,DMatrix &S,DMatrix &C,
+				    double &chisq);
 		jerror_t CorrectPointY(DMatrix S,DFDCPseudo *point);
-		jerror_t GetProcessNoiseCovariance(DMatrix S, 
-	                  vector<DFDCPseudo*>points,DMatrix &Q);
+		jerror_t GetProcessNoiseCovariance(double x, double y, 
+						   double z,DMatrix S, 
+	                  vector<DFDCPseudo*>points,double mass_hyp,
+						   DMatrix &Q);
 	        jerror_t GetHelicalTrackPosition(double z, DMatrix S,
 	                  double &xpos,double &ypos);
 		jerror_t GetTrackProjectionMatrix(double z,DMatrix S,
@@ -58,6 +65,8 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		jerror_t GetStateVector(double oldx, double oldy,
 	                  double old_z,double x, double y,double z,
 			  DMatrix S,DMatrix &S1);
+	        jerror_t RiemannCircleFit(vector<DFDCPseudo*>points,
+				double &xc,double &yc,double &rho);
 
 		const string toString(void);
 
@@ -78,6 +87,8 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		DFDCGeometry _geo;
 		JStreamLog* _log;
 		ofstream* logFile;
+
+                const DMagneticFieldMap *bfield;
 
 	        // Average magnetic field in each package
 	        double BField[4];

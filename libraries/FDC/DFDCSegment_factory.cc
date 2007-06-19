@@ -4,6 +4,7 @@
 
 #include "DFDCSegment_factory.h"
 #include "TRACKING/DQuickFit.h"
+#include "DANA/DApplication.h"
 #include <math.h>
 #define HALF_CELL 0.5
 #define MAX_DEFLECTION 0.15
@@ -98,9 +99,12 @@ DFDCSegment_factory::~DFDCSegment_factory() {
 }
 ///
 /// DFDCSegment_factory::brun():
-/// Initialization: read in deflection map
+/// Initialization: read in deflection map, get magnetic field map
 ///
 jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int eventNo) { 
+  DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+  bfield = dapp->GetBfield();
+
   ifstream fdc_deflection_file;
 
   fdc_deflection_file.open("fdc_deflections.dat");
@@ -153,10 +157,11 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
   }
   for (int j=0;j<4;j++){
     std::sort(package[j].begin(), package[j].end(), DFDCSegment_package_cmp);
-    KalmanFilter(package[j]);
+    FindSegments(package[j]);
   }
 
   // Correct for the Lorentz effect given DOCAs
+  /*
   if (got_deflection_file){
     for (unsigned int k=0;k<_data.size();k++){
       DFDCSegment *segment=_data[k];
@@ -170,30 +175,131 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
       fprintf(stderr,"DFDCSegment_factory: --> Pseudo-points will not be corrected for Lorentz effect.");
       warn=false;      
   }
-
+  */
 
   return NOERROR;
 }
 
+
+// Riemann Circle fit:  points on a circle in x,y project onto a plane cutting
+// the circular paraboloid surface described by (x,y,x^2+y^2).  Therefore the
+// task of fitting points in (x,y) to a circle is transormed to the taks of
+// fitting planes in (x,y, w=x^2+y^2) space
 //
-// Kalman Filter
+jerror_t DFDCSegment_factory::RiemannCircleFit(vector<DFDCPseudo*>points,
+	double &xc, double &yc, double &rho){
+  DMatrix X(points.size()+1,3);
+  DMatrix Xavg(3,1),n(3,1);
+  DMatrix A(3,3);
+  double N=double(points.size()+1);
+  double B0,B1,B2,Q,Q1,R,sum,diff;
+  double theta,lambda_min=1.e8,lambda;
+
+  // The goal is to find the eigenvector corresponding to the smallest 
+  // eigenvalue of the equation
+  //            lambda=n^T (X^T X - N Xavg Xavg^T)n
+  // where n is the normal vector to the plane slicing the cylindrical 
+  // paraboloid described by the parameterization (x,y,w=x^2+y^2)
+
+  for (unsigned int i=0;i<points.size();i++){
+    X(i,0)=points[i]->x;
+    X(i,1)=points[i]->y;
+    X(i,2)=points[i]->x*points[i]->x+points[i]->y*points[i]->y;
+    Xavg(0,0)+=X(i,0)/N;
+    Xavg(1,0)+=X(i,1)/N;
+    Xavg(2,0)+=X(i,2)/N;
+  }
+  // Also include the origin of the (x,y) plane, but not as a constraint
+  X(points.size(),0)=0.;
+  X(points.size(),1)=0.;
+  X(points.size(),2)=0.;
+
+  A=DMatrix(DMatrix::kTransposed,X)*X
+    -N*(Xavg*DMatrix(DMatrix::kTransposed,Xavg));
+
+  // The characteristic equation is 
+  //   lambda^3+B2*lambda^2+lambda*B1+B0=0 
+
+  B2=-(A(0,0)+A(1,1)+A(2,2));
+  B1=A(0,0)*A(1,1)-A(1,0)*A(0,1)+A(0,0)*A(2,2)-A(2,0)*A(0,2)+A(1,1)*A(2,2)
+    -A(2,1)*A(1,2);
+  B0=-A.Determinant();
+
+  // The roots of the cubic equation are given by 
+  //        lambda1= -B2/3 + S+T
+  //        lambda2= -B2/3 - (S+T)/2 + i sqrt(3)/2. (S-T)
+  //        lambda3= -B2/3 - (S+T)/2 - i sqrt(3)/2. (S-T)
+  // where we define some temporary variables:
+  //        S= (R+sqrt(Q^3+R^2))^(1/3)
+  //        T= (R-sqrt(Q^3+R^2))^(1/3)
+  //        Q=(3*B1-B2^2)/9
+  //        R=(9*B2*B1-27*B0-2*B2^3)/54
+  //        sum=S+T;
+  //        diff=i*(S-T)
+  // We divide Q and R by a safety factor to prevent multiplying together 
+  // enormous numbers that cause unreliable results.
+
+  Q=(3.*B1-B2*B2)/9.e4; 
+  R=(9.*B2*B1-27.*B0-2.*B2*B2*B2)/54.e6;
+  Q1=Q*Q*Q+R*R;
+  if (Q1<0) Q1=sqrt(-Q1);
+  else{
+    return VALUE_OUT_OF_RANGE;
+  }
+
+  // DeMoivre's theorem for fractional powers of complex numbers:  
+//(r*(cos(theta)+i sin(theta)))^(p/q)=r^(p/q)*(cos(p*theta/q)+i sin(p*theta/q))
+
+  double temp=100.*pow(R*R+Q1*Q1,0.16666666666666666667);
+  theta=atan2(Q1,R)/3.;
+  sum=2.*temp*cos(theta);
+  diff=-2.*temp*sin(theta);
+ 
+  // First root
+  lambda=-B2/3.+sum;
+  if (lambda<lambda_min) lambda_min=lambda;
+
+  // Second root
+  lambda=-B2/3.-sum/2.-sqrt(3.)/2.*diff;
+  if (lambda<lambda_min) lambda_min=lambda;
+
+  // Third root
+  lambda=-B2/3.-sum/2.+sqrt(3.)/2.*diff;
+  if (lambda<lambda_min && lambda>EPS) lambda_min=lambda;
+
+  // Normal vector to plane
+  n(0,0)=1./sqrt(1.+(A(1,0)*A(0,2)-(A(0,0)-lambda_min)*A(1,2))
+		 *(A(1,0)*A(0,2)-(A(0,0)-lambda_min)*A(1,2))
+		 /(A(0,1)*A(1,2)-(A(1,1)-lambda_min)*A(0,2))
+		 /(A(0,1)*A(1,2)-(A(1,1)-lambda_min)*A(0,2))
+		 +(A(2,0)*(A(1,1)-lambda_min)-A(1,0)*A(2,1))
+		 *(A(2,0)*(A(1,1)-lambda_min)-A(1,0)*A(2,1))
+		 /(A(0,1)*A(1,2)-(A(1,1)-lambda_min)*A(0,2))
+		 /(A(1,2)*A(2,1)-(A(2,2)-lambda_min)*(A(1,1)-lambda_min)));
+  n(1,0)=n(0,0)*(A(1,0)*A(0,2)-(A(0,0)-lambda_min)*A(1,2))
+    /(A(0,1)*A(2,1)-(A(1,1)-lambda_min)*A(0,2));
+  n(2,0)=n(0,0)*(A(2,0)*(A(1,1)-lambda_min)-A(1,0)*A(2,1))
+    /(A(1,2)*A(2,1)-(A(2,2)-lambda_min)*(A(1,1)-lambda_min));
+
+  // Distance to origin
+  double dist_to_origin=-(n(0,0)*Xavg(0,0)+n(1,0)*Xavg(1,0)+n(2,0)*Xavg(2,0));
+
+  // Center and radius of the circle
+  xc=-n(0,0)/2./n(2,0);
+  yc=-n(1,0)/2./n(2,0);
+  rho=sqrt(1.-n(2,0)*n(2,0)-4.*dist_to_origin*n(2,0))/2./fabs(n(2,0));
+
+  return NOERROR;
+}
+
+// DFDCSegment_factory::FindSegments
+//  Associate nearest neighbors within a package with track segment candidates.
+// Provide guess for (seed) track parameters
 //
-jerror_t DFDCSegment_factory::KalmanFilter(vector<DFDCPseudo*>points){
-  // Check that we have data to fit
-  if (points.size()<2) return OBJECT_NOT_AVAILABLE;
-  DMatrix Seed(5,1); //  Seed track state vector
-  DMatrix S(5,1),Old_S(5,1);  // State vector 
-  DMatrix M(2,1);  // measurement vector
-  DMatrix M_pred(2,1); // prediction for hit position
-  DMatrix H(2,5);  // Track projection matrix
-  DMatrix H_T(5,2); // Transpose of track projection matrix
-  DMatrix F(5,5);  // State vector propagation matrix
-  DMatrix F_T(5,5); // Transpose of state vector propagation matrix
-  DMatrix C(5,5);  // State vector covariance matrix
-  DMatrix Q(5,5);  // Process noise covariance matrix
-  DMatrix K(5,2);  // Kalman gain matrix
-  DMatrix V(2,2);  // Measurement covariance matrix
-  DMatrix X(2,1);  // Position on helical track
+jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
+  // We need at least 3 points to define a circle, so bail if we don't have 
+  // enough points.
+  if (points.size()<3) return RESOURCE_UNAVAILABLE;
  
   // Put indices for the first point in each plane before the most downstream
   // plane in the vector x_list.
@@ -211,9 +317,8 @@ jerror_t DFDCSegment_factory::KalmanFilter(vector<DFDCPseudo*>points){
   for (unsigned int i=0;i<x_list[0];i++){
     // Creat a new segment
     DFDCSegment *segment = new DFDCSegment;
- 
-    // Put first point in list of hits belonging to this segment
-    segment->hits.push_back(points[i]);
+    DMatrix Seed(5,1);
+    DMatrix Cov(5,5);
 
     // Point in the last plane in the package 
     double x=points[i]->x;
@@ -244,27 +349,21 @@ jerror_t DFDCSegment_factory::KalmanFilter(vector<DFDCPseudo*>points){
         neighbors.push_back(points[match]);
       }
     }
-    
+   
     // Linear regression to find charge  
-    double sigx2=HALF_CELL*HALF_CELL/3.;
-    double sigy2=MAX_DEFLECTION*MAX_DEFLECTION/3.;
     double var=0.; 
     double sumv=0.;
     double sumy=0.;
     double sumx=0.;
     double sumxx=0.,sumxy=0,Delta;
-    double cosangle,sinangle,slope;
+    double slope;
     for (unsigned int k=0;k<neighbors.size();k++){   
       double tempz=neighbors[k]->wire->origin(2);
       double phi_z=atan2(neighbors[k]->y,neighbors[k]->x);
       double r2=neighbors[k]->x*neighbors[k]->x
 	+neighbors[k]->y*neighbors[k]->y;
-      cosangle=neighbors[k]->wire->udir(1);
-      sinangle=neighbors[k]->wire->udir(0);
-      var=(neighbors[k]->x*neighbors[k]->x
-	   *(sigx2*cosangle*cosangle+sigy2*sinangle*sinangle)
-	   +neighbors[k]->y*neighbors[k]->y
-	   *(sigy2*cosangle*cosangle+sigx2*sinangle*sinangle))/r2/r2;
+      var=(neighbors[k]->x*neighbors[k]->x*neighbors[k]->cov(0,0)
+	   +neighbors[k]->y*neighbors[k]->y*neighbors[k]->cov(1,1))/r2/r2;
       sumv+=1./var;
       sumy+=phi_z/var;
       sumx+=tempz/var;
@@ -281,24 +380,20 @@ jerror_t DFDCSegment_factory::KalmanFilter(vector<DFDCPseudo*>points){
     // Guess for the center and radius of the circle from the projection of 
     // the helical path
     double xc,yc,rc;
-    DQuickFit *fit= new DQuickFit();
-    for (unsigned int k=0;k<neighbors.size();k++){
-      fit->AddHitXYZ(neighbors[k]->x,neighbors[k]->y,
-		     neighbors[k]->wire->origin(2));
-    }
-    fit->FitCircle();
-    xc=fit->x0;
-    yc=fit->y0;
-    rc=sqrt(xc*xc+yc*yc);
-    
+    RiemannCircleFit(neighbors,xc,yc,rc); 
+    segment->xc=xc;
+    segment->yc=yc;
+    segment->rc=rc;
+
     // Initial guess for state vector
-    double kappa,phi,tanl=0.,sperp,z0;
+    double kappa,phi,tanl=0.,sperp,z0,D;
     kappa=q/2./rc;
     phi=atan2(-xc,yc);
+    D=0.;
     if (q<0) phi+=M_PI;
     
     // Linear regression to find z0, tanl   
-    var=sigx2+sigy2; 
+    var=(HALF_CELL*HALF_CELL+MAX_DEFLECTION*MAX_DEFLECTION)/3.; 
     sumv=1./var;
     sumxy=sumy=0;
     sumx=Z_TARGET/var;
@@ -314,8 +409,9 @@ jerror_t DFDCSegment_factory::KalmanFilter(vector<DFDCPseudo*>points){
 	sperp=2.*rc*asin(ratio);
       // Assume errors in sperp domininated by errors in x and y at the current
       // z-position.
-      var=(neighbors[k]->w*neighbors[k]->w*sigx2
-	     +neighbors[k]->s*neighbors[k]->s*sigy2)/r/r/(1.-r*r/4./rc/rc);
+      var=(neighbors[k]->x*neighbors[k]->x*neighbors[k]->cov(0,0)
+	   +neighbors[k]->y*neighbors[k]->y*neighbors[k]->cov(1,1))/r/r
+	/(1.-r*r/4./rc/rc);
       sumv+=1./var;
       sumy+=sperp/var;
       sumx+=tempz/var;
@@ -329,118 +425,44 @@ jerror_t DFDCSegment_factory::KalmanFilter(vector<DFDCPseudo*>points){
     // Initialize seed track parameters
     Seed(0,0)=kappa;    // Curvature 
     Seed(1,0)=phi;      // Phi
-    Seed(2,0)=0.;       // D=distance of closest approach to origin   
+    Seed(2,0)=D;       // D=distance of closest approach to origin   
     Seed(3,0)=tanl;     // tan(lambda), lambda=dip angle
     Seed(4,0)=z0;       // z-position at closest approach to origin
     
+#if 0  // This bit doesn't work yet.
     // Check for consistency between measured points and helical path.
     // If the guessed charge is wrong, the points on the path will not match
     // the measured points.  Use a chi2 test to tell whether or not we should
     // change the sign of kappa.
     double xpos,ypos,chisq=0.;
     for (unsigned int k=0;k<neighbors.size();k++){
-      cosangle=neighbors[k]->wire->udir(1);
-      sinangle=neighbors[k]->wire->udir(0);
-      var=sigx2*cosangle*cosangle+sigy2*sinangle*sinangle;
+      var=neighbors[k]->cov(0,0);
       GetHelicalTrackPosition(neighbors[k]->wire->origin(2),Seed,xpos,ypos);
+
+      printf("x %f %f y %f %f \n",neighbors[k]->x,xpos, neighbors[k]->y,ypos);
       chisq+=(neighbors[k]->x-xpos)*(neighbors[k]->x-xpos)/var;
     }
     // Compute reduced chi2
     chisq/=double(neighbors.size());
+
+    printf("Chisq %f\n",chisq);
+
     if (chisq>SIGN_CHANGE_CHISQ_CUT){
       Seed(0,0)*=-1.;
       Seed(1,0)+=q*M_PI;
     }
+   
+#endif
 
-    // First guess for state vector comes from the seed track
-    S=Seed;
-    
-    // Initialization of state vector covariance matrix 
-    for (int j=0;j<5;j++){
-      C(j,j)=1.;
-    }
-    
-    // Loop over list of neighboring points, updating the state vector at each
-    // step using the Kalman algorithm
-    for (unsigned int k=0;k<neighbors.size();k++){      
-      // The next measurement 
-      M(0,0)=neighbors[k]->x;
-      M(1,0)=neighbors[k]->y; 
-     
-      // ... and its covariance matrix taking into account rotation    
-      cosangle=neighbors[k]->wire->udir(1);
-      sinangle=neighbors[k]->wire->udir(0);
-      V(0,0)=sigx2*cosangle*cosangle+sigy2*sinangle*sinangle;
-      V(1,1)=sigx2*sinangle*sinangle+sigy2*cosangle*cosangle;
-      V(0,1)=V(1,0)=(sigy2-sigx2)*sinangle*cosangle;
-           
-      // Put the current point in the list of pseudopoints belonging to this
-      // segment.
-      //segment->hits.push_back(neighbors[k]);
-      old_z=z;
-      z=neighbors[k]->wire->origin(2);
-
-      // Compute Process noise covariance matrix
-      GetProcessNoiseCovariance(S,segment->hits,Q);	
-
-      // position on the seed trajectory
-      double xold,yold;
-      GetHelicalTrackPosition(old_z,Seed,xold,yold);  
-      X(0,0)=xold;
-      X(1,0)=yold;
-
-      // position on current trajectory
-      GetHelicalTrackPosition(z,S,x,y); 
-       
-      // Get the state vector from the non-linear state propagation function
-      DMatrix S1(5,1);
-      GetStateVector(xold,yold,old_z,x,y,z,S,S1);
- 
-      // Get state transport matrix describing how S evolves
-      GetStateTransportMatrix(xold,yold,x,y,S,F);
-
-      // Transport the covariance matrix
-      F_T=DMatrix(DMatrix::kTransposed,F);
-      C=F*(C*F_T)+Q;
-	
-      // Get predicted estimate for S
-      S=Seed+F*(S1-S);
-    
-      // Get the projection matrix to propagate the track to the next z-plane
-      GetTrackProjectionMatrix(z,S1,H);
-      // Get transpose of projection matrix
-      H_T = DMatrix(DMatrix::kTransposed,H);
-    
-      // Get prediction for next measurement
-      M_pred=X+H*(S-Seed);
-      
-      // Compute new V and check that it is invertible
-      DMatrix V_new(2,2);
-      V_new=V+H*(C*H_T);
-      TDecompLU lu(V_new);
-      if (lu.Decompose()==false){
-	*_log << "Singular matrix"<< endMsg;
-	continue;
-      }
-
-      // Compute Kalman gain matrix
-      K=C*(H_T*DMatrix(DMatrix::kInverted,V_new));
-
-      // Update the state vector 
-      S=S+K*(M-M_pred); 
-      
-      // Update state vector covariance matrix
-      C=C-K*(H*C);
-    }
-      
-    segment->S.ResizeTo(S);
-    segment->S=S;
-    segment->cov.ResizeTo(C);
-    segment->cov=C;
+    segment->S.ResizeTo(Seed);
+    segment->S=Seed;
+    segment->cov.ResizeTo(Cov);
+    segment->cov=Cov;
     segment->hits=neighbors;
     
     _data.push_back(segment);
   }
+
   return NOERROR;
 }
 
@@ -514,34 +536,38 @@ jerror_t DFDCSegment_factory:: GetStateTransportMatrix(double xold,
 
 }
 
-
-jerror_t DFDCSegment_factory::GetProcessNoiseCovariance(DMatrix S,
-			    vector<DFDCPseudo*>points,DMatrix &Q){
-  if (!got_deflection_file) return RESOURCE_UNAVAILABLE;
-
+// Get covariance matrix due to multiple scattering
+jerror_t DFDCSegment_factory::GetProcessNoiseCovariance(double x, double y,
+  double z, DMatrix S,vector<DFDCPseudo*>points,double mass_hyp, DMatrix &Q){
   // Track parameters
   double tanl=S(3,0);
   double cosl=cos(atan(tanl));
+  double sinl=sin(atan(tanl));
   double kappa=S(0,0);
   double D=S(2,0);
   double phi=S(1,0);
   double sigma2_ms=0;  	
-
+  
+  // Get Bfield
+  double Bx,By,Bz,B;
+  bfield->GetField(x,y,z,Bx,By,Bz);
+  B=sqrt(Bx*Bx+By*By+Bz*Bz);
+  
   // Momentum
-  double p=0.003*BField[points[0]->wire->layer/PACKAGE_Z_POINTS]
-    /2./fabs(kappa)/cosl;
-  double beta=p/sqrt(p*p+0.140*0.140); // assume pion 
+  double p=0.003*B/2./fabs(kappa)/cosl;
+  double beta=p/sqrt(p*p+mass_hyp*mass_hyp);
 
-  //Materials: copper, Kapton, Mylar
-  double thickness[3]={4e-4,50e-4,13e-4};
-  double density[3]={8.96,1.42,1.39};
-  double X0[3]={12.86,40.56,39.95};
+  //Materials: copper, Kapton, Mylar, Air, Argon, CO2
+  double thickness[6]={4e-4,50e-4,13e-4,1.0,0.4,0.6};
+  double density[6]={8.96,1.42,1.39,1.2931e-3,1.782e-3,1.977e-3};
+  double X0[6]={12.86,40.56,39.95,36.66,19.55,36.2};
   double material_sum=0.;
-  for (int i=0;i<3;i++){
+  for (int i=0;i<6;i++){
     material_sum+=thickness[i]*density[i]/X0[i];
   }	
   // RMS from multiple scattering
-  sigma2_ms=0.0136*0.0136/p/p/beta/beta*material_sum;
+  sigma2_ms=0.0136*0.0136/p/p/beta/beta*material_sum/sinl
+    *(1.+0.038*log(material_sum/sinl))*(1.+0.038*log(material_sum/sinl));
 
   Q(0,0)=kappa*kappa*tanl*tanl;
   Q(0,3)=Q(3,0)=kappa*tanl*(1.+tanl*tanl);
@@ -668,6 +694,108 @@ jerror_t DFDCSegment_factory::CorrectPointY(DMatrix S,
   return NOERROR;
 }
 
+// Routine that performs the main loop of the Kalman engine
+jerror_t DFDCSegment_factory::KalmanLoop(vector<DFDCPseudo*>points,
+					 double mass_hyp,
+			  DMatrix Seed,DMatrix &S,DMatrix &C,double &chisq){
+  DMatrix M(2,1);  // measurement vector
+  DMatrix M_pred(2,1); // prediction for hit position
+  DMatrix H(2,5);  // Track projection matrix
+  DMatrix H_T(5,2); // Transpose of track projection matrix
+  DMatrix F(5,5);  // State vector propagation matrix
+  DMatrix F_T(5,5); // Transpose of state vector propagation matrix
+  DMatrix Q(5,5);  // Process noise covariance matrix
+  DMatrix K(5,2);  // Kalman gain matrix
+  DMatrix V(2,2);  // Measurement covariance matrix
+  DMatrix X(2,1);  // Position on helical track
+  DMatrix R(2,1);  // Filtered resididual
+  DMatrix R_T(1,2);  // ...and its transpose
+  DMatrix RC(2,2);  // Covariance of filtered residual
+
+  double x,y,z,old_z,old_x,old_y;
+  z=points[0]->wire->origin(2);
+  chisq=0;
+
+  // First guess for state vector comes from the seed track
+  S=Seed;
+  // Initialization of state vector covariance matrix 
+  for (int j=0;j<5;j++){
+    C(j,j)=1.;
+  }
+
+  // Loop over list of points, updating the state vector at each step 
+  for (unsigned int k=0;k<points.size();k++){      
+    // The next measurement 
+    M(0,0)=points[k]->x;
+    M(1,0)=points[k]->y; 
+    
+    // ... and its covariance matrix  
+    V=points[k]->cov;
+     
+    // Z-positions
+    old_z=z;
+    z=points[k]->wire->origin(2);
+   
+    // old position on the seed trajectory
+    GetHelicalTrackPosition(old_z,Seed,old_x,old_y);  
+    X(0,0)=old_x;
+    X(1,0)=old_y;
+
+    // Compute Process noise covariance matrix
+    GetProcessNoiseCovariance(old_x,old_y,old_z,Seed,points,mass_hyp,Q);    
+
+    // Current position on seed trajectory
+    GetHelicalTrackPosition(z,Seed,x,y); 
+  
+    // Get state transport matrix describing how S evolves
+    GetStateTransportMatrix(old_x,old_y,x,y,Seed,F);
+    
+      // Transport the covariance matrix
+    F_T=DMatrix(DMatrix::kTransposed,F);
+    C=F*(C*F_T)+Q;
+	
+    // Get predicted estimate for S
+    S=Seed+F*(S-Seed);
+    
+    // Get the projection matrix to propagate the track to the next z-plane
+    GetTrackProjectionMatrix(z,Seed,H);
+    // Get transpose of projection matrix
+    H_T = DMatrix(DMatrix::kTransposed,H);
+    
+    // Get prediction for next measurement
+    M_pred=X+H*(S-Seed);
+    
+    // Compute new V and check that it is invertible
+    DMatrix V_new(2,2);
+    V_new=V+H*(C*H_T);
+    TDecompLU lu(V_new);
+    if (lu.Decompose()==false){
+      *_log << "Singular matrix"<< endMsg;
+      continue;
+    }
+
+    // Compute Kalman gain matrix
+    K=C*(H_T*DMatrix(DMatrix::kInverted,V_new));
+    
+    // Update the state vector 
+    S=S+K*(M-M_pred); 
+      
+    // Update state vector covariance matrix
+    C=C-K*(H*C);
+    
+    // filtered residual and its covariance matrix
+    GetHelicalTrackPosition(z,S,x,y); 
+    R(0,0)=M(0,0)-x;
+    R(1,0)=M(1,0)-y;
+    R_T=DMatrix(DMatrix::kTransposed,R);
+    RC=V-H*(C*H_T);
+
+    // Update chi2 for this segment
+    chisq+=(R_T*((DMatrix(DMatrix::kInverted,RC))*R))(0,0);
+  }
+
+  return NOERROR;
+}
 
 
 
