@@ -25,8 +25,11 @@ class DFDCSegment : public JObject {
 		///
 		DFDCSegment(){}
 
-	        DMatrix S;
-		DMatrix cov;
+	        DMatrix S;   // state vector
+		DMatrix cov; // ... and its covariance matrix
+		double chisq;
+
+		double xc,yc,rc;  // circle parameters
 
 		// List of pseudopoints belonging to this track segment
 		vector<DFDCPseudo *>hits;
