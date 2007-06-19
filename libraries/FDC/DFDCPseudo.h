@@ -11,6 +11,7 @@
 #include "DFDCHit.h"
 #include "DFDCWire.h"
 #include "JANA/JObject.h"
+#include <DMatrix.h>
 
 #include <sstream>
 
@@ -44,6 +45,7 @@ class DFDCPseudo : public JObject {
 		float dist;	// drift distance from time
 		int status; // status word for pseudopoint
 		float x,y;  // coordinates rotated into lab coordinate system
+		DMatrix cov; // Covariance matrix in lab coordinate system
 		
 #if 0
 		///
