@@ -217,7 +217,12 @@ s_CdcTruthPoints_t* make_s_CdcTruthPoints(int n)
       pp->dradius = 0;
       pp->phi = 0;
       pp->primary = 0;
+      pp->ptype = 0;
+      pp->px = 0;
+      pp->py = 0;
+      pp->pz = 0;
       pp->r = 0;
+      pp->t = 0;
       pp->track = 0;
       pp->z = 0;
    }
@@ -320,9 +325,15 @@ s_FdcTruthPoints_t* make_s_FdcTruthPoints(int n)
    p->mult = 0;
    for (i=0; i<n; i++) {
       s_FdcTruthPoint_t* pp = &p->in[i];
+      pp->E = 0;
       pp->dEdx = 0;
       pp->dradius = 0;
       pp->primary = 0;
+      pp->ptype = 0;
+      pp->px = 0;
+      pp->py = 0;
+      pp->pz = 0;
+      pp->t = 0;
       pp->track = 0;
       pp->x = 0;
       pp->y = 0;
@@ -379,9 +390,14 @@ s_StcTruthPoints_t* make_s_StcTruthPoints(int n)
    p->mult = 0;
    for (i=0; i<n; i++) {
       s_StcTruthPoint_t* pp = &p->in[i];
+      pp->E = 0;
       pp->dEdx = 0;
       pp->phi = 0;
       pp->primary = 0;
+      pp->ptype = 0;
+      pp->px = 0;
+      pp->py = 0;
+      pp->pz = 0;
       pp->r = 0;
       pp->t = 0;
       pp->track = 0;
@@ -459,6 +475,10 @@ s_BcalTruthShowers_t* make_s_BcalTruthShowers(int n)
       pp->E = 0;
       pp->phi = 0;
       pp->primary = 0;
+      pp->ptype = 0;
+      pp->px = 0;
+      pp->py = 0;
+      pp->pz = 0;
       pp->r = 0;
       pp->t = 0;
       pp->track = 0;
@@ -517,6 +537,7 @@ s_CereTruthPoints_t* make_s_CereTruthPoints(int n)
       s_CereTruthPoint_t* pp = &p->in[i];
       pp->E = 0;
       pp->primary = 0;
+      pp->ptype = 0;
       pp->px = 0;
       pp->py = 0;
       pp->pz = 0;
@@ -564,8 +585,16 @@ s_FtofNorthHits_t* make_s_FtofNorthHits(int n)
    p->mult = 0;
    for (i=0; i<n; i++) {
       s_FtofNorthHit_t* pp = &p->in[i];
+      pp->E = 0;
       pp->dE = 0;
+      pp->ptype = 0;
+      pp->px = 0;
+      pp->py = 0;
+      pp->pz = 0;
       pp->t = 0;
+      pp->x = 0;
+      pp->y = 0;
+      pp->z = 0;
    }
    return p;
 }
@@ -579,8 +608,16 @@ s_FtofSouthHits_t* make_s_FtofSouthHits(int n)
    p->mult = 0;
    for (i=0; i<n; i++) {
       s_FtofSouthHit_t* pp = &p->in[i];
+      pp->E = 0;
       pp->dE = 0;
+      pp->ptype = 0;
+      pp->px = 0;
+      pp->py = 0;
+      pp->pz = 0;
       pp->t = 0;
+      pp->x = 0;
+      pp->y = 0;
+      pp->z = 0;
    }
    return p;
 }
@@ -594,7 +631,12 @@ s_FtofTruthPoints_t* make_s_FtofTruthPoints(int n)
    p->mult = 0;
    for (i=0; i<n; i++) {
       s_FtofTruthPoint_t* pp = &p->in[i];
+      pp->E = 0;
       pp->primary = 0;
+      pp->ptype = 0;
+      pp->px = 0;
+      pp->py = 0;
+      pp->pz = 0;
       pp->t = 0;
       pp->track = 0;
       pp->x = 0;
@@ -655,6 +697,10 @@ s_FcalTruthShowers_t* make_s_FcalTruthShowers(int n)
       s_FcalTruthShower_t* pp = &p->in[i];
       pp->E = 0;
       pp->primary = 0;
+      pp->ptype = 0;
+      pp->px = 0;
+      pp->py = 0;
+      pp->pz = 0;
       pp->t = 0;
       pp->track = 0;
       pp->x = 0;
@@ -731,6 +777,10 @@ s_UpvTruthShowers_t* make_s_UpvTruthShowers(int n)
       s_UpvTruthShower_t* pp = &p->in[i];
       pp->E = 0;
       pp->primary = 0;
+      pp->ptype = 0;
+      pp->px = 0;
+      pp->py = 0;
+      pp->pz = 0;
       pp->t = 0;
       pp->track = 0;
       pp->x = 0;
@@ -840,7 +890,7 @@ char HDDM_s_DocumentString[] =
 "        <cdcStraw maxOccurs=\"unbounded\" minOccurs=\"0\" ring=\"int\" straw=\"int\">\n"
 "          <cdcStrawHit dE=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
 "        </cdcStraw>\n"
-"        <cdcTruthPoint dEdx=\"float\" dradius=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" primary=\"boolean\" r=\"float\" track=\"int\" z=\"float\" />\n"
+"        <cdcTruthPoint dEdx=\"float\" dradius=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" r=\"float\" t=\"float\" track=\"int\" z=\"float\" />\n"
 "      </centralDC>\n"
 "      <forwardDC minOccurs=\"0\">\n"
 "        <fdcChamber layer=\"int\" maxOccurs=\"unbounded\" module=\"int\">\n"
@@ -850,47 +900,47 @@ char HDDM_s_DocumentString[] =
 "          <fdcCathodeStrip maxOccurs=\"unbounded\" minOccurs=\"0\" plane=\"int\" strip=\"int\">\n"
 "            <fdcCathodeHit maxOccurs=\"unbounded\" q=\"float\" t=\"float\" />\n"
 "          </fdcCathodeStrip>\n"
-"          <fdcTruthPoint dEdx=\"float\" dradius=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
+"          <fdcTruthPoint E=\"float\" dEdx=\"float\" dradius=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "        </fdcChamber>\n"
 "      </forwardDC>\n"
 "      <startCntr minOccurs=\"0\">\n"
 "        <stcPaddle maxOccurs=\"unbounded\" minOccurs=\"0\" sector=\"int\">\n"
 "          <stcHit dE=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
 "        </stcPaddle>\n"
-"        <stcTruthPoint dEdx=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" primary=\"boolean\" r=\"float\" t=\"float\" track=\"int\" z=\"float\" />\n"
+"        <stcTruthPoint E=\"float\" dEdx=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" r=\"float\" t=\"float\" track=\"int\" z=\"float\" />\n"
 "      </startCntr>\n"
 "      <barrelEMcal minOccurs=\"0\">\n"
 "        <bcalCell layer=\"int\" maxOccurs=\"4\" minOccurs=\"0\" module=\"int\" sector=\"int\">\n"
 "          <bcalUpstreamHit E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" />\n"
 "          <bcalDownstreamHit E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" />\n"
 "        </bcalCell>\n"
-"        <bcalTruthShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" primary=\"boolean\" r=\"float\" t=\"float\" track=\"int\" z=\"float\" />\n"
+"        <bcalTruthShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" r=\"float\" t=\"float\" track=\"int\" z=\"float\" />\n"
 "      </barrelEMcal>\n"
 "      <Cerenkov minOccurs=\"0\">\n"
 "        <cereSection maxOccurs=\"unbounded\" minOccurs=\"0\" sector=\"int\">\n"
 "          <cereHit maxOccurs=\"unbounded\" pe=\"float\" t=\"float\" />\n"
 "        </cereSection>\n"
-"        <cereTruthPoint E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" px=\"float\" py=\"float\" pz=\"float\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
+"        <cereTruthPoint E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "      </Cerenkov>\n"
 "      <forwardTOF minOccurs=\"0\">\n"
 "        <ftofCounter bar=\"int\" maxOccurs=\"unbounded\" minOccurs=\"0\" plane=\"int\">\n"
-"          <ftofNorthHit dE=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" />\n"
-"          <ftofSouthHit dE=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" />\n"
+"          <ftofNorthHit E=\"float\" dE=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" t=\"float\" x=\"float\" y=\"float\" z=\"float\" />\n"
+"          <ftofSouthHit E=\"float\" dE=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" t=\"float\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "        </ftofCounter>\n"
-"        <ftofTruthPoint maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
+"        <ftofTruthPoint E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "      </forwardTOF>\n"
 "      <forwardEMcal minOccurs=\"0\">\n"
 "        <fcalBlock column=\"int\" maxOccurs=\"unbounded\" minOccurs=\"0\" row=\"int\">\n"
 "          <fcalHit E=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
 "        </fcalBlock>\n"
-"        <fcalTruthShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
+"        <fcalTruthShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "      </forwardEMcal>\n"
 "      <upstreamEMveto minOccurs=\"0\">\n"
 "        <upvPaddle layer=\"int\" maxOccurs=\"unbounded\" minOccurs=\"0\" row=\"int\">\n"
 "          <upvLeftHit E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" />\n"
 "          <upvRightHit E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" />\n"
 "        </upvPaddle>\n"
-"        <upvTruthShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
+"        <upvTruthShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "      </upstreamEMveto>\n"
 "      <tagger minOccurs=\"0\">\n"
 "        <microChannel E=\"float\" column=\"int\" maxOccurs=\"unbounded\" minOccurs=\"0\" row=\"int\">\n"
@@ -1416,7 +1466,12 @@ static s_CdcTruthPoints_t* unpack_s_CdcTruthPoints(XDR* xdrs, popNode* pop)
          xdr_float(xdrs,&this1->in[m].dradius);
          xdr_float(xdrs,&this1->in[m].phi);
          xdr_bool(xdrs,&this1->in[m].primary);
+         xdr_int(xdrs,&this1->in[m].ptype);
+         xdr_float(xdrs,&this1->in[m].px);
+         xdr_float(xdrs,&this1->in[m].py);
+         xdr_float(xdrs,&this1->in[m].pz);
          xdr_float(xdrs,&this1->in[m].r);
+         xdr_float(xdrs,&this1->in[m].t);
          xdr_int(xdrs,&this1->in[m].track);
          xdr_float(xdrs,&this1->in[m].z);
       }
@@ -1659,9 +1714,15 @@ static s_FdcTruthPoints_t* unpack_s_FdcTruthPoints(XDR* xdrs, popNode* pop)
       this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
+         xdr_float(xdrs,&this1->in[m].E);
          xdr_float(xdrs,&this1->in[m].dEdx);
          xdr_float(xdrs,&this1->in[m].dradius);
          xdr_bool(xdrs,&this1->in[m].primary);
+         xdr_int(xdrs,&this1->in[m].ptype);
+         xdr_float(xdrs,&this1->in[m].px);
+         xdr_float(xdrs,&this1->in[m].py);
+         xdr_float(xdrs,&this1->in[m].pz);
+         xdr_float(xdrs,&this1->in[m].t);
          xdr_int(xdrs,&this1->in[m].track);
          xdr_float(xdrs,&this1->in[m].x);
          xdr_float(xdrs,&this1->in[m].y);
@@ -1794,9 +1855,14 @@ static s_StcTruthPoints_t* unpack_s_StcTruthPoints(XDR* xdrs, popNode* pop)
       this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
+         xdr_float(xdrs,&this1->in[m].E);
          xdr_float(xdrs,&this1->in[m].dEdx);
          xdr_float(xdrs,&this1->in[m].phi);
          xdr_bool(xdrs,&this1->in[m].primary);
+         xdr_int(xdrs,&this1->in[m].ptype);
+         xdr_float(xdrs,&this1->in[m].px);
+         xdr_float(xdrs,&this1->in[m].py);
+         xdr_float(xdrs,&this1->in[m].pz);
          xdr_float(xdrs,&this1->in[m].r);
          xdr_float(xdrs,&this1->in[m].t);
          xdr_int(xdrs,&this1->in[m].track);
@@ -1960,6 +2026,10 @@ static s_BcalTruthShowers_t* unpack_s_BcalTruthShowers(XDR* xdrs, popNode* pop)
          xdr_float(xdrs,&this1->in[m].E);
          xdr_float(xdrs,&this1->in[m].phi);
          xdr_bool(xdrs,&this1->in[m].primary);
+         xdr_int(xdrs,&this1->in[m].ptype);
+         xdr_float(xdrs,&this1->in[m].px);
+         xdr_float(xdrs,&this1->in[m].py);
+         xdr_float(xdrs,&this1->in[m].pz);
          xdr_float(xdrs,&this1->in[m].r);
          xdr_float(xdrs,&this1->in[m].t);
          xdr_int(xdrs,&this1->in[m].track);
@@ -2094,6 +2164,7 @@ static s_CereTruthPoints_t* unpack_s_CereTruthPoints(XDR* xdrs, popNode* pop)
       {
          xdr_float(xdrs,&this1->in[m].E);
          xdr_bool(xdrs,&this1->in[m].primary);
+         xdr_int(xdrs,&this1->in[m].ptype);
          xdr_float(xdrs,&this1->in[m].px);
          xdr_float(xdrs,&this1->in[m].py);
          xdr_float(xdrs,&this1->in[m].pz);
@@ -2205,8 +2276,16 @@ static s_FtofNorthHits_t* unpack_s_FtofNorthHits(XDR* xdrs, popNode* pop)
       this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
+         xdr_float(xdrs,&this1->in[m].E);
          xdr_float(xdrs,&this1->in[m].dE);
+         xdr_int(xdrs,&this1->in[m].ptype);
+         xdr_float(xdrs,&this1->in[m].px);
+         xdr_float(xdrs,&this1->in[m].py);
+         xdr_float(xdrs,&this1->in[m].pz);
          xdr_float(xdrs,&this1->in[m].t);
+         xdr_float(xdrs,&this1->in[m].x);
+         xdr_float(xdrs,&this1->in[m].y);
+         xdr_float(xdrs,&this1->in[m].z);
       }
       xdr_setpos(xdrs,start+size);
    }
@@ -2231,8 +2310,16 @@ static s_FtofSouthHits_t* unpack_s_FtofSouthHits(XDR* xdrs, popNode* pop)
       this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
+         xdr_float(xdrs,&this1->in[m].E);
          xdr_float(xdrs,&this1->in[m].dE);
+         xdr_int(xdrs,&this1->in[m].ptype);
+         xdr_float(xdrs,&this1->in[m].px);
+         xdr_float(xdrs,&this1->in[m].py);
+         xdr_float(xdrs,&this1->in[m].pz);
          xdr_float(xdrs,&this1->in[m].t);
+         xdr_float(xdrs,&this1->in[m].x);
+         xdr_float(xdrs,&this1->in[m].y);
+         xdr_float(xdrs,&this1->in[m].z);
       }
       xdr_setpos(xdrs,start+size);
    }
@@ -2257,7 +2344,12 @@ static s_FtofTruthPoints_t* unpack_s_FtofTruthPoints(XDR* xdrs, popNode* pop)
       this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
+         xdr_float(xdrs,&this1->in[m].E);
          xdr_bool(xdrs,&this1->in[m].primary);
+         xdr_int(xdrs,&this1->in[m].ptype);
+         xdr_float(xdrs,&this1->in[m].px);
+         xdr_float(xdrs,&this1->in[m].py);
+         xdr_float(xdrs,&this1->in[m].pz);
          xdr_float(xdrs,&this1->in[m].t);
          xdr_int(xdrs,&this1->in[m].track);
          xdr_float(xdrs,&this1->in[m].x);
@@ -2394,6 +2486,10 @@ static s_FcalTruthShowers_t* unpack_s_FcalTruthShowers(XDR* xdrs, popNode* pop)
       {
          xdr_float(xdrs,&this1->in[m].E);
          xdr_bool(xdrs,&this1->in[m].primary);
+         xdr_int(xdrs,&this1->in[m].ptype);
+         xdr_float(xdrs,&this1->in[m].px);
+         xdr_float(xdrs,&this1->in[m].py);
+         xdr_float(xdrs,&this1->in[m].pz);
          xdr_float(xdrs,&this1->in[m].t);
          xdr_int(xdrs,&this1->in[m].track);
          xdr_float(xdrs,&this1->in[m].x);
@@ -2556,6 +2652,10 @@ static s_UpvTruthShowers_t* unpack_s_UpvTruthShowers(XDR* xdrs, popNode* pop)
       {
          xdr_float(xdrs,&this1->in[m].E);
          xdr_bool(xdrs,&this1->in[m].primary);
+         xdr_int(xdrs,&this1->in[m].ptype);
+         xdr_float(xdrs,&this1->in[m].px);
+         xdr_float(xdrs,&this1->in[m].py);
+         xdr_float(xdrs,&this1->in[m].pz);
          xdr_float(xdrs,&this1->in[m].t);
          xdr_int(xdrs,&this1->in[m].track);
          xdr_float(xdrs,&this1->in[m].x);
@@ -3408,7 +3508,12 @@ static int pack_s_CdcTruthPoints(XDR* xdrs, s_CdcTruthPoints_t* this1)
       xdr_float(xdrs,&this1->in[m].dradius);
       xdr_float(xdrs,&this1->in[m].phi);
       xdr_bool(xdrs,&this1->in[m].primary);
+      xdr_int(xdrs,&this1->in[m].ptype);
+      xdr_float(xdrs,&this1->in[m].px);
+      xdr_float(xdrs,&this1->in[m].py);
+      xdr_float(xdrs,&this1->in[m].pz);
       xdr_float(xdrs,&this1->in[m].r);
+      xdr_float(xdrs,&this1->in[m].t);
       xdr_int(xdrs,&this1->in[m].track);
       xdr_float(xdrs,&this1->in[m].z);
    }
@@ -3627,9 +3732,15 @@ static int pack_s_FdcTruthPoints(XDR* xdrs, s_FdcTruthPoints_t* this1)
    xdr_u_int(xdrs,&this1->mult);
    for (m = 0; m < this1->mult; m++)
    {
+      xdr_float(xdrs,&this1->in[m].E);
       xdr_float(xdrs,&this1->in[m].dEdx);
       xdr_float(xdrs,&this1->in[m].dradius);
       xdr_bool(xdrs,&this1->in[m].primary);
+      xdr_int(xdrs,&this1->in[m].ptype);
+      xdr_float(xdrs,&this1->in[m].px);
+      xdr_float(xdrs,&this1->in[m].py);
+      xdr_float(xdrs,&this1->in[m].pz);
+      xdr_float(xdrs,&this1->in[m].t);
       xdr_int(xdrs,&this1->in[m].track);
       xdr_float(xdrs,&this1->in[m].x);
       xdr_float(xdrs,&this1->in[m].y);
@@ -3751,9 +3862,14 @@ static int pack_s_StcTruthPoints(XDR* xdrs, s_StcTruthPoints_t* this1)
    xdr_u_int(xdrs,&this1->mult);
    for (m = 0; m < this1->mult; m++)
    {
+      xdr_float(xdrs,&this1->in[m].E);
       xdr_float(xdrs,&this1->in[m].dEdx);
       xdr_float(xdrs,&this1->in[m].phi);
       xdr_bool(xdrs,&this1->in[m].primary);
+      xdr_int(xdrs,&this1->in[m].ptype);
+      xdr_float(xdrs,&this1->in[m].px);
+      xdr_float(xdrs,&this1->in[m].py);
+      xdr_float(xdrs,&this1->in[m].pz);
       xdr_float(xdrs,&this1->in[m].r);
       xdr_float(xdrs,&this1->in[m].t);
       xdr_int(xdrs,&this1->in[m].track);
@@ -3913,6 +4029,10 @@ static int pack_s_BcalTruthShowers(XDR* xdrs, s_BcalTruthShowers_t* this1)
       xdr_float(xdrs,&this1->in[m].E);
       xdr_float(xdrs,&this1->in[m].phi);
       xdr_bool(xdrs,&this1->in[m].primary);
+      xdr_int(xdrs,&this1->in[m].ptype);
+      xdr_float(xdrs,&this1->in[m].px);
+      xdr_float(xdrs,&this1->in[m].py);
+      xdr_float(xdrs,&this1->in[m].pz);
       xdr_float(xdrs,&this1->in[m].r);
       xdr_float(xdrs,&this1->in[m].t);
       xdr_int(xdrs,&this1->in[m].track);
@@ -4036,6 +4156,7 @@ static int pack_s_CereTruthPoints(XDR* xdrs, s_CereTruthPoints_t* this1)
    {
       xdr_float(xdrs,&this1->in[m].E);
       xdr_bool(xdrs,&this1->in[m].primary);
+      xdr_int(xdrs,&this1->in[m].ptype);
       xdr_float(xdrs,&this1->in[m].px);
       xdr_float(xdrs,&this1->in[m].py);
       xdr_float(xdrs,&this1->in[m].pz);
@@ -4147,8 +4268,16 @@ static int pack_s_FtofNorthHits(XDR* xdrs, s_FtofNorthHits_t* this1)
    xdr_u_int(xdrs,&this1->mult);
    for (m = 0; m < this1->mult; m++)
    {
+      xdr_float(xdrs,&this1->in[m].E);
       xdr_float(xdrs,&this1->in[m].dE);
+      xdr_int(xdrs,&this1->in[m].ptype);
+      xdr_float(xdrs,&this1->in[m].px);
+      xdr_float(xdrs,&this1->in[m].py);
+      xdr_float(xdrs,&this1->in[m].pz);
       xdr_float(xdrs,&this1->in[m].t);
+      xdr_float(xdrs,&this1->in[m].x);
+      xdr_float(xdrs,&this1->in[m].y);
+      xdr_float(xdrs,&this1->in[m].z);
    }
    FREE(this1);
    end = xdr_getpos(xdrs);
@@ -4171,8 +4300,16 @@ static int pack_s_FtofSouthHits(XDR* xdrs, s_FtofSouthHits_t* this1)
    xdr_u_int(xdrs,&this1->mult);
    for (m = 0; m < this1->mult; m++)
    {
+      xdr_float(xdrs,&this1->in[m].E);
       xdr_float(xdrs,&this1->in[m].dE);
+      xdr_int(xdrs,&this1->in[m].ptype);
+      xdr_float(xdrs,&this1->in[m].px);
+      xdr_float(xdrs,&this1->in[m].py);
+      xdr_float(xdrs,&this1->in[m].pz);
       xdr_float(xdrs,&this1->in[m].t);
+      xdr_float(xdrs,&this1->in[m].x);
+      xdr_float(xdrs,&this1->in[m].y);
+      xdr_float(xdrs,&this1->in[m].z);
    }
    FREE(this1);
    end = xdr_getpos(xdrs);
@@ -4195,7 +4332,12 @@ static int pack_s_FtofTruthPoints(XDR* xdrs, s_FtofTruthPoints_t* this1)
    xdr_u_int(xdrs,&this1->mult);
    for (m = 0; m < this1->mult; m++)
    {
+      xdr_float(xdrs,&this1->in[m].E);
       xdr_bool(xdrs,&this1->in[m].primary);
+      xdr_int(xdrs,&this1->in[m].ptype);
+      xdr_float(xdrs,&this1->in[m].px);
+      xdr_float(xdrs,&this1->in[m].py);
+      xdr_float(xdrs,&this1->in[m].pz);
       xdr_float(xdrs,&this1->in[m].t);
       xdr_int(xdrs,&this1->in[m].track);
       xdr_float(xdrs,&this1->in[m].x);
@@ -4321,6 +4463,10 @@ static int pack_s_FcalTruthShowers(XDR* xdrs, s_FcalTruthShowers_t* this1)
    {
       xdr_float(xdrs,&this1->in[m].E);
       xdr_bool(xdrs,&this1->in[m].primary);
+      xdr_int(xdrs,&this1->in[m].ptype);
+      xdr_float(xdrs,&this1->in[m].px);
+      xdr_float(xdrs,&this1->in[m].py);
+      xdr_float(xdrs,&this1->in[m].pz);
       xdr_float(xdrs,&this1->in[m].t);
       xdr_int(xdrs,&this1->in[m].track);
       xdr_float(xdrs,&this1->in[m].x);
@@ -4479,6 +4625,10 @@ static int pack_s_UpvTruthShowers(XDR* xdrs, s_UpvTruthShowers_t* this1)
    {
       xdr_float(xdrs,&this1->in[m].E);
       xdr_bool(xdrs,&this1->in[m].primary);
+      xdr_int(xdrs,&this1->in[m].ptype);
+      xdr_float(xdrs,&this1->in[m].px);
+      xdr_float(xdrs,&this1->in[m].py);
+      xdr_float(xdrs,&this1->in[m].pz);
       xdr_float(xdrs,&this1->in[m].t);
       xdr_int(xdrs,&this1->in[m].track);
       xdr_float(xdrs,&this1->in[m].x);

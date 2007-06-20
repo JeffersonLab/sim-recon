@@ -5,6 +5,9 @@
  *	HDGeant simulation program for Hall D.
  *
  *	version 1.0 	-Richard Jones July 16, 2001
+ *
+ * changes: Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
+ *          add ipart to the function hitCerenkov
  */
 
 #include <stdlib.h>
@@ -29,7 +32,7 @@ static int pointCount = 0;
 
 void hitCerenkov (float xin[4], float xout[4],
                   float pin[5], float pout[5], float dEsum,
-                  int track, int stack, int history)
+                  int track, int stack, int history, int ipart)
 {
    float x[3], t;
 
@@ -120,9 +123,9 @@ void hitCerenkov (float xin[4], float xout[4],
 
 void hitcerenkov_(float* xin, float* xout,
                   float* pin, float* pout, float* dEsum,
-                  int* track, int* stack, int* history)
+                  int* track, int* stack, int* history, int* ipart)
 {
-   hitCerenkov(xin,xout,pin,pout,*dEsum,*track,*stack,*history);
+   hitCerenkov(xin,xout,pin,pout,*dEsum,*track,*stack,*history,*ipart);
 }
 
 

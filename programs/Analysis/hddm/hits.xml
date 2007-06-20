@@ -6,6 +6,7 @@
       </cdcStraw>
       <cdcTruthPoint z="float" r="float" phi="float" dradius="float"
 			track="int" primary="boolean" dEdx="float"
+                        t="float" px="float" py="float" pz="float" ptype="int"
 			minOccurs="0" maxOccurs="unbounded" />
    </centralDC>
 
@@ -20,6 +21,7 @@
 	 </fdcCathodeStrip>
          <fdcTruthPoint z="float" x="float" y="float" dradius="float"
 			track="int" primary="boolean" dEdx="float"
+                        t="float" px="float" py="float" pz="float" E="float" ptype="int"
 			minOccurs="0" maxOccurs="unbounded" />
       </fdcChamber>
    </forwardDC>
@@ -30,6 +32,7 @@
       </stcPaddle>
       <stcTruthPoint t="float" z="float" r="float" phi="float"
 			track="int" primary="boolean" dEdx="float"
+                        px="float" py="float" pz="float" E="float" ptype="int"
 			minOccurs="0" maxOccurs="unbounded" />
    </startCntr>
 
@@ -43,6 +46,7 @@
      </bcalCell>
      <bcalTruthShower t="float" z="float" phi="float" r="float"
 			E="float" track="int" primary="boolean"
+                        px="float" py="float" pz="float" ptype="int"
 			minOccurs="0" maxOccurs="unbounded" />
    </barrelEMcal>
       
@@ -53,18 +57,22 @@
       <cereTruthPoint t="float" z="float" x="float" y="float"
 			E="float" px="float" py="float" pz="float"
 			track="int" primary="boolean"
+                        ptype="int"
 			minOccurs="0" maxOccurs="unbounded" />
    </Cerenkov>
 
    <forwardTOF minOccurs="0">
       <ftofCounter plane="int" bar="int" minOccurs="0" maxOccurs="unbounded">
-         <ftofNorthHit t="float" dE="float"
+         <ftofNorthHit t="float" dE="float" x="float" y="float" z="float"
+                       px="float" py="float" pz="float" E="float" ptype="int"
 			minOccurs="0" maxOccurs="unbounded" />
-         <ftofSouthHit t="float" dE="float"
+         <ftofSouthHit t="float" dE="float" x="float" y="float" z="float"
+                       px="float" py="float" pz="float" E="float" ptype="int"
 			minOccurs="0" maxOccurs="unbounded" />
       </ftofCounter>
       <ftofTruthPoint t="float" x="float" y="float" z="float"
 			track="int" primary="boolean"
+                        px="float" py="float" pz="float" E="float" ptype="int"
 			minOccurs="0" maxOccurs="unbounded" />
    </forwardTOF>
 
@@ -74,6 +82,7 @@
       </fcalBlock>
       <fcalTruthShower t="float" x="float" y="float" z="float"
 			E="float" track="int" primary="boolean"
+                        px="float" py="float" pz="float" ptype="int"
 			minOccurs="0" maxOccurs="unbounded" />
    </forwardEMcal>
 
@@ -86,6 +95,7 @@
       </upvPaddle>
       <upvTruthShower t="float" x="float" y="float" z="float" 
 			E="float" track="int" primary="boolean"
+                        px="float" py="float" pz="float" ptype="int"
 			minOccurs="0" maxOccurs="unbounded" />
    </upstreamEMveto>
 

@@ -6,6 +6,9 @@
  *	HDGeant simulation program for Hall D.
  *
  *
+ * changes: Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
+ *          add ipart to the function hitUpstreamEMveto
+ *
  * Programmer's Notes:
  * -------------------
  * 1) In applying the attenuation to light propagating down to both ends
@@ -47,7 +50,7 @@ static int showerCount = 0;
 
 void hitUpstreamEMveto (float xin[4], float xout[4],
 			float pin[5], float pout[5], float dEsum,
-			int track, int stack, int history)
+			int track, int stack, int history, int ipart)
 {
   float x[3], t;
   float xlocal[3];
@@ -211,9 +214,9 @@ void hitUpstreamEMveto (float xin[4], float xout[4],
 
 void hitupstreamemveto_(float* xin, float* xout,
 			float* pin, float* pout, float* dEsum,
-			int* track, int* stack, int* history)
+			int* track, int* stack, int* history, int* ipart)
 {
-  hitUpstreamEMveto(xin,xout,pin,pout,*dEsum,*track,*stack,*history);
+  hitUpstreamEMveto(xin,xout,pin,pout,*dEsum,*track,*stack,*history,*ipart);
 }
 
 

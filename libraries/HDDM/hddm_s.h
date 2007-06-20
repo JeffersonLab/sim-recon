@@ -180,7 +180,12 @@ typedef struct {
    float                dradius;
    float                phi;
    bool_t               primary;
+   int32_t              ptype;
+   float                px;
+   float                py;
+   float                pz;
    float                r;
+   float                t;
    int32_t              track;
    float                z;
 } s_CdcTruthPoint_t;
@@ -261,9 +266,15 @@ typedef struct {
 #define SAW_s_FdcTruthPoint_t
 
 typedef struct {
+   float                E;
    float                dEdx;
    float                dradius;
    bool_t               primary;
+   int32_t              ptype;
+   float                px;
+   float                py;
+   float                pz;
+   float                t;
    int32_t              track;
    float                x;
    float                y;
@@ -333,9 +344,14 @@ typedef struct {
 #define SAW_s_StcTruthPoint_t
 
 typedef struct {
+   float                E;
    float                dEdx;
    float                phi;
    bool_t               primary;
+   int32_t              ptype;
+   float                px;
+   float                py;
+   float                pz;
    float                r;
    float                t;
    int32_t              track;
@@ -409,6 +425,10 @@ typedef struct {
    float                E;
    float                phi;
    bool_t               primary;
+   int32_t              ptype;
+   float                px;
+   float                py;
+   float                pz;
    float                r;
    float                t;
    int32_t              track;
@@ -464,6 +484,7 @@ typedef struct {
 typedef struct {
    float                E;
    bool_t               primary;
+   int32_t              ptype;
    float                px;
    float                py;
    float                pz;
@@ -493,8 +514,16 @@ typedef struct {
 #define SAW_s_FtofNorthHit_t
 
 typedef struct {
+   float                E;
    float                dE;
+   int32_t              ptype;
+   float                px;
+   float                py;
+   float                pz;
    float                t;
+   float                x;
+   float                y;
+   float                z;
 } s_FtofNorthHit_t;
 
 typedef struct {
@@ -507,8 +536,16 @@ typedef struct {
 #define SAW_s_FtofSouthHit_t
 
 typedef struct {
+   float                E;
    float                dE;
+   int32_t              ptype;
+   float                px;
+   float                py;
+   float                pz;
    float                t;
+   float                x;
+   float                y;
+   float                z;
 } s_FtofSouthHit_t;
 
 typedef struct {
@@ -537,7 +574,12 @@ typedef struct {
 #define SAW_s_FtofTruthPoint_t
 
 typedef struct {
+   float                E;
    bool_t               primary;
+   int32_t              ptype;
+   float                px;
+   float                py;
+   float                pz;
    float                t;
    int32_t              track;
    float                x;
@@ -595,6 +637,10 @@ typedef struct {
 typedef struct {
    float                E;
    bool_t               primary;
+   int32_t              ptype;
+   float                px;
+   float                py;
+   float                pz;
    float                t;
    int32_t              track;
    float                x;
@@ -667,6 +713,10 @@ typedef struct {
 typedef struct {
    float                E;
    bool_t               primary;
+   int32_t              ptype;
+   float                px;
+   float                py;
+   float                pz;
    float                t;
    int32_t              track;
    float                x;

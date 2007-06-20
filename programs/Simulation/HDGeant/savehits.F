@@ -7,6 +7,10 @@
 *                                                                      *
 ************************************************************************
 *
+* changes: Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
+*          add ipart to the function calls hitxxxxxxx() 
+*
+
 #include "geant321/gckine.inc"
 #include "geant321/gcvolu.inc"
 #include "geant321/gctmed.inc"
@@ -82,7 +86,8 @@
         endif
 #endif
         if (dEsum.gt.0) then
-          call hitStartCntr(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
+          call hitStartCntr(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART)
         endif
       elseif ((cnames(NLEVEL).eq.'STRA').or.		! CDC straight straw
      +        (cnames(NLEVEL).eq.'STLA')) then	! CDC stereo straw
@@ -92,7 +97,8 @@
         endif
 #endif
         if (dEsum.gt.0) then
-          call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
+          call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART)
         endif
       elseif (cnames(NLEVEL).eq.'FDCA') then		! FDC anode drift cell
 #ifdef MAKE_HITS_WHEN_ILOSS_0
@@ -101,15 +107,18 @@
         endif
 #endif
         if (dEsum.gt.0) then
-          call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
+          call hitForwardDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART)
         endif
       elseif (cnames(NLEVEL).eq.'CERW') then		! Cerenkov truth
         if (dEsum.gt.0) then
-          call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
+          call hitCerenkov(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART)
         endif
       elseif (cnames(NLEVEL).eq.'CPMT') then		! Cerenkov counter
         if ((dEsum.gt.0).and.(IPART.eq.50)) then
-          call hitCerenkov(xin,xout,pin,pout,-dEsum,ITRA,ISTAK,ISTORY)
+          call hitCerenkov(xin,xout,pin,pout,-dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART)
         endif
       elseif ((cnames(NLEVEL).eq.'FTOC').or.		! forward TOF counter
      +        (cnames(NLEVEL).eq.'FTOH')) then
@@ -119,7 +128,8 @@
         endif
 #endif
         if (dEsum.gt.0) then
-          call hitForwardTOF(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
+          call hitForwardTOF(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART)
         endif
       elseif ((cnames(NLEVEL)(1:3).eq.'BCM').or.	! BCal segment
      +        (cnames(NLEVEL)(1:3).eq.'BM1')) then
@@ -129,7 +139,8 @@
         endif
 #endif
         if ((dEsum.gt.0).or.(ISTORY.ne.1)) then
-          call hitBarrelEMcal(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
+          call hitBarrelEMcal(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART)
           ISTORY = 1  ! this particle has entered the BCal (inherited trait)
         endif
       elseif (cnames(NLEVEL).eq.'LGBL') then		! forward calorimeter
@@ -140,7 +151,8 @@
 #endif
         if ((dEsum.ne.0).or.(ISTORY.ne.2)) then
           call hitForwardEMcal
-     +                       (xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
+     +                       (xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART)
           ISTORY = 2  ! this particle has entered the FCal (inherited trait)
         endif
       elseif ((cnames(NLEVEL).eq.'UPVP').or.		! UPV channel
@@ -152,7 +164,8 @@
 #endif
         if ((dEsum.ne.0).or.(ISTORY.ne.3)) then
           call hitUpstreamEMveto
-     +                       (xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY)
+     +                       (xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART)
           ISTORY = 3  ! this particle has entered the UPV (inherited trait)
         endif
       endif
