@@ -22,7 +22,7 @@ class DPhoton: public DKinematicData {
     ~DPhoton();
 
     // getters             
-    // Intrioducing detection point in calorimeter to avoid confusion between 
+    // Introducing detection point in calorimeter to avoid confusion between 
     // measured cluster position and vertex, 
     // which is position() in terms of DKinemtaicData.
     DVector3 getPositionCal() const; 
@@ -41,7 +41,7 @@ class DPhoton: public DKinematicData {
 
     //                DVector3 fVertex;  // Photon vertex (set to 0,0,0 for the moment)
     unsigned int fTag; //Photon origin (FCAL/BCAL 0/1))
-    double fDtRT; //Distance to closest track's RefenceTrajectory
+    double fDtRT; //Distance to closest track's ReferenceTrajectory
     DVector3 fPositionCal; // position in calorimeter
 
 };

@@ -33,15 +33,15 @@ void DPhoton::setDtRT(double aDtRT)
    fDtRT = aDtRT;
 }
 
-// A poton is described by momentum (p), position (r) and energy (E_g)
+// A photon is described by momentum (p), position (r) and energy (E_g)
 // (assuming that BCAL/FCAl cluster energy is calibrated E_g = E_c = E).
 // Make photon errorMatrix (V) by rotating matrix of measured errors (V0) 
-// in terms of vartex position (r_v), cluster position (r_c) and enrgy (E_c),
+// in terms of vertex position (r_v), cluster position (r_c) and energy (E_c),
 // Use 
 //     V = A V0 A_transp
-// where A is the matrix of first derivatives, with coeficients like 
+// where A is the matrix of first derivatives, with coefficients like 
 //      pd_Px/pd_x_c ... 
-// where pd_ standas for partial derivative.
+// where pd_ stands for partial derivative.
 // For example pd_Px/pd_x_c = E (r^2 - r_x^2) / R^3  = - pd_Px/pd_x_v
 // with r = r_c - r_v and p = E r /R being vectors of photon position and momentum
 // and R magnitude of r.
@@ -58,10 +58,9 @@ void DPhoton::makeErrorMatrix( const DMatrixDSym& aSigmas )
    double E = energy();
    double f = E/R3;
 
-// init to zeros
+// init and fill rotation matrix,
+// first with momentum derivatives
    DMatrix A(7,7);
-
-// fill momentum derivatives
    for (int i = 0; i < 3; i++) {
 	for ( int j = 0; j <3; j++) {
 		
@@ -91,9 +90,10 @@ void DPhoton::makeErrorMatrix( const DMatrixDSym& aSigmas )
   }
 
    DMatrixDSym result = aSigmas; 
-//   result = result.Similarity(A); 
-   
-   setErrorMatrix( result.Similarity(A) );
+
+   //setErrorMatrix( result.Similarity(A) );
+   result = result.Similarity(A); 
+   setErrorMatrix( result );
 
 }
 

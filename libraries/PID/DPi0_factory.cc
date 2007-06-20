@@ -25,8 +25,8 @@ DPi0_factory::DPi0_factory()
 
 //------------------
 // evnt
-// Pi0 facttory: loop over all pair combinations and make pi0
-// 		 regatdless of the pair-mass at this point (MK)
+// Pi0 factory: loop over all pair combinations and make pi0
+// 		 regardless of the pair-mass at this point (MK)
 //------------------
 jerror_t DPi0_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 {

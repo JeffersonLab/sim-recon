@@ -28,9 +28,9 @@ DPhoton_factory::DPhoton_factory()
 
 //------------------
 // evnt
-// PID Photons: FCAL photons are copied with 'tag' atribute set to zero.
-//		BCAL photons are made from BCAl showers after applying
-//              x-dependant energy corrections (right now based on 10 MeV
+// PID Photons: FCAL photons are copied with 'tag' attribute set to zero.
+//		BCAL photons are made from BCAL showers after applying
+//              x-dependent energy corrections (right now based on 10 MeV
 //		hit threshold in HDGent. (MK)
 //------------------
 jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
@@ -132,18 +132,18 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma)
         photon->setTag(0);
 
 // create the simplest error matrix:
-// At this point, it is assumed that error matrix of measured quantites is diagonal,
+// At this point, it is assumed that error matrix of measured quantities is diagonal,
 // with elements like: sigma_Z_t = L/sqrt(12) sigma_X_t = sigma_Y_t = r0/2 
-// L=target lenght, r0 = targer radius...
+// L=target length, r0 = target radius...
 // This means that energy-depth-polar angle relation  is neglected.
 // the order of sigmas is:  x_c, y_c, z_c, E, x_t, y_t, z_t
         DMatrixDSym sigmas(7);
-        sigmas[0][0] = FCAL_BLOCK_WIDTH/sqrt(12); // x_c, y_c
+        sigmas(0,0) = FCAL_BLOCK_WIDTH/sqrt(12); // x_c, y_c
         sigmas[1][1] = FCAL_BLOCK_WIDTH/sqrt(12); // x_c, y_c
         sigmas[2][2] = 2.54; //  z_c = rms of average depth for photons from 0-5 GeV
 
         sigmas[3][3] = 1.; // right now energy is 4.2%/sqrt(E)
-        if (energy>0) sigmas[4][4] = 0.042/sqrt(energy);
+        if (energy>=0) sigmas[3][3] = 0.042*sqrt(energy) + 0.001;
 
         sigmas[4][4] = 0.5*TARGET_RADIUS; // x_t, y_t
         sigmas[5][5] = 0.5*TARGET_RADIUS; // x_t, y_t
@@ -158,7 +158,7 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma)
 // The following definition is to chose normalization (A) and non-linear factor (B) extracted 
 // from 10MeV hit-threshold simulation to implement z-dependent correction of shower energy.
 // Disable to use shower Ecorr, which is shower energy multiplied 
-// by just one callibration constant.
+// by just one calibration constant.
 #define ECORR_Z
 DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALShower* shower) 
 {
@@ -189,8 +189,27 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALShower* shower)
         photon->setPositionCal( showerCentroid );
         photon->setMass( 0 );
         photon->setTag(1);
-// make errorMatrix here ....
 
+// make errorMatrix here ....
+// BCAL shower factory performs linear fits of cell position (x,y,z)
+// across all layers within a shower (x_i = a_x + c_x * r_i, i=layer index)
+// to obtain coefficients (Ax, Ay, Az) and (Cx, Cy, Cz) and their respective errors.
+// Thus, A is the impact point of the photon at the inner BCAL layer and 
+// C gives the photon direction (C_x = P_x/|P|). 
+// At this time, only impact point errors will be used to init errors on shower position in the BCAL.
+        DMatrixDSym sigmas(7);
+        sigmas(0,0) = shower->error_Apx_x; // 
+        sigmas(1,1) = shower->error_Apx_y; // 
+        sigmas(2,2) = shower->error_Apx_z; // 
+
+        sigmas[3][3] = 1.; // From Blake's simulation
+        if (E>=0) sigmas[3][3] = 0.0445*sqrt(E) + 0.009*E;
+
+        sigmas[4][4] = 0.5*TARGET_RADIUS; // x_t, y_t
+        sigmas[5][5] = 0.5*TARGET_RADIUS; // x_t, y_t
+        sigmas[6][6]  = TARGET_LENGTH/sqrt(12); // z_t
+
+        photon->makeErrorMatrix( sigmas );
         return photon;
 }
 
