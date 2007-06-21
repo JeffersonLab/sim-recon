@@ -31,7 +31,7 @@ const string DMCTrackHit_factory::toString(void)
 	GetNrows();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("     id:   r(cm): phi(rad):  z(cm): track: primary:    system:");
+	printheader("     id:   r(cm): phi(rad):  z(cm): track: primary: ptype:   system:");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DMCTrackHit *mctrackhit = _data[i];
@@ -43,6 +43,7 @@ const string DMCTrackHit_factory::toString(void)
 		printcol("%1.3f", mctrackhit->phi);
 		printcol("%3.1f", mctrackhit->z);
 		printcol("%d", mctrackhit->track);
+		printcol("%d", mctrackhit->ptype);
 		printcol(mctrackhit->primary ? "Y":"N");
 		printcol(SystemName(mctrackhit->system));
 		printrow();

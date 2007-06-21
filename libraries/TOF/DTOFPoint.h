@@ -16,6 +16,7 @@ class DTOFPoint:public JObject{
         HDCLASSDEF(DTOFPoint);
 
         unsigned int trackid;  //index to DHDDMTOFTruth (temporary)
+	int ptype;             // GEANT particle type
         float x, y, z;         //reconstructed position
         float t;               //reconstructed time
         float dedx;            //reconstructed dedx

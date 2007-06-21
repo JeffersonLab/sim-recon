@@ -29,10 +29,15 @@ const string DTOFTruth_factory::toString(void)
     printcol("%d",	truth->id);
     printcol("%d",	truth->primary);
     printcol("%d",	truth->track);
+    printcol("%d",	truth->ptype);
     printcol("%1.3f",	truth->x);
     printcol("%1.3f",	truth->y);
     printcol("%1.3f",	truth->z);
     printcol("%1.3f",	truth->t);
+    printcol("%1.3f",	truth->px);
+    printcol("%1.3f",	truth->py);
+    printcol("%1.3f",	truth->pz);
+    printcol("%1.3f",	truth->E);
     printrow();
   }
 

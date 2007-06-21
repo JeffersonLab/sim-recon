@@ -14,12 +14,17 @@
 class DTOFMCResponse:public JObject{
     public:
         HDCLASSDEF(DTOFMCResponse);
-		
+	
         int orientation;  // 0: vertical,  1: horizontal
-        int end;          // 0: left/top,  1: right/bottom
+	int ptype;        // particle type
+	int bar;          // bar number
         float y;          // x/y position of bar center
-        float t;          // time of light at end of bar  (smeared) 
-        float E;          // attenuated energy deposition  (smeared)
+        float t_north;          // time of light at end of bar  (smeared) 
+        float E_north;          // attenuated energy deposition  (smeared)
+	int ADC_north;
+        float t_south;          // time of light at end of bar  (smeared) 
+        float E_south;          // attenuated energy deposition  (smeared)
+	int ADC_south;
 };
 
 #endif // _DTOFMCResponse_

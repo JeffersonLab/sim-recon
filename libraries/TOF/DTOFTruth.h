@@ -19,8 +19,10 @@ class DTOFTruth:public JObject{
         int track;         //  track index
         int primary;       //  0: secondary, 1: primary
         float x, y, z;     //  true point of intersection
+	float px,py,pz;    //  momentum of the particle
         float t;           //  true time
-
+        float E;           //  energy of the particle
+	int ptype;         //  GEANT particle type
 };
 
 #endif // _DTOFTruth_

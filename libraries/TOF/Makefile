@@ -1,6 +1,8 @@
 
 PACKAGES = JANA
 
+CXXFLAGS += -I$(ROOTSYS)/include
+
 ifdef HALLD_SHARED
 include $(HALLD_HOME)/src/BMS/Makefile.shlib
 else

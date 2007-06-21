@@ -41,10 +41,11 @@
 // plastic scintillator specific constants
 #define ATTEN_LENGTH	150
 #define C_EFFECTIVE	15
+#define BAR_LENGTH      252.0 // length of the bar
 
 // kinematic constants
-#define TWO_HIT_RESOL   25.
-#define THRESH_MEV      0.
+#define TWO_HIT_RESOL   -25. // 25. make sure each particle registers as a separate hit
+#define THRESH_MEV      0.   // do not through away any hits, one can do that later
 
 // maximum particle tracks per counter
 #define MAX_HITS        100
@@ -165,20 +166,24 @@ void hitForwardTOF (float xin[4], float xout[4],
     int column = getcolumn_();
     
     // distance of hit from PMT north w.r.t. center and similar for PMT south
-    // this means positive x points south. to get a right handed system y must
-    // point vertically downwards as z is the beam axis.
-    float dxnorth = xlocal[0];
-    float dxsouth = -xlocal[0];
+    // this means positive x points north. to get a right handed system y must
+    // point vertically up as z is the beam axis.
+    float dxnorth = BAR_LENGTH-xlocal[0];
+    float dxsouth = BAR_LENGTH+xlocal[0];
     
-    // calculate time at the PM "normalized" to the center, so a hit in the 
+    // calculate time at the PMT "normalized" to the center, so a hit in the 
     // center will have time "t" at both PMTs
     // the speed of singnal travel is C_EFFECTTIVE
+    // propagte time to the end of the bar
     float tnorth  = (column == 2) ? 0 : t + dxnorth/C_EFFECTIVE;
     float tsouth = (column == 1) ? 0 : t + dxsouth/C_EFFECTIVE;
     
     // calculate energy seen by PM for this track step using attenuation factor
-    float dEnorth  = (column == 2) ? 0 : dEsum * exp(-dxnorth/ATTEN_LENGTH);
-    float dEsouth = (column == 1) ? 0 : dEsum * exp(-dxsouth/ATTEN_LENGTH);
+    // float dEnorth  = (column == 2) ? 0 : dEsum * exp(-dxnorth/ATTEN_LENGTH);
+    // float dEsouth = (column == 1) ? 0 : dEsum * exp(-dxsouth/ATTEN_LENGTH);
+    // do not propagate energy
+    float dEnorth  = (column == 2) ? 0 : dEsum ;
+    float dEsouth = (column == 1) ? 0 : dEsum ;
     
     float ycenter = (fabs(xftof[1]) < 1e-4) ? 0 : xftof[1];
     int mark = (plane<<20) + (row<<10) + column;
@@ -197,14 +202,18 @@ void hitForwardTOF (float xin[4], float xout[4],
       
       // get space for the left/top or right/down PMT data for a total
       // of MAX_HITS possible hits in a single paddle
-      if (column == 0 || column == 1) {
-	counters->in[0].ftofNorthHits = northHits
-	  = make_s_FtofNorthHits(MAX_HITS);
-      }
-      if (column == 0 || column == 2) {
-	counters->in[0].ftofSouthHits = southHits
-	  = make_s_FtofSouthHits(MAX_HITS);
-      }
+
+      // ok get memory space for north and south regardless if the paddle
+      // is one of the short once with only one PMT.
+
+      //      if (column == 0 || column == 1) {
+      counters->in[0].ftofNorthHits = northHits
+	= make_s_FtofNorthHits(MAX_HITS);
+      //}
+      //      if (column == 0 || column == 2) {
+      counters->in[0].ftofSouthHits = southHits
+	= make_s_FtofSouthHits(MAX_HITS);
+      //}
       tof->ftofCounters = counters;
       counterCount++;
     } else { 
@@ -234,9 +243,6 @@ void hitForwardTOF (float xin[4], float xout[4],
 	  (northHits->in[nhit].t * northHits->in[nhit].dE 
 	   + tnorth * dEnorth)
 	  / (northHits->in[nhit].dE += dEnorth);
-	northHits->in[nhit].x = x[0];
-	northHits->in[nhit].y = x[1];
-	northHits->in[nhit].z = x[2];
       }
       
       // this hit has its own new time frame
@@ -246,6 +252,12 @@ void hitForwardTOF (float xin[4], float xout[4],
 	northHits->in[nhit].x = x[0];
 	northHits->in[nhit].y = x[1];
 	northHits->in[nhit].z = x[2];
+	// save momenum, energy and particle type
+	northHits->in[nhit].E = pin[3];
+	northHits->in[nhit].px = pin[0];
+	northHits->in[nhit].py = pin[1];
+	northHits->in[nhit].pz = pin[2];
+	northHits->in[nhit].ptype = ipart;
 	northHits->mult++;
       }
       else {
@@ -268,9 +280,6 @@ void hitForwardTOF (float xin[4], float xout[4],
 	southHits->in[nhit].t = 
 	  (southHits->in[nhit].t * southHits->in[nhit].dE
 	   + tsouth * dEsouth) / (southHits->in[nhit].dE += dEsouth);
-	southHits->in[nhit].x = x[0];
-	southHits->in[nhit].y = x[1];
-	southHits->in[nhit].z = x[2];
       }
       
       // no hit found for this PM with similar timing
@@ -280,6 +289,11 @@ void hitForwardTOF (float xin[4], float xout[4],
 	southHits->in[nhit].x = x[0];
 	southHits->in[nhit].y = x[1];
 	southHits->in[nhit].z = x[2];
+	southHits->in[nhit].E = pin[3];
+	southHits->in[nhit].px = pin[0];
+	southHits->in[nhit].py = pin[1];
+	southHits->in[nhit].pz = pin[2];
+	southHits->in[nhit].ptype = ipart;
 	southHits->mult++;
       }
       else {

@@ -2,6 +2,9 @@
 //
 // Author: David Lawrence  June 24, 2004
 //
+// changes: Wed Jun 20 17:08:13 EDT 2007 B. Zihlmann
+//          modify TOF section to add several new variables incuding the 
+//          GEANT particle type to the Truth hits and the hit and track-hit list.
 //
 // DEventSourceHDDM methods
 //
@@ -347,6 +350,7 @@ jerror_t DEventSourceHDDM::GetTOFTruthHits(s_HDDM_t *hddm_s,  vector<DMCTrackHit
 			mctrackhit->z			= ftoftruthpoint->z;
 			mctrackhit->track		= ftoftruthpoint->track;
 			mctrackhit->primary	= ftoftruthpoint->primary;
+			mctrackhit->ptype       = ftoftruthpoint->ptype; // save GEANT particle type 
 			mctrackhit->system	= SYS_TOF;
 			data.push_back(mctrackhit);
 		}
@@ -1066,6 +1070,12 @@ jerror_t DEventSourceHDDM::Extract_DTOFTruth(s_HDDM_t *hddm_s,  JFactory<DTOFTru
       toftruth->y           = ftofTruthPoint->y;
       toftruth->z           = ftofTruthPoint->z;
       toftruth->t           = ftofTruthPoint->t;
+      toftruth->px          = ftofTruthPoint->px;
+      toftruth->py          = ftofTruthPoint->py;
+      toftruth->pz          = ftofTruthPoint->pz;
+      toftruth->E           = ftofTruthPoint->E;
+      toftruth->ptype       = ftofTruthPoint->ptype;
+
       data.push_back(toftruth);
     }
   }
@@ -1106,33 +1116,32 @@ jerror_t DEventSourceHDDM::Extract_DHDDMTOFHit( s_HDDM_t *hddm_s,  JFactory<DHDD
     s_FtofCounter_t *ftofCounter = ftofCounters->in;
     for(unsigned int j=0;j<ftofCounters->mult; j++, ftofCounter++){
 			 
-      // Loop over north hits
+      // Loop over north AND south hits
       s_FtofNorthHits_t *ftofNorthHits = ftofCounter->ftofNorthHits;
       s_FtofNorthHit_t *ftofNorthHit = ftofNorthHits->in;
-      for(unsigned int k=0;k<ftofNorthHits->mult; k++, ftofNorthHit++){
+      s_FtofSouthHits_t *ftofSouthHits = ftofCounter->ftofSouthHits;
+      s_FtofSouthHit_t *ftofSouthHit = ftofSouthHits->in;
+
+      for(unsigned int k=0;k<ftofNorthHits->mult; k++, ftofNorthHit++, ftofSouthHit++){
 	DHDDMTOFHit *tofhit = new DHDDMTOFHit;
 	tofhit->bar	= ftofCounter->bar;
 	tofhit->plane	= ftofCounter->plane;
-	tofhit->end		= 0;
-	tofhit->t		= ftofNorthHit->t;
-	tofhit->dE		= ftofNorthHit->dE;
+	tofhit->t_north		= ftofNorthHit->t;
+	tofhit->dE_north	= ftofNorthHit->dE;
+	tofhit->t_south		= ftofSouthHit->t;
+	tofhit->dE_south	= ftofSouthHit->dE;
+	tofhit->x               = ftofNorthHit->x;
+	tofhit->y               = ftofNorthHit->y;
+	tofhit->z               = ftofNorthHit->z;
+	tofhit->px              = ftofNorthHit->px;
+	tofhit->py              = ftofNorthHit->py;
+	tofhit->pz              = ftofNorthHit->pz;
+	tofhit->E               = ftofNorthHit->E;
+	tofhit->ptype           = ftofNorthHit->ptype;
 	tofhit->id              = id++;
 	data.push_back(tofhit);
       }
 			 
-      // Loop over south hits
-      s_FtofSouthHits_t *ftofSouthHits = ftofCounter->ftofSouthHits;
-      s_FtofSouthHit_t *ftofSouthHit = ftofSouthHits->in;
-      for(unsigned int k=0;k<ftofSouthHits->mult; k++, ftofSouthHit++){
-	DHDDMTOFHit *tofhit = new DHDDMTOFHit;
-	tofhit->bar	= ftofCounter->bar;
-	tofhit->plane	= ftofCounter->plane;
-	tofhit->end		= 1;
-	tofhit->t		= ftofSouthHit->t;
-	tofhit->dE		= ftofSouthHit->dE;
-	tofhit->id              = id++;
-	data.push_back(tofhit);
-      }
     }
   }
 
