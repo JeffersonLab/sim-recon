@@ -138,8 +138,8 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma)
 // This means that energy-depth-polar angle relation  is neglected.
 // the order of sigmas is:  x_c, y_c, z_c, E, x_t, y_t, z_t
         DMatrixDSym sigmas(7);
-        sigmas(0,0) = FCAL_BLOCK_WIDTH/sqrt(12); // x_c, y_c
-        sigmas[1][1] = FCAL_BLOCK_WIDTH/sqrt(12); // x_c, y_c
+        sigmas(0,0) = FCAL_BLOCK_WIDTH/sqrt(12.0); // x_c, y_c
+        sigmas[1][1] = FCAL_BLOCK_WIDTH/sqrt(12.0); // x_c, y_c
         sigmas[2][2] = 2.54; //  z_c = rms of average depth for photons from 0-5 GeV
 
         sigmas[3][3] = 1.; // right now energy is 4.2%/sqrt(E)
@@ -147,7 +147,7 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma)
 
         sigmas[4][4] = 0.5*TARGET_RADIUS; // x_t, y_t
         sigmas[5][5] = 0.5*TARGET_RADIUS; // x_t, y_t
-        sigmas[6][6]  = TARGET_LENGTH/sqrt(12); // z_t
+        sigmas[6][6]  = TARGET_LENGTH/sqrt(12.0); // z_t
 
         photon->makeErrorMatrix( sigmas );
 
@@ -207,7 +207,7 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALShower* shower)
 
         sigmas[4][4] = 0.5*TARGET_RADIUS; // x_t, y_t
         sigmas[5][5] = 0.5*TARGET_RADIUS; // x_t, y_t
-        sigmas[6][6]  = TARGET_LENGTH/sqrt(12); // z_t
+        sigmas[6][6]  = TARGET_LENGTH/sqrt(12.0); // z_t
 
         photon->makeErrorMatrix( sigmas );
         return photon;
