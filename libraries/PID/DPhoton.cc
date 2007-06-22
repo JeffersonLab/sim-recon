@@ -75,7 +75,7 @@ void DPhoton::makeErrorMatrix( const DMatrixDSym& aSigmas )
 // position in calorimeter is neglected!
     A[3][3] = 1.;
     for (int j=0; j<3; j++) {
-	A[3][j] = r(j)/R;
+	A[j][3] = r(j)/R;
     } 
 
 // fill spatial part where: dp_r_x/dp_x_c = - dp_r_x/dp_x_v ....
