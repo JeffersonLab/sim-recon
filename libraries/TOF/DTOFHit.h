@@ -16,10 +16,13 @@ class DTOFHit:public JObject{
         HDCLASSDEF(DTOFHit);
 
         int orientation;  // 0: vertical,  1: horizontal
-        int end;          // 0: left/top,  1: right/bottom
+	//        int end;          // 0: left/top,  1: right/bottom
         float y;          // x/y position of bar center
-        float t;          // time of light at end of bar  (calibrated) 
-        float E;          // attenuated energy deposition  (calibrated)
+        float t_north;          // time of light at end of bar  (calibrated) 
+        float E_north;          // attenuated energy deposition  (calibrated)
+        float t_south;          // time of light at end of bar  (calibrated) 
+        float E_south;          // attenuated energy deposition  (calibrated)
+
 };
 
 #endif // _DTOFHit_

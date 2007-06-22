@@ -44,6 +44,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
     unsigned int trackid = i;
     unsigned int nhits = 0;
     unsigned int hitlist[16];
+    int ptype = tracks[i]->ptype;
     for (unsigned int j = 0; j < hits.size(); j++){
       float y0 = hits[j]->y;
       if (((hits[j]->orientation == 0)&&(fabs(x-y0)<=1.0*BARWIDTH))||
@@ -64,6 +65,7 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
       point->chisq = 0.0;
       point->t = 0.0;
       point->trackid = trackid;
+      point->ptype = ptype;
       _data.push_back(point);
     }
   }
