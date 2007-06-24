@@ -8,6 +8,9 @@
 //                                        smearing for timeing
 //
 
+#include <cmath>
+using namespace std;
+
 #include "DTOFMCResponse_factory.h"
 #include "DHDDMTOFHit.h"
 #include "DTOFGeometry.h"
@@ -83,7 +86,7 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
       dist = hddmhit->x;
     }
     for (int i=0;i<2;i++){
-      loca[i] = R+powf(-1.,float(i))*dist;
+      loca[i] = R+pow((double)-1., (double)i)*dist;
       sigm[i] = loca[i]*0.001 + 0.2; // time resolution is position dependent in [ns]
       if (tof[i]>0){
 	tof[i] += Ran.Gaus(0.,1.)*sigm[i]; // add time resolution of PMT
@@ -99,7 +102,8 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
       nph[i] *= (A1+A2*REFLECT_EFF)*exp(loca[i]/ATTEN_LENGTH);  // number of photons hitting the photo cathode
       nph[i] *= PHE_EFF;             // number of photo electrons
       charge[i] = nph[i]*PMT_GAIN*ECHARGE; // charge in pC at PMT Anode
-      adc[i] = int(fminf(charge[i]/ADC_RES,1024.));
+      adc[i] = (int)(charge[i]/ADC_RES<1024.0 ? charge[i]/ADC_RES:1024.0);
+      //adc[i] = (int)fmin(charge[i]/ADC_RES,1024.); // Replaced with above line because fmin is not available on all compilers 6/24/07 D.L.
 
       energy[i] = energy[i]/PHOTONS_PERMEV/1000.; // energy in GeV
     }
