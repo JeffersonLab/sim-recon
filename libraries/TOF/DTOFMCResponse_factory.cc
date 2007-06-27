@@ -8,16 +8,12 @@
 //                                        smearing for timeing
 //
 
-#include <cmath>
-using namespace std;
-
 #include "DTOFMCResponse_factory.h"
 #include "DHDDMTOFHit.h"
 #include "DTOFGeometry.h"
 
 // root specific stuff
 #include "TRandom.h"  // random generators
-
 
 #define ATTEN_LENGTH    150
 #define C_EFFECTIVE     15
@@ -32,11 +28,17 @@ using namespace std;
 #define PMT_GAIN        40000000. // PMT gain factor 4*10^7
 #define ECHARGE         1.602e-7 // electric charge in C
 #define ADC_RES         50.      // adc resolution pC/count
+#define TOF_CENT_TRES   -0.698970004 // time resolution of tof paddel for hit in the center log10(0.2ns)
+
+
 TRandom Ran;
 float nph[2], R, A1, A2;
 float charge[2], energy[2],tof[2];
 float dist,loca[2],sigm[2];
 int adc[2],t1;
+
+
+
 
 int debugfunc(){
   return 1;
@@ -57,8 +59,8 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
  
   const DTOFGeometry& tofGeom = (*(tofGeomVect[0]));
 
-  cout<<"TOF Response Factory: Number of hits in FTOF: "
-      <<hddmhits.size()<< endl;
+  //  cout<<"TOF Response Factory: Number of hits in FTOF: "
+  //    <<hddmhits.size()<< endl;
 
   for (unsigned int i = 0; i < hddmhits.size(); i++){
 
@@ -86,8 +88,10 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
       dist = hddmhit->x;
     }
     for (int i=0;i<2;i++){
-      loca[i] = R+pow((double)-1., (double)i)*dist;
-      sigm[i] = loca[i]*0.001 + 0.2; // time resolution is position dependent in [ns]
+      loca[i] = pow(-1.,float(i))*dist;
+      // position dependent timing resolution see NIM A525 (2004)183
+      sigm[i] = loca[i]*(-0.0008926) + TOF_CENT_TRES; 
+      sigm[i] = powf(10.,sigm[i]);
       if (tof[i]>0){
 	tof[i] += Ran.Gaus(0.,1.)*sigm[i]; // add time resolution of PMT
       }
@@ -105,7 +109,8 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
       adc[i] = (int)(charge[i]/ADC_RES<1024.0 ? charge[i]/ADC_RES:1024.0);
       //adc[i] = (int)fmin(charge[i]/ADC_RES,1024.); // Replaced with above line because fmin is not available on all compilers 6/24/07 D.L.
 
-      energy[i] = energy[i]/PHOTONS_PERMEV/1000.; // energy in GeV
+
+      energy[i] = energy[i]/(PHOTONS_PERMEV)/1000.; // energy in GeV
     }
 
     response->id          = hddmhit->id;
@@ -118,7 +123,7 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
     response->ADC_south   = adc[1];
     response->E_north     = energy[0];
     response->E_south     = energy[1];
-
+    response->ptype       = hddmhit->ptype;
     _data.push_back(response);
 
   }

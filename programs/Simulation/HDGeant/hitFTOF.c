@@ -11,7 +11,7 @@
  *          set THRESH_MEV to zero to NOT concatenate hits.
  *
  * changes: Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
- *          add ipart to the function hitBarrelEMcal
+ *          add ipart to the function hitforwardTOF
  *
  * Programmer's Notes:
  * -------------------
@@ -44,7 +44,8 @@
 #define BAR_LENGTH      252.0 // length of the bar
 
 // kinematic constants
-#define TWO_HIT_RESOL   -25. // 25. make sure each particle registers as a separate hit
+#define TWO_HIT_RESOL   25. // separation time between two different hits
+
 #define THRESH_MEV      0.   // do not through away any hits, one can do that later
 
 // maximum particle tracks per counter
@@ -243,6 +244,18 @@ void hitForwardTOF (float xin[4], float xout[4],
 	  (northHits->in[nhit].t * northHits->in[nhit].dE 
 	   + tnorth * dEnorth)
 	  / (northHits->in[nhit].dE += dEnorth);
+	if (northHits->in[nhit].E<pin[3]){
+	  // save position, momenum, energy and particle type with the largest energy
+	  northHits->in[nhit].dE = dEnorth;
+	  northHits->in[nhit].x = x[0];
+	  northHits->in[nhit].y = x[1];
+	  northHits->in[nhit].z = x[2];
+	  northHits->in[nhit].E = pin[3];
+	  northHits->in[nhit].px = pin[0];
+	  northHits->in[nhit].py = pin[1];
+	  northHits->in[nhit].pz = pin[2];
+	  northHits->in[nhit].ptype = ipart;
+	}
       }
       
       // this hit has its own new time frame
@@ -280,12 +293,24 @@ void hitForwardTOF (float xin[4], float xout[4],
 	southHits->in[nhit].t = 
 	  (southHits->in[nhit].t * southHits->in[nhit].dE
 	   + tsouth * dEsouth) / (southHits->in[nhit].dE += dEsouth);
+	// save position, momenum, energy and particle type with the largest energy
+	if (southHits->in[nhit].E<pin[3]){
+	  southHits->in[nhit].x = x[0];
+	  southHits->in[nhit].y = x[1];
+	  southHits->in[nhit].z = x[2];
+	  southHits->in[nhit].E = pin[3];
+	  southHits->in[nhit].px = pin[0];
+	  southHits->in[nhit].py = pin[1];
+	  southHits->in[nhit].pz = pin[2];
+	  southHits->in[nhit].ptype = ipart;	  
+	}
       }
       
       // no hit found for this PM with similar timing
       else if (nhit < MAX_HITS) {        /* create new hit */
 	southHits->in[nhit].t = tsouth;
 	southHits->in[nhit].dE = dEsouth;
+	// save position energy momentum and particle type
 	southHits->in[nhit].x = x[0];
 	southHits->in[nhit].y = x[1];
 	southHits->in[nhit].z = x[2];

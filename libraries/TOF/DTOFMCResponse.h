@@ -21,10 +21,13 @@ class DTOFMCResponse:public JObject{
         float y;          // x/y position of bar center
         float t_north;          // time of light at end of bar  (smeared) 
         float E_north;          // attenuated energy deposition  (smeared)
-	int ADC_north;
         float t_south;          // time of light at end of bar  (smeared) 
         float E_south;          // attenuated energy deposition  (smeared)
+	int ADC_north;
 	int ADC_south;
+	int TDC_north;
+	int TDC_south;
+	
 };
 
 #endif // _DTOFMCResponse_
