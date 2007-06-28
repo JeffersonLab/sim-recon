@@ -51,7 +51,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		jerror_t KalmanLoop(vector<DFDCPseudo*>points, double mass_hyp,
 				    DMatrix Seed,DMatrix &S,DMatrix &C,
 				    double &chisq);
-		jerror_t CorrectPointY(DMatrix S,DFDCPseudo *point);
+		jerror_t CorrectPoints(vector<DFDCPseudo*>point);
 		jerror_t GetProcessNoiseCovariance(double x, double y, 
 						   double z,DMatrix S, 
 	                  vector<DFDCPseudo*>points,double mass_hyp,
@@ -65,8 +65,15 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		jerror_t GetStateVector(double oldx, double oldy,
 	                  double old_z,double x, double y,double z,
 			  DMatrix S,DMatrix &S1);
-	        jerror_t RiemannCircleFit(vector<DFDCPseudo*>points,
-				double &xc,double &yc,double &rho);
+		jerror_t RiemannHelicalFit(vector<DFDCPseudo*>points);
+	        jerror_t RiemannCircleFit(unsigned int n,DMatrix XYZ,
+			DMatrix CRPhi);
+		jerror_t RiemannLineFit(unsigned int n,DMatrix XYZ0,
+					DMatrix CR,DMatrix &XYZ);
+	        jerror_t UpdatePositionsAndCovariance(unsigned int n,
+						      double r1sq,
+			DMatrix &XYZ, DMatrix &CRPhi,DMatrix &CR);
+		jerror_t CalcNormal(DMatrix A,double lambda,DMatrix &N);
 
 		const string toString(void);
 
@@ -87,6 +94,22 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		DFDCGeometry _geo;
 		JStreamLog* _log;
 		ofstream* logFile;
+
+		double N[3];
+	        double varN[3][3];
+	 	double dist_to_origin,xc,yc,rc;
+		double xavg[3],var_avg;
+		
+		// Track parameters
+		double tanl,z0,D,kappa,phi0;
+		double var_tanl;
+
+		// Residuals and arc length
+		typedef struct fdc_track_t{
+		  double dx,dy; //residuals
+		  double s; // path length
+		};
+		vector<fdc_track_t>fdc_track;
 
                 const DMagneticFieldMap *bfield;
 
