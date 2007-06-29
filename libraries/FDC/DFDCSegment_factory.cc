@@ -509,6 +509,9 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points){
   DMatrix CRPhi(num_points,num_points); 
   DMatrix XYZ(num_points,3);
   DMatrix XYZ0(num_points,3);
+
+  // Clear suppemental track info vector
+  fdc_track.clear();
   
   // Fill initial matrices for R and RPhi measurements
   XYZ(num_points-1,2)=XYZ0(num_points-1,2)=Z_TARGET;
@@ -559,9 +562,9 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points){
   if (error!=NOERROR) return error;
   
   // Store residuals and path length for each measurement
-  fdc_track.clear();
   for (unsigned int m=0;m<points.size();m++){
     fdc_track_t temp;
+    temp.hit_id=m;
     temp.dx=XYZ(m,0)-XYZ0(m,0); // residuals
     temp.dy=XYZ(m,1)-XYZ0(m,1);
     temp.s=(XYZ(m,2)-Z_TARGET)/sin(atan(tanl)); // path length
@@ -707,6 +710,10 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
     segment->cov.ResizeTo(Cov);
     segment->cov=Cov;
     segment->hits=neighbors;
+    segment->track=fdc_track;
+    segment->xc=xc;
+    segment->yc=yc;
+    segment->rc=rc;
     
     _data.push_back(segment);
   }
@@ -954,7 +961,7 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points){
     }
     
     // Fill x and y elements with corrected values
-    point->ds =delta_y;     
+    point->ds =-delta_y;     
     point->dw =delta_x;
     point->x=(point->w+point->dw)*cosangle+(point->s+point->ds)*sinangle;
     point->y=-(point->w+point->dw)*sinangle+(point->s+point->ds)*cosangle;
