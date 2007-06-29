@@ -12,6 +12,14 @@
 #include <DMatrix.h>
 #include <sstream>
 
+// Residuals and arc length
+typedef struct fdc_track_t{
+  unsigned int hit_id;
+  double dx,dy; //residuals
+  double s; // path length
+};
+
+
 ///
 /// class DFDCSegment: definition for a track segment in the FDC
 /// 
@@ -32,8 +40,9 @@ class DFDCSegment : public JObject {
 		double xc,yc,rc;  // circle parameters
 
 		// List of pseudopoints belonging to this track segment
-		vector<DFDCPseudo *>hits;
-
+		vector<DFDCPseudo *>hits;	
+		// Supplementary track info
+		vector<fdc_track_t>track;
 };
 
 #endif //DFDCSEGMENT_H

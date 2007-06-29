@@ -103,12 +103,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		// Track parameters
 		double tanl,z0,D,kappa,phi0;
 		double var_tanl;
-
-		// Residuals and arc length
-		typedef struct fdc_track_t{
-		  double dx,dy; //residuals
-		  double s; // path length
-		};
+	
 		vector<fdc_track_t>fdc_track;
 
                 const DMagneticFieldMap *bfield;
