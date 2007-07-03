@@ -1,13 +1,14 @@
 // $Id$
 
 #include "JANA/JEventLoop.h"
-#include "DBCALHit_factory.h"
-#include "DBCALTruthShower_factory.h"
-#include "DHDDMBCALHit_factory.h"
-#include "DBCALMCResponse_factory.h"
-#include "DBCALGeometry_factory.h"
-#include "DBCALShower_factory.h"
-#include "DBCALShower_factory_SIMPLE.h"
+#include "BCAL/DBCALHit_factory.h"
+#include "BCAL/DBCALTruthShower_factory.h"
+#include "BCAL/DHDDMBCALHit_factory.h"
+#include "BCAL/DBCALMCResponse_factory.h"
+#include "BCAL/DBCALGeometry_factory.h"
+#include "BCAL/DBCALShower_factory.h"
+#include "BCAL/DBCALShower_factory_SIMPLE.h"
+#include "BCAL/DBCALShower_factory_IU.h"
 
 jerror_t BCAL_init(JEventLoop *loop)
 {
@@ -18,6 +19,7 @@ jerror_t BCAL_init(JEventLoop *loop)
 	loop->AddFactory(new DBCALGeometry_factory());
 	loop->AddFactory(new DBCALShower_factory());
 	loop->AddFactory(new DBCALShower_factory_SIMPLE());
+    loop->AddFactory(new DBCALShower_factory_IU());
 	loop->AddFactory(new DBCALTruthShower_factory());
 
 	return NOERROR;
