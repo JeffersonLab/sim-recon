@@ -3,9 +3,9 @@
 //************************************************************************
 
 #include "DFDCSegment_factory.h"
-#include "TRACKING/DQuickFit.h"
 #include "DANA/DApplication.h"
 #include <math.h>
+
 #define HALF_CELL 0.5
 #define MAX_DEFLECTION 0.15
 #define EPS 1e-3
@@ -145,7 +145,7 @@ jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int eventNo) {
 
 ///
 /// DFDCSegment_factory::evnt():
-/// Routine where pseudopoints are converted into space points
+/// Routine where pseudopoints are combined into track segments
 ///
 jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
   vector<const DFDCPseudo*>pseudopoints;
@@ -242,7 +242,7 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
   double denom=delta_x*delta_x+delta_y*delta_y;
 
   // Predicted positions
-  double Phi1=atan2(delta_y,delta_x);
+  Phi1=atan2(delta_y,delta_x);
   double z1=XYZ(0,2);
   for (unsigned int k=0;k<n;k++){   
     double sperp=(XYZ(k,2)-z1)/tanl;
@@ -714,6 +714,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
     segment->xc=xc;
     segment->yc=yc;
     segment->rc=rc;
+    segment->Phi1=Phi1;
     
     _data.push_back(segment);
   }

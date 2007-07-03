@@ -37,7 +37,12 @@ class DFDCSegment : public JObject {
 		DMatrix cov; // ... and its covariance matrix
 		double chisq;
 
-		double xc,yc,rc;  // circle parameters
+		// circle parameters
+		double xc,yc,rc;  
+		// azimuthal angle of the intersection of the helical path to 
+		// the most downstream plane in a given package containing a
+		// hit
+		double Phi1;		                
 
 		// List of pseudopoints belonging to this track segment
 		vector<DFDCPseudo *>hits;	
