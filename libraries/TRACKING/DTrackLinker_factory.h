@@ -41,6 +41,11 @@ class DTrackLinker_factory : public JFactory<DTrackLinker> {
 		jerror_t GetPositionAndMomentum(DFDCSegment *segment,
 						DVector3 &pos, DVector3 &mom);
 
+		DFDCSegment *GetTrackMatch(double q,double z, 
+					   DFDCSegment *segment,
+					   vector<DFDCSegment*>package,
+					   unsigned int &match_id);
+
 		const string toString(void);
 
 	protected:

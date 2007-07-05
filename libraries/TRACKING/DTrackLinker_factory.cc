@@ -8,6 +8,9 @@
 #include "FDC/DFDCPseudo_factory.h"
 #include "FDC/DFDCSegment_factory.h"
 
+#define MATCH_RADIUS 5.0
+#define MAX_SEGMENTS 20
+
 bool DTrackLinker_cmp(const DFDCPseudo *a,const DFDCPseudo *b){
   return a->wire->layer > b->wire->layer;
 }
@@ -54,144 +57,296 @@ jerror_t DTrackLinker_factory::evnt(JEventLoop* eventLoop, int eventNo) {
     const DFDCSegment *segment=segments[i];
  package[(segment->hits[0]->wire->layer-1)/6].push_back((DFDCSegment*)segment);
   }
-    
-  DVector3 norm;  // normal to FDC planes
-  norm.SetXYZ(0.,0.,1.);
-  DFDCSegment *match=NULL;
-
-  // Loop over segments in the first package, matching them to segments in the
-  // second, third, and fourth (most downstream) packages.
-  for (unsigned int i=0;i<package[0].size();i++){
-    // Create new track, starting with the current segment
-    DTrackLinker *track = new DTrackLinker;
-    DFDCSegment *segment=package[0][i];
-
-    // Sign of the charge
-    double kappa=segment->S(0,0);
-    double q=kappa/fabs(kappa);
-	   
-    // Start filling vector of points belonging to current track    
-    vector<DFDCPseudo*>points; 
-    points.assign(segment->hits.begin(),segment->hits.end());
- 
-    // Get the position and momentum at the exit of the package for the current
-    // segment
-    DVector3 pos,mom;
-    GetPositionAndMomentum(segment,pos,mom);
-
-    // Match to the next package by swimming the track through the field
-    double diff_min=1000.,diff;
-    for (unsigned int j=0;j<package[1].size();j++){
-      DFDCSegment *segment2=package[1][j];
-      DVector3 origin=segment2->hits[segment2->hits.size()-1]->wire->origin;
-
-      // Skip to next segment if the sign of the charge is wrong
-      double kappa=segment2->S(0,0);
-      double q2=kappa/fabs(kappa);
-      if (q2!=q) continue;
-
-      DMagneticFieldStepper stepper(bfield, q); 
-      if (stepper.SwimToPlane(pos,mom,origin,norm)==false){
-	double x2=segment2->hits[segment2->hits.size()-1]->x;
-	double y2=segment2->hits[segment2->hits.size()-1]->y;
-	diff=sqrt((pos(0)-x2)*(pos(0)-x2)+(pos(1)-y2)*(pos(1)-y2));
-	if (diff<diff_min){
-	  diff_min=diff;
-	  match=segment2;
-	}
-      }
-    }
- 
-    // if we found a match, move on to the 3rd package
-    if (match){
-      // Insert the points in the segment from package 2 into the track 
-      points.insert(points.begin(),match->hits.begin(),match->hits.end());
-
-      // Get position and momentum at last plane in package 2
-      GetPositionAndMomentum(match,pos,mom);
-    
-      // Reinitialize match pointer
-      match=NULL; 
-            
-      // Match to the next package by swimming the track through the field
-      diff_min=1000;
-      for (unsigned int j=0;j<package[2].size();j++){
-	DFDCSegment *segment2=package[2][j];
-	DVector3 origin=segment2->hits[segment2->hits.size()-1]->wire->origin;
-
-	// Skip to next segment if the sign of the charge is wrong
-	double kappa=segment2->S(0,0);
-	double q2=kappa/fabs(kappa);
-        if (q2!=q) continue;
-
-	DMagneticFieldStepper stepper(bfield, q); 
-	if (stepper.SwimToPlane(pos,mom,origin,norm)==false){
-	  double x2=segment2->hits[segment2->hits.size()-1]->x;
-	  double y2=segment2->hits[segment2->hits.size()-1]->y;
-	  diff=sqrt((pos(0)-x2)*(pos(0)-x2)+(pos(1)-y2)*(pos(1)-y2));
-	  if (diff<diff_min){
-	    diff_min=diff;
-	    match=segment2;
-	  }
-	}
-      }
-
-      // If we have a match, move on to the 4th package
-      if (match){
-	// Insert the points in the segment from package 3 into the track 
-	points.insert(points.begin(),match->hits.begin(),match->hits.end());
-
-	// Get position and momentum at last plane in package 3
-	GetPositionAndMomentum(match,pos,mom);
-    
-	// Reinitialize match pointer
-	match=NULL; 
-
-	// Match to the next package by swimming the track through the field
-	diff_min=1000;
-	for (unsigned int j=0;j<package[3].size();j++){
-	  DFDCSegment *segment2=package[3][j];
-	  DVector3 origin
-	    =segment2->hits[segment2->hits.size()-1]->wire->origin;
-
-	  // Skip to next segment if the sign of the charge is wrong
-	  double kappa=segment2->S(0,0);
-	  double q2=kappa/fabs(kappa);
-          if (q2!=q) continue;
-
-	  DMagneticFieldStepper stepper(bfield, q); 
-	  if (stepper.SwimToPlane(pos,mom,origin,norm)==false){
-	    double x2=segment2->hits[segment2->hits.size()-1]->x;
-	    double y2=segment2->hits[segment2->hits.size()-1]->y;
-	    diff=sqrt((pos(0)-x2)*(pos(0)-x2)+(pos(1)-y2)*(pos(1)-y2));
-	    if (diff<diff_min){
-	      diff_min=diff;
-	      match=segment2;
-	    }
-	  }
-	}
       
-	if (match){
+  double zpackage[4];  // z-positions of entrances to FDC packages 
+  zpackage[0]=DFDCGeometry::GetZpackage(1);
+  zpackage[1]=DFDCGeometry::GetZpackage(7);
+  zpackage[2]=DFDCGeometry::GetZpackage(13);
+  zpackage[3]=DFDCGeometry::GetZpackage(19);
+  DFDCSegment *match2=NULL;
+  DFDCSegment *match3=NULL;
+  DFDCSegment *match4=NULL;
+  unsigned int match_id=0;
+
+  // Bail if there are too many segments
+  if (package[0].size()+package[1].size()+package[2].size()
+      +package[3].size()>MAX_SEGMENTS)
+    return UNRECOVERABLE_ERROR; 
+
+  // First deal with tracks with segments in the first package
+  if (package[0].size()>0){
+    // Loop over segments in the first package, matching them to segments in 
+    // the second, third, and fourth (most downstream) packages.
+    for (unsigned int i=0;i<package[0].size();i++){
+      // Create new track, starting with the current segment
+      DTrackLinker *track = new DTrackLinker;
+      DFDCSegment *segment=package[0][i];
+      
+      // Sign of the charge
+      double kappa=segment->S(0,0);
+      double q=kappa/fabs(kappa);
+      
+      // Start filling vector of points belonging to current track    
+      vector<DFDCPseudo*>points; 
+      points.assign(segment->hits.begin(),segment->hits.end());
+      
+      // Try matching to package 2
+      if (package[1].size()>0 && 
+	  (match2=GetTrackMatch(q,zpackage[1],segment,package[1],match_id))
+	  !=NULL){
+	// Insert the points in the segment from package 2 into the track 
+	points.insert(points.begin(),match2->hits.begin(),match2->hits.end());
+	
+	// remove the segment from the list 
+	package[1].erase(package[1].begin()+match_id);
+
+	// Try matching to package 3
+	if (package[2].size()>0 && 
+	    (match3=GetTrackMatch(q,zpackage[2],match2,package[2],match_id))
+	    !=NULL){
+	  // Insert the points in the segment from package 3 into the track 
+	  points.insert(points.begin(),match3->hits.begin(),
+			match3->hits.end());
+
+	  // remove the segment from the list 
+	  package[2].erase(package[2].begin()+match_id);
+
+	  // Try matching to package 4
+	  if (package[3].size()>0 && 
+	      (match4=GetTrackMatch(q,zpackage[3],match3,package[3],
+	       match_id))!=NULL){
+	    // Insert the points in the segment from package 4 into the track 
+	    points.insert(points.begin(),match4->hits.begin(),
+			  match4->hits.end());
+
+	    // remove the segment from the list 
+	    package[3].erase(package[3].begin()+match_id);
+	  }
+	}
+	// No match in package 3, try for 4
+	else if(package[3].size()>0 && 
+		(match4=GetTrackMatch(q,zpackage[3],match2,package[3],
+		 match_id))!=NULL){
 	  // Insert the points in the segment from package 4 into the track 
-	  points.insert(points.begin(),match->hits.begin(),match->hits.end());
+	  points.insert(points.begin(),match4->hits.begin(),
+			match4->hits.end());
+
+	  // remove the segment from the list 
+	  package[3].erase(package[3].begin()+match_id);
 	}
       }
+      // No match in package 2, try for 3
+      else if (package[2].size()>0 && 
+	       (match3=GetTrackMatch(q,zpackage[2],segment,package[2],
+		match_id))!=NULL){
+	// Insert the points in the segment from package 3 into the track 
+	points.insert(points.begin(),match3->hits.begin(),match3->hits.end());
+
+	// remove the segment from the list 
+	package[2].erase(package[2].begin()+match_id);
+	
+	// Try matching to package 4
+	if (package[3].size()>0 && 
+	    (match4=GetTrackMatch(q,zpackage[3],match3,package[3],
+	     match_id))!=NULL){
+	  // Insert the points in the segment from package 4 into the track 
+	  points.insert(points.begin(),match4->hits.begin(),
+			match4->hits.end());
+
+	  // remove the segment from the list 
+	  package[3].erase(package[3].begin()+match_id);
+	}
+      }    
+      // No match to package 2 or 3, try 4
+      else if (package[3].size()>0 && 
+	       (match4=GetTrackMatch(q,zpackage[3],segment,package[3],
+		match_id))!=NULL){
+	// Insert the points in the segment from package 4 into the track 
+	points.insert(points.begin(),match4->hits.begin(),
+		      match4->hits.end());
+	// remove the segment from the list 
+	package[3].erase(package[3].begin()+match_id);
+      }
+      
+      // Sort hits by layer, starting at the most downstream plane
+      std::sort(points.begin(),points.end(),DTrackLinker_cmp);
+      track->points=points;
+      
+      track->S.ResizeTo(segment->S);
+      track->S=segment->S;
+      track->cov.ResizeTo(segment->cov);
+      track->cov=segment->cov;
+      
+      _data.push_back(track); 
     }
+  }
+ 
+  // Next try to link segments starting at package 2
+  if (package[1].size()>0 ){
+    // Loop over segments in the 2nd package, matching them to segments in 
+    // the third and fourth (most downstream) packages.
+    for (unsigned int i=0;i<package[1].size();i++){
+      // Create new track, starting with the current segment
+      DTrackLinker *track = new DTrackLinker;
+      DFDCSegment *segment=package[1][i];
+      
+      // Sign of the charge
+      double kappa=segment->S(0,0);
+      double q=kappa/fabs(kappa);
+      
+      // Start filling vector of points belonging to current track    
+      vector<DFDCPseudo*>points; 
+      points.assign(segment->hits.begin(),segment->hits.end());
+
+      // Try matching to package 3
+      if (package[2].size()>0 && 
+	  (match3=GetTrackMatch(q,zpackage[2],segment,package[2],match_id))
+	  !=NULL){
+	// Insert the points in the segment from package 3 into the track 
+	points.insert(points.begin(),match3->hits.begin(),match3->hits.end());
+
+	// remove the segment from the list 
+	package[2].erase(package[2].begin()+match_id);
+
+	// Try matching to package 4
+	if (package[3].size()>0 && 
+	    (match4=GetTrackMatch(q,zpackage[3],match3,package[3],
+	     match_id))!=NULL){
+	  // Insert the points in the segment from package 4 into the track 
+	  points.insert(points.begin(),match4->hits.begin(),
+			match4->hits.end());
+
+	  // remove the segment from the list 
+	  package[3].erase(package[3].begin()+match_id);
+	}	
+      }
+      // No match in 3, try for 4
+      else if (package[3].size()>0 && 
+	       (match4=GetTrackMatch(q,zpackage[3],segment,package[3],
+		match_id))!=NULL){
+	// Insert the points in the segment from package 4 into the track 
+	points.insert(points.begin(),match4->hits.begin(),match4->hits.end());
+
+	// remove the segment from the list 
+	package[3].erase(package[3].begin()+match_id);
+      }
     
-    // Sort hits by layer, starting at the most downstream plane
-    std::sort(points.begin(),points.end(),DTrackLinker_cmp);
-    track->points=points;
+      // Sort hits by layer, starting at the most downstream plane
+      std::sort(points.begin(),points.end(),DTrackLinker_cmp);
+      track->points=points;
+      
+      track->S.ResizeTo(segment->S);
+      track->S=segment->S;
+      track->cov.ResizeTo(segment->cov);
+      track->cov=segment->cov;
+      
+      _data.push_back(track); 
+    }
+  }
+  
+  // Next try to link segments starting at package 3
+  if(package[2].size()>0){
+    // Loop over segments in the 3rd package, matching them to segments in 
+    // the fourth (most downstream) packages.
+    for (unsigned int i=0;i<package[2].size();i++){
+      // Create new track, starting with the current segment
+      DTrackLinker *track = new DTrackLinker;
+      DFDCSegment *segment=package[2][i];
+      
+      // Sign of the charge
+      double kappa=segment->S(0,0);
+      double q=kappa/fabs(kappa);
+      
+      // Start filling vector of points belonging to current track    
+      vector<DFDCPseudo*>points; 
+      points.assign(segment->hits.begin(),segment->hits.end());
+      
+      // Try matching to package 4
+      if (package[3].size()>0 && 
+	  (match4=GetTrackMatch(q,zpackage[3],segment,package[3],match_id))
+	  !=NULL){
+	// Insert the points in the segment from package 4 into the track 
+	points.insert(points.begin(),match4->hits.begin(),
+		      match4->hits.end());
+	
+	// remove the segment from the list 
+	package[3].erase(package[3].begin()+match_id);
+      }	
+      
+      // Sort hits by layer, starting at the most downstream plane
+      std::sort(points.begin(),points.end(),DTrackLinker_cmp);
+      track->points=points;
+      
+      track->S.ResizeTo(segment->S);
+      track->S=segment->S;
+      track->cov.ResizeTo(segment->cov);
+      track->cov=segment->cov;
+      
+      _data.push_back(track); 
+    }
+  }
+
+  // Now collect stray segments in package 4
+  for (unsigned int k=0;k<package[3].size();k++){
+    DTrackLinker *track = new DTrackLinker;
+    DFDCSegment *segment=package[3][k];
     
+    track->points=segment->hits;
     track->S.ResizeTo(segment->S);
     track->S=segment->S;
     track->cov.ResizeTo(segment->cov);
     track->cov=segment->cov;
-
+    
     _data.push_back(track); 
   }
-   
+
   return NOERROR;
 }
+
+// Swim track from one package to the next and look for a match to a segment
+// in the new package
+DFDCSegment *DTrackLinker_factory::GetTrackMatch(double q,double z, 
+						 DFDCSegment *segment,
+						 vector<DFDCSegment*>package,
+						 unsigned int &match_id){
+  DFDCSegment *match=NULL;
+  DVector3 norm;  // normal to FDC planes
+  norm.SetXYZ(0.,0.,1.);
+
+  // Initialize the stepper 
+  DMagneticFieldStepper stepper(bfield, q); 
+
+  // Get the position and momentum at the exit of the package for the 
+  // current segment
+  DVector3 pos,mom,origin(0.,0.,z);
+  GetPositionAndMomentum(segment,pos,mom);
+
+  // Match to the next package by swimming the track through the field
+  double diff_min=1000.,diff;
+  if (stepper.SwimToPlane(pos,mom,origin,norm)==false){
+    for (unsigned int j=0;j<package.size();j++){
+      DFDCSegment *segment2=package[j];
+	  
+      // Skip to next segment if the sign of the charge is wrong
+      double kappa=segment2->S(0,0);
+      double q2=kappa/fabs(kappa);
+      if (q2!=q) continue;
+      
+      double x2=segment2->hits[segment2->hits.size()-1]->x;
+      double y2=segment2->hits[segment2->hits.size()-1]->y;
+      diff=sqrt((pos(0)-x2)*(pos(0)-x2)+(pos(1)-y2)*(pos(1)-y2));
+
+      if (diff<diff_min&&diff<MATCH_RADIUS){
+	diff_min=diff;
+	match=segment2;
+	match_id=j;
+      }
+    }
+  }
+ 
+  return match;
+}
+
 
 // Obtain position and momentum at the exit of a given package using the 
 // helical track model.
