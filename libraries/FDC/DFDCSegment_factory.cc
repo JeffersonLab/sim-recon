@@ -631,6 +631,23 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
       }
     }
    
+    // Perform the Riemann Helical Fit on the track segment
+    jerror_t error=RiemannHelicalFit(neighbors);   
+
+    // Correct for the Lorentz effect given DOCAs
+    if (error==NOERROR){
+      if (got_deflection_file){
+	CorrectPoints(neighbors);
+	error=RiemannHelicalFit(neighbors); 
+      }
+      else if (warn){
+	fprintf(stderr,
+		"DFDCSegment_factory: No Lorentz deflection file found!\n");
+	fprintf(stderr,"DFDCSegment_factory: --> Pseudo-points will not be corrected for Lorentz effect.");
+	warn=false;      
+      }
+    }
+    
     // Linear regression to find charge  
     double var=0.; 
     double sumv=0.;
@@ -657,46 +674,16 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
     // Guess particle charge (+/-1);
     double q=1.;   
     if (slope<0.) q=-1.;
-    
-    // Perform the Riemann Helical Fit on the track segment
-    jerror_t error=RiemannHelicalFit(neighbors);
-    
-    // Initial guess for curvature
-    kappa=q/2./rc;
 
-    // Correct for the Lorentz effect given DOCAs
-    if (error==NOERROR){
-      if (got_deflection_file){
-	CorrectPoints(neighbors);
-	error=RiemannHelicalFit(neighbors); 
-	kappa=q/2./rc;
-      }
-      else if (warn){
-	fprintf(stderr,
-		"DFDCSegment_factory: No Lorentz deflection file found!\n");
-	fprintf(stderr,"DFDCSegment_factory: --> Pseudo-points will not be corrected for Lorentz effect.");
-	warn=false;      
-      }
-    }
+    // guess for curvature
+    kappa=q/2./rc;  
 
     // Estimate for azimuthal angle
-    phi0=atan2(-xc,yc);
-    // Look for distance of closest approach nearest to target
-    double Dplus=-rc-xc/sin(phi0);
-    double Dminus=rc-xc/sin(phi0);
- 
-    if (fabs(Dplus)>fabs(Dminus)){
-      D=Dminus;
-      q=-1.;
-      kappa=-fabs(kappa);
-    }
-    else{
-      D=Dplus;
-      q=1.;
-      kappa=fabs(kappa);
-    }
+    phi0=atan2(-xc,yc); 
     if (q<0) phi0+=M_PI;
-    
+    // Look for distance of closest approach nearest to target
+    D=-q*rc-xc/sin(phi0);
+     
     // Initialize seed track parameters
     Seed(0,0)=kappa;    // Curvature 
     Seed(1,0)=phi0;      // Phi
