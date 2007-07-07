@@ -10,6 +10,8 @@
 #include "DTrackEfficiency_factory.h"
 #include "DMCThrown_factory.h"
 #include "DMCTrajectoryPoint_factory.h"
+#include "DTrackLinker_factory.h"
+
 
 jerror_t TRACKING_init(JEventLoop *loop)
 {
@@ -23,6 +25,7 @@ jerror_t TRACKING_init(JEventLoop *loop)
 	loop->AddFactory(new DTrackEfficiency_factory());
 	loop->AddFactory(new DMCThrown_factory());
 	loop->AddFactory(new DMCTrajectoryPoint_factory());
+	loop->AddFactory(new DTrackLinker_factory());
 
 	return NOERROR;
 }
