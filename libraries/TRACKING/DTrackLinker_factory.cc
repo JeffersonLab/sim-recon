@@ -89,6 +89,9 @@ jerror_t DTrackLinker_factory::evnt(JEventLoop* eventLoop, int eventNo) {
       // Start filling vector of points belonging to current track    
       vector<DFDCPseudo*>points; 
       points.assign(segment->hits.begin(),segment->hits.end());
+
+      // Check that the tangent of the dip angle makes sense for FDC hits
+      if (segment->S(3,0)<0) continue;
       
       // Try matching to package 2
       if (package[1].size()>0 && 
@@ -198,6 +201,9 @@ jerror_t DTrackLinker_factory::evnt(JEventLoop* eventLoop, int eventNo) {
       vector<DFDCPseudo*>points; 
       points.assign(segment->hits.begin(),segment->hits.end());
 
+      // Check that the tangent of the dip angle makes sense for FDC hits
+      if (segment->S(3,0)<0) continue;
+
       // Try matching to package 3
       if (package[2].size()>0 && 
 	  (match3=GetTrackMatch(q,zpackage[2],segment,package[2],match_id))
@@ -260,6 +266,9 @@ jerror_t DTrackLinker_factory::evnt(JEventLoop* eventLoop, int eventNo) {
       // Start filling vector of points belonging to current track    
       vector<DFDCPseudo*>points; 
       points.assign(segment->hits.begin(),segment->hits.end());
+
+      // Check that the tangent of the dip angle makes sense for FDC hits
+      if (segment->S(3,0)<0) continue;
       
       // Try matching to package 4
       if (package[3].size()>0 && 
@@ -330,8 +339,12 @@ DFDCSegment *DTrackLinker_factory::GetTrackMatch(double q,double z,
       // Skip to next segment if the sign of the charge is wrong
       double kappa=segment2->S(0,0);
       double q2=kappa/fabs(kappa);
+
       if (q2!=q) continue;
-      
+     
+      // Check that the tangent of the dip angle makes sense for FDC hits
+      if (segment2->S(3,0)<0) continue;
+ 
       double x2=segment2->hits[segment2->hits.size()-1]->x;
       double y2=segment2->hits[segment2->hits.size()-1]->y;
       diff=sqrt((pos(0)-x2)*(pos(0)-x2)+(pos(1)-y2)*(pos(1)-y2));
@@ -370,7 +383,8 @@ jerror_t DTrackLinker_factory::GetPositionAndMomentum(DFDCSegment *segment,
   double sperp=(z-z0)/tanl;
   double sin2ks=sin(2.*kappa*sperp);
   double cos2ks=cos(2.*kappa*sperp); 
-  
+  kappa=fabs(kappa);  // magnitude of curvature
+
   // Get Bfield
   double Bx,By,Bz,B;
   bfield->GetField(x,y,z,Bx,By,Bz);
