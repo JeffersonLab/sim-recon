@@ -10,6 +10,7 @@
 
 #define MATCH_RADIUS 5.0
 #define MAX_SEGMENTS 20
+#define FDC_OUTER_RADIUS 50.0
 
 bool DTrackLinker_cmp(const DFDCPseudo *a,const DFDCPseudo *b){
   return a->wire->layer > b->wire->layer;
@@ -91,7 +92,7 @@ jerror_t DTrackLinker_factory::evnt(JEventLoop* eventLoop, int eventNo) {
       points.assign(segment->hits.begin(),segment->hits.end());
 
       // Check that the tangent of the dip angle makes sense for FDC hits
-      if (segment->S(3,0)<0) continue;
+      if (segment->S(3,0)<=0.0) continue;
       
       // Try matching to package 2
       if (package[1].size()>0 && 
@@ -202,7 +203,7 @@ jerror_t DTrackLinker_factory::evnt(JEventLoop* eventLoop, int eventNo) {
       points.assign(segment->hits.begin(),segment->hits.end());
 
       // Check that the tangent of the dip angle makes sense for FDC hits
-      if (segment->S(3,0)<0) continue;
+      if (segment->S(3,0)<=0.0) continue;
 
       // Try matching to package 3
       if (package[2].size()>0 && 
@@ -268,7 +269,7 @@ jerror_t DTrackLinker_factory::evnt(JEventLoop* eventLoop, int eventNo) {
       points.assign(segment->hits.begin(),segment->hits.end());
 
       // Check that the tangent of the dip angle makes sense for FDC hits
-      if (segment->S(3,0)<0) continue;
+      if (segment->S(3,0)<=0.0) continue;
       
       // Try matching to package 4
       if (package[3].size()>0 && 
@@ -328,7 +329,7 @@ DFDCSegment *DTrackLinker_factory::GetTrackMatch(double q,double z,
   // Get the position and momentum at the exit of the package for the 
   // current segment
   DVector3 pos,mom,origin(0.,0.,z);
-  GetPositionAndMomentum(segment,pos,mom);
+  if (GetPositionAndMomentum(segment,pos,mom)!=NOERROR) return NULL;
 
   // Match to the next package by swimming the track through the field
   double diff_min=1000.,diff;
@@ -343,7 +344,7 @@ DFDCSegment *DTrackLinker_factory::GetTrackMatch(double q,double z,
       if (q2!=q) continue;
      
       // Check that the tangent of the dip angle makes sense for FDC hits
-      if (segment2->S(3,0)<0) continue;
+      if (segment2->S(3,0)<=0.0) continue;
  
       double x2=segment2->hits[segment2->hits.size()-1]->x;
       double y2=segment2->hits[segment2->hits.size()-1]->y;
@@ -370,6 +371,9 @@ jerror_t DTrackLinker_factory::GetPositionAndMomentum(DFDCSegment *segment,
   double x=segment->xc+segment->rc*cos(segment->Phi1);
   double y=segment->yc+segment->rc*sin(segment->Phi1);
   double z=segment->hits[0]->wire->origin(2);
+
+  // Make sure that the position makes sense!
+  if (sqrt(x*x+y*y)>FDC_OUTER_RADIUS) return VALUE_OUT_OF_RANGE;
 
   // Track parameters
   double kappa=segment->S(0,0);
