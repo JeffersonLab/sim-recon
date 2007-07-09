@@ -603,6 +603,9 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
     DMatrix Seed(5,1);
     DMatrix Cov(5,5);
 
+    // Clear track parameters
+    kappa=tanl=D=z0=phi0=Phi1=xc=yc=rc=0.;
+
     // Point in the last plane in the package 
     double x=points[i]->x;
     double y=points[i]->y; 
@@ -702,7 +705,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
     segment->yc=yc;
     segment->rc=rc;
     segment->Phi1=Phi1;
-    
+   
     _data.push_back(segment);
   }
 
@@ -902,7 +905,7 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points){
     bfield->GetField(x,y,z,Bx,By,Bz);
     B=sqrt(Bx*Bx+By*By+Bz*Bz);
     // Momentum and beta
-    double p=0.002998*B/2./fabs(kappa)/cos(lambda);
+    double p=0.002998*B*rc/cos(lambda);
     double beta=p/sqrt(p*p+0.140*0.140);
 
     // Correct the drift time for the flight path and convert to distance units
