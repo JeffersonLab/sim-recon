@@ -678,15 +678,17 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
     double q=1.;   
     if (slope<0.) q=-1.;
 
-    // guess for curvature
-    kappa=q/2./rc;  
+    if (rc>0.){
+      // guess for curvature
+      kappa=q/2./rc;  
+      
+      // Estimate for azimuthal angle
+      phi0=atan2(-xc,yc); 
+      if (q<0) phi0+=M_PI;
+      // Look for distance of closest approach nearest to target
+      D=-q*rc-xc/sin(phi0);
+    }
 
-    // Estimate for azimuthal angle
-    phi0=atan2(-xc,yc); 
-    if (q<0) phi0+=M_PI;
-    // Look for distance of closest approach nearest to target
-    D=-q*rc-xc/sin(phi0);
-     
     // Initialize seed track parameters
     Seed(0,0)=kappa;    // Curvature 
     Seed(1,0)=phi0;      // Phi
