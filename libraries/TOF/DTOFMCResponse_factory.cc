@@ -88,7 +88,7 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
       dist = hddmhit->x;
     }
     for (int i=0;i<2;i++){
-      loca[i] = pow(-1.,float(i))*dist;
+      loca[i] = pow(-1., (double)i)*dist;
       // position dependent timing resolution see NIM A525 (2004)183
       sigm[i] = loca[i]*(-0.0008926) + TOF_CENT_TRES; 
       sigm[i] = powf(10.,sigm[i]);
