@@ -54,7 +54,9 @@ private:
     void Gser(float &gamser,float a,float x);
     void Gcf(float &gammcf,float a,float x);
     float Gammln(float xx_gln);
-    
+
+#undef layermax_bcal
+
 #define modulemax_bcal 48
 #define layermax_bcal 9
 #define colmax_bcal 4
