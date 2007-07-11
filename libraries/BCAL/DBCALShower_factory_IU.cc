@@ -135,6 +135,8 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int runnumber)
             }
         }
     }
+	 
+	 return NOERROR;
 }
 
 //------------------
