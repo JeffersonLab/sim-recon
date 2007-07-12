@@ -40,7 +40,7 @@
 
 // plastic scintillator specific constants
 #define ATTEN_LENGTH	150
-#define C_EFFECTIVE	15
+#define C_EFFECTIVE	15.0
 #define BAR_LENGTH      252.0 // length of the bar
 
 // kinematic constants
@@ -169,8 +169,12 @@ void hitForwardTOF (float xin[4], float xout[4],
     // distance of hit from PMT north w.r.t. center and similar for PMT south
     // this means positive x points north. to get a right handed system y must
     // point vertically up as z is the beam axis.
-    float dxnorth = BAR_LENGTH-xlocal[0];
-    float dxsouth = BAR_LENGTH+xlocal[0];
+    // plane==0 horizontal plane, plane==1 vertical plane
+    //    float dist = xlocal[0];
+    float dist = x[0]; // do not use local coordinate for x and y
+    if (plane==1) dist = x[1];
+    float dxnorth = BAR_LENGTH/2.-dist;
+    float dxsouth = BAR_LENGTH/2.+dist;
     
     // calculate time at the PMT "normalized" to the center, so a hit in the 
     // center will have time "t" at both PMTs

@@ -20,7 +20,7 @@
 #define TWO_HIT_RESOL   25.
 #define MAX_HITS        100
 #define THRESH_MEV      0.8
-#define PHOTONS_PERMEV  10000.
+#define PHOTONS_PERMEV  10000. // scintillation photon generated per MeV energy deposition 
 #define THETA_MAX       50.74 // total internal reflection
 #define PMT_SURFACE     19.63 // PMT surface in cm^2
 #define REFLECT_EFF     0.5   // reflection efficiency of light 
@@ -29,19 +29,16 @@
 #define ECHARGE         1.602e-7 // electric charge in C
 #define ADC_RES         50.      // adc resolution pC/count
 #define TOF_CENT_TRES   -0.698970004 // time resolution of tof paddel for hit in the center log10(0.2ns)
-
+#define TDC_MC_RES         0.06 //TDC resolution in ns
 
 TRandom Ran;
 float nph[2], R, A1, A2;
 float charge[2], energy[2],tof[2];
 float dist,loca[2],sigm[2];
-int adc[2],t1;
+int adc[2],t1,tdc[2];
 
-
-
-
-int debugfunc(){
-  return 1;
+void debugfuncMCResponse(){
+  //do nothing
 }
 
 
@@ -72,12 +69,12 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
     // calculate total number of generated photons in 4pi
 
 
-    t1 = debugfunc();
+    debugfuncMCResponse();
 
     nph[0] = hddmhit->dE_north*1000.* (PHOTONS_PERMEV);
     nph[1] = hddmhit->dE_south*1000.* (PHOTONS_PERMEV);
 
-    R = tofGeom.LONGBARLENGTH/2.;
+    //    R = tofGeom.LONGBARLENGTH/2.;
 
     tof[0] = hddmhit->t_north;  // TOF at PMT
     tof[1] = hddmhit->t_south; 
@@ -88,17 +85,20 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
       dist = hddmhit->x;
     }
     for (int i=0;i<2;i++){
-      loca[i] = pow(-1., (double)i)*dist;
+      loca[i] = pow(-1.,double(i))*dist;
       // position dependent timing resolution see NIM A525 (2004)183
       sigm[i] = loca[i]*(-0.0008926) + TOF_CENT_TRES; 
       sigm[i] = powf(10.,sigm[i]);
       if (tof[i]>0){
-	tof[i] += Ran.Gaus(0.,1.)*sigm[i]; // add time resolution of PMT
+	tof[i] += Ran.Gaus(0.,sigm[i]); // add time resolution of PMT
+	tdc[i] = int(tof[i]/TDC_MC_RES);
+      } else{
+	tdc[i] = 0;
       }
     }
 
     for (int i=0;i<2;i++){
-      energy[i] = nph[i] += Ran.Gaus(0.,1.)*sqrt(nph[i]);   // smear the number of generated photons
+      energy[i] = nph[i] += Ran.Gaus(0.,sqrt(nph[i]));   // smear the number of generated photons
       // fraction of 4pi seen by PMT directly
       A1 = PMT_SURFACE/4./loca[i]/loca[i];
       // fraction of 4pi below critical angle
@@ -121,6 +121,8 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
     response->t_south     = tof[1];
     response->ADC_north   = adc[0];
     response->ADC_south   = adc[1];
+    response->TDC_north   = tdc[0];
+    response->TDC_south   = tdc[1];
     response->E_north     = energy[0];
     response->E_south     = energy[1];
     response->ptype       = hddmhit->ptype;

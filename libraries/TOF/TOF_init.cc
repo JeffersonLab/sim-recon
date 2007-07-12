@@ -7,6 +7,7 @@
 #include "DTOFTruth_factory.h"
 #include "DHDDMTOFHit_factory.h"
 #include "DTOFPoint_factory.h"
+#include "DTOFMCHit_factory.h"
 
 jerror_t TOF_init(JEventLoop *loop)
 {
@@ -17,6 +18,7 @@ jerror_t TOF_init(JEventLoop *loop)
 	loop->AddFactory(new DTOFTruth_factory());
 	loop->AddFactory(new DHDDMTOFHit_factory());
 	loop->AddFactory(new DTOFPoint_factory());
+	loop->AddFactory(new DTOFMCHit_factory());
 
 	return NOERROR;
 }
