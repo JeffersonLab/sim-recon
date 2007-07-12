@@ -1,6 +1,16 @@
 OStype = $(shell uname)
 ARCHtype = $(shell uname -m)
 
+ifndef OS
+OS = $(shell uname)
+endif
+ifndef ARCH
+ARCH = $(shell uname -p)
+endif
+ifndef OSNAME
+OSNAME = $(OS)-$(ARCH)
+endif
+
 CPP = g++
 LIBXDR = 
 
