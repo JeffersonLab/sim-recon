@@ -90,7 +90,7 @@ void hitBarrelEMcal (float xin[4], float xout[4],
       if (*twig == 0)
       {
          s_BarrelEMcal_t* bcal = *twig = make_s_BarrelEMcal();
-         s_BcalCells_t* cells = make_s_BcalCellHits(1);
+         s_BcalCells_t* cells = make_s_BcalCells(1);
          cells->mult = 1;
          cells->in[0].module = module;
          cells->in[0].layer = layer;
@@ -108,7 +108,7 @@ void hitBarrelEMcal (float xin[4], float xout[4],
 
       for (nshot = 0; nshot < hits->mult; nshot++)
       {
-         if (fabs(hits->in[nshot].t - tup) < TWO_HIT_RESOL)
+         if (fabs(hits->in[nshot].t - t) < TWO_HIT_RESOL)
          {
             break;
          }
@@ -116,16 +116,16 @@ void hitBarrelEMcal (float xin[4], float xout[4],
       if (nshot < hits->mult)		/* merge with former hit */
       {
          hits->in[nshot].t =
-                  (hits->in[nshot].t * hits->in[nshot].E + t * dESum)
-                / (hits->in[nshot].E += dESum);
+                  (hits->in[nshot].t * hits->in[nshot].E + t * dEsum)
+                / (hits->in[nshot].E += dEsum);
          hits->in[nshot].zLocal =
-                  (hits->in[nshot].zLocal * hits->in[nshot].E + zLocal * dESum)
-                / (hits->in[nshot].E += dESum);
+                  (hits->in[nshot].zLocal * hits->in[nshot].E + zLocal * dEsum)
+                / (hits->in[nshot].E += dEsum);
       }
       else if (nshot < MAX_HITS)		/* create new hit */
       {
          hits->in[nshot].t = t;
-         hits->in[nshot].E = dESum;
+         hits->in[nshot].E = dEsum;
          hits->in[nshot].zLocal = zLocal;
          hits->mult++;
       }
