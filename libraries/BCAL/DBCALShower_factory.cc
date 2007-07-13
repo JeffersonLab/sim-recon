@@ -321,7 +321,7 @@ void DBCALShower_factory::CellRecon(JEventLoop *eventLoop)
 
 // Make preparation for cell position calculation
 //  
-  float l_fiber= bcalGeom.BCALFIBERLENTH; // fiber lenth in cm
+  float l_fiber= bcalGeom.BCALFIBERLENGTH; // fiber lenth in cm
   int   modmin = 0;
   int   modmax = bcalGeom.NBCALMODS;
   int   rowmin1=0;
