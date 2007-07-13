@@ -17,19 +17,19 @@ jerror_t DBCALGeometry_factory::evnt(JEventLoop *loop, int eventnumber)
 
   DBCALGeometry *bcalGeom = new DBCALGeometry;
 
-   bcalGeom->NBCALMODS  =48; 
-   //bcalGeom->NBCALLAYS1 =8;  
-   bcalGeom->NBCALLAYS1 =5;  // DL 3/27/07
-   bcalGeom->NBCALLAYS2 =4;  
-   bcalGeom->NBCALSECS1 =4;  
-   bcalGeom->NBCALSECS2 =3; 
-   bcalGeom->BCALINNERRAD =65.0;   
-   bcalGeom->BCALMIDRAD   =75.0;   
-   //bcalGeom->BCALOUTERRAD =90.0;   
-   bcalGeom->BCALOUTERRAD =87.46;  // DL 3/27/07   
-   //bcalGeom->BCALFIBERLENTH =395.0;   
-   bcalGeom->BCALFIBERLENTH =390.0;    // DL 3/27/07 
+   bcalGeom->NBCALMODS  = 48;
+   bcalGeom->NBCALLAYS1 =  5;
+   bcalGeom->NBCALLAYS2 =  4; 
+   bcalGeom->NBCALSECS1 =  4; 
+   bcalGeom->NBCALSECS2 =  3;
+   bcalGeom->BCALINNERRAD = 65.0;   
+   bcalGeom->BCALMIDRAD   = 75.0;
+   bcalGeom->BCALOUTERRAD = 87.46;
+   bcalGeom->BCALFIBERLENGTH = 390.0;
 
+   bcalGeom->ATTEN_LENGTH = 300.;
+   bcalGeom->C_EFFECTIVE  = 16.75;
+   
   _data.push_back(bcalGeom);
 
 
@@ -59,7 +59,7 @@ const string DBCALGeometry_factory::toString(void)
        printcol("%6.3f",s->BCALINNERRAD);   
        printcol("%6.3f",s->BCALMIDRAD);   
        printcol("%6.3f",s->BCALOUTERRAD);   
-       printcol("%6.3f",s->BCALFIBERLENTH);   
+       printcol("%6.3f",s->BCALFIBERLENGTH);   
 	cout<<"NBCALSECS2= "<<s->NBCALSECS2<<"\n";
        printrow();
      }
