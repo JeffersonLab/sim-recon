@@ -8,22 +8,9 @@
  *
  * changes: Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
  *          add ipart to the function hitBarrelEMcal
- *
- * Programmer's Notes:
- * -------------------
- * 1) In applying the attenuation to light propagating down to both ends
- *    of the modules, there has to be some point where the attenuation
- *    factor is 1.  I chose it to be the midplane, so that in the middle
- *    of the module both ends see the unattenuated E values.  Closer to
- *    either end, that end has a larger E value and the opposite end a
- *    lower E value than the actual deposition.
- * 2) In applying the propagation delay to light propagating down to the
- *    ends of the modules, there has to be some point where the timing
- *    offset is 0.  I chose it to be the midplane, so that for hits in
- *    the middle of the module the t values measure time-of-flight from
- *    the t=0 of the event.  For hits closer to one end, that end sees
- *    a t value smaller than its true time-of-flight, and the other end
- *    sees a value correspondingly larger.  The average is the true tof.
+ * changes: Fri Jul 13 08:54:48 EDT 2007 M. Shepherd
+ *          remove attenuation, condense up and dowstream hits
+ *          pass up true z position and hit time
  */
 
 #include <stdlib.h>
@@ -34,16 +21,13 @@
 #include <geant3.h>
 #include <bintree.h>
 
-#define ATTEN_LENGTH	300.
-#define C_EFFECTIVE	16.75
-#define THRESH_MEV	10.
+#define THRESH_MEV	     1.
 #define TWO_HIT_RESOL	50.
-#define MAX_HITS 	100
+#define MAX_HITS 	   100
 
 binTree_t* barrelEMcalTree = 0;
 static int cellCount = 0;
 static int showerCount = 0;
-
 
 /* register hits during tracking (from gustep) */
 
@@ -93,68 +77,57 @@ void hitBarrelEMcal (float xin[4], float xout[4],
    if (dEsum > 0)
    {
       int nshot;
-      s_BcalUpstreamHits_t* upshots;
-      s_BcalDownstreamHits_t* downshots;
+      s_BcalHits_t* hits;
       int sector = getsector_();
       int layer  = getlayer_();
       int module = getmodule_();
       float phim = atan2(xbcal[1],xbcal[0]);
       float radius=sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
-      float dzup = xlocal[2];
-      float dzdown = -xlocal[2];
-      float tup = t + dzup/C_EFFECTIVE;
-      float tdown = t + dzdown/C_EFFECTIVE;
-      float Eup = dEsum * exp(-dzup/ATTEN_LENGTH);
-      float Edown = dEsum * exp(-dzdown/ATTEN_LENGTH);
+      float zLocal = xlocal[2];
       int mark = (module<<16)+ (layer<<9) + sector;
       
       void** twig = getTwig(&barrelEMcalTree, mark);
       if (*twig == 0)
       {
          s_BarrelEMcal_t* bcal = *twig = make_s_BarrelEMcal();
-         s_BcalCells_t* cells = make_s_BcalCells(1);
+         s_BcalCells_t* cells = make_s_BcalCellHits(1);
          cells->mult = 1;
          cells->in[0].module = module;
          cells->in[0].layer = layer;
          cells->in[0].sector = sector;
-         cells->in[0].bcalUpstreamHits = upshots
-                                       = make_s_BcalUpstreamHits(MAX_HITS);
-         cells->in[0].bcalDownstreamHits = downshots
-                                       = make_s_BcalDownstreamHits(MAX_HITS);
+         cells->in[0].bcalHits = hits
+                               = make_s_BcalHits(MAX_HITS);
          bcal->bcalCells = cells;
          cellCount++;
       }
       else
       {
          s_BarrelEMcal_t* bcal = *twig;
-         upshots = bcal->bcalCells->in[0].bcalUpstreamHits;
-         downshots = bcal->bcalCells->in[0].bcalDownstreamHits;
+         hits = bcal->bcalCells->in[0].bcalHits;
       }
 
-      for (nshot = 0; nshot < upshots->mult; nshot++)
+      for (nshot = 0; nshot < hits->mult; nshot++)
       {
-         if (fabs(upshots->in[nshot].t - tup) < TWO_HIT_RESOL)
+         if (fabs(hits->in[nshot].t - tup) < TWO_HIT_RESOL)
          {
             break;
          }
       }
-      if (nshot < upshots->mult)		/* merge with former hit */
+      if (nshot < hits->mult)		/* merge with former hit */
       {
-         upshots->in[nshot].t =
-                  (upshots->in[nshot].t * upshots->in[nshot].E + tup * Eup)
-                / (upshots->in[nshot].E += Eup);
-         downshots->in[nshot].t =
-             (downshots->in[nshot].t * downshots->in[nshot].E + tdown * Edown)
-           / (downshots->in[nshot].E += Edown);
+         hits->in[nshot].t =
+                  (hits->in[nshot].t * hits->in[nshot].E + t * dESum)
+                / (hits->in[nshot].E += dESum);
+         hits->in[nshot].zLocal =
+                  (hits->in[nshot].zLocal * hits->in[nshot].E + zLocal * dESum)
+                / (hits->in[nshot].E += dESum);
       }
       else if (nshot < MAX_HITS)		/* create new hit */
       {
-         upshots->in[nshot].t = tup;
-         upshots->in[nshot].E = Eup;
-         upshots->mult++;
-         downshots->in[nshot].t = tdown;
-         downshots->in[nshot].E = Edown;
-         downshots->mult++;
+         hits->in[nshot].t = t;
+         hits->in[nshot].E = dESum;
+         hits->in[nshot].zLocal = zLocal;
+         hits->mult++;
       }
       else
       {
@@ -202,51 +175,29 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 	 int m = box->bcalCells->mult;
          int mok = 0;
 
-         s_BcalUpstreamHits_t* upshots = cells->in[cell].bcalUpstreamHits;
-         s_BcalDownstreamHits_t* downshots = cells->in[cell].bcalDownstreamHits;
+         s_BcalHits_t* hits = cells->in[cell].bcalHits;
           
          /* compress out the hits below threshold */
          int i,iok;
-         for (iok=i=0; i < upshots->mult; i++)
+         for (iok=i=0; i < hits->mult; i++)
          {
-            if (upshots->in[i].E >= THRESH_MEV/1e3)
+            if (hits->in[i].E >= THRESH_MEV/1e3)
             {
                if (iok < i)
                {
-                  upshots->in[iok] = upshots->in[i];
+                  hits->in[iok] = hits->in[i];
                }
                ++iok;
                ++mok;
             }
          }
-         if (upshots != HDDM_NULL)
+         if (hits != HDDM_NULL)
          {
-            upshots->mult = iok;
+            hits->mult = iok;
             if (iok == 0)
             {
-               cells->in[cell].bcalUpstreamHits = HDDM_NULL;
-               FREE(upshots);
-            }
-         }
-         for (iok=i=0; i < downshots->mult; i++)
-         {
-            if (downshots->in[i].E >= THRESH_MEV/1e3)
-            {
-               if (iok < i)
-               {
-                  downshots->in[iok] = downshots->in[i];
-               }
-               ++iok;
-               ++mok;
-            }
-         }
-         if (downshots != HDDM_NULL)
-         {
-            downshots->mult = iok;
-            if (iok == 0)
-            {
-               cells->in[cell].bcalDownstreamHits = HDDM_NULL;
-               FREE(downshots);
+               cells->in[cell].bcalHits = HDDM_NULL;
+               FREE(hits);
             }
          }
 
