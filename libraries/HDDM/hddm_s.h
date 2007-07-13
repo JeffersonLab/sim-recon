@@ -373,33 +373,20 @@ typedef struct {
 } s_StartCntr_t;
 #endif /* s_StartCntr_t */
 
-#ifndef SAW_s_BcalUpstreamHit_t
-#define SAW_s_BcalUpstreamHit_t
+#ifndef SAW_s_BcalHit_t
+#define SAW_s_BcalHit_t
 
 typedef struct {
    float                E;
    float                t;
-} s_BcalUpstreamHit_t;
+   float                zLocal;
+} s_BcalHit_t;
 
 typedef struct {
    unsigned int mult;
-   s_BcalUpstreamHit_t in[1];
-} s_BcalUpstreamHits_t;
-#endif /* s_BcalUpstreamHit_t */
-
-#ifndef SAW_s_BcalDownstreamHit_t
-#define SAW_s_BcalDownstreamHit_t
-
-typedef struct {
-   float                E;
-   float                t;
-} s_BcalDownstreamHit_t;
-
-typedef struct {
-   unsigned int mult;
-   s_BcalDownstreamHit_t in[1];
-} s_BcalDownstreamHits_t;
-#endif /* s_BcalDownstreamHit_t */
+   s_BcalHit_t in[1];
+} s_BcalHits_t;
+#endif /* s_BcalHit_t */
 
 #ifndef SAW_s_BcalCell_t
 #define SAW_s_BcalCell_t
@@ -408,8 +395,7 @@ typedef struct {
    int32_t              layer;
    int32_t              module;
    int32_t              sector;
-   s_BcalUpstreamHits_t* bcalUpstreamHits;
-   s_BcalDownstreamHits_t* bcalDownstreamHits;
+   s_BcalHits_t*        bcalHits;
 } s_BcalCell_t;
 
 typedef struct {
@@ -912,9 +898,7 @@ s_BarrelEMcal_t* make_s_BarrelEMcal();
 
 s_BcalCells_t* make_s_BcalCells(int n);
 
-s_BcalUpstreamHits_t* make_s_BcalUpstreamHits(int n);
-
-s_BcalDownstreamHits_t* make_s_BcalDownstreamHits(int n);
+s_BcalHits_t* make_s_BcalHits(int n);
 
 s_BcalTruthShowers_t* make_s_BcalTruthShowers(int n);
 

@@ -427,38 +427,23 @@ s_BcalCells_t* make_s_BcalCells(int n)
       pp->layer = 0;
       pp->module = 0;
       pp->sector = 0;
-      pp->bcalUpstreamHits = (s_BcalUpstreamHits_t*)&hddm_nullTarget;
-      pp->bcalDownstreamHits = (s_BcalDownstreamHits_t*)&hddm_nullTarget;
+      pp->bcalHits = (s_BcalHits_t*)&hddm_nullTarget;
    }
    return p;
 }
 
-s_BcalUpstreamHits_t* make_s_BcalUpstreamHits(int n)
+s_BcalHits_t* make_s_BcalHits(int n)
 {
    int i;
    int rep = (n > 1) ? n-1 : 0;
-   int size = sizeof(s_BcalUpstreamHits_t) + rep * sizeof(s_BcalUpstreamHit_t);
-   s_BcalUpstreamHits_t* p = (s_BcalUpstreamHits_t*)MALLOC(size,"s_BcalUpstreamHits_t");
+   int size = sizeof(s_BcalHits_t) + rep * sizeof(s_BcalHit_t);
+   s_BcalHits_t* p = (s_BcalHits_t*)MALLOC(size,"s_BcalHits_t");
    p->mult = 0;
    for (i=0; i<n; i++) {
-      s_BcalUpstreamHit_t* pp = &p->in[i];
+      s_BcalHit_t* pp = &p->in[i];
       pp->E = 0;
       pp->t = 0;
-   }
-   return p;
-}
-
-s_BcalDownstreamHits_t* make_s_BcalDownstreamHits(int n)
-{
-   int i;
-   int rep = (n > 1) ? n-1 : 0;
-   int size = sizeof(s_BcalDownstreamHits_t) + rep * sizeof(s_BcalDownstreamHit_t);
-   s_BcalDownstreamHits_t* p = (s_BcalDownstreamHits_t*)MALLOC(size,"s_BcalDownstreamHits_t");
-   p->mult = 0;
-   for (i=0; i<n; i++) {
-      s_BcalDownstreamHit_t* pp = &p->in[i];
-      pp->E = 0;
-      pp->t = 0;
+      pp->zLocal = 0;
    }
    return p;
 }
@@ -911,8 +896,7 @@ char HDDM_s_DocumentString[] =
 "      </startCntr>\n"
 "      <barrelEMcal minOccurs=\"0\">\n"
 "        <bcalCell layer=\"int\" maxOccurs=\"4\" minOccurs=\"0\" module=\"int\" sector=\"int\">\n"
-"          <bcalUpstreamHit E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" />\n"
-"          <bcalDownstreamHit E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" />\n"
+"          <bcalHit E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" zLocal=\"float\" />\n"
 "        </bcalCell>\n"
 "        <bcalTruthShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" r=\"float\" t=\"float\" track=\"int\" z=\"float\" />\n"
 "      </barrelEMcal>\n"
@@ -1928,7 +1912,7 @@ static s_BcalCells_t* unpack_s_BcalCells(XDR* xdrs, popNode* pop)
       for (m = 0; m < mult; m++ )
       {
          int p;
-         void* (*ptr) = (void**) &this1->in[m].bcalUpstreamHits;
+         void* (*ptr) = (void**) &this1->in[m].bcalHits;
          xdr_int(xdrs,&this1->in[m].layer);
          xdr_int(xdrs,&this1->in[m].module);
          xdr_int(xdrs,&this1->in[m].sector);
@@ -1953,9 +1937,9 @@ static s_BcalCells_t* unpack_s_BcalCells(XDR* xdrs, popNode* pop)
    return this1;
 }
 
-static s_BcalUpstreamHits_t* unpack_s_BcalUpstreamHits(XDR* xdrs, popNode* pop)
+static s_BcalHits_t* unpack_s_BcalHits(XDR* xdrs, popNode* pop)
 {
-   s_BcalUpstreamHits_t* this1 = HDDM_NULL;
+   s_BcalHits_t* this1 = HDDM_NULL;
    unsigned int size;
    if (! xdr_u_int(xdrs,&size))
    {
@@ -1967,38 +1951,13 @@ static s_BcalUpstreamHits_t* unpack_s_BcalUpstreamHits(XDR* xdrs, popNode* pop)
       int m;
       unsigned int mult;
       xdr_u_int(xdrs,&mult);
-      this1 = make_s_BcalUpstreamHits(mult);
+      this1 = make_s_BcalHits(mult);
       this1->mult = mult;
       for (m = 0; m < mult; m++ )
       {
          xdr_float(xdrs,&this1->in[m].E);
          xdr_float(xdrs,&this1->in[m].t);
-      }
-      xdr_setpos(xdrs,start+size);
-   }
-   return this1;
-}
-
-static s_BcalDownstreamHits_t* unpack_s_BcalDownstreamHits(XDR* xdrs, popNode* pop)
-{
-   s_BcalDownstreamHits_t* this1 = HDDM_NULL;
-   unsigned int size;
-   if (! xdr_u_int(xdrs,&size))
-   {
-       return this1;
-   }
-   else if (size > 0)
-   {
-      int start = xdr_getpos(xdrs);
-      int m;
-      unsigned int mult;
-      xdr_u_int(xdrs,&mult);
-      this1 = make_s_BcalDownstreamHits(mult);
-      this1->mult = mult;
-      for (m = 0; m < mult; m++ )
-      {
-         xdr_float(xdrs,&this1->in[m].E);
-         xdr_float(xdrs,&this1->in[m].t);
+         xdr_float(xdrs,&this1->in[m].zLocal);
       }
       xdr_setpos(xdrs,start+size);
    }
@@ -2900,8 +2859,7 @@ static int pack_s_StcHits(XDR* xdrs, s_StcHits_t* this1);
 static int pack_s_StcTruthPoints(XDR* xdrs, s_StcTruthPoints_t* this1);
 static int pack_s_BarrelEMcal(XDR* xdrs, s_BarrelEMcal_t* this1);
 static int pack_s_BcalCells(XDR* xdrs, s_BcalCells_t* this1);
-static int pack_s_BcalUpstreamHits(XDR* xdrs, s_BcalUpstreamHits_t* this1);
-static int pack_s_BcalDownstreamHits(XDR* xdrs, s_BcalDownstreamHits_t* this1);
+static int pack_s_BcalHits(XDR* xdrs, s_BcalHits_t* this1);
 static int pack_s_BcalTruthShowers(XDR* xdrs, s_BcalTruthShowers_t* this1);
 static int pack_s_Cerenkov(XDR* xdrs, s_Cerenkov_t* this1);
 static int pack_s_CereSections(XDR* xdrs, s_CereSections_t* this1);
@@ -3938,18 +3896,9 @@ static int pack_s_BcalCells(XDR* xdrs, s_BcalCells_t* this1)
       xdr_int(xdrs,&this1->in[m].layer);
       xdr_int(xdrs,&this1->in[m].module);
       xdr_int(xdrs,&this1->in[m].sector);
-      if (this1->in[m].bcalUpstreamHits != (s_BcalUpstreamHits_t*)&hddm_nullTarget)
+      if (this1->in[m].bcalHits != (s_BcalHits_t*)&hddm_nullTarget)
       {
-         pack_s_BcalUpstreamHits(xdrs,this1->in[m].bcalUpstreamHits);
-      }
-      else
-      {
-         int zero=0;
-         xdr_int(xdrs,&zero);
-      }
-      if (this1->in[m].bcalDownstreamHits != (s_BcalDownstreamHits_t*)&hddm_nullTarget)
-      {
-         pack_s_BcalDownstreamHits(xdrs,this1->in[m].bcalDownstreamHits);
+         pack_s_BcalHits(xdrs,this1->in[m].bcalHits);
       }
       else
       {
@@ -3966,7 +3915,7 @@ static int pack_s_BcalCells(XDR* xdrs, s_BcalCells_t* this1)
    return size;
 }
 
-static int pack_s_BcalUpstreamHits(XDR* xdrs, s_BcalUpstreamHits_t* this1)
+static int pack_s_BcalHits(XDR* xdrs, s_BcalHits_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -3980,30 +3929,7 @@ static int pack_s_BcalUpstreamHits(XDR* xdrs, s_BcalUpstreamHits_t* this1)
    {
       xdr_float(xdrs,&this1->in[m].E);
       xdr_float(xdrs,&this1->in[m].t);
-   }
-   FREE(this1);
-   end = xdr_getpos(xdrs);
-   xdr_setpos(xdrs,base);
-   size = end-start;
-   xdr_u_int(xdrs,&size);
-   xdr_setpos(xdrs,end);
-   return size;
-}
-
-static int pack_s_BcalDownstreamHits(XDR* xdrs, s_BcalDownstreamHits_t* this1)
-{
-   int m;
-   unsigned int size=0;
-   int base,start,end;
-   base = xdr_getpos(xdrs);
-   xdr_u_int(xdrs,&size);
-   start = xdr_getpos(xdrs);
-
-   xdr_u_int(xdrs,&this1->mult);
-   for (m = 0; m < this1->mult; m++)
-   {
-      xdr_float(xdrs,&this1->in[m].E);
-      xdr_float(xdrs,&this1->in[m].t);
+      xdr_float(xdrs,&this1->in[m].zLocal);
    }
    FREE(this1);
    end = xdr_getpos(xdrs);
@@ -5007,13 +4933,9 @@ static popNode* matches(char* b, char* c)
          {
             this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_BcalCells;
          }
-         else if (strcmp(btag,"bcalUpstreamHit") == 0)
+         else if (strcmp(btag,"bcalHit") == 0)
          {
-            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_BcalUpstreamHits;
-         }
-         else if (strcmp(btag,"bcalDownstreamHit") == 0)
-         {
-            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_BcalDownstreamHits;
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_BcalHits;
          }
          else if (strcmp(btag,"bcalTruthShower") == 0)
          {
