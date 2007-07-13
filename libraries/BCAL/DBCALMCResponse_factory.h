@@ -10,17 +10,33 @@
 
 #include "JANA/JFactory.h"
 #include "JANA/JEventLoop.h"
-#include "DBCALMCResponse.h"
+
+#include "BCAL/DBCALMCResponse.h"
+
+#include "DRandom.h"
 
 class DBCALMCResponse_factory:public JFactory<DBCALMCResponse>{
-	public:
-		DBCALMCResponse_factory(){};
-		~DBCALMCResponse_factory(){};
-		const string toString(void);
 
+public:
 
-	private:
+    DBCALMCResponse_factory();
+    ~DBCALMCResponse_factory(){};
+    
+    const string toString(void);
+    
+private:
+
 		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+
+    // mock up the sampling fraction smearing
+    float samplingSmear( float E );
+    
+    float m_cellThreshold;
+    
+    float m_samplingCoefA;
+    float m_samplingCoefB;
+    
+    DRandom m_randomGen;
 };
 
 #endif // _DBCALMCResponse_factory_

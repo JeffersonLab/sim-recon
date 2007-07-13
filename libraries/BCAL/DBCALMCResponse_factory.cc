@@ -5,9 +5,31 @@
 // Creator: gluexuser (on Linux hydra.phys.uregina.ca 2.4.20-8smp i686)
 //
 
-#include <cassert>	
-#include "DBCALMCResponse_factory.h"
-#include "DHDDMBCALHit.h"
+#include <cassert>
+
+#include "BCAL/DBCALMCResponse_factory.h"
+#include "BCAL/DBCALGeometry.h"
+#include "BCAL/DHDDMBCALHit.h"
+
+#include "DRandom.h"
+#include "units.h"
+
+DBCALMCResponse_factory::DBCALMCResponse_factory() : 
+m_randomGen()
+{
+    
+    // setup response parameters
+    
+    // set cell threshold at 10 MeV
+    //m_cellThreshold = 2.5 * k_MeV;
+    m_cellThreshold = 10 * k_MeV;
+
+
+    // set the sampling smearing coefficients:
+    // (from http://www.jlab.org/Hall-D/software/wiki/index.php/Image:ReSAM_samfrac_1.gif )
+    m_samplingCoefA = 0.041;
+    m_samplingCoefB = 0.09;
+}
 
 //------------------
 // evnt
@@ -15,24 +37,49 @@
 jerror_t DBCALMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
 {
 
-  vector<const DHDDMBCALHit*> hddmhits;
-  eventLoop->Get(hddmhits);
+    vector<const DBCALGeometry*> bcalGeomVec;
+    eventLoop->Get(bcalGeomVec);
+    const DBCALGeometry& bcalGeom = *(bcalGeomVec.at( 0 ));
     
-  for (unsigned int i = 0; i < hddmhits.size(); i++) {
-    const DHDDMBCALHit *hddmhit = hddmhits[i];
-    DBCALMCResponse *response = new DBCALMCResponse;
-   
-     response->module =hddmhit->module;
-     response->layer = hddmhit->layer;
-     response->sector = hddmhit->sector;
-     response->end = hddmhit->end;
-     response->E = hddmhit->E;
-     response->t = hddmhit->t;
-     
-    _data.push_back(response);
-  }
+    vector<const DHDDMBCALHit*> hddmhits;
+    eventLoop->Get(hddmhits);
+    
+    for (unsigned int i = 0; i < hddmhits.size(); i++) {
+        
+        const DHDDMBCALHit *hddmhit = hddmhits[i];
+        DBCALMCResponse *response = new DBCALMCResponse;
+        
+        response->module =hddmhit->module;
+        response->layer = hddmhit->layer;
+        response->sector = hddmhit->sector;
+        response->E = samplingSmear( hddmhit->E );
+        response->t = hddmhit->t;
 
+        response->cellId = 
+            DBCALGeometry::cellId( hddmhit->module, hddmhit->layer, hddmhit->sector );
+
+        float upDist =  ( bcalGeom.BCALFIBERLENGTH / 2 ) + hddmhit->zLocal;
+        float downDist = ( bcalGeom.BCALFIBERLENGTH / 2 ) - hddmhit->zLocal;
+        
+        
+        // make sure we exceed the effective electronics threshold
+        if( response->E > m_cellThreshold ){
+            
+            _data.push_back(response);
+        }
+    }
+    
 	return NOERROR;
+}
+
+float
+DBCALMCResponse_factory::samplingSmear( float E )
+{
+ 
+    double sigma = sqrt( ( m_samplingCoefA * m_samplingCoefA / E ) +
+                         ( m_samplingCoefB * m_samplingCoefB ) );
+    
+    return( E * m_randomGen.Gaus( 1., sigma ) );
 }
 
 //------------------
