@@ -28,6 +28,8 @@ public:
     
     HDCLASSDEF(DBCALGeometry);
     
+    enum End { kUpstream, kDownstream };
+    
     int NBCALMODS;         ///> number of modules
     int NBCALLAYS1;        ///> number of layers in first 10 ccm 
     int NBCALLAYS2;        ///> number of layers in last  15 cm 

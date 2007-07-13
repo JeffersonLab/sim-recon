@@ -8,20 +8,24 @@
 #ifndef _DBCALMCResponse_
 #define _DBCALMCResponse_
 
+#include "BCAL/DBCALGeometry.h"
+
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
 
-class DBCALMCResponse:public JObject{
-	public:
+class DBCALMCResponse : public JObject{
+
+public:
 		HDCLASSDEF(DBCALMCResponse);
+		    
+    int module;
+    int layer;
+    int sector;
+    DBCALGeometry::End end;
+    float E;
+    float t;
 		
-		int module;
-		int layer;
-		int sector;
-		int end; /// 0:UPSTREAM(A) 1:DOWNSTREAM(B)
-		float E;
-		float t;
-		
+    int cellId;
 };
 
 #endif // _DBCALMCResponse_

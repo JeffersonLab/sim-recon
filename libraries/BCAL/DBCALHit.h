@@ -8,6 +8,8 @@
 #ifndef _DBCALHit_
 #define _DBCALHit_
 
+#include "BCAL/DBCALGeometry.h"
+
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
 
@@ -15,15 +17,10 @@ class DBCALHit:public JObject{
 	public:
 		HDCLASSDEF(DBCALHit);
 		
-		enum END_t{
-			UPSTREAM,
-			DOWNSTREAM
-		};
-		
 		int module;
 		int layer;
 		int sector;
-		END_t end; /// use BCALHit::UPSTREAM or BCALHit::DOWNSTREAM
+		DBCALGeometry::End end;
 		float E;
 		float t;
 };

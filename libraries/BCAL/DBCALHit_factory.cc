@@ -26,7 +26,7 @@ const string DBCALHit_factory::toString(void)
 		printcol("%d",	bcalhit->module);
 		printcol("%d",	bcalhit->layer);
 		printcol("%d",	bcalhit->sector);
-		printcol(bcalhit->end==DBCALHit::UPSTREAM ? "upstream":"downstream");
+		printcol(bcalhit->end==DBCALGeometry::kUpstream ? "upstream":"downstream");
 		printcol("%2.3f",	bcalhit->E);
 		printcol("%4.0f",	bcalhit->t);
 		printrow();

@@ -103,8 +103,8 @@ jerror_t DBCALShower_factory_SIMPLE::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DBCALHit*> downstream_bcalhits;
 	for(unsigned int i=0; i<bcalhits.size(); i++){
 		const DBCALHit *hit = bcalhits[i];
-		if(hit->end == DBCALHit::UPSTREAM){upstream_bcalhits.push_back(hit); continue;}
-		if(hit->end == DBCALHit::DOWNSTREAM){downstream_bcalhits.push_back(hit); continue;}
+		if(hit->end == DBCALGeometry::kUpstream){upstream_bcalhits.push_back(hit); continue;}
+		if(hit->end == DBCALGeometry::kDownstream){downstream_bcalhits.push_back(hit); continue;}
 		
 		_DBG_<<"Heyyy! How'd I get here?!?"<<endl;
 	}
