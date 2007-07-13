@@ -39,9 +39,7 @@
    <barrelEMcal minOccurs="0">
       <bcalCell module="int" layer="int" sector="int"
 			minOccurs="0" maxOccurs="4">
-         <bcalUpstreamHit t="float" E="float"
-			minOccurs="0" maxOccurs="unbounded" />
-         <bcalDownstreamHit t="float" E="float"
+         <bcalHit t="float" E="float" zLocal="float"
 			minOccurs="0" maxOccurs="unbounded" />
      </bcalCell>
      <bcalTruthShower t="float" z="float" phi="float" r="float"
