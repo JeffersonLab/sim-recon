@@ -11,9 +11,9 @@ class DHDDMBCALHit:public JObject{
 		int module;
 		int layer;
 		int sector;
-		int end; /// 0::UPSTREAM (A) or 1::DOWNSTREAM (B)
 		float E;
 		float t;
+        float zLocal;
 };
 
 #endif // _DHDDMBCALHit_
