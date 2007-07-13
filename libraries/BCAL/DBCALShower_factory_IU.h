@@ -183,28 +183,15 @@ private:
     
     // some thresholds        
     
-    // ***threshold used in ClusAnalysis()
-    
-    float r_thr;  // CENTROID DISTANCE THRESHOLD
-    float t_thr;   // CENTROID TIME THRESHOLD
-    float z_thr;    // FIBER DISTANCE THRESHOLD
-    float rt_thr; // CENTROID TRANSVERSE DISTANCE THRESHOLD
-    float ecmin;  // MIN ENERGY THRESD OF CLUSTER IN GEV
-    float rmsmax;    // T RMS THRESHOLD
-    
-    // ***the above threshold are used in ClusAnalysis()
-    
-    // Constants for attenuation 
-    // attenuation factor =f_att*exp(-x/lmbda1)+(1.0-f_att)*exp(-x/lmbda2)
-    float f_att;
-    float lmbda1; // Attenuation lenth and other parameters
-    float lmbda2; // used in formula  attenuation factor
-                  //  mcprod=0 for MC data and mcprod=1 for real data
-    int  mcprod;
-    
-    // some calibration constants
-    float C_EFFECTIVE; //Effective v of light in scintillator
-    float ECORR; // ECORR actually could be a function of E
+    float MERGE_THRESH_DIST;    // CENTROID DISTANCE THRESHOLD
+    float MERGE_THRESH_TIME;    // CENTROID TIME THRESHOLD
+    float MERGE_THRESH_ZDIST;   // FIBER DISTANCE THRESHOLD
+    float MERGE_THRESH_XYDIST;  // CENTROID TRANSVERSE DISTANCE THRESHOLD
+    float BREAK_THRESH_TRMS;    // T RMS THRESHOLD    
+    float CLUST_THRESH;         // MIN ENERGY THRESD OF CLUSTER IN GEV    
+    float ATTEN_LENGTH;         // Attenuation lenth and other parameters    
+    float C_EFFECTIVE;          // Effective v of light in scintillator
+    float ENERGY_SCALE;         // multiplicative calibration constant
     
 };
 

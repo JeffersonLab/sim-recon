@@ -22,7 +22,10 @@ using namespace std;
 //------------------
 DBCALShower_factory_IU::DBCALShower_factory_IU()
 {
-	ethr_cell=0.00001;// MIN ENERGY THRESD OF cel in GeV
+    // this should be lower than cut in BCALMCResponse
+	ethr_cell=0.0001;     // MIN ENERGY THRESD OF cell in GeV
+
+	CLUST_THRESH = 0.02;  // MIN ENERGY THRESD OF CLUSTER IN GEV
     
 	elyr = 1;
 	xlyr = 2; 
@@ -30,20 +33,24 @@ DBCALShower_factory_IU::DBCALShower_factory_IU()
 	zlyr = 4; 
 	tlyr = 5;
     
-	r_thr = 40.0;  // CENTROID DISTANCE THRESHOLD
-	t_thr = 2.5;   // CENTROID TIME THRESHOLD
-	z_thr = 30.0;    // FIBER DISTANCE THRESHOLD
-	rt_thr= 40.0; // CENTROID TRANSVERSE DISTANCE THRESHOLD
-	ecmin = 0.007;  // MIN ENERGY THRESD OF CLUSTER IN GEV
-	rmsmax= 5.0;    // T RMS THRESHOLD
+    // these four parameters are used in merging clusters
+	MERGE_THRESH_DIST   = 40.0;  // CENTROID DISTANCE THRESHOLD
+	MERGE_THRESH_TIME   =  2.5;  // CENTROID TIME THRESHOLD
+	MERGE_THRESH_ZDIST  = 30.0;  // FIBER DISTANCE THRESHOLD
+	MERGE_THRESH_XYDIST = 40.0;  // CENTROID TRANSVERSE DISTANCE THRESHOLD
+
+    // this parameter is used to break clusters based on rms time
+    BREAK_THRESH_TRMS= 5.0;   // T RMS THRESHOLD
+
+	ENERGY_SCALE=1.13; // ENERGY_SCALE actually could be a function of E
     
-	f_att= 1.0;
-	lmbda1=300.; // Attenuation lenth and other parameters DL 3/27/07
-	lmbda2=700.; // used in formula  attenuation factor
-	mcprod=0;	//   mcprod=0 for MC data and mcprod=1 for real data
-    
-	C_EFFECTIVE=16.75; //Effective v of light in scintillator DL 3/27/07
-	ECORR=0.13; // ECORR actually could be a function of E
+    gPARMS->SetDefaultParameter( "BCALRECON:CLUST_THRESH", CLUST_THRESH );
+    gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_DIST", MERGE_THRESH_DIST );
+    gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_TIME", MERGE_THRESH_TIME );
+    gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_ZDIST", MERGE_THRESH_ZDIST );
+    gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_XYDIST", MERGE_THRESH_XYDIST );
+    gPARMS->SetDefaultParameter( "BCALRECON:BREAK_THRESH_TRMS", BREAK_THRESH_TRMS );
+    gPARMS->SetDefaultParameter( "BCALRECON:ENERGY_SCALE", ENERGY_SCALE );
 }
 
 //------------------
@@ -60,7 +67,10 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int runnumber)
     // Calculate Cell Position
     //////////////////////////////////////////////////////////////////
     
-    fiberLength = bcalGeom.BCALFIBERLENTH; // fiber lenth in cm
+    ATTEN_LENGTH = bcalGeom.ATTEN_LENGTH;
+    C_EFFECTIVE = bcalGeom.C_EFFECTIVE;
+    
+    fiberLength = bcalGeom.BCALFIBERLENGTH; // fiber lenth in cm
     int   modmin = 0;
     int   modmax = bcalGeom.NBCALMODS;
     int   rowmin1=0;
@@ -156,12 +166,14 @@ jerror_t DBCALShower_factory_IU::evnt(JEventLoop *loop, int eventnumber)
     for (int i = 1; i < (clstot+1); i++){
         
         int  j=clspoi[i];
+  
+        if( e_cls[j] * ENERGY_SCALE < CLUST_THRESH ) continue;
         
         // Time to cook a final shower
         DBCALShower *shower = new DBCALShower;
   
         shower->E                   = e_cls[j];    
-        shower->Ecorr               = shower->E*(1+ECORR);
+        shower->Ecorr               = shower->E*ENERGY_SCALE;
         shower->x                   = x_cls[j];
         shower->y                   = y_cls[j];
         shower->z                   = z_cls[j] + BCAL_Z_OFFSET;   
@@ -255,8 +267,8 @@ void DBCALShower_factory_IU::CellRecon(JEventLoop *eventLoop)
         {
             cout<<"no such end, it is neither side A Nor B \n"; 
         }
-    }  
-    
+    }
+
     //////////////////////////////////////////////////////////////////////// 
     // Now data member ecel_a,tcel_a,ecel_b,tcel_b are readily filled.
     ////////////////////////////////////////////////////////////////////////
@@ -276,117 +288,82 @@ void DBCALShower_factory_IU::CellRecon(JEventLoop *eventLoop)
         for (int i = 0; i < layermax_bcal; i++){
             for (int j = 0; j <  colmax_bcal; j++){    
                 
-                float  tai    =    tcel_a[k][i][j];    // Get TIMEs
-                float  tbi    =    tcel_b[k][i][j];  
+                // get times
+                float  ta = tcel_a[k][i][j];
+                float  tb = tcel_b[k][i][j];  
                 
-                if (tai==0 || tbi==0 || fabs(tai-tbi)>80.) {  // disregard cells
-                                                              // with no t information
-                                                              // but put 0 in cwrk   
-                    xcel[k][i][j]=0.0;
-                    ycel[k][i][j]=0.0;
-                    zcel[k][i][j]=0.0;
-                    tcel[k][i][j]=0.0;
-                    ecel[k][i][j]=0.0;
-                    continue;
-                }
-                //
-                // ********* Get energy information ******************************
-                //
-                
-                float eai= ecel_a[k][i][j];
-                float ebi= ecel_b[k][i][j];
-                
-                if(eai<ethr_cell||ebi<ethr_cell){
-                    xcel[k][i][j]=0.0;
-                    ycel[k][i][j]=0.0;
-                    zcel[k][i][j]=0.0;
-                    tcel[k][i][j]=0.0;
-                    ecel[k][i][j]=0.0;
+                if( ( ta == 0 ) || ( tb == 0 ) || 
+                    ( fabs( ta - tb ) > 80. ) ) {  
+                    
+                    xcel[k][i][j] = 0.0;
+                    ycel[k][i][j] = 0.0;
+                    zcel[k][i][j] = 0.0;
+                    tcel[k][i][j] = 0.0;
+                    ecel[k][i][j] = 0.0;
+
                     continue;
                 }
                 
-                //
-                // Now retrieve and build all relevant information for each cell:
-                // To give all information for Wkim clustering, we need also to correct 
-                // TA,TB for the different cell lengths. So we have CWRK version #2.
-                //
+                float ea = ecel_a[k][i][j];
+                float eb = ecel_b[k][i][j];
                 
-                //------ Make proper initialization -----------------------------------------
-                
-                float x = 0.;
-                float y = 0.;
-                float z = 0.;
-                float t = 0.;
-                float e = 0.;
-                float tanor=0.0;
-                float tbnor=0.0;  
-                
-                //----now start the cell information reconstruction;
-                //----Here I use "Blocks and Scope" method to translate the functions
-                //----So the following brackets starts actually the functions
-                //	integer function getallemc (tain,tbin,eain,ebin,
-                //     			 e,x,y,z,t,mod,row,col,tanor,tbnor)
-                //    which is a Fortran Function appeared in Kloe code. 
-                
-                
-                //   Now begins the function getallemc
-                {
-                    float  ta = tai-ta0-ta_offset[k][i][j];
-                    float  tb = tbi-tb0-tb_offset[k][i][j];
-                    tanor =ta;
-                    tbnor =tb;
-                    float  ea = eai;
-                    float  eb = ebi;
-                    
-                    x    = xx[k][i][j];
-                    y    = yy[k][i][j];
-                    
-                    float  z1 = -0.5*fiberLength;    // cm
-                    float  z2 =  0.5*fiberLength;    // cm      
-                    float  z0 = 0.5*(z1+z2);
-                    
-                    z = 0.5*C_EFFECTIVE*(ta-tb) + z0;
-                    
-                    if( z>(0.5*fiberLength)) z = 0.5*fiberLength;
-                    else {
-                        if (z<(-0.5*fiberLength)) z = -0.5*fiberLength;
-                    }
-                    t = 0.5*(ta+tb-fiberLength/C_EFFECTIVE);
-                    float dpma = min((ta-t)*C_EFFECTIVE,fiberLength);
-                    float dpmb = min((tb-t)*C_EFFECTIVE,fiberLength);
-                    
-                    
-                    float atta=f_att*exp(-dpma/lmbda1)+(1.-f_att)*exp(-dpma/lmbda2);
-                    float attb=f_att*exp(-dpmb/lmbda1)+(1.-f_att)*exp(-dpmb/lmbda2);
-                    
-                    e = ea/atta + eb/attb;
-                    
-                    float  datanor = f_att*exp(-0.5*fiberLength/lmbda1)
-                        +(1.-f_att)*exp(-0.5*fiberLength/lmbda2);
-                    
-                    if( mcprod==0) e = e *datanor;
-                    e = 0.5*e;
-                    
+                // algorithm requires both ends be hit
+                // improve energy resolution with single hits?
+                if( ( ea < ethr_cell ) ||
+                    ( eb < ethr_cell ) ){
+
+                    xcel[k][i][j] = 0.0;
+                    ycel[k][i][j] = 0.0;
+                    zcel[k][i][j] = 0.0;
+                    tcel[k][i][j] = 0.0;
+                    ecel[k][i][j] = 0.0;
+                    continue;
                 }
                 
-                //   Now ends the function getallemc
                 
-                xcel[k][i][j]=x;
-                ycel[k][i][j]=y;
-                zcel[k][i][j]=z;
-                tcel[k][i][j]=t;
-                ecel[k][i][j]=e;
-                tcell_anor[k][i][j]=tanor;
-                tcell_bnor[k][i][j]=tbnor;
+                float  ta_cal = ta - ta0 - ta_offset[k][i][j];
+                float  tb_cal = tb - tb0 - tb_offset[k][i][j];
                 
+                float x    = xx[k][i][j];
+                float y    = yy[k][i][j];
+                    
+                float  z1 = -0.5 * fiberLength;    // cm
+                float  z2 =  0.5 * fiberLength;    // cm      
+                float  z0 =  0.5 * ( z1 + z2 );
+                    
+                float z = 0.5 * C_EFFECTIVE * ( ta_cal - tb_cal ) + z0;
+                    
+                if( z > ( 0.5 * fiberLength ) ){
+                        
+                    z = 0.5*fiberLength;
+                }
+                else if( z < ( -0.5 * fiberLength ) ){
+                        
+                    z = -0.5*fiberLength;
+                }
+                    
+                float t = 0.5 * ( ta_cal + tb_cal - fiberLength / C_EFFECTIVE );
+                
+                float dpma = min( ( ta_cal - t ) * C_EFFECTIVE, fiberLength );
+                float dpmb = min( ( tb_cal - t ) * C_EFFECTIVE, fiberLength );
+                float atta = exp( -dpma / ATTEN_LENGTH );
+                float attb = exp( -dpmb / ATTEN_LENGTH );
+                float e = ( ea / atta ) + ( eb / attb );
+                    
+                float  datanor = exp( -0.5 * fiberLength / ATTEN_LENGTH );
+                e *= datanor;
+                e *= 0.5;                
+                
+                xcel[k][i][j] = x;
+                ycel[k][i][j] = y;
+                zcel[k][i][j] = z;
+                tcel[k][i][j] = t;
+                ecel[k][i][j] = e;
+                tcell_anor[k][i][j] = ta_cal;
+                tcell_bnor[k][i][j] = tb_cal;
             }
         }
-    }
-    
-    ///////////////////////////////////////////////////////////////////////////////
-    // data member arrays xcel,ycel,zcel,tcel,ecel,tcell_anor,tcell_bnor are filled
-    ///////////////////////////////////////////////////////////////////////////////
-    
+    }    
 }
 
 
@@ -450,7 +427,6 @@ void DBCALShower_factory_IU::CeleToArray(void)
                 narr[2][celtot]=i+1;    //  be used by preclusters
                 narr[3][celtot]=j+1;    //  which will start from index of 1
                                         // rather than from 0.
-                
                 
                 //-----------------------------------------------------------------------
                 
@@ -594,40 +570,26 @@ void DBCALShower_factory_IU::PreCluster(JEventLoop *eventLoop)
                                     maxnn=j;
                                 }
                             }              
+                        }
+                    }
+                    
+                    // further check col distance if one is in row5, another is in row6
+                    // so that the two are between the boundary of two different size
+                    // of cells.
+                    if( ( i1 == rowmax1 & i2 == rowmin2 ) || 
+                        ( i1 == rowmin2 & i2 == rowmax1) ) {
+
+                        float delta_xx=xx[k1-1][i1-1][j1-1]-xx[k2-1][i2-1][j2-1];
+                        float delta_yy=yy[k1-1][i1-1][j1-1]-yy[k2-1][i2-1][j2-1];
+                        
+                        float dis = sqrt( delta_xx * delta_xx + delta_yy * delta_yy );
+                        dis = sqrt( dis*dis - dis_in_out * dis_in_out );               
+                        if( dis < disthres ){
                             
+                            emin = e_cel[j];
+                            maxnn = j;
                         }
-                        
-                    }
-                    
-                    
-                    
-                    //    further check col distance if one is in row5, another is in row6
-                    //    so that the two are between the boundary of two different size
-                    //   of cells.
-                    
-                    if(i1==rowmax1 & i2==rowmin2) {
-                        float delta_xx=xx[k1-1][i1-1][j1-1]-xx[k2-1][i2-1][j2-1];
-                        float delta_yy=yy[k1-1][i1-1][j1-1]-yy[k2-1][i2-1][j2-1];
-                        
-                        float dis=sqrt(delta_xx*delta_xx+delta_yy*delta_yy);
-                        dis=sqrt(dis*dis- dis_in_out*dis_in_out);               
-                        if(dis<disthres){      
-                            emin=e_cel[j];
-                            maxnn=j;
-                        }
-                    }
-                    
-                    if(i1==rowmin2 & i2==rowmax1) {
-                        float delta_xx=xx[k1-1][i1-1][j1-1]-xx[k2-1][i2-1][j2-1];
-                        float delta_yy=yy[k1-1][i1-1][j1-1]-yy[k2-1][i2-1][j2-1];
-                        
-                        float dis=sqrt(delta_xx*delta_xx+delta_yy*delta_yy);
-                        dis=sqrt(dis*dis-dis_in_out*dis_in_out);
-                        if(dis<disthres) {      
-                            emin=e_cel[j];
-                            maxnn=j;
-                        } 
-                    }
+                    }                    
                 }             
             }
         }        // finish second loop
@@ -734,7 +696,6 @@ void DBCALShower_factory_IU::ClusNorm(void)
         //       NORMALIZED QUANTITIES FOR EACH SIDE
         //----------------------------------------------------------------------
         
-        //  CHECK!!! -- like ea_cls[n] getting used too early!?!?
         ta_cls[n]=(ea_cls[n]*ta_cls[n]+celdata[1][ix]*ta_cel[ix])
             /(ea_cls[n]+celdata[1][ix]);        
         tsqr_a[n]=(ea_cls[n]*tsqr_a[n]+celdata[1][ix]*ta_cel[ix]*
@@ -804,7 +765,7 @@ void DBCALShower_factory_IU::ClusAnalysis()
             int ix=clspoi[j];
             if(e_cls[ix]>0.0){
                 float  dist=sqrt(trms_a[ix]*trms_a[ix]+trms_b[ix]*trms_b[ix]);
-                if(dist>rmsmax) {
+                if(dist>BREAK_THRESH_TRMS) {
                     Clus_Break(ix);
                     newClust = true;
                 }
@@ -844,11 +805,11 @@ void DBCALShower_factory_IU::ClusAnalysis()
                 //	  float  distz=abs(z_cls[ix]-z_cls[iy]);
                 //         cout<<"dist="<<dist<<" distz="<<distz<<" tdif="<<tdif<<"\n";    
                 
-                if(dist<r_thr & tdif<t_thr){
+                if( dist<MERGE_THRESH_DIST & tdif<MERGE_THRESH_TIME ){
                     float zdif=fabs(z_cls[ix]-z_cls[iy]);
                     float distran=sqrt(delta_x*delta_x+delta_y*delta_y);
                     
-                    if(zdif<z_thr & distran<rt_thr){
+                    if(zdif<MERGE_THRESH_ZDIST & distran<MERGE_THRESH_XYDIST){
                         if(e_cls[ix]>=e_cls[iy]) {
                             icls[1]=ix;
                             icls[2]=iy;
