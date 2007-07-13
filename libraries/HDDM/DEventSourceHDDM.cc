@@ -142,8 +142,8 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName == "DBCALTruthShower" )
 	  return Extract_DBCALTruthShower(my_hddm_s, dynamic_cast<JFactory<DBCALTruthShower>*>(factory));
 
-	if(dataClassName =="DBCALHit")
-		return Extract_DBCALHit(my_hddm_s, dynamic_cast<JFactory<DBCALHit>*>(factory));
+	if(dataClassName =="DHDDMBCALHit")
+		return Extract_DHDDMBCALHit(my_hddm_s, dynamic_cast<JFactory<DHDDMBCALHit>*>(factory));
 
 	if(dataClassName =="DCDCHit")
 		return Extract_DCDCHit(my_hddm_s, dynamic_cast<JFactory<DCDCHit>*>(factory));
@@ -414,7 +414,7 @@ jerror_t DEventSourceHDDM::GetUPVTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*
 //------------------
 // Extract_DBCALHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit> *factory)
+jerror_t DEventSourceHDDM::Extract_DHDDMBCALHit(s_HDDM_t *hddm_s, JFactory<DHDDMBCALHit> *factory)
 {
 	/// Copies the data from the given hddm_s structure. This is called
 	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -422,7 +422,7 @@ jerror_t DEventSourceHDDM::Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit>
 	
 	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
 	
-	vector<DBCALHit*> data;
+	vector<DHDDMBCALHit*> data;
 
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
@@ -438,32 +438,17 @@ jerror_t DEventSourceHDDM::Extract_DBCALHit(s_HDDM_t *hddm_s, JFactory<DBCALHit>
 		s_BcalCells_t *cells = hits->barrelEMcal->bcalCells;
 		for(unsigned int j=0;j<cells->mult;j++){
 			s_BcalCell_t *cell = &cells->in[j];
-			if(cell->bcalUpstreamHits != HDDM_NULL){
-				for(unsigned int k=0; k<cell->bcalUpstreamHits->mult; k++){
-					s_BcalUpstreamHit_t *upstreamhit = &cell->bcalUpstreamHits->in[k];
+			if(cell->bcalHits != HDDM_NULL){
+				for(unsigned int k=0; k<cell->bcalHits->mult; k++){
+					s_BcalHit_t *hit = &cell->bcalHits->in[k];
 					
-					DBCALHit *bcalhit = new DBCALHit();
+					DHDDMBCALHit *bcalhit = new DHDDMBCALHit();
 					bcalhit->module = cell->module;
 					bcalhit->layer = cell->layer;
 					bcalhit->sector = cell->sector;
-					bcalhit->end = DBCALHit::UPSTREAM;
-					bcalhit->E = upstreamhit->E;
-					bcalhit->t = upstreamhit->t;
-					data.push_back(bcalhit);
-				}
-			}
-
-			if(cell->bcalDownstreamHits != HDDM_NULL){
-				for(unsigned int k=0; k<cell->bcalDownstreamHits->mult; k++){
-					s_BcalDownstreamHit_t *downstreamhit = &cell->bcalDownstreamHits->in[k];
-					
-					DBCALHit *bcalhit = new DBCALHit();
-					bcalhit->module = cell->module;
-					bcalhit->layer = cell->layer;
-					bcalhit->sector = cell->sector;
-					bcalhit->end = DBCALHit::DOWNSTREAM;
-					bcalhit->E = downstreamhit->E;
-					bcalhit->t = downstreamhit->t;
+					bcalhit->E = hit->E;
+					bcalhit->t = hit->t;
+                    bcalhit->zLocal = hit->zLocal;
 					data.push_back(bcalhit);
 				}
 			}
