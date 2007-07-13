@@ -115,21 +115,17 @@ int process_event(s_HDDM_t *event)
       int nup, ndown;
       nup = ndown = 0;
       for (cell=0; cell < cells->mult; cell++) {
-         s_BcalUpstreamHits_t *hitsup = cells->in[cell].bcalUpstreamHits;
-         s_BcalDownstreamHits_t *hitsdown = cells->in[cell].bcalDownstreamHits;
+         s_BcalHits_t *hits = cells->in[cell].bcalHits;
          int hit;
          bcalnt.module = cells->in[cell].module;
          bcalnt.layer = cells->in[cell].layer;
          bcalnt.sector = cells->in[cell].sector;
-         for (hit=0; hit < hitsup->mult; hit++,nup++) {
-            bcalnt.tup[nup] = hitsup->in[hit].t; 
-            bcalnt.Eup[nup] = hitsup->in[hit].E; 
-         }
-         for (hit=0; hit < hitsdown->mult; hit++,ndown++) {
-            bcalnt.tdown[ndown] = hitsdown->in[hit].t; 
-            bcalnt.Edown[ndown] = hitsdown->in[hit].E; 
+         for (hit=0; hit < hits->mult; hit++,nup++) {
+            bcalnt.tup[nup] = hits->in[hit].t; 
+            bcalnt.Eup[nup] = hits->in[hit].E; 
          }
          bcalnt.nup = nup;
+         // old relic from when there were up and downstream hits in BCAL
          bcalnt.ndown = ndown;
          hfnt(1);
       }
