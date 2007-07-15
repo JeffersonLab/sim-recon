@@ -117,10 +117,11 @@ void hitBarrelEMcal (float xin[4], float xout[4],
       {
          hits->in[nshot].t =
                   (hits->in[nshot].t * hits->in[nshot].E + t * dEsum)
-                / (hits->in[nshot].E += dEsum);
+                / (hits->in[nshot].E + dEsum);
          hits->in[nshot].zLocal =
                   (hits->in[nshot].zLocal * hits->in[nshot].E + zLocal * dEsum)
-                / (hits->in[nshot].E += dEsum);
+                / (hits->in[nshot].E + dEsum);
+         hits->in[nshot].E += dEsum;
       }
       else if (nshot < MAX_HITS)		/* create new hit */
       {
