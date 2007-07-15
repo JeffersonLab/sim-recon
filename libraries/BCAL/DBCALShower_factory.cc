@@ -400,15 +400,14 @@ void DBCALShower_factory::CellRecon(JEventLoop *eventLoop)
      int module = hit->module;
      int layer = hit->layer;
      int sector = hit->sector;
-     int end = hit->end;
      float E = hit->E;
      float t = hit->t;
      
-     if(end==0) {                         // upstream
+     if( hit->end == DBCALGeometry::kUpstream) {                         // upstream
            ecel_a[module-1][layer-1][sector-1] =  E;
            tcel_a[module-1][layer-1][sector-1] =  t;
           }  
-          else if(end==1) {                //   downstream
+          else if( hit->end == DBCALGeometry::kDownstream) {                //   downstream
            ecel_b[module-1][layer-1][sector-1] =  E;
            tcel_b[module-1][layer-1][sector-1] =  t;	      
           }
