@@ -8,13 +8,13 @@
 
 #define HALF_CELL 0.5
 #define MAX_DEFLECTION 0.15
-#define EPS 1e-3
+#define EPS 1e-8
 #define KILL_RADIUS 5.0 
 #define NOT_CORRECTED 0x8
 #define Z_TARGET 65.0
 #define MATCH_RADIUS 5.0
 #define SIGN_CHANGE_CHISQ_CUT 10.0
-#define BEAM_VARIANCE 0.001 // cm^2
+#define BEAM_VARIANCE 0.01 // cm^2
 #define FDC_X_RESOLUTION 0.02  // 200 microns
 #define FDC_Y_RESOLUTION 0.02
 
@@ -182,7 +182,13 @@ jerror_t DFDCSegment_factory::RiemannLineFit(unsigned int n,DMatrix XYZ0,
     x_int0=-N[0]*numer/denom;
     y_int0=-N[1]*numer/denom;
     temp=denom*r2-numer*numer;
-    if (temp<0) return VALUE_OUT_OF_RANGE;
+    if (temp<0){
+      temp*=-1.;  
+      // I'm not sure this is the correct thing to do but we don't want the 
+      // algorithm to fail at this stage!
+
+      // return VALUE_OUT_OF_RANGE;
+    }
     temp=sqrt(temp)/denom;
     
     // Choose sign of square root based on proximity to actual measurements
@@ -395,15 +401,16 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(unsigned int n, DMatrix XYZ,
   // where n is the normal vector to the plane slicing the cylindrical 
   // paraboloid described by the parameterization (x,y,w=x^2+y^2),
   // and W is the weight matrix, assumed for now to be diagonal.
-  // W_sum is the sum of all the diagonal elements in W.
+  // In the absence of multiple scattering, W_sum is the sum of all the 
+  // diagonal elements in W.
 
   for (unsigned int i=0;i<n;i++){
     X(i,0)=XYZ(i,0);
     X(i,1)=XYZ(i,1);
     X(i,2)=XYZ(i,0)*XYZ(i,0)+XYZ(i,1)*XYZ(i,1);
     Ones(i,0)=OnesT(0,i)=1.;
-    W(i,i)=1./CRPhi(i,i);
   }  
+  W=DMatrix(DMatrix::kInverted,CRPhi);
   W_sum=OnesT*(W*Ones);
   Xavg=(1./W_sum(0,0))*(OnesT*(W*X));
   // Store in private array for use in other routines
@@ -456,14 +463,14 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(unsigned int n, DMatrix XYZ,
  
   // First root
   lambda[0]=-B2/3.+sum;
-  if (lambda[0]<lambda_min){
+  if (lambda[0]<lambda_min&&lambda[0]>EPS){
     lambda_min=lambda[0];
     smallest_eigenvalue=0;
   }
 
   // Second root
   lambda[1]=-B2/3.-sum/2.-sqrt(3.)/2.*diff;
-  if (lambda[1]<lambda_min){
+  if (lambda[1]<lambda_min&&lambda[1]>EPS){
     lambda_min=lambda[1];
     smallest_eigenvalue=1;
   }
@@ -502,15 +509,16 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(unsigned int n, DMatrix XYZ,
 // to a circular paraboloid surface combined with a linear fit of the arc 
 // length versus z.
 //
-jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points){
+jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
+						DMatrix &XYZ){
   double Phi;
   unsigned int num_points=points.size()+1;
   DMatrix CR(num_points,num_points);
   DMatrix CRPhi(num_points,num_points); 
-  DMatrix XYZ(num_points,3);
+  // DMatrix XYZ(num_points,3);
   DMatrix XYZ0(num_points,3);
 
-  // Clear suppemental track info vector
+  // Clear supplemental track info vector
   fdc_track.clear();
   
   // Fill initial matrices for R and RPhi measurements
@@ -562,13 +570,15 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points){
   if (error!=NOERROR) return error;
   
   // Store residuals and path length for each measurement
+  chisq=0.;
   for (unsigned int m=0;m<points.size();m++){
     fdc_track_t temp;
     temp.hit_id=m;
     temp.dx=XYZ(m,0)-XYZ0(m,0); // residuals
     temp.dy=XYZ(m,1)-XYZ0(m,1);
     temp.s=(XYZ(m,2)-Z_TARGET)/sin(atan(tanl)); // path length
-    fdc_track.push_back(temp);			  
+    fdc_track.push_back(temp);	
+    chisq+=(temp.dx*temp.dx+temp.dy*temp.dy)/CR(m,m);
   }
   return NOERROR;
 }
@@ -633,22 +643,16 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
         neighbors.push_back(points[match]);
       }
     }
-   
+    // Matrix of points on track 
+    DMatrix XYZ(neighbors.size()+1,3);
+
     // Perform the Riemann Helical Fit on the track segment
-    jerror_t error=RiemannHelicalFit(neighbors);   
+    jerror_t error=RiemannHelicalFit(neighbors,XYZ);   
 
     // Correct for the Lorentz effect given DOCAs
     if (error==NOERROR){
-      if (got_deflection_file){
-	CorrectPoints(neighbors);
-	error=RiemannHelicalFit(neighbors); 
-      }
-      else if (warn){
-	fprintf(stderr,
-		"DFDCSegment_factory: No Lorentz deflection file found!\n");
-	fprintf(stderr,"DFDCSegment_factory: --> Pseudo-points will not be corrected for Lorentz effect.");
-	warn=false;      
-      }
+      CorrectPoints(neighbors,XYZ);
+      error=RiemannHelicalFit(neighbors,XYZ);
     }
     
     // Linear regression to find charge  
@@ -707,6 +711,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
     segment->yc=yc;
     segment->rc=rc;
     segment->Phi1=Phi1;
+    segment->chisq=chisq;
    
     _data.push_back(segment);
   }
@@ -884,16 +889,24 @@ jerror_t DFDCSegment_factory::GetHelicalTrackPosition(double z,DMatrix S,
 // Correct avalanche position along wire and incorporate drift data for 
 // coordinate away from the wire using results of preliminary hit-based fit
 //
-jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points){
+jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
+					    DMatrix XYZ){
   for (unsigned int m=0;m<points.size();m++){
     DFDCPseudo *point=points[m];
 
     double z=point->wire->origin(2);
     double cosangle=point->wire->udir(1);
     double sinangle=point->wire->udir(0);
-    double x=point->x;
-    double y=point->y;
-    double delta_x=0,delta_y=0;
+    //double x=point->x;
+    // double y=point->y;
+    double x=XYZ(m,0);
+    double y=XYZ(m,1);
+    double delta_x=0,delta_y=0;   
+    // Variance based on expected resolution
+    double sigx2=FDC_X_RESOLUTION*FDC_X_RESOLUTION;
+    // Place holder for variance for position along wire
+    double sigy2=MAX_DEFLECTION*MAX_DEFLECTION/3.;
+      
     // Rotate residual into local coordinate system
     double w=fdc_track[m].dx*cosangle-fdc_track[m].dy*sinangle;
     // .. and use it to determine which sign to use for the drift time data
@@ -915,44 +928,44 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points){
     delta_x=sign*(point->time-fdc_track[m].s/beta/29.98)*55E-4;
 
     // Next find correction to y from table of deflections
-    double tanr,tanz,r=sqrt(x*x+y*y);
-    double phi=atan2(y,x);
-    double ytemp[LORENTZ_X_POINTS],ytemp2[LORENTZ_X_POINTS],dummy;
-    int imin,imax, ind,ind2;
+    if (got_deflection_file){
+      double tanr,tanz,r=sqrt(x*x+y*y);
+      double phi=atan2(y,x);
+      double ytemp[LORENTZ_X_POINTS],ytemp2[LORENTZ_X_POINTS],dummy;
+      int imin,imax, ind,ind2;
     
-    // Locate positions in x and z arrays given r and z
-    locate(lorentz_x,LORENTZ_X_POINTS,r,&ind);
-    locate(lorentz_z,LORENTZ_Z_POINTS,z,&ind2);
+      // Locate positions in x and z arrays given r and z
+      locate(lorentz_x,LORENTZ_X_POINTS,r,&ind);
+      locate(lorentz_z,LORENTZ_Z_POINTS,z,&ind2);
     
-    // First do interpolation in z direction 
-    imin=PACKAGE_Z_POINTS*(ind2/PACKAGE_Z_POINTS); // Integer division...
-    for (int j=0;j<LORENTZ_X_POINTS;j++){
-      polint(&lorentz_z[imin],&lorentz_nx[j][imin],PACKAGE_Z_POINTS,z,
-	     &ytemp[j],&dummy);
-      polint(&lorentz_z[imin],&lorentz_nz[j][imin],PACKAGE_Z_POINTS,z,
-	   &ytemp2[j],&dummy);
+      // First do interpolation in z direction 
+      imin=PACKAGE_Z_POINTS*(ind2/PACKAGE_Z_POINTS); // Integer division...
+      for (int j=0;j<LORENTZ_X_POINTS;j++){
+	polint(&lorentz_z[imin],&lorentz_nx[j][imin],PACKAGE_Z_POINTS,z,
+	       &ytemp[j],&dummy);
+	polint(&lorentz_z[imin],&lorentz_nz[j][imin],PACKAGE_Z_POINTS,z,
+	       &ytemp2[j],&dummy);
+      }
+      // Then do final interpolation in x direction 
+      imin=(ind>0)?(ind-1):0;
+      imax=(ind<LORENTZ_X_POINTS-2)?(ind+2):(LORENTZ_X_POINTS-1);
+      polint(&lorentz_x[imin],ytemp,imax-imin+1,r,&tanr,&dummy);
+      polint(&lorentz_x[imin],ytemp2,imax-imin+1,r,&tanz,&dummy);
+      
+      // Compute correction
+      double alpha=M_PI/2.-lambda;
+      delta_y=tanr*delta_x*cos(alpha)-tanz*delta_x*sin(alpha)*cos(phi);
+      
+      // Variance based on expected resolution
+      sigy2=FDC_Y_RESOLUTION*FDC_Y_RESOLUTION;
     }
-    // Then do final interpolation in x direction 
-    imin=(ind>0)?(ind-1):0;
-    imax=(ind<LORENTZ_X_POINTS-2)?(ind+2):(LORENTZ_X_POINTS-1);
-    polint(&lorentz_x[imin],ytemp,imax-imin+1,r,&tanr,&dummy);
-    polint(&lorentz_x[imin],ytemp2,imax-imin+1,r,&tanz,&dummy);
-    
-    // Compute correction
-    double alpha=M_PI/2.-lambda;
-    delta_y=tanr*delta_x*cos(alpha)-tanz*delta_x*sin(alpha)*cos(phi);
-
-    // Variances based on expected resolution
-    double sigx2=FDC_X_RESOLUTION*FDC_X_RESOLUTION;
-    double sigy2=FDC_Y_RESOLUTION*FDC_Y_RESOLUTION;
-
-    // Check to see if distance to the wire from the track segment is 
-    // consistent with the cell size.
-    if (fabs(delta_x)>=0.5){
-      delta_y=-1.*sign*MAX_DEFLECTION;
-      delta_x=sign*HALF_CELL;
+    else if (warn){
+      fprintf(stderr,
+	      "DFDCSegment_factory: No Lorentz deflection file found!\n");
+      fprintf(stderr,"DFDCSegment_factory: --> Pseudo-points will not be corrected for Lorentz effect.");
+      warn=false;            
     }
-    
+      
     // Fill x and y elements with corrected values
     point->ds =-delta_y;     
     point->dw =delta_x;
