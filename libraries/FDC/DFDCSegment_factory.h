@@ -51,7 +51,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		jerror_t KalmanLoop(vector<DFDCPseudo*>points, double mass_hyp,
 				    DMatrix Seed,DMatrix &S,DMatrix &C,
 				    double &chisq);
-		jerror_t CorrectPoints(vector<DFDCPseudo*>point);
+		jerror_t CorrectPoints(vector<DFDCPseudo*>point, DMatrix XYZ);
 		jerror_t GetProcessNoiseCovariance(double x, double y, 
 						   double z,DMatrix S, 
 	                  vector<DFDCPseudo*>points,double mass_hyp,
@@ -65,7 +65,8 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		jerror_t GetStateVector(double oldx, double oldy,
 	                  double old_z,double x, double y,double z,
 			  DMatrix S,DMatrix &S1);
-		jerror_t RiemannHelicalFit(vector<DFDCPseudo*>points);
+		jerror_t RiemannHelicalFit(vector<DFDCPseudo*>points,
+					   DMatrix &XYZ);
 	        jerror_t RiemannCircleFit(unsigned int n,DMatrix XYZ,
 			DMatrix CRPhi);
 		jerror_t RiemannLineFit(unsigned int n,DMatrix XYZ0,
@@ -105,6 +106,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		double var_tanl,Phi1;
 	
 		vector<fdc_track_t>fdc_track;
+		double chisq;
 
                 const DMagneticFieldMap *bfield;
 
