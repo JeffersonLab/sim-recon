@@ -12,7 +12,7 @@
 #include "DANA/DApplication.h"
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALTruthShower.h"
-#include "FCAL/DFCALShower.h"
+#include "FCAL/DFCALCluster.h"
 #include "TRACKING/DMCThrown.h"
 
 // The executable should define the ROOTfile global variable. It will
@@ -71,7 +71,7 @@ jerror_t DEventProcessor_bcal_hists::brun(JEventLoop *eventLoop, int runnumber)
 jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DBCALShower*> showers;
-	vector<const DFCALShower*> fcal_showers;
+	vector<const DFCALCluster*> fcal_showers;
 	vector<const DBCALTruthShower*> truthshowers;	
 	vector<const DMCThrown*> mcthrowns;
 	loop->Get(showers);
@@ -123,12 +123,12 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 		}
 		
 		for(unsigned int j=0; j<fcal_showers.size(); j++){
-			const DFCALShower *s2 = fcal_showers[j];
-			dx = s2->x;
-			dy = s2->y;
+			const DFCALCluster *s2 = fcal_showers[j];
+			dx = s2->getCentroid().X();
+			dy = s2->getCentroid().Y();
 			dz = FCAL_Z_OFFSET; // shift to coordinate relative to center of target
 			R = sqrt(dx*dx + dy*dy + dz*dz);
-			double E = s2->E;
+			double E = s2->getEnergy();
 			TLorentzVector p2(E*dx/R, E*dy/R, E*dz/R, E);		
 			
 			TLorentzVector ptot = p1dave+p2;
