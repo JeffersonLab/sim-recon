@@ -7,9 +7,9 @@
 
 #include <cassert>
 
-#include "DFCALMCResponse_factory.h"
-#include "DFCALTruthShower.h"
-#include "DFCALGeometry.h"
+#include "FCAL/DFCALMCResponse_factory.h"
+#include "FCAL/DMCFCALHit.h"
+#include "FCAL/DFCALGeometry.h"
 
 //------------------
 // evnt
@@ -25,29 +25,30 @@ jerror_t DFCALMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
 	const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
 	
 	// extract the HDDM objects
-	vector<const DFCALTruthShower*> truthShowerVect;
-	loop->Get( truthShowerVect );
+	vector<const DMCFCALHit*> hitVect;
+	loop->Get( hitVect );
 	
-	for( vector<const DFCALTruthShower*>::const_iterator 
-		 truthSh = truthShowerVect.begin();
-		 truthSh != truthShowerVect.end();
-		 ++truthSh ){
+	for( vector<const DMCFCALHit*>::const_iterator 
+		 hit = hitVect.begin();
+		 hit != hitVect.end();
+		 ++hit ){
 		
 		// loop over each HDDM shower and make the FCALMCResponse
 		// objects for showers that hit real FCAL blocks
 		
-		int row = fcalGeom.row( (**truthSh).y() );
-		int col = fcalGeom.column( (**truthSh).x() );
+		int row = (**hit).row;
+		int col = (**hit).column;
 		
 		if( fcalGeom.isBlockActive( row, col ) ){
 		
 			// can do something fancier later -- like smear E and t
-			
+			// or implement Cherenkov photon effects
+            
 			_data.push_back
-			  ( new DFCALMCResponse( (**truthSh).id,
+			  ( new DFCALMCResponse( (**hit).id,
 									 fcalGeom.channel( row, col ),
-									 (**truthSh).E(),
-									 (**truthSh).t() ) );
+									 (**hit).E,
+									 (**hit).t ) );
 		}
 	}
 	

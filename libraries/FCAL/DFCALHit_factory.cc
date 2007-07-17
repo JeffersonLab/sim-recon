@@ -7,10 +7,47 @@
 
 #include <cassert>
 
-#include "DFCALHit_factory.h"
-#include "DFCALHit.h"
-#include "DFCALMCResponse.h"
+#include "FCAL/DFCALHit_factory.h"
+#include "FCAL/DFCALHit.h"
+#include "FCAL/DFCALMCResponse.h"
+#include "FCAL/DFCALGeometry.h"
 
+//------------------
+// evnt
+//------------------
+jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
+{
+	
+	assert( _data.size() == 0 );
+	
+	// extract the FCAL Geometry
+	vector<const DFCALGeometry*> fcalGeomVect;
+	loop->Get( fcalGeomVect );
+	const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
+
+    vector<const DFCALMCResponse*> responseVect;
+    loop->Get( responseVect );
+    
+    for( vector<const DFCALMCResponse*>::const_iterator resp = responseVect.begin();
+         resp != responseVect.end();
+         ++resp ){
+     
+        DFCALHit* hit = new DFCALHit();
+        
+        hit->id = (**resp).id;
+        hit->E = (**resp).E();
+        hit->t = (**resp).t();
+        
+        TVector2 pos = fcalGeom.positionOnFace( (**resp).channel() );
+        hit->x = pos.X();
+        hit->y = pos.Y();
+        
+        _data.push_back( hit );
+    }
+    
+	return NOERROR;
+}
+    
 //------------------
 // toString
 //------------------
@@ -27,8 +64,6 @@ const string DFCALHit_factory::toString(void)
 
 		printnewrow();
 		printcol("%d",	i);
-		printcol("%d", fcalhit->column);
-		printcol("%d", fcalhit->row);
 		printcol("%3.1f", fcalhit->x);
 		printcol("%3.1f", fcalhit->y);
 		printcol("%2.3f", fcalhit->E*1000.0);

@@ -67,8 +67,6 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 // Fill the structure that used to be used by clusterizers in Radphi 
 	for (vector<const DFCALHit*>::const_iterator hit  = fcalhits.begin(); 
                                                      hit != fcalhits.end(); hit++ ) {
-           hits->hit[nhits].col = (**hit).column;
-           hits->hit[nhits].row = (**hit).row;
            hits->hit[nhits].x = (**hit).x;
            hits->hit[nhits].y = (**hit).y;
            hits->hit[nhits].E = (**hit).E; // adjust a hit energy either in the hit or photon factory

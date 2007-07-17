@@ -20,8 +20,6 @@
 
 // hits structures taken from radphi
 	typedef struct {
-	   int col;	
-	   int row;
 	   float x;
 	   float y;
 	   float E;

@@ -13,25 +13,16 @@
 
 class DFCALHit:public JObject{
 	
-	public:
-		HDCLASSDEF(DFCALHit);
-		DFCALHit(){}
-		
-	DFCALHit( oid_t id, 
-			  float x, float y,
-			  float E, float t ) :
-		JObject( id ),
-		x( x ),
-		y( y ),
-		E( E ),
-		t( t ) {}
-		
-		int column;
-		int row;
-		float x;
-		float y;
-		float E;
-		float t;
+public:
+	
+	HDCLASSDEF(DFCALHit);
+	
+	DFCALHit(){}
+    
+    float x;
+    float y;
+    float E;
+    float t;
 };
 
 #endif // _DFCALHit_
