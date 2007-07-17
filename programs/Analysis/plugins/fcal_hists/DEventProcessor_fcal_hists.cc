@@ -10,7 +10,7 @@
 #include <TLorentzVector.h>
 
 #include "DANA/DApplication.h"
-#include "FCAL/DFCALShower.h"
+#include "FCAL/DFCALCluster.h"
 #include "TRACKING/DMCThrown.h"
 
 // The executable should define the ROOTfile global variable. It will
@@ -63,34 +63,34 @@ jerror_t DEventProcessor_fcal_hists::brun(JEventLoop *eventLoop, int runnumber)
 //------------------
 jerror_t DEventProcessor_fcal_hists::evnt(JEventLoop *loop, int eventnumber)
 {
-	vector<const DFCALShower*> showers;
+	vector<const DFCALCluster*> showers;
 	loop->Get(showers);
 	
 	LockState();
 	
 	// Single shower params
 	for(unsigned int i=0; i<showers.size(); i++){
-		const DFCALShower *s = showers[i];
-		xy_shower->Fill(s->x, s->y);
-		E_shower->Fill(s->E);
+		const DFCALCluster *s = showers[i];
+		xy_shower->Fill(s->getCentroid().X(), s->getCentroid().Y());
+		E_shower->Fill(s->getEnergy());
 	}
 	
 	// 2-gamma inv. mass
 	for(unsigned int i=0; i<showers.size(); i++){
-		const DFCALShower *s1 = showers[i];
-		double x1 = s1->x;
-		double y1 = s1->y;
+		const DFCALCluster *s1 = showers[i];
+		double x1 = s1->getCentroid().X();
+		double y1 = s1->getCentroid().Y();
 		double dz = FCAL_Z_OFFSET;
 		double R = sqrt(x1*x1 + y1*y1 + dz*dz);
-		double E1 = s1->E;
+		double E1 = s1->getEnergy();
 		TLorentzVector p1(E1*x1/R, E1*y1/R, E1*dz/R, E1);		
 		
 		for(unsigned int j=i+1; j<showers.size(); j++){
-			const DFCALShower *s2 = showers[j];
-			double x2 = s2->x;
-			double y2 = s2->y;
+			const DFCALCluster *s2 = showers[j];
+			double x2 = s2->getCentroid().X();
+			double y2 = s2->getCentroid().Y();
 			R = sqrt(x2*x2 + y2*y2 + dz*dz);
-			double E2 = s2->E;
+			double E2 = s2->getEnergy();
 			TLorentzVector p2(E2*x2/R, E2*y2/R, E2*dz/R, E2);		
 			
 			TLorentzVector ptot = p1+p2;
@@ -123,9 +123,10 @@ jerror_t DEventProcessor_fcal_hists::evnt(JEventLoop *loop, int eventnumber)
 	loop->Get(mcthrowns);
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
 		for(unsigned int j=0; j<showers.size(); j++){
-			E_over_Erec_vs_E->Fill(showers[j]->E, mcthrowns[i]->E/showers[j]->E);
-			double R = sqrt(showers[j]->x*showers[j]->x + showers[j]->y*showers[j]->y);
-			E_over_Erec_vs_R->Fill(R, mcthrowns[i]->E/showers[j]->E);
+			E_over_Erec_vs_E->Fill(showers[j]->getEnergy(), mcthrowns[i]->E/showers[j]->getEnergy());
+			double R = sqrt(showers[j]->getCentroid().X()*showers[j]->getCentroid().X() + 
+                            showers[j]->getCentroid().Y()*showers[j]->getCentroid().Y());
+			E_over_Erec_vs_R->Fill(R, mcthrowns[i]->E/showers[j]->getEnergy());
 		}
 	}
 
