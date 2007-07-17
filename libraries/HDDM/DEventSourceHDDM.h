@@ -25,7 +25,7 @@ using namespace std;
 #include "CDC/DCDCHit.h"
 #include "FDC/DFDCHit.h"
 #include "FCAL/DFCALTruthShower.h"
-#include "FCAL/DFCALHit.h"
+#include "FCAL/DMCFCALHit.h"
 #include "UPV/DUPVHit.h"
 #include "UPV/DUPVTruthHit.h"
 #include "TOF/DTOFTruth.h"
@@ -60,7 +60,7 @@ class DEventSourceHDDM:public JEventSource
 		jerror_t Extract_DCDCHit(s_HDDM_t *hddm_s, JFactory<DCDCHit> *factory);
 		jerror_t Extract_DFDCHit(s_HDDM_t *hddm_s, JFactory<DFDCHit> *factory);
 		jerror_t Extract_DFCALTruthShower(s_HDDM_t *hddm_s, JFactory<DFCALTruthShower> *factory);
-		jerror_t Extract_DFCALHit(s_HDDM_t *hddm_s, JFactory<DFCALHit> *factory, JEventLoop* eventLoop );
+		jerror_t Extract_DMCFCALHit(s_HDDM_t *hddm_s, JFactory<DMCFCALHit> *factory, JEventLoop* eventLoop );
 		jerror_t Extract_DUPVHit(s_HDDM_t *hddm_s, JFactory<DUPVHit> *factory);
 		jerror_t Extract_DUPVTruthHit(s_HDDM_t *hddm_s, JFactory<DUPVTruthHit> *factory);
 		jerror_t Extract_DMCTrajectoryPoint(s_HDDM_t *hddm_s, JFactory<DMCTrajectoryPoint> *factory);
