@@ -250,6 +250,7 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
   // Predicted positions
   Phi1=atan2(delta_y,delta_x);
   double z1=XYZ(0,2);
+  double var_R1=CR(0,0);
   for (unsigned int k=0;k<n;k++){   
     double sperp=(XYZ(k,2)-z1)/tanl;
     double Phi=atan2(XYZ(k,1),XYZ(k,0));
@@ -316,7 +317,7 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
     double dy1_dn2=(XYZ(0,1)*(N[1]*N[1]-N[0]*N[0])*cdist
 		    -XYZ(0,1)*N[1]*n2*dc_dn2+N[1]*cdist*cdist
 		    -n2*cdist*dc_dn2-N[0]*N[0]*N[1]*r1sq)/n2/ydenom;
-    double var_y1=dy1_dr1*dy1_dr1*CR(0,0)
+    double var_y1=dy1_dr1*dy1_dr1*var_R1
       +dy1_dn3*dy1_dn3*varN[2][2]+dy1_dn2*dy1_dn2*varN[1][1]
       +2.*dy1_dn2*dy1_dn3*varN[1][2];
 
@@ -327,7 +328,7 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
 		    -XYZ(0,0)*N[0]*n2*dc_dn1+N[0]*cdist*cdist
 		    -n2*cdist*dc_dn1-N[0]*N[1]*N[1]*r1sq)/n2/xdenom;
 
-    double var_x1=dx1_dr1*dx1_dr1*CR(0,0)
+    double var_x1=dx1_dr1*dx1_dr1*var_R1
       +dx1_dn3*dx1_dn3*varN[2][2]+dx1_dn1*dx1_dn1*varN[0][0]
       +2.*dx1_dn3*dx1_dn1*varN[0][2];
 
@@ -340,13 +341,14 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
     // Correct weight matrix W for non-normal incidence of tracks 
     // on FDC planes.  The correction is 
     // CRPhi'= C*CRPhi*C+S*CR*S, where S(i,i)=R_i*kappa/2
-    // and C(i,i)=sqrt(1-S(i,i)^2)
-    //
+    //    and C(i,i)=sqrt(1-S(i,i)^2)
+    // Check to see that the correction will give sensible results   
     double r2=XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1); 
-    CRPhi(k,k)=r2*CR(k,k)/16./rc/rc+(1.-r2/16./rc/rc)*CRPhi(k,k);
-    
+    if (1.-r2/16./rc/rc>0.){
+      CRPhi(k,k)=r2*CR(k,k)/16./rc/rc+(1.-r2/16./rc/rc)*CRPhi(k,k);
+    }
   }
-
+ 
   return NOERROR;
 }
 
@@ -418,7 +420,7 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(unsigned int n, DMatrix XYZ,
   xavg[1]=Xavg(0,1);
   xavg[2]=Xavg(0,2);
   var_avg=1./W_sum(0,0);
-
+  
   A=DMatrix(DMatrix::kTransposed,X)*(W*X)
     -W_sum(0,0)*(DMatrix(DMatrix::kTransposed,Xavg)*Xavg);
 
@@ -548,7 +550,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   error=RiemannLineFit(num_points,XYZ0,CR,XYZ);
   if (error!=NOERROR) return error;
 
-  double r1sq=XYZ0(0,0)*XYZ0(0,0)+XYZ0(0,1)*XYZ0(0,1);
+  double r1sq=XYZ(0,0)*XYZ(0,0)+XYZ(0,1)*XYZ(0,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
 
   // Preliminary circle fit 
@@ -559,9 +561,10 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   error=RiemannLineFit(num_points,XYZ0,CR,XYZ);
   if (error!=NOERROR) return error;
     
+  r1sq=XYZ(0,0)*XYZ(0,0)+XYZ(0,1)*XYZ(0,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
 
-  // Final circle fit
+  // Final circle fit 
   error=RiemannCircleFit(num_points,XYZ0,CRPhi); 
   if (error!=NOERROR) return error;
 
@@ -652,9 +655,9 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
     // Correct for the Lorentz effect given DOCAs
     if (error==NOERROR){
       CorrectPoints(neighbors,XYZ);
-      error=RiemannHelicalFit(neighbors,XYZ);
+      error=RiemannHelicalFit(neighbors,XYZ); 
     }
-    
+     
     // Linear regression to find charge  
     double var=0.; 
     double sumv=0.;
@@ -955,7 +958,7 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
       // Compute correction
       double alpha=M_PI/2.-lambda;
       delta_y=tanr*delta_x*cos(alpha)-tanz*delta_x*sin(alpha)*cos(phi);
-      
+
       // Variance based on expected resolution
       sigy2=FDC_Y_RESOLUTION*FDC_Y_RESOLUTION;
     }
