@@ -150,7 +150,8 @@ void hitForwardDC (float xin[4], float xout[4],
       char dummy[80];
       float fdummy;
       size_t len=0;
-      getline(dummy,&len,fp); // Skip header line
+		while(fgetc(fp)!='\n'); // Skip header line
+      //getline(dummy,&len,fp); // Skip header line
    
       // Read deflection plane data
       for (i=0;i<LORENTZ_X_POINTS;i++){
