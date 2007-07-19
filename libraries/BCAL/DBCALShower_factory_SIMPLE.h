@@ -35,6 +35,7 @@ class DBCALShower_factory_SIMPLE:public JFactory<DBCALShower>{
 		};
 		
 		void ModuleLayerSectorToPhiR(int module, int layer, int sector, double &phi, double &R);
+		double FindZFromSingleHit(const DBCALHit *hit);
 
 	private:
 		//jerror_t init(void);						///< Called once at program start.
@@ -46,12 +47,16 @@ class DBCALShower_factory_SIMPLE:public JFactory<DBCALShower>{
 		double UP_DOWN_COINCIDENCE_WINDOW;
 		double ENERGY_SCALE_FACTOR;
 		double SIGNAL_VELOCITY;
+		double ATTENUATION_LENGTH;
 		double Z_CENTER;
 		double MIN_CLUSTER_SPACING;
 		double MIN_SHOWER_ENERGY;
 		bool DEBUG_HISTS;
 		
 		TH1F *hit_element_dist;
+		TH1F *hit_element_dist_z;
+		TH1F *hit_element_dist_phi;
+		TH1F *hit_element_dist_r;
 		TH3F *x_vs_y_vs_z;
 		TH1F *r_shower, *phi_shower, *z_shower;
 		TH1F *r_element, *phi_element, *z_element;

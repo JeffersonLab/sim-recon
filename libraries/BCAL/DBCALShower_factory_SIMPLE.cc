@@ -27,6 +27,7 @@ DBCALShower_factory_SIMPLE::DBCALShower_factory_SIMPLE()
 	UP_DOWN_COINCIDENCE_WINDOW = 50.0; // in ns
 	ENERGY_SCALE_FACTOR = 1.0; // scale factor for converting energy to GeV (1.1 is empirical)
 	SIGNAL_VELOCITY = 16.75; // in cm/ns
+	ATTENUATION_LENGTH = 300.0; // in cm
 	Z_CENTER = 17.0+0.5+390.0/2.0; // in cm (0.5 is empirical)
 	MIN_CLUSTER_SPACING = 50.0; // in cm
 	MIN_SHOWER_ENERGY = 0.001; // in GeV
@@ -35,6 +36,7 @@ DBCALShower_factory_SIMPLE::DBCALShower_factory_SIMPLE()
 	gPARMS->SetDefaultParameter("BCAL:UP_DOWN_COINCIDENCE_WINDOW",	UP_DOWN_COINCIDENCE_WINDOW);
 	gPARMS->SetDefaultParameter("BCAL:ENERGY_SCALE_FACTOR",	ENERGY_SCALE_FACTOR);
 	gPARMS->SetDefaultParameter("BCAL:SIGNAL_VELOCITY",	SIGNAL_VELOCITY);
+	gPARMS->SetDefaultParameter("BCAL:ATTENUATION_LENGTH",	ATTENUATION_LENGTH);
 	gPARMS->SetDefaultParameter("BCAL:Z_CENTER",	Z_CENTER);
 	gPARMS->SetDefaultParameter("BCAL:MIN_CLUSTER_SPACING",	MIN_CLUSTER_SPACING);
 	gPARMS->SetDefaultParameter("BCAL:MIN_SHOWER_ENERGY",	MIN_SHOWER_ENERGY);
@@ -56,6 +58,9 @@ jerror_t DBCALShower_factory_SIMPLE::brun(JEventLoop *eventLoop, int runnumber)
 		// Histograms may already exist. (Another thread may have created them)
 		// Try and get pointers to the existing ones.
 		hit_element_dist = (TH1F*)gROOT->FindObject("hit_element_dist");
+		hit_element_dist_z = (TH1F*)gROOT->FindObject("hit_element_dist_z");
+		hit_element_dist_phi = (TH1F*)gROOT->FindObject("hit_element_dist_phi");
+		hit_element_dist_r = (TH1F*)gROOT->FindObject("hit_element_dist_r");
 		x_vs_y_vs_z = (TH3F*)gROOT->FindObject("x_vs_y_vs_z");
 		r_shower = (TH1F*)gROOT->FindObject("r_shower");
 		phi_shower = (TH1F*)gROOT->FindObject("phi_shower");
@@ -70,6 +75,9 @@ jerror_t DBCALShower_factory_SIMPLE::brun(JEventLoop *eventLoop, int runnumber)
 		E_elementsum = (TH1F*)gROOT->FindObject("E_elementsum");
 
 		if(!hit_element_dist)hit_element_dist = new TH1F("hit_element_dist","Distance between hit elements(cm)",300, 0.0, 300.0);
+		if(!hit_element_dist_z)hit_element_dist_z = new TH1F("hit_element_dist_z","Distance in z between hit elements(cm)",300, -150.0, 150.0);
+		if(!hit_element_dist_phi)hit_element_dist_phi = new TH1F("hit_element_dist_phi","Distance in phi between hit elements(degrees)",300, -180.0, 180.0);
+		if(!hit_element_dist_r)hit_element_dist_r = new TH1F("hit_element_dist_r","Distance in r between hit elements(cm)",400, -100.0, 100.0);
 		if(!x_vs_y_vs_z)x_vs_y_vs_z = new TH3F("x_vs_y_vs_z","X,Y,Z distribution of shower centers",100, -100.0, 100.0, 100, -100.0, 100.0, 100, -50.0, 550.0);
 		if(!r_shower)r_shower = new TH1F("r_shower","radial distribution of shower centers",500, 0.0, 100.0);
 		if(!phi_shower)phi_shower = new TH1F("phi_shower","#phi distribution of shower centers",360, 0.0, 360.0);
@@ -160,6 +168,7 @@ jerror_t DBCALShower_factory_SIMPLE::evnt(JEventLoop *loop, int eventnumber)
 	// knowledge of the attenutation length, signal propagation velocity,
 	// and time offset. All of these should be known to some degree for
 	// real data.
+
 	for(unsigned int i=0; i<upstream_bcalhits.size(); i++){
 		if(up_used[i])continue; // skip hits already used above
 		const DBCALHit *up = upstream_bcalhits[i];
@@ -167,9 +176,9 @@ jerror_t DBCALShower_factory_SIMPLE::evnt(JEventLoop *loop, int eventnumber)
 		pshower_t pshower;
 		pshower.upstream_hit = up;
 		pshower.downstream_hit = NULL;
-		pshower.E = up->E*ENERGY_SCALE_FACTOR;
 		pshower.t = up->t;
 		pshower.z = Z_CENTER + SIGNAL_VELOCITY*up->t;
+		pshower.E = up->E*ENERGY_SCALE_FACTOR*exp(-(pshower.z-Z_CENTER)/ATTENUATION_LENGTH);
 		ModuleLayerSectorToPhiR(up->module, up->layer, up->sector, pshower.phi, pshower.R);
 		pshower.used = false;
 
@@ -182,9 +191,9 @@ jerror_t DBCALShower_factory_SIMPLE::evnt(JEventLoop *loop, int eventnumber)
 		pshower_t pshower;
 		pshower.upstream_hit = NULL;
 		pshower.downstream_hit = down;
-		pshower.E = down->E*ENERGY_SCALE_FACTOR;
 		pshower.t = down->t;
-		pshower.z = Z_CENTER - SIGNAL_VELOCITY*down->t;
+		pshower.z = Z_CENTER + SIGNAL_VELOCITY*down->t;
+		pshower.E = down->E*ENERGY_SCALE_FACTOR*exp(-(pshower.z-Z_CENTER)/ATTENUATION_LENGTH);
 		ModuleLayerSectorToPhiR(down->module, down->layer, down->sector, pshower.phi, pshower.R);
 		pshower.used = false;
 
@@ -218,7 +227,12 @@ jerror_t DBCALShower_factory_SIMPLE::evnt(JEventLoop *loop, int eventnumber)
 			double &z1 = pshowers[i].z;
 			double &z2 = pshowers[j].z;
 			double dist = sqrt(R1*R1 + R2*R2 - 2.0*R1*R2*cos(phi1-phi2) + pow(z1-z2, 2.0));
-			if(DEBUG_HISTS)hit_element_dist->Fill(dist);
+			if(DEBUG_HISTS){
+				hit_element_dist->Fill(dist);
+				hit_element_dist_z->Fill(z1-z2);
+				hit_element_dist_phi->Fill((phi1-phi2)*57.3);
+				hit_element_dist_r->Fill(R1-R2);
+			}
 			if(dist>MIN_CLUSTER_SPACING)continue;
 			
 			pshowers[j].used = true;
@@ -226,7 +240,7 @@ jerror_t DBCALShower_factory_SIMPLE::evnt(JEventLoop *loop, int eventnumber)
 		}
 		
 		if(cluster.size()==0)break;
-	
+
 		// Loop over pshowers in this cluster and calculate logarithmically weighted means
 		double x=0.0, y=0.0, z=0.0;
 		double norm=0.0;
@@ -248,6 +262,9 @@ jerror_t DBCALShower_factory_SIMPLE::evnt(JEventLoop *loop, int eventnumber)
 		x /= norm;
 		y /= norm;
 		z /= norm;
+		
+		// At this point, the total energy comes from only double-ended hits
+		// excluding the 
 		
 		// Create a DBCALShower from this cluster
 		DBCALShower *shower = new DBCALShower();
@@ -286,6 +303,52 @@ jerror_t DBCALShower_factory_SIMPLE::evnt(JEventLoop *loop, int eventnumber)
 	}
 
 	return NOERROR;
+}
+
+//------------------
+// FindZFromSingleHit
+//------------------
+double DBCALShower_factory_SIMPLE::FindZFromSingleHit(const DBCALHit *hit)
+{
+	double phi, R, z;
+	ModuleLayerSectorToPhiR(hit->module, hit->layer, hit->sector, phi, R);
+
+	double t = hit->end == DBCALGeometry::kUpstream ? -hit->t:hit->t;
+	double zvertex = 65.0;
+	double z0 = Z_CENTER - zvertex;
+_DBG_<<"z0="<<z0<<endl;
+	double ft = (1.0/R)*(SIGNAL_VELOCITY*t-z0);
+_DBG_<<"ft="<<ft<<endl;
+	double beta = SIGNAL_VELOCITY/29.98; // v/c
+_DBG_<<"beta="<<beta<<endl;
+	
+	// Use a Newton-Raphson method to find the root of the equation
+	// cos(theta) + ft*sin(theta) = beta
+	//
+	// Actually, it is better to write the equation in a different form:
+	//
+	// g(theta) = (beta-cos(theta))/sin(theta) - ft = 0
+	//
+	// the reason is that the function g(theta) looks nice and linear 
+	// at theta=p1/2 which is good for starting off Newton-Raphson.
+	// This also gives a good initial value for theta of pi/2
+	double theta = M_PI_2;
+	
+	// We use a for loop to ensure a maximum number of iterations
+	double min_dtheta = 0.1*M_PI/180.0;
+	for(int i=0; i<20; i++){
+		double g = (beta-cos(theta))/sin(theta) - ft;
+_DBG_<<"\t g="<<g<<endl;
+		double dg_dtheta = 1.0 + (cos(theta)/pow(sin(theta),2.0))*(cos(theta)-beta);
+		double dtheta = - g/dg_dtheta;
+		theta += dtheta;
+		if(dtheta < min_dtheta)break;
+	}
+	
+	z = R/cos(theta) + zvertex;
+_DBG_<<"theta="<<theta<<"  z="<<z<<endl;
+
+	return z;
 }
 
 //------------------
