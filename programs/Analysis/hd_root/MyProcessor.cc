@@ -8,6 +8,7 @@
 #include <iostream>
 using namespace std;
 
+#include <TROOT.h>
 #include <TTree.h>
 
 #include "MyProcessor.h"
@@ -41,7 +42,6 @@ jerror_t MyProcessor::init(void)
 
 	ROOTtree = new TTree("ROOTtree","HDGeant Hits Tree");
 	cout<<"Created Root Tree ..."<<endl;
-
 
 	return NOERROR;
 }
