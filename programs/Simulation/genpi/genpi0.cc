@@ -19,6 +19,8 @@ string OUTPUT_FILENAME="genpi0.ascii";
 
 double FORCE_THETA = -1000.0;
 double FORCE_PHI = -1000.0;
+double THETA_PHOTON_MIN = 0.0; // minimum angle for photons in radians
+double THETA_PHOTON_MAX = M_PI; // minimum angle for photons in radians
 
 #define GAMMA_TYPE 1
 #define PI_TYPE 7
@@ -77,7 +79,6 @@ int main(int narg, char* argv[])
 			}else{
 				E_pi0 = Etot*(0.25+0.5*(double)random()/(double)RAND_MAX);
 			}
-			Etot -= E_pi0; // subtract this from beam energy available
 		
 			// 4-vector of pi0. Pick a random direction.
 			double phi_pi0 = 2.0*M_PI*((double)random()/(double)RAND_MAX);
@@ -120,7 +121,17 @@ int main(int narg, char* argv[])
 			p.py2 += p.py*(PI_ZERO_MASS/2.0 + p.E2)/(p.E + PI_ZERO_MASS);
 			p.pz2 += p.pz*(PI_ZERO_MASS/2.0 + p.E2)/(p.E + PI_ZERO_MASS);
 			
+			// Check that photons are within limits set by user
+			double gtheta1 = acos(p.pz1/p.E1);
+			double gtheta2 = acos(p.pz2/p.E2);
+			if(gtheta1<THETA_PHOTON_MIN || gtheta1>THETA_PHOTON_MAX
+				|| gtheta2<THETA_PHOTON_MIN || gtheta2>THETA_PHOTON_MAX){
+				i--;
+				continue;
+			}
+			
 			pi0s.push_back(p);
+			Etot -= E_pi0; // subtract this from beam energy available
 		}
 		
 		// Write event to file
@@ -194,6 +205,12 @@ void ParseCommandLineArguments(int narg, char* argv[])
 		}else if(arg=="-m"){
 			if(i==narg-1){cout<<"-m requires an argument!"<<endl; Usage();}
 			PI_ZERO_MASS = atof(argv[++i]);
+		}else if(arg=="-gtheta_min"){
+			if(i==narg-1){cout<<"-gtheta_min requires an argument!"<<endl; Usage();}
+			THETA_PHOTON_MIN = atof(argv[++i])*M_PI/180.0;
+		}else if(arg=="-gtheta_max"){
+			if(i==narg-1){cout<<"-gtheta_max requires an argument!"<<endl; Usage();}
+			THETA_PHOTON_MAX = atof(argv[++i])*M_PI/180.0;
 		}
 	}
 	
@@ -208,6 +225,8 @@ void ParseCommandLineArguments(int narg, char* argv[])
 	cout<<"PHI             = ";
 		if(FORCE_PHI>-1000.0)cout<<FORCE_PHI; else cout<<"random";
 		cout<<endl;
+	cout<<"THETA_PHOTON_MIN= "<<THETA_PHOTON_MIN*180.0/M_PI<<" degrees"<<endl;
+	cout<<"THETA_PHOTON_MAX= "<<THETA_PHOTON_MAX*180.0/M_PI<<" degrees"<<endl;
 	cout<<"PI_ZERO_MASS    = "<<PI_ZERO_MASS<<endl;
 	cout<<"OUTPUT_FILENAME = \""<<OUTPUT_FILENAME<<"\""<<endl;
 	cout<<"-------------------------------------------------"<<endl;
@@ -224,15 +243,17 @@ void Usage(void)
 	cout<<"      genpi0 -M numEvents [options]"<<endl;
 	cout<<endl;
 	cout<<"  options:"<<endl;
-	cout<<"    -h                print this help message"<<endl;
-	cout<<"    -M     numEvents  set the number of events to produced (required)"<<endl;
-	cout<<"    -N     numPi0s    set the number of pi0s to generate per event."<<endl;
-	cout<<"    -Emin  E          set the lower beam energy limit in GeV"<<endl;
-	cout<<"    -Emax  E          set the upper beam energy limit in GeV"<<endl;
-	cout<<"    -theta angle      set theta angle in rad (default: random)"<<endl;
-	cout<<"    -phi   angle      set phi angle in rad (default: random)"<<endl;
-	cout<<"    -o     filename   set the output filename"<<endl;
-	cout<<"    -m     mass       set the rest mass of the pi0(GeV) (e.g. make it an eta!)"<<endl;
+	cout<<"    -h                  print this help message"<<endl;
+	cout<<"    -M     numEvents    set the number of events to produced (required)"<<endl;
+	cout<<"    -N     numPi0s      set the number of pi0s to generate per event."<<endl;
+	cout<<"    -Emin  E            set the lower beam energy limit in GeV"<<endl;
+	cout<<"    -Emax  E            set the upper beam energy limit in GeV"<<endl;
+	cout<<"    -theta angle        set theta angle in rad (default: random)"<<endl;
+	cout<<"    -phi   angle        set phi angle in rad (default: random)"<<endl;
+	cout<<"    -gtheta_min angle   set min. theta angle for photons in deg. (default: 0)"<<endl;
+	cout<<"    -gtheta_max angle   set max. theta angle for photons in deg. (default: 180)"<<endl;
+	cout<<"    -o     filename     set the output filename"<<endl;
+	cout<<"    -m     mass         set the rest mass of the pi0(GeV) (e.g. make it an eta!)"<<endl;
 	cout<<endl;
 	cout<<"This program will produce events with one or more pi0s and write"<<endl;
 	cout<<"out the resulting decay photons in an ASCII file of the same"<<endl;
