@@ -6,6 +6,7 @@
 //
 
 #include <iostream>
+#include <cmath>
 using namespace std;
 
 #include <TThread.h>
@@ -170,7 +171,7 @@ void DEventProcessor_invariant_mass_hists::MakeTLorentz(const DTrack *track, TLo
 	double px = track->p*sin(track->theta)*cos(track->phi);
 	double py = track->p*sin(track->theta)*sin(track->phi);
 	double pz = track->p*cos(track->theta);
-	double E = sqrt(pow(0.13957,2.0)+pow(track->p,2.0));
+	double E = sqrt(pow((double)0.13957,(double)2.0)+pow((double)track->p, (double)2.0));
 	
 	v.SetXYZT(px,py,pz,E);
 }
