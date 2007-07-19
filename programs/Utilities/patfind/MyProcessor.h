@@ -22,6 +22,7 @@
 
 #include "TRACKING/Dtrk_hit.h"
 #include "TRACKING/DQuickFit.h"
+#include "TRACKING/DSeed.h"
 
 class DMagneticFieldMap;
 class DTrackCandidate_factory;
@@ -54,19 +55,8 @@ class MyProcessor:public JEventProcessor
 		vector<TObject*> graphics;
 
 		vector<Dtrk_hit*> trkhits;
-		vector<vector<Dtrk_hit*> > dbg_in_seed;
-		vector<vector<Dtrk_hit*> > dbg_hoc;
-		vector<vector<Dtrk_hit*> > dbg_hol;
-		vector<vector<Dtrk_hit*> > dbg_hot;
-		vector<DQuickFit*> dbg_seed_fit;
-		vector<DQuickFit*> dbg_track_fit;
-		vector<int> dbg_seed_index;
-		vector<TH1F*> dbg_phiz_hist;
-		vector<int> dbg_phiz_hist_seed;
-		vector<TH1F*> dbg_zvertex_hist;
-		vector<int> dbg_zvertex_hist_seed;
-		vector<float> dbg_phizangle;
-		vector<float> dbg_z_vertex;
+		vector<Dtrk_hit*> trkhits_stereo;
+		vector<DSeed> dbg_seeds;
 
 };
 

@@ -15,8 +15,6 @@ using namespace std;
 #include "DANA/DApplication.h"
 #include "JANA/JEventLoop.h"
 #include "TRACKING/DMagneticFieldMap.h"
-#include "TRACKING/DQuickFit.h"
-#include "TRACKING/DTrackHit_factory.h"
 #include "TRACKING/DTrackCandidate_factory.h"
 
 #define rad2deg 57.3
@@ -29,8 +27,8 @@ extern MyMainFrame *mmf;
 
 class TrkHitZSort{
 	public:
-		bool operator()(DTrackHit* const &hit1, DTrackHit* const &hit2) const {
-			return hit1->z < hit2->z;
+		bool operator()(Dtrk_hit* const &hit1, Dtrk_hit* const &hit2) const {
+			return hit1->Z() < hit2->Z();
 		}
 };
 
@@ -94,24 +92,9 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 
 	// Get copies of the internal factory structures
 	trkhits = factory->Get_trkhits();
-	dbg_in_seed = factory->Get_dbg_in_seed();
-	dbg_hoc = factory->Get_dbg_hoc();
-	dbg_hol = factory->Get_dbg_hol();
-	dbg_hot = factory->Get_dbg_hot();
-	dbg_seed_fit = factory->Get_dbg_seed_fit();
-	dbg_track_fit = factory->Get_dbg_track_fit();
-	dbg_seed_index = factory->Get_dbg_seed_index();
-	dbg_phiz_hist = factory->Get_dbg_phiz_hist();
-	dbg_phiz_hist_seed = factory->Get_dbg_phiz_hist_seed();
-	dbg_zvertex_hist = factory->Get_dbg_zvertex_hist();
-	dbg_zvertex_hist_seed = factory->Get_dbg_zvertex_hist_seed();
-	dbg_phizangle = factory->Get_dbg_phizangle();
-	dbg_z_vertex = factory->Get_dbg_z_vertex();
-	
-	// Clear the flags on all track hits since Fill_phi_circle uses them
-	for(unsigned int i=0; i<trkhits.size(); i++)trkhits[i]->flags=0;
-	
-	
+	trkhits_stereo = factory->Get_trkhits_stereo();
+	dbg_seeds = factory->Get_dbg_seeds();
+
 	// Delete any existing graphical objects
 	for(unsigned int i=0; i<graphics.size(); i++)delete graphics[i];
 	graphics.clear();
@@ -126,16 +109,6 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 		default:
 			cout<<__FILE__<<":"<<__LINE__<<" Unknown display type ("<<mmf->GetDisplayType()<<")"<<endl;
 	}
-	
-	// Dump Quickfit object for selected track
-	Int_t option = mmf->GetRadioOption();
-	if(option>=1 && option<=(int)dbg_track_fit.size()){
-		cout<<"SEED FIT:"<<endl;
-		dbg_seed_fit[option-1]->Print();
-		cout<<"TRACK FIT:"<<endl;
-		dbg_track_fit[option-1]->Print();
-		cout<<endl<<endl;
-	}
 
 	return NOERROR;
 }
@@ -146,6 +119,8 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 //------------------------------------------------------------------
 void MyProcessor::DrawXYFit(DQuickFit *fit, int color, int width)
 {
+	if(fit->GetNhits()==0)return;
+
 	float x0 = fit->x0;
 	float y0 = fit->y0;
 	float r0 = sqrt(x0*x0 + y0*y0);
@@ -169,7 +144,7 @@ void MyProcessor::DrawCircle(float x0, float y0, float r0, int color, int width)
 //------------------------------------------------------------------
 void MyProcessor::DrawXYDot(Dtrk_hit *hit, float size, int style, int color)
 {
-	TMarker *marker = new TMarker(hit->x, hit->y, style);
+	TMarker *marker = new TMarker(hit->X(), hit->Y(), style);
 	marker->SetMarkerColor(color);
 	marker->SetMarkerSize(size);
 	marker->Draw();
@@ -191,6 +166,8 @@ void MyProcessor::DrawXYDots(vector<Dtrk_hit*> hits, float size, int style, int 
 //------------------------------------------------------------------
 void MyProcessor::DrawPhiZDots(vector<Dtrk_hit *> hits, DQuickFit *fit, float size, int style, int color)
 {
+	if(fit->GetNhits()==0)return;
+	if(hits.size()==0)return;
 	
 	// Order the track hits by z.
 	sort(hits.begin(), hits.end(), TrkHitZSort());
@@ -203,15 +180,12 @@ void MyProcessor::DrawPhiZDots(vector<Dtrk_hit *> hits, DQuickFit *fit, float si
 	for(unsigned int i=0; i<hits.size(); i++){
 		Dtrk_hit *a = hits[i];
 
-		//cout<<__FILE__<<":"<<__LINE__<<" z="<<a->z<<" dphi="<<a->phi_circle<<endl;
-
-		TMarker *marker = new TMarker(a->z, a->phi_circle/r0, style);
+		TMarker *marker = new TMarker(a->Z(), a->phi_circle/r0, style);
 		marker->SetMarkerColor(color);
 		marker->SetMarkerSize(size);
 		marker->Draw();
 		graphics.push_back(marker);
 	}
-	//cout<<__FILE__<<":"<<__LINE__<<endl;
 }
 
 //------------------------------------------------------------------
@@ -219,6 +193,8 @@ void MyProcessor::DrawPhiZDots(vector<Dtrk_hit *> hits, DQuickFit *fit, float si
 //------------------------------------------------------------------
 void MyProcessor::DrawPhiZFit(DQuickFit *fit, int color, int width)
 {
+	if(fit->GetNhits()==0)return;
+
 	float x0 = fit->x0;
 	float y0 = fit->y0;
 	float r0 = sqrt(x0*x0 + y0*y0);
@@ -249,7 +225,7 @@ void MyProcessor::DrawPhiZLine(float dphidz, float z_vertex, int color, int widt
 jerror_t MyProcessor::PlotXYHits(void)
 {
 	// Radio buttons select the XY seed
-	mmf->EnableRadioButtons(dbg_seed_fit.size());
+	mmf->EnableRadioButtons(dbg_seeds.size());
 	unsigned int option = (unsigned int)mmf->GetRadioOption();
 
 	// Draw the empty screen
@@ -262,39 +238,36 @@ jerror_t MyProcessor::PlotXYHits(void)
 	DrawCircle(0.0, 0.0, R2, 14, 1);
 	DrawCircle(0.0, 0.0, (R1+R2)/2.0, 16, 56);
 	
-	// Draw seed fits
-	for(unsigned int i=0; i<dbg_seed_fit.size(); i++){
-		DrawXYFit(dbg_seed_fit[i],  kYellow, 5);
+	// Draw seed and circle fits
+	for(unsigned int i=0; i<dbg_seeds.size(); i++){
+		DrawXYFit(&dbg_seeds[i].seed_fit,  18, 5);
+		DrawXYFit(&dbg_seeds[i].circle_fit1,  17, 4);
+		DrawXYFit(&dbg_seeds[i].circle_fit2,  16, 3);
 	}
-	if(option<=dbg_seed_fit.size() && option>=1)
-		DrawXYFit(dbg_seed_fit[option-1],  kCyan, 5);
-	
-	// Draw track fits
-	for(unsigned int i=0; i<dbg_track_fit.size(); i++){
-		int color = dbg_seed_index[i] == (int)option-1 ? 38:41;
-		DrawXYFit(dbg_track_fit[i], color, 2);
+	if(option<=dbg_seeds.size() && option>=1){
+		DrawXYFit(&dbg_seeds[option-1].seed_fit,  kCyan+150, 5);
+		DrawXYFit(&dbg_seeds[option-1].circle_fit1,  kCyan, 4);
+		DrawXYFit(&dbg_seeds[option-1].circle_fit2,  kCyan+100, 3);
 	}
-	
+
 	// Draw all hits as small black dots
 	DrawXYDots(trkhits, 0.4, 20, kBlack);
 	
 	// Hits for selected seed
 	unsigned int seed_index = option-1;
-	if(seed_index>=0 && seed_index<dbg_in_seed.size()){
+	if(seed_index>=0 && seed_index<dbg_seeds.size()){
 		
 		// Draw seed hits for selected seed as big green dots
-		DrawXYDots(dbg_in_seed[seed_index], 2.0, 20, kGreen);
+		DrawXYDots(dbg_seeds[seed_index].hits_in_seed, 2.0, 20, kGreen);
 		
-		// Draw on-circle hits for selected seed as smaller magenta dots
-		DrawXYDots(dbg_hoc[seed_index], 1.5, 20, kMagenta);
+		// Draw on-seed-circle hits for selected seed as smaller magenta dots
+		DrawXYDots(dbg_seeds[seed_index].hits_on_seed_circle, 1.5, 20, kMagenta);
 		
-		for(unsigned int i=0; i<dbg_seed_index.size(); i++){
-			if(dbg_seed_index[i] == (int)seed_index){
-				// Hits on line and hits on track
-				DrawXYDots(dbg_hol[i], 1.0, 20, kBlue);
-				DrawXYDots(dbg_hot[i], 0.5, 20, kRed);
-			}
-		}
+		// Draw on-circle hits for selected seed
+		DrawXYDots(dbg_seeds[seed_index].hits_on_circle, 1.0, 20, kBlue);
+
+		// Draw on-circle-with-z hits for selected seed
+		DrawXYDots(dbg_seeds[seed_index].hits_on_circle_with_z, 0.5, 21, kRed);
 	}
 	
 	mmf->Update();
@@ -308,51 +281,34 @@ jerror_t MyProcessor::PlotXYHits(void)
 jerror_t MyProcessor::PlotPhiVsZ(void)
 {
 	// Radio buttons select the XY seed
-	mmf->EnableRadioButtons(dbg_seed_fit.size());
+	mmf->EnableRadioButtons(dbg_seeds.size());
 	unsigned int option = (unsigned int)mmf->GetRadioOption();
-	int seed_index = option - 1;
+	if(option<1 || option>dbg_seeds.size())return NOERROR;
+	DSeed &seed = dbg_seeds[option-1];
 
 	// Draw the empty screen
 	axes_phiz->Draw();
-	
-	// Find track index (if any) corresponding to this seed
-	int trk_index = -1;
-	for(unsigned int i=0; i<dbg_seed_index.size(); i++){
-		if(dbg_seed_index[i] == seed_index)trk_index = i;
-	}
 
-	DQuickFit *trk_fit = trk_index>=0 ? dbg_track_fit[trk_index]:NULL;
-	DQuickFit *seed_fit = dbg_seed_fit[seed_index];
-	float x0 = seed_fit->x0;
-	float y0 = seed_fit->y0;
+	DQuickFit *fit = &seed.seed_fit;
+	if(seed.circle_fit1.GetNhits()>0)fit = &seed.circle_fit1;
+	if(seed.circle_fit2.GetNhits()>0)fit = &seed.circle_fit2;
+
+	float x0 = fit->x0;
+	float y0 = fit->y0;
 	float r0 = sqrt(x0*x0 + y0*y0);
-		
-	if(trk_index>=0){
-		// Draw line used to pick out track hits
-		DrawPhiZLine(tan(dbg_phizangle[trk_index])/r0, dbg_z_vertex[trk_index], 40, 6);
 
-		// Draw fit result
-		DrawPhiZFit(trk_fit, kBlack, 1);
-	}
-		
+	// Draw line in phi-z space used to determine "on-line" hits
+	DrawPhiZLine(tan(seed.phizangle)/r0, seed.z_vertex, 40, 1);
+
 	// Draw seed hits for selected trk as big green dots
-	vector<Dtrk_hit*> is_trkhits = dbg_in_seed[seed_index];
-	DrawPhiZDots(is_trkhits, seed_fit, 2.0, 20, kGreen);
+	//DrawPhiZDots(seed.hits_in_seed, fit, 2.0, 20, kGreen);
 		
 	// Draw on-circle hits for selected seed as large magenta dots
-	vector<Dtrk_hit*> oc_trkhits = dbg_hoc[seed_index];
-	DrawPhiZDots(oc_trkhits, seed_fit, 1.5, 20, kMagenta);
+	//DrawPhiZDots(seed.hits_on_seed_circle, fit, 1.5, 20, kMagenta);
 		
-	if(trk_index>=0){
-		// Draw on-line hits for selected seed as blue dots
-		vector<Dtrk_hit*> ol_trkhits = dbg_hol[trk_index];
-		DrawPhiZDots(ol_trkhits, seed_fit, 1.0, 20, kBlue);
-		
-		// Draw on-track hits for selected seed as tiny red dots
-		vector<Dtrk_hit*> ot_trkhits = dbg_hot[trk_index];
-		DrawPhiZDots(ot_trkhits, trk_fit, 0.5, 20, kRed);
-	}
-	
+	// Draw on-line hits for selected seed
+	DrawPhiZDots(seed.hits_on_circle_with_z, fit, 1.0, 20, kBlue+100);
+
 	mmf->SetGrid(1);
 	mmf->Update();
 	mmf->SetGrid(0);
@@ -366,12 +322,12 @@ jerror_t MyProcessor::PlotPhiVsZ(void)
 jerror_t MyProcessor::PlotPhiZSlope(void)
 {
 	// Radio buttons select the XY seed
-	mmf->EnableRadioButtons(dbg_phiz_hist.size(), &dbg_phiz_hist_seed);
+	mmf->EnableRadioButtons(dbg_seeds.size());
 	unsigned int option = (unsigned int)mmf->GetRadioOption();
 
-	if(option<1 || option>dbg_phiz_hist.size())return NOERROR;
+	if(option<1 || option>dbg_seeds.size())return NOERROR;
 	
-	dbg_phiz_hist[option-1]->Draw();
+	dbg_seeds[option-1].phizangle_hist->Draw();
 	mmf->Update();
 
 	return NOERROR;
@@ -383,12 +339,12 @@ jerror_t MyProcessor::PlotPhiZSlope(void)
 jerror_t MyProcessor::PlotZVertex(void)
 {
 	// Radio buttons select the XY seed
-	mmf->EnableRadioButtons(dbg_zvertex_hist.size(), &dbg_zvertex_hist_seed);
+	mmf->EnableRadioButtons(dbg_seeds.size());
 	unsigned int option = (unsigned int)mmf->GetRadioOption();
 
-	if(option<1 || option>dbg_zvertex_hist.size())return NOERROR;
+	if(option<1 || option>dbg_seeds.size())return NOERROR;
 	
-	dbg_zvertex_hist[option-1]->Draw();
+	dbg_seeds[option-1].zvertex_hist->Draw();
 	mmf->Update();
 
 	return NOERROR;
