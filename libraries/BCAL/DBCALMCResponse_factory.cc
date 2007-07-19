@@ -20,15 +20,13 @@ m_randomGen()
     
     // setup response parameters
     
-    // set cell threshold at 10 MeV
-    //m_cellThreshold = 2.5 * k_MeV;
-    m_cellThreshold = 10 * k_MeV;
-
+    // set cell threshold at 2.5 MeV
+    m_cellThreshold = 2.5 * k_MeV;
 
     // set the sampling smearing coefficients:
-    // (from http://www.jlab.org/Hall-D/software/wiki/index.php/Image:ReSAM_samfrac_1.gif )
-    m_samplingCoefA = 0.041;
-    m_samplingCoefB = 0.09;
+    // (from GlueX-doc 827 v3 Figure 13 )
+    m_samplingCoefA = 0.042;
+    m_samplingCoefB = 0.013;
 }
 
 //------------------
@@ -45,25 +43,51 @@ jerror_t DBCALMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
     eventLoop->Get(hddmhits);
     
     for (unsigned int i = 0; i < hddmhits.size(); i++) {
-        
+
         const DHDDMBCALHit *hddmhit = hddmhits[i];
-        DBCALMCResponse *response = new DBCALMCResponse;
+
+        float smearedE = samplingSmear( hddmhit->E );
         
-        response->module =hddmhit->module;
-        response->layer = hddmhit->layer;
-        response->sector = hddmhit->sector;
-        response->E = samplingSmear( hddmhit->E );
-        response->t = hddmhit->t;
-
-        response->cellId = 
-            DBCALGeometry::cellId( hddmhit->module, hddmhit->layer, hddmhit->sector );
-
-        float upDist =  ( bcalGeom.BCALFIBERLENGTH / 2 ) + hddmhit->zLocal;
+        float upDist = ( bcalGeom.BCALFIBERLENGTH / 2 ) + hddmhit->zLocal;
         float downDist = ( bcalGeom.BCALFIBERLENGTH / 2 ) - hddmhit->zLocal;
         
+        // sampling fluctuations are correlated between ends
+        float upEnergy = smearedE * exp( -upDist / bcalGeom.ATTEN_LENGTH );
+        float downEnergy = smearedE * exp( -downDist / bcalGeom.ATTEN_LENGTH );
+
+        float upTime = hddmhit->t + upDist / bcalGeom.C_EFFECTIVE;
+        float downTime = hddmhit->t + downDist / bcalGeom.C_EFFECTIVE;
         
-        // make sure we exceed the effective electronics threshold
-        if( response->E > m_cellThreshold ){
+        if( upEnergy > m_cellThreshold ){
+        
+            DBCALMCResponse *response = new DBCALMCResponse;
+        
+            response->module =hddmhit->module;
+            response->layer = hddmhit->layer;
+            response->sector = hddmhit->sector;
+            response->E = upEnergy;
+            response->t = upTime;
+            response->end = DBCALGeometry::kUpstream;
+
+            response->cellId = 
+                DBCALGeometry::cellId( hddmhit->module, hddmhit->layer, hddmhit->sector );
+
+            _data.push_back(response);
+        }
+        
+        if( downEnergy > m_cellThreshold ){
+            
+            DBCALMCResponse *response = new DBCALMCResponse;
+            
+            response->module =hddmhit->module;
+            response->layer = hddmhit->layer;
+            response->sector = hddmhit->sector;
+            response->E = downEnergy;
+            response->t = downTime;
+            response->end = DBCALGeometry::kDownstream;
+            
+            response->cellId = 
+                DBCALGeometry::cellId( hddmhit->module, hddmhit->layer, hddmhit->sector );
             
             _data.push_back(response);
         }
@@ -75,9 +99,7 @@ jerror_t DBCALMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
 float
 DBCALMCResponse_factory::samplingSmear( float E )
 {
- 
-    double sigma = sqrt( ( m_samplingCoefA * m_samplingCoefA / E ) +
-                         ( m_samplingCoefB * m_samplingCoefB ) );
+    double sigma = m_samplingCoefA / sqrt( E ) + m_samplingCoefB;
     
     return( E * m_randomGen.Gaus( 1., sigma ) );
 }
