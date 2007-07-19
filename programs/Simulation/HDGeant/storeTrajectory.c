@@ -22,7 +22,7 @@ void cleartrajectories_(void)
 	
 	/* First time through, allocate buffer for trajectory points */
 	if(traj_points==NULL){
-		Maxpoints = 5000;
+		Maxpoints = 10000;
 		traj_points = (s_McTrajectoryPoint_t*)malloc(Maxpoints*sizeof(s_McTrajectoryPoint_t));
 	}
 	
