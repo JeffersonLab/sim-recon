@@ -348,11 +348,9 @@ void DBCALShower_factory_IU::CellRecon(JEventLoop *eventLoop)
                 float dpmb = min( ( tb_cal - t ) * C_EFFECTIVE, fiberLength );
                 float atta = exp( -dpma / ATTEN_LENGTH );
                 float attb = exp( -dpmb / ATTEN_LENGTH );
-                float e = ( ea / atta ) + ( eb / attb );
-                    
-                float  datanor = exp( -0.5 * fiberLength / ATTEN_LENGTH );
-                e *= datanor;
-                e *= 0.5;                
+
+                // could compute energy weighted average instead of straight average
+                float e = ( ( ea / atta ) + ( eb / attb ) ) / 2;
                 
                 xcel[k][i][j] = x;
                 ycel[k][i][j] = y;
@@ -427,9 +425,8 @@ void DBCALShower_factory_IU::CeleToArray(void)
                 narr[2][celtot]=i+1;    //  be used by preclusters
                 narr[3][celtot]=j+1;    //  which will start from index of 1
                                         // rather than from 0.
-                
-                //-----------------------------------------------------------------------
-                
+                                           
+                // why 0.145? -- these variables are used as weights
                 celdata[1][celtot]=ea/0.145;
                 celdata[2][celtot]=eb/0.145;
                 
@@ -446,9 +443,7 @@ void DBCALShower_factory_IU::CeleToArray(void)
                 tb_cel[celtot]=tcell_bnor[k][i][j];
             }
         }
-    }
-    
-    //    cout<<"celtot= "<<celtot<<"\n";
+    }    
 }
 
 
