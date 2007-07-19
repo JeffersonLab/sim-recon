@@ -136,7 +136,6 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 	}
 
 	gPARMS->GetParameter("TRKFIND:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
-	gPARMS->GetParameter("TRKFIT:CANDIDATE_TAG",	CANDIDATE_TAG);
 
 	// Read in Magnetic field map
 	DApplication* dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
@@ -337,7 +336,7 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	// Draw all track candidates
 	if(hdvmf->GetDrawCandidates()){
 		vector<const DTrackCandidate*> trackcandidates;
-		eventLoop->Get(trackcandidates, CANDIDATE_TAG.c_str());
+		eventLoop->Get(trackcandidates);
 		for(unsigned int i=0; i<trackcandidates.size(); i++){
 			const DTrackCandidate *can = trackcandidates[i];
 			
