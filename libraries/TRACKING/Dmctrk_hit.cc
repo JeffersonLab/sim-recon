@@ -1,16 +1,16 @@
-// $Id$
+// $Id: Dmctrk_hit.cc 2673 2007-06-13 03:02:09Z davidl $
 //
-//    File: Dtrk_hit.cc
+//    File: Dmctrk_hit.cc
 // Created: Wed Jul 20 13:43:55 EDT 2005
 // Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
-#include "Dtrk_hit.h"
+#include "Dmctrk_hit.h"
 
 //---------------------------------
-// Dtrk_hit    (Constructor)
+// Dmctrk_hit    (Constructor)
 //---------------------------------
-Dtrk_hit::Dtrk_hit(const DMCTrackHit* hit)
+Dmctrk_hit::Dmctrk_hit(const DMCTrackHit* hit)
 {
 	r = hit->r;
 	phi = hit->phi;
@@ -25,9 +25,9 @@ Dtrk_hit::Dtrk_hit(const DMCTrackHit* hit)
 }
 
 //---------------------------------
-// ~Dtrk_hit    (Destructor)
+// ~Dmctrk_hit    (Destructor)
 //---------------------------------
-Dtrk_hit::~Dtrk_hit()
+Dmctrk_hit::~Dmctrk_hit()
 {
 
 }

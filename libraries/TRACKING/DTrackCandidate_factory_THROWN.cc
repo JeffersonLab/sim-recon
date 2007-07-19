@@ -104,8 +104,8 @@ jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		can->hitid.clear();
 		for(unsigned int j=0; j<trkhits.size(); j++){
 			Dtrk_hit *hit = trkhits[j];
-			float doca = rt->DistToRT(hit->x, hit->y, hit->z);
-			if(doca<2.5)can->hitid.push_back(hit->id);
+			float doca = rt->DistToRT(hit->X(), hit->Y(), hit->Z());
+			if(doca<2.5)can->hitid.push_back(hit->hitid);
 		}
 		
 		

@@ -14,6 +14,9 @@
 #include "DQuickFit.h"
 #include "DTrackCandidate.h"
 #include "Dtrk_hit.h"
+#include "DSeed.h"
+#include "CDC/DCDCTrackHit.h"
+#include "FDC/DFDCPseudo.h"
 
 class JGeometry;
 class DMagneticFieldMap;
@@ -24,22 +27,13 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		~DTrackCandidate_factory(){};
 		const string toString(void);
 		virtual const char* Tag(void){return "";}
-		static void Fill_phi_circle(vector<Dtrk_hit*> hits, float x0, float y0);
-		
+		static void Fill_phi_circle(vector<Dtrk_hit*> &hits, float x0, float y0);
+
+		// Member data accessor methods
 		vector<Dtrk_hit*>& Get_trkhits(void){return trkhits;}
-		vector<vector<Dtrk_hit*> >& Get_dbg_in_seed(void){return dbg_in_seed;}
-		vector<vector<Dtrk_hit*> >& Get_dbg_hoc(void){return dbg_hoc;}
-		vector<vector<Dtrk_hit*> >& Get_dbg_hol(void){return dbg_hol;}
-		vector<vector<Dtrk_hit*> >& Get_dbg_hot(void){return dbg_hot;}
-		vector<DQuickFit*>& Get_dbg_seed_fit(void){return dbg_seed_fit;}
-		vector<DQuickFit*>& Get_dbg_track_fit(void){return dbg_track_fit;}
-		vector<int>& Get_dbg_seed_index(void){return dbg_seed_index;}
-		vector<TH1F*>& Get_dbg_phiz_hist(void){return dbg_phiz_hist;}
-		vector<int>& Get_dbg_phiz_hist_seed(void){return dbg_phiz_hist_seed;}
-		vector<TH1F*>& Get_dbg_zvertex_hist(void){return dbg_zvertex_hist;}
-		vector<int>& Get_dbg_zvertex_hist_seed(void){return dbg_zvertex_hist_seed;}
-		vector<float>& Get_dbg_z_vertex(void){return dbg_z_vertex;}
-		vector<float>& Get_dbg_phizangle(void){return dbg_phizangle;}
+		vector<Dtrk_hit*>& Get_trkhits_stereo(void){return trkhits_stereo;}
+		vector<DSeed>& Get_dbg_seeds(void){return dbg_seeds;}
+
 
 	protected:
 		virtual jerror_t init(void);
@@ -52,12 +46,13 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		int TraceSeed(Dtrk_hit *hit);
 		Dtrk_hit* FindClosestXY(Dtrk_hit *hit);
 		int FitSeed(void);
+		int FindCDCStereoZvals(void);
 		int FindLineHits(void);
 		int FindPhiZAngle(void);
 		int FindZvertex(void);
 		int FitTrack(void);
 		int MarkTrackHits(DTrackCandidate* trackcandidate, DQuickFit *fit);
-		inline void ChopSeed(void){if(hits_in_seed.size()>0)hits_in_seed[0]->flags |= Dtrk_hit::IGNORE;}
+		inline void ChopSeed(void){if(seed.hits_in_seed.size()>0)seed.hits_in_seed[0]->flags |= Dtrk_hit::IGNORE;}
 
 
 		void DumpHits(int current_seed_number, string stage);
@@ -65,25 +60,21 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		const JGeometry* dgeom;
 		const DMagneticFieldMap *bfield;
 
+		// These contain pointers to objects owned by other factories
+		vector<const DCDCTrackHit* >	cdctrackhits;
+		vector<const DFDCPseudo* >		fdcpseudos;
+
+		// The following contain pointers to objects owned by this factory
 		vector<Dtrk_hit*> trkhits; // sorted by z
+		vector<Dtrk_hit*> trkhits_stereo; // hits from cdc stereo wires only
+		vector<Dtrk_hit*> trkhits_extra; // misc. trkhits allocated during finding
+		
+		// The following contains pointers to hit objects contained in one of trkhits,
+		// trkhits_stereo, or trkhits_extra. 
+		DSeed seed;
+		vector<DSeed> dbg_seeds;
 		vector<Dtrk_hit*> trkhits_r_sorted; // sorted by dist. from beam line
-		vector<Dtrk_hit*> hits_in_seed;
-		vector<Dtrk_hit*> hits_on_circle;
-		vector<Dtrk_hit*> hits_on_line;
-		vector<Dtrk_hit*> hits_on_track;
-		vector<vector<Dtrk_hit*> > dbg_in_seed;
-		vector<vector<Dtrk_hit*> > dbg_hoc;
-		vector<vector<Dtrk_hit*> > dbg_hol;
-		vector<vector<Dtrk_hit*> > dbg_hot;
-		vector<DQuickFit*> dbg_seed_fit;
-		vector<DQuickFit*> dbg_track_fit;
-		vector<int> dbg_seed_index;
-		vector<TH1F*> dbg_phiz_hist;
-		vector<int> dbg_phiz_hist_seed;
-		vector<TH1F*> dbg_zvertex_hist;
-		vector<int> dbg_zvertex_hist_seed;
-		vector<float> dbg_phizangle;
-		vector<float> dbg_z_vertex;
+
 		int runnumber;
 		int eventnumber;
 		float MAX_SEED_DIST;
@@ -101,14 +92,11 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		float phizangle_bin_size;
 		float z_vertex_bin_size;
 		float x0,y0,r0;
-		float phizangle, z_vertex;
 		float phizangle_min, phizangle_max;
 		string TRACKHIT_SOURCE;
 		float MIN_HIT_Z, MAX_HIT_Z;
 		bool EXCLUDE_STEREO;
 		unsigned int MIN_CANDIDATE_HITS;
-		
-		TH1F *phizangle_hist, *zvertex_hist, *phi_relative;
 		
 };
 

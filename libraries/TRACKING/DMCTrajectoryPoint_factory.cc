@@ -33,7 +33,7 @@ const string DMCTrajectoryPoint_factory::toString(void)
 	// The JFactory_base class has several methods defined to help. They
 	// rely on positions of colons (:) in the header. Here's an example:
 	//
-	printheader("pri-trk: trk: part:     x:     y:     z:   t(ns):     px:     py:     pz: E(GeV):  dE(MeV): mech:");
+	printheader("pri-trk: trk: part:     x:     y:     z:   t(ns):     px:     py:     pz: E(GeV):     step: radlen: dE(MeV): mech:");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DMCTrajectoryPoint *p = _data[i];
@@ -50,6 +50,8 @@ const string DMCTrajectoryPoint_factory::toString(void)
 		printcol("%3.3f",	p->py);
 		printcol("%3.3f",	p->pz);
 		printcol("%3.3f",	p->E);
+		printcol("%3.3g",	p->step);
+		printcol("%3.1f",	p->radlen);
 		printcol("%3.3f",	p->dE*1.0E3);
 		printcol("%d"   ,	p->mech);
 		printrow();

@@ -19,27 +19,15 @@ using namespace std;
 #include "DQuickFit.h"
 #include "JANA/JGeometry.h"
 #include "DMagneticFieldMap.h"
+#include "DVector2.h"
 
-
-class TrkHitSort{
-	public:
-		bool operator()(Dtrk_hit* const &hit1, Dtrk_hit* const &hit2) const {
-			return hit1->r > hit2->r;
-		}
-};
-class TrkHitZSort{
-	public:
-		bool operator()(Dtrk_hit* const &hit1, Dtrk_hit* const &hit2) const {
-			return hit1->z < hit2->z;
-		}
-};
 
 bool TrkHitSort_C(Dtrk_hit* const &hit1, Dtrk_hit* const &hit2) {
-	return hit1->r > hit2->r;
+	return hit1->Mag() > hit2->Mag();
 }
 
 bool TrkHitZSort_C(Dtrk_hit* const &hit1, Dtrk_hit* const &hit2) {
-	return hit1->z < hit2->z;
+	return hit1->Z() < hit2->Z();
 }
 
 
@@ -84,9 +72,6 @@ DTrackCandidate_factory::DTrackCandidate_factory()
 	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
 	XY_NOISE_CUT2 = XY_NOISE_CUT*XY_NOISE_CUT;
 	
-	phizangle_hist = NULL;
-	phi_relative = NULL;
-	zvertex_hist = NULL;
 }
 
 //------------------
@@ -100,22 +85,23 @@ jerror_t DTrackCandidate_factory::init(void)
 	char suffix[32];
 	sprintf(suffix,"_%08x", (unsigned int)pthread_self());
 	
-	// Since there is a subclass of this one (DTrackCandidate_factory__THROWN)
+	// Since there is a subclass of this one (DTrackCandidate_factory_THROWN)
 	// that does not need these histograms, we check if we are a true 
 	// DTrackCandidate_factory object or not before creating them. If we
-	// don't then the DTrackCandidate_factory__THROWN class will recreate
+	// don't then the DTrackCandidate_factory_THROWN class will recreate
 	// them leading to warning messages from ROOT.
 	if(typeid(this) == typeid(DTrackCandidate_factory*)){
-		char title[64];
+		char name[64];
 		eventLoop->GetJApplication()->Lock();
-		sprintf(title,"phi_z_angle%s",suffix);
-		phizangle_hist = new TH1F(title,"phi_z_angle", 1000, -M_PI, M_PI);
-		phizangle_bin_size = phizangle_hist->GetBinCenter(2)-phizangle_hist->GetBinCenter(1);
-		sprintf(title,"phi_relative%s",suffix);
-		phi_relative = new TH1F(title,"phi_relative", 1000, -M_PI, M_PI);
-		sprintf(title,"z_vertex%s",suffix);
-		zvertex_hist = new TH1F(title,"z_vertex", 140, TARGET_Z_MIN, TARGET_Z_MAX);
-		z_vertex_bin_size = zvertex_hist->GetBinCenter(2)-zvertex_hist->GetBinCenter(1);
+
+		sprintf(name,"phi_z_angle%s",suffix);
+		seed.phizangle_hist = new TH1F(name,"phi_z_angle", 1000, -M_PI, M_PI);
+		phizangle_bin_size = seed.phizangle_hist->GetBinCenter(2) - seed.phizangle_hist->GetBinCenter(1);
+		
+		sprintf(name,"z_vertex%s",suffix);
+		seed.zvertex_hist = new TH1F(name,"z_vertex", 140, TARGET_Z_MIN, TARGET_Z_MAX);
+		z_vertex_bin_size = seed.zvertex_hist->GetBinCenter(2) - seed.zvertex_hist->GetBinCenter(1);
+
 		eventLoop->GetJApplication()->Unlock();
 	}
 	
@@ -130,7 +116,6 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop *loop, int runnumber)
 	this->runnumber = runnumber;
 	dgeom = loop->GetJApplication()->GetJGeometry(runnumber);
 	bfield = NULL;
-	//bfield = dgeom->GetDMagneticFieldMap();
 	
 	return NOERROR;
 }
@@ -142,9 +127,8 @@ jerror_t DTrackCandidate_factory::fini(void)
 {
 	// seems errors are sometimes caused by deleting these ???
 	eventLoop->GetJApplication()->Lock();
-	if(phizangle_hist)delete phizangle_hist;
-	if(phi_relative)delete phi_relative;
-	if(zvertex_hist)delete zvertex_hist;
+	if(seed.phizangle_hist)delete seed.phizangle_hist;
+	if(seed.zvertex_hist)delete seed.zvertex_hist;
 	eventLoop->GetJApplication()->Unlock();
 	
 	return NOERROR;
@@ -165,6 +149,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	// Loop as long as we keep finding tracks
 	for(int i=0;i<100;i++){
+		// Clear vectors of various flavors of hits
+		seed.Clear();
+	
 		// Find a seed (group of hits that appear to be a clean track segment)
 		if(!FindSeed()){
 			if(debug_level>3)DumpHits(i, "FindSeed");
@@ -177,6 +164,16 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 		// so we can just jump to the next iteration of the loop.
 		if(!FitSeed()){
 			if(debug_level>3)DumpHits(i, "FitSeed");
+			dbg_seeds.push_back(seed);
+			continue;
+		}
+
+		// The CDC hits do not have valid z-info at this point. Use
+		// the stereo layers to generate it and at the same time, pull
+		// in the stereo hits.
+		if(!FindCDCStereoZvals()){
+			if(debug_level>3)DumpHits(i,"FindCDCStereoZvals");
+			dbg_seeds.push_back(seed);
 			continue;
 		}
 		
@@ -184,6 +181,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Make a list of hits consistent with the values found.
 		if(!FindLineHits()){
 			if(debug_level>3)DumpHits(i,"FindLineHits");
+			dbg_seeds.push_back(seed);
 			continue;
 		}
 		
@@ -191,8 +189,10 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 		// to make a new DTrackCandidate
 		FitTrack();
 		if(debug_level>3)DumpHits(i,"FitTrack");
+		dbg_seeds.push_back(seed);
 	}
-	
+
+#if 0
 	// Filter out "bad" track candidates
 	for(unsigned int i=0; i<_data.size(); i++){
 		DTrackCandidate *trackcandidate = _data[i];
@@ -211,6 +211,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 			i--;
 		}
 	}
+#endif
 
 	return NOERROR;
 }
@@ -221,28 +222,16 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 void DTrackCandidate_factory::ClearEvent(void)
 {
 	// Clear TrkHits from previous event
+	for(unsigned int i=0; i<trkhits.size(); i++)delete trkhits[i];
 	trkhits.clear();
+	for(unsigned int i=0; i<trkhits_stereo.size(); i++)delete trkhits_stereo[i];
+	trkhits_stereo.clear();
+	for(unsigned int i=0; i<trkhits_extra.size(); i++)delete trkhits_extra[i];
+	trkhits_extra.clear();
 
-	// Clear debugging buffers
-	if(MAX_DEBUG_BUFFERS){
-		dbg_in_seed.clear();
-		dbg_hoc.clear();
-		dbg_hol.clear();
-		dbg_hot.clear();
-		for(unsigned int i=0; i<dbg_seed_fit.size(); i++)delete dbg_seed_fit[i];
-		dbg_seed_fit.clear();
-		for(unsigned int i=0; i<dbg_track_fit.size(); i++)delete dbg_track_fit[i];
-		dbg_track_fit.clear();
-		dbg_seed_index.clear();
-		for(unsigned int i=0; i<dbg_phiz_hist.size(); i++)delete dbg_phiz_hist[i];
-		dbg_phiz_hist.clear();
-		dbg_phiz_hist_seed.clear();
-		for(unsigned int i=0; i<dbg_zvertex_hist.size(); i++)delete dbg_zvertex_hist[i];
-		dbg_zvertex_hist.clear();
-		dbg_zvertex_hist_seed.clear();
-		dbg_phizangle.clear();
-		dbg_z_vertex.clear();
-	}
+	// Clear debugging info (if any) from previous event
+	dbg_seeds.clear();
+
 }
 
 //------------------
@@ -253,25 +242,49 @@ void DTrackCandidate_factory::GetTrkHits(JEventLoop *loop)
 	// Copy Hits into trkhits vector. The objects returned as
 	// DTrackHit should really be Dtrk_hit types. Dynamically
 	// cast them back
-	vector<const DTrackHit*> trackhits;
-	loop->Get(trackhits, TRACKHIT_SOURCE.c_str());
-	for(unsigned int i=0; i<trackhits.size(); i++){
-		Dtrk_hit *hit = (Dtrk_hit*)dynamic_cast<const Dtrk_hit*>(trackhits[i]);
-		if(hit){
-			if(hit->system & (SYS_CDC|SYS_FDC)){
-				if(hit->z>=MIN_HIT_Z && hit->z<=MAX_HIT_Z){
-					// Don't include hits from stereo layers in CDC
-					if(EXCLUDE_STEREO){
-						if(hit->system==SYS_CDC){
-							if(hit->r>22.5 && hit->r<31.5)continue;
-							if(hit->r>40.5 && hit->r<48.5)continue;
-						}
-					}
-					trkhits.push_back(hit);
-				}
-			}
+	cdctrackhits.clear();
+	fdcpseudos.clear();
+	loop->Get(cdctrackhits);
+	loop->Get(fdcpseudos);
+
+	// Create Dtrk_hit objects from CDC hits
+	for(unsigned int i=0; i<cdctrackhits.size(); i++){
+		const DCDCTrackHit *cdchit = cdctrackhits[i];
+
+		Dtrk_hit *hit = new Dtrk_hit(cdchit->wire->origin);
+		hit->flags = 0x0;
+		hit->hitid = cdchit->id;
+		hit->wire = cdchit->wire;
+		hit->system = SYS_CDC;
+
+		// Need to Fill covariance matrix for hit
+		
+		if(cdchit->wire->stereo==0.0){
+			// Axial wire
+			trkhits.push_back(hit);
+		}else{
+			// Stereo wire
+			trkhits_stereo.push_back(hit);
 		}
 	}
+
+	// Create Dtrk_hit objects from FDC hits
+	// Note that these have already undergone some level of reconstruction
+	for(unsigned int i=0; i<fdcpseudos.size(); i++){
+		const DFDCPseudo *fdcpseudo = fdcpseudos[i];
+		
+		DVector3 pos = fdcpseudo->wire->origin + fdcpseudo->s*fdcpseudo->wire->udir;
+		Dtrk_hit *hit = new Dtrk_hit(pos);
+		hit->flags = 0x0;
+		hit->hitid = fdcpseudo->id;
+		hit->wire = fdcpseudo->wire;
+		hit->system = SYS_FDC;
+		
+		// Need to Fill covariance matrix for hit
+		
+		trkhits.push_back(hit);
+	}
+
 	
 	// Sort hits by r in X/Y plane
 	trkhits_r_sorted = trkhits;
@@ -282,13 +295,13 @@ void DTrackCandidate_factory::GetTrkHits(JEventLoop *loop)
 
 	// Flag all "lone" hits to be ignored
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		Dtrk_hit *a = trkhits[i];
+		Dtrk_hit *hit = trkhits[i];
 		
 		// temporarily flag this hit to be ignored so FindClosestXY will work
-		a->flags |= Dtrk_hit::IGNORE;
-		Dtrk_hit *b = FindClosestXY(a);
+		hit->flags |= Dtrk_hit::IGNORE;
+		Dtrk_hit *b = FindClosestXY(hit);
 		if(b){
-			if(a->DistXY2(b) < XY_NOISE_CUT2)a->flags &= ~Dtrk_hit::IGNORE;
+			if(hit->DistXY2(b) < XY_NOISE_CUT2)hit->flags &= ~Dtrk_hit::IGNORE;
 		}
 	}
 }
@@ -300,26 +313,20 @@ int DTrackCandidate_factory::FindSeed(void)
 {
 
 	// Loop over all un-used, non-ignored hits and try
-	// tracing a seed from each. Once a seed with 4 or
-	// more hits is found, return a 1 so a track can
+	// tracing a seed from each. Once a seed with MIN_SEED_HITS
+	// or more hits is found, return a 1 so a track can
 	// be searched for.
 	for(unsigned int i=0; i<trkhits_r_sorted.size(); i++){
-		Dtrk_hit *a = trkhits_r_sorted[i];
-		if(!(a->flags & (Dtrk_hit::USED | Dtrk_hit::IGNORE))){
+		Dtrk_hit *hit = trkhits_r_sorted[i];
+		if(!(hit->flags & (Dtrk_hit::USED | Dtrk_hit::IGNORE))){
 		
 			// Clear IN_SEED bit flag all hits
 			for(unsigned int j=0; j<trkhits.size(); j++){
 				trkhits[j]->flags &= ~(Dtrk_hit::IN_SEED);
 			}
 
-			// We call TraceSeed twice here on purpose! The first
-			// call traces out in one direction and the second
-			// will trace in the other.
-			// NOTE: This will have a problem if hit "a"
-			// is at a kink.
-			hits_in_seed.clear();
-			int N = TraceSeed(a);
-			N += TraceSeed(a);
+			// Trace the seed out by looking for nearest neighbors.
+			int N = TraceSeed(hit);
 			if(N>=(int)MIN_SEED_HITS)return 1;
 			ChopSeed();
 		}
@@ -345,17 +352,17 @@ int DTrackCandidate_factory::TraceSeed(Dtrk_hit *hit)
 	do{
 		N++;
 		current_hit->flags |= Dtrk_hit::IN_SEED;
-		hits_in_seed.push_back(current_hit);
-		if(hits_in_seed.size() >= MAX_SEED_HITS)break;
-		Dtrk_hit *a = FindClosestXY(current_hit);
-		if(!a)break;
-		if(a->DistXY2(current_hit) > MAX_SEED_DIST2)break;
+		seed.hits_in_seed.push_back(current_hit);
+		if(seed.hits_in_seed.size() >= MAX_SEED_HITS)break;
+		Dtrk_hit *hit = FindClosestXY(current_hit);
+		if(!hit)break;
+		if(hit->DistXY2(current_hit) > MAX_SEED_DIST2)break;
 		if(last_hit){
-			if(current_hit->CosPhiXY(a,last_hit) > 0.0)break;
+			if(current_hit->CosPhiXY(hit,last_hit) > 0.0)break;
 		}
 				
 		last_hit = current_hit;
-		current_hit = a;
+		current_hit = hit;
 
 	}while(current_hit);
 
@@ -389,53 +396,145 @@ Dtrk_hit* DTrackCandidate_factory::FindClosestXY(Dtrk_hit *hit)
 int DTrackCandidate_factory::FitSeed(void)
 {
 	// Do a quick circle fit to find the center of the seed
-	DQuickFit *fit = new DQuickFit();
-	fit->SetMagneticFieldMap(bfield);
-	for(unsigned int i=0; i<trkhits.size(); i++){
-		Dtrk_hit *a = trkhits[i];
-		if(!(a->flags&Dtrk_hit::IN_SEED))continue;
-		fit->AddHitXYZ(a->x, a->y, a->z);
+	for(unsigned int i=0; i<seed.hits_in_seed.size(); i++){
+		Dtrk_hit *hit = seed.hits_in_seed[i];
+		seed.seed_fit.AddHitXYZ(hit->X(), hit->Y(), hit->Z());
 	}
-	fit->FitCircle();
-	x0 = fit->x0;
-	y0 = fit->y0;
+	seed.seed_fit.FitCircle();
+	x0 = seed.seed_fit.x0;
+	y0 = seed.seed_fit.y0;
 	r0 = sqrt(x0*x0 + y0*y0);
 		
 	// Set ON_CIRCLE flag for all hits close to the circle defined by x0,y0
 	int N_in_seed_and_on_circle = 0;
-	hits_on_circle.clear();
 	for(unsigned int i=0; i<trkhits.size(); i++){
-		Dtrk_hit *a = trkhits[i];
-		a->flags &= ~(Dtrk_hit::ON_CIRCLE | Dtrk_hit::ON_LINE | Dtrk_hit::ON_TRACK);
-		if(a->flags&Dtrk_hit::USED)continue;
+		Dtrk_hit *hit = trkhits[i];
+		hit->flags &= ~(Dtrk_hit::ON_CIRCLE | Dtrk_hit::ON_LINE | Dtrk_hit::ON_TRACK);
+		if(hit->flags&Dtrk_hit::USED)continue;
 
-		float dx = a->x - x0;
-		float dy = a->y - y0;
+		float dx = hit->X() - x0;
+		float dy = hit->Y() - y0;
 		float r = sqrt(dx*dx + dy*dy);
 			
 		if(fabs(r0-r) <= MAX_CIRCLE_DIST){
-			a->flags |= Dtrk_hit::ON_CIRCLE;
-			hits_on_circle.push_back(a);
-			if(a->flags & Dtrk_hit::IN_SEED)N_in_seed_and_on_circle++;
+			hit->flags |= Dtrk_hit::ON_CIRCLE;
+			seed.hits_on_seed_circle.push_back(hit);
+			seed.circle_fit1.AddHitXYZ(hit->X(), hit->Y(), hit->Z());
+			if(hit->flags & Dtrk_hit::IN_SEED)N_in_seed_and_on_circle++;
 		}
-	}
-	
-	// Record diagnostic (patfind) information
-	if(dbg_seed_fit.size()<MAX_DEBUG_BUFFERS){
-		dbg_in_seed.push_back(hits_in_seed);
-		dbg_hoc.push_back(hits_on_circle);
-		dbg_seed_fit.push_back(fit);
-	}else{
-		delete fit;
 	}
 
 	// If the IN_SEED hits don't actually end up on the circle
 	// (I don't quite understand it, but it happens) then we should
 	// set the ignore flag for the first IN_SEED hit and try again.
-	if(N_in_seed_and_on_circle<3 || hits_on_circle.size()<4){
+	if(N_in_seed_and_on_circle<3 || seed.hits_on_seed_circle.size()<4){
 		ChopSeed();
 		return 0;
 	}
+
+	// Do a second circle fit using all of the on_seed_circle points
+	seed.circle_fit1.FitCircle();
+	x0 = seed.circle_fit1.x0;
+	y0 = seed.circle_fit1.y0;
+	r0 = sqrt(x0*x0 + y0*y0);
+
+	// Now, make one more pass to flag the hits that are close to the circle fit
+	for(unsigned int i=0; i<trkhits.size(); i++){
+		Dtrk_hit *hit = trkhits[i];
+		hit->flags &= ~(Dtrk_hit::ON_CIRCLE | Dtrk_hit::ON_LINE | Dtrk_hit::ON_TRACK);
+		if(hit->flags&Dtrk_hit::USED)continue;
+
+		float dx = hit->X() - x0;
+		float dy = hit->Y() - y0;
+		float r = sqrt(dx*dx + dy*dy);
+			
+		if(fabs(r0-r) <= MAX_CIRCLE_DIST){
+			hit->flags |= Dtrk_hit::ON_CIRCLE;
+			seed.hits_on_circle.push_back(hit);
+			seed.circle_fit2.AddHitXYZ(hit->X(), hit->Y(), hit->Z());
+		}
+	}
+	seed.circle_fit2.FitCircle();
+	x0 = seed.circle_fit2.x0;
+	y0 = seed.circle_fit2.y0;
+	r0 = sqrt(x0*x0 + y0*y0);
+
+	return 1;
+}
+
+//------------------
+// FindCDCStereoZvals
+//------------------
+int DTrackCandidate_factory::FindCDCStereoZvals(void)
+{
+	/// Find the z-coordinates for the CDC hits coming from the stereo layers
+	/// and add them to the list of hits.
+	
+	// To find the z coordinate, we look at the 2D projection of the
+	// stereo wire and find the intersection point of that with the
+	// circle found in FitSeed().
+
+	// Loop over stereo wires to find z-values for each
+	for(unsigned int i=0; i<trkhits_stereo.size(); i++){
+		Dtrk_hit *hit = trkhits_stereo[i];
+		const DCoordinateSystem *wire = hit->wire;
+		DVector2 r1(wire->origin.X(), wire->origin.Y());
+		DVector2 r2(wire->udir.X(), wire->udir.Y());
+		DVector2 R(x0, y0);
+		r2*=1.0/r2.Mod();
+		double a = 1.0; // r2.Mod2()
+		double b = 2.0*r2*(r1-R);
+		double c = r1.Mod2()-2.0*r1*R;
+		double A = b*b - 4.0*a*c;
+
+		// Check that this wire intersects this circle
+		if(A<0.0)continue; // line along wire does not intersect circle, ever.
+		if(a==0.0){
+			_DBG_<<"wire in CDC stereo hit list is not stereo!"<<endl;
+			continue; // this must not be a stereo wire!
+		}
+
+		// Calculate intersection points
+		double B = sqrt(A);
+		double alpha1 = (-b - B)/(2.0*a);
+		double alpha2 = (-b + B)/(2.0*a);
+		
+		// At this point we must decide which value of alpha to use. The
+		// proper way would likely involve either trying both possibilities
+		// and taking the one that gave the better chi-sq for a line fit
+		// of phi vs. z or looking at the surrounding axial layers
+		// and using the value which puts the hit closest to those.
+		// For now, we just use the value closest to zero (i.e. closest to
+		// the center of the wire).
+		double alpha = fabs(alpha1)<fabs(alpha2) ? alpha1:alpha2;
+		
+		// Now we must convert the alpha value into a z-value. To do this,
+		// we use the known theta angle of the wire. The distance along the
+		// wire from the center in 3D is given by:
+		//
+		//   s = alpha/sin(theta_wire)
+		//
+		// The z coordinate of the hit is given by:
+		//
+		//    z = z1 + s*z2
+		//
+		// where z1 is the z coordinate of the center of the wire and z2
+		// is the z component of the direction of the wire. i.e.
+		//
+		//    z2 = cos(theta_wire)
+		//
+		// This means  sin(theta_wire) = sqrt(1 - (z2)^2)
+		double z2 = wire->udir.Z();
+		double s = alpha/sqrt(1.0-z2*z2);
+		if(fabs(s) > wire->L)continue; // if wire doesn't cross circle, skip hit
+		
+		// Create a new hit object so we can set x,y,z based on s
+		Dtrk_hit *hitz = new Dtrk_hit(wire->origin + s*wire->udir, *hit);
+		trkhits_extra.push_back(hitz); // keep track of object for later deletion
+		seed.hits_on_circle.push_back(hitz);
+		seed.hits_on_circle_with_z.push_back(hitz);
+	}
+
 
 	return 1;
 }
@@ -446,9 +545,20 @@ int DTrackCandidate_factory::FitSeed(void)
 int DTrackCandidate_factory::FindLineHits(void)
 {
 	// The hits_on_circle vector should now contain pointers to
-	// only those hits on the circle and there should be enough
-	// hits (>=4) to do a fit
+	// only those hits on the circle. The hits_on_circle_with_z
+	// vector should contain hits from CDC stereo wires that have
+	// valid z coordinates and are on the circle. Add the FDC hits
+	// from hits_on_circle to the hits from hits_on_circle_with_z
+	// to get a list of all hits with valid z coordinate info
+	// (i.e. space points).
+	for(unsigned int i=0; i<seed.hits_on_circle.size(); i++){
+		Dtrk_hit *hit = seed.hits_on_circle[i];
+		if(hit->system == SYS_FDC)seed.hits_on_circle_with_z.push_back(hit);
+	}
 	
+	// Order hits by z.
+	sort(seed.hits_on_circle_with_z.begin(), seed.hits_on_circle_with_z.end(), TrkHitZSort_C);
+
 	// Find the phi-z angle and the z-vertex
 	int ok = FindPhiZAngle();
 	if(ok)ok = FindZvertex();	
@@ -458,24 +568,23 @@ int DTrackCandidate_factory::FindLineHits(void)
 	}
 
 	// Find all on-circle hits consistent with phizangle and zvertex
-	float cos_phizangle = cos(phizangle);
-	float sin_phizangle = sin(phizangle);
-	hits_on_line.clear();
-	for(unsigned int i=0; i<hits_on_circle.size(); i++){
-		Dtrk_hit *a = hits_on_circle[i];
-		float dphi = a->phi_circle;
-		float dz = a->z-z_vertex;
+	float cos_phizangle = cos(seed.phizangle);
+	float sin_phizangle = sin(seed.phizangle);
+	for(unsigned int i=0; i<seed.hits_on_circle_with_z.size(); i++){
+		Dtrk_hit *hit = seed.hits_on_circle_with_z[i];
+		float dphi = hit->phi_circle;
+		float dz = hit->Z()-seed.z_vertex;
 		float dr = sqrt(dphi*dphi + dz*dz);
 		float sin_rel = (dphi*cos_phizangle - dz*sin_phizangle)/dr;
 		float d = sin_rel*dr;
 		if(fabs(d)<MAX_PHI_Z_DIST){
 			// Flags hits as "ON_LINE" and push onto hits_on_line vector
-			a->flags |= Dtrk_hit::ON_LINE;
-			hits_on_line.push_back(a);
+			hit->flags |= Dtrk_hit::ON_LINE;
+			seed.hits_on_line.push_back(hit);
 		}
 	}
 
-	if(hits_on_line.size()<MIN_PHI_Z_HITS){
+	if(seed.hits_on_line.size()<MIN_PHI_Z_HITS){
 		ChopSeed();
 		return 0;
 	}
@@ -490,59 +599,47 @@ int DTrackCandidate_factory::FindPhiZAngle(void)
 {
 	// Fill the phi_circle field for all hits on the circle
 	// centered at x0,y0
-	Fill_phi_circle(hits_on_circle, x0, y0);
+	Fill_phi_circle(seed.hits_on_circle_with_z, x0, y0);
 
-	// Loop over all hits on circle and fill the phizangle histo.
-	phizangle_hist->Reset();
-	for(unsigned int i=0; i<hits_on_circle.size(); i++){
-		Dtrk_hit *a = hits_on_circle[i];
+	// Loop over hits on circle with z information and fill the phizangle histo.
+	seed.phizangle_hist->Reset();
+	for(unsigned int i=0; i<seed.hits_on_circle_with_z.size(); i++){
+		Dtrk_hit *hit = seed.hits_on_circle_with_z[i];
 
-		float theta1 = atan2f((a->phi_circle - 0.0), a->z - TARGET_Z_MIN);
-		float theta2 = atan2f((a->phi_circle - 0.0), a->z - TARGET_Z_MAX);
-		float theta_min, theta_max;
-		if(theta1<theta2){
-			theta_min = theta1;
-			theta_max = theta2;
-		}else{
-			theta_min = theta2;
-			theta_max = theta1;
-		}
+		float theta1 = atan2f((hit->phi_circle - 0.0), hit->Z() - TARGET_Z_MIN);
+		float theta2 = atan2f((hit->phi_circle - 0.0), hit->Z() - TARGET_Z_MAX);
+		float theta_min = theta1<theta2 ? theta1:theta2;
+		float theta_max = theta1<theta2 ? theta2:theta1;
 		
 		for(float t=theta_min; t<=theta_max; t+=phizangle_bin_size){
-			phizangle_hist->Fill(t);
+			seed.phizangle_hist->Fill(t);
 		}
 	}
 	
 	// Use maximum bin for phi-z angle
 	int xbin, ybin, zbin;
-	phizangle_hist->GetMaximumBin(xbin,ybin,zbin);
-	phizangle = phizangle_hist->GetXaxis()->GetBinCenter(xbin);
+	seed.phizangle_hist->GetMaximumBin(xbin,ybin,zbin);
+	seed.phizangle = seed.phizangle_hist->GetXaxis()->GetBinCenter(xbin);
 	
 	// Bin content should be at least as musch as the minimum
 	// number of hits required for a track.
-	float height = phizangle_hist->GetBinContent(xbin);
-	if(height<4)return 0;
+	float height = seed.phizangle_hist->GetBinContent(xbin);
+	if(height<3)return 0;
 
 	// For large angle tracks, the "peak" in the phizangle histo
 	// becomes a plateau. In this case, the maximum bin returned
 	// is the left-most bin of the plateau. (At least this  is the
 	// current behaviour of ROOT.) Look for a plateau and use the
 	// center of it if it exists.
-	int Nbins = phizangle_hist->GetXaxis()->GetNbins();
+	int Nbins = seed.phizangle_hist->GetXaxis()->GetNbins();
 	int xbin_right = xbin;
 	for(int i=xbin+1; i<Nbins; i++){
-		if(phizangle_hist->GetBinContent(i) != height)break;
+		if(seed.phizangle_hist->GetBinContent(i) != height)break;
 		xbin_right = i;
 	}
-	phizangle_min = phizangle - phizangle_bin_size/2.0;
-	phizangle_max = phizangle + phizangle_bin_size*(float)(xbin_right-xbin+1);
-	phizangle = (phizangle_min + phizangle_max)/2.0;
-
-	// Diagnostics
-	if(dbg_phiz_hist.size()<MAX_DEBUG_BUFFERS){
-		dbg_phiz_hist.push_back(new TH1F(*phizangle_hist));
-		dbg_phiz_hist_seed.push_back(dbg_seed_fit.size()-1);
-	}
+	phizangle_min = seed.phizangle - phizangle_bin_size/2.0;
+	phizangle_max = phizangle_min + phizangle_bin_size*(float)(xbin_right-xbin+1);
+	seed.phizangle = (phizangle_min + phizangle_max)/2.0;
 
 	return 1;
 }
@@ -550,7 +647,7 @@ int DTrackCandidate_factory::FindPhiZAngle(void)
 //------------------
 // Fill_phi_circle
 //------------------
-void DTrackCandidate_factory::Fill_phi_circle(vector<Dtrk_hit*> hits, float X, float Y)
+void DTrackCandidate_factory::Fill_phi_circle(vector<Dtrk_hit*> &hits, float X, float Y)
 {
 	/// Fill in the phi_circle attribute for all Dtrk_hits in "hits" by
 	/// calculating phi measured about the axis at x0,y0. Hits with either
@@ -560,13 +657,13 @@ void DTrackCandidate_factory::Fill_phi_circle(vector<Dtrk_hit*> hits, float X, f
 	float y_last = -Y;
 	float phi_last = 0.0;
 	for(unsigned int i=0; i<hits.size(); i++){
-		Dtrk_hit *a = hits[i];
+		Dtrk_hit *hit = hits[i];
 
-		float dx = a->x - X;
-		float dy = a->y - Y;
+		float dx = hit->X() - X;
+		float dy = hit->Y() - Y;
 		float dphi = atan2f(dx*y_last - dy*x_last, dx*x_last + dy*y_last);
 		float phi = phi_last +dphi;
-		a->phi_circle = phi*r0;
+		hit->phi_circle = phi*r0;
 		x_last = dx;
 		y_last = dy;
 		phi_last = phi;
@@ -579,7 +676,7 @@ void DTrackCandidate_factory::Fill_phi_circle(vector<Dtrk_hit*> hits, float X, f
 int DTrackCandidate_factory::FindZvertex(void)
 {
 	// Reset z_vertex histogram
-	zvertex_hist->Reset();
+	seed.zvertex_hist->Reset();
 
 	// tan(x) has poles at x=+/- pi/2 What we really want
 	// is cot(x) but that isn't always available. To avoid
@@ -587,115 +684,112 @@ int DTrackCandidate_factory::FindZvertex(void)
 	float cot_phizangle_min = cos(phizangle_min)/sin(phizangle_min);
 	float cot_phizangle_max = cos(phizangle_max)/sin(phizangle_max);
 
-	for(unsigned int i=0; i<hits_on_circle.size(); i++){
-		Dtrk_hit *a = hits_on_circle[i];
+	// Loop over hits with z information
+	for(unsigned int i=0; i<seed.hits_on_circle_with_z.size(); i++){
+		Dtrk_hit *hit = seed.hits_on_circle_with_z[i];
 
 		// Find intersections with Z-axis for lines with min and
 		// max phizangle going through point (a->z, a->phi_circle).
-		float z1 = a->z - a->phi_circle*cot_phizangle_min;
-		float z2 = a->z - a->phi_circle*cot_phizangle_max;
-		float z_min, z_max;
-		if(z1<z2){
-			z_min = z1;
-			z_max = z2;
-		}else{
-			z_min = z2;
-			z_max = z1;
-		}
+		float z1 = hit->Z() - hit->phi_circle*cot_phizangle_min;
+		float z2 = hit->Z() - hit->phi_circle*cot_phizangle_max;
+		float z_min = z1<z2 ? z1:z2;
+		float z_max = z1<z2 ? z2:z1;
+
 		if(z_min<TARGET_Z_MIN) z_min = TARGET_Z_MIN;
 		if(z_max>TARGET_Z_MAX) z_max = TARGET_Z_MAX;
 		
 		for(float z=z_min; z<=z_max; z+=z_vertex_bin_size){
-			zvertex_hist->Fill(z);
+			seed.zvertex_hist->Fill(z);
 		}
 	}
-	
+
 	// Use maximum bin for z vertex
 	int xbin, ybin, zbin;
-	zvertex_hist->GetMaximumBin(xbin,ybin,zbin);
-	z_vertex = zvertex_hist->GetXaxis()->GetBinCenter(xbin);
+	seed.zvertex_hist->GetMaximumBin(xbin,ybin,zbin);
+	seed.z_vertex = seed.zvertex_hist->GetXaxis()->GetBinCenter(xbin);
 	
 	// Bin content should be at least as musch as the minimum
 	// number of hits required for a track.
-	float height = zvertex_hist->GetBinContent(xbin);
-	if(height<4)return 0;
+	float height = seed.zvertex_hist->GetBinContent(xbin);
+	if(height<3)return 0;
 
 	// Similar to phizangle method above, find range of plateau
-	int Nbins = zvertex_hist->GetXaxis()->GetNbins();
+	int Nbins = seed.zvertex_hist->GetXaxis()->GetNbins();
 	int xbin_right = xbin;
 	for(int i=xbin+1; i<Nbins; i++){
-		if(zvertex_hist->GetBinContent(i) != height)break;
+		if(seed.zvertex_hist->GetBinContent(i) != height)break;
 		xbin_right = i;
 	}
-	float z_vertex_min = z_vertex - z_vertex_bin_size/2.0;
-	float z_vertex_max = z_vertex + z_vertex_bin_size*(float)(xbin_right-xbin+1);
-	z_vertex = (z_vertex_min + z_vertex_max)/2.0;
-
-	// Diagnostics
-	if(dbg_zvertex_hist.size()<MAX_DEBUG_BUFFERS){
-		dbg_zvertex_hist.push_back(new TH1F(*zvertex_hist));
-		dbg_zvertex_hist_seed.push_back(dbg_seed_fit.size()-1);
-	}
+	float z_vertex_min = seed.z_vertex - z_vertex_bin_size/2.0;
+	float z_vertex_max = z_vertex_min + z_vertex_bin_size*(float)(xbin_right-xbin+1);
+	seed.z_vertex = (z_vertex_min + z_vertex_max)/2.0;
 
 	return 1;
 }
+
 
 //------------------
 // FitTrack
 //------------------
 int DTrackCandidate_factory::FitTrack(void)
 {
-	// Create a new DTrackCandidate object and fill in the ihits
-	// values as we loop over hits below.
-	DTrackCandidate *trackcandidate = new DTrackCandidate;
-	DQuickFit *fit = new DQuickFit();
-	fit->SetMagneticFieldMap(bfield);
-	for(unsigned int i=0; i<hits_on_line.size(); i++){
-		Dtrk_hit *a = hits_on_line[i];
-		
-		// Add hit to fit
-		fit->AddHitXYZ(a->x, a->y, a->z);
+	// At this point, the values in x0, y0 come from a circle fit
+	// (linear regression) involving CDC axial and FDC hits. It's
+	// possible some of the FDC hits do not fall on the phi-z
+	// line and so, should be excluded from the circle fit.
+	//
+	// Also, the values of z_vertex and phizangle come from histograms
+	// and so are restricted by the bin widths. These are filled by
+	// CDC stereo and FDC hits. Because there are often only a few points
+	// to fit a line to in the phi-z plane, a linear regression will
+	// often give a result that does not point back to the target.
+	// We can however, still get a better value for theta (derived
+	// from phizangle) by doing a fit that restricts the z_vertex
+	// to being the current value.
+	//
+	// Since both of these "fits" use different (although overlapping)
+	// data sets, we cannot really do them simultaneously with DQuickFit.
+	// Thus, the two fits below.
+	
+	// For now we just use the last circle fit and phizangle, z_vertex
+	// to decide the parameters. 
+	DQuickFit &fit = seed.circle_fit2;
+
+	double phi = fit.phi;
+	double p_trans = fit.p_trans;
+
+	// Fit to line to get z_vertex and theta
+	seed.line_fit = seed.circle_fit2;
+	seed.line_fit.Clear();
+	for(unsigned int i=0; i<seed.hits_on_line.size(); i++){
+		Dtrk_hit *a = seed.hits_on_line[i];
+		seed.line_fit.AddHitXYZ(a->X(), a->Y(), a->Z());
 	}
+	seed.line_fit.FitLine_FixedZvertex(seed.z_vertex); // circle parameters from fit above are still valid
 	
-	// Do a fit to the final subset of hits
-	//fit->FitTrack();
-	fit->FitTrack_FixedZvertex(z_vertex);
-	
-	trackcandidate->x0 = x0 = fit->x0;
-	trackcandidate->y0 = y0 = fit->y0;
-	r0 = sqrt(x0*x0 + y0*y0);
-		
 	// The following is from a fit of ratio of thrown to reconstructed
 	// transverse momentum vs. theta
 	double par[] = {0.984463, 0.150759, -0.414933, 0.257472, -0.055801};
-	double theta = fit->theta;
+	double theta = seed.line_fit.theta;
 	double ff = par[0]+theta*(par[1]+theta*(par[2]+theta*(par[3]+theta*par[4])));
-	double sin_theta = sin(fit->theta);
+	double sin_theta = sin(theta);
 
-	trackcandidate->z_vertex = fit->z_vertex;
+	// Create a new DTrackCandidate object
+	DTrackCandidate *trackcandidate = new DTrackCandidate;
+
+	trackcandidate->p_trans = p_trans*ff;
+	trackcandidate->phi = phi;
+	trackcandidate->z_vertex = seed.z_vertex;
 	trackcandidate->dzdphi = r0/theta;
-	trackcandidate->p_trans = fit->p_trans*ff;
 	trackcandidate->p = trackcandidate->p_trans/sin_theta;
-	trackcandidate->q = fit->q;
-	trackcandidate->phi = fit->phi;
-	trackcandidate->theta = fit->theta;
+	trackcandidate->q = seed.line_fit.q;
+	trackcandidate->theta = theta;
 
 	// Do one last pass over the hits, marking all 
 	// that are consistent with these parameters as used.
-	MarkTrackHits(trackcandidate, fit);
+	MarkTrackHits(trackcandidate, &seed.line_fit);
 	
 	_data.push_back(trackcandidate);
-
-	// For diagnostics
-	if(dbg_track_fit.size()<MAX_DEBUG_BUFFERS){
-		dbg_track_fit.push_back(fit);
-		dbg_hol.push_back(hits_on_line);
-		dbg_phizangle.push_back(phizangle);
-		dbg_z_vertex.push_back(z_vertex);
-		dbg_seed_index.push_back(dbg_seed_fit.size()-1);
-	}else{
-		delete fit;
-	}
 
 	return 1;
 }
@@ -705,64 +799,31 @@ int DTrackCandidate_factory::FitTrack(void)
 //------------------
 int DTrackCandidate_factory::MarkTrackHits(DTrackCandidate *trackcandidate, DQuickFit *fit)
 {
-	// The values of x0 and y0 are set in FitTrack as the
-	// trackcandidate object is being filled. 
-	Fill_phi_circle(trkhits, x0, y0);
-
-	// Find all hits consistent with phizangle and zvertex
-	float my_phizangle = -fit->q/fabs(fit->q)*tan(fit->theta);
-//cout<<__FILE__<<":"<<__LINE__<<" my_phizangle/phizangle="<<my_phizangle/phizangle<<endl;
-my_phizangle = phizangle;
-	float cos_phizangle = cos(my_phizangle);
-	float sin_phizangle = sin(my_phizangle);
-	float r0_2pi_cos_phizangle = 2.0*M_PI*r0*cos_phizangle;
-	hits_on_track.clear();
+	// Mark all hits_on_line and hits_on_circle as used and simultaneously
+	// fill the hitid member of the DrackCandidate object
 	int N_in_seed_and_on_track = 0;
-	for(unsigned int i=0; i<trkhits.size(); i++){
-		Dtrk_hit *a = trkhits[i];
-
-		float x = a->x - x0;
-		float y = a->y - y0;
-		float r = sqrt(x*x + y*y);
-		float dr = r - r0;
-		
-		// The phi angle could be off by an integral number
-		// of 2pi's. To calculate the "real" distance, first
-		// figure out how many 2pi's to shift by		
-		float dphi = a->phi_circle;
-		float dz = a->z-z_vertex;
-		float d = dphi*cos_phizangle - dz*sin_phizangle;
-		float n = floor(0.5 + d/r0_2pi_cos_phizangle);
-		d -= n*r0_2pi_cos_phizangle;
-
-		if(fabs(d)>MAX_PHI_Z_DIST)continue;
-		if(fabs(dr)>MAX_CIRCLE_DIST)continue;
-		
-		// Flags hits as "ON_TRACK" and "USED" and push onto hits_on_track vector
-		a->flags |= Dtrk_hit::ON_TRACK | Dtrk_hit::USED;
-		hits_on_track.push_back(a);
-		if(a->flags & Dtrk_hit::IN_SEED)N_in_seed_and_on_track++;
+	for(unsigned int i=0; i<seed.hits_on_circle.size(); i++){
+		Dtrk_hit *hit = seed.hits_on_circle[i];
+		hit->flags |= Dtrk_hit::ON_TRACK | Dtrk_hit::USED;
+		if(hit->flags & Dtrk_hit::IN_SEED)N_in_seed_and_on_track++;
 
 		// Add hit index to track in factory data
-		trackcandidate->hitid.push_back(a->id);
-	}
-
-	// For diagnostics
-	if(dbg_hot.size()<MAX_DEBUG_BUFFERS){
-		dbg_hot.push_back(hits_on_track);
+		trackcandidate->hitid.push_back(hit->hitid);
+		seed.hits_on_track.push_back(hit);
 	}
 	
 	// It's possible that none of the seed hits are included in the
 	// final track, when that happens, we have to ignore the first
 	// seed hit on the next loop or else we'll keep getting the same
 	// seed and the same result.
-	if(hits_on_track.size()<3 || N_in_seed_and_on_track<1){
+	if(seed.hits_on_track.size()<3 || N_in_seed_and_on_track<1){
 		ChopSeed();
 		return 0;
 	}
 
 	return 1;
 }
+
 
 //------------------
 // toString
@@ -773,23 +834,23 @@ const string DTrackCandidate_factory::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("        id: Nhits: x0(cm): y0(cm): z_vertex: dz/dphi:  q:     p: p_trans:   phi: theta:");
+	printheader("      id: Nhits: q:     p:       theta:   phi:  p_trans:   x:     y:     z:    dz/dphi:");
 
 	for(unsigned int i=0; i<_data.size(); i++){
 		DTrackCandidate *trackcandidate = _data[i];
 		printnewrow();
 		
-		printcol("%d",    trackcandidate->id);
+		printcol("%lx",    trackcandidate->id);
 		printcol("%d",    trackcandidate->hitid.size());
-		printcol("%3.1f", trackcandidate->x0);
-		printcol("%3.1f", trackcandidate->y0);
-		printcol("%3.1f", trackcandidate->z_vertex);
-		printcol("%1.3f", trackcandidate->dzdphi);
-		printcol("%+1.0f", trackcandidate->q);
+		printcol("%+d", (int)trackcandidate->q);
 		printcol("%3.3f", trackcandidate->p);
-		printcol("%3.2f", trackcandidate->p_trans);
-		printcol("%1.3f", trackcandidate->phi);
 		printcol("%1.3f", trackcandidate->theta);
+		printcol("%1.3f", trackcandidate->phi);
+		printcol("%3.2f", trackcandidate->p_trans);
+		printcol("%2.2f", trackcandidate->x0);
+		printcol("%2.2f", trackcandidate->y0);
+		printcol("%2.2f", trackcandidate->z_vertex);
+		printcol("%1.3f", trackcandidate->dzdphi);
 
 		printrow();
 	}
@@ -852,8 +913,8 @@ void DTrackCandidate_factory::DumpHits(int current_seed_number, string stage)
 		if(t->flags & Dtrk_hit::IGNORE)cout<<" IGNORE";
 		cout<<endl;
 		cout<<i<<" phi_circle: "<<t->phi_circle<<endl;
-		cout<<i<<" x y z: "<<t->x<<" "<<t->y<<" "<<t->z<<endl;
-		cout<<i<<" r phi: "<<t->r<<" "<<t->phi<<endl;
+		cout<<i<<" x y z: "<<t->X()<<" "<<t->Y()<<" "<<t->Z()<<endl;
+		cout<<i<<" r phi: "<<t->Mag()<<" "<<t->Phi()<<endl;
 		cout<<i<<" system:"<<t->system;
 		if(t->system == 0x0)cout<<" NONE";
 		if(t->system & SYS_CDC)cout<<" CDC";

@@ -7,7 +7,7 @@
 
 #include "DTrackHit_factory_MC.h"
 #include "DMCTrackHit.h"
-#include "Dtrk_hit.h"
+#include "Dmctrk_hit.h"
 
 //------------------
 // evnt
@@ -29,10 +29,10 @@ DTrackHit_factory_MC::DTrackHit_factory_MC()
 jerror_t DTrackHit_factory_MC::evnt(JEventLoop *loop, int eventnumber)
 {
 	/// Here we just copy the data from the DMCTrackHit factory.
-	/// Note that we create objects of type Dtrk_hit which is derived
+	/// Note that we create objects of type Dmctrk_hit which is derived
 	/// from the DTrackHit class. We store them and the factory
 	/// presents them as DTrackHit objects. The reason for this is
-	/// that the attributes added by Dtrk_hit are used internally
+	/// that the attributes added by Dmctrk_hit are used internally
 	/// by the DTrackCandidate factory and so are normally "hidden".
 	/// This saves creating and deleting a whole other set of objects
 	/// in the DTrackCandidate factory which hold the same
@@ -63,7 +63,7 @@ jerror_t DTrackHit_factory_MC::evnt(JEventLoop *loop, int eventnumber)
 		if(dmctrackhit->system == SYS_FDC)
 			if(dmctrackhit->r>MAX_HIT_R_FDC)continue;
 
-		Dtrk_hit *t = new Dtrk_hit(dmctrackhit);
+		Dmctrk_hit *t = new Dmctrk_hit(dmctrackhit);
 		//t->InitCovarianceMatrix();
 		_data.push_back(t);
 		tracknumber.push_back(dmctrackhit->track);

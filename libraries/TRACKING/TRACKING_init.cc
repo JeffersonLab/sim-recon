@@ -4,6 +4,7 @@
 #include "DTrack_factory.h"
 #include "DTrackCandidate_factory.h"
 #include "DTrackCandidate_factory_THROWN.h"
+#include "DTrackCandidate_factory_CLASSIC.h"
 #include "DTrackHit_factory.h"
 #include "DTrackHit_factory_MC.h"
 #include "DMCTrackHit_factory.h"
@@ -19,6 +20,7 @@ jerror_t TRACKING_init(JEventLoop *loop)
 	loop->AddFactory(new DTrack_factory());
 	loop->AddFactory(new DTrackCandidate_factory());
 	loop->AddFactory(new DTrackCandidate_factory_THROWN());
+	loop->AddFactory(new DTrackCandidate_factory_CLASSIC());
 	loop->AddFactory(new DTrackHit_factory());
 	loop->AddFactory(new DTrackHit_factory_MC());
 	loop->AddFactory(new DMCTrackHit_factory());
