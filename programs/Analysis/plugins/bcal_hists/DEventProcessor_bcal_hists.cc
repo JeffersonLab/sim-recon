@@ -12,6 +12,7 @@
 #include "DANA/DApplication.h"
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALTruthShower.h"
+#include "BCAL/DBCALHit.h"
 #include "FCAL/DFCALCluster.h"
 #include "TRACKING/DMCThrown.h"
 
@@ -52,6 +53,7 @@ jerror_t DEventProcessor_bcal_hists::init(void)
 	Ereconstructed_vs_Ethrown = new TH2F("Ereconstructed_vs_Ethrown","BCAL total reconstructed E to total thrown E", 200, 0.0, 6.0, 200, 0.0, 6.0);
 
 	Etot_truth = new TH1F("Etot_truth", "Sum of all truth showers (GeV)", 200, 0.0, 6.0);
+	Etot_hits = new TH1F("Etot_hits", "Sum of all hits (GeV)", 200, 0.0, 6.0);
 	Etruth_over_Ethrown_vs_z = new TH2F("bcal_Etruth_over_Ethrown_vs_z","Etruth_over_Ethrown_vs_z", 200, -50.0, 600.0, 200, 0.0, 2.0);
 
 	return NOERROR;
@@ -74,10 +76,12 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DFCALCluster*> fcal_showers;
 	vector<const DBCALTruthShower*> truthshowers;	
 	vector<const DMCThrown*> mcthrowns;
+	vector<const DBCALHit*> bcalhits;
 	loop->Get(showers);
 	//loop->Get(fcal_showers);
 	loop->Get(truthshowers);
 	loop->Get(mcthrowns);
+	loop->Get(bcalhits);
 	
 	LockState();
 	
@@ -140,6 +144,13 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 		}
 		
 	}
+	
+	// Total energy in hits
+	double Ehit_tot = 0.0;
+	for(unsigned int i=0; i<bcalhits.size(); i++){
+		Ehit_tot += bcalhits[i]->E;
+	}
+	Etot_hits->Fill(Ehit_tot);
 	
 	// Truth values
 	double Etruth_tot = 0.0;

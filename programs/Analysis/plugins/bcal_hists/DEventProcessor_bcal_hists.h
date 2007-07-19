@@ -35,7 +35,7 @@ class DEventProcessor_bcal_hists:public JEventProcessor{
 		TH2F* Erec_over_Ethrown_vs_z;
 		TH2F* Ecorr_over_Erec_vs_z;
 		TH2F* Ereconstructed_vs_Ethrown;
-		TH1F* Etot_truth;
+		TH1F* Etot_truth, *Etot_hits;
 		TH2F* Etruth_over_Ethrown_vs_z;
 };
 
