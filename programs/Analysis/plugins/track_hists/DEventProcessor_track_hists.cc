@@ -24,7 +24,7 @@ using namespace std;
 
 // The executable should define the ROOTfile global variable. It will
 // be automatically linked when dlopen is called.
-extern TFile *ROOTfile;
+//extern TFile *ROOTfile;
 
 // Routine used to create our DEventProcessor
 extern "C"{
@@ -73,9 +73,6 @@ DEventProcessor_track_hists::~DEventProcessor_track_hists()
 //------------------
 jerror_t DEventProcessor_track_hists::init(void)
 {
-	// open ROOT file (if needed)
-	if(ROOTfile != NULL) ROOTfile->cd();
-
 	// Create TRACKING directory
 	TDirectory *dir = new TDirectory("TRACKING","TRACKING");
 	dir->cd();
