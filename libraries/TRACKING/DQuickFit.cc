@@ -26,6 +26,72 @@ bool DQFHitLessThanZ_C(DQFHit_t* const &a, DQFHit_t* const &b) {
 }
 
 //-----------------
+// DQuickFit (Constructor)
+//-----------------
+DQuickFit::DQuickFit(void)
+{
+	x0 = y0 = 0;
+	chisq = 0;
+	chisq_source = NOFIT;
+	bfield = NULL;
+}
+
+//-----------------
+// DQuickFit (Constructor)
+//-----------------
+DQuickFit::DQuickFit(const DQuickFit &fit)
+{
+	Copy(fit);
+}
+//-----------------
+// Copy
+//-----------------
+void DQuickFit::Copy(const DQuickFit &fit)
+{
+	x0 = fit.x0;
+	y0 = fit.y0;
+	q = fit.q;
+	p = fit.p;
+	p_trans = fit.p_trans;
+	phi = fit.phi;
+	theta = fit.theta;
+	z_vertex = fit.z_vertex;
+	chisq = fit.chisq;
+	dzdphi = fit.dzdphi;
+	chisq_source = fit.chisq_source;
+	bfield = fit.GetMagneticFieldMap();
+	Bz_avg = fit.GetBzAvg();
+	z_mean = fit.GetZMean();
+	phi_mean = fit.GetPhiMean();
+	
+	const vector<DQFHit_t*> myhits = fit.GetHits();
+	for(unsigned int i=0; i<myhits.size(); i++){
+		DQFHit_t *a = new DQFHit_t;
+		*a = *myhits[i];
+		hits.push_back(a);
+	}
+}
+
+//-----------------
+// operator= (Assignment operator)
+//-----------------
+DQuickFit& DQuickFit::operator=(const DQuickFit& fit)
+{
+	if(this == &fit)return *this;
+	Copy(fit);
+
+	return *this;
+}
+
+//-----------------
+// DQuickFit (Destructor)
+//-----------------
+DQuickFit::~DQuickFit()
+{
+	Clear();
+}
+
+//-----------------
 // AddHit
 //-----------------
 jerror_t DQuickFit::AddHit(float r, float phi, float z)
@@ -61,16 +127,28 @@ jerror_t DQuickFit::PruneHit(int idx)
 	/// 0 to GetNhits()-1.
 	if(idx<0 || idx>=(int)hits.size())return VALUE_OUT_OF_RANGE;
 
+	delete hits[idx];
 	hits.erase(hits.begin() + idx);
 
 	return NOERROR;
 }
 
+//-----------------
+// Clear
+//-----------------
+jerror_t DQuickFit::Clear(void)
+{
+	/// Remove all hits
+	for(unsigned int i=0; i<hits.size(); i++)delete hits[i];
+	hits.clear();
+
+	return NOERROR;
+}
 
 //-----------------
 // PrintChiSqVector
 //-----------------
-jerror_t DQuickFit::PrintChiSqVector(void)
+jerror_t DQuickFit::PrintChiSqVector(void) const
 {
 	/// Dump the latest chi-squared vector to the screen.
 	/// This prints the individual hits' chi-squared
@@ -108,8 +186,8 @@ jerror_t DQuickFit::FitCircle(void)
 	/// are:
 	/// 1. The magnetic field is uniform and along z so that the projection
 	///    of the track onto the X/Y plane will fall on a circle
-	///    (this also implies no multiple-scattering)
-	/// 2. The vertex is at the target center (i.e. 0,0,0 in the coordinate
+	///    (this also implies no multiple-scattering or energy loss)
+	/// 2. The vertex is at the target center (i.e. 0,0 in the coordinate
 	///    system of the points passed to us.
 	///
 	/// IMPORTANT: The value of phi which results from this assumes
@@ -161,7 +239,7 @@ jerror_t DQuickFit::FitCircle(void)
 	q = +1.0;
 	float r0 = sqrt(x0*x0 + y0*y0);
 	p_trans = q*Bz_avg*r0*qBr2p; // qBr2p converts to GeV/c
-	phi = atan2(y0,x0) + M_PI_2;
+	phi = atan2(y0,x0) - M_PI_2;
 	if(p_trans<0.0){
 		p_trans = -p_trans;
 	}
@@ -241,6 +319,26 @@ jerror_t DQuickFit::FitTrack_FixedZvertex(float z_vertex)
 {
 	/// Fit the points, but hold the z_vertex fixed at the specified value.
 	///
+	/// This just calls FitCircle and FitLine_FixedZvertex to find all parameters
+	/// of the track
+
+	// Fit to circle to get circle's center
+	FitCircle();
+	
+	// Fit to line in phi-z plane and return error
+	return FitLine_FixedZvertex(z_vertex);
+}
+
+//-----------------
+// FitLine_FixedZvertex
+//-----------------
+jerror_t DQuickFit::FitLine_FixedZvertex(float z_vertex)
+{
+	/// Fit the points, but hold the z_vertex fixed at the specified value.
+	///
+	/// This assumes FitCircle has already been called and the values
+	/// in x0 and y0 are valid.
+	///
 	/// This just fits the phi-z angle by minimizing the chi-squared
 	/// using a linear regression technique. As it turns out, the
 	/// chi-squared weights points by their distances squared which
@@ -264,9 +362,6 @@ jerror_t DQuickFit::FitTrack_FixedZvertex(float z_vertex)
 	// Fit is being done for a fixed Z-vertex
 	this->z_vertex = z_vertex;
 
-	// Fit to circle to get circle's center
-	FitCircle();
-	
 	// Calculate phi about circle center for each hit
 	Fill_phi_circle(hits, x0, y0);
 
@@ -299,7 +394,6 @@ jerror_t DQuickFit::FitTrack_FixedZvertex(float z_vertex)
 	}
 	
 	dzdphi = r0*cot_theta;
-	//dzdphi = r0*Sx/Sy;
 	
 	// Fill in the rest of the paramters
 	return FillTrackParams();
@@ -388,7 +482,7 @@ jerror_t DQuickFit::FillTrackParams(void)
 //------------------------------------------------------------------
 // Print
 //------------------------------------------------------------------
-jerror_t DQuickFit::Print(void)
+jerror_t DQuickFit::Print(void) const
 {
 	cout<<"-- DQuickFit Params ---------------"<<endl;
 	cout<<"          x0 = "<<x0<<endl;
@@ -416,7 +510,7 @@ jerror_t DQuickFit::Print(void)
 //------------------------------------------------------------------
 // Dump
 //------------------------------------------------------------------
-jerror_t DQuickFit::Dump(void)
+jerror_t DQuickFit::Dump(void) const
 {
 	Print();
 

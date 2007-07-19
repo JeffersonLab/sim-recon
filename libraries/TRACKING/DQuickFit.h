@@ -68,33 +68,31 @@ typedef struct{
 
 class DQuickFit{
 	public:
-		DQuickFit()
-		{	
-			x0 = y0 = 0;
-			chisq = 0;
-			chisq_source = NOFIT;
-			bfield = NULL;
-		}
-
-		~DQuickFit(){
-			for(unsigned int i=0; i<hits.size(); i++)delete hits[i];
-			hits.clear();
-		}
+		DQuickFit(void);
+		DQuickFit(const DQuickFit &fit);
+		DQuickFit& operator=(const DQuickFit& fit);
+		void Copy(const DQuickFit &fit);
+		~DQuickFit();
 
 		jerror_t AddHit(float r, float phi, float z);
 		jerror_t AddHitXYZ(float x, float y, float z);
 		jerror_t PruneHit(int idx);
+		jerror_t Clear(void);
 		jerror_t FitCircle(void);
 		jerror_t FitTrack(void);
 		jerror_t FitTrack_FixedZvertex(float z_vertex);
+		jerror_t FitLine_FixedZvertex(float z_vertex);
 		jerror_t Fill_phi_circle(vector<DQFHit_t*> hits, float x0, float y0);
-		inline const vector<DQFHit_t*> GetHits(){return hits;};
-		inline int GetNhits(){return hits.size();};
-		inline float GetZMean(){return z_mean;}
-		jerror_t PrintChiSqVector(void);
-		jerror_t Print(void);
-		jerror_t Dump(void);
-		inline void SetMagneticFieldMap(const DMagneticFieldMap *map){bfield=map;};
+		inline const vector<DQFHit_t*> GetHits() const {return hits;}
+		inline int GetNhits() const {return hits.size();}
+		inline const DMagneticFieldMap * GetMagneticFieldMap() const {return bfield;}
+		inline float GetBzAvg() const {return Bz_avg;}
+		inline float GetZMean() const {return z_mean;}
+		inline float GetPhiMean() const {return phi_mean;}
+		jerror_t PrintChiSqVector(void) const;
+		jerror_t Print(void) const;
+		jerror_t Dump(void) const;
+		inline void SetMagneticFieldMap(const DMagneticFieldMap *map){bfield=map;}
 
 		enum ChiSqSourceType_t{
 			NOFIT,
