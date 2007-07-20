@@ -27,6 +27,10 @@ m_randomGen()
     // (from GlueX-doc 827 v3 Figure 13 )
     m_samplingCoefA = 0.042;
     m_samplingCoefB = 0.013;
+    
+    gPARMS->SetDefaultParameter( "BCALRESPONSE:CELL_THRESHOLD",  m_cellThreshold );
+    gPARMS->SetDefaultParameter( "BCALRESPONSE:SAMPLING_COEF_A", m_samplingCoefA );
+    gPARMS->SetDefaultParameter( "BCALRESPONSE:SAMPLING_COEF_B", m_samplingCoefB );
 }
 
 //------------------
