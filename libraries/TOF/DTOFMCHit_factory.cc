@@ -47,8 +47,8 @@ jerror_t DTOFMCHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
       float ts =  float(mcresponse->TDC_south)*TDC_MC_RES;
       float en =  float(mcresponse->ADC_north);
       float es =  float(mcresponse->ADC_south);
-      // energy weighted mean time
-      float tm = (tn*en+ts*es)/(en+es);
+      // mean time
+      float tm = (tn+ts)/2.;
       // time difference south-north so positive values are hits closer to north
       float td = (ts-tn);
 
@@ -65,7 +65,7 @@ jerror_t DTOFMCHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
       en *= exp((HALFPADDLE-pos)/ATTEN_LENGTH) ;
       es *= exp((HALFPADDLE+pos)/ATTEN_LENGTH) ;
 
-      float emean = (en/tn+es/ts)/(1./tn+1./ts); 
+      float emean = (en+es)/2.; 
                                                     
       emean = emean*TOF_ADC_TO_E;
       hit->dE = emean;
