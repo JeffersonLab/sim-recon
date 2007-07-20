@@ -18,7 +18,8 @@
 #include <geant3.h>
 #include <bintree.h>
 
-#define ATTEN_LENGTH	100.
+//#define ATTEN_LENGTH	100.
+#define ATTEN_LENGTH	160.
 #define C_EFFECTIVE	15.
 #define WIDTH_OF_BLOCK  4.
 #define LENGTH_OF_BLOCK 45.
