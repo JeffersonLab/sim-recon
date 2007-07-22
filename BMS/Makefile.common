@@ -57,7 +57,8 @@ endif
 LIB_DIR		= .lib/$(OSNAME)
 BIN_DIR		= .bin/$(OSNAME)
 DEP_DIR		= .depends/$(OSNAME)
-INSTALL_DIR = $(HALLD_HOME)# (gets overwritten with HALLD_MY below)
+# The following gets overwritten with HALLD_MY below
+INSTALL_DIR = $(HALLD_HOME)
 
 # include working directory and parent directory first
 FFLAGS   += -I. -I.. -I../include
