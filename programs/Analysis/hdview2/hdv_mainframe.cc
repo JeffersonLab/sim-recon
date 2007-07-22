@@ -392,6 +392,16 @@ void hdv_mainframe::SetRange(void)
 		xhi/=1.5;
 		ylo/=1.5;
 		yhi/=1.5;
+		
+		// Some bug in root screws up drawing the x-coordinates of the
+		// end views such that they have the 2:1 aspect ratio of the
+		// side views. Compensate for this here. (YECHH!!)
+		xlo*=2.0;
+		xhi*=2.0;
+		double deltax = xhi-xlo;
+		xlo+=deltax/4.0;
+		xhi+=deltax/4.0;
+		
 		endviewA->GetCanvas()->Range(xlo, ylo, xhi, yhi);
 		endviewB->GetCanvas()->Range(xlo, ylo, xhi, yhi);
 	}else{
@@ -648,6 +658,7 @@ void hdv_mainframe::DrawDetectors(void)
 	sideviewB->GetCanvas()->cd(0);
 	for(unsigned int i=0; i<graphics_sideB.size(); i++)graphics_sideB[i]->Draw();
 	sideviewB->GetCanvas()->Update();
+	
 }
 
 //-------------------
