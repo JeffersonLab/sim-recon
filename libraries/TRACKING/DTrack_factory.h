@@ -17,7 +17,7 @@
 
 #include <JANA/JFactory.h>
 #include <JANA/JGeometry.h>
-#include "DMagneticFieldMap.h"
+#include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "DTrack.h"
 #include "DReferenceTrajectory.h"
 #include "DCoordinateSystem.h"

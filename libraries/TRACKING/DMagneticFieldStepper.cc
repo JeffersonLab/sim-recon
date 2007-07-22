@@ -3,7 +3,7 @@
 #include <iomanip>
 using namespace std;
 
-#include "DMagneticFieldMap.h"
+#include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "DMagneticFieldStepper.h"
 
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c

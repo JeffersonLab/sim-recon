@@ -7,8 +7,9 @@
 
 #include "DApplication.h"
 #include "HDDM/DEventSourceHDDMGenerator.h"
-#include "TRACKING/DMagneticFieldMapGlueX.h"
-#include "TRACKING/DMagneticFieldMapHDGEANT.h"
+#include "HDGEOMETRY/DMagneticFieldMapGlueX.h"
+#include "HDGEOMETRY/DMagneticFieldMapHDGEANT.h"
+#include "HDGEOMETRY/DMagneticFieldMapCalibDB.h"
 #include "DFactoryGenerator.h"
 
 //---------------------------------
@@ -33,7 +34,7 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	}
 	
 	// Create magnetic field object for use by everyone
-	bfield = new DMagneticFieldMapGlueX();
+	bfield = new DMagneticFieldMapCalibDB(this);
 }
 
 //---------------------------------

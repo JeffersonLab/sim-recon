@@ -18,7 +18,7 @@ using namespace std;
 #include "DTrack.h"
 #include "DQuickFit.h"
 #include "JANA/JGeometry.h"
-#include "DMagneticFieldMap.h"
+#include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "DVector2.h"
 
 

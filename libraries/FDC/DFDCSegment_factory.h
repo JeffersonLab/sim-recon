@@ -14,7 +14,7 @@
 #include "DFDCHit.h"
 #include "DFDCGeometry.h"
 
-#include "TRACKING/DMagneticFieldMap.h"
+#include "HDGEOMETRY/DMagneticFieldMap.h"
 #include <TDecompLU.h>
 
 #include <algorithm>

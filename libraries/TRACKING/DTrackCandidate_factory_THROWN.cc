@@ -10,7 +10,7 @@
 #include "DANA/DApplication.h"
 #include "DTrackCandidate_factory_THROWN.h"
 #include "DMCThrown.h"
-#include "DMagneticFieldMap.h"
+#include "HDGEOMETRY/DMagneticFieldMap.h"
 
 
 //------------------

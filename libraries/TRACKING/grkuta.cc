@@ -257,7 +257,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
 /* Revision 1.1.1.1  1995/10/24 10:21:42  cernlib */
 /* Geant */
 
-#include "DMagneticFieldMap.h"
+#include "HDGEOMETRY/DMagneticFieldMap.h"
 //#include "cmath"
 using namespace std;
 

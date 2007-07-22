@@ -9,7 +9,7 @@
 #include <DVector3.h>
 #include "JANA/jerror.h"
 
-#include "DMagneticFieldMap.h"
+#include "HDGEOMETRY/DMagneticFieldMap.h"
 
 
 /// DMagneticFieldStepper class
