@@ -148,14 +148,14 @@ public:
   inline void SetInitial(std::vector<const DKinematicData*> &__kd)
   {
     _kDataInitial_in = __kd; 
-    _cov.ResizeTo(3*__kd.size(), 3*__kd.size());
+    //_cov.ResizeTo(3*__kd.size(), 3*__kd.size());
   }
 
   /// Set the final tracks
   inline void SetFinal(const std::vector<const DKinematicData*> &__kd)
   {
     _kDataFinal_in = __kd; 
-    _cov.ResizeTo(3*__kd.size(), 3*__kd.size());
+    //_cov.ResizeTo(3*__kd.size(), 3*__kd.size());
   }
 
   /// Get the final tracks
