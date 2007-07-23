@@ -12,17 +12,16 @@
 
 #include "JANA/JFactory.h"
 #include "JANA/JEventLoop.h"
-#include "BCAL/DBCALShower.h"
 #include "BCAL/DHDDMBCALHit.h"
 
 class DMCBCALHit_factory : public JFactory< DHDDMBCALHit > { 
     
 public:
     
-    DMCBCALHit_factory();
-    ~DMCBCALHit_factory(){};
+  DMCBCALHit_factory(){}
+  ~DMCBCALHit_factory(){}
     
-    const string toString( void );
+  const string toString( void );
     
 };
 
