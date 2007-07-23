@@ -87,8 +87,7 @@ jerror_t DBCALShower_factory::evnt(JEventLoop *loop, int eventnumber)
 
     // Time to cook a final shower
     DBCALShower *shower = new DBCALShower;
-    shower->E=E_cluster;    
-    shower->Ecorr=shower->E*(1+ECORR);
+    shower->E=E_cluster;
     shower->x = X_cluster;
     shower->y = Y_cluster;
     shower->z = Z_cluster + BCAL_Z_OFFSET;   
@@ -1785,7 +1784,6 @@ const string DBCALShower_factory::toString(void)
 		printcol("%5.2f",	s->z);
 		printcol("%5.3f",	s->t);
 		printcol("%5.3f",	s->E);
-		printcol("%5.3f",	s->Ecorr);
 		printrow();
 	}
 
