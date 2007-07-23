@@ -217,13 +217,6 @@ void DBCALShower_factory_IU::CellRecon(JEventLoop *eventLoop)
     // ecel_a,tcel_a,ecel_b,tcel_b, xcel,ycel,zcel,tcel,ecel,tcell_anor and
     // tcell_bnor are the input of function CeleToArray()
     //********************************************************************** 
-        
-    // extract the BCAL hits
-    
-    vector<const DBCALMCResponse*> hits;
-    eventLoop->Get(hits);
-    if(hits.size() <= 0) return;
-    
     
     /////////////////////////////////////////////////////////////////////
     // Now start to take take out  DBCALMCResponse to form our private 
@@ -239,6 +232,13 @@ void DBCALShower_factory_IU::CellRecon(JEventLoop *eventLoop)
     memset( tcel_b, 0, modulemax_bcal * layermax_bcal *
             colmax_bcal * sizeof( float ) );
     
+    // extract the BCAL hits
+    
+    vector<const DBCALMCResponse*> hits;
+    eventLoop->Get(hits);
+    if(hits.size() <= 0) return;
+    
+        
     for (unsigned int i = 0; i < hits.size(); i++) {
         
         const  DBCALMCResponse *hit = hits[i];     
