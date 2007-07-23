@@ -159,6 +159,7 @@ jerror_t DBCALShower_factory_IU::evnt(JEventLoop *loop, int eventnumber)
     
     vector<DBCALShower*> clusters;
     
+    int id = 0;
     for (int i = 1; i < (clstot+1); i++){
         
         int  j=clspoi[i];
@@ -168,8 +169,8 @@ jerror_t DBCALShower_factory_IU::evnt(JEventLoop *loop, int eventnumber)
         // Time to cook a final shower
         DBCALShower *shower = new DBCALShower;
   
-        shower->E                   = e_cls[j];    
-        shower->Ecorr               = shower->E;
+        shower->id                  = id++;
+        shower->E                   = e_cls[j];
         shower->x                   = x_cls[j];
         shower->y                   = y_cls[j];
         shower->z                   = z_cls[j] + zOffset;   
@@ -1497,7 +1498,6 @@ const string DBCALShower_factory_IU::toString(void)
 		printcol("%5.2f",	s->z);
 		printcol("%5.3f",	s->t);
 		printcol("%5.3f",	s->E);
-		printcol("%5.3f",	s->Ecorr);
 		printrow();
 	}
     
