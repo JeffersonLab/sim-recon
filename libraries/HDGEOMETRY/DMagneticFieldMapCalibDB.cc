@@ -13,6 +13,7 @@ using namespace std;
 #include <JANA/JApplication.h>
 #include <JANA/JCalibration.h>
 
+
 //---------------------------------
 // DMagneticFieldMapCalibDB    (Constructor)
 //---------------------------------
@@ -210,9 +211,9 @@ void DMagneticFieldMapCalibDB::GetField(double x, double y, double z, double &Bx
 
 	// Get closest indices for this point
 	double r = sqrt(x*x + y*y);
-	int index_x = round((r-xmin)/dx);
+	int index_x = floor((r-xmin)/dx + 0.5);
 	if(index_x<0 || index_x>=Nx)return;
-	int index_z = round((z-zmin)/dz);	
+	int index_z = floor((z-zmin)/dz + 0.5);	
 	if(index_z<0 || index_z>=Nz)return;
 	
 	int index_y = 0;
