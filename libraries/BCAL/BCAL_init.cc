@@ -9,6 +9,7 @@
 #include "BCAL/DBCALShower_factory_SIMPLE.h"
 #include "BCAL/DBCALShower_factory_IU.h"
 #include "BCAL/DBCALPhoton_factory.h"
+#include "BCAL/DMCBCALHit_factory.h"
 
 jerror_t BCAL_init(JEventLoop *loop)
 {
@@ -21,6 +22,7 @@ jerror_t BCAL_init(JEventLoop *loop)
     loop->AddFactory(new DBCALShower_factory_IU());
 	loop->AddFactory(new DBCALTruthShower_factory());
     loop->AddFactory(new DBCALPhoton_factory());
+    loop->AddFactory(new DMCBCALHit_factory());
     
 	return NOERROR;
 }
