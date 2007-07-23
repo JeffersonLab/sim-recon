@@ -10,7 +10,7 @@
 #define _MYPROCESSOR_H_
 
 #include <JANA/JEventProcessor.h>
-#include "TRACKING/DMagneticFieldMap.h"
+#include "HDGEOMETRY/DMagneticFieldMap.h"
 class DQuickFit;
 class DTrackCandidate_factory;
 
