@@ -269,7 +269,6 @@ jerror_t DBCALShower_factory_SIMPLE::evnt(JEventLoop *loop, int eventnumber)
 		// Create a DBCALShower from this cluster
 		DBCALShower *shower = new DBCALShower();
 		shower->E = Etot;
-		shower->Ecorr = Etot;
 		shower->x = x;
 		shower->y = y;
 		shower->z = z;
@@ -424,7 +423,6 @@ const string DBCALShower_factory_SIMPLE::toString(void)
 		printcol("%5.2f",	s->z);
 		printcol("%5.3f",	s->t);
 		printcol("%5.3f",	s->E);
-		printcol("%5.3f",	s->Ecorr);
 		printrow();
 	}
 
