@@ -38,6 +38,7 @@ jerror_t DBCALPhoton_factory::brun(JEventLoop *loop, int runnumber)
     m_bcalIR = bcalGeom.BCALINNERRAD;
     m_zTarget = 65;                    // global target position -- should come from database!
     
+    return NOERROR;
 }
 
 //------------------
@@ -111,6 +112,7 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
         _data.push_back( photon );
     }
     
+    return NOERROR;
 }
 
 //------------------
