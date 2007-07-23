@@ -6,3 +6,11 @@ include $(HALLD_HOME)/src/BMS/Makefile.shlib
 else
 include $(HALLD_HOME)/src/BMS/Makefile.lib
 endif
+
+	
+hddm_s.c: hddm_s.h
+
+hddm_s.h: event.xml hits.xml reaction.xml
+	@echo --------- Regenerating hddm_s.* files
+	hddm-c event.xml
+	@echo --------- done

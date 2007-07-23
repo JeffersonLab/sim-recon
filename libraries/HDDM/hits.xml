@@ -20,7 +20,7 @@
 	    <fdcCathodeHit t="float" q="float" maxOccurs="unbounded" />
 	 </fdcCathodeStrip>
          <fdcTruthPoint z="float" x="float" y="float" dradius="float"
-			track="int" primary="boolean" dEdx="float"
+			track="int" primary="boolean" dEdx="double"
                         t="float" px="float" py="float" pz="float" E="float" ptype="int"
 			minOccurs="0" maxOccurs="unbounded" />
       </fdcChamber>

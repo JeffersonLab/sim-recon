@@ -267,7 +267,7 @@ typedef struct {
 
 typedef struct {
    float                E;
-   float                dEdx;
+   double               dEdx;
    float                dradius;
    bool_t               primary;
    int32_t              ptype;

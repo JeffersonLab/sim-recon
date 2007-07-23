@@ -885,7 +885,7 @@ char HDDM_s_DocumentString[] =
 "          <fdcCathodeStrip maxOccurs=\"unbounded\" minOccurs=\"0\" plane=\"int\" strip=\"int\">\n"
 "            <fdcCathodeHit maxOccurs=\"unbounded\" q=\"float\" t=\"float\" />\n"
 "          </fdcCathodeStrip>\n"
-"          <fdcTruthPoint E=\"float\" dEdx=\"float\" dradius=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
+"          <fdcTruthPoint E=\"float\" dEdx=\"double\" dradius=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" t=\"float\" track=\"int\" x=\"float\" y=\"float\" z=\"float\" />\n"
 "        </fdcChamber>\n"
 "      </forwardDC>\n"
 "      <startCntr minOccurs=\"0\">\n"
@@ -1699,7 +1699,7 @@ static s_FdcTruthPoints_t* unpack_s_FdcTruthPoints(XDR* xdrs, popNode* pop)
       for (m = 0; m < mult; m++ )
       {
          xdr_float(xdrs,&this1->in[m].E);
-         xdr_float(xdrs,&this1->in[m].dEdx);
+         xdr_double(xdrs,&this1->in[m].dEdx);
          xdr_float(xdrs,&this1->in[m].dradius);
          xdr_bool(xdrs,&this1->in[m].primary);
          xdr_int(xdrs,&this1->in[m].ptype);
@@ -3691,7 +3691,7 @@ static int pack_s_FdcTruthPoints(XDR* xdrs, s_FdcTruthPoints_t* this1)
    for (m = 0; m < this1->mult; m++)
    {
       xdr_float(xdrs,&this1->in[m].E);
-      xdr_float(xdrs,&this1->in[m].dEdx);
+      xdr_double(xdrs,&this1->in[m].dEdx);
       xdr_float(xdrs,&this1->in[m].dradius);
       xdr_bool(xdrs,&this1->in[m].primary);
       xdr_int(xdrs,&this1->in[m].ptype);
