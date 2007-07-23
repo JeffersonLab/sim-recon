@@ -26,7 +26,7 @@ public:
     HDCLASSDEF( DBCALPhoton );
     
     DBCALPhoton( int id ) : JObject( id ) {}
-    ~DBCALPhoton();
+    ~DBCALPhoton(){}
         
     inline DVector3 showerPosition() const { return m_position; }
     inline DLorentzVector lorentzMomentum() const { return m_p4; }
