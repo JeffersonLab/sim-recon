@@ -77,6 +77,7 @@ private:
     float  xx[modulemax_bcal][layermax_bcal][colmax_bcal];   
     float  yy[modulemax_bcal][layermax_bcal][colmax_bcal];
     float  fiberLength;
+    float  zOffset;
     
     float  xcel[modulemax_bcal][layermax_bcal][colmax_bcal];  
     float  ycel[modulemax_bcal][layermax_bcal][colmax_bcal];   
@@ -190,9 +191,7 @@ private:
     float BREAK_THRESH_TRMS;    // T RMS THRESHOLD    
     float CLUST_THRESH;         // MIN ENERGY THRESD OF CLUSTER IN GEV    
     float ATTEN_LENGTH;         // Attenuation lenth and other parameters    
-    float C_EFFECTIVE;          // Effective v of light in scintillator
-    float ENERGY_SCALE;         // multiplicative calibration constant
-    
+    float C_EFFECTIVE;          // Effective v of light in scintillator    
 };
 
 #endif // _DBCALShower_factory_IU_

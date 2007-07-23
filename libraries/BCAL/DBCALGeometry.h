@@ -39,6 +39,7 @@ public:
     float BCALMIDRAD;      ///> mid radius of BCAL in cm
     float BCALOUTERRAD;    ///> outer radius of BCAL in cm
     float BCALFIBERLENGTH; ///> BCAL Scintilator fiber lenth in cm
+    float GLOBAL_CENTER;  ///> center of BCAL in gloobal coordinate system
     
     float ATTEN_LENGTH;   ///> attenuation length
     float C_EFFECTIVE;    ///> speed of light in fibers

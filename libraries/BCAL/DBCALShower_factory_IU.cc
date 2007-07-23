@@ -13,8 +13,6 @@
 #include "BCAL/DBCALGeometry.h"
 #include "BCAL/DBCALShower_factory_IU.h"
 
-#define BCAL_Z_OFFSET 26.03+123.4+65.0 //convert regina's coordinated to HDGeant's
-
 using namespace std;
 
 //------------------
@@ -41,8 +39,6 @@ DBCALShower_factory_IU::DBCALShower_factory_IU()
 
     // this parameter is used to break clusters based on rms time
     BREAK_THRESH_TRMS= 5.0;   // T RMS THRESHOLD
-
-	ENERGY_SCALE=1.13; // ENERGY_SCALE actually could be a function of E
     
     gPARMS->SetDefaultParameter( "BCALRECON:CLUST_THRESH", CLUST_THRESH );
     gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_DIST", MERGE_THRESH_DIST );
@@ -50,7 +46,6 @@ DBCALShower_factory_IU::DBCALShower_factory_IU()
     gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_ZDIST", MERGE_THRESH_ZDIST );
     gPARMS->SetDefaultParameter( "BCALRECON:MERGE_THRESH_XYDIST", MERGE_THRESH_XYDIST );
     gPARMS->SetDefaultParameter( "BCALRECON:BREAK_THRESH_TRMS", BREAK_THRESH_TRMS );
-    gPARMS->SetDefaultParameter( "BCALRECON:ENERGY_SCALE", ENERGY_SCALE );
 }
 
 //------------------
@@ -71,6 +66,7 @@ jerror_t DBCALShower_factory_IU::brun(JEventLoop *loop, int runnumber)
     C_EFFECTIVE = bcalGeom.C_EFFECTIVE;
     
     fiberLength = bcalGeom.BCALFIBERLENGTH; // fiber lenth in cm
+    zOffset = bcalGeom.GLOBAL_CENTER;
     int   modmin = 0;
     int   modmax = bcalGeom.NBCALMODS;
     int   rowmin1=0;
@@ -167,22 +163,22 @@ jerror_t DBCALShower_factory_IU::evnt(JEventLoop *loop, int eventnumber)
         
         int  j=clspoi[i];
   
-        if( e_cls[j] * ENERGY_SCALE < CLUST_THRESH ) continue;
+        if( e_cls[j] < CLUST_THRESH ) continue;
         
         // Time to cook a final shower
         DBCALShower *shower = new DBCALShower;
   
         shower->E                   = e_cls[j];    
-        shower->Ecorr               = shower->E*ENERGY_SCALE;
+        shower->Ecorr               = shower->E;
         shower->x                   = x_cls[j];
         shower->y                   = y_cls[j];
-        shower->z                   = z_cls[j] + BCAL_Z_OFFSET;   
+        shower->z                   = z_cls[j] + zOffset;   
         shower->t                   = t_cls[j];
         shower->N_cell              = ncltot[j];
         shower->total_layer_cluster = nlrtot[j];
         shower->Apx_x               = apx[1][j];
         shower->Apx_y               = apx[2][j];
-        shower->Apx_z               = apx[3][j];
+        shower->Apx_z               = apx[3][j] + zOffset;
         shower->error_Apx_x         = eapx[1][j];
         shower->error_Apx_y         = eapx[2][j];
         shower->error_Apx_z         = eapx[3][j];
