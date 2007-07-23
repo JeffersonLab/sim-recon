@@ -127,9 +127,9 @@ int DMagneticFieldMapCalibDB::ReadMap(int runnumber, string context)
 	// Copy values into Btable
 	for(unsigned int i=0; i<Bmap.size(); i++){
 		vector<float> &a = Bmap[i];
-		int xindex = floor((a[0]-xmin+dx/2.0)/dx); // the +dx/2.0 guarantees against round-off errors
-		int yindex = Ny<2 ? 0:floor((a[1]-ymin+dy/2.0)/dy);
-		int zindex = floor((a[2]-zmin+dz/2.0)/dz);
+		int xindex = (int)floor((a[0]-xmin+dx/2.0)/dx); // the +dx/2.0 guarantees against round-off errors
+		int yindex = (int)(Ny<2 ? 0:floor((a[1]-ymin+dy/2.0)/dy));
+		int zindex = (int)floor((a[2]-zmin+dz/2.0)/dz);
 		DBfieldPoint_t *b = &Btable[xindex][yindex][zindex];
 		b->x = a[0];
 		b->y = a[1];
@@ -211,9 +211,9 @@ void DMagneticFieldMapCalibDB::GetField(double x, double y, double z, double &Bx
 
 	// Get closest indices for this point
 	double r = sqrt(x*x + y*y);
-	int index_x = floor((r-xmin)/dx + 0.5);
+	int index_x = (int)floor((r-xmin)/dx + 0.5);
 	if(index_x<0 || index_x>=Nx)return;
-	int index_z = floor((z-zmin)/dz + 0.5);	
+	int index_z = (int)floor((z-zmin)/dz + 0.5);	
 	if(index_z<0 || index_z>=Nz)return;
 	
 	int index_y = 0;
