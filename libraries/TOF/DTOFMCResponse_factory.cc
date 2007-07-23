@@ -88,7 +88,7 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
       loca[i] = pow(-1.,double(i))*dist;
       // position dependent timing resolution see NIM A525 (2004)183
       sigm[i] = loca[i]*(-0.0008926) + TOF_CENT_TRES; 
-      sigm[i] = powf(10.,sigm[i]);
+      sigm[i] = (double)pow(10.,double(sigm[i]));
       if (tof[i]>0){
 	tof[i] += Ran.Gaus(0.,sigm[i]); // add time resolution of PMT
 	tdc[i] = int(tof[i]/TDC_MC_RES);
