@@ -72,7 +72,7 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
         double scale = m_scaleZ_p0 +
             m_scaleZ_p1 * zEntry +
             m_scaleZ_p2 * zEntry * zEntry +
-            m_scaleZ_p3 * zEntry * zEntry;
+            m_scaleZ_p3 * zEntry * zEntry * zEntry;
 
         double nonlin = m_nonlinZ_p0 +
             m_nonlinZ_p1 * zEntry +
