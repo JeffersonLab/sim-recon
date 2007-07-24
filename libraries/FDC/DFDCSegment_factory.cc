@@ -17,6 +17,7 @@
 #define BEAM_VARIANCE 0.01 // cm^2
 #define FDC_X_RESOLUTION 0.02  // 200 microns
 #define FDC_Y_RESOLUTION 0.02
+#define USED_IN_SEGMENT 0x8
 
 static bool got_deflection_file=true;
 static bool warn=true;
@@ -247,6 +248,14 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
   double r1=sqrt(r1sq);
   double denom=delta_x*delta_x+delta_y*delta_y;
 
+  // Auxiliary matrices for correcting for non-normal track incidence to FDC
+  // The correction is 
+  //    CRPhi'= C*CRPhi*C+S*CR*S, where S(i,i)=R_i*kappa/2
+  //                                and C(i,i)=sqrt(1-S(i,i)^2)  
+  DMatrix C(n,n);
+  DMatrix S(n,n);
+
+
   // Predicted positions
   Phi1=atan2(delta_y,delta_x);
   double z1=XYZ(0,2);
@@ -338,16 +347,17 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
     CR(k,k)=dR_dx0*dR_dx0*var_x0+dR_dy0*dR_dy0*var_y0+dR_dx1*dR_dx1*var_x1
       +dR_dy1*dR_dy1*var_y1+dR_drho*dR_drho*var_r+dR_dtanl*dR_dtanl*var_tanl;
     
-    // Correct weight matrix W for non-normal incidence of tracks 
-    // on FDC planes.  The correction is 
-    // CRPhi'= C*CRPhi*C+S*CR*S, where S(i,i)=R_i*kappa/2
-    //    and C(i,i)=sqrt(1-S(i,i)^2)
-    // Check to see that the correction will give sensible results   
-    double r2=XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1); 
-    if (1.-r2/16./rc/rc>0.){
-      CRPhi(k,k)=r2*CR(k,k)/16./rc/rc+(1.-r2/16./rc/rc)*CRPhi(k,k);
+    double rtemp=sqrt(XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1)); 
+    double stemp=rtemp/4./rc;
+    double ctemp=1.-stemp*stemp;
+    if (ctemp>0){
+      S(k,k)=stemp;
+      C(k,k)=sqrt(ctemp);
     }
+    else S(k,k)=C(k,k)=1.;
   }
+  // Correction for non-normal incidence of track on FDC 
+  CRPhi=C*CRPhi*C+S*CR*S;
  
   return NOERROR;
 }
@@ -610,113 +620,133 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 
   // Now loop over the list of track segment end points
   for (unsigned int i=0;i<x_list[0];i++){
-    // Creat a new segment
-    DFDCSegment *segment = new DFDCSegment;
-    segment->chisq=0.;
-    DMatrix Seed(5,1);
-    DMatrix Cov(5,5);
-
-    // Clear track parameters
-    kappa=tanl=D=z0=phi0=Phi1=xc=yc=rc=0.;
-
-    // Point in the last plane in the package 
-    double x=points[i]->x;
-    double y=points[i]->y; 
-  
-    // Create list of nearest neighbors
-    vector<DFDCPseudo*>neighbors;
-    neighbors.push_back(points[i]);
-    unsigned int match=0;
-    double delta,delta_min=1000.,xtemp,ytemp;
-    for (unsigned int k=0;k<x_list.size()-1;k++){
-      delta_min=1000.;
-      match=0;
-      for (unsigned int m=x_list[k];m<x_list[k+1];m++){
-	xtemp=points[m]->x;
-	ytemp=points[m]->y;
-	delta=sqrt((x-xtemp)*(x-xtemp)+(y-ytemp)*(y-ytemp));
-        if (delta<delta_min && delta<MATCH_RADIUS){
-          delta_min=delta;
-          match=m;
-        }
-      }	
-      if (match!=0){
-        x=points[match]->x;
-        y=points[match]->y;
-        neighbors.push_back(points[match]);
-      }
-    }
-    // Matrix of points on track 
-    DMatrix XYZ(neighbors.size()+1,3);
-
-    // Perform the Riemann Helical Fit on the track segment
-    jerror_t error=RiemannHelicalFit(neighbors,XYZ);   
-
-    // Correct for the Lorentz effect given DOCAs
-    if (error==NOERROR){
-      CorrectPoints(neighbors,XYZ);
-      error=RiemannHelicalFit(neighbors,XYZ); 
-    }
-     
-    // Linear regression to find charge  
-    double var=0.; 
-    double sumv=0.;
-    double sumy=0.;
-    double sumx=0.;
-    double sumxx=0.,sumxy=0,Delta;
-    double slope,r2;
-    for (unsigned int k=0;k<neighbors.size();k++){   
-      double tempz=neighbors[k]->wire->origin(2);
-      double phi_z=atan2(neighbors[k]->y,neighbors[k]->x);
-      r2=neighbors[k]->x*neighbors[k]->x
-	+neighbors[k]->y*neighbors[k]->y;
-      var=(neighbors[k]->x*neighbors[k]->x*neighbors[k]->cov(0,0)
-	   +neighbors[k]->y*neighbors[k]->y*neighbors[k]->cov(1,1))/r2/r2;
-      sumv+=1./var;
-      sumy+=phi_z/var;
-      sumx+=tempz/var;
-      sumxx+=tempz*tempz/var;
-      sumxy+=phi_z*tempz/var;
-    }
-    Delta=sumv*sumxx-sumx*sumx;
-    slope=(sumv*sumxy-sumy*sumx)/Delta; 
-
-    // Guess particle charge (+/-1);
-    double q=1.;   
-    if (slope<0.) q=-1.;
-
-    if (rc>0.){
-      // guess for curvature
-      kappa=q/2./rc;  
-      
-      // Estimate for azimuthal angle
-      phi0=atan2(-xc,yc); 
-      if (q<0) phi0+=M_PI;
-      // Look for distance of closest approach nearest to target
-      D=-q*rc-xc/sin(phi0);
-    }
-
-    // Initialize seed track parameters
-    Seed(0,0)=kappa;    // Curvature 
-    Seed(1,0)=phi0;      // Phi
-    Seed(2,0)=D;       // D=distance of closest approach to origin   
-    Seed(3,0)=tanl;     // tan(lambda), lambda=dip angle
-    Seed(4,0)=Z_TARGET;       // z-position at closest approach to origin
-    for (unsigned int i=0;i<5;i++) Cov(i,i)=1.;
+    if ((points[i]->status&USED_IN_SEGMENT)==0){
+      // Creat a new segment
+      DFDCSegment *segment = new DFDCSegment;
+      segment->chisq=0.;
+      DMatrix Seed(5,1);
+      DMatrix Cov(5,5);
     
-    segment->S.ResizeTo(Seed);
-    segment->S=Seed;
-    segment->cov.ResizeTo(Cov);
-    segment->cov=Cov;
-    segment->hits=neighbors;
-    segment->track=fdc_track;
-    segment->xc=xc;
-    segment->yc=yc;
-    segment->rc=rc;
-    segment->Phi1=Phi1;
-    segment->chisq=chisq;
-   
-    _data.push_back(segment);
+      // Clear track parameters
+      kappa=tanl=D=z0=phi0=Phi1=xc=yc=rc=0.;
+      
+      // Point in the last plane in the package 
+      double x=points[i]->x;
+      double y=points[i]->y; 
+      
+      // Create list of nearest neighbors
+      vector<DFDCPseudo*>neighbors;
+      neighbors.push_back(points[i]);
+      unsigned int match=0;
+      double delta,delta_min=1000.,xtemp,ytemp;
+      for (unsigned int k=0;k<x_list.size()-1;k++){
+	delta_min=1000.;
+	match=0;
+	for (unsigned int m=x_list[k];m<x_list[k+1];m++){
+	  xtemp=points[m]->x;
+	  ytemp=points[m]->y;
+	  delta=sqrt((x-xtemp)*(x-xtemp)+(y-ytemp)*(y-ytemp));
+	  if (delta<delta_min && delta<MATCH_RADIUS){
+	    delta_min=delta;
+	    match=m;
+	  }
+	}	
+	if (match!=0){
+	  x=points[match]->x;
+	  y=points[match]->y;
+	  points[match]->status|=USED_IN_SEGMENT;
+	  neighbors.push_back(points[match]);	  
+	}
+      }
+      // Look for hits adjacent to the ones we have in our segment candidate
+      unsigned int num_neighbors=neighbors.size();
+      bool do_sort=false;
+      for (unsigned int k=0;k<points.size();k++){
+	for (unsigned int j=0;j<num_neighbors;j++){
+	  if (abs(neighbors[j]->wire->wire-points[k]->wire->wire)==1
+	      && neighbors[j]->wire->origin(2)==points[k]->wire->origin(2)){
+	    points[k]->status|=USED_IN_SEGMENT;
+	    neighbors.push_back(points[k]);
+	    do_sort=true;
+	  }      
+	}
+      }
+      // Sort if we added another point
+      if (do_sort)
+	std::sort(neighbors.begin(),neighbors.end(),DFDCSegment_package_cmp);
+    
+      // Matrix of points on track 
+      DMatrix XYZ(neighbors.size()+1,3);
+      
+      // Perform the Riemann Helical Fit on the track segment
+      jerror_t error=RiemannHelicalFit(neighbors,XYZ);   
+       
+      // Correct for the Lorentz effect given DOCAs
+      if (error==NOERROR){
+	CorrectPoints(neighbors,XYZ);
+	error=RiemannHelicalFit(neighbors,XYZ); 
+      }
+      
+      // Linear regression to find charge  
+      double var=0.; 
+      double sumv=0.;
+      double sumy=0.;
+      double sumx=0.;
+      double sumxx=0.,sumxy=0,Delta;
+      double slope,r2;
+      for (unsigned int k=0;k<neighbors.size();k++){   
+	double tempz=neighbors[k]->wire->origin(2);
+	double phi_z=atan2(neighbors[k]->y,neighbors[k]->x);
+	r2=neighbors[k]->x*neighbors[k]->x
+	  +neighbors[k]->y*neighbors[k]->y;
+	var=(neighbors[k]->x*neighbors[k]->x*neighbors[k]->cov(0,0)
+	     +neighbors[k]->y*neighbors[k]->y*neighbors[k]->cov(1,1))/r2/r2;
+	sumv+=1./var;
+	sumy+=phi_z/var;
+	sumx+=tempz/var;
+	sumxx+=tempz*tempz/var;
+	sumxy+=phi_z*tempz/var;
+      }
+      Delta=sumv*sumxx-sumx*sumx;
+      slope=(sumv*sumxy-sumy*sumx)/Delta; 
+      
+      // Guess particle charge (+/-1);
+      double q=1.;   
+      if (slope<0.) q=-1.;
+      
+      if (rc>0.){
+	// guess for curvature
+	kappa=q/2./rc;  
+	
+	// Estimate for azimuthal angle
+	phi0=atan2(-xc,yc); 
+	if (q<0) phi0+=M_PI;
+	// Look for distance of closest approach nearest to target
+	D=-q*rc-xc/sin(phi0);
+      }
+      
+      // Initialize seed track parameters
+      Seed(0,0)=kappa;    // Curvature 
+      Seed(1,0)=phi0;      // Phi
+      Seed(2,0)=D;       // D=distance of closest approach to origin   
+      Seed(3,0)=tanl;     // tan(lambda), lambda=dip angle
+      Seed(4,0)=Z_TARGET;       // z-position at closest approach to origin
+      for (unsigned int i=0;i<5;i++) Cov(i,i)=1.;
+      
+      segment->S.ResizeTo(Seed);
+      segment->S=Seed;
+      segment->cov.ResizeTo(Cov);
+      segment->cov=Cov;
+      segment->hits=neighbors;
+      segment->track=fdc_track;
+      segment->xc=xc;
+      segment->yc=yc;
+      segment->rc=rc;
+      segment->Phi1=Phi1;
+      segment->chisq=chisq;
+      
+      _data.push_back(segment);
+    }
   }
 
   return NOERROR;
