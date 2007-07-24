@@ -14,14 +14,14 @@ DBCALPhoton_factory::DBCALPhoton_factory()
 {
     
     // energy calibration parameters
-    m_scaleZ_p0 =  8.595E-01;
-    m_scaleZ_p1 =  4.897E-04;
-    m_scaleZ_p2 = -9.288E-07;
-    m_scaleZ_p3 =  3.758E-10;
+    m_scaleZ_p0 =  8.015E-01;
+    m_scaleZ_p1 =  1.740E-03;
+    m_scaleZ_p2 = -6.804E-06;
+    m_scaleZ_p3 =  7.162E-09;
     
-    m_nonlinZ_p0 =  4.271E-02;
-    m_nonlinZ_p1 = -5.392E-05;
-    m_nonlinZ_p2 =  8.705E-08;
+    m_nonlinZ_p0 =  4.441E-02;
+    m_nonlinZ_p1 = -1.183E-04;
+    m_nonlinZ_p2 =  3.482E-07;
     
 }
 
@@ -69,14 +69,20 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
         // for slices of z.  These fit parameters (scale and nonlin) are then plotted 
         // as a function of z and fit.
         
+
+        double nonlin = m_nonlinZ_p0 +
+            m_nonlinZ_p1 * zEntry +
+            m_nonlinZ_p2 * zEntry * zEntry;
+
+        // for the scale, we extend the scale factor at the target as a constant behind
+        // the target
+        if( zEntry < m_zTarget ) zEntry = m_zTarget;
+        
         double scale = m_scaleZ_p0 +
             m_scaleZ_p1 * zEntry +
             m_scaleZ_p2 * zEntry * zEntry +
             m_scaleZ_p3 * zEntry * zEntry * zEntry;
 
-        double nonlin = m_nonlinZ_p0 +
-            m_nonlinZ_p1 * zEntry +
-            m_nonlinZ_p2 * zEntry * zEntry;
         
         // now turn E_rec into E_gen -->> E_gen = ( E_rec / scale ) ^ ( 1 / ( 1 + nonlin ) )
         double energy = pow( (**showItr).E / scale, 1 / ( 1 + nonlin ) );
