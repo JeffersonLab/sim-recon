@@ -790,19 +790,13 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 
 		// ----- BCAL ------
 		TBox *bcal1 = new TBox(BCAL_Zmin, BCAL_Rmin, BCAL_Zmin+BCAL_Zlen, BCAL_Rmax);
-		TBox *bcal2 = new TBox(BCAL_Zmin, -BCAL_Rmin, BCAL_Zmin+BCAL_Zlen, -BCAL_Rmax);
 		bcal1->SetFillColor(28);
-		bcal2->SetFillColor(28);
 		graphics_sideA.push_back(bcal1);
-		graphics_sideA.push_back(bcal2);
 
 		// ----- CDC ------
 		TBox *cdc1 = new TBox(CDC_Zmin, CDC_Rmin, CDC_Zmin + CDC_Zlen, CDC_Rmax);
-		TBox *cdc2 = new TBox(CDC_Zmin, -CDC_Rmin, CDC_Zmin + CDC_Zlen, -CDC_Rmax);
 		cdc1->SetFillColor(17);
-		cdc2->SetFillColor(17);
 		graphics_sideA.push_back(cdc1);
-		graphics_sideA.push_back(cdc2);
 	
 		// ----- FDC ------
 		for(int i=0; i<4; i++){
@@ -810,28 +804,19 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 			float zu = (DFDCGeometry::GetDFDCWire(1+i*6,1))->origin.z();
 			float zd = (DFDCGeometry::GetDFDCWire(1+i*6+5,1))->origin.z();			
 			TBox *fdc1 = new TBox(zu, FDC_Rmin, zd, FDC_Rmax);
-			TBox *fdc2 = new TBox(zu, -FDC_Rmin, zd, -FDC_Rmax);
 			fdc1->SetFillColor(21);
-			fdc2->SetFillColor(21);
 			graphics_sideA.push_back(fdc1);
-			graphics_sideA.push_back(fdc2);
 		}
 		
 		// ----- TOF ------
 		TBox *tof1 = new TBox(TOF_Zmin, TOF_Rmin, TOF_Zmin+TOF_Zlen, TOF_Rmax);
-		TBox *tof2 = new TBox(TOF_Zmin, -TOF_Rmin, TOF_Zmin+TOF_Zlen, -TOF_Rmax);
 		tof1->SetFillColor(11);
-		tof2->SetFillColor(11);
 		graphics_sideA.push_back(tof1);
-		graphics_sideA.push_back(tof2);
 		
 		// ----- FCAL ------
 		TBox *fcal1 = new TBox(FCAL_Zmin, FCAL_Rmin, FCAL_Zmin+FCAL_Zlen, FCAL_Rmax);
-		TBox *fcal2 = new TBox(FCAL_Zmin, -FCAL_Rmin, FCAL_Zmin+FCAL_Zlen, -FCAL_Rmax);
 		fcal1->SetFillColor(40);
-		fcal2->SetFillColor(40);
 		graphics_sideA.push_back(fcal1);
-		graphics_sideA.push_back(fcal2);
 	}
 
 	//============== Side B Phi vs. z
@@ -910,8 +895,8 @@ void hdv_mainframe::SetEvent(int id)
 {
 	char str[256];
 	sprintf(str,"Event: %5d", id);
-	event_text->SetTitle(str);
-	event_text->Draw();
+	//event_text->SetTitle(str);
+	//event_text->Draw();
 	current_eventnumber = id;
 }
 

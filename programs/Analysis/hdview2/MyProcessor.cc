@@ -167,6 +167,7 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	
 	// Delete objects from last event
 	ClearEvent();
+return NOERROR;
 	
 	// Get TrackHits
 	vector<const DTrackHit*> trackhits;
