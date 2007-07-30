@@ -75,7 +75,8 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 						      double r1sq,
 			DMatrix &XYZ, DMatrix &CRPhi,DMatrix &CR);
 		jerror_t CalcNormal(DMatrix A,double lambda,DMatrix &N);
-
+		double GetProcessNoise(unsigned int i, DMatrix XYZ);
+		
 		const string toString(void);
 
 	protected:
@@ -109,9 +110,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		double chisq;
 
                 const DMagneticFieldMap *bfield;
-
-	        // Average magnetic field in each package
-	        double BField[4];
+		int myeventno;
 
 		// Variables for implementing lorentz effect
 		// due to the magnetic field).
