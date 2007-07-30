@@ -120,7 +120,6 @@ jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int eventNo) {
 
   double bx;
   double bz;
-  BField[0]=BField[1]=BField[2]=BField[3]=0.;
 
   char buf[80];
   fdc_deflection_file.getline(buf,80,'\n');
@@ -134,8 +133,6 @@ jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int eventNo) {
       fdc_deflection_file >> lorentz_nx[i][j];
       fdc_deflection_file >> lorentz_nz[i][j];  
 
-    BField[j/PACKAGE_Z_POINTS]+=sqrt(bx*bx+bz*bz)
-	/double(PACKAGE_Z_POINTS*LORENTZ_X_POINTS);  
     }
   }
   fdc_deflection_file.close();
@@ -174,7 +171,7 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 jerror_t DFDCSegment_factory::RiemannLineFit(unsigned int n,DMatrix XYZ0,
 					     DMatrix CR,DMatrix &XYZ){
   // Fill matrix of intersection points
-  for (unsigned int m=0;m<n-1;m++){
+  for (unsigned int m=0;m<n;m++){
     double r2=XYZ0(m,0)*XYZ0(m,0)+XYZ0(m,1)*XYZ0(m,1);
     double x_int0,temp,y_int0;
     double denom= N[0]*N[0]+N[1]*N[1];
@@ -254,7 +251,6 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
   //                                and C(i,i)=sqrt(1-S(i,i)^2)  
   DMatrix C(n,n);
   DMatrix S(n,n);
-
 
   // Predicted positions
   Phi1=atan2(delta_y,delta_x);
@@ -354,7 +350,10 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
       S(k,k)=stemp;
       C(k,k)=sqrt(ctemp);
     }
-    else S(k,k)=C(k,k)=1.;
+    else{
+      S(k,k)=0.;
+      C(k,k)=1.;
+    }
   }
   // Correction for non-normal incidence of track on FDC 
   CRPhi=C*CRPhi*C+S*CR*S;
@@ -532,6 +531,10 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
 
   // Clear supplemental track info vector
   fdc_track.clear();
+  fdc_track_t temp;
+  temp.hit_id=0;
+  temp.dx=temp.dy=temp.s=0.;
+  fdc_track.assign(num_points-1,temp);
   
   // Fill initial matrices for R and RPhi measurements
   XYZ(num_points-1,2)=XYZ0(num_points-1,2)=Z_TARGET;
@@ -590,7 +593,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
     temp.dx=XYZ(m,0)-XYZ0(m,0); // residuals
     temp.dy=XYZ(m,1)-XYZ0(m,1);
     temp.s=(XYZ(m,2)-Z_TARGET)/sin(atan(tanl)); // path length
-    fdc_track.push_back(temp);	
+    fdc_track[m]=temp;	
     chisq+=(temp.dx*temp.dx+temp.dy*temp.dy)/CR(m,m);
   }
   return NOERROR;
@@ -623,7 +626,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
     if ((points[i]->status&USED_IN_SEGMENT)==0){
       // Creat a new segment
       DFDCSegment *segment = new DFDCSegment;
-      segment->chisq=0.;
+      segment->chisq=1.e8;
       DMatrix Seed(5,1);
       DMatrix Cov(5,5);
     
@@ -686,7 +689,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	CorrectPoints(neighbors,XYZ);
 	error=RiemannHelicalFit(neighbors,XYZ); 
       }
-      
+
       // Linear regression to find charge  
       double var=0.; 
       double sumv=0.;
