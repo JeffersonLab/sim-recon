@@ -508,6 +508,15 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(s_HDDM_t *hddm_s,  JFactory<DMCThro
 							mcthrown->phi = atan2(py, px);
 							if(mcthrown->phi<0.0)mcthrown->phi += 2.0*M_PI;
 							mcthrown->theta = acos(pz/mcthrown->p);
+							
+							// Fill in DKinematicData part
+							// (this is temporary. eventually, this will be the
+							// only part here and the stuff above will be removed)
+							mcthrown->setMass(ParticleMass(product->type));
+							mcthrown->setMomentum(DVector3(px, py, pz));
+							mcthrown->setPosition(DVector3(origin->vx, origin->vy, origin->vz));
+							mcthrown->setCharge(ParticleCharge(product->type));
+							
 							data.push_back(mcthrown);
 						}
 					}
@@ -971,9 +980,9 @@ jerror_t DEventSourceHDDM::Extract_DMCTrajectoryPoint(s_HDDM_t *hddm_s,  JFactor
 	
 	for(unsigned int i=0; i<PE->mult; i++){
 		s_HitView_t *hits = PE->in[i].hitView;
-		if (hits == HDDM_NULL ||
-			hits->mcTrajectory == HDDM_NULL ||
-			hits->mcTrajectory->mcTrajectoryPoints == HDDM_NULL)continue;
+		if(hits == HDDM_NULL || hits==NULL)continue;
+		if(hits->mcTrajectory == HDDM_NULL || hits->mcTrajectory==NULL)continue;
+		if(hits->mcTrajectory->mcTrajectoryPoints == HDDM_NULL || hits->mcTrajectory->mcTrajectoryPoints==NULL)continue;
 
 		s_McTrajectoryPoints_t *points = hits->mcTrajectory->mcTrajectoryPoints;
 		for(unsigned int i=0; i<points->mult; i++){
