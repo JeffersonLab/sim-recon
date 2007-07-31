@@ -11,7 +11,9 @@
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
 
-class DMCThrown:public JObject{
+#include "PID/DKinematicData.h"
+
+class DMCThrown:public DKinematicData{
 	public:
 		HDCLASSDEF(DMCThrown);
 		
