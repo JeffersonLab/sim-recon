@@ -12,7 +12,7 @@ using namespace std;
 #include "MyProcessor.h"
 #include "FDC/DFDCGeometry.h"
 
-#include <TPolyMarker3D.h>
+#include <TPolyMarker.h>
 #include <TLine.h>
 #include <TMarker.h>
 #include <TBox.h>
@@ -200,44 +200,45 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 			
 				// Track
 				TGHorizontalFrame *candidatesf = new TGHorizontalFrame(trkdrawopts);
-					TGCheckButton *candidates		= new TGCheckButton(candidatesf,	"DTrackCandidate:");
+					checkbuttons["candidates"]	= new TGCheckButton(candidatesf,	"DTrackCandidate:");
 					candidatesfactory = new TGComboBox(candidatesf, "<default>", 0);
 					candidatesfactory->Resize(80,20);
-					candidatesf->AddFrame(candidates, lhints);
+					candidatesf->AddFrame(checkbuttons["candidates"], lhints);
 					candidatesf->AddFrame(candidatesfactory, lhints);
 					candidatesfactory->AddEntry("<default>",0);
 				trkdrawopts->AddFrame(candidatesf, lhints);
 					
 				TGHorizontalFrame *tracksf		= new TGHorizontalFrame(trkdrawopts);
-					TGCheckButton *tracks		= new TGCheckButton(tracksf,	"DTrack:");
+					checkbuttons["tracks"]		= new TGCheckButton(tracksf,	"DTrack:");
 					tracksfactory	= new TGComboBox(tracksf, "<default>", 0);
 					tracksfactory->Resize(80,20);
-					tracksf->AddFrame(tracks, lhints);
+					tracksf->AddFrame(checkbuttons["tracks"], lhints);
 					tracksf->AddFrame(tracksfactory, lhints);
 					tracksfactory->AddEntry("<default>",0);
 				trkdrawopts->AddFrame(tracksf, lhints);
 
-				TGCheckButton *thrown			= new TGCheckButton(trkdrawopts,	"DMCThrown");
-				trkdrawopts->AddFrame(thrown, lhints);
+				checkbuttons["thrown"]			= new TGCheckButton(trkdrawopts,	"DMCThrown");
+				trkdrawopts->AddFrame(checkbuttons["thrown"], lhints);
 				
 
 				// Hit
-				TGCheckButton *cdc				= new TGCheckButton(hitdrawopts,	"CDC");
-				TGCheckButton *cdctruth			= new TGCheckButton(hitdrawopts,	"CDCTruth");
-				TGCheckButton *fdc				= new TGCheckButton(hitdrawopts,	"FDC");
-				TGCheckButton *fdctruth			= new TGCheckButton(hitdrawopts,	"FDCTruth");
-				TGCheckButton *toftruth			= new TGCheckButton(hitdrawopts,	"TOFTruth");
-				TGCheckButton *fcaltruth		= new TGCheckButton(hitdrawopts,	"FCALTruth");
-				TGCheckButton *bcaltruth		= new TGCheckButton(hitdrawopts,	"BCALTruth");
-				TGCheckButton *trajectories	= new TGCheckButton(hitdrawopts,	"DMCTrajectoryPoint");
-				hitdrawopts->AddFrame(cdc, lhints);
-				hitdrawopts->AddFrame(cdctruth, lhints);
-				hitdrawopts->AddFrame(fdc, lhints);
-				hitdrawopts->AddFrame(fdctruth, lhints);
-				hitdrawopts->AddFrame(toftruth, lhints);
-				hitdrawopts->AddFrame(fcaltruth, lhints);
-				hitdrawopts->AddFrame(bcaltruth, lhints);
-				hitdrawopts->AddFrame(trajectories, lhints);
+				checkbuttons["cdc"]				= new TGCheckButton(hitdrawopts,	"CDC");
+				checkbuttons["cdctruth"]		= new TGCheckButton(hitdrawopts,	"CDCTruth");
+				checkbuttons["fdc"]				= new TGCheckButton(hitdrawopts,	"FDC");
+				checkbuttons["fdctruth"]		= new TGCheckButton(hitdrawopts,	"FDCTruth");
+				checkbuttons["toftruth"]		= new TGCheckButton(hitdrawopts,	"TOFTruth");
+				checkbuttons["fcaltruth"]		= new TGCheckButton(hitdrawopts,	"FCALTruth");
+				checkbuttons["bcaltruth"]		= new TGCheckButton(hitdrawopts,	"BCALTruth");
+				checkbuttons["trajectories"]	= new TGCheckButton(hitdrawopts,	"DMCTrajectoryPoint");
+				hitdrawopts->AddFrame(checkbuttons["cdc"], lhints);
+				hitdrawopts->AddFrame(checkbuttons["cdctruth"], lhints);
+				hitdrawopts->AddFrame(checkbuttons["fdc"], lhints);
+				hitdrawopts->AddFrame(checkbuttons["fdctruth"], lhints);
+				hitdrawopts->AddFrame(checkbuttons["toftruth"], lhints);
+				hitdrawopts->AddFrame(checkbuttons["fcaltruth"], lhints);
+				hitdrawopts->AddFrame(checkbuttons["bcaltruth"], lhints);
+				hitdrawopts->AddFrame(checkbuttons["trajectories"], lhints);
+				
 
 	//========== BOT FRAME ============
 	TGGroupFrame *trackinfo = new TGGroupFrame(botframe, "Track Info", kHorizontalFrame);
@@ -306,12 +307,12 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 
 
 	//&&&&&&&&&&&&&&&& Defaults
-	tracks->SetState(kButtonDown);
+	checkbuttons["tracks"]->SetState(kButtonDown);
 	xy->SetState(kButtonDown,kTRUE);
 	coordinatetype = COORD_XY;
-	cdc->SetState(kButtonDown);
-	fdc->SetState(kButtonDown);
-	trajectories->SetState(kButtonDown);
+	checkbuttons["cdc"]->SetState(kButtonDown);
+	checkbuttons["fdc"]->SetState(kButtonDown);
+	checkbuttons["trajectories"]->SetState(kButtonDown);
 	r0 = 50.0;
 	phi0 = M_PI;
 	x0 = 0.0;
@@ -320,7 +321,6 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	zoom_factor = 1.0;
 
 	//&&&&&&&&&&&&&&&& Connections
-	
 	left->Connect("Clicked","hdv_mainframe", this, "DoPanLeft()");
 	up->Connect("Clicked","hdv_mainframe", this, "DoPanUp()");
 	down->Connect("Clicked","hdv_mainframe", this, "DoPanDown()");
@@ -338,29 +338,27 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	continuous->Connect("Clicked","hdv_mainframe", this, "DoCont()");
 	delay->Connect("Selected(Int_t)","hdv_mainframe", this, "DoSetDelay(Int_t)");
 	
-	candidates->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	tracks->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	thrown->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["candidates"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["tracks"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["thrown"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 
-	cdc->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	cdctruth->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	fdc->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	fdctruth->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	toftruth->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	bcaltruth->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	fcaltruth->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	trajectories->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["cdc"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["cdctruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["fdc"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["fdctruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["toftruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["bcaltruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["fcaltruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["trajectories"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
 	tracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
 
 	// Finish up and map the window
-	DoRedraw();
 	SetWindowName("Hall-D Event Viewer");
 	SetIconName("HDView");
 	MapSubwindows();
 	Resize(GetDefaultSize());
 	MapWindow();
-
 }
 
 //-------------------
@@ -368,10 +366,13 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 //-------------------
 void hdv_mainframe::SetRange(void)
 {
+	// The following is for the bug
+	//endviewA->GetCanvas()->Range(-1, -1, 1, 1);
+
 	// Set the ranges of all canvases based on
 	// the current units (x/y or r/phi) and the zoom,pan
 	// settings
-	
+
 	if(coordinatetype==COORD_XY){
 		// define range in each direction in cm
 		double x_width = 400.0/zoom_factor;
@@ -384,7 +385,9 @@ void hdv_mainframe::SetRange(void)
 		double zlo = z0 - z_width/2.0;
 		double zhi = z0 + z_width/2.0;
 		
+		sideviewA->GetCanvas()->cd();
 		sideviewA->GetCanvas()->Range(zlo, xlo, zhi, xhi);
+		sideviewB->GetCanvas()->cd();
 		sideviewB->GetCanvas()->Range(zlo, ylo, zhi, yhi);
 		
 		// Zoom in a little on the end views
@@ -396,14 +399,17 @@ void hdv_mainframe::SetRange(void)
 		// Some bug in root screws up drawing the x-coordinates of the
 		// end views such that they have the 2:1 aspect ratio of the
 		// side views. Compensate for this here. (YECHH!!)
-		xlo*=2.0;
-		xhi*=2.0;
-		double deltax = xhi-xlo;
-		xlo+=deltax/4.0;
-		xhi+=deltax/4.0;
+		//xlo*=2.0;
+		//xhi*=2.0;
+		//double deltax = xhi-xlo;
+		//xlo+=deltax/4.0;
+		//xhi+=deltax/4.0;
 		
+		endviewA->GetCanvas()->cd();
 		endviewA->GetCanvas()->Range(xlo, ylo, xhi, yhi);
+		endviewB->GetCanvas()->cd();
 		endviewB->GetCanvas()->Range(xlo, ylo, xhi, yhi);
+
 	}else{
 		// define range in each direction in cm, radians
 		double r_width = 400.0/zoom_factor;
@@ -416,13 +422,32 @@ void hdv_mainframe::SetRange(void)
 		double zlo = z0 - z_width/2.0;
 		double zhi = z0 + z_width/2.0;
 		
+		philo = -0.2;
+		phihi = 2.0*M_PI+0.2;
+		
+		sideviewA->GetCanvas()->cd();
 		sideviewA->GetCanvas()->Range(zlo, rlo, zhi, rhi);
+		sideviewB->GetCanvas()->cd();
 		sideviewB->GetCanvas()->Range(zlo, philo, zhi, phihi);
 
 		// Zoom in a little on the end views
 		rlo/=2.5;
 		rhi/=2.5;
 
+		// Some bug in root screws up drawing the x-coordinates of the
+		// end views such that they have the 2:1 aspect ratio of the
+		// side views. Compensate for this here. (YECHH!!)
+		//philo*=2.0;
+		//phihi*=2.0;
+		//double deltaphi = phihi-philo;
+		//philo+=deltaphi/4.0;
+		//phihi+=deltaphi/4.0;
+		
+		//philo = -0.2;
+		//phihi = 2.0*M_PI + 0.2;
+		//phihi*=2.0;
+
+		endviewA->GetCanvas()->cd();
 		endviewA->GetCanvas()->Range(philo, rlo, phihi,  rhi);
 	}
 }
@@ -441,7 +466,7 @@ void hdv_mainframe::DoQuit(void)
 //-------------------
 void hdv_mainframe::DoNext(void)
 {
-	eventloop->OneEvent();
+	if(eventloop)eventloop->OneEvent();
 }
 
 //-------------------
@@ -600,8 +625,80 @@ void hdv_mainframe::DoReset(void)
 //-------------------
 void hdv_mainframe::DoRedraw(void)
 {
-	// For now, redraw detectors everytime
-	DrawDetectors();
+	// Make sure canvases have proper ranges
+	SetRange();
+
+	// Delete any existing graphics objects
+	for(unsigned int i=0; i<graphics_sideA.size(); i++)delete graphics_sideA[i];
+	for(unsigned int i=0; i<graphics_sideB.size(); i++)delete graphics_sideB[i];
+	for(unsigned int i=0; i<graphics_endA.size(); i++)delete graphics_endA[i];
+	for(unsigned int i=0; i<graphics_endB.size(); i++)delete graphics_endB[i];
+	graphics_sideA.clear();
+	graphics_sideB.clear();
+	graphics_endA.clear();
+	graphics_endB.clear();
+
+	// Draw detectors depending on coordinate system we're using
+	if(coordinatetype == COORD_XY){
+		DrawDetectorsXY();			// Draw Detectors
+	}else{
+		DrawDetectorsRPhi();			// Draw Detectors
+	}
+
+	// Get tracks, hits etc in the form of space points
+	gMYPROC->FillGraphics();
+
+	// Draw detector hits and tracks for the correct coordinates in all views
+	vector<MyProcessor::DGraphicSet>::iterator iter = gMYPROC->graphics.begin();
+	for(; iter!=gMYPROC->graphics.end(); iter++){
+	
+		if(iter->type==0){
+			// Markers
+			TPolyMarker *sA = new TPolyMarker();
+			TPolyMarker *sB = new TPolyMarker();
+			TPolyMarker *eA = new TPolyMarker();
+			FillPoly(sA, sB, eA, iter->points);
+			sA->SetMarkerColor(iter->color);
+			sB->SetMarkerColor(iter->color);
+			eA->SetMarkerColor(iter->color);
+			sA->SetMarkerSize(iter->size);
+			sB->SetMarkerSize(iter->size);
+			eA->SetMarkerSize(iter->size);
+			graphics_sideA.push_back(sA);
+			graphics_sideB.push_back(sB);
+			graphics_endA.push_back(eA);
+		}else{
+			// Lines
+			TPolyLine *sA = new TPolyLine();
+			TPolyLine *sB = new TPolyLine();
+			TPolyLine *eA = new TPolyLine();
+			FillPoly(sA, sB, eA, iter->points);
+			sA->SetLineColor(iter->color);
+			sB->SetLineColor(iter->color);
+			eA->SetLineColor(iter->color);
+			sA->SetLineWidth(iter->size);
+			sB->SetLineWidth(iter->size);
+			eA->SetLineWidth(iter->size);
+			graphics_sideA.push_back(sA);
+			graphics_sideB.push_back(sB);
+			graphics_endA.push_back(eA);
+		}
+	}
+
+	// Draw everything
+	endviewA->GetCanvas()->cd(0);
+	for(unsigned int i=0; i<graphics_endA.size(); i++)graphics_endA[i]->Draw();
+	endviewA->GetCanvas()->Update();
+	endviewB->GetCanvas()->cd(0);
+	for(unsigned int i=0; i<graphics_endB.size(); i++)graphics_endB[i]->Draw();
+	endviewB->GetCanvas()->Update();
+
+	sideviewA->GetCanvas()->cd(0);
+	for(unsigned int i=0; i<graphics_sideA.size(); i++)graphics_sideA[i]->Draw();
+	sideviewA->GetCanvas()->Update();
+	sideviewB->GetCanvas()->cd(0);
+	for(unsigned int i=0; i<graphics_sideB.size(); i++)graphics_sideB[i]->Draw();
+	sideviewB->GetCanvas()->Update();
 }
 
 //-------------------
@@ -618,47 +715,6 @@ _DBG__;
 void hdv_mainframe::DoSetCoordinates(Int_t id)
 {
 	coordinatetype = (coordsys_t)id;
-}
-
-//-------------------
-// DrawDetectors
-//-------------------
-void hdv_mainframe::DrawDetectors(void)
-{
-	// Make sure canvases have proper ranges
-	SetRange();
-
-	// Delete any existing graphics objects
-	for(unsigned int i=0; i<graphics_sideA.size(); i++)delete graphics_sideA[i];
-	for(unsigned int i=0; i<graphics_sideB.size(); i++)delete graphics_sideB[i];
-	for(unsigned int i=0; i<graphics_endA.size(); i++)delete graphics_endA[i];
-	for(unsigned int i=0; i<graphics_endB.size(); i++)delete graphics_endB[i];
-	graphics_sideA.clear(); 
-	graphics_sideB.clear(); 
-	graphics_endA.clear(); 
-	graphics_endB.clear(); 
-
-	// Create new detector objects depending on coordinate system we're using
-	switch(coordinatetype){
-		case COORD_XY:		DrawDetectorsXY();	break;
-		case COORD_RPHI:	DrawDetectorsRPhi();	break;
-	}
-	
-	// Draw everything
-	endviewA->GetCanvas()->cd(0);
-	for(unsigned int i=0; i<graphics_endA.size(); i++)graphics_endA[i]->Draw();
-	endviewA->GetCanvas()->Update();
-	endviewB->GetCanvas()->cd(0);
-	for(unsigned int i=0; i<graphics_endB.size(); i++)graphics_endB[i]->Draw();
-	endviewB->GetCanvas()->Update();
-
-	sideviewA->GetCanvas()->cd(0);
-	for(unsigned int i=0; i<graphics_sideA.size(); i++)graphics_sideA[i]->Draw();
-	sideviewA->GetCanvas()->Update();
-	sideviewB->GetCanvas()->cd(0);
-	for(unsigned int i=0; i<graphics_sideB.size(); i++)graphics_sideB[i]->Draw();
-	sideviewB->GetCanvas()->Update();
-	
 }
 
 //-------------------
@@ -977,3 +1033,44 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 	reconfactory->GetTextEntry()->SetText("DTrack:");
 }
 
+//-------------------
+// GetCheckButton
+//-------------------
+bool hdv_mainframe::GetCheckButton(string who)
+{
+	map<string, TGCheckButton*>::iterator iter = checkbuttons.find(who);
+	if(iter==checkbuttons.end())return false;
+	return iter->second->GetState()==kButtonDown;
+}
+
+//-------------------
+// AddGraphicsSideA
+//-------------------
+void hdv_mainframe::AddGraphicsSideA(vector<TObject*> &v)
+{
+	for(unsigned int i=0; i<v.size(); i++)graphics_sideA.push_back(v[i]);
+}
+
+//-------------------
+// AddGraphicsSideB
+//-------------------
+void hdv_mainframe::AddGraphicsSideB(vector<TObject*> &v)
+{
+	for(unsigned int i=0; i<v.size(); i++)graphics_sideB.push_back(v[i]);
+}
+
+//-------------------
+// AddGraphicsEndA
+//-------------------
+void hdv_mainframe::AddGraphicsEndA(vector<TObject*> &v)
+{
+	for(unsigned int i=0; i<v.size(); i++)graphics_endA.push_back(v[i]);
+}
+
+//-------------------
+// AddGraphicsEndB
+//-------------------
+void hdv_mainframe::AddGraphicsEndB(vector<TObject*> &v)
+{
+	for(unsigned int i=0; i<v.size(); i++)graphics_endB.push_back(v[i]);
+}

@@ -7,6 +7,8 @@
 // It is OK to do that in the .cc file, just not here in the 
 // header.
 
+#include <iostream>
+
 #include <TGClient.h>
 #include <TGButton.h>
 #include <TCanvas.h>
@@ -18,6 +20,8 @@
 #include <TPolyLine.h>
 #include <TEllipse.h>
 #include <TMarker.h>
+#include <TVector3.h>
+
 
 class hdv_mainframe:public TGMainFrame {
 
@@ -56,7 +60,6 @@ class hdv_mainframe:public TGMainFrame {
 		void DoSetDelay(Int_t);
 		void DoSetCoordinates(Int_t);
 		
-		void DrawDetectors(void);
 		void DrawDetectorsXY(void);
 		void DrawDetectorsRPhi(void);
 
@@ -70,6 +73,13 @@ class hdv_mainframe:public TGMainFrame {
 		void SetTrackFactories(vector<string> &facnames);
 		void SetCandidateFactories(vector<string> &facnames);
 		void SetReconstructedFactories(vector<string> &facnames);
+		
+		bool GetCheckButton(string who);
+		
+		void AddGraphicsSideA(vector<TObject*> &v);
+		void AddGraphicsSideB(vector<TObject*> &v);
+		void AddGraphicsEndA(vector<TObject*> &v);
+		void AddGraphicsEndB(vector<TObject*> &v);
 		
 	private:
 		TRootEmbeddedCanvas *sideviewA;
@@ -94,16 +104,47 @@ class hdv_mainframe:public TGMainFrame {
 		double canvas_width, default_canvas_width;
 		coordsys_t coordinatetype;
 
-		vector<TMarker*> markers;
-		vector<TEllipse*> circles;
-		vector<TPolyLine*> lines;
 		vector<TObject*> graphics_sideA;
 		vector<TObject*> graphics_sideB;
 		vector<TObject*> graphics_endA;
 		vector<TObject*> graphics_endB;
-
+		
+		map<string, TGCheckButton*> checkbuttons;
+		
+		template<typename T> void FillPoly(T *sA, T *sB, T *eA, vector<TVector3> &v);
+		
 	ClassDef(hdv_mainframe,1)
 };
+
+//---------------
+// FillPoly
+//---------------
+template<typename T>
+void hdv_mainframe::FillPoly(T *sA, T *sB, T *eA, vector<TVector3> &v)
+{
+	/// Fill sA, sB, and eA with the space points given in v. This is done
+	/// via repeated calls to the SetNextPoint method of T which
+	/// should be of type TPolyLine or TPolyMarker.
+	/// We do this in a template since both have a SetNextPoint() method
+	/// and we really want this code to do the same thing for both cases.
+	/// Note that if the SetNextPoint method were inherited from the base class,
+	/// we wouldn't have to do this with a template!
+
+	vector<TVector3>::iterator pt = v.begin();
+	for(; pt!=v.end(); pt++){
+		if(coordinatetype == COORD_XY){
+			sA->SetNextPoint(pt->Z(), pt->X());
+			sB->SetNextPoint(pt->Z(), pt->Y());
+			eA->SetNextPoint(pt->X(), pt->Y());
+		}else{
+			double phi = pt->Phi();
+			if(phi<0.0)phi+=2.0*3.14159265;
+			sA->SetNextPoint(pt->Z(), pt->Perp());
+			sB->SetNextPoint(pt->Z(), phi);
+			eA->SetNextPoint(phi, pt->Perp());
+		}
+	}
+}
 
 
 #endif //_HDV_MAINFRAME_H_

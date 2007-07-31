@@ -16,6 +16,7 @@ using namespace std;
 #include <TBox.h>
 #include <TLine.h>
 #include <TText.h>
+#include <TVector3.h>
 
 #include "hdview2.h"
 #include "hdv_mainframe.h"
@@ -27,6 +28,7 @@ using namespace std;
 #include "TRACKING/DMCTrackHit_factory.h"
 #include "TRACKING/DMCThrown.h"
 #include "TRACKING/DTrack.h"
+#include "TRACKING/DReferenceTrajectory.h"
 #include "JANA/JGeometry.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
 #include "FCAL/DFCALHit.h"
@@ -36,6 +38,7 @@ extern TCanvas *maincanvas;
 extern hdv_mainframe *hdvmf;
 //extern DEventLoop *eventloop;
 
+#if 0
 // These values are just used to draw the detectors for visualization.
 // These should be replaced by a database lookup or something similar
 // at some point.
@@ -62,7 +65,7 @@ static float FDC_Zlen = 12.0;
 //static float FDC_Zpos[4] = {240.0, 292.0, 348.0, 404.0};
 //static float FDC_Zpos[4] = {234.0, 289.0, 344.0, 399.0};
 static float FDC_Zpos[4] = {209.0, 272.0, 335.0, 398.0};
-
+#endif
 
 MyProcessor *gMYPROC=NULL;
 
@@ -71,11 +74,11 @@ MyProcessor *gMYPROC=NULL;
 //------------------------------------------------------------------
 MyProcessor::MyProcessor()
 {
-	drew_detectors=0;
 	Bfield = NULL;
+	loop = NULL;
 
 	// Tell factory to keep around a few density histos
-	gPARMS->SetParameter("TRKFIND:MAX_DEBUG_BUFFERS",	16);
+	//gPARMS->SetParameter("TRKFIND:MAX_DEBUG_BUFFERS",	16);
 	
 	gMYPROC = this;
 }
@@ -85,24 +88,7 @@ MyProcessor::MyProcessor()
 //------------------------------------------------------------------
 MyProcessor::~MyProcessor()
 {
-	ClearEvent();
 
-	for(unsigned int i=0;i<graphics.size();i++)delete graphics[i];
-	graphics.clear();
-}
-
-//------------------------------------------------------------------
-// ClearEvent 
-//------------------------------------------------------------------
-void MyProcessor::ClearEvent(void)
-{
-	for(unsigned int i=0;i<markers.size();i++)delete markers[i];
-	for(unsigned int i=0;i<circles.size();i++)delete circles[i];
-	for(unsigned int i=0;i<lines.size();i++)delete lines[i];
-	markers.clear();
-	circles.clear();
-	lines.clear();
-	
 }
 
 //------------------------------------------------------------------
@@ -129,24 +115,11 @@ jerror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // brun 
 //------------------------------------------------------------------
-jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t MyProcessor::brun(JEventLoop *eventloop, int runnumber)
 {
-	// Get a pointer to the MCTrackCandidates factory object so we can 
-	// access things not included in the normal _data container
-	JFactory_base *base = eventloop->GetFactory("DTrackCandidate");
-	factory = dynamic_cast<DTrackCandidate_factory*>(base);
-	if(!factory){
-		cerr<<endl;
-		cerr<<"Unable to get pointer to DTrackCandidate_factory!"<<endl;
-		cerr<<"I can't do much without it! Exiting ..."<<endl;
-		cerr<<endl;
-		exit(-1);
-	}
-
-	gPARMS->GetParameter("TRKFIND:TRACKHIT_SOURCE",	TRACKHIT_SOURCE);
 
 	// Read in Magnetic field map
-	DApplication* dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+	DApplication* dapp = dynamic_cast<DApplication*>(eventloop->GetJApplication());
 	Bfield = dapp->GetBfield();
 
 	return NOERROR;
@@ -157,17 +130,263 @@ jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 //------------------------------------------------------------------
 jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 {
-	int colors[] = {kBlack,kRed,kBlue,kCyan,kGreen};
-	int ncolors = 5;
-	
 	if(!eventLoop)return NOERROR;
+	loop = eventLoop;
+	last_jevent.FreeEvent();
+	last_jevent = loop->GetJEvent();
 	
 	cout<<"----------- New Event "<<eventnumber<<" -------------"<<endl;
-	hdvmf->SetEvent(eventnumber);
+	hdvmf->DoRedraw();	
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// FillGraphics 
+//------------------------------------------------------------------
+void MyProcessor::FillGraphics(void)
+{
+	graphics.clear();
 	
-	// Delete objects from last event
-	ClearEvent();
-return NOERROR;
+	if(!loop)return;
+	
+	// DMCThrown
+	if(hdvmf->GetCheckButton("thrown")){
+		vector<const DMCThrown*> mcthrown;
+		loop->Get(mcthrown);
+		for(unsigned int i=0; i<mcthrown.size(); i++){
+			AddKinematicDataTrack(mcthrown[i], kGreen, 2.0);
+		}
+	}
+
+	// DMCTrajectoryPoints
+	if(hdvmf->GetCheckButton("trajectories")){
+		vector<const DMCTrajectoryPoint*> mctrajectorypoints;
+		loop->Get(mctrajectorypoints);
+		
+		DGraphicSet gset(kBlack, kLine, 1.5);
+		for(unsigned int i=0; i<mctrajectorypoints.size(); i++){
+			const DMCTrajectoryPoint *pt = mctrajectorypoints[i];
+			
+			TVector3 v(pt->x, pt->y, pt->z);
+			gset.points.push_back(v);
+		}
+		graphics.push_back(gset);
+	}
+}
+
+//------------------------------------------------------------------
+// AddKinematicDataTrack 
+//------------------------------------------------------------------
+void MyProcessor::AddKinematicDataTrack(const DKinematicData* kd, int color, double size)
+{
+	// Create a reference trajectory with the given kinematic data and swim
+	// it through the detector.
+	DReferenceTrajectory rt(Bfield);
+	rt.Swim(kd->position(), kd->momentum(), kd->charge());
+
+	// Create a new graphics set and fill it with all of the trajectory points
+	DGraphicSet gset(color, kLine, size);
+	DReferenceTrajectory::swim_step_t *step = rt.swim_steps;
+	for(int i=0; i<rt.Nswim_steps; i++, step++){
+		gset.points.push_back(step->origin);
+	}
+	
+	// Push the graphics set onto the stack
+	graphics.push_back(gset);
+}
+
+
+#if 0
+//------------------------------------------------------------------
+// DrawHelicalTrack 
+//------------------------------------------------------------------
+jerror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
+{
+	if(lines.size()>MAX_LINES-2)return NOERROR;
+
+	float x = qf->x0;
+	float y = qf->y0;
+	float z = qf->z_vertex;
+	float r = sqrt(x*x + y*y);
+	float dphidz = qf->q*tan(qf->theta)/r;
+	float phi0 = atan2(-qf->y0, -qf->x0);
+	float X,Y;
+
+	TPolyLine *line_top = new TPolyLine();
+	TPolyLine *line_side = new TPolyLine();
+	//qf->Print();
+	float Z=z;
+	float z_step = Z<qf->GetZMean() ? +10.0:-10.0;
+	for(int i=0; i<1000; i++){
+		float delta_z = Z-qf->z_vertex;
+		float phi = phi0 + delta_z*dphidz;
+		x = qf->x0 + r*cos(phi);
+		y = qf->y0 + r*sin(phi);
+		
+		ConvertToSide(x,y,Z,X,Y);
+		line_side->SetNextPoint(X,Y);
+		ConvertToTop(x,y,Z,X,Y);
+		line_top->SetNextPoint(X,Y);
+		
+		Z+=z_step;
+		if(Z>=TOF_Zmid || Z<-10.0)break;
+		float r = sqrt((double)(x*x) + (double)(y*y));
+		if((r>BCAL_Rmin) && (fabs(Z-BCAL_Zmid)<BCAL_Zlen/2.0))break;
+	}
+	line_side->SetLineColor(color);
+	line_side->SetLineWidth(2);
+	line_side->Draw();
+	line_top->SetLineColor(color);
+	line_top->SetLineWidth(2);
+	line_top->Draw();
+	lines.push_back(line_side);
+	lines.push_back(line_top);
+	
+	// Draw circle on front view
+	if(circles.size()<MAX_CIRCLES){
+		float x_center, y_center, X, Y;
+		ConvertToFront(0, 0, 0, x_center, y_center);
+		ConvertToFront(qf->x0, qf->y0, 0, X, Y);
+		float dX = X-x_center;
+		float dY = Y-y_center;
+		float r = sqrt(dX*dX + dY*dY);
+
+		double phimin = atan2(dY,dX)-M_PI;
+		double delta_phi = dphidz*(Z-qf->z_vertex);
+		if(delta_phi > 2.0*M_PI)delta_phi=2.0*M_PI;
+		if(delta_phi < -2.0*M_PI)delta_phi=-2.0*M_PI;
+		double phimax = phimin + delta_phi;
+		if(delta_phi<0.0){
+			double tmp = phimax;
+			phimax=phimin;
+			phimin = tmp;
+		}
+		TArc *circle = new TArc(X,Y,r,phimin*57.3, phimax*57.3);
+		circle->SetLineColor(color);
+		circle->SetLineWidth(3);
+		circle->Draw("only");
+		circle->SetFillStyle(0);
+		circles.push_back(circle);
+	}
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// DrawStraightTrack 
+//------------------------------------------------------------------
+jerror_t MyProcessor::DrawStraightTrack(TVector3 p, TVector3 vertex, int color, int style)
+{
+	if(lines.size()>MAX_LINES-3)return NOERROR;
+
+	// Note: Rather than calculate just the end points of the straight
+	// line here, we just follow the method of a helical track and step
+	// the track through. This takes a little for CPU power, but no
+	// one will notice and the code is a little simpler.
+	
+	TVector3 pos = vertex;
+	TVector3 p_step = 2.0*p.Unit();// advance track in 2cm steps
+
+	TPolyLine *line_top = new TPolyLine();
+	TPolyLine *line_side = new TPolyLine();
+
+	for(int i=0; i<500; i++){
+
+		float X,Y;
+		ConvertToSide(pos.x(),pos.y(),pos.z(),X,Y);
+		line_side->SetNextPoint(X,Y);
+		ConvertToTop(pos.x(),pos.y(),pos.z(),X,Y);
+		line_top->SetNextPoint(X,Y);
+
+		pos += p_step;
+		
+		if(pos.z() < BCAL_Zmid+BCAL_Zlen/2.0){
+			if(pos.Pt()>BCAL_Rmin)break;
+		}else{
+			if(pos.z() > FCAL_Zmid-FCAL_Zlen/2.0)break;
+		}
+	}
+	line_side->SetLineColor(color);
+	line_side->SetLineStyle(style);
+	line_side->Draw();
+	line_top->SetLineColor(color);
+	line_top->SetLineStyle(style);
+	line_top->Draw();
+	lines.push_back(line_side);
+	lines.push_back(line_top);
+	
+	// Draw Line on front view
+	float X,Y;
+	TPolyLine *line_front = new TPolyLine();
+	ConvertToFront(vertex.x(), vertex.y(), vertex.z(), X, Y);
+	line_front->SetNextPoint(X,Y);
+	ConvertToFront(pos.x(), pos.y(),pos.z(), X, Y);
+	line_front->SetNextPoint(X,Y);
+	line_front->SetLineColor(color);
+	line_front->SetLineStyle(style);
+	line_front->Draw();
+	lines.push_back(line_front);
+
+	return NOERROR;
+}
+
+//------------------------------------------------------------------
+// DrawTrack 
+//------------------------------------------------------------------
+jerror_t MyProcessor::DrawTrack(double q, TVector3 pos, TVector3 mom, int color)
+{
+	if(lines.size()>MAX_LINES-2)return NOERROR;
+	
+	DMagneticFieldStepper *stepper = new DMagneticFieldStepper(Bfield, q, &pos, &mom);
+	stepper->SetStepSize(0.05);
+
+	TPolyLine *line_top = new TPolyLine();
+	TPolyLine *line_side = new TPolyLine();
+	TPolyLine *line_beam = new TPolyLine();
+
+	for(int i=0;i<100000;i++){
+	
+		stepper->Step(&pos);
+		float x = pos.x();
+		float y = pos.y();
+		float z = pos.z();
+		float X,Y;
+	
+		//if(z>=TOF_Zmid || z<-10.0)break;
+		float r = sqrt((double)(x*x) + (double)(y*y));
+		if(r>BCAL_Rmin && fabs(z-BCAL_Zmid)<BCAL_Zlen/2.0)break;
+		
+		ConvertToSide(x,y,z,X,Y);
+		if(X<0.0 && X>-2.0 && Y<0.0 && Y>-1.0)
+			line_side->SetNextPoint(X,Y);
+		ConvertToTop(x,y,z,X,Y);
+		if(X<0.0 && X>-2.0 && Y>0.0 && Y<1.0)
+			line_top->SetNextPoint(X,Y);
+		ConvertToFront(x, y, 0, X, Y);
+		if(X>0.0 && Y<1.0 && Y>-1.0)
+			line_beam->SetNextPoint(X,Y);
+	}
+	delete stepper;
+	
+	line_side->SetLineColor(color+100);
+	line_side->Draw();
+	line_top->SetLineColor(color+100);
+	line_top->Draw();
+	line_beam->SetLineColor(color+100);
+	line_beam->Draw();
+	lines.push_back(line_side);
+	lines.push_back(line_top);
+	lines.push_back(line_beam);
+
+	return NOERROR;
+}
+
+#endif
+
+
+
+#if 0
 	
 	// Get TrackHits
 	vector<const DTrackHit*> trackhits;
@@ -372,453 +591,4 @@ return NOERROR;
 	for(unsigned int i=0;i<markers.size();i++)markers[i]->Draw();
 	maincanvas->Update();
 
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// DrawHelicalTrack 
-//------------------------------------------------------------------
-jerror_t MyProcessor::DrawHelicalTrack(DQuickFit *qf, int color)
-{
-	if(lines.size()>MAX_LINES-2)return NOERROR;
-
-	float x = qf->x0;
-	float y = qf->y0;
-	float z = qf->z_vertex;
-	float r = sqrt(x*x + y*y);
-	float dphidz = qf->q*tan(qf->theta)/r;
-	float phi0 = atan2(-qf->y0, -qf->x0);
-	float X,Y;
-
-	TPolyLine *line_top = new TPolyLine();
-	TPolyLine *line_side = new TPolyLine();
-	//qf->Print();
-	float Z=z;
-	float z_step = Z<qf->GetZMean() ? +10.0:-10.0;
-	for(int i=0; i<1000; i++){
-		float delta_z = Z-qf->z_vertex;
-		float phi = phi0 + delta_z*dphidz;
-		x = qf->x0 + r*cos(phi);
-		y = qf->y0 + r*sin(phi);
-		
-		ConvertToSide(x,y,Z,X,Y);
-		line_side->SetNextPoint(X,Y);
-		ConvertToTop(x,y,Z,X,Y);
-		line_top->SetNextPoint(X,Y);
-		
-		Z+=z_step;
-		if(Z>=TOF_Zmid || Z<-10.0)break;
-		float r = sqrt((double)(x*x) + (double)(y*y));
-		if((r>BCAL_Rmin) && (fabs(Z-BCAL_Zmid)<BCAL_Zlen/2.0))break;
-	}
-	line_side->SetLineColor(color);
-	line_side->SetLineWidth(2);
-	line_side->Draw();
-	line_top->SetLineColor(color);
-	line_top->SetLineWidth(2);
-	line_top->Draw();
-	lines.push_back(line_side);
-	lines.push_back(line_top);
-	
-	// Draw circle on front view
-	if(circles.size()<MAX_CIRCLES){
-		float x_center, y_center, X, Y;
-		ConvertToFront(0, 0, 0, x_center, y_center);
-		ConvertToFront(qf->x0, qf->y0, 0, X, Y);
-		float dX = X-x_center;
-		float dY = Y-y_center;
-		float r = sqrt(dX*dX + dY*dY);
-
-		double phimin = atan2(dY,dX)-M_PI;
-		double delta_phi = dphidz*(Z-qf->z_vertex);
-		if(delta_phi > 2.0*M_PI)delta_phi=2.0*M_PI;
-		if(delta_phi < -2.0*M_PI)delta_phi=-2.0*M_PI;
-		double phimax = phimin + delta_phi;
-		if(delta_phi<0.0){
-			double tmp = phimax;
-			phimax=phimin;
-			phimin = tmp;
-		}
-		TArc *circle = new TArc(X,Y,r,phimin*57.3, phimax*57.3);
-		circle->SetLineColor(color);
-		circle->SetLineWidth(3);
-		circle->Draw("only");
-		circle->SetFillStyle(0);
-		circles.push_back(circle);
-	}
-
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// DrawStraightTrack 
-//------------------------------------------------------------------
-jerror_t MyProcessor::DrawStraightTrack(TVector3 p, TVector3 vertex, int color, int style)
-{
-	if(lines.size()>MAX_LINES-3)return NOERROR;
-
-	// Note: Rather than calculate just the end points of the straight
-	// line here, we just follow the method of a helical track and step
-	// the track through. This takes a little for CPU power, but no
-	// one will notice and the code is a little simpler.
-	
-	TVector3 pos = vertex;
-	TVector3 p_step = 2.0*p.Unit();// advance track in 2cm steps
-
-	TPolyLine *line_top = new TPolyLine();
-	TPolyLine *line_side = new TPolyLine();
-
-	for(int i=0; i<500; i++){
-
-		float X,Y;
-		ConvertToSide(pos.x(),pos.y(),pos.z(),X,Y);
-		line_side->SetNextPoint(X,Y);
-		ConvertToTop(pos.x(),pos.y(),pos.z(),X,Y);
-		line_top->SetNextPoint(X,Y);
-
-		pos += p_step;
-		
-		if(pos.z() < BCAL_Zmid+BCAL_Zlen/2.0){
-			if(pos.Pt()>BCAL_Rmin)break;
-		}else{
-			if(pos.z() > FCAL_Zmid-FCAL_Zlen/2.0)break;
-		}
-	}
-	line_side->SetLineColor(color);
-	line_side->SetLineStyle(style);
-	line_side->Draw();
-	line_top->SetLineColor(color);
-	line_top->SetLineStyle(style);
-	line_top->Draw();
-	lines.push_back(line_side);
-	lines.push_back(line_top);
-	
-	// Draw Line on front view
-	float X,Y;
-	TPolyLine *line_front = new TPolyLine();
-	ConvertToFront(vertex.x(), vertex.y(), vertex.z(), X, Y);
-	line_front->SetNextPoint(X,Y);
-	ConvertToFront(pos.x(), pos.y(),pos.z(), X, Y);
-	line_front->SetNextPoint(X,Y);
-	line_front->SetLineColor(color);
-	line_front->SetLineStyle(style);
-	line_front->Draw();
-	lines.push_back(line_front);
-
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// DrawTrack 
-//------------------------------------------------------------------
-jerror_t MyProcessor::DrawTrack(double q, TVector3 pos, TVector3 mom, int color)
-{
-	if(lines.size()>MAX_LINES-2)return NOERROR;
-	
-	DMagneticFieldStepper *stepper = new DMagneticFieldStepper(Bfield, q, &pos, &mom);
-	stepper->SetStepSize(0.05);
-
-	TPolyLine *line_top = new TPolyLine();
-	TPolyLine *line_side = new TPolyLine();
-	TPolyLine *line_beam = new TPolyLine();
-
-	for(int i=0;i<100000;i++){
-	
-		stepper->Step(&pos);
-		float x = pos.x();
-		float y = pos.y();
-		float z = pos.z();
-		float X,Y;
-	
-		//if(z>=TOF_Zmid || z<-10.0)break;
-		float r = sqrt((double)(x*x) + (double)(y*y));
-		if(r>BCAL_Rmin && fabs(z-BCAL_Zmid)<BCAL_Zlen/2.0)break;
-		
-		ConvertToSide(x,y,z,X,Y);
-		if(X<0.0 && X>-2.0 && Y<0.0 && Y>-1.0)
-			line_side->SetNextPoint(X,Y);
-		ConvertToTop(x,y,z,X,Y);
-		if(X<0.0 && X>-2.0 && Y>0.0 && Y<1.0)
-			line_top->SetNextPoint(X,Y);
-		ConvertToFront(x, y, 0, X, Y);
-		if(X>0.0 && Y<1.0 && Y>-1.0)
-			line_beam->SetNextPoint(X,Y);
-	}
-	delete stepper;
-	
-	line_side->SetLineColor(color+100);
-	line_side->Draw();
-	line_top->SetLineColor(color+100);
-	line_top->Draw();
-	line_beam->SetLineColor(color+100);
-	line_beam->Draw();
-	lines.push_back(line_side);
-	lines.push_back(line_top);
-	lines.push_back(line_beam);
-
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// ConvertToTop 
-//------------------------------------------------------------------
-jerror_t MyProcessor::ConvertToTop(float x, float y, float z, float &X, float &Y)
-{
-	X = z/350.0 - 2.1;
-	Y = x/350.0 + 0.5;
-
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// ConvertToSide 
-//------------------------------------------------------------------
-jerror_t MyProcessor::ConvertToSide(float x, float y, float z, float &X, float &Y)
-{
-	X = z/350.0 - 2.1;
-	Y = y/350.0 - 0.5;
-
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// ConvertToFront 
-//------------------------------------------------------------------
-jerror_t MyProcessor::ConvertToFront(float x, float y, float z, float &X, float &Y)
-{
-	X = x/100.0 + 1.0;
-	Y = y/100.0 + 0.0;
-
-	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// DrawDetectors 
-//------------------------------------------------------------------
-jerror_t MyProcessor::DrawDetectors(void)
-{
-	float X,Y,R1,R2,xx,yy;
-	float X2,Y2;
-	
-	// If detectors were already drawn before, delete
-	// the old objects
-	for(unsigned int i=0;i<graphics.size();i++)delete graphics[i];
-	graphics.clear();
-	
-	// ------ Draw Separators and labels ------
-	// Horizontal separator
-	TLine *line = new TLine(-2.1, 0.0, -0.1, 0.0);
-	graphics.push_back(line);
-	line->SetLineWidth(5);
-	line->Draw();
-	// Vertical separator
-	line = new TLine(-0.1, -1.0, -0.1, 1.0);
-	graphics.push_back(line);
-	line->SetLineWidth(5);
-	line->Draw();
-	// Labels
-	TText *label = new TText(-1.2, 0.85, "Top");
-	graphics.push_back(label);
-	label->Draw();
-	label = new TText(-1.2, -0.15, "Side");
-	graphics.push_back(label);
-	label->Draw();
-	label = new TText(0.0, 0.87, "Upstream View");
-	graphics.push_back(label);
-	label->Draw();
-
-	// ------ Target ------	
-	ConvertToFront(0, 0, 0, X, Y);
-	ConvertToFront(0, 1.0, 0, xx, yy);
-	R1 = fabs(yy-Y);
-	TEllipse *target = new TEllipse(X,Y,R1,R1);
-	graphics.push_back(target);
-	target->SetLineColor(13);
-	target->Draw();
-
-	// ----- BCAL ------
-	// front
-	ConvertToFront(0,0,0,X,Y);
-	ConvertToFront(0,BCAL_Rmin,0,xx,yy);
-	R1 = fabs(yy-Y);
-	ConvertToFront(0,BCAL_Rmax,0,xx,yy);
-	R2 = fabs(yy-Y);
-	TEllipse *bcal1 = new TEllipse(X,Y,R1,R1);
-	TEllipse *bcal2 = new TEllipse(X,Y,R2,R2);
-	TEllipse *bcal3 = new TEllipse(X,Y,(R1+R2)/2.0,(R1+R2)/2.0);
-	graphics.push_back(bcal1);
-	graphics.push_back(bcal2);
-	graphics.push_back(bcal3);
-	bcal1->SetLineColor(14);
-	bcal2->SetLineColor(14);
-	bcal3->SetLineColor(16); // 16= light grey
-	bcal3->SetLineWidth(60); // 16= light grey
-	bcal3->Draw();
-	bcal1->Draw();
-	bcal2->Draw();
-	
-	// Side
-	ConvertToSide(0, BCAL_Rmin, BCAL_Zmid - BCAL_Zlen/2.0,X,Y);
-	ConvertToSide(0, BCAL_Rmax, BCAL_Zmid + BCAL_Zlen/2.0,X2,Y2);
-	TBox *bcal_side = new TBox(X,Y,X2,Y2);
-	graphics.push_back(bcal_side);
-	ConvertToSide(0, -BCAL_Rmin, BCAL_Zmid - BCAL_Zlen/2.0,X,Y);
-	ConvertToSide(0, -BCAL_Rmax, BCAL_Zmid + BCAL_Zlen/2.0,X2,Y2);
-	TBox *bcal_side2 = new TBox(X,Y,X2,Y2);
-	graphics.push_back(bcal_side2);
-	bcal_side->SetFillColor(16); // 16= light grey
-	bcal_side2->SetFillColor(16); // 16= light grey
-	bcal_side->Draw();
-	bcal_side2->Draw();
-
-	// top
-	ConvertToTop(-BCAL_Rmin, 0, BCAL_Zmid - BCAL_Zlen/2.0,X,Y);
-	ConvertToTop(-BCAL_Rmax, 0, BCAL_Zmid + BCAL_Zlen/2.0,X2,Y2);
-	bcal_side = new TBox(X,Y,X2,Y2);
-	graphics.push_back(bcal_side);
-	ConvertToTop(BCAL_Rmin, 0, BCAL_Zmid - BCAL_Zlen/2.0,X,Y);
-	ConvertToTop(BCAL_Rmax, 0, BCAL_Zmid + BCAL_Zlen/2.0,X2,Y2);
-	bcal_side2 = new TBox(X,Y,X2,Y2);
-	graphics.push_back(bcal_side2);
-	bcal_side->SetFillColor(16); // 16= light grey
-	bcal_side2->SetFillColor(16); // 16= light grey
-	bcal_side->Draw();
-	bcal_side2->Draw();
-
-	// ----- TOF ------
-	// Side
-	ConvertToSide(0, TOF_Rmin, TOF_Zmid - TOF_Zlen/2.0,X,Y);
-	ConvertToSide(0, TOF_width/2.0, TOF_Zmid + TOF_Zlen/2.0,X2,Y2);
-	TBox *tof_side = new TBox(X,Y,X2,Y2);
-	graphics.push_back(tof_side);
-	ConvertToSide(0, -TOF_Rmin, TOF_Zmid - TOF_Zlen/2.0,X,Y);
-	ConvertToSide(0, -TOF_width/2.0, TOF_Zmid + TOF_Zlen/2.0,X2,Y2);
-	TBox *tof_side2 = new TBox(X,Y,X2,Y2);
-	graphics.push_back(tof_side2);
-	tof_side->SetFillColor(27);
-	tof_side2->SetFillColor(27);
-	tof_side->Draw();
-	tof_side2->Draw();
-
-	// top
-	ConvertToTop(-TOF_Rmin, 0, TOF_Zmid - TOF_Zlen/2.0,X,Y);
-	ConvertToTop(-TOF_width/2.0, 0, TOF_Zmid + TOF_Zlen/2.0,X2,Y2);
-	tof_side = new TBox(X,Y,X2,Y2);
-	graphics.push_back(tof_side);
-	ConvertToTop(TOF_Rmin, 0, TOF_Zmid - TOF_Zlen/2.0,X,Y);
-	ConvertToTop(TOF_width/2.0, 0, TOF_Zmid + TOF_Zlen/2.0,X2,Y2);
-	tof_side2 = new TBox(X,Y,X2,Y2);
-	graphics.push_back(tof_side2);
-	tof_side->SetFillColor(27);
-	tof_side2->SetFillColor(27);
-	tof_side->Draw();
-	tof_side2->Draw();
-
-	// ----- FCAL ------
-	// Side
-	ConvertToSide(0, FCAL_Rmin, FCAL_Zmid - FCAL_Zlen/2.0,X,Y);
-	ConvertToSide(0, FCAL_Rmax, FCAL_Zmid + FCAL_Zlen/2.0,X2,Y2);
-	TBox *fcal_side1 = new TBox(X,Y,X2,Y2);
-	graphics.push_back(fcal_side1);
-	ConvertToSide(0, -FCAL_Rmin, FCAL_Zmid - FCAL_Zlen/2.0,X,Y);
-	ConvertToSide(0, -FCAL_Rmax, FCAL_Zmid + FCAL_Zlen/2.0,X2,Y2);
-	TBox *fcal_side2 = new TBox(X,Y,X2,Y2);
-	graphics.push_back(fcal_side2);
-	fcal_side1->SetFillColor(30);
-	fcal_side2->SetFillColor(30);
-	fcal_side1->Draw();
-	fcal_side2->Draw();
-
-	// Top
-	ConvertToTop(-FCAL_Rmin, 0, FCAL_Zmid - FCAL_Zlen/2.0,X,Y);
-	ConvertToTop(-FCAL_Rmax, 0, FCAL_Zmid + FCAL_Zlen/2.0,X2,Y2);
-	TBox *fcal_side3 = new TBox(X,Y,X2,Y2);
-	graphics.push_back(fcal_side3);
-	ConvertToTop(FCAL_Rmin, 0, FCAL_Zmid - FCAL_Zlen/2.0,X,Y);
-	ConvertToTop(FCAL_Rmax, 0, FCAL_Zmid + FCAL_Zlen/2.0,X2,Y2);
-	TBox *fcal_side4 = new TBox(X,Y,X2,Y2);
-	graphics.push_back(fcal_side4);
-	fcal_side3->SetFillColor(30);
-	fcal_side4->SetFillColor(30);
-	fcal_side3->Draw();
-	fcal_side4->Draw();
-
-	// ----- CDC ------
-	// Side
-	ConvertToSide(0, CDC_Rmin, CDC_Zmid - CDC_Zlen/2.0,X,Y);
-	ConvertToSide(0, CDC_Rmax, CDC_Zmid + CDC_Zlen/2.0,X2,Y2);
-	TBox *cdc_side = new TBox(X,Y,X2,Y2);
-	graphics.push_back(cdc_side);
-	ConvertToSide(0, -CDC_Rmin, CDC_Zmid - CDC_Zlen/2.0,X,Y);
-	ConvertToSide(0, -CDC_Rmax, CDC_Zmid + CDC_Zlen/2.0,X2,Y2);
-	TBox *cdc_side2 = new TBox(X,Y,X2,Y2);
-	graphics.push_back(cdc_side2);
-	cdc_side->SetFillColor(33);
-	cdc_side2->SetFillColor(33);
-	cdc_side->Draw();
-	cdc_side2->Draw();
-
-	// Top
-	ConvertToTop(-CDC_Rmin, 0, CDC_Zmid - CDC_Zlen/2.0,X,Y);
-	ConvertToTop(-CDC_Rmax, 0, CDC_Zmid + CDC_Zlen/2.0,X2,Y2);
-	cdc_side = new TBox(X,Y,X2,Y2);
-	graphics.push_back(cdc_side);
-	ConvertToTop(CDC_Rmin, 0, CDC_Zmid - CDC_Zlen/2.0,X,Y);
-	ConvertToTop(CDC_Rmax, 0, CDC_Zmid + CDC_Zlen/2.0,X2,Y2);
-	cdc_side2 = new TBox(X,Y,X2,Y2);
-	graphics.push_back(cdc_side2);
-	cdc_side->SetFillColor(33);
-	cdc_side2->SetFillColor(33);
-	cdc_side->Draw();
-	cdc_side2->Draw();
-
-	// ----- FDC ------
-	
-	// Get FDC package positions from FDC library
-	for(int i=0; i<4; i++){
-		float zu = (DFDCGeometry::GetDFDCWire(1+i*6,1))->origin.z();
-		float zd = (DFDCGeometry::GetDFDCWire(1+i*6+5,1))->origin.z();
-		FDC_Zpos[i] = (zu+zd)/2.0;
-		FDC_Zlen = fabs(zd-zu)*6.0/5.0;
-	}
-	
-	// Side
-	TBox *fdc_side, *fdc_side2;
-	for(int i=0;i<4;i++){
-		ConvertToSide(0, FDC_Rmin, FDC_Zpos[i] - FDC_Zlen/2.0,X,Y);
-		ConvertToSide(0, FDC_Rmax, FDC_Zpos[i] + FDC_Zlen/2.0,X2,Y2);
-		fdc_side = new TBox(X,Y,X2,Y2);
-		graphics.push_back(fdc_side);
-		ConvertToSide(0, -FDC_Rmin, FDC_Zpos[i] - FDC_Zlen/2.0,X,Y);
-		ConvertToSide(0, -FDC_Rmax, FDC_Zpos[i] + FDC_Zlen/2.0,X2,Y2);
-		fdc_side2 = new TBox(X,Y,X2,Y2);
-		graphics.push_back(fdc_side2);
-		fdc_side->SetFillColor(40);
-		fdc_side2->SetFillColor(40);
-		fdc_side->Draw();
-		fdc_side2->Draw();
-	}
-
-	// Top
-	for(int i=0;i<4;i++){
-		ConvertToTop(-FDC_Rmin, 0, FDC_Zpos[i] - FDC_Zlen/2.0,X,Y);
-		ConvertToTop(-FDC_Rmax, 0, FDC_Zpos[i] + FDC_Zlen/2.0,X2,Y2);
-		fdc_side = new TBox(X,Y,X2,Y2);
-		graphics.push_back(fdc_side);
-		ConvertToTop(FDC_Rmin, 0, FDC_Zpos[i] - FDC_Zlen/2.0,X,Y);
-		ConvertToTop(FDC_Rmax, 0, FDC_Zpos[i] + FDC_Zlen/2.0,X2,Y2);
-		fdc_side2 = new TBox(X,Y,X2,Y2);
-		graphics.push_back(fdc_side2);
-		fdc_side->SetFillColor(40);
-		fdc_side2->SetFillColor(40);
-		fdc_side->Draw();
-		fdc_side2->Draw();
-	}
-
-	drew_detectors = 1;
-
-	return NOERROR;
-}
-
-
-
+#endif

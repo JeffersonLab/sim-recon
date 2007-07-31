@@ -10,7 +10,11 @@
 #define _MYPROCESSOR_H_
 
 #include <JANA/JEventProcessor.h>
+#include <JANA/JEventLoop.h>
+#include <JANA/JEvent.h>
 #include "HDGEOMETRY/DMagneticFieldMap.h"
+#include "PID/DKinematicData.h"
+
 class DQuickFit;
 class DTrackCandidate_factory;
 
@@ -27,6 +31,10 @@ class DTrackCandidate_factory;
 #define MAX_LINES 100
 #define MAX_CIRCLES 100
 
+class MyProcessor;
+extern MyProcessor *gMYPROC;
+
+
 class MyProcessor:public JEventProcessor
 {
 	public:
@@ -37,29 +45,43 @@ class MyProcessor:public JEventProcessor
 		jerror_t brun(JEventLoop *eventLoop, int runnumber);			///< Called everytime a new run number is detected.
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);		///< Called every event.
 
-		jerror_t ConvertToTop(float x, float y, float z, float &X, float &Y);
-		jerror_t ConvertToSide(float x, float y, float z, float &X, float &Y);
-		jerror_t ConvertToFront(float x, float y, float z, float &X, float &Y);
+		//void DrawXY(void);
+		//void DrawRPhi(void);
 
-		jerror_t DrawHelicalTrack(DQuickFit *qf, int color);
-		jerror_t DrawStraightTrack(TVector3 p, TVector3 vertex, int color, int style);
-		jerror_t DrawTrack(double q, TVector3 pos, TVector3 mom, int color);
-		jerror_t DrawDetectors(void);
+		//jerror_t DrawHelicalTrack(DQuickFit *qf, int color);
+		//jerror_t DrawStraightTrack(TVector3 p, TVector3 vertex, int color, int style);
+		//jerror_t DrawTrack(double q, TVector3 pos, TVector3 mom, int color);
+		//jerror_t DrawDetectors(void);
 
 		const DMagneticFieldMap *Bfield;
 		int eventNo;
-		vector<TMarker*> markers;
-		vector<TEllipse*> circles;
-		vector<TPolyLine*> lines;
-		vector<TObject*> graphics;
 		
-	private:
-		void ClearEvent(void);
+		enum poly_type{
+			kMarker =0,
+			kLine   =1
+		};
+		
+		class DGraphicSet{
+			public:
+				DGraphicSet(Color_t c, poly_type t, int s):color(c),type(t),size(s){}
+				vector<TVector3> points;
+				Color_t color;
+				poly_type type; // 0=markers, 1=lines
+				double size;
+		};
+		vector<DGraphicSet> graphics;
+		void FillGraphics(void);
+
+	private:	
 	
 		hdv_mainframe *hdvmf;
-		int drew_detectors;
-		DTrackCandidate_factory* factory;
-		string TRACKHIT_SOURCE;
+		JEventLoop *loop;
+		JEvent last_jevent;
+		
+		void AddKinematicDataTrack(const DKinematicData* kd, int color, double size);
+		
+		//DTrackCandidate_factory* factory;
+		//void DrawTrackXY(const DKinematicData *, int color, float size);
 };
 
 extern MyProcessor* gMYPROC;

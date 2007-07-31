@@ -32,6 +32,7 @@ int main(int narg, char *argv[])
 	japp->AddProcessor(myproc);
 	eventloop = new JEventLoop(japp);
 	japp->Init();
+	eventloop->SetAutoFree(0); // prevet auto-freeing of event after OneEvent is called
 	eventloop->OneEvent();
 
 	// Hand control to ROOT event loop
