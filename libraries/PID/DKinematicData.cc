@@ -8,6 +8,7 @@
 
 #include "PID/DKinematicData.h"
 
+#include <iostream>
 #include <assert.h>
 
 const double kLarge = 1.e20;
@@ -20,7 +21,7 @@ const double kLarge = 1.e20;
 //
 DMatrixDSym* DKinematicData::nullMatrix()
 {
-  static DMatrixDSym* sNullMatrix = new DMatrixDSym(7,0);
+  static DMatrixDSym* sNullMatrix = new DMatrixDSym(0,7);
   return sNullMatrix;
 }                         
 //
@@ -179,6 +180,12 @@ DKinematicData::setMomentum( const DVector3& aMomentum )
 DKinematicData::setPosition( const DVector3& aPosition )
 {
   m_position = aPosition ;
+}
+
+  void 
+DKinematicData::setCharge( const ValueType aCharge )
+{
+  m_charge = aCharge ;
 }
 
   void 

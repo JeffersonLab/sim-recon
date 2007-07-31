@@ -180,6 +180,7 @@ public:
     void setMass( const ValueType aMass ) ;
     void setMomentum( const DVector3& aMomentum ) ;
     void setPosition( const DVector3& aPosition ) ;
+	 void setCharge( const ValueType aCharge);
     void setMassFixed( void ) ;
     void setMassFloat( void ) ;
     void clearErrorMatrix( void ) ;
