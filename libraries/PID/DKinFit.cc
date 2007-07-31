@@ -161,7 +161,8 @@ void DKinFit::FitTwoGammas(const float __missingMass)
   }
 
 
-  bool isEnergyMeasured[numInitial + numFinal];
+	// The following was commented out to avoid compiler warnings 7/31/07 D.L.
+  //bool isEnergyMeasured[numInitial + numFinal];
 
   // Get the number of constraint equations
   int numConstraints = 4;
@@ -181,9 +182,10 @@ void DKinFit::FitTwoGammas(const float __missingMass)
   int i;
   double mass[numParts];
   int initialOrFinal[numParts];
-  double p[numParts],erg[numParts],px[numParts],py[numParts],pz[numParts];
-  double e_miss=0.,e_inv=0.,px_inv=0.,py_inv=0.,pz_inv=0.;
-  double dumt, dumx, dumy, dumz;
+	// The following 3 lines were commented out to avoid compiler warnings 7/31/07 D.L.
+  //double p[numParts],erg[numParts],px[numParts],py[numParts],pz[numParts];
+  //double e_miss=0.,e_inv=0.,px_inv=0.,py_inv=0.,pz_inv=0.;
+  //double dumt, dumx, dumy, dumz;
   TVector3 p3_miss;
 
   for(int i=0;i<numParts;i++)
@@ -613,7 +615,9 @@ void DKinFit::_MainFitter(){
     abort();
   }
 
-  bool isEnergyMeasured[numInitial + numFinal];
+	// The following was commented out to avoid compiler warnings 7/31/07 D.L.
+ // bool isEnergyMeasured[numInitial + numFinal];
+
   //for(int i=0;i<numInitial;i++)
   //isEnergyMeasuredInitial[i] = _kDataInitial_in[i].isEnergyMeasured();
   //for(int i=0;i<numFinal;i++)
@@ -631,9 +635,12 @@ void DKinFit::_MainFitter(){
   int i;
   double mass[numParts];
   int initialOrFinal[numParts];
-  double p[numParts],erg[numParts],px[numParts],py[numParts],pz[numParts];
+  	// The following was commented out to avoid compiler warnings 7/31/07 D.L.
+  //double p[numParts]
+  double erg[numParts],px[numParts],py[numParts],pz[numParts];
   double e_miss=0.,e_inv=0.,px_inv=0.,py_inv=0.,pz_inv=0.;
-  double dumt, dumx, dumy, dumz;
+	// The following was commented out to avoid compiler warnings 7/31/07 D.L.
+  //double dumt, dumx, dumy, dumz;
   TVector3 p3_miss;
 
   /*********** Define matricies needed to perform kinematic fitting **********/
