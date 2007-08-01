@@ -16,6 +16,7 @@ using namespace std;
 #include <TGeoVolume.h>
 #include <TGeoManager.h>
 #include <TGLabel.h>
+#include <TTimer.h>
 
 extern JApplication *japp;
 TGeoVolume *MOTHER = NULL;
