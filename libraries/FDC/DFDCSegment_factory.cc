@@ -146,6 +146,8 @@ jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int eventNo) {
 /// Routine where pseudopoints are combined into track segments
 ///
 jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
+  myeventno=eventNo;
+
   vector<const DFDCPseudo*>pseudopoints;
   eventLoop->Get(pseudopoints);  
 
@@ -235,7 +237,7 @@ jerror_t DFDCSegment_factory::RiemannLineFit(unsigned int n,DMatrix XYZ0,
   return NOERROR;
 }
 
-// Use predicted positions (progagating from plane 1 using a helical model) to
+// Use predicted positions (propagating from plane 1 using a helical model) to
 // update the R and RPhi covariance matrices.
 //
 jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
@@ -420,7 +422,15 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(unsigned int n, DMatrix XYZ,
     X(i,1)=XYZ(i,1);
     X(i,2)=XYZ(i,0)*XYZ(i,0)+XYZ(i,1)*XYZ(i,1);
     Ones(i,0)=OnesT(0,i)=1.;
-  }  
+  }
+
+  // Check that CRPhi is invertible 
+  TDecompLU lu(CRPhi);
+  if (lu.Decompose()==false){
+    *_log << "RiemannCircleFit: Singular matrix,  event "<< myeventno << endMsg;
+    
+    return UNRECOVERABLE_ERROR; // error placeholder
+  }
   W=DMatrix(DMatrix::kInverted,CRPhi);
   W_sum=OnesT*(W*Ones);
   Xavg=(1./W_sum(0,0))*(OnesT*(W*X));
