@@ -92,6 +92,12 @@ jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		if(can->theta>M_PI)can->theta=M_PI;
 		can->q			= thrown->q;
 		can->p_trans	= can->p*sin(can->theta);
+		
+		// Fill in DKinematic Data protion of this
+		can->setMass(0.0);
+		can->setMomentum(DVector3(can->p_trans*cos(can->phi), can->p_trans*sin(can->phi), can->p*cos(can->theta)));
+		can->setPosition(DVector3(can->x0, can->y0, can->z_vertex));
+		can->setCharge(can->q);
 
 		// Swim track using these parameters.
 		rt->q = can->q;

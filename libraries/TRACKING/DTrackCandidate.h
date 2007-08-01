@@ -10,10 +10,11 @@
 
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
+#include "PID/DKinematicData.h"
 
 #define MAX_IHITS 256
 
-class DTrackCandidate:public JObject{
+class DTrackCandidate:public DKinematicData{
 	public:
 		HDCLASSDEF(DTrackCandidate);
 		

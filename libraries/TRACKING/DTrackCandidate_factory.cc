@@ -775,21 +775,29 @@ int DTrackCandidate_factory::FitTrack(void)
 	double sin_theta = sin(theta);
 
 	// Create a new DTrackCandidate object
-	DTrackCandidate *trackcandidate = new DTrackCandidate;
+	DTrackCandidate *can = new DTrackCandidate;
 
-	trackcandidate->p_trans = p_trans*ff;
-	trackcandidate->phi = phi;
-	trackcandidate->z_vertex = seed.z_vertex;
-	trackcandidate->dzdphi = r0/theta;
-	trackcandidate->p = trackcandidate->p_trans/sin_theta;
-	trackcandidate->q = seed.line_fit.q;
-	trackcandidate->theta = theta;
+	can->x0 = fit.x0;
+	can->y0 = fit.y0;
+	can->p_trans = p_trans*ff;
+	can->phi = phi;
+	can->z_vertex = seed.z_vertex;
+	can->dzdphi = r0/theta;
+	can->p = can->p_trans/sin_theta;
+	can->q = seed.line_fit.q;
+	can->theta = theta;
+
+	// Fill in DKinematic Data protion of this
+	can->setMass(0.0);
+	can->setMomentum(DVector3(can->p_trans*cos(can->phi), can->p_trans*sin(can->phi), can->p*cos(can->theta)));
+	can->setPosition(DVector3(0.0, 0.0, can->z_vertex));
+	can->setCharge(can->q);
 
 	// Do one last pass over the hits, marking all 
 	// that are consistent with these parameters as used.
-	MarkTrackHits(trackcandidate, &seed.line_fit);
+	MarkTrackHits(can, &seed.line_fit);
 	
-	_data.push_back(trackcandidate);
+	_data.push_back(can);
 
 	return 1;
 }
