@@ -63,7 +63,7 @@ class MyProcessor:public JEventProcessor
 		
 		class DGraphicSet{
 			public:
-				DGraphicSet(Color_t c, poly_type t, int s):color(c),type(t),size(s){}
+				DGraphicSet(Color_t c, poly_type t, double s):color(c),type(t),size(s){}
 				vector<TVector3> points;
 				Color_t color;
 				poly_type type; // 0=markers, 1=lines

@@ -21,6 +21,8 @@
 #include <TEllipse.h>
 #include <TMarker.h>
 #include <TVector3.h>
+#include <TGLabel.h>
+#include <TTimer.h>
 
 
 class hdv_mainframe:public TGMainFrame {
@@ -44,11 +46,6 @@ class hdv_mainframe:public TGMainFrame {
 		void DoCont(void);
 		void DoTimer(void);
 
-		void DoToggleCandidate(void);
-		void DoToggleTrack(void);
-		void DoToggleThrown(void);
-		void DoToggleTrajectory(void);
-
 		void DoPanLeft(void);
 		void DoPanUp(void);
 		void DoPanDown(void);
@@ -62,6 +59,8 @@ class hdv_mainframe:public TGMainFrame {
 		
 		void DrawDetectorsXY(void);
 		void DrawDetectorsRPhi(void);
+		void DrawAxes(TCanvas *c, vector<TObject*> &graphics, const char *xlab, const char *ylab);
+		void DrawScale(TCanvas *c, vector<TObject*> &graphics);
 
 		// Other (non-slot) methods
 		void SetEvent(int id);
@@ -75,6 +74,7 @@ class hdv_mainframe:public TGMainFrame {
 		void SetReconstructedFactories(vector<string> &facnames);
 		
 		bool GetCheckButton(string who);
+		const char* GetFactoryTag(string who);
 		
 		void AddGraphicsSideA(vector<TObject*> &v);
 		void AddGraphicsSideB(vector<TObject*> &v);
@@ -86,13 +86,13 @@ class hdv_mainframe:public TGMainFrame {
 		TRootEmbeddedCanvas *sideviewB;
 		TRootEmbeddedCanvas *endviewA;
 		TRootEmbeddedCanvas *endviewB;
-		TText *event_text;
+		
+		TGLabel *event, *run;
 		
 		TGComboBox *tracksfactory;
 		TGComboBox *candidatesfactory;
 		TGComboBox *reconfactory;
-		
-		int current_eventnumber;
+		TGComboBox *delay;		
 		
 		bool draw_candidates;
 		bool draw_tracks;
@@ -110,6 +110,8 @@ class hdv_mainframe:public TGMainFrame {
 		vector<TObject*> graphics_endB;
 		
 		map<string, TGCheckButton*> checkbuttons;
+		
+		TTimer *timer;
 		
 		template<typename T> void FillPoly(T *sA, T *sB, T *eA, vector<TVector3> &v);
 		
@@ -130,18 +132,24 @@ void hdv_mainframe::FillPoly(T *sA, T *sB, T *eA, vector<TVector3> &v)
 	/// Note that if the SetNextPoint method were inherited from the base class,
 	/// we wouldn't have to do this with a template!
 
-	vector<TVector3>::iterator pt = v.begin();
-	for(; pt!=v.end(); pt++){
+	for(unsigned int i=0; i<v.size(); i++){
+		TVector3 &pt = v[i];
 		if(coordinatetype == COORD_XY){
-			sA->SetNextPoint(pt->Z(), pt->X());
-			sB->SetNextPoint(pt->Z(), pt->Y());
-			eA->SetNextPoint(pt->X(), pt->Y());
+			sA->SetNextPoint(pt.Z(), pt.X());
+			sB->SetNextPoint(pt.Z(), pt.Y());
+			eA->SetNextPoint(pt.X(), pt.Y());
 		}else{
-			double phi = pt->Phi();
+			double phi = pt.Phi();
+			if(phi==0 && i==0 && v.size()>1){
+				// If the first trajectory point is at phi=0, then change it to be
+				// the same as the second trajectory point. This is to avoid having
+				// a long line on R/phi plots from phi=0.
+				phi = v[i+1].Phi();
+			}
 			if(phi<0.0)phi+=2.0*3.14159265;
-			sA->SetNextPoint(pt->Z(), pt->Perp());
-			sB->SetNextPoint(pt->Z(), phi);
-			eA->SetNextPoint(phi, pt->Perp());
+			sA->SetNextPoint(pt.Z(), pt.Perp());
+			sB->SetNextPoint(pt.Z(), phi);
+			eA->SetNextPoint(phi, pt.Perp());
 		}
 	}
 }

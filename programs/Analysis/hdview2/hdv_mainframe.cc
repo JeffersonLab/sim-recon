@@ -24,6 +24,8 @@ using namespace std;
 #include <TGButton.h>
 #include <TGButtonGroup.h>
 #include <TGTextEntry.h>
+#include <TArrow.h>
+#include <TLatex.h>
 
 extern JApplication *japp;
 TGeoVolume *MOTHER = NULL;
@@ -128,12 +130,12 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 		eventcontrols->AddFrame(contf, lhints);
 		
 			// continuous, delay
-			TGCheckButton *continuous = new TGCheckButton(contf, "continuous");
+			checkbuttons["continuous"] = new TGCheckButton(contf, "continuous");
 			TGHorizontalFrame *delayf = new TGHorizontalFrame(contf);
-			contf->AddFrame(continuous, lhints);
+			contf->AddFrame(checkbuttons["continuous"], lhints);
 			contf->AddFrame(delayf, lhints);
 				TGLabel *delaylab = new TGLabel(delayf, "delay:");
-				TGComboBox *delay = new TGComboBox(delayf, "0");
+				delay = new TGComboBox(delayf, "0.25");
 				delay->Resize(50,20);
 				float delays[]={0, 0.25, 0.5, 1, 2, 3, 5, 10};
 				for(int i=0; i<8; i++){
@@ -152,8 +154,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 
 			TGLabel *runlab = new TGLabel(eventlabs, "Run:");
 			TGLabel *eventlab = new TGLabel(eventlabs, "Event:");
-			TGLabel *run = new TGLabel(eventvals, "----------");
-			TGLabel *event = new TGLabel(eventvals, "----------");
+			run = new TGLabel(eventvals, "----------");
+			event = new TGLabel(eventvals, "----------");
 			eventlabs->AddFrame(runlab, rhints);
 			eventlabs->AddFrame(eventlab,rhints);
 			eventvals->AddFrame(run, lhints);
@@ -176,7 +178,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 		detectorframe->AddFrame(drawopts, lhints);
 		
 			// Side views
-			int width=400;
+			int width=500;
 			sideviewA = new TRootEmbeddedCanvas("sideviewA Canvas", sideviews, width, width/2, kSunkenFrame, GetWhitePixel());
 			sideviewB = new TRootEmbeddedCanvas("sideviewB Canvas", sideviews, width, width/2, kSunkenFrame, GetWhitePixel());
 			sideviews->AddFrame(sideviewA, lhints);
@@ -218,26 +220,27 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 				trkdrawopts->AddFrame(tracksf, lhints);
 
 				checkbuttons["thrown"]			= new TGCheckButton(trkdrawopts,	"DMCThrown");
+				checkbuttons["trajectories"]	= new TGCheckButton(trkdrawopts,	"DMCTrajectoryPoint");
 				trkdrawopts->AddFrame(checkbuttons["thrown"], lhints);
-				
+				trkdrawopts->AddFrame(checkbuttons["trajectories"], lhints);
 
 				// Hit
 				checkbuttons["cdc"]				= new TGCheckButton(hitdrawopts,	"CDC");
 				checkbuttons["cdctruth"]		= new TGCheckButton(hitdrawopts,	"CDCTruth");
-				checkbuttons["fdc"]				= new TGCheckButton(hitdrawopts,	"FDC");
+				checkbuttons["fdcwire"]			= new TGCheckButton(hitdrawopts,	"FDC Wire");
+				checkbuttons["fdcpseudo"]		= new TGCheckButton(hitdrawopts,	"FDC Pseudo");
 				checkbuttons["fdctruth"]		= new TGCheckButton(hitdrawopts,	"FDCTruth");
 				checkbuttons["toftruth"]		= new TGCheckButton(hitdrawopts,	"TOFTruth");
 				checkbuttons["fcaltruth"]		= new TGCheckButton(hitdrawopts,	"FCALTruth");
 				checkbuttons["bcaltruth"]		= new TGCheckButton(hitdrawopts,	"BCALTruth");
-				checkbuttons["trajectories"]	= new TGCheckButton(hitdrawopts,	"DMCTrajectoryPoint");
 				hitdrawopts->AddFrame(checkbuttons["cdc"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["cdctruth"], lhints);
-				hitdrawopts->AddFrame(checkbuttons["fdc"], lhints);
+				hitdrawopts->AddFrame(checkbuttons["fdcwire"], lhints);
+				hitdrawopts->AddFrame(checkbuttons["fdcpseudo"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["fdctruth"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["toftruth"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["fcaltruth"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["bcaltruth"], lhints);
-				hitdrawopts->AddFrame(checkbuttons["trajectories"], lhints);
 				
 
 	//========== BOT FRAME ============
@@ -308,10 +311,11 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 
 	//&&&&&&&&&&&&&&&& Defaults
 	checkbuttons["tracks"]->SetState(kButtonDown);
+	checkbuttons["candidates"]->SetState(kButtonDown);
 	xy->SetState(kButtonDown,kTRUE);
 	coordinatetype = COORD_XY;
 	checkbuttons["cdc"]->SetState(kButtonDown);
-	checkbuttons["fdc"]->SetState(kButtonDown);
+	checkbuttons["fdcpseudo"]->SetState(kButtonDown);
 	checkbuttons["trajectories"]->SetState(kButtonDown);
 	r0 = 50.0;
 	phi0 = M_PI;
@@ -335,7 +339,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	quit->Connect("Clicked","hdv_mainframe", this, "DoQuit()");
 	next->Connect("Clicked","hdv_mainframe", this, "DoNext()");
 	prev->Connect("Clicked","hdv_mainframe", this, "DoPrev()");
-	continuous->Connect("Clicked","hdv_mainframe", this, "DoCont()");
+	checkbuttons["continuous"]->Connect("Clicked","hdv_mainframe", this, "DoCont()");
 	delay->Connect("Selected(Int_t)","hdv_mainframe", this, "DoSetDelay(Int_t)");
 	
 	checkbuttons["candidates"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
@@ -344,7 +348,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 
 	checkbuttons["cdc"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["cdctruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["fdc"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["fdcwire"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["fdcpseudo"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["fdctruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["toftruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["bcaltruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
@@ -352,6 +357,12 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	checkbuttons["trajectories"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
 	tracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
+
+	// Set up timer to call the DoTimer() method repeatedly
+	// so events can be automatically advanced.
+	timer = new TTimer();
+	timer->Connect("Timeout()", "hdv_mainframe", this, "DoTimer()");
+	timer->Start(250, kFALSE);
 
 	// Finish up and map the window
 	SetWindowName("Hall-D Event Viewer");
@@ -375,9 +386,9 @@ void hdv_mainframe::SetRange(void)
 
 	if(coordinatetype==COORD_XY){
 		// define range in each direction in cm
-		double x_width = 400.0/zoom_factor;
-		double y_width = x_width/zoom_factor;
-		double z_width = 2.0*x_width/zoom_factor;
+		double x_width = 350.0/zoom_factor;
+		double y_width = x_width;
+		double z_width = 2.0*x_width;
 		double xlo = x0 - x_width/2.0;
 		double xhi = x0 + x_width/2.0;
 		double ylo = y0 - y_width/2.0;
@@ -391,10 +402,11 @@ void hdv_mainframe::SetRange(void)
 		sideviewB->GetCanvas()->Range(zlo, ylo, zhi, yhi);
 		
 		// Zoom in a little on the end views
-		xlo/=1.5;
-		xhi/=1.5;
-		ylo/=1.5;
-		yhi/=1.5;
+		double end_to_side_ratio=1.8;
+		xlo/=end_to_side_ratio;
+		xhi/=end_to_side_ratio;
+		ylo/=end_to_side_ratio;
+		yhi/=end_to_side_ratio;
 		
 		// Some bug in root screws up drawing the x-coordinates of the
 		// end views such that they have the 2:1 aspect ratio of the
@@ -502,43 +514,7 @@ void hdv_mainframe::DoTimer(void)
 	/// This gets called periodically (value is set in constructor)
 	/// It is used to automatically call DoNext() periodically
 	/// so long as the global GO is set to 1.
-	if(GO)DoNext();
-}
-
-//-------------------
-// DoToggleCandidate
-//-------------------
-void hdv_mainframe::DoToggleCandidate(void)
-{
-	draw_candidates = !draw_candidates;
-	if(gMYPROC)gMYPROC->evnt(eventloop, current_eventnumber);
-}
-
-//-------------------
-// DoToggleTrack
-//-------------------
-void hdv_mainframe::DoToggleTrack(void)
-{
-	draw_tracks = !draw_tracks;
-	if(gMYPROC)gMYPROC->evnt(eventloop, current_eventnumber);
-}
-
-//-------------------
-// DoToggleThrown
-//-------------------
-void hdv_mainframe::DoToggleThrown(void)
-{
-	draw_throwns = !draw_throwns;
-	if(gMYPROC)gMYPROC->evnt(eventloop, current_eventnumber);
-}
-
-//-------------------
-// DoToggleTrajectory
-//-------------------
-void hdv_mainframe::DoToggleTrajectory(void)
-{
-	draw_trajectories = !draw_trajectories;
-	if(gMYPROC)gMYPROC->evnt(eventloop, current_eventnumber);
+	if(GetCheckButton("continuous"))DoNext();
 }
 
 //-------------------
@@ -652,7 +628,7 @@ void hdv_mainframe::DoRedraw(void)
 	vector<MyProcessor::DGraphicSet>::iterator iter = gMYPROC->graphics.begin();
 	for(; iter!=gMYPROC->graphics.end(); iter++){
 	
-		if(iter->type==0){
+		if(iter->type==MyProcessor::kMarker){
 			// Markers
 			TPolyMarker *sA = new TPolyMarker();
 			TPolyMarker *sB = new TPolyMarker();
@@ -664,6 +640,9 @@ void hdv_mainframe::DoRedraw(void)
 			sA->SetMarkerSize(iter->size);
 			sB->SetMarkerSize(iter->size);
 			eA->SetMarkerSize(iter->size);
+			sA->SetMarkerStyle(8);
+			sB->SetMarkerStyle(8);
+			eA->SetMarkerStyle(8);
 			graphics_sideA.push_back(sA);
 			graphics_sideB.push_back(sB);
 			graphics_endA.push_back(eA);
@@ -706,7 +685,11 @@ void hdv_mainframe::DoRedraw(void)
 //-------------------
 void hdv_mainframe::DoSetDelay(Int_t id)
 {
-_DBG__;
+	stringstream ss;
+	ss<<delay->GetSelectedEntry()->GetTitle();
+	double seconds;
+	ss>>seconds;
+	timer->SetTime((int)(1000.0*seconds));
 }
 
 //-------------------
@@ -726,6 +709,8 @@ void hdv_mainframe::DrawDetectorsXY(void)
 	{
 	sideviewA->GetCanvas()->cd(0);
 	sideviewA->GetCanvas()->Clear();
+	
+	
 
 		// ------ Target ------	
 		TBox *target = new TBox(TARGET_Zmid-TARGET_Zlen/2.0, -0.5, TARGET_Zmid+TARGET_Zlen/2.0, +0.5);
@@ -776,6 +761,9 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		fcal2->SetFillColor(40);
 		graphics_sideA.push_back(fcal1);
 		graphics_sideA.push_back(fcal2);
+		
+		// ------ scale ------
+		DrawScale(sideviewA->GetCanvas(), graphics_sideA);
 	}
 
 	//============== Side B
@@ -826,7 +814,15 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		target->SetFillColor(13);
 		graphics_endA.push_back(target);
 
+		// ------ scale ------
+		DrawScale(endviewA->GetCanvas(), graphics_endA);
 	}
+	
+	//=============== Draw axes arrows
+	// (this is done here since the sideB graphics are copied from sideA)
+	DrawAxes(sideviewA->GetCanvas(), graphics_sideA, "Z", "X");
+	DrawAxes(sideviewB->GetCanvas(), graphics_sideB, "Z", "Y");
+	DrawAxes(endviewA->GetCanvas(), graphics_endA, "X", "Y");
 }
 
 //-------------------
@@ -873,6 +869,9 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 		TBox *fcal1 = new TBox(FCAL_Zmin, FCAL_Rmin, FCAL_Zmin+FCAL_Zlen, FCAL_Rmax);
 		fcal1->SetFillColor(40);
 		graphics_sideA.push_back(fcal1);
+
+		// ------ scale ------
+		DrawScale(endviewA->GetCanvas(), graphics_endA);
 	}
 
 	//============== Side B Phi vs. z
@@ -914,6 +913,9 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 		TBox *fcal1 = new TBox(FCAL_Zmin, 0.0, FCAL_Zmin+FCAL_Zlen, 2.0*M_PI);
 		fcal1->SetFillColor(40);
 		graphics_sideB.push_back(fcal1);
+
+		// ------ scale ------
+		DrawScale(endviewA->GetCanvas(), graphics_endA);
 	}
 
 	//============== End A R vs. phi
@@ -942,6 +944,121 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 		graphics_endA.push_back(target);
 
 	}
+
+	//=============== Draw axes arrows
+	DrawAxes(sideviewA->GetCanvas(), graphics_sideA, "Z", "R");
+	DrawAxes(sideviewB->GetCanvas(), graphics_sideB, "Z", "#phi");
+	DrawAxes(endviewA->GetCanvas(), graphics_endA, "#phi", "R");
+}
+
+//-------------------
+// DrawAxes
+//-------------------
+void hdv_mainframe::DrawAxes(TCanvas *c, vector<TObject*> &graphics, const char *xlab, const char *ylab)
+{
+	/// Create arrows indicating x and y axes with labels on the specified canvas
+	/// and add them to the specified container of graphics objects to be draw later.
+	double x1 = c->GetX1();
+	double x2 = c->GetX2();
+	double y1 = c->GetY1();
+	double y2 = c->GetY2();
+	double deltax = x2-x1;
+	deltax *= c->GetYsizeReal()/c->GetXsizeReal();
+	double deltay = y2-y1;
+	double xlo = x1+0.04*deltax;
+	double xhi = xlo + 0.075*deltax;
+	double ylo = y1+0.04*deltay;
+	double yhi = ylo + 0.075*deltay;
+	TArrow *yarrow = new TArrow(xlo, ylo, xlo, yhi, 0.02, ">");
+	yarrow->SetLineWidth(1.5);
+	graphics.push_back(yarrow);
+	
+	TLatex *ylabel = new TLatex(xlo, yhi+0.005*deltay, ylab);
+	ylabel->SetTextAlign(21);
+	graphics.push_back(ylabel);
+	
+	TArrow *xarrow = new TArrow(xlo, ylo, xhi, ylo, 0.02, ">");
+	xarrow->SetLineWidth(1.5);
+	graphics.push_back(xarrow);
+	
+	TLatex *xlabel = new TLatex(xhi+0.005*deltax, ylo, xlab);
+	xlabel->SetTextAlign(12);
+	graphics.push_back(xlabel);
+}
+
+//-------------------
+// DrawScale
+//-------------------
+void hdv_mainframe::DrawScale(TCanvas *c, vector<TObject*> &graphics)
+{
+	/// Create a scale label on the specified canvas and add it 
+	/// to the specified container of graphics objects to be draw later.
+	double x1 = c->GetX1();
+	double x2 = c->GetX2();
+	double y1 = c->GetY1();
+	double y2 = c->GetY2();
+	double deltax = x2-x1;
+	double deltay = y2-y1;
+	double p = floor(log(0.1*deltax)/log(10.0));
+	double m = floor(0.1*deltax/pow(10.0, p) + 0.5);
+	double xlo = x1+0.72*deltax;
+	double xhi = xlo + m*pow(10.0, p);
+	double y = y1+0.04*deltay;
+	TArrow *arrow = new TArrow(xlo, y, xhi, y, 0.02, "|-|");
+	arrow->SetLineWidth(1.0);
+	graphics.push_back(arrow);
+	
+	const char *units="<out of range>";
+	switch((int)p){
+		case -5:
+			units = "#mum";
+			break;
+		case -4:
+			m*=10.0;
+			units = "#mum";
+			break;
+		case -3:
+			m*=100.0;
+			units = "#mum";
+			break;
+		case -2:
+			units="mm";
+			break;
+		case -1:
+			m*=10.0;
+			units="mm";
+			break;
+		case 0:
+			units = "cm";
+			break;
+		case 1:
+			m*=10.0;
+			units = "cm";
+			break;
+		case 2:
+			units = "m";
+			break;
+		case 3:
+			m*=10.0;
+			units = "m";
+			break;
+		case 4:
+			m*=100.0;
+			units = "m";
+			break;
+		case 5:
+			units = "km";
+			break;
+		case 6:
+			m*=10.0;
+			units = "km";
+			break;
+	}
+	char str[256];
+	sprintf(str,"%d %s", (int)m, units);
+	TLatex *label = new TLatex(xhi+0.01*deltax, y, str);
+	label->SetTextAlign(12);
+	graphics.push_back(label);
 }
 
 //-------------------
@@ -950,10 +1067,9 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 void hdv_mainframe::SetEvent(int id)
 {
 	char str[256];
-	sprintf(str,"Event: %5d", id);
-	//event_text->SetTitle(str);
-	//event_text->Draw();
-	current_eventnumber = id;
+	sprintf(str,"%5d", id);
+	event->SetTitle(str);
+	event->Draw();
 }
 
 //-------------------
@@ -1041,6 +1157,25 @@ bool hdv_mainframe::GetCheckButton(string who)
 	map<string, TGCheckButton*>::iterator iter = checkbuttons.find(who);
 	if(iter==checkbuttons.end())return false;
 	return iter->second->GetState()==kButtonDown;
+}
+
+//-------------------
+// GetFactoryTag
+//-------------------
+const char* hdv_mainframe::GetFactoryTag(string who)
+{
+	const char *tag = "";
+
+	if(who=="DTrack"){
+		tag = tracksfactory->GetSelectedEntry()->GetTitle();
+	}
+	if(who=="DTrackCandidate"){
+		tag = candidatesfactory->GetSelectedEntry()->GetTitle();
+	}
+	
+	if(string(tag) == "<default>")tag = "";
+	
+	return tag;
 }
 
 //-------------------
