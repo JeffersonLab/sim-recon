@@ -18,7 +18,7 @@
 #define TWO_HIT_RESOL   25.
 #define MAX_HITS        100
 #define THRESH_MEV      0.8
-
+#define ECHARGE         1.602e-7 // electric charge in C
 
 TRandom Ran;
 float nph[2], R, A1, A2;
@@ -79,9 +79,10 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
       }
     }
 
+    double esmear =  Ran.Gaus(0.,sqrt(nph[0]));
     for (int i=0;i<2;i++){
 
-      energy[i] = nph[i] += Ran.Gaus(0.,sqrt(nph[i]));   // smear the number of generated photons
+      energy[i] = nph[i] += esmear;   // smear the number of generated photons
       loca[i] -= HALFPADDLE ;                            // distance to PMT
 
       // fraction of 4pi seen by PMT directly
@@ -165,10 +166,10 @@ jerror_t DTOFMCResponse_factory::brun(JEventLoop *loop, int runnumber)
 
   map<string, double> tofparms;
  
-  if ( loop->GetCalib("TOF/tof_parms", tofparms)){
-    cout<<"TOF data base loaded"<<endl;
+  if ( !loop->GetCalib("TOF/tof_parms", tofparms)){
+    cout<<"DTOFMCResponse_factory: loding values from TOF data base"<<endl;
   } else {
-    cout << "Error loading TOF data base" <<endl;
+    cout << "DTOFMCResponse_factory: Error loading values from TOF data base" <<endl;
   }
 
   ATTEN_LENGTH   =    tofparms["TOF_ATTEN_LENGTH"]; 
@@ -179,7 +180,6 @@ jerror_t DTOFMCResponse_factory::brun(JEventLoop *loop, int runnumber)
   REFLECT_EFF    =    tofparms["TOF_REFLECT_EFF"];
   PHE_EFF        =    tofparms["TOF_PHE_EFF"];
   PMT_GAIN       =    tofparms["TOF_PMT_GAIN_MC"];
-  ECHARGE        =    tofparms["TOF_ECHARGE"];
   ADC_RES        =    tofparms["TOF_ADC_RES_MC"];
   TOF_CENT_TRES  =    tofparms["TOF_CENT_TRES"];
   TDC_RES        =    tofparms["TOF_TDC_RES_MC"];
