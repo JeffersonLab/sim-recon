@@ -15,31 +15,16 @@
 // root specific stuff
 #include "TRandom.h"  // random generators
 
-#define ATTEN_LENGTH    150
-#define C_EFFECTIVE     15
 #define TWO_HIT_RESOL   25.
 #define MAX_HITS        100
 #define THRESH_MEV      0.8
-#define PHOTONS_PERMEV  10000. // scintillation photon generated per MeV energy deposition 
-#define THETA_MAX       50.74 // total internal reflection
-#define PMT_SURFACE     19.63 // PMT surface in cm^2
-#define REFLECT_EFF     0.5   // reflection efficiency of light 
-#define PHE_EFF         0.2   // efficiency to create photo elecrons
-#define PMT_GAIN        40000000. // PMT gain factor 4*10^7
-#define ECHARGE         1.602e-7 // electric charge in C
-#define ADC_RES         50.      // adc resolution pC/count
-#define TOF_CENT_TRES   -0.698970004 // time resolution of tof paddel for hit in the center log10(0.2ns)
-#define TDC_MC_RES         0.06 //TDC resolution in ns
+
 
 TRandom Ran;
 float nph[2], R, A1, A2;
 float charge[2], energy[2],tof[2];
 float dist,loca[2],sigm[2];
 int adc[2],t1,tdc[2];
-
-void debugfuncMCResponse(){
-  //do nothing
-}
 
 
 //------------------
@@ -68,9 +53,6 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
 
     // calculate total number of generated photons in 4pi
 
-
-    debugfuncMCResponse();
-
     nph[0] = hddmhit->dE_north*1000.* (PHOTONS_PERMEV);
     nph[1] = hddmhit->dE_south*1000.* (PHOTONS_PERMEV);
 
@@ -91,16 +73,21 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
       sigm[i] = (double)pow(10.,double(sigm[i]));
       if (tof[i]>0){
 	tof[i] += Ran.Gaus(0.,sigm[i]); // add time resolution of PMT
-	tdc[i] = int(tof[i]/TDC_MC_RES);
+	tdc[i] = int(tof[i]/TDC_RES);
       } else{
 	tdc[i] = 0;
       }
     }
 
     for (int i=0;i<2;i++){
+
       energy[i] = nph[i] += Ran.Gaus(0.,sqrt(nph[i]));   // smear the number of generated photons
+      loca[i] -= HALFPADDLE ;                            // distance to PMT
+
       // fraction of 4pi seen by PMT directly
-      A1 = PMT_SURFACE/4./loca[i]/loca[i];
+      // surace area ratio between PMT and photon emitted in shpere that reach the PMT (total interal reflection)
+      A1 = PMT_SURFACE/4./loca[i]/loca[i]/3.1415926;   
+                                                         
       // fraction of 4pi below critical angle
       A2 = (1.-cos(THETA_MAX/180.*3.1415926))/2. - A1;
       nph[i] *= (A1+A2*REFLECT_EFF)*exp(loca[i]/ATTEN_LENGTH);  // number of photons hitting the photo cathode
@@ -167,5 +154,37 @@ const string DTOFMCResponse_factory::toString(void)
   }
   
   return _table;
+
+}
+
+//------------------
+// init
+//------------------
+jerror_t DTOFMCResponse_factory::brun(JEventLoop *loop, int runnumber)
+{
+
+  map<string, double> tofparms;
+ 
+  if ( loop->GetCalib("TOF/tof_parms", tofparms)){
+    cout<<"TOF data base loaded"<<endl;
+  } else {
+    cout << "Error loading TOF data base" <<endl;
+  }
+
+  ATTEN_LENGTH   =    tofparms["TOF_ATTEN_LENGTH"]; 
+  C_EFFECTIVE    =    tofparms["TOF_C_EFFECTIVE"];
+  PHOTONS_PERMEV =    tofparms["TOF_PHOTONS_PERMEV"];
+  THETA_MAX      =    tofparms["TOF_THETA_MAX"];
+  PMT_SURFACE    =    tofparms["TOF_PMT_SURFACE"];
+  REFLECT_EFF    =    tofparms["TOF_REFLECT_EFF"];
+  PHE_EFF        =    tofparms["TOF_PHE_EFF"];
+  PMT_GAIN       =    tofparms["TOF_PMT_GAIN_MC"];
+  ECHARGE        =    tofparms["TOF_ECHARGE"];
+  ADC_RES        =    tofparms["TOF_ADC_RES_MC"];
+  TOF_CENT_TRES  =    tofparms["TOF_CENT_TRES"];
+  TDC_RES        =    tofparms["TOF_TDC_RES_MC"];
+  HALFPADDLE     =    tofparms["TOF_HALFPADDLE"];
+
+  return NOERROR;
 
 }
