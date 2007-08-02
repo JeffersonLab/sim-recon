@@ -255,9 +255,9 @@ void hitForwardTOF (float xin[4], float xout[4],
 	  northHits->in[nhit].y = x[1];
 	  northHits->in[nhit].z = x[2];
 	  northHits->in[nhit].E = pin[3];
-	  northHits->in[nhit].px = pin[0];
-	  northHits->in[nhit].py = pin[1];
-	  northHits->in[nhit].pz = pin[2];
+	  northHits->in[nhit].px = pin[0]*pin[4];
+	  northHits->in[nhit].py = pin[1]*pin[4];
+	  northHits->in[nhit].pz = pin[2]*pin[4];
 	  northHits->in[nhit].ptype = ipart;
 	}
       }
@@ -271,9 +271,9 @@ void hitForwardTOF (float xin[4], float xout[4],
 	northHits->in[nhit].z = x[2];
 	// save momenum, energy and particle type
 	northHits->in[nhit].E = pin[3];
-	northHits->in[nhit].px = pin[0];
-	northHits->in[nhit].py = pin[1];
-	northHits->in[nhit].pz = pin[2];
+	northHits->in[nhit].px = pin[0]*pin[4];
+	northHits->in[nhit].py = pin[1]*pin[4];
+	northHits->in[nhit].pz = pin[2]*pin[4];
 	northHits->in[nhit].ptype = ipart;
 	northHits->mult++;
       }
