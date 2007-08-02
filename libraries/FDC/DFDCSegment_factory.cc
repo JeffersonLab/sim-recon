@@ -357,10 +357,81 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
       C(k,k)=1.;
     }
   }
+  
+   // Correct the covariance matrices for contributions due to multiple
+  // scattering
+  DMatrix CRPhi_ms(n,n);
+  DMatrix CR_ms(n,n);
+  double lambda=atan(tanl);
+  double cosl=cos(lambda);
+  double sinl=sin(lambda);
+  if (cosl<EPS) cosl=EPS;
+  if (sinl<EPS) sinl=EPS;
+  // We loop over all the points except the point at the target, which is left
+  // out because the path length is too long to use the linear approximation
+  // we are using to estimate the contributions due to multiple scattering.
+  for (unsigned int m=0;m<n-1;m++){
+    double Rm=sqrt(XYZ(m,0)*XYZ(m,0)+XYZ(m,1)*XYZ(m,1));
+    double zm=XYZ(m,2);
+    for (unsigned int k=m;k<n-1;k++){
+      double Rk=sqrt(XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1));
+      double zk=XYZ(k,2);
+      unsigned int imin=(k+1>m+1)?k+1:m+1;
+      for (unsigned int i=imin;i<n-1;i++){
+        double sigma2_ms=GetProcessNoise(i,XYZ);
+        double Ri=sqrt(XYZ(i,0)*XYZ(i,0)+XYZ(i,1)*XYZ(i,1));
+        double zi=XYZ(i,2);
+        CRPhi_ms(m,k)+=sigma2_ms*(Rk-Ri)*(Rm-Ri)/cosl/cosl;
+        CR_ms(m,k)+=sigma2_ms*(zk-zi)*(zm-zi)/sinl/sinl/sinl/sinl;
+      }
+      CRPhi_ms(k,m)=CRPhi_ms(m,k);
+      CR_ms(k,m)=CR_ms(m,k);
+    }
+  }
+  CRPhi+=CRPhi_ms;
+  CR+=CR_ms;
+
   // Correction for non-normal incidence of track on FDC 
   CRPhi=C*CRPhi*C+S*CR*S;
  
   return NOERROR;
+}
+
+// Variance of projected multiple scattering angle for a single layer 
+double DFDCSegment_factory::GetProcessNoise(unsigned int i,DMatrix XYZ){
+  double cosl=cos(atan(tanl));
+  double sinl=sin(atan(tanl));
+ 
+  // Try to prevent division-by-zero errors 
+  if (sinl<EPS) sinl=EPS;
+  if (cosl<EPS) cosl=EPS;
+
+  // Get Bfield
+  double x=XYZ(i,0);
+  double y=XYZ(i,1);
+  double z=XYZ(i,2);
+  double Bx,By,Bz,B;
+  bfield->GetField(x,y,z,Bx,By,Bz);
+  B=sqrt(Bx*Bx+By*By+Bz*Bz);
+   
+  // Momentum
+  double p=0.003*B*rc/cosl;
+  // Assume pion
+  double beta=p/sqrt(p*p+0.14*0.14);
+ 
+  //Materials: copper, Kapton, Mylar, Air, Argon, CO2
+  double thickness[6]={4e-4,50e-4,13e-4,1.0,0.4,0.6};
+  double density[6]={8.96,1.42,1.39,1.2931e-3,1.782e-3,1.977e-3};
+  double X0[6]={12.86,40.56,39.95,36.66,19.55,36.2};
+  double material_sum=0.;
+  for (unsigned int j=0;j<6;j++){
+    material_sum+=thickness[j]*density[j]/X0[j];
+  }
+ 
+  // Variance from multiple scattering
+  return (0.0136*0.0136/p/p/beta/beta*material_sum/sinl
+	  *(1.+0.038*log(material_sum/sinl))
+	  *(1.+0.038*log(material_sum/sinl)));
 }
 
 // Calculate the (normal) eigenvector corresponding to the eigenvalue lambda
