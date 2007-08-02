@@ -9,21 +9,6 @@
 
 #include <math.h>
 
-#define TDC_MC_RES     0.06   // TDC resolution in [ns]
-#define C_EFFECTIVE    15.0   // effective signal speed in paddle same as in hitFTOF.c
-#define ATTEN_LENGTH   150    // effective attenuation legth in paddle same as in hitFTOF.c
-#define TOF_POS_RES    3.0    // TOF position resolution [cm] has to be determined experimentally
-                              // but depends on timing resolution and might be position dependent
-
-#define TOF_ADC_TO_E      1.   // convert ADC to energy deposition in paddle needs to be detemined
-
-// the following has to be done better by modifing DTOFGeometry class
-#define HALFPADDLE     126.   // half paddle legth
-
-void debugfuncMCHit(){
-  //do nothing
-}
-
 //------------------
 // evnt
 //------------------
@@ -43,8 +28,8 @@ jerror_t DTOFMCHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
       hit->id          = mcresponse->id;
       hit->orientation = mcresponse->orientation;
 
-      float tn =  float(mcresponse->TDC_north)*TDC_MC_RES;
-      float ts =  float(mcresponse->TDC_south)*TDC_MC_RES;
+      float tn =  float(mcresponse->TDC_north)*TDC_RES_MC;
+      float ts =  float(mcresponse->TDC_south)*TDC_RES_MC;
       float en =  float(mcresponse->ADC_north);
       float es =  float(mcresponse->ADC_south);
       // mean time
@@ -67,6 +52,7 @@ jerror_t DTOFMCHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
       float emean = (en+es)/2.; 
                                                     
+      if (emean>2048) emean = 2048; // overflow
       emean = emean*TOF_ADC_TO_E;
       hit->dE = emean;
 
@@ -80,7 +66,6 @@ jerror_t DTOFMCHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
       hit->dE       = -999.;	
     }
 
-    debugfuncMCHit();
 
     _data.push_back(hit);
 
@@ -119,4 +104,28 @@ const string DTOFMCHit_factory::toString(void)
   
 	
   return _table;
+}
+
+//------------------
+// brun
+//------------------
+jerror_t DTOFMCHit_factory::brun(JEventLoop *loop, int eventnumber)
+{
+  map<string, double> tofparms;
+  
+  if ( !loop->GetCalib("TOF/tof_parms", tofparms)){
+    cout<<"DTOFMCHit_factory: loading values from TOF data base"<<endl;
+  } else {
+    cout << "DTOFMCHit_factory: Error loading values from TOF data base" <<endl;
+  }
+  
+  ATTEN_LENGTH   =    tofparms["TOF_ATTEN_LENGTH"]; 
+  C_EFFECTIVE    =    tofparms["TOF_C_EFFECTIVE"];
+  TDC_RES_MC     =    tofparms["TOF_TDC_RES_MC"];
+  HALFPADDLE     =    tofparms["TOF_HALFPADDLE"];
+  TOF_POS_RES    =    tofparms["TOF_POS_RES"];
+  TOF_ADC_TO_E   =    tofparms["TOF_ADC_TO_E"];
+  
+  return NOERROR;
+  
 }
