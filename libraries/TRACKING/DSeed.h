@@ -71,8 +71,8 @@ class DSeed{
 
 			phizangle					= seed.phizangle;
 			z_vertex						= seed.z_vertex;
-			phizangle_hist = new TH1F(*seed.phizangle_hist);
-			zvertex_hist = new TH1F(*seed.zvertex_hist);
+			phizangle_hist				= (TH1F*)seed.phizangle_hist->Clone();
+			zvertex_hist				= (TH1F*)seed.zvertex_hist->Clone();
 		}
 		virtual ~DSeed(void){
 			if(phizangle_hist)delete phizangle_hist;
