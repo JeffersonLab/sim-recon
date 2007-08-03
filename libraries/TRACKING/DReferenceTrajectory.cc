@@ -124,6 +124,11 @@ if(Nswim_steps<1)_DBG__;
 			step = swim_step;
 		}
 	}
+	if(step==NULL){
+		_DBG_<<"\"hit\" passed to DistToRT(DVector3) out of range!"<<endl;
+		hit.Print();
+		return 1.0E6;
+	}
 	
 	// Next, define a point on the helical segment defined by the
 	// swim step it the RT coordinate system. The directions of
