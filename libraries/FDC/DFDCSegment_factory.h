@@ -58,6 +58,10 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 						   DMatrix &Q);
 	        jerror_t GetHelicalTrackPosition(double z, DMatrix S,
 	                  double &xpos,double &ypos);
+		jerror_t GetHelicalTrackPosition(double z,
+						 const DFDCSegment *segment,
+						 double &xpos,
+						 double &ypos);
 		jerror_t GetTrackProjectionMatrix(double z,DMatrix S,
 						  DMatrix &H);
 		jerror_t GetStateTransportMatrix(double oldx, double oldy,
@@ -105,6 +109,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		// Track parameters
 		double tanl,z0,D,kappa,phi0;
 		double var_tanl,Phi1;
+		double charge;
 	
 		vector<fdc_track_t>fdc_track;
 		double chisq;

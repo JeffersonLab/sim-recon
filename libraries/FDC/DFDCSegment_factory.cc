@@ -258,8 +258,8 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
   Phi1=atan2(delta_y,delta_x);
   double z1=XYZ(0,2);
   double var_R1=CR(0,0);
-  for (unsigned int k=0;k<n;k++){   
-    double sperp=(XYZ(k,2)-z1)/tanl;
+  for (unsigned int k=0;k<n;k++){       
+    double sperp=charge*(XYZ(k,2)-z1)/tanl;
     double Phi=atan2(XYZ(k,1),XYZ(k,0));
     double sinPhi=sin(Phi);
     double cosPhi=cos(Phi);
@@ -644,6 +644,32 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   error=RiemannLineFit(num_points,XYZ0,CR,XYZ);
   if (error!=NOERROR) return error;
 
+  // Linear regression to find charge  
+  double var=0.; 
+  double sumv=0.;
+  double sumy=0.;
+  double sumx=0.;
+  double sumxx=0.,sumxy=0,Delta;
+  double slope,r2;
+  for (unsigned int k=0;k<points.size();k++){   
+    double tempz=points[k]->wire->origin(2);
+    double phi_z=atan2(points[k]->y,points[k]->x);
+    r2=points[k]->x*points[k]->x
+      +points[k]->y*points[k]->y;
+    var=(points[k]->x*points[k]->x*points[k]->cov(0,0)
+	 +points[k]->y*points[k]->y*points[k]->cov(1,1))/r2/r2;
+    sumv+=1./var;
+    sumy+=phi_z/var;
+    sumx+=tempz/var;
+    sumxx+=tempz*tempz/var;
+    sumxy+=phi_z*tempz/var;
+  }
+  Delta=sumv*sumxx-sumx*sumx;
+  slope=(sumv*sumxy-sumy*sumx)/Delta; 
+  
+  // Guess particle charge (+/-1);
+  if (slope<0.) charge=-1.;
+
   double r1sq=XYZ(0,0)*XYZ(0,0)+XYZ(0,1)*XYZ(0,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
 
@@ -666,11 +692,20 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   error=RiemannLineFit(num_points,XYZ0,CR,XYZ);
   if (error!=NOERROR) return error;
   
+  // Final update to covariance matrices
+  r1sq=XYZ(0,0)*XYZ(0,0)+XYZ(0,1)*XYZ(0,1);
+  UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
+  
   // Store residuals and path length for each measurement
   chisq=0.;
   for (unsigned int m=0;m<points.size();m++){
     fdc_track_t temp;
     temp.hit_id=m;
+    double sperp=charge*(XYZ(m,2)-XYZ(0,2))/tanl; 
+    double sinp=sin(Phi1+sperp/rc);
+    double cosp=cos(Phi1+sperp/rc);
+    XYZ(m,0)=xc+rc*cosp;
+    XYZ(m,1)=yc+rc*sinp;
     temp.dx=XYZ(m,0)-XYZ0(m,0); // residuals
     temp.dy=XYZ(m,1)-XYZ0(m,1);
     temp.s=(XYZ(m,2)-Z_TARGET)/sin(atan(tanl)); // path length
@@ -713,6 +748,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
     
       // Clear track parameters
       kappa=tanl=D=z0=phi0=Phi1=xc=yc=rc=0.;
+      charge=1.;
       
       // Point in the last plane in the package 
       double x=points[i]->x;
@@ -770,43 +806,16 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	CorrectPoints(neighbors,XYZ);
 	error=RiemannHelicalFit(neighbors,XYZ); 
       }
-
-      // Linear regression to find charge  
-      double var=0.; 
-      double sumv=0.;
-      double sumy=0.;
-      double sumx=0.;
-      double sumxx=0.,sumxy=0,Delta;
-      double slope,r2;
-      for (unsigned int k=0;k<neighbors.size();k++){   
-	double tempz=neighbors[k]->wire->origin(2);
-	double phi_z=atan2(neighbors[k]->y,neighbors[k]->x);
-	r2=neighbors[k]->x*neighbors[k]->x
-	  +neighbors[k]->y*neighbors[k]->y;
-	var=(neighbors[k]->x*neighbors[k]->x*neighbors[k]->cov(0,0)
-	     +neighbors[k]->y*neighbors[k]->y*neighbors[k]->cov(1,1))/r2/r2;
-	sumv+=1./var;
-	sumy+=phi_z/var;
-	sumx+=tempz/var;
-	sumxx+=tempz*tempz/var;
-	sumxy+=phi_z*tempz/var;
-      }
-      Delta=sumv*sumxx-sumx*sumx;
-      slope=(sumv*sumxy-sumy*sumx)/Delta; 
-      
-      // Guess particle charge (+/-1);
-      double q=1.;   
-      if (slope<0.) q=-1.;
       
       if (rc>0.){
 	// guess for curvature
-	kappa=q/2./rc;  
+	kappa=charge/2./rc;  
 	
 	// Estimate for azimuthal angle
 	phi0=atan2(-xc,yc); 
-	if (q<0) phi0+=M_PI;
+	if (charge<0) phi0+=M_PI;
 	// Look for distance of closest approach nearest to target
-	D=-q*rc-xc/sin(phi0);
+	D=-charge*rc-xc/sin(phi0);
       }
       
       // Initialize seed track parameters
@@ -981,6 +990,20 @@ jerror_t DFDCSegment_factory::GetTrackProjectionMatrix(double z,
   H(0,4)=(sin(phi)*sin(2.*kappa*sperp)-cos(phi)*cos(2.*kappa*sperp))/tanl;
   H(1,4)=-(sin(phi)*sin(2.*kappa*sperp)+cos(phi)*cos(2.*kappa*sperp))/tanl;
   
+  return NOERROR;
+}
+
+// Track position using Riemann Helical fit parameters
+jerror_t DFDCSegment_factory::GetHelicalTrackPosition(double z,
+                                            const DFDCSegment *segment,
+                                                      double &xpos,
+                                                      double &ypos){
+  double charge=segment->S(0,0)/fabs(segment->S(0,0));
+  double sperp=charge*(z-segment->hits[0]->wire->origin(2))/segment->S(3,0);
+ 
+  xpos=segment->xc+segment->rc*cos(segment->Phi1+sperp/segment->rc);
+  ypos=segment->yc+segment->rc*sin(segment->Phi1+sperp/segment->rc);
+ 
   return NOERROR;
 }
 
