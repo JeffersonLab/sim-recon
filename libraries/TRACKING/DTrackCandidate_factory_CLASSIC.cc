@@ -98,7 +98,7 @@ jerror_t DTrackCandidate_factory_CLASSIC::init(void)
 	bfield = NULL;
 	
 	char suffix[32];
-	sprintf(suffix,"_%08x", (unsigned int)pthread_self());
+	sprintf(suffix,"_%08x_classic", (unsigned int)pthread_self());
 	
 	// Since there is a subclass of this one (DTrackCandidate_factory_CLASSIC__THROWN)
 	// that does not need these histograms, we check if we are a true 
