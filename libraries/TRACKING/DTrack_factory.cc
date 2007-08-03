@@ -352,6 +352,13 @@ DTrack* DTrack_factory::FitTrack(DReferenceTrajectory* rt, int candidateid, cons
 	track->candidateid = candidateid;
 	track->chisq	= chisq;
 	track->rt		= rt;
+	
+	// Fill in DKinematicData part
+	track->setMass(0.0);
+	track->setMomentum(vertex_mom);
+	track->setPosition(vertex_pos);
+	track->setCharge(rt->q);
+	//track->setErrorMatrix(last_covariance);
 
 	// Fill debugging histos if requested
 	if(DEBUG_HISTS){
@@ -922,6 +929,9 @@ DTrack_factory::fit_status_t DTrack_factory::LeastSquares(DVector3 &start_pos, D
 	// is check for it and punt rather than return a nonsensical
 	// value.
 	if(B.E2Norm() > LEAST_SQUARES_MAX_E2NORM)return FIT_FAILED;
+	
+	// Copy the B matrix into last_covariance to later copy into DTrack
+	last_covariance = B;
 
 	// Calculate step direction and magnitude	
 	DMatrix delta_state = B*Ft*Vinv*m;

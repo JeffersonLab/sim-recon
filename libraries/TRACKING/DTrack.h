@@ -10,10 +10,11 @@
 
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
+#include "PID/DKinematicData.h"
 
 class DReferenceTrajectory;
 
-class DTrack:public JObject{
+class DTrack:public DKinematicData{
 	public:
 		HDCLASSDEF(DTrack);
 		

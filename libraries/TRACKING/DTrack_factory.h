@@ -97,6 +97,7 @@ class DTrack_factory:public JFactory<DTrack>{
 		std::vector<double> sigmav;
 		double Ngood_chisq_hits;
 		DCoordinateSystem *target;
+		DMatrix last_covariance;
 
 		const JGeometry *dgeom;
 		const DMagneticFieldMap *bfield;
