@@ -97,7 +97,7 @@ jerror_t DTrackCandidate_factory::init(void)
 		sprintf(name,"phi_z_angle%s",suffix);
 		seed.phizangle_hist = new TH1F(name,"phi_z_angle", 1000, -M_PI, M_PI);
 		phizangle_bin_size = seed.phizangle_hist->GetBinCenter(2) - seed.phizangle_hist->GetBinCenter(1);
-		
+
 		sprintf(name,"z_vertex%s",suffix);
 		seed.zvertex_hist = new TH1F(name,"z_vertex", 140, TARGET_Z_MIN, TARGET_Z_MAX);
 		z_vertex_bin_size = seed.zvertex_hist->GetBinCenter(2) - seed.zvertex_hist->GetBinCenter(1);
@@ -124,13 +124,7 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop *loop, int runnumber)
 // fini
 //------------------
 jerror_t DTrackCandidate_factory::fini(void)
-{
-	// seems errors are sometimes caused by deleting these ???
-	eventLoop->GetJApplication()->Lock();
-	if(seed.phizangle_hist)delete seed.phizangle_hist;
-	if(seed.zvertex_hist)delete seed.zvertex_hist;
-	eventLoop->GetJApplication()->Unlock();
-	
+{	
 	return NOERROR;
 }
 
