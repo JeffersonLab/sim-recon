@@ -63,13 +63,11 @@ void DPhoton::makeErrorMatrix( const DMatrixDSym& aSigmas )
    DMatrix A(7,7);
    for (int i = 0; i < 3; i++) {
 	for ( int j = 0; j <3; j++) {
-		
 		A[i][j] = f*( R2*DELTA(i,j) - r(i)*r(j) );
-                A[j][i] = A[i][j];
                 A[i][j+4] = - A[i][j];
-
  	}
   }
+
 
 // fill energy part and remember: relation between energy and photon 
 // position in calorimeter is neglected!
@@ -79,20 +77,23 @@ void DPhoton::makeErrorMatrix( const DMatrixDSym& aSigmas )
     } 
 
 // fill spatial part where: dp_r_x/dp_x_c = - dp_r_x/dp_x_v ....
-   for (int i = 4; i < 7; i++) {
+   for (int i = 0; i < 3; i++) {
 	for ( int j = 0; j <3; j++) {
-		int k=j+4;
-		A[i][j] = DELTA(i,k);
-                A[j][i] = A[i][j];
-                A[i][j+4] = - A[i][j];
-
+		int ik=i+4;
+		int jk=j+4;
+		A[ik][j] = DELTA(i,j);
+                A[ik][jk] = - A[ik][j];
  	}
   }
+  
 
    DMatrixDSym result = aSigmas; 
-
+   
    //setErrorMatrix( result.Similarity(A) );
    result = result.Similarity(A); 
+
+  cout << " Print result: " << endl;
+  result.Print();
    setErrorMatrix( result );
 
 }
