@@ -1,22 +1,23 @@
-// $Id: DTOFMCHit_factory.h 1899 2006-07-13 16:29:56Z davidl $
-//
-//    File: DTOFMCHit_factory.h
-// Created: Mon Jul  9 16:21:12 EDT 2007
+//    File: DTOFHit_factory_MC.h
+// Created: Thu Aug  9 11:56:15 EDT 2007
 // Creator: B.Zihlmann 
-//
+// comment: replacement for DTOFMCHit_factory.h: now DTOFHIT.h will
+//          be the same for real data and MC data
+//  
 
-#ifndef _DTOFMCHit_factory_
-#define _DTOFMCHit_factory_
+#ifndef _DTOFHit_factory_MC
+#define _DTOFHit_factory_MC
 
 #include "JANA/JFactory.h"
 #include "JANA/JEventLoop.h"
-#include "DTOFMCHit.h"
+#include "DTOFHit.h"
 
-class DTOFMCHit_factory:public JFactory<DTOFMCHit>{
+class DTOFHit_factory_MC:public JFactory<DTOFHit>{
  public:
-  DTOFMCHit_factory(){};
-  ~DTOFMCHit_factory(){};
+  DTOFHit_factory_MC(){};
+  ~DTOFHit_factory_MC(){};
   const string toString(void);
+  const char* Tag(void){return "MC";} // Monte Carlo TAG
   
  private:
   double TDC_RES_MC ;      // TDC resolution in [ns]
@@ -33,5 +34,5 @@ class DTOFMCHit_factory:public JFactory<DTOFMCHit>{
   jerror_t evnt(JEventLoop *eventLoop, int eventnumber);  ///< Called every event.
 };
 
-#endif // _DTOFMCHit_factory_
+#endif // _DTOFHit_factory_MC
 

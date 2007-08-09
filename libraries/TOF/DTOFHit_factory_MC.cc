@@ -1,10 +1,11 @@
-// $Id: DTOFMCHit_factory.cc 2710 2007-06-22 15:09:48Z zihlmann $
-//
-//    File: DTOFMCHit_factory.cc
-// Created: Mon Jul  9 16:34:24 EDT 2007
+//    File: DTOFHit_factory_MC.cc
+// Created: Thu Aug  9 11:56:15 EDT 2007
 // Creator: B. Zihlmann
+// comment: DTOFHit_factory_MC.cc replaces DTOFMCHit_factory.cc using the TAG "MC"
+//          the DTOFHit.h data structure will be the same for real data and MC data
 //
-#include "DTOFMCHit_factory.h"
+
+#include "DTOFHit_factory_MC.h"
 #include "DTOFMCResponse.h"
 
 #include <math.h>
@@ -12,7 +13,7 @@
 //------------------
 // evnt
 //------------------
-jerror_t DTOFMCHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
+jerror_t DTOFHit_factory_MC::evnt(JEventLoop *eventLoop, int eventnumber)
 {
 
   vector<const DTOFMCResponse*> mcresponses;
@@ -21,12 +22,13 @@ jerror_t DTOFMCHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
   for (unsigned int i = 0; i < mcresponses.size(); i++){
 
     const DTOFMCResponse *mcresponse = mcresponses[i];
-    DTOFMCHit *hit = new DTOFMCHit;
+    DTOFHit *hit = new DTOFHit;
 
     // calculate meantime and time difference of MC data
     if (mcresponse->TDC_north>0 && mcresponse->TDC_south>0){
       hit->id          = mcresponse->id;
       hit->orientation = mcresponse->orientation;
+      hit->bar = mcresponse->bar;
 
       float tn =  float(mcresponse->TDC_north)*TDC_RES_MC;
       float ts =  float(mcresponse->TDC_south)*TDC_RES_MC;
@@ -40,15 +42,20 @@ jerror_t DTOFMCHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
       // position 
       float pos = C_EFFECTIVE*td/2.;
       
-      hit->meantime  = tm;
-      hit->timediff = td;
-      hit->pos      = pos;
-      hit->dpos     = TOF_POS_RES; // see above only true if hit seen o both sides
+      hit->t_north = tn;
+      hit->t_south = ts;
 
-      // mean energy deposition weight by arrival time at PMT (favor closer PMT)
+      hit->meantime  = tm;
+      hit->timediff  = td;
+      hit->pos       = pos;
+      hit->dpos      = TOF_POS_RES; // see above only true if hit seen o both sides
+
+      // mean energy deposition at the location of the hit position
       // devide by two to be comparable with single PMT hits
       en *= exp((HALFPADDLE-pos)/ATTEN_LENGTH) ;
       es *= exp((HALFPADDLE+pos)/ATTEN_LENGTH) ;
+      hit->E_north = en;
+      hit->E_south = es;
 
       float emean = (en+es)/2.; 
                                                     
@@ -57,8 +64,19 @@ jerror_t DTOFMCHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
       hit->dE = emean;
 
     } else {
+
+      float tn =  float(mcresponse->TDC_north)*TDC_RES_MC;
+      float ts =  float(mcresponse->TDC_south)*TDC_RES_MC;
+      float en =  float(mcresponse->ADC_north);
+      float es =  float(mcresponse->ADC_south);
+
       hit->id          = mcresponse->id;
       hit->orientation = mcresponse->orientation;
+      hit->bar         = mcresponse->bar;
+      hit->t_north = tn;
+      hit->E_north = en;
+      hit->t_south = ts;
+      hit->E_south = es;
       hit->meantime = -999.;
       hit->timediff = -999.;
       hit->pos      = -999.;
@@ -78,7 +96,7 @@ jerror_t DTOFMCHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 //------------------
 // toString
 //------------------
-const string DTOFMCHit_factory::toString(void)
+const string DTOFHit_factory_MC::toString(void)
 {
   // Ensure our Get method has been called so _data is up to date
   Get();
@@ -88,11 +106,15 @@ const string DTOFMCHit_factory::toString(void)
 
 	
   for(unsigned int i=0; i<_data.size(); i++){
-    DTOFMCHit *tofhit = _data[i];
+    DTOFHit *tofhit = _data[i];
 
     printnewrow();
     printcol("%d",	tofhit->id );
     printcol("%d",	tofhit->orientation );
+    printcol("%2.3f",	tofhit->t_north );
+    printcol("%2.3f",	tofhit->E_north );
+    printcol("%2.3f",	tofhit->t_south );
+    printcol("%2.3f",	tofhit->E_south );
     printcol("%2.3f",	tofhit->pos );
     printcol("%2.3f",	tofhit->dpos );
     printcol("%1.3f",	tofhit->dE );
@@ -109,14 +131,14 @@ const string DTOFMCHit_factory::toString(void)
 //------------------
 // brun
 //------------------
-jerror_t DTOFMCHit_factory::brun(JEventLoop *loop, int eventnumber)
+jerror_t DTOFHit_factory_MC::brun(JEventLoop *loop, int eventnumber)
 {
   map<string, double> tofparms;
   
   if ( !loop->GetCalib("TOF/tof_parms", tofparms)){
-    cout<<"DTOFMCHit_factory: loading values from TOF data base"<<endl;
+    cout<<"DTOFHit_factory_MC: loading values from TOF data base"<<endl;
   } else {
-    cout << "DTOFMCHit_factory: Error loading values from TOF data base" <<endl;
+    cout << "DTOFHit_factory_MC: Error loading values from TOF data base" <<endl;
   }
   
   ATTEN_LENGTH   =    tofparms["TOF_ATTEN_LENGTH"]; 
