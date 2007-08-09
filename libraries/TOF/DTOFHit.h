@@ -16,12 +16,17 @@ class DTOFHit:public JObject{
         HDCLASSDEF(DTOFHit);
 
         int orientation;  // 0: vertical,  1: horizontal
-	//        int end;          // 0: left/top,  1: right/bottom
-        float y;          // x/y position of bar center
-        float t_north;          // time of light at end of bar  (calibrated) 
-        float E_north;          // attenuated energy deposition  (calibrated)
-        float t_south;          // time of light at end of bar  (calibrated) 
-        float E_south;          // attenuated energy deposition  (calibrated)
+	int bar;          // bar number
+        float t_north;    // time of light at end of bar  (calibrated) 
+        float E_north;    // attenuated energy deposition  (calibrated)
+        float t_south;    // time of light at end of bar  (calibrated) 
+        float E_south;    // attenuated energy deposition  (calibrated)
+
+        float meantime;   // equivalent to time of flight
+        float timediff;    // north - south time difference
+        float pos;        // hit position in paddle
+        float dpos;       // estimated uncertainty in hitposition
+        float dE;         // weighted energy deposition
 
 };
 

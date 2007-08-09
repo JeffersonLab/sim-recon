@@ -26,7 +26,6 @@ jerror_t DTOFHit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
     hit->id          = mcresponse->id;
     hit->orientation = mcresponse->orientation;
-    hit->y           = mcresponse->y;
     hit->t_north     = mcresponse->t_north;
     hit->E_north     = mcresponse->E_north;
     hit->t_south     = mcresponse->t_south;
@@ -58,7 +57,6 @@ const string DTOFHit_factory::toString(void)
     printnewrow();
     printcol("%d",	tofhit->id );
     printcol("%d",	tofhit->orientation );
-    printcol("%2.3f",	tofhit->y );
     printcol("%1.3f",	tofhit->t_north );
     printcol("%1.3f",	tofhit->E_north );    
     printcol("%1.3f",	tofhit->t_south );
