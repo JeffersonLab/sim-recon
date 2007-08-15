@@ -132,6 +132,7 @@
 #include "geant321/gckine.inc"
 #include "geant321/gcunit.inc"
 #include "geant321/gcphys.inc"
+#include "geant321/gcscan.inc"
 #include "hdtrackparams.inc"
 #include "backgrounds.inc"
 *
@@ -178,6 +179,12 @@ C..geant..
       IANNI=1
       IPHOT=1
       IHADR=1
+*
+*             Make the default origin for the particle gun at 0,0,65cm.
+*
+      VSCAN(1)=0
+      VSCAN(2)=0
+      VSCAN(3)=65
 *
 *             Initialize GEANT/ZBOOK data structures
 *

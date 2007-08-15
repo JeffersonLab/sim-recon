@@ -7,7 +7,7 @@ BINDIR = ../bin.$(OStype)
 # to enable custom versions of the simulation program.
 #NTUPLE_OPTIONS = -DBACKGROUND_STUDIES
 #NTUPLE_OPTIONS = -DBACKGROUND_PROFILING
-#NTUPLE_OPTIONS = -DHISTOGRAM_MATERIAL_SEEN_BY_FIRST_TRACK
+NTUPLE_OPTIONS = -DHISTOGRAM_MATERIAL_SEEN_BY_FIRST_TRACK
 #NTUPLE_OPTIONS = -DWERNERS_VTX_NTUPLE
 #NTUPLE_OPTIONS = -DCERENKOV_PID_NTUPLE
 #NTUPLE_OPTIONS = -DFCAL_SPLASH_NTUPLE
@@ -100,14 +100,14 @@ CERNLIB = $(CERN_ROOT)/bin/cernlib
 
 hdgeant++: gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXFIXED) \
            $(MISC_FIXES)
-	$(F77) -o $@ gxint.o uginit.o uglast.o $(FOPTS) \
+	$(F77) -mtune=generic -o $@ gxint.o uginit.o uglast.o $(FOPTS) \
 	   $(AUXF) $(AUXC) $(GXFIXED) $(MISC_FIXES) \
 	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
 	   `cernlib -v $(CERN_LEVEL) geant321 pawlib graflib/Motif packlib mathlib` \
 	   $(EXPORTDYNAMIC) $(GLIBS)
 
 hdgeant: hdgeant.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(MISC_FIXES)
-	$(F77) $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(STATIC) $(FOPTS) \
+	$(F77) -mtune=generic $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(STATIC) $(FOPTS) \
 	   hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC) \
 	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
 	  `$(CERNLIB) geant321 mathlib graflib grafX11` \
