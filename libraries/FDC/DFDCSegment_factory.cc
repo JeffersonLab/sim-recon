@@ -680,7 +680,25 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   // Preliminary line fit
   error=RiemannLineFit(num_points,XYZ0,CR,XYZ);
   if (error!=NOERROR) return error;
-    
+
+  // Linear regression to find charge
+  for (unsigned int k=0;k<points.size();k++){   
+    double tempz=points[k]->wire->origin(2);
+    double phi_z=atan2(XYZ(k,1),XYZ(k,0));
+    r2=XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1);
+    var=(CRPhi(k,k)+phi_z*phi_z*CR(k,k))/r2;
+    sumv+=1./var;
+    sumy+=phi_z/var;
+    sumx+=tempz/var;
+    sumxx+=tempz*tempz/var;
+    sumxy+=phi_z*tempz/var;
+  }
+  Delta=sumv*sumxx-sumx*sumx;
+  slope=(sumv*sumxy-sumy*sumx)/Delta; 
+  
+  // Guess particle charge (+/-1);
+  if (slope<0.) charge=-1.;
+  
   r1sq=XYZ(0,0)*XYZ(0,0)+XYZ(0,1)*XYZ(0,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
 
@@ -691,6 +709,24 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   // Final line fit
   error=RiemannLineFit(num_points,XYZ0,CR,XYZ);
   if (error!=NOERROR) return error;
+
+  // Linear regression to find charge
+  for (unsigned int k=0;k<points.size();k++){   
+    double tempz=points[k]->wire->origin(2);
+    double phi_z=atan2(XYZ(k,1),XYZ(k,0));
+    r2=XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1);
+    var=(CRPhi(k,k)+phi_z*phi_z*CR(k,k))/r2;
+    sumv+=1./var;
+    sumy+=phi_z/var;
+    sumx+=tempz/var;
+    sumxx+=tempz*tempz/var;
+    sumxy+=phi_z*tempz/var;
+  }
+  Delta=sumv*sumxx-sumx*sumx;
+  slope=(sumv*sumxy-sumy*sumx)/Delta; 
+  
+  // Guess particle charge (+/-1);
+  if (slope<0.) charge=-1.;
   
   // Final update to covariance matrices
   r1sq=XYZ(0,0)*XYZ(0,0)+XYZ(0,1)*XYZ(0,1);
@@ -803,10 +839,31 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
        
       // Correct for the Lorentz effect given DOCAs
       if (error==NOERROR){
+	// Correct for the Lorentz effect given DOCAs
 	CorrectPoints(neighbors,XYZ);
+
+	// Fit to "space" points
 	error=RiemannHelicalFit(neighbors,XYZ); 
+
+	// Final correction 
+	if (error==NOERROR){
+	  CorrectPoints(neighbors,XYZ);
+	  for (unsigned int m=0;m<neighbors.size();m++){
+	    fdc_track_t temp;
+	    temp.hit_id=m;
+	    double sperp=charge*(XYZ(m,2)-XYZ(0,2))/tanl; 
+	    double sinp=sin(Phi1+sperp/rc);
+	    double cosp=cos(Phi1+sperp/rc);
+	    XYZ(m,0)=xc+rc*cosp;
+	    XYZ(m,1)=yc+rc*sinp;
+	    temp.dx=XYZ(m,0)-neighbors[m]->x; // residuals
+	    temp.dy=XYZ(m,1)-neighbors[m]->y;
+	    temp.s=(XYZ(m,2)-Z_TARGET)/sin(atan(tanl)); // path length
+	    fdc_track[m]=temp;	
+	  } 
+	}
       }
-      
+
       if (rc>0.){
 	// guess for curvature
 	kappa=charge/2./rc;  
@@ -1047,9 +1104,9 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
     // Place holder for variance for position along wire
     double sigy2=MAX_DEFLECTION*MAX_DEFLECTION/3.;
       
-    // Rotate residual into local coordinate system
-    double w=fdc_track[m].dx*cosangle-fdc_track[m].dy*sinangle;
-    // .. and use it to determine which sign to use for the drift time data
+    // Find difference between point on helical path and wire
+    double w=x*cosangle-y*sinangle-point->w;
+     // .. and use it to determine which sign to use for the drift time data
     double sign=(w>0?1.:-1.);
 
     // dip angle
