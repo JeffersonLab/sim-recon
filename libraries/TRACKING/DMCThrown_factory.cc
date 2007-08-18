@@ -28,15 +28,18 @@ const string DMCThrown_factory::toString(void)
 	GetNrows();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("      id: type:  q:     p:    E: theta:   phi:   mass:     x:     y:     z:");
+	printheader("  myid: parent: type: pdgtype: mech:  q:     p:    E: theta:   phi:   mass:     x:     y:     z:");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
 		DMCThrown * mcthrown = _data[i];
 
 		printnewrow();
 		
-		printcol("%lx", mcthrown->id);
+		printcol("%d", mcthrown->myid);
+		printcol("%d", mcthrown->parentid);
 		printcol("%d", mcthrown->type);
+		printcol("%d", mcthrown->pdgtype);
+		printcol("%d", mcthrown->mech);
 		printcol("%+d", (int)mcthrown->q);
 		printcol("%3.3f", mcthrown->p);
 		printcol("%3.1f", mcthrown->E);

@@ -92,7 +92,7 @@ void write_hddm_event_(int *iev, float *beammom, int *nlnd, klund_t *klund, plun
 	
 	for(i=0;i<*nlnd; i++){
 		double E2;
-		if(klund[i].geantid==0)continue;
+		//if(klund[i].geantid==0)continue;
 		
 		E2 = pow(plund[i].px,2.0) + pow(plund[i].py,2.0) + pow(plund[i].pz,2.0) + pow(plund[i].mass,2.0);
 		ps->in[ps->mult].type = klund[i].geantid;

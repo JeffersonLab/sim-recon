@@ -18,6 +18,10 @@ class DMCThrown:public DKinematicData{
 		HDCLASSDEF(DMCThrown);
 		
 		int type;			///< GEANT particle ID
+		int pdgtype;		///< PDG particle type (not used by GEANT)
+		int myid;			///< id of this particle from original generator
+		int parentid;		///< id of parent of this particle from original generator
+		int mech;			///< production mechanism of this partcle (generator specific)
 		float q;				///< electric charge
 		float p;				///< Total momentum in GeV/c
 		float E;				///< Total energy in GeV
