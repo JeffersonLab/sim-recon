@@ -498,6 +498,10 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(s_HDDM_t *hddm_s,  JFactory<DMCThro
 							mcthrown->y = origin->vy;
 							mcthrown->z = origin->vz;
 							mcthrown->type = product->type;
+							mcthrown->myid = product->id;
+							mcthrown->parentid = product->parentid;
+							mcthrown->mech = product->mech;
+							mcthrown->pdgtype = product->pdgtype;
 							mcthrown->q = (float)ParticleCharge(product->type);
 							mcthrown->mass = ParticleMass(product->type);
 							mcthrown->E = product->momentum->E;

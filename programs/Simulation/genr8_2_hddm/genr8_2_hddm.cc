@@ -83,6 +83,10 @@ int main(int narg, char *argv[])
 			if(type<0)type = atoi(typestr);
 			
 			ps->in[ps->mult].type = (Particle_t)type;
+			ps->in[ps->mult].pdgtype = 0;		/* don't bother with the PDG type here */
+			ps->in[ps->mult].id = i+1;			/* unique value for this particle within the event */
+			ps->in[ps->mult].parentid = 0;	/* All internally generated particles have no parent */
+			ps->in[ps->mult].mech = 0;			/* maybe this should be set to something? */
 			ps->in[ps->mult].momentum = make_s_Momentum();
 			ps->in[ps->mult].momentum->px = px;
 			ps->in[ps->mult].momentum->py = py;

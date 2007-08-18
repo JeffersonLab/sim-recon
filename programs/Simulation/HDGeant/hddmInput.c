@@ -27,6 +27,12 @@
  *      or would have passed through the midplane if it had gotten that far.
  *
  * Revision history:
+ *
+ * > Aug 17, 2007 - David Lawrence
+ * Fill in id, parentid, pdgtype, and mech fields of reactions objects in HDDM.
+ * Mostly zeros, but it makes it clear the fields are invalid and allows
+ * cleaner printing.
+ *
  * > Nov 17, 2006 - Richard Jones
  * 	Added code to load_event that sets the Geant tofg parameter so
  *      that the start time of the event conforms to note (2) above.
@@ -252,6 +258,10 @@ int storeInput (int runNo, int eventNo, int ntracks)
          ps->mult = 0;
       }
       ps->in[ps->mult].type = kind;
+		ps->in[ps->mult].pdgtype = 0;		/* don't bother with the PDG type here */
+		ps->in[ps->mult].id = itra;		/* unique value for this particle within the event */
+		ps->in[ps->mult].parentid = 0;	/* All internally generated particles have no parent */
+		ps->in[ps->mult].mech = 0;			/* maybe this should be set to something? */
       ps->in[ps->mult].momentum = make_s_Momentum();
       ps->in[ps->mult].momentum->px = plab[0];
       ps->in[ps->mult].momentum->py = plab[1];

@@ -129,6 +129,10 @@ s_Products_t* make_s_Products(int n)
    for (i=0; i<n; i++) {
       s_Product_t* pp = &p->in[i];
       pp->decayVertex = 0;
+      pp->id = 0;
+      pp->mech = 0;
+      pp->parentid = 0;
+      pp->pdgtype = 0;
       pp->type = 0;
       pp->momentum = (s_Momentum_t*)&hddm_nullTarget;
       pp->properties = (s_Properties_t*)&hddm_nullTarget;
@@ -863,7 +867,7 @@ char HDDM_s_DocumentString[] =
 "        <properties charge=\"int\" mass=\"float\" />\n"
 "      </target>\n"
 "      <vertex maxOccurs=\"unbounded\">\n"
-"        <product decayVertex=\"int\" maxOccurs=\"unbounded\" type=\"Particle_t\">\n"
+"        <product decayVertex=\"int\" id=\"int\" maxOccurs=\"unbounded\" mech=\"int\" parentid=\"int\" pdgtype=\"int\" type=\"Particle_t\">\n"
 "          <momentum E=\"float\" px=\"float\" py=\"float\" pz=\"float\" />\n"
 "          <properties charge=\"int\" mass=\"float\" />\n"
 "        </product>\n"
@@ -1242,6 +1246,10 @@ static s_Products_t* unpack_s_Products(XDR* xdrs, popNode* pop)
          int p;
          void* (*ptr) = (void**) &this1->in[m].momentum;
          xdr_int(xdrs,&this1->in[m].decayVertex);
+         xdr_int(xdrs,&this1->in[m].id);
+         xdr_int(xdrs,&this1->in[m].mech);
+         xdr_int(xdrs,&this1->in[m].parentid);
+         xdr_int(xdrs,&this1->in[m].pdgtype);
          xdr_int(xdrs,(int*)&this1->in[m].type);
          for (p = 0; p < pop->popListLength; p++)
          {
@@ -3189,6 +3197,10 @@ static int pack_s_Products(XDR* xdrs, s_Products_t* this1)
    for (m = 0; m < this1->mult; m++)
    {
       xdr_int(xdrs,&this1->in[m].decayVertex);
+      xdr_int(xdrs,&this1->in[m].id);
+      xdr_int(xdrs,&this1->in[m].mech);
+      xdr_int(xdrs,&this1->in[m].parentid);
+      xdr_int(xdrs,&this1->in[m].pdgtype);
       xdr_int(xdrs,(int*)&this1->in[m].type);
       if (this1->in[m].momentum != (s_Momentum_t*)&hddm_nullTarget)
       {

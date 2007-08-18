@@ -96,6 +96,11 @@ void write_hddm_event_(int *iev, float *beammom, int *nlnd, klund_t *klund, plun
 		
 		E2 = pow(plund[i].px,2.0) + pow(plund[i].py,2.0) + pow(plund[i].pz,2.0) + pow(plund[i].mass,2.0);
 		ps->in[ps->mult].type = klund[i].geantid;
+		ps->in[ps->mult].pdgtype = klund[i].kfid;
+		ps->in[ps->mult].id = i+1;
+		ps->in[ps->mult].parentid = klund[i].parent;
+		ps->in[ps->mult].mech = klund[i].mech;
+		
 		ps->in[ps->mult].momentum = make_s_Momentum();
 		ps->in[ps->mult].momentum->px = plund[i].px;
 		ps->in[ps->mult].momentum->py = plund[i].py;

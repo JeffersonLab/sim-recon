@@ -90,6 +90,10 @@ typedef struct {
 
 typedef struct {
    int32_t              decayVertex;
+   int32_t              id;
+   int32_t              mech;
+   int32_t              parentid;
+   int32_t              pdgtype;
    Particle_t           type;
    s_Momentum_t*        momentum;
    s_Properties_t*      properties;

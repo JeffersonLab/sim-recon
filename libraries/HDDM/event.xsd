@@ -118,6 +118,10 @@
         <xs:element ref="hddm:properties"/>
       </xs:sequence>
       <xs:attribute name="type" type="hddm:Particle_t" use="required"/>
+      <xs:attribute name="pdgtype" type="hddm:int" use="required"/>
+      <xs:attribute name="id" type="hddm:int" use="required"/>
+      <xs:attribute name="parentid" type="hddm:int" use="required"/>
+      <xs:attribute name="mech" type="hddm:int" use="required"/>
       <xs:attribute name="decayVertex" type="hddm:int" use="required"/>
     </xs:complexType>
   </xs:element>
