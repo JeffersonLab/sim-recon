@@ -508,7 +508,7 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(s_HDDM_t *hddm_s,  JFactory<DMCThro
 							double py = product->momentum->py;
 							double pz = product->momentum->pz;
 							mcthrown->p = sqrt(px*px + py*py + pz*pz);
-							mcthrown->mass = sqrt(pow(mcthrown->E,2.0) - pow(mcthrown->p,2.0));
+							mcthrown->mass = sqrt(pow((double)mcthrown->E,2.0) - pow((double)mcthrown->p,2.0));
 							mcthrown->phi = atan2(py, px);
 							if(mcthrown->phi<0.0)mcthrown->phi += 2.0*M_PI;
 							mcthrown->theta = acos(pz/mcthrown->p);
