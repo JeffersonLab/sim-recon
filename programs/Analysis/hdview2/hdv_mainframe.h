@@ -75,6 +75,8 @@ class hdv_mainframe:public TGMainFrame {
 		
 		bool GetCheckButton(string who);
 		const char* GetFactoryTag(string who);
+		TPolyLine* GetFCALPolyLine(int channel);
+		TPolyLine* GetFCALPolyLine(float x, float y);
 		
 		void AddGraphicsSideA(vector<TObject*> &v);
 		void AddGraphicsSideB(vector<TObject*> &v);
@@ -110,6 +112,7 @@ class hdv_mainframe:public TGMainFrame {
 		vector<TObject*> graphics_endB;
 		
 		map<string, TGCheckButton*> checkbuttons;
+		map<int, TPolyLine*> fcalblocks;
 		
 		TTimer *timer;
 		

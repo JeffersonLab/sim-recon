@@ -17,6 +17,7 @@ using namespace std;
 #include <TLine.h>
 #include <TText.h>
 #include <TVector3.h>
+#include <TColor.h>
 
 #include "hdview2.h"
 #include "hdv_mainframe.h"
@@ -73,7 +74,8 @@ jerror_t MyProcessor::init(void)
 	
 	vector<JEventLoop*> loops = app->GetJEventLoops();
 	if(loops.size()>0){
-		vector<string> facnames = loops[0]->GetFactoryNames();
+		vector<string> facnames;
+		loops[0]->GetFactoryNames(facnames);
 		
 		hdvmf = new hdv_mainframe(gClient->GetRoot(), 1000, 600);
 		hdvmf->SetTrackFactories(facnames);
@@ -132,6 +134,29 @@ void MyProcessor::FillGraphics(void)
 	graphics.clear();
 	
 	if(!loop)return;
+	
+	// FCAL hits
+	if(hdvmf->GetCheckButton("fcal")){
+		vector<const DFCALHit*> fcalhits;
+		loop->Get(fcalhits);
+		
+		for(unsigned int i=0; i<fcalhits.size(); i++){
+			const DFCALHit *hit = fcalhits[i];
+			TPolyLine *poly = hdvmf->GetFCALPolyLine(hit->x, hit->y);
+			if(!poly)continue;
+			
+			double a = hit->E/0.25;
+			double f = sqrt(a>1.0 ? 1.0:a<0.0 ? 0.0:a);
+			double grey = 0.8;
+			double s = 1.0 - f;
+
+			float r = s*grey;
+			float g = s*grey;
+			float b = f*(1.0-grey) + grey;
+
+			poly->SetFillColor(TColor::GetColor(r,g,b));
+		}
+	}	
 	
 	// CDC hits
 	if(hdvmf->GetCheckButton("cdc")){
@@ -285,6 +310,15 @@ void MyProcessor::FillGraphics(void)
 		loop->Get(trackcandidates, hdvmf->GetFactoryTag("DTrackCandidate"));
 		for(unsigned int i=0; i<trackcandidates.size(); i++){
 			AddKinematicDataTrack(trackcandidates[i], kMagenta, 1.75);
+		}
+	}
+
+	// DTrack
+	if(hdvmf->GetCheckButton("tracks")){
+		vector<const DTrack*> tracks;
+		loop->Get(tracks, hdvmf->GetFactoryTag("DTrack"));
+		for(unsigned int i=0; i<tracks.size(); i++){
+			AddKinematicDataTrack(tracks[i], kRed, 1.00);
 		}
 	}
 

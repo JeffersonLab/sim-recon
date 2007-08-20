@@ -11,6 +11,8 @@ using namespace std;
 #include "hdview2.h"
 #include "MyProcessor.h"
 #include "FDC/DFDCGeometry.h"
+#include "FCAL/DFCALGeometry.h"
+#include "DVector2.h"
 
 #include <TPolyMarker.h>
 #include <TLine.h>
@@ -28,8 +30,8 @@ using namespace std;
 #include <TLatex.h>
 
 extern JApplication *japp;
-TGeoVolume *MOTHER = NULL;
-TGeoCombiTrans *MotherRotTrans = NULL;
+//TGeoVolume *MOTHER = NULL;
+//TGeoCombiTrans *MotherRotTrans = NULL;
 
 extern int GO;
 
@@ -56,6 +58,10 @@ static float FDC_Rmin = 3.5;
 static float FDC_Rmax = 53.6;
 static float TARGET_Zmid = 65.0;
 static float TARGET_Zlen = 30.0;
+
+// The DFCALGeometry object is not really available at the time we need it
+// when the program first starts. Cretae one of our own here.
+static DFCALGeometry *fcalgeom = new DFCALGeometry;
 
 //-------------------
 // Constructor
@@ -230,16 +236,22 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 				checkbuttons["fdcwire"]			= new TGCheckButton(hitdrawopts,	"FDC Wire");
 				checkbuttons["fdcpseudo"]		= new TGCheckButton(hitdrawopts,	"FDC Pseudo");
 				checkbuttons["fdctruth"]		= new TGCheckButton(hitdrawopts,	"FDCTruth");
+				checkbuttons["tof"]				= new TGCheckButton(hitdrawopts,	"TOF");
 				checkbuttons["toftruth"]		= new TGCheckButton(hitdrawopts,	"TOFTruth");
+				checkbuttons["fcal"]				= new TGCheckButton(hitdrawopts,	"FCAL");
 				checkbuttons["fcaltruth"]		= new TGCheckButton(hitdrawopts,	"FCALTruth");
+				checkbuttons["bcal"]				= new TGCheckButton(hitdrawopts,	"BCAL");
 				checkbuttons["bcaltruth"]		= new TGCheckButton(hitdrawopts,	"BCALTruth");
 				hitdrawopts->AddFrame(checkbuttons["cdc"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["cdctruth"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["fdcwire"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["fdcpseudo"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["fdctruth"], lhints);
+				hitdrawopts->AddFrame(checkbuttons["tof"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["toftruth"], lhints);
+				hitdrawopts->AddFrame(checkbuttons["fcal"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["fcaltruth"], lhints);
+				hitdrawopts->AddFrame(checkbuttons["bcal"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["bcaltruth"], lhints);
 				
 
@@ -351,8 +363,11 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	checkbuttons["fdcwire"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["fdcpseudo"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["fdctruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["tof"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["toftruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["bcal"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["bcaltruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["fcal"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["fcaltruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["trajectories"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
@@ -408,19 +423,10 @@ void hdv_mainframe::SetRange(void)
 		ylo/=end_to_side_ratio;
 		yhi/=end_to_side_ratio;
 		
-		// Some bug in root screws up drawing the x-coordinates of the
-		// end views such that they have the 2:1 aspect ratio of the
-		// side views. Compensate for this here. (YECHH!!)
-		//xlo*=2.0;
-		//xhi*=2.0;
-		//double deltax = xhi-xlo;
-		//xlo+=deltax/4.0;
-		//xhi+=deltax/4.0;
-		
 		endviewA->GetCanvas()->cd();
 		endviewA->GetCanvas()->Range(xlo, ylo, xhi, yhi);
 		endviewB->GetCanvas()->cd();
-		endviewB->GetCanvas()->Range(xlo, ylo, xhi, yhi);
+		endviewB->GetCanvas()->Range(xlo*1.3, ylo*1.3, xhi*1.3, yhi*1.3);
 
 	}else{
 		// define range in each direction in cm, radians
@@ -442,25 +448,11 @@ void hdv_mainframe::SetRange(void)
 		sideviewB->GetCanvas()->cd();
 		sideviewB->GetCanvas()->Range(zlo, philo, zhi, phihi);
 
-		// Zoom in a little on the end views
-		rlo/=2.5;
-		rhi/=2.5;
-
-		// Some bug in root screws up drawing the x-coordinates of the
-		// end views such that they have the 2:1 aspect ratio of the
-		// side views. Compensate for this here. (YECHH!!)
-		//philo*=2.0;
-		//phihi*=2.0;
-		//double deltaphi = phihi-philo;
-		//philo+=deltaphi/4.0;
-		//phihi+=deltaphi/4.0;
-		
-		//philo = -0.2;
-		//phihi = 2.0*M_PI + 0.2;
-		//phihi*=2.0;
-
+		// Zoom in a little on the end views in A
 		endviewA->GetCanvas()->cd();
-		endviewA->GetCanvas()->Range(philo, rlo, phihi,  rhi);
+		endviewA->GetCanvas()->Range(philo, rlo/2.5, phihi,  rhi/2.5);
+		endviewB->GetCanvas()->cd();
+		endviewB->GetCanvas()->Range(philo, rlo/10.0, phihi,  rhi/1.9);
 	}
 }
 
@@ -661,6 +653,19 @@ void hdv_mainframe::DoRedraw(void)
 			graphics_sideA.push_back(sA);
 			graphics_sideB.push_back(sB);
 			graphics_endA.push_back(eA);
+			
+			// Axial CDC wires will end up as having zero length in the end view
+			// so we draw an additional marker in the end view for those cases.
+			if(eA->GetN()==2){
+				double *x = eA->GetX();
+				double *y = eA->GetY();
+				if((x[0]==x[1]) && (y[0]==y[1])){
+					TMarker *m = new TMarker(x[0], y[0], 8);
+					m->SetMarkerColor(iter->color);
+					m->SetMarkerSize(0.5);
+					graphics_endA.push_back(m);
+				}
+			}
 		}
 	}
 
@@ -669,6 +674,7 @@ void hdv_mainframe::DoRedraw(void)
 	for(unsigned int i=0; i<graphics_endA.size(); i++)graphics_endA[i]->Draw();
 	endviewA->GetCanvas()->Update();
 	endviewB->GetCanvas()->cd(0);
+	for(unsigned int i=0; i<graphics_endB.size(); i++)graphics_endB[i]->Draw("f");
 	for(unsigned int i=0; i<graphics_endB.size(); i++)graphics_endB[i]->Draw();
 	endviewB->GetCanvas()->Update();
 
@@ -817,12 +823,54 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		// ------ scale ------
 		DrawScale(endviewA->GetCanvas(), graphics_endA);
 	}
+
+	//============== End B
+	{
+	endviewB->GetCanvas()->cd(0);
+	endviewB->GetCanvas()->Clear();
+
+		// ----- FCAL ------
+		// Get list of blocks. Loop over all getting x,y coordinates of corners for all active ones.
+		
+		// Set up 4 2-D vectors that point from the center of a block to its
+		// corners. This makes it easier to represent each corner as a vector
+		// in lab corrdinate whch we can extract r, phi from.
+		double blocksize = fcalgeom->blockSize();
+		DVector2 shift[4];
+		shift[0].Set(-blocksize/2, -blocksize/2);  // these are ordered such that they
+		shift[1].Set(-blocksize/2, +blocksize/2);  // go in a clockwise manner. This
+		shift[2].Set(+blocksize/2, +blocksize/2);  // ensures the r/phi cooridinates also
+		shift[3].Set(+blocksize/2, -blocksize/2);  // define a single enclosed space
+		fcalblocks.clear();
+		for(int chan=0; chan<kMaxChannels; chan++){
+			int row = fcalgeom->row(chan);
+			int col = fcalgeom->column(chan);
+			if(!fcalgeom->isBlockActive(row, col))continue;
+			double x[4], y[4];
+			for(int i=0; i<4; i++){
+				DVector2 pos = shift[i] + fcalgeom->positionOnFace(chan);
+				x[i] = pos.X();
+				y[i] = pos.Y();
+			}
+			
+			TPolyLine *poly = new TPolyLine(4, x, y);
+			poly->SetFillColor(18);
+			poly->SetLineColor(kBlack);
+			graphics_endB.push_back(poly);
+
+			fcalblocks[chan] = poly; // record so we can set the color later
+		}
+
+		// ------ scale ------
+		DrawScale(endviewB->GetCanvas(), graphics_endB);
+	}
 	
 	//=============== Draw axes arrows
 	// (this is done here since the sideB graphics are copied from sideA)
 	DrawAxes(sideviewA->GetCanvas(), graphics_sideA, "Z", "X");
 	DrawAxes(sideviewB->GetCanvas(), graphics_sideB, "Z", "Y");
 	DrawAxes(endviewA->GetCanvas(), graphics_endA, "X", "Y");
+	DrawAxes(endviewB->GetCanvas(), graphics_endB, "X", "Y");
 }
 
 //-------------------
@@ -920,8 +968,8 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 
 	//============== End A R vs. phi
 	{
-	endviewB->GetCanvas()->cd(0);
-	endviewB->GetCanvas()->Clear();
+	endviewA->GetCanvas()->cd(0);
+	endviewA->GetCanvas()->Clear();
 
 		// ----- BCAL ------
 		TBox *bcal1 = new TBox(0.0, BCAL_Rmin, 2.0*M_PI, BCAL_Rmax);
@@ -945,10 +993,49 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 
 	}
 
+	//============== End B R vs. phi
+	{
+	endviewB->GetCanvas()->cd(0);
+	endviewB->GetCanvas()->Clear();
+
+		// ----- FCAL ------
+		// Get list of blocks. Loop over all getting x,y coordinates of corners for all active ones.
+		
+		// Set up 4 2-D vectors that point from the center of a block to its
+		// corners. This makes it easier to represent each corner as a vector
+		// in lab corrdinate whch we can extract r, phi from.
+		double blocksize = fcalgeom->blockSize();
+		DVector2 shift[4];
+		shift[0].Set(-blocksize/2, -blocksize/2);  // these are ordered such that they
+		shift[1].Set(-blocksize/2, +blocksize/2);  // go in a clockwise manner. This
+		shift[2].Set(+blocksize/2, +blocksize/2);  // ensures the r/phi cooridinates also
+		shift[3].Set(+blocksize/2, -blocksize/2);  // define a single enclosed space
+		fcalblocks.clear();
+		for(int chan=0; chan<kMaxChannels; chan++){
+			int row = fcalgeom->row(chan);
+			int col = fcalgeom->column(chan);
+			if(!fcalgeom->isBlockActive(row, col))continue;
+			double r[4], phi[4];
+			for(int i=0; i<4; i++){
+				DVector2 pos = shift[i] + fcalgeom->positionOnFace(chan);
+				r[i] = pos.Mod();
+				phi[i] = pos.Phi_0_2pi(pos.Phi());
+			}
+			
+			TPolyLine *poly = new TPolyLine(4, phi, r);
+			poly->SetFillColor(18);
+			poly->SetLineColor(kBlack);
+			graphics_endB.push_back(poly);
+			
+			fcalblocks[chan] = poly; // record so we can set the color later
+		}
+	}
+
 	//=============== Draw axes arrows
 	DrawAxes(sideviewA->GetCanvas(), graphics_sideA, "Z", "R");
 	DrawAxes(sideviewB->GetCanvas(), graphics_sideB, "Z", "#phi");
 	DrawAxes(endviewA->GetCanvas(), graphics_endA, "#phi", "R");
+	DrawAxes(endviewB->GetCanvas(), graphics_endB, "#phi", "R");
 }
 
 //-------------------
@@ -1176,6 +1263,27 @@ const char* hdv_mainframe::GetFactoryTag(string who)
 	if(string(tag) == "<default>")tag = "";
 	
 	return tag;
+}
+
+//-------------------
+// GetFCALPolyLine
+//-------------------
+TPolyLine* hdv_mainframe::GetFCALPolyLine(int channel)
+{
+	map<int, TPolyLine*>::iterator iter = fcalblocks.find(channel);
+	if(iter==fcalblocks.end())return NULL;
+	return iter->second;
+}
+
+//-------------------
+// GetFCALPolyLine
+//-------------------
+TPolyLine* hdv_mainframe::GetFCALPolyLine(float x, float y)
+{
+	if(!fcalgeom)return NULL;
+	int row = fcalgeom->row(y);
+	int column = fcalgeom->column(x);
+	return GetFCALPolyLine(fcalgeom->channel(row, column));
 }
 
 //-------------------
