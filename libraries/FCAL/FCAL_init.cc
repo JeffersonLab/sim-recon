@@ -7,6 +7,7 @@
 #include "FCAL/DFCALGeometry_factory.h"
 #include "FCAL/DFCALTruthShower_factory.h"
 #include "FCAL/DFCALMCResponse_factory.h"
+#include "FCAL/DMCFCALHit.h"
 
 jerror_t FCAL_init(JEventLoop *loop)
 {
@@ -17,6 +18,9 @@ jerror_t FCAL_init(JEventLoop *loop)
 	loop->AddFactory(new DFCALGeometry_factory());
 	loop->AddFactory(new DFCALTruthShower_factory());
 	loop->AddFactory(new DFCALMCResponse_factory());
+
+	// This is just used as a container
+	loop->AddFactory(new JFactory<DMCFCALHit>());
 
 	return NOERROR;
 }
