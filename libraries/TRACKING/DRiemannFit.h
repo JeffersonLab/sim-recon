@@ -8,13 +8,13 @@ using namespace std;
 #include "JANA/jerror.h"
 
 typedef struct{
-        float x,y,z;            ///< point in lab coordinates
+        double x,y,z;            ///< point in lab coordinates
 }DRiemannHit_t;
 
 class DRiemannFit{
  public:
   jerror_t FitCircle(double BeamRMS,DMatrix *CRPhi);
-  jerror_t AddHit(float r, float phi, float z);
+  jerror_t AddHit(double r, double phi, double z);
   jerror_t AddHitXYZ(double x,double y, double z);
 
   // Center of projected circle and radius

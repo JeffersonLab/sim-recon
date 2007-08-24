@@ -1,10 +1,11 @@
 #include "DRiemannFit.h"
 #include <TDecompLU.h>
+#include <math.h>
 
 #define EPS 1.0e-8
 
 /// Add a hit to the list of hits using cylindrical coordinates
-jerror_t DRiemannFit::AddHit(float r, float phi, float z)
+jerror_t DRiemannFit::AddHit(double r, double phi, double z)
 {
   return AddHitXYZ(r*cos(phi), r*sin(phi), z);
 }
@@ -51,6 +52,8 @@ jerror_t DRiemannFit::CalcNormal(DMatrix A,double lambda,DMatrix &N){
 // fitting planes in (x,y, w=x^2+y^2) space
 //
 jerror_t DRiemannFit::FitCircle(double BeamRMS,DMatrix *Cov){  
+  if (hits.size()==0) return RESOURCE_UNAVAILABLE;
+
   DMatrix X(hits.size()+1,3);
   DMatrix Xavg(1,3);
   DMatrix A(3,3);
