@@ -51,7 +51,8 @@ jerror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 jerror_t MyProcessor::brun(JEventLoop *eventLoop, int runnumber)
 {
-	vector<string> factory_names = eventLoop->GetFactoryNames();
+	vector<string> factory_names;
+	eventLoop->GetFactoryNames(factory_names);
 
 	usleep(100000); //this just gives the Main thread a chance to finish printing the "Launching threads" message
 	cout<<endl;
