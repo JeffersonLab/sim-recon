@@ -25,6 +25,8 @@ jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 
 	for(unsigned int i=0; i< mcthrowns.size(); i++){
 		const DMCThrown *thrown = mcthrowns[i];
+		
+		if(fabs(thrown->q)<1)continue;
 
 		// Create new DTrack object and initialize parameters with those
 		// from track candidate
@@ -37,9 +39,9 @@ jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		track->phi		= thrown->phi + SampleGaussian(0.002);
 		if(track->phi<0.0)track->phi+=2.0*M_PI;
 		if(track->phi>=2.0*M_PI)track->phi-=2.0*M_PI;
-		track->x			= thrown->x + SampleGaussian(0.10);
-		track->y			= thrown->y + SampleGaussian(0.10);
-		track->z			= thrown->z + SampleGaussian(0.10);
+		track->x			= thrown->x + SampleGaussian(0.01);
+		track->y			= thrown->y + SampleGaussian(0.01);
+		track->z			= thrown->z + SampleGaussian(1.00);
 		track->candidateid = 0;
 		track->chisq	= 1.0;
 
@@ -53,14 +55,14 @@ jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		// of allocating/deallocating them every event, we keep a pool and
 		// re-use them. If the pool is not big enough, then add one to the
 		// pool.
-		if(rt.size()<=i){
+		if(rt.size()<=_data.size()){
 			// This is a little ugly, but only gets called a few times throughout the life of the process
 			// Note: these never get deleted, even at the end of process.
 			DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 			rt.push_back(new DReferenceTrajectory(dapp->GetBfield()));
 		}
-		rt[i]->Swim(pos, mom, track->q);
-		track->rt = rt[i];
+		rt[_data.size()]->Swim(pos, mom, track->q);
+		track->rt = rt[_data.size()];
 		
 		// Create and fill the covariance matrix for the track.
 		// We need to fill this using errors estimated from the thrown
