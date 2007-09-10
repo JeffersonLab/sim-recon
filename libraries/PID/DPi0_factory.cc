@@ -45,20 +45,6 @@ jerror_t DPi0_factory::evnt(JEventLoop *eventLoop, int eventnumber)
            } 
         } 
 
-        /* fit pi0
-        vector<const DKinematicData*> kindata;
-        DKinFit *kfit = new DKinFit();
-        kfit->SetVerbose(1);
-
-        for (unsigned int i = 0; i < photons.size() ; i++) {
-            kindata.clear();
-            kindata.push_back((DKinematicData*)photons[i]);
-        }
-        
-        //kfit->SetFinal(kindata);
-        //kfit->FitTwoGammas(0.13498); */
-        
-
 	return NOERROR;
 }
 
