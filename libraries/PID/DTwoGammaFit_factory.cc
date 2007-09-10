@@ -122,6 +122,12 @@ const string DTwoGammaFit_factory::toString(void)
 	return _table;
 }
 
+/*DTwoGammaFit::DTwoGammaFit()
+{
+  fProb=0;
+  fChi2=0;
+}
+*/
 
 /*
 // fill TwoGammaFit kinematic data from the fit 

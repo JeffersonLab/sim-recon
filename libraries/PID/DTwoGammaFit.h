@@ -41,6 +41,7 @@ class DTwoGammaFit:public DKinematicData {
 
 };
 
+
 // Getters
 // return confidence of the fit
 inline double DTwoGammaFit::getProb() const
