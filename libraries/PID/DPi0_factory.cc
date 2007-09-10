@@ -35,12 +35,8 @@ jerror_t DPi0_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	
 	// Loop over all photons and make pi0 candidates 
         for (unsigned int i = 0; i < photons.size() ; i++) {
+          if (photons[i]->getTag() == 2) continue;
           for (unsigned int j = i+1; j < photons.size() ; j++) {
-/*
-                DLorentzVector P1 = photons[i]->lorentzMomentum();
-                DLorentzVector P2 = photons[j]->lorentzMomentum();
-                unsigned int tag1 = photons[i]->getTag();
-                unsigned int tag2 = photons[j]->getTag();*/
                 
 		DPi0 *pi0 =  makePi0( photons[i], photons[j] );
 
@@ -48,6 +44,20 @@ jerror_t DPi0_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
            } 
         } 
+
+        /* fit pi0
+        vector<const DKinematicData*> kindata;
+        DKinFit *kfit = new DKinFit();
+        kfit->SetVerbose(1);
+
+        for (unsigned int i = 0; i < photons.size() ; i++) {
+            kindata.clear();
+            kindata.push_back((DKinematicData*)photons[i]);
+        }
+        
+        //kfit->SetFinal(kindata);
+        //kfit->FitTwoGammas(0.13498); */
+        
 
 	return NOERROR;
 }

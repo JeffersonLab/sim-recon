@@ -28,7 +28,7 @@ class DPhoton_factory:public JFactory<DPhoton>{
 
                 DPhoton* makeFCalPhoton(const DFCALPhoton* gamma); 
                 DPhoton* makeBCalPhoton(const DBCALPhoton* gamma); 
-                DPhoton* makeBCalPhoton(const DBCALShower* shower); 
+                DPhoton* makeBCalPhoton(const DBCALShower* shower); // obsolite! 
 
 		double MinDistToRT(const DPhoton* photon, vector<const DTrack*> tracks);
 };

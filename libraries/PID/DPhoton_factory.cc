@@ -7,8 +7,6 @@
 #include <math.h>
 #include <TLorentzVector.h>
 
-//#include "TRACKING/DTrack.h"
-//#include "TRACKING/DReferenceTrajectory.h"
 #include "DPhoton.h"
 #include "DPhoton_factory.h"
 #include "JANA/JEvent.h"
@@ -37,6 +35,7 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 // Disable this info until tracking is fixed
 //        vector<const DTrack*> tracks;
 //	eventLoop->Get(tracks);
+// and use thrown info within DPi0 to identify photons from charged particles
 
 // loop over FCAL photons    
 	vector<const DFCALPhoton*> fcalPhotons;
@@ -46,8 +45,8 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 		DPhoton *photon =  makeFCalPhoton(fcalPhotons[i]);
                 
-                // double mdtrt = MinDistToRT(photon,tracks); disable until TRACKING is fixed
-                //photon->setDtRT(mdtrt); 
+//                double mdtrt = MinDistToRT(photon,tracks); 
+//                photon->setDtRT(mdtrt); 
 
 		_data.push_back(photon);
 
@@ -65,7 +64,7 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 		DPhoton *photon =  makeBCalPhoton(bcalPhotons[i]);
 
 //                double mdtrt = MinDistToRT(photon,tracks); 
-	        //photon->setDtRT(mdtrt); 
+//	        photon->setDtRT(mdtrt); 
 
 		_data.push_back(photon);
 
@@ -151,7 +150,6 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma)
         sigmas[6][6] = pow( TARGET_LENGTH/sqrt(12.0), 2.0) ; // z_t
 
         photon->makeErrorMatrix( sigmas );
-
         return photon;
 }
 
@@ -170,7 +168,6 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma) {
         photon->setPositionCal( gamma->showerPosition() );
         photon->setMass( p.M() );
         photon->setTag(1);
-
         DMatrixDSym sigmas(7);
 
         sigmas(0,0) = pow( gamma->fitLayPointErr().X(), 2.0); // 

@@ -92,8 +92,8 @@ void DPhoton::makeErrorMatrix( const DMatrixDSym& aSigmas )
    //setErrorMatrix( result.Similarity(A) );
    result = result.Similarity(A); 
 
-  cout << " Print result: " << endl;
-  result.Print();
+//  cout << " Print result: " << endl;
+//  result.Print();
    setErrorMatrix( result );
 
 }
