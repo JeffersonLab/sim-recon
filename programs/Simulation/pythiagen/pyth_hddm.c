@@ -64,6 +64,11 @@ void write_hddm_event_(int *iev, float *beammom, int *nlnd, klund_t *klund, plun
 	static int Nevents_written = 0;
 	int runNumber=2;
 	float vertex[3]={0.0, 0.0, 65.0}; /* hardwired for center of target for now */
+
+	/* z vertex uniform in target cell 15cm long*/
+	double z=(drand48()-0.5)*30.;
+	vertex[2] += (float) z;
+
 	Nevents++;
 
 	/* Start a new event */
