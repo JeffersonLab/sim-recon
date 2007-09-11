@@ -14,7 +14,7 @@
 #define Z_TARGET 65.0
 #define MATCH_RADIUS 5.0
 #define SIGN_CHANGE_CHISQ_CUT 10.0
-#define BEAM_VARIANCE 0.01 // cm^2
+#define BEAM_VARIANCE 0.1 // cm^2
 #define FDC_X_RESOLUTION 0.02  // 200 microns
 #define FDC_Y_RESOLUTION 0.02
 #define USED_IN_SEGMENT 0x8
@@ -207,7 +207,7 @@ jerror_t DFDCSegment_factory::RiemannLineFit(unsigned int n,DMatrix XYZ0,
   }
       
   // Linear regression to find z0, tanl   
-  double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.,sperp,Delta;
+  double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.,sperp=0.,Delta;
   for (unsigned int k=0;k<n;k++){
     double diffx=XYZ(k,0)-XYZ(0,0);
     double diffy=XYZ(k,1)-XYZ(0,1);
@@ -230,6 +230,7 @@ jerror_t DFDCSegment_factory::RiemannLineFit(unsigned int n,DMatrix XYZ0,
   // Track parameters z0 and tan(lambda)
   tanl=-Delta/(sumv*sumxy-sumy*sumx); 
   z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
+  zvertex=z0-sperp*tanl;
   
   // Error in tanl 
   var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
@@ -242,8 +243,8 @@ jerror_t DFDCSegment_factory::RiemannLineFit(unsigned int n,DMatrix XYZ0,
 //
 jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
      double r1sq,DMatrix &XYZ,DMatrix &CRPhi,DMatrix &CR){
-  double delta_x=XYZ(0,0)-xc; 
-  double delta_y=XYZ(0,1)-yc;
+  double delta_x=XYZ(ref_plane,0)-xc; 
+  double delta_y=XYZ(ref_plane,1)-yc;
   double r1=sqrt(r1sq);
   double denom=delta_x*delta_x+delta_y*delta_y;
 
@@ -256,8 +257,8 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
 
   // Predicted positions
   Phi1=atan2(delta_y,delta_x);
-  double z1=XYZ(0,2);
-  double var_R1=CR(0,0);
+  double z1=XYZ(ref_plane,2);
+  double var_R1=CR(ref_plane,ref_plane);
   for (unsigned int k=0;k<n;k++){       
     double sperp=charge*(XYZ(k,2)-z1)/tanl;
     double Phi=atan2(XYZ(k,1),XYZ(k,0));
@@ -602,10 +603,9 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(unsigned int n, DMatrix XYZ,
 // length versus z.
 //
 jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
-						DMatrix &XYZ){
+						DMatrix &CR,DMatrix &XYZ){
   double Phi;
   unsigned int num_points=points.size()+1;
-  DMatrix CR(num_points,num_points);
   DMatrix CRPhi(num_points,num_points); 
   // DMatrix XYZ(num_points,3);
   DMatrix XYZ0(num_points,3);
@@ -614,7 +614,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   fdc_track.clear();
   fdc_track_t temp;
   temp.hit_id=0;
-  temp.dx=temp.dy=temp.s=0.;
+  temp.dx=temp.dy=temp.s=temp.chi2=0.;
   fdc_track.assign(num_points-1,temp);
   
   // Fill initial matrices for R and RPhi measurements
@@ -634,7 +634,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   CRPhi(points.size(),points.size())=BEAM_VARIANCE;
   
   // Reference track:
-  jerror_t error=NOERROR;
+  jerror_t error=NOERROR;  
   // First find the center and radius of the projected circle
   error=RiemannCircleFit(num_points,XYZ0,CRPhi); 
   if (error!=NOERROR) return error;
@@ -670,7 +670,8 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   // Guess particle charge (+/-1);
   if (slope<0.) charge=-1.;
 
-  double r1sq=XYZ(0,0)*XYZ(0,0)+XYZ(0,1)*XYZ(0,1);
+  double r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)
+    +XYZ(ref_plane,1)*XYZ(ref_plane,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
 
   // Preliminary circle fit 
@@ -699,7 +700,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   // Guess particle charge (+/-1);
   if (slope<0.) charge=-1.;
   
-  r1sq=XYZ(0,0)*XYZ(0,0)+XYZ(0,1)*XYZ(0,1);
+  r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)+XYZ(ref_plane,1)*XYZ(ref_plane,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
 
   // Final circle fit 
@@ -729,7 +730,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   if (slope<0.) charge=-1.;
   
   // Final update to covariance matrices
-  r1sq=XYZ(0,0)*XYZ(0,0)+XYZ(0,1)*XYZ(0,1);
+  r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)+XYZ(ref_plane,1)*XYZ(ref_plane,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
   
   // Store residuals and path length for each measurement
@@ -737,16 +738,17 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   for (unsigned int m=0;m<points.size();m++){
     fdc_track_t temp;
     temp.hit_id=m;
-    double sperp=charge*(XYZ(m,2)-XYZ(0,2))/tanl; 
+    double sperp=charge*(XYZ(m,2)-XYZ(ref_plane,2))/tanl; 
     double sinp=sin(Phi1+sperp/rc);
     double cosp=cos(Phi1+sperp/rc);
     XYZ(m,0)=xc+rc*cosp;
     XYZ(m,1)=yc+rc*sinp;
     temp.dx=XYZ(m,0)-XYZ0(m,0); // residuals
     temp.dy=XYZ(m,1)-XYZ0(m,1);
-    temp.s=(XYZ(m,2)-Z_TARGET)/sin(atan(tanl)); // path length
+    temp.s=(XYZ(m,2)-zvertex)/sin(atan(tanl)); // path length 
+    temp.chi2=(temp.dx*temp.dx+temp.dy*temp.dy)/CR(m,m);
     fdc_track[m]=temp;	
-    chisq+=(temp.dx*temp.dx+temp.dy*temp.dy)/CR(m,m);
+    chisq+=temp.chi2;
   }
   return NOERROR;
 }
@@ -833,17 +835,25 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
     
       // Matrix of points on track 
       DMatrix XYZ(neighbors.size()+1,3);
-      
+      DMatrix CR(neighbors.size()+1,neighbors.size()+1);
+   
+      // Arc lengths in helical model are referenced relative to the plane
+      // ref_plane within a segment.  For a 6 hit segment, ref_plane=2 is 
+      // roughly in the center of the segment.
+      ref_plane=2;  
+   
       // Perform the Riemann Helical Fit on the track segment
-      jerror_t error=RiemannHelicalFit(neighbors,XYZ);   
+      jerror_t error=RiemannHelicalFit(neighbors,CR,XYZ);   
        
       // Correct for the Lorentz effect given DOCAs
       if (error==NOERROR){
 	// Correct for the Lorentz effect given DOCAs
 	CorrectPoints(neighbors,XYZ);
 
+	ref_plane=0; 
+
 	// Fit to "space" points
-	error=RiemannHelicalFit(neighbors,XYZ); 
+	error=RiemannHelicalFit(neighbors,CR,XYZ); 
 
 	// Final correction 
 	if (error==NOERROR){
@@ -851,14 +861,15 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	  for (unsigned int m=0;m<neighbors.size();m++){
 	    fdc_track_t temp;
 	    temp.hit_id=m;
-	    double sperp=charge*(XYZ(m,2)-XYZ(0,2))/tanl; 
+	    double sperp=charge*(XYZ(m,2)-XYZ(ref_plane,2))/tanl; 
 	    double sinp=sin(Phi1+sperp/rc);
 	    double cosp=cos(Phi1+sperp/rc);
 	    XYZ(m,0)=xc+rc*cosp;
 	    XYZ(m,1)=yc+rc*sinp;
 	    temp.dx=XYZ(m,0)-neighbors[m]->x; // residuals
 	    temp.dy=XYZ(m,1)-neighbors[m]->y;
-	    temp.s=(XYZ(m,2)-Z_TARGET)/sin(atan(tanl)); // path length
+	    temp.s=(XYZ(m,2)-zvertex)/sin(atan(tanl)); // path length
+	    temp.chi2=(temp.dx*temp.dx+temp.dy*temp.dy)/CR(m,m);
 	    fdc_track[m]=temp;	
 	  } 
 	}
@@ -880,7 +891,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
       Seed(1,0)=phi0;      // Phi
       Seed(2,0)=D;       // D=distance of closest approach to origin   
       Seed(3,0)=tanl;     // tan(lambda), lambda=dip angle
-      Seed(4,0)=Z_TARGET;       // z-position at closest approach to origin
+      Seed(4,0)=zvertex;       // z-position at closest approach to origin
       for (unsigned int i=0;i<5;i++) Cov(i,i)=1.;
       
       segment->S.ResizeTo(Seed);

@@ -70,6 +70,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 	                  double old_z,double x, double y,double z,
 			  DMatrix S,DMatrix &S1);
 		jerror_t RiemannHelicalFit(vector<DFDCPseudo*>points,
+					   DMatrix &CR,
 					   DMatrix &XYZ);
 	        jerror_t RiemannCircleFit(unsigned int n,DMatrix XYZ,
 			DMatrix CRPhi);
@@ -107,9 +108,10 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		double xavg[3],var_avg;
 		
 		// Track parameters
-		double tanl,z0,D,kappa,phi0;
+		double tanl,z0,zvertex,D,kappa,phi0;
 		double var_tanl,Phi1;
 		double charge;
+		unsigned int ref_plane;
 	
 		vector<fdc_track_t>fdc_track;
 		double chisq;
