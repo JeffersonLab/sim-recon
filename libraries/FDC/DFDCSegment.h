@@ -15,7 +15,9 @@
 // Residuals and arc length
 typedef struct fdc_track_t{
   unsigned int hit_id;
+  double sign; // Sign of left-right ambiguity resolution for this hit
   double dx,dy; //residuals
+  double chi2; // chi2 contribution of this point
   double s; // path length
 };
 
