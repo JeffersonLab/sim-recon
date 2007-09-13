@@ -45,7 +45,7 @@ uninstall:
 	rm -rf $(INSTALL_DIR)/include/$(MODULE_NAME)
 
 clean:
-	rm -rf $(LIB_DIR) $(DEP_DIR) $(DICT_FILES) *.bak *~ core last.kumac*  #*#
+	rm -rf $(LIB_DIR) $(DEP_DIR) $(DICT_FILES) *.o *.bak *~ core last.kumac*  #*#
 
 pristine: clean
 	rm -rf .bin .obj .lib .depends
