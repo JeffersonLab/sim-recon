@@ -78,7 +78,7 @@ void DKinFit::_Copy(const DKinFit &__kfit){
 }
 //_____________________________________________________________________________
 
-void DKinFit::FitTwoGammas(const float __missingMass)
+void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweight=1.0)
 {
   /// Private function used internally to perform kinematic fitting.
   //const int numParts = (int)_p4in.size();
@@ -89,7 +89,7 @@ void DKinFit::FitTwoGammas(const float __missingMass)
   //}
   _kDataInitial_out.clear();
   _kDataFinal_out.clear();
-  float errmatrixweight = 10000.0;
+  //float errmatrixweight = 1.0;
   const int numInitial = (int)_kDataInitial_in.size();
   const int numFinal = (int)_kDataFinal_in.size();
   const int numParts = numInitial + numFinal;

@@ -244,7 +244,7 @@ public:
 	     bool __constrain_miss = false,double __invariantMass = -1.);
 
   // main kinematic fit function
-  void FitTwoGammas(const float __missingMass);
+  void FitTwoGammas(const float __missingMass, const float errmatrixweight);
 
   inline double Fit2MissingTagged(){
     /// Fit to no missing particle but instead a missing tagged photon.
