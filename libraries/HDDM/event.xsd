@@ -183,7 +183,11 @@
       <xs:attribute name="primary" type="hddm:boolean" use="required"/>
       <xs:attribute name="dEdx" type="hddm:float" use="required"/>
       <xs:attribute name="ptype" type="hddm:int" use="required"/>
-    </xs:complexType>
+      <xs:attribute name="px" type="hddm:float" use="required"/>
+      <xs:attribute name="py" type="hddm:float" use="required"/>
+      <xs:attribute name="pz" type="hddm:float" use="required"/>
+      <xs:attribute name="t" type="hddm:float" use="required"/>
+   </xs:complexType>
   </xs:element>
 
   <xs:element name="centralDC">
@@ -404,7 +408,7 @@
       <xs:attribute name="py" type="hddm:float" use="required"/>
       <xs:attribute name="pz" type="hddm:float" use="required"/>
       <xs:attribute name="E" type="hddm:float" use="required"/>
-      <xs:attribute name="ptype" type="hddm:float" use="required"/>
+      <xs:attribute name="ptype" type="hddm:int" use="required"/>
    </xs:complexType>
   </xs:element>
 
@@ -419,7 +423,7 @@
       <xs:attribute name="py" type="hddm:float" use="required"/>
       <xs:attribute name="pz" type="hddm:float" use="required"/>
       <xs:attribute name="E" type="hddm:float" use="required"/>
-      <xs:attribute name="ptype" type="hddm:float" use="required"/>
+      <xs:attribute name="ptype" type="hddm:int" use="required"/>
      </xs:complexType>
   </xs:element>
 
