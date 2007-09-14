@@ -108,7 +108,7 @@ const string DPhoton_factory::toString(void)
 // final non-linear and depth corrections can be applied here
 #define FCAL_BLOCK_WIDTH 4
 #define TARGET_RADIUS 1.5
-#define TARGET_LENGTH 1
+#define TARGET_LENGTH 30
 DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma) 
 {
 

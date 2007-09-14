@@ -18,7 +18,7 @@
 //----------------
 // Constructor
 //----------------
-DTwoGammaFit_factory_PI0::DTwoGammaFit_factory_PI0():DTwoGammaFit_factory(0.134)
+DTwoGammaFit_factory_PI0::DTwoGammaFit_factory_PI0():DTwoGammaFit_factory(0.13498)
 {
 	// Set defaults
 

@@ -7,7 +7,6 @@
 #ifndef _DTwoGammaFit_
 #define _DTwoGammaFit_
 
-///#include <TLorentzVector.h>
 #include "DKinematicData.h"
 #include "DPhoton.h"
 
@@ -21,57 +20,51 @@ class DTwoGammaFit:public DKinematicData {
                 DTwoGammaFit();
 		~DTwoGammaFit();
 
-               double getChi2() const;
-               double getProb() const ;
+               inline double getChi2() const { return fChi2; }
+               inline double getProb() const { return fProb; }
                inline double getPull(const int i) const { return fPulls[i]; }
-;
+// the origin of the  photon (FCAL, BCAL, charged)
+               inline int getChildTag(int child) const { return fTags[child]; }
+               inline oid_t getChildID(int child)  const { return fIDs[child]; }
+
                DKinematicData* getChildFit(const int i) ;
 
                void setChi2(double const aChi2);  
                void setProb(double const aProb);  
                void setPulls(double const aPull, const int i);  
+               void setChildTag(const int aTag, const int i ); 
+               void setChildID(const oid_t aID, const int i ); 
                void setChildFit(const DKinematicData& aChildFit, const int i);  
 
 	private:
 
-               double fProb; // 
-               double fChi2; // 
-               double fPulls[9];
-               DKinematicData fChildFit[2];
+               oid_t fIDs[2];  
+               int fTags[2]; // tag children origin (FCAL/BCAL/charged)
+               double fProb;  
+               double fChi2;  
+               double fMass;  
+               double fPulls[6]; // needs specification
+               DKinematicData fChildFits[2];
 
 };
 
-
 // Getters
 // return confidence of the fit
-inline double DTwoGammaFit::getProb() const
-{
-      return fProb;
-}
-
-// return chi2 of the fit
-inline double DTwoGammaFit::getChi2() const
-{
-      return fChi2;
-}
+//inline double DTwoGammaFit::getProb() const
+//{
+//      return fProb;
+//}
 
 inline DKinematicData* DTwoGammaFit::getChildFit(const int i) 
 {
-      return &fChildFit[i];
+      return &fChildFits[i];
 }
-
-/* return pull of fitted child
-inline double DTwoGammaFit::getPull(const int i) const
-{
-      return fPulls[i];
-}*/
-
 
 // Setters
 // Set data of fitted children
 inline void DTwoGammaFit::setChildFit(const DKinematicData& aChildFit, const int i)
 {
-     fChildFit[i] = aChildFit;
+     fChildFits[i] = aChildFit;
 }
 
 // Set pulls from DKinFit
@@ -92,19 +85,17 @@ inline void DTwoGammaFit::setProb(const double aProb)
      fProb = aProb;
 }
 
-/*
-// return origin of pi0  (Fcal=0, Bcal=1)
-inline unsigned int DPi0::getChildrenTag(int child) const
+// set Pi0 bits with respect to the photon detection 
+inline void DTwoGammaFit::setChildTag(const int aTag, const int i )
 {
-      return fTags[child];
+   fTags[i] = aTag;
 }
 
-// return child ID's
-inline oid_t DPi0::getChildrenID(int child) const
+inline void DTwoGammaFit::setChildID(const oid_t aID, const int i )
 {
-      return fIDs[child];
+   fIDs[i] = aID;
 }
-*/
+
 
 #endif // _DTwoGammaFit_
 
