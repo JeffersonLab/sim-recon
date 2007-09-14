@@ -5,6 +5,7 @@
 // Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
 //
 
+#include <cmath>
 #include <iostream>
 #include <vector>
 #include <map>
@@ -122,6 +123,8 @@ jerror_t DTrackEfficiency_factory::evnt(JEventLoop *loop, int eventnumber)
 	// Loop over thrown tracks. 
 	for(unsigned int i=0;i<mcthrowns.size();i++){
 		const DMCThrown *mcthrown = mcthrowns[i];
+		
+		if(fabs(mcthrown->q)==0.0)continue;
 	
 		DTrackEfficiency *trkeff = new DTrackEfficiency();
 		_data.push_back(trkeff);
