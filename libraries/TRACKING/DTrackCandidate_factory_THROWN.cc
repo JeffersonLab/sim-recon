@@ -77,6 +77,8 @@ jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
 		const DMCThrown *thrown = mcthrowns[i];
 		
+		if(fabs(thrown->q)==0.0)continue;
+		
 		DTrackCandidate *can = new DTrackCandidate;
 		
 		can->x0 = 0.0;
