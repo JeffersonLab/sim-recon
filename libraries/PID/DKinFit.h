@@ -21,252 +21,137 @@ using namespace std;
 //_____________________________________________________________________________
 
 class DKinFit {
-  
-private:
-  // Data Members (private):
 
-  int _verbose; ///< Level of verbosity
+  private:
+    // Data Members (private):
 
-  /* kinematic fitting statistical quantities */
-  std::vector<double> _pulls; ///< Pull quantities of last fit
-  double _chi2; ///< \f$ \chi^2 \f$ of last fit
-  int _ndf; ///< Number of degrees-of-freedom of last fit
+    int _verbose; ///< Level of verbosity
 
-  /* kinematic quantities */
-  double _ephot_in; /// < Photon energy (in)
-  double _ephot_out; /// < Photon energy (out)
-  std::vector<TLorentzVector> _p4in; ///< Particle 4-momenta (in)
-  std::vector<TLorentzVector> _p4out; ///< Particle 4-momenta (out)
-  std::vector<const DKinematicData*> _kDataInitial_in; ///< Initial particle 4-momenta (in)
-  std::vector<const DKinematicData*> _kDataFinal_in; ///< Final particle 4-momenta (in)
-  std::vector<DKinematicData*> _kDataInitial_out; ///< Initial particle 4-momenta (out)
-  std::vector<DKinematicData*> _kDataFinal_out; ///< Final particle 4-momenta (out)
-  std::vector<string> _reconstruction; ///< Particle reconstruction 0 - Drift chamber
-                                    ///                          1 - Calorimeter
-  double _targetMass; ///< Target mass
+    /* kinematic fitting statistical quantities */
+    std::vector<double> _pulls; ///< Pull quantities of last fit
+    double _chi2; ///< \f$ \chi^2 \f$ of last fit
+    int _ndf; ///< Number of degrees-of-freedom of last fit
 
-  string _trackingConversion; ///< Tracking conversion 
+    /* kinematic quantities */
+    std::vector<const DKinematicData*> _kDataInitial_in; ///< Initial particle 4-momenta (in)
+    std::vector<const DKinematicData*> _kDataFinal_in; ///< Final particle 4-momenta (in)
+    std::vector<DKinematicData*> _kDataInitial_out; ///< Initial particle 4-momenta (out)
+    std::vector<DKinematicData*> _kDataFinal_out; ///< Final particle 4-momenta (out)
 
-  /* covariance matrix info */
-  TMatrixD _cov; ///< Covariance matrix
-  double _sigma_missing[3]; ///< Fit errors on missing quantities
+    /* covariance matrix info */
+    TMatrixD _cov; ///< Covariance matrix
+    double _sigma_missing[3]; ///< Fit errors on missing quantities
 
-  /* missing particle info */
-  double _missingMass; ///< Mass of the missing particle
-  bool _missingParticle; ///< Is there a missing particle?
+    /* missing particle info */
+    double _missingMass; ///< Mass of the missing particle
+    bool _missingParticle; ///< Is there a missing particle?
 
-  /* extra mass constraint info */
-  bool _extraC; ///< Is there an extra mass constraint?
-  double _invariantMass; ///< Invariant mass used in extra mass constraint
-  std::vector<bool> _extraC_meas; ///< Which measured particles in constraint?
-  bool _extraC_miss; ///< Is missing particle used in extra mass constraint?
+    /* extra mass constraint info */
+    bool _extraC; ///< Is there an extra mass constraint?
+    double _invariantMass; ///< Invariant mass used in extra mass constraint
+    std::vector<bool> _extraC_meas; ///< Which measured particles in constraint?
+    bool _extraC_miss; ///< Is missing particle used in extra mass constraint?
 
-  // Functions (private):
+    // Functions (private):
+    // main kinematic fit function
+    void _MainFitter();
 
-  // main kinematic fit function
-  void _MainFitter();
+    // get ready for a new fit
+    void _ResetForNewFit();
 
-  // fit to missing tagged photon (3C fit)
-  void _FitToMissingTaggedPhoton();
+    // copy the DKinFit data members
+    void _Copy(const DKinFit &__kfit);
 
-  // get ready for a new fit
-  void _ResetForNewFit();
+    // sets output quantities for a bad fit
+    void _SetToBadFit();
 
-  // copy the DKinFit data members
-  void _Copy(const DKinFit &__kfit);
+    // set the missing particle errors
+    void _SetMissingParticleErrors(const TMatrixD &__missingCov, const TMatrixD &__x);
 
-  // sets output quantities for a bad fit
-  void _SetToBadFit();
+  public:
+    // Create/Copy/Destroy:
+    DKinFit();
 
-  // set the missing particle errors
-  void _SetMissingParticleErrors(const TMatrixD &__missingCov,
-				 const TMatrixD &__x);
+    DKinFit(const DKinFit &__kfit){ 
+      /// Copy Constructor
+      this->_Copy(__kfit);
+    }
 
-public:
-  // Create/Copy/Destroy:
-  DKinFit();
+    virtual ~DKinFit(){ 
+      /// Destructor
+      _pulls.clear();
+      _kDataInitial_in.clear();
+      _kDataFinal_in.clear();
+      _kDataInitial_out.clear();
+      _kDataFinal_out.clear();
+      _extraC_meas.clear();
+    }
 
-  DKinFit(const DKinFit &__kfit){ 
-    /// Copy Constructor
-    this->_Copy(__kfit);
-  }
+    DKinFit& operator=(const DKinFit &__kfit){
+      /// Assignment operator
+      this->_Copy(__kfit);
+      return *this;
+    }
 
-  virtual ~DKinFit(){ 
-    /// Destructor
-    _pulls.clear();
-    _p4in.clear();
-    _reconstruction.clear();
-    _p4out.clear();
-    _extraC_meas.clear();
-  }
+    // Setters:
 
-  DKinFit& operator=(const DKinFit &__kfit){
-    /// Assignment operator
-    this->_Copy(__kfit);
-    return *this;
-  }
+    inline void SetCovMatrix(const TMatrixD &__covMat){ 
+      /// Set the covariance matrix.
+      _cov.ResizeTo(__covMat);
+      _cov = __covMat;
+    }
 
-  // Setters:
-
-  inline void SetCovMatrix(const TMatrixD &__covMat){ 
-    /// Set the covariance matrix.
-    _cov.ResizeTo(__covMat);
-    _cov = __covMat;
-  }
-
-  inline void SetVerbose(int __verbose){
     /// Set the input 4-momenta.
-    _verbose = __verbose;
-  }
-  
-  inline void SetP4(const std::vector<TLorentzVector> &__p4){
-    /// Set the input 4-momenta.
-    _p4in = __p4;
-  }
-  
-  inline void SetReconstruction(const std::vector<string> &__rec){
-    /// Set the input 4-momenta.
-    _reconstruction = __rec;
-  }
-  
-  inline void SetPhotonEnergy(double __erg){ 
-    /// Set the input tagged photon energy.
-    _ephot_in = __erg;
-  }
+    inline void SetVerbose(int __verbose){_verbose = __verbose;}
 
-  inline void SetTargetMass(double __mass){
-    /// Set the target mass (the ctor sets this to be \f$ m_p \f$)
-    _targetMass = __mass;
-  }
+    /// Set the initial tracks
+    inline void SetInitial(std::vector<const DKinematicData*> &__kd)
+    { _kDataInitial_in = __kd; }
 
-  inline void SetTrackingConversion(string __tc){
-    /// Tells the fit how to convert 4-vectors to the tracking parameters.
-    _trackingConversion = __tc;
-  }
+    /// Set the final tracks
+    inline void SetFinal(const std::vector<const DKinematicData*> &__kd)
+    { _kDataFinal_in = __kd; }
 
-  /// Set the initial tracks
-  inline void SetInitial(std::vector<const DKinematicData*> &__kd)
-  {
-    _kDataInitial_in = __kd; 
-    //_cov.ResizeTo(3*__kd.size(), 3*__kd.size());
-  }
+    /// Get the momenta BEFORE the kinematic fit
+    inline std::vector<const DKinematicData*> GetInitial_in() { return _kDataInitial_in;}
+    inline std::vector<const DKinematicData*> GetFinal_in()   { return _kDataFinal_in;}
 
-  /// Set the final tracks
-  inline void SetFinal(const std::vector<const DKinematicData*> &__kd)
-  {
-    _kDataFinal_in = __kd; 
-    //_cov.ResizeTo(3*__kd.size(), 3*__kd.size());
-  }
+    /// Get the momenta AFTER the kinematic fit
+    inline std::vector<DKinematicData*> GetInitial_out() { return _kDataInitial_out;}
+    inline std::vector<DKinematicData*> GetFinal_out()   { return _kDataFinal_out;}
 
-  /// Get the final tracks
-  inline std::vector<DKinematicData*> GetInitial_out() { return _kDataInitial_out;}
-  inline std::vector<DKinematicData*> GetFinal_out()   { return _kDataFinal_out;}
+    // Getters:
 
-  inline void SetEvent(double __ephot,const std::vector<TLorentzVector> &__p4,const std::vector<string> &__reconstruction,
-		       const TMatrixD &__covMat,double __targMass = -1., string __trackingConversion="EASY"){
-    /// Set all input quantities.
-    /** @param ephot Input tagged photon energy
-     *  @param p4 Vector of detected particle 4-momenta
-     *  @param covMat Covariance matrix
-     *  @param targMass Target mass 
-     *
-     *  If @a targMass isn't specified, then the target mass is @a NOT set.
-     *  The target mass defaults to \f$ m_p \f$ in the ctor.
-     *
-     */
-    if(__targMass > 0.) _targetMass = __targMass;
-    _ephot_in = __ephot;
-    _p4in = __p4;
-    _reconstruction = __reconstruction;
-    _cov.ResizeTo(__covMat);
-    _cov = __covMat;
-    _trackingConversion = __trackingConversion;
-  }
-
-  // Getters:
-
-  inline double Chi2() const {
     /// Return \f$ \chi^2 \f$ of the last fit.
-    return _chi2;
-  }
+    inline double Chi2() const { return _chi2; }
 
-  inline int Ndf() const {
     /// Return the number of degrees of freedom of the last fit
-    return _ndf;
-  }
+    inline int Ndf() const { return _ndf; }
 
-  inline double GetPull(int __n) const {
     /// Returns the @a n pull quantity
     /** Pulls are stored as 
      *	\f$ (E_{\gamma},p_1,\lambda_1,\phi_1,...,p_n,\lambda_n,\phi_n) \f$ 
      */
-    return _pulls[__n];
-  }
+    inline double GetPull(int __n) const { return _pulls[__n]; }
 
-  inline const TLorentzVector& FitP4(int __n) const {
-    /// Returns the particle @a n 4-momentum after fitting
-    /** Same indexing as vector used to set input 4-momentum */
-    return _p4out[__n];
-  }
-
-  inline double FitPhotonEnergy() const {
-    /// Returns the tagged photon energy after fitting
-    return _ephot_out;
-  }
-
-  inline double GetMissingError(int __n) const {
     /// Returns the @a n missing particle error (p,lambda,phi)
-    return _sigma_missing[__n];
-  }
+    inline double GetMissingError(int __n) const { return _sigma_missing[__n]; }
 
-  inline const TMatrixD& GetCovMat() const {
     /// Returns the covariance matrix
-    return _cov;
-  }
+    inline const TMatrixD& GetCovMat() const { return _cov; }
 
-  // Functions:
-
-  double Prob() const {
+    // Functions:
     /// Returns the confidence level of the last fit
-    return TMath::Prob(_chi2,_ndf);
-  }
+    double Prob() const { return TMath::Prob(_chi2,_ndf); }
 
-  // converts names to masses for the missing particle
-  static double NameToMass(const string &__name);
+    // converts names to masses for the missing particle
+    static double NameToMass(const string &__name);
 
-  // Kinematic fit functions:
-  double Fit(const string &__miss,
-	     const std::vector<bool> &__constrain_meas = std::vector<bool>(),
-	     bool __constrain_miss = false,double __invariantMass = -1.);
+    // main kinematic fit function
+    void FitTwoGammas(const float __missingMass, const float errmatrixweight);
 
-  double Fit(double __missingMass = -1.,
-	     const std::vector<bool> &__constrain_meas = std::vector<bool>(),
-	     bool __constrain_miss = false,double __invariantMass = -1.);
-
-  // main kinematic fit function
-  void FitTwoGammas(const float __missingMass, const float errmatrixweight);
-
-  inline double Fit2MissingTagged(){
-    /// Fit to no missing particle but instead a missing tagged photon.
-    /** Set the covariance matrix the same way for this fit as for all other
-     *  fits. This function will rearrange the matrix itself to account for the
-     *  different role of the tagged photon in the fit (from measured to 
-     *  missing). Also, the pulls will have the same order and size as for all
-     *  other fits...the first term, which is normally the tagged photon pull,
-     *  will be set to 0 (since it is meaningless for this fit).
-     *
-     * <b> Returns: </b> Confidence level of the fit.
-     */
-    
-    // reset for new fit
-    this->_ResetForNewFit();
-    this->_FitToMissingTaggedPhoton();
-    return this->Prob();
-  }
-
-// Utility function
-DLorentzVector MissingMomentum(vector<const DKinematicData*> initial, vector<const DKinematicData*> final);
-
+    // Utility function
+    DLorentzVector MissingMomentum(vector<const DKinematicData*> initial, vector<const DKinematicData*> final);
 
 };
 //_____________________________________________________________________________
