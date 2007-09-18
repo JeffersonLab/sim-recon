@@ -1153,6 +1153,10 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
 #endif
    CodeWriter::createMapFunctions(el,ident);
 
+   if (el == 0)
+   {
+      return;
+   }
    DOMNodeList* regionsL = el->getOwnerDocument()->getDocumentElement()
                              ->getElementsByTagName(X("regions"));
    if (regionsL->getLength() == 0)
@@ -1670,6 +1674,7 @@ void FortranWriter::createUtilityFunctions(DOMElement* el, const XString& ident)
 
    DOMNodeList* propL = el->getOwnerDocument()
                           ->getElementsByTagName(X("optical_properties"));
+   int ifclauses = 0;
    for (int iprop=0; iprop < propL->getLength(); ++iprop)
    {
       DOMElement* propEl = (DOMElement*)propL->item(iprop);
@@ -1683,17 +1688,32 @@ void FortranWriter::createUtilityFunctions(DOMElement* el, const XString& ident)
             << "        call getoptical" << imate
             << "(E,refl,absl,rind,plsh,eff)" << std::endl
             << "      else";
+         ++ifclauses;
       }
    }
-   std::cout
-        << std::endl
-        << "        refl = 0" << std::endl
-        << "        absl = 0" << std::endl
-        << "        rind = 0" << std::endl
-        << "        plsh = 1" << std::endl
-        << "        eff = 0" << std::endl
-        << "      endif" << std::endl
-        << "      end" << std::endl;
+   if (ifclauses)
+   {
+      std::cout
+           << std::endl
+           << "        refl = 0" << std::endl
+           << "        absl = 0" << std::endl
+           << "        rind = 0" << std::endl
+           << "        plsh = 1" << std::endl
+           << "        eff = 0" << std::endl
+           << "      endif" << std::endl
+           << "      end" << std::endl;
+   }
+   else
+   {
+      std::cout
+           << std::endl
+           << "      refl = 0" << std::endl
+           << "      absl = 0" << std::endl
+           << "      rind = 0" << std::endl
+           << "      plsh = 1" << std::endl
+           << "      eff = 0" << std::endl
+           << "      end" << std::endl;
+   }
 
    std::cout
         << std::endl
