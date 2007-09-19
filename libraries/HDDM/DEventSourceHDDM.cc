@@ -124,7 +124,8 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(!factory)throw RESOURCE_UNAVAILABLE;
 	
 	// HDDM doesn't support tagged factories
-	if(strcmp(factory->Tag(), ""))return OBJECT_NOT_AVAILABLE;
+	const char* tag = factory->Tag()==NULL ? "":factory->Tag();
+	if(strlen(tag)!=0)return OBJECT_NOT_AVAILABLE;
 	
 	// The ref field of the JEvent is just the s_HDDM_t pointer.
 	s_HDDM_t *my_hddm_s = (s_HDDM_t*)event.GetRef();
