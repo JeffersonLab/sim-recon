@@ -29,6 +29,7 @@ libxstream.a: $(libxstream_a_OBJECTS) $(libxstream_a_DEPENDENCIES)
 	$(RANLIB) libxstream.a
 
 install: $(lib_LIBRARIES)
+	mkdir -p $(HALLD_HOME)/lib/$(OSNAME)
 	cp $^ $(HALLD_HOME)/lib/$(OSNAME)
 	cp -r ../include ./tmpinc
 	rm -rf `find ./tmpinc -name ".svn"`
