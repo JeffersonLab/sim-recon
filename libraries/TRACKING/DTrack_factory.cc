@@ -251,7 +251,7 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 		}
 //_DBG_<<"Track Number: "<<eventnumber+i<<"  cdchits_on_track="<<cdchits_on_track.size()<<"  fdchits_on_track="<<fdchits_on_track.size()<<endl;
 		// Fit the track
-		DTrack *track = FitTrack(rtv[i], trackcandidates[i]->id,  mcthrowns[i]);
+		DTrack *track = FitTrack(rtv[i], trackcandidates[i]->id,  NULL);
 
 		// If fit is successful, then store the track
 		if(track)_data.push_back(track);
