@@ -64,22 +64,19 @@ const string DFCALMCResponse_factory::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	// Put the class specific code to produce nicely formatted ASCII here.
-	// The JFactory_base class has several methods defined to help. They
-	// rely on positions of colons (:) in the header. Here's an example:
-	//
-	//		printheader("row:    x:     y:");
-	//
-	// 	for(int i=0; i<_data.size(); i++){
-	//			DFCALMCResponse *myDFCALMCResponse = _data[i];
-	//
-	//			printnewrow();
-	//			printcol("%d",	i);
-	//			printcol("%1.3f",	myDFCALMCResponse->x);
-	//			printcol("%3.2f",	myDFCALMCResponse->y);
-	//			printrow();
-	//		}
-	//
+	printheader("id:      chanel: E(MeV): t(ns):");
+
+	for(unsigned int i=0; i<_data.size(); i++){
+		DFCALMCResponse *mchit = _data[i];
+
+		printnewrow();
+		printcol("%d",	mchit->id );
+		printcol("%3.1f",	mchit->channel() );
+		printcol("%3.1f",	mchit->E() );
+		printcol("%3.1f",	mchit->t() );
+		printrow();
+	}
+
 	return _table;
 
 }
