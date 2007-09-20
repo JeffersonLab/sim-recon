@@ -33,23 +33,21 @@ DTwoGammaFit_factory::DTwoGammaFit_factory(double aMass)
 
 //------------------
 // evnt
-// Pi0 factory: loop over all pair combinations and make pi0
-// 		 regardless of the pair-mass at this point (MK)
+// TwoGammaGit factory: loop over all pair combinations and fit them to the supplied mass using
+//			kinemati fitter. Tags, like PI0, ETA (and ETAP eventually) can be used in derived 
+//			factories.
 //------------------
 jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 {
 	vector<const DPhoton*> photons;
 	eventLoop->Get(photons);
-	
-
-	// Loop over all photons and fit candidates 
+   
+	// Loop over all fit candidates.
         for (unsigned int i = 0; i < photons.size() ; i++) {
-//           if (photons[i]->getTag() == 2) continue; // apply charged clusters cut here
-          for (unsigned int j = i+1; j < photons.size() ; j++) {
-//              if (photons[j]->getTag() == 2) continue; // apply charged clusters cut here
+            if ( photons[i]->getdThetaCharge() < 0.05  ) continue;
+            for (unsigned int j = i+1; j < photons.size() ; j++) {
+                if ( photons[j]->getdThetaCharge() < 0.05  ) continue;
 
-// make sure fitter does not change photons in the future
-                TLorentzVector P4 = photons[i]->lorentzMomentum() + photons[j]->lorentzMomentum(); 
                 
                 DKinFit *kfit = new DKinFit(); 
                 vector<const DKinematicData*> kindata;
@@ -66,7 +64,9 @@ jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
                 if (kinout.size() != 2) continue;
 
                 DTwoGammaFit* fit2g = new DTwoGammaFit();
+
                 //TLorentzVector P4 = kinout[0]->lorentzMomentum() + kinout[1]->lorentzMomentum(); 
+                TLorentzVector P4 = photons[i]->lorentzMomentum() + photons[j]->lorentzMomentum(); 
 		DVector3 vertex = 0.5*(photons[i]->position() + photons[j]->position());
 
 // set two gamma kinematics
@@ -80,8 +80,8 @@ jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
                 }
                 fit2g->setChildTag( (int) photons[i]->getTag(), 0);
                 fit2g->setChildTag( (int) photons[j]->getTag(), 1);
-                fit2g->setChildID( photons[i]->getID(), 0);
-                fit2g->setChildID( photons[j]->getID(), 1);
+                fit2g->setChildID( photons[i]->id, 0);
+                fit2g->setChildID( photons[j]->id, 1);
                 fit2g->setChildFit(  *kinout[0] , 0);
                 fit2g->setChildFit(  *kinout[1] , 1);
  
@@ -116,35 +116,9 @@ const string DTwoGammaFit_factory::toString(void)
 		printcol("%6.2f", pions->lorentzMomentum().Z());
 		printcol("%6.2f", pions->mass());
 		printcol("%6.2f", pions->getChi2());
-//		printcol("%5.2f", pi0s->getM());
-//		printcol("%4.0f", fcalhit->t);
 		printrow();
 	}
 
 	return _table;
 }
-
-
-/*
-// fill TwoGammaFit kinematic data from the fit 
-DTwoGammaFit* DTwoGammaFit_factory::makeTwoGammaKin(const DKinFit* kfit, const DVector3& vertex) 
-{
-
-        DTwoGammaFit* fit2g = new DTwoGammaFit();
-
-        TLorentzVector mom1 = kfit->FitP4(0);
-        DLorentzVector mom2 = kfit->FitP4(1);
-         
-        //std::vector<const DKinematicData*> gammas = kfit->GetFinal_out();
-        DLorentzVector P4 = kfit->FitP4(0) + kfit->FitP4(1);
-//        DVector3 vertex = 0.5*(gamma1->position() + gamma2->position());
-
-        fit2g->setMass( P4.M() );
-        fit2g->setMomentum( P4.Vect() );
-        fit2g->setPosition( vertex );
-//        fit2g->setChildrenTag(gamma1->getTag(), gamma1->getTag());
-//        fit2g->setChildrenID(gamma1->getID(), gamma2->getID());
-
-        return fit2g;
-}*/
 

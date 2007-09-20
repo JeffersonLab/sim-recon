@@ -13,6 +13,7 @@
 #include "FCAL/DFCALPhoton.h"
 #include "BCAL/DBCALPhoton.h"
 #include "BCAL/DBCALShower.h"
+#include "TRACKING/DMCThrown.h"
 #include "TRACKING/DTrack.h"
 #include "TRACKING/DReferenceTrajectory.h"
 
@@ -26,11 +27,13 @@ class DPhoton_factory:public JFactory<DPhoton>{
 	private:
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
-                DPhoton* makeFCalPhoton(const DFCALPhoton* gamma); 
-                DPhoton* makeBCalPhoton(const DBCALPhoton* gamma); 
+                DPhoton* makeFCalPhoton(const DFCALPhoton* gamma, const oid_t id); 
+                DPhoton* makeBCalPhoton(const DBCALPhoton* gamma, const oid_t id); 
                 DPhoton* makeBCalPhoton(const DBCALShower* shower); // obsolite! 
 
 		double MinDistToRT(const DPhoton* photon, vector<const DTrack*> tracks);
+		double dThetaToChargeMC(const DPhoton* photon, vector<const DMCThrown*> thrown);
+
 };
 
 

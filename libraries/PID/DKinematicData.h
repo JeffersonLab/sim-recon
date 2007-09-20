@@ -148,11 +148,13 @@ public:
 
     DKinematicData( void ) ;
     
+    DKinematicData( const oid_t id );
+
     DKinematicData( const DKinematicData& aKinematicData );
     
     DKinematicData( const DKinematicData& aKinematicData,
                     const bool aCopyErrorMatrix ) ;
-    
+ 
     DKinematicData( const DVector3& aMomentum ,
                     const DVector3& aPosition,
                     const ValueType aMass,

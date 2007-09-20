@@ -4,11 +4,26 @@
 #include <DMatrix.h>
 
 
-DPhoton::DPhoton()
+DPhoton::DPhoton() : 
+   fTag( kDefaultTag ),
+   fDtRT( kDefaultDistance ), 
+   fdThetaCharge( kDefaultDistance ), 
+   fPositionCal( DVector3(0.0, 0.0, 0.0) )
 {
-   fTag = 0; // default is FCAL
-   fDtRT = 10000; // in a galaxy far far away...
-   fPositionCal.SetXYZ(0.,0.,0.);
+   return;
+}
+
+DPhoton::DPhoton(const oid_t id) : DKinematicData(id),
+   fTag( kDefaultTag ),
+   fDtRT( kDefaultDistance ),
+   fdThetaCharge( kDefaultDistance ),
+   fPositionCal( DVector3(0.0, 0.0, 0.0) )
+{
+/*   fTag = 0; 
+   fDtRT = 1000; 
+   fdThetaCharge = 1000; 
+   fPositionCal.SetXYZ(0.,0.,0.);*/
+   return;
 }
 
 DPhoton::~DPhoton()
@@ -21,7 +36,7 @@ void DPhoton::setPositionCal(const DVector3& aPosition)
      fPositionCal = aPosition;
 }
 
-// Tag photon origin: 0/1 for FCAL/BCAL
+// Tag photon origin: 1/2/3 for FCAL/BCAL/Charge? 
 void DPhoton::setTag(unsigned int aTag)
 {
    fTag = aTag;
@@ -31,6 +46,12 @@ void DPhoton::setTag(unsigned int aTag)
 void DPhoton::setDtRT(double aDtRT)
 {
    fDtRT = aDtRT;
+}
+
+// Polar angle distance to closest generated charge
+void DPhoton::setdThetaCharge(double adTheta)
+{
+   fdThetaCharge = adTheta;
 }
 
 // A photon is described by momentum (p), position (r) and energy (E_g)
@@ -89,11 +110,8 @@ void DPhoton::makeErrorMatrix( const DMatrixDSym& aSigmas )
 
    DMatrixDSym result = aSigmas; 
    
-   //setErrorMatrix( result.Similarity(A) );
    result = result.Similarity(A); 
 
-//  cout << " Print result: " << endl;
-//  result.Print();
    setErrorMatrix( result );
 
 }

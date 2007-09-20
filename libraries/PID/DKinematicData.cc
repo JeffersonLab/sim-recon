@@ -24,6 +24,7 @@ DMatrixDSym* DKinematicData::nullMatrix()
   static DMatrixDSym* sNullMatrix = new DMatrixDSym(0,7);
   return sNullMatrix;
 }                         
+
 //
 // constructors and destructor
 //
@@ -37,6 +38,20 @@ DKinematicData::DKinematicData() :
 {
   return ;
 }
+
+// constructor with Jana id
+DKinematicData::DKinematicData(const oid_t id) :
+  JObject ( id ) ,
+  m_hasFixedMass( !false ) ,
+  m_mass( kDefaultMass ) ,
+  m_charge( kDefaultCharge ) ,
+  m_momentum( DVector3( 0.0 , 0.0 , 0.0 ) ) ,
+  m_position( DVector3(  0.0 , 0.0 , 0.0 ) ) ,
+  m_errorMatrix( nullMatrix() )
+{
+  return ;
+}
+
 
 // Copy constructor with optional argument for copying over error matrix
 DKinematicData::DKinematicData( const DKinematicData& aKinematicData) :

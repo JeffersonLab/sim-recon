@@ -21,8 +21,6 @@ class DTwoGammaFit_factory:public JFactory<DTwoGammaFit>{
                 double fMass;
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
-                //DPi0* makePi0(const DLorentzVector& gamma1, const DLorentzVector& gamma2, unsigned int t1, unsigned int t2, oid_t id1, oid_t id2); 
-                 //DTwoGammaFit* makeTwoGammaKin(const DKinFit* kfit, const DVector3& vertex);
 
 };
 

@@ -35,8 +35,11 @@ jerror_t DPi0_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	
 	// Loop over all photons and make pi0 candidates 
         for (unsigned int i = 0; i < photons.size() ; i++) {
-          if (photons[i]->getTag() == 2) continue;
-          for (unsigned int j = i+1; j < photons.size() ; j++) {
+
+            if (photons[i]->getdThetaCharge() < 0.05 ) continue;
+            for (unsigned int j = i+1; j < photons.size() ; j++) {
+
+                if (photons[j]->getdThetaCharge() < 0.05 ) continue;
                 
 		DPi0 *pi0 =  makePi0( photons[i], photons[j] );
 
@@ -91,7 +94,7 @@ DPi0* DPi0_factory::makePi0(const DPhoton* gamma1, const DPhoton* gamma2)
         pi0->setMomentum( mom4.Vect() );
         pi0->setPosition( vertex );
         pi0->setChildrenTag(gamma1->getTag(), gamma1->getTag());
-        pi0->setChildrenID(gamma1->getID(), gamma2->getID());
+        pi0->setChildrenID(gamma1->id, gamma2->id);
 
         return pi0;
 }

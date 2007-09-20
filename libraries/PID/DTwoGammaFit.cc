@@ -10,7 +10,7 @@ DTwoGammaFit::DTwoGammaFit()
         fChildFits[i].setPosition( null );
         fChildFits[i].setMomentum( null );
         fChildFits[i].setMass(0.);
-        fTags[i] = -1;
+        fTags[i] = 0;
         fIDs[i] = 0;
     }
     fChi2 = 0;

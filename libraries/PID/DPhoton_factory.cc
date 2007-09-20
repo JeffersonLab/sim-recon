@@ -36,17 +36,21 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 //        vector<const DTrack*> tracks;
 //	eventLoop->Get(tracks);
 // and use thrown info within DPi0 to identify photons from charged particles
+        vector<const DMCThrown*> thrown;
+	eventLoop->Get(thrown);
 
 // loop over FCAL photons    
 	vector<const DFCALPhoton*> fcalPhotons;
 	eventLoop->Get(fcalPhotons);
-	
+  
+        oid_t nPhotons=0;
         for ( unsigned int i=0; i < fcalPhotons.size(); i++ ) {
 
-		DPhoton *photon =  makeFCalPhoton(fcalPhotons[i]);
+		DPhoton *photon =  makeFCalPhoton(fcalPhotons[i], ++nPhotons);
                 
 //                double mdtrt = MinDistToRT(photon,tracks); 
 //                photon->setDtRT(mdtrt); 
+                photon->setdThetaCharge( dThetaToChargeMC(photon,thrown) ); 
 
 		_data.push_back(photon);
 
@@ -60,11 +64,11 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	
        for (unsigned int i=0; i< bcalPhotons.size(); i++) {
 
-		//DPhoton *photon =  makeBCalPhoton(bcalShowers[i]);
-		DPhoton *photon =  makeBCalPhoton(bcalPhotons[i]);
+		DPhoton *photon =  makeBCalPhoton(bcalPhotons[i], ++nPhotons);
 
 //                double mdtrt = MinDistToRT(photon,tracks); 
 //	        photon->setDtRT(mdtrt); 
+                photon->setdThetaCharge( dThetaToChargeMC(photon,thrown) ); 
 
 		_data.push_back(photon);
 
@@ -88,7 +92,7 @@ const string DPhoton_factory::toString(void)
 		DPhoton *phot = _data[i];
                
 		printnewrow();
-		printcol("%x",	phot->getID());
+		printcol("%x",	phot->id);
 		printcol("%5.2f", phot->energy());
 		printcol("%5.2f", phot->momentum().X());
 		printcol("%5.2f", phot->momentum().Y());
@@ -109,10 +113,10 @@ const string DPhoton_factory::toString(void)
 #define FCAL_BLOCK_WIDTH 4
 #define TARGET_RADIUS 1.5
 #define TARGET_LENGTH 30
-DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma) 
+DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const oid_t id) 
 {
 
-        DPhoton* photon = new DPhoton;
+        DPhoton* photon = new DPhoton( id );
         
         double energy = gamma->getEnergy();
 // default vertex is (0,0,65) and this has been taken into account in FCAL libraries
@@ -128,7 +132,7 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma)
         photon->setMomentum( momentum );
         photon->setPositionCal( centroid );
         photon->setMass( 0. );
-        photon->setTag(0);
+        photon->setTag(1);
 
 // create the simplest error matrix:
 // At this point, it is assumed that error matrix of measured quantities is diagonal,
@@ -154,9 +158,9 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma)
 }
 
 // Copy data from BCALPhoton
-DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma) {
+DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const oid_t id) {
 
-        DPhoton* photon = new DPhoton;
+        DPhoton* photon = new DPhoton( id );
 
 
         DVector3 vertex(0.,0.,65.);
@@ -167,7 +171,7 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma) {
 
         photon->setPositionCal( gamma->showerPosition() );
         photon->setMass( p.M() );
-        photon->setTag(1);
+        photon->setTag(2);
         DMatrixDSym sigmas(7);
 
         sigmas(0,0) = pow( gamma->fitLayPointErr().X(), 2.0); // 
@@ -265,5 +269,27 @@ double DPhoton_factory::MinDistToRT(const DPhoton* photon, vector<const DTrack*>
         }
   }
   return dmin;
+}
+
+// Return the distance in polar anlge from the closest charged track.
+double DPhoton_factory::dThetaToChargeMC(const DPhoton* photon, vector<const DMCThrown*> thrown) 
+{
+
+   double dmin = 1000.; 
+
+   double theta = atan2( sqrt( pow(photon->momentum().X(),2) + pow(photon->momentum().Y(),2) ), photon->momentum().Z() );
+
+   for (vector<const DMCThrown*>::const_iterator mc  = thrown.begin(); 
+					      mc != thrown.end(); 
+								mc++) {
+
+        if ( (**mc).q == 0 ) continue;
+	double deltaT = fabs( (**mc).theta - theta); 
+        dmin = deltaT < dmin ? deltaT : dmin; 
+
+  }
+
+  return dmin;
+
 }
 
