@@ -32918,23 +32918,23 @@
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
       imate = 69
-      namate = 'leadGlassSF3'
-      wmat(1) = 0.42
+      namate = 'leadGlassF800'
+      wmat(1) = 0.645446
       call gfmate(17,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
-      wmat(2) = 0.2
+      wmat(2) = 0.0832068
       call gfmate(9,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
-      wmat(3) = 0.09
+      wmat(3) = 0.0562619
       call gfmate(42,chnama,amat(3),zmat(3),dens,radl,absl,ubuf,nwbuf)
-      wmat(4) = 0.01
+      wmat(4) = 0.056926
       call gfmate(40,chnama,amat(4),zmat(4),dens,radl,absl,ubuf,nwbuf)
-      wmat(5) = 0.28
+      wmat(5) = 0.158159
       call gfmate(3,chnama,amat(5),zmat(5),dens,radl,absl,ubuf,nwbuf)
-      dens = 3.6
+      dens = 3.61
       nlmat = 5
       call gsmixt(imate,namate,amat,zmat,dens,nlmat,wmat)
 
       itmed = 231
-      natmed = 'LGBL leadGlassSF3'
+      natmed = 'LGBL leadGlassF800'
       nmat = 69
       isvol = 1
       ifield = 0

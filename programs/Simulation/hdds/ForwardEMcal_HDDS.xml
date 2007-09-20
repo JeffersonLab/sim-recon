@@ -81,7 +81,7 @@
 					comment="LGD north section"     />
   <box name="LGDS" X_Y_Z="112.0   12.0  45.0"  material="Air"
 					comment="LGD south section"    />
-  <box name="LGBL" X_Y_Z="  4.0    4.0  45.0"  material="leadGlassSF3"
+  <box name="LGBL" X_Y_Z="  4.0    4.0  45.0"  material="leadGlassF800"
 		sensitive="true"	 comment="lead glass block"     />
 
   <!-- The following elements describe an early rendition of the GlueX
@@ -105,8 +105,8 @@
 				unit="cm"	/>
     <real	name="zlen"	value="45.0"	comment="length of blocks"
 				unit="cm"	/>
-    <reference	name="material"	value="leadGlassSF3" />
-    <reference	name="active"	value="leadGlassSF3" />
+    <reference	name="material"	value="leadGlassF800" />
+    <reference	name="active"	value="leadGlassF800" />
     <int	name="ncr1"	value="58"	comment="x segmentation"     />
     <int	name="ncr2"	value="58"	comment="y segmentation"     />
     <int	name="nlayers"	value="1"	comment="z segmentation"     />

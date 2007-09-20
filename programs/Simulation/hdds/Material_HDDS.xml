@@ -811,6 +811,25 @@
 	<real name="density"	value="3.60"	unit="g/cm^3" />
   </composite>
 
+  <composite name="leadGlassF800">
+	<addmaterial material="Lead">
+		<fractionmass	fraction="0.6803"	/>
+ 	</addmaterial>
+	<addmaterial material="Silicon">
+		<fractionmass	fraction="0.0877"	/>
+ 	</addmaterial>
+	<addmaterial material="Potassium">
+		<fractionmass	fraction="0.0593"	/>
+ 	</addmaterial>
+	<addmaterial material="Sodium">
+		<fractionmass	fraction="0.0600"	/>
+ 	</addmaterial>
+	<addmaterial material="Oxygen">
+		<fractionmass	fraction="0.1667"	/>
+ 	</addmaterial>
+	<real name="density"	value="3.61"	unit="g/cm^3" />
+  </composite>
+
   <composite name="SiliconDioxide">
         <addmaterial material="Silicon">  <natoms n="1" /> </addmaterial>
         <addmaterial material="Oxygen">   <natoms n="2" /> </addmaterial>
