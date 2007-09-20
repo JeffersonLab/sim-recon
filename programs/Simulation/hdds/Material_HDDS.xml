@@ -822,7 +822,7 @@
 		<fractionmass	fraction="0.0593"	/>
  	</addmaterial>
 	<addmaterial material="Sodium">
-		<fractionmass	fraction="0.0600"	/>
+		<fractionmass	fraction="0.0060"	/>
  	</addmaterial>
 	<addmaterial material="Oxygen">
 		<fractionmass	fraction="0.1667"	/>

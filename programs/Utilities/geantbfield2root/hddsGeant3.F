@@ -32919,15 +32919,15 @@
 
       imate = 69
       namate = 'leadGlassF800'
-      wmat(1) = 0.645446
+      wmat(1) = 0.6803
       call gfmate(17,chnama,amat(1),zmat(1),dens,radl,absl,ubuf,nwbuf)
-      wmat(2) = 0.0832068
+      wmat(2) = 0.0877
       call gfmate(9,chnama,amat(2),zmat(2),dens,radl,absl,ubuf,nwbuf)
-      wmat(3) = 0.0562619
+      wmat(3) = 0.0593
       call gfmate(42,chnama,amat(3),zmat(3),dens,radl,absl,ubuf,nwbuf)
-      wmat(4) = 0.056926
+      wmat(4) = 0.006
       call gfmate(40,chnama,amat(4),zmat(4),dens,radl,absl,ubuf,nwbuf)
-      wmat(5) = 0.158159
+      wmat(5) = 0.1667
       call gfmate(3,chnama,amat(5),zmat(5),dens,radl,absl,ubuf,nwbuf)
       dens = 3.61
       nlmat = 5
