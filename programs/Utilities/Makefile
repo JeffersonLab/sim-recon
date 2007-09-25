@@ -1,6 +1,6 @@
 
 
-DIRS += root2email
+DIRS += root2email hddm
 # DIRS += bfield2root file2et hddm2cMsg patfind
 
 .PHONY: all install clean pristine relink
