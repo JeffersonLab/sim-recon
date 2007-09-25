@@ -1,6 +1,6 @@
 
 
-DIRS += hddm hd_ana hd_dump hd_root mctrk_ana plugins hdview
+DIRS += hd_ana hd_dump hd_root mctrk_ana plugins hdview
 
 # N. B: the two blank lines between the define and endef are crucial
 define newline
