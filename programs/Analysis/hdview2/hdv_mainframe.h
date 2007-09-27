@@ -56,6 +56,7 @@ class hdv_mainframe:public TGMainFrame {
 		void DoRedraw(void);
 		void DoSetDelay(Int_t);
 		void DoSetCoordinates(Int_t);
+		void DoUpdateTrackLabels(void);
 		
 		void DrawDetectorsXY(void);
 		void DrawDetectorsRPhi(void);
@@ -68,6 +69,8 @@ class hdv_mainframe:public TGMainFrame {
 		bool GetDrawTracks(void){return draw_tracks;}
 		bool GetDrawThrowns(void){return draw_throwns;}
 		bool GetDrawTrajectories(void){return draw_trajectories;}
+		map<string, vector<TGLabel*> >& GetThrownLabels(void){return thrownlabs;}
+		map<string, vector<TGLabel*> >& GetReconstructedLabels(void){return reconlabs;}
 		
 		void SetTrackFactories(vector<string> &facnames);
 		void SetCandidateFactories(vector<string> &facnames);
@@ -75,6 +78,7 @@ class hdv_mainframe:public TGMainFrame {
 		
 		bool GetCheckButton(string who);
 		const char* GetFactoryTag(string who);
+		void GetReconFactory(string &name, string &tag);
 		TPolyLine* GetFCALPolyLine(int channel);
 		TPolyLine* GetFCALPolyLine(float x, float y);
 		
@@ -110,7 +114,9 @@ class hdv_mainframe:public TGMainFrame {
 		vector<TObject*> graphics_sideB;
 		vector<TObject*> graphics_endA;
 		vector<TObject*> graphics_endB;
-		
+
+		map<string, vector<TGLabel*> > thrownlabs;
+		map<string, vector<TGLabel*> > reconlabs;
 		map<string, TGCheckButton*> checkbuttons;
 		map<int, TPolyLine*> fcalblocks;
 		

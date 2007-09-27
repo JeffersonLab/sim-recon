@@ -19,6 +19,7 @@ using namespace std;
 #include <TVector3.h>
 #include <TColor.h>
 
+#include <particleType.h>
 #include "hdview2.h"
 #include "hdv_mainframe.h"
 #include "MyProcessor.h"
@@ -166,7 +167,8 @@ void MyProcessor::FillGraphics(void)
 		for(unsigned int i=0; i<cdctrackhits.size(); i++){
 			const DCDCWire *wire = cdctrackhits[i]->wire;
 			
-			DGraphicSet gset(kCyan, kLine, 1.0);
+			int color = fabs(cdctrackhits[i]->tdrift)<400 ? kCyan:kYellow;
+			DGraphicSet gset(color, kLine, 1.0);
 			gset.points.push_back(wire->origin-(wire->L/2.0)*wire->udir);
 			gset.points.push_back(wire->origin+(wire->L/2.0)*wire->udir);
 			graphics.push_back(gset);
@@ -322,6 +324,104 @@ void MyProcessor::FillGraphics(void)
 		}
 	}
 
+}
+
+//------------------------------------------------------------------
+// UpdateTrackLabels 
+//------------------------------------------------------------------
+void MyProcessor::UpdateTrackLabels(void)
+{
+	// Get the label pointers
+	string name, tag;
+	map<string, vector<TGLabel*> > &thrownlabs = hdvmf->GetThrownLabels();
+	map<string, vector<TGLabel*> > &reconlabs = hdvmf->GetReconstructedLabels();
+	hdvmf->GetReconFactory(name, tag);
+	
+	// Get Thrown particles
+	vector<const DMCThrown*> throwns;
+	loop->Get(throwns);
+	
+	// Get the track info as DKinematicData objects
+	vector<const DKinematicData*> trks;
+	if(name=="DTrack"){
+		vector<const DTrack*> tracks;
+		loop->Get(tracks, tag.c_str());
+		for(unsigned int i=0; i<tracks.size(); i++)trks.push_back(tracks[i]);
+	}
+	if(name=="DTrackCandidate"){
+		vector<const DTrackCandidate*> candidates;
+		loop->Get(candidates, tag.c_str());
+		for(unsigned int i=0; i<candidates.size(); i++)trks.push_back(candidates[i]);
+	}
+	
+	// Clear all labels (i.e. draw ---- in them)
+	map<string, vector<TGLabel*> >::iterator iter;
+	for(iter=reconlabs.begin(); iter!=reconlabs.end(); iter++){
+		vector<TGLabel*> &labs = iter->second;
+		for(unsigned int i=1; i<labs.size(); i++){
+			labs[i]->SetText("--------");
+		}
+	}
+	for(iter=thrownlabs.begin(); iter!=thrownlabs.end(); iter++){
+		vector<TGLabel*> &labs = iter->second;
+		for(unsigned int i=1; i<labs.size(); i++){
+			labs[i]->SetText("--------");
+		}
+	}
+
+	// Loop over thrown particles and fill in labels
+	int ii=0;
+	for(unsigned int i=0; i<throwns.size(); i++){
+		const DMCThrown *trk = throwns[i];
+		if(trk->type==0)continue;
+		int row = thrownlabs["trk"].size()-(ii++)-1;
+		if(row<1)break;
+		
+		stringstream trkno, type, p, theta, phi, z;
+		trkno<<setprecision(4)<<i+1;
+		thrownlabs["trk"][row]->SetText(trkno.str().c_str());
+		
+		thrownlabs["type"][row]->SetText(ParticleType((Particle_t)trk->type));
+
+		p<<setprecision(4)<<trk->p;
+		thrownlabs["p"][row]->SetText(p.str().c_str());
+
+		theta<<setprecision(4)<<trk->theta;
+		thrownlabs["theta"][row]->SetText(theta.str().c_str());
+
+		double myphi = trk->phi;
+		if(myphi<0.0)myphi+=2.0*M_PI;
+		phi<<setprecision(4)<<myphi;
+		thrownlabs["phi"][row]->SetText(phi.str().c_str());
+
+		z<<setprecision(4)<<trk->z;
+		thrownlabs["z"][row]->SetText(z.str().c_str());
+	}
+
+	// Loop over tracks and fill in labels
+	for(unsigned int i=0; i<trks.size(); i++){
+		const DKinematicData *trk = trks[i];
+		int row = reconlabs["trk"].size()-i-1;
+		if(row<1)break;
+		
+		stringstream trkno, type, p, theta, phi, z;
+		trkno<<setprecision(4)<<i+1;
+		reconlabs["trk"][row]->SetText(trkno.str().c_str());
+		
+		p<<setprecision(4)<<trk->momentum().Mag();
+		reconlabs["p"][row]->SetText(p.str().c_str());
+
+		theta<<setprecision(4)<<trk->momentum().Theta();
+		reconlabs["theta"][row]->SetText(theta.str().c_str());
+
+		double myphi = trk->momentum().Phi();
+		if(myphi<0.0)myphi+=2.0*M_PI;
+		phi<<setprecision(4)<<myphi;
+		reconlabs["phi"][row]->SetText(phi.str().c_str());
+
+		z<<setprecision(4)<<trk->position().Z();
+		reconlabs["z"][row]->SetText(z.str().c_str());
+	}
 }
 
 //------------------------------------------------------------------

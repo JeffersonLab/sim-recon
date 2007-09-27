@@ -7,6 +7,7 @@ using namespace std;
 
 #include <pthread.h>
 
+#include <TRACKING/DMCThrown.h>
 #include "hdv_mainframe.h"
 #include "hdview2.h"
 #include "MyProcessor.h"
@@ -267,16 +268,14 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 			
 			// Column names
 			vector<string> colnames;
-			colnames.push_back("trk:");
-			colnames.push_back("type:");
-			colnames.push_back("p:");
-			colnames.push_back("theta:");
-			colnames.push_back("phi:");
-			colnames.push_back("z:");
+			colnames.push_back("trk");
+			colnames.push_back("type");
+			colnames.push_back("p");
+			colnames.push_back("theta");
+			colnames.push_back("phi");
+			colnames.push_back("z");
 			
 			// Create a vertical frame for each column and insert the label as the first item
-			map<string, vector<TGLabel*> > thrownlabs;
-			map<string, vector<TGLabel*> > reconlabs;
 			for(unsigned int i=0; i<colnames.size(); i++){
 				// create frames
 				TGVerticalFrame *tf = new TGVerticalFrame(throwninfo);
@@ -285,8 +284,9 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 				reconinfo->AddFrame(rf, bhints);
 
 				// create column labels
-				TGLabel *tl = new TGLabel(tf, colnames[i].c_str());
-				TGLabel *rl = new TGLabel(rf, colnames[i].c_str());
+				string lab = colnames[i]+":";
+				TGLabel *tl = new TGLabel(tf, lab.c_str());
+				TGLabel *rl = new TGLabel(rf, lab.c_str());
 				tf->AddFrame(tl, chints);
 				rf->AddFrame(rl, chints);
 				vector<TGLabel*> tv;
@@ -314,16 +314,17 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 			}
 
 			// Reconstruction factory
-			reconfactory = new TGComboBox(reconinfo, "DTrack:", 0);
+			reconfactory = new TGComboBox(reconinfo, "DTrackCandidate:", 0);
 			reconfactory->Resize(160,20);
-			reconfactory->AddEntry("DTrack:",0);
+			reconfactory->AddEntry("DTrackCandidate:",0);
 			reconinfo->AddFrame(reconfactory, lhints);
 
 
 
 	//&&&&&&&&&&&&&&&& Defaults
-	checkbuttons["tracks"]->SetState(kButtonDown);
+	//checkbuttons["tracks"]->SetState(kButtonDown);
 	checkbuttons["candidates"]->SetState(kButtonDown);
+	checkbuttons["thrown"]->SetState(kButtonDown);
 	xy->SetState(kButtonDown,kTRUE);
 	coordinatetype = COORD_XY;
 	checkbuttons["cdc"]->SetState(kButtonDown);
@@ -372,6 +373,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	checkbuttons["trajectories"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
 	tracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
+	reconfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoUpdateTrackLabels()");
 
 	// Set up timer to call the DoTimer() method repeatedly
 	// so events can be automatically advanced.
@@ -684,6 +686,9 @@ void hdv_mainframe::DoRedraw(void)
 	sideviewB->GetCanvas()->cd(0);
 	for(unsigned int i=0; i<graphics_sideB.size(); i++)graphics_sideB[i]->Draw();
 	sideviewB->GetCanvas()->Update();
+	
+	// Update track labels
+	DoUpdateTrackLabels();
 }
 
 //-------------------
@@ -704,6 +709,14 @@ void hdv_mainframe::DoSetDelay(Int_t id)
 void hdv_mainframe::DoSetCoordinates(Int_t id)
 {
 	coordinatetype = (coordsys_t)id;
+}
+
+//-------------------
+// DoUpdateTrackLabels
+//-------------------
+void hdv_mainframe::DoUpdateTrackLabels(void)
+{
+	gMYPROC->UpdateTrackLabels();
 }
 
 //-------------------
@@ -842,6 +855,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		shift[2].Set(+blocksize/2, +blocksize/2);  // ensures the r/phi cooridinates also
 		shift[3].Set(+blocksize/2, -blocksize/2);  // define a single enclosed space
 		fcalblocks.clear();
+#if 0
 		for(int chan=0; chan<kMaxChannels; chan++){
 			int row = fcalgeom->row(chan);
 			int col = fcalgeom->column(chan);
@@ -860,6 +874,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 
 			fcalblocks[chan] = poly; // record so we can set the color later
 		}
+#endif
 
 		// ------ scale ------
 		DrawScale(endviewB->GetCanvas(), graphics_endB);
@@ -1206,9 +1221,11 @@ void hdv_mainframe::SetCandidateFactories(vector<string> &facnames)
 		string tag = facnames[i];
 		tag.erase(0, name.size());
 		candidatesfactory->AddEntry(tag.c_str(), i);
+		if(tag=="LINK"){
+			candidatesfactory->Select(i, kTRUE);
+			candidatesfactory->GetTextEntry()->SetText(tag.c_str());
+		}
 	}
-
-	candidatesfactory->GetTextEntry()->SetText("<default>");
 }
 
 //-------------------
@@ -1221,19 +1238,35 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 	
 	// Erase all current entries in the combobox and add back in
 	// "<default>".
+	int id =0;
 	reconfactory->RemoveAll();
-	reconfactory->AddEntry("DTrack:", 0);
+	reconfactory->AddEntry("DTrackCandidate:", id++);
 	reconfactory->Select(0, kFALSE);
+	reconfactory->GetTextEntry()->SetText("DTrackCandidate:");
 	
+	// Add DTrackCandidate factories
+	for(unsigned int i=0; i< facnames.size(); i++){
+		string name = "DTrackCandidate:";
+		string::size_type pos = facnames[i].find(name);
+		if(pos==string::npos)continue;
+		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
+		reconfactory->AddEntry(facnames[i].c_str(), id++);
+		if(tag=="LINK"){
+			reconfactory->Select(id-1, kTRUE);
+			reconfactory->GetTextEntry()->SetText(facnames[i].c_str());
+		}
+	}
+	
+	// Add DTrack factories
+	reconfactory->AddEntry("DTrack:", id++);
 	for(unsigned int i=0; i< facnames.size(); i++){
 		string name = "DTrack:";
 		string::size_type pos = facnames[i].find(name);
 		if(pos==string::npos)continue;
-		string tag = facnames[i];
-		reconfactory->AddEntry(tag.c_str(), i+1);
+		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
+		reconfactory->AddEntry(facnames[i].c_str(), id++);
 	}
 
-	reconfactory->GetTextEntry()->SetText("DTrack:");
 }
 
 //-------------------
@@ -1263,6 +1296,17 @@ const char* hdv_mainframe::GetFactoryTag(string who)
 	if(string(tag) == "<default>")tag = "";
 	
 	return tag;
+}
+
+//-------------------
+// GetReconFactory
+//-------------------
+void hdv_mainframe::GetReconFactory(string &name, string &tag)
+{
+	string nametag(reconfactory->GetSelectedEntry()->GetTitle());
+	string::size_type pos = nametag.find(":");
+	name = nametag.substr(0, pos);
+	tag = nametag.substr(pos+1, nametag.size()-(pos+1));
 }
 
 //-------------------

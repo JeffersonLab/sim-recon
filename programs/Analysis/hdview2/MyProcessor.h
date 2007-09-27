@@ -71,6 +71,7 @@ class MyProcessor:public JEventProcessor
 		};
 		vector<DGraphicSet> graphics;
 		void FillGraphics(void);
+		void UpdateTrackLabels(void);
 
 	private:	
 	
