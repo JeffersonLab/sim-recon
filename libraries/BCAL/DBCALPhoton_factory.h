@@ -25,7 +25,7 @@ public:
     
 private:
 
-    jerror_t DBCALPhoton_factory::brun(JEventLoop *loop, int runnumber);
+    jerror_t brun(JEventLoop *loop, int runnumber);
     jerror_t evnt( JEventLoop *loop, int eventnumber );
     
     double m_scaleZ_p0;
