@@ -35,8 +35,8 @@ class DKinFit {
     /* kinematic quantities */
     std::vector<const DKinematicData*> _kDataInitial_in; ///< Initial particle 4-momenta (in)
     std::vector<const DKinematicData*> _kDataFinal_in; ///< Final particle 4-momenta (in)
-    std::vector<DKinematicData*> _kDataInitial_out; ///< Initial particle 4-momenta (out)
-    std::vector<DKinematicData*> _kDataFinal_out; ///< Final particle 4-momenta (out)
+    std::vector<DKinematicData> _kDataInitial_out; ///< Initial particle 4-momenta (out)
+    std::vector<DKinematicData> _kDataFinal_out; ///< Final particle 4-momenta (out)
 
     /* covariance matrix info */
     TMatrixD _cov; ///< Covariance matrix
@@ -79,9 +79,9 @@ class DKinFit {
 
     virtual ~DKinFit(){ 
       /// Destructor
+      for(unsigned int i=0;i<_kDataInitial_in.size();i++) delete _kDataInitial_in[i];
+      for(unsigned int i=0;i<_kDataFinal_in.size();i++) delete _kDataFinal_in[i];
       _pulls.clear();
-      _kDataInitial_in.clear();
-      _kDataFinal_in.clear();
       _kDataInitial_out.clear();
       _kDataFinal_out.clear();
       _extraC_meas.clear();
@@ -117,8 +117,8 @@ class DKinFit {
     inline std::vector<const DKinematicData*> GetFinal_in()   { return _kDataFinal_in;}
 
     /// Get the momenta AFTER the kinematic fit
-    inline std::vector<DKinematicData*> GetInitial_out() { return _kDataInitial_out;}
-    inline std::vector<DKinematicData*> GetFinal_out()   { return _kDataFinal_out;}
+    inline std::vector<DKinematicData> GetInitial_out() { return _kDataInitial_out;}
+    inline std::vector<DKinematicData> GetFinal_out()   { return _kDataFinal_out;}
 
     // Getters:
 

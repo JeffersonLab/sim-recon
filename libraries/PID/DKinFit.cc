@@ -116,23 +116,23 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
   {
     for(int i=0;i<(int)_kDataInitial_in.size();i++)
     {
-      _kDataInitial_out.push_back(new DKinematicData(*_kDataInitial_in[i])); /// Make sure we're not using the same pointer
+      _kDataInitial_out.push_back(*_kDataInitial_in[i]); /// Make sure we're not using the same pointer
       for(int j=0;j<numypar;j++)
       {
         for(int k=0;k<numypar;k++)
         {
-          _cov(numypar*i+j,numypar*i+k) = (_kDataInitial_out[i]->errorMatrix())(j,k)/errmatrixweight;
+          _cov(numypar*i+j,numypar*i+k) = (_kDataInitial_out[i].errorMatrix())(j,k)/errmatrixweight;
         }
       }
     }
     for(int i=0;i<(int)_kDataFinal_in.size();i++)
     {
-      _kDataFinal_out.push_back(new DKinematicData(*_kDataFinal_in[i])); /// Make sure we're not using the same pointer
+      _kDataFinal_out.push_back(*_kDataFinal_in[i]); /// Make sure we're not using the same pointer
       for(int j=0;j<numypar;j++)
       {
         for(int k=0;k<numypar;k++)
         {
-          _cov(numypar*i+j,numypar*i+k) = (_kDataFinal_out[i]->errorMatrix())(j,k)/errmatrixweight;
+          _cov(numypar*i+j,numypar*i+k) = (_kDataFinal_out[i].errorMatrix())(j,k)/errmatrixweight;
         }
       }
     }
@@ -560,8 +560,8 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
   if(_verbose>1) cerr << "Filling the 4vecs output...." << endl;
   for(i = 0; i < (int)_kDataFinal_out.size(); i++) 
   {
-    _kDataFinal_out[i]->setMass(0.0);
-    _kDataFinal_out[i]->setMomentum(DVector3(y(3*i+0,0), y(3*i+1,0),  y(3*i+2,0)));
+    _kDataFinal_out[i].setMass(0.0);
+    _kDataFinal_out[i].setMomentum(DVector3(y(3*i+0,0), y(3*i+1,0),  y(3*i+2,0)));
   }
   if(_verbose>1) cerr << "Filled the 4vecs output...." << endl;
 
@@ -658,13 +658,13 @@ void DKinFit::_SetToBadFit()
   _ndf = 0;
   for(int i = 0; i < (int)_kDataInitial_out.size(); i++) 
   {
-    _kDataInitial_out[i]->setMomentum(DVector3(-666.,-666.,-666.));  
-    _kDataInitial_out[i]->setMass(-666.);
+    _kDataInitial_out[i].setMomentum(DVector3(-666.,-666.,-666.));  
+    _kDataInitial_out[i].setMass(-666.);
   }
   for(int i = 0; i < (int)_kDataFinal_out.size(); i++) 
   {
-    _kDataFinal_out[i]->setMomentum(DVector3(-666.,-666.,-666.));  
-    _kDataFinal_out[i]->setMass(-666.);
+    _kDataFinal_out[i].setMomentum(DVector3(-666.,-666.,-666.));  
+    _kDataFinal_out[i].setMass(-666.);
   }
 }
 
