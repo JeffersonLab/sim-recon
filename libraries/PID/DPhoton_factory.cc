@@ -18,6 +18,11 @@
 DPhoton_factory::DPhoton_factory()
 {
 	// Set defaults
+        DELTA_THETA_CHARGE = 0.05; // Polar angle separation between photon and charged particle 
+                                   // in radians
+
+	gPARMS->SetDefaultParameter("PID:DELTA_THETA_CHARGE", DELTA_THETA_CHARGE);
+
 	
 }
 
@@ -50,7 +55,10 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
                 
 //                double mdtrt = MinDistToRT(photon,tracks); 
 //                photon->setDtRT(mdtrt); 
-                photon->setdThetaCharge( dThetaToChargeMC(photon,thrown) ); 
+                double dTheta = dThetaToChargeMC(photon,thrown);
+                
+                photon->setdThetaCharge( dTheta ); 
+                if (dTheta < DELTA_THETA_CHARGE ) photon->setTag(3);
 
 		_data.push_back(photon);
 
@@ -68,7 +76,10 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 //                double mdtrt = MinDistToRT(photon,tracks); 
 //	        photon->setDtRT(mdtrt); 
-                photon->setdThetaCharge( dThetaToChargeMC(photon,thrown) ); 
+                double dTheta = dThetaToChargeMC(photon,thrown);
+                photon->setdThetaCharge( dTheta ); 
+
+                if (dTheta < DELTA_THETA_CHARGE ) photon->setTag(3);
 
 		_data.push_back(photon);
 

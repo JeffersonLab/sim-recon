@@ -19,10 +19,6 @@ DPhoton::DPhoton(const oid_t id) : DKinematicData(id),
    fdThetaCharge( kDefaultDistance ),
    fPositionCal( DVector3(0.0, 0.0, 0.0) )
 {
-/*   fTag = 0; 
-   fDtRT = 1000; 
-   fdThetaCharge = 1000; 
-   fPositionCal.SetXYZ(0.,0.,0.);*/
    return;
 }
 

@@ -18,6 +18,7 @@ class DTwoGammaFit:public DKinematicData {
 		HDCLASSDEF(DTwoGammaFit);
                 
                 DTwoGammaFit();
+                DTwoGammaFit(const oid_t id);
 		~DTwoGammaFit();
 
                inline double getChi2() const { return fChi2; }
@@ -27,7 +28,8 @@ class DTwoGammaFit:public DKinematicData {
                inline int getChildTag(int child) const { return fTags[child]; }
                inline oid_t getChildID(int child)  const { return fIDs[child]; }
 
-               DKinematicData* getChildFit(const int i) ;
+               const DKinematicData* getChildFit(const int i) const ;
+               const DLorentzVector* getChildMom(const int i) const ;
 
                void setChi2(double const aChi2);  
                void setProb(double const aProb);  
@@ -35,6 +37,7 @@ class DTwoGammaFit:public DKinematicData {
                void setChildTag(const int aTag, const int i ); 
                void setChildID(const oid_t aID, const int i ); 
                void setChildFit(const DKinematicData& aChildFit, const int i);  
+               void setChildMom(const DLorentzVector& aChildFit, const int i);  
 
 	private:
 
@@ -45,14 +48,21 @@ class DTwoGammaFit:public DKinematicData {
                double fMass;  
                double fPulls[6]; // needs specification
                DKinematicData fChildFits[2];
+               DLorentzVector fChildMoms[2];
 
 };
 
 // Getters
 
-inline DKinematicData* DTwoGammaFit::getChildFit(const int i) 
+inline const DKinematicData* DTwoGammaFit::getChildFit(const int i) const
 {
       return &fChildFits[i];
+}
+
+
+inline const DLorentzVector* DTwoGammaFit::getChildMom(const int i) const
+{
+      return &fChildMoms[i];
 }
 
 // Setters
@@ -60,6 +70,11 @@ inline DKinematicData* DTwoGammaFit::getChildFit(const int i)
 inline void DTwoGammaFit::setChildFit(const DKinematicData& aChildFit, const int i)
 {
      fChildFits[i] = aChildFit;
+}
+// Set data of fitted children
+inline void DTwoGammaFit::setChildMom(const DLorentzVector& aChildFit, const int i)
+{
+     fChildMoms[i] = aChildFit;
 }
 
 // Set pulls from DKinFit
