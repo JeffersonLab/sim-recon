@@ -116,7 +116,7 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
   {
     for(int i=0;i<(int)_kDataInitial_in.size();i++)
     {
-      _kDataInitial_out.push_back(*_kDataInitial_in[i]); /// Make sure we're not using the same pointer
+      _kDataInitial_out.push_back(_kDataInitial_in[i]); /// Make sure we're not using the same pointer
       for(int j=0;j<numypar;j++)
       {
         for(int k=0;k<numypar;k++)
@@ -127,7 +127,7 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
     }
     for(int i=0;i<(int)_kDataFinal_in.size();i++)
     {
-      _kDataFinal_out.push_back(*_kDataFinal_in[i]); /// Make sure we're not using the same pointer
+      _kDataFinal_out.push_back(_kDataFinal_in[i]); /// Make sure we're not using the same pointer
       for(int j=0;j<numypar;j++)
       {
         for(int k=0;k<numypar;k++)
@@ -225,17 +225,17 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
   // set up vector of initial measured values:
   for(i = 0; i < numInitial; i++)
   {
-    mass[i] = _kDataInitial_in[i]->mass(); // particle's mass
-    yi(numypar*i + 0,0) = _kDataInitial_in[i]->px();
-    yi(numypar*i + 1,0) = _kDataInitial_in[i]->py();
-    yi(numypar*i + 2,0) = _kDataInitial_in[i]->pz();
+    mass[i] = _kDataInitial_in[i].mass(); // particle's mass
+    yi(numypar*i + 0,0) = _kDataInitial_in[i].px();
+    yi(numypar*i + 1,0) = _kDataInitial_in[i].py();
+    yi(numypar*i + 2,0) = _kDataInitial_in[i].pz();
   }
   for(i = 0; i < numFinal; i++)
   {
-    mass[numInitial + i] = _kDataFinal_in[i]->mass(); // particle's mass
-    yi(numypar*(numInitial+i) + 0,0) = _kDataFinal_in[i]->px();
-    yi(numypar*(numInitial+i) + 1,0) = _kDataFinal_in[i]->py();
-    yi(numypar*(numInitial+i) + 2,0) = _kDataFinal_in[i]->pz();
+    mass[numInitial + i] = _kDataFinal_in[i].mass(); // particle's mass
+    yi(numypar*(numInitial+i) + 0,0) = _kDataFinal_in[i].px();
+    yi(numypar*(numInitial+i) + 1,0) = _kDataFinal_in[i].py();
+    yi(numypar*(numInitial+i) + 2,0) = _kDataFinal_in[i].pz();
   }
   y = yi; // start off y to be yi
 
