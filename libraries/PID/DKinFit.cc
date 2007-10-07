@@ -413,6 +413,9 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
         cerr << endl;
       }
     }
+    
+    if( gb.Determinant() == 0 ) break; // for the case when gb is singular
+
     gb.Invert();
     if(_verbose>1)
     {
