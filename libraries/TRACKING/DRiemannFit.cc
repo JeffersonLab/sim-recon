@@ -2,6 +2,8 @@
 #include <TDecompLU.h>
 #include <math.h>
 
+#define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
+
 #define EPS 1.0e-8
 
 /// Add a hit to the list of hits using cylindrical coordinates
@@ -183,6 +185,17 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS,DMatrix *Cov){
   xc=-N1(0,0)/2./N1(2,0);
   yc=-N1(1,0)/2./N1(2,0);
   rc=sqrt(1.-N1(2,0)*N1(2,0)-4.*dist_to_origin*N1(2,0))/2./fabs(N1(2,0));
+  
+  // p_trans and phi
+	double Bz_avg=-2.0; 
+	double q = +1.0;
+	p_trans = q*Bz_avg*rc*qBr2p; // qBr2p converts to GeV/c
+	phi = atan2(yc,xc) - M_PI_2;
+	if(p_trans<0.0){
+		p_trans = -p_trans;
+	}
+	if(phi<0)phi+=2.0*M_PI;
+	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
 
   return NOERROR;
 }

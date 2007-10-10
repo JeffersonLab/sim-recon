@@ -79,6 +79,8 @@ class DQuickFit{
 		jerror_t PruneHit(int idx);
 		jerror_t Clear(void);
 		jerror_t FitCircle(void);
+		jerror_t FitCircleRiemann(double BeamRMS=0.100);
+		jerror_t GuessChargeFromCircleFit(void);
 		jerror_t FitTrack(void);
 		jerror_t FitTrack_FixedZvertex(float z_vertex);
 		jerror_t FitLine_FixedZvertex(float z_vertex);
@@ -100,7 +102,7 @@ class DQuickFit{
 			TRACK
 		};
 
-		float x0,y0;
+		float x0,y0,r0;
 		float q;
 		float p, p_trans;
 		float phi, theta;

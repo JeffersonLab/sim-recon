@@ -19,6 +19,8 @@ class DRiemannFit{
 
   // Center of projected circle and radius
   double xc,yc,rc;
+  double p_trans;
+  double phi;
 
  protected:
   jerror_t CalcNormal(DMatrix A,double lambda,DMatrix &N);

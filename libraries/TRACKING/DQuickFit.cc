@@ -10,6 +10,7 @@ using namespace std;
 #include <math.h>
 
 #include "DQuickFit.h"
+#include "DRiemannFit.h"
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
 
 
@@ -237,6 +238,60 @@ jerror_t DQuickFit::FitCircle(void)
 	// The sign of the charge will be determined below.
 	Bz_avg=-2.0; 
 	q = +1.0;
+	r0 = sqrt(x0*x0 + y0*y0);
+	p_trans = q*Bz_avg*r0*qBr2p; // qBr2p converts to GeV/c
+	phi = atan2(y0,x0) - M_PI_2;
+	if(p_trans<0.0){
+		p_trans = -p_trans;
+	}
+	if(phi<0)phi+=2.0*M_PI;
+	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+	
+	// Calculate the chisq
+	chisq = 0.0;
+	for(unsigned int i=0;i<hits.size();i++){
+		DQFHit_t *a = hits[i];
+		float x = a->x - x0;
+		float y = a->y - y0;
+		float c = sqrt(x*x + y*y) - r0;
+		c *= c;
+		a->chisq = c;
+		chisq+=c;
+	}
+	chisq_source = CIRCLE;
+
+	return NOERROR;
+}
+
+//-----------------
+// FitCircleRiemann
+//-----------------
+jerror_t DQuickFit::FitCircleRiemann(double BeamRMS)
+{
+	/// This is a temporary solution for doing a Riemann circle fit.
+	/// It uses Simon's DRiemannFit class. This is not very efficient
+	/// since it creates a new DRiemann fit object, copies the hits
+	/// into it, and then copies the reults back to this DQuickFit
+	/// object every time this is called. At some point, the DRiemannFit
+	/// class will be merged into DQuickFit.
+	DRiemannFit rfit;
+	for(unsigned int i=0; i<hits.size(); i++){
+		DQFHit_t *hit = hits[i];
+		rfit.AddHitXYZ(hit->x, hit->y, hit->z);
+	}
+	
+	rfit.FitCircle(BeamRMS, NULL);
+	x0 = rfit.xc;
+	y0 = rfit.yc;
+	phi = rfit.phi;
+
+	// Momentum depends on magnetic field. If bfield has been
+	// set, we should use it to determine an average value of Bz
+	// for this track. Otherwise, assume -2T.
+	// Also assume a singly charged track (i.e. q=+/-1)
+	// The sign of the charge will be determined below.
+	Bz_avg=-2.0; 
+	q = +1.0;
 	float r0 = sqrt(x0*x0 + y0*y0);
 	p_trans = q*Bz_avg*r0*qBr2p; // qBr2p converts to GeV/c
 	phi = atan2(y0,x0) - M_PI_2;
@@ -259,6 +314,43 @@ jerror_t DQuickFit::FitCircle(void)
 	}
 	chisq_source = CIRCLE;
 
+	return NOERROR;
+}
+
+//-----------------
+// GuessChargeFromCircleFit
+//-----------------
+jerror_t DQuickFit::GuessChargeFromCircleFit(void)
+{
+	/// Adjust the sign of the charge (magnitude will stay 1) based on
+	/// whether the hits tend to be to the right or to the left of the
+	/// line going from the origin through the center of the circle.
+	/// If the sign is flipped, the phi angle will also be shifted by
+	/// +/- pi since the majority of hits are assumed to come from
+	/// outgoing tracks.
+	///
+	/// This is just a guess since tracks can bend all the way
+	/// around and have hits that look exactly like tracks from an
+	/// outgoing particle of opposite charge. The final charge should
+	/// come from the sign of the dphi/dz slope.
+	
+	// Simply count the number of hits whose phi angle relative to the
+	// phi of the center of the circle are greater than pi.
+	unsigned int N=0;
+	for(unsigned int i=0; i<hits.size(); i++){
+		// use cross product to decide if hits is to left or right
+		double x = hits[i]->x;
+		double y = hits[i]->y;
+		if((x*y0 - y*x0) < 0.0)N++;
+	}
+	
+	// Check if more hits are negative and make sign negative if so.
+	if(N>hits.size()/2.0){
+		q = -1.0;
+		phi += M_PI;
+		if(phi>2.0*M_PI)phi-=2.0*M_PI;
+	}
+	
 	return NOERROR;
 }
 
@@ -517,7 +609,7 @@ jerror_t DQuickFit::Dump(void) const
 	for(unsigned int i=0;i<hits.size();i++){
 		DQFHit_t *v = hits[i];
 		cout<<" x="<<v->x<<" y="<<v->y<<" z="<<v->z;
-		cout<<" phi_circle="<<v->phi_circle<<" chisq="<<chisq<<endl;
+		cout<<" phi_circle="<<v->phi_circle<<" chisq="<<v->chisq<<endl;
 	}
 	
 	return NOERROR;
