@@ -9,6 +9,8 @@
 #define _DTrackCandidate_factory_
 
 #include <TH1.h>
+#include <TH2F.h>
+#include <TH3F.h>
 
 #include "JANA/JFactory.h"
 #include "DQuickFit.h"
@@ -97,7 +99,9 @@ class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
 		float MIN_HIT_Z, MAX_HIT_Z;
 		bool EXCLUDE_STEREO;
 		unsigned int MIN_CANDIDATE_HITS;
+		bool DEBUG_HISTS;
 		
+		TH2F *dist_to_seed_vs_cdclayer;
 };
 
 #endif // _DTrackCandidate_factory_

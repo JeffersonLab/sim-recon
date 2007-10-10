@@ -11,10 +11,8 @@ using namespace std;
 
 #include <math.h>
 
-#include <TH1.h>
-
 #include "DTrackCandidate_factory.h"
-#include "JANA/JApplication.h"
+#include "DANA/DApplication.h"
 #include "DTrack.h"
 #include "DQuickFit.h"
 #include "JANA/JGeometry.h"
@@ -52,22 +50,24 @@ DTrackCandidate_factory::DTrackCandidate_factory()
 	MAX_HIT_Z = +360.0;
 	EXCLUDE_STEREO = true;
 	MIN_CANDIDATE_HITS = 6;
+	DEBUG_HISTS = false;
 	
-	gPARMS->SetDefaultParameter("TRKFIND:MAX_SEED_DIST",		MAX_SEED_DIST);
-	gPARMS->SetDefaultParameter("TRKFIND:MAX_SEED_HITS",		MAX_SEED_HITS);
-	gPARMS->SetDefaultParameter("TRKFIND:MIN_SEED_HITS",		MIN_SEED_HITS);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_SEED_DIST",			MAX_SEED_DIST);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_SEED_HITS",			MAX_SEED_HITS);
+	gPARMS->SetDefaultParameter("TRKFIND:MIN_SEED_HITS",			MIN_SEED_HITS);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_CIRCLE_DIST",		MAX_CIRCLE_DIST);
-	gPARMS->SetDefaultParameter("TRKFIND:MAX_PHI_Z_DIST",		MAX_PHI_Z_DIST);
-	gPARMS->SetDefaultParameter("TRKFIND:MIN_PHI_Z_HITS",		MIN_PHI_Z_HITS);
-	gPARMS->SetDefaultParameter("TRKFIND:MAX_DEBUG_BUFFERS",	MAX_DEBUG_BUFFERS);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_PHI_Z_DIST",			MAX_PHI_Z_DIST);
+	gPARMS->SetDefaultParameter("TRKFIND:MIN_PHI_Z_HITS",			MIN_PHI_Z_HITS);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_DEBUG_BUFFERS",		MAX_DEBUG_BUFFERS);
 	gPARMS->SetDefaultParameter("TRKFIND:TARGET_Z_MIN",			TARGET_Z_MIN);
 	gPARMS->SetDefaultParameter("TRKFIND:TARGET_Z_MAX",			TARGET_Z_MAX);
 	gPARMS->SetDefaultParameter("TRKFIND:TRACKHIT_SOURCE",		TRACKHIT_SOURCE);
 	gPARMS->SetDefaultParameter("TRKFIND:XY_NOISE_CUT",			XY_NOISE_CUT);
 	gPARMS->SetDefaultParameter("TRKFIND:MIN_HIT_Z",				MIN_HIT_Z);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_HIT_Z",				MAX_HIT_Z);
-	gPARMS->SetDefaultParameter("TRKFIND:EXCLUDE_STEREO",		EXCLUDE_STEREO);
+	gPARMS->SetDefaultParameter("TRKFIND:EXCLUDE_STEREO",			EXCLUDE_STEREO);
 	gPARMS->SetDefaultParameter("TRKFIND:MIN_CANDIDATE_HITS",	MIN_CANDIDATE_HITS);
+	gPARMS->SetDefaultParameter("TRKFIND:DEBUG_HISTS",				DEBUG_HISTS);
 
 	MAX_SEED_DIST2 = MAX_SEED_DIST*MAX_SEED_DIST;
 	XY_NOISE_CUT2 = XY_NOISE_CUT*XY_NOISE_CUT;
@@ -113,10 +113,24 @@ jerror_t DTrackCandidate_factory::init(void)
 //------------------
 jerror_t DTrackCandidate_factory::brun(JEventLoop *loop, int runnumber)
 {
+	DApplication* dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
 	this->runnumber = runnumber;
-	dgeom = loop->GetJApplication()->GetJGeometry(runnumber);
+	dgeom = dapp->GetJGeometry(runnumber);
 	bfield = NULL;
-	
+
+	if(DEBUG_HISTS){
+		dapp->Lock();
+		cout<<"Creating debugging histograms for track finding ..."<<endl;
+		
+		// Histograms may already exist. (Another thread may have created them)
+		// Try and get pointers to the existing ones.
+		dist_to_seed_vs_cdclayer = (TH2F*)gROOT->FindObject("dist_to_seed_vs_vs_cdclayer");
+
+		if(!dist_to_seed_vs_cdclayer)dist_to_seed_vs_cdclayer = new TH2F("dist_to_seed_vs_cdclayer","Distance from hit to seed circle vs. cdclayer",25, 0.5, 25.5, 50, 0.0, 10.0);
+
+		dapp->Unlock();		
+	}
+
 	return NOERROR;
 }
 
@@ -409,7 +423,14 @@ int DTrackCandidate_factory::FitSeed(void)
 		float dx = hit->X() - x0;
 		float dy = hit->Y() - y0;
 		float r = sqrt(dx*dx + dy*dy);
-			
+		
+		if(DEBUG_HISTS){
+			const DCDCTrackHit* cdchit = dynamic_cast<const DCDCTrackHit*>(eventLoop->FindByID(hit->hitid));
+			if(cdchit){
+				dist_to_seed_vs_cdclayer->Fill(cdchit->wire->ring, fabs(r0-r));
+			}
+		}
+		
 		if(fabs(r0-r) <= MAX_CIRCLE_DIST){
 			hit->flags |= Dtrk_hit::ON_CIRCLE;
 			seed.hits_on_seed_circle.push_back(hit);
