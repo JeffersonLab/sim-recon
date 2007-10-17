@@ -9,6 +9,8 @@
 #include <iomanip>
 using namespace std;
 
+#include <TROOT.h>
+
 #include <math.h>
 
 #include "DTrackCandidate_factory.h"
