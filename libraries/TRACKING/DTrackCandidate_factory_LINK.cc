@@ -219,7 +219,7 @@ void DTrackCandidate_factory_LINK::GetCDCHits(JEventLoop *loop)
 		for(unsigned int j=0; j<cdctrkhits.size(); j++){
 			if(j==i)continue;
 			double d2 = trkhit1->Dist2(cdctrkhits[j]);
-			if(d2<MAX_HIT_DIST2){
+			if(d2<9.0*MAX_HIT_DIST2){
 				trkhit1->flags &= ~NOISE;
 				cdctrkhits[j]->flags &= ~NOISE;
 				break;
@@ -248,6 +248,8 @@ void DTrackCandidate_factory_LINK::FindSeeds(vector<DCDCTrkHit*> &hits, vector<D
 		
 		// Clear USED, IN_SEED, IN_LINE, IN_TRACK flags for all these hits
 		trkhit->flags &= ~(USED|IN_SEED|IN_LINE|IN_TRACK);
+		
+		//if(trkhit->flags & NOISE)continue;
 
 		// Check if ring number has changed. 
 		if(trkhit->hit->wire->ring != last_ring){
