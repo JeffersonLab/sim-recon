@@ -177,18 +177,24 @@ void MyProcessor::FillGraphics(void)
 
 	// FDC wire
 	if(hdvmf->GetCheckButton("fdcwire")){
-		vector<const DFDCPseudo*> fdcpseudos;
-		loop->Get(fdcpseudos);
-		
-		for(unsigned int i=0; i<fdcpseudos.size(); i++){
-			const DFDCWire *wire = fdcpseudos[i]->wire;
+		vector<const DFDCHit*> fdchits;
+		loop->Get(fdchits);
+
+		for(unsigned int i=0; i<fdchits.size(); i++){
+			const DFDCHit *fdchit = fdchits[i];
+			if(fdchit->type!=0)continue;
+			const DFDCWire *wire = DFDCGeometry::GetDFDCWire(fdchit->gLayer, fdchit->element);
+			if(!wire){
+				_DBG_<<"Couldn't find wire for gLayer="<<fdchit->gLayer<<" and element="<<fdchit->element<<endl;
+				continue;
+			}
 			
 			// Wire
 			DGraphicSet gset(kCyan, kLine, 1.0);
 			gset.points.push_back(wire->origin-(wire->L/2.0)*wire->udir);
 			gset.points.push_back(wire->origin+(wire->L/2.0)*wire->udir);
 			graphics.push_back(gset);
-		}
+		}		
 	}
 	
 	// FDC psuedo hits
@@ -408,6 +414,9 @@ void MyProcessor::UpdateTrackLabels(void)
 		trkno<<setprecision(4)<<i+1;
 		reconlabs["trk"][row]->SetText(trkno.str().c_str());
 		
+		type<<"q="<<(trk->charge()>0 ? "+":"")<<trk->charge();
+		reconlabs["type"][row]->SetText(type.str().c_str());
+
 		p<<setprecision(4)<<trk->momentum().Mag();
 		reconlabs["p"][row]->SetText(p.str().c_str());
 

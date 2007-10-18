@@ -8,6 +8,7 @@
 // header.
 
 #include <iostream>
+#include <cmath>
 
 #include <TGClient.h>
 #include <TGButton.h>
@@ -157,6 +158,54 @@ void hdv_mainframe::FillPoly(T *sA, T *sB, T *eA, vector<TVector3> &v)
 			}
 			if(phi<0.0)phi+=2.0*3.14159265;
 			sA->SetNextPoint(pt.Z(), pt.Perp());
+			sB->SetNextPoint(pt.Z(), phi);
+			eA->SetNextPoint(phi, pt.Perp());
+		}
+	}
+
+	// Push graphics objects into containers
+	graphics_sideA.push_back(sA);
+	graphics_sideB.push_back(sB);
+	graphics_endA.push_back(eA);
+	
+	// OK, here's something not too pleasant. When wires are drawn, they
+	// specified as 2 points in space. For wires that are not perfectly
+	// parallel to the z direction, they will have some extent in R
+	// and may even have a funny shape if they extend in z as well.
+	// We must catch these here and replace them with several points
+	// in order to properly represent them in R.
+	if(coordinatetype == COORD_RPHI && typeid(T)==typeid(TPolyLine) && v.size()==2){
+		unsigned int Npoints = 30;
+		TVector3 s = (v[1] - v[0]);
+		s *= 1.0/(double)(Npoints-1);
+		double last_phi=0.0;
+		for(unsigned int i=1; i<Npoints; i++){
+			TVector3 pt = v[0] + ((double)i)*s;
+			double phi = pt.Phi();
+			if(phi<0.0)phi+=2.0*M_PI;
+			
+			// If the phi angle suddenly jumps by a large amount then assume
+			// we crossed the boundary and create a second TPolyLine so
+			// we don't have a long line across all of phi where no wire actually
+			// exists.
+			//
+			// Note the ugly use of reinterpret_cast below. This is because the
+			// type of sB and eB are TPolyMarkers in the T=TPolyMarker version
+			// of this method and TPolyMarker doesn't have
+			// a SetPolyLine method. We need to clear the points from
+			// our new TPolyLine (note that T should be guaranteed to be
+			// TPolyLine in here because of the typeid check above.)
+			if(fabs(phi-last_phi)>M_PI){
+				sB = new T(*sB);
+				eA = new T(*eA);
+				reinterpret_cast<TPolyLine*>(sB)->SetPolyLine(0); // clear all old points
+				reinterpret_cast<TPolyLine*>(eA)->SetPolyLine(0); // clear all old points
+				graphics_sideB.push_back(sB);
+				graphics_endA.push_back(eA);
+			}
+			last_phi = phi;
+			
+			sA->SetPoint(i, pt.Z(), pt.Perp());
 			sB->SetNextPoint(pt.Z(), phi);
 			eA->SetNextPoint(phi, pt.Perp());
 		}

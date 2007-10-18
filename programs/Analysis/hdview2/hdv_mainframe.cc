@@ -627,7 +627,6 @@ void hdv_mainframe::DoRedraw(void)
 			TPolyMarker *sA = new TPolyMarker();
 			TPolyMarker *sB = new TPolyMarker();
 			TPolyMarker *eA = new TPolyMarker();
-			FillPoly(sA, sB, eA, iter->points);
 			sA->SetMarkerColor(iter->color);
 			sB->SetMarkerColor(iter->color);
 			eA->SetMarkerColor(iter->color);
@@ -637,24 +636,19 @@ void hdv_mainframe::DoRedraw(void)
 			sA->SetMarkerStyle(8);
 			sB->SetMarkerStyle(8);
 			eA->SetMarkerStyle(8);
-			graphics_sideA.push_back(sA);
-			graphics_sideB.push_back(sB);
-			graphics_endA.push_back(eA);
+			FillPoly(sA, sB, eA, iter->points); // in hdv_mainframe.h
 		}else{
 			// Lines
 			TPolyLine *sA = new TPolyLine();
 			TPolyLine *sB = new TPolyLine();
 			TPolyLine *eA = new TPolyLine();
-			FillPoly(sA, sB, eA, iter->points);
 			sA->SetLineColor(iter->color);
 			sB->SetLineColor(iter->color);
 			eA->SetLineColor(iter->color);
 			sA->SetLineWidth(iter->size);
 			sB->SetLineWidth(iter->size);
 			eA->SetLineWidth(iter->size);
-			graphics_sideA.push_back(sA);
-			graphics_sideB.push_back(sB);
-			graphics_endA.push_back(eA);
+			FillPoly(sA, sB, eA, iter->points); // in hdv_mainframe.h
 			
 			// Axial CDC wires will end up as having zero length in the end view
 			// so we draw an additional marker in the end view for those cases.
