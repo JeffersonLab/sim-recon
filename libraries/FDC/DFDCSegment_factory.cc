@@ -600,7 +600,7 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(unsigned int n, DMatrix XYZ,
 
 // Riemann Helical Fit based on transforming points on projection to x-y plane 
 // to a circular paraboloid surface combined with a linear fit of the arc 
-// length versus z.
+// length versus z. Uses RiemannCircleFit and RiemannLineFit.
 //
 jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
 						DMatrix &CR,DMatrix &XYZ){
@@ -843,7 +843,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
       ref_plane=2;  
    
       // Perform the Riemann Helical Fit on the track segment
-      jerror_t error=RiemannHelicalFit(neighbors,CR,XYZ);   
+      jerror_t error=RiemannHelicalFit(neighbors,CR,XYZ);   /// initial hit-based fit
        
       // Correct for the Lorentz effect given DOCAs
       if (error==NOERROR){
@@ -853,11 +853,11 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	ref_plane=0; 
 
 	// Fit to "space" points
-	error=RiemannHelicalFit(neighbors,CR,XYZ); 
+	error=RiemannHelicalFit(neighbors,CR,XYZ); /// time-based fit with corrected points
 
 	// Final correction 
 	if (error==NOERROR){
-	  CorrectPoints(neighbors,XYZ);
+	  CorrectPoints(neighbors,XYZ); /// correct again based on time-based result
 	  for (unsigned int m=0;m<neighbors.size();m++){
 	    fdc_track_t temp;
 	    temp.hit_id=m;
