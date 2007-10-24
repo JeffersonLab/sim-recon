@@ -47,10 +47,13 @@ class DKinFit {
     bool _missingParticle; ///< Is there a missing particle?
 
     /* extra mass constraint info */
-    bool _extraC; ///< Is there an extra mass constraint?
+    int _extraC; ///< How many extra mass constraints are there?
     double _invariantMass; ///< Invariant mass used in extra mass constraint
     std::vector<bool> _extraC_meas; ///< Which measured particles in constraint?
-    bool _extraC_miss; ///< Is missing particle used in extra mass constraint?
+    std::vector<double> _constraintMasses; ///< Masses for the extra constraint equations
+    std::vector< std::vector<int> > _constraintParticles; ///< Particles in the extra constraint equations
+                                                          ///< -1 is the missing mass
+    std::vector<bool> _extraC_miss; ///< Is missing particle used in extra mass constraint?
 
     // Functions (private):
     // main kinematic fit function
@@ -147,7 +150,14 @@ class DKinFit {
     // converts names to masses for the missing particle
     static double NameToMass(const string &__name);
 
+    /// Set whether or not there's a missing particle
+    void SetMissingParticle(const double __missingMass);
+
+    /// Set each extra mass constraint
+    void SetMassConstraint(const double __constraintMass, const vector<int> constrainedParticles);
+
     // main kinematic fit function
+    void Fit();
     void FitTwoGammas(const float __missingMass, const float errmatrixweight);
 
     // Utility function

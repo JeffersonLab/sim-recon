@@ -11,6 +11,8 @@
 #include <iostream>
 #include <assert.h>
 
+#include "DRandom.h"
+
 const double kLarge = 1.e20;
 
 // B field constant to convert curvature to momentum
@@ -118,7 +120,6 @@ DKinematicData::DKinematicData(const DVector3& aMomentum ,
   setErrorMatrix( aErrorMatrix);
   return ;
 }
-
 
 DKinematicData::~DKinematicData()
 {
@@ -243,6 +244,7 @@ DKinematicData::setErrorMatrix( const DMatrixDSym& aMatrix )
     }
   }
 
+
 endOfLoop: clearErrorMatrix();
            if( !isNullErrorMatrix ) {
              m_errorMatrix = new DMatrixDSym(aMatrix);
@@ -274,6 +276,29 @@ DKinematicData::restoreOwnershipOfPointer( DMatrixDSym* const aPointer)
   }
 }
 
+  void 
+DKinematicData::smearMCThrownMomentum( double smearPct )
+{
+  DRandom rnd;
+  double errMatValueX = smearPct*smearPct*m_momentum.X()*m_momentum.X();
+  double errMatValueY = smearPct*smearPct*m_momentum.Y()*m_momentum.Y();
+  double errMatValueZ = smearPct*smearPct*m_momentum.Z()*m_momentum.Z();
+
+  rnd.SetSeed((uint)(1000*m_momentum.X()));
+
+  DMatrixDSym sigmas(7);
+  sigmas(0,0) = errMatValueX;
+  sigmas(1,1) = errMatValueY;
+  sigmas(2,2) = errMatValueZ;
+
+  setErrorMatrix( sigmas );
+
+  double newPx = m_momentum.X() + rnd.Gaus( 0.0 , smearPct*m_momentum.X() );
+  double newPy = m_momentum.Y() + rnd.Gaus( 0.0 , smearPct*m_momentum.Y() );
+  double newPz = m_momentum.Z() + rnd.Gaus( 0.0 , smearPct*m_momentum.Z() );
+
+  m_momentum = DVector3(newPx, newPy, newPz);
+}
 
 /******
 

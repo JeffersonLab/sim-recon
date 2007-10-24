@@ -115,6 +115,8 @@
 
 #include "JANA/JObject.h"
 
+#include "DRandom.h"    
+
 #include "DVector3.h"    
 #include "DLorentzVector.h" 
 #include "DMatrixDSym.h" 
@@ -172,8 +174,7 @@ public:
     virtual ~DKinematicData( void ) ;
     
     // assignment operator(s)
-    const DKinematicData& operator=(
-                                     const DKinematicData& aOtherKinematicData ) ;
+    const DKinematicData& operator=( const DKinematicData& aOtherKinematicData ) ;
     
     bool operator==( const DKinematicData& rhs ) const ;
     bool operator!=( const DKinematicData& rhs ) const ;
@@ -182,12 +183,15 @@ public:
     void setMass( const ValueType aMass ) ;
     void setMomentum( const DVector3& aMomentum ) ;
     void setPosition( const DVector3& aPosition ) ;
-	 void setCharge( const ValueType aCharge);
+    void setCharge( const ValueType aCharge);
     void setMassFixed( void ) ;
     void setMassFloat( void ) ;
     void clearErrorMatrix( void ) ;
     void setErrorMatrix( const DMatrixDSym& aMatrix ) ;
     
+    // For debugging with MCThrown
+    void smearMCThrownMomentum( double smearPct );
+
     // const member functions
     ValueType mass( void ) const ;
     ValueType charge( void ) const ;

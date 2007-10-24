@@ -42,9 +42,9 @@ DKinFit::DKinFit(){
   _chi2 = 666.;
   _missingMass = -1.;
   _missingParticle = false;
-  _extraC = false;
+  _extraC = 0;
   _invariantMass = -1.;
-  _extraC_miss = false;
+  _extraC_miss.clear();
   _verbose = 0;
 }
 //_____________________________________________________________________________
@@ -69,6 +69,645 @@ void DKinFit::_Copy(const DKinFit &__kfit){
   _verbose = __kfit._verbose;
   for(int i = 0; i < 3; i++) _sigma_missing[i] = __kfit._sigma_missing[i];
 }
+
+//_____________________________________________________________________________
+void DKinFit::Fit()
+{
+  /// Private function used internally to perform kinematic fitting.
+  _kDataInitial_out.clear();
+  _kDataFinal_out.clear();
+  _extraC_miss.clear();
+  const int numInitial = (int)_kDataInitial_in.size();
+  const int numFinal = (int)_kDataFinal_in.size();
+  const int numParts = numInitial + numFinal;
+  const int numypar = 3; // number of measured quantites
+  const int dim = numypar*numParts; // number of measured quantites
+  if(_verbose>0)
+  {
+    cerr << "numInitial: " << numInitial << endl;
+    cerr << "numFinal: " << numFinal << endl;
+    cerr << "numParts: " << numParts << endl;
+    cerr << "dim: " << dim << endl;
+  }
+  // Resize the covariance matrix
+  _cov.ResizeTo(dim, dim);
+
+  //const int dim = 3*numParts + 1; // number of measured quantites
+  // check to see that covariance matrix size is consistent with # particles
+  if(_cov.GetNrows() != dim || _cov.GetNcols() != dim)
+  {
+    // wrong size
+    std::cout << "Error! <DKinFit::_MainFitter> Covariance matrix size is NOT "
+      << "correct for current number of particles. For " << numParts
+      << " particles, the covariance matrix should be " << dim << " x "
+      << dim << ", but the matrix passed in is " << _cov.GetNrows()
+      << " x " << _cov.GetNcols() << std::endl;
+    abort();
+  }
+
+  for(int i=0;i<numInitial;i++)
+  {
+    _kDataInitial_out.push_back(_kDataInitial_in[i]); /// Make sure we're not using the same pointer
+    for(int j=0;j<numypar;j++)
+    {
+      for(int k=0;k<numypar;k++)
+      {
+        _cov(numypar*i+j,numypar*i+k) = (_kDataInitial_out[i].errorMatrix())(j,k);
+      }
+    }
+  }
+  for(int i=0;i<numFinal;i++)
+  {
+    _kDataFinal_out.push_back(_kDataFinal_in[i]); /// Make sure we're not using the same pointer
+    for(int j=0;j<numypar;j++)
+    {
+      for(int k=0;k<numypar;k++)
+      {
+        _cov( numypar*i+j + numypar*numInitial, numypar*i+k + numypar*numInitial) = (_kDataFinal_out[i].errorMatrix())(j,k);
+      }
+    }
+  }
+
+  if(_verbose>1)
+  {
+    cerr << "Total error matrix: " << endl;
+    for(int j=0;j<_cov.GetNrows();j++)
+    {
+      for(int k=0;k<_cov.GetNcols();k++)
+      {
+        cerr << _cov(j,k) << " ";
+      }
+      cerr << endl;
+    }
+  }
+
+  // Get the number of constraint equations
+  int numConstraints = 4;
+  if(_extraC) numConstraints += _extraC;
+  // For Two gammas
+  //numConstraints = 4;
+
+  // get the degrees of freedom
+  _ndf = 4;
+  if(_missingParticle) _ndf -= 3;
+  _ndf += _extraC;
+  //if(_extraC) _ndf += 1;
+  // For Two gammas
+  //_ndf = 1;
+
+  if(_verbose>0) cerr << "numConstraints/ndf: " << numConstraints << " " << _ndf << endl;
+
+  int i;
+  double mass[numParts];
+  double energy[numParts];
+  double missingEnergy = 999.0;
+  int initialOrFinal[numParts];
+  // The following 3 lines were commented out to avoid compiler warnings 7/31/07 D.L.
+  //double p[numParts],erg[numParts],px[numParts],py[numParts],pz[numParts];
+  //double e_miss=0.,e_inv=0.,px_inv=0.,py_inv=0.,pz_inv=0.;
+  //double dumt, dumx, dumy, dumz;
+  TVector3 p3_miss;
+  double pxMeas[_extraC], pyMeas[_extraC], pzMeas[_extraC], EMeas[_extraC];
+  double pxTot[_extraC], pyTot[_extraC], pzTot[_extraC], ETot[_extraC], massTot[_extraC];
+
+  for(int i=0;i<numParts;i++)
+  {
+    if(i<numInitial) initialOrFinal[i] = +1;
+    else             initialOrFinal[i] = -1;
+  }
+
+  /*********** Define matricies needed to perform kinematic fitting **********/
+
+  // Note: for any matrix m, mT is the transpose of m.  
+  //
+  DLorentzVector missingMomentum;
+
+  // y(i) ==> measured particle quantities. i = 0 is the tagged photon energy,
+  // i = 3*n+1,3*n+2,3*n+3 are particle n's |p|,lambda,phi respectively.
+  TMatrixD yi(dim,1),y(dim,1); // yi will be intial values
+  // x(i) ==> missing particle quantities (0,1,2) = (px,py,pz)
+  TMatrixD x(3,1);
+  //TMatrixD x(4,1);
+  // a(i,j) = dc(i)/dx(j) ==> derivatives of constraint eq's w/r to missing
+  // particle quantities x.
+  TMatrixD a(numConstraints,3),aT(3,numConstraints);
+  //TMatrixD a(numConstraints,4),aT(4,numConstraints);
+  // b(i,j) = dc(i)/dy(j) ==> derivatives of constraint eq's w/r to measured
+  // quantities y.
+  TMatrixD b(numConstraints,dim),bT(dim,numConstraints);
+  // c(i) is constraint eq. i ==> (0,1,2,3) are (e,px,py,pz) constraints, any
+  // extra mass constraints are i = 4 and up.
+  TMatrixD c(numConstraints,1);
+  // eps(i) = yi(i)-y(i) are the overall changes in the measured quantities
+  TMatrixD eps(dim,1),epsT(1,dim);
+  // delta(i) is used to update the measured quantities. After an iteration of
+  // the fitting process, y -= delta is how y is updated.
+  TMatrixD delta(dim,1);
+  // xsi(i) same as delta (above) but for x.
+  TMatrixD xsi(3,1);
+  //TMatrixD xsi(4,1);
+  // gb is a utility matrix used 
+  TMatrixD gb(numConstraints,numConstraints);
+  // cov_fit is the covariance matrix OUTPUT by the fit.
+  TMatrixD cov_fit(dim,dim);
+
+  /***************************** Initial Set Up ******************************/
+
+  // set up vector of initial measured values:
+  for(i = 0; i < numInitial; i++)
+  {
+    mass[i] = _kDataInitial_in[i].mass(); // particle's mass
+    yi(numypar*i + 0,0) = _kDataInitial_in[i].px();
+    yi(numypar*i + 1,0) = _kDataInitial_in[i].py();
+    yi(numypar*i + 2,0) = _kDataInitial_in[i].pz();
+    if(_verbose) cerr << "initial masses: " << mass[i] << endl;
+  }
+  for(i = 0; i < numFinal; i++)
+  {
+    mass[numInitial + i] = _kDataFinal_in[i].mass(); // particle's mass
+    yi(numypar*(numInitial+i) + 0,0) = _kDataFinal_in[i].px();
+    yi(numypar*(numInitial+i) + 1,0) = _kDataFinal_in[i].py();
+    yi(numypar*(numInitial+i) + 2,0) = _kDataFinal_in[i].pz();
+    if(_verbose) cerr << "final masses: " << mass[i+numInitial] << endl;
+  }
+  y = yi; // start off y to be yi
+
+  // For Two gammas
+  if(_missingParticle)
+  {
+    x(0,0) = 0.0;
+    x(1,0) = 0.0;
+    x(2,0) = 0.0;
+    for(i = 0; i < numInitial; i++)
+    {
+      x(0,0) += _kDataInitial_in[i].px();
+      x(1,0) += _kDataInitial_in[i].py();
+      x(2,0) += _kDataInitial_in[i].pz();
+    }
+    for(i = 0; i < numFinal; i++)
+    {
+      x(0,0) -= _kDataFinal_in[i].px();
+      x(1,0) -= _kDataFinal_in[i].py();
+      x(2,0) -= _kDataFinal_in[i].pz();
+    }
+  }
+
+  /************************* Begin Iteration Process *************************/
+  for(int iter = 0; iter < 10; iter++)
+  { 
+    // it should converge by 10 iterations
+    // reset all utility matricies
+    a.Zero();
+    aT.Zero();
+    b.Zero();
+    bT.Zero();
+    c.Zero();
+    delta.Zero();
+    xsi.Zero();
+
+    if(_verbose>1)
+    {
+      cerr << "y: " << endl;
+      for(int j=0;j<y.GetNrows();j++)
+      {
+        for(int k=0;k<y.GetNcols();k++)
+        {
+          cerr  << j << " " << k << " " << y(j,k) << " ";
+        }
+        cerr << endl;
+      }
+    }
+
+    if(_verbose>1)
+    {
+      cerr << "x: " << endl;
+      for(int j=0;j<x.GetNrows();j++)
+      {
+        for(int k=0;k<x.GetNcols();k++)
+        {
+          cerr  << j << " " << k << " " << x(j,k) << " ";
+        }
+        cerr << endl;
+      }
+    }
+
+    // Set up the constraint eq's for this iteration:
+    // c(0) (energy constraint): e_f - e_i = 0
+    // c(i) (p3 constraint): p3_f - p3_i = 0
+    if(_verbose>1) cerr << "setting up the constraints " << endl;
+    for(int j=0;j<4;j++) c(j,0) = 0.; 
+    for(int k=0;k<numInitial;k++)
+    {
+      int offset = k*3;
+      energy[k] = sqrt(pow(mass[k],2) + pow(y(offset+0,0),2) + pow(y(offset+1,0),2) + pow(y(offset+2,0),2));
+      c(0,0) += y(offset+0,0);
+      c(1,0) += y(offset+1,0);
+      c(2,0) += y(offset+2,0);
+      c(3,0) += energy[k];
+    }
+    for(int k=0;k<numFinal;k++)
+    {
+      int offset = (k+numInitial)*3;
+      energy[k+numInitial]  = sqrt(pow(mass[k+numInitial],2) + pow(y(offset+0,0),2) + pow(y(offset+1,0),2) + pow(y(offset+2,0),2));
+      c(0,0) -= y(offset+0,0);
+      c(1,0) -= y(offset+1,0);
+      c(2,0) -= y(offset+2,0);
+      c(3,0) -= energy[k+numInitial];
+    }
+    if(_missingParticle)
+    {
+      missingEnergy = sqrt(pow(_missingMass,2) + pow(x(0,0),2) + pow(x(1,0),2) + pow(x(2,0),2));
+      c(0,0) -= x(0,0);
+      c(1,0) -= x(1,0);
+      c(2,0) -= x(2,0);
+      c(3,0) -= missingEnergy;
+    }
+
+    /// If there is a extra mass constraints
+    for(int j=0;j<_extraC;j++)
+    {
+      int cindex = 4 + j;
+      int yoffset = 3*numInitial;
+      int numConstraintParticles = (int)_constraintParticles[j].size();
+      pxMeas[j]=pyMeas[j]=pzMeas[j]=EMeas[j]=0.0;
+      pxTot[j]=pyTot[j]=pzTot[j]=ETot[j]=0.0;
+      massTot[j] = 0.0;
+      _extraC_miss.push_back(false); // Assume missing particle is not in constraint
+      /// Add in the particles to the constraint
+      for(int k=0;k<numConstraintParticles;k++)
+      {
+        int partIndex = _constraintParticles[j][k];
+        int Eindex = numInitial + partIndex;
+        /// Use a measured particle
+        if(partIndex>=0 && partIndex<numFinal)
+        {
+          if(_verbose>1) cerr << "Using constraint final particle: " << partIndex << endl;
+          pxMeas[j] += y(yoffset + 3*partIndex + 0 ,0);
+          pyMeas[j] += y(yoffset + 3*partIndex + 1 ,0);
+          pzMeas[j] += y(yoffset + 3*partIndex + 2 ,0);
+          EMeas[j] += energy[Eindex];
+          if(_verbose>1) cerr << "constraint4vec: " << pxMeas[j] << " " << pyMeas[j] << " " << pzMeas[j] << " " << EMeas[j] << endl;
+        }
+        else if(partIndex == -1)
+        {
+          _extraC_miss[j] = true; // Assume missing particle is not in constraint
+        }
+      }
+      pxTot[j] = pxMeas[j];
+      pyTot[j] = pyMeas[j];
+      pzTot[j] = pzMeas[j];
+      ETot[j] = EMeas[j];
+      if(_extraC_miss[j])
+      {
+        pxTot[j] += x(0,0);
+        pyTot[j] += x(1,0);
+        pzTot[j] += x(2,0);
+        ETot[j] += missingEnergy;
+      }
+      massTot[j] = sqrt(pow(ETot[j],2) - pow(pxTot[j],2) - pow(pyTot[j],2) - pow(pzTot[j],2));
+      if(_verbose>1) cerr << "massTot/constraintMass: " << massTot[j] << " " <<  _constraintMasses[j] << endl;
+      c(cindex, 0) = massTot[j] - _constraintMasses[j];
+    }
+
+    if(_verbose) 
+    {
+      for(int k=0;k<numParts;k++) cerr << "energy: " << energy[k] << endl;
+      cerr << "missing energy: " << missingEnergy << endl;
+    }
+
+    // This is for when I have 4 constraints
+    //float gammaE0 = sqrt(y(0,0)*y(0,0) + y(1,0)*y(1,0) + y(2,0)*y(2,0));
+    //float gammaE1 = sqrt(y(3,0)*y(3,0) + y(4,0)*y(4,0) + y(5,0)*y(5,0));
+    //float pi0E = sqrt(x(0,0)*x(0,0) + x(1,0)*x(1,0) + x(2,0)*x(2,0) + _missingMass * _missingMass);
+    //c(0,0) = x(0,0) - y(0,0) - y(3,0);
+    //c(1,0) = x(1,0) - y(1,0) - y(4,0);
+    //c(2,0) = x(2,0) - y(2,0) - y(5,0);
+    //c(3,0) = pi0E - gammaE0 - gammaE1;
+    //if(_verbose>1) cerr << "set up the constraints " << endl;
+
+    if(_verbose>1)
+    {
+      cerr << "c: " << endl;
+      for(int j=0;j<c.GetNrows();j++)
+      {
+        for(int k=0;k<c.GetNcols();k++)
+        {
+          cerr  << j << " " << k << " " << c(j,k) << " ";
+        }
+        cerr << endl;
+      }
+    }
+
+
+    //This is for 4 constraints
+    // Derivatives of constraint equations wrt unknown quantities.
+    if(_missingParticle) /// NEED TO DO THIS RIGHT!!!!!!!!!!!!! MB
+    {
+      for(int j=0;j<3;j++)
+      {
+        a(j,j) = -1.0;                    // derivatives of p3 constraint eq's 
+        a(3,j) = -x(j,0)/missingEnergy; // derivatives of energy constraint eq.
+      }
+      for(int j=0;j<_extraC;j++)
+      {
+        int aindex = 4 + j;
+        if(_extraC_miss[j])
+        {
+          a(aindex, 0) = (((x(0,0)*ETot[j])/missingEnergy) - pxTot[j])/massTot[j];
+          a(aindex, 1) = (((x(1,0)*ETot[j])/missingEnergy) - pyTot[j])/massTot[j];
+          a(aindex, 2) = (((x(2,0)*ETot[j])/missingEnergy) - pzTot[j])/massTot[j];
+        }
+      }
+    }
+
+    if(_verbose>1)
+    {
+      cerr << "a: " << endl;
+      for(int j=0;j<a.GetNrows();j++)
+      {
+        for(int k=0;k<a.GetNcols();k++)
+        {
+          cerr << a(j,k) << " ";
+        }
+        cerr << endl;
+      }
+    }
+
+    aT.Transpose(a); // set a transpose
+
+    if(_verbose>1)
+    {
+      cerr << "aT: " << endl;
+      for(int j=0;j<aT.GetNrows();j++)
+      {
+        for(int k=0;k<aT.GetNcols();k++)
+        {
+          cerr << aT(j,k) << " ";
+        }
+        cerr << endl;
+      }
+    }
+
+    // Set up derivatives matrix b(i,j) = dc(i)/dy(j):
+    //This is for 4 constraints
+    for(int k=0;k<numInitial;k++)
+    {
+      int offset = k*3;
+      b(0,offset+0) = 1.0;
+      b(1,offset+1) = 1.0;
+      b(2,offset+2) = 1.0;
+      for(int j=0;j<3;j++) b(3,offset+j) = y(offset+j,0)/energy[k];
+    }
+    for(int k=0;k<numFinal;k++)
+    {
+      int offset = (k+numInitial)*3;
+      b(0,offset+0) = -1.0;
+      b(1,offset+1) = -1.0;
+      b(2,offset+2) = -1.0;
+      for(int j=0;j<3;j++) b(3,offset+j) = -y(offset+j,0)/energy[k+numInitial];
+    }
+    for(int j=0;j<_extraC;j++)
+    {
+      int bindex = 4 + j;
+      int yoffset = 3*numInitial;
+      int numConstraintParticles = (int)_constraintParticles[j].size();
+      /// Add in the particles to the constraint
+      for(int k=0;k<numConstraintParticles;k++)
+      {
+        int partIndex = _constraintParticles[j][k];
+        int Eindex = numInitial + partIndex;
+        /// Use a measured particle
+        if(partIndex>=0 && partIndex<numFinal)
+        {
+          b(bindex, yoffset + 3*partIndex +0) = (((y(yoffset + 3*partIndex +0,0)*ETot[j])/energy[Eindex]) - pxTot[j])/massTot[j];
+          b(bindex, yoffset + 3*partIndex +1) = (((y(yoffset + 3*partIndex +1,0)*ETot[j])/energy[Eindex]) - pyTot[j])/massTot[j];
+          b(bindex, yoffset + 3*partIndex +2) = (((y(yoffset + 3*partIndex +2,0)*ETot[j])/energy[Eindex]) - pzTot[j])/massTot[j];
+        }
+      }
+    }
+
+    if(_verbose>1)
+    {
+      cerr << "b: " << endl;
+      for(int j=0;j<b.GetNrows();j++)
+      {
+        for(int k=0;k<b.GetNcols();k++)
+        {
+          cerr << b(j,k) << " ";
+        }
+        cerr << endl;
+      }
+    }
+
+    bT.Transpose(b); // set b transpose
+
+    if(_verbose>1)
+    {
+      cerr << "bT: " << endl;
+      for(int j=0;j<bT.GetNrows();j++)
+      {
+        for(int k=0;k<bT.GetNcols();k++)
+        {
+          cerr << bT(j,k) << " ";
+        }
+        cerr << endl;
+      }
+    }
+
+    // gb is a utility matrix we'll need a lot below
+    gb = b * _cov * bT;
+    if(_verbose>1)
+    {
+      cerr << "gb: " << endl;
+      for(int j=0;j<gb.GetNrows();j++)
+      {
+        for(int k=0;k<gb.GetNcols();k++)
+        {
+          cerr << gb(j,k) << " ";
+        }
+        cerr << endl;
+      }
+    }
+
+    if( gb.Determinant() == 0 ) break; // for the case when gb is singular
+
+    gb.Invert();
+    if(_verbose>1)
+    {
+      cerr << "gb inverted: " << endl;
+      for(int j=0;j<gb.GetNrows();j++)
+      {
+        for(int k=0;k<gb.GetNcols();k++)
+        {
+          cerr << gb(j,k) << " ";
+        }
+        cerr << endl;
+      }
+
+    }
+
+    if(_missingParticle)
+    {
+      if(_verbose>1)
+      {
+        cerr << "(aT * gb * a): " << endl;
+        for(int j=0;j<(aT * gb * a).GetNrows();j++)
+        {
+          for(int k=0;k<(aT * gb * a).GetNcols();k++)
+          {
+            cerr << (aT * gb * a)(j,k) << " ";
+          }
+          cerr << endl;
+        }
+        cerr << "Before invert: " << endl;
+        cerr << "Determinant: " << (aT * gb * a).Determinant() << endl;
+      }
+      //(aT * gb * a).Invert();
+      if(_verbose>1) cerr << "After invert: " << endl;
+      // Is this what we should do? 
+      if( (aT * gb * a).Determinant() == 0.0 ) break;
+
+      // calculate the change to be made to the missing particle quantities
+      xsi = ((aT * gb * a).Invert())*(aT * gb * c);
+      // update x
+      x -= xsi;
+      // calculate the changes to be made to the measured quantities
+      delta = _cov * bT * gb * (c - a*xsi);
+
+      if(_verbose>1)
+      {
+        cerr << "xsi: " << endl;
+        for(int j=0;j<xsi.GetNrows();j++)
+        {
+          for(int k=0;k<xsi.GetNcols();k++)
+          {
+            cerr << xsi(j,k) << " ";
+          }
+          cerr << endl;
+        }
+
+        cerr << "(c - a*xsi): " << endl;
+        for(int j=0;j<(c - a*xsi).GetNrows();j++)
+        {
+          for(int k=0;k<(c - a*xsi).GetNcols();k++)
+          {
+            cerr << (c - a*xsi)(j,k) << " ";
+          }
+          cerr << endl;
+        }
+
+      }
+
+    }
+    else 
+    {
+      delta = _cov * bT * gb * c;
+    }
+
+    // update the measured quantities y
+    y -= delta;
+
+    if(_verbose>1)
+    {
+      cerr << "delta: " << endl;
+      for(int j=0;j<delta.GetNrows();j++)
+      {
+        for(int k=0;k<delta.GetNcols();k++)
+        {
+          cerr << delta(j,k) << " ";
+        }
+        cerr << endl;
+      }
+    }
+
+    if(_verbose>1)
+    {
+      cerr << "new y: " << endl;
+      for(int j=0;j<y.GetNrows();j++)
+      {
+        for(int k=0;k<y.GetNcols();k++)
+        {
+          cerr << y(j,k) << " ";
+        }
+        cerr << endl;
+      }
+    }
+
+
+    eps = yi - y;
+    epsT.Transpose(eps);
+    if(TMath::Prob((epsT * bT * gb * b * eps)(0,0),_ndf) < 1.e-10) break;
+    if(_verbose>1)
+    {
+      cerr << "eps: " << endl;
+      for(int j=0;j<eps.GetNrows();j++)
+      {
+        for(int k=0;k<eps.GetNcols();k++)
+        {
+          cerr << eps(j,k) << " ";
+        }
+        cerr << endl;
+      }
+    }
+
+
+  } /* end iteration process */
+
+  // get the total changes in the measured quantities
+  eps = yi - y;
+  epsT.Transpose(eps);
+
+  // get the fit covariance matrix
+  if(_missingParticle)
+  {
+    cov_fit = _cov - _cov*bT*gb*b*_cov + _cov*bT*gb*a*((aT*gb*a).Invert())*aT*gb*b*_cov;
+  }
+  else 
+  {
+    cov_fit = _cov - _cov*bT*gb*b*_cov;
+  }
+
+  // get chi2 and the pulls
+  _pulls.resize(dim);
+  for(i = 0; i < dim; i++)
+  {
+    _pulls[i] = -eps(i,0)/sqrt(_cov(i,i) - cov_fit(i,i));
+  }
+
+  _chi2 = (epsT * bT * gb * b * eps)(0,0); // the (0,0)...only...element 
+
+  if(_verbose>0) cerr << "Prob: " << TMath::Prob(_chi2, _ndf) << " " << _chi2 << " " << _ndf << endl;
+
+  // update output of measured quantities
+  if(_verbose>1) cerr << "Filling the 4vecs output...." << endl;
+  for(i = 0; i < numInitial; i++) 
+  {
+    int offset = 3*i;
+    _kDataInitial_out[i].setMass(mass[i]);
+    _kDataInitial_out[i].setMomentum(DVector3(y(offset+0,0), y(offset+1,0),  y(offset+2,0)));
+  }
+  for(i = 0; i < numFinal; i++) 
+  {
+    int offset = 3*(i+numInitial);
+    _kDataFinal_out[i].setMass(mass[i+numInitial]);
+    _kDataFinal_out[i].setMomentum(DVector3(y(offset+0,0), y(offset+1,0),  y(offset+2,0)));
+  }
+  if(_verbose>1) cerr << "Filled the 4vecs output...." << endl;
+
+  // set the missing particle covariance matrix
+  if(_verbose>1) cerr << "Filling the missing cov matrix output...." << endl;
+  // Not sure about this part
+  if( (aT * gb * a).Determinant() != 0.0 ) 
+  {
+    if(_missingParticle)
+      this->_SetMissingParticleErrors((aT * gb * a).Invert(),x);  
+    if(_verbose>1) cerr << "Filled the missing cov matrix output...." << endl;
+  }
+  else 
+  {
+    if(_verbose>1) cerr << "Not going to fill the missing cov matrix output 'cos singular...." << endl;
+  }
+}
 //_____________________________________________________________________________
 
 void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweight=1.0)
@@ -80,6 +719,7 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
   //{
   //dum_numParts += _kDataInitial_in[i].NumQuantitiesForDKinFit();
   //}
+  _missingMass = __missingMass;
   _kDataInitial_out.clear();
   _kDataFinal_out.clear();
   //float errmatrixweight = 1.0;
@@ -152,7 +792,7 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
   }
 
 
-	// The following was commented out to avoid compiler warnings 7/31/07 D.L.
+  // The following was commented out to avoid compiler warnings 7/31/07 D.L.
   //bool isEnergyMeasured[numInitial + numFinal];
 
   // Get the number of constraint equations
@@ -173,7 +813,7 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
   int i;
   double mass[numParts];
   int initialOrFinal[numParts];
-	// The following 3 lines were commented out to avoid compiler warnings 7/31/07 D.L.
+  // The following 3 lines were commented out to avoid compiler warnings 7/31/07 D.L.
   //double p[numParts],erg[numParts],px[numParts],py[numParts],pz[numParts];
   //double e_miss=0.,e_inv=0.,px_inv=0.,py_inv=0.,pz_inv=0.;
   //double dumt, dumx, dumy, dumz;
@@ -413,7 +1053,7 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
         cerr << endl;
       }
     }
-    
+
     if( gb.Determinant() == 0 ) break; // for the case when gb is singular
 
     gb.Invert();
@@ -596,7 +1236,7 @@ void DKinFit::_ResetForNewFit(){
 
   // reset bools to default values
   _missingParticle = false;
-  _extraC_miss = false;
+  _extraC_miss.clear();
 }
 //_____________________________________________________________________________
 
@@ -723,6 +1363,30 @@ void DKinFit::_SetMissingParticleErrors(const TMatrixD &__missingCov, const TMat
       + sigma_pz_2*(dphi_dpz*dphi_dpz));
 
 }
+//_____________________________________________________________________________
+/// Set whether or not there's a missing particle
+void DKinFit::SetMissingParticle(const double __missingMass)
+{
+  _missingParticle = true;
+  _missingMass = __missingMass;
+}
+
+//_____________________________________________________________________________
+/// Set each extra mass constraint
+void DKinFit::SetMassConstraint(const double __constraintMass, const vector<int> __constrainedParticles)
+{
+  _extraC++;
+  _constraintMasses.push_back(__constraintMass);
+  _constraintParticles.push_back(__constrainedParticles); /// Only final state particles for now
+  if(_verbose)
+  {
+    for(int i=0;i<(int)_constraintMasses.size();i++)
+    {
+      cerr << "Pushing back constraint mass: " << _constraintMasses[i] << endl;
+    }
+  }
+}
+
 //_____________________________________________________________________________
 //
 DLorentzVector DKinFit::MissingMomentum(vector<const DKinematicData*> initial, vector<const DKinematicData*> final) 
