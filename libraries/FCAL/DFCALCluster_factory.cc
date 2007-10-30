@@ -19,9 +19,10 @@
 
 userhits_t* hits = NULL;
 
-/* uncomment below to enable log-weighting method for cluster centroid
-   (imported from IU clusterizer, it was default method for Radphi) - MK */
-#define LOG2_WEIGHTING 
+/* Do not use the following switch unless you KNOW what you are doing!!!
+   The log-weighting method for cluster centroid  was imported from IU clusterizer, 
+   it was default method for Radphi - MK */
+// #define LOG2_WEIGHTING 
 
 // Used to sort hits by Energy
 bool FCALHitsSort_C(const DFCALHit* const &thit1, const DFCALHit* const &thit2) {

@@ -20,8 +20,8 @@ DFCALPhoton::~DFCALPhoton()
 #define	FCAL_SHOWER_OFFSET   3.0 
 
 // These change with the FCAL attenuation length (L=166cm)
-#define	EGAMMA_NORM 0.6348
-#define	EGAMMA_EPSILON   0.029
+#define	EGAMMA_NORM 0.627419
+#define	EGAMMA_EPSILON   0.05259
  
 // Simple non-linear correction
 void DFCALPhoton::fixEnergy(const double energy) 
@@ -29,7 +29,7 @@ void DFCALPhoton::fixEnergy(const double energy)
 
 	double const A=1/EGAMMA_NORM; 				// Normalization factor 
         double const power = 1/(1+EGAMMA_EPSILON); 	        // Non-linear factor
- 	fEnergy = pow(A*energy,power);
+
 }
 
 // Simple depth correction: estimate shower depth based on shower maximum
