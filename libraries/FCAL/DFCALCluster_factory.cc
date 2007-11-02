@@ -214,7 +214,6 @@ const string DFCALCluster_factory::toString(void)
 }
 
 const userhits_t* DFCALCluster::fHitlist = 0;
-//const DFCALHit* DFCALCluster::fHitlist = 0;
 int* DFCALCluster::fHitused = 0;
 
 DFCALCluster::DFCALCluster()
@@ -252,7 +251,6 @@ DFCALCluster::~DFCALCluster()
 }
 
  void DFCALCluster::setHitlist( const userhits_t* const hits)
-//void DFCALCluster::setHitlist( const DFCALHits* const hits, const )
 {
    fHitlist = hits;
    if (fHitused) {
@@ -266,20 +264,6 @@ DFCALCluster::~DFCALCluster()
       }
    }
 }
-
-/* not needed to solve memory leak
-void DFCALCluster::unsetHitlist()
-{
-   if (fHitused) {
-      delete [] fHitused;
-      fHitused = 0;
-   }
-   if (fHitlist) {
-       delete [] fHitlist;
-       fHitlist = 0;
-   }   
-}
-*/
 
 int DFCALCluster::addHit(const int ihit, const double frac)
 {
@@ -387,8 +371,9 @@ bool DFCALCluster::update()
 #endif
 
    double MOM1x = 0;
+   double MOM2x = 0;
    double MOM1y = 0;
-   double MOM2 = 0;
+   double MOM2y = 0;
    double MOM1u = 0;
    double MOM2u = 0;
    double MOM1v = 0;
@@ -402,7 +387,8 @@ bool DFCALCluster::update()
              *(SQR(x-centroid.x) + SQR(y-centroid.y));*/
       MOM1x += fHitlist->hit[ih].E*frac*x;
       MOM1y += fHitlist->hit[ih].E*frac*y;
-      MOM2 += fHitlist->hit[ih].E*frac*(SQR(x)+SQR(y));
+      MOM2x += fHitlist->hit[ih].E*frac*SQR(x);
+      MOM2y += fHitlist->hit[ih].E*frac*SQR(y);
 //      double u0 = sqrt(SQR(centroid.x) + SQR(centroid.y));
 //      double v0 = 0;
       double phi = atan2(centroid.y(),centroid.x());
@@ -414,7 +400,9 @@ bool DFCALCluster::update()
       MOM2v += fHitlist->hit[ih].E*frac*SQR(v);
    }
 //   fRMS = sqrt(RMS)/energy;
-   fRMS = sqrt(energy*MOM2-SQR(MOM1x)-SQR(MOM1y))/(energy);
+   fRMS = sqrt(energy*(MOM2x+MOM2y)-SQR(MOM1x)-SQR(MOM1y))/(energy);
+   fRMS_x = sqrt(energy*MOM2x - SQR(MOM1x))/(energy);
+   fRMS_y = sqrt(energy*MOM2y - SQR(MOM1y))/(energy);
    fRMS_u = sqrt(energy*MOM2u - SQR(MOM1u))/(energy);
    fRMS_v = sqrt(energy*MOM2v - SQR(MOM1v))/(energy);
 

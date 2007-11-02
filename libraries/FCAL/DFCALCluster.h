@@ -51,16 +51,7 @@ class DFCALCluster:public JObject{
                 DFCALCluster();
 		~DFCALCluster();
 
-/*  --- This has been used in a simple clusterizer [MK] ----
-                float x;  ///< x position of the shower center
-                float y;  ///< y position of the shower center
-                float E;  ///< Energy of the shower
-                float t;  ///< Time of the shower
-*/
-
 		static void setHitlist(const userhits_t* const hits);
-//		static void setHitlist(const DFCALHit* const hits);
-//		static void unsetHitlist();
 
 		double getEexpected(const int ihit) const;
 		double getEallowed(const int ihit) const;
@@ -68,6 +59,8 @@ class DFCALCluster:public JObject{
 		double getEmax() const;
 		DVector3 getCentroid() const;
 		double getRMS() const;
+		double getRMS_x() const;
+		double getRMS_y() const;
 		double getRMS_u() const;
 		double getRMS_v() const;
 		int getHits() const;
@@ -85,14 +78,14 @@ class DFCALCluster:public JObject{
 		double fEmax;                // energy in the first block of the cluster
 		DVector3 fCentroid;         // cluster centroid position (cm)
 		double fRMS;                 // cluster r.m.s. size (cm)
+		double fRMS_x;               // cluster r.m.s. size along X-axis (cm)
+		double fRMS_y;               // cluster r.m.s. size along Y-axis (cm)
 		double fRMS_u;               // cluster r.m.s. size in radial direction (cm)
 		double fRMS_v;               // cluster r.m.s. size in azimuth direction (cm)
 		int fNhits;                  // number of hits owned by this cluster
 		int *fHit;                   // index list of hits owned by this cluster
 		double *fHitf;               // list of hit fractions owned by this cluster
 		static const userhits_t* fHitlist;   // pointer to user's hit list
-//		static const DFCALHit* fHitlist;   // pointer to user's hit list
-//                static const int fHitsNum; // number of FCAL hits 
 		static int *fHitused;        // number of clusters that use hit,
 					     // or -1 if it is a cluster seed
 		double *fEexpected;          // expected energy of hit by cluster (GeV)
@@ -104,7 +97,6 @@ inline double DFCALCluster::getEexpected(const int ihit) const
 {
 
    if ( (ihit >= 0) && (fHitlist) && (ihit < fHitlist->nhits) ) 
-   //if ( (ihit >= 0) && (fHitlist) && (ihit < fHitsNum) ) 
       return fEexpected[ihit];
    else
       return 0;
@@ -114,7 +106,6 @@ inline double DFCALCluster::getEallowed(const int ihit) const
 {
 
    if (ihit >= 0 && fHitlist && ihit < fHitlist->nhits) 
-   //if (ihit >= 0 && fHitlist && ihit < fHitsNum) 
       return fEallowed[ihit];
    else
       return 0;
@@ -138,6 +129,16 @@ inline DVector3 DFCALCluster::getCentroid() const
 inline double DFCALCluster::getRMS() const
 {
    return fRMS;
+}
+
+inline double DFCALCluster::getRMS_x() const
+{
+   return fRMS_x;
+}
+
+inline double DFCALCluster::getRMS_y() const
+{
+   return fRMS_y;
 }
 
 inline double DFCALCluster::getRMS_u() const
@@ -172,8 +173,6 @@ inline int DFCALCluster::getUsed(const int ihit)
    else
       return 0;
 }
-
-
 
 #endif // _DFCALCluster_
 
