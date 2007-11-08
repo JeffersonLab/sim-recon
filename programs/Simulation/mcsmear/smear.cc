@@ -104,6 +104,9 @@ double FDC_DRIFT_SIGMA=200.0/55.0; // 200 microns/ (55 microns/ns)
 // Drift time variation for CDC anode wires
 double CDC_DRIFT_SIGMA=200.0/55.0; // 200 microns/ (55 microns/ns)
 
+// Time window for acceptance of FDC hits
+double FDC_TIME_WINDOW = 500.0E-9; // in seconds
+
 
 //-----------
 // Smear
@@ -451,8 +454,8 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 				
 				fdcAnodeWire->wire = wire_number[j];
 				
-				fdcchamber->layer = layer_number[j];
-				fdcchamber->module = (fdcchamber->layer-1)/8 + 1;
+				fdcchamber->layer = (layer_number[j]-1)%3 + 1;
+				fdcchamber->module = (layer_number[j]-1)/3 + 1;
 			}
 		}
 	}
@@ -618,5 +621,5 @@ void InitFDCGeometry(void)
 
 	// Coefficient used to calculate FDCsingle wire rate. We calculate
 	// it once here just to save calculating it for every wire in every event
-	FDC_RATE_COEFFICIENT = exp(-log(4)/23.0)/2.0/log(24.0);
+	FDC_RATE_COEFFICIENT = exp(-log(4)/23.0)/2.0/log(24.0)*FDC_TIME_WINDOW/1000.0E-9;
 }
