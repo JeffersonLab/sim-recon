@@ -105,7 +105,7 @@ double FDC_DRIFT_SIGMA=200.0/55.0; // 200 microns/ (55 microns/ns)
 double CDC_DRIFT_SIGMA=200.0/55.0; // 200 microns/ (55 microns/ns)
 
 // Time window for acceptance of FDC hits
-double FDC_TIME_WINDOW = 500.0E-9; // in seconds
+double FDC_TIME_WINDOW = 1000.0E-9; // in seconds
 
 
 //-----------
@@ -360,7 +360,8 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 	for(unsigned int layer=1; layer<=FDC_LAYER_Z.size(); layer++){
 		double No = FDC_RATE_COEFFICIENT*exp((double)layer*log(4.0)/24.0);
 		for(unsigned int wire=1; wire<=96; wire++){
-			double N = No*log(((double)wire+0.5)/((double)wire-0.5));
+			double rwire = fabs(96.0/2.0 - (double)wire);
+			double N = No*log((rwire+0.5)/(rwire-0.5));
 
 			// Indivdual wire rates should be way less than 1/event so
 			// we just use the rate as a probablity.
@@ -622,4 +623,8 @@ void InitFDCGeometry(void)
 	// Coefficient used to calculate FDCsingle wire rate. We calculate
 	// it once here just to save calculating it for every wire in every event
 	FDC_RATE_COEFFICIENT = exp(-log(4)/23.0)/2.0/log(24.0)*FDC_TIME_WINDOW/1000.0E-9;
+	
+	// Something is a little off in my calculation above so I scale it down via
+	// an emprical factor:
+	FDC_RATE_COEFFICIENT *= 0.353;
 }
