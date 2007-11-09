@@ -1004,14 +1004,14 @@ jerror_t DFDCSegment_factory::GetProcessNoiseCovariance(double x, double y,
   double p=0.003*B/2./fabs(kappa)/cosl;
   double beta=p/sqrt(p*p+mass_hyp*mass_hyp);
 
-  //Materials: copper, Kapton, Mylar, Air, Argon, CO2
-  double thickness[6]={4e-4,50e-4,13e-4,1.0,0.4,0.6};
-  double density[6]={8.96,1.42,1.39,1.2931e-3,1.782e-3,1.977e-3};
-  double X0[6]={12.86,40.56,39.95,36.66,19.55,36.2};
+  //Materials: copper, Kapton, Mylar, Air, Argon, CO2, Rohacell
+  double thickness[7]={4e-4,50e-4,13e-4,1.0,0.4,0.6,0.9894};
+  double density[7]={8.96,1.42,1.39,1.2931e-3,1.782e-3,1.977e-3,0.032};
+  double X0[7]={12.86,40.56,39.95,36.66,19.55,36.2,41.04};
   double material_sum=0.;
-  for (unsigned int i=0;i<6;i++){
+  for (unsigned int i=0;i<7;i++){
     material_sum+=thickness[i]*density[i]/X0[i];
-  }	
+  }
   // RMS from multiple scattering
   sigma2_ms=0.0136*0.0136/p/p/beta/beta*material_sum/sinl
     *(1.+0.038*log(material_sum/sinl))*(1.+0.038*log(material_sum/sinl));
