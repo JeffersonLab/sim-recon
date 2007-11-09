@@ -22,14 +22,12 @@ int QUIT = 0;
 
 extern bool ADD_NOISE;
 extern bool SMEAR_HITS;
-extern float CDC_R;
-extern float CDC_Z_SIGMA;
-extern float CDC_AVG_NOISE_HITS;
-extern float FDC_R;
-extern float FDC_AVG_NOISE_HITS;
-extern float FDC_DRIFT_SIGMA;
-extern float FDC_CATHODE_SIGMA;
-extern float CDC_DRIFT_SIGMA;
+extern double CDC_TDRIFT_SIGMA;
+extern double CDC_TIME_WINDOW;
+extern double FDC_TDRIFT_SIGMA;
+extern double FDC_CATHODE_SIGMA;
+extern double FDC_PED_NOISE;
+extern double FDC_TIME_WINDOW;
 
 //-----------
 // main
@@ -100,16 +98,13 @@ void ParseCommandLineArguments(int narg, char* argv[])
 		if(ptr[0] == '-'){
 			switch(ptr[1]){
 				case 'h': Usage();													break;
-				case 'n': ADD_NOISE=true;											break;
+				case 'n': ADD_NOISE=false;											break;
 				case 's': SMEAR_HITS=false;										break;
-				case 'r': CDC_R=atof(&ptr[2]);									break;
-				case 'z': CDC_Z_SIGMA=atof(&ptr[2]);							break;
-				case 'j': CDC_AVG_NOISE_HITS=3240.0*atof(&ptr[2])/100.0;	break;
-				case 'R': FDC_R=atof(&ptr[2]);									break;
-				case 'u': FDC_DRIFT_SIGMA=atof(&ptr[2])/55.0;				break;
-				case 't': FDC_CATHODE_SIGMA=atof(&ptr[2]);					break;
-				case 'v': CDC_DRIFT_SIGMA=atof(&ptr[2])/55.0;				break;
-				case 'J': CDC_AVG_NOISE_HITS=2856.0*atof(&ptr[2])/100.0;	break;
+				case 'u': CDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
+				case 't': CDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;				break;
+				case 'U': FDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
+				case 'C': FDC_CATHODE_SIGMA=atof(&ptr[2])*1.0E-6;			break;
+				case 'T': FDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;				break;
 			}
 		}else{
 			INFILENAME = argv[i];
@@ -149,27 +144,28 @@ void Usage(void)
 	cout<<"sigmas configurable with the options below."<<endl;
 	cout<<endl;
 	cout<<"  options:"<<endl;
-	cout<<"    -n       Add noise hits to CDC and FDC (def:"<<ADD_NOISE<<")"<<endl;
-	cout<<"    -s       Don't smear real hits (def:"<<SMEAR_HITS<<")"<<endl;
-	cout<<"    -r       Sigma CDC r-direction (def:"<<CDC_R<<"cm)"<<endl;
-	cout<<"    -z       Sigma CDC z-direction (def:"<<CDC_Z_SIGMA<<"cm)"<<endl;
-	cout<<"    -j       CDC occupancy (def:"<<100.0*CDC_AVG_NOISE_HITS/3240.0<<"%)"<<endl;
-	cout<<"    -R       Sigma FDC r-direction (def:"<<FDC_R<<"cm)"<<endl;
-	cout<<"    -u       Sigma FDC anode drift time in microns (def:"<<FDC_DRIFT_SIGMA*55.0<<"um)"<<endl;
-	cout<<"    -t       Sigma FDC cathode resoultion in microns (def:"<<FDC_CATHODE_SIGMA<<"um)"<<endl;
-	cout<<"    -v       Sigma CDC drift time in microns (def:"<<CDC_DRIFT_SIGMA*55.0<<"um)"<<endl;
-	cout<<"    -J       FDC occupancy (def:"<<100.0*FDC_AVG_NOISE_HITS/2856.0<<"%)"<<endl;
+	cout<<"    -n       Don't add background hits to CDC and FDC (default is to add)"<<endl;
+	cout<<"    -s       Don't smear real hits (default is to smear)"<<endl;
+	cout<<"    -u       Sigma CDC anode drift time in ns (def:"<<CDC_TDRIFT_SIGMA*1.0E9<<"ns)"<<endl;
+	cout<<"    -t       CDC time window for background hits in ns (def:"<<CDC_TIME_WINDOW*1.0E9<<"ns)"<<endl;
+	cout<<"    -U       Sigma FDC anode drift time in ns (def:"<<FDC_TDRIFT_SIGMA*1.0E9<<"ns)"<<endl;
+	cout<<"    -C       Sigma FDC cathode strips in microns (def:"<<FDC_TDRIFT_SIGMA<<"ns)"<<endl;
+	cout<<"    -t       FDC time window for background hits in ns (def:"<<FDC_TIME_WINDOW*1.0E9<<"ns)"<<endl;
 	cout<<"    -h       Print this usage statement."<<endl;
 	cout<<endl;
 	cout<<" Example:"<<endl;
 	cout<<endl;
-	cout<<"     mcsmear -n -r1.2 -J5.5"<<endl;
+	cout<<"     mcsmear -u3.5 -t500 hdgeant.hddm"<<endl;
 	cout<<endl;
-	cout<<" This will turn on CDC and FDC noise hits, set the r-direction"<<endl;
-	cout<<" sigma for CDC to 1.2cm, and set the noise hit occupancy level"<<endl;
-	cout<<" to 5.5%. Note that the occupancy values apply only to the"<<endl;
-	cout<<" noise hits so the actual occupancy will be higher due to the"<<endl;
-	cout<<" presence of the real hits."<<endl;
+	cout<<" This will produce a file named hdgeant_nsmeared.hddm that"<<endl;
+	cout<<" includes the hit information from the input file hdgeant.hddm"<<endl;
+	cout<<" but with the FDC and CDC hits smeared out. The CDC hits will"<<endl;
+	cout<<" have their drift times smeared via a gaussian with a 3.5ns width"<<endl;
+	cout<<" while the FDC will be smeared using the default values."<<endl;
+	cout<<" In addition, background hits will be added, the exact number of"<<endl;
+	cout<<" of which are determined by the time windows specified for the"<<endl;
+	cout<<" CDC and FDC. In this examplem the CDC time window was explicitly"<<endl;
+	cout<<" set to 500 ns."<<endl;
 	cout<<endl;
 
 	exit(0);

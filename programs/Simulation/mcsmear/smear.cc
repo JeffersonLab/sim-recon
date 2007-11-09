@@ -46,63 +46,32 @@ bool ADD_NOISE = true;
 // Do we or do we not smear real hits
 bool SMEAR_HITS = true;
 
-// The straw diameter is 1.6cm
-double CDC_R = 0.8;			// cm
+// The error on the drift time in the CDC. The drift times
+// for the actual CDC hits coming from the input file
+// are smeared by a gaussian with this sigma.
+double CDC_TDRIFT_SIGMA = 5.0E-9;	// in seconds
 
-// The stereo pitch is 6 degrees. For hit-based tracks, the
-// hit could come anywhere in the 1.6cm diameter straw. Thus,
-// the z-range corresponding to the straw diameter is
-// 1.6cm * cot(6 degrees) = 15cm. 
-double CDC_Z_SIGMA = 7.5;	// cm
-
-// The occupancy of the CDC is used to determine how many noise
-// hits to add per event. There are 3240 wires in the CDC. The
-// Number of noise hits is sampled from a gaussian with a sigma
-// equal to the sqrt(Nwires * CDCOccupancy).
-double CDC_AVG_NOISE_HITS = 0.03*3240.0; // 0.03 = 3% occupancy
-double CDC_OCCUPANCY = 0.03; // 0.03 = 3% occupancy
+// The time window for which CDC hits are accumulated.
+// This is used to determine the number of background
+// hits in the CDC for a given event.
 double CDC_TIME_WINDOW = 1000.0E-9; // in seconds
-
-// For simulated data, we use a linear drift velocity function.
-// This is the slope of that relation and should be aligned 
-// with what is used by the simulation.
-double CDC_DRIFT_VELOCITY = 55.0E-4; // Use number hardwired in simulation for now
-
-// The position resolution of the CDC wires.
-double CDC_POSITION_RESOLUTION = 150.0E-4; // in cm
  
-// The wire spacing in the FDC is 0.5cm. In the actual data,
-// multiple planes will be combined into psuedo points since
-// each plane only measures in one direction (not counting z).
-// At any rate, this should probably be an over estimate.
-double FDC_R = 0.25;			// cm
+// The error on the drift time in the CDC. The drift times
+// for the actual CDC hits coming from the input file
+// are smeared by a gaussian with this sigma.
+double FDC_TDRIFT_SIGMA = 2.0E-9;	// in seconds
 
-// The z-coordinate of the wire and cathode planes are well
-// known, but the hit will have some error on it. This should
-// come primarily from the fact that the reconstructed x/y
-// coordinates are at the DOCA point which will be off-plane.
-// The actual error will come from the error on the track angle
-// at the anode plane and the DOCA value measured by drift time.
-// For here, we'll just use sigma=1mm.
-double FDC_Z = 0.1;			// cm
+// The error in the distance along the wire as measured by
+// the cathodes. This should NOT include the Lorentz
+// effect which is already included in hdgeant. It
+// should include any fluctuations due to ion trail density
+// etc.
+double FDC_CATHODE_SIGMA = 150.0; // in microns 
 
-// The occupancy of the FDC is used to determine how many noise
-// hits to add per event. There are 2856 anode wires in the FDC.
-// Each anode plane will have two cathode planes that will be
-// used to resolve ambiguities and create "hits" that are passed
-// on to the tracking code. We base the noise level on the
-// number of anode wires.
-double FDC_AVG_NOISE_HITS = 0.01*2856.0; // 0.01 = 1% occupancy
-
-// Pedestal noise for FDC strips
-double FDC_CATHODE_SIGMA= 200. ; // microns
+// The FDC pedestal noise is used to smear the cathode ADC
+// values such that the position along the wire has the resolution
+// specified by FDC_CATHODE_SIGMA.
 double FDC_PED_NOISE; //pC (calculated from FDC_CATHODE_SIGMA in SmearFDC)
-
-// Drift time variation for FDC anode wires
-double FDC_DRIFT_SIGMA=200.0/55.0; // 200 microns/ (55 microns/ns)
-
-// Drift time variation for CDC anode wires
-double CDC_DRIFT_SIGMA=200.0/55.0; // 200 microns/ (55 microns/ns)
 
 // Time window for acceptance of FDC hits
 double FDC_TIME_WINDOW = 1000.0E-9; // in seconds
@@ -147,15 +116,10 @@ void SmearCDC(s_HDDM_t *hddm_s)
 			for(unsigned int j=0; j<cdcstraw->cdcStrawHits->mult; j++){
 				s_CdcStrawHit_t *strawhit = &cdcstraw->cdcStrawHits->in[j];
 
-				// The resolution will depend on dE/dx which in turn depends on
-				// the particle type and momentum. We don't have any of those
-				// readily available here, but we do have the dE which could be
-				// used to adjust the resolution of the hit.
-				//
-				// For now, we apply a simple 150 micron gaussian resolution
-				// everywhere.
-				double sigma_t = CDC_POSITION_RESOLUTION/CDC_DRIFT_VELOCITY;
-				double delta_t = SampleGaussian(sigma_t);
+				// Smear out the CDC drift time using the specified sigma.
+				// This should include both timing resolution and ion trail
+				// density effects.
+				double delta_t = SampleGaussian(CDC_TDRIFT_SIGMA);
 				strawhit->t += delta_t;
 				
 				// If the time is negative, reject this smear and try again
@@ -289,20 +253,6 @@ void SmearFDC(s_HDDM_t *hddm_s)
 		s_FdcChambers_t* fdcChambers = hits->forwardDC->fdcChambers;
 		s_FdcChamber_t *fdcChamber = fdcChambers->in;
 		for(unsigned int j=0; j<fdcChambers->mult; j++, fdcChamber++){
-			s_FdcTruthPoints_t *fdcTruthPoints = fdcChamber->fdcTruthPoints;
-			if(fdcTruthPoints == HDDM_NULL)continue;
-			
-			s_FdcTruthPoint_t *truth = fdcTruthPoints->in;
-			for(unsigned int k=0; k<fdcTruthPoints->mult; k++, truth++){
-							
-				// Take the simple approach here since
-				// we don't know the orientation of the plane
-				truth->x += 2.0*((float)random()/RANDOM_MAX-0.5)*FDC_R;
-				truth->y += 2.0*((float)random()/RANDOM_MAX-0.5)*FDC_R;
-							
-				// Z should be well known for the FDC, but smear it slightly anyway
-				if(FDC_Z!=0.0)truth->z += SampleGaussian(FDC_Z);
-			}
 			
 			// Add pedestal noise to strip charge data
 			s_FdcCathodeStrips_t *strips= fdcChamber->fdcCathodeStrips;
@@ -328,7 +278,7 @@ void SmearFDC(s_HDDM_t *hddm_s)
 			    if (hits==HDDM_NULL)continue;
 			    s_FdcAnodeHit_t *hit=hits->in;
 			    for (unsigned int s=0;s<hits->mult;s++,hit++){
-			      hit->t+=SampleGaussian(FDC_DRIFT_SIGMA);
+			      hit->t+=SampleGaussian(FDC_TDRIFT_SIGMA);
 			    }
 			  }
 			}
@@ -348,10 +298,20 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 	// the total number of s_FdcAnodeWire_t structures to allocate in our
 	// call to make_s_FdcAnodeWires.
 	//
+	// We do this using the individual wire rates to calculate the probability
+	// of the wire firing for a single event. For the FDC, we calculate the
+	// wire rates as a function of both wire number (distance from beam line)
+	// and layer (position in z). We want a roughly 1/r distribution in the
+	// radial direction and a roughly exponential rise in rate in the
+	// +z direction.
+	//
 	// The wire rates are obtained using a parameterization done
 	// to calculate the event size for the August 29, 2007 online
 	// meeting. This parameterization is almost already obsolete.
-	// 11/8/2007 D. L.
+	// In rough terms, the layer rate (integrated over all wires)
+	// is about 1 MHz. For a 24 layer chamber with a 1us time window,
+	// we should have approximately 24 background hits per event.
+	// 11/9/2007 D. L.
 	vector<int> Nwire_hits;
 	vector<int> wire_number;
 	vector<int> layer_number;
@@ -439,19 +399,19 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 			fdcAnodeWires->mult = 0;
 
 			for(int k=0; k<Nwire_hits[j]; k++){
-				// Create single anode wire structure
+				// Get pointer to anode wire structure
 				s_FdcAnodeWire_t *fdcAnodeWire = &fdcAnodeWires->in[fdcAnodeWires->mult++];
 
 				// Create anode hits structure
 				s_FdcAnodeHits_t *fdcanodehits = make_s_FdcAnodeHits(1);
 				fdcAnodeWire->fdcAnodeHits = fdcanodehits;
 				
-				// Create single anode hit
+				// Get pointer to anode hit structure
 				fdcanodehits->mult = 1;
 				s_FdcAnodeHit_t *fdcanodehit = &fdcanodehits->in[0];
 				
 				fdcanodehit->dE = 0.1; // what should this be?
-				fdcanodehit->t = SampleRange(0.0, 4.0);
+				fdcanodehit->t = SampleRange(0.0, FDC_TIME_WINDOW);
 				
 				fdcAnodeWire->wire = wire_number[j];
 				
