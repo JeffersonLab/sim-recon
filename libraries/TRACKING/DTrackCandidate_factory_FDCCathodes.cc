@@ -152,15 +152,17 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       }
       
       DVector3 mom,mom2,pos;
+      double phi0=segment->S(1,0);
       double xc=segment->xc,yc=segment->yc,z=segment->S(4,0);
-      GetPositionAndMomentum(segment,z,pos,mom);
+      GetPositionAndMomentum(segment,pos,mom);
       if (match2){
-        GetPositionAndMomentum(match2,match2->S(4,0),pos,mom2);
+        GetPositionAndMomentum(match2,pos,mom2);
 	mom+=mom2;
 	mom*=0.5;
 	xc=(xc+match2->xc)/2.;
 	yc=(yc+match2->yc)/2.;
 	z=(z+match2->S(4,0))/2.;
+	phi0=(phi0+match2->S(1,0))/2.;
       }
       pos.SetXYZ(0,0,z);
       track->setPosition(pos);
@@ -170,7 +172,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       track->z_vertex=z;
       track->p_trans=mom.Perp();
       track->p=mom.Mag();
-      track->phi=mom.Phi();
+      track->phi=phi0;
       track->theta=mom.Theta();
       track->q=segment->S(0,0)/fabs(segment->S(0,0));
       track->setCharge(track->q);
@@ -233,7 +235,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       
 
       DVector3 mom,pos;
-      GetPositionAndMomentum(segment,segment->S(4,0),pos,mom);
+      GetPositionAndMomentum(segment,pos,mom);
       pos.SetXYZ(0,0,segment->S(4,0));
       track->setPosition(pos);
       track->setMomentum(mom);
@@ -242,7 +244,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       track->z_vertex=segment->S(4,0);
       track->p_trans=mom.Perp();
       track->p=mom.Mag();
-      track->phi=mom.Phi();
+      track->phi=segment->S(1,0);
       track->theta=mom.Theta();
       track->q=segment->S(0,0)/fabs(segment->S(0,0));
       track->setCharge(track->q);
@@ -284,7 +286,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
      
     
       DVector3 mom,pos;
-      GetPositionAndMomentum(segment,segment->S(4,0),pos,mom);
+      GetPositionAndMomentum(segment,pos,mom);
       pos.SetXYZ(0,0,segment->S(4,0));
       track->setPosition(pos);
       track->setMomentum(mom);
@@ -293,7 +295,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       track->z_vertex=segment->S(4,0);
       track->p_trans=mom.Perp();
       track->p=mom.Mag();
-      track->phi=mom.Phi();
+      track->phi=segment->S(1,0);
       track->theta=mom.Theta();
       track->q=segment->S(0,0)/fabs(segment->S(0,0));
       track->setCharge(track->q);
@@ -308,7 +310,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     DFDCSegment *segment=package[3][k];
     
     DVector3 pos,mom;
-    GetPositionAndMomentum(segment,segment->S(4,0),pos,mom); 
+    GetPositionAndMomentum(segment,pos,mom); 
     track->z_vertex=segment->S(4,0);
     track->q=segment->S(0,0)/fabs(segment->S(0,0));
     pos.SetXYZ(0,0,track->z_vertex);
@@ -319,7 +321,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     track->y0=segment->yc;
     track->p_trans=mom.Perp();
     track->p=mom.Mag();
-    track->phi=mom.Phi();
+    track->phi=segment->S(1,0);
     track->theta=mom.Theta();
     track->q=segment->S(0,0)/fabs(segment->S(0,0));
     track->setCharge(track->q);
@@ -347,7 +349,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,double 
   // Get the position and momentum at the exit of the package for the 
   // current segment
   DVector3 pos,mom,origin(0.,0.,z);
-  if (GetPositionAndMomentum(segment,z,pos,mom)!=NOERROR) return NULL;
+  if (GetPositionAndMomentum(segment,pos,mom)!=NOERROR) return NULL;
 
   // Match to the next package by swimming the track through the field
   double diff_min=1000.,diff;
@@ -384,12 +386,11 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,double 
 // helical track model.
 //
 jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment *segment,
-								     double z,
 					      DVector3 &pos, DVector3 &mom){
   // Position of track segment at last hit plane of package
   double x=segment->xc+segment->rc*cos(segment->Phi1);
   double y=segment->yc+segment->rc*sin(segment->Phi1);
-  //double z=segment->hits[0]->wire->origin(2);
+  double z=segment->hits[0]->wire->origin(2);
  
   // Make sure that the position makes sense!
   if (sqrt(x*x+y*y)>FDC_OUTER_RADIUS) return VALUE_OUT_OF_RANGE;

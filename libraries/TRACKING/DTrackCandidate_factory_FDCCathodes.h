@@ -31,7 +31,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 		//jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		//jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		jerror_t GetPositionAndMomentum(DFDCSegment *segment,double z,
+		jerror_t GetPositionAndMomentum(DFDCSegment *segment,
 						DVector3 &pos, DVector3 &mom);
 		
                 DFDCSegment *GetTrackMatch(double q,double z,
