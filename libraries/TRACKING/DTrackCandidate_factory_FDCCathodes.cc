@@ -151,28 +151,27 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	package[3].erase(package[3].begin()+match_id);
       }
       
-      DVector3 mom,pos,mom_avg;
-      double xc=0,yc=0,z=0;
-      double num_segments=double(segments.size());
-      for (unsigned int i=0;i<segments.size();i++){
-	DFDCSegment *mysegment=segments[i];
-	GetPositionAndMomentum(mysegment,pos,mom);
-	mom_avg+=mom;
-	xc+=mysegment->xc/num_segments;
-	yc+=mysegment->yc/num_segments;
-	z+=mysegment->S(4,0)/num_segments;
+      DVector3 mom,mom2,pos;
+      double xc=segment->xc,yc=segment->yc,z=segment->S(4,0);
+      GetPositionAndMomentum(segment,pos,mom);
+      if (match2){
+        GetPositionAndMomentum(match2,pos,mom2);
+	mom+=mom2;
+	mom*=0.5;
+	xc=(xc+match2->xc)/2.;
+	yc=(yc+match2->yc)/2.;
+	z=(z+match2->S(4,0))/2.;
       }
-      mom_avg*=1./num_segments;
       pos.SetXYZ(0,0,z);
       track->setPosition(pos);
-      track->setMomentum(mom_avg);
+      track->setMomentum(mom);
       track->x0=xc;
       track->y0=yc;
       track->z_vertex=z;
-      track->p_trans=mom_avg.Perp();
-      track->p=mom_avg.Mag();
-      track->phi=mom_avg.Phi();
-      track->theta=mom_avg.Theta();
+      track->p_trans=mom.Perp();
+      track->p=mom.Mag();
+      track->phi=mom.Phi();
+      track->theta=mom.Theta();
       track->q=segment->S(0,0)/fabs(segment->S(0,0));
       track->setCharge(track->q);
           
@@ -233,28 +232,18 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       }
       
 
-      DVector3 mom,pos,mom_avg;
-      double xc=0,yc=0,z=0;
-      double num_segments=double(segments.size());
-      for (unsigned int i=0;i<segments.size();i++){
-	DFDCSegment *mysegment=segments[i];
-	GetPositionAndMomentum(mysegment,pos,mom);
-	mom_avg+=mom;
-	xc+=mysegment->xc/num_segments;
-	yc+=mysegment->yc/num_segments;
-	z+=mysegment->S(4,0)/num_segments;
-      }
-      mom_avg*=1./num_segments;
-      pos.SetXYZ(0,0,z);
+      DVector3 mom,pos;
+      GetPositionAndMomentum(segment,pos,mom);
+      pos.SetXYZ(0,0,segment->S(4,0));
       track->setPosition(pos);
-      track->setMomentum(mom_avg);
-      track->x0=xc;
-      track->y0=yc;
-      track->z_vertex=z;
-      track->p_trans=mom_avg.Perp();
-      track->p=mom_avg.Mag();
-      track->phi=mom_avg.Phi();
-      track->theta=mom_avg.Theta();
+      track->setMomentum(mom);
+      track->x0=segment->xc;
+      track->y0=segment->yc;
+      track->z_vertex=segment->S(4,0);
+      track->p_trans=mom.Perp();
+      track->p=mom.Mag();
+      track->phi=mom.Phi();
+      track->theta=mom.Theta();
       track->q=segment->S(0,0)/fabs(segment->S(0,0));
       track->setCharge(track->q);
 
@@ -294,28 +283,18 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       }	
      
     
-      DVector3 mom,pos,mom_avg;
-      double xc=0,yc=0,z=0;
-      double num_segments=double(segments.size());
-      for (unsigned int i=0;i<segments.size();i++){
-	DFDCSegment *mysegment=segments[i];
-	GetPositionAndMomentum(mysegment,pos,mom);
-	mom_avg+=mom;
-	xc+=mysegment->xc/num_segments;
-	yc+=mysegment->yc/num_segments;
-	z+=mysegment->S(4,0)/num_segments;
-      }
-      mom_avg*=1./num_segments;
-      pos.SetXYZ(0,0,z);
+      DVector3 mom,pos;
+      GetPositionAndMomentum(segment,pos,mom);
+      pos.SetXYZ(0,0,segment->S(4,0));
       track->setPosition(pos);
-      track->setMomentum(mom_avg);
-      track->x0=xc;
-      track->y0=yc;
-      track->z_vertex=z;
-      track->p_trans=mom_avg.Perp();
-      track->p=mom_avg.Mag();
-      track->phi=mom_avg.Phi();
-      track->theta=mom_avg.Theta();
+      track->setMomentum(mom);
+      track->x0=segment->xc;
+      track->y0=segment->yc;
+      track->z_vertex=segment->S(4,0);
+      track->p_trans=mom.Perp();
+      track->p=mom.Mag();
+      track->phi=mom.Phi();
+      track->theta=mom.Theta();
       track->q=segment->S(0,0)/fabs(segment->S(0,0));
       track->setCharge(track->q);
       
@@ -338,7 +317,6 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     track->setCharge(track->q);
     track->x0=segment->xc;
     track->y0=segment->yc;
-   
     track->p_trans=mom.Perp();
     track->p=mom.Mag();
     track->phi=mom.Phi();
