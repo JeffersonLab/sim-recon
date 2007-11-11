@@ -26,6 +26,10 @@ class DEventProcessor_acceptance_hists:public JEventProcessor{
 		TH2F *CDC, *FDC, *CDC_FDC;
 		TH2F *BCAL, *FCAL, *TOF;
 		TH2F *thrown_charged, *thrown_photon;
+		
+		TH1D *FDC_anode_hits_per_event;
+		TH1D *FDC_anode_hits_per_layer;
+		TH1D *FDC_anode_hits_per_wire;
 
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method

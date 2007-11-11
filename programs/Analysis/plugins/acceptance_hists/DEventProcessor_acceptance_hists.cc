@@ -20,6 +20,8 @@ using namespace std;
 #include "TRACKING/DMCThrown.h"
 #include "TRACKING/DTrackHit.h"
 #include "TRACKING/DTrackHit_factory_MC.h"
+#include "FDC/DFDCHit.h"
+#include "FDC/DFDCGeometry.h"
 
 #define MIN_CDC_HITS 8
 #define MIN_FDC_HITS 8
@@ -84,6 +86,10 @@ jerror_t DEventProcessor_acceptance_hists::init(void)
 	thrown_charged	= new TH2F("thrown_charged","thrown charged particles",N_p_bins, p_lo, p_hi, N_theta_bins, theta_lo, theta_hi);
 	thrown_photon	= new TH2F("thrown_photon","thrown photons",N_p_bins, p_lo, p_hi, N_theta_bins, theta_lo, theta_hi);
 	
+	FDC_anode_hits_per_event = new TH1D("FDC_anode_hits_per_event","FDC anode hits/event", 201, -0.5, 200.5);
+	FDC_anode_hits_per_layer = new TH1D("FDC_anode_hits_per_layer","FDC anode hits/layer", 24, 0.5, 24.5);
+	FDC_anode_hits_per_wire = new TH1D("FDC_anode_hits_per_wire","FDC anode hits/wire", 96, 0.5, 96.5);
+	
 	// Go back up to the parent directory
 	dir->cd("../");
 	
@@ -100,6 +106,24 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumbe
 	loop->Get(mcthrowns);
 	JFactory_base *fac = loop->Get(trackhits, "MC");
 	DTrackHit_factory_MC *factory = dynamic_cast<DTrackHit_factory_MC*>(fac);
+	
+	
+	// Count FDC anode hits
+	{
+		vector<const DFDCHit*> fdchits;
+		loop->Get(fdchits);
+		
+		double Nfdc_anode = 0.0;
+		for(unsigned int i=0; i<fdchits.size(); i++){
+			if(fdchits[i]->type==0){
+				Nfdc_anode+=1.0;
+				
+				FDC_anode_hits_per_layer->Fill(DFDCGeometry::gLayer(fdchits[i]));
+				FDC_anode_hits_per_wire->Fill(fdchits[i]->element);
+			}
+		}
+		FDC_anode_hits_per_event->Fill(Nfdc_anode);
+	}
 	
 	// Loop over thrown tracks
 	for(unsigned int i=0;i<mcthrowns.size();i++){

@@ -60,14 +60,16 @@ jerror_t DEventProcessor_mcthrown_hists::init(void)
 	theta	= new TH1F("theta","Thrown theta in degrees",1000, 0.0, 180.0);
 	phi	= new TH1F("phi","Thrown phi in radians",200, 0.0, 2.0*M_PI);
 	energy	= new TH1F("energy","Thrown energy in GeV",1200, 0.0, 12.0);
-	pmom_vs_theta = new TH2F("pmom_vs_theta","Thrown momentum (GeV/c) vs. theta (degrees)",200, 0.0, 20.0, 100, 0.0, 10.0);
+	pmom_vs_theta = new TH2F("pmom_vs_theta","Thrown momentum vs. #theta",1000, 0.0, 180.0, 300, 0.0, 10.0);
+	pmom_vs_theta_pip = new TH2F("pmom_vs_theta_pip","Thrown momentum vs. #theta for #pi^{+}",1000, 0.0, 180.0, 300, 0.0, 10.0);
+	pmom_vs_theta_pim = new TH2F("pmom_vs_theta_pim","Thrown momentum vs. #theta for #pi^{-}",1000, 0.0, 180.0, 300, 0.0, 10.0);
+	pmom_vs_theta_proton = new TH2F("pmom_vs_theta_proton","Thrown momentum vs. #theta for protons",1000, 0.0, 180.0, 300, 0.0, 10.0);
+	pmom_vs_theta_gamma = new TH2F("pmom_vs_theta_gamma","Thrown momentum vs. theta for gammas",1000, 0.0, 180.0, 300, 0.0, 10.0);
+
 	vertex = new TH3F("vertex", "Position of vertex from which thrown particles were thrown", 50, -5.0, 5.0, 50, -5.0, 5.0, 150, 0.0, 150.0);
 
 	Nparticles_per_event	= new TH1F("Nparticles_per_event","Number of thrown particles per event",21, -0.5, 20.5);
 	particle_type	= new TH1F("particle_type","GEANT3 particle type of thrown particles",101, -0.5, 100.5);
-
-	p_vs_theta_pion = new TH2F("p_vs_theta_pion","Momentum vs. #theta for charged #pis (from thrown values)",140, 0.0, 140.0, 100, 0.0, 6.0);
-	p_vs_theta_p = new TH2F("p_vs_theta_p","Momentum vs. #theta for protons (from thrown values)",140, 0.0, 140.0, 100, 0.0, 6.0);
 	
 	// Go back up to the parent directory
 	dir->cd("../");
@@ -98,12 +100,17 @@ jerror_t DEventProcessor_mcthrown_hists::evnt(JEventLoop *loop, int eventnumber)
 		particle_type->Fill(mcthrown->type);
 		
 		switch(mcthrown->type){
+			case 1:
+				pmom_vs_theta_gamma->Fill(mcthrown->theta*57.3, mcthrown->p);
+				break;
 			case 8:
+				pmom_vs_theta_pip->Fill(mcthrown->theta*57.3, mcthrown->p);
+				break;
 			case 9:
-				p_vs_theta_pion->Fill(mcthrown->theta*57.3, mcthrown->p);
+				pmom_vs_theta_pim->Fill(mcthrown->theta*57.3, mcthrown->p);
 				break;
 			case 14:
-				p_vs_theta_p->Fill(mcthrown->theta*57.3, mcthrown->p);
+				pmom_vs_theta_proton->Fill(mcthrown->theta*57.3, mcthrown->p);
 				break;
 		}
 	}

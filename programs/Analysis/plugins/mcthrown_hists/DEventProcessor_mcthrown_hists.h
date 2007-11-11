@@ -25,11 +25,13 @@ class DEventProcessor_mcthrown_hists:public JEventProcessor{
 		
 		TH1F *pmom, *theta, *phi, *energy;
 		TH2F *pmom_vs_theta;
+		TH2F *pmom_vs_theta_pip;
+		TH2F *pmom_vs_theta_pim;
+		TH2F *pmom_vs_theta_proton;
+		TH2F *pmom_vs_theta_gamma;
 		TH1F *Nparticles_per_event, *particle_type;
 		TH3F *vertex;
 		
-		TH2F *p_vs_theta_pion, *p_vs_theta_p;
-
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
 		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
