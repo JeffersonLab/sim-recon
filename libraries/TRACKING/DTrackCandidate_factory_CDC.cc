@@ -1,6 +1,6 @@
 // $Id$
 //
-//    File: DTrackCandidate_factory_LINK.cc
+//    File: DTrackCandidate_factory_CDC.cc
 // Created: Thu Sep  6 14:47:48 EDT 2007
 // Creator: davidl (on Darwin Amelia.local 8.10.1 i386)
 //
@@ -13,24 +13,24 @@ using namespace std;
 #include "DQuickFit.h"
 #include "DRiemannFit.h"
 
-#include "DTrackCandidate_factory_LINK.h"
+#include "DTrackCandidate_factory_CDC.h"
 
-bool CDCSortByRdecreasing(DTrackCandidate_factory_LINK::DCDCTrkHit* const &hit1, DTrackCandidate_factory_LINK::DCDCTrkHit* const &hit2) {
+bool CDCSortByRdecreasing(DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit1, DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit2) {
 	// use the ring number to sort by R(decreasing) and then straw(increasing)
 	if(hit1->hit->wire->ring == hit2->hit->wire->ring){
 		return hit1->hit->wire->straw < hit2->hit->wire->straw;
 	}
 	return hit1->hit->wire->ring > hit2->hit->wire->ring;
 }
-bool CDCSortByRincreasing(DTrackCandidate_factory_LINK::DCDCTrkHit* const &hit1, DTrackCandidate_factory_LINK::DCDCTrkHit* const &hit2) {
+bool CDCSortByRincreasing(DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit1, DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit2) {
 	// use the ring number to sort by R
 	return hit1->hit->wire->ring < hit2->hit->wire->ring;
 }
-bool CDCSortByZincreasing(DTrackCandidate_factory_LINK::DCDCTrkHit* const &hit1, DTrackCandidate_factory_LINK::DCDCTrkHit* const &hit2) {
+bool CDCSortByZincreasing(DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit1, DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit2) {
 	// use the z_stereo position to sort
 	return hit1->z_stereo < hit2->z_stereo;
 }
-bool CDCSortByStereoPhiincreasing(DTrackCandidate_factory_LINK::DCDCTrkHit* const &hit1, DTrackCandidate_factory_LINK::DCDCTrkHit* const &hit2) {
+bool CDCSortByStereoPhiincreasing(DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit1, DTrackCandidate_factory_CDC::DCDCTrkHit* const &hit2) {
 	// use the z_stereo position to sort
 	return hit1->phi_stereo < hit2->phi_stereo;
 }
@@ -38,7 +38,7 @@ bool CDCSortByStereoPhiincreasing(DTrackCandidate_factory_LINK::DCDCTrkHit* cons
 //------------------
 // init
 //------------------
-jerror_t DTrackCandidate_factory_LINK::init(void)
+jerror_t DTrackCandidate_factory_CDC::init(void)
 {
 	MAX_SUBSEED_STRAW_DIFF = 1;
 	MIN_SUBSEED_HITS = 3;
@@ -65,7 +65,7 @@ jerror_t DTrackCandidate_factory_LINK::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrackCandidate_factory_LINK::brun(JEventLoop *eventLoop, int runnumber)
+jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *eventLoop, int runnumber)
 {
 	return NOERROR;
 }
@@ -73,7 +73,7 @@ jerror_t DTrackCandidate_factory_LINK::brun(JEventLoop *eventLoop, int runnumber
 //------------------
 // erun
 //------------------
-jerror_t DTrackCandidate_factory_LINK::erun(void)
+jerror_t DTrackCandidate_factory_CDC::erun(void)
 {
 	return NOERROR;
 }
@@ -81,7 +81,7 @@ jerror_t DTrackCandidate_factory_LINK::erun(void)
 //------------------
 // fini
 //------------------
-jerror_t DTrackCandidate_factory_LINK::fini(void)
+jerror_t DTrackCandidate_factory_CDC::fini(void)
 {
 	return NOERROR;
 }
@@ -89,12 +89,12 @@ jerror_t DTrackCandidate_factory_LINK::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DTrackCandidate_factory_LINK::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 {
 	// Get CDC hits
 	GetCDCHits(loop);
 	
-	// Find all seeds in the outer 2 axial superlayers
+	// Find all seeds in all 3 axial superlayers
 	vector<DCDCSeed> seeds_sl5;
 	vector<DCDCSeed> seeds_sl3;
 	vector<DCDCSeed> seeds_sl1;
@@ -119,8 +119,8 @@ jerror_t DTrackCandidate_factory_LINK::evnt(JEventLoop *loop, int eventnumber)
 	// Extend seeds into stereo layers and do fit to find z and theta
 	for(unsigned int i=0; i<seeds.size(); i++){
 		DCDCSeed &seed = seeds[i];
-	if(debug_level>3)_DBG_<<"----- Seed "<<i<<" ------"<<endl;
-	if(debug_level>3)_DBG_<<"seed.fit.phi="<<seed.fit.phi<<endl;
+		if(debug_level>3)_DBG_<<"----- Seed "<<i<<" ------"<<endl;
+		if(debug_level>3)_DBG_<<"seed.fit.phi="<<seed.fit.phi<<endl;
 		if(!seed.valid)continue;
 
 		// Add stereo hits to seed
@@ -157,13 +157,13 @@ jerror_t DTrackCandidate_factory_LINK::evnt(JEventLoop *loop, int eventnumber)
 		//can->setCharge(seed.q);
 		can->setCharge(q);
 
-		can->q = can->charge();
-		can->phi = mom.Phi();
-		can->theta = mom.Theta();
-		can->p_trans = mom.Pt();
-		can->p = mom.Mag();
-		can->z_vertex = pos.Z();
-		if(debug_level>3)_DBG_<<"can->phi="<<can->phi<<"  phi="<<phi<<" can->theta="<<can->theta<<" theta="<<theta<<endl;
+		//can->q = can->charge();
+		//can->phi = mom.Phi();
+		//can->theta = mom.Theta();
+		//can->p_trans = mom.Pt();
+		//can->p = mom.Mag();
+		//can->z_vertex = pos.Z();
+		//if(debug_level>3)_DBG_<<"can->phi="<<can->phi<<"  phi="<<phi<<" can->theta="<<can->theta<<" theta="<<theta<<endl;
 		
 		_data.push_back(can);
 	}
@@ -174,7 +174,7 @@ jerror_t DTrackCandidate_factory_LINK::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 // GetCDCHits
 //------------------
-void DTrackCandidate_factory_LINK::GetCDCHits(JEventLoop *loop)
+void DTrackCandidate_factory_CDC::GetCDCHits(JEventLoop *loop)
 {
 	// Delete old hits
 	for(unsigned int i=0; i<cdctrkhits.size(); i++)delete cdctrkhits[i];
@@ -231,7 +231,7 @@ void DTrackCandidate_factory_LINK::GetCDCHits(JEventLoop *loop)
 //------------------
 // FindSeeds
 //------------------
-void DTrackCandidate_factory_LINK::FindSeeds(vector<DCDCTrkHit*> &hits, vector<DCDCSeed> &seeds)
+void DTrackCandidate_factory_CDC::FindSeeds(vector<DCDCTrkHit*> &hits, vector<DCDCSeed> &seeds)
 {
 	// Sort through hits ring by ring to find sub-seeds from neighboring wires
 	// in the same ring. What we want is a list of sub-seeds for each ring.
@@ -302,7 +302,7 @@ void DTrackCandidate_factory_LINK::FindSeeds(vector<DCDCTrkHit*> &hits, vector<D
 //------------------
 // LinkSubSeeds
 //------------------
-void DTrackCandidate_factory_LINK::LinkSubSeeds(vector<DCDCSeed*> &parent, ringiter ring, ringiter ringend, vector<DCDCSeed> &seeds)
+void DTrackCandidate_factory_CDC::LinkSubSeeds(vector<DCDCSeed*> &parent, ringiter ring, ringiter ringend, vector<DCDCSeed> &seeds)
 {
 	/// Combine subseeds from layers in a single superlayer into seeds.
 	///
@@ -367,7 +367,7 @@ void DTrackCandidate_factory_LINK::LinkSubSeeds(vector<DCDCSeed*> &parent, ringi
 //------------------
 // LinkSeeds
 //------------------
-void DTrackCandidate_factory_LINK::LinkSeeds(vector<DCDCSeed> &in_seeds1, vector<DCDCSeed> &in_seeds2, vector<DCDCSeed> &seeds, unsigned int max_linked_hits)
+void DTrackCandidate_factory_CDC::LinkSeeds(vector<DCDCSeed> &in_seeds1, vector<DCDCSeed> &in_seeds2, vector<DCDCSeed> &seeds, unsigned int max_linked_hits)
 {
 	/// Loop over the two input sets of seeds and compare the phi angles of
 	/// their first and last hits. The closest combination is checked to see
@@ -490,7 +490,7 @@ void DTrackCandidate_factory_LINK::LinkSeeds(vector<DCDCSeed> &in_seeds1, vector
 //------------------
 // FitCircle
 //------------------
-bool DTrackCandidate_factory_LINK::FitCircle(DCDCSeed &seed)
+bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 {
 	/// Do a quick fit of the 2-D projection of the axial hits
 	/// in seed (seed should contain *only* axial hits) to a 
@@ -541,7 +541,7 @@ bool DTrackCandidate_factory_LINK::FitCircle(DCDCSeed &seed)
 //------------------
 // FilterCloneSeeds
 //------------------
-void DTrackCandidate_factory_LINK::FilterCloneSeeds(vector<DCDCSeed> &seeds)
+void DTrackCandidate_factory_CDC::FilterCloneSeeds(vector<DCDCSeed> &seeds)
 {
 	/// Look for clones of seeds and flag all but one as not valid.
 	/// Two tracks are considered clones if their trajectories are
@@ -629,7 +629,7 @@ void DTrackCandidate_factory_LINK::FilterCloneSeeds(vector<DCDCSeed> &seeds)
 //------------------
 // AddStereoHits
 //------------------
-void DTrackCandidate_factory_LINK::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits, DCDCSeed &seed)
+void DTrackCandidate_factory_CDC::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits, DCDCSeed &seed)
 {
 	// To find the z coordinate, we look at the 2D projection of the
 	// stereo wire and find the intersection point of that with the
@@ -729,7 +729,7 @@ void DTrackCandidate_factory_LINK::AddStereoHits(vector<DCDCTrkHit*> &stereo_hit
 //------------------
 // FindThetaZ
 //------------------
-void DTrackCandidate_factory_LINK::FindThetaZ(DCDCSeed &seed)
+void DTrackCandidate_factory_CDC::FindThetaZ(DCDCSeed &seed)
 {
 	FindTheta(seed, TARGET_Z_MIN, TARGET_Z_MAX);
 	FindZ(seed, seed.theta_min, seed.theta_max);
@@ -747,7 +747,7 @@ void DTrackCandidate_factory_LINK::FindThetaZ(DCDCSeed &seed)
 //------------------
 // FindTheta
 //------------------
-void DTrackCandidate_factory_LINK::FindTheta(DCDCSeed &seed, double target_z_min, double target_z_max)
+void DTrackCandidate_factory_CDC::FindTheta(DCDCSeed &seed, double target_z_min, double target_z_max)
 {
 	/// Find the theta value using the valid stereo hits from <i>seed</i>. The values
 	/// for phi_stereo and z_stereo are assumed to be valid as is the status of the
@@ -829,7 +829,7 @@ void DTrackCandidate_factory_LINK::FindTheta(DCDCSeed &seed, double target_z_min
 //------------------
 // FindZ
 //------------------
-void DTrackCandidate_factory_LINK::FindZ(DCDCSeed &seed, double theta_min, double theta_max)
+void DTrackCandidate_factory_CDC::FindZ(DCDCSeed &seed, double theta_min, double theta_max)
 {
 	/// Find the z value of the vertex using the valid stereo hits from <i>seed</i>. The values
 	/// for phi_stereo and z_stereo are assumed to be valid as is the status of the
@@ -911,7 +911,7 @@ void DTrackCandidate_factory_LINK::FindZ(DCDCSeed &seed, double theta_min, doubl
 //------------------
 // NumEligibleSeedHits
 //------------------
-int DTrackCandidate_factory_LINK::NumEligibleSeedHits(vector<DCDCTrkHit*> &hits)
+int DTrackCandidate_factory_CDC::NumEligibleSeedHits(vector<DCDCTrkHit*> &hits)
 {
 	int N=0;
 	for(unsigned int i=0; i<hits.size(); i++){
@@ -924,7 +924,7 @@ int DTrackCandidate_factory_LINK::NumEligibleSeedHits(vector<DCDCTrkHit*> &hits)
 //------------------
 // DCDCSeed::Merge
 //------------------
-void DTrackCandidate_factory_LINK::DCDCSeed::Merge(DCDCSeed& seed)
+void DTrackCandidate_factory_CDC::DCDCSeed::Merge(DCDCSeed& seed)
 {
 	phi_avg *= (double)hits.size();
 	for(unsigned int i=0; i<seed.hits.size(); i++){
@@ -937,7 +937,7 @@ void DTrackCandidate_factory_LINK::DCDCSeed::Merge(DCDCSeed& seed)
 //------------------
 // DCDCSeed::MinDist2
 //------------------
-double DTrackCandidate_factory_LINK::DCDCSeed::MinDist2(DCDCSeed& seed)
+double DTrackCandidate_factory_CDC::DCDCSeed::MinDist2(DCDCSeed& seed)
 {
 	/// Returns the minimum distance squared between this and the given seed.
 	/// Only the first and last hits of each seed's hit list are used
@@ -971,7 +971,7 @@ double DTrackCandidate_factory_LINK::DCDCSeed::MinDist2(DCDCSeed& seed)
 //------------------
 // toString
 //------------------
-const string DTrackCandidate_factory_LINK::toString(void)
+const string DTrackCandidate_factory_CDC::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
 	Get();
@@ -984,6 +984,7 @@ const string DTrackCandidate_factory_LINK::toString(void)
 		printnewrow();
 		
 		printcol("%lx",    trackcandidate->id);
+#if 0
 		printcol("%d",    trackcandidate->hitid.size());
 		printcol("%+d", (int)trackcandidate->q);
 		printcol("%3.3f", trackcandidate->p);
@@ -994,7 +995,7 @@ const string DTrackCandidate_factory_LINK::toString(void)
 		printcol("%2.2f", trackcandidate->y0);
 		printcol("%2.2f", trackcandidate->z_vertex);
 		printcol("%1.3f", trackcandidate->dzdphi);
-
+#endif
 		printrow();
 	}
 	

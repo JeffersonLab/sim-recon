@@ -155,6 +155,7 @@ jerror_t DTrackCandidate_factory_CLASSIC::fini(void)
 //------------------
 jerror_t DTrackCandidate_factory_CLASSIC::evnt(JEventLoop *loop, int eventnumber)
 {
+#if 0
 	this->eventnumber = eventnumber;
 
 	// Clear previous event from internal buffers
@@ -211,10 +212,11 @@ jerror_t DTrackCandidate_factory_CLASSIC::evnt(JEventLoop *loop, int eventnumber
 			i--;
 		}
 	}
-
+#endif
 	return NOERROR;
 }
 
+#if 0
 //------------------
 // ClearEvent
 //------------------
@@ -763,6 +765,7 @@ my_phizangle = phizangle;
 
 	return 1;
 }
+#endif
 
 //------------------
 // toString
@@ -780,6 +783,7 @@ const string DTrackCandidate_factory_CLASSIC::toString(void)
 		printnewrow();
 		
 		printcol("%d",    trackcandidate->id);
+#if 0
 		printcol("%d",    trackcandidate->hitid.size());
 		printcol("%3.1f", trackcandidate->x0);
 		printcol("%3.1f", trackcandidate->y0);
@@ -790,7 +794,7 @@ const string DTrackCandidate_factory_CLASSIC::toString(void)
 		printcol("%3.2f", trackcandidate->p_trans);
 		printcol("%1.3f", trackcandidate->phi);
 		printcol("%1.3f", trackcandidate->theta);
-
+#endif
 		printrow();
 	}
 	

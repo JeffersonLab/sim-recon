@@ -400,10 +400,9 @@ void DTrack_factory::AssignHitsToCandidates(void)
 
 		// Get starting position and momentum from track candidate
 		// and swim the intial reference trajectory
-		DVector3 pos(0.0, 0.0, tc->z_vertex);
-		DVector3 mom;
-		mom.SetMagThetaPhi(tc->p, tc->theta, tc->phi);
-		rt->Swim(pos, mom, tc->q);
+		const DVector3 &pos = tc->position();
+		const DVector3 &mom = tc->momentum();
+		rt->Swim(pos, mom, tc->charge());
 		
 		// Get probabilities of each CDC hit being on this track
 		vector<double> cdcprob;

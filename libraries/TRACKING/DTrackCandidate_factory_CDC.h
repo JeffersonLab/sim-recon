@@ -1,12 +1,12 @@
 // $Id$
 //
-//    File: DTrackCandidate_factory_LINK.h
+//    File: DTrackCandidate_factory_CDC.h
 // Created: Thu Sep  6 14:47:48 EDT 2007
 // Creator: davidl (on Darwin Amelia.local 8.10.1 i386)
 //
 
-#ifndef _DTrackCandidate_factory_LINK_
-#define _DTrackCandidate_factory_LINK_
+#ifndef _DTrackCandidate_factory_CDC_
+#define _DTrackCandidate_factory_CDC_
 
 #include <JANA/JFactory.h>
 #include "DTrackCandidate.h"
@@ -14,12 +14,12 @@
 
 class DQuickFit;
 
-class DTrackCandidate_factory_LINK:public JFactory<DTrackCandidate>{
+class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 	public:
-		DTrackCandidate_factory_LINK(){};
-		~DTrackCandidate_factory_LINK(){};
+		DTrackCandidate_factory_CDC(){};
+		~DTrackCandidate_factory_CDC(){};
 		const string toString(void);
-		const char* Tag(void){return "LINK";}
+		const char* Tag(void){return "CDC";}
 		
 		enum trk_flags_t{
 			NONE					= 0x000,
@@ -114,5 +114,5 @@ class DTrackCandidate_factory_LINK:public JFactory<DTrackCandidate>{
 		double TARGET_Z_MAX;
 };
 
-#endif // _DTrackCandidate_factory_LINK_
+#endif // _DTrackCandidate_factory_CDC_
 

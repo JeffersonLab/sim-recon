@@ -66,6 +66,7 @@ jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 	// factory does) and finding which of them come close to the
 	// track swum with the (smeared) parameters of this candidate. 
 
+#if 0
 	// Clear previous event from internal buffers
 	ClearEvent();
 
@@ -81,19 +82,19 @@ jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		
 		DTrackCandidate *can = new DTrackCandidate;
 		
-		can->x0 = 0.0;
-		can->y0 = 0.0;
-		can->dzdphi = 0.0;
-		can->z_vertex	= thrown->z+SampleGaussian(1.0);
-		can->p			= thrown->p*(1.0+SampleGaussian(0.04));
-		can->phi			= thrown->phi;//+SampleGaussian(0.5/57.3);
-		if(can->phi<0.0)can->phi+=2.0*M_PI;
-		if(can->phi>=2.0*M_PI)can->phi-=2.0*M_PI;
-		can->theta		= thrown->theta;//+SampleGaussian(0.1/57.3);
-		if(can->theta<0.0)can->theta=0.0;
-		if(can->theta>M_PI)can->theta=M_PI;
-		can->q			= thrown->q;
-		can->p_trans	= can->p*sin(can->theta);
+		//can->x0 = 0.0;
+		//can->y0 = 0.0;
+		//can->dzdphi = 0.0;
+		//can->z_vertex	= thrown->z+SampleGaussian(1.0);
+		//can->p			= thrown->p*(1.0+SampleGaussian(0.04));
+		//can->phi			= thrown->phi;//+SampleGaussian(0.5/57.3);
+		//if(can->phi<0.0)can->phi+=2.0*M_PI;
+		//if(can->phi>=2.0*M_PI)can->phi-=2.0*M_PI;
+		//can->theta		= thrown->theta;//+SampleGaussian(0.1/57.3);
+		//if(can->theta<0.0)can->theta=0.0;
+		//if(can->theta>M_PI)can->theta=M_PI;
+		//can->q			= thrown->q;
+		//can->p_trans	= can->p*sin(can->theta);
 		
 		// Fill in DKinematic Data protion of this
 		can->setMass(0.0);
@@ -102,7 +103,7 @@ jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		can->setCharge(can->q);
 
 		// Swim track using these parameters.
-		rt->q = can->q;
+		rt->q = can->charge();
 		DVector3 pos(0.0, 0.0, can->z_vertex);
 		DVector3 mom;
 		mom.SetMagThetaPhi(can->p, can->theta, can->phi);
@@ -119,6 +120,7 @@ jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		
 		_data.push_back(can);
 	}
+#endif
 
 	return NOERROR;
 }
