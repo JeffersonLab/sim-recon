@@ -14,7 +14,7 @@ using namespace std;
 
 #include "DANA/DApplication.h"
 #include "JANA/JEventLoop.h"
-#include "TRACKING/DMagneticFieldMap.h"
+#include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "TRACKING/DTrackCandidate_factory.h"
 
 #define rad2deg 57.3
