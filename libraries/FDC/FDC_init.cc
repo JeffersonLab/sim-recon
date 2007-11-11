@@ -11,6 +11,8 @@
 #include "DFDCPseudo_factory.h"
 #include "DFDCCathodeCluster_factory.h"
 #include "DFDCSegment_factory.h"
+#include "DFDCIntersection_factory.h"
+#include "DFDCPseudo_factory_WIRESONLY.h"
 
 jerror_t FDC_init(JEventLoop *loop)
 {
@@ -22,6 +24,8 @@ jerror_t FDC_init(JEventLoop *loop)
 	loop->AddFactory(new DFDCPseudo_factory());
 	loop->AddFactory(new DFDCCathodeCluster_factory());
 	loop->AddFactory(new DFDCSegment_factory());
+	loop->AddFactory(new DFDCIntersection_factory());
+	loop->AddFactory(new DFDCPseudo_factory_WIRESONLY());
 
 	return NOERROR;
 }
