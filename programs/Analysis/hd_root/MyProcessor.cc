@@ -16,6 +16,8 @@ using namespace std;
 vector<string> toprint;
 bool ACTIVATE_ALL=false;
 
+extern string OUTPUT_FILENAME;
+
 #define ansi_escape		((char)0x1b)
 #define ansi_bold 		ansi_escape<<"[1m"
 #define ansi_black		ansi_escape<<"[30m"
@@ -35,8 +37,8 @@ bool ACTIVATE_ALL=false;
 jerror_t MyProcessor::init(void)
 {
 	// open ROOT file
-	ROOTfile = new TFile("hd_root.root","RECREATE","Produced by hd_root");
-	cout<<"Opened ROOT file \"hd_root.root\" ..."<<endl;
+	ROOTfile = new TFile(OUTPUT_FILENAME.c_str(),"RECREATE","Produced by hd_root");
+	cout<<"Opened ROOT file \""<<OUTPUT_FILENAME<<"\" ..."<<endl;
 
 	// Create tree
 

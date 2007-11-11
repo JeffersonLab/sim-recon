@@ -13,6 +13,7 @@
 
 typedef void SetTFilePtrAddress_t(TFile **);
 TFile* tfilePtr = NULL;
+string OUTPUT_FILENAME = "hd_root.root";
 
 void ParseCommandLineArguments(int &narg, char *argv[]);
 void Usage(void);
@@ -57,6 +58,13 @@ void ParseCommandLineArguments(int &narg, char *argv[])
 				break;
 			case 'A':
 				ACTIVATE_ALL = 1;
+			case 'o':
+				if(i>=narg-1){
+					cerr<<"\"-o\" requires a filename!"<<endl;
+					exit(-1);
+				}
+				OUTPUT_FILENAME = argv[i+1];
+_DBG_<<"OUTPUT_FILENAME="<<OUTPUT_FILENAME<<endl;
 				break;
 		}
 	}
@@ -80,6 +88,7 @@ void Usage(void)
 	cout<<"   -h        Print this message"<<endl;
 	cout<<"   -Dname    Activate factory for data of type \"name\" (can be used multiple times)"<<endl;
 	cout<<"   -A        Activate factories (overrides and -DXXX options)"<<endl;
+	cout<<"   -o fname  Set output filename (default is \"hd_root.root\")"<<endl;
 	cout<<endl;
 
 	exit(0);
