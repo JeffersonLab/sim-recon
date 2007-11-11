@@ -37,6 +37,7 @@ using namespace std;
 #include "FDC/DFDCGeometry.h"
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
+#include "FDC/DFDCIntersection.h"
 
 extern hdv_mainframe *hdvmf;
 
@@ -196,6 +197,18 @@ void MyProcessor::FillGraphics(void)
 			graphics.push_back(gset);
 		}		
 	}
+
+	// FDC intersection hits
+	if(hdvmf->GetCheckButton("fdcintersection")){
+		vector<const DFDCIntersection*> fdcints;
+		loop->Get(fdcints);
+		DGraphicSet gsetp(46, kMarker, 0.5);
+		
+		for(unsigned int i=0; i<fdcints.size(); i++){
+			gsetp.points.push_back(fdcints[i]->pos);
+		}
+		graphics.push_back(gsetp);
+	}
 	
 	// FDC psuedo hits
 	if(hdvmf->GetCheckButton("fdcpseudo")){
@@ -329,7 +342,6 @@ void MyProcessor::FillGraphics(void)
 			AddKinematicDataTrack(tracks[i], kRed, 1.00);
 		}
 	}
-
 }
 
 //------------------------------------------------------------------

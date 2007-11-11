@@ -36,12 +36,13 @@ int main(int narg, char *argv[])
 	eventloop->OneEvent();
 
 	// Hand control to ROOT event loop
+	app.SetReturnFromRun(true);
 	app.Run();
 	
 	// Clean-up the app (call erun and fini methods, delete sources)
-	japp->Fini();
+	//japp->Fini(); // This now actually done in hdv_mainframe::DoQuit()
 		
-	delete japp;
+	if(japp)delete japp;
 
 	return 0;
 }

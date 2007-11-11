@@ -232,21 +232,23 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 				trkdrawopts->AddFrame(checkbuttons["trajectories"], lhints);
 
 				// Hit
-				checkbuttons["cdc"]				= new TGCheckButton(hitdrawopts,	"CDC");
-				checkbuttons["cdctruth"]		= new TGCheckButton(hitdrawopts,	"CDCTruth");
-				checkbuttons["fdcwire"]			= new TGCheckButton(hitdrawopts,	"FDC Wire");
-				checkbuttons["fdcpseudo"]		= new TGCheckButton(hitdrawopts,	"FDC Pseudo");
-				checkbuttons["fdctruth"]		= new TGCheckButton(hitdrawopts,	"FDCTruth");
-				checkbuttons["tof"]				= new TGCheckButton(hitdrawopts,	"TOF");
-				checkbuttons["toftruth"]		= new TGCheckButton(hitdrawopts,	"TOFTruth");
-				checkbuttons["fcal"]				= new TGCheckButton(hitdrawopts,	"FCAL");
-				checkbuttons["fcaltruth"]		= new TGCheckButton(hitdrawopts,	"FCALTruth");
-				checkbuttons["bcal"]				= new TGCheckButton(hitdrawopts,	"BCAL");
-				checkbuttons["bcaltruth"]		= new TGCheckButton(hitdrawopts,	"BCALTruth");
+				checkbuttons["cdc"]					= new TGCheckButton(hitdrawopts,	"CDC");
+				checkbuttons["cdctruth"]			= new TGCheckButton(hitdrawopts,	"CDCTruth");
+				checkbuttons["fdcwire"]				= new TGCheckButton(hitdrawopts,	"FDC Wire");
+				checkbuttons["fdcpseudo"]			= new TGCheckButton(hitdrawopts,	"FDC Pseudo");
+				checkbuttons["fdcintersection"]	= new TGCheckButton(hitdrawopts,	"FDC Intersection");
+				checkbuttons["fdctruth"]			= new TGCheckButton(hitdrawopts,	"FDCTruth");
+				checkbuttons["tof"]					= new TGCheckButton(hitdrawopts,	"TOF");
+				checkbuttons["toftruth"]			= new TGCheckButton(hitdrawopts,	"TOFTruth");
+				checkbuttons["fcal"]					= new TGCheckButton(hitdrawopts,	"FCAL");
+				checkbuttons["fcaltruth"]			= new TGCheckButton(hitdrawopts,	"FCALTruth");
+				checkbuttons["bcal"]					= new TGCheckButton(hitdrawopts,	"BCAL");
+				checkbuttons["bcaltruth"]			= new TGCheckButton(hitdrawopts,	"BCALTruth");
 				hitdrawopts->AddFrame(checkbuttons["cdc"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["cdctruth"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["fdcwire"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["fdcpseudo"], lhints);
+				hitdrawopts->AddFrame(checkbuttons["fdcintersection"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["fdctruth"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["tof"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["toftruth"], lhints);
@@ -327,8 +329,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	checkbuttons["thrown"]->SetState(kButtonDown);
 	xy->SetState(kButtonDown,kTRUE);
 	coordinatetype = COORD_XY;
-	checkbuttons["cdc"]->SetState(kButtonDown);
-	checkbuttons["fdcpseudo"]->SetState(kButtonDown);
+	checkbuttons["fdcwire"]->SetState(kButtonDown);
+	checkbuttons["fdcintersection"]->SetState(kButtonDown);
 	checkbuttons["trajectories"]->SetState(kButtonDown);
 	r0 = 50.0;
 	phi0 = M_PI;
@@ -363,6 +365,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	checkbuttons["cdctruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["fdcwire"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["fdcpseudo"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["fdcintersection"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["fdctruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["tof"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["toftruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
@@ -464,7 +467,13 @@ void hdv_mainframe::SetRange(void)
 void hdv_mainframe::DoQuit(void)
 {
 	japp->Quit();
-	gApplication->Terminate(0);
+	japp->Fini();
+	delete japp;
+	japp = NULL;
+
+	// This is supposed to return from the Run() method in "main()"
+	// since we call SetReturnFromRun(true), but it doesn't seem to work.
+	gApplication->Terminate(0);	
 }
 
 //-------------------
@@ -1215,7 +1224,7 @@ void hdv_mainframe::SetCandidateFactories(vector<string> &facnames)
 		string tag = facnames[i];
 		tag.erase(0, name.size());
 		candidatesfactory->AddEntry(tag.c_str(), i);
-		if(tag=="LINK"){
+		if(tag=="FDC"){
 			candidatesfactory->Select(i, kTRUE);
 			candidatesfactory->GetTextEntry()->SetText(tag.c_str());
 		}
@@ -1245,7 +1254,7 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 		if(pos==string::npos)continue;
 		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
 		reconfactory->AddEntry(facnames[i].c_str(), id++);
-		if(tag=="LINK"){
+		if(tag=="FDC"){
 			reconfactory->Select(id-1, kTRUE);
 			reconfactory->GetTextEntry()->SetText(facnames[i].c_str());
 		}
