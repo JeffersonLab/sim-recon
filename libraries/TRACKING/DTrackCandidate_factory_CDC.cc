@@ -108,7 +108,7 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 	// Link seeds using average phi of seed hits
 	vector<DCDCSeed> seeds_tmp, seeds;
 	LinkSeeds(seeds_sl5, seeds_sl3, seeds_tmp, MAX_SUBSEED_LINKED_HITS);
-	LinkSeeds(seeds_tmp, seeds_sl1, seeds, 2.0*MAX_SUBSEED_LINKED_HITS);
+	LinkSeeds(seeds_tmp, seeds_sl1, seeds, 2*MAX_SUBSEED_LINKED_HITS);
 	
 	// Fit linked seeds to circles
 	for(unsigned int i=0; i<seeds.size(); i++)seeds[i].valid = FitCircle(seeds[i]);
@@ -788,8 +788,8 @@ void DTrackCandidate_factory_CDC::FindTheta(DCDCSeed &seed, double target_z_min,
 		if(debug_level>3)_DBG_<<" -- tmin="<<tmin<<"  tmax="<<tmax<<endl;
 		
 		// Find index of bins corresponding to tmin and tmax
-		unsigned int imin = floor((tmin-hist_low_limit)/bin_width);
-		unsigned int imax = floor((tmax-hist_low_limit)/bin_width);
+		unsigned int imin = (unsigned int)floor((tmin-hist_low_limit)/bin_width);
+		unsigned int imax = (unsigned int)floor((tmax-hist_low_limit)/bin_width);
 		
 		// If entire range of this hit is outside of the histogram limit
 		// then discard this hit.
@@ -870,8 +870,8 @@ void DTrackCandidate_factory_CDC::FindZ(DCDCSeed &seed, double theta_min, double
 		if(debug_level>3)_DBG_<<" -- zmin="<<zmin<<"  zmax="<<zmax<<endl;
 		
 		// Find index of bins corresponding to tmin and tmax
-		unsigned int imin = floor((zmin-hist_low_limit)/bin_width);
-		unsigned int imax = floor((zmax-hist_low_limit)/bin_width);
+		unsigned int imin = (unsigned int)floor((zmin-hist_low_limit)/bin_width);
+		unsigned int imax = (unsigned int)floor((zmax-hist_low_limit)/bin_width);
 		
 		// If entire range of this hit is outside of the histogram limit
 		// then discard this hit.

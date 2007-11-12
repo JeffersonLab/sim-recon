@@ -167,15 +167,15 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       pos.SetXYZ(0,0,z);
       track->setPosition(pos);
       track->setMomentum(mom);
-      track->x0=xc;
-      track->y0=yc;
-      track->z_vertex=z;
-      track->p_trans=mom.Perp();
-      track->p=mom.Mag();
-      track->phi=phi0;
-      track->theta=mom.Theta();
-      track->q=segment->S(0,0)/fabs(segment->S(0,0));
-      track->setCharge(track->q);
+      //track->x0=xc;
+      //track->y0=yc;
+      //track->z_vertex=z;
+      //track->p_trans=mom.Perp();
+      //track->p=mom.Mag();
+      //track->phi=phi0;
+      //track->theta=mom.Theta();
+      //track->q=segment->S(0,0)/fabs(segment->S(0,0));
+      track->setCharge(segment->S(0,0)/fabs(segment->S(0,0)));
           
       _data.push_back(track); 
     }
@@ -239,15 +239,15 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       pos.SetXYZ(0,0,segment->S(4,0));
       track->setPosition(pos);
       track->setMomentum(mom);
-      track->x0=segment->xc;
-      track->y0=segment->yc;
-      track->z_vertex=segment->S(4,0);
-      track->p_trans=mom.Perp();
-      track->p=mom.Mag();
-      track->phi=segment->S(1,0);
-      track->theta=mom.Theta();
-      track->q=segment->S(0,0)/fabs(segment->S(0,0));
-      track->setCharge(track->q);
+      //track->x0=segment->xc;
+      //track->y0=segment->yc;
+      //track->z_vertex=segment->S(4,0);
+      //track->p_trans=mom.Perp();
+      //track->p=mom.Mag();
+      //track->phi=segment->S(1,0);
+      //track->theta=mom.Theta();
+      //track->q=segment->S(0,0)/fabs(segment->S(0,0));
+      track->setCharge(segment->S(0,0)/fabs(segment->S(0,0)));
 
       _data.push_back(track); 
     }
@@ -290,15 +290,15 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       pos.SetXYZ(0,0,segment->S(4,0));
       track->setPosition(pos);
       track->setMomentum(mom);
-      track->x0=segment->xc;
-      track->y0=segment->yc;
-      track->z_vertex=segment->S(4,0);
-      track->p_trans=mom.Perp();
-      track->p=mom.Mag();
-      track->phi=segment->S(1,0);
-      track->theta=mom.Theta();
-      track->q=segment->S(0,0)/fabs(segment->S(0,0));
-      track->setCharge(track->q);
+      //track->x0=segment->xc;
+      //track->y0=segment->yc;
+      //track->z_vertex=segment->S(4,0);
+      //track->p_trans=mom.Perp();
+      //track->p=mom.Mag();
+      //track->phi=segment->S(1,0);
+      //track->theta=mom.Theta();
+      //track->q=segment->S(0,0)/fabs(segment->S(0,0));
+      track->setCharge(segment->S(0,0)/fabs(segment->S(0,0)));
       
       _data.push_back(track); 
     }
@@ -311,20 +311,20 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     
     DVector3 pos,mom;
     GetPositionAndMomentum(segment,pos,mom); 
-    track->z_vertex=segment->S(4,0);
-    track->q=segment->S(0,0)/fabs(segment->S(0,0));
-    pos.SetXYZ(0,0,track->z_vertex);
+    //track->z_vertex=segment->S(4,0);
+    //track->q=segment->S(0,0)/fabs(segment->S(0,0));
+    pos.SetXYZ(0,0,segment->S(4,0));
     track->setPosition(pos);
     track->setMomentum(mom); 
-    track->setCharge(track->q);
-    track->x0=segment->xc;
-    track->y0=segment->yc;
-    track->p_trans=mom.Perp();
-    track->p=mom.Mag();
-    track->phi=segment->S(1,0);
-    track->theta=mom.Theta();
-    track->q=segment->S(0,0)/fabs(segment->S(0,0));
-    track->setCharge(track->q);
+    //track->setCharge(track->q);
+    //track->x0=segment->xc;
+    //track->y0=segment->yc;
+    //track->p_trans=mom.Perp();
+    //track->p=mom.Mag();
+    //track->phi=segment->S(1,0);
+    //track->theta=mom.Theta();
+    //track->q=segment->S(0,0)/fabs(segment->S(0,0));
+    track->setCharge(segment->S(0,0)/fabs(segment->S(0,0)));
 
     _data.push_back(track); 
   }
@@ -358,8 +358,8 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,double 
       DFDCSegment *segment2=package[j];
 	  
       // Skip to next segment if the sign of the charge is wrong
-      double kappa=segment2->S(0,0);
-      double q2=kappa/fabs(kappa);
+      //double kappa=segment2->S(0,0);
+      //double q2=kappa/fabs(kappa);
 
       // if (q2!=q) continue;
      
@@ -442,7 +442,7 @@ const string DTrackCandidate_factory_FDCCathodes::toString(void)
 	printheader("row:    x:     y:");
 	
 	for(unsigned int i=0; i<_data.size(); i++){
-		DTrackCandidate *myDTrackCandidate = _data[i];
+		//DTrackCandidate *myDTrackCandidate = _data[i];
 	
 		printnewrow();
 		printcol("%d",	i);

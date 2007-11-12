@@ -435,8 +435,8 @@ void DTrackCandidate_factory_FDC::FindTheta(DFDCSeed &seed, double target_z_min,
 		if(debug_level>3)_DBG_<<" -- tmin="<<tmin<<"  tmax="<<tmax<<endl;
 		
 		// Find index of bins corresponding to tmin and tmax
-		unsigned int imin = floor((tmin-hist_low_limit)/bin_width);
-		unsigned int imax = floor((tmax-hist_low_limit)/bin_width);
+		unsigned int imin = (unsigned int)floor((tmin-hist_low_limit)/bin_width);
+		unsigned int imax = (unsigned int)floor((tmax-hist_low_limit)/bin_width);
 		
 		// If entire range of this hit is outside of the histogram limit
 		// then discard this hit.
@@ -525,8 +525,8 @@ void DTrackCandidate_factory_FDC::FindZ(DFDCSeed &seed, double theta_min, double
 		if(debug_level>3)_DBG_<<" -- zmin="<<zmin<<"  zmax="<<zmax<<endl;
 		
 		// Find index of bins corresponding to tmin and tmax
-		unsigned int imin = floor((zmin-hist_low_limit)/bin_width);
-		unsigned int imax = floor((zmax-hist_low_limit)/bin_width);
+		unsigned int imin = (unsigned int)floor((zmin-hist_low_limit)/bin_width);
+		unsigned int imax = (unsigned int)floor((zmax-hist_low_limit)/bin_width);
 		
 		// If entire range of this hit is outside of the histogram limit
 		// then discard this hit.
@@ -543,7 +543,7 @@ void DTrackCandidate_factory_FDC::FindZ(DFDCSeed &seed, double theta_min, double
 	}
 	
 	// Look for the indexes of the plateau
-	unsigned int istart=(TARGET_Z_MIN-hist_low_limit)/bin_width;
+	unsigned int istart=(unsigned int)((TARGET_Z_MIN-hist_low_limit)/bin_width);
 	unsigned int iend=0;
 	for(unsigned int i=1; i<Nbins; i++){
 		

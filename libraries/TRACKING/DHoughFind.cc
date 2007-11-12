@@ -238,8 +238,8 @@ void DHoughFind::ClearPoints(void)
 //---------------------------------
 void DHoughFind::FindIndexes(const DVector2 &pos, int &ix, int &iy)
 {
-	ix = floor((pos.X()-xmin)/bin_widthx);
-	iy = floor((pos.Y()-ymin)/bin_widthy);
+	ix = (int)floor((pos.X()-xmin)/bin_widthx);
+	iy = (int)floor((pos.Y()-ymin)/bin_widthy);
 }
 
 //---------------------------------
