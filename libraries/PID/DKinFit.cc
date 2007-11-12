@@ -158,17 +158,21 @@ void DKinFit::Fit()
   if(_verbose>0) cerr << "numConstraints/ndf: " << numConstraints << " " << _ndf << endl;
 
   int i;
-  double mass[numParts];
-  double energy[numParts];
+  // The following were changed to vectors to avoid compiler warnings on SunOS 11/12/2007 D.L.
+  vector<double> mass(numParts); //double mass[numParts];
+  vector<double> energy(numParts); //double energy[numParts];
   double missingEnergy = 999.0;
-  int initialOrFinal[numParts];
+  vector<int> initialOrFinal(numParts); //int initialOrFinal[numParts];
   // The following 3 lines were commented out to avoid compiler warnings 7/31/07 D.L.
   //double p[numParts],erg[numParts],px[numParts],py[numParts],pz[numParts];
   //double e_miss=0.,e_inv=0.,px_inv=0.,py_inv=0.,pz_inv=0.;
   //double dumt, dumx, dumy, dumz;
   TVector3 p3_miss;
-  double pxMeas[_extraC], pyMeas[_extraC], pzMeas[_extraC], EMeas[_extraC];
-  double pxTot[_extraC], pyTot[_extraC], pzTot[_extraC], ETot[_extraC], massTot[_extraC];
+  // The following were changed to vectors to avoid compiler warnings on SunOS 11/12/2007 D.L.
+  vector<double> pxMeas(_extraC), pyMeas(_extraC), pzMeas(_extraC), EMeas(_extraC);
+  vector<double> pxTot(_extraC), pyTot(_extraC), pzTot(_extraC), ETot(_extraC), massTot(_extraC);
+  //double pxMeas[_extraC], pyMeas[_extraC], pzMeas[_extraC], EMeas[_extraC];
+  //double pxTot[_extraC], pyTot[_extraC], pzTot[_extraC], ETot[_extraC], massTot[_extraC];
 
   for(int i=0;i<numParts;i++)
   {
@@ -811,8 +815,10 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
   if(_verbose>0) cerr << "numConstraints/ndf: " << numConstraints << " " << _ndf << endl;
 
   int i;
-  double mass[numParts];
-  int initialOrFinal[numParts];
+  // The following were changed to vectors to avoid compiler warnings on SunOS 11/12/2007 D.L.
+  vector<double> mass(numParts); //double mass[numParts];
+  vector<int> initialOrFinal(numParts); //int initialOrFinal[numParts];
+  
   // The following 3 lines were commented out to avoid compiler warnings 7/31/07 D.L.
   //double p[numParts],erg[numParts],px[numParts],py[numParts],pz[numParts];
   //double e_miss=0.,e_inv=0.,px_inv=0.,py_inv=0.,pz_inv=0.;
