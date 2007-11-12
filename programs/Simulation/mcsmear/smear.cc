@@ -160,7 +160,7 @@ void AddNoiseHitsCDC(s_HDDM_t *hddm_s)
 			// we just use the rate as a probablity.
 			double Nhits = SampleRange(0.0, 1.0)<N ? 1.0:0.0;
 			if(Nhits<1.0)continue;
-			int iNhits = floor(Nhits);
+			int iNhits = (int)floor(Nhits);
 			Nstraw_hits.push_back(iNhits);
 			straw_number.push_back(straw);
 			ring_number.push_back(ring);
@@ -327,7 +327,7 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 			// we just use the rate as a probablity.
 			double Nhits = SampleRange(0.0, 1.0)<N ? 1.0:0.0;
 			if(Nhits<1.0)continue;
-			int iNhits = floor(Nhits);
+			int iNhits = (int)floor(Nhits);
 			Nwire_hits.push_back(iNhits);
 			wire_number.push_back(wire);
 			layer_number.push_back(layer);
@@ -582,7 +582,7 @@ void InitFDCGeometry(void)
 
 	// Coefficient used to calculate FDCsingle wire rate. We calculate
 	// it once here just to save calculating it for every wire in every event
-	FDC_RATE_COEFFICIENT = exp(-log(4)/23.0)/2.0/log(24.0)*FDC_TIME_WINDOW/1000.0E-9;
+	FDC_RATE_COEFFICIENT = exp(-log(4.0)/23.0)/2.0/log(24.0)*FDC_TIME_WINDOW/1000.0E-9;
 	
 	// Something is a little off in my calculation above so I scale it down via
 	// an emprical factor:
