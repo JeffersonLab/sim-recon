@@ -117,7 +117,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		fdc_candidate_hits.push_back(fdc_outhits);
 	}
 	
-	int Nnon_noise_cdcs = cdctrackhits.size() - 100.0; // hardwire approximate value for now
+	int Nnon_noise_cdcs = (int)cdctrackhits.size() - 100; // hardwire approximate value for now
 	if(Nnon_noise_cdcs<0)Nnon_noise_cdcs=0;
 	leaf.status = ((double)Nnon_noise_cdcs/25.0 - mcthrowns.size())<1.5 ? 0:-1;
 
@@ -269,7 +269,7 @@ unsigned int DEventProcessor_trackeff_hists::FindMatch(CDChitv &thrownhits, vect
 	// If the best match shares less than half its hits with the thrown,
 	// then it is considered not to match and -1 is returned.
 
-	unsigned int ibest=-1;
+	unsigned int ibest=(unsigned int)-1;
 	CDChitv my_matched;
 	matched_hits.clear();
 	for(unsigned int i=0; i<candidate_hits.size(); i++){
@@ -294,7 +294,7 @@ unsigned int DEventProcessor_trackeff_hists::FindMatch(CDChitv &thrownhits, vect
 	// Is the best good enough?
 	if(matched_hits.size() >= (thrownhits.size()/2))return ibest;
 	
-	return -1;
+	return (unsigned int)-1;
 }
 
 //------------------
@@ -309,7 +309,7 @@ unsigned int DEventProcessor_trackeff_hists::FindMatch(FDChitv &thrownhits, vect
 	// If the best match shares less than half its hits with the thrown,
 	// then it is considered not to match and -1 is returned.
 
-	unsigned int ibest=-1;
+	unsigned int ibest=(unsigned int)-1;
 	FDChitv my_matched;
 	matched_hits.clear();
 	for(unsigned int i=0; i<candidate_hits.size(); i++){
@@ -335,7 +335,7 @@ unsigned int DEventProcessor_trackeff_hists::FindMatch(FDChitv &thrownhits, vect
 //_DBG_<<"matched_hits.size()="<<matched_hits.size()<<"  thrownhits.size()="<<thrownhits.size()<<endl;
 	if(matched_hits.size() >= (thrownhits.size()/2))return ibest;
 	
-	return -1;
+	return (unsigned int)-1;
 }
 
 //------------------
