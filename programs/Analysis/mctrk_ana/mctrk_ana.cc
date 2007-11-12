@@ -44,11 +44,13 @@ int main(int narg, char *argv[])
 	//app.SetShowTicker(0);
 
 	// Instantiate our event processor
-	MyProcessor myproc;
-	app.AddProcessor(&myproc);
+	//MyProcessor myproc;
+	//app.AddProcessor(&myproc);
 	
-	// Always use the track_hists.so plugin
-	app.AddPlugin("track_hists");
+	// Add plugins
+	app.AddPlugin("trackeff_hists");
+	app.AddPlugin("acceptance_hists");
+	app.AddPlugin("mcthrown_hists");
 
 	// Run though all events, calling our event processor's methods
 	app.monitor_heartbeat = false;

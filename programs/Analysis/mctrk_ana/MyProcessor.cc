@@ -16,7 +16,7 @@ using namespace std;
 #include "TRACKING/DTrack.h"
 #include "TRACKING/DTrackHit.h"
 #include "TRACKING/DTrackCandidate.h"
-#include "TRACKING/DTrackEfficiency.h"
+//#include "TRACKING/DTrackEfficiency.h"
 #include "TRACKING/DMCThrown.h"
 #include "FDC/DFDCPseudo.h"
 #include "GlueX.h"
@@ -61,6 +61,7 @@ jerror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
 {
+#if 0
 	// Histograms are created and filled in DEventProcessor_TrackHists
 	// Automatically since it was added to the app in mctrk_ana.cc
 
@@ -139,16 +140,7 @@ jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
 		TVector3 pos = hit->wire->origin + hit->s*hit->wire->udir;
 		FDC_pseudo->Fill(pos.x(), pos.y(), pos.z());
 	}
-	
-#if 0
-	for(unsigned int i=0; i<trackcandidates.size(); i++){
-		const DTrackCandidate *tc = trackcandidates[i];
-		
-		double R = sqrt(tc->x0*tc->x0 + tc->y0*tc->y0);
-		R_vs_theta->Fill(tc->theta,R);
-		R_over_sintheta_vs_theta->Fill(tc->theta,R/sin(tc->theta));
-	}
-#endif	
+#endif
 	return NOERROR;
 }
 
