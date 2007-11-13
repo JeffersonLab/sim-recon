@@ -160,12 +160,12 @@ DVector2 DHoughFind::Find(const vector<DVector2> &points)
 		int ix, iy; // bin indexes
 		FindIndexes(pos + small_step*g, ix, iy);
 //_DBG_<<"beta="<<beta<<" ix="<<ix<<" iy="<<iy<<endl;
-		if(ix<0 || ix>=(int)Nbinsx || iy<0 || iy>=(int)Nbinsy){
+		if(ix<0 || ix>=(int)Nbinsx-1 || iy<0 || iy>=(int)Nbinsy-1){
 			g *= -1.0;
 			FindIndexes(pos + small_step*g, ix, iy);
 
 			// If we're still out of range, then this line doesn't intersect our histo ever
-			if(ix<0 || ix>=(int)Nbinsx || iy<0 || iy>=(int)Nbinsy){
+			if(ix<0 || ix>=(int)Nbinsx-1 || iy<0 || iy>=(int)Nbinsy-1){
 				continue;
 			}
 		}
@@ -176,6 +176,9 @@ DVector2 DHoughFind::Find(const vector<DVector2> &points)
 			// Find distance to boundary of next bin
 //_DBG_<<"   --- iteration "<<Niterations<<" ---"<<endl;;
 			beta = FindBeta(xmin+(double)ix*bin_widthx, ymin+(double)iy*bin_widthy, bin_widthx, bin_widthy, pos, g);
+			
+			// Beta too large indicates problem
+			if(beta*beta > (bin_widthx*bin_widthx + bin_widthy*bin_widthy))break;
 			
 			// increment histo for bin we just stepped across
 			if(ix<0 || ix>=(int)Nbinsx || iy<0 || iy>=(int)Nbinsy)break; // must have left the histo
@@ -191,9 +194,9 @@ DVector2 DHoughFind::Find(const vector<DVector2> &points)
 			// Step to next boundary and find indexes of next bin
 			pos += beta*g;
 			FindIndexes(pos + small_step*g, ix, iy);
-//_DBG_<<"after:  ix="<<ix<<" iy="<<iy<<endl;
 
 		}while(++Niterations<2*Nbinsx);
+//_DBG_<<"after:  ix="<<ix<<" iy="<<iy<<" Niterations="<<Niterations<<endl;
 	}
 
 	return GetMaxBinLocation();
@@ -268,9 +271,9 @@ double DHoughFind::FindBeta(double xlo, double ylo, double widthx, double widthy
 	double min_dist_to_center = 1.0E6;
 	double min_beta = 1.0E6;
 	for(unsigned int i=0; i<beta.size(); i++){
-		if(fabs(beta[i])<1.0E-4*bin_size)continue; // This is most likely due to our starting pos being on a boundary already. Ignore it.
+		if(fabs(beta[i])<1.0E-6*bin_size)continue; // This is most likely due to our starting pos being on a boundary already. Ignore it.
 		
-		DVector2 delta_center = pos + beta[i]*step - bin_center;
+		DVector2 delta_center = pos + beta[i]*stepdir - bin_center;
 		if(delta_center.Mod() < min_dist_to_center){
 			min_dist_to_center = delta_center.Mod();
 			min_beta = beta[i];
