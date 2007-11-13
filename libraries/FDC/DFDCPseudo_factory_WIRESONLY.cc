@@ -81,23 +81,21 @@ const string DFDCPseudo_factory_WIRESONLY::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-#if 0
-	// Put the class specific code to produce nicely formatted ASCII here.
-	// The DFactory_base class has several methods defined to help. They
-	// rely on positions of colons (:) in the header. Here's an example:
-	//
-	printheader("row:    x:     y:");
-	
+	printheader("layer: wire: time(ns):      w(cm):     s(cm):   status:");
+
 	for(unsigned int i=0; i<_data.size(); i++){
-		DFDCPseudo *myDFDCPseudo = _data[i];
-	
+		DFDCPseudo *hit = _data[i];
+		//const DFDCWire *w = hit->wire;
+
 		printnewrow();
-		printcol("%d",	i);
-//		printcol("%1.3f",	myDFDCPseudo->x);
-//		printcol("%3.2f",	myDFDCPseudo->y);
+		printcol("%d",		hit->wire->layer);
+		printcol("%d",		hit->wire->wire);
+		printcol("%3.1f",	hit->time);
+		printcol("%3.1f",	hit->w);
+		printcol("%1.4f",	hit->s);
+		printcol("%d",		hit->status);
 		printrow();
 	}
-#endif
 
 	return _table;
 }
