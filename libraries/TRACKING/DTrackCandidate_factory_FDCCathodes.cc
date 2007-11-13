@@ -152,30 +152,22 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       }
       
       DVector3 mom,mom2,pos;
+      double tanl=segment->S(3,0);
       double phi0=segment->S(1,0);
-      double xc=segment->xc,yc=segment->yc,z=segment->S(4,0);
-      GetPositionAndMomentum(segment,pos,mom);
-      if (match2){
-        GetPositionAndMomentum(match2,pos,mom2);
-	mom+=mom2;
-	mom*=0.5;
-	xc=(xc+match2->xc)/2.;
-	yc=(yc+match2->yc)/2.;
-	z=(z+match2->S(4,0))/2.;
-	phi0=(phi0+match2->S(1,0))/2.;
-      }
-      pos.SetXYZ(0,0,z);
+      double Bx,By,Bz;
+      int middle=segment->hits.size()/2;
+      
+      bfield->GetField(segment->hits[middle]->x,segment->hits[middle]->y,
+		       segment->hits[middle]->wire->origin(2),Bx,By,Bz);
+      double B=sqrt(Bx*Bx+By*By+Bz*Bz);
+      double pt=0.003*B/2./fabs(kappa);
+      double theta=M_PI_2-atan(tanl);
+
+      mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
+      pos.SetXYZ(0,0,segment->S(4,0));
       track->setPosition(pos);
       track->setMomentum(mom);
-      //track->x0=xc;
-      //track->y0=yc;
-      //track->z_vertex=z;
-      //track->p_trans=mom.Perp();
-      //track->p=mom.Mag();
-      //track->phi=phi0;
-      //track->theta=mom.Theta();
-      //track->q=segment->S(0,0)/fabs(segment->S(0,0));
-      track->setCharge(segment->S(0,0)/fabs(segment->S(0,0)));
+      track->setCharge(q);
           
       _data.push_back(track); 
     }
@@ -235,19 +227,22 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       
 
       DVector3 mom,pos;
-      GetPositionAndMomentum(segment,pos,mom);
+      double tanl=segment->S(3,0);
+      double phi0=segment->S(1,0);
+      double Bx,By,Bz;
+      int middle=segment->hits.size()/2;
+      
+      bfield->GetField(segment->hits[middle]->x,segment->hits[middle]->y,
+		       segment->hits[middle]->wire->origin(2),Bx,By,Bz);
+      double B=sqrt(Bx*Bx+By*By+Bz*Bz);
+      double pt=0.003*B/2./fabs(kappa);
+      double theta=M_PI_2-atan(tanl);
+
+      mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
       pos.SetXYZ(0,0,segment->S(4,0));
       track->setPosition(pos);
       track->setMomentum(mom);
-      //track->x0=segment->xc;
-      //track->y0=segment->yc;
-      //track->z_vertex=segment->S(4,0);
-      //track->p_trans=mom.Perp();
-      //track->p=mom.Mag();
-      //track->phi=segment->S(1,0);
-      //track->theta=mom.Theta();
-      //track->q=segment->S(0,0)/fabs(segment->S(0,0));
-      track->setCharge(segment->S(0,0)/fabs(segment->S(0,0)));
+      track->setCharge(q);
 
       _data.push_back(track); 
     }
@@ -286,19 +281,22 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
      
     
       DVector3 mom,pos;
-      GetPositionAndMomentum(segment,pos,mom);
+      double tanl=segment->S(3,0);
+      double phi0=segment->S(1,0);
+      double Bx,By,Bz;
+      int middle=segment->hits.size()/2;
+   
+      bfield->GetField(segment->hits[middle]->x,segment->hits[middle]->y,
+		       segment->hits[middle]->wire->origin(2),Bx,By,Bz);
+      double B=sqrt(Bx*Bx+By*By+Bz*Bz);
+      double pt=0.003*B/2./fabs(kappa);
+      double theta=M_PI_2-atan(tanl);
+
+      mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
       pos.SetXYZ(0,0,segment->S(4,0));
       track->setPosition(pos);
       track->setMomentum(mom);
-      //track->x0=segment->xc;
-      //track->y0=segment->yc;
-      //track->z_vertex=segment->S(4,0);
-      //track->p_trans=mom.Perp();
-      //track->p=mom.Mag();
-      //track->phi=segment->S(1,0);
-      //track->theta=mom.Theta();
-      //track->q=segment->S(0,0)/fabs(segment->S(0,0));
-      track->setCharge(segment->S(0,0)/fabs(segment->S(0,0)));
+      track->setCharge(q);
       
       _data.push_back(track); 
     }
@@ -310,20 +308,22 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     DFDCSegment *segment=package[3][k];
     
     DVector3 pos,mom;
-    GetPositionAndMomentum(segment,pos,mom); 
-    //track->z_vertex=segment->S(4,0);
-    //track->q=segment->S(0,0)/fabs(segment->S(0,0));
+    double kappa=segment->S(0,0);
+    double tanl=segment->S(3,0);
+    double phi0=segment->S(1,0);
+    double Bx,By,Bz;
+    int middle=segment->hits.size()/2;
+    
+    bfield->GetField(segment->hits[middle]->x,segment->hits[middle]->y,
+		     segment->hits[middle]->wire->origin(2),Bx,By,Bz);
+    double B=sqrt(Bx*Bx+By*By+Bz*Bz);
+    double pt=0.003*B/2./fabs(kappa);
+    double theta=M_PI_2-atan(tanl);
+    
+    mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
     pos.SetXYZ(0,0,segment->S(4,0));
     track->setPosition(pos);
-    track->setMomentum(mom); 
-    //track->setCharge(track->q);
-    //track->x0=segment->xc;
-    //track->y0=segment->yc;
-    //track->p_trans=mom.Perp();
-    //track->p=mom.Mag();
-    //track->phi=segment->S(1,0);
-    //track->theta=mom.Theta();
-    //track->q=segment->S(0,0)/fabs(segment->S(0,0));
+    track->setMomentum(mom);    
     track->setCharge(segment->S(0,0)/fabs(segment->S(0,0)));
 
     _data.push_back(track); 
