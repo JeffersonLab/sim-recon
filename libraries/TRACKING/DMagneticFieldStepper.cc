@@ -336,7 +336,7 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVec
 	// make the wrong choice here for certain geometries where the
 	// curvature of the swimming changes direction enough.
 
-_DBG_<<"This routine is not debugged!!!"<<endl;
+//_DBG_<<"This routine is not debugged!!!"<<endl;
 	double b = norm.Dot(mom)*norm.Dot(pos-origin);
 	bool momentum_and_charge_flipped = false;
 	if(b<0.0){
