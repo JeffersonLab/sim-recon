@@ -124,6 +124,9 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 	// Get hit list for all throwns
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
 		const DMCThrown *mcthrown = mcthrowns[i];
+		
+		// if this isn't a charged track, then skip it
+		if(fabs(mcthrowns[i]->charge())==0.0)continue;
 
 		CDChitv cdc_thrownhits;
 		FDChitv fdc_thrownhits;
