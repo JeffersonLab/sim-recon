@@ -37,6 +37,8 @@ class hdv_mainframe:public TGMainFrame {
 			COORD_RPHI = 2
 		};
 		
+		void ReadPreferences(void);
+		void SavePreferences(void);
 		void SetRange(void);
 		
 		// Slots for ROOT GUI
@@ -99,7 +101,11 @@ class hdv_mainframe:public TGMainFrame {
 		TGComboBox *tracksfactory;
 		TGComboBox *candidatesfactory;
 		TGComboBox *reconfactory;
-		TGComboBox *delay;		
+		TGComboBox *delay;
+		
+		string default_candidate;
+		string default_track;
+		string default_reconstructed;
 		
 		bool draw_candidates;
 		bool draw_tracks;

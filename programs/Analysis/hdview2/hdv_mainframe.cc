@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <sstream>
 #include <cmath>
+#include <fstream>
 using namespace std;
 
 #include <pthread.h>
@@ -324,14 +325,15 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 
 
 	//&&&&&&&&&&&&&&&& Defaults
+	ReadPreferences();
 	//checkbuttons["tracks"]->SetState(kButtonDown);
-	checkbuttons["candidates"]->SetState(kButtonDown);
-	checkbuttons["thrown"]->SetState(kButtonDown);
+	//checkbuttons["candidates"]->SetState(kButtonDown);
+	//checkbuttons["thrown"]->SetState(kButtonDown);
 	xy->SetState(kButtonDown,kTRUE);
 	coordinatetype = COORD_XY;
-	checkbuttons["fdcwire"]->SetState(kButtonDown);
-	checkbuttons["fdcintersection"]->SetState(kButtonDown);
-	checkbuttons["trajectories"]->SetState(kButtonDown);
+	//checkbuttons["fdcwire"]->SetState(kButtonDown);
+	//checkbuttons["fdcintersection"]->SetState(kButtonDown);
+	//checkbuttons["trajectories"]->SetState(kButtonDown);
 	r0 = 50.0;
 	phi0 = M_PI;
 	x0 = 0.0;
@@ -390,6 +392,109 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	MapSubwindows();
 	Resize(GetDefaultSize());
 	MapWindow();
+}
+
+//-------------------
+// ReadPreferences
+//-------------------
+void hdv_mainframe::ReadPreferences(void)
+{
+	// Preferences file is "${HOME}/.hdview2"
+	const char *home = getenv("HOME");
+	if(!home)return;
+	
+	// Try and open file
+	string fname = string(home) + "/.hdview2";
+	ifstream ifs(fname.c_str());
+	if(!ifs.is_open())return;
+	cout<<"Reading preferences from \""<<fname<<"\" ..."<<endl;
+	
+	// Loop over lines
+	char line[1024];
+	while(!ifs.eof()){
+		ifs.getline(line, 1024);
+		if(strlen(line)==0)continue;
+		if(line[0] == '#')continue;
+		string str(line);
+		
+		// Break line into tokens
+		vector<string> tokens;
+		string buf; // Have a buffer string
+		stringstream ss(str); // Insert the string into a stream
+		while (ss >> buf)tokens.push_back(buf);
+		if(tokens.size()<1)continue;
+		
+		// Check first token to decide what to do
+		if(tokens[0] == "checkbutton"){
+			if(tokens.size()!=4)continue; // should be of form "checkbutton name = value" with white space on either side of the "="
+			map<string, TGCheckButton*>::iterator it = checkbuttons.find(tokens[1]);
+			if(it != checkbuttons.end()){
+				if(tokens[3] == "on")(it->second)->SetState(kButtonDown);
+			}
+		}
+		
+		if(tokens[0] == "DTrackCandidate"){
+			if(tokens.size()!=3)continue; // should be of form "DTrackCandidate = tag" with white space on either side of the "="
+			default_candidate = tokens[2];
+		}
+
+		if(tokens[0] == "DTrack"){
+			if(tokens.size()!=3)continue; // should be of form "DTrack = tag" with white space on either side of the "="
+			default_track = tokens[2];
+		}
+
+		if(tokens[0] == "Reconstructed"){
+			if(tokens.size()!=3)continue; // should be of form "Reconstructed = Factory:tag" with white space on either side of the "="
+			default_reconstructed = tokens[2];
+		}
+		
+	}
+	
+	// close file
+	ifs.close();
+}
+
+//-------------------
+// SavePreferences
+//-------------------
+void hdv_mainframe::SavePreferences(void)
+{
+	// Preferences file is "${HOME}/.hdview2"
+	const char *home = getenv("HOME");
+	if(!home)return;
+	
+	// Try deleting old file and creating new file
+	string fname = string(home) + "/.hdview2";
+	unlink(fname.c_str());
+	ofstream ofs(fname.c_str());
+	if(!ofs.is_open()){
+		cout<<"Unable to create preferences file \""<<fname<<"\"!"<<endl;
+		return;
+	}
+	
+	// Write header
+	time_t t = time(NULL);
+	ofs<<"##### hdview2 preferences file ###"<<endl;
+	ofs<<"##### Auto-generated on "<<ctime(&t)<<endl;
+	ofs<<endl;
+	
+	// Write all checkbuttons that are "on"
+	map<string, TGCheckButton*>::iterator iter;
+	for(iter=checkbuttons.begin(); iter!=checkbuttons.end(); iter++){
+		TGCheckButton *but = iter->second;
+		if(but->GetState() == kButtonDown){
+			ofs<<"checkbutton "<<(iter->first)<<" = on"<<endl;
+		}
+	}
+	ofs<<endl;
+
+	ofs<<"DTrackCandidate = "<<(candidatesfactory->GetTextEntry()->GetText())<<endl;
+	ofs<<"DTrack = "<<(tracksfactory->GetTextEntry()->GetText())<<endl;
+	ofs<<"Reconstructed = "<<(reconfactory->GetTextEntry()->GetText())<<endl;
+	
+	ofs<<endl;
+	ofs.close();
+	cout<<"Preferences written to \""<<fname<<"\""<<endl;
 }
 
 //-------------------
@@ -466,6 +571,8 @@ void hdv_mainframe::SetRange(void)
 //-------------------
 void hdv_mainframe::DoQuit(void)
 {
+	SavePreferences();
+
 	japp->Quit();
 	japp->Fini();
 	delete japp;
@@ -858,7 +965,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		shift[2].Set(+blocksize/2, +blocksize/2);  // ensures the r/phi cooridinates also
 		shift[3].Set(+blocksize/2, -blocksize/2);  // define a single enclosed space
 		fcalblocks.clear();
-#if 0
+#if 1
 		for(int chan=0; chan<kMaxChannels; chan++){
 			int row = fcalgeom->row(chan);
 			int col = fcalgeom->column(chan);
@@ -1198,6 +1305,10 @@ void hdv_mainframe::SetTrackFactories(vector<string> &facnames)
 		string tag = facnames[i];
 		tag.erase(0, name.size());
 		tracksfactory->AddEntry(tag.c_str(), i+1);
+		if(tag==default_track){
+			tracksfactory->Select(i, kTRUE);
+			tracksfactory->GetTextEntry()->SetText(tag.c_str());
+		}
 	}
 
 	tracksfactory->GetTextEntry()->SetText("<default>");
@@ -1208,7 +1319,7 @@ void hdv_mainframe::SetTrackFactories(vector<string> &facnames)
 //-------------------
 void hdv_mainframe::SetCandidateFactories(vector<string> &facnames)
 {
-	/// Filter out the factories that provide "DTrack" objects
+	/// Filter out the factories that provide "DTrackCandidate" objects
 	/// and add their tags to the tracksfactory combobox.
 	
 	// Erase all current entries in the combobox and add back in
@@ -1224,7 +1335,7 @@ void hdv_mainframe::SetCandidateFactories(vector<string> &facnames)
 		string tag = facnames[i];
 		tag.erase(0, name.size());
 		candidatesfactory->AddEntry(tag.c_str(), i);
-		if(tag=="FDC"){
+		if(tag==default_candidate){
 			candidatesfactory->Select(i, kTRUE);
 			candidatesfactory->GetTextEntry()->SetText(tag.c_str());
 		}
@@ -1254,7 +1365,7 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 		if(pos==string::npos)continue;
 		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
 		reconfactory->AddEntry(facnames[i].c_str(), id++);
-		if(tag=="FDC"){
+		if(facnames[i]==default_reconstructed){
 			reconfactory->Select(id-1, kTRUE);
 			reconfactory->GetTextEntry()->SetText(facnames[i].c_str());
 		}
@@ -1268,6 +1379,10 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 		if(pos==string::npos)continue;
 		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
 		reconfactory->AddEntry(facnames[i].c_str(), id++);
+		if(facnames[i]==default_reconstructed){
+			reconfactory->Select(id-1, kTRUE);
+			reconfactory->GetTextEntry()->SetText(facnames[i].c_str());
+		}
 	}
 
 }

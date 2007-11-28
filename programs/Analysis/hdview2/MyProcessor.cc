@@ -147,7 +147,7 @@ void MyProcessor::FillGraphics(void)
 			TPolyLine *poly = hdvmf->GetFCALPolyLine(hit->x, hit->y);
 			if(!poly)continue;
 			
-			double a = hit->E/0.25;
+			double a = hit->E/0.005;
 			double f = sqrt(a>1.0 ? 1.0:a<0.0 ? 0.0:a);
 			double grey = 0.8;
 			double s = 1.0 - f;
@@ -231,7 +231,8 @@ void MyProcessor::FillGraphics(void)
 		vector<const DMCThrown*> mcthrown;
 		loop->Get(mcthrown);
 		for(unsigned int i=0; i<mcthrown.size(); i++){
-			AddKinematicDataTrack(mcthrown[i], kGreen, 2.0);
+			//if(mcthrown[i]->q==0.0)continue;
+			AddKinematicDataTrack(mcthrown[i], mcthrown[i]->q==0.0 ? kBlue:kRed, 2.0);
 		}
 	}
 	
@@ -339,7 +340,7 @@ void MyProcessor::FillGraphics(void)
 		vector<const DTrack*> tracks;
 		loop->Get(tracks, hdvmf->GetFactoryTag("DTrack"));
 		for(unsigned int i=0; i<tracks.size(); i++){
-			AddKinematicDataTrack(tracks[i], kRed, 1.00);
+			AddKinematicDataTrack(tracks[i], 46, 1.00);
 		}
 	}
 }
