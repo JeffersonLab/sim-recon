@@ -626,9 +626,12 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
     Phi=atan2(points[m]->y,points[m]->x);
     CRPhi(m,m)
       =(Phi*cos(Phi)-sin(Phi))*(Phi*cos(Phi)-sin(Phi))*points[m]->cov(0,0)
-      +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*points[m]->cov(1,1);
+      +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*points[m]->cov(1,1)
+      +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*points[m]->cov(1,0);
+
     CR(m,m)=cos(Phi)*cos(Phi)*points[m]->cov(0,0)
-      +sin(Phi)*sin(Phi)*points[m]->cov(1,1);
+      +sin(Phi)*sin(Phi)*points[m]->cov(1,1)
+      +2.*sin(Phi)*cos(Phi)*points[m]->cov(1,0);
   }
   CR(points.size(),points.size())=BEAM_VARIANCE;
   CRPhi(points.size(),points.size())=BEAM_VARIANCE;
