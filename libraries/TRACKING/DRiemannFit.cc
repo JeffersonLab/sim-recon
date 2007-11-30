@@ -3,7 +3,7 @@
 #include <math.h>
 
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
-
+#define Z_TARGET 65.0
 #define EPS 1.0e-8
 
 /// Add a hit to the list of hits using cylindrical coordinates
@@ -19,6 +19,26 @@ jerror_t DRiemannFit::AddHitXYZ(double x,double y, double z){
   hit->x = x;
   hit->y = y;
   hit->z = z;
+  hit->covx=1.;
+  hit->covy=1.;
+  hit->covxy=0.;
+  
+  hits.push_back(hit);
+
+  return NOERROR;
+  
+} 
+
+/// Add a hit to the list of hits using Cartesian coordinates
+jerror_t DRiemannFit::AddHit(double x,double y, double z,double covx,
+				double covy, double covxy){
+  DRiemannHit_t *hit = new DRiemannHit_t;
+  hit->x = x;
+  hit->y = y;
+  hit->z = z;
+  hit->covx=covx;
+  hit->covy=covy;
+  hit->covxy=covxy;
   
   hits.push_back(hit);
 
@@ -50,7 +70,7 @@ jerror_t DRiemannFit::CalcNormal(DMatrix A,double lambda,DMatrix &N){
 
 // Riemann Circle fit:  points on a circle in x,y project onto a plane cutting
 // the circular paraboloid surface described by (x,y,x^2+y^2).  Therefore the
-// task of fitting points in (x,y) to a circle is transormed to the taks of
+// task of fitting points in (x,y) to a circle is transormed to the task of
 // fitting planes in (x,y, w=x^2+y^2) space
 //
 jerror_t DRiemannFit::FitCircle(double BeamRMS,DMatrix *Cov){  
@@ -76,7 +96,13 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS,DMatrix *Cov){
   DMatrix CRPhi(hits.size()+1,hits.size()+1);
   if (Cov==NULL){
     Cov=new DMatrix(hits.size()+1,hits.size()+1);
-    for (unsigned int i=0;i<hits.size();i++) CRPhi(i,i)=1.;
+    for (unsigned int i=0;i<hits.size();i++){
+      double Phi=atan2(hits[i]->y,hits[i]->x);
+      CRPhi(i,i)
+      =(Phi*cos(Phi)-sin(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covx
+      +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*hits[i]->covy
+      +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
+    }
     CRPhi(hits.size(),hits.size())=BeamRMS*BeamRMS;
     Cov=&CRPhi;
   }
@@ -102,6 +128,7 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS,DMatrix *Cov){
     X(i,2)=hits[i]->x*hits[i]->x+hits[i]->y*hits[i]->y;
     Ones(i,0)=OnesT(0,i)=1.;
   }
+  Ones(hits.size(),0)=OnesT(0,hits.size())=1.;
 
   // Check that CRPhi is invertible 
   TDecompLU lu(CRPhi);
@@ -177,6 +204,9 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS,DMatrix *Cov){
 
   // Normal vector to plane
   CalcNormal(A,lambda_min,N1);
+  N[0]=N1(0,0);
+  N[1]=N1(1,0);
+  N[2]=N1(2,0);
 
   // Distance to origin
   double dist_to_origin=-(N1(0,0)*Xavg(0,0)+N1(1,0)*Xavg(0,1)+N1(2,0)*Xavg(0,2));
