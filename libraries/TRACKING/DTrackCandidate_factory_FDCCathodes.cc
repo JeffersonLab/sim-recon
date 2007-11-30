@@ -203,8 +203,11 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       DTrackCandidate *track = new DTrackCandidate;
       DFDCSegment *segment=package[1][i];
       
+      // tracking parameters
+      double tanl=segment->S(3,0);
+      double phi0=segment->S(1,0);
+      double kappa=segment->S(0,0); 
       // Sign of the charge
-      double kappa=segment->S(0,0);
       double q=kappa/fabs(kappa);
       
       // Start filling vector of segments belonging to current track    
@@ -246,10 +249,27 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	package[3].erase(package[3].begin()+match_id);
       }
       
+      if (segments.size()>1){
+	DRiemannFit fit;
+	for (unsigned int m=0;m<segments.size();m++){
+	  for (unsigned int n=0;n<segments[m]->hits.size();n++){
+	    DFDCPseudo *hit=segments[m]->hits[n];
+	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->cov(0,0),
+			hit->cov(1,1),hit->cov(1,0));
+	    
+	  }
+	}
+	fit.FitCircle(0.1,NULL);
 
-      DVector3 mom,pos;
-      double tanl=segment->S(3,0);
-      double phi0=segment->S(1,0);
+	// Curvature
+	kappa=q/2./fit.rc;
+	// Estimate for azimuthal angle
+	phi0=atan2(-fit.xc,fit.yc); 
+	if (q<0) phi0+=M_PI;      
+      }
+      
+
+      DVector3 mom,pos;      
       double Bx,By,Bz;
       int middle=segment->hits.size()/2;
       
@@ -264,7 +284,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       track->setPosition(pos);
       track->setMomentum(mom);
       track->setCharge(q);
-
+      
       _data.push_back(track); 
     }
   }
@@ -277,9 +297,12 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       // Create new track, starting with the current segment
       DTrackCandidate *track = new DTrackCandidate;
       DFDCSegment *segment=package[2][i];
-      
-      // Sign of the charge
+ 
+      // tracking parameters
+      double tanl=segment->S(3,0);
+      double phi0=segment->S(1,0);
       double kappa=segment->S(0,0);
+      // Sign of the charge
       double q=kappa/fabs(kappa);
       
       // Start filling vector of segments belonging to current track    
@@ -294,16 +317,34 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  (match4=GetTrackMatch(q,zpackage[3],segment,package[3],match_id))
 	  !=NULL){
 	// Insert the segment from package 4 into the track 
-	//segments.push_back(match4);
+	segments.push_back(match4);
 	
 	// remove the segment from the list 
 	package[3].erase(package[3].begin()+match_id);
       }	
      
+       
+      if (segments.size()>1){
+	DRiemannFit fit;
+	for (unsigned int m=0;m<segments.size();m++){
+	  for (unsigned int n=0;n<segments[m]->hits.size();n++){
+	    DFDCPseudo *hit=segments[m]->hits[n];
+	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->cov(0,0),
+		       hit->cov(1,1),hit->cov(1,0));
+	    
+	  }
+	}
+	fit.FitCircle(0.1,NULL);
+	
+	// Curvature
+	kappa=q/2./fit.rc;
+	// Estimate for azimuthal angle
+	phi0=atan2(-fit.xc,fit.yc); 
+	if (q<0) phi0+=M_PI;      
+      }
+      
     
       DVector3 mom,pos;
-      double tanl=segment->S(3,0);
-      double phi0=segment->S(1,0);
       double Bx,By,Bz;
       int middle=segment->hits.size()/2;
    
@@ -318,12 +359,12 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       track->setPosition(pos);
       track->setMomentum(mom);
       track->setCharge(q);
-      
+     
       _data.push_back(track); 
     }
   }
 
-  // Now collect stray segments in package 
+  // Now collect stray segments in package 4
   for (unsigned int k=0;k<package[3].size();k++){
     DTrackCandidate *track = new DTrackCandidate;
     DFDCSegment *segment=package[3][k];
