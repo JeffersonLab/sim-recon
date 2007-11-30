@@ -12,6 +12,7 @@
 #include "DMagneticFieldStepper.h"
 #include "FDC/DFDCPseudo_factory.h"
 #include "FDC/DFDCSegment_factory.h"
+#include "DRiemannFit.h"
 
 #define MATCH_RADIUS 5.0
 #define MAX_SEGMENTS 20
@@ -66,8 +67,11 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       DTrackCandidate *track = new DTrackCandidate;
       DFDCSegment *segment=package[0][i];
       
-      // Sign of the charge
+      // Tracking parameters from first segment
+      double tanl=segment->S(3,0);
+      double phi0=segment->S(1,0);
       double kappa=segment->S(0,0);
+      // Sign of the charge
       double q=kappa/fabs(kappa);
       
       // Start filling vector of segments belonging to current track    
@@ -92,7 +96,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    (match3=GetTrackMatch(q,zpackage[2],match2,package[2],match_id))
 	    !=NULL){
 	  // Insert the segment from package 3 into the track 
-	  segments.push_back(match3);
+	  //segments.push_back(match3);
 
 	  // remove the segment from the list 
 	  package[2].erase(package[2].begin()+match_id);
@@ -124,7 +128,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	       (match3=GetTrackMatch(q,zpackage[2],segment,package[2],
 		match_id))!=NULL){
 	// Insert the segment from package 3 into the track
-	segments.push_back(match3);
+	//segments.push_back(match3);
 
 	// remove the segment from the list 
 	package[2].erase(package[2].begin()+match_id);
@@ -150,10 +154,27 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	// remove the segment from the list 
 	package[3].erase(package[3].begin()+match_id);
       }
+
+      if (segments.size()>1){
+	DRiemannFit fit;
+	for (unsigned int m=0;m<segments.size();m++){
+	  for (unsigned int n=0;n<segments[m]->hits.size();n++){
+	    DFDCPseudo *hit=segments[m]->hits[n];
+	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->cov(0,0),
+			hit->cov(1,1),hit->cov(1,0));
+	    
+	  }
+	}
+	fit.FitCircle(0.1,NULL);
       
+	// Curvature
+	kappa=q/2./fit.rc;
+	// Estimate for azimuthal angle
+	phi0=atan2(-fit.xc,fit.yc); 
+	if (q<0) phi0+=M_PI;
+      }
+
       DVector3 mom,mom2,pos;
-      double tanl=segment->S(3,0);
-      double phi0=segment->S(1,0);
       double Bx,By,Bz;
       int middle=segment->hits.size()/2;
       
