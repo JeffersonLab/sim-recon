@@ -2,7 +2,6 @@
 #include <stdio.h>
 
 #include "HDDM/hddm_s.h"
-#include "particleType.h"
 
 s_iostream_t* hddmOutputStream=NULL;
 
