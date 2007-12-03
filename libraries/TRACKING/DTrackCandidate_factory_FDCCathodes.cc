@@ -168,10 +168,32 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	fit.FitCircle(0.1,NULL);
       
 	// Curvature
-	kappa=q/2./fit.rc;
+	segments[1]->S(0,0)=kappa=q/2./fit.rc;
 	// Estimate for azimuthal angle
 	phi0=atan2(-fit.xc,fit.yc); 
 	if (q<0) phi0+=M_PI;
+	segments[1]->S(1,0)=phi0;
+	// remaining tracking parameters
+	segments[1]->S(3,0)=tanl;
+	segments[1]->S(4,0)=segment->S(4,0);
+	segments[1]->xc=fit.xc;
+	segments[1]->yc=fit.yc;
+	segments[1]->rc=fit.rc;
+
+	// Try to match to package 3 again.
+	if (match3==NULL && package[2].size()>0 &&
+	    (match3=GetTrackMatch(q,zpackage[2],segments[1],package[2],
+				  match_id))!=NULL){
+	  // remove the segment from the list 
+	  package[2].erase(package[2].begin()+match_id);
+	  
+	  if (match4==NULL && package[3].size()>0 && 
+	      (match4=GetTrackMatch(q,zpackage[3],segments[1],package[3],
+				    match_id))!=NULL){
+	    // remove the segment from the list 
+	    package[3].erase(package[3].begin()+match_id); 
+	  }
+	}
       }
 
       DVector3 mom,mom2,pos;
@@ -262,12 +284,24 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	fit.FitCircle(0.1,NULL);
 
 	// Curvature
-	kappa=q/2./fit.rc;
+	segments[1]->S(0,0)=kappa=q/2./fit.rc;
 	// Estimate for azimuthal angle
 	phi0=atan2(-fit.xc,fit.yc); 
 	if (q<0) phi0+=M_PI;      
+	segments[1]->S(3,0)=tanl;
+	segments[1]->S(4,0)=segment->S(4,0);
+	segments[1]->xc=fit.xc;
+	segments[1]->yc=fit.yc;
+	segments[1]->rc=fit.rc;
+
+	// Try to match to package 4 again.
+	if (match4==NULL && package[3].size()>0 &&
+	    (match4=GetTrackMatch(q,zpackage[3],segments[1],package[3],match_id))
+	    !=NULL){
+	  // remove the segment from the list 
+	  package[3].erase(package[3].begin()+match_id);
+	}
       }
-      
 
       DVector3 mom,pos;      
       double Bx,By,Bz;
