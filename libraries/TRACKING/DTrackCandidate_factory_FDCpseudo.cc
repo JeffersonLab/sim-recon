@@ -1,4 +1,4 @@
-// $Id$
+// $Id: DTrackCandidate_factory_FDCpseudo.cc 2962 2007-11-12 13:44:06Z davidl $
 //
 //    File: DTrackCandidate_factory.cc
 // Created: Mon Jul 18 15:23:04 EDT 2005
@@ -13,7 +13,7 @@ using namespace std;
 
 #include <math.h>
 
-#include "DTrackCandidate_factory_FDC.h"
+#include "DTrackCandidate_factory_FDCpseudo.h"
 #include "DANA/DApplication.h"
 #include "DTrack.h"
 #include "DQuickFit.h"
@@ -24,19 +24,20 @@ using namespace std;
 #include "DHoughFind.h"
 
 
-bool FDCSortByZincreasing(DTrackCandidate_factory_FDC::DFDCTrkHit* const &hit1, DTrackCandidate_factory_FDC::DFDCTrkHit* const &hit2) {
-	return hit1->hit->pos.Z() < hit2->hit->pos.Z();
+bool FDCSortByZincreasing(DTrackCandidate_factory_FDCpseudo::DFDCTrkHit* const &hit1, DTrackCandidate_factory_FDCpseudo::DFDCTrkHit* const &hit2) {
+	return hit1->hit->wire->origin.Z() < hit2->hit->wire->origin.Z();
 }
 
 
 //------------------
-// DTrackCandidate_factory_FDC
+// DTrackCandidate_factory_FDCpseudo
 //------------------
-DTrackCandidate_factory_FDC::DTrackCandidate_factory_FDC()
+DTrackCandidate_factory_FDCpseudo::DTrackCandidate_factory_FDCpseudo()
 {
 #if 0
 	// Set defaults
 	MAX_SEED_DIST = 5.0;
+	
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_SEED_DIST",			MAX_SEED_DIST);
 #endif
 }
@@ -44,7 +45,7 @@ DTrackCandidate_factory_FDC::DTrackCandidate_factory_FDC()
 //------------------
 // init
 //------------------
-jerror_t DTrackCandidate_factory_FDC::init(void)
+jerror_t DTrackCandidate_factory_FDCpseudo::init(void)
 {
 	TARGET_Z_MIN = 65.0 - 15.0;
 	TARGET_Z_MAX = 65.0 + 15.0;
@@ -58,7 +59,7 @@ jerror_t DTrackCandidate_factory_FDC::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrackCandidate_factory_FDC::brun(JEventLoop *loop, int runnumber)
+jerror_t DTrackCandidate_factory_FDCpseudo::brun(JEventLoop *loop, int runnumber)
 {
 	return NOERROR;
 }
@@ -66,7 +67,7 @@ jerror_t DTrackCandidate_factory_FDC::brun(JEventLoop *loop, int runnumber)
 //------------------
 // fini
 //------------------
-jerror_t DTrackCandidate_factory_FDC::fini(void)
+jerror_t DTrackCandidate_factory_FDCpseudo::fini(void)
 {	
 	return NOERROR;
 }
@@ -74,15 +75,11 @@ jerror_t DTrackCandidate_factory_FDC::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DTrackCandidate_factory_FDC::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackCandidate_factory_FDCpseudo::evnt(JEventLoop *loop, int eventnumber)
 {
 
 	// Get the hits into the trkhits vector
 	GetTrkHits(loop);
-	
-	// Events with more than 100 hits are probably hopeless to reconstruct
-	// bail now.
-	if(fdctrkhits.size()>100)return NOERROR;
 	
 	// Find seeds from X/Y projections
 	vector<DFDCSeed> seeds;
@@ -125,7 +122,7 @@ jerror_t DTrackCandidate_factory_FDC::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 // GetTrkHits
 //------------------
-void DTrackCandidate_factory_FDC::GetTrkHits(JEventLoop *loop)
+void DTrackCandidate_factory_FDCpseudo::GetTrkHits(JEventLoop *loop)
 {
 	// Clear out old hits
 	for(unsigned int i=0; i<fdctrkhits.size(); i++){
@@ -134,14 +131,14 @@ void DTrackCandidate_factory_FDC::GetTrkHits(JEventLoop *loop)
 	fdctrkhits.clear();
 
 	// Get hits
-	vector<const DFDCIntersection*> fdcintersects;
-	loop->Get(fdcintersects);
+	vector<const DFDCPseudo*> fdcpseudos;
+	loop->Get(fdcpseudos);
 	
 	// Create a DFDCTrkHit object for each DFDCIntersection object
-	for(unsigned int i=0; i<fdcintersects.size(); i++){
+	for(unsigned int i=0; i<fdcpseudos.size(); i++){
 		
 		DFDCTrkHit *trkhit = new DFDCTrkHit;
-		trkhit->hit = fdcintersects[i];
+		trkhit->hit = fdcpseudos[i];
 		trkhit->flags = NOISE;
 		
 		fdctrkhits.push_back(trkhit);
@@ -169,7 +166,7 @@ void DTrackCandidate_factory_FDC::GetTrkHits(JEventLoop *loop)
 //------------------
 // FindSeeds
 //------------------
-void DTrackCandidate_factory_FDC::FindSeeds(vector<DFDCSeed> &seeds)
+void DTrackCandidate_factory_FDCpseudo::FindSeeds(vector<DFDCSeed> &seeds)
 {
 	// Create a DHoughFind object to find a seed via the Hough Transform method
 	// We create it once here to avoid the overhead of reallocating memory
@@ -197,15 +194,15 @@ void DTrackCandidate_factory_FDC::FindSeeds(vector<DFDCSeed> &seeds)
 			if(fdctrkhit->flags&USED)continue;
 			if(fdctrkhit->flags&NOISE)continue;
 			if(fdctrkhit->flags&OUT_OF_TIME)continue;
-			const DFDCIntersection *hit = fdctrkhit->hit;
+			const DFDCPseudo *hit = fdctrkhit->hit;
 		
-			hough.AddPoint(hit->pos.X(), hit->pos.Y());
+			hough.AddPoint(hit->x, hit->y);
 		}
 	
 		DVector2 Ro = hough.Find();
 		if(debug_level>3)_DBG_<<"Rough: GetMaxBinContent="<<hough.GetMaxBinContent()<<"  x0="<<Ro.X()<<"  y0="<<Ro.Y()<<endl;
 		if(debug_level>6)hough.PrintHist();
-		if(hough.GetMaxBinContent()<10.0)break;
+		if(hough.GetMaxBinContent()<10.0)continue;
 		
 		// Zoom in on resonanace a little
 		double width = 60.0;
@@ -220,7 +217,7 @@ void DTrackCandidate_factory_FDC::FindSeeds(vector<DFDCSeed> &seeds)
 		Ro = hough.Find();
 		if(debug_level>3)_DBG_<<"Fine: GetMaxBinContent="<<hough.GetMaxBinContent()<<"  x0="<<Ro.X()<<"  y0="<<Ro.Y()<<endl;
 		if(debug_level>5)hough.PrintHist();
-		
+
 		DFDCSeed seed;
 		
 		seed.valid = true;
@@ -253,7 +250,7 @@ void DTrackCandidate_factory_FDC::FindSeeds(vector<DFDCSeed> &seeds)
 //------------------
 // FillSeedHits
 //------------------
-void DTrackCandidate_factory_FDC::FillSeedHits(DFDCSeed &seed)
+void DTrackCandidate_factory_FDCpseudo::FillSeedHits(DFDCSeed &seed)
 {
 	// Loop over available hits and add any consistent with the circle
 	// parameters to the list of hits for this seed.
@@ -265,12 +262,12 @@ void DTrackCandidate_factory_FDC::FillSeedHits(DFDCSeed &seed)
 		if(fdctrkhit->flags&USED)continue;
 		if(fdctrkhit->flags&NOISE)continue;
 		if(fdctrkhit->flags&OUT_OF_TIME)continue;
-		const DFDCIntersection *hit = fdctrkhit->hit;
+		const DFDCPseudo *hit = fdctrkhit->hit;
 
 		// Calculate distance between Hough transformed line (i.e.
 		// the line on which a circle that passes through both the
 		// origin and the point at hit->pos) and the circle center.
-		DVector2 h(hit->pos.X()/2.0, hit->pos.Y()/2.0);
+		DVector2 h(hit->x/2.0, hit->y/2.0);
 		DVector2 g(h.Y(), -h.X()); 
 		g /= g.Mod();
 		DVector2 Ro_minus_h(seed.x0-h.X(), seed.y0-h.Y());
@@ -303,10 +300,10 @@ void DTrackCandidate_factory_FDC::FillSeedHits(DFDCSeed &seed)
 	int Nq = 0;
 	for(unsigned int i=0; i<seed.hits.size(); i++){
 		DFDCTrkHit *fdctrkhit = seed.hits[i];
-		const DVector3 &pos = fdctrkhit->hit->pos;
+		//const DVector3 &pos = fdctrkhit->hit->pos;
 		
 		// Calculate phi. We do this trivially for now
-		DVector2 p(pos.X() , pos.Y());
+		DVector2 p(fdctrkhit->hit->x , fdctrkhit->hit->y);
 		DVector2 p_minus_Ro = p - Ro;
 		p_minus_Ro/=p_minus_Ro.Mod();
 		double delta_phi = p_minus_Ro.Phi() - last_dir.Phi();
@@ -315,17 +312,17 @@ void DTrackCandidate_factory_FDC::FillSeedHits(DFDCSeed &seed)
 		fdctrkhit->phi_hit = last_phi + delta_phi;
 		last_phi = fdctrkhit->phi_hit;
 		last_dir = p_minus_Ro;
-		if(debug_level>3)_DBG_<<"phi_hit="<<fdctrkhit->phi_hit<<" z="<<fdctrkhit->hit->pos.Z()<<"  phi_hit/z="<<fdctrkhit->phi_hit/(fdctrkhit->hit->pos.Z()-65.0)<<" delta_phi="<<delta_phi<<endl;
-		if(fdctrkhit->hit->wire2->layer<=6){
+		if(debug_level>3)_DBG_<<"phi_hit="<<fdctrkhit->phi_hit<<" z="<<fdctrkhit->hit->wire->origin.Z()<<"  phi_hit/z="<<fdctrkhit->phi_hit/(fdctrkhit->hit->wire->origin.Z()-65.0)<<" delta_phi="<<delta_phi<<endl;
+		if(fdctrkhit->hit->wire->layer<=6){
 			Nq += fdctrkhit->phi_hit>0.0 ? +1:-1;
 		}
 	}
-	
+
 	// If Nq has too few entries, then look to the second package
 	if(abs(Nq)<2){
 		for(unsigned int i=0; i<seed.hits.size(); i++){
 			DFDCTrkHit *fdctrkhit = seed.hits[i];
-			if(fdctrkhit->hit->wire2->layer<=12){
+			if(fdctrkhit->hit->wire->layer<=12){
 				Nq += fdctrkhit->phi_hit>0.0 ? +1:-1;
 			}
 		}
@@ -337,7 +334,7 @@ void DTrackCandidate_factory_FDC::FillSeedHits(DFDCSeed &seed)
 //------------------
 // NumAvailableHits
 //------------------
-unsigned int DTrackCandidate_factory_FDC::NumAvailableHits(void)
+unsigned int DTrackCandidate_factory_FDCpseudo::NumAvailableHits(void)
 {
 	// Loop over all hits and count the ones that are still
 	// available for making a new seed.
@@ -357,7 +354,7 @@ unsigned int DTrackCandidate_factory_FDC::NumAvailableHits(void)
 //------------------
 // FindThetaZ
 //------------------
-void DTrackCandidate_factory_FDC::FindThetaZ(DFDCSeed &seed)
+void DTrackCandidate_factory_FDCpseudo::FindThetaZ(DFDCSeed &seed)
 {
 	FindTheta(seed, TARGET_Z_MIN, TARGET_Z_MAX);
 	FindZ(seed, seed.theta_min, seed.theta_max);
@@ -392,7 +389,7 @@ void DTrackCandidate_factory_FDC::FindThetaZ(DFDCSeed &seed)
 //------------------
 // FindTheta
 //------------------
-void DTrackCandidate_factory_FDC::FindTheta(DFDCSeed &seed, double target_z_min, double target_z_max)
+void DTrackCandidate_factory_FDCpseudo::FindTheta(DFDCSeed &seed, double target_z_min, double target_z_max)
 {
 	/// Find the theta value using the hits from <i>seed</i>. 
 	/// The value of seed.r0 is used to calculate theta.
@@ -421,7 +418,7 @@ void DTrackCandidate_factory_FDC::FindTheta(DFDCSeed &seed, double target_z_min,
 		// Calculate upper and lower limits in theta
 		double alpha = r0*trkhit->phi_hit;
 		if(seed.q<0.0)alpha = -alpha;
-		double z_hit = trkhit->hit->pos.Z();
+		double z_hit = trkhit->hit->wire->origin.Z();
 		double tmin = atan2(alpha, z_hit - target_z_min);
 		double tmax = atan2(alpha, z_hit - target_z_max);
 		if(tmin>tmax){
@@ -501,7 +498,7 @@ void DTrackCandidate_factory_FDC::FindTheta(DFDCSeed &seed, double target_z_min,
 //------------------
 // FindZ
 //------------------
-void DTrackCandidate_factory_FDC::FindZ(DFDCSeed &seed, double theta_min, double theta_max)
+void DTrackCandidate_factory_FDCpseudo::FindZ(DFDCSeed &seed, double theta_min, double theta_max)
 {
 	/// Find the z value of the vertex using the valid stereo hits from <i>seed</i>. The values
 	/// for phi_hit and pos.Z() are assumed to be valid as is the status of the
@@ -540,7 +537,7 @@ void DTrackCandidate_factory_FDC::FindZ(DFDCSeed &seed, double theta_min, double
 		
 		// Calculate upper and lower limits in z
 		double q_sign = seed.q>0.0 ? +1.0:-1.0;
-		double z_hit = trkhit->hit->pos.Z();
+		double z_hit = trkhit->hit->wire->origin.Z();
 		double zmin = z_hit - q_sign*trkhit->phi_hit/tan_alpha_min;
 		double zmax = z_hit - q_sign*trkhit->phi_hit/tan_alpha_max;
 		if(zmin>zmax){
@@ -615,7 +612,7 @@ void DTrackCandidate_factory_FDC::FindZ(DFDCSeed &seed, double theta_min, double
 //------------------
 // toString
 //------------------
-const string DTrackCandidate_factory_FDC::toString(void)
+const string DTrackCandidate_factory_FDCpseudo::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
 	Get();
@@ -645,12 +642,4 @@ const string DTrackCandidate_factory_FDC::toString(void)
 	
 	return _table;
 }
-
-
-// ----------------------------------------------------------------
-// ----------------------------------------------------------------
-// ----------------------- DEBUGGING ROUTINES ---------------------
-// ----------------------------------------------------------------
-// ----------------------------------------------------------------
-
 

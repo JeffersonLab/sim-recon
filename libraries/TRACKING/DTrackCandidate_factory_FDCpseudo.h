@@ -1,12 +1,12 @@
-// $Id$
+// $Id: DTrackCandidate_factory_FDCpseudo.h 2955 2007-11-11 04:54:05Z davidl $
 //
-//    File: DTrackCandidate_factory_FDC.h
+//    File: DTrackCandidate_factory_FDCpseudo.h
 // Created: Mon Jul 18 15:23:04 EDT 2005
 // Creator: davidl (on Darwin wire129.jlab.org 7.8.0 powerpc)
 //
 
-#ifndef _DTrackCandidate_factory_FDC_
-#define _DTrackCandidate_factory_FDC_
+#ifndef _DTrackCandidate_factory_FDCpseudo_
+#define _DTrackCandidate_factory_FDCpseudo_
 
 #include <TH1.h>
 #include <TH2F.h>
@@ -14,20 +14,20 @@
 
 #include "JANA/JFactory.h"
 #include "DQuickFit.h"
-#include "DHoughFind.h"
 #include "DTrackCandidate.h"
-#include "FDC/DFDCIntersection.h"
+#include "FDC/DFDCPseudo.h"
 #include "FDC/DFDCWire.h"
+#include "DHoughFind.h"
 
 class JGeometry;
 class DMagneticFieldMap;
 
-class DTrackCandidate_factory_FDC:public JFactory<DTrackCandidate>{
+class DTrackCandidate_factory_FDCpseudo:public JFactory<DTrackCandidate>{
 	public:
-		DTrackCandidate_factory_FDC();
-		~DTrackCandidate_factory_FDC(){};
+		DTrackCandidate_factory_FDCpseudo();
+		~DTrackCandidate_factory_FDCpseudo(){};
 		const string toString(void);
-		virtual const char* Tag(void){return "FDC";}
+		virtual const char* Tag(void){return "FDCpseudo";}
 
 		enum trk_flags_t{
 			NONE					= 0x000,
@@ -50,7 +50,7 @@ class DTrackCandidate_factory_FDC:public JFactory<DTrackCandidate>{
 		
 		class DFDCTrkHit{
 			public:
-				const DFDCIntersection *hit;
+				const DFDCPseudo *hit;
 				double phi_hit;
 				unsigned int flags;
 				double theta_min;
@@ -59,11 +59,9 @@ class DTrackCandidate_factory_FDC:public JFactory<DTrackCandidate>{
 				double zmax;
 				
 				double Dist2(const DFDCTrkHit* trkhit){
-					DVector3 delta = trkhit->hit->pos - this->hit->pos;
-					return delta.Mag2();
-					//double dx = trkhit->hit->pos.X() - this->hit->pos.X();
-					//double dy = trkhit->hit->pos.Y() - this->hit->pos.Y();
-					//return dx*dx + dy*dy;
+					double dx = trkhit->hit->x - this->hit->x;
+					double dy = trkhit->hit->y - this->hit->y;
+					return dx*dx + dy*dy;
 				}
 		};
 		
@@ -110,5 +108,5 @@ class DTrackCandidate_factory_FDC:public JFactory<DTrackCandidate>{
 
 };
 
-#endif // _DTrackCandidate_factory_FDC_
+#endif // _DTrackCandidate_factory_FDCpseudo_
 

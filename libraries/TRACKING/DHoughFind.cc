@@ -73,6 +73,7 @@ void DHoughFind::SetLimits(double xmin, double xmax, double ymin, double ymax, u
 void DHoughFind::ResetHist(void)
 {
 	for(unsigned int i=0; i<Nbinsx*Nbinsy; i++)hist[i]=0.0;
+	//memset(hist, 0, Nbinsx*Nbinsy*sizeof(double));
 
 	imax_binx = Nbinsx/2;
 	imax_biny = Nbinsy/2;
@@ -174,7 +175,7 @@ DVector2 DHoughFind::Find(const vector<DVector2> &points)
 		do{
 			
 			// Find distance to boundary of next bin
-//_DBG_<<"   --- iteration "<<Niterations<<" ---"<<endl;;
+//_DBG_<<"   --- iteration "<<Niterations<<" ---"<<endl;
 			beta = FindBeta(xmin+(double)ix*bin_widthx, ymin+(double)iy*bin_widthy, bin_widthx, bin_widthy, pos, g);
 			
 			// Beta too large indicates problem
@@ -235,7 +236,7 @@ void DHoughFind::ClearPoints(void)
 	points.clear();
 }
 
-
+#if 0
 //---------------------------------
 // FindIndexes
 //---------------------------------
@@ -255,11 +256,16 @@ double DHoughFind::FindBeta(double xlo, double ylo, double widthx, double widthy
 	DVector2 ydir(0.0, 1.0);
 	DVector2 stepdir = step/step.Mod();
 
-	vector<double> beta;
-	beta.push_back(FindBeta(a0, xdir, pos, stepdir));
-	beta.push_back(FindBeta(a0+widthx*xdir, ydir, pos, stepdir));
-	beta.push_back(FindBeta(a0+widthx*xdir+widthy*ydir, -1.0*xdir, pos, stepdir));
-	beta.push_back(FindBeta(a0+widthy*ydir, -1.0*ydir, pos, stepdir));
+	//vector<double> beta(4);
+	double beta[4];
+	beta[0] = FindBeta(a0, xdir, pos, stepdir);
+	beta[1] = FindBeta(a0+widthx*xdir, ydir, pos, stepdir);
+	beta[2] = FindBeta(a0+widthx*xdir+widthy*ydir, -1.0*xdir, pos, stepdir);
+	beta[3] = FindBeta(a0+widthy*ydir, -1.0*ydir, pos, stepdir);
+	//beta.push_back(FindBeta(a0, xdir, pos, stepdir));
+	//beta.push_back(FindBeta(a0+widthx*xdir, ydir, pos, stepdir));
+	//beta.push_back(FindBeta(a0+widthx*xdir+widthy*ydir, -1.0*xdir, pos, stepdir));
+	//beta.push_back(FindBeta(a0+widthy*ydir, -1.0*ydir, pos, stepdir));
 
 	// Here, we want to choose the closest boundary of the bin which is not
 	// the boundary the point "pos" lies on. The values of beta give the
@@ -270,7 +276,7 @@ double DHoughFind::FindBeta(double xlo, double ylo, double widthx, double widthy
 	DVector2 bin_center(xlo+widthx/2.0, ylo+widthy/2.0);
 	double min_dist_to_center = 1.0E6;
 	double min_beta = 1.0E6;
-	for(unsigned int i=0; i<beta.size(); i++){
+	for(unsigned int i=0; i<4; i++){
 		if(fabs(beta[i])<1.0E-6*bin_size)continue; // This is most likely due to our starting pos being on a boundary already. Ignore it.
 		
 		DVector2 delta_center = pos + beta[i]*stepdir - bin_center;
@@ -314,7 +320,7 @@ double DHoughFind::FindBeta(const DVector2 &a, const DVector2 &b, const DVector2
 
 	return (d*(a-c) - (d*b)*(b*(a-c)))/(1.0-pow(b*d, 2.0));
 }
-
+#endif
 
 //---------------------------------
 // PrintHist
