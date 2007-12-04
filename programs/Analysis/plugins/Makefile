@@ -3,7 +3,7 @@
 
 all:
 	make -C acceptance_hists
-	make -C bcal_hists
+	#make -C bcal_hists
 	make -C cdc_hists
 	make -C fcal_hists
 	make -C trackeff_hists
@@ -11,7 +11,7 @@ all:
 
 install:
 	make -C acceptance_hists install
-	make -C bcal_hists install
+	#make -C bcal_hists install
 	make -C cdc_hists install
 	make -C fcal_hists install
 	make -C trackeff_hists install
@@ -20,7 +20,7 @@ install:
 
 clean:
 	make -C acceptance_hists clean
-	make -C bcal_hists clean
+	#make -C bcal_hists clean
 	make -C cdc_hists clean
 	make -C fcal_hists clean
 	make -C trackeff_hists clean
@@ -28,7 +28,7 @@ clean:
 
 pristine:
 	make -C acceptance_hists pristine
-	make -C bcal_hists pristine
+	#make -C bcal_hists pristine
 	make -C cdc_hists pristine
 	make -C fcal_hists pristine
 	make -C trackeff_hists pristine
