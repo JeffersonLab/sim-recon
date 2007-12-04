@@ -9,6 +9,8 @@
 #define _DFDCIntersection_factory_
 
 #include <JANA/JFactory.h>
+#include <DVector2.h>
+
 #include "DFDCIntersection.h"
 
 class DFDCIntersection_factory:public JFactory<DFDCIntersection>{
@@ -19,14 +21,18 @@ class DFDCIntersection_factory:public JFactory<DFDCIntersection>{
 
 
 	private:
-		//jerror_t init(void);						///< Called once at program start.
+		jerror_t init(void);						///< Called once at program start.
 		//jerror_t brun(JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Called every event.
 		//jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		//jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		void MakeIntersectionPoints(vector<vector<const DFDCHit*> >&hits_by_layer);
+		void MakeRestrictedIntersectionPoints(vector<vector<const DFDCHit*> >&hits_by_layer);
+		
+		void FindIntersections(vector<const DFDCHit*> &layer1, vector<const DFDCHit*> &layer2, vector<DFDCIntersection*> &intersections);
 
+		double MAX_DIST2;
 };
 
 #endif // _DFDCIntersection_factory_
