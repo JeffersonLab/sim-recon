@@ -20,6 +20,9 @@ class DRiemannFit{
   jerror_t AddHitXYZ(double x,double y, double z);
   jerror_t AddHit(double x,double y,double z,double covx,double covy,
 		     double covxy);
+ 
+  double GetCharge(double BeamRMS, DMatrix *CR, DMatrix *CRPhi);
+
 
   // Center of projected circle and radius
   double xc,yc,rc;

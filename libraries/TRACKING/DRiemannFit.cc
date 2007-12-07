@@ -229,5 +229,63 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS,DMatrix *Cov){
 
   return NOERROR;
 }
+ 
+// Linear regression to find charge
+double DRiemannFit::GetCharge(double BeamRMS,DMatrix *CovR, DMatrix *CovRPhi){
+  // Covariance matrices
+  DMatrix CRPhi(hits.size()+1,hits.size()+1);
+  DMatrix CR(hits.size()+1,hits.size()+1);
+  if (CovRPhi==NULL){
+    CovRPhi=new DMatrix(hits.size()+1,hits.size()+1);
+    for (unsigned int i=0;i<hits.size();i++){
+      double Phi=atan2(hits[i]->y,hits[i]->x);
+      CRPhi(i,i)
+      =(Phi*cos(Phi)-sin(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covx
+      +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*hits[i]->covy
+      +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
+    }
+    CRPhi(hits.size(),hits.size())=BeamRMS*BeamRMS;
+    CovRPhi=&CRPhi;
+  }
+  else{
+    for (unsigned int i=0;i<hits.size()+1;i++)
+      for (unsigned int j=0;j<hits.size()+1;j++)
+	CRPhi(i,j)=CovRPhi->operator()(i, j);
+  }
+  if (CovR==NULL){
+    CovR=new DMatrix(hits.size()+1,hits.size()+1);
+    for (unsigned int m=0;m<hits.size();m++){
+      double Phi=atan2(hits[m]->y,hits[m]->x);
+      CR(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
+      +sin(Phi)*sin(Phi)*hits[m]->covy
+      +2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
+    } 
+    CR(hits.size(),hits.size())=BeamRMS*BeamRMS;
+    CovR=&CR;
+  }
+  else{
+    for (unsigned int i=0;i<hits.size()+1;i++)
+      for (unsigned int j=0;j<hits.size()+1;j++)
+	CR(i,j)=CovR->operator()(i, j);
+  }
 
 
+  double sumv=0,sumy=0,sumx=0,sumxx=0,sumxy=0;
+  for (unsigned int k=0;k<hits.size();k++){
+    DRiemannHit_t *hit=hits[k];   
+    double phi_z=atan2(hit->y,hit->x);
+    double r2=hit->x*hit->x+hit->y*hit->y;
+    double var=(CRPhi(k,k)+phi_z*phi_z*CR(k,k))/r2;
+    sumv+=1./var;
+    sumy+=phi_z/var;
+    sumx+=hit->z/var;
+    sumxx+=hit->z*hit->z/var;
+    sumxy+=phi_z*hit->z/var;
+  }
+  double slope=(sumv*sumxy-sumy*sumx)/(sumv*sumxx-sumx*sumx); 
+ 
+  // Guess particle charge (+/-1);
+  if (slope<0.) return -1.;
+
+  return 1.;
+}
