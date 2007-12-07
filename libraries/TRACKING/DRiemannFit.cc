@@ -269,11 +269,17 @@ double DRiemannFit::GetCharge(double BeamRMS,DMatrix *CovR, DMatrix *CovRPhi){
 	CR(i,j)=CovR->operator()(i, j);
   }
 
-
+  double phi_old=atan2(hits[0]->y,hits[0]->x);
   double sumv=0,sumy=0,sumx=0,sumxx=0,sumxy=0;
   for (unsigned int k=0;k<hits.size();k++){
     DRiemannHit_t *hit=hits[k];   
     double phi_z=atan2(hit->y,hit->x);
+
+    // Check for problem regions near +pi and -pi
+    if (fabs(phi_z-phi_old)>M_PI){  
+      if (phi_old<0) phi_z-=2.*M_PI;
+      else phi_z+=2.*M_PI;
+    }
     double r2=hit->x*hit->x+hit->y*hit->y;
     double var=(CRPhi(k,k)+phi_z*phi_z*CR(k,k))/r2;
     sumv+=1./var;
@@ -281,6 +287,7 @@ double DRiemannFit::GetCharge(double BeamRMS,DMatrix *CovR, DMatrix *CovRPhi){
     sumx+=hit->z/var;
     sumxx+=hit->z*hit->z/var;
     sumxy+=phi_z*hit->z/var;
+    phi_old=phi_z;
   }
   double slope=(sumv*sumxy-sumy*sumx)/(sumv*sumxx-sumx*sumx); 
  
