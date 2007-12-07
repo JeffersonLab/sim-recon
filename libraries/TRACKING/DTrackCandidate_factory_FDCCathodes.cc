@@ -165,7 +165,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    
 	  }
 	}
-	fit.FitCircle(0.1,NULL);
+	DMatrix *CRPhi=NULL,*CR=NULL;
+	fit.FitCircle(0.1,CRPhi);
+	q=fit.GetCharge(0.1,CR,CRPhi);
       
 	// Curvature
 	segments[1]->S(0,0)=kappa=q/2./fit.rc;
@@ -281,7 +283,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    
 	  }
 	}
-	fit.FitCircle(0.1,NULL);
+	DMatrix *CR=NULL,*CRPhi=NULL;
+	fit.FitCircle(0.1,CRPhi);
+	q=fit.GetCharge(0.1,CR,CRPhi);
 
 	// Curvature
 	segments[1]->S(0,0)=kappa=q/2./fit.rc;
