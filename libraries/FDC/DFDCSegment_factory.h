@@ -81,7 +81,9 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 			DMatrix &XYZ, DMatrix &CRPhi,DMatrix &CR);
 		jerror_t CalcNormal(DMatrix A,double lambda,DMatrix &N);
 		double GetProcessNoise(unsigned int i, DMatrix XYZ);
-		
+		double GetCharge(unsigned int n,
+				 DMatrix XYZ, DMatrix CR, DMatrix CRPhi);
+
 		const string toString(void);
 
 	protected:

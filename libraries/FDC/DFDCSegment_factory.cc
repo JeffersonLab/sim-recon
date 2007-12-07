@@ -647,31 +647,8 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   error=RiemannLineFit(num_points,XYZ0,CR,XYZ);
   if (error!=NOERROR) return error;
 
-  // Linear regression to find charge  
-  double var=0.; 
-  double sumv=0.;
-  double sumy=0.;
-  double sumx=0.;
-  double sumxx=0.,sumxy=0,Delta;
-  double slope,r2;
-  for (unsigned int k=0;k<points.size();k++){   
-    double tempz=points[k]->wire->origin(2);
-    double phi_z=atan2(points[k]->y,points[k]->x);
-    r2=points[k]->x*points[k]->x
-      +points[k]->y*points[k]->y;
-    var=(points[k]->x*points[k]->x*points[k]->cov(0,0)
-	 +points[k]->y*points[k]->y*points[k]->cov(1,1))/r2/r2;
-    sumv+=1./var;
-    sumy+=phi_z/var;
-    sumx+=tempz/var;
-    sumxx+=tempz*tempz/var;
-    sumxy+=phi_z*tempz/var;
-  }
-  Delta=sumv*sumxx-sumx*sumx;
-  slope=(sumv*sumxy-sumy*sumx)/Delta; 
-  
   // Guess particle charge (+/-1);
-  if (slope<0.) charge=-1.;
+  charge=GetCharge(points.size(),XYZ0,CR,CRPhi);
 
   double r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)
     +XYZ(ref_plane,1)*XYZ(ref_plane,1);
@@ -685,23 +662,8 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   error=RiemannLineFit(num_points,XYZ0,CR,XYZ);
   if (error!=NOERROR) return error;
 
-  // Linear regression to find charge
-  for (unsigned int k=0;k<points.size();k++){   
-    double tempz=points[k]->wire->origin(2);
-    double phi_z=atan2(XYZ(k,1),XYZ(k,0));
-    r2=XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1);
-    var=(CRPhi(k,k)+phi_z*phi_z*CR(k,k))/r2;
-    sumv+=1./var;
-    sumy+=phi_z/var;
-    sumx+=tempz/var;
-    sumxx+=tempz*tempz/var;
-    sumxy+=phi_z*tempz/var;
-  }
-  Delta=sumv*sumxx-sumx*sumx;
-  slope=(sumv*sumxy-sumy*sumx)/Delta; 
-  
   // Guess particle charge (+/-1);
-  if (slope<0.) charge=-1.;
+  charge=GetCharge(points.size(),XYZ,CR,CRPhi);
   
   r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)+XYZ(ref_plane,1)*XYZ(ref_plane,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
@@ -714,23 +676,8 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   error=RiemannLineFit(num_points,XYZ0,CR,XYZ);
   if (error!=NOERROR) return error;
 
-  // Linear regression to find charge
-  for (unsigned int k=0;k<points.size();k++){   
-    double tempz=points[k]->wire->origin(2);
-    double phi_z=atan2(XYZ(k,1),XYZ(k,0));
-    r2=XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1);
-    var=(CRPhi(k,k)+phi_z*phi_z*CR(k,k))/r2;
-    sumv+=1./var;
-    sumy+=phi_z/var;
-    sumx+=tempz/var;
-    sumxx+=tempz*tempz/var;
-    sumxy+=phi_z*tempz/var;
-  }
-  Delta=sumv*sumxx-sumx*sumx;
-  slope=(sumv*sumxy-sumy*sumx)/Delta; 
-  
-  // Guess particle charge (+/-1);
-  if (slope<0.) charge=-1.;
+  // Guess particle charge (+/-1)
+  charge=GetCharge(points.size(),XYZ,CR,CRPhi);
   
   // Final update to covariance matrices
   r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)+XYZ(ref_plane,1)*XYZ(ref_plane,1);
@@ -1292,6 +1239,42 @@ jerror_t DFDCSegment_factory::KalmanLoop(vector<DFDCPseudo*>points,
   }
 
   return NOERROR;
+}
+
+
+// Linear regression to find charge
+double DFDCSegment_factory::GetCharge(unsigned int n,DMatrix XYZ, DMatrix CR, 
+				      DMatrix CRPhi){
+  double var=0.; 
+  double sumv=0.;
+  double sumy=0.;
+  double sumx=0.;
+  double sumxx=0.,sumxy=0,Delta;
+  double slope,r2;
+  double phi_old=atan2(XYZ(0,1),XYZ(0,0));
+  for (unsigned int k=0;k<n;k++){   
+    double tempz=XYZ(k,2);
+    double phi_z=atan2(XYZ(k,1),XYZ(k,0));
+    // Check for problem regions near +pi and -pi
+    if (fabs(phi_z-phi_old)>M_PI){  
+      if (phi_old<0) phi_z-=2.*M_PI;
+      else phi_z+=2.*M_PI;
+    }
+    r2=XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1);
+    var=(CRPhi(k,k)+phi_z*phi_z*CR(k,k))/r2;
+    sumv+=1./var;
+    sumy+=phi_z/var;
+    sumx+=tempz/var;
+    sumxx+=tempz*tempz/var;
+    sumxy+=phi_z*tempz/var;
+    phi_old=phi_z;
+  }
+  Delta=sumv*sumxx-sumx*sumx;
+  slope=(sumv*sumxy-sumy*sumx)/Delta; 
+  
+  // Guess particle charge (+/-1);
+  if (slope<0.) return -1.;
+  return 1.;
 }
 
 
