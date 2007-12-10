@@ -6,6 +6,11 @@
 #define Z_TARGET 65.0
 #define EPS 1.0e-8
 
+// Boolean function for sorting hits
+bool DRiemannFit_hit_cmp(DRiemannHit_t *a,DRiemannHit_t *b){
+  return (a->z>b->z);
+}
+
 /// Add a hit to the list of hits using cylindrical coordinates
 jerror_t DRiemannFit::AddHit(double r, double phi, double z)
 {
@@ -91,6 +96,9 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS,DMatrix *Cov){
   DMatrix N2(3,1);
   DMatrix N3(3,1);
   DMatrix VN(3,3);
+
+  // Make sure hit list is ordered in z
+  std::sort(hits.begin(),hits.end(),DRiemannFit_hit_cmp);
  
   // Covariance matrix
   DMatrix CRPhi(hits.size()+1,hits.size()+1);
@@ -295,4 +303,98 @@ double DRiemannFit::GetCharge(double BeamRMS,DMatrix *CovR, DMatrix *CovRPhi){
   if (slope<0.) return -1.;
 
   return 1.;
+}
+
+
+// Riemann Line fit: linear regression of s on z to determine the tangent of 
+// the dip angle and the z position of the closest approach to the beam line.
+// Computes intersection points along the helical path.
+//
+jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
+  // Get covariance matrix 
+  DMatrix CR(hits.size()+1,hits.size()+1);
+  if (CovR==NULL){
+    CovR=new DMatrix(hits.size()+1,hits.size()+1);
+    for (unsigned int m=0;m<hits.size();m++){
+      double Phi=atan2(hits[m]->y,hits[m]->x);
+      CR(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
+      +sin(Phi)*sin(Phi)*hits[m]->covy
+      +2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
+    } 
+    CR(hits.size(),hits.size())=BeamRMS*BeamRMS;
+    CovR=&CR;
+  }
+  else{
+    for (unsigned int i=0;i<hits.size()+1;i++)
+      for (unsigned int j=0;j<hits.size()+1;j++)
+	CR(i,j)=CovR->operator()(i, j);
+  }
+
+  // Fill vector of intersection points
+  for (unsigned int m=0;m<hits.size();m++){
+    double r2=hits[m]->x*hits[m]->x+hits[m]->y*hits[m]->y;
+    double x_int0,temp,y_int0;
+    double denom= N[0]*N[0]+N[1]*N[1];
+    double numer=dist_to_origin+r2*N[2];
+
+    x_int0=-N[0]*numer/denom;
+    y_int0=-N[1]*numer/denom;
+    temp=denom*r2-numer*numer;
+    if (temp<0){
+      temp*=-1.;  
+      // I'm not sure this is the correct thing to do but we don't want the 
+      // algorithm to fail at this stage!
+
+      // return VALUE_OUT_OF_RANGE;
+    }
+    temp=sqrt(temp)/denom;
+    
+    // Choose sign of square root based on proximity to actual measurements
+    double diffx1=x_int0+N[1]*temp-hits[m]->x;
+    double diffy1=y_int0-N[0]*temp-hits[m]->y;
+    double diffx2=x_int0-N[1]*temp-hits[m]->x;
+    double diffy2=y_int0+N[0]*temp-hits[m]->y;
+    DRiemannHit_t *temphit = new DRiemannHit_t;
+    temphit->z=hits[m]->z;
+    if (diffx1*diffx1+diffy1*diffy1 > diffx2*diffx2+diffy2*diffy2){
+      temphit->x=x_int0-N[1]*temp;
+      temphit->y=y_int0+N[0]*temp;
+    }
+    else{
+      temphit->x=x_int0+N[1]*temp;
+      temphit->y=y_int0-N[0]*temp;
+    }
+    projections.push_back(temphit);
+  }
+      
+  // Linear regression to find z0, tanl   
+  double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.,sperp=0.,Delta;
+  for (unsigned int k=0;k<projections.size();k++){
+    double diffx=projections[k]->x-projections[0]->x;
+    double diffy=projections[k]->y-projections[0]->y;
+    double chord=sqrt(diffx*diffx+diffy*diffy);
+    double ratio=chord/2./rc; 
+    // Make sure the argument for the arcsin does not go out of range...
+    if (ratio>1.) 
+      sperp=2.*rc*(M_PI/2.);
+    else
+      sperp=2.*rc*asin(ratio);
+    // Assume errors in s dominated by errors in R 
+    sumv+=1./CR(k,k);
+    sumy+=sperp/CR(k,k);
+    sumx+=projections[k]->z/CR(k,k);
+    sumxx+=projections[k]->z*projections[k]->z/CR(k,k);
+    sumxy+=sperp*projections[k]->z/CR(k,k);
+  }
+  Delta=sumv*sumxx-sumx*sumx;
+
+  // Track parameters z0 and tan(lambda)
+  tanl=-Delta/(sumv*sumxy-sumy*sumx); 
+  z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
+  zvertex=z0-sperp*tanl;
+  
+  // Error in tanl 
+  var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
+
+  return NOERROR;
 }
