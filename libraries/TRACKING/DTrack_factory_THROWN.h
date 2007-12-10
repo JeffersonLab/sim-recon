@@ -25,6 +25,21 @@ class DTrack_factory_THROWN:public JFactory<DTrack>{
 		//jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		//jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+    double res_p1(double x);
+    double res_p2(double x);
+    double res_p3(double x);
+    double res_p4(double x);
+    double res_p5(double x);
+    double res_p6(double x);
+    double res_p7(double x);
+    double res_p8(double x);
+    double res_p9(double x);
+    double res_p10(double x);
+    double res_p11(double x);
+    double res_p12(double x);
+
+		void SmearMomentum(DTrack* trk);
+
 		double SampleGaussian(double sigma);
 		
 		vector<DReferenceTrajectory*> rt;
