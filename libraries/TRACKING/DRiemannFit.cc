@@ -330,12 +330,13 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
 	CR(i,j)=CovR->operator()(i, j);
   }
 
-  // Fill vector of intersection points
+  // Fill vector of intersection points 
+  double x_int0,temp,y_int0;
+  double denom= N[0]*N[0]+N[1]*N[1];
+  double numer;
   for (unsigned int m=0;m<hits.size();m++){
     double r2=hits[m]->x*hits[m]->x+hits[m]->y*hits[m]->y;
-    double x_int0,temp,y_int0;
-    double denom= N[0]*N[0]+N[1]*N[1];
-    double numer=dist_to_origin+r2*N[2];
+    numer=dist_to_origin+r2*N[2];
 
     x_int0=-N[0]*numer/denom;
     y_int0=-N[1]*numer/denom;
@@ -391,8 +392,16 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
   // Track parameters z0 and tan(lambda)
   tanl=-Delta/(sumv*sumxy-sumy*sumx); 
   z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
+  double chord=sqrt(projections[0]->x*projections[0]->x
+		    +projections[0]->y*projections[0]->y);
+  double ratio=chord/2./rc; 
+  // Make sure the argument for the arcsin does not go out of range...
+  if (ratio>1.) 
+    sperp=2.*rc*(M_PI/2.);
+  else
+    sperp=2.*rc*asin(ratio); 
   zvertex=z0-sperp*tanl;
-  
+
   // Error in tanl 
   var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
 
