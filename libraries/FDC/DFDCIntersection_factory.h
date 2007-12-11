@@ -32,6 +32,7 @@ class DFDCIntersection_factory:public JFactory<DFDCIntersection>{
 		
 		void FindIntersections(vector<const DFDCHit*> &layer1, vector<const DFDCHit*> &layer2, vector<DFDCIntersection*> &intersections);
 
+		vector<vector<vector<const DFDCHit*> > > fdchits_by_package; ///< fdchits_by_package[package][layer][hit]
 		double MAX_DIST2;
 };
 

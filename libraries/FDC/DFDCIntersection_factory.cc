@@ -16,6 +16,12 @@ jerror_t DFDCIntersection_factory::init(void)
 {
 	MAX_DIST2 = 2.0*2.0;
 
+	// Create skeleton of data structure to hold hits
+	vector<const DFDCHit*> mt_trkhits;
+	vector<vector<const DFDCHit*> > mt_trkhits_by_layer;
+	for(int i=0; i<6; i++)mt_trkhits_by_layer.push_back(mt_trkhits);
+	for(int i=0; i<4; i++)fdchits_by_package.push_back(mt_trkhits_by_layer);
+
 	return NOERROR;
 }
 
@@ -24,16 +30,16 @@ jerror_t DFDCIntersection_factory::init(void)
 //------------------
 jerror_t DFDCIntersection_factory::evnt(JEventLoop *loop, int eventnumber)
 {
+	// Clear fdchits_by_package structure
+	for(int package=1; package<=4; package++){
+		for(int layer=1; layer<=6; layer++){
+			fdchits_by_package[package-1][layer-1].clear();
+		}
+	}
+
 	// Get raw hits
 	vector<const DFDCHit*> fdchits;
 	loop->Get(fdchits);
-
-	// Create skeleton of data structure to hold hits
-	vector<vector<vector<const DFDCHit*> > > fdchits_by_package; ///< fdchits_by_package[package][layer][hit]
-	vector<const DFDCHit*> mt_trkhits;
-	vector<vector<const DFDCHit*> > mt_trkhits_by_layer;
-	for(int i=0; i<6; i++)mt_trkhits_by_layer.push_back(mt_trkhits);
-	for(int i=0; i<4; i++)fdchits_by_package.push_back(mt_trkhits_by_layer);
 	
 	// Sort wire hits by package and layer
 	for(unsigned int i=0; i<fdchits.size(); i++){
@@ -82,37 +88,83 @@ void DFDCIntersection_factory::MakeIntersectionPoints(vector<vector<const DFDCHi
 void DFDCIntersection_factory::MakeRestrictedIntersectionPoints(vector<vector<const DFDCHit*> >&hits_by_layer)
 {
 	// hits_by_layer should contain all of the wire hits in a single
-	// FDC package. They are stored in set of nested vectors with the
+	// FDC package. They are stored in a set of nested vectors with the
 	// outer vector being the list of layers (always 6 in length)
 	// and the inner vector the hits within the layer.
 	
-	// This method will loop over interior layers (2-5) and for each wire hit,
-	// look for intersections with hits wires in the layers before and after.
-	// Only intersection points that have a match on both sides are kept. This
-	// should provide a filter that is somewhat analagous to the cathode strips
-	// that use 3 views to remove ambguities.
+	// This method will first make a list of all the intersection points
+	// between adjacent layers in the package. It will then make a list
+	// which intersection points to keep by finding those that meet
+	// one of the following criteria:
+	//
+	// 1. For one of the wires used, this is the only intersection
+	//    point at this z location.
+	//
+	// 2. The intersection point has a corresponding intersection
+	//    point in an adjacent plane (i.e. a triple wire coincidence)
+	// 
+	// Note that there is a class of hits this method fails to accept
+	// at the moment. This is when 2 wire planes have 2 hits each leading
+	// to 4 intersections, only 2 of which are real. If the adjacent
+	// plane has only one hit that is in coincidence with only
+	// 1 of the points, the other "true" point could be inferred. At this
+	// point, the second true point will not be kept in these cases
+	// (or similar ones with more tracks).
 
-	// Loop over interior layers
+	// First, get all of the intersection points
 	vector<vector<DFDCIntersection *> > intersections(hits_by_layer.size()-1);
 	for(unsigned int i=0; i<hits_by_layer.size()-1; i++){
 		
-		// Find intersection points with current and upstream layers
+		// Find intersection points between the current layer and next one downstream
 		FindIntersections(hits_by_layer[i], hits_by_layer[i+1], intersections[i]);
+	}
+	
+	// Here we need to make 2 lists for every wire hit. The first is of
+	// intersection points made from intersections with its upstream
+	// neighbor and the second from intersections with its downstream
+	// neighbor.
+	map<const DFDCWire*, vector<DFDCIntersection*> > upstr;
+	map<const DFDCWire*, vector<DFDCIntersection*> > dnstr;
+	for(unsigned int i=0; i<intersections.size(); i++){
+		vector<DFDCIntersection *> &layer = intersections[i];
+		
+		for(unsigned int j=0; j<layer.size(); j++){
+			DFDCIntersection *fdcinter = layer[j];
+			// Note here that wire2 is in the downstream layer for the hit
+			// and wire1 is the upstream layer. Therefore, this intersection
+			// should be upstream for wire2 and downstream for wire 1.
+			upstr[fdcinter->wire2].push_back(fdcinter);
+			dnstr[fdcinter->wire1].push_back(fdcinter);
+		}
 	}
 	
 	// Keep track of the "good" intersection objects in a map.
 	map<DFDCIntersection *, bool> intersects_to_keep;
 	
+	// Loop over both the upstr and dnstr lists to find wires
+	// with only one hit in either its upstream or downstream
+	// plane.
+	map<const DFDCWire*, vector<DFDCIntersection*> >::iterator iter;
+	for(iter=upstr.begin(); iter!=upstr.end(); iter++){
+		vector<DFDCIntersection*> &hits = iter->second;
+		if(hits.size()==1)intersects_to_keep[hits[0]] = true;
+	}
+	for(iter=dnstr.begin(); iter!=dnstr.end(); iter++){
+		vector<DFDCIntersection*> &hits = iter->second;
+		if(hits.size()==1)intersects_to_keep[hits[0]] = true;
+	}
+
+	// Find triple wire plane coincidences
 	// Loop over intersection layers
 	for(unsigned int i=0; i<intersections.size()-1; i++){
+		
+		// Loop over intersections in this intersection layer
 		vector<DFDCIntersection *> &layer1 = intersections[i];
-
-		// Loop over hits in upstream layer
 		for(unsigned int j=0; j<layer1.size(); j++){
-			DFDCIntersection *int1 = layer1[j];
-			vector<DFDCIntersection *> &layer2 = intersections[i+1];
+			DFDCIntersection *int1 = layer1[j];			
 
 			// Loop over hits in downstream layer
+			vector<DFDCIntersection *> &layer2 = intersections[i+1];
 			for(unsigned int k=0; k<layer2.size(); k++){
 				DFDCIntersection *int2 = layer2[k];
 				// Only interested in hits that share a wire
@@ -135,11 +187,12 @@ void DFDCIntersection_factory::MakeRestrictedIntersectionPoints(vector<vector<co
 	// copy to _data. All others, delete.
 	for(unsigned int i=0; i<intersections.size(); i++){
 		for(unsigned int j=0; j<intersections[i].size(); j++){
-			bool keep = intersects_to_keep[intersections[i][j]];
+			DFDCIntersection *intersection = intersections[i][j];
+			bool keep = intersects_to_keep[intersection];
 			if(keep){
-				_data.push_back(intersections[i][j]);
+				_data.push_back(intersection);
 			}else{
-				delete intersections[i][j];
+				delete intersection;
 			}
 		}
 	}
