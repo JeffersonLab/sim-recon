@@ -60,10 +60,10 @@ class DTrackCandidate_factory_FDC:public JFactory<DTrackCandidate>{
 				
 				double Dist2(const DFDCTrkHit* trkhit){
 					DVector3 delta = trkhit->hit->pos - this->hit->pos;
-					return delta.Mag2();
-					//double dx = trkhit->hit->pos.X() - this->hit->pos.X();
-					//double dy = trkhit->hit->pos.Y() - this->hit->pos.Y();
-					//return dx*dx + dy*dy;
+					//return delta.Mag2();
+					double dx = trkhit->hit->pos.X() - this->hit->pos.X();
+					double dy = trkhit->hit->pos.Y() - this->hit->pos.Y();
+					return dx*dx + dy*dy;
 				}
 		};
 		

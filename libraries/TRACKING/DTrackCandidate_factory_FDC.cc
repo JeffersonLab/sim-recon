@@ -80,10 +80,6 @@ jerror_t DTrackCandidate_factory_FDC::evnt(JEventLoop *loop, int eventnumber)
 	// Get the hits into the trkhits vector
 	GetTrkHits(loop);
 	
-	// Events with more than 100 hits are probably hopeless to reconstruct
-	// bail now.
-	if(fdctrkhits.size()>100)return NOERROR;
-	
 	// Find seeds from X/Y projections
 	vector<DFDCSeed> seeds;
 	FindSeeds(seeds);
@@ -151,14 +147,15 @@ void DTrackCandidate_factory_FDC::GetTrkHits(JEventLoop *loop)
 	// Hits with a neighbor within MAX_HIT_DIST have their noise flags cleared.
 	for(unsigned int i=0; i<fdctrkhits.size(); i++){ // cut above should ensure cdctrkhits.size() is at least 1
 		DFDCTrkHit *trkhit1 = fdctrkhits[i];
-		if(!(trkhit1->flags & NOISE))continue; // this hit already not marked for noise
-		for(unsigned int j=0; j<fdctrkhits.size(); j++){
-			if(j==i)continue;
-			double d2 = trkhit1->Dist2(fdctrkhits[j]);
-			if(d2<MAX_HIT_DIST2){
+		for(unsigned int j=i+1; j<fdctrkhits.size(); j++){
+			DFDCTrkHit *trkhit2 = fdctrkhits[j];
+			if(!(trkhit2->flags & NOISE))continue; // this hit already has noise flag cleared
+			double d2 = trkhit1->Dist2(trkhit2);
+			double deltaz = fabs(trkhit1->hit->pos.Z() - trkhit2->hit->pos.Z());
+			if(debug_level>4)_DBG_<<" -- Dist hits "<<i<<" and "<<j<<" : deltaR="<<sqrt(d2)<<"  deltaZ="<<deltaz<<endl;
+			if(d2<MAX_HIT_DIST2 && deltaz<12.0){
 				trkhit1->flags &= ~NOISE;
-				fdctrkhits[j]->flags &= ~NOISE;
-				break;
+				trkhit2->flags &= ~NOISE;
 			}// if
 		}// j
 	}// i
@@ -466,7 +463,10 @@ void DTrackCandidate_factory_FDC::FindTheta(DFDCSeed &seed, double target_z_min,
 	}
 	
 	// If there are no entries in the histogram, then flag this seed as invalid
-	if(hist[istart]==0.0)seed.valid=false;
+	if(hist[istart]==0.0){
+		if(debug_level>3)_DBG_<<" - No entries in theta hist. Seed aborted."<<endl;
+		seed.valid=false;
+	}
 	
 	// Calculate theta limits
 	seed.theta_min = hist_low_limit + bin_width*(0.5+(double)istart);
@@ -530,8 +530,9 @@ void DTrackCandidate_factory_FDC::FindZ(DFDCSeed &seed, double theta_min, double
 	
 	// Loop over valid hits, filling the histogram
 	double r0 = seed.r0;
-	double tan_alpha_min = tan(theta_min - theta_err)/r0;
 	double tan_alpha_max = tan(theta_max + theta_err)/r0;
+	double tan_alpha_min = tan(theta_min - theta_err)/r0;
+	if(tan_alpha_min<0.0)tan_alpha_min=0.0;
 	for(unsigned int i=0; i<seed.hits.size(); i++){
 		DFDCTrkHit *trkhit = seed.hits[i];
 		if(!trkhit->flags&VALID_HIT)continue;
@@ -590,7 +591,10 @@ void DTrackCandidate_factory_FDC::FindZ(DFDCSeed &seed, double theta_min, double
 	}
 
 	// If there are no entries in the histogram, then flag this seed as invalid
-	if(hist[istart]==0.0)seed.valid=false;
+	if(hist[istart]==0.0){
+		if(debug_level>3)_DBG_<<" - No entries in z-vertex hist. Seed aborted."<<endl;
+		seed.valid=false;
+	}
 	
 	// Calculate z limits
 	seed.z_min = hist_low_limit + bin_width*(0.5+(double)istart);
@@ -621,36 +625,28 @@ const string DTrackCandidate_factory_FDC::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("      id: Nhits: q:     p:       theta:   phi:  p_trans:   x:     y:     z:    dz/dphi:");
+	printheader("  row: q:       p:       E:     theta:   phi:    mass:     x:     y:     z:");
 
 	for(unsigned int i=0; i<_data.size(); i++){
 		DTrackCandidate *trackcandidate = _data[i];
 		printnewrow();
 		
-		printcol("%lx",    trackcandidate->id);
-#if 0
-		printcol("%d",    trackcandidate->hitid.size());
-		printcol("%+d", (int)trackcandidate->q);
-		printcol("%3.3f", trackcandidate->p);
-		printcol("%1.3f", trackcandidate->theta);
-		printcol("%1.3f", trackcandidate->phi);
-		printcol("%3.2f", trackcandidate->p_trans);
-		printcol("%2.2f", trackcandidate->x0);
-		printcol("%2.2f", trackcandidate->y0);
-		printcol("%2.2f", trackcandidate->z_vertex);
-		printcol("%1.3f", trackcandidate->dzdphi);
-#endif
+		double phi = (trackcandidate->momentum()).Phi();
+		if(phi<0.0)phi+=2.0*M_PI;
+		
+		printcol("%ld",    i);
+		printcol("%+d", (int)trackcandidate->charge());
+		printcol("%1.3f", trackcandidate->pmag());
+		printcol("%1.3f", trackcandidate->energy());
+		printcol("%1.3f", (trackcandidate->momentum()).Theta());
+		printcol("%3.2f", phi);
+		printcol("%f",    trackcandidate->mass());
+		printcol("%2.2f", (trackcandidate->position()).X());
+		printcol("%2.2f", (trackcandidate->position()).Y());
+		printcol("%2.2f", (trackcandidate->position()).Z());
 		printrow();
 	}
 	
 	return _table;
 }
-
-
-// ----------------------------------------------------------------
-// ----------------------------------------------------------------
-// ----------------------- DEBUGGING ROUTINES ---------------------
-// ----------------------------------------------------------------
-// ----------------------------------------------------------------
-
 
