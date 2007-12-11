@@ -71,6 +71,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       double tanl=segment->S(3,0);
       double phi0=segment->S(1,0);
       double kappa=segment->S(0,0);
+      double zvertex=segment->S(4,0);
       // Sign of the charge
       double q=kappa/fabs(kappa);
       
@@ -168,6 +169,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	DMatrix *CRPhi=NULL,*CR=NULL;
 	fit.FitCircle(0.1,CRPhi);
 	q=fit.GetCharge(0.1,CR,CRPhi);
+	// Extension to helix
+	fit.FitLine(0.1,CR);
       
 	// Curvature
 	segments[1]->S(0,0)=kappa=q/2./fit.rc;
@@ -176,8 +179,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	if (q<0) phi0+=M_PI;
 	segments[1]->S(1,0)=phi0;
 	// remaining tracking parameters
+	tanl=fit.tanl;
+        zvertex=fit.zvertex;
 	segments[1]->S(3,0)=tanl;
-	segments[1]->S(4,0)=segment->S(4,0);
+	segments[1]->S(4,0)=zvertex;
 	segments[1]->xc=fit.xc;
 	segments[1]->yc=fit.yc;
 	segments[1]->rc=fit.rc;
@@ -209,7 +214,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       double theta=M_PI_2-atan(tanl);
 
       mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
-      pos.SetXYZ(0,0,segment->S(4,0));
+      pos.SetXYZ(0,0,zvertex);
       track->setPosition(pos);
       track->setMomentum(mom);
       track->setCharge(q);
@@ -231,6 +236,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       double tanl=segment->S(3,0);
       double phi0=segment->S(1,0);
       double kappa=segment->S(0,0); 
+      double zvertex=segment->S(4,0);
       // Sign of the charge
       double q=kappa/fabs(kappa);
       
@@ -286,14 +292,19 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	DMatrix *CR=NULL,*CRPhi=NULL;
 	fit.FitCircle(0.1,CRPhi);
 	q=fit.GetCharge(0.1,CR,CRPhi);
+	// Extension to helix
+	fit.FitLine(0.1,CR);
 
 	// Curvature
 	segments[1]->S(0,0)=kappa=q/2./fit.rc;
 	// Estimate for azimuthal angle
 	phi0=atan2(-fit.xc,fit.yc); 
 	if (q<0) phi0+=M_PI;      
+	// remaining tracking parameters
+	tanl=fit.tanl;
+        zvertex=fit.zvertex;
 	segments[1]->S(3,0)=tanl;
-	segments[1]->S(4,0)=segment->S(4,0);
+	segments[1]->S(4,0)=zvertex;
 	segments[1]->xc=fit.xc;
 	segments[1]->yc=fit.yc;
 	segments[1]->rc=fit.rc;
@@ -318,7 +329,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       double theta=M_PI_2-atan(tanl);
 
       mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
-      pos.SetXYZ(0,0,segment->S(4,0));
+      pos.SetXYZ(0,0,zvertex);
       track->setPosition(pos);
       track->setMomentum(mom);
       track->setCharge(q);
@@ -340,6 +351,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       double tanl=segment->S(3,0);
       double phi0=segment->S(1,0);
       double kappa=segment->S(0,0);
+      double zvertex=segment->S(4,0);
       // Sign of the charge
       double q=kappa/fabs(kappa);
       
@@ -372,13 +384,20 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    
 	  }
 	}
-	fit.FitCircle(0.1,NULL);
+	DMatrix *CR=NULL, *CRPhi=NULL;
+	fit.FitCircle(0.1,CRPhi);
+	q=fit.GetCharge(0.1,CR,CRPhi);	
+	// Extension to helix
+	fit.FitLine(0.1,CR);
 	
 	// Curvature
 	kappa=q/2./fit.rc;
 	// Estimate for azimuthal angle
 	phi0=atan2(-fit.xc,fit.yc); 
-	if (q<0) phi0+=M_PI;      
+	if (q<0) phi0+=M_PI; 
+	// remaining tracking parameters
+	tanl=fit.tanl;
+        zvertex=fit.zvertex;     
       }
       
     
@@ -393,7 +412,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       double theta=M_PI_2-atan(tanl);
 
       mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
-      pos.SetXYZ(0,0,segment->S(4,0));
+      pos.SetXYZ(0,0,zvertex);
       track->setPosition(pos);
       track->setMomentum(mom);
       track->setCharge(q);
