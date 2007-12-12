@@ -333,6 +333,10 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
     temp=denom*r2-numer*numer;
     if (temp<0){  // Skip point if the intersection gives nonsense
       bad[m]=1;
+      DRiemannHit_t *temphit = new DRiemannHit_t;
+      temphit->x=x_int0;
+      temphit->y=y_int0;
+      projections.push_back(temphit);
       continue;
     }
     temp=sqrt(temp)/denom;
