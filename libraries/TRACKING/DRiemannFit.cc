@@ -217,24 +217,13 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS,DMatrix *Cov){
   N[2]=N1(2,0);
 
   // Distance to origin
-  double dist_to_origin=-(N1(0,0)*Xavg(0,0)+N1(1,0)*Xavg(0,1)+N1(2,0)*Xavg(0,2));
+  dist_to_origin=-(N1(0,0)*Xavg(0,0)+N1(1,0)*Xavg(0,1)+N1(2,0)*Xavg(0,2));
 
   // Center and radius of the circle
   xc=-N1(0,0)/2./N1(2,0);
   yc=-N1(1,0)/2./N1(2,0);
   rc=sqrt(1.-N1(2,0)*N1(2,0)-4.*dist_to_origin*N1(2,0))/2./fabs(N1(2,0));
   
-  // p_trans and phi
-	double Bz_avg=-2.0; 
-	double q = +1.0;
-	p_trans = q*Bz_avg*rc*qBr2p; // qBr2p converts to GeV/c
-	phi = atan2(yc,xc) - M_PI_2;
-	if(p_trans<0.0){
-		p_trans = -p_trans;
-	}
-	if(phi<0)phi+=2.0*M_PI;
-	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
-
   return NOERROR;
 }
  
@@ -334,6 +323,7 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
   double x_int0,temp,y_int0;
   double denom= N[0]*N[0]+N[1]*N[1];
   double numer;
+  vector<int>bad(hits.size());
   for (unsigned int m=0;m<hits.size();m++){
     double r2=hits[m]->x*hits[m]->x+hits[m]->y*hits[m]->y;
     numer=dist_to_origin+r2*N[2];
@@ -341,12 +331,9 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
     x_int0=-N[0]*numer/denom;
     y_int0=-N[1]*numer/denom;
     temp=denom*r2-numer*numer;
-    if (temp<0){
-      temp*=-1.;  
-      // I'm not sure this is the correct thing to do but we don't want the 
-      // algorithm to fail at this stage!
-
-      // return VALUE_OUT_OF_RANGE;
+    if (temp<0){  // Skip point if the intersection gives nonsense
+      bad[m]=1;
+      continue;
     }
     temp=sqrt(temp)/denom;
     
@@ -371,21 +358,23 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
   // Linear regression to find z0, tanl   
   double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.,sperp=0.,Delta;
   for (unsigned int k=0;k<projections.size();k++){
-    double diffx=projections[k]->x-projections[0]->x;
-    double diffy=projections[k]->y-projections[0]->y;
-    double chord=sqrt(diffx*diffx+diffy*diffy);
-    double ratio=chord/2./rc; 
-    // Make sure the argument for the arcsin does not go out of range...
-    if (ratio>1.) 
-      sperp=2.*rc*(M_PI/2.);
-    else
-      sperp=2.*rc*asin(ratio);
-    // Assume errors in s dominated by errors in R 
-    sumv+=1./CR(k,k);
-    sumy+=sperp/CR(k,k);
-    sumx+=projections[k]->z/CR(k,k);
-    sumxx+=projections[k]->z*projections[k]->z/CR(k,k);
-    sumxy+=sperp*projections[k]->z/CR(k,k);
+    if (!bad[k]){
+      double diffx=projections[k]->x-projections[0]->x;
+      double diffy=projections[k]->y-projections[0]->y;
+      double chord=sqrt(diffx*diffx+diffy*diffy);
+      double ratio=chord/2./rc; 
+      // Make sure the argument for the arcsin does not go out of range...
+      if (ratio>1.) 
+	sperp=2.*rc*(M_PI/2.);
+      else
+	sperp=2.*rc*asin(ratio);
+      // Assume errors in s dominated by errors in R 
+      sumv+=1./CR(k,k);
+      sumy+=sperp/CR(k,k);
+      sumx+=projections[k]->z/CR(k,k);
+      sumxx+=projections[k]->z*projections[k]->z/CR(k,k);
+      sumxy+=sperp*projections[k]->z/CR(k,k);
+    }
   }
   Delta=sumv*sumxx-sumx*sumx;
 
@@ -401,7 +390,7 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
   else
     sperp=2.*rc*asin(ratio); 
   zvertex=z0-sperp*tanl;
-
+  
   // Error in tanl 
   var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
 
