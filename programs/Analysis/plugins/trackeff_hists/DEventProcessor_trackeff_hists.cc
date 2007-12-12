@@ -117,9 +117,9 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		fdc_candidate_hits.push_back(fdc_outhits);
 	}
 	
-	int Nnon_noise_cdcs = (int)cdctrackhits.size() - 100; // hardwire approximate value for now
-	if(Nnon_noise_cdcs<0)Nnon_noise_cdcs=0;
-	leaf.status = ((double)Nnon_noise_cdcs/25.0 - mcthrowns.size())<1.5 ? 0:-1;
+	//int Nnon_noise_cdcs = (int)cdctrackhits.size() - 100; // hardwire approximate value for now
+	//if(Nnon_noise_cdcs<0)Nnon_noise_cdcs=0;
+	//leaf.status = ((double)Nnon_noise_cdcs/25.0 - mcthrowns.size())<1.5 ? 0:-1;
 
 	// Get hit list for all throwns
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
@@ -133,6 +133,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		GetCDCHits(mcthrowns[i], cdctrackhits, cdc_thrownhits);
 		GetFDCHits(mcthrowns[i], fdctrackhits, fdc_thrownhits);
 		
+		leaf.status = 0;
 		if(cdc_thrownhits.size()<5 && fdc_thrownhits.size()<5) leaf.status--;
 		
 		leaf.pthrown = mcthrown->momentum();
@@ -189,6 +190,10 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		if(can!=NULL){
 			leaf.pcan = can->momentum();
 			leaf.z_can = can->position().Z();
+		}else{
+			if(leaf.status==0 && fdc_thrownhits.size()>=5){
+				//_DBG_<<"Missed track!  event number:"<<eventnumber<<"  thrownhits:"<<fdc_thrownhits.size()<<endl;
+			}
 		}
 		
 		trkeff->Fill();
