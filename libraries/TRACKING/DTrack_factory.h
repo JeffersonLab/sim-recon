@@ -71,8 +71,8 @@ class DTrack_factory:public JFactory<DTrack>{
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 		jerror_t fini(void);
 
-		void AssignHitsToCandidates(void);
-		DTrack* FitTrack(DReferenceTrajectory* rt, int candidateid, const DMCThrown *thrown);
+		void FindHitCandidateProbabilities(void);
+		DTrack* FitTrack(DReferenceTrajectory* rt, int candidateid);
 		void GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob);
 		void GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob);
 		double GetDistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double &s);
@@ -90,8 +90,8 @@ class DTrack_factory:public JFactory<DTrack>{
 		std::vector<const DFDCPseudo* >		fdctrackhits;
 		std::vector<const DCDCTrackHit* >	cdchits_on_track;
 		std::vector<const DFDCPseudo* >		fdchits_on_track;
-		std::vector<int> trackassignmentcdc;
-		std::vector<int> trackassignmentfdc;
+		std::vector<vector<double> > cdcprobs;
+		std::vector<vector<double> > fdcprobs;
 		
 		std::vector<double> chisqv;
 		std::vector<double> sigmav;
@@ -126,7 +126,6 @@ class DTrack_factory:public JFactory<DTrack>{
 		double LEAST_SQUARES_DX;
 		unsigned int LEAST_SQUARES_MIN_HITS;
 		double LEAST_SQUARES_MAX_E2NORM;
-		string CANDIDATE_TAG;
 		double DEFAULT_STEP_SIZE;
 		double MIN_CDC_HIT_PROB;
 		double MAX_CDC_DOUBLE_HIT_PROB;

@@ -82,7 +82,6 @@ DTrack_factory::DTrack_factory()
 	LEAST_SQUARES_DX = 0.010;
 	LEAST_SQUARES_MIN_HITS = 3;
 	LEAST_SQUARES_MAX_E2NORM = 1.0E6;
-	CANDIDATE_TAG = "";
 	DEFAULT_STEP_SIZE = 0.5;
 	MIN_CDC_HIT_PROB = 0.2;
 	MAX_CDC_DOUBLE_HIT_PROB = 0.1;
@@ -106,7 +105,6 @@ DTrack_factory::DTrack_factory()
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_DX",		LEAST_SQUARES_DX);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MIN_HITS",LEAST_SQUARES_MIN_HITS);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MAX_E2NORM",LEAST_SQUARES_MAX_E2NORM);		
-	gPARMS->SetDefaultParameter("TRKFIT:CANDIDATE_TAG",			CANDIDATE_TAG);
 	gPARMS->SetDefaultParameter("TRKFIT:DEFAULT_STEP_SIZE",		DEFAULT_STEP_SIZE);
 	gPARMS->SetDefaultParameter("TRKFIT:MIN_CDC_HIT_PROB",			MIN_CDC_HIT_PROB);
 	gPARMS->SetDefaultParameter("TRKFIT:MAX_CDC_DOUBLE_HIT_PROB",	MAX_CDC_DOUBLE_HIT_PROB);
@@ -223,35 +221,46 @@ jerror_t DTrack_factory::brun(JEventLoop *loop, int runnumber)
 //------------------
 jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 {
-	// Get the thrown values (this is just temporary)
-	vector<const DMCThrown*> mcthrowns;
-	loop->Get(mcthrowns);
+	// Get input data
 	trackcandidates.clear();
 	cdctrackhits.clear();
 	fdctrackhits.clear();
-	loop->Get(trackcandidates,CANDIDATE_TAG.c_str());
+	loop->Get(trackcandidates);
 	loop->Get(cdctrackhits);
 	loop->Get(fdctrackhits);
 
-	// Assign hits to track candidates
-	AssignHitsToCandidates();
+	// Calculate the probablity of each hit belonging to each candidate
+	FindHitCandidateProbabilities();
+	
+	// Consistency check
+	if(cdctrackhits.size()!=cdcprobs.size() || fdctrackhits.size()!=fdcprobs.size()){
+		_DBG_<<"Hit vector and assignment vector not the same size!"<<endl;
+		_DBG_<<"  cdctrackhits.size()="<<cdctrackhits.size()<<" ; cdcprobs.size()"<<cdcprobs.size()<<endl;
+		_DBG_<<"  fdctrackhits.size()="<<fdctrackhits.size()<<" ; fdcprobs.size()"<<fdcprobs.size()<<endl;
+		return VALUE_OUT_OF_RANGE;
+	}
 
 	// Loop over track candidates
 	for(unsigned int i=0; i<trackcandidates.size(); i++){
 	
-		// Copy the hits assigned to this track into the
+		if(debug_level>1){
+			_DBG__;
+			_DBG_<<"============ Fitting Candidate "<<i<<" ================"<<endl;
+		}
+
+		// Copy the hits consistent with this track into the
 		// cdchits_on_track and fdchits_on_track vectors
 		cdchits_on_track.clear();
-		for(unsigned int j=0; j<trackassignmentcdc.size(); j++){
-			if(trackassignmentcdc[j]==(int)i)cdchits_on_track.push_back(cdctrackhits[j]);
+		for(unsigned int j=0; j<cdcprobs.size(); j++){
+			if(cdcprobs[j][i]>=MIN_CDC_HIT_PROB)cdchits_on_track.push_back(cdctrackhits[j]);
 		}
 		fdchits_on_track.clear();
-		for(unsigned int j=0; j<trackassignmentfdc.size(); j++){
-			if(trackassignmentfdc[j]==(int)i)fdchits_on_track.push_back(fdctrackhits[j]);
+		for(unsigned int j=0; j<fdcprobs.size(); j++){
+			if(fdcprobs[j][i]>=MIN_FDC_HIT_PROB)fdchits_on_track.push_back(fdctrackhits[j]);
 		}
-//_DBG_<<"Track Number: "<<eventnumber+i<<"  cdchits_on_track="<<cdchits_on_track.size()<<"  fdchits_on_track="<<fdchits_on_track.size()<<endl;
+
 		// Fit the track
-		DTrack *track = FitTrack(rtv[i], trackcandidates[i]->id,  NULL);
+		DTrack *track = FitTrack(rtv[i], trackcandidates[i]->id);
 
 		// If fit is successful, then store the track
 		if(track)_data.push_back(track);
@@ -271,12 +280,17 @@ jerror_t DTrack_factory::fini(void)
 //------------------
 // FitTrack
 //------------------
-DTrack* DTrack_factory::FitTrack(DReferenceTrajectory* rt, int candidateid, const DMCThrown *thrown)
+DTrack* DTrack_factory::FitTrack(DReferenceTrajectory* rt, int candidateid)
 {
 	/// Fit a track candidate
-//_DBG__;
-//_DBG_<<"cdchits_on_track.size="<<cdchits_on_track.size()<<"  fdchits_on_track.size="<<fdchits_on_track.size()<<endl;
-//_DBG_<<"cdctrackhits.size="<<cdctrackhits.size()<<"  fdctrackhits.size="<<fdctrackhits.size()<<endl;
+	
+	// Debug message
+	if(debug_level>2){
+		_DBG__;
+		_DBG_<<"cdchits_on_track.size="<<cdchits_on_track.size()<<"  fdchits_on_track.size="<<fdchits_on_track.size()<<endl;
+		_DBG_<<"cdctrackhits.size="<<cdctrackhits.size()<<"  fdctrackhits.size="<<fdctrackhits.size()<<endl;
+	}
+
 	// Get starting position and momentum from reference trajectory
 	DVector3 start_pos = rt->swim_steps[0].origin;
 	DVector3 start_mom = rt->swim_steps[0].mom;
@@ -296,10 +310,12 @@ DTrack* DTrack_factory::FitTrack(DReferenceTrajectory* rt, int candidateid, cons
 			vertex_pos = pos;
 			vertex_mom = mom;
 			rt->Swim(vertex_pos, vertex_mom);
+			if(debug_level>1)_DBG_<<"Fit failed for iteration "<<Niterations<<" (not necessarily fatal)"<<endl;
 			break;
 		}
 
 		if(Niterations==0)initial_chisq = chisq;
+		if(debug_level>3)_DBG_<<" ---- iteration "<<Niterations<<"  chisq="<<chisq<<endl;
 		if(DEBUG_HISTS){
 			chisq_vs_pass->Fill(Niterations+1, chisq);
 			dchisq_vs_pass->Fill(Niterations+1, last_chisq-chisq);			
@@ -313,9 +329,10 @@ DTrack* DTrack_factory::FitTrack(DReferenceTrajectory* rt, int candidateid, cons
 		pos = vertex_pos;
 		mom = vertex_mom;
 	}
+	if(debug_level>1)_DBG_<<" Niterations="<<Niterations<<endl;
 	
-	// At this point we must decided whether the fit succeeded or not.
-	// We'll consider the fit a success if:
+	// At this point we must decide whether the fit succeeded or not.
+	// We'll consider the fit a success if any of the following is true:
 	//
 	// 1. We got through at least one iteration in the above loop
 	// 2. The chi-sq is less than CHISQ_GOOD_LIMIT
@@ -331,12 +348,7 @@ DTrack* DTrack_factory::FitTrack(DReferenceTrajectory* rt, int candidateid, cons
 	//double s;
 	//rt->DistToRT(target, &s);
 	//rt->GetLastDOCAPoint(vertex_pos, vertex_mom);
-//double dp_over_p = fabs(thrown->p-vertex_mom.Mag())/thrown->p;
-//start_pos.Print();
-//vertex_pos.Print();
-//start_mom.Print();
-//vertex_mom.Print();
-//_DBG_<<"final chi-sq:"<<chisq<<"   DOF="<<chisqv.size()<<"   Niterations="<<Niterations<<" dp_over_p="<<dp_over_p<<endl;
+	//_DBG_<<"final chi-sq:"<<chisq<<"   DOF="<<chisqv.size()<<"   Niterations="<<Niterations<<" dp_over_p="<<dp_over_p<<endl;
 
 	// Create new DTrack object and initialize parameters with those
 	// from track candidate
@@ -366,14 +378,19 @@ DTrack* DTrack_factory::FitTrack(DReferenceTrajectory* rt, int candidateid, cons
 		initial_chisq_vs_Npasses->Fill(Niterations, initial_chisq);
 		FillDebugHists(rt, vertex_pos, vertex_mom);
 	}
+	
+	// Debugging messages
+	if(debug_level>2){
+		_DBG_<<" -- Fit succeeded: q="<<track->q<<" p="<<track->p<<" theta="<<track->theta<<" phi="<<track->phi<<endl;
+	}
 
 	return track;
 }
 
 //------------------
-// AssignHitsToCandidates
+// FindHitCandidateProbabilities
 //------------------
-void DTrack_factory::AssignHitsToCandidates(void)
+void DTrack_factory::FindHitCandidateProbabilities(void)
 {
 	/// Sort all CDC and FDC hits by which track candidate they most likely belong to.
 	///
@@ -391,9 +408,13 @@ void DTrack_factory::AssignHitsToCandidates(void)
 	// They are delete in the factory deconstructor.
 	while(rtv.size()<trackcandidates.size())rtv.push_back(new DReferenceTrajectory(bfield));
 	
+	// Increase capcity (if needed) and clear out hit-track probability matrices.
+	if(cdcprobs.size()!=cdctrackhits.size())cdcprobs.resize(cdctrackhits.size());
+	if(fdcprobs.size()!=fdctrackhits.size())fdcprobs.resize(fdctrackhits.size());
+	for(unsigned int i=0; i<cdcprobs.size(); i++)cdcprobs[i].clear();
+	for(unsigned int i=0; i<fdcprobs.size(); i++)fdcprobs[i].clear();
+	
 	// Loop over track candidates
-	vector<vector<double> > cdcprobs(cdctrackhits.size());
-	vector<vector<double> > fdcprobs(fdctrackhits.size());
 	for(unsigned int i=0; i<trackcandidates.size(); i++){
 		const DTrackCandidate *tc = trackcandidates[i];
 		DReferenceTrajectory *rt = rtv[i];
@@ -413,11 +434,16 @@ void DTrack_factory::AssignHitsToCandidates(void)
 		vector<double> fdcprob;
 		GetFDCTrackHitProbabilities(rt, fdcprob);
 		for(unsigned int j=0; j<fdcprob.size(); j++)fdcprobs[j].push_back(fdcprob[j]);
-//_DBG_<<"Candidate "<<i<<endl;
-//for(unsigned int j=0; j<cdcprob.size(); j++)_DBG_<<"  cdcprob["<<j<<"] = "<<cdcprob[j]<<endl;
-//for(unsigned int j=0; j<fdcprob.size(); j++)_DBG_<<"  fdcprob["<<j<<"] = "<<fdcprob[j]<<endl;
+		
+		// Debugging messages
+		if(debug_level>10){
+			_DBG_<<"Candidate "<<i<<endl;
+			for(unsigned int j=0; j<cdcprob.size(); j++)_DBG_<<"  cdcprob["<<j<<"] = "<<cdcprob[j]<<endl;
+			for(unsigned int j=0; j<fdcprob.size(); j++)_DBG_<<"  fdcprob["<<j<<"] = "<<fdcprob[j]<<endl;
+		}
 	}
-	
+
+#if 0
 	// Now we need to loop over the hits and decide which track,
 	// if any, this hit should belong to.
 	// First, the CDC...
@@ -474,7 +500,8 @@ void DTrack_factory::AssignHitsToCandidates(void)
 			trackassignmentfdc.push_back(-1); // not consistent with any track
 			continue;
 		}
-		
+
+#if 0
 		// Check probability of belonging to more than one track
 		double p_double = prob.size()>1 ? prob[1]*p_single:0.0;
 		if(DEBUG_HISTS)fdc_double_hit_prob->Fill(p_double);
@@ -482,6 +509,7 @@ void DTrack_factory::AssignHitsToCandidates(void)
 			trackassignmentfdc.push_back(-1); // consistent with more than one track
 			continue;
 		}
+#endif
 
 		// Find index of hit with highest probability
 		for(unsigned int j=0; j<fdcprobs[i].size(); j++){
@@ -491,6 +519,7 @@ void DTrack_factory::AssignHitsToCandidates(void)
 			}
 		}
 	}
+#endif
 }
 
 //------------------
@@ -557,8 +586,8 @@ void DTrack_factory::GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, vecto
 	// The error on the residual. This should include the
 	// error from measurement,track parameters, and multiple 
 	// scattering.
-	double sigma_anode = sqrt(pow(SIGMA_FDC_ANODE,2.0) + pow(0.4000,2.0));
-	double sigma_cathode = sqrt(pow(SIGMA_FDC_CATHODE,2.0) + pow(0.300,2.0));
+	double sigma_anode = sqrt(pow(SIGMA_FDC_ANODE,2.0) + pow(1.000,2.0));
+	double sigma_cathode = sqrt(pow(SIGMA_FDC_CATHODE,2.0) + pow(1.000,2.0));
 	
 	prob.clear();
 	for(unsigned int j=0; j<fdctrackhits.size(); j++){
@@ -582,13 +611,19 @@ void DTrack_factory::GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, vecto
 		double p = finite(resi) ? exp(-pow(resi/sigma_anode,2.0)):0.0;
 
 		// Cathode
-		double u = rt->GetLastDistAlongWire();
-		resi = u - hit->s;
+		double u=0;
+		double resic=0;
+		if(USE_FDC_CATHODE){
+			u = rt->GetLastDistAlongWire();
+			resic = u - hit->s;
 
-		// Same as for the anode. We multiply the
-		// probabilities to get a total probability
-		// based on both the anode and cathode hits.
-		p *= finite(resi) ? exp(-pow(resi/sigma_cathode,2.0)):0.0;
+			// Same as for the anode. We multiply the
+			// probabilities to get a total probability
+			// based on both the anode and cathode hits.
+			p *= finite(resic) ? exp(-pow(resic/sigma_cathode,2.0)):0.0;
+		}
+		
+		if(debug_level>10)_DBG_<<" fdc hit "<<j<<": dist,doca="<<dist<<", "<<doca<<"  u,s="<<u<<", "<<hit->s<<" resi="<<resi<<" resic="<<resic<<endl;
 		
 		prob.push_back(p);
 	}
@@ -743,13 +778,14 @@ double DTrack_factory::ChiSq(double q, DReferenceTrajectory *rt)
 		// along the track and the errors of the measurement in 3D.
 		// For now, we use a single distance which may be sufficient.
 		if(!finite(chisqv[i]))continue;
-		if(fabs(chisqv[i]/sigmav[i])>CHISQ_MAX_RESI_SIGMAS)continue;
-		if(fabs(chisqv[i]/sigmav[i])>chisq_max_resi_sigmas)continue;
+		//if(fabs(chisqv[i]/sigmav[i])>CHISQ_MAX_RESI_SIGMAS)continue;
+		//if(fabs(chisqv[i]/sigmav[i])>chisq_max_resi_sigmas)continue;
 
 		chisq+=pow(chisqv[i]/sigmav[i], 2.0);
 		Ngood_chisq_hits += 1.0;
 	}
 	chisq/=Ngood_chisq_hits;
+	if(debug_level>10)_DBG_<<"Chisq:  Ngood_chisq_hits="<<Ngood_chisq_hits<<"  chisq="<<chisq<<endl;
 
 	return chisq;
 }
@@ -874,7 +910,7 @@ DTrack_factory::fit_status_t DTrack_factory::LeastSquares(DVector3 &start_pos, D
 		Ngood++;
 	}
 	if(Ngood<LEAST_SQUARES_MIN_HITS){
-		//cout<<__FILE__<<":"<<__LINE__<<" Bad number of good distance calculations!"<<endl;
+		if(debug_level>2)_DBG_<<" Bad number of good distance calculations!"<<endl;
 		return FIT_FAILED;
 	}
 
@@ -915,7 +951,10 @@ DTrack_factory::fit_status_t DTrack_factory::LeastSquares(DVector3 &start_pos, D
 	
 	// If the inversion failed altogether then the invalid flag
 	// will be set on the matrix. In these cases, were dead.
-	if(!B.IsValid())return FIT_FAILED;
+	if(!B.IsValid()){
+		if(debug_level>1)_DBG_<<" -- B matrix invalid"<<endl;
+		return FIT_FAILED;
+	}
 
 	// The "B" matrix happens to be the covariance matrix of the
 	// state parameters. A problem sometimes occurs where one or
@@ -927,9 +966,13 @@ DTrack_factory::fit_status_t DTrack_factory::LeastSquares(DVector3 &start_pos, D
 	// I don't want to introduce quite yet. What we do now
 	// is check for it and punt rather than return a nonsensical
 	// value.
-	if(B.E2Norm() > LEAST_SQUARES_MAX_E2NORM)return FIT_FAILED;
+	if(B.E2Norm() > LEAST_SQUARES_MAX_E2NORM){
+		if(debug_level>1)_DBG_<<" -- B matrix E2Norm out of range(E2Norm="<<B.E2Norm()<<" max="<<LEAST_SQUARES_MAX_E2NORM<<")"<<endl;
+		return FIT_FAILED;
+	}
 	
 	// Copy the B matrix into last_covariance to later copy into DTrack
+	last_covariance.ResizeTo(B);
 	last_covariance = B;
 
 	// Calculate step direction and magnitude	
@@ -968,7 +1011,7 @@ DTrack_factory::fit_status_t DTrack_factory::LeastSquares(DVector3 &start_pos, D
 		new_chisq = ChiSq(rt->q, rt);
 		
 		// If we're at a lower chi-sq then we're done
-//_DBG_<<"chisq="<<chisq<<"  new_chisq="<<new_chisq<<" nhits="<<chisqv.size()<<"  lambda="<<lambda<<endl;
+		if(debug_level>4)_DBG_<<" -- chisq="<<chisq<<"  new_chisq="<<new_chisq<<" nhits="<<chisqv.size()<<"  lambda="<<lambda<<endl;
 		if(new_chisq-chisq < 0.01)break;
 		
 		// Chi-sq was increased, try a smaller step on the next iteration
@@ -997,7 +1040,7 @@ DTrack_factory::fit_status_t DTrack_factory::LeastSquares(DVector3 &start_pos, D
 			new_chisq = ChiSq(rt->q, rt);
 
 			// If we're at a lower chi-sq then we're done
-//_DBG_<<"chisq="<<chisq<<"  new_chisq="<<new_chisq<<"  lambda="<<lambda<<endl;
+		if(debug_level>4)_DBG_<<" -- chisq="<<chisq<<"  new_chisq="<<new_chisq<<" nhits="<<chisqv.size()<<"  lambda="<<lambda<<endl;
 		if(new_chisq-chisq < 0.01)break;
 
 			// Chi-sq was increased, try a smaller step on the next iteration
@@ -1007,7 +1050,10 @@ DTrack_factory::fit_status_t DTrack_factory::LeastSquares(DVector3 &start_pos, D
 
 	// If we failed to make a step to a smaller chi-sq then signal
 	// that the fit failed completely.
-	if(Ntrys>=max_trys)return FIT_FAILED;
+	if(Ntrys>=max_trys){
+		if(debug_level>1)_DBG_<<"Chisq only increased (both directions searched!)"<<endl;
+		return FIT_FAILED;
+	}
 	
 	chisq = new_chisq;
 
