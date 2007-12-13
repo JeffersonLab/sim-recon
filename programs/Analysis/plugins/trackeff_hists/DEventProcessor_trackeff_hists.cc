@@ -19,6 +19,7 @@ using namespace std;
 #include <DANA/DApplication.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DTrackCandidate.h>
+#include <TRACKING/DTrack.h>
 #include <FDC/DFDCGeometry.h>
 
 // The executable should define the ROOTfile global variable. It will
@@ -94,11 +95,13 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 	CDChitv cdctrackhits;
 	FDChitv fdctrackhits;
 	vector<const DTrackCandidate*> trackcandidates;
+	vector<const DTrack*> tracks;
 	vector<const DMCThrown*> mcthrowns;
 	
 	loop->Get(cdctrackhits);
 	loop->Get(fdctrackhits);
 	loop->Get(trackcandidates);
+	loop->Get(tracks);
 	loop->Get(mcthrowns);
 	
 	// Lock mutex
@@ -116,10 +119,19 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		GetFDCHits(trackcandidates[i], fdctrackhits, fdc_outhits);
 		fdc_candidate_hits.push_back(fdc_outhits);
 	}
-	
-	//int Nnon_noise_cdcs = (int)cdctrackhits.size() - 100; // hardwire approximate value for now
-	//if(Nnon_noise_cdcs<0)Nnon_noise_cdcs=0;
-	//leaf.status = ((double)Nnon_noise_cdcs/25.0 - mcthrowns.size())<1.5 ? 0:-1;
+
+	// Get hit list for all fit tracks
+	vector<CDChitv> cdc_fit_hits;
+	vector<FDChitv> fdc_fit_hits;
+	for(unsigned int i=0; i<tracks.size(); i++){
+		CDChitv cdc_outhits;
+		GetCDCHits(tracks[i], cdctrackhits, cdc_outhits);
+		cdc_fit_hits.push_back(cdc_outhits);
+
+		FDChitv fdc_outhits;
+		GetFDCHits(tracks[i], fdctrackhits, fdc_outhits);
+		fdc_fit_hits.push_back(fdc_outhits);
+	}
 
 	// Get hit list for all throwns
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
@@ -133,8 +145,12 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		GetCDCHits(mcthrowns[i], cdctrackhits, cdc_thrownhits);
 		GetFDCHits(mcthrowns[i], fdctrackhits, fdc_thrownhits);
 		
-		leaf.status = 0;
-		if(cdc_thrownhits.size()<5 && fdc_thrownhits.size()<5) leaf.status--;
+		leaf.status_can = 0;
+		leaf.status_fit = 0;
+		if(cdc_thrownhits.size()<5 && fdc_thrownhits.size()<5){
+			leaf.status_can--;
+			leaf.status_fit--;
+		}
 		
 		leaf.pthrown = mcthrown->momentum();
 		leaf.z_thrown = mcthrown->position().Z();
@@ -143,6 +159,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		leaf.ncdc_hits = cdctrackhits.size();
 		leaf.nfdc_hits = GetNFDCWireHits(fdctrackhits);
 		
+		//========= CANDIDATE ========
 		// Look for a candidate track that matches this thrown one
 		CDChitv cdc_matched_hits;
 		FDChitv fdc_matched_hits;
@@ -190,10 +207,54 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		if(can!=NULL){
 			leaf.pcan = can->momentum();
 			leaf.z_can = can->position().Z();
+		}
+
+		//========= FIT TRACK ========
+		// Look for a fit track that matches this thrown one
+		unsigned int icdc_fit = FindMatch(cdc_thrownhits, cdc_fit_hits, cdc_matched_hits);
+		unsigned int ifdc_fit = FindMatch(fdc_thrownhits, fdc_fit_hits, fdc_matched_hits);
+		
+		// Initialize values for when no matching fitdidate is found
+		leaf.pfit.SetXYZ(0.0, 0.0, 0.0);
+		leaf.z_fit = -1000.0;
+		leaf.ncdc_hits_fit = 0;
+		leaf.nfdc_hits_fit = 0;
+		leaf.ncdc_hits_thrown_and_fit = 0;
+		leaf.nfdc_hits_thrown_and_fit = 0;
+		leaf.cdc_chisq_fit = 1.0E6;
+		leaf.fdc_chisq_fit = 1.0E6;
+		
+		// CDC
+		const DTrack *cdc_fit = NULL;
+		if(icdc_fit>=0 && icdc_fit<tracks.size()){
+			cdc_fit = tracks[icdc_fit];
+			
+			leaf.ncdc_hits_fit = cdc_fit_hits[icdc_fit].size();
+			leaf.ncdc_hits_thrown_and_fit = cdc_matched_hits.size();
+			leaf.cdc_chisq_fit = 0.0;
+		}
+		
+		// FDC
+		const DTrack *fdc_fit = NULL;
+		if(ifdc_fit>=0 && ifdc_fit<tracks.size()){
+			fdc_fit = tracks[ifdc_fit];
+			
+			leaf.nfdc_hits_fit = fdc_fit_hits[ifdc_fit].size();
+			leaf.nfdc_hits_thrown_and_fit = fdc_matched_hits.size();
+			leaf.fdc_chisq_fit = 0.0;
+		}
+		
+		// Figure out which fitdidate (if any) I should match this with
+		const DTrack* fit = NULL;
+		if(cdc_fit!=NULL && fdc_fit!=NULL){
+			fit = cdc_matched_hits.size()>fdc_matched_hits.size() ? cdc_fit:fdc_fit;
 		}else{
-			if(leaf.status==0 && fdc_thrownhits.size()>=5){
-				//_DBG_<<"Missed track!  event number:"<<eventnumber<<"  thrownhits:"<<fdc_thrownhits.size()<<endl;
-			}
+			fit = cdc_fit!=NULL ? cdc_fit:fdc_fit;
+		}
+		
+		if(fit!=NULL){
+			leaf.pfit = fit->momentum();
+			leaf.z_fit = fit->position().Z();
 		}
 		
 		trkeff->Fill();
