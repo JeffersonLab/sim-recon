@@ -190,6 +190,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
 			}
 		}else{
 			INFILENAMES.push_back(argv[i]);
+			loop_source.push_back(loop);
 			Nevents_to_merge.push_back(Nmerge);
 		}
 	}
