@@ -43,8 +43,8 @@ const string DMCTrackHit_factory::toString(void)
 		printcol("%1.3f", mctrackhit->phi);
 		printcol("%3.1f", mctrackhit->z);
 		printcol("%d", mctrackhit->track);
-		printcol("%d", mctrackhit->ptype);
 		printcol(mctrackhit->primary ? "Y":"N");
+		printcol("%d", mctrackhit->ptype);
 		printcol(SystemName(mctrackhit->system));
 		printrow();
 	}
