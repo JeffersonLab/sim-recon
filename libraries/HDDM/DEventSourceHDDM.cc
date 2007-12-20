@@ -561,9 +561,9 @@ jerror_t DEventSourceHDDM::Extract_DCDCHit(s_HDDM_t *hddm_s,  JFactory<DCDCHit> 
 		// Acquire the pointer to the overall hits section of the data
 		s_HitView_t *hits = allEvents->in[m].hitView;
 		
-		if (hits == HDDM_NULL)return NOERROR;
-		if (hits->centralDC == HDDM_NULL)return NOERROR;
-		if (hits->centralDC->cdcStraws == HDDM_NULL)return NOERROR;
+		if (hits == HDDM_NULL)continue;
+		if (hits->centralDC == HDDM_NULL)continue;
+		if (hits->centralDC->cdcStraws == HDDM_NULL)continue;
 		for(unsigned int k=0; k<hits->centralDC->cdcStraws->mult; k++){
 			s_CdcStraw_t *cdcstraw = &hits->centralDC->cdcStraws->in[k];
 			for(unsigned int j=0; j<cdcstraw->cdcStrawHits->mult; j++){
@@ -614,17 +614,17 @@ jerror_t DEventSourceHDDM::Extract_DFDCHit(s_HDDM_t *hddm_s,  JFactory<DFDCHit> 
 		
 		if (hits == HDDM_NULL) {
 		  //throw JException("HDDM source has no hits.");
-			return NOERROR;
+			continue;
 		}
 
 		if (hits->forwardDC == HDDM_NULL) {
 		  //throw JException("HDDM source has no forwardDC information.");
-			return NOERROR;
+			continue;
 		}
 
 		if (hits->forwardDC->fdcChambers == HDDM_NULL) {
 		  // throw JException("HDDM source has no hits in the FDC.");		
-			return NOERROR;
+			continue;
 		}
 
 		// Acquire the pointer to the beginning of the FDC hit tree
@@ -857,17 +857,17 @@ jerror_t DEventSourceHDDM::Extract_DUPVHit(s_HDDM_t *hddm_s,  JFactory<DUPVHit> 
 		
 		if (hits == HDDM_NULL) {
 		  //throw JException("HDDM source has no hits.");
-			return NOERROR;
+			continue;
 		}
 
 		if (hits->upstreamEMveto == HDDM_NULL) {
 		  //throw JException("HDDM source has no forwardDC information.");
-			return NOERROR;
+			continue;
 		}
 
 		if (hits->upstreamEMveto->upvPaddles == HDDM_NULL) {
 		  // throw JException("HDDM source has no hits in the UPV.");		
-			return NOERROR;
+			continue;
 		}
 
 		// Acquire the pointer to the beginning of the UPV hit tree
@@ -941,9 +941,9 @@ jerror_t DEventSourceHDDM::Extract_DUPVTruthHit(s_HDDM_t *hddm_s,  JFactory<DUPV
 		// Acquire the pointer to the overall hits section of the data
 		s_HitView_t *hits = allEvents->in[m].hitView;
 		
-		if (hits == HDDM_NULL)return NOERROR;
-		if (hits->upstreamEMveto == HDDM_NULL)return NOERROR;
-		if (hits->upstreamEMveto->upvTruthShowers == HDDM_NULL)return NOERROR;
+		if (hits == HDDM_NULL)continue;
+		if (hits->upstreamEMveto == HDDM_NULL)continue;
+		if (hits->upstreamEMveto->upvTruthShowers == HDDM_NULL)continue;
 
 		// Acquire the pointer to the beginning of the UPV hit tree
 		s_UpvTruthShowers_t* upvTruthShowers = hits->upstreamEMveto->upvTruthShowers;
