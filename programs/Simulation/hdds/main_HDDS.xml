@@ -46,8 +46,8 @@
      ******************************************
 -->
 <section name        = "HallD"
-         version     = "2.0"
-         date        = "2006-11-22"
+         version     = "3.0"
+         date        = "2007-12-07"
          author      = "R.T. Jones"
          top_volume  = "HALL"
          specification = "v1.0">
@@ -63,25 +63,27 @@
     <posXYZ volume="Solenoid" />
     <posXYZ volume="StartCntr" X_Y_Z="0.0 0.0 37.5" />
     <posXYZ volume="CentralDC" X_Y_Z="0.0 0.0 17.0" />
-    <posXYZ volume="ForwardDC" X_Y_Z="0.0 0.0 212.0" />
+    <posXYZ volume="ForwardDC" X_Y_Z="0.0 0.0 190.0" />
     <posXYZ volume="BarrelEMcal" X_Y_Z="0.0 0.0 17.0" />
   </composition>
 
   <composition name="forwardPackage">
-    <posXYZ volume="CerenkovCntr" X_Y_Z="0.0 0.0 407.0" />
+    <posXYZ volume="CerenkovCntr" X_Y_Z="0.0 0.0 466.0" />
     <posXYZ volume="ForwardTOF" X_Y_Z="0.0 0.0 616.25" />
     <posXYZ volume="ForwardEMcal" X_Y_Z="0.0 0.0 625.3" />
   </composition>
 
   <composition name="backwardPackage">
     <posXYZ volume="UpstreamEMveto" X_Y_Z="0.0 0.0 -86.8" />
-  </composition>
+  </composition> 
 
   <composition name="GlueXdetector">
     <posXYZ volume="Target" X_Y_Z="0.0 0.0 50.0" />
     <posXYZ volume="barrelPackage" />
     <posXYZ volume="forwardPackage" />
+<!-- removed from standard geometry 12/11/2007 -rtj
     <posXYZ volume="backwardPackage" />
+-->
   </composition>
 
   <composition name="experimentalHall" envelope="HALL">

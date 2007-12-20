@@ -10,8 +10,8 @@
 -->
 
 <section name        = "Solenoid"
-         version     = "2.0"
-         date        = "2006-11-22"
+         version     = "3.0"
+         date        = "2007-12-20"
          author      = "R.T. Jones"
          top_volume  = "LASS"
          specification = "v1.0">
@@ -33,9 +33,7 @@
     <polyplane Rio_Z="4.5   188.0  -60.8" />
     <polyplane Rio_Z="4.5   188.0   92.0" />
     <polyplane Rio_Z="0.0   188.0   92.0" />
-    <polyplane Rio_Z="0.0   188.0  406.0" />
-    <polyplane Rio_Z="62.0  188.0  406.0" />
-    <polyplane Rio_Z="62.0  188.0  443.8" />
+    <polyplane Rio_Z="0.0   188.0  460.0" />
   </pcon>
 
   <tubs name="IYUP" Rio_Z=" 92.71 187.96  50.8" material="Iron" />

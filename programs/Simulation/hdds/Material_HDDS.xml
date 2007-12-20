@@ -10,7 +10,7 @@
 <HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds">
 -->
 
-<materials version="2.0"
+<materials version="3.0"
 	   date="2006-11-22"
 	   author="R.T. Jones"
            specification="v1.0" >
@@ -512,6 +512,12 @@
 	<real name="dedx"	value="1.936"	unit="MeV/g/cm^2"	/>
   </composite>
 
+  <composite name="BCF-12">
+	<addmaterial material="Carbon">   <natoms n="8"	/> </addmaterial>
+	<addmaterial material="Hydrogen"> <natoms n="8" /></addmaterial>
+	<real name="density"	value="1.049"	unit="g/cm^3"	/>
+  </composite>
+
   <composite name="Air">
 	<addmaterial material="Nitrogen">
 		<fractionmass	fraction="0.7494"	/>
@@ -718,15 +724,15 @@
  	</addmaterial>
   </composite>
 
-  <composite name="CopperKapton">
+  <composite name="CopperKaptonEpoxy">
 	<addmaterial material="Copper">
-		<fractionmass	fraction="0.34"	/>
+		<fractionmass	fraction="0.21"	/>
  	</addmaterial>
 	<addmaterial material="Kapton">
-		<fractionmass	fraction="0.66"	/>
+		<fractionmass	fraction="0.38"	/>
  	</addmaterial>
 	<addmaterial material="EpoxyResin">
-		<fractionmass	fraction="0.00"	/>
+		<fractionmass	fraction="0.41"	/>
  	</addmaterial>
   </composite>
 
@@ -739,7 +745,7 @@
  	</addmaterial>
   </composite>
 
-  <composite name="MylarFilm">
+  <composite name="AluminizedMylarFilm">
 	<addmaterial material="Mylar">
 		<fractionmass	fraction="0.967" />
  	</addmaterial>
@@ -762,6 +768,16 @@
 	<real name="density"	value="0.35"	unit="g/cm^3" />
   </composite>
 
+  <composite name="AluminizedMylar">
+	<addmaterial material="Aluminum">
+		<fractionmass	fraction="0.071"	/>
+ 	</addmaterial>
+	<addmaterial material="Mylar">
+		<fractionmass	fraction="0.929"	/>
+ 	</addmaterial>
+	<real name="density"	value="1.47"	unit="g/cm^3" />
+  </composite>
+
   <composite name="FDchamberGas">
 	<addmaterial material="Argon">
 		<fractionmass	fraction="0.38"	/>
@@ -772,24 +788,42 @@
 	<real name="density"	value="1.899e-3"  unit="g/cm^3" />
   </composite>
 
+  <composite name="CalciumTitanate">
+        <addmaterial material="Calcium"> <natoms n="1" /> </addmaterial>
+        <addmaterial material="Titanium"> <natoms n="1" /> </addmaterial>
+        <addmaterial material="Oxygen"> <natoms n="3" /> </addmaterial>
+	<real name="density"	value="3.70"	unit="g/cm^3" />
+  </composite>
+
+  <composite name="HVcapacitorSolder">
+	<addmaterial material="CalciumTitanate">
+		<fractionmass	fraction="0.90"	/>
+ 	</addmaterial>
+	<addmaterial material="Silver">
+		<fractionmass	fraction="0.10"	/>
+ 	</addmaterial>
+  </composite>
+
   <composite name="BC600epoxy">
         <addmaterial material="Carbon"> <natoms n="60" /> </addmaterial>
         <addmaterial material="Hydrogen"> <natoms n="79" /> </addmaterial>
         <addmaterial material="Oxygen"> <natoms n="3" /> </addmaterial>
         <addmaterial material="Nitrogen"> <natoms n="2" /> </addmaterial>
-	<real name="density"	value="1.20"	unit="g/cm^3" />
+	<real name="density"	value="1.18"	unit="g/cm^3" />
   </composite>
 
   <composite name="leadScint">
-	<addmaterial material="Scintillator">
-		<fractionmass	fraction="0.104"	/>
+	<addmaterial material="BCF-12">
+		<fractionmass	fraction="0.1036"	/>
  	</addmaterial>
 	<addmaterial material="Lead">
-		<fractionmass	fraction="0.862"	/>
+		<fractionmass	fraction="0.8619"	/>
  	</addmaterial>
 	<addmaterial material="BC600epoxy">
-		<fractionmass	fraction="0.034"	/>
+		<fractionmass	fraction="0.0345"	/>
  	</addmaterial>
+	<real name="density"	value="4.87"	unit="g/cm^3" />
+	<real name="radlen"	value="7.19"	unit="g/cm^2"	/>
   </composite>
 
   <composite name="leadGlassSF3">
@@ -1015,12 +1049,31 @@
         </optical_properties>
   </composite>
 
-  <composite name="CerenkovPMT">
-	<addmaterial material="BorosilicateGlass">
-		<fractionmass fraction="0.999" />
- 	</addmaterial>
+  <composite name="fusedSilica">
+	<addmaterial material="Silicon"> <natoms n="1"/> </addmaterial>
+	<addmaterial material="Oxygen"> <natoms n="2"/> </addmaterial>
+	<real name="density"	value="2.20"	unit="g/cm^3" />
+        <optical_properties>
+	  <specify E="1.50" refindex="1.452" abslen="300" />
+	  <specify E="2.00" refindex="1.457" abslen="300" />
+	  <specify E="2.50" refindex="1.462" abslen="300" />
+	  <specify E="3.00" refindex="1.468" abslen="300" />
+	  <specify E="3.50" refindex="1.475" abslen="300" />
+	  <specify E="4.00" refindex="1.484" abslen="300" />
+	  <specify E="4.50" refindex="1.495" abslen="300" />
+	  <specify E="5.00" refindex="1.508" abslen="200" />
+	  <specify E="5.50" refindex="1.508" abslen="100" />
+	  <specify E="6.00" refindex="1.523" abslen="50" />
+	  <specify E="6.50" refindex="1.541" abslen="20" />
+	  <specify E="7.00" refindex="1.563" abslen="10" />
+	  <specify E="7.50" refindex="1.591" abslen="0.1" />
+	  <specify E="8.00" refindex="1.625" abslen="0.05" />
+        </optical_properties>
+  </composite>
+
+  <composite name="CerenkovPhotocathode">
 	<addmaterial material="Cesium">
-		<fractionmass fraction="0.001" />
+		<fractionmass fraction="1.0" />
  	</addmaterial>
         <optical_properties>
 	  <specify E="1.50" refindex="1.52" abslen="0.001" effic="0.001" />
@@ -1202,22 +1255,22 @@
 
   <composite name="SignalCables">
 	<addmaterial material="Copper">
-                <fractionmass   fraction="0.33" />
+                <fractionmass   fraction="0.40" />
         </addmaterial>
 	<addmaterial material="PVC">
-                <fractionmass   fraction="0.67" />
+                <fractionmass   fraction="0.60" />
         </addmaterial>
   </composite>
 
   <composite name="CircuitBoards">
 	<addmaterial material="Polyethylene">
-                <fractionmass   fraction="0.60" />
+                <fractionmass   fraction="0.35" />
+        </addmaterial>
+	<addmaterial material="Copper">
+                <fractionmass   fraction="0.58" />
         </addmaterial>
 	<addmaterial material="FR-4">
-                <fractionmass   fraction="0.26" />
-        </addmaterial>
-	<addmaterial material="Silicon">
-                <fractionmass   fraction="0.14" />
+                <fractionmass   fraction="0.07" />
         </addmaterial>
   </composite>
 

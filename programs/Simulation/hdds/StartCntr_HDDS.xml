@@ -13,8 +13,8 @@
 -->
 
 <section name        = "StartCntr"
-         version     = "2.0"
-         date        = "2006-11-22"
+         version     = "3.0"
+         date        = "2007-12-07"
          author      = "R.T. Jones"
          top_volume  = "STRT"
          specification = "v1.0">
@@ -42,49 +42,49 @@
      <posXYZ volume="STLG" />
   </composition>
 
-  <tubs name="TARM" Rio_Z="9.5 11.32 140" material="Aluminum"
+  <tubs name="TARM" Rio_Z="6.951 8.675 140" material="Aluminum"
                                   comment="target region support arm" />
-  <tubs name="STLG" Rio_Z="10.0 11.32 140" material="Plexiglas"
+  <tubs name="STLG" Rio_Z="7.551 8.675 140" material="Plexiglas"
                                   comment="start counter light guides" />
   <pgon name="STRT" segments="24" material="LowDensityROHACELL"
 				  comment="start counter assembly">
-     <polyplane Rio_Z="9.500 11.400 -140.0" />
-     <polyplane Rio_Z="9.500 11.400 50.200" />
-     <polyplane Rio_Z="9.343 11.400 50.578" />
-     <polyplane Rio_Z="8.012 10.069 53.792" />
-     <polyplane Rio_Z="6.936  9.623 54.868" />
-     <polyplane Rio_Z="1.604  4.291 60.200" />
-     <polyplane Rio_Z="2.948  2.948 61.544" />
+    <polyplane Rio_Z="6.951 8.675 -140.000" />
+    <polyplane Rio_Z="6.951 8.675 51.383" />
+    <polyplane Rio_Z="6.809 8.675 51.726" />
+    <polyplane Rio_Z="5.893 7.759 53.938" />
+    <polyplane Rio_Z="4.916 7.354 54.914" />
+    <polyplane Rio_Z="1.915 4.353 57.915" />
+    <polyplane Rio_Z="3.134 3.134 59.134" />
   </pgon>
   <pgon name="STRC" segments="1" profile="-7.5 15" material="Scintillator"
 		sensitive="true" comment="start counter scintillator">
-     <polyplane Rio_Z="10.030 10.245  0.000"  />
-     <polyplane Rio_Z="10.030 10.245 50.420" />
-     <polyplane Rio_Z="10.012 10.245 50.463" />
-     <polyplane Rio_Z=" 8.542  8.775 54.012" />
-     <polyplane Rio_Z=" 8.420  8.724 54.134" />
-     <polyplane Rio_Z=" 2.154  2.458 60.400" />
-     <polyplane Rio_Z=" 2.306  2.306 60.552" />
+    <polyplane Rio_Z="7.481 7.696 0.000" />
+    <polyplane Rio_Z="7.481 7.696 51.488" />
+    <polyplane Rio_Z="7.463 7.696 51.531" />
+    <polyplane Rio_Z="6.342 6.575 54.238" />
+    <polyplane Rio_Z="6.220 6.524 54.360" />
+    <polyplane Rio_Z="2.290 2.594 58.290" />
+    <polyplane Rio_Z="2.442 2.442 58.442" />
   </pgon>
   <pgon name="STSU" segments="24" material="HighDensityROHACELL"
 				  comment="start counter support cylinder">
-     <polyplane Rio_Z="9.500 10.030  0.000" />
-     <polyplane Rio_Z="9.500 10.030 50.200" />
-     <polyplane Rio_Z="9.456 10.030 50.305" />
-     <polyplane Rio_Z="8.012  8.586 53.792" />
-     <polyplane Rio_Z="7.712  8.461 54.092" />
-     <polyplane Rio_Z="1.604  2.354 60.200" />
-     <polyplane Rio_Z="1.979  1.979 60.575" />
+    <polyplane Rio_Z="6.951 7.481 0.000" />
+    <polyplane Rio_Z="6.951 7.481 51.383" />
+    <polyplane Rio_Z="6.907 7.481 51.488" />
+    <polyplane Rio_Z="5.893 6.467 53.938" />
+    <polyplane Rio_Z="5.593 6.342 54.238" />
+    <polyplane Rio_Z="1.915 2.665 57.915" />
+    <polyplane Rio_Z="2.290 2.290 58.290" />
   </pgon>
   <pgon name="STWR" segments="24" material="Cellulose"
 				  comment="start counter wrapping tape">
-     <polyplane Rio_Z="11.320 11.400 -140.0" />
-     <polyplane Rio_Z="11.320 11.400 50.562" />
-     <polyplane Rio_Z="11.313 11.400 50.578" />
-     <polyplane Rio_Z=" 9.555  9.642 54.823" />
-     <polyplane Rio_Z=" 9.510  9.623 54.868" />
-     <polyplane Rio_Z=" 2.891  3.004 61.487" />
-     <polyplane Rio_Z=" 2.948  2.948 61.544" />
+    <polyplane Rio_Z="8.675 8.725 0.000" />
+    <polyplane Rio_Z="8.675 8.725 51.726" />
+    <polyplane Rio_Z="8.671 8.725 51.736" />
+    <polyplane Rio_Z="7.354 7.409 54.914" />
+    <polyplane Rio_Z="7.326 7.397 54.942" />
+    <polyplane Rio_Z="3.134 3.205 59.134" />
+    <polyplane Rio_Z="3.170 3.170 59.170" />
   </pgon>
 
   <!-- The following elements describe an early rendition of the GlueX
