@@ -449,15 +449,21 @@ const string DFDCPseudo_factory::toString(void)
 	Get();
 	if(_data.size()<=0)return string(); // don't print anything if we have no data!
 
-	printheader("layer: wire: time(ns):      w(cm):     s(cm):   status:");
+	printheader("layer: wire:   r(cm): phi(rad):  z(cm): time(ns):      w(cm):     s(cm):   status:");
 
 	for(unsigned int i=0; i<_data.size(); i++){
 		DFDCPseudo *hit = _data[i];
 		//const DFDCWire *w = hit->wire;
+		DVector3 pos = hit->wire->origin + hit->wire->udir*hit->s;
+		double phi = pos.Phi();
+		if(phi<0.0)phi+=2.0*M_PI;
 
 		printnewrow();
 		printcol("%d",		hit->wire->layer);
 		printcol("%d",		hit->wire->wire);
+		printcol("%3.1f", pos.Perp());
+		printcol("%1.3f", phi);
+		printcol("%3.1f", pos.Z());
 		printcol("%3.1f",	hit->time);
 		printcol("%3.1f",	hit->w);
 		printcol("%1.4f",	hit->s);
