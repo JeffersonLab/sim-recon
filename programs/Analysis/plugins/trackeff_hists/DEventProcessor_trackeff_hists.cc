@@ -21,6 +21,7 @@ using namespace std;
 #include <TRACKING/DTrackCandidate.h>
 #include <TRACKING/DTrack.h>
 #include <FDC/DFDCGeometry.h>
+#include <DVector2.h>
 
 // The executable should define the ROOTfile global variable. It will
 // be automatically linked when dlopen is called.
@@ -88,6 +89,23 @@ jerror_t DEventProcessor_trackeff_hists::brun(JEventLoop *loop, int runnumber)
 }
 
 //------------------
+// erun
+//------------------
+jerror_t DEventProcessor_trackeff_hists::erun(void)
+{
+
+	return NOERROR;
+}
+
+//------------------
+// fini
+//------------------
+jerror_t DEventProcessor_trackeff_hists::fini(void)
+{
+	return NOERROR;
+}
+
+//------------------
 // evnt
 //------------------
 jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
@@ -106,7 +124,10 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 	
 	// Lock mutex
 	pthread_mutex_lock(&mutex);
-	
+
+	// Fill map associating FDC hits with truth points
+	FindFDCTrackNumbers(loop);
+		
 	// Get hit list for all candidates
 	vector<CDChitv> cdc_candidate_hits;
 	vector<FDChitv> fdc_candidate_hits;
@@ -130,6 +151,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 
 		FDChitv fdc_outhits;
 		GetFDCHits(tracks[i], fdctrackhits, fdc_outhits);
+		GetFDCHitsFromTruth(i+1, fdc_outhits);
 		fdc_fit_hits.push_back(fdc_outhits);
 	}
 
@@ -143,7 +165,9 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		CDChitv cdc_thrownhits;
 		FDChitv fdc_thrownhits;
 		GetCDCHits(mcthrowns[i], cdctrackhits, cdc_thrownhits);
-		GetFDCHits(mcthrowns[i], fdctrackhits, fdc_thrownhits);
+		//GetFDCHits(mcthrowns[i], fdctrackhits, fdc_thrownhits);
+		GetFDCHitsFromTruth(i+1, fdc_thrownhits);
+
 		
 		leaf.status_can = 0;
 		leaf.status_fit = 0;
@@ -315,6 +339,20 @@ void DEventProcessor_trackeff_hists::GetFDCHits(const DKinematicData *p, FDChitv
 }
 
 //------------------
+// GetFDCHitsFromTruth
+//------------------
+void DEventProcessor_trackeff_hists::GetFDCHitsFromTruth(int trackno, FDChitv &outhits)
+{
+	// Loop over all entried in the fdclink map and find the ones
+	// corresponding to the given track number
+	outhits.clear();
+	map<const DFDCHit*, const DMCTrackHit*>::iterator iter;
+	for(iter=fdclink.begin(); iter!=fdclink.end(); iter++){
+		if((iter->second)->track==trackno)outhits.push_back(iter->first);
+	}
+}
+
+//------------------
 // GetNFDCWireHits
 //------------------
 unsigned int DEventProcessor_trackeff_hists::GetNFDCWireHits(FDChitv &inhits)
@@ -408,18 +446,60 @@ unsigned int DEventProcessor_trackeff_hists::FindMatch(FDChitv &thrownhits, vect
 }
 
 //------------------
-// erun
+// FindMatch
 //------------------
-jerror_t DEventProcessor_trackeff_hists::erun(void)
+void DEventProcessor_trackeff_hists::FindFDCTrackNumbers(JEventLoop *loop)
 {
+	vector<const DFDCHit*> fdchits;
+	vector<const DMCTrackHit*> mchits;
+	loop->Get(fdchits);
+	loop->Get(mchits);
 
-	return NOERROR;
+	fdclink.clear();
+
+	// Loop over all FDC wire hits
+	for(unsigned int i=0; i<fdchits.size(); i++){
+		const DFDCHit *fdchit = fdchits[i];
+		if(fdchit->type!=0)continue; // only look for wires
+		const DFDCWire *wire = DFDCGeometry::GetDFDCWire(fdchit->gLayer, fdchit->element);
+		if(!wire)continue;
+		
+		// Loop over FDC truth points
+		for(unsigned int j=0; j<mchits.size(); j++){
+			const DMCTrackHit *mchit = mchits[j];
+			if(mchit->system != SYS_FDC)continue;
+			
+			// Check if this hit is "on" this wire
+			if(fabs(mchit->z - wire->origin.Z())>0.01)continue;
+			DVector2 A(wire->origin.X(), wire->origin.Y());
+			DVector2 Adir = A/A.Mod();
+			DVector2 udir(wire->udir.X(), wire->udir.Y());
+			DVector2 f(mchit->r*cos(mchit->phi), mchit->r*sin(mchit->phi));
+			double delta = udir*(f-A);
+			double k = udir*Adir;
+			double beta = Adir*(f - A - delta*udir)/(1.0 - k*Adir*udir);
+			
+			// Truth point is somewhere in the cell. We give some tolerance
+			// for the exact cell size because the track can go through at
+			// an angle such that the truth point is outside the cell. 
+			// Not also that the same truth point can be associated with 2
+			// FDC hits.
+			bool match = (fabs(beta)-1.116/2.0)<0.01;
+			if(!match)continue;
+			
+			// Check if this is already in the map
+			map<const DFDCHit*, const DMCTrackHit*>::iterator iter = fdclink.find(fdchit);
+			if(iter!=fdclink.end()){
+				//_DBG_<<"More than 1 match for FDC hit!"<<endl;
+				// If a link for this hit already exists, delete it so neither
+				// one is used. This will of couse only work for 0,1, or 2
+				// hits matched to a given truth point. 3 or more hits will
+				// cause the algorithm to fail.
+				fdclink.erase(iter);
+			}else{
+				fdclink[fdchit] = mchit;
+			}
+		}
+	}
 }
 
-//------------------
-// fini
-//------------------
-jerror_t DEventProcessor_trackeff_hists::fini(void)
-{
-	return NOERROR;
-}

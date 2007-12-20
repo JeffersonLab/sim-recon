@@ -9,20 +9,23 @@
 #define _DEventProcessor_trackeff_hists_
 
 #include <pthread.h>
+#include <map>
+using std::map;
 
 #include <TTree.h>
 #include <TFile.h>
 #include <TH1.h>
 #include <TH2.h>
 
-#include "JANA/JFactory.h"
-#include "JANA/JEventProcessor.h"
-#include "JANA/JEventLoop.h"
+#include <JANA/JFactory.h>
+#include <JANA/JEventProcessor.h>
+#include <JANA/JEventLoop.h>
 
-#include "PID/DKinematicData.h"
-#include "TRACKING/DReferenceTrajectory.h"
-#include "CDC/DCDCTrackHit.h"
-#include "FDC/DFDCHit.h"
+#include <PID/DKinematicData.h>
+#include <TRACKING/DReferenceTrajectory.h>
+#include <TRACKING/DMCTrackHit.h>
+#include <CDC/DCDCTrackHit.h>
+#include <FDC/DFDCHit.h>
 
 #include "TrkEff_Leaf.h"
 
@@ -50,14 +53,18 @@ class DEventProcessor_trackeff_hists:public JEventProcessor{
 
 		void GetCDCHits(const DKinematicData *p, CDChitv &inhits, CDChitv &outhits);
 		void GetFDCHits(const DKinematicData *p, FDChitv &inhits, FDChitv &outhits);
+		void GetFDCHitsFromTruth(int trackno, FDChitv &outhits);
 		unsigned int FindMatch(CDChitv &thrownhits, vector<CDChitv> &candidate_hits, CDChitv &matched_hits);
 		unsigned int FindMatch(FDChitv &thrownhits, vector<FDChitv> &candidate_hits, FDChitv &matched_hits);
 		unsigned int GetNFDCWireHits(FDChitv &inhits);
+		void FindFDCTrackNumbers(JEventLoop *loop);
 
 		DMagneticFieldMap *bfield;
 		DReferenceTrajectory *ref;
 		double MAX_HIT_DIST_CDC;
 		double MAX_HIT_DIST_FDC;
+		
+		map<const DFDCHit*, const DMCTrackHit*> fdclink;
 		
 		pthread_mutex_t mutex;
 		pthread_mutex_t rt_mutex;
