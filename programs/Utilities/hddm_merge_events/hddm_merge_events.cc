@@ -17,17 +17,11 @@ void ParseCommandLineArguments(int narg, char* argv[]);
 void Usage(void);
 void ctrlCHandle(int x);
 
-char *INFILENAME = NULL;
+vector<int> Nevents_to_merge;
+vector<bool> loop_source;
+vector<char*> INFILENAMES;
 char *OUTFILENAME = NULL;
 int QUIT = 0;
-int Nevents_to_merge=2;
-
-s_HDDM_t *merged_event=NULL;
-
-void AddEvent(s_HDDM_t *new_event);
-void AddCDCHits(s_HDDM_t *new_event);
-void AddFDCHits(s_HDDM_t *new_event);
-void AddThrowns(s_HDDM_t *new_event);
 
 
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
@@ -44,216 +38,131 @@ int main(int narg,char* argv[])
 
 	ParseCommandLineArguments(narg, argv);
 	
-	cout<<" input file: "<<INFILENAME<<endl;
-	cout<<" output file: "<<OUTFILENAME<<endl;
-	
-	// Open Input file
-	s_iostream_t *fin = open_s_HDDM(INFILENAME);
-	if(!fin){
-		cout<<" Error opening input file \""<<INFILENAME<<"\"!"<<endl;
+	// Dummy check
+	if(Nevents_to_merge.size() != INFILENAMES.size()){
+		_DBG_<<"Size of Nevents_to_merge and INFILENAMES vectors not the same!"<<endl;
+		_DBG_<<"This indicates a bug in the program. Exiting ..."<<endl;
+		exit(-1);
+	}
+	if(Nevents_to_merge.size() != loop_source.size()){
+		_DBG_<<"Size of Nevents_to_merge and loop_source vectors not the same!"<<endl;
+		_DBG_<<"This indicates a bug in the program. Exiting ..."<<endl;
 		exit(-1);
 	}
 	
+	// Open Input file(s)
+	vector<s_iostream_t*> instreams;
+	for(unsigned int i=0; i<INFILENAMES.size(); i++){
+		cout<<" input file: "<<INFILENAMES[i]<<"  ("<<Nevents_to_merge[i]<<" events)"<<endl;
+		s_iostream_t *fin = open_s_HDDM(INFILENAMES[i]);
+		if(!fin){
+			cout<<" Error opening input file \""<<INFILENAMES[i]<<"\"!"<<endl;
+			exit(-1);
+		}
+		
+		instreams.push_back(fin);
+	}
+	
 	// Output file
+	cout<<" output file: "<<OUTFILENAME<<endl;
 	s_iostream_t *fout = init_s_HDDM(OUTFILENAME);
 	if(!fout){
 		cout<<" Error opening output file \""<<OUTFILENAME<<"\"!"<<endl;
 		exit(-1);
 	}
 	
-	// Loop over events in input file
-	s_HDDM_t *hddm_s;
+	// Loop over output events until one of the inputs does not
+	// have enough events to make an output
 	int NEvents = 0;
+	int NEvents_read = 0;
 	time_t last_time = time(NULL);
-	while((hddm_s = read_s_HDDM(fin))){
+	while(true){
+		// First, read in all events we want to combine
+		vector<s_HDDM_t*> events;
+		
+		// Loop over inputs
+		bool done=false;
+		events.clear();
+		for(unsigned int i=0; i<instreams.size(); i++){
+			// Loop over events to merge for this input
+			for(unsigned int j=0; j<(unsigned int)Nevents_to_merge[i]; j++){
+				s_HDDM_t *hddm_s = read_s_HDDM(instreams[i]);
+				if(!hddm_s){
+					// Looks like this source is out of events. Check if we need
+					// to re-open this input to keep reading events from it.
+					if(loop_source[i]){
+						close_s_HDDM(instreams[i]);
+						instreams[i] = open_s_HDDM(INFILENAMES[i]);
+						cout<<endl<<"Reopened \""<<INFILENAMES[i]<<"\" ..."<<endl;
+						hddm_s = read_s_HDDM(instreams[i]);
+					}
+				}
+				if(!hddm_s){
+					done = true;
+					break;
+				}
+				events.push_back(hddm_s);
+				NEvents_read++;
+			}
+			if(done)break;
+		}
+		if(done)break;
+		
+		// Make a new output event
+		s_HDDM_t* output_hddm_s = make_s_HDDM();
+		
+		// An input file's event may have more than 1 PhysicsEvent already.
+		// Loop through and find the total number of Physics events we
+		// need to allocate for.
+		int Nphysics_events = 0;
+		for(unsigned int i=0; i<events.size(); i++)Nphysics_events += events[i]->physicsEvents->mult;
+		
+		// Add enough PhysicsEvents to hold all of our inputs
+		output_hddm_s->physicsEvents = make_s_PhysicsEvents(Nphysics_events);
+		
+		// Copy PhysicsEvents for inputs, transferring ownership to
+		// output event and freeing memory from the "heads" of the
+		// input events.
+		unsigned int &mult = output_hddm_s->physicsEvents->mult;
+		mult = 0;
+		for(unsigned int i=0; i<events.size(); i++){
+			s_HDDM_t* input_hddm_s = events[i];
+			
+			// Loop over PhysicsEvents inside this input event
+			for(unsigned int j=0; j<input_hddm_s->physicsEvents->mult; j++){
+				output_hddm_s->physicsEvents->in[mult++] = input_hddm_s->physicsEvents->in[j];
+				
+				// Set the 2 pointers in PhysicsEvent to HDDM_NULL so they aren't freed
+				// when the input event is freed.
+				input_hddm_s->physicsEvents->in[j].reactions = (s_Reactions_t*)HDDM_NULL;
+				input_hddm_s->physicsEvents->in[j].hitView = (s_HitView_t*)HDDM_NULL;
+			}
+			
+			// Free this input event
+			flush_s_HDDM(input_hddm_s, NULL);
+		}
+		
+		// Write this output event to file and free its memory
+		flush_s_HDDM(output_hddm_s, fout);
 		NEvents++;
+		
+		// Update ticker
 		time_t now = time(NULL);
 		if(now != last_time){
-			cout<<"  "<<NEvents<<" events processed      \r";cout.flush();
+			cout<<"  "<<NEvents_read<<" events read     ("<<NEvents<<" event written) \r";cout.flush();
 			last_time = now;
 		}
-		
-		// Accumulate events
-		if(NEvents%Nevents_to_merge == 1){
-			merged_event = hddm_s;
-		}else{
-			AddEvent(hddm_s);
-			flush_s_HDDM(hddm_s, NULL);
-		}
-		
-		// Every N events, write them out
-		if(NEvents%Nevents_to_merge == 0){
-			if(merged_event)flush_s_HDDM(merged_event, fout);
-			merged_event=NULL;
-		}		
-		
+
 		if(QUIT)break;
 	}
 	
-	// close input and output files
-	close_s_HDDM(fin);
+	// Close all inputs
+	for(unsigned int i=0; i<instreams.size(); i++)close_s_HDDM(instreams[i]);
 	close_s_HDDM(fout);
-
+	
 	cout<<" "<<NEvents<<" events read"<<endl;
 
 	return 0;
-}
-
-//-----------
-// AddEvent
-//-----------
-void AddEvent(s_HDDM_t *new_event)
-{
-	AddCDCHits(new_event);
-	AddFDCHits(new_event);
-	AddThrowns(new_event);
-}
-
-//-----------
-// AddCDCHits
-//-----------
-void AddCDCHits(s_HDDM_t *new_event)
-{
-	// Make sure structures exist in merged_event
-	if(merged_event->physicsEvents == HDDM_NULL)merged_event->physicsEvents = make_s_PhysicsEvents(1);
-	s_HitView_t* &old_hits = merged_event->physicsEvents->in[0].hitView;
-	s_HitView_t* &new_hits = new_event->physicsEvents->in[0].hitView;
-	if(old_hits == HDDM_NULL)old_hits = make_s_HitView();
-	if(old_hits->centralDC==HDDM_NULL)old_hits->centralDC = make_s_CentralDC();
-	if(old_hits->centralDC->cdcStraws==HDDM_NULL)old_hits->centralDC->cdcStraws = make_s_CdcStraws(0);
-	if(old_hits->centralDC->cdcTruthPoints==HDDM_NULL)old_hits->centralDC->cdcTruthPoints = make_s_CdcTruthPoints(0);
-
-	if(new_hits->centralDC==HDDM_NULL)return;
-	if(new_hits->centralDC->cdcStraws==HDDM_NULL)return;
-	if(new_hits->centralDC->cdcTruthPoints==HDDM_NULL)return;
-	
-	s_CdcStraws_t* &old_cdcStraws = old_hits->centralDC->cdcStraws;
-	s_CdcStraws_t* &new_cdcStraws = new_hits->centralDC->cdcStraws;
-	s_CdcTruthPoints_t* &old_cdcTruthPoints = old_hits->centralDC->cdcTruthPoints;
-	s_CdcTruthPoints_t* &new_cdcTruthPoints = new_hits->centralDC->cdcTruthPoints;
-
-	int Nold = old_cdcStraws->mult;
-	int Nnew = new_cdcStraws->mult;
-	if(Nnew>0){
-		s_CdcStraws_t *cdcStraws = make_s_CdcStraws(Nold+Nnew);
-
-		for(int i=0; i<Nold; i++){
-			cdcStraws->in[cdcStraws->mult++] = old_cdcStraws->in[i];
-		}
-		for(int i=0; i<Nnew; i++){
-			cdcStraws->in[cdcStraws->mult++] = new_cdcStraws->in[i];
-		}
-		
-		// Here we need to replace the new_fdcChambers structure
-		// so when new_event is freed, the underlying structures
-		// are not.
-		free(new_cdcStraws);
-		new_cdcStraws = (s_CdcStraws_t*)HDDM_NULL;
-		
-		free(old_cdcStraws);
-		old_cdcStraws = cdcStraws;
-	}
-
-	Nold = old_cdcTruthPoints->mult;
-	Nnew = new_cdcTruthPoints->mult;
-	if(Nnew>0){
-		s_CdcTruthPoints_t *cdcTruthPoints = make_s_CdcTruthPoints(Nold+Nnew);
-
-		for(int i=0; i<Nold; i++){
-			cdcTruthPoints->in[cdcTruthPoints->mult++] = old_cdcTruthPoints->in[i];
-		}
-		for(int i=0; i<Nnew; i++){
-			cdcTruthPoints->in[cdcTruthPoints->mult++] = new_cdcTruthPoints->in[i];
-		}
-		
-		// Here we need to replace the new_fdcChambers structure
-		// so when new_event is freed, the underlying structures
-		// are not.
-		free(new_cdcTruthPoints);
-		new_cdcTruthPoints = (s_CdcTruthPoints_t*)HDDM_NULL;
-		
-		free(old_cdcTruthPoints);
-		old_cdcTruthPoints = cdcTruthPoints;
-	}
-
-}
-
-//-----------
-// AddFDCHits
-//-----------
-void AddFDCHits(s_HDDM_t *new_event)
-{
-	// Make sure structures exist in merged_event
-	if(merged_event->physicsEvents == HDDM_NULL)merged_event->physicsEvents = make_s_PhysicsEvents(1);
-	s_HitView_t* &old_hits = merged_event->physicsEvents->in[0].hitView;
-	s_HitView_t* &new_hits = new_event->physicsEvents->in[0].hitView;
-	if(old_hits == HDDM_NULL)old_hits = make_s_HitView();
-	if(old_hits->forwardDC==HDDM_NULL)old_hits->forwardDC = make_s_ForwardDC();
-	if(old_hits->forwardDC->fdcChambers==HDDM_NULL)old_hits->forwardDC->fdcChambers = make_s_FdcChambers(0);
-	
-	if(new_hits->forwardDC==HDDM_NULL)return;
-	if(new_hits->forwardDC->fdcChambers==HDDM_NULL)return;
-	
-	s_FdcChambers_t* &old_fdcChambers = old_hits->forwardDC->fdcChambers;
-	s_FdcChambers_t* &new_fdcChambers = new_hits->forwardDC->fdcChambers;
-	int Nold = old_fdcChambers->mult;
-	int Nnew = new_fdcChambers->mult;
-	if(Nnew>0){
-		s_FdcChambers_t *fdcChambers = make_s_FdcChambers(Nold+Nnew);
-
-		for(int i=0; i<Nold; i++){
-			fdcChambers->in[fdcChambers->mult++] = old_fdcChambers->in[i];
-		}
-		for(int i=0; i<Nnew; i++){
-			fdcChambers->in[fdcChambers->mult++] = new_fdcChambers->in[i];
-		}
-		
-		// Here we need to replace the new_fdcChambers structure
-		// so when new_event is freed, the underlying structures
-		// are not.
-		free(new_fdcChambers);
-		new_fdcChambers = (s_FdcChambers_t*)HDDM_NULL;
-		
-		free(old_fdcChambers);
-		old_fdcChambers = fdcChambers;
-	}
-}
-
-
-//-----------
-// AddThrowns
-//-----------
-void AddThrowns(s_HDDM_t *new_event)
-{
-	// Make sure structures exist in merged_event
-	if(merged_event->physicsEvents == HDDM_NULL)merged_event->physicsEvents = make_s_PhysicsEvents(1);
-	s_Reactions_t* &old_reactions = merged_event->physicsEvents->in[0].reactions;
-	s_Reactions_t* &new_reactions = new_event->physicsEvents->in[0].reactions;
-	if(old_reactions == HDDM_NULL)old_reactions = make_s_Reactions(0);
-	
-	if(new_reactions==HDDM_NULL)return;
-	
-	int Nold = old_reactions->mult;
-	int Nnew = new_reactions->mult;
-	if(Nnew>0){
-		s_Reactions_t *reactions = make_s_Reactions(Nold+Nnew);
-
-		for(int i=0; i<Nold; i++){
-			reactions->in[reactions->mult++] = old_reactions->in[i];
-		}
-		for(int i=0; i<Nnew; i++){
-			reactions->in[reactions->mult++] = new_reactions->in[i];
-		}
-		
-		// Here we need to replace the new_reactions structure
-		// so when new_event is freed, the underlying structures
-		// are not.
-		free(new_reactions);
-		new_reactions = (s_Reactions_t*)HDDM_NULL;
-		
-		free(old_reactions);
-		old_reactions = reactions;
-	}
 }
 
 //-----------
@@ -261,34 +170,36 @@ void AddThrowns(s_HDDM_t *new_event)
 //-----------
 void ParseCommandLineArguments(int narg, char* argv[])
 {
+	int Nmerge = 1;
+	bool loop = false;
+
+	INFILENAMES.clear();
+	loop_source.clear();
+	Nevents_to_merge.clear();
 
 	for(int i=1; i<narg; i++){
 		char *ptr = argv[i];
 		
 		if(ptr[0] == '-'){
 			switch(ptr[1]){
-				case 'h': Usage();													break;
-				case 'N': Nevents_to_merge=atoi(&ptr[2]);						break;
+				case 'h': Usage();						break;
+				case 'N': Nmerge=atoi(&ptr[2]);		break;
+				case 'o': OUTFILENAME=&ptr[2];		break;
+				case 'l': loop=true;						break;
+				case 's': loop=false;					break;
 			}
 		}else{
-			INFILENAME = argv[i];
+			INFILENAMES.push_back(argv[i]);
+			Nevents_to_merge.push_back(Nmerge);
 		}
 	}
 
-	if(!INFILENAME){
+	if(INFILENAMES.size()==0){
 		cout<<endl<<"You must enter a filename!"<<endl<<endl;
 		Usage();
 	}
 	
-	// Generate output filename based on input filename
-	char *ptr, *path_stripped;
-	path_stripped = ptr = strdup(INFILENAME);
-	while((ptr = strstr(ptr, "/")))path_stripped = ++ptr;
-	ptr = strstr(path_stripped, ".hddm");
-	if(ptr)*ptr=0;
-	char str[256];
-	sprintf(str, "%s_merged.hddm", path_stripped);
-	OUTFILENAME = strdup(str);
+	if(OUTFILENAME==NULL)OUTFILENAME = "merged.hddm";
 }
 
 
@@ -298,19 +209,66 @@ void ParseCommandLineArguments(int narg, char* argv[])
 void Usage(void)
 {
 	cout<<endl<<"Usage:"<<endl;
-	cout<<"     hddm_merge_events [-Nnum] file.hddm"<<endl;
+	cout<<"     hddm_merge_events [-oOutputfile] [-l|s -Nnum] file1.hddm [-l|s -Nnum] file2.hddm ..."<<endl;
 	cout<<endl;
 	cout<<"options:"<<endl;
-	cout<<"    -Nnum    Merge together num events"<<endl;
+	cout<<"    -oOutputfile  Set output filename (def. merged.hddm)"<<endl;
+	cout<<"    -Nnum         Merge together num events from each of the following input files"<<endl;
+	cout<<"    -l            Continually loop over events from the following inputs"<<endl;
+	cout<<"    -s            Stop when all events from the following inputs have been read"<<endl;
 	cout<<endl;
-	cout<<" This will merge hits from multiple events into one"<<endl;
-	cout<<" event and write the merged events to an output file."<<endl;
-	cout<<" At this time, only FDC, CDC, and thrown particle "<<endl;
-	cout<<" information is copied."<<endl;
+	cout<<" This will take events from 1 or more HDDM files and merge them"<<endl;
+	cout<<" into events written to an output HDDM file. This works by simply"<<endl;
+	cout<<" copying the s_PhysicsEvent objects into a single event that gets"<<endl;
+	cout<<" written to the output file."<<endl;
+	cout<<" "<<endl;
+	cout<<" Multiple input files can be specified and for each, the number of"<<endl;
+	cout<<" events to merge. This allows one to do things such as merge 3 events"<<endl;
+	cout<<" from a file of background events with a single event from a file of"<<endl;
+	cout<<" signal events to get a sample of events with 3 times the backaground"<<endl;
+	cout<<" rate overlayed on the signal."<<endl;
+	cout<<" "<<endl;
+	cout<<" By specifying the -l flag, certain input sources can be looped over"<<endl;
+	cout<<" to recycle thier events. This is useful if one has a sample of"<<endl;
+	cout<<" background events that is smaller than the sample of signal events."<<endl;
+	cout<<" See the examples below."<<endl;
+	cout<<" "<<endl;
 	cout<<" NOTE: Events are not merged such that double hits are"<<endl;
 	cout<<" merged. Hits are only copied so it is possible for"<<endl;
 	cout<<" the output event to have two hits on the same wire"<<endl;
 	cout<<" at the same time."<<endl;
+	cout<<" "<<endl;
+	cout<<" Example 1:"<<endl;
+	cout<<"     hddm_merge_events -N2 file.hddm"<<endl;
+	cout<<" "<<endl;
+	cout<<"  This will combine every 2 events from file.hddm into a single in the"<<endl;
+	cout<<" output. Since no output file name is specified, the file \"merged.hddm\""<<endl;
+	cout<<" will be used."<<endl;
+	cout<<" "<<endl;
+	cout<<" "<<endl;
+	cout<<" Example 2:"<<endl;
+	cout<<"     hddm_merge_events signal.hddm -N10 em_bkgnd.hddm -N1 hadronic_bkgnd.hddm"<<endl;
+	cout<<" "<<endl;
+	cout<<" This will combine 1 event from signal.hddm, 10 events from em_bkgnd.hddm,"<<endl;
+	cout<<" and 1 event from hadronic_bkgnd.hdm into a single output event."<<endl;
+	cout<<" "<<endl;
+	cout<<" "<<endl;
+	cout<<" Example 3:"<<endl;
+	cout<<"     hddm_merge_events -N3 file1.hddm file2.hddm file3.hddm -N1 file4.hddm"<<endl;
+	cout<<" "<<endl;
+	cout<<" This will combine 3 events from each of file1.hddm, file2.hddm, and"<<endl;
+	cout<<" file3.hddm with 1 event from file4.hddm."<<endl;
+	cout<<" "<<endl;
+	cout<<" "<<endl;
+	cout<<" Example 4:"<<endl;
+	cout<<"     hddm_merge_events signal.hddm -l -N10 background.hddm"<<endl;
+	cout<<" "<<endl;
+	cout<<" This will combine 1 signal event with 10 background events to create"<<endl;
+	cout<<" and output event. The events in the background file will be looped"<<endl;
+	cout<<" over continuosly as needed until all of the signal events have been"<<endl;
+	cout<<" processed."<<endl;
+	cout<<" "<<endl;
+	cout<<" "<<endl;
 	cout<<endl;
 
 	exit(0);
