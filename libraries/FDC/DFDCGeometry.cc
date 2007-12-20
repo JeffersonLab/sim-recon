@@ -32,35 +32,35 @@ DFDCGeometry::DFDCGeometry(void)
 	for(int layer=1; layer<=FDC_NUM_LAYERS; layer++){
 		
 		float angle=0.0;
-		float z_anode=212.0+95.5;
+		float z_anode=188.5+85.0;
 		switch(layer){
-			case  1: z_anode+= -92.5-2.0;	angle=  degrees00; break;
-			case  2: z_anode+= -92.5+0.0;	angle= +degrees60; break;
-			case  3: z_anode+= -92.5+2.0;	angle= -degrees60; break;
-			case  4: z_anode+= -86.5-2.0;	angle=  degrees00; break;
-			case  5: z_anode+= -86.5+0.0;	angle= +degrees60; break;
-			case  6: z_anode+= -86.5+2.0;	angle= -degrees60; break;
+			case  1: z_anode+= -80.5-3.0;	angle=  degrees00; break;
+			case  2: z_anode+= -80.5+0.0;	angle= +degrees60; break;
+			case  3: z_anode+= -80.5+3.0;	angle= -degrees60; break;
+			case  4: z_anode+= -71.5-3.0;	angle=  degrees00; break;
+			case  5: z_anode+= -71.5+0.0;	angle= +degrees60; break;
+			case  6: z_anode+= -71.5+3.0;	angle= -degrees60; break;
 
-			case  7: z_anode+= -32.5-2.0;	angle=  degrees00; break;
-			case  8: z_anode+= -32.5+0.0;	angle= +degrees60; break;
-			case  9: z_anode+= -32.5+2.0;	angle= -degrees60; break;
-			case 10: z_anode+= -26.5-2.0;	angle=  degrees00; break;
-			case 11: z_anode+= -26.5+0.0;	angle= +degrees60; break;
-			case 12: z_anode+= -26.5+2.0;	angle= -degrees60; break;
+			case  7: z_anode+= -30.5-3.0;	angle=  degrees00; break;
+			case  8: z_anode+= -30.5+0.0;	angle= +degrees60; break;
+			case  9: z_anode+= -30.5+3.0;	angle= -degrees60; break;
+			case 10: z_anode+= -21.5-3.0;	angle=  degrees00; break;
+			case 11: z_anode+= -21.5+0.0;	angle= +degrees60; break;
+			case 12: z_anode+= -21.5+3.0;	angle= -degrees60; break;
 
-			case 13: z_anode+= +26.5-2.0;	angle=  degrees00; break;
-			case 14: z_anode+= +26.5+0.0;	angle= +degrees60; break;
-			case 15: z_anode+= +26.5+2.0;	angle= -degrees60; break;
-			case 16: z_anode+= +32.5-2.0;	angle=  degrees00; break;
-			case 17: z_anode+= +32.5+0.0;	angle= +degrees60; break;
-			case 18: z_anode+= +32.5+2.0;	angle= -degrees60; break;
+			case 13: z_anode+= +21.5-3.0;	angle=  degrees00; break;
+			case 14: z_anode+= +21.5+0.0;	angle= +degrees60; break;
+			case 15: z_anode+= +21.5+3.0;	angle= -degrees60; break;
+			case 16: z_anode+= +30.5-3.0;	angle=  degrees00; break;
+			case 17: z_anode+= +30.5+0.0;	angle= +degrees60; break;
+			case 18: z_anode+= +30.5+3.0;	angle= -degrees60; break;
 
-			case 19: z_anode+= +86.5-2.0;	angle=  degrees00; break;
-			case 20: z_anode+= +86.5+0.0;	angle= +degrees60; break;
-			case 21: z_anode+= +86.5+2.0;	angle= -degrees60; break;
-			case 22: z_anode+= +92.5-2.0;	angle=  degrees00; break;
-			case 23: z_anode+= +92.5+0.0;	angle= +degrees60; break;
-			case 24: z_anode+= +92.5+2.0;	angle= -degrees60; break;
+			case 19: z_anode+= +71.5-3.0;	angle=  degrees00; break;
+			case 20: z_anode+= +71.5+0.0;	angle= +degrees60; break;
+			case 21: z_anode+= +71.5+3.0;	angle= -degrees60; break;
+			case 22: z_anode+= +80.5-3.0;	angle=  degrees00; break;
+			case 23: z_anode+= +80.5+0.0;	angle= +degrees60; break;
+			case 24: z_anode+= +80.5+3.0;	angle= -degrees60; break;
 		}
 		
 		// Somewhere between HDDS and here I'm missing a sign. I'm not

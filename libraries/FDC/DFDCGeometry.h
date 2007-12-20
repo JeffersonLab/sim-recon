@@ -8,11 +8,11 @@
 #define DFDCGEOMETRY_H
 
 #define FDC_NUM_LAYERS			24
-#define FDC_ACTIVE_RADIUS		53.6
+#define FDC_ACTIVE_RADIUS		48.5
 
 //----- These were cut from HDGeant/hitFDC.c -----
 #define DRIFT_SPEED           .0055
-#define WIRE_DEAD_ZONE_RADIUS 3.5
+#define WIRE_DEAD_ZONE_RADIUS 3.2
 #define ANODE_CATHODE_SPACING 0.5
 #define TWO_HIT_RESOL         250.
 #define WIRES_PER_PLANE       96
@@ -49,19 +49,19 @@ class DFDCGeometry : public JObject {
 		// Get z-coordinate for first wire plane in a package
 		static inline float GetZpackage(int layer){
 		  int package_number=(layer-1)/6;
-		  float z=212.0+95.5;
+		  float z=188.5+85.0;
 		  switch (package_number){
 		  case 0:
-		    z+=-92.5-2.0;
+		    z+=-80.5-3.0;
 		    break;
 		  case 1:
-		    z+= -32.5-2.0;
+		    z+= -30.5-3.0;
 		    break;
 		  case 2:
-		    z+=+26.5-2.0;
+		    z+=+21.5-3.0;
 		    break;
 		  case 3:
-		    z+=+86.5-2.0;
+		    z+=+71.5-3.0;
 		    break;		    
 		  }
 		  return z;
@@ -91,6 +91,9 @@ class DFDCGeometry : public JObject {
 		/// Get the Z position of a layer
 		///
 		static float getLayerZ(const DFDCHit* h) {
+_DBG__;
+			return -1000.0;  // I'm not sure if anything uses this. These values should be derived from DFDCWire anyway!
+#if 0
 			if (h->gPlane <= 18)  
 				return 227.5 + h->gPlane*0.5;			// Thing 1
 			if (h->gPlane <= 36)	   
@@ -98,6 +101,7 @@ class DFDCGeometry : public JObject {
 			if (h->gPlane <= 54)	   
 				return 358.5 + (h->gPlane - 36)*0.5;	// Thing 3
 			return 394.5 + (h->gPlane - 540*0.5); 		// Thing 4
+#endif
 		}
 		
 		///		
