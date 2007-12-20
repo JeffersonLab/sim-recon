@@ -128,6 +128,7 @@ class hdv_mainframe:public TGMainFrame {
 		map<int, TPolyLine*> fcalblocks;
 		
 		TTimer *timer;
+		long sleep_time; // in milliseconds
 		
 		template<typename T> void FillPoly(T *sA, T *sB, T *eA, vector<TVector3> &v);
 		

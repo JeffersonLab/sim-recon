@@ -48,16 +48,16 @@ static float FCAL_Zlen = 45.0;
 static float FCAL_Zmin = 622.8;
 static float FCAL_Rmin = 6.0;
 static float FCAL_Rmax = 212.0/2.0;
-static float CDC_Rmin = 15.0;
-static float CDC_Rmax = 60.0;
-static float CDC_Zlen = 175.0;
+static float CDC_Rmin = 9.0;
+static float CDC_Rmax = 59.0;
+static float CDC_Zlen = 150.0;
 static float CDC_Zmin = 17.0;
 static float TOF_Rmax = 125.0;
 static float TOF_Rmin = 6.0;
 static float TOF_Zlen = 2.54;
 static float TOF_Zmin = 618.8;
 static float FDC_Rmin = 3.5;
-static float FDC_Rmax = 53.6;
+static float FDC_Rmax = 48.5;
 static float TARGET_Zmid = 65.0;
 static float TARGET_Zlen = 30.0;
 
@@ -384,7 +384,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	// so events can be automatically advanced.
 	timer = new TTimer();
 	timer->Connect("Timeout()", "hdv_mainframe", this, "DoTimer()");
-	timer->Start(250, kFALSE);
+	sleep_time = 250;
+	timer->Start(sleep_time, kFALSE);
 
 	// Finish up and map the window
 	SetWindowName("Hall-D Event Viewer");
@@ -624,7 +625,12 @@ void hdv_mainframe::DoTimer(void)
 	/// This gets called periodically (value is set in constructor)
 	/// It is used to automatically call DoNext() periodically
 	/// so long as the global GO is set to 1.
-	if(GetCheckButton("continuous"))DoNext();
+	if(GetCheckButton("continuous")){
+		DoNext();
+		if(sleep_time != (long)timer->GetTime())timer->SetTime(sleep_time);
+	}else{
+		if(sleep_time == 0)timer->SetTime(10);
+	}
 }
 
 //-------------------
@@ -810,7 +816,8 @@ void hdv_mainframe::DoSetDelay(Int_t id)
 	ss<<delay->GetSelectedEntry()->GetTitle();
 	double seconds;
 	ss>>seconds;
-	timer->SetTime((int)(1000.0*seconds));
+	sleep_time = (int)(1000.0*seconds);
+	timer->SetTime(sleep_time);
 }
 
 //-------------------
@@ -965,7 +972,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		shift[2].Set(+blocksize/2, +blocksize/2);  // ensures the r/phi cooridinates also
 		shift[3].Set(+blocksize/2, -blocksize/2);  // define a single enclosed space
 		fcalblocks.clear();
-#if 1
+#if 0
 		for(int chan=0; chan<kMaxChannels; chan++){
 			int row = fcalgeom->row(chan);
 			int col = fcalgeom->column(chan);

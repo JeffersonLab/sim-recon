@@ -231,8 +231,29 @@ void MyProcessor::FillGraphics(void)
 		vector<const DMCThrown*> mcthrown;
 		loop->Get(mcthrown);
 		for(unsigned int i=0; i<mcthrown.size(); i++){
-			//if(mcthrown[i]->q==0.0)continue;
-			AddKinematicDataTrack(mcthrown[i], mcthrown[i]->q==0.0 ? kBlue:kRed, 2.0);
+			int color=14;
+			double size=1.5;
+			if(mcthrown[i]->q==0.0) color = kGreen;
+			if(mcthrown[i]->q >0.0) color = kBlue;
+			if(mcthrown[i]->q <0.0) color = kRed;
+			switch(mcthrown[i]->type){
+				case Gamma:
+				case Positron:
+				case Electron:
+					size = 1.0;
+					break;
+				case Pi0:
+				case PiPlus:
+				case PiMinus:
+					size = 2.0;
+					break;
+				case Neutron:
+				case Proton:
+				case AntiProton:
+					size = 3.0;
+					break;
+			}
+			AddKinematicDataTrack(mcthrown[i], color, size);
 		}
 	}
 	
@@ -331,7 +352,11 @@ void MyProcessor::FillGraphics(void)
 		vector<const DTrackCandidate*> trackcandidates;
 		loop->Get(trackcandidates, hdvmf->GetFactoryTag("DTrackCandidate"));
 		for(unsigned int i=0; i<trackcandidates.size(); i++){
-			AddKinematicDataTrack(trackcandidates[i], kMagenta, 1.75);
+			int color=28;
+			double size=1.75;
+			if(trackcandidates[i]->charge() >0.0) color += 100; // lighter shade
+			if(trackcandidates[i]->charge() <0.0) color += 150; // darker shade
+			AddKinematicDataTrack(trackcandidates[i], color, size);
 		}
 	}
 
