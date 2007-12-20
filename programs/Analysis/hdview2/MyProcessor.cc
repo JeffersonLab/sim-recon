@@ -168,7 +168,7 @@ void MyProcessor::FillGraphics(void)
 		for(unsigned int i=0; i<cdctrackhits.size(); i++){
 			const DCDCWire *wire = cdctrackhits[i]->wire;
 			
-			int color = fabs(cdctrackhits[i]->tdrift)<400 ? kCyan:kYellow;
+			int color = (cdctrackhits[i]->tdrift>-20 && cdctrackhits[i]->tdrift<400) ? kCyan:kYellow;
 			DGraphicSet gset(color, kLine, 1.0);
 			gset.points.push_back(wire->origin-(wire->L/2.0)*wire->udir);
 			gset.points.push_back(wire->origin+(wire->L/2.0)*wire->udir);
@@ -191,7 +191,8 @@ void MyProcessor::FillGraphics(void)
 			}
 			
 			// Wire
-			DGraphicSet gset(kCyan, kLine, 1.0);
+			int color = (fdchit->t>-50 && fdchit->t<400) ? kCyan:kYellow;
+			DGraphicSet gset(color, kLine, 1.0);
 			gset.points.push_back(wire->origin-(wire->L/2.0)*wire->udir);
 			gset.points.push_back(wire->origin+(wire->L/2.0)*wire->udir);
 			graphics.push_back(gset);
