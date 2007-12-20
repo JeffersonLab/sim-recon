@@ -244,6 +244,7 @@ jerror_t DEventSourceHDDM::GetCDCTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*
 			mctrackhit->z			= cdctruthpoint->z;
 			mctrackhit->track		= cdctruthpoint->track;
 			mctrackhit->primary	= cdctruthpoint->primary;
+			mctrackhit->ptype		= cdctruthpoint->ptype;
 			mctrackhit->system	= SYS_CDC;
 			data.push_back(mctrackhit);
 		}
@@ -284,6 +285,7 @@ jerror_t DEventSourceHDDM::GetFDCTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*
 				mctrackhit->z			= truth->z;
 				mctrackhit->track		= truth->track;
 				mctrackhit->primary	= truth->primary;
+				mctrackhit->ptype		= truth->ptype;
 				mctrackhit->system	= SYS_FDC;
 				data.push_back(mctrackhit);
 			}
@@ -317,6 +319,7 @@ jerror_t DEventSourceHDDM::GetBCALTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit
 			mctrackhit->z			= bcalTruthShower->z;
 			mctrackhit->track		= bcalTruthShower->track;
 			mctrackhit->primary	= bcalTruthShower->primary;
+			mctrackhit->ptype		= bcalTruthShower->ptype;
 			mctrackhit->system	= SYS_BCAL;
 			data.push_back(mctrackhit);
 		}
@@ -351,7 +354,7 @@ jerror_t DEventSourceHDDM::GetTOFTruthHits(s_HDDM_t *hddm_s,  vector<DMCTrackHit
 			mctrackhit->z			= ftoftruthpoint->z;
 			mctrackhit->track		= ftoftruthpoint->track;
 			mctrackhit->primary	= ftoftruthpoint->primary;
-			mctrackhit->ptype       = ftoftruthpoint->ptype; // save GEANT particle type 
+			mctrackhit->ptype    = ftoftruthpoint->ptype; // save GEANT particle type 
 			mctrackhit->system	= SYS_TOF;
 			data.push_back(mctrackhit);
 		}
@@ -395,6 +398,7 @@ jerror_t DEventSourceHDDM::GetFCALTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit
 			mctrackhit->z			= fcalTruthShower->z;
 			mctrackhit->track		= fcalTruthShower->track;
 			mctrackhit->primary	= fcalTruthShower->primary;
+			mctrackhit->ptype		= fcalTruthShower->ptype;
 			mctrackhit->system	= SYS_FCAL;
 			data.push_back(mctrackhit);
 		}
@@ -449,7 +453,7 @@ jerror_t DEventSourceHDDM::Extract_DHDDMBCALHit(s_HDDM_t *hddm_s, JFactory<DHDDM
 					bcalhit->sector = cell->sector;
 					bcalhit->E = hit->E;
 					bcalhit->t = hit->t;
-                    bcalhit->zLocal = hit->zLocal;
+					bcalhit->zLocal = hit->zLocal;
 					data.push_back(bcalhit);
 				}
 			}
