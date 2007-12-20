@@ -11,8 +11,8 @@
 #include <JANA/JFactory.h>
 #include "DCDCTrackHit.h"
 
-#define CDC_MAX_STRAWS 228
-#define CDC_MAX_RINGS 23
+#define CDC_MAX_STRAWS 222
+#define CDC_MAX_RINGS 25
 
 class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 	public:
