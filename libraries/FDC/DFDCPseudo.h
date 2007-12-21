@@ -45,8 +45,6 @@ class DFDCPseudo : public JObject {
 		float dist;	// drift distance from time
 		int status; // status word for pseudopoint
 		float x,y;  // coordinates rotated into lab coordinate system
-		float xcorr,ycorr;  // corrections to coordinates based on Lorentz effect
-		float w_x, w_y, s_x, s_y;  // x and y components of w and s
 		DMatrix cov; // Covariance matrix in lab coordinate system
 		
 #if 0
