@@ -798,7 +798,18 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
       // Correct for the Lorentz effect given DOCAs
       if (error==NOERROR){
 	// Correct for the Lorentz effect given DOCAs
+	vector<DFDCPseudo> neighbors_old;
+	for (int i = 0; i < neighbors.size(); i++) {
+	  neighbors_old.push_back(*(neighbors[i]));
+	}
 	CorrectPoints(neighbors,XYZ);
+	for (int i = 0; i < neighbors.size(); i++) {
+	  float xcorr = neighbors[i]->x - neighbors_old[i].x;
+	  float ycorr = neighbors[i]->y - neighbors_old[i].y;
+	  cout << "xcorr = " << xcorr << " ycorr = " << ycorr << endl;
+	  neighbors[i]->xcorr = xcorr;
+	  neighbors[i]->ycorr = ycorr;
+	}
 
 	ref_plane=0; 
 
@@ -807,7 +818,16 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 
 	// Final correction 
 	if (error==NOERROR){
+	  vector<DFDCPseudo> neighbors_old;
+	  for (int i = 0; i < neighbors.size(); i++) {
+	    neighbors_old.push_back(*(neighbors[i]));
+	  }
 	  CorrectPoints(neighbors,XYZ); /// correct again based on time-based result
+	  for (int i = 0; i < neighbors.size(); i++) {
+	    float xcorr = neighbors[i]->x - neighbors_old[i].x;
+	    float ycorr = neighbors[i]->y - neighbors_old[i].y;
+	    cout << "xcorrf = " << xcorr << " ycorrf = " << ycorr << endl;
+	  }
 	  for (unsigned int m=0;m<neighbors.size();m++){
 	    fdc_track_t temp;
 	    temp.hit_id=m;
@@ -1129,6 +1149,10 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
     point->dw =delta_x;
     point->x=(point->w+point->dw)*cosangle+(point->s+point->ds)*sinangle;
     point->y=-(point->w+point->dw)*sinangle+(point->s+point->ds)*cosangle;
+    point->w_x=point->dw*cosangle;
+    point->w_y=-point->dw*sinangle;
+    point->s_x=point->ds*sinangle;
+    point->s_y=point->ds*cosangle;
     point->cov(0,0)=sigx2*cosangle*cosangle+sigy2*sinangle*sinangle;
     point->cov(1,1)=sigx2*sinangle*sinangle+sigy2*cosangle*cosangle;
     point->cov(0,1)=point->cov(1,0)=(sigy2-sigx2)*sinangle*cosangle;
