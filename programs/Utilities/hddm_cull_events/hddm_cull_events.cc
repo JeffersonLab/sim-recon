@@ -20,6 +20,8 @@ void ctrlCHandle(int x);
 vector<char*> INFILENAMES;
 char *OUTFILENAME = NULL;
 int QUIT = 0;
+unsigned int EVENTS_TO_SKIP = 0;
+unsigned int EVENTS_TO_KEEP = 1;
 
 
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
@@ -36,6 +38,8 @@ int main(int narg,char* argv[])
 
 	ParseCommandLineArguments(narg, argv);
 	
+	cout<<"Skipping "<<EVENTS_TO_SKIP<<endl;
+	cout<<"Keeping  "<<EVENTS_TO_KEEP<<endl;
 	
 	// Output file
 	cout<<" output file: "<<OUTFILENAME<<endl;
@@ -46,8 +50,8 @@ int main(int narg,char* argv[])
 	}
 
 	// Loop over input files
-	int NEvents = 0;
-	int NEvents_read = 0;
+	unsigned int NEvents = 0;
+	unsigned int NEvents_read = 0;
 	time_t last_time = time(NULL);
 	for(unsigned int i=0; i<INFILENAMES.size(); i++){
 		cout<<" input file: "<<INFILENAMES[i]<<endl;
@@ -64,8 +68,12 @@ int main(int narg,char* argv[])
 			NEvents_read++;
 			
 			// Write this output event to file and free its memory
-			flush_s_HDDM(hddm_s, fout);
-			NEvents++;
+			if(NEvents_read>=EVENTS_TO_SKIP){
+				flush_s_HDDM(hddm_s, fout);
+				NEvents++;
+			}else{
+				flush_s_HDDM(hddm_s, NULL);
+			}
 		
 			// Update ticker
 			time_t now = time(NULL);
@@ -73,6 +81,9 @@ int main(int narg,char* argv[])
 				cout<<"  "<<NEvents_read<<" events read     ("<<NEvents<<" event written) \r";cout.flush();
 				last_time = now;
 			}
+			
+			// Quit as soon as we wrote all of the events we're going to
+			if(NEvents_read>=(EVENTS_TO_SKIP+EVENTS_TO_KEEP-1))break;
 
 			if(QUIT)break;
 		}
@@ -84,7 +95,8 @@ int main(int narg,char* argv[])
 	// Close output file
 	close_s_HDDM(fout);
 	
-	cout<<" "<<NEvents<<" events read"<<endl;
+	cout<<endl;
+	cout<<" "<<NEvents_read<<" events read, "<<NEvents<<" events written"<<endl;
 
 	return 0;
 }
@@ -101,8 +113,10 @@ void ParseCommandLineArguments(int narg, char* argv[])
 		
 		if(ptr[0] == '-'){
 			switch(ptr[1]){
-				case 'h': Usage();						break;
-				case 'o': OUTFILENAME=&ptr[2];		break;
+				case 'h': Usage();								break;
+				case 'o': OUTFILENAME=&ptr[2];				break;
+				case 's': EVENTS_TO_SKIP=atoi(&ptr[2]);	break;
+				case 'k': EVENTS_TO_KEEP=atoi(&ptr[2]);	break;
 			}
 		}else{
 			INFILENAMES.push_back(argv[i]);
@@ -114,7 +128,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
 		Usage();
 	}
 	
-	if(OUTFILENAME==NULL)OUTFILENAME = "merged_files.hddm";
+	if(OUTFILENAME==NULL)OUTFILENAME = "culled.hddm";
 }
 
 
@@ -124,12 +138,16 @@ void ParseCommandLineArguments(int narg, char* argv[])
 void Usage(void)
 {
 	cout<<endl<<"Usage:"<<endl;
-	cout<<"     hddm_merge_files [-oOutputfile] file1.hddm file2.hddm ..."<<endl;
+	cout<<"     hddm_cull_events [-oOutputfile] [-sNeventsToSkip] [-kNeventsToKeep] file1.hddm file2.hddm ..."<<endl;
 	cout<<endl;
 	cout<<"options:"<<endl;
-	cout<<"    -oOutputfile  Set output filename (def. merged_files.hddm)"<<endl;
+	cout<<"    -oOutputfile     Set output filename (def. culled.hddm)"<<endl;
+	cout<<"    -sNeventsToSkip  Set number of events to skip (def. 0)"<<endl;
+	cout<<"    -kNeventsToKeep  Set number of events to keep (def. 1)"<<endl;
 	cout<<endl;
-	cout<<" This will merge 1 or more HDDM files into a single HDDM file."<<endl;
+	cout<<" This will copy a continguous set of events from the combined event streams"<<endl;
+	cout<<" into a seperate output file. The primary use for this would be to copy"<<endl;
+	cout<<" a single, problematic event into a seperate file for easier debugging."<<endl;
 	cout<<" "<<endl;
 	cout<<" "<<endl;
 	cout<<endl;
