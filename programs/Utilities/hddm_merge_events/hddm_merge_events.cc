@@ -22,6 +22,7 @@ vector<bool> loop_source;
 vector<char*> INFILENAMES;
 char *OUTFILENAME = NULL;
 int QUIT = 0;
+int MAXEVENTS=-1;
 
 
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
@@ -154,6 +155,9 @@ int main(int narg,char* argv[])
 		}
 
 		if(QUIT)break;
+		if(MAXEVENTS>0){
+			if(NEvents>=MAXEVENTS)break;
+		}
 	}
 	
 	// Close all inputs
@@ -184,6 +188,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
 			switch(ptr[1]){
 				case 'h': Usage();						break;
 				case 'N': Nmerge=atoi(&ptr[2]);		break;
+				case 'M': MAXEVENTS=atoi(&ptr[2]);	break;
 				case 'o': OUTFILENAME=&ptr[2];		break;
 				case 'l': loop=true;						break;
 				case 's': loop=false;					break;
@@ -210,10 +215,11 @@ void ParseCommandLineArguments(int narg, char* argv[])
 void Usage(void)
 {
 	cout<<endl<<"Usage:"<<endl;
-	cout<<"     hddm_merge_events [-oOutputfile] [-l|s -Nnum] file1.hddm [-l|s -Nnum] file2.hddm ..."<<endl;
+	cout<<"     hddm_merge_events [-Mmaxevents] [-oOutputfile] [-l|s -Nnum] file1.hddm [-l|s -Nnum] file2.hddm ..."<<endl;
 	cout<<endl;
 	cout<<"options:"<<endl;
 	cout<<"    -oOutputfile  Set output filename (def. merged.hddm)"<<endl;
+	cout<<"    -Mmaxevents   Do not write out more than maxevents events"<<endl;
 	cout<<"    -Nnum         Merge together num events from each of the following input files"<<endl;
 	cout<<"    -l            Continually loop over events from the following inputs"<<endl;
 	cout<<"    -s            Stop when all events from the following inputs have been read"<<endl;
