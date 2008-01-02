@@ -65,6 +65,13 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 				 vector<const DFDCCathodeCluster*>& u,
 				 vector<const DFDCCathodeCluster*>& v,
 				 int layer);
+		
+		///
+		/// DFDCPseudo_factory::CalcMeanTime()
+		/// Calculates mean and RMS time for a cluster of cathode hits
+		///
+		void CalcMeanTime(const vector<const DFDCHit*>& H, float &t, float &t_rms);
+		
 		///
 		/// DFDCPseudo_factory::FindCentroid()
 		/// Calculates the centroids of groups of three adjacent strips

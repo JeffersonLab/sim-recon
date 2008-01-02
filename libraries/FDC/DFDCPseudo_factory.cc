@@ -143,6 +143,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       temp.pos=(*strip)->element;
       temp.q=2.*((*strip)->q);  // Each cathode view should see half the 
                                  // anode charge
+		CalcMeanTime((*uIt)->members, temp.t, temp.t_rms);
       upeaks.push_back(temp);
       break;
     case 2: //Two adjacent hits: use average for the centroid
@@ -152,6 +153,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       E2=(*(strip+1))->q;      
       temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
       temp.q=2.*(E1+E2);
+		CalcMeanTime((*uIt)->members, temp.t, temp.t_rms);
       upeaks.push_back(temp);
       break;
     default:      
@@ -172,6 +174,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       temp.pos=(*strip)->element;
       temp.q=2.*((*strip)->q);
       temp.numstrips=1;
+		CalcMeanTime((*vIt)->members, temp.t, temp.t_rms);
       vpeaks.push_back(temp);
       break;
     case 2: //Two adjacent hits: use average for the centroid
@@ -182,6 +185,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
       temp.q=2.*(E1+E2);
       temp.numstrips=2;
+		CalcMeanTime((*vIt)->members, temp.t, temp.t_rms);
       vpeaks.push_back(temp);
       break;
     default:      
@@ -203,6 +207,17 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	float y_from_strips=DFDCGeometry::getYLocalStrips(upeaks[i].pos,
 							  vpeaks[j].pos);
 	for(xIt=x.begin();xIt!=x.end();xIt++){
+	
+		// First check if mean times of strips and wire are close.
+		// There are 3 values to compare so we look at the RMS
+		// of the 3 differences. (I'm just making this up!)
+		// 1/2/2008 D. L.
+		float dt1 = (*xIt)->t - upeaks[i].t;
+		float dt2 = (*xIt)->t - vpeaks[j].t;
+		float dt3 = upeaks[i].t - vpeaks[j].t;
+		float trms = sqrt((dt1*dt1 + dt2*dt2 + dt3*dt3)/3.0);
+		if(trms>20.0)continue;
+	
 	  float x_from_wire=DFDCGeometry::getWireR(*xIt);
 	  if (fabs(x_from_wire-x_from_strips)<WIRE_SPACING/2.){
 	    int status=upeaks[i].numstrips+vpeaks[j].numstrips;
@@ -246,6 +261,25 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 }			
 
 //
+/// DFDCPseudo_factory::CalcMeanTime()
+/// Calculate the mean and rms of the times of the hits passed in "H".
+/// The contents of H should be pointers to a single cluster in a
+/// cathode plane. 
+//  1/2/2008 D.L.
+void DFDCPseudo_factory::CalcMeanTime(const vector<const DFDCHit*>& H, float &t, float &t_rms)
+{
+	// Calculate mean
+	t=0.0;
+	for(unsigned int i=0; i<H.size(); i++)t+=H[i]->t;
+	if(H.size()>0)t/=(float)H.size();
+	
+	// Calculate RMS
+	t_rms=0.0;
+	for(unsigned int i=0; i<H.size(); i++)t_rms+=pow((double)(H[i]->t-t),2.0);
+	if(H.size()>0)t_rms = sqrt(t_rms/(float)H.size());
+}
+
+//
 /// DFDCPseudo_factory::FindCentroid()
 ///   Uses the Newton-Raphson method for solving the set of non-linear
 /// equations describing the charge distribution over 3 strips for the peak 
@@ -260,6 +294,9 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
   // Make sure we do not exceed the range of the vector
   if (peak>H.begin() && peak+1!=H.end()){
     float err_diff1=0.,err_diff2=0.;
+	 
+	 // Fill in time info in temp  1/2/2008 D.L.
+    CalcMeanTime(H, temp.t, temp.t_rms);
 
     // Some code for checking for significance of fluctuations.
     // Currently disabled.

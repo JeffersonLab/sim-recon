@@ -19,6 +19,8 @@ typedef struct {
   float pos;
   float q;
   int numstrips;
+  float t; // mean time of strips in peak
+  float t_rms; // rms of strips in peak
 }centroid_t;
 
 ///
