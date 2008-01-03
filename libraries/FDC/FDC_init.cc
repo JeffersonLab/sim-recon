@@ -13,6 +13,7 @@
 #include "DFDCSegment_factory.h"
 #include "DFDCIntersection_factory.h"
 #include "DFDCPseudo_factory_WIRESONLY.h"
+#include "DFDCPseudo_factory_CORRECTED.h"
 
 jerror_t FDC_init(JEventLoop *loop)
 {
@@ -26,6 +27,7 @@ jerror_t FDC_init(JEventLoop *loop)
 	loop->AddFactory(new DFDCSegment_factory());
 	loop->AddFactory(new DFDCIntersection_factory());
 	loop->AddFactory(new DFDCPseudo_factory_WIRESONLY());
+	loop->AddFactory(new DFDCPseudo_factory_CORRECTED());
 
 	return NOERROR;
 }
