@@ -63,8 +63,6 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     // Loop over segments in the first package, matching them to segments in 
     // the second, third, and fourth (most downstream) packages.
     for (unsigned int i=0;i<package[0].size();i++){
-      // Create new track, starting with the current segment
-      DTrackCandidate *track = new DTrackCandidate;
       DFDCSegment *segment=package[0][i];
       
       // Tracking parameters from first segment
@@ -161,8 +159,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	for (unsigned int m=0;m<segments.size();m++){
 	  for (unsigned int n=0;n<segments[m]->hits.size();n++){
 	    DFDCPseudo *hit=segments[m]->hits[n];
-	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->cov(0,0),
-			hit->cov(1,1),hit->cov(1,0));
+	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
+			hit->covyy,hit->covxy);
 	    
 	  }
 	}
@@ -215,6 +213,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
       mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
       pos.SetXYZ(0,0,zvertex);
+
+      // Create new track, starting with the current segment
+      DTrackCandidate *track = new DTrackCandidate;
       track->setPosition(pos);
       track->setMomentum(mom);
       track->setCharge(q);
@@ -228,8 +229,6 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     // Loop over segments in the 2nd package, matching them to segments in 
     // the third and fourth (most downstream) packages.
     for (unsigned int i=0;i<package[1].size();i++){
-      // Create new track, starting with the current segment
-      DTrackCandidate *track = new DTrackCandidate;
       DFDCSegment *segment=package[1][i];
       
       // tracking parameters
@@ -284,8 +283,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	for (unsigned int m=0;m<segments.size();m++){
 	  for (unsigned int n=0;n<segments[m]->hits.size();n++){
 	    DFDCPseudo *hit=segments[m]->hits[n];
-	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->cov(0,0),
-			hit->cov(1,1),hit->cov(1,0));
+	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
+			hit->covyy,hit->covxy);
 	    
 	  }
 	}
@@ -330,6 +329,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
       mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
       pos.SetXYZ(0,0,zvertex);
+
+      // Create new track, starting with the current segment
+      DTrackCandidate *track = new DTrackCandidate;
       track->setPosition(pos);
       track->setMomentum(mom);
       track->setCharge(q);
@@ -343,8 +345,6 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     // Loop over segments in the 3rd package, matching them to segments in 
     // the fourth (most downstream) packages.
     for (unsigned int i=0;i<package[2].size();i++){
-      // Create new track, starting with the current segment
-      DTrackCandidate *track = new DTrackCandidate;
       DFDCSegment *segment=package[2][i];
  
       // tracking parameters
@@ -358,7 +358,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       // Start filling vector of segments belonging to current track    
       vector<DFDCSegment*>segments; 
       segments.push_back(segment);
-
+	
       // Check that the tangent of the dip angle makes sense for FDC hits
       if (segment->S(3,0)<=0.0) continue;
       
@@ -379,9 +379,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	for (unsigned int m=0;m<segments.size();m++){
 	  for (unsigned int n=0;n<segments[m]->hits.size();n++){
 	    DFDCPseudo *hit=segments[m]->hits[n];
-	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->cov(0,0),
-		       hit->cov(1,1),hit->cov(1,0));
-	    
+	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
+		       hit->covyy,hit->covxy);	   
 	  }
 	}
 	DMatrix *CR=NULL, *CRPhi=NULL;
@@ -413,6 +412,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
       mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
       pos.SetXYZ(0,0,zvertex);
+      
+      // Create new track, starting with the current segment
+      DTrackCandidate *track = new DTrackCandidate;
       track->setPosition(pos);
       track->setMomentum(mom);
       track->setCharge(q);
@@ -423,7 +425,6 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
   // Now collect stray segments in package 4
   for (unsigned int k=0;k<package[3].size();k++){
-    DTrackCandidate *track = new DTrackCandidate;
     DFDCSegment *segment=package[3][k];
     
     DVector3 pos,mom;
@@ -441,6 +442,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     
     mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
     pos.SetXYZ(0,0,segment->S(4,0));
+     
+    // Create new track, starting with the current segment
+    DTrackCandidate *track = new DTrackCandidate;
     track->setPosition(pos);
     track->setMomentum(mom);    
     track->setCharge(segment->S(0,0)/fabs(segment->S(0,0)));
