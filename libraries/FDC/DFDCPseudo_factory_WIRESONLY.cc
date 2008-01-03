@@ -5,6 +5,9 @@
 // Creator: davidl (on Darwin fwing-dhcp95.jlab.org 8.10.1 i386)
 //
 
+#include <cmath>
+using namespace std;
+
 #include "DVector2.h"
 #include "FDC/DFDCIntersection.h"
 
