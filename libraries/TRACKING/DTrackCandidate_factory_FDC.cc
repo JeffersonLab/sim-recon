@@ -549,17 +549,19 @@ void DTrackCandidate_factory_FDC::FindZ(DFDCSeed &seed, double theta_min, double
 			zmin=zmax;
 			zmax=tmp;
 		}
-		if(debug_level>3)_DBG_<<" -- phi_hit="<<trkhit->phi_hit<<" z_hit="<<z_hit<<endl;
-		if(debug_level>3)_DBG_<<" -- zmin="<<zmin<<"  zmax="<<zmax<<endl;
 		
 		// Copy z limits into trkhit
 		trkhit->zmin = zmin;
 		trkhit->zmax = zmax;
 		
 		// Find index of bins corresponding to tmin and tmax
-		unsigned int imin = (unsigned int)floor((zmin-hist_low_limit)/bin_width);
-		unsigned int imax = (unsigned int)floor((zmax-hist_low_limit)/bin_width);
+		unsigned int imin = zmin<hist_low_limit ? 0:(unsigned int)floor((zmin-hist_low_limit)/bin_width);
+		unsigned int imax = zmax<hist_low_limit ? 0:(unsigned int)floor((zmax-hist_low_limit)/bin_width);
 		
+		if(debug_level>3)_DBG_<<" -- phi_hit="<<trkhit->phi_hit<<" z_hit="<<z_hit<<endl;
+		if(debug_level>3)_DBG_<<" -- zmin="<<zmin<<"  zmax="<<zmax<<endl;
+		if(debug_level>3)_DBG_<<" -- imin="<<imin<<"  imax="<<imax<<endl;
+
 		// If entire range of this hit is outside of the histogram limit
 		// then discard this hit.
 		if(imax<=0 || imin>=Nbins)continue;
