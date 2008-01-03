@@ -47,8 +47,8 @@ class DFDCPseudo : public JObject {
 		float dist;	// drift distance from time
 		int status; // status word for pseudopoint
 		float x,y;  // coordinates rotated into lab coordinate system
-		DMatrix cov; // Covariance matrix in lab coordinate system
-		
+		float covxx,covxy,covyy;
+	
 #if 0
 		///
 		/// DFDCPseudo::header():

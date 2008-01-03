@@ -64,10 +64,11 @@ void DFDCPseudo_factory_WIRESONLY::MakePseudo(const DFDCHit *hit, const DFDCWire
 	Rot(0,0) = cos_angle;		Rot(1,0) = sin_angle;
 	Rot(0,1) = -sin_angle;		Rot(1,1) = cos_angle;
 	DMatrix RotT(DMatrix::kTransposed, Rot);
+	DMatrix RotCov=RotT*cov*Rot;
 	
-	// Apply rotation to covariance matrix
-	pseudo->cov.ResizeTo(cov);
-	pseudo->cov = RotT*cov*Rot; // (I think this is right??)
+	pseudo->covxx=RotCov(0,0);
+	pseudo->covxy=RotCov(1,0);
+	pseudo->covyy=RotCov(1,1);
 
 	_data.push_back(pseudo);
 }

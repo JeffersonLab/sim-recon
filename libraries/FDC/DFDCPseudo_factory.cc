@@ -242,15 +242,11 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	    newPseu->x=(newPseu->w)*cosangle+(newPseu->s)*sinangle;
 	    newPseu->y=-(newPseu->w)*sinangle+(newPseu->s)*cosangle;
 
-	    DMatrix V(2,2); 
 	    double sigx2=HALF_CELL*HALF_CELL/3.;
 	    double sigy2=MAX_DEFLECTION*MAX_DEFLECTION/3.;
-	    V(0,0)=sigx2*cosangle*cosangle+sigy2*sinangle*sinangle;
-	    V(1,1)=sigx2*sinangle*sinangle+sigy2*cosangle*cosangle;
-	    V(0,1)=V(1,0)=(sigy2-sigx2)*sinangle*cosangle;
-
-	    newPseu->cov.ResizeTo(V);
-	    newPseu->cov=V;
+	    newPseu->covxx=sigx2*cosangle*cosangle+sigy2*sinangle*sinangle;
+	    newPseu->covyy=sigx2*sinangle*sinangle+sigy2*cosangle*cosangle;
+	    newPseu->covxy=(sigy2-sigx2)*sinangle*cosangle;
 
 	    _data.push_back(newPseu);
 	  } // match in x
