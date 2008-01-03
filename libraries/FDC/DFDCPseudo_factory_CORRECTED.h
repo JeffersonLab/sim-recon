@@ -1,4 +1,5 @@
-#ifndef _DFDCPseudo_factory_CORRECTED_ #define _DFDCPseudo_factory_CORRECTED_ 
+#ifndef _DFDCPseudo_factory_CORRECTED_ 
+#define _DFDCPseudo_factory_CORRECTED_ 
 #include <JANA/JFactory.h>
 #include "DFDCPseudo.h"
 
