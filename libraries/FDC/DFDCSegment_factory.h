@@ -47,28 +47,11 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		~DFDCSegment_factory();	
 
 		jerror_t FindSegments(vector<DFDCPseudo*>points);
-		jerror_t KalmanFilter(vector <DFDCPseudo*>points);
-		jerror_t KalmanLoop(vector<DFDCPseudo*>points, double mass_hyp,
-				    DMatrix Seed,DMatrix &S,DMatrix &C,
-				    double &chisq);
 		jerror_t CorrectPoints(vector<DFDCPseudo*>point, DMatrix XYZ);
-		jerror_t GetProcessNoiseCovariance(double x, double y, 
-						   double z,DMatrix S, 
-	                  vector<DFDCPseudo*>points,double mass_hyp,
-						   DMatrix &Q);
-	        jerror_t GetHelicalTrackPosition(double z, DMatrix S,
-	                  double &xpos,double &ypos);
 		jerror_t GetHelicalTrackPosition(double z,
 						 const DFDCSegment *segment,
 						 double &xpos,
 						 double &ypos);
-		jerror_t GetTrackProjectionMatrix(double z,DMatrix S,
-						  DMatrix &H);
-		jerror_t GetStateTransportMatrix(double oldx, double oldy,
-	                  double x,double y, DMatrix S, DMatrix &F);
-		jerror_t GetStateVector(double oldx, double oldy,
-	                  double old_z,double x, double y,double z,
-			  DMatrix S,DMatrix &S1);
 		jerror_t RiemannHelicalFit(vector<DFDCPseudo*>points,
 					   DMatrix &CR,
 					   DMatrix &XYZ);
