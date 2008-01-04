@@ -143,6 +143,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       temp.pos=(*strip)->element;
       temp.q=2.*((*strip)->q);  // Each cathode view should see half the 
                                  // anode charge
+      temp.numstrips=1;
 		CalcMeanTime((*uIt)->members, temp.t, temp.t_rms);
       upeaks.push_back(temp);
       break;
@@ -153,6 +154,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       E2=(*(strip+1))->q;      
       temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
       temp.q=2.*(E1+E2);
+      temp.numstrips=2;
 		CalcMeanTime((*uIt)->members, temp.t, temp.t_rms);
       upeaks.push_back(temp);
       break;
