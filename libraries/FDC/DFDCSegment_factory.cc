@@ -184,11 +184,14 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 // the dip angle and the z position of the closest approach to the beam line.
 // Also returns predicted positions along the helical path.
 //
-jerror_t DFDCSegment_factory::RiemannLineFit(unsigned int n,DMatrix XYZ0,
+jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
 					     DMatrix CR,DMatrix &XYZ){
+  unsigned int n=points.size()+1;
   // Fill matrix of intersection points
   for (unsigned int m=0;m<n;m++){
-    double r2=XYZ0(m,0)*XYZ0(m,0)+XYZ0(m,1)*XYZ0(m,1);
+    double r2=0.;
+    if (m<n-1)
+      r2=points[m]->x*points[m]->x+points[m]->y*points[m]->y;
     double x_int0,temp,y_int0;
     double denom= N[0]*N[0]+N[1]*N[1];
     double numer=dist_to_origin+r2*N[2];
@@ -196,18 +199,47 @@ jerror_t DFDCSegment_factory::RiemannLineFit(unsigned int n,DMatrix XYZ0,
     x_int0=-N[0]*numer/denom;
     y_int0=-N[1]*numer/denom;
     temp=denom*r2-numer*numer;
-    if (temp<0){
+    if (temp<0){          
       XYZ(m,0)=x_int0;
       XYZ(m,1)=y_int0;
-      continue; 
+      // I am not sure the following is really useful...
+      if (m==ref_plane && ref_plane==0){
+	// Try the other solution for the LR ambiguity resolution
+	double cosangle=points[m]->wire->udir(1);
+	double sinangle=points[m]->wire->udir(0);
+	double tempx=(points[m]->w-points[m]->dw)*cosangle
+	  +(points[m]->s-points[m]->ds)*sinangle;
+	double tempy=-(points[m]->w-points[m]->dw)*sinangle
+	  +(points[m]->s-points[m]->ds)*cosangle;
+	r2=tempx*tempx+tempy*tempy;
+	numer=dist_to_origin+r2*N[2];
+	temp=denom*r2-numer*numer;
+        // If we still get a negative number for temp, bail...
+	if (temp<0) continue;
+	// Otherwise use the new x and y values
+	x_int0=-N[0]*numer/denom;
+	y_int0=-N[1]*numer/denom;
+	points[m]->x=tempx;
+	points[m]->y=tempy;
+	points[m]->ds*=-1.;
+	points[m]->dw*=-1.;
+      }
+      else continue; 
     }
     temp=sqrt(temp)/denom;
     
     // Choose sign of square root based on proximity to actual measurements
-    double diffx1=x_int0+N[1]*temp-XYZ0(m,0);
-    double diffy1=y_int0-N[0]*temp-XYZ0(m,1);
-    double diffx2=x_int0-N[1]*temp-XYZ0(m,0);
-    double diffy2=y_int0+N[0]*temp-XYZ0(m,1);
+    double diffx1=x_int0+N[1]*temp;
+    double diffy1=y_int0-N[0]*temp;
+    double diffx2=x_int0-N[1]*temp;
+    double diffy2=y_int0+N[0]*temp;
+    if (m<n-1){
+      diffx1-=points[m]->x;
+      diffx2-=points[m]->x;
+      diffy1-=points[m]->y;
+      diffy2-=points[m]->y;		       
+    }
+    
     if (diffx1*diffx1+diffy1*diffy1 > diffx2*diffx2+diffy2*diffy2){
       XYZ(m,0)=x_int0-N[1]*temp;
       XYZ(m,1)=y_int0+N[0]*temp;
@@ -474,8 +506,9 @@ jerror_t DFDCSegment_factory::CalcNormal(DMatrix A,double lambda,DMatrix &N){
 // task of fitting points in (x,y) to a circle is transormed to the taks of
 // fitting planes in (x,y, w=x^2+y^2) space
 //
-jerror_t DFDCSegment_factory::RiemannCircleFit(unsigned int n, DMatrix XYZ,
+jerror_t DFDCSegment_factory::RiemannCircleFit(vector<DFDCPseudo *>points,
 					       DMatrix CRPhi){
+  unsigned int n=points.size()+1;
   DMatrix X(n,3);
   DMatrix Xavg(1,3);
   DMatrix A(3,3);
@@ -501,12 +534,13 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(unsigned int n, DMatrix XYZ,
   // In the absence of multiple scattering, W_sum is the sum of all the 
   // diagonal elements in W.
 
-  for (unsigned int i=0;i<n;i++){
-    X(i,0)=XYZ(i,0);
-    X(i,1)=XYZ(i,1);
-    X(i,2)=XYZ(i,0)*XYZ(i,0)+XYZ(i,1)*XYZ(i,1);
+  for (unsigned int i=0;i<n-1;i++){
+    X(i,0)=points[i]->x;
+    X(i,1)=points[i]->y;
+    X(i,2)=X(i,0)*X(i,0)+X(i,1)*X(i,1);
     Ones(i,0)=OnesT(0,i)=1.;
   }
+  Ones(n-1,0)=OnesT(0,n-1)=1.;
 
   // Check that CRPhi is invertible 
   TDecompLU lu(CRPhi);
@@ -619,9 +653,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   double Phi;
   unsigned int num_points=points.size()+1;
   DMatrix CRPhi(num_points,num_points); 
-  // DMatrix XYZ(num_points,3);
-  DMatrix XYZ0(num_points,3);
-
+ 
   // Clear supplemental track info vector
   fdc_track.clear();
   fdc_track_t temp;
@@ -630,11 +662,9 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   fdc_track.assign(num_points-1,temp);
  
   // Fill initial matrices for R and RPhi measurements
-  XYZ(num_points-1,2)=XYZ0(num_points-1,2)=Z_TARGET;
+  XYZ(num_points-1,2)=Z_TARGET;
   for (unsigned int m=0;m<points.size();m++){
-    XYZ0(m,0)=points[m]->x;
-    XYZ0(m,1)=points[m]->y;
-    XYZ(m,2)=XYZ0(m,2)=points[m]->wire->origin(2);
+    XYZ(m,2)=points[m]->wire->origin(2);
     Phi=atan2(points[m]->y,points[m]->x);
     CRPhi(m,m)
       =(Phi*cos(Phi)-sin(Phi))*(Phi*cos(Phi)-sin(Phi))*points[m]->covxx
@@ -651,27 +681,27 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   // Reference track:
   jerror_t error=NOERROR;  
   // First find the center and radius of the projected circle
-  error=RiemannCircleFit(num_points,XYZ0,CRPhi); 
+  error=RiemannCircleFit(points,CRPhi); 
   if (error!=NOERROR) return error;
   
   // Get reference track estimates for z0 and tanl and intersection points
   // (stored in XYZ)
-  error=RiemannLineFit(num_points,XYZ0,CR,XYZ);
+  error=RiemannLineFit(points,CR,XYZ);
   if (error!=NOERROR) return error;
 
   // Guess particle charge (+/-1);
-  charge=GetCharge(points.size(),XYZ0,CR,CRPhi);
+  charge=GetCharge(points.size(),XYZ,CR,CRPhi);
 
   double r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)
     +XYZ(ref_plane,1)*XYZ(ref_plane,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
 
   // Preliminary circle fit 
-  error=RiemannCircleFit(num_points,XYZ0,CRPhi); 
+  error=RiemannCircleFit(points,CRPhi); 
   if (error!=NOERROR) return error;
 
   // Preliminary line fit
-  error=RiemannLineFit(num_points,XYZ0,CR,XYZ);
+  error=RiemannLineFit(points,CR,XYZ);
   if (error!=NOERROR) return error;
 
   // Guess particle charge (+/-1);
@@ -681,11 +711,11 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
 
   // Final circle fit 
-  error=RiemannCircleFit(num_points,XYZ0,CRPhi); 
+  error=RiemannCircleFit(points,CRPhi); 
   if (error!=NOERROR) return error;
 
   // Final line fit
-  error=RiemannLineFit(num_points,XYZ0,CR,XYZ);
+  error=RiemannLineFit(points,CR,XYZ);
   if (error!=NOERROR) return error;
 
   // Guess particle charge (+/-1)
@@ -704,8 +734,8 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
     double cosp=cos(Phi1+sperp/rc);
     XYZ(m,0)=xc+rc*cosp;
     XYZ(m,1)=yc+rc*sinp;
-    fdc_track[m].dx=XYZ(m,0)-XYZ0(m,0); // residuals
-    fdc_track[m].dy=XYZ(m,1)-XYZ0(m,1);
+    fdc_track[m].dx=XYZ(m,0)-points[m]->x; // residuals
+    fdc_track[m].dy=XYZ(m,1)-points[m]->y;
     fdc_track[m].s=(XYZ(m,2)-zvertex)/sin(atan(tanl)); // path length 
     fdc_track[m].chi2=(fdc_track[m].dx*fdc_track[m].dx
                        +fdc_track[m].dy*fdc_track[m].dy)/CR(m,m);
@@ -802,7 +832,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
       // ref_plane within a segment.  For a 6 hit segment, ref_plane=2 is 
       // roughly in the center of the segment.
       ref_plane=2;  
-   
+    
       // Perform the Riemann Helical Fit on the track segment
       jerror_t error=RiemannHelicalFit(neighbors,CR,XYZ);   /// initial hit-based fit
        
@@ -820,7 +850,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	if (error==NOERROR){
 	  CorrectPoints(neighbors,XYZ); /// correct again based on time-based result
 	  for (unsigned int m=0;m<neighbors.size();m++){
-	    neighbors[m]->status|=CORRECTED;
+	    // neighbors[m]->status|=CORRECTED;
 	    fdc_track[m].hit_id=m;
 	    double sperp=charge*(XYZ(m,2)-XYZ(ref_plane,2))/tanl; 
 	    double sinp=sin(Phi1+sperp/rc);
@@ -928,7 +958,7 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
     // Correct the drift time for the flight path and convert to distance units
     // assuming the particle is a pion
     delta_x=sign*(point->time-fdc_track[m].s/beta/29.98)*55E-4;
-
+  
     // Next find correction to y from table of deflections
     if (got_deflection_file){
       double tanr,tanz,r=sqrt(x*x+y*y);
@@ -976,6 +1006,7 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
     point->covxx=sigx2*cosangle*cosangle+sigy2*sinangle*sinangle;
     point->covyy=sigx2*sinangle*sinangle+sigy2*cosangle*cosangle;
     point->covxy=(sigy2-sigx2)*sinangle*cosangle;
+    point->status|=CORRECTED;
 
   }
   return NOERROR;

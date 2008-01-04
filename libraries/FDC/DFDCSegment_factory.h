@@ -55,9 +55,9 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		jerror_t RiemannHelicalFit(vector<DFDCPseudo*>points,
 					   DMatrix &CR,
 					   DMatrix &XYZ);
-	        jerror_t RiemannCircleFit(unsigned int n,DMatrix XYZ,
+	        jerror_t RiemannCircleFit(vector<DFDCPseudo*>points,
 			DMatrix CRPhi);
-		jerror_t RiemannLineFit(unsigned int n,DMatrix XYZ0,
+		jerror_t RiemannLineFit(vector<DFDCPseudo *>points,
 					DMatrix CR,DMatrix &XYZ);
 	        jerror_t UpdatePositionsAndCovariance(unsigned int n,
 						      double r1sq,
