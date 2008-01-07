@@ -71,32 +71,62 @@ jerror_t DCDCTrackHit_factory::init(void)
 			case  1:	myNstraws=  43;	radius= 10.960;	stereo=  degrees0; break;
 			case  2:	myNstraws=  50;	radius= 12.741;	stereo=  degrees0; break;
 			case  3:	myNstraws=  57;	radius= 14.522;	stereo=  degrees0; break;
-			case  4:	myNstraws=  64;	radius= 16.304;	stereo= +degrees6; break;
-			case  5:	myNstraws=  71;	radius= 18.086;	stereo= +degrees6; break;
+			case  4:	myNstraws=  64;	radius= 16.304;	stereo= -degrees6; break;
+			case  5:	myNstraws=  71;	radius= 18.086;	stereo= -degrees6; break;
 			case  6:	myNstraws=  78;	radius= 19.868;	stereo= +degrees6; break;
-			case  7:	myNstraws=  91;	radius= 23.178;	stereo=  degrees0; break;
-			case  8:	myNstraws=  98;	radius= 24.960;	stereo=  degrees0; break;
-			case  9:	myNstraws= 105;	radius= 26.742;	stereo=  degrees0; break;
-			case 10:	myNstraws= 112;	radius= 28.524;	stereo=  degrees0; break;
-			case 11:	myNstraws= 119;	radius= 30.307;	stereo=  degrees0; break;
-			case 12:	myNstraws= 126;	radius= 32.089;	stereo= -degrees6; break;
-			case 13:	myNstraws= 133;	radius= 33.871;	stereo= -degrees6; break;
-			case 14:	myNstraws= 140;	radius= 35.654;	stereo= -degrees6; break;
-			case 15:	myNstraws= 150;	radius= 38.200;	stereo=  degrees0; break;
-			case 16:	myNstraws= 157;	radius= 39.982;	stereo=  degrees0; break;
-			case 17:	myNstraws= 164;	radius= 41.765;	stereo=  degrees0; break;
-			case 18:	myNstraws= 171;	radius= 43.547;	stereo=  degrees0; break;
-			case 19:	myNstraws= 178;	radius= 45.330;	stereo=  degrees0; break;
-			case 20:	myNstraws= 185;	radius= 47.112;	stereo= +degrees6; break;
-			case 21:	myNstraws= 192;	radius= 48.895;	stereo= +degrees6; break;
-			case 22:	myNstraws= 199;	radius= 50.677;	stereo= +degrees6; break;
+			case  7:	myNstraws=  85;	radius= 21.65 ;	stereo= +degrees6; break;
+			case  8:	myNstraws=  99;	radius= 25.214;	stereo=  degrees0; break;
+			case  9:	myNstraws= 106;	radius= 26.997;	stereo=  degrees0; break;
+			case 10:	myNstraws= 113;	radius= 28.779;	stereo=  degrees0; break;
+			case 11:	myNstraws= 120;	radius= 30.561;	stereo=  degrees0; break;
+			case 12:	myNstraws= 127;	radius= 32.344;	stereo=  degrees0; break;
+			case 13:	myNstraws= 134;	radius= 34.126;	stereo= -degrees6; break;
+			case 14:	myNstraws= 141;	radius= 35.908;	stereo= -degrees6; break;
+			case 15:	myNstraws= 148;	radius= 37.691;	stereo= +degrees6; break;
+			case 16:	myNstraws= 155;	radius= 39.473;	stereo= +degrees6; break;
+			case 17:	myNstraws= 166;	radius= 42.274;	stereo=  degrees0; break;
+			case 18:	myNstraws= 173;	radius= 44.057;	stereo=  degrees0; break;
+			case 19:	myNstraws= 172;	radius= 45.839;	stereo=  degrees0; break;
+			case 20:	myNstraws= 187;	radius= 47.621;	stereo=  degrees0; break;
+			case 21:	myNstraws= 194;	radius= 49.404;	stereo=  degrees0; break;
+			case 22:	myNstraws= 201;	radius= 51.186;	stereo=  degrees0; break;
 			case 23:	myNstraws= 208;	radius= 52.969;	stereo=  degrees0; break;
 			case 24:	myNstraws= 215;	radius= 54.751;	stereo=  degrees0; break;
 			case 25:	myNstraws= 222;	radius= 56.534;	stereo=  degrees0; break;
 			default:
 				cerr<<__FILE__<<":"<<__LINE__<<" Invalid value for CDC ring ("<<ring<<") should be 1-23 inclusive!"<<endl;
+#if 0
+			case  1:	myNstraws=  43;	radius= 10.960;	stereo=  degrees0; break;
+			case  2:	myNstraws=  50;	radius= 12.741;	stereo=  degrees0; break;
+			case  3:	myNstraws=  57;	radius= 14.522;	stereo=  degrees0; break;
+			case  4:	myNstraws=  64;	radius= 16.304;	stereo= -degrees6; break;
+			case  5:	myNstraws=  71;	radius= 18.086;	stereo= -degrees6; break;
+			case  6:	myNstraws=  78;	radius= 19.868;	stereo= +degrees6; break;
+			case  7:	myNstraws=  91;	radius= 23.178;	stereo= +degrees6; break;
+			case  8:	myNstraws=  98;	radius= 24.960;	stereo=  degrees0; break;
+			case  9:	myNstraws= 105;	radius= 26.742;	stereo=  degrees0; break;
+			case 10:	myNstraws= 112;	radius= 28.524;	stereo=  degrees0; break;
+			case 11:	myNstraws= 119;	radius= 30.307;	stereo=  degrees0; break;
+			case 12:	myNstraws= 126;	radius= 32.089;	stereo=  degrees0; break;
+			case 13:	myNstraws= 133;	radius= 33.871;	stereo= -degrees6; break;
+			case 14:	myNstraws= 140;	radius= 35.654;	stereo= -degrees6; break;
+			case 15:	myNstraws= 150;	radius= 38.200;	stereo= +degrees6; break;
+			case 16:	myNstraws= 157;	radius= 39.982;	stereo= +degrees6; break;
+			case 17:	myNstraws= 164;	radius= 41.765;	stereo=  degrees0; break;
+			case 18:	myNstraws= 171;	radius= 43.547;	stereo=  degrees0; break;
+			case 19:	myNstraws= 178;	radius= 45.330;	stereo=  degrees0; break;
+			case 20:	myNstraws= 185;	radius= 47.112;	stereo=  degrees0; break;
+			case 21:	myNstraws= 192;	radius= 48.895;	stereo=  degrees0; break;
+			case 22:	myNstraws= 199;	radius= 50.677;	stereo=  degrees0; break;
+			case 23:	myNstraws= 208;	radius= 52.969;	stereo=  degrees0; break;
+			case 24:	myNstraws= 215;	radius= 54.751;	stereo=  degrees0; break;
+			case 25:	myNstraws= 222;	radius= 56.534;	stereo=  degrees0; break;
+#endif
 		}
 		Nstraws[ring-1] = myNstraws;
+		
+		// I'm not sure why this is needed, but empirically, it just is.
+		stereo = -stereo;
 		
 		float dphi = 2.0*M_PI/(float)myNstraws; // phi angle difference between straws
 		for(int straw=1; straw<=myNstraws; straw++){
