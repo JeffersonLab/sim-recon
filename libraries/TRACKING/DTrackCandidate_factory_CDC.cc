@@ -199,11 +199,11 @@ void DTrackCandidate_factory_CDC::GetCDCHits(JEventLoop *loop)
 		cdctrkhits.push_back(cdctrkhit);
 		
 		// Sort into list of hits by superlayer
-		if(cdctrkhit->hit->wire->ring<=4)cdchits_by_superlayer[0].push_back(cdctrkhit);
-		else if(cdctrkhit->hit->wire->ring<= 8)cdchits_by_superlayer[1].push_back(cdctrkhit);
-		else if(cdctrkhit->hit->wire->ring<=13)cdchits_by_superlayer[2].push_back(cdctrkhit);
-		else if(cdctrkhit->hit->wire->ring<=17)cdchits_by_superlayer[3].push_back(cdctrkhit);
-		else if(cdctrkhit->hit->wire->ring<=23)cdchits_by_superlayer[4].push_back(cdctrkhit);
+		if(cdctrkhit->hit->wire->ring<=3)cdchits_by_superlayer[0].push_back(cdctrkhit);
+		else if(cdctrkhit->hit->wire->ring<= 7)cdchits_by_superlayer[1].push_back(cdctrkhit);
+		else if(cdctrkhit->hit->wire->ring<=12)cdchits_by_superlayer[2].push_back(cdctrkhit);
+		else if(cdctrkhit->hit->wire->ring<=16)cdchits_by_superlayer[3].push_back(cdctrkhit);
+		else if(cdctrkhit->hit->wire->ring<=25)cdchits_by_superlayer[4].push_back(cdctrkhit);
 	}
 	
 	// Sort the individual superlayer lists by decreasing values of R
@@ -504,6 +504,7 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 	/// discarded.
 	
 	// Loop over hits in seed and add them to the seed's DQuickFit object
+	seed.fit.Clear();
 	for(unsigned int j=0; j<seed.hits.size(); j++){
 		if(seed.hits[j]->flags&OUT_OF_TIME)continue;
 		const DVector3 &pos = seed.hits[j]->hit->wire->origin;
@@ -518,10 +519,14 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 	double r0 = sqrt(x0*x0 + y0*y0);
 	unsigned int N=0;
 	for(unsigned int i=0; i<seed.hits.size(); i++){
-		if(seed.hits[i]->flags&OUT_OF_TIME)continue;
+		if(seed.hits[i]->flags&OUT_OF_TIME){
+			if(debug_level>6)_DBG_<<"discarding out of time hit"<<endl;
+			continue;
+		}
 		double dx = seed.hits[i]->hit->wire->origin.X() - x0;
 		double dy = seed.hits[i]->hit->wire->origin.Y() - y0;
 		double d = sqrt(dx*dx + dy*dy);
+		if(debug_level>10)_DBG_<<"dist="<<d-r0<<endl;
 		if(fabs(d-r0)<=MAX_HIT_DIST)N++;
 	}
 	
@@ -697,7 +702,7 @@ void DTrackCandidate_factory_CDC::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits
 		// This means  sin(theta_wire) = sqrt(1 - (z2)^2)
 		//double z2 = wire->udir.Z();
 		double s = alpha/fabs(sin(wire->stereo));
-		if(debug_level>3)_DBG_<<"alpha="<<alpha<<" s="<<s<<endl;
+		if(debug_level>3)_DBG_<<"alpha="<<alpha<<" s="<<s<<" ring="<<wire->ring<<" straw="<<wire->straw<<" stereo="<<wire->stereo<<endl;
 		if(fabs(s) > wire->L/2.0)continue; // if wire doesn't cross circle, skip hit
 		
 		// Add this hit to the stereo hit list
