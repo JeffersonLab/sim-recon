@@ -64,9 +64,14 @@ void write_hddm_event_(int *iev, float *beammom, int *nlnd, klund_t *klund, plun
 	int runNumber=2;
 	float vertex[3]={0.0, 0.0, 65.0}; /* hardwired for center of target for now */
 
+	/* hdgeant apparently has code to sample from an extended target if */
+	/* the input event has a vertex position of 0,0,0. Here we set the */
+	/* target position to 0,0,0 to trigger that. The original code for */
+	/* setting the z-position is commented out below. */
+	vertex[0] = vertex[1] = vertex[2] = 0.0;
 	/* z vertex uniform in target cell 15cm long*/
-	double z=(drand48()-0.5)*30.;
-	vertex[2] += (float) z;
+	/*double z=(drand48()-0.5)*30.;*/
+	/*vertex[2] += (float) z;*/
 
 	Nevents++;
 
