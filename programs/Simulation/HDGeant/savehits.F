@@ -100,7 +100,10 @@
           call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
         endif
-      elseif (cnames(NLEVEL).eq.'FDCA') then		! FDC anode drift cell
+      elseif (cnames(NLEVEL).eq.'FDA1' .or.	! FDC anode drift cell
+     >        cnames(NLEVEL).eq.'FDA2' .or.
+     >        cnames(NLEVEL).eq.'FDA3' .or.
+     >        cnames(NLEVEL).eq.'FDA4') then
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-5   ! 10 KeV in gas
