@@ -215,6 +215,9 @@ void DTrack_factory_THROWN::SmearMomentum(DTrack *trk)
   mom.SetMagThetaPhi(pmag, theta, phi);
   trk->setMomentum(mom);
   trk->setMass(0.0);
+  trk->p = pmag;
+  trk->theta = theta;
+  trk->phi = phi;
 
   // Set up the error matrix properly
   DMatrixDSym errMat(7);
