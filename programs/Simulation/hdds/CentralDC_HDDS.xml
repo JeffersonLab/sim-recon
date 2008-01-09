@@ -264,7 +264,7 @@
     <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
   </composition>
   <composition name="CDClayer_19_option-1" envelope="DC19">
-    <mposPhi volume="CDCsector_19_option-1" ncopy="172">
+    <mposPhi volume="CDCsector_19_option-1" ncopy="180">
       <ring value="19" />
       <sector value="1" step="1" />
     </mposPhi>
