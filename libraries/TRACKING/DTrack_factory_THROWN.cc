@@ -160,17 +160,22 @@ void DTrack_factory_THROWN::SmearMomentum(DTrack *trk)
   DRandom rnd;
 
   // Track phi, theta, mag
-  double pmag = trk->p;
-  double phi = trk->phi;
-  double theta = trk->theta;
+  //double pmag = trk->p;
+  //double phi = trk->phi;
+  //double theta = trk->theta;
+  double pmag = trk->lorentzMomentum().Rho();
+  double theta = trk->lorentzMomentum().Theta();
+  double phi = trk->lorentzMomentum().Phi();
 
-  double theta_deg = theta*180.0/3.14159;
+  // Alex's study used phi in degrees
+  double theta_deg = theta*180.0/TMath::Pi();
 
-  rnd.SetSeed((uint)(1000*pmag));
+  // Set the random seed based on phi
+  rnd.SetSeed((uint)(10000*phi));
 
   double dp, dphi, dtheta, dtheta_deg;
 
-  //cerr << "pmag/theta/theta_deg/phi: " << pmag << " " << theta << " " << theta_deg << " " << phi << endl;
+  // Grabbed this from 
   if(theta_deg<15) 
     {dp=res_p1(theta_deg); dtheta_deg=res_p10(pmag); dphi=res_p9(pmag);}
   else if(theta_deg>=15 && theta_deg<25) 
@@ -186,95 +191,62 @@ void DTrack_factory_THROWN::SmearMomentum(DTrack *trk)
     dtheta_deg=res_p12(pmag); 
     dphi=res_p9(pmag);
     if(pmag<2.0) 
-      dp=res_p6(theta_deg); 
+      dp=res_p8(theta_deg);  /// Note that this is different from the FORTRAN code due to mismatch from orginal study.
     else if(pmag>=2.0 && pmag<3.0) 
       dp=res_p7(theta_deg); 
-    else if(pmag>=3.0)
-      dp=res_p8(theta_deg); 
+    else if(pmag>=3.0) /// Note that this is different from the FORTRAN code due to mismatch from orginal study.
+      dp=res_p6(theta_deg); 
   }
 
-  dtheta = dtheta_deg*3.14159/180.0;
-  dphi *=3.14159/180.0;
+  // Both dphi and dtheta are returned in degrees, so we convert back to radians
+  dphi *= TMath::Pi()/180.0;
+  dtheta = dtheta_deg*TMath::Pi()/180.0;
 
-  //cerr << "Pre: dp/dtheta/dphi: " << dp << " " << dtheta << " " << dphi << endl;
+  // Generate the spearing
+  double deltap = rnd.Gaus(0.0, dp);
+  double deltatheta = rnd.Gaus(0.0, dtheta);
+  double deltaphi = rnd.Gaus(0.0, dphi);
+  pmag += deltap;
+  theta += deltatheta;
+  phi += deltaphi;
 
-  dp=dp*pmag/2.0;
-  dtheta=dtheta/2.0;
-  dphi=dphi/2.0;
+  // Set the 3momentum of the track with the new parameters
+  DVector3 mom;
+  mom.SetMagThetaPhi(pmag, theta, phi);
+  trk->setMomentum(mom);
+  trk->setMass(0.0);
 
+  // Set up the error matrix properly
   DMatrixDSym errMat(7);
   DMatrix sphErrMat(3,3);
   DMatrix transformMat(3,3);
   DMatrix transformMat_T(3,3);
   DMatrix cartErrMat(3,3);
+
+  // Start off with a diagonal matrix in the spherical coordinates.
   sphErrMat[0][0] = dp*dp;
-  //sphErrMat[0][1] = dp*dtheta;
-  //sphErrMat[0][2] = dp*dphi;
-  //sphErrMat[1][0] = dtheta*dp;
   sphErrMat[1][1] = dtheta*dtheta;
-  //sphErrMat[1][2] = dtheta*dphi;
-  //sphErrMat[2][0] = dphi*dp;
-  //sphErrMat[2][1] = dphi*dtheta;
   sphErrMat[2][2] = dphi*dphi;
 
-  //cerr << "(0,1) pmag/theta/phi: " << pmag << " " << theta << " " << phi << endl;
-  //cerr << "(0,1) pmag/cos(theta)/cos(phi): " << pmag << " " << cos(theta) << " " << cos(phi) << endl;
-
+  // Transformation matrix
+  // T_ij = dr_i/dx_j
   transformMat[0][0] = sin(theta)*cos(phi);
   transformMat[1][0] = pmag*cos(theta)*cos(phi);
   transformMat[2][0] = -pmag*sin(theta)*sin(phi);
   transformMat[0][1] = sin(theta)*sin(phi);
   transformMat[1][1] = pmag*cos(theta)*sin(phi);
-  transformMat[2][1] = -pmag*sin(theta)*cos(phi);
-  transformMat[0][2] = cos(phi);
-  transformMat[1][2] = pmag*sin(theta);
-  transformMat[2][2] = 1;
+  transformMat[2][1] = pmag*sin(theta)*cos(phi);
+  transformMat[0][2] = cos(theta);
+  transformMat[1][2] = -pmag*sin(theta);
+  transformMat[2][2] = 0.0;
 
+  // Carry out the conversion to cartesian coordinates
   transformMat_T.Transpose(transformMat);
   cartErrMat = transformMat_T * sphErrMat * transformMat;
 
-  /*
-  cerr << "spherical: " << endl;
-  for(int i=0;i<sphErrMat.GetNcols();i++)
-  {
-    for(int j=0;j<sphErrMat.GetNcols();j++)
-    {
-      cerr << sphErrMat[i][j] << " ";
-    }
-    cerr << endl;
-  }
-
-  cerr << "transform: " << endl;
-  for(int i=0;i<transformMat.GetNcols();i++)
-  {
-    for(int j=0;j<transformMat.GetNcols();j++)
-    {
-      cerr << transformMat[i][j] << " ";
-    }
-    cerr << endl;
-  }
-
-  cerr << "transform_T: " << endl;
-  for(int i=0;i<transformMat_T.GetNcols();i++)
-  {
-    for(int j=0;j<transformMat_T.GetNcols();j++)
-    {
-      cerr << transformMat_T[i][j] << " ";
-    }
-    cerr << endl;
-  }
-
-  cerr << "cartesian: " << endl;
-  for(int i=0;i<cartErrMat.GetNcols();i++)
-  {
-    for(int j=0;j<cartErrMat.GetNcols();j++)
-    {
-      cerr << cartErrMat[i][j] << " ";
-    }
-    cerr << endl;
-  }
-  */
-  
+  // Set up the full error matrix.
+  // Note that we have not smeared the energy [3] nor
+  // the vertex [4,5,6].
   errMat[0][0] = cartErrMat[0][0];
   errMat[0][1] = cartErrMat[0][1];
   errMat[0][2] = cartErrMat[0][2];
@@ -285,40 +257,7 @@ void DTrack_factory_THROWN::SmearMomentum(DTrack *trk)
   errMat[2][1] = cartErrMat[2][1];
   errMat[2][2] = cartErrMat[2][2];
 
-  //cerr << "errMatt(x,y,z): " << sqrt(errMat[0][0]) << " " << sqrt(errMat[1][1]) << " " << sqrt(errMat[2][2]) << endl;
-  //cerr << "errMatt(xy): " << sqrt(errMat[0][0])*sqrt(errMat[1][1]) << " " << errMat[1][0] << endl;
-  //cerr << "errMatt(xz): " << sqrt(errMat[0][0])*sqrt(errMat[2][2]) << " " << errMat[2][0] << endl;
-  //cerr << "errMatt(yz): " << sqrt(errMat[1][1])*sqrt(errMat[2][2]) << " " << errMat[2][1] << endl;
-
-  /*
-  cerr << "full: " << endl;
-  for(int i=0;i<errMat.GetNcols();i++)
-  {
-    for(int j=0;j<errMat.GetNcols();j++)
-    {
-      cerr << errMat[i][j] << " ";
-    }
-    cerr << endl;
-  }
-  */
-
-  //cerr << "dp/dtheta/dphi: " << dp << " " << dtheta << " " << dphi << endl;
-
-  double deltap = rnd.Gaus(0.0, dp);
-  double deltatheta = rnd.Gaus(0.0, dtheta);
-  double deltaphi = rnd.Gaus(0.0, dphi);
-
-  //cerr << "deltap/deltatheta/deltaphi: " << deltap << " " << deltatheta << " " << deltaphi << endl;
-
-  pmag += deltap;
-  theta += deltatheta;
-  phi += deltaphi;
-
-  DVector3 mom;
-  mom.SetMagThetaPhi(pmag, theta, phi);
-  trk->setMass(0.0);
-  trk->setMomentum(mom);
-
+  // Set the error matrix
   trk->setErrorMatrix(errMat);
 }
 
