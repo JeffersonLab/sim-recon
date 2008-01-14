@@ -30,8 +30,8 @@ class DPhoton: public DKinematicData {
 
     // getters             
     // Introducing detection point in calorimeter to avoid confusion between 
-    // measured cluster position and vertex, 
-    // which is position() in terms of DKinemtaicData.
+    // measured cluster position and vertex.
+    // The last can be obtained by position() method of DKinemtaicData.
     DVector3 getPositionCal() const; 
 
     unsigned int getTag() const; 

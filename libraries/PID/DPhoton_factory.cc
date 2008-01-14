@@ -123,7 +123,7 @@ const string DPhoton_factory::toString(void)
 // final non-linear and depth corrections can be applied here
 #define FCAL_BLOCK_WIDTH 4
 #define TARGET_RADIUS 1.5
-#define TARGET_LENGTH 30
+#define TARGET_LENGTH 30.
 DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const oid_t id) 
 {
 
@@ -153,12 +153,15 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const oid_t i
 // the order of sigmas is:  x_c, y_c, z_c, E, x_t, y_t, z_t
         DMatrixDSym sigmas(7);
 
-        sigmas(0,0) = pow( FCAL_BLOCK_WIDTH/sqrt(12.0), 2.0 ); // x_c, y_c
-        sigmas[1][1] = pow( FCAL_BLOCK_WIDTH/sqrt(12.0), 2.0 ); // x_c, y_c
-        sigmas[2][2] = pow( 2.54, 2.0); //  z_c = rms of average depth for photons from 0-5 GeV
+//        sigmas[0][0] = pow( FCAL_BLOCK_WIDTH/sqrt(12.0), 2.0 ); // x_c, y_c
+//        sigmas[1][1] = pow( FCAL_BLOCK_WIDTH/sqrt(12.0), 2.0 ); // x_c, y_c
+        sigmas[0][0] = pow( 0.7 , 2.0 ); // x_c, y_c
+        sigmas[1][1] = pow( 0.7 , 2.0 ); // x_c, y_c
 
-        sigmas[3][3] = 1.; // right now energy is 4.2%/sqrt(E)
-        if (energy>=0) sigmas[3][3] = pow( 0.042*sqrt(energy) + 0.001, 2.0 );
+//        sigmas[2][2] = pow( 2.54, 2.0); //  z_c = rms of average depth for photons from 0-5 GeV
+        sigmas[2][2] = pow( gamma->getPositionError().Z() , 2.0); 
+
+        sigmas[3][3] =  (energy >= 0)  ? pow( 0.042*sqrt(energy) + 0.0001, 2.0 ) : 1e-6 ;
 
         sigmas[4][4] = pow( 0.5*TARGET_RADIUS, 2.0) ; // x_t, y_t
         sigmas[5][5] = pow( 0.5*TARGET_RADIUS, 2.0) ; // x_t, y_t
