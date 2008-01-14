@@ -23,7 +23,8 @@ class DFCALPhoton_factory:public JFactory<DFCALPhoton>{
 	private:
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
-                DFCALPhoton* makePhoton(const TLorentzVector gamma); 
+                //DFCALPhoton* makePhoton(const TLorentzVector gamma); 
+                DFCALPhoton* makePhoton(const DFCALCluster* cluster); 
 };
 
 

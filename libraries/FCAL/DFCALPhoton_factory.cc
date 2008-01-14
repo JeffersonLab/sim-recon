@@ -38,18 +38,13 @@ jerror_t DFCALPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	vector<const DFCALCluster*> fcalClusters;
 	eventLoop->Get(fcalClusters);
 	
-    
-       for (vector<const DFCALCluster*>::const_iterator cluster  = fcalClusters.begin(); 
-                                                        cluster != fcalClusters.end(); 
-							cluster++) {
+       for ( unsigned int i = 0; i < fcalClusters.size(); i++ ) {
 
-                TLorentzVector gamma( (**cluster).getCentroid(), (**cluster).getEnergy() );
-                DFCALPhoton* fcalPhoton = makePhoton( gamma );
+                DFCALPhoton* fcalPhoton = makePhoton( fcalClusters[i] );
 
 		_data.push_back(fcalPhoton);
 
        } 
-
 
 	return NOERROR;
 }
@@ -84,19 +79,21 @@ const string DFCALPhoton_factory::toString(void)
 }
 
 // Non-linear and depth corrections should be fixed within DFCALPhoton member functions
-DFCALPhoton* DFCALPhoton_factory::makePhoton(const TLorentzVector gamma) 
+DFCALPhoton* DFCALPhoton_factory::makePhoton(const DFCALCluster* cluster) 
 {
 
         DFCALPhoton* photon = new DFCALPhoton;
        
 // Do non-linar energy correction first,
-	photon->fixEnergy( gamma.T() );
+	photon->fixEnergy( cluster->getEnergy() );
 
 // than depth. Idealy, the two previous steps should be done simultaneously.
-	photon->fixDepth(photon->getEnergy(), gamma.Vect());   
+	photon->fixDepth( photon->getEnergy(), cluster->getCentroid() );   
+
+        photon->setErrorXY(cluster->getRMS_x(), cluster->getRMS_y());
 
 // Than set momentum to units of GeV.
-	photon->setMom3(photon->getEnergy(), photon->getPosition());   
+	photon->setMom3( photon->getEnergy(), photon->getPosition() );   
         photon->setMom4();
 
         return photon;

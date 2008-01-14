@@ -224,6 +224,8 @@ DFCALCluster::DFCALCluster()
    fCentroid.SetY(0);
    fCentroid.SetZ(0);
    fRMS = 0;
+   fRMS_x = 0;
+   fRMS_y = 0;
    fRMS_u = 0;
    fRMS_v = 0;
    fNhits = 0;

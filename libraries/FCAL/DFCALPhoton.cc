@@ -66,6 +66,15 @@ void DFCALPhoton::fixDepth(const double energy, const DVector3 pos) {
         double z2 = z0 + zMax*( 1 / sqrt( 1 + t1*t1 ) );
 
         fPosition.SetXYZ(pos.X(), pos.Y(), z2);
+        fPositionError.SetZ( fabs(z2-z1) );
+
+}
+
+// Set X&Y error
+void DFCALPhoton::setErrorXY(const double aXerr, const double aYerr) {
+
+        fPositionError.SetX( aXerr);
+        fPositionError.SetY( aYerr);
 
 }
 

@@ -24,6 +24,7 @@ class DFCALPhoton:public JObject{
 
 		// getter functions
 			DVector3 getPosition() const; 
+                        DVector3 getPositionError() const;
 			double getEnergy() const;  
 			DVector3 getMom3() const; 
 			TLorentzVector getMom4() const;
@@ -31,6 +32,8 @@ class DFCALPhoton:public JObject{
 		// fix photon energy and momentu from cluster energy and position
 			void fixDepth(const double energy, const DVector3 centroid);  
 			void fixEnergy(const double energy);  
+
+                        void setErrorXY(const double aXerr, const double aYerr);
 
                 // set photon momentum
 			void setMom3(const double energy, const DVector3 pos);    
@@ -40,6 +43,7 @@ class DFCALPhoton:public JObject{
 
 			double fEnergy; 
 			DVector3 fPosition;  // Photon position in the FCAL
+                        DVector3 fPositionError;  // Errors in X and Y are estimated from
 			DVector3 fMom3;  // Photon 3-momentum
 			TLorentzVector fMom4;  // Photon 4-momentum
 };
@@ -48,6 +52,11 @@ class DFCALPhoton:public JObject{
 inline DVector3 DFCALPhoton::getPosition() const
 {
       return fPosition;
+}
+
+inline DVector3 DFCALPhoton::getPositionError() const
+{
+      return fPositionError;
 }
 
 inline DVector3 DFCALPhoton::getMom3() const
