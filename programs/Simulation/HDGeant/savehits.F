@@ -33,7 +33,11 @@
 * formation of a single hit by pretending that we are still in the mother;
 * the true geometry information is restored before we exit.
 
-      if (cnames(NLEVEL).eq.'FDCA') then ! do not split hits around wire plane
+
+      if (cnames(NLEVEL).eq.'FDA1' .or.	! FDC anode drift cell
+     >    cnames(NLEVEL).eq.'FDA2' .or.
+     >    cnames(NLEVEL).eq.'FDA3' .or.
+     >    cnames(NLEVEL).eq.'FDA4') then !do not split hits around wire plane
         if (INWVOL.eq.2.and.INFROM.eq.0) then
           INWVOL = 0 ! continue, do not finalize hit
         elseif (INWVOL.eq.1.and.INFROM.eq.1) then
