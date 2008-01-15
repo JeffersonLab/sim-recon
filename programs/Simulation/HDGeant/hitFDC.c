@@ -19,11 +19,13 @@
 #include <bintree.h>
 
 const float Tau[] = {0,-45,0,45,15,60,105,-105,-60,-15};
+const float wire_dead_zone_radius[4]={2.3,3.2,3.9,4.6};
+const float strip_dead_zone_radius[4]={3.0,3.0,4.0,4.0};
 
 // Drift speed 2.2cm/us is appropriate for a 90/10 Argon/Methane mixture
 #define DRIFT_SPEED           .0055
-#define WIRE_DEAD_ZONE_RADIUS 3.5
-#define STRIP_DEAD_ZONE_RADIUS 5.0
+//#define WIRE_DEAD_ZONE_RADIUS 3.5
+//#define STRIP_DEAD_ZONE_RADIUS 5.0
 #define ACTIVE_AREA_OUTER_RADIUS 48.5
 #define ANODE_CATHODE_SPACING 0.5
 #define TWO_HIT_RESOL         250.
@@ -41,7 +43,7 @@ const float Tau[] = {0,-45,0,45,15,60,105,-105,-60,-15};
 #define THRESH_STRIPS        5.   /* pC */
 #define ELECTRON_CHARGE 1.6022e-4 /* fC */
 /* The folowing are for interpreting grid of Lorentz deflection data */
-#define PACKAGE_Z_POINTS 7
+#define PACKAGE_Z_POINTS 10
 #define LORENTZ_X_POINTS 21
 #define LORENTZ_Z_POINTS 4*PACKAGE_Z_POINTS
 
@@ -140,6 +142,7 @@ void hitForwardDC (float xin[4], float xout[4],
   int module = getmodule_();
   int layer = getlayer_();
   int chamber = (module*10)+layer;
+  int PackNo = (chamber-11)/20;
   int wire1,wire2;
   int wire,dwire;
 
@@ -200,7 +203,8 @@ void hitForwardDC (float xin[4], float xout[4],
   /* Make a fuzzy boundary around the forward dead region 
    * by killing any track segment whose midpoint is within the boundary */
 
-  if (sqrt(xlocal[0]*xlocal[0]+xlocal[1]*xlocal[1]) < WIRE_DEAD_ZONE_RADIUS)
+  if (sqrt(xlocal[0]*xlocal[0]+xlocal[1]*xlocal[1])
+      < wire_dead_zone_radius[PackNo])
   {
     return;
   }
@@ -296,7 +300,7 @@ void hitForwardDC (float xin[4], float xout[4],
 
 	// Locate positions in x and z arrays given r and z=x[2]
 	locate(lorentz_x,LORENTZ_X_POINTS,r,&ind);
-	locate(lorentz_z,25,x[2],&ind2);
+	locate(lorentz_z,LORENTZ_Z_POINTS,x[2],&ind2);
 	
 	// First do interpolation in z direction 
 	imin=PACKAGE_Z_POINTS*(ind2/PACKAGE_Z_POINTS); // Integer division...
@@ -313,13 +317,13 @@ void hitForwardDC (float xin[4], float xout[4],
 	polint(&lorentz_x[imin],ytemp2,imax-imin+1,r,&tanz,&dy);
 
 	// Correct avalanche position with deflection along wire	
-	avalanche_y+=-tanz*dist_to_wire*sin(alpha)*cos(phi)
+ 	avalanche_y+=-tanz*dist_to_wire*sin(alpha)*cos(phi)
 	  +tanr*dist_to_wire*cos(alpha);
 	
 	/* If the Lorentz effect would deflect the avalanche out of the active 
 	   region, mark as invalid hit */
 	r=sqrt(avalanche_y*avalanche_y+xwire*xwire);
-	if (r>ACTIVE_AREA_OUTER_RADIUS || r<WIRE_DEAD_ZONE_RADIUS){
+	if (r>ACTIVE_AREA_OUTER_RADIUS || r<wire_dead_zone_radius[PackNo]){
 	  valid_hit=0;
 	}
       }
@@ -452,7 +456,7 @@ void hitForwardDC (float xin[4], float xout[4],
 	    float check_radius=sqrt(strip_outer_u*strip_outer_u
 				    +cathode_v*cathode_v);
 
-            if ((strip > 0) && (check_radius>STRIP_DEAD_ZONE_RADIUS) 
+            if ((strip > 0) && (check_radius>strip_dead_zone_radius[PackNo]) 
 		&& (strip <= STRIPS_PER_PLANE))
             {
   	      int mark = (chamber<<20) + (plane<<10) + strip;
