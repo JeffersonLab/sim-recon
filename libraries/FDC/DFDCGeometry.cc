@@ -32,7 +32,7 @@ DFDCGeometry::DFDCGeometry(void)
 	for(int layer=1; layer<=FDC_NUM_LAYERS; layer++){
 		
 		float angle=0.0;
-		float z_anode=188.5+85.0;
+		float z_anode=188.5+85.0+0.2477; // ???
 		switch(layer){
 			case  1: z_anode+= -80.5-3.0;	angle=  degrees00; break;
 			case  2: z_anode+= -80.5+0.0;	angle= +degrees60; break;
@@ -41,19 +41,19 @@ DFDCGeometry::DFDCGeometry(void)
 			case  5: z_anode+= -71.5+0.0;	angle= +degrees60; break;
 			case  6: z_anode+= -71.5+3.0;	angle= -degrees60; break;
 
-			case  7: z_anode+= -30.5-3.0;	angle=  degrees00; break;
-			case  8: z_anode+= -30.5+0.0;	angle= +degrees60; break;
-			case  9: z_anode+= -30.5+3.0;	angle= -degrees60; break;
-			case 10: z_anode+= -21.5-3.0;	angle=  degrees00; break;
-			case 11: z_anode+= -21.5+0.0;	angle= +degrees60; break;
-			case 12: z_anode+= -21.5+3.0;	angle= -degrees60; break;
+			case  7: z_anode+= -29.83-3.0;	angle=  degrees00; break;
+			case  8: z_anode+= -29.83+0.0;	angle= +degrees60; break;
+			case  9: z_anode+= -29.83+3.0;	angle= -degrees60; break;
+			case 10: z_anode+= -20.83-3.0;	angle=  degrees00; break;
+			case 11: z_anode+= -20.83+0.0;	angle= +degrees60; break;
+			case 12: z_anode+= -20.83+3.0;	angle= -degrees60; break;
 
-			case 13: z_anode+= +21.5-3.0;	angle=  degrees00; break;
-			case 14: z_anode+= +21.5+0.0;	angle= +degrees60; break;
-			case 15: z_anode+= +21.5+3.0;	angle= -degrees60; break;
-			case 16: z_anode+= +30.5-3.0;	angle=  degrees00; break;
-			case 17: z_anode+= +30.5+0.0;	angle= +degrees60; break;
-			case 18: z_anode+= +30.5+3.0;	angle= -degrees60; break;
+			case 13: z_anode+= +20.83-3.0;	angle=  degrees00; break;
+			case 14: z_anode+= +20.83+0.0;	angle= +degrees60; break;
+			case 15: z_anode+= +20.83+3.0;	angle= -degrees60; break;
+			case 16: z_anode+= +29.83-3.0;	angle=  degrees00; break;
+			case 17: z_anode+= +29.83+0.0;	angle= +degrees60; break;
+			case 18: z_anode+= +29.83+3.0;	angle= -degrees60; break;
 
 			case 19: z_anode+= +71.5-3.0;	angle=  degrees00; break;
 			case 20: z_anode+= +71.5+0.0;	angle= +degrees60; break;
