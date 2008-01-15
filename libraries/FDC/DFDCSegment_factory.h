@@ -22,7 +22,7 @@
 #include <cmath>
 
 /* The folowing are for interpreting grid of Lorentz deflection data */
-#define PACKAGE_Z_POINTS 7
+#define PACKAGE_Z_POINTS 10 
 #define LORENTZ_X_POINTS 21
 #define LORENTZ_Z_POINTS 4*PACKAGE_Z_POINTS
 
