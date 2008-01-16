@@ -95,7 +95,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    (match3=GetTrackMatch(q,zpackage[2],match2,package[2],match_id))
 	    !=NULL){
 	  // Insert the segment from package 3 into the track 
-	  //segments.push_back(match3);
+	  segments.push_back(match3);
 
 	  // remove the segment from the list 
 	  package[2].erase(package[2].begin()+match_id);
@@ -127,7 +127,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	       (match3=GetTrackMatch(q,zpackage[2],segment,package[2],
 		match_id))!=NULL){
 	// Insert the segment from package 3 into the track
-	//segments.push_back(match3);
+	segments.push_back(match3);
 
 	// remove the segment from the list 
 	package[2].erase(package[2].begin()+match_id);
@@ -164,11 +164,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    
 	  }
 	}
-	DMatrix *CRPhi=NULL,*CR=NULL;
-	fit.FitCircle(0.1,CRPhi);
-	q=fit.GetCharge(0.1,CR,CRPhi);
+	fit.FitCircle(0.1,NULL);
+	q=fit.GetCharge(0.1,NULL,NULL);
 	// Extension to helix
-	fit.FitLine(0.1,CR);
+	fit.FitLine(0.1,NULL);
       
 	// Curvature
 	segments[1]->S(0,0)=kappa=q/2./fit.rc;
@@ -189,11 +188,42 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	if (match3==NULL && package[2].size()>0 &&
 	    (match3=GetTrackMatch(q,zpackage[2],segments[1],package[2],
 				  match_id))!=NULL){
+	  // Insert the segment from package 3 into the track
+	  segments.push_back(match3);
+
 	  // remove the segment from the list 
 	  package[2].erase(package[2].begin()+match_id);
 	  
+	  // Redo the fit with the additional hits from package 3
+	  for(unsigned int n=0;n<segments[segments.size()-1]->hits.size();n++){
+	    DFDCPseudo *hit=segments[segments.size()-1]->hits[n];
+	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
+		       hit->covyy,hit->covxy);
+	    
+	  }
+	  fit.FitCircle(0.1,NULL);
+	  q=fit.GetCharge(0.1,NULL,NULL);
+	  // Extension to helix
+	  fit.FitLine(0.1,NULL);
+     
+	  // Curvature
+	  segments[2]->S(0,0)=kappa=q/2./fit.rc;
+	  // Estimate for azimuthal angle
+	  phi0=atan2(-fit.xc,fit.yc); 
+	  if (q<0) phi0+=M_PI;
+	  segments[2]->S(1,0)=phi0;
+	  // remaining tracking parameters
+	  tanl=fit.tanl;
+	  zvertex=fit.zvertex;
+	  segments[2]->S(3,0)=tanl;
+	  segments[2]->S(4,0)=zvertex;
+	  segments[2]->xc=fit.xc;
+	  segments[2]->yc=fit.yc;
+	  segments[2]->rc=fit.rc;
+	  
+	  // If we failed to match to package 4, try again.
 	  if (match4==NULL && package[3].size()>0 && 
-	      (match4=GetTrackMatch(q,zpackage[3],segments[1],package[3],
+	      (match4=GetTrackMatch(q,zpackage[3],segments[2],package[3],
 				    match_id))!=NULL){
 	    // remove the segment from the list 
 	    package[3].erase(package[3].begin()+match_id); 
@@ -288,11 +318,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    
 	  }
 	}
-	DMatrix *CR=NULL,*CRPhi=NULL;
-	fit.FitCircle(0.1,CRPhi);
-	q=fit.GetCharge(0.1,CR,CRPhi);
+	fit.FitCircle(0.1,NULL);
+	q=fit.GetCharge(0.1,NULL,NULL);
 	// Extension to helix
-	fit.FitLine(0.1,CR);
+	fit.FitLine(0.1,NULL);
 
 	// Curvature
 	segments[1]->S(0,0)=kappa=q/2./fit.rc;
@@ -383,11 +412,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 		       hit->covyy,hit->covxy);	   
 	  }
 	}
-	DMatrix *CR=NULL, *CRPhi=NULL;
-	fit.FitCircle(0.1,CRPhi);
-	q=fit.GetCharge(0.1,CR,CRPhi);	
+	fit.FitCircle(0.1,NULL);
+	q=fit.GetCharge(0.1,NULL,NULL);	
 	// Extension to helix
-	fit.FitLine(0.1,CR);
+	fit.FitLine(0.1,NULL);
 	
 	// Curvature
 	kappa=q/2./fit.rc;
