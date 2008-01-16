@@ -16,9 +16,9 @@
 #define ANODE_CATHODE_SPACING 0.5
 #define TWO_HIT_RESOL         250.
 #define WIRES_PER_PLANE       96
-#define WIRE_SPACING          1.116
+#define WIRE_SPACING          1.0
 #define U_OF_WIRE_ZERO        (-((WIRES_PER_PLANE-1)*WIRE_SPACING)/2)
-#define STRIPS_PER_PLANE      216
+#define STRIPS_PER_PLANE      192 
 #define STRIP_SPACING         0.5
 #define U_OF_STRIP_ZERO		   (-((STRIPS_PER_PLANE-1)*STRIP_SPACING)/2)
 #define STRIP_GAP             0.1
