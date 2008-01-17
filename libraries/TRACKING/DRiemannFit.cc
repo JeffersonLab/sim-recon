@@ -103,7 +103,6 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS,DMatrix *Cov){
   // Covariance matrix
   DMatrix CRPhi(hits.size()+1,hits.size()+1);
   if (Cov==NULL){
-    Cov=new DMatrix(hits.size()+1,hits.size()+1);
     for (unsigned int i=0;i<hits.size();i++){
       double Phi=atan2(hits[i]->y,hits[i]->x);
       CRPhi(i,i)
@@ -112,7 +111,6 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS,DMatrix *Cov){
       +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
     }
     CRPhi(hits.size(),hits.size())=BeamRMS*BeamRMS;
-    Cov=&CRPhi;
   }
   else{
     for (unsigned int i=0;i<hits.size()+1;i++)
@@ -233,7 +231,6 @@ double DRiemannFit::GetCharge(double BeamRMS,DMatrix *CovR, DMatrix *CovRPhi){
   DMatrix CRPhi(hits.size()+1,hits.size()+1);
   DMatrix CR(hits.size()+1,hits.size()+1);
   if (CovRPhi==NULL){
-    CovRPhi=new DMatrix(hits.size()+1,hits.size()+1);
     for (unsigned int i=0;i<hits.size();i++){
       double Phi=atan2(hits[i]->y,hits[i]->x);
       CRPhi(i,i)
@@ -242,7 +239,6 @@ double DRiemannFit::GetCharge(double BeamRMS,DMatrix *CovR, DMatrix *CovRPhi){
       +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
     }
     CRPhi(hits.size(),hits.size())=BeamRMS*BeamRMS;
-    CovRPhi=&CRPhi;
   }
   else{
     for (unsigned int i=0;i<hits.size()+1;i++)
@@ -250,7 +246,6 @@ double DRiemannFit::GetCharge(double BeamRMS,DMatrix *CovR, DMatrix *CovRPhi){
 	CRPhi(i,j)=CovRPhi->operator()(i, j);
   }
   if (CovR==NULL){
-    CovR=new DMatrix(hits.size()+1,hits.size()+1);
     for (unsigned int m=0;m<hits.size();m++){
       double Phi=atan2(hits[m]->y,hits[m]->x);
       CR(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
@@ -258,7 +253,6 @@ double DRiemannFit::GetCharge(double BeamRMS,DMatrix *CovR, DMatrix *CovRPhi){
       +2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
     } 
     CR(hits.size(),hits.size())=BeamRMS*BeamRMS;
-    CovR=&CR;
   }
   else{
     for (unsigned int i=0;i<hits.size()+1;i++)
@@ -303,7 +297,6 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
   // Get covariance matrix 
   DMatrix CR(hits.size()+1,hits.size()+1);
   if (CovR==NULL){
-    CovR=new DMatrix(hits.size()+1,hits.size()+1);
     for (unsigned int m=0;m<hits.size();m++){
       double Phi=atan2(hits[m]->y,hits[m]->x);
       CR(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
@@ -311,7 +304,6 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
       +2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
     } 
     CR(hits.size(),hits.size())=BeamRMS*BeamRMS;
-    CovR=&CR;
   }
   else{
     for (unsigned int i=0;i<hits.size()+1;i++)
