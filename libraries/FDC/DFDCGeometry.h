@@ -12,6 +12,8 @@
 
 //----- These were cut from HDGeant/hitFDC.c -----
 #define DRIFT_SPEED           .0055
+#define CATHODE_ROT_ANGLE     1.309  // 75 degrees
+//#define CATHODE_ROT_ANGLE     0.7854 // 45 degrees
 #define WIRE_DEAD_ZONE_RADIUS 3.2
 #define ANODE_CATHODE_SPACING 0.5
 #define TWO_HIT_RESOL         250.
@@ -127,7 +129,8 @@ _DBG__;
 		/// from the strip data.
 		///
 		static inline float getXLocalStrips(float u, float v){
-		  return STRIP_SPACING*(u-1 + v-1 - (STRIPS_PER_PLANE-1))/sqrt(2.);
+		  return STRIP_SPACING*(u-1 + v-1 - (STRIPS_PER_PLANE-1))
+		    /2./cos(CATHODE_ROT_ANGLE);
 		}
 
 		///
@@ -136,7 +139,7 @@ _DBG__;
 		/// from the strip data
 		///
 		static inline float getYLocalStrips(float u, float v){
-		  return  STRIP_SPACING*(u-v)/sqrt(2.);
+		  return  STRIP_SPACING*(u-v)/2./sin(CATHODE_ROT_ANGLE);
 		} 
 	
 		///

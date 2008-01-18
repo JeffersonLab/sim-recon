@@ -22,6 +22,8 @@ const float Tau[] = {0,-45,0,45,15,60,105,-105,-60,-15};
 const float wire_dead_zone_radius[4]={2.3,3.2,3.9,4.6};
 const float strip_dead_zone_radius[4]={3.0,3.0,4.0,4.0};
 
+#define CATHODE_ROT_ANGLE 1.309 // 75 degrees
+
 // Drift speed 2.2cm/us is appropriate for a 90/10 Argon/Methane mixture
 #define DRIFT_SPEED           .0055
 //#define WIRE_DEAD_ZONE_RADIUS 3.5
@@ -393,7 +395,7 @@ void hitForwardDC (float xin[4], float xout[4],
         int plane, node;
         for (plane=1; plane<4; plane+=2)
         {
-          float theta = (plane == 1)? -M_PI/4 : +M_PI/4;
+          float theta = (plane == 1)? -CATHODE_ROT_ANGLE : +CATHODE_ROT_ANGLE;
           float cathode_u = avalanche_x*cos(theta)+avalanche_y*sin(theta);
           int strip1 = ceil((cathode_u - U_OF_STRIP_ZERO)/STRIP_SPACING +0.5);
           float cathode_u1 = (strip1-1)*STRIP_SPACING + U_OF_STRIP_ZERO;
