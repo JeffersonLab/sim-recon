@@ -1,0 +1,29 @@
+*** Begin of history file: Thu Jan 17 14:30:23 2008
+h/fil 2 bggen.nt 0 -x
+exec example_1
+nt/pri //lun2/1
+fu/pl //lun2/1.p_kin.f(1,1,0) iproc=1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 1 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 10 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 10 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 10 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 10 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 10 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 10 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 10 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 10 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 10 1
+exec example_1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 10 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 10 1
+nt/pri //lun2/1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 10 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 10 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 10 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 100 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1 100 1
+nt/pl //lun2/1.p_kin.f(1,1,0) iproc=1
+exit
+*** End   of history file: Thu Jan 17 14:43:02 2008
