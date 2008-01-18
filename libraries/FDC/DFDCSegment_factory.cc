@@ -13,7 +13,7 @@
 #define Z_TARGET 65.0
 #define MATCH_RADIUS 5.0
 #define SIGN_CHANGE_CHISQ_CUT 10.0
-#define BEAM_VARIANCE 0.1 // cm^2
+#define BEAM_VARIANCE 1.0 // cm^2
 #define FDC_X_RESOLUTION 0.02  // 200 microns
 #define FDC_Y_RESOLUTION 0.02
 #define USED_IN_SEGMENT 0x8
@@ -403,6 +403,7 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
     }
   }
   
+#if 0  // Disable for now...
    // Correct the covariance matrices for contributions due to multiple
   // scattering
   DMatrix CRPhi_ms(n,n);
@@ -424,6 +425,9 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
       unsigned int imin=(k+1>m+1)?k+1:m+1;
       for (unsigned int i=imin;i<n-1;i++){
         double sigma2_ms=GetProcessNoise(i,XYZ);
+	if (isnan(sigma2_ms)){
+	  sigma2_ms=0.;
+	}
         double Ri=sqrt(XYZ(i,0)*XYZ(i,0)+XYZ(i,1)*XYZ(i,1));
         double zi=XYZ(i,2);
         CRPhi_ms(m,k)+=sigma2_ms*(Rk-Ri)*(Rm-Ri)/cosl/cosl;
@@ -435,6 +439,7 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
   }
   CRPhi+=CRPhi_ms;
   CR+=CR_ms;
+ #endif
 
   // Correction for non-normal incidence of track on FDC 
   CRPhi=C*CRPhi*C+S*CR*S;
@@ -660,7 +665,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   temp.hit_id=0;
   temp.dx=temp.dy=temp.s=temp.chi2=0.;
   fdc_track.assign(num_points-1,temp);
- 
+   
   // Fill initial matrices for R and RPhi measurements
   XYZ(num_points-1,2)=Z_TARGET;
   for (unsigned int m=0;m<points.size();m++){
