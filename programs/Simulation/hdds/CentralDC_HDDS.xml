@@ -389,7 +389,7 @@
       <sector value="1" step="1" />
     </mposPhi>
     <mposPhi volume="CDCstrawLong" ncopy="78" R_Z="19.868 0.0"
-                         unit_length="cm" rot="+6.000 0 0" unit_angle="deg">
+                         unit_length="cm" rot="-6.000 0 0" unit_angle="deg">
       <ring value="6" />
       <sector value="1" step="1" />
     </mposPhi>
