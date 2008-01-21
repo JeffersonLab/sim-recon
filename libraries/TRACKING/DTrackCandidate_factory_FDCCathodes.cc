@@ -253,7 +253,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       _data.push_back(track); 
     }
   }
- 
+
   // Next try to link segments starting at package 2
   if (package[1].size()>0 ){
     // Loop over segments in the 2nd package, matching them to segments in 
@@ -526,6 +526,29 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,double 
 	match=segment2;
 	match_id=j;
       }
+    }
+  }
+  
+  // If matching in the forward direction did not work, try swimming and
+ // matching backwards...
+  if (match==NULL){
+    diff_min=1000.;
+    for (unsigned int i=0;i<package.size();i++){
+      DFDCSegment *segment2=package[i];
+      if (GetPositionAndMomentum(segment2,pos,mom)==NOERROR){
+        mom=-1.0*mom;
+        origin(2)=segment->hits[0]->wire->origin(2);
+        if (stepper.SwimToPlane(pos,mom,origin,norm)==false){
+          double x2=segment->hits[0]->x;
+          double y2=segment2->hits[0]->y;
+          diff=sqrt((pos(0)-x2)*(pos(0)-x2)+(pos(1)-y2)*(pos(1)-y2));
+          if (diff<diff_min&&diff<MATCH_RADIUS){
+	    diff_min=diff;
+	    match=segment2;
+            match_id=i;
+          }
+        }	
+      }       
     }
   }
  
