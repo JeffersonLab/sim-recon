@@ -130,10 +130,10 @@
     <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +0.9987" />
     <posXYZ volume="FDRO" X_Y_Z="0.0 0.0 -0.6052" />
     <posXYZ volume="FDRO" X_Y_Z="0.0 0.0 +0.6052" />
-    <posXYZ volume="FDK1" X_Y_Z="0.0 0.0 -0.5026" />
-    <posXYZ volume="FDK1" X_Y_Z="0.0 0.0 +0.5026" />
-    <posXYZ volume="FDJ1" X_Y_Z="0.0 0.0 -0.5027" />
-    <posXYZ volume="FDJ1" X_Y_Z="0.0 0.0 +0.5027" />
+    <posXYZ volume="FDK2" X_Y_Z="0.0 0.0 -0.5026" />
+    <posXYZ volume="FDK2" X_Y_Z="0.0 0.0 +0.5026" />
+    <posXYZ volume="FDJ2" X_Y_Z="0.0 0.0 -0.5027" />
+    <posXYZ volume="FDJ2" X_Y_Z="0.0 0.0 +0.5027" />
     <posXYZ volume="forwardDC_gasVolume_2" />
   </composition>
   <composition name="forwardDC_chamber_3" envelope="FDC3">
@@ -141,10 +141,10 @@
     <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +0.9987" />
     <posXYZ volume="FDRO" X_Y_Z="0.0 0.0 -0.6052" />
     <posXYZ volume="FDRO" X_Y_Z="0.0 0.0 +0.6052" />
-    <posXYZ volume="FDK1" X_Y_Z="0.0 0.0 -0.5026" />
-    <posXYZ volume="FDK1" X_Y_Z="0.0 0.0 +0.5026" />
-    <posXYZ volume="FDJ1" X_Y_Z="0.0 0.0 -0.5027" />
-    <posXYZ volume="FDJ1" X_Y_Z="0.0 0.0 +0.5027" />
+    <posXYZ volume="FDK3" X_Y_Z="0.0 0.0 -0.5026" />
+    <posXYZ volume="FDK3" X_Y_Z="0.0 0.0 +0.5026" />
+    <posXYZ volume="FDJ3" X_Y_Z="0.0 0.0 -0.5027" />
+    <posXYZ volume="FDJ3" X_Y_Z="0.0 0.0 +0.5027" />
     <posXYZ volume="forwardDC_gasVolume_3" />
   </composition>
   <composition name="forwardDC_chamber_4" envelope="FDC4">
@@ -152,10 +152,10 @@
     <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +0.9987" />
     <posXYZ volume="FDRO" X_Y_Z="0.0 0.0 -0.6052" />
     <posXYZ volume="FDRO" X_Y_Z="0.0 0.0 +0.6052" />
-    <posXYZ volume="FDK1" X_Y_Z="0.0 0.0 -0.5026" />
-    <posXYZ volume="FDK1" X_Y_Z="0.0 0.0 +0.5026" />
-    <posXYZ volume="FDJ1" X_Y_Z="0.0 0.0 -0.5027" />
-    <posXYZ volume="FDJ1" X_Y_Z="0.0 0.0 +0.5027" />
+    <posXYZ volume="FDK4" X_Y_Z="0.0 0.0 -0.5026" />
+    <posXYZ volume="FDK4" X_Y_Z="0.0 0.0 +0.5026" />
+    <posXYZ volume="FDJ4" X_Y_Z="0.0 0.0 -0.5027" />
+    <posXYZ volume="FDJ4" X_Y_Z="0.0 0.0 +0.5027" />
     <posXYZ volume="forwardDC_gasVolume_4" />
   </composition>
 
@@ -293,13 +293,13 @@
                              comment="cathode strip plane for chamber 3" />
   <tubs name="FDK4" Rio_Z=" 4.6 50.25 0.0052" material="CopperKaptonEpoxy"
                              comment="cathode strip plane for chamber 4" />
-  <tubs name="FDJ1" Rio_Z=" 0.0 2.3 0.0052" material="CopperKaptonEpoxy"
+  <tubs name="FDJ1" Rio_Z=" 0.0 2.3 0.0025" material="Kapton"
                       comment="copper-free cathode plane for chamber 1" />
-  <tubs name="FDJ2" Rio_Z=" 0.0 3.2 0.0052" material="CopperKaptonEpoxy"
+  <tubs name="FDJ2" Rio_Z=" 0.0 3.2 0.0025" material="Kapton"
                       comment="copper-free cathode plane for chamber 2" />
-  <tubs name="FDJ3" Rio_Z=" 0.0 3.9 0.0052" material="CopperKaptonEpoxy"
+  <tubs name="FDJ3" Rio_Z=" 0.0 3.9 0.0025" material="Kapton"
                       comment="copper-free cathode plane for chamber 3" />
-  <tubs name="FDJ4" Rio_Z=" 0.0 4.6 0.0052" material="CopperKaptonEpoxy"
+  <tubs name="FDJ4" Rio_Z=" 0.0 4.6 0.0025" material="Kapton"
                       comment="copper-free cathode plane for chamber 4" />
   <tubs name="FDCG" Rio_Z=" 0.0 50.25 0.0026" material="AluminizedMylarFilm"
                                        comment="fdc ground plane" />
