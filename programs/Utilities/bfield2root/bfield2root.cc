@@ -8,7 +8,7 @@
 #include <iomanip>
 using namespace std;
 
-#include "TRACKING/DMagneticFieldMapGlueX.h"
+#include "HDGEOMETRY/DMagneticFieldMapGlueX.h"
 #include "JANA/JParameterManager.h"
 
 #include <TFile.h>
