@@ -11,6 +11,7 @@
 #define EPS 1e-8
 #define KILL_RADIUS 5.0 
 #define Z_TARGET 65.0
+#define Z_VERTEX_CUT 25.0
 #define MATCH_RADIUS 5.0
 #define SIGN_CHANGE_CHISQ_CUT 10.0
 #define BEAM_VARIANCE 1.0 // cm^2
@@ -275,6 +276,12 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
   tanl=-Delta/(sumv*sumxy-sumy*sumx); 
   z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
   zvertex=z0-sperp*tanl;
+
+  // Check that the vertex z position is sensible
+  if (zvertex<Z_VERTEX_CUT){ 
+    zvertex=Z_TARGET;
+    tanl=57.3; // one degree from beam line
+  }
   
   // Error in tanl 
   var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
@@ -814,6 +821,11 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
       }
       // Look for hits adjacent to the ones we have in our segment candidate
       unsigned int num_neighbors=neighbors.size();
+
+      // Skip to next segment seed if we don't have enough points to fit a 
+      // circle
+      if (num_neighbors<3) continue;    
+
       bool do_sort=false;
       for (unsigned int k=0;k<points.size();k++){
 	for (unsigned int j=0;j<num_neighbors;j++){
