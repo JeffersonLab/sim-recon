@@ -25,7 +25,8 @@
 #define LENGTH_OF_BLOCK 45.
 #define TWO_HIT_RESOL   75.
 #define MAX_HITS        100
-#define THRESH_MEV      30.
+//#define THRESH_MEV      30.
+#define THRESH_MEV      5.
 #define ACTIVE_RADIUS   120.
 #define CENTRAL_ROW     29
 #define CENTRAL_COLUMN  29
