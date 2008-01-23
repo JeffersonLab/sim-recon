@@ -11,6 +11,24 @@
 #include "FCAL/DMCFCALHit.h"
 #include "FCAL/DFCALGeometry.h"
 
+DFCALMCResponse_factory::DFCALMCResponse_factory() :
+m_randomGen()
+{
+
+    // setup response parameters
+
+    // set block  threshold at 18 MeV 
+    // this is ~ equivalent to 30 MeV incident energy for 166 cm attenuation length
+    m_blockThreshold = 20.0 * k_MeV;
+
+    // set the photon-statistics factor for smearing hit energy, from Criss's MC
+    m_photStatCoef = 0.035;
+
+    gPARMS->SetDefaultParameter( "FCALRESPONSE:BLOCK_THRESHOLD",  m_blockThreshold );
+    gPARMS->SetDefaultParameter( "FCALRESPONSE:PHOT_STAT_C", m_photStatCoef );
+}
+
+
 //------------------
 // evnt
 //------------------
@@ -43,12 +61,17 @@ jerror_t DFCALMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
 		
 			// can do something fancier later -- like smear E and t
 			// or implement Cherenkov photon effects
-            
-			_data.push_back
-			  ( new DFCALMCResponse( (**hit).id,
+
+                        double sigma = m_photStatCoef / sqrt( (**hit).E ) ;
+                	float smearE = (**hit).E * m_randomGen.Gaus( 1., sigma );;
+                       
+                        if ( smearE > m_blockThreshold ) {  
+				_data.push_back
+			  	( new DFCALMCResponse( (**hit).id,
 									 fcalGeom.channel( row, col ),
-									 (**hit).E,
-									 (**hit).t ) );
+									 smearE, // (**hit).E,
+										 (**hit).t ) );
+			}
 		}
 	}
 	

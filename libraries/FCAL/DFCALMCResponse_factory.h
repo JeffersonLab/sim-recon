@@ -11,11 +11,13 @@
 #include "JANA/JFactory.h"
 #include "DFCALMCResponse.h"
 
+#include "DRandom.h"
+
 class DFCALMCResponse_factory:public JFactory<DFCALMCResponse>{
 
 public:
 	
-	DFCALMCResponse_factory(){};
+	DFCALMCResponse_factory();
 	~DFCALMCResponse_factory(){};
 
 	const string toString(void);
@@ -23,6 +25,12 @@ public:
 private:
 		
 		jerror_t evnt(JEventLoop *loop, int eventnumber);	
+ 
+    float m_photStatCoef; // photon statistis contribution to energy resolution
+    float m_blockThreshold;
+
+    DRandom m_randomGen;
+
 };
 
 #endif // _DFCALMCResponse_factory_

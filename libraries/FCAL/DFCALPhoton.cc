@@ -30,8 +30,10 @@ DFCALPhoton::~DFCALPhoton()
 #define	FCAL_SHOWER_OFFSET   1. 
 
 // These change with the FCAL attenuation length (L=166cm)
-#define	EGAMMA_NORM 0.627419
-#define	EGAMMA_EPSILON   0.05259
+//#define	EGAMMA_NORM 0.627419
+//#define	EGAMMA_EPSILON   0.05259
+#define	EGAMMA_NORM 0.6517
+#define	EGAMMA_EPSILON   0.03499
  
 // Simple non-linear correction
 void DFCALPhoton::fixEnergy(const double energy) 
