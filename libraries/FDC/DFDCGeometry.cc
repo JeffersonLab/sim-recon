@@ -32,7 +32,7 @@ DFDCGeometry::DFDCGeometry(void)
 	for(int layer=1; layer<=FDC_NUM_LAYERS; layer++){
 		
 		float angle=0.0;
-		float z_anode=188.5+85.0+0.2477; // ???
+		float z_anode=188.5+85.0; 
 		switch(layer){
 			case  1: z_anode+= -80.5-3.0;	angle=  degrees00; break;
 			case  2: z_anode+= -80.5+0.0;	angle= +degrees60; break;
