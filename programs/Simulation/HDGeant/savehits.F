@@ -43,7 +43,7 @@
         elseif (INWVOL.eq.1.and.INFROM.eq.1) then
           INWVOL = 0 ! append to previous hit segment
         endif
-      elseif (cnames(NLEVEL).eq.'FDCW') then ! discard energy lost in wires
+      elseif (cnames(NLEVEL).eq.'FDAW') then ! discard energy lost in wires
         goto 9
       endif
 
