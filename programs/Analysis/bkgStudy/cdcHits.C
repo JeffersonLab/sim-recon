@@ -44,7 +44,12 @@ void cdcHits(void)
 	rate_per_straw->SetStats(0);
 	rate_per_straw->SetLineColor(kRed);
 	rate_per_straw->SetLineWidth(2.0);
-	rate_per_straw->Draw("E1");
+	rate_per_straw->SetMarkerColor(kRed);
+	rate_per_straw->SetMarkerStyle(20);
+	rate_per_straw->SetMarkerSize(1.5);
+	rate_per_straw->Draw("P");
 	
+	c1->SaveAs("cdc_hit_rate.gif");
+	c1->SaveAs("cdc_hit_rate.pdf");
 }
 
