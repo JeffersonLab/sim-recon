@@ -69,9 +69,10 @@ jerror_t FillHitsProc::init(void)
   m_tofHitTree->Branch( "nHits", &m_nHits, "nHits/I" );
   m_tofHitTree->Branch( "plane", m_plane, "plane[nHits]/F" );
   m_tofHitTree->Branch( "bar", m_bar, "bar[nHits]/F" );
-  m_tofHitTree->Branch( "end", m_end, "end[nHits]/F" );
-  m_tofHitTree->Branch( "E", m_E, "E[nHits]/F" );
-  m_tofHitTree->Branch( "t", m_t, "t[nHits]/F" );
+  m_tofHitTree->Branch( "dE_north", m_dE_north, "dE_north[nHits]/F" );
+  m_tofHitTree->Branch( "t_north", m_t_north, "t_north[nHits]/F" );
+  m_tofHitTree->Branch( "dE_south", m_dE_south, "dE_south[nHits]/F" );
+  m_tofHitTree->Branch( "t_south", m_t_south, "t_south[nHits]/F" );
 
   m_startFile = new TFile( "start_hits.root", "RECREATE" );
   m_startFile->cd();
@@ -194,10 +195,11 @@ jerror_t FillHitsProc::evnt(JEventLoop *loop, int eventnumber)
   for( int i = 0; i < m_nHits; ++i ){
 	  
     m_plane[i] = tofHitVect[i]->plane;
-    m_end[i] = tofHitVect[i]->end;
     m_bar[i] = tofHitVect[i]->bar;
-    m_E[i] = tofHitVect[i]->dE;
-    m_t[i] = tofHitVect[i]->t;
+    m_dE_north[i] = tofHitVect[i]->dE_north;
+    m_t_north[i] = tofHitVect[i]->t_north;
+    m_dE_south[i] = tofHitVect[i]->dE_south;
+    m_t_south[i] = tofHitVect[i]->t_south;
   }
   
   m_tofHitTree->Fill();

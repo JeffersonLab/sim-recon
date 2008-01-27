@@ -59,6 +59,10 @@ class FillHitsProc:public JEventProcessor{
     float m_r[kMaxHits];
     float m_E[kMaxHits];
     float m_t[kMaxHits];
+    float m_t_north[kMaxHits];
+    float m_t_south[kMaxHits];
+    float m_dE_north[kMaxHits];
+    float m_dE_south[kMaxHits];
     float m_q[kMaxHits];
     float m_module[kMaxHits];
     float m_sector[kMaxHits];
