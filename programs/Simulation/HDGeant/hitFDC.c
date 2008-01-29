@@ -20,7 +20,7 @@
 
 const float Tau[] = {0,-45,0,45,15,60,105,-105,-60,-15};
 const float wire_dead_zone_radius[4]={2.3,3.2,3.9,4.6};
-const float strip_dead_zone_radius[4]={3.0,3.0,4.0,4.0};
+const float strip_dead_zone_radius[4]={2.3,3.2,3.9,4.6};
 
 #define CATHODE_ROT_ANGLE 1.309 // 75 degrees
 
