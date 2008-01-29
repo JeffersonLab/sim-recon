@@ -316,6 +316,8 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
   double denom= N[0]*N[0]+N[1]*N[1];
   double numer;
   vector<int>bad(hits.size());
+  // Clear old projection vector
+  projections.clear();
   for (unsigned int m=0;m<hits.size();m++){
     double r2=hits[m]->x*hits[m]->x+hits[m]->y*hits[m]->y;
     numer=dist_to_origin+r2*N[2];
