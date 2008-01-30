@@ -19,6 +19,7 @@
 #define FDC_Y_RESOLUTION 0.02
 #define USED_IN_SEGMENT 0x8
 #define CORRECTED 0x10
+#define MAX_ITER 10
 
 static bool got_deflection_file=true;
 static bool warn=true;
@@ -765,12 +766,12 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
   // We need at least 3 points to define a circle, so bail if we don't have 
   // enough points.
   if (points.size()<3) return RESOURCE_UNAVAILABLE;
-
  
   // Put indices for the first point in each plane before the most downstream
   // plane in the vector x_list.
   double old_z=points[0]->wire->origin(2);
   vector<unsigned int>x_list;
+  x_list.push_back(0);
   for (unsigned int i=0;i<points.size();i++){
     if (points[i]->wire->origin(2)!=old_z){
       x_list.push_back(i);
@@ -779,31 +780,42 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
   }
   x_list.push_back(points.size()); 
 
-  // Now loop over the list of track segment end points
-  for (unsigned int i=0;i<x_list[0];i++){
-    if ((points[i]->status&USED_IN_SEGMENT)==0){ 
-      points[i]->status|=USED_IN_SEGMENT;   
-      // Creat a new segment
-      DFDCSegment *segment = new DFDCSegment;
-      chisq=1.e8;
+  unsigned int start=0;
+  // loop over the start indices, starting with the first plane
+  while (start<x_list.size()-1){
+    int used=0;
+    // For each iteration, count how many hits we have used already in segments
+    for (unsigned int i=0;i<points.size();i++){
+      if (points[i]->status&USED_IN_SEGMENT) used++;
+    }
+    // Break out of loop if we don't have enough hits left to fit a circle
+    if (points.size()-used<3) break;
 
-      // Clear track parameters
-      kappa=tanl=D=z0=phi0=Phi1=xc=yc=rc=0.;
-      charge=1.;
-      
-      // Point in the last plane in the package 
-      double x=points[i]->x;
-      double y=points[i]->y; 
-      
-      // Create list of nearest neighbors
-      vector<DFDCPseudo*>neighbors;
-      neighbors.push_back(points[i]);
-      unsigned int match=0;
-      double delta,delta_min=1000.,xtemp,ytemp;
-      for (unsigned int k=0;k<x_list.size()-1;k++){
-	delta_min=1000.;
-	match=0;
-	for (unsigned int m=x_list[k];m<x_list[k+1];m++){
+    // Now loop over the list of track segment start points
+    for (unsigned int i=x_list[start];i<x_list[start+1];i++){
+      if ((points[i]->status&USED_IN_SEGMENT)==0){ 
+	points[i]->status|=USED_IN_SEGMENT;   
+	// Creat a new segment
+	DFDCSegment *segment = new DFDCSegment;
+	chisq=1.e8;
+
+	// Clear track parameters
+	kappa=tanl=D=z0=phi0=Phi1=xc=yc=rc=0.;
+	charge=1.;
+	
+	// Point in the current plane in the package 
+	double x=points[i]->x;
+	double y=points[i]->y; 
+	
+	// Create list of nearest neighbors
+	vector<DFDCPseudo*>neighbors;
+	neighbors.push_back(points[i]);
+	unsigned int match=0;
+	double delta,delta_min=1000.,xtemp,ytemp;
+	for (unsigned int k=0;k<x_list.size()-1;k++){
+	  delta_min=1000.;
+	  match=0;
+	  for (unsigned int m=x_list[k];m<x_list[k+1];m++){
 	  xtemp=points[m]->x;
 	  ytemp=points[m]->y;
 	  delta=sqrt((x-xtemp)*(x-xtemp)+(y-ytemp)*(y-ytemp));
@@ -811,112 +823,118 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	    delta_min=delta;
 	    match=m;
 	  }
-	}	
-	if (match!=0){
-	  x=points[match]->x;
-	  y=points[match]->y;
-	  points[match]->status|=USED_IN_SEGMENT;
-	  neighbors.push_back(points[match]);	  
+	  }	
+	  if (match!=0){
+	    x=points[match]->x;
+	    y=points[match]->y;
+	    points[match]->status|=USED_IN_SEGMENT;
+	    neighbors.push_back(points[match]);	  
+	  }
 	}
-      }
-      // Look for hits adjacent to the ones we have in our segment candidate
-      unsigned int num_neighbors=neighbors.size();
+	unsigned int num_neighbors=neighbors.size();
+	
+	// Skip to next segment seed if we don't have enough points to fit a 
+	// circle
+	if (num_neighbors<3) continue;    
 
-      // Skip to next segment seed if we don't have enough points to fit a 
-      // circle
-      if (num_neighbors<3) continue;    
-
-      bool do_sort=false;
-      for (unsigned int k=0;k<points.size();k++){
-	for (unsigned int j=0;j<num_neighbors;j++){
-	  if (abs(neighbors[j]->wire->wire-points[k]->wire->wire)==1
-	      && neighbors[j]->wire->origin(2)==points[k]->wire->origin(2)){
-	    points[k]->status|=USED_IN_SEGMENT;
-	    neighbors.push_back(points[k]);
-	    do_sort=true;
-	  }      
+	bool do_sort=false;
+	// Look for hits adjacent to the ones we have in our segment candidate
+	for (unsigned int k=0;k<points.size();k++){
+	  for (unsigned int j=0;j<num_neighbors;j++){
+	    if (abs(neighbors[j]->wire->wire-points[k]->wire->wire)==1
+		&& neighbors[j]->wire->origin(2)==points[k]->wire->origin(2)){
+	      points[k]->status|=USED_IN_SEGMENT;
+	      neighbors.push_back(points[k]);
+	      do_sort=true;
+	    }      
+	  }
 	}
-      }
-      // Sort if we added another point
-      if (do_sort)
-	std::sort(neighbors.begin(),neighbors.end(),DFDCSegment_package_cmp);
+	// Sort if we added another point
+	if (do_sort)
+	  std::sort(neighbors.begin(),neighbors.end(),DFDCSegment_package_cmp);
     
-      // Matrix of points on track 
-      DMatrix XYZ(neighbors.size()+1,3);
-      DMatrix CR(neighbors.size()+1,neighbors.size()+1);
+	// Matrix of points on track 
+	DMatrix XYZ(neighbors.size()+1,3);
+	DMatrix CR(neighbors.size()+1,neighbors.size()+1);
    
-      // Arc lengths in helical model are referenced relative to the plane
-      // ref_plane within a segment.  For a 6 hit segment, ref_plane=2 is 
-      // roughly in the center of the segment.
-      ref_plane=2;  
-    
-      // Perform the Riemann Helical Fit on the track segment
-      jerror_t error=RiemannHelicalFit(neighbors,CR,XYZ);   /// initial hit-based fit
-       
-      // Correct for the Lorentz effect given DOCAs
-      if (error==NOERROR){
+	// Arc lengths in helical model are referenced relative to the plane
+	// ref_plane within a segment.  For a 6 hit segment, ref_plane=2 is 
+	// roughly in the center of the segment.
+	ref_plane=2;  
+	
+	// Perform the Riemann Helical Fit on the track segment
+	jerror_t error=RiemannHelicalFit(neighbors,CR,XYZ);   /// initial hit-based fit
+	
 	// Correct for the Lorentz effect given DOCAs
-	CorrectPoints(neighbors,XYZ);
-
-	ref_plane=0; 
-
-	// Fit to "space" points
-	error=RiemannHelicalFit(neighbors,CR,XYZ); /// time-based fit with corrected points
-
-	// Final correction 
 	if (error==NOERROR){
-	  CorrectPoints(neighbors,XYZ); /// correct again based on time-based result
-	  for (unsigned int m=0;m<neighbors.size();m++){
-	    // neighbors[m]->status|=CORRECTED;
-	    fdc_track[m].hit_id=m;
-	    double sperp=charge*(XYZ(m,2)-XYZ(ref_plane,2))/tanl; 
-	    double sinp=sin(Phi1+sperp/rc);
-	    double cosp=cos(Phi1+sperp/rc);
-	    XYZ(m,0)=xc+rc*cosp;
-	    XYZ(m,1)=yc+rc*sinp;
-	    fdc_track[m].dx=XYZ(m,0)-neighbors[m]->x; // residuals
-	    fdc_track[m].dy=XYZ(m,1)-neighbors[m]->y;
-	    fdc_track[m].s=(XYZ(m,2)-zvertex)/sin(atan(tanl)); // path length
-	    fdc_track[m].chi2=(fdc_track[m].dx*fdc_track[m].dx
-			       +fdc_track[m].dy*fdc_track[m].dy)/CR(m,m);
-	  } 
-	  // guess for curvature
-	  kappa=charge/2./rc;  
+	  // Correct for the Lorentz effect given DOCAs
+	  CorrectPoints(neighbors,XYZ);
 	  
-	  // Estimate for azimuthal angle
-	  phi0=atan2(-xc,yc); 
-	  if (charge<0) phi0+=M_PI;
-	  // Look for distance of closest approach nearest to target
-	  D=-charge*rc-xc/sin(phi0);
-
+	  ref_plane=0; 
+	  
+	  // Fit to "space" points
+	  error=RiemannHelicalFit(neighbors,CR,XYZ); /// time-based fit with corrected points
+	  
+	  // Final correction 
+	  if (error==NOERROR){
+	    CorrectPoints(neighbors,XYZ); /// correct again based on time-based result
+	    for (unsigned int m=0;m<neighbors.size();m++){
+	      // neighbors[m]->status|=CORRECTED;
+	      fdc_track[m].hit_id=m;
+	      double sperp=charge*(XYZ(m,2)-XYZ(ref_plane,2))/tanl; 
+	      double sinp=sin(Phi1+sperp/rc);
+	      double cosp=cos(Phi1+sperp/rc);
+	      XYZ(m,0)=xc+rc*cosp;
+	      XYZ(m,1)=yc+rc*sinp;
+	      fdc_track[m].dx=XYZ(m,0)-neighbors[m]->x; // residuals
+	      fdc_track[m].dy=XYZ(m,1)-neighbors[m]->y;
+	      fdc_track[m].s=(XYZ(m,2)-zvertex)/sin(atan(tanl)); // path length
+	      fdc_track[m].chi2=(fdc_track[m].dx*fdc_track[m].dx
+				 +fdc_track[m].dy*fdc_track[m].dy)/CR(m,m);
+	    } 
+	    // guess for curvature
+	    kappa=charge/2./rc;  
+	    
+	    // Estimate for azimuthal angle
+	    phi0=atan2(-xc,yc); 
+	    if (charge<0) phi0+=M_PI;
+	    // Look for distance of closest approach nearest to target
+	    D=-charge*rc-xc/sin(phi0);
+	    
+	  }
 	}
+	
+	DMatrix Seed(5,1);
+	DMatrix Cov(5,5);	  
+	// Initialize seed track parameters
+	Seed(0,0)=kappa;    // Curvature 
+	Seed(1,0)=phi0;      // Phi
+	Seed(2,0)=D;       // D=distance of closest approach to origin   
+	Seed(3,0)=tanl;     // tan(lambda), lambda=dip angle
+	Seed(4,0)=zvertex;       // z-position at closest approach to origin
+	for (unsigned int i=0;i<5;i++) Cov(i,i)=1.;
+	
+	segment->S.ResizeTo(Seed);
+	segment->S=Seed;
+	segment->cov.ResizeTo(Cov);
+	segment->cov=Cov;
+	segment->hits=neighbors;
+	segment->track=fdc_track;
+	segment->xc=xc;
+	segment->yc=yc;
+	segment->rc=rc;
+	segment->Phi1=Phi1;
+	segment->chisq=chisq;
+	
+	_data.push_back(segment);
       }
-    
-      DMatrix Seed(5,1);
-      DMatrix Cov(5,5);	  
-      // Initialize seed track parameters
-      Seed(0,0)=kappa;    // Curvature 
-      Seed(1,0)=phi0;      // Phi
-      Seed(2,0)=D;       // D=distance of closest approach to origin   
-      Seed(3,0)=tanl;     // tan(lambda), lambda=dip angle
-      Seed(4,0)=zvertex;       // z-position at closest approach to origin
-      for (unsigned int i=0;i<5;i++) Cov(i,i)=1.;
-      
-      segment->S.ResizeTo(Seed);
-      segment->S=Seed;
-      segment->cov.ResizeTo(Cov);
-      segment->cov=Cov;
-      segment->hits=neighbors;
-      segment->track=fdc_track;
-      segment->xc=xc;
-      segment->yc=yc;
-      segment->rc=rc;
-      segment->Phi1=Phi1;
-      segment->chisq=chisq;
-      
-      _data.push_back(segment);
     }
-  }
+    // Look for a new plane to start looking for a segment
+    while (start<x_list.size()-1){
+      if ((points[x_list[start]]->status&USED_IN_SEGMENT)==0) break;
+      start++;
+    }
+  } //while loop over x_list planes
 
   return NOERROR;
 }
