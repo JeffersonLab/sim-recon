@@ -179,13 +179,13 @@ void DTrack_factory_THROWN::SmearMomentum(DTrack *trk)
   if(theta_deg<15) 
     {dp=res_p1(theta_deg); dtheta_deg=res_p10(pmag); dphi=res_p9(pmag);}
   else if(theta_deg>=15 && theta_deg<25) 
-    {dp=res_p2(pmag); dtheta_deg=res_p10(pmag); dphi=res_p9(pmag);}
+    {dp=res_p2(theta_deg); dtheta_deg=res_p10(pmag); dphi=res_p9(pmag);}
   else if(theta_deg>=25 && theta_deg<35) 
-    {dp=res_p3(pmag); dtheta_deg=res_p10(pmag); dphi=res_p9(pmag);}
+    {dp=res_p3(theta_deg); dtheta_deg=res_p10(pmag); dphi=res_p9(pmag);}
   else if(theta_deg>=35 && theta_deg<45) 
-    {dp=res_p4(pmag); dtheta_deg=res_p11(pmag); dphi=res_p9(pmag);}
+    {dp=res_p4(theta_deg); dtheta_deg=res_p11(pmag); dphi=res_p9(pmag);}
   else if(theta_deg>=45 && theta_deg<55) 
-    {dp=res_p4(pmag); dtheta_deg=res_p12(pmag); dphi=res_p9(pmag);}
+    {dp=res_p5(theta_deg); dtheta_deg=res_p12(pmag); dphi=res_p9(pmag);}
   else if(theta_deg>=55)
   {
     dtheta_deg=res_p12(pmag); 
