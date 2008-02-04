@@ -2,4 +2,8 @@
 CXXFLAGS += -I$(JANA_HOME)/include
 LIB_DIRS += $(JANA_HOME)/lib/$(OSNAME)
 
+ifdef XERCESCROOT
+	include $(JANA_HOME)/src/BMS/Makefile.XERCES
+endif
+
 ADDITIONAL_MODULES += JANA
