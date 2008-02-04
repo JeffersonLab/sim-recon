@@ -64,7 +64,7 @@ int DMagneticFieldMapCalibDB::ReadMap(int runnumber, string context)
 	// we do it this way. 
 	if(!jcalib)return 0;
 	
-	string namepath = "Magnets/Solenoid/solenoid_1400";
+	string namepath = "Magnets/Solenoid/solenoid_1500";
 	cout<<"Reading Magnetic field map from "<<namepath<<" ..."<<endl;
 	vector< vector<float> > Bmap;
 	jcalib->Get(namepath, Bmap);
