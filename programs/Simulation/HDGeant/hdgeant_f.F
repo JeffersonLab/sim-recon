@@ -1,4 +1,9 @@
-      PROGRAM HDGEANT
+C
+C Note: In order to link with C++ code, "main" must defined from C++.
+C Thus, we turn the fortran program "HDGEANT" into a subroutine and
+C call it from the C++ main() which is in hdgeant.cc
+
+      SUBROUTINE HDGEANT
 
       implicit none
       real q,hq

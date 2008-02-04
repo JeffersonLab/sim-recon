@@ -22,7 +22,7 @@
 #include "geant321/pilot.h"
 *CMZ :  3.21/02 29/03/94  15.41.33  by  S.Giani
 *-- Author :
-      PROGRAM GXINT
+      SUBROUTINE GXINT
 *
 *     GEANT main program. To link with the MOTIF user interface
 *     the routine GPAWPP(NWGEAN,NWPAW) should be called, whereas

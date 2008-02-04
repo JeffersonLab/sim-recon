@@ -282,6 +282,7 @@ C..geant..
 *
       call HDDSgeant3
       call Goptimize
+		call initcalibdb
 *
 *             Open the HBOOK file for output
 *
