@@ -180,9 +180,10 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 		const DMCThrown *mcthrown = mcthrowns[i];
 		const DTrackEfficiency *trkeff = trackefficiencies[i];
 		
-		float theta = mcthrown->theta;
-		float phi = mcthrown->phi;
-		float p = mcthrown->p;
+		DVector3 thrown_mom = mcthrown->momentum();
+		float theta = thrown_mom.Theta();
+		float phi = thrown_mom.Phi();
+		float p = thrown_mom.Mag();
 		
 		int Nhits = trkeff->Nhits_thrown;
 		FillAll(NHITS_THROWN, Nhits, theta, phi, p, Nhits);
@@ -203,22 +204,32 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 			}
 		
 			const DTrack *track = factory_trk->GetByIDT(trkeff->trackid);
-			if(track){				
-				float dp_over_p = (track->p - mcthrown->p)/mcthrown->p;
+			if(track){
+				DVector3 track_mom = track->momentum();
+				float trk_theta = track_mom.Theta();
+				float trk_phi = track_mom.Phi();
+				float trk_p = track_mom.Mag();
+
+				float dp_over_p = (trk_p - p)/p;
 				dp_over_p_vs_p->Fill(p, dp_over_p);
 				dp_over_p_vs_theta->Fill(theta, dp_over_p);
-				if(track->p != 0.0)
-					pthrown_over_pfound_vs_p->Fill(mcthrown->p,mcthrown->p/track->p);
+				if(trk_p != 0.0)
+					pthrown_over_pfound_vs_p->Fill(p,p/trk_p);
 				const DTrackCandidate *trackcandidate = factory_trkcandidate->GetByIDT(track->candidateid);
-				float dpcan_over_p = (trackcandidate->p - mcthrown->p)/mcthrown->p;
+				DVector3 can_mom = trackcandidate->momentum();
+				float can_theta = can_mom.Theta();
+				float can_phi = can_mom.Phi();
+				float can_p = can_mom.Mag();
+
+				float dpcan_over_p = (can_p - p)/p;
 				dpcandidate_over_p_vs_theta->Fill(theta, dpcan_over_p);
-				if(trackcandidate->p != 0.0)
-					pcandidatethrown_over_pfound_vs_p->Fill(mcthrown->p,mcthrown->p/trackcandidate->p);
+				if(can_p != 0.0)
+					pcandidatethrown_over_pfound_vs_p->Fill(p,p/can_p);
 				
-				double sthrown = sin(mcthrown->theta);
-				double sfound = sin(track->theta);
+				double sthrown = sin(theta);
+				double sfound = sin(trk_theta);
 				sinthrown_over_sinfound_vs_sin->Fill(sthrown, sthrown/sfound);
-				phithrown_over_phifound_vs_phi->Fill(mcthrown->phi, mcthrown->phi/track->phi);
+				phithrown_over_phifound_vs_phi->Fill(phi, phi/trk_phi);
 
 				if(fabs(dp_over_p) <=0.2){
 					FillAll(NMATCHED, Nhits, theta, phi, p);
@@ -230,9 +241,10 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 	for(unsigned int i=0;i<tracks.size();i++){
 		const DTrack *track = tracks[i];
 
-		float theta = track->theta;
-		float phi = track->phi;
-		float p = track->p;
+		DVector3 track_mom = track->momentum();
+		float theta = track_mom.Theta();
+		float phi = track_mom.Phi();
+		float p = track_mom.Mag();
 		FillAll(NFOUND, 0, theta, phi, p);
 	}
 	
