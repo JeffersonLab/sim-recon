@@ -142,6 +142,9 @@ C
 C
       CALL PYINIT('FIXT','gamma','p+',dbeam)
 C
+C     Uncomment the following to enable Ko decays in pythia
+C      CALL pythia6_setdecay(.true., .true.)
+C
       DO iev=1,nevent
 C
          CALL PYEVNT
