@@ -22,6 +22,7 @@ class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 
 	private:
 		jerror_t init(void);
+		jerror_t brun(JEventLoop *loop, int runnumber);
 		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
 		float Z_MIN, Z_MAX;

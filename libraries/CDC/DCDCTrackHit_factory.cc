@@ -22,6 +22,14 @@ static int Nstraws[CDC_MAX_RINGS];
 //------------------
 jerror_t DCDCTrackHit_factory::init(void)
 {
+	return NOERROR;
+}
+
+//------------------
+// brun
+//------------------
+jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
+{
 	// Initialize the "wire" table that is a static global variable.
 	// This table takes up about 200kB - 300kB so we don't want
 	// to duplicate it for each thread which is why it is static.
