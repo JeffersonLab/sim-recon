@@ -71,6 +71,7 @@ void cdc_fdc_bfield(void)
 	
 	// Save
 	c1->SaveAs("cdc_fdc_bfield.eps");
+	c1->SaveAs("cdc_fdc_bfield.pdf");
 	c1->SaveAs("cdc_fdc_bfield.gif");
 }
 
