@@ -8,6 +8,7 @@
 #ifndef _DFCALPhoton_
 #define _DFCALPhoton_
 
+#include <math.h>
 #include <DVector3.h>
 #include <TLorentzVector.h>
 #include "DFCALCluster.h"
