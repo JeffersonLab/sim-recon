@@ -316,6 +316,7 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
   double denom= N[0]*N[0]+N[1]*N[1];
   double numer;
   vector<int>bad(hits.size());
+  int numbad=0;
   // Clear old projection vector
   projections.clear();
   for (unsigned int m=0;m<hits.size();m++){
@@ -327,6 +328,7 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
     temp=denom*r2-numer*numer;
     if (temp<0){  // Skip point if the intersection gives nonsense
       bad[m]=1;
+      numbad++;
       DRiemannHit_t *temphit = new DRiemannHit_t;
       temphit->x=x_int0;
       temphit->y=y_int0;
@@ -352,13 +354,24 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
     }
     projections.push_back(temphit);
   }
-      
+
+  // All arc lengths are measured relative to some reference plane with a hit.
+  // Don't use a "bad" hit for the reference...
+  unsigned int start=0;
+  for (unsigned int i=0;i<bad.size();i++){
+    if (!bad[i]){
+      start=i;
+      break;
+    }
+  }
+
   // Linear regression to find z0, tanl   
   double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.,sperp=0.,Delta;
-  for (unsigned int k=0;k<projections.size();k++){
-    if (!bad[k]){
-      double diffx=projections[k]->x-projections[0]->x;
-      double diffy=projections[k]->y-projections[0]->y;
+  for (unsigned int k=start;k<projections.size();k++){
+    if (!bad[k])
+      {
+      double diffx=projections[k]->x-projections[start]->x;
+      double diffy=projections[k]->y-projections[start]->y;
       double chord=sqrt(diffx*diffx+diffy*diffy);
       double ratio=chord/2./rc; 
       // Make sure the argument for the arcsin does not go out of range...
@@ -379,8 +392,8 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
   // Track parameters z0 and tan(lambda)
   tanl=-Delta/(sumv*sumxy-sumy*sumx); 
   z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
-  double chord=sqrt(projections[0]->x*projections[0]->x
-		    +projections[0]->y*projections[0]->y);
+  double chord=sqrt(projections[start]->x*projections[start]->x
+		    +projections[start]->y*projections[start]->y);
   double ratio=chord/2./rc; 
   // Make sure the argument for the arcsin does not go out of range...
   if (ratio>1.) 
