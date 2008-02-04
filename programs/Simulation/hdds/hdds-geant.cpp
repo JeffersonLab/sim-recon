@@ -1284,26 +1284,27 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
 
             std::cout
              << "      else if (iregion.eq." << id << ") then" << std::endl
-             << "        rs(1) = r(1)-orig" << id << "(1)" << std::endl
-             << "        rs(2) = r(2)-orig" << id << "(2)" << std::endl
-             << "        rs(3) = r(3)-orig" << id << "(3)" << std::endl
-             << "        rr(1) = rs(1)*rmat" << id << "(1,1)"
+				 << "		    call gufld2(r, B)" << std::endl
+             << "C        rs(1) = r(1)-orig" << id << "(1)" << std::endl
+             << "C        rs(2) = r(2)-orig" << id << "(2)" << std::endl
+             << "C        rs(3) = r(3)-orig" << id << "(3)" << std::endl
+             << "C        rr(1) = rs(1)*rmat" << id << "(1,1)"
              <<                "+rs(2)*rmat" << id << "(1,2)"
              <<                "+rs(3)*rmat" << id << "(1,3)" << std::endl
-             << "        rr(2) = rs(1)*rmat" << id << "(2,1)"
+             << "C        rr(2) = rs(1)*rmat" << id << "(2,1)"
              <<                "+rs(2)*rmat" << id << "(2,2)"
              <<                "+rs(3)*rmat" << id << "(2,3)" << std::endl
-             << "        rr(3) = rs(1)*rmat" << id << "(3,1)"
+             << "C        rr(3) = rs(1)*rmat" << id << "(3,1)"
              <<                "+rs(2)*rmat" << id << "(3,2)"
-	    <<                 "+rs(3)*rmat" << id << "(3,3)" << std::endl
-             << "        call gufld" << map << "(rr,BB)"     << std::endl
-             << "        B(1) = BB(1)*rmat" << id << "(1,1)"
+             <<                "+rs(3)*rmat" << id << "(3,3)" << std::endl
+             << "C        call gufld" << map << "(rr,BB)"     << std::endl
+             << "C        B(1) = BB(1)*rmat" << id << "(1,1)"
              <<               "+BB(2)*rmat" << id << "(2,1)"
              <<               "+BB(3)*rmat" << id << "(3,1)" << std::endl
-             << "        B(2) = BB(1)*rmat" << id << "(1,2)"
+             << "C        B(2) = BB(1)*rmat" << id << "(1,2)"
              <<               "+BB(2)*rmat" << id << "(2,2)"
              <<               "+BB(3)*rmat" << id << "(3,2)" << std::endl
-             << "        B(3) = BB(1)*rmat" << id << "(1,3)"
+             << "C        B(3) = BB(1)*rmat" << id << "(1,3)"
              <<               "+BB(2)*rmat" << id << "(2,3)"
              <<               "+BB(3)*rmat" << id << "(3,3)" << std::endl;
 
