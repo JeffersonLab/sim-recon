@@ -59,8 +59,8 @@ static int initialized=0;
 // due to the magnetic field).
 float lorentz_x[LORENTZ_X_POINTS];
 float lorentz_z[LORENTZ_Z_POINTS];
-float lorentz_nx[LORENTZ_X_POINTS][LORENTZ_Z_POINTS];
-float lorentz_nz[LORENTZ_X_POINTS][LORENTZ_Z_POINTS];
+float *lorentz_nx[LORENTZ_X_POINTS];
+float *lorentz_nz[LORENTZ_X_POINTS];
 
 void gpoiss_(float*,int*,const int*); // avoid solaris compiler warnings
 
@@ -150,6 +150,23 @@ void hitForwardDC (float xin[4], float xout[4],
 
   // Initialize arrays of deflection data from the Lorentz effect
   if (!initialized){
+		// Allocate memory for 2-D tables. By "faking" a 2-D array this way,
+		// we can pass the pointers into GetLorentzDefelections() without
+		// having to hardwire array sizes into the data types of the arguments.
+		for (i=0;i<LORENTZ_X_POINTS;i++){
+			lorentz_nx[i] = (float*)malloc(LORENTZ_Z_POINTS*sizeof(float));
+			lorentz_nz[i] = (float*)malloc(LORENTZ_Z_POINTS*sizeof(float));
+		}
+		
+		// Get tables from database
+		GetLorentzDefelections(lorentz_x, lorentz_z, lorentz_nx, lorentz_nz, LORENTZ_X_POINTS, LORENTZ_Z_POINTS);
+		initialized=1;
+
+		// Below is Simon's original code for reading in the lorentz deflection
+		// tables. It is preserved for now for easy reference, but may be deleted
+		// in the future once the calib DB method is considered stable and working.
+		// 7/24/07  D. L.
+#if 0
     FILE *fp=fopen("fdc_deflections.dat","r");
     if (fp){
       char dummy[80];
@@ -173,6 +190,7 @@ void hitForwardDC (float xin[4], float xout[4],
       fprintf(stderr,"no deflection parameterization file found.\n");
       exit(1);
     }
+#endif
   }  
 
   transformCoord(xin,"global",xinlocal,"local");

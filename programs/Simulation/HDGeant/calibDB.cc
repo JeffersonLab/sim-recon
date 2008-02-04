@@ -123,6 +123,13 @@ void GetLorentzDefelections(float *lorentz_x, float *lorentz_z, float **lorentz_
 		exit(-1);
 	}
 	
+	// Notify user
+	cout<<"Read "<<tvals.size()<<" values from FDC/lorentz_deflections in calibDB"<<endl;
+	cout<<"   lorentz_deflections columns (alphabetical): ";
+	map<string,float>::iterator iter;
+	for(iter=tvals[0].begin(); iter!=tvals[0].end(); iter++)cout<<iter->first<<" ";
+	cout<<endl;
+	
 	// Copy values into tables. We preserve the order since that is how it was
 	// originally done in hitFDC.c
 	for(unsigned int i=0; i<tvals.size(); i++){
