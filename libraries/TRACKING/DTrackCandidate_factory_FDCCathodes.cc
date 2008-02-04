@@ -17,7 +17,9 @@
 #define MATCH_RADIUS 5.0
 #define MAX_SEGMENTS 20
 #define HALF_PACKAGE 6.0
-#define FDC_OUTER_RADIUS 50.0
+#define FDC_OUTER_RADIUS 50.0 
+#define BEAM_RMS 0.3 //cm
+
 ///
 /// DTrackCandidate_factory_FDCCathodes::brun():
 ///
@@ -164,10 +166,12 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    
 	  }
 	}
-	fit.FitCircle(0.1,NULL);
-	q=fit.GetCharge(0.1,NULL,NULL);
+	jerror_t error=fit.FitCircle(BEAM_RMS,NULL);
+	if (error!=NOERROR) fprintf(stderr,"Error ! %d\n",error);
+	q=fit.GetCharge(BEAM_RMS,NULL,NULL);
 	// Extension to helix
-	fit.FitLine(0.1,NULL);
+	error=fit.FitLine(BEAM_RMS,NULL);
+	if (error!=NOERROR) fprintf(stderr,"line Error ! %d\n",error);
       
 	// Curvature
 	segments[1]->S(0,0)=kappa=q/2./fit.rc;
@@ -201,10 +205,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 		       hit->covyy,hit->covxy);
 	    
 	  }
-	  fit.FitCircle(0.1,NULL);
-	  q=fit.GetCharge(0.1,NULL,NULL);
+	  fit.FitCircle(BEAM_RMS,NULL);
+	  q=fit.GetCharge(BEAM_RMS,NULL,NULL);
 	  // Extension to helix
-	  fit.FitLine(0.1,NULL);
+	  fit.FitLine(BEAM_RMS,NULL);
      
 	  // Curvature
 	  segments[2]->S(0,0)=kappa=q/2./fit.rc;
@@ -318,10 +322,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    
 	  }
 	}
-	fit.FitCircle(0.1,NULL);
-	q=fit.GetCharge(0.1,NULL,NULL);
+	fit.FitCircle(BEAM_RMS,NULL);
+	q=fit.GetCharge(BEAM_RMS,NULL,NULL);
 	// Extension to helix
-	fit.FitLine(0.1,NULL);
+	fit.FitLine(BEAM_RMS,NULL);
 
 	// Curvature
 	segments[1]->S(0,0)=kappa=q/2./fit.rc;
@@ -412,10 +416,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 		       hit->covyy,hit->covxy);	   
 	  }
 	}
-	fit.FitCircle(0.1,NULL);
-	q=fit.GetCharge(0.1,NULL,NULL);	
+	fit.FitCircle(BEAM_RMS,NULL);
+	q=fit.GetCharge(BEAM_RMS,NULL,NULL);	
 	// Extension to helix
-	fit.FitLine(0.1,NULL);
+	fit.FitLine(BEAM_RMS,NULL);
 	
 	// Curvature
 	kappa=q/2./fit.rc;
