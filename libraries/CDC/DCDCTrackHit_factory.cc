@@ -94,7 +94,7 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 			case 16:	myNstraws= 155;	radius= 39.473;	stereo= +degrees6; break;
 			case 17:	myNstraws= 166;	radius= 42.274;	stereo=  degrees0; break;
 			case 18:	myNstraws= 173;	radius= 44.057;	stereo=  degrees0; break;
-			case 19:	myNstraws= 172;	radius= 45.839;	stereo=  degrees0; break;
+			case 19:	myNstraws= 180;	radius= 45.839;	stereo=  degrees0; break;
 			case 20:	myNstraws= 187;	radius= 47.621;	stereo=  degrees0; break;
 			case 21:	myNstraws= 194;	radius= 49.404;	stereo=  degrees0; break;
 			case 22:	myNstraws= 201;	radius= 51.186;	stereo=  degrees0; break;
