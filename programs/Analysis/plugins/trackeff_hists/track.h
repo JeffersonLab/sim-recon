@@ -5,14 +5,14 @@
 // Creator: davidl (on Darwin fwing-dhcp95.jlab.org 8.10.1 i386)
 //
 
-#ifndef _TrkEff_Leaf_
-#define _TrkEff_Leaf_
+#ifndef _track_
+#define _track_
 
 #include <TObject.h>
 #include <TVector3.h>
 
 
-class TrkEff_Leaf:public TObject{
+class track:public TObject{
 
 	public:
 
@@ -42,9 +42,9 @@ class TrkEff_Leaf:public TObject{
 		int status_fit;
 
 	private:
-		ClassDef(TrkEff_Leaf,1);
+		ClassDef(track,1);
 
 };
 
-#endif // _TrkEff_Leaf_
+#endif // _track_
 

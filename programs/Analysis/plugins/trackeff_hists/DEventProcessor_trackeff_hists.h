@@ -24,12 +24,13 @@ using std::map;
 #include <PID/DKinematicData.h>
 #include <TRACKING/DReferenceTrajectory.h>
 #include <TRACKING/DMCTrackHit.h>
+#include <TRACKING/DTrack.h>
+#include <TRACKING/DMCThrown.h>
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCHit.h>
 
-#include "TrkEff_Leaf.h"
-
-class DCDCTrackHit;
+#include "track.h"
+#include "dchit.h"
 
 class DEventProcessor_trackeff_hists:public JEventProcessor{
 
@@ -38,8 +39,12 @@ class DEventProcessor_trackeff_hists:public JEventProcessor{
 		~DEventProcessor_trackeff_hists();
 
 		TTree *trkeff;
-		TrkEff_Leaf leaf;
-		TrkEff_Leaf *leaf_ptr;
+		track trk;
+		track *trk_ptr;
+
+		TTree *fdchits, *cdchits;
+		dchit cdchit, fdchit;
+		dchit *cdchit_ptr, *fdchit_ptr;
 		
 		typedef vector<const DCDCTrackHit*> CDChitv;
 		typedef vector<const DFDCHit*> FDChitv;
@@ -54,10 +59,12 @@ class DEventProcessor_trackeff_hists:public JEventProcessor{
 		void GetCDCHits(const DKinematicData *p, CDChitv &inhits, CDChitv &outhits);
 		void GetFDCHits(const DKinematicData *p, FDChitv &inhits, FDChitv &outhits);
 		void GetFDCHitsFromTruth(int trackno, FDChitv &outhits);
+		void GetCDCHitsFromTruth(int trackno, CDChitv &outhits);
 		unsigned int FindMatch(CDChitv &thrownhits, vector<CDChitv> &candidate_hits, CDChitv &matched_hits);
 		unsigned int FindMatch(FDChitv &thrownhits, vector<FDChitv> &candidate_hits, FDChitv &matched_hits);
 		unsigned int GetNFDCWireHits(FDChitv &inhits);
 		void FindFDCTrackNumbers(JEventLoop *loop);
+		void FindCDCTrackNumbers(JEventLoop *loop);
 
 		DMagneticFieldMap *bfield;
 		DReferenceTrajectory *ref;
@@ -65,6 +72,8 @@ class DEventProcessor_trackeff_hists:public JEventProcessor{
 		double MAX_HIT_DIST_FDC;
 		
 		map<const DFDCHit*, const DMCTrackHit*> fdclink;
+		map<const DCDCTrackHit*, const DMCTrackHit*> cdclink;
+		map<const DMCThrown*, const DTrack*> trklink;
 		
 		pthread_mutex_t mutex;
 		pthread_mutex_t rt_mutex;

@@ -22,10 +22,8 @@ using namespace std;
 #include <TRACKING/DTrack.h>
 #include <FDC/DFDCGeometry.h>
 #include <DVector2.h>
+#include <ParticleType.h>
 
-// The executable should define the ROOTfile global variable. It will
-// be automatically linked when dlopen is called.
-//extern TFile *ROOTfile;
 
 // Routine used to create our DEventProcessor
 extern "C"{
@@ -41,7 +39,9 @@ void InitPlugin(JApplication *app){
 //------------------
 DEventProcessor_trackeff_hists::DEventProcessor_trackeff_hists()
 {
-	leaf_ptr = &leaf;
+	trk_ptr = &trk;
+	cdchit_ptr = &cdchit;
+	fdchit_ptr = &fdchit;
 	
 	pthread_mutex_init(&mutex, NULL);
 	pthread_mutex_init(&rt_mutex, NULL);
@@ -66,7 +66,7 @@ jerror_t DEventProcessor_trackeff_hists::init(void)
 
 	// Create Tree
 	trkeff = new TTree("trkeff","Tracking Efficiency");
-	trkeff->Branch("F","TrkEff_Leaf",&leaf_ptr);
+	trkeff->Branch("F","track",&trk_ptr);
 
 	dir->cd("../");
 	
@@ -125,7 +125,8 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 	// Lock mutex
 	pthread_mutex_lock(&mutex);
 
-	// Fill map associating FDC hits with truth points
+	// Fill maps associating CDC and FDC hits with truth points
+	FindCDCTrackNumbers(loop);
 	FindFDCTrackNumbers(loop);
 		
 	// Get hit list for all candidates
@@ -151,7 +152,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 
 		FDChitv fdc_outhits;
 		GetFDCHits(tracks[i], fdctrackhits, fdc_outhits);
-		GetFDCHitsFromTruth(i+1, fdc_outhits);
+		//GetFDCHitsFromTruth(i+1, fdc_outhits);
 		fdc_fit_hits.push_back(fdc_outhits);
 	}
 
@@ -164,24 +165,24 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 
 		CDChitv cdc_thrownhits;
 		FDChitv fdc_thrownhits;
-		GetCDCHits(mcthrowns[i], cdctrackhits, cdc_thrownhits);
+		//GetCDCHits(mcthrowns[i], cdctrackhits, cdc_thrownhits);
 		//GetFDCHits(mcthrowns[i], fdctrackhits, fdc_thrownhits);
+		GetCDCHitsFromTruth(i+1, cdc_thrownhits);
 		GetFDCHitsFromTruth(i+1, fdc_thrownhits);
-
 		
-		leaf.status_can = 0;
-		leaf.status_fit = 0;
+		trk.status_can = 0;
+		trk.status_fit = 0;
 		if(cdc_thrownhits.size()<5 && fdc_thrownhits.size()<5){
-			leaf.status_can--;
-			leaf.status_fit--;
+			trk.status_can--;
+			trk.status_fit--;
 		}
 		
-		leaf.pthrown = mcthrown->momentum();
-		leaf.z_thrown = mcthrown->position().Z();
-		leaf.ncdc_hits_thrown = cdc_thrownhits.size();
-		leaf.nfdc_hits_thrown = fdc_thrownhits.size();
-		leaf.ncdc_hits = cdctrackhits.size();
-		leaf.nfdc_hits = GetNFDCWireHits(fdctrackhits);
+		trk.pthrown = mcthrown->momentum();
+		trk.z_thrown = mcthrown->position().Z();
+		trk.ncdc_hits_thrown = cdc_thrownhits.size();
+		trk.nfdc_hits_thrown = fdc_thrownhits.size();
+		trk.ncdc_hits = cdctrackhits.size();
+		trk.nfdc_hits = GetNFDCWireHits(fdctrackhits);
 		
 		//========= CANDIDATE ========
 		// Look for a candidate track that matches this thrown one
@@ -191,23 +192,23 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		unsigned int ifdc_can = FindMatch(fdc_thrownhits, fdc_candidate_hits, fdc_matched_hits);
 		
 		// Initialize values for when no matching candidate is found
-		leaf.pcan.SetXYZ(0.0, 0.0, 0.0);
-		leaf.z_can = -1000.0;
-		leaf.ncdc_hits_can = 0;
-		leaf.nfdc_hits_can = 0;
-		leaf.ncdc_hits_thrown_and_can = 0;
-		leaf.nfdc_hits_thrown_and_can = 0;
-		leaf.cdc_chisq_can = 1.0E6;
-		leaf.fdc_chisq_can = 1.0E6;
+		trk.pcan.SetXYZ(0.0, 0.0, 0.0);
+		trk.z_can = -1000.0;
+		trk.ncdc_hits_can = 0;
+		trk.nfdc_hits_can = 0;
+		trk.ncdc_hits_thrown_and_can = 0;
+		trk.nfdc_hits_thrown_and_can = 0;
+		trk.cdc_chisq_can = 1.0E6;
+		trk.fdc_chisq_can = 1.0E6;
 		
 		// CDC
 		const DTrackCandidate *cdc_can = NULL;
 		if(icdc_can>=0 && icdc_can<trackcandidates.size()){
 			cdc_can = trackcandidates[icdc_can];
 			
-			leaf.ncdc_hits_can = cdc_candidate_hits[icdc_can].size();
-			leaf.ncdc_hits_thrown_and_can = cdc_matched_hits.size();
-			leaf.cdc_chisq_can = 0.0;
+			trk.ncdc_hits_can = cdc_candidate_hits[icdc_can].size();
+			trk.ncdc_hits_thrown_and_can = cdc_matched_hits.size();
+			trk.cdc_chisq_can = 0.0;
 		}
 		
 		// FDC
@@ -215,9 +216,9 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		if(ifdc_can>=0 && ifdc_can<trackcandidates.size()){
 			fdc_can = trackcandidates[ifdc_can];
 			
-			leaf.nfdc_hits_can = fdc_candidate_hits[ifdc_can].size();
-			leaf.nfdc_hits_thrown_and_can = fdc_matched_hits.size();
-			leaf.fdc_chisq_can = 0.0;
+			trk.nfdc_hits_can = fdc_candidate_hits[ifdc_can].size();
+			trk.nfdc_hits_thrown_and_can = fdc_matched_hits.size();
+			trk.fdc_chisq_can = 0.0;
 		}
 		
 		// Figure out which candidate (if any) I should match this with
@@ -229,8 +230,11 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		}
 		
 		if(can!=NULL){
-			leaf.pcan = can->momentum();
-			leaf.z_can = can->position().Z();
+			trk.pcan = can->momentum();
+			trk.z_can = can->position().Z();
+		}else{
+			trk.pcan.SetXYZ(0,0,0);
+			trk.z_can = -1000.0;
 		}
 
 		//========= FIT TRACK ========
@@ -239,23 +243,23 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		unsigned int ifdc_fit = FindMatch(fdc_thrownhits, fdc_fit_hits, fdc_matched_hits);
 		
 		// Initialize values for when no matching fitdidate is found
-		leaf.pfit.SetXYZ(0.0, 0.0, 0.0);
-		leaf.z_fit = -1000.0;
-		leaf.ncdc_hits_fit = 0;
-		leaf.nfdc_hits_fit = 0;
-		leaf.ncdc_hits_thrown_and_fit = 0;
-		leaf.nfdc_hits_thrown_and_fit = 0;
-		leaf.cdc_chisq_fit = 1.0E6;
-		leaf.fdc_chisq_fit = 1.0E6;
+		trk.pfit.SetXYZ(0.0, 0.0, 0.0);
+		trk.z_fit = -1000.0;
+		trk.ncdc_hits_fit = 0;
+		trk.nfdc_hits_fit = 0;
+		trk.ncdc_hits_thrown_and_fit = 0;
+		trk.nfdc_hits_thrown_and_fit = 0;
+		trk.cdc_chisq_fit = 1.0E6;
+		trk.fdc_chisq_fit = 1.0E6;
 		
 		// CDC
 		const DTrack *cdc_fit = NULL;
 		if(icdc_fit>=0 && icdc_fit<tracks.size()){
 			cdc_fit = tracks[icdc_fit];
 			
-			leaf.ncdc_hits_fit = cdc_fit_hits[icdc_fit].size();
-			leaf.ncdc_hits_thrown_and_fit = cdc_matched_hits.size();
-			leaf.cdc_chisq_fit = 0.0;
+			trk.ncdc_hits_fit = cdc_fit_hits[icdc_fit].size();
+			trk.ncdc_hits_thrown_and_fit = cdc_matched_hits.size();
+			trk.cdc_chisq_fit = 0.0;
 		}
 		
 		// FDC
@@ -263,12 +267,12 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		if(ifdc_fit>=0 && ifdc_fit<tracks.size()){
 			fdc_fit = tracks[ifdc_fit];
 			
-			leaf.nfdc_hits_fit = fdc_fit_hits[ifdc_fit].size();
-			leaf.nfdc_hits_thrown_and_fit = fdc_matched_hits.size();
-			leaf.fdc_chisq_fit = 0.0;
+			trk.nfdc_hits_fit = fdc_fit_hits[ifdc_fit].size();
+			trk.nfdc_hits_thrown_and_fit = fdc_matched_hits.size();
+			trk.fdc_chisq_fit = 0.0;
 		}
 		
-		// Figure out which fitdidate (if any) I should match this with
+		// Figure out which candidate (if any) I should match this with
 		const DTrack* fit = NULL;
 		if(cdc_fit!=NULL && fdc_fit!=NULL){
 			fit = cdc_matched_hits.size()>fdc_matched_hits.size() ? cdc_fit:fdc_fit;
@@ -277,11 +281,83 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		}
 		
 		if(fit!=NULL){
-			leaf.pfit = fit->momentum();
-			leaf.z_fit = fit->position().Z();
+			trk.pfit = fit->momentum();
+			trk.z_fit = fit->position().Z();
 		}
 		
+		// Fill map linking this thrown track to a fit track (NULL is OK here)
+		trklink[mcthrown] = fit;
+		
+		// Fill tree
 		trkeff->Fill();
+	}
+	
+	// CDC hits tree
+	map<const DCDCTrackHit*, const DMCTrackHit*>::iterator iter;
+	for(iter=cdclink.begin(); iter!=cdclink.end(); iter++){
+		const DMCTrackHit *truth = iter->second;
+		const DCDCTrackHit *hit = iter->first;
+		const DCDCWire *wire = hit->wire;
+
+		// Fill in values we can with only hit and truth point
+		TVector3 pos_truth(truth->r*cos(truth->phi), truth->r*sin(truth->phi), truth->z);
+		cdchit.wire = wire->straw;
+		cdchit.layer = wire->ring;
+		cdchit.t = hit->tdrift;
+		cdchit.pos_truth = pos_truth;
+		cdchit.ptype = truth->ptype;
+
+		// Some quantities require a fit track to calculate (e.g. residuals)
+		// Here we see if there is a fit track associated with the thrown
+		// track this hit came from.
+		int trackno = truth->track;
+		const DTrack *track = NULL;
+		const DMCThrown *mcthrown=NULL;
+		if(trackno>=1 && trackno<=(int)mcthrowns.size()){
+			mcthrown=mcthrowns[trackno-1];
+			track = trklink[mcthrown];
+
+			// We just need the thrown track for the beta
+			double mass = ParticleMass((Particle_t)truth->ptype);
+			cdchit.beta = sqrt(1.0/(pow(mass/mcthrown->momentum().Mag(), 2.0) + 1.0));
+		}else{
+			cdchit.beta = -1000.0;
+		}
+
+		
+		// Now, fill in the rest of the DC hit info based on whether we have
+		// a fit track or not
+		if(track!=NULL){
+			// Fit track found
+			DReferenceTrajectory *rt = const_cast<DReferenceTrajectory *>(track->rt);
+			double s,t;
+			rt->DistToRT(wire, &s);
+			t = rt->GetLastDistAlongWire();
+			TVector3 pos_doca;
+			TVector3 mom_doca;
+			rt->GetLastDOCAPoint(pos_doca, mom_doca);
+			TVector3 pos_wire = wire->origin + t*wire->tdir;
+			TVector3 delta_hit = pos_doca - pos_wire;
+			TVector3 delta_truth = pos_truth - pos_wire;
+			TVector3 delta_truth_cross_tdir = delta_truth.Cross(wire->tdir);
+
+			cdchit.tof = cdchit.beta*s;
+			cdchit.doca = delta_hit.Mag();
+			cdchit.resi = delta_truth_cross_tdir.Mag();
+			cdchit.track_wire_angle = 57.3*acos(mom_doca.Dot(wire->tdir)/mom_doca.Mag());
+			cdchit.chisq = track->chisq;
+			cdchit.pos_wire = pos_wire;
+		}else{
+			// No fit track
+			cdchit.tof = -1000.0;
+			cdchit.doca = -1000.0;
+			cdchit.resi = -1000.0;
+			cdchit.track_wire_angle = -1000.0;
+			cdchit.chisq = -1000.0;
+			cdchit.pos_wire.SetXYZ(-1000,-1000,-1000);
+		}
+		
+		cdchits->Fill();
 	}
 	
 	// Unlock mutex
@@ -339,11 +415,25 @@ void DEventProcessor_trackeff_hists::GetFDCHits(const DKinematicData *p, FDChitv
 }
 
 //------------------
+// GetCDCHitsFromTruth
+//------------------
+void DEventProcessor_trackeff_hists::GetCDCHitsFromTruth(int trackno, CDChitv &outhits)
+{
+	// Loop over all entries in the cdclink map and find the ones
+	// corresponding to the given track number
+	outhits.clear();
+	map<const DCDCTrackHit*, const DMCTrackHit*>::iterator iter;
+	for(iter=cdclink.begin(); iter!=cdclink.end(); iter++){
+		if((iter->second)->track==trackno)outhits.push_back(iter->first);
+	}
+}
+
+//------------------
 // GetFDCHitsFromTruth
 //------------------
 void DEventProcessor_trackeff_hists::GetFDCHitsFromTruth(int trackno, FDChitv &outhits)
 {
-	// Loop over all entried in the fdclink map and find the ones
+	// Loop over all entries in the fdclink map and find the ones
 	// corresponding to the given track number
 	outhits.clear();
 	map<const DFDCHit*, const DMCTrackHit*>::iterator iter;
@@ -446,7 +536,7 @@ unsigned int DEventProcessor_trackeff_hists::FindMatch(FDChitv &thrownhits, vect
 }
 
 //------------------
-// FindMatch
+// FindFDCTrackNumbers
 //------------------
 void DEventProcessor_trackeff_hists::FindFDCTrackNumbers(JEventLoop *loop)
 {
@@ -492,7 +582,7 @@ void DEventProcessor_trackeff_hists::FindFDCTrackNumbers(JEventLoop *loop)
 			if(iter!=fdclink.end()){
 				//_DBG_<<"More than 1 match for FDC hit!"<<endl;
 				// If a link for this hit already exists, delete it so neither
-				// one is used. This will of couse only work for 0,1, or 2
+				// one is used. This will of course only work for 0,1, or 2
 				// hits matched to a given truth point. 3 or more hits will
 				// cause the algorithm to fail.
 				fdclink.erase(iter);
@@ -502,4 +592,6 @@ void DEventProcessor_trackeff_hists::FindFDCTrackNumbers(JEventLoop *loop)
 		}
 	}
 }
+
+
 
