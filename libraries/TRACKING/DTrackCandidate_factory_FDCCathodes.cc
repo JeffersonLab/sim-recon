@@ -188,6 +188,14 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	segments[1]->yc=fit.yc;
 	segments[1]->rc=fit.rc;
 
+	// Try to match to package 2 again.
+	if (match2==NULL && package[1].size()>0 &&
+	    (match2=GetTrackMatch(q,zpackage[1],segments[1],package[1],
+				  match_id))!=NULL){ 
+	  // remove the segment from the list 
+	  package[1].erase(package[1].begin()+match_id);
+	}
+
 	// Try to match to package 3 again.
 	if (match3==NULL && package[2].size()>0 &&
 	    (match3=GetTrackMatch(q,zpackage[2],segments[1],package[2],
@@ -233,6 +241,14 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    package[3].erase(package[3].begin()+match_id); 
 	  }
 	}
+	// Try to match to package 4 again.
+	if (match4==NULL && package[3].size()>0 &&
+	    (match4=GetTrackMatch(q,zpackage[3],segments[1],package[3],
+				  match_id))!=NULL){ 
+	  // remove the segment from the list
+	  package[3].erase(package[3].begin()+match_id);
+	}
+
       }
 
       DVector3 mom,mom2,pos;
