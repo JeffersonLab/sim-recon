@@ -48,6 +48,7 @@ class DFDCPseudo : public JObject {
 		int status; // status word for pseudopoint
 		float x,y;  // coordinates rotated into lab coordinate system
 		float covxx,covxy,covyy;
+		float dE;
 	
 #if 0
 		///

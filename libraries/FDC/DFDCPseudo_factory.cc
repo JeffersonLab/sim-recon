@@ -18,6 +18,7 @@
 #define TOLF 1e-4
 #define A_OVER_H 0.475
 #define ALPHA 1e-4 // rate parameter for Newton step backtracking algorithm
+#define CHARGE_TO_ENERGY 0.01 //place holder 
 
 ///
 /// DFDCCathodeCluster_gLayer_cmp(): 
@@ -226,7 +227,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	    float xres=WIRE_SPACING/2./sqrt(12.);
 	    float yres=fabs(x_from_wire-x_from_strips);
             float cosangle,sinangle;	   
- 
+
 	    yres=x_from_wire-x_from_strips;
 	   
 	    DFDCPseudo* newPseu = new DFDCPseudo;
@@ -238,6 +239,8 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	    newPseu->time   = (*xIt)->t;
 	    newPseu->dist   = newPseu->time*DRIFT_SPEED;
 	    newPseu->status = status;
+
+	    newPseu->dE = CHARGE_TO_ENERGY*(upeaks[i].q+vpeaks[j].q)/2.;
 
 	    sinangle=newPseu->wire->udir(0);
 	    cosangle=newPseu->wire->udir(1);
