@@ -22,84 +22,65 @@ using namespace std;
 //------------------
 jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 {
-  vector<const DMCThrown*> mcthrowns;
-  loop->Get(mcthrowns);
+	vector<const DMCThrown*> mcthrowns;
+	loop->Get(mcthrowns);
 
-  for(unsigned int i=0; i< mcthrowns.size(); i++){
-    const DMCThrown *thrown = mcthrowns[i];
+	for(unsigned int i=0; i< mcthrowns.size(); i++){
+		const DMCThrown *thrown = mcthrowns[i];
+		const DKinematicData *kd_thrown = thrown;
 
-    if(fabs(thrown->q)<1)continue;
+		if(fabs(thrown->q)<1)continue;
 
-    // Create new DTrack object and initialize parameters with those
-    // from track candidate
-    /*
-     * Dave Lawrence's preliminary smearing algorithm.
-     DTrack *track = new DTrack;
-     track->q			= thrown->q;
-     track->p			= thrown->p*(1.0+SampleGaussian(0.02));
-     track->theta	= thrown->theta + SampleGaussian(0.001);
-     if(track->theta<0.0)track->theta = 0.0;
-     if(track->theta>=M_PI)track->theta = M_PI;
-     track->phi		= thrown->phi + SampleGaussian(0.002);
-     if(track->phi<0.0)track->phi+=2.0*M_PI;
-     if(track->phi>=2.0*M_PI)track->phi-=2.0*M_PI;
-     track->x			= thrown->x + SampleGaussian(0.01);
-     track->y			= thrown->y + SampleGaussian(0.01);
-     track->z			= thrown->z + SampleGaussian(1.00);
-     track->candidateid = 0;
-     track->chisq	= 1.0;
-     */
-    DTrack *track = new DTrack;
-    track->q			= thrown->q;
-    track->candidateid = 0;
-    track->chisq	= 1.0;
-    track->x			= thrown->x;
-    track->y			= thrown->y;
-    track->z			= thrown->z;
-    track->p			= thrown->p;
-    track->theta	= thrown->theta;
-    track->phi		= thrown->phi;
+		// First, copy over the DKinematicData part
+		DTrack *track = new DTrack;
+		DKinematicData *kd_track = track;
+		*kd_track = *kd_thrown;
 
-    // Adapted from Alex's fortran code to paramatrize the resolution 
-    // of GlueX. He developed this from a study Dave Lawrence did. 
+		// Create and fill the covariance matrix for the track.
+		// We need to fill this using errors estimated from the thrown
+		// momentum and angle. 
+		DMatrixDSym errMatrix(1,7);
+		track->setErrorMatrix(errMatrix);
 
-    // Both the reference trajectory and the kinematic data section below
-    // use DVector3 objects for position and momentum.
-    DVector3 mom, pos;
-    pos.SetXYZ(track->x, track->y, track->z);
-    mom.SetMagThetaPhi(track->p, track->theta, track->phi);
+		// Fill in DTrack specific members. (Some of these are redundant)
+		DVector3 pos = track->position();
+		DVector3 mom = track->momentum();
+		track->q			= track->charge();
+		track->p			= mom.Mag();
+		track->theta	= mom.Theta();
+		track->phi		= mom.Phi();
+		track->x			= pos.X();
+		track->y			= pos.Y();
+		track->z			= pos.Z();
+		track->candidateid = 0;
+		track->chisq	= 0.0;
+		track->dE		= 0.0;
+		track->ds		= 0.0;
+		track->err_dE	= 0.0;
+		track->err_ds	= 0.0;
 
-    // We need to swim a reference trajectory here. To avoid the overhead
-    // of allocating/deallocating them every event, we keep a pool and
-    // re-use them. If the pool is not big enough, then add one to the
-    // pool.
-    if(rt.size()<=_data.size()){
-      // This is a little ugly, but only gets called a few times throughout the life of the process
-      // Note: these never get deleted, even at the end of process.
-      DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
-      rt.push_back(new DReferenceTrajectory(dapp->GetBfield()));
-    }
-    rt[_data.size()]->Swim(pos, mom, track->q);
-    track->rt = rt[_data.size()];
+		// Adapted from Alex's fortran code to paramatrize the resolution 
+		// of GlueX. He developed this from a study Dave Lawrence did. 
+		this->SmearMomentum(track);
 
-    // Create and fill the covariance matrix for the track.
-    // We need to fill this using errors estimated from the thrown
-    // momentum and angle. 
-    DMatrixDSym errMatrix(1,7);
+		// We need to swim a reference trajectory here. To avoid the overhead
+		// of allocating/deallocating them every event, we keep a pool and
+		// re-use them. If the pool is not big enough, then add one to the
+		// pool.
+		if(rt.size()<=_data.size()){
+			// This is a little ugly, but only gets called a few times throughout the life of the process
+			// Note: these never get deleted, even at the end of process.
+			DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+			rt.push_back(new DReferenceTrajectory(dapp->GetBfield()));
+		}
 
-    // Fill in DKinematicData part
-    track->setMass(0.0);
-    track->setMomentum(mom);
-    track->setPosition(pos);
-    //track->setCharge(track->q);
-    track->setErrorMatrix(errMatrix);
+		rt[_data.size()]->Swim(pos, mom, track->charge());
+		track->rt = rt[_data.size()];
 
-    this->SmearMomentum(track);
+		_data.push_back(track);
+	}
 
-    _data.push_back(track);
-  }
-
-  return NOERROR;
+	return NOERROR;
 }
 
 //------------------
@@ -173,7 +154,7 @@ void DTrack_factory_THROWN::SmearMomentum(DTrack *trk)
   // Set the random seed based on phi
   rnd.SetSeed((uint)(10000*phi));
 
-  double dp, dphi, dtheta, dtheta_deg;
+  double dp=0, dphi=0, dtheta=0, dtheta_deg=0;
 
   // Grabbed this from 
   if(theta_deg<15) 
