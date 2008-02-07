@@ -22,7 +22,7 @@ using namespace std;
 #include <TRACKING/DTrack.h>
 #include <FDC/DFDCGeometry.h>
 #include <DVector2.h>
-#include <ParticleType.h>
+#include <particleType.h>
 
 
 // Routine used to create our DEventProcessor
@@ -64,9 +64,15 @@ jerror_t DEventProcessor_trackeff_hists::init(void)
 	TDirectory *dir = new TDirectory("TRACKING","TRACKING");
 	dir->cd();
 
-	// Create Tree
+	// Create Trees
 	trkeff = new TTree("trkeff","Tracking Efficiency");
 	trkeff->Branch("F","track",&trk_ptr);
+
+	cdchits = new TTree("cdchits","CDC hits");
+	cdchits->Branch("C","dchit",&cdchit_ptr);
+
+	fdchits = new TTree("fdchits","FDC hits");
+	fdchits->Branch("D","dchit",&fdchit_ptr);
 
 	dir->cd("../");
 	
@@ -169,7 +175,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		//GetFDCHits(mcthrowns[i], fdctrackhits, fdc_thrownhits);
 		GetCDCHitsFromTruth(i+1, cdc_thrownhits);
 		GetFDCHitsFromTruth(i+1, fdc_thrownhits);
-		
+
 		trk.status_can = 0;
 		trk.status_fit = 0;
 		if(cdc_thrownhits.size()<5 && fdc_thrownhits.size()<5){
@@ -318,7 +324,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 			track = trklink[mcthrown];
 
 			// We just need the thrown track for the beta
-			double mass = ParticleMass((Particle_t)truth->ptype);
+			double mass = ParticleMass((Particle_t)mcthrown->type);
 			cdchit.beta = sqrt(1.0/(pow(mass/mcthrown->momentum().Mag(), 2.0) + 1.0));
 		}else{
 			cdchit.beta = -1000.0;
@@ -330,23 +336,25 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		if(track!=NULL){
 			// Fit track found
 			DReferenceTrajectory *rt = const_cast<DReferenceTrajectory *>(track->rt);
-			double s,t;
+			double s,u;
 			rt->DistToRT(wire, &s);
-			t = rt->GetLastDistAlongWire();
+			u = rt->GetLastDistAlongWire();
 			TVector3 pos_doca;
 			TVector3 mom_doca;
 			rt->GetLastDOCAPoint(pos_doca, mom_doca);
-			TVector3 pos_wire = wire->origin + t*wire->tdir;
+			TVector3 pos_wire = wire->origin + u*wire->udir;
 			TVector3 delta_hit = pos_doca - pos_wire;
 			TVector3 delta_truth = pos_truth - pos_wire;
-			TVector3 delta_truth_cross_tdir = delta_truth.Cross(wire->tdir);
+			TVector3 delta_truth_cross_udir = delta_truth.Cross(wire->udir);
 
-			cdchit.tof = cdchit.beta*s;
+			cdchit.tof = s/(cdchit.beta*3.0E10*1.0E-9);
 			cdchit.doca = delta_hit.Mag();
-			cdchit.resi = delta_truth_cross_tdir.Mag();
-			cdchit.track_wire_angle = 57.3*acos(mom_doca.Dot(wire->tdir)/mom_doca.Mag());
+			cdchit.resi = cdchit.doca - hit->dist*(cdchit.t-cdchit.tof)/cdchit.t;
+			cdchit.resi_truth = cdchit.doca-delta_truth_cross_udir.Mag();
+			cdchit.track_wire_angle = 57.3*acos(mom_doca.Dot(wire->udir)/mom_doca.Mag());
 			cdchit.chisq = track->chisq;
 			cdchit.pos_wire = pos_wire;
+			cdchit.pos_doca = pos_doca;
 		}else{
 			// No fit track
 			cdchit.tof = -1000.0;
@@ -355,11 +363,12 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 			cdchit.track_wire_angle = -1000.0;
 			cdchit.chisq = -1000.0;
 			cdchit.pos_wire.SetXYZ(-1000,-1000,-1000);
+			cdchit.pos_doca.SetXYZ(-1000,-1000,-1000);
 		}
 		
 		cdchits->Fill();
 	}
-	
+
 	// Unlock mutex
 	pthread_mutex_unlock(&mutex);
 	
@@ -588,6 +597,71 @@ void DEventProcessor_trackeff_hists::FindFDCTrackNumbers(JEventLoop *loop)
 				fdclink.erase(iter);
 			}else{
 				fdclink[fdchit] = mchit;
+			}
+		}
+	}
+}
+
+//------------------
+// FindCDCTrackNumbers
+//------------------
+void DEventProcessor_trackeff_hists::FindCDCTrackNumbers(JEventLoop *loop)
+{
+	vector<const DCDCTrackHit*> cdchits;
+	vector<const DMCTrackHit*> mchits;
+	loop->Get(cdchits);
+	loop->Get(mchits);
+
+	cdclink.clear();
+
+	// Loop over all CDC wire hits
+	for(unsigned int i=0; i<cdchits.size(); i++){
+		const DCDCTrackHit *cdchit = cdchits[i];
+		const DCDCWire *wire = cdchit->wire;
+		if(!wire)continue;
+		
+		// Loop over CDC truth points
+		for(unsigned int j=0; j<mchits.size(); j++){
+			const DMCTrackHit *mchit = mchits[j];
+			if(mchit->system != SYS_CDC)continue;
+			
+			// Find the distance between this truth hit and this wire
+			DVector3 pos_truth(mchit->r*cos(mchit->phi), mchit->r*sin(mchit->phi), mchit->z);
+			DVector3 A = wire->udir.Cross(pos_truth - wire->origin);
+			double dist = A.Mag();
+			
+			// The value of cdchit->dist was calculated using a time
+			// that did not have TOF removed. We must estimate the TOF
+			// here so so we can correct for that in order to make a
+			// more accurate comparison between the truth point
+			// and the hit. We estimate TOF by finding the distance
+			// that the truth point is from the center of the target
+			// and assume beta=1.
+			DVector3 target(0,0,65.0);
+			DVector3 delta_truth = pos_truth - target;
+			double tof = delta_truth.Mag()/3.0E10/1.0E-9;
+			double corrected_dist = cdchit->dist*(cdchit->tdrift-tof)/cdchit->tdrift;
+//_DBG_<<"x="<<pos_truth.X()<<" y="<<pos_truth.Y()<<" z="<<pos_truth.Z()<<" tof="<<tof<<" tdrift="<<cdchit->tdrift-tof<<" t="<<cdchit->tdrift<<endl;
+			// The best we can do is check that the truth hit is inside
+			// the straw.
+			bool match = fabs(corrected_dist - dist)<0.02;
+//_DBG_<<"fabs(corrected_dist - dist)="<<fabs(corrected_dist - dist)<<"  cdchit->dist="<<cdchit->dist<<"  dist="<<dist<<endl;
+			if(!match)continue;
+			
+			// Check if this is already in the map
+			map<const DCDCTrackHit*, const DMCTrackHit*>::iterator iter = cdclink.find(cdchit);
+			if(iter!=cdclink.end()){
+				// If more than one hit occurs in this straw then keep the
+				// one closest to corrected_dist
+				const DMCTrackHit *mchit_old = cdclink[cdchit];
+				DVector3 pos_truth(mchit_old->r*cos(mchit_old->phi), mchit_old->r*sin(mchit_old->phi), mchit_old->z);
+				DVector3 A = wire->udir.Cross(pos_truth - wire->origin);
+				double dist_old = A.Mag();
+				if(fabs(corrected_dist - dist)<fabs(corrected_dist - dist_old)){
+					cdclink[cdchit] = mchit;
+				}
+			}else{
+				cdclink[cdchit] = mchit;
 			}
 		}
 	}

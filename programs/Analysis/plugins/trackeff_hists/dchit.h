@@ -21,6 +21,7 @@ class dchit:public TObject{
 		float tof;
 		float doca;
 		float resi;
+		float resi_truth;
 		float track_wire_angle;
 		float chisq;
 		float beta;
