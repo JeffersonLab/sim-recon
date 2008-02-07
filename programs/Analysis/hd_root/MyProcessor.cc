@@ -138,10 +138,14 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 //------------------------------------------------------------------
 jerror_t MyProcessor::fini(void)
 {
-	ROOTfile->Write();
-	delete ROOTfile;
-	cout<<endl<<"Closed ROOT file"<<endl;
-
+	if(ROOTfile!=NULL){
+		ROOTfile->Write();
+		//ROOTfile->Close();
+		//delete ROOTfile;
+		ROOTfile=NULL;
+		cout<<endl<<"Closed ROOT file"<<endl;
+	}
+	
 	return NOERROR;
 }
 
