@@ -26,6 +26,7 @@ jerror_t TRACKING_init(JEventLoop *loop)
 	loop->AddFactory(new DTrackCandidate_factory_FDC());
 	loop->AddFactory(new DTrackCandidate_factory_FDCCathodes());
 	loop->AddFactory(new DTrackCandidate_factory_FDCpseudo());
+	loop->AddFactory(new DTrackCandidate_factory_THROWN());
 	loop->AddFactory(new DTrackHit_factory());
 	loop->AddFactory(new DTrackHit_factory_MC());
 	loop->AddFactory(new DMCTrackHit_factory());

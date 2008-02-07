@@ -57,70 +57,26 @@ jerror_t DTrackCandidate_factory_THROWN::brun(JEventLoop *eventLoop, int runnumb
 jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 {
 	/// Get thrown values from MC and smear them out a little before
-	/// creating the DTrackCandidate objects
+	/// creating the DTrackCandidate objects.
+	/// NOTE: At this point no smearing is actually done and the
+	/// values are copied exactly.
 
-	// In order for all of the tracking efficiency histograms and even
-	// resolution histos to get filled, the hitid vector of the
-	// track candidate needs to be filled. We do this by getting
-	// the track hits (in the same way the default DTrackCandidate 
-	// factory does) and finding which of them come close to the
-	// track swum with the (smeared) parameters of this candidate. 
-
-#if 0
-	// Clear previous event from internal buffers
-	ClearEvent();
-
-	// Get the hits into the trkhits vector
-	GetTrkHits(loop);
 
 	vector<const DMCThrown*> mcthrowns;
 	loop->Get(mcthrowns);
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
 		const DMCThrown *thrown = mcthrowns[i];
+		const DKinematicData *kd_thrown = thrown;
 		
 		if(fabs(thrown->q)==0.0)continue;
 		
 		DTrackCandidate *can = new DTrackCandidate;
+		DKinematicData *kd_can = can;
 		
-		//can->x0 = 0.0;
-		//can->y0 = 0.0;
-		//can->dzdphi = 0.0;
-		//can->z_vertex	= thrown->z+SampleGaussian(1.0);
-		//can->p			= thrown->p*(1.0+SampleGaussian(0.04));
-		//can->phi			= thrown->phi;//+SampleGaussian(0.5/57.3);
-		//if(can->phi<0.0)can->phi+=2.0*M_PI;
-		//if(can->phi>=2.0*M_PI)can->phi-=2.0*M_PI;
-		//can->theta		= thrown->theta;//+SampleGaussian(0.1/57.3);
-		//if(can->theta<0.0)can->theta=0.0;
-		//if(can->theta>M_PI)can->theta=M_PI;
-		//can->q			= thrown->q;
-		//can->p_trans	= can->p*sin(can->theta);
-		
-		// Fill in DKinematic Data protion of this
-		can->setMass(0.0);
-		can->setMomentum(DVector3(can->p_trans*cos(can->phi), can->p_trans*sin(can->phi), can->p*cos(can->theta)));
-		can->setPosition(DVector3(can->x0, can->y0, can->z_vertex));
-		can->setCharge(can->q);
-
-		// Swim track using these parameters.
-		rt->q = can->charge();
-		DVector3 pos(0.0, 0.0, can->z_vertex);
-		DVector3 mom;
-		mom.SetMagThetaPhi(can->p, can->theta, can->phi);
-		rt->Swim(pos, mom);
-
-		// Loop over hits and add ones close to this track to the hitid list
-		can->hitid.clear();
-		for(unsigned int j=0; j<trkhits.size(); j++){
-			Dtrk_hit *hit = trkhits[j];
-			float doca = rt->DistToRT(hit->X(), hit->Y(), hit->Z());
-			if(doca<2.5)can->hitid.push_back(hit->hitid);
-		}
-		
+		*kd_can = *kd_thrown;		
 		
 		_data.push_back(can);
 	}
-#endif
 
 	return NOERROR;
 }
