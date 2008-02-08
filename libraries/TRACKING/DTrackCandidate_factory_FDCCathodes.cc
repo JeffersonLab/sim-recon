@@ -19,6 +19,7 @@
 #define HALF_PACKAGE 6.0
 #define FDC_OUTER_RADIUS 50.0 
 #define BEAM_RMS 0.3 //cm
+#define HIT_CHI2_CUT 10.0
 
 ///
 /// DTrackCandidate_factory_FDCCathodes::brun():
@@ -80,8 +81,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       segments.push_back(segment);
 
       // Check that the tangent of the dip angle makes sense for FDC hits
-      if (segment->S(3,0)<=0.0) continue;
-      
+      if (segment->S(3,0)<=0.0){
+	continue;
+      }
+ 
       // Try matching to package 2
       if (package[1].size()>0 && 
 	  (match2=GetTrackMatch(q,zpackage[1],segment,package[1],match_id))
@@ -161,17 +164,22 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	for (unsigned int m=0;m<segments.size();m++){
 	  for (unsigned int n=0;n<segments[m]->hits.size();n++){
 	    DFDCPseudo *hit=segments[m]->hits[n];
-	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
-			hit->covyy,hit->covxy);
-	    
+	    double covxx=hit->covxx;
+	    double covyy=hit->covyy;
+	    double covxy=hit->covxy;
+	    double hit_chi2=segments[segments.size()-1]->track[n].chi2;
+	    /*if (hit_chi2>1.){
+	      covxx*=hit_chi2;      
+	      covyy*=hit_chi2;
+	      covxy*=hit_chi2;
+	      }*/
+	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
 	  }
 	}
-	jerror_t error=fit.FitCircle(BEAM_RMS,NULL);
-	if (error!=NOERROR) fprintf(stderr,"Error ! %d\n",error);
-	q=fit.GetCharge(BEAM_RMS,NULL,NULL);
+	fit.FitCircle(BEAM_RMS,segments[0]->rc,NULL,NULL);
+	fit.GetCharge(BEAM_RMS,NULL,NULL);
 	// Extension to helix
-	error=fit.FitLine(BEAM_RMS,NULL);
-	if (error!=NOERROR) fprintf(stderr,"line Error ! %d\n",error);
+	fit.FitLine(BEAM_RMS,NULL);
       
 	// Curvature
 	segments[1]->S(0,0)=kappa=q/2./fit.rc;
@@ -209,11 +217,18 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  // Redo the fit with the additional hits from package 3
 	  for(unsigned int n=0;n<segments[segments.size()-1]->hits.size();n++){
 	    DFDCPseudo *hit=segments[segments.size()-1]->hits[n];
-	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
-		       hit->covyy,hit->covxy);
-	    
+	    double covxx=hit->covxx;
+	    double covyy=hit->covyy;
+	    double covxy=hit->covxy;
+	    double hit_chi2=segments[segments.size()-1]->track[n].chi2;
+	    /*if (hit_chi2>1.){
+	      covxx*=hit_chi2;      
+	      covyy*=hit_chi2;
+	      covxy*=hit_chi2;
+	      }*/
+	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
 	  }
-	  fit.FitCircle(BEAM_RMS,NULL);
+	  fit.FitCircle(BEAM_RMS,fit.rc,NULL,NULL);
 	  q=fit.GetCharge(BEAM_RMS,NULL,NULL);
 	  // Extension to helix
 	  fit.FitLine(BEAM_RMS,NULL);
@@ -333,12 +348,19 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	for (unsigned int m=0;m<segments.size();m++){
 	  for (unsigned int n=0;n<segments[m]->hits.size();n++){
 	    DFDCPseudo *hit=segments[m]->hits[n];
-	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
-			hit->covyy,hit->covxy);
-	    
+	    double covxx=hit->covxx;
+	    double covyy=hit->covyy;
+	    double covxy=hit->covxy;
+	    double hit_chi2=segments[m]->track[n].chi2;
+	    /*if (hit_chi2>1.){
+	      covxx*=hit_chi2;      
+	      covyy*=hit_chi2;
+	      covxy*=hit_chi2;
+	      }*/
+	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
 	  }
 	}
-	fit.FitCircle(BEAM_RMS,NULL);
+	fit.FitCircle(BEAM_RMS,segments[0]->rc,NULL,NULL);
 	q=fit.GetCharge(BEAM_RMS,NULL,NULL);
 	// Extension to helix
 	fit.FitLine(BEAM_RMS,NULL);
@@ -428,11 +450,19 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	for (unsigned int m=0;m<segments.size();m++){
 	  for (unsigned int n=0;n<segments[m]->hits.size();n++){
 	    DFDCPseudo *hit=segments[m]->hits[n];
-	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
-		       hit->covyy,hit->covxy);	   
+	    double covxx=hit->covxx;
+	    double covyy=hit->covyy;
+	    double covxy=hit->covxy;
+	    double hit_chi2=segments[m]->track[n].chi2;
+	    /*if (hit_chi2>1.){
+	      covxx*=hit_chi2;      
+	      covyy*=hit_chi2;
+	      covxy*=hit_chi2;
+	      }*/
+	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
 	  }
 	}
-	fit.FitCircle(BEAM_RMS,NULL);
+	fit.FitCircle(BEAM_RMS,segments[0]->rc,NULL,NULL);
 	q=fit.GetCharge(BEAM_RMS,NULL,NULL);	
 	// Extension to helix
 	fit.FitLine(BEAM_RMS,NULL);
