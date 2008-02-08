@@ -73,6 +73,67 @@ jerror_t DRiemannFit::CalcNormal(DMatrix A,double lambda,DMatrix &N){
   return NOERROR;
 }
 
+// Riemann Circle fit with correction for non-normal track incidence
+jerror_t DRiemannFit::FitCircle(double BeamRMS, double rc, DMatrix *CovR,
+				DMatrix *CovRPhi){
+  // Covariance matrices
+  DMatrix CRPhi(hits.size()+1,hits.size()+1);
+  DMatrix CR(hits.size()+1,hits.size()+1);
+  // Auxiliary matrices for correcting for non-normal track incidence to FDC
+  // The correction is 
+  //    CRPhi'= C*CRPhi*C+S*CR*S, where S(i,i)=R_i*kappa/2
+  //                                and C(i,i)=sqrt(1-S(i,i)^2)  
+  DMatrix C(hits.size()+1,hits.size()+1);
+  DMatrix S(hits.size()+1,hits.size()+1);
+
+  if (CovRPhi==NULL){
+    for (unsigned int i=0;i<hits.size();i++){
+      double Phi=atan2(hits[i]->y,hits[i]->x);
+      CRPhi(i,i)
+      =(Phi*cos(Phi)-sin(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covx
+      +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*hits[i]->covy
+      +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
+      double rtemp=sqrt(hits[i]->x*hits[i]->x+hits[i]->y*hits[i]->y); 
+      double stemp=rtemp/4./rc;
+    double ctemp=1.-stemp*stemp;
+    if (ctemp>0){
+      S(i,i)=stemp;
+      C(i,i)=sqrt(ctemp);
+    }
+    else{
+      S(i,i)=0.;
+      C(i,i)=1.;
+    }
+    }
+    CRPhi(hits.size(),hits.size())=BeamRMS*BeamRMS;
+    C(hits.size(),hits.size())=1.;
+  }
+  else{
+    for (unsigned int i=0;i<hits.size()+1;i++)
+      for (unsigned int j=0;j<hits.size()+1;j++)
+	CRPhi(i,j)=CovRPhi->operator()(i, j);
+  }
+  if (CovR==NULL){
+    for (unsigned int m=0;m<hits.size();m++){
+      double Phi=atan2(hits[m]->y,hits[m]->x);
+      CR(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
+      +sin(Phi)*sin(Phi)*hits[m]->covy
+      +2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
+    } 
+    CR(hits.size(),hits.size())=BeamRMS*BeamRMS;
+  }
+  else{
+    for (unsigned int i=0;i<hits.size()+1;i++)
+      for (unsigned int j=0;j<hits.size()+1;j++)
+	CR(i,j)=CovR->operator()(i, j);
+  }
+  // Correction for non-normal incidence of track on FDC 
+  CRPhi=C*CRPhi*C+S*CR*S;
+  return FitCircle(BeamRMS,&CRPhi);
+}
+
+
+
 // Riemann Circle fit:  points on a circle in x,y project onto a plane cutting
 // the circular paraboloid surface described by (x,y,x^2+y^2).  Therefore the
 // task of fitting points in (x,y) to a circle is transormed to the task of
@@ -367,13 +428,14 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
 
   // Linear regression to find z0, tanl   
   double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.,sperp=0.,Delta;
+  double chord=0,ratio=0;
   for (unsigned int k=start;k<projections.size();k++){
     if (!bad[k])
       {
       double diffx=projections[k]->x-projections[start]->x;
       double diffy=projections[k]->y-projections[start]->y;
-      double chord=sqrt(diffx*diffx+diffy*diffy);
-      double ratio=chord/2./rc; 
+      chord=sqrt(diffx*diffx+diffy*diffy);
+      ratio=chord/2./rc; 
       // Make sure the argument for the arcsin does not go out of range...
       if (ratio>1.) 
 	sperp=2.*rc*(M_PI/2.);
@@ -387,19 +449,26 @@ jerror_t DRiemannFit::FitLine(double BeamRMS,DMatrix *CovR){
       sumxy+=sperp*projections[k]->z/CR(k,k);
     }
   }
+  // Arc length to target point
+  chord=sqrt(projections[start]->x*projections[start]->x
+		    +projections[start]->y*projections[start]->y);
+  ratio=chord/2./rc; 
+  // Make sure the argument for the arcsin does not go out of range...
+  if (ratio>1.) 
+    sperp=2.*rc*(M_PI/2.);
+  else
+    sperp=2.*rc*asin(ratio);
+  double CRtarg=CR(projections.size(),projections.size());
+  sumv+=1./CRtarg,
+  sumy+=sperp/CRtarg;
+  sumx+=Z_TARGET/CRtarg;
+  sumxx+=Z_TARGET*Z_TARGET/CRtarg;
+  sumxy+=sperp*Z_TARGET/CRtarg;
   Delta=sumv*sumxx-sumx*sumx;
 
   // Track parameters z0 and tan(lambda)
   tanl=-Delta/(sumv*sumxy-sumy*sumx); 
   z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
-  double chord=sqrt(projections[start]->x*projections[start]->x
-		    +projections[start]->y*projections[start]->y);
-  double ratio=chord/2./rc; 
-  // Make sure the argument for the arcsin does not go out of range...
-  if (ratio>1.) 
-    sperp=2.*rc*(M_PI/2.);
-  else
-    sperp=2.*rc*asin(ratio); 
   zvertex=z0-sperp*tanl;
   
   // Error in tanl 

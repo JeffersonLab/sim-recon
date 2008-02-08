@@ -14,6 +14,8 @@ typedef struct{
 
 class DRiemannFit{
  public:
+  jerror_t DRiemannFit::FitCircle(double BeamRMS, double rc, DMatrix *CovR,
+				  DMatrix *CovRPhi);
   jerror_t FitCircle(double BeamRMS,DMatrix *CRPhi);
   jerror_t FitLine(double BeamRMS,DMatrix *CR);
 
