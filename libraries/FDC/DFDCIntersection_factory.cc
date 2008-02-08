@@ -40,6 +40,14 @@ jerror_t DFDCIntersection_factory::evnt(JEventLoop *loop, int eventnumber)
 	// Get raw hits
 	vector<const DFDCHit*> fdchits;
 	loop->Get(fdchits);
+
+	// For events with a very large number of hits, assume
+	// we can't reconstruct them so bail early
+	// Feb. 8, 2008  D.L.
+	if(fdchits.size()>(5.0+5.0+1.0)*25.0*6.0){
+		_DBG_<<"Too many hits in FDC! Intersection point reconstruction in FDC bypassed for event "<<loop->GetJEvent().GetEventNumber()<<endl;
+		return NOERROR;
+	}
 	
 	// Sort wire hits by package and layer
 	for(unsigned int i=0; i<fdchits.size(); i++){

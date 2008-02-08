@@ -73,7 +73,18 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	vector<const DFDCCathodeCluster*> oneLayerV;
 	vector<const DFDCHit*> oneLayerX;
 
+	// Get all FDC hits (anode and cathode)
 	eventLoop->Get(fdcHits);
+
+	// For events with a very large number of hits, assume
+	// we can't reconstruct them so bail early
+	// Feb. 8, 2008  D.L.
+	if(fdcHits.size()>(5.0+5.0+1.0)*25.0*6.0){
+		_DBG_<<"Too many hits in FDC! Psuedopoint reconstruction in FDC bypassed for event "<<eventLoop->GetJEvent().GetEventNumber()<<endl;
+		return NOERROR;
+	}
+
+	// Get cathode clusters
 	eventLoop->Get(cathClus);
 	
 	// Ensure clusters are in order of ascending Z position.
