@@ -134,6 +134,10 @@ void MyProcessor::FillGraphics(void)
 	/// various views of the detector in hdv_mainframe.
 		
 	graphics.clear();
+	graphics_xyA.clear(); // The objects placed in these will be deleted by hdv_mainframe
+	graphics_xyB.clear(); // The objects placed in these will be deleted by hdv_mainframe
+	graphics_xz.clear();  // The objects placed in these will be deleted by hdv_mainframe
+	graphics_yz.clear();  // The objects placed in these will be deleted by hdv_mainframe
 	
 	if(!loop)return;
 	
@@ -173,6 +177,22 @@ void MyProcessor::FillGraphics(void)
 			gset.points.push_back(wire->origin-(wire->L/2.0)*wire->udir);
 			gset.points.push_back(wire->origin+(wire->L/2.0)*wire->udir);
 			graphics.push_back(gset);
+			
+			// Rings for drift times.
+			// NOTE: These are not perfect since they still have TOF in them
+			if(hdvmf->GetCheckButton("cdcdrift") && wire->stereo==0.0){
+				double x = wire->origin.X();
+				double y = wire->origin.Y();
+				double dist1 = cdctrackhits[i]->dist;
+				TEllipse *e = new TEllipse(x, y, dist1, dist1);
+				e->SetLineColor(38);
+				graphics_xyA.push_back(e);
+
+				double dist2 = dist1 - 20.0*55.0E-6; // what if out TOF was 20ns?
+				e = new TEllipse(x, y, dist2, dist2);
+				e->SetLineColor(38);
+				graphics_xyA.push_back(e);
+			}
 		}
 	}	
 

@@ -191,16 +191,16 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 			sideviewB = new TRootEmbeddedCanvas("sideviewB Canvas", sideviews, width, width/2, kSunkenFrame, GetWhitePixel());
 			sideviews->AddFrame(sideviewA, lhints);
 			sideviews->AddFrame(sideviewB, lhints);
-			sideviewA->SetScrolling(TGCanvas::kCanvasNoScroll);
-			sideviewB->SetScrolling(TGCanvas::kCanvasNoScroll);
+			sideviewA->SetScrolling(TGCanvas::kCanvasScrollBoth);
+			sideviewB->SetScrolling(TGCanvas::kCanvasScrollBoth);
 
 			// End views
 			endviewA = new TRootEmbeddedCanvas("endviewA Canvas", endviews, width/2, width/2, kSunkenFrame, GetWhitePixel());
 			endviewB = new TRootEmbeddedCanvas("endviewB Canvas", endviews, width/2, width/2, kSunkenFrame, GetWhitePixel());
 			endviews->AddFrame(endviewA, lhints);
 			endviews->AddFrame(endviewB, lhints);
-			endviewA->SetScrolling(TGCanvas::kCanvasNoScroll);
-			endviewB->SetScrolling(TGCanvas::kCanvasNoScroll);
+			endviewA->SetScrolling(TGCanvas::kCanvasScrollBoth);
+			endviewB->SetScrolling(TGCanvas::kCanvasScrollBoth);
 			
 			// Draw opts
 			TGGroupFrame *trkdrawopts = new TGGroupFrame(drawopts, "Track Draw Options", kVerticalFrame);
@@ -234,6 +234,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 
 				// Hit
 				checkbuttons["cdc"]					= new TGCheckButton(hitdrawopts,	"CDC");
+				checkbuttons["cdcdrift"]			= new TGCheckButton(hitdrawopts,	"CDC Drift Time");
 				checkbuttons["cdctruth"]			= new TGCheckButton(hitdrawopts,	"CDCTruth");
 				checkbuttons["fdcwire"]				= new TGCheckButton(hitdrawopts,	"FDC Wire");
 				checkbuttons["fdcpseudo"]			= new TGCheckButton(hitdrawopts,	"FDC Pseudo");
@@ -246,6 +247,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 				checkbuttons["bcal"]					= new TGCheckButton(hitdrawopts,	"BCAL");
 				checkbuttons["bcaltruth"]			= new TGCheckButton(hitdrawopts,	"BCALTruth");
 				hitdrawopts->AddFrame(checkbuttons["cdc"], lhints);
+				hitdrawopts->AddFrame(checkbuttons["cdcdrift"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["cdctruth"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["fdcwire"], lhints);
 				hitdrawopts->AddFrame(checkbuttons["fdcpseudo"], lhints);
@@ -364,6 +366,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	checkbuttons["thrown"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 
 	checkbuttons["cdc"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["cdcdrift"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["cdctruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["fdcwire"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["fdcpseudo"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
@@ -784,6 +787,13 @@ void hdv_mainframe::DoRedraw(void)
 					graphics_endA.push_back(m);
 				}
 			}
+		}
+	}
+	
+	// Add in additional view-specific objects
+	if(coordinatetype == COORD_XY){
+		for(unsigned int i=0; i<gMYPROC->graphics_xyA.size(); i++){
+			graphics_endA.push_back(gMYPROC->graphics_xyA[i]);
 		}
 	}
 

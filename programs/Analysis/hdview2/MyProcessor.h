@@ -72,6 +72,12 @@ class MyProcessor:public JEventProcessor
 		vector<DGraphicSet> graphics;
 		void FillGraphics(void);
 		void UpdateTrackLabels(void);
+		
+		// Additional graphics that may be appropriate for only certain views
+		vector<TObject*> graphics_xyA;
+		vector<TObject*> graphics_xyB;
+		vector<TObject*> graphics_xz;
+		vector<TObject*> graphics_yz;
 
 	private:	
 	
