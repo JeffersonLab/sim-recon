@@ -176,10 +176,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
 	  }
 	}
-	fit.FitCircle(BEAM_RMS,segments[0]->rc,NULL,NULL);
-	q=fit.GetCharge(BEAM_RMS,segments[0]->rc,NULL,NULL);
+	fit.FitCircle(BEAM_RMS,segments[0]->rc);
+	q=fit.GetCharge(BEAM_RMS,segments[0]->rc);
 	// Extension to helix
-	fit.FitLine(BEAM_RMS,NULL);
+	fit.FitLine(BEAM_RMS);
       
 	// Curvature
 	segments[1]->S(0,0)=kappa=q/2./fit.rc;
@@ -215,23 +215,26 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  package[2].erase(package[2].begin()+match_id);
 	  
 	  // Redo the fit with the additional hits from package 3
-	  for(unsigned int n=0;n<segments[segments.size()-1]->hits.size();n++){
-	    DFDCPseudo *hit=segments[segments.size()-1]->hits[n];
-	    double covxx=hit->covxx;
-	    double covyy=hit->covyy;
-	    double covxy=hit->covxy;
-	    double hit_chi2=segments[segments.size()-1]->track[n].chi2;
-	    /*if (hit_chi2>1.){
-	      covxx*=hit_chi2;      
-	      covyy*=hit_chi2;
-	      covxy*=hit_chi2;
-	      }*/
-	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
+	  DRiemannFit fit;
+	  for (unsigned int m=0;m<segments.size();m++){
+	    for(unsigned int n=0;n<segments[m]->hits.size();n++){
+	      DFDCPseudo *hit=segments[m]->hits[n];
+	      double covxx=hit->covxx;
+	      double covyy=hit->covyy;
+	      double covxy=hit->covxy;
+	      double hit_chi2=segments[segments.size()-1]->track[n].chi2;
+	      /*if (hit_chi2>1.){
+		covxx*=hit_chi2;      
+		covyy*=hit_chi2;
+		covxy*=hit_chi2;
+		}*/
+	      fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
+	    }
 	  }
-	  fit.FitCircle(BEAM_RMS,fit.rc,NULL,NULL);
-	  q=fit.GetCharge(BEAM_RMS,fit.rc,NULL,NULL);
+	  fit.FitCircle(BEAM_RMS,fit.rc);
+	  q=fit.GetCharge(BEAM_RMS);
 	  // Extension to helix
-	  fit.FitLine(BEAM_RMS,NULL);
+	  fit.FitLine(BEAM_RMS);
      
 	  // Curvature
 	  segments[2]->S(0,0)=kappa=q/2./fit.rc;
@@ -360,10 +363,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
 	  }
 	}
-	fit.FitCircle(BEAM_RMS,segments[0]->rc,NULL,NULL);
-	q=fit.GetCharge(BEAM_RMS,segments[0]->rc,NULL,NULL);
+	fit.FitCircle(BEAM_RMS,segments[0]->rc);
+	q=fit.GetCharge(BEAM_RMS);
 	// Extension to helix
-	fit.FitLine(BEAM_RMS,NULL);
+	fit.FitLine(BEAM_RMS);
 
 	// Curvature
 	segments[1]->S(0,0)=kappa=q/2./fit.rc;
@@ -462,10 +465,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
 	  }
 	}
-	fit.FitCircle(BEAM_RMS,segments[0]->rc,NULL,NULL);
-        q=fit.GetCharge(BEAM_RMS,segments[0]->rc,NULL,NULL);	
+	fit.FitCircle(BEAM_RMS,segments[0]->rc);
+        q=fit.GetCharge(BEAM_RMS);	
 	// Extension to helix
-	fit.FitLine(BEAM_RMS,NULL);
+	fit.FitLine(BEAM_RMS);
 	
 	// Curvature
 	kappa=q/2./fit.rc;
