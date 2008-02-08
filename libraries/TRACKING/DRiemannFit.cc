@@ -85,16 +85,9 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS, double rc, DMatrix *CovR,
   //                                and C(i,i)=sqrt(1-S(i,i)^2)  
   DMatrix C(hits.size()+1,hits.size()+1);
   DMatrix S(hits.size()+1,hits.size()+1);
-
-  if (CovRPhi==NULL){
-    for (unsigned int i=0;i<hits.size();i++){
-      double Phi=atan2(hits[i]->y,hits[i]->x);
-      CRPhi(i,i)
-      =(Phi*cos(Phi)-sin(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covx
-      +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*hits[i]->covy
-      +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
-      double rtemp=sqrt(hits[i]->x*hits[i]->x+hits[i]->y*hits[i]->y); 
-      double stemp=rtemp/4./rc;
+  for (unsigned int i=0;i<hits.size();i++){
+    double rtemp=sqrt(hits[i]->x*hits[i]->x+hits[i]->y*hits[i]->y); 
+    double stemp=rtemp/4./rc;
     double ctemp=1.-stemp*stemp;
     if (ctemp>0){
       S(i,i)=stemp;
@@ -104,9 +97,18 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS, double rc, DMatrix *CovR,
       S(i,i)=0.;
       C(i,i)=1.;
     }
+  }
+  C(hits.size(),hits.size())=1.;
+
+  if (CovRPhi==NULL){
+    for (unsigned int i=0;i<hits.size();i++){
+      double Phi=atan2(hits[i]->y,hits[i]->x);
+      CRPhi(i,i)
+      =(Phi*cos(Phi)-sin(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covx
+	+(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*hits[i]->covy
+	+2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
     }
     CRPhi(hits.size(),hits.size())=BeamRMS*BeamRMS;
-    C(hits.size(),hits.size())=1.;
   }
   else{
     for (unsigned int i=0;i<hits.size()+1;i++)
@@ -117,8 +119,8 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS, double rc, DMatrix *CovR,
     for (unsigned int m=0;m<hits.size();m++){
       double Phi=atan2(hits[m]->y,hits[m]->x);
       CR(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
-      +sin(Phi)*sin(Phi)*hits[m]->covy
-      +2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
+	+sin(Phi)*sin(Phi)*hits[m]->covy
+	+2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
     } 
     CR(hits.size(),hits.size())=BeamRMS*BeamRMS;
   }
@@ -284,6 +286,67 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS,DMatrix *Cov){
   rc=sqrt(1.-N1(2,0)*N1(2,0)-4.*dist_to_origin*N1(2,0))/2./fabs(N1(2,0));
   
   return NOERROR;
+}
+
+// Charge-finding routine with corrected CRPhi (see above)
+double DRiemannFit::GetCharge(double BeamRMS,double rc,DMatrix *CovR, 
+			      DMatrix *CovRPhi){
+ // Covariance matrices
+  DMatrix CRPhi(hits.size()+1,hits.size()+1);
+  DMatrix CR(hits.size()+1,hits.size()+1);
+  // Auxiliary matrices for correcting for non-normal track incidence to FDC
+  // The correction is 
+  //    CRPhi'= C*CRPhi*C+S*CR*S, where S(i,i)=R_i*kappa/2
+  //                                and C(i,i)=sqrt(1-S(i,i)^2)  
+  DMatrix C(hits.size()+1,hits.size()+1);
+  DMatrix S(hits.size()+1,hits.size()+1);
+  for (unsigned int i=0;i<hits.size();i++){
+    double rtemp=sqrt(hits[i]->x*hits[i]->x+hits[i]->y*hits[i]->y); 
+    double stemp=rtemp/4./rc;
+    double ctemp=1.-stemp*stemp;
+    if (ctemp>0){
+      S(i,i)=stemp;
+      C(i,i)=sqrt(ctemp);
+    }
+    else{
+      S(i,i)=0.;
+      C(i,i)=1;      
+    }
+  }
+  C(hits.size(),hits.size())=1.;
+
+  if (CovRPhi==NULL){
+    for (unsigned int i=0;i<hits.size();i++){
+      double Phi=atan2(hits[i]->y,hits[i]->x);
+      CRPhi(i,i)
+      =(Phi*cos(Phi)-sin(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covx
+      +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*hits[i]->covy
+      +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
+    }
+    CRPhi(hits.size(),hits.size())=BeamRMS*BeamRMS;
+  }
+  else{
+    for (unsigned int i=0;i<hits.size()+1;i++)
+      for (unsigned int j=0;j<hits.size()+1;j++)
+	CRPhi(i,j)=CovRPhi->operator()(i, j);
+  }
+  if (CovR==NULL){
+    for (unsigned int m=0;m<hits.size();m++){
+      double Phi=atan2(hits[m]->y,hits[m]->x);
+      CR(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
+      +sin(Phi)*sin(Phi)*hits[m]->covy
+      +2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
+    } 
+    CR(hits.size(),hits.size())=BeamRMS*BeamRMS;
+  }
+  else{
+    for (unsigned int i=0;i<hits.size()+1;i++)
+      for (unsigned int j=0;j<hits.size()+1;j++)
+	CR(i,j)=CovR->operator()(i, j);
+  }
+  // Correction for non-normal incidence of track on FDC 
+  CRPhi=C*CRPhi*C+S*CR*S;
+  return GetCharge(BeamRMS,&CR,&CRPhi);
 }
  
 // Linear regression to find charge

@@ -24,6 +24,7 @@ class DRiemannFit{
   jerror_t AddHit(double x,double y,double z,double covx,double covy,
 		     double covxy);
  
+  double GetCharge(double BeamRMS, double rc,DMatrix *CR, DMatrix *CRPhi);
   double GetCharge(double BeamRMS, DMatrix *CR, DMatrix *CRPhi);
 
 

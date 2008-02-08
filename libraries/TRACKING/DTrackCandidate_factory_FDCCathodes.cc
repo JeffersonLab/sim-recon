@@ -177,7 +177,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  }
 	}
 	fit.FitCircle(BEAM_RMS,segments[0]->rc,NULL,NULL);
-	fit.GetCharge(BEAM_RMS,NULL,NULL);
+	q=fit.GetCharge(BEAM_RMS,segments[0]->rc,NULL,NULL);
 	// Extension to helix
 	fit.FitLine(BEAM_RMS,NULL);
       
@@ -229,7 +229,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
 	  }
 	  fit.FitCircle(BEAM_RMS,fit.rc,NULL,NULL);
-	  q=fit.GetCharge(BEAM_RMS,NULL,NULL);
+	  q=fit.GetCharge(BEAM_RMS,fit.rc,NULL,NULL);
 	  // Extension to helix
 	  fit.FitLine(BEAM_RMS,NULL);
      
@@ -361,7 +361,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  }
 	}
 	fit.FitCircle(BEAM_RMS,segments[0]->rc,NULL,NULL);
-	q=fit.GetCharge(BEAM_RMS,NULL,NULL);
+	q=fit.GetCharge(BEAM_RMS,segments[0]->rc,NULL,NULL);
 	// Extension to helix
 	fit.FitLine(BEAM_RMS,NULL);
 
@@ -463,7 +463,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  }
 	}
 	fit.FitCircle(BEAM_RMS,segments[0]->rc,NULL,NULL);
-	q=fit.GetCharge(BEAM_RMS,NULL,NULL);	
+        q=fit.GetCharge(BEAM_RMS,segments[0]->rc,NULL,NULL);	
 	// Extension to helix
 	fit.FitLine(BEAM_RMS,NULL);
 	
