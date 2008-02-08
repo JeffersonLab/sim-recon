@@ -241,6 +241,16 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	    newPseu->status = status;
 
 	    newPseu->dE = CHARGE_TO_ENERGY*(upeaks[i].q+vpeaks[j].q)/2.;
+		 
+		 // It can occur (although rarely) that newPseu->wire is NULL
+		 // which causes us to crash below. In these cases, we can't really
+		 // make a psuedo point so we delete the current object
+		 // and just go on to the next one.
+		 if(newPseu->wire==NULL){
+		 	_DBG_<<"newPseu->wire=NULL! This shouldn't happen. Complain to staylor@jlab.org"<<endl;
+			delete newPseu;
+			continue;
+		 }
 
 	    sinangle=newPseu->wire->udir(0);
 	    cosangle=newPseu->wire->udir(1);
