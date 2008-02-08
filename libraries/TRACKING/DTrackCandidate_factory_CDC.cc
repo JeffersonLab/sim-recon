@@ -188,6 +188,13 @@ void DTrackCandidate_factory_CDC::GetCDCHits(JEventLoop *loop)
 	// If there are no hits, then bail now
 	if(cdctrackhits.size()==0)return;
 	
+	// If there are too many hits, bail with a warning message
+	if(cdctrackhits.size()>200){
+		_DBG_<<"Too many hits in CDC! Track finding in CDC bypassed for event "<<loop->GetJEvent().GetEventNumber()<<endl;
+		cdctrackhits.clear();
+		return;
+	}
+	
 	// Create DCDCTrkHit objects out of these.
 	for(unsigned int i=0; i<cdctrackhits.size(); i++){
 		DCDCTrkHit *cdctrkhit = new DCDCTrkHit;
