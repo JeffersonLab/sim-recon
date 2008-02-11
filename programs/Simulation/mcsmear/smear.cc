@@ -49,7 +49,7 @@ bool SMEAR_HITS = true;
 // The error on the drift time in the CDC. The drift times
 // for the actual CDC hits coming from the input file
 // are smeared by a gaussian with this sigma.
-double CDC_TDRIFT_SIGMA = 5.0E-9;	// in seconds
+double CDC_TDRIFT_SIGMA = 150.0/55.0*1E-9;	// in seconds
 
 // The time window for which CDC hits are accumulated.
 // This is used to determine the number of background
@@ -119,11 +119,11 @@ void SmearCDC(s_HDDM_t *hddm_s)
 				// Smear out the CDC drift time using the specified sigma.
 				// This should include both timing resolution and ion trail
 				// density effects.
-				double delta_t = SampleGaussian(CDC_TDRIFT_SIGMA);
+				double delta_t = SampleGaussian(CDC_TDRIFT_SIGMA)*1.0E9; // delta_t is in ns
 				strawhit->t += delta_t;
 				
 				// If the time is negative, reject this smear and try again
-				if(strawhit->t<0)j--;
+				//if(strawhit->t<0)j--;
 			}
 		}
 	}
