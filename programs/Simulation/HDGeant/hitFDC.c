@@ -385,9 +385,17 @@ void hitForwardDC (float xin[4], float xout[4],
         }
         if (nhit < ahits->mult)                 /* merge with former hit */
         {
-          ahits->in[nhit].t = 
+				/* keep the earlier hit and discard the later one */
+				/* Feb. 11, 2008 D. L. */
+				if(ahits->in[nhit].t>tdrift){
+					ahits->in[nhit].t = tdrift;
+					ahits->in[nhit].dE = dEsum;
+				}
+			
+          /*ahits->in[nhit].t = 
               (ahits->in[nhit].t * ahits->in[nhit].dE + tdrift * dE)
               / (ahits->in[nhit].dE += dE);
+			 */
         }
         else if (nhit < MAX_HITS)              /* create new hit */
         {
@@ -514,9 +522,16 @@ void hitForwardDC (float xin[4], float xout[4],
               }
               if (nhit < chits->mult)          /* merge with former hit */
               {
-                chits->in[nhit].t = 
+						/* keep the earlier hit and discard the later one */
+						/* Feb. 11, 2008 D. L. */
+						if(chits->in[nhit].t>tdrift){
+							chits->in[nhit].t = tdrift;
+							chits->in[nhit].q = q;
+						}
+                /*chits->in[nhit].t = 
                     (chits->in[nhit].t * chits->in[nhit].q + tdrift * q)
                     / (chits->in[nhit].q += q);
+					*/
               }
               else if (nhit < MAX_HITS)        /* create new hit */
               {

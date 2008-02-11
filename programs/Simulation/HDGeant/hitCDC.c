@@ -23,6 +23,7 @@
 #define TWO_HIT_RESOL	250.
 #define MAX_HITS 	100
 #define THRESH_KEV	1.
+#define STRAW_RADIUS 0.8
 
 binTree_t* centralDCTree = 0;
 static int strawCount = 0;
@@ -57,93 +58,134 @@ void hitCentralDC (float xin[4], float xout[4],
    xlocal[1] = (xinlocal[1] + xoutlocal[1])/2;
    xlocal[2] = (xinlocal[2] + xoutlocal[2])/2;
 
-   dradius = sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
    drin = sqrt(xinlocal[0]*xinlocal[0] + xinlocal[1]*xinlocal[1]);
    drout = sqrt(xoutlocal[0]*xoutlocal[0] + xoutlocal[1]*xoutlocal[1]);
+	
+	/* This will get called when the particle actually passes through
+	 * the wire volume itself. For these cases, we should set the 
+	 * location of the hit to be the point on the wire itself. Do
+	 * determine if this is what is happening, we check drout to
+	 * see if it is very close to the wire and drin to see if it is
+	 * close to the tube.
+	 *
+	 * For the other case, when drin is close to the wire, we assume
+	 * it is because it is emerging from the wire volume and
+	 * automatically ignore those hits by returning immediately.
+	*/
+	if(drin < 0.0050)return; /* entering straw within 50 microns of wire. ignore */
+	if(drin>(STRAW_RADIUS-0.0200) && drout<0.0050){
+		/* We entered within 200 microns of the straw tube and left
+		 * within 50 microns of the wire. Assume the track passed through
+		 * the wire volume.
+		*/
+		
+		x[0] = xin[0];
+		x[1] = xin[1];
+		x[2] = xin[2];
+		t = xin[3] * 1e9;
+		xlocal[0] = xinlocal[0];
+		xlocal[1] = xinlocal[1];
+		xlocal[2] = xinlocal[2];
+		
+		/* For dx, we will just assume it is twice the distance from
+		 * the straw to wire.
+		*/
+		dx[0] *= 2.0;
+		dx[1] *= 2.0;
+		dx[2] *= 2.0;
+	}
+	
+	/* Distance of hit from center of wire */
+   dradius = sqrt(xlocal[0]*xlocal[0] + xlocal[1]*xlocal[1]);
+	
+	/* If the particle exits from the end of the tube, then the midpoint
+	 * from entrance to exit will not necessarily correspond
+	 * to the DOCA.  This is important since many tracks that exit through
+	 * the CDC endplate will exit through the end of the straw tube. In
+	 * these cases, there are two possibilities:
+	 *  1.) The DOCA is at the exit point itself
+	 *  2.) The DOCA is at the mid-point between the entrance and where the
+	 *      exit would have been if the tube were infinitely long.
+	 *
+	 * If we determine that the particle exited the end of the tube,
+	 * we calculate the DOCA (dradius) for both possibilities
+	 * and keep the one that is smallest.
+	 *
+	 * We'll assume that track left through the end of the tube if
+	 * its exiting point was more than 200 microns from the straw.
+	 * Since this will be the case for particles going through the wire
+	 * volume, we make sure the entrance point is within 200 microns
+	 * of the straw. 
+	 */
+	if(drin>(STRAW_RADIUS-0.0200) && drout<(STRAW_RADIUS-0.0200)){
+		/* Particle exited from end of the straw.
+		 *
+		 * Calculate exit point from an infinite straw 
+		 * We do this by defining the direction of the
+		 * track and finding the amount we need to extend 
+		 * in that direction in order to be at the tube
+		 * radius (determined by the entrance point).
+		 *
+		 * xout_local = xin_local + alpha*trackdir
+		 *
+		 * where xout_local, xin_local, and trackdir are all
+		 * vectors. "alpha" is a scaler multiplier to be
+		 * be solved for. The values of xin_local and trackdir
+		 * are detemined from xin and xout, while xout_local
+		 * is to be calculated once alpha is determined.
+		 *
+		 * We solve for alpha by setting the transverse
+		 * distance of xout_local to drin, the radius
+		 * of the tube. This leads to an equation quadratic
+		 * in alpha. 
+		 */
 
-/* If the particle hits the wire or exits from the end of the tube,
- * then the midpoint from entrance to exit will not actually correspond
- * to the DOCA.  This is important since many tracks that exit through
- * the CDC endplate will exit through the end of the straw tube. In either
- * of these two cases, there are two possibilities:
- *  1.) The DOCA is at the exit point itself
- *  2.) The DOCA is at the mid-point between the entrance and where the
- *      exit would have been if the tube were infinitely long.
- *
- * First, we determine if the particle exited the end of the tube.
- * If so, then calculate the DOCA (dradius) for both possibilities
- * and keep the one that is smallest.
- */
-   if (drin < 0.01)		/* particle is leaving the wire */
-   {
-      dradius = drin;
-      t = xin[3]*1e9;
-   }
-   else if (drout < dradius)    /* particle is entering the wire */
-   {
-      dradius = drout;
-      t = xout[3]*1e9;
-   }
-   else if (fabs(drout-drin) > 0.01)
-   {
-   /* Particle exited from end of the straw.
-    *
-    * Calculate exit point from an infinite straw 
-    * We do this by defining the direction of the
-    * track and finding the amount we need to extend 
-    * in that direction in order to be at the tube
-    * radius (determined by the entrance point).
-    *
-    * xout_local = xin_local + alpha*trackdir
-    *
-    * where xout_local, xin_local, and trackdir are all
-    * vectors. "alpha" is a scaler multiplier to be
-    * be solved for. The values of xin_local and trackdir
-    * are detemined from xin and xout, while xout_local
-    * is to be calculated once alpha is determined.
-    *
-    * We solve for alpha by setting the transverse
-    * distance of xout_local to drin, the radius
-    * of the tube. This leads to an equation quadratic
-    * in alpha.  */
-
-      float alpha;
-      float A,B,C;
-      float trackdir[3];
-      float xoutlocal_i[3], xout_i[3];
-      float docaout;
-      transformCoord(dx,"global",trackdir,"local");
-      A = trackdir[0]*trackdir[0] + trackdir[1]*trackdir[1];
-      B = 2.0*(trackdir[0]*xinlocal[0] + trackdir[1]*xinlocal[1]);
-      C = drin*drin + xinlocal[0]*xinlocal[0] + xinlocal[1]*xinlocal[1];
-      
-      alpha = (-B + sqrt(B*B - 4.0*A*C))/(2.0*A);
-      xoutlocal_i[0] = xinlocal[0] + alpha*trackdir[0];
-      xoutlocal_i[1] = xinlocal[1] + alpha*trackdir[1];
-      xoutlocal_i[2] = xinlocal[2] + alpha*trackdir[2];
-      docaout = sqrt(xoutlocal_i[0]*xoutlocal_i[0]
-                     + xoutlocal_i[1]*xoutlocal_i[1]);
-      transformCoord(xoutlocal_i,"local",xout_i,"global");
-      
-    /* Check which is the smallest DOCA and copy that into
-     * dradius so it will be used for the drift time below.  */
-      if (drout < dradius)
-      {
-         dradius = drout;
-         x[0]=xoutlocal[0];
-         x[1]=xoutlocal[1];
-         x[2]=xoutlocal[2];
-         t = xout[3]*1e9;
-      }
-      if (docaout < dradius)
-      {
-         dradius = docaout;
-         x[0]=xoutlocal_i[0];
-         x[1]=xoutlocal_i[1];
-         x[2]=xoutlocal_i[2];
-         t = xout[3]*1e9;
-      }
-   }
+		float alpha;
+		float A,B,C;
+		float trackdir[3];
+		float xoutlocal_i[3], xout_i[3];
+		float docaout;
+		transformCoord(dx,"global",trackdir,"local");
+		A = trackdir[0]*trackdir[0] + trackdir[1]*trackdir[1];
+		B = 2.0*(trackdir[0]*xinlocal[0] + trackdir[1]*xinlocal[1]);
+		C = drin*drin + xinlocal[0]*xinlocal[0] + xinlocal[1]*xinlocal[1];
+		
+		alpha = (-B + sqrt(B*B - 4.0*A*C))/(2.0*A);
+		xoutlocal_i[0] = xinlocal[0] + alpha*trackdir[0];
+		xoutlocal_i[1] = xinlocal[1] + alpha*trackdir[1];
+		xoutlocal_i[2] = xinlocal[2] + alpha*trackdir[2];
+			
+		/* Here, we have to figure out whether the DOCA point
+		 * of the track is within the tube or not. If the track
+		 * is in the tube, then the absolute value of 
+		 * xoutlocal_i[2] should be smaller than that of
+		 * xoutlocal[2].
+		 */
+		if (fabs(xoutlocal_i[2]) > fabs(xoutlocal[2]))
+		{
+			/* DOCA point is on end of tube */
+			x[0] = xout[0];
+			x[1] = xout[1];
+			x[2] = xout[2];
+			t = xout[3]*1e9;
+			xlocal[0]=xoutlocal[0];
+			xlocal[1]=xoutlocal[1];
+			xlocal[2]=xoutlocal[2];
+			dradius = drout;
+		}else{
+			/* DOCA point is inside the tube */
+			docaout = sqrt(xoutlocal_i[0]*xoutlocal_i[0] + xoutlocal_i[1]*xoutlocal_i[1]);
+			transformCoord(xoutlocal_i,"local",xout_i,"global");
+			x[0] = xout_i[0];
+			x[1] = xout_i[1];
+			x[2] = xout_i[2];
+			t = xout[3]*1e9; /* Don't bother adjusting time */
+			xlocal[0]=xoutlocal_i[0];
+			xlocal[1]=xoutlocal_i[1];
+			xlocal[2]=xoutlocal_i[2];
+			dradius = docaout;
+		}
+	}
 
    /* Calculate dE/dx */
 
@@ -224,9 +266,17 @@ void hitCentralDC (float xin[4], float xout[4],
          }
          if (nhit < hits->mult)		/* merge with former hit */
          {
-            hits->in[nhit].t =
+				/* keep the earlier hit and discard the later one */
+				/* Feb. 11, 2008 D. L. */
+				if(hits->in[nhit].t>tdrift){
+					hits->in[nhit].t = tdrift;
+					hits->in[nhit].dE = dEsum;
+				}
+			
+           /* hits->in[nhit].t =
                     (hits->in[nhit].t * hits->in[nhit].dE + tdrift * dEsum)
                   / (hits->in[nhit].dE += dEsum);
+				*/
          }
          else if (nhit < MAX_HITS)		/* create new hit */
          {
