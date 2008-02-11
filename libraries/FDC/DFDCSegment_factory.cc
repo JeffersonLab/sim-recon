@@ -189,11 +189,10 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
 					     DMatrix CR,DMatrix &XYZ){
   unsigned int n=points.size()+1;
+  vector<int>bad(n);  // Keep track of "bad" intersection points
   // Fill matrix of intersection points
-  for (unsigned int m=0;m<n;m++){
-    double r2=0.;
-    if (m<n-1)
-      r2=points[m]->x*points[m]->x+points[m]->y*points[m]->y;
+  for (unsigned int m=0;m<n-1;m++){
+    double r2=points[m]->x*points[m]->x+points[m]->y*points[m]->y;
     double x_int0,temp,y_int0;
     double denom= N[0]*N[0]+N[1]*N[1];
     double numer=dist_to_origin+r2*N[2];
@@ -201,7 +200,8 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
     x_int0=-N[0]*numer/denom;
     y_int0=-N[1]*numer/denom;
     temp=denom*r2-numer*numer;
-    if (temp<0){          
+    if (temp<0){    
+      bad[m]=1;
       XYZ(m,0)=x_int0;
       XYZ(m,1)=y_int0;
       // I am not sure the following is really useful...
@@ -225,6 +225,7 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
 	points[m]->y=tempy;
 	points[m]->ds*=-1.;
 	points[m]->dw*=-1.;
+	bad[m]=0;
       }
       else continue; 
     }
@@ -251,25 +252,38 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
       XYZ(m,1)=y_int0-N[0]*temp;
     }
   }
-      
+  // Fake target point
+  XYZ(n-1,0)=XYZ(n-1,1)=0.;
+  
+  // All arc lengths are measured relative to some reference plane with a hit.
+  // Don't use a "bad" hit for the reference...
+  unsigned int start=0;
+  for (unsigned int i=0;i<bad.size();i++){
+    if (!bad[i]){
+      start=i;
+      break;
+    }
+  }
   // Linear regression to find z0, tanl   
   double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.,sperp=0.,Delta;
-  for (unsigned int k=0;k<n;k++){
-    double diffx=XYZ(k,0)-XYZ(0,0);
-    double diffy=XYZ(k,1)-XYZ(0,1);
-    double chord=sqrt(diffx*diffx+diffy*diffy);
-    double ratio=chord/2./rc; 
-    // Make sure the argument for the arcsin does not go out of range...
-    if (ratio>1.) 
-      sperp=2.*rc*(M_PI/2.);
-    else
-      sperp=2.*rc*asin(ratio);
-    // Assume errors in s dominated by errors in R 
-    sumv+=1./CR(k,k);
-    sumy+=sperp/CR(k,k);
-    sumx+=XYZ(k,2)/CR(k,k);
-    sumxx+=XYZ(k,2)*XYZ(k,2)/CR(k,k);
-    sumxy+=sperp*XYZ(k,2)/CR(k,k);
+  for (unsigned int k=start;k<n;k++){
+    if (!bad[k]){
+      double diffx=XYZ(k,0)-XYZ(start,0);
+      double diffy=XYZ(k,1)-XYZ(start,1);
+      double chord=sqrt(diffx*diffx+diffy*diffy);
+      double ratio=chord/2./rc; 
+      // Make sure the argument for the arcsin does not go out of range...
+      if (ratio>1.) 
+	sperp=2.*rc*(M_PI/2.);
+      else
+	sperp=2.*rc*asin(ratio);
+      // Assume errors in s dominated by errors in R 
+      sumv+=1./CR(k,k);
+      sumy+=sperp/CR(k,k);
+      sumx+=XYZ(k,2)/CR(k,k);
+      sumxx+=XYZ(k,2)*XYZ(k,2)/CR(k,k);
+      sumxy+=sperp*XYZ(k,2)/CR(k,k);
+    }
   }
   Delta=sumv*sumxx-sumx*sumx;
 
@@ -277,11 +291,10 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
   tanl=-Delta/(sumv*sumxy-sumy*sumx); 
   z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
   zvertex=z0-sperp*tanl;
-
+  
   // Check that the vertex z position is sensible
-  if (zvertex<Z_VERTEX_CUT){ 
+  if (zvertex<Z_VERTEX_CUT){
     zvertex=Z_TARGET;
-    tanl=57.3; // one degree from beam line
   }
   
   // Error in tanl 
@@ -310,6 +323,8 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
   // Predicted positions
   Phi1=atan2(delta_y,delta_x);
   double z1=XYZ(ref_plane,2);
+  double y1=XYZ(ref_plane,1);
+  double x1=XYZ(ref_plane,0);
   double var_R1=CR(ref_plane,ref_plane);
   for (unsigned int k=0;k<n;k++){       
     double sperp=charge*(XYZ(k,2)-z1)/tanl;
@@ -371,21 +386,21 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
     double cdist=dist_to_origin+r1sq*N[2];
     double n2=N[0]*N[0]+N[1]*N[1];
 
-    double ydenom=XYZ(0,1)*n2+N[1]*cdist;
-    double dy1_dn3=-(dc_dn3+r1sq)*(N[1]*XYZ(0,1)+cdist)/ydenom;
-    double dy1_dr1=-r1*(2.*N[1]*N[2]*XYZ(0,1)+2.*N[2]*cdist-N[0]*N[0])/ydenom;
-    double dy1_dn2=(XYZ(0,1)*(N[1]*N[1]-N[0]*N[0])*cdist
-		    -XYZ(0,1)*N[1]*n2*dc_dn2+N[1]*cdist*cdist
+    double ydenom=y1*n2+N[1]*cdist;
+    double dy1_dn3=-(dc_dn3+r1sq)*(N[1]*y1+cdist)/ydenom;
+    double dy1_dr1=-r1*(2.*N[1]*N[2]*y1+2.*N[2]*cdist-N[0]*N[0])/ydenom;
+    double dy1_dn2=(y1*(N[1]*N[1]-N[0]*N[0])*cdist
+		    -y1*N[1]*n2*dc_dn2+N[1]*cdist*cdist
 		    -n2*cdist*dc_dn2-N[0]*N[0]*N[1]*r1sq)/n2/ydenom;
     double var_y1=dy1_dr1*dy1_dr1*var_R1
       +dy1_dn3*dy1_dn3*varN[2][2]+dy1_dn2*dy1_dn2*varN[1][1]
       +2.*dy1_dn2*dy1_dn3*varN[1][2];
 
-    double xdenom=XYZ(0,0)*n2+N[0]*cdist;
-    double dx1_dn3=-(dc_dn3+r1sq)*(XYZ(0,0)*N[0]+cdist)/xdenom;
-    double dx1_dr1=-r1*(2.*N[0]*N[2]*XYZ(0,0)+2.*N[2]*cdist-N[1]*N[1])/xdenom;
-    double dx1_dn1=(XYZ(0,0)*(N[0]*N[0]-N[1]*N[1])*cdist
-		    -XYZ(0,0)*N[0]*n2*dc_dn1+N[0]*cdist*cdist
+    double xdenom=x1*n2+N[0]*cdist;
+    double dx1_dn3=-(dc_dn3+r1sq)*(x1*N[0]+cdist)/xdenom;
+    double dx1_dr1=-r1*(2.*N[0]*N[2]*x1+2.*N[2]*cdist-N[1]*N[1])/xdenom;
+    double dx1_dn1=(x1*(N[0]*N[0]-N[1]*N[1])*cdist
+		    -x1*N[0]*n2*dc_dn1+N[0]*cdist*cdist
 		    -n2*cdist*dc_dn1-N[0]*N[1]*N[1]*r1sq)/n2/xdenom;
 
     double var_x1=dx1_dr1*dx1_dr1*var_R1
@@ -860,7 +875,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	// Arc lengths in helical model are referenced relative to the plane
 	// ref_plane within a segment.  For a 6 hit segment, ref_plane=2 is 
 	// roughly in the center of the segment.
-	ref_plane=2;  
+	ref_plane=2; 
 	
 	// Perform the Riemann Helical Fit on the track segment
 	jerror_t error=RiemannHelicalFit(neighbors,CR,XYZ);   /// initial hit-based fit
@@ -878,6 +893,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	  // Final correction 
 	  if (error==NOERROR){
 	    CorrectPoints(neighbors,XYZ); /// correct again based on time-based result
+	    chisq=0.;
 	    for (unsigned int m=0;m<neighbors.size();m++){
 	      // neighbors[m]->status|=CORRECTED;
 	      fdc_track[m].hit_id=m;
@@ -891,6 +907,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	      fdc_track[m].s=(XYZ(m,2)-zvertex)/sin(atan(tanl)); // path length
 	      fdc_track[m].chi2=(fdc_track[m].dx*fdc_track[m].dx
 				 +fdc_track[m].dy*fdc_track[m].dy)/CR(m,m);
+	      chisq+=fdc_track[m].chi2;
 	    } 
 	    // guess for curvature
 	    kappa=charge/2./rc;  
