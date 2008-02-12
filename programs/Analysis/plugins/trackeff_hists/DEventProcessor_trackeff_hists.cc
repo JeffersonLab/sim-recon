@@ -716,7 +716,7 @@ void DEventProcessor_trackeff_hists::FindCDCTrackNumbers(JEventLoop *loop)
 //_DBG_<<"x="<<pos_truth.X()<<" y="<<pos_truth.Y()<<" z="<<pos_truth.Z()<<" tof="<<tof<<" tdrift="<<cdchit->tdrift-tof<<" t="<<cdchit->tdrift<<endl;
 			// The best we can do is check that the truth hit is inside
 			// the straw.
-			bool match = fabs(corrected_dist - dist)<0.02;
+			bool match = fabs(corrected_dist - dist)<0.8;
 //_DBG_<<"fabs(corrected_dist - dist)="<<fabs(corrected_dist - dist)<<"  cdchit->dist="<<cdchit->dist<<"  dist="<<dist<<endl;
 			if(!match)continue;
 			
