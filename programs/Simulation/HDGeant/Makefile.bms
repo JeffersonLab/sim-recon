@@ -22,9 +22,10 @@ ADDITIONAL_MODULES += HDDM HDGEOMETRY
 # on whether you are running gcc3 or gcc4.
 SHELL := tcsh
 GCC3 := $(shell gcc -v |& grep "gcc version" | grep " 3." | wc -l)
-ifeq ($(GCC3), 1)
+ifeq ($(strip $(GCC3)),1)
 	LD = $(FC) -lstdc++
 endif
+
 
 include $(HALLD_HOME)/src/BMS/Makefile.bin
 
