@@ -1243,18 +1243,17 @@ void hdv_mainframe::DrawScale(TCanvas *c, vector<TObject*> &graphics)
 			units = "#mum";
 			break;
 		case -4:
-			m*=10.0;
 			units = "#mum";
 			break;
 		case -3:
-			m*=100.0;
+			m*=10.0;
 			units = "#mum";
 			break;
 		case -2:
-			units="mm";
+			m*=100.0;
+			units="#mum";
 			break;
 		case -1:
-			m*=10.0;
 			units="mm";
 			break;
 		case 0:
@@ -1327,8 +1326,6 @@ void hdv_mainframe::SetTrackFactories(vector<string> &facnames)
 			tracksfactory->GetTextEntry()->SetText(tag.c_str());
 		}
 	}
-
-	tracksfactory->GetTextEntry()->SetText("<default>");
 }
 
 //-------------------
@@ -1422,7 +1419,8 @@ const char* hdv_mainframe::GetFactoryTag(string who)
 	const char *tag = "";
 
 	if(who=="DTrack"){
-		tag = tracksfactory->GetSelectedEntry()->GetTitle();
+		tag = tracksfactory->GetTextEntry()->GetTitle();
+		//tag = tracksfactory->GetSelectedEntry()->GetTitle();
 	}
 	if(who=="DTrackCandidate"){
 		tag = candidatesfactory->GetSelectedEntry()->GetTitle();
