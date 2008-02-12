@@ -15,11 +15,13 @@
 #include "DMCTrajectoryPoint_factory.h"
 #include "DTrackLinker_factory.h"
 #include "DTrack_factory_THROWN.h"
+#include "DTrack_factory_ALT1.h"
 
 
 jerror_t TRACKING_init(JEventLoop *loop)
 {
 	/// Create and register TRACKING data factories
+	loop->AddFactory(new DTrack_factory_ALT1());
 	loop->AddFactory(new DTrack_factory());
 	loop->AddFactory(new DTrackCandidate_factory());
 	loop->AddFactory(new DTrackCandidate_factory_CDC());
