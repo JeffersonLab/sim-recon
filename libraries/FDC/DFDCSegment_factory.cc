@@ -264,6 +264,8 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
       break;
     }
   }
+  if ((start!=0 && ref_plane==0) || (start!=2&&ref_plane==2)) ref_plane=start;
+
   // Linear regression to find z0, tanl   
   double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.,sperp=0.,Delta;
   for (unsigned int k=start;k<n;k++){
@@ -328,16 +330,15 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
   double var_R1=CR(ref_plane,ref_plane);
   for (unsigned int k=0;k<n;k++){       
     double sperp=charge*(XYZ(k,2)-z1)/tanl;
+    double sinp=sin(Phi1+sperp/rc);
+    double cosp=cos(Phi1+sperp/rc);
+    XYZ(k,0)=xc+rc*cosp;
+    XYZ(k,1)=yc+rc*sinp;
     double Phi=atan2(XYZ(k,1),XYZ(k,0));
     double sinPhi=sin(Phi);
     double cosPhi=cos(Phi);
     double dRPhi_dx=Phi*cosPhi-sinPhi;
     double dRPhi_dy=Phi*sinPhi+cosPhi;
-
-    double sinp=sin(Phi1+sperp/rc);
-    double cosp=cos(Phi1+sperp/rc);
-    XYZ(k,0)=xc+rc*cosp;
-    XYZ(k,1)=yc+rc*sinp;
     
     double dx_drho=cosp+sperp/rc*sinp;
     double dx_dx0=1.-rc*sinp*delta_y/denom;
