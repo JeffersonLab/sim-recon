@@ -60,9 +60,9 @@ jerror_t DEventProcessor_radlen_hists::init(void)
 	dE_vs_r	= new TH2F("dE_vs_r","dE (keV) vs r", 300, 0.0, 65.0,1000, 0.0, 1000.0);
 	dE_vs_z	= new TH2F("dE_vs_z","dE (keV) vs z", 650, 0.0, 650.0, 1000, 0.0, 1000.0);
 
-	int Ntheta_bins = 360;
+	int Ntheta_bins = 480;
 	double theta_min = 0.0;
-	double theta_max = 90.0;
+	double theta_max = 120.0;
 	theta_nevents = new TH1F("theta_nevents","Number of events per #theta bin in int_radlen_vs_z_vs_theta", Ntheta_bins, theta_min, theta_max);
 	nXo_vs_z_vs_theta = new TH2F("nXo_vs_z_vs_theta","Radiation lengths vs. z and #theta", 650, 0.0, 650.0, Ntheta_bins, theta_min, theta_max);
 	nXo_vs_z_vs_theta->SetXTitle("z-position along beamline (cm)");
@@ -176,6 +176,7 @@ jerror_t DEventProcessor_radlen_hists::erun(void)
 	}
 	
 	double N = theta_nevents->Integral();
+_DBG_<<"N="<<N<<endl;
 	nXo_vs_r->Scale(1.0/N);
 	nXo_vs_z->Scale(1.0/N);
 	inXo_vs_r->SetBinContent(1,nXo_vs_r->GetBinContent(1));
