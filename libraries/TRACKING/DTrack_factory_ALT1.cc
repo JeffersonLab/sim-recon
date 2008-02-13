@@ -767,7 +767,17 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 			rt->DistToRT(wire, &s);
 			rt->GetLastDOCAPoint(pos_doca, mom_doca);
 			DVector3 shift = wire->udir.Cross(mom_doca);
-			shift.SetMag(hit->dist);
+			
+			// The magnitude of the shift is based on the drift time. The
+			// value of the dist member of the DCDCTrackHit object does not
+			// subtract out the TOF. This can add 50-100 microns to the
+			// resolution in the CDC. Here, we actually can calculate the TOF
+			// (for a given mass hypothesis).
+			double mass = 0.13957;
+			double beta = 1.0/sqrt(1.0 + pow(mass/mom_doca.Mag(), 2.0))*2.998E10;
+			double tof = s/beta/1.0E-9; // in ns
+			double dist = hit->dist*((hit->tdrift-tof)/hit->tdrift);
+			shift.SetMag(dist);
 
 			// If we're doing time-based tracking then there is a sign ambiguity
 			// to each of the "shifts". It is not realistic to check every possible
