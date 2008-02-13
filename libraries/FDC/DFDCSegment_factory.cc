@@ -14,7 +14,7 @@
 #define Z_VERTEX_CUT 25.0
 #define MATCH_RADIUS 5.0
 #define SIGN_CHANGE_CHISQ_CUT 10.0
-#define BEAM_VARIANCE 1.0 // cm^2
+#define BEAM_VARIANCE 0.01 // cm^2
 #define FDC_X_RESOLUTION 0.02  // 200 microns
 #define FDC_Y_RESOLUTION 0.02
 #define USED_IN_SEGMENT 0x8
@@ -291,9 +291,18 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
 
   // Track parameters z0 and tan(lambda)
   tanl=-Delta/(sumv*sumxy-sumy*sumx); 
-  z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
-  zvertex=z0-sperp*tanl;
-  
+  //z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
+    
+  // Arc-length to (0,0) from the most upstream plane in the FDC
+  double chord=sqrt(XYZ(n-2,0)*XYZ(n-2,0)+XYZ(n-2,1)*XYZ(n-2,1));
+  double ratio=chord/2./rc; 
+  // Make sure the argument for the arcsin does not go out of range...
+  if (ratio>1.) 
+    sperp=2.*rc*(M_PI/2.);
+  else
+    sperp=2.*rc*asin(ratio);
+  zvertex=XYZ(n-2,2)-sperp*tanl;
+
   // Check that the vertex z position is sensible
   if (zvertex<Z_VERTEX_CUT){
     zvertex=Z_TARGET;
@@ -542,17 +551,13 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<DFDCPseudo *>points,
   DMatrix Xavg(1,3);
   DMatrix A(3,3);
   double B0,B1,B2,Q,Q1,R,sum,diff;
-  double theta,lambda_min=1.e8,lambda[3];
-  int smallest_eigenvalue=0;
+  double theta,lambda_min;
   // Column and row vectors of ones
   DMatrix Ones(n,1),OnesT(1,n);
   DMatrix W_sum(1,1);
   DMatrix W(n,n);
-  // Eigenvectors
+  // Eigenvector
   DMatrix N1(3,1);
-  DMatrix N2(3,1);
-  DMatrix N3(3,1);
-  DMatrix VN(3,3);
 
   // The goal is to find the eigenvector corresponding to the smallest 
   // eigenvalue of the equation
@@ -628,27 +633,8 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<DFDCPseudo *>points,
   theta=atan2(Q1,R)/3.;
   sum=2.*temp*cos(theta);
   diff=-2.*temp*sin(theta);
- 
-  // First root
-  lambda[0]=-B2/3.+sum;
-  if (lambda[0]<lambda_min&&lambda[0]>EPS){
-    lambda_min=lambda[0];
-    smallest_eigenvalue=0;
-  }
-
-  // Second root
-  lambda[1]=-B2/3.-sum/2.-sqrt(3.)/2.*diff;
-  if (lambda[1]<lambda_min&&lambda[1]>EPS){
-    lambda_min=lambda[1];
-    smallest_eigenvalue=1;
-  }
-
   // Third root
-  lambda[2]=-B2/3.-sum/2.+sqrt(3.)/2.*diff;
-  if (lambda[2]<lambda_min&&lambda[2]>EPS){
-    lambda_min=lambda[2];
-    smallest_eigenvalue=2;
-  }
+  lambda_min=-B2/3.-sum/2.+sqrt(3.)/2.*diff;
 
   // Normal vector to plane
   CalcNormal(A,lambda_min,N1);
