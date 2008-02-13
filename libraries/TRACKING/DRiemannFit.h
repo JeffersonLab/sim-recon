@@ -19,18 +19,18 @@ class DRiemannFit{
     CovRPhi_=NULL;
   };
 
-  jerror_t DRiemannFit::FitCircle(double BeamRMS, double rc);
-  jerror_t FitCircle(double BeamRMS);
-  jerror_t FitLine(double BeamRMS);
+  jerror_t FitCircle(double rc);
+  jerror_t FitCircle();
+  jerror_t FitLine();
 
   jerror_t AddHit(double r, double phi, double z);
   jerror_t AddHitXYZ(double x,double y, double z);
   jerror_t AddHit(double x,double y,double z,double covx,double covy,
 		     double covxy);
  
-  double GetCharge(double BeamRMS, double rc);
-  double GetCharge(double BeamRMS);
-
+  double GetCharge(double rc);
+  double GetCharge();
+  jerror_t DoFit(double rc);
 
   // Center of projected circle and radius
   double xc,yc,rc;
@@ -39,6 +39,7 @@ class DRiemannFit{
   double var_tanl;
   double p_trans;
   double phi;
+  double q; // sign of charge
 
  protected:
   jerror_t CalcNormal(DMatrix A,double lambda,DMatrix &N);
@@ -49,8 +50,11 @@ class DRiemannFit{
   DMatrix *CovR_;
   DMatrix *CovRPhi_;
 
+  // Cirlce fit parameters
   double N[3]; 
+  double varN[3][3];
   double dist_to_origin;
+  double xavg[3],var_avg;
 };
 
 #endif //_DRIEMANN_FIT_H_

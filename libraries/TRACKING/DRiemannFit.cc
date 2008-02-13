@@ -48,8 +48,18 @@ jerror_t DRiemannFit::AddHit(double x,double y, double z,double covx,
   hits.push_back(hit);
 
   return NOERROR;
-  
 }
+
+// Fit sequence
+jerror_t DRiemannFit::DoFit(double rc_input){
+  jerror_t error=NOERROR;
+  error=FitCircle(rc_input);
+  error=FitLine();
+  q=GetCharge();;
+
+  return error;
+}
+
 
 // Calculate the (normal) eigenvector corresponding to the eigenvalue lambda
 jerror_t DRiemannFit::CalcNormal(DMatrix A,double lambda,DMatrix &N){
@@ -73,16 +83,16 @@ jerror_t DRiemannFit::CalcNormal(DMatrix A,double lambda,DMatrix &N){
 }
 
 // Riemann Circle fit with correction for non-normal track incidence
-jerror_t DRiemannFit::FitCircle(double BeamRMS, double rc){
+jerror_t DRiemannFit::FitCircle(double rc){
   // Covariance matrices
-  DMatrix CRPhi(hits.size()+1,hits.size()+1);
-  DMatrix CR(hits.size()+1,hits.size()+1);
+  DMatrix CRPhi(hits.size(),hits.size());
+  DMatrix CR(hits.size(),hits.size());
   // Auxiliary matrices for correcting for non-normal track incidence to FDC
   // The correction is 
   //    CRPhi'= C*CRPhi*C+S*CR*S, where S(i,i)=R_i*kappa/2
   //                                and C(i,i)=sqrt(1-S(i,i)^2)  
-  DMatrix C(hits.size()+1,hits.size()+1);
-  DMatrix S(hits.size()+1,hits.size()+1);
+  DMatrix C(hits.size(),hits.size());
+  DMatrix S(hits.size(),hits.size());
   for (unsigned int i=0;i<hits.size();i++){
     double rtemp=sqrt(hits[i]->x*hits[i]->x+hits[i]->y*hits[i]->y); 
     double stemp=rtemp/4./rc;
@@ -96,11 +106,10 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS, double rc){
       C(i,i)=1.;
     }
   }
-  C(hits.size(),hits.size())=1.;
 
   // Covariance matrices
   if (CovRPhi_==NULL){
-    CovRPhi_ = new DMatrix(hits.size()+1,hits.size()+1);
+    CovRPhi_ = new DMatrix(hits.size(),hits.size());
     for (unsigned int i=0;i<hits.size();i++){
       double Phi=atan2(hits[i]->y,hits[i]->x);
       CovRPhi_->operator()(i,i)
@@ -108,30 +117,29 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS, double rc){
       +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*hits[i]->covy
       +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
     }
-    CovRPhi_->operator()(hits.size(),hits.size())=BeamRMS*BeamRMS;
   }
   if (CovR_==NULL){
-    CovR_= new DMatrix(hits.size()+1,hits.size()+1);
+    CovR_= new DMatrix(hits.size(),hits.size());
     for (unsigned int m=0;m<hits.size();m++){
       double Phi=atan2(hits[m]->y,hits[m]->x);
       CovR_->operator()(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
 	+sin(Phi)*sin(Phi)*hits[m]->covy
 	+2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
     } 
-    CovR_->operator()(hits.size(),hits.size())=BeamRMS*BeamRMS;
   }
-  for (unsigned int i=0;i<hits.size()+1;i++){
-    for (unsigned int j=0;j<hits.size()+1;j++){
+  for (unsigned int i=0;i<hits.size();i++){
+    for (unsigned int j=0;j<hits.size();j++){
       CR(i,j)=CovR_->operator()(i, j);
       CRPhi(i,j)=CovRPhi_->operator()(i, j);
     }
   }
+
   // Correction for non-normal incidence of track on FDC 
   CRPhi=C*CRPhi*C+S*CR*S;
-  for (unsigned int i=0;i<hits.size()+1;i++)
-    for (unsigned int j=0;j<hits.size()+1;j++)
+  for (unsigned int i=0;i<hits.size();i++)
+    for (unsigned int j=0;j<hits.size();j++)
       CovRPhi_->operator()(i,j)=CRPhi(i,j);
-  return FitCircle(BeamRMS);
+  return FitCircle();
 }
 
 
@@ -141,32 +149,28 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS, double rc){
 // task of fitting points in (x,y) to a circle is transormed to the task of
 // fitting planes in (x,y, w=x^2+y^2) space
 //
-jerror_t DRiemannFit::FitCircle(double BeamRMS){  
+jerror_t DRiemannFit::FitCircle(){  
   if (hits.size()==0) return RESOURCE_UNAVAILABLE;
 
-  DMatrix X(hits.size()+1,3);
+  DMatrix X(hits.size(),3);
   DMatrix Xavg(1,3);
   DMatrix A(3,3);
   double B0,B1,B2,Q,Q1,R,sum,diff;
-  double theta,lambda_min=1.e8,lambda[3];
-  int smallest_eigenvalue=0;
+  double theta,lambda_min=0.;
   // Column and row vectors of ones
-  DMatrix Ones(hits.size()+1,1),OnesT(1,hits.size()+1);
+  DMatrix Ones(hits.size(),1),OnesT(1,hits.size());
   DMatrix W_sum(1,1);
-  DMatrix W(hits.size()+1,hits.size()+1);
-  // Eigenvectors
+  DMatrix W(hits.size(),hits.size());
+  // Eigenvector
   DMatrix N1(3,1);
-  DMatrix N2(3,1);
-  DMatrix N3(3,1);
-  DMatrix VN(3,3);
 
   // Make sure hit list is ordered in z
   std::sort(hits.begin(),hits.end(),DRiemannFit_hit_cmp);
  
   // Covariance matrix
-  DMatrix CRPhi(hits.size()+1,hits.size()+1);
+  DMatrix CRPhi(hits.size(),hits.size());
   if (CovRPhi_==NULL){
-    CovRPhi_ = new DMatrix(hits.size()+1,hits.size()+1);
+    CovRPhi_ = new DMatrix(hits.size(),hits.size());
     for (unsigned int i=0;i<hits.size();i++){
       double Phi=atan2(hits[i]->y,hits[i]->x);
       CovRPhi_->operator()(i,i)
@@ -174,10 +178,9 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS){
       +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*hits[i]->covy
       +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
     }
-    CovRPhi_->operator()(hits.size(),hits.size())=BeamRMS*BeamRMS;
   }
-  for (unsigned int i=0;i<hits.size()+1;i++)
-    for (unsigned int j=0;j<hits.size()+1;j++)
+  for (unsigned int i=0;i<hits.size();i++)
+    for (unsigned int j=0;j<hits.size();j++)
       CRPhi(i,j)=CovRPhi_->operator()(i, j);
  
   // The goal is to find the eigenvector corresponding to the smallest 
@@ -195,7 +198,6 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS){
     X(i,2)=hits[i]->x*hits[i]->x+hits[i]->y*hits[i]->y;
     Ones(i,0)=OnesT(0,i)=1.;
   }
-  Ones(hits.size(),0)=OnesT(0,hits.size())=1.;
 
   // Check that CRPhi is invertible 
   TDecompLU lu(CRPhi);
@@ -247,34 +249,16 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS){
   theta=atan2(Q1,R)/3.;
   sum=2.*temp*cos(theta);
   diff=-2.*temp*sin(theta);
- 
-  // First root
-  lambda[0]=-B2/3.+sum;
-  if (lambda[0]<lambda_min&&lambda[0]>EPS){
-    lambda_min=lambda[0];
-    smallest_eigenvalue=0;
-  }
-
-  // Second root
-  lambda[1]=-B2/3.-sum/2.-sqrt(3.)/2.*diff;
-  if (lambda[1]<lambda_min&&lambda[1]>EPS){
-    lambda_min=lambda[1];
-    smallest_eigenvalue=1;
-  }
-
   // Third root
-  lambda[2]=-B2/3.-sum/2.+sqrt(3.)/2.*diff;
-  if (lambda[2]<lambda_min&&lambda[2]>EPS){
-    lambda_min=lambda[2];
-    smallest_eigenvalue=2;
-  }
-
+  lambda_min=-B2/3.-sum/2.+sqrt(3.)/2.*diff;
+ 
   // Normal vector to plane
   CalcNormal(A,lambda_min,N1);
+  // Store in private array
   N[0]=N1(0,0);
   N[1]=N1(1,0);
   N[2]=N1(2,0);
-
+ 
   // Distance to origin
   dist_to_origin=-(N1(0,0)*Xavg(0,0)+N1(1,0)*Xavg(0,1)+N1(2,0)*Xavg(0,2));
 
@@ -287,19 +271,19 @@ jerror_t DRiemannFit::FitCircle(double BeamRMS){
 }
 
 // Charge-finding routine with corrected CRPhi (see above)
-double DRiemannFit::GetCharge(double BeamRMS,double rc){
+double DRiemannFit::GetCharge(double rc_input){
  // Covariance matrices
-  DMatrix CRPhi(hits.size()+1,hits.size()+1);
-  DMatrix CR(hits.size()+1,hits.size()+1);
+  DMatrix CRPhi(hits.size(),hits.size());
+  DMatrix CR(hits.size(),hits.size());
   // Auxiliary matrices for correcting for non-normal track incidence to FDC
   // The correction is 
   //    CRPhi'= C*CRPhi*C+S*CR*S, where S(i,i)=R_i*kappa/2
   //                                and C(i,i)=sqrt(1-S(i,i)^2)  
-  DMatrix C(hits.size()+1,hits.size()+1);
-  DMatrix S(hits.size()+1,hits.size()+1);
+  DMatrix C(hits.size(),hits.size());
+  DMatrix S(hits.size(),hits.size());
   for (unsigned int i=0;i<hits.size();i++){
     double rtemp=sqrt(hits[i]->x*hits[i]->x+hits[i]->y*hits[i]->y); 
-    double stemp=rtemp/4./rc;
+    double stemp=rtemp/4./rc_input;
     double ctemp=1.-stemp*stemp;
     if (ctemp>0){
       S(i,i)=stemp;
@@ -310,11 +294,10 @@ double DRiemannFit::GetCharge(double BeamRMS,double rc){
       C(i,i)=1;      
     }
   }
-  C(hits.size(),hits.size())=1.;
   
   // Covariance matrices
   if (CovRPhi_==NULL){
-    CovRPhi_ = new DMatrix(hits.size()+1,hits.size()+1);
+    CovRPhi_ = new DMatrix(hits.size(),hits.size());
     for (unsigned int i=0;i<hits.size();i++){
       double Phi=atan2(hits[i]->y,hits[i]->x);
       CovRPhi_->operator()(i,i)
@@ -322,39 +305,38 @@ double DRiemannFit::GetCharge(double BeamRMS,double rc){
       +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*hits[i]->covy
       +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
     }
-    CovRPhi_->operator()(hits.size(),hits.size())=BeamRMS*BeamRMS;
   }
   if (CovR_==NULL){
-    CovR_= new DMatrix(hits.size()+1,hits.size()+1);
+    CovR_= new DMatrix(hits.size(),hits.size());
     for (unsigned int m=0;m<hits.size();m++){
       double Phi=atan2(hits[m]->y,hits[m]->x);
       CovR_->operator()(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
 	+sin(Phi)*sin(Phi)*hits[m]->covy
 	+2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
     } 
-    CovR_->operator()(hits.size(),hits.size())=BeamRMS*BeamRMS;
   }
-  for (unsigned int i=0;i<hits.size()+1;i++){
-    for (unsigned int j=0;j<hits.size()+1;j++){
+  for (unsigned int i=0;i<hits.size();i++){
+    for (unsigned int j=0;j<hits.size();j++){
       CR(i,j)=CovR_->operator()(i, j);
       CRPhi(i,j)=CovRPhi_->operator()(i, j);
     }
   }
   // Correction for non-normal incidence of track on FDC 
   CRPhi=C*CRPhi*C+S*CR*S; 
-  for (unsigned int i=0;i<hits.size()+1;i++)
-    for (unsigned int j=0;j<hits.size()+1;j++)
+  for (unsigned int i=0;i<hits.size();i++)
+    for (unsigned int j=0;j<hits.size();j++)
       CovRPhi_->operator()(i,j)=CRPhi(i,j);
-  return GetCharge(BeamRMS);
+  return GetCharge();
 }
+
  
 // Linear regression to find charge
-double DRiemannFit::GetCharge(double BeamRMS){
+double DRiemannFit::GetCharge(){
   // Covariance matrices
-  DMatrix CRPhi(hits.size()+1,hits.size()+1);
-  DMatrix CR(hits.size()+1,hits.size()+1);
+  DMatrix CRPhi(hits.size(),hits.size());
+  DMatrix CR(hits.size(),hits.size());
   if (CovRPhi_==NULL){
-    CovRPhi_ = new DMatrix(hits.size()+1,hits.size()+1);
+    CovRPhi_ = new DMatrix(hits.size(),hits.size());
     for (unsigned int i=0;i<hits.size();i++){
       double Phi=atan2(hits[i]->y,hits[i]->x);
       CovRPhi_->operator()(i,i)
@@ -362,20 +344,18 @@ double DRiemannFit::GetCharge(double BeamRMS){
       +(Phi*sin(Phi)+cos(Phi))*(Phi*sin(Phi)+cos(Phi))*hits[i]->covy
       +2.*(Phi*sin(Phi)+cos(Phi))*(Phi*cos(Phi)-sin(Phi))*hits[i]->covxy;
     }
-    CovRPhi_->operator()(hits.size(),hits.size())=BeamRMS*BeamRMS;
   }
   if (CovR_==NULL){
-    CovR_= new DMatrix(hits.size()+1,hits.size()+1);
+    CovR_= new DMatrix(hits.size(),hits.size());
     for (unsigned int m=0;m<hits.size();m++){
       double Phi=atan2(hits[m]->y,hits[m]->x);
       CovR_->operator()(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
 	+sin(Phi)*sin(Phi)*hits[m]->covy
 	+2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
     } 
-    CovR_->operator()(hits.size(),hits.size())=BeamRMS*BeamRMS;
   }
-  for (unsigned int i=0;i<hits.size()+1;i++){
-    for (unsigned int j=0;j<hits.size()+1;j++){
+  for (unsigned int i=0;i<hits.size();i++){
+    for (unsigned int j=0;j<hits.size();j++){
       CR(i,j)=CovR_->operator()(i, j);
       CRPhi(i,j)=CovRPhi_->operator()(i, j);
     }
@@ -392,13 +372,13 @@ double DRiemannFit::GetCharge(double BeamRMS){
       if (phi_old<0) phi_z-=2.*M_PI;
       else phi_z+=2.*M_PI;
     }
-    double r2=hit->x*hit->x+hit->y*hit->y;
-    double var=(CRPhi(k,k)+phi_z*phi_z*CR(k,k))/r2;
-    sumv+=1./var;
-    sumy+=phi_z/var;
-    sumx+=hit->z/var;
-    sumxx+=hit->z*hit->z/var;
-    sumxy+=phi_z*hit->z/var;
+    double inv_var=(hit->x*hit->x+hit->y*hit->y)
+      /(CRPhi(k,k)+phi_z*phi_z*CR(k,k));
+    sumv+=inv_var;
+    sumy+=phi_z*inv_var;
+    sumx+=hit->z*inv_var;
+    sumxx+=hit->z*hit->z*inv_var;
+    sumxy+=phi_z*hit->z*inv_var;
     phi_old=phi_z;
   }
   double slope=(sumv*sumxy-sumy*sumx)/(sumv*sumxx-sumx*sumx); 
@@ -414,21 +394,20 @@ double DRiemannFit::GetCharge(double BeamRMS){
 // the dip angle and the z position of the closest approach to the beam line.
 // Computes intersection points along the helical path.
 //
-jerror_t DRiemannFit::FitLine(double BeamRMS){
+jerror_t DRiemannFit::FitLine(){
   // Get covariance matrix 
-  DMatrix CR(hits.size()+1,hits.size()+1);
+  DMatrix CR(hits.size(),hits.size());
   if (CovR_==NULL){ 
-    CovR_= new DMatrix(hits.size()+1,hits.size()+1);
+    CovR_= new DMatrix(hits.size(),hits.size());
     for (unsigned int m=0;m<hits.size();m++){
       double Phi=atan2(hits[m]->y,hits[m]->x);
       CovR_->operator()(m,m)=cos(Phi)*cos(Phi)*hits[m]->covx
       +sin(Phi)*sin(Phi)*hits[m]->covy
       +2.*sin(Phi)*cos(Phi)*hits[m]->covxy;
     } 
-    CovR_->operator()(hits.size(),hits.size())=BeamRMS*BeamRMS;
   }
-  for (unsigned int i=0;i<hits.size()+1;i++)
-    for (unsigned int j=0;j<hits.size()+1;j++)
+  for (unsigned int i=0;i<hits.size();i++)
+    for (unsigned int j=0;j<hits.size();j++)
       CR(i,j)=CovR_->operator()(i, j);
 
   // Fill vector of intersection points 
@@ -452,6 +431,7 @@ jerror_t DRiemannFit::FitLine(double BeamRMS){
       DRiemannHit_t *temphit = new DRiemannHit_t;
       temphit->x=x_int0;
       temphit->y=y_int0;
+      temphit->z=hits[m]->z;
       projections.push_back(temphit);
       continue;
     }
@@ -474,7 +454,7 @@ jerror_t DRiemannFit::FitLine(double BeamRMS){
     }
     projections.push_back(temphit);
   }
-
+  
   // All arc lengths are measured relative to some reference plane with a hit.
   // Don't use a "bad" hit for the reference...
   unsigned int start=0;
@@ -508,30 +488,24 @@ jerror_t DRiemannFit::FitLine(double BeamRMS){
       sumxy+=sperp*projections[k]->z/CR(k,k);
     }
   }
-  // Arc length to target point
-  chord=sqrt(projections[start]->x*projections[start]->x
-		    +projections[start]->y*projections[start]->y);
+  Delta=sumv*sumxx-sumx*sumx;
+
+  // Track parameters z0 and tan(lambda)
+  tanl=-Delta/(sumv*sumxy-sumy*sumx); 
+  z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
+
+  // Arc-length to (0,0)
+  unsigned int first=projections.size()-2;
+  chord=sqrt(projections[first]->x*projections[first]->x
+	     +projections[first]->y*projections[first]->y);
   ratio=chord/2./rc; 
   // Make sure the argument for the arcsin does not go out of range...
   if (ratio>1.) 
     sperp=2.*rc*(M_PI/2.);
   else
     sperp=2.*rc*asin(ratio);
-  double CRtarg=CR(projections.size(),projections.size());
-  sumv+=1./CRtarg,
-  sumy+=sperp/CRtarg;
-  sumx+=Z_TARGET/CRtarg;
-  sumxx+=Z_TARGET*Z_TARGET/CRtarg;
-  sumxy+=sperp*Z_TARGET/CRtarg;
-  Delta=sumv*sumxx-sumx*sumx;
-
-  // Track parameters z0 and tan(lambda)
-  tanl=-Delta/(sumv*sumxy-sumy*sumx); 
-  z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
-  zvertex=z0-sperp*tanl;
-  
-  // Error in tanl 
-  var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
+  zvertex=projections[first]->z-sperp*tanl;
 
   return NOERROR;
 }
+
