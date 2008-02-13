@@ -18,8 +18,9 @@
 #define MAX_SEGMENTS 20
 #define HALF_PACKAGE 6.0
 #define FDC_OUTER_RADIUS 50.0 
-#define BEAM_RMS 0.3 //cm
+#define BEAM_VAR 0.01 // cm^2
 #define HIT_CHI2_CUT 10.0
+#define Z_VERTEX 65.0
 
 ///
 /// DTrackCandidate_factory_FDCCathodes::brun():
@@ -176,97 +177,98 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
 	  }
 	}
-	fit.FitCircle(BEAM_RMS,segments[0]->rc);
-	q=fit.GetCharge(BEAM_RMS,segments[0]->rc);
-	// Extension to helix
-	fit.FitLine(BEAM_RMS);
-      
-	// Curvature
-	segments[1]->S(0,0)=kappa=q/2./fit.rc;
-	// Estimate for azimuthal angle
-	phi0=atan2(-fit.xc,fit.yc); 
-	if (q<0) phi0+=M_PI;
-	segments[1]->S(1,0)=phi0;
-	// remaining tracking parameters
-	tanl=fit.tanl;
-        zvertex=fit.zvertex;
-	segments[1]->S(3,0)=tanl;
-	segments[1]->S(4,0)=zvertex;
-	segments[1]->xc=fit.xc;
-	segments[1]->yc=fit.yc;
-	segments[1]->rc=fit.rc;
-
-	// Try to match to package 2 again.
-	if (match2==NULL && package[1].size()>0 &&
-	    (match2=GetTrackMatch(q,zpackage[1],segments[1],package[1],
-				  match_id))!=NULL){ 
-	  // remove the segment from the list 
-	  package[1].erase(package[1].begin()+match_id);
-	}
-
-	// Try to match to package 3 again.
-	if (match3==NULL && package[2].size()>0 &&
-	    (match3=GetTrackMatch(q,zpackage[2],segments[1],package[2],
-				  match_id))!=NULL){
-	  // Insert the segment from package 3 into the track
-	  segments.push_back(match3);
-
-	  // remove the segment from the list 
-	  package[2].erase(package[2].begin()+match_id);
-	  
-	  // Redo the fit with the additional hits from package 3
-	  DRiemannFit fit;
-	  for (unsigned int m=0;m<segments.size();m++){
-	    for(unsigned int n=0;n<segments[m]->hits.size();n++){
-	      DFDCPseudo *hit=segments[m]->hits[n];
-	      double covxx=hit->covxx;
-	      double covyy=hit->covyy;
-	      double covxy=hit->covxy;
-	      double hit_chi2=segments[segments.size()-1]->track[n].chi2;
-	      /*if (hit_chi2>1.){
-		covxx*=hit_chi2;      
-		covyy*=hit_chi2;
-		covxy*=hit_chi2;
-		}*/
-	      fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
-	    }
-	  }
-	  fit.FitCircle(BEAM_RMS,fit.rc);
-	  q=fit.GetCharge(BEAM_RMS);
-	  // Extension to helix
-	  fit.FitLine(BEAM_RMS);
-     
+	// Fake point at origin
+	fit.AddHit(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	if (fit.DoFit(segments[0]->rc)==NOERROR){      
+	  // Charge
+	  q=fit.q;
 	  // Curvature
-	  segments[2]->S(0,0)=kappa=q/2./fit.rc;
+	  segments[1]->S(0,0)=kappa=fit.q/2./fit.rc;
 	  // Estimate for azimuthal angle
 	  phi0=atan2(-fit.xc,fit.yc); 
-	  if (q<0) phi0+=M_PI;
-	  segments[2]->S(1,0)=phi0;
+	  if (fit.q<0) phi0+=M_PI;
+	  segments[1]->S(1,0)=phi0;
 	  // remaining tracking parameters
 	  tanl=fit.tanl;
 	  zvertex=fit.zvertex;
-	  segments[2]->S(3,0)=tanl;
-	  segments[2]->S(4,0)=zvertex;
-	  segments[2]->xc=fit.xc;
-	  segments[2]->yc=fit.yc;
-	  segments[2]->rc=fit.rc;
+	  segments[1]->S(3,0)=tanl;
+	  segments[1]->S(4,0)=zvertex;
+	  segments[1]->xc=fit.xc;
+	  segments[1]->yc=fit.yc;
+	  segments[1]->rc=fit.rc;
 	  
-	  // If we failed to match to package 4, try again.
-	  if (match4==NULL && package[3].size()>0 && 
-	      (match4=GetTrackMatch(q,zpackage[3],segments[2],package[3],
-				    match_id))!=NULL){
+	  // Try to match to package 2 again.
+	  if (match2==NULL && package[1].size()>0 &&
+	      (match2=GetTrackMatch(q,zpackage[1],segments[1],package[1],
+				    match_id))!=NULL){ 
 	    // remove the segment from the list 
-	    package[3].erase(package[3].begin()+match_id); 
+	    package[1].erase(package[1].begin()+match_id);
+	  }
+	  
+	  // Try to match to package 3 again.
+	  if (match3==NULL && package[2].size()>0 &&
+	      (match3=GetTrackMatch(q,zpackage[2],segments[1],package[2],
+				    match_id))!=NULL){
+	    // Insert the segment from package 3 into the track
+	    segments.push_back(match3);
+	    
+	    // remove the segment from the list 
+	    package[2].erase(package[2].begin()+match_id);
+	    
+	    // Redo the fit with the additional hits from package 3
+	    DRiemannFit fit;
+	    for (unsigned int m=0;m<segments.size();m++){
+	      for(unsigned int n=0;n<segments[m]->hits.size();n++){
+		DFDCPseudo *hit=segments[m]->hits[n];
+		double covxx=hit->covxx;
+		double covyy=hit->covyy;
+		double covxy=hit->covxy;
+		double hit_chi2=segments[segments.size()-1]->track[n].chi2;
+		/*if (hit_chi2>1.){
+		  covxx*=hit_chi2;      
+		  covyy*=hit_chi2;
+		covxy*=hit_chi2;
+		}*/
+		fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
+	      }
+	    }
+	    // Fake point at origin
+	    fit.AddHit(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	    if (fit.DoFit(segments[1]->rc)==NOERROR){     
+	      // Charge
+	      q=fit.q;
+	      // Curvature
+	      segments[2]->S(0,0)=kappa=fit.q/2./fit.rc;
+	      // Estimate for azimuthal angle
+	      phi0=atan2(-fit.xc,fit.yc); 
+	      if (fit.q<0) phi0+=M_PI;
+	      segments[2]->S(1,0)=phi0;
+	      // remaining tracking parameters
+	      tanl=fit.tanl;
+	      zvertex=fit.zvertex;
+	      segments[2]->S(3,0)=tanl;
+	      segments[2]->S(4,0)=zvertex;
+	      segments[2]->xc=fit.xc;
+	      segments[2]->yc=fit.yc;
+	      segments[2]->rc=fit.rc;
+	      
+	      // If we failed to match to package 4, try again.
+	      if (match4==NULL && package[3].size()>0 && 
+		  (match4=GetTrackMatch(q,zpackage[3],segments[2],package[3],
+					match_id))!=NULL){
+		// remove the segment from the list 
+		package[3].erase(package[3].begin()+match_id); 
+	      }
+	    }
+	    // Try to match to package 4 again.
+	    if (match4==NULL && package[3].size()>0 &&
+		(match4=GetTrackMatch(q,zpackage[3],segments[1],package[3],
+				      match_id))!=NULL){ 
+	      // remove the segment from the list
+	      package[3].erase(package[3].begin()+match_id);
+	    }
 	  }
 	}
-	// Try to match to package 4 again.
-	if (match4==NULL && package[3].size()>0 &&
-	    (match4=GetTrackMatch(q,zpackage[3],segments[1],package[3],
-				  match_id))!=NULL){ 
-	  // remove the segment from the list
-	  package[3].erase(package[3].begin()+match_id);
-	}
-
       }
 
       DVector3 mom,mom2,pos;
@@ -363,31 +365,32 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
 	  }
 	}
-	fit.FitCircle(BEAM_RMS,segments[0]->rc);
-	q=fit.GetCharge(BEAM_RMS);
-	// Extension to helix
-	fit.FitLine(BEAM_RMS);
-
-	// Curvature
-	segments[1]->S(0,0)=kappa=q/2./fit.rc;
-	// Estimate for azimuthal angle
-	phi0=atan2(-fit.xc,fit.yc); 
-	if (q<0) phi0+=M_PI;      
-	// remaining tracking parameters
-	tanl=fit.tanl;
-        zvertex=fit.zvertex;
-	segments[1]->S(3,0)=tanl;
-	segments[1]->S(4,0)=zvertex;
-	segments[1]->xc=fit.xc;
-	segments[1]->yc=fit.yc;
-	segments[1]->rc=fit.rc;
-
-	// Try to match to package 4 again.
-	if (match4==NULL && package[3].size()>0 &&
-	    (match4=GetTrackMatch(q,zpackage[3],segments[1],package[3],match_id))
-	    !=NULL){
-	  // remove the segment from the list 
-	  package[3].erase(package[3].begin()+match_id);
+	// Fake point at origin
+	fit.AddHit(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	if (fit.DoFit(segments[0]->rc)==NOERROR){
+	  // Charge
+	  q=fit.q;
+	  // Curvature
+	  segments[1]->S(0,0)=kappa=fit.q/2./fit.rc;
+	  // Estimate for azimuthal angle
+	  phi0=atan2(-fit.xc,fit.yc); 
+	  if (fit.q<0) phi0+=M_PI;      
+	  // remaining tracking parameters
+	  tanl=fit.tanl;
+	  zvertex=fit.zvertex;
+	  segments[1]->S(3,0)=tanl;
+	  segments[1]->S(4,0)=zvertex;
+	  segments[1]->xc=fit.xc;
+	  segments[1]->yc=fit.yc;
+	  segments[1]->rc=fit.rc;
+	  
+	  // Try to match to package 4 again.
+	  if (match4==NULL && package[3].size()>0 &&
+	      (match4=GetTrackMatch(q,zpackage[3],segments[1],package[3],match_id))
+	      !=NULL){
+	    // remove the segment from the list 
+	    package[3].erase(package[3].begin()+match_id);
+	  }
 	}
       }
 
@@ -446,8 +449,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	// remove the segment from the list 
 	package[3].erase(package[3].begin()+match_id);
       }	
-     
-       
+            
       if (segments.size()>1){
 	DRiemannFit fit;
 	for (unsigned int m=0;m<segments.size();m++){
@@ -465,19 +467,20 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
 	  }
 	}
-	fit.FitCircle(BEAM_RMS,segments[0]->rc);
-        q=fit.GetCharge(BEAM_RMS);	
-	// Extension to helix
-	fit.FitLine(BEAM_RMS);
-	
-	// Curvature
-	kappa=q/2./fit.rc;
-	// Estimate for azimuthal angle
-	phi0=atan2(-fit.xc,fit.yc); 
-	if (q<0) phi0+=M_PI; 
-	// remaining tracking parameters
-	tanl=fit.tanl;
-        zvertex=fit.zvertex;     
+	// Fake point at origin
+	fit.AddHit(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	if (fit.DoFit(segments[0]->rc)==NOERROR){     	
+	  // Charge
+	  q=fit.q;
+	  // Curvature
+	  kappa=fit.q/2./fit.rc;
+	  // Estimate for azimuthal angle
+	  phi0=atan2(-fit.xc,fit.yc); 
+	  if (fit.q<0) phi0+=M_PI; 
+	  // remaining tracking parameters
+	  tanl=fit.tanl;
+	  zvertex=fit.zvertex;
+	}
       }
       
     
