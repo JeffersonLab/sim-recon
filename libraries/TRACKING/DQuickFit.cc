@@ -12,7 +12,7 @@ using namespace std;
 #include "DQuickFit.h"
 #include "DRiemannFit.h"
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
-
+#define Z_VERTEX 65.0
 
 // The following is for sorting hits by z
 class DQFHitLessThanZ{
@@ -279,8 +279,11 @@ jerror_t DQuickFit::FitCircleRiemann(double BeamRMS)
 		DQFHit_t *hit = hits[i];
 		rfit.AddHitXYZ(hit->x, hit->y, hit->z);
 	}
-	
-	rfit.FitCircle(BeamRMS, NULL);
+	// Fake point at origin
+	double beam_var=BeamRMS*BeamRMS;
+	rfit.AddHit(0.,0.,Z_VERTEX,beam_var,beam_var,0.);
+
+	rfit.FitCircle();
 	x0 = rfit.xc;
 	y0 = rfit.yc;
 	phi = rfit.phi;
