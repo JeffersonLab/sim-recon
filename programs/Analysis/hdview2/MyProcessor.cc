@@ -188,7 +188,7 @@ void MyProcessor::FillGraphics(void)
 				e->SetLineColor(38);
 				graphics_xyA.push_back(e);
 
-				double dist2 = dist1 - 20.0*55.0E-6; // what if out TOF was 20ns?
+				double dist2 = dist1 - 4.0*55.0E-4; // what if our TOF was 4ns?
 				e = new TEllipse(x, y, dist2, dist2);
 				e->SetLineColor(38);
 				graphics_xyA.push_back(e);
