@@ -72,6 +72,8 @@ void write_hddm_event_(int *iev, int *iproc,
 	s_PhysicsEvents_t* pes;
 	s_Reactions_t* rs;
 	s_Beam_t* bs;
+	s_Momentum_t *mom;
+	s_Properties_t *prop;
 	s_Target_t* ts;
 	s_Vertices_t* vs;
 	s_Origin_t* origin;
@@ -88,17 +90,25 @@ void write_hddm_event_(int *iev, int *iproc,
 
 	rs->in[0].beam = bs = make_s_Beam();
         bs->type = kin[0].geantid;
-        bs->momentum->px = pin[0].px;
-        bs->momentum->py = pin[0].py;
-        bs->momentum->pz = pin[0].pz;
-        bs->momentum->E  = pin[0].en;
+		  bs->momentum = mom = make_s_Momentum();
+        mom->px = pin[0].px;
+        mom->py = pin[0].py;
+        mom->pz = pin[0].pz;
+        mom->E  = pin[0].en;
+		  bs->properties = prop = make_s_Properties();
+		  prop->charge = 0.0;
+		  prop->mass = 0.0;
         
 	rs->in[0].target = ts = make_s_Target();
         ts->type = kin[1].geantid;
-        ts->momentum->px = pin[1].px;
-        ts->momentum->py = pin[1].py;
-        ts->momentum->pz = pin[1].pz;
-        ts->momentum->E  = pin[1].en;
+		  ts->momentum = mom = make_s_Momentum();
+        mom->px = pin[1].px;
+        mom->py = pin[1].py;
+        mom->pz = pin[1].pz;
+        mom->E  = pin[1].en;
+		  ts->properties = prop = make_s_Properties();
+		  prop->charge = +1;
+		  prop->mass = 0.938272; /* this should be derived from type ... */
         
 	rs->in[0].vertices = vs = make_s_Vertices(1);
 	vs->mult = 1;
