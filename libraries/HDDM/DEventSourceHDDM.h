@@ -32,6 +32,7 @@ using namespace std;
 #include "TOF/DHDDMTOFHit.h"
 #include "START_COUNTER/DSCTruthHit.h"
 #include "START_COUNTER/DSCHit.h"
+#include <PID/DBeamPhoton.h>
 
 class DEventSourceHDDM:public JEventSource
 {
@@ -56,6 +57,7 @@ class DEventSourceHDDM:public JEventSource
 
 		jerror_t Extract_DBCALTruthShower(s_HDDM_t *hddm_s, JFactory<DBCALTruthShower> *factory);
 		jerror_t Extract_DHDDMBCALHit(s_HDDM_t *hddm_s, JFactory<DHDDMBCALHit> *factory);
+		jerror_t Extract_DBeamPhoton(s_HDDM_t *hddm_s, JFactory<DBeamPhoton> *factory);
 		jerror_t Extract_DMCThrown(s_HDDM_t *hddm_s, JFactory<DMCThrown> *factory);
 		jerror_t Extract_DCDCHit(s_HDDM_t *hddm_s, JFactory<DCDCHit> *factory);
 		jerror_t Extract_DFDCHit(s_HDDM_t *hddm_s, JFactory<DFDCHit> *factory);

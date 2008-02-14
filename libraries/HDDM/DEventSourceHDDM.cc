@@ -137,6 +137,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(dataClassName =="DMCTrackHit")
 		return Extract_DMCTrackHit(my_hddm_s, dynamic_cast<JFactory<DMCTrackHit>*>(factory));
 
+	if(dataClassName =="DBeamPhoton")
+		return Extract_DBeamPhoton(my_hddm_s, dynamic_cast<JFactory<DBeamPhoton>*>(factory));
+
 	if(dataClassName =="DMCThrown")
 		return Extract_DMCThrown(my_hddm_s, dynamic_cast<JFactory<DMCThrown>*>(factory));
 
@@ -459,6 +462,54 @@ jerror_t DEventSourceHDDM::Extract_DHDDMBCALHit(s_HDDM_t *hddm_s, JFactory<DHDDM
 			}
 		} // j   (cells)
 	} // i   (physicsEvents)
+	
+	// Copy into factory
+	factory->CopyTo(data);
+
+	return NOERROR;
+}
+
+//------------------
+// Extract_DBeamPhoton
+//------------------
+jerror_t DEventSourceHDDM::Extract_DBeamPhoton(s_HDDM_t *hddm_s,  JFactory<DBeamPhoton> *factory)
+{
+	/// Copies the data from the given hddm_s structure. This is called
+	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
+	/// returns OBJECT_NOT_AVAILABLE immediately.
+	
+	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
+	
+	vector<DBeamPhoton*> data;
+
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+	
+	for(unsigned int i=0; i<PE->mult; i++){
+		// ------------ Reactions --------------
+		s_Reactions_t *reactions=PE->in[i].reactions;
+		if(!reactions)continue;
+
+		for(unsigned int j=0; j<reactions->mult; j++){
+			s_Beam_t *beam = reactions->in[j].beam;
+			if(beam!=HDDM_NULL){
+				s_Momentum_t *momentum = beam->momentum;
+				
+				DVector3 pos(0.0, 0.0, 65.0);
+				DVector3 mom(momentum->px, momentum->py, momentum->pz);
+				DBeamPhoton *photon = new DBeamPhoton;
+				photon->setPosition(pos);
+				photon->setMomentum(mom);
+				photon->setMass(0.0);
+				photon->setCharge(0.0);
+				photon->clearErrorMatrix();
+				photon->t = 0.0;
+		
+				data.push_back(photon);
+			}
+		}
+	}
 	
 	// Copy into factory
 	factory->CopyTo(data);
