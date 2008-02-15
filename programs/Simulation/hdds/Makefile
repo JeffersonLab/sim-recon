@@ -61,3 +61,6 @@ hdds-mcfast: hdds-mcfast.cpp XParsers.cpp XParsers.hpp\
 
 clean:
 	rm -f *.o core *.depend hdds-geant hdds-root hdds-mcfast
+
+pristine: clean
+	

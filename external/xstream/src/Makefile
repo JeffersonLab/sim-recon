@@ -43,6 +43,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+pristine: clean
+	
+
 clean:
 	rm -f *.o *.a $(HALLD_HOME)/lib/$(OSNAME)/$(lib_LIBRARIES)
 

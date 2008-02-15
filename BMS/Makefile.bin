@@ -68,10 +68,10 @@ install: all
 relink: exec_clean install
 
 clean:
-	rm -rf $(BIN_DIR) $(OBJ_DIR) $(DEP_DIR) $(DICT_FILES) *.o *.bak *~ core last.kumac*  #*# 
+	set nonomatch; rm -rf $(BIN_DIR) $(OBJ_DIR) $(DEP_DIR) $(DICT_FILES) *.o *.bak *~ core last.kumac*  #*# 
 
 pristine: clean
-	rm -rf .bin .obj .lib .depends
+	set nonomatch; rm -rf .bin .obj .lib .depends
 
 exec_clean:
 	rm -f $(EXE_PATHNAMES)
