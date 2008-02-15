@@ -421,39 +421,43 @@ jerror_t DRiemannFit::FitLine(){
   for (unsigned int m=0;m<hits.size();m++){
     double r2=hits[m]->x*hits[m]->x+hits[m]->y*hits[m]->y;
     numer=dist_to_origin+r2*N[2];
-
-    x_int0=-N[0]*numer/denom;
-    y_int0=-N[1]*numer/denom;
-    temp=denom*r2-numer*numer;
-    if (temp<0){  // Skip point if the intersection gives nonsense
-      bad[m]=1;
-      numbad++;
-      DRiemannHit_t *temphit = new DRiemannHit_t;
-      temphit->x=x_int0;
-      temphit->y=y_int0;
-      temphit->z=hits[m]->z;
-      projections.push_back(temphit);
-      continue;
-    }
-    temp=sqrt(temp)/denom;
-    
-    // Choose sign of square root based on proximity to actual measurements
-    double diffx1=x_int0+N[1]*temp-hits[m]->x;
-    double diffy1=y_int0-N[0]*temp-hits[m]->y;
-    double diffx2=x_int0-N[1]*temp-hits[m]->x;
-    double diffy2=y_int0+N[0]*temp-hits[m]->y;
     DRiemannHit_t *temphit = new DRiemannHit_t;
     temphit->z=hits[m]->z;
-    if (diffx1*diffx1+diffy1*diffy1 > diffx2*diffx2+diffy2*diffy2){
-      temphit->x=x_int0-N[1]*temp;
-      temphit->y=y_int0+N[0]*temp;
+
+    if (r2==0){
+      temphit->x=0.;
+      temphit->y=0.;
     }
     else{
-      temphit->x=x_int0+N[1]*temp;
-      temphit->y=y_int0-N[0]*temp;
+      x_int0=-N[0]*numer/denom;
+      y_int0=-N[1]*numer/denom;
+      temp=denom*r2-numer*numer;
+      if (temp<0){  // Skip point if the intersection gives nonsense
+	bad[m]=1;
+	numbad++;
+	temphit->x=x_int0;
+	temphit->y=y_int0;
+	projections.push_back(temphit);
+	continue;
+      }
+      temp=sqrt(temp)/denom;
+      
+      // Choose sign of square root based on proximity to actual measurements
+      double diffx1=x_int0+N[1]*temp-hits[m]->x;
+      double diffy1=y_int0-N[0]*temp-hits[m]->y;
+      double diffx2=x_int0-N[1]*temp-hits[m]->x;
+      double diffy2=y_int0+N[0]*temp-hits[m]->y;
+      if (diffx1*diffx1+diffy1*diffy1 > diffx2*diffx2+diffy2*diffy2){
+	temphit->x=x_int0-N[1]*temp;
+	temphit->y=y_int0+N[0]*temp;
+      }
+      else{
+	temphit->x=x_int0+N[1]*temp;
+	temphit->y=y_int0-N[0]*temp;
+      }
     }
     projections.push_back(temphit);
-  }
+  }  
   
   // All arc lengths are measured relative to some reference plane with a hit.
   // Don't use a "bad" hit for the reference...
