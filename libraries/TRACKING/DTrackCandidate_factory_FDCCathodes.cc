@@ -32,6 +32,14 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop, int ev
   return NOERROR;
 }
 
+// Local routine for sorting segments by charge and curvature
+bool DTrackCandidate_segment_cmp(const DFDCSegment *a, const DFDCSegment *b){
+  double k1=a->S(0,0),k2=b->S(0,0);
+  double q1=k1/fabs(k1),q2=k2/fabs(k2);
+  if (q1!=q2) return q1<q2;
+  return fabs(k1)<fabs(k2);  
+}
+
 //------------------
 // evnt:  main segment linking routine
 //------------------
@@ -39,11 +47,12 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 {
   vector<const DFDCSegment*>segments;
   eventLoop->Get(segments);
-  
+  std::sort(segments.begin(), segments.end(), DTrackCandidate_segment_cmp);
+
   // Group segments by package
-  vector<DFDCSegment*>package[4];
+  vector<DFDCSegment*>package[4]; 
   for (unsigned int i=0;i<segments.size();i++){
-    const DFDCSegment *segment=segments[i];
+     const DFDCSegment *segment=segments[i];
  package[(segment->hits[0]->wire->layer-1)/6].push_back((DFDCSegment*)segment);
   }
       
