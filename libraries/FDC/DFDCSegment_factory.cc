@@ -20,6 +20,7 @@
 #define USED_IN_SEGMENT 0x8
 #define CORRECTED 0x10
 #define MAX_ITER 10
+#define MIN_TANL 0.44 // 23.8 degrees from end of target to first package
 
 static bool got_deflection_file=true;
 static bool warn=true;
@@ -267,13 +268,15 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
   if ((start!=0 && ref_plane==0) || (start!=2&&ref_plane==2)) ref_plane=start;
 
   // Linear regression to find z0, tanl   
-  double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.,sperp=0.,Delta;
-  for (unsigned int k=start;k<n;k++){
+  double sumv=1./CR(n-1,n-1),sumx=XYZ(n-1,2)/CR(n-1,n-1);
+  double sumy=0.,sumxx=XYZ(n-1,2)*XYZ(n-1,2)/CR(n-1,n-1),sumxy=0.;
+  double sperp=0.,chord,ratio,Delta;
+  for (unsigned int k=start;k<n-1;k++){
     if (!bad[k]){
       double diffx=XYZ(k,0)-XYZ(start,0);
       double diffy=XYZ(k,1)-XYZ(start,1);
-      double chord=sqrt(diffx*diffx+diffy*diffy);
-      double ratio=chord/2./rc; 
+      chord=sqrt(diffx*diffx+diffy*diffy);
+      ratio=chord/2./rc; 
       // Make sure the argument for the arcsin does not go out of range...
       if (ratio>1.) 
 	sperp=2.*rc*(M_PI/2.);
@@ -287,29 +290,49 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
       sumxy+=sperp*XYZ(k,2)/CR(k,k);
     }
   }
-  Delta=sumv*sumxx-sumx*sumx;
-
-  // Track parameters z0 and tan(lambda)
-  tanl=-Delta/(sumv*sumxy-sumy*sumx); 
-  //z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
-    
-  // Arc-length to (0,0) from the most upstream plane in the FDC
-  double chord=sqrt(XYZ(n-2,0)*XYZ(n-2,0)+XYZ(n-2,1)*XYZ(n-2,1));
-  double ratio=chord/2./rc; 
+  double old_sumy=sumy;
+  double old_sumxy=sumxy;
+  chord=sqrt(XYZ(0,0)*XYZ(0,0)+XYZ(0,1)*XYZ(0,1));
+  ratio=chord/2./rc; 
   // Make sure the argument for the arcsin does not go out of range...
   if (ratio>1.) 
     sperp=2.*rc*(M_PI/2.);
   else
     sperp=2.*rc*asin(ratio);
-  zvertex=XYZ(n-2,2)-sperp*tanl;
+  sumy=old_sumy+sperp/CR(n-1,n-1);
+  sumxy=old_sumxy+sperp*XYZ(n-1,2)/CR(n-1,n-1);
+  Delta=sumv*sumxx-sumx*sumx;
+  // Track parameters z0 and tan(lambda)
+  tanl=-Delta/(sumv*sumxy-sumy*sumx); 
+  //z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
+  // Error in tanl 
+  var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
+   
+  // Compute tanl using the other possible choice for the path length to the
+  // target point
+  double test_var=0.,test_tanl=0.;
+  double test_sperp=2.*rc*M_PI-sperp;
+  sumy=old_sumy+test_sperp/CR(n-1,n-1);
+  sumxy=old_sumxy+test_sperp*XYZ(n-1,2)/CR(n-1,n-1);
+  Delta=sumv*sumxx-sumx*sumx;
+  test_tanl=-Delta/(sumv*sumxy-sumy*sumx);
+  test_var=sumv/Delta*(test_tanl*test_tanl*test_tanl*test_tanl);
+  
+  // Vertex position
+  zvertex=XYZ(start,2)-sperp*tanl;
+  double zvertex_temp=XYZ(start,2)-test_sperp*test_tanl;
+  // Choose best tanl based on proximity of projected z-vertex to the center 
+  // of the target
+  if (fabs(zvertex-Z_TARGET)>fabs(zvertex_temp-Z_TARGET)){
+    zvertex=zvertex_temp;
+    tanl=test_tanl;
+    var_tanl=test_var;
+  }
 
   // Check that the vertex z position is sensible
   if (zvertex<Z_VERTEX_CUT){
     zvertex=Z_TARGET;
   }
-  
-  // Error in tanl 
-  var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
 
   return NOERROR;
 }
@@ -797,8 +820,6 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
     for (unsigned int i=x_list[start];i<x_list[start+1];i++){
       if ((points[i]->status&USED_IN_SEGMENT)==0){ 
 	points[i]->status|=USED_IN_SEGMENT;   
-	// Creat a new segment
-	DFDCSegment *segment = new DFDCSegment;
 	chisq=1.e8;
 
 	// Clear track parameters
@@ -907,30 +928,34 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	    
 	  }
 	}
-	
-	DMatrix Seed(5,1);
-	DMatrix Cov(5,5);	  
-	// Initialize seed track parameters
-	Seed(0,0)=kappa;    // Curvature 
-	Seed(1,0)=phi0;      // Phi
-	Seed(2,0)=D;       // D=distance of closest approach to origin   
-	Seed(3,0)=tanl;     // tan(lambda), lambda=dip angle
-	Seed(4,0)=zvertex;       // z-position at closest approach to origin
-	for (unsigned int i=0;i<5;i++) Cov(i,i)=1.;
-	
-	segment->S.ResizeTo(Seed);
-	segment->S=Seed;
-	segment->cov.ResizeTo(Cov);
-	segment->cov=Cov;
-	segment->hits=neighbors;
-	segment->track=fdc_track;
-	segment->xc=xc;
-	segment->yc=yc;
-	segment->rc=rc;
-	segment->Phi1=Phi1;
-	segment->chisq=chisq;
-	
-	_data.push_back(segment);
+
+	if (error==NOERROR){
+	  // Creat a new segment
+	  DFDCSegment *segment = new DFDCSegment;	
+	  DMatrix Seed(5,1);
+	  DMatrix Cov(5,5);	  
+	  // Initialize seed track parameters
+	  Seed(0,0)=kappa;    // Curvature 
+	  Seed(1,0)=phi0;      // Phi
+	  Seed(2,0)=D;       // D=distance of closest approach to origin   
+	  Seed(3,0)=tanl;     // tan(lambda), lambda=dip angle
+	  Seed(4,0)=zvertex;       // z-position at closest approach to origin
+	  for (unsigned int i=0;i<5;i++) Cov(i,i)=1.;
+	  
+	  segment->S.ResizeTo(Seed);
+	  segment->S=Seed;
+	  segment->cov.ResizeTo(Cov);
+	  segment->cov=Cov;
+	  segment->hits=neighbors;
+	  segment->track=fdc_track;
+	  segment->xc=xc;
+	  segment->yc=yc;
+	  segment->rc=rc;
+	  segment->Phi1=Phi1;
+	  segment->chisq=chisq;
+	  
+	  _data.push_back(segment);
+	}
       }
     }
     // Look for a new plane to start looking for a segment
