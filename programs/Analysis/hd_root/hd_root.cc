@@ -34,6 +34,7 @@ int main(int narg, char *argv[])
 	DApplication app(narg, argv);
 
 	// Run though all events, calling our event processor's methods
+	app.monitor_heartbeat = 0;
 	app.Run(&myproc);
 	
 	return 0;
