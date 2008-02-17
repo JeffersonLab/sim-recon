@@ -69,7 +69,7 @@ DTrack_factory_ALT1::DTrack_factory_ALT1()
 	LEAST_SQUARES_DP = 0.0001;
 	LEAST_SQUARES_DX = 0.010;
 	LEAST_SQUARES_MIN_HITS = 3;
-	LEAST_SQUARES_MAX_E2NORM = 1.0E6;
+	LEAST_SQUARES_MAX_E2NORM = 1.0E8;
 	DEFAULT_STEP_SIZE = 0.5;
 	MIN_CDC_HIT_PROB = 0.2;
 	MAX_CDC_DOUBLE_HIT_PROB = 0.1;
@@ -258,6 +258,11 @@ jerror_t DTrack_factory_ALT1::evnt(JEventLoop *loop, int eventnumber)
 
 		// Fit the track
 		DTrack *track = FitTrack(rtv[i], trackcandidates[i]->id);
+		
+		// Try fitting with the opposite charge
+		if(track==NULL || (track!=NULL && track->chisq>2.0)){
+			track = FitTrackWithOppositeCharge(rtv[i], trackcandidates[i]->id, track);
+		}
 
 		// If fit is successful, then store the track
 		if(track)_data.push_back(track);
@@ -291,10 +296,19 @@ DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
 	// Do initial hit-based fit
 	if(debug_level>3)_DBG_<<"============= Hit-based ==============="<<endl;
 	double chisq_hit_based;
-	for(int i=0; i<1; i++){
-		if(LeastSquaresB(kHitBased, rt, chisq_hit_based) != FIT_OK){
-			if(debug_level>3)_DBG_<<"Hit based fit failed for candidate "<<candidateid<<endl;
-			return NULL;
+	for(int i=0; i<3; i++){
+		switch(LeastSquaresB(kHitBased, rt, chisq_hit_based)){
+			case FIT_OK:
+				if(debug_level>2)_DBG_<<"Hit based fit succeeded for candidate "<<candidateid<<endl;
+				break;
+			case FIT_NO_IMPROVEMENT:
+				if(debug_level>2)_DBG_<<"Hit based fit showed no improvement for candidate "<<candidateid<<endl;
+				if(debug_level>2)_DBG_<<"Maybe time based will improve things ... "<<endl;
+				break;
+			case FIT_FAILED:
+				if(debug_level>2)_DBG_<<"Hit based fit failed for candidate "<<candidateid<<endl;
+				return NULL;
+				break;
 		}
 	}
 	
@@ -305,9 +319,16 @@ DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
 	double last_chisq = 1.0E6;
 	int Niterations;
 	for(Niterations=0; Niterations<MAX_FIT_ITERATIONS; Niterations++){
-		if(LeastSquaresB(kTimeBased, rt, chisq_time_based) != FIT_OK){
-			if(debug_level>3)_DBG_<<"Time based fit failed for candidate "<<candidateid<<" on iteration "<<Niterations<<endl;
-			return NULL;
+		switch(LeastSquaresB(kTimeBased, rt, chisq_time_based) != FIT_OK){
+			case FIT_OK:
+				if(debug_level>2)_DBG_<<"Time based fit succeeded for candidate "<<candidateid<<endl;
+				break;
+			case FIT_NO_IMPROVEMENT:
+				if(debug_level>2)_DBG_<<"Time based fit unable to improve candidate "<<candidateid<<endl;
+				break;
+			case FIT_FAILED:
+				if(debug_level>2)_DBG_<<"Time based fit failed for candidate "<<candidateid<<" on iteration "<<Niterations<<endl;
+				return NULL;
 		}
 
 		// Fill debug histos
@@ -326,47 +347,6 @@ DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
 		if(fabs(last_chisq-chisq_time_based) < MAX_CHISQ_DIFF)break;
 		last_chisq = chisq_time_based;
 	}
-
-#if 0
-	// Get starting position and momentum from candidate reference trajectory
-	DVector3 start_pos = rt->swim_steps[0].origin;
-	DVector3 start_mom = rt->swim_steps[0].mom;
-	DVector3 pos = start_pos;
-	DVector3 mom = start_mom;
-
-	// Fit the track and get the results in the form of the
-	// position/momentum
-	DVector3 vertex_pos=pos; // to hold fitted values on return
-	DVector3 vertex_mom=mom; // to hold fitted values on return
-	double initial_chisq=1.0E6, chisq=1.0E6, last_chisq;
-	int Niterations;
-	for(Niterations=0; Niterations<MAX_FIT_ITERATIONS; Niterations++){
-		last_chisq = chisq;
-		fit_status_t status = LeastSquares(pos, mom, rt, vertex_pos, vertex_mom, chisq);
-		if(status != FIT_OK){
-			vertex_pos = pos;
-			vertex_mom = mom;
-			rt->Swim(vertex_pos, vertex_mom);
-			if(debug_level>1)_DBG_<<"Fit failed for iteration "<<Niterations<<" (not necessarily fatal)"<<endl;
-			break;
-		}
-
-		if(Niterations==0)initial_chisq = chisq;
-		if(debug_level>3)_DBG_<<" ---- iteration "<<Niterations<<"  chisq="<<chisq<<endl;
-		if(DEBUG_HISTS){
-			chisq_vs_pass->Fill(Niterations+1, chisq);
-			dchisq_vs_pass->Fill(Niterations+1, last_chisq-chisq);			
-		}
-		if(fabs(last_chisq-chisq) < MAX_CHISQ_DIFF)break;
-		if(chisq>1.0E4)break;
-		
-		// If the fit succeeded (which it had to if we got here)
-		// then rt should already reflect the track at
-		// vertex_pos, vertex_mom.
-		pos = vertex_pos;
-		mom = vertex_mom;
-	}
-#endif
 
 	if(debug_level>1)_DBG_<<" Niterations="<<Niterations<<"  chisq_time_based="<<chisq_time_based<<" p="<<rt->swim_steps[0].mom.Mag()<<endl;
 	
@@ -427,6 +407,52 @@ DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
 	return track;
 }
 
+
+//------------------
+// FitTrackWithOppositeCharge
+//------------------
+DTrack* DTrack_factory_ALT1::FitTrackWithOppositeCharge(DReferenceTrajectory* rt, int candidateid, DTrack* &track)
+{
+	if(debug_level>2)_DBG_<<"Fitting track with opposite charge (original:"<<(rt->q>0 ? "+":"-")<<" now:"<<(rt->q>0 ? "-":"+")<<")"<<endl;
+
+	// Re-swim track with flipped charge
+	swim_step_t &start_step = rt->swim_steps[0];
+	DVector3 pos = start_step.origin;
+	DVector3 mom = start_step.mom;
+	rt->Swim(pos, mom, -rt->q);
+	if(rt->Nswim_steps==0)return track;
+	
+	// Try fitting track
+	DTrack *track_bar = FitTrack(rt, candidateid);
+	
+	// Decide which (if any) track to keep
+	if((track==NULL) && (track_bar==NULL)){
+		if(debug_level>3)_DBG_<<"Track fits failed both q and q_bar"<<endl;
+		return NULL;
+	}
+	if((track==NULL) && (track_bar!=NULL)){
+		if(debug_level>3)_DBG_<<"Track fit failed q but succeeded for q_bar"<<endl;
+		return track = track_bar;
+	}
+	if((track!=NULL) && (track_bar==NULL)){
+		if(debug_level>3)_DBG_<<"Track fit failed q_bar but succeeded for q"<<endl;
+		return track;
+	}
+	
+	// At thsis point, we have successful ( or at least not-failed) fits
+	// for both charge choices. Decided which to keep via the lower
+	// chisq. Delete the loser and return the winner.
+	if(track_bar->chisq < track->chisq){
+		delete track;
+		track = track_bar;
+	}else{
+		delete track_bar;
+		rt->Swim(pos, mom, -rt->q); // re-swim with original charge
+	}
+	
+	return track;
+}
+
 //------------------
 // FindHitCandidateProbabilities
 //------------------
@@ -464,6 +490,11 @@ void DTrack_factory_ALT1::FindHitCandidateProbabilities(void)
 		const DVector3 &pos = tc->position();
 		const DVector3 &mom = tc->momentum();
 		rt->Swim(pos, mom, tc->charge());
+		if(rt->Nswim_steps<1){
+			for(unsigned int j=0; j<cdctrackhits.size(); j++)cdcprobs[j].push_back(0.0);
+			for(unsigned int j=0; j<fdctrackhits.size(); j++)fdcprobs[j].push_back(0.0);
+			continue;
+		}
 		
 		// Get probabilities of each CDC hit being on this track
 		vector<double> cdcprob;
@@ -624,6 +655,20 @@ double DTrack_factory_ALT1::ChiSq(DMatrix &state, const swim_step_t *start_step,
 
 	if(!rt){
 		_DBG_<<"NULL pointer passed for DReferenceTrajectory object!"<<endl;
+		chisqv.clear();
+		for(unsigned int i=0; i<wires.size(); i++)chisqv.push_back(1.0E6);
+		return 1.0E6;
+	}
+	
+	if(pos.Mag()>200.0 || fabs(state[state_x ][0])>100.0 || fabs(state[state_v ][0])>100.0){
+		if(debug_level>3)_DBG_<<"state values out of range"<<endl;
+		if(debug_level>6){
+			pos.Print();
+			mom.Print();
+			_DBG_<<"state[state_x ][0]="<<state[state_x ][0]<<"  state[state_v ][0]="<<state[state_x ][0]<<endl;
+		}
+		chisqv.clear();
+		for(unsigned int i=0; i<wires.size(); i++)chisqv.push_back(1.0E6);
 		return 1.0E6;
 	}
 	
@@ -659,6 +704,14 @@ double DTrack_factory_ALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordi
 	if(wires.size()!=errs.size() || (shifts.size()!=0 && !use_shifts)){
 		_DBG_<<"Error! the wires, errs, and shifts vectors are out of alignment."<<endl;
 		_DBG_<<"wires.size()="<<wires.size()<<" errs.size()="<<errs.size()<<" shifts.size()="<<shifts.size()<<endl;
+		for(unsigned int i=0; i<wires.size(); i++)chisqv.push_back(1.0E6);
+		return 1.0E6;
+	}
+	
+	// Sometimes, we end up with a zero step rt due to bad parameters.
+	// Avoid all the warning messages by detecting this now and bailing early.
+	if(rt->Nswim_steps<1){
+		for(unsigned int i=0; i<wires.size(); i++)chisqv.push_back(1.0E6);
 		return 1.0E6;
 	}
 	
@@ -710,7 +763,13 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	/// described by R. Mankel Rep. Prog. Phys. 67 (2004) 553-622 pg 565.
 	/// Since it uses a linear approximation for the chisq dependance on
 	/// the fit parameters, several calls may be required for convergence.
-	
+
+	// Make sure RT is not empty
+	if(rt->Nswim_steps<1){
+		chisq = 1.0E6;
+		return FIT_FAILED;
+	}
+
 	// For fitting, we want to define a coordinate system very similar to the
 	// Reference Trajectory coordinate system. The difference is that we want
 	// the position to be defined in a plane perpendicular to the momentum.
@@ -739,7 +798,7 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	target.udir.SetXYZ(0.0, 0.0, 1.0);
 	target.L=3.0;
 	wires.push_back(&target);
-	errs.push_back(0.1);
+	errs.push_back(fit_type==kHitBased ? 0.001:0.02);
 	if(fit_type!=kHitBased)shifts.push_back(DVector3(0.0, 0.0, 0.0));
 #endif
 
@@ -803,6 +862,69 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 			
 			shifts.push_back(shift);
 			errs.push_back(SIGMA_CDC);
+		}
+	}
+
+	// --- FDC ---
+	for(unsigned int i=0; i<fdchits_on_track.size(); i++){
+		const DFDCPseudo *hit = fdchits_on_track[i];
+		const DCoordinateSystem *wire = hit->wire;
+		wires.push_back(wire);
+
+		// Fill in shifts and errs vectors based on whether we're doing
+		// hit-based or time-based tracking
+		if(fit_type==kHitBased){
+			// If we're doing hit-based tracking then only the wire positions
+			// are used and the drift time info is ignored. Thus, we don't
+			// have to calculate the shift vectors
+			errs.push_back(0.261694); // empirically from single pi+ events
+		}else{
+			// Find the DOCA point for the RT and use the momentum direction
+			// there and the wire direction to determine the "shift".
+			// Note that whether the shift is to the left or to the right
+			// is not decided here. That ambiguity is left to be resolved later
+			// by applying a minus sign (or not) to the shift.
+			DVector3 pos_doca, mom_doca;
+			double s;
+			rt->DistToRT(wire, &s);
+			rt->GetLastDOCAPoint(pos_doca, mom_doca);
+			DVector3 shift = wire->udir.Cross(mom_doca);
+			
+			// The magnitude of the shift is based on the drift time. The
+			// value of the dist member of the DCDCTrackHit object does not
+			// subtract out the TOF. This can add 50-100 microns to the
+			// resolution in the CDC. Here, we actually can calculate the TOF
+			// (for a given mass hypothesis).
+			double mass = 0.13957;
+			double beta = 1.0/sqrt(1.0 + pow(mass/mom_doca.Mag(), 2.0))*2.998E10;
+			double tof = s/beta/1.0E-9; // in ns
+			double dist = hit->dist*((hit->time-tof)/hit->time);
+			shift.SetMag(dist);
+
+			// If we're doing time-based tracking then there is a sign ambiguity
+			// to each of the "shifts". It is not realistic to check every possible
+			// solution so we have to make a guess as to what the sign is for each
+			// based on the current reference trajectory. Presumably, if, we're
+			// doing time-based track fitting then we have already gone through a pass
+			// of hit-based track fitting so the initial reference trajectory should be
+			// a pretty good indicator as to what side of the wire the track went
+			// on. We use this in the assignments for now. In the future, we should
+			// try multiple cases for hits close to the wire where the ambiguity 
+			// is not clearly resolved.
+			
+			// shift needs to be in the direction pointing from the avalanche
+			// position on the wire to the DOCA point on the rt. We find this
+			// by first finding this vector for the rt and then seeing if
+			// the "shift" vector is generally pointing in the same direction
+			// as it or not by checking if thier dot product is positive or
+			// negative.
+			double u = rt->GetLastDistAlongWire();
+			DVector3 pos_wire = wire->origin + u*wire->udir;
+			DVector3 pos_diff = pos_doca-pos_wire;
+			if(shift.Dot(pos_diff)<0.0)shift = -shift;
+			
+			shifts.push_back(shift);
+			errs.push_back(SIGMA_FDC_ANODE);
 		}
 	}
 	
@@ -873,6 +995,28 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	vector<double> &chisqv_dx_lo = chisqv_initial;
 	vector<double> chisqv_dx_hi;
 	double chisq_dx = ChiSq(state_dx, &start_step, tmprt, wires, shifts, errs, chisqv_dx_hi);
+	
+	// This line just avoids a compiler warning
+	if(debug_level>4){
+		_DBG_<<"initial_chisq="<<initial_chisq<<endl;
+		_DBG_<<"chisq_dpx="<<chisq_dpx<<endl;
+		_DBG_<<"chisq_dpy="<<chisq_dpy<<endl;
+		_DBG_<<"chisq_dpz="<<chisq_dpz<<endl;
+		_DBG_<<"chisq_dv="<<chisq_dv<<endl;
+		_DBG_<<"chisq_dx="<<chisq_dx<<endl;
+	}
+	if(debug_level>10){
+		_DBG_<<"hit\tinitial\tpx   \tpy   \tpz   \tx   \tv"<<endl;
+		for(unsigned int j=0; j<chisqv_initial.size(); j++){
+			cout<<j<<"\t";
+			cout<<chisqv_initial[j]<<"\t";
+			cout<<chisqv_dpx_hi[j]<<"\t";
+			cout<<chisqv_dpy_hi[j]<<"\t";
+			cout<<chisqv_dpz_hi[j]<<"\t";
+			cout<<chisqv_dv_hi[j]<<"\t";
+			cout<<chisqv_dx_hi[j]<<endl;
+		}
+	}
 
 	// Make a list of "clean" hits. Ones that are less than 4 sigma and
 	// are not "nan" for the initial as well as the tweaked  cases.
@@ -971,7 +1115,11 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	// is check for it and punt rather than return a nonsensical
 	// value.
 	if(B.E2Norm() > LEAST_SQUARES_MAX_E2NORM){
-		if(debug_level>1)_DBG_<<" -- B matrix E2Norm out of range(E2Norm="<<B.E2Norm()<<" max="<<LEAST_SQUARES_MAX_E2NORM<<")"<<endl;
+		if(debug_level>1){
+			_DBG_<<" -- B matrix E2Norm out of range(E2Norm="<<B.E2Norm()<<" max="<<LEAST_SQUARES_MAX_E2NORM<<")"<<endl;
+			F.Print();
+			B.Print();
+		}
 		return FIT_FAILED;
 	}
 	
@@ -995,7 +1143,7 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	// we see the chi-sq improve.
 	double lambda = 1.0;
 	int Ntrys = 0;
-	int max_trys = 4;
+	int max_trys = 8;
 	DMatrix new_state(5,1);
 	for(; Ntrys<max_trys; Ntrys++){
 
@@ -1033,17 +1181,15 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	}
 
 	// If we failed to make a step to a smaller chi-sq then signal
-	// that the fit failed completely.
+	// that we were unable to make any improvement.
 	if(Ntrys>=2*max_trys){
 		if(debug_level>1)_DBG_<<"Chisq only increased (both directions searched!)"<<endl;
-		return FIT_FAILED;
+		return FIT_NO_IMPROVEMENT;
 	}
 
 	// Re-swim reference trajectory using these parameters and re-calc chisq
 	vector<double> new_chisqv;
 	chisq = ChiSq(new_state, &start_step, rt, wires, shifts, errs, new_chisqv);
-
-//_DBG_<<"chisq="<<chisq<<endl;
 
 	return FIT_OK;
 }

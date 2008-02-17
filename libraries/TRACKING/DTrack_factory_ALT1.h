@@ -48,6 +48,7 @@ class DTrack_factory_ALT1:public JFactory<DTrack>{
 		
 		enum fit_status_t{
 			FIT_OK,
+			FIT_NO_IMPROVEMENT,
 			FIT_FAILED
 		};
 
@@ -63,6 +64,7 @@ class DTrack_factory_ALT1:public JFactory<DTrack>{
 
 		void FindHitCandidateProbabilities(void);
 		DTrack* FitTrack(DReferenceTrajectory* rt, int candidateid);
+		DTrack* FitTrackWithOppositeCharge(DReferenceTrajectory* rt, int candidateid, DTrack* &track);
 		void GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob);
 		void GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob);
 		double GetDistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double &s);
