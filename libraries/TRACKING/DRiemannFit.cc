@@ -2,6 +2,10 @@
 #include <TDecompLU.h>
 #include <math.h>
 
+#include <iostream>
+using std::cerr;
+using std::endl;
+
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
 #define Z_TARGET 65.0
 #define EPS 1.0e-8
@@ -151,7 +155,6 @@ jerror_t DRiemannFit::FitCircle(double rc){
 //
 jerror_t DRiemannFit::FitCircle(){  
   if (hits.size()==0) return RESOURCE_UNAVAILABLE;
-
   DMatrix X(hits.size(),3);
   DMatrix Xavg(1,3);
   DMatrix A(3,3);
@@ -210,6 +213,7 @@ jerror_t DRiemannFit::FitCircle(){
   
   A=DMatrix(DMatrix::kTransposed,X)*(W*X)
     -W_sum(0,0)*(DMatrix(DMatrix::kTransposed,Xavg)*Xavg);
+  if(!A.IsValid())return UNRECOVERABLE_ERROR;
 
   // The characteristic equation is 
   //   lambda^3+B2*lambda^2+lambda*B1+B0=0 
@@ -218,6 +222,7 @@ jerror_t DRiemannFit::FitCircle(){
   B1=A(0,0)*A(1,1)-A(1,0)*A(0,1)+A(0,0)*A(2,2)-A(2,0)*A(0,2)+A(1,1)*A(2,2)
     -A(2,1)*A(1,2);
   B0=-A.Determinant();
+  if(B0==0 || !finite(B0))return UNRECOVERABLE_ERROR;
 
   // The roots of the cubic equation are given by 
   //        lambda1= -B2/3 + S+T
