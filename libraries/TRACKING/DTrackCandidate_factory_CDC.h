@@ -95,6 +95,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		void FilterCloneSeeds(vector<DCDCSeed> &seeds);
 		void AddStereoHits(vector<DCDCTrkHit*> &stereo_hits, DCDCSeed &seed);
 		void FindThetaZ(DCDCSeed &seed);
+		void FindThetaZStraightTrack(DCDCSeed &seed);
 		void FindTheta(DCDCSeed &seed, double target_z_min, double target_z_max);
 		void FindZ(DCDCSeed &seed, double theta_min, double theta_max);
 		int NumEligibleSeedHits(vector<DCDCTrkHit*> &hits);

@@ -111,7 +111,9 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 	LinkSeeds(seeds_tmp, seeds_sl1, seeds, 2*MAX_SUBSEED_LINKED_HITS);
 	
 	// Fit linked seeds to circles
-	for(unsigned int i=0; i<seeds.size(); i++)seeds[i].valid = FitCircle(seeds[i]);
+	for(unsigned int i=0; i<seeds.size(); i++){
+		seeds[i].valid = FitCircle(seeds[i]);
+	}
 	
 	// Filter out duplicates of seeds by clearing their "valid" flags
 	FilterCloneSeeds(seeds);
@@ -163,7 +165,7 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 		//can->p_trans = mom.Pt();
 		//can->p = mom.Mag();
 		//can->z_vertex = pos.Z();
-		//if(debug_level>3)_DBG_<<"can->phi="<<can->phi<<"  phi="<<phi<<" can->theta="<<can->theta<<" theta="<<theta<<endl;
+		if(debug_level>3)_DBG_<<"Final Candidate parameters: p="<<mom.Mag()<<" theta="<<mom.Theta()<<"  phi="<<mom.Phi()<<" z="<<pos.Z()<<endl;
 		
 		_data.push_back(can);
 	}
@@ -517,8 +519,23 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 		const DVector3 &pos = seed.hits[j]->hit->wire->origin;
 		seed.fit.AddHitXYZ(pos.X(), pos.Y(), pos.Z());
 	}
-	seed.fit.FitCircle();
-	seed.fit.GuessChargeFromCircleFit();
+	
+	// Try and fit the circle using a Riemann fit. If 
+	// it fails, try a basic fit with DQuickFit.
+	if(seed.fit.FitCircleRiemann()!=NOERROR){
+		if(debug_level>3)_DBG_<<"Riemann fit failed. Attempting regression fit..."<<endl;
+		if(seed.fit.FitCircle()!=NOERROR){
+			if(debug_level>3)_DBG_<<"Regression circle fit failed. Trying straight line."<<endl;
+			if(seed.fit.FitCircleStraightTrack()!=NOERROR){
+				if(debug_level>3)_DBG_<<"Trying straight line fit failed. Giving up."<<endl;
+				return false;
+			}
+		}else{
+			seed.fit.GuessChargeFromCircleFit(); // for Riemann fit
+		}
+	}else{
+		seed.fit.GuessChargeFromCircleFit(); // for regression fit
+	}
 
 	// Check if majority of hits are close to circle.
 	double x0 = seed.fit.x0;
@@ -743,8 +760,24 @@ void DTrackCandidate_factory_CDC::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits
 //------------------
 void DTrackCandidate_factory_CDC::FindThetaZ(DCDCSeed &seed)
 {
-	FindTheta(seed, TARGET_Z_MIN, TARGET_Z_MAX);
-	FindZ(seed, seed.theta_min, seed.theta_max);
+	// Decide whether to use the histogramming method or the
+	// straight track method base on the transverse momentum
+if(debug_level>2)_DBG_<<"p_trans:"<<seed.fit.p_trans<<endl;
+	if(seed.fit.p_trans<3.0){
+		FindTheta(seed, TARGET_Z_MIN, TARGET_Z_MAX);
+		FindZ(seed, seed.theta_min, seed.theta_max);
+	}else{
+		FindThetaZStraightTrack(seed);
+		
+		// The value of p_trans that was originally determined
+		// by DQuickFit::FitCircleStraightTrack() can often lead
+		// to a total momentum larger than the beam momentum.
+		// Re-estimate p_trans limiting the search with the
+		// theta we just found.
+		seed.fit.SearchPtrans(9.0*sin(seed.theta), 0.1);
+		//seed.fit.QuickPtrans();
+		if(debug_level>2)_DBG_<<"p_trans from search:"<<seed.fit.p_trans<<"  (ptot="<<seed.fit.p_trans/sin(seed.theta)<<")"<<endl;
+	}
 	
 	// If z_vertex is not inside the target limits, then flag this
 	// seed as invalid.
@@ -754,6 +787,69 @@ void DTrackCandidate_factory_CDC::FindThetaZ(DCDCSeed &seed)
 	}
 	
 	return;
+}
+
+//------------------
+// FindThetaZStraightTrack
+//------------------
+void DTrackCandidate_factory_CDC::FindThetaZStraightTrack(DCDCSeed &seed)
+{
+	/// In the case of high momentum tracks, the values of phi_stereo will
+	/// all be close together (and near 0 or +-2pi). For these cases,
+	/// we calculate theta from r and z points which should be pretty linear.
+	
+	if(debug_level>3)_DBG_<<"Fitting theta and z for high transverse momentum track (p_trans="<<seed.fit.p_trans<<")"<<endl;
+
+	// Do a linear regression of R vs. Z for stereo hits. First, we make
+	// a list of the hits we'll use.
+	vector<double> r;
+	vector<double> z;
+	for(unsigned int i=0; i<seed.stereo_hits.size(); i++){
+		DCDCTrkHit *trkhit = seed.stereo_hits[i];
+		if(!trkhit->flags&VALID_STEREO)continue;
+		
+		double R = sqrt(pow(trkhit->x_stereo,2.0) + pow(trkhit->y_stereo,2.0));
+		r.push_back(R);
+		z.push_back(trkhit->z_stereo);
+	}
+	
+	// Add center of target as a point to constrain the fit a little more
+	double z_target = (TARGET_Z_MIN+TARGET_Z_MAX)/2.0;
+	r.push_back(0.0);
+	z.push_back(z_target);
+	
+	// Calculate average z and r
+	double Ravg=0.0, Zavg=0.0;
+	for(unsigned int i=0; i<r.size(); i++){
+		Ravg += r[i];
+		Zavg += z[i];
+	}
+	Ravg /= (double)r.size();
+	Zavg /= (double)z.size();
+
+	// Now, do the regression
+	double Szr=0.0, Szz=0.0, Srr=0.0;;
+	for(unsigned int i=0; i<r.size(); i++){
+		if(debug_level>4)_DBG_<<"r="<<r[i]<<"\t z="<<z[i]<<endl;
+		Szr += (z[i] - Zavg)*(r[i] - Ravg);
+		Szz += pow((z[i] - Zavg), 2.0);
+		Srr += pow((r[i] - Ravg), 2.0);
+	}
+
+	if(Szz>Srr){
+		// track is more horizontal
+		seed.z_vertex = Zavg - Ravg*Szz/Szr;
+		seed.theta = atan2(Szr, Szz);
+	}else{
+		// track is more vertical
+		seed.z_vertex = Zavg - Ravg*Szr/Srr;
+		seed.theta = M_PI_2 - atan2(Szr, Srr);
+	}
+	if(seed.theta<0.0){
+		if(debug_level>3)_DBG_<<"theta less than 0 ("<<seed.theta<<") this simply shoudn't happen!"<<endl;
+		seed.theta+=M_PI;
+	}
+	if(debug_level>3)_DBG_<<"theta="<<seed.theta<<"  z_vertex="<<seed.z_vertex<<endl;
 }
 
 //------------------
@@ -771,7 +867,7 @@ void DTrackCandidate_factory_CDC::FindTheta(DCDCSeed &seed, double target_z_min,
 	/// The overlaps usually lead to a range of values for theta. The limits
 	/// of these are stored in the theta_min and theta_max fields of the seed.
 	/// The centroid of the range is stored in the theta field.
-	
+		
 	// We use a simple array to store our histogram here. We don't want to use
 	// ROOT histograms because they are not thread safe.
 	unsigned int Nbins = 1000;
@@ -796,7 +892,7 @@ void DTrackCandidate_factory_CDC::FindTheta(DCDCSeed &seed, double target_z_min,
 			tmin=tmax;
 			tmax=tmp;
 		}
-		if(debug_level>3)_DBG_<<" -- phi_stereo="<<trkhit->phi_stereo<<" z_stereo="<<trkhit->z_stereo<<endl;
+		if(debug_level>3)_DBG_<<" -- phi_stereo="<<trkhit->phi_stereo<<" z_stereo="<<trkhit->z_stereo<<"  alpha="<<alpha<<endl;
 		if(debug_level>3)_DBG_<<" -- tmin="<<tmin<<"  tmax="<<tmax<<endl;
 		
 		// Find index of bins corresponding to tmin and tmax
