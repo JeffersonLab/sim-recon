@@ -202,6 +202,7 @@ jerror_t DQuickFit::FitCircle(void)
 	/// value of p_trans will be half of what it should be.
 
 	float alpha=0.0, beta=0.0, gamma=0.0, deltax=0.0, deltay=0.0;
+	chisq_source = NOFIT; // in case we reutrn early
 	
 	// Loop over hits to calculate alpha, beta, gamma, and delta
 	// if a magnetic field map was given, use it to find average Z B-field
@@ -218,9 +219,11 @@ jerror_t DQuickFit::FitCircle(void)
 	}
 	
 	// Calculate x0,y0 - the center of the circle
-	x0 = (deltax*beta-deltay*gamma)/(alpha*beta-gamma*gamma);
+	double denom = alpha*beta-gamma*gamma;
+	if(fabs(denom)<1.0E-20)return UNRECOVERABLE_ERROR;
+	x0 = (deltax*beta-deltay*gamma)/denom;
 	//y0 = (deltay-gamma*x0)/beta;
-	y0 = (deltay*alpha-deltax*gamma)/(alpha*beta-gamma*gamma);
+	y0 = (deltay*alpha-deltax*gamma)/denom;
 	
 	// Calculate the phi angle traversed by the track from the
 	// origin to the last hit. NOTE: this can be off by a multiple
@@ -248,6 +251,21 @@ jerror_t DQuickFit::FitCircle(void)
 	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
 	
 	// Calculate the chisq
+	ChisqCircle();
+	chisq_source = CIRCLE;
+
+	return NOERROR;
+}
+
+//-----------------
+// ChisqCircle
+//-----------------
+double DQuickFit::ChisqCircle(void)
+{
+	/// Calculate the chisq for the hits and current circle
+	/// parameters.
+	/// NOTE: This does not return the chi2/dof, just the
+	/// raw chi2 with errs set to 1.0
 	chisq = 0.0;
 	for(unsigned int i=0;i<hits.size();i++){
 		DQFHit_t *a = hits[i];
@@ -258,9 +276,9 @@ jerror_t DQuickFit::FitCircle(void)
 		a->chisq = c;
 		chisq+=c;
 	}
-	chisq_source = CIRCLE;
-
-	return NOERROR;
+	
+	// Do NOT divide by DOF
+	return chisq;
 }
 
 //-----------------
@@ -274,19 +292,26 @@ jerror_t DQuickFit::FitCircleRiemann(double BeamRMS)
 	/// into it, and then copies the reults back to this DQuickFit
 	/// object every time this is called. At some point, the DRiemannFit
 	/// class will be merged into DQuickFit.
+
+	chisq_source = NOFIT; // in case we reutrn early
+
 	DRiemannFit rfit;
 	for(unsigned int i=0; i<hits.size(); i++){
 		DQFHit_t *hit = hits[i];
 		rfit.AddHitXYZ(hit->x, hit->y, hit->z);
 	}
+	
 	// Fake point at origin
 	double beam_var=BeamRMS*BeamRMS;
 	rfit.AddHit(0.,0.,Z_VERTEX,beam_var,beam_var,0.);
 
-	rfit.FitCircle();
+	jerror_t err = rfit.FitCircle(BeamRMS);
+	if(err!=NOERROR)return err;
+	
 	x0 = rfit.xc;
 	y0 = rfit.yc;
 	phi = rfit.phi;
+	r0 = sqrt(x0*x0+y0*y0);
 
 	// Momentum depends on magnetic field. If bfield has been
 	// set, we should use it to determine an average value of Bz
@@ -305,19 +330,206 @@ jerror_t DQuickFit::FitCircleRiemann(double BeamRMS)
 	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
 	
 	// Calculate the chisq
-	chisq = 0.0;
-	for(unsigned int i=0;i<hits.size();i++){
-		DQFHit_t *a = hits[i];
-		float x = a->x - x0;
-		float y = a->y - y0;
-		float c = sqrt(x*x + y*y) - r0;
-		c *= c;
-		a->chisq = c;
-		chisq+=c;
-	}
+	ChisqCircle();
 	chisq_source = CIRCLE;
 
 	return NOERROR;
+}
+
+
+//-----------------
+// FitCircleStraightTrack
+//-----------------
+jerror_t DQuickFit::FitCircleStraightTrack(void)
+{
+	/// This is a last resort!
+	/// The circle fit can fail for high momentum tracks that are nearly
+	/// straight tracks. In these cases (when pt~2GeV or more) there
+	/// is not enough position resolution with wire positions only
+	/// to measure the curvature of the track. 
+	/// We can though, fit the X/Y points with a straight line in order
+	/// to get phi and project out the stereo angles. 
+	///
+	/// For the radius of the circle (i.e. p_trans) we loop over momenta
+	/// from 1 to 9GeV and just use the one with the smallest chisq.
+
+	// Average the x's and y's of the individual hits. We should be 
+	// able to do this via linear regression, but I can't get it to
+	// work right now and I'm under the gun to get ready for a review
+	// so I take the easy way. Note that we don't average phi's since
+	// that will cause problems at the 0/2pi boundary.
+	double X=0.0, Y=0.0;
+	DQFHit_t *a = NULL;
+	for(unsigned int i=0;i<hits.size();i++){
+		a = hits[i];
+		double r = sqrt(pow(a->x,2.0) + pow(a->y, 2.0));
+		// weight by r to give outer points more influence. Note that
+		// we really are really weighting by r^2 since x and y already
+		// have a magnitude component.
+		X += a->x*r; 
+		Y += a->y*r;
+	}
+	phi = atan2(Y,X);
+	if(phi<0)phi+=2.0*M_PI;
+	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+
+	// Search the chi2 space for values for p_trans, x0, ...
+	SearchPtrans(9.0, 0.5);
+
+#if 0
+	// We do a simple linear regression here to find phi. This is
+	// simplified by the intercept being zero (i.e. the track
+	// passes through the beamline).
+	float Sxx=0.0, Syy=0.0, Sxy=0.0;
+	chisq_source = NOFIT; // in case we reutrn early
+	
+	// Loop over hits to calculate Sxx, Syy, and Sxy
+	DQFHit_t *a = NULL;
+	for(unsigned int i=0;i<hits.size();i++){
+		a = hits[i];
+		float x=a->x;
+		float y=a->y;
+		Sxx += x*x;
+		Syy += y*y;
+		Sxy += x*y;
+	}
+	double A = 2.0*Sxy;
+	double B = Sxx - Syy;
+	phi = B>A ? atan2(A,B)/2.0 : 1.0/atan2(B,A)/2.0;
+	if(phi<0)phi+=2.0*M_PI;
+	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+#endif
+
+	return NOERROR;
+}
+
+//-----------------
+// SearchPtrans
+//-----------------
+void DQuickFit::SearchPtrans(double ptrans_max, double ptrans_step)
+{
+	/// Search the chi2 space as a function of the transverse momentum
+	/// for the minimal chi2. The values corresponding to the minmal
+	/// chi2 are left in chisq, x0, y0, r0, q, and p_trans.
+	///
+	/// This does NOT optimize the value of p_trans. It simply
+	/// does a straight forward chisq calculation on a grid
+	/// and keeps the best one. It is intended for use in finding
+	/// a reasonable value for p_trans for straight tracks that
+	/// are contained to less than p_trans_max which is presumably
+	/// chosen based on a known &theta;.
+
+	// Loop over several values for p_trans and calculate the
+	// chisq for each.
+	double min_chisq=1.0E6;
+	double min_x0=0.0, min_y0=0.0, min_r0=0.0;
+	for(double my_p_trans=ptrans_step; my_p_trans<=ptrans_max; my_p_trans+=ptrans_step){
+
+		r0 = my_p_trans/(0.003*2.0);
+		double alpha, my_chisq;
+
+		// q = +1
+		alpha = phi + M_PI_2;
+		x0 = r0*cos(alpha);
+		y0 = r0*sin(alpha);
+		my_chisq = ChisqCircle();
+		if(my_chisq<min_chisq){
+			min_chisq=my_chisq;
+			min_x0 = x0;
+			min_y0 = y0;
+			min_r0 = r0;
+			q = +1.0;
+			p_trans = my_p_trans;
+		}
+
+		// q = -1
+		alpha = phi - M_PI_2;
+		x0 = r0*cos(alpha);
+		y0 = r0*sin(alpha);
+		my_chisq = ChisqCircle();
+		if(my_chisq<min_chisq){
+			min_chisq=my_chisq;
+			min_x0 = x0;
+			min_y0 = y0;
+			min_r0 = r0;
+			q = -1.0;
+			p_trans = my_p_trans;
+		}
+	}
+	
+	// Copy params from minimum chisq
+	x0 = min_x0;
+	y0 = min_y0;
+	r0 = min_r0;
+}
+
+//-----------------
+// QuickPtrans
+//-----------------
+void DQuickFit::QuickPtrans(void)
+{
+	/// Quickly calculate a value of p_trans by looking
+	/// for the hit furthest out and the hit closest
+	/// to half that distance. Those 2 hits along with the
+	/// origin are used to define a circle from which
+	/// p_trans is calculated.
+	
+	// Find hit with largest R
+	double R2max = 0.0;
+	DQFHit_t *hit_max = NULL;
+	for(unsigned int i=0; i<hits.size(); i++){
+		// use cross product to decide if hits is to left or right
+		double x = hits[i]->x;
+		double y = hits[i]->y;
+		double R2 = x*x + y*y;
+		if(R2>R2max){
+			R2max = R2;
+			hit_max = hits[i];
+		}
+	}
+	
+	// Bullet proof
+	if(!hit_max)return;
+	
+	// Find hit closest to half-way out
+	double Rmid = 0.0;
+	double Rmax = sqrt(R2max);
+	DQFHit_t *hit_mid = NULL;
+	for(unsigned int i=0; i<hits.size(); i++){
+		// use cross product to decide if hits is to left or right
+		double x = hits[i]->x;
+		double y = hits[i]->y;
+		double R = sqrt(x*x + y*y);
+		if(fabs(R-Rmax/2.0) < fabs(Rmid-Rmax/2.0)){
+			Rmid = R;
+			hit_mid = hits[i];
+		}
+	}
+	
+	// Bullet proof
+	if(!hit_mid)return;
+	
+	// Calculate p_trans from 3 points
+	double x1 = hit_mid->x;
+	double y1 = hit_mid->y;
+	double x2 = hit_max->x;
+	double y2 = hit_max->y;
+	double r2 = sqrt(x2*x2 + y2*y2);
+	double cos_phi = x2/r2;
+	double sin_phi = y2/r2;
+	double u1 =  x1*cos_phi + y1*sin_phi;
+	double v1 = -x1*sin_phi + y1*cos_phi;
+	double u2 =  x2*cos_phi + y2*sin_phi;
+	double u0 = u2/2.0;
+	double v0 = (u1*u1 + v1*v1 - u1*u2)/(2.0*v1);
+	
+	x0 = u0*cos_phi - v0*sin_phi;
+	y0 = u0*sin_phi + v0*cos_phi;
+	r0 = sqrt(x0*x0 + y0*y0);
+	
+	double B=-2.0;
+	p_trans = fabs(0.003*B*r0);
+	q = v1>0.0 ? -1.0:+1.0;
 }
 
 //-----------------
