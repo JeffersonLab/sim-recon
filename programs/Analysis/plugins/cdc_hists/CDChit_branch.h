@@ -20,6 +20,8 @@ class CDChit_branch:public TObject{
 		int straw;
 		float dE;
 		float t;
+		
+		float pthrown; // taken from first DMCThrown object
 
 	private:
 		ClassDef(CDChit_branch,1);

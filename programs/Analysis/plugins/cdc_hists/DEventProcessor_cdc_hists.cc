@@ -18,6 +18,7 @@ using namespace std;
 #include <TRACKING/DTrackCandidate.h>
 #include <TRACKING/DTrack.h>
 #include <TRACKING/DMCTrackHit.h>
+#include <TRACKING/DMCThrown.h>
 #include <CDC/DCDCHit.h>
 #include <DVector2.h>
 
@@ -97,8 +98,10 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DMCTrackHit*> mctrackhits;
 	vector<const DCDCHit*> cdchits;
+	vector<const DMCThrown*> mcthrowns;
 	loop->Get(mctrackhits);
 	loop->Get(cdchits);
+	loop->Get(mcthrowns);
 	
 	// Lock mutex
 	pthread_mutex_lock(&mutex);
@@ -125,7 +128,8 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 		cdchit.straw	= hit->straw;
 		cdchit.dE		= hit->dE;
 		cdchit.t			= hit->t;
-		
+		cdchit.pthrown = mcthrowns.size()>0 ? mcthrowns[0]->p:-1000.0;
+
 		cdchittree->Fill();
 	}
 
