@@ -362,7 +362,7 @@ jerror_t DQuickFit::FitCircleStraightTrack(void)
 	DQFHit_t *a = NULL;
 	for(unsigned int i=0;i<hits.size();i++){
 		a = hits[i];
-		double r = sqrt(pow(a->x,2.0) + pow(a->y, 2.0));
+		double r = sqrt(pow((double)a->x,2.0) + pow((double)a->y, 2.0));
 		// weight by r to give outer points more influence. Note that
 		// we really are really weighting by r^2 since x and y already
 		// have a magnitude component.
