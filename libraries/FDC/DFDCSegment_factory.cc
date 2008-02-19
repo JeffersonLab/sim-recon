@@ -617,6 +617,7 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<DFDCPseudo *>points,
   
   A=DMatrix(DMatrix::kTransposed,X)*(W*X)
     -W_sum(0,0)*(DMatrix(DMatrix::kTransposed,Xavg)*Xavg);
+  if(!A.IsValid())return UNRECOVERABLE_ERROR;
 
   // The characteristic equation is 
   //   lambda^3+B2*lambda^2+lambda*B1+B0=0 
@@ -625,6 +626,7 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<DFDCPseudo *>points,
   B1=A(0,0)*A(1,1)-A(1,0)*A(0,1)+A(0,0)*A(2,2)-A(2,0)*A(0,2)+A(1,1)*A(2,2)
     -A(2,1)*A(1,2);
   B0=-A.Determinant();
+  if(B0==0 || !finite(B0))return UNRECOVERABLE_ERROR;
 
   // The roots of the cubic equation are given by 
   //        lambda1= -B2/3 + S+T
