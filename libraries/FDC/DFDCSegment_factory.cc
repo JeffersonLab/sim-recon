@@ -20,7 +20,8 @@
 #define USED_IN_SEGMENT 0x8
 #define CORRECTED 0x10
 #define MAX_ITER 10
-#define MIN_TANL 0.44 // 23.8 degrees from end of target to first package
+#define TARGET_LENGTH 30.0 //cm
+#define MIN_TANL 2.0
 
 static bool got_deflection_file=true;
 static bool warn=true;
@@ -329,9 +330,15 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
     var_tanl=test_var;
   }
 
-  // Check that the vertex z position is sensible
-  if (zvertex<Z_VERTEX_CUT){
+  // If the dip angle looks like it may be too small from the linear 
+  // regression, make a crude guess using one of the points in the segment 
+  // and the center of the target
+  if (tanl<MIN_TANL){
+    tanl=(XYZ(start,2)-Z_TARGET)
+      /sqrt(XYZ(start,0)*XYZ(start,0)+XYZ(start,1)*XYZ(start,1));
     zvertex=Z_TARGET;
+    var_tanl=(CR(start,start)*tanl*tanl+TARGET_LENGTH*TARGET_LENGTH/12.)
+      /(XYZ(start,0)*XYZ(start,0)+XYZ(start,1)*XYZ(start,1));
   }
 
   return NOERROR;
