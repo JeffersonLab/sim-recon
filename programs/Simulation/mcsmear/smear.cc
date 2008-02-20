@@ -59,7 +59,7 @@ double CDC_TIME_WINDOW = 1000.0E-9; // in seconds
 // The error on the drift time in the CDC. The drift times
 // for the actual CDC hits coming from the input file
 // are smeared by a gaussian with this sigma.
-double FDC_TDRIFT_SIGMA = 2.0E-9;	// in seconds
+double FDC_TDRIFT_SIGMA = 200.0/55.0*1.0E-9;	// in seconds
 
 // The error in the distance along the wire as measured by
 // the cathodes. This should NOT include the Lorentz
