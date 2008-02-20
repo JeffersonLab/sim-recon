@@ -160,7 +160,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DTrackCandidate*> fdctrackcandidates;
 	vector<const DTrackLinker*> fdctracklinker;
 	loop->Get(cdctrackcandidates, "CDC");
-	loop->Get(fdctrackcandidates, "FDC");
+	loop->Get(fdctrackcandidates, "FDCCathodes");
 	//loop->Get(fdctracklinker);
 	
 	for(unsigned int i=0; i<cdctrackcandidates.size(); i++){
