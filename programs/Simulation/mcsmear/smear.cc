@@ -278,7 +278,7 @@ void SmearFDC(s_HDDM_t *hddm_s)
 			    if (hits==HDDM_NULL)continue;
 			    s_FdcAnodeHit_t *hit=hits->in;
 			    for (unsigned int s=0;s<hits->mult;s++,hit++){
-			      hit->t+=SampleGaussian(FDC_TDRIFT_SIGMA);
+			      hit->t+=SampleGaussian(FDC_TDRIFT_SIGMA)*1.0E9;
 			    }
 			  }
 			}
