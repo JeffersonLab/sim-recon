@@ -9,6 +9,7 @@ using std::endl;
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
 #define Z_TARGET 65.0
 #define EPS 1.0e-8
+#define MIN_TANL 2.0
 
 // Boolean function for sorting hits
 bool DRiemannFit_hit_cmp(DRiemannHit_t *a,DRiemannHit_t *b){
@@ -271,7 +272,7 @@ jerror_t DRiemannFit::FitCircle(){
   xc=-N1(0,0)/2./N1(2,0);
   yc=-N1(1,0)/2./N1(2,0);
   rc=sqrt(1.-N1(2,0)*N1(2,0)-4.*dist_to_origin*N1(2,0))/2./fabs(N1(2,0));
-  
+
   return NOERROR;
 }
 
@@ -475,9 +476,11 @@ jerror_t DRiemannFit::FitLine(){
   }
 
   // Linear regression to find z0, tanl   
-  double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.,sperp=0.,Delta;
-  double chord=0,ratio=0;
-  for (unsigned int k=start;k<projections.size();k++){
+  unsigned int n=projections.size()-1;
+  double sumv=1./CR(n,n),sumx=projections[n]->z/CR(n,n);
+  double sumy=0.,sumxx=projections[n]->z*projections[n]->z/CR(n,n),sumxy=0.;
+  double sperp=0., chord=0,ratio=0, Delta;
+  for (unsigned int k=start;k<n;k++){
     if (!bad[k])
       {
       double diffx=projections[k]->x-projections[start]->x;
@@ -497,23 +500,36 @@ jerror_t DRiemannFit::FitLine(){
       sumxy+=sperp*projections[k]->z/CR(k,k);
     }
   }
-  Delta=sumv*sumxx-sumx*sumx;
-
-  // Track parameters z0 and tan(lambda)
-  tanl=-Delta/(sumv*sumxy-sumy*sumx); 
-  z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
-
-  // Arc-length to (0,0)
-  unsigned int first=projections.size()-2;
-  chord=sqrt(projections[first]->x*projections[first]->x
-	     +projections[first]->y*projections[first]->y);
+  double old_sumy=sumy;
+  double old_sumxy=sumxy;
+  chord=sqrt(projections[start]->x*projections[start]->x
+	     +projections[start]->y*projections[start]->y);
   ratio=chord/2./rc; 
   // Make sure the argument for the arcsin does not go out of range...
   if (ratio>1.) 
     sperp=2.*rc*(M_PI/2.);
   else
     sperp=2.*rc*asin(ratio);
-  zvertex=projections[first]->z-sperp*tanl;
+  sumy=old_sumy+sperp/CR(n,n);
+  sumxy=old_sumxy+sperp*projections[n]->z/CR(n,n);
+  Delta=sumv*sumxx-sumx*sumx;
+  // Track parameter tan(lambda)
+  tanl=-Delta/(sumv*sumxy-sumy*sumx); 
+
+    // Compute tanl using the other possible choice for the path length to the
+  // target point
+  double test_tanl=0.;
+  double test_sperp=2.*rc*M_PI-sperp;
+  sumy=old_sumy+test_sperp/CR(n,n);
+  sumxy=old_sumxy+test_sperp*projections[n]->z/CR(n,n);
+  Delta=sumv*sumxx-sumx*sumx;
+  test_tanl=-Delta/(sumv*sumxy-sumy*sumx);
+ // Vertex position
+  zvertex=projections[start]->z-sperp*tanl;
+  double zvertex_temp=projections[start]->z-test_sperp*test_tanl;
+  // Choose best tanl based on proximity of projected z-vertex to the center 
+  // of the target
+  if (fabs(zvertex-Z_TARGET)>fabs(zvertex_temp-Z_TARGET)) zvertex=zvertex_temp;
 
   return NOERROR;
 }
