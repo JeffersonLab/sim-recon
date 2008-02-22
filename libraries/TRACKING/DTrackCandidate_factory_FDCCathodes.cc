@@ -13,14 +13,16 @@
 #include "FDC/DFDCPseudo_factory.h"
 #include "FDC/DFDCSegment_factory.h"
 #include "DRiemannFit.h"
+#include <TH1F.h>
 
-#define MATCH_RADIUS 5.0
+#define MATCH_RADIUS 25.0
 #define MAX_SEGMENTS 20
 #define HALF_PACKAGE 6.0
 #define FDC_OUTER_RADIUS 50.0 
 #define BEAM_VAR 0.01 // cm^2
 #define HIT_CHI2_CUT 10.0
 #define Z_VERTEX 65.0
+#define PT_MAX 9.0
 
 ///
 /// DTrackCandidate_factory_FDCCathodes::brun():
@@ -28,7 +30,14 @@
 jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop, int eventNo) {
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   bfield = dapp->GetBfield();
-
+  
+  if(DEBUG_HISTS){
+    dapp->Lock();
+    match_dist=(TH1F*)gROOT->FindObject("match_dist");
+    if (!match_dist) match_dist=new TH1F("match_dist","Matching distance",100,0,25.);
+    dapp->Unlock();
+  }
+    
   return NOERROR;
 }
 
@@ -616,7 +625,9 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,double 
       }       
     }
   }
- 
+  if(DEBUG_HISTS){
+    match_dist->Fill(diff_min);
+  }
   return match;
 }
 
@@ -657,6 +668,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment
   double px=(cosp*cos2ks-sinp*sin2ks)*0.003*B/2./kappa;
   double py=(sinp*cos2ks+cosp*sin2ks)*0.003*B/2./kappa;
   double pz=0.003*B*tanl/2./kappa;
+
+  if (sqrt(px*px+py*py)>PT_MAX) return VALUE_OUT_OF_RANGE;
 
   pos.SetXYZ(x,y,z);
   mom.SetXYZ(px,py,pz);

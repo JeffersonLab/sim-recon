@@ -13,11 +13,13 @@
 #include <DMatrix.h>
 #include "FDC/DFDCSegment_factory.h"
 #include "HDGEOMETRY/DMagneticFieldMap.h"
-
+#include <TH1F.h>
 
 class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 	public:
-		DTrackCandidate_factory_FDCCathodes(){};
+		DTrackCandidate_factory_FDCCathodes(){
+		  DEBUG_HISTS = false;
+		};
 		~DTrackCandidate_factory_FDCCathodes(){};
 		const string toString(void);
 		const char* Tag(void){return "FDCCathodes";}
@@ -38,6 +40,8 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
                                            DFDCSegment *segment,
                                            vector<DFDCSegment*>package,
                                            unsigned int &match_id);
+	bool DEBUG_HISTS;
+	TH1F *match_dist;
 
 };
 
