@@ -207,6 +207,14 @@ jerror_t DEventSourceHDDM::Extract_DMCTrackHit(s_HDDM_t *hddm_s, JFactory<DMCTra
 	GetCherenkovTruthHits(hddm_s, data);
 	GetFCALTruthHits(hddm_s, data);
 	GetUPVTruthHits(hddm_s, data);
+
+	// It has happened that some CDC hits have "nan" for the drift time
+	// in a peculiar event Alex Somov came across. This ultimately caused
+	// a seg. fault in MCTrackHitSort_C. I hate doing this since it
+	// is treating the symptom rather than the cause, but nonetheless,
+	// it patches up the problem for now until there is time to revisit
+	// it later.
+	for(unsigned int i=0;i<data.size(); i++)if(!finite(data[i]->z))data[i]->z=-1000.0;
 	
 	// sort hits by z
 	sort(data.begin(), data.end(), MCTrackHitSort_C);
