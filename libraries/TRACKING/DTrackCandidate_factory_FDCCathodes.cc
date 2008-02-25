@@ -14,8 +14,9 @@
 #include "FDC/DFDCSegment_factory.h"
 #include "DRiemannFit.h"
 #include <TH1F.h>
+#include <TH2F.h>
 
-#define MATCH_RADIUS 25.0
+#define MATCH_RADIUS(p) (2.79+2.88/(p)/(p))
 #define MAX_SEGMENTS 20
 #define HALF_PACKAGE 6.0
 #define FDC_OUTER_RADIUS 50.0 
@@ -33,8 +34,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop, int ev
   
   if(DEBUG_HISTS){
     dapp->Lock();
-    match_dist=(TH1F*)gROOT->FindObject("match_dist");
-    if (!match_dist) match_dist=new TH1F("match_dist","Matching distance",100,0,25.);
+    match_dist=(TH2F*)gROOT->FindObject("match_dist");
+    if (!match_dist) match_dist=new TH2F("match_dist","Matching distance",
+					 50,0.,7,100,0,25.);
     dapp->Unlock();
   }
     
@@ -595,7 +597,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,double 
       double y2=segment2->hits[segment2->hits.size()-1]->y;
       diff=sqrt((pos(0)-x2)*(pos(0)-x2)+(pos(1)-y2)*(pos(1)-y2));
 
-      if (diff<diff_min&&diff<MATCH_RADIUS){
+      if (diff<diff_min&&diff<MATCH_RADIUS(mom.Mag())){
 	diff_min=diff;
 	match=segment2;
 	match_id=j;
@@ -616,7 +618,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,double 
           double x2=segment->hits[0]->x;
           double y2=segment2->hits[0]->y;
           diff=sqrt((pos(0)-x2)*(pos(0)-x2)+(pos(1)-y2)*(pos(1)-y2));
-          if (diff<diff_min&&diff<MATCH_RADIUS){
+          if (diff<diff_min&&diff<MATCH_RADIUS(mom.Mag())){
 	    diff_min=diff;
 	    match=segment2;
             match_id=i;
@@ -626,7 +628,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,double 
     }
   }
   if(DEBUG_HISTS){
-    match_dist->Fill(diff_min);
+    match_dist->Fill(mom.Mag(),diff_min);
   }
   return match;
 }
@@ -669,7 +671,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment
   double py=(sinp*cos2ks+cosp*sin2ks)*0.003*B/2./kappa;
   double pz=0.003*B*tanl/2./kappa;
 
-  if (sqrt(px*px+py*py)>PT_MAX) return VALUE_OUT_OF_RANGE;
+  //if (sqrt(px*px+py*py)>PT_MAX) return VALUE_OUT_OF_RANGE;
 
   pos.SetXYZ(x,y,z);
   mom.SetXYZ(px,py,pz);
