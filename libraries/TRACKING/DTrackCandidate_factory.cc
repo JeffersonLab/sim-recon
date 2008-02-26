@@ -20,7 +20,6 @@ using namespace std;
 #include "JANA/JGeometry.h"
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "DVector2.h"
-#include "DTrackLinker.h"
 
 
 bool TrkHitSort_C(Dtrk_hit* const &hit1, Dtrk_hit* const &hit2) {
@@ -158,10 +157,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	vector<const DTrackCandidate*> cdctrackcandidates;
 	vector<const DTrackCandidate*> fdctrackcandidates;
-	vector<const DTrackLinker*> fdctracklinker;
+
 	loop->Get(cdctrackcandidates, "CDC");
 	loop->Get(fdctrackcandidates, "FDCCathodes");
-	//loop->Get(fdctracklinker);
 	
 	for(unsigned int i=0; i<cdctrackcandidates.size(); i++){
 		DTrackCandidate *can = new DTrackCandidate;
