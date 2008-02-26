@@ -4,6 +4,7 @@
 
 #include "DFDCSegment_factory.h"
 #include "DANA/DApplication.h"
+#include "HDGEOMETRY/DLorentzMapCalibDB.h"
 #include <math.h>
 
 #define HALF_CELL 0.5
@@ -23,70 +24,8 @@
 #define TARGET_LENGTH 30.0 //cm
 #define MIN_TANL 2.0
 
-static bool got_deflection_file=true;
-static bool warn=true;
-
 bool DFDCSegment_package_cmp(const DFDCPseudo* a, const DFDCPseudo* b) {
   return a->wire->layer>b->wire->layer;
-}
-
-
-// Locate a position in array xx given x
-void locate(double *xx,int n,double x,int *j){
-  int ju,jm,jl;
-  int ascnd;
-  
-  jl=-1;
-  ju=n;
-  ascnd=(xx[n-1]>=xx[0]);
-  while(ju-jl>1){
-    jm=(ju+jl)>>1;
-    if (x>=xx[jm]==ascnd)
-      jl=jm;
-    else
-      ju=jm;
-  }
-  if (x==xx[0]) *j=0;
-  else if (x==xx[n-1]) *j=n-2;
-  else *j=jl; 
-}
-
-
-// Polynomial interpolation on a grid.
-// Adapted from Numerical Recipes in C (2nd Edition), pp. 121-122.
-void polint(double *xa, double *ya,int n,double x, double *y,double *dy){
-  int i,m,ns=0;
-  double den,dif,dift,ho,hp,w;
-  
-  double *c= new double[n];
-  double *d= new double[n];
-
-  dif=fabs(x-xa[0]);
-  for (i=0;i<n;i++){
-    if ((dift=fabs(x-xa[i]))<dif){
-      ns=i;
-      dif=dift;
-    }
-    c[i]=ya[i];
-    d[i]=ya[i];
-  }
-  *y=ya[ns--];
-
-  for (m=1;m<n;m++){
-    for (i=1;i<=n-m;i++){
-      ho=xa[i-1]-x;
-      hp=xa[i+m-1]-x;
-      w=c[i+1-1]-d[i-1];
-      if ((den=ho-hp)==0.0) return;
-      
-      den=w/den;
-      d[i-1]=hp*den;
-      c[i-1]=ho*den;      
-    }    
-    *y+=(*dy=(2*ns<(n-m) ?c[ns+1]:d[ns--]));
-  }
-  delete []c;
-  delete []d;
 }
 
 DFDCSegment_factory::DFDCSegment_factory() {
@@ -112,34 +51,7 @@ DFDCSegment_factory::~DFDCSegment_factory() {
 jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int eventNo) { 
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   bfield = dapp->GetBfield();
-
-  ifstream fdc_deflection_file;
-
-  fdc_deflection_file.open("fdc_deflections.dat");
-  if (!fdc_deflection_file.is_open()){ 
-    *_log << "Failed to open fdc_deflection file." << endMsg;
-    got_deflection_file=false;
-    return RESOURCE_UNAVAILABLE;
-  }
-
-  double bx;
-  double bz;
-
-  char buf[80];
-  fdc_deflection_file.getline(buf,80,'\n');
-  fdc_deflection_file.setf(ios::skipws); 
-  for (int i=0;i<LORENTZ_X_POINTS;i++){
-    for (int j=0;j<LORENTZ_Z_POINTS;j++){
-      fdc_deflection_file >> lorentz_x[i];
-      fdc_deflection_file >> lorentz_z[j];
-      fdc_deflection_file >> bx;
-      fdc_deflection_file >> bz;
-      fdc_deflection_file >> lorentz_nx[i][j];
-      fdc_deflection_file >> lorentz_nz[i][j];  
-
-    }
-  }
-  fdc_deflection_file.close();
+  lorentz_def=dapp->GetLorentzDeflections();
 
   *_log << "Table of Lorentz deflections initialized." << endMsg;
   return NOERROR;
@@ -1019,6 +931,7 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
 
     // dip angle
     double lambda=atan(tanl);  
+    double alpha=M_PI/2.-lambda;
 
     // Get Bfield, needed to guess particle momentum
     double Bx,By,Bz,B;
@@ -1033,44 +946,11 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
     delta_x=sign*(point->time-fdc_track[m].s/beta/29.98)*55E-4;
   
     // Next find correction to y from table of deflections
-    if (got_deflection_file){
-      double tanr,tanz,r=sqrt(x*x+y*y);
-      double phi=atan2(y,x);
-      double ytemp[LORENTZ_X_POINTS],ytemp2[LORENTZ_X_POINTS],dummy;
-      int imin,imax, ind,ind2;
-    
-      // Locate positions in x and z arrays given r and z
-      locate(lorentz_x,LORENTZ_X_POINTS,r,&ind);
-      locate(lorentz_z,LORENTZ_Z_POINTS,z,&ind2);
-    
-      // First do interpolation in z direction 
-      imin=PACKAGE_Z_POINTS*(ind2/PACKAGE_Z_POINTS); // Integer division...
-      for (int j=0;j<LORENTZ_X_POINTS;j++){
-	polint(&lorentz_z[imin],&lorentz_nx[j][imin],PACKAGE_Z_POINTS,z,
-	       &ytemp[j],&dummy);
-	polint(&lorentz_z[imin],&lorentz_nz[j][imin],PACKAGE_Z_POINTS,z,
-	       &ytemp2[j],&dummy);
-      }
-      // Then do final interpolation in x direction 
-      imin=(ind>0)?(ind-1):0;
-      imax=(ind<LORENTZ_X_POINTS-2)?(ind+2):(LORENTZ_X_POINTS-1);
-      polint(&lorentz_x[imin],ytemp,imax-imin+1,r,&tanr,&dummy);
-      polint(&lorentz_x[imin],ytemp2,imax-imin+1,r,&tanz,&dummy);
-      
-      // Compute correction
-      double alpha=M_PI/2.-lambda;
-      delta_y=tanr*delta_x*cos(alpha)-tanz*delta_x*sin(alpha)*cos(phi);
+    delta_y=lorentz_def->GetLorentzCorrection(x,y,z,alpha,delta_x);
 
-      // Variance based on expected resolution
-      sigy2=FDC_Y_RESOLUTION*FDC_Y_RESOLUTION;
-    }
-    else if (warn){
-      fprintf(stderr,
-	      "DFDCSegment_factory: No Lorentz deflection file found!\n");
-      fprintf(stderr,"DFDCSegment_factory: --> Pseudo-points will not be corrected for Lorentz effect.");
-      warn=false;            
-    }
-      
+    // Variance based on expected resolution
+    sigy2=FDC_Y_RESOLUTION*FDC_Y_RESOLUTION;
+         
     // Fill x and y elements with corrected values
     point->ds =-delta_y;     
     point->dw =delta_x;

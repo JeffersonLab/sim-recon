@@ -15,6 +15,7 @@
 #include "DFDCGeometry.h"
 
 #include "HDGEOMETRY/DMagneticFieldMap.h"
+#include "HDGEOMETRY/DLorentzDeflections.h"
 #include <TDecompLU.h>
 
 #include <algorithm>
@@ -22,10 +23,10 @@
 #include <cmath>
 
 /* The folowing are for interpreting grid of Lorentz deflection data */
-#define PACKAGE_Z_POINTS 10 
+/*#define PACKAGE_Z_POINTS 10 
 #define LORENTZ_X_POINTS 21
 #define LORENTZ_Z_POINTS 4*PACKAGE_Z_POINTS
-
+*/
 
 ///
 /// class DFDCSegment_factory: definition for a JFactory that
@@ -102,15 +103,9 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		double chisq;
 
                 const DMagneticFieldMap *bfield;
-		int myeventno;
+		const DLorentzDeflections *lorentz_def;
 
-		// Variables for implementing lorentz effect
-		// due to the magnetic field).
-		double lorentz_x[LORENTZ_X_POINTS];
-		double lorentz_z[LORENTZ_Z_POINTS];
-		double lorentz_nx[LORENTZ_X_POINTS][LORENTZ_Z_POINTS];
-		double lorentz_nz[LORENTZ_X_POINTS][LORENTZ_Z_POINTS];
-	
+		int myeventno;
 };
 
 #endif // DFACTORY_DFDCSEGMENT_H
