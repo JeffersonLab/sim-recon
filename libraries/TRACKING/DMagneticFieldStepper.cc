@@ -355,7 +355,10 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVec
 	SetStartingParams(q, &pos, &mom);
 	double k, start_k = norm.Dot(pos-origin);
 	double s = 0.0;
+	DVector3 last_pos;
 	do{
+		last_pos = pos;
+
 		s += Step(&pos);
 		if(s>MAX_SWIM_DIST){
 			if(momentum_and_charge_flipped){
@@ -372,38 +375,55 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVec
 	// along the helix as a function of phi. phi is defined as the
 	// phi angle about the center of the helix such that phi=0 points
 	// to the current step position itself. This is similar to,
-	// but not as complicated as, how the distance from the tracjectory
+	// but not as complicated as, how the distance from the trajectory
 	// to a wire is calculated in DReferenceTrajectory::DistToRT.
 	// See the comments there for more details.
 	double dz_dphi = Ro*mom.Dot(zdir)/mom.Dot(ydir);
-	DVector3 pos_diff = pos - origin;
-	double A = xdir.Dot(norm);
-	double B = ydir.Dot(norm);
-	double C = zdir.Dot(norm);
-	double D = pos_diff.Dot(norm);
 
-	double alpha = -A*Ro/2.0;
-	double beta = B*Ro + C*dz_dphi;
-	
-	// now we solve the quadratic equation for phi. It's not obvious
-	// a priori which root will be correct so we calculate both and
-	// choose the one closer to phi=0
-	double d = sqrt(beta*beta - 4.0*alpha*D);
-	double phi1 = (-beta + d)/(2.0*alpha);
-	double phi2 = (-beta - d)/(2.0*alpha);
-	double phi = fabs(phi1)<fabs(phi2) ? phi1:phi2;
-	
-	// Calculate position in plane
-	pos += -Ro*phi*phi/2.0*xdir + Ro*phi*ydir + dz_dphi*phi*zdir;
+	// It turns out there are cases than can cause dz_dphi to be
+	// a large or non-finite number. Check for this here. If that
+	// is the case, switch to using a linear approximation between
+	// the current and last positions
+	if(finite(dz_dphi) && fabs(dz_dphi)<1.0E8){
 
-	// Calculate momentum in plane
-	mom.Rotate(phi, zdir);
+		DVector3 pos_diff = pos - origin;
+		double A = xdir.Dot(norm);
+		double B = ydir.Dot(norm);
+		double C = zdir.Dot(norm);
+		double D = pos_diff.Dot(norm);
+
+		double alpha = -A*Ro/2.0;
+		double beta = B*Ro + C*dz_dphi;
+		
+		// now we solve the quadratic equation for phi. It's not obvious
+		// a priori which root will be correct so we calculate both and
+		// choose the one closer to phi=0
+		double d = sqrt(beta*beta - 4.0*alpha*D);
+		double phi1 = (-beta + d)/(2.0*alpha);
+		double phi2 = (-beta - d)/(2.0*alpha);
+		double phi = fabs(phi1)<fabs(phi2) ? phi1:phi2;
+		
+		// Calculate position in plane
+		pos += -Ro*phi*phi/2.0*xdir + Ro*phi*ydir + dz_dphi*phi*zdir;
+
+		// Calculate momentum in plane
+		mom.Rotate(phi, zdir);
+		
+		double delta =  sqrt(pow(Ro*phi*phi/2.0, 2.0) + pow(Ro*phi, 2.0) + pow(dz_dphi*phi, 2.0));
+		s += (phi<0 ? -delta:+delta);
+	}else{
+		// Treat as straight track.
+		double num = norm.Dot(origin - last_pos);
+		double den = norm.Dot( pos   - last_pos);
+		double alpha = num/den;
+		
+		DVector3 delta = pos - last_pos;
+		pos = last_pos + alpha*delta;
+		s -= (1.0-alpha)*delta.Mag();
+	}
 	
 	// Copy path length into caller's variable if supplied
-	if(pathlen){
-		double delta =  sqrt(pow(Ro*phi*phi/2.0, 2.0) + pow(Ro*phi, 2.0) + pow(dz_dphi*phi, 2.0));
-		*pathlen = s + (phi<0 ? -delta:+delta);
-	}
+	if(pathlen)*pathlen = s ;
 
 	// If we had to flip the particle in order to hit the plane, flip it back
 	if(momentum_and_charge_flipped){
