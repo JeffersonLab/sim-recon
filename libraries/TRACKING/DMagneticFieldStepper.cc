@@ -306,6 +306,11 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVec
 	/// The charge of the particle is set by the constructor or last
 	/// call to SetStartingParameters(...).
 	///
+	/// If a non-NULL value is passed for <i>pathlen</i> then the pathlength
+	/// of the track from the given starting position to the intersection point
+	/// is given.
+	///
+	/// <b>THE FOLLOWING FEATURE IS CURRENTLY DISABLED!</b>
 	/// Note that a check is made that the particle is initially going
 	/// toward the plane. If the particle appears to be going away
 	/// from the plane, then the momentum is temporarily flipped as
@@ -396,7 +401,8 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVec
 	
 	// Copy path length into caller's variable if supplied
 	if(pathlen){
-		*pathlen = s + sqrt(pow(Ro*phi*phi/2.0, 2.0) + pow(Ro*phi, 2.0) + pow(dz_dphi*phi, 2.0));
+		double delta =  sqrt(pow(Ro*phi*phi/2.0, 2.0) + pow(Ro*phi, 2.0) + pow(dz_dphi*phi, 2.0));
+		*pathlen = s + (phi<0 ? -delta:+delta);
 	}
 
 	// If we had to flip the particle in order to hit the plane, flip it back
@@ -425,6 +431,10 @@ bool DMagneticFieldStepper::SwimToRadius(DVector3 &pos, DVector3 &mom, double R,
 	/// Swim the particle from the point specified by the given position 
 	/// and momentum until it crosses the specified radius R as measured
 	/// from the beamline.
+	///
+	/// If a non-NULL value is passed for <i>pathlen</i> then the pathlength
+	/// of the track from the given starting position to the intersection point
+	/// is given.
 	///
 	/// Particles will only be swum a distance of
 	/// MAX_SWIM_DIST (currently hardwired to 20 meters) along their
@@ -472,8 +482,10 @@ bool DMagneticFieldStepper::SwimToRadius(DVector3 &pos, DVector3 &mom, double R,
 	DVector3 delta = pos - last_pos;
 	pos = last_pos + alpha*delta;
 
-	// Add additional small segment to path length
-	s += alpha*delta.Mag();
+	// The value of s actually represents the pathlength
+	// to the outside point. Adjust it back to the
+	// intersection point (approximately).
+	s -= (1.0-alpha)*delta.Mag();
 	
 	// Copy path length into caller's variable if supplied
 	if(pathlen)*pathlen=s;
