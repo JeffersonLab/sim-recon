@@ -580,7 +580,8 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,double 
 
   // Match to the next package by swimming the track through the field
   double diff_min=1000.,diff;
-  if (stepper.SwimToPlane(pos,mom,origin,norm)==false){
+  double s;
+  if (stepper.SwimToPlane(pos,mom,origin,norm,&s)==false){
     for (unsigned int j=0;j<package.size();j++){
       DFDCSegment *segment2=package[j];
 	  
@@ -614,7 +615,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,double 
       if (GetPositionAndMomentum(segment2,pos,mom)==NOERROR){
         mom=-1.0*mom;
         origin(2)=segment->hits[0]->wire->origin(2);
-        if (stepper.SwimToPlane(pos,mom,origin,norm)==false){
+        if (stepper.SwimToPlane(pos,mom,origin,norm,&s)==false){
           double x2=segment->hits[0]->x;
           double y2=segment2->hits[0]->y;
           diff=sqrt((pos(0)-x2)*(pos(0)-x2)+(pos(1)-y2)*(pos(1)-y2));
