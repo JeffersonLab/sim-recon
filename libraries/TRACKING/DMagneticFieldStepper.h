@@ -36,9 +36,9 @@ class DMagneticFieldStepper
 		void GetPosition(DVector3 &pos){pos = this->pos;}
 		double GetCharge(void){return q;}
 		void GetPosMom(DVector3 &pos, DVector3 &mom){pos=this->pos; mom=this->mom;}
-		bool SwimToPlane(DVector3 &pos, DVector3 &mom, const DVector3 &origin, const DVector3 &norm);
+		bool SwimToPlane(DVector3 &pos, DVector3 &mom, const DVector3 &origin, const DVector3 &norm, double *pathlen=NULL);
 		bool DistToPlane(DVector3 &pos, const DVector3 &origin, const DVector3 &norm);
-		bool SwimToRadius(DVector3 &pos, DVector3 &mom, double R);
+		bool SwimToRadius(DVector3 &pos, DVector3 &mom, double R, double *pathlen=NULL);
 		bool DistToRadius(DVector3 &pos, double R);
 
 		inline double GetRo(void){return fabs(Ro);}

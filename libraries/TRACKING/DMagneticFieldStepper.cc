@@ -5,6 +5,7 @@ using namespace std;
 
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "DMagneticFieldStepper.h"
+#include <DVector2.h>
 
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
 
@@ -297,7 +298,7 @@ void DMagneticFieldStepper::GetDirs(DVector3 &xdir, DVector3 &ydir, DVector3 &zd
 //-----------------------
 // SwimToPlane
 //-----------------------
-bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVector3 &origin, const DVector3 &norm)
+bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVector3 &origin, const DVector3 &norm, double *pathlen)
 {
 	/// Swim the particle from the given position/momentum to
 	/// the plane defined by origin and norm. "origin" should define a point
@@ -392,6 +393,11 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVec
 
 	// Calculate momentum in plane
 	mom.Rotate(phi, zdir);
+	
+	// Copy path length into caller's variable if supplied
+	if(pathlen){
+		*pathlen = s + sqrt(pow(Ro*phi*phi/2.0, 2.0) + pow(Ro*phi, 2.0) + pow(dz_dphi*phi, 2.0));
+	}
 
 	// If we had to flip the particle in order to hit the plane, flip it back
 	if(momentum_and_charge_flipped){
@@ -414,8 +420,63 @@ bool DMagneticFieldStepper::DistToPlane(DVector3 &pos, const DVector3 &origin, c
 //-----------------------
 // SwimToRadius
 //-----------------------
-bool DMagneticFieldStepper::SwimToRadius(DVector3 &pos, DVector3 &mom, double R)
+bool DMagneticFieldStepper::SwimToRadius(DVector3 &pos, DVector3 &mom, double R, double *pathlen)
 {
+	/// Swim the particle from the point specified by the given position 
+	/// and momentum until it crosses the specified radius R as measured
+	/// from the beamline.
+	///
+	/// Particles will only be swum a distance of
+	/// MAX_SWIM_DIST (currently hardwired to 20 meters) along their
+	/// trajectory before returning boolean true indicating failure
+	/// to intersect the radius. This can happen if the particle's
+	/// momentum is too low to reach the radius.
+	///
+	/// On success, a value of false is returned and the values in
+	/// pos and mom will be updated with the position and momentum at
+	/// the point of intersection with the radius.
+
+	// Set the starting parameters and start stepping!
+	SetStartingParams(q, &pos, &mom);
+	double s = 0.0;
+	DVector3 last_pos;
+	do{
+		last_pos = pos;
+		
+		s += Step(&pos);
+		if(s>MAX_SWIM_DIST)return true;
+
+	}while(pos.Perp() < R);
+
+	// At this point, the location where the track intersects the cyclinder 
+	// is somewhere between last_pos and pos. For simplicity, we're going
+	// to just find the intersection of the cylinder with the line that joins
+	// the 2 positions. We do this by working in the X/Y plane only and
+	// finding the value of "alpha" which is the fractional distance the
+	// intersection point is between last_pos and pos. We'll then apply
+	// the alpha found in the 2D X/Y space to the 3D x/y/Z space to find
+	// the actual intersection point.
+	DVector2 x1(last_pos.X(), last_pos.Y());
+	DVector2 x2(pos.X(), pos.Y());
+	DVector2 dx = x2-x1;
+	double A = dx.Mod2();
+	double B = 2.0*(x1.X()*dx.X() + x1.Y()*dx.Y());
+	double C = x1.Mod2() - R*R;
+	
+	double alpha1 = (-B + sqrt(B*B-4.0*A*C))/(2.0*A);
+	double alpha2 = (-B - sqrt(B*B-4.0*A*C))/(2.0*A);
+	double alpha = alpha1;
+	if(alpha1<0.0 || alpha1>1.0)alpha=alpha2;
+	if(!finite(alpha))return true;
+	
+	DVector3 delta = pos - last_pos;
+	pos = last_pos + alpha*delta;
+
+	// Add additional small segment to path length
+	s += alpha*delta.Mag();
+	
+	// Copy path length into caller's variable if supplied
+	if(pathlen)*pathlen=s;
 
 	return false;
 }
