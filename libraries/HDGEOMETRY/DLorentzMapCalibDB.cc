@@ -80,14 +80,10 @@ unsigned int DLorentzMapCalibDB::GetLorentzDeflections(unsigned int runno){
     map<string, float> &row = tvals[i];
     unsigned int xindex = i/LORENTZ_Z_POINTS;
     unsigned int zindex = i%LORENTZ_Z_POINTS;
-
-    printf("xi %d zi %d\n",xindex,zindex);
-
     lorentz_x[xindex] = row["x"];
     lorentz_z[zindex] = row["z"];
     lorentz_nx[xindex][zindex] = row["nx"];
     lorentz_nz[xindex][zindex] = row["nz"];
   }
-  printf("end loop\n");
   return tvals.size();
 }
