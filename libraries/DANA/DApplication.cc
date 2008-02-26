@@ -10,6 +10,7 @@
 #include "HDGEOMETRY/DMagneticFieldMapGlueX.h"
 #include "HDGEOMETRY/DMagneticFieldMapHDGEANT.h"
 #include "HDGEOMETRY/DMagneticFieldMapCalibDB.h"
+#include "HDGEOMETRY/DLorentzMapCalibDB.h"
 #include "DFactoryGenerator.h"
 
 //---------------------------------
@@ -35,6 +36,9 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	
 	// Create magnetic field object for use by everyone
 	bfield = new DMagneticFieldMapCalibDB(this);
+
+	// Create Lorentz deflection object
+	lorentz_def= new DLorentzMapCalibDB(this);
 }
 
 //---------------------------------

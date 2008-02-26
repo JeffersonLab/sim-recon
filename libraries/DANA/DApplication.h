@@ -12,6 +12,7 @@
 #include "JANA/JApplication.h"
 
 class DMagneticFieldMap;
+class DLorentzDeflections;
 
 class DApplication:public JApplication{
 
@@ -26,9 +27,15 @@ class DApplication:public JApplication{
 		static const char* static_className(void){return "DApplication";}
 		
 		DMagneticFieldMap* GetBfield(void){return bfield;}
+		DLorentzDeflections *GetLorentzDeflections(void){
+		  return lorentz_def;
+		}
+								
+
 	protected:
 	
 		DMagneticFieldMap *bfield;
+		DLorentzDeflections *lorentz_def;
 	private:
 
 };
