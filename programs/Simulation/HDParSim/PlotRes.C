@@ -33,14 +33,14 @@ void AddStandardLabels(TH2F *axes=NULL)
 	// a consistent labeling.
 	
 	// Date, Author
-	TLatex *lab = new TLatex(0.7, 0.7, "Feb. 21, 2008 DL");
+	TLatex *lab = new TLatex(0.7, 0.7, "Feb. 22, 2008 DL");
 	ConvertFromNDC(lab, axes);
 	lab->SetTextSize(0.03);
 	lab->SetTextAlign(33);
 	lab->Draw();
 
 	// SVN Revision
-	lab = new TLatex(0.7, 0.645, "svn revision: 3348");
+	lab = new TLatex(0.7, 0.645, "svn revision: 3355");
 	ConvertFromNDC(lab, axes);
 	lab->SetTextSize(0.02);
 	lab->SetTextAlign(31);
