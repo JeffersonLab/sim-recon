@@ -13,7 +13,6 @@
 #include "DMCTrackHit_factory.h"
 #include "DMCThrown_factory.h"
 #include "DMCTrajectoryPoint_factory.h"
-#include "DTrackLinker_factory.h"
 #include "DTrack_factory_THROWN.h"
 #include "DTrack_factory_ALT1.h"
 
@@ -34,7 +33,6 @@ jerror_t TRACKING_init(JEventLoop *loop)
 	loop->AddFactory(new DMCTrackHit_factory());
 	loop->AddFactory(new DMCThrown_factory());
 	loop->AddFactory(new DMCTrajectoryPoint_factory());
-	loop->AddFactory(new DTrackLinker_factory());
 	loop->AddFactory(new DTrack_factory_THROWN());
 
 	return NOERROR;
