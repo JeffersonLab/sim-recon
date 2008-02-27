@@ -101,9 +101,9 @@ void DTrackingResolutionGEANT::GetResolution(int geanttype, const TVector3 &mom,
 	// Here we should do an interpolation from the surrounding bins.
 	// We have fairly small bins though so I can afford to be
 	// lazy :)
-	pt_res = pt_res_hist->GetBinContent(thetabin, pbin)/100.0;
-	theta_res = theta_res_hist->GetBinContent(thetabin, pbin)/1000.0;
-	phi_res = phi_res_hist->GetBinContent(thetabin, pbin)/1000.0;
+	pt_res = pt_res_hist->GetBinContent(thetabin, pbin)/100.0; // return as fraction
+	theta_res = theta_res_hist->GetBinContent(thetabin, pbin); // return in milliradians
+	phi_res = phi_res_hist->GetBinContent(thetabin, pbin); // return in milliradians
 }
 
 //----------------
