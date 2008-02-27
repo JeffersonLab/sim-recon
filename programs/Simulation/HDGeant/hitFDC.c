@@ -197,6 +197,12 @@ void hitForwardDC (float xin[4], float xout[4],
   wire1 = ceil((xinlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
   transformCoord(xout,"global",xoutlocal,"local");
   wire2 = ceil((xoutlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
+  // Check that wire numbers are not out of range
+  if ((wire1>WIRES_PER_PLANE && wire2==WIRES_PER_PLANE) ||
+      (wire2>WIRES_PER_PLANE && wire1==WIRES_PER_PLANE)) 
+    wire1=wire2=WIRES_PER_PLANE;  
+  // Make sure at least one wire number is valid
+  if (wire1>WIRES_PER_PLANE&&wire2>WIRES_PER_PLANE) return;
   dwire = (wire1 < wire2)? 1 : -1;
   alpha = atan2(xoutlocal[0]-xinlocal[0],xoutlocal[2]-xinlocal[2]);
   xlocal[0] = (xinlocal[0] + xoutlocal[0])/2;
@@ -228,7 +234,7 @@ void hitForwardDC (float xin[4], float xout[4],
   {
     return;
   }
-  
+
   /* post the hit to the truth tree */
  
   if (history == 0)
@@ -269,7 +275,8 @@ void hitForwardDC (float xin[4], float xout[4],
     int nhit;
     s_FdcAnodeHits_t* ahits;    
     s_FdcCathodeHits_t* chits;    
-    float tdrift;
+    float tdrift;    
+
     for (wire=wire1; wire-dwire != wire2; wire+=dwire)
     {
       int valid_hit=1;
