@@ -20,6 +20,7 @@ using namespace std;
 #include <TRACKING/DMCTrackHit.h>
 #include <TRACKING/DMCThrown.h>
 #include <CDC/DCDCHit.h>
+#include <FDC/DFDCHit.h>
 #include <DVector2.h>
 
 
@@ -98,10 +99,16 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DMCTrackHit*> mctrackhits;
 	vector<const DCDCHit*> cdchits;
+	vector<const DFDCHit*> fdchits;
 	vector<const DMCThrown*> mcthrowns;
 	loop->Get(mctrackhits);
 	loop->Get(cdchits);
+	loop->Get(fdchits);
 	loop->Get(mcthrowns);
+	
+	// Find number of wire hits in FDC
+	int Nfdc_wire_hits = 0;
+	for(unsigned int i=0; i<fdchits.size(); i++)if(fdchits[i]->type==0)Nfdc_wire_hits++;
 	
 	// Lock mutex
 	pthread_mutex_lock(&mutex);
@@ -129,6 +136,8 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 		cdchit.dE		= hit->dE;
 		cdchit.t			= hit->t;
 		cdchit.pthrown = mcthrowns.size()>0 ? mcthrowns[0]->p:-1000.0;
+		cdchit.ncdchits	= (int)cdchits.size();
+		cdchit.ntothits	= (int)cdchits.size() + Nfdc_wire_hits;
 
 		cdchittree->Fill();
 	}
