@@ -97,6 +97,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       // Sign of the charge
       double q=kappa/fabs(kappa);
       
+      double qsum=q;
       // Start filling vector of segments belonging to current track    
       vector<DFDCSegment*>segments; 
       segments.push_back(segment);
@@ -116,6 +117,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	// remove the segment from the list 
 	package[1].erase(package[1].begin()+match_id);
 
+	qsum+=match2->S(0,0)/fabs(match2->S(0,0));
+
 	// Try matching to package 3
 	if (package[2].size()>0 && 
 	    (match3=GetTrackMatch(q,zpackage[2],match2,package[2],match_id))
@@ -126,6 +129,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  // remove the segment from the list 
 	  package[2].erase(package[2].begin()+match_id);
 
+	  qsum+=match3->S(0,0)/fabs(match3->S(0,0));
+
 	  // Try matching to package 4
 	  if (package[3].size()>0 && 
 	      (match4=GetTrackMatch(q,zpackage[3],match3,package[3],
@@ -135,6 +140,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
 	    // remove the segment from the list 
 	    package[3].erase(package[3].begin()+match_id);
+
 	  }
 	}
 	// No match in package 3, try for 4
@@ -157,6 +163,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
 	// remove the segment from the list 
 	package[2].erase(package[2].begin()+match_id);
+
+	qsum+=match3->S(0,0)/fabs(match3->S(0,0));
 	
 	// Try matching to package 4
 	if (package[3].size()>0 && 
@@ -180,6 +188,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	package[3].erase(package[3].begin()+match_id);
       }
 
+      if (qsum>0) q=1.;
+      else if (qsum<0) q=-1.;
+      else q=0.;
+
       if (segments.size()>1){
 	DRiemannFit fit;
 	for (unsigned int m=0;m<segments.size();m++){
@@ -201,16 +213,18 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	fit.AddHit(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.DoFit(segments[0]->rc)==NOERROR){      
 	  // Charge
-	  q=fit.q;
+	  if (q==0) q=fit.q;
 	  // Curvature
-	  segments[1]->S(0,0)=kappa=fit.q/2./fit.rc;
+	  segments[1]->S(0,0)=kappa=q/2./fit.rc;
 	  // Estimate for azimuthal angle
 	  phi0=atan2(-fit.xc,fit.yc); 
-	  if (fit.q<0) phi0+=M_PI;
+	  if (q<0) phi0+=M_PI;
 	  segments[1]->S(1,0)=phi0;
 	  // remaining tracking parameters
-	  tanl=fit.tanl;
-	  zvertex=fit.zvertex;
+	  if (fabs(zvertex-Z_VERTEX)>fabs(fit.zvertex-Z_VERTEX)){
+	    tanl=fit.tanl;
+	    zvertex=fit.zvertex;
+	  }
 	  segments[1]->S(3,0)=tanl;
 	  segments[1]->S(4,0)=zvertex;
 	  segments[1]->xc=fit.xc;
@@ -235,6 +249,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    // remove the segment from the list 
 	    package[2].erase(package[2].begin()+match_id);
 	    
+	    qsum+=match3->S(0,0)/fabs(match3->S(0,0));
+
 	    // Redo the fit with the additional hits from package 3
 	    DRiemannFit fit;
 	    for (unsigned int m=0;m<segments.size();m++){
@@ -254,18 +270,25 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    }
 	    // Fake point at origin
 	    fit.AddHit(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+
+	    if (qsum>0) q=1.;
+	    else if (qsum<0) q=-1.;
+	    else q=0.;
+
 	    if (fit.DoFit(segments[1]->rc)==NOERROR){     
 	      // Charge
-	      q=fit.q;
+	      if (q==0) q=fit.q;
 	      // Curvature
-	      segments[2]->S(0,0)=kappa=fit.q/2./fit.rc;
+	      segments[2]->S(0,0)=kappa=q/2./fit.rc;
 	      // Estimate for azimuthal angle
 	      phi0=atan2(-fit.xc,fit.yc); 
-	      if (fit.q<0) phi0+=M_PI;
+	      if (q<0) phi0+=M_PI;
 	      segments[2]->S(1,0)=phi0;
 	      // remaining tracking parameters
-	      tanl=fit.tanl;
-	      zvertex=fit.zvertex;
+	      if (fabs(zvertex-Z_VERTEX)>fabs(fit.zvertex-Z_VERTEX)){
+		tanl=fit.tanl;
+		zvertex=fit.zvertex;
+	      }
 	      segments[2]->S(3,0)=tanl;
 	      segments[2]->S(4,0)=zvertex;
 	      segments[2]->xc=fit.xc;
@@ -329,6 +352,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       // Sign of the charge
       double q=kappa/fabs(kappa);
       
+      double qsum=q;
+      
       // Start filling vector of segments belonging to current track    
       vector<DFDCSegment*>segments; 
       segments.push_back(segment);
@@ -346,6 +371,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	// remove the segment from the list 
 	package[2].erase(package[2].begin()+match_id);
 
+	qsum+=match3->S(0,0)/fabs(match3->S(0,0));
+
 	// Try matching to package 4
 	if (package[3].size()>0 && 
 	    (match4=GetTrackMatch(q,zpackage[3],match3,package[3],
@@ -355,6 +382,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
 	  // remove the segment from the list 
 	  package[3].erase(package[3].begin()+match_id);
+	  
 	}	
       }
       // No match in 3, try for 4
@@ -368,6 +396,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	package[3].erase(package[3].begin()+match_id);
       }
       
+      if (qsum>0) q=1.;
+      else if (qsum<0) q=-1.;
+      else q=0.;
+
       if (segments.size()>1){
 	DRiemannFit fit;
 	for (unsigned int m=0;m<segments.size();m++){
@@ -389,15 +421,17 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	fit.AddHit(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.DoFit(segments[0]->rc)==NOERROR){
 	  // Charge
-	  q=fit.q;
+	  if (q==0) q=fit.q;
 	  // Curvature
-	  segments[1]->S(0,0)=kappa=fit.q/2./fit.rc;
+	  segments[1]->S(0,0)=kappa=q/2./fit.rc;
 	  // Estimate for azimuthal angle
 	  phi0=atan2(-fit.xc,fit.yc); 
-	  if (fit.q<0) phi0+=M_PI;      
+	  if (q<0) phi0+=M_PI;      
 	  // remaining tracking parameters
-	  tanl=fit.tanl;
-	  zvertex=fit.zvertex;
+	  if (fabs(zvertex-Z_VERTEX)>fabs(fit.zvertex-Z_VERTEX)){
+	    tanl=fit.tanl;
+	    zvertex=fit.zvertex;
+	  }
 	  segments[1]->S(3,0)=tanl;
 	  segments[1]->S(4,0)=zvertex;
 	  segments[1]->xc=fit.xc;
@@ -491,15 +525,17 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	fit.AddHit(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.DoFit(segments[0]->rc)==NOERROR){     	
 	  // Charge
-	  q=fit.q;
+	  //q=fit.q;
 	  // Curvature
-	  kappa=fit.q/2./fit.rc;
+	  kappa=q/2./fit.rc;
 	  // Estimate for azimuthal angle
 	  phi0=atan2(-fit.xc,fit.yc); 
-	  if (fit.q<0) phi0+=M_PI; 
+	  if (q<0) phi0+=M_PI; 
 	  // remaining tracking parameters
-	  tanl=fit.tanl;
-	  zvertex=fit.zvertex;
+	   if (fabs(zvertex-Z_VERTEX)>fabs(fit.zvertex-Z_VERTEX)){
+	     tanl=fit.tanl;
+	     zvertex=fit.zvertex;
+	  }
 	}
       }
       
