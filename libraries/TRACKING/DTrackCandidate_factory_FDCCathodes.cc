@@ -142,6 +142,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    // remove the segment from the list 
 	    package[3].erase(package[3].begin()+match_id);
 
+	    qsum+=match4->S(0,0)/fabs(match4->S(0,0));
 	  }
 	}
 	// No match in package 3, try for 4
@@ -153,6 +154,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
 	  // remove the segment from the list 
 	  package[3].erase(package[3].begin()+match_id);
+
+	  qsum+=match4->S(0,0)/fabs(match4->S(0,0));
 	}
       }
       // No match in package 2, try for 3
@@ -176,6 +179,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
 	  // remove the segment from the list 
 	  package[3].erase(package[3].begin()+match_id);
+
+	  qsum+=match4->S(0,0)/fabs(match4->S(0,0));
 	}
       }    
       // No match to package 2 or 3, try 4
@@ -187,6 +192,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	
 	// remove the segment from the list 
 	package[3].erase(package[3].begin()+match_id);
+
+	qsum+=match4->S(0,0)/fabs(match4->S(0,0));
       }
 
       if (qsum>0) q=1.;
@@ -238,6 +245,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 				    match_id))!=NULL){ 
 	    // remove the segment from the list 
 	    package[1].erase(package[1].begin()+match_id);
+
+	    qsum+=match2->S(0,0)/fabs(match2->S(0,0));
 	  }
 	  
 	  // Try to match to package 3 again.
@@ -383,7 +392,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
 	  // remove the segment from the list 
 	  package[3].erase(package[3].begin()+match_id);
-	  
+
+	  qsum+=match4->S(0,0)/fabs(match4->S(0,0));	  
 	}	
       }
       // No match in 3, try for 4
@@ -395,6 +405,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
 	// remove the segment from the list 
 	package[3].erase(package[3].begin()+match_id);
+
+	qsum+=match4->S(0,0)/fabs(match4->S(0,0));
       }
       
       if (qsum>0) q=1.;
@@ -490,6 +502,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       // Start filling vector of segments belonging to current track    
       vector<DFDCSegment*>segments; 
       segments.push_back(segment);
+      double qsum=q;
 	
       // Check that the tangent of the dip angle makes sense for FDC hits
       if (segment->S(3,0)<=0.0) continue;
@@ -503,8 +516,14 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	
 	// remove the segment from the list 
 	package[3].erase(package[3].begin()+match_id);
+	
+	qsum+=match4->S(0,0)/fabs(match4->S(0,0));
       }	
-            
+      
+      if (qsum>0) q=1.;
+      else if (qsum<0) q=-1.;
+      else q=0.;   
+
       if (segments.size()>1){
 	DRiemannFit fit;
 	for (unsigned int m=0;m<segments.size();m++){
@@ -526,7 +545,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	fit.AddHit(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.DoFit(segments[0]->rc)==NOERROR){     	
 	  // Charge
-	  //q=fit.q;
+	  if (q==0) q=fit.q;
 	  // Curvature
 	  kappa=q/2./fit.rc;
 	  // Estimate for azimuthal angle
