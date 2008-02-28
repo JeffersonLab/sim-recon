@@ -49,7 +49,7 @@ int main(int narg, char *argv[])
 		// Loop over theta vals
 		for(int j=0; j<NTHETAVALS; j++){
 			double theta = THETA;
-			if(j>0)theta += (double)i*THETADELTA/((double)NTHETAVALS-1.0);
+			if(j>0)theta += (double)j*THETADELTA/((double)NTHETAVALS-1.0);
 		
 			TVector3 mom;
 			mom.SetMagThetaPhi(p, theta*M_PI/180.0, 0.0);
