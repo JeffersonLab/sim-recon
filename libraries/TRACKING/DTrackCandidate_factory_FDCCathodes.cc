@@ -13,6 +13,7 @@
 #include "FDC/DFDCPseudo_factory.h"
 #include "FDC/DFDCSegment_factory.h"
 #include "DRiemannFit.h"
+#include <TROOT.h>
 #include <TH1F.h>
 #include <TH2F.h>
 
