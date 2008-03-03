@@ -7,10 +7,11 @@ BINDIR = ../bin.$(OStype)
 # to enable custom versions of the simulation program.
 #NTUPLE_OPTIONS = -DBACKGROUND_STUDIES
 #NTUPLE_OPTIONS = -DBACKGROUND_PROFILING
-NTUPLE_OPTIONS = -DHISTOGRAM_MATERIAL_SEEN_BY_FIRST_TRACK
+#NTUPLE_OPTIONS = -DHISTOGRAM_MATERIAL_SEEN_BY_FIRST_TRACK
 #NTUPLE_OPTIONS = -DWERNERS_VTX_NTUPLE
 #NTUPLE_OPTIONS = -DCERENKOV_PID_NTUPLE
 #NTUPLE_OPTIONS = -DFCAL_SPLASH_NTUPLE
+#NTUPLE_OPTIONS = -DTESTING_CAL_CONTAINMENT
 #SIM_OPTIONS = -DTRACK_SHOWERS_IN_COLLIMATOR
 #--------------------------------------------------------------------
 
@@ -25,7 +26,7 @@ ifeq ($(OStype),Linux)
 		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
 		COPTS = -g $(SWITCHES)
 		FOPTS = -g -Wno-globals $(SWITCHES)
-		GLIBS 	:= -L/usr/lib/gcc-lib/alpha-redhat-linux/egcs-2.91.66/ -lg2c 
+		GLIBS 	:= -L/usr/lib/gcc-lib/alpha-redhat-linux/egcs-2.91.66/ -lg2c
 	else
 		CC	:= gcc
 		CPP	:= g++
@@ -34,9 +35,10 @@ ifeq ($(OStype),Linux)
 		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
 		COPTS = -g $(SWITCHES)
 		FOPTS = -g -Wno-globals $(SWITCHES)
-		GLIBS	:= -lXmu -lSM -lICE -lpthread
+		GLIBS	:= -lXmu -lSM -lICE -lpthread -lg2c
 		EXPORTDYNAMIC = -Wl,-export-dynamic
-		STATIC = -Wl,-Bstatic
+#		STATIC = -Wl,-Bstatic
+ 		STATIC =
 	endif
 endif
 ifeq ($(OStype),OSF1)
@@ -91,25 +93,29 @@ AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o gsstak.o gltrac.o \
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
        hitFCal.o hitUPV.o bintree.o memcheck.o timel.o trapfpe.o \
-       hitTag.o storeTrajectory.o
+       calibDB.o hitTag.o storeTrajectory.o hitGCal.o
 
 GXFIXED = gxcs.o gxphys.o
 GELHAD = gelhad/libgelhad.a
 
 CERNLIB = $(CERN_ROOT)/bin/cernlib
 
-hdgeant++: gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXFIXED) \
+hdgeant++: hdgeant++.o gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXFIXED) \
            $(MISC_FIXES)
-	$(F77) -mtune=generic -o $@ gxint.o uginit.o uglast.o $(FOPTS) \
-	   $(AUXF) $(AUXC) $(GXFIXED) $(MISC_FIXES) \
+	$(CPP) -mtune=generic -o $@ hdgeant++.o gxint.o uginit.o uglast.o \
+	   $(FOPTS) $(AUXF) $(AUXC) $(GXFIXED) $(MISC_FIXES) \
 	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
+	   -L$(HALLD_HOME)/lib/$(OSNAME) -lHDGEOMETRY \
+	   -L$(JANA_HOME)/lib/$(OSNAME) -lJANA \
 	   `cernlib -v $(CERN_LEVEL) geant321 pawlib graflib/Motif packlib mathlib` \
 	   $(EXPORTDYNAMIC) $(GLIBS)
 
-hdgeant: hdgeant.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(MISC_FIXES)
-	$(F77) -mtune=generic $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(STATIC) $(FOPTS) \
-	   hdgeant.o uginit.o uglast.o $(AUXF) $(AUXC) \
+hdgeant: hdgeant.o hdgeant_f.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(MISC_FIXES)
+	$(CPP) -mtune=generic $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(STATIC) $(FOPTS) \
+	   hdgeant.o hdgeant_f.o uginit.o uglast.o $(AUXF) $(AUXC) \
 	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
+	   -L$(HALLD_HOME)/lib/$(OSNAME) -lHDGEOMETRY \
+	   -L$(JANA_HOME)/lib/$(OSNAME) -lJANA \
 	  `$(CERNLIB) geant321 mathlib graflib grafX11` \
 	   $(NETLIB) $(XLIBS) $(GLIBS)
 
@@ -124,26 +130,42 @@ install: hdgeant hdgeant++
 
 .c.o:
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
-	-I$(HALLD_HOME)/src/libraries/include -I$(CERN_ROOT)/include \
+	-I$(JANA_HOME)/src \
+	-I$(HALLD_HOME)/src/libraries \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(CERN_ROOT)/include \
 	-c -o $@ $<
 
 $(AUXC): $(HDDM)/hddm_s.h bintree.h geant3.h hddmOutput.h 
 
 .cpp.o:
 	$(CPP) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
-	-I$(HALLD_HOME)/src/libraries/include -c -o $@ $<
+	-I$(JANA_HOME)/src \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(HALLD_HOME)/src/libraries -c -o $@ $<
+
+.cc.o:
+	$(CPP) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(JANA_HOME)/src \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(HALLD_HOME)/src/libraries -c -o $@ $<
 
 hddm_s.o: $(HDDM)/hddm_s.c
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
-	-I$(HALLD_HOME)/src/libraries/include -c -o $@ $<
+	-I$(JANA_HOME)/src \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(HALLD_HOME)/src/libraries -c -o $@ $<
 
 cdcdump: cdcdump.c hddm_s.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
-	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ 
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(HALLD_HOME)/src/libraries -o $@ $^
 
 %2nt: %2nt.c hddm_s.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
-	-I$(HALLD_HOME)/src/libraries/include -o $@ $^ \
+	-I$(JANA_HOME)/src \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(HALLD_HOME)/src/libraries -o $@ $^ \
 	-L$(CERN_ROOT)/lib -lpacklib -lkernlib -lg2c
 
 $(GELHAD):
