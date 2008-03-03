@@ -9,6 +9,7 @@
 #define _GlueX_
 
 enum DetectorSystem_t{
+	SYS_NULL   	= 0x0000,
 	SYS_CDC			= 0x0001,
 	SYS_FDC			= 0x0002,
 	SYS_BCAL			= 0x0004,
@@ -22,6 +23,7 @@ enum DetectorSystem_t{
 inline const char* SystemName(DetectorSystem_t sys)
 {
 	switch(sys){
+      case SYS_NULL:		return "NULL_DETECTOR";			break;
 			case SYS_CDC:			return "CDC";			break;
 			case SYS_FDC:			return "FDC";			break;
 			case SYS_BCAL:			return "BCAL";			break;
