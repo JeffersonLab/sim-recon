@@ -1,5 +1,5 @@
 /*
- * hitFCal - registers hits for forward calorimeter
+ * hitGCal - registers hits for gap calorimeter
  *
  *	This is a part of the hits package for the
  *	HDGeant simulation program for Hall D.
@@ -7,7 +7,7 @@
  *	version 1.0 	-Richard Jones July 16, 2001
  *
  * changes: Wed Jun 20 13:19:56 EDT 2007 B. Zihlmann 
- *          add ipart to the function hitForwardEMcal
+ *          add ipart to the function hitGapEMcal
  */
 
 #include <stdlib.h>
@@ -19,51 +19,50 @@
 #include <bintree.h>
 
 //#define ATTEN_LENGTH	100.
-#define ATTEN_LENGTH	160.
+#define ATTEN_LENGTH	1e6
 #define C_EFFECTIVE	15.
 #define WIDTH_OF_BLOCK  4.
 #define LENGTH_OF_BLOCK 45.
 #define TWO_HIT_RESOL   75.
 #define MAX_HITS        100
-//#define THRESH_MEV      30.
-#define THRESH_MEV      5.
-#define ACTIVE_RADIUS   120.
+#define THRESH_MEV      30.
+#define ACTIVE_RADIUS   120.e6
 #define CENTRAL_ROW     29
 #define CENTRAL_COLUMN  29
 
 
-binTree_t* forwardEMcalTree = 0;
+binTree_t* gapEMcalTree = 0;
 static int blockCount = 0;
 static int showerCount = 0;
 
 
 /* register hits during tracking (from gustep) */
 
-void hitForwardEMcal (float xin[4], float xout[4],
+void hitGapEMcal (float xin[4], float xout[4],
                       float pin[5], float pout[5], float dEsum,
                       int track, int stack, int history, int ipart)
 {
    float x[3], t;
-   float xfcal[3];
+   float xgcal[3];
    float zeroHat[] = {0,0,0};
 
    x[0] = (xin[0] + xout[0])/2;
    x[1] = (xin[1] + xout[1])/2;
    x[2] = (xin[2] + xout[2])/2;
    t    = (xin[3] + xout[3])/2 * 1e9;
-   transformCoord(zeroHat,"local",xfcal,"FCAL");
+   transformCoord(zeroHat,"local",xgcal,"gCAL");
 
    /* post the hit to the truth tree */
 
    if ((history == 0) && (pin[3] > THRESH_MEV/1e3))
    {
-      s_FcalTruthShowers_t* showers;
+      s_GcalTruthShowers_t* showers;
       int mark = (1<<30) + showerCount;
-      void** twig = getTwig(&forwardEMcalTree, mark);
+      void** twig = getTwig(&gapEMcalTree, mark);
       if (*twig == 0)
       {
-         s_ForwardEMcal_t* cal = *twig = make_s_ForwardEMcal();
-         cal->fcalTruthShowers = showers = make_s_FcalTruthShowers(1);
+         s_GapEMcal_t* cal = *twig = make_s_GapEMcal();
+         cal->gcalTruthShowers = showers = make_s_GcalTruthShowers(1);
          showers->in[0].primary = (stack == 0);
          showers->in[0].track = track;
          showers->in[0].t = xin[3]*1e9;
@@ -81,29 +80,29 @@ void hitForwardEMcal (float xin[4], float xout[4],
    if (dEsum > 0)
    {
       int nhit;
-      s_FcalHits_t* hits;
+      s_GcalHits_t* hits;
       int row = getrow_();
       int column = getcolumn_();
-      float dist = LENGTH_OF_BLOCK-xfcal[2];
+      float dist = LENGTH_OF_BLOCK-xgcal[2];
       float dEcorr = dEsum * exp(-dist/ATTEN_LENGTH);
       float tcorr = t + dist/C_EFFECTIVE;
       int mark = ((row+1)<<16) + (column+1);
-      void** twig = getTwig(&forwardEMcalTree, mark);
+      void** twig = getTwig(&gapEMcalTree, mark);
       if (*twig == 0)
       {
-         s_ForwardEMcal_t* cal = *twig = make_s_ForwardEMcal();
-         s_FcalBlocks_t* blocks = make_s_FcalBlocks(1);
+         s_GapEMcal_t* cal = *twig = make_s_GapEMcal();
+         s_GcalBlocks_t* blocks = make_s_GcalBlocks(1);
          blocks->mult = 1;
          blocks->in[0].row = row;
          blocks->in[0].column = column;
-         blocks->in[0].fcalHits = hits = make_s_FcalHits(MAX_HITS);
-         cal->fcalBlocks = blocks;
+         blocks->in[0].gcalHits = hits = make_s_GcalHits(MAX_HITS);
+         cal->gcalBlocks = blocks;
          blockCount++;
       }
       else
       {
-         s_ForwardEMcal_t* cal = *twig;
-         hits = cal->fcalBlocks->in[0].fcalHits;
+         s_GapEMcal_t* cal = *twig;
+         hits = cal->gcalBlocks->in[0].gcalHits;
       }
 
       for (nhit = 0; nhit < hits->mult; nhit++)
@@ -127,7 +126,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
       }
       else
       {
-         fprintf(stderr,"HDGeant error in hitforwardEMcal: ");
+         fprintf(stderr,"HDGeant error in hitgapEMcal: ");
          fprintf(stderr,"max hit count %d exceeded, truncating!\n",MAX_HITS);
          exit(2);
       }
@@ -136,20 +135,20 @@ void hitForwardEMcal (float xin[4], float xout[4],
 
 /* entry point from fortran */
 
-void hitforwardemcal_(float* xin, float* xout,
+void hitgapemcal_(float* xin, float* xout,
                       float* pin, float* pout, float* dEsum,
                       int* track, int* stack, int* history, int* ipart)
 {
-   hitForwardEMcal(xin,xout,pin,pout,*dEsum,*track,*stack,*history, *ipart);
+   hitGapEMcal(xin,xout,pin,pout,*dEsum,*track,*stack,*history, *ipart);
 }
 
 
 /* pick and package the hits for shipping */
 
-s_ForwardEMcal_t* pickForwardEMcal ()
+s_GapEMcal_t* pickGapEMcal ()
 {
-   s_ForwardEMcal_t* box;
-   s_ForwardEMcal_t* item;
+   s_GapEMcal_t* box;
+   s_GapEMcal_t* item;
 
 #if TESTING_CAL_CONTAINMENT
    double Etotal = 0;
@@ -159,14 +158,14 @@ s_ForwardEMcal_t* pickForwardEMcal ()
       return HDDM_NULL;
    }
 
-   box = make_s_ForwardEMcal();
-   box->fcalBlocks = make_s_FcalBlocks(blockCount);
-   box->fcalTruthShowers = make_s_FcalTruthShowers(showerCount);
-   while (item = (s_ForwardEMcal_t*) pickTwig(&forwardEMcalTree))
+   box = make_s_GapEMcal();
+   box->gcalBlocks = make_s_GcalBlocks(blockCount);
+   box->gcalTruthShowers = make_s_GcalTruthShowers(showerCount);
+   while (item = (s_GapEMcal_t*) pickTwig(&gapEMcalTree))
    {
-      s_FcalBlocks_t* blocks = item->fcalBlocks;
+      s_GcalBlocks_t* blocks = item->gcalBlocks;
       int block;
-      s_FcalTruthShowers_t* showers = item->fcalTruthShowers;
+      s_GcalTruthShowers_t* showers = item->gcalTruthShowers;
       int shower;
       for (block=0; block < blocks->mult; ++block)
       {
@@ -176,12 +175,12 @@ s_ForwardEMcal_t* pickForwardEMcal ()
          float y0 = (column - CENTRAL_COLUMN)*WIDTH_OF_BLOCK;
          float dist = sqrt(x0*x0+y0*y0);
 
-         s_FcalHits_t* hits = blocks->in[block].fcalHits;
+         s_GcalHits_t* hits = blocks->in[block].gcalHits;
 
          /* compress out the hits outside the active region */
          if (dist < ACTIVE_RADIUS)
          {
-	    int m = box->fcalBlocks->mult;
+	    int m = box->gcalBlocks->mult;
 
          /* compress out the hits below threshold */
             int i,iok;
@@ -202,8 +201,8 @@ s_ForwardEMcal_t* pickForwardEMcal ()
             if (iok)
             {
                hits->mult = iok;
-               box->fcalBlocks->in[m] = blocks->in[block];
-               box->fcalBlocks->mult++;
+               box->gcalBlocks->in[m] = blocks->in[block];
+               box->gcalBlocks->mult++;
             }
             else if (hits != HDDM_NULL)
             {
@@ -218,8 +217,8 @@ s_ForwardEMcal_t* pickForwardEMcal ()
 
       for (shower=0; shower < showers->mult; ++shower)
       {
-         int m = box->fcalTruthShowers->mult++;
-         box->fcalTruthShowers->in[m] = showers->in[shower];
+         int m = box->gcalTruthShowers->mult++;
+         box->gcalTruthShowers->in[m] = showers->in[shower];
       }
       if (blocks != HDDM_NULL)
       {
@@ -234,26 +233,26 @@ s_ForwardEMcal_t* pickForwardEMcal ()
 
    blockCount = showerCount = 0;
 
-   if ((box->fcalBlocks != HDDM_NULL) &&
-       (box->fcalBlocks->mult == 0))
+   if ((box->gcalBlocks != HDDM_NULL) &&
+       (box->gcalBlocks->mult == 0))
    {
-      FREE(box->fcalBlocks);
-      box->fcalBlocks = HDDM_NULL;
+      FREE(box->gcalBlocks);
+      box->gcalBlocks = HDDM_NULL;
    }
-   if ((box->fcalTruthShowers != HDDM_NULL) &&
-       (box->fcalTruthShowers->mult == 0))
+   if ((box->gcalTruthShowers != HDDM_NULL) &&
+       (box->gcalTruthShowers->mult == 0))
    {
-      FREE(box->fcalTruthShowers);
-      box->fcalTruthShowers = HDDM_NULL;
+      FREE(box->gcalTruthShowers);
+      box->gcalTruthShowers = HDDM_NULL;
    }
-   if ((box->fcalBlocks->mult == 0) &&
-       (box->fcalTruthShowers->mult == 0))
+   if ((box->gcalBlocks->mult == 0) &&
+       (box->gcalTruthShowers->mult == 0))
    {
       FREE(box);
       box = HDDM_NULL;
    }
 #if TESTING_CAL_CONTAINMENT
-  printf("FCal energy sum: %f\n",Etotal/0.614);
+  printf("GCal energy sum: %f\n",Etotal);
 #endif
    return box;
 }

@@ -88,6 +88,9 @@ int loadOutput ()
       					forwardTOF = pickForwardTOF();
    thisOutputEvent->physicsEvents->in[0].hitView->
       					forwardEMcal = pickForwardEMcal();
+#ifdef TESTING_CAL_CONTAINMENT
+   pickGapEMcal();printf("\n");
+#endif
    thisOutputEvent->physicsEvents->in[0].hitView->
       					upstreamEMveto = pickUpstreamEMveto();
    thisOutputEvent->physicsEvents->in[0].hitView->

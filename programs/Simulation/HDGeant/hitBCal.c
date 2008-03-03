@@ -156,6 +156,9 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
 {
    s_BarrelEMcal_t* box;
    s_BarrelEMcal_t* item;
+#if TESTING_CAL_CONTAINMENT
+  double Etotal = 0;
+#endif
 
    if ((cellCount == 0) && (showerCount == 0))
    {
@@ -184,6 +187,9 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
          {
             if (hits->in[i].E >= THRESH_MEV/1e3)
             {
+#if TESTING_CAL_CONTAINMENT
+  Etotal += hits->in[i].E;
+#endif
                if (iok < i)
                {
                   hits->in[iok] = hits->in[i];
@@ -246,5 +252,8 @@ s_BarrelEMcal_t* pickBarrelEMcal ()
       FREE(box);
       box = HDDM_NULL;
    }
+#if TESTING_CAL_CONTAINMENT
+  printf("BCal energy sum: %f\n",Etotal);
+#endif
    return box;
 }
