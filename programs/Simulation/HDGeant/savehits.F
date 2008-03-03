@@ -33,11 +33,7 @@
 * formation of a single hit by pretending that we are still in the mother;
 * the true geometry information is restored before we exit.
 
-
-      if (cnames(NLEVEL).eq.'FDA1' .or.	! FDC anode drift cell
-     >    cnames(NLEVEL).eq.'FDA2' .or.
-     >    cnames(NLEVEL).eq.'FDA3' .or.
-     >    cnames(NLEVEL).eq.'FDA4') then !do not split hits around wire plane
+      if (cnames(NLEVEL)(1:3).eq.'FDA') then ! do not split hits around wire plane
         if (INWVOL.eq.2.and.INFROM.eq.0) then
           INWVOL = 0 ! continue, do not finalize hit
         elseif (INWVOL.eq.1.and.INFROM.eq.1) then
@@ -104,10 +100,7 @@
           call hitCentralDC(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
         endif
-      elseif (cnames(NLEVEL).eq.'FDA1' .or.	! FDC anode drift cell
-     >        cnames(NLEVEL).eq.'FDA2' .or.
-     >        cnames(NLEVEL).eq.'FDA3' .or.
-     >        cnames(NLEVEL).eq.'FDA4') then
+      elseif (cnames(NLEVEL)(1:3).eq.'FDA') then	! FDC anode drift cell
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-5   ! 10 KeV in gas
@@ -138,8 +131,7 @@
           call hitForwardTOF(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
         endif
-      elseif ((cnames(NLEVEL)(1:3).eq.'BCM').or.	! BCal segment
-     +        (cnames(NLEVEL)(1:3).eq.'BM1')) then
+      elseif (cnames(NLEVEL)(1:2).eq.'BM') then		! BCal segment
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-2  ! 10 MeV in the calorimeter module
@@ -149,6 +141,17 @@
           call hitBarrelEMcal(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
      >          IPART)
           ISTORY = 1  ! this particle has entered the BCal (inherited trait)
+        endif
+      elseif (cnames(NLEVEL).eq.'GCAL') then		! GCal segment
+#ifdef MAKE_HITS_WHEN_ILOSS_0
+        if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
+          dEsum = 1e-2  ! 10 MeV in the calorimeter module
+        endif
+#endif
+        if ((dEsum.gt.0).or.(ISTORY.ne.1)) then
+          call hitGapEMcal(xin,xout,pin,pout,dEsum,ITRA,ISTAK,ISTORY,
+     >          IPART)
+          ISTORY = 1  ! this particle has entered the GCal (inherited trait)
         endif
       elseif (cnames(NLEVEL).eq.'LGBL') then		! forward calorimeter
 #ifdef MAKE_HITS_WHEN_ILOSS_0
