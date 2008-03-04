@@ -285,6 +285,9 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
     double cosp=cos(Phi1+sperp/rc);
     XYZ(k,0)=xc+rc*cosp;
     XYZ(k,1)=yc+rc*sinp;
+    if (k<n-1) // Exclude target point...
+      fdc_track[k].s=(XYZ(k,2)-zvertex)/sin(atan(tanl)); // path length 
+ 
     double Phi=atan2(XYZ(k,1),XYZ(k,0));
     double sinPhi=sin(Phi);
     double cosPhi=cos(Phi);
@@ -655,6 +658,9 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
     +XYZ(ref_plane,1)*XYZ(ref_plane,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
 
+  // Correct points for Lorentz effect
+  CorrectPoints(points,XYZ);
+
   // Preliminary circle fit 
   error=RiemannCircleFit(points,CRPhi); 
   if (error!=NOERROR) return error;
@@ -669,6 +675,9 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)+XYZ(ref_plane,1)*XYZ(ref_plane,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
 
+  // Correct points for Lorentz effect
+  CorrectPoints(points,XYZ);
+  
   // Final circle fit 
   error=RiemannCircleFit(points,CRPhi); 
   if (error!=NOERROR) return error;
@@ -681,9 +690,13 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   charge=GetCharge(points.size(),XYZ,CR,CRPhi);
   
   // Final update to covariance matrices
+  ref_plane=0;
   r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)+XYZ(ref_plane,1)*XYZ(ref_plane,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
-  
+
+  // Final correction for Lorentz effect
+  CorrectPoints(points,XYZ);
+
   // Store residuals and path length for each measurement
   chisq=0.;
   for (unsigned int m=0;m<points.size();m++){
@@ -808,49 +821,18 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	
 	// Perform the Riemann Helical Fit on the track segment
 	jerror_t error=RiemannHelicalFit(neighbors,CR,XYZ);   /// initial hit-based fit
-	
-	// Correct for the Lorentz effect given DOCAs
-	if (error==NOERROR){
-	  // Correct for the Lorentz effect given DOCAs
-	  CorrectPoints(neighbors,XYZ);
+		
+	if (error==NOERROR){  
+	  // guess for curvature
+	  kappa=charge/2./rc;  
 	  
-	  ref_plane=0; 
+	  // Estimate for azimuthal angle
+	  phi0=atan2(-xc,yc); 
+	  if (charge<0) phi0+=M_PI;
 	  
-	  // Fit to "space" points
-	  error=RiemannHelicalFit(neighbors,CR,XYZ); /// time-based fit with corrected points
+	  // Look for distance of closest approach nearest to target
+	  D=-charge*rc-xc/sin(phi0);
 	  
-	  // Final correction 
-	  if (error==NOERROR){
-	    CorrectPoints(neighbors,XYZ); /// correct again based on time-based result
-	    chisq=0.;
-	    for (unsigned int m=0;m<neighbors.size();m++){
-	      // neighbors[m]->status|=CORRECTED;
-	      fdc_track[m].hit_id=m;
-	      double sperp=charge*(XYZ(m,2)-XYZ(ref_plane,2))/tanl; 
-	      double sinp=sin(Phi1+sperp/rc);
-	      double cosp=cos(Phi1+sperp/rc);
-	      XYZ(m,0)=xc+rc*cosp;
-	      XYZ(m,1)=yc+rc*sinp;
-	      fdc_track[m].dx=XYZ(m,0)-neighbors[m]->x; // residuals
-	      fdc_track[m].dy=XYZ(m,1)-neighbors[m]->y;
-	      fdc_track[m].s=(XYZ(m,2)-zvertex)/sin(atan(tanl)); // path length
-	      fdc_track[m].chi2=(fdc_track[m].dx*fdc_track[m].dx
-				 +fdc_track[m].dy*fdc_track[m].dy)/CR(m,m);
-	      chisq+=fdc_track[m].chi2;
-	    } 
-	    // guess for curvature
-	    kappa=charge/2./rc;  
-	    
-	    // Estimate for azimuthal angle
-	    phi0=atan2(-xc,yc); 
-	    if (charge<0) phi0+=M_PI;
-	    // Look for distance of closest approach nearest to target
-	    D=-charge*rc-xc/sin(phi0);
-	    
-	  }
-	}
-
-	if (error==NOERROR){
 	  // Creat a new segment
 	  DFDCSegment *segment = new DFDCSegment;	
 	  DMatrix Seed(5,1);
