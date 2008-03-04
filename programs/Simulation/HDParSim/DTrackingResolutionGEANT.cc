@@ -98,6 +98,9 @@ void DTrackingResolutionGEANT::GetResolution(int geanttype, const TVector3 &mom,
 	int pbin = pt_res_hist->GetYaxis()->FindBin(p);
 	int thetabin = pt_res_hist->GetXaxis()->FindBin(theta);
 	
+	if(pbin<1 || pbin>pt_res_hist->GetNbinsY()){pt_res=theta_res=phi_res=0.0; return;}
+	if(thetabin<1 || thetabin>pt_res_hist->GetNbinsX()){pt_res=theta_res=phi_res=0.0; return;}
+	
 	// Here we should do an interpolation from the surrounding bins.
 	// We have fairly small bins though so I can afford to be
 	// lazy :)
