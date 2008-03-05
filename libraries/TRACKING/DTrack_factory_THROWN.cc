@@ -39,7 +39,8 @@ jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		// Create and fill the covariance matrix for the track.
 		// We need to fill this using errors estimated from the thrown
 		// momentum and angle. 
-		DMatrixDSym errMatrix(1,7);
+		//DMatrixDSym errMatrix(1,7);
+		DMatrixDSym errMatrix(7);
 		track->setErrorMatrix(errMatrix);
 
 		// Fill in DTrack specific members. (Some of these are redundant)
