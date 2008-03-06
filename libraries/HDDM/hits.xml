@@ -47,6 +47,17 @@
                         px="float" py="float" pz="float" ptype="int"
 			minOccurs="0" maxOccurs="unbounded" />
    </barrelEMcal>
+
+   <gapEMcal minOccurs="0">
+      <gcalCell module="int" minOccurs="0" maxOccurs="48">
+         <gcalHit t="float" E="float" zLocal="float"
+			minOccurs="0" maxOccurs="unbounded" />
+     </gcalCell>
+     <gcalTruthShower t="float" z="float" phi="float" r="float"
+			E="float" track="int" primary="boolean"
+                        px="float" py="float" pz="float" ptype="int"
+			minOccurs="0" maxOccurs="unbounded" />
+   </gapEMcal>
       
    <Cerenkov minOccurs="0">
       <cereSection sector="int" minOccurs="0" maxOccurs="unbounded">

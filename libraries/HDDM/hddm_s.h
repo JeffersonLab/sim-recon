@@ -440,6 +440,67 @@ typedef struct {
 } s_BarrelEMcal_t;
 #endif /* s_BarrelEMcal_t */
 
+#ifndef SAW_s_GcalHit_t
+#define SAW_s_GcalHit_t
+
+typedef struct {
+   float                E;
+   float                t;
+   float                zLocal;
+} s_GcalHit_t;
+
+typedef struct {
+   unsigned int mult;
+   s_GcalHit_t in[1];
+} s_GcalHits_t;
+#endif /* s_GcalHit_t */
+
+#ifndef SAW_s_GcalCell_t
+#define SAW_s_GcalCell_t
+
+typedef struct {
+   int32_t              module;
+   s_GcalHits_t*        gcalHits;
+} s_GcalCell_t;
+
+typedef struct {
+   unsigned int mult;
+   s_GcalCell_t in[1];
+} s_GcalCells_t;
+#endif /* s_GcalCell_t */
+
+#ifndef SAW_s_GcalTruthShower_t
+#define SAW_s_GcalTruthShower_t
+
+typedef struct {
+   float                E;
+   float                phi;
+   bool_t               primary;
+   int32_t              ptype;
+   float                px;
+   float                py;
+   float                pz;
+   float                r;
+   float                t;
+   int32_t              track;
+   float                z;
+} s_GcalTruthShower_t;
+
+typedef struct {
+   unsigned int mult;
+   s_GcalTruthShower_t in[1];
+} s_GcalTruthShowers_t;
+#endif /* s_GcalTruthShower_t */
+
+#ifndef SAW_s_GapEMcal_t
+#define SAW_s_GapEMcal_t
+
+typedef struct {
+   s_GcalCells_t*       gcalCells;
+   s_GcalTruthShowers_t* gcalTruthShowers;
+} s_GapEMcal_t;
+#endif /* s_GapEMcal_t */
+
 #ifndef SAW_s_CereHit_t
 #define SAW_s_CereHit_t
 
@@ -809,6 +870,7 @@ typedef struct {
    s_ForwardDC_t*       forwardDC;
    s_StartCntr_t*       startCntr;
    s_BarrelEMcal_t*     barrelEMcal;
+   s_GapEMcal_t*        gapEMcal;
    s_Cerenkov_t*        Cerenkov;
    s_ForwardTOF_t*      forwardTOF;
    s_ForwardEMcal_t*    forwardEMcal;
@@ -905,6 +967,14 @@ s_BcalCells_t* make_s_BcalCells(int n);
 s_BcalHits_t* make_s_BcalHits(int n);
 
 s_BcalTruthShowers_t* make_s_BcalTruthShowers(int n);
+
+s_GapEMcal_t* make_s_GapEMcal();
+
+s_GcalCells_t* make_s_GcalCells(int n);
+
+s_GcalHits_t* make_s_GcalHits(int n);
+
+s_GcalTruthShowers_t* make_s_GcalTruthShowers(int n);
 
 s_Cerenkov_t* make_s_Cerenkov();
 

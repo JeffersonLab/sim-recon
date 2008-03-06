@@ -159,6 +159,7 @@ s_HitView_t* make_s_HitView()
    p->forwardDC = (s_ForwardDC_t*)&hddm_nullTarget;
    p->startCntr = (s_StartCntr_t*)&hddm_nullTarget;
    p->barrelEMcal = (s_BarrelEMcal_t*)&hddm_nullTarget;
+   p->gapEMcal = (s_GapEMcal_t*)&hddm_nullTarget;
    p->Cerenkov = (s_Cerenkov_t*)&hddm_nullTarget;
    p->forwardTOF = (s_ForwardTOF_t*)&hddm_nullTarget;
    p->forwardEMcal = (s_ForwardEMcal_t*)&hddm_nullTarget;
@@ -461,6 +462,70 @@ s_BcalTruthShowers_t* make_s_BcalTruthShowers(int n)
    p->mult = 0;
    for (i=0; i<n; i++) {
       s_BcalTruthShower_t* pp = &p->in[i];
+      pp->E = 0;
+      pp->phi = 0;
+      pp->primary = 0;
+      pp->ptype = 0;
+      pp->px = 0;
+      pp->py = 0;
+      pp->pz = 0;
+      pp->r = 0;
+      pp->t = 0;
+      pp->track = 0;
+      pp->z = 0;
+   }
+   return p;
+}
+
+s_GapEMcal_t* make_s_GapEMcal()
+{
+   int size = sizeof(s_GapEMcal_t);
+   s_GapEMcal_t* p = (s_GapEMcal_t*)MALLOC(size,"s_GapEMcal_t");
+   p->gcalCells = (s_GcalCells_t*)&hddm_nullTarget;
+   p->gcalTruthShowers = (s_GcalTruthShowers_t*)&hddm_nullTarget;
+   return p;
+}
+
+s_GcalCells_t* make_s_GcalCells(int n)
+{
+   int i;
+   int rep = (n > 1) ? n-1 : 0;
+   int size = sizeof(s_GcalCells_t) + rep * sizeof(s_GcalCell_t);
+   s_GcalCells_t* p = (s_GcalCells_t*)MALLOC(size,"s_GcalCells_t");
+   p->mult = 0;
+   for (i=0; i<n; i++) {
+      s_GcalCell_t* pp = &p->in[i];
+      pp->module = 0;
+      pp->gcalHits = (s_GcalHits_t*)&hddm_nullTarget;
+   }
+   return p;
+}
+
+s_GcalHits_t* make_s_GcalHits(int n)
+{
+   int i;
+   int rep = (n > 1) ? n-1 : 0;
+   int size = sizeof(s_GcalHits_t) + rep * sizeof(s_GcalHit_t);
+   s_GcalHits_t* p = (s_GcalHits_t*)MALLOC(size,"s_GcalHits_t");
+   p->mult = 0;
+   for (i=0; i<n; i++) {
+      s_GcalHit_t* pp = &p->in[i];
+      pp->E = 0;
+      pp->t = 0;
+      pp->zLocal = 0;
+   }
+   return p;
+}
+
+s_GcalTruthShowers_t* make_s_GcalTruthShowers(int n)
+{
+   int i;
+   int rep = (n > 1) ? n-1 : 0;
+   int size = sizeof(s_GcalTruthShowers_t) + rep * sizeof(s_GcalTruthShower_t);
+   s_GcalTruthShowers_t* p = (s_GcalTruthShowers_t*)MALLOC(size,"s_GcalTruthShowers_t");
+   p->mult = 0;
+   for (i=0; i<n; i++) {
+      s_GcalTruthShower_t* pp = &p->in[i];
       pp->E = 0;
       pp->phi = 0;
       pp->primary = 0;
@@ -904,6 +969,12 @@ char HDDM_s_DocumentString[] =
 "        </bcalCell>\n"
 "        <bcalTruthShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" r=\"float\" t=\"float\" track=\"int\" z=\"float\" />\n"
 "      </barrelEMcal>\n"
+"      <gapEMcal minOccurs=\"0\">\n"
+"        <gcalCell maxOccurs=\"48\" minOccurs=\"0\" module=\"int\">\n"
+"          <gcalHit E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" t=\"float\" zLocal=\"float\" />\n"
+"        </gcalCell>\n"
+"        <gcalTruthShower E=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" r=\"float\" t=\"float\" track=\"int\" z=\"float\" />\n"
+"      </gapEMcal>\n"
 "      <Cerenkov minOccurs=\"0\">\n"
 "        <cereSection maxOccurs=\"unbounded\" minOccurs=\"0\" sector=\"int\">\n"
 "          <cereHit maxOccurs=\"unbounded\" pe=\"float\" t=\"float\" />\n"
@@ -2007,6 +2078,146 @@ static s_BcalTruthShowers_t* unpack_s_BcalTruthShowers(XDR* xdrs, popNode* pop)
    return this1;
 }
 
+static s_GapEMcal_t* unpack_s_GapEMcal(XDR* xdrs, popNode* pop)
+{
+   s_GapEMcal_t* this1 = HDDM_NULL;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return this1;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      this1 = make_s_GapEMcal();
+      {
+         int p;
+         void* (*ptr) = (void**) &this1->gcalCells;
+         for (p = 0; p < pop->popListLength; p++)
+         {
+            popNode* pnode = pop->popList[p];
+            if (pnode)
+            {
+               int kid = pnode->inParent;
+               ptr[kid] = pnode->unpacker(xdrs,pnode);
+            }
+            else
+            {
+               unsigned int skip;
+               xdr_u_int(xdrs,&skip);
+               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);
+            }
+         }
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
+static s_GcalCells_t* unpack_s_GcalCells(XDR* xdrs, popNode* pop)
+{
+   s_GcalCells_t* this1 = HDDM_NULL;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return this1;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      int m;
+      unsigned int mult;
+      xdr_u_int(xdrs,&mult);
+      this1 = make_s_GcalCells(mult);
+      this1->mult = mult;
+      for (m = 0; m < mult; m++ )
+      {
+         int p;
+         void* (*ptr) = (void**) &this1->in[m].gcalHits;
+         xdr_int(xdrs,&this1->in[m].module);
+         for (p = 0; p < pop->popListLength; p++)
+         {
+            popNode* pnode = pop->popList[p];
+            if (pnode)
+            {
+               int kid = pnode->inParent;
+               ptr[kid] = pnode->unpacker(xdrs,pnode);
+            }
+            else
+            {
+               unsigned int skip;
+               xdr_u_int(xdrs,&skip);
+               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);
+            }
+         }
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
+static s_GcalHits_t* unpack_s_GcalHits(XDR* xdrs, popNode* pop)
+{
+   s_GcalHits_t* this1 = HDDM_NULL;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return this1;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      int m;
+      unsigned int mult;
+      xdr_u_int(xdrs,&mult);
+      this1 = make_s_GcalHits(mult);
+      this1->mult = mult;
+      for (m = 0; m < mult; m++ )
+      {
+         xdr_float(xdrs,&this1->in[m].E);
+         xdr_float(xdrs,&this1->in[m].t);
+         xdr_float(xdrs,&this1->in[m].zLocal);
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
+static s_GcalTruthShowers_t* unpack_s_GcalTruthShowers(XDR* xdrs, popNode* pop)
+{
+   s_GcalTruthShowers_t* this1 = HDDM_NULL;
+   unsigned int size;
+   if (! xdr_u_int(xdrs,&size))
+   {
+       return this1;
+   }
+   else if (size > 0)
+   {
+      int start = xdr_getpos(xdrs);
+      int m;
+      unsigned int mult;
+      xdr_u_int(xdrs,&mult);
+      this1 = make_s_GcalTruthShowers(mult);
+      this1->mult = mult;
+      for (m = 0; m < mult; m++ )
+      {
+         xdr_float(xdrs,&this1->in[m].E);
+         xdr_float(xdrs,&this1->in[m].phi);
+         xdr_bool(xdrs,&this1->in[m].primary);
+         xdr_int(xdrs,&this1->in[m].ptype);
+         xdr_float(xdrs,&this1->in[m].px);
+         xdr_float(xdrs,&this1->in[m].py);
+         xdr_float(xdrs,&this1->in[m].pz);
+         xdr_float(xdrs,&this1->in[m].r);
+         xdr_float(xdrs,&this1->in[m].t);
+         xdr_int(xdrs,&this1->in[m].track);
+         xdr_float(xdrs,&this1->in[m].z);
+      }
+      xdr_setpos(xdrs,start+size);
+   }
+   return this1;
+}
+
 static s_Cerenkov_t* unpack_s_Cerenkov(XDR* xdrs, popNode* pop)
 {
    s_Cerenkov_t* this1 = HDDM_NULL;
@@ -2869,6 +3080,10 @@ static int pack_s_BarrelEMcal(XDR* xdrs, s_BarrelEMcal_t* this1);
 static int pack_s_BcalCells(XDR* xdrs, s_BcalCells_t* this1);
 static int pack_s_BcalHits(XDR* xdrs, s_BcalHits_t* this1);
 static int pack_s_BcalTruthShowers(XDR* xdrs, s_BcalTruthShowers_t* this1);
+static int pack_s_GapEMcal(XDR* xdrs, s_GapEMcal_t* this1);
+static int pack_s_GcalCells(XDR* xdrs, s_GcalCells_t* this1);
+static int pack_s_GcalHits(XDR* xdrs, s_GcalHits_t* this1);
+static int pack_s_GcalTruthShowers(XDR* xdrs, s_GcalTruthShowers_t* this1);
 static int pack_s_Cerenkov(XDR* xdrs, s_Cerenkov_t* this1);
 static int pack_s_CereSections(XDR* xdrs, s_CereSections_t* this1);
 static int pack_s_CereHits(XDR* xdrs, s_CereHits_t* this1);
@@ -3296,6 +3511,15 @@ static int pack_s_HitView(XDR* xdrs, s_HitView_t* this1)
       if (this1->barrelEMcal != (s_BarrelEMcal_t*)&hddm_nullTarget)
       {
          pack_s_BarrelEMcal(xdrs,this1->barrelEMcal);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->gapEMcal != (s_GapEMcal_t*)&hddm_nullTarget)
+      {
+         pack_s_GapEMcal(xdrs,this1->gapEMcal);
       }
       else
       {
@@ -3953,6 +4177,135 @@ static int pack_s_BcalHits(XDR* xdrs, s_BcalHits_t* this1)
 }
 
 static int pack_s_BcalTruthShowers(XDR* xdrs, s_BcalTruthShowers_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].E);
+      xdr_float(xdrs,&this1->in[m].phi);
+      xdr_bool(xdrs,&this1->in[m].primary);
+      xdr_int(xdrs,&this1->in[m].ptype);
+      xdr_float(xdrs,&this1->in[m].px);
+      xdr_float(xdrs,&this1->in[m].py);
+      xdr_float(xdrs,&this1->in[m].pz);
+      xdr_float(xdrs,&this1->in[m].r);
+      xdr_float(xdrs,&this1->in[m].t);
+      xdr_int(xdrs,&this1->in[m].track);
+      xdr_float(xdrs,&this1->in[m].z);
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_GapEMcal(XDR* xdrs, s_GapEMcal_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   m = 0; /* avoid warnings from -Wall */
+   {
+      if (this1->gcalCells != (s_GcalCells_t*)&hddm_nullTarget)
+      {
+         pack_s_GcalCells(xdrs,this1->gcalCells);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+      if (this1->gcalTruthShowers != (s_GcalTruthShowers_t*)&hddm_nullTarget)
+      {
+         pack_s_GcalTruthShowers(xdrs,this1->gcalTruthShowers);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_GcalCells(XDR* xdrs, s_GcalCells_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_int(xdrs,&this1->in[m].module);
+      if (this1->in[m].gcalHits != (s_GcalHits_t*)&hddm_nullTarget)
+      {
+         pack_s_GcalHits(xdrs,this1->in[m].gcalHits);
+      }
+      else
+      {
+         int zero=0;
+         xdr_int(xdrs,&zero);
+      }
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_GcalHits(XDR* xdrs, s_GcalHits_t* this1)
+{
+   int m;
+   unsigned int size=0;
+   int base,start,end;
+   base = xdr_getpos(xdrs);
+   xdr_u_int(xdrs,&size);
+   start = xdr_getpos(xdrs);
+
+   xdr_u_int(xdrs,&this1->mult);
+   for (m = 0; m < this1->mult; m++)
+   {
+      xdr_float(xdrs,&this1->in[m].E);
+      xdr_float(xdrs,&this1->in[m].t);
+      xdr_float(xdrs,&this1->in[m].zLocal);
+   }
+   FREE(this1);
+   end = xdr_getpos(xdrs);
+   xdr_setpos(xdrs,base);
+   size = end-start;
+   xdr_u_int(xdrs,&size);
+   xdr_setpos(xdrs,end);
+   return size;
+}
+
+static int pack_s_GcalTruthShowers(XDR* xdrs, s_GcalTruthShowers_t* this1)
 {
    int m;
    unsigned int size=0;
@@ -4952,6 +5305,22 @@ static popNode* matches(char* b, char* c)
          else if (strcmp(btag,"bcalTruthShower") == 0)
          {
             this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_BcalTruthShowers;
+         }
+         else if (strcmp(btag,"gapEMcal") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_GapEMcal;
+         }
+         else if (strcmp(btag,"gcalCell") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_GcalCells;
+         }
+         else if (strcmp(btag,"gcalHit") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_GcalHits;
+         }
+         else if (strcmp(btag,"gcalTruthShower") == 0)
+         {
+            this1->unpacker = (void*(*)(XDR*,popNode*))unpack_s_GcalTruthShowers;
          }
          else if (strcmp(btag,"Cerenkov") == 0)
          {
