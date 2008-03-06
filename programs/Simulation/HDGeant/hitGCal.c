@@ -32,7 +32,7 @@
 
 
 binTree_t* gapEMcalTree = 0;
-static int blockCount = 0;
+static int cellCount = 0;
 static int showerCount = 0;
 
 
@@ -57,6 +57,8 @@ void hitGapEMcal (float xin[4], float xout[4],
    if ((history == 0) && (pin[3] > THRESH_MEV/1e3))
    {
       s_GcalTruthShowers_t* showers;
+      float r = sqrt(xin[0]*xin[0]+xin[1]*xin[1]);
+      float phi = atan2(xin[1],xin[0]);
       int mark = (1<<30) + showerCount;
       void** twig = getTwig(&gapEMcalTree, mark);
       if (*twig == 0)
@@ -65,10 +67,10 @@ void hitGapEMcal (float xin[4], float xout[4],
          cal->gcalTruthShowers = showers = make_s_GcalTruthShowers(1);
          showers->in[0].primary = (stack == 0);
          showers->in[0].track = track;
-         showers->in[0].t = xin[3]*1e9;
-         showers->in[0].x = xin[0];
-         showers->in[0].y = xin[1];
          showers->in[0].z = xin[2];
+         showers->in[0].r = r;
+         showers->in[0].phi = phi;
+         showers->in[0].t = xin[3]*1e9;
          showers->in[0].E = pin[3];
          showers->mult = 1;
          showerCount++;
@@ -81,28 +83,26 @@ void hitGapEMcal (float xin[4], float xout[4],
    {
       int nhit;
       s_GcalHits_t* hits;
-      int row = getrow_();
-      int column = getcolumn_();
+      int module = getmodule_();
       float dist = LENGTH_OF_BLOCK-xgcal[2];
       float dEcorr = dEsum * exp(-dist/ATTEN_LENGTH);
       float tcorr = t + dist/C_EFFECTIVE;
-      int mark = ((row+1)<<16) + (column+1);
+      int mark = ((module+1)<<16);
       void** twig = getTwig(&gapEMcalTree, mark);
       if (*twig == 0)
       {
          s_GapEMcal_t* cal = *twig = make_s_GapEMcal();
-         s_GcalBlocks_t* blocks = make_s_GcalBlocks(1);
-         blocks->mult = 1;
-         blocks->in[0].row = row;
-         blocks->in[0].column = column;
-         blocks->in[0].gcalHits = hits = make_s_GcalHits(MAX_HITS);
-         cal->gcalBlocks = blocks;
-         blockCount++;
+         s_GcalCells_t* cells = make_s_GcalCells(1);
+         cells->mult = 1;
+         cells->in[0].module = module;
+         cells->in[0].gcalHits = hits = make_s_GcalHits(MAX_HITS);
+         cal->gcalCells = cells;
+         cellCount++;
       }
       else
       {
          s_GapEMcal_t* cal = *twig;
-         hits = cal->gcalBlocks->in[0].gcalHits;
+         hits = cal->gcalCells->in[0].gcalHits;
       }
 
       for (nhit = 0; nhit < hits->mult; nhit++)
@@ -153,63 +153,54 @@ s_GapEMcal_t* pickGapEMcal ()
 #if TESTING_CAL_CONTAINMENT
    double Etotal = 0;
 #endif
-   if ((blockCount == 0) && (showerCount == 0))
+   if ((cellCount == 0) && (showerCount == 0))
    {
       return HDDM_NULL;
    }
 
    box = make_s_GapEMcal();
-   box->gcalBlocks = make_s_GcalBlocks(blockCount);
+   box->gcalCells = make_s_GcalCells(cellCount);
    box->gcalTruthShowers = make_s_GcalTruthShowers(showerCount);
    while (item = (s_GapEMcal_t*) pickTwig(&gapEMcalTree))
    {
-      s_GcalBlocks_t* blocks = item->gcalBlocks;
-      int block;
+      s_GcalCells_t* cells = item->gcalCells;
+      int cell;
       s_GcalTruthShowers_t* showers = item->gcalTruthShowers;
       int shower;
-      for (block=0; block < blocks->mult; ++block)
+      for (cell=0; cell < cells->mult; ++cell)
       {
-         int row = blocks->in[block].row;
-         int column = blocks->in[block].column;
-         float x0 = (row - CENTRAL_ROW)*WIDTH_OF_BLOCK;
-         float y0 = (column - CENTRAL_COLUMN)*WIDTH_OF_BLOCK;
-         float dist = sqrt(x0*x0+y0*y0);
+	 int m = box->gcalCells->mult;
+         int mok = 0;
 
-         s_GcalHits_t* hits = blocks->in[block].gcalHits;
-
-         /* compress out the hits outside the active region */
-         if (dist < ACTIVE_RADIUS)
-         {
-	    int m = box->gcalBlocks->mult;
+         s_GcalHits_t* hits = cells->in[cell].gcalHits;
 
          /* compress out the hits below threshold */
-            int i,iok;
-            for (iok=i=0; i < hits->mult; i++)
+         int i,iok;
+         for (iok=i=0; i < hits->mult; i++)
+         {
+            if (hits->in[i].E >= THRESH_MEV/1e3)
             {
-               if (hits->in[i].E >= THRESH_MEV/1e3)
-               {
 #if TESTING_CAL_CONTAINMENT
   Etotal += hits->in[i].E;
 #endif
-                  if (iok < i)
-                  {
-                     hits->in[iok] = hits->in[i];
-                  }
-                  ++iok;
+               if (iok < i)
+               {
+                  hits->in[iok] = hits->in[i];
                }
-            }
-            if (iok)
-            {
-               hits->mult = iok;
-               box->gcalBlocks->in[m] = blocks->in[block];
-               box->gcalBlocks->mult++;
-            }
-            else if (hits != HDDM_NULL)
-            {
-               FREE(hits);
+               ++iok;
             }
          }
+         if (iok)
+         {
+            hits->mult = iok;
+            box->gcalCells->in[m] = cells->in[cell];
+            box->gcalCells->mult++;
+         }
          else if (hits != HDDM_NULL)
+         {
+            FREE(hits);
+         }
+         if (hits != HDDM_NULL)
          {
             FREE(hits);
          }
@@ -220,9 +211,9 @@ s_GapEMcal_t* pickGapEMcal ()
          int m = box->gcalTruthShowers->mult++;
          box->gcalTruthShowers->in[m] = showers->in[shower];
       }
-      if (blocks != HDDM_NULL)
+      if (cells != HDDM_NULL)
       {
-         FREE(blocks);
+         FREE(cells);
       }
       if (showers != HDDM_NULL)
       {
@@ -231,13 +222,13 @@ s_GapEMcal_t* pickGapEMcal ()
       FREE(item);
    }
 
-   blockCount = showerCount = 0;
+   cellCount = showerCount = 0;
 
-   if ((box->gcalBlocks != HDDM_NULL) &&
-       (box->gcalBlocks->mult == 0))
+   if ((box->gcalCells != HDDM_NULL) &&
+       (box->gcalCells->mult == 0))
    {
-      FREE(box->gcalBlocks);
-      box->gcalBlocks = HDDM_NULL;
+      FREE(box->gcalCells);
+      box->gcalCells = HDDM_NULL;
    }
    if ((box->gcalTruthShowers != HDDM_NULL) &&
        (box->gcalTruthShowers->mult == 0))
@@ -245,7 +236,7 @@ s_GapEMcal_t* pickGapEMcal ()
       FREE(box->gcalTruthShowers);
       box->gcalTruthShowers = HDDM_NULL;
    }
-   if ((box->gcalBlocks->mult == 0) &&
+   if ((box->gcalCells->mult == 0) &&
        (box->gcalTruthShowers->mult == 0))
    {
       FREE(box);
