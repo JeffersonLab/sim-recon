@@ -17,7 +17,15 @@ class DRiemannFit{
   DRiemannFit(){
     CovR_=NULL;
     CovRPhi_=NULL;
+    hits.clear();
+    projections.clear();
   };
+  
+  ~DRiemannFit(){
+    if (CovR_!=NULL) delete CovR_;
+    if (CovRPhi_!=NULL) delete CovRPhi_;
+  };
+
 
   jerror_t FitCircle(double rc);
   jerror_t FitCircle();
