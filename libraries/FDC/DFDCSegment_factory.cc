@@ -15,7 +15,7 @@
 #define Z_VERTEX_CUT 25.0
 #define MATCH_RADIUS 5.0
 #define SIGN_CHANGE_CHISQ_CUT 10.0
-#define BEAM_VARIANCE 0.01 // cm^2
+#define BEAM_VARIANCE 0.1 // cm^2
 #define FDC_X_RESOLUTION 0.02  // 200 microns
 #define FDC_Y_RESOLUTION 0.02
 #define USED_IN_SEGMENT 0x8
@@ -181,8 +181,8 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
   if ((start!=0 && ref_plane==0) || (start!=2&&ref_plane==2)) ref_plane=start;
 
   // Linear regression to find z0, tanl   
-  double sumv=1./CR(n-1,n-1),sumx=XYZ(n-1,2)/CR(n-1,n-1);
-  double sumy=0.,sumxx=XYZ(n-1,2)*XYZ(n-1,2)/CR(n-1,n-1),sumxy=0.;
+  double sumv=0.,sumx=0.;
+  double sumy=0.,sumxx=0.,sumxy=0.;
   double sperp=0.,chord,ratio,Delta;
   for (unsigned int k=start;k<n-1;k++){
     if (!bad[k]){
@@ -203,8 +203,14 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
       sumxy+=sperp*XYZ(k,2)/CR(k,k);
     }
   }
-  double old_sumy=sumy;
-  double old_sumxy=sumxy;
+  Delta=sumv*sumxx-sumx*sumx;
+  // Track parameters z0 and tan(lambda)
+  tanl=-Delta/(sumv*sumxy-sumy*sumx); 
+  //z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
+  // Error in tanl 
+  var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
+ 
+  // Path length to (0,0)
   chord=sqrt(XYZ(0,0)*XYZ(0,0)+XYZ(0,1)*XYZ(0,1));
   ratio=chord/2./rc; 
   // Make sure the argument for the arcsin does not go out of range...
@@ -212,45 +218,16 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
     sperp=2.*rc*(M_PI/2.);
   else
     sperp=2.*rc*asin(ratio);
-  sumy=old_sumy+sperp/CR(n-1,n-1);
-  sumxy=old_sumxy+sperp*XYZ(n-1,2)/CR(n-1,n-1);
-  Delta=sumv*sumxx-sumx*sumx;
-  // Track parameters z0 and tan(lambda)
-  tanl=-Delta/(sumv*sumxy-sumy*sumx); 
-  //z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
-  // Error in tanl 
-  var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
-   
-  // Compute tanl using the other possible choice for the path length to the
-  // target point
-  double test_var=0.,test_tanl=0.;
-  double test_sperp=2.*rc*M_PI-sperp;
-  sumy=old_sumy+test_sperp/CR(n-1,n-1);
-  sumxy=old_sumxy+test_sperp*XYZ(n-1,2)/CR(n-1,n-1);
-  Delta=sumv*sumxx-sumx*sumx;
-  test_tanl=-Delta/(sumv*sumxy-sumy*sumx);
-  test_var=sumv/Delta*(test_tanl*test_tanl*test_tanl*test_tanl);
-  
+
   // Vertex position
   zvertex=XYZ(start,2)-sperp*tanl;
-  double zvertex_temp=XYZ(start,2)-test_sperp*test_tanl;
-  // Choose best tanl based on proximity of projected z-vertex to the center 
+  // Compute the "vertex" position using the other possible choice for the path 
+  // length to the target point
+  double zvertex_temp=XYZ(start,2)-(2.*rc*M_PI-sperp)*tanl;
+  // Choose best zvertex based on proximity of projected z-vertex to the center 
   // of the target
   if (fabs(zvertex-Z_TARGET)>fabs(zvertex_temp-Z_TARGET)){
     zvertex=zvertex_temp;
-    tanl=test_tanl;
-    var_tanl=test_var;
-  }
-
-  // If the dip angle looks like it may be too small from the linear 
-  // regression, make a crude guess using one of the points in the segment 
-  // and the center of the target
-  if (tanl<MIN_TANL){
-    tanl=(XYZ(start,2)-Z_TARGET)
-      /sqrt(XYZ(start,0)*XYZ(start,0)+XYZ(start,1)*XYZ(start,1));
-    zvertex=Z_TARGET;
-    var_tanl=(CR(start,start)*tanl*tanl+TARGET_LENGTH*TARGET_LENGTH/12.)
-      /(XYZ(start,0)*XYZ(start,0)+XYZ(start,1)*XYZ(start,1));
   }
 
   return NOERROR;
