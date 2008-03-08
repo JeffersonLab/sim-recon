@@ -33,7 +33,6 @@
 * formation of a single hit by pretending that we are still in the mother;
 * the true geometry information is restored before we exit.
 
-      write(6,*)cnames(NLEVEL)
       if (cnames(NLEVEL).eq.'FDAW') then ! discard energy lost in wires
         goto 9
       elseif (cnames(NLEVEL)(1:3).eq.'FDA') then ! do not split hits around wire plane
