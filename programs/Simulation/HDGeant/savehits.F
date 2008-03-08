@@ -33,14 +33,15 @@
 * formation of a single hit by pretending that we are still in the mother;
 * the true geometry information is restored before we exit.
 
-      if (cnames(NLEVEL)(1:3).eq.'FDA') then ! do not split hits around wire plane
+      write(6,*)cnames(NLEVEL)
+      if (cnames(NLEVEL).eq.'FDAW') then ! discard energy lost in wires
+        goto 9
+      elseif (cnames(NLEVEL)(1:3).eq.'FDA') then ! do not split hits around wire plane
         if (INWVOL.eq.2.and.INFROM.eq.0) then
           INWVOL = 0 ! continue, do not finalize hit
         elseif (INWVOL.eq.1.and.INFROM.eq.1) then
           INWVOL = 0 ! append to previous hit segment
         endif
-      elseif (cnames(NLEVEL).eq.'FDAW') then ! discard energy lost in wires
-        goto 9
       endif
 
 * Accumulate hit information and save it when particle exits the volume
