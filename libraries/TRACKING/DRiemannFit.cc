@@ -433,6 +433,7 @@ jerror_t DRiemannFit::FitLine(){
     if (r2==0){
       temphit->x=0.;
       temphit->y=0.;
+      bad[m]=1;
     }
     else{
       x_int0=-N[0]*numer/denom;
@@ -476,9 +477,8 @@ jerror_t DRiemannFit::FitLine(){
   }
 
   // Linear regression to find z0, tanl   
-  unsigned int n=projections.size()-1;
-  double sumv=1./CR(n,n),sumx=projections[n]->z/CR(n,n);
-  double sumy=0.,sumxx=projections[n]->z*projections[n]->z/CR(n,n),sumxy=0.;
+  unsigned int n=projections.size();
+  double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.;
   double sperp=0., chord=0,ratio=0, Delta;
   for (unsigned int k=start;k<n;k++){
     if (!bad[k])
@@ -500,8 +500,6 @@ jerror_t DRiemannFit::FitLine(){
       sumxy+=sperp*projections[k]->z/CR(k,k);
     }
   }
-  double old_sumy=sumy;
-  double old_sumxy=sumxy;
   chord=sqrt(projections[start]->x*projections[start]->x
 	     +projections[start]->y*projections[start]->y);
   ratio=chord/2./rc; 
@@ -510,24 +508,14 @@ jerror_t DRiemannFit::FitLine(){
     sperp=2.*rc*(M_PI/2.);
   else
     sperp=2.*rc*asin(ratio);
-  sumy=old_sumy+sperp/CR(n,n);
-  sumxy=old_sumxy+sperp*projections[n]->z/CR(n,n);
   Delta=sumv*sumxx-sumx*sumx;
   // Track parameter tan(lambda)
   tanl=-Delta/(sumv*sumxy-sumy*sumx); 
 
-    // Compute tanl using the other possible choice for the path length to the
-  // target point
-  double test_tanl=0.;
-  double test_sperp=2.*rc*M_PI-sperp;
-  sumy=old_sumy+test_sperp/CR(n,n);
-  sumxy=old_sumxy+test_sperp*projections[n]->z/CR(n,n);
-  Delta=sumv*sumxx-sumx*sumx;
-  test_tanl=-Delta/(sumv*sumxy-sumy*sumx);
- // Vertex position
+  // Vertex position
   zvertex=projections[start]->z-sperp*tanl;
-  double zvertex_temp=projections[start]->z-test_sperp*test_tanl;
-  // Choose best tanl based on proximity of projected z-vertex to the center 
+  double zvertex_temp=projections[start]->z-(2.*rc*M_PI-sperp)*tanl;
+  // Choose vertex z based on proximity of projected z-vertex to the center 
   // of the target
   if (fabs(zvertex-Z_TARGET)>fabs(zvertex_temp-Z_TARGET)) zvertex=zvertex_temp;
 

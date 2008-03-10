@@ -229,10 +229,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  if (q<0) phi0+=M_PI;
 	  segments[1]->S(1,0)=phi0;
 	  // remaining tracking parameters
-	  if (fabs(zvertex-Z_VERTEX)>fabs(fit.zvertex-Z_VERTEX)){
-	    tanl=fit.tanl;
-	    zvertex=fit.zvertex;
-	  }
+	  tanl=fit.tanl;
+	  zvertex=fit.zvertex;
+	 
 	  segments[1]->S(3,0)=tanl;
 	  segments[1]->S(4,0)=zvertex;
 	  segments[1]->xc=fit.xc;
@@ -295,10 +294,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	      if (q<0) phi0+=M_PI;
 	      segments[2]->S(1,0)=phi0;
 	      // remaining tracking parameters
-	      if (fabs(zvertex-Z_VERTEX)>fabs(fit.zvertex-Z_VERTEX)){
-		tanl=fit.tanl;
-		zvertex=fit.zvertex;
-	      }
+	      tanl=fit.tanl;
+	      zvertex=fit.zvertex;
+	
 	      segments[2]->S(3,0)=tanl;
 	      segments[2]->S(4,0)=zvertex;
 	      segments[2]->xc=fit.xc;
@@ -441,10 +439,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  phi0=atan2(-fit.xc,fit.yc); 
 	  if (q<0) phi0+=M_PI;      
 	  // remaining tracking parameters
-	  if (fabs(zvertex-Z_VERTEX)>fabs(fit.zvertex-Z_VERTEX)){
-	    tanl=fit.tanl;
-	    zvertex=fit.zvertex;
-	  }
+	  tanl=fit.tanl;
+	  zvertex=fit.zvertex;
+
 	  segments[1]->S(3,0)=tanl;
 	  segments[1]->S(4,0)=zvertex;
 	  segments[1]->xc=fit.xc;
@@ -552,10 +549,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  phi0=atan2(-fit.xc,fit.yc); 
 	  if (q<0) phi0+=M_PI; 
 	  // remaining tracking parameters
-	   if (fabs(zvertex-Z_VERTEX)>fabs(fit.zvertex-Z_VERTEX)){
-	     tanl=fit.tanl;
-	     zvertex=fit.zvertex;
-	  }
+	  tanl=fit.tanl;
+	  zvertex=fit.zvertex;
 	}
       }
       
