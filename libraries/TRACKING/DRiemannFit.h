@@ -23,7 +23,9 @@ class DRiemannFit{
   
   ~DRiemannFit(){
     if (CovR_!=NULL) delete CovR_;
-    if (CovRPhi_!=NULL) delete CovRPhi_;
+    if (CovRPhi_!=NULL) delete CovRPhi_; 
+    hits.clear();
+    projections.clear();
   };
 
 
