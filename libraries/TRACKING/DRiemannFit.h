@@ -24,6 +24,11 @@ class DRiemannFit{
   ~DRiemannFit(){
     if (CovR_!=NULL) delete CovR_;
     if (CovRPhi_!=NULL) delete CovRPhi_; 
+
+    for (unsigned int i=0;i<hits.size();i++)
+      delete hits[i];
+    for (unsigned int i=0;i<projections.size();i++)
+      delete projections[i];
     hits.clear();
     projections.clear();
   };
