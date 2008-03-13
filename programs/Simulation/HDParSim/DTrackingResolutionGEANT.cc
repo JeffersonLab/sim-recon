@@ -30,7 +30,7 @@ DTrackingResolutionGEANT::DTrackingResolutionGEANT()
 		cout<<endl;
 		exit(0);
 	}
-	cout<<"Opened \""<<file->GetName()<<"\""<<endl;
+	//cout<<"Opened \""<<file->GetName()<<"\""<<endl;
 
 	// Read pt resolution histogram
 	file->GetObject("dpt_over_pt_vs_p_vs_theta_2", pt_res_hist);

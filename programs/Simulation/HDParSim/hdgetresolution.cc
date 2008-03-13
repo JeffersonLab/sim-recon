@@ -22,6 +22,7 @@ double PTOTDELTA=0.0;
 double THETADELTA=0.0;
 int NPVALS=1;
 int NTHETAVALS=1;
+bool OUTPUT_C_PLUS_PLUS=false;
 
 //------------
 // main
@@ -36,10 +37,29 @@ int main(int narg, char *argv[])
 	// simulations.
 	DTrackingResolution *res = new DTrackingResolutionGEANT();
 
+	if(OUTPUT_C_PLUS_PLUS)cout<<"/*"<<endl;
 	cout<<"# ptot is in GeV/c and theta is in degrees"<<endl;
 	cout<<"# Momentum resolution is fractional"<<endl;
 	cout<<"# Angular resolutions in milliradians"<<endl; 
 	cout<<"# ptot\ttheta\tdpt/pt  \tdtheta\tdphi"<<endl;
+	if(OUTPUT_C_PLUS_PLUS){
+		cout<<"*/"<<endl;
+		cout<<endl;
+		cout<<"int NPVALS = "<<NPVALS<<";"<<endl;
+		cout<<"int NTHETAVALS = "<<NTHETAVALS<<";"<<endl;
+		cout<<"int Nresvals = "<<NPVALS*NTHETAVALS<<"; // (NPVALS*NTHETAVALS)"<<endl;
+		cout<<"double PTOT = "<<PTOT<<";"<<endl;
+		cout<<"double THETA = "<<THETA<<";"<<endl;
+		cout<<"double PTOTDELTA = "<<PTOTDELTA<<";"<<endl;
+		cout<<"double THETADELTA = "<<THETADELTA<<";"<<endl;
+		cout<<endl;
+		cout<<"class resvals_t{"<<endl;
+		cout<<"	public:"<<endl;
+		cout<<"	double p, theta, sigma_pt_over_pt, sigma_theta, sigma_phi;"<<endl;
+		cout<<"};"<<endl;
+		cout<<endl;
+		cout<<"resvals_t resvals["<<NPVALS*NTHETAVALS<<"] = {"<<endl;
+	}
 
 	// Loop over p vals
 	for(int i=0; i<NPVALS; i++){
@@ -56,8 +76,18 @@ int main(int narg, char *argv[])
 			double pt_res, theta_res, phi_res;
 			res->GetResolution(8, mom, pt_res, theta_res, phi_res);
 			
-			cout<<p<<"\t"<<theta<<"\t"<<pt_res<<"\t"<<theta_res<<"\t"<<phi_res<<endl;
+			if(OUTPUT_C_PLUS_PLUS){
+				cout<<"{"<<p<<", "<<theta<<", "<<pt_res<<", "<<theta_res<<", "<<phi_res<<"}";
+				if(((j+1)*(i+1))!=(NTHETAVALS*NPVALS))cout<<",";
+				cout<<endl;
+			}else{
+				cout<<p<<"\t"<<theta<<"\t"<<pt_res<<"\t"<<theta_res<<"\t"<<phi_res<<endl;
+			}
 		}
+	}
+	
+	if(OUTPUT_C_PLUS_PLUS){
+		cout<<"};"<<endl<<endl;
 	}
 
 	return 0;
@@ -101,6 +131,8 @@ void ParseCommandLineArguments(int narg, char *argv[])
 				cerr<<"-nthetavals requires an argument!"<<endl;
 				Usage();
 			}
+		}else if(arg=="-cpp"){
+			OUTPUT_C_PLUS_PLUS=true;
 		}else if(arg[0]!='-'){
 			if(PTOT<0.0){
 				PTOT = atof(arg.c_str());
@@ -142,6 +174,7 @@ void Usage(void)
 	cout<<"    -thetadelta X  thetadelta (degrees)"<<endl;
 	cout<<"    -npvals X      Number of moemtum values to print"<<endl;
 	cout<<"    -nthetavals X  Number of theta values to print"<<endl;
+	cout<<"    -cpp           Print output in C++ compilable format"<<endl; 
 	cout<<endl;
 	cout<<"   Print the charged particle resolutions to the sceen for a"<<endl;
 	cout<<"specified total momentum and polar angle. If only the ptot"<<endl;
