@@ -115,11 +115,15 @@
 
 #include "JANA/JObject.h"
 
+#include "GlueX.h"    
+
 #include "DRandom.h"    
 
 #include "DVector3.h"    
 #include "DLorentzVector.h" 
 #include "DMatrixDSym.h" 
+
+#define SPEED_OF_LIGHT 29.9792
 
 class DKinematicData : public JObject
 {
@@ -188,6 +192,10 @@ public:
     void setMassFloat( void ) ;
     void clearErrorMatrix( void ) ;
     void setErrorMatrix( const DMatrixDSym& aMatrix ) ;
+
+    void setT0(const ValueType at0, const ValueType at0_err, const DetectorSystem_t at0_detector);
+    void setT1(const ValueType at1, const ValueType at1_err, const DetectorSystem_t at1_detector);
+    void setPathLength(const ValueType apathLength, const ValueType apathLength_err);
     
     // For debugging with MCThrown
     void smearMCThrownMomentum( double smearPct );
@@ -211,7 +219,24 @@ public:
     const DLorentzVector lorentzMomentum( void ) const ;
     bool hasFixedMass( void ) const ;
     virtual const DMatrixDSym& errorMatrix( void ) const ;
+
+    ValueType t0( void ) const;
+    ValueType t0_err( void ) const;
+    DetectorSystem_t t0_detector( void ) const;
+    ValueType t1( void ) const;
+    ValueType t1_err( void ) const;
+    DetectorSystem_t t1_detector( void ) const;
+    ValueType pathLength( void ) const;
+    ValueType pathLength_err( void ) const;
+    ValueType TOF( void ) ;
+    ValueType TOF_err( void ) ;
     
+    ValueType deltaInvBeta( void ) ;
+    ValueType measuredInvBeta_err( void ) ;
+    ValueType deltaBeta( void ) ;
+    ValueType measuredBeta( void ) ;
+    ValueType measuredBeta_err( void ) ;
+
     /// \return TRUE if errors are all zero
     bool hasNullErrorMatrix() const {
         return (&errorMatrix() == nullMatrix());};
@@ -237,6 +262,17 @@ private:
     DVector3 m_momentum ;
     DVector3 m_position ;
     DMatrixDSym* m_errorMatrix ;   // Order is (px, py, pz, E, x, y, z)
+
+    // Time of flight information
+    double m_t0; /// Start time (ns)
+    double m_t0_err; /// Start time error
+    DetectorSystem_t m_t0_detector; /// Detector used to measure the start time
+    double m_t1; /// End of flight time (ns)
+    double m_t1_err; /// End of flight time error 
+    DetectorSystem_t m_t1_detector; /// Detector used to measure the end of flight time 
+
+    double m_pathLength; /// Flight path length (cm) 
+    double m_pathLength_err; /// Flight path length err
     
     //All matricies without a set error matrix can share the same nullMatrix
     static DMatrixDSym* nullMatrix();

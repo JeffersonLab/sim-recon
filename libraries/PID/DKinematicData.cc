@@ -23,7 +23,8 @@ const double kLarge = 1.e20;
 //
 DMatrixDSym* DKinematicData::nullMatrix()
 {
-  static DMatrixDSym* sNullMatrix = new DMatrixDSym(0,7);
+  //static DMatrixDSym* sNullMatrix = new DMatrixDSym(0,7);
+  static DMatrixDSym* sNullMatrix = new DMatrixDSym(7);
   return sNullMatrix;
 }                         
 
@@ -38,6 +39,14 @@ DKinematicData::DKinematicData() :
   m_position( DVector3(  0.0 , 0.0 , 0.0 ) ) ,
   m_errorMatrix( nullMatrix() )
 {
+  m_t0 = -999.0;
+  m_t0_err = -999.0;
+  m_t0_detector = SYS_NULL; /// No detector
+  m_t1 = -999.0;
+  m_t1_err = -999.0;
+  m_t1_detector = SYS_NULL; /// No detector
+  m_pathLength = -999.0;
+  m_pathLength_err = -999.0;
   return ;
 }
 
@@ -68,6 +77,14 @@ DKinematicData::DKinematicData( const DKinematicData& aKinematicData) :
   if(! aKinematicData.hasNullErrorMatrix() ){
     setErrorMatrix( *aKinematicData.m_errorMatrix ) ;
   }
+  m_t0 = aKinematicData.m_t0;
+  m_t0_err = aKinematicData.m_t0_err;
+  m_t0_detector = aKinematicData.m_t0_detector;
+  m_t1 =aKinematicData.m_t1;
+  m_t1_err = aKinematicData.m_t1_err;
+  m_t1_detector = aKinematicData.m_t1_detector;
+  m_pathLength = aKinematicData.m_pathLength;
+  m_pathLength_err = aKinematicData.m_pathLength_err;
   return ;
 }
 
@@ -87,6 +104,14 @@ DKinematicData::DKinematicData( const DKinematicData& aKinematicData,
   if(aCopyErrorMatrix && ! aKinematicData.hasNullErrorMatrix() ){
     setErrorMatrix( *aKinematicData.m_errorMatrix ) ;
   }
+  m_t0 = aKinematicData.m_t0;
+  m_t0_err = aKinematicData.m_t0_err;
+  m_t0_detector = aKinematicData.m_t0_detector;
+  m_t1 =aKinematicData.m_t1;
+  m_t1_err = aKinematicData.m_t1_err;
+  m_t1_detector = aKinematicData.m_t1_detector;
+  m_pathLength = aKinematicData.m_pathLength;
+  m_pathLength_err = aKinematicData.m_pathLength_err;
   return ;
 }
 
@@ -145,6 +170,14 @@ DKinematicData::operator=( const DKinematicData& aOtherKinematicData )
     else {
       clearErrorMatrix();
     }
+    m_t0 = aOtherKinematicData.m_t0;
+    m_t0_err = aOtherKinematicData.m_t0_err;
+    m_t0_detector = aOtherKinematicData.m_t0_detector;
+    m_t1 =aOtherKinematicData.m_t1;
+    m_t1_err = aOtherKinematicData.m_t1_err;
+    m_t1_detector = aOtherKinematicData.m_t1_detector;
+    m_pathLength = aOtherKinematicData.m_pathLength;
+    m_pathLength_err = aOtherKinematicData.m_pathLength_err;
   }
   return ( *this ) ;
 }
@@ -234,8 +267,10 @@ DKinematicData::setErrorMatrix( const DMatrixDSym& aMatrix )
   //Check to see if new Matrix is null
   bool isNullErrorMatrix = true;
   if( &aMatrix != nullMatrix() ) {
-    for(int column = 1; column <= kMatrixSize; ++column) {
-      for(int row = column; row <= kMatrixSize; ++row) {
+    //for(int column = 1; column <= kMatrixSize; ++column) {
+      //for(int row = column; row <= kMatrixSize; ++row) {
+    for(int column = 0; column < kMatrixSize; ++column) {
+      for(int row = column; row < kMatrixSize; ++row) {
         if(0 != aMatrix(row,column)) {
           isNullErrorMatrix = false;
           goto endOfLoop;
@@ -244,13 +279,35 @@ DKinematicData::setErrorMatrix( const DMatrixDSym& aMatrix )
     }
   }
 
-
 endOfLoop: clearErrorMatrix();
            if( !isNullErrorMatrix ) {
              m_errorMatrix = new DMatrixDSym(aMatrix);
            }
 }
 
+
+/// Setters for the timing information
+void DKinematicData::setT0( const ValueType at0, const ValueType at0_err, const DetectorSystem_t at0_detector)
+{
+  m_t0 = at0;
+  m_t0_err = at0_err;
+  m_t0_detector = at0_detector;
+}
+
+void DKinematicData::setT1( const ValueType at1, const ValueType at1_err, const DetectorSystem_t at1_detector)
+{
+  m_t1 = at1;
+  m_t1_err = at1_err;
+  m_t1_detector = at1_detector;
+}
+
+void DKinematicData::setPathLength( const ValueType apathLength, const ValueType apathLength_err)
+{
+  m_pathLength = apathLength;
+  m_pathLength_err = apathLength_err;
+}
+
+/////////////////////
   DMatrixDSym*
 DKinematicData::takeOwnershipOfPointer( void )
 {
@@ -612,6 +669,43 @@ DKinematicData::errorMatrix( void ) const
 {
   return ( *m_errorMatrix ) ;
 }
+
+/// Timing info
+DKinematicData::ValueType DKinematicData::t0( void ) const { return ( m_t0 ) ; }
+DKinematicData::ValueType DKinematicData::t0_err( void ) const { return ( m_t0_err ) ; }
+DetectorSystem_t DKinematicData::t0_detector( void ) const { return ( m_t0_detector ) ; }
+DKinematicData::ValueType DKinematicData::t1( void ) const { return ( m_t1 ) ; }
+DKinematicData::ValueType DKinematicData::t1_err( void ) const { return ( m_t1_err ) ; }
+DetectorSystem_t DKinematicData::t1_detector( void ) const { return ( m_t1_detector ) ; }
+DKinematicData::ValueType DKinematicData::pathLength( void ) const { return ( m_pathLength ) ; }
+DKinematicData::ValueType DKinematicData::pathLength_err( void ) const { return ( m_pathLength_err ) ; }
+
+DKinematicData::ValueType DKinematicData::TOF( void ) { return ( (m_t1 - m_t0) ) ; }
+DKinematicData::ValueType DKinematicData::TOF_err( void ) { return sqrt(m_t1_err*m_t1_err + m_t0_err*m_t0_err);}
+
+DKinematicData::ValueType DKinematicData::measuredBeta( void ) { return ( (m_pathLength/(m_t1 - m_t0) ))/SPEED_OF_LIGHT ; }
+DKinematicData::ValueType DKinematicData::measuredBeta_err( void )
+{
+  double a = pow(m_pathLength_err/m_pathLength, 2);
+  double b = (pow(m_t1_err,2) + pow(m_t0_err,2))/pow(m_t1 - m_t0,2);
+
+  double err = measuredBeta()*sqrt(a + b);
+
+  return err;
+}
+
+DKinematicData::ValueType DKinematicData::deltaBeta( void ) { return ( lorentzMomentum().Beta() - measuredBeta() ) ; }
+DKinematicData::ValueType DKinematicData::deltaInvBeta( void ) { return ( 1.0/lorentzMomentum().Beta() - 1.0/measuredBeta() ) ; }
+DKinematicData::ValueType DKinematicData::measuredInvBeta_err( void )
+{
+  double a = (m_t1_err*m_t1_err + m_t0_err*m_t0_err)/pow(m_t1 - m_t0,2);
+  double b = pow(m_pathLength_err/m_pathLength,2);
+
+  double err = (1.0/measuredBeta())*sqrt(a+b);
+
+  return err;
+}
+
 
 //
 // static member functions

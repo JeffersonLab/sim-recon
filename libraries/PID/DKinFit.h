@@ -31,6 +31,9 @@ class DKinFit {
     std::vector<double> _pulls; ///< Pull quantities of last fit
     double _chi2; ///< \f$ \chi^2 \f$ of last fit
     int _ndf; ///< Number of degrees-of-freedom of last fit
+    bool _useTimingInformation; ///< Tells us whether or not to use whatever
+                                ///< timing information is available in the final
+                                ///< calculation of the confidence level.
 
     /* kinematic quantities */
     std::vector<DKinematicData> _kDataInitial_in; ///< Initial particle 4-momenta (in)
@@ -89,7 +92,7 @@ class DKinFit {
       _kDataFinal_out.clear();
       _extraC_meas.clear();
     }
-
+    
     DKinFit& operator=(const DKinFit &__kfit){
       /// Assignment operator
       this->_Copy(__kfit);
@@ -97,6 +100,9 @@ class DKinFit {
     }
 
     // Setters:
+
+    // get ready for a new fit
+    inline void ResetForNewFit() { this->_ResetForNewFit();}
 
     inline void SetCovMatrix(const TMatrixD &__covMat){ 
       /// Set the covariance matrix.
@@ -155,6 +161,9 @@ class DKinFit {
 
     /// Set each extra mass constraint
     void SetMassConstraint(const double __constraintMass, const vector<int> constrainedParticles);
+
+    /// Use whatever timing information is available
+    void UseTimingInformation() { _useTimingInformation = true; }
 
     // main kinematic fit function
     void Fit();

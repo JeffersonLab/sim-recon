@@ -45,6 +45,7 @@ DKinFit::DKinFit(){
   _extraC = 0;
   _invariantMass = -1.;
   _extraC_miss.clear();
+  _useTimingInformation = false;
   _verbose = 0;
 }
 //_____________________________________________________________________________
@@ -66,6 +67,7 @@ void DKinFit::_Copy(const DKinFit &__kfit){
   _invariantMass = __kfit._invariantMass;
   _extraC_meas = __kfit._extraC_meas;
   _extraC_miss = __kfit._extraC_miss;
+  _useTimingInformation = __kfit._useTimingInformation;
   _verbose = __kfit._verbose;
   for(int i = 0; i < 3; i++) _sigma_missing[i] = __kfit._sigma_missing[i];
 }
@@ -572,7 +574,9 @@ void DKinFit::Fit()
       if( (aT * gb * a).Determinant() == 0.0 ) break;
 
       // calculate the change to be made to the missing particle quantities
+      cerr << "doing A Invert..." << endl;
       xsi = ((aT * gb * a).Invert())*(aT * gb * c);
+      cerr << "did A Invert..." << endl;
       // update x
       x -= xsi;
       // calculate the changes to be made to the measured quantities
@@ -671,6 +675,39 @@ void DKinFit::Fit()
     cov_fit = _cov - _cov*bT*gb*b*_cov;
   }
 
+  DMatrixDSym dumerr(7);
+  //dumerr(0,0) = 1.0;
+  //cerr << "FILLING ERROR MATRIX" << endl;
+  //cerr << "dum row/col: " << dumerr.GetNrows() << " " << dumerr.GetNcols() << endl;
+  //cerr << "kin row/col: " << _kDataInitial_out[0].errorMatrix().GetNrows() << " " << _kDataInitial_out[0].errorMatrix().GetNcols() << endl;
+  //_kDataInitial_out[0].setErrorMatrix(dumerr);
+  //cerr << "FILLED ERROR MATRIX" << endl;
+
+  for(int i=0;i<numInitial;i++)
+  {
+    dumerr = _kDataInitial_out[i].errorMatrix();
+    for(int j=0;j<numypar;j++)
+    {
+      for(int k=0;k<numypar;k++)
+      {
+        dumerr(j,k) = cov_fit(numypar*i+j,numypar*i+k);
+      }
+    }
+    _kDataInitial_out[i].setErrorMatrix(dumerr);
+  }
+  for(int i=0;i<numFinal;i++)
+  {
+    dumerr = _kDataFinal_out[i].errorMatrix();
+    for(int j=0;j<numypar;j++)
+    {
+      for(int k=0;k<numypar;k++)
+      {
+        dumerr(j,k) = cov_fit( numypar*i+j + numypar*numInitial, numypar*i+k + numypar*numInitial);
+      }
+    }
+    _kDataFinal_out[i].setErrorMatrix(dumerr);
+  }
+
   // get chi2 and the pulls
   _pulls.resize(dim);
   for(i = 0; i < dim; i++)
@@ -679,6 +716,10 @@ void DKinFit::Fit()
   }
 
   _chi2 = (epsT * bT * gb * b * eps)(0,0); // the (0,0)...only...element 
+
+  DRandom rnd;
+  rnd.SetSeed((uint)(10000*_chi2));
+
 
   if(_verbose>0) cerr << "Prob: " << TMath::Prob(_chi2, _ndf) << " " << _chi2 << " " << _ndf << endl;
 
@@ -698,9 +739,53 @@ void DKinFit::Fit()
   }
   if(_verbose>1) cerr << "Filled the 4vecs output...." << endl;
 
+  if(_useTimingInformation)
+  {
+    //_chi2 = 0;
+    //_ndf = 0;
+    for(i = 0; i < numFinal; i++) 
+    {
+      if(_verbose>=1) cerr << "detector: " << i << " " << _kDataFinal_in[i].t1_detector() << endl;
+      //if(_kDataFinal_in[i].t1_detector() != SYS_NULL)
+      //if(_kDataFinal_in[i].t1_detector() == SYS_TOF)
+      //if(_kDataFinal_in[i].t1_detector() == SYS_BCAL)
+      if(_kDataFinal_in[i].t1_detector() == SYS_BCAL || _kDataFinal_in[i].t1_detector() == SYS_TOF)
+      {
+        //cerr << "Before: chi2/_ndf/prob: " << _chi2 << " " << _ndf << " " << TMath::Prob(_chi2, _ndf) << endl;
+        double beta = _kDataFinal_out[i].lorentzMomentum().Beta();
+        double deltaBeta = _kDataFinal_out[i].deltaBeta();
+        double measuredBeta_err = _kDataFinal_out[i].measuredBeta_err();
+        double px = _kDataFinal_out[i].lorentzMomentum().X();
+        double py = _kDataFinal_out[i].lorentzMomentum().Y();
+        double pz = _kDataFinal_out[i].lorentzMomentum().Z();
+        double pxerr = sqrt(_kDataFinal_out[i].errorMatrix()(0,0));
+        double pyerr = sqrt(_kDataFinal_out[i].errorMatrix()(1,1));
+        double pzerr = sqrt(_kDataFinal_out[i].errorMatrix()(2,2));
+        double X = beta*beta;
+        double A = pow(_kDataFinal_out[i].lorentzMomentum().Rho(),2);
+        double B = pow(_kDataFinal_out[i].lorentzMomentum().E(),2);
+        double errA = sqrt(pow(px*2.0*pxerr,2) + pow(py*2.0*pyerr,2) + pow(pz*2.0*pzerr,2) );
+        double errB = errA;
+        double errX = X*sqrt( pow(errA/A,2) + pow(errB/B,2) - 2.0*errA*errB/(A*B));
+        double calcBeta_err = beta*(1.0/2.0)*( errX/X );
+        double timing_chi2 = pow(deltaBeta,2)/(pow(calcBeta_err,2) + pow(measuredBeta_err,2));
+        //double timing_chi2 = pow(deltaBeta,2)/(pow(calcBeta_err,2));
+        if(_verbose>=1) cerr << "deltaBeta/err/timing_chi2: " << i << " " << deltaBeta << " " << measuredBeta_err << " " << timing_chi2 << endl;
+        if(_verbose>=1) cerr << "Beta/measured: " << i << " " << _kDataFinal_out[i].lorentzMomentum().Beta() << "\t";
+        if(_verbose>=1) cerr << _kDataFinal_out[i].measuredBeta() << endl;
+        if(_verbose>=1) cerr << "t1_detector: " << i << " " << _kDataFinal_in[i].t1_detector() << "\t";
+        if(_verbose>=1) cerr << "chi2: " << _chi2 << endl;
+        _chi2 += timing_chi2;
+        _ndf += 1;
+        //cerr << "chi2/_ndf/prob: " << _chi2 << " " << _ndf << " " << TMath::Prob(_chi2, _ndf) << endl;
+      }
+    }
+  }
   // set the missing particle covariance matrix
   if(_verbose>1) cerr << "Filling the missing cov matrix output...." << endl;
   // Not sure about this part
+  if(_missingParticle)
+  {
   if( (aT * gb * a).Determinant() != 0.0 ) 
   {
     if(_missingParticle)
@@ -710,6 +795,7 @@ void DKinFit::Fit()
   else 
   {
     if(_verbose>1) cerr << "Not going to fill the missing cov matrix output 'cos singular...." << endl;
+  }
   }
 }
 //_____________________________________________________________________________
@@ -1239,6 +1325,7 @@ void DKinFit::_ResetForNewFit(){
   _kDataFinal_in.clear();
   _kDataInitial_out.clear();
   _kDataFinal_out.clear();
+  _pulls.clear();
 
   // reset bools to default values
   _missingParticle = false;
