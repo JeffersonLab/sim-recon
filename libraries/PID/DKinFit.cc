@@ -574,9 +574,7 @@ void DKinFit::Fit()
       if( (aT * gb * a).Determinant() == 0.0 ) break;
 
       // calculate the change to be made to the missing particle quantities
-      cerr << "doing A Invert..." << endl;
       xsi = ((aT * gb * a).Invert())*(aT * gb * c);
-      cerr << "did A Invert..." << endl;
       // update x
       x -= xsi;
       // calculate the changes to be made to the measured quantities
