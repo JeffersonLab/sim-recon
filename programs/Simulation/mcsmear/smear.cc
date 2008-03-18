@@ -226,7 +226,7 @@ void AddNoiseHitsCDC(s_HDDM_t *hddm_s)
 			for(int k=0; k<Nstraw_hits[j]; k++){
 				s_CdcStrawHit_t *strawhit = &strawhits->in[strawhits->mult++];
 				strawhit->dE = 1.0;
-				strawhit->t = SampleRange(-CDC_TIME_WINDOW/2.0, +CDC_TIME_WINDOW/2.0);
+				strawhit->t = SampleRange(-CDC_TIME_WINDOW/2.0, +CDC_TIME_WINDOW/2.0)*1.e9;
 			}
 		}
 	}
@@ -411,7 +411,7 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 				s_FdcAnodeHit_t *fdcanodehit = &fdcanodehits->in[0];
 				
 				fdcanodehit->dE = 0.1; // what should this be?
-				fdcanodehit->t = SampleRange(0.0, FDC_TIME_WINDOW);
+				fdcanodehit->t = SampleRange(-FDC_TIME_WINDOW/2., +FDC_TIME_WINDOW/2.)*1.e9;
 				
 				fdcAnodeWire->wire = wire_number[j];
 				
