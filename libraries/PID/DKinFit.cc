@@ -39,7 +39,7 @@ using namespace std;
 DKinFit::DKinFit(){
   /// Default Constructor
   _ndf = 0;
-  _chi2 = 666.;
+  _chi2 = -1.;
   _missingMass = -1.;
   _missingParticle = false;
   _extraC = 0;
@@ -1388,7 +1388,7 @@ void DKinFit::_SetToBadFit()
    *  kinematic quantites to 0.
    */
   for(int i = 0; i < (int)_pulls.size(); i++) _pulls[i] = 666.;
-  _chi2 = 666.;
+  _chi2 = -1.;
   _ndf = 0;
   for(int i = 0; i < (int)_kDataInitial_out.size(); i++) 
   {
