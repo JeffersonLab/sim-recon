@@ -433,7 +433,7 @@ jerror_t DRiemannFit::FitLine(){
     if (r2==0){
       temphit->x=0.;
       temphit->y=0.;
-      bad[m]=1;
+      //      bad[m]=1;
     }
     else{
       x_int0=-N[0]*numer/denom;
