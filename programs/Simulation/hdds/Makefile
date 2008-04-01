@@ -59,6 +59,11 @@ hdds-mcfast: hdds-mcfast.cpp XParsers.cpp XParsers.hpp\
 	XParsers.cpp XString.cpp \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
+xpath-example: xpath-example.cpp
+	$(CC) $(COPTS) -I$(XALANCROOT)/src -I$(XERCESCROOT)/include \
+	-o $@ xpath-example.cpp \
+	-L$(XALANCROOT)/lib -lxalan-c -L$(XERCESCROOT)/lib -lxerces-c
+
 clean:
 	rm -f *.o core *.depend hdds-geant hdds-root hdds-mcfast
 
