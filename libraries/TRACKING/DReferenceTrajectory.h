@@ -58,6 +58,7 @@ class DReferenceTrajectory{
 		double DistToRTBruteForce(const DCoordinateSystem *wire, double *s=NULL);
 		double DistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
 		double DistToRTBruteForce(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
+		double Straw_dx(const DCoordinateSystem *wire, double radius);
 		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire);
 		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0);
 		DVector3 GetLastDOCAPoint(void);

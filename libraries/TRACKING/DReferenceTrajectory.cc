@@ -235,16 +235,22 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 	double min_delta2 = 1.0E6;
 	double L_over_2 = wire->L/2.0; // half-length of wire in cm
 	for(int i=0; i<Nswim_steps; i++, swim_step++){
-		// Find the point's position along the wire. Skip this
-		// swim step if it is past the end of the wire
+		// Find the point's position along the wire. If the point
+		// is past the end of the wire, calculate the distance
+		// from the end of the wire.
 		DVector3 pos_diff = swim_step->origin - wire->origin;
 		double u = wire->udir.Dot(pos_diff);
-		if(fabs(u)>L_over_2)continue;
-		
+
 		// Find distance perpendicular to wire
 		double s = wire->sdir.Dot(pos_diff);
 		double t = wire->tdir.Dot(pos_diff);
 		double delta2 = s*s + t*t;
+
+		// If point is past end of wire, calculate distance
+		// from wire's end by adding on distance along wire direction.
+		if(fabs(u)>L_over_2){
+			delta2 += pow(fabs(u)-L_over_2, 2.0);
+		}
 
 		if(delta2 < min_delta2){
 			min_delta2 = delta2;
@@ -265,7 +271,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, double *s)
 	/// defined by "wire" should have its origin at the center of
 	/// the wire with the wire running in the direction of udir.
 	swim_step_t *step=FindClosestSwimStep(wire);
-	
+
 	return step ? DistToRT(wire, step, s):std::numeric_limits<double>::quiet_NaN();
 }
 
@@ -617,6 +623,81 @@ double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, c
 	if(s)*s=step->s + (phi>0.0 ? ds:-ds);
 
 	return d;
+}
+
+//------------------
+// Straw_dx
+//------------------
+double DReferenceTrajectory::Straw_dx(const DCoordinateSystem *wire, double radius)
+{
+	/// Find the distance traveled within the specified radius of the
+	/// specified wire. This will give the "dx" component of a dE/dx
+	/// measurement for cylindrical geometry as we have with straw tubes.
+	///
+	/// At this point, the estimate is done using a simple linear 
+	/// extrapolation from the DOCA point in the direction of the momentum
+	/// to the 2 points at which it itersects the given radius. Segments
+	/// which extend past the end of the wire will be clipped to the end
+	/// of the wire before calculating the total dx.
+	
+	// First, find the DOCA point for this wire
+	double s;
+	double doca = DistToRT(wire, &s);
+	
+	// If doca is outside of the given radius, then we're done
+	if(doca>=radius)return 0.0;
+	
+	// Get the location and momentum direction of the DOCA point
+	DVector3 pos, momdir;
+	GetLastDOCAPoint(pos, momdir);
+	momdir.SetMag(1.0);
+	
+	// Get wire direction
+	const DVector3 &udir = wire->udir;
+	
+	// Calculate vectors used to form quadratic equation for "alpha"
+	// the distance along the mometum direction from the DOCA point
+	// to the intersection with a cylinder of the given radius.
+	DVector3 A = udir.Cross(pos-wire->origin);
+	DVector3 B = udir.Cross(momdir);
+	
+	// If the magnitude of B is zero at this point, it means the momentum
+	// direction is parallel to the wire. In this case, this method will
+	// not work. Return NaN.
+	if(B.Mag()<1.0E-10)return std::numeric_limits<double>::quiet_NaN();
+	
+	double a = B.Mag();
+	double b = A.Dot(B);
+	double c = A.Mag() - radius;
+	double d = sqrt(b*b - 4.0*a*c);
+	
+	// The 2 roots should correspond to the 2 intersection points.
+	double alpha1 = (-b + d)/(2.0*a);
+	double alpha2 = (-b - d)/(2.0*a);
+	
+	DVector3 int1 = pos + alpha1*momdir;
+	DVector3 int2 = pos + alpha2*momdir;
+	
+	// Check if point1 is past the end of the wire
+	double q = udir.Dot(int1 - wire->origin);
+	if(fabs(q) > wire->L/2.0){
+		double gamma = udir.Dot(wire->origin - pos) + (q>0.0 ? +1.0:-1.0)*wire->L/2.0;
+		gamma /= momdir.Dot(udir);
+		int1 = pos + gamma*momdir;
+	}
+
+	// Check if point2 is past the end of the wire
+	q = udir.Dot(int2 - wire->origin);
+	if(fabs(q) > wire->L/2.0){
+		double gamma = udir.Dot(wire->origin - pos) + (q>0.0 ? +1.0:-1.0)*wire->L/2.0;
+		gamma /= momdir.Dot(udir);
+		int2 = pos + gamma*momdir;
+	}
+	
+	// Calculate distance
+	DVector3 delta = int1 - int2;
+	
+	return delta.Mag();
 }
 
 //------------------
