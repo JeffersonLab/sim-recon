@@ -42,6 +42,9 @@ class DEventProcessor_cdc_hists:public JEventProcessor{
 		CDChit_branch cdchit;
 		CDChit_branch *cdchit_ptr;
 		TBranch *cdcbranch, *cdchitbranch;
+		
+		TH1D *idEdx;
+		TH2D *idEdx_vs_p;
 
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
@@ -50,6 +53,9 @@ class DEventProcessor_cdc_hists:public JEventProcessor{
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
 
 		pthread_mutex_t mutex;
+		
+		const DMagneticFieldMap *bfield;
+		DReferenceTrajectory *rt;
 };
 
 #endif // _DEventProcessor_cdc_hists_

@@ -19,7 +19,9 @@ using namespace std;
 #include <TRACKING/DTrack.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <TRACKING/DMCThrown.h>
+#include <TRACKING/DReferenceTrajectory.h>
 #include <CDC/DCDCHit.h>
+#include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCHit.h>
 #include <DVector2.h>
 
@@ -68,9 +70,19 @@ jerror_t DEventProcessor_cdc_hists::init(void)
 	cdchittree = new TTree("cdchit","CDC Hits");
 	cdcbranch = cdctree->Branch("T","CDC_branch",&cdc_ptr);
 	cdchitbranch = cdchittree->Branch("H","CDChit_branch",&cdchit_ptr);
+	
+	idEdx = new TH1D("idEdx","Integrated dE/dx in CDC", 10000, 0.0, 1.0E-3);
+	idEdx->SetXTitle("dE/dx (GeV/cm)");
+	idEdx_vs_p = new TH2D("idEdx_vs_p","Integrated dE/dx vs. momentum in CDC", 100, 0.0, 1.0, 1000, 0.0, 1.0E1);
+	idEdx->SetXTitle("momentum (GeV/c)");
+	idEdx->SetYTitle("dE/dx (MeV/g^{-1}cm^{2})");
 
 	// Go back up to the parent directory
 	dir->cd("../");
+	
+	DApplication *dapp = dynamic_cast<DApplication*>(app);
+	bfield = dapp->GetBfield();
+	rt = new DReferenceTrajectory(bfield);
 	
 	return NOERROR;
 }
@@ -99,10 +111,12 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DMCTrackHit*> mctrackhits;
 	vector<const DCDCHit*> cdchits;
+	vector<const DCDCTrackHit*> cdctrackhits;
 	vector<const DFDCHit*> fdchits;
 	vector<const DMCThrown*> mcthrowns;
 	loop->Get(mctrackhits);
 	loop->Get(cdchits);
+	loop->Get(cdctrackhits);
 	loop->Get(fdchits);
 	loop->Get(mcthrowns);
 	
@@ -113,7 +127,16 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 	// Lock mutex
 	pthread_mutex_lock(&mutex);
 	
-	// Loop over all truth hits, ignoring all but FDC hits
+	// Swim reference trajectory for first thrown track
+	const DMCThrown *mcthrown = mcthrowns.size()>0 ? mcthrowns[0]:NULL;
+	if(mcthrown){
+		DVector3 pos(mcthrown->x, mcthrown->y, mcthrown->z);
+		DVector3 mom;
+		mom.SetMagThetaPhi(mcthrown->p, mcthrown->theta, mcthrown->phi);
+		rt->Swim(pos, mom, mcthrown->q);
+	}
+	
+	// Loop over all truth hits, ignoring all but CDC hits
 	for(unsigned int i=0; i<mctrackhits.size(); i++){
 		const DMCTrackHit *mctrackhit = mctrackhits[i];
 		if(mctrackhit->system != SYS_CDC)continue;
@@ -128,18 +151,43 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 	}
 
 	// Loop over all real hits
+	double dEtot = 0.0;
+	double dxtot = 0.0;
 	for(unsigned int i=0; i<cdchits.size(); i++){
 		const DCDCHit *hit = cdchits[i];
 		
 		cdchit.ring		= hit->ring;
 		cdchit.straw	= hit->straw;
 		cdchit.dE		= hit->dE;
+		cdchit.dx		= 0.0;
 		cdchit.t			= hit->t;
 		cdchit.pthrown = mcthrowns.size()>0 ? mcthrowns[0]->p:-1000.0;
 		cdchit.ncdchits	= (int)cdchits.size();
 		cdchit.ntothits	= (int)cdchits.size() + Nfdc_wire_hits;
+		
+		if(mcthrown && (cdchits.size() == cdctrackhits.size())){
+			cdchit.dx = rt->Straw_dx(cdctrackhits[i]->wire, 0.8);
+		}
+		
+		if(cdchit.dx!=0.0){
+			dEtot += cdchit.dE;
+			dxtot += cdchit.dx;
+		}
 
 		cdchittree->Fill();
+	}
+	
+	if(((Nfdc_wire_hits+cdchits.size()) >= 10) && (cdchits.size()>=5)){
+		if(dxtot>0.0){
+			idEdx->Fill(dEtot/dxtot);
+			if(mcthrown){
+				// The CDC gas is 85% Ar, 15% CO2 by mass.
+				// density of  Ar: 1.977E-3 g/cm^3
+				// density of CO2: 1.66E-3 g/cm^3
+				double density = 0.85*1.66E-3 + 0.15*1.977E-3;
+				idEdx_vs_p->Fill(mcthrown->p, dEtot/dxtot*1000.0/density);
+			}
+		}
 	}
 
 	// Unlock mutex

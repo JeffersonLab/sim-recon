@@ -19,6 +19,7 @@ class CDChit_branch:public TObject{
 		int ring;
 		int straw;
 		float dE;
+		float dx;
 		float t;
 		
 		float pthrown; // taken from first DMCThrown object
