@@ -22,6 +22,7 @@ using namespace std;
 #include "TRACKING/DTrackHit_factory_MC.h"
 #include "FDC/DFDCHit.h"
 #include "FDC/DFDCGeometry.h"
+#include "CDC/DCDCTrackHit.h"
 
 #define MIN_CDC_HITS 8
 #define MIN_FDC_HITS 8
@@ -89,6 +90,10 @@ jerror_t DEventProcessor_acceptance_hists::init(void)
 	FDC_anode_hits_per_event = new TH1D("FDC_anode_hits_per_event","FDC anode hits/event", 201, -0.5, 200.5);
 	FDC_anode_hits_per_layer = new TH1D("FDC_anode_hits_per_layer","FDC anode hits/layer", 24, 0.5, 24.5);
 	FDC_anode_hits_per_wire = new TH1D("FDC_anode_hits_per_wire","FDC anode hits/wire", 96, 0.5, 96.5);
+
+	CDC_nhits_vs_pthrown = new TH1D("CDC_nhits_vs_pthrown","Number of CDC hits per event vs. thrown momentum", 40, 0.0, 9.0);
+	FDC_nhits_vs_pthrown = new TH1D("FDC_nhits_vs_pthrown","Number of FDC anode hits per event vs. thrown momentum", 40, 0.0, 9.0);
+	pthrown = new TH1D("pthrown","thrown momentum", 40, 0.0, 9.0);
 	
 	// Go back up to the parent directory
 	dir->cd("../");
@@ -109,11 +114,11 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumbe
 	
 	
 	// Count FDC anode hits
+	double Nfdc_anode = 0.0;
 	{
 		vector<const DFDCHit*> fdchits;
 		loop->Get(fdchits);
 		
-		double Nfdc_anode = 0.0;
 		for(unsigned int i=0; i<fdchits.size(); i++){
 			if(fdchits[i]->type==0){
 				Nfdc_anode+=1.0;
@@ -124,6 +129,15 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumbe
 		}
 		FDC_anode_hits_per_event->Fill(Nfdc_anode);
 	}
+	
+	// Count CDC hits
+	double Ncdc_anode = 0.0;
+	{
+		vector<const DCDCTrackHit*> cdctrackhits;
+		loop->Get(cdctrackhits);
+		Ncdc_anode = (double)cdctrackhits.size();
+	}
+	
 	
 	// Loop over thrown tracks
 	for(unsigned int i=0;i<mcthrowns.size();i++){
@@ -170,6 +184,15 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumbe
 				break;
 		}
 	}
+	
+	// Simple 1-D histos for CDC and FDC as a function of thrown momentum
+	if(mcthrowns.size()==1){
+		double p = mcthrowns[0]->p;
+		CDC_nhits_vs_pthrown->Fill(p, Ncdc_anode);
+		FDC_nhits_vs_pthrown->Fill(p, Nfdc_anode);
+		pthrown->Fill(p);
+	}
+
 	
 	// NOTE: In the sections that follow we have to assume that
 	// the track number of the hit corresponds to the position of

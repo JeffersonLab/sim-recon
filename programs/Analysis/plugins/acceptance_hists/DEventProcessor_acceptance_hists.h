@@ -30,6 +30,10 @@ class DEventProcessor_acceptance_hists:public JEventProcessor{
 		TH1D *FDC_anode_hits_per_event;
 		TH1D *FDC_anode_hits_per_layer;
 		TH1D *FDC_anode_hits_per_wire;
+		
+		TH1D *CDC_nhits_vs_pthrown;
+		TH1D *FDC_nhits_vs_pthrown;
+		TH1D *pthrown;
 
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
