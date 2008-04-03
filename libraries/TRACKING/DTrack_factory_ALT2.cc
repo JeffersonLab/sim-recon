@@ -1,6 +1,6 @@
 // $Id$
 //
-//    File: DTrack_factory_ALT1.cc
+//    File: DTrack_factory_ALT2.cc
 // Created: Fri. Feb. 8, 2008
 // Creator: davidl
 //
@@ -18,7 +18,7 @@
 #include "DANA/DApplication.h"
 #include "DMagneticFieldStepper.h"
 #include "DTrackCandidate.h"
-#include "DTrack_factory_ALT1.h"
+#include "DTrack_factory_ALT2.h"
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
 #include "DReferenceTrajectory.h"
@@ -39,9 +39,9 @@ class greaterthan{
 
 
 //------------------
-// DTrack_factory_ALT1   (Constructor)
+// DTrack_factory_ALT2   (Constructor)
 //------------------
-DTrack_factory_ALT1::DTrack_factory_ALT1()
+DTrack_factory_ALT2::DTrack_factory_ALT2()
 {
 	// This gets allocated in brun once the bfield is known
 	tmprt=NULL;
@@ -103,9 +103,9 @@ DTrack_factory_ALT1::DTrack_factory_ALT1()
 }
 
 //------------------
-// DTrack_factory_ALT1   (Destructor)
+// DTrack_factory_ALT2   (Destructor)
 //------------------
-DTrack_factory_ALT1::~DTrack_factory_ALT1()
+DTrack_factory_ALT2::~DTrack_factory_ALT2()
 {
 	if(tmprt)delete tmprt;
 	for(unsigned int i=0; i<rtv.size(); i++)delete rtv[i];
@@ -114,7 +114,7 @@ DTrack_factory_ALT1::~DTrack_factory_ALT1()
 //------------------
 // init
 //------------------
-jerror_t DTrack_factory_ALT1::init(void)
+jerror_t DTrack_factory_ALT2::init(void)
 {
 	return NOERROR;
 }
@@ -122,7 +122,7 @@ jerror_t DTrack_factory_ALT1::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrack_factory_ALT1::brun(JEventLoop *loop, int runnumber)
+jerror_t DTrack_factory_ALT2::brun(JEventLoop *loop, int runnumber)
 {
 	// Get pointer to DMagneticFieldMap field object
 	//gPARMS->SetParameter("GEOM:BZ_CONST",  -2.0);	
@@ -213,7 +213,7 @@ jerror_t DTrack_factory_ALT1::brun(JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DTrack_factory_ALT1::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrack_factory_ALT2::evnt(JEventLoop *loop, int eventnumber)
 {
 	// Store current event number
 	this->eventnumber = eventnumber;
@@ -274,7 +274,7 @@ jerror_t DTrack_factory_ALT1::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 // fini
 //------------------
-jerror_t DTrack_factory_ALT1::fini(void)
+jerror_t DTrack_factory_ALT2::fini(void)
 {
 	return NOERROR;
 }
@@ -282,7 +282,7 @@ jerror_t DTrack_factory_ALT1::fini(void)
 //------------------
 // FitTrack
 //------------------
-DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
+DTrack* DTrack_factory_ALT2::FitTrack(DReferenceTrajectory* rt, int candidateid)
 {
 	/// Fit a track candidate
 	
@@ -411,7 +411,7 @@ DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
 //------------------
 // FitTrackWithOppositeCharge
 //------------------
-DTrack* DTrack_factory_ALT1::FitTrackWithOppositeCharge(DReferenceTrajectory* rt, int candidateid, DTrack* &track)
+DTrack* DTrack_factory_ALT2::FitTrackWithOppositeCharge(DReferenceTrajectory* rt, int candidateid, DTrack* &track)
 {
 	if(debug_level>2)_DBG_<<"Fitting track with opposite charge (original:"<<(rt->q>0 ? "+":"-")<<" now:"<<(rt->q>0 ? "-":"+")<<")"<<endl;
 
@@ -458,7 +458,7 @@ DTrack* DTrack_factory_ALT1::FitTrackWithOppositeCharge(DReferenceTrajectory* rt
 //------------------
 // FindHitCandidateProbabilities
 //------------------
-void DTrack_factory_ALT1::FindHitCandidateProbabilities(void)
+void DTrack_factory_ALT2::FindHitCandidateProbabilities(void)
 {
 	/// Sort all CDC and FDC hits by which track candidate they most likely belong to.
 	///
@@ -520,7 +520,7 @@ void DTrack_factory_ALT1::FindHitCandidateProbabilities(void)
 //------------------
 // GetCDCTrackHitProbabilities
 //------------------
-void DTrack_factory_ALT1::GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob)
+void DTrack_factory_ALT2::GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob)
 {
 	/// Determine the probability that for each CDC hit that it came from the track with the given trajectory.
 	///
@@ -571,7 +571,7 @@ void DTrack_factory_ALT1::GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, 
 //------------------
 // GetFDCTrackHitProbabilities
 //------------------
-void DTrack_factory_ALT1::GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob)
+void DTrack_factory_ALT2::GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob)
 {
 	/// Determine the probability that for each FDC hit that it came from the track with the given trajectory.
 	///
@@ -636,7 +636,7 @@ void DTrack_factory_ALT1::GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, 
 //------------------
 // ChiSq
 //------------------
-double DTrack_factory_ALT1::ChiSq(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv)
+double DTrack_factory_ALT2::ChiSq(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv)
 {
 	/// Calculate the chi-squared for a track specified by state relative to the
 	/// given reference trajectory. This is just a wrapper for 
@@ -647,13 +647,24 @@ double DTrack_factory_ALT1::ChiSq(DMatrix &state, const swim_step_t *start_step,
 	// x-direction. See LeastSquares() for more.
 	DVector3 vdir = start_step->sdir.Cross(start_step->mom);
 	vdir.SetMag(1.0);
+	
+	// Momentum in RT coordinate system
+	DVector3 mom_rt;
+	double p = 1.0/state[state_curvature][0];
+	double theta = state[state_dip][0]-M_PI;
+	double phi = state[state_phi][0];
+	if(theta<0.0){
+		theta = -theta;
+		phi += M_PI;
+	}
+	mom_rt.SetMagThetaPhi(p, theta, phi);
 
 	DVector3 pos =   start_step->origin
 						+ state[state_x ][0]*start_step->sdir
 						+ state[state_v ][0]*vdir;
-	DVector3 mom =   state[state_px][0]*start_step->sdir
-						+ state[state_py][0]*start_step->tdir
-						+ state[state_pz][0]*start_step->udir;
+	DVector3 mom =   mom_rt.X()*start_step->sdir
+						+ mom_rt.Y()*start_step->tdir
+						+ mom_rt.Z()*start_step->udir;
 
 	if(!rt){
 		_DBG_<<"NULL pointer passed for DReferenceTrajectory object!"<<endl;
@@ -682,7 +693,7 @@ double DTrack_factory_ALT1::ChiSq(DMatrix &state, const swim_step_t *start_step,
 //------------------
 // ChiSq
 //------------------
-double DTrack_factory_ALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv)
+double DTrack_factory_ALT2::ChiSq(DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv)
 {
 	/// Calculate the chisq for a track represented by the given reference
 	/// trajectory with the given list of wires. The values in the "shifts"
@@ -763,7 +774,7 @@ double DTrack_factory_ALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordi
 //------------------
 // LeastSquaresB
 //------------------
-DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t fit_type, DReferenceTrajectory *rt, double &chisq)
+DTrack_factory_ALT2::fit_status_t DTrack_factory_ALT2::LeastSquaresB(fit_type_t fit_type, DReferenceTrajectory *rt, double &chisq)
 {
 	/// Fit the track with starting parameters given in the first step
 	/// of the reference trajectory rt. On return, the reference
@@ -809,7 +820,7 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	target.udir.SetXYZ(0.0, 0.0, 1.0);
 	target.L=3.0;
 	wires.push_back(&target);
-	errs.push_back(fit_type==kHitBased ? 0.1:0.1);
+	errs.push_back(fit_type==kHitBased ? 0.001:0.02);
 	if(fit_type!=kHitBased)shifts.push_back(DVector3(0.0, 0.0, 0.0));
 #endif
 
@@ -943,6 +954,15 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	vector<double> chisqv_initial;
 	double initial_chisq = ChiSq(rt, wires, shifts, errs, chisqv_initial);
 
+	// Derive state parameters from momentum vector
+	double px_rt = mom.Dot(start_step.sdir);
+	double py_rt = mom.Dot(start_step.tdir);
+	double pz_rt = mom.Dot(start_step.udir);
+	DVector3 mom_rt(px_rt, py_rt, pz_rt);
+	double p_rt = mom_rt.Mag();
+	double dip_rt = mom_rt.Theta()+M_PI;
+	double phi_rt = mom_rt.Phi();
+
 	// Because we have a non-linear system, we must take the derivatives
 	// numerically.
 	//
@@ -956,40 +976,40 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	switch(Nparameters){
 		case 5: state[state_v	][0] = 0.0;
 		case 4: state[state_x	][0] = 0.0;
-		case 3: state[state_pz	][0] = mom.Dot(start_step.udir);
-		case 2: state[state_py	][0] = mom.Dot(start_step.tdir);
-		case 1: state[state_px	][0] = mom.Dot(start_step.sdir);
+		case 3: state[state_phi	][0] = phi_rt;
+		case 2: state[state_dip	][0] = dip_rt;
+		case 1: state[state_curvature	][0] = 1.0/p_rt;
 	}
 	
 	// For the swimming below, we use a second reference trajectory so as
-	// to preserve the original. Set the charge here. The reset of the
+	// to preserve the original. Set the charge here. The rest of the
 	// parameters (starting position and momentum) will be set using
 	// values from the state vector.
 	tmprt->q = rt->q;
 	
 	// dpx : tweak by +/- 0.01
-	DMatrix state_dpx = state;
-	state_dpx[state_px][0] += LEAST_SQUARES_DP;
-	deltas[state_px] = state_dpx[state_px][0] - state[state_px][0];
-	vector<double> &chisqv_dpx_lo = chisqv_initial;
-	vector<double> chisqv_dpx_hi;
-	double chisq_dpx = ChiSq(state_dpx, &start_step, tmprt, wires, shifts, errs, chisqv_dpx_hi);
+	DMatrix state_dcurvature = state;
+	state_dcurvature[state_curvature][0] += 1.0E-3;
+	deltas[state_curvature] = state_dcurvature[state_curvature][0] - state[state_curvature][0];
+	vector<double> &chisqv_dcurvature_lo = chisqv_initial;
+	vector<double> chisqv_dcurvature_hi;
+	double chisq_dcurvature = ChiSq(state_dcurvature, &start_step, tmprt, wires, shifts, errs, chisqv_dcurvature_hi);
 
 	// dpy : tweak by +/- 0.01
-	DMatrix state_dpy = state;
-	state_dpy[state_py][0] += LEAST_SQUARES_DP;
-	deltas[state_py] = state_dpy[state_py][0] - state[state_py][0];
-	vector<double> &chisqv_dpy_lo = chisqv_initial;
-	vector<double> chisqv_dpy_hi;
-	double chisq_dpy = ChiSq(state_dpy, &start_step, tmprt, wires, shifts, errs, chisqv_dpy_hi);
+	DMatrix state_ddip = state;
+	state_ddip[state_dip][0] += 1.0E-2;
+	deltas[state_dip] = state_ddip[state_dip][0] - state[state_dip][0];
+	vector<double> &chisqv_ddip_lo = chisqv_initial;
+	vector<double> chisqv_ddip_hi;
+	double chisq_ddip = ChiSq(state_ddip, &start_step, tmprt, wires, shifts, errs, chisqv_ddip_hi);
 
 	// dpz : tweak by +/- 0.01
-	DMatrix state_dpz = state;
-	state_dpz[state_pz][0] += LEAST_SQUARES_DP;
-	deltas[state_pz] = state_dpz[state_pz][0] - state[state_pz][0];
-	vector<double> &chisqv_dpz_lo = chisqv_initial;
-	vector<double> chisqv_dpz_hi;
-	double chisq_dpz = ChiSq(state_dpz, &start_step, tmprt, wires, shifts, errs, chisqv_dpz_hi);
+	DMatrix state_dphi = state;
+	state_dphi[state_phi][0] += 1.0E-3;
+	deltas[state_phi] = state_dphi[state_phi][0] - state[state_phi][0];
+	vector<double> &chisqv_dphi_lo = chisqv_initial;
+	vector<double> chisqv_dphi_hi;
+	double chisq_dphi = ChiSq(state_dphi, &start_step, tmprt, wires, shifts, errs, chisqv_dphi_hi);
 
 	// dv : tweak by +/- 0.01
 	DMatrix state_dv = state;
@@ -1010,20 +1030,20 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	// This line just avoids a compiler warning
 	if(debug_level>4){
 		_DBG_<<"initial_chisq="<<initial_chisq<<endl;
-		_DBG_<<"chisq_dpx="<<chisq_dpx<<endl;
-		_DBG_<<"chisq_dpy="<<chisq_dpy<<endl;
-		_DBG_<<"chisq_dpz="<<chisq_dpz<<endl;
+		_DBG_<<"chisq_dcurvature="<<chisq_dcurvature<<endl;
+		_DBG_<<"chisq_ddip="<<chisq_ddip<<endl;
+		_DBG_<<"chisq_dphi="<<chisq_dphi<<endl;
 		_DBG_<<"chisq_dv="<<chisq_dv<<endl;
 		_DBG_<<"chisq_dx="<<chisq_dx<<endl;
 	}
 	if(debug_level>10){
-		_DBG_<<"hit\tinitial\tpx   \tpy   \tpz   \tx   \tv"<<endl;
+		_DBG_<<"hit\tinitial\t1/p   \tdip   \tphi   \tx   \tv"<<endl;
 		for(unsigned int j=0; j<chisqv_initial.size(); j++){
 			cout<<j<<"\t";
 			cout<<chisqv_initial[j]<<"\t";
-			cout<<chisqv_dpx_hi[j]<<"\t";
-			cout<<chisqv_dpy_hi[j]<<"\t";
-			cout<<chisqv_dpz_hi[j]<<"\t";
+			cout<<chisqv_dcurvature_hi[j]<<"\t";
+			cout<<chisqv_ddip_hi[j]<<"\t";
+			cout<<chisqv_dphi_hi[j]<<"\t";
 			cout<<chisqv_dv_hi[j]<<"\t";
 			cout<<chisqv_dx_hi[j]<<endl;
 		}
@@ -1047,11 +1067,11 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 		// go these hits match to the track overall.
 		double max=CHISQ_MAX_RESI_SIGMAS*(initial_chisq>1.0 ? initial_chisq:1.0);
 		double sigma;
-//_DBG_<<"sigma="<<chisqv_initial[i]<<" : "<<chisqv_dpx_hi[i]<<" : "<<chisqv_dpy_hi[i]<<" : "<<chisqv_dpz_hi[i]<<" : "<<chisqv_dx_hi[i]<<" : "<<chisqv_dv_hi[i]<<endl;
+//_DBG_<<"sigma="<<chisqv_initial[i]<<" : "<<chisqv_dcurvature_hi[i]<<" : "<<chisqv_ddip_hi[i]<<" : "<<chisqv_dphi_hi[i]<<" : "<<chisqv_dx_hi[i]<<" : "<<chisqv_dv_hi[i]<<endl;
 		sigma = chisqv_initial[i]; if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
-		sigma = chisqv_dpx_hi[i];  if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
-		sigma = chisqv_dpy_hi[i];  if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
-		sigma = chisqv_dpz_hi[i];  if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
+		sigma = chisqv_dcurvature_hi[i];  if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
+		sigma = chisqv_ddip_hi[i];  if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
+		sigma = chisqv_dphi_hi[i];  if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
 		sigma = chisqv_dx_hi[i];   if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
 		sigma = chisqv_dv_hi[i];   if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
 
@@ -1071,9 +1091,9 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 			// Note: This is a funny way to use a switch!
 			case 5: F[i][state_v ] = pow(errs[j],1.0)*(chisqv_dv_hi[j]-chisqv_dv_lo[j])/deltas[state_v];
 			case 4: F[i][state_x ] = pow(errs[j],1.0)*(chisqv_dx_hi[j]-chisqv_dx_lo[j])/deltas[state_x];
-			case 3: F[i][state_pz] = pow(errs[j],1.0)*(chisqv_dpz_hi[j]-chisqv_dpz_lo[j])/deltas[state_pz];
-			case 2: F[i][state_py] = pow(errs[j],1.0)*(chisqv_dpy_hi[j]-chisqv_dpy_lo[j])/deltas[state_py];
-			case 1: F[i][state_px] = pow(errs[j],1.0)*(chisqv_dpx_hi[j]-chisqv_dpx_lo[j])/deltas[state_px];
+			case 3: F[i][state_phi] = pow(errs[j],1.0)*(chisqv_dphi_hi[j]-chisqv_dphi_lo[j])/deltas[state_phi];
+			case 2: F[i][state_dip] = pow(errs[j],1.0)*(chisqv_ddip_hi[j]-chisqv_ddip_lo[j])/deltas[state_dip];
+			case 1: F[i][state_curvature] = pow(errs[j],1.0)*(chisqv_dcurvature_hi[j]-chisqv_dcurvature_lo[j])/deltas[state_curvature];
 		}
 		i++;
 	}
@@ -1233,7 +1253,7 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 //------------------
 // ChiSq
 //------------------
-double DTrack_factory_ALT1::ChiSq(double q, DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt)
+double DTrack_factory_ALT2::ChiSq(double q, DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt)
 {
 	DVector3 vdir = start_step->sdir.Cross(start_step->mom);
 	vdir.SetMag(1.0);
@@ -1241,9 +1261,9 @@ double DTrack_factory_ALT1::ChiSq(double q, DMatrix &state, const swim_step_t *s
 	DVector3 pos =   start_step->origin
 						+ state[state_x ][0]*start_step->sdir
 						+ state[state_v ][0]*vdir;
-	DVector3 mom =   state[state_px][0]*start_step->sdir
-						+ state[state_py][0]*start_step->tdir
-						+ state[state_pz][0]*start_step->udir;
+	DVector3 mom =   state[state_curvature][0]*start_step->sdir
+						+ state[state_dip][0]*start_step->tdir
+						+ state[state_phi][0]*start_step->udir;
 
 	if(rt)rt->Swim(pos,mom);
 
@@ -1253,7 +1273,7 @@ double DTrack_factory_ALT1::ChiSq(double q, DMatrix &state, const swim_step_t *s
 //------------------
 // ChiSq
 //------------------
-double DTrack_factory_ALT1::ChiSq(double q, const DVector3 &pos, const DVector3 &mom, DReferenceTrajectory *rt)
+double DTrack_factory_ALT2::ChiSq(double q, const DVector3 &pos, const DVector3 &mom, DReferenceTrajectory *rt)
 {
 	// Swim a reference trajectory using the state defined by
 	// "state" at "start_step" if one is not provided.
@@ -1275,7 +1295,7 @@ double DTrack_factory_ALT1::ChiSq(double q, const DVector3 &pos, const DVector3 
 //------------------
 // ChiSq
 //------------------
-double DTrack_factory_ALT1::ChiSq(double q, DReferenceTrajectory *rt)
+double DTrack_factory_ALT2::ChiSq(double q, DReferenceTrajectory *rt)
 {
 	// Clear chisq and sigma vector
 	chisqv.clear();
@@ -1394,7 +1414,7 @@ double DTrack_factory_ALT1::ChiSq(double q, DReferenceTrajectory *rt)
 //------------------
 // LeastSquares
 //------------------
-DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquares(DVector3 &start_pos, DVector3 &start_mom, DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom, double &chisq)
+DTrack_factory_ALT2::fit_status_t DTrack_factory_ALT2::LeastSquares(DVector3 &start_pos, DVector3 &start_mom, DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom, double &chisq)
 {
 	// Determine the best fit of the track using the least squares method
 	// described by R. Mankel Rep. Prog. Phys. 67 (2004) 553-622 pg 565
@@ -1429,9 +1449,9 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquares(DVector3 &st
 	switch(Nparameters){
 		case 5: state[state_v	][0] = pos_diff.Dot(vdir);
 		case 4: state[state_x	][0] = pos_diff.Dot(start_step.sdir);
-		case 3: state[state_pz	][0] = mom.Dot(start_step.udir);
-		case 2: state[state_py	][0] = mom.Dot(start_step.tdir);
-		case 1: state[state_px	][0] = mom.Dot(start_step.sdir);
+		case 3: state[state_phi	][0] = mom.Dot(start_step.udir);
+		case 2: state[state_dip	][0] = mom.Dot(start_step.tdir);
+		case 1: state[state_curvature	][0] = mom.Dot(start_step.sdir);
 	}
 
 	// Create reference trajectory to use in calculating derivatives
@@ -1451,26 +1471,26 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquares(DVector3 &st
 	// Recipes in C 2nd ed. section 5.7 ppg. 186-189.
 
 	// dpx : tweak by +/- 0.01
-	DMatrix state_dpx = state;
-	state_dpx[state_px][0] += LEAST_SQUARES_DP;
-	deltas[state_px] = state_dpx[state_px][0] - state[state_px][0];
-	ChiSq(rt->q, state_dpx, &start_step,tmprt);
+	DMatrix state_dcurvature = state;
+	state_dcurvature[state_curvature][0] += LEAST_SQUARES_DP;
+	deltas[state_curvature] = state_dcurvature[state_curvature][0] - state[state_curvature][0];
+	ChiSq(rt->q, state_dcurvature, &start_step,tmprt);
 	vector<double> resi_dpx_hi = chisqv;
 	vector<double> &resi_dpx_lo = resi;
 
 	// dpy : tweak by +/- 0.01
-	DMatrix state_dpy = state;
-	state_dpy[state_py][0] += LEAST_SQUARES_DP;
-	deltas[state_py] = state_dpy[state_py][0] - state[state_py][0];
-	ChiSq(rt->q, state_dpy, &start_step,tmprt);
+	DMatrix state_ddip = state;
+	state_ddip[state_dip][0] += LEAST_SQUARES_DP;
+	deltas[state_dip] = state_ddip[state_dip][0] - state[state_dip][0];
+	ChiSq(rt->q, state_ddip, &start_step,tmprt);
 	vector<double> resi_dpy_hi = chisqv;
 	vector<double> &resi_dpy_lo = resi;
 
 	// dpz : tweak by +/- 0.01
-	DMatrix state_dpz = state;
-	state_dpz[state_pz][0] += LEAST_SQUARES_DP;
-	deltas[state_pz] = state_dpz[state_pz][0] - state[state_pz][0];
-	ChiSq(rt->q, state_dpz, &start_step,tmprt);
+	DMatrix state_dphi = state;
+	state_dphi[state_phi][0] += LEAST_SQUARES_DP;
+	deltas[state_phi] = state_dphi[state_phi][0] - state[state_phi][0];
+	ChiSq(rt->q, state_dphi, &start_step,tmprt);
 	vector<double> resi_dpz_hi = chisqv;
 	vector<double> &resi_dpz_lo = resi;
 
@@ -1523,9 +1543,9 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquares(DVector3 &st
 			// Note: This is a funny way to use a switch!
 			case 5: F[i][state_v ] = (resi_dv_hi[j]-resi_dv_lo[j])/deltas[state_v];
 			case 4: F[i][state_x ] = (resi_dx_hi[j]-resi_dx_lo[j])/deltas[state_x];
-			case 3: F[i][state_pz] = (resi_dpz_hi[j]-resi_dpz_lo[j])/deltas[state_pz];
-			case 2: F[i][state_py] = (resi_dpy_hi[j]-resi_dpy_lo[j])/deltas[state_py];
-			case 1: F[i][state_px] = (resi_dpx_hi[j]-resi_dpx_lo[j])/deltas[state_px];
+			case 3: F[i][state_phi] = (resi_dpz_hi[j]-resi_dpz_lo[j])/deltas[state_phi];
+			case 2: F[i][state_dip] = (resi_dpy_hi[j]-resi_dpy_lo[j])/deltas[state_dip];
+			case 1: F[i][state_curvature] = (resi_dpx_hi[j]-resi_dpx_lo[j])/deltas[state_curvature];
 		}
 		i++;
 	}
@@ -1603,9 +1623,9 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquares(DVector3 &st
 		vertex_pos =     start_step.origin
 							+ new_state[state_x ][0]*start_step.sdir
 							+ new_state[state_v ][0]*vdir;
-		vertex_mom =     new_state[state_px][0]*start_step.sdir
-							+ new_state[state_py][0]*start_step.tdir
-							+ new_state[state_pz][0]*start_step.udir;
+		vertex_mom =     new_state[state_curvature][0]*start_step.sdir
+							+ new_state[state_dip][0]*start_step.tdir
+							+ new_state[state_phi][0]*start_step.udir;
 
 		// Re-swim reference trajectory using these parameters and find Chi-sq
 		rt->Swim(vertex_pos, vertex_mom);
@@ -1632,9 +1652,9 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquares(DVector3 &st
 			vertex_pos =     start_step.origin
 								+ new_state[state_x ][0]*start_step.sdir
 								+ new_state[state_v ][0]*vdir;
-			vertex_mom =     new_state[state_px][0]*start_step.sdir
-								+ new_state[state_py][0]*start_step.tdir
-								+ new_state[state_pz][0]*start_step.udir;
+			vertex_mom =     new_state[state_curvature][0]*start_step.sdir
+								+ new_state[state_dip][0]*start_step.tdir
+								+ new_state[state_phi][0]*start_step.udir;
 
 			// Re-swim reference trajectory using these parameters and find Chi-sq
 			rt->Swim(vertex_pos, vertex_mom);
@@ -1665,7 +1685,7 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquares(DVector3 &st
 //------------------
 // FillDebugHists
 //------------------
-void DTrack_factory_ALT1::FillDebugHists(DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom)
+void DTrack_factory_ALT2::FillDebugHists(DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom)
 {
 	//vertex_mom.SetMagThetaPhi(6.0, 17.2*M_PI/180.0, 90.0*M_PI/180.0);
 	//vertex_pos.SetXYZ(0.0,0.0,65.0);
@@ -1753,7 +1773,7 @@ void DTrack_factory_ALT1::FillDebugHists(DReferenceTrajectory *rt, DVector3 &ver
 //------------------
 // toString
 //------------------
-const string DTrack_factory_ALT1::toString(void)
+const string DTrack_factory_ALT2::toString(void)
 {
 	// Ensure our Get method has been called so _data is up to date
 	GetNrows();
