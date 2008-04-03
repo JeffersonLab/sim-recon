@@ -358,12 +358,26 @@ void MyProcessor::FillGraphics(void)
 		vector<const DMCTrajectoryPoint*> mctrajectorypoints;
 		loop->Get(mctrajectorypoints);
 		
-		DGraphicSet gset(kBlack, kLine, 1.5);
+		int colors[] = {kBlack, kMagenta, kGreen, 13, 14, 39};
+		int Ncolors = 1;
+		int Ntraj=0;
+		DGraphicSet gset(colors[Ntraj%Ncolors], kLine, 3.0);
+		TVector3 last_point;
 		for(unsigned int i=0; i<mctrajectorypoints.size(); i++){
 			const DMCTrajectoryPoint *pt = mctrajectorypoints[i];
-			
+						
 			TVector3 v(pt->x, pt->y, pt->z);
+
+			if(i>0){
+				if((v-last_point).Mag() > 10.0){
+					graphics.push_back(gset);
+					gset.points.clear();
+					gset.color = colors[(++Ntraj)%Ncolors];
+				}
+			}
+			
 			gset.points.push_back(v);
+			last_point = v;
 		}
 		graphics.push_back(gset);
 	}
@@ -404,18 +418,18 @@ void MyProcessor::UpdateTrackLabels(void)
 	
 	// Get Thrown particles
 	vector<const DMCThrown*> throwns;
-	loop->Get(throwns);
+	if(loop)loop->Get(throwns);
 	
 	// Get the track info as DKinematicData objects
 	vector<const DKinematicData*> trks;
 	if(name=="DTrack"){
 		vector<const DTrack*> tracks;
-		loop->Get(tracks, tag.c_str());
+		if(loop)loop->Get(tracks, tag.c_str());
 		for(unsigned int i=0; i<tracks.size(); i++)trks.push_back(tracks[i]);
 	}
 	if(name=="DTrackCandidate"){
 		vector<const DTrackCandidate*> candidates;
-		loop->Get(candidates, tag.c_str());
+		if(loop)loop->Get(candidates, tag.c_str());
 		for(unsigned int i=0; i<candidates.size(); i++)trks.push_back(candidates[i]);
 	}
 	
