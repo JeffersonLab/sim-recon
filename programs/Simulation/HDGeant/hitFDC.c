@@ -41,9 +41,10 @@ const float strip_dead_zone_radius[4]={2.3,3.2,3.9,4.6};
 #define MAX_HITS             100
 #define K2                  1.15
 #define STRIP_NODES           3
-#define THRESH_KEV           1.
+#define THRESH_KEV           1. 
 #define THRESH_STRIPS        5.   /* pC */
 #define ELECTRON_CHARGE 1.6022e-4 /* fC */
+#define DIFFUSION_COEFF     1.1e-6 // cm^2/s --> 200 microns at 1 cm
 /* The folowing are for interpreting grid of Lorentz deflection data */
 #define PACKAGE_Z_POINTS 10
 #define LORENTZ_X_POINTS 21
@@ -63,6 +64,7 @@ float *lorentz_nx[LORENTZ_X_POINTS];
 float *lorentz_nz[LORENTZ_X_POINTS];
 
 void gpoiss_(float*,int*,const int*); // avoid solaris compiler warnings
+void rnorml_(float*,int*);
 
 // Locate a position in array xx given x
 void locate(float *xx,int n,float x,int *j){
@@ -321,6 +323,8 @@ void hitForwardDC (float xin[4], float xout[4],
 	float phi=atan2(x0[1]+x1[1],x0[0]+x1[0]);
 	float ytemp[LORENTZ_X_POINTS],ytemp2[LORENTZ_X_POINTS],dy;
 	int imin,imax,ind,ind2;
+	float rndno[2];
+	int two=2;
 	
 	avalanche_y = (x0[1]+x1[1])/2;
 	r=sqrt((x0[0]+x1[0])*(x0[0]+x1[0])+(x0[1]+x1[1])*(x0[1]+x1[1]))/2.;
@@ -346,6 +350,12 @@ void hitForwardDC (float xin[4], float xout[4],
 	// Correct avalanche position with deflection along wire	
  	avalanche_y+=-tanz*dist_to_wire*sin(alpha)*cos(phi)
 	  +tanr*dist_to_wire*cos(alpha);
+
+	rnorml_(rndno,&two);
+	// Angular dependence from PHENIX data
+	avalanche_y+=0.16*ANODE_CATHODE_SPACING*tan(alpha)*rndno[0];
+	// Crude approximation for transverse diffusion
+	avalanche_y+=sqrt(2.*DIFFUSION_COEFF*(tdrift-t))*rndno[1];
 	
 	/* If the Lorentz effect would deflect the avalanche out of the active 
 	   region, mark as invalid hit */
