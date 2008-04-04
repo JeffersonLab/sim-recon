@@ -4,6 +4,7 @@
 
 #include "DFDCSegment_factory.h"
 #include "DANA/DApplication.h"
+#include "START_COUNTER/DSCHit_factory.h"
 #include "HDGEOMETRY/DLorentzMapCalibDB.h"
 #include <math.h>
 
@@ -23,6 +24,14 @@
 #define MAX_ITER 10
 #define TARGET_LENGTH 30.0 //cm
 #define MIN_TANL 2.0
+#define R_START 7.6
+#define SC_V_EFF 15.
+
+// Variance for position along wire using PHENIX angle dependence, transverse
+// diffusion, and an intrinsic resolution of 127 microns.
+inline double fdc_y_variance(double alpha,double x){
+  return 0.00016+0.0064*tan(alpha)*tan(alpha)+0.0004*fabs(x);
+}
 
 bool DFDCSegment_package_cmp(const DFDCPseudo* a, const DFDCPseudo* b) {
   return a->wire->layer>b->wire->layer;
@@ -63,6 +72,15 @@ jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int eventNo) {
 ///
 jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
   myeventno=eventNo;
+
+  vector<const DSCHit*>sc_hits;
+  eventLoop->Get(sc_hits);
+  // Use simple average to get start time from start counter hits
+  start_time=0;
+  double nsc_hits=double(sc_hits.size());
+  for (unsigned int i=0;i<sc_hits.size();i++){
+    start_time+=sc_hits[i]->t/nsc_hits;
+  }
 
   vector<const DFDCPseudo*>pseudopoints;
   eventLoop->Get(pseudopoints);  
@@ -867,48 +885,54 @@ jerror_t DFDCSegment_factory::GetHelicalTrackPosition(double z,
 //
 jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
 					    DMatrix XYZ){
+  // dip angle
+  double lambda=atan(tanl);  
+  double alpha=M_PI/2.-lambda;
+  
+  // Get Bfield, needed to guess particle momentum
+  double Bx,By,Bz,B;
+  double x=XYZ(ref_plane,0);
+  double y=XYZ(ref_plane,1);
+  double z=points[ref_plane]->wire->origin(2);  
+  bfield->GetField(x,y,z,Bx,By,Bz);
+  B=sqrt(Bx*Bx+By*By+Bz*Bz);
+
+  // Momentum and beta
+  double p=0.002998*B*rc/cos(lambda);
+  double beta=p/sqrt(p*p+0.140*0.140);
+
+  // Correct start time for propagation from (0,0)
+  double my_start_time=0.;
+  if (start_time>0) 
+    my_start_time=start_time
+      -2.*rc*asin(R_START/2./rc)*(1./cos(lambda)/beta/29.98);
+
   for (unsigned int m=0;m<points.size();m++){
     DFDCPseudo *point=points[m];
-
-    double z=point->wire->origin(2);
     double cosangle=point->wire->udir(1);
     double sinangle=point->wire->udir(0);
-    //double x=point->x;
-    // double y=point->y;
-    double x=XYZ(m,0);
-    double y=XYZ(m,1);
+    x=XYZ(m,0);
+    y=XYZ(m,1);
+    z=point->wire->origin(2);
     double delta_x=0,delta_y=0;   
-    // Variance based on expected resolution
+    // Variances based on expected resolution
     double sigx2=FDC_X_RESOLUTION*FDC_X_RESOLUTION;
-    // Place holder for variance for position along wire
-    double sigy2=MAX_DEFLECTION*MAX_DEFLECTION/3.;
-      
+   
     // Find difference between point on helical path and wire
     double w=x*cosangle-y*sinangle-point->w;
      // .. and use it to determine which sign to use for the drift time data
     double sign=(w>0?1.:-1.);
 
-    // dip angle
-    double lambda=atan(tanl);  
-    double alpha=M_PI/2.-lambda;
-
-    // Get Bfield, needed to guess particle momentum
-    double Bx,By,Bz,B;
-    bfield->GetField(x,y,z,Bx,By,Bz);
-    B=sqrt(Bx*Bx+By*By+Bz*Bz);
-    // Momentum and beta
-    double p=0.002998*B*rc/cos(lambda);
-    double beta=p/sqrt(p*p+0.140*0.140);
-
     // Correct the drift time for the flight path and convert to distance units
     // assuming the particle is a pion
-    delta_x=sign*(point->time-fdc_track[m].s/beta/29.98)*55E-4;
-  
+    delta_x=sign*(point->time-fdc_track[m].s/beta/29.98-my_start_time)*55E-4;
+     
+    // Variance for position along wire. Includes angle dependence from PHENIX
+    // and transverse diffusion
+    double sigy2=fdc_y_variance(alpha,delta_x);
+
     // Next find correction to y from table of deflections
     delta_y=lorentz_def->GetLorentzCorrection(x,y,z,alpha,delta_x);
-
-    // Variance based on expected resolution
-    sigy2=FDC_Y_RESOLUTION*FDC_Y_RESOLUTION;
          
     // Fill x and y elements with corrected values
     point->ds =-delta_y;     
