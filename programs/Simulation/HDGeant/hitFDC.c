@@ -342,10 +342,12 @@ void hitForwardDC (float xin[4], float xout[4],
 		 &ytemp2[j],&dy);
 	}
 	// Then do final interpolation in x direction 
-	imin=(ind>0)?(ind-1):0;
-	imax=(ind<LORENTZ_X_POINTS-2)?(ind+2):(LORENTZ_X_POINTS-1);
-	polint(&lorentz_x[imin],ytemp,imax-imin+1,r,&tanr,&dy);
-	polint(&lorentz_x[imin],ytemp2,imax-imin+1,r,&tanz,&dy);
+	if (ind>0){
+	  imin=((ind+3)>LORENTZ_X_POINTS)?(LORENTZ_X_POINTS-4):(ind-1);
+	}
+	else imin=0;
+	polint(&lorentz_x[imin],ytemp,4,r,&tanr,&dy);
+	polint(&lorentz_x[imin],ytemp2,4,r,&tanz,&dy);
 
 	// Correct avalanche position with deflection along wire	
  	avalanche_y+=-tanz*dist_to_wire*sin(alpha)*cos(phi)

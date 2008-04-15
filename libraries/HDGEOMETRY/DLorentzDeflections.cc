@@ -68,7 +68,7 @@ void polint(const double *xa, const double *ya,int n,double x, double *y,
 double DLorentzDeflections::GetLorentzCorrection(double x,double y,double z,
 						 double alpha,double dx) const
 {
-  int imin,imax,ind,ind2;
+  int imin,ind,ind2;
   double r=sqrt(x*x+y*y);
   double phi=atan2(y,x);
 
@@ -86,11 +86,13 @@ double DLorentzDeflections::GetLorentzCorrection(double x,double y,double z,
 	   &ytemp2[j],&dy);
   }
   // Then do final interpolation in x direction 
-  double tanr,tanz;
-  imin=(ind>0)?(ind-1):0;
-  imax=(ind<LORENTZ_X_POINTS-2)?(ind+2):(LORENTZ_X_POINTS-1);
-  polint(&lorentz_x[imin],ytemp,imax-imin+1,r,&tanr,&dy);
-  polint(&lorentz_x[imin],ytemp2,imax-imin+1,r,&tanz,&dy);
+  double tanr,tanz; 
+  if (ind>0){
+    imin=((ind+3)>LORENTZ_X_POINTS)?(LORENTZ_X_POINTS-4):(ind-1);
+  }
+  else imin=0;
+  polint(&lorentz_x[imin],ytemp,4,r,&tanr,&dy);
+  polint(&lorentz_x[imin],ytemp2,4,r,&tanz,&dy);
 
   // Deflection along wire	
   return (-tanz*dx*sin(alpha)*cos(phi)+tanr*dx*cos(alpha));
