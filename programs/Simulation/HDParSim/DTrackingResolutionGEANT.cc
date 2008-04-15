@@ -5,6 +5,7 @@
 // Creator: davidl (on Darwin fwing-dhcp13.jlab.org 8.11.1 i386)
 //
 
+#include <TROOT.h>
 #include <TApplication.h>
 
 #include <iostream>
