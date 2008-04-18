@@ -191,6 +191,51 @@ int DMagneticFieldMapCalibDB::ReadMap(int runnumber, string context)
 	return Bmap.size();
 }
 
+
+//-------------
+// GetFieldGradient
+//-------------
+void DMagneticFieldMapCalibDB::GetFieldGradient(double x, double y, double z,
+						double &dBxdx, double &dBxdy,
+						double &dBxdz,
+						double &dBydx, double &dBydy,
+						double &dBydz,		
+						double &dBzdx, double &dBzdy,
+						double &dBzdz) const{
+  
+  	// Get closest indices for this point
+	double r = sqrt(x*x + y*y);
+	int index_x = (int)floor((r-xmin)/dx + 0.5);
+	if(index_x<0 || index_x>=Nx)return;
+	int index_z = (int)floor((z-zmin)/dz + 0.5);	
+	if(index_z<0 || index_z>=Nz)return;
+	
+	int index_y = 0;
+
+	const DBfieldPoint_t *B = &Btable[index_x][index_y][index_z];
+
+	// Convert r back to x,y components
+	double cos_theta = x/r;
+	double sin_theta = y/r;
+	if(r==0.0){
+		cos_theta=1.0;
+		sin_theta=0.0;
+	}
+
+	// Rotate back into phi direction
+	dBxdx = B->dBxdx*cos_theta*cos_theta;
+	dBxdy = B->dBxdx*cos_theta*sin_theta;
+	dBxdz = B->dBxdz;
+	dBydx = B->dBydx*sin_theta*cos_theta;
+	dBydy = B->dBydx*sin_theta*sin_theta;
+	dBydz = B->dBydz;
+	dBzdx = B->dBzdx*cos_theta;
+	dBzdy = B->dBzdy*sin_theta;
+	dBzdz = B->dBzdz;
+}
+
+
+
 //---------------------------------
 // GetField
 //---------------------------------

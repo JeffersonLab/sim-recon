@@ -29,6 +29,14 @@ class DMagneticFieldMapCalibDB:public DMagneticFieldMap{
 		int ReadMap(int runnumber=1, string context="");
 		
 		void GetField(double x, double y, double z, double &Bx, double &By, double &Bz, int method=0) const;
+		
+		void GetFieldGradient(double x, double y, double z,
+				      double &dBxdx, double &dBxdy,
+				      double &dBxdz,
+				      double &dBxdx, double &dBxdy,
+				      double &dBxdz,		
+				      double &dBxdx, double &dBxdy,
+				      double &dBxdz) const;
 
 		typedef struct{
 			float x,y,z,Bx,By,Bz;
