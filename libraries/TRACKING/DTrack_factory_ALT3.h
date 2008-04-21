@@ -3,14 +3,18 @@
 
 #include <vector>
 
-#include <DVector3.h>
 #include <DMatrix.h>
+#include <TH2.h>
+#include <TH3.h>
+
 #include <JANA/JFactory.h>
 #include <JANA/JGeometry.h>
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "DTrack.h"
 #include "DReferenceTrajectory.h"
 #include "DCoordinateSystem.h"
+
+
 
 using namespace std;
 
@@ -33,9 +37,11 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
   double MIN_FDC_HIT_PROB;
   unsigned int MIN_HITS;
 
+  jerror_t init(void);
   jerror_t brun(JEventLoop *loop, int runnumber);
   jerror_t evnt(JEventLoop *eventLoop, int eventnumber); 
-
+  jerror_t fini(void);
+  jerror_t erun(void);
 
   vector<const DTrackCandidate*>     trackcandidates;
   vector<const DCDCTrackHit* >       cdctrackhits;
