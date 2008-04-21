@@ -5,15 +5,14 @@
 
 #include <JANA/JEventLoop.h>
 
-#include "GlueX.h"
 #include "DANA/DApplication.h"
 #include "DMagneticFieldStepper.h"
 #include "DTrackCandidate.h"
 #include "DTrack_factory_ALT3.h"
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
-#include "DReferenceTrajectory.h"
 #include "DKalmanFilter.h"
+#include "DReferenceTrajectory.h"
 
 //------------------
 // DTrack_factory_ALT3   (Constructor)
@@ -26,6 +25,14 @@ DTrack_factory_ALT3::DTrack_factory_ALT3(){
 }
 
 //------------------
+// DTrack_factory_ALT3   (Destructor)
+//------------------
+DTrack_factory_ALT3::~DTrack_factory_ALT3(){};
+
+//------------------
+jerror_t DTrack_factory_ALT3::init(void){return NOERROR;}
+jerror_t DTrack_factory_ALT3::erun(void){return NOERROR;}
+jerror_t DTrack_factory_ALT3::fini(void){return NOERROR;}
 
 //------------------
 // brun
