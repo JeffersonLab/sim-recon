@@ -230,7 +230,7 @@ void DMagneticFieldMapCalibDB::GetFieldGradient(double x, double y, double z,
 	dBydy = B->dBydx*sin_theta*sin_theta;
 	dBydz = B->dBydz;
 	dBzdx = B->dBzdx*cos_theta;
-	dBzdy = B->dBzdy*sin_theta;
+	dBzdy = B->dBzdx*sin_theta;
 	dBzdz = B->dBzdz;
 }
 
