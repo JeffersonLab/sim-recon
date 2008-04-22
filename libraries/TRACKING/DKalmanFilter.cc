@@ -8,6 +8,7 @@
 #include <math.h>
 
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
+#define EPS 1.0e-8
 
 bool DKalmanHit_cmp(DKalmanHit_t *a, DKalmanHit_t *b){
   return a->z>b->z;
@@ -22,15 +23,27 @@ DKalmanFilter::DKalmanFilter(const DMagneticFieldMap *bfield){
 jerror_t DKalmanFilter::SetSeed(double q,DVector3 pos, DVector3 mom){
   x_=pos(0);
   y_=pos(1);
-  startz=pos(2);
+  z_=pos(2);
   tx_= mom(0)/mom(2);
   ty_= mom(1)/mom(2);
   q_over_p_=q/mom.Mag();
   
-//  printf("x %f y %f z %f tx %f ty %f q/p %f\n",x_,y_,startz,tx_,ty_,q_over_p_);
-  
   return NOERROR;
 }
+
+// Return the momentum at the distance of closest approach to the origin.
+void DKalmanFilter::GetMomentum(DVector3 &mom){
+  double p=fabs(1./q_over_p_);
+  double factor=sqrt(1.+tx_*tx_+ty_*ty_);
+  mom.SetXYZ(p*tx_/factor,p*ty_/factor,p/factor);
+}
+
+// Return the "vertex" position (position at which track crosses beam line)
+void DKalmanFilter::GetPosition(DVector3 &pos){
+  pos.SetXYZ(x_,y_,z_);
+}
+
+
 
 /// Add a hit to the list of hits using Cartesian coordinates
 jerror_t DKalmanFilter::AddHit(double x,double y, double z,double covx,
@@ -69,21 +82,21 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double z,DMatrix S,
   D(3,0)=qBr2p*q_over_p*factor*((1.+ty*ty)*Bx-tx*ty*By-tx*Bz);
 
   // Jacobian
-  J(2,0)=J(3,1)=1.;
+  J(0,2)=J(1,3)=1.;
   J(2,4)=qBr2p*factor*(Bx*tx*ty-By*(1.+tx*tx)+Bz*ty);
   J(3,4)=qBr2p*factor*(Bx*(1.+ty*ty)-By*tx*ty-Bz*tx);
   J(2,2)=qBr2p*q_over_p*(Bx*ty*(1.+2.*tx*tx+ty*ty)-By*tx*(3.+3.*tx*tx+2.*ty*ty)
-			 +Bz*tx*ty)/factor
-    + qBr2p*q_over_p*factor*(ty*dBzdx+tx*ty*dBxdx-(1.+tx*tx)*dBydx);
+			 +Bz*tx*ty)/factor;
+  J(2,0)= qBr2p*q_over_p*factor*(ty*dBzdx+tx*ty*dBxdx-(1.+tx*tx)*dBydx);
   J(3,3)=qBr2p*q_over_p*(Bx*ty*(3.+2.*tx*tx+3.*ty*ty)-By*tx*(1.+tx*tx+2.*ty*ty)
-			 -Bz*tx*ty)/factor
-    + qBr2p*q_over_p*factor*((1.+ty*ty)*dBxdy-tx*ty*dBydy-tx*dBzdy);
-  J(2,3)=-qBr2p*q_over_p*((Bx*tx+Bz)*(1.+tx*tx+2.*ty*ty)-By*ty*(1.+tx*tx))
-    /factor
-    + qBr2p*q_over_p*factor*(tx*dBzdy+tx*ty*dBxdy-(1.+tx*tx)*dBydy);
+			 -Bz*tx*ty)/factor;
+  J(3,1)= qBr2p*q_over_p*factor*((1.+ty*ty)*dBxdy-tx*ty*dBydy-tx*dBzdy);
+  J(2,3)=qBr2p*q_over_p*((Bx*tx+Bz)*(1.+tx*tx+2.*ty*ty)-By*ty*(1.+tx*tx))
+    /factor;
+  J(2,1)= qBr2p*q_over_p*factor*(tx*dBzdy+tx*ty*dBxdy-(1.+tx*tx)*dBydy);
   J(3,2)=-qBr2p*q_over_p*((By*ty+Bz)*(1.+2.*tx*tx+ty*ty)-Bx*tx*(1.+ty*ty))
-    /factor
-    + qBr2p*q_over_p*((1.+ty*ty)*dBxdx-tx*ty*dBydx-tx*dBzdx);
+    /factor;
+  J(3,0)=qBr2p*q_over_p*factor*((1.+ty*ty)*dBxdx-tx*ty*dBydx-tx*dBzdx);
 
   return NOERROR;
 }
@@ -110,8 +123,6 @@ double DKalmanFilter::StepCovariance(double oldz,double newz,DMatrix &S,
   S+=delta_z*((1./6.)*D1+(1./3.)*D2+(1./3.)*D3+(1./6.)*D4);
   J+=delta_z*((1./6.)*J1+(1./3.)*J2+(1./3.)*J3+(1./6.)*J4);
 
-//printf("dz %f\n",delta_z);
-//	J.Print();
   return s;
 }
 
@@ -122,6 +133,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
   DMatrix H(2,5);  // Track projection matrix
   DMatrix H_T(5,2); // Transpose of track projection matrix
   DMatrix J(5,5);  // State vector Jacobian matrix
+  DMatrix J_T(5,5); // transpose of this matrix
   DMatrix Q(5,5);  // Process noise covariance matrix
   DMatrix K(5,2);  // Kalman gain matrix
   DMatrix V(2,2);  // Measurement covariance matrix
@@ -129,8 +141,9 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
   DMatrix R(2,1);  // Filtered residual
   DMatrix R_T(1,2);  // ...and its transpose
   DMatrix RC(2,2);  // Covariance of filtered residual
-  DMatrix S(5,1),S0(5,1);
-  DMatrix C(5,5);
+  DMatrix S(5,1),S0(5,1); //State vector
+  DMatrix C0(5,5),C(5,5);   // Covariance matrix for state vector
+  DMatrix InvV(2,2); // Inverse of error matrix
 
   chisq=0;
   // Initialize the state vector 
@@ -141,16 +154,20 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
   S(4,0)=S0(4,0)=q_over_p_;
 
   // Initialize the covariance matrix
-  for (unsigned int i=0;i<5;i++) C(i,i)=1.0;
+  for (unsigned int i=0;i<5;i++) C(i,i)=C0(i,i)=1.0;
 
   // Order the hits from the most downstream to the most upstream
   sort(hits.begin(),hits.end(),DKalmanHit_cmp);
 
-  // Loop over list of points, updating the state vector at each step 
-  for (unsigned int k=0;k<hits.size();k++){      
-    double endz=hits[k]->z;
+  // Track projection matrix
+  H(0,0)=H(1,1)=1.;
+  H_T=DMatrix(DMatrix::kTransposed,H);
 
-//	printf("z %f %f\n",endz,startz);
+  // Loop over hits, updating the state vector at each step 
+  double endz,newz,oldz; // we increment in z
+  for (unsigned int k=0;k<hits.size();k++){      
+    endz=hits[k]->z;
+
     // The next measurement 
     M(0,0)=hits[k]->x;
     M(1,0)=hits[k]->y; 
@@ -160,31 +177,43 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
     V(1,0)=V(0,1)=hits[k]->covxy;
     V(1,1)=hits[k]->covy;
 
-    // Propagate state vector and covariance matrices to next measurement
-    double sign=(endz>startz)?1.0:-1.0;
-    int num_inc=int(sign*(endz-startz));
-    double oldz=startz,newz=oldz;
+    // Propagate state vector and covariance matrices to next measurement   
+    double sign=(endz>z_)?1.0:-1.0; 
+    int num_inc=int(sign*(endz-z_));
+    oldz=z_;
+    newz=oldz;
     for (int j=0;j<num_inc;j++){
       newz=oldz+sign*1.0;
-      H(0,2)=H(1,3)=newz-oldz;
-      H_T = DMatrix(DMatrix::kTransposed,H);
       StepCovariance(oldz,newz,S0,J);
-      C=J*(C*DMatrix(DMatrix::kTransposed,J));
-      S=S+J*(S-S0);
-//	printf("x %f %f y %f %f\n",S0(0,0),S(0,0),S0(1,0),S(1,0));
-      V=V+H*(C*H_T);
+      J_T=DMatrix(DMatrix::kTransposed,J);
+      C0=J*(C0*J_T); 
+      // State vector S is a perturbation about the seed S0
+      S=S0+J*(S-S0);
+      C=C0+J*((C-C0)*J_T);
       oldz=newz;			  
     }
-        
+    if (fabs(endz-oldz)>EPS){
+      StepCovariance(oldz,endz,S0,J);
+      J_T=DMatrix(DMatrix::kTransposed,J);
+      C0=J*(C0*J_T);
+      // State vector S is a perturbation about the seed S0
+      S=S0+J*(S-S0);
+      C=C0+J*((C-C0)*J_T);
+    }
+
+    // Updated error matrix
+    V=V+H*(C*H_T);
+    InvV=DMatrix(DMatrix::kInverted,V);
+
     // Compute Kalman gain matrix
-    K=C*(H_T*DMatrix(DMatrix::kInverted,V));
+    K=C*(H_T*InvV);
 
     // Update the state vector 
     M_pred(0,0)=S0(0,0);
     M_pred(1,0)=S0(1,0);
     M_pred = M_pred + H*(S-S0);
     S=S+K*(M-M_pred); 
-    
+
     // Update state vector covariance matrix
     C=C-K*(H*C);
     
@@ -193,17 +222,33 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
     R(1,0)=M(1,0)-S(1,0);
     R_T=DMatrix(DMatrix::kTransposed,R);
     RC=V-H*(C*H_T);
-
+    
     // Update chi2 for this segment
     chisq+=(R_T*((DMatrix(DMatrix::kInverted,RC))*R))(0,0);
 
-    // increment z postion
-    startz=endz;
+    // increment z position
+    z_=endz;
   }
+
+  oldz=endz;
+  double xold=S(0,0),yold=S(1,0);
+  double x=xold,y=yold;
+  do{
+    xold=S(0,0);
+    yold=S(1,0);
+    newz=oldz-1.0;
+    StepCovariance(oldz,newz,S0,J);
+    S=S0+J*(S-S0);
+    oldz=newz;
+    x=S(0,0);
+    y=S(1,0);
+  }
+  while(x*xold>0 && y*yold>0);
   
-  // Fitted track parameters
+  // Fitted track parameters at vertex
   x_=S(0,0);
   y_=S(1,0);
+  z_=newz;
   tx_=S(2,0);
   ty_=S(3,0);
   q_over_p_=S(4,0);

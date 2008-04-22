@@ -30,6 +30,10 @@ class DKalmanFilter{
   double StepCovariance(double oldz,double newz,DMatrix &S,
 			DMatrix &J);
   jerror_t KalmanLoop(double mass_hyp,double &chisq);
+  
+  void GetMomentum(DVector3 &mom);
+  void GetPosition(DVector3 &pos);
+  double GetChiSq(void){return chisq;}
 
  protected:
 
@@ -43,7 +47,9 @@ class DKalmanFilter{
   // Track parameters
   double x_,y_,tx_,ty_,q_over_p_;
   // Starting z-position
-  double startz;
+  double z_;
+  // chi2 of fit
+  double chisq;
 
 };
 

@@ -63,16 +63,12 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
   loop->Get(fdctrackhits,"CORRECTED");
   
   // Loop over track candidates
-  for(unsigned int i=0; i<trackcandidates.size(); i++){
+  for(unsigned int i=0; i<trackcandidates.size(); i++){ 
+    const DTrackCandidate *tc = trackcandidates[i];
     double chisq;
 
     // Initialize Kalman filter with B-field
     DKalmanFilter fit(bfield);
-
-    // Get starting parameters from track candidate	
-    const DTrackCandidate *tc = trackcandidates[i];
-    DVector3 pos = tc->position();
-    DVector3 mom = tc->momentum(); 
 
     // Initialize the stepper 
     DMagneticFieldStepper stepper(bfield, tc->charge()); 
@@ -82,19 +78,21 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
     DVector3 last_pos,last_mom;
     for(unsigned int j=0; j<fdctrackhits.size(); j++){
       const DFDCPseudo *hit = fdctrackhits[j];
-      double variance=1.0; //guess for now
+      double variance=5.0; //guess for now
       DVector3 norm(0,0,1), origin(0,0,hit->wire->origin(2));
  
-      // Swim to measurement plane and compute residual
-      double s; 
-      stepper.SwimToPlane(pos,mom,origin,norm,&s); 
+      // Swim from target position to measurement plane and compute residual
+      DVector3 pos = tc->position();
+      DVector3 mom = tc->momentum(); 
+      stepper.SwimToPlane(pos,mom,origin,norm,NULL); 
+   
+      // compute residual
       double resi=sqrt((pos(0)-hit->x)*(pos(0)-hit->x)+(pos(1)-hit->y)*(pos(1)-hit->y));
 
       // Use an un-normalized gaussian so that for a residual
       // of zero, we get a probability of 1.0.
       double p = finite(resi) ? exp(-resi*resi/2./variance):0.0;
       if(p>=MIN_FDC_HIT_PROB){
-//	printf("Adding hit %d resi %f\n",j,resi);
 	fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,hit->covxy,
 		   hit->covyy);
 	last_pos=pos;
