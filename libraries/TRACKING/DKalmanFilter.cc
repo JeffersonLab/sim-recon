@@ -126,6 +126,26 @@ double DKalmanFilter::StepCovariance(double oldz,double newz,DMatrix &S,
   return s;
 }
 
+// Compute contributions to the covariance matrix due to multiple scattering
+jerror_t DKalmanFilter::GetProcessNoise(double mass_hyp,double ds,
+					double X0,DMatrix S,DMatrix &Q){
+  DMatrix Q1(5,5);
+  double tx=S(2,0),ty=S(3,0),one_over_p_sq=S(4,0)*S(4,0);
+  double my_ds=fabs(ds);
+
+  Q1(2,2)=(1.+tx*tx)*(1.+tx*tx+ty*ty);
+  Q1(3,3)=(1.+ty*ty)*(1.+tx*tx+ty*ty);
+  Q1(2,3)=Q1(3,2)=tx*ty*(1.+tx*tx+ty*ty);
+
+  double sig2_ms= 0.0136*0.0136*(1.+one_over_p_sq*mass_hyp*mass_hyp)
+    *one_over_p_sq*my_ds/X0*(1.+0.038*log(my_ds/X0))*(1.+0.038*log(my_ds/X0));
+
+  Q=sig2_ms*Q1;
+
+  return NOERROR;
+}
+
+
 // Routine that performs the main loop of the Kalman engine
 jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
   DMatrix M(2,1);  // measurement vector
@@ -144,6 +164,9 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
   DMatrix S(5,1),S0(5,1); //State vector
   DMatrix C0(5,5),C(5,5);   // Covariance matrix for state vector
   DMatrix InvV(2,2); // Inverse of error matrix
+  // path length increment
+  double ds=0;
+
 
   chisq=0;
   // Initialize the state vector 
@@ -179,23 +202,25 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
 
     // Propagate state vector and covariance matrices to next measurement   
     double sign=(endz>z_)?1.0:-1.0; 
-    int num_inc=int(sign*(endz-z_));
+    int num_inc=int(sign*(endz-z_)/0.5);
     oldz=z_;
     newz=oldz;
     for (int j=0;j<num_inc;j++){
-      newz=oldz+sign*1.0;
-      StepCovariance(oldz,newz,S0,J);
+      newz=oldz+sign*0.5;
+      ds=StepCovariance(oldz,newz,S0,J);
       J_T=DMatrix(DMatrix::kTransposed,J);
-      C0=J*(C0*J_T); 
+      GetProcessNoise(mass_hyp,ds,30420.,S0,Q); // use air for now
+      C0=J*(C0*J_T)+Q; 
       // State vector S is a perturbation about the seed S0
       S=S0+J*(S-S0);
       C=C0+J*((C-C0)*J_T);
       oldz=newz;			  
     }
     if (fabs(endz-oldz)>EPS){
-      StepCovariance(oldz,endz,S0,J);
-      J_T=DMatrix(DMatrix::kTransposed,J);
-      C0=J*(C0*J_T);
+      ds=StepCovariance(oldz,endz,S0,J);
+      J_T=DMatrix(DMatrix::kTransposed,J);  
+      GetProcessNoise(mass_hyp,ds,30420.,S0,Q); // use air for now
+      C0=J*(C0*J_T)+Q;
       // State vector S is a perturbation about the seed S0
       S=S0+J*(S-S0);
       C=C0+J*((C-C0)*J_T);
@@ -236,14 +261,14 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
   do{
     xold=S(0,0);
     yold=S(1,0);
-    newz=oldz-1.0;
+    newz=oldz-0.5;
     StepCovariance(oldz,newz,S0,J);
     S=S0+J*(S-S0);
     oldz=newz;
     x=S(0,0);
     y=S(1,0);
   }
-  while(x*xold>0 && y*yold>0);
+  while(x*xold>0 && y*yold>0 && newz>50.);
   
   // Fitted track parameters at vertex
   x_=S(0,0);

@@ -39,6 +39,10 @@ class DKalmanFilter{
 
   
  private:
+  jerror_t GetProcessNoise(double mass_hyp,double ds,
+			   double X0,DMatrix S,DMatrix &Q);
+
+
   const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
 
   // list of hits on track
