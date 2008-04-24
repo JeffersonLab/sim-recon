@@ -8,7 +8,9 @@
 #ifndef _DFCALMCResponse_factory_
 #define _DFCALMCResponse_factory_
 
-#include "JANA/JFactory.h"
+#include <JANA/JFactory.h>
+using namespace jana;
+
 #include "DFCALMCResponse.h"
 
 #include "DRandom.h"
@@ -19,8 +21,6 @@ public:
 	
 	DFCALMCResponse_factory();
 	~DFCALMCResponse_factory(){};
-
-	const string toString(void);
 
 private:
 		

@@ -8,9 +8,10 @@
 #ifndef DFACTORY_DFDCPSEUDO_H
 #define DFACTORY_DFDCPSEUDO_H
 
-#include "JANA/JFactory.h"
-#include "JANA/JException.h"
-#include "JANA/JStreamLog.h"
+#include <JANA/JFactory.h>
+#include <JANA/JException.h>
+#include <JANA/JStreamLog.h>
+using namespace jana;
 
 #include "DFDCPseudo.h"
 #include "DFDCCathodeCluster.h"
@@ -44,7 +45,6 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		///
 		~DFDCPseudo_factory();	
 							
-		const string toString(void);
 
 	protected:
 		///

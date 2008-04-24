@@ -15,7 +15,6 @@ class DTOFPoint_factory:public JFactory<DTOFPoint>{
 	public:
 		DTOFPoint_factory(){};
 		~DTOFPoint_factory(){};
-		const string toString(void);
 
 
 	private:

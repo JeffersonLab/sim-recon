@@ -8,23 +8,17 @@
 #ifndef _DTrackCandidate_
 #define _DTrackCandidate_
 
-#include "JANA/JObject.h"
-#include "JANA/JFactory.h"
+#include <JANA/JObject.h>
+#include <JANA/JFactory.h>
+using namespace jana;
+
 #include "PID/DKinematicData.h"
 
 #define MAX_IHITS 256
 
 class DTrackCandidate:public DKinematicData{
 	public:
-		HDCLASSDEF(DTrackCandidate);
-		
-		//vector<oid_t> hitid;	///< ids of hits in DTrackHit factory
-		//float x0,y0;			///< center of circle
-		//float z_vertex;		///< z coordinate of vertex
-		//float dzdphi;			///< dz/dphi in cm per radian
-		//float q;					///< electric charge 
-		//float p, p_trans;		///< total and transverse momenta in GeV/c
-		//float phi, theta;		///< theta and phi in radians
+		JOBJECT_PUBLIC(DTrackCandidate);
 };
 
 #endif // _DTrackCandidate_

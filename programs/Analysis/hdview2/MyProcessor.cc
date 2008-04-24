@@ -23,7 +23,7 @@ using namespace std;
 #include "hdview2.h"
 #include "hdv_mainframe.h"
 #include "MyProcessor.h"
-#include "TRACKING/DTrackHit_factory.h"
+#include "TRACKING/DTrackHit.h"
 #include "TRACKING/DQuickFit.h"
 #include "TRACKING/DMagneticFieldStepper.h"
 #include "TRACKING/DTrackCandidate_factory.h"
@@ -113,6 +113,7 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	
 	cout<<"----------- New Event "<<eventnumber<<" -------------"<<endl;
 	hdvmf->SetEvent(eventnumber);
+	hdvmf->SetSource(last_jevent.GetJEventSource()->GetSourceName());
 	hdvmf->DoRedraw();	
 
 	return NOERROR;
@@ -254,9 +255,9 @@ void MyProcessor::FillGraphics(void)
 		for(unsigned int i=0; i<mcthrown.size(); i++){
 			int color=14;
 			double size=1.5;
-			if(mcthrown[i]->q==0.0) color = kGreen;
-			if(mcthrown[i]->q >0.0) color = kBlue;
-			if(mcthrown[i]->q <0.0) color = kRed;
+			if(mcthrown[i]->charge()==0.0) color = kGreen;
+			if(mcthrown[i]->charge() >0.0) color = kBlue;
+			if(mcthrown[i]->charge() <0.0) color = kRed;
 			switch(mcthrown[i]->type){
 				case Gamma:
 				case Positron:
@@ -462,18 +463,18 @@ void MyProcessor::UpdateTrackLabels(void)
 		
 		thrownlabs["type"][row]->SetText(ParticleType((Particle_t)trk->type));
 
-		p<<setprecision(4)<<trk->p;
+		p<<setprecision(4)<<trk->momentum().Mag();
 		thrownlabs["p"][row]->SetText(p.str().c_str());
 
-		theta<<setprecision(4)<<trk->theta;
+		theta<<setprecision(4)<<trk->momentum().Theta();
 		thrownlabs["theta"][row]->SetText(theta.str().c_str());
 
-		double myphi = trk->phi;
+		double myphi = trk->momentum().Phi();
 		if(myphi<0.0)myphi+=2.0*M_PI;
 		phi<<setprecision(4)<<myphi;
 		thrownlabs["phi"][row]->SetText(phi.str().c_str());
 
-		z<<setprecision(4)<<trk->z;
+		z<<setprecision(4)<<trk->position().Z();
 		thrownlabs["z"][row]->SetText(z.str().c_str());
 	}
 
@@ -526,4 +527,141 @@ void MyProcessor::AddKinematicDataTrack(const DKinematicData* kd, int color, dou
 	// Push the graphics set onto the stack
 	graphics.push_back(gset);
 }
+
+
+//------------------------------------------------------------------
+// GetFactoryNames 
+//------------------------------------------------------------------
+void MyProcessor::GetFactoryNames(vector<string> &facnames)
+{
+	vector<JEventLoop*> loops = app->GetJEventLoops();
+	if(loops.size()>0){
+		vector<string> facnames;
+		loops[0]->GetFactoryNames(facnames);
+	}
+}
+
+//------------------------------------------------------------------
+// GetFactories 
+//------------------------------------------------------------------
+void MyProcessor::GetFactories(vector<JFactory_base*> &factories)
+{
+	vector<JEventLoop*> loops = app->GetJEventLoops();
+	if(loops.size()>0){
+		factories = loops[0]->GetFactories();
+	}
+}
+
+//------------------------------------------------------------------
+// GetNrows 
+//------------------------------------------------------------------
+unsigned int MyProcessor::GetNrows(const string &factory, const string &tag)
+{
+	vector<JEventLoop*> loops = app->GetJEventLoops();
+	if(loops.size()>0){
+		JFactory_base *fac = loops[0]->GetFactory(factory, tag.c_str());
+
+		// Since calling GetNrows will cause the program to quit if there is
+		// not a valid event, then first check that there is one before calling it
+		if(loops[0]->GetJEvent().GetJEventSource() == NULL)return 0;
+		
+		return fac==NULL ? 0:(unsigned int)fac->GetNrows();
+	}
+	
+	return 0;
+}
+
+//------------------------------------------------------------------
+// GetDReferenceTrajectory 
+//------------------------------------------------------------------
+void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned int index, DReferenceTrajectory* &rt)
+{
+	// initialize rt to NULL in case we don't find the one requested
+	rt = NULL;
+
+	// Get pointer to the JEventLoop so we can get at the data
+	vector<JEventLoop*> loops = app->GetJEventLoops();
+	if(loops.size()==0)return;
+	JEventLoop* &loop = loops[0];
+	
+	// Variables to hold track parameters
+	DVector3 pos, mom(0,0,0);
+	double q=0.0;
+
+	// Find the specified track
+	if(dataname=="DTrack"){
+		vector<const DTrack*> tracks;
+		loop->Get(tracks);
+		if(index>=tracks.size())return;
+		q = tracks[index]->charge();
+		pos = tracks[index]->position();
+		mom = tracks[index]->momentum();
+	}
+
+	if(dataname=="DTrackCandidate"){
+		vector<const DTrackCandidate*> tracks;
+		loop->Get(tracks);
+		if(index>=tracks.size())return;
+		q = tracks[index]->charge();
+		pos = tracks[index]->position();
+		mom = tracks[index]->momentum();
+	}
+
+	if(dataname=="DMCThrown"){
+		vector<const DMCThrown*> tracks;
+		loop->Get(tracks);
+		if(index>=tracks.size())return;
+		const DMCThrown *t = tracks[index];
+		q = t->charge();
+		pos = t->position();
+		mom = t->momentum();
+	}
+
+	// Make sure we found a charged particle we can track
+	if(q==0.0 || mom.Mag()<0.01)return;
+	
+	// Create a new DReference trajectory object. The caller takes
+	// ownership of this and so they are responsible for deleting it.
+	rt = new DReferenceTrajectory(Bfield);
+	rt->Swim(pos, mom, q);
+}
+
+//------------------------------------------------------------------
+// GetAllWireHits
+//------------------------------------------------------------------
+void MyProcessor::GetAllWireHits(vector<pair<const DCoordinateSystem*,double> > &allhits)
+{
+	/// Argument is vector of pairs that contain a pointer to the
+	/// DCoordinateSystem representing a wire and a double that
+	/// represents the drift distance. To get info on the specific
+	/// wire, one needs to attempt a dynamic_cast to both a DCDCWire
+	/// and a DFDCWire and access the parameters of whichever one succeeds.
+	
+	// Get pointer to the JEventLoop so we can get at the data
+	vector<JEventLoop*> loops = app->GetJEventLoops();
+	if(loops.size()==0)return;
+	JEventLoop* &loop = loops[0];
+
+	// Get CDC wire hits
+	vector<const DCDCTrackHit*> cdchits;
+	loop->Get(cdchits);
+	for(unsigned int i=0; i<cdchits.size(); i++){
+		pair<const DCoordinateSystem*,double> hit;
+		hit.first = cdchits[i]->wire;
+		hit.second = cdchits[i]->dist;
+		allhits.push_back(hit);
+	}
+	
+	// Get FDC wire hits
+	vector<const DFDCPseudo*> fdchits;
+	loop->Get(fdchits);
+	for(unsigned int i=0; i<fdchits.size(); i++){
+		pair<const DCoordinateSystem*,double> hit;
+		hit.first = fdchits[i]->wire;
+		hit.second = fdchits[i]->dist;
+		allhits.push_back(hit);
+	}
+}
+
+
 

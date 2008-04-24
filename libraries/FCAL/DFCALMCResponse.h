@@ -16,7 +16,7 @@ class DFCALMCResponse : public JObject {
 
 public:
 
-	HDCLASSDEF(DFCALMCResponse);
+	JOBJECT_PUBLIC(DFCALMCResponse);
 	DFCALMCResponse(){}
 	
 	DFCALMCResponse( oid_t id, int channel, 
@@ -31,6 +31,12 @@ public:
 	double E() const { return m_E; }
 	double t() const { return m_t; }
 	
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "channel", "%d", channel());
+			AddString(items, "E(MeV)", "%3.1f", E());
+			AddString(items, "t(ns)", "%2.3f", t());
+		}
+
 private:
 		
 	int m_channel;

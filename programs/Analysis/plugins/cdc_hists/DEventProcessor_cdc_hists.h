@@ -19,6 +19,7 @@ using std::map;
 #include <JANA/JFactory.h>
 #include <JANA/JEventProcessor.h>
 #include <JANA/JEventLoop.h>
+using namespace jana;
 
 #include <PID/DKinematicData.h>
 #include <TRACKING/DReferenceTrajectory.h>

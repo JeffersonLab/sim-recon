@@ -17,8 +17,9 @@
 using std::vector;
 using std::string;
 
-class JApplication;
-class JCalibration;
+#include <JANA/JApplication.h>
+#include <JANA/JCalibration.h>
+using namespace jana;
 
 class DMagneticFieldMapCalibDB:public DMagneticFieldMap{
 	public:

@@ -18,7 +18,6 @@ class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 	public:
 		DCDCTrackHit_factory(){};
 		~DCDCTrackHit_factory(){};
-		const string toString(void);
 
 	private:
 		jerror_t init(void);

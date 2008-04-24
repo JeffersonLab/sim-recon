@@ -16,7 +16,7 @@
 //class DPhoton: public JObject {
 class DPhoton: public DKinematicData {
   public:
-    HDCLASSDEF(DPhoton);
+    JOBJECT_PUBLIC(DPhoton);
 
 
     enum { kDefaultTag = 0 ,
@@ -44,6 +44,17 @@ class DPhoton: public DKinematicData {
     void setdThetaCharge(double adTheta);  
     void setPositionCal( const DVector3& aPosition );
     void makeErrorMatrix( const DMatrixDSym& aSigmas );  
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "E(GeV)", "%5.2f", energy());
+			AddString(items, "Px(GeV/c)", "%5.2f", momentum().X());
+			AddString(items, "Px(GeV/c)", "%5.2f", momentum().Y());
+			AddString(items, "Px(GeV/c)", "%5.2f", momentum().Z());
+			AddString(items, "X(cm)", "%7.2f", position().X());
+			AddString(items, "Y(cm)", "%7.2f", position().Y());
+			AddString(items, "Z(cm)", "%7.2f", position().Z());
+			AddString(items, "Tag", "%5i", getTag());
+		}
 
   private:
 

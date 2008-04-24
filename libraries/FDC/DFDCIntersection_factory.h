@@ -17,8 +17,6 @@ class DFDCIntersection_factory:public JFactory<DFDCIntersection>{
 	public:
 		DFDCIntersection_factory(){};
 		~DFDCIntersection_factory(){};
-		const string toString(void);
-
 
 	private:
 		jerror_t init(void);						///< Called once at program start.

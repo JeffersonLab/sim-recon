@@ -8,16 +8,18 @@
 #define DFDCHIT_H
 
 #include <sstream>
+using namespace std;
 
-#include "JANA/JObject.h"
-#include "JANA/JFactory.h"
+#include <JANA/JObject.h>
+#include <JANA/JFactory.h>
+using namespace jana;
 
 ///
 /// class DFDCHit: definition for a basic FDC hit data type.
 ///
 class DFDCHit : public JObject{
 	public:
-		HDCLASSDEF(DFDCHit);		
+		JOBJECT_PUBLIC(DFDCHit);		
 		int layer;				// 1(V), 2(X), or 3(U)
 		int module;				// 1 through 8, 1 module = 3 detection layers
 		int element;			// wire or strip number
@@ -30,54 +32,18 @@ class DFDCHit : public JObject{
 	    						// center of chamber to wire/strip center
 	    int type;				// cathode=1, anode=0
 
-		///
-		/// DFDCHit::header():
-		/// Return a sensible string header for DFDCHit data
-		///
-		const string header() const {
-			stringstream s;
-			s.width(7);
-			s << "w/s #:" << " ";	// wire or strip number ("element" field)
-			s.width(7);
-			s << "plane:" << " ";	
-			s.width(7);
-			s << "gPla:" << " ";	// gPlane
-			s.width(7);
-			s << "gLay:" << " ";	// gLayer
-			s.width(7);
-			s << "q:" << " ";		
-			s.width(7);
-			s << "t:" << " ";		
-			return s.str();
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "layer", "%d", layer);
+			AddString(items, "module", "%d", module);
+			AddString(items, "w/s #", "%d", element);
+			AddString(items, "plane", "%s", plane==1 ? "V":(plane==2 ? "X":"U"));
+			AddString(items, "gPlane", "%d", gPlane);
+			AddString(items, "gLayer", "%d", gLayer);
+			AddString(items, "q", "%d", q);
+			AddString(items, "t", "%d", t);
+			AddString(items, "r", "%f", r);
+			AddString(items, "type", "%d", type);
 		}
-		
-		///
-		/// DFDCHit::toString():
-		/// Return a sensible string representation of a single DFDCHit object
-		///
-		const string toString() const {
-			stringstream s;
-			s.precision(3);
-	    	s.width(7);
-	    	s << element << " ";
-	    	s.width(7);
-	    	if (plane == 1)
-	    		s << "V" << " ";
-	    	else if (plane == 2)
-	    		s << "X" << " ";
-	    	else
-	    		s << "U" << " ";
-	    	s.width(7);
-	    	s << gPlane << " ";
-	    	s.width(7);
-	    	s << gLayer << " ";
-	    	s.width(7);
-	    	s << q << " ";
-	    	s.width(7);
-	    	s << t << " ";
-	    	
-	    	return s.str();
-	    }
 	    	
 };
 

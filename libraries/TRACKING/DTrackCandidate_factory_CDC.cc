@@ -1076,36 +1076,3 @@ double DTrackCandidate_factory_CDC::DCDCSeed::MinDist2(DCDCSeed& seed)
 	return d2min;
 }
 
-//------------------
-// toString
-//------------------
-const string DTrackCandidate_factory_CDC::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("      id: Nhits: q:     p:       theta:   phi:  p_trans:   x:     y:     z:    dz/dphi:");
-
-	for(unsigned int i=0; i<_data.size(); i++){
-		DTrackCandidate *trackcandidate = _data[i];
-		printnewrow();
-		
-		printcol("%lx",    trackcandidate->id);
-#if 0
-		printcol("%d",    trackcandidate->hitid.size());
-		printcol("%+d", (int)trackcandidate->q);
-		printcol("%3.3f", trackcandidate->p);
-		printcol("%1.3f", trackcandidate->theta);
-		printcol("%1.3f", trackcandidate->phi);
-		printcol("%3.2f", trackcandidate->p_trans);
-		printcol("%2.2f", trackcandidate->x0);
-		printcol("%2.2f", trackcandidate->y0);
-		printcol("%2.2f", trackcandidate->z_vertex);
-		printcol("%1.3f", trackcandidate->dzdphi);
-#endif
-		printrow();
-	}
-	
-	return _table;
-}

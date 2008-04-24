@@ -10,15 +10,15 @@
 #include "DKinematicData.h"
 #include "DPhoton.h"
 
-#include "JANA/JObject.h"
-#include "JANA/JFactory.h"
+#include <JANA/JObject.h>
+using namespace jana;
 
 class DTwoGammaFit:public DKinematicData {
 	public:
-		HDCLASSDEF(DTwoGammaFit);
+		JOBJECT_PUBLIC(DTwoGammaFit);
                 
                 DTwoGammaFit();
-                DTwoGammaFit(const oid_t id);
+                DTwoGammaFit(const JObject::oid_t id);
 		~DTwoGammaFit();
 
                inline double getChi2() const { return fChi2; }
@@ -35,13 +35,13 @@ class DTwoGammaFit:public DKinematicData {
                void setProb(double const aProb);  
                void setPulls(double const aPull, const int i);  
                void setChildTag(const int aTag, const int i ); 
-               void setChildID(const oid_t aID, const int i ); 
+               void setChildID(const JObject::oid_t aID, const int i ); 
                void setChildFit(const DKinematicData& aChildFit, const int i);  
                void setChildMom(const DLorentzVector& aChildFit, const int i);  
 
 	private:
 
-               oid_t fIDs[2];  
+               JObject::oid_t fIDs[2];  
                int fTags[2]; // tag children origin (FCAL/BCAL/charged)
                double fProb;  
                double fChi2;  

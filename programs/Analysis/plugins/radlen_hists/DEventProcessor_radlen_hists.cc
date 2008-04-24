@@ -12,6 +12,7 @@ using namespace std;
 
 #include <JANA/JApplication.h>
 #include <JANA/JEventLoop.h>
+using namespace jana;
 
 #include "DEventProcessor_radlen_hists.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
@@ -118,7 +119,7 @@ jerror_t DEventProcessor_radlen_hists::evnt(JEventLoop *loop, int eventnumber)
 		_DBG_<<"Event doesn't have exactly 1 thrown (has"<<throwns.size()<<"). Skipping..."<<endl;
 		return NOERROR;
 	}
-	theta = throwns[0]->theta*57.3;
+	theta = throwns[0]->momentum().Theta()*57.3;
 	theta_nevents->Fill(theta);
 	
 	// Loop over trajectory points
@@ -126,7 +127,7 @@ jerror_t DEventProcessor_radlen_hists::evnt(JEventLoop *loop, int eventnumber)
 		const DMCTrajectoryPoint *traj = trajpoints[i];
 		
 		double dE = traj->dE*1.0E6; // convert to keV
-		double r = sqrt(pow(traj->x,2.0) + pow(traj->y,2.0));
+		double r = sqrt(pow((double)traj->x,2.0) + pow((double)traj->y,2.0));
 		dE_vs_r->Fill( r, dE);
 		dE_vs_z->Fill( traj->z, dE);
 		

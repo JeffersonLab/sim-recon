@@ -120,32 +120,3 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
     
     return NOERROR;
 }
-
-//------------------
-// toString
-//------------------
-const string DBCALPhoton_factory::toString(void)
-{
-    
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if( _data.size() <= 0 )
-        return string(); // don't print anything if we have no data!
-    
-    printheader( "id:      px:      py:      pz:       E:" );
-    
-    for(unsigned int i = 0; i < _data.size(); i++) {
-		DBCALPhoton *s = _data[i];
-        
-		printnewrow();
-		printcol("%d",	s->id);
-		printcol("%5.2f", s->lorentzMomentum().Px() );
-		printcol("%5.2f", s->lorentzMomentum().Py() );
-		printcol("%5.2f", s->lorentzMomentum().Pz() );
-		printcol("%5.3f", s->lorentzMomentum().E() );
-		printrow();
-	}
-    
-	return _table;
-    
-}

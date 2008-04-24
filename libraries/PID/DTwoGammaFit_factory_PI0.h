@@ -15,8 +15,7 @@ class DTwoGammaFit_factory_PI0:public DTwoGammaFit_factory {
 	public:
 		DTwoGammaFit_factory_PI0();
 		~DTwoGammaFit_factory_PI0(){};
-		const string toString(void);
-                const char* Tag(void){return "PI0";}
+      const char* Tag(void){return "PI0";}
 	
 	private:
 

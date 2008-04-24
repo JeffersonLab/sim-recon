@@ -17,7 +17,6 @@ public:
 	
 	DFCALGeometry_factory() {}
 	~DFCALGeometry_factory(){}
-	const string toString(void);
 
 private:
 	

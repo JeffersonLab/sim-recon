@@ -9,13 +9,14 @@
 #define _DFDCPseudo_factory_WIRESONLY_
 
 #include <JANA/JFactory.h>
+using namespace jana;
+
 #include "DFDCPseudo.h"
 
 class DFDCPseudo_factory_WIRESONLY:public JFactory<DFDCPseudo>{
 	public:
 		DFDCPseudo_factory_WIRESONLY(){};
 		~DFDCPseudo_factory_WIRESONLY(){};
-		const string toString(void);
 		const char* Tag(void){return "WIRESONLY";}
 
 	private:

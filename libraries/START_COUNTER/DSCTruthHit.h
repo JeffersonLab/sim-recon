@@ -13,7 +13,7 @@
 
 class DSCTruthHit:public JObject{
 	public:
-		HDCLASSDEF(DSCTruthHit);
+		JOBJECT_PUBLIC(DSCTruthHit);
 		
 		float dEdx;
 		bool primary;
@@ -22,6 +22,16 @@ class DSCTruthHit:public JObject{
 		float phi;
 		float z;
 		float t;
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "track", "%d", track);
+			AddString(items, "primary", "%d", primary);
+			AddString(items, "dEdx(MeV/cm)", "%1.3f", dEdx*1.0E3);
+			AddString(items, "t", "%3.2f", t);
+			AddString(items, "r", "%3.1f", r);
+			AddString(items, "phi", "%1.3f", phi);
+			AddString(items, "z", "%3.1f", z);
+		}
 };
 
 #endif // _DSCTruthHit_

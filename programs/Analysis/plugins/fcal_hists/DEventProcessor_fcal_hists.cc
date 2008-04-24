@@ -123,10 +123,10 @@ jerror_t DEventProcessor_fcal_hists::evnt(JEventLoop *loop, int eventnumber)
 	loop->Get(mcthrowns);
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
 		for(unsigned int j=0; j<showers.size(); j++){
-			E_over_Erec_vs_E->Fill(showers[j]->getEnergy(), mcthrowns[i]->E/showers[j]->getEnergy());
+			E_over_Erec_vs_E->Fill(showers[j]->getEnergy(), mcthrowns[i]->energy()/showers[j]->getEnergy());
 			double R = sqrt(showers[j]->getCentroid().X()*showers[j]->getCentroid().X() + 
                             showers[j]->getCentroid().Y()*showers[j]->getCentroid().Y());
-			E_over_Erec_vs_R->Fill(R, mcthrowns[i]->E/showers[j]->getEnergy());
+			E_over_Erec_vs_R->Fill(R, mcthrowns[i]->energy()/showers[j]->getEnergy());
 		}
 	}
 

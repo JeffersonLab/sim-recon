@@ -8,15 +8,17 @@
 #ifndef _DBCALShower_factory_
 #define _DBCALShower_factory_
 
-#include "JANA/JFactory.h"
-#include "JANA/JEventLoop.h"
+#include <JANA/JFactory.h>
+#include <JANA/JEventLoop.h>
+using namespace jana;
+
+
 #include "DBCALShower.h"
 
 class DBCALShower_factory:public JFactory<DBCALShower>{
 	public:
 		DBCALShower_factory();
 		~DBCALShower_factory(){};
-		const string toString(void);
 
 
 	private:

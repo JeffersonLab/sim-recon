@@ -132,7 +132,7 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	if(!my_hddm_s)throw RESOURCE_UNAVAILABLE;
 	
 	// Get name of data class we're trying to extract
-	string dataClassName = factory->dataClassName();
+	string dataClassName = factory->GetDataClassName();
 	
 	if(dataClassName =="DMCTrackHit")
 		return Extract_DMCTrackHit(my_hddm_s, dynamic_cast<JFactory<DMCTrackHit>*>(factory));
@@ -160,12 +160,6 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 
 	if(dataClassName == "DMCFCALHit" )
 	  return Extract_DMCFCALHit(my_hddm_s, dynamic_cast<JFactory<DMCFCALHit>*>(factory), event.GetJEventLoop() );
-
-	if(dataClassName =="DUPVHit")
-		return Extract_DUPVHit(my_hddm_s, dynamic_cast<JFactory<DUPVHit>*>(factory));
-
-	if(dataClassName =="DUPVTruthHit")
-		return Extract_DUPVTruthHit(my_hddm_s, dynamic_cast<JFactory<DUPVTruthHit>*>(factory));
 
 	if(dataClassName =="DMCTrajectoryPoint")
 		return Extract_DMCTrajectoryPoint(my_hddm_s, dynamic_cast<JFactory<DMCTrajectoryPoint>*>(factory));
@@ -206,7 +200,6 @@ jerror_t DEventSourceHDDM::Extract_DMCTrackHit(s_HDDM_t *hddm_s, JFactory<DMCTra
 	GetTOFTruthHits(hddm_s, data);
 	GetCherenkovTruthHits(hddm_s, data);
 	GetFCALTruthHits(hddm_s, data);
-	GetUPVTruthHits(hddm_s, data);
 
 	// It has happened that some CDC hits have "nan" for the drift time
 	// in a peculiar event Alex Somov came across. This ultimately caused
@@ -418,15 +411,6 @@ jerror_t DEventSourceHDDM::GetFCALTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit
 	return NOERROR;
 }
 
-//-------------------
-// GetUPVTruthHits
-//-------------------
-jerror_t DEventSourceHDDM::GetUPVTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit*>& data)
-{
-
-	return NOERROR;
-}
-
 //------------------
 // Extract_DBCALHit
 //------------------
@@ -556,30 +540,17 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(s_HDDM_t *hddm_s,  JFactory<DMCThro
 					if(products && origin){
 						for(unsigned int m=0;m<products->mult;m++){
 							s_Product_t *product = &products->in[m];
+
+							double px = product->momentum->px;
+							double py = product->momentum->py;
+							double pz = product->momentum->pz;
 							
 							DMCThrown *mcthrown = new DMCThrown;
-							mcthrown->x = origin->vx;
-							mcthrown->y = origin->vy;
-							mcthrown->z = origin->vz;
 							mcthrown->type = product->type;
 							mcthrown->myid = product->id;
 							mcthrown->parentid = product->parentid;
 							mcthrown->mech = product->mech;
 							mcthrown->pdgtype = product->pdgtype;
-							mcthrown->q = (float)ParticleCharge(product->type);
-							mcthrown->E = product->momentum->E;
-							double px = product->momentum->px;
-							double py = product->momentum->py;
-							double pz = product->momentum->pz;
-							mcthrown->p = sqrt(px*px + py*py + pz*pz);
-							mcthrown->mass = sqrt(pow((double)mcthrown->E,2.0) - pow((double)mcthrown->p,2.0));
-							mcthrown->phi = atan2(py, px);
-							if(mcthrown->phi<0.0)mcthrown->phi += 2.0*M_PI;
-							mcthrown->theta = acos(pz/mcthrown->p);
-							
-							// Fill in DKinematicData part
-							// (this is temporary. eventually, this will be the
-							// only part here and the stuff above will be removed)
 							mcthrown->setMass(ParticleMass(product->type));
 							mcthrown->setMomentum(DVector3(px, py, pz));
 							mcthrown->setPosition(DVector3(origin->vx, origin->vy, origin->vz));
@@ -807,7 +778,7 @@ jerror_t DEventSourceHDDM::Extract_DFCALTruthShower(s_HDDM_t *hddm_s,  JFactory<
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return NOERROR;
 	
-	oid_t id=1;
+	JObject::oid_t id=1;
 	for(unsigned int i=0; i<PE->mult; i++){
 		s_HitView_t *hits = PE->in[i].hitView;
 		if (hits == HDDM_NULL ||
@@ -887,146 +858,6 @@ jerror_t DEventSourceHDDM::Extract_DMCFCALHit(s_HDDM_t *hddm_s,  JFactory<DMCFCA
   factory->CopyTo(data);
   
   return NOERROR;
-}
-
-//------------------
-// Extract_DUPVHit
-//------------------
-jerror_t DEventSourceHDDM::Extract_DUPVHit(s_HDDM_t *hddm_s,  JFactory<DUPVHit> *factory)
-{
-	/// Copies the data from the given hddm_s structure. This is called
-	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
-	/// returns OBJECT_NOT_AVAILABLE immediately.
-	
-	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
-	
-	vector<DUPVHit*> data;
-
-	// Acquire the pointer to the physics events
-	s_PhysicsEvents_t* allEvents = hddm_s->physicsEvents;
-	if(!allEvents) {
-	  //throw JException("Attempt to get physics events from HDDM source failed.");
-		return NOERROR;
-	}
-       
-	for (unsigned int m=0; m < allEvents->mult; m++) {
-	
-		// Acquire the pointer to the overall hits section of the data
-		s_HitView_t *hits = allEvents->in[m].hitView;
-		
-		if (hits == HDDM_NULL) {
-		  //throw JException("HDDM source has no hits.");
-			continue;
-		}
-
-		if (hits->upstreamEMveto == HDDM_NULL) {
-		  //throw JException("HDDM source has no forwardDC information.");
-			continue;
-		}
-
-		if (hits->upstreamEMveto->upvPaddles == HDDM_NULL) {
-		  // throw JException("HDDM source has no hits in the UPV.");		
-			continue;
-		}
-
-		// Acquire the pointer to the beginning of the UPV hit tree
-		s_UpvPaddles_t* upvPaddles = hits->upstreamEMveto->upvPaddles;
-
-		for (unsigned int i=0; i < upvPaddles->mult; i++) {
-			// Each chamber in the ChamberSet has a wire set and a strip set
-			s_UpvPaddle_t &upvPaddle 		   = upvPaddles->in[i];		
-			s_UpvLeftHits_t* upvLeftHits 		= upvPaddle.upvLeftHits;
-			s_UpvRightHits_t* upvRightHits 	= upvPaddle.upvRightHits;
-			
-			int &layer = upvPaddle.layer;
-			int &row   = upvPaddle.row;
-		
-			// Loop over "left" hits
-			for (unsigned int j=0; j < upvLeftHits->mult; j++) {
-				s_UpvLeftHit_t &hit		= upvLeftHits->in[j];
-				
-				DUPVHit* newHit			= new DUPVHit();
-				newHit->layer		 		= layer;
-				newHit->row		 			= row;
-				newHit->E					= hit.E;
-				newHit->t					= hit.t;
-				newHit->side				= DUPVHit::UPV_LEFT;
-				data.push_back(newHit);
-			}
-		
-			// Loop over "right" hits
-			for (unsigned int j=0; j < upvRightHits->mult; j++) {
-				s_UpvRightHit_t &hit		= upvRightHits->in[j];
-				
-				DUPVHit* newHit			= new DUPVHit();
-				newHit->layer		 		= layer;
-				newHit->row		 			= row;
-				newHit->E					= hit.E;
-				newHit->t					= hit.t;
-				newHit->side				= DUPVHit::UPV_RIGHT;
-				data.push_back(newHit);
-			}
-		}
-	}
-	
-	// Copy into factory
-	factory->CopyTo(data);
-
-	return NOERROR;
-}
-
-//------------------
-// Extract_DUPVTruthHit
-//------------------
-jerror_t DEventSourceHDDM::Extract_DUPVTruthHit(s_HDDM_t *hddm_s,  JFactory<DUPVTruthHit> *factory)
-{
-	/// Copies the data from the given hddm_s structure. This is called
-	/// from JEventSourceHDDM::GetObjects. If factory is NULL, this
-	/// returns OBJECT_NOT_AVAILABLE immediately.
-	
-	if(factory==NULL)return OBJECT_NOT_AVAILABLE;
-	
-	vector<DUPVTruthHit*> data;
-
-	// Acquire the pointer to the physics events
-	s_PhysicsEvents_t* allEvents = hddm_s->physicsEvents;
-	if(!allEvents) {
-	  //throw JException("Attempt to get physics events from HDDM source failed.");
-		return NOERROR;
-	}
-       
-	for (unsigned int m=0; m < allEvents->mult; m++) {
-	
-		// Acquire the pointer to the overall hits section of the data
-		s_HitView_t *hits = allEvents->in[m].hitView;
-		
-		if (hits == HDDM_NULL)continue;
-		if (hits->upstreamEMveto == HDDM_NULL)continue;
-		if (hits->upstreamEMveto->upvTruthShowers == HDDM_NULL)continue;
-
-		// Acquire the pointer to the beginning of the UPV hit tree
-		s_UpvTruthShowers_t* upvTruthShowers = hits->upstreamEMveto->upvTruthShowers;
-
-		for (unsigned int i=0; i < upvTruthShowers->mult; i++) {
-			s_UpvTruthShower_t &shower = upvTruthShowers->in[i];
-			
-			DUPVTruthHit *hit = new DUPVTruthHit();
-			hit->E			= shower.E;
-			hit->primary	= shower.primary;
-			hit->t			= shower.t;
-			hit->track		= shower.track;
-			hit->x			= shower.x;
-			hit->y			= shower.y;
-			hit->z			= shower.z;
-
-			data.push_back(hit);
-		}
-	}
-	
-	// Copy into factory
-	factory->CopyTo(data);
-
-	return NOERROR;
 }
 
 //------------------

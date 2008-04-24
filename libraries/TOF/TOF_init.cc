@@ -1,13 +1,18 @@
 // $Id$
 
-#include "JANA/JEventLoop.h"
+#include <JANA/JEventLoop.h>
+using namespace jana;
+
 #include "DTOFHit_factory.h"
-#include "DTOFGeometry_factory.h"
 #include "DTOFMCResponse_factory.h"
-#include "DTOFTruth_factory.h"
-#include "DHDDMTOFHit_factory.h"
 #include "DTOFPoint_factory.h"
 #include "DTOFHit_factory_MC.h"
+#include "DTOFGeometry_factory.h"
+
+#include "DHDDMTOFHit.h"
+#include "DTOFTruth.h"
+typedef JFactory<DHDDMTOFHit> DHDDMTOFHit_factory;
+typedef JFactory<DTOFTruth> DTOFTruth_factory;
 
 jerror_t TOF_init(JEventLoop *loop)
 {

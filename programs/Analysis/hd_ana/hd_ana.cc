@@ -5,6 +5,7 @@
 //
 
 #include "DANA/DApplication.h"
+using namespace std;
 
 void Usage(JApplication &app);
 

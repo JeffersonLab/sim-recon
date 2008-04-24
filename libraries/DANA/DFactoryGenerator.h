@@ -8,8 +8,9 @@
 #ifndef _DFactoryGenerator_
 #define _DFactoryGenerator_
 
-#include "JANA/jerror.h"
-#include "JANA/JFactoryGenerator.h"
+#include <JANA/jerror.h>
+#include <JANA/JFactoryGenerator.h>
+using namespace jana;
 
 class DFactoryGenerator: public JFactoryGenerator{
 	public:

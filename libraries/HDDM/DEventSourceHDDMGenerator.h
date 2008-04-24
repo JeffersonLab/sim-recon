@@ -8,7 +8,8 @@
 #ifndef _DEventSourceHDDMGenerator_
 #define _DEventSourceHDDMGenerator_
 
-#include "JANA/JEventSourceGenerator.h"
+#include <JANA/JEventSourceGenerator.h>
+using namespace jana;
 
 class DEventSourceHDDMGenerator:public JEventSourceGenerator{
 	public:

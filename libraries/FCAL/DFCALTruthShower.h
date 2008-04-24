@@ -13,7 +13,7 @@
 
 class DFCALTruthShower:public JObject{
 	public:
-		HDCLASSDEF(DFCALTruthShower);
+		JOBJECT_PUBLIC(DFCALTruthShower);
 		DFCALTruthShower(){}
 		
 		DFCALTruthShower( oid_t id,
@@ -39,6 +39,16 @@ class DFCALTruthShower:public JObject{
 
 		void Serialize(JILStream&) const;
 		void Deserialize(JILStream&);
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "x(cm)", "%3.1f", x());
+			AddString(items, "y(cm)", "%3.1f", y());
+			AddString(items, "z(cm)", "%3.1f", z());
+			AddString(items, "E(MeV)", "%3.3f", E()*1000.0);
+			AddString(items, "t(ns)", "%3.1f", t());
+			AddString(items, "primary", "%d", primary());
+			AddString(items, "track", "%d", track());
+		}
 
 	private:
 		

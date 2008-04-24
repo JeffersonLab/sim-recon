@@ -8,8 +8,10 @@
 #ifndef _DFCALCluster_factory_
 #define _DFCALCluster_factory_
 
-#include "JANA/JFactory.h"
-#include "JANA/JEventLoop.h"
+#include <JANA/JFactory.h>
+#include <JANA/JEventLoop.h>
+using namespace jana;
+
 #include "DFCALCluster.h"
 
 class DFCALCluster_factory:public JFactory<DFCALCluster>{
@@ -17,7 +19,6 @@ class DFCALCluster_factory:public JFactory<DFCALCluster>{
 		DFCALCluster_factory();
 		~DFCALCluster_factory(){};
 		
-		const string toString(void);
 //	        userhits_t* hits;
 	
 	private:

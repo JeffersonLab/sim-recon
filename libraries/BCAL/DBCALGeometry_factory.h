@@ -8,14 +8,15 @@
 #ifndef _DBCALGeometry_factory_
 #define _DBCALGeometry_factory_
 
-#include "JANA/JFactory.h"
+#include <JANA/JFactory.h>
+using namespace jana;
+
 #include "DBCALGeometry.h"
 
 class DBCALGeometry_factory:public JFactory<DBCALGeometry>{
 	public:
 		DBCALGeometry_factory(){};
 		~DBCALGeometry_factory(){};
-		const string toString(void);
 
 
 	private:

@@ -22,7 +22,6 @@ class DPhoton_factory:public JFactory<DPhoton>{
 	public:
 		DPhoton_factory();
 		~DPhoton_factory(){};
-		const string toString(void);
 	
 	private:
 		float DELTA_THETA_CHARGE; // The largest expected polar angle separation (in radians)
@@ -30,8 +29,8 @@ class DPhoton_factory:public JFactory<DPhoton>{
 
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
-                DPhoton* makeFCalPhoton(const DFCALPhoton* gamma, const oid_t id); 
-                DPhoton* makeBCalPhoton(const DBCALPhoton* gamma, const oid_t id); 
+                DPhoton* makeFCalPhoton(const DFCALPhoton* gamma, const JObject::oid_t id); 
+                DPhoton* makeBCalPhoton(const DBCALPhoton* gamma, const JObject::oid_t id); 
                 DPhoton* makeBCalPhoton(const DBCALShower* shower); // obsolite! 
 
 		double MinDistToRT(const DPhoton* photon, vector<const DTrack*> tracks);

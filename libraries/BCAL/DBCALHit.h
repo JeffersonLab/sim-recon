@@ -10,12 +10,13 @@
 
 #include "BCAL/DBCALGeometry.h"
 
-#include "JANA/JObject.h"
-#include "JANA/JFactory.h"
+#include <JANA/JObject.h>
+#include <JANA/JFactory.h>
+using namespace jana;
 
 class DBCALHit:public JObject{
 	public:
-		HDCLASSDEF(DBCALHit);
+		JOBJECT_PUBLIC(DBCALHit);
 		
 		int module;
 		int layer;
@@ -23,6 +24,15 @@ class DBCALHit:public JObject{
 		DBCALGeometry::End end;
 		float E;
 		float t;
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "module", "%d", module);
+			AddString(items, "layer", "%d", layer);
+			AddString(items, "sector", "%d", sector);
+			AddString(items, "end", "%s", end==DBCALGeometry::kUpstream ? "upstream":"downstream");
+			AddString(items, "E(GeV)", "%2.3f", E);
+			AddString(items, "t(ns)", "%4.0f", t);
+		}
 };
 
 #endif // _DBCALHit_

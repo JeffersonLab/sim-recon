@@ -9,6 +9,7 @@
 #define _DEventProcessor_bcal_hists_
 
 #include <JANA/JEventProcessor.h>
+using namespace jana;
 
 #include <TFile.h>
 #include <TH1.h>

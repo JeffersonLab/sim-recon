@@ -8,8 +8,10 @@
 #ifndef _DFCALGeometry_
 #define _DFCALGeometry_
 
-#include "JANA/JFactory.h"
-#include "JANA/JObject.h"
+#include <JANA/JFactory.h>
+#include <JANA/JObject.h>
+using namespace jana;
+
 #include "TVector2.h"
 #include "units.h"
 
@@ -40,7 +42,7 @@ class DFCALGeometry : public JObject {
 
 public:
 	
-	HDCLASSDEF(DFCALGeometry);
+	JOBJECT_PUBLIC(DFCALGeometry);
 
 	//static const int kBlocksWide      = 53;
 	//static const int kBlocksTall      = 53;
@@ -67,6 +69,13 @@ public:
 	// get row and column from x and y positions
 	int row   ( float y ) const;
 	int column( float x ) const;
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "kBlocksWide", "%d", kBlocksWide);
+			AddString(items, "kBlocksTall", "%d", kBlocksTall);
+			AddString(items, "kMaxChannels", "%d", kMaxChannels);
+			AddString(items, "kBeamHoleSize", "%2.3f", kBeamHoleSize);
+		}
 	
 private:
 

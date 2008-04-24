@@ -15,7 +15,6 @@ class DPi0_factory:public JFactory<DPi0>{
 	public:
 		DPi0_factory();
 		~DPi0_factory(){};
-		const string toString(void);
 	
 	private:
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method

@@ -8,8 +8,10 @@
 #ifndef _DTOFMCResponse_factory_
 #define _DTOFMCResponse_factory_
 
-#include "JANA/JFactory.h"
-#include "JANA/JEventLoop.h"
+#include <JANA/JFactory.h>
+#include <JANA/JEventLoop.h>
+using namespace jana;
+
 #include "DTOFMCResponse.h"
 
 
@@ -17,7 +19,7 @@ class DTOFMCResponse_factory:public JFactory<DTOFMCResponse>{
  public:
   DTOFMCResponse_factory(){};
   ~DTOFMCResponse_factory(){};
-  const string toString(void);
+
  private:
   double ATTEN_LENGTH  ;   // attenuation length in paddle
   double C_EFFECTIVE   ;   // effective light speed in paddle

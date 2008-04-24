@@ -5,10 +5,13 @@
 #ifndef DFDCSEGMENT_H
 #define DFDCSEGMENT_H
 
+#include <JANA/JObject.h>
+using namespace jana;
+
 #include "DFDCHit.h"
 #include "DFDCWire.h"
 #include "DFDCPseudo.h"
-#include "JANA/JObject.h"
+
 #include <DMatrix.h>
 #include <sstream>
 
@@ -27,7 +30,7 @@ typedef struct fdc_track_t{
 /// 
 class DFDCSegment : public JObject {
 	public :
-		HDCLASSDEF(DFDCSegment);			/// DANA identifier
+		JOBJECT_PUBLIC(DFDCSegment);			/// DANA identifier
 		
 		/// 
 		/// DFDCSegment::DFDCSegment():
@@ -50,6 +53,14 @@ class DFDCSegment : public JObject {
 		vector<DFDCPseudo *>hits;	
 		// Supplementary track info
 		vector<fdc_track_t>track;
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "xc", "%3.2f", xc);
+			AddString(items, "yc", "%3.2f", yc);
+			AddString(items, "rc", "%3.2f", rc);
+			AddString(items, "Phi1(rad)", "%3.2f", Phi1);
+			AddString(items, "Nhits", "%d", hits.size());
+		}
 };
 
 #endif //DFDCSEGMENT_H

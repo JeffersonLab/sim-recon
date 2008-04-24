@@ -6,6 +6,7 @@
 //
 
 #include <DVector3.h>
+using namespace std;
 
 #include "DReferenceTrajectory.h"
 #include "DTrackCandidate.h"

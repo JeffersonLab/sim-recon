@@ -68,7 +68,7 @@ jerror_t DTrackCandidate_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		const DMCThrown *thrown = mcthrowns[i];
 		const DKinematicData *kd_thrown = thrown;
 		
-		if(fabs(thrown->q)==0.0)continue;
+		if(fabs(thrown->charge())==0.0)continue;
 		
 		DTrackCandidate *can = new DTrackCandidate;
 		DKinematicData *kd_can = can;

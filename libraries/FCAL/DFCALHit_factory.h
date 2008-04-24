@@ -19,7 +19,6 @@ class DFCALHit_factory:public JFactory<DFCALHit>{
 	
 	    DFCALHit_factory(){};
 		~DFCALHit_factory(){};
-		const string toString(void);
 		
 	protected:
             

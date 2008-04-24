@@ -9,6 +9,8 @@
 
 #include <JANA/JFactory.h>
 #include <JANA/JGeometry.h>
+using namespace jana;
+
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "DTrack.h"
 #include "DReferenceTrajectory.h"
@@ -27,7 +29,6 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
  public:
   DTrack_factory_ALT3();
   ~DTrack_factory_ALT3();
-  const string toString(void);
   const char* Tag(void){return "ALT3";}
 
 

@@ -10,8 +10,6 @@ using namespace std;
 
 #include "DMagneticFieldMapCalibDB.h"
 
-#include <JANA/JApplication.h>
-#include <JANA/JCalibration.h>
 
 
 //---------------------------------

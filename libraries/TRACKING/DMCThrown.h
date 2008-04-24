@@ -15,19 +15,22 @@
 
 class DMCThrown:public DKinematicData{
 	public:
-		HDCLASSDEF(DMCThrown);
+		JOBJECT_PUBLIC(DMCThrown);
 		
 		int type;			///< GEANT particle ID
 		int pdgtype;		///< PDG particle type (not used by GEANT)
 		int myid;			///< id of this particle from original generator
 		int parentid;		///< id of parent of this particle from original generator
 		int mech;			///< production mechanism of this partcle (generator specific)
-		float q;				///< electric charge
-		float p;				///< Total momentum in GeV/c
-		float E;				///< Total energy in GeV
-		float theta,phi;	///< Inital theta and phi angles in radians
-		float x,y,z;		///< Vertex position in cm
-		float mass;			///< Mass in GeV/c^2
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "type", "%d", type);
+			AddString(items, "pdgtype", "%d", pdgtype);
+			AddString(items, "myid", "%d", myid);
+			AddString(items, "parentid", "%d", parentid);
+			AddString(items, "mech", "%d", mech);
+			DKinematicData::toStrings(items);
+		}
 
 };
 

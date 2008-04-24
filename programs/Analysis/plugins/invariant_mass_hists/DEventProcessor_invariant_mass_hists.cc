@@ -14,6 +14,7 @@ using namespace std;
 
 #include <JANA/JApplication.h>
 #include <JANA/JEventLoop.h>
+using namespace jana;
 
 #include "DEventProcessor_invariant_mass_hists.h"
 #include "TRACKING/DTrack.h"
@@ -181,9 +182,9 @@ void DEventProcessor_invariant_mass_hists::MakeTLorentz(const DTrack *track, TLo
 //------------------
 void DEventProcessor_invariant_mass_hists::MakeTLorentz(const DMCThrown *thrown, TLorentzVector &v)
 {
-	double p = thrown->p;
-	double theta = thrown->theta;
-	double phi = thrown->phi;
+	double p = thrown->momentum().Mag();
+	double theta = thrown->momentum().Theta();
+	double phi = thrown->momentum().Phi();
 
 #if 0	
 	// smear values

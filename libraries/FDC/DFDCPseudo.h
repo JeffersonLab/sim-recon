@@ -8,9 +8,11 @@
 #ifndef DFDCPSEUDO_H
 #define DFDCPSEUDO_H
 
+#include <JANA/JObject.h>
+using namespace jana;
+
 #include "DFDCHit.h"
 #include "DFDCWire.h"
-#include "JANA/JObject.h"
 #include <DMatrix.h>
 
 #include <sstream>
@@ -28,7 +30,7 @@ typedef struct {
 /// 
 class DFDCPseudo : public JObject {
 	public :
-		HDCLASSDEF(DFDCPseudo);			/// DANA identifier
+		JOBJECT_PUBLIC(DFDCPseudo);			/// DANA identifier
 		
 		/// 
 		/// DFDCPseudo::DFDCPseudo():
@@ -49,39 +51,21 @@ class DFDCPseudo : public JObject {
 		float x,y;  // coordinates rotated into lab coordinate system
 		float covxx,covxy,covyy;
 		float dE;
-	
-#if 0
-		///
-		/// DFDCPseudo::header():
-		/// Print a sensible header for a table of DFDCPseudos
-		///
-		const string header() const {
-			stringstream s;
-			s.width(7);
-			s << "w" << " ";
-			s.width(7);
-			s << "s" << " ";
-			s.width(7);
-			s << "gLay:" << " ";	// gLayer
-			return s.str();
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "Nmembers", "%d", members.size());
+			AddString(items, "w", "%3.2f", w);
+			AddString(items, "s", "%3.2f", s);
+			AddString(items, "layer", "%d", wire->layer);
+			AddString(items, "wire", "%d", wire->wire);
+			AddString(items, "time", "%3.1f", time);
+			AddString(items, "dist", "%d", dist);
+			AddString(items, "status", "%d", status);
+			AddString(items, "x", "%3.1f", x);
+			AddString(items, "y", "%3.1f", y);
+			AddString(items, "dE", "%3.1f", dE);
 		}
-		
-		/// 
-		/// DFDCPseudo::toString():
-		/// Print a sensible string representation of a DFDCPseudo object
-		///
-		const string toString() const {
-			stringstream s;
-			s.precision(4);
-			s.width(7);
-			s << w << "+/-" << dw << " ";
-			s.width(7);
-			s << s << "+/- "<< ds << " ";
-			s.width(7);
-			s << gLayer << " ";
-			return s.str();
-		}
-#endif
+
 };
 
 #endif //DFDCPSEUDO_H

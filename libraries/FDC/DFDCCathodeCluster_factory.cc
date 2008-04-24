@@ -213,21 +213,3 @@ void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H) {
 	}
 }
 
-///
-/// DFDCCathodeCluster_factory::toString():
-/// returns a sensible std::string representation of the data contained in this 
-/// factory.
-///
-const string DFDCCathodeCluster_factory::toString() {
-	if (_data.size() <= 0)
-		return "";
-		
-	stringstream s;
-	s << (*_data.begin())->header() << endl;
-
-	// Simply call each cluster's toString() method and stream it into s.
-	for (unsigned int i=0; i < _data.size(); ++i) 
-		s << _data[i]->toString() << endl;
-	
-	return s.str();
-}

@@ -1,8 +1,12 @@
 // $Id$
 
-#include "JANA/JEventLoop.h"
-#include "DCDCHit_factory.h"
+#include <JANA/JEventLoop.h>
+using namespace jana;
+
+#include "DCDCHit.h"
 #include "DCDCTrackHit_factory.h"
+
+typedef JFactory<DCDCHit> DCDCHit_factory;
 
 jerror_t CDC_init(JEventLoop *loop)
 {

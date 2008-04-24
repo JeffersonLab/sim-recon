@@ -13,11 +13,17 @@
 
 class DSCHit:public JObject{
 	public:
-		HDCLASSDEF(DSCHit);
+		JOBJECT_PUBLIC(DSCHit);
 		
 		float dE;		// Energy loss in GeV
 		float t;			// TOF to start counter in ns
 		int sector;		// sector number 1-24
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "dE", "%3.3f", dE);
+			AddString(items, "t", "%3.3f", t);
+			AddString(items, "sector", "%d", sector);
+		}
 };
 
 #endif // _DSCHit_

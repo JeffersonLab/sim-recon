@@ -68,8 +68,6 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		double GetCharge(unsigned int n,
 				 DMatrix XYZ, DMatrix CR, DMatrix CRPhi);
 
-		const string toString(void);
-
 	protected:
 		///
 		/// DFDCSegment_factory::brun():

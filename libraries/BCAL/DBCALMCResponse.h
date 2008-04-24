@@ -10,13 +10,14 @@
 
 #include "BCAL/DBCALGeometry.h"
 
-#include "JANA/JObject.h"
-#include "JANA/JFactory.h"
+#include <JANA/JObject.h>
+#include <JANA/JFactory.h>
+using namespace jana;
 
 class DBCALMCResponse : public JObject{
 
 public:
-		HDCLASSDEF(DBCALMCResponse);
+		JOBJECT_PUBLIC(DBCALMCResponse);
 		    
     int module;
     int layer;
@@ -26,6 +27,15 @@ public:
     float t;
 		
     int cellId;
+	 
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "module", "%d", module);
+			AddString(items, "layer", "%d", layer);
+			AddString(items, "sector", "%d", sector);
+			AddString(items, "end", "%s", end==0? "upstream":"downstream");
+			AddString(items, "E(GeV)", "%d", E);
+			AddString(items, "t(ns)", "%d", t);
+		}
 };
 
 #endif // _DBCALMCResponse_

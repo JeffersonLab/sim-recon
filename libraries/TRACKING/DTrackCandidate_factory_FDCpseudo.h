@@ -12,14 +12,16 @@
 #include <TH2F.h>
 #include <TH3F.h>
 
-#include "JANA/JFactory.h"
+#include <JANA/JFactory.h>
+#include <JANA/JGeometry.h>
+using namespace jana;
+
 #include "DQuickFit.h"
 #include "DTrackCandidate.h"
 #include "FDC/DFDCPseudo.h"
 #include "FDC/DFDCWire.h"
 #include "DHoughFind.h"
 
-class JGeometry;
 class DMagneticFieldMap;
 
 class DTrackCandidate_factory_FDCpseudo:public JFactory<DTrackCandidate>{

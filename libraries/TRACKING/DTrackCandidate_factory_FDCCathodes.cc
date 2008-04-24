@@ -208,7 +208,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    double covxx=hit->covxx;
 	    double covyy=hit->covyy;
 	    double covxy=hit->covxy;
-	    double hit_chi2=segments[segments.size()-1]->track[n].chi2;
+	    //double hit_chi2=segments[segments.size()-1]->track[n].chi2;
 	    /*if (hit_chi2>1.){
 	      covxx*=hit_chi2;      
 	      covyy*=hit_chi2;
@@ -268,7 +268,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 		double covxx=hit->covxx;
 		double covyy=hit->covyy;
 		double covxy=hit->covxy;
-		double hit_chi2=segments[segments.size()-1]->track[n].chi2;
+		//double hit_chi2=segments[segments.size()-1]->track[n].chi2;
 		/*if (hit_chi2>1.){
 		  covxx*=hit_chi2;      
 		  covyy*=hit_chi2;
@@ -419,7 +419,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    double covxx=hit->covxx;
 	    double covyy=hit->covyy;
 	    double covxy=hit->covxy;
-	    double hit_chi2=segments[m]->track[n].chi2;
+	    //double hit_chi2=segments[m]->track[n].chi2;
 	    /*if (hit_chi2>1.){
 	      covxx*=hit_chi2;      
 	      covyy*=hit_chi2;
@@ -529,7 +529,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    double covxx=hit->covxx;
 	    double covyy=hit->covyy;
 	    double covxy=hit->covxy;
-	    double hit_chi2=segments[m]->track[n].chi2;
+	    //double hit_chi2=segments[m]->track[n].chi2;
 	    /*if (hit_chi2>1.){
 	      covxx*=hit_chi2;      
 	      covyy*=hit_chi2;
@@ -732,30 +732,3 @@ jerror_t DTrackCandidate_factory_FDCCathodes::GetPositionAndMomentum(DFDCSegment
 }
 
 
-//------------------
-// toString
-//------------------
-const string DTrackCandidate_factory_FDCCathodes::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	// Put the class specific code to produce nicely formatted ASCII here.
-	// The DFactory_base class has several methods defined to help. They
-	// rely on positions of colons (:) in the header. Here's an example:
-	//
-	printheader("row:    x:     y:");
-	
-	for(unsigned int i=0; i<_data.size(); i++){
-		//DTrackCandidate *myDTrackCandidate = _data[i];
-	
-		printnewrow();
-		printcol("%d",	i);
-//		printcol("%1.3f",	myDTrackCandidate->x);
-//		printcol("%3.2f",	myDTrackCandidate->y);
-		printrow();
-	}
-
-	return _table;
-}

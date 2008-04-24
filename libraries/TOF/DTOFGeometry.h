@@ -16,7 +16,7 @@
 class DTOFGeometry:public JObject{
 
  public:
-  HDCLASSDEF(DTOFGeometry);
+  JOBJECT_PUBLIC(DTOFGeometry);
 
   int NLONGBARS;        ///> number of long scintillator bars
   int NSHORTBARS;       ///> number of short scintillator bars
@@ -58,6 +58,13 @@ class DTOFGeometry:public JObject{
     return bar;
   }
 
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "", "%d", NLONGBARS);
+			AddString(items, "", "%d", NSHORTBARS);
+			AddString(items, "", "%6.3f", LONGBARLENGTH);
+			AddString(items, "", "%6.3f", SHORTBARLENGTH);
+			AddString(items, "", "%6.3f", BARWIDTH);
+		}
 };
 
 #endif // _DTOFGeometry_

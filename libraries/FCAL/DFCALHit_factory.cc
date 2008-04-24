@@ -6,6 +6,7 @@
 //
 
 #include <cassert>
+using namespace std;
 
 #include "FCAL/DFCALHit_factory.h"
 #include "FCAL/DFCALHit.h"
@@ -48,28 +49,3 @@ jerror_t DFCALHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	return NOERROR;
 }
     
-//------------------
-// toString
-//------------------
-const string DFCALHit_factory::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("hit:  column:   row:   x(cm):   y(cm):   E(MeV):   t(ns):");
-	
-	for(unsigned int i=0; i<_data.size(); i++){
-		DFCALHit *fcalhit = _data[i];
-
-		printnewrow();
-		printcol("%d",	i);
-		printcol("%3.1f", fcalhit->x);
-		printcol("%3.1f", fcalhit->y);
-		printcol("%2.3f", fcalhit->E*1000.0);
-		printcol("%4.0f", fcalhit->t);
-		printrow();
-	}
-	
-	return _table;
-}

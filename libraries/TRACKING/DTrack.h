@@ -16,7 +16,7 @@ class DReferenceTrajectory;
 
 class DTrack:public DKinematicData{
 	public:
-		HDCLASSDEF(DTrack);
+		JOBJECT_PUBLIC(DTrack);
 		
 		float q;					///< electric charge
 		float p;					///< Total momentum in GeV/c

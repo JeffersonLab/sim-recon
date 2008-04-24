@@ -10,7 +10,9 @@
 
 #include <math.h>
 
-#include "JANA/jerror.h"
+#include <JANA/jerror.h>
+using namespace jana;
+
 #include "GlueX.h"
 #include "DVector3.h"
 #include "DMatrix.h"
@@ -41,7 +43,7 @@ class Dtrk_hit:public DVector3{
 		DMatrix covariance;			///< Covariance matrix in XYZ of hit position
 		unsigned int flags;			///< see Dtrk_hit_Flags_t enum above
 		float phi_circle;				///< phi angle relative to helix center
-		oid_t hitid;					///< JANA object id of hit this came from
+		JObject::oid_t hitid;					///< JANA object id of hit this came from
 		const DCoordinateSystem *wire; ///< Wire (if any) this hit came from
 		DetectorSystem_t system;	///< detector system this hit came from (see GlueX.h)
 		

@@ -36,37 +36,3 @@ jerror_t DBCALGeometry_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	return NOERROR;
 }
-
-//------------------
-// toString
-//------------------
-const string DBCALGeometry_factory::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)
-        return string(); // don't print anything if we have no data!
-
-       printheader("mod: layn1: layn2: secn1: secn2: inr: midr: outr: length:");
-
-      for(unsigned int i = 0; i < _data.size(); i++) {
-       DBCALGeometry *s = _data[i];
-       printnewrow();
-       printcol("%d",s->NBCALMODS);
-       printcol("%d",s->NBCALLAYS1);  
-       printcol("%d",s->NBCALLAYS2);  
-       printcol("%d",s->NBCALSECS1);  
-       printcol("%d",s->NBCALSECS2);
-       printcol("%6.3f",s->BCALINNERRAD);   
-       printcol("%6.3f",s->BCALMIDRAD);   
-       printcol("%6.3f",s->BCALOUTERRAD);   
-       printcol("%6.3f",s->BCALFIBERLENGTH);   
-	cout<<"NBCALSECS2= "<<s->NBCALSECS2<<"\n";
-       printrow();
-     }
-     printnewrow();
-     printrow();
-
-     return _table;
-
-}

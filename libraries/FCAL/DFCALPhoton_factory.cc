@@ -13,8 +13,8 @@
 //#include "DFCALPhoton.h"
 #include "DFCALCluster.h"
 #include "DFCALHit.h"
-#include "JANA/JEvent.h"
-
+#include <JANA/JEvent.h>
+using namespace jana;
 
 //----------------
 // Constructor
@@ -49,34 +49,6 @@ jerror_t DFCALPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	return NOERROR;
 }
 
-//------------------
-// toString
-//------------------
-const string DFCALPhoton_factory::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("row:   E(GeV):   Px(GeV):   Py(GeV):   Pz(GeV):   X(cm):   Y(cm):   Z(cm):");
-	
-	for(unsigned int i=0; i<_data.size(); i++){
-		DFCALPhoton *fcalphot = _data[i];
-               
-		printnewrow();
-		printcol("%d",	i);
-		printcol("%6.2f", fcalphot->getEnergy());
-		printcol("%6.2f", fcalphot->getMom3().X());
-		printcol("%6.2f", fcalphot->getMom3().Y());
-		printcol("%6.2f", fcalphot->getMom3().Z());
-		printcol("%7.2f", fcalphot->getPosition().X());
-		printcol("%7.2f", fcalphot->getPosition().Y());
-		printcol("%7.2f", fcalphot->getPosition().Z());
-		printrow();
-	}
-
-	return _table;
-}
 
 // Non-linear and depth corrections should be fixed within DFCALPhoton member functions
 DFCALPhoton* DFCALPhoton_factory::makePhoton(const DFCALCluster* cluster) 

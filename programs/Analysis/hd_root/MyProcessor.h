@@ -8,6 +8,7 @@
 
 #include <JANA/JEventProcessor.h>
 #include <JANA/JEventLoop.h>
+using namespace jana;
 
 #include <TFile.h>
 #include <TTree.h>

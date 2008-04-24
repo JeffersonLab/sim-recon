@@ -48,7 +48,7 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	vector<const DFCALPhoton*> fcalPhotons;
 	eventLoop->Get(fcalPhotons);
   
-        oid_t nPhotons=0;
+        JObject::oid_t nPhotons=0;
         for ( unsigned int i=0; i < fcalPhotons.size(); i++ ) {
 
 		DPhoton *photon =  makeFCalPhoton(fcalPhotons[i], ++nPhotons);
@@ -88,43 +88,13 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	return NOERROR;
 }
 
-//------------------
-// toString
-//------------------
-const string DPhoton_factory::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("row:   E(GeV):   Px(GeV):	  Py(GeV):    Pz(GeV):    X(cm):    Y(cm):    Z(cm):    Tag: ");
-	
-	for(unsigned int i=0; i<_data.size(); i++){
-		DPhoton *phot = _data[i];
-               
-		printnewrow();
-		printcol("%x",	phot->id);
-		printcol("%5.2f", phot->energy());
-		printcol("%5.2f", phot->momentum().X());
-		printcol("%5.2f", phot->momentum().Y());
-		printcol("%5.2f", phot->momentum().Z());
-		printcol("%7.2f", phot->position().X());
-		printcol("%7.2f", phot->position().Y());
-		printcol("%7.2f", phot->position().Z());
-		printcol("%5i", phot->getTag());
-		printrow();
-	}
-
-	return _table;
-}
-
 
 // at this time just copy data from DFCALPhoton and set 'tag' to zero
 // final non-linear and depth corrections can be applied here
 #define FCAL_BLOCK_WIDTH 4
 #define TARGET_RADIUS 1.5
 #define TARGET_LENGTH 30.
-DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const oid_t id) 
+DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const JObject::oid_t id) 
 {
 
         DPhoton* photon = new DPhoton( id );
@@ -172,7 +142,7 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const oid_t i
 }
 
 // Copy data from BCALPhoton
-DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const oid_t id) {
+DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject::oid_t id) {
 
         DPhoton* photon = new DPhoton( id );
 
@@ -297,8 +267,8 @@ double DPhoton_factory::dThetaToChargeMC(const DPhoton* photon, vector<const DMC
 					      mc != thrown.end(); 
 								mc++) {
 
-        if ( (**mc).q == 0 ) continue;
-	double deltaT = fabs( (**mc).theta - theta); 
+        if ( (**mc).charge() == 0 ) continue;
+	double deltaT = fabs( (**mc).momentum().Theta() - theta); 
         dmin = deltaT < dmin ? deltaT : dmin; 
 
   }

@@ -2,11 +2,8 @@
 #include "DLorentzDeflections.h"
 #include <map>
 #include <vector>
-
 using namespace std;
 
-#include <JANA/JApplication.h>
-#include <JANA/JCalibration.h>
 
 //---------------------------------
 // DLorentzMapCalibDB    (Constructor)

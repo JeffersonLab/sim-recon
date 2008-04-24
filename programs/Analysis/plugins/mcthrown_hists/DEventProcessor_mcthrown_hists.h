@@ -16,6 +16,7 @@
 #include <JANA/JFactory.h>
 #include <JANA/JEventProcessor.h>
 #include <JANA/JEventLoop.h>
+using namespace jana;
 
 class DEventProcessor_mcthrown_hists:public JEventProcessor{
 

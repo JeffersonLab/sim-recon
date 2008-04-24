@@ -13,6 +13,7 @@
 #include <DMatrix.h>
 
 #include <JANA/JEventLoop.h>
+using namespace jana;
 
 #include "GlueX.h"
 #include "DANA/DApplication.h"
@@ -1748,38 +1749,6 @@ void DTrack_factory_ALT1::FillDebugHists(DReferenceTrajectory *rt, DVector3 &ver
 	chisq_final_vs_initial->Fill(chisq_initial,chisq_final);
 	nhits_final_vs_initial->Fill(nhits_initial, nhits_final);
 #endif
-}
-
-//------------------
-// toString
-//------------------
-const string DTrack_factory_ALT1::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	GetNrows();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("row: q:       p:   theta:   phi:    x:    y:    z:");
-	
-	for(unsigned int i=0; i<_data.size(); i++){
-
-		DTrack *track = _data[i];
-
-		printnewrow();
-		
-		printcol("%x", i);
-		printcol("%+d", (int)track->q);
-		printcol("%3.3f", track->p);
-		printcol("%1.3f", track->theta);
-		printcol("%1.3f", track->phi);
-		printcol("%2.2f", track->x);
-		printcol("%2.2f", track->y);
-		printcol("%2.2f", track->z);
-
-		printrow();
-	}
-	
-	return _table;
 }
 
 

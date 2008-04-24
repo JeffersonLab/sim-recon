@@ -8,14 +8,15 @@
 #ifndef _DFCALHit_
 #define _DFCALHit_
 
-#include "JANA/JObject.h"
-#include "JANA/JFactory.h"
+#include <JANA/JObject.h>
+#include <JANA/JFactory.h>
+using namespace jana;
 
 class DFCALHit:public JObject{
 	
 public:
 	
-	HDCLASSDEF(DFCALHit);
+	JOBJECT_PUBLIC(DFCALHit);
 	
 	DFCALHit(){}
     
@@ -23,6 +24,13 @@ public:
     float y;
     float E;
     float t;
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "x(cm)", "%3.1f", x);
+			AddString(items, "y(cm)", "%3.1f", y);
+			AddString(items, "E(MeV)", "%2.3f", E*1000.0);
+			AddString(items, "t(ns)", "%2.3f", t);
+		}
 };
 
 #endif // _DFCALHit_

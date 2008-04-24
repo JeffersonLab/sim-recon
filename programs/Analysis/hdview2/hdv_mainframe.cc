@@ -82,46 +82,74 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	TGLayoutHints *bhints = new TGLayoutHints(kLHintsBottom|kLHintsCenterX, 2,2,2,2);
 	TGLayoutHints *xhints = new TGLayoutHints(kLHintsNormal|kLHintsExpandX, 2,2,2,2);
 	TGLayoutHints *yhints = new TGLayoutHints(kLHintsNormal|kLHintsExpandY, 2,2,2,2);
+	TGLayoutHints *dhints = new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0,0,0,0);
+	TGLayoutHints *ehints = new TGLayoutHints(kLHintsNormal, 2,2,0,0);
+	TGLayoutHints *thints = new TGLayoutHints(kLHintsTop|kLHintsCenterX, 2,2,0,0);
+	TGLayoutHints *lxhints = new TGLayoutHints(kLHintsLeft|kLHintsExpandX, 2,2,0,0);
+	TGHorizontalFrame *sourceframe = new TGHorizontalFrame(this,w,20);
 	TGHorizontalFrame *topframe = new TGHorizontalFrame(this, w, h);
 	TGHorizontalFrame *midframe = new TGHorizontalFrame(this, w, h);
 	TGHorizontalFrame *botframe = new TGHorizontalFrame(this, w, h);
+	AddFrame(sourceframe, lxhints);
 	AddFrame(topframe, lhints);
 	AddFrame(midframe, hints);
 	AddFrame(botframe, lhints);
+
+	//========== Source ===========
+	TGLabel *sourcelab = new TGLabel(sourceframe, "Source:");
+	sourceframe->AddFrame(sourcelab,ehints);
+	source = new TGLabel(sourceframe, "--");
+	sourceframe->AddFrame(source, lxhints);
+	source->SetTextJustify(1);
 
 	//========== TOP FRAME ============
 	TGGroupFrame *viewcontrols = new TGGroupFrame(topframe, "View Controls", kHorizontalFrame);
 	TGGroupFrame *eventcontrols = new TGGroupFrame(topframe, "Event Controls", kHorizontalFrame);
 	TGGroupFrame *eventinfo = new TGGroupFrame(topframe, "Info", kHorizontalFrame);
+	TGGroupFrame *inspectors = new TGGroupFrame(topframe, "Inspectors", kVerticalFrame);
 	TGHorizontalFrame *programcontrols = new TGHorizontalFrame(topframe);
 	topframe->AddFrame(viewcontrols, lhints);
 	topframe->AddFrame(eventcontrols, hints);
 	topframe->AddFrame(eventinfo, yhints);
+	topframe->AddFrame(inspectors, yhints);
 	topframe->AddFrame(programcontrols, yhints);
 	
 		//-------------Pan buttons
-		TGHorizontalFrame *pan = new TGHorizontalFrame(viewcontrols);
-		viewcontrols->AddFrame(pan,	hints);
-			TGTextButton *left	= new TGTextButton(pan,	"<-");
-			TGVerticalFrame *updown = new TGVerticalFrame(pan);
-				TGTextButton *up	= new TGTextButton(updown,	"^");
-				TGTextButton *down	= new TGTextButton(updown,	"V");
-				updown->AddFrame(up,	lhints);
-				updown->AddFrame(down,	lhints);
-			TGTextButton *right	= new TGTextButton(pan,	"->");
-			pan->AddFrame(left,	chints);
-			pan->AddFrame(updown,	chints);
-			pan->AddFrame(right,	chints);
+		TGVerticalFrame *panneg = new TGVerticalFrame(viewcontrols);
+		TGVerticalFrame *panpos = new TGVerticalFrame(viewcontrols);
+		viewcontrols->AddFrame(panneg,	hints);
+		viewcontrols->AddFrame(panpos,	hints);
+			TGTextButton *panxneg	= new TGTextButton(panneg,	"-X");
+			TGTextButton *panyneg	= new TGTextButton(panneg,	"-Y");
+			TGTextButton *panzneg	= new TGTextButton(panneg,	"-Z");
+			panneg->AddFrame(panxneg,	dhints);
+			panneg->AddFrame(panyneg,	dhints);
+			panneg->AddFrame(panzneg,	dhints);
 
+			TGTextButton *panxpos	= new TGTextButton(panpos,	"X+");
+			TGTextButton *panypos	= new TGTextButton(panpos,	"Y+");
+			TGTextButton *panzpos	= new TGTextButton(panpos,	"Z+");
+			panpos->AddFrame(panxpos,	dhints);
+			panpos->AddFrame(panypos,	dhints);
+			panpos->AddFrame(panzpos,	dhints);
+
+			panxneg->Connect("Clicked()","hdv_mainframe",this,"DoPanXneg()");
+			panyneg->Connect("Clicked()","hdv_mainframe",this,"DoPanYneg()");
+			panzneg->Connect("Clicked()","hdv_mainframe",this,"DoPanZneg()");
+			panxpos->Connect("Clicked()","hdv_mainframe",this,"DoPanXpos()");
+			panypos->Connect("Clicked()","hdv_mainframe",this,"DoPanYpos()");
+			panzpos->Connect("Clicked()","hdv_mainframe",this,"DoPanZpos()");
 		//------------- Zoom/Reset buttons
 		TGVerticalFrame *zoom = new TGVerticalFrame(viewcontrols);
 		viewcontrols->AddFrame(zoom,	lhints);
-			TGTextButton *zoomin	= new TGTextButton(zoom,	"Zoom In");
-			TGTextButton *zoomout	= new TGTextButton(zoom,	"Zoom Out");
+			TGGroupFrame *zoomframe = new TGGroupFrame(zoom, "ZOOM", kHorizontalFrame);
+			zoom->AddFrame(zoomframe,	thints);
+				TGTextButton *zoomout = new TGTextButton(zoomframe,	" - ");
+				TGTextButton *zoomin	= new TGTextButton(zoomframe,	" + ");
+				zoomframe->AddFrame(zoomout,	thints);
+				zoomframe->AddFrame(zoomin,	thints);
 			TGTextButton *reset	= new TGTextButton(zoom,	"Reset");
-			zoom->AddFrame(zoomin, lhints);
-			zoom->AddFrame(zoomout, lhints);
-			zoom->AddFrame(reset, lhints);
+			zoom->AddFrame(reset, chints);
 		
 		//-------------- Transverse Coordinates
 		TGVButtonGroup *coordinates = new TGVButtonGroup(viewcontrols,"Transverse Coordinates");
@@ -130,8 +158,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 			new TGRadioButton(coordinates, "r/phi");
 		
 		//-------------- Next, Previous
-		TGTextButton *prev	= new TGTextButton(eventcontrols,	"<-- Prev");
-		TGTextButton *next	= new TGTextButton(eventcontrols,	"Next -->");
+		prev	= new TGTextButton(eventcontrols,	"<-- Prev");
+		next	= new TGTextButton(eventcontrols,	"Next -->");
 		TGVerticalFrame *contf = new TGVerticalFrame(eventcontrols);
 		eventcontrols->AddFrame(prev, chints);
 		eventcontrols->AddFrame(next, chints);
@@ -169,6 +197,19 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 			eventvals->AddFrame(run, lhints);
 			eventvals->AddFrame(event, lhints);
 			
+		//----------------- Inspectors
+		TGTextButton *trackinspector	= new TGTextButton(inspectors,	"Track Inspector");
+		TGTextButton *tofinspector	= new TGTextButton(inspectors,	"TOF Inspector");
+		TGTextButton *bcalinspector	= new TGTextButton(inspectors,	"BCAL Inspector");
+		TGTextButton *fcalinspector	= new TGTextButton(inspectors,	"FCAL Inspector");
+		inspectors->AddFrame(trackinspector, xhints);
+		inspectors->AddFrame(tofinspector, xhints);
+		inspectors->AddFrame(bcalinspector, xhints);
+		inspectors->AddFrame(fcalinspector, xhints);
+		tofinspector->SetEnabled(kFALSE);
+		bcalinspector->SetEnabled(kFALSE);
+		fcalinspector->SetEnabled(kFALSE);
+
 		//-------------- Program Controls
 		TGTextButton *quit	= new TGTextButton(programcontrols,	"&Quit");
 		programcontrols->AddFrame(quit, rhints);
@@ -187,12 +228,16 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 		
 			// Side views
 			int width=500;
-			sideviewA = new TRootEmbeddedCanvas("sideviewA Canvas", sideviews, width, width/2, kSunkenFrame, GetWhitePixel());
-			sideviewB = new TRootEmbeddedCanvas("sideviewB Canvas", sideviews, width, width/2, kSunkenFrame, GetWhitePixel());
-			sideviews->AddFrame(sideviewA, lhints);
-			sideviews->AddFrame(sideviewB, lhints);
-			sideviewA->SetScrolling(TGCanvas::kCanvasScrollBoth);
-			sideviewB->SetScrolling(TGCanvas::kCanvasScrollBoth);
+			TGHorizontalFrame *sideviewAframe = new TGHorizontalFrame(sideviews);
+			TGHorizontalFrame *sideviewBframe = new TGHorizontalFrame(sideviews);
+			sideviews->AddFrame(sideviewAframe, lhints);
+			sideviews->AddFrame(sideviewBframe, lhints);
+				sideviewA = new TRootEmbeddedCanvas("sideviewA Canvas", sideviewAframe, width, width/2, kSunkenFrame, GetWhitePixel());
+				sideviewB = new TRootEmbeddedCanvas("sideviewB Canvas", sideviewBframe, width, width/2, kSunkenFrame, GetWhitePixel());
+				sideviewAframe->AddFrame(sideviewA, lhints);
+				sideviewBframe->AddFrame(sideviewB, lhints);
+				sideviewA->SetScrolling(TGCanvas::kCanvasScrollBoth);
+				sideviewB->SetScrolling(TGCanvas::kCanvasScrollBoth);
 
 			// End views
 			endviewA = new TRootEmbeddedCanvas("endviewA Canvas", endviews, width/2, width/2, kSunkenFrame, GetWhitePixel());
@@ -328,14 +373,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 
 	//&&&&&&&&&&&&&&&& Defaults
 	ReadPreferences();
-	//checkbuttons["tracks"]->SetState(kButtonDown);
-	//checkbuttons["candidates"]->SetState(kButtonDown);
-	//checkbuttons["thrown"]->SetState(kButtonDown);
 	xy->SetState(kButtonDown,kTRUE);
 	coordinatetype = COORD_XY;
-	//checkbuttons["fdcwire"]->SetState(kButtonDown);
-	//checkbuttons["fdcintersection"]->SetState(kButtonDown);
-	//checkbuttons["trajectories"]->SetState(kButtonDown);
 	r0 = 50.0;
 	phi0 = M_PI;
 	x0 = 0.0;
@@ -344,10 +383,6 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	zoom_factor = 1.0;
 
 	//&&&&&&&&&&&&&&&& Connections
-	left->Connect("Clicked","hdv_mainframe", this, "DoPanLeft()");
-	up->Connect("Clicked","hdv_mainframe", this, "DoPanUp()");
-	down->Connect("Clicked","hdv_mainframe", this, "DoPanDown()");
-	right->Connect("Clicked","hdv_mainframe", this, "DoPanRight()");
 	zoomin->Connect("Clicked","hdv_mainframe", this, "DoZoomIn()");
 	zoomout->Connect("Clicked","hdv_mainframe", this, "DoZoomOut()");
 	reset->Connect("Clicked","hdv_mainframe", this, "DoReset()");
@@ -360,6 +395,11 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	prev->Connect("Clicked","hdv_mainframe", this, "DoPrev()");
 	checkbuttons["continuous"]->Connect("Clicked","hdv_mainframe", this, "DoCont()");
 	delay->Connect("Selected(Int_t)","hdv_mainframe", this, "DoSetDelay(Int_t)");
+	
+	trackinspector->Connect("Clicked","hdv_mainframe", this, "DoOpenTrackInspector()");
+	tofinspector->Connect("Clicked","hdv_mainframe", this, "DoOpenTOFInspector()");
+	fcalinspector->Connect("Clicked","hdv_mainframe", this, "DoOpenFCALInspector()");
+	bcalinspector->Connect("Clicked","hdv_mainframe", this, "DoOpenBCALInspector()");
 	
 	checkbuttons["candidates"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["tracks"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
@@ -382,6 +422,9 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
 	tracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
 	reconfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoUpdateTrackLabels()");
+
+	// Pointers to optional daughter windows
+	trkmf = NULL;
 
 	// Set up timer to call the DoTimer() method repeatedly
 	// so events can be automatically advanced.
@@ -637,47 +680,136 @@ void hdv_mainframe::DoTimer(void)
 }
 
 //-------------------
-// DoPanLeft
+// DoOpenTrackInspector
 //-------------------
-void hdv_mainframe::DoPanLeft(void)
+void hdv_mainframe::DoOpenTrackInspector(void)
 {
-	x0 -= 50/zoom_factor;
-	SetRange();
-	DoRedraw();
-	//if(gMYPROC)gMYPROC->evnt(eventloop, current_eventnumber);
+	if(trkmf==NULL){
+		trkmf = new trk_mainframe(this, NULL, 100, 100);
+		if(trkmf){
+			next->Connect("Clicked","trk_mainframe", trkmf, "DoNewEvent()");
+			prev->Connect("Clicked","trk_mainframe", trkmf, "DoNewEvent()");
+		}
+	}else{
+		trkmf->RaiseWindow();
+		trkmf->RequestFocus();
+	}
 }
 
 //-------------------
-// DoPanUp
+// DoOpenTOFInspector
 //-------------------
-void hdv_mainframe::DoPanUp(void)
+void hdv_mainframe::DoOpenTOFInspector(void)
 {
-	y0 += 50/zoom_factor;
-	SetRange();
-	DoRedraw();
-	//if(gMYPROC)gMYPROC->evnt(eventloop, current_eventnumber);
+
 }
 
 //-------------------
-// DoPanDown
+// DoOpenFCALInspector
 //-------------------
-void hdv_mainframe::DoPanDown(void)
+void hdv_mainframe::DoOpenFCALInspector(void)
 {
-	y0 -= 50/zoom_factor;
-	SetRange();
-	DoRedraw();
-	//if(gMYPROC)gMYPROC->evnt(eventloop, current_eventnumber);
+
 }
 
 //-------------------
-// DoPanRight
+// DoOpenBCALInspector
 //-------------------
-void hdv_mainframe::DoPanRight(void)
+void hdv_mainframe::DoOpenBCALInspector(void)
+{
+
+}
+
+//-------------------
+// DoClearTrackInspectorPointer
+//-------------------
+void hdv_mainframe::DoClearTrackInspectorPointer(void)
+{
+	trkmf = NULL;
+}
+
+//-------------------
+// DoClearTOFInspectorPointer
+//-------------------
+void hdv_mainframe::DoClearTOFInspectorPointer(void)
+{
+
+}
+
+//-------------------
+// DoClearFCALInspectorPointer
+//-------------------
+void hdv_mainframe::DoClearFCALInspectorPointer(void)
+{
+
+}
+
+//-------------------
+// DoClearBCALInspectorPointer
+//-------------------
+void hdv_mainframe::DoClearBCALInspectorPointer(void)
+{
+
+}
+
+//-------------------
+// DoPanXpos
+//-------------------
+void hdv_mainframe::DoPanXpos(void)
 {
 	x0 += 50/zoom_factor;
 	SetRange();
 	DoRedraw();
-	//if(gMYPROC)gMYPROC->evnt(eventloop, current_eventnumber);
+}
+
+//-------------------
+// DoPanXneg
+//-------------------
+void hdv_mainframe::DoPanXneg(void)
+{
+	x0 -= 50/zoom_factor;
+	SetRange();
+	DoRedraw();
+}
+
+//-------------------
+// DoPanYpos
+//-------------------
+void hdv_mainframe::DoPanYpos(void)
+{
+	y0 += 50/zoom_factor;
+	SetRange();
+	DoRedraw();
+}
+
+//-------------------
+// DoPanYneg
+//-------------------
+void hdv_mainframe::DoPanYneg(void)
+{
+	y0 -= 50/zoom_factor;
+	SetRange();
+	DoRedraw();
+}
+
+//-------------------
+// DoPanZpos
+//-------------------
+void hdv_mainframe::DoPanZpos(void)
+{
+	z0 += 50/zoom_factor;
+	SetRange();
+	DoRedraw();
+}
+
+//-------------------
+// DoPanZneg
+//-------------------
+void hdv_mainframe::DoPanZneg(void)
+{
+	z0 -= 50/zoom_factor;
+	SetRange();
+	DoRedraw();
 }
 
 //-------------------
@@ -1298,6 +1430,15 @@ void hdv_mainframe::SetEvent(int id)
 	sprintf(str,"%5d", id);
 	event->SetTitle(str);
 	event->Draw();
+}
+
+//-------------------
+// SetSource
+//-------------------
+void hdv_mainframe::SetSource(string source)
+{
+	this->source->SetTitle(source.c_str());
+	this->source->Draw();
 }
 
 //-------------------

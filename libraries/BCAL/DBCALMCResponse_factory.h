@@ -8,8 +8,9 @@
 #ifndef _DBCALMCResponse_factory_
 #define _DBCALMCResponse_factory_
 
-#include "JANA/JFactory.h"
-#include "JANA/JEventLoop.h"
+#include <JANA/JFactory.h>
+#include <JANA/JEventLoop.h>
+using namespace jana;
 
 #include "BCAL/DBCALMCResponse.h"
 
@@ -22,7 +23,6 @@ public:
     DBCALMCResponse_factory();
     ~DBCALMCResponse_factory(){};
     
-    const string toString(void);
     
 private:
 

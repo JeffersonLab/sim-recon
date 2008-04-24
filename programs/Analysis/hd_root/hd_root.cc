@@ -10,6 +10,7 @@
 
 #include "MyProcessor.h"
 #include "DANA/DApplication.h"
+using namespace std;
 
 typedef void SetTFilePtrAddress_t(TFile **);
 TFile* tfilePtr = NULL;

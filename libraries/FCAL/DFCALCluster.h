@@ -13,8 +13,9 @@
 #include <DVector3.h>
 //#include "DFCALHit.h"
 
-#include "JANA/JObject.h"
-#include "JANA/JFactory.h"
+#include <JANA/JObject.h>
+#include <JANA/JFactory.h>
+using namespace jana;
 
 #define FCAL_USER_HITS_MAX 2800
 
@@ -46,7 +47,7 @@ static float FCAL_Zmid = FCAL_Zmin - Shower_Vertex_Z +FCAL_Zlen/2.0;
 
 class DFCALCluster:public JObject{
 	public:
-		HDCLASSDEF(DFCALCluster);
+		JOBJECT_PUBLIC(DFCALCluster);
                 
                 DFCALCluster();
 		~DFCALCluster();
@@ -69,6 +70,12 @@ class DFCALCluster:public JObject{
 		int addHit(const int ihit, const double frac);
 		void resetHits();
 		bool update();
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "x(cm)", "%3.1f", getCentroid().x());
+			AddString(items, "y(cm)", "%3.1f", getCentroid().y());
+			AddString(items, "E(GeV)", "%2.3f", getEnergy());
+		}
 
 	private:
 

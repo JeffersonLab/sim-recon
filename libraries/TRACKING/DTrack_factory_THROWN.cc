@@ -29,7 +29,7 @@ jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		const DMCThrown *thrown = mcthrowns[i];
 		const DKinematicData *kd_thrown = thrown;
 
-		if(fabs(thrown->q)<1)continue;
+		if(fabs(thrown->charge())<1)continue;
 
 		// First, copy over the DKinematicData part
 		DTrack *track = new DTrack;
@@ -101,37 +101,6 @@ double DTrack_factory_THROWN::SampleGaussian(double sigma)
   return val;
 }
 
-//------------------
-// toString
-//------------------
-const string DTrack_factory_THROWN::toString(void)
-{
-  // Ensure our Get method has been called so _data is up to date
-  GetNrows();
-  if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-  printheader("row: q:       p:   theta:   phi:    x:    y:    z:");
-
-  for(unsigned int i=0; i<_data.size(); i++){
-
-    DTrack *track = _data[i];
-
-    printnewrow();
-
-    printcol("%x", i);
-    printcol("%+d", (int)track->q);
-    printcol("%3.3f", track->p);
-    printcol("%1.3f", track->theta);
-    printcol("%1.3f", track->phi);
-    printcol("%2.2f", track->x);
-    printcol("%2.2f", track->y);
-    printcol("%2.2f", track->z);
-
-    printrow();
-  }
-
-  return _table;
-}
 
 //------------------
 // The various smearing resolutions taken

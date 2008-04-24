@@ -22,7 +22,6 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 		  DEBUG_HISTS = false;
 		};
 		~DTrackCandidate_factory_FDCCathodes(){};
-		const string toString(void);
 		const char* Tag(void){return "FDCCathodes";}
 	
 	private:  

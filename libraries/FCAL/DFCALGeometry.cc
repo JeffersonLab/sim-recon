@@ -7,6 +7,7 @@
 
 #include <cassert>
 #include <math.h>
+using namespace std;
 
 #include "DFCALGeometry.h"
 #include "TVector2.h"

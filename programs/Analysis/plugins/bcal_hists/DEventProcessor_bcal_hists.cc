@@ -171,13 +171,13 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 	// Compare to thrown values
 	double Etot_thrown=0.0;
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
-		Etot_thrown += mcthrowns[i]->E;
+		Etot_thrown += mcthrowns[i]->energy();
 		for(unsigned int j=0; j<showers.size(); j++){
 			double z = showers[j]->z;
-			Erec_over_Ethrown_vs_z->Fill(z, showers[j]->Ecorr/mcthrowns[i]->E);
+			Erec_over_Ethrown_vs_z->Fill(z, showers[j]->Ecorr/mcthrowns[i]->energy());
 
 			double Ecorr = showers[j]->Ecorr*(1.106+(z-208.4)*(z-208.4)*6.851E-6);
-			Ecorr_over_Erec_vs_z->Fill(z, mcthrowns[i]->E/Ecorr);
+			Ecorr_over_Erec_vs_z->Fill(z, mcthrowns[i]->energy()/Ecorr);
 		}
 	}
 	
@@ -187,8 +187,8 @@ jerror_t DEventProcessor_bcal_hists::evnt(JEventLoop *loop, int eventnumber)
 	// Single thrown particle
 	if(mcthrowns.size()==1){
 		const DMCThrown* mcthrown = mcthrowns[0];
-		if(mcthrown->theta>0.0001){
-			double z = mcthrown->z + 65.0/tan(mcthrown->theta);
+		if(mcthrown->momentum().Theta()>0.0001){
+			double z = mcthrown->position().Z() + 65.0/tan(mcthrown->momentum().Theta());
 			double Ethrown = 1.0; // for some reason, mcthrown->E is zero right now.
 			// I fudge this for now since I know all of the events thrw 1.0GeV
 			Edeposited_over_Ethrown_vs_z->Fill(z, Ehit_tot/Ethrown);

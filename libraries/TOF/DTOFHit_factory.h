@@ -16,7 +16,6 @@ class DTOFHit_factory:public JFactory<DTOFHit>{
 	public:
 		DTOFHit_factory(){};
 		~DTOFHit_factory(){};
-		const string toString(void);
 	
 	protected:
 		//jerror_t init(void);						///< Called once at program start.

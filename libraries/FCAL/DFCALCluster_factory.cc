@@ -7,11 +7,14 @@
 
 #include <math.h>
 #include <DVector3.h>
+using namespace std;
+
+#include <JANA/JEvent.h>
+using namespace jana;
 
 #include "DFCALCluster_factory.h"
 #include "DFCALCluster.h"
 #include "DFCALHit.h"
-#include "JANA/JEvent.h"
 
 #ifndef SQR
 # define SQR(x) (x)*(x)
@@ -186,32 +189,6 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 }
 
-
-//------------------
-// toString
-//------------------
-const string DFCALCluster_factory::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("index:   x(cm):   y(cm):   E(GeV):");
-	
-	for(unsigned int i=0; i<_data.size(); i++){
-		DFCALCluster *fcalclust = _data[i];
-
-		printnewrow();
-		printcol("%d",	i);
-		printcol("%3.1f", fcalclust->getCentroid().x());
-		printcol("%3.1f", fcalclust->getCentroid().y());
-		printcol("%2.3f", fcalclust->getEnergy());
-
-		printrow();
-	}
-
-	return _table;
-}
 
 const userhits_t* DFCALCluster::fHitlist = 0;
 int* DFCALCluster::fHitused = 0;

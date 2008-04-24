@@ -7,11 +7,13 @@
 
 #include <math.h>
 
+#include <JANA/JEvent.h>
+using namespace jana;
+
 #include "DTwoGammaFit.h"
 #include "DKinFit.h"
 #include "DPhoton.h"
 #include "DTwoGammaFit_factory.h"
-#include "JANA/JEvent.h"
 
 
 //----------------
@@ -42,7 +44,7 @@ jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	vector<const DPhoton*> photons;
 	eventLoop->Get(photons);
    
-        oid_t nPairs=0;
+        JObject::oid_t nPairs=0;
 	// Loop over all fit candidates.
         for (unsigned int i = 0; i < photons.size() ; i++) {
             if ( photons[i]->getTag() == 3  ) continue;
@@ -99,31 +101,4 @@ jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	return NOERROR;
 }
 
-//------------------
-// toString
-//------------------
-const string DTwoGammaFit_factory::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("row:   E(GeV):   Px(cm):   Py(cm):   Pz(cm):   M(GeV):   Chi2:");
-	
-	for(unsigned int i=0; i<_data.size(); i++){
-		DTwoGammaFit *pions = _data[i];
-
-		printnewrow();
-		printcol("%d",	i);
-		printcol("%6.2f", pions->energy());
-		printcol("%6.2f", pions->lorentzMomentum().X());
-		printcol("%6.2f", pions->lorentzMomentum().Y());
-		printcol("%6.2f", pions->lorentzMomentum().Z());
-		printcol("%6.2f", pions->mass());
-		printcol("%6.2f", pions->getChi2());
-		printrow();
-	}
-
-	return _table;
-}
 

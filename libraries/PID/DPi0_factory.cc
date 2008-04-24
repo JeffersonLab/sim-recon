@@ -51,36 +51,6 @@ jerror_t DPi0_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	return NOERROR;
 }
 
-//------------------
-// toString
-//------------------
-const string DPi0_factory::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("row:   E(GeV):   Px(cm):   Py(cm):   Pz(cm):   M(GeV):");
-	
-	for(unsigned int i=0; i<_data.size(); i++){
-		DPi0 *pions = _data[i];
-
-		printnewrow();
-		printcol("%d",	i);
-		printcol("%6.2f", pions->lorentzMomentum().T());
-		printcol("%6.2f", pions->lorentzMomentum().X());
-		printcol("%6.2f", pions->lorentzMomentum().Y());
-		printcol("%6.2f", pions->lorentzMomentum().Z());
-		printcol("%6.2f", pions->lorentzMomentum().M());
-//		printcol("%5.2f", pi0s->getM());
-//		printcol("%4.0f", fcalhit->t);
-		printrow();
-	}
-
-	return _table;
-}
-
-
 
 // create pi0 candidate from two photons 
 DPi0* DPi0_factory::makePi0(const DPhoton* gamma1, const DPhoton* gamma2) 

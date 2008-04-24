@@ -73,32 +73,3 @@ jerror_t DTrackHit_factory_MC::evnt(JEventLoop *loop, int eventnumber)
 	return NOERROR;
 }
 
-//------------------
-// toString
-//------------------
-const string DTrackHit_factory_MC::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-	
-	printheader("row:    id:    x:     y:     z:    r:    phi:   system:");
-
-	for(unsigned int i=0; i<_data.size(); i++){
-		DTrackHit *trackhit = _data[i];
-
-		printnewrow();
-		printcol("%d",i);
-		printcol("%x",	trackhit->id);
-		printcol("%1.3f",	trackhit->x);
-		printcol("%1.3f",	trackhit->y);
-		printcol("%1.3f",	trackhit->z);
-		printcol("%1.3f",	trackhit->r);
-		printcol("%1.3f",	trackhit->phi);
-		printcol("%s",	SystemName(trackhit->system));
-		printrow();
-	}
-
-	return _table;
-
-}

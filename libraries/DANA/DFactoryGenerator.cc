@@ -9,16 +9,12 @@
 
 extern jerror_t BCAL_init(JEventLoop *loop);
 extern jerror_t CDC_init(JEventLoop *loop);
-extern jerror_t CHERENKOV_init(JEventLoop *loop);
 extern jerror_t FDC_init(JEventLoop *loop);
 extern jerror_t FCAL_init(JEventLoop *loop);
 extern jerror_t START_COUNTER_init(JEventLoop *loop);
 extern jerror_t TAGGER_init(JEventLoop *loop);
 extern jerror_t TOF_init(JEventLoop *loop);
 extern jerror_t TRACKING_init(JEventLoop *loop);
-extern jerror_t TRIGGER_init(JEventLoop *loop);
-extern jerror_t UPV_init(JEventLoop *loop);
-extern jerror_t ONLINE_init(JEventLoop *loop);
 extern jerror_t PID_init(JEventLoop *loop);
 
 //---------------------------------
@@ -44,16 +40,12 @@ jerror_t DFactoryGenerator::GenerateFactories(JEventLoop *loop)
 {
 	BCAL_init(loop);
 	CDC_init(loop);
-	CHERENKOV_init(loop);
 	FDC_init(loop);
 	FCAL_init(loop);
 	START_COUNTER_init(loop);
 	TAGGER_init(loop);
 	TOF_init(loop);
 	TRACKING_init(loop);
-	TRIGGER_init(loop);
-	UPV_init(loop);
-	ONLINE_init(loop);
 	PID_init(loop);
 	
 	return NOERROR;

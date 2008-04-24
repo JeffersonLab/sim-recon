@@ -28,6 +28,10 @@
 #include <TGLabel.h>
 #include <TTimer.h>
 
+class trk_mainframe;
+#ifndef __CINT__
+#include "trk_mainframe.h"
+#endif
 
 class hdv_mainframe:public TGMainFrame {
 
@@ -51,11 +55,24 @@ class hdv_mainframe:public TGMainFrame {
 		void DoStop(void);
 		void DoCont(void);
 		void DoTimer(void);
+		
+		void DoOpenTrackInspector(void);
+		void DoOpenTOFInspector(void);
+		void DoOpenFCALInspector(void);
+		void DoOpenBCALInspector(void);
+		
+		void DoClearTrackInspectorPointer(void);
+		void DoClearTOFInspectorPointer(void);
+		void DoClearFCALInspectorPointer(void);
+		void DoClearBCALInspectorPointer(void);
 
-		void DoPanLeft(void);
-		void DoPanUp(void);
-		void DoPanDown(void);
-		void DoPanRight(void);
+		void DoPanXpos(void);
+		void DoPanXneg(void);
+		void DoPanYpos(void);
+		void DoPanYneg(void);
+		void DoPanZpos(void);
+		void DoPanZneg(void);
+
 		void DoZoomIn(void);
 		void DoZoomOut(void);
 		void DoReset(void);
@@ -71,6 +88,7 @@ class hdv_mainframe:public TGMainFrame {
 
 		// Other (non-slot) methods
 		void SetEvent(int id);
+		void SetSource(string source);
 		bool GetDrawCandidates(void){return draw_candidates;}
 		bool GetDrawTracks(void){return draw_tracks;}
 		bool GetDrawThrowns(void){return draw_throwns;}
@@ -94,17 +112,22 @@ class hdv_mainframe:public TGMainFrame {
 		void AddGraphicsEndB(vector<TObject*> &v);
 		
 	private:
+	
+		trk_mainframe *trkmf;
+	
 		TRootEmbeddedCanvas *sideviewA;
 		TRootEmbeddedCanvas *sideviewB;
 		TRootEmbeddedCanvas *endviewA;
 		TRootEmbeddedCanvas *endviewB;
 		
-		TGLabel *event, *run;
+		TGLabel *event, *run, *source;
 		
 		TGComboBox *tracksfactory;
 		TGComboBox *candidatesfactory;
 		TGComboBox *reconfactory;
 		TGComboBox *delay;
+		
+		TGTextButton *next, *prev;
 		
 		string default_candidate;
 		string default_track;

@@ -18,7 +18,6 @@ class DFCALPhoton_factory:public JFactory<DFCALPhoton>{
 	public:
 		DFCALPhoton_factory();
 		~DFCALPhoton_factory(){};
-		const string toString(void);
 	
 	private:
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method

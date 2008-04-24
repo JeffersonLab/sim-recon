@@ -8,15 +8,16 @@
 #ifndef _DTOFHit_factory_MC
 #define _DTOFHit_factory_MC
 
-#include "JANA/JFactory.h"
-#include "JANA/JEventLoop.h"
+#include <JANA/JFactory.h>
+#include <JANA/JEventLoop.h>
+using namespace jana;
+
 #include "DTOFHit.h"
 
 class DTOFHit_factory_MC:public JFactory<DTOFHit>{
  public:
   DTOFHit_factory_MC(){};
   ~DTOFHit_factory_MC(){};
-  const string toString(void);
   const char* Tag(void){return "MC";} // Monte Carlo TAG
   
  private:

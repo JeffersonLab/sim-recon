@@ -13,11 +13,13 @@ using namespace std;
 
 #include <math.h>
 
+#include <JANA/JGeometry.h>
+using namespace jana;
+
 #include "DTrackCandidate_factory_FDCpseudo.h"
 #include "DANA/DApplication.h"
 #include "DTrack.h"
 #include "DQuickFit.h"
-#include "JANA/JGeometry.h"
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "DVector2.h"
 #include "FDC/DFDCGeometry.h"
@@ -616,39 +618,5 @@ void DTrackCandidate_factory_FDCpseudo::FindZ(DFDCSeed &seed, double theta_min, 
 		if(trkhit->zmax < seed.z_vertex)continue;
 		trkhit->flags |= IN_Z_RANGE;
 	}
-}
-
-//------------------
-// toString
-//------------------
-const string DTrackCandidate_factory_FDCpseudo::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("  row: q:       p:       E:     theta:   phi:    mass:     x:     y:     z:");
-
-	for(unsigned int i=0; i<_data.size(); i++){
-		DTrackCandidate *trackcandidate = _data[i];
-		printnewrow();
-		
-		double phi = (trackcandidate->momentum()).Phi();
-		if(phi<0.0)phi+=2.0*M_PI;
-		
-		printcol("%ld",    i);
-		printcol("%+d", (int)trackcandidate->charge());
-		printcol("%1.3f", trackcandidate->pmag());
-		printcol("%1.3f", trackcandidate->energy());
-		printcol("%1.3f", (trackcandidate->momentum()).Theta());
-		printcol("%3.2f", phi);
-		printcol("%f",    trackcandidate->mass());
-		printcol("%2.2f", (trackcandidate->position()).X());
-		printcol("%2.2f", (trackcandidate->position()).Y());
-		printcol("%2.2f", (trackcandidate->position()).Z());
-		printrow();
-	}
-	
-	return _table;
 }
 

@@ -12,21 +12,22 @@
 #include <TH2F.h>
 #include <TH3F.h>
 
-#include "JANA/JFactory.h"
+#include <JANA/JFactory.h>
+#include <JANA/JGeometry.h>
+using namespace jana;
+
 #include "DQuickFit.h"
 #include "DHoughFind.h"
 #include "DTrackCandidate.h"
 #include "FDC/DFDCIntersection.h"
 #include "FDC/DFDCWire.h"
 
-class JGeometry;
 class DMagneticFieldMap;
 
 class DTrackCandidate_factory_FDC:public JFactory<DTrackCandidate>{
 	public:
 		DTrackCandidate_factory_FDC();
 		~DTrackCandidate_factory_FDC(){};
-		const string toString(void);
 		virtual const char* Tag(void){return "FDC";}
 
 		enum trk_flags_t{

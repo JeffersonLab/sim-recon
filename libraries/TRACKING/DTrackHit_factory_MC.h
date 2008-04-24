@@ -8,14 +8,15 @@
 #ifndef _DTrackHit_factory_MC_
 #define _DTrackHit_factory_MC_
 
-#include "JANA/JFactory.h"
+#include <JANA/JFactory.h>
+using namespace jana;
+
 #include "DTrackHit.h"
 
 class DTrackHit_factory_MC:public JFactory<DTrackHit>{
 	public:
 		DTrackHit_factory_MC();
 		~DTrackHit_factory_MC(){};
-		const string toString(void);
 		const char* Tag(void){return "MC";}
 		
 		const vector<int>& GetTrackNumbers(void){return tracknumber;}

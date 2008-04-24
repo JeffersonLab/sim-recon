@@ -143,10 +143,10 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumbe
 	for(unsigned int i=0;i<mcthrowns.size();i++){
 		const DMCThrown *mcthrown = mcthrowns[i];
 		
-		if(mcthrown->q != 0.0){
-			thrown_charged->Fill(mcthrown->p, mcthrown->theta*57.3);
+		if(mcthrown->charge() != 0.0){
+			thrown_charged->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
 		}else if(mcthrown->type == 1){
-			thrown_photon->Fill(mcthrown->p, mcthrown->theta*57.3);
+			thrown_photon->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
 		}
 	}
 	
@@ -187,7 +187,7 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumbe
 	
 	// Simple 1-D histos for CDC and FDC as a function of thrown momentum
 	if(mcthrowns.size()==1){
-		double p = mcthrowns[0]->p;
+		double p = mcthrowns[0]->momentum().Mag();
 		CDC_nhits_vs_pthrown->Fill(p, Ncdc_anode);
 		FDC_nhits_vs_pthrown->Fill(p, Nfdc_anode);
 		pthrown->Fill(p);
@@ -208,7 +208,7 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumbe
 		if(iter->first<=0 || iter->first>(int)mcthrowns.size())continue;
 		const DMCThrown *mcthrown = mcthrowns[iter->first-1];
 		
-		if(iter->second >= MIN_CDC_HITS)CDC->Fill(mcthrown->p, mcthrown->theta*57.3);
+		if(iter->second >= MIN_CDC_HITS)CDC->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
 	}
 
 	// Loop over tracks in the FDC
@@ -218,13 +218,13 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumbe
 		if(iter->first<=0 || iter->first>(int)mcthrowns.size())continue;
 		const DMCThrown *mcthrown = mcthrowns[iter->first-1];
 		
-		if(iter->second >= MIN_FDC_HITS)FDC->Fill(mcthrown->p, mcthrown->theta*57.3);
+		if(iter->second >= MIN_FDC_HITS)FDC->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
 		
 		// Fill CDC + FDC histo
 		if(cdchits.find(iter->first) != cdchits.end()){
 			int cdc_fdc_hits = cdchits.find(iter->first)->second + iter->second;
 			if(cdc_fdc_hits >= MIN_CDC_FDC_HITS)
-				CDC_FDC->Fill(mcthrown->p, mcthrown->theta*57.3);
+				CDC_FDC->Fill(mcthrown->momentum().Mag(), mcthrown->momentum().Theta()*57.3);
 		}
 	}
 

@@ -4,7 +4,7 @@
 
 #include "DFDCSegment_factory.h"
 #include "DANA/DApplication.h"
-#include "START_COUNTER/DSCHit_factory.h"
+#include "START_COUNTER/DSCHit.h"
 #include "HDGEOMETRY/DLorentzMapCalibDB.h"
 #include <math.h>
 
@@ -983,17 +983,3 @@ double DFDCSegment_factory::GetCharge(unsigned int n,DMatrix XYZ, DMatrix CR,
   return 1.;
 }
 
-
-
-//------------------
-// toString
-//------------------
-const string DFDCSegment_factory::toString(void)
-{
-        // Ensure our Get method has been called so _data is up to date
-        Get();
-        if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	return string();
-
-}

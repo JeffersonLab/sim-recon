@@ -13,6 +13,7 @@ using namespace std;
 
 #include <JANA/JApplication.h>
 #include <JANA/JEventLoop.h>
+using namespace jana;
 
 #include "DEventProcessor_mcthrown_hists.h"
 #include "TRACKING/DMCThrown.h"
@@ -90,27 +91,27 @@ jerror_t DEventProcessor_mcthrown_hists::evnt(JEventLoop *loop, int eventnumber)
 	for(unsigned int i=0;i<mcthrowns.size();i++){
 		const DMCThrown *mcthrown = mcthrowns[i];
 
-		pmom->Fill(mcthrown->p);
-		theta->Fill(mcthrown->theta*57.3);
-		phi->Fill(mcthrown->phi);
-		energy->Fill(mcthrown->E);
-		pmom_vs_theta->Fill(mcthrown->theta*57.3, mcthrown->p);
-		vertex->Fill(mcthrown->x, mcthrown->y, mcthrown->z);
+		pmom->Fill(mcthrown->momentum().Mag());
+		theta->Fill(mcthrown->momentum().Theta()*57.3);
+		phi->Fill(mcthrown->momentum().Phi());
+		energy->Fill(mcthrown->energy());
+		pmom_vs_theta->Fill(mcthrown->momentum().Theta()*57.3, mcthrown->momentum().Mag());
+		vertex->Fill(mcthrown->position().X(), mcthrown->position().Y(), mcthrown->position().Z());
 		
 		particle_type->Fill(mcthrown->type);
 		
 		switch(mcthrown->type){
 			case 1:
-				pmom_vs_theta_gamma->Fill(mcthrown->theta*57.3, mcthrown->p);
+				pmom_vs_theta_gamma->Fill(mcthrown->momentum().Theta()*57.3, mcthrown->momentum().Mag());
 				break;
 			case 8:
-				pmom_vs_theta_pip->Fill(mcthrown->theta*57.3, mcthrown->p);
+				pmom_vs_theta_pip->Fill(mcthrown->momentum().Theta()*57.3, mcthrown->momentum().Mag());
 				break;
 			case 9:
-				pmom_vs_theta_pim->Fill(mcthrown->theta*57.3, mcthrown->p);
+				pmom_vs_theta_pim->Fill(mcthrown->momentum().Theta()*57.3, mcthrown->momentum().Mag());
 				break;
 			case 14:
-				pmom_vs_theta_proton->Fill(mcthrown->theta*57.3, mcthrown->p);
+				pmom_vs_theta_proton->Fill(mcthrown->momentum().Theta()*57.3, mcthrown->momentum().Mag());
 				break;
 		}
 	}

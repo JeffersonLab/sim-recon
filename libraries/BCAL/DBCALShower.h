@@ -1,12 +1,13 @@
 #ifndef _DBCALShower_
 #define _DBCALShower_
 
-#include "JANA/JObject.h"
-#include "JANA/JFactory.h"
+#include <JANA/JObject.h>
+#include <JANA/JFactory.h>
+using namespace jana;
 
 class DBCALShower:public JObject{
 	public:
-		HDCLASSDEF(DBCALShower);
+		JOBJECT_PUBLIC(DBCALShower);
 
     float E;    
     float Ecorr;
@@ -31,6 +32,13 @@ class DBCALShower:public JObject{
     float t_rms_a;
     float t_rms_b;
 
+	void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "x", "%5.2f", x);
+			AddString(items, "y", "%5.2f", y);
+			AddString(items, "z", "%5.2f", z);
+			AddString(items, "t", "%5.2f", t);
+			AddString(items, "E", "%5.2f", E);
+	}
 };
 
 #endif // _DBCALShower_

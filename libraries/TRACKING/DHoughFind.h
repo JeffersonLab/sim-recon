@@ -13,6 +13,8 @@ using std::vector;
 
 #include <JANA/jerror.h>
 #include <JANA/JObject.h>
+using namespace jana;
+
 #include <DVector2.h>
 
 class DHoughFind:public JObject{

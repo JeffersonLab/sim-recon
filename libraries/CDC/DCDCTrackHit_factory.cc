@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <pthread.h>
+using namespace std;
 
 #include "DCDCTrackHit_factory.h"
 #include "DCDCHit.h"
@@ -212,32 +213,3 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	return NOERROR;
 }
 
-//------------------
-// toString
-//------------------
-const string DCDCTrackHit_factory::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-	printheader("ring: straw:    x(cm):     y(cm): stereo(rad):  tdrift(ns):  dist(cm):");
-
-	for(unsigned int i=0; i<_data.size(); i++){
-		DCDCTrackHit *hit = _data[i];
-		const DCDCWire *w = hit->wire;
-
-		printnewrow();
-		printcol("%d",	w->ring);
-		printcol("%d",	w->straw);
-		printcol("%3.1f",	w->origin.x());
-		printcol("%3.1f",	w->origin.y());
-		printcol("%1.4f",	w->stereo);
-		printcol("%3.1f",	hit->tdrift);
-		printcol("%3.1f",	hit->dist);
-		printrow();
-	}
-
-	return _table;
-
-}

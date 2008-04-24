@@ -1,12 +1,16 @@
 // $Id: PID_init.cc 2433 2007-04-07 14:57:32Z kornicer $
 
-#include "JANA/JEventLoop.h"
+#include <JANA/JEventLoop.h>
+using namespace jana;
+
 #include "DPhoton_factory.h"
 #include "DPi0_factory.h"
 #include "DTwoGammaFit_factory.h"
 #include "DTwoGammaFit_factory_PI0.h"
 #include "DTwoGammaFit_factory_ETA.h"
-#include "DBeamPhoton_factory.h"
+
+#include "DBeamPhoton.h"
+typedef JFactory<DBeamPhoton> DBeamPhoton_factory;
 
 #define UC_CLUSTERIZER
 

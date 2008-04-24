@@ -8,15 +8,20 @@
 #include "DTrackCandidate_factory_FDC.h"
 #include "DTrackCandidate_factory_FDCCathodes.h"
 #include "DTrackCandidate_factory_FDCpseudo.h"
-#include "DTrackHit_factory.h"
 #include "DTrackHit_factory_MC.h"
-#include "DMCTrackHit_factory.h"
-#include "DMCThrown_factory.h"
-#include "DMCTrajectoryPoint_factory.h"
 #include "DTrack_factory_THROWN.h"
 #include "DTrack_factory_ALT1.h"
 #include "DTrack_factory_ALT2.h"
 #include "DTrack_factory_ALT3.h"
+
+#include "DMCThrown.h"
+#include "DMCTrackHit.h"
+#include "DMCTrajectoryPoint.h"
+#include "DTrackHit.h"
+typedef JFactory<DMCThrown> DMCThrown_factory;
+typedef JFactory<DMCTrackHit> DMCTrackHit_factory;
+typedef JFactory<DMCTrajectoryPoint> DMCTrajectoryPoint_factory;
+typedef JFactory<DTrackHit> DTrackHit_factory;
 
 jerror_t TRACKING_init(JEventLoop *loop)
 {

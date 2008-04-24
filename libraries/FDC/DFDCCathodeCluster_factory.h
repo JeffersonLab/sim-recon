@@ -7,9 +7,10 @@
 #ifndef DFACTORY_DFDCCATHODECLUSTER_H
 #define DFACTORY_DFDCCATHODECLUSTER_H
 
-#include "JANA/JFactory.h"
-#include "JANA/JException.h"
-#include "JANA/JStreamLog.h"
+#include <JANA/JFactory.h>
+#include <JANA/JException.h>
+#include <JANA/JStreamLog.h>
+using namespace jana;
 
 #include "DFDCCathodeCluster.h"
 #include "DFDCHit.h"
@@ -44,14 +45,7 @@ class DFDCCathodeCluster_factory : public JFactory<DFDCCathodeCluster> {
 		/// by grouping together hits with consecutive strip numbers.
 		///
 		void pique(vector<const DFDCHit*>& h);
-		
-		///
-		/// DFDCCathodeCluster_factory::toString():
-		/// returns a sensible std::string representation of the data contained in this 
-		/// factory.
-		///		
-		const string toString();
-	
+			
 	protected:
 		///
 		/// DFDCCathodeCluster_factory::evnt():

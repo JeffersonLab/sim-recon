@@ -48,3 +48,45 @@ DApplication::~DApplication()
 {
 
 }
+
+//---------------------------------
+// GetDGeometry
+//---------------------------------
+DGeometry* DApplication::GetDGeometry(unsigned int run_number)
+{
+	/// Get the DGeometry object for the specified run number.
+	/// The DGeometry class is Hall-D specific. It uses the
+	/// JGeometry class from JANA to access values in the HDDS
+	/// XML files. However, it supplies some useful and more
+	/// user friendly methods for getting at some of the values.
+	///
+	/// This will first look for the DGeometry object in a list
+	/// kept internal to DApplication and return a pointer to the
+	/// object if found there. If it is not found there, then
+	/// a new DGeometry object will be created and added to the
+	/// internal list before returning a pointer to it.
+	///
+	/// Note that since this method can change internal data
+	/// members, a mutex is locked to ensure integrity. This
+	/// means that it is <b>NOT</b> efficient to call this
+	/// method for every event. The pointer should be obtained
+	/// in a brun() method and kept in a local variable if
+	/// needed outside of brun().
+	
+	// First, get the JGeometry object using our JApplication
+	// base class. Then, use that to find the correct DGeometry
+	// object if it exists.
+	JGeometry *jgeom = GetJGeometry(run_number);
+	if(!jgeom)return NULL;
+	
+	for(unsigned int i=0; i<geometries.size(); i++){
+		if(geometries[i]->GetJGeometry() == jgeom)return geometries[i];
+	}
+	
+	// Couldn't find a DGeometry object that uses this JGeometry object.
+	// Create one and add it to the list.
+	DGeometry *dgeom = new DGeometry(jgeom, this);
+	geometries.push_back(dgeom);
+	
+	return dgeom;
+}

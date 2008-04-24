@@ -8,18 +8,18 @@
 #ifndef _DTOFGeometry_factory_
 #define _DTOFGeometry_factory_
 
-#include "JANA/JFactory.h"
+#include <JANA/JFactory.h>
+using namespace jana;
+
 #include "DTOFGeometry.h"
 
 class DTOFGeometry_factory:public JFactory<DTOFGeometry>{
 	public:
 		DTOFGeometry_factory(){};
 		~DTOFGeometry_factory(){};
-		const string toString(void);
 
 
 	private:
-		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 		jerror_t init(void);
 };
 

@@ -13,12 +13,13 @@
 #include <TLorentzVector.h>
 #include "DFCALCluster.h"
 
-#include "JANA/JObject.h"
-#include "JANA/JFactory.h"
+#include <JANA/JObject.h>
+#include <JANA/JFactory.h>
+using namespace jana;
 
 class DFCALPhoton:public JObject{
 	public:
-		HDCLASSDEF(DFCALPhoton);
+		JOBJECT_PUBLIC(DFCALPhoton);
                 
 			DFCALPhoton();
 			~DFCALPhoton();
@@ -39,6 +40,16 @@ class DFCALPhoton:public JObject{
                 // set photon momentum
 			void setMom3(const double energy, const DVector3 pos);    
 			void setMom4();  
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "E(GeV)", "%6.2f", getEnergy());
+			AddString(items, "Px(GeV)", "%6.2f", getMom3().X());
+			AddString(items, "Py(GeV)", "%6.2f", getMom3().Y());
+			AddString(items, "Pz(GeV)", "%6.2f", getMom3().Z());
+			AddString(items, "X(cm)", "%7.2f", getPosition().X());
+			AddString(items, "Y(cm)", "%7.2f", getPosition().Y());
+			AddString(items, "Z(cm)", "%7.2f", getPosition().Z());
+		}
 
 	private:
 

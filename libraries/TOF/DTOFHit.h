@@ -8,15 +8,16 @@
 #ifndef _DTOFHit_
 #define _DTOFHit_
 
-#include "JANA/JObject.h"
-#include "JANA/JFactory.h"
+#include <JANA/JObject.h>
+#include <JANA/JFactory.h>
+using namespace jana;
 
 class DTOFHit:public JObject{
     public:
-        HDCLASSDEF(DTOFHit);
+        JOBJECT_PUBLIC(DTOFHit);
 
         int orientation;  // 0: vertical,  1: horizontal
-	int bar;          // bar number
+		  int bar;          // bar number
         float t_north;    // time of light at end of bar  (calibrated) 
         float E_north;    // attenuated energy deposition  (calibrated)
         float t_south;    // time of light at end of bar  (calibrated) 
@@ -28,6 +29,18 @@ class DTOFHit:public JObject{
         float dpos;       // estimated uncertainty in hitposition
         float dE;         // weighted energy deposition
 
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "orientation", "%d", orientation);
+			AddString(items, "bar", "%d", bar);
+			AddString(items, "t_north", "%1.3f", t_north);
+			AddString(items, "E_north", "%1.3f", E_north);
+			AddString(items, "t_south", "%1.3f", t_south);
+			AddString(items, "meantime", "%1.3f", meantime);
+			AddString(items, "timediff", "%1.3f", timediff);
+			AddString(items, "pos", "%1.3f", pos);
+			AddString(items, "dpos", "%1.3f", dpos);
+			AddString(items, "dE", "%1.3f", dE);
+		}
 };
 
 #endif // _DTOFHit_

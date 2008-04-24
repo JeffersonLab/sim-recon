@@ -10,16 +10,27 @@
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
+using namespace jana;
 
 #include "DCDCWire.h"
 
 class DCDCTrackHit:public JObject{
 	public:
-		HDCLASSDEF(DCDCTrackHit);
+		JOBJECT_PUBLIC(DCDCTrackHit);
 
 		const DCDCWire *wire;	// DCDCWire structure for this hit
 		float tdrift;				// Drift time of hit in ns
 		float dist;					// Measured DOCA in cm
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "ring", "%d", wire->ring);
+			AddString(items, "straw", "%d", wire->straw);
+			AddString(items, "x(cm)", "%3.1f", wire->origin.y());
+			AddString(items, "y(cm)", "%3.1f", wire->origin.y());
+			AddString(items, "stereo(rad)", "%1.4f", wire->stereo);
+			AddString(items, "tdrift(ns)", "%3.1f", tdrift);
+			AddString(items, "dist(cm)", "%3.1f", dist);
+		}
 };
 
 #endif // _DCDCTrackHit_

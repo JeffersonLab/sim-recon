@@ -7,9 +7,10 @@
 /// hd_dump print event info to screen
 ///
 
-#include "JANA/JEventProcessor.h"
-#include "JANA/JEventLoop.h"
-#include "JANA/JFactory.h"
+#include <JANA/JEventProcessor.h>
+#include <JANA/JEventLoop.h>
+#include <JANA/JFactory.h>
+using namespace jana;
 
 extern int PAUSE_BETWEEN_EVENTS;
 extern int SKIP_BORING_EVENTS;

@@ -15,8 +15,7 @@ class DTwoGammaFit_factory_ETA:public DTwoGammaFit_factory {
 	public:
 		DTwoGammaFit_factory_ETA();
 		~DTwoGammaFit_factory_ETA(){};
-		const string toString(void);
-                const char* Tag(void){return "ETA";}
+		const char* Tag(void){return "ETA";}
 	
 	private:
 

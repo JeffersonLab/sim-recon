@@ -113,7 +113,10 @@
  
  */
 
-#include "JANA/JObject.h"
+#include <cmath>
+
+#include <JANA/JObject.h>
+using namespace jana;
 
 #include "GlueX.h"    
 
@@ -241,6 +244,18 @@ public:
     bool hasNullErrorMatrix() const {
         return (&errorMatrix() == nullMatrix());};
     
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "q", "%+1.0f", charge());
+			AddString(items, "x(cm)", "%3.1f", x());
+			AddString(items, "y(cm)", "%3.1f", y());
+			AddString(items, "z(cm)", "%3.1f", z());
+			AddString(items, "E(GeV)", "%2.3f", energy());
+			AddString(items, "t(ns)", "%2.3f", t0());
+			AddString(items, "p(GeV/c)", "%2.3f", momentum().Mag());
+			AddString(items, "theta(deg)", "%2.3f", momentum().Theta()*180.0/M_PI);
+			AddString(items, "phi(deg)", "%2.3f", momentum().Phi()*180.0/M_PI);
+		}
+
 protected:
         
     // protected member functions

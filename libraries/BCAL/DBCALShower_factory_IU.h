@@ -18,8 +18,10 @@
 #ifndef _DBCALShower_factory_IU_
 #define _DBCALShower_factory_IU_
 
-#include "JANA/JFactory.h"
-#include "JANA/JEventLoop.h"
+#include <JANA/JFactory.h>
+#include <JANA/JEventLoop.h>
+using namespace jana;
+
 #include "BCAL/DBCALShower.h"
 
 class DBCALShower_factory_IU:public JFactory<DBCALShower>{
@@ -28,7 +30,6 @@ public:
     
     DBCALShower_factory_IU();
     ~DBCALShower_factory_IU(){};
-    const string toString(void);
     const char* Tag(void){return "IU";}
     
 private:

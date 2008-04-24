@@ -10,6 +10,7 @@ using namespace std;
 #include <TThread.h>
 
 #include <JANA/JEventLoop.h>
+using namespace jana;
 
 #include "DEventProcessor_cdc_hists.h"
 
@@ -130,10 +131,10 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 	// Swim reference trajectory for first thrown track
 	const DMCThrown *mcthrown = mcthrowns.size()>0 ? mcthrowns[0]:NULL;
 	if(mcthrown){
-		DVector3 pos(mcthrown->x, mcthrown->y, mcthrown->z);
+		DVector3 pos(mcthrown->position().X(), mcthrown->position().X(), mcthrown->position().X());
 		DVector3 mom;
-		mom.SetMagThetaPhi(mcthrown->p, mcthrown->theta, mcthrown->phi);
-		rt->Swim(pos, mom, mcthrown->q);
+		mom.SetMagThetaPhi(mcthrown->momentum().Mag(), mcthrown->momentum().Theta(), mcthrown->momentum().Phi());
+		rt->Swim(pos, mom, mcthrown->charge());
 	}
 	
 	// Loop over all truth hits, ignoring all but CDC hits
@@ -161,7 +162,7 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 		cdchit.dE		= hit->dE;
 		cdchit.dx		= 0.0;
 		cdchit.t			= hit->t;
-		cdchit.pthrown = mcthrowns.size()>0 ? mcthrowns[0]->p:-1000.0;
+		cdchit.pthrown = mcthrowns.size()>0 ? mcthrowns[0]->momentum().Mag():-1000.0;
 		cdchit.ncdchits	= (int)cdchits.size();
 		cdchit.ntothits	= (int)cdchits.size() + Nfdc_wire_hits;
 		
@@ -185,7 +186,7 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 				// density of  Ar: 1.977E-3 g/cm^3
 				// density of CO2: 1.66E-3 g/cm^3
 				double density = 0.85*1.66E-3 + 0.15*1.977E-3;
-				idEdx_vs_p->Fill(mcthrown->p, dEtot/dxtot*1000.0/density);
+				idEdx_vs_p->Fill(mcthrown->momentum().Mag(), dEtot/dxtot*1000.0/density);
 			}
 		}
 	}

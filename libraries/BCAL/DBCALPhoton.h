@@ -16,14 +16,15 @@
 
 #include "BCAL/DBCALShower.h"
 
-#include "JANA/JObject.h"
-#include "JANA/JFactory.h"
+#include <JANA/JObject.h>
+#include <JANA/JFactory.h>
+using namespace jana;
 
 class DBCALPhoton : public JObject {
 
 public:
 
-    HDCLASSDEF( DBCALPhoton );
+    JOBJECT_PUBLIC( DBCALPhoton );
     
     DBCALPhoton( int id ) : JObject( id ) {}
     ~DBCALPhoton(){}
@@ -43,7 +44,17 @@ public:
     void setFitLayPointErr( const DVector3& vec3 ) { m_fitLayPointErr = vec3; }
     void setFitLaySlope( const DVector3& vec3 )    { m_fitLaySlope = vec3;    }
     void setFitLaySlopeErr( const DVector3& vec3 ) { m_fitLaySlopeErr = vec3; }
-    
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "x", "%3.2f", m_position.X());
+			AddString(items, "y", "%3.2f", m_position.Y());
+			AddString(items, "z", "%3.2f", m_position.Z());
+			AddString(items, "px", "%5.2f", m_p4.Px());
+			AddString(items, "py", "%5.2f", m_p4.Py());
+			AddString(items, "pz", "%5.2f", m_p4.Pz());
+			AddString(items, "E" , "%5.2f", m_p4.E());
+		}
+
 private:
       
     DVector3 m_position;

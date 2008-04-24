@@ -1,13 +1,18 @@
 // $Id$
 
-#include "JANA/JEventLoop.h"
-#include "FCAL/DFCALHit_factory.h"
-#include "FCAL/DFCALCluster_factory.h"
-#include "FCAL/DFCALPhoton_factory.h"
-#include "FCAL/DFCALGeometry_factory.h"
-#include "FCAL/DFCALTruthShower_factory.h"
-#include "FCAL/DFCALMCResponse_factory.h"
-#include "FCAL/DMCFCALHit.h"
+#include <JANA/JEventLoop.h>
+using namespace jana;
+
+#include "DFCALCluster_factory.h"
+#include "DFCALGeometry_factory.h"
+#include "DFCALHit_factory.h"
+#include "DFCALMCResponse_factory.h"
+#include "DFCALPhoton_factory.h"
+
+#include "DFCALTruthShower.h"
+#include "DMCFCALHit.h"
+typedef JFactory<DFCALTruthShower> DFCALTruthShower_factory;
+typedef JFactory<DMCFCALHit> DMCFCALHit_factory;
 
 jerror_t FCAL_init(JEventLoop *loop)
 {

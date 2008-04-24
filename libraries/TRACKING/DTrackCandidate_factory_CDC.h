@@ -9,16 +9,17 @@
 #define _DTrackCandidate_factory_CDC_
 
 #include <JANA/JFactory.h>
-#include "DTrackCandidate.h"
-#include <CDC/DCDCTrackHit.h>
+using namespace jana;
 
-class DQuickFit;
+#include "DTrackCandidate.h"
+#include "DQuickFit.h"
+#include "CDC/DCDCTrackHit.h"
+
 
 class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 	public:
 		DTrackCandidate_factory_CDC(){};
 		~DTrackCandidate_factory_CDC(){};
-		const string toString(void);
 		const char* Tag(void){return "CDC";}
 		
 		enum trk_flags_t{

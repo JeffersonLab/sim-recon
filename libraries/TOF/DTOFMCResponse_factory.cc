@@ -8,6 +8,9 @@
 //                                        smearing for timeing
 //
 
+#include <iostream>
+using namespace std;
+
 #include "DTOFMCResponse_factory.h"
 #include "DHDDMTOFHit.h"
 #include "DTOFGeometry.h"
@@ -121,42 +124,6 @@ jerror_t DTOFMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
   return NOERROR;
 }
 
-
-//------------------
-// toString
-//------------------
-const string DTOFMCResponse_factory::toString(void)
-{
-	// Ensure our Get method has been called so _data is up to date
-  Get();
-  if(_data.size()<=0)return string(); // don't print anything if we have no data!
-
-  // Put the class specific code to produce nicely formatted ASCII here.
-  // The JFactory_base class has several methods defined to help. They
-  // rely on positions of colons (:) in the header. Here's an example:
-  
-  printheader( "id: orientation: end:    t [ns]:    x/y (orth.):   dE [MeV]:" );
-
-  for(unsigned int i=0; i<_data.size(); i++ ){
-
-    DTOFMCResponse *myTOF = _data[i];
-    
-    printnewrow();
-    printcol("%d",	myTOF->id );
-    printcol("%d",	myTOF->orientation );
-    printcol("%2.3f",	myTOF->y );
-    printcol("%1.3f",	myTOF->t_north );
-    printcol("%1.3f",	myTOF->E_north );
-    printcol("%1.3f",	myTOF->t_south );
-    printcol("%1.3f",	myTOF->E_south );
-    printcol("%1.3f",	myTOF->ADC_north );
-    printcol("%1.3f",	myTOF->ADC_south );
-    printrow();
-  }
-  
-  return _table;
-
-}
 
 //------------------
 // init

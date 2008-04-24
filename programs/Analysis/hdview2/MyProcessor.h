@@ -12,8 +12,11 @@
 #include <JANA/JEventProcessor.h>
 #include <JANA/JEventLoop.h>
 #include <JANA/JEvent.h>
-#include "HDGEOMETRY/DMagneticFieldMap.h"
-#include "PID/DKinematicData.h"
+
+#include <HDGEOMETRY/DMagneticFieldMap.h>
+#include <PID/DKinematicData.h>
+#include <DCoordinateSystem.h>
+#include <TRACKING/DReferenceTrajectory.h>
 
 class DQuickFit;
 class DTrackCandidate_factory;
@@ -78,6 +81,12 @@ class MyProcessor:public JEventProcessor
 		vector<TObject*> graphics_xyB;
 		vector<TObject*> graphics_xz;
 		vector<TObject*> graphics_yz;
+		
+		void GetFactoryNames(vector<string> &facnames);
+		void GetFactories(vector<JFactory_base*> &factories);
+		unsigned int GetNrows(const string &factory, const string &tag);
+		void GetDReferenceTrajectory(string dataname, string tag, unsigned int index, DReferenceTrajectory* &rt);
+		void GetAllWireHits(vector<pair<const DCoordinateSystem*,double> > &allhits);
 
 	private:	
 	

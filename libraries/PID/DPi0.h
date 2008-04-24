@@ -15,7 +15,7 @@
 
 class DPi0:public DKinematicData {
 	public:
-		HDCLASSDEF(DPi0);
+		JOBJECT_PUBLIC(DPi0);
                 
                 DPi0();
 		~DPi0();
@@ -23,7 +23,7 @@ class DPi0:public DKinematicData {
                 oid_t getChildrenID(int child)  const; // JANA id's of children
                 unsigned int getChildrenTag(int child) const; // the origin of the 1st photon (FCAL, BCAL)
 
-                void setChildrenID(oid_t id1, oid_t id2 ); 
+                void setChildrenID(JObject::oid_t id1, JObject::oid_t id2 ); 
                 void setChildrenTag(unsigned int tag1, unsigned int tag2 ); 
 
 	private:
@@ -41,7 +41,7 @@ inline unsigned int DPi0::getChildrenTag(int child) const
 }
 
 // return child ID's
-inline oid_t DPi0::getChildrenID(int child) const
+inline JObject::oid_t DPi0::getChildrenID(int child) const
 {
       return fIDs[child];
 }

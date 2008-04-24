@@ -9,8 +9,11 @@
 #ifndef _DBCALPhoton_factory_
 #define _DBCALPhoton_factory_
 
-#include "JANA/JFactory.h"
-#include "JANA/JEventLoop.h"
+#include <JANA/JFactory.h>
+#include <JANA/JEventLoop.h>
+using namespace jana;
+
+
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALPhoton.h"
 
@@ -21,7 +24,6 @@ public:
     DBCALPhoton_factory();
     ~DBCALPhoton_factory(){};
 
-    const string toString( void );
     
 private:
 

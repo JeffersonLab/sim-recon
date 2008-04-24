@@ -15,7 +15,6 @@ class DTwoGammaFit_factory:public JFactory<DTwoGammaFit>{
 	public:
 		DTwoGammaFit_factory(double aMass);
 		~DTwoGammaFit_factory(){};
-		const string toString(void);
 	
 	private:
                 double fMass;

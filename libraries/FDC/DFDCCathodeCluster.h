@@ -13,14 +13,16 @@
 #include <iomanip>
 
 #include "DFDCHit.h"
-#include "JANA/JObject.h"
+#include <JANA/JObject.h>
+using namespace jana;
 
 #define HIT_TIME_DIFF_MIN 10.0
 
 class DFDCCathodeCluster : public JObject {
 	public:
+		JOBJECT_PUBLIC(DFDCCathodeCluster);		/// DANA identifier
+
 		vector<const DFDCHit*> members;		/// DFDCHits that make up this cluster
-		HDCLASSDEF(DFDCCathodeCluster);		/// DANA identifier
 		int gPlane;							/// #1-74, which plane out of all FDC modules
 		int plane;							/// V=1, U=3
 		int gLayer;							/// #1-24, which detection layer of all FDC
@@ -31,46 +33,17 @@ class DFDCCathodeCluster : public JObject {
 		float q_tot;						/// total energy/charge deposited in the cluster
 		
 		/// Return a sensible string representation of this object
-		const string toString() const {
-			stringstream s;
-			s.precision(4);
-			s.width(7);
-			s << gPlane << " "; 
-			s.width(7);
-			s << gLayer << " ";
-			s.width(7); 
-			s << beginStrip << " ";
-			s.width(7);
-			s << endStrip << " ";
-			s.width(7);
-			s << maxStrip << " ";
-			s.width(7);
-			s << width << " ";
-			s.width(7);
-			s << q_tot;
-			return s.str();
+		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "Nmembers", "%d", members.size());
+			AddString(items, "gPlane", "%d", gPlane);
+			AddString(items, "plane", "%d", plane);
+			AddString(items, "gLayer", "%d", gLayer);
+			AddString(items, "beginStrip", "%d", beginStrip);
+			AddString(items, "endStrip", "%d", endStrip);
+			AddString(items, "maxStrip", "%d", maxStrip);
+			AddString(items, "width", "%d", width);
+			AddString(items, "q_tot", "%f", q_tot);
 		}
-		
-		/// Print a sensible header for a list of stringified DFDCCathodeClusters.
-		const string header() const {
-			stringstream s;
-			s.width(7);
-			s << "gPla:" << " ";	// gLayer
-			s.width(7);
-			s << "gLay:" << " ";	// gPlane
-			s.width(7);
-			s << "bStrp:" << " ";	// beginStrip
-			s.width(7);
-			s << "eStrp:" << " ";	// endStrip
-			s.width(7);
-			s << "mxStrp:" << " "; 	// maxStrip
-			s.width(7);
-			s << "width:" << " ";	// duh
-			s.width(7);
-			s << "q_tot:" << " ";	// duh
-			
-			return s.str();
-		}	
 };
 
 #endif //DFDCCATHODECLUSTER_H

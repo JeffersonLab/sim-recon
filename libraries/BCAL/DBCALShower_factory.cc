@@ -7,6 +7,7 @@
 
 #include <cassert>
 #include <math.h>
+using namespace std;
 
 #include "DBCALMCResponse.h"
 #include "DBCALGeometry.h"
@@ -1760,33 +1761,3 @@ float DBCALShower_factory::Gammln(float xx_gln)
          return gammln;
 }
 
-
-//------------------
-// toString
-//------------------
-const string DBCALShower_factory::toString(void)
-{
-
-	// Ensure our Get method has been called so _data is up to date
-	Get();
-	if(_data.size()<=0)
-        return string(); // don't print anything if we have no data!
-
-  printheader("row:      x:      y:      z:       t:     E_seen:     E_corr:");
-
-  for(unsigned int i = 0; i < _data.size(); i++) {
-		DBCALShower *s = _data[i];
-    
-		printnewrow();
-		printcol("%d",	i);
-		printcol("%5.2f",	s->x);
-		printcol("%5.2f",	s->y);
-		printcol("%5.2f",	s->z);
-		printcol("%5.3f",	s->t);
-		printcol("%5.3f",	s->E);
-		printrow();
-	}
-
-	return _table;
-
-}
