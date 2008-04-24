@@ -60,7 +60,7 @@ hdds-mcfast: hdds-mcfast.cpp XParsers.cpp XParsers.hpp\
 	-L$(XERCESCROOT)/lib -lxerces-c
 
 xpath-example: xpath-example.cpp
-	$(CC) $(COPTS) -I$(XALANCROOT)/src -I$(XERCESCROOT)/include \
+	$(CC) $(COPTS) -I$(XALANCROOT)/include -I$(XERCESCROOT)/include \
 	-o $@ xpath-example.cpp \
 	-L$(XALANCROOT)/lib -lxalan-c -L$(XERCESCROOT)/lib -lxerces-c
 
