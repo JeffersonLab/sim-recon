@@ -31,6 +31,7 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
   ~DTrack_factory_ALT3();
   const char* Tag(void){return "ALT3";}
 
+  typedef DReferenceTrajectory::swim_step_t swim_step_t;
 
  private:
 
@@ -54,7 +55,7 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
 
   int eventnumber;
   const DMagneticFieldMap *bfield;
-
+  vector<DReferenceTrajectory*>rtv;
 
 
 };
