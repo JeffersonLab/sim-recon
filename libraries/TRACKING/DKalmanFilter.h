@@ -25,10 +25,6 @@ class DKalmanFilter{
   jerror_t AddHit(double x,double y, double z,double covx,
 		  double covy, double covxy);
   jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
-  jerror_t CalcDerivAndJacobian(double z,DMatrix S,double dEds,
-				double m,DMatrix &J,DMatrix &D);
-  double StepCovariance(double oldz,double newz,DMatrix &S,
-			DMatrix &J);
   jerror_t KalmanLoop(double mass_hyp,double &chisq);
   
   void GetMomentum(DVector3 &mom);
@@ -41,7 +37,12 @@ class DKalmanFilter{
  private:
   jerror_t GetProcessNoise(double mass_hyp,double ds,
 			   double X0,DMatrix S,DMatrix &Q);
-
+  double Step(double oldz,double newz, double dEdx,DMatrix &S);
+  double StepJacobian(double oldz,double newz,DMatrix &S,double dEdx,
+		      DMatrix &J);
+  jerror_t CalcDerivAndJacobian(double z,DMatrix S,double dEdx,
+				DMatrix &J,DMatrix &D);
+  jerror_t CalcDeriv(double z,DMatrix S, double dEdx, DMatrix &D);
 
   const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
 
