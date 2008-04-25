@@ -66,6 +66,7 @@ class DReferenceTrajectory{
 		double GetLastDistAlongWire(void){return last_dist_along_wire;}
 		void SetStepSize(double step_size){this->step_size=step_size;}
 
+		const swim_step_t *GetLastSwimStep(void){return last_swim_step;}
 		swim_step_t *swim_steps;
 		int Nswim_steps;
 		float q;

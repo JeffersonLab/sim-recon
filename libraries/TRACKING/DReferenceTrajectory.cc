@@ -131,6 +131,10 @@ if(Nswim_steps<1)_DBG__;
 		return 1.0E6;
 	}
 	
+	// store last step
+	last_swim_step=step;
+
+	
 	// Next, define a point on the helical segment defined by the
 	// swim step it the RT coordinate system. The directions of
 	// the RT coordinate system are defined by step->xdir, step->ydir,
