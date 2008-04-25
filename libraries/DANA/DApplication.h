@@ -33,7 +33,7 @@ class DApplication:public JApplication{
 		DMagneticFieldMap* GetBfield(void){return bfield;}
 		DLorentzDeflections *GetLorentzDeflections(void){return lorentz_def;}
 		
-		DGeometry* DApplication::GetDGeometry(unsigned int run_number);
+		DGeometry* GetDGeometry(unsigned int run_number);
 
 	protected:
 	
