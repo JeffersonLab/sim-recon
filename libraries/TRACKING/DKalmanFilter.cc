@@ -106,7 +106,7 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double z,DMatrix S,
 // to newz.  Uses the 4th-order Runga-Kutte algorithm.
 double DKalmanFilter::StepCovariance(double oldz,double newz,DMatrix &S,
 				     DMatrix &J){
-  // Initialize the Jacobian matrix
+   // Initialize the Jacobian matrix
   J.Zero();
   for (int i=0;i<5;i++) J(i,i)=1.;
   // Matrices for intermediate steps
@@ -164,6 +164,11 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
   DMatrix S(5,1),S0(5,1); //State vector
   DMatrix C0(5,5),C(5,5);   // Covariance matrix for state vector
   DMatrix InvV(2,2); // Inverse of error matrix
+
+  // Dummy matrix -- kludge for now
+  DMatrix Jdummy(5,5);
+  
+
   // path length increment
   double ds=0;
 
@@ -208,23 +213,23 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
     for (int j=0;j<num_inc;j++){
       newz=oldz+sign*0.5;
       ds=StepCovariance(oldz,newz,S0,J);
+      StepCovariance(oldz,newz,S,Jdummy);
       J_T=DMatrix(DMatrix::kTransposed,J);
       GetProcessNoise(mass_hyp,ds,30420.,S0,Q); // use air for now
       C0=J*(C0*J_T)+Q; 
-      // State vector S is a perturbation about the seed S0
-      S=S0+J*(S-S0);
-      C=C0+J*((C-C0)*J_T);
       oldz=newz;			  
     }
     if (fabs(endz-oldz)>EPS){
       ds=StepCovariance(oldz,endz,S0,J);
+      StepCovariance(oldz,endz,S,Jdummy);
       J_T=DMatrix(DMatrix::kTransposed,J);  
       GetProcessNoise(mass_hyp,ds,30420.,S0,Q); // use air for now
       C0=J*(C0*J_T)+Q;
-      // State vector S is a perturbation about the seed S0
-      S=S0+J*(S-S0);
-      C=C0+J*((C-C0)*J_T);
     }
+
+    // State vector S is a perturbation about the seed S0
+    S=S0+J*(S-S0);
+    C=C0*J*((C-C0)*J_T);
 
     // Updated error matrix
     V=V+H*(C*H_T);
@@ -247,7 +252,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
     R(1,0)=M(1,0)-S(1,0);
     R_T=DMatrix(DMatrix::kTransposed,R);
     RC=V-H*(C*H_T);
-    
+
     // Update chi2 for this segment
     chisq+=(R_T*((DMatrix(DMatrix::kInverted,RC))*R))(0,0);
 
@@ -255,28 +260,30 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
     z_=endz;
   }
 
+  // Propagate track to point of distance of closest approach to origin
+  int num_inc=int((endz-50.)/0.5);
+  DMatrix SBest(5,1);
+  SBest=S;
   oldz=endz;
-  double xold=S(0,0),yold=S(1,0);
-  double x=xold,y=yold;
-  do{
-    xold=S(0,0);
-    yold=S(1,0);
+  double r2=S(0,0)*S(0,0)+S(1,0)*S(1,0),r2min=r2;
+  for (int i=0;i<num_inc;i++){
+    if (r2<r2min){
+      r2min=r2;
+      SBest=S;
+      z_=oldz;
+    }
     newz=oldz-0.5;
-    StepCovariance(oldz,newz,S0,J);
-    S=S0+J*(S-S0);
+    StepCovariance(oldz,newz,S,J);
+    r2=S(0,0)*S(0,0)+S(1,0)*S(1,0);   
     oldz=newz;
-    x=S(0,0);
-    y=S(1,0);
   }
-  while(x*xold>0 && y*yold>0 && newz>50.);
   
   // Fitted track parameters at vertex
-  x_=S(0,0);
-  y_=S(1,0);
-  z_=newz;
-  tx_=S(2,0);
-  ty_=S(3,0);
-  q_over_p_=S(4,0);
+  x_=SBest(0,0);
+  y_=SBest(1,0);
+  tx_=SBest(2,0);
+  ty_=SBest(3,0);
+  q_over_p_=SBest(4,0);
 
   return NOERROR;
 }
