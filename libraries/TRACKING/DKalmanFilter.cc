@@ -9,6 +9,7 @@
 
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
 #define EPS 1.0e-8
+#define DEDX_AIR (-2.19e-6) // GeV/cm
 
 bool DKalmanHit_cmp(DKalmanHit_t *a, DKalmanHit_t *b){
   return a->z>b->z;
@@ -62,9 +63,11 @@ jerror_t DKalmanFilter::AddHit(double x,double y, double z,double covx,
 }
 
 // Calculate the derivative of the state vector with respect to z
-jerror_t DKalmanFilter::CalcDeriv(double z,DMatrix S, double dEds, DMatrix &D){
+jerror_t DKalmanFilter::CalcDeriv(double z,DMatrix S, double dEdx, DMatrix &D){
   double x=S(0,0), y=S(1,0),tx=S(2,0),ty=S(3,0),q_over_p=S(4,0);
   double factor=sqrt(1.+tx*tx+ty*ty);
+  double mass=0.14; // pion for now
+  double E=sqrt(1./q_over_p/q_over_p+mass*mass); 
 
   //B-field at (x,y,z)
   double Bx,By,Bz;
@@ -74,6 +77,7 @@ jerror_t DKalmanFilter::CalcDeriv(double z,DMatrix S, double dEds, DMatrix &D){
   D(1,0)=ty;
   D(2,0)=qBr2p*q_over_p*factor*(tx*ty*Bx-(1.+tx*tx)*By+ty*Bz);
   D(3,0)=qBr2p*q_over_p*factor*((1.+ty*ty)*Bx-tx*ty*By-tx*Bz);
+  D(4,0)=-q_over_p*q_over_p*q_over_p*E*dEdx*factor;
 
   return NOERROR;
 }
@@ -81,10 +85,12 @@ jerror_t DKalmanFilter::CalcDeriv(double z,DMatrix S, double dEds, DMatrix &D){
 
 // Calculate the derivative of the state vector with respect to z and the 
 // Jacobian matrix relating the state vector at z to the state vector at z+dz.
-jerror_t DKalmanFilter::CalcDerivAndJacobian(double z,DMatrix S,double dEds,
+jerror_t DKalmanFilter::CalcDerivAndJacobian(double z,DMatrix S,double dEdx,
 					     DMatrix &J,DMatrix &D){
   double x=S(0,0), y=S(1,0),tx=S(2,0),ty=S(3,0),q_over_p=S(4,0);
   double factor=sqrt(1.+tx*tx+ty*ty);
+  double mass=0.14; // pion for now
+  double E=sqrt(1./q_over_p/q_over_p+mass*mass); 
 
   //B-field and field gradient at (x,y,z)
   double Bx,By,Bz,dBxdx,dBxdy,dBxdz,dBydx,dBydy,dBydz,dBzdx,dBzdy,dBzdz;
@@ -97,6 +103,7 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double z,DMatrix S,double dEds,
   D(1,0)=ty;
   D(2,0)=qBr2p*q_over_p*factor*(tx*ty*Bx-(1.+tx*tx)*By+ty*Bz);
   D(3,0)=qBr2p*q_over_p*factor*((1.+ty*ty)*Bx-tx*ty*By-tx*Bz);
+  D(4,0)=-q_over_p*q_over_p*q_over_p*E*dEdx*factor;
 
   // Jacobian
   J(0,2)=J(1,3)=1.;
@@ -114,22 +121,25 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double z,DMatrix S,double dEds,
   J(3,2)=-qBr2p*q_over_p*((By*ty+Bz)*(1.+2.*tx*tx+ty*ty)-Bx*tx*(1.+ty*ty))
     /factor;
   J(3,0)=qBr2p*q_over_p*factor*((1.+ty*ty)*dBxdx-tx*ty*dBydx-tx*dBzdx);
-
+  J(4,2)=D(4,0)*tx/factor/factor;
+  J(4,3)=D(4,0)*ty/factor/factor;
+  J(4,4)=-dEdx*factor/E*(2.+3.*mass*mass*q_over_p*q_over_p);
+  
   return NOERROR;
 }
 
 
 // Step the state vector through the field from oldz to newz.
 // Uses the 4th-order Runga-Kutte algorithm.
-double DKalmanFilter::Step(double oldz,double newz, double dEds,DMatrix &S){
+double DKalmanFilter::Step(double oldz,double newz, double dEdx,DMatrix &S){
   double delta_z=newz-oldz;
   DMatrix D1(5,1),D2(5,1),D3(5,1),D4(5,1);
 
   double s=sqrt(1.+S(2,0)*S(2,0)+S(3,0)*S(3,0))*delta_z;
-  CalcDeriv(oldz,S,dEds,D1);
-  CalcDeriv(oldz+delta_z/2.,S+0.5*delta_z*D1,dEds,D2);
-  CalcDeriv(oldz+delta_z/2.,S+0.5*delta_z*D2,dEds,D3);
-  CalcDeriv(oldz+delta_z,S+delta_z*D3,dEds,D4);
+  CalcDeriv(oldz,S,dEdx,D1);
+  CalcDeriv(oldz+delta_z/2.,S+0.5*delta_z*D1,dEdx,D2);
+  CalcDeriv(oldz+delta_z/2.,S+0.5*delta_z*D2,dEdx,D3);
+  CalcDeriv(oldz+delta_z,S+delta_z*D3,dEdx,D4);
 	
   S+=delta_z*((1./6.)*D1+(1./3.)*D2+(1./3.)*D3+(1./6.)*D4);
 
@@ -221,7 +231,9 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
   H_T=DMatrix(DMatrix::kTransposed,H);
 
   // Loop over hits, updating the state vector at each step 
-  double endz,newz,oldz; // we increment in z
+  double endz=hits[0]->z,newz,oldz; // we increment in z
+  // Start at the most downstream measurement
+  if (z_!=endz) z_=endz;
   for (unsigned int k=0;k<hits.size();k++){      
     endz=hits[k]->z;
 
@@ -235,17 +247,16 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
     V(1,1)=hits[k]->covy;
 
     // Propagate state vector and covariance matrices to next measurement   
-    double sign=(endz>z_)?1.0:-1.0; 
-    int num_inc=int(sign*(endz-z_)/0.5);
+    int num_inc=int((endz-z_)/0.5);
     oldz=z_;
     newz=oldz;
     for (int j=0;j<num_inc;j++){
-      newz=oldz+sign*0.5;
+      newz=oldz-0.5;
       // Step the seed state vector through the field and get the Jacobian 
-      ds=StepJacobian(oldz,newz,S0,0.,J);
+      ds=StepJacobian(oldz,newz,S0,DEDX_AIR,J);
 
       // Step the improved state vector through the field
-      Step(oldz,newz,0.,S);
+      Step(oldz,newz,DEDX_AIR,S);
 
       // Get the covariance matrix due to the multiple scattering
       GetProcessNoise(mass_hyp,ds,30420.,S0,Q); // use air for now
@@ -257,8 +268,8 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
       oldz=newz;			  
     }
     if (fabs(endz-oldz)>EPS){
-      ds=StepJacobian(oldz,endz,S0,0.,J);
-      Step(oldz,endz,0.,S);
+      ds=StepJacobian(oldz,endz,S0,DEDX_AIR,J);
+      Step(oldz,endz,DEDX_AIR,S);
       J_T=DMatrix(DMatrix::kTransposed,J);  
       GetProcessNoise(mass_hyp,ds,30420.,S0,Q); // use air for now
       C0=J*(C0*J_T)+Q;
@@ -310,7 +321,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
       z_=oldz;
     }
     newz=oldz-0.5;
-    StepJacobian(oldz,newz,S,0.,J);  
+    StepJacobian(oldz,newz,S,DEDX_AIR,J);  
     J_T=DMatrix(DMatrix::kTransposed,J);  
     C=J*(C*J_T);
     r2=S(0,0)*S(0,0)+S(1,0)*S(1,0);   
