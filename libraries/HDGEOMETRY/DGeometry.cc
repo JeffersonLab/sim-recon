@@ -306,6 +306,35 @@ bool DGeometry::GetCDCNwires(vector<int> &cdc_nwires)
 	return false;
 }
 
+
+//---------------------------------
+// GetCDCEndplate
+//---------------------------------
+bool DGeometry::GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax)
+  const{
+  bool good = true;
+  vector<double>cdc_origin;
+  vector<double>cdc_center;
+  vector<double>cdc_endplate_pos;
+  vector<double>cdc_endplate_dim;
+  
+  good |= Get("//posXYZ[@volume='CentralDC'/@X_Y_Z",cdc_origin);
+  good |= Get("//posXYZ[@volume='centralDC_option-1']/@X_Y_Z",cdc_center);
+  good |= Get("//posXYZ[@volume='CDPD']/@X_Y_Z",cdc_endplate_pos);
+  good |= Get("//tubs[@name='CDPD']/@Rio_Z",cdc_endplate_dim);
+
+  if(!good){
+    _DBG_<<"Unable to retrieve CDC Endplate data."<<endl;
+    return good;
+  }
+  
+  z=cdc_origin[2]+cdc_center[2]+cdc_endplate_pos[2]+cdc_endplate_dim[2];
+  dz=cdc_endplate_dim[2];
+  rmin=cdc_endplate_dim[0];
+  rmax=cdc_endplate_dim[1];
+
+  return good;
+}
 //---------------------------------
 // GetBCALRmin
 //---------------------------------

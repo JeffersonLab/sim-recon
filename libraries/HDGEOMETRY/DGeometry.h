@@ -60,6 +60,11 @@ class DGeometry{
 		bool GetCDCRmid(vector<double> &cdc_rmid); ///< Distance of the center of CDC wire from beamline for each layer in cm
 		bool GetCDCNwires(vector<int> &cdc_nwires); ///< Number of wires for each CDC layer
 		
+		/// Get the downstream z position of the CDC end plate and its
+		/// dimensions
+		bool GetCDCEndplate(double &z,double &dz,double &rmin,
+				    double &rmax) const; 
+
 		bool GetBCALRmin(double &bcal_rmin); ///< minimum distance of BCAL module from beam line
 		bool GetBCALNmodules(unsigned int &bcal_nmodules); ///< Number of BCAL modules
 		bool GetBCALCenterZ(double &bcal_center_z); ///< z-location of center of BCAL module in cm
