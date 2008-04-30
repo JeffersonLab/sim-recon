@@ -33,19 +33,19 @@ class DGeometry{
 		// base DGeometry on JGeometry and so we'd get these automatically.
 		// However, that would require a more complicated generator mechanism
 		// where the geometry objects are made outside of JANA.
-		bool Get(string xpath, string &sval){return jgeom->Get(xpath, sval);}
-		bool Get(string xpath, map<string, string> &svals){return jgeom->Get(xpath, svals);}
-		template<class T> bool Get(string xpath, T &val){return jgeom->Get(xpath, val);}
-		template<class T> bool Get(string xpath, vector<T> &vals, string delimiter=" "){return jgeom->Get(xpath, vals, delimiter);}
-		template<class T> bool Get(string xpath, map<string,T> &vals){return jgeom->Get(xpath, vals);}
+		bool Get(string xpath, string &sval) const {return jgeom->Get(xpath, sval);}
+		bool Get(string xpath, map<string, string> &svals) const {return jgeom->Get(xpath, svals);}
+		template<class T> bool Get(string xpath, T &val) const {return jgeom->Get(xpath, val);}
+		template<class T> bool Get(string xpath, vector<T> &vals, string delimiter=" ") const {return jgeom->Get(xpath, vals, delimiter);}
+		template<class T> bool Get(string xpath, map<string,T> &vals) const {return jgeom->Get(xpath, vals);}
 
 		// The GNU 3.2.3 compiler has a problem resolving the ambiguity between
 		// Get(string, T&val) and Get(string, vector<T> &vals, string) above.
 		// This does not seem to be a problem with the 4.0 compiler. To get
 		// around this, some non-templated versions are provided (eeech!).
-		bool Get(string xpath, vector<double> &vals, string delimiter=" "){return jgeom->Get(xpath, vals, delimiter);}
-		bool Get(string xpath, vector<int> &vals, string delimiter=" "){return jgeom->Get(xpath, vals, delimiter);}
-		bool Get(string xpath, vector<float> &vals, string delimiter=" "){return jgeom->Get(xpath, vals, delimiter);}
+		bool Get(string xpath, vector<double> &vals, string delimiter=" ") const {return jgeom->Get(xpath, vals, delimiter);}
+		bool Get(string xpath, vector<int> &vals, string delimiter=" ") const {return jgeom->Get(xpath, vals, delimiter);}
+		bool Get(string xpath, vector<float> &vals, string delimiter=" ") const {return jgeom->Get(xpath, vals, delimiter);}
 		
 		// Convenience methods
 		bool GetFDCZ(vector<double> &z_wires); ///< z-locations for each of the FDC wire planes in cm
