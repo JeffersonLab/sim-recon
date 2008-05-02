@@ -5,26 +5,6 @@ MISC_LIBS = -L/sw/lib -lXm -L/usr/X11R6/lib -lXt -lgelhad -lhitutil
 CFLAGS += -I$(HALLD_MY)/src/libraries/HDDM -I$(HALLD_HOME)/src/libraries/HDDM
 ADDITIONAL_MODULES += HDDM HDGEOMETRY
 
-# The tricky part here is choosing which progrm to link with. It seems
-# that more modern systems use gcc4 and gfortran in which case you
-# want to use g++ to link and add the -lgfortran library (which is
-# currently added automatically in Makefile.CERNLIB).
-#
-# For legacy gcc3 systems using g77, you want to use g77 to
-# link and explicitly add the the libstdc++ library.
-#
-# Other systems may mix gcc3 with gfortran or gcc4 with
-# g77. For these, you'll just need to play around since
-# it is just too difficult to make (and keep!) this working
-# for all possible combinations.
-#
-# We do at least make an attempt to do the right thing based
-# on whether you are running gcc3 or gcc4.
-SHELL := tcsh
-GCC3 := $(shell gcc -v |& grep "gcc version" | grep " 3." | wc -l)
-ifeq ($(strip $(GCC3)),1)
-	LD = $(FC) -lstdc++
-endif
 
 
 include $(HALLD_HOME)/src/BMS/Makefile.bin
