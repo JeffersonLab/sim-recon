@@ -49,6 +49,7 @@ jerror_t DTrack_factory_ALT3::brun(JEventLoop *loop, int runnumber)
   // Get pointer to DMagneticFieldMap field object
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   bfield = dapp->GetBfield();
+  dgeom  = dapp->GetDGeometry(runnumber);
 
   return NOERROR;
 }
@@ -89,7 +90,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
     rt->Swim(pos, mom, tc->charge());
 
     // Initialize Kalman filter with B-field
-    DKalmanFilter fit(bfield);
+    DKalmanFilter fit(bfield,dgeom);
 
     // Add hits to be put through Kalman engine
     unsigned int num_matched_hits=0;

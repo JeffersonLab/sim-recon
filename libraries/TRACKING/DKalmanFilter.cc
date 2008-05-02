@@ -5,19 +5,27 @@
 #include "DKalmanFilter.h"
 #include "DANA/DApplication.h"
 #include "HDGEOMETRY/DMagneticFieldMap.h"
+#include "HDGEOMETRY/DGeometry.h"
+
 #include <math.h>
 
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
 #define EPS 1.0e-8
+#define DEDX_ENDPLATE (-3.95e-3) // Carbon
 #define DEDX_AIR (-2.19e-6) // GeV/cm
 
 bool DKalmanHit_cmp(DKalmanHit_t *a, DKalmanHit_t *b){
   return a->z>b->z;
 }
 
-DKalmanFilter::DKalmanFilter(const DMagneticFieldMap *bfield){
+DKalmanFilter::DKalmanFilter(const DMagneticFieldMap *bfield,
+			     const DGeometry *dgeom){
   this->bfield=bfield;
+  this->geom=dgeom;
   hits.clear();
+
+  // Get the position of the exit of the CDC endplate from DGeometry
+  geom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
 }
 
 // Initialize the state vector
@@ -308,8 +316,39 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
     z_=endz;
   }
 
+  // Propagate track to entrance to CDC endplate
+  int num_inc=(int)(endz-endplate_z);
+  oldz=endz;
+  endz=endplate_z;
+  for (int i=0;i<num_inc;i++){
+    newz=oldz-0.5;
+    StepJacobian(oldz,newz,S,DEDX_AIR,J);  
+    J_T=DMatrix(DMatrix::kTransposed,J);  
+    C=J*(C*J_T);
+    oldz=newz;
+  }
+  if (oldz!=endz){
+    StepJacobian(oldz,endz,S,DEDX_AIR,J);  
+    J_T=DMatrix(DMatrix::kTransposed,J);  
+    C=J*(C*J_T);    
+  }
+
+  // Next treat the CDC endplate
+  oldz=endz;
+  double r=sqrt(S(0,0)*S(0,0)+S(1,0)*S(1,0)); // current radius
+  if (r>endplate_rmin){
+    for (int i=0;i<4;i++){
+       newz=oldz-endplate_dz/4.;
+       StepJacobian(oldz,newz,S,DEDX_ENDPLATE,J);  
+       J_T=DMatrix(DMatrix::kTransposed,J);  
+       C=J*(C*J_T);
+       oldz=newz;
+    }
+    endz=newz;
+  }
+
   // Propagate track to point of distance of closest approach to origin
-  int num_inc=int((endz-0.)/0.5);
+  num_inc=int((endz-0.)/0.5);
   DMatrix SBest(5,1);
   SBest=S;
   oldz=endz;

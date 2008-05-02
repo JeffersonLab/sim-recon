@@ -12,9 +12,11 @@
 using namespace jana;
 
 #include "HDGEOMETRY/DMagneticFieldMap.h"
+#include "HDGEOMETRY/DGeometry.h"
 #include "DTrack.h"
 #include "DReferenceTrajectory.h"
 #include "DCoordinateSystem.h"
+
 
 
 
@@ -56,6 +58,8 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
   int eventnumber;
   const DMagneticFieldMap *bfield;
   vector<DReferenceTrajectory*>rtv;
+  const DGeometry *dgeom;
+
 
 
 };
