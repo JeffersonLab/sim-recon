@@ -64,7 +64,7 @@ DLorentzDeflections* DGeometry::GetLorentzDeflections(void)
 //---------------------------------
 // GetFDCZ
 //---------------------------------
-bool DGeometry::GetFDCZ(vector<double> &z_wires)
+bool DGeometry::GetFDCZ(vector<double> &z_wires) const
 {
 	// The FDC geometry is defined as 4 packages, each containing 2
 	// "module"s and each of those containing 3 "chambers". The modules
@@ -140,7 +140,7 @@ bool DGeometry::GetFDCZ(vector<double> &z_wires)
 //---------------------------------
 // GetFDCStereo
 //---------------------------------
-bool DGeometry::GetFDCStereo(vector<double> &stereo_angles)
+bool DGeometry::GetFDCStereo(vector<double> &stereo_angles) const
 {
 	// The FDC geometry is defined as 4 packages, each containing 2
 	// "module"s and each of those containing 3 "chambers". The modules
@@ -200,7 +200,7 @@ bool DGeometry::GetFDCStereo(vector<double> &stereo_angles)
 //---------------------------------
 // GetFDCRmin
 //---------------------------------
-bool DGeometry::GetFDCRmin(vector<double> &rmin_packages)
+bool DGeometry::GetFDCRmin(vector<double> &rmin_packages) const
 {
 	vector<double> FDA[4];
 
@@ -227,7 +227,7 @@ bool DGeometry::GetFDCRmin(vector<double> &rmin_packages)
 //---------------------------------
 // GetFDCRmax
 //---------------------------------
-bool DGeometry::GetFDCRmax(double &rmax_active_fdc)
+bool DGeometry::GetFDCRmax(double &rmax_active_fdc) const
 {
 	// We assume that all packages have the same outer radius of the
 	// active area.
@@ -250,7 +250,7 @@ bool DGeometry::GetFDCRmax(double &rmax_active_fdc)
 //---------------------------------
 // GetCDCOption
 //---------------------------------
-bool DGeometry::GetCDCOption(string &cdc_option)
+bool DGeometry::GetCDCOption(string &cdc_option) const
 {
 	bool good = Get("//CentralDC_s/section/composition/posXYZ/@volume", cdc_option);
 	
@@ -264,7 +264,7 @@ bool DGeometry::GetCDCOption(string &cdc_option)
 //---------------------------------
 // GetCDCCenterZ
 //---------------------------------
-bool DGeometry::GetCDCCenterZ(double &cdc_center_z)
+bool DGeometry::GetCDCCenterZ(double &cdc_center_z) const
 {
 
 	return false;
@@ -273,7 +273,7 @@ bool DGeometry::GetCDCCenterZ(double &cdc_center_z)
 //---------------------------------
 // GetCDCAxialLength
 //---------------------------------
-bool DGeometry::GetCDCAxialLength(double &cdc_axial_length)
+bool DGeometry::GetCDCAxialLength(double &cdc_axial_length) const
 {
 
 	return false;
@@ -282,7 +282,7 @@ bool DGeometry::GetCDCAxialLength(double &cdc_axial_length)
 //---------------------------------
 // GetCDCStereo
 //---------------------------------
-bool DGeometry::GetCDCStereo(vector<double> &cdc_stereo)
+bool DGeometry::GetCDCStereo(vector<double> &cdc_stereo) const
 {
 
 	return false;
@@ -291,7 +291,7 @@ bool DGeometry::GetCDCStereo(vector<double> &cdc_stereo)
 //---------------------------------
 // GetCDCRmid
 //---------------------------------
-bool DGeometry::GetCDCRmid(vector<double> &cdc_rmid)
+bool DGeometry::GetCDCRmid(vector<double> &cdc_rmid) const
 {
 
 	return false;
@@ -300,7 +300,7 @@ bool DGeometry::GetCDCRmid(vector<double> &cdc_rmid)
 //---------------------------------
 // GetCDCNwires
 //---------------------------------
-bool DGeometry::GetCDCNwires(vector<int> &cdc_nwires)
+bool DGeometry::GetCDCNwires(vector<int> &cdc_nwires) const
 {
 
 	return false;
@@ -338,7 +338,7 @@ bool DGeometry::GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax)
 //---------------------------------
 // GetBCALRmin
 //---------------------------------
-bool DGeometry::GetBCALRmin(double &bcal_rmin)
+bool DGeometry::GetBCALRmin(double &bcal_rmin) const
 {
 
 	return false;
@@ -347,7 +347,7 @@ bool DGeometry::GetBCALRmin(double &bcal_rmin)
 //---------------------------------
 // GetBCALNmodules
 //---------------------------------
-bool DGeometry::GetBCALNmodules(unsigned int &bcal_nmodules)
+bool DGeometry::GetBCALNmodules(unsigned int &bcal_nmodules) const
 {
 
 	return false;
@@ -356,7 +356,7 @@ bool DGeometry::GetBCALNmodules(unsigned int &bcal_nmodules)
 //---------------------------------
 // GetBCALCenterZ
 //---------------------------------
-bool DGeometry::GetBCALCenterZ(double &bcal_center_z)
+bool DGeometry::GetBCALCenterZ(double &bcal_center_z) const
 {
 
 	return false;
@@ -365,7 +365,7 @@ bool DGeometry::GetBCALCenterZ(double &bcal_center_z)
 //---------------------------------
 // GetBCALLength
 //---------------------------------
-bool DGeometry::GetBCALLength(double &bcal_length)
+bool DGeometry::GetBCALLength(double &bcal_length) const
 {
 
 	return false;
@@ -374,7 +374,7 @@ bool DGeometry::GetBCALLength(double &bcal_length)
 //---------------------------------
 // GetBCALDepth
 //---------------------------------
-bool DGeometry::GetBCALDepth(double &bcal_depth)
+bool DGeometry::GetBCALDepth(double &bcal_depth) const
 {
 
 	return false;
@@ -383,7 +383,7 @@ bool DGeometry::GetBCALDepth(double &bcal_depth)
 //---------------------------------
 // GetFCALZ
 //---------------------------------
-bool DGeometry::GetFCALZ(double &z_fcal)
+bool DGeometry::GetFCALZ(double &z_fcal) const
 {
 	vector<double> ForwardEMcalpos;
 	bool good = Get("//section/composition/posXYZ[@volume='ForwardEMcal']/@X_Y_Z", ForwardEMcalpos);
@@ -401,7 +401,7 @@ bool DGeometry::GetFCALZ(double &z_fcal)
 //---------------------------------
 // GetTOFZ
 //---------------------------------
-bool DGeometry::GetTOFZ(vector<double> &z_tof)
+bool DGeometry::GetTOFZ(vector<double> &z_tof) const
 {
 	vector<double> ForwardTOF;
 	vector<double> forwardTOF[2];
@@ -421,7 +421,7 @@ bool DGeometry::GetTOFZ(vector<double> &z_tof)
 //---------------------------------
 // GetTargetZ
 //---------------------------------
-bool DGeometry::GetTargetZ(double &z_target)
+bool DGeometry::GetTargetZ(double &z_target) const
 {
 
 	return false;
@@ -430,8 +430,8 @@ bool DGeometry::GetTargetZ(double &z_target)
 //---------------------------------
 // GetTargetLength
 //---------------------------------
-bool DGeometry::GetTargetLength(double &target_length)
-{
+bool DGeometry::GetTargetLength(double &target_length) const
+ {
 
 	return false;
 }
