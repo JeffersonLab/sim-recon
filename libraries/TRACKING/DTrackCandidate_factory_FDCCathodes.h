@@ -42,6 +42,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
                                            unsigned int &match_id);
 	bool DEBUG_HISTS;
 	TH2F *match_dist;
+	vector<double>z_wires;
 
 };
 

@@ -29,9 +29,12 @@
 ///
 /// DTrackCandidate_factory_FDCCathodes::brun():
 ///
-jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop, int eventNo) {
+jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop, 
+						   int runnumber) {
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   bfield = dapp->GetBfield();
+  const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
+  dgeom->GetFDCZ(z_wires);
   
   if(DEBUG_HISTS){
     dapp->Lock();
@@ -69,10 +72,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
   }
       
   double zpackage[4];  // z-positions of entrances to FDC packages 
-  zpackage[0]=DFDCGeometry::GetZpackage(1);
-  zpackage[1]=DFDCGeometry::GetZpackage(7);
-  zpackage[2]=DFDCGeometry::GetZpackage(13);
-  zpackage[3]=DFDCGeometry::GetZpackage(19);
+  zpackage[0]=z_wires[0];
+  zpackage[1]=z_wires[6];
+  zpackage[2]=z_wires[12];
+  zpackage[3]=z_wires[18];
   DFDCSegment *match2=NULL;
   DFDCSegment *match3=NULL;
   DFDCSegment *match4=NULL;
