@@ -17,6 +17,7 @@ using namespace jana;
 #include "DFDCCathodeCluster.h"
 #include "DFDCHit.h"
 #include "DFDCGeometry.h"
+#include "HDGEOMETRY/DGeometry.h"
 
 #include <DMatrix.h>
 #include <TDecompLU.h>
@@ -56,6 +57,7 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		/// DFDCPseudo_factory::makePseudo().
 		///
 		jerror_t evnt(JEventLoop *eventLoop, int eventNo);
+		jerror_t brun(JEventLoop *loop, int runnumber);
 
 		/// 
 		/// DFDCPseudo_factory::makePseudo():
@@ -90,7 +92,8 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 	private:
 		std::vector<centroid_t>upeaks;
 		std::vector<centroid_t>vpeaks;
-		DFDCGeometry _geo;
+		vector<vector<DFDCWire*> >fdcwires;
+
 		JStreamLog* _log;
 		ofstream* logFile;
 };

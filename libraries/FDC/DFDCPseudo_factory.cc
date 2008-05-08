@@ -7,6 +7,8 @@
 //********************************************************
 
 #include "DFDCPseudo_factory.h"
+#include "HDGEOMETRY/DGeometry.h"
+#include "DFDCGeometry.h"
 
 #define HALF_CELL 0.5
 #define MAX_DEFLECTION 0.15
@@ -58,6 +60,22 @@ DFDCPseudo_factory::~DFDCPseudo_factory() {
 	delete logFile;
 	delete _log;
 }
+
+//------------------
+// brun
+//------------------
+jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
+{
+  // Get pointer to DGeometry object
+  DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+  const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
+  dgeom->GetFDCWires(fdcwires);
+
+  return NOERROR;
+}
+
+
+
 
 ///
 /// DFDCPseudo_factory::evnt():
@@ -217,7 +235,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	// In the layer local coordinate system, wires are quantized 
 	// in the x-direction and y is along the wire.
 	float x_from_strips=DFDCGeometry::getXLocalStrips(upeaks[i].pos,
-							  vpeaks[j].pos);
+						 vpeaks[j].pos);
 	float y_from_strips=DFDCGeometry::getYLocalStrips(upeaks[i].pos,
 							  vpeaks[j].pos);
 	for(xIt=x.begin();xIt!=x.end();xIt++){
@@ -246,7 +264,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	    newPseu->dw     = xres;
 	    newPseu->s      = y_from_strips;
 	    newPseu->ds     = yres;
-	    newPseu->wire   = DFDCGeometry::GetDFDCWire(layer, (*xIt)->element);
+	    newPseu->wire   = fdcwires[layer-1][(*xIt)->element-1];
 	    newPseu->time   = (*xIt)->t;
 	    newPseu->dist   = newPseu->time*DRIFT_SPEED;
 	    newPseu->status = status;
