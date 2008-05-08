@@ -8,6 +8,7 @@
 
 #include "DFDCIntersection_factory.h"
 #include "FDC/DFDCGeometry.h"
+#include "HDGEOMETRY/DGeometry.h"
 
 //------------------
 // init
@@ -23,6 +24,19 @@ jerror_t DFDCIntersection_factory::init(void)
 	for(int i=0; i<4; i++)fdchits_by_package.push_back(mt_trkhits_by_layer);
 
 	return NOERROR;
+}
+
+//------------------
+// brun
+//------------------
+jerror_t DFDCIntersection_factory::brun(JEventLoop *loop, int runnumber)
+{
+  // Get pointer to DGeometry object
+  DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+  DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
+  dgeom->GetFDCWires(fdcwires);
+
+  return NOERROR;
 }
 
 //------------------
@@ -214,7 +228,7 @@ void DFDCIntersection_factory::FindIntersections(vector<const DFDCHit*> &layer1,
 	// Loop over hits in layer1
 	for(unsigned int j=0; j<layer1.size(); j++){
 		const DFDCHit* hit1 = layer1[j];
-		const DFDCWire *wire1 = DFDCGeometry::GetDFDCWire(hit1->gLayer, hit1->element);
+		const DFDCWire *wire1 =fdcwires[hit1->gLayer-1][hit1->element-1];
 		if(!wire1){
 			_DBG_<<"No wire for layer="<<hit1->gLayer<<" wire="<<hit1->element<<" !!"<<endl;
 			continue;
@@ -226,7 +240,7 @@ void DFDCIntersection_factory::FindIntersections(vector<const DFDCHit*> &layer1,
 		// Loop over hits in layer2
 		for(unsigned int k=0; k<layer2.size(); k++){
 			const DFDCHit* hit2 = layer2[k];
-			const DFDCWire *wire2 = DFDCGeometry::GetDFDCWire(hit2->gLayer, hit2->element);
+			const DFDCWire *wire2 =fdcwires[hit2->gLayer-1][hit2->element-1];
 			if(!wire2){
 				_DBG_<<"No wire for layer="<<hit2->gLayer<<" wire="<<hit2->element<<" !!"<<endl;
 				continue;

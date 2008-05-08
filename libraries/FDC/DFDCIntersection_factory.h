@@ -12,6 +12,7 @@
 #include <DVector2.h>
 
 #include "DFDCIntersection.h"
+#include "DFDCGeometry.h"
 
 class DFDCIntersection_factory:public JFactory<DFDCIntersection>{
 	public:
@@ -20,7 +21,7 @@ class DFDCIntersection_factory:public JFactory<DFDCIntersection>{
 
 	private:
 		jerror_t init(void);						///< Called once at program start.
-		//jerror_t brun(JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
+		jerror_t brun(JEventLoop *eventLoop, int runnumber);	///< Called everytime a new run number is detected.
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Called every event.
 		//jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		//jerror_t fini(void);						///< Called after last event of last event source has been processed.
@@ -32,6 +33,10 @@ class DFDCIntersection_factory:public JFactory<DFDCIntersection>{
 
 		vector<vector<vector<const DFDCHit*> > > fdchits_by_package; ///< fdchits_by_package[package][layer][hit]
 		double MAX_DIST2;
+
+	vector<vector<DFDCWire*> >fdcwires;
+		
+
 };
 
 #endif // _DFDCIntersection_factory_

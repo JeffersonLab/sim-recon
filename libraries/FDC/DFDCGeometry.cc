@@ -7,6 +7,7 @@
 
 #include "DFDCGeometry.h"
 
+#if 0  // Old method for FDC geometry with hard coded positions!!!
 
 // Static globals used by all instances of DCDCTrackHit_factory
 static pthread_mutex_t wire_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -18,7 +19,6 @@ static DFDCWire fdcwire[FDC_NUM_LAYERS][WIRES_PER_PLANE];
 //-----------------
 DFDCGeometry::DFDCGeometry(void)
 {
-
 	// We use the mutex and wire_table_initialized flag to
 	// make sure the table is initialized only once.
 	pthread_mutex_lock(&wire_mutex);
@@ -121,3 +121,5 @@ const DFDCWire* DFDCGeometry::GetDFDCWire(int layer, int wire)
 
 	return &fdcwire[layer-1][wire-1];
 }
+#endif
+
