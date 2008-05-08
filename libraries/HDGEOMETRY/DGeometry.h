@@ -13,6 +13,8 @@
 using namespace jana;
 
 #include <DANA/DApplication.h>
+#include "FDC/DFDCGeometry.h"
+#include "FDC/DFDCWire.h"
 
 class DApplication;
 class DMagneticFieldMap;
@@ -24,8 +26,8 @@ class DGeometry{
 		virtual ~DGeometry();
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DGeometry";}
-		
-		JGeometry* GetJGeometry(void){return jgeom;}
+
+		JGeometry* GetJGeometry(void) {return jgeom;}
 		DMagneticFieldMap* GetBfield(void);
 		DLorentzDeflections *GetLorentzDeflections(void);
 
@@ -48,6 +50,8 @@ class DGeometry{
 		bool Get(string xpath, vector<float> &vals, string delimiter=" ") const {return jgeom->Get(xpath, vals, delimiter);}
 		
 		// Convenience methods
+		bool GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const;
+
 		bool GetFDCZ(vector<double> &z_wires) const; ///< z-locations for each of the FDC wire planes in cm
 		bool GetFDCStereo(vector<double> &stereo_angles) const; ///< stereo angles of each of the FDC wire layers
 		bool GetFDCRmin(vector<double> &rmin_packages) const; ///< beam hole size for each FDC package in cm
@@ -82,6 +86,7 @@ class DGeometry{
 	private:
 		JGeometry *jgeom;
 		DApplication *dapp;
+
 };
 
 #endif // _DGeometry_

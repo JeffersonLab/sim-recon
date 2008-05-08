@@ -6,6 +6,8 @@
 //
 
 #include "DGeometry.h"
+#include "FDC/DFDCWire.h"
+#include "FDC/DFDCGeometry.h"
 using namespace std;
 
 //---------------------------------
@@ -15,6 +17,7 @@ DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp)
 {
 	this->jgeom = jgeom;
 	this->dapp = dapp;
+
 }
 
 //---------------------------------
@@ -59,6 +62,63 @@ DLorentzDeflections* DGeometry::GetLorentzDeflections(void)
 // to the XML (such as the locations of the FDC packages) they
 // are automatically reflected here.
 //====================================================================
+
+bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
+  // Get geometrical information from database
+  vector<double>z_wires;
+  vector<double>stereo_angles;
+  
+  bool good=true;
+
+  good|=GetFDCZ(z_wires);
+  good|=GetFDCStereo(stereo_angles);
+  
+  if (!good) return good;
+
+  for(int layer=1; layer<=FDC_NUM_LAYERS; layer++){
+    double angle=-stereo_angles[layer-1]*M_PI/180.;
+    vector<DFDCWire *>temp;
+    for(int wire=1; wire<=WIRES_PER_PLANE; wire++){
+      
+      DFDCWire *w = new DFDCWire;
+      w->layer = layer;
+      w->wire = wire;
+      w->angle = angle;
+
+      // find coordinates of center of wire in rotated system
+      float u = U_OF_WIRE_ZERO + WIRE_SPACING*(float)(wire-1);
+      
+      // Rotate coordinates into lab system and set the wire's origin
+      // Note that the FDC measures "angle" such that angle=0
+      // corresponds to the anode wire in the vertical direction
+      // (i.e. at phi=90 degrees).
+      float x = u*sin(angle + M_PI/2.0);
+      float y = u*cos(angle + M_PI/2.0);
+      w->origin.SetXYZ(x,y,z_wires[layer-1]);
+
+      // Length of wire is set by active radius
+      w->L = 2.0*sqrt(pow(FDC_ACTIVE_RADIUS,2.0) - u*u);
+			
+      // Set directions of wire's coordinate system with "udir"
+      // along wire.
+      w->udir.SetXYZ(sin(angle),cos(angle),0.0);
+			
+      // "s" points in direction from beamline to midpoint of
+      // wire. This happens to be the same direction as "origin"
+      w->sdir = w->origin;
+      w->sdir.SetMag(1.0);
+      
+      w->tdir = w->udir.Cross(w->sdir);
+      w->tdir.SetMag(1.0); // This isn't really needed
+      temp.push_back(w);
+    }
+    fdcwires.push_back(temp);
+  }
+
+  return good;
+}
+
+
 
 
 //---------------------------------
