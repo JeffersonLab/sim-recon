@@ -12,7 +12,6 @@
 #include "DFDCSegment.h"
 #include "DFDCPseudo.h"
 #include "DFDCHit.h"
-#include "DFDCGeometry.h"
 
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "HDGEOMETRY/DLorentzDeflections.h"
@@ -82,7 +81,6 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		jerror_t evnt(JEventLoop *eventLoop, int eventNo);
 
 	private:
-		DFDCGeometry _geo;
 		JStreamLog* _log;
 		ofstream* logFile;
 
@@ -102,8 +100,9 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 
                 const DMagneticFieldMap *bfield;
 		const DLorentzDeflections *lorentz_def;
-		double start_time;
-		
+		double ref_time;
+		bool use_tof;
+
 		int myeventno;
 };
 

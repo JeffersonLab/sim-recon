@@ -5,6 +5,7 @@
 #include "DFDCSegment_factory.h"
 #include "DANA/DApplication.h"
 #include "START_COUNTER/DSCHit.h"
+#include "TOF/DTOFHit.h"
 #include "HDGEOMETRY/DLorentzMapCalibDB.h"
 #include <math.h>
 
@@ -26,6 +27,7 @@
 #define MIN_TANL 2.0
 #define R_START 7.6
 #define SC_V_EFF 15.
+#define Z_TOF 617.4
 
 // Variance for position along wire using PHENIX angle dependence, transverse
 // diffusion, and an intrinsic resolution of 127 microns.
@@ -73,18 +75,9 @@ jerror_t DFDCSegment_factory::brun(JEventLoop* eventLoop, int eventNo) {
 jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
   myeventno=eventNo;
 
-  vector<const DSCHit*>sc_hits;
-  eventLoop->Get(sc_hits);
-  // Use simple average to get start time from start counter hits
-  start_time=0;
-  double nsc_hits=double(sc_hits.size());
-  for (unsigned int i=0;i<sc_hits.size();i++){
-    start_time+=sc_hits[i]->t/nsc_hits;
-  }
-
   vector<const DFDCPseudo*>pseudopoints;
   eventLoop->Get(pseudopoints);  
-
+  
   // Copy into local vector
   vector<DFDCPseudo*>points;
   for (vector<const DFDCPseudo*>::iterator i=pseudopoints.begin();
@@ -93,19 +86,51 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
     *temp=*(*i);
     points.push_back(temp);
   }
+  
+  // Skip segment finding if there aren't enough points to form a sensible 
+  // segment 
+  if (pseudopoints.size()>=3){
+    // get start counter hits
+    vector<const DSCHit*>sc_hits;
+    eventLoop->Get(sc_hits);
+    vector<const DTOFHit*>tof_hits;
+    eventLoop->Get(tof_hits);
 
-  // Group pseudopoints by package
-  vector<DFDCPseudo*>package[4];
-  for (vector<DFDCPseudo*>::iterator i=points.begin();i!=points.end();i++){
-     package[((*i)->wire->layer-1)/6].push_back(*i);
-  }
-
-  // Find the segments in each package
-  for (int j=0;j<4;j++){
-    std::sort(package[j].begin(), package[j].end(), DFDCSegment_package_cmp);
-    FindSegments(package[j]);
-  } 
-
+    ref_time=0;
+    use_tof=false;
+    if (sc_hits.size()>0){
+      double sc_min=1000.;
+      for (unsigned int i=0;i<sc_hits.size();i++){
+	if (sc_hits[i]->t<sc_min) sc_min=sc_hits[i]->t;
+      }
+      ref_time=sc_min;
+    }
+    else if (tof_hits.size()>0){
+      double tof_min=1000.;
+      for (unsigned int i=0;i<tof_hits.size();i++){
+	if (tof_hits[i]->meantime<tof_min) tof_min=tof_hits[i]->meantime;
+      }
+      ref_time=tof_min;
+      use_tof=true;
+    }
+     
+    if (ref_time>0){
+      // Group pseudopoints by package
+      vector<DFDCPseudo*>package[4];
+      for (vector<DFDCPseudo*>::iterator i=points.begin();i!=points.end();i++){
+	package[((*i)->wire->layer-1)/6].push_back(*i);
+      }
+    
+      // Find the segments in each package
+      for (int j=0;j<4;j++){
+	std::sort(package[j].begin(),package[j].end(),DFDCSegment_package_cmp);
+	// We need at least 3 points to define a circle, so skip if we don't 
+	// have enough points.
+	if (package[j].size()>2) FindSegments(package[j]);
+      } 
+    } // sc_hits>0
+  } // pseudopoints>2
+    
   // Copy corrected pseudopoints to the "CORRECTED" pseudopoint factory
   JFactory_base *facbase=eventLoop->GetFactory("DFDCPseudo","CORRECTED");
   JFactory<DFDCPseudo>*fac=dynamic_cast<JFactory<DFDCPseudo>*>(facbase);
@@ -622,6 +647,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   XYZ(num_points-1,2)=Z_TARGET;
   for (unsigned int m=0;m<points.size();m++){
     XYZ(m,2)=points[m]->wire->origin(2);
+
     Phi=atan2(points[m]->y,points[m]->x);
     CRPhi(m,m)
       =(Phi*cos(Phi)-sin(Phi))*(Phi*cos(Phi)-sin(Phi))*points[m]->covxx
@@ -717,11 +743,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
 // Provide guess for (seed) track parameters
 //
 jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
-  // We need at least 3 points to define a circle, so bail if we don't have 
-  // enough points.
-  if (points.size()<3) return RESOURCE_UNAVAILABLE;
- 
-  // Put indices for the first point in each plane before the most downstream
+   // Put indices for the first point in each plane before the most downstream
   // plane in the vector x_list.
   double old_z=points[0]->wire->origin(2);
   vector<unsigned int>x_list;
@@ -808,7 +830,7 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	// Matrix of points on track 
 	DMatrix XYZ(neighbors.size()+1,3);
 	DMatrix CR(neighbors.size()+1,neighbors.size()+1);
-   
+   	
 	// Arc lengths in helical model are referenced relative to the plane
 	// ref_plane within a segment.  For a 6 hit segment, ref_plane=2 is 
 	// roughly in the center of the segment.
@@ -889,11 +911,14 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
   double lambda=atan(tanl);  
   double alpha=M_PI/2.-lambda;
   
+  if (alpha == 0. || rc==0.) return VALUE_OUT_OF_RANGE;
+
   // Get Bfield, needed to guess particle momentum
   double Bx,By,Bz,B;
   double x=XYZ(ref_plane,0);
   double y=XYZ(ref_plane,1);
-  double z=points[ref_plane]->wire->origin(2);  
+  double z=XYZ(ref_plane,2);
+  
   bfield->GetField(x,y,z,Bx,By,Bz);
   B=sqrt(Bx*Bx+By*By+Bz*Bz);
 
@@ -903,12 +928,17 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
 
   // Correct start time for propagation from (0,0)
   double my_start_time=0.;
-  if (start_time>0) 
-    my_start_time=start_time
+  if (use_tof){
+    //my_start_time=ref_time-(Z_TOF-Z_TARGET)/sin(lambda)/beta/29.98;
+    my_start_time=0;
+  }
+  else
+    my_start_time=ref_time
       -2.*rc*asin(R_START/2./rc)*(1./cos(lambda)/beta/29.98);
 
   for (unsigned int m=0;m<points.size();m++){
     DFDCPseudo *point=points[m];
+
     double cosangle=point->wire->udir(1);
     double sinangle=point->wire->udir(0);
     x=XYZ(m,0);
@@ -930,7 +960,7 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
     // Variance for position along wire. Includes angle dependence from PHENIX
     // and transverse diffusion
     double sigy2=fdc_y_variance(alpha,delta_x);
-
+    
     // Next find correction to y from table of deflections
     delta_y=lorentz_def->GetLorentzCorrection(x,y,z,alpha,delta_x);
          
@@ -943,7 +973,6 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
     point->covyy=sigx2*sinangle*sinangle+sigy2*cosangle*cosangle;
     point->covxy=(sigy2-sigx2)*sinangle*cosangle;
     point->status|=CORRECTED;
-
   }
   return NOERROR;
 }
