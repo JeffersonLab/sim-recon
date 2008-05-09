@@ -107,7 +107,8 @@ jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, int eventNo) {
 		      thisLayer.push_back(*i);
 		      i++;
 		    }
-		    pique(thisLayer);
+		    if (thisLayer.size()>0)
+		      pique(thisLayer);
 		    thisLayer.clear();
 		  }
 		}
@@ -120,7 +121,8 @@ jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, int eventNo) {
 		      thisLayer.push_back(*i);
 		      i++;
 		    }
-		    pique(thisLayer);
+		    if (thisLayer.size()>0)
+		      pique(thisLayer);
 		    thisLayer.clear();
 		  }
 		}
@@ -145,9 +147,6 @@ jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, int eventNo) {
 /// numbers.
 ///
 void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H) {
-	if (H.size() == 0)
-		return;
-		
 	int width(1);
 	int beginStrip(0);
 	int maxStrip(0);
