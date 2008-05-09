@@ -130,16 +130,17 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	// For each layer, get its sets of V, X, and U hits, and then pass them to the geometrical
 	// organization routine, DFDCPseudo_factory::makePseudo()
 	for (int iLayer=1; iLayer <= 24; iLayer++) {
-		for (; ((uIt != uClus.end() && (*uIt)->gLayer == iLayer)); uIt++)
-			oneLayerU.push_back(*uIt);
-		for (; ((vIt != vClus.end() && (*vIt)->gLayer == iLayer)); vIt++)
-			oneLayerV.push_back(*vIt);
-		for (; ((xIt != xHits.end() && (*xIt)->gLayer == iLayer)); xIt++)
-			oneLayerX.push_back(*xIt);
-		makePseudo(oneLayerX, oneLayerU, oneLayerV,iLayer);
-		oneLayerU.clear();
-		oneLayerV.clear();
-		oneLayerX.clear();
+	  for (; ((uIt != uClus.end() && (*uIt)->gLayer == iLayer)); uIt++)
+	    oneLayerU.push_back(*uIt);
+	  for (; ((vIt != vClus.end() && (*vIt)->gLayer == iLayer)); vIt++)
+	    oneLayerV.push_back(*vIt);
+	  for (; ((xIt != xHits.end() && (*xIt)->gLayer == iLayer)); xIt++)
+	    oneLayerX.push_back(*xIt);
+	  if (oneLayerU.size()>0 && oneLayerV.size()>0 && oneLayerX.size()>0)
+	    makePseudo(oneLayerX, oneLayerU, oneLayerV,iLayer);
+	  oneLayerU.clear();
+	  oneLayerV.clear();
+	  oneLayerX.clear();
 	}
 	
 	return NOERROR;
@@ -154,8 +155,6 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 				    vector<const DFDCCathodeCluster*>& v,
 				    int layer)
 {
-  if ((u.size() == 0) || (v.size() == 0) || (x.size() == 0))
-    return;
   vector<const DFDCHit*>::iterator xIt;
   vector<const DFDCCathodeCluster*>::iterator uIt;
   vector<const DFDCCathodeCluster*>::iterator vIt;
@@ -239,61 +238,62 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	float y_from_strips=DFDCGeometry::getYLocalStrips(upeaks[i].pos,
 							  vpeaks[j].pos);
 	for(xIt=x.begin();xIt!=x.end();xIt++){
-	
-		// First check if mean times of strips and wire are close.
-		// There are 3 values to compare so we look at the RMS
-		// of the 3 differences. (I'm just making this up!)
-		// 1/2/2008 D. L.
-		float dt1 = (*xIt)->t - upeaks[i].t;
-		float dt2 = (*xIt)->t - vpeaks[j].t;
-		float dt3 = upeaks[i].t - vpeaks[j].t;
-		float trms = sqrt((dt1*dt1 + dt2*dt2 + dt3*dt3)/3.0);
-		if(trms>20.0)continue;
-	
-	  float x_from_wire=DFDCGeometry::getWireR(*xIt);
-	  if (fabs(x_from_wire-x_from_strips)<WIRE_SPACING/2.){
-	    int status=upeaks[i].numstrips+vpeaks[j].numstrips;
-	    float xres=WIRE_SPACING/2./sqrt(12.);
-	    float yres=fabs(x_from_wire-x_from_strips);
-            float cosangle,sinangle;	   
+	  if ((*xIt)->element<=WIRES_PER_PLANE && (*xIt)->element>0){
+	    // First check if mean times of strips and wire are close.
+	    // There are 3 values to compare so we look at the RMS
+	    // of the 3 differences. (I'm just making this up!)
+	    // 1/2/2008 D. L.
+	    float dt1 = (*xIt)->t - upeaks[i].t;
+	    float dt2 = (*xIt)->t - vpeaks[j].t;
+	    float dt3 = upeaks[i].t - vpeaks[j].t;
+	    float trms = sqrt((dt1*dt1 + dt2*dt2 + dt3*dt3)/3.0);
+	    if(trms>20.0)continue;	
+	    
+	    float x_from_wire=DFDCGeometry::getWireR(*xIt);
+	    if (fabs(x_from_wire-x_from_strips)<WIRE_SPACING/2.){
+	      int status=upeaks[i].numstrips+vpeaks[j].numstrips;
+	      float xres=WIRE_SPACING/2./sqrt(12.);
+	      float yres=fabs(x_from_wire-x_from_strips);
+	      float cosangle,sinangle;	   
+	      
+	      yres=x_from_wire-x_from_strips;
+	      
+	      DFDCPseudo* newPseu = new DFDCPseudo;
+	      newPseu->w      = x_from_wire;
+	      newPseu->dw     = xres;
+	      newPseu->s      = y_from_strips;
+	      newPseu->ds     = yres;
+	      newPseu->wire   = fdcwires[layer-1][(*xIt)->element-1];
+	      newPseu->time   = (*xIt)->t;
+	      newPseu->dist   = newPseu->time*DRIFT_SPEED;
+	      newPseu->status = status;
+	      
+	      newPseu->dE = CHARGE_TO_ENERGY*(upeaks[i].q+vpeaks[j].q)/2.;
+	      
+	      // It can occur (although rarely) that newPseu->wire is NULL
+	      // which causes us to crash below. In these cases, we can't really
+	      // make a psuedo point so we delete the current object
+	      // and just go on to the next one.
+	      if(newPseu->wire==NULL){
+		_DBG_<<"newPseu->wire=NULL! This shouldn't happen. Complain to staylor@jlab.org"<<endl;
+		delete newPseu;
+		continue;
+	      }
+	      sinangle=newPseu->wire->udir(0);
+	      cosangle=newPseu->wire->udir(1);
 
-	    yres=x_from_wire-x_from_strips;
-	   
-	    DFDCPseudo* newPseu = new DFDCPseudo;
-	    newPseu->w      = x_from_wire;
-	    newPseu->dw     = xres;
-	    newPseu->s      = y_from_strips;
-	    newPseu->ds     = yres;
-	    newPseu->wire   = fdcwires[layer-1][(*xIt)->element-1];
-	    newPseu->time   = (*xIt)->t;
-	    newPseu->dist   = newPseu->time*DRIFT_SPEED;
-	    newPseu->status = status;
+	      newPseu->x=(newPseu->w)*cosangle+(newPseu->s)*sinangle;
+	      newPseu->y=-(newPseu->w)*sinangle+(newPseu->s)*cosangle;
+	      
+	      double sigx2=HALF_CELL*HALF_CELL/3.;
+	      double sigy2=MAX_DEFLECTION*MAX_DEFLECTION/3.;
+	      newPseu->covxx=sigx2*cosangle*cosangle+sigy2*sinangle*sinangle;
+	      newPseu->covyy=sigx2*sinangle*sinangle+sigy2*cosangle*cosangle;
+	      newPseu->covxy=(sigy2-sigx2)*sinangle*cosangle;
 
-	    newPseu->dE = CHARGE_TO_ENERGY*(upeaks[i].q+vpeaks[j].q)/2.;
-		 
-		 // It can occur (although rarely) that newPseu->wire is NULL
-		 // which causes us to crash below. In these cases, we can't really
-		 // make a psuedo point so we delete the current object
-		 // and just go on to the next one.
-		 if(newPseu->wire==NULL){
-		 	_DBG_<<"newPseu->wire=NULL! This shouldn't happen. Complain to staylor@jlab.org"<<endl;
-			delete newPseu;
-			continue;
-		 }
-
-	    sinangle=newPseu->wire->udir(0);
-	    cosangle=newPseu->wire->udir(1);
-	    newPseu->x=(newPseu->w)*cosangle+(newPseu->s)*sinangle;
-	    newPseu->y=-(newPseu->w)*sinangle+(newPseu->s)*cosangle;
-
-	    double sigx2=HALF_CELL*HALF_CELL/3.;
-	    double sigy2=MAX_DEFLECTION*MAX_DEFLECTION/3.;
-	    newPseu->covxx=sigx2*cosangle*cosangle+sigy2*sinangle*sinangle;
-	    newPseu->covyy=sigx2*sinangle*sinangle+sigy2*cosangle*cosangle;
-	    newPseu->covxy=(sigy2-sigx2)*sinangle*cosangle;
-
-	    _data.push_back(newPseu);
-	  } // match in x
+	      _data.push_back(newPseu);
+	    } // match in x
+	  } else _DBG_ << "Bad wire " << (*xIt)->element <<endl;
 	} // xIt loop
       } // vpeaks loop
     } // upeaks loop
