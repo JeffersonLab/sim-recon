@@ -6,6 +6,7 @@
 #include "DANA/DApplication.h"
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "HDGEOMETRY/DGeometry.h"
+#include <TDecompLU.h>
 
 #include <math.h>
 
@@ -213,6 +214,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
   DMatrix R(2,1);  // Filtered residual
   DMatrix R_T(1,2);  // ...and its transpose
   DMatrix RC(2,2);  // Covariance of filtered residual
+  DMatrix InvRC(2,2); // and its inverse
   DMatrix S(5,1),S0(5,1); //State vector
   DMatrix C0(5,5),C(5,5);   // Covariance matrix for state vector
   DMatrix InvV(2,2); // Inverse of error matrix
@@ -289,7 +291,19 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
 
     // Updated error matrix
     V=V+H*(C*H_T);
-    InvV=DMatrix(DMatrix::kInverted,V);
+
+    // Calculate the inverse of V
+    double det=V(0,0)*V(1,1)-V(0,1)*V(1,0);
+    if (det!=0){
+      InvV(0,0)=V(1,1)/det;
+      InvV(1,0)=-V(1,0)/det;
+      InvV(0,1)=-V(0,1)/det;
+      InvV(1,1)=V(0,0)/det;
+    }
+    else{
+      _DBG_ << "Kalman filter:  Singular matrix..." << endl;
+      return UNRECOVERABLE_ERROR;
+    }
 
     // Compute Kalman gain matrix
     K=C*(H_T*InvV);
@@ -309,8 +323,21 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
     R_T=DMatrix(DMatrix::kTransposed,R);
     RC=V-H*(C*H_T);
 
+    // Calculate the inverse of RC
+    det=RC(0,0)*RC(1,1)-RC(0,1)*RC(1,0);
+    if (det!=0){
+      InvRC(0,0)=RC(1,1)/det;
+      InvRC(1,0)=-RC(1,0)/det;
+      InvRC(0,1)=-RC(0,1)/det;
+      InvRC(1,1)=RC(0,0)/det;
+    }
+    else{
+      _DBG_ << "Kalman filter:  Singular matrix RC..." << endl;
+      return UNRECOVERABLE_ERROR;
+    }
+
     // Update chi2 for this segment
-    chisq+=(R_T*((DMatrix(DMatrix::kInverted,RC))*R))(0,0);
+    chisq+=(R_T*(InvRC*R))(0,0);
 
     // increment z position
     z_=endz;
