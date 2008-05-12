@@ -203,8 +203,12 @@ void hitForwardDC (float xin[4], float xout[4],
   if ((wire1>WIRES_PER_PLANE && wire2==WIRES_PER_PLANE) ||
       (wire2>WIRES_PER_PLANE && wire1==WIRES_PER_PLANE)) 
     wire1=wire2=WIRES_PER_PLANE;  
+  if ((wire1==0 && wire2 == 1) || (wire1==1 && wire2== 0)){
+    wire1=wire2=1;
+  }
   // Make sure at least one wire number is valid
   if (wire1>WIRES_PER_PLANE&&wire2>WIRES_PER_PLANE) return;
+  if (wire1==0 && wire2==0) return;
   dwire = (wire1 < wire2)? 1 : -1;
   alpha = atan2(xoutlocal[0]-xinlocal[0],xoutlocal[2]-xinlocal[2]);
   xlocal[0] = (xinlocal[0] + xoutlocal[0])/2;
