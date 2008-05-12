@@ -15,6 +15,7 @@ using namespace std;
 #include "FDC/DFDCGeometry.h"
 #include "FCAL/DFCALGeometry.h"
 #include "DVector2.h"
+#include "HDGEOMETRY/DGeometry.h"
 
 #include <TPolyMarker.h>
 #include <TLine.h>
@@ -65,11 +66,20 @@ static float TARGET_Zlen = 30.0;
 // when the program first starts. Cretae one of our own here.
 static DFCALGeometry *fcalgeom = new DFCALGeometry;
 
+static vector<vector <DFDCWire *> >fdcwires;
+
 //-------------------
 // Constructor
 //-------------------
 hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(p,w,h)
 {
+  //Get pointer to DGeometry object
+  DApplication* dapp=dynamic_cast<DApplication*>(japp);
+  const DGeometry *dgeom  = dapp->GetDGeometry(0);
+  
+  dgeom->GetFDCWires(fdcwires);
+
+
 	// First, define all of the of the graphics objects. Below that, make all
 	// of the connections to the methods so these things will work!
 
@@ -1014,8 +1024,8 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		// ----- FDC ------
 		for(int i=0; i<4; i++){
 			// Get FDC package positions from FDC library
-			float zu = (DFDCGeometry::GetDFDCWire(1+i*6,1))->origin.z();
-			float zd = (DFDCGeometry::GetDFDCWire(1+i*6+5,1))->origin.z();			
+			float zu = fdcwires[i*6][0]->origin.z();
+			float zd = fdcwires[i*6+5][0]->origin.z();			
 			TBox *fdc1 = new TBox(zu, FDC_Rmin, zd, FDC_Rmax);
 			TBox *fdc2 = new TBox(zu, -FDC_Rmin, zd, -FDC_Rmax);
 			fdc1->SetFillColor(21);
@@ -1175,8 +1185,8 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 		// ----- FDC ------
 		for(int i=0; i<4; i++){
 			// Get FDC package positions from FDC library
-			float zu = (DFDCGeometry::GetDFDCWire(1+i*6,1))->origin.z();
-			float zd = (DFDCGeometry::GetDFDCWire(1+i*6+5,1))->origin.z();			
+			float zu = fdcwires[i*6][0]->origin.z();
+			float zd = fdcwires[i*6+5][0]->origin.z();			
 			TBox *fdc1 = new TBox(zu, FDC_Rmin, zd, FDC_Rmax);
 			fdc1->SetFillColor(21);
 			graphics_sideA.push_back(fdc1);
@@ -1219,8 +1229,9 @@ void hdv_mainframe::DrawDetectorsRPhi(void)
 		// ----- FDC ------
 		for(int i=0; i<4; i++){
 			// Get FDC package positions from FDC library
-			float zu = (DFDCGeometry::GetDFDCWire(1+i*6,1))->origin.z();
-			float zd = (DFDCGeometry::GetDFDCWire(1+i*6+5,1))->origin.z();			
+			float zu = fdcwires[i*6][0]->origin.z();
+			float zd = fdcwires[i*6+5][0]->origin.z();	
+
 			TBox *fdc1 = new TBox(zu, 0.0, zd, 2.0*M_PI);
 			fdc1->SetFillColor(21);
 			graphics_sideB.push_back(fdc1);

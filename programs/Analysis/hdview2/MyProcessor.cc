@@ -38,8 +38,12 @@ using namespace std;
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
 #include "FDC/DFDCIntersection.h"
+#include "HDGEOMETRY/DGeometry.h"
 
 extern hdv_mainframe *hdvmf;
+
+
+static vector<vector <DFDCWire *> >fdcwires;
 
 
 MyProcessor *gMYPROC=NULL;
@@ -73,12 +77,14 @@ jerror_t MyProcessor::init(void)
 {
 	// Make sure detectors have been drawn
 	//if(!drew_detectors)DrawDetectors();
-	
+  
+  
+
 	vector<JEventLoop*> loops = app->GetJEventLoops();
 	if(loops.size()>0){
 		vector<string> facnames;
 		loops[0]->GetFactoryNames(facnames);
-		
+
 		hdvmf = new hdv_mainframe(gClient->GetRoot(), 1000, 600);
 		hdvmf->SetTrackFactories(facnames);
 		hdvmf->SetCandidateFactories(facnames);
@@ -97,6 +103,8 @@ jerror_t MyProcessor::brun(JEventLoop *eventloop, int runnumber)
 	// Read in Magnetic field map
 	DApplication* dapp = dynamic_cast<DApplication*>(eventloop->GetJApplication());
 	Bfield = dapp->GetBfield();
+	const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
+	dgeom->GetFDCWires(fdcwires);
 
 	return NOERROR;
 }
@@ -205,7 +213,7 @@ void MyProcessor::FillGraphics(void)
 		for(unsigned int i=0; i<fdchits.size(); i++){
 			const DFDCHit *fdchit = fdchits[i];
 			if(fdchit->type!=0)continue;
-			const DFDCWire *wire = DFDCGeometry::GetDFDCWire(fdchit->gLayer, fdchit->element);
+			const DFDCWire *wire =fdcwires[fdchit->gLayer-1][fdchit->element-1];
 			if(!wire){
 				_DBG_<<"Couldn't find wire for gLayer="<<fdchit->gLayer<<" and element="<<fdchit->element<<endl;
 				continue;
