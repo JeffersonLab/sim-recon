@@ -11,6 +11,7 @@ using namespace std;
 
 #include "DCDCTrackHit_factory.h"
 #include "DCDCHit.h"
+#include "HDGEOMETRY/DGeometry.h"
 
 // Static globals used by all instances of DCDCTrackHit_factory
 static pthread_mutex_t wire_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -39,9 +40,19 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 	// trade off to allow fast access to the array
 	// during event time.
 	
-	Z_MIN = 17.0;
-	Z_MAX = Z_MIN + 150.0;
-	
+  // Get pointer to DGeometry object
+  DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+  dgeom  = dapp->GetDGeometry(runnumber);
+
+  vector<double>cdc_origin;
+  vector<double>cdc_half_length;
+  dgeom->Get("//posXYZ[@volume='CentralDC']/@X_Y_Z",cdc_origin);
+  dgeom->Get("//posXYZ[@volume='centralDC_option-1']/@X_Y_Z",cdc_half_length);
+
+
+	Z_MIN = cdc_origin[2];
+	Z_MAX = Z_MIN + 2.*cdc_half_length[2];
+
 	gPARMS->SetDefaultParameter("CDC:Z_MIN",Z_MIN);
 	gPARMS->SetDefaultParameter("CDC:Z_MAX",Z_MAX);
 	
@@ -76,6 +87,7 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 		int myNstraws=0;
 		float radius = 0.0;
 		float stereo=0.0;
+
 		switch(ring){
 #if 1 // 1=CDC-option 1  0=CDC-option2
 			case  1:	myNstraws=  43;	radius= 10.960;	stereo=  degrees0; break;

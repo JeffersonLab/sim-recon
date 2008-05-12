@@ -10,6 +10,7 @@
 
 #include <JANA/JFactory.h>
 #include "DCDCTrackHit.h"
+#include "HDGEOMETRY/DGeometry.h"
 
 #define CDC_MAX_STRAWS 222
 #define CDC_MAX_RINGS 25
@@ -24,6 +25,8 @@ class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 		jerror_t brun(JEventLoop *loop, int runnumber);
 		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
+
+		DGeometry *dgeom;
 		float Z_MIN, Z_MAX;
 };
 
