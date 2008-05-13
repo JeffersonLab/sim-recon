@@ -14,6 +14,9 @@
 #define EPS 1.0e-8
 #define DEDX_ENDPLATE (-3.95e-3) // Carbon
 #define DEDX_AIR (-2.19e-6) // GeV/cm
+#define DEDX_LH2 ( -2.856e-4) 
+#define DEDX_ROHACELL (-0.4e-3) // low density carbon for now!!
+#define BEAM_RADIUS  0.1 
 
 bool DKalmanHit_cmp(DKalmanHit_t *a, DKalmanHit_t *b){
   return a->z>b->z;
@@ -27,6 +30,18 @@ DKalmanFilter::DKalmanFilter(const DMagneticFieldMap *bfield,
 
   // Get the position of the exit of the CDC endplate from DGeometry
   geom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
+
+  // Start counter material
+ 
+
+   // Get dimensions of target wall
+  vector<double>target_center;
+  geom->Get("//posXYZ[@volume='Target']/@X_Y_Z",target_center);
+  geom->Get("//tubs[@name='CYLW']/@Rio_Z",targ_wall);
+  targ_wall[2]+=target_center[2];
+  // Target material
+  geom->Get("//tubs[@name='LIH2']/@Rio_Z",target);
+  target[2]+=target_center[2];
 }
 
 // Initialize the state vector
@@ -57,7 +72,7 @@ void DKalmanFilter::GetPosition(DVector3 &pos){
 
 /// Add a hit to the list of hits using Cartesian coordinates
 jerror_t DKalmanFilter::AddHit(double x,double y, double z,double covx,
-                                double covy, double covxy){
+                                double covy, double covxy, double dE){
   DKalmanHit_t *hit = new DKalmanHit_t;
   hit->x = x;
   hit->y = y;
@@ -65,6 +80,7 @@ jerror_t DKalmanFilter::AddHit(double x,double y, double z,double covx,
   hit->covx=covx;
   hit->covy=covy;
   hit->covxy=covxy;
+  hit->dE=dE;
   
   hits.push_back(hit);
 
@@ -200,7 +216,7 @@ jerror_t DKalmanFilter::GetProcessNoise(double mass_hyp,double ds,
 
 
 // Routine that performs the main loop of the Kalman engine
-jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
+jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
   DMatrix M(2,1);  // measurement vector
   DMatrix M_pred(2,1); // prediction for hit position
   DMatrix H(2,5);  // Track projection matrix
@@ -210,6 +226,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
   DMatrix Q(5,5);  // Process noise covariance matrix
   DMatrix K(5,2);  // Kalman gain matrix
   DMatrix V(2,2);  // Measurement covariance matrix
+  DMatrix V1(2,2);  // same, with the contribution from C
   DMatrix X(2,1);  // Position on track
   DMatrix R(2,1);  // Filtered residual
   DMatrix R_T(1,2);  // ...and its transpose
@@ -221,6 +238,8 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
 
   // path length increment
   double ds=0;
+  // Path length in active volume
+  path_length=0;
 
   chisq=0;
   // Initialize the state vector 
@@ -255,22 +274,25 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
     V(0,0)=hits[k]->covx;
     V(1,0)=V(0,1)=hits[k]->covxy;
     V(1,1)=hits[k]->covy;
-
+    
     // Propagate state vector and covariance matrices to next measurement   
     int num_inc=int((endz-z_)/0.5);
     oldz=z_;
     newz=oldz;
     for (int j=0;j<num_inc;j++){
       newz=oldz-0.5;
+      // Step the improved state vector through the field
+      ds=StepJacobian(oldz,newz,S,DEDX_AIR,J);
+      // Get the covariance matrix due to the multiple scattering
+      GetProcessNoise(mass_hyp,ds,30420.,S,Q); // use air for now
+      // Rotate the covariance matrix and add the multiple scattering elements
+      J_T=DMatrix(DMatrix::kTransposed,J);
+      C=J*(C*J_T)+Q; 
+
       // Step the seed state vector through the field and get the Jacobian 
       ds=StepJacobian(oldz,newz,S0,DEDX_AIR,J);
-
-      // Step the improved state vector through the field
-      Step(oldz,newz,DEDX_AIR,S);
-
       // Get the covariance matrix due to the multiple scattering
       GetProcessNoise(mass_hyp,ds,30420.,S0,Q); // use air for now
-
       // Rotate the covariance matrix and add the multiple scattering elements
       J_T=DMatrix(DMatrix::kTransposed,J);
       C0=J*(C0*J_T)+Q; 
@@ -278,8 +300,12 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
       oldz=newz;			  
     }
     if (fabs(endz-oldz)>EPS){
+      ds=StepJacobian(oldz,endz,S,DEDX_AIR,J);
+      J_T=DMatrix(DMatrix::kTransposed,J);  
+      GetProcessNoise(mass_hyp,ds,30420.,S,Q); // use air for now
+      C=J*(C*J_T)+Q;
+
       ds=StepJacobian(oldz,endz,S0,DEDX_AIR,J);
-      Step(oldz,endz,DEDX_AIR,S);
       J_T=DMatrix(DMatrix::kTransposed,J);  
       GetProcessNoise(mass_hyp,ds,30420.,S0,Q); // use air for now
       C0=J*(C0*J_T)+Q;
@@ -287,18 +313,18 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
 
     // State vector S is a perturbation about the seed S0
     S=S0+J*(S-S0);
-    C=C0*J*((C-C0)*J_T);
+    C=C0+J*((C-C0)*J_T);
 
     // Updated error matrix
-    V=V+H*(C*H_T);
+    V1=V+H*(C*H_T);
 
     // Calculate the inverse of V
-    double det=V(0,0)*V(1,1)-V(0,1)*V(1,0);
+    double det=V1(0,0)*V1(1,1)-V1(0,1)*V1(1,0);
     if (det!=0){
-      InvV(0,0)=V(1,1)/det;
-      InvV(1,0)=-V(1,0)/det;
-      InvV(0,1)=-V(0,1)/det;
-      InvV(1,1)=V(0,0)/det;
+      InvV(0,0)=V1(1,1)/det;
+      InvV(1,0)=-V1(1,0)/det;
+      InvV(0,1)=-V1(0,1)/det;
+      InvV(1,1)=V1(0,0)/det;
     }
     else{
       _DBG_ << "Kalman filter:  Singular matrix..." << endl;
@@ -313,6 +339,9 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
     M_pred(1,0)=S0(1,0);
     M_pred = M_pred + H*(S-S0);
     S=S+K*(M-M_pred); 
+
+    // Path length in active volume
+    path_length+=1.0*sqrt(1.+S(2,0)*S(2,0)+S(3,0)*S(3,0));
 
     // Update state vector covariance matrix
     C=C-K*(H*C);
@@ -379,18 +408,27 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,double &chisq){
   DMatrix SBest(5,1);
   SBest=S;
   oldz=endz;
-  double r2=S(0,0)*S(0,0)+S(1,0)*S(1,0),r2min=r2;
-  for (int i=0;i<num_inc;i++){
-    if (r2<r2min){
-      r2min=r2;
+  r=sqrt(S(0,0)*S(0,0)+S(1,0)*S(1,0));
+  double rmin=r;
+  double dedx=DEDX_AIR;
+  while (oldz>0. && rmin>BEAM_RADIUS){
+    if (r<rmin){
+      rmin=r;
       SBest=S;
       z_=oldz;
     }
-    newz=oldz-0.5;
-    StepJacobian(oldz,newz,S,DEDX_AIR,J);  
+    if (oldz>targ_wall[2])
+      newz=oldz-0.5;
+    else
+      newz=oldz-0.1;
+    if (r<targ_wall[1] && r>targ_wall[0] && newz<=targ_wall[2])
+      dedx=DEDX_ROHACELL;
+    else if (r<target[1] && newz<=target[2]) 
+      dedx=DEDX_LH2;
+    StepJacobian(oldz,newz,S,dedx,J);  
     J_T=DMatrix(DMatrix::kTransposed,J);  
     C=J*(C*J_T);
-    r2=S(0,0)*S(0,0)+S(1,0)*S(1,0);   
+    r=sqrt(S(0,0)*S(0,0)+S(1,0)*S(1,0));   
     oldz=newz;
   }
   

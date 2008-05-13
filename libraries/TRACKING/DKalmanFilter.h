@@ -12,6 +12,7 @@ using namespace std;
 typedef struct{
   double x,y,z;
   double covx,covxy,covy;
+  double dE;
 }DKalmanHit_t;
 
 class DKalmanFilter{
@@ -24,13 +25,14 @@ class DKalmanFilter{
   };
 
   jerror_t AddHit(double x,double y, double z,double covx,
-		  double covy, double covxy);
+		  double covy, double covxy,double dE);
   jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
-  jerror_t KalmanLoop(double mass_hyp,double &chisq);
+  jerror_t KalmanLoop(double mass_hyp);
   
   void GetMomentum(DVector3 &mom);
   void GetPosition(DVector3 &pos);
   double GetChiSq(void){return chisq;}
+  double GetActivePathLength(void){ return path_length;}
 
  protected:
 
@@ -58,11 +60,16 @@ class DKalmanFilter{
   // chi2 of fit
   double chisq;
 
+  // For dEdx measurements
+  double path_length;  // path length in active volume
+
   // endplate dimensions and location
   double endplate_z, endplate_dz, endplate_rmin, endplate_rmax;
 
-  // target cylinder
-  vector<double>targ_cyl;
+  // target wall cylinder
+  vector<double>targ_wall;
+  // target material
+  vector<double>target;
 
 };
 

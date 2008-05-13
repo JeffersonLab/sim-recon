@@ -82,7 +82,9 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
   for(unsigned int i=0; i<trackcandidates.size(); i++){ 
     const DTrackCandidate *tc = trackcandidates[i];
     DReferenceTrajectory *rt = rtv[i];
-    double chisq;
+
+    // Initialize energy loss sum
+    double dEsum=0.;
 
      // Find reference trajectory by swimming through the field
     DVector3 pos = tc->position();
@@ -110,7 +112,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
       double p = finite(resi) ? exp(-resi*resi/2./variance):0.0;
       if(p>=MIN_FDC_HIT_PROB){
 	fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,hit->covxy,
-		   hit->covyy);
+		   hit->covyy,hit->dE);
 	const swim_step_t *last_step=rt->GetLastSwimStep();
      
 	if (last_step!=NULL){
@@ -118,6 +120,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	  last_mom=last_step->mom;
 	}
 	num_matched_hits++;
+	dEsum+=hit->dE;
       }
     }
    
@@ -126,7 +129,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
       fit.SetSeed(tc->charge(),last_pos,last_mom);
 
       // Kalman filter 
-      jerror_t error=fit.KalmanLoop(TOF_MASS,chisq);
+      jerror_t error=fit.KalmanLoop(TOF_MASS);
 
       if (error==NOERROR){
 	// Create a new track object
@@ -147,12 +150,16 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	track->chisq=fit.GetChiSq();
 	track->candidateid=tc->id;
 	track->rt=rt;
-	
+
 	// Fill in DKinematicData part
 	track->setMass(0.0);
 	track->setMomentum(mom);
 	track->setPosition(pos);
 	track->setCharge(track->q);
+
+	// dEdx
+	track->dE=dEsum;
+	track->ds=fit.GetActivePathLength();
 
 	_data.push_back(track);
       }
