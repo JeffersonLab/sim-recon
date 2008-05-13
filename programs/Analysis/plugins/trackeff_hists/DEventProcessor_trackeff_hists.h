@@ -28,6 +28,7 @@ using std::map;
 #include <TRACKING/DMCThrown.h>
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCHit.h>
+#include <FDC/DFDCWire.h>
 
 #include "track.h"
 #include "dchit.h"
@@ -75,6 +76,8 @@ class DEventProcessor_trackeff_hists:public JEventProcessor{
 		map<const DCDCTrackHit*, const DMCTrackHit*> cdclink;
 		map<const DMCThrown*, const DTrack*> trklink;
 		
+		vector<vector<DFDCWire*> >fdcwires;
+			
 		pthread_mutex_t mutex;
 		pthread_mutex_t rt_mutex;
 };

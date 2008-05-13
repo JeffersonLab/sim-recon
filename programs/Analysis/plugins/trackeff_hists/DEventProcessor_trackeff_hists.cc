@@ -21,6 +21,7 @@ using namespace std;
 #include <TRACKING/DTrackCandidate.h>
 #include <TRACKING/DTrack.h>
 #include <FDC/DFDCGeometry.h>
+#include <HDGEOMETRY/DGeometry.h>
 #include <DVector2.h>
 #include <particleType.h>
 
@@ -90,6 +91,10 @@ jerror_t DEventProcessor_trackeff_hists::brun(JEventLoop *loop, int runnumber)
 	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	bfield = dapp->GetBfield(); // temporary until new geometry scheme is worked out
 	ref = new DReferenceTrajectory(bfield);
+
+	const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
+	dgeom->GetFDCWires(fdcwires);
+	
 	
 	return NOERROR;
 }
@@ -125,7 +130,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 	loop->Get(cdctrackhits);
 	loop->Get(fdctrackhits);
 	loop->Get(trackcandidates);
-	loop->Get(tracks);
+	//loop->Get(tracks);
 	loop->Get(mcthrowns);
 	
 	// Lock mutex
@@ -243,203 +248,10 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 			trk.z_can = -1000.0;
 		}
 
-		//========= FIT TRACK ========
-		// Look for a fit track that matches this thrown one
-		unsigned int icdc_fit = FindMatch(cdc_thrownhits, cdc_fit_hits, cdc_matched_hits);
-		unsigned int ifdc_fit = FindMatch(fdc_thrownhits, fdc_fit_hits, fdc_matched_hits);
-		
-		// Initialize values for when no matching fitdidate is found
-		trk.pfit.SetXYZ(0.0, 0.0, 0.0);
-		trk.z_fit = -1000.0;
-		trk.ncdc_hits_fit = 0;
-		trk.nfdc_hits_fit = 0;
-		trk.ncdc_hits_thrown_and_fit = 0;
-		trk.nfdc_hits_thrown_and_fit = 0;
-		trk.cdc_chisq_fit = 1.0E6;
-		trk.fdc_chisq_fit = 1.0E6;
-		
-		// CDC
-		const DTrack *cdc_fit = NULL;
-		if(icdc_fit>=0 && icdc_fit<tracks.size()){
-			cdc_fit = tracks[icdc_fit];
-			
-			trk.ncdc_hits_fit = cdc_fit_hits[icdc_fit].size();
-			trk.ncdc_hits_thrown_and_fit = cdc_matched_hits.size();
-			trk.cdc_chisq_fit = cdc_fit->chisq;
-		}
-		
-		// FDC
-		const DTrack *fdc_fit = NULL;
-		if(ifdc_fit>=0 && ifdc_fit<tracks.size()){
-			fdc_fit = tracks[ifdc_fit];
-			
-			trk.nfdc_hits_fit = fdc_fit_hits[ifdc_fit].size();
-			trk.nfdc_hits_thrown_and_fit = fdc_matched_hits.size();
-			trk.fdc_chisq_fit = fdc_fit->chisq;
-		}
-		
-		// Figure out which candidate (if any) I should match this with
-		const DTrack* fit = NULL;
-		if(cdc_fit!=NULL && fdc_fit!=NULL){
-			fit = cdc_matched_hits.size()>fdc_matched_hits.size() ? cdc_fit:fdc_fit;
-		}else{
-			fit = cdc_fit!=NULL ? cdc_fit:fdc_fit;
-		}
-		
-		if(fit!=NULL){
-			trk.pfit = fit->momentum();
-			trk.z_fit = fit->position().Z();
-		}
-		
-		// Fill map linking this thrown track to a fit track (NULL is OK here)
-		trklink[mcthrown] = fit;
-		
 		// Fill tree
 		trkeff->Fill();
 	}
 	
-	// CDC hits tree
-	map<const DCDCTrackHit*, const DMCTrackHit*>::iterator iter;
-	for(iter=cdclink.begin(); iter!=cdclink.end(); iter++){
-		const DMCTrackHit *truth = iter->second;
-		const DCDCTrackHit *hit = iter->first;
-		const DCDCWire *wire = hit->wire;
-
-		// Fill in values we can with only hit and truth point
-		TVector3 pos_truth(truth->r*cos(truth->phi), truth->r*sin(truth->phi), truth->z);
-		cdchit.wire = wire->straw;
-		cdchit.layer = wire->ring;
-		cdchit.t = hit->tdrift;
-		cdchit.pos_truth = pos_truth;
-		cdchit.ptype = truth->ptype;
-
-		// Some quantities require a fit track to calculate (e.g. residuals)
-		// Here we see if there is a fit track associated with the thrown
-		// track this hit came from.
-		int trackno = truth->track;
-		const DTrack *track = NULL;
-		const DMCThrown *mcthrown=NULL;
-		if(trackno>=1 && trackno<=(int)mcthrowns.size()){
-			mcthrown=mcthrowns[trackno-1];
-			track = trklink[mcthrown];
-
-			// We just need the thrown track for the beta
-			double mass = ParticleMass((Particle_t)mcthrown->type);
-			cdchit.beta = sqrt(1.0/(pow(mass/mcthrown->momentum().Mag(), 2.0) + 1.0));
-		}else{
-			cdchit.beta = -1000.0;
-		}
-
-		
-		// Now, fill in the rest of the DC hit info based on whether we have
-		// a fit track or not
-		if(track!=NULL){
-			// Fit track found
-			DReferenceTrajectory *rt = const_cast<DReferenceTrajectory *>(track->rt);
-			double s,u;
-			rt->DistToRT(wire, &s);
-			u = rt->GetLastDistAlongWire();
-			TVector3 pos_doca;
-			TVector3 mom_doca;
-			rt->GetLastDOCAPoint(pos_doca, mom_doca);
-			TVector3 pos_wire = wire->origin + u*wire->udir;
-			TVector3 delta_hit = pos_doca - pos_wire;
-			TVector3 delta_truth = pos_truth - pos_wire;
-			TVector3 delta_truth_cross_udir = delta_truth.Cross(wire->udir);
-
-			cdchit.tof = s/(cdchit.beta*3.0E10*1.0E-9);
-			cdchit.doca = delta_hit.Mag();
-			cdchit.resi = cdchit.doca - hit->dist*(cdchit.t-cdchit.tof)/cdchit.t;
-			cdchit.resi_truth = cdchit.doca-delta_truth_cross_udir.Mag();
-			cdchit.track_wire_angle = 57.3*acos(mom_doca.Dot(wire->udir)/mom_doca.Mag());
-			cdchit.chisq = track->chisq;
-			cdchit.pos_wire = pos_wire;
-			cdchit.pos_doca = pos_doca;
-		}else{
-			// No fit track
-			cdchit.tof = -1000.0;
-			cdchit.doca = -1000.0;
-			cdchit.resi = -1000.0;
-			cdchit.track_wire_angle = -1000.0;
-			cdchit.chisq = -1000.0;
-			cdchit.pos_wire.SetXYZ(-1000,-1000,-1000);
-			cdchit.pos_doca.SetXYZ(-1000,-1000,-1000);
-		}
-		
-		cdchits->Fill();
-	}
-
-	
-	// FDC hits tree
-	map<const DFDCHit*, const DMCTrackHit*>::iterator fdciter;
-	for(fdciter=fdclink.begin(); fdciter!=fdclink.end(); fdciter++){
-		const DMCTrackHit *truth = fdciter->second;
-		const DFDCHit *hit = fdciter->first;
-		const DFDCWire *wire = DFDCGeometry::GetDFDCWire(hit->layer, hit->element);
-
-		// Fill in values we can with only hit and truth point
-		TVector3 pos_truth(truth->r*cos(truth->phi), truth->r*sin(truth->phi), truth->z);
-		fdchit.wire = wire->wire;
-		fdchit.layer = wire->layer;
-		fdchit.t = hit->t;
-		fdchit.pos_truth = pos_truth;
-		fdchit.ptype = truth->ptype;
-
-		// Some quantities require a fit track to calculate (e.g. residuals)
-		// Here we see if there is a fit track associated with the thrown
-		// track this hit came from.
-		int trackno = truth->track;
-		const DTrack *track = NULL;
-		const DMCThrown *mcthrown=NULL;
-		if(trackno>=1 && trackno<=(int)mcthrowns.size()){
-			mcthrown=mcthrowns[trackno-1];
-			track = trklink[mcthrown];
-
-			// We just need the thrown track for the beta
-			double mass = ParticleMass((Particle_t)mcthrown->type);
-			fdchit.beta = sqrt(1.0/(pow(mass/mcthrown->momentum().Mag(), 2.0) + 1.0));
-		}else{
-			fdchit.beta = -1000.0;
-		}
-
-		
-		// Now, fill in the rest of the DC hit info based on whether we have
-		// a fit track or not
-		if(track!=NULL){
-			// Fit track found
-			DReferenceTrajectory *rt = const_cast<DReferenceTrajectory *>(track->rt);
-			double s,u;
-			rt->DistToRT(wire, &s);
-			u = rt->GetLastDistAlongWire();
-			TVector3 pos_doca;
-			TVector3 mom_doca;
-			rt->GetLastDOCAPoint(pos_doca, mom_doca);
-			TVector3 pos_wire = wire->origin + u*wire->udir;
-			TVector3 delta_hit = pos_doca - pos_wire;
-			TVector3 delta_truth = pos_truth - pos_wire;
-			TVector3 delta_truth_cross_udir = delta_truth.Cross(wire->udir);
-
-			fdchit.tof = s/(fdchit.beta*3.0E10*1.0E-9);
-			fdchit.doca = delta_hit.Mag();
-			fdchit.resi = fdchit.doca - DRIFT_SPEED*(fdchit.t-fdchit.tof);
-			fdchit.resi_truth = fdchit.doca-delta_truth_cross_udir.Mag();
-			fdchit.track_wire_angle = 57.3*acos(mom_doca.Dot(wire->udir)/mom_doca.Mag());
-			fdchit.chisq = track->chisq;
-			fdchit.pos_wire = pos_wire;
-			fdchit.pos_doca = pos_doca;
-		}else{
-			// No fit track
-			fdchit.tof = -1000.0;
-			fdchit.doca = -1000.0;
-			fdchit.resi = -1000.0;
-			fdchit.track_wire_angle = -1000.0;
-			fdchit.chisq = -1000.0;
-			fdchit.pos_wire.SetXYZ(-1000,-1000,-1000);
-			fdchit.pos_doca.SetXYZ(-1000,-1000,-1000);
-		}
-		
-		fdchits->Fill();
-	}
 
 	// Unlock mutex
 	pthread_mutex_unlock(&mutex);
@@ -486,7 +298,7 @@ void DEventProcessor_trackeff_hists::GetFDCHits(const DKinematicData *p, FDChitv
 	for(unsigned int i=0; i<inhits.size(); i++){
 		const DFDCHit* hit = inhits[i];
 		if(hit->type != 0)continue; // filter out cathode hits
-		const DFDCWire *wire = DFDCGeometry::GetDFDCWire(hit->gLayer, hit->element);
+		const DFDCWire *wire = fdcwires[hit->gLayer-1][hit->element-1];
 		if(!wire)continue;
 		double doca = ref->DistToRT(wire);
 		if(doca < MAX_HIT_DIST_FDC)outhits.push_back(hit);
@@ -632,7 +444,8 @@ void DEventProcessor_trackeff_hists::FindFDCTrackNumbers(JEventLoop *loop)
 	for(unsigned int i=0; i<fdchits.size(); i++){
 		const DFDCHit *fdchit = fdchits[i];
 		if(fdchit->type!=0)continue; // only look for wires
-		const DFDCWire *wire = DFDCGeometry::GetDFDCWire(fdchit->gLayer, fdchit->element);
+		const DFDCWire *wire 
+		  = fdcwires[fdchit->gLayer-1][fdchit->element-1];
 		if(!wire)continue;
 		
 		// Loop over FDC truth points
