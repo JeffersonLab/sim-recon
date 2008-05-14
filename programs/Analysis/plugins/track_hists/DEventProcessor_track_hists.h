@@ -8,65 +8,65 @@
 #ifndef _DEventProcessor_track_hists_
 #define _DEventProcessor_track_hists_
 
+#include <pthread.h>
+#include <map>
+using std::map;
+
+#include <TTree.h>
 #include <TFile.h>
 #include <TH1.h>
 #include <TH2.h>
 
-#include "JANA/JFactory.h"
-#include "JANA/JEventProcessor.h"
-#include "JANA/JEventLoop.h"
+#include <JANA/JFactory.h>
+#include <JANA/JEventProcessor.h>
+#include <JANA/JEventLoop.h>
+
+#include <PID/DKinematicData.h>
+#include <TRACKING/DReferenceTrajectory.h>
+#include <TRACKING/DMCTrackHit.h>
+#include <TRACKING/DMCThrown.h>
+#include <CDC/DCDCTrackHit.h>
+
+#include "track.h"
+#include "dchit.h"
 
 class DEventProcessor_track_hists:public JEventProcessor{
 
 	public:
 		DEventProcessor_track_hists();
 		~DEventProcessor_track_hists();
-		void FillAll(float what, int nhits, float theta, float phi, float p, float weight=1.0);
-		void EffVsX(TH1F *out, TH2F* in, int numerator=NMATCHED);
 
-		enum{
-			NHITS_THROWN =1,
-			NHITS_FOUND,
-			NHITS_THROWN_AND_FOUND,
-			NHITS_FOUND_DIFFERENT,
-			NHITS_THROWN_UNUSED,
-			NTHROWN,
-			NFOUND,
-			NFITTABLE,
-			NMATCHED,
-			NHITMATCHED,
+		TTree *trkeff;
+		track trk;
+		track *trk_ptr;
 
-			R_FOUND_TO_FITTABLE,
-			R_THROWN_AND_FOUND_TO_THROWN,
-			R_THROWN_AND_FOUND_TO_FOUND,
-			R_MATCHED_TO_FITTABLE,
-			R_HITMATCHED_TO_FITTABLE,
-			
-			NBINS
-		};
+		TTree *cdchits;
+		dchit cdchit;
+		dchit *cdchit_ptr;
 		
-		TH1F *stats;
-		TH1F *frac_from_thrown;
-		TH2F *stats_vs_theta, *stats_vs_phi, *stats_vs_p, *stats_vs_nhits;
-		TH2F *dp_over_p_vs_p, *dp_over_p_vs_theta, *dpcandidate_over_p_vs_theta;
-		TH2F *pthrown_over_pfound_vs_p, *sinthrown_over_sinfound_vs_sin;
-		TH2F *pcandidatethrown_over_pfound_vs_p;
-		TH2F *phithrown_over_phifound_vs_phi;
-		TH1F *eff_vs_theta, *eff_vs_phi, *eff_vs_p, *eff_vs_nhits;
-		TH1F *eff_vs_theta_hm, *eff_vs_phi_hm, *eff_vs_p_hm, *eff_vs_nhits_hm;
-		TH1F *dist_same, *dist_diff;
+		typedef vector<const DCDCTrackHit*> CDChitv;
 
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
+		jerror_t brun(JEventLoop *loop, int runnumber);
 		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 		jerror_t erun(void);					///< Invoked via DEventProcessor virtual method
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
 
-		unsigned int Nevents;
-		unsigned int Ncdchits;
-		unsigned int Nfdchits;
+		void GetCDCHits(const DKinematicData *p, CDChitv &inhits, CDChitv &outhits);
+		void GetCDCHitsFromTruth(int trackno, CDChitv &outhits);
+		unsigned int FindMatch(CDChitv &thrownhits, vector<CDChitv> &candidate_hits, CDChitv &matched_hits);
+		void FindCDCTrackNumbers(JEventLoop *loop);
+
+		DMagneticFieldMap *bfield;
+		DReferenceTrajectory *ref;
+		double MAX_HIT_DIST_CDC;
+		double MAX_HIT_DIST_FDC;
 		
-		string CANDIDATE_TAG;
+		map<const DCDCTrackHit*, const DMCTrackHit*> cdclink;
+		
+		pthread_mutex_t mutex;
+		pthread_mutex_t rt_mutex;
 };
 
 #endif // _DEventProcessor_track_hists_

@@ -15,16 +15,15 @@ using namespace std;
 
 #include <JANA/JApplication.h>
 #include <JANA/JEventLoop.h>
-#include "TRACKING/DTrackEfficiency.h"
-#include "TRACKING/DTrackHit.h"
-#include "TRACKING/DMCTrackHit.h"
-#include "TRACKING/DMCThrown.h"
-#include "TRACKING/DTrack.h"
-#include "TRACKING/DTrackCandidate.h"
 
-// The executable should define the ROOTfile global variable. It will
-// be automatically linked when dlopen is called.
-//extern TFile *ROOTfile;
+#include <DANA/DApplication.h>
+#include <TRACKING/DMCThrown.h>
+#include <TRACKING/DTrackCandidate.h>
+#include <TRACKING/DTrack.h>
+#include <FDC/DFDCGeometry.h>
+#include <DVector2.h>
+#include <particleType.h>
+
 
 // Routine used to create our DEventProcessor
 extern "C"{
@@ -34,31 +33,18 @@ void InitPlugin(JApplication *app){
 }
 } // "C"
 
-const char* TrackHistsDescription[DEventProcessor_track_hists::NBINS] = {
-	"<nothing>",
-	"Num (primary) hits in thrown track",
-	"Num (primary) hits in reconstructed track",
-	"Num (primary) hits in both thrown and found tracks",
-	"Nfound - Nhits_thrown_and_found",
-	"Nthrown - Nhits_thrown_and_found",
-	"Num of thrown tracks (fittable or not)",
-	"Num of found tracks (real or not)",
-	"Num fittable tracks",
-	"Num fittable tracks that were found(parameter matched)",
-	"Num fittable tracks that were found(hit matched)",
-	
-	"Ratio of found tracks to fittable ones",
-	"Frac. of thrown (fittable or not) trks that were found",
-	"Frac. of found tracks that were thrown",
-	"Frac. of fittable tracks that were found(parameter matched)",
-	"Frac. of fittable tracks that were found(hit matched)",
-};
 
 //------------------
 // DEventProcessor_track_hists
 //------------------
 DEventProcessor_track_hists::DEventProcessor_track_hists()
 {	
+	trk_ptr = &trk;
+	cdchit_ptr = &cdchit;
+	ref=NULL;
+	
+	pthread_mutex_init(&mutex, NULL);
+	pthread_mutex_init(&rt_mutex, NULL);
 }
 
 //------------------
@@ -66,6 +52,7 @@ DEventProcessor_track_hists::DEventProcessor_track_hists()
 //------------------
 DEventProcessor_track_hists::~DEventProcessor_track_hists()
 {
+	if(ref)delete ref;
 }
 
 //------------------
@@ -73,243 +60,28 @@ DEventProcessor_track_hists::~DEventProcessor_track_hists()
 //------------------
 jerror_t DEventProcessor_track_hists::init(void)
 {
-	// Create TRACKING directory
-	TDirectory *dir = new TDirectory("TRACKING","TRACKING");
-	dir->cd();
+	// Create Trees
+	trkeff = new TTree("trkeff","Tracking Efficiency");
+	trkeff->Branch("F","track",&trk_ptr);
 
-	// Create histograms
-	stats	= new TH1F("stats","MC Tracking Efficiency",NBINS, 0.5, (float)NBINS + 0.5);
-	frac_from_thrown	= new TH1F("frac_from_thrown","Fraction of found track's hit from same thrown",110, 0.0, 1.1);
-	stats_vs_theta	= new TH2F("stats_vs_theta","MC Tracking Eff. vs. Theta", 100, 0.0, M_PI,NBINS, 0.5, (float)NBINS + 0.5);
-	stats_vs_phi	= new TH2F("stats_vs_phi","MC Tracking Eff. vs. Phi", 100, 0.0, 2.0*M_PI,NBINS, 0.5, (float)NBINS + 0.5);
-	stats_vs_p	= new TH2F("stats_vs_p","MC Tracking Eff. vs. p", 100, 0.0, 10.0, NBINS, 0.5, (float)NBINS + 0.5);
-	stats_vs_nhits	= new TH2F("stats_vs_nhits","MC Tracking Eff. vs. Nhits", 201, -0.5, 200.5, NBINS, 0.5, (float)NBINS + 0.5);
-	dp_over_p_vs_p	= new TH2F("dp_over_p_vs_p","dp/p vs. p",	200, 0.0, 10.0, 200, -0.500, 0.500);
-	dp_over_p_vs_theta	= new TH2F("dp_over_p_vs_theta","dp/p vs. theta",	200, 0.0, M_PI, 200, -0.500, 0.500);
-	dpcandidate_over_p_vs_theta	= new TH2F("dpcandidate_over_p_vs_theta","dpcan/p vs. theta",	200, 0.0, M_PI, 200, -0.500, 0.500);
-	pthrown_over_pfound_vs_p	= new TH2F("pthrown_over_pfound_vs_p","pthrown/pfound vs. p",	200, 0.0, 10.0, 200, 0.0, 5.0);
-	pcandidatethrown_over_pfound_vs_p	= new TH2F("pcandidatethrown_over_pfound_vs_p","pthrown/pfound vs. p",	200, 0.0, 10.0, 200, 0.0, 5.0);
-	sinthrown_over_sinfound_vs_sin	= new TH2F("sinthrown_over_sinfound_vs_sin","sin(theta)/sin(theta_found) vs. sin(theta)",	200, 0.0, 1.0, 200, 0.0, 5.0);
-	phithrown_over_phifound_vs_phi	= new TH2F("phithrown_over_phifound_vs_phi","phi/phi_found vs. phi",	200, 0.0, 2.0*M_PI, 200, 0.0, 5.0);
-	dist_same = new TH1F("dist_same","Distance between closest hits from same track in X/Y plane(cm)", 400, 0.0, 200.0);
-	dist_diff = new TH1F("dist_diff","Distance between closest hits from different tracks in X/Y plane(cm)", 400, 0.0, 200.0);
+	cdchits = new TTree("cdchits","CDC hits");
+	cdchits->Branch("C","dchit",&cdchit_ptr);
 	
-	dir = new TDirectory("ParameterMatch","ParameterMatch");
-	dir->cd();
-	eff_vs_theta = new TH1F("eff_vs_theta", "Tracking efficiency vs. theta (param match,all tracks)", 100, 0.0, M_PI);
-	eff_vs_phi = new TH1F("eff_vs_phi", "Tracking efficiency vs. phi (param match,all tracks)", 100, 0.0, 2.0*M_PI);
-	eff_vs_p = new TH1F("eff_vs_p", "Tracking efficiency vs. p (param match,all tracks)", 100, 0.0, 10.0);
-	eff_vs_nhits = new TH1F("eff_vs_nhits", "Tracking efficiency vs. nhits (param match,all tracks)", 201, -0.5, 200.5);
-	dir->cd("../");
+	MAX_HIT_DIST_CDC = 1.0; // cm
 
-	dir = new TDirectory("HitMatch","HitMatch");
-	dir->cd();
-	eff_vs_theta_hm = new TH1F("eff_vs_theta", "Tracking efficiency vs. theta (hit match,all tracks)", 100, 0.0, M_PI);
-	eff_vs_phi_hm = new TH1F("eff_vs_phi", "Tracking efficiency vs. phi (hit match,all tracks)", 100, 0.0, 2.0*M_PI);
-	eff_vs_p_hm = new TH1F("eff_vs_p", "Tracking efficiency vs. p (hit match,all tracks)", 100, 0.0, 10.0);
-	eff_vs_nhits_hm = new TH1F("eff_vs_nhits", "Tracking efficiency vs. nhits (hit match,all tracks)", 201, -0.5, 200.5);
-	dir->cd("../");
-
-	stats->SetOption("B"); // bar chart
-	stats->SetBarWidth(0.5);
-	stats->SetBarOffset(0.25);
-	stats->SetLineColor(kRed);
-	stats->SetFillColor(kRed+100);
-
-	for(int i=1;i<NBINS;i++){
-		TAxis *axis = stats->GetXaxis();
-		axis->SetBinLabel(i, TrackHistsDescription[i]);
-		axis = stats_vs_theta->GetYaxis();
-		axis->SetBinLabel(i, TrackHistsDescription[i]);
-		axis = stats_vs_phi->GetYaxis();
-		axis->SetBinLabel(i, TrackHistsDescription[i]);
-		axis = stats_vs_p->GetYaxis();
-		axis->SetBinLabel(i, TrackHistsDescription[i]);
-	}
-	
-	dir->cd("../");
-	
-	Nevents = 0;
-	Ncdchits = 0;
-	Nfdchits = 0;
-
-	gPARMS->GetParameter("TRKFIT:CANDIDATE_TAG", CANDIDATE_TAG);
-	
 	return NOERROR;
 }
 
 //------------------
-// evnt
+// brun
 //------------------
-jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_track_hists::brun(JEventLoop *loop, int runnumber)
 {
-	vector<const DTrackHit*> trackhits;
-	vector<const DMCTrackHit*> mctrackhits;
-	vector<const DTrack*> tracks;
-	vector<const DTrackCandidate*> trackcandidates;
-	vector<const DMCThrown*> mcthrowns;
-	vector<const DTrackEfficiency*> trackefficiencies;
+	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	bfield = dapp->GetBfield(); // temporary until new geometry scheme is worked out
+	ref = new DReferenceTrajectory(bfield);
 	
-	loop->Get(trackhits, "MC");
-	loop->Get(mctrackhits);
-	JFactory<DTrack> *factory_trk = loop->Get(tracks);
-	JFactory<DTrackCandidate> *factory_trkcandidate = loop->Get(trackcandidates, CANDIDATE_TAG.c_str());
-	loop->Get(mcthrowns);
-	loop->Get(trackefficiencies);
-	
-	// For calculating Occupancy
-	Nevents++;
-	for(unsigned int i=0; i<trackhits.size(); i++){
-		switch(trackhits[i]->system){
-			case SYS_CDC: Ncdchits++;	break;
-			case SYS_FDC: Nfdchits++;	break;
-			default:							break;
-		}
-	}
-
-	// There should be a one to one correspondance between DMCThrown
-	// and DTrackEfficiency
-	if(trackefficiencies.size() != mcthrowns.size()){
-		cerr<<__FILE__<<":"<<__LINE__<<" DTrackEfficiency size does not";
-		cerr<<" match that of DMCThrown!"<<endl;
-		return NOERROR;
-	}
-	
-	// Loop over thrown tracks
-	for(unsigned int i=0;i<mcthrowns.size();i++){
-		const DMCThrown *mcthrown = mcthrowns[i];
-		const DTrackEfficiency *trkeff = trackefficiencies[i];
-		
-		DVector3 thrown_mom = mcthrown->momentum();
-		float theta = thrown_mom.Theta();
-		float phi = thrown_mom.Phi();
-		float p = thrown_mom.Mag();
-		
-		int Nhits = trkeff->Nhits_thrown;
-		FillAll(NHITS_THROWN, Nhits, theta, phi, p, Nhits);
-		FillAll(NHITS_FOUND, Nhits, theta, phi, p, trkeff->Nhits_found);
-		FillAll(NHITS_THROWN_AND_FOUND, Nhits, theta, phi, p, trkeff->Nhits_thrown_and_found);
-		FillAll(NHITS_FOUND_DIFFERENT, Nhits, theta, phi, p, trkeff->Nhits_found_different);
-		FillAll(NHITS_THROWN_UNUSED, Nhits, theta, phi, p, trkeff->Nhits_thrown_unused);
-		FillAll(NTHROWN, Nhits, theta, phi, p);
-		if(trkeff->fittable){
-			FillAll(NFITTABLE, Nhits, theta, phi, p);
-			
-			if(trkeff->Nhits_found){
-				float fraction_from_thrown = (float)trkeff->Nhits_thrown_and_found/(float)trkeff->Nhits_found;
-				frac_from_thrown->Fill(fraction_from_thrown);
-				if(fraction_from_thrown >=0.65){
-					FillAll(NHITMATCHED, Nhits, theta, phi, p);
-				}
-			}
-		
-			const DTrack *track = factory_trk->GetByIDT(trkeff->trackid);
-			if(track){
-				DVector3 track_mom = track->momentum();
-				float trk_theta = track_mom.Theta();
-				float trk_phi = track_mom.Phi();
-				float trk_p = track_mom.Mag();
-
-				float dp_over_p = (trk_p - p)/p;
-				dp_over_p_vs_p->Fill(p, dp_over_p);
-				dp_over_p_vs_theta->Fill(theta, dp_over_p);
-				if(trk_p != 0.0)
-					pthrown_over_pfound_vs_p->Fill(p,p/trk_p);
-				const DTrackCandidate *trackcandidate = factory_trkcandidate->GetByIDT(track->candidateid);
-				DVector3 can_mom = trackcandidate->momentum();
-				float can_theta = can_mom.Theta();
-				float can_phi = can_mom.Phi();
-				float can_p = can_mom.Mag();
-
-				float dpcan_over_p = (can_p - p)/p;
-				dpcandidate_over_p_vs_theta->Fill(theta, dpcan_over_p);
-				if(can_p != 0.0)
-					pcandidatethrown_over_pfound_vs_p->Fill(p,p/can_p);
-				
-				double sthrown = sin(theta);
-				double sfound = sin(trk_theta);
-				sinthrown_over_sinfound_vs_sin->Fill(sthrown, sthrown/sfound);
-				phithrown_over_phifound_vs_phi->Fill(phi, phi/trk_phi);
-
-				if(fabs(dp_over_p) <=0.2){
-					FillAll(NMATCHED, Nhits, theta, phi, p);
-				}
-			}
-		}
-	}
-	
-	for(unsigned int i=0;i<tracks.size();i++){
-		const DTrack *track = tracks[i];
-
-		DVector3 track_mom = track->momentum();
-		float theta = track_mom.Theta();
-		float phi = track_mom.Phi();
-		float p = track_mom.Mag();
-		FillAll(NFOUND, 0, theta, phi, p);
-	}
-	
-	// Histogram distance between closest hits on same and different tracks.
-	for(unsigned int i=0;i<mctrackhits.size(); i++){
-		const DMCTrackHit *a = mctrackhits[i];
-		float min_d2 = 1000000.0;
-		bool same = false;
-		for(unsigned int j=i+1; j<mctrackhits.size(); j++){
-			const DMCTrackHit *b = mctrackhits[j];
-			float d2 = a->r*a->r +b->r*b->r - 2.0*a->r*b->r*cos(a->phi - b->phi);
-			if(d2<min_d2){
-				min_d2=d2;
-				same = (a->track == b->track) && (a->track>0);
-			}
-		}
-		if(same)
-			dist_same->Fill(sqrt(min_d2));
-		else
-			dist_diff->Fill(sqrt(min_d2));
-	}
-	
-
 	return NOERROR;
-}
-
-//------------------------------------------------------------------
-// FillAll
-//------------------------------------------------------------------
-void DEventProcessor_track_hists::FillAll(float what, int nhits, float theta, float phi, float p, float weight)
-{
-	// Since multiple threads can call this while trying to fill
-	// the same histogram objects, we need to lock these
-	TThread::Lock();
-	stats->Fill(what, weight);
-	stats_vs_theta->Fill(theta,what, weight);
-	stats_vs_phi->Fill(phi, what, weight);
-	stats_vs_p->Fill(p, what, weight);
-	stats_vs_nhits->Fill(nhits, what, weight);
-	TThread::UnLock();
-}
-
-//------------------------------------------------------------------
-// EffVsX
-//------------------------------------------------------------------
-void DEventProcessor_track_hists::EffVsX(TH1F *out, TH2F* in, int numerator)
-{
-	TH1D *matched = in->ProjectionX("matched", numerator, numerator);
-	TH1D *fittable = in->ProjectionX("fittable", NFITTABLE,NFITTABLE);
-	out->Divide(matched, fittable);
-	
-	// calculate error based on binomial distribution (sigma=sqrt(Npq))
-	int Nbins = matched->GetNbinsX();
-	for(int i=1; i<=Nbins; i++){
-		double Nfound = matched->GetBinContent(i);
-		double p = out->GetBinContent(i);
-		double q = 1.0 - p;
-		double sigma_found = sqrt(Nfound*p*q);
-		double sigma = p*sigma_found/Nfound;
-		if(!finite(sigma))sigma=0.0;
-		out->SetBinError(i, sigma);
-	}
-	out->SetOption("E1");
-	delete matched;
-	delete fittable;
 }
 
 //------------------
@@ -317,42 +89,6 @@ void DEventProcessor_track_hists::EffVsX(TH1F *out, TH2F* in, int numerator)
 //------------------
 jerror_t DEventProcessor_track_hists::erun(void)
 {
-	// Fill the fractions histo with ratios
-	float h[NBINS];
-	for(int i=1;i<NBINS;i++){
-		// copy bin contents into local "h" array
-		h[i] = stats->GetBinContent(i);
-	}
-
-	stats->Fill(R_FOUND_TO_FITTABLE, h[NFOUND]/h[NFITTABLE]);
-	stats->Fill(R_THROWN_AND_FOUND_TO_THROWN, h[NHITS_THROWN_AND_FOUND]/h[NHITS_THROWN]);
-	stats->Fill(R_THROWN_AND_FOUND_TO_FOUND, h[NHITS_THROWN_AND_FOUND]/h[NHITS_FOUND]);
-	stats->Fill(R_MATCHED_TO_FITTABLE, h[NMATCHED]/h[NFITTABLE]);
-	stats->Fill(R_HITMATCHED_TO_FITTABLE, h[NHITMATCHED]/h[NFITTABLE]);
-
-	for(int i=1;i<NBINS;i++){
-		// Once again copy, but now ratios are valid
-		h[i] = stats->GetBinContent(i);
-		cout<<" h["<<i<<"] = "<<h[i]<<"\t"<<TrackHistsDescription[i]<<endl;
-	}
-	
-	// Occupancy (3240 is number of wires in CDC, 2856 in FDC)
-	double cdcoccupancy = 100.0*(double)Ncdchits/(double)Nevents/3240.0;
-	double fdcoccupancy = 100.0*(double)Nfdchits/(double)Nevents/2856.0;
-	cout<<endl;
-	cout<<" CDC Occupancy: "<<cdcoccupancy<<"%  Ncdchits="<<Ncdchits<<endl;
-	cout<<" FDC Occupancy: "<<fdcoccupancy<<"%  Nfdchits="<<Nfdchits<<endl;
-	
-	// Fill efficiency vs. X histos
-	EffVsX(eff_vs_theta, stats_vs_theta);
-	EffVsX(eff_vs_phi, stats_vs_phi);
-	EffVsX(eff_vs_p, stats_vs_p);
-	EffVsX(eff_vs_nhits, stats_vs_nhits);
-
-	EffVsX(eff_vs_theta_hm, stats_vs_theta, NHITMATCHED);
-	EffVsX(eff_vs_phi_hm, stats_vs_phi, NHITMATCHED);
-	EffVsX(eff_vs_p_hm, stats_vs_p, NHITMATCHED);
-	EffVsX(eff_vs_nhits_hm, stats_vs_nhits, NHITMATCHED);
 
 	return NOERROR;
 }
@@ -364,3 +100,288 @@ jerror_t DEventProcessor_track_hists::fini(void)
 {
 	return NOERROR;
 }
+
+//------------------
+// evnt
+//------------------
+jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
+{
+	CDChitv cdctrackhits;
+	vector<const DTrackCandidate*> trackcandidates;
+	vector<const DMCThrown*> mcthrowns;
+	
+	loop->Get(cdctrackhits);
+	loop->Get(trackcandidates, "CDC");
+	loop->Get(mcthrowns);
+	
+	// Lock mutex
+	pthread_mutex_lock(&mutex);
+
+	// Fill maps associating CDC and FDC hits with truth points
+	FindCDCTrackNumbers(loop);
+		
+	// Get hit list for all candidates
+	vector<CDChitv> cdc_candidate_hits;
+	for(unsigned int i=0; i<trackcandidates.size(); i++){
+		CDChitv cdc_outhits;
+		GetCDCHits(trackcandidates[i], cdctrackhits, cdc_outhits);
+		cdc_candidate_hits.push_back(cdc_outhits);
+	}
+
+	// Get hit list for all throwns
+	for(unsigned int i=0; i<mcthrowns.size(); i++){
+		const DMCThrown *mcthrown = mcthrowns[i];
+		
+		// if this isn't a charged track, then skip it
+		if(fabs(mcthrowns[i]->charge())==0.0)continue;
+
+		CDChitv cdc_thrownhits;
+		GetCDCHitsFromTruth(i+1, cdc_thrownhits);
+
+		trk.status_can = 0;
+		if(cdc_thrownhits.size()<5){
+			trk.status_can--;
+		}
+		
+		trk.pthrown = mcthrown->momentum();
+		trk.z_thrown = mcthrown->position().Z();
+		trk.ncdc_hits_thrown = cdc_thrownhits.size();
+		trk.ncdc_hits = cdctrackhits.size();
+		
+		//========= CANDIDATE ========
+		// Look for a candidate track that matches this thrown one
+		CDChitv cdc_matched_hits;
+		unsigned int icdc_can = FindMatch(cdc_thrownhits, cdc_candidate_hits, cdc_matched_hits);
+		
+		// Initialize values for when no matching candidate is found
+		trk.pcan.SetXYZ(0.0, 0.0, 0.0);
+		trk.z_can = -1000.0;
+		trk.ncdc_hits_can = 0;
+		trk.ncdc_hits_thrown_and_can = 0;
+		trk.cdc_chisq_can = 1.0E6;
+		
+		// CDC
+		const DTrackCandidate *cdc_can = NULL;
+		if(icdc_can>=0 && icdc_can<trackcandidates.size()){
+			cdc_can = trackcandidates[icdc_can];
+			
+			trk.ncdc_hits_can = cdc_candidate_hits[icdc_can].size();
+			trk.ncdc_hits_thrown_and_can = cdc_matched_hits.size();
+			trk.cdc_chisq_can = 0.0;
+		}
+		
+		// Figure out which candidate (if any) I should match this with
+		const DTrackCandidate* can = cdc_can;
+		
+		if(can!=NULL){
+			trk.pcan = can->momentum();
+			trk.z_can = can->position().Z();
+		}else{
+			trk.pcan.SetXYZ(0,0,0);
+			trk.z_can = -1000.0;
+		}
+
+		
+		// Fill tree
+		trkeff->Fill();
+	}
+	
+	// CDC hits tree
+	map<const DCDCTrackHit*, const DMCTrackHit*>::iterator iter;
+	for(iter=cdclink.begin(); iter!=cdclink.end(); iter++){
+		const DMCTrackHit *truth = iter->second;
+		const DCDCTrackHit *hit = iter->first;
+		const DCDCWire *wire = hit->wire;
+
+		// Fill in values we can with only hit and truth point
+		TVector3 pos_truth(truth->r*cos(truth->phi), truth->r*sin(truth->phi), truth->z);
+		cdchit.wire = wire->straw;
+		cdchit.layer = wire->ring;
+		cdchit.t = hit->tdrift;
+		cdchit.pos_truth = pos_truth;
+		cdchit.ptype = truth->ptype;
+
+		// Some quantities require a fit track to calculate (e.g. residuals)
+		// Here we see if there is a fit track associated with the thrown
+		// track this hit came from.
+		int trackno = truth->track;
+		const DMCThrown *mcthrown=NULL;
+		if(trackno>=1 && trackno<=(int)mcthrowns.size()){
+			mcthrown=mcthrowns[trackno-1];
+
+			// We just need the thrown track for the beta
+			double mass = ParticleMass((Particle_t)mcthrown->type);
+			cdchit.beta = sqrt(1.0/(pow(mass/mcthrown->momentum().Mag(), 2.0) + 1.0));
+		}else{
+			cdchit.beta = -1000.0;
+		}
+		
+		// Now, fill in the rest of the DC hit info based on whether we have
+		// a fit track or not
+
+		// No fit track
+		cdchit.tof = -1000.0;
+		cdchit.doca = -1000.0;
+		cdchit.resi = -1000.0;
+		cdchit.track_wire_angle = -1000.0;
+		cdchit.chisq = -1000.0;
+		cdchit.pos_wire.SetXYZ(-1000,-1000,-1000);
+		cdchit.pos_doca.SetXYZ(-1000,-1000,-1000);
+		
+		cdchits->Fill();
+	}
+
+	// Unlock mutex
+	pthread_mutex_unlock(&mutex);
+	
+	return NOERROR;
+}
+
+
+//------------------
+// GetCDCHits
+//------------------
+void DEventProcessor_track_hists::GetCDCHits(const DKinematicData *p, CDChitv &inhits, CDChitv &outhits)
+{
+	// In case we run with multiple threads
+	pthread_mutex_lock(&rt_mutex);
+	
+	// Re-swim the reference trajectory using the parameters in p
+	ref->Swim(p->position(), p->momentum(), p->charge());
+	
+	// Loop over hits in the "inhits" vector and find the DOCA of the R.T.
+	// for each.
+	outhits.clear();
+	if(ref->Nswim_steps == 0){
+		pthread_mutex_unlock(&rt_mutex);
+		return;
+	}
+	for(unsigned int i=0; i<inhits.size(); i++){
+		double doca = ref->DistToRT(inhits[i]->wire);
+		if(doca < MAX_HIT_DIST_CDC)outhits.push_back(inhits[i]);
+	}
+	
+	pthread_mutex_unlock(&rt_mutex);
+}
+
+//------------------
+// GetCDCHitsFromTruth
+//------------------
+void DEventProcessor_track_hists::GetCDCHitsFromTruth(int trackno, CDChitv &outhits)
+{
+	// Loop over all entries in the cdclink map and find the ones
+	// corresponding to the given track number
+	outhits.clear();
+	map<const DCDCTrackHit*, const DMCTrackHit*>::iterator iter;
+	for(iter=cdclink.begin(); iter!=cdclink.end(); iter++){
+		if((iter->second)->track==trackno)outhits.push_back(iter->first);
+	}
+}
+
+//------------------
+// FindMatch
+//------------------
+unsigned int DEventProcessor_track_hists::FindMatch(CDChitv &thrownhits, vector<CDChitv> &candidate_hits, CDChitv &matched_hits)
+{
+	// Loop through all of the candidate hits and look for the one that best
+	// matches this thrown's hits. The algorithm simply looks for the candidate
+	// that has the most hits in common with the thrown.
+	//
+	// If the best match shares less than half its hits with the thrown,
+	// then it is considered not to match and -1 is returned.
+
+	unsigned int ibest=(unsigned int)-1;
+	CDChitv my_matched;
+	matched_hits.clear();
+	for(unsigned int i=0; i<candidate_hits.size(); i++){
+		CDChitv &canhits = candidate_hits[i];
+		
+		// Loop over thrown hits
+		my_matched.clear();
+		for(unsigned int j=0; j<thrownhits.size(); j++){
+			// Loop over candidate hits
+			for(unsigned int k=0; k<canhits.size(); k++){
+				if(canhits[k] == thrownhits[j])my_matched.push_back(thrownhits[j]);
+			}
+		}
+		
+		// Check if this candidate is a better match
+		if(my_matched.size() > matched_hits.size()){
+			matched_hits = my_matched;
+			ibest = i;
+		}
+	}
+	
+	// Is the best good enough?
+	if(matched_hits.size() >= (thrownhits.size()/2))return ibest;
+	
+	return (unsigned int)-1;
+}
+
+//------------------
+// FindCDCTrackNumbers
+//------------------
+void DEventProcessor_track_hists::FindCDCTrackNumbers(JEventLoop *loop)
+{
+	vector<const DCDCTrackHit*> cdchits;
+	vector<const DMCTrackHit*> mchits;
+	loop->Get(cdchits);
+	loop->Get(mchits);
+
+	cdclink.clear();
+
+	// Loop over all CDC wire hits
+	for(unsigned int i=0; i<cdchits.size(); i++){
+		const DCDCTrackHit *cdchit = cdchits[i];
+		const DCDCWire *wire = cdchit->wire;
+		if(!wire)continue;
+		
+		// Loop over CDC truth points
+		for(unsigned int j=0; j<mchits.size(); j++){
+			const DMCTrackHit *mchit = mchits[j];
+			if(mchit->system != SYS_CDC)continue;
+			
+			// Find the distance between this truth hit and this wire
+			DVector3 pos_truth(mchit->r*cos(mchit->phi), mchit->r*sin(mchit->phi), mchit->z);
+			DVector3 A = wire->udir.Cross(pos_truth - wire->origin);
+			double dist = A.Mag();
+			
+			// The value of cdchit->dist was calculated using a time
+			// that did not have TOF removed. We must estimate the TOF
+			// here so so we can correct for that in order to make a
+			// more accurate comparison between the truth point
+			// and the hit. We estimate TOF by finding the distance
+			// that the truth point is from the center of the target
+			// and assume beta=1.
+			DVector3 target(0,0,65.0);
+			DVector3 delta_truth = pos_truth - target;
+			double tof = delta_truth.Mag()/3.0E10/1.0E-9;
+			double corrected_dist = cdchit->dist*(cdchit->tdrift-tof)/cdchit->tdrift;
+//_DBG_<<"x="<<pos_truth.X()<<" y="<<pos_truth.Y()<<" z="<<pos_truth.Z()<<" tof="<<tof<<" tdrift="<<cdchit->tdrift-tof<<" t="<<cdchit->tdrift<<endl;
+			// The best we can do is check that the truth hit is inside
+			// the straw.
+			bool match = fabs(corrected_dist - dist)<0.8;
+//_DBG_<<"fabs(corrected_dist - dist)="<<fabs(corrected_dist - dist)<<"  cdchit->dist="<<cdchit->dist<<"  dist="<<dist<<endl;
+			if(!match)continue;
+			
+			// Check if this is already in the map
+			map<const DCDCTrackHit*, const DMCTrackHit*>::iterator iter = cdclink.find(cdchit);
+			if(iter!=cdclink.end()){
+				// If more than one hit occurs in this straw then keep the
+				// one closest to corrected_dist
+				const DMCTrackHit *mchit_old = cdclink[cdchit];
+				DVector3 pos_truth(mchit_old->r*cos(mchit_old->phi), mchit_old->r*sin(mchit_old->phi), mchit_old->z);
+				DVector3 A = wire->udir.Cross(pos_truth - wire->origin);
+				double dist_old = A.Mag();
+				if(fabs(corrected_dist - dist)<fabs(corrected_dist - dist_old)){
+					cdclink[cdchit] = mchit;
+				}
+			}else{
+				cdclink[cdchit] = mchit;
+			}
+		}
+	}
+}
+
+
+
