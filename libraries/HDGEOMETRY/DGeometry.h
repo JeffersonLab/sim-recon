@@ -16,9 +16,15 @@ using namespace jana;
 #include "FDC/DFDCGeometry.h"
 #include "FDC/DFDCWire.h"
 
+#include <particleType.h>
+#include <DVector3.h>
+#include "DMaterial.h"
+using namespace jana;
+
 class DApplication;
 class DMagneticFieldMap;
 class DLorentzDeflections;
+
 
 class DGeometry{
 	public:
@@ -28,7 +34,7 @@ class DGeometry{
 		static const char* static_className(void){return "DGeometry";}
 
 		JGeometry* GetJGeometry(void) {return jgeom;}
-		DMagneticFieldMap* GetBfield(void);
+		DMagneticFieldMap* GetBfield(void) const;
 		DLorentzDeflections *GetLorentzDeflections(void);
 
 		// These methods just map to the same methods in JGeometry. Ideally, we'd
@@ -49,9 +55,16 @@ class DGeometry{
 		bool Get(string xpath, vector<int> &vals, string delimiter=" ") const {return jgeom->Get(xpath, vals, delimiter);}
 		bool Get(string xpath, vector<float> &vals, string delimiter=" ") const {return jgeom->Get(xpath, vals, delimiter);}
 		
+		typedef pair<string, map<string,string> > node_t;
+		typedef vector<node_t> xpathparsed_t;
+		
+		void FindNodes(string xpath, vector<xpathparsed_t> &matched_xpaths) const;
+		
 		// Convenience methods
-		bool GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const;
+		const DMaterial* GetDMaterial(string name);
+		//void GetTraversedMaterialsZ(double q, const DVector3 &pos, const DVector3 &mom, double z_end, vector<DMaterialStep> &materialsteps);
 
+		bool GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const;
 		bool GetFDCZ(vector<double> &z_wires) const; ///< z-locations for each of the FDC wire planes in cm
 		bool GetFDCStereo(vector<double> &stereo_angles) const; ///< stereo angles of each of the FDC wire layers
 		bool GetFDCRmin(vector<double> &rmin_packages) const; ///< beam hole size for each FDC package in cm
@@ -63,11 +76,7 @@ class DGeometry{
 		bool GetCDCStereo(vector<double> &cdc_stereo) const; ///< stereo angle for each CDC layer in degrees
 		bool GetCDCRmid(vector<double> &cdc_rmid) const; ///< Distance of the center of CDC wire from beamline for each layer in cm
 		bool GetCDCNwires(vector<int> &cdc_nwires) const; ///< Number of wires for each CDC layer
-		
-		/// Get the downstream z position of the CDC end plate and its
-		/// dimensions
-		bool GetCDCEndplate(double &z,double &dz,double &rmin,
-				    double &rmax) const; 
+		bool GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax) const; 
 
 		bool GetBCALRmin(double &bcal_rmin) const; ///< minimum distance of BCAL module from beam line
 		bool GetBCALNmodules(unsigned int &bcal_nmodules) const; ///< Number of BCAL modules
@@ -82,11 +91,13 @@ class DGeometry{
 		
 	protected:
 		DGeometry(){}
+		void GetMaterials(void);
+		bool GetCompositeMaterial(const string &name, double &density, double &radlen);
 	
 	private:
 		JGeometry *jgeom;
 		DApplication *dapp;
-
+		vector<DMaterial*> materials;
 };
 
 #endif // _DGeometry_

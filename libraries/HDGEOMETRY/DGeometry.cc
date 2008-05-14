@@ -6,9 +6,13 @@
 //
 
 #include "DGeometry.h"
+#include "DMaterialStepper.h"
+#include <JANA/JGeometryXML.h>
 #include "FDC/DFDCWire.h"
 #include "FDC/DFDCGeometry.h"
+
 using namespace std;
+
 
 //---------------------------------
 // DGeometry    (Constructor)
@@ -25,13 +29,14 @@ DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp)
 //---------------------------------
 DGeometry::~DGeometry()
 {
-
+	for(unsigned int i=0; i<materials.size(); i++)delete materials[i];
+	materials.clear();
 }
 
 //---------------------------------
 // GetBfield
 //---------------------------------
-DMagneticFieldMap* DGeometry::GetBfield(void)
+DMagneticFieldMap* DGeometry::GetBfield(void) const
 {
 	return dapp->GetBfield();
 }
@@ -42,6 +47,51 @@ DMagneticFieldMap* DGeometry::GetBfield(void)
 DLorentzDeflections* DGeometry::GetLorentzDeflections(void)
 {
 	return dapp->GetLorentzDeflections();
+}
+
+//---------------------------------
+// FindNodes
+//---------------------------------
+void DGeometry::FindNodes(string xpath, vector<xpathparsed_t> &matched_xpaths) const
+{
+	/// Find all nodes that match the specified xpath and return them as
+	/// fully parsed lists of the nodes and attributes.
+	///
+	/// The matched_xpaths variable has 4 levels of STL containers nested
+	/// together! The node_t data type contains 2 of them and represents
+	/// a single tag with the "first" member being the tag name
+	/// and the "second" member being a map of all of the attributes
+	/// of that tag along with their values.
+	///
+	/// The xpathparsed_t data type is a STL vector of node_t objects
+	/// that comprises a complete xpath. The data type of matched_xpaths
+	/// is a STL vector if xpathparsed_t objects and so comprises a
+	/// list of complete xpaths.
+	
+	/// We do this by calling the GetXPaths() method of JGeometry to get
+	/// a list of all xpaths. Then we pass all of those in to 
+	/// JGeometryXML::ParseXPath() to get a parsed list for each. This
+	/// is compared to the parsed values of the xpath passed to us
+	/// (also parsed by JGeometryXML::ParseXPath()) to find matches.
+	
+	// Make sure matched_xpaths is empty
+	matched_xpaths.clear();
+	
+	// Cast JGeometry into a JGeometryXML
+	JGeometryXML *jgeomxml = dynamic_cast<JGeometryXML*>(jgeom);
+	
+	// Parse our target xpath
+	xpathparsed_t target;
+	string unused_string;
+	unsigned int unused_int;
+	jgeomxml->ParseXPath(xpath, target, unused_string, unused_int);
+	
+	// Get all xpaths for current geometry source
+	vector<string> allxpaths;
+	jgeom->GetXPaths(allxpaths, JGeometry::attr_level_all);
+	
+	// Loop over xpaths
+	for(unsigned int i=0; i<allxpaths.size(); i++);
 }
 
 //====================================================================
@@ -63,6 +113,189 @@ DLorentzDeflections* DGeometry::GetLorentzDeflections(void)
 // are automatically reflected here.
 //====================================================================
 
+//---------------------------------
+// GetDMaterial
+//---------------------------------
+const DMaterial* DGeometry::GetDMaterial(string name)
+{
+	/// Get a pointer to the DMaterial object with the specified name.
+	// Only fill materials member when one is actually requested
+	// and then, only fill it once.
+	if(materials.size()==0)GetMaterials();
+
+	for(unsigned int i=0; i<materials.size(); i++){
+		if(materials[i]->GetName() == name)return materials[i];
+	}
+	
+	//_DBG_<<"No material \""<<name<<"\" found ("<<materials.size()<<" materials defined)"<<endl;
+	
+	return NULL;
+}
+
+//---------------------------------
+// GetMaterials
+//---------------------------------
+void DGeometry::GetMaterials(void)
+{
+	/// Read in all of the materials from the geometry source and create
+	/// a DMaterial object for each one.
+	
+	//=========== elements ===========
+	string filter = "//materials/element/real[@name=\"radlen\"]";
+	
+	// Get list of all xpaths
+	vector<string> xpaths;
+	jgeom->GetXPaths(xpaths, JGeometry::attr_level_all, filter);
+	
+	// Look for xpaths that have "/materials[" in them
+	for(unsigned int i=0; i<xpaths.size(); i++){
+		// Get start of "element" section
+		string::size_type pos = xpaths[i].find("/element[");
+		if(pos == string::npos)continue;
+		
+		// Get name attribute
+		string::size_type start_pos = xpaths[i].find("@name=", pos);
+		start_pos = xpaths[i].find("'", start_pos);
+		string::size_type end_pos = xpaths[i].find("'", start_pos+1);
+		if(end_pos==string::npos)continue;
+		string name = xpaths[i].substr(start_pos+1, end_pos-(start_pos+1));
+
+		// Get values
+		char xpath[256];
+
+		double A;
+		sprintf(xpath,"//materials/element[@name='%s']/[@a]", name.c_str());
+		if(!Get(xpath, A))continue;
+
+		double Z;
+		sprintf(xpath,"//materials/element[@name='%s']/[@z]", name.c_str());
+		if(!Get(xpath, Z))continue;
+
+		double density;
+		sprintf(xpath,"//materials/element[@name='%s']/real[@name='density']/[@value]", name.c_str());
+		if(!Get(xpath, density))continue;
+
+		double radlen;
+		sprintf(xpath,"//materials/element[@name='%s']/real[@name='radlen']/[@value]", name.c_str());
+		if(!Get(xpath, radlen))continue;
+
+		DMaterial *mat = new DMaterial(name, A, Z, density, radlen);
+		materials.push_back(mat);
+		
+		cout<<mat->toString();
+	}
+
+	//=========== composites ===========
+	filter = "//materials/composite[@name]";
+	
+	// Get list of all xpaths
+	jgeom->GetXPaths(xpaths, JGeometry::attr_level_all, filter);
+
+	// Look for xpaths that have "/materials[" in them
+	for(unsigned int i=0; i<xpaths.size(); i++){
+		// Get start of "composite" section
+		string::size_type pos = xpaths[i].find("/composite[");
+		if(pos == string::npos)continue;
+		
+		// Get name attribute
+		string::size_type start_pos = xpaths[i].find("@name=", pos);
+		start_pos = xpaths[i].find("'", start_pos);
+		string::size_type end_pos = xpaths[i].find("'", start_pos+1);
+		if(end_pos==string::npos)continue;
+		string name = xpaths[i].substr(start_pos+1, end_pos-(start_pos+1));
+
+		if(GetDMaterial(name))continue; // skip duplicates
+
+		// Get values
+		char xpath[256];
+
+		// We should calculate an effective A and Z .... but we don't
+		bool found_all=true;
+		double A=0;
+		double Z=0;
+
+		double density;
+		sprintf(xpath,"//materials/composite[@name='%s']/real[@name='density']/[@value]", name.c_str());
+		found_all &= Get(xpath, density);
+
+		double radlen;
+		sprintf(xpath,"//materials/composite[@name='%s']/real[@name='radlen']/[@value]", name.c_str());
+		found_all &= Get(xpath, radlen);
+		
+		// If we didn't find the info we need (radlen and density) in the 
+		// composite tag itself. Try calculating them from the components
+		if(!found_all)found_all = GetCompositeMaterial(name, density, radlen);
+		
+		// If we weren't able to get the values needed to make the DMaterial object
+		// then skip this one.
+		if(!found_all)continue;
+
+		DMaterial *mat = new DMaterial(name, A, Z, density, radlen);
+		materials.push_back(mat);
+		
+		cout<<mat->toString();
+	}
+}
+
+//---------------------------------
+// GetCompositeMaterial
+//---------------------------------
+bool DGeometry::GetCompositeMaterial(const string &name, double &density, double &radlen)
+{
+	// Get list of all xpaths with "addmaterial" and "fractionmass"
+	char filter[512];
+	sprintf(filter,"//materials/composite[@name='%s']/addmaterial/fractionmass[@fraction]", name.c_str());
+	vector<string> xpaths;
+	jgeom->GetXPaths(xpaths, JGeometry::attr_level_all, filter);
+	
+	// Loop over components of this composite
+_DBG_<<"Components for compsite "<<name<<endl;
+	for(unsigned int i=0; i<xpaths.size(); i++){
+		// Get component material name
+		string::size_type start_pos = xpaths[i].find("@material=", 0);
+		start_pos = xpaths[i].find("'", start_pos);
+		string::size_type end_pos = xpaths[i].find("'", start_pos+1);
+		if(end_pos==string::npos)continue;
+		string mat_name = xpaths[i].substr(start_pos+1, end_pos-(start_pos+1));
+
+		// Get component mass fraction
+		start_pos = xpaths[i].find("fractionmass[", 0);
+		start_pos = xpaths[i].find("@fraction=", start_pos);
+		start_pos = xpaths[i].find("'", start_pos);
+		end_pos = xpaths[i].find("'", start_pos+1);
+		if(end_pos==string::npos)continue;
+		string mat_frac_str = xpaths[i].substr(start_pos+1, end_pos-(start_pos+1));
+		double fractionmass = atof(mat_frac_str.c_str());
+
+		_DBG_<<"   "<<xpaths[i]<<"  fractionmass="<<fractionmass<<endl;
+	}
+	
+	return true;
+}
+
+//---------------------------------
+// GetTraversedMaterialsZ
+//---------------------------------
+//void DGeometry::GetTraversedMaterialsZ(double q, const DVector3 &pos, const DVector3 &mom, double z_end, vector<DMaterialStep> &materialsteps)
+//{
+	/// Find the materials traversed by a particle swimming from a specific
+	/// position with a specific momentum through the magnetic field until
+	/// it reaches a specific z-location. Energy loss is not included in
+	/// the swimming since this method itself is assumed to be one of the
+	/// primary means of determining energy loss. As such, one should not
+	/// pass in a value of z_end that is far from pos.
+	///
+	/// The vector materialsteps will be filled with DMaterialStep objects
+	/// corresponding to each of the materials traversed.
+	///
+	/// The real work here is done by the DMaterialStepper class
+	
+//}
+
+
+//---------------------------------
+// GetFDCWires
+//---------------------------------
 bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
   // Get geometrical information from database
   vector<double>z_wires;
@@ -117,9 +350,6 @@ bool DGeometry::GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const{
 
   return good;
 }
-
-
-
 
 //---------------------------------
 // GetFDCZ
