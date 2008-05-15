@@ -130,7 +130,7 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
       } 
     } // sc_hits>0
   } // pseudopoints>2
-    
+
   // Copy corrected pseudopoints to the "CORRECTED" pseudopoint factory
   JFactory_base *facbase=eventLoop->GetFactory("DFDCPseudo","CORRECTED");
   JFactory<DFDCPseudo>*fac=dynamic_cast<JFactory<DFDCPseudo>*>(facbase);
@@ -932,9 +932,15 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
     //my_start_time=ref_time-(Z_TOF-Z_TARGET)/sin(lambda)/beta/29.98;
     my_start_time=0;
   }
-  else
-    my_start_time=ref_time
-      -2.*rc*asin(R_START/2./rc)*(1./cos(lambda)/beta/29.98);
+  else{
+    double ratio=R_START/2./rc;
+    if (ratio<=1.)
+      my_start_time=ref_time
+	-2.*rc*asin(R_START/2./rc)*(1./cos(lambda)/beta/29.98);
+    else
+      my_start_time=ref_time
+	-rc*M_PI*(1./cos(lambda)/beta/29.98);
+  }
 
   for (unsigned int m=0;m<points.size();m++){
     DFDCPseudo *point=points[m];
@@ -956,14 +962,14 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
     // Correct the drift time for the flight path and convert to distance units
     // assuming the particle is a pion
     delta_x=sign*(point->time-fdc_track[m].s/beta/29.98-my_start_time)*55E-4;
-     
+
     // Variance for position along wire. Includes angle dependence from PHENIX
     // and transverse diffusion
     double sigy2=fdc_y_variance(alpha,delta_x);
     
     // Next find correction to y from table of deflections
     delta_y=lorentz_def->GetLorentzCorrection(x,y,z,alpha,delta_x);
-         
+
     // Fill x and y elements with corrected values
     point->ds =-delta_y;     
     point->dw =delta_x;
