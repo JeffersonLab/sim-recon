@@ -78,8 +78,19 @@ c the event) that a random beam photon could produce background hits
 c somewhere in the detector.  Note that for this to work, the BEAM card
 c must be present (see above).  This means that background generation is
 c disabled when the simulation operates in particle gun mode.
+
+c The low energy of the generated bremsstrahlung photons can be set using
+c EBREMS_MIN card. If  EBREMS_MIN  is commented, or set to 0, the default 
+c photon-energy  threshold of 0.12 GeV  is used. If EBREM_MIN is set, the 
+c rate of background photons is automatically scaled as follows:
+c Rate(E_gamma > Thr)  =  Rate(E_gamma = 0.12 Gev) * K,
+c where K is a scale factor calculated inside the program:
+c K = 1 for Thr = 0.12 GeV, K > 1 for Thr < 0.12 GeV. 
+c Note, K is calculated assuming the beam energies BEAM 12. 9. 
+
 BGRATE 1.10
 BGGATE -200. 200.
+c EBREM_MIN  0.12
 
 c The following card seeds the random number generator so it must be unique
 c for each run.  There are two ways to specify the random see for a run.

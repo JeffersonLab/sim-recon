@@ -45,8 +45,11 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       data freqMaximum/1.0e-4/
 
       save /coherentGen/
-      real xMinimum,Theta02
-      parameter (xMinimum=1e-2)
+      real xMinimum, Theta02
+C     xMinimum is calculated in uginit.F
+C     parameter (xMinimum=1e-2)
+      common /brem_cut/ xMinimum
+
       parameter (Theta02=1.8)
       real CollimPos
       parameter (CollimPos=-2200.0)

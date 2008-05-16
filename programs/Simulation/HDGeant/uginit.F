@@ -153,6 +153,16 @@ c The following parameters are declared in hdtrackparams.inc above.
       data nosecondaries/0/
       data storetraj/0/
 
+
+C  Use these parameters to set up a threshold on the bremsstrahlung photon energy
+C  xMimimum is used in beamgen.F
+      real    ebrem_min, xMinimum
+      common /brem_cut/ xMinimum
+      save   /brem_cut/
+
+      data  ebrem_min/0.0/
+      data  xMinimum/1e-2/
+
 *
 *     -----------------------------------------------------------------
 *
@@ -207,6 +217,7 @@ C..geant..
       call ffkey('trajectories', storetraj,1,'INTEGER')
       CALL FFKEY('bgrate',bgrate,1,'REAL')
       CALL FFKEY('bggate',bggate,2,'REAL')
+      CALL FFKEY('ebrem_min',ebrem_min,1,'REAL')
       call gtgamaff()
       CALL GFFGO
 *
@@ -249,6 +260,30 @@ C..geant..
 *
 *             Assign the beam parameters
 *
+      if (ebrem_min .lt. 0) then
+         print *
+         print *, 'Error in uginit:',
+     +        ' EBREM_MIN is specified with negative value,',
+     +        ' cannot continue.'
+         stop
+      elseif (ebrem_min.gt.0.12) then
+         print *
+         print *, 'Error in uginit:',
+     +        ' EBREM_MIN is larger than a default value of 0.12 GeV,',
+     +        ' cannot continue.'
+         stop
+      endif
+            
+*     Scale BG rate according to the threshold set on energy of bremsstrahlung
+*     photons. bgrate corresponds to  Rate(E_brem = 0.12 GeV).
+
+      if (ebrem_min.gt.0) then
+         bgrate   = bgrate*(0.12*9.1625*LOG(0.12/ebrem_min)/4.936 + 1.0)
+         xMinimum = ebrem_min/beamE0
+         print *,'UGINIT.F:  BGRATE rate is ',bgrate
+      endif
+
+
       if (bgrate .lt. 0) then
         print *
         print *, 'Error in uginit:',
