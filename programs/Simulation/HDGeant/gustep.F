@@ -290,6 +290,8 @@
         det = 6
       elseif (cnames(nlevel).eq.'DET7') then
         det = 7
+      elseif (cnames(nlevel).eq.'CONV') then
+        det = 8
       else
         det = 0
       endif
@@ -302,7 +304,8 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
      +   ) then
         call gfvert(1,vertx,ntbeamx,nttargx,tofgx,ubuf,nubuf)
         if (.not.hexist(9+det)) then
-          call hbnt(9+det,'New Ntuple',' ')
+          write(title,'(\'hits in virtual detector\',i3)') det
+          call hbnt(9+det,title,' ')
           call hbname(9+det,'hits',gekin,'totE:r')
           call hbname(9+det,'hits',vect,'x(7):r')
           call hbname(9+det,'hits',ubuf,'ppol:r')
