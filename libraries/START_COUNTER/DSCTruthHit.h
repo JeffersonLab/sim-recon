@@ -18,6 +18,7 @@ class DSCTruthHit:public JObject{
 		float dEdx;
 		bool primary;
 		int track;
+                int ptype;
 		float r;
 		float phi;
 		float z;
@@ -26,6 +27,7 @@ class DSCTruthHit:public JObject{
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "track", "%d", track);
 			AddString(items, "primary", "%d", primary);
+                        AddString(items, "ptype", "%d", ptype);
 			AddString(items, "dEdx(MeV/cm)", "%1.3f", dEdx*1.0E3);
 			AddString(items, "t", "%3.2f", t);
 			AddString(items, "r", "%3.1f", r);
