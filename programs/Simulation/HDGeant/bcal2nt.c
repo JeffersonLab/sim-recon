@@ -14,28 +14,35 @@
 #include "hddm_s.h"
 
 struct bcalnt_struct {
+   int event;
    int module;
    int layer;
    int sector;
-   int nup;
-   float tup[200];
-   float Eup[200];
-   int ndown;
-   float tdown[200];
-   float Edown[200];
+   int nhit;
+   float t[200];
+   float E[200];
 } bcalnt;
 
-#define BCALNT_FORM "module:i,layer:i,sector:i,nup[0,200]:i,tup(nup):r,Eup(nup):r,ndown[0,200]:i,tdown(ndown):r,Edown(ndown):r"
+#define BCALNT_FORM "event:i,module:i,layer:i,sector:i,nhit[0,200]:i,t(nhit):r,E(nhit):r,z(nhit):r"
 
 #define PAWC_SIZE 1000000
-struct pawc_struct {
-   float iq[PAWC_SIZE];
+struct {
+   float q[PAWC_SIZE];
 } pawc_;
+
+struct {
+   int iq[100];
+} quest_;
 
 void hlimit(int size)
 {
    void hlimit_(int *words);
    hlimit_(&size);
+}
+void hbset(char* name, int *value, int *istat)
+{
+   void hbset_(char *,int *,int *,int);
+   hbset_(name, value, istat, strlen(name));
 }
 void hropen(int lun, char *name, char*filename, char*status, int *lrec, int *istat)
 {
@@ -76,12 +83,14 @@ int main(int argc, char **argv)
    s_HDDM_t *thisInputEvent = 0;
    s_iostream_t *thisInputFile = 0;
    int input;
-   int lrec=1024;
+   int lrec=65536;
    int status;
    int cycle;
 
    hlimit(PAWC_SIZE);
-   hropen(50,"RZfile","bcal2nt.hbook","N",&lrec,&status);
+   hbset("BSIZE",&lrec,&status);
+   quest_.iq[9] = 256000;  // extend RZ quota to 2^32 bits
+   hropen(50,"RZfile","bcal2nt.hbook","NQE",&lrec,&status);
    hbnt(1,"BCal diagnostic ntuple"," ");
    hbname(1,"bcalnt",&bcalnt,BCALNT_FORM);
 
@@ -112,21 +121,18 @@ int process_event(s_HDDM_t *event)
    if (hits->barrelEMcal != HDDM_NULL) {
       s_BcalCells_t *cells = hits->barrelEMcal->bcalCells;
       int cell;
-      int nup, ndown;
-      nup = ndown = 0;
       for (cell=0; cell < cells->mult; cell++) {
          s_BcalHits_t *hits = cells->in[cell].bcalHits;
          int hit;
+         bcalnt.event = event->physicsEvents->in[0].eventNo;
          bcalnt.module = cells->in[cell].module;
          bcalnt.layer = cells->in[cell].layer;
          bcalnt.sector = cells->in[cell].sector;
-         for (hit=0; hit < hits->mult; hit++,nup++) {
-            bcalnt.tup[nup] = hits->in[hit].t; 
-            bcalnt.Eup[nup] = hits->in[hit].E; 
+         for (hit=0; hit < hits->mult; hit++) {
+            bcalnt.t[hit] = hits->in[hit].t; 
+            bcalnt.E[hit] = hits->in[hit].E; 
          }
-         bcalnt.nup = nup;
-         // old relic from when there were up and downstream hits in BCAL
-         bcalnt.ndown = ndown;
+         bcalnt.nhit = hit;
          hfnt(1);
       }
       return 1;
