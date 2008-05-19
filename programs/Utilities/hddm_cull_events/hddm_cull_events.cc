@@ -68,7 +68,7 @@ int main(int narg,char* argv[])
 			NEvents_read++;
 			
 			// Write this output event to file and free its memory
-			if(NEvents_read>=EVENTS_TO_SKIP){
+			if(NEvents_read>EVENTS_TO_SKIP){
 				flush_s_HDDM(hddm_s, fout);
 				NEvents++;
 			}else{
@@ -83,7 +83,7 @@ int main(int narg,char* argv[])
 			}
 			
 			// Quit as soon as we wrote all of the events we're going to
-			if(NEvents_read>=(EVENTS_TO_SKIP+EVENTS_TO_KEEP-1))break;
+			if(NEvents_read>=(EVENTS_TO_SKIP+EVENTS_TO_KEEP))break;
 
 			if(QUIT)break;
 		}
