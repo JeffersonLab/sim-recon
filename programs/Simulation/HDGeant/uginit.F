@@ -156,8 +156,8 @@ c The following parameters are declared in hdtrackparams.inc above.
 
 C  Use this parameter to set up a minimum photon energy 
 C  for the coherent bremsstrahlung beam generator - see beamgen.F
-      real    xMinimum
-      common /coherentGen/xMinimum
+      real    xMinimum,freqMaximum,beamStartZ,Theta02
+      common /coherentGen/xMinimum,freqMaximum,beamStartZ,Theta02
 
 *
 *     -----------------------------------------------------------------
