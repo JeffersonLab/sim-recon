@@ -37,6 +37,15 @@
      -modified DET1, now a cylinder placed in front of primary collimator
      -added tungsten pin-cushion detector model into simulation
      -csg- 
+
+     Revision 2.0 05/16/2008
+     -moved DET2 to just after the second collimator, in agreement with
+      the comments below.  Somehow it got misplaced to upstream of the
+      second collimator.  I guess no one was using it until now.
+     -added the volume CONV for the pair conversion target located inside
+      the vacuum pipe just downstream of the second sweep magnet.  Right
+      now it its material is vacuum, but the thickness of 240 microns is
+      chosen to make a 0.1% converter if the material is set to Carbon.
  
 
 <HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds">
@@ -67,7 +76,7 @@
     <!--posXYZ volume="PHOL" X_Y_Z="-250.0 0.0 -100.0" rot="0  90  0" /-->
     <posXYZ volume="collimatorStack" X_Y_Z="0.0 -35.0 -450.0"/>
     <posXYZ volume="shieldingWall" X_Y_Z="0.0  0.0  592.5" />     
-    <posXYZ volume="DET2" X_Y_Z="0.0  0.0  75.0" />
+    <posXYZ volume="DET2" X_Y_Z="0.0  0.0  225.0" />
     <posXYZ volume="DET3" X_Y_Z="0.0  132.0  0.0" />
   </composition>
  
@@ -131,7 +140,11 @@
   </composition>
 
   <composition name="CaveHole1" envelope="OCH1">
-    <posXYZ volume="ICH1" X_Y_Z="0.0 0.0 0.0"/>
+    <posXYZ volume="PairConverter" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+
+  <composition name="PairConverter" envelope="ICH1">
+    <posXYZ volume="CONV" X_Y_Z="0.0 0.0 0.0"/>
   </composition>
 
   <composition name="CaveHole2" envelope="OCH2">
@@ -183,6 +196,8 @@
   <tubs name="IMHO" Rio_Z="0.0 2.2 50.0"  material="Vacuum" />
   <tubs name="OMHO" Rio_Z="0.0 2.5 50.0" material="Iron" /> 
   <tubs name="CAP1" Rio_Z="0.0  2.2  0.05"  material="Mylar" />
+  <tubs name="CONV" Rio_Z="0.0  2.0  0.0240"  material="Vacuum"
+        comment="set to Carbon for 0.1% converter, vacuum to remove" />
 
   <tubs name="ICH1" Rio_Z="0.0 2.2 10.0" material="Vacuum"/>
   <tubs name="OCH1" Rio_Z="0.0 2.5 10.0" material="Iron"/>

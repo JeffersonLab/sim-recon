@@ -11,6 +11,7 @@
   <!ENTITY StartCntr_s SYSTEM "StartCntr_HDDS.xml">
   <!ENTITY ForwardTOF_s SYSTEM "ForwardTOF_HDDS.xml">
   <!ENTITY BarrelEMcal_s SYSTEM "BarrelEMcal_HDDS.xml">
+  <!ENTITY GapEMcal_s SYSTEM "GapEMcal_HDDS.xml">
   <!ENTITY ForwardEMcal_s SYSTEM "ForwardEMcal_HDDS.xml">
   <!ENTITY CerenkovCntr_s SYSTEM "CerenkovCntr_HDDS.xml">
   <!ENTITY UpstreamEMveto_s SYSTEM "UpstreamEMveto_HDDS.xml">
@@ -30,6 +31,7 @@
 <!-- Include spec files -->
      &ForwardEMcal_s;
      &BarrelEMcal_s;
+     &GapEMcal_s;
      &ForwardTOF_s;
      &CerenkovCntr_s;
      &ForwardDC_s;
@@ -69,6 +71,7 @@
 
   <composition name="forwardPackage">
     <posXYZ volume="CerenkovCntr" X_Y_Z="0.0 0.0 466.0" />
+    <!--posXYZ volume="GapEMcal" X_Y_Z="0.0 0.0 460.0" /-->
     <posXYZ volume="ForwardTOF" X_Y_Z="0.0 0.0 616.25" />
     <posXYZ volume="ForwardEMcal" X_Y_Z="0.0 0.0 625.3" />
   </composition>
