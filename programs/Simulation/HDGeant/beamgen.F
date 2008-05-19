@@ -40,19 +40,14 @@ c  the target thickness (radiation lengths) divided by 2pi.  A good
 c  choice for freqMaximum is the target thickness in radiation lengths.
 c  A warning is printed in the simulation output log each time a value
 c  freq > freqMaximum is generated; a few ppm of these is no problem.
-      real freqMaximum
-      common /coherentGen/freqMaximum
+      real xMinimum,freqMaximum,beamStartZ,Theta02
+      common /coherentGen/xMinimum,freqMaximum,beamStartZ,Theta02
+      data xMinimum/0.01/
       data freqMaximum/1.0e-4/
+      data beamStartZ/-2200.0/
+      data Theta02/1.8/
 
       save /coherentGen/
-      real xMinimum, Theta02
-C     xMinimum is calculated in uginit.F
-C     parameter (xMinimum=1e-2)
-      common /brem_cut/ xMinimum
-
-      parameter (Theta02=1.8)
-      real CollimPos
-      parameter (CollimPos=-2200.0)
       integer nubuf
       real ubuf(10)
 
@@ -134,7 +129,7 @@ C     parameter (xMinimum=1e-2)
       rhoc = spot*sqrt(-2*log(rndm(2)))
       vertex(1) = (rhoc*cos(phic)-D*thxBeam+D*thetaX)*100
       vertex(2) = (rhoc*sin(phic)-D*thyBeam+D*thetaY)*100
-      vertex(3) = CollimPos
+      vertex(3) = beamStartZ
       ubuf(1) = ppol
       nubuf = 1
 #if defined BEAM_BOX_SIZE
