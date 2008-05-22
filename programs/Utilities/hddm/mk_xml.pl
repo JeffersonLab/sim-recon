@@ -16,14 +16,12 @@ use FileHandle;
 
 my $schemafile = "$ENV{HALLD_HOME}/src/libraries/HDDM/event.xsd";
 
-for (my $i=0;$i<$#ARGV;$i++){
-    if ($#ARGV==0){
-	print "Use default schema file: $schemafile\n";
-    }
-    if ($ARGV[$i] eq "-h"){
-	print "Usage: mk_xml.pl \[schema-file\]\n";
-	return;
-    }
+if ($#ARGV==0){
+    print "Use default schema file: $schemafile\n";
+}
+if ($ARGV[$i] eq "-h"){
+    print "Usage: mk_xml.pl \[schema-file\]\n";
+    return;
 }
 
 my $inf = "/tmp/xml.log";
