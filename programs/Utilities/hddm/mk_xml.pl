@@ -40,6 +40,8 @@ my $ofh = "hits.xml";
 my $OF;
 my $open = 0;
 my $line1 = $INF->getline();
+$line1 = "\<\?xml version=\"1.0\" encoding=\"UTF-8\"\?\>";
+
 while (<$INF>){
 
     if (/\<reaction/){
