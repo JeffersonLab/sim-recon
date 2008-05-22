@@ -182,12 +182,12 @@
       <xs:attribute name="track" type="hddm:int" use="required"/>
       <xs:attribute name="primary" type="hddm:boolean" use="required"/>
       <xs:attribute name="dEdx" type="hddm:float" use="required"/>
-      <xs:attribute name="ptype" type="hddm:int" use="required"/>
+      <xs:attribute name="t" type="hddm:float" use="required"/>
       <xs:attribute name="px" type="hddm:float" use="required"/>
       <xs:attribute name="py" type="hddm:float" use="required"/>
       <xs:attribute name="pz" type="hddm:float" use="required"/>
-      <xs:attribute name="t" type="hddm:float" use="required"/>
-   </xs:complexType>
+      <xs:attribute name="ptype" type="hddm:int" use="required"/>
+    </xs:complexType>
   </xs:element>
 
   <xs:element name="centralDC">
@@ -299,7 +299,7 @@
       <xs:attribute name="py" type="hddm:float" use="required"/>
       <xs:attribute name="pz" type="hddm:float" use="required"/>
       <xs:attribute name="E" type="hddm:float" use="required"/>
-      <xs:attribute name="ptype" type="hddm:int" use="required"/>	
+      <xs:attribute name="ptype" type="hddm:int" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -352,6 +352,48 @@
       <xs:sequence>
         <xs:element maxOccurs="4" minOccurs="0" ref="hddm:bcalCell"/>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:bcalTruthShower"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="gcalHit">
+    <xs:complexType>
+      <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
+      <xs:attribute name="zLocal" type="hddm:float" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="gcalCell">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:gcalHit"/>
+      </xs:sequence>
+      <xs:attribute name="module" type="hddm:int" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="gcalTruthShower">
+    <xs:complexType>
+      <xs:attribute name="t" type="hddm:float" use="required"/>
+      <xs:attribute name="z" type="hddm:float" use="required"/>
+      <xs:attribute name="phi" type="hddm:float" use="required"/>
+      <xs:attribute name="r" type="hddm:float" use="required"/>
+      <xs:attribute name="E" type="hddm:float" use="required"/>
+      <xs:attribute name="track" type="hddm:int" use="required"/>
+      <xs:attribute name="primary" type="hddm:boolean" use="required"/>
+      <xs:attribute name="px" type="hddm:float" use="required"/>
+      <xs:attribute name="py" type="hddm:float" use="required"/>
+      <xs:attribute name="pz" type="hddm:float" use="required"/>
+      <xs:attribute name="ptype" type="hddm:int" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="gapEMcal">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="48" minOccurs="0" ref="hddm:gcalCell"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hddm:gcalTruthShower"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -409,7 +451,7 @@
       <xs:attribute name="pz" type="hddm:float" use="required"/>
       <xs:attribute name="E" type="hddm:float" use="required"/>
       <xs:attribute name="ptype" type="hddm:int" use="required"/>
-   </xs:complexType>
+    </xs:complexType>
   </xs:element>
 
   <xs:element name="ftofSouthHit">
@@ -424,7 +466,7 @@
       <xs:attribute name="pz" type="hddm:float" use="required"/>
       <xs:attribute name="E" type="hddm:float" use="required"/>
       <xs:attribute name="ptype" type="hddm:int" use="required"/>
-     </xs:complexType>
+    </xs:complexType>
   </xs:element>
 
   <xs:element name="ftofCounter">
@@ -584,19 +626,19 @@
     <xs:complexType>
       <xs:attribute name="E" type="hddm:float" use="required"/>
       <xs:attribute name="dE" type="hddm:float" use="required"/>
+      <xs:attribute name="mech" type="hddm:int" use="required"/>
       <xs:attribute name="part" type="hddm:int" use="required"/>
+      <xs:attribute name="primary_track" type="hddm:int" use="required"/>
       <xs:attribute name="px" type="hddm:float" use="required"/>
       <xs:attribute name="py" type="hddm:float" use="required"/>
       <xs:attribute name="pz" type="hddm:float" use="required"/>
+      <xs:attribute name="radlen" type="hddm:float" use="required"/>
+      <xs:attribute name="step" type="hddm:float" use="required"/>
       <xs:attribute name="t" type="hddm:float" use="required"/>
       <xs:attribute name="track" type="hddm:int" use="required"/>
-      <xs:attribute name="primary_track" type="hddm:int" use="required"/>
       <xs:attribute name="x" type="hddm:float" use="required"/>
       <xs:attribute name="y" type="hddm:float" use="required"/>
       <xs:attribute name="z" type="hddm:float" use="required"/>
-      <xs:attribute name="radlen" type="hddm:float" use="required"/>
-      <xs:attribute name="step" type="hddm:float" use="required"/>
-      <xs:attribute name="mech" type="hddm:int" use="required"/>
     </xs:complexType>
   </xs:element>
 
@@ -615,6 +657,7 @@
         <xs:element minOccurs="0" ref="hddm:forwardDC"/>
         <xs:element minOccurs="0" ref="hddm:startCntr"/>
         <xs:element minOccurs="0" ref="hddm:barrelEMcal"/>
+        <xs:element minOccurs="0" ref="hddm:gapEMcal"/>
         <xs:element minOccurs="0" ref="hddm:Cerenkov"/>
         <xs:element minOccurs="0" ref="hddm:forwardTOF"/>
         <xs:element minOccurs="0" ref="hddm:forwardEMcal"/>
