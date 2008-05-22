@@ -28,7 +28,7 @@ for (my $i=0;$i<$#ARGV;$i++){
 
 my $inf = "/tmp/xml.log";
 
-my $cmd = "schema-hddm event.xsd > $inf";
+my $cmd = "schema-hddm $schemafile > $inf";
 system($cmd);
 
 my $INF = new FileHandle("<$inf") or
