@@ -33,6 +33,7 @@ class DKalmanFilter{
   void GetPosition(DVector3 &pos);
   double GetChiSq(void){return chisq;}
   double GetActivePathLength(void){ return path_length;}
+  double GetdEdx(double M,double q_over_p,double Z,double A, double rho);
 
  protected:
 
