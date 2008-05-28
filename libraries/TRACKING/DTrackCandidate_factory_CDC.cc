@@ -158,7 +158,12 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 		can->setMomentum(mom);
 		//can->setCharge(seed.q);
 		can->setCharge(q);
-
+	
+		for (unsigned int n=0;n<seed.hits.size();n++){
+		  const DCDCTrackHit *cdchit=(seed.hits[n])->hit;
+		  can->AddAssociatedObject(cdchit);
+		}
+	
 		//can->q = can->charge();
 		//can->phi = mom.Phi();
 		//can->theta = mom.Theta();
