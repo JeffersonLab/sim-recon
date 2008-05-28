@@ -22,7 +22,7 @@ DTrack_factory_ALT3::DTrack_factory_ALT3(){
 
   TOF_MASS = 0.13957018;
   MIN_FDC_HIT_PROB=0.1;
-  MIN_HITS=1;
+  MIN_HITS=3;
 }
 
 //------------------
@@ -89,6 +89,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
      // Find reference trajectory by swimming through the field
     DVector3 pos = tc->position();
     DVector3 mom = tc->momentum(); 	
+
     rt->Swim(pos, mom, tc->charge());
 
     // Initialize Kalman filter with B-field
@@ -111,8 +112,10 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
       // of zero, we get a probability of 1.0.
       double p = finite(resi) ? exp(-resi*resi/2./variance):0.0;
       if(p>=MIN_FDC_HIT_PROB){
-	fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,hit->covxy,
-		   hit->covyy,hit->dE);
+	// Temporary rescaling of covariance matrix
+	fit.AddHit(hit->x,hit->y,hit->wire->origin(2),100*hit->covxx,
+		   100*hit->covxy,
+		   100*hit->covyy,hit->dE);
 	const swim_step_t *last_step=rt->GetLastSwimStep();
      
 	if (last_step!=NULL){
@@ -139,7 +142,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	DVector3 mom,pos;
 	fit.GetMomentum(mom);
 	fit.GetPosition(pos);
-	
+
 	track->x=pos(0);
 	track->y=pos(1);
 	track->z=pos(2);
