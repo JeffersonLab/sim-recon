@@ -24,7 +24,7 @@
 #define BEAM_VAR 0.01 // cm^2
 #define HIT_CHI2_CUT 10.0
 #define Z_VERTEX 65.0
-#define PT_MAX 9.0
+
 
 ///
 /// DTrackCandidate_factory_FDCCathodes::brun():
@@ -35,7 +35,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::brun(JEventLoop* eventLoop,
   bfield = dapp->GetBfield();
   const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
   dgeom->GetFDCZ(z_wires);
-  
+
   if(DEBUG_HISTS){
     dapp->Lock();
     match_dist=(TH2F*)gROOT->FindObject("match_dist");
@@ -140,7 +140,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	      (match4=GetTrackMatch(q,zpackage[3],match3,package[3],
 	       match_id))!=NULL){
 	    // Insert the segment from package 4 into the track 
-	    //segments.push_back(match4);
+	    segments.push_back(match4);
 
 	    // remove the segment from the list 
 	    package[3].erase(package[3].begin()+match_id);
@@ -153,7 +153,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 		(match4=GetTrackMatch(q,zpackage[3],match2,package[3],
 		 match_id))!=NULL){
 	  // Insert the segment from package 4 into the track 
-	  // segments.push_back(match4);
+	  segments.push_back(match4);
 
 	  // remove the segment from the list 
 	  package[3].erase(package[3].begin()+match_id);
@@ -178,7 +178,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    (match4=GetTrackMatch(q,zpackage[3],match3,package[3],
 	     match_id))!=NULL){
 	  // Insert the segment from package 4 into the track 
-	  //segments.push_back(match4);
+	  segments.push_back(match4);
 
 	  // remove the segment from the list 
 	  package[3].erase(package[3].begin()+match_id);
@@ -191,7 +191,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	       (match4=GetTrackMatch(q,zpackage[3],segment,package[3],
 		match_id))!=NULL){
 	// Insert the segment from package 4 into the track 
-	//segments.push_back(match4);
+	segments.push_back(match4);
 	
 	// remove the segment from the list 
 	package[3].erase(package[3].begin()+match_id);
@@ -205,19 +205,37 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
       if (segments.size()>1){
 	DRiemannFit fit;
-	for (unsigned int m=0;m<segments.size();m++){
-	  for (unsigned int n=0;n<segments[m]->hits.size();n++){
-	    DFDCPseudo *hit=segments[m]->hits[n];
-	    double covxx=hit->covxx;
-	    double covyy=hit->covyy;
-	    double covxy=hit->covxy;
-	    //double hit_chi2=segments[segments.size()-1]->track[n].chi2;
-	    /*if (hit_chi2>1.){
-	      covxx*=hit_chi2;      
-	      covyy*=hit_chi2;
-	      covxy*=hit_chi2;
-	      }*/
-	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
+	if (segment){ 
+	  for (unsigned int n=0;n<segment->hits.size();n++){
+	    double covxx=segment->hits[n]->covxx;
+	    double covyy=segment->hits[n]->covyy;
+	    double covxy=segment->hits[n]->covxy;
+	    double x=segment->hits[n]->x;
+	    double y=segment->hits[n]->y;
+	    double z=segment->hits[n]->wire->origin(2);
+	    fit.AddHit(x,y,z,covxx,covyy,covxy);
+	  }
+	}
+	if (match2){
+	  for (unsigned int n=0;n<match2->hits.size();n++){
+	    double covxx=match2->hits[n]->covxx;
+	    double covyy=match2->hits[n]->covyy;
+	    double covxy=match2->hits[n]->covxy;
+	    double x=match2->hits[n]->x;
+	    double y=match2->hits[n]->y;
+	    double z=match2->hits[n]->wire->origin(2);
+	    fit.AddHit(x,y,z,covxx,covyy,covxy);
+	  }
+	}
+	if (match3){
+	  for (unsigned int n=0;n<match3->hits.size();n++){
+	    double covxx=match3->hits[n]->covxx;
+	    double covyy=match3->hits[n]->covyy;
+	    double covxy=match3->hits[n]->covxy;
+	    double x=match3->hits[n]->x;
+	    double y=match3->hits[n]->y;
+	    double z=match3->hits[n]->wire->origin(2);
+	    fit.AddHit(x,y,z,covxx,covyy,covxy);
 	  }
 	}
 	// Fake point at origin
@@ -264,25 +282,16 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    qsum+=match3->S(0,0)/fabs(match3->S(0,0));
 
 	    // Redo the fit with the additional hits from package 3
-	    DRiemannFit fit;
-	    for (unsigned int m=0;m<segments.size();m++){
-	      for(unsigned int n=0;n<segments[m]->hits.size();n++){
-		DFDCPseudo *hit=segments[m]->hits[n];
-		double covxx=hit->covxx;
-		double covyy=hit->covyy;
-		double covxy=hit->covxy;
-		//double hit_chi2=segments[segments.size()-1]->track[n].chi2;
-		/*if (hit_chi2>1.){
-		  covxx*=hit_chi2;      
-		  covyy*=hit_chi2;
-		covxy*=hit_chi2;
-		}*/
-		fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
-	      }
+	    for (unsigned int n=0;n<match3->hits.size();n++){
+	      double covxx=match3->hits[n]->covxx;
+	      double covyy=match3->hits[n]->covyy;
+	      double covxy=match3->hits[n]->covxy;
+	      double x=match3->hits[n]->x;
+	      double y=match3->hits[n]->y;
+	      double z=match3->hits[n]->wire->origin(2);
+	      fit.AddHit(x,y,z,covxx,covyy,covxy);
 	    }
-	    // Fake point at origin
-	    fit.AddHit(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
-
+	    
 	    if (qsum>0) q=1.;
 	    else if (qsum<0) q=-1.;
 	    else q=0.;
@@ -337,13 +346,19 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
       mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
       pos.SetXYZ(0,0,zvertex);
-
+      
       // Create new track, starting with the current segment
       DTrackCandidate *track = new DTrackCandidate;
       track->setPosition(pos);
       track->setMomentum(mom);
+      // If all the other methods for estimating the charge failed, use the 
+      // first segment, where the field is strongest
+      if (q==0) q=segment->S(0,0)/fabs(segment->S(0,0)); 
       track->setCharge(q);
-          
+
+      for (unsigned int m=0;m<segments.size();m++)
+	track->AddAssociatedObject(segments[m]);
+
       _data.push_back(track); 
     }
   }
@@ -389,7 +404,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    (match4=GetTrackMatch(q,zpackage[3],match3,package[3],
 	     match_id))!=NULL){
 	  // Insert the segment from package 4 into the track 
-	  //segments.push_back(match4);
+	  segments.push_back(match4);
 
 	  // remove the segment from the list 
 	  package[3].erase(package[3].begin()+match_id);
@@ -402,7 +417,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	       (match4=GetTrackMatch(q,zpackage[3],segment,package[3],
 		match_id))!=NULL){
 	// Insert the points in the segment from package 4 into the track 
-	//segments.push_back(match4);
+	segments.push_back(match4);
 
 	// remove the segment from the list 
 	package[3].erase(package[3].begin()+match_id);
@@ -416,19 +431,26 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
       if (segments.size()>1){
 	DRiemannFit fit;
-	for (unsigned int m=0;m<segments.size();m++){
-	  for (unsigned int n=0;n<segments[m]->hits.size();n++){
-	    DFDCPseudo *hit=segments[m]->hits[n];
-	    double covxx=hit->covxx;
-	    double covyy=hit->covyy;
-	    double covxy=hit->covxy;
-	    //double hit_chi2=segments[m]->track[n].chi2;
-	    /*if (hit_chi2>1.){
-	      covxx*=hit_chi2;      
-	      covyy*=hit_chi2;
-	      covxy*=hit_chi2;
-	      }*/
-	    fit.AddHit(hit->x,hit->y,hit->wire->origin(2),covxx,covyy,covxy);
+	if (segment){ 
+	  for (unsigned int n=0;n<segment->hits.size();n++){
+	    double covxx=segment->hits[n]->covxx;
+	    double covyy=segment->hits[n]->covyy;
+	    double covxy=segment->hits[n]->covxy;
+	    double x=segment->hits[n]->x;
+	    double y=segment->hits[n]->y;
+	    double z=segment->hits[n]->wire->origin(2);
+	    fit.AddHit(x,y,z,covxx,covyy,covxy);
+	  }
+	}
+	if (match3){
+	  for (unsigned int n=0;n<match3->hits.size();n++){
+	    double covxx=match3->hits[n]->covxx;
+	    double covyy=match3->hits[n]->covyy;
+	    double covxy=match3->hits[n]->covxy;
+	    double x=match3->hits[n]->x;
+	    double y=match3->hits[n]->y;
+	    double z=match3->hits[n]->wire->origin(2);
+	    fit.AddHit(x,y,z,covxx,covyy,covxy);
 	  }
 	}
 	// Fake point at origin
@@ -473,13 +495,19 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
       mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
       pos.SetXYZ(0,0,zvertex);
-
+	
       // Create new track, starting with the current segment
       DTrackCandidate *track = new DTrackCandidate;
       track->setPosition(pos);
       track->setMomentum(mom);
+      // If all the other methods for estimating the charge failed, use the 
+      // first segment, where the field is strongest
+      if (q==0) q=segment->S(0,0)/fabs(segment->S(0,0)); 
       track->setCharge(q);
-      
+
+      for (unsigned int m=0;m<segments.size();m++)
+	track->AddAssociatedObject(segments[m]);
+
       _data.push_back(track); 
     }
   }
@@ -570,13 +598,19 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
       mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
       pos.SetXYZ(0,0,zvertex);
-      
+
       // Create new track, starting with the current segment
       DTrackCandidate *track = new DTrackCandidate;
       track->setPosition(pos);
-      track->setMomentum(mom);
+      track->setMomentum(mom);      
+      // If all the other methods for estimating the charge failed, use the 
+      // first segment, where the field is strongest
+      if (q==0) q=segment->S(0,0)/fabs(segment->S(0,0)); 
       track->setCharge(q);
-     
+      
+      for (unsigned int m=0;m<segments.size();m++)
+	track->AddAssociatedObject(segments[m]);
+      
       _data.push_back(track); 
     }
   }
@@ -592,6 +626,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     double Bx,By,Bz;
     int middle=segment->hits.size()/2;
     
+    double q=segment->S(0,0)/fabs(segment->S(0,0));
+
     bfield->GetField(segment->hits[middle]->x,segment->hits[middle]->y,
 		     segment->hits[middle]->wire->origin(2),Bx,By,Bz);
     double B=sqrt(Bx*Bx+By*By+Bz*Bz);
@@ -600,12 +636,15 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     
     mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
     pos.SetXYZ(0,0,segment->S(4,0));
-     
+    
     // Create new track, starting with the current segment
     DTrackCandidate *track = new DTrackCandidate;
     track->setPosition(pos);
     track->setMomentum(mom);    
-    track->setCharge(segment->S(0,0)/fabs(segment->S(0,0)));
+    track->setCharge(q);
+     
+    for (unsigned int m=0;m<segments.size();m++)
+      track->AddAssociatedObject(segments[m]);
 
     _data.push_back(track); 
   }
@@ -661,7 +700,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,double 
   }
   
   // If matching in the forward direction did not work, try swimming and
- // matching backwards...
+  // matching backwards...
   if (match==NULL){
     diff_min=1000.;
     for (unsigned int i=0;i<package.size();i++){
