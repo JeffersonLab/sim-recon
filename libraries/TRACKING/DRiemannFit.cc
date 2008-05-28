@@ -58,6 +58,12 @@ jerror_t DRiemannFit::AddHit(double x,double y, double z,double covx,
 // Fit sequence
 jerror_t DRiemannFit::DoFit(double rc_input){
   jerror_t error=NOERROR;
+
+  if (CovR_!=NULL) delete CovR_;
+  if (CovRPhi_!=NULL) delete CovRPhi_; 
+  CovR_=NULL;
+  CovRPhi_=NULL;
+
   error=FitCircle(rc_input);
   error=FitLine();
   q=GetCharge();;
