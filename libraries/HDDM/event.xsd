@@ -661,7 +661,7 @@
         <xs:element minOccurs="0" ref="hddm:Cerenkov"/>
         <xs:element minOccurs="0" ref="hddm:forwardTOF"/>
         <xs:element minOccurs="0" ref="hddm:forwardEMcal"/>
-        <xs:element minOccurs="0" ref="hddm:upstreamEMveto"/>
+         <xs:element minOccurs="0" ref="hddm:upstreamEMveto"/>
         <xs:element minOccurs="0" ref="hddm:tagger"/>
         <xs:element minOccurs="0" ref="hddm:mcTrajectory"/>
       </xs:sequence>

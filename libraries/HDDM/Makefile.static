@@ -10,7 +10,11 @@ endif
 	
 hddm_s.c: hddm_s.h
 
-hddm_s.h: event.xml hits.xml reaction.xml
+hddm_s.h: event.xml event.xsd
+	@echo --------- generating xml file
+	cp ${HALLD_HOME}/src/programs/Utilities/hddm/schema-hddm.xsl .
+	schema-hddm event.xsd > event.xml
+	@echo --------- event.xml generated	 
 	@echo --------- Regenerating hddm_s.* files
 	hddm-c event.xml
 	@echo --------- done
