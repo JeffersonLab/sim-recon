@@ -17,6 +17,7 @@
 #define DEDX_LH2 ( 2.856e-4) 
 #define DEDX_ROHACELL (0.4e-3) // low density carbon for now!!
 #define BEAM_RADIUS  0.1 
+#define NUM_ITER 4
 
 bool DKalmanHit_cmp(DKalmanHit_t *a, DKalmanHit_t *b){
   return a->z>b->z;
@@ -186,9 +187,12 @@ double DKalmanFilter::StepJacobian(double oldz,double newz,DMatrix &S,
   double s=sqrt(1.+S(2,0)*S(2,0)+S(3,0)*S(3,0))*delta_z;
   CalcDerivAndJacobian(oldz,S,dEdx,J1,D1);
   CalcDerivAndJacobian(oldz+delta_z/2.,S+0.5*delta_z*D1,dEdx,J2,D2);
+  J2=J2+0.5*J2*J1;
   CalcDerivAndJacobian(oldz+delta_z/2.,S+0.5*delta_z*D2,dEdx,J3,D3);
+  J3=J3+0.5*J3*J2;
   CalcDerivAndJacobian(oldz+delta_z,S+delta_z*D3,dEdx,J4,D4);
-	
+  J4=J4+J4*J3;
+
   S+=delta_z*((1./6.)*D1+(1./3.)*D2+(1./3.)*D3+(1./6.)*D4);
   J+=delta_z*((1./6.)*J1+(1./3.)*J2+(1./3.)*J3+(1./6.)*J4);
   
@@ -252,8 +256,9 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
   DMatrix RC(2,2);  // Covariance of filtered residual
   DMatrix InvRC(2,2); // and its inverse
   DMatrix S(5,1),S0(5,1); //State vector
+  DMatrix SBest(5,1);
   DMatrix dS(5,1);  // perturbation in state vector
-  DMatrix C0(5,5),C(5,5);   // Covariance matrix for state vector
+  DMatrix C(5,5);   // Covariance matrix for state vector
   DMatrix InvV(2,2); // Inverse of error matrix
 
   // path length increment
@@ -263,16 +268,15 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
   // Energy loss
   double dedx=0.;
 
-  chisq=0;
   // Initialize the state vector 
-  S(0,0)=S0(0,0)=x_;
-  S(1,0)=S0(1,0)=y_;
-  S(2,0)=S0(2,0)=tx_;
-  S(3,0)=S0(3,0)=ty_;
-  S(4,0)=S0(4,0)=q_over_p_;
+  S0(0,0)=x_;
+  S0(1,0)=y_;
+  S0(2,0)=tx_;
+  S0(3,0)=ty_;
+  S0(4,0)=q_over_p_;
 
   // Initialize the covariance matrix
-  for (unsigned int i=0;i<5;i++) C(i,i)=C0(i,i)=1.;
+  for (unsigned int i=0;i<5;i++) C(i,i)=1;
 
   // Order the hits from the most downstream to the most upstream
   sort(hits.begin(),hits.end(),DKalmanHit_cmp);
@@ -283,126 +287,147 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
 
   // Loop over hits, updating the state vector at each step 
   double endz=hits[0]->z,newz,oldz; // we increment in z
-  // Start at the most downstream measurement
-  if (z_!=endz) z_=endz;
-  for (unsigned int k=0;k<hits.size();k++){      
-    endz=hits[k]->z;
+  z_=endz;
+  for (int m=0;m<NUM_ITER;m++){
+    // Initialize the state vector and covariance matrix
+    S=S0;
+    C=100.*C;
+    chisq=0.;
 
-    // The next measurement 
-    M(0,0)=hits[k]->x;
-    M(1,0)=hits[k]->y; 
+    for (unsigned int k=0;k<hits.size();k++){      
+      endz=hits[k]->z;
     
-    // ... and its covariance matrix  
-    V(0,0)=hits[k]->covx;
-    V(1,0)=V(0,1)=hits[k]->covxy;
-    V(1,1)=hits[k]->covy;
-
-    // Propagate state vector and covariance matrices to next measurement   
-    int num_inc=int((z_-endz)/0.25);
-    oldz=z_;
-    newz=oldz;
-    for (int j=0;j<num_inc;j++){
-      dS=S-S0;
-      newz=oldz-0.25;
-
-      // Get dEdx for this step
-      dedx=GetdEdx(0.14,S0(4,0),7.,14.,1.205e-3);
-
-      // Step the seed state vector through the field and get the Jacobian 
-      ds=StepJacobian(oldz,newz,S0,dedx,J);
-
-      // Get the covariance matrix due to the multiple scattering
-      GetProcessNoise(mass_hyp,ds,30420.,S0,Q); // use air for now
-
-      // Rotate the covariance matrix and add the multiple scattering elements
-      J_T=DMatrix(DMatrix::kTransposed,J);
-      C=J*(C*J_T)+Q;
-
-      // Update the "improved" state vector
-      S=S0+J*dS;
-
-      oldz=newz;			  
-    }
-    if (fabs(endz-oldz)>EPS){ 
-      dS=S-S0;
-
-      // Get dEdx for this step
-      dedx=GetdEdx(0.14,S0(4,0),7.,14.,1.205e-3);
+      // The next measurement 
+      M(0,0)=hits[k]->x;
+      M(1,0)=hits[k]->y; 
       
-      // Step the seed state vector through the field and get the Jacobian 
-      ds=StepJacobian(oldz,endz,S0,dedx,J);
+      // ... and its covariance matrix  
+      V(0,0)=hits[k]->covx;
+      V(1,0)=V(0,1)=hits[k]->covxy;
+      V(1,1)=hits[k]->covy;
 
-      // Get the covariance matrix due to the multiple scattering
-      GetProcessNoise(mass_hyp,ds,30420.,S0,Q); // use air for now
+      // Propagate state vector and covariance matrices to next measurement   
+      int num_inc=int((z_-endz)/0.25);
+      oldz=z_;
+      newz=oldz;
+      for (int j=0;j<num_inc-1;j++){
+	dS=S-S0;
+	newz=oldz-0.25;
+	
+	// Get dEdx for this step
+	dedx=GetdEdx(0.14,S0(4,0),7.,14.,1.205e-3);
+	
+	// Step the seed state vector through the field and get the Jacobian 
+	ds=StepJacobian(oldz,newz,S0,dedx,J);
+	
+	// Get the covariance matrix due to the multiple scattering
+	GetProcessNoise(mass_hyp,ds,30420.,S0,Q); // use air for now
+	
+	// Rotate the covariance matrix and add the multiple scattering elements
+	J_T=DMatrix(DMatrix::kTransposed,J);
+	C=J*(C*J_T)+Q;
+	
+	// Update the "improved" state vector
+	S=S0+J*dS;
+	
+	oldz=newz;			  
+      }
+      if (fabs(endz-oldz)>EPS){ 
+	dS=S-S0;
+	
+	// Get dEdx for this step
+	dedx=GetdEdx(0.14,S0(4,0),7.,14.,1.205e-3);
+	
+	// Step the seed state vector through the field and get the Jacobian 
+	ds=StepJacobian(oldz,endz,S0,dedx,J);
+	
+	// Get the covariance matrix due to the multiple scattering
+	GetProcessNoise(mass_hyp,ds,30420.,S0,Q); // use air for now
+	
+	// Rotate the covariance matrix and add the multiple scattering elements
+	J_T=DMatrix(DMatrix::kTransposed,J);
+	C=J*(C*J_T)+Q;
+	
+	// Update the "improved" state vector
+	S=S0+J*dS;
+	
+	oldz=newz;	
+      }  
+      
+      // Updated error matrix
+      V1=V+H*(C*H_T);
+      
+      // Calculate the inverse of V
+      double det=V1(0,0)*V1(1,1)-V1(0,1)*V1(1,0);
+      if (det!=0){
+	InvV(0,0)=V1(1,1)/det;
+	InvV(1,0)=-V1(1,0)/det;
+	InvV(0,1)=-V1(0,1)/det;
+	InvV(1,1)=V1(0,0)/det;
+      }
+      else{
+	_DBG_ << "Kalman filter:  Singular matrix..." << endl;
+	return UNRECOVERABLE_ERROR;
+      }
+      
+      // Compute Kalman gain matrix
+      K=C*(H_T*InvV);
+      
+      // Update the state vector 
+      S=S+K*(M-H*S);
+      
+      // Path length in active volume
+      path_length+=1.0*sqrt(1.+S(2,0)*S(2,0)+S(3,0)*S(3,0));
+      
+      // Update state vector covariance matrix
+      C=C-K*(H*C);    
+      
+      // Residuals
+      R(0,0)=M(0,0)-S(0,0);
+      R(1,0)=M(1,0)-S(1,0);
+      R_T=DMatrix(DMatrix::kTransposed,R);
+      RC=V-H*(C*H_T);
 
-      // Rotate the covariance matrix and add the multiple scattering elements
-      J_T=DMatrix(DMatrix::kTransposed,J);
-      C=J*(C*J_T)+Q;
-
-      // Update the "improved" state vector
-      S=S0+J*dS;
-
-      oldz=newz;	
+      // Calculate the inverse of RC
+      det=RC(0,0)*RC(1,1)-RC(0,1)*RC(1,0);
+      if (det!=0){
+	InvRC(0,0)=RC(1,1)/det;
+	InvRC(1,0)=-RC(1,0)/det;
+	InvRC(0,1)=-RC(0,1)/det;
+	InvRC(1,1)=RC(0,0)/det;
+      }
+      else{
+	_DBG_ << "Kalman filter:  Singular matrix RC..." << endl;
+	return UNRECOVERABLE_ERROR;
+      }
+      
+      // Update chi2 for this segment
+      chisq+=(R_T*(InvRC*R))(0,0);
+      
+      // increment z position
+      z_=endz;
     }
+    // Save the last value of S
+    SBest=S;
 
-    // Updated error matrix
-    V1=V+H*(C*H_T);
-
-    // Calculate the inverse of V
-    double det=V1(0,0)*V1(1,1)-V1(0,1)*V1(1,0);
-    if (det!=0){
-      InvV(0,0)=V1(1,1)/det;
-      InvV(1,0)=-V1(1,0)/det;
-      InvV(0,1)=-V1(0,1)/det;
-      InvV(1,1)=V1(0,0)/det;
+    // Swim back to first point to try again with "improved" S and C
+    int num_inc=(int)((hits[0]->z-z_)/0.5);
+    oldz=endz;
+    for (int i=0;i<num_inc;i++){
+      newz=oldz+0.5;  
+      dedx=GetdEdx(0.14,S(4,0),7.,14.,1.205e-3);
+      StepJacobian(oldz,newz,S,dedx,J);  
+      J_T=DMatrix(DMatrix::kTransposed,J);     
+      C=J*(C*J_T);
+      oldz=newz;
     }
-    else{
-      _DBG_ << "Kalman filter:  Singular matrix..." << endl;
-      return UNRECOVERABLE_ERROR;
-    }
-    
-    // Compute Kalman gain matrix
-    K=C*(H_T*InvV);
-
-    // Update the state vector 
-    S=S+K*(M-H*S);
-
-    // Path length in active volume
-    path_length+=1.0*sqrt(1.+S(2,0)*S(2,0)+S(3,0)*S(3,0));
-
-    // Update state vector covariance matrix
-    C=C-K*(H*C);    
-
-    // Residuals
-    R(0,0)=M(0,0)-S(0,0);
-    R(1,0)=M(1,0)-S(1,0);
-    R_T=DMatrix(DMatrix::kTransposed,R);
-    RC=V-H*(C*H_T);
-
-    // Calculate the inverse of RC
-    det=RC(0,0)*RC(1,1)-RC(0,1)*RC(1,0);
-    if (det!=0){
-      InvRC(0,0)=RC(1,1)/det;
-      InvRC(1,0)=-RC(1,0)/det;
-      InvRC(0,1)=-RC(0,1)/det;
-      InvRC(1,1)=RC(0,0)/det;
-    }
-    else{
-      _DBG_ << "Kalman filter:  Singular matrix RC..." << endl;
-      return UNRECOVERABLE_ERROR;
-    }
-
-    // Update chi2 for this segment
-    chisq+=(R_T*(InvRC*R))(0,0);
-
-    // increment z position
-    z_=endz;
   }
 
   // Propagate track to entrance to CDC endplate
-  int num_inc=(int)(endz-endplate_z);
+  int  num_inc=(int)(z_-endplate_z);
   oldz=endz;
   endz=endplate_z;
+  S=SBest; // Start with the state vector at the most upstream point
   for (int i=0;i<num_inc;i++){
     newz=oldz-0.5;  
     dedx=GetdEdx(0.14,S(4,0),7.,14.,1.205e-3);
@@ -435,7 +460,6 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
 
   // Propagate track to point of distance of closest approach to origin
   num_inc=int((endz-0.)/0.5);
-  DMatrix SBest(5,1);
   SBest=S;
   oldz=endz;
   r=sqrt(S(0,0)*S(0,0)+S(1,0)*S(1,0));
