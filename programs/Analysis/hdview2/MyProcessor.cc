@@ -599,7 +599,7 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 	// Find the specified track
 	if(dataname=="DTrack"){
 		vector<const DTrack*> tracks;
-		loop->Get(tracks);
+		loop->Get(tracks, tag.c_str());
 		if(index>=tracks.size())return;
 		q = tracks[index]->charge();
 		pos = tracks[index]->position();
@@ -608,7 +608,7 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 
 	if(dataname=="DTrackCandidate"){
 		vector<const DTrackCandidate*> tracks;
-		loop->Get(tracks);
+		loop->Get(tracks, tag.c_str());
 		if(index>=tracks.size())return;
 		q = tracks[index]->charge();
 		pos = tracks[index]->position();
@@ -617,7 +617,7 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 
 	if(dataname=="DMCThrown"){
 		vector<const DMCThrown*> tracks;
-		loop->Get(tracks);
+		loop->Get(tracks, tag.c_str());
 		if(index>=tracks.size())return;
 		const DMCThrown *t = tracks[index];
 		q = t->charge();
