@@ -565,6 +565,13 @@ bool DGeometry::GetCDCCenterZ(double &cdc_center_z) const
 //---------------------------------
 bool DGeometry::GetCDCAxialLength(double &cdc_axial_length) const
 {
+	vector<double> Rio_Z;
+	bool good = Get("//section[@name='CentralDC']/tubs[@name='STRW']/@Rio_Z", Rio_Z);
+	cdc_axial_length = Rio_Z[2];
+
+	if(!good){
+		_DBG_<<"Unable to retrieve CDC axial wire length"<<endl;
+	}
 
 	return false;
 }
