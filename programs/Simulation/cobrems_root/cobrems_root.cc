@@ -21,7 +21,7 @@ int main(int narg, char* argv[])
 	// Initialize coherent brem table
 	float Emax = 12.0;
 	float Epeak = 9.0;
-	float Dist = 7600.0;
+	float Dist = 76.0;
 	cobrems_(&Emax, &Epeak, &Dist);
 
 	// Open ROOT file
