@@ -12,6 +12,8 @@ using namespace std;
 #include "hdview2.h"
 #include "MyProcessor.h"
 
+#include <CDC/DCDCWire.h>
+
 #include <TGButtonGroup.h>
 #include <TGTextEntry.h>
 #include <TArrow.h>
@@ -65,7 +67,8 @@ trk_mainframe::trk_mainframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt_t w, 
 		canvas->SetScrolling(TGCanvas::kCanvasScrollBoth);
 		
 		slo = -10.0;
-		shi = 437.0;
+		//shi = 437.0;
+		shi = 100.0;
 		resilo = -1000;
 		resihi = +1000;
 		canvas->GetCanvas()->cd();
@@ -198,7 +201,7 @@ trk_mainframe::trk_mainframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt_t w, 
 				this->factorytag.push_back(factorytag);
 				factorytag->Resize(100,20);
 				factorytag->SetUniqueID(i);
-				FillFactoryTagComboBox(factorytag, datatype, "<default>");
+				FillFactoryTagComboBox(factorytag, datatype, i==0 ? "ALT1":"<default>");
 
 				factorytag->Connect("Selected(Int_t, Int_t)","trk_mainframe", this, "DoTrackNumberMenuUpdate(Int_t, Int_t)");
 				factorytag->Connect("Selected(Int_t)","trk_mainframe", this, "DoRequestFocus(Int_t)");
@@ -266,12 +269,20 @@ void trk_mainframe::DoRedraw(void)
 	for(unsigned int i=0; i<graphics.size(); i++)delete graphics[i];
 	graphics.clear();
 
-	// Draw axes and scales
-	DrawAxes(canvas->GetCanvas(), graphics, "resi (#mum)", "s (cm)");
-	
 	// Draw hits on main canvas
 	DrawHits(graphics);
 
+	// Draw axes and scales
+	double smargin = 0.10*(shi-slo);
+	shi+=smargin;
+	slo-=smargin;
+	resihi = (shi-slo)/5.0/4.0;
+	resilo = -resihi;
+_DBG_<<"slo:"<<slo<<" shi:"<<shi<<" resilo:"<<resilo<<" resihi:"<<resihi<<endl;
+	canvas->GetCanvas()->cd();
+	canvas->GetCanvas()->Range(resilo, slo, resihi, shi);
+	DrawAxes(canvas->GetCanvas(), graphics, "wire pos(cm)", "s(cm)");
+	
 	// Draw everything
 	canvas->GetCanvas()->cd(0);
 	for(unsigned int i=0; i<graphics.size(); i++)graphics[i]->Draw();
@@ -426,6 +437,7 @@ void trk_mainframe::FillTrackNumberComboBox(TGComboBox* cb, TGComboBox* dataname
 	// Get the currently selected value for the trackno 
 	// so we can recycle it if possible.
 	string deftrackno = cb->GetTextEntry()->GetText();
+	if(deftrackno=="")deftrackno="0";
 
 	// Add "Best Match" option if specified
 	cb->RemoveAll();
@@ -509,8 +521,12 @@ void trk_mainframe::DrawAxes(TCanvas *c, vector<TObject*> &graphics, const char 
 	// Bottom axis
 	axis = new TGaxis(xlo , ylo, xhi, ylo, xlo, xhi, 510, "+UW");
 	graphics.push_back(axis);
-	axis = new TGaxis(xlo+0.3*deltax, ylo, xhi, ylo, xlo+0.3*deltax, xhi, 507, "+L");
+	axis = new TGaxis(xlo+0.2*deltax, ylo, xhi, ylo, xlo+0.2*deltax, xhi, 507, "+L");
 	graphics.push_back(axis);
+	
+	// Center line
+	TLine *l = new TLine(0.0, ylo, 0.0, yhi);
+	graphics.push_back(l);
 }
 
 //-------------------
@@ -518,11 +534,14 @@ void trk_mainframe::DrawAxes(TCanvas *c, vector<TObject*> &graphics, const char 
 //-------------------
 void trk_mainframe::DrawHits(vector<TObject*> &graphics)
 {
-_DBG__;
 	// Find the factory name, tag, and track number for the prime track
 	string dataname = datatype[0]->GetTextEntry()->GetText();
 	string tag = factorytag[0]->GetTextEntry()->GetText();
 	string track = trackno[0]->GetTextEntry()->GetText();
+
+	// Reset residual histogram
+	this->resi->Reset();
+
 	if(track=="")return;
 	if(tag=="<default>")tag="";
 	unsigned int index = atoi(track.c_str());
@@ -530,7 +549,6 @@ _DBG__;
 	// Clear out any existing reference trajectories
 	for(unsigned int i=0; i<REFTRAJ.size(); i++)delete REFTRAJ[i];
 	REFTRAJ.clear();
-	this->resi->Reset();
 	
 	// Get the reference trajectory for the prime track
 	DReferenceTrajectory *rt=NULL;
@@ -556,6 +574,7 @@ _DBG__;
 		unsigned int index = atoi(track.c_str());
 		if(track=="Best Match"){
 			// Need to implement algorithm to find the best match
+			index=0;
 		}
 		
 		// Get reference trajectory for this track
@@ -577,9 +596,11 @@ void trk_mainframe::DrawHitsForOneTrack(
 	DReferenceTrajectory *rt,
 	int index)
 {
-_DBG_<<"index="<<index<<endl;
 	// Clear current hits list
-	if(index==0)TRACKHITS.clear();
+	if(index==0){
+		TRACKHITS.clear();
+		slo = shi = 20.0;
+	}
 	
 	vector<pair<const DCoordinateSystem*,double> > &hits = index==0 ? allhits:TRACKHITS;
 	
@@ -611,34 +632,62 @@ _DBG_<<"index="<<index<<endl;
 		double u = rt->GetLastDistAlongWire();
 		DVector3 pos_wire = wire->origin + u*wire->udir;
 		DVector3 pos_diff = pos_doca-pos_wire;
-		if(shift.Dot(pos_diff)<0.0)shift = -shift;
+		double sdist = pos_diff.Mag();
+		if(shift.Dot(pos_diff)<0.0){
+			shift = -shift;
+			sdist = -sdist;
+		}
 		
 		// OK. Finally, we can decide on a sign for the residual.
 		// We do this by taking the dot product of the shift with
 		// the vector pointing to the center of the wire.
 		//double sign = (shift.Dot(pos_wire)<0.0) ? -1.0:+1.0;
 		double resi = pos_diff.Mag()-dist;
+		if(!finite(resi))continue;
 		
 		// If the residual is reasonably small, consider this hit to be
 		// on this track and record it (if this is the prime track)
 		if(index==0)TRACKHITS.push_back(hits[i]);
 		
-		
-_DBG_<<"resi="<<resi<<"  s="<<s<<"   resi*10E4="<<resi*1.0E4<<endl;
+//_DBG_<<"resi="<<resi<<"  s="<<s<<"   resi*10E4="<<resi*1.0E4<<endl;
 		
 		if(index==0){
-			TMarker *m = new TMarker(resi*1.0E4, s, 20);
+			TMarker *m = new TMarker(sdist, s, 20);
 			m->SetMarkerSize(1.6);
 			m->SetMarkerColor(kYellow);
 			graphics.push_back(m);
 			
 			this->resi->Fill(resi);
+			
+			// Record limits for s.
+			// NOTE: We calculate resilo and resihi from these later
+			// in DoRedraw().
+			if(s<slo)slo=s;
+			if(s>shi)shi=s;
 		}
 		
-		TMarker *m = new TMarker(resi*1.0E4, s, 20);
-		m->SetMarkerSize(0.8);
+		// Check if this is a CDC wire.
+		int marker_style = 20;
+		double ellipse_width = 0.8;
+		int ellipse_color = colors[index%ncolors];
+		const DCDCWire *cdcwire = dynamic_cast<const DCDCWire*>(wire);
+		if(cdcwire!=NULL && cdcwire->stereo!=0.0){
+			ellipse_width = 3.0;
+			ellipse_color += cdcwire->stereo>0.0 ? 100:150;
+			marker_style = 5;
+		}
+
+		// Create marker for wire
+		TMarker *m = new TMarker(sdist, s, marker_style);
+		m->SetMarkerSize(1.5);
 		m->SetMarkerColor(colors[index%ncolors]);
 		graphics.push_back(m);
+		
+		// Create ellipse for distance from wire
+		TEllipse *e = new TEllipse(sdist, s, dist, dist);
+		e->SetLineWidth(ellipse_width);
+		e->SetLineColor(ellipse_color);
+		graphics.push_back(e);
 	}
 }
 
