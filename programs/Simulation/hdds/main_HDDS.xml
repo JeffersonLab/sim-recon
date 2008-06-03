@@ -51,7 +51,7 @@
          version     = "3.0"
          date        = "2007-12-07"
          author      = "R.T. Jones"
-         top_volume  = "HALL"
+         top_volume  = "SITE"
          specification = "v1.0">
 
   <box name="SITE" X_Y_Z="5000. 5000. 5000." material="Air"
