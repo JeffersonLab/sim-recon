@@ -149,6 +149,9 @@ void hitCentralDC (float xin[4], float xout[4],
 		A = trackdir[0]*trackdir[0] + trackdir[1]*trackdir[1];
 		B = 2.0*(trackdir[0]*xinlocal[0] + trackdir[1]*xinlocal[1]);
 		C = drin*drin + xinlocal[0]*xinlocal[0] + xinlocal[1]*xinlocal[1];
+		/* Check that we don't try to take the square root of a 
+		 * negative number. */
+		if (B*B - 4.0*A*C<0.) return;
 		
 		alpha = (-B + sqrt(B*B - 4.0*A*C))/(2.0*A);
 		xoutlocal_i[0] = xinlocal[0] + alpha*trackdir[0];
