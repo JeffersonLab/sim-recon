@@ -43,20 +43,25 @@ hddsroot.C: hdds-root $(XML_SOURCE)
 
 hdds-geant: hdds-geant.cpp XParsers.cpp XParsers.hpp \
             XString.cpp XString.hpp hddsCommon.cpp hddsCommon.hpp
-	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ hdds-geant.cpp \
+	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ $< \
 	hddsCommon.cpp XParsers.cpp XString.cpp \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
 hdds-root: hdds-root.cpp hdds-root.hpp XParsers.cpp XParsers.hpp \
            XString.cpp XString.hpp hddsCommon.cpp hddsCommon.hpp
-	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ hdds-root.cpp \
+	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ $< \
 	hddsCommon.cpp XParsers.cpp XString.cpp \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
 hdds-mcfast: hdds-mcfast.cpp XParsers.cpp XParsers.hpp\
              XString.cpp XString.hpp
-	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ hdds-mcfast.cpp \
-	XParsers.cpp XString.cpp \
+	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ $< \
+	XParsers.cpp XString.cpp -L$(XERCESCROOT)/lib -lxerces-c
+
+findall: findall.cpp XParsers.cpp XParsers.hpp hddsCommon.hpp hddsCommon.cpp \
+         XString.cpp XString.hpp hddsBrowser.hpp hddsBrowser.cpp
+	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ $< \
+	hddsBrowser.cpp hddsCommon.cpp XParsers.cpp XString.cpp \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
 xpath-example: xpath-example.cpp
