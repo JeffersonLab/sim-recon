@@ -28,15 +28,15 @@ class Refsys
   *        x = R x' + s ,  where R = Rz Ry Rx, and s is a shift of origin.
   *
   *              / 1         0             0        \
-  *        Rx = |  0    cos(omega_x)   sin(omega_x)  |
-  *              \ 0   -sin(omega_x)   cos(omega_x) /
+  *        Rx = |  0    cos(omega_x)  -sin(omega_x)  |
+  *              \ 0    sin(omega_x)   cos(omega_x) /
   *
-  *              /-sin(omega_y)   0    cos(omega_y) \
+  *              / cos(omega_y)   0    sin(omega_y) \
   *        Ry = |      0          1        0         |
-  *              \ cos(omega_y)   0    sin(omega_y) /
+  *              \-sin(omega_y)   0    cos(omega_y) /
   *
-  *              / cos(omega_z)   sin(omega_z)   0  \
-  *        Rz = | -sin(omega_z)   cos(omega_z)   0   |
+  *              / cos(omega_z)  -sin(omega_z)   0  \
+  *        Rz = |  sin(omega_z)   cos(omega_z)   0   |
   *              \     0               0         1  /
   *
   * This corresponds to transformation from daughter to mother coordinates
@@ -120,6 +120,9 @@ class Refsys
    Refsys& rotate(const Refsys& ref);	  // copy Rmatrix from ref
    Refsys& rotate(const Refsys& ref,
                   const double omega[3]); // rotate by omega in ref frame
+
+   std::vector<double>& getRotation() const; // get rotation vector omega (rad)
+   std::vector<double>& getMRotation() const; // get MRS rotation vector (rad)
 
    void addIdentifier(XString ident,
                       int value,

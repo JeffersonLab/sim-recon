@@ -317,6 +317,34 @@ Refsys& Refsys::rotate(const Refsys& ref,
    return rotate(myRef);
 }
 
+std::vector<double>& Refsys::getRotation() const
+{
+   std::vector<double> *angles = new std::vector<double>(3);
+   if (fRmatrix[2][1] == 0 && fRmatrix[2][2] == 0) {
+      if (fRmatrix[2][0] < 0) {
+         (*angles)[0] = atan2(fRmatrix[0][1],fRmatrix[1][1]);
+         (*angles)[1] = M_PI/2.;
+         (*angles)[2] = 0;
+      }
+      else {
+         (*angles)[0] = atan2(-fRmatrix[0][1],fRmatrix[1][1]);
+         (*angles)[1] = -M_PI/2.;
+         (*angles)[2] = 0;
+      }
+   }
+   else {
+      (*angles)[0] = atan2(fRmatrix[2][1],fRmatrix[2][2]);
+      (*angles)[1] = atan2(-fRmatrix[2][0],
+                            fRmatrix[2][2]/(cos((*angles)[0])+1e-100));
+      (*angles)[2] = atan2(fRmatrix[1][0],fRmatrix[0][0]);
+   }
+   return *angles;
+}
+
+std::vector<double>& Refsys::getMRotation() const
+{
+}
+
 void Refsys::clearIdentifiers()
 {
    fIdentifier.clear();
