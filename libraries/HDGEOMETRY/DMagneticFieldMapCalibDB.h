@@ -34,10 +34,10 @@ class DMagneticFieldMapCalibDB:public DMagneticFieldMap{
 		void GetFieldGradient(double x, double y, double z,
 				      double &dBxdx, double &dBxdy,
 				      double &dBxdz,
-				      double &dBxdx, double &dBxdy,
-				      double &dBxdz,		
-				      double &dBxdx, double &dBxdy,
-				      double &dBxdz) const;
+				      double &dBydx, double &dBydy,
+				      double &dBydz,		
+				      double &dBzdx, double &dBzdy,
+				      double &dBzdz) const;
 
 		typedef struct{
 			float x,y,z,Bx,By,Bz;
