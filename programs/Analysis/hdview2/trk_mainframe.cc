@@ -20,6 +20,7 @@ using namespace std;
 #include <TLatex.h>
 #include <TGaxis.h>
 #include <TColor.h>
+#include <TROOT.h>
 
 // We declare this as a global since putting it in the class would
 // require defining the DReferenceTrajectory class to ROOT
