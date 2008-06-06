@@ -9,6 +9,7 @@
 #define _DMaterial_
 
 #include <string>
+#include <string.h>
 using std::string;
 
 #include <particleType.h>
