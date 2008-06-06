@@ -9,6 +9,7 @@
 
 #include <iosfwd>
 #include <iomanip>
+#include <iostream>
 
 #include "debug.h"
 
@@ -264,7 +265,7 @@ namespace digest{
 		return r;
 	}
 
-	static void print_hex(std::ostream& o, uint32_t n)
+  static void print_hex(std::ostream& o, uint32_t n)
 	{
 		for(int i=0; i<4; ++i){
 			o.width(2);
