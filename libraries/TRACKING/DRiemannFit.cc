@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include <iostream>
+#include <algorithm>
 using std::cerr;
 using std::endl;
 
