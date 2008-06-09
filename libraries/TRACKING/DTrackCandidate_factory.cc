@@ -111,12 +111,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       double diff_min=1000.; // candidate matching difference
 
       // Propagate FDC track candidate back to CDC endplate 
-      DVector3 mom=-1.*srccan->momentum();
-      DVector3 pos;
-      pos(0)=segments[0]->hits[0]->x;
-      pos(1)=segments[0]->hits[0]->y;
-      pos(2)=segments[0]->hits[0]->wire->origin(2);
-
+      DVector3 mom,pos;
+      GetPositionAndMomentum(segments[0],pos,mom);
+      mom=-1.0*mom;
       DMagneticFieldStepper stepper(bfield,srccan->charge()); 
       if (stepper.SwimToPlane(pos,mom,cdc_endplate,norm,NULL)==false){
 	unsigned int jmin=0;
@@ -227,4 +224,45 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
   
   return NOERROR;
 }
+
+// Obtain position and momentum at the exit of a given package using the 
+// helical track model.
+jerror_t DTrackCandidate_factory::GetPositionAndMomentum(
+					      const DFDCSegment *segment,
+					      DVector3 &pos, DVector3 &mom){
+  // Position of track segment at last hit plane of package
+  double x=segment->xc+segment->rc*cos(segment->Phi1);
+  double y=segment->yc+segment->rc*sin(segment->Phi1);
+  double z=segment->hits[0]->wire->origin(2);
+
+  // Track parameters
+  double kappa=segment->S(0,0);
+  double phi0=segment->S(1,0);
+  double tanl=segment->S(3,0);
+  double z0=segment->S(4,0);
+
+  // Useful intermediate variables
+  double cosp=cos(phi0);
+  double sinp=sin(phi0);
+  double sperp=(z-z0)/tanl;
+  double sin2ks=sin(2.*kappa*sperp);
+  double cos2ks=cos(2.*kappa*sperp); 
+  kappa=fabs(kappa);  // magnitude of curvature
+
+  // Get Bfield
+  double Bx,By,Bz,B;
+  bfield->GetField(x,y,z,Bx,By,Bz);
+  B=sqrt(Bx*Bx+By*By+Bz*Bz);
+  
+  // Momentum
+  double px=(cosp*cos2ks-sinp*sin2ks)*0.003*B/2./kappa;
+  double py=(sinp*cos2ks+cosp*sin2ks)*0.003*B/2./kappa;
+  double pz=0.003*B*tanl/2./kappa;
+
+  pos.SetXYZ(x,y,z);
+  mom.SetXYZ(px,py,pz);
+
+  return NOERROR;
+}
+
 

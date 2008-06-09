@@ -14,19 +14,26 @@
 using namespace jana;
 #include <TH2F.h>
 #include "DTrackCandidate.h"
+#include <DVector3.h>
+#include "FDC/DFDCSegment.h"
 
 class DMagneticFieldMap;
 
 class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
  public:
-  DTrackCandidate_factory(){DEBUG_HISTS=true;};
+  DTrackCandidate_factory(){
+    //DEBUG_HISTS=false;
+    DEBUG_HISTS=true;
+  };
   ~DTrackCandidate_factory(){};
-
+  
+  jerror_t GetPositionAndMomentum(const DFDCSegment *segment,
+				  DVector3 &pos, DVector3 &mom);
   
  protected:
   virtual jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
   virtual jerror_t brun(JEventLoop* eventLoop,int runnumber);
-
+  
  private:
   const DMagneticFieldMap *bfield;
 
