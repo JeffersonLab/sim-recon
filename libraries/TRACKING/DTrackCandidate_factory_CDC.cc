@@ -12,6 +12,8 @@ using namespace std;
 #include <CDC/DCDCTrackHit.h>
 #include "DQuickFit.h"
 #include "DRiemannFit.h"
+#include <HDGEOMETRY/DGeometry.h>
+#include <HDGEOMETRY/DMagneticFieldMap.h>
 
 #include "DTrackCandidate_factory_CDC.h"
 
@@ -142,7 +144,7 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 		//double par[] = {0.984463, 0.150759, -0.414933, 0.257472, -0.055801};
 		//double theta = seed.theta;
 		//double ff = par[0]+theta*(par[1]+theta*(par[2]+theta*(par[3]+theta*par[4])));
-		double p_trans = seed.fit.p_trans*0.95;
+		double p_trans = seed.fit.p_trans*seed.FindAverageBz(loop)/2.0;
 		double phi = seed.fit.phi;
 		double q = seed.fit.q;
 		double theta = seed.theta;
@@ -758,6 +760,24 @@ void DTrackCandidate_factory_CDC::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits
 		trkhit->flags |= VALID_STEREO;
 		seed.stereo_hits.push_back(trkhit);
 	}
+	
+	// It can happen that stereo wires from nearby tracks can intersect
+	// with the current track which, of course, screws up the parameters
+	// later. Here, we identify some of these by looking for stereo 
+	// wire hits from the same layer ("ring") that are far enough apart
+	// that it's unlikely they came from the same track.
+	vector<DCDCTrkHit*>::iterator iter1 = stereo_hits.begin();
+	for(; iter1!=stereo_hits.end(); iter1++){
+		vector<DCDCTrkHit*>::iterator iter2 = iter1+1;
+		const DCDCWire *wire1 = (*iter1)->hit->wire;
+		for(; iter2!=stereo_hits.end(); iter2++){
+			const DCDCWire *wire2 = (*iter2)->hit->wire;
+			
+			if(wire1->ring == wire2->ring){
+			
+			}
+		}
+	}
 }
 
 //------------------
@@ -835,7 +855,7 @@ void DTrackCandidate_factory_CDC::FindThetaZStraightTrack(DCDCSeed &seed)
 	// Now, do the regression
 	double Szr=0.0, Szz=0.0, Srr=0.0;;
 	for(unsigned int i=0; i<r.size(); i++){
-		if(debug_level>4)_DBG_<<"r="<<r[i]<<"\t z="<<z[i]<<endl;
+		if(debug_level>4)_DBG_<<"r="<<r[i]<<"\t z="<<z[i]<<"  Szz_i="<<pow((z[i] - Zavg), 2.0)<<" Srr_i="<<pow((r[i] - Ravg),2.0)<<endl;
 		Szr += (z[i] - Zavg)*(r[i] - Ravg);
 		Szz += pow((z[i] - Zavg), 2.0);
 		Srr += pow((r[i] - Ravg), 2.0);
@@ -855,6 +875,15 @@ void DTrackCandidate_factory_CDC::FindThetaZStraightTrack(DCDCSeed &seed)
 		seed.theta+=M_PI;
 	}
 	if(debug_level>3)_DBG_<<"theta="<<seed.theta<<"  z_vertex="<<seed.z_vertex<<endl;
+	if(debug_level>4){
+		_DBG_<<"Szz="<<Szz<<"  Srr="<<Srr<<endl;
+		double z_vertex = Zavg - Ravg*Szz/Szr;
+		double theta = atan2(Szr, Szz);
+		_DBG_<<"for Szz>Srr : theta="<<theta<<"  z_vertex="<<z_vertex<<endl;
+		z_vertex = Zavg - Ravg*Szr/Srr;
+		theta = M_PI_2 - atan2(Szr, Srr);
+		_DBG_<<"for Szz<=Srr : theta="<<theta<<"  z_vertex="<<z_vertex<<endl;
+	}
 }
 
 //------------------
@@ -1079,5 +1108,30 @@ double DTrackCandidate_factory_CDC::DCDCSeed::MinDist2(DCDCSeed& seed)
 	}
 	
 	return d2min;
+}
+
+//------------------
+// DCDCSeed::FindAverageBz
+//------------------
+double DTrackCandidate_factory_CDC::DCDCSeed::FindAverageBz(JEventLoop *loop)
+{
+return 2.0;
+	if(!loop)return 0.0;
+	DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	if(!dapp)return 0.0;
+	const DGeometry *dgeom = dapp->GetDGeometry(100);
+	if(!dgeom)return 0.0;
+	DMagneticFieldMap *bfield = dgeom->GetBfield();
+	if(!bfield)return 0.0;
+
+	double Bz_sum=0.0;
+	for(unsigned int i=0; i<stereo_hits.size(); i++){
+		DCDCTrkHit *hit = stereo_hits[i];
+		double Bx, By, Bz;
+		bfield->GetField(hit->x_stereo, hit->y_stereo, hit->z_stereo, Bx, By, Bz);
+		Bz_sum += Bz;
+	}
+	
+	return Bz_sum/(double)stereo_hits.size();
 }
 
