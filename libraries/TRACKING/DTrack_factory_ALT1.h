@@ -70,9 +70,10 @@ class DTrack_factory_ALT1:public JFactory<DTrack>{
 		double GetDistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double &s);
 		double ChiSq(double q, DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt=NULL);
 		double ChiSq(double q, const DVector3 &pos, const DVector3 &mom, DReferenceTrajectory *rt=NULL);
-		double ChiSq(double q, DReferenceTrajectory *rt);
+		double ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt);
 		double ChiSq(DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv);
 		double ChiSq(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv);
+		void GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs);
 		fit_status_t LeastSquaresB(fit_type_t fit_type, DReferenceTrajectory *rt, double &chisq);
 		fit_status_t LeastSquares(DVector3 &pos, DVector3 &mom, DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom, double &chisq);
 		void FillDebugHists(DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom);
@@ -90,7 +91,7 @@ class DTrack_factory_ALT1:public JFactory<DTrack>{
 		double Ngood_chisq_hits;
 		DCoordinateSystem *target;
 		DMatrix last_covariance;
-
+		
 		int eventnumber;
 		const JGeometry *dgeom;
 		const DMagneticFieldMap *bfield;
@@ -137,6 +138,7 @@ class DTrack_factory_ALT1:public JFactory<DTrack>{
 		TH1F *cdc_single_hit_prob, *cdc_double_hit_prob;
 		TH1F *fdc_single_hit_prob, *fdc_double_hit_prob;
 		TH1F *cdc_can_resi, *fdc_can_resi, *fdc_can_resi_cath;
+		TH2F *chisq_vs_p_vs_theta;
 };
 
 #endif // _DTrack_factory_ALT1_

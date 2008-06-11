@@ -4,6 +4,7 @@
 // Created: Fri. Feb. 8, 2008
 // Creator: davidl
 //
+namespace{const char* GetMyID(){return "$Id$";}}
 
 #include <math.h>
 
@@ -65,6 +66,8 @@ DTrack_factory_ALT1::DTrack_factory_ALT1()
 	SIGMA_CDC = 0.0200;
 	SIGMA_FDC_ANODE = 0.0200;
 	SIGMA_FDC_CATHODE = 0.0200;
+//SIGMA_FDC_ANODE = 100.0;
+//SIGMA_FDC_CATHODE = 100.0;
 	CHISQ_MAX_RESI_SIGMAS = 100.0;
 	CHISQ_GOOD_LIMIT = 2.0;
 	LEAST_SQUARES_DP = 0.0001;
@@ -133,11 +136,11 @@ jerror_t DTrack_factory_ALT1::brun(JEventLoop *loop, int runnumber)
 	// (re)-allocate temporary DReferenceTrajectory used in
 	// numerical derivatives
 	if(tmprt)delete tmprt;
-	tmprt = new DReferenceTrajectory(bfield);	
+	tmprt = new DReferenceTrajectory(bfield);
 	
 	// Set limits on CDC. (This should eventually come from HDDS)
 	CDC_Z_MIN = 17.0;
-	CDC_Z_MAX = CDC_Z_MIN + 175.0;
+	CDC_Z_MAX = CDC_Z_MIN + 150.0;
 	hit_based = false;
 	//cout<<__FILE__<<":"<<__LINE__<<"-------------- Helical Fitter TRACKING --------------"<<endl;
 	cout<<__FILE__<<":"<<__LINE__<<"-------------- Least Squares TRACKING --------------"<<endl;
@@ -175,6 +178,7 @@ jerror_t DTrack_factory_ALT1::brun(JEventLoop *loop, int runnumber)
 		cdc_can_resi = (TH1F*)gROOT->FindObject("cdc_can_resi");
 		fdc_can_resi = (TH1F*)gROOT->FindObject("fdc_can_resi");
 		fdc_can_resi_cath = (TH1F*)gROOT->FindObject("fdc_can_resi_cath");
+		chisq_vs_p_vs_theta = (TH2F*)gROOT->FindObject("chisq_vs_p_vs_theta");
 
 		if(!cdcdoca_vs_dist)cdcdoca_vs_dist = new TH2F("cdcdoca_vs_dist","DOCA vs. DIST",300, 0.0, 1.2, 300, 0.0, 1.2);
 		if(!cdcdoca_vs_dist_vs_ring)cdcdoca_vs_dist_vs_ring = new TH3F("cdcdoca_vs_dist_vs_ring","DOCA vs. DIST vs. ring",300, 0.0, 1.2, 300, 0.0, 1.2,23,0.5,23.5);
@@ -204,6 +208,7 @@ jerror_t DTrack_factory_ALT1::brun(JEventLoop *loop, int runnumber)
 		if(!cdc_can_resi)cdc_can_resi = new TH1F("cdc_can_resi","Residual of CDC hits with candidate tracks", 200, -1.0, 1.0);
 		if(!fdc_can_resi)fdc_can_resi = new TH1F("fdc_can_resi","Residual of FDC hits with candidate tracks", 200, -1.0, 1.0);
 		if(!fdc_can_resi_cath)fdc_can_resi_cath = new TH1F("fdc_can_resi_cath","Residual of FDC cathode hits with candidate tracks", 200, -1.0, 1.0);
+		//if(!chisq_vs_p_vs_theta)chisq_vs_p_vs_theta = new TH2F("chisq_vs_p_vs_theta","#chi^{2}/dof map", 100, 0.9, 1.1, 100, 0.9, 1.1);
 
 		dapp->Unlock();		
 	}
@@ -267,6 +272,42 @@ jerror_t DTrack_factory_ALT1::evnt(JEventLoop *loop, int eventnumber)
 
 		// If fit is successful, then store the track
 		if(track)_data.push_back(track);
+			
+		// Fill Chisq map around thrown parameters
+		if(debug_level>2 && DEBUG_HISTS){
+			vector<const DMCThrown*> mcthrowns;
+			loop->Get(mcthrowns);
+			
+			double p = mcthrowns[0]->momentum().Mag();
+			double theta = mcthrowns[0]->momentum().Theta();
+			if(chisq_vs_p_vs_theta)delete chisq_vs_p_vs_theta;
+			chisq_vs_p_vs_theta = new TH2F("chisq_vs_p_vs_theta","#chi^{2}/dof map", 400, theta-0.6, theta+0.6, 400, p-0.2, p+0.2);
+			chisq_vs_p_vs_theta->Reset();
+			
+			DReferenceTrajectory *rt = new DReferenceTrajectory(bfield);
+			//DVector3 pos(0.0, 0.0, 74.39);
+			//double phi = 0.3826;
+			DVector3 pos(0.0, 0.0, 65.0);
+			double phi = mcthrowns[0]->momentum().Phi();
+			
+			// Loop over bins in chisq map histo
+			for(int i=1; i<=chisq_vs_p_vs_theta->GetNbinsX(); i++){
+				theta = chisq_vs_p_vs_theta->GetXaxis()->GetBinCenter(i);
+				for(int j=1; j<=chisq_vs_p_vs_theta->GetNbinsY(); j++){
+					p = chisq_vs_p_vs_theta->GetYaxis()->GetBinCenter(j);
+					
+					DVector3 mom;
+					mom.SetMagThetaPhi(p, theta, phi);
+					rt->Swim(pos, mom, mcthrowns[0]->charge());
+					
+					double chisq = ChiSq(kTimeBased, rt);
+					
+					chisq_vs_p_vs_theta->SetBinContent(i,j,chisq);
+				}
+			}
+
+			delete rt;
+		}
 	}
 
 	return NOERROR;
@@ -293,10 +334,10 @@ DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
 		_DBG_<<"cdchits_on_track.size="<<cdchits_on_track.size()<<"  fdchits_on_track.size="<<fdchits_on_track.size()<<endl;
 		_DBG_<<"cdctrackhits.size="<<cdctrackhits.size()<<"  fdctrackhits.size="<<fdctrackhits.size()<<endl;
 	}
-	
 	// Do initial hit-based fit
 	if(debug_level>3)_DBG_<<"============= Hit-based ==============="<<endl;
-	double chisq_hit_based;
+	double chisq_hit_based=1.0;
+#if 1
 	for(int i=0; i<3; i++){
 		switch(LeastSquaresB(kHitBased, rt, chisq_hit_based)){
 			case FIT_OK:
@@ -312,7 +353,7 @@ DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
 				break;
 		}
 	}
-	
+#endif
 	// Iterate over time-based fits until it converges or we reach the 
 	// maximum number of iterations
 	if(debug_level>3)_DBG_<<"============= Time-based ==============="<<endl;
@@ -320,12 +361,12 @@ DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
 	double last_chisq = 1.0E6;
 	int Niterations;
 	for(Niterations=0; Niterations<MAX_FIT_ITERATIONS; Niterations++){
-		switch(LeastSquaresB(kTimeBased, rt, chisq_time_based) != FIT_OK){
+		switch(LeastSquaresB(kTimeBased, rt, chisq_time_based)){
 			case FIT_OK:
 				if(debug_level>2)_DBG_<<"Time based fit succeeded for candidate "<<candidateid<<endl;
 				break;
 			case FIT_NO_IMPROVEMENT:
-				if(debug_level>2)_DBG_<<"Time based fit unable to improve candidate "<<candidateid<<endl;
+				if(debug_level>2)_DBG_<<"Time based fit unable to improve candidate "<<candidateid<<" (chisq="<<chisq_time_based<<")"<<endl;
 				break;
 			case FIT_FAILED:
 				if(debug_level>2)_DBG_<<"Time based fit failed for candidate "<<candidateid<<" on iteration "<<Niterations<<endl;
@@ -362,6 +403,12 @@ DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
 	if(chisq_time_based<=CHISQ_GOOD_LIMIT)fit_succeeded = true;
 	if(MAX_FIT_ITERATIONS==0)fit_succeeded = true;
 	if(!fit_succeeded)return NULL;
+	
+	if(debug_level>10){
+		_DBG_<<"-------- Final Chisq for track = "<<chisq_time_based<<endl;
+		double chisq = ChiSq(kTimeBased, rt);
+		_DBG_<<"-------- Check chisq = "<<chisq<<endl;
+	}
 	
 	// Find point of closest approach to target and use parameters
 	// there for vertex position and momentum
@@ -538,7 +585,8 @@ void DTrack_factory_ALT1::GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, 
 	// error from measurement,track parameters, and multiple 
 	// scattering.
 	//double sigma = sqrt(pow(SIGMA_CDC,2.0) + pow(0.4000,2.0));
-	double sigma = 0.261694; // empirically from single pi+ events
+	//double sigma = 0.261694; // empirically from single pi+ events
+	double sigma = 5.0; // playing around
 
 	prob.clear();
 	for(unsigned int j=0; j<cdctrackhits.size(); j++){
@@ -561,6 +609,8 @@ void DTrack_factory_ALT1::GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, 
 		// of zero, we get a probability of 1.0.
 		double probability = finite(resi) ? exp(-pow(resi/sigma,2.0)):0.0;
 		prob.push_back(probability);
+
+		if(debug_level>10)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" tof="<<tof<<" prob="<<probability<<endl;
 
 		if(DEBUG_HISTS){
 			cdc_can_resi->Fill(resi);
@@ -614,6 +664,8 @@ void DTrack_factory_ALT1::GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, 
 		// of zero, we get a probability of 1.0.
 		double p = finite(resi) ? exp(-pow(resi/sigma_anode,2.0)):0.0;
 
+		if(debug_level>10)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" tof="<<tof<<" prob="<<p<<endl;
+
 		// Cathode
 		double u=0;
 		double resic=0;
@@ -628,10 +680,25 @@ void DTrack_factory_ALT1::GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, 
 			p *= finite(resic) ? exp(-pow(resic/sigma_cathode,2.0)):0.0;
 		}
 		
-		if(debug_level>10)_DBG_<<" fdc hit "<<j<<": dist,doca="<<dist<<", "<<doca<<"  u,s="<<u<<", "<<hit->s<<" resi="<<resi<<" resic="<<resic<<endl;
+		if(debug_level>10)_DBG_<<"   cathode: u="<<u<<" hit->s="<<hit->s<<" resic"<<resic<<"  (total) p="<<p<<endl;
 		
 		prob.push_back(p);
 	}
+}
+
+//------------------
+// ChiSq
+//------------------
+double DTrack_factory_ALT1::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt)
+{
+	vector<const DCoordinateSystem*> wires;
+	vector<DVector3> shifts;
+	vector<double> errs;
+	vector<double> chisqv;
+	
+	GetWiresShiftsErrs(fit_type, rt, wires, shifts, errs);
+	
+	return ChiSq(rt, wires, shifts, errs, chisqv);
 }
 
 //------------------
@@ -718,12 +785,34 @@ double DTrack_factory_ALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordi
 		return 1.0E6;
 	}
 	
+	// These are for debugging
+	const DFDCWire *fdcwire=NULL;
+	const DCDCWire *cdcwire=NULL;
+	int Npos_shifts=0;
+	int Nneg_shifts=0;
+	int Nzero_shifts=0;
+	
 	// Loop over wires
 	double chisq = 0.0;
 	int dof=0;
 	for(unsigned int i=0; i<wires.size(); i++){
+		
+		if(debug_level>10){
+			fdcwire = dynamic_cast<const DFDCWire*>(wires[i]);
+			cdcwire = dynamic_cast<const DCDCWire*>(wires[i]);
+		}
+	
 		DCoordinateSystem wire = *wires[i];
-		if(use_shifts)wire.origin += shifts[i];
+		if(use_shifts){
+			wire.origin += shifts[i];
+			
+			if(debug_level>10){
+				double a = (shifts[i].Cross(wires[i]->origin)).Z();
+				if(a==0.0)Nzero_shifts++;
+				else if(a<0.0)Nneg_shifts++;
+				else Npos_shifts++;
+			}
+		}
 		
 		// Get distance of the (shifted) wire from the reference trajectory
 		double s;
@@ -750,10 +839,19 @@ double DTrack_factory_ALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordi
 		if(finite(c)){
 			chisq += c*c;
 			dof++;
-			if(debug_level>10)_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  Rwire="<<wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s<<endl;
+			if(debug_level>10){
+				_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  Rwire="<<wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s;
+				if(fdcwire)cerr<<" FDC: layer="<<fdcwire->layer<<" wire="<<fdcwire->wire<<" angle="<<fdcwire->angle;
+				if(cdcwire)cerr<<" CDC: ring="<<cdcwire->ring<<" straw="<<cdcwire->straw<<" stereo="<<cdcwire->stereo;
+				cerr<<endl;
+			}
 		}else{
 			if(debug_level>10)_DBG_<<"  chisqv[unused] = "<<c<<"  d="<<d<<"  Rwire="<<wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s<<endl;
 		}
+	}
+	
+	if(debug_level>10){
+		_DBG_<<" Nshifts(+,-,0)=("<<Npos_shifts<<","<<Nneg_shifts<<","<<Nzero_shifts<<")"<<endl;
 	}
 
 	// If it turns out the dof is zero, return 1.0E6. Otherwise, return
@@ -762,55 +860,23 @@ double DTrack_factory_ALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordi
 }
 
 //------------------
-// LeastSquaresB
+// GetWiresShiftsErrs
 //------------------
-DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t fit_type, DReferenceTrajectory *rt, double &chisq)
+void DTrack_factory_ALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs)
 {
-	/// Fit the track with starting parameters given in the first step
-	/// of the reference trajectory rt. On return, the reference
-	/// trajectory rt will represent the final fit parameters and
-	/// chisq will contain the chisq/dof of the track.
-	///
-	/// This determines the best fit of the track using the least squares method
-	/// described by R. Mankel Rep. Prog. Phys. 67 (2004) 553-622 pg 565.
-	/// Since it uses a linear approximation for the chisq dependance on
-	/// the fit parameters, several calls may be required for convergence.
-
-	// Make sure RT is not empty
-	if(rt->Nswim_steps<1){
-		chisq = 1.0E6;
-		return FIT_FAILED;
-	}
-
-	// For fitting, we want to define a coordinate system very similar to the
-	// Reference Trajectory coordinate system. The difference is that we want
-	// the position to be defined in a plane perpendicular to the momentum.
-	// The RT x-direction is in this plane, but the momentum itself lies
-	// somewhere in the Y/Z plane so that neither Y nor Z makes a good choice
-	// for the second postion dimension. We will call the second coordinate in 
-	// the perpendicular plane "v" which is the coordinate along the axis that
-	// is perpendicular to both the x-direction and the momentum direction.
 	swim_step_t &start_step = rt->swim_steps[0];
-	DVector3 pos = start_step.origin;
-	DVector3 mom = start_step.mom;
-	
-	// Make list of wires
-	vector<const DCoordinateSystem*> wires;
-	vector<DVector3> shifts;
-	vector<double> errs;
+	DVector3 &pos = start_step.origin;
 
 #if 1
 	// --- Target ---
 	// Define the target as though it were a wire so it is included
 	// in the chi-sq
-	DCoordinateSystem target;
-	target.origin.SetXYZ(0.0, 0.0, pos.Z());
-	target.sdir.SetXYZ(1.0, 0.0, 0.0);
-	target.tdir.SetXYZ(0.0, 1.0, 0.0);
-	target.udir.SetXYZ(0.0, 0.0, 1.0);
-	target.L=3.0;
-	wires.push_back(&target);
+	target->L = 3.0;
+//target->L = 0.0;
+	target->origin.SetXYZ(0.0, 0.0, pos.Z());
+	wires.push_back(target);
 	errs.push_back(fit_type==kHitBased ? 0.1:0.1);
+//errs.push_back(fit_type==kHitBased ? 0.0001:0.0001);
 	if(fit_type!=kHitBased)shifts.push_back(DVector3(0.0, 0.0, 0.0));
 #endif
 
@@ -939,7 +1005,47 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 			errs.push_back(SIGMA_FDC_ANODE);
 		}
 	}
+}
+
+//------------------
+// LeastSquaresB
+//------------------
+DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t fit_type, DReferenceTrajectory *rt, double &chisq)
+{
+	/// Fit the track with starting parameters given in the first step
+	/// of the reference trajectory rt. On return, the reference
+	/// trajectory rt will represent the final fit parameters and
+	/// chisq will contain the chisq/dof of the track.
+	///
+	/// This determines the best fit of the track using the least squares method
+	/// described by R. Mankel Rep. Prog. Phys. 67 (2004) 553-622 pg 565.
+	/// Since it uses a linear approximation for the chisq dependance on
+	/// the fit parameters, several calls may be required for convergence.
+
+	// Make sure RT is not empty
+	if(rt->Nswim_steps<1){
+		chisq = 1.0E6;
+		return FIT_FAILED;
+	}
+
+	// For fitting, we want to define a coordinate system very similar to the
+	// Reference Trajectory coordinate system. The difference is that we want
+	// the position to be defined in a plane perpendicular to the momentum.
+	// The RT x-direction is in this plane, but the momentum itself lies
+	// somewhere in the Y/Z plane so that neither Y nor Z makes a good choice
+	// for the second postion dimension. We will call the second coordinate in 
+	// the perpendicular plane "v" which is the coordinate along the axis that
+	// is perpendicular to both the x-direction and the momentum direction.
+	swim_step_t &start_step = rt->swim_steps[0];
+	DVector3 pos = start_step.origin;
+	DVector3 mom = start_step.mom;
 	
+	// Make list of wires
+	vector<const DCoordinateSystem*> wires;
+	vector<DVector3> shifts;
+	vector<double> errs;	
+	GetWiresShiftsErrs(fit_type, rt, wires, shifts, errs);
+
 	// Get the chi-squared vector for the initial reference trajectory
 	vector<double> chisqv_initial;
 	double initial_chisq = ChiSq(rt, wires, shifts, errs, chisqv_initial);
@@ -1208,6 +1314,7 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	// that we were unable to make any improvement.
 	if(min_lambda==0.0){
 		if(debug_level>1)_DBG_<<"Chisq only increased (both directions searched!)"<<endl;
+		chisq = initial_chisq;
 		return FIT_NO_IMPROVEMENT;
 	}
 	
