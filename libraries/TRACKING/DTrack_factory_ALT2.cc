@@ -539,6 +539,7 @@ void DTrack_factory_ALT2::GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, 
 	// scattering.
 	//double sigma = sqrt(pow(SIGMA_CDC,2.0) + pow(0.4000,2.0));
 	double sigma = 0.261694; // empirically from single pi+ events
+	//double sigma = 5.0; // playing around
 
 	prob.clear();
 	for(unsigned int j=0; j<cdctrackhits.size(); j++){
@@ -728,11 +729,21 @@ double DTrack_factory_ALT2::ChiSq(DReferenceTrajectory *rt, vector<const DCoordi
 		for(unsigned int i=0; i<wires.size(); i++)chisqv.push_back(1.0E6);
 		return 1.0E6;
 	}
+
+	// These are for debugging
+	const DFDCWire *fdcwire=NULL;
+	const DCDCWire *cdcwire=NULL;
 	
 	// Loop over wires
 	double chisq = 0.0;
 	int dof=0;
 	for(unsigned int i=0; i<wires.size(); i++){
+		
+		if(debug_level>10){
+			fdcwire = dynamic_cast<const DFDCWire*>(wires[i]);
+			cdcwire = dynamic_cast<const DCDCWire*>(wires[i]);
+		}
+
 		DCoordinateSystem wire = *wires[i];
 		if(use_shifts)wire.origin += shifts[i];
 		
@@ -761,7 +772,12 @@ double DTrack_factory_ALT2::ChiSq(DReferenceTrajectory *rt, vector<const DCoordi
 		if(finite(c)){
 			chisq += c*c;
 			dof++;
-			if(debug_level>10)_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  Rwire="<<wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s<<endl;
+			if(debug_level>10){
+				_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  Rwire="<<wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s;
+				if(fdcwire)cerr<<" FDC: layer="<<fdcwire->layer<<" wire="<<fdcwire->wire<<" angle="<<fdcwire->angle;
+				if(cdcwire)cerr<<" CDC: ring="<<cdcwire->ring<<" straw="<<cdcwire->straw<<" stereo="<<cdcwire->stereo;
+				cerr<<endl;
+			}
 		}else{
 			if(debug_level>10)_DBG_<<"  chisqv[unused] = "<<c<<"  d="<<d<<"  Rwire="<<wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s<<endl;
 		}
