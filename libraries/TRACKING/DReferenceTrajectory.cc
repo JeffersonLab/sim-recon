@@ -239,6 +239,7 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 	swim_step_t *step=NULL;
 	double min_delta2 = 1.0E6;
 	double L_over_2 = wire->L/2.0; // half-length of wire in cm
+	int istep=-1;
 	for(int i=0; i<Nswim_steps; i++, swim_step++){
 		// Find the point's position along the wire. If the point
 		// is past the end of the wire, calculate the distance
@@ -247,9 +248,7 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 		double u = wire->udir.Dot(pos_diff);
 
 		// Find distance perpendicular to wire
-		double s = wire->sdir.Dot(pos_diff);
-		double t = wire->tdir.Dot(pos_diff);
-		double delta2 = s*s + t*t;
+		double delta2 = pos_diff.Mag2() - u*u;
 
 		// If point is past end of wire, calculate distance
 		// from wire's end by adding on distance along wire direction.
@@ -260,6 +259,7 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 		if(delta2 < min_delta2){
 			min_delta2 = delta2;
 			step = swim_step;
+			istep=i;
 		}
 	}
 
