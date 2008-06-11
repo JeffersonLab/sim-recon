@@ -62,7 +62,7 @@ jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 
 		// Adapted from Alex's fortran code to paramatrize the resolution 
 		// of GlueX. He developed this from a study Dave Lawrence did. 
-		this->SmearMomentum(track);
+		//this->SmearMomentum(track);
 
 		// We need to swim a reference trajectory here. To avoid the overhead
 		// of allocating/deallocating them every event, we keep a pool and
