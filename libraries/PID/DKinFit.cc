@@ -1,4 +1,8 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <cctype>
+#include <algorithm>
 #include "PID/DKinFit.h"
 using namespace std;
 /** @file DKinFit.C
