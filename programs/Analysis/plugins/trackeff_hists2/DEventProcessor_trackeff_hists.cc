@@ -24,7 +24,8 @@ using namespace std;
 #include <FDC/DFDCGeometry.h>
 #include <DVector2.h>
 #include <particleType.h>
-
+#include <CDC/DCDCTrackHit.h>
+#include <FDC/DFDCPseudo.h>
 
 // Routine used to create our DEventProcessor
 extern "C"{
@@ -73,7 +74,7 @@ jerror_t DEventProcessor_trackeff_hists::init(void)
 	
 	JParameterManager *parms = app->GetJParameterManager();
 
-	DEBUG = 1;
+	DEBUG = 2;
 	
 	parms->SetDefaultParameter("TRKEFF:DEBUG", DEBUG);
 
@@ -176,8 +177,6 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 			double pt_pull = (pfit.Perp() - pthrown.Perp())/pthrown.Perp()/pt_res;
 			double theta_pull = (pfit.Theta() - pthrown.Theta())*1000.0/theta_res;
 			double phi_pull = (pfit.Phi() - pthrown.Phi())*1000.0/phi_res;
-theta_pull/=2.0;
-phi_pull/=2.0;
 			double chisq = (pow(pt_pull, 2.0) + pow(theta_pull, 2.0) + pow(phi_pull, 2.0))/3.0;
 			double likelihood = exp(-chisq*3.0/2.0);
 			if(DEBUG>10)_DBG_<<"chisq="<<chisq<<" likelihood="<<likelihood<<endl;
@@ -188,13 +187,25 @@ phi_pull/=2.0;
 				trk.theta_pull = theta_pull;
 				trk.phi_pull = phi_pull;
 				trk.pfit = pfit;
+				
+				// Get # of CDC and FDC hits
+				vector<const DCDCTrackHit*> cdchits;
+				track->Get(cdchits);
+				trk.Nstereo = 0;
+				for(unsigned int k=0; k<cdchits.size(); k++)if(cdchits[k]->wire->stereo!=0.0)trk.Nstereo++;
+				trk.Ncdc = cdchits.size();
+				vector<const DFDCPseudo*> fdchits;
+				track->Get(fdchits);
+				trk.Nfdc = fdchits.size();
 			}
 		}
 		
 		if(DEBUG>5)if(trk.chisq>=3.0 && trk.pthrown.Theta()*57.3<150.0)_DBG_<<"Event:"<<eventnumber<<" thrown track "<<i<<"  trk.chisq="<<trk.chisq<<"  theta="<<trk.pthrown.Theta()*57.3<<" p="<<trk.pthrown.Mag()<<endl;
 		if(DEBUG>0){
 			if(trk.isreconstructable && trk.chisq>10.0){
-				_DBG_<<" Reconstructable event not found/fit: "<<eventnumber<<" (likelihood="<<trk.likelihood<<")"<<endl;
+				_DBG_<<" Reconstructable event not found/fit: "<<eventnumber<<" (chisq="<<trk.chisq<<")";
+				if(DEBUG>1)cerr<<" pt_pull="<<trk.pt_pull<<" theta_pull="<<trk.theta_pull<<" phi_pull="<<trk.phi_pull;
+				cerr<<endl;
 			}
 		}
 		

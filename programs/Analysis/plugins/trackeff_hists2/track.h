@@ -24,6 +24,9 @@ class track:public TObject{
 		double theta_pull;
 		double phi_pull;
 		bool isreconstructable;
+		int Nstereo;
+		int Ncdc;
+		int Nfdc;
 
 	private:
 		ClassDef(track,1);
