@@ -441,6 +441,11 @@ DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
 	track->setPosition(vertex_pos);
 	track->setCharge(rt->q);
 	//track->setErrorMatrix(last_covariance);
+	
+	// Add CDC and FDC hits used to fit this track to its 
+	// associated objects list
+	for(unsigned int k=0; k<cdchits_on_track.size();k++)track->AddAssociatedObject(cdchits_on_track[k]);
+	for(unsigned int k=0; k<fdchits_on_track.size();k++)track->AddAssociatedObject(fdchits_on_track[k]);
 
 	// Fill debugging histos if requested
 	if(DEBUG_HISTS){
