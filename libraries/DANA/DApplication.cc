@@ -77,8 +77,19 @@ DGeometry* DApplication::GetDGeometry(unsigned int run_number)
 	// base class. Then, use that to find the correct DGeometry
 	// object if it exists.
 	JGeometry *jgeom = GetJGeometry(run_number);
-	if(!jgeom)return NULL;
-	
+	if(!jgeom){
+		_DBG_<<"ERROR: Unable get geometry for run "<<run_number<<"!"<<endl;
+		_DBG_<<"Make sure you JANA_GEOMETRY_URL environment variable is set."<<endl;
+		_DBG_<<"It should be set to something like:"<<endl;
+		_DBG_<<endl;
+		_DBG_<<"    xmlfile://${HALLD_HOME}/src/programs/Simulation/hdds/main_HDDS.xml"<<endl;
+		_DBG_<<endl;
+		_DBG_<<"Exiting now."<<endl;
+		Quit();
+		exit(-1);
+		return NULL;
+	}
+
 	for(unsigned int i=0; i<geometries.size(); i++){
 		if(geometries[i]->GetJGeometry() == jgeom)return geometries[i];
 	}
