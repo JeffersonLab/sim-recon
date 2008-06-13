@@ -625,6 +625,23 @@ bool DGeometry::GetCDCEndplate(double &z,double &dz,double &rmin,double &rmax)
     return good;
   }
   
+	if(cdc_origin.size()<3){
+  		_DBG_<<"cdc_origin.size()<3 !"<<endl;
+		return false;
+	}
+	if(cdc_center.size()<3){
+  		_DBG_<<"cdc_center.size()<3 !"<<endl;
+		return false;
+	}
+	if(cdc_endplate_pos.size()<3){
+  		_DBG_<<"cdc_endplate_pos.size()<3 !"<<endl;
+		return false;
+	}
+	if(cdc_endplate_dim.size()<3){
+  		_DBG_<<"cdc_endplate_dim.size()<3 !"<<endl;
+		return false;
+	}
+  
   z=cdc_origin[2]+cdc_center[2]+cdc_endplate_pos[2]+cdc_endplate_dim[2];
   dz=cdc_endplate_dim[2];
   rmin=cdc_endplate_dim[0];
