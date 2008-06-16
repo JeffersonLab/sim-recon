@@ -26,6 +26,7 @@ using namespace std;
 #include <particleType.h>
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
+#include <FDC/DFDCHit.h>
 
 // Routine used to create our DEventProcessor
 extern "C"{
@@ -74,7 +75,7 @@ jerror_t DEventProcessor_trackeff_hists::init(void)
 	
 	JParameterManager *parms = app->GetJParameterManager();
 
-	DEBUG = 2;
+	DEBUG = 1;
 	
 	parms->SetDefaultParameter("TRKEFF:DEBUG", DEBUG);
 
@@ -122,10 +123,20 @@ jerror_t DEventProcessor_trackeff_hists::fini(void)
 //------------------
 jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 {
+	vector<const DCDCTrackHit*> cdctrackhits;
+	vector<const DFDCHit*> fdchits;
 	vector<const DTrack*> tracks;
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrajectoryPoint*> mctrajpoints;
 	
+	// Bail quick on events with too many CDC hits
+	loop->Get(cdctrackhits);
+	if(cdctrackhits.size()>30 || cdctrackhits.size()<6)return NOERROR;
+
+	// Bail quick on events with too many FDC hits
+	loop->Get(fdchits);
+	if(fdchits.size()>30)return NOERROR;
+
 	loop->Get(tracks,"ALT1");
 	loop->Get(mcthrowns);
 	loop->Get(mctrajpoints);
@@ -177,6 +188,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 			double pt_pull = (pfit.Perp() - pthrown.Perp())/pthrown.Perp()/pt_res;
 			double theta_pull = (pfit.Theta() - pthrown.Theta())*1000.0/theta_res;
 			double phi_pull = (pfit.Phi() - pthrown.Phi())*1000.0/phi_res;
+
 			double chisq = (pow(pt_pull, 2.0) + pow(theta_pull, 2.0) + pow(phi_pull, 2.0))/3.0;
 			double likelihood = exp(-chisq*3.0/2.0);
 			if(DEBUG>10)_DBG_<<"chisq="<<chisq<<" likelihood="<<likelihood<<endl;
@@ -202,9 +214,16 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		
 		if(DEBUG>5)if(trk.chisq>=3.0 && trk.pthrown.Theta()*57.3<150.0)_DBG_<<"Event:"<<eventnumber<<" thrown track "<<i<<"  trk.chisq="<<trk.chisq<<"  theta="<<trk.pthrown.Theta()*57.3<<" p="<<trk.pthrown.Mag()<<endl;
 		if(DEBUG>0){
-			if(trk.isreconstructable && trk.chisq>10.0){
-				_DBG_<<" Reconstructable event not found/fit: "<<eventnumber<<" (chisq="<<trk.chisq<<")";
-				if(DEBUG>1)cerr<<" pt_pull="<<trk.pt_pull<<" theta_pull="<<trk.theta_pull<<" phi_pull="<<trk.phi_pull;
+			double sigma_pt_pull=0.811035, sigma_theta_pull=0.636278, sigma_phi_pull=1.65046;
+			double pt_pull = trk.pt_pull/=sigma_pt_pull;
+			double theta_pull = trk.theta_pull/=sigma_theta_pull;
+			double phi_pull = trk.phi_pull/=sigma_phi_pull;
+			double chisq_corrected = (pow(pt_pull,2.0) + pow(theta_pull,2.0) + pow(phi_pull, 2.0))/3.0;
+
+			if(trk.isreconstructable && trk.chisq>100.0){
+
+				_DBG_<<" Reconstructable event not found/fit: "<<eventnumber<<" (chisq_corrected="<<chisq_corrected<<")";
+				if(DEBUG>1)cerr<<" pt_pull="<<pt_pull<<" theta_pull="<<theta_pull<<" phi_pull="<<phi_pull;
 				cerr<<endl;
 			}
 		}
