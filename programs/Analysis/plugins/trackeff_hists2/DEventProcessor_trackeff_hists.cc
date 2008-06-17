@@ -158,12 +158,13 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		// Get resolutions for this thrown track
 		double pt_res, theta_res, phi_res;
 		trkres->GetResolution(8 , pthrown, pt_res, theta_res, phi_res);
+
 		// Initialize with the "no candidate" values
 		trk.likelihood = 0.0;
-		trk.chisq=1.0E6;
-		trk.pt_pull=1.0E6;
-		trk.theta_pull=1.0E6;
-		trk.phi_pull=1.0E6;
+		trk.chisq=1.0E20;
+		trk.pt_pull=1.0E20;
+		trk.theta_pull=1.0E20;
+		trk.phi_pull=1.0E20;
 		trk.isreconstructable = isReconstructable(mcthrown, mctrajpoints);
 
 		// Loop over found/fit tracks and calculate chisq and likelihood
@@ -192,7 +193,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 			double chisq = (pow(pt_pull, 2.0) + pow(theta_pull, 2.0) + pow(phi_pull, 2.0))/3.0;
 			double likelihood = exp(-chisq*3.0/2.0);
 			if(DEBUG>10)_DBG_<<"chisq="<<chisq<<" likelihood="<<likelihood<<endl;
-			if(likelihood>trk.likelihood){
+			if(chisq<trk.chisq){
 				trk.likelihood = likelihood;
 				trk.chisq = chisq;
 				trk.pt_pull = pt_pull;
@@ -214,13 +215,14 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		
 		if(DEBUG>5)if(trk.chisq>=3.0 && trk.pthrown.Theta()*57.3<150.0)_DBG_<<"Event:"<<eventnumber<<" thrown track "<<i<<"  trk.chisq="<<trk.chisq<<"  theta="<<trk.pthrown.Theta()*57.3<<" p="<<trk.pthrown.Mag()<<endl;
 		if(DEBUG>0){
-			double sigma_pt_pull=0.811035, sigma_theta_pull=0.636278, sigma_phi_pull=1.65046;
-			double pt_pull = trk.pt_pull/=sigma_pt_pull;
-			double theta_pull = trk.theta_pull/=sigma_theta_pull;
-			double phi_pull = trk.phi_pull/=sigma_phi_pull;
+			//double sigma_pt_pull=0.811035, sigma_theta_pull=0.636278, sigma_phi_pull=1.65046;
+			double sigma_pt_pull=1.0, sigma_theta_pull=1.0, sigma_phi_pull=1.0;
+			double pt_pull = trk.pt_pull/sigma_pt_pull;
+			double theta_pull = trk.theta_pull/sigma_theta_pull;
+			double phi_pull = trk.phi_pull/sigma_phi_pull;
 			double chisq_corrected = (pow(pt_pull,2.0) + pow(theta_pull,2.0) + pow(phi_pull, 2.0))/3.0;
 
-			if(trk.isreconstructable && trk.chisq>100.0){
+			if(trk.isreconstructable && chisq_corrected>1000.0){
 
 				_DBG_<<" Reconstructable event not found/fit: "<<eventnumber<<" (chisq_corrected="<<chisq_corrected<<")";
 				if(DEBUG>1)cerr<<" pt_pull="<<pt_pull<<" theta_pull="<<theta_pull<<" phi_pull="<<phi_pull;
@@ -255,7 +257,7 @@ bool DEventProcessor_trackeff_hists::isReconstructable(const DMCThrown *mcthrown
 	/// of the CDC to the downstream end of the 2nd FDC package.
 	/// This ensures that it either passes through the first 2 layers
 	/// of the outermost axial superlayer of the CDC or, the first
-	/// 2 packages of the CDC.
+	/// 2 packages of the FDC.
 	///
 	/// Note that the beam hole is not considered here. It is assumed
 	/// that efficiency plots will be made either with a cut on theta
