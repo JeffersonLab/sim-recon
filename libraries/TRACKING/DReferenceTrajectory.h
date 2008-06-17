@@ -47,7 +47,8 @@ class DReferenceTrajectory{
 									, swim_step_t *swim_steps=NULL
 									, int max_swim_steps=0
 									, double step_size=-1.0);
-
+		DReferenceTrajectory(const DReferenceTrajectory& rt);
+		DReferenceTrajectory& operator=(const DReferenceTrajectory& rt);
 		virtual ~DReferenceTrajectory();
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DReferenceTrajectory";}

@@ -370,6 +370,10 @@ DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
 				break;
 			case FIT_FAILED:
 				if(debug_level>2)_DBG_<<"Time based fit failed for candidate "<<candidateid<<" on iteration "<<Niterations<<endl;
+				if(Niterations>4){
+					if(debug_level>2)_DBG_<<"Number of iterations >4. Trying to keep fit from last iteration... "<<endl;
+					break;
+				}
 				return NULL;
 		}
 
@@ -468,19 +472,30 @@ DTrack* DTrack_factory_ALT1::FitTrackWithOppositeCharge(DReferenceTrajectory* rt
 {
 	if(debug_level>2)_DBG_<<"Fitting track with opposite charge (original:"<<(rt->q>0 ? "+":"-")<<" now:"<<(rt->q>0 ? "-":"+")<<")"<<endl;
 
-	// Re-swim track with flipped charge
-	swim_step_t &start_step = rt->swim_steps[0];
-	DVector3 pos = start_step.origin;
-	DVector3 mom = start_step.mom;
-	rt->Swim(pos, mom, -rt->q);
-	if(rt->Nswim_steps==0)return track;
-	
+	// Create a new reference trajectory with flipped charge using the
+	// original track candidate parameters
+	const DTrackCandidate *tc = eventLoop->FindByID<DTrackCandidate>(candidateid);
+	if(tc==NULL){
+		_DBG_<<"Unable to find track candidate with id="<<candidateid<<endl;
+		return NULL;
+	}
+	const DVector3 &pos = tc->position();
+	const DVector3 &mom = tc->momentum();
+	DReferenceTrajectory *myrt = new DReferenceTrajectory(bfield);
+	myrt->Swim(pos, mom, -tc->charge());
+	if(myrt->Nswim_steps==0){
+		if(debug_level>2)_DBG_<<"No swim steps when swimming opposite charged track!"<<endl;
+		delete myrt;
+		return track;
+	}
+
 	// Try fitting track
-	DTrack *track_bar = FitTrack(rt, candidateid);
+	DTrack *track_bar = FitTrack(myrt, candidateid);
 	
 	// Decide which (if any) track to keep
 	if((track==NULL) && (track_bar==NULL)){
 		if(debug_level>3)_DBG_<<"Track fits failed both q and q_bar"<<endl;
+		delete myrt;
 		return NULL;
 	}
 	if((track==NULL) && (track_bar!=NULL)){
@@ -489,21 +504,25 @@ DTrack* DTrack_factory_ALT1::FitTrackWithOppositeCharge(DReferenceTrajectory* rt
 	}
 	if((track!=NULL) && (track_bar==NULL)){
 		if(debug_level>3)_DBG_<<"Track fit failed q_bar but succeeded for q"<<endl;
+		delete myrt;
 		return track;
 	}
 	
-	// At thsis point, we have successful ( or at least not-failed) fits
+	// At this point, we have successful ( or at least not-failed) fits
 	// for both charge choices. Decided which to keep via the lower
 	// chisq. Delete the loser and return the winner.
 	if(track_bar->chisq < track->chisq){
 		if(debug_level>3)_DBG_<<"Keeping opposite charged track"<<endl;
 		delete track;
+		*rt = *myrt;
 		track = track_bar;
 	}else{
 		if(debug_level>3)_DBG_<<"Keeping original charge track"<<endl;
 		delete track_bar;
 		rt->Swim(pos, mom, -rt->q); // re-swim with original charge
 	}
+	
+	delete myrt;
 	
 	return track;
 }

@@ -44,6 +44,82 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 }
 
 //---------------------------------
+// DReferenceTrajectory    (Copy Constructor)
+//---------------------------------
+DReferenceTrajectory::DReferenceTrajectory(const DReferenceTrajectory& rt)
+{
+	/// The copy constructor will always allocate its own memory for the
+	/// swim steps and set its internal flag to indicate that is owns them
+	/// regardless of the owner of the source trajectory's.
+
+	this->Nswim_steps = rt.Nswim_steps;
+	this->q = rt.q;
+	this->max_swim_steps = rt.max_swim_steps;
+	this->own_swim_steps = true;
+	this->step_size = rt.step_size;
+	this->bfield = rt.bfield;
+	this->last_phi = rt.last_phi;
+	this->last_swim_step = rt.last_swim_step;
+	this->last_dist_along_wire = rt.last_dist_along_wire;
+	this->last_dz_dphi = rt.last_dz_dphi;
+
+	this->swim_steps = new swim_step_t[this->max_swim_steps];
+	for(int i=0; i<Nswim_steps; i++)swim_steps[i] = rt.swim_steps[i];
+}
+
+//---------------------------------
+// operator=               (Assignment operator)
+//---------------------------------
+DReferenceTrajectory& DReferenceTrajectory::operator=(const DReferenceTrajectory& rt)
+{
+	/// The assignment operator will always make sure the memory allocated
+	/// for the swim_steps is owned by the object being copied into.
+	/// If it already owns memory of sufficient size, then it will be
+	/// reused. If it owns memory that is too small, it will be freed and
+	/// a new block allocated. If it does not own its swim_steps coming
+	/// in, then it will allocate memory so that it does own it on the
+	/// way out.
+
+	// Free memory if block is too small
+	if(own_swim_steps==true && max_swim_steps<rt.Nswim_steps){
+		delete[] swim_steps;
+		swim_steps=NULL;
+	}
+	
+	// Forget memory block if we don't currently own it
+	if(!own_swim_steps){
+		swim_steps=NULL;
+	}
+
+	this->Nswim_steps = rt.Nswim_steps;
+	this->q = rt.q;
+	this->max_swim_steps = rt.max_swim_steps;
+	this->own_swim_steps = true;
+	this->step_size = rt.step_size;
+	this->bfield = rt.bfield;
+	this->last_phi = rt.last_phi;
+	this->last_swim_step = rt.last_swim_step;
+	this->last_dist_along_wire = rt.last_dist_along_wire;
+	this->last_dz_dphi = rt.last_dz_dphi;
+
+	// Allocate memory if needed
+	if(swim_steps==NULL)this->swim_steps = new swim_step_t[this->max_swim_steps];
+
+	// Copy swim steps
+	for(int i=0; i<Nswim_steps; i++)swim_steps[i] = rt.swim_steps[i];
+}
+
+//---------------------------------
+// ~DReferenceTrajectory    (Destructor)
+//---------------------------------
+DReferenceTrajectory::~DReferenceTrajectory()
+{
+	if(own_swim_steps){
+		delete[] swim_steps;
+	}
+}
+
+//---------------------------------
 // Swim
 //---------------------------------
 void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q)
@@ -94,16 +170,6 @@ if(Nswim_steps<2){
 	// frame have been recorded along with the momentum of the
 	// particle and the directions of reference trajectory
 	// coordinate system at each point.
-}
-
-//---------------------------------
-// ~DReferenceTrajectory    (Destructor)
-//---------------------------------
-DReferenceTrajectory::~DReferenceTrajectory()
-{
-	if(own_swim_steps){
-		delete[] swim_steps;
-	}
 }
 
 //---------------------------------
