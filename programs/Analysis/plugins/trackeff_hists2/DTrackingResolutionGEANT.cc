@@ -6,6 +6,7 @@
 //
 
 #include <TApplication.h>
+#include <TROOT.h>
 
 #include <iostream>
 using namespace std;
