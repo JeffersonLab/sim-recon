@@ -1,0 +1,494 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--DOCTYPE HDDS>
+
+  Hall D Geometry Data Base: Beam Line
+  ************************************
+
+     version 1.0: Initial version	-rtj
+
+     Revision 1.1 10/18/2002 
+     -added concrete shielding to the collimator housing 
+     -added the virtual detectors to this code:
+        DET1: disk intercepting entire beam upstream of collimators
+        DET2: plane perpendicular to beam just after second collimator
+        DET3: plane mounted just below the ceiling of collimator cave
+        DET4: plane perpendicular to beam just after entry to hall
+        DET5: plane perpendicular to beam at photon dump end of hall
+        DET6: plane mounted just below the ceiling inside the hall
+        DET7: plane perpendicular to beam just before the target
+     -added a steel tube containing a vacuum that goes from the back of
+      the collimator to the front of the solenoid  
+     -csg-
+
+     Revision 1.2 10/28/2002
+     -revised collimator to the heavy shielding option 
+     -added a steel tube containing a vacuum in the WALL, SHLD and ABS2 volumes
+     -repositioned DET3 to be inside the collimator housing 
+     -removed the BEAM volume from the collimator system
+     -csg-
+
+     Revision 1.3 1/9/2003
+     -shrunk the size of the vacuum tube from r=5.3 to r=2.5 in order to
+      extend the tube into the second steering magnet
+     -csg-
+
+     Revision 1.4 06/16/2003
+     -mid-shielding option
+     -modified DET1, now a cylinder placed in front of primary collimator
+     -added tungsten pin-cushion detector model into simulation
+     -csg- 
+
+     Revision 2.0 05/16/2008
+     -moved DET2 to just after the second collimator, in agreement with
+      the comments below.  Somehow it got misplaced to upstream of the
+      second collimator.  I guess no one was using it until now.
+     -added the volume CONV for the pair conversion target located inside
+      the vacuum pipe just downstream of the second sweep magnet.  Right
+      now it its material is vacuum, but the thickness of 240 microns is
+      chosen to make a 0.1% converter if the material is set to Carbon.
+ 
+
+<HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds">
+-->
+
+<section name        = "BeamLine"
+         version     = "2.0"
+         date        = "2006-11-25"
+         author      = "R.T. Jones"
+         top_volume  = "collimatorPackage"
+         specification = "v1.0">
+
+<!-- Origin of collimatorPackage is center of the entrance face of the
+     primary collimator.  					-->
+
+  <composition name="collimatorPackage">
+    <posXYZ volume="ShieldedCollimator" X_Y_Z="0.0  0.0  425.0" />
+  </composition>
+
+  <box name="SHLD" X_Y_Z="550.  550.  1250." material="Concrete"/>
+  <composition name="ShieldedCollimator" envelope="SHLD">
+    <posXYZ volume="collimatorCave" X_Y_Z="0.0  35.0  25.0" />
+  </composition>  
+ 
+  <box  name="CAVE" X_Y_Z="450. 270. 1200." material="Air" />
+  <composition name="collimatorCave" envelope="CAVE">
+    <posXYZ volume="ShieldHole" X_Y_Z="0.0 -35.0 567.5" />
+    <!--posXYZ volume="PHOL" X_Y_Z="-250.0 0.0 -100.0" rot="0  90  0" /-->
+    <posXYZ volume="collimatorStack" X_Y_Z="0.0 -35.0 -450.0"/>
+    <posXYZ volume="shieldingWall" X_Y_Z="0.0  0.0  592.5" />     
+    <posXYZ volume="DET2" X_Y_Z="0.0  0.0  225.0" />
+    <posXYZ volume="DET3" X_Y_Z="0.0  132.0  0.0" />
+  </composition>
+ 
+  <tubs name="BEAM" Rio_Z="0.0  0.25 1200." material="Air" />
+  <composition name="collimatorSubCave">
+    <!--posXYZ volume="BEAM" X_Y_Z="0.0  0.0  125.0"  /-->
+    <posXYZ volume="collimatorStack" />
+  </composition>
+
+  <composition name="collimatorStack">
+    <posXYZ volume="ColDetector" X_Y_Z="0.0  0.0  -2.2"/>
+    <posXYZ volume="DET1" X_Y_Z="0.0  0.0  -5.5" />
+    <posXYZ volume="COL1" X_Y_Z="0.0  0.0  15.0" />
+    <posXYZ volume="sweepMagnet1" X_Y_Z="0.0 0.0 75." rot="90 0 0" />
+    <posXYZ volume="shieldingBlock1" X_Y_Z="0.0  0.0  210." />
+    <posXYZ volume="ConcreteBlock1" X_Y_Z="0.0  0.0  400." /> 
+    <posXYZ volume="COL2" X_Y_Z="0.0  0.0  645." />
+    <posXYZ volume="sweepMagnet2" X_Y_Z="0.0 0.0 705." rot="90 0 0" />
+    <posXYZ volume="CaveHole1" X_Y_Z="0.0 0.0 735." />
+    <posXYZ volume="shieldingBlock2" X_Y_Z="0.0  0.0  790." />
+    <posXYZ volume="CaveHole2" X_Y_Z="0.0  0.0  860.0" /> 
+    <posXYZ volume="ConcreteBlock2" X_Y_Z="0.0  25.0  930.0" />
+    <posXYZ volume="CaveHole3" X_Y_Z="0.0  0.0  1035.0" />
+  </composition>
+
+  <composition name="shieldingWall" envelope="WALL">
+    <posXYZ volume="WallHole" X_Y_Z="0.0  -35.0  0.0"/>
+  </composition>
+  <composition name="shieldingBlock1" envelope="ABS1">
+    <posXYZ volume="HOL1" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+  <composition name="shieldingBlock2" envelope="ABS2">
+    <posXYZ volume="Absorber2Hole" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+  
+  <composition name="sweepMagnet1" envelope="MAG1">
+    <posXYZ volume="POL1" X_Y_Z="0.0 0.0 -8.0" />
+    <posXYZ volume="POL1" X_Y_Z="0.0 0.0 +8.0" />
+    <posXYZ volume="GAP1" X_Y_Z="-5.5 0.0 0.0" />
+    <posXYZ volume="GAP1" X_Y_Z="+5.5 0.0 0.0" />
+  </composition>
+
+  <composition name="sweepMagnet2" envelope="MAG2">
+    <posXYZ volume="POL2" X_Y_Z="0.0 0.0 -8.75" />
+    <posXYZ volume="POL2" X_Y_Z="0.0 0.0 +8.75" />
+    <posXYZ volume="GAP2" X_Y_Z="-6.25 0.0 0.0" />
+    <posXYZ volume="GAP2" X_Y_Z="+6.25 0.0 0.0" />
+    <posXYZ volume="MagnetHole" X_Y_Z="0.0 0.0 0.0" rot="90 0 0" />
+  </composition>
+
+  <composition name="WallHole" envelope="OWHO">
+    <posXYZ volume="IWHO" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+
+  <composition name="ShieldHole" envelope="OSHO">
+    <posXYZ volume="ISHO" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+
+  <composition name="MagnetHole" envelope="OMHO">
+    <posXYZ volume="InnerMagnetHole" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+
+  <composition name="CaveHole1" envelope="OCH1">
+    <posXYZ volume="PairConverter" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+
+  <composition name="PairConverter" envelope="ICH1">
+    <posXYZ volume="CONV" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+
+  <composition name="CaveHole2" envelope="OCH2">
+    <posXYZ volume="ICH2" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+  
+  <composition name="CaveHole3" envelope="OCH3">
+    <posXYZ volume="ICH3" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+  
+  <composition name="Absorber2Hole" envelope="OAHO">
+    <posXYZ volume="IAHO" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+
+  <composition name="InnerMagnetHole" envelope="IMHO">
+    <posXYZ volume="CAP1" X_Y_Z="0.0  0.0  24.975" />
+  </composition>
+
+  <composition name="ConcreteBlock1" envelope="BLC1">
+    <posXYZ volume="BHO1" X_Y_Z="0.0 0.0 0.0" />
+  </composition>
+
+  <composition name="ConcreteBlock2" envelope="BLC2">
+    <posXYZ volume="Block2Hole" X_Y_Z="0.0 -25.0 0.0"/>
+  </composition>
+
+  <composition name="Block2Hole" envelope="OBHO">
+    <posXYZ volume="IBHO"  X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+
+  <tubs name="DET1" Rio_Z="0.    50.  2." material="Air" />
+  <box name="DET2" X_Y_Z="450.  270.  2." material="Air" />
+  <box name="DET3" X_Y_Z="450.  2.  1200." material="Air" />
+
+  <tubs name="COL1" Rio_Z="0.17 10.0  30.0" material="Tungsten" />
+  <tubs name="COL2" Rio_Z="0.50 10.0  50.0" material="Nickel" />
+  
+  <box name="MAG1" X_Y_Z="20.0 50.0 30.0" material="Air">
+    <apply region="sweepDipoleBfield" />
+  </box>
+  <box name="POL1" X_Y_Z="20.0 50.0 14.0" material="Iron" />
+  <box name="GAP1" X_Y_Z=" 9.0 50.0  2.0" material="Lead" />
+  
+  <box name="MAG2" X_Y_Z="20.0 50.0 30.0" material="Air">
+    <apply region="sweepDipoleBfield" />
+  </box>
+  <box name="POL2" X_Y_Z="20.0 50.0 12.5" material="Iron" />
+  <box name="GAP2" X_Y_Z=" 7.5 50.0  5.0" material="Lead" />
+  <tubs name="IMHO" Rio_Z="0.0 2.2 50.0"  material="Vacuum" />
+  <tubs name="OMHO" Rio_Z="0.0 2.5 50.0" material="Iron" /> 
+  <tubs name="CAP1" Rio_Z="0.0  2.2  0.05"  material="Mylar" />
+  <tubs name="CONV" Rio_Z="0.0  2.0  0.0240"  material="Vacuum"
+        comment="set to Carbon for 0.1% converter, vacuum to remove" />
+
+  <tubs name="ICH1" Rio_Z="0.0 2.2 10.0" material="Vacuum"/>
+  <tubs name="OCH1" Rio_Z="0.0 2.5 10.0" material="Iron"/>
+
+  <tubs name="ICH2" Rio_Z="0.0  2.2  40.0" material="Vacuum"/>
+  <tubs name="OCH2" Rio_Z="0.0  2.5  40.0" material="Iron" />
+
+  <tubs name="ICH3" Rio_Z="0.0  2.2  110.0" material="Vacuum"/>
+  <tubs name="OCH3" Rio_Z="0.0  2.5  110.0" material="Iron" />
+
+  <box name="ABS1" X_Y_Z="50.0 50.0 200." material="Iron" />
+  <box name="HOL1" X_Y_Z=" 2.0  2.0 200." material="Air" />
+  
+  <box name="ABS2" X_Y_Z="100. 100. 100." material="Iron" />
+  <tubs name="IAHO" Rio_Z="0.0  2.2  100." material="Vacuum" />
+  <tubs name="OAHO" Rio_Z="0.0  2.5  100." material="Iron" />
+   
+  <box name="BLC1" X_Y_Z="200.0  200.0 100.0" material="Concrete" /> 
+  <box name="BHO1" X_Y_Z="2.0  2.0  100.0" material="Air" />
+
+  <box name="BLC2" X_Y_Z="400.0 250.0 100.0" material="Concrete" />
+  <tubs name="IBHO" Rio_Z="0.0  2.2  100.0" material="Vacuum" />
+  <tubs name="OBHO" Rio_Z="0.0 2.5 100.0" material="Iron" />
+
+  <box name="WALL" X_Y_Z="470. 270. 15.0" material="Lead" />
+  <tubs name="IWHO" Rio_Z="0.0  2.2 15.0" material="Vacuum" />
+  <tubs name="OWHO" Rio_Z="0.0  2.5 15.0" material="Iron" />
+
+  <tubs name="ISHO" Rio_Z="0.0 2.2 35.0" material="Vacuum" />
+  <tubs name="OSHO" Rio_Z="0.0 2.5 35.0" material="Iron" />
+
+  <tubs name="PHOL" Rio_Z="0.0 100.0 50.0" material="Air" />
+
+<!-- Inside the above collimatorPackage is embedded a series of sections
+     of a single vacuum pipe that starts inside the second sweeping
+     magnet.  The beamPipe composition extends the vacuum all the way
+     to the position of the target.
+
+     Origin of beamPipe is center of the hall.
+-->
+
+  <box name="DET4" X_Y_Z="1700.0  1200.0  2.0" material="Air" /> 
+  <box name="DET5" X_Y_Z="1700.0  1200.0  2.0" material="Air" />
+  <box name="DET6" X_Y_Z="1700.0  2.0  3000.0" material="Air" />
+  <box name="DET7" X_Y_Z="1700.0  1200.0  2.0" material="Air" />
+  
+  <tubs name="IHPI" Rio_Z="0.0  2.2  908.0" material="Vacuum" />
+  <tubs name="OHPI" Rio_Z="0.0  2.5  908.0" material="Iron" />
+  <tubs name="CAP2" Rio_Z="0.0  2.2  0.05"   material="Mylar" />
+    
+  <composition name="InnerHallPipe" envelope="IHPI" >
+    <posXYZ volume="CAP2" X_Y_Z="0.0  0.0  453.975" />
+  </composition>
+
+  <composition name="HallPipe" envelope="OHPI" >
+    <posXYZ volume="InnerHallPipe" X_Y_Z="0.0 0.0 0.0"/> 
+  </composition>
+
+  <composition name="beamPipe">
+    <posXYZ volume="DET4"     X_Y_Z="  0.0     0.0 -1400.0"/> 
+    <posXYZ volume="DET5"     X_Y_Z="  0.0     0.0  1400.0"/> 
+    <posXYZ volume="DET6"     X_Y_Z="  0.0   600.0     0.0"/>
+    <posXYZ volume="DET7"     X_Y_Z="  0.0     0.0  -591.0"/>
+    <posXYZ volume="HallPipe" X_Y_Z="150.0  -350.0 -1046.0"/>  
+  </composition>
+
+<!-- Following is the definition of the active collimator.  It sits
+     on the upstream end of the primary collimator and acts as an
+     active absorber with segmented detection of the beam intensity.
+-->
+
+  <composition name="ColDetector" envelope="INSU">
+    <posXYZ volume="ColAssemblyFinal" X_Y_Z="0.0 0.0 0.50"/>
+    <posXYZ volume="HOUF" X_Y_Z="0.0  0.0  -1.85"/>
+  </composition>
+
+  <composition name="ColAssemblyFinal" envelope="HOUS">
+    <posXYZ volume="ColAssemblyInitial" X_Y_Z="0.0  0.0  -0.15"/>
+  </composition>
+  
+  <composition name="ColAssemblyInitial" envelope="AIRH">
+    <mposPhi volume="DIV1" ncopy="4" Phi0="0" dPhi="90" R_Z="3.375 0."/>  
+    <posXYZ  volume="DIV2" X_Y_Z="0.0  0.0  0.0"/>  
+    <mposPhi volume="innerPinCushionWedge" ncopy="4" Phi0="45" dPhi="90" />
+    <mposPhi volume="outerPinCushionWedge" ncopy="4" Phi0="45" dPhi="90" />
+  </composition>
+
+  <tubs name="INSU" Rio_Z="0.25   7.36  4.20" material="BoronNitride"/>
+ 
+  <tubs name="HOUS" Rio_Z="0.25   6.70  3.20" material="Aluminum" />
+ 
+  <tubs name="HOUF" Rio_Z="0.25   6.85  0.50" material="Aluminum"/>
+ 
+  <tubs name="AIRH" Rio_Z="0.25   6.5  2.9" material="Air" />
+  <box  name="DIV1" X_Y_Z="6.25  0.1  2.9" material="Aluminum" />
+  <tubs name="DIV2" Rio_Z="2.7   2.8  2.9" material="Aluminum" />
+
+  <composition name="innerPinCushionWedge" envelope="ACWI">
+    <posXYZ volume="ACBI" X_Y_Z="0.0 0.0 -0.85" />
+    <posXYZ volume="innerPinCushionRing_1" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="innerPinCushionRing_2" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="innerPinCushionRing_3" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="innerPinCushionRing_4" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="innerPinCushionRing_5" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="innerPinCushionRing_6" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="innerPinCushionRing_7" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="innerPinCushionRing_8" X_Y_Z="0.0 0.0 0.40" />
+  </composition>
+  <composition name="innerPinCushionRing_1" envelope="AIR1">
+    <mposPhi volume="innerPinCushionSector_1" ncopy="3"
+                                              Phi0="-15.0" dPhi="15.0" />
+  </composition>
+  <composition name="innerPinCushionRing_2" envelope="AIR2">
+    <mposPhi volume="innerPinCushionSector_2" ncopy="4"
+                                              Phi0="-18.0" dPhi="12.0" />
+  </composition>
+  <composition name="innerPinCushionRing_3" envelope="AIR3">
+    <mposPhi volume="innerPinCushionSector_3" ncopy="5"
+                                              Phi0="-20.0" dPhi="10.0" />
+  </composition>
+  <composition name="innerPinCushionRing_4" envelope="AIR4">
+    <mposPhi volume="innerPinCushionSector_4" ncopy="6"
+                                              Phi0="-21.43" dPhi="8.57" />
+  </composition>
+  <composition name="innerPinCushionRing_5" envelope="AIR5">
+    <mposPhi volume="innerPinCushionSector_5" ncopy="7"
+                                              Phi0="-22.5" dPhi="7.5" />
+  </composition>
+  <composition name="innerPinCushionRing_6" envelope="AIR6">
+    <mposPhi volume="innerPinCushionSector_6" ncopy="8"
+                                              Phi0="-23.33" dPhi="6.67" />
+  </composition>
+  <composition name="innerPinCushionRing_7" envelope="AIR7">
+    <mposPhi volume="innerPinCushionSector_7" ncopy="9"
+                                              Phi0="-24.0" dPhi="6.0" />
+  </composition>
+  <composition name="innerPinCushionRing_8" envelope="AIR8">
+    <mposPhi volume="innerPinCushionSector_8" ncopy="10"
+                                              Phi0="-24.55" dPhi="5.45" />
+  </composition>
+  <composition name="innerPinCushionSector_1" envelope="AIS1">
+    <posXYZ volume="PIN1" X_Y_Z="0.300 0.0 0.0" />
+  </composition>
+  <composition name="innerPinCushionSector_2" envelope="AIS2">
+    <posXYZ volume="PIN1" X_Y_Z="0.375 0.0 0.0" />
+  </composition>
+  <composition name="innerPinCushionSector_3" envelope="AIS3">
+    <posXYZ volume="PIN1" X_Y_Z="0.450 0.0 0.0" />
+  </composition>
+  <composition name="innerPinCushionSector_4" envelope="AIS4">
+    <posXYZ volume="PIN1" X_Y_Z="0.525 0.0 0.0" />
+  </composition>
+  <composition name="innerPinCushionSector_5" envelope="AIS5">
+    <posXYZ volume="PIN1" X_Y_Z="0.600 0.0 0.0" />
+  </composition>
+  <composition name="innerPinCushionSector_6" envelope="AIS6">
+    <posXYZ volume="PIN1" X_Y_Z="0.675 0.0 0.0" />
+  </composition>
+  <composition name="innerPinCushionSector_7" envelope="AIS7">
+    <posXYZ volume="PIN1" X_Y_Z="0.750 0.0 0.0" />
+  </composition>
+  <composition name="innerPinCushionSector_8" envelope="AIS8">
+    <posXYZ volume="PIN1" X_Y_Z="0.825 0.0 0.0" />
+  </composition>
+
+  <composition name="outerPinCushionWedge" envelope="ACWO">
+    <posXYZ volume="ACBO" X_Y_Z="0.0 0.0 -0.85" />
+    <posXYZ volume="outerPinCushionRing_1" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRing_2" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRing_3" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRing_4" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRing_5" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRing_6" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRing_7" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRing_8" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRing_9" X_Y_Z="0.0 0.0 0.40" />
+  </composition>
+  <composition name="outerPinCushionRing_1" envelope="AOR1">
+    <mposPhi volume="outerPinCushionSector_1" ncopy="40"
+                                              Phi0="-28.660" dPhi="1.463" />
+  </composition>
+  <composition name="outerPinCushionRing_2" envelope="AOR2">
+    <mposPhi volume="outerPinCushionSector_2" ncopy="41"
+                                              Phi0="-28.668" dPhi="1.429" />
+  </composition>
+  <composition name="outerPinCushionRing_3" envelope="AOR3">
+    <mposPhi volume="outerPinCushionSector_3" ncopy="42"
+                                              Phi0="-28.686" dPhi="1.395" />
+  </composition>
+  <composition name="outerPinCushionRing_4" envelope="AOR4">
+    <mposPhi volume="outerPinCushionSector_4" ncopy="43"
+                                              Phi0="-28.703" dPhi="1.364" />
+  </composition>
+  <composition name="outerPinCushionRing_5" envelope="AOR5">
+    <mposPhi volume="outerPinCushionSector_5" ncopy="44"
+                                              Phi0="-28.718" dPhi="1.333" />
+  </composition>
+  <composition name="outerPinCushionRing_6" envelope="AOR6">
+    <mposPhi volume="outerPinCushionSector_6" ncopy="45"
+                                              Phi0="-28.733" dPhi="1.304" />
+  </composition>
+  <composition name="outerPinCushionRing_7" envelope="AOR7">
+    <mposPhi volume="outerPinCushionSector_7" ncopy="46"
+                                              Phi0="-28.748" dPhi="1.277" />
+  </composition>
+  <composition name="outerPinCushionRing_8" envelope="AOR8">
+    <mposPhi volume="outerPinCushionSector_8" ncopy="47"
+                                              Phi0="-28.762" dPhi="1.250" />
+  </composition>
+  <composition name="outerPinCushionRing_9" envelope="AOR9">
+    <mposPhi volume="outerPinCushionSector_9" ncopy="48"
+                                              Phi0="-28.775" dPhi="1.224" />
+  </composition>
+  <composition name="outerPinCushionSector_1" envelope="AOS1">
+    <posXYZ volume="PIN1" X_Y_Z="3.05 0.0 0.0" />
+  </composition>
+  <composition name="outerPinCushionSector_2" envelope="AOS2">
+    <posXYZ volume="PIN1" X_Y_Z="3.125 0.0 0.0" />
+  </composition>
+  <composition name="outerPinCushionSector_3" envelope="AOS3">
+    <posXYZ volume="PIN1" X_Y_Z="3.200 0.0 0.0" />
+  </composition>
+  <composition name="outerPinCushionSector_4" envelope="AOS4">
+    <posXYZ volume="PIN1" X_Y_Z="3.275 0.0 0.0" />
+  </composition>
+  <composition name="outerPinCushionSector_5" envelope="AOS5">
+    <posXYZ volume="PIN1" X_Y_Z="3.350 0.0 0.0" />
+  </composition>
+  <composition name="outerPinCushionSector_6" envelope="AOS6">
+    <posXYZ volume="PIN1" X_Y_Z="3.425 0.0 0.0" />
+  </composition>
+  <composition name="outerPinCushionSector_7" envelope="AOS7">
+    <posXYZ volume="PIN1" X_Y_Z="3.500 0.0 0.0" />
+  </composition>
+  <composition name="outerPinCushionSector_8" envelope="AOS8">
+    <posXYZ volume="PIN1" X_Y_Z="3.575 0.0 0.0" />
+  </composition>
+  <composition name="outerPinCushionSector_9" envelope="AOS9">
+    <posXYZ volume="PIN1" X_Y_Z="3.650 0.0 0.0" />
+  </composition>
+
+
+  <tubs name="ACWI" Rio_Z="0.25 2.5  2.5" profile="-30. 60."
+         material="Air" comment="active collimator inner wedge" />  
+  <tubs name="ACWO" Rio_Z="3.0  6.0  2.5" profile="-30. 60."
+         material="Air" comment="active collimator outer wedge" />  
+  <tubs name="ACBI" Rio_Z="0.25 2.5  0.8" profile="-30. 60."
+         material="SoftTungsten" comment="inner wedge base plate" />  
+  <tubs name="ACBO" Rio_Z="3.0  6.0  0.8" profile="-30. 60."
+         material="SoftTungsten" comment="outer wedge base plate" />  
+
+  <tubs name="AIR1" Rio_Z="0.25 0.33 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AIS1" Rio_Z="0.25 0.33 1.7" profile="-10. 20." material="Air" />
+  <tubs name="AIR2" Rio_Z="0.33 0.42 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AIS2" Rio_Z="0.33 0.42 1.7" profile="-7.5 15." material="Air" />
+  <tubs name="AIR3" Rio_Z="0.42 0.49 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AIS3" Rio_Z="0.42 0.49 1.7" profile="-6.0 12." material="Air" />
+  <tubs name="AIR4" Rio_Z="0.49 0.56 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AIS4" Rio_Z="0.49 0.56 1.7" profile="-5. 10." material="Air" />
+  <tubs name="AIR5" Rio_Z="0.56 0.64 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AIS5" Rio_Z="0.56 0.64 1.7" profile="-4.29 8.57" material="Air" />
+  <tubs name="AIR6" Rio_Z="0.64 0.70 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AIS6" Rio_Z="0.64 0.70 1.7" profile="-3.75 7.5" material="Air" />
+  <tubs name="AIR7" Rio_Z="0.70 0.78 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AIS7" Rio_Z="0.70 0.78 1.7" profile="-3.33 6.67" material="Air" />
+  <tubs name="AIR8" Rio_Z="0.78 0.85 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AIS8" Rio_Z="0.78 0.85 1.7" profile="-3.0 6.0" material="Air" />
+
+  <tubs name="AOR1" Rio_Z="3.00 3.08 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AOS1" Rio_Z="3.00 3.08 1.7" profile="-0.732 1.463" material="Air" />
+  <tubs name="AOR2" Rio_Z="3.08 3.16 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AOS2" Rio_Z="3.08 3.16 1.7" profile="-0.715 1.429" material="Air" />
+  <tubs name="AOR3" Rio_Z="3.16 3.24 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AOS3" Rio_Z="3.16 3.24 1.7" profile="-0.698 1.395" material="Air" />
+  <tubs name="AOR4" Rio_Z="3.24 3.32 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AOS4" Rio_Z="3.24 3.32 1.7" profile="-0.682 1.364" material="Air" />
+  <tubs name="AOR5" Rio_Z="3.32 3.38 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AOS5" Rio_Z="3.32 3.38 1.7" profile="-0.667 1.333" material="Air" />
+  <tubs name="AOR6" Rio_Z="3.38 3.46 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AOS6" Rio_Z="3.38 3.46 1.7" profile="-0.652 1.304" material="Air" />
+  <tubs name="AOR7" Rio_Z="3.46 3.54 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AOS7" Rio_Z="3.46 3.54 1.7" profile="-0.639 1.277" material="Air" />
+  <tubs name="AOR8" Rio_Z="3.54 3.62 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AOS8" Rio_Z="3.54 3.62 1.7" profile="-0.625 1.250" material="Air" />
+  <tubs name="AOR9" Rio_Z="3.62 3.70 1.7" profile="-30. 60." material="Air" />
+  <tubs name="AOS9" Rio_Z="3.62 3.70 1.7" profile="-0.612 1.224" material="Air" />
+
+  <box name="PIN1" X_Y_Z="0.04 0.04 1.7" material="SoftTungsten" />
+ 
+  <!-- there is no mcfast model of the photon beamline -->
+
+</section>
+
+<!-- </HDDS> -->
