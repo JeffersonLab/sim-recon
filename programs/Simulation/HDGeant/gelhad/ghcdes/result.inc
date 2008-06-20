@@ -1,8 +1,0 @@
-**** Sequence /result from PAM geanh321 ****
-      COMMON/RESULT/XEND,YEND,ZEND,RCA,RCE,AMAS,NCH,TOF,PX,PY,PZ,
-     *              USERW,INTCT,P,EN,EK,AMASQ,DELTN,ITK,NTK,IPART,IND,
-     *              LCALO,ICEL,SINL,COSL,SINP,COSP,
-     *              XOLD,YOLD,ZOLD,POLD,PXOLD,PYOLD,PZOLD,
-     *              XSCAT,YSCAT,ZSCAT,PSCAT,PXSCAT,PYSCAT,PZSCAT
-                    REAL NCH,INTCT
-C
