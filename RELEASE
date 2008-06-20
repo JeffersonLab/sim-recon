@@ -1,0 +1,21 @@
+
+Release Notes for Hall-D source code
+------------------------------------
+
+   URL: https://halldsvn.jlab.org/repos/tags/release-2008-06-20
+  Date: June 20, 2008
+Author: David Lawrence davidl@jlab.org
+
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Fedora Core6 (Zod) on i686  32-bit
+------------
+  Xerces 2.8
+  JANA 0.4.6
+  ROOT 5.18/00 (root_v5.18.00_rhel5)
+  lesstif 0.95.0 (release 20.fc6)
+  gcc 4.1.1 (20061011 (Red Hat 4.1.1-30))
+
+
