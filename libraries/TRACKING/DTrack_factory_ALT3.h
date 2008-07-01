@@ -6,6 +6,7 @@
 #include <DMatrix.h>
 #include <TH2.h>
 #include <TH3.h>
+#include <DVector3.h>
 
 #include <JANA/JFactory.h>
 #include <JANA/JGeometry.h>
@@ -16,7 +17,7 @@ using namespace jana;
 #include "DTrack.h"
 #include "DReferenceTrajectory.h"
 #include "DCoordinateSystem.h"
-
+#include "FDC/DFDCSegment.h"
 
 
 
@@ -33,6 +34,10 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
   ~DTrack_factory_ALT3();
   const char* Tag(void){return "ALT3";}
 
+  jerror_t GetPositionAndMomentum(const DFDCSegment *segment,
+				  DVector3 &pos, DVector3 &mom);
+
+  
   typedef DReferenceTrajectory::swim_step_t swim_step_t;
 
  private:

@@ -12,6 +12,7 @@ using namespace jana;
 #include "DTrack_factory_ALT3.h"
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
+#include "FDC/DFDCSegment.h"
 #include "DKalmanFilter.h"
 #include "DReferenceTrajectory.h"
 
@@ -80,51 +81,71 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
   
   // Loop over track candidates
   for(unsigned int i=0; i<trackcandidates.size(); i++){ 
-    const DTrackCandidate *tc = trackcandidates[i];
-    DReferenceTrajectory *rt = rtv[i];
+    const DTrackCandidate *tc = trackcandidates[i];    
+    vector<const DFDCSegment *>segments;
+    tc->GetT(segments);
 
-    // Initialize energy loss sum
+     // Initialize energy loss sum
     double dEsum=0.;
-
-     // Find reference trajectory by swimming through the field
-    DVector3 pos = tc->position();
-    DVector3 mom = tc->momentum(); 	
-
-    rt->Swim(pos, mom, tc->charge());
+    unsigned int num_matched_hits=0;
+    DVector3 last_pos,last_mom;  
 
     // Initialize Kalman filter with B-field
     DKalmanFilter fit(bfield,dgeom);
 
-    // Add hits to be put through Kalman engine
-    unsigned int num_matched_hits=0;
-    DVector3 last_pos,last_mom;  
-    for(unsigned int j=0; j<fdctrackhits.size(); j++){
-      const DFDCPseudo *hit = fdctrackhits[j];
-      double variance=1.0; //guess for now
+    if (segments.size()==0){
+      DReferenceTrajectory *rt = rtv[i];
+      
+      // Find reference trajectory by swimming through the field
+      DVector3 pos = tc->position();
+      DVector3 mom = tc->momentum(); 	
+      
+      rt->Swim(pos, mom, tc->charge());
 
-      // Find residual 
-      pos(0)=hit->x;
-      pos(1)=hit->y;
-      pos(2)=hit->wire->origin(2);
-      double resi=rt->DistToRT(pos);
-    
-      // Use an un-normalized gaussian so that for a residual
-      // of zero, we get a probability of 1.0.
-      double p = finite(resi) ? exp(-resi*resi/2./variance):0.0;
-      if(p>=MIN_FDC_HIT_PROB){
-	// Temporary rescaling of covariance matrix
-	fit.AddHit(hit->x,hit->y,hit->wire->origin(2),100*hit->covxx,
-		   100*hit->covxy,
-		   100*hit->covyy,hit->dE);
-	const swim_step_t *last_step=rt->GetLastSwimStep();
-     
-	if (last_step!=NULL){
+      // Add hits to be put through Kalman engine
+      for(unsigned int j=0; j<fdctrackhits.size(); j++){
+	const DFDCPseudo *hit = fdctrackhits[j];
+	double variance=1.0; //guess for now
+	
+	// Find residual 
+	pos(0)=hit->x;
+	pos(1)=hit->y;
+	pos(2)=hit->wire->origin(2);
+	double resi=rt->DistToRT(pos);
+	
+	// Use an un-normalized gaussian so that for a residual
+	// of zero, we get a probability of 1.0.
+	double p = finite(resi) ? exp(-resi*resi/2./variance):0.0;
+	if(p>=MIN_FDC_HIT_PROB){
+	  // Temporary rescaling of covariance matrix
+	  fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
+		   hit->covxy,hit->covyy,hit->dE);
+	  const swim_step_t *last_step=rt->GetLastSwimStep();
+	  
+	  if (last_step!=NULL){
 	  last_pos=last_step->origin;
 	  last_mom=last_step->mom;
 	}
-	num_matched_hits++;
-	dEsum+=hit->dE;
+	  num_matched_hits++;
+	  dEsum+=hit->dE;
+	}
       }
+    }
+    else{	
+      const DFDCSegment *segment=NULL;
+      for (unsigned m=0;m<segments.size();m++){
+	segment=segments[m];
+	for (unsigned n=0;n<segment->hits.size();n++){
+	  const DFDCPseudo *hit=segment->hits[n];
+	  fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
+		     hit->covxy,hit->covyy,hit->dE);
+	  num_matched_hits++;
+	  dEsum+=hit->dE;
+	}
+
+      }
+      GetPositionAndMomentum(segment,last_pos,last_mom);
+     
     }
    
     if (num_matched_hits>=MIN_HITS){
@@ -152,7 +173,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	track->theta=mom.Theta();
 	track->chisq=fit.GetChiSq();
 	track->candidateid=tc->id;
-	track->rt=rt;
+	//track->rt=rt;
 
 	// Fill in DKinematicData part
 	track->setMass(0.0);
@@ -173,3 +194,45 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
   return NOERROR;
 }
 
+
+// Obtain position and momentum at the exit of a given package using the 
+// helical track model.
+//
+jerror_t DTrack_factory_ALT3::GetPositionAndMomentum(const DFDCSegment *segment,
+					      DVector3 &pos, DVector3 &mom){
+  // Position of track segment at last hit plane of package
+  double x=segment->xc+segment->rc*cos(segment->Phi1);
+  double y=segment->yc+segment->rc*sin(segment->Phi1);
+  double z=segment->hits[0]->wire->origin(2);
+ 
+  // Track parameters
+  double kappa=segment->S(0,0);
+  double phi0=segment->S(1,0);
+  double tanl=segment->S(3,0);
+  double z0=segment->S(4,0);
+
+  // Useful intermediate variables
+  double cosp=cos(phi0);
+  double sinp=sin(phi0);
+  double sperp=(z-z0)/tanl;
+  double sin2ks=sin(2.*kappa*sperp);
+  double cos2ks=cos(2.*kappa*sperp); 
+  kappa=fabs(kappa);  // magnitude of curvature
+
+  // Get Bfield
+  double Bx,By,Bz,B;
+  bfield->GetField(x,y,z,Bx,By,Bz);
+  B=sqrt(Bx*Bx+By*By+Bz*Bz);
+  
+  // Momentum
+  double px=(cosp*cos2ks-sinp*sin2ks)*0.003*B/2./kappa;
+  double py=(sinp*cos2ks+cosp*sin2ks)*0.003*B/2./kappa;
+  double pz=0.003*B*tanl/2./kappa;
+
+  //if (sqrt(px*px+py*py)>PT_MAX) return VALUE_OUT_OF_RANGE;
+
+  pos.SetXYZ(x,y,z);
+  mom.SetXYZ(px,py,pz);
+
+  return NOERROR;
+}
