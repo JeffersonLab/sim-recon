@@ -48,6 +48,13 @@ class DKalmanFilter{
 				DMatrix &J,DMatrix &D);
   jerror_t CalcDeriv(double z,DMatrix S, double dEdx, DMatrix &D);
 
+  jerror_t StepJacobian(DVector3 &pos,double ds,
+			DMatrix &S, double dEdx,DMatrix &J);
+  jerror_t CalcDerivAndJacobian(DVector3 &pos,double ds,
+				DMatrix S,double dEdx,
+				DMatrix &J1,DMatrix &D1);
+  jerror_t ConvertStateVector(double z,DMatrix S,DMatrix &Sc);
+
   const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   const DGeometry *geom;
 

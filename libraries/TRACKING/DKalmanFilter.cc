@@ -17,7 +17,7 @@
 #define DEDX_LH2 ( 2.856e-4) 
 #define DEDX_ROHACELL (0.4e-3) // low density carbon for now!!
 #define BEAM_RADIUS  0.1 
-#define NUM_ITER 4
+#define NUM_ITER 3
 
 bool DKalmanHit_cmp(DKalmanHit_t *a, DKalmanHit_t *b){
   return a->z>b->z;
@@ -59,9 +59,13 @@ jerror_t DKalmanFilter::SetSeed(double q,DVector3 pos, DVector3 mom){
 
 // Return the momentum at the distance of closest approach to the origin.
 void DKalmanFilter::GetMomentum(DVector3 &mom){
-  double p=fabs(1./q_over_p_);
-  double factor=sqrt(1.+tx_*tx_+ty_*ty_);
-  mom.SetXYZ(p*tx_/factor,p*ty_/factor,p/factor);
+  /*
+    double p=fabs(1./q_over_p_);
+    double factor=sqrt(1.+tx_*tx_+ty_*ty_);
+    mom.SetXYZ(p*tx_/factor,p*ty_/factor,p/factor);
+  */
+
+  mom.SetXYZ(cos(phi_)/q_over_pt_,sin(phi_)/q_over_pt_,tanl_/q_over_pt_);
 }
 
 // Return the "vertex" position (position at which track crosses beam line)
@@ -197,6 +201,87 @@ double DKalmanFilter::StepJacobian(double oldz,double newz,DMatrix &S,
   J+=delta_z*((1./6.)*J1+(1./3.)*J2+(1./3.)*J3+(1./6.)*J4);
   
   return s;
+}
+
+// Calculate the derivative and Jacobian matrices for the alternate set of 
+// parameters {q/pT, phi, tan(lambda),D,z}
+jerror_t DKalmanFilter::CalcDerivAndJacobian(DVector3 &pos,double ds,
+					     DMatrix S,double dEdx,
+					     DMatrix &J1,DMatrix &D1){
+  
+  //Direction at current point
+  double tanl=S(2,0);
+  double phi=S(1,0);
+  double cosphi=cos(phi);
+  double sinphi=sin(phi);
+  double lambda=atan(tanl);
+  double sinl=sin(lambda);
+  double cosl=cos(lambda);
+  // Other parameters
+  double q_over_pt=S(0,0);
+  double d=S(3,0);
+  double z=S(4,0);
+
+
+  //B-field and field gradient at (x,y,z)
+  double Bx,By,Bz,dBxdx,dBxdy,dBxdz,dBydx,dBydy,dBydz,dBzdx,dBzdy,dBzdz;
+  bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
+  bfield->GetFieldGradient(pos.x(),pos.y(),pos.z(),dBxdx,dBxdy,dBxdz,dBydx,
+			   dBydy,dBydz,dBzdx,dBzdy,dBzdz);
+  double B=sqrt(Bx*Bx+By*By+Bz*Bz);
+
+  // Derivative of S with respect to s
+  D1(0,0)=qBr2p*q_over_pt*q_over_pt*sinl*(By*cosphi-Bx*sinphi);
+  D1(1,0)=qBr2p*q_over_pt*(Bx*cosphi*sinl+By*sinphi*sinl-Bz*cosl);
+  D1(2,0)=qBr2p*q_over_pt*(By*cosphi-Bx*sinphi)/cosl;
+  D1(3,0)=0.;
+  D1(4,0)=sinl;
+
+  // New position 
+  pos.SetXYZ(pos.x()+cosl*cosphi*ds,pos.y()+cosl*sinphi*ds,pos.z()+sinl*ds);
+
+  return NOERROR;
+}
+
+
+// Convert between the forward parameter set {x,y,tx,ty,q/p} and the central
+// parameter set {q/pT,phi,tan(lambda),D,z}
+jerror_t DKalmanFilter::ConvertStateVector(double z,DMatrix S, DMatrix &Sc){
+  double tx=S(2,0),ty=S(3,0),q_over_p=S(4,0);
+  double tanl=1./sqrt(tx*tx+ty*ty);
+  double cosl=cos(atan(tanl));
+  Sc(0,0)=q_over_p/cosl;
+  Sc(1,0)=atan2(ty,tx);
+  Sc(2,0)=tanl;
+  Sc(3,0)=0.;
+  Sc(4,0)=z;
+  return NOERROR;
+}
+
+// Runga-Kutte for alternate parameter set {q/pT,phi,tanl(lambda),D,z}
+jerror_t DKalmanFilter::StepJacobian(DVector3 &pos,double ds,
+				     DMatrix &S,
+				     double dEdx,DMatrix &J){
+   // Initialize the Jacobian matrix
+  J.Zero();
+  for (int i=0;i<5;i++) J(i,i)=1.;
+  // Matrices for intermediate steps
+  DMatrix J1(5,5),J2(5,5),J3(5,5),J4(5,5);  
+  DMatrix D1(5,1),D2(5,1),D3(5,1),D4(5,1);
+  
+  CalcDerivAndJacobian(pos,ds/2.,S,dEdx,J1,D1);
+  CalcDerivAndJacobian(pos,0.,S+0.5*ds*D1,dEdx,J2,D2);
+  J2=J2+0.5*J2*J1;
+  CalcDerivAndJacobian(pos,ds/2.,S+0.5*ds*D2,dEdx,J3,D3);
+  J3=J3+0.5*J3*J2;
+  CalcDerivAndJacobian(pos,0.,S+ds*D3,dEdx,J4,D4);
+  J4=J4+J4*J3;
+
+  // New state vector and Jacobian matrix
+  S+=ds*((1./6.)*D1+(1./3.)*D2+(1./3.)*D3+(1./6.)*D4);
+  J+=ds*((1./6.)*J1+(1./3.)*J2+(1./3.)*J3+(1./6.)*J4);
+  
+  return NOERROR;
 }
 
 // Compute contributions to the covariance matrix due to multiple scattering
@@ -445,56 +530,49 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
 
   // Next treat the CDC endplate
   oldz=endz;
-  double r=sqrt(S(0,0)*S(0,0)+S(1,0)*S(1,0)); // current radius
-  if (r>endplate_rmin){
-    for (int i=0;i<4;i++){
-       newz=oldz-endplate_dz/4.;
-       dedx=GetdEdx(0.14,S(4,0),6.,12.,2.265);
-       StepJacobian(oldz,newz,S,dedx,J);  
-       J_T=DMatrix(DMatrix::kTransposed,J);  
-       C=J*(C*J_T);
-       oldz=newz;
-    }
-    endz=newz;
-  }
-
-  // Propagate track to point of distance of closest approach to origin
-  num_inc=int((endz-0.)/0.5);
-  SBest=S;
-  oldz=endz;
-  r=sqrt(S(0,0)*S(0,0)+S(1,0)*S(1,0));
-  double rmin=r;
-  while (oldz>0. && rmin>BEAM_RADIUS){
-    if (r<rmin){
-      rmin=r;
-      SBest=S;
-      z_=oldz;
-    }
-    
-    if (oldz>targ_wall[2])
-      newz=oldz-0.5;
+  double r=0.;
+  for (int i=0;i<4;i++){
+    newz=oldz-endplate_dz/4.;
+    r=sqrt(S(0,0)*S(0,0)+S(1,0)*S(1,0));
+    if (r>endplate_rmin)
+      dedx=GetdEdx(0.14,S(4,0),6.,12.,2.265);
     else
-      newz=oldz-0.1;
-    /* This bit doesn't work yet...
-    if (r<targ_wall[1] && r>targ_wall[0] && newz<=targ_wall[2])
-      dedx=DEDX_ROHACELL;
-    else if (r<target[1] && newz<=target[2]) 
-      dedx=DEDX_LH2;
-    */
-    dedx=0.;
+      dedx=GetdEdx(0.14,S(4,0),7.,14.,1.205e-3);
     StepJacobian(oldz,newz,S,dedx,J);  
     J_T=DMatrix(DMatrix::kTransposed,J);  
     C=J*(C*J_T);
-    r=sqrt(S(0,0)*S(0,0)+S(1,0)*S(1,0));   
     oldz=newz;
   }
+  endz=newz;
+
+  // Convert state vector into a version more useful for central region
+  DMatrix Sc(5,1);
+  DMatrix Jc(5,5);
+  ConvertStateVector(oldz,S,Sc);
+  DVector3 pos(S(0,0),S(1,0),oldz);
+ 
+  // Propagate track to point of distance of closest approach to origin
+  r=pos.Perp();
+  ds=-1.; // 1 cm step along path
+  double r_old=r;
+  while (Sc(4,0)>0. && r>BEAM_RADIUS){
+    dedx=0.;
+    StepJacobian(pos,ds,Sc,dedx,Jc);
+    r=pos.Perp();
+    if (r>r_old) { // Passed through minimum doca to beamline
+      break;
+    }
+    // Store current parameters
+    r_old=r;
+    SBest=Sc;
+    x_=pos.x();
+    y_=pos.y();
+  }
   
-  // Fitted track parameters at vertex
-  x_=SBest(0,0);
-  y_=SBest(1,0);
-  tx_=SBest(2,0);
-  ty_=SBest(3,0);
-  q_over_p_=SBest(4,0);
+  z_=SBest(4,0);
+  phi_=SBest(1,0);
+  q_over_pt_=SBest(0,0);
+  tanl_=SBest(2,0);
 
   return NOERROR;
 }
