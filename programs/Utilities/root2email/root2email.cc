@@ -18,6 +18,7 @@ using namespace std;
 #include <TFrame.h>
 #include <TFile.h>
 #include <TH2F.h>
+#include <TROOT.h>
 
 char *filename = "mctrk_ana.root";
 
@@ -89,8 +90,8 @@ void AddPlot(TFile &f, string histname)
 	plot_t plot;
 	stringstream mess;
 
-	TH1F *hist=NULL;
-	f.GetObject(histname.c_str(), hist);
+	TH1F *hist=(TH1F*)gROOT->FindObject(histname.c_str());
+	//f.GetObject(histname.c_str(), hist);
 	if(!hist){
 		mess<<"Unable to read in histogram '"<<histname<<"' !";
 		plot.gif_file = string("");
