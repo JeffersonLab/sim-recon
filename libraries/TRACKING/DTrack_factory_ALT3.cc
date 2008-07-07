@@ -119,7 +119,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	if(p>=MIN_FDC_HIT_PROB){
 	  // Temporary rescaling of covariance matrix
 	  fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
-		   hit->covxy,hit->covyy,hit->dE);
+		   hit->covyy,hit->covxy,hit->dE);
 	  const swim_step_t *last_step=rt->GetLastSwimStep();
 	  
 	  if (last_step!=NULL){
@@ -138,7 +138,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	for (unsigned n=0;n<segment->hits.size();n++){
 	  const DFDCPseudo *hit=segment->hits[n];
 	  fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
-		     hit->covxy,hit->covyy,hit->dE);
+		     hit->covyy,hit->covxy,hit->dE);
 	  num_matched_hits++;
 	  dEsum+=hit->dE;
 	}
