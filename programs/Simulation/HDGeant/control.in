@@ -19,7 +19,7 @@ c process the following 100 input events and stop.  If the end of the file is
 c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
 cINFILE 'rhop.hddm'
-TRIG 1000
+TRIG 100000
 RUNG 9999
 
 c The BEAM card configures the built-in coherent bremsstralung photon
