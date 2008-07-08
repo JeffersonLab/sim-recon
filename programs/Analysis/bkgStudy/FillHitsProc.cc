@@ -8,12 +8,11 @@
 #include "FillHitsProc.h"
 
 #include "FCAL/DFCALHit.h"
-#include "BCAL/DBCALHit.h"
+#include "BCAL/DHDDMBCALHit.h"
 #include "CDC/DCDCHit.h"
 #include "FDC/DFDCHit.h"
 #include "TOF/DHDDMTOFHit.h"
 #include "START_COUNTER/DSCHit.h"
-#include "UPV/DUPVHit.h"
 
 //------------------
 // init
@@ -39,7 +38,6 @@ jerror_t FillHitsProc::init(void)
   m_bcalHitTree->Branch( "module", m_module, "module[nHits]/F" );
   m_bcalHitTree->Branch( "layer", m_layer, "layer[nHits]/F" );
   m_bcalHitTree->Branch( "sector", m_sector, "sector[nHits]/F" );
-  m_bcalHitTree->Branch( "end", m_end, "end[nHits]/F" );
   m_bcalHitTree->Branch( "E", m_E, "E[nHits]/F" );
   m_bcalHitTree->Branch( "t", m_t, "t[nHits]/F" );
 
@@ -86,16 +84,6 @@ jerror_t FillHitsProc::init(void)
   m_ckovFile->cd();
   m_ckovHitTree = new TTree( "ckovHits", "Cherenkov Hits" );
   
-  m_upvFile = new TFile( "upv_hits.root", "RECREATE" );
-  m_upvFile->cd();
-  m_upvHitTree = new TTree( "upvHits", "UPV Hits" );
-  m_upvHitTree->Branch( "nHits", &m_nHits, "nHits/I" );
-  m_upvHitTree->Branch( "layer", m_layer, "layer[nHits]/F" );
-  m_upvHitTree->Branch( "row", m_row, "row[nHits]/F" );
-  m_upvHitTree->Branch( "E", m_E, "E[nHits]/F" );
-  m_upvHitTree->Branch( "t", m_t, "t[nHits]/F" );
-  m_upvHitTree->Branch( "end", m_end, "end[nHits]/F" );
-
   return NOERROR;
 }
 
@@ -131,7 +119,7 @@ jerror_t FillHitsProc::evnt(JEventLoop *loop, int eventnumber)
   m_fcalHitTree->Fill();
 
   // BCAL Hits:
-  vector<const DBCALHit*> bcalHitVect;
+  vector<const DHDDMBCALHit*> bcalHitVect;
   loop->Get( bcalHitVect );
 	
   m_nHits = bcalHitVect.size();
@@ -142,7 +130,6 @@ jerror_t FillHitsProc::evnt(JEventLoop *loop, int eventnumber)
     m_module[i] = bcalHitVect[i]->module;
     m_layer[i] = bcalHitVect[i]->layer;
     m_sector[i] = bcalHitVect[i]->sector;
-    m_end[i] = bcalHitVect[i]->end;
     m_E[i] = bcalHitVect[i]->E;
     m_t[i] = bcalHitVect[i]->t;
   }
@@ -219,25 +206,6 @@ jerror_t FillHitsProc::evnt(JEventLoop *loop, int eventnumber)
   }
 
   m_startHitTree->Fill();
-
-
-  // UPV Hits:
-  vector<const DUPVHit*> upvHitVect;
-  loop->Get( upvHitVect );
-
-  m_nHits = upvHitVect.size();
-  assert( m_nHits < kMaxHits );
-
- for( int i = 0; i < m_nHits; ++i ){
-
-   m_E[i] = upvHitVect[i]->E;
-   m_t[i] = upvHitVect[i]->t;
-   m_end[i] = upvHitVect[i]->side;
-   m_layer[i] = upvHitVect[i]->layer;
-   m_row[i] = upvHitVect[i]->row;
- }
-
-  m_upvHitTree->Fill();
       
   return NOERROR;
 }

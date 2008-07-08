@@ -12,6 +12,8 @@
 #include "TFile.h"
 #include "TTree.h"
 
+using namespace jana;
+
 class FillHitsProc:public JEventProcessor{
  public:
 
@@ -50,9 +52,6 @@ class FillHitsProc:public JEventProcessor{
     TFile* m_ckovFile;
     TTree* m_ckovHitTree;
 
-    TFile* m_upvFile;
-    TTree* m_upvHitTree;
-
     int m_nHits;
     float m_x[kMaxHits];
     float m_y[kMaxHits];
@@ -66,7 +65,6 @@ class FillHitsProc:public JEventProcessor{
     float m_q[kMaxHits];
     float m_module[kMaxHits];
     float m_sector[kMaxHits];
-    float m_end[kMaxHits];
     float m_ring[kMaxHits];
     float m_straw[kMaxHits];
     float m_plane[kMaxHits];
