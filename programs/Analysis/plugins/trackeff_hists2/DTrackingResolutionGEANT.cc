@@ -9,6 +9,7 @@
 #include <TROOT.h>
 
 #include <iostream>
+#include <cstdlib>
 using namespace std;
 
 #include "DTrackingResolutionGEANT.h"
