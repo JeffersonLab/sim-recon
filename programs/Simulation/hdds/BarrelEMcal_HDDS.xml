@@ -35,6 +35,7 @@
 
   <composition name="barrelModule" envelope="BCAM">
     <apply region="nullBfield"/>
+    <posXYZ volume="BCL0" />
     <posXYZ volume="BCALlayer_1" />
     <posXYZ volume="BCALlayer_2" />
     <posXYZ volume="BCALlayer_3" />
@@ -156,7 +157,7 @@
   <composition name="BCALfatlayer_8" envelope="BCK8">
     <mposPhi volume="BCALfatsector_8" ncopy="2" Phi0="-1.875"  dPhi="3.75"
                                              impliedRot="true">
-      <layer value="11" />
+      <layer value="8" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
@@ -270,6 +271,10 @@
   <tubs name="BCAS" Rio_Z="87.46 90.0 410.0" profile="-3.75 7.5"
                     unit_length="cm" unit_angle="deg"
                     material="Aluminum" comment="bcal module support bar" />
+
+  <tubs name="BCL0" Rio_Z="64.2 65.0 390.0" profile="-3.75 7.5"
+                    unit_length="cm" unit_angle="deg"
+                    material="Aluminum" comment="bcal inside support plate" />
 
   <tubs name="BCL1" Rio_Z="65.0 67.0 410.0" profile="-3.75 7.5"
                     unit_length="cm" unit_angle="deg"
