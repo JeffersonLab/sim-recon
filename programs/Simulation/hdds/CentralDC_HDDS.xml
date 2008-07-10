@@ -95,7 +95,8 @@
     <posXYZ volume="CDClayer_20-22_option-2" />
     <posXYZ volume="CDClayer_23_option-2" />
     <posXYZ volume="CDClayer_24_option-2" />
-    <posXYZ volume="CDClayer_25_option-2" />
+    <!-- remove layer 25: B.Z. Wed Jul  9 15:20:54 EDT 2008
+    <posXYZ volume="CDClayer_25_option-2" / -->
     <posXYZ volume="CDCI" />
     <posXYZ volume="CDCO" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
