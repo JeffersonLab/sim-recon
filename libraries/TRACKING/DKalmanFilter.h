@@ -31,7 +31,7 @@ class DKalmanFilter{
   
   void GetMomentum(DVector3 &mom);
   void GetPosition(DVector3 &pos);
-  double GetChiSq(void){return chisq;}
+  double GetChiSq(void){return chisq_;}
   double GetActivePathLength(void){ return path_length;}
   double GetdEdx(double M,double q_over_p,double Z,double A, double rho);
 
@@ -39,6 +39,21 @@ class DKalmanFilter{
 
   
  private:
+  enum state_types_forward{
+    state_x,
+    state_y,
+    state_tx,
+    state_ty,
+    state_q_over_p,
+  };
+  enum state_types_central{
+    state_q_over_pt,
+    state_phi,
+    state_tanl,
+    state_D,
+    state_z,
+  };
+
   jerror_t GetProcessNoise(double mass_hyp,double ds,
 			   double X0,DMatrix S,DMatrix &Q);
   double Step(double oldz,double newz, double dEdx,DMatrix &S);
@@ -53,7 +68,9 @@ class DKalmanFilter{
   jerror_t CalcDerivAndJacobian(DVector3 &pos,double ds,
 				DMatrix S,double dEdx,
 				DMatrix &J1,DMatrix &D1);
-  jerror_t ConvertStateVector(double z,DMatrix S,DMatrix &Sc);
+  jerror_t ConvertStateVector(double z,double wire_x,double wire_y,
+			      DMatrix S,DMatrix C,DMatrix &Sc,
+			      DMatrix &Cc);
 
   const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   const DGeometry *geom;
@@ -66,7 +83,7 @@ class DKalmanFilter{
   // Alternate track parameters for central region
   double z_,phi_,R_,tanl_,q_over_pt_;
   // chi2 of fit
-  double chisq;
+  double chisq_;
 
   // For dEdx measurements
   double path_length;  // path length in active volume
