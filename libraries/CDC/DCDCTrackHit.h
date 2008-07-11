@@ -23,13 +23,14 @@ class DCDCTrackHit:public JObject{
 		float dist;					// Measured DOCA in cm
 
 		void toStrings(vector<pair<string,string> > &items)const{
+		  std::cout << "toStrings in DCDCTrackHist.h\n";
 			AddString(items, "ring", "%d", wire->ring);
 			AddString(items, "straw", "%d", wire->straw);
-			AddString(items, "x(cm)", "%3.1f", wire->origin.y());
+			AddString(items, "x(cm)", "%3.1f", wire->origin.x());
 			AddString(items, "y(cm)", "%3.1f", wire->origin.y());
 			AddString(items, "stereo(rad)", "%1.4f", wire->stereo);
 			AddString(items, "tdrift(ns)", "%3.1f", tdrift);
-			AddString(items, "dist(cm)", "%3.1f", dist);
+			AddString(items, "dist(cm)", "%1.3f", dist);
 		}
 };
 
