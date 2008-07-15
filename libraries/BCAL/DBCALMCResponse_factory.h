@@ -26,15 +26,19 @@ public:
     
 private:
 
-		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+    jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
     // mock up the sampling fraction smearing
     float samplingSmear( float E );
-    
+    float timeSmear( float t, float E );
+
     float m_cellThreshold;
     
     float m_samplingCoefA;
     float m_samplingCoefB;
+    float m_timediffCoefA;
+    float m_timediffCoefB;
+ 
     
     DRandom m_randomGen;
 };
