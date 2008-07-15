@@ -16,7 +16,7 @@
 #include <TH2F.h>
 
 #define CUT 10.
-#define RADIUS_CUT 28.
+#define RADIUS_CUT 50.0
 #define BEAM_VAR 0.01 // cm^2
 #define Z_VERTEX 65.0
 
@@ -41,12 +41,19 @@ jerror_t DTrackCandidate_factory::brun(JEventLoop* eventLoop,int runnumber){
   if(DEBUG_HISTS){
     dapp->Lock();
     match_dist=(TH2F*)gROOT->FindObject("match_dist");
-    if (!match_dist) match_dist=new TH2F("match_dist","Matching distance",
-					 60,0.,60.,100,0,25.);
+    if (!match_dist){
+      match_dist=new TH2F("match_dist","Matching distance",
+			  60,0.,60.,100,0,25.);
+      match_dist->SetXTitle("r (cm)");
+      match_dist->SetYTitle("#Deltar (cm)");
+    }
     match_dist_vs_p=(TH2F*)gROOT->FindObject("match_dist_vs_p");
-    if (!match_dist_vs_p) 
+    if (!match_dist_vs_p) {
       match_dist_vs_p=new TH2F("match_dist_vs_p","Matching distance vs p",
 			       50,0.,7.,100,0,25.);
+      match_dist_vs_p->SetYTitle("#Deltar (cm)");
+      match_dist_vs_p->SetXTitle("p (GeV/c)");
+    }
     dapp->Unlock();
   }
 
@@ -78,7 +85,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     double theta=mom.Theta();
     
     // Propagate track to CDC endplate
-    if (theta<atan(endplate_rmax/(cdc_endplate(2)-pos.z()))){
+    if (theta<M_PI/6.){      
       DMagneticFieldStepper stepper(bfield,srccan->charge()); 
       if (stepper.SwimToPlane(pos,mom,cdc_endplate,norm,NULL)==false){
 	cdc_endplate_projections.push_back(pos);
@@ -86,13 +93,19 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       }
     }
     else{
+      vector<const DCDCTrackHit *>cdchits;
+      srccan->GetT(cdchits);
+
       DTrackCandidate *can = new DTrackCandidate;
       
       can->setMass(srccan->mass());
       can->setMomentum(srccan->momentum());
       can->setPosition(srccan->position());
       can->setCharge(srccan->charge());
-      
+
+      for (unsigned int n=0;n<cdchits.size();n++)
+	can->AddAssociatedObject(cdchits[n]);    
+
       _data.push_back(can);
     }
   }
@@ -143,15 +156,14 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  if (cdctrackcandidates[cdc_index]->charge()==srccan->charge()){
 	    // Remove the CDC candidate from the list and indicate that we 
 	    // found a match
-	    cdc_forward_ids.erase(cdc_forward_ids.begin()+jmin);	  
+	    cdc_forward_ids.erase(cdc_forward_ids.begin()+jmin); 
+	    vector<const DCDCTrackHit *>cdchits;
+	    cdctrackcandidates[cdc_index]->GetT(cdchits);	  
 	    got_match=true;
 
 	    if (radius<RADIUS_CUT){
-	      vector<const DCDCTrackHit *>cdchits;
-	      cdctrackcandidates[cdc_index]->GetT(cdchits);
-	      
 	      DRiemannFit fit;
-	      for (unsigned int k=0;k<cdchits.size();k++){
+	      for (unsigned int k=0;k<cdchits.size();k++){	
 		fit.AddHit(cdchits[k]->wire->origin.x(),
 			   cdchits[k]->wire->origin.y(),
 			   cdchits[k]->wire->origin.z());
@@ -164,6 +176,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 		  double x=segments[k]->hits[n]->x;
 		  double y=segments[k]->hits[n]->y;
 		  double z=segments[k]->hits[n]->wire->origin(2);
+		
 		  fit.AddHit(x,y,z,covxx,covyy,covxy);
 		}
 	      }	
@@ -181,6 +194,12 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      double theta=srccan->momentum().Theta(); 
 	      mom.SetMagThetaPhi(pt/sin(theta),theta,srccan->momentum().Phi());
 	    }
+	    else if (segments.size()==1 && segments[0]->hits.size()<4){
+	      unsigned int cdc_index=cdc_forward_ids[jmin];
+	      double pt=cdctrackcandidates[cdc_index]->momentum().Perp();
+	      double theta=srccan->momentum().Theta(); 
+	      mom.SetMagThetaPhi(pt/sin(theta),theta,srccan->momentum().Phi());
+	    }
 
 	    // Put the candidate in the combined list
 	    DTrackCandidate *can = new DTrackCandidate;
@@ -189,6 +208,11 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    can->setMomentum(mom);
 	    can->setPosition(srccan->position());
 	    can->setCharge(srccan->charge());
+	    
+	    for (unsigned int m=0;m<segments.size();m++)
+	      can->AddAssociatedObject(segments[m]);
+	    for (unsigned int n=0;n<cdchits.size();n++)
+	      can->AddAssociatedObject(cdchits[n]); 
 	    
 	    _data.push_back(can);	    
 	  }
@@ -205,6 +229,14 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       can->setPosition(srccan->position());
       can->setCharge(srccan->charge());
       
+      for (unsigned int m=0;m<segments.size();m++)
+	 can->AddAssociatedObject(segments[m]); 
+   
+      // Try to gather up stray CDC hits from candidates that were not matched
+      // with the previous algorithm
+      
+      // .. code goes here ...
+      
       _data.push_back(can);
     }
   }
@@ -212,13 +244,18 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
   // Unmatched CDC track candidates
   for (unsigned int j=0;j<cdc_forward_ids.size();j++){	  
     DTrackCandidate *can = new DTrackCandidate;
-    const DTrackCandidate *cdccan = cdctrackcandidates[cdc_forward_ids[j]];
-    
+    const DTrackCandidate *cdccan = cdctrackcandidates[cdc_forward_ids[j]]; 
+    vector<const DCDCTrackHit *>cdchits;
+    cdccan->GetT(cdchits);
+
     can->setMass(cdccan->mass());
     can->setMomentum(cdccan->momentum());
     can->setPosition(cdccan->position());
     can->setCharge(cdccan->charge());
     
+    for (unsigned int n=0;n<cdchits.size();n++)
+      can->AddAssociatedObject(cdchits[n]);
+   
     _data.push_back(can);
   }	  
   
