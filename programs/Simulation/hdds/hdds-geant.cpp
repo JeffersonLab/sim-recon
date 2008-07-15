@@ -412,6 +412,7 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
       par[0] = phi0 * unit.deg;
       par[1] = dphi * unit.deg;
       par[2] = planeList->getLength();
+      double zlast = -1e30;
       for (int p = 0; p < planeList->getLength(); p++)
       {
          double ri, ro, zl;
@@ -420,6 +421,16 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
          XString riozS(elem->getAttribute(X("Rio_Z")));
          std::stringstream listr1(riozS);
          listr1 >> ri >> ro >> zl;
+         if (zl < zlast)
+         {
+            std::cerr
+              << APP_NAME << " error: Please re-order the polyplanes"
+              << " of volume " << S(nameS) << " so that the z-values"
+              << " are non-decreasing."
+              << std::endl;
+            exit(1);
+         }
+         zlast = zl;
          par[npar++] = zl * unit.cm;
          par[npar++] = ri * unit.cm;
          par[npar++] = ro * unit.cm;
@@ -442,6 +453,7 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
       par[1] = dphi * unit.deg;
       par[2] = segments;
       par[3] = planeList->getLength();
+      double zlast = -1e30;
       for (int p = 0; p < planeList->getLength(); p++)
       {
          double ri, ro, zl;
@@ -450,6 +462,16 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
          XString riozS(elem->getAttribute(X("Rio_Z")));
          std::stringstream listr1(riozS);
          listr1 >> ri >> ro >> zl;
+         if (zl < zlast)
+         {
+            std::cerr
+              << APP_NAME << " error: Please re-order the polyplanes"
+              << " of volume " << S(nameS) << " so that the z-values"
+              << " are non-decreasing."
+              << std::endl;
+            exit(1);
+         }
+         zlast = zl;
          par[npar++] = zl * unit.cm;
          par[npar++] = ri * unit.cm;
          par[npar++] = ro * unit.cm;
