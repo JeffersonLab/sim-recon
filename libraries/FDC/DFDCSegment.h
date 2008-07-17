@@ -16,7 +16,7 @@ using namespace jana;
 #include <sstream>
 
 // Residuals and arc length
-typedef struct fdc_track_t{
+struct fdc_track_t{
   unsigned int hit_id;
   double sign; // Sign of left-right ambiguity resolution for this hit
   double dx,dy; //residuals
