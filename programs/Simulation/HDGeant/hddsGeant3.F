@@ -5269,8 +5269,8 @@
       chshap = 'TUBE'
       nmed = 105
       npar = 3
-      par(1) = 10.12
-      par(2) = 11.8
+      par(1) = 10.14
+      par(2) = 11.84
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.122) stop 'consistency check #1 failed'
@@ -5314,8 +5314,8 @@
       chshap = 'TUBS'
       nmed = 106
       npar = 5
-      par(1) = 10.12
-      par(2) = 11.8
+      par(1) = 10.142
+      par(2) = 11.838
       par(3) = 76.25
       par(4) = -4.186
       par(5) = 4.186
@@ -5380,7 +5380,7 @@
       chname = 'STRA'
       nr = 1
       chmoth = 'DS1'
-      x = 10.96
+      x = 10.984
       y = 0
       z = 0
       irot = 0
@@ -5670,8 +5670,8 @@
       chshap = 'TUBE'
       nmed = 114
       npar = 3
-      par(1) = 11.901
-      par(2) = 13.581
+      par(1) = 11.94
+      par(2) = 13.64
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.132) stop 'consistency check #1 failed'
@@ -5691,7 +5691,7 @@
       ndiv = 50
       iaxis = 2
       step = 7.2
-      c0 = -3.6
+      c0 = 0
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -5715,8 +5715,8 @@
       chshap = 'TUBS'
       nmed = 115
       npar = 5
-      par(1) = 11.9
-      par(2) = 13.58
+      par(1) = 11.942
+      par(2) = 13.638
       par(3) = 76.25
       par(4) = -3.6
       par(5) = 3.6
@@ -5736,7 +5736,7 @@
       chname = 'STRA'
       nr = 2
       chmoth = 'DS2'
-      x = 12.741
+      x = 12.769
       y = 0
       z = 0
       irot = 0
@@ -5782,8 +5782,8 @@
       chshap = 'TUBE'
       nmed = 116
       npar = 3
-      par(1) = 13.682
-      par(2) = 15.362
+      par(1) = 13.72
+      par(2) = 15.42
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.135) stop 'consistency check #1 failed'
@@ -5803,7 +5803,7 @@
       ndiv = 57
       iaxis = 2
       step = 6.31579
-      c0 = -3.158
+      c0 = -5.263
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -5827,8 +5827,8 @@
       chshap = 'TUBS'
       nmed = 117
       npar = 5
-      par(1) = 13.68
-      par(2) = 15.36
+      par(1) = 13.722
+      par(2) = 15.418
       par(3) = 76.25
       par(4) = -3.158
       par(5) = 3.158
@@ -5848,7 +5848,7 @@
       chname = 'STRA'
       nr = 3
       chmoth = 'DS3'
-      x = 14.522
+      x = 14.555
       y = 0
       z = 0
       irot = 0
@@ -5947,7 +5947,7 @@
       chname = 'STLA'
       nr = 1
       chmoth = 'DC4'
-      x = 16.304
+      x = 16.174
       y = 0
       z = 0
       irot = 47
@@ -6046,18 +6046,18 @@
 
       irot = 48
       theta1 = 90
-      phi1 = 5.625
+      phi1 = 5.71429
       theta2 = 96
-      phi2 = 95.625
+      phi2 = 95.7143
       theta3 = 6
-      phi3 = 95.625
+      phi3 = 95.7143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 2
       chmoth = 'DC4'
-      x = 16.2255
-      y = 1.59807
+      x = 16.0936
+      y = 1.61041
       z = 0
       irot = 48
       chonly = 'ONLY'
@@ -6065,18 +6065,18 @@
 
       irot = 49
       theta1 = 90
-      phi1 = 11.25
+      phi1 = 11.4286
       theta2 = 96
-      phi2 = 101.25
+      phi2 = 101.429
       theta3 = 6
-      phi3 = 101.25
+      phi3 = 101.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 3
       chmoth = 'DC4'
-      x = 15.9907
-      y = 3.18075
+      x = 15.8533
+      y = 3.20482
       z = 0
       irot = 49
       chonly = 'ONLY'
@@ -6084,18 +6084,18 @@
 
       irot = 50
       theta1 = 90
-      phi1 = 16.875
+      phi1 = 17.1429
       theta2 = 96
-      phi2 = 106.875
+      phi2 = 107.143
       theta3 = 6
-      phi3 = 106.875
+      phi3 = 107.143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 4
       chmoth = 'DC4'
-      x = 15.602
-      y = 4.7328
+      x = 15.4554
+      y = 4.76737
       z = 0
       irot = 50
       chonly = 'ONLY'
@@ -6103,18 +6103,18 @@
 
       irot = 51
       theta1 = 90
-      phi1 = 22.5
+      phi1 = 22.8571
       theta2 = 96
-      phi2 = 112.5
+      phi2 = 112.857
       theta3 = 6
-      phi3 = 112.5
+      phi3 = 112.857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 5
       chmoth = 'DC4'
-      x = 15.0629
-      y = 6.23927
+      x = 14.904
+      y = 6.28254
       z = 0
       irot = 51
       chonly = 'ONLY'
@@ -6122,18 +6122,18 @@
 
       irot = 52
       theta1 = 90
-      phi1 = 28.125
+      phi1 = 28.5714
       theta2 = 96
-      phi2 = 118.125
+      phi2 = 118.571
       theta3 = 6
-      phi3 = 118.125
+      phi3 = 118.571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 6
       chmoth = 'DC4'
-      x = 14.3788
-      y = 7.68565
+      x = 14.2044
+      y = 7.73528
       z = 0
       irot = 52
       chonly = 'ONLY'
@@ -6141,18 +6141,18 @@
 
       irot = 53
       theta1 = 90
-      phi1 = 33.75
+      phi1 = 34.2857
       theta2 = 96
-      phi2 = 123.75
+      phi2 = 124.286
       theta3 = 6
-      phi3 = 123.75
+      phi3 = 124.286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 7
       chmoth = 'DC4'
-      x = 13.5563
-      y = 9.05802
+      x = 13.3636
+      y = 9.11114
       z = 0
       irot = 53
       chonly = 'ONLY'
@@ -6160,18 +6160,18 @@
 
       irot = 54
       theta1 = 90
-      phi1 = 39.375
+      phi1 = 40
       theta2 = 96
-      phi2 = 129.375
+      phi2 = 130
       theta3 = 6
-      phi3 = 129.375
+      phi3 = 130
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 8
       chmoth = 'DC4'
-      x = 12.6032
-      y = 10.3431
+      x = 12.39
+      y = 10.3964
       z = 0
       irot = 54
       chonly = 'ONLY'
@@ -6179,18 +6179,18 @@
 
       irot = 55
       theta1 = 90
-      phi1 = 45
+      phi1 = 45.7143
       theta2 = 96
-      phi2 = 135
+      phi2 = 135.714
       theta3 = 6
-      phi3 = 135
+      phi3 = 135.714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 9
       chmoth = 'DC4'
-      x = 11.5287
-      y = 11.5287
+      x = 11.2933
+      y = 11.5784
       z = 0
       irot = 55
       chonly = 'ONLY'
@@ -6198,18 +6198,18 @@
 
       irot = 56
       theta1 = 90
-      phi1 = 50.625
+      phi1 = 51.4286
       theta2 = 96
-      phi2 = 140.625
+      phi2 = 141.429
       theta3 = 6
-      phi3 = 140.625
+      phi3 = 141.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 10
       chmoth = 'DC4'
-      x = 10.3431
-      y = 12.6032
+      x = 10.0843
+      y = 12.6453
       z = 0
       irot = 56
       chonly = 'ONLY'
@@ -6217,18 +6217,18 @@
 
       irot = 57
       theta1 = 90
-      phi1 = 56.25
+      phi1 = 57.1429
       theta2 = 96
-      phi2 = 146.25
+      phi2 = 147.143
       theta3 = 6
-      phi3 = 146.25
+      phi3 = 147.143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 11
       chmoth = 'DC4'
-      x = 9.05802
-      y = 13.5563
+      x = 8.77514
+      y = 13.5866
       z = 0
       irot = 57
       chonly = 'ONLY'
@@ -6236,18 +6236,18 @@
 
       irot = 58
       theta1 = 90
-      phi1 = 61.875
+      phi1 = 62.8571
       theta2 = 96
-      phi2 = 151.875
+      phi2 = 152.857
       theta3 = 6
-      phi3 = 151.875
+      phi3 = 152.857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 12
       chmoth = 'DC4'
-      x = 7.68565
-      y = 14.3788
+      x = 7.37875
+      y = 14.3928
       z = 0
       irot = 58
       chonly = 'ONLY'
@@ -6255,18 +6255,18 @@
 
       irot = 59
       theta1 = 90
-      phi1 = 67.5
+      phi1 = 68.5714
       theta2 = 96
-      phi2 = 157.5
+      phi2 = 158.571
       theta3 = 6
-      phi3 = 157.5
+      phi3 = 158.571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 13
       chmoth = 'DC4'
-      x = 6.23927
-      y = 15.0629
+      x = 5.90903
+      y = 15.056
       z = 0
       irot = 59
       chonly = 'ONLY'
@@ -6274,18 +6274,18 @@
 
       irot = 60
       theta1 = 90
-      phi1 = 73.125
+      phi1 = 74.2857
       theta2 = 96
-      phi2 = 163.125
+      phi2 = 164.286
       theta3 = 6
-      phi3 = 163.125
+      phi3 = 164.286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 14
       chmoth = 'DC4'
-      x = 4.7328
-      y = 15.602
+      x = 4.38057
+      y = 15.5695
       z = 0
       irot = 60
       chonly = 'ONLY'
@@ -6293,18 +6293,18 @@
 
       irot = 61
       theta1 = 90
-      phi1 = 78.75
+      phi1 = 80
       theta2 = 96
-      phi2 = 168.75
+      phi2 = 170
       theta3 = 6
-      phi3 = 168.75
+      phi3 = 170
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 15
       chmoth = 'DC4'
-      x = 3.18075
-      y = 15.9907
+      x = 2.80859
+      y = 15.9283
       z = 0
       irot = 61
       chonly = 'ONLY'
@@ -6312,18 +6312,18 @@
 
       irot = 62
       theta1 = 90
-      phi1 = 84.375
+      phi1 = 85.7143
       theta2 = 96
-      phi2 = 174.375
+      phi2 = 175.714
       theta3 = 6
-      phi3 = 174.375
+      phi3 = 175.714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 16
       chmoth = 'DC4'
-      x = 1.59807
-      y = 16.2255
+      x = 1.20868
+      y = 16.1288
       z = 0
       irot = 62
       chonly = 'ONLY'
@@ -6331,18 +6331,18 @@
 
       irot = 63
       theta1 = 90
-      phi1 = 90
+      phi1 = 91.4286
       theta2 = 96
-      phi2 = -180
+      phi2 = -178.571
       theta3 = 6
-      phi3 = -180
+      phi3 = -178.571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 17
       chmoth = 'DC4'
-      x = 9.98299e-16
-      y = 16.304
+      x = -0.403229
+      y = 16.169
       z = 0
       irot = 63
       chonly = 'ONLY'
@@ -6350,18 +6350,18 @@
 
       irot = 64
       theta1 = 90
-      phi1 = 95.625
+      phi1 = 97.1429
       theta2 = 96
-      phi2 = -174.375
+      phi2 = -172.857
       theta3 = 6
-      phi3 = -174.375
+      phi3 = -172.857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 18
       chmoth = 'DC4'
-      x = -1.59807
-      y = 16.2255
+      x = -2.01114
+      y = 16.0485
       z = 0
       irot = 64
       chonly = 'ONLY'
@@ -6369,18 +6369,18 @@
 
       irot = 65
       theta1 = 90
-      phi1 = 101.25
+      phi1 = 102.857
       theta2 = 96
-      phi2 = -168.75
+      phi2 = -167.143
       theta3 = 6
-      phi3 = -168.75
+      phi3 = -167.143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 19
       chmoth = 'DC4'
-      x = -3.18075
-      y = 15.9907
+      x = -3.59905
+      y = 15.7685
       z = 0
       irot = 65
       chonly = 'ONLY'
@@ -6388,18 +6388,18 @@
 
       irot = 66
       theta1 = 90
-      phi1 = 106.875
+      phi1 = 108.571
       theta2 = 96
-      phi2 = -163.125
+      phi2 = -161.429
       theta3 = 6
-      phi3 = -163.125
+      phi3 = -161.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 20
       chmoth = 'DC4'
-      x = -4.7328
-      y = 15.602
+      x = -5.1512
+      y = 15.3318
       z = 0
       irot = 66
       chonly = 'ONLY'
@@ -6407,18 +6407,18 @@
 
       irot = 67
       theta1 = 90
-      phi1 = 112.5
+      phi1 = 114.286
       theta2 = 96
-      phi2 = -157.5
+      phi2 = -155.714
       theta3 = 6
-      phi3 = -157.5
+      phi3 = -155.714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 21
       chmoth = 'DC4'
-      x = -6.23927
-      y = 15.0629
+      x = -6.65216
+      y = 14.7427
       z = 0
       irot = 67
       chonly = 'ONLY'
@@ -6426,18 +6426,18 @@
 
       irot = 68
       theta1 = 90
-      phi1 = 118.125
+      phi1 = 120
       theta2 = 96
-      phi2 = -151.875
+      phi2 = -150
       theta3 = 6
-      phi3 = -151.875
+      phi3 = -150
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 22
       chmoth = 'DC4'
-      x = -7.68565
-      y = 14.3788
+      x = -8.087
+      y = 14.0071
       z = 0
       irot = 68
       chonly = 'ONLY'
@@ -6445,18 +6445,18 @@
 
       irot = 69
       theta1 = 90
-      phi1 = 123.75
+      phi1 = 125.714
       theta2 = 96
-      phi2 = -146.25
+      phi2 = -144.286
       theta3 = 6
-      phi3 = -146.25
+      phi3 = -144.286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 23
       chmoth = 'DC4'
-      x = -9.05802
-      y = 13.5563
+      x = -9.44147
+      y = 13.1323
       z = 0
       irot = 69
       chonly = 'ONLY'
@@ -6464,18 +6464,18 @@
 
       irot = 70
       theta1 = 90
-      phi1 = 129.375
+      phi1 = 131.429
       theta2 = 96
-      phi2 = -140.625
+      phi2 = -138.571
       theta3 = 6
-      phi3 = -140.625
+      phi3 = -138.571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 24
       chmoth = 'DC4'
-      x = -10.3431
-      y = 12.6032
+      x = -10.7021
+      y = 12.127
       z = 0
       irot = 70
       chonly = 'ONLY'
@@ -6483,18 +6483,18 @@
 
       irot = 71
       theta1 = 90
-      phi1 = 135
+      phi1 = 137.143
       theta2 = 96
-      phi2 = -135
+      phi2 = -132.857
       theta3 = 6
-      phi3 = -135
+      phi3 = -132.857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 25
       chmoth = 'DC4'
-      x = -11.5287
-      y = 11.5287
+      x = -11.8564
+      y = 11.0011
       z = 0
       irot = 71
       chonly = 'ONLY'
@@ -6502,18 +6502,18 @@
 
       irot = 72
       theta1 = 90
-      phi1 = 140.625
+      phi1 = 142.857
       theta2 = 96
-      phi2 = -129.375
+      phi2 = -127.143
       theta3 = 6
-      phi3 = -129.375
+      phi3 = -127.143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 26
       chmoth = 'DC4'
-      x = -12.6032
-      y = 10.3431
+      x = -12.8928
+      y = 9.76593
       z = 0
       irot = 72
       chonly = 'ONLY'
@@ -6521,18 +6521,18 @@
 
       irot = 73
       theta1 = 90
-      phi1 = 146.25
+      phi1 = 148.571
       theta2 = 96
-      phi2 = -123.75
+      phi2 = -121.429
       theta3 = 6
-      phi3 = -123.75
+      phi3 = -121.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 27
       chmoth = 'DC4'
-      x = -13.5563
-      y = 9.05802
+      x = -13.8011
+      y = 8.43369
       z = 0
       irot = 73
       chonly = 'ONLY'
@@ -6540,18 +6540,18 @@
 
       irot = 74
       theta1 = 90
-      phi1 = 151.875
+      phi1 = 154.286
       theta2 = 96
-      phi2 = -118.125
+      phi2 = -115.714
       theta3 = 6
-      phi3 = -118.125
+      phi3 = -115.714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 28
       chmoth = 'DC4'
-      x = -14.3788
-      y = 7.68565
+      x = -14.5723
+      y = 7.01764
       z = 0
       irot = 74
       chonly = 'ONLY'
@@ -6559,18 +6559,18 @@
 
       irot = 75
       theta1 = 90
-      phi1 = 157.5
+      phi1 = 160
       theta2 = 96
-      phi2 = -112.5
+      phi2 = -110
       theta3 = 6
-      phi3 = -112.5
+      phi3 = -110
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 29
       chmoth = 'DC4'
-      x = -15.0629
-      y = 6.23927
+      x = -15.1986
+      y = 5.53183
       z = 0
       irot = 75
       chonly = 'ONLY'
@@ -6578,18 +6578,18 @@
 
       irot = 76
       theta1 = 90
-      phi1 = 163.125
+      phi1 = 165.714
       theta2 = 96
-      phi2 = -106.875
+      phi2 = -104.286
       theta3 = 6
-      phi3 = -106.875
+      phi3 = -104.286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 30
       chmoth = 'DC4'
-      x = -15.602
-      y = 4.7328
+      x = -15.6739
+      y = 3.99105
       z = 0
       irot = 76
       chonly = 'ONLY'
@@ -6597,18 +6597,18 @@
 
       irot = 77
       theta1 = 90
-      phi1 = 168.75
+      phi1 = 171.429
       theta2 = 96
-      phi2 = -101.25
+      phi2 = -98.5714
       theta3 = 6
-      phi3 = -101.25
+      phi3 = -98.5714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 31
       chmoth = 'DC4'
-      x = -15.9907
-      y = 3.18075
+      x = -15.9933
+      y = 2.41061
       z = 0
       irot = 77
       chonly = 'ONLY'
@@ -6616,18 +6616,18 @@
 
       irot = 78
       theta1 = 90
-      phi1 = 174.375
+      phi1 = 177.143
       theta2 = 96
-      phi2 = -95.625
+      phi2 = -92.8571
       theta3 = 6
-      phi3 = -95.625
+      phi3 = -92.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 32
       chmoth = 'DC4'
-      x = -16.2255
-      y = 1.59807
+      x = -16.1539
+      y = 0.806207
       z = 0
       irot = 78
       chonly = 'ONLY'
@@ -6635,18 +6635,18 @@
 
       irot = 79
       theta1 = 90
-      phi1 = -180
+      phi1 = -177.143
       theta2 = 96
-      phi2 = -90
+      phi2 = -87.1429
       theta3 = 6
-      phi3 = -90
+      phi3 = -87.1429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 33
       chmoth = 'DC4'
-      x = -16.304
-      y = 1.9966e-15
+      x = -16.1539
+      y = -0.806207
       z = 0
       irot = 79
       chonly = 'ONLY'
@@ -6654,18 +6654,18 @@
 
       irot = 80
       theta1 = 90
-      phi1 = -174.375
+      phi1 = -171.429
       theta2 = 96
-      phi2 = -84.375
+      phi2 = -81.4286
       theta3 = 6
-      phi3 = -84.375
+      phi3 = -81.4286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 34
       chmoth = 'DC4'
-      x = -16.2255
-      y = -1.59807
+      x = -15.9933
+      y = -2.41061
       z = 0
       irot = 80
       chonly = 'ONLY'
@@ -6673,18 +6673,18 @@
 
       irot = 81
       theta1 = 90
-      phi1 = -168.75
+      phi1 = -165.714
       theta2 = 96
-      phi2 = -78.75
+      phi2 = -75.7143
       theta3 = 6
-      phi3 = -78.75
+      phi3 = -75.7143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 35
       chmoth = 'DC4'
-      x = -15.9907
-      y = -3.18075
+      x = -15.6739
+      y = -3.99105
       z = 0
       irot = 81
       chonly = 'ONLY'
@@ -6692,18 +6692,18 @@
 
       irot = 82
       theta1 = 90
-      phi1 = -163.125
+      phi1 = -160
       theta2 = 96
-      phi2 = -73.125
+      phi2 = -70
       theta3 = 6
-      phi3 = -73.125
+      phi3 = -70
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 36
       chmoth = 'DC4'
-      x = -15.602
-      y = -4.7328
+      x = -15.1986
+      y = -5.53183
       z = 0
       irot = 82
       chonly = 'ONLY'
@@ -6711,18 +6711,18 @@
 
       irot = 83
       theta1 = 90
-      phi1 = -157.5
+      phi1 = -154.286
       theta2 = 96
-      phi2 = -67.5
+      phi2 = -64.2857
       theta3 = 6
-      phi3 = -67.5
+      phi3 = -64.2857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 37
       chmoth = 'DC4'
-      x = -15.0629
-      y = -6.23927
+      x = -14.5723
+      y = -7.01764
       z = 0
       irot = 83
       chonly = 'ONLY'
@@ -6730,18 +6730,18 @@
 
       irot = 84
       theta1 = 90
-      phi1 = -151.875
+      phi1 = -148.571
       theta2 = 96
-      phi2 = -61.875
+      phi2 = -58.5714
       theta3 = 6
-      phi3 = -61.875
+      phi3 = -58.5714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 38
       chmoth = 'DC4'
-      x = -14.3788
-      y = -7.68565
+      x = -13.8011
+      y = -8.43369
       z = 0
       irot = 84
       chonly = 'ONLY'
@@ -6749,18 +6749,18 @@
 
       irot = 85
       theta1 = 90
-      phi1 = -146.25
+      phi1 = -142.857
       theta2 = 96
-      phi2 = -56.25
+      phi2 = -52.8571
       theta3 = 6
-      phi3 = -56.25
+      phi3 = -52.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 39
       chmoth = 'DC4'
-      x = -13.5563
-      y = -9.05802
+      x = -12.8928
+      y = -9.76593
       z = 0
       irot = 85
       chonly = 'ONLY'
@@ -6768,18 +6768,18 @@
 
       irot = 86
       theta1 = 90
-      phi1 = -140.625
+      phi1 = -137.143
       theta2 = 96
-      phi2 = -50.625
+      phi2 = -47.1429
       theta3 = 6
-      phi3 = -50.625
+      phi3 = -47.1429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 40
       chmoth = 'DC4'
-      x = -12.6032
-      y = -10.3431
+      x = -11.8564
+      y = -11.0011
       z = 0
       irot = 86
       chonly = 'ONLY'
@@ -6787,18 +6787,18 @@
 
       irot = 87
       theta1 = 90
-      phi1 = -135
+      phi1 = -131.429
       theta2 = 96
-      phi2 = -45
+      phi2 = -41.4286
       theta3 = 6
-      phi3 = -45
+      phi3 = -41.4286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 41
       chmoth = 'DC4'
-      x = -11.5287
-      y = -11.5287
+      x = -10.7021
+      y = -12.127
       z = 0
       irot = 87
       chonly = 'ONLY'
@@ -6806,18 +6806,18 @@
 
       irot = 88
       theta1 = 90
-      phi1 = -129.375
+      phi1 = -125.714
       theta2 = 96
-      phi2 = -39.375
+      phi2 = -35.7143
       theta3 = 6
-      phi3 = -39.375
+      phi3 = -35.7143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 42
       chmoth = 'DC4'
-      x = -10.3431
-      y = -12.6032
+      x = -9.44147
+      y = -13.1323
       z = 0
       irot = 88
       chonly = 'ONLY'
@@ -6825,18 +6825,18 @@
 
       irot = 89
       theta1 = 90
-      phi1 = -123.75
+      phi1 = -120
       theta2 = 96
-      phi2 = -33.75
+      phi2 = -30
       theta3 = 6
-      phi3 = -33.75
+      phi3 = -30
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 43
       chmoth = 'DC4'
-      x = -9.05802
-      y = -13.5563
+      x = -8.087
+      y = -14.0071
       z = 0
       irot = 89
       chonly = 'ONLY'
@@ -6844,18 +6844,18 @@
 
       irot = 90
       theta1 = 90
-      phi1 = -118.125
+      phi1 = -114.286
       theta2 = 96
-      phi2 = -28.125
+      phi2 = -24.2857
       theta3 = 6
-      phi3 = -28.125
+      phi3 = -24.2857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 44
       chmoth = 'DC4'
-      x = -7.68565
-      y = -14.3788
+      x = -6.65216
+      y = -14.7427
       z = 0
       irot = 90
       chonly = 'ONLY'
@@ -6863,18 +6863,18 @@
 
       irot = 91
       theta1 = 90
-      phi1 = -112.5
+      phi1 = -108.571
       theta2 = 96
-      phi2 = -22.5
+      phi2 = -18.5714
       theta3 = 6
-      phi3 = -22.5
+      phi3 = -18.5714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 45
       chmoth = 'DC4'
-      x = -6.23927
-      y = -15.0629
+      x = -5.1512
+      y = -15.3318
       z = 0
       irot = 91
       chonly = 'ONLY'
@@ -6882,18 +6882,18 @@
 
       irot = 92
       theta1 = 90
-      phi1 = -106.875
+      phi1 = -102.857
       theta2 = 96
-      phi2 = -16.875
+      phi2 = -12.8571
       theta3 = 6
-      phi3 = -16.875
+      phi3 = -12.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 46
       chmoth = 'DC4'
-      x = -4.7328
-      y = -15.602
+      x = -3.59905
+      y = -15.7685
       z = 0
       irot = 92
       chonly = 'ONLY'
@@ -6901,18 +6901,18 @@
 
       irot = 93
       theta1 = 90
-      phi1 = -101.25
+      phi1 = -97.1429
       theta2 = 96
-      phi2 = -11.25
+      phi2 = -7.14286
       theta3 = 6
-      phi3 = -11.25
+      phi3 = -7.14286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 47
       chmoth = 'DC4'
-      x = -3.18075
-      y = -15.9907
+      x = -2.01114
+      y = -16.0485
       z = 0
       irot = 93
       chonly = 'ONLY'
@@ -6920,18 +6920,18 @@
 
       irot = 94
       theta1 = 90
-      phi1 = -95.625
+      phi1 = -91.4286
       theta2 = 96
-      phi2 = -5.625
+      phi2 = -1.42857
       theta3 = 6
-      phi3 = -5.625
+      phi3 = -1.42857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 48
       chmoth = 'DC4'
-      x = -1.59807
-      y = -16.2255
+      x = -0.403229
+      y = -16.169
       z = 0
       irot = 94
       chonly = 'ONLY'
@@ -6939,18 +6939,18 @@
 
       irot = 95
       theta1 = 90
-      phi1 = -90
+      phi1 = -85.7143
       theta2 = 96
-      phi2 = 4.03642e-14
+      phi2 = 4.28571
       theta3 = 6
-      phi3 = 4.03642e-14
+      phi3 = 4.28571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 49
       chmoth = 'DC4'
-      x = -2.9949e-15
-      y = -16.304
+      x = 1.20868
+      y = -16.1288
       z = 0
       irot = 95
       chonly = 'ONLY'
@@ -6958,18 +6958,18 @@
 
       irot = 96
       theta1 = 90
-      phi1 = -84.375
+      phi1 = -80
       theta2 = 96
-      phi2 = 5.625
+      phi2 = 10
       theta3 = 6
-      phi3 = 5.625
+      phi3 = 10
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 50
       chmoth = 'DC4'
-      x = 1.59807
-      y = -16.2255
+      x = 2.80859
+      y = -15.9283
       z = 0
       irot = 96
       chonly = 'ONLY'
@@ -6977,18 +6977,18 @@
 
       irot = 97
       theta1 = 90
-      phi1 = -78.75
+      phi1 = -74.2857
       theta2 = 96
-      phi2 = 11.25
+      phi2 = 15.7143
       theta3 = 6
-      phi3 = 11.25
+      phi3 = 15.7143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 51
       chmoth = 'DC4'
-      x = 3.18075
-      y = -15.9907
+      x = 4.38057
+      y = -15.5695
       z = 0
       irot = 97
       chonly = 'ONLY'
@@ -6996,18 +6996,18 @@
 
       irot = 98
       theta1 = 90
-      phi1 = -73.125
+      phi1 = -68.5714
       theta2 = 96
-      phi2 = 16.875
+      phi2 = 21.4286
       theta3 = 6
-      phi3 = 16.875
+      phi3 = 21.4286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 52
       chmoth = 'DC4'
-      x = 4.7328
-      y = -15.602
+      x = 5.90903
+      y = -15.056
       z = 0
       irot = 98
       chonly = 'ONLY'
@@ -7015,18 +7015,18 @@
 
       irot = 99
       theta1 = 90
-      phi1 = -67.5
+      phi1 = -62.8571
       theta2 = 96
-      phi2 = 22.5
+      phi2 = 27.1429
       theta3 = 6
-      phi3 = 22.5
+      phi3 = 27.1429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 53
       chmoth = 'DC4'
-      x = 6.23927
-      y = -15.0629
+      x = 7.37875
+      y = -14.3928
       z = 0
       irot = 99
       chonly = 'ONLY'
@@ -7034,18 +7034,18 @@
 
       irot = 100
       theta1 = 90
-      phi1 = -61.875
+      phi1 = -57.1429
       theta2 = 96
-      phi2 = 28.125
+      phi2 = 32.8571
       theta3 = 6
-      phi3 = 28.125
+      phi3 = 32.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 54
       chmoth = 'DC4'
-      x = 7.68565
-      y = -14.3788
+      x = 8.77514
+      y = -13.5866
       z = 0
       irot = 100
       chonly = 'ONLY'
@@ -7053,18 +7053,18 @@
 
       irot = 101
       theta1 = 90
-      phi1 = -56.25
+      phi1 = -51.4286
       theta2 = 96
-      phi2 = 33.75
+      phi2 = 38.5714
       theta3 = 6
-      phi3 = 33.75
+      phi3 = 38.5714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 55
       chmoth = 'DC4'
-      x = 9.05802
-      y = -13.5563
+      x = 10.0843
+      y = -12.6453
       z = 0
       irot = 101
       chonly = 'ONLY'
@@ -7072,18 +7072,18 @@
 
       irot = 102
       theta1 = 90
-      phi1 = -50.625
+      phi1 = -45.7143
       theta2 = 96
-      phi2 = 39.375
+      phi2 = 44.2857
       theta3 = 6
-      phi3 = 39.375
+      phi3 = 44.2857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 56
       chmoth = 'DC4'
-      x = 10.3431
-      y = -12.6032
+      x = 11.2933
+      y = -11.5784
       z = 0
       irot = 102
       chonly = 'ONLY'
@@ -7091,18 +7091,18 @@
 
       irot = 103
       theta1 = 90
-      phi1 = -45
+      phi1 = -40
       theta2 = 96
-      phi2 = 45
+      phi2 = 50
       theta3 = 6
-      phi3 = 45
+      phi3 = 50
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 57
       chmoth = 'DC4'
-      x = 11.5287
-      y = -11.5287
+      x = 12.39
+      y = -10.3964
       z = 0
       irot = 103
       chonly = 'ONLY'
@@ -7110,18 +7110,18 @@
 
       irot = 104
       theta1 = 90
-      phi1 = -39.375
+      phi1 = -34.2857
       theta2 = 96
-      phi2 = 50.625
+      phi2 = 55.7143
       theta3 = 6
-      phi3 = 50.625
+      phi3 = 55.7143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 58
       chmoth = 'DC4'
-      x = 12.6032
-      y = -10.3431
+      x = 13.3636
+      y = -9.11114
       z = 0
       irot = 104
       chonly = 'ONLY'
@@ -7129,18 +7129,18 @@
 
       irot = 105
       theta1 = 90
-      phi1 = -33.75
+      phi1 = -28.5714
       theta2 = 96
-      phi2 = 56.25
+      phi2 = 61.4286
       theta3 = 6
-      phi3 = 56.25
+      phi3 = 61.4286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 59
       chmoth = 'DC4'
-      x = 13.5563
-      y = -9.05802
+      x = 14.2044
+      y = -7.73528
       z = 0
       irot = 105
       chonly = 'ONLY'
@@ -7148,18 +7148,18 @@
 
       irot = 106
       theta1 = 90
-      phi1 = -28.125
+      phi1 = -22.8571
       theta2 = 96
-      phi2 = 61.875
+      phi2 = 67.1429
       theta3 = 6
-      phi3 = 61.875
+      phi3 = 67.1429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 60
       chmoth = 'DC4'
-      x = 14.3788
-      y = -7.68565
+      x = 14.904
+      y = -6.28254
       z = 0
       irot = 106
       chonly = 'ONLY'
@@ -7167,18 +7167,18 @@
 
       irot = 107
       theta1 = 90
-      phi1 = -22.5
+      phi1 = -17.1429
       theta2 = 96
-      phi2 = 67.5
+      phi2 = 72.8571
       theta3 = 6
-      phi3 = 67.5
+      phi3 = 72.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 61
       chmoth = 'DC4'
-      x = 15.0629
-      y = -6.23927
+      x = 15.4554
+      y = -4.76737
       z = 0
       irot = 107
       chonly = 'ONLY'
@@ -7186,18 +7186,18 @@
 
       irot = 108
       theta1 = 90
-      phi1 = -16.875
+      phi1 = -11.4286
       theta2 = 96
-      phi2 = 73.125
+      phi2 = 78.5714
       theta3 = 6
-      phi3 = 73.125
+      phi3 = 78.5714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 62
       chmoth = 'DC4'
-      x = 15.602
-      y = -4.7328
+      x = 15.8533
+      y = -3.20482
       z = 0
       irot = 108
       chonly = 'ONLY'
@@ -7205,43 +7205,24 @@
 
       irot = 109
       theta1 = 90
-      phi1 = -11.25
+      phi1 = -5.71429
       theta2 = 96
-      phi2 = 78.75
+      phi2 = 84.2857
       theta3 = 6
-      phi3 = 78.75
+      phi3 = 84.2857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 63
       chmoth = 'DC4'
-      x = 15.9907
-      y = -3.18075
+      x = 16.0936
+      y = -1.61041
       z = 0
       irot = 109
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
       irot = 110
-      theta1 = 90
-      phi1 = -5.625
-      theta2 = 96
-      phi2 = 84.375
-      theta3 = 6
-      phi3 = 84.375
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 64
-      chmoth = 'DC4'
-      x = 16.2255
-      y = -1.59807
-      z = 0
-      irot = 110
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 111
       theta1 = 90
       phi1 = 0
       theta2 = 96
@@ -7251,10 +7232,29 @@
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
+      nr = 64
+      chmoth = 'DC4'
+      x = 17.969
+      y = 0
+      z = 0
+      irot = 110
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 111
+      theta1 = 90
+      phi1 = 5.14286
+      theta2 = 96
+      phi2 = 95.1429
+      theta3 = 6
+      phi3 = 95.1429
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
       nr = 65
       chmoth = 'DC4'
-      x = 18.086
-      y = 0
+      x = 17.8967
+      y = 1.61073
       z = 0
       irot = 111
       chonly = 'ONLY'
@@ -7262,18 +7262,18 @@
 
       irot = 112
       theta1 = 90
-      phi1 = 5.07042
+      phi1 = 10.2857
       theta2 = 96
-      phi2 = 95.0704
+      phi2 = 100.286
       theta3 = 6
-      phi3 = 95.0704
+      phi3 = 100.286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 66
       chmoth = 'DC4'
-      x = 18.0152
-      y = 1.59844
+      x = 17.6802
+      y = 3.20849
       z = 0
       irot = 112
       chonly = 'ONLY'
@@ -7281,18 +7281,18 @@
 
       irot = 113
       theta1 = 90
-      phi1 = 10.1408
+      phi1 = 15.4286
       theta2 = 96
-      phi2 = 100.141
+      phi2 = 105.429
       theta3 = 6
-      phi3 = 100.141
+      phi3 = 105.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 67
       chmoth = 'DC4'
-      x = 17.8035
-      y = 3.18438
+      x = 17.3214
+      y = 4.78042
       z = 0
       irot = 113
       chonly = 'ONLY'
@@ -7300,18 +7300,18 @@
 
       irot = 114
       theta1 = 90
-      phi1 = 15.2113
+      phi1 = 20.5714
       theta2 = 96
-      phi2 = 105.211
+      phi2 = 110.571
       theta3 = 6
-      phi3 = 105.211
+      phi3 = 110.571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 68
       chmoth = 'DC4'
-      x = 17.4524
-      y = 4.74539
+      x = 16.8232
+      y = 6.31385
       z = 0
       irot = 114
       chonly = 'ONLY'
@@ -7319,18 +7319,18 @@
 
       irot = 115
       theta1 = 90
-      phi1 = 20.2817
+      phi1 = 25.7143
       theta2 = 96
-      phi2 = 110.282
+      phi2 = 115.714
       theta3 = 6
-      phi3 = 110.282
+      phi3 = 115.714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 69
       chmoth = 'DC4'
-      x = 16.9647
-      y = 6.26926
+      x = 16.1895
+      y = 7.79646
       z = 0
       irot = 115
       chonly = 'ONLY'
@@ -7338,18 +7338,18 @@
 
       irot = 116
       theta1 = 90
-      phi1 = 25.3521
+      phi1 = 30.8571
       theta2 = 96
-      phi2 = 115.352
+      phi2 = 120.857
       theta3 = 6
-      phi3 = 115.352
+      phi3 = 120.857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 70
       chmoth = 'DC4'
-      x = 16.3442
-      y = 7.74406
+      x = 15.4255
+      y = 9.21629
       z = 0
       irot = 116
       chonly = 'ONLY'
@@ -7357,18 +7357,18 @@
 
       irot = 117
       theta1 = 90
-      phi1 = 30.4225
+      phi1 = 36
       theta2 = 96
-      phi2 = 120.423
+      phi2 = 126
       theta3 = 6
-      phi3 = 120.423
+      phi3 = 126
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 71
       chmoth = 'DC4'
-      x = 15.5958
-      y = 9.15826
+      x = 14.5372
+      y = 10.5619
       z = 0
       irot = 117
       chonly = 'ONLY'
@@ -7376,18 +7376,18 @@
 
       irot = 118
       theta1 = 90
-      phi1 = 35.493
+      phi1 = 41.1429
       theta2 = 96
-      phi2 = 125.493
+      phi2 = 131.143
       theta3 = 6
-      phi3 = 125.493
+      phi3 = 131.143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 72
       chmoth = 'DC4'
-      x = 14.7254
-      y = 10.5008
+      x = 13.5319
+      y = 11.8225
       z = 0
       irot = 118
       chonly = 'ONLY'
@@ -7395,18 +7395,18 @@
 
       irot = 119
       theta1 = 90
-      phi1 = 40.5634
+      phi1 = 46.2857
       theta2 = 96
-      phi2 = 130.563
+      phi2 = 136.286
       theta3 = 6
-      phi3 = 130.563
+      phi3 = 136.286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 73
       chmoth = 'DC4'
-      x = 13.7397
-      y = 11.7611
+      x = 12.4177
+      y = 12.9879
       z = 0
       irot = 119
       chonly = 'ONLY'
@@ -7414,18 +7414,18 @@
 
       irot = 120
       theta1 = 90
-      phi1 = 45.6338
+      phi1 = 51.4286
       theta2 = 96
-      phi2 = 135.634
+      phi2 = 141.429
       theta3 = 6
-      phi3 = 135.634
+      phi3 = 141.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 74
       chmoth = 'DC4'
-      x = 12.6465
-      y = 12.9294
+      x = 11.2035
+      y = 14.0487
       z = 0
       irot = 120
       chonly = 'ONLY'
@@ -7433,18 +7433,18 @@
 
       irot = 121
       theta1 = 90
-      phi1 = 50.7042
+      phi1 = 56.5714
       theta2 = 96
-      phi2 = 140.704
+      phi2 = 146.571
       theta3 = 6
-      phi3 = 140.704
+      phi3 = 146.571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 75
       chmoth = 'DC4'
-      x = 11.4543
-      y = 13.9965
+      x = 9.89907
+      y = 14.9964
       z = 0
       irot = 121
       chonly = 'ONLY'
@@ -7452,18 +7452,18 @@
 
       irot = 122
       theta1 = 90
-      phi1 = 55.7746
+      phi1 = 61.7143
       theta2 = 96
-      phi2 = 145.775
+      phi2 = 151.714
       theta3 = 6
-      phi3 = 145.775
+      phi3 = 151.714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 76
       chmoth = 'DC4'
-      x = 10.1725
-      y = 14.9541
+      x = 8.51495
+      y = 15.8234
       z = 0
       irot = 122
       chonly = 'ONLY'
@@ -7471,18 +7471,18 @@
 
       irot = 123
       theta1 = 90
-      phi1 = 60.8451
+      phi1 = 66.8571
       theta2 = 96
-      phi2 = 150.845
+      phi2 = 156.857
       theta3 = 6
-      phi3 = 150.845
+      phi3 = 156.857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 77
       chmoth = 'DC4'
-      x = 8.81101
-      y = 15.7946
+      x = 7.06227
+      y = 16.523
       z = 0
       irot = 123
       chonly = 'ONLY'
@@ -7490,18 +7490,18 @@
 
       irot = 124
       theta1 = 90
-      phi1 = 65.9155
+      phi1 = 72
       theta2 = 96
-      phi2 = 155.915
+      phi2 = 162
       theta3 = 6
-      phi3 = 155.915
+      phi3 = 162
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 78
       chmoth = 'DC4'
-      x = 7.3806
-      y = 16.5115
+      x = 5.55273
+      y = 17.0895
       z = 0
       irot = 124
       chonly = 'ONLY'
@@ -7509,18 +7509,18 @@
 
       irot = 125
       theta1 = 90
-      phi1 = 70.9859
+      phi1 = 77.1429
       theta2 = 96
-      phi2 = 160.986
+      phi2 = 167.143
       theta3 = 6
-      phi3 = 160.986
+      phi3 = 167.143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 79
       chmoth = 'DC4'
-      x = 5.89243
-      y = 17.0992
+      x = 3.99848
+      y = 17.5185
       z = 0
       irot = 125
       chonly = 'ONLY'
@@ -7528,18 +7528,18 @@
 
       irot = 126
       theta1 = 90
-      phi1 = 76.0563
+      phi1 = 82.2857
       theta2 = 96
-      phi2 = 166.056
+      phi2 = 172.286
       theta3 = 6
-      phi3 = 166.056
+      phi3 = 172.286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 80
       chmoth = 'DC4'
-      x = 4.35814
-      y = 17.5531
+      x = 2.41204
+      y = 17.8064
       z = 0
       irot = 126
       chonly = 'ONLY'
@@ -7547,18 +7547,18 @@
 
       irot = 127
       theta1 = 90
-      phi1 = 81.1268
+      phi1 = 87.4286
       theta2 = 96
-      phi2 = 171.127
+      phi2 = 177.429
       theta3 = 6
-      phi3 = 171.127
+      phi3 = 177.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 81
       chmoth = 'DC4'
-      x = 2.78975
-      y = 17.8695
+      x = 0.806176
+      y = 17.9509
       z = 0
       irot = 127
       chonly = 'ONLY'
@@ -7566,18 +7566,18 @@
 
       irot = 128
       theta1 = 90
-      phi1 = 86.1972
+      phi1 = 92.5714
       theta2 = 96
-      phi2 = 176.197
+      phi2 = -177.429
       theta3 = 6
-      phi3 = 176.197
+      phi3 = -177.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 82
       chmoth = 'DC4'
-      x = 1.19952
-      y = 18.0462
+      x = -0.806176
+      y = 17.9509
       z = 0
       irot = 128
       chonly = 'ONLY'
@@ -7585,18 +7585,18 @@
 
       irot = 129
       theta1 = 90
-      phi1 = 91.2676
+      phi1 = 97.7143
       theta2 = 96
-      phi2 = -178.732
+      phi2 = -172.286
       theta3 = 6
-      phi3 = -178.732
+      phi3 = -172.286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 83
       chmoth = 'DC4'
-      x = -0.4001
-      y = 18.0816
+      x = -2.41204
+      y = 17.8064
       z = 0
       irot = 129
       chonly = 'ONLY'
@@ -7604,18 +7604,18 @@
 
       irot = 130
       theta1 = 90
-      phi1 = 96.338
+      phi1 = 102.857
       theta2 = 96
-      phi2 = -173.662
+      phi2 = -167.143
       theta3 = 6
-      phi3 = -173.662
+      phi3 = -167.143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 84
       chmoth = 'DC4'
-      x = -1.99659
-      y = 17.9755
+      x = -3.99848
+      y = 17.5185
       z = 0
       irot = 130
       chonly = 'ONLY'
@@ -7623,18 +7623,18 @@
 
       irot = 131
       theta1 = 90
-      phi1 = 101.408
+      phi1 = 108
       theta2 = 96
-      phi2 = -168.592
+      phi2 = -162
       theta3 = 6
-      phi3 = -168.592
+      phi3 = -162
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 85
       chmoth = 'DC4'
-      x = -3.57745
-      y = 17.7287
+      x = -5.55273
+      y = 17.0895
       z = 0
       irot = 131
       chonly = 'ONLY'
@@ -7642,18 +7642,18 @@
 
       irot = 132
       theta1 = 90
-      phi1 = 106.479
+      phi1 = 113.143
       theta2 = 96
-      phi2 = -163.521
+      phi2 = -156.857
       theta3 = 6
-      phi3 = -163.521
+      phi3 = -156.857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 86
       chmoth = 'DC4'
-      x = -5.13031
-      y = 17.3431
+      x = -7.06227
+      y = 16.523
       z = 0
       irot = 132
       chonly = 'ONLY'
@@ -7661,18 +7661,18 @@
 
       irot = 133
       theta1 = 90
-      phi1 = 111.549
+      phi1 = 118.286
       theta2 = 96
-      phi2 = -158.451
+      phi2 = -151.714
       theta3 = 6
-      phi3 = -158.451
+      phi3 = -151.714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 87
       chmoth = 'DC4'
-      x = -6.64302
-      y = 16.8218
+      x = -8.51495
+      y = 15.8234
       z = 0
       irot = 133
       chonly = 'ONLY'
@@ -7680,18 +7680,18 @@
 
       irot = 134
       theta1 = 90
-      phi1 = 116.62
+      phi1 = 123.429
       theta2 = 96
-      phi2 = -153.38
+      phi2 = -146.571
       theta3 = 6
-      phi3 = -153.38
+      phi3 = -146.571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 88
       chmoth = 'DC4'
-      x = -8.10374
-      y = 16.1689
+      x = -9.89907
+      y = 14.9964
       z = 0
       irot = 134
       chonly = 'ONLY'
@@ -7699,18 +7699,18 @@
 
       irot = 135
       theta1 = 90
-      phi1 = 121.69
+      phi1 = 128.571
       theta2 = 96
-      phi2 = -148.31
+      phi2 = -141.429
       theta3 = 6
-      phi3 = -148.31
+      phi3 = -141.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 89
       chmoth = 'DC4'
-      x = -9.50103
-      y = 15.3894
+      x = -11.2035
+      y = 14.0487
       z = 0
       irot = 135
       chonly = 'ONLY'
@@ -7718,18 +7718,18 @@
 
       irot = 136
       theta1 = 90
-      phi1 = 126.761
+      phi1 = 133.714
       theta2 = 96
-      phi2 = -143.239
+      phi2 = -136.286
       theta3 = 6
-      phi3 = -143.239
+      phi3 = -136.286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 90
       chmoth = 'DC4'
-      x = -10.824
-      y = 14.4895
+      x = -12.4177
+      y = 12.9879
       z = 0
       irot = 136
       chonly = 'ONLY'
@@ -7737,18 +7737,18 @@
 
       irot = 137
       theta1 = 90
-      phi1 = 131.831
+      phi1 = 138.857
       theta2 = 96
-      phi2 = -138.169
+      phi2 = -131.143
       theta3 = 6
-      phi3 = -138.169
+      phi3 = -131.143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 91
       chmoth = 'DC4'
-      x = -12.0622
-      y = 13.4762
+      x = -13.5319
+      y = 11.8225
       z = 0
       irot = 137
       chonly = 'ONLY'
@@ -7756,18 +7756,18 @@
 
       irot = 138
       theta1 = 90
-      phi1 = 136.901
+      phi1 = 144
       theta2 = 96
-      phi2 = -133.099
+      phi2 = -126
       theta3 = 6
-      phi3 = -133.099
+      phi3 = -126
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 92
       chmoth = 'DC4'
-      x = -13.206
-      y = 12.3574
+      x = -14.5372
+      y = 10.5619
       z = 0
       irot = 138
       chonly = 'ONLY'
@@ -7775,18 +7775,18 @@
 
       irot = 139
       theta1 = 90
-      phi1 = 141.972
+      phi1 = 149.143
       theta2 = 96
-      phi2 = -128.028
+      phi2 = -120.857
       theta3 = 6
-      phi3 = -128.028
+      phi3 = -120.857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 93
       chmoth = 'DC4'
-      x = -14.2465
-      y = 11.1419
+      x = -15.4255
+      y = 9.21629
       z = 0
       irot = 139
       chonly = 'ONLY'
@@ -7794,18 +7794,18 @@
 
       irot = 140
       theta1 = 90
-      phi1 = 147.042
+      phi1 = 154.286
       theta2 = 96
-      phi2 = -122.958
+      phi2 = -115.714
       theta3 = 6
-      phi3 = -122.958
+      phi3 = -115.714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 94
       chmoth = 'DC4'
-      x = -15.1755
-      y = 9.83915
+      x = -16.1895
+      y = 7.79646
       z = 0
       irot = 140
       chonly = 'ONLY'
@@ -7813,18 +7813,18 @@
 
       irot = 141
       theta1 = 90
-      phi1 = 152.113
+      phi1 = 159.429
       theta2 = 96
-      phi2 = -117.887
+      phi2 = -110.571
       theta3 = 6
-      phi3 = -117.887
+      phi3 = -110.571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 95
       chmoth = 'DC4'
-      x = -15.9857
-      y = 8.45944
+      x = -16.8232
+      y = 6.31385
       z = 0
       irot = 141
       chonly = 'ONLY'
@@ -7832,18 +7832,18 @@
 
       irot = 142
       theta1 = 90
-      phi1 = 157.183
+      phi1 = 164.571
       theta2 = 96
-      phi2 = -112.817
+      phi2 = -105.429
       theta3 = 6
-      phi3 = -112.817
+      phi3 = -105.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 96
       chmoth = 'DC4'
-      x = -16.6707
-      y = 7.01352
+      x = -17.3214
+      y = 4.78042
       z = 0
       irot = 142
       chonly = 'ONLY'
@@ -7851,18 +7851,18 @@
 
       irot = 143
       theta1 = 90
-      phi1 = 162.254
+      phi1 = 169.714
       theta2 = 96
-      phi2 = -107.746
+      phi2 = -100.286
       theta3 = 6
-      phi3 = -107.746
+      phi3 = -100.286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 97
       chmoth = 'DC4'
-      x = -17.2254
-      y = 5.51272
+      x = -17.6802
+      y = 3.20849
       z = 0
       irot = 143
       chonly = 'ONLY'
@@ -7870,18 +7870,18 @@
 
       irot = 144
       theta1 = 90
-      phi1 = 167.324
+      phi1 = 174.857
       theta2 = 96
-      phi2 = -102.676
+      phi2 = -95.1429
       theta3 = 6
-      phi3 = -102.676
+      phi3 = -95.1429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 98
       chmoth = 'DC4'
-      x = -17.6452
-      y = 3.96876
+      x = -17.8967
+      y = 1.61073
       z = 0
       irot = 144
       chonly = 'ONLY'
@@ -7889,18 +7889,18 @@
 
       irot = 145
       theta1 = 90
-      phi1 = 172.394
+      phi1 = 180
       theta2 = 96
-      phi2 = -97.6056
+      phi2 = -90
       theta3 = 6
-      phi3 = -97.6056
+      phi3 = -90
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 99
       chmoth = 'DC4'
-      x = -17.9269
-      y = 2.39375
+      x = -17.969
+      y = 2.2005e-15
       z = 0
       irot = 145
       chonly = 'ONLY'
@@ -7908,18 +7908,18 @@
 
       irot = 146
       theta1 = 90
-      phi1 = 177.465
+      phi1 = -174.857
       theta2 = 96
-      phi2 = -92.5352
+      phi2 = -84.8571
       theta3 = 6
-      phi3 = -92.5352
+      phi3 = -84.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 100
       chmoth = 'DC4'
-      x = -18.0683
-      y = 0.800004
+      x = -17.8967
+      y = -1.61073
       z = 0
       irot = 146
       chonly = 'ONLY'
@@ -7927,18 +7927,18 @@
 
       irot = 147
       theta1 = 90
-      phi1 = -177.465
+      phi1 = -169.714
       theta2 = 96
-      phi2 = -87.4648
+      phi2 = -79.7143
       theta3 = 6
-      phi3 = -87.4648
+      phi3 = -79.7143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 101
       chmoth = 'DC4'
-      x = -18.0683
-      y = -0.800004
+      x = -17.6802
+      y = -3.20849
       z = 0
       irot = 147
       chonly = 'ONLY'
@@ -7946,18 +7946,18 @@
 
       irot = 148
       theta1 = 90
-      phi1 = -172.394
+      phi1 = -164.571
       theta2 = 96
-      phi2 = -82.3944
+      phi2 = -74.5714
       theta3 = 6
-      phi3 = -82.3944
+      phi3 = -74.5714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 102
       chmoth = 'DC4'
-      x = -17.9269
-      y = -2.39375
+      x = -17.3214
+      y = -4.78042
       z = 0
       irot = 148
       chonly = 'ONLY'
@@ -7965,18 +7965,18 @@
 
       irot = 149
       theta1 = 90
-      phi1 = -167.324
+      phi1 = -159.429
       theta2 = 96
-      phi2 = -77.3239
+      phi2 = -69.4286
       theta3 = 6
-      phi3 = -77.3239
+      phi3 = -69.4286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 103
       chmoth = 'DC4'
-      x = -17.6452
-      y = -3.96876
+      x = -16.8232
+      y = -6.31385
       z = 0
       irot = 149
       chonly = 'ONLY'
@@ -7984,18 +7984,18 @@
 
       irot = 150
       theta1 = 90
-      phi1 = -162.254
+      phi1 = -154.286
       theta2 = 96
-      phi2 = -72.2535
+      phi2 = -64.2857
       theta3 = 6
-      phi3 = -72.2535
+      phi3 = -64.2857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 104
       chmoth = 'DC4'
-      x = -17.2254
-      y = -5.51272
+      x = -16.1895
+      y = -7.79646
       z = 0
       irot = 150
       chonly = 'ONLY'
@@ -8003,18 +8003,18 @@
 
       irot = 151
       theta1 = 90
-      phi1 = -157.183
+      phi1 = -149.143
       theta2 = 96
-      phi2 = -67.1831
+      phi2 = -59.1429
       theta3 = 6
-      phi3 = -67.1831
+      phi3 = -59.1429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 105
       chmoth = 'DC4'
-      x = -16.6707
-      y = -7.01352
+      x = -15.4255
+      y = -9.21629
       z = 0
       irot = 151
       chonly = 'ONLY'
@@ -8022,18 +8022,18 @@
 
       irot = 152
       theta1 = 90
-      phi1 = -152.113
+      phi1 = -144
       theta2 = 96
-      phi2 = -62.1127
+      phi2 = -54
       theta3 = 6
-      phi3 = -62.1127
+      phi3 = -54
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 106
       chmoth = 'DC4'
-      x = -15.9857
-      y = -8.45944
+      x = -14.5372
+      y = -10.5619
       z = 0
       irot = 152
       chonly = 'ONLY'
@@ -8041,18 +8041,18 @@
 
       irot = 153
       theta1 = 90
-      phi1 = -147.042
+      phi1 = -138.857
       theta2 = 96
-      phi2 = -57.0423
+      phi2 = -48.8571
       theta3 = 6
-      phi3 = -57.0423
+      phi3 = -48.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 107
       chmoth = 'DC4'
-      x = -15.1755
-      y = -9.83915
+      x = -13.5319
+      y = -11.8225
       z = 0
       irot = 153
       chonly = 'ONLY'
@@ -8060,18 +8060,18 @@
 
       irot = 154
       theta1 = 90
-      phi1 = -141.972
+      phi1 = -133.714
       theta2 = 96
-      phi2 = -51.9718
+      phi2 = -43.7143
       theta3 = 6
-      phi3 = -51.9718
+      phi3 = -43.7143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 108
       chmoth = 'DC4'
-      x = -14.2465
-      y = -11.1419
+      x = -12.4177
+      y = -12.9879
       z = 0
       irot = 154
       chonly = 'ONLY'
@@ -8079,18 +8079,18 @@
 
       irot = 155
       theta1 = 90
-      phi1 = -136.901
+      phi1 = -128.571
       theta2 = 96
-      phi2 = -46.9014
+      phi2 = -38.5714
       theta3 = 6
-      phi3 = -46.9014
+      phi3 = -38.5714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 109
       chmoth = 'DC4'
-      x = -13.206
-      y = -12.3574
+      x = -11.2035
+      y = -14.0487
       z = 0
       irot = 155
       chonly = 'ONLY'
@@ -8098,18 +8098,18 @@
 
       irot = 156
       theta1 = 90
-      phi1 = -131.831
+      phi1 = -123.429
       theta2 = 96
-      phi2 = -41.831
+      phi2 = -33.4286
       theta3 = 6
-      phi3 = -41.831
+      phi3 = -33.4286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 110
       chmoth = 'DC4'
-      x = -12.0622
-      y = -13.4762
+      x = -9.89907
+      y = -14.9964
       z = 0
       irot = 156
       chonly = 'ONLY'
@@ -8117,18 +8117,18 @@
 
       irot = 157
       theta1 = 90
-      phi1 = -126.761
+      phi1 = -118.286
       theta2 = 96
-      phi2 = -36.7606
+      phi2 = -28.2857
       theta3 = 6
-      phi3 = -36.7606
+      phi3 = -28.2857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 111
       chmoth = 'DC4'
-      x = -10.824
-      y = -14.4895
+      x = -8.51495
+      y = -15.8234
       z = 0
       irot = 157
       chonly = 'ONLY'
@@ -8136,18 +8136,18 @@
 
       irot = 158
       theta1 = 90
-      phi1 = -121.69
+      phi1 = -113.143
       theta2 = 96
-      phi2 = -31.6901
+      phi2 = -23.1429
       theta3 = 6
-      phi3 = -31.6901
+      phi3 = -23.1429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 112
       chmoth = 'DC4'
-      x = -9.50103
-      y = -15.3894
+      x = -7.06227
+      y = -16.523
       z = 0
       irot = 158
       chonly = 'ONLY'
@@ -8155,18 +8155,18 @@
 
       irot = 159
       theta1 = 90
-      phi1 = -116.62
+      phi1 = -108
       theta2 = 96
-      phi2 = -26.6197
+      phi2 = -18
       theta3 = 6
-      phi3 = -26.6197
+      phi3 = -18
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 113
       chmoth = 'DC4'
-      x = -8.10374
-      y = -16.1689
+      x = -5.55273
+      y = -17.0895
       z = 0
       irot = 159
       chonly = 'ONLY'
@@ -8174,18 +8174,18 @@
 
       irot = 160
       theta1 = 90
-      phi1 = -111.549
+      phi1 = -102.857
       theta2 = 96
-      phi2 = -21.5493
+      phi2 = -12.8571
       theta3 = 6
-      phi3 = -21.5493
+      phi3 = -12.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 114
       chmoth = 'DC4'
-      x = -6.64302
-      y = -16.8218
+      x = -3.99848
+      y = -17.5185
       z = 0
       irot = 160
       chonly = 'ONLY'
@@ -8193,18 +8193,18 @@
 
       irot = 161
       theta1 = 90
-      phi1 = -106.479
+      phi1 = -97.7143
       theta2 = 96
-      phi2 = -16.4789
+      phi2 = -7.71429
       theta3 = 6
-      phi3 = -16.4789
+      phi3 = -7.71429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 115
       chmoth = 'DC4'
-      x = -5.13031
-      y = -17.3431
+      x = -2.41204
+      y = -17.8064
       z = 0
       irot = 161
       chonly = 'ONLY'
@@ -8212,18 +8212,18 @@
 
       irot = 162
       theta1 = 90
-      phi1 = -101.408
+      phi1 = -92.5714
       theta2 = 96
-      phi2 = -11.4085
+      phi2 = -2.57143
       theta3 = 6
-      phi3 = -11.4085
+      phi3 = -2.57143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 116
       chmoth = 'DC4'
-      x = -3.57745
-      y = -17.7287
+      x = -0.806176
+      y = -17.9509
       z = 0
       irot = 162
       chonly = 'ONLY'
@@ -8231,18 +8231,18 @@
 
       irot = 163
       theta1 = 90
-      phi1 = -96.338
+      phi1 = -87.4286
       theta2 = 96
-      phi2 = -6.33803
+      phi2 = 2.57143
       theta3 = 6
-      phi3 = -6.33803
+      phi3 = 2.57143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 117
       chmoth = 'DC4'
-      x = -1.99659
-      y = -17.9755
+      x = 0.806176
+      y = -17.9509
       z = 0
       irot = 163
       chonly = 'ONLY'
@@ -8250,18 +8250,18 @@
 
       irot = 164
       theta1 = 90
-      phi1 = -91.2676
+      phi1 = -82.2857
       theta2 = 96
-      phi2 = -1.26761
+      phi2 = 7.71429
       theta3 = 6
-      phi3 = -1.26761
+      phi3 = 7.71429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 118
       chmoth = 'DC4'
-      x = -0.4001
-      y = -18.0816
+      x = 2.41204
+      y = -17.8064
       z = 0
       irot = 164
       chonly = 'ONLY'
@@ -8269,18 +8269,18 @@
 
       irot = 165
       theta1 = 90
-      phi1 = -86.1972
+      phi1 = -77.1429
       theta2 = 96
-      phi2 = 3.80282
+      phi2 = 12.8571
       theta3 = 6
-      phi3 = 3.80282
+      phi3 = 12.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 119
       chmoth = 'DC4'
-      x = 1.19952
-      y = -18.0462
+      x = 3.99848
+      y = -17.5185
       z = 0
       irot = 165
       chonly = 'ONLY'
@@ -8288,18 +8288,18 @@
 
       irot = 166
       theta1 = 90
-      phi1 = -81.1268
+      phi1 = -72
       theta2 = 96
-      phi2 = 8.87324
+      phi2 = 18
       theta3 = 6
-      phi3 = 8.87324
+      phi3 = 18
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 120
       chmoth = 'DC4'
-      x = 2.78975
-      y = -17.8695
+      x = 5.55273
+      y = -17.0895
       z = 0
       irot = 166
       chonly = 'ONLY'
@@ -8307,18 +8307,18 @@
 
       irot = 167
       theta1 = 90
-      phi1 = -76.0563
+      phi1 = -66.8571
       theta2 = 96
-      phi2 = 13.9437
+      phi2 = 23.1429
       theta3 = 6
-      phi3 = 13.9437
+      phi3 = 23.1429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 121
       chmoth = 'DC4'
-      x = 4.35814
-      y = -17.5531
+      x = 7.06227
+      y = -16.523
       z = 0
       irot = 167
       chonly = 'ONLY'
@@ -8326,18 +8326,18 @@
 
       irot = 168
       theta1 = 90
-      phi1 = -70.9859
+      phi1 = -61.7143
       theta2 = 96
-      phi2 = 19.0141
+      phi2 = 28.2857
       theta3 = 6
-      phi3 = 19.0141
+      phi3 = 28.2857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 122
       chmoth = 'DC4'
-      x = 5.89243
-      y = -17.0992
+      x = 8.51495
+      y = -15.8234
       z = 0
       irot = 168
       chonly = 'ONLY'
@@ -8345,18 +8345,18 @@
 
       irot = 169
       theta1 = 90
-      phi1 = -65.9155
+      phi1 = -56.5714
       theta2 = 96
-      phi2 = 24.0845
+      phi2 = 33.4286
       theta3 = 6
-      phi3 = 24.0845
+      phi3 = 33.4286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 123
       chmoth = 'DC4'
-      x = 7.3806
-      y = -16.5115
+      x = 9.89907
+      y = -14.9964
       z = 0
       irot = 169
       chonly = 'ONLY'
@@ -8364,18 +8364,18 @@
 
       irot = 170
       theta1 = 90
-      phi1 = -60.8451
+      phi1 = -51.4286
       theta2 = 96
-      phi2 = 29.1549
+      phi2 = 38.5714
       theta3 = 6
-      phi3 = 29.1549
+      phi3 = 38.5714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 124
       chmoth = 'DC4'
-      x = 8.81101
-      y = -15.7946
+      x = 11.2035
+      y = -14.0487
       z = 0
       irot = 170
       chonly = 'ONLY'
@@ -8383,18 +8383,18 @@
 
       irot = 171
       theta1 = 90
-      phi1 = -55.7746
+      phi1 = -46.2857
       theta2 = 96
-      phi2 = 34.2254
+      phi2 = 43.7143
       theta3 = 6
-      phi3 = 34.2254
+      phi3 = 43.7143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 125
       chmoth = 'DC4'
-      x = 10.1725
-      y = -14.9541
+      x = 12.4177
+      y = -12.9879
       z = 0
       irot = 171
       chonly = 'ONLY'
@@ -8402,18 +8402,18 @@
 
       irot = 172
       theta1 = 90
-      phi1 = -50.7042
+      phi1 = -41.1429
       theta2 = 96
-      phi2 = 39.2958
+      phi2 = 48.8571
       theta3 = 6
-      phi3 = 39.2958
+      phi3 = 48.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 126
       chmoth = 'DC4'
-      x = 11.4543
-      y = -13.9965
+      x = 13.5319
+      y = -11.8225
       z = 0
       irot = 172
       chonly = 'ONLY'
@@ -8421,18 +8421,18 @@
 
       irot = 173
       theta1 = 90
-      phi1 = -45.6338
+      phi1 = -36
       theta2 = 96
-      phi2 = 44.3662
+      phi2 = 54
       theta3 = 6
-      phi3 = 44.3662
+      phi3 = 54
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 127
       chmoth = 'DC4'
-      x = 12.6465
-      y = -12.9294
+      x = 14.5372
+      y = -10.5619
       z = 0
       irot = 173
       chonly = 'ONLY'
@@ -8440,18 +8440,18 @@
 
       irot = 174
       theta1 = 90
-      phi1 = -40.5634
+      phi1 = -30.8571
       theta2 = 96
-      phi2 = 49.4366
+      phi2 = 59.1429
       theta3 = 6
-      phi3 = 49.4366
+      phi3 = 59.1429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 128
       chmoth = 'DC4'
-      x = 13.7397
-      y = -11.7611
+      x = 15.4255
+      y = -9.21629
       z = 0
       irot = 174
       chonly = 'ONLY'
@@ -8459,18 +8459,18 @@
 
       irot = 175
       theta1 = 90
-      phi1 = -35.493
+      phi1 = -25.7143
       theta2 = 96
-      phi2 = 54.507
+      phi2 = 64.2857
       theta3 = 6
-      phi3 = 54.507
+      phi3 = 64.2857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 129
       chmoth = 'DC4'
-      x = 14.7254
-      y = -10.5008
+      x = 16.1895
+      y = -7.79646
       z = 0
       irot = 175
       chonly = 'ONLY'
@@ -8478,18 +8478,18 @@
 
       irot = 176
       theta1 = 90
-      phi1 = -30.4225
+      phi1 = -20.5714
       theta2 = 96
-      phi2 = 59.5775
+      phi2 = 69.4286
       theta3 = 6
-      phi3 = 59.5775
+      phi3 = 69.4286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 130
       chmoth = 'DC4'
-      x = 15.5958
-      y = -9.15826
+      x = 16.8232
+      y = -6.31385
       z = 0
       irot = 176
       chonly = 'ONLY'
@@ -8497,18 +8497,18 @@
 
       irot = 177
       theta1 = 90
-      phi1 = -25.3521
+      phi1 = -15.4286
       theta2 = 96
-      phi2 = 64.6479
+      phi2 = 74.5714
       theta3 = 6
-      phi3 = 64.6479
+      phi3 = 74.5714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 131
       chmoth = 'DC4'
-      x = 16.3442
-      y = -7.74406
+      x = 17.3214
+      y = -4.78042
       z = 0
       irot = 177
       chonly = 'ONLY'
@@ -8516,18 +8516,18 @@
 
       irot = 178
       theta1 = 90
-      phi1 = -20.2817
+      phi1 = -10.2857
       theta2 = 96
-      phi2 = 69.7183
+      phi2 = 79.7143
       theta3 = 6
-      phi3 = 69.7183
+      phi3 = 79.7143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 132
       chmoth = 'DC4'
-      x = 16.9647
-      y = -6.26926
+      x = 17.6802
+      y = -3.20849
       z = 0
       irot = 178
       chonly = 'ONLY'
@@ -8535,62 +8535,24 @@
 
       irot = 179
       theta1 = 90
-      phi1 = -15.2113
+      phi1 = -5.14286
       theta2 = 96
-      phi2 = 74.7887
+      phi2 = 84.8571
       theta3 = 6
-      phi3 = 74.7887
+      phi3 = 84.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 133
       chmoth = 'DC4'
-      x = 17.4524
-      y = -4.74539
+      x = 17.8967
+      y = -1.61073
       z = 0
       irot = 179
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
       irot = 180
-      theta1 = 90
-      phi1 = -10.1408
-      theta2 = 96
-      phi2 = 79.8592
-      theta3 = 6
-      phi3 = 79.8592
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 134
-      chmoth = 'DC4'
-      x = 17.8035
-      y = -3.18438
-      z = 0
-      irot = 180
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 181
-      theta1 = 90
-      phi1 = -5.07042
-      theta2 = 96
-      phi2 = 84.9296
-      theta3 = 6
-      phi3 = 84.9296
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 135
-      chmoth = 'DC4'
-      x = 18.0152
-      y = -1.59844
-      z = 0
-      irot = 181
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 182
       theta1 = 90
       phi1 = 0
       theta2 = 84
@@ -8600,10 +8562,48 @@
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
+      nr = 134
+      chmoth = 'DC4'
+      x = 19.765
+      y = 0
+      z = 0
+      irot = 180
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 181
+      theta1 = 90
+      phi1 = 4.67532
+      theta2 = 84
+      phi2 = 94.6753
+      theta3 = 6
+      phi3 = -85.3247
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 135
+      chmoth = 'DC4'
+      x = 19.6992
+      y = 1.61103
+      z = 0
+      irot = 181
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 182
+      theta1 = 90
+      phi1 = 9.35065
+      theta2 = 84
+      phi2 = 99.3506
+      theta3 = 6
+      phi3 = -80.6494
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
       nr = 136
       chmoth = 'DC4'
-      x = 19.868
-      y = 0
+      x = 19.5024
+      y = 3.21134
       z = 0
       irot = 182
       chonly = 'ONLY'
@@ -8611,18 +8611,18 @@
 
       irot = 183
       theta1 = 90
-      phi1 = 4.61538
+      phi1 = 14.026
       theta2 = 84
-      phi2 = 94.6154
+      phi2 = 104.026
       theta3 = 6
-      phi3 = -85.3846
+      phi3 = -75.974
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 137
       chmoth = 'DC4'
-      x = 19.8036
-      y = 1.59871
+      x = 19.1757
+      y = 4.79028
       z = 0
       irot = 183
       chonly = 'ONLY'
@@ -8630,18 +8630,18 @@
 
       irot = 184
       theta1 = 90
-      phi1 = 9.23077
+      phi1 = 18.7013
       theta2 = 84
-      phi2 = 99.2308
+      phi2 = 108.701
       theta3 = 6
-      phi3 = -80.7692
+      phi3 = -71.2987
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 138
       chmoth = 'DC4'
-      x = 19.6107
-      y = 3.18705
+      x = 18.7215
+      y = 6.33734
       z = 0
       irot = 184
       chonly = 'ONLY'
@@ -8649,18 +8649,18 @@
 
       irot = 185
       theta1 = 90
-      phi1 = 13.8462
+      phi1 = 23.3766
       theta2 = 84
-      phi2 = 103.846
+      phi2 = 113.377
       theta3 = 6
-      phi3 = -76.1538
+      phi3 = -66.6234
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 139
       chmoth = 'DC4'
-      x = 19.2907
-      y = 4.75472
+      x = 18.1426
+      y = 7.84223
       z = 0
       irot = 185
       chonly = 'ONLY'
@@ -8668,18 +8668,18 @@
 
       irot = 186
       theta1 = 90
-      phi1 = 18.4615
+      phi1 = 28.0519
       theta2 = 84
-      phi2 = 108.462
+      phi2 = 118.052
       theta3 = 6
-      phi3 = -71.5385
+      phi3 = -61.9481
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 140
       chmoth = 'DC4'
-      x = 18.8455
-      y = 6.29156
+      x = 17.443
+      y = 9.29492
       z = 0
       irot = 186
       chonly = 'ONLY'
@@ -8687,18 +8687,18 @@
 
       irot = 187
       theta1 = 90
-      phi1 = 23.0769
+      phi1 = 32.7273
       theta2 = 84
-      phi2 = 113.077
+      phi2 = 122.727
       theta3 = 6
-      phi3 = -66.9231
+      phi3 = -57.2727
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 141
       chmoth = 'DC4'
-      x = 18.2782
-      y = 7.78759
+      x = 16.6274
+      y = 10.6858
       z = 0
       irot = 187
       chonly = 'ONLY'
@@ -8706,18 +8706,18 @@
 
       irot = 188
       theta1 = 90
-      phi1 = 27.6923
+      phi1 = 37.4026
       theta2 = 84
-      phi2 = 117.692
+      phi2 = 127.403
       theta3 = 6
-      phi3 = -62.3077
+      phi3 = -52.5974
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 142
       chmoth = 'DC4'
-      x = 17.5922
-      y = 9.23312
+      x = 15.7011
+      y = 12.0055
       z = 0
       irot = 188
       chonly = 'ONLY'
@@ -8725,18 +8725,18 @@
 
       irot = 189
       theta1 = 90
-      phi1 = 32.3077
+      phi1 = 42.0779
       theta2 = 84
-      phi2 = 122.308
+      phi2 = 132.078
       theta3 = 6
-      phi3 = -57.6923
+      phi3 = -47.9221
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 143
       chmoth = 'DC4'
-      x = 16.7922
-      y = 10.6188
+      x = 14.6703
+      y = 13.2453
       z = 0
       irot = 189
       chonly = 'ONLY'
@@ -8744,18 +8744,18 @@
 
       irot = 190
       theta1 = 90
-      phi1 = 36.9231
+      phi1 = 46.7532
       theta2 = 84
-      phi2 = 126.923
+      phi2 = 136.753
       theta3 = 6
-      phi3 = -53.0769
+      phi3 = -43.2468
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 144
       chmoth = 'DC4'
-      x = 15.8833
-      y = 11.9355
+      x = 13.5418
+      y = 14.397
       z = 0
       irot = 190
       chonly = 'ONLY'
@@ -8763,18 +8763,18 @@
 
       irot = 191
       theta1 = 90
-      phi1 = 41.5385
+      phi1 = 51.4286
       theta2 = 84
-      phi2 = 131.538
+      phi2 = 141.429
       theta3 = 6
-      phi3 = -48.4615
+      phi3 = -38.5714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 145
       chmoth = 'DC4'
-      x = 14.8714
-      y = 13.1749
+      x = 12.3233
+      y = 15.4529
       z = 0
       irot = 191
       chonly = 'ONLY'
@@ -8782,18 +8782,18 @@
 
       irot = 192
       theta1 = 90
-      phi1 = 46.1538
+      phi1 = 56.1039
       theta2 = 84
-      phi2 = 136.154
+      phi2 = 146.104
       theta3 = 6
-      phi3 = -43.8462
+      phi3 = -33.8961
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 146
       chmoth = 'DC4'
-      x = 13.763
-      y = 14.3289
+      x = 11.0227
+      y = 16.4059
       z = 0
       irot = 192
       chonly = 'ONLY'
@@ -8801,18 +8801,18 @@
 
       irot = 193
       theta1 = 90
-      phi1 = 50.7692
+      phi1 = 60.7792
       theta2 = 84
-      phi2 = 140.769
+      phi2 = 150.779
       theta3 = 6
-      phi3 = -39.2308
+      phi3 = -29.2208
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 147
       chmoth = 'DC4'
-      x = 12.5654
-      y = 15.3899
+      x = 9.6488
+      y = 17.2498
       z = 0
       irot = 193
       chonly = 'ONLY'
@@ -8820,24 +8820,1468 @@
 
       irot = 194
       theta1 = 90
-      phi1 = 55.3846
+      phi1 = 65.4545
       theta2 = 84
-      phi2 = 145.385
+      phi2 = 155.455
       theta3 = 6
-      phi3 = -34.6154
+      phi3 = -24.5455
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 148
       chmoth = 'DC4'
-      x = 11.2863
-      y = 16.351
+      x = 8.21068
+      y = 17.9789
       z = 0
       irot = 194
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
       irot = 195
+      theta1 = 90
+      phi1 = 70.1299
+      theta2 = 84
+      phi2 = 160.13
+      theta3 = 6
+      phi3 = -19.8701
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 149
+      chmoth = 'DC4'
+      x = 6.71791
+      y = 18.5883
+      z = 0
+      irot = 195
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 196
+      theta1 = 90
+      phi1 = 74.8052
+      theta2 = 84
+      phi2 = 164.805
+      theta3 = 6
+      phi3 = -15.1948
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 150
+      chmoth = 'DC4'
+      x = 5.18044
+      y = 19.074
+      z = 0
+      irot = 196
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 197
+      theta1 = 90
+      phi1 = 79.4805
+      theta2 = 84
+      phi2 = 169.481
+      theta3 = 6
+      phi3 = -10.5195
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 151
+      chmoth = 'DC4'
+      x = 3.60849
+      y = 19.4328
+      z = 0
+      irot = 197
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 198
+      theta1 = 90
+      phi1 = 84.1558
+      theta2 = 84
+      phi2 = 174.156
+      theta3 = 6
+      phi3 = -5.84416
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 152
+      chmoth = 'DC4'
+      x = 2.01253
+      y = 19.6623
+      z = 0
+      irot = 198
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 199
+      theta1 = 90
+      phi1 = 88.8312
+      theta2 = 84
+      phi2 = 178.831
+      theta3 = 6
+      phi3 = -1.16883
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 153
+      chmoth = 'DC4'
+      x = 0.403177
+      y = 19.7609
+      z = 0
+      irot = 199
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 200
+      theta1 = 90
+      phi1 = 93.5065
+      theta2 = 84
+      phi2 = -176.494
+      theta3 = 6
+      phi3 = 3.50649
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 154
+      chmoth = 'DC4'
+      x = -1.20886
+      y = 19.728
+      z = 0
+      irot = 200
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 201
+      theta1 = 90
+      phi1 = 98.1818
+      theta2 = 84
+      phi2 = -171.818
+      theta3 = 6
+      phi3 = 8.18182
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 155
+      chmoth = 'DC4'
+      x = -2.81285
+      y = 19.5638
+      z = 0
+      irot = 201
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 202
+      theta1 = 90
+      phi1 = 102.857
+      theta2 = 84
+      phi2 = -167.143
+      theta3 = 6
+      phi3 = 12.8571
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 156
+      chmoth = 'DC4'
+      x = -4.39813
+      y = 19.2695
+      z = 0
+      irot = 202
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 203
+      theta1 = 90
+      phi1 = 107.532
+      theta2 = 84
+      phi2 = -162.468
+      theta3 = 6
+      phi3 = 17.5325
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 157
+      chmoth = 'DC4'
+      x = -5.95413
+      y = 18.8468
+      z = 0
+      irot = 203
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 204
+      theta1 = 90
+      phi1 = 112.208
+      theta2 = 84
+      phi2 = -157.792
+      theta3 = 6
+      phi3 = 22.2078
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 158
+      chmoth = 'DC4'
+      x = -7.47051
+      y = 18.2988
+      z = 0
+      irot = 204
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 205
+      theta1 = 90
+      phi1 = 116.883
+      theta2 = 84
+      phi2 = -153.117
+      theta3 = 6
+      phi3 = 26.8831
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 159
+      chmoth = 'DC4'
+      x = -8.93718
+      y = 17.629
+      z = 0
+      irot = 205
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 206
+      theta1 = 90
+      phi1 = 121.558
+      theta2 = 84
+      phi2 = -148.442
+      theta3 = 6
+      phi3 = 31.5584
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 160
+      chmoth = 'DC4'
+      x = -10.3444
+      y = 16.8419
+      z = 0
+      irot = 206
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 207
+      theta1 = 90
+      phi1 = 126.234
+      theta2 = 84
+      phi2 = -143.766
+      theta3 = 6
+      phi3 = 36.2338
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 161
+      chmoth = 'DC4'
+      x = -11.6827
+      y = 15.9427
+      z = 0
+      irot = 207
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 208
+      theta1 = 90
+      phi1 = 130.909
+      theta2 = 84
+      phi2 = -139.091
+      theta3 = 6
+      phi3 = 40.9091
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 162
+      chmoth = 'DC4'
+      x = -12.9433
+      y = 14.9374
+      z = 0
+      irot = 208
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 209
+      theta1 = 90
+      phi1 = 135.584
+      theta2 = 84
+      phi2 = -134.416
+      theta3 = 6
+      phi3 = 45.5844
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 163
+      chmoth = 'DC4'
+      x = -14.1178
+      y = 13.8327
+      z = 0
+      irot = 209
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 210
+      theta1 = 90
+      phi1 = 140.26
+      theta2 = 84
+      phi2 = -129.74
+      theta3 = 6
+      phi3 = 50.2597
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 164
+      chmoth = 'DC4'
+      x = -15.1983
+      y = 12.6359
+      z = 0
+      irot = 210
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 211
+      theta1 = 90
+      phi1 = 144.935
+      theta2 = 84
+      phi2 = -125.065
+      theta3 = 6
+      phi3 = 54.9351
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 165
+      chmoth = 'DC4'
+      x = -16.1777
+      y = 11.3551
+      z = 0
+      irot = 211
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 212
+      theta1 = 90
+      phi1 = 149.61
+      theta2 = 84
+      phi2 = -120.39
+      theta3 = 6
+      phi3 = 59.6104
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 166
+      chmoth = 'DC4'
+      x = -17.0494
+      y = 9.99867
+      z = 0
+      irot = 212
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 213
+      theta1 = 90
+      phi1 = 154.286
+      theta2 = 84
+      phi2 = -115.714
+      theta3 = 6
+      phi3 = 64.2857
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 167
+      chmoth = 'DC4'
+      x = -17.8076
+      y = 8.57571
+      z = 0
+      irot = 213
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 214
+      theta1 = 90
+      phi1 = 158.961
+      theta2 = 84
+      phi2 = -111.039
+      theta3 = 6
+      phi3 = 68.961
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 168
+      chmoth = 'DC4'
+      x = -18.4474
+      y = 7.09569
+      z = 0
+      irot = 214
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 215
+      theta1 = 90
+      phi1 = 163.636
+      theta2 = 84
+      phi2 = -106.364
+      theta3 = 6
+      phi3 = 73.6364
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 169
+      chmoth = 'DC4'
+      x = -18.9644
+      y = 5.56844
+      z = 0
+      irot = 215
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 216
+      theta1 = 90
+      phi1 = 168.312
+      theta2 = 84
+      phi2 = -101.688
+      theta3 = 6
+      phi3 = 78.3117
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 170
+      chmoth = 'DC4'
+      x = -19.3552
+      y = 4.00414
+      z = 0
+      irot = 216
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 217
+      theta1 = 90
+      phi1 = 172.987
+      theta2 = 84
+      phi2 = -97.013
+      theta3 = 6
+      phi3 = 82.987
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 171
+      chmoth = 'DC4'
+      x = -19.6171
+      y = 2.41319
+      z = 0
+      irot = 217
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 218
+      theta1 = 90
+      phi1 = 177.662
+      theta2 = 84
+      phi2 = -92.3377
+      theta3 = 6
+      phi3 = 87.6623
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 172
+      chmoth = 'DC4'
+      x = -19.7486
+      y = 0.806186
+      z = 0
+      irot = 218
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 219
+      theta1 = 90
+      phi1 = -177.662
+      theta2 = 84
+      phi2 = -87.6623
+      theta3 = 6
+      phi3 = 92.3377
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 173
+      chmoth = 'DC4'
+      x = -19.7486
+      y = -0.806186
+      z = 0
+      irot = 219
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 220
+      theta1 = 90
+      phi1 = -172.987
+      theta2 = 84
+      phi2 = -82.987
+      theta3 = 6
+      phi3 = 97.013
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 174
+      chmoth = 'DC4'
+      x = -19.6171
+      y = -2.41319
+      z = 0
+      irot = 220
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 221
+      theta1 = 90
+      phi1 = -168.312
+      theta2 = 84
+      phi2 = -78.3117
+      theta3 = 6
+      phi3 = 101.688
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 175
+      chmoth = 'DC4'
+      x = -19.3552
+      y = -4.00414
+      z = 0
+      irot = 221
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 222
+      theta1 = 90
+      phi1 = -163.636
+      theta2 = 84
+      phi2 = -73.6364
+      theta3 = 6
+      phi3 = 106.364
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 176
+      chmoth = 'DC4'
+      x = -18.9644
+      y = -5.56844
+      z = 0
+      irot = 222
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 223
+      theta1 = 90
+      phi1 = -158.961
+      theta2 = 84
+      phi2 = -68.961
+      theta3 = 6
+      phi3 = 111.039
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 177
+      chmoth = 'DC4'
+      x = -18.4474
+      y = -7.09569
+      z = 0
+      irot = 223
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 224
+      theta1 = 90
+      phi1 = -154.286
+      theta2 = 84
+      phi2 = -64.2857
+      theta3 = 6
+      phi3 = 115.714
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 178
+      chmoth = 'DC4'
+      x = -17.8076
+      y = -8.57571
+      z = 0
+      irot = 224
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 225
+      theta1 = 90
+      phi1 = -149.61
+      theta2 = 84
+      phi2 = -59.6104
+      theta3 = 6
+      phi3 = 120.39
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 179
+      chmoth = 'DC4'
+      x = -17.0494
+      y = -9.99867
+      z = 0
+      irot = 225
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 226
+      theta1 = 90
+      phi1 = -144.935
+      theta2 = 84
+      phi2 = -54.9351
+      theta3 = 6
+      phi3 = 125.065
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 180
+      chmoth = 'DC4'
+      x = -16.1777
+      y = -11.3551
+      z = 0
+      irot = 226
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 227
+      theta1 = 90
+      phi1 = -140.26
+      theta2 = 84
+      phi2 = -50.2597
+      theta3 = 6
+      phi3 = 129.74
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 181
+      chmoth = 'DC4'
+      x = -15.1983
+      y = -12.6359
+      z = 0
+      irot = 227
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 228
+      theta1 = 90
+      phi1 = -135.584
+      theta2 = 84
+      phi2 = -45.5844
+      theta3 = 6
+      phi3 = 134.416
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 182
+      chmoth = 'DC4'
+      x = -14.1178
+      y = -13.8327
+      z = 0
+      irot = 228
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 229
+      theta1 = 90
+      phi1 = -130.909
+      theta2 = 84
+      phi2 = -40.9091
+      theta3 = 6
+      phi3 = 139.091
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 183
+      chmoth = 'DC4'
+      x = -12.9433
+      y = -14.9374
+      z = 0
+      irot = 229
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 230
+      theta1 = 90
+      phi1 = -126.234
+      theta2 = 84
+      phi2 = -36.2338
+      theta3 = 6
+      phi3 = 143.766
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 184
+      chmoth = 'DC4'
+      x = -11.6827
+      y = -15.9427
+      z = 0
+      irot = 230
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 231
+      theta1 = 90
+      phi1 = -121.558
+      theta2 = 84
+      phi2 = -31.5584
+      theta3 = 6
+      phi3 = 148.442
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 185
+      chmoth = 'DC4'
+      x = -10.3444
+      y = -16.8419
+      z = 0
+      irot = 231
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 232
+      theta1 = 90
+      phi1 = -116.883
+      theta2 = 84
+      phi2 = -26.8831
+      theta3 = 6
+      phi3 = 153.117
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 186
+      chmoth = 'DC4'
+      x = -8.93718
+      y = -17.629
+      z = 0
+      irot = 232
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 233
+      theta1 = 90
+      phi1 = -112.208
+      theta2 = 84
+      phi2 = -22.2078
+      theta3 = 6
+      phi3 = 157.792
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 187
+      chmoth = 'DC4'
+      x = -7.47051
+      y = -18.2988
+      z = 0
+      irot = 233
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 234
+      theta1 = 90
+      phi1 = -107.532
+      theta2 = 84
+      phi2 = -17.5325
+      theta3 = 6
+      phi3 = 162.468
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 188
+      chmoth = 'DC4'
+      x = -5.95413
+      y = -18.8468
+      z = 0
+      irot = 234
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 235
+      theta1 = 90
+      phi1 = -102.857
+      theta2 = 84
+      phi2 = -12.8571
+      theta3 = 6
+      phi3 = 167.143
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 189
+      chmoth = 'DC4'
+      x = -4.39813
+      y = -19.2695
+      z = 0
+      irot = 235
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 236
+      theta1 = 90
+      phi1 = -98.1818
+      theta2 = 84
+      phi2 = -8.18182
+      theta3 = 6
+      phi3 = 171.818
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 190
+      chmoth = 'DC4'
+      x = -2.81285
+      y = -19.5638
+      z = 0
+      irot = 236
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 237
+      theta1 = 90
+      phi1 = -93.5065
+      theta2 = 84
+      phi2 = -3.50649
+      theta3 = 6
+      phi3 = 176.494
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 191
+      chmoth = 'DC4'
+      x = -1.20886
+      y = -19.728
+      z = 0
+      irot = 237
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 238
+      theta1 = 90
+      phi1 = -88.8312
+      theta2 = 84
+      phi2 = 1.16883
+      theta3 = 6
+      phi3 = -178.831
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 192
+      chmoth = 'DC4'
+      x = 0.403177
+      y = -19.7609
+      z = 0
+      irot = 238
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 239
+      theta1 = 90
+      phi1 = -84.1558
+      theta2 = 84
+      phi2 = 5.84416
+      theta3 = 6
+      phi3 = -174.156
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 193
+      chmoth = 'DC4'
+      x = 2.01253
+      y = -19.6623
+      z = 0
+      irot = 239
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 240
+      theta1 = 90
+      phi1 = -79.4805
+      theta2 = 84
+      phi2 = 10.5195
+      theta3 = 6
+      phi3 = -169.481
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 194
+      chmoth = 'DC4'
+      x = 3.60849
+      y = -19.4328
+      z = 0
+      irot = 240
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 241
+      theta1 = 90
+      phi1 = -74.8052
+      theta2 = 84
+      phi2 = 15.1948
+      theta3 = 6
+      phi3 = -164.805
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 195
+      chmoth = 'DC4'
+      x = 5.18044
+      y = -19.074
+      z = 0
+      irot = 241
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 242
+      theta1 = 90
+      phi1 = -70.1299
+      theta2 = 84
+      phi2 = 19.8701
+      theta3 = 6
+      phi3 = -160.13
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 196
+      chmoth = 'DC4'
+      x = 6.71791
+      y = -18.5883
+      z = 0
+      irot = 242
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 243
+      theta1 = 90
+      phi1 = -65.4545
+      theta2 = 84
+      phi2 = 24.5455
+      theta3 = 6
+      phi3 = -155.455
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 197
+      chmoth = 'DC4'
+      x = 8.21068
+      y = -17.9789
+      z = 0
+      irot = 243
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 244
+      theta1 = 90
+      phi1 = -60.7792
+      theta2 = 84
+      phi2 = 29.2208
+      theta3 = 6
+      phi3 = -150.779
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 198
+      chmoth = 'DC4'
+      x = 9.6488
+      y = -17.2498
+      z = 0
+      irot = 244
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 245
+      theta1 = 90
+      phi1 = -56.1039
+      theta2 = 84
+      phi2 = 33.8961
+      theta3 = 6
+      phi3 = -146.104
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 199
+      chmoth = 'DC4'
+      x = 11.0227
+      y = -16.4059
+      z = 0
+      irot = 245
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 246
+      theta1 = 90
+      phi1 = -51.4286
+      theta2 = 84
+      phi2 = 38.5714
+      theta3 = 6
+      phi3 = -141.429
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 200
+      chmoth = 'DC4'
+      x = 12.3233
+      y = -15.4529
+      z = 0
+      irot = 246
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 247
+      theta1 = 90
+      phi1 = -46.7532
+      theta2 = 84
+      phi2 = 43.2468
+      theta3 = 6
+      phi3 = -136.753
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 201
+      chmoth = 'DC4'
+      x = 13.5418
+      y = -14.397
+      z = 0
+      irot = 247
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 248
+      theta1 = 90
+      phi1 = -42.0779
+      theta2 = 84
+      phi2 = 47.9221
+      theta3 = 6
+      phi3 = -132.078
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 202
+      chmoth = 'DC4'
+      x = 14.6703
+      y = -13.2453
+      z = 0
+      irot = 248
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 249
+      theta1 = 90
+      phi1 = -37.4026
+      theta2 = 84
+      phi2 = 52.5974
+      theta3 = 6
+      phi3 = -127.403
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 203
+      chmoth = 'DC4'
+      x = 15.7011
+      y = -12.0055
+      z = 0
+      irot = 249
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 250
+      theta1 = 90
+      phi1 = -32.7273
+      theta2 = 84
+      phi2 = 57.2727
+      theta3 = 6
+      phi3 = -122.727
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 204
+      chmoth = 'DC4'
+      x = 16.6274
+      y = -10.6858
+      z = 0
+      irot = 250
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 251
+      theta1 = 90
+      phi1 = -28.0519
+      theta2 = 84
+      phi2 = 61.9481
+      theta3 = 6
+      phi3 = -118.052
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 205
+      chmoth = 'DC4'
+      x = 17.443
+      y = -9.29492
+      z = 0
+      irot = 251
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 252
+      theta1 = 90
+      phi1 = -23.3766
+      theta2 = 84
+      phi2 = 66.6234
+      theta3 = 6
+      phi3 = -113.377
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 206
+      chmoth = 'DC4'
+      x = 18.1426
+      y = -7.84223
+      z = 0
+      irot = 252
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 253
+      theta1 = 90
+      phi1 = -18.7013
+      theta2 = 84
+      phi2 = 71.2987
+      theta3 = 6
+      phi3 = -108.701
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 207
+      chmoth = 'DC4'
+      x = 18.7215
+      y = -6.33734
+      z = 0
+      irot = 253
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 254
+      theta1 = 90
+      phi1 = -14.026
+      theta2 = 84
+      phi2 = 75.974
+      theta3 = 6
+      phi3 = -104.026
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 208
+      chmoth = 'DC4'
+      x = 19.1757
+      y = -4.79028
+      z = 0
+      irot = 254
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 255
+      theta1 = 90
+      phi1 = -9.35065
+      theta2 = 84
+      phi2 = 80.6494
+      theta3 = 6
+      phi3 = -99.3506
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 209
+      chmoth = 'DC4'
+      x = 19.5024
+      y = -3.21134
+      z = 0
+      irot = 255
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 256
+      theta1 = 90
+      phi1 = -4.67532
+      theta2 = 84
+      phi2 = 85.3247
+      theta3 = 6
+      phi3 = -94.6753
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 210
+      chmoth = 'DC4'
+      x = 19.6992
+      y = -1.61103
+      z = 0
+      irot = 256
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 257
+      theta1 = 90
+      phi1 = 0
+      theta2 = 84
+      phi2 = 90
+      theta3 = 6
+      phi3 = -90
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 211
+      chmoth = 'DC4'
+      x = 21.561
+      y = 0
+      z = 0
+      irot = 257
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 258
+      theta1 = 90
+      phi1 = 4.28571
+      theta2 = 84
+      phi2 = 94.2857
+      theta3 = 6
+      phi3 = -85.7143
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 212
+      chmoth = 'DC4'
+      x = 21.5007
+      y = 1.61126
+      z = 0
+      irot = 258
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 259
+      theta1 = 90
+      phi1 = 8.57143
+      theta2 = 84
+      phi2 = 98.5714
+      theta3 = 6
+      phi3 = -81.4286
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 213
+      chmoth = 'DC4'
+      x = 21.3202
+      y = 3.2135
+      z = 0
+      irot = 259
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 260
+      theta1 = 90
+      phi1 = 12.8571
+      theta2 = 84
+      phi2 = 102.857
+      theta3 = 6
+      phi3 = -77.1429
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 214
+      chmoth = 'DC4'
+      x = 21.0204
+      y = 4.79777
+      z = 0
+      irot = 260
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 261
+      theta1 = 90
+      phi1 = 17.1429
+      theta2 = 84
+      phi2 = 107.143
+      theta3 = 6
+      phi3 = -72.8571
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 215
+      chmoth = 'DC4'
+      x = 20.6031
+      y = 6.35522
+      z = 0
+      irot = 261
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 262
+      theta1 = 90
+      phi1 = 21.4286
+      theta2 = 84
+      phi2 = 111.429
+      theta3 = 6
+      phi3 = -68.5714
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 216
+      chmoth = 'DC4'
+      x = 20.0706
+      y = 7.87712
+      z = 0
+      irot = 262
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 263
+      theta1 = 90
+      phi1 = 25.7143
+      theta2 = 84
+      phi2 = 115.714
+      theta3 = 6
+      phi3 = -64.2857
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 217
+      chmoth = 'DC4'
+      x = 19.4258
+      y = 9.35497
+      z = 0
+      irot = 263
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 264
+      theta1 = 90
+      phi1 = 30
+      theta2 = 84
+      phi2 = 120
+      theta3 = 6
+      phi3 = -60
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 218
+      chmoth = 'DC4'
+      x = 18.6724
+      y = 10.7805
+      z = 0
+      irot = 264
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 265
+      theta1 = 90
+      phi1 = 34.2857
+      theta2 = 84
+      phi2 = 124.286
+      theta3 = 6
+      phi3 = -55.7143
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 219
+      chmoth = 'DC4'
+      x = 17.8145
+      y = 12.1457
+      z = 0
+      irot = 265
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 266
+      theta1 = 90
+      phi1 = 38.5714
+      theta2 = 84
+      phi2 = 128.571
+      theta3 = 6
+      phi3 = -51.4286
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 220
+      chmoth = 'DC4'
+      x = 16.8571
+      y = 13.4431
+      z = 0
+      irot = 266
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 267
+      theta1 = 90
+      phi1 = 42.8571
+      theta2 = 84
+      phi2 = 132.857
+      theta3 = 6
+      phi3 = -47.1429
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 221
+      chmoth = 'DC4'
+      x = 15.8053
+      y = 14.6652
+      z = 0
+      irot = 267
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 268
+      theta1 = 90
+      phi1 = 47.1429
+      theta2 = 84
+      phi2 = 137.143
+      theta3 = 6
+      phi3 = -42.8571
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 222
+      chmoth = 'DC4'
+      x = 14.6652
+      y = 15.8053
+      z = 0
+      irot = 268
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 269
+      theta1 = 90
+      phi1 = 51.4286
+      theta2 = 84
+      phi2 = 141.429
+      theta3 = 6
+      phi3 = -38.5714
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 223
+      chmoth = 'DC4'
+      x = 13.4431
+      y = 16.8571
+      z = 0
+      irot = 269
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 270
+      theta1 = 90
+      phi1 = 55.7143
+      theta2 = 84
+      phi2 = 145.714
+      theta3 = 6
+      phi3 = -34.2857
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 224
+      chmoth = 'DC4'
+      x = 12.1457
+      y = 17.8145
+      z = 0
+      irot = 270
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 271
       theta1 = 90
       phi1 = 60
       theta2 = 84
@@ -8847,244 +10291,263 @@
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 149
+      nr = 225
       chmoth = 'DC4'
-      x = 9.934
-      y = 17.2062
+      x = 10.7805
+      y = 18.6724
       z = 0
-      irot = 195
+      irot = 271
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 196
+      irot = 272
       theta1 = 90
-      phi1 = 64.6154
+      phi1 = 64.2857
       theta2 = 84
-      phi2 = 154.615
+      phi2 = 154.286
       theta3 = 6
-      phi3 = -25.3846
+      phi3 = -25.7143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 150
+      nr = 226
       chmoth = 'DC4'
-      x = 8.51726
-      y = 17.9498
+      x = 9.35497
+      y = 19.4258
       z = 0
-      irot = 196
+      irot = 272
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 197
+      irot = 273
       theta1 = 90
-      phi1 = 69.2308
+      phi1 = 68.5714
       theta2 = 84
-      phi2 = 159.231
+      phi2 = 158.571
       theta3 = 6
-      phi3 = -20.7692
+      phi3 = -21.4286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 151
+      nr = 227
       chmoth = 'DC4'
-      x = 7.04529
-      y = 18.5769
+      x = 7.87712
+      y = 20.0706
       z = 0
-      irot = 197
+      irot = 273
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 198
+      irot = 274
       theta1 = 90
-      phi1 = 73.8462
+      phi1 = 72.8571
       theta2 = 84
-      phi2 = 163.846
+      phi2 = 162.857
       theta3 = 6
-      phi3 = -16.1538
+      phi3 = -17.1429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 152
+      nr = 228
       chmoth = 'DC4'
-      x = 5.52762
-      y = 19.0836
+      x = 6.35522
+      y = 20.6031
       z = 0
-      irot = 198
+      irot = 274
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 199
+      irot = 275
       theta1 = 90
-      phi1 = 78.4615
+      phi1 = 77.1429
       theta2 = 84
-      phi2 = 168.462
+      phi2 = 167.143
       theta3 = 6
-      phi3 = -11.5385
+      phi3 = -12.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 153
+      nr = 229
       chmoth = 'DC4'
-      x = 3.97411
-      y = 19.4665
+      x = 4.79777
+      y = 21.0204
       z = 0
-      irot = 199
+      irot = 275
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 200
+      irot = 276
       theta1 = 90
-      phi1 = 83.0769
+      phi1 = 81.4286
       theta2 = 84
-      phi2 = 173.077
+      phi2 = 171.429
       theta3 = 6
-      phi3 = -6.92308
+      phi3 = -8.57143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 154
+      nr = 230
       chmoth = 'DC4'
-      x = 2.39482
-      y = 19.7231
+      x = 3.2135
+      y = 21.3202
       z = 0
-      irot = 200
+      irot = 276
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 201
+      irot = 277
       theta1 = 90
-      phi1 = 87.6923
+      phi1 = 85.7143
       theta2 = 84
-      phi2 = 177.692
+      phi2 = 175.714
       theta3 = 6
-      phi3 = -2.30769
+      phi3 = -4.28571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 155
+      nr = 231
       chmoth = 'DC4'
-      x = 0.800004
-      y = 19.8519
+      x = 1.61126
+      y = 21.5007
       z = 0
-      irot = 201
+      irot = 277
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 202
+      irot = 278
       theta1 = 90
-      phi1 = 92.3077
+      phi1 = 90
       theta2 = 84
-      phi2 = -177.692
+      phi2 = -180
       theta3 = 6
-      phi3 = 2.30769
+      phi3 = 2.19362e-14
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 156
+      nr = 232
       chmoth = 'DC4'
-      x = -0.800004
-      y = 19.8519
+      x = 1.32019e-15
+      y = 21.561
       z = 0
-      irot = 202
+      irot = 278
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 203
+      irot = 279
       theta1 = 90
-      phi1 = 96.9231
+      phi1 = 94.2857
       theta2 = 84
-      phi2 = -173.077
+      phi2 = -175.714
       theta3 = 6
-      phi3 = 6.92308
+      phi3 = 4.28571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 157
+      nr = 233
       chmoth = 'DC4'
-      x = -2.39482
-      y = 19.7231
+      x = -1.61126
+      y = 21.5007
       z = 0
-      irot = 203
+      irot = 279
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 204
+      irot = 280
       theta1 = 90
-      phi1 = 101.538
+      phi1 = 98.5714
       theta2 = 84
-      phi2 = -168.462
+      phi2 = -171.429
       theta3 = 6
-      phi3 = 11.5385
+      phi3 = 8.57143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 158
+      nr = 234
       chmoth = 'DC4'
-      x = -3.97411
-      y = 19.4665
+      x = -3.2135
+      y = 21.3202
       z = 0
-      irot = 204
+      irot = 280
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 205
+      irot = 281
       theta1 = 90
-      phi1 = 106.154
+      phi1 = 102.857
       theta2 = 84
-      phi2 = -163.846
+      phi2 = -167.143
       theta3 = 6
-      phi3 = 16.1538
+      phi3 = 12.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 159
+      nr = 235
       chmoth = 'DC4'
-      x = -5.52762
-      y = 19.0836
+      x = -4.79777
+      y = 21.0204
       z = 0
-      irot = 205
+      irot = 281
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 206
+      irot = 282
       theta1 = 90
-      phi1 = 110.769
+      phi1 = 107.143
       theta2 = 84
-      phi2 = -159.231
+      phi2 = -162.857
       theta3 = 6
-      phi3 = 20.7692
+      phi3 = 17.1429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 160
+      nr = 236
       chmoth = 'DC4'
-      x = -7.04529
-      y = 18.5769
+      x = -6.35522
+      y = 20.6031
       z = 0
-      irot = 206
+      irot = 282
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 207
+      irot = 283
       theta1 = 90
-      phi1 = 115.385
+      phi1 = 111.429
       theta2 = 84
-      phi2 = -154.615
+      phi2 = -158.571
       theta3 = 6
-      phi3 = 25.3846
+      phi3 = 21.4286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 161
+      nr = 237
       chmoth = 'DC4'
-      x = -8.51726
-      y = 17.9498
+      x = -7.87712
+      y = 20.0706
       z = 0
-      irot = 207
+      irot = 283
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 208
+      irot = 284
+      theta1 = 90
+      phi1 = 115.714
+      theta2 = 84
+      phi2 = -154.286
+      theta3 = 6
+      phi3 = 25.7143
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 238
+      chmoth = 'DC4'
+      x = -9.35497
+      y = 19.4258
+      z = 0
+      irot = 284
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 285
       theta1 = 90
       phi1 = 120
       theta2 = 84
@@ -9094,246 +10557,265 @@
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 162
+      nr = 239
       chmoth = 'DC4'
-      x = -9.934
-      y = 17.2062
+      x = -10.7805
+      y = 18.6724
       z = 0
-      irot = 208
+      irot = 285
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 209
+      irot = 286
       theta1 = 90
-      phi1 = 124.615
+      phi1 = 124.286
       theta2 = 84
-      phi2 = -145.385
+      phi2 = -145.714
       theta3 = 6
-      phi3 = 34.6154
+      phi3 = 34.2857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 163
+      nr = 240
       chmoth = 'DC4'
-      x = -11.2863
-      y = 16.351
+      x = -12.1457
+      y = 17.8145
       z = 0
-      irot = 209
+      irot = 286
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 210
+      irot = 287
       theta1 = 90
-      phi1 = 129.231
+      phi1 = 128.571
       theta2 = 84
-      phi2 = -140.769
+      phi2 = -141.429
       theta3 = 6
-      phi3 = 39.2308
+      phi3 = 38.5714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 164
+      nr = 241
       chmoth = 'DC4'
-      x = -12.5654
-      y = 15.3899
+      x = -13.4431
+      y = 16.8571
       z = 0
-      irot = 210
+      irot = 287
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 211
+      irot = 288
       theta1 = 90
-      phi1 = 133.846
+      phi1 = 132.857
       theta2 = 84
-      phi2 = -136.154
+      phi2 = -137.143
       theta3 = 6
-      phi3 = 43.8462
+      phi3 = 42.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 165
+      nr = 242
       chmoth = 'DC4'
-      x = -13.763
-      y = 14.3289
+      x = -14.6652
+      y = 15.8053
       z = 0
-      irot = 211
+      irot = 288
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 212
+      irot = 289
       theta1 = 90
-      phi1 = 138.462
+      phi1 = 137.143
       theta2 = 84
-      phi2 = -131.538
+      phi2 = -132.857
       theta3 = 6
-      phi3 = 48.4615
+      phi3 = 47.1429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 166
+      nr = 243
       chmoth = 'DC4'
-      x = -14.8714
-      y = 13.1749
+      x = -15.8053
+      y = 14.6652
       z = 0
-      irot = 212
+      irot = 289
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 213
+      irot = 290
       theta1 = 90
-      phi1 = 143.077
+      phi1 = 141.429
       theta2 = 84
-      phi2 = -126.923
+      phi2 = -128.571
       theta3 = 6
-      phi3 = 53.0769
+      phi3 = 51.4286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 167
+      nr = 244
       chmoth = 'DC4'
-      x = -15.8833
-      y = 11.9355
+      x = -16.8571
+      y = 13.4431
       z = 0
-      irot = 213
+      irot = 290
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 214
+      irot = 291
       theta1 = 90
-      phi1 = 147.692
+      phi1 = 145.714
       theta2 = 84
-      phi2 = -122.308
+      phi2 = -124.286
       theta3 = 6
-      phi3 = 57.6923
+      phi3 = 55.7143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 168
+      nr = 245
       chmoth = 'DC4'
-      x = -16.7922
-      y = 10.6188
+      x = -17.8145
+      y = 12.1457
       z = 0
-      irot = 214
+      irot = 291
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 215
+      irot = 292
       theta1 = 90
-      phi1 = 152.308
+      phi1 = 150
       theta2 = 84
-      phi2 = -117.692
+      phi2 = -120
       theta3 = 6
-      phi3 = 62.3077
+      phi3 = 60
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 169
+      nr = 246
       chmoth = 'DC4'
-      x = -17.5922
-      y = 9.23312
+      x = -18.6724
+      y = 10.7805
       z = 0
-      irot = 215
+      irot = 292
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 216
+      irot = 293
       theta1 = 90
-      phi1 = 156.923
+      phi1 = 154.286
       theta2 = 84
-      phi2 = -113.077
+      phi2 = -115.714
       theta3 = 6
-      phi3 = 66.9231
+      phi3 = 64.2857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 170
+      nr = 247
       chmoth = 'DC4'
-      x = -18.2782
-      y = 7.78759
+      x = -19.4258
+      y = 9.35497
       z = 0
-      irot = 216
+      irot = 293
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 217
+      irot = 294
       theta1 = 90
-      phi1 = 161.538
+      phi1 = 158.571
       theta2 = 84
-      phi2 = -108.462
+      phi2 = -111.429
       theta3 = 6
-      phi3 = 71.5385
+      phi3 = 68.5714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 171
+      nr = 248
       chmoth = 'DC4'
-      x = -18.8455
-      y = 6.29156
+      x = -20.0706
+      y = 7.87712
       z = 0
-      irot = 217
+      irot = 294
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 218
+      irot = 295
       theta1 = 90
-      phi1 = 166.154
+      phi1 = 162.857
       theta2 = 84
-      phi2 = -103.846
+      phi2 = -107.143
       theta3 = 6
-      phi3 = 76.1538
+      phi3 = 72.8571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 172
+      nr = 249
       chmoth = 'DC4'
-      x = -19.2907
-      y = 4.75472
+      x = -20.6031
+      y = 6.35522
       z = 0
-      irot = 218
+      irot = 295
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 219
+      irot = 296
       theta1 = 90
-      phi1 = 170.769
+      phi1 = 167.143
       theta2 = 84
-      phi2 = -99.2308
+      phi2 = -102.857
       theta3 = 6
-      phi3 = 80.7692
+      phi3 = 77.1429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 173
+      nr = 250
       chmoth = 'DC4'
-      x = -19.6107
-      y = 3.18705
+      x = -21.0204
+      y = 4.79777
       z = 0
-      irot = 219
+      irot = 296
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 220
+      irot = 297
       theta1 = 90
-      phi1 = 175.385
+      phi1 = 171.429
       theta2 = 84
-      phi2 = -94.6154
+      phi2 = -98.5714
       theta3 = 6
-      phi3 = 85.3846
+      phi3 = 81.4286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 174
+      nr = 251
       chmoth = 'DC4'
-      x = -19.8036
-      y = 1.59871
+      x = -21.3202
+      y = 3.2135
       z = 0
-      irot = 220
+      irot = 297
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 221
+      irot = 298
       theta1 = 90
-      phi1 = -180
+      phi1 = 175.714
+      theta2 = 84
+      phi2 = -94.2857
+      theta3 = 6
+      phi3 = 85.7143
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 252
+      chmoth = 'DC4'
+      x = -21.5007
+      y = 1.61126
+      z = 0
+      irot = 298
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 299
+      theta1 = 90
+      phi1 = 180
       theta2 = 84
       phi2 = -90
       theta3 = 6
@@ -9341,244 +10823,263 @@
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 175
+      nr = 253
       chmoth = 'DC4'
-      x = -19.868
-      y = 2.43305e-15
+      x = -21.561
+      y = 2.64037e-15
       z = 0
-      irot = 221
+      irot = 299
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 222
+      irot = 300
       theta1 = 90
-      phi1 = -175.385
+      phi1 = -175.714
       theta2 = 84
-      phi2 = -85.3846
+      phi2 = -85.7143
       theta3 = 6
-      phi3 = 94.6154
+      phi3 = 94.2857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 176
+      nr = 254
       chmoth = 'DC4'
-      x = -19.8036
-      y = -1.59871
+      x = -21.5007
+      y = -1.61126
       z = 0
-      irot = 222
+      irot = 300
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 223
+      irot = 301
       theta1 = 90
-      phi1 = -170.769
+      phi1 = -171.429
       theta2 = 84
-      phi2 = -80.7692
+      phi2 = -81.4286
       theta3 = 6
-      phi3 = 99.2308
+      phi3 = 98.5714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 177
+      nr = 255
       chmoth = 'DC4'
-      x = -19.6107
-      y = -3.18705
+      x = -21.3202
+      y = -3.2135
       z = 0
-      irot = 223
+      irot = 301
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 224
+      irot = 302
       theta1 = 90
-      phi1 = -166.154
+      phi1 = -167.143
       theta2 = 84
-      phi2 = -76.1538
+      phi2 = -77.1429
       theta3 = 6
-      phi3 = 103.846
+      phi3 = 102.857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 178
+      nr = 256
       chmoth = 'DC4'
-      x = -19.2907
-      y = -4.75472
+      x = -21.0204
+      y = -4.79777
       z = 0
-      irot = 224
+      irot = 302
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 225
+      irot = 303
       theta1 = 90
-      phi1 = -161.538
+      phi1 = -162.857
       theta2 = 84
-      phi2 = -71.5385
+      phi2 = -72.8571
       theta3 = 6
-      phi3 = 108.462
+      phi3 = 107.143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 179
+      nr = 257
       chmoth = 'DC4'
-      x = -18.8455
-      y = -6.29156
+      x = -20.6031
+      y = -6.35522
       z = 0
-      irot = 225
+      irot = 303
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 226
+      irot = 304
       theta1 = 90
-      phi1 = -156.923
+      phi1 = -158.571
       theta2 = 84
-      phi2 = -66.9231
+      phi2 = -68.5714
       theta3 = 6
-      phi3 = 113.077
+      phi3 = 111.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 180
+      nr = 258
       chmoth = 'DC4'
-      x = -18.2782
-      y = -7.78759
+      x = -20.0706
+      y = -7.87712
       z = 0
-      irot = 226
+      irot = 304
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 227
+      irot = 305
       theta1 = 90
-      phi1 = -152.308
+      phi1 = -154.286
       theta2 = 84
-      phi2 = -62.3077
+      phi2 = -64.2857
       theta3 = 6
-      phi3 = 117.692
+      phi3 = 115.714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 181
+      nr = 259
       chmoth = 'DC4'
-      x = -17.5922
-      y = -9.23312
+      x = -19.4258
+      y = -9.35497
       z = 0
-      irot = 227
+      irot = 305
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 228
+      irot = 306
       theta1 = 90
-      phi1 = -147.692
+      phi1 = -150
       theta2 = 84
-      phi2 = -57.6923
+      phi2 = -60
       theta3 = 6
-      phi3 = 122.308
+      phi3 = 120
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 182
+      nr = 260
       chmoth = 'DC4'
-      x = -16.7922
-      y = -10.6188
+      x = -18.6724
+      y = -10.7805
       z = 0
-      irot = 228
+      irot = 306
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 229
+      irot = 307
       theta1 = 90
-      phi1 = -143.077
+      phi1 = -145.714
       theta2 = 84
-      phi2 = -53.0769
+      phi2 = -55.7143
       theta3 = 6
-      phi3 = 126.923
+      phi3 = 124.286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 183
+      nr = 261
       chmoth = 'DC4'
-      x = -15.8833
-      y = -11.9355
+      x = -17.8145
+      y = -12.1457
       z = 0
-      irot = 229
+      irot = 307
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 230
+      irot = 308
       theta1 = 90
-      phi1 = -138.462
+      phi1 = -141.429
       theta2 = 84
-      phi2 = -48.4615
+      phi2 = -51.4286
       theta3 = 6
-      phi3 = 131.538
+      phi3 = 128.571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 184
+      nr = 262
       chmoth = 'DC4'
-      x = -14.8714
-      y = -13.1749
+      x = -16.8571
+      y = -13.4431
       z = 0
-      irot = 230
+      irot = 308
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 231
+      irot = 309
       theta1 = 90
-      phi1 = -133.846
+      phi1 = -137.143
       theta2 = 84
-      phi2 = -43.8462
+      phi2 = -47.1429
       theta3 = 6
-      phi3 = 136.154
+      phi3 = 132.857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 185
+      nr = 263
       chmoth = 'DC4'
-      x = -13.763
-      y = -14.3289
+      x = -15.8053
+      y = -14.6652
       z = 0
-      irot = 231
+      irot = 309
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 232
+      irot = 310
       theta1 = 90
-      phi1 = -129.231
+      phi1 = -132.857
       theta2 = 84
-      phi2 = -39.2308
+      phi2 = -42.8571
       theta3 = 6
-      phi3 = 140.769
+      phi3 = 137.143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 186
+      nr = 264
       chmoth = 'DC4'
-      x = -12.5654
-      y = -15.3899
+      x = -14.6652
+      y = -15.8053
       z = 0
-      irot = 232
+      irot = 310
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 233
+      irot = 311
       theta1 = 90
-      phi1 = -124.615
+      phi1 = -128.571
       theta2 = 84
-      phi2 = -34.6154
+      phi2 = -38.5714
       theta3 = 6
-      phi3 = 145.385
+      phi3 = 141.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 187
+      nr = 265
       chmoth = 'DC4'
-      x = -11.2863
-      y = -16.351
+      x = -13.4431
+      y = -16.8571
       z = 0
-      irot = 233
+      irot = 311
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 234
+      irot = 312
+      theta1 = 90
+      phi1 = -124.286
+      theta2 = 84
+      phi2 = -34.2857
+      theta3 = 6
+      phi3 = 145.714
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 266
+      chmoth = 'DC4'
+      x = -12.1457
+      y = -17.8145
+      z = 0
+      irot = 312
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 313
       theta1 = 90
       phi1 = -120
       theta2 = 84
@@ -9588,244 +11089,263 @@
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 188
+      nr = 267
       chmoth = 'DC4'
-      x = -9.934
-      y = -17.2062
+      x = -10.7805
+      y = -18.6724
       z = 0
-      irot = 234
+      irot = 313
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 235
+      irot = 314
       theta1 = 90
-      phi1 = -115.385
+      phi1 = -115.714
       theta2 = 84
-      phi2 = -25.3846
+      phi2 = -25.7143
       theta3 = 6
-      phi3 = 154.615
+      phi3 = 154.286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 189
+      nr = 268
       chmoth = 'DC4'
-      x = -8.51726
-      y = -17.9498
+      x = -9.35497
+      y = -19.4258
       z = 0
-      irot = 235
+      irot = 314
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 236
+      irot = 315
       theta1 = 90
-      phi1 = -110.769
+      phi1 = -111.429
       theta2 = 84
-      phi2 = -20.7692
+      phi2 = -21.4286
       theta3 = 6
-      phi3 = 159.231
+      phi3 = 158.571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 190
+      nr = 269
       chmoth = 'DC4'
-      x = -7.04529
-      y = -18.5769
+      x = -7.87712
+      y = -20.0706
       z = 0
-      irot = 236
+      irot = 315
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 237
+      irot = 316
       theta1 = 90
-      phi1 = -106.154
+      phi1 = -107.143
       theta2 = 84
-      phi2 = -16.1538
+      phi2 = -17.1429
       theta3 = 6
-      phi3 = 163.846
+      phi3 = 162.857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 191
+      nr = 270
       chmoth = 'DC4'
-      x = -5.52762
-      y = -19.0836
+      x = -6.35522
+      y = -20.6031
       z = 0
-      irot = 237
+      irot = 316
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 238
+      irot = 317
       theta1 = 90
-      phi1 = -101.538
+      phi1 = -102.857
       theta2 = 84
-      phi2 = -11.5385
+      phi2 = -12.8571
       theta3 = 6
-      phi3 = 168.462
+      phi3 = 167.143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 192
+      nr = 271
       chmoth = 'DC4'
-      x = -3.97411
-      y = -19.4665
+      x = -4.79777
+      y = -21.0204
       z = 0
-      irot = 238
+      irot = 317
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 239
+      irot = 318
       theta1 = 90
-      phi1 = -96.9231
+      phi1 = -98.5714
       theta2 = 84
-      phi2 = -6.92308
+      phi2 = -8.57143
       theta3 = 6
-      phi3 = 173.077
+      phi3 = 171.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 193
+      nr = 272
       chmoth = 'DC4'
-      x = -2.39482
-      y = -19.7231
+      x = -3.2135
+      y = -21.3202
       z = 0
-      irot = 239
+      irot = 318
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 240
+      irot = 319
       theta1 = 90
-      phi1 = -92.3077
+      phi1 = -94.2857
       theta2 = 84
-      phi2 = -2.30769
+      phi2 = -4.28571
       theta3 = 6
-      phi3 = 177.692
+      phi3 = 175.714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 194
+      nr = 273
       chmoth = 'DC4'
-      x = -0.800004
-      y = -19.8519
+      x = -1.61126
+      y = -21.5007
       z = 0
-      irot = 240
+      irot = 319
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 241
+      irot = 320
       theta1 = 90
-      phi1 = -87.6923
+      phi1 = -90
       theta2 = 84
-      phi2 = 2.30769
+      phi2 = -1.05247e-14
       theta3 = 6
-      phi3 = -177.692
+      phi3 = 180
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 195
+      nr = 274
       chmoth = 'DC4'
-      x = 0.800004
-      y = -19.8519
+      x = -3.96056e-15
+      y = -21.561
       z = 0
-      irot = 241
+      irot = 320
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 242
+      irot = 321
       theta1 = 90
-      phi1 = -83.0769
+      phi1 = -85.7143
       theta2 = 84
-      phi2 = 6.92308
+      phi2 = 4.28571
       theta3 = 6
-      phi3 = -173.077
+      phi3 = -175.714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 196
+      nr = 275
       chmoth = 'DC4'
-      x = 2.39482
-      y = -19.7231
+      x = 1.61126
+      y = -21.5007
       z = 0
-      irot = 242
+      irot = 321
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 243
+      irot = 322
       theta1 = 90
-      phi1 = -78.4615
+      phi1 = -81.4286
       theta2 = 84
-      phi2 = 11.5385
+      phi2 = 8.57143
       theta3 = 6
-      phi3 = -168.462
+      phi3 = -171.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 197
+      nr = 276
       chmoth = 'DC4'
-      x = 3.97411
-      y = -19.4665
+      x = 3.2135
+      y = -21.3202
       z = 0
-      irot = 243
+      irot = 322
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 244
+      irot = 323
       theta1 = 90
-      phi1 = -73.8462
+      phi1 = -77.1429
       theta2 = 84
-      phi2 = 16.1538
+      phi2 = 12.8571
       theta3 = 6
-      phi3 = -163.846
+      phi3 = -167.143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 198
+      nr = 277
       chmoth = 'DC4'
-      x = 5.52762
-      y = -19.0836
+      x = 4.79777
+      y = -21.0204
       z = 0
-      irot = 244
+      irot = 323
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 245
+      irot = 324
       theta1 = 90
-      phi1 = -69.2308
+      phi1 = -72.8571
       theta2 = 84
-      phi2 = 20.7692
+      phi2 = 17.1429
       theta3 = 6
-      phi3 = -159.231
+      phi3 = -162.857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 199
+      nr = 278
       chmoth = 'DC4'
-      x = 7.04529
-      y = -18.5769
+      x = 6.35522
+      y = -20.6031
       z = 0
-      irot = 245
+      irot = 324
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 246
+      irot = 325
       theta1 = 90
-      phi1 = -64.6154
+      phi1 = -68.5714
       theta2 = 84
-      phi2 = 25.3846
+      phi2 = 21.4286
       theta3 = 6
-      phi3 = -154.615
+      phi3 = -158.571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 200
+      nr = 279
       chmoth = 'DC4'
-      x = 8.51726
-      y = -17.9498
+      x = 7.87712
+      y = -20.0706
       z = 0
-      irot = 246
+      irot = 325
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 247
+      irot = 326
+      theta1 = 90
+      phi1 = -64.2857
+      theta2 = 84
+      phi2 = 25.7143
+      theta3 = 6
+      phi3 = -154.286
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 280
+      chmoth = 'DC4'
+      x = 9.35497
+      y = -19.4258
+      z = 0
+      irot = 326
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 327
       theta1 = 90
       phi1 = -60
       theta2 = 84
@@ -9835,1530 +11355,10 @@
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 201
-      chmoth = 'DC4'
-      x = 9.934
-      y = -17.2062
-      z = 0
-      irot = 247
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 248
-      theta1 = 90
-      phi1 = -55.3846
-      theta2 = 84
-      phi2 = 34.6154
-      theta3 = 6
-      phi3 = -145.385
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 202
-      chmoth = 'DC4'
-      x = 11.2863
-      y = -16.351
-      z = 0
-      irot = 248
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 249
-      theta1 = 90
-      phi1 = -50.7692
-      theta2 = 84
-      phi2 = 39.2308
-      theta3 = 6
-      phi3 = -140.769
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 203
-      chmoth = 'DC4'
-      x = 12.5654
-      y = -15.3899
-      z = 0
-      irot = 249
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 250
-      theta1 = 90
-      phi1 = -46.1538
-      theta2 = 84
-      phi2 = 43.8462
-      theta3 = 6
-      phi3 = -136.154
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 204
-      chmoth = 'DC4'
-      x = 13.763
-      y = -14.3289
-      z = 0
-      irot = 250
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 251
-      theta1 = 90
-      phi1 = -41.5385
-      theta2 = 84
-      phi2 = 48.4615
-      theta3 = 6
-      phi3 = -131.538
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 205
-      chmoth = 'DC4'
-      x = 14.8714
-      y = -13.1749
-      z = 0
-      irot = 251
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 252
-      theta1 = 90
-      phi1 = -36.9231
-      theta2 = 84
-      phi2 = 53.0769
-      theta3 = 6
-      phi3 = -126.923
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 206
-      chmoth = 'DC4'
-      x = 15.8833
-      y = -11.9355
-      z = 0
-      irot = 252
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 253
-      theta1 = 90
-      phi1 = -32.3077
-      theta2 = 84
-      phi2 = 57.6923
-      theta3 = 6
-      phi3 = -122.308
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 207
-      chmoth = 'DC4'
-      x = 16.7922
-      y = -10.6188
-      z = 0
-      irot = 253
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 254
-      theta1 = 90
-      phi1 = -27.6923
-      theta2 = 84
-      phi2 = 62.3077
-      theta3 = 6
-      phi3 = -117.692
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 208
-      chmoth = 'DC4'
-      x = 17.5922
-      y = -9.23312
-      z = 0
-      irot = 254
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 255
-      theta1 = 90
-      phi1 = -23.0769
-      theta2 = 84
-      phi2 = 66.9231
-      theta3 = 6
-      phi3 = -113.077
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 209
-      chmoth = 'DC4'
-      x = 18.2782
-      y = -7.78759
-      z = 0
-      irot = 255
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 256
-      theta1 = 90
-      phi1 = -18.4615
-      theta2 = 84
-      phi2 = 71.5385
-      theta3 = 6
-      phi3 = -108.462
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 210
-      chmoth = 'DC4'
-      x = 18.8455
-      y = -6.29156
-      z = 0
-      irot = 256
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 257
-      theta1 = 90
-      phi1 = -13.8462
-      theta2 = 84
-      phi2 = 76.1538
-      theta3 = 6
-      phi3 = -103.846
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 211
-      chmoth = 'DC4'
-      x = 19.2907
-      y = -4.75472
-      z = 0
-      irot = 257
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 258
-      theta1 = 90
-      phi1 = -9.23077
-      theta2 = 84
-      phi2 = 80.7692
-      theta3 = 6
-      phi3 = -99.2308
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 212
-      chmoth = 'DC4'
-      x = 19.6107
-      y = -3.18705
-      z = 0
-      irot = 258
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 259
-      theta1 = 90
-      phi1 = -4.61538
-      theta2 = 84
-      phi2 = 85.3846
-      theta3 = 6
-      phi3 = -94.6154
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 213
-      chmoth = 'DC4'
-      x = 19.8036
-      y = -1.59871
-      z = 0
-      irot = 259
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 260
-      theta1 = 90
-      phi1 = 0
-      theta2 = 84
-      phi2 = 90
-      theta3 = 6
-      phi3 = -90
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 214
-      chmoth = 'DC4'
-      x = 21.65
-      y = 0
-      z = 0
-      irot = 260
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 261
-      theta1 = 90
-      phi1 = 4.23529
-      theta2 = 84
-      phi2 = 94.2353
-      theta3 = 6
-      phi3 = -85.7647
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 215
-      chmoth = 'DC4'
-      x = 21.5909
-      y = 1.59891
-      z = 0
-      irot = 261
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 262
-      theta1 = 90
-      phi1 = 8.47059
-      theta2 = 84
-      phi2 = 98.4706
-      theta3 = 6
-      phi3 = -81.5294
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 216
-      chmoth = 'DC4'
-      x = 21.4138
-      y = 3.18908
-      z = 0
-      irot = 262
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 263
-      theta1 = 90
-      phi1 = 12.7059
-      theta2 = 84
-      phi2 = 102.706
-      theta3 = 6
-      phi3 = -77.2941
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 217
-      chmoth = 'DC4'
-      x = 21.1198
-      y = 4.76184
-      z = 0
-      irot = 263
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 264
-      theta1 = 90
-      phi1 = 16.9412
-      theta2 = 84
-      phi2 = 106.941
-      theta3 = 6
-      phi3 = -73.0588
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 218
-      chmoth = 'DC4'
-      x = 20.7105
-      y = 6.30859
-      z = 0
-      irot = 264
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 265
-      theta1 = 90
-      phi1 = 21.1765
-      theta2 = 84
-      phi2 = 111.176
-      theta3 = 6
-      phi3 = -68.8235
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 219
-      chmoth = 'DC4'
-      x = 20.188
-      y = 7.82088
-      z = 0
-      irot = 265
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 266
-      theta1 = 90
-      phi1 = 25.4118
-      theta2 = 84
-      phi2 = 115.412
-      theta3 = 6
-      phi3 = -64.5882
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 220
-      chmoth = 'DC4'
-      x = 19.5553
-      y = 9.29046
-      z = 0
-      irot = 266
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 267
-      theta1 = 90
-      phi1 = 29.6471
-      theta2 = 84
-      phi2 = 119.647
-      theta3 = 6
-      phi3 = -60.3529
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 221
-      chmoth = 'DC4'
-      x = 18.8158
-      y = 10.7093
-      z = 0
-      irot = 267
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 268
-      theta1 = 90
-      phi1 = 33.8824
-      theta2 = 84
-      phi2 = 123.882
-      theta3 = 6
-      phi3 = -56.1176
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 222
-      chmoth = 'DC4'
-      x = 17.9735
-      y = 12.0696
-      z = 0
-      irot = 268
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 269
-      theta1 = 90
-      phi1 = 38.1176
-      theta2 = 84
-      phi2 = 128.118
-      theta3 = 6
-      phi3 = -51.8824
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 223
-      chmoth = 'DC4'
-      x = 17.033
-      y = 13.3641
-      z = 0
-      irot = 269
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 270
-      theta1 = 90
-      phi1 = 42.3529
-      theta2 = 84
-      phi2 = 132.353
-      theta3 = 6
-      phi3 = -47.6471
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 224
-      chmoth = 'DC4'
-      x = 15.9995
-      y = 14.5855
-      z = 0
-      irot = 270
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 271
-      theta1 = 90
-      phi1 = 46.5882
-      theta2 = 84
-      phi2 = 136.588
-      theta3 = 6
-      phi3 = -43.4118
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 225
-      chmoth = 'DC4'
-      x = 14.8787
-      y = 15.7273
-      z = 0
-      irot = 271
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 272
-      theta1 = 90
-      phi1 = 50.8235
-      theta2 = 84
-      phi2 = 140.824
-      theta3 = 6
-      phi3 = -39.1765
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 226
-      chmoth = 'DC4'
-      x = 13.6765
-      y = 16.7832
-      z = 0
-      irot = 272
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 273
-      theta1 = 90
-      phi1 = 55.0588
-      theta2 = 84
-      phi2 = 145.059
-      theta3 = 6
-      phi3 = -34.9412
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 227
-      chmoth = 'DC4'
-      x = 12.3997
-      y = 17.7474
-      z = 0
-      irot = 273
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 274
-      theta1 = 90
-      phi1 = 59.2941
-      theta2 = 84
-      phi2 = 149.294
-      theta3 = 6
-      phi3 = -30.7059
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 228
-      chmoth = 'DC4'
-      x = 11.0552
-      y = 18.6147
-      z = 0
-      irot = 274
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 275
-      theta1 = 90
-      phi1 = 63.5294
-      theta2 = 84
-      phi2 = 153.529
-      theta3 = 6
-      phi3 = -26.4706
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 229
-      chmoth = 'DC4'
-      x = 9.65024
-      y = 19.3803
-      z = 0
-      irot = 275
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 276
-      theta1 = 90
-      phi1 = 67.7647
-      theta2 = 84
-      phi2 = 157.765
-      theta3 = 6
-      phi3 = -22.2353
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 230
-      chmoth = 'DC4'
-      x = 8.1926
-      y = 20.0401
-      z = 0
-      irot = 276
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 277
-      theta1 = 90
-      phi1 = 72
-      theta2 = 84
-      phi2 = 162
-      theta3 = 6
-      phi3 = -18
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 231
-      chmoth = 'DC4'
-      x = 6.69022
-      y = 20.5904
-      z = 0
-      irot = 277
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 278
-      theta1 = 90
-      phi1 = 76.2353
-      theta2 = 84
-      phi2 = 166.235
-      theta3 = 6
-      phi3 = -13.7647
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 232
-      chmoth = 'DC4'
-      x = 5.1513
-      y = 21.0282
-      z = 0
-      irot = 278
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 279
-      theta1 = 90
-      phi1 = 80.4706
-      theta2 = 84
-      phi2 = 170.471
-      theta3 = 6
-      phi3 = -9.52941
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 233
-      chmoth = 'DC4'
-      x = 3.58424
-      y = 21.3512
-      z = 0
-      irot = 279
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 280
-      theta1 = 90
-      phi1 = 84.7059
-      theta2 = 84
-      phi2 = 174.706
-      theta3 = 6
-      phi3 = -5.29412
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 234
-      chmoth = 'DC4'
-      x = 1.99761
-      y = 21.5576
-      z = 0
-      irot = 280
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 281
-      theta1 = 90
-      phi1 = 88.9412
-      theta2 = 84
-      phi2 = 178.941
-      theta3 = 6
-      phi3 = -1.05882
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 235
-      chmoth = 'DC4'
-      x = 0.400068
-      y = 21.6463
-      z = 0
-      irot = 281
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 282
-      theta1 = 90
-      phi1 = 93.1765
-      theta2 = 84
-      phi2 = -176.824
-      theta3 = 6
-      phi3 = 3.17647
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 236
-      chmoth = 'DC4'
-      x = -1.19966
-      y = 21.6167
-      z = 0
-      irot = 282
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 283
-      theta1 = 90
-      phi1 = 97.4118
-      theta2 = 84
-      phi2 = -172.588
-      theta3 = 6
-      phi3 = 7.41176
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 237
-      chmoth = 'DC4'
-      x = -2.79283
-      y = 21.4691
-      z = 0
-      irot = 283
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 284
-      theta1 = 90
-      phi1 = 101.647
-      theta2 = 84
-      phi2 = -168.353
-      theta3 = 6
-      phi3 = 11.6471
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 238
-      chmoth = 'DC4'
-      x = -4.37075
-      y = 21.2042
-      z = 0
-      irot = 284
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 285
-      theta1 = 90
-      phi1 = 105.882
-      theta2 = 84
-      phi2 = -164.118
-      theta3 = 6
-      phi3 = 15.8824
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 239
-      chmoth = 'DC4'
-      x = -5.9248
-      y = 20.8235
-      z = 0
-      irot = 285
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 286
-      theta1 = 90
-      phi1 = 110.118
-      theta2 = 84
-      phi2 = -159.882
-      theta3 = 6
-      phi3 = 20.1176
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 240
-      chmoth = 'DC4'
-      x = -7.44649
-      y = 20.3291
-      z = 0
-      irot = 286
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 287
-      theta1 = 90
-      phi1 = 114.353
-      theta2 = 84
-      phi2 = -155.647
-      theta3 = 6
-      phi3 = 24.3529
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 241
-      chmoth = 'DC4'
-      x = -8.92751
-      y = 19.7236
-      z = 0
-      irot = 287
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 288
-      theta1 = 90
-      phi1 = 118.588
-      theta2 = 84
-      phi2 = -151.412
-      theta3 = 6
-      phi3 = 28.5882
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 242
-      chmoth = 'DC4'
-      x = -10.3598
-      y = 19.0105
-      z = 0
-      irot = 288
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 289
-      theta1 = 90
-      phi1 = 122.824
-      theta2 = 84
-      phi2 = -147.176
-      theta3 = 6
-      phi3 = 32.8235
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 243
-      chmoth = 'DC4'
-      x = -11.7355
-      y = 18.1934
-      z = 0
-      irot = 289
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 290
-      theta1 = 90
-      phi1 = 127.059
-      theta2 = 84
-      phi2 = -142.941
-      theta3 = 6
-      phi3 = 37.0588
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 244
-      chmoth = 'DC4'
-      x = -13.047
-      y = 17.2771
-      z = 0
-      irot = 290
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 291
-      theta1 = 90
-      phi1 = 131.294
-      theta2 = 84
-      phi2 = -138.706
-      theta3 = 6
-      phi3 = 41.2941
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 245
-      chmoth = 'DC4'
-      x = -14.2874
-      y = 16.2663
-      z = 0
-      irot = 291
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 292
-      theta1 = 90
-      phi1 = 135.529
-      theta2 = 84
-      phi2 = -134.471
-      theta3 = 6
-      phi3 = 45.5294
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 246
-      chmoth = 'DC4'
-      x = -15.4497
-      y = 15.1668
-      z = 0
-      irot = 292
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 293
-      theta1 = 90
-      phi1 = 139.765
-      theta2 = 84
-      phi2 = -130.235
-      theta3 = 6
-      phi3 = 49.7647
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 247
-      chmoth = 'DC4'
-      x = -16.5276
-      y = 13.9843
-      z = 0
-      irot = 293
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 294
-      theta1 = 90
-      phi1 = 144
-      theta2 = 84
-      phi2 = -126
-      theta3 = 6
-      phi3 = 54
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 248
-      chmoth = 'DC4'
-      x = -17.5152
-      y = 12.7256
-      z = 0
-      irot = 294
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 295
-      theta1 = 90
-      phi1 = 148.235
-      theta2 = 84
-      phi2 = -121.765
-      theta3 = 6
-      phi3 = 58.2353
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 249
-      chmoth = 'DC4'
-      x = -18.4072
-      y = 11.3973
-      z = 0
-      irot = 295
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 296
-      theta1 = 90
-      phi1 = 152.471
-      theta2 = 84
-      phi2 = -117.529
-      theta3 = 6
-      phi3 = 62.4706
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 250
-      chmoth = 'DC4'
-      x = -19.1987
-      y = 10.0067
-      z = 0
-      irot = 296
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 297
-      theta1 = 90
-      phi1 = 156.706
-      theta2 = 84
-      phi2 = -113.294
-      theta3 = 6
-      phi3 = 66.7059
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 251
-      chmoth = 'DC4'
-      x = -19.8852
-      y = 8.56152
-      z = 0
-      irot = 297
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 298
-      theta1 = 90
-      phi1 = 160.941
-      theta2 = 84
-      phi2 = -109.059
-      theta3 = 6
-      phi3 = 70.9412
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 252
-      chmoth = 'DC4'
-      x = -20.4632
-      y = 7.06956
-      z = 0
-      irot = 298
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 299
-      theta1 = 90
-      phi1 = 165.176
-      theta2 = 84
-      phi2 = -104.824
-      theta3 = 6
-      phi3 = 75.1765
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 253
-      chmoth = 'DC4'
-      x = -20.9295
-      y = 5.539
-      z = 0
-      irot = 299
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 300
-      theta1 = 90
-      phi1 = 169.412
-      theta2 = 84
-      phi2 = -100.588
-      theta3 = 6
-      phi3 = 79.4118
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 254
-      chmoth = 'DC4'
-      x = -21.2814
-      y = 3.97818
-      z = 0
-      irot = 300
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 301
-      theta1 = 90
-      phi1 = 173.647
-      theta2 = 84
-      phi2 = -96.3529
-      theta3 = 6
-      phi3 = 83.6471
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 255
-      chmoth = 'DC4'
-      x = -21.5171
-      y = 2.39563
-      z = 0
-      irot = 301
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 302
-      theta1 = 90
-      phi1 = 177.882
-      theta2 = 84
-      phi2 = -92.1176
-      theta3 = 6
-      phi3 = 87.8824
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 256
-      chmoth = 'DC4'
-      x = -21.6352
-      y = 0.8
-      z = 0
-      irot = 302
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 303
-      theta1 = 90
-      phi1 = -177.882
-      theta2 = 84
-      phi2 = -87.8824
-      theta3 = 6
-      phi3 = 92.1176
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 257
-      chmoth = 'DC4'
-      x = -21.6352
-      y = -0.8
-      z = 0
-      irot = 303
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 304
-      theta1 = 90
-      phi1 = -173.647
-      theta2 = 84
-      phi2 = -83.6471
-      theta3 = 6
-      phi3 = 96.3529
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 258
-      chmoth = 'DC4'
-      x = -21.5171
-      y = -2.39563
-      z = 0
-      irot = 304
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 305
-      theta1 = 90
-      phi1 = -169.412
-      theta2 = 84
-      phi2 = -79.4118
-      theta3 = 6
-      phi3 = 100.588
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 259
-      chmoth = 'DC4'
-      x = -21.2814
-      y = -3.97818
-      z = 0
-      irot = 305
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 306
-      theta1 = 90
-      phi1 = -165.176
-      theta2 = 84
-      phi2 = -75.1765
-      theta3 = 6
-      phi3 = 104.824
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 260
-      chmoth = 'DC4'
-      x = -20.9295
-      y = -5.539
-      z = 0
-      irot = 306
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 307
-      theta1 = 90
-      phi1 = -160.941
-      theta2 = 84
-      phi2 = -70.9412
-      theta3 = 6
-      phi3 = 109.059
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 261
-      chmoth = 'DC4'
-      x = -20.4632
-      y = -7.06956
-      z = 0
-      irot = 307
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 308
-      theta1 = 90
-      phi1 = -156.706
-      theta2 = 84
-      phi2 = -66.7059
-      theta3 = 6
-      phi3 = 113.294
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 262
-      chmoth = 'DC4'
-      x = -19.8852
-      y = -8.56152
-      z = 0
-      irot = 308
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 309
-      theta1 = 90
-      phi1 = -152.471
-      theta2 = 84
-      phi2 = -62.4706
-      theta3 = 6
-      phi3 = 117.529
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 263
-      chmoth = 'DC4'
-      x = -19.1987
-      y = -10.0067
-      z = 0
-      irot = 309
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 310
-      theta1 = 90
-      phi1 = -148.235
-      theta2 = 84
-      phi2 = -58.2353
-      theta3 = 6
-      phi3 = 121.765
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 264
-      chmoth = 'DC4'
-      x = -18.4072
-      y = -11.3973
-      z = 0
-      irot = 310
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 311
-      theta1 = 90
-      phi1 = -144
-      theta2 = 84
-      phi2 = -54
-      theta3 = 6
-      phi3 = 126
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 265
-      chmoth = 'DC4'
-      x = -17.5152
-      y = -12.7256
-      z = 0
-      irot = 311
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 312
-      theta1 = 90
-      phi1 = -139.765
-      theta2 = 84
-      phi2 = -49.7647
-      theta3 = 6
-      phi3 = 130.235
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 266
-      chmoth = 'DC4'
-      x = -16.5276
-      y = -13.9843
-      z = 0
-      irot = 312
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 313
-      theta1 = 90
-      phi1 = -135.529
-      theta2 = 84
-      phi2 = -45.5294
-      theta3 = 6
-      phi3 = 134.471
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 267
-      chmoth = 'DC4'
-      x = -15.4497
-      y = -15.1668
-      z = 0
-      irot = 313
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 314
-      theta1 = 90
-      phi1 = -131.294
-      theta2 = 84
-      phi2 = -41.2941
-      theta3 = 6
-      phi3 = 138.706
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 268
-      chmoth = 'DC4'
-      x = -14.2874
-      y = -16.2663
-      z = 0
-      irot = 314
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 315
-      theta1 = 90
-      phi1 = -127.059
-      theta2 = 84
-      phi2 = -37.0588
-      theta3 = 6
-      phi3 = 142.941
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 269
-      chmoth = 'DC4'
-      x = -13.047
-      y = -17.2771
-      z = 0
-      irot = 315
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 316
-      theta1 = 90
-      phi1 = -122.824
-      theta2 = 84
-      phi2 = -32.8235
-      theta3 = 6
-      phi3 = 147.176
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 270
-      chmoth = 'DC4'
-      x = -11.7355
-      y = -18.1934
-      z = 0
-      irot = 316
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 317
-      theta1 = 90
-      phi1 = -118.588
-      theta2 = 84
-      phi2 = -28.5882
-      theta3 = 6
-      phi3 = 151.412
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 271
-      chmoth = 'DC4'
-      x = -10.3598
-      y = -19.0105
-      z = 0
-      irot = 317
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 318
-      theta1 = 90
-      phi1 = -114.353
-      theta2 = 84
-      phi2 = -24.3529
-      theta3 = 6
-      phi3 = 155.647
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 272
-      chmoth = 'DC4'
-      x = -8.92751
-      y = -19.7236
-      z = 0
-      irot = 318
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 319
-      theta1 = 90
-      phi1 = -110.118
-      theta2 = 84
-      phi2 = -20.1176
-      theta3 = 6
-      phi3 = 159.882
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 273
-      chmoth = 'DC4'
-      x = -7.44649
-      y = -20.3291
-      z = 0
-      irot = 319
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 320
-      theta1 = 90
-      phi1 = -105.882
-      theta2 = 84
-      phi2 = -15.8824
-      theta3 = 6
-      phi3 = 164.118
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 274
-      chmoth = 'DC4'
-      x = -5.9248
-      y = -20.8235
-      z = 0
-      irot = 320
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 321
-      theta1 = 90
-      phi1 = -101.647
-      theta2 = 84
-      phi2 = -11.6471
-      theta3 = 6
-      phi3 = 168.353
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 275
-      chmoth = 'DC4'
-      x = -4.37075
-      y = -21.2042
-      z = 0
-      irot = 321
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 322
-      theta1 = 90
-      phi1 = -97.4118
-      theta2 = 84
-      phi2 = -7.41176
-      theta3 = 6
-      phi3 = 172.588
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 276
-      chmoth = 'DC4'
-      x = -2.79283
-      y = -21.4691
-      z = 0
-      irot = 322
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 323
-      theta1 = 90
-      phi1 = -93.1765
-      theta2 = 84
-      phi2 = -3.17647
-      theta3 = 6
-      phi3 = 176.824
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 277
-      chmoth = 'DC4'
-      x = -1.19966
-      y = -21.6167
-      z = 0
-      irot = 323
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 324
-      theta1 = 90
-      phi1 = -88.9412
-      theta2 = 84
-      phi2 = 1.05882
-      theta3 = 6
-      phi3 = -178.941
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 278
-      chmoth = 'DC4'
-      x = 0.400068
-      y = -21.6463
-      z = 0
-      irot = 324
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 325
-      theta1 = 90
-      phi1 = -84.7059
-      theta2 = 84
-      phi2 = 5.29412
-      theta3 = 6
-      phi3 = -174.706
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 279
-      chmoth = 'DC4'
-      x = 1.99761
-      y = -21.5576
-      z = 0
-      irot = 325
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 326
-      theta1 = 90
-      phi1 = -80.4706
-      theta2 = 84
-      phi2 = 9.52941
-      theta3 = 6
-      phi3 = -170.471
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 280
-      chmoth = 'DC4'
-      x = 3.58424
-      y = -21.3512
-      z = 0
-      irot = 326
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 327
-      theta1 = 90
-      phi1 = -76.2353
-      theta2 = 84
-      phi2 = 13.7647
-      theta3 = 6
-      phi3 = -166.235
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
       nr = 281
       chmoth = 'DC4'
-      x = 5.1513
-      y = -21.0282
+      x = 10.7805
+      y = -18.6724
       z = 0
       irot = 327
       chonly = 'ONLY'
@@ -11366,18 +11366,18 @@
 
       irot = 328
       theta1 = 90
-      phi1 = -72
+      phi1 = -55.7143
       theta2 = 84
-      phi2 = 18
+      phi2 = 34.2857
       theta3 = 6
-      phi3 = -162
+      phi3 = -145.714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 282
       chmoth = 'DC4'
-      x = 6.69022
-      y = -20.5904
+      x = 12.1457
+      y = -17.8145
       z = 0
       irot = 328
       chonly = 'ONLY'
@@ -11385,18 +11385,18 @@
 
       irot = 329
       theta1 = 90
-      phi1 = -67.7647
+      phi1 = -51.4286
       theta2 = 84
-      phi2 = 22.2353
+      phi2 = 38.5714
       theta3 = 6
-      phi3 = -157.765
+      phi3 = -141.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 283
       chmoth = 'DC4'
-      x = 8.1926
-      y = -20.0401
+      x = 13.4431
+      y = -16.8571
       z = 0
       irot = 329
       chonly = 'ONLY'
@@ -11404,18 +11404,18 @@
 
       irot = 330
       theta1 = 90
-      phi1 = -63.5294
+      phi1 = -47.1429
       theta2 = 84
-      phi2 = 26.4706
+      phi2 = 42.8571
       theta3 = 6
-      phi3 = -153.529
+      phi3 = -137.143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 284
       chmoth = 'DC4'
-      x = 9.65024
-      y = -19.3803
+      x = 14.6652
+      y = -15.8053
       z = 0
       irot = 330
       chonly = 'ONLY'
@@ -11423,18 +11423,18 @@
 
       irot = 331
       theta1 = 90
-      phi1 = -59.2941
+      phi1 = -42.8571
       theta2 = 84
-      phi2 = 30.7059
+      phi2 = 47.1429
       theta3 = 6
-      phi3 = -149.294
+      phi3 = -132.857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 285
       chmoth = 'DC4'
-      x = 11.0552
-      y = -18.6147
+      x = 15.8053
+      y = -14.6652
       z = 0
       irot = 331
       chonly = 'ONLY'
@@ -11442,18 +11442,18 @@
 
       irot = 332
       theta1 = 90
-      phi1 = -55.0588
+      phi1 = -38.5714
       theta2 = 84
-      phi2 = 34.9412
+      phi2 = 51.4286
       theta3 = 6
-      phi3 = -145.059
+      phi3 = -128.571
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 286
       chmoth = 'DC4'
-      x = 12.3997
-      y = -17.7474
+      x = 16.8571
+      y = -13.4431
       z = 0
       irot = 332
       chonly = 'ONLY'
@@ -11461,18 +11461,18 @@
 
       irot = 333
       theta1 = 90
-      phi1 = -50.8235
+      phi1 = -34.2857
       theta2 = 84
-      phi2 = 39.1765
+      phi2 = 55.7143
       theta3 = 6
-      phi3 = -140.824
+      phi3 = -124.286
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 287
       chmoth = 'DC4'
-      x = 13.6765
-      y = -16.7832
+      x = 17.8145
+      y = -12.1457
       z = 0
       irot = 333
       chonly = 'ONLY'
@@ -11480,18 +11480,18 @@
 
       irot = 334
       theta1 = 90
-      phi1 = -46.5882
+      phi1 = -30
       theta2 = 84
-      phi2 = 43.4118
+      phi2 = 60
       theta3 = 6
-      phi3 = -136.588
+      phi3 = -120
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 288
       chmoth = 'DC4'
-      x = 14.8787
-      y = -15.7273
+      x = 18.6724
+      y = -10.7805
       z = 0
       irot = 334
       chonly = 'ONLY'
@@ -11499,18 +11499,18 @@
 
       irot = 335
       theta1 = 90
-      phi1 = -42.3529
+      phi1 = -25.7143
       theta2 = 84
-      phi2 = 47.6471
+      phi2 = 64.2857
       theta3 = 6
-      phi3 = -132.353
+      phi3 = -115.714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 289
       chmoth = 'DC4'
-      x = 15.9995
-      y = -14.5855
+      x = 19.4258
+      y = -9.35497
       z = 0
       irot = 335
       chonly = 'ONLY'
@@ -11518,18 +11518,18 @@
 
       irot = 336
       theta1 = 90
-      phi1 = -38.1176
+      phi1 = -21.4286
       theta2 = 84
-      phi2 = 51.8824
+      phi2 = 68.5714
       theta3 = 6
-      phi3 = -128.118
+      phi3 = -111.429
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 290
       chmoth = 'DC4'
-      x = 17.033
-      y = -13.3641
+      x = 20.0706
+      y = -7.87712
       z = 0
       irot = 336
       chonly = 'ONLY'
@@ -11537,18 +11537,18 @@
 
       irot = 337
       theta1 = 90
-      phi1 = -33.8824
+      phi1 = -17.1429
       theta2 = 84
-      phi2 = 56.1176
+      phi2 = 72.8571
       theta3 = 6
-      phi3 = -123.882
+      phi3 = -107.143
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 291
       chmoth = 'DC4'
-      x = 17.9735
-      y = -12.0696
+      x = 20.6031
+      y = -6.35522
       z = 0
       irot = 337
       chonly = 'ONLY'
@@ -11556,18 +11556,18 @@
 
       irot = 338
       theta1 = 90
-      phi1 = -29.6471
+      phi1 = -12.8571
       theta2 = 84
-      phi2 = 60.3529
+      phi2 = 77.1429
       theta3 = 6
-      phi3 = -119.647
+      phi3 = -102.857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 292
       chmoth = 'DC4'
-      x = 18.8158
-      y = -10.7093
+      x = 21.0204
+      y = -4.79777
       z = 0
       irot = 338
       chonly = 'ONLY'
@@ -11575,18 +11575,18 @@
 
       irot = 339
       theta1 = 90
-      phi1 = -25.4118
+      phi1 = -8.57143
       theta2 = 84
-      phi2 = 64.5882
+      phi2 = 81.4286
       theta3 = 6
-      phi3 = -115.412
+      phi3 = -98.5714
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 293
       chmoth = 'DC4'
-      x = 19.5553
-      y = -9.29046
+      x = 21.3202
+      y = -3.2135
       z = 0
       irot = 339
       chonly = 'ONLY'
@@ -11594,96 +11594,20 @@
 
       irot = 340
       theta1 = 90
-      phi1 = -21.1765
+      phi1 = -4.28571
       theta2 = 84
-      phi2 = 68.8235
+      phi2 = 85.7143
       theta3 = 6
-      phi3 = -111.176
+      phi3 = -94.2857
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 294
       chmoth = 'DC4'
-      x = 20.188
-      y = -7.82088
+      x = 21.5007
+      y = -1.61126
       z = 0
       irot = 340
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 341
-      theta1 = 90
-      phi1 = -16.9412
-      theta2 = 84
-      phi2 = 73.0588
-      theta3 = 6
-      phi3 = -106.941
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 295
-      chmoth = 'DC4'
-      x = 20.7105
-      y = -6.30859
-      z = 0
-      irot = 341
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 342
-      theta1 = 90
-      phi1 = -12.7059
-      theta2 = 84
-      phi2 = 77.2941
-      theta3 = 6
-      phi3 = -102.706
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 296
-      chmoth = 'DC4'
-      x = 21.1198
-      y = -4.76184
-      z = 0
-      irot = 342
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 343
-      theta1 = 90
-      phi1 = -8.47059
-      theta2 = 84
-      phi2 = 81.5294
-      theta3 = 6
-      phi3 = -98.4706
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 297
-      chmoth = 'DC4'
-      x = 21.4138
-      y = -3.18908
-      z = 0
-      irot = 343
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 344
-      theta1 = 90
-      phi1 = -4.23529
-      theta2 = 84
-      phi2 = 85.7647
-      theta3 = 6
-      phi3 = -94.2353
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 298
-      chmoth = 'DC4'
-      x = 21.5909
-      y = -1.59891
-      z = 0
-      irot = 344
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -11726,8 +11650,8 @@
       chshap = 'TUBE'
       nmed = 122
       npar = 3
-      par(1) = 24.374
-      par(2) = 26.054
+      par(1) = 24.16
+      par(2) = 25.86
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.142) stop 'consistency check #1 failed'
@@ -11744,10 +11668,10 @@
 
       chname = 'SD15'
       chmoth = 'DC8'
-      ndiv = 99
+      ndiv = 98
       iaxis = 2
-      step = 3.63636
-      c0 = -1.818
+      step = 3.67347
+      c0 = -1.6207
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -11771,11 +11695,11 @@
       chshap = 'TUBS'
       nmed = 123
       npar = 5
-      par(1) = 24.37
-      par(2) = 26.05
+      par(1) = 24.162
+      par(2) = 25.858
       par(3) = 76.25
-      par(4) = -1.818
-      par(5) = 1.818
+      par(4) = -1.8367
+      par(5) = 1.8363
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.144) stop 'consistency check #1 failed'
 
@@ -11792,7 +11716,7 @@
       chname = 'STRA'
       nr = 4
       chmoth = 'DS8'
-      x = 25.214
+      x = 25.015
       y = 0
       z = 0
       irot = 0
@@ -11838,8 +11762,8 @@
       chshap = 'TUBE'
       nmed = 124
       npar = 3
-      par(1) = 26.157
-      par(2) = 27.837
+      par(1) = 25.95
+      par(2) = 27.63
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.145) stop 'consistency check #1 failed'
@@ -11856,10 +11780,10 @@
 
       chname = 'SD16'
       chmoth = 'DC9'
-      ndiv = 106
+      ndiv = 105
       iaxis = 2
-      step = 3.39623
-      c0 = -1.698
+      step = 3.42857
+      c0 = -1.7143
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -11883,11 +11807,11 @@
       chshap = 'TUBS'
       nmed = 125
       npar = 5
-      par(1) = 26.15
-      par(2) = 27.83
+      par(1) = 25.952
+      par(2) = 27.628
       par(3) = 76.25
-      par(4) = -1.698
-      par(5) = 1.698
+      par(4) = -1.7143
+      par(5) = 1.7142
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.147) stop 'consistency check #1 failed'
 
@@ -11904,7 +11828,7 @@
       chname = 'STRA'
       nr = 5
       chmoth = 'DS9'
-      x = 26.997
+      x = 26.801
       y = 0
       z = 0
       irot = 0
@@ -11950,8 +11874,8 @@
       chshap = 'TUBE'
       nmed = 126
       npar = 3
-      par(1) = 27.939
-      par(2) = 29.619
+      par(1) = 27.73
+      par(2) = 29.43
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.148) stop 'consistency check #1 failed'
@@ -11968,10 +11892,10 @@
 
       chname = 'SD17'
       chmoth = 'DC10'
-      ndiv = 113
+      ndiv = 112
       iaxis = 2
-      step = 3.18584
-      c0 = -1.593
+      step = 3.21429
+      c0 = -0.0001
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -11995,11 +11919,11 @@
       chshap = 'TUBS'
       nmed = 127
       npar = 5
-      par(1) = 27.94
-      par(2) = 29.62
+      par(1) = 27.732
+      par(2) = 29.428
       par(3) = 76.25
-      par(4) = -1.593
-      par(5) = 1.593
+      par(4) = -1.6071
+      par(5) = 1.6072
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.150) stop 'consistency check #1 failed'
 
@@ -12016,7 +11940,7 @@
       chname = 'STRA'
       nr = 6
       chmoth = 'DS10'
-      x = 28.779
+      x = 28.588
       y = 0
       z = 0
       irot = 0
@@ -12062,8 +11986,8 @@
       chshap = 'TUBE'
       nmed = 128
       npar = 3
-      par(1) = 29.721
-      par(2) = 31.401
+      par(1) = 29.45
+      par(2) = 31.23
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.151) stop 'consistency check #1 failed'
@@ -12080,10 +12004,10 @@
 
       chname = 'SD18'
       chmoth = 'DC11'
-      ndiv = 120
+      ndiv = 119
       iaxis = 2
-      step = 3
-      c0 = -1.5
+      step = 3.02521
+      c0 = -2.5206
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -12107,11 +12031,11 @@
       chshap = 'TUBS'
       nmed = 129
       npar = 5
-      par(1) = 29.72
-      par(2) = 31.4
+      par(1) = 29.452
+      par(2) = 31.228
       par(3) = 76.25
-      par(4) = -1.5
-      par(5) = 1.5
+      par(4) = -1.5126
+      par(5) = 1.5126
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.153) stop 'consistency check #1 failed'
 
@@ -12128,7 +12052,7 @@
       chname = 'STRA'
       nr = 7
       chmoth = 'DS11'
-      x = 30.561
+      x = 30.374
       y = 0
       z = 0
       irot = 0
@@ -12174,8 +12098,8 @@
       chshap = 'TUBE'
       nmed = 130
       npar = 3
-      par(1) = 31.504
-      par(2) = 33.184
+      par(1) = 31.3
+      par(2) = 32.98
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.154) stop 'consistency check #1 failed'
@@ -12192,10 +12116,10 @@
 
       chname = 'SD19'
       chmoth = 'DC12'
-      ndiv = 127
+      ndiv = 126
       iaxis = 2
-      step = 2.83465
-      c0 = -1.417
+      step = 2.85714
+      c0 = -0.8575
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -12219,11 +12143,11 @@
       chshap = 'TUBS'
       nmed = 131
       npar = 5
-      par(1) = 31.5
-      par(2) = 33.18
+      par(1) = 31.302
+      par(2) = 32.978
       par(3) = 76.25
-      par(4) = -1.417
-      par(5) = 1.418
+      par(4) = -1.4285
+      par(5) = 1.4286
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.156) stop 'consistency check #1 failed'
 
@@ -12240,7 +12164,7 @@
       chname = 'STRA'
       nr = 8
       chmoth = 'DS12'
-      x = 32.344
+      x = 32.16
       y = 0
       z = 0
       irot = 0
@@ -12286,8 +12210,8 @@
       chshap = 'TUBE'
       nmed = 132
       npar = 3
-      par(1) = 33.286
-      par(2) = 41.092
+      par(1) = 33.08
+      par(2) = 41.09
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.157) stop 'consistency check #1 failed'
@@ -12302,20 +12226,96 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 345
+      irot = 341
       theta1 = 90
       phi1 = 0
       theta2 = 96
       phi2 = 90
       theta3 = 6
       phi3 = 90
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 295
+      chmoth = 'DC13'
+      x = 33.877
+      y = 0
+      z = 0
+      irot = 341
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 342
+      theta1 = 90
+      phi1 = 2.72727
+      theta2 = 96
+      phi2 = 92.7273
+      theta3 = 6
+      phi3 = 92.7273
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 296
+      chmoth = 'DC13'
+      x = 33.8386
+      y = 1.61193
+      z = 0
+      irot = 342
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 343
+      theta1 = 90
+      phi1 = 5.45455
+      theta2 = 96
+      phi2 = 95.4545
+      theta3 = 6
+      phi3 = 95.4545
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 297
+      chmoth = 'DC13'
+      x = 33.7236
+      y = 3.22021
+      z = 0
+      irot = 343
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 344
+      theta1 = 90
+      phi1 = 8.18182
+      theta2 = 96
+      phi2 = 98.1818
+      theta3 = 6
+      phi3 = 98.1818
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 298
+      chmoth = 'DC13'
+      x = 33.5322
+      y = 4.8212
+      z = 0
+      irot = 344
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 345
+      theta1 = 90
+      phi1 = 10.9091
+      theta2 = 96
+      phi2 = 100.909
+      theta3 = 6
+      phi3 = 100.909
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 299
       chmoth = 'DC13'
-      x = 34.126
-      y = 0
+      x = 33.2648
+      y = 6.41126
       z = 0
       irot = 345
       chonly = 'ONLY'
@@ -12323,18 +12323,18 @@
 
       irot = 346
       theta1 = 90
-      phi1 = 2.68657
+      phi1 = 13.6364
       theta2 = 96
-      phi2 = 92.6866
+      phi2 = 103.636
       theta3 = 6
-      phi3 = 92.6866
+      phi3 = 103.636
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 300
       chmoth = 'DC13'
-      x = 34.0885
-      y = 1.59956
+      x = 32.9221
+      y = 7.98681
       z = 0
       irot = 346
       chonly = 'ONLY'
@@ -12342,18 +12342,18 @@
 
       irot = 347
       theta1 = 90
-      phi1 = 5.37313
+      phi1 = 16.3636
       theta2 = 96
-      phi2 = 95.3731
+      phi2 = 106.364
       theta3 = 6
-      phi3 = 95.3731
+      phi3 = 106.364
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 301
       chmoth = 'DC13'
-      x = 33.976
-      y = 3.19561
+      x = 32.5047
+      y = 9.54425
       z = 0
       irot = 347
       chonly = 'ONLY'
@@ -12361,18 +12361,18 @@
 
       irot = 348
       theta1 = 90
-      phi1 = 8.0597
+      phi1 = 19.0909
       theta2 = 96
-      phi2 = 98.0597
+      phi2 = 109.091
       theta3 = 6
-      phi3 = 98.0597
+      phi3 = 109.091
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 302
       chmoth = 'DC13'
-      x = 33.7889
-      y = 4.78463
+      x = 32.0138
+      y = 11.0801
       z = 0
       irot = 348
       chonly = 'ONLY'
@@ -12380,18 +12380,18 @@
 
       irot = 349
       theta1 = 90
-      phi1 = 10.7463
+      phi1 = 21.8182
       theta2 = 96
-      phi2 = 100.746
+      phi2 = 111.818
       theta3 = 6
-      phi3 = 100.746
+      phi3 = 111.818
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 303
       chmoth = 'DC13'
-      x = 33.5275
-      y = 6.36314
+      x = 31.4503
+      y = 12.5908
       z = 0
       irot = 349
       chonly = 'ONLY'
@@ -12399,18 +12399,18 @@
 
       irot = 350
       theta1 = 90
-      phi1 = 13.4328
+      phi1 = 24.5455
       theta2 = 96
-      phi2 = 103.433
+      phi2 = 114.545
       theta3 = 6
-      phi3 = 103.433
+      phi3 = 114.545
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 304
       chmoth = 'DC13'
-      x = 33.1924
-      y = 7.92765
+      x = 30.8156
+      y = 14.073
       z = 0
       irot = 350
       chonly = 'ONLY'
@@ -12418,18 +12418,18 @@
 
       irot = 351
       theta1 = 90
-      phi1 = 16.1194
+      phi1 = 27.2727
       theta2 = 96
-      phi2 = 106.119
+      phi2 = 117.273
       theta3 = 6
-      phi3 = 106.119
+      phi3 = 117.273
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 305
       chmoth = 'DC13'
-      x = 32.7843
-      y = 9.47474
+      x = 30.1111
+      y = 15.5233
       z = 0
       irot = 351
       chonly = 'ONLY'
@@ -12437,18 +12437,18 @@
 
       irot = 352
       theta1 = 90
-      phi1 = 18.806
+      phi1 = 30
       theta2 = 96
-      phi2 = 108.806
+      phi2 = 120
       theta3 = 6
-      phi3 = 108.806
+      phi3 = 120
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 306
       chmoth = 'DC13'
-      x = 32.3042
-      y = 11.001
+      x = 29.3383
+      y = 16.9385
       z = 0
       irot = 352
       chonly = 'ONLY'
@@ -12456,18 +12456,18 @@
 
       irot = 353
       theta1 = 90
-      phi1 = 21.4925
+      phi1 = 32.7273
       theta2 = 96
-      phi2 = 111.493
+      phi2 = 122.727
       theta3 = 6
-      phi3 = 111.493
+      phi3 = 122.727
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 307
       chmoth = 'DC13'
-      x = 31.7531
-      y = 12.5031
+      x = 28.4991
+      y = 18.3153
       z = 0
       irot = 353
       chonly = 'ONLY'
@@ -12475,18 +12475,18 @@
 
       irot = 354
       theta1 = 90
-      phi1 = 24.1791
+      phi1 = 35.4545
       theta2 = 96
-      phi2 = 114.179
+      phi2 = 125.455
       theta3 = 6
-      phi3 = 114.179
+      phi3 = 125.455
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 308
       chmoth = 'DC13'
-      x = 31.1321
-      y = 13.9777
+      x = 27.5954
+      y = 19.6506
       z = 0
       irot = 354
       chonly = 'ONLY'
@@ -12494,18 +12494,18 @@
 
       irot = 355
       theta1 = 90
-      phi1 = 26.8657
+      phi1 = 38.1818
       theta2 = 96
-      phi2 = 116.866
+      phi2 = 128.182
       theta3 = 6
-      phi3 = 116.866
+      phi3 = 128.182
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 309
       chmoth = 'DC13'
-      x = 30.4427
-      y = 15.4216
+      x = 26.6291
+      y = 20.9414
       z = 0
       irot = 355
       chonly = 'ONLY'
@@ -12513,18 +12513,18 @@
 
       irot = 356
       theta1 = 90
-      phi1 = 29.5522
+      phi1 = 40.9091
       theta2 = 96
-      phi2 = 119.552
+      phi2 = 130.909
       theta3 = 6
-      phi3 = 119.552
+      phi3 = 130.909
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 310
       chmoth = 'DC13'
-      x = 29.6864
-      y = 16.8315
+      x = 25.6025
+      y = 22.1847
       z = 0
       irot = 356
       chonly = 'ONLY'
@@ -12532,18 +12532,18 @@
 
       irot = 357
       theta1 = 90
-      phi1 = 32.2388
+      phi1 = 43.6364
       theta2 = 96
-      phi2 = 122.239
+      phi2 = 133.636
       theta3 = 6
-      phi3 = 122.239
+      phi3 = 133.636
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 311
       chmoth = 'DC13'
-      x = 28.8649
-      y = 18.2045
+      x = 24.5179
+      y = 23.3778
       z = 0
       irot = 357
       chonly = 'ONLY'
@@ -12551,18 +12551,18 @@
 
       irot = 358
       theta1 = 90
-      phi1 = 34.9254
+      phi1 = 46.3636
       theta2 = 96
-      phi2 = 124.925
+      phi2 = 136.364
       theta3 = 6
-      phi3 = 124.925
+      phi3 = 136.364
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 312
       chmoth = 'DC13'
-      x = 27.9799
-      y = 19.5374
+      x = 23.3778
+      y = 24.5179
       z = 0
       irot = 358
       chonly = 'ONLY'
@@ -12570,18 +12570,18 @@
 
       irot = 359
       theta1 = 90
-      phi1 = 37.6119
+      phi1 = 49.0909
       theta2 = 96
-      phi2 = 127.612
+      phi2 = 139.091
       theta3 = 6
-      phi3 = 127.612
+      phi3 = 139.091
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 313
       chmoth = 'DC13'
-      x = 27.0333
-      y = 20.8274
+      x = 22.1847
+      y = 25.6025
       z = 0
       irot = 359
       chonly = 'ONLY'
@@ -12589,18 +12589,18 @@
 
       irot = 360
       theta1 = 90
-      phi1 = 40.2985
+      phi1 = 51.8182
       theta2 = 96
-      phi2 = 130.299
+      phi2 = 141.818
       theta3 = 6
-      phi3 = 130.299
+      phi3 = 141.818
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 314
       chmoth = 'DC13'
-      x = 26.0274
-      y = 22.0717
+      x = 20.9414
+      y = 26.6291
       z = 0
       irot = 360
       chonly = 'ONLY'
@@ -12608,18 +12608,18 @@
 
       irot = 361
       theta1 = 90
-      phi1 = 42.9851
+      phi1 = 54.5455
       theta2 = 96
-      phi2 = 132.985
+      phi2 = 144.545
       theta3 = 6
-      phi3 = 132.985
+      phi3 = 144.545
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 315
       chmoth = 'DC13'
-      x = 24.9642
-      y = 23.2674
+      x = 19.6506
+      y = 27.5954
       z = 0
       irot = 361
       chonly = 'ONLY'
@@ -12627,18 +12627,18 @@
 
       irot = 362
       theta1 = 90
-      phi1 = 45.6716
+      phi1 = 57.2727
       theta2 = 96
-      phi2 = 135.672
+      phi2 = 147.273
       theta3 = 6
-      phi3 = 135.672
+      phi3 = 147.273
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 316
       chmoth = 'DC13'
-      x = 23.8462
-      y = 24.4119
+      x = 18.3153
+      y = 28.4991
       z = 0
       irot = 362
       chonly = 'ONLY'
@@ -12646,18 +12646,18 @@
 
       irot = 363
       theta1 = 90
-      phi1 = 48.3582
+      phi1 = 60
       theta2 = 96
-      phi2 = 138.358
+      phi2 = 150
       theta3 = 6
-      phi3 = 138.358
+      phi3 = 150
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 317
       chmoth = 'DC13'
-      x = 22.6758
-      y = 25.5028
+      x = 16.9385
+      y = 29.3383
       z = 0
       irot = 363
       chonly = 'ONLY'
@@ -12665,18 +12665,18 @@
 
       irot = 364
       theta1 = 90
-      phi1 = 51.0448
+      phi1 = 62.7273
       theta2 = 96
-      phi2 = 141.045
+      phi2 = 152.727
       theta3 = 6
-      phi3 = 141.045
+      phi3 = 152.727
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 318
       chmoth = 'DC13'
-      x = 21.4555
-      y = 26.5377
+      x = 15.5233
+      y = 30.1111
       z = 0
       irot = 364
       chonly = 'ONLY'
@@ -12684,18 +12684,18 @@
 
       irot = 365
       theta1 = 90
-      phi1 = 53.7313
+      phi1 = 65.4545
       theta2 = 96
-      phi2 = 143.731
+      phi2 = 155.455
       theta3 = 6
-      phi3 = 143.731
+      phi3 = 155.455
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 319
       chmoth = 'DC13'
-      x = 20.188
-      y = 27.5142
+      x = 14.073
+      y = 30.8156
       z = 0
       irot = 365
       chonly = 'ONLY'
@@ -12703,18 +12703,18 @@
 
       irot = 366
       theta1 = 90
-      phi1 = 56.4179
+      phi1 = 68.1818
       theta2 = 96
-      phi2 = 146.418
+      phi2 = 158.182
       theta3 = 6
-      phi3 = 146.418
+      phi3 = 158.182
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 320
       chmoth = 'DC13'
-      x = 18.8762
-      y = 28.4302
+      x = 12.5908
+      y = 31.4503
       z = 0
       irot = 366
       chonly = 'ONLY'
@@ -12722,18 +12722,18 @@
 
       irot = 367
       theta1 = 90
-      phi1 = 59.1045
+      phi1 = 70.9091
       theta2 = 96
-      phi2 = 149.104
+      phi2 = 160.909
       theta3 = 6
-      phi3 = 149.104
+      phi3 = 160.909
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 321
       chmoth = 'DC13'
-      x = 17.5228
-      y = 29.2837
+      x = 11.0801
+      y = 32.0138
       z = 0
       irot = 367
       chonly = 'ONLY'
@@ -12741,18 +12741,18 @@
 
       irot = 368
       theta1 = 90
-      phi1 = 61.791
+      phi1 = 73.6364
       theta2 = 96
-      phi2 = 151.791
+      phi2 = 163.636
       theta3 = 6
-      phi3 = 151.791
+      phi3 = 163.636
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 322
       chmoth = 'DC13'
-      x = 16.131
-      y = 30.0728
+      x = 9.54425
+      y = 32.5047
       z = 0
       irot = 368
       chonly = 'ONLY'
@@ -12760,18 +12760,18 @@
 
       irot = 369
       theta1 = 90
-      phi1 = 64.4776
+      phi1 = 76.3636
       theta2 = 96
-      phi2 = 154.478
+      phi2 = 166.364
       theta3 = 6
-      phi3 = 154.478
+      phi3 = 166.364
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 323
       chmoth = 'DC13'
-      x = 14.7037
-      y = 30.7959
+      x = 7.98681
+      y = 32.9221
       z = 0
       irot = 369
       chonly = 'ONLY'
@@ -12779,18 +12779,18 @@
 
       irot = 370
       theta1 = 90
-      phi1 = 67.1642
+      phi1 = 79.0909
       theta2 = 96
-      phi2 = 157.164
+      phi2 = 169.091
       theta3 = 6
-      phi3 = 157.164
+      phi3 = 169.091
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 324
       chmoth = 'DC13'
-      x = 13.244
-      y = 31.4512
+      x = 6.41126
+      y = 33.2648
       z = 0
       irot = 370
       chonly = 'ONLY'
@@ -12798,18 +12798,18 @@
 
       irot = 371
       theta1 = 90
-      phi1 = 69.8507
+      phi1 = 81.8182
       theta2 = 96
-      phi2 = 159.851
+      phi2 = 171.818
       theta3 = 6
-      phi3 = 159.851
+      phi3 = 171.818
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 325
       chmoth = 'DC13'
-      x = 11.7553
-      y = 32.0374
+      x = 4.8212
+      y = 33.5322
       z = 0
       irot = 371
       chonly = 'ONLY'
@@ -12817,18 +12817,18 @@
 
       irot = 372
       theta1 = 90
-      phi1 = 72.5373
+      phi1 = 84.5455
       theta2 = 96
-      phi2 = 162.537
+      phi2 = 174.545
       theta3 = 6
-      phi3 = 162.537
+      phi3 = 174.545
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 326
       chmoth = 'DC13'
-      x = 10.2407
-      y = 32.5532
+      x = 3.22021
+      y = 33.7236
       z = 0
       irot = 372
       chonly = 'ONLY'
@@ -12836,18 +12836,18 @@
 
       irot = 373
       theta1 = 90
-      phi1 = 75.2239
+      phi1 = 87.2727
       theta2 = 96
-      phi2 = 165.224
+      phi2 = 177.273
       theta3 = 6
-      phi3 = 165.224
+      phi3 = 177.273
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 327
       chmoth = 'DC13'
-      x = 8.70359
-      y = 32.9974
+      x = 1.61193
+      y = 33.8386
       z = 0
       irot = 373
       chonly = 'ONLY'
@@ -12855,18 +12855,18 @@
 
       irot = 374
       theta1 = 90
-      phi1 = 77.9104
+      phi1 = 90
       theta2 = 96
-      phi2 = 167.91
+      phi2 = -180
       theta3 = 6
-      phi3 = 167.91
+      phi3 = -180
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 328
       chmoth = 'DC13'
-      x = 7.14736
-      y = 33.3691
+      x = 2.0743e-15
+      y = 33.877
       z = 0
       irot = 374
       chonly = 'ONLY'
@@ -12874,18 +12874,18 @@
 
       irot = 375
       theta1 = 90
-      phi1 = 80.597
+      phi1 = 92.7273
       theta2 = 96
-      phi2 = 170.597
+      phi2 = -177.273
       theta3 = 6
-      phi3 = 170.597
+      phi3 = -177.273
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 329
       chmoth = 'DC13'
-      x = 5.57542
-      y = 33.6675
+      x = -1.61193
+      y = 33.8386
       z = 0
       irot = 375
       chonly = 'ONLY'
@@ -12893,18 +12893,18 @@
 
       irot = 376
       theta1 = 90
-      phi1 = 83.2836
+      phi1 = 95.4545
       theta2 = 96
-      phi2 = 173.284
+      phi2 = -174.545
       theta3 = 6
-      phi3 = 173.284
+      phi3 = -174.545
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 330
       chmoth = 'DC13'
-      x = 3.99122
-      y = 33.8918
+      x = -3.22021
+      y = 33.7236
       z = 0
       irot = 376
       chonly = 'ONLY'
@@ -12912,18 +12912,18 @@
 
       irot = 377
       theta1 = 90
-      phi1 = 85.9701
+      phi1 = 98.1818
       theta2 = 96
-      phi2 = 175.97
+      phi2 = -171.818
       theta3 = 6
-      phi3 = 175.97
+      phi3 = -171.818
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 331
       chmoth = 'DC13'
-      x = 2.39825
-      y = 34.0416
+      x = -4.8212
+      y = 33.5322
       z = 0
       irot = 377
       chonly = 'ONLY'
@@ -12931,18 +12931,18 @@
 
       irot = 378
       theta1 = 90
-      phi1 = 88.6567
+      phi1 = 100.909
       theta2 = 96
-      phi2 = 178.657
+      phi2 = -169.091
       theta3 = 6
-      phi3 = 178.657
+      phi3 = -169.091
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 332
       chmoth = 'DC13'
-      x = 0.800001
-      y = 34.1166
+      x = -6.41126
+      y = 33.2648
       z = 0
       irot = 378
       chonly = 'ONLY'
@@ -12950,18 +12950,18 @@
 
       irot = 379
       theta1 = 90
-      phi1 = 91.3433
+      phi1 = 103.636
       theta2 = 96
-      phi2 = -178.657
+      phi2 = -166.364
       theta3 = 6
-      phi3 = -178.657
+      phi3 = -166.364
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 333
       chmoth = 'DC13'
-      x = -0.800001
-      y = 34.1166
+      x = -7.98681
+      y = 32.9221
       z = 0
       irot = 379
       chonly = 'ONLY'
@@ -12969,18 +12969,18 @@
 
       irot = 380
       theta1 = 90
-      phi1 = 94.0299
+      phi1 = 106.364
       theta2 = 96
-      phi2 = -175.97
+      phi2 = -163.636
       theta3 = 6
-      phi3 = -175.97
+      phi3 = -163.636
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 334
       chmoth = 'DC13'
-      x = -2.39825
-      y = 34.0416
+      x = -9.54425
+      y = 32.5047
       z = 0
       irot = 380
       chonly = 'ONLY'
@@ -12988,18 +12988,18 @@
 
       irot = 381
       theta1 = 90
-      phi1 = 96.7164
+      phi1 = 109.091
       theta2 = 96
-      phi2 = -173.284
+      phi2 = -160.909
       theta3 = 6
-      phi3 = -173.284
+      phi3 = -160.909
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 335
       chmoth = 'DC13'
-      x = -3.99122
-      y = 33.8918
+      x = -11.0801
+      y = 32.0138
       z = 0
       irot = 381
       chonly = 'ONLY'
@@ -13007,18 +13007,18 @@
 
       irot = 382
       theta1 = 90
-      phi1 = 99.403
+      phi1 = 111.818
       theta2 = 96
-      phi2 = -170.597
+      phi2 = -158.182
       theta3 = 6
-      phi3 = -170.597
+      phi3 = -158.182
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 336
       chmoth = 'DC13'
-      x = -5.57542
-      y = 33.6675
+      x = -12.5908
+      y = 31.4503
       z = 0
       irot = 382
       chonly = 'ONLY'
@@ -13026,18 +13026,18 @@
 
       irot = 383
       theta1 = 90
-      phi1 = 102.09
+      phi1 = 114.545
       theta2 = 96
-      phi2 = -167.91
+      phi2 = -155.455
       theta3 = 6
-      phi3 = -167.91
+      phi3 = -155.455
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 337
       chmoth = 'DC13'
-      x = -7.14736
-      y = 33.3691
+      x = -14.073
+      y = 30.8156
       z = 0
       irot = 383
       chonly = 'ONLY'
@@ -13045,2703 +13045,24 @@
 
       irot = 384
       theta1 = 90
-      phi1 = 104.776
+      phi1 = 117.273
       theta2 = 96
-      phi2 = -165.224
+      phi2 = -152.727
       theta3 = 6
-      phi3 = -165.224
+      phi3 = -152.727
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 338
       chmoth = 'DC13'
-      x = -8.70359
-      y = 32.9974
+      x = -15.5233
+      y = 30.1111
       z = 0
       irot = 384
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
       irot = 385
-      theta1 = 90
-      phi1 = 107.463
-      theta2 = 96
-      phi2 = -162.537
-      theta3 = 6
-      phi3 = -162.537
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 339
-      chmoth = 'DC13'
-      x = -10.2407
-      y = 32.5532
-      z = 0
-      irot = 385
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 386
-      theta1 = 90
-      phi1 = 110.149
-      theta2 = 96
-      phi2 = -159.851
-      theta3 = 6
-      phi3 = -159.851
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 340
-      chmoth = 'DC13'
-      x = -11.7553
-      y = 32.0374
-      z = 0
-      irot = 386
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 387
-      theta1 = 90
-      phi1 = 112.836
-      theta2 = 96
-      phi2 = -157.164
-      theta3 = 6
-      phi3 = -157.164
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 341
-      chmoth = 'DC13'
-      x = -13.244
-      y = 31.4512
-      z = 0
-      irot = 387
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 388
-      theta1 = 90
-      phi1 = 115.522
-      theta2 = 96
-      phi2 = -154.478
-      theta3 = 6
-      phi3 = -154.478
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 342
-      chmoth = 'DC13'
-      x = -14.7037
-      y = 30.7959
-      z = 0
-      irot = 388
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 389
-      theta1 = 90
-      phi1 = 118.209
-      theta2 = 96
-      phi2 = -151.791
-      theta3 = 6
-      phi3 = -151.791
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 343
-      chmoth = 'DC13'
-      x = -16.131
-      y = 30.0728
-      z = 0
-      irot = 389
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 390
-      theta1 = 90
-      phi1 = 120.896
-      theta2 = 96
-      phi2 = -149.104
-      theta3 = 6
-      phi3 = -149.104
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 344
-      chmoth = 'DC13'
-      x = -17.5228
-      y = 29.2837
-      z = 0
-      irot = 390
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 391
-      theta1 = 90
-      phi1 = 123.582
-      theta2 = 96
-      phi2 = -146.418
-      theta3 = 6
-      phi3 = -146.418
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 345
-      chmoth = 'DC13'
-      x = -18.8762
-      y = 28.4302
-      z = 0
-      irot = 391
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 392
-      theta1 = 90
-      phi1 = 126.269
-      theta2 = 96
-      phi2 = -143.731
-      theta3 = 6
-      phi3 = -143.731
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 346
-      chmoth = 'DC13'
-      x = -20.188
-      y = 27.5142
-      z = 0
-      irot = 392
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 393
-      theta1 = 90
-      phi1 = 128.955
-      theta2 = 96
-      phi2 = -141.045
-      theta3 = 6
-      phi3 = -141.045
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 347
-      chmoth = 'DC13'
-      x = -21.4555
-      y = 26.5377
-      z = 0
-      irot = 393
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 394
-      theta1 = 90
-      phi1 = 131.642
-      theta2 = 96
-      phi2 = -138.358
-      theta3 = 6
-      phi3 = -138.358
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 348
-      chmoth = 'DC13'
-      x = -22.6758
-      y = 25.5028
-      z = 0
-      irot = 394
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 395
-      theta1 = 90
-      phi1 = 134.328
-      theta2 = 96
-      phi2 = -135.672
-      theta3 = 6
-      phi3 = -135.672
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 349
-      chmoth = 'DC13'
-      x = -23.8462
-      y = 24.4119
-      z = 0
-      irot = 395
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 396
-      theta1 = 90
-      phi1 = 137.015
-      theta2 = 96
-      phi2 = -132.985
-      theta3 = 6
-      phi3 = -132.985
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 350
-      chmoth = 'DC13'
-      x = -24.9642
-      y = 23.2674
-      z = 0
-      irot = 396
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 397
-      theta1 = 90
-      phi1 = 139.701
-      theta2 = 96
-      phi2 = -130.299
-      theta3 = 6
-      phi3 = -130.299
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 351
-      chmoth = 'DC13'
-      x = -26.0274
-      y = 22.0717
-      z = 0
-      irot = 397
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 398
-      theta1 = 90
-      phi1 = 142.388
-      theta2 = 96
-      phi2 = -127.612
-      theta3 = 6
-      phi3 = -127.612
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 352
-      chmoth = 'DC13'
-      x = -27.0333
-      y = 20.8274
-      z = 0
-      irot = 398
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 399
-      theta1 = 90
-      phi1 = 145.075
-      theta2 = 96
-      phi2 = -124.925
-      theta3 = 6
-      phi3 = -124.925
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 353
-      chmoth = 'DC13'
-      x = -27.9799
-      y = 19.5374
-      z = 0
-      irot = 399
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 400
-      theta1 = 90
-      phi1 = 147.761
-      theta2 = 96
-      phi2 = -122.239
-      theta3 = 6
-      phi3 = -122.239
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 354
-      chmoth = 'DC13'
-      x = -28.8649
-      y = 18.2045
-      z = 0
-      irot = 400
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 401
-      theta1 = 90
-      phi1 = 150.448
-      theta2 = 96
-      phi2 = -119.552
-      theta3 = 6
-      phi3 = -119.552
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 355
-      chmoth = 'DC13'
-      x = -29.6864
-      y = 16.8315
-      z = 0
-      irot = 401
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 402
-      theta1 = 90
-      phi1 = 153.134
-      theta2 = 96
-      phi2 = -116.866
-      theta3 = 6
-      phi3 = -116.866
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 356
-      chmoth = 'DC13'
-      x = -30.4427
-      y = 15.4216
-      z = 0
-      irot = 402
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 403
-      theta1 = 90
-      phi1 = 155.821
-      theta2 = 96
-      phi2 = -114.179
-      theta3 = 6
-      phi3 = -114.179
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 357
-      chmoth = 'DC13'
-      x = -31.1321
-      y = 13.9777
-      z = 0
-      irot = 403
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 404
-      theta1 = 90
-      phi1 = 158.507
-      theta2 = 96
-      phi2 = -111.493
-      theta3 = 6
-      phi3 = -111.493
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 358
-      chmoth = 'DC13'
-      x = -31.7531
-      y = 12.5031
-      z = 0
-      irot = 404
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 405
-      theta1 = 90
-      phi1 = 161.194
-      theta2 = 96
-      phi2 = -108.806
-      theta3 = 6
-      phi3 = -108.806
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 359
-      chmoth = 'DC13'
-      x = -32.3042
-      y = 11.001
-      z = 0
-      irot = 405
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 406
-      theta1 = 90
-      phi1 = 163.881
-      theta2 = 96
-      phi2 = -106.119
-      theta3 = 6
-      phi3 = -106.119
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 360
-      chmoth = 'DC13'
-      x = -32.7843
-      y = 9.47474
-      z = 0
-      irot = 406
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 407
-      theta1 = 90
-      phi1 = 166.567
-      theta2 = 96
-      phi2 = -103.433
-      theta3 = 6
-      phi3 = -103.433
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 361
-      chmoth = 'DC13'
-      x = -33.1924
-      y = 7.92765
-      z = 0
-      irot = 407
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 408
-      theta1 = 90
-      phi1 = 169.254
-      theta2 = 96
-      phi2 = -100.746
-      theta3 = 6
-      phi3 = -100.746
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 362
-      chmoth = 'DC13'
-      x = -33.5275
-      y = 6.36314
-      z = 0
-      irot = 408
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 409
-      theta1 = 90
-      phi1 = 171.94
-      theta2 = 96
-      phi2 = -98.0597
-      theta3 = 6
-      phi3 = -98.0597
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 363
-      chmoth = 'DC13'
-      x = -33.7889
-      y = 4.78463
-      z = 0
-      irot = 409
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 410
-      theta1 = 90
-      phi1 = 174.627
-      theta2 = 96
-      phi2 = -95.3731
-      theta3 = 6
-      phi3 = -95.3731
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 364
-      chmoth = 'DC13'
-      x = -33.976
-      y = 3.19561
-      z = 0
-      irot = 410
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 411
-      theta1 = 90
-      phi1 = 177.313
-      theta2 = 96
-      phi2 = -92.6866
-      theta3 = 6
-      phi3 = -92.6866
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 365
-      chmoth = 'DC13'
-      x = -34.0885
-      y = 1.59956
-      z = 0
-      irot = 411
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 412
-      theta1 = 90
-      phi1 = -180
-      theta2 = 96
-      phi2 = -90
-      theta3 = 6
-      phi3 = -90
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 366
-      chmoth = 'DC13'
-      x = -34.126
-      y = 4.17909e-15
-      z = 0
-      irot = 412
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 413
-      theta1 = 90
-      phi1 = -177.313
-      theta2 = 96
-      phi2 = -87.3134
-      theta3 = 6
-      phi3 = -87.3134
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 367
-      chmoth = 'DC13'
-      x = -34.0885
-      y = -1.59956
-      z = 0
-      irot = 413
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 414
-      theta1 = 90
-      phi1 = -174.627
-      theta2 = 96
-      phi2 = -84.6269
-      theta3 = 6
-      phi3 = -84.6269
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 368
-      chmoth = 'DC13'
-      x = -33.976
-      y = -3.19561
-      z = 0
-      irot = 414
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 415
-      theta1 = 90
-      phi1 = -171.94
-      theta2 = 96
-      phi2 = -81.9403
-      theta3 = 6
-      phi3 = -81.9403
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 369
-      chmoth = 'DC13'
-      x = -33.7889
-      y = -4.78463
-      z = 0
-      irot = 415
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 416
-      theta1 = 90
-      phi1 = -169.254
-      theta2 = 96
-      phi2 = -79.2537
-      theta3 = 6
-      phi3 = -79.2537
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 370
-      chmoth = 'DC13'
-      x = -33.5275
-      y = -6.36314
-      z = 0
-      irot = 416
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 417
-      theta1 = 90
-      phi1 = -166.567
-      theta2 = 96
-      phi2 = -76.5672
-      theta3 = 6
-      phi3 = -76.5672
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 371
-      chmoth = 'DC13'
-      x = -33.1924
-      y = -7.92765
-      z = 0
-      irot = 417
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 418
-      theta1 = 90
-      phi1 = -163.881
-      theta2 = 96
-      phi2 = -73.8806
-      theta3 = 6
-      phi3 = -73.8806
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 372
-      chmoth = 'DC13'
-      x = -32.7843
-      y = -9.47474
-      z = 0
-      irot = 418
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 419
-      theta1 = 90
-      phi1 = -161.194
-      theta2 = 96
-      phi2 = -71.194
-      theta3 = 6
-      phi3 = -71.194
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 373
-      chmoth = 'DC13'
-      x = -32.3042
-      y = -11.001
-      z = 0
-      irot = 419
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 420
-      theta1 = 90
-      phi1 = -158.507
-      theta2 = 96
-      phi2 = -68.5075
-      theta3 = 6
-      phi3 = -68.5075
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 374
-      chmoth = 'DC13'
-      x = -31.7531
-      y = -12.5031
-      z = 0
-      irot = 420
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 421
-      theta1 = 90
-      phi1 = -155.821
-      theta2 = 96
-      phi2 = -65.8209
-      theta3 = 6
-      phi3 = -65.8209
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 375
-      chmoth = 'DC13'
-      x = -31.1321
-      y = -13.9777
-      z = 0
-      irot = 421
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 422
-      theta1 = 90
-      phi1 = -153.134
-      theta2 = 96
-      phi2 = -63.1343
-      theta3 = 6
-      phi3 = -63.1343
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 376
-      chmoth = 'DC13'
-      x = -30.4427
-      y = -15.4216
-      z = 0
-      irot = 422
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 423
-      theta1 = 90
-      phi1 = -150.448
-      theta2 = 96
-      phi2 = -60.4478
-      theta3 = 6
-      phi3 = -60.4478
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 377
-      chmoth = 'DC13'
-      x = -29.6864
-      y = -16.8315
-      z = 0
-      irot = 423
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 424
-      theta1 = 90
-      phi1 = -147.761
-      theta2 = 96
-      phi2 = -57.7612
-      theta3 = 6
-      phi3 = -57.7612
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 378
-      chmoth = 'DC13'
-      x = -28.8649
-      y = -18.2045
-      z = 0
-      irot = 424
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 425
-      theta1 = 90
-      phi1 = -145.075
-      theta2 = 96
-      phi2 = -55.0746
-      theta3 = 6
-      phi3 = -55.0746
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 379
-      chmoth = 'DC13'
-      x = -27.9799
-      y = -19.5374
-      z = 0
-      irot = 425
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 426
-      theta1 = 90
-      phi1 = -142.388
-      theta2 = 96
-      phi2 = -52.3881
-      theta3 = 6
-      phi3 = -52.3881
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 380
-      chmoth = 'DC13'
-      x = -27.0333
-      y = -20.8274
-      z = 0
-      irot = 426
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 427
-      theta1 = 90
-      phi1 = -139.701
-      theta2 = 96
-      phi2 = -49.7015
-      theta3 = 6
-      phi3 = -49.7015
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 381
-      chmoth = 'DC13'
-      x = -26.0274
-      y = -22.0717
-      z = 0
-      irot = 427
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 428
-      theta1 = 90
-      phi1 = -137.015
-      theta2 = 96
-      phi2 = -47.0149
-      theta3 = 6
-      phi3 = -47.0149
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 382
-      chmoth = 'DC13'
-      x = -24.9642
-      y = -23.2674
-      z = 0
-      irot = 428
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 429
-      theta1 = 90
-      phi1 = -134.328
-      theta2 = 96
-      phi2 = -44.3284
-      theta3 = 6
-      phi3 = -44.3284
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 383
-      chmoth = 'DC13'
-      x = -23.8462
-      y = -24.4119
-      z = 0
-      irot = 429
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 430
-      theta1 = 90
-      phi1 = -131.642
-      theta2 = 96
-      phi2 = -41.6418
-      theta3 = 6
-      phi3 = -41.6418
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 384
-      chmoth = 'DC13'
-      x = -22.6758
-      y = -25.5028
-      z = 0
-      irot = 430
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 431
-      theta1 = 90
-      phi1 = -128.955
-      theta2 = 96
-      phi2 = -38.9552
-      theta3 = 6
-      phi3 = -38.9552
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 385
-      chmoth = 'DC13'
-      x = -21.4555
-      y = -26.5377
-      z = 0
-      irot = 431
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 432
-      theta1 = 90
-      phi1 = -126.269
-      theta2 = 96
-      phi2 = -36.2687
-      theta3 = 6
-      phi3 = -36.2687
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 386
-      chmoth = 'DC13'
-      x = -20.188
-      y = -27.5142
-      z = 0
-      irot = 432
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 433
-      theta1 = 90
-      phi1 = -123.582
-      theta2 = 96
-      phi2 = -33.5821
-      theta3 = 6
-      phi3 = -33.5821
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 387
-      chmoth = 'DC13'
-      x = -18.8762
-      y = -28.4302
-      z = 0
-      irot = 433
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 434
-      theta1 = 90
-      phi1 = -120.896
-      theta2 = 96
-      phi2 = -30.8955
-      theta3 = 6
-      phi3 = -30.8955
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 388
-      chmoth = 'DC13'
-      x = -17.5228
-      y = -29.2837
-      z = 0
-      irot = 434
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 435
-      theta1 = 90
-      phi1 = -118.209
-      theta2 = 96
-      phi2 = -28.209
-      theta3 = 6
-      phi3 = -28.209
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 389
-      chmoth = 'DC13'
-      x = -16.131
-      y = -30.0728
-      z = 0
-      irot = 435
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 436
-      theta1 = 90
-      phi1 = -115.522
-      theta2 = 96
-      phi2 = -25.5224
-      theta3 = 6
-      phi3 = -25.5224
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 390
-      chmoth = 'DC13'
-      x = -14.7037
-      y = -30.7959
-      z = 0
-      irot = 436
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 437
-      theta1 = 90
-      phi1 = -112.836
-      theta2 = 96
-      phi2 = -22.8358
-      theta3 = 6
-      phi3 = -22.8358
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 391
-      chmoth = 'DC13'
-      x = -13.244
-      y = -31.4512
-      z = 0
-      irot = 437
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 438
-      theta1 = 90
-      phi1 = -110.149
-      theta2 = 96
-      phi2 = -20.1493
-      theta3 = 6
-      phi3 = -20.1493
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 392
-      chmoth = 'DC13'
-      x = -11.7553
-      y = -32.0374
-      z = 0
-      irot = 438
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 439
-      theta1 = 90
-      phi1 = -107.463
-      theta2 = 96
-      phi2 = -17.4627
-      theta3 = 6
-      phi3 = -17.4627
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 393
-      chmoth = 'DC13'
-      x = -10.2407
-      y = -32.5532
-      z = 0
-      irot = 439
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 440
-      theta1 = 90
-      phi1 = -104.776
-      theta2 = 96
-      phi2 = -14.7761
-      theta3 = 6
-      phi3 = -14.7761
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 394
-      chmoth = 'DC13'
-      x = -8.70359
-      y = -32.9974
-      z = 0
-      irot = 440
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 441
-      theta1 = 90
-      phi1 = -102.09
-      theta2 = 96
-      phi2 = -12.0896
-      theta3 = 6
-      phi3 = -12.0896
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 395
-      chmoth = 'DC13'
-      x = -7.14736
-      y = -33.3691
-      z = 0
-      irot = 441
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 442
-      theta1 = 90
-      phi1 = -99.403
-      theta2 = 96
-      phi2 = -9.40299
-      theta3 = 6
-      phi3 = -9.40299
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 396
-      chmoth = 'DC13'
-      x = -5.57542
-      y = -33.6675
-      z = 0
-      irot = 442
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 443
-      theta1 = 90
-      phi1 = -96.7164
-      theta2 = 96
-      phi2 = -6.71642
-      theta3 = 6
-      phi3 = -6.71642
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 397
-      chmoth = 'DC13'
-      x = -3.99122
-      y = -33.8918
-      z = 0
-      irot = 443
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 444
-      theta1 = 90
-      phi1 = -94.0299
-      theta2 = 96
-      phi2 = -4.02985
-      theta3 = 6
-      phi3 = -4.02985
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 398
-      chmoth = 'DC13'
-      x = -2.39825
-      y = -34.0416
-      z = 0
-      irot = 444
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 445
-      theta1 = 90
-      phi1 = -91.3433
-      theta2 = 96
-      phi2 = -1.34328
-      theta3 = 6
-      phi3 = -1.34328
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 399
-      chmoth = 'DC13'
-      x = -0.800001
-      y = -34.1166
-      z = 0
-      irot = 445
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 446
-      theta1 = 90
-      phi1 = -88.6567
-      theta2 = 96
-      phi2 = 1.34328
-      theta3 = 6
-      phi3 = 1.34328
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 400
-      chmoth = 'DC13'
-      x = 0.800001
-      y = -34.1166
-      z = 0
-      irot = 446
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 447
-      theta1 = 90
-      phi1 = -85.9701
-      theta2 = 96
-      phi2 = 4.02985
-      theta3 = 6
-      phi3 = 4.02985
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 401
-      chmoth = 'DC13'
-      x = 2.39825
-      y = -34.0416
-      z = 0
-      irot = 447
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 448
-      theta1 = 90
-      phi1 = -83.2836
-      theta2 = 96
-      phi2 = 6.71642
-      theta3 = 6
-      phi3 = 6.71642
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 402
-      chmoth = 'DC13'
-      x = 3.99122
-      y = -33.8918
-      z = 0
-      irot = 448
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 449
-      theta1 = 90
-      phi1 = -80.597
-      theta2 = 96
-      phi2 = 9.40299
-      theta3 = 6
-      phi3 = 9.40299
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 403
-      chmoth = 'DC13'
-      x = 5.57542
-      y = -33.6675
-      z = 0
-      irot = 449
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 450
-      theta1 = 90
-      phi1 = -77.9104
-      theta2 = 96
-      phi2 = 12.0896
-      theta3 = 6
-      phi3 = 12.0896
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 404
-      chmoth = 'DC13'
-      x = 7.14736
-      y = -33.3691
-      z = 0
-      irot = 450
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 451
-      theta1 = 90
-      phi1 = -75.2239
-      theta2 = 96
-      phi2 = 14.7761
-      theta3 = 6
-      phi3 = 14.7761
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 405
-      chmoth = 'DC13'
-      x = 8.70359
-      y = -32.9974
-      z = 0
-      irot = 451
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 452
-      theta1 = 90
-      phi1 = -72.5373
-      theta2 = 96
-      phi2 = 17.4627
-      theta3 = 6
-      phi3 = 17.4627
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 406
-      chmoth = 'DC13'
-      x = 10.2407
-      y = -32.5532
-      z = 0
-      irot = 452
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 453
-      theta1 = 90
-      phi1 = -69.8507
-      theta2 = 96
-      phi2 = 20.1493
-      theta3 = 6
-      phi3 = 20.1493
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 407
-      chmoth = 'DC13'
-      x = 11.7553
-      y = -32.0374
-      z = 0
-      irot = 453
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 454
-      theta1 = 90
-      phi1 = -67.1642
-      theta2 = 96
-      phi2 = 22.8358
-      theta3 = 6
-      phi3 = 22.8358
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 408
-      chmoth = 'DC13'
-      x = 13.244
-      y = -31.4512
-      z = 0
-      irot = 454
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 455
-      theta1 = 90
-      phi1 = -64.4776
-      theta2 = 96
-      phi2 = 25.5224
-      theta3 = 6
-      phi3 = 25.5224
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 409
-      chmoth = 'DC13'
-      x = 14.7037
-      y = -30.7959
-      z = 0
-      irot = 455
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 456
-      theta1 = 90
-      phi1 = -61.791
-      theta2 = 96
-      phi2 = 28.209
-      theta3 = 6
-      phi3 = 28.209
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 410
-      chmoth = 'DC13'
-      x = 16.131
-      y = -30.0728
-      z = 0
-      irot = 456
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 457
-      theta1 = 90
-      phi1 = -59.1045
-      theta2 = 96
-      phi2 = 30.8955
-      theta3 = 6
-      phi3 = 30.8955
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 411
-      chmoth = 'DC13'
-      x = 17.5228
-      y = -29.2837
-      z = 0
-      irot = 457
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 458
-      theta1 = 90
-      phi1 = -56.4179
-      theta2 = 96
-      phi2 = 33.5821
-      theta3 = 6
-      phi3 = 33.5821
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 412
-      chmoth = 'DC13'
-      x = 18.8762
-      y = -28.4302
-      z = 0
-      irot = 458
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 459
-      theta1 = 90
-      phi1 = -53.7313
-      theta2 = 96
-      phi2 = 36.2687
-      theta3 = 6
-      phi3 = 36.2687
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 413
-      chmoth = 'DC13'
-      x = 20.188
-      y = -27.5142
-      z = 0
-      irot = 459
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 460
-      theta1 = 90
-      phi1 = -51.0448
-      theta2 = 96
-      phi2 = 38.9552
-      theta3 = 6
-      phi3 = 38.9552
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 414
-      chmoth = 'DC13'
-      x = 21.4555
-      y = -26.5377
-      z = 0
-      irot = 460
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 461
-      theta1 = 90
-      phi1 = -48.3582
-      theta2 = 96
-      phi2 = 41.6418
-      theta3 = 6
-      phi3 = 41.6418
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 415
-      chmoth = 'DC13'
-      x = 22.6758
-      y = -25.5028
-      z = 0
-      irot = 461
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 462
-      theta1 = 90
-      phi1 = -45.6716
-      theta2 = 96
-      phi2 = 44.3284
-      theta3 = 6
-      phi3 = 44.3284
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 416
-      chmoth = 'DC13'
-      x = 23.8462
-      y = -24.4119
-      z = 0
-      irot = 462
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 463
-      theta1 = 90
-      phi1 = -42.9851
-      theta2 = 96
-      phi2 = 47.0149
-      theta3 = 6
-      phi3 = 47.0149
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 417
-      chmoth = 'DC13'
-      x = 24.9642
-      y = -23.2674
-      z = 0
-      irot = 463
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 464
-      theta1 = 90
-      phi1 = -40.2985
-      theta2 = 96
-      phi2 = 49.7015
-      theta3 = 6
-      phi3 = 49.7015
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 418
-      chmoth = 'DC13'
-      x = 26.0274
-      y = -22.0717
-      z = 0
-      irot = 464
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 465
-      theta1 = 90
-      phi1 = -37.6119
-      theta2 = 96
-      phi2 = 52.3881
-      theta3 = 6
-      phi3 = 52.3881
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 419
-      chmoth = 'DC13'
-      x = 27.0333
-      y = -20.8274
-      z = 0
-      irot = 465
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 466
-      theta1 = 90
-      phi1 = -34.9254
-      theta2 = 96
-      phi2 = 55.0746
-      theta3 = 6
-      phi3 = 55.0746
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 420
-      chmoth = 'DC13'
-      x = 27.9799
-      y = -19.5374
-      z = 0
-      irot = 466
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 467
-      theta1 = 90
-      phi1 = -32.2388
-      theta2 = 96
-      phi2 = 57.7612
-      theta3 = 6
-      phi3 = 57.7612
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 421
-      chmoth = 'DC13'
-      x = 28.8649
-      y = -18.2045
-      z = 0
-      irot = 467
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 468
-      theta1 = 90
-      phi1 = -29.5522
-      theta2 = 96
-      phi2 = 60.4478
-      theta3 = 6
-      phi3 = 60.4478
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 422
-      chmoth = 'DC13'
-      x = 29.6864
-      y = -16.8315
-      z = 0
-      irot = 468
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 469
-      theta1 = 90
-      phi1 = -26.8657
-      theta2 = 96
-      phi2 = 63.1343
-      theta3 = 6
-      phi3 = 63.1343
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 423
-      chmoth = 'DC13'
-      x = 30.4427
-      y = -15.4216
-      z = 0
-      irot = 469
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 470
-      theta1 = 90
-      phi1 = -24.1791
-      theta2 = 96
-      phi2 = 65.8209
-      theta3 = 6
-      phi3 = 65.8209
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 424
-      chmoth = 'DC13'
-      x = 31.1321
-      y = -13.9777
-      z = 0
-      irot = 470
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 471
-      theta1 = 90
-      phi1 = -21.4925
-      theta2 = 96
-      phi2 = 68.5075
-      theta3 = 6
-      phi3 = 68.5075
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 425
-      chmoth = 'DC13'
-      x = 31.7531
-      y = -12.5031
-      z = 0
-      irot = 471
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 472
-      theta1 = 90
-      phi1 = -18.806
-      theta2 = 96
-      phi2 = 71.194
-      theta3 = 6
-      phi3 = 71.194
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 426
-      chmoth = 'DC13'
-      x = 32.3042
-      y = -11.001
-      z = 0
-      irot = 472
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 473
-      theta1 = 90
-      phi1 = -16.1194
-      theta2 = 96
-      phi2 = 73.8806
-      theta3 = 6
-      phi3 = 73.8806
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 427
-      chmoth = 'DC13'
-      x = 32.7843
-      y = -9.47474
-      z = 0
-      irot = 473
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 474
-      theta1 = 90
-      phi1 = -13.4328
-      theta2 = 96
-      phi2 = 76.5672
-      theta3 = 6
-      phi3 = 76.5672
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 428
-      chmoth = 'DC13'
-      x = 33.1924
-      y = -7.92765
-      z = 0
-      irot = 474
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 475
-      theta1 = 90
-      phi1 = -10.7463
-      theta2 = 96
-      phi2 = 79.2537
-      theta3 = 6
-      phi3 = 79.2537
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 429
-      chmoth = 'DC13'
-      x = 33.5275
-      y = -6.36314
-      z = 0
-      irot = 475
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 476
-      theta1 = 90
-      phi1 = -8.0597
-      theta2 = 96
-      phi2 = 81.9403
-      theta3 = 6
-      phi3 = 81.9403
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 430
-      chmoth = 'DC13'
-      x = 33.7889
-      y = -4.78463
-      z = 0
-      irot = 476
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 477
-      theta1 = 90
-      phi1 = -5.37313
-      theta2 = 96
-      phi2 = 84.6269
-      theta3 = 6
-      phi3 = 84.6269
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 431
-      chmoth = 'DC13'
-      x = 33.976
-      y = -3.19561
-      z = 0
-      irot = 477
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 478
-      theta1 = 90
-      phi1 = -2.68657
-      theta2 = 96
-      phi2 = 87.3134
-      theta3 = 6
-      phi3 = 87.3134
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 432
-      chmoth = 'DC13'
-      x = 34.0885
-      y = -1.59956
-      z = 0
-      irot = 478
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 479
-      theta1 = 90
-      phi1 = 0
-      theta2 = 96
-      phi2 = 90
-      theta3 = 6
-      phi3 = 90
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 433
-      chmoth = 'DC13'
-      x = 35.908
-      y = 0
-      z = 0
-      irot = 479
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 480
-      theta1 = 90
-      phi1 = 2.55319
-      theta2 = 96
-      phi2 = 92.5532
-      theta3 = 6
-      phi3 = 92.5532
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 434
-      chmoth = 'DC13'
-      x = 35.8724
-      y = 1.59959
-      z = 0
-      irot = 480
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 481
-      theta1 = 90
-      phi1 = 5.10638
-      theta2 = 96
-      phi2 = 95.1064
-      theta3 = 6
-      phi3 = 95.1064
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 435
-      chmoth = 'DC13'
-      x = 35.7655
-      y = 3.196
-      z = 0
-      irot = 481
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 482
-      theta1 = 90
-      phi1 = 7.65957
-      theta2 = 96
-      phi2 = 97.6596
-      theta3 = 6
-      phi3 = 97.6596
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 436
-      chmoth = 'DC13'
-      x = 35.5876
-      y = 4.78607
-      z = 0
-      irot = 482
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 483
-      theta1 = 90
-      phi1 = 10.2128
-      theta2 = 96
-      phi2 = 100.213
-      theta3 = 6
-      phi3 = 100.213
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 437
-      chmoth = 'DC13'
-      x = 35.3391
-      y = 6.36663
-      z = 0
-      irot = 483
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 484
-      theta1 = 90
-      phi1 = 12.766
-      theta2 = 96
-      phi2 = 102.766
-      theta3 = 6
-      phi3 = 102.766
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 438
-      chmoth = 'DC13'
-      x = 35.0204
-      y = 7.93456
-      z = 0
-      irot = 484
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 485
-      theta1 = 90
-      phi1 = 15.3191
-      theta2 = 96
-      phi2 = 105.319
-      theta3 = 6
-      phi3 = 105.319
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 439
-      chmoth = 'DC13'
-      x = 34.6322
-      y = 9.48673
-      z = 0
-      irot = 485
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 486
-      theta1 = 90
-      phi1 = 17.8723
-      theta2 = 96
-      phi2 = 107.872
-      theta3 = 6
-      phi3 = 107.872
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 440
-      chmoth = 'DC13'
-      x = 34.1752
-      y = 11.0201
-      z = 0
-      irot = 486
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 487
-      theta1 = 90
-      phi1 = 20.4255
-      theta2 = 96
-      phi2 = 110.426
-      theta3 = 6
-      phi3 = 110.426
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 441
-      chmoth = 'DC13'
-      x = 33.6503
-      y = 12.5315
-      z = 0
-      irot = 487
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 488
-      theta1 = 90
-      phi1 = 22.9787
-      theta2 = 96
-      phi2 = 112.979
-      theta3 = 6
-      phi3 = 112.979
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 442
-      chmoth = 'DC13'
-      x = 33.0587
-      y = 14.0181
-      z = 0
-      irot = 488
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 489
-      theta1 = 90
-      phi1 = 25.5319
-      theta2 = 96
-      phi2 = 115.532
-      theta3 = 6
-      phi3 = 115.532
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 443
-      chmoth = 'DC13'
-      x = 32.4014
-      y = 15.4768
-      z = 0
-      irot = 489
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 490
-      theta1 = 90
-      phi1 = 28.0851
-      theta2 = 96
-      phi2 = 118.085
-      theta3 = 6
-      phi3 = 118.085
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 444
-      chmoth = 'DC13'
-      x = 31.6798
-      y = 16.9049
-      z = 0
-      irot = 490
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 491
-      theta1 = 90
-      phi1 = 30.6383
-      theta2 = 96
-      phi2 = 120.638
-      theta3 = 6
-      phi3 = 120.638
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 445
-      chmoth = 'DC13'
-      x = 30.8953
-      y = 18.2993
-      z = 0
-      irot = 491
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 492
-      theta1 = 90
-      phi1 = 33.1915
-      theta2 = 96
-      phi2 = 123.191
-      theta3 = 6
-      phi3 = 123.191
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 446
-      chmoth = 'DC13'
-      x = 30.0495
-      y = 19.6574
-      z = 0
-      irot = 492
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 493
-      theta1 = 90
-      phi1 = 35.7447
-      theta2 = 96
-      phi2 = 125.745
-      theta3 = 6
-      phi3 = 125.745
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 447
-      chmoth = 'DC13'
-      x = 29.1439
-      y = 20.9765
-      z = 0
-      irot = 493
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 494
-      theta1 = 90
-      phi1 = 38.2979
-      theta2 = 96
-      phi2 = 128.298
-      theta3 = 6
-      phi3 = 128.298
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 448
-      chmoth = 'DC13'
-      x = 28.1806
-      y = 22.254
-      z = 0
-      irot = 494
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 495
-      theta1 = 90
-      phi1 = 40.8511
-      theta2 = 96
-      phi2 = 130.851
-      theta3 = 6
-      phi3 = 130.851
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 449
-      chmoth = 'DC13'
-      x = 27.1613
-      y = 23.4872
-      z = 0
-      irot = 495
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 496
-      theta1 = 90
-      phi1 = 43.4043
-      theta2 = 96
-      phi2 = 133.404
-      theta3 = 6
-      phi3 = 133.404
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 450
-      chmoth = 'DC13'
-      x = 26.088
-      y = 24.6739
-      z = 0
-      irot = 496
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 497
-      theta1 = 90
-      phi1 = 45.9574
-      theta2 = 96
-      phi2 = 135.957
-      theta3 = 6
-      phi3 = 135.957
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 451
-      chmoth = 'DC13'
-      x = 24.963
-      y = 25.8115
-      z = 0
-      irot = 497
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 498
-      theta1 = 90
-      phi1 = 48.5106
-      theta2 = 96
-      phi2 = 138.511
-      theta3 = 6
-      phi3 = 138.511
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 452
-      chmoth = 'DC13'
-      x = 23.7884
-      y = 26.8979
-      z = 0
-      irot = 498
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 499
-      theta1 = 90
-      phi1 = 51.0638
-      theta2 = 96
-      phi2 = 141.064
-      theta3 = 6
-      phi3 = 141.064
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 453
-      chmoth = 'DC13'
-      x = 22.5665
-      y = 27.9309
-      z = 0
-      irot = 499
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 500
-      theta1 = 90
-      phi1 = 53.617
-      theta2 = 96
-      phi2 = 143.617
-      theta3 = 6
-      phi3 = 143.617
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 454
-      chmoth = 'DC13'
-      x = 21.2999
-      y = 28.9085
-      z = 0
-      irot = 500
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 501
-      theta1 = 90
-      phi1 = 56.1702
-      theta2 = 96
-      phi2 = 146.17
-      theta3 = 6
-      phi3 = 146.17
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 455
-      chmoth = 'DC13'
-      x = 19.991
-      y = 29.8286
-      z = 0
-      irot = 501
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 502
-      theta1 = 90
-      phi1 = 58.7234
-      theta2 = 96
-      phi2 = 148.723
-      theta3 = 6
-      phi3 = 148.723
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 456
-      chmoth = 'DC13'
-      x = 18.6424
-      y = 30.6895
-      z = 0
-      irot = 502
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 503
-      theta1 = 90
-      phi1 = 61.2766
-      theta2 = 96
-      phi2 = 151.277
-      theta3 = 6
-      phi3 = 151.277
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 457
-      chmoth = 'DC13'
-      x = 17.2567
-      y = 31.4895
-      z = 0
-      irot = 503
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 504
-      theta1 = 90
-      phi1 = 63.8298
-      theta2 = 96
-      phi2 = 153.83
-      theta3 = 6
-      phi3 = 153.83
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 458
-      chmoth = 'DC13'
-      x = 15.8368
-      y = 32.227
-      z = 0
-      irot = 504
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 505
-      theta1 = 90
-      phi1 = 66.383
-      theta2 = 96
-      phi2 = 156.383
-      theta3 = 6
-      phi3 = 156.383
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 459
-      chmoth = 'DC13'
-      x = 14.3855
-      y = 32.9005
-      z = 0
-      irot = 505
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 506
-      theta1 = 90
-      phi1 = 68.9362
-      theta2 = 96
-      phi2 = 158.936
-      theta3 = 6
-      phi3 = 158.936
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 460
-      chmoth = 'DC13'
-      x = 12.9056
-      y = 33.5086
-      z = 0
-      irot = 506
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 507
-      theta1 = 90
-      phi1 = 71.4894
-      theta2 = 96
-      phi2 = 161.489
-      theta3 = 6
-      phi3 = 161.489
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 461
-      chmoth = 'DC13'
-      x = 11.4001
-      y = 34.0503
-      z = 0
-      irot = 507
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 508
-      theta1 = 90
-      phi1 = 74.0426
-      theta2 = 96
-      phi2 = 164.043
-      theta3 = 6
-      phi3 = 164.043
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 462
-      chmoth = 'DC13'
-      x = 9.87195
-      y = 34.5243
-      z = 0
-      irot = 508
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 509
-      theta1 = 90
-      phi1 = 76.5957
-      theta2 = 96
-      phi2 = 166.596
-      theta3 = 6
-      phi3 = 166.596
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 463
-      chmoth = 'DC13'
-      x = 8.3242
-      y = 34.9298
-      z = 0
-      irot = 509
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 510
-      theta1 = 90
-      phi1 = 79.1489
-      theta2 = 96
-      phi2 = 169.149
-      theta3 = 6
-      phi3 = 169.149
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 464
-      chmoth = 'DC13'
-      x = 6.75992
-      y = 35.266
-      z = 0
-      irot = 510
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 511
-      theta1 = 90
-      phi1 = 81.7021
-      theta2 = 96
-      phi2 = 171.702
-      theta3 = 6
-      phi3 = 171.702
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 465
-      chmoth = 'DC13'
-      x = 5.18222
-      y = 35.5321
-      z = 0
-      irot = 511
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 512
-      theta1 = 90
-      phi1 = 84.2553
-      theta2 = 96
-      phi2 = 174.255
-      theta3 = 6
-      phi3 = 174.255
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 466
-      chmoth = 'DC13'
-      x = 3.59424
-      y = 35.7277
-      z = 0
-      irot = 512
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 513
-      theta1 = 90
-      phi1 = 86.8085
-      theta2 = 96
-      phi2 = 176.809
-      theta3 = 6
-      phi3 = 176.809
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 467
-      chmoth = 'DC13'
-      x = 1.99911
-      y = 35.8523
-      z = 0
-      irot = 513
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 514
-      theta1 = 90
-      phi1 = 89.3617
-      theta2 = 96
-      phi2 = 179.362
-      theta3 = 6
-      phi3 = 179.362
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 468
-      chmoth = 'DC13'
-      x = 0.400021
-      y = 35.9058
-      z = 0
-      irot = 514
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 515
-      theta1 = 90
-      phi1 = 91.9149
-      theta2 = 96
-      phi2 = -178.085
-      theta3 = 6
-      phi3 = -178.085
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 469
-      chmoth = 'DC13'
-      x = -1.19986
-      y = 35.8879
-      z = 0
-      irot = 515
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 516
-      theta1 = 90
-      phi1 = 94.4681
-      theta2 = 96
-      phi2 = -175.532
-      theta3 = 6
-      phi3 = -175.532
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 470
-      chmoth = 'DC13'
-      x = -2.79737
-      y = 35.7989
-      z = 0
-      irot = 516
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 517
-      theta1 = 90
-      phi1 = 97.0213
-      theta2 = 96
-      phi2 = -172.979
-      theta3 = 6
-      phi3 = -172.979
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 471
-      chmoth = 'DC13'
-      x = -4.38932
-      y = 35.6387
-      z = 0
-      irot = 517
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 518
-      theta1 = 90
-      phi1 = 99.5745
-      theta2 = 96
-      phi2 = -170.426
-      theta3 = 6
-      phi3 = -170.426
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 472
-      chmoth = 'DC13'
-      x = -5.97255
-      y = 35.4078
-      z = 0
-      irot = 518
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 519
-      theta1 = 90
-      phi1 = 102.128
-      theta2 = 96
-      phi2 = -167.872
-      theta3 = 6
-      phi3 = -167.872
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 473
-      chmoth = 'DC13'
-      x = -7.54393
-      y = 35.1066
-      z = 0
-      irot = 519
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 520
-      theta1 = 90
-      phi1 = 104.681
-      theta2 = 96
-      phi2 = -165.319
-      theta3 = 6
-      phi3 = -165.319
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 474
-      chmoth = 'DC13'
-      x = -9.10033
-      y = 34.7357
-      z = 0
-      irot = 520
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 521
-      theta1 = 90
-      phi1 = 107.234
-      theta2 = 96
-      phi2 = -162.766
-      theta3 = 6
-      phi3 = -162.766
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 475
-      chmoth = 'DC13'
-      x = -10.6387
-      y = 34.2958
-      z = 0
-      irot = 521
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 522
-      theta1 = 90
-      phi1 = 109.787
-      theta2 = 96
-      phi2 = -160.213
-      theta3 = 6
-      phi3 = -160.213
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 476
-      chmoth = 'DC13'
-      x = -12.1559
-      y = 33.7879
-      z = 0
-      irot = 522
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 523
-      theta1 = 90
-      phi1 = 112.34
-      theta2 = 96
-      phi2 = -157.66
-      theta3 = 6
-      phi3 = -157.66
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 477
-      chmoth = 'DC13'
-      x = -13.6489
-      y = 33.2128
-      z = 0
-      irot = 523
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 524
-      theta1 = 90
-      phi1 = 114.894
-      theta2 = 96
-      phi2 = -155.106
-      theta3 = 6
-      phi3 = -155.106
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 478
-      chmoth = 'DC13'
-      x = -15.1149
-      y = 32.5718
-      z = 0
-      irot = 524
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 525
-      theta1 = 90
-      phi1 = 117.447
-      theta2 = 96
-      phi2 = -152.553
-      theta3 = 6
-      phi3 = -152.553
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 479
-      chmoth = 'DC13'
-      x = -16.5509
-      y = 31.8662
-      z = 0
-      irot = 525
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 526
       theta1 = 90
       phi1 = 120
       theta2 = 96
@@ -15751,890 +13072,833 @@
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 480
+      nr = 339
       chmoth = 'DC13'
-      x = -17.954
-      y = 31.0972
+      x = -16.9385
+      y = 29.3383
       z = 0
-      irot = 526
+      irot = 385
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 527
+      irot = 386
       theta1 = 90
-      phi1 = 122.553
+      phi1 = 122.727
       theta2 = 96
-      phi2 = -147.447
+      phi2 = -147.273
       theta3 = 6
-      phi3 = -147.447
+      phi3 = -147.273
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 481
+      nr = 340
       chmoth = 'DC13'
-      x = -19.3215
-      y = 30.2666
+      x = -18.3153
+      y = 28.4991
       z = 0
-      irot = 527
+      irot = 386
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 528
+      irot = 387
       theta1 = 90
-      phi1 = 125.106
+      phi1 = 125.455
       theta2 = 96
-      phi2 = -144.894
+      phi2 = -144.545
       theta3 = 6
-      phi3 = -144.894
+      phi3 = -144.545
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 482
+      nr = 341
       chmoth = 'DC13'
-      x = -20.6506
-      y = 29.3758
+      x = -19.6506
+      y = 27.5954
       z = 0
-      irot = 528
+      irot = 387
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 529
+      irot = 388
       theta1 = 90
-      phi1 = 127.66
+      phi1 = 128.182
       theta2 = 96
-      phi2 = -142.34
+      phi2 = -141.818
       theta3 = 6
-      phi3 = -142.34
+      phi3 = -141.818
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 483
+      nr = 342
       chmoth = 'DC13'
-      x = -21.9387
-      y = 28.4267
+      x = -20.9414
+      y = 26.6291
       z = 0
-      irot = 529
+      irot = 388
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 530
+      irot = 389
       theta1 = 90
-      phi1 = 130.213
+      phi1 = 130.909
       theta2 = 96
-      phi2 = -139.787
+      phi2 = -139.091
       theta3 = 6
-      phi3 = -139.787
+      phi3 = -139.091
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 484
+      nr = 343
       chmoth = 'DC13'
-      x = -23.1832
-      y = 27.4212
+      x = -22.1847
+      y = 25.6025
       z = 0
-      irot = 530
+      irot = 389
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 531
+      irot = 390
       theta1 = 90
-      phi1 = 132.766
+      phi1 = 133.636
       theta2 = 96
-      phi2 = -137.234
+      phi2 = -136.364
       theta3 = 6
-      phi3 = -137.234
+      phi3 = -136.364
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 485
+      nr = 344
       chmoth = 'DC13'
-      x = -24.3817
-      y = 26.3613
+      x = -23.3778
+      y = 24.5179
       z = 0
-      irot = 531
+      irot = 390
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 532
+      irot = 391
       theta1 = 90
-      phi1 = 135.319
+      phi1 = 136.364
       theta2 = 96
-      phi2 = -134.681
+      phi2 = -133.636
       theta3 = 6
-      phi3 = -134.681
+      phi3 = -133.636
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 486
+      nr = 345
       chmoth = 'DC13'
-      x = -25.5318
-      y = 25.249
+      x = -24.5179
+      y = 23.3778
       z = 0
-      irot = 532
+      irot = 391
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 533
+      irot = 392
       theta1 = 90
-      phi1 = 137.872
+      phi1 = 139.091
       theta2 = 96
-      phi2 = -132.128
+      phi2 = -130.909
       theta3 = 6
-      phi3 = -132.128
+      phi3 = -130.909
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 487
+      nr = 346
       chmoth = 'DC13'
-      x = -26.6312
-      y = 24.0865
+      x = -25.6025
+      y = 22.1847
       z = 0
-      irot = 533
+      irot = 392
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 534
+      irot = 393
       theta1 = 90
-      phi1 = 140.426
+      phi1 = 141.818
       theta2 = 96
-      phi2 = -129.574
+      phi2 = -128.182
       theta3 = 6
-      phi3 = -129.574
+      phi3 = -128.182
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 488
+      nr = 347
       chmoth = 'DC13'
-      x = -27.6778
-      y = 22.8763
+      x = -26.6291
+      y = 20.9414
       z = 0
-      irot = 534
+      irot = 393
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 535
+      irot = 394
       theta1 = 90
-      phi1 = 142.979
+      phi1 = 144.545
       theta2 = 96
-      phi2 = -127.021
+      phi2 = -125.455
       theta3 = 6
-      phi3 = -127.021
+      phi3 = -125.455
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 489
+      nr = 348
       chmoth = 'DC13'
-      x = -28.6694
-      y = 21.6206
+      x = -27.5954
+      y = 19.6506
       z = 0
-      irot = 535
+      irot = 394
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 536
+      irot = 395
       theta1 = 90
-      phi1 = 145.532
+      phi1 = 147.273
       theta2 = 96
-      phi2 = -124.468
+      phi2 = -122.727
       theta3 = 6
-      phi3 = -124.468
+      phi3 = -122.727
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 490
+      nr = 349
       chmoth = 'DC13'
-      x = -29.604
-      y = 20.322
+      x = -28.4991
+      y = 18.3153
       z = 0
-      irot = 536
+      irot = 395
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 537
+      irot = 396
       theta1 = 90
-      phi1 = 148.085
+      phi1 = 150
       theta2 = 96
-      phi2 = -121.915
+      phi2 = -120
       theta3 = 6
-      phi3 = -121.915
+      phi3 = -120
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 491
+      nr = 350
       chmoth = 'DC13'
-      x = -30.4799
-      y = 18.9831
+      x = -29.3383
+      y = 16.9385
       z = 0
-      irot = 537
+      irot = 396
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 538
+      irot = 397
       theta1 = 90
-      phi1 = 150.638
+      phi1 = 152.727
       theta2 = 96
-      phi2 = -119.362
+      phi2 = -117.273
       theta3 = 6
-      phi3 = -119.362
+      phi3 = -117.273
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 492
+      nr = 351
       chmoth = 'DC13'
-      x = -31.2953
-      y = 17.6065
+      x = -30.1111
+      y = 15.5233
       z = 0
-      irot = 538
+      irot = 397
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 539
+      irot = 398
       theta1 = 90
-      phi1 = 153.191
+      phi1 = 155.455
       theta2 = 96
-      phi2 = -116.809
+      phi2 = -114.545
       theta3 = 6
-      phi3 = -116.809
+      phi3 = -114.545
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 493
+      nr = 352
       chmoth = 'DC13'
-      x = -32.0486
-      y = 16.1949
+      x = -30.8156
+      y = 14.073
       z = 0
-      irot = 539
+      irot = 398
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 540
+      irot = 399
       theta1 = 90
-      phi1 = 155.745
+      phi1 = 158.182
       theta2 = 96
-      phi2 = -114.255
+      phi2 = -111.818
       theta3 = 6
-      phi3 = -114.255
+      phi3 = -111.818
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 494
+      nr = 353
       chmoth = 'DC13'
-      x = -32.7382
-      y = 14.7511
+      x = -31.4503
+      y = 12.5908
       z = 0
-      irot = 540
+      irot = 399
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 541
+      irot = 400
       theta1 = 90
-      phi1 = 158.298
+      phi1 = 160.909
       theta2 = 96
-      phi2 = -111.702
+      phi2 = -109.091
       theta3 = 6
-      phi3 = -111.702
+      phi3 = -109.091
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 495
+      nr = 354
       chmoth = 'DC13'
-      x = -33.3628
-      y = 13.2781
+      x = -32.0138
+      y = 11.0801
       z = 0
-      irot = 541
+      irot = 400
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 542
+      irot = 401
       theta1 = 90
-      phi1 = 160.851
+      phi1 = 163.636
       theta2 = 96
-      phi2 = -109.149
+      phi2 = -106.364
       theta3 = 6
-      phi3 = -109.149
+      phi3 = -106.364
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 496
+      nr = 355
       chmoth = 'DC13'
-      x = -33.9212
-      y = 11.7787
+      x = -32.5047
+      y = 9.54425
       z = 0
-      irot = 542
+      irot = 401
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 543
+      irot = 402
       theta1 = 90
-      phi1 = 163.404
+      phi1 = 166.364
       theta2 = 96
-      phi2 = -106.596
+      phi2 = -103.636
       theta3 = 6
-      phi3 = -106.596
+      phi3 = -103.636
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 497
+      nr = 356
       chmoth = 'DC13'
-      x = -34.4122
-      y = 10.2559
+      x = -32.9221
+      y = 7.98681
       z = 0
-      irot = 543
+      irot = 402
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 544
+      irot = 403
       theta1 = 90
-      phi1 = 165.957
+      phi1 = 169.091
       theta2 = 96
-      phi2 = -104.043
+      phi2 = -100.909
       theta3 = 6
-      phi3 = -104.043
+      phi3 = -100.909
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 498
+      nr = 357
       chmoth = 'DC13'
-      x = -34.8349
-      y = 8.71281
+      x = -33.2648
+      y = 6.41126
       z = 0
-      irot = 544
+      irot = 403
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 545
+      irot = 404
       theta1 = 90
-      phi1 = 168.511
+      phi1 = 171.818
       theta2 = 96
-      phi2 = -101.489
+      phi2 = -98.1818
       theta3 = 6
-      phi3 = -101.489
+      phi3 = -98.1818
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 499
+      nr = 358
       chmoth = 'DC13'
-      x = -35.1885
-      y = 7.15237
+      x = -33.5322
+      y = 4.8212
       z = 0
-      irot = 545
+      irot = 404
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 546
+      irot = 405
       theta1 = 90
-      phi1 = 171.064
+      phi1 = 174.545
       theta2 = 96
-      phi2 = -98.9362
+      phi2 = -95.4545
       theta3 = 6
-      phi3 = -98.9362
+      phi3 = -95.4545
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 500
+      nr = 359
       chmoth = 'DC13'
-      x = -35.4721
-      y = 5.57773
+      x = -33.7236
+      y = 3.22021
       z = 0
-      irot = 546
+      irot = 405
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 547
+      irot = 406
       theta1 = 90
-      phi1 = 173.617
+      phi1 = 177.273
       theta2 = 96
-      phi2 = -96.383
+      phi2 = -92.7273
       theta3 = 6
-      phi3 = -96.383
+      phi3 = -92.7273
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 501
+      nr = 360
       chmoth = 'DC13'
-      x = -35.6854
-      y = 3.99203
+      x = -33.8386
+      y = 1.61193
       z = 0
-      irot = 547
+      irot = 406
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 548
+      irot = 407
       theta1 = 90
-      phi1 = 176.17
+      phi1 = 180
       theta2 = 96
-      phi2 = -93.8298
+      phi2 = -90
       theta3 = 6
-      phi3 = -93.8298
+      phi3 = -90
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 502
+      nr = 361
       chmoth = 'DC13'
-      x = -35.8278
-      y = 2.39839
+      x = -33.877
+      y = 4.1486e-15
       z = 0
-      irot = 548
+      irot = 407
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 549
+      irot = 408
       theta1 = 90
-      phi1 = 178.723
+      phi1 = -177.273
       theta2 = 96
-      phi2 = -91.2766
+      phi2 = -87.2727
       theta3 = 6
-      phi3 = -91.2766
+      phi3 = -87.2727
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 503
+      nr = 362
       chmoth = 'DC13'
-      x = -35.8991
-      y = 0.799993
+      x = -33.8386
+      y = -1.61193
       z = 0
-      irot = 549
+      irot = 408
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 550
+      irot = 409
       theta1 = 90
-      phi1 = -178.723
+      phi1 = -174.545
       theta2 = 96
-      phi2 = -88.7234
+      phi2 = -84.5455
       theta3 = 6
-      phi3 = -88.7234
+      phi3 = -84.5455
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 504
+      nr = 363
       chmoth = 'DC13'
-      x = -35.8991
-      y = -0.799993
+      x = -33.7236
+      y = -3.22021
       z = 0
-      irot = 550
+      irot = 409
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 551
+      irot = 410
       theta1 = 90
-      phi1 = -176.17
+      phi1 = -171.818
       theta2 = 96
-      phi2 = -86.1702
+      phi2 = -81.8182
       theta3 = 6
-      phi3 = -86.1702
+      phi3 = -81.8182
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 505
+      nr = 364
       chmoth = 'DC13'
-      x = -35.8278
-      y = -2.39839
+      x = -33.5322
+      y = -4.8212
       z = 0
-      irot = 551
+      irot = 410
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 552
+      irot = 411
       theta1 = 90
-      phi1 = -173.617
+      phi1 = -169.091
       theta2 = 96
-      phi2 = -83.617
+      phi2 = -79.0909
       theta3 = 6
-      phi3 = -83.617
+      phi3 = -79.0909
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 506
+      nr = 365
       chmoth = 'DC13'
-      x = -35.6854
-      y = -3.99203
+      x = -33.2648
+      y = -6.41126
       z = 0
-      irot = 552
+      irot = 411
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 553
+      irot = 412
       theta1 = 90
-      phi1 = -171.064
+      phi1 = -166.364
       theta2 = 96
-      phi2 = -81.0638
+      phi2 = -76.3636
       theta3 = 6
-      phi3 = -81.0638
+      phi3 = -76.3636
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 507
+      nr = 366
       chmoth = 'DC13'
-      x = -35.4721
-      y = -5.57773
+      x = -32.9221
+      y = -7.98681
       z = 0
-      irot = 553
+      irot = 412
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 554
+      irot = 413
       theta1 = 90
-      phi1 = -168.511
+      phi1 = -163.636
       theta2 = 96
-      phi2 = -78.5106
+      phi2 = -73.6364
       theta3 = 6
-      phi3 = -78.5106
+      phi3 = -73.6364
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 508
+      nr = 367
       chmoth = 'DC13'
-      x = -35.1885
-      y = -7.15237
+      x = -32.5047
+      y = -9.54425
       z = 0
-      irot = 554
+      irot = 413
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 555
+      irot = 414
       theta1 = 90
-      phi1 = -165.957
+      phi1 = -160.909
       theta2 = 96
-      phi2 = -75.9574
+      phi2 = -70.9091
       theta3 = 6
-      phi3 = -75.9574
+      phi3 = -70.9091
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 509
+      nr = 368
       chmoth = 'DC13'
-      x = -34.8349
-      y = -8.71281
+      x = -32.0138
+      y = -11.0801
       z = 0
-      irot = 555
+      irot = 414
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 556
+      irot = 415
       theta1 = 90
-      phi1 = -163.404
+      phi1 = -158.182
       theta2 = 96
-      phi2 = -73.4043
+      phi2 = -68.1818
       theta3 = 6
-      phi3 = -73.4043
+      phi3 = -68.1818
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 510
+      nr = 369
       chmoth = 'DC13'
-      x = -34.4122
-      y = -10.2559
+      x = -31.4503
+      y = -12.5908
       z = 0
-      irot = 556
+      irot = 415
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 557
+      irot = 416
       theta1 = 90
-      phi1 = -160.851
+      phi1 = -155.455
       theta2 = 96
-      phi2 = -70.8511
+      phi2 = -65.4545
       theta3 = 6
-      phi3 = -70.8511
+      phi3 = -65.4545
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 511
+      nr = 370
       chmoth = 'DC13'
-      x = -33.9212
-      y = -11.7787
+      x = -30.8156
+      y = -14.073
       z = 0
-      irot = 557
+      irot = 416
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 558
+      irot = 417
       theta1 = 90
-      phi1 = -158.298
+      phi1 = -152.727
       theta2 = 96
-      phi2 = -68.2979
+      phi2 = -62.7273
       theta3 = 6
-      phi3 = -68.2979
+      phi3 = -62.7273
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 512
+      nr = 371
       chmoth = 'DC13'
-      x = -33.3628
-      y = -13.2781
+      x = -30.1111
+      y = -15.5233
       z = 0
-      irot = 558
+      irot = 417
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 559
+      irot = 418
       theta1 = 90
-      phi1 = -155.745
+      phi1 = -150
       theta2 = 96
-      phi2 = -65.7447
+      phi2 = -60
       theta3 = 6
-      phi3 = -65.7447
+      phi3 = -60
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 513
+      nr = 372
       chmoth = 'DC13'
-      x = -32.7382
-      y = -14.7511
+      x = -29.3383
+      y = -16.9385
       z = 0
-      irot = 559
+      irot = 418
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 560
+      irot = 419
       theta1 = 90
-      phi1 = -153.191
+      phi1 = -147.273
       theta2 = 96
-      phi2 = -63.1915
+      phi2 = -57.2727
       theta3 = 6
-      phi3 = -63.1915
+      phi3 = -57.2727
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 514
+      nr = 373
       chmoth = 'DC13'
-      x = -32.0486
-      y = -16.1949
+      x = -28.4991
+      y = -18.3153
       z = 0
-      irot = 560
+      irot = 419
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 561
+      irot = 420
       theta1 = 90
-      phi1 = -150.638
+      phi1 = -144.545
       theta2 = 96
-      phi2 = -60.6383
+      phi2 = -54.5455
       theta3 = 6
-      phi3 = -60.6383
+      phi3 = -54.5455
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 515
+      nr = 374
       chmoth = 'DC13'
-      x = -31.2953
-      y = -17.6065
+      x = -27.5954
+      y = -19.6506
       z = 0
-      irot = 561
+      irot = 420
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 562
+      irot = 421
       theta1 = 90
-      phi1 = -148.085
+      phi1 = -141.818
       theta2 = 96
-      phi2 = -58.0851
+      phi2 = -51.8182
       theta3 = 6
-      phi3 = -58.0851
+      phi3 = -51.8182
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 516
+      nr = 375
       chmoth = 'DC13'
-      x = -30.4799
-      y = -18.9831
+      x = -26.6291
+      y = -20.9414
       z = 0
-      irot = 562
+      irot = 421
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 563
+      irot = 422
       theta1 = 90
-      phi1 = -145.532
+      phi1 = -139.091
       theta2 = 96
-      phi2 = -55.5319
+      phi2 = -49.0909
       theta3 = 6
-      phi3 = -55.5319
+      phi3 = -49.0909
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 517
+      nr = 376
       chmoth = 'DC13'
-      x = -29.604
-      y = -20.322
+      x = -25.6025
+      y = -22.1847
       z = 0
-      irot = 563
+      irot = 422
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 564
+      irot = 423
       theta1 = 90
-      phi1 = -142.979
+      phi1 = -136.364
       theta2 = 96
-      phi2 = -52.9787
+      phi2 = -46.3636
       theta3 = 6
-      phi3 = -52.9787
+      phi3 = -46.3636
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 518
+      nr = 377
       chmoth = 'DC13'
-      x = -28.6694
-      y = -21.6206
+      x = -24.5179
+      y = -23.3778
       z = 0
-      irot = 564
+      irot = 423
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 565
+      irot = 424
       theta1 = 90
-      phi1 = -140.426
+      phi1 = -133.636
       theta2 = 96
-      phi2 = -50.4255
+      phi2 = -43.6364
       theta3 = 6
-      phi3 = -50.4255
+      phi3 = -43.6364
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 519
+      nr = 378
       chmoth = 'DC13'
-      x = -27.6778
-      y = -22.8763
+      x = -23.3778
+      y = -24.5179
       z = 0
-      irot = 565
+      irot = 424
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 566
+      irot = 425
       theta1 = 90
-      phi1 = -137.872
+      phi1 = -130.909
       theta2 = 96
-      phi2 = -47.8723
+      phi2 = -40.9091
       theta3 = 6
-      phi3 = -47.8723
+      phi3 = -40.9091
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 520
+      nr = 379
       chmoth = 'DC13'
-      x = -26.6312
-      y = -24.0865
+      x = -22.1847
+      y = -25.6025
       z = 0
-      irot = 566
+      irot = 425
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 567
+      irot = 426
       theta1 = 90
-      phi1 = -135.319
+      phi1 = -128.182
       theta2 = 96
-      phi2 = -45.3191
+      phi2 = -38.1818
       theta3 = 6
-      phi3 = -45.3191
+      phi3 = -38.1818
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 521
+      nr = 380
       chmoth = 'DC13'
-      x = -25.5318
-      y = -25.249
+      x = -20.9414
+      y = -26.6291
       z = 0
-      irot = 567
+      irot = 426
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 568
+      irot = 427
       theta1 = 90
-      phi1 = -132.766
+      phi1 = -125.455
       theta2 = 96
-      phi2 = -42.766
+      phi2 = -35.4545
       theta3 = 6
-      phi3 = -42.766
+      phi3 = -35.4545
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 522
+      nr = 381
       chmoth = 'DC13'
-      x = -24.3817
-      y = -26.3613
+      x = -19.6506
+      y = -27.5954
       z = 0
-      irot = 568
+      irot = 427
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 569
+      irot = 428
       theta1 = 90
-      phi1 = -130.213
+      phi1 = -122.727
       theta2 = 96
-      phi2 = -40.2128
+      phi2 = -32.7273
       theta3 = 6
-      phi3 = -40.2128
+      phi3 = -32.7273
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
-      nr = 523
+      nr = 382
       chmoth = 'DC13'
-      x = -23.1832
-      y = -27.4212
+      x = -18.3153
+      y = -28.4991
       z = 0
-      irot = 569
+      irot = 428
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 570
-      theta1 = 90
-      phi1 = -127.66
-      theta2 = 96
-      phi2 = -37.6596
-      theta3 = 6
-      phi3 = -37.6596
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 524
-      chmoth = 'DC13'
-      x = -21.9387
-      y = -28.4267
-      z = 0
-      irot = 570
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 571
-      theta1 = 90
-      phi1 = -125.106
-      theta2 = 96
-      phi2 = -35.1064
-      theta3 = 6
-      phi3 = -35.1064
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 525
-      chmoth = 'DC13'
-      x = -20.6506
-      y = -29.3758
-      z = 0
-      irot = 571
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 572
-      theta1 = 90
-      phi1 = -122.553
-      theta2 = 96
-      phi2 = -32.5532
-      theta3 = 6
-      phi3 = -32.5532
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 526
-      chmoth = 'DC13'
-      x = -19.3215
-      y = -30.2666
-      z = 0
-      irot = 572
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 573
+      irot = 429
       theta1 = 90
       phi1 = -120
       theta2 = 96
@@ -16644,10 +13908,2746 @@
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
+      nr = 383
+      chmoth = 'DC13'
+      x = -16.9385
+      y = -29.3383
+      z = 0
+      irot = 429
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 430
+      theta1 = 90
+      phi1 = -117.273
+      theta2 = 96
+      phi2 = -27.2727
+      theta3 = 6
+      phi3 = -27.2727
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 384
+      chmoth = 'DC13'
+      x = -15.5233
+      y = -30.1111
+      z = 0
+      irot = 430
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 431
+      theta1 = 90
+      phi1 = -114.545
+      theta2 = 96
+      phi2 = -24.5455
+      theta3 = 6
+      phi3 = -24.5455
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 385
+      chmoth = 'DC13'
+      x = -14.073
+      y = -30.8156
+      z = 0
+      irot = 431
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 432
+      theta1 = 90
+      phi1 = -111.818
+      theta2 = 96
+      phi2 = -21.8182
+      theta3 = 6
+      phi3 = -21.8182
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 386
+      chmoth = 'DC13'
+      x = -12.5908
+      y = -31.4503
+      z = 0
+      irot = 432
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 433
+      theta1 = 90
+      phi1 = -109.091
+      theta2 = 96
+      phi2 = -19.0909
+      theta3 = 6
+      phi3 = -19.0909
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 387
+      chmoth = 'DC13'
+      x = -11.0801
+      y = -32.0138
+      z = 0
+      irot = 433
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 434
+      theta1 = 90
+      phi1 = -106.364
+      theta2 = 96
+      phi2 = -16.3636
+      theta3 = 6
+      phi3 = -16.3636
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 388
+      chmoth = 'DC13'
+      x = -9.54425
+      y = -32.5047
+      z = 0
+      irot = 434
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 435
+      theta1 = 90
+      phi1 = -103.636
+      theta2 = 96
+      phi2 = -13.6364
+      theta3 = 6
+      phi3 = -13.6364
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 389
+      chmoth = 'DC13'
+      x = -7.98681
+      y = -32.9221
+      z = 0
+      irot = 435
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 436
+      theta1 = 90
+      phi1 = -100.909
+      theta2 = 96
+      phi2 = -10.9091
+      theta3 = 6
+      phi3 = -10.9091
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 390
+      chmoth = 'DC13'
+      x = -6.41126
+      y = -33.2648
+      z = 0
+      irot = 436
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 437
+      theta1 = 90
+      phi1 = -98.1818
+      theta2 = 96
+      phi2 = -8.18182
+      theta3 = 6
+      phi3 = -8.18182
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 391
+      chmoth = 'DC13'
+      x = -4.8212
+      y = -33.5322
+      z = 0
+      irot = 437
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 438
+      theta1 = 90
+      phi1 = -95.4545
+      theta2 = 96
+      phi2 = -5.45455
+      theta3 = 6
+      phi3 = -5.45455
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 392
+      chmoth = 'DC13'
+      x = -3.22021
+      y = -33.7236
+      z = 0
+      irot = 438
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 439
+      theta1 = 90
+      phi1 = -92.7273
+      theta2 = 96
+      phi2 = -2.72727
+      theta3 = 6
+      phi3 = -2.72727
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 393
+      chmoth = 'DC13'
+      x = -1.61193
+      y = -33.8386
+      z = 0
+      irot = 439
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 440
+      theta1 = 90
+      phi1 = -90
+      theta2 = 96
+      phi2 = -1.12302e-13
+      theta3 = 6
+      phi3 = -1.12302e-13
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 394
+      chmoth = 'DC13'
+      x = -6.2229e-15
+      y = -33.877
+      z = 0
+      irot = 440
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 441
+      theta1 = 90
+      phi1 = -87.2727
+      theta2 = 96
+      phi2 = 2.72727
+      theta3 = 6
+      phi3 = 2.72727
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 395
+      chmoth = 'DC13'
+      x = 1.61193
+      y = -33.8386
+      z = 0
+      irot = 441
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 442
+      theta1 = 90
+      phi1 = -84.5455
+      theta2 = 96
+      phi2 = 5.45455
+      theta3 = 6
+      phi3 = 5.45455
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 396
+      chmoth = 'DC13'
+      x = 3.22021
+      y = -33.7236
+      z = 0
+      irot = 442
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 443
+      theta1 = 90
+      phi1 = -81.8182
+      theta2 = 96
+      phi2 = 8.18182
+      theta3 = 6
+      phi3 = 8.18182
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 397
+      chmoth = 'DC13'
+      x = 4.8212
+      y = -33.5322
+      z = 0
+      irot = 443
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 444
+      theta1 = 90
+      phi1 = -79.0909
+      theta2 = 96
+      phi2 = 10.9091
+      theta3 = 6
+      phi3 = 10.9091
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 398
+      chmoth = 'DC13'
+      x = 6.41126
+      y = -33.2648
+      z = 0
+      irot = 444
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 445
+      theta1 = 90
+      phi1 = -76.3636
+      theta2 = 96
+      phi2 = 13.6364
+      theta3 = 6
+      phi3 = 13.6364
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 399
+      chmoth = 'DC13'
+      x = 7.98681
+      y = -32.9221
+      z = 0
+      irot = 445
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 446
+      theta1 = 90
+      phi1 = -73.6364
+      theta2 = 96
+      phi2 = 16.3636
+      theta3 = 6
+      phi3 = 16.3636
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 400
+      chmoth = 'DC13'
+      x = 9.54425
+      y = -32.5047
+      z = 0
+      irot = 446
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 447
+      theta1 = 90
+      phi1 = -70.9091
+      theta2 = 96
+      phi2 = 19.0909
+      theta3 = 6
+      phi3 = 19.0909
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 401
+      chmoth = 'DC13'
+      x = 11.0801
+      y = -32.0138
+      z = 0
+      irot = 447
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 448
+      theta1 = 90
+      phi1 = -68.1818
+      theta2 = 96
+      phi2 = 21.8182
+      theta3 = 6
+      phi3 = 21.8182
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 402
+      chmoth = 'DC13'
+      x = 12.5908
+      y = -31.4503
+      z = 0
+      irot = 448
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 449
+      theta1 = 90
+      phi1 = -65.4545
+      theta2 = 96
+      phi2 = 24.5455
+      theta3 = 6
+      phi3 = 24.5455
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 403
+      chmoth = 'DC13'
+      x = 14.073
+      y = -30.8156
+      z = 0
+      irot = 449
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 450
+      theta1 = 90
+      phi1 = -62.7273
+      theta2 = 96
+      phi2 = 27.2727
+      theta3 = 6
+      phi3 = 27.2727
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 404
+      chmoth = 'DC13'
+      x = 15.5233
+      y = -30.1111
+      z = 0
+      irot = 450
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 451
+      theta1 = 90
+      phi1 = -60
+      theta2 = 96
+      phi2 = 30
+      theta3 = 6
+      phi3 = 30
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 405
+      chmoth = 'DC13'
+      x = 16.9385
+      y = -29.3383
+      z = 0
+      irot = 451
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 452
+      theta1 = 90
+      phi1 = -57.2727
+      theta2 = 96
+      phi2 = 32.7273
+      theta3 = 6
+      phi3 = 32.7273
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 406
+      chmoth = 'DC13'
+      x = 18.3153
+      y = -28.4991
+      z = 0
+      irot = 452
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 453
+      theta1 = 90
+      phi1 = -54.5455
+      theta2 = 96
+      phi2 = 35.4545
+      theta3 = 6
+      phi3 = 35.4545
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 407
+      chmoth = 'DC13'
+      x = 19.6506
+      y = -27.5954
+      z = 0
+      irot = 453
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 454
+      theta1 = 90
+      phi1 = -51.8182
+      theta2 = 96
+      phi2 = 38.1818
+      theta3 = 6
+      phi3 = 38.1818
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 408
+      chmoth = 'DC13'
+      x = 20.9414
+      y = -26.6291
+      z = 0
+      irot = 454
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 455
+      theta1 = 90
+      phi1 = -49.0909
+      theta2 = 96
+      phi2 = 40.9091
+      theta3 = 6
+      phi3 = 40.9091
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 409
+      chmoth = 'DC13'
+      x = 22.1847
+      y = -25.6025
+      z = 0
+      irot = 455
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 456
+      theta1 = 90
+      phi1 = -46.3636
+      theta2 = 96
+      phi2 = 43.6364
+      theta3 = 6
+      phi3 = 43.6364
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 410
+      chmoth = 'DC13'
+      x = 23.3778
+      y = -24.5179
+      z = 0
+      irot = 456
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 457
+      theta1 = 90
+      phi1 = -43.6364
+      theta2 = 96
+      phi2 = 46.3636
+      theta3 = 6
+      phi3 = 46.3636
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 411
+      chmoth = 'DC13'
+      x = 24.5179
+      y = -23.3778
+      z = 0
+      irot = 457
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 458
+      theta1 = 90
+      phi1 = -40.9091
+      theta2 = 96
+      phi2 = 49.0909
+      theta3 = 6
+      phi3 = 49.0909
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 412
+      chmoth = 'DC13'
+      x = 25.6025
+      y = -22.1847
+      z = 0
+      irot = 458
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 459
+      theta1 = 90
+      phi1 = -38.1818
+      theta2 = 96
+      phi2 = 51.8182
+      theta3 = 6
+      phi3 = 51.8182
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 413
+      chmoth = 'DC13'
+      x = 26.6291
+      y = -20.9414
+      z = 0
+      irot = 459
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 460
+      theta1 = 90
+      phi1 = -35.4545
+      theta2 = 96
+      phi2 = 54.5455
+      theta3 = 6
+      phi3 = 54.5455
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 414
+      chmoth = 'DC13'
+      x = 27.5954
+      y = -19.6506
+      z = 0
+      irot = 460
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 461
+      theta1 = 90
+      phi1 = -32.7273
+      theta2 = 96
+      phi2 = 57.2727
+      theta3 = 6
+      phi3 = 57.2727
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 415
+      chmoth = 'DC13'
+      x = 28.4991
+      y = -18.3153
+      z = 0
+      irot = 461
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 462
+      theta1 = 90
+      phi1 = -30
+      theta2 = 96
+      phi2 = 60
+      theta3 = 6
+      phi3 = 60
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 416
+      chmoth = 'DC13'
+      x = 29.3383
+      y = -16.9385
+      z = 0
+      irot = 462
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 463
+      theta1 = 90
+      phi1 = -27.2727
+      theta2 = 96
+      phi2 = 62.7273
+      theta3 = 6
+      phi3 = 62.7273
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 417
+      chmoth = 'DC13'
+      x = 30.1111
+      y = -15.5233
+      z = 0
+      irot = 463
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 464
+      theta1 = 90
+      phi1 = -24.5455
+      theta2 = 96
+      phi2 = 65.4545
+      theta3 = 6
+      phi3 = 65.4545
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 418
+      chmoth = 'DC13'
+      x = 30.8156
+      y = -14.073
+      z = 0
+      irot = 464
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 465
+      theta1 = 90
+      phi1 = -21.8182
+      theta2 = 96
+      phi2 = 68.1818
+      theta3 = 6
+      phi3 = 68.1818
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 419
+      chmoth = 'DC13'
+      x = 31.4503
+      y = -12.5908
+      z = 0
+      irot = 465
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 466
+      theta1 = 90
+      phi1 = -19.0909
+      theta2 = 96
+      phi2 = 70.9091
+      theta3 = 6
+      phi3 = 70.9091
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 420
+      chmoth = 'DC13'
+      x = 32.0138
+      y = -11.0801
+      z = 0
+      irot = 466
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 467
+      theta1 = 90
+      phi1 = -16.3636
+      theta2 = 96
+      phi2 = 73.6364
+      theta3 = 6
+      phi3 = 73.6364
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 421
+      chmoth = 'DC13'
+      x = 32.5047
+      y = -9.54425
+      z = 0
+      irot = 467
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 468
+      theta1 = 90
+      phi1 = -13.6364
+      theta2 = 96
+      phi2 = 76.3636
+      theta3 = 6
+      phi3 = 76.3636
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 422
+      chmoth = 'DC13'
+      x = 32.9221
+      y = -7.98681
+      z = 0
+      irot = 468
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 469
+      theta1 = 90
+      phi1 = -10.9091
+      theta2 = 96
+      phi2 = 79.0909
+      theta3 = 6
+      phi3 = 79.0909
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 423
+      chmoth = 'DC13'
+      x = 33.2648
+      y = -6.41126
+      z = 0
+      irot = 469
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 470
+      theta1 = 90
+      phi1 = -8.18182
+      theta2 = 96
+      phi2 = 81.8182
+      theta3 = 6
+      phi3 = 81.8182
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 424
+      chmoth = 'DC13'
+      x = 33.5322
+      y = -4.8212
+      z = 0
+      irot = 470
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 471
+      theta1 = 90
+      phi1 = -5.45455
+      theta2 = 96
+      phi2 = 84.5455
+      theta3 = 6
+      phi3 = 84.5455
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 425
+      chmoth = 'DC13'
+      x = 33.7236
+      y = -3.22021
+      z = 0
+      irot = 471
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 472
+      theta1 = 90
+      phi1 = -2.72727
+      theta2 = 96
+      phi2 = 87.2727
+      theta3 = 6
+      phi3 = 87.2727
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 426
+      chmoth = 'DC13'
+      x = 33.8386
+      y = -1.61193
+      z = 0
+      irot = 472
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 473
+      theta1 = 90
+      phi1 = 0
+      theta2 = 96
+      phi2 = 90
+      theta3 = 6
+      phi3 = 90
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 427
+      chmoth = 'DC13'
+      x = 35.673
+      y = 0
+      z = 0
+      irot = 473
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 474
+      theta1 = 90
+      phi1 = 2.58993
+      theta2 = 96
+      phi2 = 92.5899
+      theta3 = 6
+      phi3 = 92.5899
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 428
+      chmoth = 'DC13'
+      x = 35.6366
+      y = 1.61197
+      z = 0
+      irot = 474
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 475
+      theta1 = 90
+      phi1 = 5.17986
+      theta2 = 96
+      phi2 = 95.1799
+      theta3 = 6
+      phi3 = 95.1799
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 429
+      chmoth = 'DC13'
+      x = 35.5273
+      y = 3.22065
+      z = 0
+      irot = 475
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 476
+      theta1 = 90
+      phi1 = 7.76978
+      theta2 = 96
+      phi2 = 97.7698
+      theta3 = 6
+      phi3 = 97.7698
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 430
+      chmoth = 'DC13'
+      x = 35.3455
+      y = 4.82274
+      z = 0
+      irot = 476
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 477
+      theta1 = 90
+      phi1 = 10.3597
+      theta2 = 96
+      phi2 = 100.36
+      theta3 = 6
+      phi3 = 100.36
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 431
+      chmoth = 'DC13'
+      x = 35.0915
+      y = 6.41499
+      z = 0
+      irot = 477
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 478
+      theta1 = 90
+      phi1 = 12.9496
+      theta2 = 96
+      phi2 = 102.95
+      theta3 = 6
+      phi3 = 102.95
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 432
+      chmoth = 'DC13'
+      x = 34.7657
+      y = 7.99412
+      z = 0
+      irot = 478
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 479
+      theta1 = 90
+      phi1 = 15.5396
+      theta2 = 96
+      phi2 = 105.54
+      theta3 = 6
+      phi3 = 105.54
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 433
+      chmoth = 'DC13'
+      x = 34.369
+      y = 9.55693
+      z = 0
+      irot = 479
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 480
+      theta1 = 90
+      phi1 = 18.1295
+      theta2 = 96
+      phi2 = 108.129
+      theta3 = 6
+      phi3 = 108.129
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 434
+      chmoth = 'DC13'
+      x = 33.902
+      y = 11.1002
+      z = 0
+      irot = 480
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 481
+      theta1 = 90
+      phi1 = 20.7194
+      theta2 = 96
+      phi2 = 110.719
+      theta3 = 6
+      phi3 = 110.719
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 435
+      chmoth = 'DC13'
+      x = 33.3658
+      y = 12.6208
+      z = 0
+      irot = 481
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 482
+      theta1 = 90
+      phi1 = 23.3094
+      theta2 = 96
+      phi2 = 113.309
+      theta3 = 6
+      phi3 = 113.309
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 436
+      chmoth = 'DC13'
+      x = 32.7614
+      y = 14.1156
+      z = 0
+      irot = 482
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 483
+      theta1 = 90
+      phi1 = 25.8993
+      theta2 = 96
+      phi2 = 115.899
+      theta3 = 6
+      phi3 = 115.899
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 437
+      chmoth = 'DC13'
+      x = 32.0901
+      y = 15.5816
+      z = 0
+      irot = 483
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 484
+      theta1 = 90
+      phi1 = 28.4892
+      theta2 = 96
+      phi2 = 118.489
+      theta3 = 6
+      phi3 = 118.489
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 438
+      chmoth = 'DC13'
+      x = 31.3532
+      y = 17.0158
+      z = 0
+      irot = 484
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 485
+      theta1 = 90
+      phi1 = 31.0791
+      theta2 = 96
+      phi2 = 121.079
+      theta3 = 6
+      phi3 = 121.079
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 439
+      chmoth = 'DC13'
+      x = 30.5523
+      y = 18.4152
+      z = 0
+      irot = 485
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 486
+      theta1 = 90
+      phi1 = 33.6691
+      theta2 = 96
+      phi2 = 123.669
+      theta3 = 6
+      phi3 = 123.669
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 440
+      chmoth = 'DC13'
+      x = 29.689
+      y = 19.7769
+      z = 0
+      irot = 486
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 487
+      theta1 = 90
+      phi1 = 36.259
+      theta2 = 96
+      phi2 = 126.259
+      theta3 = 6
+      phi3 = 126.259
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 441
+      chmoth = 'DC13'
+      x = 28.765
+      y = 21.0983
+      z = 0
+      irot = 487
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 488
+      theta1 = 90
+      phi1 = 38.8489
+      theta2 = 96
+      phi2 = 128.849
+      theta3 = 6
+      phi3 = 128.849
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 442
+      chmoth = 'DC13'
+      x = 27.7822
+      y = 22.3766
+      z = 0
+      irot = 488
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 489
+      theta1 = 90
+      phi1 = 41.4388
+      theta2 = 96
+      phi2 = 131.439
+      theta3 = 6
+      phi3 = 131.439
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 443
+      chmoth = 'DC13'
+      x = 26.7427
+      y = 23.6091
+      z = 0
+      irot = 489
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 490
+      theta1 = 90
+      phi1 = 44.0288
+      theta2 = 96
+      phi2 = 134.029
+      theta3 = 6
+      phi3 = 134.029
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 444
+      chmoth = 'DC13'
+      x = 25.6486
+      y = 24.7934
+      z = 0
+      irot = 490
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 491
+      theta1 = 90
+      phi1 = 46.6187
+      theta2 = 96
+      phi2 = 136.619
+      theta3 = 6
+      phi3 = 136.619
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 445
+      chmoth = 'DC13'
+      x = 24.502
+      y = 25.9271
+      z = 0
+      irot = 491
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 492
+      theta1 = 90
+      phi1 = 49.2086
+      theta2 = 96
+      phi2 = 139.209
+      theta3 = 6
+      phi3 = 139.209
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 446
+      chmoth = 'DC13'
+      x = 23.3054
+      y = 27.0078
+      z = 0
+      irot = 492
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 493
+      theta1 = 90
+      phi1 = 51.7986
+      theta2 = 96
+      phi2 = 141.799
+      theta3 = 6
+      phi3 = 141.799
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 447
+      chmoth = 'DC13'
+      x = 22.0612
+      y = 28.0333
+      z = 0
+      irot = 493
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 494
+      theta1 = 90
+      phi1 = 54.3885
+      theta2 = 96
+      phi2 = 144.388
+      theta3 = 6
+      phi3 = 144.388
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 448
+      chmoth = 'DC13'
+      x = 20.7719
+      y = 29.0016
+      z = 0
+      irot = 494
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 495
+      theta1 = 90
+      phi1 = 56.9784
+      theta2 = 96
+      phi2 = 146.978
+      theta3 = 6
+      phi3 = 146.978
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 449
+      chmoth = 'DC13'
+      x = 19.4402
+      y = 29.9106
+      z = 0
+      irot = 495
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 496
+      theta1 = 90
+      phi1 = 59.5683
+      theta2 = 96
+      phi2 = 149.568
+      theta3 = 6
+      phi3 = 149.568
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 450
+      chmoth = 'DC13'
+      x = 18.0687
+      y = 30.7585
+      z = 0
+      irot = 496
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 497
+      theta1 = 90
+      phi1 = 62.1583
+      theta2 = 96
+      phi2 = 152.158
+      theta3 = 6
+      phi3 = 152.158
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 451
+      chmoth = 'DC13'
+      x = 16.6604
+      y = 31.5435
+      z = 0
+      irot = 497
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 498
+      theta1 = 90
+      phi1 = 64.7482
+      theta2 = 96
+      phi2 = 154.748
+      theta3 = 6
+      phi3 = 154.748
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 452
+      chmoth = 'DC13'
+      x = 15.218
+      y = 32.2642
+      z = 0
+      irot = 498
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 499
+      theta1 = 90
+      phi1 = 67.3381
+      theta2 = 96
+      phi2 = 157.338
+      theta3 = 6
+      phi3 = 157.338
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 453
+      chmoth = 'DC13'
+      x = 13.7445
+      y = 32.9189
+      z = 0
+      irot = 499
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 500
+      theta1 = 90
+      phi1 = 69.9281
+      theta2 = 96
+      phi2 = 159.928
+      theta3 = 6
+      phi3 = 159.928
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 454
+      chmoth = 'DC13'
+      x = 12.243
+      y = 33.5063
+      z = 0
+      irot = 500
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 501
+      theta1 = 90
+      phi1 = 72.518
+      theta2 = 96
+      phi2 = 162.518
+      theta3 = 6
+      phi3 = 162.518
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 455
+      chmoth = 'DC13'
+      x = 10.7164
+      y = 34.0253
+      z = 0
+      irot = 501
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 502
+      theta1 = 90
+      phi1 = 75.1079
+      theta2 = 96
+      phi2 = 165.108
+      theta3 = 6
+      phi3 = 165.108
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 456
+      chmoth = 'DC13'
+      x = 9.16794
+      y = 34.4748
+      z = 0
+      irot = 502
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 503
+      theta1 = 90
+      phi1 = 77.6978
+      theta2 = 96
+      phi2 = 167.698
+      theta3 = 6
+      phi3 = 167.698
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 457
+      chmoth = 'DC13'
+      x = 7.60075
+      y = 34.8539
+      z = 0
+      irot = 503
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 504
+      theta1 = 90
+      phi1 = 80.2878
+      theta2 = 96
+      phi2 = 170.288
+      theta3 = 6
+      phi3 = 170.288
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 458
+      chmoth = 'DC13'
+      x = 6.01803
+      y = 35.1617
+      z = 0
+      irot = 504
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 505
+      theta1 = 90
+      phi1 = 82.8777
+      theta2 = 96
+      phi2 = 172.878
+      theta3 = 6
+      phi3 = 172.878
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 459
+      chmoth = 'DC13'
+      x = 4.42301
+      y = 35.3977
+      z = 0
+      irot = 505
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 506
+      theta1 = 90
+      phi1 = 85.4676
+      theta2 = 96
+      phi2 = 175.468
+      theta3 = 6
+      phi3 = 175.468
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 460
+      chmoth = 'DC13'
+      x = 2.81897
+      y = 35.5614
+      z = 0
+      irot = 506
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 507
+      theta1 = 90
+      phi1 = 88.0576
+      theta2 = 96
+      phi2 = 178.058
+      theta3 = 6
+      phi3 = 178.058
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 461
+      chmoth = 'DC13'
+      x = 1.20916
+      y = 35.6525
+      z = 0
+      irot = 507
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 508
+      theta1 = 90
+      phi1 = 90.6475
+      theta2 = 96
+      phi2 = -179.353
+      theta3 = 6
+      phi3 = -179.353
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 462
+      chmoth = 'DC13'
+      x = -0.403121
+      y = 35.6707
+      z = 0
+      irot = 508
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 509
+      theta1 = 90
+      phi1 = 93.2374
+      theta2 = 96
+      phi2 = -176.763
+      theta3 = 6
+      phi3 = -176.763
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 463
+      chmoth = 'DC13'
+      x = -2.01458
+      y = 35.6161
+      z = 0
+      irot = 509
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 510
+      theta1 = 90
+      phi1 = 95.8273
+      theta2 = 96
+      phi2 = -174.173
+      theta3 = 6
+      phi3 = -174.173
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 464
+      chmoth = 'DC13'
+      x = -3.62191
+      y = 35.4887
+      z = 0
+      irot = 510
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 511
+      theta1 = 90
+      phi1 = 98.4173
+      theta2 = 96
+      phi2 = -171.583
+      theta3 = 6
+      phi3 = -171.583
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 465
+      chmoth = 'DC13'
+      x = -5.22185
+      y = 35.2887
+      z = 0
+      irot = 511
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 512
+      theta1 = 90
+      phi1 = 101.007
+      theta2 = 96
+      phi2 = -168.993
+      theta3 = 6
+      phi3 = -168.993
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 466
+      chmoth = 'DC13'
+      x = -6.81113
+      y = 35.0167
+      z = 0
+      irot = 512
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 513
+      theta1 = 90
+      phi1 = 103.597
+      theta2 = 96
+      phi2 = -166.403
+      theta3 = 6
+      phi3 = -166.403
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 467
+      chmoth = 'DC13'
+      x = -8.38648
+      y = 34.6732
+      z = 0
+      irot = 513
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 514
+      theta1 = 90
+      phi1 = 106.187
+      theta2 = 96
+      phi2 = -163.813
+      theta3 = 6
+      phi3 = -163.813
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 468
+      chmoth = 'DC13'
+      x = -9.94471
+      y = 34.2588
+      z = 0
+      irot = 514
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 515
+      theta1 = 90
+      phi1 = 108.777
+      theta2 = 96
+      phi2 = -161.223
+      theta3 = 6
+      phi3 = -161.223
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 469
+      chmoth = 'DC13'
+      x = -11.4826
+      y = 33.7744
+      z = 0
+      irot = 515
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 516
+      theta1 = 90
+      phi1 = 111.367
+      theta2 = 96
+      phi2 = -158.633
+      theta3 = 6
+      phi3 = -158.633
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 470
+      chmoth = 'DC13'
+      x = -12.9971
+      y = 33.2211
+      z = 0
+      irot = 516
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 517
+      theta1 = 90
+      phi1 = 113.957
+      theta2 = 96
+      phi2 = -156.043
+      theta3 = 6
+      phi3 = -156.043
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 471
+      chmoth = 'DC13'
+      x = -14.485
+      y = 32.5998
+      z = 0
+      irot = 517
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 518
+      theta1 = 90
+      phi1 = 116.547
+      theta2 = 96
+      phi2 = -153.453
+      theta3 = 6
+      phi3 = -153.453
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 472
+      chmoth = 'DC13'
+      x = -15.9433
+      y = 31.912
+      z = 0
+      irot = 518
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 519
+      theta1 = 90
+      phi1 = 119.137
+      theta2 = 96
+      phi2 = -150.863
+      theta3 = 6
+      phi3 = -150.863
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 473
+      chmoth = 'DC13'
+      x = -17.369
+      y = 31.159
+      z = 0
+      irot = 519
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 520
+      theta1 = 90
+      phi1 = 121.727
+      theta2 = 96
+      phi2 = -148.273
+      theta3 = 6
+      phi3 = -148.273
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 474
+      chmoth = 'DC13'
+      x = -18.7592
+      y = 30.3423
+      z = 0
+      irot = 520
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 521
+      theta1 = 90
+      phi1 = 124.317
+      theta2 = 96
+      phi2 = -145.683
+      theta3 = 6
+      phi3 = -145.683
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 475
+      chmoth = 'DC13'
+      x = -20.1112
+      y = 29.4636
+      z = 0
+      irot = 521
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 522
+      theta1 = 90
+      phi1 = 126.906
+      theta2 = 96
+      phi2 = -143.094
+      theta3 = 6
+      phi3 = -143.094
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 476
+      chmoth = 'DC13'
+      x = -21.422
+      y = 28.5247
+      z = 0
+      irot = 522
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 523
+      theta1 = 90
+      phi1 = 129.496
+      theta2 = 96
+      phi2 = -140.504
+      theta3 = 6
+      phi3 = -140.504
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 477
+      chmoth = 'DC13'
+      x = -22.6891
+      y = 27.5276
+      z = 0
+      irot = 523
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 524
+      theta1 = 90
+      phi1 = 132.086
+      theta2 = 96
+      phi2 = -137.914
+      theta3 = 6
+      phi3 = -137.914
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 478
+      chmoth = 'DC13'
+      x = -23.9098
+      y = 26.4742
+      z = 0
+      irot = 524
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 525
+      theta1 = 90
+      phi1 = 134.676
+      theta2 = 96
+      phi2 = -135.324
+      theta3 = 6
+      phi3 = -135.324
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 479
+      chmoth = 'DC13'
+      x = -25.0817
+      y = 25.3667
+      z = 0
+      irot = 525
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 526
+      theta1 = 90
+      phi1 = 137.266
+      theta2 = 96
+      phi2 = -132.734
+      theta3 = 6
+      phi3 = -132.734
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 480
+      chmoth = 'DC13'
+      x = -26.2023
+      y = 24.2075
+      z = 0
+      irot = 526
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 527
+      theta1 = 90
+      phi1 = 139.856
+      theta2 = 96
+      phi2 = -130.144
+      theta3 = 6
+      phi3 = -130.144
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 481
+      chmoth = 'DC13'
+      x = -27.2694
+      y = 22.9987
+      z = 0
+      irot = 527
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 528
+      theta1 = 90
+      phi1 = 142.446
+      theta2 = 96
+      phi2 = -127.554
+      theta3 = 6
+      phi3 = -127.554
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 482
+      chmoth = 'DC13'
+      x = -28.2808
+      y = 21.743
+      z = 0
+      irot = 528
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 529
+      theta1 = 90
+      phi1 = 145.036
+      theta2 = 96
+      phi2 = -124.964
+      theta3 = 6
+      phi3 = -124.964
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 483
+      chmoth = 'DC13'
+      x = -29.2345
+      y = 20.4428
+      z = 0
+      irot = 529
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 530
+      theta1 = 90
+      phi1 = 147.626
+      theta2 = 96
+      phi2 = -122.374
+      theta3 = 6
+      phi3 = -122.374
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 484
+      chmoth = 'DC13'
+      x = -30.1283
+      y = 19.1009
+      z = 0
+      irot = 530
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 531
+      theta1 = 90
+      phi1 = 150.216
+      theta2 = 96
+      phi2 = -119.784
+      theta3 = 6
+      phi3 = -119.784
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 485
+      chmoth = 'DC13'
+      x = -30.9607
+      y = 17.72
+      z = 0
+      irot = 531
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 532
+      theta1 = 90
+      phi1 = 152.806
+      theta2 = 96
+      phi2 = -117.194
+      theta3 = 6
+      phi3 = -117.194
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 486
+      chmoth = 'DC13'
+      x = -31.7298
+      y = 16.3029
+      z = 0
+      irot = 532
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 533
+      theta1 = 90
+      phi1 = 155.396
+      theta2 = 96
+      phi2 = -114.604
+      theta3 = 6
+      phi3 = -114.604
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 487
+      chmoth = 'DC13'
+      x = -32.4341
+      y = 14.8524
+      z = 0
+      irot = 533
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 534
+      theta1 = 90
+      phi1 = 157.986
+      theta2 = 96
+      phi2 = -112.014
+      theta3 = 6
+      phi3 = -112.014
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 488
+      chmoth = 'DC13'
+      x = -33.0721
+      y = 13.3716
+      z = 0
+      irot = 534
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 535
+      theta1 = 90
+      phi1 = 160.576
+      theta2 = 96
+      phi2 = -109.424
+      theta3 = 6
+      phi3 = -109.424
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 489
+      chmoth = 'DC13'
+      x = -33.6425
+      y = 11.8635
+      z = 0
+      irot = 535
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 536
+      theta1 = 90
+      phi1 = 163.165
+      theta2 = 96
+      phi2 = -106.835
+      theta3 = 6
+      phi3 = -106.835
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 490
+      chmoth = 'DC13'
+      x = -34.1442
+      y = 10.3312
+      z = 0
+      irot = 536
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 537
+      theta1 = 90
+      phi1 = 165.755
+      theta2 = 96
+      phi2 = -104.245
+      theta3 = 6
+      phi3 = -104.245
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 491
+      chmoth = 'DC13'
+      x = -34.5762
+      y = 8.77777
+      z = 0
+      irot = 537
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 538
+      theta1 = 90
+      phi1 = 168.345
+      theta2 = 96
+      phi2 = -101.655
+      theta3 = 6
+      phi3 = -101.655
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 492
+      chmoth = 'DC13'
+      x = -34.9375
+      y = 7.2064
+      z = 0
+      irot = 538
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 539
+      theta1 = 90
+      phi1 = 170.935
+      theta2 = 96
+      phi2 = -99.0647
+      theta3 = 6
+      phi3 = -99.0647
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 493
+      chmoth = 'DC13'
+      x = -35.2275
+      y = 5.6203
+      z = 0
+      irot = 539
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 540
+      theta1 = 90
+      phi1 = 173.525
+      theta2 = 96
+      phi2 = -96.4748
+      theta3 = 6
+      phi3 = -96.4748
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 494
+      chmoth = 'DC13'
+      x = -35.4455
+      y = 4.02272
+      z = 0
+      irot = 540
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 541
+      theta1 = 90
+      phi1 = 176.115
+      theta2 = 96
+      phi2 = -93.8849
+      theta3 = 6
+      phi3 = -93.8849
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 495
+      chmoth = 'DC13'
+      x = -35.591
+      y = 2.41692
+      z = 0
+      irot = 541
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 542
+      theta1 = 90
+      phi1 = 178.705
+      theta2 = 96
+      phi2 = -91.295
+      theta3 = 6
+      phi3 = -91.295
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 496
+      chmoth = 'DC13'
+      x = -35.6639
+      y = 0.806191
+      z = 0
+      irot = 542
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 543
+      theta1 = 90
+      phi1 = -178.705
+      theta2 = 96
+      phi2 = -88.705
+      theta3 = 6
+      phi3 = -88.705
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 497
+      chmoth = 'DC13'
+      x = -35.6639
+      y = -0.806191
+      z = 0
+      irot = 543
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 544
+      theta1 = 90
+      phi1 = -176.115
+      theta2 = 96
+      phi2 = -86.1151
+      theta3 = 6
+      phi3 = -86.1151
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 498
+      chmoth = 'DC13'
+      x = -35.591
+      y = -2.41692
+      z = 0
+      irot = 544
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 545
+      theta1 = 90
+      phi1 = -173.525
+      theta2 = 96
+      phi2 = -83.5252
+      theta3 = 6
+      phi3 = -83.5252
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 499
+      chmoth = 'DC13'
+      x = -35.4455
+      y = -4.02272
+      z = 0
+      irot = 545
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 546
+      theta1 = 90
+      phi1 = -170.935
+      theta2 = 96
+      phi2 = -80.9353
+      theta3 = 6
+      phi3 = -80.9353
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 500
+      chmoth = 'DC13'
+      x = -35.2275
+      y = -5.6203
+      z = 0
+      irot = 546
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 547
+      theta1 = 90
+      phi1 = -168.345
+      theta2 = 96
+      phi2 = -78.3453
+      theta3 = 6
+      phi3 = -78.3453
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 501
+      chmoth = 'DC13'
+      x = -34.9375
+      y = -7.2064
+      z = 0
+      irot = 547
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 548
+      theta1 = 90
+      phi1 = -165.755
+      theta2 = 96
+      phi2 = -75.7554
+      theta3 = 6
+      phi3 = -75.7554
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 502
+      chmoth = 'DC13'
+      x = -34.5762
+      y = -8.77777
+      z = 0
+      irot = 548
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 549
+      theta1 = 90
+      phi1 = -163.165
+      theta2 = 96
+      phi2 = -73.1655
+      theta3 = 6
+      phi3 = -73.1655
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 503
+      chmoth = 'DC13'
+      x = -34.1442
+      y = -10.3312
+      z = 0
+      irot = 549
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 550
+      theta1 = 90
+      phi1 = -160.576
+      theta2 = 96
+      phi2 = -70.5755
+      theta3 = 6
+      phi3 = -70.5755
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 504
+      chmoth = 'DC13'
+      x = -33.6425
+      y = -11.8635
+      z = 0
+      irot = 550
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 551
+      theta1 = 90
+      phi1 = -157.986
+      theta2 = 96
+      phi2 = -67.9856
+      theta3 = 6
+      phi3 = -67.9856
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 505
+      chmoth = 'DC13'
+      x = -33.0721
+      y = -13.3716
+      z = 0
+      irot = 551
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 552
+      theta1 = 90
+      phi1 = -155.396
+      theta2 = 96
+      phi2 = -65.3957
+      theta3 = 6
+      phi3 = -65.3957
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 506
+      chmoth = 'DC13'
+      x = -32.4341
+      y = -14.8524
+      z = 0
+      irot = 552
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 553
+      theta1 = 90
+      phi1 = -152.806
+      theta2 = 96
+      phi2 = -62.8058
+      theta3 = 6
+      phi3 = -62.8058
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 507
+      chmoth = 'DC13'
+      x = -31.7298
+      y = -16.3029
+      z = 0
+      irot = 553
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 554
+      theta1 = 90
+      phi1 = -150.216
+      theta2 = 96
+      phi2 = -60.2158
+      theta3 = 6
+      phi3 = -60.2158
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 508
+      chmoth = 'DC13'
+      x = -30.9607
+      y = -17.72
+      z = 0
+      irot = 554
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 555
+      theta1 = 90
+      phi1 = -147.626
+      theta2 = 96
+      phi2 = -57.6259
+      theta3 = 6
+      phi3 = -57.6259
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 509
+      chmoth = 'DC13'
+      x = -30.1283
+      y = -19.1009
+      z = 0
+      irot = 555
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 556
+      theta1 = 90
+      phi1 = -145.036
+      theta2 = 96
+      phi2 = -55.036
+      theta3 = 6
+      phi3 = -55.036
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 510
+      chmoth = 'DC13'
+      x = -29.2345
+      y = -20.4428
+      z = 0
+      irot = 556
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 557
+      theta1 = 90
+      phi1 = -142.446
+      theta2 = 96
+      phi2 = -52.446
+      theta3 = 6
+      phi3 = -52.446
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 511
+      chmoth = 'DC13'
+      x = -28.2808
+      y = -21.743
+      z = 0
+      irot = 557
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 558
+      theta1 = 90
+      phi1 = -139.856
+      theta2 = 96
+      phi2 = -49.8561
+      theta3 = 6
+      phi3 = -49.8561
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 512
+      chmoth = 'DC13'
+      x = -27.2694
+      y = -22.9987
+      z = 0
+      irot = 558
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 559
+      theta1 = 90
+      phi1 = -137.266
+      theta2 = 96
+      phi2 = -47.2662
+      theta3 = 6
+      phi3 = -47.2662
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 513
+      chmoth = 'DC13'
+      x = -26.2023
+      y = -24.2075
+      z = 0
+      irot = 559
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 560
+      theta1 = 90
+      phi1 = -134.676
+      theta2 = 96
+      phi2 = -44.6763
+      theta3 = 6
+      phi3 = -44.6763
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 514
+      chmoth = 'DC13'
+      x = -25.0817
+      y = -25.3667
+      z = 0
+      irot = 560
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 561
+      theta1 = 90
+      phi1 = -132.086
+      theta2 = 96
+      phi2 = -42.0863
+      theta3 = 6
+      phi3 = -42.0863
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 515
+      chmoth = 'DC13'
+      x = -23.9098
+      y = -26.4742
+      z = 0
+      irot = 561
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 562
+      theta1 = 90
+      phi1 = -129.496
+      theta2 = 96
+      phi2 = -39.4964
+      theta3 = 6
+      phi3 = -39.4964
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 516
+      chmoth = 'DC13'
+      x = -22.6891
+      y = -27.5276
+      z = 0
+      irot = 562
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 563
+      theta1 = 90
+      phi1 = -126.906
+      theta2 = 96
+      phi2 = -36.9065
+      theta3 = 6
+      phi3 = -36.9065
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 517
+      chmoth = 'DC13'
+      x = -21.422
+      y = -28.5247
+      z = 0
+      irot = 563
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 564
+      theta1 = 90
+      phi1 = -124.317
+      theta2 = 96
+      phi2 = -34.3165
+      theta3 = 6
+      phi3 = -34.3165
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 518
+      chmoth = 'DC13'
+      x = -20.1112
+      y = -29.4636
+      z = 0
+      irot = 564
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 565
+      theta1 = 90
+      phi1 = -121.727
+      theta2 = 96
+      phi2 = -31.7266
+      theta3 = 6
+      phi3 = -31.7266
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 519
+      chmoth = 'DC13'
+      x = -18.7592
+      y = -30.3423
+      z = 0
+      irot = 565
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 566
+      theta1 = 90
+      phi1 = -119.137
+      theta2 = 96
+      phi2 = -29.1367
+      theta3 = 6
+      phi3 = -29.1367
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 520
+      chmoth = 'DC13'
+      x = -17.369
+      y = -31.159
+      z = 0
+      irot = 566
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 567
+      theta1 = 90
+      phi1 = -116.547
+      theta2 = 96
+      phi2 = -26.5468
+      theta3 = 6
+      phi3 = -26.5468
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 521
+      chmoth = 'DC13'
+      x = -15.9433
+      y = -31.912
+      z = 0
+      irot = 567
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 568
+      theta1 = 90
+      phi1 = -113.957
+      theta2 = 96
+      phi2 = -23.9568
+      theta3 = 6
+      phi3 = -23.9568
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 522
+      chmoth = 'DC13'
+      x = -14.485
+      y = -32.5998
+      z = 0
+      irot = 568
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 569
+      theta1 = 90
+      phi1 = -111.367
+      theta2 = 96
+      phi2 = -21.3669
+      theta3 = 6
+      phi3 = -21.3669
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 523
+      chmoth = 'DC13'
+      x = -12.9971
+      y = -33.2211
+      z = 0
+      irot = 569
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 570
+      theta1 = 90
+      phi1 = -108.777
+      theta2 = 96
+      phi2 = -18.777
+      theta3 = 6
+      phi3 = -18.777
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 524
+      chmoth = 'DC13'
+      x = -11.4826
+      y = -33.7744
+      z = 0
+      irot = 570
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 571
+      theta1 = 90
+      phi1 = -106.187
+      theta2 = 96
+      phi2 = -16.1871
+      theta3 = 6
+      phi3 = -16.1871
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 525
+      chmoth = 'DC13'
+      x = -9.94471
+      y = -34.2588
+      z = 0
+      irot = 571
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 572
+      theta1 = 90
+      phi1 = -103.597
+      theta2 = 96
+      phi2 = -13.5971
+      theta3 = 6
+      phi3 = -13.5971
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 526
+      chmoth = 'DC13'
+      x = -8.38648
+      y = -34.6732
+      z = 0
+      irot = 572
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 573
+      theta1 = 90
+      phi1 = -101.007
+      theta2 = 96
+      phi2 = -11.0072
+      theta3 = 6
+      phi3 = -11.0072
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
       nr = 527
       chmoth = 'DC13'
-      x = -17.954
-      y = -31.0972
+      x = -6.81113
+      y = -35.0167
       z = 0
       irot = 573
       chonly = 'ONLY'
@@ -16655,18 +16655,18 @@
 
       irot = 574
       theta1 = 90
-      phi1 = -117.447
+      phi1 = -98.4173
       theta2 = 96
-      phi2 = -27.4468
+      phi2 = -8.41727
       theta3 = 6
-      phi3 = -27.4468
+      phi3 = -8.41727
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 528
       chmoth = 'DC13'
-      x = -16.5509
-      y = -31.8662
+      x = -5.22185
+      y = -35.2887
       z = 0
       irot = 574
       chonly = 'ONLY'
@@ -16674,18 +16674,18 @@
 
       irot = 575
       theta1 = 90
-      phi1 = -114.894
+      phi1 = -95.8273
       theta2 = 96
-      phi2 = -24.8936
+      phi2 = -5.82734
       theta3 = 6
-      phi3 = -24.8936
+      phi3 = -5.82734
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 529
       chmoth = 'DC13'
-      x = -15.1149
-      y = -32.5718
+      x = -3.62191
+      y = -35.4887
       z = 0
       irot = 575
       chonly = 'ONLY'
@@ -16693,18 +16693,18 @@
 
       irot = 576
       theta1 = 90
-      phi1 = -112.34
+      phi1 = -93.2374
       theta2 = 96
-      phi2 = -22.3404
+      phi2 = -3.23741
       theta3 = 6
-      phi3 = -22.3404
+      phi3 = -3.23741
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 530
       chmoth = 'DC13'
-      x = -13.6489
-      y = -33.2128
+      x = -2.01458
+      y = -35.6161
       z = 0
       irot = 576
       chonly = 'ONLY'
@@ -16712,18 +16712,18 @@
 
       irot = 577
       theta1 = 90
-      phi1 = -109.787
+      phi1 = -90.6475
       theta2 = 96
-      phi2 = -19.7872
+      phi2 = -0.647482
       theta3 = 6
-      phi3 = -19.7872
+      phi3 = -0.647482
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 531
       chmoth = 'DC13'
-      x = -12.1559
-      y = -33.7879
+      x = -0.403121
+      y = -35.6707
       z = 0
       irot = 577
       chonly = 'ONLY'
@@ -16731,18 +16731,18 @@
 
       irot = 578
       theta1 = 90
-      phi1 = -107.234
+      phi1 = -88.0576
       theta2 = 96
-      phi2 = -17.234
+      phi2 = 1.94245
       theta3 = 6
-      phi3 = -17.234
+      phi3 = 1.94245
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 532
       chmoth = 'DC13'
-      x = -10.6387
-      y = -34.2958
+      x = 1.20916
+      y = -35.6525
       z = 0
       irot = 578
       chonly = 'ONLY'
@@ -16750,18 +16750,18 @@
 
       irot = 579
       theta1 = 90
-      phi1 = -104.681
+      phi1 = -85.4676
       theta2 = 96
-      phi2 = -14.6809
+      phi2 = 4.53237
       theta3 = 6
-      phi3 = -14.6809
+      phi3 = 4.53237
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 533
       chmoth = 'DC13'
-      x = -9.10033
-      y = -34.7357
+      x = 2.81897
+      y = -35.5614
       z = 0
       irot = 579
       chonly = 'ONLY'
@@ -16769,18 +16769,18 @@
 
       irot = 580
       theta1 = 90
-      phi1 = -102.128
+      phi1 = -82.8777
       theta2 = 96
-      phi2 = -12.1277
+      phi2 = 7.1223
       theta3 = 6
-      phi3 = -12.1277
+      phi3 = 7.1223
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 534
       chmoth = 'DC13'
-      x = -7.54393
-      y = -35.1066
+      x = 4.42301
+      y = -35.3977
       z = 0
       irot = 580
       chonly = 'ONLY'
@@ -16788,18 +16788,18 @@
 
       irot = 581
       theta1 = 90
-      phi1 = -99.5745
+      phi1 = -80.2878
       theta2 = 96
-      phi2 = -9.57447
+      phi2 = 9.71223
       theta3 = 6
-      phi3 = -9.57447
+      phi3 = 9.71223
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 535
       chmoth = 'DC13'
-      x = -5.97255
-      y = -35.4078
+      x = 6.01803
+      y = -35.1617
       z = 0
       irot = 581
       chonly = 'ONLY'
@@ -16807,18 +16807,18 @@
 
       irot = 582
       theta1 = 90
-      phi1 = -97.0213
+      phi1 = -77.6978
       theta2 = 96
-      phi2 = -7.02128
+      phi2 = 12.3022
       theta3 = 6
-      phi3 = -7.02128
+      phi3 = 12.3022
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 536
       chmoth = 'DC13'
-      x = -4.38932
-      y = -35.6387
+      x = 7.60075
+      y = -34.8539
       z = 0
       irot = 582
       chonly = 'ONLY'
@@ -16826,18 +16826,18 @@
 
       irot = 583
       theta1 = 90
-      phi1 = -94.4681
+      phi1 = -75.1079
       theta2 = 96
-      phi2 = -4.46809
+      phi2 = 14.8921
       theta3 = 6
-      phi3 = -4.46809
+      phi3 = 14.8921
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 537
       chmoth = 'DC13'
-      x = -2.79737
-      y = -35.7989
+      x = 9.16794
+      y = -34.4748
       z = 0
       irot = 583
       chonly = 'ONLY'
@@ -16845,18 +16845,18 @@
 
       irot = 584
       theta1 = 90
-      phi1 = -91.9149
+      phi1 = -72.518
       theta2 = 96
-      phi2 = -1.91489
+      phi2 = 17.482
       theta3 = 6
-      phi3 = -1.91489
+      phi3 = 17.482
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 538
       chmoth = 'DC13'
-      x = -1.19986
-      y = -35.8879
+      x = 10.7164
+      y = -34.0253
       z = 0
       irot = 584
       chonly = 'ONLY'
@@ -16864,18 +16864,18 @@
 
       irot = 585
       theta1 = 90
-      phi1 = -89.3617
+      phi1 = -69.9281
       theta2 = 96
-      phi2 = 0.638298
+      phi2 = 20.0719
       theta3 = 6
-      phi3 = 0.638298
+      phi3 = 20.0719
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 539
       chmoth = 'DC13'
-      x = 0.400021
-      y = -35.9058
+      x = 12.243
+      y = -33.5063
       z = 0
       irot = 585
       chonly = 'ONLY'
@@ -16883,18 +16883,18 @@
 
       irot = 586
       theta1 = 90
-      phi1 = -86.8085
+      phi1 = -67.3381
       theta2 = 96
-      phi2 = 3.19149
+      phi2 = 22.6619
       theta3 = 6
-      phi3 = 3.19149
+      phi3 = 22.6619
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 540
       chmoth = 'DC13'
-      x = 1.99911
-      y = -35.8523
+      x = 13.7445
+      y = -32.9189
       z = 0
       irot = 586
       chonly = 'ONLY'
@@ -16902,18 +16902,18 @@
 
       irot = 587
       theta1 = 90
-      phi1 = -84.2553
+      phi1 = -64.7482
       theta2 = 96
-      phi2 = 5.74468
+      phi2 = 25.2518
       theta3 = 6
-      phi3 = 5.74468
+      phi3 = 25.2518
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 541
       chmoth = 'DC13'
-      x = 3.59424
-      y = -35.7277
+      x = 15.218
+      y = -32.2642
       z = 0
       irot = 587
       chonly = 'ONLY'
@@ -16921,18 +16921,18 @@
 
       irot = 588
       theta1 = 90
-      phi1 = -81.7021
+      phi1 = -62.1583
       theta2 = 96
-      phi2 = 8.29787
+      phi2 = 27.8417
       theta3 = 6
-      phi3 = 8.29787
+      phi3 = 27.8417
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 542
       chmoth = 'DC13'
-      x = 5.18222
-      y = -35.5321
+      x = 16.6604
+      y = -31.5435
       z = 0
       irot = 588
       chonly = 'ONLY'
@@ -16940,18 +16940,18 @@
 
       irot = 589
       theta1 = 90
-      phi1 = -79.1489
+      phi1 = -59.5683
       theta2 = 96
-      phi2 = 10.8511
+      phi2 = 30.4317
       theta3 = 6
-      phi3 = 10.8511
+      phi3 = 30.4317
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 543
       chmoth = 'DC13'
-      x = 6.75992
-      y = -35.266
+      x = 18.0687
+      y = -30.7585
       z = 0
       irot = 589
       chonly = 'ONLY'
@@ -16959,18 +16959,18 @@
 
       irot = 590
       theta1 = 90
-      phi1 = -76.5957
+      phi1 = -56.9784
       theta2 = 96
-      phi2 = 13.4043
+      phi2 = 33.0216
       theta3 = 6
-      phi3 = 13.4043
+      phi3 = 33.0216
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 544
       chmoth = 'DC13'
-      x = 8.3242
-      y = -34.9298
+      x = 19.4402
+      y = -29.9106
       z = 0
       irot = 590
       chonly = 'ONLY'
@@ -16978,18 +16978,18 @@
 
       irot = 591
       theta1 = 90
-      phi1 = -74.0426
+      phi1 = -54.3885
       theta2 = 96
-      phi2 = 15.9574
+      phi2 = 35.6115
       theta3 = 6
-      phi3 = 15.9574
+      phi3 = 35.6115
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 545
       chmoth = 'DC13'
-      x = 9.87195
-      y = -34.5243
+      x = 20.7719
+      y = -29.0016
       z = 0
       irot = 591
       chonly = 'ONLY'
@@ -16997,18 +16997,18 @@
 
       irot = 592
       theta1 = 90
-      phi1 = -71.4894
+      phi1 = -51.7986
       theta2 = 96
-      phi2 = 18.5106
+      phi2 = 38.2014
       theta3 = 6
-      phi3 = 18.5106
+      phi3 = 38.2014
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 546
       chmoth = 'DC13'
-      x = 11.4001
-      y = -34.0503
+      x = 22.0612
+      y = -28.0333
       z = 0
       irot = 592
       chonly = 'ONLY'
@@ -17016,18 +17016,18 @@
 
       irot = 593
       theta1 = 90
-      phi1 = -68.9362
+      phi1 = -49.2086
       theta2 = 96
-      phi2 = 21.0638
+      phi2 = 40.7914
       theta3 = 6
-      phi3 = 21.0638
+      phi3 = 40.7914
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 547
       chmoth = 'DC13'
-      x = 12.9056
-      y = -33.5086
+      x = 23.3054
+      y = -27.0078
       z = 0
       irot = 593
       chonly = 'ONLY'
@@ -17035,18 +17035,18 @@
 
       irot = 594
       theta1 = 90
-      phi1 = -66.383
+      phi1 = -46.6187
       theta2 = 96
-      phi2 = 23.617
+      phi2 = 43.3813
       theta3 = 6
-      phi3 = 23.617
+      phi3 = 43.3813
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 548
       chmoth = 'DC13'
-      x = 14.3855
-      y = -32.9005
+      x = 24.502
+      y = -25.9271
       z = 0
       irot = 594
       chonly = 'ONLY'
@@ -17054,18 +17054,18 @@
 
       irot = 595
       theta1 = 90
-      phi1 = -63.8298
+      phi1 = -44.0288
       theta2 = 96
-      phi2 = 26.1702
+      phi2 = 45.9712
       theta3 = 6
-      phi3 = 26.1702
+      phi3 = 45.9712
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 549
       chmoth = 'DC13'
-      x = 15.8368
-      y = -32.227
+      x = 25.6486
+      y = -24.7934
       z = 0
       irot = 595
       chonly = 'ONLY'
@@ -17073,18 +17073,18 @@
 
       irot = 596
       theta1 = 90
-      phi1 = -61.2766
+      phi1 = -41.4388
       theta2 = 96
-      phi2 = 28.7234
+      phi2 = 48.5612
       theta3 = 6
-      phi3 = 28.7234
+      phi3 = 48.5612
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 550
       chmoth = 'DC13'
-      x = 17.2567
-      y = -31.4895
+      x = 26.7427
+      y = -23.6091
       z = 0
       irot = 596
       chonly = 'ONLY'
@@ -17092,18 +17092,18 @@
 
       irot = 597
       theta1 = 90
-      phi1 = -58.7234
+      phi1 = -38.8489
       theta2 = 96
-      phi2 = 31.2766
+      phi2 = 51.1511
       theta3 = 6
-      phi3 = 31.2766
+      phi3 = 51.1511
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 551
       chmoth = 'DC13'
-      x = 18.6424
-      y = -30.6895
+      x = 27.7822
+      y = -22.3766
       z = 0
       irot = 597
       chonly = 'ONLY'
@@ -17111,18 +17111,18 @@
 
       irot = 598
       theta1 = 90
-      phi1 = -56.1702
+      phi1 = -36.259
       theta2 = 96
-      phi2 = 33.8298
+      phi2 = 53.741
       theta3 = 6
-      phi3 = 33.8298
+      phi3 = 53.741
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 552
       chmoth = 'DC13'
-      x = 19.991
-      y = -29.8286
+      x = 28.765
+      y = -21.0983
       z = 0
       irot = 598
       chonly = 'ONLY'
@@ -17130,18 +17130,18 @@
 
       irot = 599
       theta1 = 90
-      phi1 = -53.617
+      phi1 = -33.6691
       theta2 = 96
-      phi2 = 36.383
+      phi2 = 56.3309
       theta3 = 6
-      phi3 = 36.383
+      phi3 = 56.3309
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 553
       chmoth = 'DC13'
-      x = 21.2999
-      y = -28.9085
+      x = 29.689
+      y = -19.7769
       z = 0
       irot = 599
       chonly = 'ONLY'
@@ -17149,18 +17149,18 @@
 
       irot = 600
       theta1 = 90
-      phi1 = -51.0638
+      phi1 = -31.0791
       theta2 = 96
-      phi2 = 38.9362
+      phi2 = 58.9209
       theta3 = 6
-      phi3 = 38.9362
+      phi3 = 58.9209
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 554
       chmoth = 'DC13'
-      x = 22.5665
-      y = -27.9309
+      x = 30.5523
+      y = -18.4152
       z = 0
       irot = 600
       chonly = 'ONLY'
@@ -17168,18 +17168,18 @@
 
       irot = 601
       theta1 = 90
-      phi1 = -48.5106
+      phi1 = -28.4892
       theta2 = 96
-      phi2 = 41.4894
+      phi2 = 61.5108
       theta3 = 6
-      phi3 = 41.4894
+      phi3 = 61.5108
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 555
       chmoth = 'DC13'
-      x = 23.7884
-      y = -26.8979
+      x = 31.3532
+      y = -17.0158
       z = 0
       irot = 601
       chonly = 'ONLY'
@@ -17187,18 +17187,18 @@
 
       irot = 602
       theta1 = 90
-      phi1 = -45.9574
+      phi1 = -25.8993
       theta2 = 96
-      phi2 = 44.0426
+      phi2 = 64.1007
       theta3 = 6
-      phi3 = 44.0426
+      phi3 = 64.1007
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 556
       chmoth = 'DC13'
-      x = 24.963
-      y = -25.8115
+      x = 32.0901
+      y = -15.5816
       z = 0
       irot = 602
       chonly = 'ONLY'
@@ -17206,18 +17206,18 @@
 
       irot = 603
       theta1 = 90
-      phi1 = -43.4043
+      phi1 = -23.3094
       theta2 = 96
-      phi2 = 46.5957
+      phi2 = 66.6906
       theta3 = 6
-      phi3 = 46.5957
+      phi3 = 66.6906
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 557
       chmoth = 'DC13'
-      x = 26.088
-      y = -24.6739
+      x = 32.7614
+      y = -14.1156
       z = 0
       irot = 603
       chonly = 'ONLY'
@@ -17225,18 +17225,18 @@
 
       irot = 604
       theta1 = 90
-      phi1 = -40.8511
+      phi1 = -20.7194
       theta2 = 96
-      phi2 = 49.1489
+      phi2 = 69.2806
       theta3 = 6
-      phi3 = 49.1489
+      phi3 = 69.2806
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 558
       chmoth = 'DC13'
-      x = 27.1613
-      y = -23.4872
+      x = 33.3658
+      y = -12.6208
       z = 0
       irot = 604
       chonly = 'ONLY'
@@ -17244,18 +17244,18 @@
 
       irot = 605
       theta1 = 90
-      phi1 = -38.2979
+      phi1 = -18.1295
       theta2 = 96
-      phi2 = 51.7021
+      phi2 = 71.8705
       theta3 = 6
-      phi3 = 51.7021
+      phi3 = 71.8705
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 559
       chmoth = 'DC13'
-      x = 28.1806
-      y = -22.254
+      x = 33.902
+      y = -11.1002
       z = 0
       irot = 605
       chonly = 'ONLY'
@@ -17263,18 +17263,18 @@
 
       irot = 606
       theta1 = 90
-      phi1 = -35.7447
+      phi1 = -15.5396
       theta2 = 96
-      phi2 = 54.2553
+      phi2 = 74.4604
       theta3 = 6
-      phi3 = 54.2553
+      phi3 = 74.4604
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 560
       chmoth = 'DC13'
-      x = 29.1439
-      y = -20.9765
+      x = 34.369
+      y = -9.55693
       z = 0
       irot = 606
       chonly = 'ONLY'
@@ -17282,18 +17282,18 @@
 
       irot = 607
       theta1 = 90
-      phi1 = -33.1915
+      phi1 = -12.9496
       theta2 = 96
-      phi2 = 56.8085
+      phi2 = 77.0504
       theta3 = 6
-      phi3 = 56.8085
+      phi3 = 77.0504
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 561
       chmoth = 'DC13'
-      x = 30.0495
-      y = -19.6574
+      x = 34.7657
+      y = -7.99412
       z = 0
       irot = 607
       chonly = 'ONLY'
@@ -17301,18 +17301,18 @@
 
       irot = 608
       theta1 = 90
-      phi1 = -30.6383
+      phi1 = -10.3597
       theta2 = 96
-      phi2 = 59.3617
+      phi2 = 79.6403
       theta3 = 6
-      phi3 = 59.3617
+      phi3 = 79.6403
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 562
       chmoth = 'DC13'
-      x = 30.8953
-      y = -18.2993
+      x = 35.0915
+      y = -6.41499
       z = 0
       irot = 608
       chonly = 'ONLY'
@@ -17320,18 +17320,18 @@
 
       irot = 609
       theta1 = 90
-      phi1 = -28.0851
+      phi1 = -7.76978
       theta2 = 96
-      phi2 = 61.9149
+      phi2 = 82.2302
       theta3 = 6
-      phi3 = 61.9149
+      phi3 = 82.2302
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 563
       chmoth = 'DC13'
-      x = 31.6798
-      y = -16.9049
+      x = 35.3455
+      y = -4.82274
       z = 0
       irot = 609
       chonly = 'ONLY'
@@ -17339,18 +17339,18 @@
 
       irot = 610
       theta1 = 90
-      phi1 = -25.5319
+      phi1 = -5.17986
       theta2 = 96
-      phi2 = 64.4681
+      phi2 = 84.8201
       theta3 = 6
-      phi3 = 64.4681
+      phi3 = 84.8201
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 564
       chmoth = 'DC13'
-      x = 32.4014
-      y = -15.4768
+      x = 35.5273
+      y = -3.22065
       z = 0
       irot = 610
       chonly = 'ONLY'
@@ -17358,18 +17358,18 @@
 
       irot = 611
       theta1 = 90
-      phi1 = -22.9787
+      phi1 = -2.58993
       theta2 = 96
-      phi2 = 67.0213
+      phi2 = 87.4101
       theta3 = 6
-      phi3 = 67.0213
+      phi3 = 87.4101
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 565
       chmoth = 'DC13'
-      x = 33.0587
-      y = -14.0181
+      x = 35.6366
+      y = -1.61197
       z = 0
       irot = 611
       chonly = 'ONLY'
@@ -17377,18 +17377,18 @@
 
       irot = 612
       theta1 = 90
-      phi1 = -20.4255
-      theta2 = 96
-      phi2 = 69.5745
+      phi1 = 0
+      theta2 = 84
+      phi2 = 90
       theta3 = 6
-      phi3 = 69.5745
+      phi3 = -90
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 566
       chmoth = 'DC13'
-      x = 33.6503
-      y = -12.5315
+      x = 37.469
+      y = 0
       z = 0
       irot = 612
       chonly = 'ONLY'
@@ -17396,18 +17396,18 @@
 
       irot = 613
       theta1 = 90
-      phi1 = -17.8723
-      theta2 = 96
-      phi2 = 72.1277
+      phi1 = 2.46575
+      theta2 = 84
+      phi2 = 92.4658
       theta3 = 6
-      phi3 = 72.1277
+      phi3 = -87.5342
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 567
       chmoth = 'DC13'
-      x = 34.1752
-      y = -11.0201
+      x = 37.4343
+      y = 1.612
       z = 0
       irot = 613
       chonly = 'ONLY'
@@ -17415,18 +17415,18 @@
 
       irot = 614
       theta1 = 90
-      phi1 = -15.3191
-      theta2 = 96
-      phi2 = 74.6809
+      phi1 = 4.93151
+      theta2 = 84
+      phi2 = 94.9315
       theta3 = 6
-      phi3 = 74.6809
+      phi3 = -85.0685
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 568
       chmoth = 'DC13'
-      x = 34.6322
-      y = -9.48673
+      x = 37.3303
+      y = 3.22102
       z = 0
       irot = 614
       chonly = 'ONLY'
@@ -17434,18 +17434,18 @@
 
       irot = 615
       theta1 = 90
-      phi1 = -12.766
-      theta2 = 96
-      phi2 = 77.234
+      phi1 = 7.39726
+      theta2 = 84
+      phi2 = 97.3973
       theta3 = 6
-      phi3 = 77.234
+      phi3 = -82.6027
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 569
       chmoth = 'DC13'
-      x = 35.0204
-      y = -7.93456
+      x = 37.1572
+      y = 4.82407
       z = 0
       irot = 615
       chonly = 'ONLY'
@@ -17453,18 +17453,18 @@
 
       irot = 616
       theta1 = 90
-      phi1 = -10.2128
-      theta2 = 96
-      phi2 = 79.7872
+      phi1 = 9.86301
+      theta2 = 84
+      phi2 = 99.863
       theta3 = 6
-      phi3 = 79.7872
+      phi3 = -80.137
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 570
       chmoth = 'DC13'
-      x = 35.3391
-      y = -6.36663
+      x = 36.9152
+      y = 6.41818
       z = 0
       irot = 616
       chonly = 'ONLY'
@@ -17472,18 +17472,18 @@
 
       irot = 617
       theta1 = 90
-      phi1 = -7.65957
-      theta2 = 96
-      phi2 = 82.3404
+      phi1 = 12.3288
+      theta2 = 84
+      phi2 = 102.329
       theta3 = 6
-      phi3 = 82.3404
+      phi3 = -77.6712
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 571
       chmoth = 'DC13'
-      x = 35.5876
-      y = -4.78607
+      x = 36.6049
+      y = 8.00042
       z = 0
       irot = 617
       chonly = 'ONLY'
@@ -17491,18 +17491,18 @@
 
       irot = 618
       theta1 = 90
-      phi1 = -5.10638
-      theta2 = 96
-      phi2 = 84.8936
+      phi1 = 14.7945
+      theta2 = 84
+      phi2 = 104.795
       theta3 = 6
-      phi3 = 84.8936
+      phi3 = -75.2055
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 572
       chmoth = 'DC13'
-      x = 35.7655
-      y = -3.196
+      x = 36.2268
+      y = 9.56783
       z = 0
       irot = 618
       chonly = 'ONLY'
@@ -17510,18 +17510,18 @@
 
       irot = 619
       theta1 = 90
-      phi1 = -2.55319
-      theta2 = 96
-      phi2 = 87.4468
+      phi1 = 17.2603
+      theta2 = 84
+      phi2 = 107.26
       theta3 = 6
-      phi3 = 87.4468
+      phi3 = -72.7397
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 573
       chmoth = 'DC13'
-      x = 35.8724
-      y = -1.59959
+      x = 35.7816
+      y = 11.1175
       z = 0
       irot = 619
       chonly = 'ONLY'
@@ -17529,18 +17529,18 @@
 
       irot = 620
       theta1 = 90
-      phi1 = 0
+      phi1 = 19.726
       theta2 = 84
-      phi2 = 90
+      phi2 = 109.726
       theta3 = 6
-      phi3 = -90
+      phi3 = -70.274
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 574
       chmoth = 'DC13'
-      x = 37.691
-      y = 0
+      x = 35.2702
+      y = 12.6466
       z = 0
       irot = 620
       chonly = 'ONLY'
@@ -17548,18 +17548,18 @@
 
       irot = 621
       theta1 = 90
-      phi1 = 2.43243
+      phi1 = 22.1918
       theta2 = 84
-      phi2 = 92.4324
+      phi2 = 112.192
       theta3 = 6
-      phi3 = -87.5676
+      phi3 = -67.8082
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 575
       chmoth = 'DC13'
-      x = 37.657
-      y = 1.59965
+      x = 34.6935
+      y = 14.1523
       z = 0
       irot = 621
       chonly = 'ONLY'
@@ -17567,18 +17567,18 @@
 
       irot = 622
       theta1 = 90
-      phi1 = 4.86486
+      phi1 = 24.6575
       theta2 = 84
-      phi2 = 94.8649
+      phi2 = 114.658
       theta3 = 6
-      phi3 = -85.1351
+      phi3 = -65.3425
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 576
       chmoth = 'DC13'
-      x = 37.5552
-      y = 3.19642
+      x = 34.0525
+      y = 15.6318
       z = 0
       irot = 622
       chonly = 'ONLY'
@@ -17586,18 +17586,18 @@
 
       irot = 623
       theta1 = 90
-      phi1 = 7.2973
+      phi1 = 27.1233
       theta2 = 84
-      phi2 = 97.2973
+      phi2 = 117.123
       theta3 = 6
-      phi3 = -82.7027
+      phi3 = -62.8767
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 577
       chmoth = 'DC13'
-      x = 37.3857
-      y = 4.78743
+      x = 33.3484
+      y = 17.0824
       z = 0
       irot = 623
       chonly = 'ONLY'
@@ -17605,18 +17605,18 @@
 
       irot = 624
       theta1 = 90
-      phi1 = 9.72973
+      phi1 = 29.589
       theta2 = 84
-      phi2 = 99.7297
+      phi2 = 119.589
       theta3 = 6
-      phi3 = -80.2703
+      phi3 = -60.411
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 578
       chmoth = 'DC13'
-      x = 37.1488
-      y = 6.36981
+      x = 32.5826
+      y = 18.5013
       z = 0
       irot = 624
       chonly = 'ONLY'
@@ -17624,18 +17624,18 @@
 
       irot = 625
       theta1 = 90
-      phi1 = 12.1622
+      phi1 = 32.0548
       theta2 = 84
-      phi2 = 102.162
+      phi2 = 122.055
       theta3 = 6
-      phi3 = -77.8378
+      phi3 = -57.9452
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 579
       chmoth = 'DC13'
-      x = 36.845
-      y = 7.94071
+      x = 31.7565
+      y = 19.8859
       z = 0
       irot = 625
       chonly = 'ONLY'
@@ -17643,18 +17643,18 @@
 
       irot = 626
       theta1 = 90
-      phi1 = 14.5946
+      phi1 = 34.5205
       theta2 = 84
-      phi2 = 104.595
+      phi2 = 124.521
       theta3 = 6
-      phi3 = -75.4054
+      phi3 = -55.4795
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 580
       chmoth = 'DC13'
-      x = 36.4748
-      y = 9.49731
+      x = 30.8716
+      y = 21.2337
       z = 0
       irot = 626
       chonly = 'ONLY'
@@ -17662,18 +17662,18 @@
 
       irot = 627
       theta1 = 90
-      phi1 = 17.027
+      phi1 = 36.9863
       theta2 = 84
-      phi2 = 107.027
+      phi2 = 126.986
       theta3 = 6
-      phi3 = -72.973
+      phi3 = -53.0137
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 581
       chmoth = 'DC13'
-      x = 36.0389
-      y = 11.0368
+      x = 29.9295
+      y = 22.5423
       z = 0
       irot = 627
       chonly = 'ONLY'
@@ -17681,18 +17681,18 @@
 
       irot = 628
       theta1 = 90
-      phi1 = 19.4595
+      phi1 = 39.4521
       theta2 = 84
-      phi2 = 109.459
+      phi2 = 129.452
       theta3 = 6
-      phi3 = -70.5405
+      phi3 = -50.5479
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 582
       chmoth = 'DC13'
-      x = 35.538
-      y = 12.5564
+      x = 28.9319
+      y = 23.809
       z = 0
       irot = 628
       chonly = 'ONLY'
@@ -17700,18 +17700,18 @@
 
       irot = 629
       theta1 = 90
-      phi1 = 21.8919
+      phi1 = 41.9178
       theta2 = 84
-      phi2 = 111.892
+      phi2 = 131.918
       theta3 = 6
-      phi3 = -68.1081
+      phi3 = -48.0822
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 583
       chmoth = 'DC13'
-      x = 34.9731
-      y = 14.0533
+      x = 27.8808
+      y = 25.0317
       z = 0
       irot = 629
       chonly = 'ONLY'
@@ -17719,18 +17719,18 @@
 
       irot = 630
       theta1 = 90
-      phi1 = 24.3243
+      phi1 = 44.3836
       theta2 = 84
-      phi2 = 114.324
+      phi2 = 134.384
       theta3 = 6
-      phi3 = -65.6757
+      phi3 = -45.6164
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 584
       chmoth = 'DC13'
-      x = 34.3451
-      y = 15.525
+      x = 26.7781
+      y = 26.208
       z = 0
       irot = 630
       chonly = 'ONLY'
@@ -17738,18 +17738,18 @@
 
       irot = 631
       theta1 = 90
-      phi1 = 26.7568
+      phi1 = 46.8493
       theta2 = 84
-      phi2 = 116.757
+      phi2 = 136.849
       theta3 = 6
-      phi3 = -63.2432
+      phi3 = -43.1507
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 585
       chmoth = 'DC13'
-      x = 33.6553
-      y = 16.9686
+      x = 25.6258
+      y = 27.3358
       z = 0
       irot = 631
       chonly = 'ONLY'
@@ -17757,18 +17757,18 @@
 
       irot = 632
       theta1 = 90
-      phi1 = 29.1892
+      phi1 = 49.3151
       theta2 = 84
-      phi2 = 119.189
+      phi2 = 139.315
       theta3 = 6
-      phi3 = -60.8108
+      phi3 = -40.6849
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 586
       chmoth = 'DC13'
-      x = 32.9048
-      y = 18.3817
+      x = 24.426
+      y = 28.413
       z = 0
       irot = 632
       chonly = 'ONLY'
@@ -17776,18 +17776,18 @@
 
       irot = 633
       theta1 = 90
-      phi1 = 31.6216
+      phi1 = 51.7808
       theta2 = 84
-      phi2 = 121.622
+      phi2 = 141.781
       theta3 = 6
-      phi3 = -58.3784
+      phi3 = -38.2192
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 587
       chmoth = 'DC13'
-      x = 32.095
-      y = 19.7617
+      x = 23.181
+      y = 29.4375
       z = 0
       irot = 633
       chonly = 'ONLY'
@@ -17795,18 +17795,18 @@
 
       irot = 634
       theta1 = 90
-      phi1 = 34.0541
+      phi1 = 54.2466
       theta2 = 84
-      phi2 = 124.054
+      phi2 = 144.247
       theta3 = 6
-      phi3 = -55.9459
+      phi3 = -35.7534
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 588
       chmoth = 'DC13'
-      x = 31.2274
-      y = 21.106
+      x = 21.8931
+      y = 30.4076
       z = 0
       irot = 634
       chonly = 'ONLY'
@@ -17814,18 +17814,18 @@
 
       irot = 635
       theta1 = 90
-      phi1 = 36.4865
+      phi1 = 56.7123
       theta2 = 84
-      phi2 = 126.486
+      phi2 = 146.712
       theta3 = 6
-      phi3 = -53.5135
+      phi3 = -33.2877
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 589
       chmoth = 'DC13'
-      x = 30.3035
-      y = 22.4123
+      x = 20.5646
+      y = 31.3213
       z = 0
       irot = 635
       chonly = 'ONLY'
@@ -17833,18 +17833,18 @@
 
       irot = 636
       theta1 = 90
-      phi1 = 38.9189
+      phi1 = 59.1781
       theta2 = 84
-      phi2 = 128.919
+      phi2 = 149.178
       theta3 = 6
-      phi3 = -51.0811
+      phi3 = -30.8219
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 590
       chmoth = 'DC13'
-      x = 29.3249
-      y = 23.6782
+      x = 19.198
+      y = 32.177
       z = 0
       irot = 636
       chonly = 'ONLY'
@@ -17852,18 +17852,18 @@
 
       irot = 637
       theta1 = 90
-      phi1 = 41.3514
+      phi1 = 61.6438
       theta2 = 84
-      phi2 = 131.351
+      phi2 = 151.644
       theta3 = 6
-      phi3 = -48.6486
+      phi3 = -28.3562
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 591
       chmoth = 'DC13'
-      x = 28.2936
-      y = 24.9015
+      x = 17.7959
+      y = 32.9732
       z = 0
       irot = 637
       chonly = 'ONLY'
@@ -17871,18 +17871,18 @@
 
       irot = 638
       theta1 = 90
-      phi1 = 43.7838
+      phi1 = 64.1096
       theta2 = 84
-      phi2 = 133.784
+      phi2 = 154.11
       theta3 = 6
-      phi3 = -46.2162
+      phi3 = -25.8904
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 592
       chmoth = 'DC13'
-      x = 27.2112
-      y = 26.0799
+      x = 16.3609
+      y = 33.7083
       z = 0
       irot = 638
       chonly = 'ONLY'
@@ -17890,18 +17890,18 @@
 
       irot = 639
       theta1 = 90
-      phi1 = 46.2162
+      phi1 = 66.5753
       theta2 = 84
-      phi2 = 136.216
+      phi2 = 156.575
       theta3 = 6
-      phi3 = -43.7838
+      phi3 = -23.4247
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 593
       chmoth = 'DC13'
-      x = 26.0799
-      y = 27.2112
+      x = 14.8955
+      y = 34.3809
       z = 0
       irot = 639
       chonly = 'ONLY'
@@ -17909,18 +17909,18 @@
 
       irot = 640
       theta1 = 90
-      phi1 = 48.6486
+      phi1 = 69.0411
       theta2 = 84
-      phi2 = 138.649
+      phi2 = 159.041
       theta3 = 6
-      phi3 = -41.3514
+      phi3 = -20.9589
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 594
       chmoth = 'DC13'
-      x = 24.9015
-      y = 28.2936
+      x = 13.4026
+      y = 34.9899
       z = 0
       irot = 640
       chonly = 'ONLY'
@@ -17928,18 +17928,18 @@
 
       irot = 641
       theta1 = 90
-      phi1 = 51.0811
+      phi1 = 71.5068
       theta2 = 84
-      phi2 = 141.081
+      phi2 = 161.507
       theta3 = 6
-      phi3 = -38.9189
+      phi3 = -18.4932
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 595
       chmoth = 'DC13'
-      x = 23.6782
-      y = 29.3249
+      x = 11.8848
+      y = 35.5342
       z = 0
       irot = 641
       chonly = 'ONLY'
@@ -17947,18 +17947,18 @@
 
       irot = 642
       theta1 = 90
-      phi1 = 53.5135
+      phi1 = 73.9726
       theta2 = 84
-      phi2 = 143.514
+      phi2 = 163.973
       theta3 = 6
-      phi3 = -36.4865
+      phi3 = -16.0274
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 596
       chmoth = 'DC13'
-      x = 22.4123
-      y = 30.3035
+      x = 10.3451
+      y = 36.0126
       z = 0
       irot = 642
       chonly = 'ONLY'
@@ -17966,18 +17966,18 @@
 
       irot = 643
       theta1 = 90
-      phi1 = 55.9459
+      phi1 = 76.4384
       theta2 = 84
-      phi2 = 145.946
+      phi2 = 166.438
       theta3 = 6
-      phi3 = -34.0541
+      phi3 = -13.5616
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 597
       chmoth = 'DC13'
-      x = 21.106
-      y = 31.2274
+      x = 8.78616
+      y = 36.4243
       z = 0
       irot = 643
       chonly = 'ONLY'
@@ -17985,18 +17985,18 @@
 
       irot = 644
       theta1 = 90
-      phi1 = 58.3784
+      phi1 = 78.9041
       theta2 = 84
-      phi2 = 148.378
+      phi2 = 168.904
       theta3 = 6
-      phi3 = -31.6216
+      phi3 = -11.0959
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 598
       chmoth = 'DC13'
-      x = 19.7617
-      y = 32.095
+      x = 7.21097
+      y = 36.7686
       z = 0
       irot = 644
       chonly = 'ONLY'
@@ -18004,18 +18004,18 @@
 
       irot = 645
       theta1 = 90
-      phi1 = 60.8108
+      phi1 = 81.3699
       theta2 = 84
-      phi2 = 150.811
+      phi2 = 171.37
       theta3 = 6
-      phi3 = -29.1892
+      phi3 = -8.63014
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 599
       chmoth = 'DC13'
-      x = 18.3817
-      y = 32.9048
+      x = 5.62243
+      y = 37.0448
       z = 0
       irot = 645
       chonly = 'ONLY'
@@ -18023,18 +18023,18 @@
 
       irot = 646
       theta1 = 90
-      phi1 = 63.2432
+      phi1 = 83.8356
       theta2 = 84
-      phi2 = 153.243
+      phi2 = 173.836
       theta3 = 6
-      phi3 = -26.7568
+      phi3 = -6.16438
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 600
       chmoth = 'DC13'
-      x = 16.9686
-      y = 33.6553
+      x = 4.02347
+      y = 37.2524
       z = 0
       irot = 646
       chonly = 'ONLY'
@@ -18042,18 +18042,18 @@
 
       irot = 647
       theta1 = 90
-      phi1 = 65.6757
+      phi1 = 86.3014
       theta2 = 84
-      phi2 = 155.676
+      phi2 = 176.301
       theta3 = 6
-      phi3 = -24.3243
+      phi3 = -3.69863
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 601
       chmoth = 'DC13'
-      x = 15.525
-      y = 34.3451
+      x = 2.41707
+      y = 37.391
       z = 0
       irot = 647
       chonly = 'ONLY'
@@ -18061,18 +18061,18 @@
 
       irot = 648
       theta1 = 90
-      phi1 = 68.1081
+      phi1 = 88.7671
       theta2 = 84
-      phi2 = 158.108
+      phi2 = 178.767
       theta3 = 6
-      phi3 = -21.8919
+      phi3 = -1.23288
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 602
       chmoth = 'DC13'
-      x = 14.0533
-      y = 34.9731
+      x = 0.806187
+      y = 37.4603
       z = 0
       irot = 648
       chonly = 'ONLY'
@@ -18080,18 +18080,18 @@
 
       irot = 649
       theta1 = 90
-      phi1 = 70.5405
+      phi1 = 91.2329
       theta2 = 84
-      phi2 = 160.541
+      phi2 = -178.767
       theta3 = 6
-      phi3 = -19.4595
+      phi3 = 1.23288
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 603
       chmoth = 'DC13'
-      x = 12.5564
-      y = 35.538
+      x = -0.806187
+      y = 37.4603
       z = 0
       irot = 649
       chonly = 'ONLY'
@@ -18099,18 +18099,18 @@
 
       irot = 650
       theta1 = 90
-      phi1 = 72.973
+      phi1 = 93.6986
       theta2 = 84
-      phi2 = 162.973
+      phi2 = -176.301
       theta3 = 6
-      phi3 = -17.027
+      phi3 = 3.69863
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 604
       chmoth = 'DC13'
-      x = 11.0368
-      y = 36.0389
+      x = -2.41707
+      y = 37.391
       z = 0
       irot = 650
       chonly = 'ONLY'
@@ -18118,18 +18118,18 @@
 
       irot = 651
       theta1 = 90
-      phi1 = 75.4054
+      phi1 = 96.1644
       theta2 = 84
-      phi2 = 165.405
+      phi2 = -173.836
       theta3 = 6
-      phi3 = -14.5946
+      phi3 = 6.16438
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 605
       chmoth = 'DC13'
-      x = 9.49731
-      y = 36.4748
+      x = -4.02347
+      y = 37.2524
       z = 0
       irot = 651
       chonly = 'ONLY'
@@ -18137,18 +18137,18 @@
 
       irot = 652
       theta1 = 90
-      phi1 = 77.8378
+      phi1 = 98.6301
       theta2 = 84
-      phi2 = 167.838
+      phi2 = -171.37
       theta3 = 6
-      phi3 = -12.1622
+      phi3 = 8.63014
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 606
       chmoth = 'DC13'
-      x = 7.94071
-      y = 36.845
+      x = -5.62243
+      y = 37.0448
       z = 0
       irot = 652
       chonly = 'ONLY'
@@ -18156,18 +18156,18 @@
 
       irot = 653
       theta1 = 90
-      phi1 = 80.2703
+      phi1 = 101.096
       theta2 = 84
-      phi2 = 170.27
+      phi2 = -168.904
       theta3 = 6
-      phi3 = -9.72973
+      phi3 = 11.0959
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 607
       chmoth = 'DC13'
-      x = 6.36981
-      y = 37.1488
+      x = -7.21097
+      y = 36.7686
       z = 0
       irot = 653
       chonly = 'ONLY'
@@ -18175,18 +18175,18 @@
 
       irot = 654
       theta1 = 90
-      phi1 = 82.7027
+      phi1 = 103.562
       theta2 = 84
-      phi2 = 172.703
+      phi2 = -166.438
       theta3 = 6
-      phi3 = -7.2973
+      phi3 = 13.5616
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 608
       chmoth = 'DC13'
-      x = 4.78743
-      y = 37.3857
+      x = -8.78616
+      y = 36.4243
       z = 0
       irot = 654
       chonly = 'ONLY'
@@ -18194,18 +18194,18 @@
 
       irot = 655
       theta1 = 90
-      phi1 = 85.1351
+      phi1 = 106.027
       theta2 = 84
-      phi2 = 175.135
+      phi2 = -163.973
       theta3 = 6
-      phi3 = -4.86486
+      phi3 = 16.0274
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 609
       chmoth = 'DC13'
-      x = 3.19642
-      y = 37.5552
+      x = -10.3451
+      y = 36.0126
       z = 0
       irot = 655
       chonly = 'ONLY'
@@ -18213,18 +18213,18 @@
 
       irot = 656
       theta1 = 90
-      phi1 = 87.5676
+      phi1 = 108.493
       theta2 = 84
-      phi2 = 177.568
+      phi2 = -161.507
       theta3 = 6
-      phi3 = -2.43243
+      phi3 = 18.4932
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 610
       chmoth = 'DC13'
-      x = 1.59965
-      y = 37.657
+      x = -11.8848
+      y = 35.5342
       z = 0
       irot = 656
       chonly = 'ONLY'
@@ -18232,18 +18232,18 @@
 
       irot = 657
       theta1 = 90
-      phi1 = 90
+      phi1 = 110.959
       theta2 = 84
-      phi2 = -180
+      phi2 = -159.041
       theta3 = 6
-      phi3 = 6.01029e-14
+      phi3 = 20.9589
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 611
       chmoth = 'DC13'
-      x = 2.30783e-15
-      y = 37.691
+      x = -13.4026
+      y = 34.9899
       z = 0
       irot = 657
       chonly = 'ONLY'
@@ -18251,18 +18251,18 @@
 
       irot = 658
       theta1 = 90
-      phi1 = 92.4324
+      phi1 = 113.425
       theta2 = 84
-      phi2 = -177.568
+      phi2 = -156.575
       theta3 = 6
-      phi3 = 2.43243
+      phi3 = 23.4247
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 612
       chmoth = 'DC13'
-      x = -1.59965
-      y = 37.657
+      x = -14.8955
+      y = 34.3809
       z = 0
       irot = 658
       chonly = 'ONLY'
@@ -18270,18 +18270,18 @@
 
       irot = 659
       theta1 = 90
-      phi1 = 94.8649
+      phi1 = 115.89
       theta2 = 84
-      phi2 = -175.135
+      phi2 = -154.11
       theta3 = 6
-      phi3 = 4.86486
+      phi3 = 25.8904
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 613
       chmoth = 'DC13'
-      x = -3.19642
-      y = 37.5552
+      x = -16.3609
+      y = 33.7083
       z = 0
       irot = 659
       chonly = 'ONLY'
@@ -18289,18 +18289,18 @@
 
       irot = 660
       theta1 = 90
-      phi1 = 97.2973
+      phi1 = 118.356
       theta2 = 84
-      phi2 = -172.703
+      phi2 = -151.644
       theta3 = 6
-      phi3 = 7.2973
+      phi3 = 28.3562
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 614
       chmoth = 'DC13'
-      x = -4.78743
-      y = 37.3857
+      x = -17.7959
+      y = 32.9732
       z = 0
       irot = 660
       chonly = 'ONLY'
@@ -18308,18 +18308,18 @@
 
       irot = 661
       theta1 = 90
-      phi1 = 99.7297
+      phi1 = 120.822
       theta2 = 84
-      phi2 = -170.27
+      phi2 = -149.178
       theta3 = 6
-      phi3 = 9.72973
+      phi3 = 30.8219
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 615
       chmoth = 'DC13'
-      x = -6.36981
-      y = 37.1488
+      x = -19.198
+      y = 32.177
       z = 0
       irot = 661
       chonly = 'ONLY'
@@ -18327,18 +18327,18 @@
 
       irot = 662
       theta1 = 90
-      phi1 = 102.162
+      phi1 = 123.288
       theta2 = 84
-      phi2 = -167.838
+      phi2 = -146.712
       theta3 = 6
-      phi3 = 12.1622
+      phi3 = 33.2877
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 616
       chmoth = 'DC13'
-      x = -7.94071
-      y = 36.845
+      x = -20.5646
+      y = 31.3213
       z = 0
       irot = 662
       chonly = 'ONLY'
@@ -18346,18 +18346,18 @@
 
       irot = 663
       theta1 = 90
-      phi1 = 104.595
+      phi1 = 125.753
       theta2 = 84
-      phi2 = -165.405
+      phi2 = -144.247
       theta3 = 6
-      phi3 = 14.5946
+      phi3 = 35.7534
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 617
       chmoth = 'DC13'
-      x = -9.49731
-      y = 36.4748
+      x = -21.8931
+      y = 30.4076
       z = 0
       irot = 663
       chonly = 'ONLY'
@@ -18365,18 +18365,18 @@
 
       irot = 664
       theta1 = 90
-      phi1 = 107.027
+      phi1 = 128.219
       theta2 = 84
-      phi2 = -162.973
+      phi2 = -141.781
       theta3 = 6
-      phi3 = 17.027
+      phi3 = 38.2192
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 618
       chmoth = 'DC13'
-      x = -11.0368
-      y = 36.0389
+      x = -23.181
+      y = 29.4375
       z = 0
       irot = 664
       chonly = 'ONLY'
@@ -18384,18 +18384,18 @@
 
       irot = 665
       theta1 = 90
-      phi1 = 109.459
+      phi1 = 130.685
       theta2 = 84
-      phi2 = -160.541
+      phi2 = -139.315
       theta3 = 6
-      phi3 = 19.4595
+      phi3 = 40.6849
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 619
       chmoth = 'DC13'
-      x = -12.5564
-      y = 35.538
+      x = -24.426
+      y = 28.413
       z = 0
       irot = 665
       chonly = 'ONLY'
@@ -18403,18 +18403,18 @@
 
       irot = 666
       theta1 = 90
-      phi1 = 111.892
+      phi1 = 133.151
       theta2 = 84
-      phi2 = -158.108
+      phi2 = -136.849
       theta3 = 6
-      phi3 = 21.8919
+      phi3 = 43.1507
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 620
       chmoth = 'DC13'
-      x = -14.0533
-      y = 34.9731
+      x = -25.6258
+      y = 27.3358
       z = 0
       irot = 666
       chonly = 'ONLY'
@@ -18422,18 +18422,18 @@
 
       irot = 667
       theta1 = 90
-      phi1 = 114.324
+      phi1 = 135.616
       theta2 = 84
-      phi2 = -155.676
+      phi2 = -134.384
       theta3 = 6
-      phi3 = 24.3243
+      phi3 = 45.6164
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 621
       chmoth = 'DC13'
-      x = -15.525
-      y = 34.3451
+      x = -26.7781
+      y = 26.208
       z = 0
       irot = 667
       chonly = 'ONLY'
@@ -18441,18 +18441,18 @@
 
       irot = 668
       theta1 = 90
-      phi1 = 116.757
+      phi1 = 138.082
       theta2 = 84
-      phi2 = -153.243
+      phi2 = -131.918
       theta3 = 6
-      phi3 = 26.7568
+      phi3 = 48.0822
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 622
       chmoth = 'DC13'
-      x = -16.9686
-      y = 33.6553
+      x = -27.8808
+      y = 25.0317
       z = 0
       irot = 668
       chonly = 'ONLY'
@@ -18460,18 +18460,18 @@
 
       irot = 669
       theta1 = 90
-      phi1 = 119.189
+      phi1 = 140.548
       theta2 = 84
-      phi2 = -150.811
+      phi2 = -129.452
       theta3 = 6
-      phi3 = 29.1892
+      phi3 = 50.5479
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 623
       chmoth = 'DC13'
-      x = -18.3817
-      y = 32.9048
+      x = -28.9319
+      y = 23.809
       z = 0
       irot = 669
       chonly = 'ONLY'
@@ -18479,18 +18479,18 @@
 
       irot = 670
       theta1 = 90
-      phi1 = 121.622
+      phi1 = 143.014
       theta2 = 84
-      phi2 = -148.378
+      phi2 = -126.986
       theta3 = 6
-      phi3 = 31.6216
+      phi3 = 53.0137
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 624
       chmoth = 'DC13'
-      x = -19.7617
-      y = 32.095
+      x = -29.9295
+      y = 22.5423
       z = 0
       irot = 670
       chonly = 'ONLY'
@@ -18498,18 +18498,18 @@
 
       irot = 671
       theta1 = 90
-      phi1 = 124.054
+      phi1 = 145.479
       theta2 = 84
-      phi2 = -145.946
+      phi2 = -124.521
       theta3 = 6
-      phi3 = 34.0541
+      phi3 = 55.4795
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 625
       chmoth = 'DC13'
-      x = -21.106
-      y = 31.2274
+      x = -30.8716
+      y = 21.2337
       z = 0
       irot = 671
       chonly = 'ONLY'
@@ -18517,18 +18517,18 @@
 
       irot = 672
       theta1 = 90
-      phi1 = 126.486
+      phi1 = 147.945
       theta2 = 84
-      phi2 = -143.514
+      phi2 = -122.055
       theta3 = 6
-      phi3 = 36.4865
+      phi3 = 57.9452
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 626
       chmoth = 'DC13'
-      x = -22.4123
-      y = 30.3035
+      x = -31.7565
+      y = 19.8859
       z = 0
       irot = 672
       chonly = 'ONLY'
@@ -18536,18 +18536,18 @@
 
       irot = 673
       theta1 = 90
-      phi1 = 128.919
+      phi1 = 150.411
       theta2 = 84
-      phi2 = -141.081
+      phi2 = -119.589
       theta3 = 6
-      phi3 = 38.9189
+      phi3 = 60.411
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 627
       chmoth = 'DC13'
-      x = -23.6782
-      y = 29.3249
+      x = -32.5826
+      y = 18.5013
       z = 0
       irot = 673
       chonly = 'ONLY'
@@ -18555,18 +18555,18 @@
 
       irot = 674
       theta1 = 90
-      phi1 = 131.351
+      phi1 = 152.877
       theta2 = 84
-      phi2 = -138.649
+      phi2 = -117.123
       theta3 = 6
-      phi3 = 41.3514
+      phi3 = 62.8767
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 628
       chmoth = 'DC13'
-      x = -24.9015
-      y = 28.2936
+      x = -33.3484
+      y = 17.0824
       z = 0
       irot = 674
       chonly = 'ONLY'
@@ -18574,18 +18574,18 @@
 
       irot = 675
       theta1 = 90
-      phi1 = 133.784
+      phi1 = 155.342
       theta2 = 84
-      phi2 = -136.216
+      phi2 = -114.658
       theta3 = 6
-      phi3 = 43.7838
+      phi3 = 65.3425
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 629
       chmoth = 'DC13'
-      x = -26.0799
-      y = 27.2112
+      x = -34.0525
+      y = 15.6318
       z = 0
       irot = 675
       chonly = 'ONLY'
@@ -18593,18 +18593,18 @@
 
       irot = 676
       theta1 = 90
-      phi1 = 136.216
+      phi1 = 157.808
       theta2 = 84
-      phi2 = -133.784
+      phi2 = -112.192
       theta3 = 6
-      phi3 = 46.2162
+      phi3 = 67.8082
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 630
       chmoth = 'DC13'
-      x = -27.2112
-      y = 26.0799
+      x = -34.6935
+      y = 14.1523
       z = 0
       irot = 676
       chonly = 'ONLY'
@@ -18612,18 +18612,18 @@
 
       irot = 677
       theta1 = 90
-      phi1 = 138.649
+      phi1 = 160.274
       theta2 = 84
-      phi2 = -131.351
+      phi2 = -109.726
       theta3 = 6
-      phi3 = 48.6486
+      phi3 = 70.274
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 631
       chmoth = 'DC13'
-      x = -28.2936
-      y = 24.9015
+      x = -35.2702
+      y = 12.6466
       z = 0
       irot = 677
       chonly = 'ONLY'
@@ -18631,18 +18631,18 @@
 
       irot = 678
       theta1 = 90
-      phi1 = 141.081
+      phi1 = 162.74
       theta2 = 84
-      phi2 = -128.919
+      phi2 = -107.26
       theta3 = 6
-      phi3 = 51.0811
+      phi3 = 72.7397
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 632
       chmoth = 'DC13'
-      x = -29.3249
-      y = 23.6782
+      x = -35.7816
+      y = 11.1175
       z = 0
       irot = 678
       chonly = 'ONLY'
@@ -18650,18 +18650,18 @@
 
       irot = 679
       theta1 = 90
-      phi1 = 143.514
+      phi1 = 165.205
       theta2 = 84
-      phi2 = -126.486
+      phi2 = -104.795
       theta3 = 6
-      phi3 = 53.5135
+      phi3 = 75.2055
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 633
       chmoth = 'DC13'
-      x = -30.3035
-      y = 22.4123
+      x = -36.2268
+      y = 9.56783
       z = 0
       irot = 679
       chonly = 'ONLY'
@@ -18669,18 +18669,18 @@
 
       irot = 680
       theta1 = 90
-      phi1 = 145.946
+      phi1 = 167.671
       theta2 = 84
-      phi2 = -124.054
+      phi2 = -102.329
       theta3 = 6
-      phi3 = 55.9459
+      phi3 = 77.6712
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 634
       chmoth = 'DC13'
-      x = -31.2274
-      y = 21.106
+      x = -36.6049
+      y = 8.00042
       z = 0
       irot = 680
       chonly = 'ONLY'
@@ -18688,18 +18688,18 @@
 
       irot = 681
       theta1 = 90
-      phi1 = 148.378
+      phi1 = 170.137
       theta2 = 84
-      phi2 = -121.622
+      phi2 = -99.863
       theta3 = 6
-      phi3 = 58.3784
+      phi3 = 80.137
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 635
       chmoth = 'DC13'
-      x = -32.095
-      y = 19.7617
+      x = -36.9152
+      y = 6.41818
       z = 0
       irot = 681
       chonly = 'ONLY'
@@ -18707,18 +18707,18 @@
 
       irot = 682
       theta1 = 90
-      phi1 = 150.811
+      phi1 = 172.603
       theta2 = 84
-      phi2 = -119.189
+      phi2 = -97.3973
       theta3 = 6
-      phi3 = 60.8108
+      phi3 = 82.6027
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 636
       chmoth = 'DC13'
-      x = -32.9048
-      y = 18.3817
+      x = -37.1572
+      y = 4.82407
       z = 0
       irot = 682
       chonly = 'ONLY'
@@ -18726,18 +18726,18 @@
 
       irot = 683
       theta1 = 90
-      phi1 = 153.243
+      phi1 = 175.068
       theta2 = 84
-      phi2 = -116.757
+      phi2 = -94.9315
       theta3 = 6
-      phi3 = 63.2432
+      phi3 = 85.0685
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 637
       chmoth = 'DC13'
-      x = -33.6553
-      y = 16.9686
+      x = -37.3303
+      y = 3.22102
       z = 0
       irot = 683
       chonly = 'ONLY'
@@ -18745,18 +18745,18 @@
 
       irot = 684
       theta1 = 90
-      phi1 = 155.676
+      phi1 = 177.534
       theta2 = 84
-      phi2 = -114.324
+      phi2 = -92.4658
       theta3 = 6
-      phi3 = 65.6757
+      phi3 = 87.5342
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 638
       chmoth = 'DC13'
-      x = -34.3451
-      y = 15.525
+      x = -37.4343
+      y = 1.612
       z = 0
       irot = 684
       chonly = 'ONLY'
@@ -18764,178 +18764,7 @@
 
       irot = 685
       theta1 = 90
-      phi1 = 158.108
-      theta2 = 84
-      phi2 = -111.892
-      theta3 = 6
-      phi3 = 68.1081
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 639
-      chmoth = 'DC13'
-      x = -34.9731
-      y = 14.0533
-      z = 0
-      irot = 685
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 686
-      theta1 = 90
-      phi1 = 160.541
-      theta2 = 84
-      phi2 = -109.459
-      theta3 = 6
-      phi3 = 70.5405
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 640
-      chmoth = 'DC13'
-      x = -35.538
-      y = 12.5564
-      z = 0
-      irot = 686
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 687
-      theta1 = 90
-      phi1 = 162.973
-      theta2 = 84
-      phi2 = -107.027
-      theta3 = 6
-      phi3 = 72.973
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 641
-      chmoth = 'DC13'
-      x = -36.0389
-      y = 11.0368
-      z = 0
-      irot = 687
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 688
-      theta1 = 90
-      phi1 = 165.405
-      theta2 = 84
-      phi2 = -104.595
-      theta3 = 6
-      phi3 = 75.4054
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 642
-      chmoth = 'DC13'
-      x = -36.4748
-      y = 9.49731
-      z = 0
-      irot = 688
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 689
-      theta1 = 90
-      phi1 = 167.838
-      theta2 = 84
-      phi2 = -102.162
-      theta3 = 6
-      phi3 = 77.8378
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 643
-      chmoth = 'DC13'
-      x = -36.845
-      y = 7.94071
-      z = 0
-      irot = 689
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 690
-      theta1 = 90
-      phi1 = 170.27
-      theta2 = 84
-      phi2 = -99.7297
-      theta3 = 6
-      phi3 = 80.2703
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 644
-      chmoth = 'DC13'
-      x = -37.1488
-      y = 6.36981
-      z = 0
-      irot = 690
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 691
-      theta1 = 90
-      phi1 = 172.703
-      theta2 = 84
-      phi2 = -97.2973
-      theta3 = 6
-      phi3 = 82.7027
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 645
-      chmoth = 'DC13'
-      x = -37.3857
-      y = 4.78743
-      z = 0
-      irot = 691
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 692
-      theta1 = 90
-      phi1 = 175.135
-      theta2 = 84
-      phi2 = -94.8649
-      theta3 = 6
-      phi3 = 85.1351
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 646
-      chmoth = 'DC13'
-      x = -37.5552
-      y = 3.19642
-      z = 0
-      irot = 692
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 693
-      theta1 = 90
-      phi1 = 177.568
-      theta2 = 84
-      phi2 = -92.4324
-      theta3 = 6
-      phi3 = 87.5676
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 647
-      chmoth = 'DC13'
-      x = -37.657
-      y = 1.59965
-      z = 0
-      irot = 693
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 694
-      theta1 = 90
-      phi1 = -180
+      phi1 = 180
       theta2 = 84
       phi2 = -90
       theta3 = 6
@@ -18943,10 +18772,181 @@
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
+      nr = 639
+      chmoth = 'DC13'
+      x = -37.469
+      y = 4.58848e-15
+      z = 0
+      irot = 685
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 686
+      theta1 = 90
+      phi1 = -177.534
+      theta2 = 84
+      phi2 = -87.5342
+      theta3 = 6
+      phi3 = 92.4658
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 640
+      chmoth = 'DC13'
+      x = -37.4343
+      y = -1.612
+      z = 0
+      irot = 686
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 687
+      theta1 = 90
+      phi1 = -175.068
+      theta2 = 84
+      phi2 = -85.0685
+      theta3 = 6
+      phi3 = 94.9315
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 641
+      chmoth = 'DC13'
+      x = -37.3303
+      y = -3.22102
+      z = 0
+      irot = 687
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 688
+      theta1 = 90
+      phi1 = -172.603
+      theta2 = 84
+      phi2 = -82.6027
+      theta3 = 6
+      phi3 = 97.3973
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 642
+      chmoth = 'DC13'
+      x = -37.1572
+      y = -4.82407
+      z = 0
+      irot = 688
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 689
+      theta1 = 90
+      phi1 = -170.137
+      theta2 = 84
+      phi2 = -80.137
+      theta3 = 6
+      phi3 = 99.863
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 643
+      chmoth = 'DC13'
+      x = -36.9152
+      y = -6.41818
+      z = 0
+      irot = 689
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 690
+      theta1 = 90
+      phi1 = -167.671
+      theta2 = 84
+      phi2 = -77.6712
+      theta3 = 6
+      phi3 = 102.329
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 644
+      chmoth = 'DC13'
+      x = -36.6049
+      y = -8.00042
+      z = 0
+      irot = 690
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 691
+      theta1 = 90
+      phi1 = -165.205
+      theta2 = 84
+      phi2 = -75.2055
+      theta3 = 6
+      phi3 = 104.795
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 645
+      chmoth = 'DC13'
+      x = -36.2268
+      y = -9.56783
+      z = 0
+      irot = 691
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 692
+      theta1 = 90
+      phi1 = -162.74
+      theta2 = 84
+      phi2 = -72.7397
+      theta3 = 6
+      phi3 = 107.26
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 646
+      chmoth = 'DC13'
+      x = -35.7816
+      y = -11.1175
+      z = 0
+      irot = 692
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 693
+      theta1 = 90
+      phi1 = -160.274
+      theta2 = 84
+      phi2 = -70.274
+      theta3 = 6
+      phi3 = 109.726
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 647
+      chmoth = 'DC13'
+      x = -35.2702
+      y = -12.6466
+      z = 0
+      irot = 693
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 694
+      theta1 = 90
+      phi1 = -157.808
+      theta2 = 84
+      phi2 = -67.8082
+      theta3 = 6
+      phi3 = 112.192
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
       nr = 648
       chmoth = 'DC13'
-      x = -37.691
-      y = 4.61566e-15
+      x = -34.6935
+      y = -14.1523
       z = 0
       irot = 694
       chonly = 'ONLY'
@@ -18954,18 +18954,18 @@
 
       irot = 695
       theta1 = 90
-      phi1 = -177.568
+      phi1 = -155.342
       theta2 = 84
-      phi2 = -87.5676
+      phi2 = -65.3425
       theta3 = 6
-      phi3 = 92.4324
+      phi3 = 114.658
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 649
       chmoth = 'DC13'
-      x = -37.657
-      y = -1.59965
+      x = -34.0525
+      y = -15.6318
       z = 0
       irot = 695
       chonly = 'ONLY'
@@ -18973,18 +18973,18 @@
 
       irot = 696
       theta1 = 90
-      phi1 = -175.135
+      phi1 = -152.877
       theta2 = 84
-      phi2 = -85.1351
+      phi2 = -62.8767
       theta3 = 6
-      phi3 = 94.8649
+      phi3 = 117.123
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 650
       chmoth = 'DC13'
-      x = -37.5552
-      y = -3.19642
+      x = -33.3484
+      y = -17.0824
       z = 0
       irot = 696
       chonly = 'ONLY'
@@ -18992,18 +18992,18 @@
 
       irot = 697
       theta1 = 90
-      phi1 = -172.703
+      phi1 = -150.411
       theta2 = 84
-      phi2 = -82.7027
+      phi2 = -60.411
       theta3 = 6
-      phi3 = 97.2973
+      phi3 = 119.589
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 651
       chmoth = 'DC13'
-      x = -37.3857
-      y = -4.78743
+      x = -32.5826
+      y = -18.5013
       z = 0
       irot = 697
       chonly = 'ONLY'
@@ -19011,18 +19011,18 @@
 
       irot = 698
       theta1 = 90
-      phi1 = -170.27
+      phi1 = -147.945
       theta2 = 84
-      phi2 = -80.2703
+      phi2 = -57.9452
       theta3 = 6
-      phi3 = 99.7297
+      phi3 = 122.055
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 652
       chmoth = 'DC13'
-      x = -37.1488
-      y = -6.36981
+      x = -31.7565
+      y = -19.8859
       z = 0
       irot = 698
       chonly = 'ONLY'
@@ -19030,18 +19030,18 @@
 
       irot = 699
       theta1 = 90
-      phi1 = -167.838
+      phi1 = -145.479
       theta2 = 84
-      phi2 = -77.8378
+      phi2 = -55.4795
       theta3 = 6
-      phi3 = 102.162
+      phi3 = 124.521
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 653
       chmoth = 'DC13'
-      x = -36.845
-      y = -7.94071
+      x = -30.8716
+      y = -21.2337
       z = 0
       irot = 699
       chonly = 'ONLY'
@@ -19049,18 +19049,18 @@
 
       irot = 700
       theta1 = 90
-      phi1 = -165.405
+      phi1 = -143.014
       theta2 = 84
-      phi2 = -75.4054
+      phi2 = -53.0137
       theta3 = 6
-      phi3 = 104.595
+      phi3 = 126.986
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 654
       chmoth = 'DC13'
-      x = -36.4748
-      y = -9.49731
+      x = -29.9295
+      y = -22.5423
       z = 0
       irot = 700
       chonly = 'ONLY'
@@ -19068,18 +19068,18 @@
 
       irot = 701
       theta1 = 90
-      phi1 = -162.973
+      phi1 = -140.548
       theta2 = 84
-      phi2 = -72.973
+      phi2 = -50.5479
       theta3 = 6
-      phi3 = 107.027
+      phi3 = 129.452
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 655
       chmoth = 'DC13'
-      x = -36.0389
-      y = -11.0368
+      x = -28.9319
+      y = -23.809
       z = 0
       irot = 701
       chonly = 'ONLY'
@@ -19087,18 +19087,18 @@
 
       irot = 702
       theta1 = 90
-      phi1 = -160.541
+      phi1 = -138.082
       theta2 = 84
-      phi2 = -70.5405
+      phi2 = -48.0822
       theta3 = 6
-      phi3 = 109.459
+      phi3 = 131.918
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 656
       chmoth = 'DC13'
-      x = -35.538
-      y = -12.5564
+      x = -27.8808
+      y = -25.0317
       z = 0
       irot = 702
       chonly = 'ONLY'
@@ -19106,18 +19106,18 @@
 
       irot = 703
       theta1 = 90
-      phi1 = -158.108
+      phi1 = -135.616
       theta2 = 84
-      phi2 = -68.1081
+      phi2 = -45.6164
       theta3 = 6
-      phi3 = 111.892
+      phi3 = 134.384
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 657
       chmoth = 'DC13'
-      x = -34.9731
-      y = -14.0533
+      x = -26.7781
+      y = -26.208
       z = 0
       irot = 703
       chonly = 'ONLY'
@@ -19125,18 +19125,18 @@
 
       irot = 704
       theta1 = 90
-      phi1 = -155.676
+      phi1 = -133.151
       theta2 = 84
-      phi2 = -65.6757
+      phi2 = -43.1507
       theta3 = 6
-      phi3 = 114.324
+      phi3 = 136.849
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 658
       chmoth = 'DC13'
-      x = -34.3451
-      y = -15.525
+      x = -25.6258
+      y = -27.3358
       z = 0
       irot = 704
       chonly = 'ONLY'
@@ -19144,18 +19144,18 @@
 
       irot = 705
       theta1 = 90
-      phi1 = -153.243
+      phi1 = -130.685
       theta2 = 84
-      phi2 = -63.2432
+      phi2 = -40.6849
       theta3 = 6
-      phi3 = 116.757
+      phi3 = 139.315
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 659
       chmoth = 'DC13'
-      x = -33.6553
-      y = -16.9686
+      x = -24.426
+      y = -28.413
       z = 0
       irot = 705
       chonly = 'ONLY'
@@ -19163,18 +19163,18 @@
 
       irot = 706
       theta1 = 90
-      phi1 = -150.811
+      phi1 = -128.219
       theta2 = 84
-      phi2 = -60.8108
+      phi2 = -38.2192
       theta3 = 6
-      phi3 = 119.189
+      phi3 = 141.781
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 660
       chmoth = 'DC13'
-      x = -32.9048
-      y = -18.3817
+      x = -23.181
+      y = -29.4375
       z = 0
       irot = 706
       chonly = 'ONLY'
@@ -19182,18 +19182,18 @@
 
       irot = 707
       theta1 = 90
-      phi1 = -148.378
+      phi1 = -125.753
       theta2 = 84
-      phi2 = -58.3784
+      phi2 = -35.7534
       theta3 = 6
-      phi3 = 121.622
+      phi3 = 144.247
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 661
       chmoth = 'DC13'
-      x = -32.095
-      y = -19.7617
+      x = -21.8931
+      y = -30.4076
       z = 0
       irot = 707
       chonly = 'ONLY'
@@ -19201,18 +19201,18 @@
 
       irot = 708
       theta1 = 90
-      phi1 = -145.946
+      phi1 = -123.288
       theta2 = 84
-      phi2 = -55.9459
+      phi2 = -33.2877
       theta3 = 6
-      phi3 = 124.054
+      phi3 = 146.712
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 662
       chmoth = 'DC13'
-      x = -31.2274
-      y = -21.106
+      x = -20.5646
+      y = -31.3213
       z = 0
       irot = 708
       chonly = 'ONLY'
@@ -19220,18 +19220,18 @@
 
       irot = 709
       theta1 = 90
-      phi1 = -143.514
+      phi1 = -120.822
       theta2 = 84
-      phi2 = -53.5135
+      phi2 = -30.8219
       theta3 = 6
-      phi3 = 126.486
+      phi3 = 149.178
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 663
       chmoth = 'DC13'
-      x = -30.3035
-      y = -22.4123
+      x = -19.198
+      y = -32.177
       z = 0
       irot = 709
       chonly = 'ONLY'
@@ -19239,18 +19239,18 @@
 
       irot = 710
       theta1 = 90
-      phi1 = -141.081
+      phi1 = -118.356
       theta2 = 84
-      phi2 = -51.0811
+      phi2 = -28.3562
       theta3 = 6
-      phi3 = 128.919
+      phi3 = 151.644
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 664
       chmoth = 'DC13'
-      x = -29.3249
-      y = -23.6782
+      x = -17.7959
+      y = -32.9732
       z = 0
       irot = 710
       chonly = 'ONLY'
@@ -19258,18 +19258,18 @@
 
       irot = 711
       theta1 = 90
-      phi1 = -138.649
+      phi1 = -115.89
       theta2 = 84
-      phi2 = -48.6486
+      phi2 = -25.8904
       theta3 = 6
-      phi3 = 131.351
+      phi3 = 154.11
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 665
       chmoth = 'DC13'
-      x = -28.2936
-      y = -24.9015
+      x = -16.3609
+      y = -33.7083
       z = 0
       irot = 711
       chonly = 'ONLY'
@@ -19277,18 +19277,18 @@
 
       irot = 712
       theta1 = 90
-      phi1 = -136.216
+      phi1 = -113.425
       theta2 = 84
-      phi2 = -46.2162
+      phi2 = -23.4247
       theta3 = 6
-      phi3 = 133.784
+      phi3 = 156.575
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 666
       chmoth = 'DC13'
-      x = -27.2112
-      y = -26.0799
+      x = -14.8955
+      y = -34.3809
       z = 0
       irot = 712
       chonly = 'ONLY'
@@ -19296,18 +19296,18 @@
 
       irot = 713
       theta1 = 90
-      phi1 = -133.784
+      phi1 = -110.959
       theta2 = 84
-      phi2 = -43.7838
+      phi2 = -20.9589
       theta3 = 6
-      phi3 = 136.216
+      phi3 = 159.041
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 667
       chmoth = 'DC13'
-      x = -26.0799
-      y = -27.2112
+      x = -13.4026
+      y = -34.9899
       z = 0
       irot = 713
       chonly = 'ONLY'
@@ -19315,18 +19315,18 @@
 
       irot = 714
       theta1 = 90
-      phi1 = -131.351
+      phi1 = -108.493
       theta2 = 84
-      phi2 = -41.3514
+      phi2 = -18.4932
       theta3 = 6
-      phi3 = 138.649
+      phi3 = 161.507
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 668
       chmoth = 'DC13'
-      x = -24.9015
-      y = -28.2936
+      x = -11.8848
+      y = -35.5342
       z = 0
       irot = 714
       chonly = 'ONLY'
@@ -19334,18 +19334,18 @@
 
       irot = 715
       theta1 = 90
-      phi1 = -128.919
+      phi1 = -106.027
       theta2 = 84
-      phi2 = -38.9189
+      phi2 = -16.0274
       theta3 = 6
-      phi3 = 141.081
+      phi3 = 163.973
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 669
       chmoth = 'DC13'
-      x = -23.6782
-      y = -29.3249
+      x = -10.3451
+      y = -36.0126
       z = 0
       irot = 715
       chonly = 'ONLY'
@@ -19353,18 +19353,18 @@
 
       irot = 716
       theta1 = 90
-      phi1 = -126.486
+      phi1 = -103.562
       theta2 = 84
-      phi2 = -36.4865
+      phi2 = -13.5616
       theta3 = 6
-      phi3 = 143.514
+      phi3 = 166.438
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 670
       chmoth = 'DC13'
-      x = -22.4123
-      y = -30.3035
+      x = -8.78616
+      y = -36.4243
       z = 0
       irot = 716
       chonly = 'ONLY'
@@ -19372,18 +19372,18 @@
 
       irot = 717
       theta1 = 90
-      phi1 = -124.054
+      phi1 = -101.096
       theta2 = 84
-      phi2 = -34.0541
+      phi2 = -11.0959
       theta3 = 6
-      phi3 = 145.946
+      phi3 = 168.904
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 671
       chmoth = 'DC13'
-      x = -21.106
-      y = -31.2274
+      x = -7.21097
+      y = -36.7686
       z = 0
       irot = 717
       chonly = 'ONLY'
@@ -19391,18 +19391,18 @@
 
       irot = 718
       theta1 = 90
-      phi1 = -121.622
+      phi1 = -98.6301
       theta2 = 84
-      phi2 = -31.6216
+      phi2 = -8.63014
       theta3 = 6
-      phi3 = 148.378
+      phi3 = 171.37
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 672
       chmoth = 'DC13'
-      x = -19.7617
-      y = -32.095
+      x = -5.62243
+      y = -37.0448
       z = 0
       irot = 718
       chonly = 'ONLY'
@@ -19410,18 +19410,18 @@
 
       irot = 719
       theta1 = 90
-      phi1 = -119.189
+      phi1 = -96.1644
       theta2 = 84
-      phi2 = -29.1892
+      phi2 = -6.16438
       theta3 = 6
-      phi3 = 150.811
+      phi3 = 173.836
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 673
       chmoth = 'DC13'
-      x = -18.3817
-      y = -32.9048
+      x = -4.02347
+      y = -37.2524
       z = 0
       irot = 719
       chonly = 'ONLY'
@@ -19429,18 +19429,18 @@
 
       irot = 720
       theta1 = 90
-      phi1 = -116.757
+      phi1 = -93.6986
       theta2 = 84
-      phi2 = -26.7568
+      phi2 = -3.69863
       theta3 = 6
-      phi3 = 153.243
+      phi3 = 176.301
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 674
       chmoth = 'DC13'
-      x = -16.9686
-      y = -33.6553
+      x = -2.41707
+      y = -37.391
       z = 0
       irot = 720
       chonly = 'ONLY'
@@ -19448,18 +19448,18 @@
 
       irot = 721
       theta1 = 90
-      phi1 = -114.324
+      phi1 = -91.2329
       theta2 = 84
-      phi2 = -24.3243
+      phi2 = -1.23288
       theta3 = 6
-      phi3 = 155.676
+      phi3 = 178.767
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 675
       chmoth = 'DC13'
-      x = -15.525
-      y = -34.3451
+      x = -0.806187
+      y = -37.4603
       z = 0
       irot = 721
       chonly = 'ONLY'
@@ -19467,18 +19467,18 @@
 
       irot = 722
       theta1 = 90
-      phi1 = -111.892
+      phi1 = -88.7671
       theta2 = 84
-      phi2 = -21.8919
+      phi2 = 1.23288
       theta3 = 6
-      phi3 = 158.108
+      phi3 = -178.767
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 676
       chmoth = 'DC13'
-      x = -14.0533
-      y = -34.9731
+      x = 0.806187
+      y = -37.4603
       z = 0
       irot = 722
       chonly = 'ONLY'
@@ -19486,18 +19486,18 @@
 
       irot = 723
       theta1 = 90
-      phi1 = -109.459
+      phi1 = -86.3014
       theta2 = 84
-      phi2 = -19.4595
+      phi2 = 3.69863
       theta3 = 6
-      phi3 = 160.541
+      phi3 = -176.301
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 677
       chmoth = 'DC13'
-      x = -12.5564
-      y = -35.538
+      x = 2.41707
+      y = -37.391
       z = 0
       irot = 723
       chonly = 'ONLY'
@@ -19505,18 +19505,18 @@
 
       irot = 724
       theta1 = 90
-      phi1 = -107.027
+      phi1 = -83.8356
       theta2 = 84
-      phi2 = -17.027
+      phi2 = 6.16438
       theta3 = 6
-      phi3 = 162.973
+      phi3 = -173.836
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 678
       chmoth = 'DC13'
-      x = -11.0368
-      y = -36.0389
+      x = 4.02347
+      y = -37.2524
       z = 0
       irot = 724
       chonly = 'ONLY'
@@ -19524,18 +19524,18 @@
 
       irot = 725
       theta1 = 90
-      phi1 = -104.595
+      phi1 = -81.3699
       theta2 = 84
-      phi2 = -14.5946
+      phi2 = 8.63014
       theta3 = 6
-      phi3 = 165.405
+      phi3 = -171.37
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 679
       chmoth = 'DC13'
-      x = -9.49731
-      y = -36.4748
+      x = 5.62243
+      y = -37.0448
       z = 0
       irot = 725
       chonly = 'ONLY'
@@ -19543,18 +19543,18 @@
 
       irot = 726
       theta1 = 90
-      phi1 = -102.162
+      phi1 = -78.9041
       theta2 = 84
-      phi2 = -12.1622
+      phi2 = 11.0959
       theta3 = 6
-      phi3 = 167.838
+      phi3 = -168.904
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 680
       chmoth = 'DC13'
-      x = -7.94071
-      y = -36.845
+      x = 7.21097
+      y = -36.7686
       z = 0
       irot = 726
       chonly = 'ONLY'
@@ -19562,18 +19562,18 @@
 
       irot = 727
       theta1 = 90
-      phi1 = -99.7297
+      phi1 = -76.4384
       theta2 = 84
-      phi2 = -9.72973
+      phi2 = 13.5616
       theta3 = 6
-      phi3 = 170.27
+      phi3 = -166.438
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 681
       chmoth = 'DC13'
-      x = -6.36981
-      y = -37.1488
+      x = 8.78616
+      y = -36.4243
       z = 0
       irot = 727
       chonly = 'ONLY'
@@ -19581,18 +19581,18 @@
 
       irot = 728
       theta1 = 90
-      phi1 = -97.2973
+      phi1 = -73.9726
       theta2 = 84
-      phi2 = -7.2973
+      phi2 = 16.0274
       theta3 = 6
-      phi3 = 172.703
+      phi3 = -163.973
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 682
       chmoth = 'DC13'
-      x = -4.78743
-      y = -37.3857
+      x = 10.3451
+      y = -36.0126
       z = 0
       irot = 728
       chonly = 'ONLY'
@@ -19600,18 +19600,18 @@
 
       irot = 729
       theta1 = 90
-      phi1 = -94.8649
+      phi1 = -71.5068
       theta2 = 84
-      phi2 = -4.86486
+      phi2 = 18.4932
       theta3 = 6
-      phi3 = 175.135
+      phi3 = -161.507
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 683
       chmoth = 'DC13'
-      x = -3.19642
-      y = -37.5552
+      x = 11.8848
+      y = -35.5342
       z = 0
       irot = 729
       chonly = 'ONLY'
@@ -19619,18 +19619,18 @@
 
       irot = 730
       theta1 = 90
-      phi1 = -92.4324
+      phi1 = -69.0411
       theta2 = 84
-      phi2 = -2.43243
+      phi2 = 20.9589
       theta3 = 6
-      phi3 = 177.568
+      phi3 = -159.041
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 684
       chmoth = 'DC13'
-      x = -1.59965
-      y = -37.657
+      x = 13.4026
+      y = -34.9899
       z = 0
       irot = 730
       chonly = 'ONLY'
@@ -19638,18 +19638,18 @@
 
       irot = 731
       theta1 = 90
-      phi1 = -90
+      phi1 = -66.5753
       theta2 = 84
-      phi2 = 4.47475e-13
+      phi2 = 23.4247
       theta3 = 6
-      phi3 = -180
+      phi3 = -156.575
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 685
       chmoth = 'DC13'
-      x = -6.9235e-15
-      y = -37.691
+      x = 14.8955
+      y = -34.3809
       z = 0
       irot = 731
       chonly = 'ONLY'
@@ -19657,18 +19657,18 @@
 
       irot = 732
       theta1 = 90
-      phi1 = -87.5676
+      phi1 = -64.1096
       theta2 = 84
-      phi2 = 2.43243
+      phi2 = 25.8904
       theta3 = 6
-      phi3 = -177.568
+      phi3 = -154.11
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 686
       chmoth = 'DC13'
-      x = 1.59965
-      y = -37.657
+      x = 16.3609
+      y = -33.7083
       z = 0
       irot = 732
       chonly = 'ONLY'
@@ -19676,18 +19676,18 @@
 
       irot = 733
       theta1 = 90
-      phi1 = -85.1351
+      phi1 = -61.6438
       theta2 = 84
-      phi2 = 4.86486
+      phi2 = 28.3562
       theta3 = 6
-      phi3 = -175.135
+      phi3 = -151.644
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 687
       chmoth = 'DC13'
-      x = 3.19642
-      y = -37.5552
+      x = 17.7959
+      y = -32.9732
       z = 0
       irot = 733
       chonly = 'ONLY'
@@ -19695,18 +19695,18 @@
 
       irot = 734
       theta1 = 90
-      phi1 = -82.7027
+      phi1 = -59.1781
       theta2 = 84
-      phi2 = 7.2973
+      phi2 = 30.8219
       theta3 = 6
-      phi3 = -172.703
+      phi3 = -149.178
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 688
       chmoth = 'DC13'
-      x = 4.78743
-      y = -37.3857
+      x = 19.198
+      y = -32.177
       z = 0
       irot = 734
       chonly = 'ONLY'
@@ -19714,18 +19714,18 @@
 
       irot = 735
       theta1 = 90
-      phi1 = -80.2703
+      phi1 = -56.7123
       theta2 = 84
-      phi2 = 9.72973
+      phi2 = 33.2877
       theta3 = 6
-      phi3 = -170.27
+      phi3 = -146.712
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 689
       chmoth = 'DC13'
-      x = 6.36981
-      y = -37.1488
+      x = 20.5646
+      y = -31.3213
       z = 0
       irot = 735
       chonly = 'ONLY'
@@ -19733,18 +19733,18 @@
 
       irot = 736
       theta1 = 90
-      phi1 = -77.8378
+      phi1 = -54.2466
       theta2 = 84
-      phi2 = 12.1622
+      phi2 = 35.7534
       theta3 = 6
-      phi3 = -167.838
+      phi3 = -144.247
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 690
       chmoth = 'DC13'
-      x = 7.94071
-      y = -36.845
+      x = 21.8931
+      y = -30.4076
       z = 0
       irot = 736
       chonly = 'ONLY'
@@ -19752,18 +19752,18 @@
 
       irot = 737
       theta1 = 90
-      phi1 = -75.4054
+      phi1 = -51.7808
       theta2 = 84
-      phi2 = 14.5946
+      phi2 = 38.2192
       theta3 = 6
-      phi3 = -165.405
+      phi3 = -141.781
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 691
       chmoth = 'DC13'
-      x = 9.49731
-      y = -36.4748
+      x = 23.181
+      y = -29.4375
       z = 0
       irot = 737
       chonly = 'ONLY'
@@ -19771,18 +19771,18 @@
 
       irot = 738
       theta1 = 90
-      phi1 = -72.973
+      phi1 = -49.3151
       theta2 = 84
-      phi2 = 17.027
+      phi2 = 40.6849
       theta3 = 6
-      phi3 = -162.973
+      phi3 = -139.315
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 692
       chmoth = 'DC13'
-      x = 11.0368
-      y = -36.0389
+      x = 24.426
+      y = -28.413
       z = 0
       irot = 738
       chonly = 'ONLY'
@@ -19790,18 +19790,18 @@
 
       irot = 739
       theta1 = 90
-      phi1 = -70.5405
+      phi1 = -46.8493
       theta2 = 84
-      phi2 = 19.4595
+      phi2 = 43.1507
       theta3 = 6
-      phi3 = -160.541
+      phi3 = -136.849
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 693
       chmoth = 'DC13'
-      x = 12.5564
-      y = -35.538
+      x = 25.6258
+      y = -27.3358
       z = 0
       irot = 739
       chonly = 'ONLY'
@@ -19809,18 +19809,18 @@
 
       irot = 740
       theta1 = 90
-      phi1 = -68.1081
+      phi1 = -44.3836
       theta2 = 84
-      phi2 = 21.8919
+      phi2 = 45.6164
       theta3 = 6
-      phi3 = -158.108
+      phi3 = -134.384
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 694
       chmoth = 'DC13'
-      x = 14.0533
-      y = -34.9731
+      x = 26.7781
+      y = -26.208
       z = 0
       irot = 740
       chonly = 'ONLY'
@@ -19828,18 +19828,18 @@
 
       irot = 741
       theta1 = 90
-      phi1 = -65.6757
+      phi1 = -41.9178
       theta2 = 84
-      phi2 = 24.3243
+      phi2 = 48.0822
       theta3 = 6
-      phi3 = -155.676
+      phi3 = -131.918
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 695
       chmoth = 'DC13'
-      x = 15.525
-      y = -34.3451
+      x = 27.8808
+      y = -25.0317
       z = 0
       irot = 741
       chonly = 'ONLY'
@@ -19847,18 +19847,18 @@
 
       irot = 742
       theta1 = 90
-      phi1 = -63.2432
+      phi1 = -39.4521
       theta2 = 84
-      phi2 = 26.7568
+      phi2 = 50.5479
       theta3 = 6
-      phi3 = -153.243
+      phi3 = -129.452
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 696
       chmoth = 'DC13'
-      x = 16.9686
-      y = -33.6553
+      x = 28.9319
+      y = -23.809
       z = 0
       irot = 742
       chonly = 'ONLY'
@@ -19866,18 +19866,18 @@
 
       irot = 743
       theta1 = 90
-      phi1 = -60.8108
+      phi1 = -36.9863
       theta2 = 84
-      phi2 = 29.1892
+      phi2 = 53.0137
       theta3 = 6
-      phi3 = -150.811
+      phi3 = -126.986
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 697
       chmoth = 'DC13'
-      x = 18.3817
-      y = -32.9048
+      x = 29.9295
+      y = -22.5423
       z = 0
       irot = 743
       chonly = 'ONLY'
@@ -19885,18 +19885,18 @@
 
       irot = 744
       theta1 = 90
-      phi1 = -58.3784
+      phi1 = -34.5205
       theta2 = 84
-      phi2 = 31.6216
+      phi2 = 55.4795
       theta3 = 6
-      phi3 = -148.378
+      phi3 = -124.521
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 698
       chmoth = 'DC13'
-      x = 19.7617
-      y = -32.095
+      x = 30.8716
+      y = -21.2337
       z = 0
       irot = 744
       chonly = 'ONLY'
@@ -19904,18 +19904,18 @@
 
       irot = 745
       theta1 = 90
-      phi1 = -55.9459
+      phi1 = -32.0548
       theta2 = 84
-      phi2 = 34.0541
+      phi2 = 57.9452
       theta3 = 6
-      phi3 = -145.946
+      phi3 = -122.055
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 699
       chmoth = 'DC13'
-      x = 21.106
-      y = -31.2274
+      x = 31.7565
+      y = -19.8859
       z = 0
       irot = 745
       chonly = 'ONLY'
@@ -19923,18 +19923,18 @@
 
       irot = 746
       theta1 = 90
-      phi1 = -53.5135
+      phi1 = -29.589
       theta2 = 84
-      phi2 = 36.4865
+      phi2 = 60.411
       theta3 = 6
-      phi3 = -143.514
+      phi3 = -119.589
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 700
       chmoth = 'DC13'
-      x = 22.4123
-      y = -30.3035
+      x = 32.5826
+      y = -18.5013
       z = 0
       irot = 746
       chonly = 'ONLY'
@@ -19942,18 +19942,18 @@
 
       irot = 747
       theta1 = 90
-      phi1 = -51.0811
+      phi1 = -27.1233
       theta2 = 84
-      phi2 = 38.9189
+      phi2 = 62.8767
       theta3 = 6
-      phi3 = -141.081
+      phi3 = -117.123
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 701
       chmoth = 'DC13'
-      x = 23.6782
-      y = -29.3249
+      x = 33.3484
+      y = -17.0824
       z = 0
       irot = 747
       chonly = 'ONLY'
@@ -19961,18 +19961,18 @@
 
       irot = 748
       theta1 = 90
-      phi1 = -48.6486
+      phi1 = -24.6575
       theta2 = 84
-      phi2 = 41.3514
+      phi2 = 65.3425
       theta3 = 6
-      phi3 = -138.649
+      phi3 = -114.658
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 702
       chmoth = 'DC13'
-      x = 24.9015
-      y = -28.2936
+      x = 34.0525
+      y = -15.6318
       z = 0
       irot = 748
       chonly = 'ONLY'
@@ -19980,18 +19980,18 @@
 
       irot = 749
       theta1 = 90
-      phi1 = -46.2162
+      phi1 = -22.1918
       theta2 = 84
-      phi2 = 43.7838
+      phi2 = 67.8082
       theta3 = 6
-      phi3 = -136.216
+      phi3 = -112.192
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 703
       chmoth = 'DC13'
-      x = 26.0799
-      y = -27.2112
+      x = 34.6935
+      y = -14.1523
       z = 0
       irot = 749
       chonly = 'ONLY'
@@ -19999,18 +19999,18 @@
 
       irot = 750
       theta1 = 90
-      phi1 = -43.7838
+      phi1 = -19.726
       theta2 = 84
-      phi2 = 46.2162
+      phi2 = 70.274
       theta3 = 6
-      phi3 = -133.784
+      phi3 = -109.726
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 704
       chmoth = 'DC13'
-      x = 27.2112
-      y = -26.0799
+      x = 35.2702
+      y = -12.6466
       z = 0
       irot = 750
       chonly = 'ONLY'
@@ -20018,18 +20018,18 @@
 
       irot = 751
       theta1 = 90
-      phi1 = -41.3514
+      phi1 = -17.2603
       theta2 = 84
-      phi2 = 48.6486
+      phi2 = 72.7397
       theta3 = 6
-      phi3 = -131.351
+      phi3 = -107.26
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 705
       chmoth = 'DC13'
-      x = 28.2936
-      y = -24.9015
+      x = 35.7816
+      y = -11.1175
       z = 0
       irot = 751
       chonly = 'ONLY'
@@ -20037,18 +20037,18 @@
 
       irot = 752
       theta1 = 90
-      phi1 = -38.9189
+      phi1 = -14.7945
       theta2 = 84
-      phi2 = 51.0811
+      phi2 = 75.2055
       theta3 = 6
-      phi3 = -128.919
+      phi3 = -104.795
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 706
       chmoth = 'DC13'
-      x = 29.3249
-      y = -23.6782
+      x = 36.2268
+      y = -9.56783
       z = 0
       irot = 752
       chonly = 'ONLY'
@@ -20056,18 +20056,18 @@
 
       irot = 753
       theta1 = 90
-      phi1 = -36.4865
+      phi1 = -12.3288
       theta2 = 84
-      phi2 = 53.5135
+      phi2 = 77.6712
       theta3 = 6
-      phi3 = -126.486
+      phi3 = -102.329
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 707
       chmoth = 'DC13'
-      x = 30.3035
-      y = -22.4123
+      x = 36.6049
+      y = -8.00042
       z = 0
       irot = 753
       chonly = 'ONLY'
@@ -20075,18 +20075,18 @@
 
       irot = 754
       theta1 = 90
-      phi1 = -34.0541
+      phi1 = -9.86301
       theta2 = 84
-      phi2 = 55.9459
+      phi2 = 80.137
       theta3 = 6
-      phi3 = -124.054
+      phi3 = -99.863
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 708
       chmoth = 'DC13'
-      x = 31.2274
-      y = -21.106
+      x = 36.9152
+      y = -6.41818
       z = 0
       irot = 754
       chonly = 'ONLY'
@@ -20094,18 +20094,18 @@
 
       irot = 755
       theta1 = 90
-      phi1 = -31.6216
+      phi1 = -7.39726
       theta2 = 84
-      phi2 = 58.3784
+      phi2 = 82.6027
       theta3 = 6
-      phi3 = -121.622
+      phi3 = -97.3973
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 709
       chmoth = 'DC13'
-      x = 32.095
-      y = -19.7617
+      x = 37.1572
+      y = -4.82407
       z = 0
       irot = 755
       chonly = 'ONLY'
@@ -20113,18 +20113,18 @@
 
       irot = 756
       theta1 = 90
-      phi1 = -29.1892
+      phi1 = -4.93151
       theta2 = 84
-      phi2 = 60.8108
+      phi2 = 85.0685
       theta3 = 6
-      phi3 = -119.189
+      phi3 = -94.9315
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 710
       chmoth = 'DC13'
-      x = 32.9048
-      y = -18.3817
+      x = 37.3303
+      y = -3.22102
       z = 0
       irot = 756
       chonly = 'ONLY'
@@ -20132,214 +20132,24 @@
 
       irot = 757
       theta1 = 90
-      phi1 = -26.7568
+      phi1 = -2.46575
       theta2 = 84
-      phi2 = 63.2432
+      phi2 = 87.5342
       theta3 = 6
-      phi3 = -116.757
+      phi3 = -92.4658
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 711
       chmoth = 'DC13'
-      x = 33.6553
-      y = -16.9686
+      x = 37.4343
+      y = -1.612
       z = 0
       irot = 757
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
       irot = 758
-      theta1 = 90
-      phi1 = -24.3243
-      theta2 = 84
-      phi2 = 65.6757
-      theta3 = 6
-      phi3 = -114.324
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 712
-      chmoth = 'DC13'
-      x = 34.3451
-      y = -15.525
-      z = 0
-      irot = 758
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 759
-      theta1 = 90
-      phi1 = -21.8919
-      theta2 = 84
-      phi2 = 68.1081
-      theta3 = 6
-      phi3 = -111.892
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 713
-      chmoth = 'DC13'
-      x = 34.9731
-      y = -14.0533
-      z = 0
-      irot = 759
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 760
-      theta1 = 90
-      phi1 = -19.4595
-      theta2 = 84
-      phi2 = 70.5405
-      theta3 = 6
-      phi3 = -109.459
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 714
-      chmoth = 'DC13'
-      x = 35.538
-      y = -12.5564
-      z = 0
-      irot = 760
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 761
-      theta1 = 90
-      phi1 = -17.027
-      theta2 = 84
-      phi2 = 72.973
-      theta3 = 6
-      phi3 = -107.027
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 715
-      chmoth = 'DC13'
-      x = 36.0389
-      y = -11.0368
-      z = 0
-      irot = 761
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 762
-      theta1 = 90
-      phi1 = -14.5946
-      theta2 = 84
-      phi2 = 75.4054
-      theta3 = 6
-      phi3 = -104.595
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 716
-      chmoth = 'DC13'
-      x = 36.4748
-      y = -9.49731
-      z = 0
-      irot = 762
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 763
-      theta1 = 90
-      phi1 = -12.1622
-      theta2 = 84
-      phi2 = 77.8378
-      theta3 = 6
-      phi3 = -102.162
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 717
-      chmoth = 'DC13'
-      x = 36.845
-      y = -7.94071
-      z = 0
-      irot = 763
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 764
-      theta1 = 90
-      phi1 = -9.72973
-      theta2 = 84
-      phi2 = 80.2703
-      theta3 = 6
-      phi3 = -99.7297
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 718
-      chmoth = 'DC13'
-      x = 37.1488
-      y = -6.36981
-      z = 0
-      irot = 764
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 765
-      theta1 = 90
-      phi1 = -7.2973
-      theta2 = 84
-      phi2 = 82.7027
-      theta3 = 6
-      phi3 = -97.2973
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 719
-      chmoth = 'DC13'
-      x = 37.3857
-      y = -4.78743
-      z = 0
-      irot = 765
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 766
-      theta1 = 90
-      phi1 = -4.86486
-      theta2 = 84
-      phi2 = 85.1351
-      theta3 = 6
-      phi3 = -94.8649
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 720
-      chmoth = 'DC13'
-      x = 37.5552
-      y = -3.19642
-      z = 0
-      irot = 766
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 767
-      theta1 = 90
-      phi1 = -2.43243
-      theta2 = 84
-      phi2 = 87.5676
-      theta3 = 6
-      phi3 = -92.4324
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 721
-      chmoth = 'DC13'
-      x = 37.657
-      y = -1.59965
-      z = 0
-      irot = 767
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 768
       theta1 = 90
       phi1 = 0
       theta2 = 84
@@ -20349,10 +20159,200 @@
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
+      nr = 712
+      chmoth = 'DC13'
+      x = 39.265
+      y = 0
+      z = 0
+      irot = 758
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 759
+      theta1 = 90
+      phi1 = 2.35294
+      theta2 = 84
+      phi2 = 92.3529
+      theta3 = 6
+      phi3 = -87.6471
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 713
+      chmoth = 'DC13'
+      x = 39.2319
+      y = 1.61203
+      z = 0
+      irot = 759
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 760
+      theta1 = 90
+      phi1 = 4.70588
+      theta2 = 84
+      phi2 = 94.7059
+      theta3 = 6
+      phi3 = -85.2941
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 714
+      chmoth = 'DC13'
+      x = 39.1326
+      y = 3.22133
+      z = 0
+      irot = 760
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 761
+      theta1 = 90
+      phi1 = 7.05882
+      theta2 = 84
+      phi2 = 97.0588
+      theta3 = 6
+      phi3 = -82.9412
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 715
+      chmoth = 'DC13'
+      x = 38.9674
+      y = 4.82521
+      z = 0
+      irot = 761
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 762
+      theta1 = 90
+      phi1 = 9.41176
+      theta2 = 84
+      phi2 = 99.4118
+      theta3 = 6
+      phi3 = -80.5882
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 716
+      chmoth = 'DC13'
+      x = 38.7364
+      y = 6.42095
+      z = 0
+      irot = 762
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 763
+      theta1 = 90
+      phi1 = 11.7647
+      theta2 = 84
+      phi2 = 101.765
+      theta3 = 6
+      phi3 = -78.2353
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 717
+      chmoth = 'DC13'
+      x = 38.4402
+      y = 8.00586
+      z = 0
+      irot = 763
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 764
+      theta1 = 90
+      phi1 = 14.1176
+      theta2 = 84
+      phi2 = 104.118
+      theta3 = 6
+      phi3 = -75.8824
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 718
+      chmoth = 'DC13'
+      x = 38.0791
+      y = 9.57727
+      z = 0
+      irot = 764
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 765
+      theta1 = 90
+      phi1 = 16.4706
+      theta2 = 84
+      phi2 = 106.471
+      theta3 = 6
+      phi3 = -73.5294
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 719
+      chmoth = 'DC13'
+      x = 37.6538
+      y = 11.1325
+      z = 0
+      irot = 765
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 766
+      theta1 = 90
+      phi1 = 18.8235
+      theta2 = 84
+      phi2 = 108.824
+      theta3 = 6
+      phi3 = -71.1765
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 720
+      chmoth = 'DC13'
+      x = 37.165
+      y = 12.669
+      z = 0
+      irot = 766
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 767
+      theta1 = 90
+      phi1 = 21.1765
+      theta2 = 84
+      phi2 = 111.176
+      theta3 = 6
+      phi3 = -68.8235
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
+      nr = 721
+      chmoth = 'DC13'
+      x = 36.6135
+      y = 14.1842
+      z = 0
+      irot = 767
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 768
+      theta1 = 90
+      phi1 = 23.5294
+      theta2 = 84
+      phi2 = 113.529
+      theta3 = 6
+      phi3 = -66.4706
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'STLA'
       nr = 722
       chmoth = 'DC13'
-      x = 39.473
-      y = 0
+      x = 36.0003
+      y = 15.6754
       z = 0
       irot = 768
       chonly = 'ONLY'
@@ -20360,18 +20360,18 @@
 
       irot = 769
       theta1 = 90
-      phi1 = 2.32258
+      phi1 = 25.8824
       theta2 = 84
-      phi2 = 92.3226
+      phi2 = 115.882
       theta3 = 6
-      phi3 = -87.6774
+      phi3 = -64.1176
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 723
       chmoth = 'DC13'
-      x = 39.4406
-      y = 1.59967
+      x = 35.3264
+      y = 17.1401
       z = 0
       irot = 769
       chonly = 'ONLY'
@@ -20379,18 +20379,18 @@
 
       irot = 770
       theta1 = 90
-      phi1 = 4.64516
+      phi1 = 28.2353
       theta2 = 84
-      phi2 = 94.6452
+      phi2 = 118.235
       theta3 = 6
-      phi3 = -85.3548
+      phi3 = -61.7647
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 724
       chmoth = 'DC13'
-      x = 39.3433
-      y = 3.1967
+      x = 34.5929
+      y = 18.576
       z = 0
       irot = 770
       chonly = 'ONLY'
@@ -20398,18 +20398,18 @@
 
       irot = 771
       theta1 = 90
-      phi1 = 6.96774
+      phi1 = 30.5882
       theta2 = 84
-      phi2 = 96.9677
+      phi2 = 120.588
       theta3 = 6
-      phi3 = -83.0323
+      phi3 = -59.4118
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 725
       chmoth = 'DC13'
-      x = 39.1815
-      y = 4.78849
+      x = 33.8011
+      y = 19.9806
       z = 0
       irot = 771
       chonly = 'ONLY'
@@ -20417,18 +20417,18 @@
 
       irot = 772
       theta1 = 90
-      phi1 = 9.29032
+      phi1 = 32.9412
       theta2 = 84
-      phi2 = 99.2903
+      phi2 = 122.941
       theta3 = 6
-      phi3 = -80.7097
+      phi3 = -57.0588
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 726
       chmoth = 'DC13'
-      x = 38.9552
-      y = 6.37241
+      x = 32.9523
+      y = 21.3514
       z = 0
       irot = 772
       chonly = 'ONLY'
@@ -20436,18 +20436,18 @@
 
       irot = 773
       theta1 = 90
-      phi1 = 11.6129
+      phi1 = 35.2941
       theta2 = 84
-      phi2 = 101.613
+      phi2 = 125.294
       theta3 = 6
-      phi3 = -78.3871
+      phi3 = -54.7059
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 727
       chmoth = 'DC13'
-      x = 38.665
-      y = 7.94586
+      x = 32.048
+      y = 22.6863
       z = 0
       irot = 773
       chonly = 'ONLY'
@@ -20455,18 +20455,18 @@
 
       irot = 774
       theta1 = 90
-      phi1 = 13.9355
+      phi1 = 37.6471
       theta2 = 84
-      phi2 = 103.935
+      phi2 = 127.647
       theta3 = 6
-      phi3 = -76.0645
+      phi3 = -52.3529
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 728
       chmoth = 'DC13'
-      x = 38.3112
-      y = 9.50625
+      x = 31.0896
+      y = 23.9829
       z = 0
       irot = 774
       chonly = 'ONLY'
@@ -20474,18 +20474,18 @@
 
       irot = 775
       theta1 = 90
-      phi1 = 16.2581
+      phi1 = 40
       theta2 = 84
-      phi2 = 106.258
+      phi2 = 130
       theta3 = 6
-      phi3 = -73.7419
+      phi3 = -50
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 729
       chmoth = 'DC13'
-      x = 37.8945
-      y = 11.051
+      x = 30.0787
+      y = 25.2391
       z = 0
       irot = 775
       chonly = 'ONLY'
@@ -20493,18 +20493,18 @@
 
       irot = 776
       theta1 = 90
-      phi1 = 18.5806
+      phi1 = 42.3529
       theta2 = 84
-      phi2 = 108.581
+      phi2 = 132.353
       theta3 = 6
-      phi3 = -71.4194
+      phi3 = -47.6471
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 730
       chmoth = 'DC13'
-      x = 37.4155
-      y = 12.5776
+      x = 29.0172
+      y = 26.4527
       z = 0
       irot = 776
       chonly = 'ONLY'
@@ -20512,18 +20512,18 @@
 
       irot = 777
       theta1 = 90
-      phi1 = 20.9032
+      phi1 = 44.7059
       theta2 = 84
-      phi2 = 110.903
+      phi2 = 134.706
       theta3 = 6
-      phi3 = -69.0968
+      phi3 = -45.2941
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 731
       chmoth = 'DC13'
-      x = 36.8751
-      y = 14.0836
+      x = 27.9067
+      y = 27.6217
       z = 0
       irot = 777
       chonly = 'ONLY'
@@ -20531,18 +20531,18 @@
 
       irot = 778
       theta1 = 90
-      phi1 = 23.2258
+      phi1 = 47.0588
       theta2 = 84
-      phi2 = 113.226
+      phi2 = 137.059
       theta3 = 6
-      phi3 = -66.7742
+      phi3 = -42.9412
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 732
       chmoth = 'DC13'
-      x = 36.274
-      y = 15.5664
+      x = 26.7492
+      y = 28.7441
       z = 0
       irot = 778
       chonly = 'ONLY'
@@ -20550,18 +20550,18 @@
 
       irot = 779
       theta1 = 90
-      phi1 = 25.5484
+      phi1 = 49.4118
       theta2 = 84
-      phi2 = 115.548
+      phi2 = 139.412
       theta3 = 6
-      phi3 = -64.4516
+      phi3 = -40.5882
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 733
       chmoth = 'DC13'
-      x = 35.6134
-      y = 17.0236
+      x = 25.5465
+      y = 29.818
       z = 0
       irot = 779
       chonly = 'ONLY'
@@ -20569,18 +20569,18 @@
 
       irot = 780
       theta1 = 90
-      phi1 = 27.871
+      phi1 = 51.7647
       theta2 = 84
-      phi2 = 117.871
+      phi2 = 141.765
       theta3 = 6
-      phi3 = -62.129
+      phi3 = -38.2353
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 734
       chmoth = 'DC13'
-      x = 34.8942
-      y = 18.4529
+      x = 24.3008
+      y = 30.8417
       z = 0
       irot = 780
       chonly = 'ONLY'
@@ -20588,18 +20588,18 @@
 
       irot = 781
       theta1 = 90
-      phi1 = 30.1935
+      phi1 = 54.1176
       theta2 = 84
-      phi2 = 120.194
+      phi2 = 144.118
       theta3 = 6
-      phi3 = -59.8065
+      phi3 = -35.8824
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 735
       chmoth = 'DC13'
-      x = 34.1178
-      y = 19.8519
+      x = 23.0141
+      y = 31.8134
       z = 0
       irot = 781
       chonly = 'ONLY'
@@ -20607,18 +20607,18 @@
 
       irot = 782
       theta1 = 90
-      phi1 = 32.5161
+      phi1 = 56.4706
       theta2 = 84
-      phi2 = 122.516
+      phi2 = 146.471
       theta3 = 6
-      phi3 = -57.4839
+      phi3 = -33.5294
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 736
       chmoth = 'DC13'
-      x = 33.2852
-      y = 21.2182
+      x = 21.6886
+      y = 32.7314
       z = 0
       irot = 782
       chonly = 'ONLY'
@@ -20626,18 +20626,18 @@
 
       irot = 783
       theta1 = 90
-      phi1 = 34.8387
+      phi1 = 58.8235
       theta2 = 84
-      phi2 = 124.839
+      phi2 = 148.824
       theta3 = 6
-      phi3 = -55.1613
+      phi3 = -31.1765
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 737
       chmoth = 'DC13'
-      x = 32.398
-      y = 22.5497
+      x = 20.3265
+      y = 33.5942
       z = 0
       irot = 783
       chonly = 'ONLY'
@@ -20645,18 +20645,18 @@
 
       irot = 784
       theta1 = 90
-      phi1 = 37.1613
+      phi1 = 61.1765
       theta2 = 84
-      phi2 = 127.161
+      phi2 = 151.176
       theta3 = 6
-      phi3 = -52.8387
+      phi3 = -28.8235
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 738
       chmoth = 'DC13'
-      x = 31.4575
-      y = 23.8441
+      x = 18.9302
+      y = 34.4004
       z = 0
       irot = 784
       chonly = 'ONLY'
@@ -20664,18 +20664,18 @@
 
       irot = 785
       theta1 = 90
-      phi1 = 39.4839
+      phi1 = 63.5294
       theta2 = 84
-      phi2 = 129.484
+      phi2 = 153.529
       theta3 = 6
-      phi3 = -50.5161
+      phi3 = -26.4706
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 739
       chmoth = 'DC13'
-      x = 30.4654
-      y = 25.0993
+      x = 17.5019
+      y = 35.1486
       z = 0
       irot = 785
       chonly = 'ONLY'
@@ -20683,18 +20683,18 @@
 
       irot = 786
       theta1 = 90
-      phi1 = 41.8065
+      phi1 = 65.8824
       theta2 = 84
-      phi2 = 131.806
+      phi2 = 155.882
       theta3 = 6
-      phi3 = -48.1935
+      phi3 = -24.1176
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 740
       chmoth = 'DC13'
-      x = 29.4232
-      y = 26.3133
+      x = 16.0441
+      y = 35.8375
       z = 0
       irot = 786
       chonly = 'ONLY'
@@ -20702,18 +20702,18 @@
 
       irot = 787
       theta1 = 90
-      phi1 = 44.129
+      phi1 = 68.2353
       theta2 = 84
-      phi2 = 134.129
+      phi2 = 158.235
       theta3 = 6
-      phi3 = -45.871
+      phi3 = -21.7647
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 741
       chmoth = 'DC13'
-      x = 28.3327
-      y = 27.4841
+      x = 14.5593
+      y = 36.466
       z = 0
       irot = 787
       chonly = 'ONLY'
@@ -20721,18 +20721,18 @@
 
       irot = 788
       theta1 = 90
-      phi1 = 46.4516
+      phi1 = 70.5882
       theta2 = 84
-      phi2 = 136.452
+      phi2 = 160.588
       theta3 = 6
-      phi3 = -43.5484
+      phi3 = -19.4118
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 742
       chmoth = 'DC13'
-      x = 27.1956
-      y = 28.6097
+      x = 13.0499
+      y = 37.033
       z = 0
       irot = 788
       chonly = 'ONLY'
@@ -20740,18 +20740,18 @@
 
       irot = 789
       theta1 = 90
-      phi1 = 48.7742
+      phi1 = 72.9412
       theta2 = 84
-      phi2 = 138.774
+      phi2 = 162.941
       theta3 = 6
-      phi3 = -41.2258
+      phi3 = -17.0588
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 743
       chmoth = 'DC13'
-      x = 26.0138
-      y = 29.6884
+      x = 11.5185
+      y = 37.5375
       z = 0
       irot = 789
       chonly = 'ONLY'
@@ -20759,18 +20759,18 @@
 
       irot = 790
       theta1 = 90
-      phi1 = 51.0968
+      phi1 = 75.2941
       theta2 = 84
-      phi2 = 141.097
+      phi2 = 165.294
       theta3 = 6
-      phi3 = -38.9032
+      phi3 = -14.7059
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 744
       chmoth = 'DC13'
-      x = 24.7893
-      y = 30.7182
+      x = 9.9677
+      y = 37.9787
       z = 0
       irot = 790
       chonly = 'ONLY'
@@ -20778,18 +20778,18 @@
 
       irot = 791
       theta1 = 90
-      phi1 = 53.4194
+      phi1 = 77.6471
       theta2 = 84
-      phi2 = 143.419
+      phi2 = 167.647
       theta3 = 6
-      phi3 = -36.5806
+      phi3 = -12.3529
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 745
       chmoth = 'DC13'
-      x = 23.5241
-      y = 31.6976
+      x = 8.40008
+      y = 38.3559
       z = 0
       irot = 791
       chonly = 'ONLY'
@@ -20797,18 +20797,18 @@
 
       irot = 792
       theta1 = 90
-      phi1 = 55.7419
+      phi1 = 80
       theta2 = 84
-      phi2 = 145.742
+      phi2 = 170
       theta3 = 6
-      phi3 = -34.2581
+      phi3 = -10
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 746
       chmoth = 'DC13'
-      x = 22.2202
-      y = 32.6248
+      x = 6.8183
+      y = 38.6685
       z = 0
       irot = 792
       chonly = 'ONLY'
@@ -20816,18 +20816,18 @@
 
       irot = 793
       theta1 = 90
-      phi1 = 58.0645
+      phi1 = 82.3529
       theta2 = 84
-      phi2 = 148.065
+      phi2 = 172.353
       theta3 = 6
-      phi3 = -31.9355
+      phi3 = -7.64706
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 747
       chmoth = 'DC13'
-      x = 20.8798
-      y = 33.4985
+      x = 5.22501
+      y = 38.9158
       z = 0
       irot = 793
       chonly = 'ONLY'
@@ -20835,18 +20835,18 @@
 
       irot = 794
       theta1 = 90
-      phi1 = 60.3871
+      phi1 = 84.7059
       theta2 = 84
-      phi2 = 150.387
+      phi2 = 174.706
       theta3 = 6
-      phi3 = -29.6129
+      phi3 = -5.29412
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 748
       chmoth = 'DC13'
-      x = 19.5051
-      y = 34.3172
+      x = 3.62292
+      y = 39.0975
       z = 0
       irot = 794
       chonly = 'ONLY'
@@ -20854,18 +20854,18 @@
 
       irot = 795
       theta1 = 90
-      phi1 = 62.7097
+      phi1 = 87.0588
       theta2 = 84
-      phi2 = 152.71
+      phi2 = 177.059
       theta3 = 6
-      phi3 = -27.2903
+      phi3 = -2.94118
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 749
       chmoth = 'DC13'
-      x = 18.0983
-      y = 35.0794
+      x = 2.01471
+      y = 39.2133
       z = 0
       irot = 795
       chonly = 'ONLY'
@@ -20873,18 +20873,18 @@
 
       irot = 796
       theta1 = 90
-      phi1 = 65.0323
+      phi1 = 89.4118
       theta2 = 84
-      phi2 = 155.032
+      phi2 = 179.412
       theta3 = 6
-      phi3 = -24.9677
+      phi3 = -0.588235
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 750
       chmoth = 'DC13'
-      x = 16.6619
-      y = 35.7841
+      x = 0.403113
+      y = 39.2629
       z = 0
       irot = 796
       chonly = 'ONLY'
@@ -20892,18 +20892,18 @@
 
       irot = 797
       theta1 = 90
-      phi1 = 67.3548
+      phi1 = 91.7647
       theta2 = 84
-      phi2 = 157.355
+      phi2 = -178.235
       theta3 = 6
-      phi3 = -22.6452
+      phi3 = 1.76471
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 751
       chmoth = 'DC13'
-      x = 15.198
-      y = 36.4299
+      x = -1.20917
+      y = 39.2464
       z = 0
       irot = 797
       chonly = 'ONLY'
@@ -20911,18 +20911,18 @@
 
       irot = 798
       theta1 = 90
-      phi1 = 69.6774
+      phi1 = 94.1176
       theta2 = 84
-      phi2 = 159.677
+      phi2 = -175.882
       theta3 = 6
-      phi3 = -20.3226
+      phi3 = 4.11765
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 752
       chmoth = 'DC13'
-      x = 13.7092
-      y = 37.0159
+      x = -2.81941
+      y = 39.1636
       z = 0
       irot = 798
       chonly = 'ONLY'
@@ -20930,18 +20930,18 @@
 
       irot = 799
       theta1 = 90
-      phi1 = 72
+      phi1 = 96.4706
       theta2 = 84
-      phi2 = 162
+      phi2 = -173.529
       theta3 = 6
-      phi3 = -18
+      phi3 = 6.47059
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 753
       chmoth = 'DC13'
-      x = 12.1978
-      y = 37.5411
+      x = -4.4249
+      y = 39.0149
       z = 0
       irot = 799
       chonly = 'ONLY'
@@ -20949,18 +20949,18 @@
 
       irot = 800
       theta1 = 90
-      phi1 = 74.3226
+      phi1 = 98.8235
       theta2 = 84
-      phi2 = 164.323
+      phi2 = -171.176
       theta3 = 6
-      phi3 = -15.6774
+      phi3 = 8.82353
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 754
       chmoth = 'DC13'
-      x = 10.6664
-      y = 38.0045
+      x = -6.02292
+      y = 38.8003
       z = 0
       irot = 800
       chonly = 'ONLY'
@@ -20968,18 +20968,18 @@
 
       irot = 801
       theta1 = 90
-      phi1 = 76.6452
+      phi1 = 101.176
       theta2 = 84
-      phi2 = 166.645
+      phi2 = -168.824
       theta3 = 6
-      phi3 = -13.3548
+      phi3 = 11.1765
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 755
       chmoth = 'DC13'
-      x = 9.11752
-      y = 38.4056
+      x = -7.61079
+      y = 38.5203
       z = 0
       irot = 801
       chonly = 'ONLY'
@@ -20987,18 +20987,18 @@
 
       irot = 802
       theta1 = 90
-      phi1 = 78.9677
+      phi1 = 103.529
       theta2 = 84
-      phi2 = 168.968
+      phi2 = -166.471
       theta3 = 6
-      phi3 = -11.0323
+      phi3 = 13.5294
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 756
       chmoth = 'DC13'
-      x = 7.55362
-      y = 38.7435
+      x = -9.18583
+      y = 38.1754
       z = 0
       irot = 802
       chonly = 'ONLY'
@@ -21006,18 +21006,18 @@
 
       irot = 803
       theta1 = 90
-      phi1 = 81.2903
+      phi1 = 105.882
       theta2 = 84
-      phi2 = 171.29
+      phi2 = -164.118
       theta3 = 6
-      phi3 = -8.70968
+      phi3 = 15.8824
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 757
       chmoth = 'DC13'
-      x = 5.97731
-      y = 39.0178
+      x = -10.7454
+      y = 37.7661
       z = 0
       irot = 803
       chonly = 'ONLY'
@@ -21025,18 +21025,18 @@
 
       irot = 804
       theta1 = 90
-      phi1 = 83.6129
+      phi1 = 108.235
       theta2 = 84
-      phi2 = 173.613
+      phi2 = -161.765
       theta3 = 6
-      phi3 = -6.3871
+      phi3 = 18.2353
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 758
       chmoth = 'DC13'
-      x = 4.39118
-      y = 39.228
+      x = -12.2868
+      y = 37.2931
       z = 0
       irot = 804
       chonly = 'ONLY'
@@ -21044,18 +21044,18 @@
 
       irot = 805
       theta1 = 90
-      phi1 = 85.9355
+      phi1 = 110.588
       theta2 = 84
-      phi2 = 175.935
+      phi2 = -159.412
       theta3 = 6
-      phi3 = -4.06452
+      phi3 = 20.5882
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 759
       chmoth = 'DC13'
-      x = 2.79783
-      y = 39.3737
+      x = -13.8075
+      y = 36.7572
       z = 0
       irot = 805
       chonly = 'ONLY'
@@ -21063,18 +21063,18 @@
 
       irot = 806
       theta1 = 90
-      phi1 = 88.2581
+      phi1 = 112.941
       theta2 = 84
-      phi2 = 178.258
+      phi2 = -157.059
       theta3 = 6
-      phi3 = -1.74194
+      phi3 = 22.9412
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 760
       chmoth = 'DC13'
-      x = 1.19989
-      y = 39.4548
+      x = -15.3049
+      y = 36.1594
       z = 0
       irot = 806
       chonly = 'ONLY'
@@ -21082,18 +21082,18 @@
 
       irot = 807
       theta1 = 90
-      phi1 = 90.5806
+      phi1 = 115.294
       theta2 = 84
-      phi2 = -179.419
+      phi2 = -154.706
       theta3 = 6
-      phi3 = 0.580645
+      phi3 = 25.2941
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 761
       chmoth = 'DC13'
-      x = -0.400019
-      y = 39.471
+      x = -16.7766
+      y = 35.5005
       z = 0
       irot = 807
       chonly = 'ONLY'
@@ -21101,18 +21101,18 @@
 
       irot = 808
       theta1 = 90
-      phi1 = 92.9032
+      phi1 = 117.647
       theta2 = 84
-      phi2 = -177.097
+      phi2 = -152.353
       theta3 = 6
-      phi3 = 2.90323
+      phi3 = 27.6471
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 762
       chmoth = 'DC13'
-      x = -1.99927
-      y = 39.4223
+      x = -18.2199
+      y = 34.7818
       z = 0
       irot = 808
       chonly = 'ONLY'
@@ -21120,18 +21120,18 @@
 
       irot = 809
       theta1 = 90
-      phi1 = 95.2258
+      phi1 = 120
       theta2 = 84
-      phi2 = -174.774
+      phi2 = -150
       theta3 = 6
-      phi3 = 5.22581
+      phi3 = 30
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 763
       chmoth = 'DC13'
-      x = -3.59525
-      y = 39.3089
+      x = -19.6325
+      y = 34.0045
       z = 0
       irot = 809
       chonly = 'ONLY'
@@ -21139,18 +21139,18 @@
 
       irot = 810
       theta1 = 90
-      phi1 = 97.5484
+      phi1 = 122.353
       theta2 = 84
-      phi2 = -172.452
+      phi2 = -147.647
       theta3 = 6
-      phi3 = 7.54839
+      phi3 = 32.3529
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 764
       chmoth = 'DC13'
-      x = -5.18531
-      y = 39.1309
+      x = -21.012
+      y = 33.1698
       z = 0
       irot = 810
       chonly = 'ONLY'
@@ -21158,18 +21158,18 @@
 
       irot = 811
       theta1 = 90
-      phi1 = 99.871
+      phi1 = 124.706
       theta2 = 84
-      phi2 = -170.129
+      phi2 = -145.294
       theta3 = 6
-      phi3 = 9.87097
+      phi3 = 34.7059
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 765
       chmoth = 'DC13'
-      x = -6.76685
-      y = 38.8887
+      x = -22.3561
+      y = 32.2792
       z = 0
       irot = 811
       chonly = 'ONLY'
@@ -21177,18 +21177,18 @@
 
       irot = 812
       theta1 = 90
-      phi1 = 102.194
+      phi1 = 127.059
       theta2 = 84
-      phi2 = -167.806
+      phi2 = -142.941
       theta3 = 6
-      phi3 = 12.1935
+      phi3 = 37.0588
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 766
       chmoth = 'DC13'
-      x = -8.33728
-      y = 38.5825
+      x = -23.6624
+      y = 31.3341
       z = 0
       irot = 812
       chonly = 'ONLY'
@@ -21196,18 +21196,18 @@
 
       irot = 813
       theta1 = 90
-      phi1 = 104.516
+      phi1 = 129.412
       theta2 = 84
-      phi2 = -165.484
+      phi2 = -140.588
       theta3 = 6
-      phi3 = 14.5161
+      phi3 = 39.4118
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 767
       chmoth = 'DC13'
-      x = -9.89401
-      y = 38.2129
+      x = -24.9289
+      y = 30.3363
       z = 0
       irot = 813
       chonly = 'ONLY'
@@ -21215,18 +21215,18 @@
 
       irot = 814
       theta1 = 90
-      phi1 = 106.839
+      phi1 = 131.765
       theta2 = 84
-      phi2 = -163.161
+      phi2 = -138.235
       theta3 = 6
-      phi3 = 16.8387
+      phi3 = 41.7647
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 768
       chmoth = 'DC13'
-      x = -11.4345
-      y = 37.7806
+      x = -26.1534
+      y = 29.2872
       z = 0
       irot = 814
       chonly = 'ONLY'
@@ -21234,18 +21234,18 @@
 
       irot = 815
       theta1 = 90
-      phi1 = 109.161
+      phi1 = 134.118
       theta2 = 84
-      phi2 = -160.839
+      phi2 = -135.882
       theta3 = 6
-      phi3 = 19.1613
+      phi3 = 44.1176
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 769
       chmoth = 'DC13'
-      x = -12.9562
-      y = 37.2861
+      x = -27.3337
+      y = 28.1888
       z = 0
       irot = 815
       chonly = 'ONLY'
@@ -21253,18 +21253,18 @@
 
       irot = 816
       theta1 = 90
-      phi1 = 111.484
+      phi1 = 136.471
       theta2 = 84
-      phi2 = -158.516
+      phi2 = -133.529
       theta3 = 6
-      phi3 = 21.4839
+      phi3 = 46.4706
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 770
       chmoth = 'DC13'
-      x = -14.4566
-      y = 36.7304
+      x = -28.4679
+      y = 27.0429
       z = 0
       irot = 816
       chonly = 'ONLY'
@@ -21272,18 +21272,18 @@
 
       irot = 817
       theta1 = 90
-      phi1 = 113.806
+      phi1 = 138.824
       theta2 = 84
-      phi2 = -156.194
+      phi2 = -131.176
       theta3 = 6
-      phi3 = 23.8065
+      phi3 = 48.8235
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 771
       chmoth = 'DC13'
-      x = -15.9332
-      y = 36.1144
+      x = -29.5542
+      y = 25.8513
       z = 0
       irot = 817
       chonly = 'ONLY'
@@ -21291,18 +21291,18 @@
 
       irot = 818
       theta1 = 90
-      phi1 = 116.129
+      phi1 = 141.176
       theta2 = 84
-      phi2 = -153.871
+      phi2 = -128.824
       theta3 = 6
-      phi3 = 26.129
+      phi3 = 51.1765
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 772
       chmoth = 'DC13'
-      x = -17.3837
-      y = 35.439
+      x = -30.5906
+      y = 24.6162
       z = 0
       irot = 818
       chonly = 'ONLY'
@@ -21310,18 +21310,18 @@
 
       irot = 819
       theta1 = 90
-      phi1 = 118.452
+      phi1 = 143.529
       theta2 = 84
-      phi2 = -151.548
+      phi2 = -126.471
       theta3 = 6
-      phi3 = 28.4516
+      phi3 = 53.5294
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 773
       chmoth = 'DC13'
-      x = -18.8056
-      y = 34.7054
+      x = -31.5754
+      y = 23.3395
       z = 0
       irot = 819
       chonly = 'ONLY'
@@ -21329,18 +21329,18 @@
 
       irot = 820
       theta1 = 90
-      phi1 = 120.774
+      phi1 = 145.882
       theta2 = 84
-      phi2 = -149.226
+      phi2 = -124.118
       theta3 = 6
-      phi3 = 30.7742
+      phi3 = 55.8824
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 774
       chmoth = 'DC13'
-      x = -20.1966
-      y = 33.9148
+      x = -32.507
+      y = 22.0235
       z = 0
       irot = 820
       chonly = 'ONLY'
@@ -21348,18 +21348,18 @@
 
       irot = 821
       theta1 = 90
-      phi1 = 123.097
+      phi1 = 148.235
       theta2 = 84
-      phi2 = -146.903
+      phi2 = -121.765
       theta3 = 6
-      phi3 = 33.0968
+      phi3 = 58.2353
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 775
       chmoth = 'DC13'
-      x = -21.5544
-      y = 33.0685
+      x = -33.3838
+      y = 20.6704
       z = 0
       irot = 821
       chonly = 'ONLY'
@@ -21367,18 +21367,18 @@
 
       irot = 822
       theta1 = 90
-      phi1 = 125.419
+      phi1 = 150.588
       theta2 = 84
-      phi2 = -144.581
+      phi2 = -119.412
       theta3 = 6
-      phi3 = 35.4194
+      phi3 = 60.5882
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 776
       chmoth = 'DC13'
-      x = -22.8768
-      y = 32.1678
+      x = -34.2043
+      y = 19.2824
       z = 0
       irot = 822
       chonly = 'ONLY'
@@ -21386,18 +21386,18 @@
 
       irot = 823
       theta1 = 90
-      phi1 = 127.742
+      phi1 = 152.941
       theta2 = 84
-      phi2 = -142.258
+      phi2 = -117.059
       theta3 = 6
-      phi3 = 37.7419
+      phi3 = 62.9412
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 777
       chmoth = 'DC13'
-      x = -24.1617
-      y = 31.2143
+      x = -34.9671
+      y = 17.8618
       z = 0
       irot = 823
       chonly = 'ONLY'
@@ -21405,18 +21405,18 @@
 
       irot = 824
       theta1 = 90
-      phi1 = 130.065
+      phi1 = 155.294
       theta2 = 84
-      phi2 = -139.935
+      phi2 = -114.706
       theta3 = 6
-      phi3 = 40.0645
+      phi3 = 65.2941
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 778
       chmoth = 'DC13'
-      x = -25.4068
-      y = 30.2095
+      x = -35.6709
+      y = 16.4112
       z = 0
       irot = 824
       chonly = 'ONLY'
@@ -21424,18 +21424,18 @@
 
       irot = 825
       theta1 = 90
-      phi1 = 132.387
+      phi1 = 157.647
       theta2 = 84
-      phi2 = -137.613
+      phi2 = -112.353
       theta3 = 6
-      phi3 = 42.3871
+      phi3 = 67.6471
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 779
       chmoth = 'DC13'
-      x = -26.6102
-      y = 29.155
+      x = -36.3146
+      y = 14.9329
       z = 0
       irot = 825
       chonly = 'ONLY'
@@ -21443,18 +21443,18 @@
 
       irot = 826
       theta1 = 90
-      phi1 = 134.71
+      phi1 = 160
       theta2 = 84
-      phi2 = -135.29
+      phi2 = -110
       theta3 = 6
-      phi3 = 44.7097
+      phi3 = 70
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 780
       chmoth = 'DC13'
-      x = -27.7698
-      y = 28.0527
+      x = -36.897
+      y = 13.4294
       z = 0
       irot = 826
       chonly = 'ONLY'
@@ -21462,18 +21462,18 @@
 
       irot = 827
       theta1 = 90
-      phi1 = 137.032
+      phi1 = 162.353
       theta2 = 84
-      phi2 = -132.968
+      phi2 = -107.647
       theta3 = 6
-      phi3 = 47.0323
+      phi3 = 72.3529
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 781
       chmoth = 'DC13'
-      x = -28.8839
-      y = 26.9043
+      x = -37.4173
+      y = 11.9033
       z = 0
       irot = 827
       chonly = 'ONLY'
@@ -21481,18 +21481,18 @@
 
       irot = 828
       theta1 = 90
-      phi1 = 139.355
+      phi1 = 164.706
       theta2 = 84
-      phi2 = -130.645
+      phi2 = -105.294
       theta3 = 6
-      phi3 = 49.3548
+      phi3 = 74.7059
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 782
       chmoth = 'DC13'
-      x = -29.9505
-      y = 25.7116
+      x = -37.8744
+      y = 10.3571
       z = 0
       irot = 828
       chonly = 'ONLY'
@@ -21500,18 +21500,18 @@
 
       irot = 829
       theta1 = 90
-      phi1 = 141.677
+      phi1 = 167.059
       theta2 = 84
-      phi2 = -128.323
+      phi2 = -102.941
       theta3 = 6
-      phi3 = 51.6774
+      phi3 = 77.0588
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 783
       chmoth = 'DC13'
-      x = -30.9678
-      y = 24.4767
+      x = -38.2677
+      y = 8.79342
       z = 0
       irot = 829
       chonly = 'ONLY'
@@ -21519,18 +21519,18 @@
 
       irot = 830
       theta1 = 90
-      phi1 = 144
+      phi1 = 169.412
       theta2 = 84
-      phi2 = -126
+      phi2 = -100.588
       theta3 = 6
-      phi3 = 54
+      phi3 = 79.4118
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 784
       chmoth = 'DC13'
-      x = -31.9343
-      y = 23.2016
+      x = -38.5964
+      y = 7.21492
       z = 0
       irot = 830
       chonly = 'ONLY'
@@ -21538,18 +21538,18 @@
 
       irot = 831
       theta1 = 90
-      phi1 = 146.323
+      phi1 = 171.765
       theta2 = 84
-      phi2 = -123.677
+      phi2 = -98.2353
       theta3 = 6
-      phi3 = 56.3226
+      phi3 = 81.7647
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 785
       chmoth = 'DC13'
-      x = -32.8484
-      y = 21.8884
+      x = -38.8601
+      y = 5.62426
       z = 0
       irot = 831
       chonly = 'ONLY'
@@ -21557,18 +21557,18 @@
 
       irot = 832
       theta1 = 90
-      phi1 = 148.645
+      phi1 = 174.118
       theta2 = 84
-      phi2 = -121.355
+      phi2 = -95.8824
       theta3 = 6
-      phi3 = 58.6452
+      phi3 = 84.1176
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 786
       chmoth = 'DC13'
-      x = -33.7084
-      y = 20.5393
+      x = -39.0582
+      y = 4.02412
       z = 0
       irot = 832
       chonly = 'ONLY'
@@ -21576,18 +21576,18 @@
 
       irot = 833
       theta1 = 90
-      phi1 = 150.968
+      phi1 = 176.471
       theta2 = 84
-      phi2 = -119.032
+      phi2 = -93.5294
       theta3 = 6
-      phi3 = 60.9677
+      phi3 = 86.4706
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 787
       chmoth = 'DC13'
-      x = -34.5131
-      y = 19.1563
+      x = -39.1905
+      y = 2.41719
       z = 0
       irot = 833
       chonly = 'ONLY'
@@ -21595,18 +21595,18 @@
 
       irot = 834
       theta1 = 90
-      phi1 = 153.29
+      phi1 = 178.824
       theta2 = 84
-      phi2 = -116.71
+      phi2 = -91.1765
       theta3 = 6
-      phi3 = 63.2903
+      phi3 = 88.8235
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 788
       chmoth = 'DC13'
-      x = -35.2611
-      y = 17.7419
+      x = -39.2567
+      y = 0.806183
       z = 0
       irot = 834
       chonly = 'ONLY'
@@ -21614,18 +21614,18 @@
 
       irot = 835
       theta1 = 90
-      phi1 = 155.613
+      phi1 = -178.824
       theta2 = 84
-      phi2 = -114.387
+      phi2 = -88.8235
       theta3 = 6
-      phi3 = 65.6129
+      phi3 = 91.1765
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 789
       chmoth = 'DC13'
-      x = -35.9511
-      y = 16.2984
+      x = -39.2567
+      y = -0.806183
       z = 0
       irot = 835
       chonly = 'ONLY'
@@ -21633,18 +21633,18 @@
 
       irot = 836
       theta1 = 90
-      phi1 = 157.935
+      phi1 = -176.471
       theta2 = 84
-      phi2 = -112.065
+      phi2 = -86.4706
       theta3 = 6
-      phi3 = 67.9355
+      phi3 = 93.5294
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 790
       chmoth = 'DC13'
-      x = -36.5821
-      y = 14.828
+      x = -39.1905
+      y = -2.41719
       z = 0
       irot = 836
       chonly = 'ONLY'
@@ -21652,18 +21652,18 @@
 
       irot = 837
       theta1 = 90
-      phi1 = 160.258
+      phi1 = -174.118
       theta2 = 84
-      phi2 = -109.742
+      phi2 = -84.1176
       theta3 = 6
-      phi3 = 70.2581
+      phi3 = 95.8824
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 791
       chmoth = 'DC13'
-      x = -37.1529
-      y = 13.3334
+      x = -39.0582
+      y = -4.02412
       z = 0
       irot = 837
       chonly = 'ONLY'
@@ -21671,18 +21671,18 @@
 
       irot = 838
       theta1 = 90
-      phi1 = 162.581
+      phi1 = -171.765
       theta2 = 84
-      phi2 = -107.419
+      phi2 = -81.7647
       theta3 = 6
-      phi3 = 72.5806
+      phi3 = 98.2353
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 792
       chmoth = 'DC13'
-      x = -37.6627
-      y = 11.8168
+      x = -38.8601
+      y = -5.62426
       z = 0
       irot = 838
       chonly = 'ONLY'
@@ -21690,18 +21690,18 @@
 
       irot = 839
       theta1 = 90
-      phi1 = 164.903
+      phi1 = -169.412
       theta2 = 84
-      phi2 = -105.097
+      phi2 = -79.4118
       theta3 = 6
-      phi3 = 74.9032
+      phi3 = 100.588
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 793
       chmoth = 'DC13'
-      x = -38.1107
-      y = 10.2807
+      x = -38.5964
+      y = -7.21492
       z = 0
       irot = 839
       chonly = 'ONLY'
@@ -21709,18 +21709,18 @@
 
       irot = 840
       theta1 = 90
-      phi1 = 167.226
+      phi1 = -167.059
       theta2 = 84
-      phi2 = -102.774
+      phi2 = -77.0588
       theta3 = 6
-      phi3 = 77.2258
+      phi3 = 102.941
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 794
       chmoth = 'DC13'
-      x = -38.496
-      y = 8.72785
+      x = -38.2677
+      y = -8.79342
       z = 0
       irot = 840
       chonly = 'ONLY'
@@ -21728,18 +21728,18 @@
 
       irot = 841
       theta1 = 90
-      phi1 = 169.548
+      phi1 = -164.706
       theta2 = 84
-      phi2 = -100.452
+      phi2 = -74.7059
       theta3 = 6
-      phi3 = 79.5484
+      phi3 = 105.294
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 795
       chmoth = 'DC13'
-      x = -38.8181
-      y = 7.1606
+      x = -37.8744
+      y = -10.3571
       z = 0
       irot = 841
       chonly = 'ONLY'
@@ -21747,18 +21747,18 @@
 
       irot = 842
       theta1 = 90
-      phi1 = 171.871
+      phi1 = -162.353
       theta2 = 84
-      phi2 = -98.129
+      phi2 = -72.3529
       theta3 = 6
-      phi3 = 81.871
+      phi3 = 107.647
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 796
       chmoth = 'DC13'
-      x = -39.0764
-      y = 5.5816
+      x = -37.4173
+      y = -11.9033
       z = 0
       irot = 842
       chonly = 'ONLY'
@@ -21766,18 +21766,18 @@
 
       irot = 843
       theta1 = 90
-      phi1 = 174.194
+      phi1 = -160
       theta2 = 84
-      phi2 = -95.8065
+      phi2 = -70
       theta3 = 6
-      phi3 = 84.1935
+      phi3 = 110
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 797
       chmoth = 'DC13'
-      x = -39.2705
-      y = 3.99342
+      x = -36.897
+      y = -13.4294
       z = 0
       irot = 843
       chonly = 'ONLY'
@@ -21785,18 +21785,18 @@
 
       irot = 844
       theta1 = 90
-      phi1 = 176.516
+      phi1 = -157.647
       theta2 = 84
-      phi2 = -93.4839
+      phi2 = -67.6471
       theta3 = 6
-      phi3 = 86.5161
+      phi3 = 112.353
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 798
       chmoth = 'DC13'
-      x = -39.4001
-      y = 2.39868
+      x = -36.3146
+      y = -14.9329
       z = 0
       irot = 844
       chonly = 'ONLY'
@@ -21804,18 +21804,18 @@
 
       irot = 845
       theta1 = 90
-      phi1 = 178.839
+      phi1 = -155.294
       theta2 = 84
-      phi2 = -91.1613
+      phi2 = -65.2941
       theta3 = 6
-      phi3 = 88.8387
+      phi3 = 114.706
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 799
       chmoth = 'DC13'
-      x = -39.4649
-      y = 0.799997
+      x = -35.6709
+      y = -16.4112
       z = 0
       irot = 845
       chonly = 'ONLY'
@@ -21823,18 +21823,18 @@
 
       irot = 846
       theta1 = 90
-      phi1 = -178.839
+      phi1 = -152.941
       theta2 = 84
-      phi2 = -88.8387
+      phi2 = -62.9412
       theta3 = 6
-      phi3 = 91.1613
+      phi3 = 117.059
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 800
       chmoth = 'DC13'
-      x = -39.4649
-      y = -0.799997
+      x = -34.9671
+      y = -17.8618
       z = 0
       irot = 846
       chonly = 'ONLY'
@@ -21842,18 +21842,18 @@
 
       irot = 847
       theta1 = 90
-      phi1 = -176.516
+      phi1 = -150.588
       theta2 = 84
-      phi2 = -86.5161
+      phi2 = -60.5882
       theta3 = 6
-      phi3 = 93.4839
+      phi3 = 119.412
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 801
       chmoth = 'DC13'
-      x = -39.4001
-      y = -2.39868
+      x = -34.2043
+      y = -19.2824
       z = 0
       irot = 847
       chonly = 'ONLY'
@@ -21861,18 +21861,18 @@
 
       irot = 848
       theta1 = 90
-      phi1 = -174.194
+      phi1 = -148.235
       theta2 = 84
-      phi2 = -84.1935
+      phi2 = -58.2353
       theta3 = 6
-      phi3 = 95.8065
+      phi3 = 121.765
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 802
       chmoth = 'DC13'
-      x = -39.2705
-      y = -3.99342
+      x = -33.3838
+      y = -20.6704
       z = 0
       irot = 848
       chonly = 'ONLY'
@@ -21880,18 +21880,18 @@
 
       irot = 849
       theta1 = 90
-      phi1 = -171.871
+      phi1 = -145.882
       theta2 = 84
-      phi2 = -81.871
+      phi2 = -55.8824
       theta3 = 6
-      phi3 = 98.129
+      phi3 = 124.118
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 803
       chmoth = 'DC13'
-      x = -39.0764
-      y = -5.5816
+      x = -32.507
+      y = -22.0235
       z = 0
       irot = 849
       chonly = 'ONLY'
@@ -21899,18 +21899,18 @@
 
       irot = 850
       theta1 = 90
-      phi1 = -169.548
+      phi1 = -143.529
       theta2 = 84
-      phi2 = -79.5484
+      phi2 = -53.5294
       theta3 = 6
-      phi3 = 100.452
+      phi3 = 126.471
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 804
       chmoth = 'DC13'
-      x = -38.8181
-      y = -7.1606
+      x = -31.5754
+      y = -23.3395
       z = 0
       irot = 850
       chonly = 'ONLY'
@@ -21918,18 +21918,18 @@
 
       irot = 851
       theta1 = 90
-      phi1 = -167.226
+      phi1 = -141.176
       theta2 = 84
-      phi2 = -77.2258
+      phi2 = -51.1765
       theta3 = 6
-      phi3 = 102.774
+      phi3 = 128.824
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 805
       chmoth = 'DC13'
-      x = -38.496
-      y = -8.72785
+      x = -30.5906
+      y = -24.6162
       z = 0
       irot = 851
       chonly = 'ONLY'
@@ -21937,18 +21937,18 @@
 
       irot = 852
       theta1 = 90
-      phi1 = -164.903
+      phi1 = -138.824
       theta2 = 84
-      phi2 = -74.9032
+      phi2 = -48.8235
       theta3 = 6
-      phi3 = 105.097
+      phi3 = 131.176
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 806
       chmoth = 'DC13'
-      x = -38.1107
-      y = -10.2807
+      x = -29.5542
+      y = -25.8513
       z = 0
       irot = 852
       chonly = 'ONLY'
@@ -21956,18 +21956,18 @@
 
       irot = 853
       theta1 = 90
-      phi1 = -162.581
+      phi1 = -136.471
       theta2 = 84
-      phi2 = -72.5806
+      phi2 = -46.4706
       theta3 = 6
-      phi3 = 107.419
+      phi3 = 133.529
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 807
       chmoth = 'DC13'
-      x = -37.6627
-      y = -11.8168
+      x = -28.4679
+      y = -27.0429
       z = 0
       irot = 853
       chonly = 'ONLY'
@@ -21975,18 +21975,18 @@
 
       irot = 854
       theta1 = 90
-      phi1 = -160.258
+      phi1 = -134.118
       theta2 = 84
-      phi2 = -70.2581
+      phi2 = -44.1176
       theta3 = 6
-      phi3 = 109.742
+      phi3 = 135.882
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 808
       chmoth = 'DC13'
-      x = -37.1529
-      y = -13.3334
+      x = -27.3337
+      y = -28.1888
       z = 0
       irot = 854
       chonly = 'ONLY'
@@ -21994,18 +21994,18 @@
 
       irot = 855
       theta1 = 90
-      phi1 = -157.935
+      phi1 = -131.765
       theta2 = 84
-      phi2 = -67.9355
+      phi2 = -41.7647
       theta3 = 6
-      phi3 = 112.065
+      phi3 = 138.235
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 809
       chmoth = 'DC13'
-      x = -36.5821
-      y = -14.828
+      x = -26.1534
+      y = -29.2872
       z = 0
       irot = 855
       chonly = 'ONLY'
@@ -22013,18 +22013,18 @@
 
       irot = 856
       theta1 = 90
-      phi1 = -155.613
+      phi1 = -129.412
       theta2 = 84
-      phi2 = -65.6129
+      phi2 = -39.4118
       theta3 = 6
-      phi3 = 114.387
+      phi3 = 140.588
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 810
       chmoth = 'DC13'
-      x = -35.9511
-      y = -16.2984
+      x = -24.9289
+      y = -30.3363
       z = 0
       irot = 856
       chonly = 'ONLY'
@@ -22032,18 +22032,18 @@
 
       irot = 857
       theta1 = 90
-      phi1 = -153.29
+      phi1 = -127.059
       theta2 = 84
-      phi2 = -63.2903
+      phi2 = -37.0588
       theta3 = 6
-      phi3 = 116.71
+      phi3 = 142.941
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 811
       chmoth = 'DC13'
-      x = -35.2611
-      y = -17.7419
+      x = -23.6624
+      y = -31.3341
       z = 0
       irot = 857
       chonly = 'ONLY'
@@ -22051,18 +22051,18 @@
 
       irot = 858
       theta1 = 90
-      phi1 = -150.968
+      phi1 = -124.706
       theta2 = 84
-      phi2 = -60.9677
+      phi2 = -34.7059
       theta3 = 6
-      phi3 = 119.032
+      phi3 = 145.294
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 812
       chmoth = 'DC13'
-      x = -34.5131
-      y = -19.1563
+      x = -22.3561
+      y = -32.2792
       z = 0
       irot = 858
       chonly = 'ONLY'
@@ -22070,18 +22070,18 @@
 
       irot = 859
       theta1 = 90
-      phi1 = -148.645
+      phi1 = -122.353
       theta2 = 84
-      phi2 = -58.6452
+      phi2 = -32.3529
       theta3 = 6
-      phi3 = 121.355
+      phi3 = 147.647
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 813
       chmoth = 'DC13'
-      x = -33.7084
-      y = -20.5393
+      x = -21.012
+      y = -33.1698
       z = 0
       irot = 859
       chonly = 'ONLY'
@@ -22089,18 +22089,18 @@
 
       irot = 860
       theta1 = 90
-      phi1 = -146.323
+      phi1 = -120
       theta2 = 84
-      phi2 = -56.3226
+      phi2 = -30
       theta3 = 6
-      phi3 = 123.677
+      phi3 = 150
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 814
       chmoth = 'DC13'
-      x = -32.8484
-      y = -21.8884
+      x = -19.6325
+      y = -34.0045
       z = 0
       irot = 860
       chonly = 'ONLY'
@@ -22108,18 +22108,18 @@
 
       irot = 861
       theta1 = 90
-      phi1 = -144
+      phi1 = -117.647
       theta2 = 84
-      phi2 = -54
+      phi2 = -27.6471
       theta3 = 6
-      phi3 = 126
+      phi3 = 152.353
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 815
       chmoth = 'DC13'
-      x = -31.9343
-      y = -23.2016
+      x = -18.2199
+      y = -34.7818
       z = 0
       irot = 861
       chonly = 'ONLY'
@@ -22127,18 +22127,18 @@
 
       irot = 862
       theta1 = 90
-      phi1 = -141.677
+      phi1 = -115.294
       theta2 = 84
-      phi2 = -51.6774
+      phi2 = -25.2941
       theta3 = 6
-      phi3 = 128.323
+      phi3 = 154.706
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 816
       chmoth = 'DC13'
-      x = -30.9678
-      y = -24.4767
+      x = -16.7766
+      y = -35.5005
       z = 0
       irot = 862
       chonly = 'ONLY'
@@ -22146,18 +22146,18 @@
 
       irot = 863
       theta1 = 90
-      phi1 = -139.355
+      phi1 = -112.941
       theta2 = 84
-      phi2 = -49.3548
+      phi2 = -22.9412
       theta3 = 6
-      phi3 = 130.645
+      phi3 = 157.059
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 817
       chmoth = 'DC13'
-      x = -29.9505
-      y = -25.7116
+      x = -15.3049
+      y = -36.1594
       z = 0
       irot = 863
       chonly = 'ONLY'
@@ -22165,18 +22165,18 @@
 
       irot = 864
       theta1 = 90
-      phi1 = -137.032
+      phi1 = -110.588
       theta2 = 84
-      phi2 = -47.0323
+      phi2 = -20.5882
       theta3 = 6
-      phi3 = 132.968
+      phi3 = 159.412
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 818
       chmoth = 'DC13'
-      x = -28.8839
-      y = -26.9043
+      x = -13.8075
+      y = -36.7572
       z = 0
       irot = 864
       chonly = 'ONLY'
@@ -22184,18 +22184,18 @@
 
       irot = 865
       theta1 = 90
-      phi1 = -134.71
+      phi1 = -108.235
       theta2 = 84
-      phi2 = -44.7097
+      phi2 = -18.2353
       theta3 = 6
-      phi3 = 135.29
+      phi3 = 161.765
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 819
       chmoth = 'DC13'
-      x = -27.7698
-      y = -28.0527
+      x = -12.2868
+      y = -37.2931
       z = 0
       irot = 865
       chonly = 'ONLY'
@@ -22203,18 +22203,18 @@
 
       irot = 866
       theta1 = 90
-      phi1 = -132.387
+      phi1 = -105.882
       theta2 = 84
-      phi2 = -42.3871
+      phi2 = -15.8824
       theta3 = 6
-      phi3 = 137.613
+      phi3 = 164.118
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 820
       chmoth = 'DC13'
-      x = -26.6102
-      y = -29.155
+      x = -10.7454
+      y = -37.7661
       z = 0
       irot = 866
       chonly = 'ONLY'
@@ -22222,18 +22222,18 @@
 
       irot = 867
       theta1 = 90
-      phi1 = -130.065
+      phi1 = -103.529
       theta2 = 84
-      phi2 = -40.0645
+      phi2 = -13.5294
       theta3 = 6
-      phi3 = 139.935
+      phi3 = 166.471
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 821
       chmoth = 'DC13'
-      x = -25.4068
-      y = -30.2095
+      x = -9.18583
+      y = -38.1754
       z = 0
       irot = 867
       chonly = 'ONLY'
@@ -22241,18 +22241,18 @@
 
       irot = 868
       theta1 = 90
-      phi1 = -127.742
+      phi1 = -101.176
       theta2 = 84
-      phi2 = -37.7419
+      phi2 = -11.1765
       theta3 = 6
-      phi3 = 142.258
+      phi3 = 168.824
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 822
       chmoth = 'DC13'
-      x = -24.1617
-      y = -31.2143
+      x = -7.61079
+      y = -38.5203
       z = 0
       irot = 868
       chonly = 'ONLY'
@@ -22260,18 +22260,18 @@
 
       irot = 869
       theta1 = 90
-      phi1 = -125.419
+      phi1 = -98.8235
       theta2 = 84
-      phi2 = -35.4194
+      phi2 = -8.82353
       theta3 = 6
-      phi3 = 144.581
+      phi3 = 171.176
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 823
       chmoth = 'DC13'
-      x = -22.8768
-      y = -32.1678
+      x = -6.02292
+      y = -38.8003
       z = 0
       irot = 869
       chonly = 'ONLY'
@@ -22279,18 +22279,18 @@
 
       irot = 870
       theta1 = 90
-      phi1 = -123.097
+      phi1 = -96.4706
       theta2 = 84
-      phi2 = -33.0968
+      phi2 = -6.47059
       theta3 = 6
-      phi3 = 146.903
+      phi3 = 173.529
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 824
       chmoth = 'DC13'
-      x = -21.5544
-      y = -33.0685
+      x = -4.4249
+      y = -39.0149
       z = 0
       irot = 870
       chonly = 'ONLY'
@@ -22298,18 +22298,18 @@
 
       irot = 871
       theta1 = 90
-      phi1 = -120.774
+      phi1 = -94.1176
       theta2 = 84
-      phi2 = -30.7742
+      phi2 = -4.11765
       theta3 = 6
-      phi3 = 149.226
+      phi3 = 175.882
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 825
       chmoth = 'DC13'
-      x = -20.1966
-      y = -33.9148
+      x = -2.81941
+      y = -39.1636
       z = 0
       irot = 871
       chonly = 'ONLY'
@@ -22317,18 +22317,18 @@
 
       irot = 872
       theta1 = 90
-      phi1 = -118.452
+      phi1 = -91.7647
       theta2 = 84
-      phi2 = -28.4516
+      phi2 = -1.76471
       theta3 = 6
-      phi3 = 151.548
+      phi3 = 178.235
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 826
       chmoth = 'DC13'
-      x = -18.8056
-      y = -34.7054
+      x = -1.20917
+      y = -39.2464
       z = 0
       irot = 872
       chonly = 'ONLY'
@@ -22336,18 +22336,18 @@
 
       irot = 873
       theta1 = 90
-      phi1 = -116.129
+      phi1 = -89.4118
       theta2 = 84
-      phi2 = -26.129
+      phi2 = 0.588235
       theta3 = 6
-      phi3 = 153.871
+      phi3 = -179.412
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 827
       chmoth = 'DC13'
-      x = -17.3837
-      y = -35.439
+      x = 0.403113
+      y = -39.2629
       z = 0
       irot = 873
       chonly = 'ONLY'
@@ -22355,18 +22355,18 @@
 
       irot = 874
       theta1 = 90
-      phi1 = -113.806
+      phi1 = -87.0588
       theta2 = 84
-      phi2 = -23.8065
+      phi2 = 2.94118
       theta3 = 6
-      phi3 = 156.194
+      phi3 = -177.059
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 828
       chmoth = 'DC13'
-      x = -15.9332
-      y = -36.1144
+      x = 2.01471
+      y = -39.2133
       z = 0
       irot = 874
       chonly = 'ONLY'
@@ -22374,18 +22374,18 @@
 
       irot = 875
       theta1 = 90
-      phi1 = -111.484
+      phi1 = -84.7059
       theta2 = 84
-      phi2 = -21.4839
+      phi2 = 5.29412
       theta3 = 6
-      phi3 = 158.516
+      phi3 = -174.706
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 829
       chmoth = 'DC13'
-      x = -14.4566
-      y = -36.7304
+      x = 3.62292
+      y = -39.0975
       z = 0
       irot = 875
       chonly = 'ONLY'
@@ -22393,18 +22393,18 @@
 
       irot = 876
       theta1 = 90
-      phi1 = -109.161
+      phi1 = -82.3529
       theta2 = 84
-      phi2 = -19.1613
+      phi2 = 7.64706
       theta3 = 6
-      phi3 = 160.839
+      phi3 = -172.353
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 830
       chmoth = 'DC13'
-      x = -12.9562
-      y = -37.2861
+      x = 5.22501
+      y = -38.9158
       z = 0
       irot = 876
       chonly = 'ONLY'
@@ -22412,18 +22412,18 @@
 
       irot = 877
       theta1 = 90
-      phi1 = -106.839
+      phi1 = -80
       theta2 = 84
-      phi2 = -16.8387
+      phi2 = 10
       theta3 = 6
-      phi3 = 163.161
+      phi3 = -170
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 831
       chmoth = 'DC13'
-      x = -11.4345
-      y = -37.7806
+      x = 6.8183
+      y = -38.6685
       z = 0
       irot = 877
       chonly = 'ONLY'
@@ -22431,18 +22431,18 @@
 
       irot = 878
       theta1 = 90
-      phi1 = -104.516
+      phi1 = -77.6471
       theta2 = 84
-      phi2 = -14.5161
+      phi2 = 12.3529
       theta3 = 6
-      phi3 = 165.484
+      phi3 = -167.647
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 832
       chmoth = 'DC13'
-      x = -9.89401
-      y = -38.2129
+      x = 8.40008
+      y = -38.3559
       z = 0
       irot = 878
       chonly = 'ONLY'
@@ -22450,18 +22450,18 @@
 
       irot = 879
       theta1 = 90
-      phi1 = -102.194
+      phi1 = -75.2941
       theta2 = 84
-      phi2 = -12.1935
+      phi2 = 14.7059
       theta3 = 6
-      phi3 = 167.806
+      phi3 = -165.294
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 833
       chmoth = 'DC13'
-      x = -8.33728
-      y = -38.5825
+      x = 9.9677
+      y = -37.9787
       z = 0
       irot = 879
       chonly = 'ONLY'
@@ -22469,18 +22469,18 @@
 
       irot = 880
       theta1 = 90
-      phi1 = -99.871
+      phi1 = -72.9412
       theta2 = 84
-      phi2 = -9.87097
+      phi2 = 17.0588
       theta3 = 6
-      phi3 = 170.129
+      phi3 = -162.941
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 834
       chmoth = 'DC13'
-      x = -6.76685
-      y = -38.8887
+      x = 11.5185
+      y = -37.5375
       z = 0
       irot = 880
       chonly = 'ONLY'
@@ -22488,18 +22488,18 @@
 
       irot = 881
       theta1 = 90
-      phi1 = -97.5484
+      phi1 = -70.5882
       theta2 = 84
-      phi2 = -7.54839
+      phi2 = 19.4118
       theta3 = 6
-      phi3 = 172.452
+      phi3 = -160.588
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 835
       chmoth = 'DC13'
-      x = -5.18531
-      y = -39.1309
+      x = 13.0499
+      y = -37.033
       z = 0
       irot = 881
       chonly = 'ONLY'
@@ -22507,18 +22507,18 @@
 
       irot = 882
       theta1 = 90
-      phi1 = -95.2258
+      phi1 = -68.2353
       theta2 = 84
-      phi2 = -5.22581
+      phi2 = 21.7647
       theta3 = 6
-      phi3 = 174.774
+      phi3 = -158.235
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 836
       chmoth = 'DC13'
-      x = -3.59525
-      y = -39.3089
+      x = 14.5593
+      y = -36.466
       z = 0
       irot = 882
       chonly = 'ONLY'
@@ -22526,18 +22526,18 @@
 
       irot = 883
       theta1 = 90
-      phi1 = -92.9032
+      phi1 = -65.8824
       theta2 = 84
-      phi2 = -2.90323
+      phi2 = 24.1176
       theta3 = 6
-      phi3 = 177.097
+      phi3 = -155.882
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 837
       chmoth = 'DC13'
-      x = -1.99927
-      y = -39.4223
+      x = 16.0441
+      y = -35.8375
       z = 0
       irot = 883
       chonly = 'ONLY'
@@ -22545,18 +22545,18 @@
 
       irot = 884
       theta1 = 90
-      phi1 = -90.5806
+      phi1 = -63.5294
       theta2 = 84
-      phi2 = -0.580645
+      phi2 = 26.4706
       theta3 = 6
-      phi3 = 179.419
+      phi3 = -153.529
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 838
       chmoth = 'DC13'
-      x = -0.400019
-      y = -39.471
+      x = 17.5019
+      y = -35.1486
       z = 0
       irot = 884
       chonly = 'ONLY'
@@ -22564,18 +22564,18 @@
 
       irot = 885
       theta1 = 90
-      phi1 = -88.2581
+      phi1 = -61.1765
       theta2 = 84
-      phi2 = 1.74194
+      phi2 = 28.8235
       theta3 = 6
-      phi3 = -178.258
+      phi3 = -151.176
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 839
       chmoth = 'DC13'
-      x = 1.19989
-      y = -39.4548
+      x = 18.9302
+      y = -34.4004
       z = 0
       irot = 885
       chonly = 'ONLY'
@@ -22583,18 +22583,18 @@
 
       irot = 886
       theta1 = 90
-      phi1 = -85.9355
+      phi1 = -58.8235
       theta2 = 84
-      phi2 = 4.06452
+      phi2 = 31.1765
       theta3 = 6
-      phi3 = -175.935
+      phi3 = -148.824
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 840
       chmoth = 'DC13'
-      x = 2.79783
-      y = -39.3737
+      x = 20.3265
+      y = -33.5942
       z = 0
       irot = 886
       chonly = 'ONLY'
@@ -22602,18 +22602,18 @@
 
       irot = 887
       theta1 = 90
-      phi1 = -83.6129
+      phi1 = -56.4706
       theta2 = 84
-      phi2 = 6.3871
+      phi2 = 33.5294
       theta3 = 6
-      phi3 = -173.613
+      phi3 = -146.471
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 841
       chmoth = 'DC13'
-      x = 4.39118
-      y = -39.228
+      x = 21.6886
+      y = -32.7314
       z = 0
       irot = 887
       chonly = 'ONLY'
@@ -22621,18 +22621,18 @@
 
       irot = 888
       theta1 = 90
-      phi1 = -81.2903
+      phi1 = -54.1176
       theta2 = 84
-      phi2 = 8.70968
+      phi2 = 35.8824
       theta3 = 6
-      phi3 = -171.29
+      phi3 = -144.118
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 842
       chmoth = 'DC13'
-      x = 5.97731
-      y = -39.0178
+      x = 23.0141
+      y = -31.8134
       z = 0
       irot = 888
       chonly = 'ONLY'
@@ -22640,18 +22640,18 @@
 
       irot = 889
       theta1 = 90
-      phi1 = -78.9677
+      phi1 = -51.7647
       theta2 = 84
-      phi2 = 11.0323
+      phi2 = 38.2353
       theta3 = 6
-      phi3 = -168.968
+      phi3 = -141.765
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 843
       chmoth = 'DC13'
-      x = 7.55362
-      y = -38.7435
+      x = 24.3008
+      y = -30.8417
       z = 0
       irot = 889
       chonly = 'ONLY'
@@ -22659,18 +22659,18 @@
 
       irot = 890
       theta1 = 90
-      phi1 = -76.6452
+      phi1 = -49.4118
       theta2 = 84
-      phi2 = 13.3548
+      phi2 = 40.5882
       theta3 = 6
-      phi3 = -166.645
+      phi3 = -139.412
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 844
       chmoth = 'DC13'
-      x = 9.11752
-      y = -38.4056
+      x = 25.5465
+      y = -29.818
       z = 0
       irot = 890
       chonly = 'ONLY'
@@ -22678,18 +22678,18 @@
 
       irot = 891
       theta1 = 90
-      phi1 = -74.3226
+      phi1 = -47.0588
       theta2 = 84
-      phi2 = 15.6774
+      phi2 = 42.9412
       theta3 = 6
-      phi3 = -164.323
+      phi3 = -137.059
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 845
       chmoth = 'DC13'
-      x = 10.6664
-      y = -38.0045
+      x = 26.7492
+      y = -28.7441
       z = 0
       irot = 891
       chonly = 'ONLY'
@@ -22697,18 +22697,18 @@
 
       irot = 892
       theta1 = 90
-      phi1 = -72
+      phi1 = -44.7059
       theta2 = 84
-      phi2 = 18
+      phi2 = 45.2941
       theta3 = 6
-      phi3 = -162
+      phi3 = -134.706
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 846
       chmoth = 'DC13'
-      x = 12.1978
-      y = -37.5411
+      x = 27.9067
+      y = -27.6217
       z = 0
       irot = 892
       chonly = 'ONLY'
@@ -22716,18 +22716,18 @@
 
       irot = 893
       theta1 = 90
-      phi1 = -69.6774
+      phi1 = -42.3529
       theta2 = 84
-      phi2 = 20.3226
+      phi2 = 47.6471
       theta3 = 6
-      phi3 = -159.677
+      phi3 = -132.353
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 847
       chmoth = 'DC13'
-      x = 13.7092
-      y = -37.0159
+      x = 29.0172
+      y = -26.4527
       z = 0
       irot = 893
       chonly = 'ONLY'
@@ -22735,18 +22735,18 @@
 
       irot = 894
       theta1 = 90
-      phi1 = -67.3548
+      phi1 = -40
       theta2 = 84
-      phi2 = 22.6452
+      phi2 = 50
       theta3 = 6
-      phi3 = -157.355
+      phi3 = -130
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 848
       chmoth = 'DC13'
-      x = 15.198
-      y = -36.4299
+      x = 30.0787
+      y = -25.2391
       z = 0
       irot = 894
       chonly = 'ONLY'
@@ -22754,18 +22754,18 @@
 
       irot = 895
       theta1 = 90
-      phi1 = -65.0323
+      phi1 = -37.6471
       theta2 = 84
-      phi2 = 24.9677
+      phi2 = 52.3529
       theta3 = 6
-      phi3 = -155.032
+      phi3 = -127.647
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 849
       chmoth = 'DC13'
-      x = 16.6619
-      y = -35.7841
+      x = 31.0896
+      y = -23.9829
       z = 0
       irot = 895
       chonly = 'ONLY'
@@ -22773,18 +22773,18 @@
 
       irot = 896
       theta1 = 90
-      phi1 = -62.7097
+      phi1 = -35.2941
       theta2 = 84
-      phi2 = 27.2903
+      phi2 = 54.7059
       theta3 = 6
-      phi3 = -152.71
+      phi3 = -125.294
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 850
       chmoth = 'DC13'
-      x = 18.0983
-      y = -35.0794
+      x = 32.048
+      y = -22.6863
       z = 0
       irot = 896
       chonly = 'ONLY'
@@ -22792,18 +22792,18 @@
 
       irot = 897
       theta1 = 90
-      phi1 = -60.3871
+      phi1 = -32.9412
       theta2 = 84
-      phi2 = 29.6129
+      phi2 = 57.0588
       theta3 = 6
-      phi3 = -150.387
+      phi3 = -122.941
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 851
       chmoth = 'DC13'
-      x = 19.5051
-      y = -34.3172
+      x = 32.9523
+      y = -21.3514
       z = 0
       irot = 897
       chonly = 'ONLY'
@@ -22811,18 +22811,18 @@
 
       irot = 898
       theta1 = 90
-      phi1 = -58.0645
+      phi1 = -30.5882
       theta2 = 84
-      phi2 = 31.9355
+      phi2 = 59.4118
       theta3 = 6
-      phi3 = -148.065
+      phi3 = -120.588
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 852
       chmoth = 'DC13'
-      x = 20.8798
-      y = -33.4985
+      x = 33.8011
+      y = -19.9806
       z = 0
       irot = 898
       chonly = 'ONLY'
@@ -22830,18 +22830,18 @@
 
       irot = 899
       theta1 = 90
-      phi1 = -55.7419
+      phi1 = -28.2353
       theta2 = 84
-      phi2 = 34.2581
+      phi2 = 61.7647
       theta3 = 6
-      phi3 = -145.742
+      phi3 = -118.235
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 853
       chmoth = 'DC13'
-      x = 22.2202
-      y = -32.6248
+      x = 34.5929
+      y = -18.576
       z = 0
       irot = 899
       chonly = 'ONLY'
@@ -22849,18 +22849,18 @@
 
       irot = 900
       theta1 = 90
-      phi1 = -53.4194
+      phi1 = -25.8824
       theta2 = 84
-      phi2 = 36.5806
+      phi2 = 64.1176
       theta3 = 6
-      phi3 = -143.419
+      phi3 = -115.882
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 854
       chmoth = 'DC13'
-      x = 23.5241
-      y = -31.6976
+      x = 35.3264
+      y = -17.1401
       z = 0
       irot = 900
       chonly = 'ONLY'
@@ -22868,18 +22868,18 @@
 
       irot = 901
       theta1 = 90
-      phi1 = -51.0968
+      phi1 = -23.5294
       theta2 = 84
-      phi2 = 38.9032
+      phi2 = 66.4706
       theta3 = 6
-      phi3 = -141.097
+      phi3 = -113.529
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 855
       chmoth = 'DC13'
-      x = 24.7893
-      y = -30.7182
+      x = 36.0003
+      y = -15.6754
       z = 0
       irot = 901
       chonly = 'ONLY'
@@ -22887,18 +22887,18 @@
 
       irot = 902
       theta1 = 90
-      phi1 = -48.7742
+      phi1 = -21.1765
       theta2 = 84
-      phi2 = 41.2258
+      phi2 = 68.8235
       theta3 = 6
-      phi3 = -138.774
+      phi3 = -111.176
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 856
       chmoth = 'DC13'
-      x = 26.0138
-      y = -29.6884
+      x = 36.6135
+      y = -14.1842
       z = 0
       irot = 902
       chonly = 'ONLY'
@@ -22906,18 +22906,18 @@
 
       irot = 903
       theta1 = 90
-      phi1 = -46.4516
+      phi1 = -18.8235
       theta2 = 84
-      phi2 = 43.5484
+      phi2 = 71.1765
       theta3 = 6
-      phi3 = -136.452
+      phi3 = -108.824
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 857
       chmoth = 'DC13'
-      x = 27.1956
-      y = -28.6097
+      x = 37.165
+      y = -12.669
       z = 0
       irot = 903
       chonly = 'ONLY'
@@ -22925,18 +22925,18 @@
 
       irot = 904
       theta1 = 90
-      phi1 = -44.129
+      phi1 = -16.4706
       theta2 = 84
-      phi2 = 45.871
+      phi2 = 73.5294
       theta3 = 6
-      phi3 = -134.129
+      phi3 = -106.471
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 858
       chmoth = 'DC13'
-      x = 28.3327
-      y = -27.4841
+      x = 37.6538
+      y = -11.1325
       z = 0
       irot = 904
       chonly = 'ONLY'
@@ -22944,18 +22944,18 @@
 
       irot = 905
       theta1 = 90
-      phi1 = -41.8065
+      phi1 = -14.1176
       theta2 = 84
-      phi2 = 48.1935
+      phi2 = 75.8824
       theta3 = 6
-      phi3 = -131.806
+      phi3 = -104.118
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 859
       chmoth = 'DC13'
-      x = 29.4232
-      y = -26.3133
+      x = 38.0791
+      y = -9.57727
       z = 0
       irot = 905
       chonly = 'ONLY'
@@ -22963,18 +22963,18 @@
 
       irot = 906
       theta1 = 90
-      phi1 = -39.4839
+      phi1 = -11.7647
       theta2 = 84
-      phi2 = 50.5161
+      phi2 = 78.2353
       theta3 = 6
-      phi3 = -129.484
+      phi3 = -101.765
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 860
       chmoth = 'DC13'
-      x = 30.4654
-      y = -25.0993
+      x = 38.4402
+      y = -8.00586
       z = 0
       irot = 906
       chonly = 'ONLY'
@@ -22982,18 +22982,18 @@
 
       irot = 907
       theta1 = 90
-      phi1 = -37.1613
+      phi1 = -9.41176
       theta2 = 84
-      phi2 = 52.8387
+      phi2 = 80.5882
       theta3 = 6
-      phi3 = -127.161
+      phi3 = -99.4118
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 861
       chmoth = 'DC13'
-      x = 31.4575
-      y = -23.8441
+      x = 38.7364
+      y = -6.42095
       z = 0
       irot = 907
       chonly = 'ONLY'
@@ -23001,18 +23001,18 @@
 
       irot = 908
       theta1 = 90
-      phi1 = -34.8387
+      phi1 = -7.05882
       theta2 = 84
-      phi2 = 55.1613
+      phi2 = 82.9412
       theta3 = 6
-      phi3 = -124.839
+      phi3 = -97.0588
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 862
       chmoth = 'DC13'
-      x = 32.398
-      y = -22.5497
+      x = 38.9674
+      y = -4.82521
       z = 0
       irot = 908
       chonly = 'ONLY'
@@ -23020,18 +23020,18 @@
 
       irot = 909
       theta1 = 90
-      phi1 = -32.5161
+      phi1 = -4.70588
       theta2 = 84
-      phi2 = 57.4839
+      phi2 = 85.2941
       theta3 = 6
-      phi3 = -122.516
+      phi3 = -94.7059
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 863
       chmoth = 'DC13'
-      x = 33.2852
-      y = -21.2182
+      x = 39.1326
+      y = -3.22133
       z = 0
       irot = 909
       chonly = 'ONLY'
@@ -23039,248 +23039,20 @@
 
       irot = 910
       theta1 = 90
-      phi1 = -30.1935
+      phi1 = -2.35294
       theta2 = 84
-      phi2 = 59.8065
+      phi2 = 87.6471
       theta3 = 6
-      phi3 = -120.194
+      phi3 = -92.3529
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
       chname = 'STLA'
       nr = 864
       chmoth = 'DC13'
-      x = 34.1178
-      y = -19.8519
+      x = 39.2319
+      y = -1.61203
       z = 0
       irot = 910
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 911
-      theta1 = 90
-      phi1 = -27.871
-      theta2 = 84
-      phi2 = 62.129
-      theta3 = 6
-      phi3 = -117.871
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 865
-      chmoth = 'DC13'
-      x = 34.8942
-      y = -18.4529
-      z = 0
-      irot = 911
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 912
-      theta1 = 90
-      phi1 = -25.5484
-      theta2 = 84
-      phi2 = 64.4516
-      theta3 = 6
-      phi3 = -115.548
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 866
-      chmoth = 'DC13'
-      x = 35.6134
-      y = -17.0236
-      z = 0
-      irot = 912
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 913
-      theta1 = 90
-      phi1 = -23.2258
-      theta2 = 84
-      phi2 = 66.7742
-      theta3 = 6
-      phi3 = -113.226
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 867
-      chmoth = 'DC13'
-      x = 36.274
-      y = -15.5664
-      z = 0
-      irot = 913
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 914
-      theta1 = 90
-      phi1 = -20.9032
-      theta2 = 84
-      phi2 = 69.0968
-      theta3 = 6
-      phi3 = -110.903
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 868
-      chmoth = 'DC13'
-      x = 36.8751
-      y = -14.0836
-      z = 0
-      irot = 914
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 915
-      theta1 = 90
-      phi1 = -18.5806
-      theta2 = 84
-      phi2 = 71.4194
-      theta3 = 6
-      phi3 = -108.581
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 869
-      chmoth = 'DC13'
-      x = 37.4155
-      y = -12.5776
-      z = 0
-      irot = 915
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 916
-      theta1 = 90
-      phi1 = -16.2581
-      theta2 = 84
-      phi2 = 73.7419
-      theta3 = 6
-      phi3 = -106.258
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 870
-      chmoth = 'DC13'
-      x = 37.8945
-      y = -11.051
-      z = 0
-      irot = 916
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 917
-      theta1 = 90
-      phi1 = -13.9355
-      theta2 = 84
-      phi2 = 76.0645
-      theta3 = 6
-      phi3 = -103.935
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 871
-      chmoth = 'DC13'
-      x = 38.3112
-      y = -9.50625
-      z = 0
-      irot = 917
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 918
-      theta1 = 90
-      phi1 = -11.6129
-      theta2 = 84
-      phi2 = 78.3871
-      theta3 = 6
-      phi3 = -101.613
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 872
-      chmoth = 'DC13'
-      x = 38.665
-      y = -7.94586
-      z = 0
-      irot = 918
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 919
-      theta1 = 90
-      phi1 = -9.29032
-      theta2 = 84
-      phi2 = 80.7097
-      theta3 = 6
-      phi3 = -99.2903
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 873
-      chmoth = 'DC13'
-      x = 38.9552
-      y = -6.37241
-      z = 0
-      irot = 919
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 920
-      theta1 = 90
-      phi1 = -6.96774
-      theta2 = 84
-      phi2 = 83.0323
-      theta3 = 6
-      phi3 = -96.9677
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 874
-      chmoth = 'DC13'
-      x = 39.1815
-      y = -4.78849
-      z = 0
-      irot = 920
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 921
-      theta1 = 90
-      phi1 = -4.64516
-      theta2 = 84
-      phi2 = 85.3548
-      theta3 = 6
-      phi3 = -94.6452
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 875
-      chmoth = 'DC13'
-      x = 39.3433
-      y = -3.1967
-      z = 0
-      irot = 921
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 922
-      theta1 = 90
-      phi1 = -2.32258
-      theta2 = 84
-      phi2 = 87.6774
-      theta3 = 6
-      phi3 = -92.3226
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'STLA'
-      nr = 876
-      chmoth = 'DC13'
-      x = 39.4406
-      y = -1.59967
-      z = 0
-      irot = 922
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -23323,8 +23095,8 @@
       chshap = 'TUBE'
       nmed = 133
       npar = 3
-      par(1) = 41.434
-      par(2) = 43.114
+      par(1) = 41.25
+      par(2) = 42.98
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.158) stop 'consistency check #1 failed'
@@ -23341,10 +23113,10 @@
 
       chname = 'SD1A'
       chmoth = 'DC17'
-      ndiv = 166
+      ndiv = 165
       iaxis = 2
-      step = 2.16867
-      c0 = -1.084
+      step = 2.18182
+      c0 = -1.0909
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -23368,11 +23140,11 @@
       chshap = 'TUBS'
       nmed = 134
       npar = 5
-      par(1) = 41.43
-      par(2) = 43.11
+      par(1) = 41.252
+      par(2) = 42.978
       par(3) = 76.25
-      par(4) = -1.084
-      par(5) = 1.085
+      par(4) = -1.0909
+      par(5) = 1.09092
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.160) stop 'consistency check #1 failed'
 
@@ -23389,7 +23161,7 @@
       chname = 'STRA'
       nr = 9
       chmoth = 'DS17'
-      x = 42.274
+      x = 42.113
       y = 0
       z = 0
       irot = 0
@@ -23435,8 +23207,8 @@
       chshap = 'TUBE'
       nmed = 135
       npar = 3
-      par(1) = 43.217
-      par(2) = 44.897
+      par(1) = 43.01
+      par(2) = 44.75
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.161) stop 'consistency check #1 failed'
@@ -23453,10 +23225,10 @@
 
       chname = 'SD1B'
       chmoth = 'DC18'
-      ndiv = 173
+      ndiv = 172
       iaxis = 2
-      step = 2.08092
-      c0 = -1.04
+      step = 2.09302
+      c0 = 0.0005
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -23480,11 +23252,11 @@
       chshap = 'TUBS'
       nmed = 136
       npar = 5
-      par(1) = 43.22
-      par(2) = 44.9
+      par(1) = 43.012
+      par(2) = 44.748
       par(3) = 76.25
-      par(4) = -1.04
-      par(5) = 1.041
+      par(4) = -1.0465
+      par(5) = 1.0465
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.163) stop 'consistency check #1 failed'
 
@@ -23501,7 +23273,7 @@
       chname = 'STRA'
       nr = 10
       chmoth = 'DS18'
-      x = 44.057
+      x = 43.899
       y = 0
       z = 0
       irot = 0
@@ -23547,8 +23319,8 @@
       chshap = 'TUBE'
       nmed = 137
       npar = 3
-      par(1) = 44.999
-      par(2) = 46.679
+      par(1) = 44.8
+      par(2) = 46.52
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.164) stop 'consistency check #1 failed'
@@ -23565,10 +23337,10 @@
 
       chname = 'SD1C'
       chmoth = 'DC19'
-      ndiv = 180
+      ndiv = 179
       iaxis = 2
-      step = 2
-      c0 = -1
+      step = 2.01117
+      c0 = -1.6755
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -23592,11 +23364,11 @@
       chshap = 'TUBS'
       nmed = 138
       npar = 5
-      par(1) = 45
-      par(2) = 46.68
+      par(1) = 44.802
+      par(2) = 46.518
       par(3) = 76.25
-      par(4) = -1
-      par(5) = 1
+      par(4) = -1.0055
+      par(5) = 1.0056
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.166) stop 'consistency check #1 failed'
 
@@ -23613,7 +23385,7 @@
       chname = 'STRA'
       nr = 11
       chmoth = 'DS19'
-      x = 45.839
+      x = 45.686
       y = 0
       z = 0
       irot = 0
@@ -23659,8 +23431,8 @@
       chshap = 'TUBE'
       nmed = 139
       npar = 3
-      par(1) = 46.781
-      par(2) = 48.461
+      par(1) = 46.56
+      par(2) = 48.28
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.167) stop 'consistency check #1 failed'
@@ -23677,10 +23449,10 @@
 
       chname = 'SD1D'
       chmoth = 'DC20'
-      ndiv = 187
+      ndiv = 186
       iaxis = 2
-      step = 1.92513
-      c0 = -0.963
+      step = 1.93548
+      c0 = -0.5807
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -23704,11 +23476,11 @@
       chshap = 'TUBS'
       nmed = 140
       npar = 5
-      par(1) = 46.78
-      par(2) = 48.46
+      par(1) = 46.562
+      par(2) = 48.278
       par(3) = 76.25
-      par(4) = -0.963
-      par(5) = 0.962
+      par(4) = -0.9677
+      par(5) = 0.9677
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.169) stop 'consistency check #1 failed'
 
@@ -23725,7 +23497,7 @@
       chname = 'STRA'
       nr = 12
       chmoth = 'DS20'
-      x = 47.621
+      x = 47.472
       y = 0
       z = 0
       irot = 0
@@ -23771,8 +23543,8 @@
       chshap = 'TUBE'
       nmed = 141
       npar = 3
-      par(1) = 48.564
-      par(2) = 50.244
+      par(1) = 48.32
+      par(2) = 50.04
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.170) stop 'consistency check #1 failed'
@@ -23789,10 +23561,10 @@
 
       chname = 'SD1E'
       chmoth = 'DC21'
-      ndiv = 194
+      ndiv = 193
       iaxis = 2
-      step = 1.85567
-      c0 = -0.928
+      step = 1.86528
+      c0 = -1.1986
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -23816,11 +23588,11 @@
       chshap = 'TUBS'
       nmed = 142
       npar = 5
-      par(1) = 48.56
-      par(2) = 50.24
+      par(1) = 48.322
+      par(2) = 50.038
       par(3) = 76.25
-      par(4) = -0.928
-      par(5) = 0.928
+      par(4) = -0.9326
+      par(5) = 0.9326
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.172) stop 'consistency check #1 failed'
 
@@ -23837,7 +23609,7 @@
       chname = 'STRA'
       nr = 13
       chmoth = 'DS21'
-      x = 49.404
+      x = 49.258
       y = 0
       z = 0
       irot = 0
@@ -23883,8 +23655,8 @@
       chshap = 'TUBE'
       nmed = 143
       npar = 3
-      par(1) = 50.346
-      par(2) = 52.026
+      par(1) = 50.08
+      par(2) = 51.9
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.173) stop 'consistency check #1 failed'
@@ -23901,10 +23673,10 @@
 
       chname = 'SD1F'
       chmoth = 'DC22'
-      ndiv = 201
+      ndiv = 200
       iaxis = 2
-      step = 1.79104
-      c0 = -0.896
+      step = 1.8
+      c0 = -0.736
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -23928,11 +23700,11 @@
       chshap = 'TUBS'
       nmed = 144
       npar = 5
-      par(1) = 50.35
-      par(2) = 52.03
+      par(1) = 50.082
+      par(2) = 51.898
       par(3) = 76.25
-      par(4) = -0.896
-      par(5) = 0.895
+      par(4) = -0.9
+      par(5) = 0.9
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.175) stop 'consistency check #1 failed'
 
@@ -23949,7 +23721,7 @@
       chname = 'STRA'
       nr = 14
       chmoth = 'DS22'
-      x = 51.186
+      x = 51.045
       y = 0
       z = 0
       irot = 0
@@ -23995,8 +23767,8 @@
       chshap = 'TUBE'
       nmed = 145
       npar = 3
-      par(1) = 52.129
-      par(2) = 53.809
+      par(1) = 51.94
+      par(2) = 53.7
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.176) stop 'consistency check #1 failed'
@@ -24013,10 +23785,10 @@
 
       chname = 'SD20'
       chmoth = 'DC23'
-      ndiv = 208
+      ndiv = 207
       iaxis = 2
-      step = 1.73077
-      c0 = -0.865
+      step = 1.73913
+      c0 = -1.0035
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -24040,11 +23812,11 @@
       chshap = 'TUBS'
       nmed = 146
       npar = 5
-      par(1) = 52.13
-      par(2) = 53.81
+      par(1) = 51.942
+      par(2) = 53.698
       par(3) = 76.25
-      par(4) = -0.865
-      par(5) = 0.866
+      par(4) = -0.8695
+      par(5) = 0.8696
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.178) stop 'consistency check #1 failed'
 
@@ -24061,7 +23833,7 @@
       chname = 'STRA'
       nr = 15
       chmoth = 'DS23'
-      x = 52.969
+      x = 52.831
       y = 0
       z = 0
       irot = 0
@@ -24107,8 +23879,8 @@
       chshap = 'TUBE'
       nmed = 147
       npar = 3
-      par(1) = 53.911
-      par(2) = 55.591
+      par(1) = 53.74
+      par(2) = 55.44
       par(3) = 76.25
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.179) stop 'consistency check #1 failed'
@@ -24125,10 +23897,10 @@
 
       chname = 'SD21'
       chmoth = 'DC24'
-      ndiv = 215
+      ndiv = 214
       iaxis = 2
-      step = 1.67442
-      c0 = -0.837
+      step = 1.68224
+      c0 = -0.7421
       numed = 0
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
@@ -24152,11 +23924,11 @@
       chshap = 'TUBS'
       nmed = 148
       npar = 5
-      par(1) = 53.91
-      par(2) = 55.59
+      par(1) = 53.742
+      par(2) = 55.438
       par(3) = 76.25
-      par(4) = -0.837
-      par(5) = 0.837
+      par(4) = -0.8411
+      par(5) = 0.8411
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.181) stop 'consistency check #1 failed'
 
@@ -24173,7 +23945,7 @@
       chname = 'STRA'
       nr = 16
       chmoth = 'DS24'
-      x = 54.751
+      x = 54.618
       y = 0
       z = 0
       irot = 0
@@ -25290,7 +25062,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 923
+      irot = 911
       theta1 = 90
       phi1 = 60
       theta2 = 90
@@ -25305,11 +25077,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 923
+      irot = 911
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 924
+      irot = 912
       theta1 = 90
       phi1 = -60
       theta2 = 90
@@ -25324,7 +25096,7 @@
       x = 0
       y = 0
       z = 3
-      irot = 924
+      irot = 912
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -25492,7 +25264,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.208) stop 'consistency check #1 failed'
 
-      irot = 925
+      irot = 913
       theta1 = 90
       phi1 = -7.5
       theta2 = 90
@@ -25507,7 +25279,7 @@
       x = 51.803
       y = -6.81999
       z = 0
-      irot = 925
+      irot = 913
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -25616,7 +25388,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.212) stop 'consistency check #1 failed'
 
-      irot = 926
+      irot = 914
       theta1 = 90
       phi1 = -7.5
       theta2 = 90
@@ -25631,7 +25403,7 @@
       x = 51.803
       y = -6.81999
       z = 0
-      irot = 926
+      irot = 914
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -25655,7 +25427,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 927
+      irot = 915
       theta1 = 90
       phi1 = 15
       theta2 = 90
@@ -25670,11 +25442,11 @@
       x = 50.4696
       y = 13.5233
       z = 0
-      irot = 927
+      irot = 915
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 928
+      irot = 916
       theta1 = 90
       phi1 = 30
       theta2 = 90
@@ -25689,11 +25461,11 @@
       x = 45.2498
       y = 26.125
       z = 0
-      irot = 928
+      irot = 916
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 929
+      irot = 917
       theta1 = 90
       phi1 = 45
       theta2 = 90
@@ -25708,11 +25480,11 @@
       x = 36.9463
       y = 36.9463
       z = 0
-      irot = 929
+      irot = 917
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 930
+      irot = 918
       theta1 = 90
       phi1 = 60
       theta2 = 90
@@ -25727,11 +25499,11 @@
       x = 26.125
       y = 45.2498
       z = 0
-      irot = 930
+      irot = 918
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 931
+      irot = 919
       theta1 = 90
       phi1 = 75
       theta2 = 90
@@ -25746,11 +25518,11 @@
       x = 13.5233
       y = 50.4696
       z = 0
-      irot = 931
+      irot = 919
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 932
+      irot = 920
       theta1 = 90
       phi1 = 90
       theta2 = 90
@@ -25765,11 +25537,11 @@
       x = 3.19928e-15
       y = 52.25
       z = 0
-      irot = 932
+      irot = 920
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 933
+      irot = 921
       theta1 = 90
       phi1 = 105
       theta2 = 90
@@ -25784,11 +25556,11 @@
       x = -13.5233
       y = 50.4696
       z = 0
-      irot = 933
+      irot = 921
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 934
+      irot = 922
       theta1 = 90
       phi1 = 120
       theta2 = 90
@@ -25803,11 +25575,11 @@
       x = -26.125
       y = 45.2498
       z = 0
-      irot = 934
+      irot = 922
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 935
+      irot = 923
       theta1 = 90
       phi1 = 135
       theta2 = 90
@@ -25822,11 +25594,11 @@
       x = -36.9463
       y = 36.9463
       z = 0
-      irot = 935
+      irot = 923
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 936
+      irot = 924
       theta1 = 90
       phi1 = 150
       theta2 = 90
@@ -25841,11 +25613,11 @@
       x = -45.2498
       y = 26.125
       z = 0
-      irot = 936
+      irot = 924
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 937
+      irot = 925
       theta1 = 90
       phi1 = 165
       theta2 = 90
@@ -25860,11 +25632,11 @@
       x = -50.4696
       y = 13.5233
       z = 0
-      irot = 937
+      irot = 925
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 938
+      irot = 926
       theta1 = 90
       phi1 = -180
       theta2 = 90
@@ -25879,11 +25651,11 @@
       x = -52.25
       y = 6.39857e-15
       z = 0
-      irot = 938
+      irot = 926
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 939
+      irot = 927
       theta1 = 90
       phi1 = -165
       theta2 = 90
@@ -25898,11 +25670,11 @@
       x = -50.4696
       y = -13.5233
       z = 0
-      irot = 939
+      irot = 927
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 940
+      irot = 928
       theta1 = 90
       phi1 = -150
       theta2 = 90
@@ -25917,11 +25689,11 @@
       x = -45.2498
       y = -26.125
       z = 0
-      irot = 940
+      irot = 928
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 941
+      irot = 929
       theta1 = 90
       phi1 = -135
       theta2 = 90
@@ -25936,11 +25708,11 @@
       x = -36.9463
       y = -36.9463
       z = 0
-      irot = 941
+      irot = 929
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 942
+      irot = 930
       theta1 = 90
       phi1 = -120
       theta2 = 90
@@ -25955,11 +25727,11 @@
       x = -26.125
       y = -45.2498
       z = 0
-      irot = 942
+      irot = 930
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 943
+      irot = 931
       theta1 = 90
       phi1 = -105
       theta2 = 90
@@ -25974,11 +25746,11 @@
       x = -13.5233
       y = -50.4696
       z = 0
-      irot = 943
+      irot = 931
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 944
+      irot = 932
       theta1 = 90
       phi1 = -90
       theta2 = 90
@@ -25993,11 +25765,11 @@
       x = -9.59785e-15
       y = -52.25
       z = 0
-      irot = 944
+      irot = 932
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 945
+      irot = 933
       theta1 = 90
       phi1 = -75
       theta2 = 90
@@ -26012,11 +25784,11 @@
       x = 13.5233
       y = -50.4696
       z = 0
-      irot = 945
+      irot = 933
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 946
+      irot = 934
       theta1 = 90
       phi1 = -60
       theta2 = 90
@@ -26031,11 +25803,11 @@
       x = 26.125
       y = -45.2498
       z = 0
-      irot = 946
+      irot = 934
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 947
+      irot = 935
       theta1 = 90
       phi1 = -45
       theta2 = 90
@@ -26050,11 +25822,11 @@
       x = 36.9463
       y = -36.9463
       z = 0
-      irot = 947
+      irot = 935
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 948
+      irot = 936
       theta1 = 90
       phi1 = -30
       theta2 = 90
@@ -26069,11 +25841,11 @@
       x = 45.2498
       y = -26.125
       z = 0
-      irot = 948
+      irot = 936
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 949
+      irot = 937
       theta1 = 90
       phi1 = -15
       theta2 = 90
@@ -26088,7 +25860,7 @@
       x = 50.4696
       y = -13.5233
       z = 0
-      irot = 949
+      irot = 937
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -26172,7 +25944,7 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      irot = 950
+      irot = 938
       theta1 = 90
       phi1 = -7.5
       theta2 = 90
@@ -26187,7 +25959,7 @@
       x = 51.803
       y = -6.81999
       z = 0
-      irot = 950
+      irot = 938
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -26211,7 +25983,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 951
+      irot = 939
       theta1 = 90
       phi1 = 15
       theta2 = 90
@@ -26226,11 +25998,11 @@
       x = 50.4696
       y = 13.5233
       z = 0
-      irot = 951
+      irot = 939
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 952
+      irot = 940
       theta1 = 90
       phi1 = 30
       theta2 = 90
@@ -26245,11 +26017,11 @@
       x = 45.2498
       y = 26.125
       z = 0
-      irot = 952
+      irot = 940
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 953
+      irot = 941
       theta1 = 90
       phi1 = 45
       theta2 = 90
@@ -26264,11 +26036,11 @@
       x = 36.9463
       y = 36.9463
       z = 0
-      irot = 953
+      irot = 941
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 954
+      irot = 942
       theta1 = 90
       phi1 = 60
       theta2 = 90
@@ -26283,11 +26055,11 @@
       x = 26.125
       y = 45.2498
       z = 0
-      irot = 954
+      irot = 942
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 955
+      irot = 943
       theta1 = 90
       phi1 = 75
       theta2 = 90
@@ -26302,11 +26074,11 @@
       x = 13.5233
       y = 50.4696
       z = 0
-      irot = 955
+      irot = 943
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 956
+      irot = 944
       theta1 = 90
       phi1 = 90
       theta2 = 90
@@ -26321,11 +26093,11 @@
       x = 3.19928e-15
       y = 52.25
       z = 0
-      irot = 956
+      irot = 944
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 957
+      irot = 945
       theta1 = 90
       phi1 = 105
       theta2 = 90
@@ -26340,11 +26112,11 @@
       x = -13.5233
       y = 50.4696
       z = 0
-      irot = 957
+      irot = 945
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 958
+      irot = 946
       theta1 = 90
       phi1 = 120
       theta2 = 90
@@ -26359,11 +26131,11 @@
       x = -26.125
       y = 45.2498
       z = 0
-      irot = 958
+      irot = 946
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 959
+      irot = 947
       theta1 = 90
       phi1 = 135
       theta2 = 90
@@ -26378,11 +26150,11 @@
       x = -36.9463
       y = 36.9463
       z = 0
-      irot = 959
+      irot = 947
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 960
+      irot = 948
       theta1 = 90
       phi1 = 150
       theta2 = 90
@@ -26397,11 +26169,11 @@
       x = -45.2498
       y = 26.125
       z = 0
-      irot = 960
+      irot = 948
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 961
+      irot = 949
       theta1 = 90
       phi1 = 165
       theta2 = 90
@@ -26416,11 +26188,11 @@
       x = -50.4696
       y = 13.5233
       z = 0
-      irot = 961
+      irot = 949
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 962
+      irot = 950
       theta1 = 90
       phi1 = -180
       theta2 = 90
@@ -26435,11 +26207,11 @@
       x = -52.25
       y = 6.39857e-15
       z = 0
-      irot = 962
+      irot = 950
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 963
+      irot = 951
       theta1 = 90
       phi1 = -165
       theta2 = 90
@@ -26454,11 +26226,11 @@
       x = -50.4696
       y = -13.5233
       z = 0
-      irot = 963
+      irot = 951
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 964
+      irot = 952
       theta1 = 90
       phi1 = -150
       theta2 = 90
@@ -26473,11 +26245,11 @@
       x = -45.2498
       y = -26.125
       z = 0
-      irot = 964
+      irot = 952
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 965
+      irot = 953
       theta1 = 90
       phi1 = -135
       theta2 = 90
@@ -26492,11 +26264,11 @@
       x = -36.9463
       y = -36.9463
       z = 0
-      irot = 965
+      irot = 953
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 966
+      irot = 954
       theta1 = 90
       phi1 = -120
       theta2 = 90
@@ -26511,11 +26283,11 @@
       x = -26.125
       y = -45.2498
       z = 0
-      irot = 966
+      irot = 954
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 967
+      irot = 955
       theta1 = 90
       phi1 = -105
       theta2 = 90
@@ -26530,11 +26302,11 @@
       x = -13.5233
       y = -50.4696
       z = 0
-      irot = 967
+      irot = 955
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 968
+      irot = 956
       theta1 = 90
       phi1 = -90
       theta2 = 90
@@ -26549,11 +26321,11 @@
       x = -9.59785e-15
       y = -52.25
       z = 0
-      irot = 968
+      irot = 956
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 969
+      irot = 957
       theta1 = 90
       phi1 = -75
       theta2 = 90
@@ -26568,11 +26340,11 @@
       x = 13.5233
       y = -50.4696
       z = 0
-      irot = 969
+      irot = 957
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 970
+      irot = 958
       theta1 = 90
       phi1 = -60
       theta2 = 90
@@ -26587,11 +26359,11 @@
       x = 26.125
       y = -45.2498
       z = 0
-      irot = 970
+      irot = 958
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 971
+      irot = 959
       theta1 = 90
       phi1 = -45
       theta2 = 90
@@ -26606,11 +26378,11 @@
       x = 36.9463
       y = -36.9463
       z = 0
-      irot = 971
+      irot = 959
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 972
+      irot = 960
       theta1 = 90
       phi1 = -30
       theta2 = 90
@@ -26625,11 +26397,11 @@
       x = 45.2498
       y = -26.125
       z = 0
-      irot = 972
+      irot = 960
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 973
+      irot = 961
       theta1 = 90
       phi1 = -15
       theta2 = 90
@@ -26644,7 +26416,7 @@
       x = 50.4696
       y = -13.5233
       z = 0
-      irot = 973
+      irot = 961
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -26713,7 +26485,7 @@
       ndvmax = 0
       call gsdvx(chname,chmoth,ndiv,iaxis,step,c0,numed,ndvmax)
 
-      irot = 974
+      irot = 962
       theta1 = 90
       phi1 = -7.5
       theta2 = 90
@@ -26728,7 +26500,7 @@
       x = 51.803
       y = -6.81999
       z = 0
-      irot = 974
+      irot = 962
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -26914,7 +26686,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 975
+      irot = 963
       theta1 = 90
       phi1 = 15
       theta2 = 90
@@ -26929,11 +26701,11 @@
       x = 50.4696
       y = 13.5233
       z = 0
-      irot = 975
+      irot = 963
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 976
+      irot = 964
       theta1 = 90
       phi1 = 30
       theta2 = 90
@@ -26948,11 +26720,11 @@
       x = 45.2498
       y = 26.125
       z = 0
-      irot = 976
+      irot = 964
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 977
+      irot = 965
       theta1 = 90
       phi1 = 45
       theta2 = 90
@@ -26967,11 +26739,11 @@
       x = 36.9463
       y = 36.9463
       z = 0
-      irot = 977
+      irot = 965
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 978
+      irot = 966
       theta1 = 90
       phi1 = 60
       theta2 = 90
@@ -26986,11 +26758,11 @@
       x = 26.125
       y = 45.2498
       z = 0
-      irot = 978
+      irot = 966
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 979
+      irot = 967
       theta1 = 90
       phi1 = 75
       theta2 = 90
@@ -27005,11 +26777,11 @@
       x = 13.5233
       y = 50.4696
       z = 0
-      irot = 979
+      irot = 967
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 980
+      irot = 968
       theta1 = 90
       phi1 = 90
       theta2 = 90
@@ -27024,11 +26796,11 @@
       x = 3.19928e-15
       y = 52.25
       z = 0
-      irot = 980
+      irot = 968
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 981
+      irot = 969
       theta1 = 90
       phi1 = 105
       theta2 = 90
@@ -27043,11 +26815,11 @@
       x = -13.5233
       y = 50.4696
       z = 0
-      irot = 981
+      irot = 969
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 982
+      irot = 970
       theta1 = 90
       phi1 = 120
       theta2 = 90
@@ -27062,11 +26834,11 @@
       x = -26.125
       y = 45.2498
       z = 0
-      irot = 982
+      irot = 970
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 983
+      irot = 971
       theta1 = 90
       phi1 = 135
       theta2 = 90
@@ -27081,11 +26853,11 @@
       x = -36.9463
       y = 36.9463
       z = 0
-      irot = 983
+      irot = 971
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 984
+      irot = 972
       theta1 = 90
       phi1 = 150
       theta2 = 90
@@ -27100,11 +26872,11 @@
       x = -45.2498
       y = 26.125
       z = 0
-      irot = 984
+      irot = 972
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 985
+      irot = 973
       theta1 = 90
       phi1 = 165
       theta2 = 90
@@ -27119,11 +26891,11 @@
       x = -50.4696
       y = 13.5233
       z = 0
-      irot = 985
+      irot = 973
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 986
+      irot = 974
       theta1 = 90
       phi1 = -180
       theta2 = 90
@@ -27138,11 +26910,11 @@
       x = -52.25
       y = 6.39857e-15
       z = 0
-      irot = 986
+      irot = 974
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 987
+      irot = 975
       theta1 = 90
       phi1 = -165
       theta2 = 90
@@ -27157,11 +26929,11 @@
       x = -50.4696
       y = -13.5233
       z = 0
-      irot = 987
+      irot = 975
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 988
+      irot = 976
       theta1 = 90
       phi1 = -150
       theta2 = 90
@@ -27176,11 +26948,11 @@
       x = -45.2498
       y = -26.125
       z = 0
-      irot = 988
+      irot = 976
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 989
+      irot = 977
       theta1 = 90
       phi1 = -135
       theta2 = 90
@@ -27195,11 +26967,11 @@
       x = -36.9463
       y = -36.9463
       z = 0
-      irot = 989
+      irot = 977
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 990
+      irot = 978
       theta1 = 90
       phi1 = -120
       theta2 = 90
@@ -27214,11 +26986,11 @@
       x = -26.125
       y = -45.2498
       z = 0
-      irot = 990
+      irot = 978
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 991
+      irot = 979
       theta1 = 90
       phi1 = -105
       theta2 = 90
@@ -27233,11 +27005,11 @@
       x = -13.5233
       y = -50.4696
       z = 0
-      irot = 991
+      irot = 979
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 992
+      irot = 980
       theta1 = 90
       phi1 = -90
       theta2 = 90
@@ -27252,11 +27024,11 @@
       x = -9.59785e-15
       y = -52.25
       z = 0
-      irot = 992
+      irot = 980
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 993
+      irot = 981
       theta1 = 90
       phi1 = -75
       theta2 = 90
@@ -27271,11 +27043,11 @@
       x = 13.5233
       y = -50.4696
       z = 0
-      irot = 993
+      irot = 981
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 994
+      irot = 982
       theta1 = 90
       phi1 = -60
       theta2 = 90
@@ -27290,11 +27062,11 @@
       x = 26.125
       y = -45.2498
       z = 0
-      irot = 994
+      irot = 982
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 995
+      irot = 983
       theta1 = 90
       phi1 = -45
       theta2 = 90
@@ -27309,11 +27081,11 @@
       x = 36.9463
       y = -36.9463
       z = 0
-      irot = 995
+      irot = 983
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 996
+      irot = 984
       theta1 = 90
       phi1 = -30
       theta2 = 90
@@ -27328,11 +27100,11 @@
       x = 45.2498
       y = -26.125
       z = 0
-      irot = 996
+      irot = 984
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 997
+      irot = 985
       theta1 = 90
       phi1 = -15
       theta2 = 90
@@ -27347,7 +27119,7 @@
       x = 50.4696
       y = -13.5233
       z = 0
-      irot = 997
+      irot = 985
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -27731,7 +27503,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 998
+      irot = 986
       theta1 = 90
       phi1 = 60
       theta2 = 90
@@ -27746,11 +27518,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 998
+      irot = 986
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 999
+      irot = 987
       theta1 = 90
       phi1 = -60
       theta2 = 90
@@ -27765,7 +27537,7 @@
       x = 0
       y = 0
       z = 3
-      irot = 999
+      irot = 987
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -28134,7 +27906,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1000
+      irot = 988
       theta1 = 90
       phi1 = 60
       theta2 = 90
@@ -28149,11 +27921,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1000
+      irot = 988
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1001
+      irot = 989
       theta1 = 90
       phi1 = -60
       theta2 = 90
@@ -28168,7 +27940,7 @@
       x = 0
       y = 0
       z = 3
-      irot = 1001
+      irot = 989
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -28537,7 +28309,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1002
+      irot = 990
       theta1 = 90
       phi1 = 60
       theta2 = 90
@@ -28552,11 +28324,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1002
+      irot = 990
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1003
+      irot = 991
       theta1 = 90
       phi1 = -60
       theta2 = 90
@@ -28571,7 +28343,7 @@
       x = 0
       y = 0
       z = 3
-      irot = 1003
+      irot = 991
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -28630,7 +28402,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1004
+      irot = 992
       theta1 = 90
       phi1 = 90
       theta2 = 90
@@ -28645,11 +28417,11 @@
       x = 3.19928e-15
       y = 52.25
       z = 0
-      irot = 1004
+      irot = 992
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1005
+      irot = 993
       theta1 = 90
       phi1 = 180
       theta2 = 90
@@ -28664,11 +28436,11 @@
       x = -52.25
       y = 6.39857e-15
       z = 0
-      irot = 1005
+      irot = 993
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1006
+      irot = 994
       theta1 = 90
       phi1 = -90
       theta2 = 90
@@ -28683,7 +28455,7 @@
       x = -9.59785e-15
       y = -52.25
       z = 0
-      irot = 1006
+      irot = 994
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -29009,7 +28781,7 @@
       chshap = 'TUBE'
       nmed = 211
       npar = 3
-      par(1) = 65
+      par(1) = 64.2
       par(2) = 90
       par(3) = 205
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -29054,7 +28826,7 @@
       chshap = 'TUBS'
       nmed = 212
       npar = 5
-      par(1) = 65
+      par(1) = 64.2
       par(2) = 90
       par(3) = 205
       par(4) = -3.75
@@ -29309,7 +29081,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1007
+      irot = 995
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -29324,7 +29096,7 @@
       x = 66
       y = 0
       z = -197.5
-      irot = 1007
+      irot = 995
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -29347,8 +29119,8 @@
       chshap = 'BOX '
       nmed = 218
       npar = 3
-      par(1) = 1
-      par(2) = 1
+      par(1) = 0.95
+      par(2) = 0.95
       par(3) = 1
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.257) stop 'consistency check #1 failed'
@@ -29363,7 +29135,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1008
+      irot = 996
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -29378,7 +29150,7 @@
       x = 66
       y = 0
       z = -201
-      irot = 1008
+      irot = 996
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -29546,7 +29318,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1009
+      irot = 997
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -29561,7 +29333,7 @@
       x = 68
       y = 0
       z = -197.5
-      irot = 1009
+      irot = 997
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -29575,7 +29347,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1010
+      irot = 998
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -29590,7 +29362,7 @@
       x = 68
       y = 0
       z = -201
-      irot = 1010
+      irot = 998
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -29758,7 +29530,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1011
+      irot = 999
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -29773,7 +29545,7 @@
       x = 70
       y = 0
       z = -197.5
-      irot = 1011
+      irot = 999
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -29787,7 +29559,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1012
+      irot = 1000
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -29802,7 +29574,7 @@
       x = 70
       y = 0
       z = -201
-      irot = 1012
+      irot = 1000
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -29970,7 +29742,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1013
+      irot = 1001
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -29985,7 +29757,7 @@
       x = 72
       y = 0
       z = -197.5
-      irot = 1013
+      irot = 1001
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -29999,7 +29771,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1014
+      irot = 1002
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30014,7 +29786,7 @@
       x = 72
       y = 0
       z = -201
-      irot = 1014
+      irot = 1002
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -30182,7 +29954,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1015
+      irot = 1003
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30197,7 +29969,7 @@
       x = 74
       y = 0
       z = -197.5
-      irot = 1015
+      irot = 1003
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -30211,7 +29983,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1016
+      irot = 1004
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30226,7 +29998,7 @@
       x = 74
       y = 0
       z = -201
-      irot = 1016
+      irot = 1004
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -30394,7 +30166,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1017
+      irot = 1005
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30409,7 +30181,7 @@
       x = 76
       y = 0
       z = -197.5
-      irot = 1017
+      irot = 1005
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -30423,7 +30195,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1018
+      irot = 1006
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30438,7 +30210,7 @@
       x = 76
       y = 0
       z = -201
-      irot = 1018
+      irot = 1006
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -30606,7 +30378,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1019
+      irot = 1007
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30621,7 +30393,7 @@
       x = 79.62
       y = 0
       z = -200
-      irot = 1019
+      irot = 1007
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -30789,7 +30561,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1020
+      irot = 1008
       theta1 = 90
       phi1 = 0
       theta2 = 90
@@ -30804,7 +30576,7 @@
       x = 84.85
       y = 0
       z = -200
-      irot = 1020
+      irot = 1008
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31215,7 +30987,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.301) stop 'consistency check #1 failed'
 
-      irot = 1021
+      irot = 1009
       theta1 = 101.6
       phi1 = 0
       theta2 = 90
@@ -31230,7 +31002,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1021
+      irot = 1009
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31266,7 +31038,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.302) stop 'consistency check #1 failed'
 
-      irot = 1022
+      irot = 1010
       theta1 = 101.6
       phi1 = 0
       theta2 = 90
@@ -31281,7 +31053,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1022
+      irot = 1010
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31317,7 +31089,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.303) stop 'consistency check #1 failed'
 
-      irot = 1023
+      irot = 1011
       theta1 = 101.6
       phi1 = 0
       theta2 = 90
@@ -31332,7 +31104,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1023
+      irot = 1011
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31368,7 +31140,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.304) stop 'consistency check #1 failed'
 
-      irot = 1024
+      irot = 1012
       theta1 = 101.6
       phi1 = 0
       theta2 = 90
@@ -31383,7 +31155,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1024
+      irot = 1012
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31419,7 +31191,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.305) stop 'consistency check #1 failed'
 
-      irot = 1025
+      irot = 1013
       theta1 = 101.6
       phi1 = 0
       theta2 = 90
@@ -31434,7 +31206,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1025
+      irot = 1013
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31470,7 +31242,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.306) stop 'consistency check #1 failed'
 
-      irot = 1026
+      irot = 1014
       theta1 = 101.6
       phi1 = 0
       theta2 = 90
@@ -31485,7 +31257,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1026
+      irot = 1014
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31521,7 +31293,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.307) stop 'consistency check #1 failed'
 
-      irot = 1027
+      irot = 1015
       theta1 = 101.6
       phi1 = 0
       theta2 = 90
@@ -31536,7 +31308,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1027
+      irot = 1015
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31572,7 +31344,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.308) stop 'consistency check #1 failed'
 
-      irot = 1028
+      irot = 1016
       theta1 = 101.6
       phi1 = 0
       theta2 = 90
@@ -31587,7 +31359,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1028
+      irot = 1016
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31623,7 +31395,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.309) stop 'consistency check #1 failed'
 
-      irot = 1029
+      irot = 1017
       theta1 = 101.6
       phi1 = 0
       theta2 = 90
@@ -31638,7 +31410,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1029
+      irot = 1017
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31674,7 +31446,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.310) stop 'consistency check #1 failed'
 
-      irot = 1030
+      irot = 1018
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -31689,7 +31461,7 @@
       x = 104.5
       y = -46.5266
       z = 14.09
-      irot = 1030
+      irot = 1018
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31725,7 +31497,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.311) stop 'consistency check #1 failed'
 
-      irot = 1031
+      irot = 1019
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -31740,7 +31512,7 @@
       x = 104.5
       y = -46.5266
       z = 14.09
-      irot = 1031
+      irot = 1019
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31776,7 +31548,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.312) stop 'consistency check #1 failed'
 
-      irot = 1032
+      irot = 1020
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -31791,7 +31563,7 @@
       x = 104.5
       y = -46.5266
       z = 14.09
-      irot = 1032
+      irot = 1020
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31827,7 +31599,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.313) stop 'consistency check #1 failed'
 
-      irot = 1033
+      irot = 1021
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -31842,7 +31614,7 @@
       x = 104.5
       y = -46.5266
       z = 14.09
-      irot = 1033
+      irot = 1021
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31878,7 +31650,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.314) stop 'consistency check #1 failed'
 
-      irot = 1034
+      irot = 1022
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -31893,7 +31665,7 @@
       x = 104.5
       y = -46.5266
       z = 14.09
-      irot = 1034
+      irot = 1022
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31929,7 +31701,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.315) stop 'consistency check #1 failed'
 
-      irot = 1035
+      irot = 1023
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -31944,7 +31716,7 @@
       x = 104.5
       y = -46.5266
       z = 14.09
-      irot = 1035
+      irot = 1023
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -31980,7 +31752,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.316) stop 'consistency check #1 failed'
 
-      irot = 1036
+      irot = 1024
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -31995,7 +31767,7 @@
       x = 104.5
       y = -46.5266
       z = 14.09
-      irot = 1036
+      irot = 1024
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -32031,7 +31803,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.317) stop 'consistency check #1 failed'
 
-      irot = 1037
+      irot = 1025
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -32046,7 +31818,7 @@
       x = 104.5
       y = -46.5266
       z = 14.09
-      irot = 1037
+      irot = 1025
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -32082,7 +31854,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.318) stop 'consistency check #1 failed'
 
-      irot = 1038
+      irot = 1026
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -32097,7 +31869,7 @@
       x = 104.5
       y = -46.5266
       z = 14.09
-      irot = 1038
+      irot = 1026
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -32133,7 +31905,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.319) stop 'consistency check #1 failed'
 
-      irot = 1039
+      irot = 1027
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -32148,7 +31920,7 @@
       x = 104.5
       y = -46.5266
       z = 14.09
-      irot = 1039
+      irot = 1027
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -32184,7 +31956,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.320) stop 'consistency check #1 failed'
 
-      irot = 1040
+      irot = 1028
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -32199,7 +31971,7 @@
       x = 104.5
       y = -46.5266
       z = 14.09
-      irot = 1040
+      irot = 1028
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -32235,7 +32007,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.321) stop 'consistency check #1 failed'
 
-      irot = 1041
+      irot = 1029
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -32250,7 +32022,7 @@
       x = 104.5
       y = -46.5266
       z = 14.09
-      irot = 1041
+      irot = 1029
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -32286,7 +32058,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.322) stop 'consistency check #1 failed'
 
-      irot = 1042
+      irot = 1030
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -32301,7 +32073,7 @@
       x = 104.5
       y = -46.5266
       z = 14.09
-      irot = 1042
+      irot = 1030
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -32337,7 +32109,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.323) stop 'consistency check #1 failed'
 
-      irot = 1043
+      irot = 1031
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -32352,7 +32124,7 @@
       x = 104.5
       y = -46.5266
       z = 14.09
-      irot = 1043
+      irot = 1031
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -32388,7 +32160,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.324) stop 'consistency check #1 failed'
 
-      irot = 1044
+      irot = 1032
       theta1 = 101.6
       phi1 = -24
       theta2 = 90
@@ -32403,6 +32175,234 @@
       x = 104.5
       y = -46.5266
       z = 14.09
+      irot = 1032
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1033
+      theta1 = 101.6
+      phi1 = 0
+      theta2 = 90
+      phi2 = 90
+      theta3 = 11.6
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'CM11'
+      nr = 2
+      chmoth = 'CESI'
+      x = 114.39
+      y = 0
+      z = 14.09
+      irot = 1033
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1034
+      theta1 = 101.6
+      phi1 = 0
+      theta2 = 90
+      phi2 = 90
+      theta3 = 11.6
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'CM12'
+      nr = 2
+      chmoth = 'CESI'
+      x = 114.39
+      y = 0
+      z = 14.09
+      irot = 1034
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1035
+      theta1 = 101.6
+      phi1 = 0
+      theta2 = 90
+      phi2 = 90
+      theta3 = 11.6
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'CM13'
+      nr = 2
+      chmoth = 'CESI'
+      x = 114.39
+      y = 0
+      z = 14.09
+      irot = 1035
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1036
+      theta1 = 101.6
+      phi1 = 0
+      theta2 = 90
+      phi2 = 90
+      theta3 = 11.6
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'CM14'
+      nr = 2
+      chmoth = 'CESI'
+      x = 114.39
+      y = 0
+      z = 14.09
+      irot = 1036
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1037
+      theta1 = 101.6
+      phi1 = 0
+      theta2 = 90
+      phi2 = 90
+      theta3 = 11.6
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'CM15'
+      nr = 2
+      chmoth = 'CESI'
+      x = 114.39
+      y = 0
+      z = 14.09
+      irot = 1037
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1038
+      theta1 = 101.6
+      phi1 = 0
+      theta2 = 90
+      phi2 = 90
+      theta3 = 11.6
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'CM16'
+      nr = 2
+      chmoth = 'CESI'
+      x = 114.39
+      y = 0
+      z = 14.09
+      irot = 1038
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1039
+      theta1 = 101.6
+      phi1 = 0
+      theta2 = 90
+      phi2 = 90
+      theta3 = 11.6
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'CM17'
+      nr = 2
+      chmoth = 'CESI'
+      x = 114.39
+      y = 0
+      z = 14.09
+      irot = 1039
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1040
+      theta1 = 101.6
+      phi1 = 0
+      theta2 = 90
+      phi2 = 90
+      theta3 = 11.6
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'CM18'
+      nr = 2
+      chmoth = 'CESI'
+      x = 114.39
+      y = 0
+      z = 14.09
+      irot = 1040
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1041
+      theta1 = 101.6
+      phi1 = 0
+      theta2 = 90
+      phi2 = 90
+      theta3 = 11.6
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'CM19'
+      nr = 2
+      chmoth = 'CESI'
+      x = 114.39
+      y = 0
+      z = 14.09
+      irot = 1041
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1042
+      theta1 = 101.6
+      phi1 = 0
+      theta2 = 90
+      phi2 = 90
+      theta3 = 11.6
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'CM1A'
+      nr = 2
+      chmoth = 'CESI'
+      x = 114.39
+      y = 0
+      z = 14.09
+      irot = 1042
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1043
+      theta1 = 101.6
+      phi1 = 0
+      theta2 = 90
+      phi2 = 90
+      theta3 = 11.6
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'CM1B'
+      nr = 2
+      chmoth = 'CESI'
+      x = 114.39
+      y = 0
+      z = 14.09
+      irot = 1043
+      chonly = 'ONLY'
+      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
+
+      irot = 1044
+      theta1 = 101.6
+      phi1 = 0
+      theta2 = 90
+      phi2 = 90
+      theta3 = 11.6
+      phi3 = 0
+      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
+
+      chname = 'CM1C'
+      nr = 2
+      chmoth = 'CESI'
+      x = 114.39
+      y = 0
+      z = 14.09
       irot = 1044
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -32416,7 +32416,7 @@
       phi3 = 0
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
-      chname = 'CM11'
+      chname = 'CM1D'
       nr = 2
       chmoth = 'CESI'
       x = 114.39
@@ -32435,7 +32435,7 @@
       phi3 = 0
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
-      chname = 'CM12'
+      chname = 'CM1E'
       nr = 2
       chmoth = 'CESI'
       x = 114.39
@@ -32454,7 +32454,7 @@
       phi3 = 0
       call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
 
-      chname = 'CM13'
+      chname = 'CM1F'
       nr = 2
       chmoth = 'CESI'
       x = 114.39
@@ -32465,234 +32465,6 @@
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
       irot = 1048
-      theta1 = 101.6
-      phi1 = 0
-      theta2 = 90
-      phi2 = 90
-      theta3 = 11.6
-      phi3 = 0
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'CM14'
-      nr = 2
-      chmoth = 'CESI'
-      x = 114.39
-      y = 0
-      z = 14.09
-      irot = 1048
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 1049
-      theta1 = 101.6
-      phi1 = 0
-      theta2 = 90
-      phi2 = 90
-      theta3 = 11.6
-      phi3 = 0
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'CM15'
-      nr = 2
-      chmoth = 'CESI'
-      x = 114.39
-      y = 0
-      z = 14.09
-      irot = 1049
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 1050
-      theta1 = 101.6
-      phi1 = 0
-      theta2 = 90
-      phi2 = 90
-      theta3 = 11.6
-      phi3 = 0
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'CM16'
-      nr = 2
-      chmoth = 'CESI'
-      x = 114.39
-      y = 0
-      z = 14.09
-      irot = 1050
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 1051
-      theta1 = 101.6
-      phi1 = 0
-      theta2 = 90
-      phi2 = 90
-      theta3 = 11.6
-      phi3 = 0
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'CM17'
-      nr = 2
-      chmoth = 'CESI'
-      x = 114.39
-      y = 0
-      z = 14.09
-      irot = 1051
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 1052
-      theta1 = 101.6
-      phi1 = 0
-      theta2 = 90
-      phi2 = 90
-      theta3 = 11.6
-      phi3 = 0
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'CM18'
-      nr = 2
-      chmoth = 'CESI'
-      x = 114.39
-      y = 0
-      z = 14.09
-      irot = 1052
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 1053
-      theta1 = 101.6
-      phi1 = 0
-      theta2 = 90
-      phi2 = 90
-      theta3 = 11.6
-      phi3 = 0
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'CM19'
-      nr = 2
-      chmoth = 'CESI'
-      x = 114.39
-      y = 0
-      z = 14.09
-      irot = 1053
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 1054
-      theta1 = 101.6
-      phi1 = 0
-      theta2 = 90
-      phi2 = 90
-      theta3 = 11.6
-      phi3 = 0
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'CM1A'
-      nr = 2
-      chmoth = 'CESI'
-      x = 114.39
-      y = 0
-      z = 14.09
-      irot = 1054
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 1055
-      theta1 = 101.6
-      phi1 = 0
-      theta2 = 90
-      phi2 = 90
-      theta3 = 11.6
-      phi3 = 0
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'CM1B'
-      nr = 2
-      chmoth = 'CESI'
-      x = 114.39
-      y = 0
-      z = 14.09
-      irot = 1055
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 1056
-      theta1 = 101.6
-      phi1 = 0
-      theta2 = 90
-      phi2 = 90
-      theta3 = 11.6
-      phi3 = 0
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'CM1C'
-      nr = 2
-      chmoth = 'CESI'
-      x = 114.39
-      y = 0
-      z = 14.09
-      irot = 1056
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 1057
-      theta1 = 101.6
-      phi1 = 0
-      theta2 = 90
-      phi2 = 90
-      theta3 = 11.6
-      phi3 = 0
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'CM1D'
-      nr = 2
-      chmoth = 'CESI'
-      x = 114.39
-      y = 0
-      z = 14.09
-      irot = 1057
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 1058
-      theta1 = 101.6
-      phi1 = 0
-      theta2 = 90
-      phi2 = 90
-      theta3 = 11.6
-      phi3 = 0
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'CM1E'
-      nr = 2
-      chmoth = 'CESI'
-      x = 114.39
-      y = 0
-      z = 14.09
-      irot = 1058
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 1059
-      theta1 = 101.6
-      phi1 = 0
-      theta2 = 90
-      phi2 = 90
-      theta3 = 11.6
-      phi3 = 0
-      call gsrotm(irot,theta1,phi1,theta2,phi2,theta3,phi3)
-
-      chname = 'CM1F'
-      nr = 2
-      chmoth = 'CESI'
-      x = 114.39
-      y = 0
-      z = 14.09
-      irot = 1059
-      chonly = 'ONLY'
-      call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
-
-      irot = 1060
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32707,11 +32479,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1060
+      irot = 1048
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1061
+      irot = 1049
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32726,11 +32498,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1061
+      irot = 1049
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1062
+      irot = 1050
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32745,11 +32517,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1062
+      irot = 1050
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1063
+      irot = 1051
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32764,11 +32536,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1063
+      irot = 1051
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1064
+      irot = 1052
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32783,11 +32555,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1064
+      irot = 1052
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1065
+      irot = 1053
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32802,11 +32574,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1065
+      irot = 1053
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1066
+      irot = 1054
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32821,11 +32593,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1066
+      irot = 1054
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1067
+      irot = 1055
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32840,11 +32612,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1067
+      irot = 1055
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1068
+      irot = 1056
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32859,11 +32631,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1068
+      irot = 1056
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1069
+      irot = 1057
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32878,11 +32650,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1069
+      irot = 1057
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1070
+      irot = 1058
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32897,11 +32669,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1070
+      irot = 1058
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1071
+      irot = 1059
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32916,11 +32688,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1071
+      irot = 1059
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1072
+      irot = 1060
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32935,11 +32707,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1072
+      irot = 1060
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1073
+      irot = 1061
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32954,11 +32726,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1073
+      irot = 1061
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1074
+      irot = 1062
       theta1 = 101.6
       phi1 = 24
       theta2 = 90
@@ -32973,11 +32745,11 @@
       x = 104.5
       y = 46.5266
       z = 14.09
-      irot = 1074
+      irot = 1062
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1075
+      irot = 1063
       theta1 = 90
       phi1 = 72
       theta2 = 90
@@ -32992,11 +32764,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1075
+      irot = 1063
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1076
+      irot = 1064
       theta1 = 90
       phi1 = 144
       theta2 = 90
@@ -33011,11 +32783,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1076
+      irot = 1064
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1077
+      irot = 1065
       theta1 = 90
       phi1 = -144
       theta2 = 90
@@ -33030,11 +32802,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1077
+      irot = 1065
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1078
+      irot = 1066
       theta1 = 90
       phi1 = -72
       theta2 = 90
@@ -33049,7 +32821,7 @@
       x = 0
       y = 0
       z = 0
-      irot = 1078
+      irot = 1066
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33137,7 +32909,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.326) stop 'consistency check #1 failed'
 
-      irot = 1079
+      irot = 1067
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33152,7 +32924,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1079
+      irot = 1067
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33188,7 +32960,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.327) stop 'consistency check #1 failed'
 
-      irot = 1080
+      irot = 1068
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33203,7 +32975,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1080
+      irot = 1068
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33239,7 +33011,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.328) stop 'consistency check #1 failed'
 
-      irot = 1081
+      irot = 1069
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33254,7 +33026,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1081
+      irot = 1069
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33290,7 +33062,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.329) stop 'consistency check #1 failed'
 
-      irot = 1082
+      irot = 1070
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33305,7 +33077,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1082
+      irot = 1070
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33341,7 +33113,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.330) stop 'consistency check #1 failed'
 
-      irot = 1083
+      irot = 1071
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33356,7 +33128,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1083
+      irot = 1071
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33392,7 +33164,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.331) stop 'consistency check #1 failed'
 
-      irot = 1084
+      irot = 1072
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33407,7 +33179,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1084
+      irot = 1072
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33443,7 +33215,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.332) stop 'consistency check #1 failed'
 
-      irot = 1085
+      irot = 1073
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33458,7 +33230,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1085
+      irot = 1073
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33494,7 +33266,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.333) stop 'consistency check #1 failed'
 
-      irot = 1086
+      irot = 1074
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33509,7 +33281,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1086
+      irot = 1074
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33545,7 +33317,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.334) stop 'consistency check #1 failed'
 
-      irot = 1087
+      irot = 1075
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33560,7 +33332,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1087
+      irot = 1075
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33596,7 +33368,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.335) stop 'consistency check #1 failed'
 
-      irot = 1088
+      irot = 1076
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33611,7 +33383,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1088
+      irot = 1076
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33647,7 +33419,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.336) stop 'consistency check #1 failed'
 
-      irot = 1089
+      irot = 1077
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33662,7 +33434,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1089
+      irot = 1077
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33698,7 +33470,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.337) stop 'consistency check #1 failed'
 
-      irot = 1090
+      irot = 1078
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33713,7 +33485,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1090
+      irot = 1078
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33749,7 +33521,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.338) stop 'consistency check #1 failed'
 
-      irot = 1091
+      irot = 1079
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33764,7 +33536,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1091
+      irot = 1079
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33800,7 +33572,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.339) stop 'consistency check #1 failed'
 
-      irot = 1092
+      irot = 1080
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33815,7 +33587,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1092
+      irot = 1080
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33851,7 +33623,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.340) stop 'consistency check #1 failed'
 
-      irot = 1093
+      irot = 1081
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33866,7 +33638,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1093
+      irot = 1081
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33902,7 +33674,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.341) stop 'consistency check #1 failed'
 
-      irot = 1094
+      irot = 1082
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33917,7 +33689,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1094
+      irot = 1082
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -33953,7 +33725,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.342) stop 'consistency check #1 failed'
 
-      irot = 1095
+      irot = 1083
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -33968,7 +33740,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1095
+      irot = 1083
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -34004,7 +33776,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.343) stop 'consistency check #1 failed'
 
-      irot = 1096
+      irot = 1084
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -34019,7 +33791,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1096
+      irot = 1084
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -34055,7 +33827,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.344) stop 'consistency check #1 failed'
 
-      irot = 1097
+      irot = 1085
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -34070,7 +33842,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1097
+      irot = 1085
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -34106,7 +33878,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.345) stop 'consistency check #1 failed'
 
-      irot = 1098
+      irot = 1086
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -34121,7 +33893,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1098
+      irot = 1086
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -34157,7 +33929,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.346) stop 'consistency check #1 failed'
 
-      irot = 1099
+      irot = 1087
       theta1 = 123.1
       phi1 = 0
       theta2 = 90
@@ -34172,7 +33944,7 @@
       x = 114.39
       y = 0
       z = 14.09
-      irot = 1099
+      irot = 1087
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -34212,7 +33984,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.347) stop 'consistency check #1 failed'
 
-      irot = 1100
+      irot = 1088
       theta1 = 132
       phi1 = -180
       theta2 = 90
@@ -34227,7 +33999,7 @@
       x = 118.39
       y = 0
       z = 51.02
-      irot = 1100
+      irot = 1088
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -34284,7 +34056,7 @@
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1101
+      irot = 1089
       theta1 = 90
       phi1 = 24
       theta2 = 90
@@ -34299,11 +34071,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1101
+      irot = 1089
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1102
+      irot = 1090
       theta1 = 90
       phi1 = 48
       theta2 = 90
@@ -34318,11 +34090,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1102
+      irot = 1090
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1103
+      irot = 1091
       theta1 = 90
       phi1 = 72
       theta2 = 90
@@ -34337,11 +34109,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1103
+      irot = 1091
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1104
+      irot = 1092
       theta1 = 90
       phi1 = 96
       theta2 = 90
@@ -34356,11 +34128,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1104
+      irot = 1092
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1105
+      irot = 1093
       theta1 = 90
       phi1 = 120
       theta2 = 90
@@ -34375,11 +34147,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1105
+      irot = 1093
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1106
+      irot = 1094
       theta1 = 90
       phi1 = 144
       theta2 = 90
@@ -34394,11 +34166,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1106
+      irot = 1094
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1107
+      irot = 1095
       theta1 = 90
       phi1 = 168
       theta2 = 90
@@ -34413,11 +34185,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1107
+      irot = 1095
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1108
+      irot = 1096
       theta1 = 90
       phi1 = -168
       theta2 = 90
@@ -34432,11 +34204,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1108
+      irot = 1096
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1109
+      irot = 1097
       theta1 = 90
       phi1 = -144
       theta2 = 90
@@ -34451,11 +34223,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1109
+      irot = 1097
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1110
+      irot = 1098
       theta1 = 90
       phi1 = -120
       theta2 = 90
@@ -34470,11 +34242,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1110
+      irot = 1098
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1111
+      irot = 1099
       theta1 = 90
       phi1 = -96
       theta2 = 90
@@ -34489,11 +34261,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1111
+      irot = 1099
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1112
+      irot = 1100
       theta1 = 90
       phi1 = -72
       theta2 = 90
@@ -34508,11 +34280,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1112
+      irot = 1100
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1113
+      irot = 1101
       theta1 = 90
       phi1 = -48
       theta2 = 90
@@ -34527,11 +34299,11 @@
       x = 0
       y = 0
       z = 0
-      irot = 1113
+      irot = 1101
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
-      irot = 1114
+      irot = 1102
       theta1 = 90
       phi1 = -24
       theta2 = 90
@@ -34546,7 +34318,7 @@
       x = 0
       y = 0
       z = 0
-      irot = 1114
+      irot = 1102
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -34575,7 +34347,7 @@
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.349) stop 'consistency check #1 failed'
 
-      irot = 1115
+      irot = 1103
       theta1 = 90
       phi1 = -90
       theta2 = 90
@@ -34590,7 +34362,7 @@
       x = 150
       y = -350
       z = 117.52
-      irot = 1115
+      irot = 1103
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
 
@@ -36265,10 +36037,10 @@
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    1,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,   44,    0,    0,   94,    0,    0,  151,    0,
-     +     0,    0, 1027,    0,    0, 1126,    0,    0, 1232,    0,
-     +     0, 1345,    0,    0, 1465,    0,    0,    0, 1592,    0,
-     +     0, 1758,    0,    0, 1931,    0,    0, 2111,    0,    0,
-     +  2298,    0,    0, 2492,    0,    0, 2693,    0,    0, 2901,
+     +     0,    0, 1015,    0,    0, 1113,    0,    0, 1218,    0,
+     +     0, 1330,    0,    0, 1449,    0,    0,    0, 1575,    0,
+     +     0, 1740,    0,    0, 1912,    0,    0, 2091,    0,    0,
+     +  2277,    0,    0, 2470,    0,    0, 2670,    0,    0, 2877,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0/
       data (istart(i),i=201,300) /
@@ -36291,7 +36063,7 @@
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0/
-      integer lookup(3115)
+      integer lookup(3090)
       data (lookup(i),i=1,100) /
      +     1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
      +     1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -36316,14 +36088,14 @@
      +     4,    4,    4,    4,    4,    4,    4,    4,    4,    4/
       data (lookup(i),i=201,300) /
      +     4,    4,    4,    4,    4,    4,    4,    4,    4,    4,
-     +     4,    4,    4,    4,    5,    5,    5,    5,    5,    5,
+     +     4,    4,    4,    5,    5,    5,    5,    5,    5,    5,
      +     5,    5,    5,    5,    5,    5,    5,    5,    5,    5,
      +     5,    5,    5,    5,    5,    5,    5,    5,    5,    5,
      +     5,    5,    5,    5,    5,    5,    5,    5,    5,    5,
      +     5,    5,    5,    5,    5,    5,    5,    5,    5,    5,
      +     5,    5,    5,    5,    5,    5,    5,    5,    5,    5,
      +     5,    5,    5,    5,    5,    5,    5,    5,    5,    5,
-     +     5,    5,    5,    5,    5,    6,    6,    6,    6,    6,
+     +     5,    5,    5,    6,    6,    6,    6,    6,    6,    6,
      +     6,    6,    6,    6,    6,    6,    6,    6,    6,    6/
       data (lookup(i),i=301,400) /
      +     6,    6,    6,    6,    6,    6,    6,    6,    6,    6,
@@ -36332,7 +36104,7 @@
      +     6,    6,    6,    6,    6,    6,    6,    6,    6,    6,
      +     6,    6,    6,    6,    6,    6,    6,    6,    6,    6,
      +     6,    6,    6,    6,    6,    6,    6,    6,    6,    6,
-     +     6,    6,    6,    7,    7,    7,    7,    7,    7,    7,
+     +     7,    7,    7,    7,    7,    7,    7,    7,    7,    7,
      +     7,    7,    7,    7,    7,    7,    7,    7,    7,    7,
      +     7,    7,    7,    7,    7,    7,    7,    7,    7,    7,
      +     7,    7,    7,    7,    7,    7,    7,    7,    7,    7/
@@ -36341,7 +36113,7 @@
      +     7,    7,    7,    7,    7,    7,    7,    7,    7,    7,
      +     7,    7,    7,    7,    7,    7,    7,    7,    7,    7,
      +     7,    7,    7,    7,    7,    7,    7,    7,    7,    7,
-     +     7,    7,    7,    7,    7,    7,    7,    7,   13,   13,
+     +     7,    7,    7,    7,   13,   13,   13,   13,   13,   13,
      +    13,   13,   13,   13,   13,   13,   13,   13,   13,   13,
      +    13,   13,   13,   13,   13,   13,   13,   13,   13,   13,
      +    13,   13,   13,   13,   13,   13,   13,   13,   13,   13,
@@ -36355,8 +36127,8 @@
      +    13,   13,   13,   13,   13,   13,   13,   13,   13,   13,
      +    13,   13,   13,   13,   13,   13,   13,   13,   13,   13,
      +    13,   13,   13,   13,   13,   13,   13,   13,   13,   13,
-     +    13,   13,   13,   13,   13,   13,   13,   13,   13,   13,
-     +    13,   13,   14,   14,   14,   14,   14,   14,   14,   14,
+     +    13,   13,   13,   13,   13,   13,   14,   14,   14,   14,
+     +    14,   14,   14,   14,   14,   14,   14,   14,   14,   14,
      +    14,   14,   14,   14,   14,   14,   14,   14,   14,   14/
       data (lookup(i),i=601,700) /
      +    14,   14,   14,   14,   14,   14,   14,   14,   14,   14,
@@ -36371,8 +36143,8 @@
      +    14,   14,   14,   14,   14,   14,   14,   14,   14,   14/
       data (lookup(i),i=701,800) /
      +    14,   14,   14,   14,   14,   14,   14,   14,   14,   14,
-     +    14,   14,   14,   14,   14,   14,   14,   14,   14,   14,
-     +    14,   14,   14,   15,   15,   15,   15,   15,   15,   15,
+     +    14,   14,   14,   14,   14,   15,   15,   15,   15,   15,
+     +    15,   15,   15,   15,   15,   15,   15,   15,   15,   15,
      +    15,   15,   15,   15,   15,   15,   15,   15,   15,   15,
      +    15,   15,   15,   15,   15,   15,   15,   15,   15,   15,
      +    15,   15,   15,   15,   15,   15,   15,   15,   15,   15,
@@ -36387,8 +36159,8 @@
      +    15,   15,   15,   15,   15,   15,   15,   15,   15,   15,
      +    15,   15,   15,   15,   15,   15,   15,   15,   15,   15,
      +    15,   15,   15,   15,   15,   15,   15,   15,   15,   15,
-     +    15,   15,   15,   15,   15,   15,   15,   15,   15,   15,
      +    15,   16,   16,   16,   16,   16,   16,   16,   16,   16,
+     +    16,   16,   16,   16,   16,   16,   16,   16,   16,   16,
      +    16,   16,   16,   16,   16,   16,   16,   16,   16,   16,
      +    16,   16,   16,   16,   16,   16,   16,   16,   16,   16/
       data (lookup(i),i=901,1000) /
@@ -36404,8 +36176,8 @@
      +    16,   16,   16,   16,   16,   16,   16,   16,   16,   16/
       data (lookup(i),i=1001,1100) /
      +    16,   16,   16,   16,   16,   16,   16,   16,   16,   16,
-     +    16,   16,   16,   16,   16,   16,   16,   16,   16,   16,
-     +    16,   16,   16,   16,   16,   16,    8,    8,    8,    8,
+     +    16,   16,   16,   16,    8,    8,    8,    8,    8,    8,
+     +     8,    8,    8,    8,    8,    8,    8,    8,    8,    8,
      +     8,    8,    8,    8,    8,    8,    8,    8,    8,    8,
      +     8,    8,    8,    8,    8,    8,    8,    8,    8,    8,
      +     8,    8,    8,    8,    8,    8,    8,    8,    8,    8,
@@ -36415,8 +36187,8 @@
      +     8,    8,    8,    8,    8,    8,    8,    8,    8,    8/
       data (lookup(i),i=1101,1200) /
      +     8,    8,    8,    8,    8,    8,    8,    8,    8,    8,
-     +     8,    8,    8,    8,    8,    8,    8,    8,    8,    8,
-     +     8,    8,    8,    8,    8,    9,    9,    9,    9,    9,
+     +     8,    8,    9,    9,    9,    9,    9,    9,    9,    9,
+     +     9,    9,    9,    9,    9,    9,    9,    9,    9,    9,
      +     9,    9,    9,    9,    9,    9,    9,    9,    9,    9,
      +     9,    9,    9,    9,    9,    9,    9,    9,    9,    9,
      +     9,    9,    9,    9,    9,    9,    9,    9,    9,    9,
@@ -36426,9 +36198,9 @@
      +     9,    9,    9,    9,    9,    9,    9,    9,    9,    9/
       data (lookup(i),i=1201,1300) /
      +     9,    9,    9,    9,    9,    9,    9,    9,    9,    9,
-     +     9,    9,    9,    9,    9,    9,    9,    9,    9,    9,
-     +     9,    9,    9,    9,    9,    9,    9,    9,    9,    9,
-     +     9,   10,   10,   10,   10,   10,   10,   10,   10,   10,
+     +     9,    9,    9,    9,    9,    9,    9,   10,   10,   10,
+     +    10,   10,   10,   10,   10,   10,   10,   10,   10,   10,
+     +    10,   10,   10,   10,   10,   10,   10,   10,   10,   10,
      +    10,   10,   10,   10,   10,   10,   10,   10,   10,   10,
      +    10,   10,   10,   10,   10,   10,   10,   10,   10,   10,
      +    10,   10,   10,   10,   10,   10,   10,   10,   10,   10,
@@ -36438,9 +36210,9 @@
       data (lookup(i),i=1301,1400) /
      +    10,   10,   10,   10,   10,   10,   10,   10,   10,   10,
      +    10,   10,   10,   10,   10,   10,   10,   10,   10,   10,
-     +    10,   10,   10,   10,   10,   10,   10,   10,   10,   10,
-     +    10,   10,   10,   10,   10,   10,   10,   10,   10,   10,
-     +    10,   10,   10,   10,   11,   11,   11,   11,   11,   11,
+     +    10,   10,   10,   10,   10,   10,   10,   10,   10,   11,
+     +    11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
+     +    11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
      +    11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
      +    11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
      +    11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
@@ -36451,9 +36223,9 @@
      +    11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
      +    11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
      +    11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
-     +    11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
-     +    11,   11,   11,   11,   11,   11,   11,   11,   11,   11,
-     +    11,   11,   11,   11,   12,   12,   12,   12,   12,   12,
+     +    11,   11,   11,   11,   11,   11,   11,   11,   12,   12,
+     +    12,   12,   12,   12,   12,   12,   12,   12,   12,   12,
+     +    12,   12,   12,   12,   12,   12,   12,   12,   12,   12,
      +    12,   12,   12,   12,   12,   12,   12,   12,   12,   12,
      +    12,   12,   12,   12,   12,   12,   12,   12,   12,   12,
      +    12,   12,   12,   12,   12,   12,   12,   12,   12,   12/
@@ -36465,9 +36237,9 @@
      +    12,   12,   12,   12,   12,   12,   12,   12,   12,   12,
      +    12,   12,   12,   12,   12,   12,   12,   12,   12,   12,
      +    12,   12,   12,   12,   12,   12,   12,   12,   12,   12,
-     +    12,   12,   12,   12,   12,   12,   12,   12,   12,   12,
-     +    12,   12,   12,   12,   12,   12,   12,   12,   12,   12,
-     +    12,   17,   17,   17,   17,   17,   17,   17,   17,   17/
+     +    12,   12,   12,   12,   17,   17,   17,   17,   17,   17,
+     +    17,   17,   17,   17,   17,   17,   17,   17,   17,   17,
+     +    17,   17,   17,   17,   17,   17,   17,   17,   17,   17/
       data (lookup(i),i=1601,1700) /
      +    17,   17,   17,   17,   17,   17,   17,   17,   17,   17,
      +    17,   17,   17,   17,   17,   17,   17,   17,   17,   17,
@@ -36483,9 +36255,9 @@
      +    17,   17,   17,   17,   17,   17,   17,   17,   17,   17,
      +    17,   17,   17,   17,   17,   17,   17,   17,   17,   17,
      +    17,   17,   17,   17,   17,   17,   17,   17,   17,   17,
-     +    17,   17,   17,   17,   17,   17,   17,   17,   17,   17,
-     +    17,   17,   17,   17,   17,   17,   17,   17,   17,   17,
-     +    17,   17,   17,   17,   17,   17,   17,   18,   18,   18,
+     +    17,   17,   17,   17,   17,   17,   17,   17,   17,   18,
+     +    18,   18,   18,   18,   18,   18,   18,   18,   18,   18,
+     +    18,   18,   18,   18,   18,   18,   18,   18,   18,   18,
      +    18,   18,   18,   18,   18,   18,   18,   18,   18,   18,
      +    18,   18,   18,   18,   18,   18,   18,   18,   18,   18,
      +    18,   18,   18,   18,   18,   18,   18,   18,   18,   18,
@@ -36503,8 +36275,8 @@
      +    18,   18,   18,   18,   18,   18,   18,   18,   18,   18/
       data (lookup(i),i=1901,2000) /
      +    18,   18,   18,   18,   18,   18,   18,   18,   18,   18,
-     +    18,   18,   18,   18,   18,   18,   18,   18,   18,   18,
-     +    18,   18,   18,   18,   18,   18,   18,   18,   18,   18,
+     +    18,   19,   19,   19,   19,   19,   19,   19,   19,   19,
+     +    19,   19,   19,   19,   19,   19,   19,   19,   19,   19,
      +    19,   19,   19,   19,   19,   19,   19,   19,   19,   19,
      +    19,   19,   19,   19,   19,   19,   19,   19,   19,   19,
      +    19,   19,   19,   19,   19,   19,   19,   19,   19,   19,
@@ -36522,9 +36294,9 @@
      +    19,   19,   19,   19,   19,   19,   19,   19,   19,   19,
      +    19,   19,   19,   19,   19,   19,   19,   19,   19,   19,
      +    19,   19,   19,   19,   19,   19,   19,   19,   19,   19,
-     +    19,   19,   19,   19,   19,   19,   19,   19,   19,   19/
+     +    20,   20,   20,   20,   20,   20,   20,   20,   20,   20/
       data (lookup(i),i=2101,2200) /
-     +    19,   19,   19,   19,   19,   19,   19,   19,   19,   19,
+     +    20,   20,   20,   20,   20,   20,   20,   20,   20,   20,
      +    20,   20,   20,   20,   20,   20,   20,   20,   20,   20,
      +    20,   20,   20,   20,   20,   20,   20,   20,   20,   20,
      +    20,   20,   20,   20,   20,   20,   20,   20,   20,   20,
@@ -36542,9 +36314,9 @@
      +    20,   20,   20,   20,   20,   20,   20,   20,   20,   20,
      +    20,   20,   20,   20,   20,   20,   20,   20,   20,   20,
      +    20,   20,   20,   20,   20,   20,   20,   20,   20,   20,
-     +    20,   20,   20,   20,   20,   20,   20,   20,   20,   20,
-     +    20,   20,   20,   20,   20,   20,   20,   20,   20,   20,
-     +    20,   20,   20,   20,   20,   20,   20,   21,   21,   21/
+     +    20,   20,   20,   20,   20,   20,   21,   21,   21,   21,
+     +    21,   21,   21,   21,   21,   21,   21,   21,   21,   21,
+     +    21,   21,   21,   21,   21,   21,   21,   21,   21,   21/
       data (lookup(i),i=2301,2400) /
      +    21,   21,   21,   21,   21,   21,   21,   21,   21,   21,
      +    21,   21,   21,   21,   21,   21,   21,   21,   21,   21,
@@ -36563,10 +36335,10 @@
      +    21,   21,   21,   21,   21,   21,   21,   21,   21,   21,
      +    21,   21,   21,   21,   21,   21,   21,   21,   21,   21,
      +    21,   21,   21,   21,   21,   21,   21,   21,   21,   21,
-     +    21,   21,   21,   21,   21,   21,   21,   21,   21,   21,
-     +    21,   21,   21,   21,   21,   21,   21,   21,   21,   21,
-     +    21,   21,   21,   21,   21,   21,   21,   21,   21,   21,
-     +    21,   22,   22,   22,   22,   22,   22,   22,   22,   22/
+     +    21,   21,   21,   21,   21,   21,   21,   21,   21,   22,
+     +    22,   22,   22,   22,   22,   22,   22,   22,   22,   22,
+     +    22,   22,   22,   22,   22,   22,   22,   22,   22,   22,
+     +    22,   22,   22,   22,   22,   22,   22,   22,   22,   22/
       data (lookup(i),i=2501,2600) /
      +    22,   22,   22,   22,   22,   22,   22,   22,   22,   22,
      +    22,   22,   22,   22,   22,   22,   22,   22,   22,   22,
@@ -36585,10 +36357,10 @@
      +    22,   22,   22,   22,   22,   22,   22,   22,   22,   22,
      +    22,   22,   22,   22,   22,   22,   22,   22,   22,   22,
      +    22,   22,   22,   22,   22,   22,   22,   22,   22,   22,
-     +    22,   22,   22,   22,   22,   22,   22,   22,   22,   22,
-     +    22,   22,   22,   22,   22,   22,   22,   22,   22,   22,
-     +    22,   22,   22,   22,   22,   22,   22,   22,   22,   22,
-     +    22,   22,   23,   23,   23,   23,   23,   23,   23,   23/
+     +    22,   22,   22,   22,   22,   22,   22,   22,   22,   23,
+     +    23,   23,   23,   23,   23,   23,   23,   23,   23,   23,
+     +    23,   23,   23,   23,   23,   23,   23,   23,   23,   23,
+     +    23,   23,   23,   23,   23,   23,   23,   23,   23,   23/
       data (lookup(i),i=2701,2800) /
      +    23,   23,   23,   23,   23,   23,   23,   23,   23,   23,
      +    23,   23,   23,   23,   23,   23,   23,   23,   23,   23,
@@ -36608,9 +36380,9 @@
      +    23,   23,   23,   23,   23,   23,   23,   23,   23,   23,
      +    23,   23,   23,   23,   23,   23,   23,   23,   23,   23,
      +    23,   23,   23,   23,   23,   23,   23,   23,   23,   23,
-     +    23,   23,   23,   23,   23,   23,   23,   23,   23,   23,
-     +    23,   23,   23,   23,   23,   23,   23,   23,   23,   23,
-     +    23,   23,   23,   23,   23,   23,   23,   23,   23,   23/
+     +    23,   23,   23,   23,   23,   23,   24,   24,   24,   24,
+     +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24,
+     +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24/
       data (lookup(i),i=2901,3000) /
      +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24,
      +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24,
@@ -36622,8 +36394,7 @@
      +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24,
      +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24,
      +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24/
-      data (lookup(i),i=3001,3100) /
-     +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24,
+      data (lookup(i),i=3001,3090) /
      +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24,
      +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24,
      +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24,
@@ -36633,9 +36404,6 @@
      +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24,
      +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24,
      +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24/
-      data (lookup(i),i=3101,3115) /
-     +    24,   24,   24,   24,   24,   24,   24,   24,   24,   24,
-     +    24,   24,   24,   24,   24/
       integer level,index
       integer ring
       getRing = 0
@@ -36748,10 +36516,10 @@
      +     0,    0,    0,    0,    0,    1,    0,    0,    0,    0,
      +     0,    0,   25,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,   68,    0,    0,  118,    0,    0,  175,    0,
-     +     0,    0, 1051,    0,    0, 1150,    0,    0, 1256,    0,
-     +     0, 1369,    0,    0, 1489,    0,    0,    0, 1616,    0,
-     +     0, 1782,    0,    0, 1955,    0,    0, 2135,    0,    0,
-     +  2322,    0,    0, 2516,    0,    0, 2717,    0,    0, 2925,
+     +     0,    0, 1039,    0,    0, 1137,    0,    0, 1242,    0,
+     +     0, 1354,    0,    0, 1473,    0,    0,    0, 1599,    0,
+     +     0, 1764,    0,    0, 1936,    0,    0, 2115,    0,    0,
+     +  2301,    0,    0, 2494,    0,    0, 2694,    0,    0, 2901,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0/
       data (istart(i),i=201,300) /
@@ -36760,21 +36528,21 @@
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-     +     0,    0, 3140,    0,    0,    0,    0,    0, 3144,    0,
-     +     0,    0,    0, 3148,    0,    0,    0,    0, 3152,    0,
-     +     0,    0,    0, 3156,    0,    0,    0,    0, 3160,    0,
-     +     0,    0,    0, 3164,    0,    0,    0,    0, 3166,    0,
+     +     0,    0, 3115,    0,    0,    0,    0,    0, 3119,    0,
+     +     0,    0,    0, 3123,    0,    0,    0,    0, 3127,    0,
+     +     0,    0,    0, 3131,    0,    0,    0,    0, 3135,    0,
+     +     0,    0,    0, 3139,    0,    0,    0,    0, 3141,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0/
       data (istart(i),i=301,380) /
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-     +     0,    0,    0,    0, 3168,    0,    0,    0,    0,    0,
+     +     0,    0,    0,    0, 3143,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
      +     0,    0,    0,    0,    0,    0,    0,    0,    0,    0/
-      integer lookup(3182)
+      integer lookup(3157)
       data (lookup(i),i=1,100) /
      +     1,    2,    3,    4,    5,    6,    7,    8,    9,   10,
      +    11,   12,   13,   14,   15,   16,   17,   18,   19,   20,
@@ -36801,36 +36569,146 @@
      +    27,   28,   29,   30,   31,   32,   33,   34,   35,   36,
      +    37,   38,   39,   40,   41,   42,   43,   44,   45,   46,
      +    47,   48,   49,   50,   51,   52,   53,   54,   55,   56,
-     +    57,   58,   59,   60,   61,   62,   63,   64,    1,    2,
-     +     3,    4,    5,    6,    7,    8,    9,   10,   11,   12,
-     +    13,   14,   15,   16,   17,   18,   19,   20,   21,   22,
-     +    23,   24,   25,   26,   27,   28,   29,   30,   31,   32,
-     +    33,   34,   35,   36,   37,   38,   39,   40,   41,   42,
-     +    43,   44,   45,   46,   47,   48,   49,   50,   51,   52,
-     +    53,   54,   55,   56,   57,   58,   59,   60,   61,   62/
+     +    57,   58,   59,   60,   61,   62,   63,    1,    2,    3,
+     +     4,    5,    6,    7,    8,    9,   10,   11,   12,   13,
+     +    14,   15,   16,   17,   18,   19,   20,   21,   22,   23,
+     +    24,   25,   26,   27,   28,   29,   30,   31,   32,   33,
+     +    34,   35,   36,   37,   38,   39,   40,   41,   42,   43,
+     +    44,   45,   46,   47,   48,   49,   50,   51,   52,   53,
+     +    54,   55,   56,   57,   58,   59,   60,   61,   62,   63/
       data (lookup(i),i=301,400) /
-     +    63,   64,   65,   66,   67,   68,   69,   70,   71,    1,
-     +     2,    3,    4,    5,    6,    7,    8,    9,   10,   11,
-     +    12,   13,   14,   15,   16,   17,   18,   19,   20,   21,
-     +    22,   23,   24,   25,   26,   27,   28,   29,   30,   31,
-     +    32,   33,   34,   35,   36,   37,   38,   39,   40,   41,
-     +    42,   43,   44,   45,   46,   47,   48,   49,   50,   51,
-     +    52,   53,   54,   55,   56,   57,   58,   59,   60,   61,
-     +    62,   63,   64,   65,   66,   67,   68,   69,   70,   71,
-     +    72,   73,   74,   75,   76,   77,   78,    1,    2,    3,
-     +     4,    5,    6,    7,    8,    9,   10,   11,   12,   13/
-      data (lookup(i),i=401,500) /
+     +    64,   65,   66,   67,   68,   69,   70,    1,    2,    3,
+     +     4,    5,    6,    7,    8,    9,   10,   11,   12,   13,
      +    14,   15,   16,   17,   18,   19,   20,   21,   22,   23,
      +    24,   25,   26,   27,   28,   29,   30,   31,   32,   33,
      +    34,   35,   36,   37,   38,   39,   40,   41,   42,   43,
      +    44,   45,   46,   47,   48,   49,   50,   51,   52,   53,
      +    54,   55,   56,   57,   58,   59,   60,   61,   62,   63,
      +    64,   65,   66,   67,   68,   69,   70,   71,   72,   73,
-     +    74,   75,   76,   77,   78,   79,   80,   81,   82,   83,
-     +    84,   85,    1,    2,    3,    4,    5,    6,    7,    8,
+     +    74,   75,   76,   77,    1,    2,    3,    4,    5,    6,
+     +     7,    8,    9,   10,   11,   12,   13,   14,   15,   16/
+      data (lookup(i),i=401,500) /
+     +    17,   18,   19,   20,   21,   22,   23,   24,   25,   26,
+     +    27,   28,   29,   30,   31,   32,   33,   34,   35,   36,
+     +    37,   38,   39,   40,   41,   42,   43,   44,   45,   46,
+     +    47,   48,   49,   50,   51,   52,   53,   54,   55,   56,
+     +    57,   58,   59,   60,   61,   62,   63,   64,   65,   66,
+     +    67,   68,   69,   70,   71,   72,   73,   74,   75,   76,
+     +    77,   78,   79,   80,   81,   82,   83,   84,    1,    2,
+     +     3,    4,    5,    6,    7,    8,    9,   10,   11,   12,
+     +    13,   14,   15,   16,   17,   18,   19,   20,   21,   22,
+     +    23,   24,   25,   26,   27,   28,   29,   30,   31,   32/
+      data (lookup(i),i=501,600) /
+     +    33,   34,   35,   36,   37,   38,   39,   40,   41,   42,
+     +    43,   44,   45,   46,   47,   48,   49,   50,   51,   52,
+     +    53,   54,   55,   56,   57,   58,   59,   60,   61,   62,
+     +    63,   64,   65,   66,   67,   68,   69,   70,   71,   72,
+     +    73,   74,   75,   76,   77,   78,   79,   80,   81,   82,
+     +    83,   84,   85,   86,   87,   88,   89,   90,   91,   92,
+     +    93,   94,   95,   96,   97,   98,   99,  100,  101,  102,
+     +   103,  104,  105,  106,  107,  108,  109,  110,  111,  112,
+     +   113,  114,  115,  116,  117,  118,  119,  120,  121,  122,
+     +   123,  124,  125,  126,  127,  128,  129,  130,  131,  132/
+      data (lookup(i),i=601,700) /
+     +     1,    2,    3,    4,    5,    6,    7,    8,    9,   10,
+     +    11,   12,   13,   14,   15,   16,   17,   18,   19,   20,
+     +    21,   22,   23,   24,   25,   26,   27,   28,   29,   30,
+     +    31,   32,   33,   34,   35,   36,   37,   38,   39,   40,
+     +    41,   42,   43,   44,   45,   46,   47,   48,   49,   50,
+     +    51,   52,   53,   54,   55,   56,   57,   58,   59,   60,
+     +    61,   62,   63,   64,   65,   66,   67,   68,   69,   70,
+     +    71,   72,   73,   74,   75,   76,   77,   78,   79,   80,
+     +    81,   82,   83,   84,   85,   86,   87,   88,   89,   90,
+     +    91,   92,   93,   94,   95,   96,   97,   98,   99,  100/
+      data (lookup(i),i=701,800) /
+     +   101,  102,  103,  104,  105,  106,  107,  108,  109,  110,
+     +   111,  112,  113,  114,  115,  116,  117,  118,  119,  120,
+     +   121,  122,  123,  124,  125,  126,  127,  128,  129,  130,
+     +   131,  132,  133,  134,  135,  136,  137,  138,  139,    1,
+     +     2,    3,    4,    5,    6,    7,    8,    9,   10,   11,
+     +    12,   13,   14,   15,   16,   17,   18,   19,   20,   21,
+     +    22,   23,   24,   25,   26,   27,   28,   29,   30,   31,
+     +    32,   33,   34,   35,   36,   37,   38,   39,   40,   41,
+     +    42,   43,   44,   45,   46,   47,   48,   49,   50,   51,
+     +    52,   53,   54,   55,   56,   57,   58,   59,   60,   61/
+      data (lookup(i),i=801,900) /
+     +    62,   63,   64,   65,   66,   67,   68,   69,   70,   71,
+     +    72,   73,   74,   75,   76,   77,   78,   79,   80,   81,
+     +    82,   83,   84,   85,   86,   87,   88,   89,   90,   91,
+     +    92,   93,   94,   95,   96,   97,   98,   99,  100,  101,
+     +   102,  103,  104,  105,  106,  107,  108,  109,  110,  111,
+     +   112,  113,  114,  115,  116,  117,  118,  119,  120,  121,
+     +   122,  123,  124,  125,  126,  127,  128,  129,  130,  131,
+     +   132,  133,  134,  135,  136,  137,  138,  139,  140,  141,
+     +   142,  143,  144,  145,  146,    1,    2,    3,    4,    5,
+     +     6,    7,    8,    9,   10,   11,   12,   13,   14,   15/
+      data (lookup(i),i=901,1000) /
+     +    16,   17,   18,   19,   20,   21,   22,   23,   24,   25,
+     +    26,   27,   28,   29,   30,   31,   32,   33,   34,   35,
+     +    36,   37,   38,   39,   40,   41,   42,   43,   44,   45,
+     +    46,   47,   48,   49,   50,   51,   52,   53,   54,   55,
+     +    56,   57,   58,   59,   60,   61,   62,   63,   64,   65,
+     +    66,   67,   68,   69,   70,   71,   72,   73,   74,   75,
+     +    76,   77,   78,   79,   80,   81,   82,   83,   84,   85,
+     +    86,   87,   88,   89,   90,   91,   92,   93,   94,   95,
+     +    96,   97,   98,   99,  100,  101,  102,  103,  104,  105,
+     +   106,  107,  108,  109,  110,  111,  112,  113,  114,  115/
+      data (lookup(i),i=1001,1100) /
+     +   116,  117,  118,  119,  120,  121,  122,  123,  124,  125,
+     +   126,  127,  128,  129,  130,  131,  132,  133,  134,  135,
+     +   136,  137,  138,  139,  140,  141,  142,  143,  144,  145,
+     +   146,  147,  148,  149,  150,  151,  152,  153,    1,    2,
+     +     3,    4,    5,    6,    7,    8,    9,   10,   11,   12,
+     +    13,   14,   15,   16,   17,   18,   19,   20,   21,   22,
+     +    23,   24,   25,   26,   27,   28,   29,   30,   31,   32,
+     +    33,   34,   35,   36,   37,   38,   39,   40,   41,   42,
+     +    43,   44,   45,   46,   47,   48,   49,   50,   51,   52,
+     +    53,   54,   55,   56,   57,   58,   59,   60,   61,   62/
+      data (lookup(i),i=1101,1200) /
+     +    63,   64,   65,   66,   67,   68,   69,   70,   71,   72,
+     +    73,   74,   75,   76,   77,   78,   79,   80,   81,   82,
+     +    83,   84,   85,   86,   87,   88,   89,   90,   91,   92,
+     +    93,   94,   95,   96,   97,   98,    1,    2,    3,    4,
+     +     5,    6,    7,    8,    9,   10,   11,   12,   13,   14,
+     +    15,   16,   17,   18,   19,   20,   21,   22,   23,   24,
+     +    25,   26,   27,   28,   29,   30,   31,   32,   33,   34,
+     +    35,   36,   37,   38,   39,   40,   41,   42,   43,   44,
+     +    45,   46,   47,   48,   49,   50,   51,   52,   53,   54,
+     +    55,   56,   57,   58,   59,   60,   61,   62,   63,   64/
+      data (lookup(i),i=1201,1300) /
+     +    65,   66,   67,   68,   69,   70,   71,   72,   73,   74,
+     +    75,   76,   77,   78,   79,   80,   81,   82,   83,   84,
+     +    85,   86,   87,   88,   89,   90,   91,   92,   93,   94,
+     +    95,   96,   97,   98,   99,  100,  101,  102,  103,  104,
+     +   105,    1,    2,    3,    4,    5,    6,    7,    8,    9,
+     +    10,   11,   12,   13,   14,   15,   16,   17,   18,   19,
+     +    20,   21,   22,   23,   24,   25,   26,   27,   28,   29,
+     +    30,   31,   32,   33,   34,   35,   36,   37,   38,   39,
+     +    40,   41,   42,   43,   44,   45,   46,   47,   48,   49,
+     +    50,   51,   52,   53,   54,   55,   56,   57,   58,   59/
+      data (lookup(i),i=1301,1400) /
+     +    60,   61,   62,   63,   64,   65,   66,   67,   68,   69,
+     +    70,   71,   72,   73,   74,   75,   76,   77,   78,   79,
+     +    80,   81,   82,   83,   84,   85,   86,   87,   88,   89,
+     +    90,   91,   92,   93,   94,   95,   96,   97,   98,   99,
+     +   100,  101,  102,  103,  104,  105,  106,  107,  108,  109,
+     +   110,  111,  112,    1,    2,    3,    4,    5,    6,    7,
+     +     8,    9,   10,   11,   12,   13,   14,   15,   16,   17,
+     +    18,   19,   20,   21,   22,   23,   24,   25,   26,   27,
+     +    28,   29,   30,   31,   32,   33,   34,   35,   36,   37,
+     +    38,   39,   40,   41,   42,   43,   44,   45,   46,   47/
+      data (lookup(i),i=1401,1500) /
+     +    48,   49,   50,   51,   52,   53,   54,   55,   56,   57,
+     +    58,   59,   60,   61,   62,   63,   64,   65,   66,   67,
+     +    68,   69,   70,   71,   72,   73,   74,   75,   76,   77,
+     +    78,   79,   80,   81,   82,   83,   84,   85,   86,   87,
+     +    88,   89,   90,   91,   92,   93,   94,   95,   96,   97,
+     +    98,   99,  100,  101,  102,  103,  104,  105,  106,  107,
+     +   108,  109,  110,  111,  112,  113,  114,  115,  116,  117,
+     +   118,  119,    1,    2,    3,    4,    5,    6,    7,    8,
      +     9,   10,   11,   12,   13,   14,   15,   16,   17,   18,
      +    19,   20,   21,   22,   23,   24,   25,   26,   27,   28/
-      data (lookup(i),i=501,600) /
+      data (lookup(i),i=1501,1600) /
      +    29,   30,   31,   32,   33,   34,   35,   36,   37,   38,
      +    39,   40,   41,   42,   43,   44,   45,   46,   47,   48,
      +    49,   50,   51,   52,   53,   54,   55,   56,   57,   58,
@@ -36840,107 +36718,9 @@
      +    89,   90,   91,   92,   93,   94,   95,   96,   97,   98,
      +    99,  100,  101,  102,  103,  104,  105,  106,  107,  108,
      +   109,  110,  111,  112,  113,  114,  115,  116,  117,  118,
-     +   119,  120,  121,  122,  123,  124,  125,  126,  127,  128/
-      data (lookup(i),i=601,700) /
-     +   129,  130,  131,  132,  133,  134,    1,    2,    3,    4,
-     +     5,    6,    7,    8,    9,   10,   11,   12,   13,   14,
-     +    15,   16,   17,   18,   19,   20,   21,   22,   23,   24,
-     +    25,   26,   27,   28,   29,   30,   31,   32,   33,   34,
-     +    35,   36,   37,   38,   39,   40,   41,   42,   43,   44,
-     +    45,   46,   47,   48,   49,   50,   51,   52,   53,   54,
-     +    55,   56,   57,   58,   59,   60,   61,   62,   63,   64,
-     +    65,   66,   67,   68,   69,   70,   71,   72,   73,   74,
-     +    75,   76,   77,   78,   79,   80,   81,   82,   83,   84,
-     +    85,   86,   87,   88,   89,   90,   91,   92,   93,   94/
-      data (lookup(i),i=701,800) /
-     +    95,   96,   97,   98,   99,  100,  101,  102,  103,  104,
-     +   105,  106,  107,  108,  109,  110,  111,  112,  113,  114,
-     +   115,  116,  117,  118,  119,  120,  121,  122,  123,  124,
-     +   125,  126,  127,  128,  129,  130,  131,  132,  133,  134,
-     +   135,  136,  137,  138,  139,  140,  141,    1,    2,    3,
-     +     4,    5,    6,    7,    8,    9,   10,   11,   12,   13,
-     +    14,   15,   16,   17,   18,   19,   20,   21,   22,   23,
-     +    24,   25,   26,   27,   28,   29,   30,   31,   32,   33,
-     +    34,   35,   36,   37,   38,   39,   40,   41,   42,   43,
-     +    44,   45,   46,   47,   48,   49,   50,   51,   52,   53/
-      data (lookup(i),i=801,900) /
-     +    54,   55,   56,   57,   58,   59,   60,   61,   62,   63,
-     +    64,   65,   66,   67,   68,   69,   70,   71,   72,   73,
-     +    74,   75,   76,   77,   78,   79,   80,   81,   82,   83,
-     +    84,   85,   86,   87,   88,   89,   90,   91,   92,   93,
-     +    94,   95,   96,   97,   98,   99,  100,  101,  102,  103,
-     +   104,  105,  106,  107,  108,  109,  110,  111,  112,  113,
-     +   114,  115,  116,  117,  118,  119,  120,  121,  122,  123,
-     +   124,  125,  126,  127,  128,  129,  130,  131,  132,  133,
-     +   134,  135,  136,  137,  138,  139,  140,  141,  142,  143,
-     +   144,  145,  146,  147,  148,    1,    2,    3,    4,    5/
-      data (lookup(i),i=901,1000) /
-     +     6,    7,    8,    9,   10,   11,   12,   13,   14,   15,
-     +    16,   17,   18,   19,   20,   21,   22,   23,   24,   25,
-     +    26,   27,   28,   29,   30,   31,   32,   33,   34,   35,
-     +    36,   37,   38,   39,   40,   41,   42,   43,   44,   45,
-     +    46,   47,   48,   49,   50,   51,   52,   53,   54,   55,
-     +    56,   57,   58,   59,   60,   61,   62,   63,   64,   65,
-     +    66,   67,   68,   69,   70,   71,   72,   73,   74,   75,
-     +    76,   77,   78,   79,   80,   81,   82,   83,   84,   85,
-     +    86,   87,   88,   89,   90,   91,   92,   93,   94,   95,
-     +    96,   97,   98,   99,  100,  101,  102,  103,  104,  105/
-      data (lookup(i),i=1001,1100) /
-     +   106,  107,  108,  109,  110,  111,  112,  113,  114,  115,
-     +   116,  117,  118,  119,  120,  121,  122,  123,  124,  125,
-     +   126,  127,  128,  129,  130,  131,  132,  133,  134,  135,
-     +   136,  137,  138,  139,  140,  141,  142,  143,  144,  145,
-     +   146,  147,  148,  149,  150,  151,  152,  153,  154,  155,
-     +     1,    2,    3,    4,    5,    6,    7,    8,    9,   10,
-     +    11,   12,   13,   14,   15,   16,   17,   18,   19,   20,
-     +    21,   22,   23,   24,   25,   26,   27,   28,   29,   30,
-     +    31,   32,   33,   34,   35,   36,   37,   38,   39,   40,
-     +    41,   42,   43,   44,   45,   46,   47,   48,   49,   50/
-      data (lookup(i),i=1101,1200) /
-     +    51,   52,   53,   54,   55,   56,   57,   58,   59,   60,
-     +    61,   62,   63,   64,   65,   66,   67,   68,   69,   70,
-     +    71,   72,   73,   74,   75,   76,   77,   78,   79,   80,
-     +    81,   82,   83,   84,   85,   86,   87,   88,   89,   90,
-     +    91,   92,   93,   94,   95,   96,   97,   98,   99,    1,
-     +     2,    3,    4,    5,    6,    7,    8,    9,   10,   11,
-     +    12,   13,   14,   15,   16,   17,   18,   19,   20,   21,
-     +    22,   23,   24,   25,   26,   27,   28,   29,   30,   31,
-     +    32,   33,   34,   35,   36,   37,   38,   39,   40,   41,
-     +    42,   43,   44,   45,   46,   47,   48,   49,   50,   51/
-      data (lookup(i),i=1201,1300) /
-     +    52,   53,   54,   55,   56,   57,   58,   59,   60,   61,
-     +    62,   63,   64,   65,   66,   67,   68,   69,   70,   71,
-     +    72,   73,   74,   75,   76,   77,   78,   79,   80,   81,
-     +    82,   83,   84,   85,   86,   87,   88,   89,   90,   91,
-     +    92,   93,   94,   95,   96,   97,   98,   99,  100,  101,
-     +   102,  103,  104,  105,  106,    1,    2,    3,    4,    5,
-     +     6,    7,    8,    9,   10,   11,   12,   13,   14,   15,
-     +    16,   17,   18,   19,   20,   21,   22,   23,   24,   25,
-     +    26,   27,   28,   29,   30,   31,   32,   33,   34,   35,
-     +    36,   37,   38,   39,   40,   41,   42,   43,   44,   45/
-      data (lookup(i),i=1301,1400) /
-     +    46,   47,   48,   49,   50,   51,   52,   53,   54,   55,
-     +    56,   57,   58,   59,   60,   61,   62,   63,   64,   65,
-     +    66,   67,   68,   69,   70,   71,   72,   73,   74,   75,
-     +    76,   77,   78,   79,   80,   81,   82,   83,   84,   85,
-     +    86,   87,   88,   89,   90,   91,   92,   93,   94,   95,
-     +    96,   97,   98,   99,  100,  101,  102,  103,  104,  105,
-     +   106,  107,  108,  109,  110,  111,  112,  113,    1,    2,
+     +   119,  120,  121,  122,  123,  124,  125,  126,    1,    2/
+      data (lookup(i),i=1601,1700) /
      +     3,    4,    5,    6,    7,    8,    9,   10,   11,   12,
-     +    13,   14,   15,   16,   17,   18,   19,   20,   21,   22,
-     +    23,   24,   25,   26,   27,   28,   29,   30,   31,   32/
-      data (lookup(i),i=1401,1500) /
-     +    33,   34,   35,   36,   37,   38,   39,   40,   41,   42,
-     +    43,   44,   45,   46,   47,   48,   49,   50,   51,   52,
-     +    53,   54,   55,   56,   57,   58,   59,   60,   61,   62,
-     +    63,   64,   65,   66,   67,   68,   69,   70,   71,   72,
-     +    73,   74,   75,   76,   77,   78,   79,   80,   81,   82,
-     +    83,   84,   85,   86,   87,   88,   89,   90,   91,   92,
-     +    93,   94,   95,   96,   97,   98,   99,  100,  101,  102,
-     +   103,  104,  105,  106,  107,  108,  109,  110,  111,  112,
-     +   113,  114,  115,  116,  117,  118,  119,  120,    1,    2,
-     +     3,    4,    5,    6,    7,    8,    9,   10,   11,   12/
-      data (lookup(i),i=1501,1600) /
      +    13,   14,   15,   16,   17,   18,   19,   20,   21,   22,
      +    23,   24,   25,   26,   27,   28,   29,   30,   31,   32,
      +    33,   34,   35,   36,   37,   38,   39,   40,   41,   42,
@@ -36949,119 +36729,43 @@
      +    63,   64,   65,   66,   67,   68,   69,   70,   71,   72,
      +    73,   74,   75,   76,   77,   78,   79,   80,   81,   82,
      +    83,   84,   85,   86,   87,   88,   89,   90,   91,   92,
-     +    93,   94,   95,   96,   97,   98,   99,  100,  101,  102,
-     +   103,  104,  105,  106,  107,  108,  109,  110,  111,  112/
-      data (lookup(i),i=1601,1700) /
-     +   113,  114,  115,  116,  117,  118,  119,  120,  121,  122,
-     +   123,  124,  125,  126,  127,    1,    2,    3,    4,    5,
-     +     6,    7,    8,    9,   10,   11,   12,   13,   14,   15,
-     +    16,   17,   18,   19,   20,   21,   22,   23,   24,   25,
-     +    26,   27,   28,   29,   30,   31,   32,   33,   34,   35,
-     +    36,   37,   38,   39,   40,   41,   42,   43,   44,   45,
-     +    46,   47,   48,   49,   50,   51,   52,   53,   54,   55,
-     +    56,   57,   58,   59,   60,   61,   62,   63,   64,   65,
-     +    66,   67,   68,   69,   70,   71,   72,   73,   74,   75,
-     +    76,   77,   78,   79,   80,   81,   82,   83,   84,   85/
+     +    93,   94,   95,   96,   97,   98,   99,  100,  101,  102/
       data (lookup(i),i=1701,1800) /
-     +    86,   87,   88,   89,   90,   91,   92,   93,   94,   95,
-     +    96,   97,   98,   99,  100,  101,  102,  103,  104,  105,
-     +   106,  107,  108,  109,  110,  111,  112,  113,  114,  115,
-     +   116,  117,  118,  119,  120,  121,  122,  123,  124,  125,
-     +   126,  127,  128,  129,  130,  131,  132,  133,  134,  135,
-     +   136,  137,  138,  139,  140,  141,  142,  143,  144,  145,
-     +   146,  147,  148,  149,  150,  151,  152,  153,  154,  155,
-     +   156,  157,  158,  159,  160,  161,  162,  163,  164,  165,
-     +   166,    1,    2,    3,    4,    5,    6,    7,    8,    9,
-     +    10,   11,   12,   13,   14,   15,   16,   17,   18,   19/
+     +   103,  104,  105,  106,  107,  108,  109,  110,  111,  112,
+     +   113,  114,  115,  116,  117,  118,  119,  120,  121,  122,
+     +   123,  124,  125,  126,  127,  128,  129,  130,  131,  132,
+     +   133,  134,  135,  136,  137,  138,  139,  140,  141,  142,
+     +   143,  144,  145,  146,  147,  148,  149,  150,  151,  152,
+     +   153,  154,  155,  156,  157,  158,  159,  160,  161,  162,
+     +   163,  164,  165,    1,    2,    3,    4,    5,    6,    7,
+     +     8,    9,   10,   11,   12,   13,   14,   15,   16,   17,
+     +    18,   19,   20,   21,   22,   23,   24,   25,   26,   27,
+     +    28,   29,   30,   31,   32,   33,   34,   35,   36,   37/
       data (lookup(i),i=1801,1900) /
-     +    20,   21,   22,   23,   24,   25,   26,   27,   28,   29,
-     +    30,   31,   32,   33,   34,   35,   36,   37,   38,   39,
-     +    40,   41,   42,   43,   44,   45,   46,   47,   48,   49,
-     +    50,   51,   52,   53,   54,   55,   56,   57,   58,   59,
-     +    60,   61,   62,   63,   64,   65,   66,   67,   68,   69,
-     +    70,   71,   72,   73,   74,   75,   76,   77,   78,   79,
-     +    80,   81,   82,   83,   84,   85,   86,   87,   88,   89,
-     +    90,   91,   92,   93,   94,   95,   96,   97,   98,   99,
-     +   100,  101,  102,  103,  104,  105,  106,  107,  108,  109,
-     +   110,  111,  112,  113,  114,  115,  116,  117,  118,  119/
+     +    38,   39,   40,   41,   42,   43,   44,   45,   46,   47,
+     +    48,   49,   50,   51,   52,   53,   54,   55,   56,   57,
+     +    58,   59,   60,   61,   62,   63,   64,   65,   66,   67,
+     +    68,   69,   70,   71,   72,   73,   74,   75,   76,   77,
+     +    78,   79,   80,   81,   82,   83,   84,   85,   86,   87,
+     +    88,   89,   90,   91,   92,   93,   94,   95,   96,   97,
+     +    98,   99,  100,  101,  102,  103,  104,  105,  106,  107,
+     +   108,  109,  110,  111,  112,  113,  114,  115,  116,  117,
+     +   118,  119,  120,  121,  122,  123,  124,  125,  126,  127,
+     +   128,  129,  130,  131,  132,  133,  134,  135,  136,  137/
       data (lookup(i),i=1901,2000) /
-     +   120,  121,  122,  123,  124,  125,  126,  127,  128,  129,
-     +   130,  131,  132,  133,  134,  135,  136,  137,  138,  139,
-     +   140,  141,  142,  143,  144,  145,  146,  147,  148,  149,
-     +   150,  151,  152,  153,  154,  155,  156,  157,  158,  159,
-     +   160,  161,  162,  163,  164,  165,  166,  167,  168,  169,
-     +   170,  171,  172,  173,    1,    2,    3,    4,    5,    6,
-     +     7,    8,    9,   10,   11,   12,   13,   14,   15,   16,
-     +    17,   18,   19,   20,   21,   22,   23,   24,   25,   26,
-     +    27,   28,   29,   30,   31,   32,   33,   34,   35,   36,
-     +    37,   38,   39,   40,   41,   42,   43,   44,   45,   46/
-      data (lookup(i),i=2001,2100) /
-     +    47,   48,   49,   50,   51,   52,   53,   54,   55,   56,
-     +    57,   58,   59,   60,   61,   62,   63,   64,   65,   66,
-     +    67,   68,   69,   70,   71,   72,   73,   74,   75,   76,
-     +    77,   78,   79,   80,   81,   82,   83,   84,   85,   86,
-     +    87,   88,   89,   90,   91,   92,   93,   94,   95,   96,
-     +    97,   98,   99,  100,  101,  102,  103,  104,  105,  106,
-     +   107,  108,  109,  110,  111,  112,  113,  114,  115,  116,
-     +   117,  118,  119,  120,  121,  122,  123,  124,  125,  126,
-     +   127,  128,  129,  130,  131,  132,  133,  134,  135,  136,
-     +   137,  138,  139,  140,  141,  142,  143,  144,  145,  146/
-      data (lookup(i),i=2101,2200) /
-     +   147,  148,  149,  150,  151,  152,  153,  154,  155,  156,
-     +   157,  158,  159,  160,  161,  162,  163,  164,  165,  166,
-     +   167,  168,  169,  170,  171,  172,  173,  174,  175,  176,
-     +   177,  178,  179,  180,    1,    2,    3,    4,    5,    6,
-     +     7,    8,    9,   10,   11,   12,   13,   14,   15,   16,
-     +    17,   18,   19,   20,   21,   22,   23,   24,   25,   26,
-     +    27,   28,   29,   30,   31,   32,   33,   34,   35,   36,
-     +    37,   38,   39,   40,   41,   42,   43,   44,   45,   46,
-     +    47,   48,   49,   50,   51,   52,   53,   54,   55,   56,
-     +    57,   58,   59,   60,   61,   62,   63,   64,   65,   66/
-      data (lookup(i),i=2201,2300) /
-     +    67,   68,   69,   70,   71,   72,   73,   74,   75,   76,
-     +    77,   78,   79,   80,   81,   82,   83,   84,   85,   86,
-     +    87,   88,   89,   90,   91,   92,   93,   94,   95,   96,
-     +    97,   98,   99,  100,  101,  102,  103,  104,  105,  106,
-     +   107,  108,  109,  110,  111,  112,  113,  114,  115,  116,
-     +   117,  118,  119,  120,  121,  122,  123,  124,  125,  126,
-     +   127,  128,  129,  130,  131,  132,  133,  134,  135,  136,
-     +   137,  138,  139,  140,  141,  142,  143,  144,  145,  146,
-     +   147,  148,  149,  150,  151,  152,  153,  154,  155,  156,
-     +   157,  158,  159,  160,  161,  162,  163,  164,  165,  166/
-      data (lookup(i),i=2301,2400) /
-     +   167,  168,  169,  170,  171,  172,  173,  174,  175,  176,
-     +   177,  178,  179,  180,  181,  182,  183,  184,  185,  186,
-     +   187,    1,    2,    3,    4,    5,    6,    7,    8,    9,
-     +    10,   11,   12,   13,   14,   15,   16,   17,   18,   19,
-     +    20,   21,   22,   23,   24,   25,   26,   27,   28,   29,
-     +    30,   31,   32,   33,   34,   35,   36,   37,   38,   39,
-     +    40,   41,   42,   43,   44,   45,   46,   47,   48,   49,
-     +    50,   51,   52,   53,   54,   55,   56,   57,   58,   59,
-     +    60,   61,   62,   63,   64,   65,   66,   67,   68,   69,
-     +    70,   71,   72,   73,   74,   75,   76,   77,   78,   79/
-      data (lookup(i),i=2401,2500) /
-     +    80,   81,   82,   83,   84,   85,   86,   87,   88,   89,
-     +    90,   91,   92,   93,   94,   95,   96,   97,   98,   99,
-     +   100,  101,  102,  103,  104,  105,  106,  107,  108,  109,
-     +   110,  111,  112,  113,  114,  115,  116,  117,  118,  119,
-     +   120,  121,  122,  123,  124,  125,  126,  127,  128,  129,
-     +   130,  131,  132,  133,  134,  135,  136,  137,  138,  139,
-     +   140,  141,  142,  143,  144,  145,  146,  147,  148,  149,
-     +   150,  151,  152,  153,  154,  155,  156,  157,  158,  159,
-     +   160,  161,  162,  163,  164,  165,  166,  167,  168,  169,
-     +   170,  171,  172,  173,  174,  175,  176,  177,  178,  179/
-      data (lookup(i),i=2501,2600) /
-     +   180,  181,  182,  183,  184,  185,  186,  187,  188,  189,
-     +   190,  191,  192,  193,  194,    1,    2,    3,    4,    5,
+     +   138,  139,  140,  141,  142,  143,  144,  145,  146,  147,
+     +   148,  149,  150,  151,  152,  153,  154,  155,  156,  157,
+     +   158,  159,  160,  161,  162,  163,  164,  165,  166,  167,
+     +   168,  169,  170,  171,  172,    1,    2,    3,    4,    5,
      +     6,    7,    8,    9,   10,   11,   12,   13,   14,   15,
      +    16,   17,   18,   19,   20,   21,   22,   23,   24,   25,
      +    26,   27,   28,   29,   30,   31,   32,   33,   34,   35,
      +    36,   37,   38,   39,   40,   41,   42,   43,   44,   45,
      +    46,   47,   48,   49,   50,   51,   52,   53,   54,   55,
-     +    56,   57,   58,   59,   60,   61,   62,   63,   64,   65,
+     +    56,   57,   58,   59,   60,   61,   62,   63,   64,   65/
+      data (lookup(i),i=2001,2100) /
      +    66,   67,   68,   69,   70,   71,   72,   73,   74,   75,
-     +    76,   77,   78,   79,   80,   81,   82,   83,   84,   85/
-      data (lookup(i),i=2601,2700) /
+     +    76,   77,   78,   79,   80,   81,   82,   83,   84,   85,
      +    86,   87,   88,   89,   90,   91,   92,   93,   94,   95,
      +    96,   97,   98,   99,  100,  101,  102,  103,  104,  105,
      +   106,  107,  108,  109,  110,  111,  112,  113,  114,  115,
@@ -37069,44 +36773,19 @@
      +   126,  127,  128,  129,  130,  131,  132,  133,  134,  135,
      +   136,  137,  138,  139,  140,  141,  142,  143,  144,  145,
      +   146,  147,  148,  149,  150,  151,  152,  153,  154,  155,
-     +   156,  157,  158,  159,  160,  161,  162,  163,  164,  165,
+     +   156,  157,  158,  159,  160,  161,  162,  163,  164,  165/
+      data (lookup(i),i=2101,2200) /
      +   166,  167,  168,  169,  170,  171,  172,  173,  174,  175,
-     +   176,  177,  178,  179,  180,  181,  182,  183,  184,  185/
-      data (lookup(i),i=2701,2800) /
-     +   186,  187,  188,  189,  190,  191,  192,  193,  194,  195,
-     +   196,  197,  198,  199,  200,  201,    1,    2,    3,    4,
-     +     5,    6,    7,    8,    9,   10,   11,   12,   13,   14,
-     +    15,   16,   17,   18,   19,   20,   21,   22,   23,   24,
-     +    25,   26,   27,   28,   29,   30,   31,   32,   33,   34,
-     +    35,   36,   37,   38,   39,   40,   41,   42,   43,   44,
-     +    45,   46,   47,   48,   49,   50,   51,   52,   53,   54,
-     +    55,   56,   57,   58,   59,   60,   61,   62,   63,   64,
-     +    65,   66,   67,   68,   69,   70,   71,   72,   73,   74,
-     +    75,   76,   77,   78,   79,   80,   81,   82,   83,   84/
-      data (lookup(i),i=2801,2900) /
-     +    85,   86,   87,   88,   89,   90,   91,   92,   93,   94,
-     +    95,   96,   97,   98,   99,  100,  101,  102,  103,  104,
-     +   105,  106,  107,  108,  109,  110,  111,  112,  113,  114,
-     +   115,  116,  117,  118,  119,  120,  121,  122,  123,  124,
-     +   125,  126,  127,  128,  129,  130,  131,  132,  133,  134,
-     +   135,  136,  137,  138,  139,  140,  141,  142,  143,  144,
-     +   145,  146,  147,  148,  149,  150,  151,  152,  153,  154,
-     +   155,  156,  157,  158,  159,  160,  161,  162,  163,  164,
-     +   165,  166,  167,  168,  169,  170,  171,  172,  173,  174,
-     +   175,  176,  177,  178,  179,  180,  181,  182,  183,  184/
-      data (lookup(i),i=2901,3000) /
-     +   185,  186,  187,  188,  189,  190,  191,  192,  193,  194,
-     +   195,  196,  197,  198,  199,  200,  201,  202,  203,  204,
-     +   205,  206,  207,  208,    1,    2,    3,    4,    5,    6,
+     +   176,  177,  178,  179,    1,    2,    3,    4,    5,    6,
      +     7,    8,    9,   10,   11,   12,   13,   14,   15,   16,
      +    17,   18,   19,   20,   21,   22,   23,   24,   25,   26,
      +    27,   28,   29,   30,   31,   32,   33,   34,   35,   36,
      +    37,   38,   39,   40,   41,   42,   43,   44,   45,   46,
      +    47,   48,   49,   50,   51,   52,   53,   54,   55,   56,
      +    57,   58,   59,   60,   61,   62,   63,   64,   65,   66,
-     +    67,   68,   69,   70,   71,   72,   73,   74,   75,   76/
-      data (lookup(i),i=3001,3100) /
-     +    77,   78,   79,   80,   81,   82,   83,   84,   85,   86,
+     +    67,   68,   69,   70,   71,   72,   73,   74,   75,   76,
+     +    77,   78,   79,   80,   81,   82,   83,   84,   85,   86/
+      data (lookup(i),i=2201,2300) /
      +    87,   88,   89,   90,   91,   92,   93,   94,   95,   96,
      +    97,   98,   99,  100,  101,  102,  103,  104,  105,  106,
      +   107,  108,  109,  110,  111,  112,  113,  114,  115,  116,
@@ -37115,17 +36794,103 @@
      +   137,  138,  139,  140,  141,  142,  143,  144,  145,  146,
      +   147,  148,  149,  150,  151,  152,  153,  154,  155,  156,
      +   157,  158,  159,  160,  161,  162,  163,  164,  165,  166,
-     +   167,  168,  169,  170,  171,  172,  173,  174,  175,  176/
-      data (lookup(i),i=3101,3182) /
-     +   177,  178,  179,  180,  181,  182,  183,  184,  185,  186,
-     +   187,  188,  189,  190,  191,  192,  193,  194,  195,  196,
-     +   197,  198,  199,  200,  201,  202,  203,  204,  205,  206,
-     +   207,  208,  209,  210,  211,  212,  213,  214,  215,    1,
-     +     2,    3,    4,    1,    2,    3,    4,    1,    2,    3,
-     +     4,    1,    2,    3,    4,    1,    2,    3,    4,    1,
-     +     2,    3,    4,    1,    2,    1,    2,    1,    2,    3,
-     +     4,    5,    6,    7,    8,    9,   10,   11,   12,   13,
-     +    14,   15/
+     +   167,  168,  169,  170,  171,  172,  173,  174,  175,  176,
+     +   177,  178,  179,  180,  181,  182,  183,  184,  185,  186/
+      data (lookup(i),i=2301,2400) /
+     +     1,    2,    3,    4,    5,    6,    7,    8,    9,   10,
+     +    11,   12,   13,   14,   15,   16,   17,   18,   19,   20,
+     +    21,   22,   23,   24,   25,   26,   27,   28,   29,   30,
+     +    31,   32,   33,   34,   35,   36,   37,   38,   39,   40,
+     +    41,   42,   43,   44,   45,   46,   47,   48,   49,   50,
+     +    51,   52,   53,   54,   55,   56,   57,   58,   59,   60,
+     +    61,   62,   63,   64,   65,   66,   67,   68,   69,   70,
+     +    71,   72,   73,   74,   75,   76,   77,   78,   79,   80,
+     +    81,   82,   83,   84,   85,   86,   87,   88,   89,   90,
+     +    91,   92,   93,   94,   95,   96,   97,   98,   99,  100/
+      data (lookup(i),i=2401,2500) /
+     +   101,  102,  103,  104,  105,  106,  107,  108,  109,  110,
+     +   111,  112,  113,  114,  115,  116,  117,  118,  119,  120,
+     +   121,  122,  123,  124,  125,  126,  127,  128,  129,  130,
+     +   131,  132,  133,  134,  135,  136,  137,  138,  139,  140,
+     +   141,  142,  143,  144,  145,  146,  147,  148,  149,  150,
+     +   151,  152,  153,  154,  155,  156,  157,  158,  159,  160,
+     +   161,  162,  163,  164,  165,  166,  167,  168,  169,  170,
+     +   171,  172,  173,  174,  175,  176,  177,  178,  179,  180,
+     +   181,  182,  183,  184,  185,  186,  187,  188,  189,  190,
+     +   191,  192,  193,    1,    2,    3,    4,    5,    6,    7/
+      data (lookup(i),i=2501,2600) /
+     +     8,    9,   10,   11,   12,   13,   14,   15,   16,   17,
+     +    18,   19,   20,   21,   22,   23,   24,   25,   26,   27,
+     +    28,   29,   30,   31,   32,   33,   34,   35,   36,   37,
+     +    38,   39,   40,   41,   42,   43,   44,   45,   46,   47,
+     +    48,   49,   50,   51,   52,   53,   54,   55,   56,   57,
+     +    58,   59,   60,   61,   62,   63,   64,   65,   66,   67,
+     +    68,   69,   70,   71,   72,   73,   74,   75,   76,   77,
+     +    78,   79,   80,   81,   82,   83,   84,   85,   86,   87,
+     +    88,   89,   90,   91,   92,   93,   94,   95,   96,   97,
+     +    98,   99,  100,  101,  102,  103,  104,  105,  106,  107/
+      data (lookup(i),i=2601,2700) /
+     +   108,  109,  110,  111,  112,  113,  114,  115,  116,  117,
+     +   118,  119,  120,  121,  122,  123,  124,  125,  126,  127,
+     +   128,  129,  130,  131,  132,  133,  134,  135,  136,  137,
+     +   138,  139,  140,  141,  142,  143,  144,  145,  146,  147,
+     +   148,  149,  150,  151,  152,  153,  154,  155,  156,  157,
+     +   158,  159,  160,  161,  162,  163,  164,  165,  166,  167,
+     +   168,  169,  170,  171,  172,  173,  174,  175,  176,  177,
+     +   178,  179,  180,  181,  182,  183,  184,  185,  186,  187,
+     +   188,  189,  190,  191,  192,  193,  194,  195,  196,  197,
+     +   198,  199,  200,    1,    2,    3,    4,    5,    6,    7/
+      data (lookup(i),i=2701,2800) /
+     +     8,    9,   10,   11,   12,   13,   14,   15,   16,   17,
+     +    18,   19,   20,   21,   22,   23,   24,   25,   26,   27,
+     +    28,   29,   30,   31,   32,   33,   34,   35,   36,   37,
+     +    38,   39,   40,   41,   42,   43,   44,   45,   46,   47,
+     +    48,   49,   50,   51,   52,   53,   54,   55,   56,   57,
+     +    58,   59,   60,   61,   62,   63,   64,   65,   66,   67,
+     +    68,   69,   70,   71,   72,   73,   74,   75,   76,   77,
+     +    78,   79,   80,   81,   82,   83,   84,   85,   86,   87,
+     +    88,   89,   90,   91,   92,   93,   94,   95,   96,   97,
+     +    98,   99,  100,  101,  102,  103,  104,  105,  106,  107/
+      data (lookup(i),i=2801,2900) /
+     +   108,  109,  110,  111,  112,  113,  114,  115,  116,  117,
+     +   118,  119,  120,  121,  122,  123,  124,  125,  126,  127,
+     +   128,  129,  130,  131,  132,  133,  134,  135,  136,  137,
+     +   138,  139,  140,  141,  142,  143,  144,  145,  146,  147,
+     +   148,  149,  150,  151,  152,  153,  154,  155,  156,  157,
+     +   158,  159,  160,  161,  162,  163,  164,  165,  166,  167,
+     +   168,  169,  170,  171,  172,  173,  174,  175,  176,  177,
+     +   178,  179,  180,  181,  182,  183,  184,  185,  186,  187,
+     +   188,  189,  190,  191,  192,  193,  194,  195,  196,  197,
+     +   198,  199,  200,  201,  202,  203,  204,  205,  206,  207/
+      data (lookup(i),i=2901,3000) /
+     +     1,    2,    3,    4,    5,    6,    7,    8,    9,   10,
+     +    11,   12,   13,   14,   15,   16,   17,   18,   19,   20,
+     +    21,   22,   23,   24,   25,   26,   27,   28,   29,   30,
+     +    31,   32,   33,   34,   35,   36,   37,   38,   39,   40,
+     +    41,   42,   43,   44,   45,   46,   47,   48,   49,   50,
+     +    51,   52,   53,   54,   55,   56,   57,   58,   59,   60,
+     +    61,   62,   63,   64,   65,   66,   67,   68,   69,   70,
+     +    71,   72,   73,   74,   75,   76,   77,   78,   79,   80,
+     +    81,   82,   83,   84,   85,   86,   87,   88,   89,   90,
+     +    91,   92,   93,   94,   95,   96,   97,   98,   99,  100/
+      data (lookup(i),i=3001,3100) /
+     +   101,  102,  103,  104,  105,  106,  107,  108,  109,  110,
+     +   111,  112,  113,  114,  115,  116,  117,  118,  119,  120,
+     +   121,  122,  123,  124,  125,  126,  127,  128,  129,  130,
+     +   131,  132,  133,  134,  135,  136,  137,  138,  139,  140,
+     +   141,  142,  143,  144,  145,  146,  147,  148,  149,  150,
+     +   151,  152,  153,  154,  155,  156,  157,  158,  159,  160,
+     +   161,  162,  163,  164,  165,  166,  167,  168,  169,  170,
+     +   171,  172,  173,  174,  175,  176,  177,  178,  179,  180,
+     +   181,  182,  183,  184,  185,  186,  187,  188,  189,  190,
+     +   191,  192,  193,  194,  195,  196,  197,  198,  199,  200/
+      data (lookup(i),i=3101,3157) /
+     +   201,  202,  203,  204,  205,  206,  207,  208,  209,  210,
+     +   211,  212,  213,  214,    1,    2,    3,    4,    1,    2,
+     +     3,    4,    1,    2,    3,    4,    1,    2,    3,    4,
+     +     1,    2,    3,    4,    1,    2,    3,    4,    1,    2,
+     +     1,    2,    1,    2,    3,    4,    5,    6,    7,    8,
+     +     9,   10,   11,   12,   13,   14,   15/
       integer level,index
       integer sector
       getSector = 0

@@ -153,7 +153,7 @@
   <composition name="BCALfatlayer_7" envelope="BCK7">
     <mposPhi volume="BCALfatsector_7" ncopy="2" Phi0="-1.875"  dPhi="3.75"
                                              impliedRot="true">
-      <layer value="7" />
+      <layer value="4" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
@@ -161,7 +161,7 @@
   <composition name="BCALfatlayer_8" envelope="BCK8">
     <mposPhi volume="BCALfatsector_8" ncopy="2" Phi0="-1.875"  dPhi="3.75"
                                              impliedRot="true">
-      <layer value="8" />
+      <layer value="5" />
       <sector value="1" step="1" />
     </mposPhi>
   </composition>
@@ -269,9 +269,9 @@
     <posRPhiZ volume="BCO8" R_Phi_Z="84.85 0.0 -200.0" rot="180 0 0" />
   </composition>
 
-  <tubs name="BCAL" Rio_Z="65.0 90.0 410.0" unit_length="cm" material="Air"
+  <tubs name="BCAL" Rio_Z="64.2 90.0 410.0" unit_length="cm" material="Air"
                                       comment="barrel EMcal mother" />
-  <tubs name="BCAM" Rio_Z="65.0 90.0 410.0" profile="-3.75 7.5"
+  <tubs name="BCAM" Rio_Z="64.2 90.0 410.0" profile="-3.75 7.5"
                     unit_length="cm" unit_angle="deg"
                     material="Air" comment="barrel calorimeter module" />
   <tubs name="BCAS" Rio_Z="87.46 90.0 410.0" profile="-3.75 7.5"

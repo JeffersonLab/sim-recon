@@ -263,9 +263,9 @@
     <posRPhiZ volume="BCO8" R_Phi_Z="84.85 0.0 -200.0" rot="180 0 0" />
   </composition>
 
-  <tubs name="BCAL" Rio_Z="65.0 90.0 410.0" unit_length="cm" material="Air"
+  <tubs name="BCAL" Rio_Z="64.2 90.0 410.0" unit_length="cm" material="Air"
                                       comment="barrel EMcal mother" />
-  <tubs name="BCAM" Rio_Z="65.0 90.0 410.0" profile="-3.75 7.5"
+  <tubs name="BCAM" Rio_Z="64.2 90.0 410.0" profile="-3.75 7.5"
                     unit_length="cm" unit_angle="deg"
                     material="Air" comment="barrel calorimeter module" />
   <tubs name="BCAS" Rio_Z="87.46 90.0 410.0" profile="-3.75 7.5"
@@ -435,7 +435,7 @@
   <trd name="BCO8" Xmp_Ymp_Z="5.23 3.0 5.04 3.0 10.0" 
        material="Plexiglas" comment="light collector for fat layer 8"/>
 
-  <box name="BCPM" X_Y_Z="2.0 2.0 2.0" 
+  <box name="BCPM" X_Y_Z="1.9 1.9 2.0" 
        material="Aluminum" comment="SiPM readout module with cooler"/>
 
   <pcon name="BCSU" material="SignalCables" comment="upstream readout cables">
