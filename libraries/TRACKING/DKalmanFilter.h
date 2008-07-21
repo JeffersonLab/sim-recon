@@ -6,6 +6,7 @@
 #include <DVector3.h>
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "HDGEOMETRY/DGeometry.h"
+#include "CDC/DCDCTrackHit.h"
 
 using namespace std;
 
@@ -15,20 +16,37 @@ typedef struct{
   double dE;
 }DKalmanHit_t;
 
+typedef struct{
+  double t,d,stereo;
+  DVector3 origin;
+  DVector3 dir;
+}DKalmanCDCHit_t;
+
+
+
 class DKalmanFilter{
  public:
   DKalmanFilter(const DMagneticFieldMap *bfield,const DGeometry *dgeom);
   ~DKalmanFilter(){
     for (unsigned int i=0;i<hits.size();i++)
       delete hits[i];
+    for (unsigned int i=0;i<cdchits.size();i++){
+      delete cdchits[i];
+    }
     hits.clear();
+    cdchits.clear();
   };
+
+  jerror_t AddCDCHit(const DCDCTrackHit *cdchit);
 
   jerror_t AddHit(double x,double y, double z,double covx,
 		  double covy, double covxy,double dE);
   jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
   jerror_t KalmanLoop(double mass_hyp);
-  
+  jerror_t KalmanForward(double mass_hyp,DMatrix &S, DMatrix &C);
+  jerror_t KalmanCentral(double mass_hyp,DMatrix &S, DMatrix &C);
+  jerror_t ExtrapolateToVertex(double mass_hyp,DMatrix Sc,DMatrix Cc);
+
   void GetMomentum(DVector3 &mom);
   void GetPosition(DVector3 &pos);
   double GetChiSq(void){return chisq_;}
@@ -77,6 +95,7 @@ class DKalmanFilter{
 
   // list of hits on track
   vector<DKalmanHit_t*>hits;
+  vector<DKalmanCDCHit_t *>cdchits;
 
   // Track parameters for forward region
   double x_,y_,tx_,ty_,q_over_p_;
