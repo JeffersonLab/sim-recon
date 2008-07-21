@@ -165,6 +165,11 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 		  const DCDCTrackHit *cdchit=(seed.hits[n])->hit;
 		  can->AddAssociatedObject(cdchit);
 		}
+		for (unsigned int n=0;n<seed.stereo_hits.size();n++){
+		  const DCDCTrackHit *cdchit=(seed.stereo_hits[n])->hit;
+		  can->AddAssociatedObject(cdchit);
+		}
+
 	
 		//can->q = can->charge();
 		//can->phi = mom.Phi();
@@ -1115,7 +1120,7 @@ double DTrackCandidate_factory_CDC::DCDCSeed::MinDist2(DCDCSeed& seed)
 //------------------
 double DTrackCandidate_factory_CDC::DCDCSeed::FindAverageBz(JEventLoop *loop)
 {
-return 2.0;
+  //return 2.0;
 	if(!loop)return 0.0;
 	DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	if(!dapp)return 0.0;
