@@ -23,7 +23,7 @@ DTrack_factory_ALT3::DTrack_factory_ALT3(){
 
   TOF_MASS = 0.13957018;
   MIN_FDC_HIT_PROB=0.1;
-  MIN_HITS=3;
+  MIN_HITS=6;
 }
 
 //------------------
@@ -31,11 +31,7 @@ DTrack_factory_ALT3::DTrack_factory_ALT3(){
 //------------------
 DTrack_factory_ALT3::~DTrack_factory_ALT3()
 {
-
-  for(unsigned int i=0; i<rtv.size(); i++)delete rtv[i];
 }
-
-
 
 //------------------
 jerror_t DTrack_factory_ALT3::init(void){return NOERROR;}
@@ -71,65 +67,70 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
   loop->Get(cdctrackhits);
   loop->Get(fdctrackhits,"CORRECTED");	
 
-  // Allocate more DReferenceTrajectory objects if needed.
-  // These each have a large enough memory footprint that
-  // it causes noticable performance problems if we allocated
-  // and deallocated them every event. Therefore, we allocate
-  // when needed, but recycle them on the next event.
-  // They are deleted in the factory deconstructor.
-  while(rtv.size()<trackcandidates.size())rtv.push_back(new DReferenceTrajectory(bfield));
-  
   // Loop over track candidates
   for(unsigned int i=0; i<trackcandidates.size(); i++){ 
     const DTrackCandidate *tc = trackcandidates[i];    
     vector<const DFDCSegment *>segments;
+    vector<const DCDCTrackHit *>cdchits;
     tc->GetT(segments);
+    tc->GetT(cdchits);
 
      // Initialize energy loss sum
     double dEsum=0.;
     unsigned int num_matched_hits=0;
-    DVector3 last_pos,last_mom;  
+    DVector3 last_pos,last_mom; 
+    double R=0;
 
     // Initialize Kalman filter with B-field
     DKalmanFilter fit(bfield,dgeom);
 
-    if (segments.size()==0){
-      DReferenceTrajectory *rt = rtv[i];
+    for (unsigned int k=0;k<cdchits.size();k++){
+      double r=cdchits[k]->wire->origin.Perp();
+      if (r>R) R=r;
+
+      fit.AddCDCHit(cdchits[k]);
+    }
+    num_matched_hits+=cdchits.size();
+
+    if (segments.size()==0){    
+      // Initialize the stepper 
+      DMagneticFieldStepper stepper(bfield,tc->charge());
       
       // Find reference trajectory by swimming through the field
       DVector3 pos = tc->position();
       DVector3 mom = tc->momentum(); 	
-      
-      rt->Swim(pos, mom, tc->charge());
+      DVector3 norm(0,0,1);
 
+      if (cdchits.size()>0){
+	stepper.SwimToRadius(pos,mom,R+0.8,NULL);
+      }
+      last_pos=pos;
+      last_mom=mom;
+      
       // Add hits to be put through Kalman engine
       for(unsigned int j=0; j<fdctrackhits.size(); j++){
 	const DFDCPseudo *hit = fdctrackhits[j];
 	double variance=1.0; //guess for now
 	
+	// Swim to FDC hit plane
+	stepper.SwimToPlane(pos,mom,hit->wire->origin,norm,NULL);
+
 	// Find residual 
-	pos(0)=hit->x;
-	pos(1)=hit->y;
-	pos(2)=hit->wire->origin(2);
-	double resi=rt->DistToRT(pos);
+	double resi=sqrt((hit->x-pos.x())*(hit->x-pos.x())
+			 +(hit->y-pos.y())*(hit->y-pos.y()));
 	
 	// Use an un-normalized gaussian so that for a residual
 	// of zero, we get a probability of 1.0.
 	double p = finite(resi) ? exp(-resi*resi/2./variance):0.0;
 	if(p>=MIN_FDC_HIT_PROB){
-	  // Temporary rescaling of covariance matrix
 	  fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
-		   hit->covyy,hit->covxy,hit->dE);
-	  const swim_step_t *last_step=rt->GetLastSwimStep();
-	  
-	  if (last_step!=NULL){
-	  last_pos=last_step->origin;
-	  last_mom=last_step->mom;
-	}
+		     hit->covyy,hit->covxy,hit->dE);
+	  last_pos=pos;
+	  last_mom=mom;
 	  num_matched_hits++;
 	  dEsum+=hit->dE;
 	}
-      }
+      }      
     }
     else{	
       const DFDCSegment *segment=NULL;
@@ -147,7 +148,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
       GetPositionAndMomentum(segment,last_pos,last_mom);
      
     }
-   
+
     if (num_matched_hits>=MIN_HITS){
     // Set the initial parameters from the track candidate
       fit.SetSeed(tc->charge(),last_pos,last_mom);
@@ -163,7 +164,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	DVector3 mom,pos;
 	fit.GetMomentum(mom);
 	fit.GetPosition(pos);
-
+	
 	track->x=pos(0);
 	track->y=pos(1);
 	track->z=pos(2);

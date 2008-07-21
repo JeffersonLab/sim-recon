@@ -37,9 +37,6 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
   jerror_t GetPositionAndMomentum(const DFDCSegment *segment,
 				  DVector3 &pos, DVector3 &mom);
 
-  
-  typedef DReferenceTrajectory::swim_step_t swim_step_t;
-
  private:
 
   double TOF_MASS;
@@ -62,10 +59,7 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
 
   int eventnumber;
   const DMagneticFieldMap *bfield;
-  vector<DReferenceTrajectory*>rtv;
   const DGeometry *dgeom;
-
-
 
 };
 
