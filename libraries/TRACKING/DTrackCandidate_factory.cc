@@ -19,11 +19,18 @@
 #define RADIUS_CUT 50.0
 #define BEAM_VAR 0.01 // cm^2
 #define Z_VERTEX 65.0
+#define EPS 0.001
 
 bool cdc_fdc_match(double p, double dist){
   if (p<=0.25) return true;
   if (dist < 1.+7.6/(p-0.25)) return true;
   return false;
+}
+
+bool cdchit_cmp(const DCDCTrackHit *a, const DCDCTrackHit *b){
+  double ra=a->wire->origin.Perp();
+  double rb=b->wire->origin.Perp();
+  return (rb>ra);
 }
 
 
@@ -119,16 +126,17 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     srccan->GetT(segments);
 
     bool got_match=false;
-
+    // Initialize the stepper 
+    DMagneticFieldStepper stepper(bfield,srccan->charge());
+ 
     if (cdc_forward_ids.size()>0){
       double diff_min=1000.; // candidate matching difference
 
       // Propagate FDC track candidate back to CDC endplate 
-      DVector3 mom,pos;
-      GetPositionAndMomentum(segments[0],pos,mom);
-      mom=-1.0*mom;
-      DMagneticFieldStepper stepper(bfield,srccan->charge()); 
-      if (stepper.SwimToPlane(pos,mom,cdc_endplate,norm,NULL)==false){
+      DVector3 mom_back,pos;
+      GetPositionAndMomentum(segments[0],pos,mom_back);
+      mom_back=-1.0*mom_back;
+      if (stepper.SwimToPlane(pos,mom_back,cdc_endplate,norm,NULL)==false){
 	unsigned int jmin=0;
 	double radius=0.;
 	for (unsigned int j=0;j<cdc_forward_ids.size();j++){
@@ -164,9 +172,10 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    if (radius<RADIUS_CUT){
 	      DRiemannFit fit;
 	      for (unsigned int k=0;k<cdchits.size();k++){	
-		fit.AddHit(cdchits[k]->wire->origin.x(),
-			   cdchits[k]->wire->origin.y(),
-			   cdchits[k]->wire->origin.z());
+		if (fabs(cdchits[k]->wire->stereo)<EPS)
+		  fit.AddHit(cdchits[k]->wire->origin.x(),
+			     cdchits[k]->wire->origin.y(),
+			     cdchits[k]->wire->origin.z());
 	      }
 	      for (unsigned int k=0;k<segments.size();k++){
 		for (unsigned int n=0;n<segments[k]->hits.size();n++){
@@ -216,7 +225,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    
 	    _data.push_back(can);	    
 	  }
-	}
+	} 
       }
     }
  
@@ -231,12 +240,48 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       
       for (unsigned int m=0;m<segments.size();m++)
 	 can->AddAssociatedObject(segments[m]); 
-   
-      // Try to gather up stray CDC hits from candidates that were not matched
-      // with the previous algorithm
       
-      // .. code goes here ...
-      
+      // Try to gather up stray CDC hits from candidates that were not 
+      // matched with the previous algorithm.  Use axial wires for now.
+      DVector3 pos=srccan->position();
+      DVector3 mom=srccan->momentum();
+      for (unsigned int j=0;j<cdc_forward_ids.size();j++){
+	vector<const DCDCTrackHit *>cdchits;
+	cdctrackcandidates[cdc_forward_ids[j]]->GetT(cdchits);	 
+	sort(cdchits.begin(),cdchits.end(),cdchit_cmp);
+	
+	unsigned int num_match=0;
+	unsigned int num_axial=0;
+	for (unsigned int m=0;m<cdchits.size();m++){
+	  if (fabs(cdchits[m]->wire->stereo)<EPS){
+	    double R=cdchits[m]->wire->origin.Perp();
+	    
+	    // Swim out from the "vertex"
+	    if (stepper.SwimToRadius(pos,mom,R,NULL)==false){
+	      double dx=cdchits[m]->wire->origin.x()-pos.x();
+	      double dy=cdchits[m]->wire->origin.y()-pos.y();
+	      double dr=sqrt(dx*dx+dy*dy);
+	      
+	      // Use an un-normalized gaussian so that for a residual
+	      // of zero, we get a probability of 1.0.
+	      double variance=1.0;
+	      double prob = finite(dr) ? exp(-dr*dr/2./variance):0.0;
+	      if (prob>0.1) num_match++;
+	    }
+	    num_axial++;
+	  }
+	}
+	if (num_match==num_axial && num_match>0){
+	  // Remove the CDC candidate from the list
+	  cdc_forward_ids.erase(cdc_forward_ids.begin()+j); 
+
+	  // Add the CDC hits to the track candidate
+	  for (unsigned int m=0;m<cdchits.size();m++)
+		can->AddAssociatedObject(cdchits[m]);
+	  break;
+	}
+      }
+
       _data.push_back(can);
     }
   }
