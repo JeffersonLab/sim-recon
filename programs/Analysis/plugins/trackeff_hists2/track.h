@@ -27,6 +27,7 @@ class track:public TObject{
 		int Nstereo;
 		int Ncdc;
 		int Nfdc;
+		double trk_chisq;
 
 	private:
 		ClassDef(track,1);

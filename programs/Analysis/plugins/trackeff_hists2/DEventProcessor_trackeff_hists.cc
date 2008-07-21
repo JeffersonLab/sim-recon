@@ -210,6 +210,9 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 				vector<const DFDCPseudo*> fdchits;
 				track->Get(fdchits);
 				trk.Nfdc = fdchits.size();
+				
+				// Chisq from tracking
+				trk.trk_chisq = track->chisq;
 			}
 		}
 		
