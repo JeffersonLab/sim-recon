@@ -28,8 +28,8 @@ endif
 ifndef ARCH
 ARCH = $(shell uname -p)
 endif
-ifndef OSNAME
-OSNAME = $(OS)-$(ARCH)
+ifndef BMS_OSNAME
+BMS_OSNAME = $(shell $(HALLD_HOME)/src/BMS/osrelease.pl)
 endif
 
 # Default GNU fortran compiler is based
@@ -66,9 +66,9 @@ ifndef DCXX
 DCXX	= g++
 endif
 
-LIB_DIR		= .lib/$(OSNAME)
-BIN_DIR		= .bin/$(OSNAME)
-DEP_DIR		= .depends/$(OSNAME)
+LIB_DIR		= .lib/$(BMS_OSNAME)
+BIN_DIR		= .bin/$(BMS_OSNAME)
+DEP_DIR		= .depends/$(BMS_OSNAME)
 # The following gets overwritten with HALLD_MY below
 INSTALL_DIR = $(HALLD_HOME)
 
@@ -129,7 +129,7 @@ LIBNAME = $(LIB_DIR)/lib$(MODULE_NAME)$(DEBUG_SUFFIX).a
 # (the "-" at the front means don't error if the file doesn't exist)
 -include $(HALLD_HOME)/src/BMS/Makefile.$(OS)
 -include $(HALLD_HOME)/src/BMS/Makefile.$(ARCH)
--include $(HALLD_HOME)/src/BMS/Makefile.$(OSNAME)
+-include $(HALLD_HOME)/src/BMS/Makefile.$(BMS_OSNAME)
 
 # For GNU compilers, add verbose warnings
 ifeq ($(FC),$(FC_GNU))

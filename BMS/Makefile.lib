@@ -16,7 +16,7 @@ first: install
 #Make sure directories and dependancy files exist
 all: mkdirs $(DEPS) $(LIBNAME)($(OBJS))
 	@rm -f $(DICT_FILES)
-ifeq ($(OSNAME),Darwin)
+ifeq ($(BMS_OSNAME),Darwin)
 	ranlib $(LIBNAME)
 endif
 
@@ -35,13 +35,13 @@ mkdirs:
 	@mkdir -p $(DEP_DIR)
 
 install: all
-	mkdir -p $(INSTALL_DIR)/lib/$(OSNAME)
+	mkdir -p $(INSTALL_DIR)/lib/$(BMS_OSNAME)
 	mkdir -p $(INSTALL_DIR)/include/$(MODULE_NAME)
-	install -p $(LIBNAME) $(INSTALL_DIR)/lib/$(OSNAME)
+	install -p $(LIBNAME) $(INSTALL_DIR)/lib/$(BMS_OSNAME)
 	$(HEADER_CP_CMD)
 
 uninstall: 
-	rm -f $(INSTALL_DIR)/lib/$(OSNAME)/$(shell basename $(LIBNAME))
+	rm -f $(INSTALL_DIR)/lib/$(BMS_OSNAME)/$(shell basename $(LIBNAME))
 	rm -rf $(INSTALL_DIR)/include/$(MODULE_NAME)
 
 clean:
@@ -78,7 +78,7 @@ env:
 	@echo HEADERS	   = $(HEADERS)
 	@echo HEADER_CP_CMD	   = $(HEADER_CP_CMD)
 	@echo LIBS	   	= $(LIBS)
-	@echo OSNAME	   = $(OSNAME)
+	@echo BMS_OSNAME	   = $(BMS_OSNAME)
 	@echo OBJS		   = $(OBJS)
 	@echo MODULE_NAME = $(MODULE_NAME)
 	@echo LIBNAME	   = $(LIBNAME)
