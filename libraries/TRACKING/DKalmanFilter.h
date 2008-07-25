@@ -2,6 +2,8 @@
 #define _DKALMANFILTER_H_
 
 #include <vector>
+#include <deque>
+
 #include <DMatrix.h>
 #include <DVector3.h>
 #include "HDGEOMETRY/DMagneticFieldMap.h"
@@ -22,6 +24,12 @@ typedef struct{
   DVector3 dir;
 }DKalmanCDCHit_t;
 
+typedef struct{
+  double S[5];
+  double C[5][5];
+  double JT[5][5];
+  bool measurement;
+}DKalmanState_t;
 
 
 class DKalmanFilter{
@@ -81,9 +89,9 @@ class DKalmanFilter{
 				DMatrix &J,DMatrix &D);
   jerror_t CalcDeriv(double z,DMatrix S, double dEdx, DMatrix &D);
 
-  jerror_t StepJacobian(DVector3 &pos,double ds,
+  jerror_t StepJacobian(DVector3 &pos,DVector3 wire_pos,double ds,
 			DMatrix &S, double dEdx,DMatrix &J);
-  jerror_t CalcDerivAndJacobian(DVector3 &pos,double ds,
+  jerror_t CalcDerivAndJacobian(DVector3 &pos,DVector3 wire_pos,double ds,
 				DMatrix S,double dEdx,
 				DMatrix &J1,DMatrix &D1);
   jerror_t ConvertStateVector(double z,double wire_x,double wire_y,
@@ -103,6 +111,11 @@ class DKalmanFilter{
   double z_,phi_,R_,tanl_,q_over_pt_;
   // chi2 of fit
   double chisq_;
+  
+  // Lists containing state, covariance, and jacobian at each step
+  deque<DKalmanState_t>central_traj;
+  deque<DKalmanState_t>forward_traj;
+
 
   // For dEdx measurements
   double path_length;  // path length in active volume
