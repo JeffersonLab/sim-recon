@@ -63,11 +63,14 @@ C.    ******************************************************************
 C.
 C.
 #include "geant321/gcomis.inc"
+#include "geant321/gcphys.inc"
 C.    ------------------------------------------------------------------
 C.
       integer iskip
       call gelh_outp(iskip)
       call loadOutput()
       call flushOutput()
-      call fdpree()
+
+C		FDPREE() should only be called if FLUKA is being used
+		if (IHADR.ge.3) call fdpree()
       END
