@@ -19,7 +19,7 @@ C                      the number of events, the beam energy range, the distance
 C            file "particle.dat" contains a table for particle masses (GEANT numbering)
 C
 C
-      PROGRAM BGGEN
+      SUBROUTINE BGGEN
 C
       IMPLICIT NONE
 C
