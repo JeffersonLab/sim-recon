@@ -5,6 +5,9 @@ CFLAGS += -I$(CERN)/$(CERN_LEVEL)/include
 CXXFLAGS += -I$(CERN)/$(CERN_LEVEL)/include
 CERNLIBS = $(shell cernlib geant321 pawlib graflib grafX11 packlib mathlib kernlib)
 
+FFLAGS += -I/usr/include/cernlib/$(CERN_LEVEL)
+CFLAGS += -I/usr/include/cernlib/$(CERN_LEVEL)
+CXXFLAGS += -I/usr/include/cernlib/$(CERN_LEVEL)
 
 MISC_LIBS += $(CERNLIBS) $(EXTRA_LIBS)
 
