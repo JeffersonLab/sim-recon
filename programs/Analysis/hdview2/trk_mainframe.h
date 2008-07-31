@@ -74,6 +74,7 @@ class trk_mainframe:public TGMainFrame{
 		vector<TGComboBox*> datatype;
 		vector<TGComboBox*> factorytag;
 		vector<TGComboBox*> trackno;
+		TGCheckButton *slock;
 
 		double slo, shi, resilo, resihi;
 		

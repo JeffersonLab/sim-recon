@@ -28,6 +28,7 @@ static vector<DReferenceTrajectory*> REFTRAJ;
 
 // Ditto
 static vector<pair<const DCoordinateSystem*,double> > TRACKHITS;
+static map<const DCoordinateSystem*,double> S_VALS;
 
 
 int colors[]={kBlue, kRed, kMagenta, kGreen, kCyan};
@@ -139,6 +140,10 @@ trk_mainframe::trk_mainframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt_t w, 
 				
 				TGTextButton *reset = new TGTextButton(panzoomresetframe, "reset");
 				panzoomresetframe->AddFrame(reset, xhints);
+				
+				slock = new TGCheckButton(panzoomresetframe,"lock s-axis");
+				panzoomresetframe->AddFrame(slock, xhints);
+				slock->Connect("Clicked","trk_mainframe", this, "DoRedraw()");
 				
 			//-------- Event, Info frame
 			TGVerticalFrame *eventinfoframe = new TGVerticalFrame(controlsframe);
@@ -600,8 +605,12 @@ void trk_mainframe::DrawHitsForOneTrack(
 	// Clear current hits list
 	if(index==0){
 		TRACKHITS.clear();
+		S_VALS.clear();
 		slo = shi = 20.0;
 	}
+	
+	// Get state of s-lock checkbutton
+	bool lock_s_coordinate = slock->GetState();
 	
 	vector<pair<const DCoordinateSystem*,double> > &hits = index==0 ? allhits:TRACKHITS;
 	
@@ -676,6 +685,21 @@ void trk_mainframe::DrawHitsForOneTrack(
 			ellipse_width = 3.0;
 			ellipse_color += cdcwire->stereo>0.0 ? 100:150;
 			marker_style = 5;
+		}
+		
+		// If the lock_s_coordinate flag is set and this is not the prime track
+		// then try and replace the s-value for this hit by the one from the 
+		// prime track. If this is the prime track, then record the s-value.
+		if(lock_s_coordinate){
+			if(index==0){
+				// This is prime track. Record s-value for this wire
+				S_VALS[wire] = s;
+			}else{
+				map<const DCoordinateSystem*,double>::iterator iter = S_VALS.find(wire);
+				if(iter!=S_VALS.end()){
+					s = iter->second;
+				}
+			}
 		}
 
 		// Create marker for wire
