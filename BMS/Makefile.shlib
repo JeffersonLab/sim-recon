@@ -73,7 +73,7 @@ pristine: clean
 	rm -rf .bin .obj .lib .depends
 
 exec_clean:
-	rm -f $(SOLIB_NAME)
+	rm -f $(LIB_DIR)/$(SOLIB_NAME)
 
 
 # Rules to make DEPENDS files from source. Note that these are similar to the
