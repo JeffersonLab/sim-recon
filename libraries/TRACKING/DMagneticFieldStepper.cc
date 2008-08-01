@@ -446,7 +446,7 @@ bool DMagneticFieldStepper::DistToPlane(DVector3 &pos, const DVector3 &origin, c
 //-----------------------
 // SwimToRadius
 //-----------------------
-bool DMagneticFieldStepper::SwimToRadius(DVector3 &pos, DVector3 &mom, double R, double *pathlen)
+bool DMagneticFieldStepper::SwimToRadius(DVector3 &mypos, DVector3 &mymom, double R, double *pathlen)
 {
 	/// Swim the particle from the point specified by the given position 
 	/// and momentum until it crosses the specified radius R as measured
@@ -467,27 +467,27 @@ bool DMagneticFieldStepper::SwimToRadius(DVector3 &pos, DVector3 &mom, double R,
 	/// the point of intersection with the radius.
 
 	// Set the starting parameters and start stepping!
-	SetStartingParams(q, &pos, &mom);
+	SetStartingParams(q, &mypos, &mymom);
 	double s = 0.0;
 	DVector3 last_pos;
 	do{
-		last_pos = pos;
+		last_pos = mypos;
 		
-		s += Step(&pos);
+		s += Step(&mypos);
 		if(s>MAX_SWIM_DIST)return true;
 
-	}while(pos.Perp() < R);
+	}while(mypos.Perp() < R);
 
 	// At this point, the location where the track intersects the cyclinder 
-	// is somewhere between last_pos and pos. For simplicity, we're going
+	// is somewhere between last_pos and mypos. For simplicity, we're going
 	// to just find the intersection of the cylinder with the line that joins
 	// the 2 positions. We do this by working in the X/Y plane only and
 	// finding the value of "alpha" which is the fractional distance the
-	// intersection point is between last_pos and pos. We'll then apply
+	// intersection point is between last_pos and mypos. We'll then apply
 	// the alpha found in the 2D X/Y space to the 3D x/y/Z space to find
 	// the actual intersection point.
 	DVector2 x1(last_pos.X(), last_pos.Y());
-	DVector2 x2(pos.X(), pos.Y());
+	DVector2 x2(mypos.X(), mypos.Y());
 	DVector2 dx = x2-x1;
 	double A = dx.Mod2();
 	double B = 2.0*(x1.X()*dx.X() + x1.Y()*dx.Y());
@@ -499,8 +499,9 @@ bool DMagneticFieldStepper::SwimToRadius(DVector3 &pos, DVector3 &mom, double R,
 	if(alpha1<0.0 || alpha1>1.0)alpha=alpha2;
 	if(!finite(alpha))return true;
 	
-	DVector3 delta = pos - last_pos;
-	pos = last_pos + alpha*delta;
+	DVector3 delta = mypos - last_pos;
+	mypos = last_pos + alpha*delta;
+	mymom = mom;
 
 	// The value of s actually represents the pathlength
 	// to the outside point. Adjust it back to the
