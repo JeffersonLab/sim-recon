@@ -71,6 +71,14 @@ void hitForwardEMcal (float xin[4], float xout[4],
          showers->in[0].y = xin[1];
          showers->in[0].z = xin[2];
          showers->in[0].E = pin[3];
+
+         showers->in[0].px = pin[0];
+         showers->in[0].py = pin[1];
+         showers->in[0].pz = pin[2];
+
+	 showers->in[0].t = t;
+	 showers->in[0].ptype = ipart;
+
          showers->mult = 1;
          showerCount++;
       }
