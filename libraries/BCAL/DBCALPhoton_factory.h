@@ -30,17 +30,31 @@ private:
     jerror_t brun(JEventLoop *loop, int runnumber);
     jerror_t evnt( JEventLoop *loop, int eventnumber );
     
-    double m_scaleZ_p0;
-    double m_scaleZ_p1;
-    double m_scaleZ_p2;
-    double m_scaleZ_p3;
+    double m_scaleZ_p0LT;
+    double m_scaleZ_p1LT;
+    double m_scaleZ_p2LT;
+   
+    double m_scaleZ_p0GE;
+    double m_scaleZ_p1GE;
+    double m_scaleZ_p2GE;
     
-    double m_nonlinZ_p0;
-    double m_nonlinZ_p1;
-    double m_nonlinZ_p2;
+    double m_nonlinZ_p0LT;
+    double m_nonlinZ_p1LT;
+    double m_nonlinZ_p2LT;
+    double m_nonlinZ_p3LT;
+
+  
+    double m_nonlinZ_p0GE;
+    double m_nonlinZ_p1GE;
+    double m_nonlinZ_p2GE;
+    double m_nonlinZ_p3GE;
     
     double m_bcalIR;
     double m_zTarget;
+
+    double nonlin;
+    double scale;
+
 };
 
 #endif

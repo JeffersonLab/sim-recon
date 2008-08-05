@@ -12,17 +12,29 @@
 
 DBCALPhoton_factory::DBCALPhoton_factory()
 {
-    
-    // energy calibration parameters
-    m_scaleZ_p0 =  8.015E-01;
-    m_scaleZ_p1 =  1.740E-03;
-    m_scaleZ_p2 = -6.804E-06;
-    m_scaleZ_p3 =  7.162E-09;
-    
-    m_nonlinZ_p0 =  4.441E-02;
-    m_nonlinZ_p1 = -1.183E-04;
-    m_nonlinZ_p2 =  3.482E-07;
-    
+
+  //scaling parameter set for nCell < 5
+   
+    m_scaleZ_p0LT =  7.038E-01;
+    m_scaleZ_p1LT =  1.251E-03;
+    m_scaleZ_p2LT = -2.539E-06;
+     
+    m_nonlinZ_p0LT =  1.181E-01;
+    m_nonlinZ_p1LT = -9.330E-04;
+    m_nonlinZ_p2LT =  4.334E-06;    
+    m_nonlinZ_p3LT = -5.486E-09;
+
+   //scaling parameter set for nCell >= 5
+   
+    m_scaleZ_p0GE =  8.483E-01;
+    m_scaleZ_p1GE =  5.840E-04;
+    m_scaleZ_p2GE = -1.690E-06;
+     
+    m_nonlinZ_p0GE =  2.489E-02;
+    m_nonlinZ_p1GE =  4.504E-04;
+    m_nonlinZ_p2GE = -1.980E-06;    
+    m_nonlinZ_p3GE =  2.428E-09;
+
 }
 
 //------------------
@@ -48,7 +60,7 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
 {
     
     vector< const DBCALShower* > showerVect;
-    loop->Get( showerVect, "IU" );
+    loop->Get( showerVect );
     
     for( vector< const DBCALShower* >::iterator showItr = showerVect.begin();
          showItr != showerVect.end();
@@ -57,7 +69,8 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
         double xSh = (**showItr).x;
         double ySh = (**showItr).y;
         double zSh = (**showItr).z;
-        
+        int nCell = (**showItr).N_cell;        
+
         // get z where shower enters BCAL (this corresponds to generated z
         // in tuning MC)
         double zEntry = zSh - ( ( zSh - m_zTarget ) * 
@@ -69,20 +82,31 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
         // for slices of z.  These fit parameters (scale and nonlin) are then plotted 
         // as a function of z and fit.
         
-
-        double nonlin = m_nonlinZ_p0 +
-            m_nonlinZ_p1 * zEntry +
-            m_nonlinZ_p2 * zEntry * zEntry;
+	if( nCell < 5 ) { 
+            nonlin = m_nonlinZ_p0LT +
+            m_nonlinZ_p1LT * zEntry +
+            m_nonlinZ_p2LT * zEntry * zEntry +
+	    m_nonlinZ_p3LT * zEntry * zEntry * zEntry;}
+	else if( nCell >= 5 ) {
+            nonlin = m_nonlinZ_p0GE +
+            m_nonlinZ_p1GE * zEntry +
+            m_nonlinZ_p2GE * zEntry * zEntry +
+	    m_nonlinZ_p3GE * zEntry * zEntry * zEntry;}
+	//	nonlin = 0.0; // fixed value for debug
 
         // for the scale, we extend the scale factor at the target as a constant behind
         // the target
         if( zEntry < m_zTarget ) zEntry = m_zTarget;
-        
-        double scale = m_scaleZ_p0 +
-            m_scaleZ_p1 * zEntry +
-            m_scaleZ_p2 * zEntry * zEntry +
-            m_scaleZ_p3 * zEntry * zEntry * zEntry;
-
+    
+        if( nCell < 5 ) {
+            scale = m_scaleZ_p0LT +
+            m_scaleZ_p1LT * zEntry +
+	    m_scaleZ_p2LT * zEntry * zEntry;}
+	else if ( nCell >= 5 ) {
+            scale = m_scaleZ_p0GE +
+            m_scaleZ_p1GE * zEntry +
+	    m_scaleZ_p2GE * zEntry * zEntry;}
+	//     scale = 1.0; // fixed value for debug
         
         // now turn E_rec into E_gen -->> E_gen = ( E_rec / scale ) ^ ( 1 / ( 1 + nonlin ) )
         double energy = pow( (**showItr).E / scale, 1 / ( 1 + nonlin ) );
