@@ -4,7 +4,6 @@
 #include "DBCALMCResponse_factory.h"
 #include "DBCALGeometry_factory.h"
 #include "DBCALShower_factory.h"
-#include "DBCALShower_factory_IU.h"
 #include "DBCALPhoton_factory.h"
 
 #include "DBCALHit.h"
@@ -21,7 +20,6 @@ jerror_t BCAL_init(JEventLoop *loop)
 	loop->AddFactory(new DBCALMCResponse_factory());
 	loop->AddFactory(new DBCALGeometry_factory());
 	loop->AddFactory(new DBCALShower_factory());
-	loop->AddFactory(new DBCALShower_factory_IU());
 	loop->AddFactory(new DBCALTruthShower_factory());
 	loop->AddFactory(new DBCALPhoton_factory());
 	loop->AddFactory(new DMCBCALHit_factory());
