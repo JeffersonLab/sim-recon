@@ -91,13 +91,15 @@ class DKalmanFilter{
 
   jerror_t StepJacobian(DVector3 &pos,DVector3 wire_pos,double ds,
 			DMatrix &S, double dEdx,DMatrix &J);
-  jerror_t CalcDerivAndJacobian(DVector3 &pos,DVector3 wire_pos,double ds,
+  jerror_t CalcDerivAndJacobian(DVector3 pos,DVector3 &dpos,DVector3 wire_pos,
 				DMatrix S,double dEdx,
 				DMatrix &J1,DMatrix &D1);
   jerror_t ConvertStateVector(double z,double wire_x,double wire_y,
 			      DMatrix S,DMatrix C,DMatrix &Sc,
 			      DMatrix &Cc);
-
+  jerror_t GetProcessNoiseCentral(double mass_hyp,double ds,
+				  double X0,DMatrix Sc,
+				  DMatrix &Q);
   const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   const DGeometry *geom;
 
