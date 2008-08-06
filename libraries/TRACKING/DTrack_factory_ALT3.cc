@@ -92,17 +92,17 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
     }
     num_matched_hits+=cdchits.size();
 
-    if (segments.size()==0){    
-      // Initialize the stepper 
-      DMagneticFieldStepper stepper(bfield,tc->charge());
-      
-      // Find reference trajectory by swimming through the field
-      DVector3 pos = tc->position();
-      DVector3 mom = tc->momentum(); 	
-      DVector3 norm(0,0,1);
-
+    // Initialize the stepper 
+    DMagneticFieldStepper stepper(bfield,tc->charge());
+    
+    // Find reference tr by swimming through the field
+    DVector3 pos = tc->position();
+    DVector3 mom = tc->momentum(); 	
+    last_mom=mom;
+    DVector3 norm(0,0,1);
+    if (segments.size()==0){       
       if (cdchits.size()>0){
-	stepper.SwimToRadius(pos,mom,R+0.8,NULL);
+	stepper.SwimToRadius(pos,mom,65.,NULL);
       }
       last_pos=pos;
       last_mom=mom;
@@ -145,7 +145,22 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	}
 
       }
-      GetPositionAndMomentum(segment,last_pos,last_mom);
+      unsigned int last_segment_id=segments.size()-1;
+      unsigned int last_hit_id=segments[last_segment_id]->hits.size()-1;
+
+      // If we have a good last segment (with more than 3 hits) use this 
+      // to provide the initial guess to the kalman routines, otherwise 
+      // swim from the origin to the most downstream fdc plane with a hit.
+      if (last_hit_id>2)
+	GetPositionAndMomentum(segment,last_pos,last_mom);
+      else{
+	// Swim to FDC hit plane
+	stepper.SwimToPlane(pos,mom,
+	    segments[last_segment_id]->hits[last_hit_id]->wire->origin,
+			    norm,NULL);
+	last_pos=pos;
+	last_mom=mom;
+      }
      
     }
 
