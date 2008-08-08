@@ -794,10 +794,14 @@ jerror_t DEventSourceHDDM::Extract_DFCALTruthShower(s_HDDM_t *hddm_s,  JFactory<
 				shower->x,
 				shower->y,
 				shower->z,
+				shower->px,
+				shower->py,
+				shower->pz,
 				shower->E,
 				shower->t,
 				shower->primary,
-				shower->track
+				shower->track,
+				shower->ptype
 				);
 			
 			data.push_back(dfcaltruthshower);
