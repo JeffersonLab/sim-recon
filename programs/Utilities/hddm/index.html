@@ -534,9 +534,9 @@ converted to xml using <x>hddm-xml</x>.  Warning: some browsers have
 difficulty displaying plain xml.  Mozilla 1.x and Internet Explorer 6
 give a nice view of the document below.
 <pre>
-&lt;?xml version="1.0"?>
+&lt;?xml version="1.0" encoding="UTF-8"?>
 
-&lt;HDDM class="s" version="1.0">
+&lt;HDDM class="s" version="1.0" xmlns="http://www.gluex.org/hddm">
   &lt;physicsEvent eventNo="int" runNo="int">
     &lt;reaction type="int" weight="float" maxOccurs="unbounded">
       &lt;beam type="Particle_t">
@@ -562,9 +562,9 @@ give a nice view of the document below.
 <li> A more complex example follows, showing a hits tree for the full
 detector.
 <pre>
-&lt;?xml version="1.0"?>
+&lt;?xml version="1.0"? encoding="UTF-8"?>
 
-&lt;HDDM class="s" version="1.0">
+&lt;HDDM class="s" version="1.0" xmlns="http://www.gluex.org/hddm">
   &lt;physicsEvent eventNo="int" runNo="int">
 
     &lt;hitView version="1.0">
