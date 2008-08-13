@@ -88,6 +88,10 @@ void hitStartCntr (float xin[4], float xout[4],
          points->in[0].z = x[2];
          points->in[0].r = sqrt(x[0]*x[0]+x[1]*x[1]);
          points->in[0].phi = atan2(x[1],x[0]);
+         points->in[0].px = pin[0]*pin[4];
+         points->in[0].py = pin[1]*pin[4];
+         points->in[0].pz = pin[2]*pin[4];
+         points->in[0].E = pin[3];
          points->in[0].dEdx = dEdx;
          points->in[0].ptype = ipart;
          points->mult = 1;

@@ -62,6 +62,7 @@ void hitCerenkov (float xin[4], float xout[4],
          points->in[0].py = pin[4]*pin[1];
          points->in[0].pz = pin[4]*pin[2];
          points->in[0].E = pin[3];
+         points->in[0].ptype = ipart;
          points->mult = 1;
          pointCount++;
       }
