@@ -28783,7 +28783,7 @@
       npar = 3
       par(1) = 64.2
       par(2) = 90
-      par(3) = 205
+      par(3) = 210
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
       if (ivolu.ne.248) stop 'consistency check #1 failed'
 
@@ -28828,7 +28828,7 @@
       npar = 5
       par(1) = 64.2
       par(2) = 90
-      par(3) = 205
+      par(3) = 210
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -28902,7 +28902,7 @@
       npar = 5
       par(1) = 65
       par(2) = 67
-      par(3) = 205
+      par(3) = 210
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -28949,7 +28949,7 @@
       npar = 5
       par(1) = 65
       par(2) = 67
-      par(3) = 205
+      par(3) = 210
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -29057,7 +29057,7 @@
       chshap = 'TRAP'
       nmed = 217
       npar = 11
-      par(1) = 2.5
+      par(1) = 5
       par(2) = 0
       par(3) = 0
       par(4) = 1
@@ -29076,7 +29076,7 @@
       chmoth = 'BCS1'
       x = 66
       y = 0
-      z = 197.5
+      z = 200
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29095,7 +29095,7 @@
       chmoth = 'BCS1'
       x = 66
       y = 0
-      z = -197.5
+      z = -200
       irot = 995
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29130,7 +29130,7 @@
       chmoth = 'BCS1'
       x = 66
       y = 0
-      z = 201
+      z = 206
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29149,7 +29149,7 @@
       chmoth = 'BCS1'
       x = 66
       y = 0
-      z = -201
+      z = -206
       irot = 996
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29175,7 +29175,7 @@
       npar = 5
       par(1) = 67
       par(2) = 69
-      par(3) = 205
+      par(3) = 210
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -29222,7 +29222,7 @@
       npar = 5
       par(1) = 67
       par(2) = 69
-      par(3) = 205
+      par(3) = 210
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -29294,7 +29294,7 @@
       chshap = 'TRAP'
       nmed = 222
       npar = 11
-      par(1) = 2.5
+      par(1) = 5
       par(2) = 0
       par(3) = 0
       par(4) = 1
@@ -29313,7 +29313,7 @@
       chmoth = 'BCS2'
       x = 68
       y = 0
-      z = 197.5
+      z = 200
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29332,7 +29332,7 @@
       chmoth = 'BCS2'
       x = 68
       y = 0
-      z = -197.5
+      z = -200
       irot = 997
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29342,7 +29342,7 @@
       chmoth = 'BCS2'
       x = 68
       y = 0
-      z = 201
+      z = 206
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29361,7 +29361,7 @@
       chmoth = 'BCS2'
       x = 68
       y = 0
-      z = -201
+      z = -206
       irot = 998
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29387,7 +29387,7 @@
       npar = 5
       par(1) = 69
       par(2) = 71
-      par(3) = 205
+      par(3) = 210
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -29434,7 +29434,7 @@
       npar = 5
       par(1) = 69
       par(2) = 71
-      par(3) = 205
+      par(3) = 210
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -29506,7 +29506,7 @@
       chshap = 'TRAP'
       nmed = 226
       npar = 11
-      par(1) = 2.5
+      par(1) = 5
       par(2) = 0
       par(3) = 0
       par(4) = 1
@@ -29525,7 +29525,7 @@
       chmoth = 'BCS3'
       x = 70
       y = 0
-      z = 197.5
+      z = 200
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29544,7 +29544,7 @@
       chmoth = 'BCS3'
       x = 70
       y = 0
-      z = -197.5
+      z = -200
       irot = 999
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29554,7 +29554,7 @@
       chmoth = 'BCS3'
       x = 70
       y = 0
-      z = 201
+      z = 206
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29573,7 +29573,7 @@
       chmoth = 'BCS3'
       x = 70
       y = 0
-      z = -201
+      z = -206
       irot = 1000
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29599,7 +29599,7 @@
       npar = 5
       par(1) = 71
       par(2) = 73
-      par(3) = 205
+      par(3) = 210
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -29646,7 +29646,7 @@
       npar = 5
       par(1) = 71
       par(2) = 73
-      par(3) = 205
+      par(3) = 210
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -29718,7 +29718,7 @@
       chshap = 'TRAP'
       nmed = 230
       npar = 11
-      par(1) = 2.5
+      par(1) = 5
       par(2) = 0
       par(3) = 0
       par(4) = 1
@@ -29737,7 +29737,7 @@
       chmoth = 'BCS4'
       x = 72
       y = 0
-      z = 197.5
+      z = 200
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29756,7 +29756,7 @@
       chmoth = 'BCS4'
       x = 72
       y = 0
-      z = -197.5
+      z = -200
       irot = 1001
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29766,7 +29766,7 @@
       chmoth = 'BCS4'
       x = 72
       y = 0
-      z = 201
+      z = 206
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29785,7 +29785,7 @@
       chmoth = 'BCS4'
       x = 72
       y = 0
-      z = -201
+      z = -206
       irot = 1002
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29811,7 +29811,7 @@
       npar = 5
       par(1) = 73
       par(2) = 75
-      par(3) = 205
+      par(3) = 210
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -29858,7 +29858,7 @@
       npar = 5
       par(1) = 73
       par(2) = 75
-      par(3) = 205
+      par(3) = 210
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -29930,7 +29930,7 @@
       chshap = 'TRAP'
       nmed = 234
       npar = 11
-      par(1) = 2.5
+      par(1) = 5
       par(2) = 0
       par(3) = 0
       par(4) = 1
@@ -29949,7 +29949,7 @@
       chmoth = 'BCS5'
       x = 74
       y = 0
-      z = 197.5
+      z = 200
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29968,7 +29968,7 @@
       chmoth = 'BCS5'
       x = 74
       y = 0
-      z = -197.5
+      z = -200
       irot = 1003
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29978,7 +29978,7 @@
       chmoth = 'BCS5'
       x = 74
       y = 0
-      z = 201
+      z = 206
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -29997,7 +29997,7 @@
       chmoth = 'BCS5'
       x = 74
       y = 0
-      z = -201
+      z = -206
       irot = 1004
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -30023,7 +30023,7 @@
       npar = 5
       par(1) = 75
       par(2) = 77
-      par(3) = 205
+      par(3) = 210
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -30070,7 +30070,7 @@
       npar = 5
       par(1) = 75
       par(2) = 77
-      par(3) = 205
+      par(3) = 210
       par(4) = -0.9375
       par(5) = 0.9375
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -30142,7 +30142,7 @@
       chshap = 'TRAP'
       nmed = 238
       npar = 11
-      par(1) = 2.5
+      par(1) = 5
       par(2) = 0
       par(3) = 0
       par(4) = 1
@@ -30161,7 +30161,7 @@
       chmoth = 'BCS6'
       x = 76
       y = 0
-      z = 197.5
+      z = 200
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -30180,7 +30180,7 @@
       chmoth = 'BCS6'
       x = 76
       y = 0
-      z = -197.5
+      z = -200
       irot = 1005
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -30190,7 +30190,7 @@
       chmoth = 'BCS6'
       x = 76
       y = 0
-      z = 201
+      z = 206
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -30209,7 +30209,7 @@
       chmoth = 'BCS6'
       x = 76
       y = 0
-      z = -201
+      z = -206
       irot = 1006
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -30235,7 +30235,7 @@
       npar = 5
       par(1) = 77
       par(2) = 82.23
-      par(3) = 205
+      par(3) = 210
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -30282,7 +30282,7 @@
       npar = 5
       par(1) = 77
       par(2) = 82.23
-      par(3) = 205
+      par(3) = 210
       par(4) = -1.875
       par(5) = 1.875
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -30354,7 +30354,7 @@
       chshap = 'TRAP'
       nmed = 242
       npar = 11
-      par(1) = 5
+      par(1) = 9.5
       par(2) = 0
       par(3) = 0
       par(4) = 2.52
@@ -30373,7 +30373,7 @@
       chmoth = 'BCA7'
       x = 79.62
       y = 0
-      z = 200
+      z = 203
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -30392,7 +30392,7 @@
       chmoth = 'BCA7'
       x = 79.62
       y = 0
-      z = -200
+      z = -203
       irot = 1007
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -30418,7 +30418,7 @@
       npar = 5
       par(1) = 82.23
       par(2) = 87.46
-      par(3) = 205
+      par(3) = 210
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -30465,7 +30465,7 @@
       npar = 5
       par(1) = 82.23
       par(2) = 87.46
-      par(3) = 205
+      par(3) = 210
       par(4) = -1.875
       par(5) = 1.875
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
@@ -30537,7 +30537,7 @@
       chshap = 'TRAP'
       nmed = 246
       npar = 11
-      par(1) = 5
+      par(1) = 9.5
       par(2) = 0
       par(3) = 0
       par(4) = 2.52
@@ -30556,7 +30556,7 @@
       chmoth = 'BCA8'
       x = 84.85
       y = 0
-      z = 200
+      z = 203
       irot = 0
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -30575,7 +30575,7 @@
       chmoth = 'BCA8'
       x = 84.85
       y = 0
-      z = -200
+      z = -203
       irot = 1008
       chonly = 'ONLY'
       call gspos(chname,nr,chmoth,x,y,z,irot,chonly)
@@ -30601,7 +30601,7 @@
       npar = 5
       par(1) = 87.46
       par(2) = 90
-      par(3) = 205
+      par(3) = 195
       par(4) = -3.75
       par(5) = 3.75
       call gsvolu(chname,chshap,nmed,par,npar,ivolu)
