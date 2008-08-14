@@ -1,4 +1,4 @@
-      PROGRAM GXTWIST
+      SUBROUTINE GXTWIST
 
       implicit none
       real q,hq
