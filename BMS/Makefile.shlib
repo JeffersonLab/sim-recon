@@ -41,6 +41,17 @@ endif
 LD_DIRS += $(addprefix -L,$(LIB_DIRS))
 LD_LIBS += $(addsuffix $(DEBUG_SUFFIX),$(addprefix -l,$(ADDITIONAL_MODULES)))
 
+# To avoid errors if there are NO headers in a libraries source directory
+# (this happened with a FORTRAN library) we have to define the command
+# here.
+HEADERS := $(wildcard *.h)
+ifeq ($(HEADERS),)
+  HEADER_CP_CMD = @echo "No Header Files to copy."
+else
+  HEADER_CP_CMD = install -p $(HEADERS) $(INSTALL_DIR)/include/$(MODULE_NAME)
+endif
+
+
 first: install
 
 all: mkdirs $(DEPS) $(LIB_DIR)/$(SOLIB_NAME)
@@ -62,7 +73,7 @@ install: all
 	mkdir -p $(INSTALL_DIR)/bin/$(BMS_OSNAME)
 	mkdir -p $(INSTALL_DIR)/include/$(MODULE_NAME)
 	install -p $(LIB_DIR)/$(SOLIB_NAME) $(INSTALL_DIR)/lib/$(BMS_OSNAME)
-	install -p *.h $(INSTALL_DIR)/include/$(MODULE_NAME)
+	$(HEADER_CP_CMD)
 
 relink: exec_clean all
 
