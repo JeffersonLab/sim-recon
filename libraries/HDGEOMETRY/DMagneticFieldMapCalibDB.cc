@@ -15,11 +15,11 @@ using namespace std;
 //---------------------------------
 // DMagneticFieldMapCalibDB    (Constructor)
 //---------------------------------
-DMagneticFieldMapCalibDB::DMagneticFieldMapCalibDB(JApplication *japp)
+DMagneticFieldMapCalibDB::DMagneticFieldMapCalibDB(JApplication *japp, string namepath)
 {
 	int runnumber = 1;
 	jcalib = japp->GetJCalibration(runnumber);
-	int Npoints = ReadMap(runnumber); 
+	int Npoints = ReadMap(namepath, runnumber); 
 	if(Npoints==0){
 		_DBG_<<"Error getting JCalibration object for magnetic field!"<<endl;
 		japp->Quit();
@@ -29,10 +29,10 @@ DMagneticFieldMapCalibDB::DMagneticFieldMapCalibDB(JApplication *japp)
 //---------------------------------
 // DMagneticFieldMapCalibDB    (Constructor)
 //---------------------------------
-DMagneticFieldMapCalibDB::DMagneticFieldMapCalibDB(JCalibration *jcalib)
+DMagneticFieldMapCalibDB::DMagneticFieldMapCalibDB(JCalibration *jcalib, string namepath)
 {
 	this->jcalib = jcalib;
-	if(ReadMap()==0){
+	if(ReadMap(namepath)==0){
 		_DBG_<<"Error getting JCalibration object for magnetic field!"<<endl;
 		exit(1);
 	} 
@@ -49,7 +49,7 @@ DMagneticFieldMapCalibDB::~DMagneticFieldMapCalibDB()
 //---------------------------------
 // ReadMap
 //---------------------------------
-int DMagneticFieldMapCalibDB::ReadMap(int runnumber, string context)
+int DMagneticFieldMapCalibDB::ReadMap(string namepath, int runnumber, string context)
 {
 	/// Read the magnetic field map in from the calibration database.
 	/// This will read in the map and figure out the number of grid
@@ -62,7 +62,6 @@ int DMagneticFieldMapCalibDB::ReadMap(int runnumber, string context)
 	// we do it this way. 
 	if(!jcalib)return 0;
 	
-	string namepath = "Magnets/Solenoid/solenoid_1500";
 	cout<<"Reading Magnetic field map from "<<namepath<<" ..."<<endl;
 	vector< vector<float> > Bmap;
 	jcalib->Get(namepath, Bmap);
