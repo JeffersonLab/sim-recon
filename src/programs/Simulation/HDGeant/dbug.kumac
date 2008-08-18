@@ -1,0 +1,52 @@
+MACRO dbug key=help
+  if ([key] = help) then
+    message 'Usage: dbug [-]<keyword1> [ [-]<keyword2> [...]]'
+    message 'where <keyword> is one of the following:'
+    message '1) none - disables all debugging options'
+    message '2) printout - enables step-by-step debug printout during tracking'
+    message '3) store - stores step-by-step track coordinates during tracking'
+    message '4) plot - plots the tracks on the current drawing view'
+    message '5) plotnow - plots at every step instead of at end of track'
+    message '6) neutrals - renders neutral tracks visible during plotting'
+    exitm
+  endif
+  while [1] <> ' ' do
+    case [1] in
+    (none)
+        switch 1 0
+        switch 2 0
+        switch 3 0
+        debug off
+    (-none)
+        message 'This is meaningless!'
+    (printout)
+        switch 2 2
+        debug on
+    (-printout)
+        switch 2 0
+    (store)
+        switch 3 1
+        debug on
+    (-store)
+        switch 3 0
+    (plot)
+        switch 3 1
+        switch 2 3
+        debug on
+    (-plot)
+        switch 2 0
+    (plotnow)
+        switch 2 4
+        debug on
+    (-plotnow)
+        switch 2 0
+    (neutrals)
+        switch 4 0
+        debug on
+    (-neutrals)
+        switch 4 3
+        switch 2 3
+    endcase
+    shift
+  endwhile
+RETURN
