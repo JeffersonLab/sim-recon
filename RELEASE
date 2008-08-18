@@ -1,0 +1,671 @@
+
+Release Notes for Hall-D source code
+------------------------------------
+
+   URL: https://halldsvn.jlab.org/repos/tags/release-2008-08-18
+  Date: August 18, 2008
+Author: David Lawrence davidl@jlab.org
+
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Mac OS X 10.4.11 (Darwin Kernel Version 8.11.1)
+------------
+  Xerces 2.7.0
+  JANA 0.4.7
+  ROOT 5.14/00
+  gcc/g++  : gcc version 4.0.1 (Apple Computer, Inc. build 5367)
+  gfortran : gcc version 4.3.0 20061230 (experimental)
+
+Fedora release 8 (Werewolf) on i686  32-bit
+------------
+  Xerces 2.8
+  JANA 0.4.7
+  ROOT 5.14/00g
+  lesstif-devel 0.95.0-25.fc8
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+
+
+Relevant repository log of changes:
+
+command: svn log -r 3835:4059 --verbose https://halldsvn.jlab.org/repos/trunk/src
+
+------------------------------------------------------------------------
+r3856 | staylor | 2008-07-01 08:58:03 -0400 (Tue, 01 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.cc
+   M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.h
+
+If the track candidate contains at least one FDC segment, use the data from the most upstream segment to provide initial guesses for the tracking parameters for the kalman filter; otherwise use the reference trajectory as before. Added routine to get position and momentum given an FDC segment.
+------------------------------------------------------------------------
+r3863 | staylor | 2008-07-02 08:11:41 -0400 (Wed, 02 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+After the trajectory passes through the CDC endplate, transform the track parameters from the forward tracking set -- x,y,tx,ty,q/p -- to a central tracking set -> q/pT,phi,tan(lambda),D,z, where D is the distance of closest approach to a CDC wire.  Use this new parameterization for the projection back to the beam line.  The Jacobian matrix is not filled in yet and D is set to zero while I figure out what to do with it.
+------------------------------------------------------------------------
+r3868 | davidl | 2008-07-03 10:36:21 -0400 (Thu, 03 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/Makefile
+
+Make the trackeff_hists2 plugin by default, but not the trackeff_hists plugin.
+------------------------------------------------------------------------
+r3869 | davidl | 2008-07-03 14:48:43 -0400 (Thu, 03 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/root2email/root2email.cc
+
+Replaced call to TFile::GetObject() with call to TROOT::FindObject() since the former did not appear to be working on ifarml1 while the latter did.
+------------------------------------------------------------------------
+r3874 | davidl | 2008-07-03 16:22:29 -0400 (Thu, 03 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/genr8/InputFiles/p_pi+pi-pi0.input
+
+Replaced Xmass, Xwidth, beamZ with actual numbers so this will work 'out of the box'.
+------------------------------------------------------------------------
+r3887 | staylor | 2008-07-07 12:36:44 -0400 (Mon, 07 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.cc
+
+Fixed order of arguments to the Kalman fit AddHit method
+------------------------------------------------------------------------
+r3888 | marki | 2008-07-07 12:50:56 -0400 (Mon, 07 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant
+   M /trunk/src/programs/Simulation/HDGeant/control.in
+
+ignore run-produced junk
+------------------------------------------------------------------------
+r3889 | marki | 2008-07-07 12:53:41 -0400 (Mon, 07 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/control.in
+
+restore to revision 3721, modified version mistakenly checked in
+------------------------------------------------------------------------
+r3891 | zihlmann | 2008-07-08 08:43:31 -0400 (Tue, 08 Jul 2008) | 3 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/ForwardDC_HDDS.xml
+
+re-route the FDC cables upstream through the solenoid.
+a comment has been put into the file itself about this change.
+
+------------------------------------------------------------------------
+r3895 | shepherd | 2008-07-08 16:15:35 -0400 (Tue, 08 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/bkgStudy/FillHitsProc.cc
+   M /trunk/src/programs/Analysis/bkgStudy/FillHitsProc.h
+
+fixed BCAL plotting to use DHDDMBCALHit
+------------------------------------------------------------------------
+r3903 | zihlmann | 2008-07-09 16:30:29 -0400 (Wed, 09 Jul 2008) | 8 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/hddsGeant3.F
+   M /trunk/src/programs/Simulation/hdds/BarrelEMcal_HDDS.xml
+   M /trunk/src/programs/Simulation/hdds/BarrelEMcal_HDDS.xml_3x3
+   M /trunk/src/programs/Simulation/hdds/CentralDC_HDDS.xml
+
+Update geometry to reflect all current desing descissions:
+1) CDC with 24 layers: removed the outermost layer and make the CDC radius 1.6cm shorter
+2) BCAL add 8mm aluminum plate on the inside of the barrel
+3) update the resulting geometry fortran file in the Monte Carlo directory
+4) fixed bug for layer 8 numbering in the BCAL (as found by Matt)
+5) BCAL fixes added to the 3x3 readout scheem file
+
+
+------------------------------------------------------------------------
+r3904 | marki | 2008-07-09 16:43:19 -0400 (Wed, 09 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trackeff_hists2/DTrackingResolutionGEANT.cc
+
+Add include of <cstdlib> to declare exit()
+------------------------------------------------------------------------
+r3906 | zihlmann | 2008-07-10 08:20:58 -0400 (Thu, 10 Jul 2008) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/CentralDC_HDDS.xml
+
+remove also the outer most layer 25 of the option-2 implementation
+of the CDC. in this way also option-2 is compatible with the outer
+dimateter of the CDC
+
+------------------------------------------------------------------------
+r3914 | marki | 2008-07-11 09:43:32 -0400 (Fri, 11 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/CDC/DCDCTrackHit.h
+
+fix typo in wire x-coord, adjust format for dist on toStrings
+------------------------------------------------------------------------
+r3917 | staylor | 2008-07-11 15:32:13 -0400 (Fri, 11 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+Created enum to provide labels for the various tracking parameters.  Added transform of covariance matrix from the forward parameter set to the central parameter set.  Increase the number of iterations from 3 to 10.  Look for mininum chisq to determine best values for S and C. Scale diagonal elements of C by 10000 before each iteration.
+------------------------------------------------------------------------
+r3918 | jonesrt | 2008-07-13 06:28:44 -0400 (Sun, 13 Jul 2008) | 6 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/stdhep_translators/stdhep2hddm.c
+
+stdhep2hddm.c [rtj]
+   - A long time ago I changed the convention of uninstantiated targets
+     in hddm from null pointers to a valid but unique target called
+     hddm_nullTarget.  I failed to propagate that change to stdhep2hddm.c
+     so it has not worked for a long time.  Bug fixed.
+
+------------------------------------------------------------------------
+r3919 | jonesrt | 2008-07-14 21:32:23 -0400 (Mon, 14 Jul 2008) | 6 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/hdds-geant.cpp
+
+hdds-geant.cpp [rtj]
+   - Add a check that the polyplanes of a pcon or pgon are ordered such that
+     the z-values are non-decreasing.  The user may assume that they can be
+     listed in either order, but a little-known feature of the Geant3
+     geometry package requires that they be listed in the order low->high.
+
+------------------------------------------------------------------------
+r3920 | shepherd | 2008-07-15 15:11:29 -0400 (Tue, 15 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/BCAL/DBCALMCResponse_factory.cc
+   M /trunk/src/libraries/BCAL/DBCALMCResponse_factory.h
+
+added time smearing to MC response based on beam test results and adjusteded cell threshold
+------------------------------------------------------------------------
+r3921 | staylor | 2008-07-15 18:17:36 -0400 (Tue, 15 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+Add cdc hits and fdc segments as associated objects to track candidates
+------------------------------------------------------------------------
+r3926 | zihlmann | 2008-07-16 15:40:16 -0400 (Wed, 16 Jul 2008) | 3 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/ForwardDC_HDDS.xml
+
+set the z components of the polylines that simulate the cable volumes
+in ascending order so it will be handled correctly by GEANT3.
+
+------------------------------------------------------------------------
+r3927 | zihlmann | 2008-07-16 15:43:33 -0400 (Wed, 16 Jul 2008) | 2 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/hddsGeant3.F
+
+new geometry file with the correctly implemented FDC cables running upstream
+
+------------------------------------------------------------------------
+r3928 | marki | 2008-07-17 08:00:17 -0400 (Thu, 17 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/FDC/DFDCSegment.h
+
+Extraneous typedef removed: Simon should check this.
+------------------------------------------------------------------------
+r3940 | zihlmann | 2008-07-18 16:20:27 -0400 (Fri, 18 Jul 2008) | 12 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/hddsGeant3.F
+   M /trunk/src/programs/Simulation/hdds/BarrelEMcal_HDDS.xml
+   M /trunk/src/programs/Simulation/hdds/BarrelEMcal_HDDS.xml_3x3
+   M /trunk/src/programs/Simulation/hdds/CentralDC_HDDS.xml
+
+the Barrel calorimeter has now an 8mm aluminum plate at the inside
+of the Barrel. This volume is now also visible by GEANT.
+the same is done for the 3x3 readout version.
+
+The CDC are now defined according to the Gluex doc 979 with the correct number 
+of straws per layer and the correct radii. Also the axial layers are shifted/rotated
+w.r.t. eachother layer so avoid lineups.
+
+all this changes are reflected in the fortran geometry file need for the MC and the
+file is updated in the appropirate directory HDGeant.
+
+
+------------------------------------------------------------------------
+r3941 | davidl | 2008-07-21 08:57:22 -0400 (Mon, 21 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trackeff_hists2/DEventProcessor_trackeff_hists.cc
+   M /trunk/src/programs/Analysis/plugins/trackeff_hists2/track.h
+
+Added hit-value chisq from tracking to tree made with trackeff_hists2 plugin.
+------------------------------------------------------------------------
+r3953 | staylor | 2008-07-21 13:59:50 -0400 (Mon, 21 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+Add stereo hits to track candidate as associated objects.  Turn on averaging of B-field using stereo info.
+------------------------------------------------------------------------
+r3958 | staylor | 2008-07-21 18:28:45 -0400 (Mon, 21 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+Make sure we only use axial CDC hits in the combined FDC+CDC circle refit.  For those CDC candidates we failed to match with FDC candidates by swimming to the CDC end plate, swim the FDC candidates back toward the target looking for CDC axial hits that are close to the projected radial positions.  Assume gaussian errors and assign a minimum probability of 10 percent.  Require all the axial hits to satisfy this condition before indicating that the FDC and CDC candidates are matched.  Pass along the CDC hits as associated objects.
+------------------------------------------------------------------------
+r3959 | staylor | 2008-07-21 18:32:42 -0400 (Mon, 21 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.cc
+   M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.h
+
+Removed use of reference trajectory objects-- use DMagneticFieldStepper SwimToPlane and SwimToRadius routines instead.  Start to include  CDC hits as well as FDC hits.
+------------------------------------------------------------------------
+r3960 | staylor | 2008-07-21 18:39:38 -0400 (Mon, 21 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+Split kalman loop routine up into methods that deal with the FDC hits, any CDC hits in the track candidate and extrapolation to the beam line.  The part that deals with the CDC hits does not do anything particularly useful right now except for track swimming -- the hit info is not being used yet.
+------------------------------------------------------------------------
+r3962 | davidl | 2008-07-22 14:47:47 -0400 (Tue, 22 Jul 2008) | 2 lines
+Changed paths:
+   D /trunk/scripts/osrelease.pl
+   A /trunk/src/BMS/osrelease.pl (from /trunk/scripts/osrelease.pl:3961)
+
+Moving osrelease.pl script into BMS directory.
+
+------------------------------------------------------------------------
+r3964 | davidl | 2008-07-22 14:51:31 -0400 (Tue, 22 Jul 2008) | 2 lines
+Changed paths:
+   A /trunk/home/davidl/JIL/jil_exe2xml (from /trunk/src/BMS/jil_exe2xml:3963)
+   D /trunk/src/BMS/jil_exe2xml
+
+Moving JIL script
+
+------------------------------------------------------------------------
+r3965 | davidl | 2008-07-22 14:52:05 -0400 (Tue, 22 Jul 2008) | 2 lines
+Changed paths:
+   A /trunk/home/davidl/JIL/jil_xml2cpp (from /trunk/src/BMS/jil_xml2cpp:3964)
+   D /trunk/src/BMS/jil_xml2cpp
+
+Moving JIL script
+
+------------------------------------------------------------------------
+r3966 | davidl | 2008-07-22 14:56:15 -0400 (Tue, 22 Jul 2008) | 4 lines
+Changed paths:
+   M /trunk/src/BMS/Makefile.bin
+   M /trunk/src/BMS/Makefile.common
+   M /trunk/src/BMS/Makefile.lib
+   M /trunk/src/BMS/Makefile.shlib
+
+-Renamed OSNAME to BMS_OSNAME following suggestion by Elliott. The enviro var. OSNAME is used frequently on unix flavors and can cause problems.
+
+-Incorporated osrelease.pl script to set BMS_OSNAME. Now, instead of a simple form such as Linux-i686, a more descriptive string is used such as Linux_Fedora8-i686-gcc4.1.2. This is needed because of the numerous Linux systems out there now running with incompatible versions of gcc.
+
+------------------------------------------------------------------------
+r3978 | staylor | 2008-07-25 15:24:33 -0400 (Fri, 25 Jul 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+More progress in including CDC hits infits for forward-going tracks.  For each wire the code swims to the doca, whereaupon the hit information is added.  This means that the coordinate system for determining this doca is constantly changing along the track.  The covariance terms for D still need to be worked out.
+------------------------------------------------------------------------
+r3984 | davidl | 2008-07-28 10:30:49 -0400 (Mon, 28 Jul 2008) | 18 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/guout.F
+
+- Only call FDPREE if HADR flag is set to 3 or more indicating FLUKA is being used.
+
+This is motivated by the situation on a Fedora8 machine with the default cernlib 2006
+installed which does not have FLUKA support. When a value of HADR=1 is specified
+in the control.in file, hdgeant would quit on this call complaining about
+the absence of FLUKA. A value of HADR=1 should indicate only GEISHA be used for
+hadronic interactions so the FLUKA specific call FDPREE should not be made.
+
+An interesting side note: When a value of HADR=3 was specified in control.in, it 
+seemed to set IHADR to 1. For all other values, IHADR was set to whatever the HADR
+flag was set to. This may have been done in the same dummy library that replaced the
+FLUKA calls since HADR=3 means GEISHA and FLUKA and HADR=1 means only GEISHA. The end
+result is that setting HADR=3 is equivalent to HADR=1 on systems without FLUKA support
+compiled in, but with no warning messages to indicate to the user this is happening.
+Using a value of HADR=4 will cause the program to quit with an appropriate error
+message.
+
+
+------------------------------------------------------------------------
+r3989 | davidl | 2008-07-30 13:41:33 -0400 (Wed, 30 Jul 2008) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/bggen/code/bggen.F
+   A /trunk/src/programs/Simulation/bggen/code/bggen.cc
+
+Making a C++ wrapper for bggen main routine which is in FORTRAN. This seems to be needed on Mac OS X 10.4 and seems to also work on Fedora 8. Without this, it seems that main_ is not defined (only _MAIN_).
+
+This revision will actually not work since bggen.F needs to be renamed to bggen_F.F. Since I modified it, that has to be done a second commit which I will do immediately after this one.
+
+------------------------------------------------------------------------
+r3990 | davidl | 2008-07-30 13:41:58 -0400 (Wed, 30 Jul 2008) | 2 lines
+Changed paths:
+   D /trunk/src/programs/Simulation/bggen/code/bggen.F
+   A /trunk/src/programs/Simulation/bggen/code/bggen_F.F (from /trunk/src/programs/Simulation/bggen/code/bggen.F:3989)
+
+enaming bggen.F to bggen_F.F as promised.
+
+------------------------------------------------------------------------
+r3991 | davidl | 2008-07-31 01:18:38 -0400 (Thu, 31 Jul 2008) | 2 lines
+Changed paths:
+   A /trunk/src/programs/Utilities/root2hbook
+   A /trunk/src/programs/Utilities/root2hbook/Makefile
+   A /trunk/src/programs/Utilities/root2hbook/cern_c.c
+   A /trunk/src/programs/Utilities/root2hbook/cern_c.h
+   A /trunk/src/programs/Utilities/root2hbook/root2hbook.cc
+
+A quickly written utility for converting a specific ROOT tree into a an HBOOK Ntuple. This is specific to the format of the ROOT tree used by Matt S. in a file produced for the PrimEx collaborators to look at. It is not a general tool.
+
+------------------------------------------------------------------------
+r3992 | davidl | 2008-07-31 08:21:30 -0400 (Thu, 31 Jul 2008) | 5 lines
+Changed paths:
+   M /trunk/src/BMS/Makefile.shlib
+
+Add path to shared object name. This was a bug before when doing a
+"make exec_clean" (which was used by "make relink") that caused the
+binary to not actually be deleted since it was looking in the wrong
+place.
+
+------------------------------------------------------------------------
+r3993 | davidl | 2008-07-31 08:23:33 -0400 (Thu, 31 Jul 2008) | 4 lines
+Changed paths:
+   M /trunk/src/BMS/Makefile.bin
+
+Add -c to argument list when generating make dependancy rule for fortran.
+This eliminates (on at least some platforms) the annoying warnings from 
+gfortran about linking not being done.
+
+------------------------------------------------------------------------
+r3994 | davidl | 2008-07-31 08:26:30 -0400 (Thu, 31 Jul 2008) | 5 lines
+Changed paths:
+   M /trunk/src/BMS/Makefile.CERNLIB
+
+Add the /usr/include/cernlib/$CERN_LEVEL directory to the include path
+when compiling programs with cernlib support. This is needed because
+of the unfortunate installation scheme fedora used with their implementation
+of cernlib available through the package manager on Fedora 8.
+
+------------------------------------------------------------------------
+r3995 | davidl | 2008-07-31 09:13:13 -0400 (Thu, 31 Jul 2008) | 9 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/trk_mainframe.cc
+   M /trunk/src/programs/Analysis/hdview2/trk_mainframe.h
+
+Added checkbutton to Track Inspector window to allow one to lock
+the s-axis to the primary track. Specifically, setting it on
+plots hits from secondary tracks at the s-value for the given
+wire from the prime track. This makes it easier to visualize
+certain aspects of the fit and thrown tracks when comparing the
+2 by lining up hits from the same wire in s. The original drawing
+method is still available by de-selecting the checkbutton.
+
+
+------------------------------------------------------------------------
+r4001 | staylor | 2008-08-01 17:18:13 -0400 (Fri, 01 Aug 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DMagneticFieldStepper.cc
+
+Fixed bug in SwimToRadius that resulted in the input momentum before the swim to be the same as the output momentum after the swim.  The momentum was being updated internally within the class but the end result never got out of the routine...
+------------------------------------------------------------------------
+r4006 | zihlmann | 2008-08-05 11:47:34 -0400 (Tue, 05 Aug 2008) | 3 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/hitFCal.c
+
+initialize the momentum, time and particle type of the primary particle
+hitting the FCAL in the FcalTruthShower structure
+
+------------------------------------------------------------------------
+r4007 | shepherd | 2008-08-05 12:17:37 -0400 (Tue, 05 Aug 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/BCAL/DBCALGeometry_factory.cc
+
+adjusted BCAL geometry to default 4x6 inner and 2x2 outer segmentation
+------------------------------------------------------------------------
+r4008 | shepherd | 2008-08-05 12:27:21 -0400 (Tue, 05 Aug 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/BCAL/BCAL_init.cc
+
+remove registry of DBCALShower_factory_IU
+------------------------------------------------------------------------
+r4009 | shepherd | 2008-08-05 12:28:52 -0400 (Tue, 05 Aug 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/BCAL/DBCALShower_factory.cc
+   M /trunk/src/libraries/BCAL/DBCALShower_factory.h
+   D /trunk/src/libraries/BCAL/DBCALShower_factory_IU.cc
+   D /trunk/src/libraries/BCAL/DBCALShower_factory_IU.h
+
+merge IU tageed DBCALShower_factory back to default DBCALShower_factory
+------------------------------------------------------------------------
+r4010 | shepherd | 2008-08-05 12:30:17 -0400 (Tue, 05 Aug 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/BCAL/DBCALPhoton_factory.cc
+   M /trunk/src/libraries/BCAL/DBCALPhoton_factory.h
+
+adjust DBCALPhoton_factory to get default photons and also recalibrate for new thresholds and 4x6 geometry
+------------------------------------------------------------------------
+r4014 | staylor | 2008-08-06 08:16:57 -0400 (Wed, 06 Aug 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.cc
+
+(1) For central tracks swim out to the BCAL inner radius for initial values. (2) Only use track segment in the FDC if there are at least 4 hits in the segment, otherwise swim to the last hit.
+------------------------------------------------------------------------
+r4015 | staylor | 2008-08-06 08:25:20 -0400 (Wed, 06 Aug 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+Include process noise routine for central tracks. Numerous tweaks to forward and central kalman routines.  Initialize covariance matrices with reasonable guesses for errors on the parameters returned by the track finding routines.  For example, for now assume 20% momentum resolution and 10 mrad angular uncertainty. These are much bigger than the expected final results but not as enormous as the orginal guess of 1's on the C diagonal...
+------------------------------------------------------------------------
+r4021 | shepherd | 2008-08-08 16:17:48 -0400 (Fri, 08 Aug 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/FCAL/DFCALTruthShower.h
+
+modifications to DFCALTruthShower to include momentum and type
+------------------------------------------------------------------------
+r4022 | shepherd | 2008-08-08 16:18:01 -0400 (Fri, 08 Aug 2008) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDDM/DEventSourceHDDM.cc
+
+modifications to DFCALTruthShower to include momentum and type
+------------------------------------------------------------------------
+r4023 | zihlmann | 2008-08-09 15:13:30 -0400 (Sat, 09 Aug 2008) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/hitFCal.c
+
+write into the TruthShower structure the actual momentum px py pz
+instead of the fractional momentum. the variable E in this structure
+contains the absolute momentum value of the particle
+
+------------------------------------------------------------------------
+r4032 | jonesrt | 2008-08-12 15:48:42 -0400 (Tue, 12 Aug 2008) | 6 lines
+Changed paths:
+   M /trunk/src/programs/Utilities/hddm/index.html
+   M /trunk/src/programs/Utilities/hddm/mc.xml
+
+mc.xml  [rtj]
+   - insert the template contents inline instead of using xml includes.
+index.html [rtj]
+   - fix the examples to include the xmlns option on the HDDM tag,
+     so that the hddm-schema translator recognizes the user's tags.
+
+------------------------------------------------------------------------
+r4033 | jonesrt | 2008-08-12 16:24:35 -0400 (Tue, 12 Aug 2008) | 3 lines
+Changed paths:
+   M /trunk/src/programs/Utilities/hddm/index.html
+
+index.html [rtj]
+   - fixed a typo in the header line of one of the examples.
+
+------------------------------------------------------------------------
+r4036 | jonesrt | 2008-08-13 10:53:05 -0400 (Wed, 13 Aug 2008) | 7 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/hitBCal.c
+   M /trunk/src/programs/Simulation/HDGeant/hitCDC.c
+   M /trunk/src/programs/Simulation/HDGeant/hitCerenkov.c
+   M /trunk/src/programs/Simulation/HDGeant/hitFCal.c
+   M /trunk/src/programs/Simulation/HDGeant/hitFDC.c
+   M /trunk/src/programs/Simulation/HDGeant/hitGCal.c
+   M /trunk/src/programs/Simulation/HDGeant/hitStart.c
+   M /trunk/src/programs/Simulation/HDGeant/hitUPV.c
+
+hitGCal.c hitStart.c hitUPV.c hitCDC.c 
+hitFDC.c hitBCal.c hitFCal.c hitCerenkov.c [rtj]
+   - modified to load the correct values into the new attributes of the hit
+     tags.  In the case of hitFCal.c, someone tried to do it, but didn't
+     quite get it right.  It is correct now.
+
+
+------------------------------------------------------------------------
+r4041 | davidl | 2008-08-14 09:19:45 -0400 (Thu, 14 Aug 2008) | 2 lines
+Changed paths:
+   D /trunk/gxtwist
+   A /trunk/src/programs/Simulation/gxtwist (from /trunk/gxtwist:4040)
+
+ Moving gxtwist from topmost directory to inside Simulation source directory.
+
+------------------------------------------------------------------------
+r4044 | zihlmann | 2008-08-14 11:58:21 -0400 (Thu, 14 Aug 2008) | 5 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/BarrelEMcal_HDDS.xml
+
+design readout of 4x6 in the innter section of the BCal has now
+light guids with length according to glueX document 1077.
+The upstream end does NOT have the 50cm light guides required
+if fine mesh PMTs are chosen for the outer readout.
+
+------------------------------------------------------------------------
+r4045 | zihlmann | 2008-08-14 11:59:18 -0400 (Thu, 14 Aug 2008) | 3 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/hddsGeant3.F
+
+relfect the change of the Barrel calorimeter light guide
+geometry in the fortran file for the geometry.
+
+------------------------------------------------------------------------
+r4046 | davidl | 2008-08-14 13:36:11 -0400 (Thu, 14 Aug 2008) | 1 line
+Changed paths:
+   A /trunk/src/BMS/Makefile.CURL
+
+Added BMS makefile for CURL support
+------------------------------------------------------------------------
+r4047 | davidl | 2008-08-14 13:37:28 -0400 (Thu, 14 Aug 2008) | 1 line
+Changed paths:
+   M /trunk/src/BMS/Makefile.shlib
+
+Fixed Makefile.shlib so it checks if no headers are present before attempting to copy them.
+------------------------------------------------------------------------
+r4049 | davidl | 2008-08-14 17:01:36 -0400 (Thu, 14 Aug 2008) | 40 lines
+Changed paths:
+   D /trunk/src/programs/Simulation/gxtwist/Makefile
+   A /trunk/src/programs/Simulation/gxtwist/Makefile.bms
+   A /trunk/src/programs/Simulation/gxtwist/Makefile.orig (from /trunk/src/programs/Simulation/gxtwist/Makefile:4041)
+   A /trunk/src/programs/Simulation/gxtwist/getwebfile.c
+   M /trunk/src/programs/Simulation/gxtwist/gxint.F
+   A /trunk/src/programs/Simulation/gxtwist/gxtwist++.cc
+   D /trunk/src/programs/Simulation/gxtwist/gxtwist.F
+   A /trunk/src/programs/Simulation/gxtwist/gxtwist_f.F (from /trunk/src/programs/Simulation/gxtwist/gxtwist.F:4041)
+   M /trunk/src/programs/Simulation/gxtwist/hdds/Makefile
+   M /trunk/src/programs/Simulation/gxtwist/hdds/Regions.xml
+   A /trunk/src/programs/Simulation/gxtwist/hdds/XParsers.cpp (from /trunk/src/programs/Simulation/hdds/XParsers.cpp:3201)
+   A /trunk/src/programs/Simulation/gxtwist/hdds/XParsers.hpp (from /trunk/src/programs/Simulation/hdds/XParsers.hpp:3201)
+   A /trunk/src/programs/Simulation/gxtwist/hdds/XString.cpp (from /trunk/src/programs/Simulation/hdds/XString.cpp:3201)
+   A /trunk/src/programs/Simulation/gxtwist/hdds/XString.hpp (from /trunk/src/programs/Simulation/hdds/XString.hpp:3201)
+   A /trunk/src/programs/Simulation/gxtwist/hdds/hdds-geant.cpp (from /trunk/src/programs/Simulation/hdds/hdds-geant.cpp:3201)
+   A /trunk/src/programs/Simulation/gxtwist/hdds/hddsCommon.cpp (from /trunk/src/programs/Simulation/hdds/hddsCommon.cpp:3201)
+   A /trunk/src/programs/Simulation/gxtwist/hdds/hddsCommon.hpp (from /trunk/src/programs/Simulation/hdds/hddsCommon.hpp:3201)
+
+This commit contains several significant changes to the gxtwist package.
+The changes are related primarily to the building and organization of 
+the code with no significant changes to the code function. The changes
+are meant to bring the gxtwist package more in line with the HDGeant
+package. The following is a list of changes:
+
+- Switched to BMS build scheme. The original Makefile was renamed to
+  Makefile.orig as was done in HDGeant. This required moving the
+  "main" routine into a C++ file (gxtwist.cc and gxtwist++.cc) and
+  renaming gxtwist.F to gxtwist_f.F.
+
+- Copied the hdds-geant.cpp program along with all of its support
+  files (XString.*, XParsers.*, ...) from version 3201 in the
+  src/programs/Simulation/hdds directory to the gxtwist/hdds
+  directory. This version pre-dates the change to using the calibDB
+  for the solenoid map so that gxtwist will continue to access the
+  tagger map from a file in the local working directory.
+
+- Renamed the hddsGeant3.F file for gxtwist to hddsGeant3_tagger.F
+  in order to keep it distinct from the hddsGeant3.F file used
+  by hdgeant. This change was actually made to the Makefile since
+  the hddsGeant3_tagger.F file is not kept in the repository.
+
+- Added a message (through hdds-geant) to print the name of the 
+  B-field map to the screen as it starts to read it in.
+
+- Changed the name of the B-field map in to use "-map" for the 
+  suffix rather than ".map". This is because the source file
+  is currently obtained from UConn as a gzipped file with a name
+  containing the dash, not a dot.
+
+- Added getwebfile.c which uses the CURL package to try and
+  automatically retrieve the B-field map file if it does not
+  currently exist in the current directory. This is significant
+  it that it now requires the libcurl package which may not be
+  installed on all platforms. It was however on all the ones I
+  checked. Note also that this requires an up-to-date BMS directory
+  since the Makefile.CURL file was added recently just for this.
+
+
+------------------------------------------------------------------------
+r4050 | davidl | 2008-08-14 17:06:05 -0400 (Thu, 14 Aug 2008) | 6 lines
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.cc
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.h
+
+Added a second, optional argument to DMagneticFieldMapCalibDB
+constructors to allow passing the field map's namepath in. The
+default is set to the solenoid 1500A map so it works as before.
+This change just allows one to create an DMagneticFieldMapCalibDB
+based on any map stored in the calibDB.
+
+------------------------------------------------------------------------
+r4051 | davidl | 2008-08-14 17:09:21 -0400 (Thu, 14 Aug 2008) | 10 lines
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/Makefile
+   M /trunk/src/libraries/TOF/Makefile
+
+Fixed bug in makefiles for HDGEOMETRY and TOF where they explicitly
+set the include search path for ROOT headers using the ROOTSYS
+environment variable. This is a problem for systems which have installed
+root in a non-standard way where the headers are not in
+$ROOTSYS/include.
+
+Now, they just add ROOT to the PACKAGES variable so that the BMS
+file Makefile.ROOT is used which correctly gets the search path
+(and other cflags) from root-config.
+
+------------------------------------------------------------------------
+r4053 | davidl | 2008-08-15 09:08:28 -0400 (Fri, 15 Aug 2008) | 1 line
+Changed paths:
+   A /trunk/src/programs/Simulation/gxtwist/Makefile
+
+Forgot to add Makefile ysterday
+------------------------------------------------------------------------
+r4055 | davidl | 2008-08-15 09:51:48 -0400 (Fri, 15 Aug 2008) | 1 line
+Changed paths:
+   A /trunk/src/programs/Simulation/gxtwist/gxtwist.cc
+
+Forgot to add gxtwist.cc yesterday
+------------------------------------------------------------------------
+r4057 | davidl | 2008-08-18 08:52:12 -0400 (Mon, 18 Aug 2008) | 1 line
+Changed paths:
+   D /trunk/src/programs/Simulation/gxtwist/hdgeant
+
+hdgeant executable looks to have been put here by mistake some time ago.
+------------------------------------------------------------------------
+r4058 | davidl | 2008-08-18 08:53:57 -0400 (Mon, 18 Aug 2008) | 1 line
+Changed paths:
+   D /trunk/src/programs/Simulation/gxtwist/hdds/hddsGeant3.F
+
+hddsGeant3.F file is no longer part of gxtwist. It has been replaced by hddsGeant3_tagger.F. Furthermore, this file is an intermediate file and should not exist in the repository anyway.
+------------------------------------------------------------------------
+r4059 | davidl | 2008-08-18 10:59:00 -0400 (Mon, 18 Aug 2008) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDParSim/DTrackingResolutionGEANT.cc
+   M /trunk/src/programs/Simulation/HDParSim/Makefile
+   A /trunk/src/programs/Simulation/HDParSim/getwebfile.c (from /trunk/src/programs/Simulation/gxtwist/getwebfile.c:4056)
+   A /trunk/src/programs/Simulation/HDParSim/getwebfile.h
+   D /trunk/src/programs/Simulation/HDParSim/hd_res_charged.root
+
+Remove hd_res_charged.root from repository and place it at a
+well-known URL. The file is now automatically downloaded at
+run time (if needed).
+
+------------------------------------------------------------------------
