@@ -12,6 +12,7 @@
 using namespace std;
 
 #include "DTrackingResolutionGEANT.h"
+#include "getwebfile.h"
 
 
 //---------------------------------
@@ -21,6 +22,10 @@ DTrackingResolutionGEANT::DTrackingResolutionGEANT()
 {
 	int argc=0;
 	TApplication *app = new TApplication("myapp", &argc, NULL);
+
+	// Get ROOT file from web if it is not already here
+	const char *url = "http://www.jlab.org/Hall-D/datatables/hd_res_charged.root";
+	getwebfile(url);
 
 	// Open ROOT file
 	file = new TFile("hd_res_charged.root");
