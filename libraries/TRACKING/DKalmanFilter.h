@@ -51,8 +51,9 @@ class DKalmanFilter{
 		  double covy, double covxy,double dE);
   jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
   jerror_t KalmanLoop(double mass_hyp);
-  jerror_t KalmanForward(double mass_hyp,DMatrix &S, DMatrix &C);
-  jerror_t KalmanCentral(double mass_hyp,DMatrix &S, DMatrix &C);
+  jerror_t KalmanForward(double mass_hyp,DMatrix &S,DMatrix &C,double &chisq);
+  jerror_t KalmanCentral(double mass_hyp,DMatrix &S, DMatrix &C,DVector3 &pos,
+			 double &chisq);
   jerror_t ExtrapolateToVertex(double mass_hyp,DMatrix Sc,DMatrix Cc);
 
   void GetMomentum(DVector3 &mom);
@@ -89,9 +90,10 @@ class DKalmanFilter{
 				DMatrix &J,DMatrix &D);
   jerror_t CalcDeriv(double z,DMatrix S, double dEdx, DMatrix &D);
 
-  jerror_t StepJacobian(DVector3 &pos,DVector3 wire_pos,double ds,
-			DMatrix &S, double dEdx,DMatrix &J);
+  jerror_t StepJacobian(DVector3 &pos,DVector3 wire_pos,DVector3 wiredir,
+			double ds,DMatrix &S, double dEdx,DMatrix &J);
   jerror_t CalcDerivAndJacobian(DVector3 pos,DVector3 &dpos,DVector3 wire_pos,
+				DVector3 wiredir,
 				DMatrix S,double dEdx,
 				DMatrix &J1,DMatrix &D1);
   jerror_t ConvertStateVector(double z,double wire_x,double wire_y,
@@ -100,6 +102,9 @@ class DKalmanFilter{
   jerror_t GetProcessNoiseCentral(double mass_hyp,double ds,
 				  double X0,DMatrix Sc,
 				  DMatrix &Q);
+  jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S,DMatrix &C);
+  jerror_t SwimToRadius(double Rf,DVector3 wirepos,DMatrix &Sc,DMatrix &Cc);
+
   const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   const DGeometry *geom;
 
