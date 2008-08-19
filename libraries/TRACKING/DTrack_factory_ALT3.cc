@@ -47,6 +47,8 @@ jerror_t DTrack_factory_ALT3::brun(JEventLoop *loop, int runnumber)
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   bfield = dapp->GetBfield();
   dgeom  = dapp->GetDGeometry(runnumber);
+  // Get the position of the exit of the CDC endplate from DGeometry
+  dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
 
   return NOERROR;
 }
@@ -85,6 +87,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
     DKalmanFilter fit(bfield,dgeom);
 
     for (unsigned int k=0;k<cdchits.size();k++){
+      // Find the outer radius with a hit in the CDC
       double r=cdchits[k]->wire->origin.Perp();
       if (r>R) R=r;
 
@@ -95,14 +98,14 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
     // Initialize the stepper 
     DMagneticFieldStepper stepper(bfield,tc->charge());
     
-    // Find reference tr by swimming through the field
+    // Find the track seed by swimming through the field
     DVector3 pos = tc->position();
     DVector3 mom = tc->momentum(); 	
     last_mom=mom;
     DVector3 norm(0,0,1);
     if (segments.size()==0){       
       if (cdchits.size()>0){
-	stepper.SwimToRadius(pos,mom,65.,NULL);
+	stepper.SwimToRadius(pos,mom,R+0.8,NULL);
       }
       last_pos=pos;
       last_mom=mom;
@@ -153,7 +156,8 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
       // swim from the origin to the most downstream fdc plane with a hit.
       if (last_hit_id>2)
 	GetPositionAndMomentum(segment,last_pos,last_mom);
-      else{
+      else
+	{
 	// Swim to FDC hit plane
 	stepper.SwimToPlane(pos,mom,
 	    segments[last_segment_id]->hits[last_hit_id]->wire->origin,
