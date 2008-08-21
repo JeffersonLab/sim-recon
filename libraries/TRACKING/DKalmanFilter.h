@@ -89,9 +89,14 @@ class DKalmanFilter{
   jerror_t CalcDerivAndJacobian(double z,DMatrix S,double dEdx,
 				DMatrix &J,DMatrix &D);
   jerror_t CalcDeriv(double z,DMatrix S, double dEdx, DMatrix &D);
+  jerror_t CalcDeriv(DVector3 pos,DVector3 &dpos,DVector3 wire_orig,
+		     DVector3 wiredir,DMatrix S,double dEdx,DMatrix &D1);
 
   jerror_t StepJacobian(DVector3 &pos,DVector3 wire_pos,DVector3 wiredir,
 			double ds,DMatrix &S, double dEdx,DMatrix &J);
+  jerror_t Step(DVector3 &pos,DVector3 wire_pos,DVector3 wiredir,double ds,
+		DMatrix &S, double dEdx);
+
   jerror_t CalcDerivAndJacobian(DVector3 pos,DVector3 &dpos,DVector3 wire_pos,
 				DVector3 wiredir,
 				DMatrix S,double dEdx,
@@ -104,6 +109,10 @@ class DKalmanFilter{
 				  DMatrix &Q);
   jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S,DMatrix &C);
   jerror_t SwimToRadius(double Rf,DVector3 wirepos,DMatrix &Sc,DMatrix &Cc);
+  
+  jerror_t GoldenSection(double &ds,double doca,double dedx,DVector3 &pos,
+		       DVector3 origin,DVector3 dir,  
+		       DMatrix &Sc,DMatrix &Jc);
 
   const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   const DGeometry *geom;
