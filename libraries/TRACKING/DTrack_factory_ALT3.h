@@ -42,6 +42,7 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
   double TOF_MASS;
   double MIN_FDC_HIT_PROB;
   unsigned int MIN_HITS;
+  double endplate_z,endplate_dz,endplate_rmin,endplate_rmax;
 
   jerror_t init(void);
   jerror_t brun(JEventLoop *loop, int runnumber);
