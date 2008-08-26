@@ -74,6 +74,7 @@ void PrintFactoryList(DApplication *app)
 	// register itself with the DApplication and the factories
 	// will be made, even ones from plugins passed on the command
 	// line.
+	app->Init();
 	JEventLoop *loop = new JEventLoop(app);
 	
 	// Print header
