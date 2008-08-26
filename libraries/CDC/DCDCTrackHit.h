@@ -23,7 +23,6 @@ class DCDCTrackHit:public JObject{
 		float dist;					// Measured DOCA in cm
 
 		void toStrings(vector<pair<string,string> > &items)const{
-		  std::cout << "toStrings in DCDCTrackHist.h\n";
 			AddString(items, "ring", "%d", wire->ring);
 			AddString(items, "straw", "%d", wire->straw);
 			AddString(items, "x(cm)", "%3.1f", wire->origin.x());
