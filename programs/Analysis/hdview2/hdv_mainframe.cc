@@ -1437,6 +1437,8 @@ void hdv_mainframe::DrawScale(TCanvas *c, vector<TObject*> &graphics)
 //-------------------
 void hdv_mainframe::SetEvent(int id)
 {
+	if(!event)return;
+
 	char str[256];
 	sprintf(str,"%5d", id);
 	event->SetTitle(str);
