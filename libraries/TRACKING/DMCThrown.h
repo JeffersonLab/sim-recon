@@ -24,12 +24,12 @@ class DMCThrown:public DKinematicData{
 		int mech;			///< production mechanism of this partcle (generator specific)
 
 		void toStrings(vector<pair<string,string> > &items)const{
+			DKinematicData::toStrings(items);
 			AddString(items, "type", "%d", type);
 			AddString(items, "pdgtype", "%d", pdgtype);
 			AddString(items, "myid", "%d", myid);
 			AddString(items, "parentid", "%d", parentid);
 			AddString(items, "mech", "%d", mech);
-			DKinematicData::toStrings(items);
 		}
 
 };
