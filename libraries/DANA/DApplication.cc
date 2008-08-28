@@ -90,14 +90,22 @@ DGeometry* DApplication::GetDGeometry(unsigned int run_number)
 		return NULL;
 	}
 
+	Lock();
+	
 	for(unsigned int i=0; i<geometries.size(); i++){
-		if(geometries[i]->GetJGeometry() == jgeom)return geometries[i];
+		if(geometries[i]->GetJGeometry() == jgeom){
+			DGeometry *dgeom = geometries[i];
+			Unlock();
+			return dgeom;
+		}
 	}
 	
 	// Couldn't find a DGeometry object that uses this JGeometry object.
 	// Create one and add it to the list.
 	DGeometry *dgeom = new DGeometry(jgeom, this);
 	geometries.push_back(dgeom);
+	
+	Unlock();
 	
 	return dgeom;
 }
