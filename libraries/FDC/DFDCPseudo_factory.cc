@@ -18,9 +18,9 @@
 #define ITER_MAX 100
 #define TOLX 1e-4
 #define TOLF 1e-4
-#define A_OVER_H 0.475
+#define A_OVER_H 0.4
 #define ALPHA 1e-4 // rate parameter for Newton step backtracking algorithm
-#define CHARGE_TO_ENERGY 0.01 //place holder 
+#define CHARGE_TO_ENERGY 4.*0.0076 //place holder 
 
 ///
 /// DFDCCathodeCluster_gLayer_cmp(): 
@@ -217,7 +217,7 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       temp.q=2.*(E1+E2);
       temp.numstrips=2;
 		CalcMeanTime((*vIt)->members, temp.t, temp.t_rms);
-      vpeaks.push_back(temp);
+      vpeaks.push_back(temp);  
       break;
     default:      
       for (strip=(*vIt)->members.begin();
@@ -468,7 +468,7 @@ jerror_t DFDCPseudo_factory::FindNewParmVec(DMatrix N,DMatrix X,DMatrix F,
   DMatrix f(1,1),f2(1,1),newF(3,1),newf(1,1);
 
   // Compute starting values for f=1/2 F.F 
-  f=0.5*(DMatrix(DMatrix::kTransposed,F)*F); // dot product
+  f=-0.5*slope;
 
   for (;;){
     newpar=par+lambda*fullstep;
