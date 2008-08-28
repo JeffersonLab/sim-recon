@@ -24,14 +24,18 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	AddEventSourceGenerator(new DEventSourceHDDMGenerator());
 	AddFactoryGenerator(new DFactoryGenerator());
 	
+	// Add plugin paths to Hall-D specific binary directories
+	const char *bms = getenv("BMS_OSNAME");
+	string sbms(bms==NULL ? "":bms);
+	
 	if(const char *ptr = getenv("DANA_PLUGIN_PATH")){
 		AddPluginPath(string(ptr));
 	}
 	if(const char *ptr = getenv("HALLD_MY")){
-		AddPluginPath(string(ptr) + "/src/programs/Analysis/plugins");
+		AddPluginPath(string(ptr) + "/lib/" + sbms);
 	}
 	if(const char *ptr = getenv("HALLD_HOME")){
-		AddPluginPath(string(ptr) + "/src/programs/Analysis/plugins");
+		AddPluginPath(string(ptr) + "/lib/" + sbms);
 	}
 	
 	// Create magnetic field object for use by everyone
