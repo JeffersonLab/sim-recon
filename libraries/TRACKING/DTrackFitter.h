@@ -12,9 +12,38 @@
 #include <JANA/JFactory.h>
 #include <JANA/JEventLoop.h>
 
+#include <DANA/DApplication.h>
 #include <PID/DKinematicData.h>
-#include <HDGEOMETRY/DMagnetidFieldMap.h>
+#include <HDGEOMETRY/DMagneticFieldMap.h>
+#include <CDC/DCDCTrackHit.h>
+#include <FDC/DFDCPseudo.h>
 
+//////////////////////////////////////////////////////////////////////////////////
+/// The DTrackFitter class is a base class for different charged track
+/// fitting algorithms. It does not actually fit the track itself, but
+/// provides the interface and some common support features most algorthims
+/// will need to implement.
+///
+/// The reason this is needed (instead of just using the mechanism already
+/// built into JANA) is due to the nature of charged track fitting.
+/// Specifically, tracks are usually fit first to the wire positions
+/// and then to the drift times. The algorithm for both is (at least
+/// usually) the same. However, we want to separate the wire-based and
+/// time-based fitting into 2 distinct stages allowing easy access to the 
+/// wire-based fits.
+///
+/// There were a few options on how to handle this within the JANA framework
+/// but it was decided passing DTrackFitter objects through the framework
+/// was the best way to address it. Sub-classes of DTrackFitter will
+/// implement the actual algorithms, but JANA will only see these
+/// objects as pointers to the DTrackFitter base class. Only one
+/// DTrackFitterXXX object will exist for each thread (i.e. each JEventLoop).
+/// As such, the state of that object will likely be overwritten
+/// many times in a single event and it's internal data never used
+/// by anything outside of the TRACKING package. Also, the factories that
+/// produce the DTrackFitterXXX objects will make them as persistent
+/// and will turn off the the WRITE_TO_OUTPUT bit by default.
+//////////////////////////////////////////////////////////////////////////////////
 
 class DTrackFitter:public jana::JObject{
 	public:
@@ -35,11 +64,13 @@ class DTrackFitter:public jana::JObject{
 		DTrackFitter(JEventLoop *loop);	// require JEventLoop in constructor
 		virtual ~DTrackFitter();
 		
+		void Reset(void);
+		
 		// Hit accessor methods
-		AddHit(const DCDCTrackHit* cdchit);
-		AddHits(vector<const DCDCTrackHit*> cdchits);
-		AddHit(const DFDCPseudo* fdchit);
-		AddHits(vector<const DFDCPseudo*> fdchits);
+		void AddHit(const DCDCTrackHit* cdchit);
+		void AddHits(vector<const DCDCTrackHit*> cdchits);
+		void AddHit(const DFDCPseudo* fdchit);
+		void AddHits(vector<const DFDCPseudo*> fdchits);
 		const vector<const DCDCTrackHit*>& GetCDCInputHits(void){return cdchits;}
 		const vector<const DFDCPseudo*>&   GetFDCInputHits(void){return fdchits;}
 		const vector<const DCDCTrackHit*>& GetCDCFitHits(void){return cdchits_used_in_fit;}
@@ -52,7 +83,7 @@ class DTrackFitter:public jana::JObject{
 		void SetFitType(fit_type_t type){fit_type=type;}
 		
 		// Wrappers
-		fit_status_t FitTrack(const DVector3 &pos, const DVector3 &mom, double q);
+		fit_status_t FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass);
 		fit_status_t FitTrack(const DKinematicData &starting_params);
 		
 		//---- The following needs to be supplied by the subclass ----
@@ -71,7 +102,8 @@ class DTrackFitter:public jana::JObject{
 		// The following should be set as outputs by FitTrack(void)
 		DKinematicData fit_params;									//< Results of last fit
 		double chisq;													//< Chi-sq of final track fit (not the chisq/dof!)
-		int dof;															//< Number of degrees of freedom for final fit parameters
+		int Ndof;														//< Number of degrees of freedom for final fit parameters
+		fit_status_t fit_status;									//< Status of values in fit_params (kFitSuccess, kFitFailed, ...)
 		vector<const DCDCTrackHit*> cdchits_used_in_fit;	//< The CDC hits actually used in the fit
 		vector<const DFDCPseudo*> fdchits_used_in_fit;		//< The FDC hits actually used in the fit
 
