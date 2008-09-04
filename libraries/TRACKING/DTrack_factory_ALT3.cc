@@ -178,19 +178,19 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
       if (error==NOERROR){
 	// Create a new track object
 	DTrack *track = new DTrack;
-	track->q=tc->charge();
+	//track->q=tc->charge();
 	
 	DVector3 mom,pos;
 	fit.GetMomentum(mom);
 	fit.GetPosition(pos);
 	
-	track->x=pos(0);
-	track->y=pos(1);
-	track->z=pos(2);
-	track->p=mom.Mag();
-	track->phi=mom.Phi();
-	if(track->phi<0.0)track->phi+=2.0*M_PI;
-	track->theta=mom.Theta();
+	//track->x=pos(0);
+	//track->y=pos(1);
+	//track->z=pos(2);
+	//track->p=mom.Mag();
+	//track->phi=mom.Phi();
+	//if(track->phi<0.0)track->phi+=2.0*M_PI;
+	//track->theta=mom.Theta();
 	track->chisq=fit.GetChiSq();
 	track->candidateid=tc->id;
 	//track->rt=rt;
@@ -199,11 +199,11 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	track->setMass(0.0);
 	track->setMomentum(mom);
 	track->setPosition(pos);
-	track->setCharge(track->q);
+	track->setCharge(tc->charge());
 
 	// dEdx
-	track->dE=dEsum;
-	track->ds=fit.GetActivePathLength();
+	//track->dE=dEsum;
+	//track->ds=fit.GetActivePathLength();
 
 	_data.push_back(track);
       }

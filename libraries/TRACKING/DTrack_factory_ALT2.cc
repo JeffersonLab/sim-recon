@@ -376,14 +376,14 @@ DTrack* DTrack_factory_ALT2::FitTrack(DReferenceTrajectory* rt, int candidateid)
 	// Create new DTrack object and initialize parameters with those
 	// from track candidate
 	DTrack *track = new DTrack;
-	track->q			= rt->q;
-	track->p			= vertex_mom.Mag();
-	track->theta	= vertex_mom.Theta();
-	track->phi		= vertex_mom.Phi();
-	if(track->phi<0.0)track->phi+=2.0*M_PI;
-	track->x			= vertex_pos.X();
-	track->y			= vertex_pos.Y();
-	track->z			= vertex_pos.Z();
+	//track->q			= rt->q;
+	//track->p			= vertex_mom.Mag();
+	//track->theta	= vertex_mom.Theta();
+	//track->phi		= vertex_mom.Phi();
+	//if(track->phi<0.0)track->phi+=2.0*M_PI;
+	//track->x			= vertex_pos.X();
+	//track->y			= vertex_pos.Y();
+	//track->z			= vertex_pos.Z();
 	track->candidateid = candidateid;
 	track->chisq	= chisq_time_based;
 	track->rt		= rt;
@@ -403,7 +403,7 @@ DTrack* DTrack_factory_ALT2::FitTrack(DReferenceTrajectory* rt, int candidateid)
 	}
 
 	// Debugging messages
-	if(debug_level>2)_DBG_<<" -- Fit succeeded: q="<<track->q<<" p="<<track->p<<" theta="<<track->theta<<" phi="<<track->phi<<endl;
+	if(debug_level>2)_DBG_<<" -- Fit succeeded: q="<<rt->q<<" p="<<vertex_mom.Mag()<<" theta="<<vertex_mom.Theta()*57.3<<" phi="<<vertex_mom.Phi()*57.3<<endl;
 
 	return track;
 }

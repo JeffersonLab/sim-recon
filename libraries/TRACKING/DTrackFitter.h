@@ -57,7 +57,8 @@ class DTrackFitter:public jana::JObject{
 		enum fit_status_t{
 			kFitNotDone,
 			kFitSuccess,
-			kFitFailed
+			kFitFailed,
+			kFitNoImprovement
 		};
 		
 		// Constructor and destructor
@@ -71,22 +72,26 @@ class DTrackFitter:public jana::JObject{
 		void AddHits(vector<const DCDCTrackHit*> cdchits);
 		void AddHit(const DFDCPseudo* fdchit);
 		void AddHits(vector<const DFDCPseudo*> fdchits);
-		const vector<const DCDCTrackHit*>& GetCDCInputHits(void){return cdchits;}
-		const vector<const DFDCPseudo*>&   GetFDCInputHits(void){return fdchits;}
-		const vector<const DCDCTrackHit*>& GetCDCFitHits(void){return cdchits_used_in_fit;}
-		const vector<const DFDCPseudo*>&   GetFDCFitHits(void){return fdchits_used_in_fit;}
+		const vector<const DCDCTrackHit*>& GetCDCInputHits(void) const {return cdchits;}
+		const vector<const DFDCPseudo*>&   GetFDCInputHits(void) const {return fdchits;}
+		const vector<const DCDCTrackHit*>& GetCDCFitHits(void) const {return cdchits_used_in_fit;}
+		const vector<const DFDCPseudo*>&   GetFDCFitHits(void) const {return fdchits_used_in_fit;}
 		
 		// Fit parameter accessor methods
-		DKinematicData& GetInputParameters(void){return input_params;}
-		DKinematicData& GetFitParameters(void){return fit_params;}
-		fit_type_t GetFitType(void){return fit_type;}
+		const DKinematicData& GetInputParameters(void) const {return input_params;}
+		const DKinematicData& GetFitParameters(void) const {return fit_params;}
+		double GetChisq(void) const {return chisq;}
+		int GetNdof(void) const {return Ndof;}
+		fit_type_t GetFitType(void) const {return fit_type;}
 		void SetFitType(fit_type_t type){fit_type=type;}
+		const DMagneticFieldMap* GetDMagneticFieldMap(void) const {return bfield;}
 		
 		// Wrappers
 		fit_status_t FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass);
 		fit_status_t FitTrack(const DKinematicData &starting_params);
 		
-		//---- The following needs to be supplied by the subclass ----
+		//---- The following need to be supplied by the subclass ----
+		virtual string Name(void) const =0;
 		virtual fit_status_t FitTrack(void)=0;
 
 	protected:
@@ -102,7 +107,7 @@ class DTrackFitter:public jana::JObject{
 		// The following should be set as outputs by FitTrack(void)
 		DKinematicData fit_params;									//< Results of last fit
 		double chisq;													//< Chi-sq of final track fit (not the chisq/dof!)
-		int Ndof;														//< Number of degrees of freedom for final fit parameters
+		int Ndof;														//< Number of degrees of freedom for final track
 		fit_status_t fit_status;									//< Status of values in fit_params (kFitSuccess, kFitFailed, ...)
 		vector<const DCDCTrackHit*> cdchits_used_in_fit;	//< The CDC hits actually used in the fit
 		vector<const DFDCPseudo*> fdchits_used_in_fit;		//< The FDC hits actually used in the fit

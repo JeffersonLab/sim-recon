@@ -19,6 +19,11 @@ using namespace jana;
 class DTrackCandidate:public DKinematicData{
 	public:
 		JOBJECT_PUBLIC(DTrackCandidate);
+
+		void toStrings(vector<pair<string,string> > &items)const{
+			DKinematicData::toStrings(items);
+			AddString(items, "id", "0x%x", id);
+		}
 };
 
 #endif // _DTrackCandidate_

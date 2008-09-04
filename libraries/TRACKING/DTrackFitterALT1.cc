@@ -1,7 +1,7 @@
-// $Id$
+// $Id:$
 //
-//    File: DTrack_factory_ALT1.cc
-// Created: Fri. Feb. 8, 2008
+//    File: DTrackFitterALT1.cc
+// Created: Tue Sep  2 11:18:22 EDT 2008
 // Creator: davidl
 //
 namespace{const char* GetMyID(){return "$Id$";}}
@@ -20,7 +20,7 @@ using namespace jana;
 #include "DANA/DApplication.h"
 #include "DMagneticFieldStepper.h"
 #include "DTrackCandidate.h"
-#include "DTrack_factory_ALT1.h"
+#include "DTrackFitterALT1.h"
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
 #include "DReferenceTrajectory.h"
@@ -41,12 +41,11 @@ class greaterthan{
 
 
 //------------------
-// DTrack_factory_ALT1   (Constructor)
+// DTrackFitterALT1   (Constructor)
 //------------------
-DTrack_factory_ALT1::DTrack_factory_ALT1()
+DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 {
-	// This gets allocated in brun once the bfield is known
-	tmprt=NULL;
+	this->loop = loop;
 
 	// Define target center
 	target = new DCoordinateSystem();
@@ -58,6 +57,7 @@ DTrack_factory_ALT1::DTrack_factory_ALT1()
 
 	MAX_HIT_DIST = 2.0; // cm
 	DEBUG_HISTS = false;
+	DEBUG_LEVEL = 0;
 	USE_CDC = true;
 	USE_FDC_ANODE = true;
 	USE_FDC_CATHODE = true;
@@ -83,6 +83,7 @@ DTrack_factory_ALT1::DTrack_factory_ALT1()
 	
 	gPARMS->SetDefaultParameter("TRKFIT:MAX_HIT_DIST",				MAX_HIT_DIST);
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",				DEBUG_HISTS);
+	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",				DEBUG_LEVEL);
 	gPARMS->SetDefaultParameter("TRKFIT:USE_CDC",					USE_CDC);
 	gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_ANODE",			USE_FDC_ANODE);
 	gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_CATHODE",			USE_FDC_CATHODE);
@@ -104,38 +105,9 @@ DTrack_factory_ALT1::DTrack_factory_ALT1()
 	gPARMS->SetDefaultParameter("TRKFIT:MAX_FDC_DOUBLE_HIT_PROB",	MAX_FDC_DOUBLE_HIT_PROB);
 	gPARMS->SetDefaultParameter("TRKFIT:TOF_MASS",					TOF_MASS);
 
-}
-
-//------------------
-// DTrack_factory_ALT1   (Destructor)
-//------------------
-DTrack_factory_ALT1::~DTrack_factory_ALT1()
-{
-	if(tmprt)delete tmprt;
-	for(unsigned int i=0; i<rtv.size(); i++)delete rtv[i];
-}
-
-//------------------
-// init
-//------------------
-jerror_t DTrack_factory_ALT1::init(void)
-{
-	return NOERROR;
-}
-
-//------------------
-// brun
-//------------------
-jerror_t DTrack_factory_ALT1::brun(JEventLoop *loop, int runnumber)
-{
-	// Get pointer to DMagneticFieldMap field object
-	//gPARMS->SetParameter("GEOM:BZ_CONST",  -2.0);	
-	DApplication* dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
-	bfield = dapp->GetBfield(); // temporary until new geometry scheme is worked out
 	
-	// (re)-allocate temporary DReferenceTrajectory used in
-	// numerical derivatives
-	if(tmprt)delete tmprt;
+	// DReferenceTrajectory objects
+	rt = new DReferenceTrajectory(bfield);
 	tmprt = new DReferenceTrajectory(bfield);
 	
 	// Set limits on CDC. (This should eventually come from HDDS)
@@ -144,6 +116,12 @@ jerror_t DTrack_factory_ALT1::brun(JEventLoop *loop, int runnumber)
 	hit_based = false;
 	//cout<<__FILE__<<":"<<__LINE__<<"-------------- Helical Fitter TRACKING --------------"<<endl;
 	cout<<__FILE__<<":"<<__LINE__<<"-------------- Least Squares TRACKING --------------"<<endl;
+
+	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	if(!dapp){
+		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
+		return;
+	}
 	
 	if(DEBUG_HISTS){
 		dapp->Lock();
@@ -210,16 +188,24 @@ jerror_t DTrack_factory_ALT1::brun(JEventLoop *loop, int runnumber)
 		if(!fdc_can_resi_cath)fdc_can_resi_cath = new TH1F("fdc_can_resi_cath","Residual of FDC cathode hits with candidate tracks", 200, -1.0, 1.0);
 		//if(!chisq_vs_p_vs_theta)chisq_vs_p_vs_theta = new TH2F("chisq_vs_p_vs_theta","#chi^{2}/dof map", 100, 0.9, 1.1, 100, 0.9, 1.1);
 
-		dapp->Unlock();		
+		dapp->Unlock();
 	}
-
-	return NOERROR;
 }
 
 //------------------
+// DTrackFitterALT1   (Destructor)
+//------------------
+DTrackFitterALT1::~DTrackFitterALT1()
+{
+	if(rt)delete rt;
+	if(tmprt)delete tmprt;
+}
+
+#if 0
+//------------------
 // evnt
 //------------------
-jerror_t DTrack_factory_ALT1::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackFitterALT1::evnt(JEventLoop *loop, int eventnumber)
 {
 	// Store current event number
 	this->eventnumber = eventnumber;
@@ -246,7 +232,7 @@ jerror_t DTrack_factory_ALT1::evnt(JEventLoop *loop, int eventnumber)
 	// Loop over track candidates
 	for(unsigned int i=0; i<trackcandidates.size(); i++){
 	
-		if(debug_level>1){
+		if(DEBUG_LEVEL>1){
 			_DBG__;
 			_DBG_<<"============ Fitting Candidate "<<i<<" ================"<<endl;
 		}
@@ -274,7 +260,7 @@ jerror_t DTrack_factory_ALT1::evnt(JEventLoop *loop, int eventnumber)
 		if(track)_data.push_back(track);
 			
 		// Fill Chisq map around thrown parameters
-		if(debug_level>2 && DEBUG_HISTS){
+		if(DEBUG_LEVEL>2 && DEBUG_HISTS){
 			vector<const DMCThrown*> mcthrowns;
 			loop->Get(mcthrowns);
 			
@@ -312,89 +298,92 @@ jerror_t DTrack_factory_ALT1::evnt(JEventLoop *loop, int eventnumber)
 
 	return NOERROR;
 }
-
-//------------------
-// fini
-//------------------
-jerror_t DTrack_factory_ALT1::fini(void)
-{
-	return NOERROR;
-}
+#endif
 
 //------------------
 // FitTrack
 //------------------
-DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
+DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 {
 	/// Fit a track candidate
 	
 	// Debug message
-	if(debug_level>2){
+	if(DEBUG_LEVEL>2){
 		_DBG__;
-		_DBG_<<"cdchits_on_track.size="<<cdchits_on_track.size()<<"  fdchits_on_track.size="<<fdchits_on_track.size()<<endl;
-		_DBG_<<"cdctrackhits.size="<<cdctrackhits.size()<<"  fdctrackhits.size="<<fdctrackhits.size()<<endl;
+		_DBG_<<"cdchits.size="<<cdchits.size()<<"  fdchits.size="<<fdchits.size()<<endl;
+		if(fit_type==kTimeBased)_DBG_<<"============= Time-based ==============="<<endl;
+		if(fit_type==kWireBased)_DBG_<<"============== Hit-based ==============="<<endl;
 	}
+	
+	// Swim reference trajectory
+	fit_status = kFitNotDone; // initialize to a safe default
+	rt->Swim(input_params.position(), input_params.momentum(), input_params.charge());
+
+#if 0
 	// Do initial hit-based fit
-	if(debug_level>3)_DBG_<<"============= Hit-based ==============="<<endl;
+	if(DEBUG_LEVEL>3)_DBG_<<"============= Hit-based ==============="<<endl;
 	double chisq_hit_based=1.0;
-#if 1
 	for(int i=0; i<3; i++){
-		switch(LeastSquaresB(kHitBased, rt, chisq_hit_based)){
-			case FIT_OK:
-				if(debug_level>2)_DBG_<<"Hit based fit succeeded for candidate "<<candidateid<<endl;
+		switch(LeastSquaresB(kWireBased, rt, chisq_hit_based)){
+			case kFitSuccess:
+				if(DEBUG_LEVEL>2)_DBG_<<"Hit based fit succeeded for candidate "<<candidateid<<endl;
 				break;
-			case FIT_NO_IMPROVEMENT:
-				if(debug_level>2)_DBG_<<"Hit based fit showed no improvement for candidate "<<candidateid<<endl;
-				if(debug_level>2)_DBG_<<"Maybe time based will improve things ... "<<endl;
+			case kFitNoImprovement:
+				if(DEBUG_LEVEL>2)_DBG_<<"Hit based fit showed no improvement for candidate "<<candidateid<<endl;
+				if(DEBUG_LEVEL>2)_DBG_<<"Maybe time based will improve things ... "<<endl;
 				break;
-			case FIT_FAILED:
-				if(debug_level>2)_DBG_<<"Hit based fit failed for candidate "<<candidateid<<endl;
+			case kFitFailed:
+				if(DEBUG_LEVEL>2)_DBG_<<"Hit based fit failed for candidate "<<candidateid<<endl;
 				return NULL;
 				break;
 		}
 	}
 #endif
-	// Iterate over time-based fits until it converges or we reach the 
+
+//return fit_status = kFitFailed;
+
+	// Iterate over fitter until it converges or we reach the 
 	// maximum number of iterations
-	if(debug_level>3)_DBG_<<"============= Time-based ==============="<<endl;
-	double chisq_time_based;
 	double last_chisq = 1.0E6;
 	int Niterations;
 	for(Niterations=0; Niterations<MAX_FIT_ITERATIONS; Niterations++){
-		switch(LeastSquaresB(kTimeBased, rt, chisq_time_based)){
-			case FIT_OK:
-				if(debug_level>2)_DBG_<<"Time based fit succeeded for candidate "<<candidateid<<endl;
+		switch(fit_status = LeastSquaresB(fit_type, rt)){
+			case kFitSuccess:
+				if(DEBUG_LEVEL>2)_DBG_<<"Fit succeeded ----- "<<endl;
 				break;
-			case FIT_NO_IMPROVEMENT:
-				if(debug_level>2)_DBG_<<"Time based fit unable to improve candidate "<<candidateid<<" (chisq="<<chisq_time_based<<")"<<endl;
+			case kFitNoImprovement:
+				if(DEBUG_LEVEL>2)_DBG_<<"Unable to improve on input parameters (chisq="<<chisq<<")"<<endl;
 				break;
-			case FIT_FAILED:
-				if(debug_level>2)_DBG_<<"Time based fit failed for candidate "<<candidateid<<" on iteration "<<Niterations<<endl;
+			case kFitFailed:
+				if(DEBUG_LEVEL>2)_DBG_<<"Fit failed on iteration "<<Niterations<<endl;
 				if(Niterations>4){
-					if(debug_level>2)_DBG_<<"Number of iterations >4. Trying to keep fit from last iteration... "<<endl;
+					if(DEBUG_LEVEL>2)_DBG_<<"Number of iterations >4. Trying to keep fit from last iteration... "<<endl;
 					break;
 				}
-				return NULL;
+				return fit_status;
+				break;
+			case kFitNotDone: // avoid compiler warnings
+				break;
 		}
 
 		// Fill debug histos
 		if(DEBUG_HISTS){
-			chisq_vs_pass->Fill(Niterations+1, chisq_time_based);
-			dchisq_vs_pass->Fill(Niterations+1, last_chisq-chisq_time_based);			
+			chisq_vs_pass->Fill(Niterations+1, chisq);
+			dchisq_vs_pass->Fill(Niterations+1, last_chisq-chisq);			
 		}
 
 		// If the chisq is too large, then consider it a hopeless cause
-		if(chisq_time_based>1.0E4){
-			if(debug_level>3)_DBG_<<"Time based fit chisq too large for candidate "<<candidateid<<" on iteration "<<Niterations<<endl;
-			return NULL;
+		if(chisq>1.0E4){
+			if(DEBUG_LEVEL>3)_DBG_<<"Fit chisq too large on iteration "<<Niterations<<endl;
+			return fit_status=kFitFailed;
 		}
 		
 		// Check if we converged
-		if(fabs(last_chisq-chisq_time_based) < MAX_CHISQ_DIFF)break;
-		last_chisq = chisq_time_based;
+		if(fabs(last_chisq-chisq) < MAX_CHISQ_DIFF)break;
+		last_chisq = chisq;
 	}
 
-	if(debug_level>1)_DBG_<<" Niterations="<<Niterations<<"  chisq_time_based="<<chisq_time_based<<" p="<<rt->swim_steps[0].mom.Mag()<<endl;
+	if(DEBUG_LEVEL>1)_DBG_<<" Niterations="<<Niterations<<"  chisq="<<chisq<<" p="<<rt->swim_steps[0].mom.Mag()<<endl;
 	
 	// At this point we must decide whether the fit succeeded or not.
 	// We'll consider the fit a success if any of the following is true:
@@ -404,13 +393,13 @@ DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
 	// 3. MAX_FIT_ITERATIONS is zero (for debugging)
 	bool fit_succeeded = false;
 	if(Niterations>0)fit_succeeded = true;
-	if(chisq_time_based<=CHISQ_GOOD_LIMIT)fit_succeeded = true;
+	if(chisq<=CHISQ_GOOD_LIMIT)fit_succeeded = true;
 	if(MAX_FIT_ITERATIONS==0)fit_succeeded = true;
-	if(!fit_succeeded)return NULL;
+	if(!fit_succeeded)return fit_status=kFitFailed;
 	
-	if(debug_level>10){
-		_DBG_<<"-------- Final Chisq for track = "<<chisq_time_based<<endl;
-		double chisq = ChiSq(kTimeBased, rt);
+	if(DEBUG_LEVEL>10){
+		_DBG_<<"-------- Final Chisq for track = "<<chisq<<endl;
+		double chisq = ChiSq(fit_type, rt);
 		_DBG_<<"-------- Check chisq = "<<chisq<<endl;
 	}
 	
@@ -424,17 +413,27 @@ DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
 	DVector3 &vertex_mom = rt->swim_steps[0].mom;
 	DVector3 &vertex_pos = rt->swim_steps[0].origin;
 
+	// Copy final fit parameters into TrackFitter classes data members
+	fit_params.setPosition(vertex_pos);
+	fit_params.setMomentum(vertex_mom);
+	fit_params.setCharge(rt->q);
+	fit_params.setMass(input_params.mass());
+	Ndof = (int)(cdchits.size() + 2*fdchits.size() - 5);
+	cdchits_used_in_fit = cdchits;
+	fdchits_used_in_fit = fdchits;
+
+#if 0	
 	// Create new DTrack object and initialize parameters with those
 	// from track candidate
 	DTrack *track = new DTrack;
-	//track->q			= rt->q;
-	//track->p			= vertex_mom.Mag();
-	//track->theta	= vertex_mom.Theta();
-	//track->phi		= vertex_mom.Phi();
-	//if(track->phi<0.0)track->phi+=2.0*M_PI;
-	//track->x			= vertex_pos.X();
-	//track->y			= vertex_pos.Y();
-	//track->z			= vertex_pos.Z();
+	track->q			= rt->q;
+	track->p			= vertex_mom.Mag();
+	track->theta	= vertex_mom.Theta();
+	track->phi		= vertex_mom.Phi();
+	if(track->phi<0.0)track->phi+=2.0*M_PI;
+	track->x			= vertex_pos.X();
+	track->y			= vertex_pos.Y();
+	track->z			= vertex_pos.Z();
 	track->candidateid = candidateid;
 	track->chisq	= chisq_time_based;
 	track->rt		= rt;
@@ -450,27 +449,28 @@ DTrack* DTrack_factory_ALT1::FitTrack(DReferenceTrajectory* rt, int candidateid)
 	// associated objects list
 	for(unsigned int k=0; k<cdchits_on_track.size();k++)track->AddAssociatedObject(cdchits_on_track[k]);
 	for(unsigned int k=0; k<fdchits_on_track.size();k++)track->AddAssociatedObject(fdchits_on_track[k]);
+#endif
 
 	// Fill debugging histos if requested
 	if(DEBUG_HISTS){
 		Npasses->Fill(Niterations);
-		initial_chisq_vs_Npasses->Fill(Niterations, chisq_hit_based);
+		initial_chisq_vs_Npasses->Fill(Niterations, chisq);
 		FillDebugHists(rt, vertex_pos, vertex_mom);
 	}
 
 	// Debugging messages
-	if(debug_level>2)_DBG_<<" -- Fit succeeded: q="<<rt->q<<" p="<<vertex_mom.Mag()<<" theta="<<vertex_mom.Theta()*57.3<<" phi="<<vertex_mom.Phi()*57.3<<endl;
+	if(DEBUG_LEVEL>2)_DBG_<<" -- Fit succeeded: q="<<rt->q<<" p="<<vertex_mom.Mag()<<" theta="<<vertex_mom.Theta()*57.3<<" phi="<<vertex_mom.Phi()*57.3<<endl;
 
-	return track;
+	return fit_status;
 }
 
-
+#if 0
 //------------------
 // FitTrackWithOppositeCharge
 //------------------
-DTrack* DTrack_factory_ALT1::FitTrackWithOppositeCharge(DReferenceTrajectory* rt, int candidateid, DTrack* &track)
+DTrack* DTrackFitterALT1::FitTrackWithOppositeCharge(DReferenceTrajectory* rt, int candidateid, DTrack* &track)
 {
-	if(debug_level>2)_DBG_<<"Fitting track with opposite charge (original:"<<(rt->q>0 ? "+":"-")<<" now:"<<(rt->q>0 ? "-":"+")<<")"<<endl;
+	if(DEBUG_LEVEL>2)_DBG_<<"Fitting track with opposite charge (original:"<<(rt->q>0 ? "+":"-")<<" now:"<<(rt->q>0 ? "-":"+")<<")"<<endl;
 
 	// Create a new reference trajectory with flipped charge using the
 	// original track candidate parameters
@@ -484,7 +484,7 @@ DTrack* DTrack_factory_ALT1::FitTrackWithOppositeCharge(DReferenceTrajectory* rt
 	DReferenceTrajectory *myrt = new DReferenceTrajectory(bfield);
 	myrt->Swim(pos, mom, -tc->charge());
 	if(myrt->Nswim_steps==0){
-		if(debug_level>2)_DBG_<<"No swim steps when swimming opposite charged track!"<<endl;
+		if(DEBUG_LEVEL>2)_DBG_<<"No swim steps when swimming opposite charged track!"<<endl;
 		delete myrt;
 		return track;
 	}
@@ -494,16 +494,16 @@ DTrack* DTrack_factory_ALT1::FitTrackWithOppositeCharge(DReferenceTrajectory* rt
 	
 	// Decide which (if any) track to keep
 	if((track==NULL) && (track_bar==NULL)){
-		if(debug_level>3)_DBG_<<"Track fits failed both q and q_bar"<<endl;
+		if(DEBUG_LEVEL>3)_DBG_<<"Track fits failed both q and q_bar"<<endl;
 		delete myrt;
 		return NULL;
 	}
 	if((track==NULL) && (track_bar!=NULL)){
-		if(debug_level>3)_DBG_<<"Track fit failed q but succeeded for q_bar"<<endl;
+		if(DEBUG_LEVEL>3)_DBG_<<"Track fit failed q but succeeded for q_bar"<<endl;
 		return track = track_bar;
 	}
 	if((track!=NULL) && (track_bar==NULL)){
-		if(debug_level>3)_DBG_<<"Track fit failed q_bar but succeeded for q"<<endl;
+		if(DEBUG_LEVEL>3)_DBG_<<"Track fit failed q_bar but succeeded for q"<<endl;
 		delete myrt;
 		return track;
 	}
@@ -512,12 +512,12 @@ DTrack* DTrack_factory_ALT1::FitTrackWithOppositeCharge(DReferenceTrajectory* rt
 	// for both charge choices. Decided which to keep via the lower
 	// chisq. Delete the loser and return the winner.
 	if(track_bar->chisq < track->chisq){
-		if(debug_level>3)_DBG_<<"Keeping opposite charged track"<<endl;
+		if(DEBUG_LEVEL>3)_DBG_<<"Keeping opposite charged track"<<endl;
 		delete track;
 		*rt = *myrt;
 		track = track_bar;
 	}else{
-		if(debug_level>3)_DBG_<<"Keeping original charge track"<<endl;
+		if(DEBUG_LEVEL>3)_DBG_<<"Keeping original charge track"<<endl;
 		delete track_bar;
 		rt->Swim(pos, mom, -rt->q); // re-swim with original charge
 	}
@@ -526,11 +526,13 @@ DTrack* DTrack_factory_ALT1::FitTrackWithOppositeCharge(DReferenceTrajectory* rt
 	
 	return track;
 }
+#endif
 
+#if 0
 //------------------
 // FindHitCandidateProbabilities
 //------------------
-void DTrack_factory_ALT1::FindHitCandidateProbabilities(void)
+void DTrackFitterALT1::FindHitCandidateProbabilities(void)
 {
 	/// Sort all CDC and FDC hits by which track candidate they most likely belong to.
 	///
@@ -581,7 +583,7 @@ void DTrack_factory_ALT1::FindHitCandidateProbabilities(void)
 		for(unsigned int j=0; j<fdcprob.size(); j++)fdcprobs[j].push_back(fdcprob[j]);
 		
 		// Debugging messages
-		if(debug_level>10){
+		if(DEBUG_LEVEL>10){
 			_DBG_<<"Candidate "<<i<<endl;
 			for(unsigned int j=0; j<cdcprob.size(); j++)_DBG_<<"  cdcprob["<<j<<"] = "<<cdcprob[j]<<endl;
 			for(unsigned int j=0; j<fdcprob.size(); j++)_DBG_<<"  fdcprob["<<j<<"] = "<<fdcprob[j]<<endl;
@@ -592,7 +594,7 @@ void DTrack_factory_ALT1::FindHitCandidateProbabilities(void)
 //------------------
 // GetCDCTrackHitProbabilities
 //------------------
-void DTrack_factory_ALT1::GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob)
+void DTrackFitterALT1::GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob)
 {
 	/// Determine the probability that for each CDC hit that it came from the track with the given trajectory.
 	///
@@ -634,7 +636,7 @@ void DTrack_factory_ALT1::GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, 
 		double probability = finite(resi) ? exp(-pow(resi/sigma,2.0)):0.0;
 		prob.push_back(probability);
 
-		if(debug_level>10)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" tof="<<tof<<" prob="<<probability<<endl;
+		if(DEBUG_LEVEL>10)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" tof="<<tof<<" prob="<<probability<<endl;
 
 		if(DEBUG_HISTS){
 			cdc_can_resi->Fill(resi);
@@ -646,7 +648,7 @@ void DTrack_factory_ALT1::GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, 
 //------------------
 // GetFDCTrackHitProbabilities
 //------------------
-void DTrack_factory_ALT1::GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob)
+void DTrackFitterALT1::GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob)
 {
 	/// Determine the probability that for each FDC hit that it came from the track with the given trajectory.
 	///
@@ -688,7 +690,7 @@ void DTrack_factory_ALT1::GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, 
 		// of zero, we get a probability of 1.0.
 		double p = finite(resi) ? exp(-pow(resi/sigma_anode,2.0)):0.0;
 
-		if(debug_level>10)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" tof="<<tof<<" prob="<<p<<endl;
+		if(DEBUG_LEVEL>10)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" tof="<<tof<<" prob="<<p<<endl;
 
 		// Cathode
 		double u=0;
@@ -704,16 +706,17 @@ void DTrack_factory_ALT1::GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, 
 			p *= finite(resic) ? exp(-pow(resic/sigma_cathode,2.0)):0.0;
 		}
 		
-		if(debug_level>10)_DBG_<<"   cathode: u="<<u<<" hit->s="<<hit->s<<" resic"<<resic<<"  (total) p="<<p<<endl;
+		if(DEBUG_LEVEL>10)_DBG_<<"   cathode: u="<<u<<" hit->s="<<hit->s<<" resic"<<resic<<"  (total) p="<<p<<endl;
 		
 		prob.push_back(p);
 	}
 }
+#endif
 
 //------------------
 // ChiSq
 //------------------
-double DTrack_factory_ALT1::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt)
+double DTrackFitterALT1::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt)
 {
 	vector<const DCoordinateSystem*> wires;
 	vector<DVector3> shifts;
@@ -728,7 +731,7 @@ double DTrack_factory_ALT1::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt)
 //------------------
 // ChiSq
 //------------------
-double DTrack_factory_ALT1::ChiSq(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv)
+double DTrackFitterALT1::ChiSq(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv)
 {
 	/// Calculate the chi-squared for a track specified by state relative to the
 	/// given reference trajectory. This is just a wrapper for 
@@ -755,8 +758,8 @@ double DTrack_factory_ALT1::ChiSq(DMatrix &state, const swim_step_t *start_step,
 	}
 	
 	if(pos.Mag()>200.0 || fabs(state[state_x ][0])>100.0 || fabs(state[state_v ][0])>100.0){
-		if(debug_level>3)_DBG_<<"state values out of range"<<endl;
-		if(debug_level>6){
+		if(DEBUG_LEVEL>3)_DBG_<<"state values out of range"<<endl;
+		if(DEBUG_LEVEL>6){
 			pos.Print();
 			mom.Print();
 			_DBG_<<"state[state_x ][0]="<<state[state_x ][0]<<"  state[state_v ][0]="<<state[state_x ][0]<<endl;
@@ -774,7 +777,7 @@ double DTrack_factory_ALT1::ChiSq(DMatrix &state, const swim_step_t *start_step,
 //------------------
 // ChiSq
 //------------------
-double DTrack_factory_ALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv)
+double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv)
 {
 	/// Calculate the chisq for a track represented by the given reference
 	/// trajectory with the given list of wires. The values in the "shifts"
@@ -791,7 +794,7 @@ double DTrack_factory_ALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordi
 	/// (if non-zero) are checked to make sure they all match. If not, an error
 	/// message is printed and a value of 1.0E6 is returned and chisqv
 	/// will be empty
-	
+
 	// Make sure input vectors match
 	chisqv.clear();
 	bool use_shifts = shifts.size()==wires.size();
@@ -821,7 +824,7 @@ double DTrack_factory_ALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordi
 	int dof=0;
 	for(unsigned int i=0; i<wires.size(); i++){
 		
-		if(debug_level>10){
+		if(DEBUG_LEVEL>10){
 			fdcwire = dynamic_cast<const DFDCWire*>(wires[i]);
 			cdcwire = dynamic_cast<const DCDCWire*>(wires[i]);
 		}
@@ -830,7 +833,7 @@ double DTrack_factory_ALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordi
 		if(use_shifts){
 			wire.origin += shifts[i];
 			
-			if(debug_level>10){
+			if(DEBUG_LEVEL>10){
 				double a = (shifts[i].Cross(wires[i]->origin)).Z();
 				if(a==0.0)Nzero_shifts++;
 				else if(a<0.0)Nneg_shifts++;
@@ -863,18 +866,18 @@ double DTrack_factory_ALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordi
 		if(finite(c)){
 			chisq += c*c;
 			dof++;
-			if(debug_level>10){
+			if(DEBUG_LEVEL>10){
 				_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  Rwire="<<wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s;
 				if(fdcwire)cerr<<" FDC: layer="<<fdcwire->layer<<" wire="<<fdcwire->wire<<" angle="<<fdcwire->angle;
 				if(cdcwire)cerr<<" CDC: ring="<<cdcwire->ring<<" straw="<<cdcwire->straw<<" stereo="<<cdcwire->stereo;
 				cerr<<endl;
 			}
 		}else{
-			if(debug_level>10)_DBG_<<"  chisqv[unused] = "<<c<<"  d="<<d<<"  Rwire="<<wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s<<endl;
+			if(DEBUG_LEVEL>10)_DBG_<<"  chisqv[unused] = "<<c<<"  d="<<d<<"  Rwire="<<wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s<<endl;
 		}
 	}
 	
-	if(debug_level>10){
+	if(DEBUG_LEVEL>10){
 		_DBG_<<" Nshifts(+,-,0)=("<<Npos_shifts<<","<<Nneg_shifts<<","<<Nzero_shifts<<")"<<endl;
 	}
 
@@ -886,7 +889,7 @@ double DTrack_factory_ALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordi
 //------------------
 // GetWiresShiftsErrs
 //------------------
-void DTrack_factory_ALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs)
+void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs)
 {
 	swim_step_t &start_step = rt->swim_steps[0];
 	DVector3 &pos = start_step.origin;
@@ -899,20 +902,20 @@ void DTrack_factory_ALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraj
 //target->L = 0.0;
 	target->origin.SetXYZ(0.0, 0.0, pos.Z());
 	wires.push_back(target);
-	errs.push_back(fit_type==kHitBased ? 0.1:0.1);
-//errs.push_back(fit_type==kHitBased ? 0.0001:0.0001);
-	if(fit_type!=kHitBased)shifts.push_back(DVector3(0.0, 0.0, 0.0));
+	errs.push_back(fit_type==kWireBased ? 0.1:0.1);
+//errs.push_back(fit_type==kWireBased ? 0.0001:0.0001);
+	if(fit_type!=kWireBased)shifts.push_back(DVector3(0.0, 0.0, 0.0));
 #endif
 
 	// --- CDC ---
-	for(unsigned int i=0; i<cdchits_on_track.size(); i++){
-		const DCDCTrackHit *hit = cdchits_on_track[i];
+	for(unsigned int i=0; i<cdchits.size(); i++){
+		const DCDCTrackHit *hit = cdchits[i];
 		const DCoordinateSystem *wire = hit->wire;
 		wires.push_back(wire);
 
 		// Fill in shifts and errs vectors based on whether we're doing
 		// hit-based or time-based tracking
-		if(fit_type==kHitBased){
+		if(fit_type==kWireBased){
 			// If we're doing hit-based tracking then only the wire positions
 			// are used and the drift time info is ignored. Thus, we don't
 			// have to calculate the shift vectors
@@ -968,14 +971,14 @@ void DTrack_factory_ALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraj
 	}
 
 	// --- FDC ---
-	for(unsigned int i=0; i<fdchits_on_track.size(); i++){
-		const DFDCPseudo *hit = fdchits_on_track[i];
+	for(unsigned int i=0; i<fdchits.size(); i++){
+		const DFDCPseudo *hit = fdchits[i];
 		const DCoordinateSystem *wire = hit->wire;
 		wires.push_back(wire);
 
 		// Fill in shifts and errs vectors based on whether we're doing
 		// hit-based or time-based tracking
-		if(fit_type==kHitBased){
+		if(fit_type==kWireBased){
 			// If we're doing hit-based tracking then only the wire positions
 			// are used and the drift time info is ignored. Thus, we don't
 			// have to calculate the shift vectors
@@ -1034,7 +1037,7 @@ void DTrack_factory_ALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraj
 //------------------
 // LeastSquaresB
 //------------------
-DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t fit_type, DReferenceTrajectory *rt, double &chisq)
+DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_type, DReferenceTrajectory *rt)
 {
 	/// Fit the track with starting parameters given in the first step
 	/// of the reference trajectory rt. On return, the reference
@@ -1049,7 +1052,7 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	// Make sure RT is not empty
 	if(rt->Nswim_steps<1){
 		chisq = 1.0E6;
-		return FIT_FAILED;
+		return kFitFailed;
 	}
 
 	// For fitting, we want to define a coordinate system very similar to the
@@ -1139,7 +1142,7 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	double chisq_dx = ChiSq(state_dx, &start_step, tmprt, wires, shifts, errs, chisqv_dx_hi);
 	
 	// This line just avoids a compiler warning
-	if(debug_level>4){
+	if(DEBUG_LEVEL>4){
 		_DBG_<<"initial_chisq="<<initial_chisq<<endl;
 		_DBG_<<"chisq_dpx="<<chisq_dpx<<endl;
 		_DBG_<<"chisq_dpy="<<chisq_dpy<<endl;
@@ -1147,7 +1150,7 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 		_DBG_<<"chisq_dv="<<chisq_dv<<endl;
 		_DBG_<<"chisq_dx="<<chisq_dx<<endl;
 	}
-	if(debug_level>10){
+	if(DEBUG_LEVEL>10){
 		_DBG_<<"hit\tinitial\tpx   \tpy   \tpz   \tx   \tv"<<endl;
 		for(unsigned int j=0; j<chisqv_initial.size(); j++){
 			cout<<j<<"\t";
@@ -1190,8 +1193,8 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 		Ngood++;
 	}
 	if(Ngood<LEAST_SQUARES_MIN_HITS){
-		if(debug_level>2)_DBG_<<" Bad number of good distance calculations!(Ngood="<<Ngood<<" LEAST_SQUARES_MIN_HITS="<<LEAST_SQUARES_MIN_HITS<<")"<<endl;
-		return FIT_FAILED;
+		if(DEBUG_LEVEL>2)_DBG_<<" Bad number of good distance calculations!(Ngood="<<Ngood<<" LEAST_SQUARES_MIN_HITS="<<LEAST_SQUARES_MIN_HITS<<")"<<endl;
+		return kFitFailed;
 	}
 
 	// Build "F" matrix of derivatives
@@ -1242,8 +1245,8 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	// If the inversion failed altogether then the invalid flag
 	// will be set on the matrix. In these cases, were dead.
 	if(!B.IsValid()){
-		if(debug_level>1)_DBG_<<" -- B matrix invalid"<<endl;
-		return FIT_FAILED;
+		if(DEBUG_LEVEL>1)_DBG_<<" -- B matrix invalid"<<endl;
+		return kFitFailed;
 	}
 
 	// The "B" matrix happens to be the covariance matrix of the
@@ -1257,12 +1260,12 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	// is check for it and punt rather than return a nonsensical
 	// value.
 	if(B.E2Norm() > LEAST_SQUARES_MAX_E2NORM){
-		if(debug_level>1){
+		if(DEBUG_LEVEL>1){
 			_DBG_<<" -- B matrix E2Norm out of range(E2Norm="<<B.E2Norm()<<" max="<<LEAST_SQUARES_MAX_E2NORM<<")"<<endl;
 			F.Print();
 			B.Print();
 		}
-		return FIT_FAILED;
+		return kFitFailed;
 	}
 	
 	// Copy the B matrix into last_covariance to later copy into DTrack
@@ -1302,7 +1305,7 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 		}
 		
 		// If we're at a lower chi-sq then we're done
-		if(debug_level>4)_DBG_<<" -- initial_chisq="<<initial_chisq<<"  new chisq="<<chisq<<" nhits="<<new_chisqv.size()<<" p="<<tmprt->swim_steps[0].mom.Mag()<<"  lambda="<<lambda<<endl;
+		if(DEBUG_LEVEL>4)_DBG_<<" -- initial_chisq="<<initial_chisq<<"  new chisq="<<chisq<<" nhits="<<new_chisqv.size()<<" p="<<tmprt->swim_steps[0].mom.Mag()<<"  lambda="<<lambda<<endl;
 		if(chisq-initial_chisq < 0.1 && chisq<2.0)break;
 		
 		// Chi-sq was increased, try a smaller step on the next iteration
@@ -1326,7 +1329,7 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 			}
 			
 			// If we're at a lower chi-sq then we're done
-			if(debug_level>4)_DBG_<<" -- initial_chisq="<<initial_chisq<<"  new chisq="<<chisq<<" nhits="<<new_chisqv.size()<<"  lambda="<<lambda<<endl;
+			if(DEBUG_LEVEL>4)_DBG_<<" -- initial_chisq="<<initial_chisq<<"  new chisq="<<chisq<<" nhits="<<new_chisqv.size()<<"  lambda="<<lambda<<endl;
 			if(chisq-initial_chisq < 0.1 && chisq<2.0)break;
 			
 			// Chi-sq was increased, try a smaller step on the next iteration
@@ -1337,9 +1340,9 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	// If we failed to make a step to a smaller chi-sq then signal
 	// that we were unable to make any improvement.
 	if(min_lambda==0.0){
-		if(debug_level>1)_DBG_<<"Chisq only increased (both directions searched!)"<<endl;
+		if(DEBUG_LEVEL>1)_DBG_<<"Chisq only increased (both directions searched!)"<<endl;
 		chisq = initial_chisq;
-		return FIT_NO_IMPROVEMENT;
+		return kFitNoImprovement;
 	}
 	
 	// Re-create new_state using min_lambda
@@ -1349,7 +1352,7 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 	vector<double> new_chisqv;
 	chisq = ChiSq(new_state, &start_step, rt, wires, shifts, errs, new_chisqv);
 	
-	if(debug_level>3){
+	if(DEBUG_LEVEL>3){
 		DVector3 pos = start_step.origin;
 		DVector3 mom = start_step.mom;
 		double phi = mom.Phi();
@@ -1357,447 +1360,13 @@ DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquaresB(fit_type_t 
 		_DBG_<<"LeastSquaresB succeeded: p="<<mom.Mag()<<" theta="<<mom.Theta()<<" phi="<<phi<<" z="<<pos.Z()<<endl;
 	}
 
-	return FIT_OK;
+	return kFitSuccess;
 }
-
-
-#if 0
-//------------------
-// ChiSq
-//------------------
-double DTrack_factory_ALT1::ChiSq(double q, DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt)
-{
-	DVector3 vdir = start_step->sdir.Cross(start_step->mom);
-	vdir.SetMag(1.0);
-
-	DVector3 pos =   start_step->origin
-						+ state[state_x ][0]*start_step->sdir
-						+ state[state_v ][0]*vdir;
-	DVector3 mom =   state[state_px][0]*start_step->sdir
-						+ state[state_py][0]*start_step->tdir
-						+ state[state_pz][0]*start_step->udir;
-
-	if(rt)rt->Swim(pos,mom);
-
-	return ChiSq(q, pos, mom,rt);
-}
-
-//------------------
-// ChiSq
-//------------------
-double DTrack_factory_ALT1::ChiSq(double q, const DVector3 &pos, const DVector3 &mom, DReferenceTrajectory *rt)
-{
-	// Swim a reference trajectory using the state defined by
-	// "state" at "start_step" if one is not provided.
-	bool own_rt = false;
-	if(!rt){
-		rt = new DReferenceTrajectory(bfield, q, NULL, 0, DEFAULT_STEP_SIZE);
-		rt->Swim(pos,mom);
-		own_rt = true;
-	}
-	
-	double chisq = ChiSq(q, rt);
-
-	// If we created the reference trajectory, then delete
-	if(own_rt)delete rt;
-	
-	return chisq;
-}
-
-//------------------
-// ChiSq
-//------------------
-double DTrack_factory_ALT1::ChiSq(double q, DReferenceTrajectory *rt)
-{
-	// Clear chisq and sigma vector
-	chisqv.clear();
-	sigmav.clear();
-	
-	if(rt->Nswim_steps<3)return 1.0E6;
-	
-	// Calculate particle beta
-	double beta = 1.0/sqrt(1.0+TOF_MASS*TOF_MASS/rt->swim_steps[0].mom.Mag2()); // assume this is a pion for now. This should eventually come from outer detectors
-	
-	// Add CDC hits (if any)
-	for(unsigned int i=0; i<cdchits_on_track.size(); i++){
-		const DCDCTrackHit *hit = cdchits_on_track[i];
-		const DCoordinateSystem *wire = hit->wire;
-		
-		// Distance of closest approach for track to wire
-		double s;
-		double doca = rt->DistToRT(wire, &s);
-			
-		// Distance from drift time. Hardwired for simulation for now
-		double dist, sigma;
-		if(hit_based){
-			dist=0.400; // Middle of the tube is best guess when no time info is present
-			sigma = 2.0*dist/3.464; // sigma of flat distr. is W/sqrt(12) where W is total width
-		}else{
-			// Calculate time of flight (TOF) so we can subtract it
-			double tof = s/(beta*3E10*1E-9);
-			dist = (hit->tdrift-tof)*55E-4;
-			sigma = SIGMA_CDC; // 200 um
-//sigma += 0.010*s/100.0; // add 50 um per meter due to MULS
-		}
-
-		// NOTE: Sometimes we push nan or large values on here
-		double resi = dist - doca;
-
-		chisqv.push_back(USE_CDC ? resi:NaN);
-		sigmav.push_back(sigma);
-	}
-	
-	// Add FDC hits (if any)
-	for(unsigned int i=0; i<fdchits_on_track.size(); i++){
-		const DFDCPseudo *hit = fdchits_on_track[i];
-		const DCoordinateSystem *wire = hit->wire;
-		
-		// Distance of closest approach for track to wire
-		double s;
-		double doca = rt->DistToRT(wire,&s);
-
-		// Distance from drift time. Hardwired for simulation for now.
-		double dist, sigma;
-		if(hit_based){
-			dist = 1.116/4.0; // 1/4 of wire spacing is best guess when no time info is present
-			sigma = 2.0*dist/3.464; // sigma of flat distr. is W/sqrt(12) where W is total width
-		}else{
-			// Calculate time of flight (TOF) so we can subtract it
-			double tof = s/(beta*3E10*1E-9);
-			dist = (hit->time-tof)*55E-4;
-			sigma = SIGMA_FDC_ANODE; // 200 um
-//sigma += 0.010*s/100.0; // add 50 um per meter due to MULS
-		}
-
-		// NOTE: Sometimes we push nan or large values on here
-		double resi = dist - doca;
-		chisqv.push_back(USE_FDC_ANODE ? resi:NaN);
-		sigmav.push_back(sigma);
-		
-		// For the FDC we also have a measurement along the wire
-		// which we include as a separate measurement
-		double u = rt->GetLastDistAlongWire();
-		resi = u - hit->s;
-		sigma = SIGMA_FDC_CATHODE;
-//sigma += 0.010*s/100.0; // add 50 um per meter due to MULS
-		chisqv.push_back(USE_FDC_CATHODE ? resi:NaN);
-		sigmav.push_back(sigma); // 200 um
-		
-	}
-	
-	// Include distance from target as element of chi-sq. This will
-	// need to be changed for off-beamline vertices.
-	double s;
-	double d = rt->DistToRT(target, &s);
-	chisqv.push_back(d);
-	sigmav.push_back(0.1); // 1 mm
-	
-	// Filter out all but the best hits from the chisq
-	// If we have at least 10 hits, then throw away the
-	// worst 10% of the hits.
-	vector<double> tmp;
-	for(unsigned int i=0; i<chisqv.size(); i++) tmp.push_back(fabs(chisqv[i]/sigmav[i]));
-	sort(tmp.begin(),tmp.end());
-	unsigned int index = tmp.size();
-	if(index>10)index = (unsigned int)((float)index*0.9);
-	double chisq_max_resi_sigmas = tmp[index];
-
-	// Add "good" hits together to get the chi-squared
-	double chisq = 0;
-	Ngood_chisq_hits=0.0;
-	for(unsigned int i=0; i<chisqv.size(); i++){
-		// Check if this hit is close enough to the RT to be on
-		// the track. This should be a function of both the distance
-		// along the track and the errors of the measurement in 3D.
-		// For now, we use a single distance which may be sufficient.
-		if(!finite(chisqv[i]))continue;
-		//if(fabs(chisqv[i]/sigmav[i])>CHISQ_MAX_RESI_SIGMAS)continue;
-		//if(fabs(chisqv[i]/sigmav[i])>chisq_max_resi_sigmas)continue;
-
-		chisq+=pow(chisqv[i]/sigmav[i], 2.0);
-		Ngood_chisq_hits += 1.0;
-	}
-	chisq/=Ngood_chisq_hits;
-	if(debug_level>10)_DBG_<<"Chisq:  Ngood_chisq_hits="<<Ngood_chisq_hits<<"  chisq="<<chisq<<endl;
-
-	return chisq;
-}
-
-//------------------
-// LeastSquares
-//------------------
-DTrack_factory_ALT1::fit_status_t DTrack_factory_ALT1::LeastSquares(DVector3 &start_pos, DVector3 &start_mom, DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom, double &chisq)
-{
-	// Determine the best fit of the track using the least squares method
-	// described by R. Mankel Rep. Prog. Phys. 67 (2004) 553-622 pg 565
-	const int Nparameters = 5;
-	double deltas[Nparameters];
-
-	// For fitting, we want to define a coordinate system very similar to the
-	// Reference Trajectory coordinate system. The difference is that we want
-	// the position to be defined in a plane perpendicular to the momentum.
-	// The RT x-direction is in this plane, but the momentum itself lies
-	// somewhere in the Y/Z plane so that neither Y nor Z makes a good choice
-	// for the second postion dimension. We will call the second coordinate in 
-	// the perpendicular plane "v" which is the coordinate along the axis that
-	// is perpendicular to both the x-direction and the momentum direction.
-	swim_step_t start_step = rt->swim_steps[0];
-	DVector3 vdir = start_step.sdir.Cross(start_step.mom);
-	vdir.SetMag(1.0);
-	
-	// Since we define the state in the X/V plane, we need to propagate the
-	// particle from the given starting position up to this plane.
-	DVector3 pos = start_pos;
-	DVector3 mom = start_mom;
-//	DMagneticFieldStepper stepper(bfield, rt->q);
-//	if(stepper.SwimToPlane(pos, mom, start_step.origin, start_step.udir)){
-//return FIT_FAILED;
-//	}
-
-	// Define the particle state in the reference trajectory coordinate
-	// system at the start of the RT
-	DVector3 pos_diff = pos - start_step.origin;
-	DMatrix state(5,1);
-	switch(Nparameters){
-		case 5: state[state_v	][0] = pos_diff.Dot(vdir);
-		case 4: state[state_x	][0] = pos_diff.Dot(start_step.sdir);
-		case 3: state[state_pz	][0] = mom.Dot(start_step.udir);
-		case 2: state[state_py	][0] = mom.Dot(start_step.tdir);
-		case 1: state[state_px	][0] = mom.Dot(start_step.sdir);
-	}
-
-	// Create reference trajectory to use in calculating derivatives
-	tmprt->Swim(pos,mom, rt->q);
-
-	// Best-guess
-	chisq = ChiSq(rt->q, tmprt);
-	vector<double> resi = chisqv;
-	vector<double> errs = sigmav;
-
-	// Because we have a non-linear system, we must take the derivatives
-	// numerically.
-	//
-	// Note that in the calculations of the deltas below,
-	// the change in state should be set first and the value
-	// of deltas[...] calculated from that. See Numerical
-	// Recipes in C 2nd ed. section 5.7 ppg. 186-189.
-
-	// dpx : tweak by +/- 0.01
-	DMatrix state_dpx = state;
-	state_dpx[state_px][0] += LEAST_SQUARES_DP;
-	deltas[state_px] = state_dpx[state_px][0] - state[state_px][0];
-	ChiSq(rt->q, state_dpx, &start_step,tmprt);
-	vector<double> resi_dpx_hi = chisqv;
-	vector<double> &resi_dpx_lo = resi;
-
-	// dpy : tweak by +/- 0.01
-	DMatrix state_dpy = state;
-	state_dpy[state_py][0] += LEAST_SQUARES_DP;
-	deltas[state_py] = state_dpy[state_py][0] - state[state_py][0];
-	ChiSq(rt->q, state_dpy, &start_step,tmprt);
-	vector<double> resi_dpy_hi = chisqv;
-	vector<double> &resi_dpy_lo = resi;
-
-	// dpz : tweak by +/- 0.01
-	DMatrix state_dpz = state;
-	state_dpz[state_pz][0] += LEAST_SQUARES_DP;
-	deltas[state_pz] = state_dpz[state_pz][0] - state[state_pz][0];
-	ChiSq(rt->q, state_dpz, &start_step,tmprt);
-	vector<double> resi_dpz_hi = chisqv;
-	vector<double> &resi_dpz_lo = resi;
-
-	// dx : tweak by +/- 0.01
-	DMatrix state_dx = state;
-	state_dx[state_x][0] += LEAST_SQUARES_DX;
-	deltas[state_x] = state_dx[state_x][0] - state[state_x][0];
-	if(Nparameters>=4)ChiSq(rt->q, state_dx, &start_step,tmprt);
-	vector<double> resi_dx_hi = chisqv;
-	vector<double> &resi_dx_lo = resi;
-
-	// dv : tweak by +/- 0.01
-	DMatrix state_dv = state;
-	state_dv[state_v][0] += LEAST_SQUARES_DX;
-	deltas[state_v] = state_dv[state_v][0] - state[state_v][0];
-	if(Nparameters>=5)ChiSq(rt->q, state_dv, &start_step,tmprt);
-	vector<double> resi_dv_hi = chisqv;
-	vector<double> &resi_dv_lo = resi;
-	
-	// Make a list of "clean" hits. Ones with reasonably
-	// small, residuals that are not "nan" for the
-	// best-guess as well as the tweaked  cases.
-	vector<bool> good;
-	unsigned int Ngood=0;
-	unsigned int Nhits = resi.size();
-	for(unsigned int i=0; i<Nhits; i++){
-		double res;
-		double max=CHISQ_MAX_RESI_SIGMAS;
-		res =        resi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-		res = resi_dpx_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-		res = resi_dpy_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-		res = resi_dpz_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-
-		res = resi_dx_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-		res = resi_dv_hi[i]; if(!finite(res) || fabs(res)>max){good.push_back(false); continue;}
-
-		good.push_back(true);
-		Ngood++;
-	}
-	if(Ngood<LEAST_SQUARES_MIN_HITS){
-		if(debug_level>2)_DBG_<<" Bad number of good distance calculations!"<<endl;
-		return FIT_FAILED;
-	}
-
-	// Build "F" matrix of derivatives
-	DMatrix F(Ngood,Nparameters);
-	for(unsigned int i=0,j=0; j<Nhits; j++){
-		if(!good[j])continue; // skip bad hits
-		switch(Nparameters){
-			// Note: This is a funny way to use a switch!
-			case 5: F[i][state_v ] = (resi_dv_hi[j]-resi_dv_lo[j])/deltas[state_v];
-			case 4: F[i][state_x ] = (resi_dx_hi[j]-resi_dx_lo[j])/deltas[state_x];
-			case 3: F[i][state_pz] = (resi_dpz_hi[j]-resi_dpz_lo[j])/deltas[state_pz];
-			case 2: F[i][state_py] = (resi_dpy_hi[j]-resi_dpy_lo[j])/deltas[state_py];
-			case 1: F[i][state_px] = (resi_dpx_hi[j]-resi_dpx_lo[j])/deltas[state_px];
-		}
-		i++;
-	}
-	DMatrix Ft(DMatrix::kTransposed, F);
-
-	// V is a diagonal matrix of the measurement errors. In
-	// principle, we could fold in the multiple scattering
-	// here, but for now, we don't. This is filled in the
-	// loop below.
-	DMatrix V(Ngood,Ngood);
-	V.Zero();
-	
-	// Measurement vector. This contains the residuals between
-	// DOCAs and DISTs.
-	DMatrix m(Ngood,1);
-	for(unsigned int i=0,j=0; j<Nhits; j++){
-		if(!good[j])continue; // skip bad hits
-		m[i][0] = -resi[j]; // drift time is already subtracted in ChiSq(...)
-		V[i][i] = pow(errs[j], 2.0);
-		i++;
-	}
-	DMatrix Vinv(DMatrix::kInverted, V);
-	DMatrix B(DMatrix::kInverted, Ft*Vinv*F);
-	
-	// If the inversion failed altogether then the invalid flag
-	// will be set on the matrix. In these cases, were dead.
-	if(!B.IsValid()){
-		if(debug_level>1)_DBG_<<" -- B matrix invalid"<<endl;
-		return FIT_FAILED;
-	}
-
-	// The "B" matrix happens to be the covariance matrix of the
-	// state parameters. A problem sometimes occurs where one or
-	// more elements of B are very large. This tends to happen
-	// when a column of F is essentially all zeros making the
-	// matrix un-invertable.What we should really do in these
-	// cases is check beforehand and drop the bad column(s)
-	// before trying to invert. That will add complication that
-	// I don't want to introduce quite yet. What we do now
-	// is check for it and punt rather than return a nonsensical
-	// value.
-	if(B.E2Norm() > LEAST_SQUARES_MAX_E2NORM){
-		if(debug_level>1)_DBG_<<" -- B matrix E2Norm out of range(E2Norm="<<B.E2Norm()<<" max="<<LEAST_SQUARES_MAX_E2NORM<<")"<<endl;
-		return FIT_FAILED;
-	}
-	
-	// Copy the B matrix into last_covariance to later copy into DTrack
-	last_covariance.ResizeTo(B);
-	last_covariance = B;
-
-	// Calculate step direction and magnitude	
-	DMatrix delta_state = B*Ft*Vinv*m;
-
-	// The following is based on Numerical Recipes in C 2nd Ed.
-	// ppg. 384-385.
-	//
-	// We now have the "direction" by which to step in the-d
-	// parameter space as well as an amplitude by which to
-	// step in "delta_state". A potential problem is that
-	// we can over-step such that we end up at a worse
-	// chi-squared value. To address this, we try taking 
-	// the full step, but if we end up at a worse chi-sq
-	// then we backtrack and take a smaller step until
-	// we see the chi-sq improve.
-	double lambda = 1.0;
-	int Ntrys = 0;
-	double new_chisq;
-	int max_trys = 4;
-	for(; Ntrys<max_trys; Ntrys++){
-
-		DMatrix new_state(5,1);
-		for(int i=0; i<Nparameters; i++)new_state[i][0] = state[i][0] + delta_state[i][0]*lambda;
-
-		// Calculate initial particle position/momentum.
-		vertex_pos =     start_step.origin
-							+ new_state[state_x ][0]*start_step.sdir
-							+ new_state[state_v ][0]*vdir;
-		vertex_mom =     new_state[state_px][0]*start_step.sdir
-							+ new_state[state_py][0]*start_step.tdir
-							+ new_state[state_pz][0]*start_step.udir;
-
-		// Re-swim reference trajectory using these parameters and find Chi-sq
-		rt->Swim(vertex_pos, vertex_mom);
-		new_chisq = ChiSq(rt->q, rt);
-		
-		// If we're at a lower chi-sq then we're done
-		if(debug_level>4)_DBG_<<" -- chisq="<<chisq<<"  new_chisq="<<new_chisq<<" nhits="<<chisqv.size()<<"  lambda="<<lambda<<endl;
-		if(new_chisq-chisq < 0.01)break;
-		
-		// Chi-sq was increased, try a smaller step on the next iteration
-		lambda/=2.0;
-	}
-	
-	// If we failed to find a better Chi-Sq above, maybe we were looking 
-	// in the wrong direction(??) Try looking in the opposite direction.
-	if(Ntrys>=max_trys){
-		lambda = -lambda;
-		for(Ntrys=0; Ntrys<max_trys; Ntrys++){
-
-			DMatrix new_state(5,1);
-			for(int i=0; i<Nparameters; i++)new_state[i][0] = state[i][0] + delta_state[i][0]*lambda;
-
-			// Calculate initial particle position/momentum.
-			vertex_pos =     start_step.origin
-								+ new_state[state_x ][0]*start_step.sdir
-								+ new_state[state_v ][0]*vdir;
-			vertex_mom =     new_state[state_px][0]*start_step.sdir
-								+ new_state[state_py][0]*start_step.tdir
-								+ new_state[state_pz][0]*start_step.udir;
-
-			// Re-swim reference trajectory using these parameters and find Chi-sq
-			rt->Swim(vertex_pos, vertex_mom);
-			new_chisq = ChiSq(rt->q, rt);
-
-			// If we're at a lower chi-sq then we're done
-		if(debug_level>4)_DBG_<<" -- chisq="<<chisq<<"  new_chisq="<<new_chisq<<" nhits="<<chisqv.size()<<"  lambda="<<lambda<<endl;
-		if(new_chisq-chisq < 0.01)break;
-
-			// Chi-sq was increased, try a smaller step on the next iteration
-			lambda*=2.0;
-		}
-	}
-
-	// If we failed to make a step to a smaller chi-sq then signal
-	// that the fit failed completely.
-	if(Ntrys>=max_trys){
-		if(debug_level>1)_DBG_<<"Chisq only increased (both directions searched!)"<<endl;
-		return FIT_FAILED;
-	}
-	
-	chisq = new_chisq;
-
-	return FIT_OK;
-}
-#endif
 
 //------------------
 // FillDebugHists
 //------------------
-void DTrack_factory_ALT1::FillDebugHists(DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom)
+void DTrackFitterALT1::FillDebugHists(DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom)
 {
 	//vertex_mom.SetMagThetaPhi(6.0, 17.2*M_PI/180.0, 90.0*M_PI/180.0);
 	//vertex_pos.SetXYZ(0.0,0.0,65.0);
@@ -1807,8 +1376,8 @@ void DTrack_factory_ALT1::FillDebugHists(DReferenceTrajectory *rt, DVector3 &ver
 	// Calculate particle beta
 	double beta = 1.0/sqrt(1.0+TOF_MASS*TOF_MASS/vertex_mom.Mag2()); // assume this is a pion for now. This should eventually come from outer detectors
 
-	for(unsigned int j=0; j<cdchits_on_track.size(); j++){
-		const DCDCTrackHit *hit = cdchits_on_track[j];
+	for(unsigned int j=0; j<cdchits.size(); j++){
+		const DCDCTrackHit *hit = cdchits[j];
 		const DCDCWire *wire = hit->wire;
 		
 		// Distance of closest approach for track to wire
@@ -1839,8 +1408,8 @@ void DTrack_factory_ALT1::FillDebugHists(DReferenceTrajectory *rt, DVector3 &ver
 
 	}
 	
-	for(unsigned int j=0; j<fdchits_on_track.size(); j++){
-		const DFDCPseudo *hit = fdchits_on_track[j];
+	for(unsigned int j=0; j<fdchits.size(); j++){
+		const DFDCPseudo *hit = fdchits[j];
 		const DFDCWire *wire = hit->wire;
 
 		// Distance of closest approach for track to wire
@@ -1866,20 +1435,6 @@ void DTrack_factory_ALT1::FillDebugHists(DReferenceTrajectory *rt, DVector3 &ver
 			residuals_fdc_cathode_vs_s->Fill(resi, wire->layer,s);
 		}
 	}
-
-	// Find chi-sq for both initial and final values
-#if 0
-	double chisq_final = ChiSq(rt->q, rt);
-	double nhits_final = Ngood_chisq_hits;
-	DVector3 mom;
-	mom.SetMagThetaPhi(tc->p, tc->theta, tc->phi);
-	DVector3 pos(0.0, 0.0, tc->z_vertex);
-	rt->Swim(pos, mom);
-	double chisq_initial = ChiSq(rt->q, rt);
-	double nhits_initial = Ngood_chisq_hits;
-	chisq_final_vs_initial->Fill(chisq_initial,chisq_final);
-	nhits_final_vs_initial->Fill(nhits_initial, nhits_final);
-#endif
 }
 
 

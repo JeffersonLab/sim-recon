@@ -46,19 +46,19 @@ jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		// Fill in DTrack specific members. (Some of these are redundant)
 		DVector3 pos = track->position();
 		DVector3 mom = track->momentum();
-		track->q			= track->charge();
-		track->p			= mom.Mag();
-		track->theta	= mom.Theta();
-		track->phi		= mom.Phi();
-		track->x			= pos.X();
-		track->y			= pos.Y();
-		track->z			= pos.Z();
+		//track->q			= track->charge();
+		//track->p			= mom.Mag();
+		//track->theta	= mom.Theta();
+		//track->phi		= mom.Phi();
+		//track->x			= pos.X();
+		//track->y			= pos.Y();
+		//track->z			= pos.Z();
 		track->candidateid = 0;
 		track->chisq	= 0.0;
-		track->dE		= 0.0;
-		track->ds		= 0.0;
-		track->err_dE	= 0.0;
-		track->err_ds	= 0.0;
+		//track->dE		= 0.0;
+		//track->ds		= 0.0;
+		//track->err_dE	= 0.0;
+		//track->err_ds	= 0.0;
 
 		// Adapted from Alex's fortran code to paramatrize the resolution 
 		// of GlueX. He developed this from a study Dave Lawrence did. 
@@ -166,9 +166,9 @@ void DTrack_factory_THROWN::SmearMomentum(DTrack *trk)
   mom.SetMagThetaPhi(pmag, theta, phi);
   trk->setMomentum(mom);
   trk->setMass(0.0);
-  trk->p = pmag;
-  trk->theta = theta;
-  trk->phi = phi;
+  //trk->p = pmag;
+  //trk->theta = theta;
+  //trk->phi = phi;
 
   // Set up the error matrix properly
   DMatrixDSym errMat(7);

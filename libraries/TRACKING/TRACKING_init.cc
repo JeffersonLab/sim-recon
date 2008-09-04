@@ -13,6 +13,8 @@
 #include "DTrack_factory_ALT1.h"
 #include "DTrack_factory_ALT2.h"
 #include "DTrack_factory_ALT3.h"
+#include "DTrackFitter_factory.h"
+#include "DTrackFitter_factory_ALT1.h"
 
 #include "DMCThrown.h"
 #include "DMCTrackHit.h"
@@ -26,7 +28,7 @@ typedef JFactory<DTrackHit> DTrackHit_factory;
 jerror_t TRACKING_init(JEventLoop *loop)
 {
 	/// Create and register TRACKING data factories
-	loop->AddFactory(new DTrack_factory_ALT1());
+	//loop->AddFactory(new DTrack_factory_ALT1());
 	loop->AddFactory(new DTrack_factory_ALT2());
 	loop->AddFactory(new DTrack_factory_ALT3());
 	loop->AddFactory(new DTrack_factory());
@@ -42,6 +44,8 @@ jerror_t TRACKING_init(JEventLoop *loop)
 	loop->AddFactory(new DMCThrown_factory());
 	loop->AddFactory(new DMCTrajectoryPoint_factory());
 	loop->AddFactory(new DTrack_factory_THROWN());
+	loop->AddFactory(new DTrackFitter_factory());
+	loop->AddFactory(new DTrackFitter_factory_ALT1());
 
 	return NOERROR;
 }
