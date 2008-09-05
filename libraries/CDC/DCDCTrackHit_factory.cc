@@ -87,74 +87,54 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 		int myNstraws=0;
 		float radius = 0.0;
 		float stereo=0.0;
+		float phi_shift=0.0;
 
 		switch(ring){
-#if 1 // 1=CDC-option 1  0=CDC-option2
-			case  1:	myNstraws=  43;	radius= 10.960;	stereo=  degrees0; break;
-			case  2:	myNstraws=  50;	radius= 12.741;	stereo=  degrees0; break;
-			case  3:	myNstraws=  57;	radius= 14.522;	stereo=  degrees0; break;
-			case  4:	myNstraws=  64;	radius= 16.304;	stereo= -degrees6; break;
-			case  5:	myNstraws=  71;	radius= 18.086;	stereo= -degrees6; break;
-			case  6:	myNstraws=  78;	radius= 19.868;	stereo= +degrees6; break;
-			case  7:	myNstraws=  85;	radius= 21.65 ;	stereo= +degrees6; break;
-			case  8:	myNstraws=  99;	radius= 25.214;	stereo=  degrees0; break;
-			case  9:	myNstraws= 106;	radius= 26.997;	stereo=  degrees0; break;
-			case 10:	myNstraws= 113;	radius= 28.779;	stereo=  degrees0; break;
-			case 11:	myNstraws= 120;	radius= 30.561;	stereo=  degrees0; break;
-			case 12:	myNstraws= 127;	radius= 32.344;	stereo=  degrees0; break;
-			case 13:	myNstraws= 134;	radius= 34.126;	stereo= -degrees6; break;
-			case 14:	myNstraws= 141;	radius= 35.908;	stereo= -degrees6; break;
-			case 15:	myNstraws= 148;	radius= 37.691;	stereo= +degrees6; break;
-			case 16:	myNstraws= 155;	radius= 39.473;	stereo= +degrees6; break;
-			case 17:	myNstraws= 166;	radius= 42.274;	stereo=  degrees0; break;
-			case 18:	myNstraws= 173;	radius= 44.057;	stereo=  degrees0; break;
-			case 19:	myNstraws= 180;	radius= 45.839;	stereo=  degrees0; break;
-			case 20:	myNstraws= 187;	radius= 47.621;	stereo=  degrees0; break;
-			case 21:	myNstraws= 194;	radius= 49.404;	stereo=  degrees0; break;
-			case 22:	myNstraws= 201;	radius= 51.186;	stereo=  degrees0; break;
-			case 23:	myNstraws= 208;	radius= 52.969;	stereo=  degrees0; break;
-			case 24:	myNstraws= 215;	radius= 54.751;	stereo=  degrees0; break;
-			case 25:	myNstraws= 222;	radius= 56.534;	stereo=  degrees0; break;
-#else
-			case  1:	myNstraws=  43;	radius= 10.960;	stereo=  degrees0; break;
-			case  2:	myNstraws=  50;	radius= 12.741;	stereo=  degrees0; break;
-			case  3:	myNstraws=  57;	radius= 14.522;	stereo=  degrees0; break;
-			case  4:	myNstraws=  64;	radius= 16.304;	stereo= -degrees6; break;
-			case  5:	myNstraws=  71;	radius= 18.086;	stereo= -degrees6; break;
-			case  6:	myNstraws=  78;	radius= 19.868;	stereo= -degrees6; break;
-			case  7:	myNstraws=  91;	radius= 23.178;	stereo=  degrees0; break;
-			case  8:	myNstraws=  98;	radius= 24.960;	stereo=  degrees0; break;
-			case  9:	myNstraws= 105;	radius= 26.742;	stereo=  degrees0; break;
-			case 10:	myNstraws= 112;	radius= 28.524;	stereo=  degrees0; break;
-			case 11:	myNstraws= 119;	radius= 30.307;	stereo=  degrees0; break;
-			case 12:	myNstraws= 126;	radius= 32.089;	stereo= +degrees6; break;
-			case 13:	myNstraws= 133;	radius= 33.871;	stereo= +degrees6; break;
-			case 14:	myNstraws= 140;	radius= 35.654;	stereo= +degrees6; break;
-			case 15:	myNstraws= 150;	radius= 38.200;	stereo=  degrees0; break;
-			case 16:	myNstraws= 157;	radius= 39.982;	stereo=  degrees0; break;
-			case 17:	myNstraws= 164;	radius= 41.765;	stereo=  degrees0; break;
-			case 18:	myNstraws= 171;	radius= 43.547;	stereo=  degrees0; break;
-			case 19:	myNstraws= 178;	radius= 45.330;	stereo=  degrees0; break;
-			case 20:	myNstraws= 185;	radius= 47.112;	stereo= -degrees6; break;
-			case 21:	myNstraws= 192;	radius= 48.895;	stereo= -degrees6; break;
-			case 22:	myNstraws= 199;	radius= 50.677;	stereo= -degrees6; break;
-			case 23:	myNstraws= 208;	radius= 52.969;	stereo=  degrees0; break;
-			case 24:	myNstraws= 215;	radius= 54.751;	stereo=  degrees0; break;
-			case 25:	myNstraws= 222;	radius= 56.534;	stereo=  degrees0; break;
-#endif
+			// Phase shifted configuration
+			// NOTE: These follow an XML file sent ot me by Beni Z. on July 18, 2008
+			// but the sign of the stereo shift seems opposite to that used in GlueX-doc-990-v10.
+			// We stick with Beni's convention for simplicity here on the assumption that
+			// this choice is arbitrary.  7/21/2008 DL.
+			case  1:	myNstraws=  43;	radius= 10.984;	stereo=  degrees0; phi_shift= 0.000;	break;
+			case  2:	myNstraws=  50;	radius= 12.769;	stereo=  degrees0; phi_shift=+3.600;	break;
+			case  3:	myNstraws=  57;	radius= 14.555;	stereo=  degrees0; phi_shift=-2.105;	break;
+			case  4:	myNstraws=  63;	radius= 16.174;	stereo= -degrees6; phi_shift= 0.000;	break;
+			case  5:	myNstraws=  70;	radius= 17.969;	stereo= -degrees6; phi_shift= 0.000;	break;
+			case  6:	myNstraws=  77;	radius= 19.765;	stereo= +degrees6; phi_shift= 0.000;	break;
+			case  7:	myNstraws=  84;	radius= 21.561;	stereo= +degrees6; phi_shift= 0.000;	break;
+			case  8:	myNstraws=  98;	radius= 25.015;	stereo=  degrees0; phi_shift=+0.216;	break;
+			case  9:	myNstraws= 105;	radius= 26.801;	stereo=  degrees0; phi_shift= 0.000;	break;
+			case 10:	myNstraws= 112;	radius= 28.588;	stereo=  degrees0; phi_shift=+1.607;	break;
+			case 11:	myNstraws= 119;	radius= 30.374;	stereo=  degrees0; phi_shift=-1.008;	break;
+			case 12:	myNstraws= 126;	radius= 32.160;	stereo=  degrees0; phi_shift=+0.571;	break;
+			case 13:	myNstraws= 132;	radius= 33.877;	stereo= -degrees6; phi_shift= 0.000;	break;
+			case 14:	myNstraws= 139;	radius= 35.673;	stereo= -degrees6; phi_shift= 0.000;	break;
+			case 15:	myNstraws= 146;	radius= 37.469;	stereo= +degrees6; phi_shift= 0.000;	break;
+			case 16:	myNstraws= 153;	radius= 39.265;	stereo= +degrees6; phi_shift= 0.000;	break;
+			case 17:	myNstraws= 165;	radius= 42.113;	stereo=  degrees0; phi_shift= 0.000;	break;
+			case 18:	myNstraws= 172;	radius= 43.899;	stereo=  degrees0; phi_shift=+1.047;	break;
+			case 19:	myNstraws= 179;	radius= 45.686;	stereo=  degrees0; phi_shift=-0.670;	break;
+			case 20:	myNstraws= 186;	radius= 47.472;	stereo=  degrees0; phi_shift=+0.387;	break;
+			case 21:	myNstraws= 193;	radius= 49.258;	stereo=  degrees0; phi_shift=-0.266;	break;
+			case 22:	myNstraws= 200;	radius= 51.045;	stereo=  degrees0; phi_shift=+0.164;	break;
+			case 23:	myNstraws= 207;	radius= 52.831;	stereo=  degrees0; phi_shift=-0.134;	break;
+			case 24:	myNstraws= 214;	radius= 54.618;	stereo=  degrees0; phi_shift=+0.099;	break;
 			default:
-				cerr<<__FILE__<<":"<<__LINE__<<" Invalid value for CDC ring ("<<ring<<") should be 1-23 inclusive!"<<endl;
+				cerr<<__FILE__<<":"<<__LINE__<<" Invalid value for CDC ring ("<<ring<<") should be 1-24 inclusive!"<<endl;
 		}
 		Nstraws[ring-1] = myNstraws;
 		
 		// I'm not sure why this is needed, but empirically, it just is.
 		stereo = -stereo;
 		
+		// Convert phi_shift to radians
+		phi_shift *= M_PI/180.0;
+		
 		float dphi = 2.0*M_PI/(float)myNstraws; // phi angle difference between straws
 		for(int straw=1; straw<=myNstraws; straw++){
 			DCDCWire *w = &wire[ring-1][straw-1];
 
-			float phi = (float)(straw-1)*dphi;
+			float phi = phi_shift + (float)(straw-1)*dphi;
 			
 			// Define position of midpoint of wire, phi of midpoint, and m_x, m_y
 			w->ring = ring;
