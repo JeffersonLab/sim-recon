@@ -25,10 +25,7 @@ typedef struct{
 }DKalmanCDCHit_t;
 
 typedef struct{
-  double S[5];
-  double C[5][5];
-  double JT[5][5];
-  bool measurement;
+  DMatrix *C,*Ck,*S,*Sk,*J,*J1;
 }DKalmanState_t;
 
 
@@ -41,24 +38,34 @@ class DKalmanFilter{
     for (unsigned int i=0;i<cdchits.size();i++){
       delete cdchits[i];
     }
+    for (unsigned int i=0;i<central_traj.size();i++){
+      delete central_traj[i].Ck;
+      delete central_traj[i].C;
+      delete central_traj[i].Sk;
+      delete central_traj[i].S;
+      delete central_traj[i].J;
+    }
     hits.clear();
     cdchits.clear();
   };
 
   jerror_t AddCDCHit(const DCDCTrackHit *cdchit);
-
+  jerror_t AddVertex(DVector3 vertex);
   jerror_t AddHit(double x,double y, double z,double covx,
 		  double covy, double covxy,double dE);
   jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
   jerror_t KalmanLoop(double mass_hyp);
   jerror_t KalmanForward(double mass_hyp,DMatrix &S,DMatrix &C,double &chisq);
-  jerror_t KalmanCentral(double mass_hyp,DMatrix &S, DMatrix &C,DVector3 &pos,
+  jerror_t KalmanCentral(double mass_hyp,double anneal_factor,DMatrix &S, 
+			 DMatrix &C,DVector3 &pos,
 			 double &chisq);
-  jerror_t ExtrapolateToVertex(double mass_hyp,DMatrix Sc,DMatrix Cc);
+  jerror_t ExtrapolateToVertex(double mass_hyp,DVector3 pos,DMatrix Sc,
+			       DMatrix Cc);
 
   void GetMomentum(DVector3 &mom);
   void GetPosition(DVector3 &pos);
   double GetChiSq(void){return chisq_;}
+  unsigned int GetNDF(void){return ndf;};
   double GetActivePathLength(void){ return path_length;}
   double GetdEdx(double M,double q_over_p,double Z,double A, double rho);
 
@@ -108,7 +115,7 @@ class DKalmanFilter{
 				  double X0,DMatrix Sc,
 				  DMatrix &Q);
   jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S,DMatrix &C);
-  jerror_t SwimToRadius(double Rf,DVector3 wirepos,DMatrix &Sc,DMatrix &Cc);
+  jerror_t SwimToRadius(DVector3 &pos, double Rf,DMatrix &Sc,DMatrix &Cc);
   
   jerror_t GoldenSection(double &ds,double doca,double dedx,DVector3 &pos,
 		       DVector3 origin,DVector3 dir,  
@@ -127,6 +134,8 @@ class DKalmanFilter{
   double z_,phi_,R_,tanl_,q_over_pt_;
   // chi2 of fit
   double chisq_;
+  // number of degrees of freedom
+  unsigned int ndf;
   
   // Lists containing state, covariance, and jacobian at each step
   deque<DKalmanState_t>central_traj;
