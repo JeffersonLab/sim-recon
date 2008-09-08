@@ -20,10 +20,12 @@ DPhoton_factory::DPhoton_factory()
 	// Set defaults
         DELTA_THETA_CHARGE = 0.05; // Polar angle separation between photon and charged particle 
                                    // in radians
-
-	gPARMS->SetDefaultParameter("PID:DELTA_THETA_CHARGE", DELTA_THETA_CHARGE);
-
+	USE_BCAL_ONLY = 0;
+	USE_FCAL_ONLY = 0;
 	
+	gPARMS->SetDefaultParameter( "PID:DELTA_THETA_CHARGE", DELTA_THETA_CHARGE);
+	gPARMS->SetDefaultParameter( "PID:USE_BCAL_ONLY", USE_BCAL_ONLY );
+	gPARMS->SetDefaultParameter( "PID:USE_FCAL_ONLY", USE_FCAL_ONLY );
 }
 
 
@@ -46,7 +48,7 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 // loop over FCAL photons    
 	vector<const DFCALPhoton*> fcalPhotons;
-	eventLoop->Get(fcalPhotons);
+	if( ! USE_BCAL_ONLY ) eventLoop->Get(fcalPhotons);
   
         JObject::oid_t nPhotons=0;
         for ( unsigned int i=0; i < fcalPhotons.size(); i++ ) {
@@ -68,7 +70,7 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 // loop over BCAL photons and
 // correct shower energy and position in makeBCalPhoton
 	vector<const DBCALPhoton*> bcalPhotons;
-	eventLoop->Get(bcalPhotons);
+	if( ! USE_FCAL_ONLY ) eventLoop->Get(bcalPhotons);
 	
        for (unsigned int i=0; i< bcalPhotons.size(); i++) {
 

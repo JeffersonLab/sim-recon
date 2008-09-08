@@ -27,6 +27,9 @@ class DPhoton_factory:public JFactory<DPhoton>{
 		float DELTA_THETA_CHARGE; // The largest expected polar angle separation (in radians)
 					  // between photon and charged particle
 
+		int USE_BCAL_ONLY;
+		int USE_FCAL_ONLY;
+
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
                 DPhoton* makeFCalPhoton(const DFCALPhoton* gamma, const JObject::oid_t id); 
