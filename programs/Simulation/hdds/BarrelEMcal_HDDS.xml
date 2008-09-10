@@ -23,8 +23,8 @@
 
   <composition name="BarrelEMcal">
     <posXYZ volume="barrelEMcal" X_Y_Z="0.0 0.0 195.0" />
-    <posXYZ volume="BCSU" X_Y_Z="0.0 0.0 -10.0" />
-    <posXYZ volume="BCSD" X_Y_Z="0.0 0.0 400." />
+    <posXYZ volume="BCSU" X_Y_Z="0.0 0.0 -15.0" />
+    <posXYZ volume="BCSD" X_Y_Z="0.0 0.0 405." />
   </composition>
 
   <composition name="barrelEMcal" envelope="BCAL">
@@ -253,14 +253,14 @@
 
   <composition name="BCALfatsector_7" envelope="BCA7">
     <posRPhiZ volume="BMF7" />
-    <posRPhiZ volume="BCO7" R_Phi_Z="79.62 0.0  203.0" />
-    <posRPhiZ volume="BCO7" R_Phi_Z="79.62 0.0 -203.0" rot="180 0 0" />
+    <posRPhiZ volume="BCO7" R_Phi_Z="79.62 0.0  202.5" />
+    <posRPhiZ volume="BCO7" R_Phi_Z="79.62 0.0 -202.5" rot="180 0 0" />
   </composition>
 
   <composition name="BCALfatsector_8" envelope="BCA8">
     <posRPhiZ volume="BMF8" />
-    <posRPhiZ volume="BCO8" R_Phi_Z="84.85 0.0  203.0" />
-    <posRPhiZ volume="BCO8" R_Phi_Z="84.85 0.0 -203.0" rot="180 0 0" />
+    <posRPhiZ volume="BCO8" R_Phi_Z="84.85 0.0  202.5" />
+    <posRPhiZ volume="BCO8" R_Phi_Z="84.85 0.0 -202.5" rot="180 0 0" />
   </composition>
 
   <tubs name="BCAL" Rio_Z="64.2 90.0 420.0" unit_length="cm" material="Air"
@@ -429,9 +429,9 @@
        material="Plexiglas" comment="Winston cone for layer 9"/>
   <trd name="BCNB" Xmp_Ymp_Z="2.0 1.3 2.0 1.3 10.0" 
        material="Plexiglas" comment="Winston cone for layer 9"/>
-  <trd name="BCO7" Xmp_Ymp_Z="5.23 3.0 5.04 3.0 19.0" 
+  <trd name="BCO7" Xmp_Ymp_Z="5.23 3.0 5.04 3.0 15.0" 
        material="Plexiglas" comment="light collector for fat layer 7"/>
-  <trd name="BCO8" Xmp_Ymp_Z="5.23 3.0 5.04 3.0 19.0" 
+  <trd name="BCO8" Xmp_Ymp_Z="5.23 3.0 5.04 3.0 15.0" 
        material="Plexiglas" comment="light collector for fat layer 8"/>
 
   <box name="BCPM" X_Y_Z="1.9 1.9 2.0" 
