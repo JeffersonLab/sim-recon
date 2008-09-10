@@ -96,7 +96,7 @@ class DKalmanFilter{
   jerror_t CalcDerivAndJacobian(double z,DMatrix S,double dEdx,
 				DMatrix &J,DMatrix &D);
   jerror_t CalcDeriv(double z,DMatrix S, double dEdx, DMatrix &D);
-  jerror_t CalcDeriv(DVector3 pos,DVector3 &dpos,DVector3 wire_orig,
+  jerror_t CalcDeriv(double ds,DVector3 pos,DVector3 &dpos,DVector3 wire_orig,
 		     DVector3 wiredir,DMatrix S,double dEdx,DMatrix &D1);
 
   jerror_t StepJacobian(DVector3 &pos,DVector3 wire_pos,DVector3 wiredir,
@@ -104,7 +104,8 @@ class DKalmanFilter{
   jerror_t Step(DVector3 &pos,DVector3 wire_pos,DVector3 wiredir,double ds,
 		DMatrix &S, double dEdx);
 
-  jerror_t CalcDerivAndJacobian(DVector3 pos,DVector3 &dpos,DVector3 wire_pos,
+  jerror_t CalcDerivAndJacobian(double ds,DVector3 pos,DVector3 &dpos,
+				DVector3 wire_pos,
 				DVector3 wiredir,
 				DMatrix S,double dEdx,
 				DMatrix &J1,DMatrix &D1);
