@@ -145,10 +145,10 @@ class DbMaker
  * output structure based on that information.
  */ 
  public:
-   static void DbMaker::processTemplateFile(const DOMElement* const targetEl,
+   static void processTemplateFile(const DOMElement* const targetEl,
                                             const char* const fname);
-   static void DbMaker::makedb(DOMElement* el);
-   static void DbMaker::printdb();
+   static void makedb(DOMElement* el);
+   static void printdb();
 };
 
 int main(int argC, char* argV[])
