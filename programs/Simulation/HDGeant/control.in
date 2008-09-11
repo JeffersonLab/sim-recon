@@ -19,7 +19,7 @@ c process the following 100 input events and stop.  If the end of the file is
 c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
 cINFILE 'rhop.hddm'
-TRIG 100000
+TRIG 1
 RUNG 9999
 
 c The BEAM card configures the built-in coherent bremsstralung photon
@@ -35,7 +35,7 @@ c      Emax   - end-point energy of the electron beam (GeV)
 c      Epeak  - energy of the primary coherent peak edge (GeV)
 c      Emin   - minimum energy of the coherent bremsstrahlung beam (GeV)
 c Omitting the final parameter Emin results in the default value being used.
-BEAM 12. 9.
+cBEAM 12. 9.
 
 c Commenting out the following line will disable simulated hits output.
 OUTFILE 'hdgeant.hddm'
@@ -59,7 +59,7 @@ c  - delta_theta = spread in initial track polar angle, full width (degrees)
 c  - delta_phi = spread in initial track azimuthal angle, full width (degrees)
 c
 c   particle  momentum  theta  phi  delta_momentum delta_theta delta_phi
-KINE   101      9.0       10.   0.      0.              3.        360.
+KINE   101      0.1      5.   0.      0.              0.        360.
 
 c The SCAP card determines the vertex position for the particle gun.  It
 c supports the following three arguments, all of which default to 0.
@@ -99,8 +99,8 @@ c where K is a scale factor calculated inside uginit.F:
 c       K = 1 for Thr = 0.12 GeV,
 c       K > 1 for Thr < 0.12 GeV. 
 c Note, K is calculated assuming the beam energies Emax = 12, Epeak = 9. 
-BGRATE 1.10
-BGGATE -200. 200.
+cBGRATE 1.10
+cBGGATE -200. 200.
 
 c The following card seeds the random number generator so it must be unique
 c for each run.  There are two ways to specify the random see for a run.
