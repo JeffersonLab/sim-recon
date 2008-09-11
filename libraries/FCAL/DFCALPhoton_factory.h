@@ -22,8 +22,18 @@ class DFCALPhoton_factory:public JFactory<DFCALPhoton>{
 	private:
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
-                //DFCALPhoton* makePhoton(const TLorentzVector gamma); 
                 DFCALPhoton* makePhoton(const DFCALCluster* cluster); 
+
+		double NON_LIN_COEF_A;
+		double NON_LIN_COEF_B;
+		double NON_LIN_COEF_C;
+		double NON_LIN_COEF_alfa;
+
+		double FCAL_RADIATION_LENGTH;
+		double FCAL_CRITICAL_ENERGY;
+		double FCAL_SHOWER_OFFSET;
+
+
 };
 
 

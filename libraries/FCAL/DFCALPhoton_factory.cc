@@ -8,6 +8,7 @@
 #include <math.h>
 #include <DVector3.h>
 #include <TLorentzVector.h>
+using namespace std;
 
 #include "DFCALPhoton_factory.h"
 //#include "DFCALPhoton.h"
@@ -21,11 +22,28 @@ using namespace jana;
 //----------------
 DFCALPhoton_factory::DFCALPhoton_factory()
 {
-	// Set defaults
-	
-//	gPARMS->SetDefaultParameter("FCAL:EGAMMA_NORM", EGAMMA_EPSILON);
-//	gPARMS->SetDefaultParameter("FCAL:EGAMMA_EPSILON", EGAMMA_EPSILON);
 
+// Set of coefficients for non-linear energy corrections 
+        NON_LIN_COEF_A = 0.5334;
+        NON_LIN_COEF_B = 2.9598; 
+        NON_LIN_COEF_C = 2.6635;
+        NON_LIN_COEF_alfa = 1.0073;
+
+// Parameters to make shower-depth correction taken from Radphi, 
+// slightly modifed to match photon-polar angle
+        FCAL_RADIATION_LENGTH = 3.1;
+        FCAL_CRITICAL_ENERGY = 0.035;
+        FCAL_SHOWER_OFFSET = 1.0;
+
+	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_A", NON_LIN_COEF_A);
+	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_B", NON_LIN_COEF_B);
+	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_C", NON_LIN_COEF_C);
+	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_alfa", NON_LIN_COEF_alfa);
+
+	gPARMS->SetDefaultParameter("FCAL:FCAL_RADIATION_LENGTH", FCAL_RADIATION_LENGTH);
+	gPARMS->SetDefaultParameter("FCAL:FCAL_CRITICAL_ENERGY", FCAL_CRITICAL_ENERGY);
+	gPARMS->SetDefaultParameter("FCAL:FCAL_SHOWER_OFFSET", FCAL_SHOWER_OFFSET);
+	
 }
 
 
@@ -56,18 +74,77 @@ DFCALPhoton* DFCALPhoton_factory::makePhoton(const DFCALCluster* cluster)
 
         DFCALPhoton* photon = new DFCALPhoton;
        
-// Do non-linar energy correction first,
-	photon->fixEnergy( cluster->getEnergy() );
+// Non-linar energy correction are done here
+       int MAXITER = 1000;
 
-// than depth. Idealy, the two previous steps should be done simultaneously.
-	photon->fixDepth( photon->getEnergy(), cluster->getCentroid() );   
+       double A  = NON_LIN_COEF_A;
+       double B  = NON_LIN_COEF_B;
+       double C  = NON_LIN_COEF_C;
+       double alfa  = NON_LIN_COEF_alfa;
+       double Eclust = cluster->getEnergy();
+       double Egamma = Eclust/A;
 
-        photon->setErrorXY(cluster->getRMS_x(), cluster->getRMS_y());
+       for (int niter=0; 1; niter++) {
 
-// Than set momentum to units of GeV.
-	photon->setMom3( photon->getEnergy(), photon->getPosition() );   
+           double energy = Egamma;
+           double non_lin_part = pow(Egamma,1+alfa)/(B+C*Egamma);
+           Egamma = Eclust/A - non_lin_part;
+           if ( fabs( (Egamma-energy)/energy ) < 0.001 ) {
+
+               break;
+
+           }
+           else if ( niter > MAXITER ) {
+
+               Egamma  = 0;
+               cout << " Iteration failed for cluster energy " << Eclust << endl;
+               break;
+
+           }
+          
+       }
+
+	photon->setEnergy( Egamma );
+
+// than depth corrections 
+
+        DVector3  pos = cluster->getCentroid();
+        double z0 = FCAL_Zmin - Shower_Vertex_Z;
+        double zMax = (FCAL_RADIATION_LENGTH*(
+                       FCAL_SHOWER_OFFSET + log(Egamma/FCAL_CRITICAL_ENERGY)));
+        double zed = z0;
+        double zed1 = z0 + zMax;
+
+        if ( Egamma > 0 ) { 
+
+            double r0 = sqrt( pos.X()*pos.X() + pos.Y()*pos.Y() );
+
+            int niter;
+            for ( niter=0; niter<100; niter++) {
+
+                double tt = r0/zed1;
+                zed = z0 + zMax/sqrt( 1 + tt*tt );
+                if ( fabs( (zed-zed1) ) < 0.001) {
+                   break;
+                }
+                zed1 = zed;
+            }
+
+        }
+    
+        pos.SetZ( zed );
+
+	photon->setPosition( pos );   
+
+        photon->setPosError(cluster->getRMS_x(), cluster->getRMS_y(), fabs( zed-zed1 ) );
+
+// Than set momentum to GeV units.
+	photon->setMom3( Egamma, photon->getPosition() );   
         photon->setMom4();
 
         return photon;
+
 }
+
+
 

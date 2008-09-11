@@ -12,6 +12,7 @@
 #include <DVector3.h>
 #include <TLorentzVector.h>
 #include "DFCALCluster.h"
+using namespace std;
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
@@ -31,11 +32,11 @@ class DFCALPhoton:public JObject{
 			DVector3 getMom3() const; 
 			TLorentzVector getMom4() const;
 
-		// fix photon energy and momentu from cluster energy and position
-			void fixDepth(const double energy, const DVector3 centroid);  
-			void fixEnergy(const double energy);  
+		// set photon energy and position 
+			void setPosition( const DVector3 aPosition );  
+			void setEnergy(const double energy);  
 
-                        void setErrorXY(const double aXerr, const double aYerr);
+                        void setPosError(const double aXerr, const double aYerr, const double aZerr);
 
                 // set photon momentum
 			void setMom3(const double energy, const DVector3 pos);    

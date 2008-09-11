@@ -38,9 +38,7 @@ using namespace jana;
    Make sure the same vertex from the Geant control.in file is used here
    and elsewhere in analysis - MK.
 */
-//static float FCAL_Zmin = 625.3;
-//static float FCAL_Zmin = 546.5;
-static float FCAL_Zmin = 628.0;
+static float FCAL_Zmin = 625.3;
 static float FCAL_Zlen = 45.0;
 static float Shower_Vertex_Z = 65.0; 
 static float FCAL_Zmid = FCAL_Zmin - Shower_Vertex_Z +FCAL_Zlen/2.0;
