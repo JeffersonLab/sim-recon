@@ -30,12 +30,13 @@ ifeq ($(OStype),Linux)
 	else
 		CC	:= gcc
 		CPP	:= g++
-		F77	:= g77
+		F77	:= gfortran
 		NETLIB := -lnsl
 		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
 		COPTS = -g $(SWITCHES)
-		FOPTS = -g -Wno-globals $(SWITCHES)
-		GLIBS	:= -lXmu -lSM -lICE -lpthread -lg2c
+#		FOPTS = -g -Wno-globals $(SWITCHES)
+		FOPTS = -g $(SWITCHES)
+		GLIBS	:= -lXmu -lSM -lICE -lpthread -lgfortran
 		EXPORTDYNAMIC = -Wl,-export-dynamic
 #		STATIC = -Wl,-Bstatic
  		STATIC =
@@ -166,7 +167,7 @@ cdcdump: cdcdump.c hddm_s.o
 	-I$(JANA_HOME)/src \
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -o $@ $^ \
-	-L$(CERN_ROOT)/lib -lpacklib -lkernlib -lg2c
+	-L$(CERN_ROOT)/lib -lpacklib -lkernlib -lgfortran
 
 $(GELHAD):
 	$(MAKE) -C gelhad
