@@ -44,7 +44,7 @@ ifeq ($(OStype),Linux)
 		FOPTS = -g $(SWITCHES)
 		GLIBS	:= -lXmu -lSM -lICE -lpthread
 		EXPORTDYNAMIC = -Wl,-export-dynamic
-		STATIC = -Wl,-Bstatic
+		STATIC = 
 	endif
 endif
 ifeq ($(OStype),OSF1)
@@ -109,10 +109,11 @@ endif
 
 AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o \
        gelhad/gtgama.o gelhad/caspim.o gelhad/caspip.o gpairg.o \
-       hdds/hddsGeant3.F goptimize.o cobrems.o beamgen.o halo.o \
+       hdds/hddsGeant3_tagger.F goptimize.o cobrems.o beamgen.o halo.o \
        gelhad/bimsel.o
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
-       bintree.o memcheck.o trapfpe.o
+       bintree.o memcheck.o trapfpe.o \
+       getwebfile.o
 
 GXFIXED = gxcs.o gxphys.o
 
@@ -125,20 +126,21 @@ hdds:	force
 	make -C hdds
 force: ;
 
-gxtwist++: gxint.o uginit.o uglast.o $(AUXF) $(AUXC) $(GXFIXED) \
+gxtwist++: gxtwist++.o gxint.o uginit.o uglast.o $(AUXF) $(AUXC) $(GXFIXED) \
            $(MISC_FIXES)
-	$(F77) -g -o $@ gxint.o uginit.o uglast.o $(CERN_INC) \
+	$(F77) -g -o $@ gxtwist++.o gxint.o uginit.o uglast.o $(CERN_INC) \
 	   $(AUXF) $(AUXC) $(GXFIXED) $(MISC_FIXES) \
-           -Lgelhad -L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lgelhad \
+           -Lgelhad -L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lgelhad -lcurl \
 	   `cernlib -v $(CERN_LEVEL) geant321 pawlib graflib/Motif packlib mathlib` \
-	   $(EXPORTDYNAMIC) $(GLIBS)
+	   $(EXPORTDYNAMIC) $(GLIBS) -lstdc++
 
-gxtwist: gxtwist.o uginit.o uglast.o $(AUXF) $(AUXC) $(MISC_FIXES)
+gxtwist: gxtwist.o gxtwist_f.o uginit.o uglast.o $(AUXF) $(AUXC) $(MISC_FIXES)
 	$(F77) -g $(LOPTS) -o $@ $(CERN_INC) $(STATIC) \
-	   gxtwist.o uginit.o uglast.o $(AUXF) $(AUXC) $(MISC_FIXES) \
-	   -Lgelhad -lgelhad \
+	   gxtwist.o gxtwist_f.o uginit.o uglast.o \
+	   $(AUXF) $(AUXC) $(MISC_FIXES) \
+	   -Lgelhad -lgelhad -lcurl \
 	  `$(CERNLIB) geant321 mathlib graflib grafX11` \
-	   $(NETLIB) $(XLIBS) $(GLIBS)
+	   $(NETLIB) $(XLIBS) $(GLIBS) -lstdc++
 
 install: gxtwist gxtwist++
 	cp $^ $(HALLD_HOME)/bin/$(OStype)
