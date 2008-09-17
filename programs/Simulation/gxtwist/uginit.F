@@ -31,12 +31,18 @@
       data outfile/20*0/
       integer openInput, skipInput, openOutput
       external openInput, skipInput, openOutput
-      real beamE0, beamEpeak, radColDist
-      common /beamPars/ beamE0,beamEpeak,radColDist
-      data beamPars,beamEpeak,radColDist/0,0,76.0/
+      real beamE0, beamEpeak, beamEmin, radColDist
+      common /beamPars/ beamE0,beamEpeak,beamEmin,radColDist
+      data beamE0,beamEpeak,beamEmin,radColDist/0,0,0,76.0/
       data fhalo/0.0/
       data bfield/-999.0/
       data nosecondaries/0/
+
+C  Use this parameter to set up a minimum photon energy 
+C  for the coherent bremsstrahlung beam generator - see beamgen.F
+      real    xMinimum,freqMaximum,beamStartZ,Theta02
+      common /coherentGen/xMinimum,freqMaximum,beamStartZ,Theta02
+
 
 *
 *     -----------------------------------------------------------------
@@ -79,7 +85,7 @@ C..geant..
       call ffkey('infile',infile,20,'MIXED')
       call ffkey('skip',iskip,1,'INTEGER')
       call ffkey('outfile',outfile,20,'MIXED')
-      call ffkey('beam',beamE0,3,'REAL')
+      call ffkey('beam',beamE0,4,'REAL')
       call ffkey('bfield', bfield,1,'REAL')
       call ffkey('nosecondaries', nosecondaries,1,'INTEGER')
       call ffkey('halo',fhalo,1,'REAL')
@@ -126,7 +132,29 @@ C..geant..
 *
 *             Assign the beam parameters
 *
-      call cobrems(beamE0,beamEpeak,radColDist)
+      if (beamEmin.lt.0) then
+         print *
+         print *, 'Error in uginit:',
+     +        ' beamEmin is specified with negative value,',
+     +        ' cannot continue.'
+         stop
+      elseif (beamEmin.gt.0.12) then
+         print *
+         print *, 'Error in uginit:',
+     +        ' beamEmin is larger than a default value of 0.12 GeV,',
+     +        ' cannot continue.'
+         stop
+      elseif (beamEmin.lt.1e-6) then
+         print *,
+     +        ' beamEmin is smaller than a minimum value of 1 KeV,',
+     +        ' Using default (120 MeV).'
+         beamEmin = 0.12
+      endif
+      xMinimum = beamEmin/beamE0
+            
+      if (beamE0 .gt. 0) then
+        call cobrems(beamE0,beamEpeak,radColDist)
+      endif
 *
 *             Initialize graphics package
 *
@@ -150,7 +178,15 @@ C..geant..
       CALL GRFILE(3,'gxtwist.rz','ON')
       CALL HCDIR('//RZfile',' ')
 
+*
+*             Initialize the GELHAD package and verify parameters
+*
       call gelh_vrfy()
+*
+*             Load FLUKA and MICAP cross section data if selected
+*
+      if (IHADR.ge.3) call FLINIT
+      if (IHADR.eq.4) call GMORIN
 
  1000 FORMAT(/,'  MODE VERSION 1.00 : ',/)
       END
