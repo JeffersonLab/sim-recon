@@ -33,7 +33,7 @@
       external openInput, skipInput, openOutput
       real beamE0, beamEpeak, beamEmin, radColDist
       common /beamPars/ beamE0,beamEpeak,beamEmin,radColDist
-      data beamE0,beamEpeak,beamEmin,radColDist/0,0,0,76.0/
+      data beamE0,beamEpeak,beamEmin,radColDist/0.,0.,0.,76./
       data fhalo/0.0/
       data bfield/-999.0/
       data nosecondaries/0/
@@ -152,9 +152,7 @@ C..geant..
       endif
       xMinimum = beamEmin/beamE0
             
-      if (beamE0 .gt. 0) then
-        call cobrems(beamE0,beamEpeak,radColDist)
-      endif
+      call cobrems(beamE0,beamEpeak,radColDist)
 *
 *             Initialize graphics package
 *
