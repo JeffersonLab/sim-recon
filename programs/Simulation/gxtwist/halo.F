@@ -14,7 +14,7 @@
       include 'halo.inc'
       halox = (hparX(1,ns)+hparX(2,ns)*x+hparX(3,ns)*x**2)
      +        +hparX(4,ns)*exp(-0.5*((x-hparX(5,ns))/hparX(6,ns))**2)
-      halox = max(halox,0.0)
+      halox = max(halox,0.)
       end
 
       real function haloy(y,ns)  ! halo fits from JLAB-TN-06-048
@@ -23,7 +23,7 @@
       include 'halo.inc'
       haloy = (hparY(1,ns)+hparY(2,ns)*y+hparY(3,ns)*y**2)
      +        +hparY(4,ns)*exp(-0.5*((y-hparY(5,ns))/hparY(6,ns))**2)
-      haloy = max(haloy,0.0)
+      haloy = max(haloy,0.)
       end
 
       real function haloxy(x,y,ns)  ! 2D model by R.T. Jones
@@ -48,7 +48,7 @@
       f=c0(ns)*(1+c1*r+c2*r**2)
       haloxy=((f/b)*(cos(theta)**2)**p+(f/(2*a))*(sin(theta)**2)**p)
      +      *sqrt(a**2+b**2) ! + 1e6*exp(-0.5*rr**2)
-      haloxy = max(haloxy,0.0)
+      haloxy = max(haloxy,0.)
       end
 
       real function haloc(x,y)  ! cut function occludes the central ellipse
