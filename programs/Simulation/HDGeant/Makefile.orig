@@ -90,7 +90,8 @@ endif
 
 AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o gsstak.o gltrac.o \
        gelhad/gtgama.o gelhad/caspim.o gelhad/caspip.o gpairg.o savehits.o \
-       hddsGeant3.o goptimize.o cobrems.o beamgen.o settofg.o seteventid.o
+       hddsGeant3.o goptimize.o cobrems.o beamgen.o settofg.o seteventid.o \
+       gelhad/bimsel.o
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
        hitFCal.o hitUPV.o bintree.o memcheck.o timel.o trapfpe.o \
