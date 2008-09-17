@@ -9,6 +9,9 @@
 #include "HDGEOMETRY/DGeometry.h"
 #include <TDecompLU.h>
 
+#include <TH2F.h>
+#include <TROOT.h>
+
 #include <math.h>
 
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
@@ -52,6 +55,9 @@ DKalmanFilter::DKalmanFilter(const DMagneticFieldMap *bfield,
   target[2]+=target_center[2];
 
   ndf=0;
+
+  DEBUG_HISTS=true;
+  // DEBUG_HISTS=false;
 }
 
 // Initialize the state vector
@@ -440,8 +446,8 @@ jerror_t DKalmanFilter::ConvertStateVector(double z,double wire_x,
   J(state_q_over_pt,state_q_over_p)=1./cosl;
   J(state_q_over_pt,state_tx)=-tx*q_over_p*tanl*tanl*tanl*factor;
   J(state_q_over_pt,state_ty)=-ty*q_over_p*tanl*tanl*tanl*factor;
-  J(state_phi,state_tx)=-ty*factor*factor;
-  J(state_phi,state_ty)=tx*factor*factor;
+  J(state_phi,state_tx)=-ty/(tx*tx+ty*ty);
+  J(state_phi,state_ty)=tx/(tx*tx+ty*ty);
   J(state_D,state_x)=(x-wire_x)/S(state_D,0);
   J(state_D,state_y)=(y-wire_y)/S(state_D,0);
 
@@ -745,8 +751,8 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
     double dy=y_-y;
     Sc(state_D,0)=sqrt(dx*dx+dy*dy);
     
-    Cc(state_z,state_z)=1.;
-    Cc(state_q_over_pt,state_q_over_pt)=0.01*q_over_pt_*q_over_pt_;
+    Cc(state_z,state_z)=0.01;
+    Cc(state_q_over_pt,state_q_over_pt)=0.04*q_over_pt_*q_over_pt_;
     Cc(state_phi,state_phi)=0.015*0.015;
     Cc(state_D,state_D)=0.01;
     double theta=90.-180./M_PI*atan(tanl_);
@@ -785,7 +791,8 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
     unsigned int num_iter=NUM_ITER;
     // There does not seem to be any benefit to iterating if there are too few
     // points...
-    if (hits.size()<7) num_iter=1;
+    //if (hits.size()<7) num_iter=1;
+    last_iter=false;
     for (unsigned int iter=0;iter<num_iter;iter++){
       if (z_!=hits[0]->z){
 	// Swim back to the first (most downstream) plane and use the new 
@@ -794,7 +801,9 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
 	// Scale the covariance matrix to try to minimize bias
 	//for (unsigned int i=0;i<5;i++) C(i,i)*=100.;
       }
+      if (iter==num_iter-1) last_iter=true;
       KalmanForward(mass_hyp,S,C,chisq);
+
       if (chisq<chisq_forward){
 	Sbest=S;
 	Cbest=C;
@@ -823,14 +832,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
     // Starting radius 
     double R0=best_pos.Perp();
 
-    int num_iter=1;
-    /*
-      if (hits.size()>4) num_iter=5;
-      else
-      num_iter=20;
-    */
-    num_iter=5;
-
+    int num_iter=5;
     for (int iter=0;iter<num_iter;iter++){
       double R=pos.Perp();
       if (fabs(R-R0)>EPS){
@@ -883,34 +885,19 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
 
       for (unsigned int i=0;i<5;i++) Cc(i,i)*=anneal_factor;
 
-      //printf("chi2 %f\n",chisq);
-
       if (chisq==0.) break;
-      if (hits.size()>0)
-	{
-	  if (fabs(chisq_central-chisq)<0.1||iter==num_iter-1){
-	    Scbest=Sc;
-	  Ccbest=Cc;   
-	  best_pos=pos;    
-	  break;
-	  }
-	  chisq_central=chisq;
-	}
-      
-      else{
-	if (chisq>0 && chisq<chisq_central){
-	  Scbest=Sc;
-	  Ccbest=Cc;
-	  chisq_central=chisq;
-	  best_pos=pos;        
-	}
+      if (chisq<chisq_central){
+	Scbest=Sc;
+	Ccbest=Cc;
+	chisq_central=chisq;
+	best_pos=pos;        
       }
     }
-  }
-  
-  if (chisq_central>=1e8 ){
-    _DBG_ << "-- central fit failed --" <<endl;
-    if (hits.size()==0) return VALUE_OUT_OF_RANGE;
+
+    if (chisq_central>=1e8 ){
+      _DBG_ << "-- central fit failed --" <<endl;
+      if (hits.size()==0) return VALUE_OUT_OF_RANGE;
+    }
   }
   
   // Find track parameters where track crosses beam line
@@ -918,7 +905,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
   
   // total chisq and ndf
   chisq_=chisq_forward+chisq_central;
-  ndf=hits.size()+cdchits.size();
+  ndf=2*hits.size()+cdchits.size();
   
   return NOERROR;
 }
@@ -1048,8 +1035,9 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     double sign=Sc(state_q_over_pt,0)/fabs(Sc(state_q_over_pt,0));
     if (rc2<Rc*Rc) sign*=-1.;
     
+    //sign*=-1.;
     sign=1.;
-
+    
     H(0,state_D)=sign;
     H_T(state_D,0)=sign;
 
@@ -1174,7 +1162,6 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     */
 
     // Update the position
-    /*
     double lambda=atan(Sc(state_tanl,0));
     double cosl=cos(lambda);
     double sinl=sin(lambda);
@@ -1182,7 +1169,6 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     pos(0)+=ds*cosl*cos(Sc(state_phi,0));
     pos(1)+=ds*cosl*sin(Sc(state_phi,0));
     pos(2)=Sc(state_z,0);
-    */
 
     // Path length in active volume
     //path_length+=?
@@ -1191,7 +1177,13 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     Cc=Cc-(K*(H*Cc));  
     
     //central_traj.push_front(temp);
-
+    
+    if (DEBUG_HISTS){
+      TH2F *cdc_residuals=(TH2F*)gROOT->FindObject("cdc_residuals");
+      if (cdc_residuals) cdc_residuals->Fill(pos.Perp(),
+					     cdchits[m]->d-sign*Sc(state_D,0));
+    }
+      
     // Update chi2 for this hit
     if (1.-(H*K)(0,0)>EPS)
       chisq+=(cdchits[m]->d-sign*Sc(state_D,0))*(cdchits[m]->d-sign*Sc(state_D,0))
@@ -1280,8 +1272,9 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
       // Get dEdx for this step
       if (fabs(oldz-hits[k]->z)>0.5 || j>2)
 	dedx=GetdEdx(0.14,S0(state_q_over_p,0),7.,14.,1.205e-3);
+      //dedx=GetdEdx(0.14,S0(state_q_over_p,0),6.,12.,0.032);
       else
-	// Chamber gas, use Ar fo now
+	// Chamber gas, use Ar for now
 	dedx=GetdEdx(0.14,S0(state_q_over_p,0),18.,39.9,1.782e-3); 
       
       // Step the seed state vector through the field and get the Jacobian 
@@ -1290,6 +1283,7 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
       // Get the covariance matrix due to the multiple scattering
       if (fabs(oldz-hits[k]->z)>0.5 || j>2)
 	GetProcessNoise(mass_hyp,ds,30420.,S0,Q); // use air for now
+      //GetProcessNoise(mass_hyp,ds,10.,S0,Q);
       else
 	// Chamber gas, use Ar for now 
 	GetProcessNoise(mass_hyp,ds,10029.,S0,Q); 
@@ -1359,7 +1353,21 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
     R(state_y,0)=M(1,0)-S(state_y,0);
     R_T=DMatrix(DMatrix::kTransposed,R);
     RC=V-H*(C*H_T);
-    
+
+    if (DEBUG_HISTS && last_iter){
+      TH2F *fdc_xresiduals=(TH2F*)gROOT->FindObject("fdc_xresiduals");
+      if (fdc_xresiduals) fdc_xresiduals->Fill(endz,R(state_x,0));
+      
+      TH2F *fdc_yresiduals=(TH2F*)gROOT->FindObject("fdc_yresiduals");
+      if (fdc_yresiduals) fdc_yresiduals->Fill(endz,R(state_y,0));  
+      
+      TH2F *fdc_ypulls=(TH2F*)gROOT->FindObject("fdc_ypulls");
+      if (fdc_ypulls) fdc_ypulls->Fill(endz,R(state_y,0)/sqrt(RC(1,1)));
+
+      TH2F *fdc_xpulls=(TH2F*)gROOT->FindObject("fdc_xpulls");
+      if (fdc_xpulls) fdc_xpulls->Fill(endz,R(state_y,0)/sqrt(RC(0,0)));
+    }
+
     // Calculate the inverse of RC
     det=RC(0,0)*RC(1,1)-RC(0,1)*RC(1,0);
     if (det!=0){

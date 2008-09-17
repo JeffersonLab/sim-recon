@@ -154,6 +154,8 @@ class DKalmanFilter{
   // target material
   vector<double>target;
 
+  bool last_iter;
+  bool DEBUG_HISTS;
 };
 
 
