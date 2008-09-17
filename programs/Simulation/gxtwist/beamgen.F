@@ -37,14 +37,14 @@ c  the target thickness (radiation lengths) divided by 2pi.  A good
 c  choice for freqMaximum is the target thickness in radiation lengths.
 c  A warning is printed in the simulation output log each time a value
 c  freq > freqMaximum is generated; a few ppm of these is no problem.
-      real freqMaximum
-      common /coherentGen/freqMaximum
+      real xMinimum,freqMaximum,beamStartZ,Theta02
+      common /coherentGen/xMinimum,freqMaximum,beamStartZ,Theta02
+      data xMinimum/0.01/
       data freqMaximum/1.0e-4/
+      data beamStartZ/0.0/
+      data Theta02/1.8/
 
       save /coherentGen/
-      real xMinimum,Theta02
-      parameter (xMinimum=1e-2)
-      parameter (Theta02=1.8)
       real RadiatorPos,RadiatorSize
       parameter (RadiatorPos=0.0)
       parameter (RadiatorSize=5.0)
