@@ -47,8 +47,8 @@
       parameter (ntform='kind:i,xin(4):r,xout(4):r,'
      +                //'pin(5):r,pout(5):r,dEsum:r,'
      +                //'x0(4):r,p0(5):r')
-      integer ntid1,ntid2
-      parameter(ntid1=1,ntid2=2)
+      integer ntid1,ntid2,ntid3
+      parameter(ntid1=1,ntid2=2,ntid3=3)
 
       logical hexist
       external hexist   
@@ -58,11 +58,13 @@
           call hbname(ntid1,'hits',ptype,ntform)
           call hbnt(ntid2,'fixed array hits',' ')
           call hbname(ntid2,'hits',ptype,ntform)
+          call hbnt(ntid3,'endpoint array hits',' ')
+          call hbname(ntid3,'hits',ptype,ntform)
       endif
  
       CALL GDEBUG
 
-#define GENERATE_BUT_DO_NOT_TRACK 0
+*#define GENERATE_BUT_DO_NOT_TRACK 1
 #if GENERATE_BUT_DO_NOT_TRACK
       istop = 1
       return
@@ -182,6 +184,8 @@ c     endif
         call hfnt(ntid1)
       elseif (CNAMES(NLEVEL)(1:2).eq.'FX') then
         call hfnt(ntid2)
+      elseif (CNAMES(NLEVEL)(1:4).eq.'VBW1') then
+        call hfnt(ntid3)
       elseif (CNAMES(NLEVEL).eq.'XTAL') then
         x0(1) = VECT(1)
         x0(2) = VECT(2)
