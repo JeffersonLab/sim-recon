@@ -304,7 +304,7 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
      +   ) then
         call gfvert(1,vertx,ntbeamx,nttargx,tofgx,ubuf,nubuf)
         if (.not.hexist(9+det)) then
-          write(title,'(\'hits in virtual detector\',i3)') det
+          write(title,"('hits in virtual detector',i3)") det
           call hbnt(9+det,title,' ')
           call hbname(9+det,'hits',gekin,'totE:r')
           call hbname(9+det,'hits',vect,'x(7):r')
