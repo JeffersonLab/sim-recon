@@ -179,7 +179,7 @@ c         do l=-2,-2
                 goto 10
               elseif (l/2*2.ne.l) then
                 goto 10
-              elseif ((k+l)/4*4.ne.k+l) then
+              elseif ((h+k+l)/4*4.ne.h+k+l) then
                 goto 10
               endif
             elseif (k/2*2.eq.k) then
