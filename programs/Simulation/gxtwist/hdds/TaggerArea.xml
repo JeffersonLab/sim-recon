@@ -88,7 +88,9 @@
     <posXYZ volume="vacuumBox" X_Y_Z="0 0 0" />
     <posXYZ volume="electronExitTube" X_Y_Z="-250.737 0.0 1376.759"
                                    rot="0 -13.4 0" unit_angle="deg" />
-    <posXYZ volume="taggerFocalPlane" X_Y_Z="-48.535 0.0 -5.015"
+    <!--posXYZ volume="taggerFocalPlane" X_Y_Z="-48.535 0.0 -5.015"
+                                   rot="0 -9.944 0" unit_angle="deg" /-->
+    <posXYZ volume="taggerFocalPlane" X_Y_Z="-57.169 0.0 44.234"
                                    rot="0 -9.944 0" unit_angle="deg" />
   </composition>
 
