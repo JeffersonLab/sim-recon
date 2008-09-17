@@ -2,6 +2,9 @@
 
 #include <DVector3.h>
 #include <DMatrix.h>
+#include <TH2F.h>
+#include <TROOT.h>
+
 
 #include <JANA/JEventLoop.h>
 using namespace jana;
@@ -50,6 +53,44 @@ jerror_t DTrack_factory_ALT3::brun(JEventLoop *loop, int runnumber)
   // Get the position of the exit of the CDC endplate from DGeometry
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
 
+  dapp->Lock();
+  cdc_residuals=(TH2F*)gROOT->FindObject("cdc_residuals");
+  if (!cdc_residuals){
+    cdc_residuals=new TH2F("cdc_residuals","residuals vs R",
+			60,0.,60.,100,-1,1.);
+    cdc_residuals->SetXTitle("R (cm)");
+    cdc_residuals->SetYTitle("#Deltad (cm)");
+  } 
+  fdc_xresiduals=(TH2F*)gROOT->FindObject("fdc_xresiduals");
+  if (!fdc_xresiduals){
+    fdc_xresiduals=new TH2F("fdc_xresiduals","x residuals vs z",
+			200,170.,370.,100,-1,1.);
+    fdc_xresiduals->SetXTitle("z (cm)");
+    fdc_xresiduals->SetYTitle("#Deltax (cm)");
+  }  
+  fdc_yresiduals=(TH2F*)gROOT->FindObject("fdc_yresiduals");
+  if (!fdc_yresiduals){
+    fdc_yresiduals=new TH2F("fdc_yresiduals","y residuals vs z",
+			200,170.,370.,100,-1,1.);
+    fdc_yresiduals->SetXTitle("z (cm)");
+    fdc_yresiduals->SetYTitle("#Deltay (cm)");
+  }
+  fdc_ypulls=(TH2F*)gROOT->FindObject("fdc_ypulls");
+  if (!fdc_ypulls){
+    fdc_ypulls=new TH2F("fdc_ypulls","y pulls vs z",
+			    200,170.,370.,100,-5,5.);
+    fdc_ypulls->SetXTitle("z (cm)");
+    fdc_ypulls->SetYTitle("#Deltay (cm)");
+  }  
+  fdc_xpulls=(TH2F*)gROOT->FindObject("fdc_xpulls");
+  if (!fdc_xpulls){
+    fdc_xpulls=new TH2F("fdc_xpulls","x pulls vs z",
+			    200,170.,370.,100,-5,5.);
+    fdc_xpulls->SetXTitle("z (cm)");
+    fdc_xpulls->SetYTitle("#Deltay (cm)");
+  }
+
+  dapp->Unlock();
   return NOERROR;
 }
 
@@ -192,6 +233,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	//if(track->phi<0.0)track->phi+=2.0*M_PI;
 	//track->theta=mom.Theta();
 	track->chisq=fit.GetChiSq();
+	track->Ndof=fit.GetNDF();
 	track->candidateid=tc->id;
 	//track->rt=rt;
 

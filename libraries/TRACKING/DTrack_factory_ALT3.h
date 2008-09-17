@@ -62,6 +62,10 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
   const DMagneticFieldMap *bfield;
   const DGeometry *dgeom;
 
+  bool DEBUG_HISTS;
+  TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
+  TH2F *fdc_xpulls,*fdc_ypulls;
+
 };
 
 #endif // _DTrack_factory_ALT3_
