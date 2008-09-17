@@ -18,12 +18,12 @@ ifeq ($(OStype),Linux)
 	else
 		CC	:= gcc
 		CPP	:= g++
-		F77	:= g77
+		F77	:= gfortran
 		AR	:= ar
 		NETLIB := -lnsl
 		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp
 		COPTS = -g
-		FOPTS = -g -Wno-globals
+		FOPTS = -g
 		GLIBS	:= 
 	endif
 endif
@@ -44,7 +44,7 @@ endif
 OBJS =  caspim.o caspip.o gamate.o gelboost.o gelh_outp.o \
 	gelh_last.o gelh_vrfy.o geltwobod.o gheishp.o begran.o \
 	ghstopp.o gmmate.o gpgheip.o gphad.o gpsig.o grmate.o gtgama.o \
-	labframe.o recoilframe.o sigmagamma.o sigmag.o
+	labframe.o recoilframe.o sigmagamma.o sigmag.o bimsel.o
 
 libgelhad.a:	symlink $(OBJS)
 	$(AR) rv $@ $(OBJS)
