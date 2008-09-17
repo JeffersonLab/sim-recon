@@ -109,7 +109,8 @@ endif
 
 AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o \
        gelhad/gtgama.o gelhad/caspim.o gelhad/caspip.o gpairg.o \
-       hdds/hddsGeant3.F goptimize.o cobrems.o beamgen.o halo.o
+       hdds/hddsGeant3.F goptimize.o cobrems.o beamgen.o halo.o \
+       gelhad/bimsel.o
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        bintree.o memcheck.o trapfpe.o
 
