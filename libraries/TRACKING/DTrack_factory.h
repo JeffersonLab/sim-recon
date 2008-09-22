@@ -16,9 +16,13 @@
 #include "DTrack.h"
 
 ///////////////////////////////////////////////////////////////////////
-/// The DTrack_factory class is not much more than a skeleton class.
-/// It grabs a DTrackFitter object using the default Tag through JANA
-/// and uses it to fit the DCtrackCandidate objects which it grabs
+/// The DTrack_factory class coordinates the fitting of wire-based
+/// tracks. While the hit selection is done here, the actual heavy
+/// lifting of the fit is done by the DTrackFitter class (or, more
+/// specifically, a class that inherits from DTrackFitter).
+///
+/// This grabs a DTrackFitter object using the default Tag through JANA
+/// and uses it to fit the DTrackCandidate objects which it grabs
 /// also using the default Tag.
 /// 
 /// The DTrack objects are wire-based tracks (no drift time information
@@ -49,6 +53,8 @@ class DTrack_factory:public jana::JFactory<DTrack>{
 		DTrackFitter *fitter;
 		vector<DReferenceTrajectory*> rtv;
 
+		void AddCDCTrackHits(DReferenceTrajectory *rt, vector<const DCDCTrackHit*> &cdctrackhits);
+		void AddFDCPseudoHits(DReferenceTrajectory *rt, vector<const DFDCPseudo*> &fdcpseudos);
 		void MakeDTrack(jana::JObject::oid_t candidateid);
 		
 };
