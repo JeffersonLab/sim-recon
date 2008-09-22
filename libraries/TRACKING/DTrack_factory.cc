@@ -126,7 +126,7 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 				break;
 			case DTrackFitter::kFitSuccess:
 			case DTrackFitter::kFitNoImprovement:
-				MakeDTrack(candidate->id);
+				MakeDTrack(candidate);
 				break;
 			case DTrackFitter::kFitFailed:
 				break;
@@ -206,7 +206,7 @@ void DTrack_factory::AddCDCTrackHits(DReferenceTrajectory *rt, vector<const DCDC
 		double probability = TMath::Prob(chisq/4.0, 1);
 		if(probability>=MIN_HIT_PROB)fitter->AddHit(hit);
 
-		if(debug_level>10 || true)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" tof="<<tof<<" prob="<<probability<<endl;
+		if(debug_level>10)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" tof="<<tof<<" prob="<<probability<<endl;
 	}
 }
 
@@ -278,7 +278,7 @@ void DTrack_factory::AddFDCPseudoHits(DReferenceTrajectory *rt, vector<const DFD
 //------------------
 // MakeDTrack
 //------------------
-void DTrack_factory::MakeDTrack(JObject::oid_t candidateid)
+void DTrack_factory::MakeDTrack(const DTrackCandidate *candidate)
 {
 	// Allocate a DReferenceTrajectory object if needed.
 	// These each have a large enough memory footprint that
@@ -299,7 +299,7 @@ void DTrack_factory::MakeDTrack(JObject::oid_t candidateid)
 	track->rt = rt;
 	track->chisq = fitter->GetChisq();
 	track->Ndof = fitter->GetNdof();
-	track->candidateid = candidateid;
+	track->candidateid = candidate->id;
 	
 	// Add hits used as associated objects
 	vector<const DCDCTrackHit*> cdchits = fitter->GetCDCFitHits();
@@ -308,6 +308,9 @@ void DTrack_factory::MakeDTrack(JObject::oid_t candidateid)
 	sort(fdchits.begin(), fdchits.end(), FDCSortByZincreasing);
 	for(unsigned int i=0; i<cdchits.size(); i++)track->AddAssociatedObject(cdchits[i]);
 	for(unsigned int i=0; i<fdchits.size(); i++)track->AddAssociatedObject(fdchits[i]);
+	
+	// Add DTrackCandidate as associated object (yes, this is redundant with the candidateid member)
+	track->AddAssociatedObject(candidate);
 	
 	_data.push_back(track);
 }

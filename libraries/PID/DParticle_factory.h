@@ -11,6 +11,8 @@
 #include <JANA/JFactory.h>
 #include <TRACKING/DTrackFitter.h>
 
+class DTrack;
+
 #include "DParticle.h"
 
 /// Time based tracks
@@ -31,7 +33,7 @@ class DParticle_factory:public jana::JFactory<DParticle>{
 		DTrackFitter *fitter;
 		vector<DReferenceTrajectory*> rtv;
 
-		void MakeDParticle(jana::JObject::oid_t trackid);
+		void MakeDParticle(const DTrack *track);
 };
 
 #endif // _DParticle_factory_

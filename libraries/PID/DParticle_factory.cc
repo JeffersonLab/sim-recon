@@ -85,17 +85,13 @@ jerror_t DParticle_factory::evnt(JEventLoop *loop, int eventnumber)
 		DTrackFitter::fit_status_t status = fitter->FitTrack(input_params);
 		switch(status){
 			case DTrackFitter::kFitNotDone:
-_DBG_<<"###############################################"<<endl;
 				_DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
 				break;
 			case DTrackFitter::kFitSuccess:
-_DBG_<<"###############################################"<<endl;
 			case DTrackFitter::kFitNoImprovement:
-_DBG_<<"###############################################"<<endl;
-				MakeDParticle(track->id);
+				MakeDParticle(track);
 				break;
 			case DTrackFitter::kFitFailed:
-_DBG_<<"###############################################"<<endl;
 				break;
 		}
 
@@ -126,7 +122,7 @@ jerror_t DParticle_factory::fini(void)
 //------------------
 // MakeDParticle
 //------------------
-void DParticle_factory::MakeDParticle(JObject::oid_t trackid)
+void DParticle_factory::MakeDParticle(const DTrack *track)
 {
 	// Allocate a DReferenceTrajectory object if needed.
 	// These each have a large enough memory footprint that
@@ -147,13 +143,16 @@ void DParticle_factory::MakeDParticle(JObject::oid_t trackid)
 	particle->rt = rt;
 	particle->chisq = fitter->GetChisq();
 	particle->Ndof = fitter->GetNdof();
-	particle->trackid = trackid;
+	particle->trackid = track->id;
 
 	// Add hits used as associated objects
 	const vector<const DCDCTrackHit*> &cdchits = fitter->GetCDCFitHits();
 	const vector<const DFDCPseudo*> &fdchits = fitter->GetFDCFitHits();
 	for(unsigned int i=0; i<cdchits.size(); i++)particle->AddAssociatedObject(cdchits[i]);
 	for(unsigned int i=0; i<fdchits.size(); i++)particle->AddAssociatedObject(fdchits[i]);
+	
+	// Add DTrack object as associate object
+	particle->AddAssociatedObject(track);
 	
 	_data.push_back(particle);
 }

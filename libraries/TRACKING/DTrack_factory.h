@@ -13,6 +13,8 @@
 
 #include <TRACKING/DTrackFitter.h>
 
+class DTrackCandidate;
+
 #include "DTrack.h"
 
 ///////////////////////////////////////////////////////////////////////
@@ -55,7 +57,7 @@ class DTrack_factory:public jana::JFactory<DTrack>{
 
 		void AddCDCTrackHits(DReferenceTrajectory *rt, vector<const DCDCTrackHit*> &cdctrackhits);
 		void AddFDCPseudoHits(DReferenceTrajectory *rt, vector<const DFDCPseudo*> &fdcpseudos);
-		void MakeDTrack(jana::JObject::oid_t candidateid);
+		void MakeDTrack(const DTrackCandidate *candidate);
 		
 };
 
