@@ -8,6 +8,7 @@ using namespace jana;
 #include "DTwoGammaFit_factory.h"
 #include "DTwoGammaFit_factory_PI0.h"
 #include "DTwoGammaFit_factory_ETA.h"
+#include "DParticle_factory.h"
 
 #include "DBeamPhoton.h"
 typedef JFactory<DBeamPhoton> DBeamPhoton_factory;
@@ -23,6 +24,7 @@ jerror_t PID_init(JEventLoop *loop)
 	loop->AddFactory(new DTwoGammaFit_factory_PI0);
 	loop->AddFactory(new DTwoGammaFit_factory_ETA);
 	loop->AddFactory(new DBeamPhoton_factory);
+	loop->AddFactory(new DParticle_factory);
 
 	return NOERROR;
 }
