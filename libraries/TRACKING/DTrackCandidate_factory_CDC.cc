@@ -55,8 +55,6 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 	TARGET_Z_MIN = 50.0;
 	TARGET_Z_MAX = 80.0;
 	
-	MAX_HIT_DIST2 = MAX_HIT_DIST*MAX_HIT_DIST;
-
 	// Initialize cdchits_by_superlayer with empty vectors for each superlayer
 	vector<DCDCTrkHit*> mt;
 	for(int i=0; i<5; i++)cdchits_by_superlayer.push_back(mt);
@@ -69,6 +67,19 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 //------------------
 jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *eventLoop, int runnumber)
 {
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_SUBSEED_STRAW_DIFF", MAX_SUBSEED_STRAW_DIFF);
+	gPARMS->SetDefaultParameter("TRKFIND:MIN_SUBSEED_HITS", MIN_SUBSEED_HITS);
+	gPARMS->SetDefaultParameter("TRKFIND:MIN_SEED_HITS", MIN_SEED_HITS);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_SUBSEED_LINKED_HITS", MAX_SUBSEED_LINKED_HITS);
+	gPARMS->SetDefaultParameter("TRKFIND:MIN_SEED_DIST", MIN_SEED_DIST);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_HIT_DIST", MAX_HIT_DIST);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_HIT_CIRCLE_DIST", MAX_HIT_CIRCLE_DIST);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_SEED_TIME_DIFF", MAX_SEED_TIME_DIFF);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_CIRCLE_CLONE_FILTER_FRAC", MAX_CIRCLE_CLONE_FILTER_FRAC);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_STEREO_PHI_DELTA", MAX_STEREO_PHI_DELTA);
+	
+	MAX_HIT_DIST2 = MAX_HIT_DIST*MAX_HIT_DIST;
+
 	return NOERROR;
 }
 
