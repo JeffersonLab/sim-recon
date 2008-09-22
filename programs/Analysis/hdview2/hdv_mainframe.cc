@@ -281,6 +281,15 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 					tracksf->AddFrame(tracksfactory, lhints);
 					tracksfactory->AddEntry("<default>",0);
 				trkdrawopts->AddFrame(tracksf, lhints);
+					
+				TGHorizontalFrame *particlesf		= new TGHorizontalFrame(trkdrawopts);
+					checkbuttons["particles"]		= new TGCheckButton(particlesf,	"DParticle:");
+					particlesfactory	= new TGComboBox(particlesf, "<default>", 0);
+					particlesfactory->Resize(80,20);
+					particlesf->AddFrame(checkbuttons["particles"], lhints);
+					particlesf->AddFrame(particlesfactory, lhints);
+					particlesfactory->AddEntry("<default>",0);
+				trkdrawopts->AddFrame(particlesf, lhints);
 
 				checkbuttons["thrown"]			= new TGCheckButton(trkdrawopts,	"DMCThrown");
 				checkbuttons["trajectories"]	= new TGCheckButton(trkdrawopts,	"DMCTrajectoryPoint");
@@ -413,6 +422,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	
 	checkbuttons["candidates"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["tracks"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["particles"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	checkbuttons["thrown"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 
 	checkbuttons["cdc"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
@@ -431,6 +441,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	checkbuttons["trajectories"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
 	candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
 	tracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
+	particlesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
 	reconfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoUpdateTrackLabels()");
 
 	// Pointers to optional daughter windows
@@ -547,6 +558,7 @@ void hdv_mainframe::SavePreferences(void)
 
 	ofs<<"DTrackCandidate = "<<(candidatesfactory->GetTextEntry()->GetText())<<endl;
 	ofs<<"DTrack = "<<(tracksfactory->GetTextEntry()->GetText())<<endl;
+	ofs<<"DParticle = "<<(particlesfactory->GetTextEntry()->GetText())<<endl;
 	ofs<<"Reconstructed = "<<(reconfactory->GetTextEntry()->GetText())<<endl;
 	
 	ofs<<endl;
@@ -1543,6 +1555,20 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 	reconfactory->AddEntry("DTrack:", id++);
 	for(unsigned int i=0; i< facnames.size(); i++){
 		string name = "DTrack:";
+		string::size_type pos = facnames[i].find(name);
+		if(pos==string::npos)continue;
+		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
+		reconfactory->AddEntry(facnames[i].c_str(), id++);
+		if(facnames[i]==default_reconstructed){
+			reconfactory->Select(id-1, kTRUE);
+			reconfactory->GetTextEntry()->SetText(facnames[i].c_str());
+		}
+	}
+	
+	// Add DParticle factories
+	reconfactory->AddEntry("DParticle:", id++);
+	for(unsigned int i=0; i< facnames.size(); i++){
+		string name = "DParticle:";
 		string::size_type pos = facnames[i].find(name);
 		if(pos==string::npos)continue;
 		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());

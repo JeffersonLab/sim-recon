@@ -30,6 +30,7 @@ using namespace std;
 #include "TRACKING/DMCTrackHit.h"
 #include "TRACKING/DMCThrown.h"
 #include "TRACKING/DTrack.h"
+#include "PID/DParticle.h"
 #include "TRACKING/DReferenceTrajectory.h"
 #include "JANA/JGeometry.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
@@ -396,7 +397,7 @@ void MyProcessor::FillGraphics(void)
 		vector<const DTrackCandidate*> trackcandidates;
 		loop->Get(trackcandidates, hdvmf->GetFactoryTag("DTrackCandidate"));
 		for(unsigned int i=0; i<trackcandidates.size(); i++){
-			int color=28;
+			int color=26;
 			double size=1.75;
 			if(trackcandidates[i]->charge() >0.0) color += 100; // lighter shade
 			if(trackcandidates[i]->charge() <0.0) color += 150; // darker shade
@@ -409,7 +410,16 @@ void MyProcessor::FillGraphics(void)
 		vector<const DTrack*> tracks;
 		loop->Get(tracks, hdvmf->GetFactoryTag("DTrack"));
 		for(unsigned int i=0; i<tracks.size(); i++){
-			AddKinematicDataTrack(tracks[i], 46, 1.00);
+			AddKinematicDataTrack(tracks[i], 28, 1.25);
+		}
+	}
+
+	// DParticle
+	if(hdvmf->GetCheckButton("particles")){
+		vector<const DParticle*> particles;
+		loop->Get(particles, hdvmf->GetFactoryTag("DParticle"));
+		for(unsigned int i=0; i<particles.size(); i++){
+			AddKinematicDataTrack(particles[i], 46, 1.00);
 		}
 	}
 }
@@ -431,6 +441,11 @@ void MyProcessor::UpdateTrackLabels(void)
 	
 	// Get the track info as DKinematicData objects
 	vector<const DKinematicData*> trks;
+	if(name=="DParticle"){
+		vector<const DParticle*> particles;
+		if(loop)loop->Get(particles, tag.c_str());
+		for(unsigned int i=0; i<particles.size(); i++)trks.push_back(particles[i]);
+	}
 	if(name=="DTrack"){
 		vector<const DTrack*> tracks;
 		if(loop)loop->Get(tracks, tag.c_str());
@@ -597,6 +612,15 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 	double q=0.0;
 
 	// Find the specified track
+	if(dataname=="DParticle"){
+		vector<const DParticle*> particles;
+		loop->Get(particles, tag.c_str());
+		if(index>=particles.size())return;
+		q = particles[index]->charge();
+		pos = particles[index]->position();
+		mom = particles[index]->momentum();
+	}
+
 	if(dataname=="DTrack"){
 		vector<const DTrack*> tracks;
 		loop->Get(tracks, tag.c_str());

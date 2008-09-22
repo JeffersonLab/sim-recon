@@ -122,6 +122,7 @@ class hdv_mainframe:public TGMainFrame {
 		
 		TGLabel *event, *run, *source;
 		
+		TGComboBox *particlesfactory;
 		TGComboBox *tracksfactory;
 		TGComboBox *candidatesfactory;
 		TGComboBox *reconfactory;

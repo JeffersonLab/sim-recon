@@ -363,6 +363,7 @@ void trk_mainframe::FillDataTypeComboBox(TGComboBox* cb, const string &def)
 
 	vector<string> facnames;
 	if(def=="<none>")facnames.push_back(def);
+	facnames.push_back("DParticle");
 	facnames.push_back("DTrack");
 	facnames.push_back("DTrackCandidate");
 	facnames.push_back("DMCThrown");
