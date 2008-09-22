@@ -108,7 +108,7 @@ int DMagneticFieldMapCalibDB::ReadMap(string namepath, int runnumber, string con
 	cout<<" Nx="<<Nx;
 	cout<<" Ny="<<Ny;
 	cout<<" Nz="<<Nz;
-	cout<<" )"<<endl;
+	cout<<" )  at 0x"<<hex<<(unsigned long)this<<dec<<endl;
 	
 	// Create 3D vector so we can index the values by [x][y][z]
 	vector<DBfieldPoint_t> zvec(Nz);
