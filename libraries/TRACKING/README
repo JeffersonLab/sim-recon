@@ -1,26 +1,74 @@
 
 README TRACKING
-Aug. 2, 2006  David Lawrence
+Sept. 22, 2008  David Lawrence
+
+NOTE: This is a 2nd version of this README which completely discards the
+1st version. The 1st version is available in svn in revison 1921.
 
 
-At this point I am just trying to collect my thoughts on the details of how the charged particle tracking will work. I have started implementing some code for a general solution, but am now starting to lean towards a geometry specific solution.
+The charged particle tracking reconstruction is broken up into 3
+main stages:
+
+1.) Track finding with helical fit (DTrackCandidate class)
+
+2.) Track fitting to wire position (DTrack class)
+
+3.) Track fitting to drift times (DParticle class)
 
 
-This starts at the point of track fitting. We assume a set of starting parameters has already been obtained from the track finding.
+The DTrackCandidate objects are created separately for the
+FDC and CDC in their respective tagged factories. The
+default DTrackCandidate factory combines the two lists
+into a single list. Candidates from the 2 systems that appear
+to be the same physical track are combined so that the
+track isn't fit twice.
 
-Since track finding assumes a perfect helix and confines itself to the central region of the detector, it does not necessarily contain a complete list of hits for the track. Thus, the first thing that is done is that a reference trajectory(RT) is swum through the inhomogeneous field. Distances of each of the hits from the RT are then calculated in order to determine the hits that will be used in the track fitting.
+The DTrack and DParticle objects are fits based on wire-position
+only and fits based on drift times respectively. Both will
+use the same DTrackFitter based object to do the heavy lifting
+in fitting the track. The hit selection for the wire-based fits
+is done in the DTrack_factory class. The hits used in the fit
+(DCDCTrackHit and DFDCPseudo objects) are added as associated
+objects to the DTrack object. The DParticle_factory class
+currently uses the hit list from the DTrack associated objects.
+This means the time-based fits are done using the exact same list
+of hits used for the wire-based fits. DParticle objects also have
+the hit objects added as  associated objects so the hits used in
+the fit can always be recovered.
 
-A Kalman filter method is used. In this method, the state vector is defined to have the following items: {momentum, theta, phi, x, z}. All of these are quantities describing the state of the particle relative to the RT reference frame. In other words, x and z are coordinates in the RT reference frame, and momentum, theta,and phi are the instantaneous values of the particle at that point. The independent coordinate will be "s", the pathlength along the RT.
+The fitting itself is done in a couple of ways:
 
-The same state vector will be used, but different Kalman matrices will be defined depending upon which detector system the hit came from.
+Helical fitters:
+----------------
 
-For the CDC, the measurement vector will consist of a single value: {r}. One could consider the wire position a measurement as well, but this would only complicate the problem unecessarily. We assume we know the wire position precisely and so can calculate the trajectory's distance from it precisely for the given state vector. So, to convert the state vector into a measurement value for a particular wire, the particle is just swum until its distance from the wire increases. Then the distance can be estimated. We'll call this distance the SVTDOCA for State Vector Trajectory Distance Of Closest Approach. Here is where things get more complicated. The "measurement" needs to correspond to a particular point along the independant variable. In our case, the independant variable is the distance "s" along the RT. We thus, need to convert the SVTDOCA to the coordinate system defined by a point on the RT. In other words, we have to translate a 3-D point in space(the SVTDOCA point) into an s-value on the RT (i.e. where y=0 in the RT reference frame). The problem is that there may be more than one s value for which the point would fall in the y=0 plane of the RT. Actually, it may not be such a problem. In principle, it doesn't matter at what value of s we choose just so long as the SVTDOCA point is in the y=0 plane.
+The DQuickFit and DRiemannFit classes do (essentially) helical
+fits using 2 different techniques. Both are used in the current
+track finders. A 3rd method is in the DHoughFind class which also
+does an effective helical fit, but is considerably slower. The
+DHough class is not currently used.
 
-We are required to use the Extended Kalman Filter because of the non-linear nature of particle trajectories through magnetic fields. Also, because of the inhomogenaity of our field coupled with the non-uniform material the trajectories pass through, we can't use analytic derivatives and are forced to rely on numerical ones. This will take more CPU time, but will make the code a little easier to write. To calculate derivatives, the state vector parameters will be tweaked slightly and the particle re-swum so that a difference of the final state vector and the one swum without tweaking can be made.
 
-So, for the CDC, we will use the distance of closest approach of the SVTDOCA point to the reference trajectory to define s for the measurement. As the particle is re-swum while calculating derivatives, it will be projected up to the y=0 plane of this same RT point so that all state vectors will correspond to the same s-value. Hit-based tracking would correspond to setting the measured value of r to zero for all hits.
+Non-helical fitters:
+--------------------
 
+The DTrackFitter class is meant as a base class for the "full"
+(i.e. respecting the inhomgenous field) track fitters. Currently,
+only one fitter is implemented in this framework (DTrackFitterALT1),
+but others are expected soon. This allows the algorithm
+to be easily swapped out for both wire-based and time-based tracks.
+The DKalmanFilter class implements another algorithm currently
+being developed.
 
-The FDC is somewhat different in the information it gives and so in some ways must be handled differently. It is tempting to think of the FDC as giving well defined z-coordinate information and so we should use the known z-positions of the chamber planes to define the Kalman measurement points. In reality though, the drift time measurements come from the DOCA which is virtually never precisely in the wire plane. Thus, the distance from the wire must be treated in the same way as for the CDC. In addition to the drift time information (which only tells distance from the wire), the FDC provides a measurement of distance along the wire. So, for the purposes of the Kalman Filter, the FDC provides two measurements: {r, w} where "r" is the DOCA of the track to the wire and "w" is the coordinate of the DOCA point in the wire direction.
+The ALT1 fitter is a global fitter using a non-standard 
+parameterization of the momentum parameters. Most spcifically,
+it uses total momentum and polar angle theta as 2 of the parameters.
+The ALT2 fitter is identical to ALT1 except that it uses a more
+standard parameterization that includes 1/p and dip angle.
 
+The ALT3 fitter implements the DKalmanFilter class to fit via
+the Kalman filter technique.
+
+The DReferenceTrajectory and DMagneticFieldStepper classes are
+utility classes used to swim tracks through the inhomogeneous
+magnetic field. They do not currently account for energy loss.
 
