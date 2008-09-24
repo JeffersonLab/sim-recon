@@ -64,7 +64,7 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
 
   bool DEBUG_HISTS;
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
-  TH2F *fdc_xpulls,*fdc_ypulls;
+  TH2F *cdc_pulls_histo,*fdc_xpulls,*fdc_ypulls;
 
 };
 

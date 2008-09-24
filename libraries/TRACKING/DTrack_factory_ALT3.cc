@@ -60,6 +60,13 @@ jerror_t DTrack_factory_ALT3::brun(JEventLoop *loop, int runnumber)
 			60,0.,60.,100,-1,1.);
     cdc_residuals->SetXTitle("R (cm)");
     cdc_residuals->SetYTitle("#Deltad (cm)");
+  }  
+  cdc_pulls_histo=(TH2F*)gROOT->FindObject("cdc_pulls");
+  if (!cdc_pulls_histo){
+    cdc_pulls_histo=new TH2F("cdc_pulls","pulls vs R",
+			60,0.,60.,100,-5,5.);
+    cdc_pulls_histo->SetXTitle("R (cm)");
+    cdc_pulls_histo->SetYTitle("#Deltad/#sigmad");
   } 
   fdc_xresiduals=(TH2F*)gROOT->FindObject("fdc_xresiduals");
   if (!fdc_xresiduals){
@@ -80,14 +87,14 @@ jerror_t DTrack_factory_ALT3::brun(JEventLoop *loop, int runnumber)
     fdc_ypulls=new TH2F("fdc_ypulls","y pulls vs z",
 			    200,170.,370.,100,-5,5.);
     fdc_ypulls->SetXTitle("z (cm)");
-    fdc_ypulls->SetYTitle("#Deltay (cm)");
+    fdc_ypulls->SetYTitle("#Deltay/#sigmay");
   }  
   fdc_xpulls=(TH2F*)gROOT->FindObject("fdc_xpulls");
   if (!fdc_xpulls){
     fdc_xpulls=new TH2F("fdc_xpulls","x pulls vs z",
 			    200,170.,370.,100,-5,5.);
     fdc_xpulls->SetXTitle("z (cm)");
-    fdc_xpulls->SetYTitle("#Deltay (cm)");
+    fdc_xpulls->SetYTitle("#Deltax/#sigmax");
   }
 
   dapp->Unlock();
@@ -242,7 +249,11 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	track->setMomentum(mom);
 	track->setPosition(pos);
 	track->setCharge(tc->charge());
-
+	/*
+	printf("p %f theta %f phi %f z %f doca %f\n",track->momentum().Mag(),track->momentum().Theta(),
+	       (track->momentum().Phi()<0?track->momentum().Phi()+2.*M_PI:track->momentum().Phi()),
+	       track->position().z(),pos.Perp());
+	*/
 	// dEdx
 	//track->dE=dEsum;
 	//track->ds=fit.GetActivePathLength();
