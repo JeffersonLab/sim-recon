@@ -751,10 +751,10 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
     double dy=y_-y;
     Sc(state_D,0)=sqrt(dx*dx+dy*dy);
     
-    Cc(state_z,state_z)=0.01;
+    Cc(state_z,state_z)=1.;
     Cc(state_q_over_pt,state_q_over_pt)=0.04*q_over_pt_*q_over_pt_;
     Cc(state_phi,state_phi)=0.015*0.015;
-    Cc(state_D,state_D)=0.01;
+    Cc(state_D,state_D)=0.25;
     double theta=90.-180./M_PI*atan(tanl_);
     double dlambda=2.1e-3-3.4e-4*theta+3.5e-5*theta*theta;
     Cc(state_tanl,state_tanl)=(1.+tanl_*tanl_)*(1.+tanl_*tanl_)
@@ -791,7 +791,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
     unsigned int num_iter=NUM_ITER;
     // There does not seem to be any benefit to iterating if there are too few
     // points...
-    //if (hits.size()<7) num_iter=1;
+    if (hits.size()<7) num_iter=1;
     last_iter=false;
     for (unsigned int iter=0;iter<num_iter;iter++){
       if (z_!=hits[0]->z){
@@ -878,10 +878,15 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
       // on the iteration,so that we approach the "true' measurement errors
       // by the last iteration.
       double f=2.;
-      double anneal_factor=499./pow(f,num_iter)+1.;
+      double anneal_factor=9./pow(f,num_iter)+1.;
       anneal_factor=1.;
+
+      //printf("start p %f theta %f \n",1./Sc(state_q_over_pt,0)/cos(atan(Sc(state_tanl,0))),M_PI/2.-atan(Sc(state_tanl,0)));
+
       jerror_t error=KalmanCentral(mass_hyp,anneal_factor,Sc,Cc,pos,chisq);
       if (error!=NOERROR) break;
+
+      printf("p %f theta %f chi2 %f \n",1./Sc(state_q_over_pt,0)/cos(atan(Sc(state_tanl,0))),M_PI/2.-atan(Sc(state_tanl,0)),chisq);
 
       for (unsigned int i=0;i<5;i++) Cc(i,i)*=anneal_factor;
 
@@ -989,9 +994,13 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
   
   // Initialize the chi2 for this part of the track
   chisq=0.;
+
+
+  //Track projection matrix
+  H(0,state_D)=H_T(state_D,0)=1.;
   
   // path length increment, dedx, and position variables.
-  double ds=-0.5;
+  double ds=-0.5,ds2=-0.1;
   double dedx=0.;
   double R,r,x,y,dx,dy;
   double q=Sc(state_q_over_pt,0)/fabs(Sc(state_q_over_pt,0));
@@ -1020,7 +1029,6 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
       +(pos.z()-cdchits[m]->origin.z())*cdchits[m]->dir.y();
     dx=pos.x()-x;
     dy=pos.y()-y;
-
     
     //B-field at (x,y,z)
     double Bx,By,Bz;
@@ -1036,12 +1044,9 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     if (rc2<Rc*Rc) sign*=-1.;
     
     //sign*=-1.;
-    sign=1.;
+    //sign=1.;
     
-    H(0,state_D)=sign;
-    H_T(state_D,0)=sign;
-
-    // signed doca
+    // doca
     Sc(state_D,0)=sign*sqrt(dx*dx+dy*dy);   
 
     // Rotate covariance matrix into new coordinate system for D
@@ -1061,11 +1066,24 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
       */
     }
 
+    // Path length increment
     ds=-0.25;    
+  
+    // Check that we are heading the right direction toward the current wire
+    S0=Sc;
+    DVector3 testpos=pos;
+    Step(testpos,cdchits[m]->origin,cdchits[m]->dir,ds,S0,dedx);
+    if (fabs(S0(state_D,0))>fabs(Sc(state_D,0))){
+      // change the sign of the path length increment
+      ds=0.25;
+      ds2=0.1;
+    }
+
     // Current positions of wire and track
     R=sqrt(x*x+y*y);
     r=pos.Perp();
     doca=Sc(state_D,0);
+    
     while (r>targ_wall[1] && fabs(doca)>EPS){
       // Check that z value makes sense 
       if (pos.z()<0 || pos.z()>400){
@@ -1079,13 +1097,13 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
       double cosl=cos(atan(tanl));
       double q_over_p=Sc(state_q_over_pt,0)*cosl;
 
-      if (r<R+0.8) ds=-0.1;
+      if (r<R+0.8) ds=ds2;
       if (fabs(doca)<0.8){
 	dedx=GetdEdx(0.14,q_over_p,18.,39.9,0.00166);
       }
       else
 	dedx=GetdEdx(0.14,q_over_p,7.,14.,1.205e-3);
-      
+     
       // Propagate the state and the covariance matrix through the field
       StepJacobian(pos,cdchits[m]->origin,cdchits[m]->dir,ds,Sc,dedx,Jc);
 	
@@ -1102,7 +1120,8 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
       Cc=Jc*(Cc*Jc_T)+Q;
 
       if ((fabs(doca)<fabs(Sc(state_D,0)))
-	  || (doca/fabs(doca)!=Sc(state_D,0)/fabs(Sc(state_D,0)))){
+	  || (doca/fabs(doca)!=Sc(state_D,0)/fabs(Sc(state_D,0)))
+	  ){
 	// We've bracketed the minimum; now use the golden section algorithm
 	// to find the best doca.  See Numerical Recipes in C, pp 401-402.	
 	GoldenSection(ds,doca,dedx,pos,cdchits[m]->origin,cdchits[m]->dir,Sc,Jc);
@@ -1121,7 +1140,6 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
 
 	break;
       }
-      doca=Sc(state_D,0);
                 
       // Find the radius at the end of this step
       x=cdchits[m]->origin.x()
@@ -1130,6 +1148,9 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
 	+(pos.z()-cdchits[m]->origin.z())*cdchits[m]->dir.y();
       R=sqrt(x*x+y*y);
       r=pos.Perp();
+
+      // Save the doca
+      doca=Sc(state_D,0);
     }
 
     // Update the list of state vectors and covariances
@@ -1145,6 +1166,8 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     temp.J=Jtemp;
     */
 
+    H(0,state_D)=H_T(state_D,0)=Sc(state_D,0)/fabs(Sc(state_D,0));
+
     // Inverse of variance
     InvV=1./(V+(H*(Cc*H_T))(0,0));
     
@@ -1154,22 +1177,16 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     // Update the state vector 
     dS=cdchits[m]->d*K-K*(H*Sc);
     Sc=Sc+dS;
-    /*
-    printf("doca %f meas %f diff %f\n",Sc(state_D,0),cdchits[m]->d,
-	   cdchits[m]->d-sign*Sc(state_D,0));
-
-    printf("new d %f residual %f\n",Sc(state_D,0),cdchits[m]->d-sign*Sc(state_D,0));
-    */
-
+  
     // Update the position
-    double lambda=atan(Sc(state_tanl,0));
-    double cosl=cos(lambda);
-    double sinl=sin(lambda);
-    ds=(Sc(state_z,0)-pos.z())/sinl;
-    pos(0)+=ds*cosl*cos(Sc(state_phi,0));
-    pos(1)+=ds*cosl*sin(Sc(state_phi,0));
-    pos(2)=Sc(state_z,0);
-
+    pos(2)=Sc(state_z,0);  
+    x=cdchits[m]->origin.x()
+      +(pos.z()-cdchits[m]->origin.z())*cdchits[m]->dir.x(); 
+    y=cdchits[m]->origin.y()
+      +(pos.z()-cdchits[m]->origin.z())*cdchits[m]->dir.y();
+    pos(0)=x-Sc(state_D,0)*sin(Sc(state_phi,0));
+    pos(1)=y+Sc(state_D,0)*cos(Sc(state_phi,0));
+ 
     // Path length in active volume
     //path_length+=?
 
@@ -1181,12 +1198,12 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     if (DEBUG_HISTS){
       TH2F *cdc_residuals=(TH2F*)gROOT->FindObject("cdc_residuals");
       if (cdc_residuals) cdc_residuals->Fill(pos.Perp(),
-					     cdchits[m]->d-sign*Sc(state_D,0));
+					     cdchits[m]->d-(H*Sc)(0,0));
     }
       
     // Update chi2 for this hit
     if (1.-(H*K)(0,0)>EPS)
-      chisq+=(cdchits[m]->d-sign*Sc(state_D,0))*(cdchits[m]->d-sign*Sc(state_D,0))
+      chisq+=(cdchits[m]->d-(H*Sc)(0,0))*(cdchits[m]->d-(H*Sc)(0,0))
 	/(V-(H*(Cc*H_T))(0,0));
 
     // Save values of doca and wire position
