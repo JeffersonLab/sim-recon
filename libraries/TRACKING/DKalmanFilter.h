@@ -142,6 +142,9 @@ class DKalmanFilter{
   deque<DKalmanState_t>central_traj;
   deque<DKalmanState_t>forward_traj;
 
+  vector<double>cdc_resid;
+  vector<double>cdc_pulls;
+
 
   // For dEdx measurements
   double path_length;  // path length in active volume

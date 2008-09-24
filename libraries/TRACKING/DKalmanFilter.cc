@@ -754,7 +754,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
     Cc(state_z,state_z)=1.;
     Cc(state_q_over_pt,state_q_over_pt)=0.04*q_over_pt_*q_over_pt_;
     Cc(state_phi,state_phi)=0.015*0.015;
-    Cc(state_D,state_D)=0.25;
+    Cc(state_D,state_D)=0.01;
     double theta=90.-180./M_PI*atan(tanl_);
     double dlambda=2.1e-3-3.4e-4*theta+3.5e-5*theta*theta;
     Cc(state_tanl,state_tanl)=(1.+tanl_*tanl_)*(1.+tanl_*tanl_)
@@ -832,7 +832,15 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
     // Starting radius 
     double R0=best_pos.Perp();
 
-    int num_iter=5;
+    // Vector of residuals  
+    vector<double>best_cdc_resid(cdchits.size()); 
+    vector<double>best_cdc_pulls(cdchits.size());
+    if (DEBUG_HISTS){
+      cdc_resid=best_cdc_resid;
+      cdc_pulls=best_cdc_pulls;
+    }
+
+    int num_iter=3;
     for (int iter=0;iter<num_iter;iter++){
       double R=pos.Perp();
       if (fabs(R-R0)>EPS){
@@ -877,34 +885,54 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
       // Calculate a scale factor for the measurement errors that depends 
       // on the iteration,so that we approach the "true' measurement errors
       // by the last iteration.
-      double f=2.;
-      double anneal_factor=9./pow(f,num_iter)+1.;
-      anneal_factor=1.;
-
+      double f=1.5;
+      double anneal_factor=1.;
+      //anneal_factor=49./pow(f,iter)+1.;
+      //if (iter>0) anneal_factor=1.;
+      
       //printf("start p %f theta %f \n",1./Sc(state_q_over_pt,0)/cos(atan(Sc(state_tanl,0))),M_PI/2.-atan(Sc(state_tanl,0)));
-
+    
       jerror_t error=KalmanCentral(mass_hyp,anneal_factor,Sc,Cc,pos,chisq);
       if (error!=NOERROR) break;
-
-      //printf("p %f theta %f chi2 %f \n",1./Sc(state_q_over_pt,0)/cos(atan(Sc(state_tanl,0))),M_PI/2.-atan(Sc(state_tanl,0)),chisq);
-
-      for (unsigned int i=0;i<5;i++) Cc(i,i)*=anneal_factor;
+      
+      //printf("chi2 %f p %f theta %f\n",chisq,1./Sc(state_q_over_pt,0)/cos(atan(Sc(state_tanl,0))),M_PI/2.-atan(Sc(state_tanl,0)));
+       
+      //for (unsigned int i=0;i<5;i++) Cc(i,i)*=anneal_factor;
 
       if (chisq==0.) break;
-      if (chisq<chisq_central){
-	Scbest=Sc;
-	Ccbest=Cc;
-	chisq_central=chisq;
-	best_pos=pos;        
-      }
+      if (chisq<chisq_central)
+	{
+	  Scbest=Sc;
+	  Ccbest=Cc;
+	  chisq_central=chisq;
+	  best_pos=pos;       
+
+	  if (DEBUG_HISTS){
+	    best_cdc_resid=cdc_resid;
+	    best_cdc_pulls=cdc_pulls;
+	  }
+	}
+      else break;
     }
 
     if (chisq_central>=1e8 ){
       _DBG_ << "-- central fit failed --" <<endl;
       if (hits.size()==0) return VALUE_OUT_OF_RANGE;
     }
-  }
+
   
+    if (DEBUG_HISTS){
+      TH2F *cdc_residuals=(TH2F*)gROOT->FindObject("cdc_residuals");
+      TH2F *cdc_pulls_histo=(TH2F*)gROOT->FindObject("cdc_pulls");
+      if (cdc_residuals && cdc_pulls_histo)
+	for (unsigned int m=0;m<cdchits.size();m++){
+	  cdc_residuals->Fill(cdchits[m]->origin.Perp(),best_cdc_resid[m]);
+	  cdc_pulls_histo->Fill(cdchits[m]->origin.Perp(),best_cdc_pulls[m]);
+	}
+    }
+  }
+
+
   // Find track parameters where track crosses beam line
   ExtrapolateToVertex(mass_hyp,best_pos,Scbest,Ccbest);
   
@@ -1196,13 +1224,15 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     //central_traj.push_front(temp);
     
     if (DEBUG_HISTS){
-      TH2F *cdc_residuals=(TH2F*)gROOT->FindObject("cdc_residuals");
-      if (cdc_residuals) cdc_residuals->Fill(pos.Perp(),
-					     cdchits[m]->d-(H*Sc)(0,0));
+      cdc_resid[m]= cdchits[m]->d-(H*Sc)(0,0);
+      if (V-(H*(Cc*H_T))(0,0)>0.)
+	cdc_pulls[m]= (cdchits[m]->d-(H*Sc)(0,0))/sqrt((V-(H*(Cc*H_T))(0,0)));
+      else
+	cdc_pulls[m]=1000.;
     }
       
     // Update chi2 for this hit
-    if (1.-(H*K)(0,0)>EPS)
+    //    if (1.-(H*K)(0,0)>EPS)
       chisq+=(cdchits[m]->d-(H*Sc)(0,0))*(cdchits[m]->d-(H*Sc)(0,0))
 	/(V-(H*(Cc*H_T))(0,0));
 
