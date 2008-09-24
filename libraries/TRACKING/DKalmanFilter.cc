@@ -886,7 +886,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
       jerror_t error=KalmanCentral(mass_hyp,anneal_factor,Sc,Cc,pos,chisq);
       if (error!=NOERROR) break;
 
-      printf("p %f theta %f chi2 %f \n",1./Sc(state_q_over_pt,0)/cos(atan(Sc(state_tanl,0))),M_PI/2.-atan(Sc(state_tanl,0)),chisq);
+      //printf("p %f theta %f chi2 %f \n",1./Sc(state_q_over_pt,0)/cos(atan(Sc(state_tanl,0))),M_PI/2.-atan(Sc(state_tanl,0)),chisq);
 
       for (unsigned int i=0;i<5;i++) Cc(i,i)*=anneal_factor;
 
