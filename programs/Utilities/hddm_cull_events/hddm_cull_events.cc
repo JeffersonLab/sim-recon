@@ -22,7 +22,7 @@ char *OUTFILENAME = NULL;
 int QUIT = 0;
 unsigned int EVENTS_TO_SKIP = 0;
 unsigned int EVENTS_TO_KEEP = 1;
-
+unsigned int SPECIFIC_EVENT_TO_KEEP = 0;
 
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
 #define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
@@ -113,10 +113,11 @@ void ParseCommandLineArguments(int narg, char* argv[])
 		
 		if(ptr[0] == '-'){
 			switch(ptr[1]){
-				case 'h': Usage();								break;
-				case 'o': OUTFILENAME=&ptr[2];				break;
-				case 's': EVENTS_TO_SKIP=atoi(&ptr[2]);	break;
-				case 'k': EVENTS_TO_KEEP=atoi(&ptr[2]);	break;
+				case 'h': Usage();										break;
+				case 'o': OUTFILENAME=&ptr[2];						break;
+				case 's': EVENTS_TO_SKIP=atoi(&ptr[2]);			break;
+				case 'k': EVENTS_TO_KEEP=atoi(&ptr[2]);			break;
+				case 'e': SPECIFIC_EVENT_TO_KEEP=atoi(&ptr[2]);	break;
 			}
 		}else{
 			INFILENAMES.push_back(argv[i]);
@@ -128,7 +129,19 @@ void ParseCommandLineArguments(int narg, char* argv[])
 		Usage();
 	}
 	
-	if(OUTFILENAME==NULL)OUTFILENAME = "culled.hddm";
+	if(SPECIFIC_EVENT_TO_KEEP>0){
+		EVENTS_TO_KEEP=1;
+		EVENTS_TO_SKIP=SPECIFIC_EVENT_TO_KEEP-1;
+	}
+	
+	if(OUTFILENAME==NULL){
+		if(SPECIFIC_EVENT_TO_KEEP>0){
+			OUTFILENAME = new char[256];
+			sprintf(OUTFILENAME,"evt%d.hddm", SPECIFIC_EVENT_TO_KEEP);
+		}else{
+			OUTFILENAME = "culled.hddm";
+		}
+	}
 }
 
 
@@ -144,11 +157,16 @@ void Usage(void)
 	cout<<"    -oOutputfile     Set output filename (def. culled.hddm)"<<endl;
 	cout<<"    -sNeventsToSkip  Set number of events to skip (def. 0)"<<endl;
 	cout<<"    -kNeventsToKeep  Set number of events to keep (def. 1)"<<endl;
+	cout<<"    -eSingleEvent    Keep only the single, specified event"<<endl;
 	cout<<endl;
 	cout<<" This will copy a continguous set of events from the combined event streams"<<endl;
 	cout<<" into a seperate output file. The primary use for this would be to copy"<<endl;
 	cout<<" a single, problematic event into a seperate file for easier debugging."<<endl;
-	cout<<" "<<endl;
+	cout<<endl;
+	cout<<" If the -eNNN option is used then only a single event is extracted"<<endl;
+	cout<<" (the NNN-th event) and written to a file with the name evtNNN.hddm."<<endl;
+	cout<<" Note that the event is counted from the begining of the file, starting"<<endl;
+	cout<<" with \"1\". This does NOT look at the event number stored in the event itself."<<endl;
 	cout<<" "<<endl;
 	cout<<endl;
 
