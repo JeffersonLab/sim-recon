@@ -123,7 +123,7 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	cout<<"----------- New Event "<<eventnumber<<" -------------"<<endl;
 	hdvmf->SetEvent(eventnumber);
 	hdvmf->SetSource(last_jevent.GetJEventSource()->GetSourceName());
-	hdvmf->DoRedraw();	
+	hdvmf->DoMyRedraw();	
 
 	return NOERROR;
 }

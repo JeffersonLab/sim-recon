@@ -407,7 +407,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	reset->Connect("Clicked","hdv_mainframe", this, "DoReset()");
 
 	coordinates->Connect("Clicked(Int_t)","hdv_mainframe", this, "DoSetCoordinates(Int_t)");
-	coordinates->Connect("Clicked(Int_t)","hdv_mainframe", this, "DoRedraw()");
+	coordinates->Connect("Clicked(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
 
 	quit->Connect("Clicked","hdv_mainframe", this, "DoQuit()");
 	next->Connect("Clicked","hdv_mainframe", this, "DoNext()");
@@ -420,28 +420,28 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	fcalinspector->Connect("Clicked","hdv_mainframe", this, "DoOpenFCALInspector()");
 	bcalinspector->Connect("Clicked","hdv_mainframe", this, "DoOpenBCALInspector()");
 	
-	checkbuttons["candidates"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["tracks"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["particles"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["thrown"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["candidates"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["tracks"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["particles"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["thrown"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
 
-	checkbuttons["cdc"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["cdcdrift"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["cdctruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["fdcwire"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["fdcpseudo"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["fdcintersection"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["fdctruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["tof"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["toftruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["bcal"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["bcaltruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["fcal"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["fcaltruth"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	checkbuttons["trajectories"]->Connect("Clicked","hdv_mainframe", this, "DoRedraw()");
-	candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
-	tracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
-	particlesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoRedraw()");
+	checkbuttons["cdc"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["cdcdrift"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["cdctruth"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["fdcwire"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["fdcpseudo"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["fdcintersection"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["fdctruth"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["tof"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["toftruth"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["bcal"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["bcaltruth"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["fcal"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["fcaltruth"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["trajectories"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
+	tracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
+	particlesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
 	reconfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoUpdateTrackLabels()");
 
 	// Pointers to optional daughter windows
@@ -781,7 +781,7 @@ void hdv_mainframe::DoPanXpos(void)
 {
 	x0 += 50/zoom_factor;
 	SetRange();
-	DoRedraw();
+	DoMyRedraw();
 }
 
 //-------------------
@@ -791,7 +791,7 @@ void hdv_mainframe::DoPanXneg(void)
 {
 	x0 -= 50/zoom_factor;
 	SetRange();
-	DoRedraw();
+	DoMyRedraw();
 }
 
 //-------------------
@@ -801,7 +801,7 @@ void hdv_mainframe::DoPanYpos(void)
 {
 	y0 += 50/zoom_factor;
 	SetRange();
-	DoRedraw();
+	DoMyRedraw();
 }
 
 //-------------------
@@ -811,7 +811,7 @@ void hdv_mainframe::DoPanYneg(void)
 {
 	y0 -= 50/zoom_factor;
 	SetRange();
-	DoRedraw();
+	DoMyRedraw();
 }
 
 //-------------------
@@ -821,7 +821,7 @@ void hdv_mainframe::DoPanZpos(void)
 {
 	z0 += 50/zoom_factor;
 	SetRange();
-	DoRedraw();
+	DoMyRedraw();
 }
 
 //-------------------
@@ -831,7 +831,7 @@ void hdv_mainframe::DoPanZneg(void)
 {
 	z0 -= 50/zoom_factor;
 	SetRange();
-	DoRedraw();
+	DoMyRedraw();
 }
 
 //-------------------
@@ -841,7 +841,7 @@ void hdv_mainframe::DoZoomIn(void)
 {
 	zoom_factor*=1.25;
 	SetRange();
-	DoRedraw();
+	DoMyRedraw();
 	//if(gMYPROC)gMYPROC->evnt(eventloop, current_eventnumber);
 }
 
@@ -852,7 +852,7 @@ void hdv_mainframe::DoZoomOut(void)
 {
 	zoom_factor/=1.25;
 	SetRange();
-	DoRedraw();
+	DoMyRedraw();
 	//if(gMYPROC)gMYPROC->evnt(eventloop, current_eventnumber);
 }
 
@@ -865,14 +865,14 @@ void hdv_mainframe::DoReset(void)
 	y0 = 0.0;
 	z0 = 350.0;
 	zoom_factor = 1.0;
-	DoRedraw();
+	DoMyRedraw();
 }
 
 
 //-------------------
-// DoRedraw
+// DoMyRedraw
 //-------------------
-void hdv_mainframe::DoRedraw(void)
+void hdv_mainframe::DoMyRedraw(void)
 {
 	// Make sure canvases have proper ranges
 	SetRange();
@@ -1501,7 +1501,6 @@ void hdv_mainframe::SetCandidateFactories(vector<string> &facnames)
 {
 	/// Filter out the factories that provide "DTrackCandidate" objects
 	/// and add their tags to the tracksfactory combobox.
-	
 	// Erase all current entries in the combobox and add back in
 	// "<default>".
 	candidatesfactory->RemoveAll();

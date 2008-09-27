@@ -76,7 +76,7 @@ class hdv_mainframe:public TGMainFrame {
 		void DoZoomIn(void);
 		void DoZoomOut(void);
 		void DoReset(void);
-		void DoRedraw(void);
+		void DoMyRedraw(void);
 		void DoSetDelay(Int_t);
 		void DoSetCoordinates(Int_t);
 		void DoUpdateTrackLabels(void);
