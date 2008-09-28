@@ -96,8 +96,9 @@ class hdv_mainframe:public TGMainFrame {
 		map<string, vector<TGLabel*> >& GetThrownLabels(void){return thrownlabs;}
 		map<string, vector<TGLabel*> >& GetReconstructedLabels(void){return reconlabs;}
 		
-		void SetTrackFactories(vector<string> &facnames);
 		void SetCandidateFactories(vector<string> &facnames);
+		void SetTrackFactories(vector<string> &facnames);
+		void SetParticleFactories(vector<string> &facnames);
 		void SetReconstructedFactories(vector<string> &facnames);
 		
 		bool GetCheckButton(string who);

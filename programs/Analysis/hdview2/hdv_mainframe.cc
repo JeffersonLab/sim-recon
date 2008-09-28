@@ -269,8 +269,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 					candidatesfactory = new TGComboBox(candidatesf, "<default>", 0);
 					candidatesfactory->Resize(80,20);
 					candidatesf->AddFrame(checkbuttons["candidates"], lhints);
+					for(int i=0; i<100; i++)candidatesfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
 					candidatesf->AddFrame(candidatesfactory, lhints);
-					candidatesfactory->AddEntry("<default>",0);
 				trkdrawopts->AddFrame(candidatesf, lhints);
 					
 				TGHorizontalFrame *tracksf		= new TGHorizontalFrame(trkdrawopts);
@@ -278,8 +278,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 					tracksfactory	= new TGComboBox(tracksf, "<default>", 0);
 					tracksfactory->Resize(80,20);
 					tracksf->AddFrame(checkbuttons["tracks"], lhints);
+					for(int i=0; i<100; i++)tracksfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
 					tracksf->AddFrame(tracksfactory, lhints);
-					tracksfactory->AddEntry("<default>",0);
 				trkdrawopts->AddFrame(tracksf, lhints);
 					
 				TGHorizontalFrame *particlesf		= new TGHorizontalFrame(trkdrawopts);
@@ -287,8 +287,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 					particlesfactory	= new TGComboBox(particlesf, "<default>", 0);
 					particlesfactory->Resize(80,20);
 					particlesf->AddFrame(checkbuttons["particles"], lhints);
+					for(int i=0; i<100; i++)particlesfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
 					particlesf->AddFrame(particlesfactory, lhints);
-					particlesfactory->AddEntry("<default>",0);
 				trkdrawopts->AddFrame(particlesf, lhints);
 
 				checkbuttons["thrown"]			= new TGCheckButton(trkdrawopts,	"DMCThrown");
@@ -385,7 +385,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 			// Reconstruction factory
 			reconfactory = new TGComboBox(reconinfo, "DTrackCandidate:", 0);
 			reconfactory->Resize(160,20);
-			reconfactory->AddEntry("DTrackCandidate:",0);
+			for(int i=0; i<100; i++)reconfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
 			reconinfo->AddFrame(reconfactory, lhints);
 
 
@@ -508,6 +508,11 @@ void hdv_mainframe::ReadPreferences(void)
 
 		if(tokens[0] == "DTrack"){
 			if(tokens.size()!=3)continue; // should be of form "DTrack = tag" with white space on either side of the "="
+			default_track = tokens[2];
+		}
+
+		if(tokens[0] == "DParticle"){
+			if(tokens.size()!=3)continue; // should be of form "DParticle = tag" with white space on either side of the "="
 			default_track = tokens[2];
 		}
 
@@ -1467,6 +1472,34 @@ void hdv_mainframe::SetSource(string source)
 }
 
 //-------------------
+// SetCandidateFactories
+//-------------------
+void hdv_mainframe::SetCandidateFactories(vector<string> &facnames)
+{
+	/// Filter out the factories that provide "DTrackCandidate" objects
+	/// and add their tags to the tracksfactory combobox.
+	// Erase all current entries in the combobox and add back in
+	// "<default>".
+	candidatesfactory->RemoveAll();
+	candidatesfactory->AddEntry("<default>", 0);
+	candidatesfactory->GetTextEntry()->SetText("<default>");
+	candidatesfactory->Select(0, kFALSE);
+	
+	for(unsigned int i=0; i< facnames.size(); i++){
+		string name = "DTrackCandidate:";
+		string::size_type pos = facnames[i].find(name);
+		if(pos==string::npos)continue;
+		string tag = facnames[i];
+		tag.erase(0, name.size());
+		candidatesfactory->AddEntry(tag.c_str(), i);
+		if(tag==default_candidate){
+			candidatesfactory->Select(i, kTRUE);
+			candidatesfactory->GetTextEntry()->SetText(tag.c_str());
+		}
+	}
+}
+
+//-------------------
 // SetTrackFactories
 //-------------------
 void hdv_mainframe::SetTrackFactories(vector<string> &facnames)
@@ -1478,6 +1511,7 @@ void hdv_mainframe::SetTrackFactories(vector<string> &facnames)
 	// "<default>".
 	tracksfactory->RemoveAll();
 	tracksfactory->AddEntry("<default>", 0);
+	tracksfactory->GetTextEntry()->SetText("<default>");
 	tracksfactory->Select(0, kFALSE);
 	
 	for(unsigned int i=0; i< facnames.size(); i++){
@@ -1495,28 +1529,30 @@ void hdv_mainframe::SetTrackFactories(vector<string> &facnames)
 }
 
 //-------------------
-// SetCandidateFactories
+// SetParticleFactories
 //-------------------
-void hdv_mainframe::SetCandidateFactories(vector<string> &facnames)
+void hdv_mainframe::SetParticleFactories(vector<string> &facnames)
 {
-	/// Filter out the factories that provide "DTrackCandidate" objects
-	/// and add their tags to the tracksfactory combobox.
+	/// Filter out the factories that provide "DParticle" objects
+	/// and add their tags to the particlesfactory combobox.
+	
 	// Erase all current entries in the combobox and add back in
 	// "<default>".
-	candidatesfactory->RemoveAll();
-	candidatesfactory->AddEntry("<default>", 0);
-	candidatesfactory->Select(0, kFALSE);
+	particlesfactory->RemoveAll();
+	particlesfactory->AddEntry("<default>", 0);
+	particlesfactory->GetTextEntry()->SetText("<default>");
+	particlesfactory->Select(0, kFALSE);
 	
 	for(unsigned int i=0; i< facnames.size(); i++){
-		string name = "DTrackCandidate:";
+		string name = "DParticle:";
 		string::size_type pos = facnames[i].find(name);
 		if(pos==string::npos)continue;
 		string tag = facnames[i];
 		tag.erase(0, name.size());
-		candidatesfactory->AddEntry(tag.c_str(), i);
-		if(tag==default_candidate){
-			candidatesfactory->Select(i, kTRUE);
-			candidatesfactory->GetTextEntry()->SetText(tag.c_str());
+		particlesfactory->AddEntry(tag.c_str(), i+1);
+		if(tag==default_track){
+			particlesfactory->Select(i, kTRUE);
+			particlesfactory->GetTextEntry()->SetText(tag.c_str());
 		}
 	}
 }

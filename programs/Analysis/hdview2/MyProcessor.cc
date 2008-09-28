@@ -87,8 +87,9 @@ jerror_t MyProcessor::init(void)
 		loops[0]->GetFactoryNames(facnames);
 
 		hdvmf = new hdv_mainframe(gClient->GetRoot(), 1000, 600);
-		hdvmf->SetTrackFactories(facnames);
 		hdvmf->SetCandidateFactories(facnames);
+		hdvmf->SetTrackFactories(facnames);
+		hdvmf->SetParticleFactories(facnames);
 		hdvmf->SetReconstructedFactories(facnames);
 	}
 	
@@ -397,10 +398,10 @@ void MyProcessor::FillGraphics(void)
 		vector<const DTrackCandidate*> trackcandidates;
 		loop->Get(trackcandidates, hdvmf->GetFactoryTag("DTrackCandidate"));
 		for(unsigned int i=0; i<trackcandidates.size(); i++){
-			int color=26;
-			double size=1.75;
-			if(trackcandidates[i]->charge() >0.0) color += 100; // lighter shade
-			if(trackcandidates[i]->charge() <0.0) color += 150; // darker shade
+			int color=30;
+			double size=2.0;
+			//if(trackcandidates[i]->charge() >0.0) color += 100; // lighter shade
+			//if(trackcandidates[i]->charge() <0.0) color += 150; // darker shade
 			AddKinematicDataTrack(trackcandidates[i], color, size);
 		}
 	}
