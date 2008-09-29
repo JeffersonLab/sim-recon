@@ -526,5 +526,5 @@ C--Multiple scattering formula of Kaune et.al. is a bit off
 c     sigma2MS=8*dpi*nsites*alpha**2*Z**2*tt*(hbarc/(me*a))**2/a
 c    +         *log(183*Z**(-1/3.))
 C--Use the PDG formula instead (with beta=1, charge=1)
-      sigma2MS=(13.6e-3/E)**2*(tt/radlen)*(1+0.038*log(tt/radlen))**2
+      sigma2MS=(2*13.6e-3/E)**2*(tt/radlen)*(1+0.038*log(tt/radlen))**2
       end
