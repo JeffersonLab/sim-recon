@@ -8,25 +8,24 @@
 using namespace std;
 
 #include "MyProcessor.h"
-#include "DEvent.h"
-#include "hddm_s.h"
+#include "HDDM/hddm_s.h"
 
-#include "DCDCHit.h"
-#include "DFCALHit.h"
+#include "CDC/DCDCHit.h"
+#include "FCAL/DFCALHit.h"
 
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
 //------------------------------------------------------------------
-derror_t MyProcessor::init(void)
+jerror_t MyProcessor::init(void)
 {
 	// open ROOT file
 	ROOTfile = new TFile("hd_ana.root","RECREATE","Produced by hd_ana");
-	cout<<"Opened ROOT file \"hd_ana.root\""<<endl;
+	cout<<"Opened ROOT file \"hd_example.root\""<<endl;
 
 	// Create histogram
-	cdc_y_vs_x	= new TH2F("cdc_y_vs_x","CDC Y vs. X",200, -70.0, 70.0, 200, -70.0, 70.0);
-	fcal_y_vs_x	= new TH2F("fcal_y_vs_x","FCAL Y vs. X",200, -100.0, 100.0, 200, -100.0, 100.0);
-	fcalhitE	= new TH1F("fcalhitE","fcal single detector energy(GeV)",100, 0.0, 6.0);
+	cdc_ring_vs_straw	= new TH2F("cdc_ring_vs_straw","CDC RING vs. STRAW",200, 0.0, 1000.0, 200, 0.0, 100.0);
+	fcal_y_vs_x		= new TH2F("fcal_y_vs_x","FCAL Y vs. X",200, -100.0, 100.0, 200, -100.0, 100.0);
+	fcalhitE		= new TH1F("fcalhitE","fcal single detector energy(GeV)",100, 0.0, 6.0);
 
 	return NOERROR;
 }
@@ -34,7 +33,7 @@ derror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // evnt   -Fill histograms here
 //------------------------------------------------------------------
-derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 {
 	vector<const DCDCHit*> cdchits;
 	vector<const DFCALHit*> fcalhits;
@@ -43,9 +42,9 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 	
 	for(unsigned int i=0;i<cdchits.size();i++){
 		const DCDCHit *cdchit = cdchits[i];
-		float x = cdchit->radius*cos(cdchit->phim);
-		float y = cdchit->radius*sin(cdchit->phim);
-		cdc_y_vs_x->Fill(y,x);
+		float ring = (float) cdchit->ring;
+		float straw = (float) cdchit->straw;
+		cdc_ring_vs_straw->Fill(straw,ring);
 	}
 
 	for(unsigned int i=0;i<fcalhits.size();i++){
@@ -60,7 +59,7 @@ derror_t MyProcessor::evnt(DEventLoop *eventLoop, int eventnumber)
 //------------------------------------------------------------------
 // fini   -Close output file here
 //------------------------------------------------------------------
-derror_t MyProcessor::fini(void)
+jerror_t MyProcessor::fini(void)
 {
 	ROOTfile->Write();
 	delete ROOTfile;
