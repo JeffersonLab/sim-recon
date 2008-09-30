@@ -8,7 +8,10 @@
 #include <cmath>
 using namespace std;
 
-#include "DANA/DApplication.h"
+#include <DANA/DApplication.h>
+
+#include <CDC/DCDCTrackHit.h>
+#include <FDC/DFDCPseudo.h>
 
 #include "DTrack_factory_THROWN.h"
 #include "DMCThrown.h"
@@ -23,7 +26,11 @@ using namespace std;
 jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DMCThrown*> mcthrowns;
+	vector<const DCDCTrackHit*> cdctrackhits;
+	vector<const DFDCPseudo*> fdcpseudos;
 	loop->Get(mcthrowns);
+	loop->Get(cdctrackhits);
+	loop->Get(fdcpseudos);
 
 	for(unsigned int i=0; i< mcthrowns.size(); i++){
 		const DMCThrown *thrown = mcthrowns[i];
@@ -46,19 +53,9 @@ jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		// Fill in DTrack specific members. (Some of these are redundant)
 		DVector3 pos = track->position();
 		DVector3 mom = track->momentum();
-		//track->q			= track->charge();
-		//track->p			= mom.Mag();
-		//track->theta	= mom.Theta();
-		//track->phi		= mom.Phi();
-		//track->x			= pos.X();
-		//track->y			= pos.Y();
-		//track->z			= pos.Z();
 		track->candidateid = 0;
-		track->chisq	= 0.0;
-		//track->dE		= 0.0;
-		//track->ds		= 0.0;
-		//track->err_dE	= 0.0;
-		//track->err_ds	= 0.0;
+		track->chisq = 0.0;
+		track->Ndof = 0.0;
 
 		// Adapted from Alex's fortran code to paramatrize the resolution 
 		// of GlueX. He developed this from a study Dave Lawrence did. 
@@ -77,6 +74,23 @@ jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 
 		rt[_data.size()]->Swim(pos, mom, track->charge());
 		track->rt = rt[_data.size()];
+		
+		// Find hits that look like they belong to this track and add them in as associated objects.
+		// This is a bit dangerous since "real" DTrack factories use the associated objects to
+		// convey the hits actually used in the fit. The is no fit here so to be consistent, we
+		// shouldn't add these. However, other factories that use DTrack (DParticle) rely on the
+		// hit list to do their fit so we must add thme here.
+		//
+		// There is a good probability that this will fall out of alignment with the selection
+		// criteria used in DTrack_factory. We should probably have this factory derive from
+		// DTrack_factory just so we can guarantee they stay in sync. However, that would take
+		// time that I don't have right now.
+		cdchits.clear();
+		fdchits.clear();
+		AddCDCTrackHits(rt[_data.size()], cdctrackhits);
+		AddFDCPseudoHits(rt[_data.size()], fdcpseudos);
+		for(unsigned int i=0; i<cdchits.size(); i++)track->AddAssociatedObject(cdchits[i]);
+		for(unsigned int i=0; i<fdchits.size(); i++)track->AddAssociatedObject(fdchits[i]);
 
 		_data.push_back(track);
 	}
@@ -84,324 +98,127 @@ jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 	return NOERROR;
 }
 
-//------------------
-// SampleGaussian
-//------------------
-double DTrack_factory_THROWN::SampleGaussian(double sigma)
-{
-  // We loop to ensure not to return values greater than 3sigma away
-  double val;
-  do{
-    double epsilon = 1.0E-10;
-    double r1 = epsilon+((double)random()/(double)RAND_MAX);
-    double r2 = (double)random()/(double)RAND_MAX;
-    val = sigma*sqrt(-2.0*log(r1))*cos(2.0*M_PI*r2);
-  }while(fabs(val/sigma) > 3.0);
 
-  return val;
-}
+//==============================================================
+// NOTE: The following routines were copied from DTrack_factory
+//==============================================================
 
 
 //------------------
-// The various smearing resolutions taken
-// directly from Alex's smear.f code.
+// AddCDCTrackHits
 //------------------
-void DTrack_factory_THROWN::SmearMomentum(DTrack *trk)
+void DTrack_factory_THROWN::AddCDCTrackHits(DReferenceTrajectory *rt, vector<const DCDCTrackHit*> &cdctrackhits)
 {
-  DRandom rnd;
+	/// Determine the probability that for each CDC hit that it came from the track with the given trajectory.
+	///
+	/// This will calculate a probability for each CDC hit that
+	/// it came from the track represented by the given
+	/// DReference trajectory. The probability is based on
+	/// the residual between the distance of closest approach
+	/// of the trajectory to the wire and the drift time.
 
-  // Track phi, theta, mag
-  //double pmag = trk->p;
-  //double phi = trk->phi;
-  //double theta = trk->theta;
-  double pmag = trk->lorentzMomentum().Rho();
-  double theta = trk->lorentzMomentum().Theta();
-  double phi = trk->lorentzMomentum().Phi();
+	// Calculate beta of particle assuming its a pion for now. If the
+	// particles is really a proton or an electron, the residual
+	// calculated below will only be off by a little.
+	double TOF_MASS = 0.13957018;
+	double beta = 1.0/sqrt(1.0+TOF_MASS*TOF_MASS/rt->swim_steps[0].mom.Mag2());
+	
+	// The error on the residual. This should include the
+	// error from measurement,track parameters, and multiple 
+	// scattering.
+	//double sigma = sqrt(pow(SIGMA_CDC,2.0) + pow(0.4000,2.0));
+	double sigma = 0.8/sqrt(12.0);
+	
+	// Minimum probability of hit belonging to wire and still be accepted
+	double MIN_HIT_PROB = 0.2;
 
-  // Alex's study used phi in degrees
-  double theta_deg = theta*180.0/TMath::Pi();
+	for(unsigned int j=0; j<cdctrackhits.size(); j++){
+		const DCDCTrackHit *hit = cdctrackhits[j];
+		
+		// Find the DOCA to this wire
+		double s;
+		double doca = rt->DistToRT(hit->wire, &s);
 
-  // Set the random seed based on phi
-  rnd.SetSeed((uint)(10000*phi));
+		// Distance using drift time
+		// NOTE: Right now we assume pions for the TOF
+		// and a constant drift velocity of 55um/ns
+		double tof = s/(beta*3E10*1E-9);
+		double dist = (hit->tdrift - tof)*55E-4;
+		
+		// Residual
+		//double resi = dist - doca;
+		double resi = doca - 0.4;
+		double chisq = pow(resi/sigma, 2.0);
 
-  double dp=0, dphi=0, dtheta=0, dtheta_deg=0;
+		// Use chi-sq probaility function with Ndof=1 to calculate probability
+		double probability = TMath::Prob(chisq/4.0, 1);
+		if(probability>=MIN_HIT_PROB)cdchits.push_back(hit);
 
-  // Grabbed this from 
-  if(theta_deg<15) 
-    {dp=res_p1(theta_deg); dtheta_deg=res_p10(pmag); dphi=res_p9(pmag);}
-  else if(theta_deg>=15 && theta_deg<25) 
-    {dp=res_p2(pmag); dtheta_deg=res_p10(pmag); dphi=res_p9(pmag);}
-  else if(theta_deg>=25 && theta_deg<35) 
-    {dp=res_p3(pmag); dtheta_deg=res_p10(pmag); dphi=res_p9(pmag);}
-  else if(theta_deg>=35 && theta_deg<45) 
-    {dp=res_p4(pmag); dtheta_deg=res_p11(pmag); dphi=res_p9(pmag);}
-  else if(theta_deg>=45 && theta_deg<55) 
-    {dp=res_p5(pmag); dtheta_deg=res_p12(pmag); dphi=res_p9(pmag);}
-  else if(theta_deg>=55)
-  {
-    dtheta_deg=res_p12(pmag); 
-    dphi=res_p9(pmag);
-    if(pmag<2.0) 
-      dp=res_p8(theta_deg);  /// Note that this is different from the FORTRAN code due to mismatch from orginal study.
-    else if(pmag>=2.0 && pmag<3.0) 
-      dp=res_p7(theta_deg); 
-    else if(pmag>=3.0) /// Note that this is different from the FORTRAN code due to mismatch from orginal study.
-      dp=res_p6(theta_deg); 
-  }
-
-  // Both dphi and dtheta are returned in degrees, so we convert back to radians
-  dphi *= TMath::Pi()/180.0;
-  dtheta = dtheta_deg*TMath::Pi()/180.0;
-
-  // Generate the spearing
-  double deltap = rnd.Gaus(0.0, dp);
-  double deltatheta = rnd.Gaus(0.0, dtheta);
-  double deltaphi = rnd.Gaus(0.0, dphi);
-  pmag += deltap;
-  theta += deltatheta;
-  phi += deltaphi;
-
-  // Set the 3momentum of the track with the new parameters
-  DVector3 mom;
-  mom.SetMagThetaPhi(pmag, theta, phi);
-  trk->setMomentum(mom);
-  trk->setMass(0.0);
-  //trk->p = pmag;
-  //trk->theta = theta;
-  //trk->phi = phi;
-
-  // Set up the error matrix properly
-  DMatrixDSym errMat(7);
-  DMatrix sphErrMat(3,3);
-  DMatrix transformMat(3,3);
-  DMatrix transformMat_T(3,3);
-  DMatrix cartErrMat(3,3);
-
-  // Start off with a diagonal matrix in the spherical coordinates.
-  sphErrMat[0][0] = dp*dp;
-  sphErrMat[1][1] = dtheta*dtheta;
-  sphErrMat[2][2] = dphi*dphi;
-
-  // Transformation matrix
-  // T_ij = dr_i/dx_j
-  transformMat[0][0] = sin(theta)*cos(phi);
-  transformMat[1][0] = pmag*cos(theta)*cos(phi);
-  transformMat[2][0] = -pmag*sin(theta)*sin(phi);
-  transformMat[0][1] = sin(theta)*sin(phi);
-  transformMat[1][1] = pmag*cos(theta)*sin(phi);
-  transformMat[2][1] = pmag*sin(theta)*cos(phi);
-  transformMat[0][2] = cos(theta);
-  transformMat[1][2] = -pmag*sin(theta);
-  transformMat[2][2] = 0.0;
-
-  // Carry out the conversion to cartesian coordinates
-  transformMat_T.Transpose(transformMat);
-  cartErrMat = transformMat_T * sphErrMat * transformMat;
-
-  // Set up the full error matrix.
-  // Note that we have not smeared the energy [3] nor
-  // the vertex [4,5,6].
-  errMat[0][0] = cartErrMat[0][0];
-  errMat[0][1] = cartErrMat[0][1];
-  errMat[0][2] = cartErrMat[0][2];
-  errMat[1][0] = cartErrMat[1][0];
-  errMat[1][1] = cartErrMat[1][1];
-  errMat[1][2] = cartErrMat[1][2];
-  errMat[2][0] = cartErrMat[2][0];
-  errMat[2][1] = cartErrMat[2][1];
-  errMat[2][2] = cartErrMat[2][2];
-
-  // Set the error matrix
-  trk->setErrorMatrix(errMat);
+		if(debug_level>10)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" tof="<<tof<<" prob="<<probability<<endl;
+	}
 }
 
-double DTrack_factory_THROWN::res_p1(double x)
+//------------------
+// AddFDCPseudoHits
+//------------------
+void DTrack_factory_THROWN::AddFDCPseudoHits(DReferenceTrajectory *rt, vector<const DFDCPseudo*> &fdcpseudos)
 {
-  // Return dpmag/pmag(theta) 
-  // 0<theta<15 
-  // 0<pmag<inf
-  double k0=0.11088;
-  double k1=-0.023485;
-  double k2=0.0021123;
-  double k3=-0.000058412;
+	/// Determine the probability that for each FDC hit that it came from the track with the given trajectory.
+	///
+	/// This will calculate a probability for each FDC hit that
+	/// it came from the track represented by the given
+	/// DReference trajectory. The probability is based on
+	/// the residual between the distance of closest approach
+	/// of the trajectory to the wire and the drift time
+	/// and the distance along the wire.
 
-  double res = k0 + k1*x + k2*pow(x,2)+ k3*pow(x,3);
-  return res;
+	// Calculate beta of particle assuming its a pion for now. If the
+	// particles is really a proton or an electron, the residual
+	// calculated below will only be off by a little.
+	double TOF_MASS = 0.13957018;
+	double beta = 1.0/sqrt(1.0+TOF_MASS*TOF_MASS/rt->swim_steps[0].mom.Mag2());
+	
+	// The error on the residual. This should include the
+	// error from measurement,track parameters, and multiple 
+	// scattering.
+	//double sigma_anode = sqrt(pow(SIGMA_FDC_ANODE,2.0) + pow(1.000,2.0));
+	//double sigma_cathode = sqrt(pow(SIGMA_FDC_CATHODE,2.0) + pow(1.000,2.0));
+	double sigma_anode = 0.5/sqrt(12.0);
+	double sigma_cathode = 0.5/sqrt(12.0);
+	
+	// Minimum probability of hit belonging to wire and still be accepted
+	double MIN_HIT_PROB = 0.2;
+
+	for(unsigned int j=0; j<fdcpseudos.size(); j++){
+		const DFDCPseudo *hit = fdcpseudos[j];
+		
+		// Find the DOCA to this wire
+		double s;
+		double doca = rt->DistToRT(hit->wire, &s);
+
+		// Distance using drift time
+		// NOTE: Right now we assume pions for the TOF
+		// and a constant drift velocity of 55um/ns
+		double tof = s/(beta*3E10*1E-9);
+		double dist = (hit->time - tof)*55E-4;
+		
+		// Residual
+		double resi = dist - doca;		
+
+		// Use chi-sq probaility function with Ndof=1 to calculate probability
+		double probability = TMath::Prob(resi/sigma_anode, 1);
+
+		// Cathode
+		double u=rt->GetLastDistAlongWire();
+		double resic = u - hit->s;
+
+		// Same as for the anode. We multiply the
+		// probabilities to get a total probability
+		// based on both the anode and cathode hits.
+		probability *= TMath::Prob(resic/sigma_cathode, 1);
+
+		if(probability<=MIN_HIT_PROB)fdchits.push_back(hit);
+
+		if(debug_level>10)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" tof="<<tof<<" prob="<<probability<<endl;
+	}
 }
-
-double DTrack_factory_THROWN::res_p2(double x)
-{
-  // Return dpmag/pmag(theta) 
-  // 15<theta<25 
-  // 0<pmag<inf
-  double a=0.013814;
-  double b=0.010706;
-  double s=0.342;
-
-  double res=sqrt(pow(a*s*x,2)+pow(b,2)*(1+0.02/pow(x,2))/s);
-  return res;
-}
-
-double DTrack_factory_THROWN::res_p3(double x)
-{
-  // Return dpmag/pmag(theta) 
-  // 25<theta<35 
-  // 0<pmag<inf
-  double a=0.0073285;
-  double b=0.0083813;
-  double s=0.5;
-
-  double res=sqrt(pow(a*s*x,2)+pow(b,2)*(1+0.02/pow(x,2))/s);
-  return res;
-}
-
-double DTrack_factory_THROWN::res_p4(double x)
-{
-  // Return dpmag/pmag(theta) 
-  // 35<theta<45 
-  // 0<pmag<inf
-  double a=0.007551;
-  double b=0.0087766;
-  double s=0.643;
-
-  double res=sqrt(pow(a*s*x,2)+pow(b,2)*(1+0.02/pow(x,2))/s);
-  return res;
-}
-
-double DTrack_factory_THROWN::res_p5(double x)
-{
-  // Return dpmag/pmag(theta) 
-  // 45<theta<55 
-  // 0<pmag<inf
-  double a=0.0077688;
-  double b=0.009204;
-  double s=0.766;
-
-  double res=sqrt(pow(a*s*x,2)+pow(b,2)*(1+0.02/pow(x,2))/s);
-  return res;
-}
-
-double DTrack_factory_THROWN::res_p6(double x)
-{
-  // Return dpmag/pmag(theta) 
-  // 55<theta<180 
-  // 0<pmag<2 GeV
-  double k0=0.37978;
-  double k1=-0.0178;
-  double k2=0.0003155;
-  double k3=-.0000024105;
-  double k4=0.000000006728;
-
-  double res = k0 + k1*x + k2*pow(x,2) + k3*pow(x,3)+ k4*pow(x,4);;
-  return res;
-}
-
-double DTrack_factory_THROWN::res_p7(double x)
-{
-  // Return dpmag/pmag(theta) 
-  // 55<theta<180 
-  // 2<pmag<3 GeV
-  double k0=0.36913;
-  double k1=-0.017553;
-  double k2=0.00031951;
-  double k3=-.0000024915;
-  double k4=0.000000007067;
-
-  double res = k0 + k1*x + k2*pow(x,2) + k3*pow(x,3)+ k4*pow(x,4);;
-  return res;
-}
-
-double DTrack_factory_THROWN::res_p8(double x)
-{
-  // Return dpmag/pmag(theta) 
-  // 55<theta<180 
-  // 3<pmag<inf
-  double k0=0.5213;
-  double k1=-0.024712;
-  double k2=0.00044629;
-  double k3=-.0000034504;
-  double k4=0.0000000096985;
-
-  double res = k0 + k1*x + k2*pow(x,2) + k3*pow(x,3)+ k4*pow(x,4);;
-  return res;
-}
-
-double DTrack_factory_THROWN::res_p9(double x)
-{
-  // Return dphi(pmag)
-  // 0<theta<180 
-  // 0<pmag<inf
-  double k0=0.95004;
-  double k1=-0.71694;
-  double k2=0.26776;
-  double k3=-0.044906;
-  double k4=0.0027684;
-
-  double res = k0 + k1*x + k2*pow(x,2) + k3*pow(x,3)+ k4*pow(x,4);;
-  if(x>=5.5768) 
-  {
-    res = 0.16847;
-  }
-  return res;
-}
-
-double DTrack_factory_THROWN::res_p10(double x)
-{
-  // Return dtheta/theta(p) 
-  // 0<theta<35 
-  // 0<pmag<inf
-  double xo=0.28323;
-  double yo=0.092655;
-  double a1=0.13457;
-  double a2=0.16388;
-  double t1=0.27009;
-  double t2=0.95528;
-
-  double res=yo+ a1*exp(-(x-xo)/t1) + a2*exp(-(x-xo)/t2);
-  if(x>=4)
-  {
-    res=0.096163;
-  }
-  return res;
-}
-
-double DTrack_factory_THROWN::res_p11(double x)
-{
-  // Return dtheta/theta(p) 
-  // 35<theta<45 
-  // 0<pmag<inf
-  double xo=0.243846;
-  double yo=0.14657;
-  double a1=0.27375;
-  double a2=0.13852;
-  double t1=0.15888;
-  double t2=0.76164;
-
-  double res=yo+ a1*exp(-(x-xo)/t1) + a2*exp(-(x-xo)/t2);
-  if(x>=4)
-  {
-    res=0.1478;
-  }
-  return res;
-}
-
-double DTrack_factory_THROWN::res_p12(double x)
-{
-  // Return dtheta/theta(p) 
-  // 45<theta<180 
-  // 0<pmag<inf
-  double xo=0.235728;
-  double yo=0.20553;
-  double a1=0.16369;
-  double a2=0.062797;
-  double t1=0.28976;
-  double t2=1.056;
-
-  double res=yo+ a1*exp(-(x-xo)/t1) + a2*exp(-(x-xo)/t2);
-  if(x>=4)
-  {
-    res=0.20749;
-  }
-  return res;
-}
-
