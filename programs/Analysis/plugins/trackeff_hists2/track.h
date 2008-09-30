@@ -18,16 +18,19 @@ class track:public TObject{
 
 		TVector3 pthrown;
 		TVector3 pfit;
-		double likelihood;
-		double chisq;
-		double pt_pull;
-		double theta_pull;
-		double phi_pull;
+		TVector3 pfit_wire;
+		TVector3 pcan;
+		double trk_chisq;
+		double delta_pt_over_pt;
+		double delta_theta;	// mrad
+		double delta_phi;		// mrad
 		bool isreconstructable;
 		int Nstereo;
 		int Ncdc;
 		int Nfdc;
-		double trk_chisq;
+		int NLR_bad_stereo;
+		int NLR_bad;
+		unsigned long event;
 
 	private:
 		ClassDef(track,1);

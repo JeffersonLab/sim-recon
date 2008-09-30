@@ -29,6 +29,9 @@ using std::map;
 #include "track.h"
 #include "DTrackingResolution.h"
 
+class DReferenceTrajectory;
+class DCoordinateSystem;
+
 class DEventProcessor_trackeff_hists:public JEventProcessor{
 
 	public:
@@ -51,10 +54,14 @@ class DEventProcessor_trackeff_hists:public JEventProcessor{
 
 		DTrackingResolution *trkres;
 		pthread_mutex_t mutex;
+		DReferenceTrajectory *rt_thrown;
 		
 		double CDCZmin, CDCZmax;
 		
 		int DEBUG;
+		
+		void FindLR(vector<const DCoordinateSystem*> &wires, const DReferenceTrajectory *crt, vector<int> &LRhits);
+		void FindLR(vector<const DCoordinateSystem*> &wires, vector<const DMCTrajectoryPoint*> &trajpoints, vector<int> &LRhits);
 };
 
 #endif // _DEventProcessor_trackeff_hists_

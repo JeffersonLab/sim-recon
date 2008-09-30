@@ -21,6 +21,8 @@ using namespace std;
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DTrackCandidate.h>
 #include <TRACKING/DTrack.h>
+#include <TRACKING/DReferenceTrajectory.h>
+#include <PID/DParticle.h>
 #include <FDC/DFDCGeometry.h>
 #include <DVector2.h>
 #include <particleType.h>
@@ -44,7 +46,7 @@ DEventProcessor_trackeff_hists::DEventProcessor_trackeff_hists()
 {
 	trk_ptr = &trk;
 
-	trkres = new DTrackingResolutionGEANT();
+	//trkres = new DTrackingResolutionGEANT();
 
 	pthread_mutex_init(&mutex, NULL);
 	
@@ -90,14 +92,14 @@ jerror_t DEventProcessor_trackeff_hists::brun(JEventLoop *loop, int runnumber)
 	DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	const DGeometry *dgeom = dapp->GetDGeometry(runnumber);
 	
+	rt_thrown = new DReferenceTrajectory(dgeom->GetBfield());
+	
 	double dz, rmin, rmax;
 	dgeom->GetCDCEndplate(CDCZmax, dz, rmin, rmax);
 
 	double cdc_axial_length;
 	dgeom->GetCDCAxialLength(cdc_axial_length);
 	CDCZmin = CDCZmax-cdc_axial_length;
-	
-_DBG_<<"CDCZmin="<<CDCZmin<<"  CDCZmax="<<CDCZmax<<endl;
 
 	return NOERROR;
 }
@@ -125,114 +127,138 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DCDCTrackHit*> cdctrackhits;
 	vector<const DFDCHit*> fdchits;
-	vector<const DTrack*> tracks;
+	vector<const DParticle*> particles;
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrajectoryPoint*> mctrajpoints;
 	
-	// Bail quick on events with too many CDC hits
+	// Bail quick on events with too many or too few CDC hits
 	loop->Get(cdctrackhits);
-	if(cdctrackhits.size()>30 || cdctrackhits.size()<6)return NOERROR;
+	//if(cdctrackhits.size()>30 || cdctrackhits.size()<6)return NOERROR;
 
 	// Bail quick on events with too many FDC hits
 	loop->Get(fdchits);
-	if(fdchits.size()>30)return NOERROR;
+	//if(fdchits.size()>30)return NOERROR;
 
-	loop->Get(tracks,"ALT1");
+	loop->Get(particles);
 	loop->Get(mcthrowns);
 	loop->Get(mctrajpoints);
-	
+
 	// Lock mutex
 	pthread_mutex_lock(&mutex);
-
+	
 	// Get hit list for all throwns
 	for(unsigned int i=0; i<mcthrowns.size(); i++){
 		const DMCThrown *mcthrown = mcthrowns[i];
 		
+		// If there aren't enough DMCTrajectoryPoint objects then we will need to
+		// get the LR information by swimming the thrown value ourself.
+		bool use_rt_thrown = mctrajpoints.size()<20;
+		if(use_rt_thrown)rt_thrown->Swim(mcthrown->position(), mcthrown->momentum(), mcthrown->charge());
+
 		// if this isn't a charged track, then skip it
 		if(fabs(mcthrowns[i]->charge())==0.0)continue;
 
 		// Momentum of thrown particle
 		DVector3 pthrown = mcthrown->momentum();
 		trk.pthrown = pthrown;
-		
-		// Get resolutions for this thrown track
-		double pt_res, theta_res, phi_res;
-		trkres->GetResolution(8 , pthrown, pt_res, theta_res, phi_res);
 
-		// Initialize with the "no candidate" values
-		trk.likelihood = 0.0;
-		trk.chisq=1.0E20;
-		trk.pt_pull=1.0E20;
-		trk.theta_pull=1.0E20;
-		trk.phi_pull=1.0E20;
+		// Initialize with the "not found" values
+		trk.pfit.SetXYZ(0,0,0);
+		trk.pfit_wire.SetXYZ(0,0,0);
+		trk.pcan.SetXYZ(0,0,0);
+		trk.trk_chisq=1.0E20;
+		trk.delta_pt_over_pt=1.0E20;
+		trk.delta_theta=1.0E20;
+		trk.delta_phi=1.0E20;
 		trk.isreconstructable = isReconstructable(mcthrown, mctrajpoints);
+		trk.Nstereo = 0;
+		trk.Ncdc = 0;
+		trk.Nfdc = 0;
+		trk.NLR_bad_stereo = 0;
+		trk.NLR_bad = 0;
+		trk.event = eventnumber;
+		
+		double fom_best = 1.0E8;
 
-		// Loop over found/fit tracks and calculate chisq and likelihood
-		// for each to be from this thrown track
-		for(unsigned int j=0; j<tracks.size(); j++){
-			const DTrack *track = tracks[j];
+		// Loop over found/fit tracks
+		for(unsigned int j=0; j<particles.size(); j++){
+			const DParticle *particle = particles[j];
 			
-			// For places outside of our acceptance, the resolutions will be
-			// returned as 0. For these (and any other case when a resolution
-			// is 0) we automatically assume the track wasn't found.
-			//
-			// NOTE: There is a potential gotcha here. The resolution function
-			// is set to return zeros for the resolutions for anything outside
-			// of the ROOT histogram used to hold the resolutions. At this point,
-			// the limits are 0-150 degrees in theta and 0.2-7.1 GeV/c in 
-			// total momentum.
-			if(DEBUG>10)_DBG_<<"pt_res="<<pt_res<<" theta_res="<<theta_res<<" phi_res="<<phi_res<<endl;
-			if(DEBUG>10)_DBG_<<"p="<<pthrown.Mag()<<" theta="<<pthrown.Theta()*57.3<<" phi="<<pthrown.Phi()*57.3<<endl;
-			if(pt_res==0.0 || theta_res==0.0 || phi_res==0.0)continue;
+			// Get DTrack and DTrackCandidate objects for this DParticle
+			vector<const DTrack*> tracks;
+			particle->Get(tracks);
+			const DTrack *track = tracks.size()==1 ? tracks[0]:NULL;
+			vector<const DTrackCandidate*> trackcandidates;
+			if(track)track->Get(trackcandidates);
+			const DTrackCandidate *trackcandidate = trackcandidates.size()==1 ? trackcandidates[0]:NULL;
 
-			DVector3 pfit = track->momentum();
-			double pt_pull = (pfit.Perp() - pthrown.Perp())/pthrown.Perp()/pt_res;
-			double theta_pull = (pfit.Theta() - pthrown.Theta())*1000.0/theta_res;
-			double phi_pull = (pfit.Phi() - pthrown.Phi())*1000.0/phi_res;
+			// Copy momentum vectors to convenient local variables
+			DVector3 pfit  = particle->momentum();
+			DVector3 pfit_wire  = track ? track->momentum():DVector3(0,0,0);
+			DVector3 pcan  = trackcandidate ? trackcandidate->momentum():DVector3(0,0,0);
+			
+			// Calculate residuals from momentum parameters from DParticle
+			double delta_pt_over_pt = (pfit.Perp() - pthrown.Perp())/pthrown.Perp();
+			double delta_theta = (pfit.Theta() - pthrown.Theta())*1000.0;
+			double delta_phi = (pfit.Phi() - pthrown.Phi())*1000.0;
 
-			double chisq = (pow(pt_pull, 2.0) + pow(theta_pull, 2.0) + pow(phi_pull, 2.0))/3.0;
-			double likelihood = exp(-chisq*3.0/2.0);
-			if(DEBUG>10)_DBG_<<"chisq="<<chisq<<" likelihood="<<likelihood<<endl;
-			if(chisq<trk.chisq){
-				trk.likelihood = likelihood;
-				trk.chisq = chisq;
-				trk.pt_pull = pt_pull;
-				trk.theta_pull = theta_pull;
-				trk.phi_pull = phi_pull;
-				trk.pfit = pfit;
+			// Formulate a figure of merit to decide if this fit track is closer to
+			// the thrown track than the best one we found so far. We hardwire
+			// dpt/pt=2%, dtheta=20mrad and dphi=20mrad for now.
+			double fom = pow(delta_pt_over_pt/0.02, 2.0) + pow(delta_theta/20.0, 2.0) + pow(delta_phi/20.0, 2.0);
+//_DBG_<<"rpt="<<delta_pt_over_pt/0.02<<" rtheta="<<delta_theta/20.0<<" rphi="<<delta_phi/20.0<<"  fom="<<fom<<endl;
+			if(fom<fom_best){
+				fom = fom_best;
 				
-				// Get # of CDC and FDC hits
+				trk.pfit = pfit;
+				trk.pfit_wire = pfit_wire;
+				trk.pcan = pcan;
+				trk.trk_chisq = particle->chisq;
+				trk.delta_pt_over_pt = delta_pt_over_pt;
+				trk.delta_theta = delta_theta;
+				trk.delta_phi = delta_phi;
+				
+				// Get Nstereo, Ncdc, and Nfdc
 				vector<const DCDCTrackHit*> cdchits;
-				track->Get(cdchits);
+				particle->Get(cdchits);
 				trk.Nstereo = 0;
 				for(unsigned int k=0; k<cdchits.size(); k++)if(cdchits[k]->wire->stereo!=0.0)trk.Nstereo++;
 				trk.Ncdc = cdchits.size();
 				vector<const DFDCPseudo*> fdchits;
-				track->Get(fdchits);
+				particle->Get(fdchits);
 				trk.Nfdc = fdchits.size();
 				
-				// Chisq from tracking
-				trk.trk_chisq = track->chisq;
+				// Get the number LR signs for all hits used on this track. We have to 
+				// do this for the thrown track here so we get the list for the same hits
+				// used in fitting this track.
+				vector<int> LRthrown;
+				vector<int> LRfit;
+				vector<const DCoordinateSystem*> wires;
+				for(unsigned int k=0; k<cdchits.size(); k++)wires.push_back(cdchits[k]->wire);
+				for(unsigned int k=0; k<fdchits.size(); k++)wires.push_back(fdchits[k]->wire);
+				if(use_rt_thrown){
+					FindLR(wires, rt_thrown, LRthrown);
+				}else{
+					FindLR(wires, mctrajpoints, LRthrown);
+				}
+				FindLR(wires, particle->rt, LRfit);
+				
+				// Make sure the number of entries is the same for both LR vectors
+				if(LRfit.size()!=LRthrown.size() || LRfit.size()!=wires.size()){
+					_DBG_<<"LR vector sizes do not match! LRfit.size()="<<LRfit.size()<<" LRthrown.size()="<<LRthrown.size()<<" wires.size()="<<wires.size()<<endl;
+					continue;
+				}
+				
+				// count total number of incorrect LR choices and how many are stereo
+				trk.NLR_bad_stereo = trk.NLR_bad = 0;
+				for(unsigned int k=0; k<wires.size(); k++){
+					if(LRfit[k] == LRthrown[k])continue;
+					trk.NLR_bad++;
+					bool is_stereo = (wires[k]->udir.Theta()*57.3)>2.0;
+					if(is_stereo)trk.NLR_bad_stereo++;
+				}
 			}
-		}
-		
-		if(DEBUG>5)if(trk.chisq>=3.0 && trk.pthrown.Theta()*57.3<150.0)_DBG_<<"Event:"<<eventnumber<<" thrown track "<<i<<"  trk.chisq="<<trk.chisq<<"  theta="<<trk.pthrown.Theta()*57.3<<" p="<<trk.pthrown.Mag()<<endl;
-		if(DEBUG>0){
-			//double sigma_pt_pull=0.811035, sigma_theta_pull=0.636278, sigma_phi_pull=1.65046;
-			double sigma_pt_pull=1.0, sigma_theta_pull=1.0, sigma_phi_pull=1.0;
-			double pt_pull = trk.pt_pull/sigma_pt_pull;
-			double theta_pull = trk.theta_pull/sigma_theta_pull;
-			double phi_pull = trk.phi_pull/sigma_phi_pull;
-			double chisq_corrected = (pow(pt_pull,2.0) + pow(theta_pull,2.0) + pow(phi_pull, 2.0))/3.0;
-
-			if(trk.isreconstructable && chisq_corrected>1000.0){
-
-				_DBG_<<" Reconstructable event not found/fit: "<<eventnumber<<" (chisq_corrected="<<chisq_corrected<<")";
-				if(DEBUG>1)cerr<<" pt_pull="<<pt_pull<<" theta_pull="<<theta_pull<<" phi_pull="<<phi_pull;
-				cerr<<endl;
-			}
-		}
-		
+		}		
 		
 		trkeff->Fill();
 	}
@@ -286,4 +312,41 @@ bool DEventProcessor_trackeff_hists::isReconstructable(const DMCThrown *mcthrown
 	return false;
 }
 
+//------------------
+// FindLR
+//------------------
+void DEventProcessor_trackeff_hists::FindLR(vector<const DCoordinateSystem*> &wires, const DReferenceTrajectory *crt, vector<int> &LRhits)
+{
+	/// Fill the vector LRhits with +1 or -1 values indicating the side of each wire in the "wires"
+	/// vector the given reference trajectory passed on.
+	
+	LRhits.clear();
+	
+	// This first bit is shameful. In order to use the DistToRT methods of the reference trajectory,
+	// we have to cast away the const qualifier since those methods must modify the object
+	DReferenceTrajectory *rt = const_cast<DReferenceTrajectory*>(crt);
+	for(unsigned int i=0; i<wires.size(); i++){
+		const DCoordinateSystem *wire = wires[i];
+
+		DVector3 pos_doca, mom_doca;
+		rt->DistToRT(wire);
+		rt->GetLastDOCAPoint(pos_doca, mom_doca);
+		DVector3 shift = wire->udir.Cross(mom_doca);
+		double u = rt->GetLastDistAlongWire();
+		DVector3 pos_wire = wire->origin + u*wire->udir;
+		DVector3 pos_diff = pos_doca-pos_wire;
+		
+		LRhits.push_back(shift.Dot(pos_diff)<0.0 ? -1:1);
+	}
+}
+
+//------------------
+// FindLR
+//------------------
+void DEventProcessor_trackeff_hists::FindLR(vector<const DCoordinateSystem*> &wires, vector<const DMCTrajectoryPoint*> &trajpoints, vector<int> &LRhits)
+{		
+	/// Fill the vector LRhits with +1 or -1 values indicating the side of each wire in the "wires"
+	/// vector the particle swum by GEANT passed on according to the closest DMCTrajectoryPoint.
+
+}
 
