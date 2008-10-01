@@ -6,6 +6,7 @@ using namespace std;
 
 #include <DMatrix.h>
 #include "JANA/jerror.h"
+#include <DVector3.h>
 
 typedef struct{
         double x,y,z;            ///< point in lab coordinates
@@ -45,6 +46,12 @@ class DRiemannFit{
  
   double GetCharge(double rc);
   double GetCharge();
+  void GetPlaneParameters(double &c,DVector3 &n){
+    c=dist_to_origin;
+    n(0)=N[0];
+    n(1)=N[1];
+    n(2)=N[2];
+  };
   jerror_t DoFit(double rc);
 
   // Center of projected circle and radius
