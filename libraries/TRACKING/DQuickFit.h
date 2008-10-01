@@ -115,6 +115,9 @@ class DQuickFit{
 		float dzdphi;
 		ChiSqSourceType_t chisq_source;
 
+		DVector3 normal;
+		double c_origin;
+
 	protected:
 		vector<DQFHit_t*> hits;
 		const DMagneticFieldMap *bfield; ///< pointer to magnetic field map

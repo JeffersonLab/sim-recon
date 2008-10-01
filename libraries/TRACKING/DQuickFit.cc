@@ -36,6 +36,9 @@ DQuickFit::DQuickFit(void)
 	chisq = 0;
 	chisq_source = NOFIT;
 	bfield = NULL;
+
+	c_origin=0.;
+	normal.SetXYZ(0.,0.,0.);
 }
 
 //-----------------
@@ -312,8 +315,12 @@ jerror_t DQuickFit::FitCircleRiemann(double BeamRMS)
 	x0 = rfit.xc;
 	y0 = rfit.yc;
 	phi = rfit.phi;
-	r0 = sqrt(x0*x0+y0*y0);
 
+	//r0 = sqrt(x0*x0+y0*y0);
+	r0=rfit.rc;
+
+	rfit.GetPlaneParameters(c_origin,normal);
+	
 	// Momentum depends on magnetic field. If bfield has been
 	// set, we should use it to determine an average value of Bz
 	// for this track. Otherwise, assume -2T.
