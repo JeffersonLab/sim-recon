@@ -63,7 +63,7 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	USE_FDC_CATHODE = true;
 	MAX_CHISQ_DIFF = 1.0E-2;
 	MAX_FIT_ITERATIONS = 50;
-	SIGMA_CDC = 0.0200;
+	SIGMA_CDC = 0.0150;
 	SIGMA_FDC_ANODE = 0.0200;
 	SIGMA_FDC_CATHODE = 0.0200;
 //SIGMA_FDC_ANODE = 100.0;
@@ -288,15 +288,17 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	//rt->GetLastDOCAPoint(vertex_pos, vertex_mom);
 	//_DBG_<<"final chi-sq:"<<chisq<<"   DOF="<<chisqv.size()<<"   Niterations="<<Niterations<<" dp_over_p="<<dp_over_p<<endl;
 
+ChiSq(fit_type, rt, &this->chisq, &this->Ndof);
+
 	DVector3 &vertex_mom = rt->swim_steps[0].mom;
 	DVector3 &vertex_pos = rt->swim_steps[0].origin;
 
-	// Copy final fit parameters into TrackFitter classes data members
+	// Copy final fit parameters into TrackFitter classes data members. Note that the chisq and Ndof
+	// members are copied in during the ChiSq() method call in LeastSquaresB().
 	fit_params.setPosition(vertex_pos);
 	fit_params.setMomentum(vertex_mom);
 	fit_params.setCharge(rt->q);
 	fit_params.setMass(input_params.mass());
-	Ndof = (int)(cdchits.size() + 2*fdchits.size() - 5);
 	cdchits_used_in_fit = cdchits;
 	fdchits_used_in_fit = fdchits;
 
@@ -306,7 +308,7 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 		initial_chisq_vs_Npasses->Fill(Niterations, chisq);
 		FillDebugHists(rt, vertex_pos, vertex_mom);
 	}
-
+	
 	// Debugging messages
 	if(DEBUG_LEVEL>2)_DBG_<<" -- Fit succeeded: q="<<rt->q<<" p="<<vertex_mom.Mag()<<" theta="<<vertex_mom.Theta()*57.3<<" phi="<<vertex_mom.Phi()*57.3<<endl;
 
@@ -380,22 +382,22 @@ DTrack* DTrackFitterALT1::FitTrackWithOppositeCharge(DReferenceTrajectory* rt, i
 //------------------
 // ChiSq
 //------------------
-double DTrackFitterALT1::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt)
+double DTrackFitterALT1::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr, int *dof_ptr)
 {
 	vector<const DCoordinateSystem*> wires;
 	vector<DVector3> shifts;
 	vector<double> errs;
-	vector<double> chisqv;
+	//vector<double> chisqv;
 	
 	GetWiresShiftsErrs(fit_type, rt, wires, shifts, errs);
 	
-	return ChiSq(rt, wires, shifts, errs, chisqv);
+	return ChiSq(rt, wires, shifts, errs, chisqv, chisq_ptr, dof_ptr);
 }
 
 //------------------
 // ChiSq
 //------------------
-double DTrackFitterALT1::ChiSq(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv)
+double DTrackFitterALT1::ChiSq(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv, double *chisq_ptr, int *dof_ptr)
 {
 	/// Calculate the chi-squared for a track specified by state relative to the
 	/// given reference trajectory. This is just a wrapper for 
@@ -435,13 +437,13 @@ double DTrackFitterALT1::ChiSq(DMatrix &state, const swim_step_t *start_step, DR
 	
 	rt->Swim(pos,mom);
 
-	return ChiSq(rt, wires, shifts, errs, chisqv);
+	return ChiSq(rt, wires, shifts, errs, chisqv, chisq_ptr, dof_ptr);
 }
 
 //------------------
 // ChiSq
 //------------------
-double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv)
+double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv, double *chisq_ptr, int *dof_ptr)
 {
 	/// Calculate the chisq for a track represented by the given reference
 	/// trajectory with the given list of wires. The values in the "shifts"
@@ -524,9 +526,10 @@ double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordinat
 		// The value going into chisqv needs to be a signed quantity with positive
 		// values meaning the doca is larger than the dist and negative values
 		// meaning the doca is smaller than the dist (doca from track, dist
-		// from drift time). To decide the sign, we have to 
+		// from drift time). 
 		double c = d/errs[i];
 		chisqv.push_back(c);
+
 		if(finite(c)){
 			chisq += c*c;
 			dof++;
@@ -540,10 +543,14 @@ double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, vector<const DCoordinat
 			if(DEBUG_LEVEL>10)_DBG_<<"  chisqv[unused] = "<<c<<"  d="<<d<<"  Rwire="<<wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s<<endl;
 		}
 	}
-	
+
 	if(DEBUG_LEVEL>10){
 		_DBG_<<" Nshifts(+,-,0)=("<<Npos_shifts<<","<<Nneg_shifts<<","<<Nzero_shifts<<")"<<endl;
 	}
+	
+	// If the caller supplied pointers to chisq and dof variables, copy the values into them
+	if(chisq_ptr)*chisq_ptr = chisq;
+	if(dof_ptr)*dof_ptr = dof - 5; // assume 5 fit parameters
 
 	// If it turns out the dof is zero, return 1.0E6. Otherwise, return
 	// the chisq/dof
@@ -583,7 +590,8 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 			// If we're doing hit-based tracking then only the wire positions
 			// are used and the drift time info is ignored. Thus, we don't
 			// have to calculate the shift vectors
-			errs.push_back(0.261694); // empirically from single pi+ events
+			//errs.push_back(0.261694); // empirically from single pi+ events
+			errs.push_back(0.8/sqrt(12.0)); // variance for evenly illuminated straw
 		}else{
 			// Find the DOCA point for the RT and use the momentum direction
 			// there and the wire direction to determine the "shift".
@@ -646,7 +654,8 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 			// If we're doing hit-based tracking then only the wire positions
 			// are used and the drift time info is ignored. Thus, we don't
 			// have to calculate the shift vectors
-			errs.push_back(0.261694); // empirically from single pi+ events
+			//errs.push_back(0.261694); // empirically from single pi+ events
+			errs.push_back(0.5/sqrt(12.0)); // variance for evenly illuminated cell
 		}else{
 			// Find the DOCA point for the RT and use the momentum direction
 			// there and the wire direction to determine the "shift".
@@ -713,11 +722,12 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_ty
 	/// Since it uses a linear approximation for the chisq dependance on
 	/// the fit parameters, several calls may be required for convergence.
 
+	// Initialize the chisq and Ndof data members in case we need to bail early
+	this->chisq = 1.0E6;
+	this->Ndof = 0;
+
 	// Make sure RT is not empty
-	if(rt->Nswim_steps<1){
-		chisq = 1.0E6;
-		return kFitFailed;
-	}
+	if(rt->Nswim_steps<1)return kFitFailed;
 
 	// For fitting, we want to define a coordinate system very similar to the
 	// Reference Trajectory coordinate system. The difference is that we want
@@ -739,7 +749,9 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_ty
 
 	// Get the chi-squared vector for the initial reference trajectory
 	vector<double> chisqv_initial;
-	double initial_chisq = ChiSq(rt, wires, shifts, errs, chisqv_initial);
+	double initial_chisq;
+	int initial_Ndof;
+	double initial_chisq_per_dof = ChiSq(rt, wires, shifts, errs, chisqv_initial, &initial_chisq, &initial_Ndof);
 
 	// Because we have a non-linear system, we must take the derivatives
 	// numerically.
@@ -807,7 +819,7 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_ty
 	
 	// This line just avoids a compiler warning
 	if(DEBUG_LEVEL>4){
-		_DBG_<<"initial_chisq="<<initial_chisq<<endl;
+		_DBG_<<"initial_chisq_per_dof="<<initial_chisq_per_dof<<endl;
 		_DBG_<<"chisq_dpx="<<chisq_dpx<<endl;
 		_DBG_<<"chisq_dpy="<<chisq_dpy<<endl;
 		_DBG_<<"chisq_dpz="<<chisq_dpz<<endl;
@@ -841,11 +853,10 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_ty
 		// and more appropriate.
 		//
 		// To accomodate this, we scale the CHISQ_MAX_RESI_SIGMAS value based
-		// on the initial_chisq value since that gives us a handle on how
+		// on the initial_chisq_per_dof value since that gives us a handle on how
 		// go these hits match to the track overall.
-		double max=CHISQ_MAX_RESI_SIGMAS*(initial_chisq>1.0 ? initial_chisq:1.0);
+		double max=CHISQ_MAX_RESI_SIGMAS*(initial_chisq_per_dof>1.0 ? initial_chisq_per_dof:1.0);
 		double sigma;
-//_DBG_<<"sigma="<<chisqv_initial[i]<<" : "<<chisqv_dpx_hi[i]<<" : "<<chisqv_dpy_hi[i]<<" : "<<chisqv_dpz_hi[i]<<" : "<<chisqv_dx_hi[i]<<" : "<<chisqv_dv_hi[i]<<endl;
 		sigma = chisqv_initial[i]; if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
 		sigma = chisqv_dpx_hi[i];  if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
 		sigma = chisqv_dpy_hi[i];  if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
@@ -907,7 +918,7 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_ty
 	DMatrix B(DMatrix::kInverted, Ft*Vinv*F);
 	
 	// If the inversion failed altogether then the invalid flag
-	// will be set on the matrix. In these cases, were dead.
+	// will be set on the matrix. In these cases, we're dead.
 	if(!B.IsValid()){
 		if(DEBUG_LEVEL>1)_DBG_<<" -- B matrix invalid"<<endl;
 		return kFitFailed;
@@ -950,7 +961,7 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_ty
 	// the full step, but if we end up at a worse chi-sq
 	// then we backtrack and take a smaller step until
 	// we see the chi-sq improve.
-	double min_chisq = initial_chisq;
+	double min_chisq_per_dof = initial_chisq_per_dof;
 	double min_lambda = 0.0;
 	double lambda = 1.0;
 	int Ntrys = 0;
@@ -961,16 +972,16 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_ty
 		for(int i=0; i<Nparameters; i++)new_state[i][0] = state[i][0] + delta_state[i][0]*lambda;
 
 		vector<double> new_chisqv;
-		chisq = ChiSq(new_state, &start_step, tmprt, wires, shifts, errs, new_chisqv);
+		double chisq_per_dof = ChiSq(new_state, &start_step, tmprt, wires, shifts, errs, new_chisqv);
 		
-		if(chisq<min_chisq){
-			min_chisq = chisq;
+		if(chisq_per_dof<min_chisq_per_dof){
+			min_chisq_per_dof = chisq_per_dof;
 			min_lambda = lambda;
 		}
 		
 		// If we're at a lower chi-sq then we're done
-		if(DEBUG_LEVEL>4)_DBG_<<" -- initial_chisq="<<initial_chisq<<"  new chisq="<<chisq<<" nhits="<<new_chisqv.size()<<" p="<<tmprt->swim_steps[0].mom.Mag()<<"  lambda="<<lambda<<endl;
-		if(chisq-initial_chisq < 0.1 && chisq<2.0)break;
+		if(DEBUG_LEVEL>4)_DBG_<<" -- initial_chisq_per_dof="<<initial_chisq_per_dof<<"  new chisq_per_dof="<<chisq_per_dof<<" nhits="<<new_chisqv.size()<<" p="<<tmprt->swim_steps[0].mom.Mag()<<"  lambda="<<lambda<<endl;
+		if(chisq_per_dof-initial_chisq_per_dof < 0.1 && chisq_per_dof<2.0)break;
 		
 		// Chi-sq was increased, try a smaller step on the next iteration
 		lambda/=2.0;
@@ -985,16 +996,16 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_ty
 			for(int i=0; i<Nparameters; i++)new_state[i][0] = state[i][0] + delta_state[i][0]*lambda;
 
 			vector<double> new_chisqv;
-			chisq = ChiSq(new_state, &start_step, tmprt, wires, shifts, errs, new_chisqv);
+			double chisq_per_dof = ChiSq(new_state, &start_step, tmprt, wires, shifts, errs, new_chisqv);
 		
-			if(chisq<min_chisq){
-				min_chisq = chisq;
+			if(chisq_per_dof<min_chisq_per_dof){
+				min_chisq_per_dof = chisq_per_dof;
 				min_lambda = lambda;
 			}
 			
 			// If we're at a lower chi-sq then we're done
-			if(DEBUG_LEVEL>4)_DBG_<<" -- initial_chisq="<<initial_chisq<<"  new chisq="<<chisq<<" nhits="<<new_chisqv.size()<<"  lambda="<<lambda<<endl;
-			if(chisq-initial_chisq < 0.1 && chisq<2.0)break;
+			if(DEBUG_LEVEL>4)_DBG_<<" -- initial_chisq_per_dof="<<initial_chisq_per_dof<<"  new chisq="<<chisq<<" nhits="<<new_chisqv.size()<<"  lambda="<<lambda<<endl;
+			if(chisq_per_dof-initial_chisq_per_dof < 0.1 && chisq_per_dof<2.0)break;
 			
 			// Chi-sq was increased, try a smaller step on the next iteration
 			lambda/=2.0;
@@ -1005,16 +1016,17 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_ty
 	// that we were unable to make any improvement.
 	if(min_lambda==0.0){
 		if(DEBUG_LEVEL>1)_DBG_<<"Chisq only increased (both directions searched!)"<<endl;
-		chisq = initial_chisq;
+		this->chisq = initial_chisq;
+		this->Ndof = initial_Ndof;
 		return kFitNoImprovement;
 	}
 	
 	// Re-create new_state using min_lambda
 	for(int i=0; i<Nparameters; i++)new_state[i][0] = state[i][0] + delta_state[i][0]*min_lambda;
 
-	// Re-swim reference trajectory using these parameters and re-calc chisq
-	vector<double> new_chisqv;
-	chisq = ChiSq(new_state, &start_step, rt, wires, shifts, errs, new_chisqv);
+	// Re-swim reference trajectory using these parameters and re-calc chisq.
+	// Note that here we have the chisq and Ndof members set.
+	ChiSq(new_state, &start_step, rt, wires, shifts, errs, chisqv, &this->chisq, &this->Ndof);
 	
 	if(DEBUG_LEVEL>3){
 		DVector3 pos = start_step.origin;
