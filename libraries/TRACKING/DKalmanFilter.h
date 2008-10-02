@@ -25,7 +25,10 @@ typedef struct{
 }DKalmanCDCHit_t;
 
 typedef struct{
-  DMatrix *C,*Ck,*S,*Sk,*J,*J1;
+  unsigned int h_id;
+  DVector3 pos;
+  DMatrix *S;
+  DMatrix *J,*Q;
 }DKalmanState_t;
 
 
@@ -38,12 +41,10 @@ class DKalmanFilter{
     for (unsigned int i=0;i<cdchits.size();i++){
       delete cdchits[i];
     }
-    for (unsigned int i=0;i<central_traj.size();i++){
-      delete central_traj[i].Ck;
-      delete central_traj[i].C;
-      delete central_traj[i].Sk;
-      delete central_traj[i].S;
-      delete central_traj[i].J;
+    for (unsigned int i=0;i<forward_traj.size();i++){
+      delete forward_traj[i].Q;
+      delete forward_traj[i].S;
+      delete forward_traj[i].J;
     }
     hits.clear();
     cdchits.clear();
@@ -61,7 +62,7 @@ class DKalmanFilter{
 			 double &chisq);
   jerror_t ExtrapolateToVertex(double mass_hyp,DVector3 pos,DMatrix Sc,
 			       DMatrix Cc);
-
+  jerror_t SetReferenceTrajectory(DMatrix S);
   void GetMomentum(DVector3 &mom);
   void GetPosition(DVector3 &pos);
   double GetChiSq(void){return chisq_;}
@@ -144,6 +145,7 @@ class DKalmanFilter{
 
   vector<double>cdc_resid;
   vector<double>cdc_pulls;
+
 
 
   // For dEdx measurements

@@ -75,7 +75,7 @@ jerror_t DKalmanFilter::SetSeed(double q,DVector3 pos, DVector3 mom){
   phi_=mom.Phi();
   tanl_=tan(M_PI/2.-mom.Theta());
   q_over_pt_=q/pt;
-  
+
   return NOERROR;
 }
 
@@ -219,6 +219,110 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double z,DMatrix S,double dEdx,
   return NOERROR;
 }
 
+jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix S){ 
+  // Order the hits from the most downstream to the most upstream
+  sort(hits.begin(),hits.end(),DKalmanHit_cmp);
+  
+  DMatrix J(5,5),Q(5,5);    
+  DKalmanState_t temp;
+
+  // progress in z from hit to hit
+  double z=hits[0]->z;
+ 
+  temp.h_id=1;
+  double newz=z-0.25;
+
+  temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
+  temp.S= new DMatrix(S);
+
+  // Get the contribution to the covariance matrix due to multiple scattering
+  double ds=0.25*sqrt(1+S(state_tx,0)*S(state_tx,0)+S(state_ty,0)*S(state_ty,0));
+  GetProcessNoise(0.14,ds,10029.,S,Q);
+  temp.Q=new DMatrix(Q);
+
+  // Get dEdx for this step
+  double dedx=GetdEdx(0.14,S(state_q_over_p,0),18.,39.9,1.782e-3); // Ar for now
+ 
+  // Step the seed state vector through the field and get the Jacobian 
+  StepJacobian(z,newz,S,dedx,J);
+  temp.J=new DMatrix(J);
+
+  forward_traj.push_back(temp);
+
+  temp.h_id=0;
+  z=newz;
+  for (unsigned int m=1;m<hits.size();m++){    
+    // Propagate state vector and covariance matrices to next measurement   
+    while(z>hits[m]->z+0.25){
+      double newz=z-0.25;
+
+      temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
+      temp.S= new DMatrix(S);
+
+      // Get the contribution to the covariance matrix due to multiple scattering
+      double ds=0.25*sqrt(1+S(state_tx,0)*S(state_tx,0)+S(state_ty,0)*S(state_ty,0));
+      GetProcessNoise(0.14,ds,10029.,S,Q);
+      temp.Q=new DMatrix(Q);
+
+      // Get dEdx for this step
+      double dedx=GetdEdx(0.14,S(state_q_over_p,0),18.,39.9,1.782e-3); // Ar for now
+
+      // Step the seed state vector through the field and get the Jacobian 
+      StepJacobian(z,newz,S,dedx,J);
+      temp.J=new DMatrix(J);
+
+      forward_traj.push_back(temp);
+
+      temp.h_id=0;
+      z=newz;
+    }
+
+    if (z-hits[m]->z>EPS){
+      temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
+      temp.S= new DMatrix(S);
+
+      // Get the contribution to the covariance matrix due to multiple scattering
+      double ds=(z-hits[m]->z)*sqrt(1+S(state_tx,0)*S(state_tx,0)+S(state_ty,0)*S(state_ty,0));
+      GetProcessNoise(0.14,ds,10029.,S,Q);
+      temp.Q=new DMatrix(Q);
+      
+      // Get dEdx for this step
+      double dedx=GetdEdx(0.14,S(state_q_over_p,0),18.,39.9,1.782e-3); // Ar for now
+      
+      // Step the seed state vector through the field and get the Jacobian 
+      StepJacobian(z,hits[m]->z,S,dedx,J);
+      temp.J=new DMatrix(J);
+      
+      forward_traj.push_back(temp);
+      z=hits[m]->z;
+    }
+    temp.h_id=m+1;
+    
+  }
+  // last hit
+  newz=z-0.25;
+
+  temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
+  temp.S= new DMatrix(S);
+  
+  // Get the contribution to the covariance matrix due to multiple scattering
+  ds=0.25*sqrt(1+S(state_tx,0)*S(state_tx,0)+S(state_ty,0)*S(state_ty,0));
+  GetProcessNoise(0.14,ds,10029.,S,Q);
+  temp.Q=new DMatrix(Q);
+
+  // Get dEdx for this step
+  dedx=GetdEdx(0.14,S(state_q_over_p,0),18.,39.9,1.782e-3); // Ar for now
+  
+  // Step the seed state vector through the field and get the Jacobian 
+  StepJacobian(z,newz,S,dedx,J);
+  temp.J=new DMatrix(J);
+  
+  forward_traj.push_back(temp);
+
+  return NOERROR;
+}
+
+
 
 // Step the state vector through the field from oldz to newz.
 // Uses the 4th-order Runga-Kutte algorithm.
@@ -338,7 +442,6 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double ds,DVector3 pos,
   double q_over_pt=S(state_q_over_pt,0);
   double pt=fabs(1./q_over_pt);
   double D=S(state_D,0);
-  double sign=D/fabs(D);
   double z=S(state_z,0);
   double p=pt/cosl;
   double q=pt*q_over_pt;
@@ -357,17 +460,12 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double ds,DVector3 pos,
   // Derivative of S with respect to s
   D1(state_q_over_pt,0)=qBr2p*q_over_pt*q_over_pt*sinl*(By*cosphi-Bx*sinphi)
     -q_over_pt*E/p/p*dEdx;
-  
-  // printf("dedx %g dqpt %f %f \n",dEdx,D1(state_q_over_pt,0), -q_over_pt*E/p/p*dEdx);
 
   D1(state_phi,0)=qBr2p*q_over_pt*(Bx*cosphi*sinl+By*sinphi*sinl-Bz*cosl);
   D1(state_tanl,0)=qBr2p*q_over_pt*(By*cosphi-Bx*sinphi)/cosl;
  
   D1(state_D,0)=(dx*(cosphi*cosl-wiredir.x()*sinl)
 		 +dy*(sinphi*cosl-wiredir.y()*sinl))/D;
-  double D_=D+D1(state_D,0)*ds;
-  if (D_/fabs(D_)!=sign) D1(state_D,0)*=-1.;
-
   D1(state_z,0)=sinl;
 
   // Jacobian matrix elements
@@ -403,16 +501,19 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double ds,DVector3 pos,
 
   J1(state_D,state_phi)=cosl*(dy*cosphi-dx*sinphi)/D;
   J1(state_D,state_tanl)
-    =-1./D/(1+tanl*tanl)*(dx*(cosphi*sinl+wiredir.x()*cosl)
+    =-1./D/(1+tanl*tanl)*(dx*(cosphi*sinl+wiredir.x()*cosl)  
+			  //=1./D/(1+tanl*tanl)*(dx*(cosphi*sinl+wiredir.x()*cosl)
 			  +dy*(sinphi*sinl+wiredir.y()*cosl));
   J1(state_D,state_D)=-D1(state_D,0)/D;
   J1(state_D,state_z)=(-1./D)*(wiredir.x()*(cosphi*cosl-wiredir.x()*sinl)
 			       +wiredir.y()*(sinphi*cosl-wiredir.y()*sinl));
+  /*
   if (D_/fabs(D_)!=sign){
     J1(state_D,state_phi)*=-1.;
     J1(state_D,state_tanl)*=-1.;
     J1(state_D,state_z)*=-1.;
   }
+  */
 
   // New direction
   dpos.SetXYZ(cosl*cosphi,cosl*sinphi,sinl);
@@ -671,15 +772,6 @@ jerror_t DKalmanFilter::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc,
     Cc=Jc*(Cc*DMatrix(DMatrix::kTransposed,Jc));
   }
 
-  // Wire position for wire #m
-  double xm=cdchits[m]->origin.x()
-    +(pos.z()-cdchits[m]->origin.z())*cdchits[m]->dir.x(); 
-  double ym=cdchits[m]->origin.y()
-    +(pos.z()-cdchits[m]->origin.z())*cdchits[m]->dir.y();
-  double dxm=pos.x()-xm;
-  double dym=pos.y()-ym;
-  double Dm=Sc(state_D,0);
-
   // Wire position for wire#0
   double x=cdchits[0]->origin.x()
     +(pos.z()-cdchits[0]->origin.z())*cdchits[0]->dir.x(); 
@@ -703,15 +795,6 @@ jerror_t DKalmanFilter::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc,
   
   // New doca
   Sc(state_D,0)=sign*sqrt(dx*dx+dy*dy);  
-  
-  Jc.Zero();
-  Jc(state_phi,state_phi)=Jc(state_q_over_pt,state_q_over_pt)
-    =Jc(state_tanl,state_tanl)=Jc(state_z,state_z)=1.;
-  Jc(state_D,state_D)
-    =0.5*((dx/Sc(state_D,0))*Dm/dxm+(dy/Sc(state_D,0))*Dm/dym);
-
-  // Rotate Cc into new coordinate system (we measure relative to the wire)
-  Cc=Jc*(Cc*Jc); // Jc is a diagonal matrix, so JcT=Jc
 
   // Update the internal variables
   x_=pos.x();
@@ -725,6 +808,7 @@ jerror_t DKalmanFilter::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc,
 // Interface routine for Kalman filter
 jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
   DMatrix S(5,1),C(5,5),Sc(5,1),Cc(5,5);
+  DMatrix C0(5,5);
   DMatrix Sbest(5,1),Cbest(5,5),Scbest(5,1),Ccbest(5,5);
   double chisq=0.,chisq_forward=0.,chisq_central=0.;
   chisq_=1.e8;
@@ -753,10 +837,11 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
     
     Cc(state_z,state_z)=1.;
     Cc(state_q_over_pt,state_q_over_pt)=0.04*q_over_pt_*q_over_pt_;
-    Cc(state_phi,state_phi)=0.015*0.015;
-    Cc(state_D,state_D)=0.01;
+    Cc(state_phi,state_phi)=0.025*0.025;
+    Cc(state_D,state_D)=1.;
     double theta=90.-180./M_PI*atan(tanl_);
     double dlambda=2.1e-3-3.4e-4*theta+3.5e-5*theta*theta;
+    dlambda=0.025;
     Cc(state_tanl,state_tanl)=(1.+tanl_*tanl_)*(1.+tanl_*tanl_)
       *dlambda*dlambda;
 
@@ -776,11 +861,11 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
     S(state_ty,0)=ty_;
     S(state_q_over_p,0)=q_over_p_; 
 
-    C(state_x,state_x)=1.;
-    C(state_y,state_y)=1.;
-    C(state_tx,state_tx)=0.010*0.010;
-    C(state_ty,state_ty)=0.010*0.010;
-    C(state_q_over_p,state_q_over_p)=0.04*q_over_p_*q_over_p_;
+    C0(state_x,state_x)=1.;
+    C0(state_y,state_y)=1.;
+    C0(state_tx,state_tx)=0.010*0.010;
+    C0(state_ty,state_ty)=0.010*0.010;
+    C0(state_q_over_p,state_q_over_p)=0.04*q_over_p_*q_over_p_;
 
     // Initialize chi2
     chisq_forward=1.e8;
@@ -788,10 +873,11 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
 
   // First deal with hits in the FDC
   if (hits.size()>0){
+    SetReferenceTrajectory(S);
     unsigned int num_iter=NUM_ITER;
     // There does not seem to be any benefit to iterating if there are too few
     // points...
-    if (hits.size()<7) num_iter=1;
+    //if (hits.size()<7) num_iter=1;
     last_iter=false;
     for (unsigned int iter=0;iter<num_iter;iter++){
       if (z_!=hits[0]->z){
@@ -802,6 +888,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
 	//for (unsigned int i=0;i<5;i++) C(i,i)*=100.;
       }
       if (iter==num_iter-1) last_iter=true;
+      C=C0;
       KalmanForward(mass_hyp,S,C,chisq);
 
       if (chisq<chisq_forward){
@@ -822,6 +909,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
     // Save the current state vector and covariance matrix
     Scbest=Sc;
     Ccbest=Cc;
+
     best_pos.SetXYZ(Sbest(state_x,0),Sbest(state_y,0),z_);
   }
 
@@ -840,7 +928,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
       cdc_pulls=best_cdc_pulls;
     }
 
-    int num_iter=3;
+    int num_iter=10;
     for (int iter=0;iter<num_iter;iter++){
       double R=pos.Perp();
       if (fabs(R-R0)>EPS){
@@ -887,11 +975,9 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
       // by the last iteration.
       double f=1.5;
       double anneal_factor=1.;
-      //anneal_factor=49./pow(f,iter)+1.;
+      anneal_factor=99./pow(f,iter)+1.;
       //if (iter>0) anneal_factor=1.;
-      
-      //printf("start p %f theta %f \n",1./Sc(state_q_over_pt,0)/cos(atan(Sc(state_tanl,0))),M_PI/2.-atan(Sc(state_tanl,0)));
-    
+         
       jerror_t error=KalmanCentral(mass_hyp,anneal_factor,Sc,Cc,pos,chisq);
       if (error!=NOERROR) break;
       
@@ -912,7 +998,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
 	    best_cdc_pulls=cdc_pulls;
 	  }
 	}
-      else break;
+	// else break;
     }
 
     if (chisq_central>=1e8 ){
@@ -938,7 +1024,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
   
   // total chisq and ndf
   chisq_=chisq_forward+chisq_central;
-  ndf=2*hits.size()+cdchits.size();
+  ndf=2*hits.size()+cdchits.size()-5;
   
   return NOERROR;
 }
@@ -1014,7 +1100,8 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
   DMatrix Jc_T(5,5); // transpose of this matrix
   DMatrix Q(5,5);  // Process noise covariance matrix
   DMatrix K(5,1);  // Kalman gain matrix
-  double V=0.0045*anneal_factor;  // Measurement variance
+  double V=1.6*1.6/12.*anneal_factor;  // Measurement variance
+  //double V=0.000225;
   double InvV; // inverse of variance
   DMatrix S0(5,1); //State vector
   DMatrix dS(5,1);  // perturbation in state vector
@@ -1022,7 +1109,6 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
   
   // Initialize the chi2 for this part of the track
   chisq=0.;
-
 
   //Track projection matrix
   H(0,state_D)=H_T(state_D,0)=1.;
@@ -1070,29 +1156,9 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     double rc2=(x-xc)*(x-xc)+(y-yc)*(y-yc);
     double sign=Sc(state_q_over_pt,0)/fabs(Sc(state_q_over_pt,0));
     if (rc2<Rc*Rc) sign*=-1.;
-    
-    //sign*=-1.;
-    //sign=1.;
-    
+      
     // doca
     Sc(state_D,0)=sign*sqrt(dx*dx+dy*dy);   
-
-    // Rotate covariance matrix into new coordinate system for D
-    if (m!=0){
-      Jc.Zero();
-      Jc(state_phi,state_phi)=Jc(state_q_over_pt,state_q_over_pt)
-	=Jc(state_tanl,state_tanl)=Jc(state_z,state_z)=1.;
-      Jc(state_D,state_D)=0.5*((dx/Sc(state_D,0))*doca/(pos.x()-wirepos.x())
-	+(dy/Sc(state_D,0))*doca/(pos.y()-wirepos.y()));
-      Cc=Jc*(Cc*Jc);  // Jc=JcT because Jc is diagonal
-
-      /*
-      DMatrix *Jtemp = new DMatrix(5,5);
-      *Jtemp=Jc;
-      Jtemp->operator()(state_D,state_D)=1./Jc(state_D,state_D);
-      temp.J1=Jtemp;
-      */
-    }
 
     // Path length increment
     ds=-0.25;    
@@ -1101,7 +1167,7 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     S0=Sc;
     DVector3 testpos=pos;
     Step(testpos,cdchits[m]->origin,cdchits[m]->dir,ds,S0,dedx);
-    if (fabs(S0(state_D,0))>fabs(Sc(state_D,0))){
+    if (fabs(S0(state_D,0))>fabs(Sc(state_D,0))){   
       // change the sign of the path length increment
       ds=0.25;
       ds2=0.1;
@@ -1131,7 +1197,7 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
       }
       else
 	dedx=GetdEdx(0.14,q_over_p,7.,14.,1.205e-3);
-     
+      
       // Propagate the state and the covariance matrix through the field
       StepJacobian(pos,cdchits[m]->origin,cdchits[m]->dir,ds,Sc,dedx,Jc);
 	
@@ -1162,7 +1228,7 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
 	  GetProcessNoiseCentral(mass_hyp,ds,10029.,Sc,Q); // use Ar for now
 	else
 	  GetProcessNoiseCentral(mass_hyp,ds,30420.,Sc,Q); // use Air for now
-	
+
 	// Propagate the covariance matrix
 	Cc=Jc*(Cc*Jc_T)-Q;  // Subtract Q because we backtracked
 
@@ -1193,6 +1259,8 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     *Jtemp=Jc_T; 
     temp.J=Jtemp;
     */
+    // if (fabs(cdchits[m]->stereo)>0) continue;
+    
 
     H(0,state_D)=H_T(state_D,0)=Sc(state_D,0)/fabs(Sc(state_D,0));
 
@@ -1203,9 +1271,11 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     K=InvV*(Cc*H_T);
 
     // Update the state vector 
-    dS=cdchits[m]->d*K-K*(H*Sc);
+    double dmeas=cdchits[m]->d;
+    dmeas=0;
+    dS=dmeas*K-K*(H*Sc);
     Sc=Sc+dS;
-  
+    
     // Update the position
     pos(2)=Sc(state_z,0);  
     x=cdchits[m]->origin.x()
@@ -1224,17 +1294,17 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     //central_traj.push_front(temp);
     
     if (DEBUG_HISTS){
-      cdc_resid[m]= cdchits[m]->d-(H*Sc)(0,0);
-      if (V-(H*(Cc*H_T))(0,0)>0.)
-	cdc_pulls[m]= (cdchits[m]->d-(H*Sc)(0,0))/sqrt((V-(H*(Cc*H_T))(0,0)));
+      cdc_resid[m]= dmeas-(H*Sc)(0,0);
+      if (V-(H*(Cc*H_T))(0,0)>0.){
+	cdc_pulls[m]= (dmeas-(H*Sc)(0,0))/sqrt((V-(H*(Cc*H_T))(0,0)));
+      }
       else
 	cdc_pulls[m]=1000.;
     }
       
     // Update chi2 for this hit
     //    if (1.-(H*K)(0,0)>EPS)
-      chisq+=(cdchits[m]->d-(H*Sc)(0,0))*(cdchits[m]->d-(H*Sc)(0,0))
-	/(V-(H*(Cc*H_T))(0,0));
+    chisq+=(dmeas-(H*Sc)(0,0))*(dmeas-(H*Sc)(0,0))/(V-(H*(Cc*H_T))(0,0));
 
     // Save values of doca and wire position
     doca=Sc(state_D,0);
@@ -1268,21 +1338,17 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
   DMatrix R_T(1,2);  // ...and its transpose
   DMatrix RC(2,2);  // Covariance of filtered residual
   DMatrix InvRC(2,2); // and its inverse
-  DMatrix S0(5,1),S0Init(5,1); //State vector
+  DMatrix S0(5,1),S0_(5,1); //State vector
   DMatrix SBest(5,1);
   DMatrix dS(5,1);  // perturbation in state vector
   DMatrix CBest(5,5);   // Covariance matrix for state vector
   DMatrix InvV(2,2); // Inverse of error matrix
 
-  // path length increment
-  double ds=0;
   // Path length in active volume
   path_length=0;
   // Energy loss
   double dedx=0.;
 
-  //Set the seed
-  S0=S;
   // Initialize chi squared
   chisq=0;
 
@@ -1293,151 +1359,111 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
   H(0,0)=H(1,1)=1.;
   H_T=DMatrix(DMatrix::kTransposed,H);
 
-  // Loop over hits, updating the state vector at each step 
-  double endz=hits[0]->z,newz,oldz; // we increment in z
-  z_=endz;
-  for (unsigned int k=0;k<hits.size();k++){      
-    endz=hits[k]->z;
-    
-    // The next measurement 
-    M(0,0)=hits[k]->x;
-    M(1,0)=hits[k]->y; 
-    
-    // ... and its covariance matrix  
-    V(0,0)=hits[k]->covx;
-    V(1,0)=V(0,1)=hits[k]->covxy;
-    V(1,1)=hits[k]->covy;
-    
-    // Propagate state vector and covariance matrices to next measurement   
-    int num_inc=int((z_-endz)/0.25);
-    oldz=z_;
-    newz=oldz;
-    for (int j=0;j<num_inc-1;j++){
-      dS=S-S0;
-      newz=oldz-0.25;
-      
-      // Get dEdx for this step
-      if (fabs(oldz-hits[k]->z)>0.5 || j>2)
-	dedx=GetdEdx(0.14,S0(state_q_over_p,0),7.,14.,1.205e-3);
-      //dedx=GetdEdx(0.14,S0(state_q_over_p,0),6.,12.,0.032);
-      else
-	// Chamber gas, use Ar for now
-	dedx=GetdEdx(0.14,S0(state_q_over_p,0),18.,39.9,1.782e-3); 
-      
-      // Step the seed state vector through the field and get the Jacobian 
-      ds=StepJacobian(oldz,newz,S0,dedx,J);
-      
-      // Get the covariance matrix due to the multiple scattering
-      if (fabs(oldz-hits[k]->z)>0.5 || j>2)
-	GetProcessNoise(mass_hyp,ds,30420.,S0,Q); // use air for now
-      //GetProcessNoise(mass_hyp,ds,10.,S0,Q);
-      else
-	// Chamber gas, use Ar for now 
-	GetProcessNoise(mass_hyp,ds,10029.,S0,Q); 
+  S0_=S;
+  for (unsigned int k=0;k<forward_traj.size();k++){
+    if (forward_traj[k].h_id>0){
+      unsigned int id=forward_traj[k].h_id-1;
 
-      // Rotate the covariance matrix and add the multiple scattering elements
-      J_T=DMatrix(DMatrix::kTransposed,J);
-      C=J*(C*J_T)+Q;
+      // The next measurement 
+      M(0,0)=hits[id]->x;
+      M(1,0)=hits[id]->y; 
       
-      // Update the "improved" state vector
-      S=S0+J*dS;
+      // ... and its covariance matrix  
+      V(0,0)=hits[id]->covx;
+      V(1,0)=V(0,1)=hits[id]->covxy;
+      V(1,1)=hits[id]->covy;
+
+      // Updated error matrix
+      V1=V+H*(C*H_T);
+
+      // Calculate the inverse of V
+      double det=V1(0,0)*V1(1,1)-V1(0,1)*V1(1,0);
+      if (det!=0){
+	InvV(0,0)=V1(1,1)/det;
+	InvV(1,0)=-V1(1,0)/det;
+	InvV(0,1)=-V1(0,1)/det;
+	InvV(1,1)=V1(0,0)/det;
+      }
+      else{
+	_DBG_ << "Kalman filter:  Singular matrix..." << endl;
+	return UNRECOVERABLE_ERROR;
+      }
       
-      oldz=newz;			  
-    }
-    if (fabs(endz-oldz)>EPS){ 
-      dS=S-S0;
+      // Compute Kalman gain matrix
+      K=C*(H_T*InvV);
+
+      // Update the state vector 
+      S=S+K*(M-H*S); 
       
-      // Get dEdx for this step
-      dedx=GetdEdx(0.14,S0(state_q_over_p,0),18.,39.9,1.782e-3); // Ar for now
-      
-      // Step the seed state vector through the field and get the Jacobian 
-      ds=StepJacobian(oldz,endz,S0,dedx,J);
-      
-      // Get the covariance matrix due to the multiple scattering
-      GetProcessNoise(mass_hyp,ds,10029.,S0,Q); // use Ar for now
-      
-      // Rotate the covariance matrix and add the multiple scattering elements
-      J_T=DMatrix(DMatrix::kTransposed,J);
-      C=J*(C*J_T)+Q;
-      
-      // Update the "improved" state vector
-      S=S0+J*dS;
-      
-      oldz=newz;	
-    }  
-    
-    // Updated error matrix
-    V1=V+H*(C*H_T);
-    
-    // Calculate the inverse of V
-    double det=V1(0,0)*V1(1,1)-V1(0,1)*V1(1,0);
-    if (det!=0){
-      InvV(0,0)=V1(1,1)/det;
-      InvV(1,0)=-V1(1,0)/det;
-      InvV(0,1)=-V1(0,1)/det;
-      InvV(1,1)=V1(0,0)/det;
-    }
-    else{
-      _DBG_ << "Kalman filter:  Singular matrix..." << endl;
-      return UNRECOVERABLE_ERROR;
-    }
-    
-    // Compute Kalman gain matrix
-    K=C*(H_T*InvV);
-      
-    // Update the state vector 
-    S=S+K*(M-H*S);
-      
-    // Path length in active volume
-    path_length+=1.0*sqrt(1.+S(state_tx,0)*S(state_tx,0)
+      // Path length in active volume
+      path_length+=1.0*sqrt(1.+S(state_tx,0)*S(state_tx,0)
 			    +S(state_ty,0)*S(state_ty,0));
       
-    // Update state vector covariance matrix
-    C=C-K*(H*C);    
-    
-    // Residuals
-    R(state_x,0)=M(0,0)-S(state_x,0);
-    R(state_y,0)=M(1,0)-S(state_y,0);
-    R_T=DMatrix(DMatrix::kTransposed,R);
-    RC=V-H*(C*H_T);
-
-    if (DEBUG_HISTS && last_iter){
-      TH2F *fdc_xresiduals=(TH2F*)gROOT->FindObject("fdc_xresiduals");
-      if (fdc_xresiduals) fdc_xresiduals->Fill(endz,R(state_x,0));
+      // Update state vector covariance matrix
+      C=C-K*(H*C);    
       
-      TH2F *fdc_yresiduals=(TH2F*)gROOT->FindObject("fdc_yresiduals");
-      if (fdc_yresiduals) fdc_yresiduals->Fill(endz,R(state_y,0));  
+      // Residuals
+      R(state_x,0)=M(0,0)-S(state_x,0);
+      R(state_y,0)=M(1,0)-S(state_y,0);
+      R_T=DMatrix(DMatrix::kTransposed,R);
+      RC=V-H*(C*H_T);
+
+      if (DEBUG_HISTS && last_iter){
+	TH2F *fdc_xresiduals=(TH2F*)gROOT->FindObject("fdc_xresiduals");
+	if (fdc_xresiduals) fdc_xresiduals->Fill(hits[id]->z,R(state_x,0));
+	
+	TH2F *fdc_yresiduals=(TH2F*)gROOT->FindObject("fdc_yresiduals");
+	if (fdc_yresiduals) fdc_yresiduals->Fill(hits[id]->z,R(state_y,0));  
+	
+	TH2F *fdc_ypulls=(TH2F*)gROOT->FindObject("fdc_ypulls");
+	if (fdc_ypulls) fdc_ypulls->Fill(hits[id]->z,R(state_y,0)/sqrt(RC(1,1)));
+	
+	TH2F *fdc_xpulls=(TH2F*)gROOT->FindObject("fdc_xpulls");
+	if (fdc_xpulls) fdc_xpulls->Fill(hits[id]->z,R(state_y,0)/sqrt(RC(0,0)));
+      }
       
-      TH2F *fdc_ypulls=(TH2F*)gROOT->FindObject("fdc_ypulls");
-      if (fdc_ypulls) fdc_ypulls->Fill(endz,R(state_y,0)/sqrt(RC(1,1)));
-
-      TH2F *fdc_xpulls=(TH2F*)gROOT->FindObject("fdc_xpulls");
-      if (fdc_xpulls) fdc_xpulls->Fill(endz,R(state_y,0)/sqrt(RC(0,0)));
+      // Calculate the inverse of RC
+      det=RC(0,0)*RC(1,1)-RC(0,1)*RC(1,0);
+      if (det!=0){
+	InvRC(0,0)=RC(1,1)/det;
+	InvRC(1,0)=-RC(1,0)/det;
+	InvRC(0,1)=-RC(0,1)/det;
+	InvRC(1,1)=RC(0,0)/det;
+      }
+      else{
+	_DBG_ << "Kalman filter:  Singular matrix RC..." << endl;
+	return UNRECOVERABLE_ERROR;
+      }
+      
+      // Update chi2 for this segment
+      chisq+=(R_T*(InvRC*R))(0,0);
     }
 
-    // Calculate the inverse of RC
-    det=RC(0,0)*RC(1,1)-RC(0,1)*RC(1,0);
-    if (det!=0){
-      InvRC(0,0)=RC(1,1)/det;
-      InvRC(1,0)=-RC(1,0)/det;
-      InvRC(0,1)=-RC(0,1)/det;
-      InvRC(1,1)=RC(0,0)/det;
-    }
-    else{
-      _DBG_ << "Kalman filter:  Singular matrix RC..." << endl;
-      return UNRECOVERABLE_ERROR;
-    }
-    
-    // Update chi2 for this segment
-    chisq+=(R_T*(InvRC*R))(0,0);
-    
-    // increment z position
-    z_=endz;
+    // Get the state vector, jacobian matrix, and multiple scattering matrix from reference trajectory
+    S0=DMatrix(*forward_traj[k].S);
+    J=DMatrix(*forward_traj[k].J);
+    Q=DMatrix(*forward_traj[k].Q);
+
+    // State S is perturbation about a seed S0
+    dS=S-S0_;
+
+    // Get the state vector, jacobian matrix, and multiple scattering matrix from reference trajectory
+    S0=DMatrix(*forward_traj[k].S);
+    J=DMatrix(*forward_traj[k].J);
+    Q=DMatrix(*forward_traj[k].Q);
+
+    // Update the actual state vector and covariance matrix
+    S=S0+J*dS;
+    C=J*(C*DMatrix(DMatrix::kTransposed,J))+Q;   
+
+    S0_=S0;
   }
+  // Last position
+  double endz=forward_traj[forward_traj.size()-1].pos.Z();
 
   // Propagate track to entrance to CDC endplate
-  int  num_inc=(int)(z_-endplate_z);
-  oldz=endz;
+  int  num_inc=(int)(endz-endplate_z);
+  double oldz=endz,newz;
   endz=endplate_z;
   // Start with the state vector at the most upstream point
   for (int i=0;i<num_inc;i++){
