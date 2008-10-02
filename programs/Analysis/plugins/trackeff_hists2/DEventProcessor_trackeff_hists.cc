@@ -206,7 +206,6 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 			// the thrown track than the best one we found so far. We hardwire
 			// dpt/pt=2%, dtheta=20mrad and dphi=20mrad for now.
 			double fom = pow(delta_pt_over_pt/0.02, 2.0) + pow(delta_theta/20.0, 2.0) + pow(delta_phi/20.0, 2.0);
-//_DBG_<<"rpt="<<delta_pt_over_pt/0.02<<" rtheta="<<delta_theta/20.0<<" rphi="<<delta_phi/20.0<<"  fom="<<fom<<endl;
 			if(fom<fom_best){
 				fom = fom_best;
 				
@@ -214,9 +213,11 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 				trk.pfit_wire = pfit_wire;
 				trk.pcan = pcan;
 				trk.trk_chisq = particle->chisq;
+				trk.trk_Ndof = particle->Ndof;
 				trk.delta_pt_over_pt = delta_pt_over_pt;
 				trk.delta_theta = delta_theta;
 				trk.delta_phi = delta_phi;
+//_DBG_<<"trk.trk_chisq="<<trk.trk_chisq<<endl;
 				
 				// Get Nstereo, Ncdc, and Nfdc
 				vector<const DCDCTrackHit*> cdchits;
