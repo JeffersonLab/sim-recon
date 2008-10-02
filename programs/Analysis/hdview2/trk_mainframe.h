@@ -34,6 +34,7 @@
 #include <TGLabel.h>
 #include <TTimer.h>
 #include <TH1.h>
+#include <TLatex.h>
 
 
 class hdv_mainframe;
@@ -51,7 +52,7 @@ class trk_mainframe:public TGMainFrame{
 		virtual ~trk_mainframe();
 		
 		void DoNewEvent(void);
-		void DoRedraw(void);
+		void DoMyRedraw(void);
 		void DoHitSelect(void);
 		void DoUpdateMenus(void);
 		void DoTagMenuUpdate(Int_t widgetId, Int_t id);
@@ -71,6 +72,7 @@ class trk_mainframe:public TGMainFrame{
 		TRootEmbeddedCanvas *canvas;
 		TRootEmbeddedCanvas *histocanvas;
 		TH1D *resi;
+		TLatex *resi_lab;
 		vector<TGComboBox*> datatype;
 		vector<TGComboBox*> factorytag;
 		vector<TGComboBox*> trackno;

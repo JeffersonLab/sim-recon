@@ -579,10 +579,20 @@ void MyProcessor::GetFactories(vector<JFactory_base*> &factories)
 //------------------------------------------------------------------
 // GetNrows 
 //------------------------------------------------------------------
-unsigned int MyProcessor::GetNrows(const string &factory, const string &tag)
+unsigned int MyProcessor::GetNrows(const string &factory, string tag)
 {
 	vector<JEventLoop*> loops = app->GetJEventLoops();
 	if(loops.size()>0){
+		// Here is something a little tricky. The GetFactory() method of JEventLoop
+		// gets the factory of the specified data name and tag, but without trying
+		// to substitute a user-specified tag (a'la -PDEFTAG:XXX=YYY) as is done
+		// on normal Get() method calls. Therefore, we have to check for the default
+		// tags ourselves and substitute it "by hand".
+		if(tag==""){
+			map<string,string> default_tags = loops[0]->GetDefaultTags();
+			map<string, string>::const_iterator iter = default_tags.find(factory);
+			if(iter!=default_tags.end())tag = iter->second.c_str();
+		}
 		JFactory_base *fac = loops[0]->GetFactory(factory, tag.c_str());
 
 		// Since calling GetNrows will cause the program to quit if there is

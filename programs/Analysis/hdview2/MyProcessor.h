@@ -84,7 +84,7 @@ class MyProcessor:public JEventProcessor
 		
 		void GetFactoryNames(vector<string> &facnames);
 		void GetFactories(vector<JFactory_base*> &factories);
-		unsigned int GetNrows(const string &factory, const string &tag);
+		unsigned int GetNrows(const string &factory, string tag);
 		void GetDReferenceTrajectory(string dataname, string tag, unsigned int index, DReferenceTrajectory* &rt);
 		void GetAllWireHits(vector<pair<const DCoordinateSystem*,double> > &allhits);
 

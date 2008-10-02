@@ -21,6 +21,7 @@ using namespace std;
 #include <TGaxis.h>
 #include <TColor.h>
 #include <TROOT.h>
+#include <TF1.h>
 
 // We declare this as a global since putting it in the class would
 // require defining the DReferenceTrajectory class to ROOT
@@ -92,6 +93,11 @@ trk_mainframe::trk_mainframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt_t w, 
 		resi->SetFillColor(kMagenta);
 		resi->Draw();
 
+		resi_lab = new TLatex(resihi-0.25*(resihi-resilo), 0.5, "#sigma=?#mum");
+		resi_lab->SetTextSize(0.02);
+		resi_lab->SetTextAlign(32);
+		resi_lab->Draw();
+
 		//------- Hits radio buttons
 		TGVButtonGroup *hitsbuttons = new TGVButtonGroup(leftframe, "Hit");
 		leftframe->AddFrame(hitsbuttons, thints);
@@ -143,7 +149,7 @@ trk_mainframe::trk_mainframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt_t w, 
 				
 				slock = new TGCheckButton(panzoomresetframe,"lock s-axis");
 				panzoomresetframe->AddFrame(slock, xhints);
-				slock->Connect("Clicked","trk_mainframe", this, "DoRedraw()");
+				slock->Connect("Clicked","trk_mainframe", this, "DoMyRedraw()");
 				
 			//-------- Event, Info frame
 			TGVerticalFrame *eventinfoframe = new TGVerticalFrame(controlsframe);
@@ -190,7 +196,7 @@ trk_mainframe::trk_mainframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt_t w, 
 				this->datatype.push_back(datatype);
 				datatype->Resize(120,20);
 				datatype->SetUniqueID(i);
-				FillDataTypeComboBox(datatype, i==0 ? "DTrack":"<none>");
+				FillDataTypeComboBox(datatype, i==0 ? "DParticle":"<none>");
 
 				datatype->Connect("Selected(Int_t, Int_t)","trk_mainframe", this, "DoTagMenuUpdate(Int_t, Int_t)");
 				datatype->Connect("Selected(Int_t)","trk_mainframe", this, "DoRequestFocus(Int_t)");
@@ -226,7 +232,7 @@ trk_mainframe::trk_mainframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt_t w, 
 				trackno->SetUniqueID(i);
 
 				trackno->Connect("Selected(Int_t)","trk_mainframe", this, "DoRequestFocus(Int_t)");
-				trackno->Connect("Selected(Int_t)","trk_mainframe", this, "DoRedraw()");
+				trackno->Connect("Selected(Int_t)","trk_mainframe", this, "DoMyRedraw()");
 		}
 
 
@@ -247,6 +253,8 @@ trk_mainframe::trk_mainframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt_t w, 
 	MapWindow();
 	
 	RequestFocus();
+	
+	DoNewEvent();
 }
 
 //---------------------------------
@@ -263,13 +271,13 @@ trk_mainframe::~trk_mainframe()
 void trk_mainframe::DoNewEvent(void)
 {
 	DoUpdateMenus();
-	DoRedraw();
+	DoMyRedraw();
 }
 
 //---------------------------------
-// DoRedraw
+// DoMyRedraw
 //---------------------------------
-void trk_mainframe::DoRedraw(void)
+void trk_mainframe::DoMyRedraw(void)
 {
 	// Delete any existing graphics objects
 	for(unsigned int i=0; i<graphics.size(); i++)delete graphics[i];
@@ -284,7 +292,6 @@ void trk_mainframe::DoRedraw(void)
 	slo-=smargin;
 	resihi = (shi-slo)/5.0/4.0;
 	resilo = -resihi;
-_DBG_<<"slo:"<<slo<<" shi:"<<shi<<" resilo:"<<resilo<<" resihi:"<<resihi<<endl;
 	canvas->GetCanvas()->cd();
 	canvas->GetCanvas()->Range(resilo, slo, resihi, shi);
 	DrawAxes(canvas->GetCanvas(), graphics, "wire pos(cm)", "s(cm)");
@@ -297,7 +304,18 @@ _DBG_<<"slo:"<<slo<<" shi:"<<shi<<" resilo:"<<resilo<<" resihi:"<<resihi<<endl;
 	// Update the histogram
 	histocanvas->GetCanvas()->cd();
 	resi->Fit("gaus","Q");
-	//resi->Draw();
+	double sigma = resi->GetFunction("gaus")->GetParameter(2);
+
+	// Update label (this doesn't work, but may be only a tweak away!)
+	char title[256];
+	sprintf(title, "#sigma=%3.0f#mum",sigma*1.0E4);
+	_DBG_<<title<<endl;
+	resi_lab->SetText(resi->GetXaxis()->GetXmax(), resi->GetMaximum()*0.5, title);
+	TVirtualPad *pad = gPad;
+	histocanvas->GetCanvas()->cd();
+	resi_lab->Draw();
+	pad->cd();
+	
 	histocanvas->GetCanvas()->Update();
 }
 
@@ -338,7 +356,7 @@ void trk_mainframe::DoTrackNumberMenuUpdate(Int_t widgetId, Int_t id)
 {
 	if(widgetId>=0 && widgetId<(int)datatype.size()){
 		FillTrackNumberComboBox(trackno[widgetId], datatype[widgetId], factorytag[widgetId], widgetId!=0);
-		DoRedraw();
+		DoMyRedraw();
 	}
 }
 
@@ -549,7 +567,7 @@ void trk_mainframe::DrawHits(vector<TObject*> &graphics)
 	// Reset residual histogram
 	this->resi->Reset();
 
-	if(track=="")return;
+	if(track==""){_DBG_<<"No prime tracks!"<<endl;return;}
 	if(tag=="<default>")tag="";
 	unsigned int index = atoi(track.c_str());
 	
@@ -560,7 +578,10 @@ void trk_mainframe::DrawHits(vector<TObject*> &graphics)
 	// Get the reference trajectory for the prime track
 	DReferenceTrajectory *rt=NULL;
 	gMYPROC->GetDReferenceTrajectory(dataname, tag, index, rt);
-	if(rt==NULL)return;
+	if(rt==NULL){
+		_DBG_<<"Reference trajectory unavailable for "<<dataname<<":"<<tag<<" #"<<index<<endl;
+		return;
+	}
 	
 	REFTRAJ.push_back(rt);
 
@@ -623,7 +644,7 @@ void trk_mainframe::DrawHitsForOneTrack(
 		double s;
 		if(wire==NULL){_DBG_<<"wire==NULL!!"<<endl; continue;}
 		if(rt==NULL){_DBG_<<"rt==NULL!!"<<endl; continue;}
-		rt->DistToRT(wire, &s);
+		double doca = rt->DistToRT(wire, &s);
 		rt->GetLastDOCAPoint(pos_doca, mom_doca);
 		DVector3 shift = wire->udir.Cross(mom_doca);
 		
@@ -653,7 +674,7 @@ void trk_mainframe::DrawHitsForOneTrack(
 		// We do this by taking the dot product of the shift with
 		// the vector pointing to the center of the wire.
 		//double sign = (shift.Dot(pos_wire)<0.0) ? -1.0:+1.0;
-		double resi = pos_diff.Mag()-dist;
+		double resi = fabs(doca)-fabs(dist);
 		if(!finite(resi))continue;
 		
 		// If the residual is reasonably small, consider this hit to be
@@ -667,12 +688,11 @@ void trk_mainframe::DrawHitsForOneTrack(
 			m->SetMarkerSize(1.6);
 			m->SetMarkerColor(kYellow);
 			graphics.push_back(m);
-			
 			this->resi->Fill(resi);
 			
 			// Record limits for s.
 			// NOTE: We calculate resilo and resihi from these later
-			// in DoRedraw().
+			// in DoMyRedraw().
 			if(s<slo)slo=s;
 			if(s>shi)shi=s;
 		}
