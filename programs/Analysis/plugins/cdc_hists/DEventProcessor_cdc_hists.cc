@@ -131,10 +131,7 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 	// Swim reference trajectory for first thrown track
 	const DMCThrown *mcthrown = mcthrowns.size()>0 ? mcthrowns[0]:NULL;
 	if(mcthrown){
-		DVector3 pos(mcthrown->position().X(), mcthrown->position().X(), mcthrown->position().X());
-		DVector3 mom;
-		mom.SetMagThetaPhi(mcthrown->momentum().Mag(), mcthrown->momentum().Theta(), mcthrown->momentum().Phi());
-		rt->Swim(pos, mom, mcthrown->charge());
+		rt->Swim(mcthrown->position(), mcthrown->momentum(), mcthrown->charge());
 	}
 	
 	// Loop over all truth hits, ignoring all but CDC hits
@@ -156,6 +153,7 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 	double dxtot = 0.0;
 	for(unsigned int i=0; i<cdchits.size(); i++){
 		const DCDCHit *hit = cdchits[i];
+		const DCDCWire *wire = (cdchits.size() == cdctrackhits.size()) ? cdctrackhits[i]->wire:NULL;
 		
 		cdchit.ring		= hit->ring;
 		cdchit.straw	= hit->straw;
@@ -166,18 +164,32 @@ jerror_t DEventProcessor_cdc_hists::evnt(JEventLoop *loop, int eventnumber)
 		cdchit.ncdchits	= (int)cdchits.size();
 		cdchit.ntothits	= (int)cdchits.size() + Nfdc_wire_hits;
 		
-		if(mcthrown && (cdchits.size() == cdctrackhits.size())){
-			cdchit.dx = rt->Straw_dx(cdctrackhits[i]->wire, 0.8);
+		if(mcthrown && wire){
+			cdchit.dx = rt->Straw_dx(wire, 0.8);
 		}
 		
 		if(cdchit.dx!=0.0){
 			dEtot += cdchit.dE;
 			dxtot += cdchit.dx;
 		}
+		
+		// Find residual of hit with "thrown" track (if present)
+		if(mcthrown && wire){
+			double s;
+			double doca = rt->DistToRT(wire, &s);
+			double mass = 0.13957; // assume pion
+			double beta = 1.0/sqrt(1.0 + pow(mass/mcthrown->momentum().Mag(), 2.0))*2.998E10;
+			double tof = s/beta/1.0E-9; // in ns
+			double dist = (cdchit.t-tof)*55.0E-4;
+			cdchit.resi_thrown = doca-dist;
+		}else{
+			cdchit.resi_thrown = 0.0;
+		}
 
 		cdchittree->Fill();
 	}
 	
+	// Fill dE/dx histograms
 	if(((Nfdc_wire_hits+cdchits.size()) >= 10) && (cdchits.size()>=5)){
 		if(dxtot>0.0){
 			idEdx->Fill(dEtot/dxtot);
