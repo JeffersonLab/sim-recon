@@ -55,6 +55,9 @@ int closeOutput ()
 
 int loadOutput ()
 {
+   int packages_hit=0;
+   s_HitView_t *hitView;
+
    if (thisOutputEvent)
    {
       flush_s_HDDM(thisOutputEvent, 0);
@@ -70,35 +73,48 @@ int loadOutput ()
       thisOutputEvent->physicsEvents->mult = 1;
       thisOutputEvent->physicsEvents->in[0].eventNo = ++eventNo;
    }
-   if (thisOutputEvent->physicsEvents->in[0].hitView == HDDM_NULL)
+   if (thisOutputEvent->physicsEvents->in[0].hitView == HDDM_NULL);
    {
       thisOutputEvent->physicsEvents->in[0].hitView = make_s_HitView();
    }
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					centralDC = pickCentralDC();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					forwardDC = pickForwardDC();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					startCntr = pickStartCntr();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					barrelEMcal = pickBarrelEMcal();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					Cerenkov = pickCerenkov();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					forwardTOF = pickForwardTOF();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					forwardEMcal = pickForwardEMcal();
+
+   hitView = thisOutputEvent->physicsEvents->in[0].hitView;
+   if ((hitView->centralDC = pickCentralDC()) != HDDM_NULL) {
+      ++packages_hit;
+   }
+   if ((hitView->forwardDC = pickForwardDC()) != HDDM_NULL) {
+      ++packages_hit;
+   }
+   if ((hitView->startCntr = pickStartCntr()) != HDDM_NULL) {
+      ++packages_hit;
+   }
+   if ((hitView->barrelEMcal = pickBarrelEMcal()) != HDDM_NULL) {
+      ++packages_hit;
+   }
+   if ((hitView->Cerenkov = pickCerenkov()) != HDDM_NULL) {
+      ++packages_hit;
+   }
+   if ((hitView->forwardTOF = pickForwardTOF()) != HDDM_NULL) {
+      ++packages_hit;
+   }
+   if ((hitView->forwardEMcal = pickForwardEMcal()) != HDDM_NULL) {
+      ++packages_hit;
+   }
 #ifdef TESTING_CAL_CONTAINMENT
-   pickGapEMcal();printf("\n");
+   if ((hitView->gapEMcal = pickGapEMcal()) != HDDM_NULL) {
+      ++packages_hit;
+   }
 #endif
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					upstreamEMveto = pickUpstreamEMveto();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					tagger = pickTagger();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					mcTrajectory = pickMCTrajectory();
-							
-   return 0;
+   if ((hitView->upstreamEMveto = pickUpstreamEMveto()) != HDDM_NULL) {
+      ++packages_hit;
+   }
+   if ((hitView->tagger = pickTagger()) != HDDM_NULL) {
+      ++packages_hit;
+   }
+   if ((hitView->mcTrajectory = pickMCTrajectory()) != HDDM_NULL) {
+      ++packages_hit;
+   }
+   return packages_hit;
 }
 
 /* entry points from Fortran */

@@ -67,9 +67,17 @@ C.
 C.    ------------------------------------------------------------------
 C.
       integer iskip
+      integer iseen
       call gelh_outp(iskip)
-      call loadOutput()
-      call flushOutput()
+      iseen = loadOutput()
+#define WRITE_ONLY_IF_SOMETHING_WAS_SEEN 1
+#if WRITE_ONLY_IF_SOMETHING_WAS_SEEN
+      if (iseen.gt.0) then
+#else
+      if (iseen.ge.0) then
+#endif
+        call flushOutput()
+      endif
 
 C		FDPREE() should only be called if FLUKA is being used
 		if (IHADR.ge.3) call fdpree()
