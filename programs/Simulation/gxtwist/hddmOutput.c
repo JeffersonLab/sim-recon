@@ -55,6 +55,8 @@ int closeOutput ()
 
 int loadOutput ()
 {
+   int packages_hit=0;
+
    if (thisOutputEvent)
    {
       flush_s_HDDM(thisOutputEvent, 0);
@@ -70,29 +72,7 @@ int loadOutput ()
       thisOutputEvent->physicsEvents->mult = 1;
       thisOutputEvent->physicsEvents->in[0].eventNo = ++eventNo;
    }
-#if 0
-   if (thisOutputEvent->physicsEvents->in[0].hitView == HDDM_NULL)
-   {
-      thisOutputEvent->physicsEvents->in[0].hitView = make_s_HitView();
-   }
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					centralDC = pickCentralDC();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					forwardDC = pickForwardDC();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					startCntr = pickStartCntr();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					barrelEMcal = pickBarrelEMcal();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					Cerenkov = pickCerenkov();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					forwardTOF = pickForwardTOF();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					forwardEMcal = pickForwardEMcal();
-   thisOutputEvent->physicsEvents->in[0].hitView->
-      					upstreamEMveto = pickUpstreamEMveto();
-#endif
-   return 0;
+   return packages_hit;
 }
 
 /* entry points from Fortran */

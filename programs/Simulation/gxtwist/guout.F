@@ -23,11 +23,18 @@ C.    ------------------------------------------------------------------
 C.
 
       integer iskip
+      integer nseen
       call gelh_outp(iskip)
+      nseen = loadOutput();
 
-#ifndef DISABLE_OUTPUT
-      call loadOutput();
-      call flushOutput();
+#ifdef DISABLE_OUTPUT
+      if (0.gt.1) then
+#elif WRITE_ONLY_IF_SOMETHING_WAS_SEEN
+      if (iseen.gt.0) then
+#else
+      if (iseen.ge.0) then
 #endif
+         call flushOutput();
+      endif
 
       END
