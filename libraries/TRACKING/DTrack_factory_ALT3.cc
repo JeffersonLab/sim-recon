@@ -52,6 +52,8 @@ jerror_t DTrack_factory_ALT3::brun(JEventLoop *loop, int runnumber)
   dgeom  = dapp->GetDGeometry(runnumber);
   // Get the position of the exit of the CDC endplate from DGeometry
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
+  // Get the half-length of the CDC 
+  dgeom->Get("//posXYZ[@volume='centralDC_option-1']/@X_Y_Z",cdc_half_length);
 
   dapp->Lock();
   cdc_residuals=(TH2F*)gROOT->FindObject("cdc_residuals");
@@ -136,7 +138,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 
     for (unsigned int k=0;k<cdchits.size();k++){
       // Find the outer radius with a hit in the CDC
-      double r=cdchits[k]->wire->origin.Perp();
+      double r=(cdchits[k]->wire->origin+cdc_half_length[2]*cdchits[k]->wire->udir).Perp();
       if (r>R) R=r;
 
       fit.AddCDCHit(cdchits[k]);
@@ -202,9 +204,11 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
       // If we have a good last segment (with more than 3 hits) use this 
       // to provide the initial guess to the kalman routines, otherwise 
       // swim from the origin to the most downstream fdc plane with a hit.
+      
       if (last_hit_id>2)
 	GetPositionAndMomentum(segment,last_pos,last_mom);
       else
+   
 	{
 	// Swim to FDC hit plane
 	stepper.SwimToPlane(pos,mom,

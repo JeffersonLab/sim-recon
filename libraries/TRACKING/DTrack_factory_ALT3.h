@@ -19,8 +19,6 @@ using namespace jana;
 #include "DCoordinateSystem.h"
 #include "FDC/DFDCSegment.h"
 
-
-
 using namespace std;
 
 class DTrackCandidate;
@@ -43,6 +41,7 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
   double MIN_FDC_HIT_PROB;
   unsigned int MIN_HITS;
   double endplate_z,endplate_dz,endplate_rmin,endplate_rmax;
+  vector<double>cdc_half_length;
 
   jerror_t init(void);
   jerror_t brun(JEventLoop *loop, int runnumber);
