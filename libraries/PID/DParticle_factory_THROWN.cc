@@ -142,8 +142,6 @@ jerror_t DParticle_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		ChiSq(rt, wires, shifts, errs, chisqv, &chisq, &particle->Ndof);
 		particle->chisq = chisq;
 		
-		for(unsigned int i=0; i<chisqv.size(); i++)_DBG_<<"chisqv["<<i<<"]="<<chisqv[i]<<endl;
-
 		_data.push_back(particle);
 	}
 
