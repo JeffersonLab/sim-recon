@@ -853,6 +853,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
     chisq_central=1.e8;
   }
 
+  // First deal with hits in FDC
   if (hits.size()>0){   
     // Initialize the state vector and covariance matrix
     S(state_x,0)=x_;
@@ -869,10 +870,8 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
 
     // Initialize chi2
     chisq_forward=1.e8;
-  }
 
-  // First deal with hits in the FDC
-  if (hits.size()>0){
+    // Swim once through the field from the most downstream to the most upstream FDC hit
     SetReferenceTrajectory(S);
     unsigned int num_iter=NUM_ITER;
     // There does not seem to be any benefit to iterating if there are too few
@@ -897,6 +896,77 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
 	chisq_forward=chisq;
       }      
     } 
+    // Last position
+    z_=forward_traj[forward_traj.size()-1].pos.Z();
+
+    // Propagate track to entrance to CDC endplate
+    DMatrix J(5,5),J_T(5,5); // Jacobian matrix
+    DMatrix Q(5,5); // Process noise (multiple scattering)
+    int  num_inc=(int)(z_-endplate_z);
+    double oldz=z_,dedx;
+    // Start with the state vector at the most upstream point
+    for (int i=0;i<num_inc;i++){
+      z_=oldz-0.5;  
+      
+      // Get the contribution to the covariance matrix due to multiple scattering
+      double ds=0.5*sqrt(1+Sbest(state_tx,0)*Sbest(state_tx,0)+Sbest(state_ty,0)*Sbest(state_ty,0));
+      GetProcessNoise(0.14,ds,30420.,Sbest,Q);
+      
+      // Energy loss
+      dedx=GetdEdx(0.14,Sbest(state_q_over_p,0),7.,14.,1.205e-3);
+
+      // step through the field
+      StepJacobian(oldz,z_,Sbest,dedx,J);  
+      J_T=DMatrix(DMatrix::kTransposed,J);     
+      Cbest=J*(Cbest*J_T)+Q;
+      oldz=z_;
+    }
+    if (z_!=endplate_z){
+       // Get the contribution to the covariance matrix due to multiple scattering
+      double ds=(endplate_z-z_)*sqrt(1+Sbest(state_tx,0)*Sbest(state_tx,0)+Sbest(state_ty,0)*Sbest(state_ty,0));
+      GetProcessNoise(0.14,ds,30420.,Sbest,Q);
+      
+      // Energy loss
+      dedx=GetdEdx(0.14,Sbest(state_q_over_p,0),7.,14.,1.205e-3);
+
+      // step through the field
+      StepJacobian(oldz,endplate_z,Sbest,dedx,J);  
+      J_T=DMatrix(DMatrix::kTransposed,J);
+      Cbest=J*(Cbest*J_T)+Q;    
+      z_=endplate_z;
+    }
+    
+    // Next treat the CDC endplate
+    oldz=z_;
+    double r=0.;
+    for (int i=0;i<4;i++){
+      double X0; //radiation length of material
+
+      z_=oldz-endplate_dz/4.;
+
+      r=sqrt(Sbest(state_x,0)*Sbest(state_x,0)+Sbest(state_y,0)*Sbest(state_y,0));
+      // Energy loss and radiation length
+      if (r>endplate_rmin){
+	X0=18.8; // Carbon
+	dedx=GetdEdx(0.14,Sbest(state_q_over_p,0),6.,12.,2.265);
+      }
+      else{
+	X0=30420.; //Air
+	dedx=GetdEdx(0.14,Sbest(state_q_over_p,0),7.,14.,1.205e-3);
+      }
+
+      // Get the contribution to the covariance matrix due to multiple scattering
+      double ds=endplate_dz/4.*sqrt(1+Sbest(state_tx,0)*Sbest(state_tx,0)+Sbest(state_ty,0)*Sbest(state_ty,0));
+      GetProcessNoise(0.14,ds,X0,Sbest,Q);
+     
+
+      // step through the field.
+      StepJacobian(oldz,z_,Sbest,dedx,J);  
+      J_T=DMatrix(DMatrix::kTransposed,J);  
+      Cbest=J*(Cbest*J_T)+Q;
+      oldz=z_;
+    }
+
     // Convert to Central Track parameter set
     double wire_x=0,wire_y=0;
     if (cdchits.size()>0){
@@ -1361,6 +1431,26 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
 
   S0_=S;
   for (unsigned int k=0;k<forward_traj.size();k++){
+    // Get the state vector, jacobian matrix, and multiple scattering matrix from reference trajectory
+    S0=DMatrix(*forward_traj[k].S);
+    J=DMatrix(*forward_traj[k].J);
+    Q=DMatrix(*forward_traj[k].Q);
+
+    // State S is perturbation about a seed S0
+    dS=S-S0_;
+
+    // Get the state vector, jacobian matrix, and multiple scattering matrix from reference trajectory
+    S0=DMatrix(*forward_traj[k].S);
+    J=DMatrix(*forward_traj[k].J);
+    Q=DMatrix(*forward_traj[k].Q);
+
+    // Update the actual state vector and covariance matrix
+    S=S0+J*dS;
+    C=J*(C*DMatrix(DMatrix::kTransposed,J))+Q;   
+
+    S0_=S0;
+
+    // Add the hit
     if (forward_traj[k].h_id>0){
       unsigned int id=forward_traj[k].h_id-1;
 
@@ -1439,68 +1529,11 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
       chisq+=(R_T*(InvRC*R))(0,0);
     }
 
-    // Get the state vector, jacobian matrix, and multiple scattering matrix from reference trajectory
-    S0=DMatrix(*forward_traj[k].S);
-    J=DMatrix(*forward_traj[k].J);
-    Q=DMatrix(*forward_traj[k].Q);
-
-    // State S is perturbation about a seed S0
-    dS=S-S0_;
-
-    // Get the state vector, jacobian matrix, and multiple scattering matrix from reference trajectory
-    S0=DMatrix(*forward_traj[k].S);
-    J=DMatrix(*forward_traj[k].J);
-    Q=DMatrix(*forward_traj[k].Q);
-
-    // Update the actual state vector and covariance matrix
-    S=S0+J*dS;
-    C=J*(C*DMatrix(DMatrix::kTransposed,J))+Q;   
-
-    S0_=S0;
   }
-  // Last position
-  double endz=forward_traj[forward_traj.size()-1].pos.Z();
-
-  // Propagate track to entrance to CDC endplate
-  int  num_inc=(int)(endz-endplate_z);
-  double oldz=endz,newz;
-  endz=endplate_z;
-  // Start with the state vector at the most upstream point
-  for (int i=0;i<num_inc;i++){
-    newz=oldz-0.5;  
-    dedx=GetdEdx(0.14,S(state_q_over_p,0),7.,14.,1.205e-3);
-    StepJacobian(oldz,newz,S,dedx,J);  
-    J_T=DMatrix(DMatrix::kTransposed,J);     
-    C=J*(C*J_T);
-    oldz=newz;
-  }
-  if (oldz!=endz){
-    dedx=GetdEdx(0.14,S(state_q_over_p,0),7.,14.,1.205e-3);
-    StepJacobian(oldz,endz,S,dedx,J);  
-    J_T=DMatrix(DMatrix::kTransposed,J);
-    C=J*(C*J_T);    
-  }
-  
-  // Next treat the CDC endplate
-  oldz=endz;
-  double r=0.;
-  for (int i=0;i<4;i++){
-    newz=oldz-endplate_dz/4.;
-    r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
-    if (r>endplate_rmin)
-      dedx=GetdEdx(0.14,S(state_q_over_p,0),6.,12.,2.265);
-    else
-      dedx=GetdEdx(0.14,S(state_q_over_p,0),7.,14.,1.205e-3);
-    StepJacobian(oldz,newz,S,dedx,J);  
-    J_T=DMatrix(DMatrix::kTransposed,J);  
-    C=J*(C*J_T);
-    oldz=newz;
-  }
-  
   // Final position for this leg
   x_=S(state_x,0);
   y_=S(state_y,0);
-  z_=newz;
+  z_=forward_traj[forward_traj.size()-1].pos.Z();
   
   return NOERROR;
 }
