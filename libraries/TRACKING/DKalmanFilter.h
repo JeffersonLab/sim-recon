@@ -31,6 +31,10 @@ typedef struct{
   DMatrix *J,*Q;
 }DKalmanState_t;
 
+typedef struct{
+  DVector3 pos;
+  double q_over_pt,phi,tanl,D,z;
+}DKalmanCentral_t;
 
 class DKalmanFilter{
  public:
@@ -121,7 +125,10 @@ class DKalmanFilter{
   
   jerror_t GoldenSection(double &ds,double doca,double dedx,DVector3 &pos,
 		       DVector3 origin,DVector3 dir,  
-		       DMatrix &Sc,DMatrix &Jc);
+		       DMatrix &Sc,DMatrix &Jc); 
+  void GoldenSection(double &ds,double doca,double dedx,
+		     DVector3 pos,DVector3 origin,DVector3 dir,  
+		     DMatrix Sc);
 
   const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   const DGeometry *geom;
