@@ -521,10 +521,99 @@ c     write(6,*) norm
 
       real function sigma2MS(tt)
       real tt
+      sigma2MS=sigma2MS_Geant(tt)
+      end
+
+      real function sigma2MS_Kaune(tt)
+      real tt
       include 'cobrems.inc'
-C--Multiple scattering formula of Kaune et.al. is a bit off
-c     sigma2MS=8*dpi*nsites*alpha**2*Z**2*tt*(hbarc/(me*a))**2/a
-c    +         *log(183*Z**(-1/3.))
-C--Use the PDG formula instead (with beta=1, charge=1)
-      sigma2MS=(2*13.6e-3/E)**2*(tt/radlen)*(1+0.038*log(tt/radlen))**2
+C--Multiple scattering formula of Kaune et.al. 
+c  with a correction factor from a multiple-scattering calculation
+c  taking into account the atomic and nuclear form factors for carbon.
+
+c--Note by RTJ, Oct. 13, 2008:
+c  I think this formula overestimates multiple scattering in thin targets
+c  like these diamond radiators, because it scales simply like sqrt(tt).
+c  Although the leading behavior is sqrt(tt/radlen), it should increase
+c  faster than that because of the 1/theta**2 tail of the Rutherford
+c  distribution that makes the central gaussian region swell with increasing
+c  number of scattering events.  For comparison, I include below the PDG
+c  formula (sigma2MS), the Moliere formula used in the Geant3 simulation
+c  of gaussian multiple scattering (sigma2MS_Geant), and a Moliere fit for
+c  thin targets taken from reference Phys.Rev. vol.3 no.2, (1958), p.647
+c  (sigma2MS_Hanson).  The latter two separate the gaussian part from the
+c  tails in different ways, but both agree that the central part is much
+c  more narrow than the formulation by Kaune et.al. below.
+
+      carboncor=4.2/4.6
+      sigma2MS_Kaune=8*dpi*nsites*alpha**2*Z**2*tt*(hbarc/(E*a))**2/a
+     +              *log(183*Z**(-1/3.))
+     +              *carboncor
+      end
+
+      real function sigma2MS_pdg(tt)
+      real tt
+      include 'cobrems.inc'
+C--The PDG formula instead (with beta=1, charge=1)
+c  This formula is said to be within 11% for t > 1e-3 rad.len.
+      sigma2MS_pdg=(13.6e-3/E)**2*(tt/radlen)
+     +            *(1+0.038*log(tt/radlen))**2
+      end
+
+      real function sigma2MS_Geant(tt)
+      real tt
+      include 'cobrems.inc'
+C--Geant3 formula for the rms multiple-scattering angle
+c  This formula is based on the theory of Moliere scattering.  It contains
+c  a cutoff parameter F that is used for the fractional integral of the
+c  scattering probability distribution that is included in computing the
+c  rms.  This is needed because the complete distribution of scattering
+c  angles connects smoothly from a central gaussian (small-angle
+c  multiple-scattering regime) to a 1/theta^2 tail (large-angle Rutherford
+c  scattering regime) through the so-called plural scattering region.
+      F=0.98 ! probability cutoff in definition of sigma2MS
+      density=3.534 ! g/cm^3
+      chi2cc=(0.39612e-2)**2*(Z*(Z+1))*(density/12) ! GeV^2/m
+      chi2c=chi2cc*(tt/E**2)
+      rBohr=0.52917721e-10 ! m
+      chi2alpha=1.13*(hbarc/(E*rBohr*0.885))**2
+     +         *Z**(2/3.)*(1+3.34*(alpha*Z)**2)
+      omega0=chi2c/(1.167*chi2alpha) ! mean number of scatters
+      gnu=omega0/(2*(1-F))
+      sigma2MS_Geant=chi2c/(1+F**2)*((1+gnu)/gnu*log(1+gnu)-1)
+      end
+
+      real function sigma2MS_Hanson(tt)
+      real tt
+      include 'cobrems.inc'
+C--Formulation of the rms projected angle attributed to Hanson et.al.
+c  in reference Phys.Rev. vol.3 no.2, (1958), p.647.  This is just Moliere
+c  theory used to give the 1/e angular width of the scattering distribution.
+c  In the paper, though, they compare it with experiment for a variety of
+c  metal foils down to 1e-4 rad.len. in thickness, and show excellent
+c  agreement with the gaussian approximation out to 4 sigma or so.  I
+c  like this paper because of the excellent agreement between the theory
+c  and experimental data.
+      density=3.534 ! g/cm^3
+      ttingcm=tt*100*density
+      Atomicweight=12
+      EinMeV=E*1000
+      theta2max=0.157*Z*(Z+1)/Atomicweight*(ttingcm/EinMeV**2)
+      theta2screen=theta2max*Atomicweight*(1+3.35*(Z*alpha)**2)
+     +            /(7800*(Z+1)*Z**(1/3.)*ttingcm)
+      BminuslogB=log(theta2max/theta2screen)-0.154
+      Blast=1
+      do i=1,999
+        B=BminuslogB+log(Blast)
+        if (B.lt.1.2) then
+          B=1.21
+          goto 10
+        elseif (abs(B-Blast).gt.1e-6) then
+          Blast=B
+        else
+          goto 10
+        endif
+      enddo
+   10 continue
+      sigma2MS_Hanson=theta2max*(B-1.2)/2
       end

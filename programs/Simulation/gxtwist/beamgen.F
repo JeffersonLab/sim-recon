@@ -134,7 +134,12 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       vertex(3) = RadiatorPos
 
       ubuf(1) = ppol
-      nubuf = 1
+      ubuf(2) = plab(1)
+      ubuf(3) = plab(2)
+      ubuf(4) = plab(3)
+      ubuf(5) = plab(4)
+      ubuf(6) = plab(5)
+      nubuf = 6
 #if defined BEAM_BOX_SIZE
       call GRNDM(rndm,2)
       ubuf(2) = rndm(1)*BEAM_BOX_SIZE
