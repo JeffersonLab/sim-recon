@@ -696,6 +696,7 @@
   the following attributes:
 
 	    name      : a short descriptive ID of this field region
+            modifies  : name of another region to provide default values
 	    comment   : a more verbose description
 
   The region name must be a NMTOKEN type (begin with a letter, contain
@@ -703,7 +704,13 @@
   material names and identifier names so that it can be referenced by
   volumes through the region="XXX" attribute.  The properties of a region
   are specified using the content elements described in the next section.
-  Any properties that are not specified obtain their default values.
+  Any properties that are not specified obtain the default values, either
+  those of the modifies="REGION", if given, or the default region if not.
+  This attribute was introduced to make it simple to create copies of a
+  region which share a common set of properties, but must have private
+  values for a subset of their properties.  Creating an empty region
+  element with only a modifies="REGION" argument effectively creates an
+  alias for "REGION".
 
 1.6.2) Region contents: Bfield descriptions
 ============================================
@@ -881,8 +888,8 @@
         <samples axis="x" n="351" bounds="-340 10" unit_length="cm">
           <samples axis="z" n="1611" bounds="-10 1600" unit_length="cm">
             <samples axis="y" n="16" bounds="0 1.5" unit_length="cm"/>
-          </sequence>
-        </sequence>
+          </samples>
+        </samples>
       </grid>
     </mappedBfield>
   </region>
@@ -900,7 +907,8 @@
     <swim method="RungeKutta"/>
   </region>
 
-  <region name="quadrupoleCenter" comment="rapidly varying magnetic region">
+  <region name="quadrupoleCenter" comment="rapidly varying magnetic region"
+          modifies="solenoidBfield">
     <swim method="RungeKutta" maxArcStep="0.1"/>
   </region>
 
@@ -1672,6 +1680,7 @@
     </xs:sequence>
 
     <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="modifies" use="optional" type="xs:IDREF"/>
     <xs:attribute name="comment" use="optional" type="xs:string"/>
   </xs:complexType>
 </xs:element>
