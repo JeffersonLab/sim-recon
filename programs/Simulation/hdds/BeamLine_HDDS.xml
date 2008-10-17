@@ -297,148 +297,83 @@
 
   <composition name="innerPinCushionWedge" envelope="ACWI">
     <posXYZ volume="ACBI" X_Y_Z="0.0 0.0 -0.85" />
-    <posXYZ volume="innerPinCushionRing_1" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="innerPinCushionRing_2" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="innerPinCushionRing_3" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="innerPinCushionRing_4" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="innerPinCushionRing_5" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="innerPinCushionRing_6" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="innerPinCushionRing_7" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="innerPinCushionRing_8" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="innerPinCushionRow_1" X_Y_Z="0.275 0.0 0.40" />
+    <posXYZ volume="innerPinCushionRow_2" X_Y_Z="0.375 0.0 0.40" />
+    <posXYZ volume="innerPinCushionRow_3" X_Y_Z="0.475 0.0 0.40" />
+    <posXYZ volume="innerPinCushionRow_4" X_Y_Z="0.575 0.0 0.40" />
+    <posXYZ volume="innerPinCushionRow_5" X_Y_Z="0.675 0.0 0.40" />
+    <posXYZ volume="innerPinCushionRow_6" X_Y_Z="0.775 0.0 0.40" />
   </composition>
-  <composition name="innerPinCushionRing_1" envelope="AIR1">
-    <mposPhi volume="innerPinCushionSector_1" ncopy="3"
-                                              Phi0="-15.0" dPhi="15.0" />
+  <composition name="innerPinCushionRow_1" envelope="AIR1">
+    <mposY volume="PIN1" ncopy="3" Y0="-0.10" dY="0.10" />
   </composition>
-  <composition name="innerPinCushionRing_2" envelope="AIR2">
-    <mposPhi volume="innerPinCushionSector_2" ncopy="4"
-                                              Phi0="-18.0" dPhi="12.0" />
+  <composition name="innerPinCushionRow_2" envelope="AIR2">
+    <mposY volume="PIN1" ncopy="5" Y0="-0.20" dY="0.10" />
   </composition>
-  <composition name="innerPinCushionRing_3" envelope="AIR3">
-    <mposPhi volume="innerPinCushionSector_3" ncopy="5"
-                                              Phi0="-20.0" dPhi="10.0" />
+  <composition name="innerPinCushionRow_3" envelope="AIR3">
+    <mposY volume="PIN1" ncopy="5" Y0="-0.20" dY="0.10" />
   </composition>
-  <composition name="innerPinCushionRing_4" envelope="AIR4">
-    <mposPhi volume="innerPinCushionSector_4" ncopy="6"
-                                              Phi0="-21.43" dPhi="8.57" />
+  <composition name="innerPinCushionRow_4" envelope="AIR4">
+    <mposY volume="PIN1" ncopy="7" Y0="-0.30" dY="0.10" />
   </composition>
-  <composition name="innerPinCushionRing_5" envelope="AIR5">
-    <mposPhi volume="innerPinCushionSector_5" ncopy="7"
-                                              Phi0="-22.5" dPhi="7.5" />
+  <composition name="innerPinCushionRow_5" envelope="AIR5">
+    <mposY volume="PIN1" ncopy="7" Y0="-0.30" dY="0.10" />
   </composition>
-  <composition name="innerPinCushionRing_6" envelope="AIR6">
-    <mposPhi volume="innerPinCushionSector_6" ncopy="8"
-                                              Phi0="-23.33" dPhi="6.67" />
-  </composition>
-  <composition name="innerPinCushionRing_7" envelope="AIR7">
-    <mposPhi volume="innerPinCushionSector_7" ncopy="9"
-                                              Phi0="-24.0" dPhi="6.0" />
-  </composition>
-  <composition name="innerPinCushionRing_8" envelope="AIR8">
-    <mposPhi volume="innerPinCushionSector_8" ncopy="10"
-                                              Phi0="-24.55" dPhi="5.45" />
-  </composition>
-  <composition name="innerPinCushionSector_1" envelope="AIS1">
-    <posXYZ volume="PIN1" X_Y_Z="0.300 0.0 0.0" />
-  </composition>
-  <composition name="innerPinCushionSector_2" envelope="AIS2">
-    <posXYZ volume="PIN1" X_Y_Z="0.375 0.0 0.0" />
-  </composition>
-  <composition name="innerPinCushionSector_3" envelope="AIS3">
-    <posXYZ volume="PIN1" X_Y_Z="0.450 0.0 0.0" />
-  </composition>
-  <composition name="innerPinCushionSector_4" envelope="AIS4">
-    <posXYZ volume="PIN1" X_Y_Z="0.525 0.0 0.0" />
-  </composition>
-  <composition name="innerPinCushionSector_5" envelope="AIS5">
-    <posXYZ volume="PIN1" X_Y_Z="0.600 0.0 0.0" />
-  </composition>
-  <composition name="innerPinCushionSector_6" envelope="AIS6">
-    <posXYZ volume="PIN1" X_Y_Z="0.675 0.0 0.0" />
-  </composition>
-  <composition name="innerPinCushionSector_7" envelope="AIS7">
-    <posXYZ volume="PIN1" X_Y_Z="0.750 0.0 0.0" />
-  </composition>
-  <composition name="innerPinCushionSector_8" envelope="AIS8">
-    <posXYZ volume="PIN1" X_Y_Z="0.825 0.0 0.0" />
+  <composition name="innerPinCushionRow_6" envelope="AIR6">
+    <mposY volume="PIN1" ncopy="9" Y0="-0.40" dY="0.10" />
   </composition>
 
   <composition name="outerPinCushionWedge" envelope="ACWO">
     <posXYZ volume="ACBO" X_Y_Z="0.0 0.0 -0.85" />
-    <posXYZ volume="outerPinCushionRing_1" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="outerPinCushionRing_2" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="outerPinCushionRing_3" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="outerPinCushionRing_4" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="outerPinCushionRing_5" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="outerPinCushionRing_6" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="outerPinCushionRing_7" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="outerPinCushionRing_8" X_Y_Z="0.0 0.0 0.40" />
-    <posXYZ volume="outerPinCushionRing_9" X_Y_Z="0.0 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRow_1" X_Y_Z="2.625 -1.50 0.40" />
+    <posXYZ volume="outerPinCushionRow_1" X_Y_Z="2.625 +1.50 0.40" />
+    <posXYZ volume="outerPinCushionRow_2" X_Y_Z="2.725 -1.40 0.40" />
+    <posXYZ volume="outerPinCushionRow_2" X_Y_Z="2.725 +1.40 0.40" />
+    <posXYZ volume="outerPinCushionRow_3" X_Y_Z="2.825 -1.35 0.40" />
+    <posXYZ volume="outerPinCushionRow_3" X_Y_Z="2.825 +1.35 0.40" />
+    <posXYZ volume="outerPinCushionRow_4" X_Y_Z="2.925 -1.15 0.40" />
+    <posXYZ volume="outerPinCushionRow_4" X_Y_Z="2.925 +1.15 0.40" />
+    <posXYZ volume="outerPinCushionRow_5" X_Y_Z="3.025 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRow_6" X_Y_Z="3.125 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRow_7" X_Y_Z="3.225 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRow_8" X_Y_Z="3.325 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRow_9" X_Y_Z="3.425 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRow_10" X_Y_Z="3.525 0.0 0.40" />
+    <posXYZ volume="outerPinCushionRow_11" X_Y_Z="3.625 0.0 0.40" />
   </composition>
-  <composition name="outerPinCushionRing_1" envelope="AOR1">
-    <mposPhi volume="outerPinCushionSector_1" ncopy="40"
-                                              Phi0="-28.660" dPhi="1.463" />
+  <composition name="outerPinCushionRow_1" envelope="AOR1">
+    <posXYZ volume="PIN1" />
   </composition>
-  <composition name="outerPinCushionRing_2" envelope="AOR2">
-    <mposPhi volume="outerPinCushionSector_2" ncopy="41"
-                                              Phi0="-28.668" dPhi="1.429" />
+  <composition name="outerPinCushionRow_2" envelope="AOR2">
+    <mposY volume="PIN1" ncopy="3" Y0="-0.10" dY="0.10" />
   </composition>
-  <composition name="outerPinCushionRing_3" envelope="AOR3">
-    <mposPhi volume="outerPinCushionSector_3" ncopy="42"
-                                              Phi0="-28.686" dPhi="1.395" />
+  <composition name="outerPinCushionRow_3" envelope="AOR3">
+    <mposY volume="PIN1" ncopy="6" Y0="-0.25" dY="0.10" />
   </composition>
-  <composition name="outerPinCushionRing_4" envelope="AOR4">
-    <mposPhi volume="outerPinCushionSector_4" ncopy="43"
-                                              Phi0="-28.703" dPhi="1.364" />
+  <composition name="outerPinCushionRow_4" envelope="AOR4">
+    <mposY volume="PIN1" ncopy="10" Y0="-0.45" dY="0.10" />
   </composition>
-  <composition name="outerPinCushionRing_5" envelope="AOR5">
-    <mposPhi volume="outerPinCushionSector_5" ncopy="44"
-                                              Phi0="-28.718" dPhi="1.333" />
+  <composition name="outerPinCushionRow_5" envelope="AOR5">
+    <mposY volume="PIN1" ncopy="35" Y0="-1.70" dY="0.10" />
   </composition>
-  <composition name="outerPinCushionRing_6" envelope="AOR6">
-    <mposPhi volume="outerPinCushionSector_6" ncopy="45"
-                                              Phi0="-28.733" dPhi="1.304" />
+  <composition name="outerPinCushionRow_6" envelope="AOR6">
+    <mposY volume="PIN1" ncopy="35" Y0="-1.70" dY="0.10" />
   </composition>
-  <composition name="outerPinCushionRing_7" envelope="AOR7">
-    <mposPhi volume="outerPinCushionSector_7" ncopy="46"
-                                              Phi0="-28.748" dPhi="1.277" />
+  <composition name="outerPinCushionRow_7" envelope="AOR7">
+    <mposY volume="PIN1" ncopy="37" Y0="-1.80" dY="0.10" />
   </composition>
-  <composition name="outerPinCushionRing_8" envelope="AOR8">
-    <mposPhi volume="outerPinCushionSector_8" ncopy="47"
-                                              Phi0="-28.762" dPhi="1.250" />
+  <composition name="outerPinCushionRow_8" envelope="AOR8">
+    <mposY volume="PIN1" ncopy="39" Y0="-1.90" dY="0.10" />
   </composition>
-  <composition name="outerPinCushionRing_9" envelope="AOR9">
-    <mposPhi volume="outerPinCushionSector_9" ncopy="48"
-                                              Phi0="-28.775" dPhi="1.224" />
+  <composition name="outerPinCushionRow_9" envelope="AOR9">
+    <mposY volume="PIN1" ncopy="39" Y0="-1.90" dY="0.10" />
   </composition>
-  <composition name="outerPinCushionSector_1" envelope="AOS1">
-    <posXYZ volume="PIN1" X_Y_Z="3.05 0.0 0.0" />
+  <composition name="outerPinCushionRow_10" envelope="AORA">
+    <mposY volume="PIN1" ncopy="41" Y0="-2.00" dY="0.10" />
   </composition>
-  <composition name="outerPinCushionSector_2" envelope="AOS2">
-    <posXYZ volume="PIN1" X_Y_Z="3.125 0.0 0.0" />
+  <composition name="outerPinCushionRow_11" envelope="AORB">
+    <mposY volume="PIN1" ncopy="41" Y0="-2.00" dY="0.10" />
   </composition>
-  <composition name="outerPinCushionSector_3" envelope="AOS3">
-    <posXYZ volume="PIN1" X_Y_Z="3.200 0.0 0.0" />
-  </composition>
-  <composition name="outerPinCushionSector_4" envelope="AOS4">
-    <posXYZ volume="PIN1" X_Y_Z="3.275 0.0 0.0" />
-  </composition>
-  <composition name="outerPinCushionSector_5" envelope="AOS5">
-    <posXYZ volume="PIN1" X_Y_Z="3.350 0.0 0.0" />
-  </composition>
-  <composition name="outerPinCushionSector_6" envelope="AOS6">
-    <posXYZ volume="PIN1" X_Y_Z="3.425 0.0 0.0" />
-  </composition>
-  <composition name="outerPinCushionSector_7" envelope="AOS7">
-    <posXYZ volume="PIN1" X_Y_Z="3.500 0.0 0.0" />
-  </composition>
-  <composition name="outerPinCushionSector_8" envelope="AOS8">
-    <posXYZ volume="PIN1" X_Y_Z="3.575 0.0 0.0" />
-  </composition>
-  <composition name="outerPinCushionSector_9" envelope="AOS9">
-    <posXYZ volume="PIN1" X_Y_Z="3.650 0.0 0.0" />
-  </composition>
-
 
   <tubs name="ACWI" Rio_Z="0.25 2.5  2.5" profile="-30. 60."
          material="Air" comment="active collimator inner wedge" />  
@@ -449,43 +384,26 @@
   <tubs name="ACBO" Rio_Z="3.0  6.0  0.8" profile="-30. 60."
          material="SoftTungsten" comment="outer wedge base plate" />  
 
-  <tubs name="AIR1" Rio_Z="0.25 0.33 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AIS1" Rio_Z="0.25 0.33 1.7" profile="-10. 20." material="Air" />
-  <tubs name="AIR2" Rio_Z="0.33 0.42 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AIS2" Rio_Z="0.33 0.42 1.7" profile="-7.5 15." material="Air" />
-  <tubs name="AIR3" Rio_Z="0.42 0.49 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AIS3" Rio_Z="0.42 0.49 1.7" profile="-6.0 12." material="Air" />
-  <tubs name="AIR4" Rio_Z="0.49 0.56 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AIS4" Rio_Z="0.49 0.56 1.7" profile="-5. 10." material="Air" />
-  <tubs name="AIR5" Rio_Z="0.56 0.64 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AIS5" Rio_Z="0.56 0.64 1.7" profile="-4.29 8.57" material="Air" />
-  <tubs name="AIR6" Rio_Z="0.64 0.70 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AIS6" Rio_Z="0.64 0.70 1.7" profile="-3.75 7.5" material="Air" />
-  <tubs name="AIR7" Rio_Z="0.70 0.78 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AIS7" Rio_Z="0.70 0.78 1.7" profile="-3.33 6.67" material="Air" />
-  <tubs name="AIR8" Rio_Z="0.78 0.85 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AIS8" Rio_Z="0.78 0.85 1.7" profile="-3.0 6.0" material="Air" />
+  <box name="AIR1" X_Y_Z="0.05 0.30 1.7" material="Air" />
+  <box name="AIR2" X_Y_Z="0.05 0.50 1.7" material="Air" />
+  <box name="AIR3" X_Y_Z="0.05 0.50 1.7" material="Air" />
+  <box name="AIR4" X_Y_Z="0.05 0.70 1.7" material="Air" />
+  <box name="AIR5" X_Y_Z="0.05 0.70 1.7" material="Air" />
+  <box name="AIR6" X_Y_Z="0.05 0.90 1.7" material="Air" />
 
-  <tubs name="AOR1" Rio_Z="3.00 3.08 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AOS1" Rio_Z="3.00 3.08 1.7" profile="-0.732 1.463" material="Air" />
-  <tubs name="AOR2" Rio_Z="3.08 3.16 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AOS2" Rio_Z="3.08 3.16 1.7" profile="-0.715 1.429" material="Air" />
-  <tubs name="AOR3" Rio_Z="3.16 3.24 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AOS3" Rio_Z="3.16 3.24 1.7" profile="-0.698 1.395" material="Air" />
-  <tubs name="AOR4" Rio_Z="3.24 3.32 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AOS4" Rio_Z="3.24 3.32 1.7" profile="-0.682 1.364" material="Air" />
-  <tubs name="AOR5" Rio_Z="3.32 3.38 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AOS5" Rio_Z="3.32 3.38 1.7" profile="-0.667 1.333" material="Air" />
-  <tubs name="AOR6" Rio_Z="3.38 3.46 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AOS6" Rio_Z="3.38 3.46 1.7" profile="-0.652 1.304" material="Air" />
-  <tubs name="AOR7" Rio_Z="3.46 3.54 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AOS7" Rio_Z="3.46 3.54 1.7" profile="-0.639 1.277" material="Air" />
-  <tubs name="AOR8" Rio_Z="3.54 3.62 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AOS8" Rio_Z="3.54 3.62 1.7" profile="-0.625 1.250" material="Air" />
-  <tubs name="AOR9" Rio_Z="3.62 3.70 1.7" profile="-30. 60." material="Air" />
-  <tubs name="AOS9" Rio_Z="3.62 3.70 1.7" profile="-0.612 1.224" material="Air" />
+  <box name="AOR1" X_Y_Z="0.05 0.10 1.7" material="Air" />
+  <box name="AOR2" X_Y_Z="0.05 0.30 1.7" material="Air" />
+  <box name="AOR3" X_Y_Z="0.05 0.70 1.7" material="Air" />
+  <box name="AOR4" X_Y_Z="0.05 1.00 1.7" material="Air" />
+  <box name="AOR5" X_Y_Z="0.05 3.50 1.7" material="Air" />
+  <box name="AOR6" X_Y_Z="0.05 3.50 1.7" material="Air" />
+  <box name="AOR7" X_Y_Z="0.05 3.70 1.7" material="Air" />
+  <box name="AOR8" X_Y_Z="0.05 3.90 1.7" material="Air" />
+  <box name="AOR9" X_Y_Z="0.05 3.90 1.7" material="Air" />
+  <box name="AORA" X_Y_Z="0.05 4.10 1.7" material="Air" />
+  <box name="AORB" X_Y_Z="0.05 4.10 1.7" material="Air" />
 
-  <box name="PIN1" X_Y_Z="0.04 0.04 1.7" material="SoftTungsten" />
+  <box name="PIN1" X_Y_Z="0.051 0.051 1.7" material="SoftTungsten" />
  
   <!-- there is no mcfast model of the photon beamline -->
 
