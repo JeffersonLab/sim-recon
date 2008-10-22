@@ -19,6 +19,8 @@ using namespace jana;
 #include "DKalmanFilter.h"
 #include "DReferenceTrajectory.h"
 
+#define CDC_OUTER_RADIUS 57.0
+
 //------------------
 // DTrack_factory_ALT3   (Constructor)
 //------------------
@@ -155,7 +157,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
     DVector3 norm(0,0,1);
     if (segments.size()==0){       
       if (cdchits.size()>0){
-	stepper.SwimToRadius(pos,mom,R+0.8,NULL);
+	stepper.SwimToRadius(pos,mom,CDC_OUTER_RADIUS,NULL);
       }
       last_pos=pos;
       last_mom=mom;
