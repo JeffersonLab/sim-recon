@@ -135,7 +135,11 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	cout<<"Event: "<<eventnumber<<endl;
 
 	// We want to print info about all factories results, even if we aren't
-	// printing the actual data.
+	// printing the actual data. To make sure the informational messages often
+	// printed during brun are printed first, call the GetNrows() method of all factories
+	// ourself first.
+	vector<JFactory_base*> myfacs = eventLoop->GetFactories();
+	for(unsigned int i=0; i<myfacs.size(); i++)myfacs[i]->GetNrows();
 	eventLoop->PrintFactories(1);
 	
 	// Print data for all specified factories
