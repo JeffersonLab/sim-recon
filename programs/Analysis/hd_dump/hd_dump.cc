@@ -39,7 +39,7 @@ int main(int narg, char *argv[])
 		return 0;
 	}
 
-	// This monkey shines is needed to get getchar() to return single
+	// This monkeyshines is needed to get getchar() to return single
 	// characters without waiting for the user to hit return
 	struct termios t;
 	tcgetattr(fileno(stdin), &t);
@@ -126,6 +126,9 @@ void ParseCommandLineArguments(int &narg, char *argv[])
 			case 'L':
 				LIST_FACTORIES = 1;
 				break;
+			case 'a':
+				LIST_ASSOCIATED_OBJECTS = true;
+				break;
 		}
 	}
 }
@@ -149,6 +152,7 @@ void Usage(void)
 	cout<<"   -L        List available factories and exit"<<endl;
 	cout<<"   -p        Don't pause for keystroke between events (def. is to pause)"<<endl;
 	cout<<"   -s        Skip events which don't have any of the specified data types"<<endl;
+	cout<<"   -a        List types and number of associated objects"<<endl;
 	cout<<endl;
 
 	exit(0);
