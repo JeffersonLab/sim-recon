@@ -217,7 +217,7 @@ void DTrack_factory_THROWN::AddFDCPseudoHits(DReferenceTrajectory *rt, vector<co
 		// based on both the anode and cathode hits.
 		probability *= TMath::Prob(resic/sigma_cathode, 1);
 
-		if(probability<=MIN_HIT_PROB)fdchits.push_back(hit);
+		if(probability>=MIN_HIT_PROB)fdchits.push_back(hit);
 
 		if(debug_level>10)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" tof="<<tof<<" prob="<<probability<<endl;
 	}
