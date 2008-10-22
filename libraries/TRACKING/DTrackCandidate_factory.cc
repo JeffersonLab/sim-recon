@@ -19,6 +19,8 @@
 #define RADIUS_CUT 50.0
 #define BEAM_VAR 0.01 // cm^2
 #define Z_VERTEX 65.0
+#define Z_MIN 45.
+#define Z_MAX 85.
 #define EPS 0.001
 
 bool cdc_fdc_match(double p, double dist){
@@ -215,7 +217,15 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    
 	    can->setMass(srccan->mass());
 	    can->setMomentum(mom);
-	    can->setPosition(srccan->position());
+	    if (srccan->position().Z()>Z_MIN && srccan->position().Z()<Z_MAX)
+	      can->setPosition(srccan->position());
+	    else if (cdctrackcandidates[cdc_index]->position().Z()>Z_MIN 
+		     && cdctrackcandidates[cdc_index]->position().Z()<Z_MAX)
+	      can->setPosition(cdctrackcandidates[cdc_index]->position());
+	    else{
+	      DVector3 center(0,0,Z_VERTEX);
+	      can->setPosition(center);
+	    }
 	    can->setCharge(srccan->charge());
 	    
 	    for (unsigned int m=0;m<segments.size();m++)
