@@ -152,7 +152,7 @@ c   HADR 1	GHEISHA only (default)
 c   HADR 2	GHEISHA only, with no generation of secondaries
 c   HADR 3      FLUKA (with GHEISHA for neutrons below 20MeV)
 c   HADR 4	FLUKA (with MICAP for neutrons below 20MeV)
-HADR 4
+HADR 1
 
 c The following cards are needed if optical photons are being
 c being generated and tracked in the simulation.  The CKOV directive
