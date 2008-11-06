@@ -670,7 +670,13 @@ void DKinFit::Fit()
   // get the fit covariance matrix
   if(_missingParticle)
   {
-    cov_fit = _cov - _cov*bT*gb*b*_cov + _cov*bT*gb*a*((aT*gb*a).Invert())*aT*gb*b*_cov;
+    if( (aT * gb * a).Determinant() != 0.0 ) {
+      cov_fit = _cov - _cov*bT*gb*b*_cov + _cov*bT*gb*a*((aT*gb*a).Invert())*aT*gb*b*_cov;
+    }
+    else 
+    {
+    if(_verbose>1) cerr << "Not going to fill the missing cov matrix output because of singularity...." << endl;
+    }
   }
   else 
   {
@@ -1174,6 +1180,8 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
       }
     }
 
+    // Is this what we should do? 
+    if( (aT * gb * a).Determinant() == 0.0 ) break;
     if(_verbose>1)
     {
       cerr << "Before invert: " << endl;
@@ -1181,8 +1189,6 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
       (aT * gb * a).Invert();
       cerr << "After invert: " << endl;
     }
-    // Is this what we should do? 
-    if( (aT * gb * a).Determinant() == 0.0 ) break;
 
     //if(_missingParticle)
     {
@@ -1275,12 +1281,16 @@ void DKinFit::FitTwoGammas(const float __missingMass, const float errmatrixweigh
 
   // get the fit covariance matrix
   //if(_missingParticle)
+  if( (aT * gb * a).Determinant() != 0.0 )
   {
     cov_fit = _cov - _cov*bT*gb*b*_cov 
       + _cov*bT*gb*a*((aT*gb*a).Invert())*aT*gb*b*_cov;
   }
-  //else 
+  else 
   //cov_fit = _cov - _cov*bT*gb*b*_cov;
+  {
+     if(_verbose>1) cerr << "Not going to fill the missing cov matrix output 'cos is singular...." << endl;
+  }
 
   // get chi2 and the pulls
   _pulls.resize(dim);
