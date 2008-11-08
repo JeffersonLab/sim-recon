@@ -75,7 +75,9 @@
     <posXYZ volume="vacuumBoxSegment4" X_Y_Z="-217.565 0 1177.756"/>
     <posXYZ volume="vacuumBoxSnout" X_Y_Z="-221.308 0 1238.528"
                                                  rot="0 -13.4 0"/>
-    <posXYZ volume="vacuumBoxExitFlange" X_Y_Z="-154.238 0 603.582"
+    <!--posXYZ volume="vacuumBoxExitFlange" X_Y_Z="-154.238 0 603.582"
+                                                 rot="0 -9.94 0"/-->
+    <posXYZ volume="vacuumBoxExitFlange" X_Y_Z="-145.603 0 554.333"
                                                  rot="0 -9.94 0"/>
   </composition>
   <composition name="vacuumBoxSegment1" envelope="VBS1">
@@ -155,8 +157,8 @@
   <composition name="vacuumBoxExitFlange" envelope="VBXF">
     <posXYZ volume="VBXS"/>
   </composition>
-  <box name="VBXF" X_Y_Z="1.0 5.0 1000.0" material="Iron"/>
-  <box name="VBXS" X_Y_Z="1.0 3.0 980.0" material="Air"/>
+  <box name="VBXF" X_Y_Z="1.0 5.0 1100.0" material="Iron"/>
+  <box name="VBXS" X_Y_Z="1.0 3.0 1080.0" material="Air"/>
 
 </section>
 
