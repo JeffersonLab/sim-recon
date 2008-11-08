@@ -3,8 +3,7 @@ XML_SOURCE = TaggerArea.xml FocalPlane.xml Materials.xml PhotonPipe.xml\
               Regions.xml Spectrometer.xml ElectronDump.xml
 
 hddsGeant3_tagger.F: hdds-geant $(XML_SOURCE)
-	hdds-geant TaggerArea.xml >$@
-	cp $@ ..
+	./hdds-geant TaggerArea.xml >$@
 
 
 hdds-geant: hdds-geant.cpp XParsers.cpp XParsers.hpp \

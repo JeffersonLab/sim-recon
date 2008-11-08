@@ -1295,7 +1295,7 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
              <<                "+rs(3)*rmat" << id << "(2,3)" << std::endl
              << "        rr(3) = rs(1)*rmat" << id << "(3,1)"
              <<                "+rs(2)*rmat" << id << "(3,2)"
-	    <<                 "+rs(3)*rmat" << id << "(3,3)" << std::endl
+	     <<                 "+rs(3)*rmat" << id << "(3,3)" << std::endl
              << "        call gufld" << map << "(rr,BB)"     << std::endl
              << "        B(1) = BB(1)*rmat" << id << "(1,1)"
              <<               "+BB(2)*rmat" << id << "(2,1)"
@@ -1518,7 +1518,7 @@ void FortranWriter::createMapFunctions(DOMElement* el, const XString& ident)
 
       std::cout
            << "      if (.not.loaded) then" << std::endl
-           << "        print*,'Reading B-filed map from \"" << mapS << "\"'" << std::endl
+           << "        print*,'Reading B-field map from \"" << mapS << "\"'" << std::endl
            << "        open(unit=78,file='" << mapS << "',status='old',err=7)"
            << std::endl
            << "        read(unit=78,fmt=*,err=5,end=6)" << std::endl
