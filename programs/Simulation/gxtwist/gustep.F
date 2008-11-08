@@ -40,13 +40,16 @@
       data chfrom/'NULL'/
       real rnd(100)
 
+      real vertx(3),tofgx,ubuf(99),xint(3,999)
+      integer ntbeamx,nttargx,nubuf
+
       integer ptype
-      real xin(4),xout(4),pin(5),pout(5),dEsum,x0(4),p0(5)
-      common /nt1/ ptype,xin,xout,pin,pout,dEsum,x0,p0
+      real xin(4),xout(4),pin(5),pout(5),dEsum,x0(4),p0(5),p1(5),ppol
+      common /nt1/ ptype,xin,xout,pin,pout,dEsum,x0,p0,p1,ppol
       character*80 ntform
       parameter (ntform='kind:i,xin(4):r,xout(4):r,'
      +                //'pin(5):r,pout(5):r,dEsum:r,'
-     +                //'x0(4):r,p0(5):r')
+     +                //'x0(4):r,p0(5):r,p1(5):r,ppol:r')
       integer ntid1,ntid2,ntid3
       parameter(ntid1=1,ntid2=2,ntid3=3)
 
@@ -140,6 +143,13 @@ c     endif
         p0(3) = VECT(6)
         p0(4) = GETOT
         p0(5) = VECT(7)
+        call gfvert(1,vertx,ntbeamx,nttargx,tofgx,ubuf,nubuf)
+        ppol = ubuf(1)
+        p1(1) = ubuf(2)
+        p1(2) = ubuf(3)
+        p1(3) = ubuf(4)
+        p1(4) = ubuf(5)
+        p1(5) = ubuf(6)
       elseif (ISVOL.eq.0) then
         return
       endif
@@ -184,7 +194,7 @@ c     endif
         call hfnt(ntid1)
       elseif (CNAMES(NLEVEL)(1:2).eq.'FX') then
         call hfnt(ntid2)
-      elseif (CNAMES(NLEVEL)(1:4).eq.'VBW1') then
+      elseif (CNAMES(NLEVEL)(1:4).eq.'ENDP') then
         call hfnt(ntid3)
       elseif (CNAMES(NLEVEL).eq.'XTAL') then
         x0(1) = VECT(1)
@@ -196,6 +206,13 @@ c     endif
         p0(3) = VECT(6)
         p0(4) = GETOT
         p0(5) = VECT(7)
+        call gfvert(1,vertx,ntbeamx,nttargx,tofgx,ubuf,nubuf)
+        ppol = ubuf(1)
+        p1(1) = ubuf(2)/ubuf(6)
+        p1(2) = ubuf(3)/ubuf(6)
+        p1(3) = ubuf(4)/ubuf(6)
+        p1(4) = ubuf(5)
+        p1(5) = ubuf(6)
       endif
       END
 
