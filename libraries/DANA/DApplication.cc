@@ -10,6 +10,7 @@
 #include "HDGEOMETRY/DMagneticFieldMapGlueX.h"
 #include "HDGEOMETRY/DMagneticFieldMapHDGEANT.h"
 #include "HDGEOMETRY/DMagneticFieldMapCalibDB.h"
+#include "HDGEOMETRY/DMagneticFieldMapConst.h"
 #include "HDGEOMETRY/DLorentzMapCalibDB.h"
 #include "DFactoryGenerator.h"
 
@@ -39,7 +40,18 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	}
 	
 	// Create magnetic field object for use by everyone
-	bfield = new DMagneticFieldMapCalibDB(this);
+	// Allow a trivial homogeneous map to be used if 
+	// specified on the command line
+	string bfield_type = "CalibDB";
+	GetJParameterManager()->SetDefaultParameter("BFIELD_TYPE", bfield_type);
+	if(bfield_type=="CalibDB"){
+		bfield = new DMagneticFieldMapCalibDB(this);
+	}else if(bfield_type=="Const"){
+		bfield = new DMagneticFieldMapConst(this);
+	}else{
+		_DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type<<"\" !!"<<endl;
+		exit(-1);
+	}
 
 	// Create Lorentz deflection object
 	lorentz_def= new DLorentzMapCalibDB(this);

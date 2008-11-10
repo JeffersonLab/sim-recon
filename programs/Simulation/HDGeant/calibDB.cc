@@ -2,10 +2,12 @@
 
 #include <iostream>
 #include <vector>
+#include <string>
 using namespace std;
 
 #include <JANA/JCalibrationFile.h>
 #include <HDGEOMETRY/DMagneticFieldMapCalibDB.h>
+#include <HDGEOMETRY/DMagneticFieldMapConst.h>
 
 extern "C" {
 #include "calibDB.h"
@@ -17,7 +19,7 @@ static JCalibration *jcalib=NULL;
 //----------------
 // initcalibdb_
 //----------------
-void initcalibdb_(void)
+void initcalibdb_(char *bfield_type)
 {
 	ios::sync_with_stdio(true);
 	
@@ -30,10 +32,25 @@ void initcalibdb_(void)
 	}
 	jcalib = new JCalibrationFile(url, 1, "");
 	
-	// Read in the field map from the calibration DB
-	Bmap = new DMagneticFieldMapCalibDB(jcalib);
-
+	// The actual DMagneticFieldMap subclass can be specified in
+	// the control.in file. Since it is read in as integers of
+	// "MIXED" format through ffkey though (who knows what that
+	// means!) then there can be trailing white spaceat the end
+	// of the string. Here, we replace terminate the string with
+	// a null to eliminate that white space.
+	while(strlen(bfield_type)>0 && bfield_type[strlen(bfield_type)-1]==' ')bfield_type[strlen(bfield_type)-1] = 0;
 	
+	// Read in the field map from the appropriate source
+	if(bfield_type[0] == 0)strcpy(bfield_type, "CalibDB");
+	string bfield_type_str(bfield_type);
+	if(bfield_type_str=="CalibDB"){
+		Bmap = new DMagneticFieldMapCalibDB(jcalib);
+	}else if(bfield_type_str=="Const"){
+		Bmap = new DMagneticFieldMapConst(jcalib);
+	}else{
+		_DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type_str<<"\" !!"<<endl;
+		exit(-1);
+	}	
 }
 
 //----------------

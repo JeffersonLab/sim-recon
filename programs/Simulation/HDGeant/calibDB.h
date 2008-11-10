@@ -7,7 +7,7 @@
 //
 // This file should contain no C++ code.
 
-void initcalibdb_(void);
+void initcalibdb_(char *bfield_type);
 void gufld2_(float *r, float *B);
 int GetCalib(const char* namepath, unsigned int *Nvals, float* vals);
 void GetLorentzDefelections(float *lorentz_x, float *lorentz_z, float **lorentz_nx, float **lorentz_nz

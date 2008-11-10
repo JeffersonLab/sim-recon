@@ -219,4 +219,18 @@ c by removing the comment in front of the following card.  Any parameters with
 c zero values are still assigned automatic values even when AUTO is turned off.
 cAUTO 0
 
+c The magnetic field map is accessed through the HDGEOMETRY library
+c so that the same map can be used for both simulation and reconstruction.
+c There are currently 2 alternatives to the type of map read in: 1.) A map
+c of the inhomogeneous field and 2.) values representing a constant field. The map
+c for 1.) is kept in the calibDB as Magnets/Solenoid/solenoid_1500. The 
+c 3 components for 2.) are also in the calibDB as Magnets/Solenoid/solenoid_const.
+c To use 1.), either don't define the BFIELD card or set it to 'CalibDB'.
+c To use 2.), set the BFIELD card to 'Const'.
+c To maintain compatibility with the reconstruction, one must specify the 
+c same option on the command line to the reconstruction program like this:
+c hd_root -PBFIELD_TYPE=Const file.hddm
+c BFIELD 'Const'
+
+
 END
