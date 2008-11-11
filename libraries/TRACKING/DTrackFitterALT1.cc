@@ -886,6 +886,18 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_ty
 		}
 		i++;
 	}
+	
+	// Sometimes, "F" has lots of values like 1.44E+09 indicating a problem (I think comming
+	// from some nan values floating around.) Anyway, in these cases, the E2Norm value is
+	// quite large (>1E+18) which we  can use to punt now. In reality, we do this to avoid
+	// ROOT error messages about a matrix being singular when Ft*Vinv*F is inverted below.
+	if(F.E2Norm()>1.0E18){
+		if(DEBUG_LEVEL>1){
+			_DBG_<<" -- F matrix E2Norm out of range(E2Norm="<<F.E2Norm()<<" max="<<1.0E18<<")"<<endl;
+		}
+		return kFitFailed;
+	} 
+	
 	DMatrix Ft(DMatrix::kTransposed, F);
 
 	// V is a diagonal matrix of the measurement errors. In

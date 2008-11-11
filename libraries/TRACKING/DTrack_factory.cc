@@ -101,6 +101,7 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 		
 		// Swim a reference trajectory with this candidate's parameters
 		rt->Swim(candidate->position(), candidate->momentum(), candidate->charge());
+		if(rt->Nswim_steps<1)continue;
 
 #if 0
 		// Get CDC and FDC hits from candidate
