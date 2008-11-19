@@ -79,6 +79,8 @@ DReferenceTrajectory& DReferenceTrajectory::operator=(const DReferenceTrajectory
 	/// a new block allocated. If it does not own its swim_steps coming
 	/// in, then it will allocate memory so that it does own it on the
 	/// way out.
+	
+	if(&rt == this)return *this; // protect against self copies
 
 	// Free memory if block is too small
 	if(own_swim_steps==true && max_swim_steps<rt.Nswim_steps){
@@ -107,6 +109,8 @@ DReferenceTrajectory& DReferenceTrajectory::operator=(const DReferenceTrajectory
 
 	// Copy swim steps
 	for(int i=0; i<Nswim_steps; i++)swim_steps[i] = rt.swim_steps[i];
+	
+	return *this;
 }
 
 //---------------------------------
