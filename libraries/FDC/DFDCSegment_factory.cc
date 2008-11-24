@@ -18,8 +18,8 @@
 #define MATCH_RADIUS 5.0
 #define SIGN_CHANGE_CHISQ_CUT 10.0
 #define BEAM_VARIANCE 0.1 // cm^2
-#define FDC_X_RESOLUTION 0.02  // 200 microns
-#define FDC_Y_RESOLUTION 0.02
+#define FDC_X_RESOLUTION 0.028
+#define FDC_Y_RESOLUTION 0.02 //cm
 #define USED_IN_SEGMENT 0x8
 #define CORRECTED 0x10
 #define MAX_ITER 10
@@ -32,7 +32,7 @@
 // Variance for position along wire using PHENIX angle dependence, transverse
 // diffusion, and an intrinsic resolution of 127 microns.
 inline double fdc_y_variance(double alpha,double x){
-  return 0.00016+0.0064*tan(alpha)*tan(alpha)+0.0004*fabs(x);
+  return 0.00060+0.0064*tan(alpha)*tan(alpha)+0.0004*fabs(x);
 }
 
 bool DFDCSegment_package_cmp(const DFDCPseudo* a, const DFDCPseudo* b) {
@@ -84,6 +84,8 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
        i!=pseudopoints.end();i++){
     DFDCPseudo *temp=new DFDCPseudo();
     *temp=*(*i);
+    temp->ds=0.;  //initialize correction along wire
+    temp->dw=0.;  // initialize correction transverse to wire
     points.push_back(temp);
   }
   
@@ -114,7 +116,8 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
       use_tof=true;
     }
      
-    if (ref_time>0){
+    //if (ref_time>0)
+      {
       // Group pseudopoints by package
       vector<DFDCPseudo*>package[4];
       for (vector<DFDCPseudo*>::iterator i=points.begin();i!=points.end();i++){
@@ -308,85 +311,47 @@ jerror_t DFDCSegment_factory::UpdatePositionsAndCovariance(unsigned int n,
     if (k<n-1) // Exclude target point...
       fdc_track[k].s=(XYZ(k,2)-zvertex)/sin(atan(tanl)); // path length 
  
+    // Error analysis.  We ignore errors in N because there doesn't seem to 
+    // be any obvious established way to estimate errors in eigenvalues for 
+    // small eigenvectors.  We assume that most of the error comes from 
+    // the measurement for the reference plane radius and the dip angle anyway.
     double Phi=atan2(XYZ(k,1),XYZ(k,0));
     double sinPhi=sin(Phi);
     double cosPhi=cos(Phi);
     double dRPhi_dx=Phi*cosPhi-sinPhi;
     double dRPhi_dy=Phi*sinPhi+cosPhi;
     
-    double dx_drho=cosp+sperp/rc*sinp;
-    double dx_dx0=1.-rc*sinp*delta_y/denom;
-    double dx_dy0=rc*sinp*delta_x/denom;
     double dx_dx1=rc*sinp*delta_y/denom;
     double dx_dy1=-rc*sinp*delta_x/denom;
     double dx_dtanl=sinp*sperp/tanl;
     
-    double dy_drho=sinp-sperp/rc*cosp;
-    double dy_dx0=rc*cosp*delta_y/denom;
-    double dy_dy0=1.-rc*cosp*delta_x/denom;
     double dy_dx1=-rc*cosp*delta_y/denom;
     double dy_dy1=rc*cosp*delta_x/denom;
     double dy_dtanl=-cosp*sperp/tanl;
  
-    double dRPhi_dx0=dRPhi_dx*dx_dx0+dRPhi_dy*dy_dx0;
-    double dRPhi_dy0=dRPhi_dx*dx_dy0+dRPhi_dy*dy_dy0;
     double dRPhi_dx1=dRPhi_dx*dx_dx1+dRPhi_dy*dy_dx1;
     double dRPhi_dy1=dRPhi_dx*dx_dy1+dRPhi_dy*dy_dy1;
-    double dRPhi_drho=dRPhi_dx*dx_drho+dRPhi_dy*dy_drho;
     double dRPhi_dtanl=dRPhi_dx*dx_dtanl+dRPhi_dy*dy_dtanl;
 
-    double dR_dx0=cosPhi*dx_dx0+sinPhi*dy_dx0;
-    double dR_dy0=cosPhi*dx_dy0+sinPhi*dy_dy0;
     double dR_dx1=cosPhi*dx_dx1+sinPhi*dy_dx1;
     double dR_dy1=cosPhi*dx_dy1+sinPhi*dy_dy1;
-    double dR_drho=cosPhi*dx_drho+sinPhi*dy_drho;
     double dR_dtanl=cosPhi*dx_dtanl+sinPhi*dy_dtanl;
-    
-    double var_x0=(varN[0][0]+N[0]*N[0]*varN[2][2]/N[2]/N[2]
-		   -2.*varN[0][2]*N[0]/N[2])/4./N[2]/N[2];
-    double var_y0=(varN[1][1]+N[1]*N[1]*varN[2][2]/N[2]/N[2]
-		   -2.*varN[1][2]*N[1]/N[2])/4./N[2]/N[2];
-    
-    double dr_dn1=xavg[0]/2./N[2]/rc;
-    double dr_dn2=xavg[0]/2./N[2]/rc;
-    double dr_dn3=-(1.+4.*xavg[0]*N[0]+4.*xavg[1]*N[1])/4./rc/N[2]/N[2];
-    double var_r=dr_dn1*dr_dn1*varN[0][0]+dr_dn2*dr_dn2*varN[1][1]
-      +dr_dn3*dr_dn3*varN[2][2]+2.*varN[0][1]*dr_dn1*dr_dn2
-      +2.*varN[1][2]*dr_dn2*dr_dn3+2.*varN[0][2]*dr_dn1*dr_dn3
-      +var_avg/4./rc/rc/N[2]/N[2];
-	
-    double dc_dn3=-xavg[2];
-    double dc_dn2=-xavg[1];
-    double dc_dn1=-xavg[0];
+      	
     double cdist=dist_to_origin+r1sq*N[2];
     double n2=N[0]*N[0]+N[1]*N[1];
 
     double ydenom=y1*n2+N[1]*cdist;
-    double dy1_dn3=-(dc_dn3+r1sq)*(N[1]*y1+cdist)/ydenom;
     double dy1_dr1=-r1*(2.*N[1]*N[2]*y1+2.*N[2]*cdist-N[0]*N[0])/ydenom;
-    double dy1_dn2=(y1*(N[1]*N[1]-N[0]*N[0])*cdist
-		    -y1*N[1]*n2*dc_dn2+N[1]*cdist*cdist
-		    -n2*cdist*dc_dn2-N[0]*N[0]*N[1]*r1sq)/n2/ydenom;
-    double var_y1=dy1_dr1*dy1_dr1*var_R1
-      +dy1_dn3*dy1_dn3*varN[2][2]+dy1_dn2*dy1_dn2*varN[1][1]
-      +2.*dy1_dn2*dy1_dn3*varN[1][2];
+    double var_y1=dy1_dr1*dy1_dr1*var_R1;
 
     double xdenom=x1*n2+N[0]*cdist;
-    double dx1_dn3=-(dc_dn3+r1sq)*(x1*N[0]+cdist)/xdenom;
     double dx1_dr1=-r1*(2.*N[0]*N[2]*x1+2.*N[2]*cdist-N[1]*N[1])/xdenom;
-    double dx1_dn1=(x1*(N[0]*N[0]-N[1]*N[1])*cdist
-		    -x1*N[0]*n2*dc_dn1+N[0]*cdist*cdist
-		    -n2*cdist*dc_dn1-N[0]*N[1]*N[1]*r1sq)/n2/xdenom;
+    double var_x1=dx1_dr1*dx1_dr1*var_R1;
 
-    double var_x1=dx1_dr1*dx1_dr1*var_R1
-      +dx1_dn3*dx1_dn3*varN[2][2]+dx1_dn1*dx1_dn1*varN[0][0]
-      +2.*dx1_dn3*dx1_dn1*varN[0][2];
-
-    CRPhi(k,k)=dRPhi_dx0*dRPhi_dx0*var_x0+dRPhi_dy0*dRPhi_dy0*var_y0
-      +dRPhi_dx1*dRPhi_dx1*var_x1+dRPhi_dy1*dRPhi_dy1*var_y1
-      +dRPhi_drho*dRPhi_drho*var_r+dRPhi_dtanl*dRPhi_dtanl*var_tanl;
-    CR(k,k)=dR_dx0*dR_dx0*var_x0+dR_dy0*dR_dy0*var_y0+dR_dx1*dR_dx1*var_x1
-      +dR_dy1*dR_dy1*var_y1+dR_drho*dR_drho*var_r+dR_dtanl*dR_dtanl*var_tanl;
+    CRPhi(k,k)=dRPhi_dx1*dRPhi_dx1*var_x1+dRPhi_dy1*dRPhi_dy1*var_y1
+      +dRPhi_dtanl*dRPhi_dtanl*var_tanl;
+    CR(k,k)=dR_dx1*dR_dx1*var_x1+dR_dy1*dR_dy1*var_y1
+      +dR_dtanl*dR_dtanl*var_tanl;
     
     double rtemp=sqrt(XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1)); 
     double stemp=rtemp/4./rc;
@@ -482,28 +447,6 @@ double DFDCSegment_factory::GetProcessNoise(unsigned int i,DMatrix XYZ){
 	  *(1.+0.038*log(material_sum/sinl)));
 }
 
-// Calculate the (normal) eigenvector corresponding to the eigenvalue lambda
-jerror_t DFDCSegment_factory::CalcNormal(DMatrix A,double lambda,DMatrix &N){
-  double sum=0;
-
-  N(0,0)=1.;
-  N(1,0)=N(0,0)*(A(1,0)*A(0,2)-(A(0,0)-lambda)*A(1,2))
-    /(A(0,1)*A(2,1)-(A(1,1)-lambda)*A(0,2));
-  N(2,0)=N(0,0)*(A(2,0)*(A(1,1)-lambda)-A(1,0)*A(2,1))
-    /(A(1,2)*A(2,1)-(A(2,2)-lambda)*(A(1,1)-lambda));
-  
-  // Normalize: n1^2+n2^2+n3^2=1
-  for (int i=0;i<3;i++){
-    sum+=N(i,0)*N(i,0);
-  }
-  for (int i=0;i<3;i++){
-    N(i,0)/=sqrt(sum);
-  }
-
-  return NOERROR;
-}
-
-
 // Riemann Circle fit:  points on a circle in x,y project onto a plane cutting
 // the circular paraboloid surface described by (x,y,x^2+y^2).  Therefore the
 // task of fitting points in (x,y) to a circle is transormed to the taks of
@@ -521,8 +464,6 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<DFDCPseudo *>points,
   DMatrix Ones(n,1),OnesT(1,n);
   DMatrix W_sum(1,1);
   DMatrix W(n,n);
-  // Eigenvector
-  DMatrix N1(3,1);
 
   // The goal is to find the eigenvector corresponding to the smallest 
   // eigenvalue of the equation
@@ -604,16 +545,20 @@ jerror_t DFDCSegment_factory::RiemannCircleFit(vector<DFDCPseudo *>points,
   lambda_min=-B2/3.-sum/2.+sqrt(3.)/2.*diff;
 
   // Normal vector to plane
-  CalcNormal(A,lambda_min,N1);
-  // Copy N1 to private array
-  N[0]=N1(0,0);
-  N[1]=N1(1,0);
-  N[2]=N1(2,0);
-
-  // Error estimate for N, currently zeroes...
-  for (int i=0;i<3;i++)
-    for (int j=0;j<3;j++)
-      varN[i][j]=0.;
+  N[0]=1.;
+  N[1]=(A(1,0)*A(0,2)-(A(0,0)-lambda_min)*A(1,2))
+    /(A(0,1)*A(2,1)-(A(1,1)-lambda_min)*A(0,2));
+  N[2]=(A(2,0)*(A(1,1)-lambda_min)-A(1,0)*A(2,1))
+    /(A(1,2)*A(2,1)-(A(2,2)-lambda_min)*(A(1,1)-lambda_min));
+  
+  // Normalize: n1^2+n2^2+n3^2=1
+  sum=0.;
+  for (int i=0;i<3;i++){
+    sum+=N[i]*N[i];
+  }
+  for (int i=0;i<3;i++){
+    N[i]/=sqrt(sum);
+  }
       
   // Distance to origin
   dist_to_origin=-(N[0]*Xavg(0,0)+N[1]*Xavg(0,1)+N[2]*Xavg(0,2));
@@ -941,6 +886,8 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
       my_start_time=ref_time
 	-rc*M_PI*(1./cos(lambda)/beta/29.98);
   }
+
+  my_start_time=0.;
 
   for (unsigned int m=0;m<points.size();m++){
     DFDCPseudo *point=points[m];

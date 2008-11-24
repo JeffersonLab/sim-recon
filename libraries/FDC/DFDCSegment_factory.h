@@ -62,7 +62,6 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 	        jerror_t UpdatePositionsAndCovariance(unsigned int n,
 						      double r1sq,
 			DMatrix &XYZ, DMatrix &CRPhi,DMatrix &CR);
-		jerror_t CalcNormal(DMatrix A,double lambda,DMatrix &N);
 		double GetProcessNoise(unsigned int i, DMatrix XYZ);
 		double GetCharge(unsigned int n,
 				 DMatrix XYZ, DMatrix CR, DMatrix CRPhi);
