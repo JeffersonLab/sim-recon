@@ -12,7 +12,7 @@
 using namespace jana;
 
 #include "DTrackCandidate.h"
-#include "DQuickFit.h"
+#include "DHelicalFit.h"
 #include "CDC/DCDCTrackHit.h"
 
 
@@ -65,7 +65,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 				double tdrift_avg;
 				bool linked;
 				bool valid;
-				DQuickFit fit;
+				DHelicalFit fit;
 				double theta;
 				double z_vertex;
 				double q;

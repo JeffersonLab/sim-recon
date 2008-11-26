@@ -10,10 +10,11 @@ using namespace std;
 
 #include <DVector2.h>
 #include <CDC/DCDCTrackHit.h>
-#include "DQuickFit.h"
-#include "DRiemannFit.h"
+#include "DHelicalFit.h"
 #include <HDGEOMETRY/DGeometry.h>
 #include <HDGEOMETRY/DMagneticFieldMap.h>
+#define BeamRMS 0.1
+
 
 #include "DTrackCandidate_factory_CDC.h"
 
@@ -232,20 +233,31 @@ void DTrackCandidate_factory_CDC::GetCDCHits(JEventLoop *loop)
 	
 	// Create DCDCTrkHit objects out of these.
 	for(unsigned int i=0; i<cdctrackhits.size(); i++){
-		DCDCTrkHit *cdctrkhit = new DCDCTrkHit;
-		cdctrkhit->hit = cdctrackhits[i];
-		cdctrkhit->flags = cdctrkhit->hit->wire->stereo==0.0 ? NONE:IS_STEREO;
-		cdctrkhit->flags |= NOISE; // (see below)
-
-		// Add to "master" list
-		cdctrkhits.push_back(cdctrkhit);
-		
-		// Sort into list of hits by superlayer
-		if(cdctrkhit->hit->wire->ring<=3)cdchits_by_superlayer[0].push_back(cdctrkhit);
-		else if(cdctrkhit->hit->wire->ring<= 7)cdchits_by_superlayer[1].push_back(cdctrkhit);
-		else if(cdctrkhit->hit->wire->ring<=12)cdchits_by_superlayer[2].push_back(cdctrkhit);
-		else if(cdctrkhit->hit->wire->ring<=16)cdchits_by_superlayer[3].push_back(cdctrkhit);
-		else if(cdctrkhit->hit->wire->ring<=25)cdchits_by_superlayer[4].push_back(cdctrkhit);
+	  DCDCTrkHit *cdctrkhit = new DCDCTrkHit;
+	  cdctrkhit->hit = cdctrackhits[i];
+	  cdctrkhit->flags = cdctrkhit->hit->wire->stereo==0.0 ? NONE:IS_STEREO;
+	  cdctrkhit->flags |= NOISE; // (see below)
+	  
+	  // Add to "master" list
+	  cdctrkhits.push_back(cdctrkhit);
+	  
+	  // Sort into list of hits by superlayer
+	  // GeomC
+	  /*
+	  if(cdctrkhit->hit->wire->ring<=4)cdchits_by_superlayer[0].push_back(cdctrkhit);
+	  else if(cdctrkhit->hit->wire->ring<= 12)cdchits_by_superlayer[1].push_back(cdctrkhit);
+	  else if(cdctrkhit->hit->wire->ring<=16)cdchits_by_superlayer[2].push_back(cdctrkhit);
+	  else if(cdctrkhit->hit->wire->ring<=24)cdchits_by_superlayer[3].push_back(cdctrkhit);
+	  else if(cdctrkhit->hit->wire->ring<=27)cdchits_by_superlayer[4].push_back(cdctrkhit);   
+	  */
+	  //V4 Geometry
+	
+	  if(cdctrkhit->hit->wire->ring<=3)cdchits_by_superlayer[0].push_back(cdctrkhit);
+	  else if(cdctrkhit->hit->wire->ring<= 7)cdchits_by_superlayer[1].push_back(cdctrkhit);
+	  else if(cdctrkhit->hit->wire->ring<=12)cdchits_by_superlayer[2].push_back(cdctrkhit);
+	  else if(cdctrkhit->hit->wire->ring<=16)cdchits_by_superlayer[3].push_back(cdctrkhit);
+	  else if(cdctrkhit->hit->wire->ring<=25)cdchits_by_superlayer[4].push_back(cdctrkhit);
+	  
 	}
 	
 	// Sort the individual superlayer lists by decreasing values of R
@@ -545,26 +557,29 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 	/// returned indicating failure and that the seed should be
 	/// discarded.
 	
-	// Loop over hits in seed and add them to the seed's DQuickFit object
+	// Loop over hits in seed and add them to the seed's DHelicalFit object
 	seed.fit.Clear();
 	for(unsigned int j=0; j<seed.hits.size(); j++){
 		if(seed.hits[j]->flags&OUT_OF_TIME)continue;
 		const DVector3 &pos = seed.hits[j]->hit->wire->origin;
-		seed.fit.AddHitXYZ(pos.X(), pos.Y(), pos.Z());
+		//double cov=seed.hits[j]->hit->dist*seed.hits[j]->hit->dist;
+		//seed.fit.AddHitXYZ(pos.X(), pos.Y(), pos.Z(),cov,cov,0.);
+		seed.fit.AddHitXYZ(pos.X(), pos.Y(),pos.Z());
 	}
-	
+
 	// Try and fit the circle using a Riemann fit. If 
-	// it fails, try a basic fit with DQuickFit.
-	if(seed.fit.FitCircleRiemann()!=NOERROR){
-		if(debug_level>3)_DBG_<<"Riemann fit failed. Attempting regression fit..."<<endl;
-		if(seed.fit.FitCircle()!=NOERROR){
-			if(debug_level>3)_DBG_<<"Regression circle fit failed. Trying straight line."<<endl;
-			if(seed.fit.FitCircleStraightTrack()!=NOERROR){
-				if(debug_level>3)_DBG_<<"Trying straight line fit failed. Giving up."<<endl;
-				return false;
-			}
-		}else{
-			seed.fit.GuessChargeFromCircleFit(); // for Riemann fit
+	// it fails, try a basic fit with QuickFit.
+	if(seed.fit.FitCircleRiemann(BeamRMS)!=NOERROR){
+	  if(debug_level>3)
+	    _DBG_<<"Riemann fit failed. Attempting regression fit..."<<endl;
+	  if(seed.fit.FitCircle()!=NOERROR){
+	    if(debug_level>3)_DBG_<<"Regression circle fit failed. Trying straight line."<<endl;
+	    if(seed.fit.FitCircleStraightTrack()!=NOERROR){
+	      if(debug_level>3)_DBG_<<"Trying straight line fit failed. Giving up."<<endl;
+	      return false;
+	    }
+	  }else{
+	    seed.fit.GuessChargeFromCircleFit(); // for Riemann fit
 		}
 	}else{
 		seed.fit.GuessChargeFromCircleFit(); // for regression fit
@@ -573,7 +588,7 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 	// Check if majority of hits are close to circle.
 	double x0 = seed.fit.x0;
 	double y0 = seed.fit.y0;
-	double r0 = sqrt(x0*x0 + y0*y0);
+	double r0 = seed.fit.r0;
 	unsigned int N=0;
 	for(unsigned int i=0; i<seed.hits.size(); i++){
 		if(seed.hits[i]->flags&OUT_OF_TIME){
