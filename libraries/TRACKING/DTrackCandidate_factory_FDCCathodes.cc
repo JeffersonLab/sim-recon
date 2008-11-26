@@ -245,7 +245,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
 	if (fit.FitTrackRiemann(segments[0]->rc)==NOERROR){      
 	  // Charge
-	  if (q==0) q=fit.q;
+	  //if (q==0) 
+	  q=fit.q;
 	  // Curvature
 	  segments[1]->S(0,0)=q/2./fit.r0;
 	  // Estimate for azimuthal angle
@@ -301,7 +302,8 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
 	    if (fit.FitTrackRiemann(segments[1]->rc)==NOERROR){     
 	      // Charge
-	      if (q==0) q=fit.q;
+	      //if (q==0) 
+	      q=fit.q;
 	      // Curvature
 	      segments[2]->S(0,0)=q/2./fit.r0;
 	      // Estimate for azimuthal angle
