@@ -11,7 +11,7 @@
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCSegment.h"
 #include "DMagneticFieldStepper.h"
-#include "DRiemannFit.h"
+#include "DHelicalFit.h"
 #include <TROOT.h>
 #include <TH2F.h>
 
@@ -94,7 +94,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     double theta=mom.Theta();
     
     // Propagate track to CDC endplate
-    if (theta<M_PI/6.){      
+    if (theta<M_PI/6. && fdctrackcandidates.size()>0){      
       DMagneticFieldStepper stepper(bfield,srccan->charge()); 
       if (stepper.SwimToPlane(pos,mom,cdc_endplate,norm,NULL)==false){
 	cdc_endplate_projections.push_back(pos);
@@ -172,12 +172,14 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    got_match=true;
 
 	    if (radius<RADIUS_CUT){
-	      DRiemannFit fit;
+	      DHelicalFit fit;
 	      for (unsigned int k=0;k<cdchits.size();k++){	
-		if (fabs(cdchits[k]->wire->stereo)<EPS)
-		  fit.AddHit(cdchits[k]->wire->origin.x(),
-			     cdchits[k]->wire->origin.y(),
-			     cdchits[k]->wire->origin.z());
+		if (fabs(cdchits[k]->wire->stereo)<EPS){
+		  double cov=0.8*0.8/12.;  //guess
+		  fit.AddHitXYZ(cdchits[k]->wire->origin.x(),
+				cdchits[k]->wire->origin.y(),
+				cdchits[k]->wire->origin.z(),cov,cov,0.);
+		}
 	      }
 	      for (unsigned int k=0;k<segments.size();k++){
 		for (unsigned int n=0;n<segments[k]->hits.size();n++){
@@ -188,33 +190,35 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 		  double y=segments[k]->hits[n]->y;
 		  double z=segments[k]->hits[n]->wire->origin(2);
 		
-		  fit.AddHit(x,y,z,covxx,covyy,covxy);
+		  if (segments[k]->hits[n]->status<20) printf("uncorrected?\n");
+		  fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
 		}
 	      }	
 	      // Fake point at origin
-	      fit.AddHit(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+	      fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
 	      // Fit the points to a circle
-	      fit.FitCircle();
+	      fit.FitCircleRiemannCorrected(segments[0]->rc);
 	      
 	      // Compute new transverse momentum
-	      double Bx,By,Bz;
-	      bfield->GetField(segments[0]->hits[0]->x,segments[0]->hits[0]->y,
-			       segments[0]->hits[0]->wire->origin(2),Bx,By,Bz);
-	      double B=sqrt(Bx*Bx+By*By+Bz*Bz);
-	      double pt=0.003*B*fit.rc;
-	      double theta=srccan->momentum().Theta(); 
-	      mom.SetMagThetaPhi(pt/sin(theta),theta,srccan->momentum().Phi());
-	    }
-	    else if (segments.size()==1 && segments[0]->hits.size()<4){
-	      unsigned int cdc_index=cdc_forward_ids[jmin];
-	      double pt=cdctrackcandidates[cdc_index]->momentum().Perp();
-	      double theta=srccan->momentum().Theta(); 
-	      mom.SetMagThetaPhi(pt/sin(theta),theta,srccan->momentum().Phi());
+	      double Bz_avg=0.;
+	      for (unsigned int m=0;m<segments[0]->hits.size();m++){
+		double Bx,By,Bz;
+		DFDCPseudo *hit=segments[0]->hits[m];
+		bfield->GetField(hit->x,hit->y,hit->wire->origin.z(),Bx,By,Bz);
+		Bz_avg-=Bz;
+	      }
+
+	      Bz_avg/=float(segments[0]->hits.size());
+	      double pt=0.003*Bz_avg*fit.r0;
+	      double theta=srccan->momentum().Theta();
+	      double phi=atan2(-fit.x0,fit.y0);
+	      if (srccan->charge()<0) phi+=M_PI;
+	      mom.SetMagThetaPhi(pt/sin(theta),theta,phi);
 	    }
 
 	    // Put the candidate in the combined list
 	    DTrackCandidate *can = new DTrackCandidate;
-	    
+	      
 	    can->setMass(srccan->mass());
 	    can->setMomentum(mom);
 	    if (srccan->position().Z()>Z_MIN && srccan->position().Z()<Z_MAX)
@@ -238,7 +242,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	} 
       }
     }
- 
+   
     if (!got_match){
       // Put the fdc candidate in the combined list
       DTrackCandidate *can = new DTrackCandidate;
@@ -312,7 +316,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       can->AddAssociatedObject(cdchits[n]);
    
     _data.push_back(can);
-  }	  
+  }	
   
   return NOERROR;
 }
@@ -344,8 +348,9 @@ jerror_t DTrackCandidate_factory::GetPositionAndMomentum(
   // Get Bfield
   double Bx,By,Bz,B;
   bfield->GetField(x,y,z,Bx,By,Bz);
-  B=sqrt(Bx*Bx+By*By+Bz*Bz);
-  
+  //B=sqrt(Bx*Bx+By*By+Bz*Bz);
+  B=fabs(Bz);
+
   // Momentum
   double px=(cosp*cos2ks-sinp*sin2ks)*0.003*B/2./kappa;
   double py=(sinp*cos2ks+cosp*sin2ks)*0.003*B/2./kappa;
