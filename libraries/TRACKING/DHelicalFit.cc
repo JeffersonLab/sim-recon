@@ -358,6 +358,10 @@ jerror_t DHelicalFit::FitCircleRiemann(float BeamRMS)
 	if(p_trans<0.0){
 		p_trans = -p_trans;
 	}
+	phi=atan2(-x0,y0);  
+	if(phi<0)phi+=2.0*M_PI;
+        if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+
 
 	return NOERROR;
 }
@@ -495,11 +499,6 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   y0=-N[1]/2./N[2];
   r0=sqrt(1.-N[2]*N[2]-4.*dist_to_origin*N[2])/2./fabs(N[2]);
  
-  // Phi at the vertex
-  phi=atan2(-x0,y0);
-  if(phi<0)phi+=2.0*M_PI;
-  if(phi>=2.0*M_PI)phi-=2.0*M_PI;
-  
   // Calculate the chisq
   ChisqCircle();
   chisq_source = CIRCLE;
