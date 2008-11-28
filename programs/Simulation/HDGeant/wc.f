@@ -60,3 +60,41 @@ c       if (getcell().gt.0)   print 1002, 'cell',getcell()
  1030 format(10x,'uniform field (',2(g12.5,','),
      +       g12.5,') kG')
       end
+
+      subroutine wcpnorm(n,x,y,z)
+      integer n
+      real x(*),y(*),z(*)
+      real xnorm(3,2),u(3,2),v(3,2)
+      integer ierr
+      do i=1,n
+        xnorm(1,1)=x(i)
+        xnorm(2,1)=y(i)
+        xnorm(3,1)=z(i)
+        call gmedia(xnorm,numed)
+        call ggperp(xnorm,u,ierr)
+        xnorm(1,2)=xnorm(1,1)+u(1,1)
+        xnorm(2,2)=xnorm(2,1)+u(2,1)
+        xnorm(3,2)=xnorm(3,1)+u(3,1)
+        call GDFR3D(xnorm,2,u,v)
+        call IPL(2,u,v)
+      enddo
+      end
+
+      subroutine wc3dpline(n,x,y,z)
+      integer n
+      real x(*),y(*),z(*)
+      real u(999),v(999)
+      real x3d(3,999)
+      if (n.gt.999) then
+        print *, 'Warning from wc3dpline - cannot plot more than 999'
+        print *, 'points in a single polyline, request ignored.'
+        return
+      endif
+      do i=1,n
+        x3d(1,i)=x(i)
+        x3d(2,i)=y(i)
+        x3d(3,i)=z(i)
+      enddo
+      call GDFR3D(x3d,n,u,v)
+      call IPL(n,u,v)
+      end

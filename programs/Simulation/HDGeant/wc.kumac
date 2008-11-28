@@ -511,7 +511,11 @@ MACRO pick opt
     line $sigma(wcvecu(1)) $sigma(wcvecv(1)) $sigma(wcvecu(2)) $sigma(wcvecv(2))
   elseif ($fexist(wc.f).gt.0) then
     call wc.f77
-    call wcprint([nhit],wcx,wcy,wcz)
+    if ([opt].eq.n) then
+      call wcpnorm([nhit],wcx,wcy,wcz)
+    else
+      call wcprint([nhit],wcx,wcy,wcz)
+    endif
   else
     do i=1,[nhit]
       message '   point' [i]: $sigma(wcx([i])) $sigma(wcy([i])) $sigma(wcz([i]))
