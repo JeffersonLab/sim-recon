@@ -43,13 +43,29 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       real xMinimum,freqMaximum,beamStartZ,Theta02
       common /coherentGen/xMinimum,freqMaximum,beamStartZ,Theta02
       data xMinimum/0.01/
-      data freqMaximum/1.0e-4/
+      data freqMaximum/2.0e-4/
       data beamStartZ/-2200.0/
       data Theta02/1.8/
-
       save /coherentGen/
+
+      integer nProfileBins
+      parameter (nProfileBins=500)
+      real freqProfile(nProfileBins)
+      real freqIntegral(nProfileBins)
+      common /freqTables/freqProfile,freqIntegral
+      data freqProfile/nProfileBins*0/
+      data freqIntegral/nProfileBins*0/
+      save /freqTables/
+      real Wincoh
+      parameter (Wincoh=0.1)
+
       integer nubuf
       real ubuf(10)
+
+      logical hexist
+      external hexist
+      common /genstate/ppol,rndm
+      save /genstate/
 
       call GRNDM(rndm,7)
       phim = rndm(1)*TWOPI
@@ -77,28 +93,62 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       rotate(3,3) = 0
       call rotmat(rotate,thxBeam+thxMS-thx-thxMosaic,0d0,0d0)
       call rotmat(rotate,0d0,thyBeam+thyMS-thy-thyMosaic,0d0)
-      do i=1,10000
+      if (freqIntegral(nProfileBins).eq.0) then
+         x1 = 1
+         x0 = xMinimum**(1./nProfileBins)
+         freqProfile(1) = dNcdxdp((x0+x1)/2,TWOPI/4)
+         freqIntegral(1) = freqProfile(1)*(x1-x0)
+         do ip=2,nProfileBins
+            x1 = x0
+            x0 = xMinimum**(ip*1./nProfileBins)
+            freqProfile(ip) = dNcdxdp((x0+x1)/2,TWOPI/4)
+            freqIntegral(ip) = freqIntegral(ip-1)
+     +                        +freqProfile(ip)*(x1-x0)
+         enddo
+      endif
+      do i=1,1000000000
          call GRNDM(rndm,5)
-         phi = rndm(1)*TWOPI
-         x = xMinimum**rndm(2)
-         if (rndm(4).lt.0.5) then              !try coherent generation
+         if (rndm(1).gt.1/(Wincoh+1)) then             !try coherent generation
+            f = freqIntegral(nProfileBins)*rndm(2)
+            do ip=1,nProfileBins
+               if (f.le.freqIntegral(ip)) then
+                  x0 = xMinimum**((ip-1.)/nProfileBins)
+                  x1 = xMinimum**((ip*1.)/nProfileBins)
+                  if (ip.gt.1) then
+                     f0 = freqIntegral(ip-1)
+                  else
+                     f0 = 0
+                  endif
+                  f1 = freqIntegral(ip)
+                  fp = freqProfile(ip)
+                  x = (x0*(f1-f)+x1*(f-f0))/(f1-f0)
+                  go to 4
+               endif
+            enddo
+ 4          continue
+            phi = rndm(3)*TWOPI
             freq = dNcdxdp(x,phi)
             f = freq*rndm(3)
-            do ip=1,q2points
-               if (f.le.q2weight(ip)) then
-                  theta2 = q2theta2(ip)
+            do iq=1,q2points
+               if (f.le.q2weight(iq)) then
+                  theta2 = q2theta2(iq)
                   goto 5
                endif
             enddo
  5          continue
+            freq = freq*freqIntegral(nProfileBins)/fp
+            freq = freq*TWOPI
             ppol = polarization(x,theta2)
          else                                  !try incoherent generation
-            theta2 = Theta02*rndm(3)/(1-rndm(3)+1e-30)
+            x = xMinimum**rndm(2)
+            phi = rndm(3)*TWOPI
+            theta2 = Theta02*rndm(4)/(1-rndm(3)+1e-30)
             freq = dNidxdt2(x,theta2)
-            freq = freq*(Theta02+theta2)**2/(TWOPI*Theta02)
+            freq = freq*(Theta02+theta2)**2/Theta02
+            freq = freq*x*(-log(xMinimum))
+            freq = freq*Wincoh
             ppol = 0
          endif
-         freq = x*freq
          if (freq.gt.freqMaximum) then
             print *, 'Warning from beamgen: freq=',freq,
      +               ' is greater than freqMaximum=',freqMaximum
@@ -112,6 +162,24 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
       stop
 
 50    continue
+
+#if DEBUG_CB_BEAM_GENERATOR
+      print *, 'success after',i,' attempts'
+      if (.not.hexist(20)) then
+        call hbnt(20,'coherent generator state',' ')
+        call hbnt(21,'incoherent generator state',' ')
+        call hbname(20,'genstate',ppol,'ppol:r')
+        call hbname(20,'genstate',rndm(1),'varndm(5):r')
+        call hbname(21,'genstate',ppol,'ppol:r')
+        call hbname(21,'genstate',rndm(1),'varndm(5):r')
+      endif
+      if (ppol.eq.0) then
+        call hfnt(21)
+      else
+        call hfnt(20)
+      endif
+#endif
+
       call GRNDM(rndm,2)
       phip = rndm(1)*TWOPI
       rhop = sqrt(-2*log(rndm(2)))
