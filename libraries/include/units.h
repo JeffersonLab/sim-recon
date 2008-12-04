@@ -63,11 +63,11 @@ const double k_degrees = M_PI / 180;
 const double k_to_radians = 1/k_radians;
 const double k_to_degrees = 1/k_degrees;
 
-const double k_psec = 1;
-const double k_nsec = 1.0E3;
-const double k_usec = 1.0E6;
-const double k_msec = 1.0E9;
-const double k_sec  = 1.0E12;
+const double k_psec = 1.0E-3;
+const double k_nsec = 1; // time in nanoseconds
+const double k_usec = 1.0E3;
+const double k_msec = 1.0E6;
+const double k_sec  = 1.0E9;
 const double k_to_psec = 1/k_psec;
 const double k_to_nsec = 1/k_nsec;
 const double k_to_usec = 1/k_usec;
