@@ -51,9 +51,9 @@ const double k_to_eV = 1/k_eV;
 const double k_to_J = 1.60217733E-10;
 const double k_J = 1/k_to_J;
 
-const double k_kGauss = 1;
-const double k_Gauss = 1.0E-3;
-const double k_Tesla = 10;
+const double k_kGauss = 0.1;
+const double k_Gauss = 1.0E-4;
+const double k_Tesla = 1; // magnetic field in Tesla
 const double k_to_kGauss = 1/k_kGauss;
 const double k_to_Gauss = 1/k_Gauss;
 const double k_to_Tesla = 1/k_Tesla;
