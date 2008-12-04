@@ -298,7 +298,7 @@ void DMagneticFieldStepper::GetDirs(DVector3 &xdir, DVector3 &ydir, DVector3 &zd
 //-----------------------
 // SwimToPlane
 //-----------------------
-bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVector3 &origin, const DVector3 &norm, double *pathlen)
+bool DMagneticFieldStepper::SwimToPlane(DVector3 &mypos, DVector3 &mymom, const DVector3 &origin, const DVector3 &norm, double *pathlen)
 {
 	/// Swim the particle from the given position/momentum to
 	/// the plane defined by origin and norm. "origin" should define a point
@@ -343,7 +343,7 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVec
 	// curvature of the swimming changes direction enough.
 
 //_DBG_<<"This routine is not debugged!!!"<<endl;
-	double b = norm.Dot(mom)*norm.Dot(pos-origin);
+	double b = norm.Dot(mymom)*norm.Dot(pos-origin);
 	bool momentum_and_charge_flipped = false;
 	if(b<0.0){
 		momentum_and_charge_flipped = true;
@@ -352,14 +352,14 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVec
 	}
 
 	// Set the starting parameters and start stepping!
-	SetStartingParams(q, &pos, &mom);
-	double k, start_k = norm.Dot(pos-origin);
+	SetStartingParams(q, &mypos, &mymom);
+	double k, start_k = norm.Dot(mypos-origin);
 	double s = 0.0;
 	DVector3 last_pos;
 	do{
-		last_pos = pos;
+		last_pos = mypos;
 
-		s += Step(&pos);
+		s += Step(&mypos);
 		if(s>MAX_SWIM_DIST){
 			if(momentum_and_charge_flipped){
 				//mom = -mom;
@@ -367,7 +367,7 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVec
 			}
 			return true;
 		}
-		k = norm.Dot(pos-origin);
+		k = norm.Dot(mypos-origin);
 	}while(k/start_k > 0.0);
 	
 	// OK, now pos should define a point
@@ -386,7 +386,7 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVec
 	// the current and last positions
 	if(finite(dz_dphi) && fabs(dz_dphi)<1.0E8){
 
-		DVector3 pos_diff = pos - origin;
+		DVector3 pos_diff = mypos - origin;
 		double A = xdir.Dot(norm);
 		double B = ydir.Dot(norm);
 		double C = zdir.Dot(norm);
@@ -404,7 +404,7 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVec
 		double phi = fabs(phi1)<fabs(phi2) ? phi1:phi2;
 		
 		// Calculate position in plane
-		pos += -Ro*phi*phi/2.0*xdir + Ro*phi*ydir + dz_dphi*phi*zdir;
+		mypos += -Ro*phi*phi/2.0*xdir + Ro*phi*ydir + dz_dphi*phi*zdir;
 
 		// Calculate momentum in plane
 		mom.Rotate(phi, zdir);
@@ -414,11 +414,11 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVec
 	}else{
 		// Treat as straight track.
 		double num = norm.Dot(origin - last_pos);
-		double den = norm.Dot( pos   - last_pos);
+		double den = norm.Dot( mypos   - last_pos);
 		double alpha = num/den;
 		
-		DVector3 delta = pos - last_pos;
-		pos = last_pos + alpha*delta;
+		DVector3 delta = mypos - last_pos;
+		mypos = last_pos + alpha*delta;
 		s -= (1.0-alpha)*delta.Mag();
 	}
 	
@@ -430,7 +430,9 @@ bool DMagneticFieldStepper::SwimToPlane(DVector3 &pos, DVector3 &mom, const DVec
 		//mom = -mom;
 		//q = -q;
 	}
-
+	// Return the momentum at the current position
+	mymom=mom;
+	
 	return false;
 }
 
