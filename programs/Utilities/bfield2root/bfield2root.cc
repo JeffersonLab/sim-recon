@@ -18,18 +18,18 @@ using namespace std;
 #include <TFile.h>
 #include <TTree.h>
 
-int Nr = 100;
+int Nr = 81;
 int Nphi = 1;
-int Nz = 500;
+int Nz = 401;
 
-double Rmin = 0.0;
-double Rmax = 65.0;
+double Rmin = 1.0*2.54;
+double Rmax = 81.0*2.54;
 
 double Phimin = 0.0;
 double Phimax = 0.0;
 
-double Zmin = -100.0;
-double Zmax = 500.0;
+double Zmin = -126.0*2.54;
+double Zmax = 274.0*2.54;
 double Z0 = 0.0;
 
 void Usage(void);
@@ -128,6 +128,8 @@ void Usage(void)
 	cout<<"as is used by the reconstruction and simulation programs. Since it is a DANA"<<endl;
 	cout<<"based program, it accepts the same same arguments to manipulate the field as"<<endl;
 	cout<<"other DANA programs. Namely, -PBFIELD_MAP=XXX and -PBFIELD_TYPE=YYY ."<<endl;
+	cout<<endl;
+	cout<<"For example:  -PBFIELD=Magnets/Solenoid/solenoid_1500"<<endl;
 	cout<<endl;
 	cout<<"The entries in the TTree are evaluated on a grid in cylindrical coordinates"<<endl;
 	cout<<"that likely does not reflect the points in the underlying map. As such, the"<<endl;
