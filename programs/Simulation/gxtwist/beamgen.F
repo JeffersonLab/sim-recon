@@ -129,7 +129,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
  4          continue
             phi = rndm(3)*TWOPI
             freq = dNcdxdp(x,phi)
-            f = freq*rndm(3)
+            f = freq*rndm(4)
             do iq=1,q2points
                if (f.le.q2weight(iq)) then
                   theta2 = q2theta2(iq)
@@ -143,7 +143,7 @@ c  freq > freqMaximum is generated; a few ppm of these is no problem.
          else                                  !try incoherent generation
             x = xMinimum**rndm(2)
             phi = rndm(3)*TWOPI
-            theta2 = Theta02*rndm(4)/(1-rndm(3)+1e-30)
+            theta2 = Theta02*rndm(4)/(1-rndm(4)+1e-30)
             freq = dNidxdt2(x,theta2)
             freq = freq*(Theta02+theta2)**2/Theta02
             freq = freq*x*(-log(xMinimum))
