@@ -124,6 +124,15 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
   // Loop over track candidates
   for(unsigned int i=0; i<trackcandidates.size(); i++){ 
     const DTrackCandidate *tc = trackcandidates[i];    
+    DVector3 pos = tc->position();
+    DVector3 mom = tc->momentum(); 	
+
+    if (isnan(pos.Mag()) || isnan(mom.Mag()) || mom.Mag()==0. 
+	|| pos.Mag()==0.){
+      _DBG_<< "Invalid seed data ! " <<endl;
+      continue;
+    }
+
     vector<const DFDCSegment *>segments;
     vector<const DCDCTrackHit *>cdchits;
     tc->GetT(segments);
@@ -132,17 +141,11 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
      // Initialize energy loss sum
     double dEsum=0.;
     unsigned int num_matched_hits=0;
-    DVector3 last_pos,last_mom; 
-    double R=0;
-
+    
     // Initialize Kalman filter with B-field
     DKalmanFilter fit(bfield,dgeom);
 
     for (unsigned int k=0;k<cdchits.size();k++){
-      // Find the outer radius with a hit in the CDC
-      double r=(cdchits[k]->wire->origin+cdc_half_length[2]*cdchits[k]->wire->udir).Perp();
-      if (r>R) R=r;
-
       fit.AddCDCHit(cdchits[k]);
     }
     num_matched_hits+=cdchits.size();
@@ -150,24 +153,19 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
     // Initialize the stepper 
     DMagneticFieldStepper stepper(bfield,tc->charge());
     
-    // Find the track seed by swimming through the field
-    DVector3 pos = tc->position();
-    DVector3 mom = tc->momentum(); 	
-    last_mom=mom;
-    DVector3 norm(0,0,1);
-    if (segments.size()==0){       
+    // Gather hits to pass to the kalman filter
+    if (segments.size()==0){      
       if (cdchits.size()>0){
-	stepper.SwimToRadius(pos,mom,CDC_OUTER_RADIUS,NULL);
+       	stepper.SwimToRadius(pos,mom,CDC_OUTER_RADIUS,NULL);
       }
-      last_pos=pos;
-      last_mom=mom;
       
-      // Add hits to be put through Kalman engine
+      // Look for stray FDC hits
       for(unsigned int j=0; j<fdctrackhits.size(); j++){
 	const DFDCPseudo *hit = fdctrackhits[j];
 	double variance=1.0; //guess for now
 	
-	// Swim to FDC hit plane
+	// Swim to FDC hit plane 
+	DVector3 norm(0,0,1);
 	stepper.SwimToPlane(pos,mom,hit->wire->origin,norm,NULL);
 
 	// Find residual 
@@ -180,13 +178,11 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	if(p>=MIN_FDC_HIT_PROB){
 	  fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
 		     hit->covyy,hit->covxy,hit->dE);
-	  last_pos=pos;
-	  last_mom=mom;
 	  num_matched_hits++;
 	  dEsum+=hit->dE;
 	}
-      }      
-    }
+      } 
+    } // if (segments.size()==0)
     else{	
       const DFDCSegment *segment=NULL;
       for (unsigned m=0;m<segments.size();m++){
@@ -200,31 +196,11 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	}
 
       }
-      unsigned int last_segment_id=segments.size()-1;
-      unsigned int last_hit_id=segments[last_segment_id]->hits.size()-1;
-
-      // If we have a good last segment (with more than 3 hits) use this 
-      // to provide the initial guess to the kalman routines, otherwise 
-      // swim from the origin to the most downstream fdc plane with a hit.
-      
-      if (last_hit_id>2)
-	GetPositionAndMomentum(segment,last_pos,last_mom);
-      else
-   
-	{
-	// Swim to FDC hit plane
-	stepper.SwimToPlane(pos,mom,
-	    segments[last_segment_id]->hits[last_hit_id]->wire->origin,
-			    norm,NULL);
-	last_pos=pos;
-	last_mom=mom;
-      }
-     
     }
 
     if (num_matched_hits>=MIN_HITS){
     // Set the initial parameters from the track candidate
-      fit.SetSeed(tc->charge(),last_pos,last_mom);
+      fit.SetSeed(tc->charge(),tc->position(),tc->momentum());
 
       // Kalman filter 
       jerror_t error=fit.KalmanLoop(TOF_MASS);
@@ -273,7 +249,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
   return NOERROR;
 }
 
-
+// ------------------- NOT CURRENTLY USED ---------------------------------
 // Obtain position and momentum at the exit of a given package using the 
 // helical track model.
 //
