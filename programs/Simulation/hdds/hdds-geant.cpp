@@ -371,6 +371,20 @@ int FortranWriter::createSolid(DOMElement* el, Refsys& ref)
          npar = 3;
       }
    }
+   else if (shapeS == "eltu")
+   {
+
+      shapeS = "ELTU";
+      double ri, ro, zl;
+      XString riozS(el->getAttribute(X("Rio_Z")));
+      std::stringstream listr(riozS);
+      listr >> ri >> ro >> zl;
+
+      npar = 3;
+      par[0] = ri * unit.cm;
+      par[1] = ro * unit.cm;
+      par[2] = zl/2 * unit.cm;
+   }
    else if (shapeS == "trd")
    {
       shapeS = "TRAP";

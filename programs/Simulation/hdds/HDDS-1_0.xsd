@@ -178,6 +178,7 @@
         1) solid volume (have a "material" and may be "sensitive"))
            |-> box      3-rectangle
            |-> tubs	tube section
+	   |-> eltu     elliptical tube
            |-> trd	trapezoid
            |-> pcon	poly-cone (sequence of joined cons)
            |-> pgon	polyhedron (sequence of joined polygons)
@@ -280,7 +281,21 @@
 
   NB: Note the factor two difference in the length wrt the 'Geant4 - tubs'
 
-1.4.1.4) Cone segment (element tag "cons")
+
+1.4.1.4) Elliptical cross-section tube (element tag "eltu")
+
+  It has three parameters:
+
+                     Rio_Z="Ri Ro Z"
+
+  with
+
+                     Ri    Semi-axis of the ellipse along x
+                     Ro    Semi-axis of the ellipse along y
+                     Z     Half-length in z
+
+
+1.4.1.5) Cone segment (element tag "cons")
 
   A cons is, in the general case, a Phi segment of a cone, with length
   Z, inner and outer radii specified at -Z/2 and +Z/2. The Phi segment
@@ -303,7 +318,7 @@
                      dPhi    Delta angle phi
 
 
-1.4.1.5) Polycone segment (element tag "pcon" )
+1.4.1.6) Polycone segment (element tag "pcon" )
 
   A pcon is, in the general case, a Phi segment of a polycone. The
   polycone is build from a series of consecutive cones.
@@ -330,7 +345,7 @@
                      Z      position z
 
 
-1.4.1.6) Polyhedron solid (element tag "pgon" )
+1.4.1.7) Polyhedron solid (element tag "pgon" )
 
   A pgon is similar to the polycone (element tag "pcon") except that
   its boundaries are planar segments instead of conical ones.
@@ -367,7 +382,7 @@
   where "radius" of a planar boundary is defined to be the perpendicular
   distance from the boundary to the z-axis.
 
-1.4.1.7) Sphere segment (element tag "sphere" )
+1.4.1.8) Sphere segment (element tag "sphere" )
 
   A sphere segment is a section of a sphere that is delimited by boundaries
   of fixed radius, polar angle and azimuthal angle.
@@ -2318,6 +2333,7 @@
       <xs:element ref="box"/>
       <xs:element ref="trd"/>
       <xs:element ref="tubs"/>
+      <xs:element ref="eltu"/>
       <xs:element ref="cons"/>
       <xs:element ref="pcon"/>
       <xs:element ref="pgon"/>
@@ -2516,6 +2532,31 @@
     <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
   </xs:complexType>
 </xs:element>
+
+<xs:element name="eltu">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element ref="apply" minOccurs="0"/>
+      <xs:group ref="parameter_group" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+
+    <xs:attribute name="Rio_Z" use="required">
+      <xs:simpleType>
+        <xs:restriction base="floatList">
+          <xs:length value="3"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="comment" type="xs:string"/>
+    <xs:attribute name="material" use="required" type="xs:IDREF"/>
+    <xs:attribute name="name" use="required" type="xs:ID"/>
+    <xs:attribute name="parameters" type="xs:IDREF"/>
+    <xs:attribute name="sensitive" default="false" type="trueFalse"/>
+    <xs:attribute name="unit_angle" default="deg" type="angleUnit"/>
+    <xs:attribute name="unit_length" default="cm" type="lengthUnit"/>
+  </xs:complexType>
+</xs:element>
+
 
 <xs:element name="union">
   <xs:complexType>

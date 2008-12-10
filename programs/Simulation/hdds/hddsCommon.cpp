@@ -1449,9 +1449,10 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             }
             XString targProfS(targEnv->getAttribute(X("profile")));
             if (noRotation && (nSiblings == 1) &&
-                (containerS == "pcon" ||
-                 containerS == "cons" ||
-                 containerS == "tubs") &&
+                (containerS == "pcon"  ||
+                 containerS == "cons"  ||
+                 containerS == "tubs"  ||
+		 containerS == "eltu") &&
                 (targProfS.size() > 0) &&
                 (implrotS == "true"))
             {
@@ -1554,7 +1555,8 @@ int CodeWriter::createVolume(DOMElement* el, Refsys& ref)
             if (noRotation && (nSiblings == 1) &&
                 (containerS == "pcon" ||
                  containerS == "cons" ||
-                 containerS == "tubs"))
+                 containerS == "tubs" || 
+                 containerS == "eltu" ))
             {
                static int rDivisions = 0xd00;
                std::stringstream divStr;

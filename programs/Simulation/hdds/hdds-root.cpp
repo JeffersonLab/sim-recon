@@ -345,6 +345,26 @@ int RootMacroWriter::createSolid(DOMElement* el, Refsys& ref)
            << itmed << "," << par[0] << "," << par[1] << ","
            << par[2] << ");" << std::endl;
    }
+   else if (shapeS == "eltu")
+   {
+      shapeS = "ELTU";
+      double ri, ro, zl, phi0, dphi;
+      XString riozS(el->getAttribute(X("Rio_Z")));
+      std::stringstream listr(riozS);
+      listr >> ri >> ro >> zl;
+
+      npar = 3;
+      par[0] = ri * unit.cm;
+      par[1] = ro * unit.cm;
+      par[2] = zl/2 * unit.cm;
+
+      std::cout
+           << "TGeoVolume *" << S(nameS) << "= gGeoManager->MakeEltu(\"" 
+           << S(nameS) << "\",med" << itmed << "," 
+           << par[0] << "," << par[1] << "," << par[2] << ");"
+           << std::endl;
+
+   }
    else if (shapeS == "tubs")
    {
       shapeS = "TUBS";
