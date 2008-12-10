@@ -26,9 +26,11 @@ typedef struct{
 
 typedef struct{
   unsigned int h_id;
+  unsigned int num_hits;
   DVector3 pos;
   DMatrix *S;
   DMatrix *J,*Q;
+  double s;
 }DKalmanState_t;
 
 typedef struct{
@@ -50,6 +52,12 @@ class DKalmanFilter{
       delete forward_traj[i].S;
       delete forward_traj[i].J;
     }
+
+    for (unsigned int i=0;i<central_traj.size();i++){
+      delete central_traj[i].Q;
+      delete central_traj[i].S;
+      delete central_traj[i].J;
+    }
     hits.clear();
     cdchits.clear();
   };
@@ -66,7 +74,9 @@ class DKalmanFilter{
 			 double &chisq);
   jerror_t ExtrapolateToVertex(double mass_hyp,DVector3 pos,DMatrix Sc,
 			       DMatrix Cc);
+  jerror_t ExtrapolateToVertex(double mass_hyp,DMatrix S, DMatrix C);
   jerror_t SetReferenceTrajectory(DMatrix S);
+  jerror_t SetCDCReferenceTrajectory(DMatrix Sc);
   void GetMomentum(DVector3 &mom);
   void GetPosition(DVector3 &pos);
   double GetChiSq(void){return chisq_;}
@@ -96,7 +106,7 @@ class DKalmanFilter{
   jerror_t GetProcessNoise(double mass_hyp,double ds,
 			   double X0,DMatrix S,DMatrix &Q);
   double Step(double oldz,double newz, double dEdx,DMatrix &S);
-  double StepJacobian(double oldz,double newz,DMatrix &S,double dEdx,
+  jerror_t StepJacobian(double oldz,double newz,DMatrix S,double dEdx,
 		      DMatrix &J);
   jerror_t CalcDerivAndJacobian(double z,DMatrix S,double dEdx,
 				DMatrix &J,DMatrix &D);
@@ -104,11 +114,10 @@ class DKalmanFilter{
   jerror_t CalcDeriv(double ds,DVector3 pos,DVector3 &dpos,DVector3 wire_orig,
 		     DVector3 wiredir,DMatrix S,double dEdx,DMatrix &D1);
 
-  jerror_t StepJacobian(DVector3 &pos,DVector3 wire_pos,DVector3 wiredir,
-			double ds,DMatrix &S, double dEdx,DMatrix &J);
+  jerror_t StepJacobian(DVector3 pos,DVector3 wire_pos,DVector3 wiredir,
+			double ds,DMatrix S, double dEdx,DMatrix &J);
   jerror_t Step(DVector3 &pos,DVector3 wire_pos,DVector3 wiredir,double ds,
 		DMatrix &S, double dEdx);
-
   jerror_t CalcDerivAndJacobian(double ds,DVector3 pos,DVector3 &dpos,
 				DVector3 wire_pos,
 				DVector3 wiredir,
@@ -126,7 +135,7 @@ class DKalmanFilter{
   jerror_t GoldenSection(double &ds,double doca,double dedx,DVector3 &pos,
 		       DVector3 origin,DVector3 dir,  
 		       DMatrix &Sc,DMatrix &Jc); 
-  void GoldenSection(double &ds,double doca,double dedx,
+  double GoldenSection(double ds1,double ds2,double doca,double dedx,
 		     DVector3 pos,DVector3 origin,DVector3 dir,  
 		     DMatrix Sc);
 
@@ -153,7 +162,8 @@ class DKalmanFilter{
   vector<double>cdc_resid;
   vector<double>cdc_pulls;
 
-
+  // path length
+  double len;
 
   // For dEdx measurements
   double path_length;  // path length in active volume
