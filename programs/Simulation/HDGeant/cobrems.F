@@ -24,9 +24,9 @@ C
       a=3.56e-10	!dimension of diamond unit cell (m)
       Aphonon=0.5e9	!phonon-free recoil constant (GeV**-2)
       betaFF=111*Z**(-1/3.)/me	!cutoff for atomic form-factor (/GeV)
-      mospread=50e-6	!crystal r.m.s. mosaic spread
+      mospread=20e-6	!crystal r.m.s. mosaic spread
       E=Emax		!electron beam energy (GeV)
-      Erms=6.0e-3       !electron beam energy rms spread (GeV)
+      Erms=2.5e-3       !electron beam energy rms spread (GeV)
       emitx=1.0e-8	!electron beam emittance in x (m r)
       emity=0.5e-8	!electron beam emittance in y (m r)
       spot=0.0005	!electron beam spot size at collimator
