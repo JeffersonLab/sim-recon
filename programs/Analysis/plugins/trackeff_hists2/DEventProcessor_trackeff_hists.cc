@@ -11,6 +11,8 @@ using namespace std;
 
 #include <TThread.h>
 
+#include <TROOT.h>
+
 #include "DEventProcessor_trackeff_hists.h"
 #include "DTrackingResolutionGEANT.h"
 
@@ -66,7 +68,8 @@ DEventProcessor_trackeff_hists::~DEventProcessor_trackeff_hists()
 jerror_t DEventProcessor_trackeff_hists::init(void)
 {
 	// Create TRACKING directory
-	TDirectory *dir = new TDirectory("TRACKING","TRACKING");
+	TDirectory *dir = (TDirectory*)gROOT->FindObject("TRACKING");
+	if(!dir)dir = new TDirectory("TRACKING","TRACKING");
 	dir->cd();
 
 	// Create Trees
