@@ -1,8 +1,8 @@
 // $Id$
 //
 //    File: DEventProcessor_track_hists.h
-// Created: Sun Apr 24 06:45:21 EDT 2005
-// Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
+// Created: Wed Oct 10 13:30:37 EDT 2007
+// Creator: davidl (on Darwin fwing-dhcp95.jlab.org 8.10.1 i386)
 //
 
 #ifndef _DEventProcessor_track_hists_
@@ -24,11 +24,14 @@ using std::map;
 #include <PID/DKinematicData.h>
 #include <TRACKING/DReferenceTrajectory.h>
 #include <TRACKING/DMCTrackHit.h>
+#include <TRACKING/DTrack.h>
 #include <TRACKING/DMCThrown.h>
 #include <CDC/DCDCTrackHit.h>
+#include <FDC/DFDCHit.h>
+#include <FDC/DFDCWire.h>
 
-#include "track.h"
 #include "dchit.h"
+#include "trackpar.h"
 
 class DEventProcessor_track_hists:public JEventProcessor{
 
@@ -36,37 +39,25 @@ class DEventProcessor_track_hists:public JEventProcessor{
 		DEventProcessor_track_hists();
 		~DEventProcessor_track_hists();
 
-		TTree *trkeff;
-		track trk;
-		track *trk_ptr;
-
-		TTree *cdchits;
-		dchit cdchit;
-		dchit *cdchit_ptr;
+		TTree *fdchits, *cdchits, *ttrack;
+		dchit cdchit, fdchit;
+		dchit *cdchit_ptr, *fdchit_ptr;
+		trackpar trk;
+		trackpar *trk_ptr;
 		
-		typedef vector<const DCDCTrackHit*> CDChitv;
+		DReferenceTrajectory *rt_thrown;
+		DCoordinateSystem target;
 
+		void FindLR(vector<const DCoordinateSystem*> &wires, const DReferenceTrajectory *crt, vector<int> &LRhits);
+		
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
 		jerror_t brun(JEventLoop *loop, int runnumber);
 		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via DEventProcessor virtual method
 		jerror_t erun(void);					///< Invoked via DEventProcessor virtual method
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
-
-		void GetCDCHits(const DKinematicData *p, CDChitv &inhits, CDChitv &outhits);
-		void GetCDCHitsFromTruth(int trackno, CDChitv &outhits);
-		unsigned int FindMatch(CDChitv &thrownhits, vector<CDChitv> &candidate_hits, CDChitv &matched_hits);
-		void FindCDCTrackNumbers(JEventLoop *loop);
-
-		DMagneticFieldMap *bfield;
-		DReferenceTrajectory *ref;
-		double MAX_HIT_DIST_CDC;
-		double MAX_HIT_DIST_FDC;
-		
-		map<const DCDCTrackHit*, const DMCTrackHit*> cdclink;
-		
+			
 		pthread_mutex_t mutex;
-		pthread_mutex_t rt_mutex;
 };
 
 #endif // _DEventProcessor_track_hists_
