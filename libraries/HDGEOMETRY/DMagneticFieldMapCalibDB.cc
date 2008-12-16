@@ -19,6 +19,10 @@ DMagneticFieldMapCalibDB::DMagneticFieldMapCalibDB(JApplication *japp, string na
 {
 	int runnumber = 1;
 	jcalib = japp->GetJCalibration(runnumber);
+
+	JParameterManager *jparms = japp->GetJParameterManager();
+	jparms->SetDefaultParameter("BFIELD_MAP", namepath);
+	
 	int Npoints = ReadMap(namepath, runnumber); 
 	if(Npoints==0){
 		_DBG_<<"Error getting JCalibration object for magnetic field!"<<endl;
