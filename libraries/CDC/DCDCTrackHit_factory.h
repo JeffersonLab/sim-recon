@@ -13,7 +13,7 @@
 #include "HDGEOMETRY/DGeometry.h"
 
 #define CDC_MAX_STRAWS 222
-#define CDC_MAX_RINGS 24
+#define CDC_MAX_RINGS 28
 
 class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 	public:

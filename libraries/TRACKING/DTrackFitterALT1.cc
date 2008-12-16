@@ -565,7 +565,7 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 	swim_step_t &start_step = rt->swim_steps[0];
 	DVector3 &pos = start_step.origin;
 
-#if 1
+#if 0
 	// --- Target ---
 	// Define the target as though it were a wire so it is included
 	// in the chi-sq

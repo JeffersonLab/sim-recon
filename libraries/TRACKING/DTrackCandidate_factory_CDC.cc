@@ -242,22 +242,11 @@ void DTrackCandidate_factory_CDC::GetCDCHits(JEventLoop *loop)
 	  cdctrkhits.push_back(cdctrkhit);
 	  
 	  // Sort into list of hits by superlayer
-	  // GeomC
-	  /*
 	  if(cdctrkhit->hit->wire->ring<=4)cdchits_by_superlayer[0].push_back(cdctrkhit);
 	  else if(cdctrkhit->hit->wire->ring<= 12)cdchits_by_superlayer[1].push_back(cdctrkhit);
 	  else if(cdctrkhit->hit->wire->ring<=16)cdchits_by_superlayer[2].push_back(cdctrkhit);
 	  else if(cdctrkhit->hit->wire->ring<=24)cdchits_by_superlayer[3].push_back(cdctrkhit);
-	  else if(cdctrkhit->hit->wire->ring<=27)cdchits_by_superlayer[4].push_back(cdctrkhit);   
-	  */
-	  //V4 Geometry
-	
-	  if(cdctrkhit->hit->wire->ring<=3)cdchits_by_superlayer[0].push_back(cdctrkhit);
-	  else if(cdctrkhit->hit->wire->ring<= 7)cdchits_by_superlayer[1].push_back(cdctrkhit);
-	  else if(cdctrkhit->hit->wire->ring<=12)cdchits_by_superlayer[2].push_back(cdctrkhit);
-	  else if(cdctrkhit->hit->wire->ring<=16)cdchits_by_superlayer[3].push_back(cdctrkhit);
-	  else if(cdctrkhit->hit->wire->ring<=25)cdchits_by_superlayer[4].push_back(cdctrkhit);
-	  
+	  else if(cdctrkhit->hit->wire->ring<=28)cdchits_by_superlayer[4].push_back(cdctrkhit);	  
 	}
 	
 	// Sort the individual superlayer lists by decreasing values of R

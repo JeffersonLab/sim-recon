@@ -80,7 +80,8 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 	// layers 7,8,16,17 are -6 degrees
 	// all other layers are zero degrees
 
-	float degrees6 = 6.0*M_PI/180.0;
+	float deg2rad = M_PI/180.0;
+	float degrees6 = 6.0*deg2rad;
 	float degrees0 = 0.0;
 	double L = Z_MAX - Z_MIN; // full length of wire
 	for(int ring=1; ring<=CDC_MAX_RINGS; ring++){
@@ -88,47 +89,79 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 		float radius = 0.0;
 		float stereo=0.0;
 		float phi_shift=0.0;
+		float deltaX=0.0;
+		float deltaY=0.0;
+		float rotX=0.0;
+		float rotY=0.0;
 
 		switch(ring){
-			// Phase shifted configuration
-			// NOTE: These follow an XML file sent ot me by Beni Z. on July 18, 2008
-			// but the sign of the stereo shift seems opposite to that used in GlueX-doc-990-v10.
-			// We stick with Beni's convention for simplicity here on the assumption that
-			// this choice is arbitrary.  7/21/2008 DL.
-			case  1:	myNstraws=  43;	radius= 10.984;	stereo=  degrees0; phi_shift= 0.000;	break;
-			case  2:	myNstraws=  50;	radius= 12.769;	stereo=  degrees0; phi_shift=+3.600;	break;
-			case  3:	myNstraws=  57;	radius= 14.555;	stereo=  degrees0; phi_shift=-2.105;	break;
-			case  4:	myNstraws=  63;	radius= 16.174;	stereo= -degrees6; phi_shift= 0.000;	break;
-			case  5:	myNstraws=  70;	radius= 17.969;	stereo= -degrees6; phi_shift= 0.000;	break;
-			case  6:	myNstraws=  77;	radius= 19.765;	stereo= +degrees6; phi_shift= 0.000;	break;
-			case  7:	myNstraws=  84;	radius= 21.561;	stereo= +degrees6; phi_shift= 0.000;	break;
-			case  8:	myNstraws=  98;	radius= 25.015;	stereo=  degrees0; phi_shift=+0.216;	break;
-			case  9:	myNstraws= 105;	radius= 26.801;	stereo=  degrees0; phi_shift= 0.000;	break;
-			case 10:	myNstraws= 112;	radius= 28.588;	stereo=  degrees0; phi_shift=+1.607;	break;
-			case 11:	myNstraws= 119;	radius= 30.374;	stereo=  degrees0; phi_shift=-1.008;	break;
-			case 12:	myNstraws= 126;	radius= 32.160;	stereo=  degrees0; phi_shift=+0.571;	break;
-			case 13:	myNstraws= 132;	radius= 33.877;	stereo= -degrees6; phi_shift= 0.000;	break;
-			case 14:	myNstraws= 139;	radius= 35.673;	stereo= -degrees6; phi_shift= 0.000;	break;
-			case 15:	myNstraws= 146;	radius= 37.469;	stereo= +degrees6; phi_shift= 0.000;	break;
-			case 16:	myNstraws= 153;	radius= 39.265;	stereo= +degrees6; phi_shift= 0.000;	break;
-			case 17:	myNstraws= 165;	radius= 42.113;	stereo=  degrees0; phi_shift= 0.000;	break;
-			case 18:	myNstraws= 172;	radius= 43.899;	stereo=  degrees0; phi_shift=+1.047;	break;
-			case 19:	myNstraws= 179;	radius= 45.686;	stereo=  degrees0; phi_shift=-0.670;	break;
-			case 20:	myNstraws= 186;	radius= 47.472;	stereo=  degrees0; phi_shift=+0.387;	break;
-			case 21:	myNstraws= 193;	radius= 49.258;	stereo=  degrees0; phi_shift=-0.266;	break;
-			case 22:	myNstraws= 200;	radius= 51.045;	stereo=  degrees0; phi_shift=+0.164;	break;
-			case 23:	myNstraws= 207;	radius= 52.831;	stereo=  degrees0; phi_shift=-0.134;	break;
-			case 24:	myNstraws= 214;	radius= 54.618;	stereo=  degrees0; phi_shift=+0.099;	break;
+			// Geometry "C" from http://www.jlab.org/Hall-D/software/wiki/index.php/CDC_Future_MC_Studies_Discussion%2C_September_29%2C_2008
+
+			// axial
+			case  1:	myNstraws=  43;	radius= 10.984;	stereo=  degrees0; phi_shift= 0.00000;	break;
+			case  2:	myNstraws=  43;	radius= 12.341;	stereo=  degrees0; phi_shift= 4.18605;	break;
+			case  3:	myNstraws=  55;	radius= 14.029;	stereo=  degrees0; phi_shift= 2.00000;	break;
+			case  4:	myNstraws=  55;	radius= 15.410;	stereo=  degrees0; phi_shift= 5.27272727272;	break;
+
+			// -stereo
+			case  5:	myNstraws=  66;	radius= 17.085;	stereo= -degrees6; phi_shift= 0.33333;	break;
+			case  6:	myNstraws=  66;	phi_shift= 0.33333;	deltaX= 18.450;	deltaY= 0.886027;	rotX=-6.500;	rotY=-0.30;	break;
+			case  7:	myNstraws=  80;	radius= 20.581;	stereo= -degrees6; phi_shift= -0.5000;	break;
+			case  8:	myNstraws=  80;	phi_shift= -0.5000;	deltaX= 21.950;	deltaY= 0.87224;	rotX=-6.475;	rotY=-0.27;	break;
+
+			// +stereo
+			case  9:	myNstraws=  93;	radius= 23.980;	stereo= +degrees6; phi_shift= 1.1000;	break;
+			case 10:	myNstraws=  93;	phi_shift= 1.1000;	deltaX= 25.35;	deltaY= 0.857573;	rotX=+6.35;	rotY=+0.24;	break;
+			case 11:	myNstraws= 106;	radius= 27.380;	stereo= +degrees6; phi_shift= -1.40;	break;
+			case 12:	myNstraws= 106;	phi_shift= -1.400;	deltaX= 28.800;	deltaY= 0.835;	rotX=+6.3;	rotY=+0.21;	break;
+
+			// axial
+			case 13:	myNstraws= 124;	radius= 31.65;	stereo=  degrees0; phi_shift= 0.5000000;	break;
+			case 14:	myNstraws= 124;	radius= 33.05;	stereo=  degrees0; phi_shift= 1.9516000;	break;
+			case 15:	myNstraws= 133;	radius= 34.7;	stereo=  degrees0; phi_shift= 1.0000000;	break;
+			case 16:	myNstraws= 133;	radius= 36.1;	stereo=  degrees0; phi_shift= 2.3533834;	break;
+
+			// -stereo
+			case 17:	myNstraws= 145;	radius= 37.720;	stereo= -degrees6; phi_shift= 0.2;	break;
+			case 18:	myNstraws= 145;	phi_shift= 0.2;	deltaX= 39.12;	deltaY= 0.8321106;	rotX=-6.25;	rotY=-0.16;	break;
+			case 19:	myNstraws= 158;	radius= 40.89;	stereo= -degrees6; phi_shift= 0.7;	break;
+			case 20:	myNstraws= 158;	phi_shift= 0.7;	deltaX=42.29 ;	deltaY= 0.8391063;	rotX=-6.25;	rotY=-0.13;	break;
+
+			// +stereo
+			case 21:	myNstraws= 171;	radius= 44.05;	stereo= +degrees6; phi_shift= 1.1000;	break;
+			case 22:	myNstraws= 171;	phi_shift= 1.1000;	deltaX=45.46 ;	deltaY= 0.8349124;	rotX=+6.20;	rotY=+0.11;	break;
+			case 23:	myNstraws= 184;	radius= 47.20;	stereo= +degrees6; phi_shift= 1.40;	break;
+			case 24:	myNstraws= 184;	phi_shift= 1.400;	deltaX= 48.63;	deltaY= 0.8303831;	rotX=+6.18;	rotY=+0.10;	break;
+
+			// axial
+			case 25:	myNstraws= 197;	radius= 51.0;	stereo=  degrees0; phi_shift= 0.200000000;	break;
+			case 26:	myNstraws= 197;	radius= 52.4;	stereo=  degrees0; phi_shift= 1.113705000;	break;
+			case 27:	myNstraws= 210;	radius= 54.05;	stereo=  degrees0; phi_shift= 0.800000000;	break;
+			case 28:	myNstraws= 210;	radius= 55.45;	stereo=  degrees0; phi_shift= 1.657142857;	break;
+
 			default:
-				cerr<<__FILE__<<":"<<__LINE__<<" Invalid value for CDC ring ("<<ring<<") should be 1-24 inclusive!"<<endl;
+				cerr<<__FILE__<<":"<<__LINE__<<" Invalid value for CDC ring ("<<ring<<") should be 1-28 inclusive!"<<endl;
 		}
 		Nstraws[ring-1] = myNstraws;
 		
 		// I'm not sure why this is needed, but empirically, it just is.
 		stereo = -stereo;
+		rotX = -rotX;
+		rotY = -rotY;
+		
+		// For close-packed stereo layers, rotX is set. For normal stereo layers, stereo is set.
+		// In the case of normal stereo wires, copy the rotation to the rotX field
+		if(stereo!=0.0)rotX = stereo/deg2rad;
 		
 		// Convert phi_shift to radians
 		phi_shift *= M_PI/180.0;
+		
+		// Close-packed stereos have and additional, initial phi shift in order to be close packed
+		phi_shift += atan2(deltaY, deltaX);
+		
+		// If radius is 0 then it means this is a close-packed stereo whose position is set
+		// by deltaX and deltaY. Calculate the initial radius from these
+		if(radius==0.0)radius=sqrt(deltaX*deltaX + deltaY*deltaY);
 		
 		float dphi = 2.0*M_PI/(float)myNstraws; // phi angle difference between straws
 		for(int straw=1; straw<=myNstraws; straw++){
@@ -139,13 +172,12 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 			// Define position of midpoint of wire, phi of midpoint, and m_x, m_y
 			w->ring = ring;
 			w->straw = straw;
-			w->stereo = stereo;
 			w->origin.SetX(radius*cos(phi));
 			w->origin.SetY(radius*sin(phi));
 			w->origin.SetZ((Z_MAX + Z_MIN)/2.0);
 			w->phi = phi;
 			//w->L = L/cos(stereo);
-			w->L = L + (stereo==degrees0 ? 0.0:1.5); // to make consistent with HDDS
+			//w->L = L + (stereo==degrees0 ? 0.0:1.5); // to make consistent with HDDS
 			
 			// Here, we need to define a coordinate system for the wire
 			// in which the wire runs along one axis. We call the directions
@@ -153,14 +185,20 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 			// the wire running in the "u" direction. The "s" direction
 			// will be defined by the direction pointing from the beamline
 			// to the midpoint of the wire.
-			w->sdir.SetXYZ(cos(w->phi), sin(w->phi), 0.0);
-			w->sdir.SetMag(1.0); // This isn't really needed
 			
-			w->udir.SetXYZ(-sin(stereo)*sin(w->phi), sin(stereo)*cos(w->phi), cos(stereo));
-			w->udir.SetMag(1.0); // This isn't really needed
+			w->udir.SetXYZ(0.0, 0.0, 1.0);
+			w->udir.RotateX(-rotX*deg2rad);
+			w->udir.RotateY(-rotY*deg2rad);
+			w->udir.RotateZ(phi);
 			
+			w->sdir=w->origin-TVector3(0,0,w->origin.Z());
+			w->sdir.SetMag(1.0);
+
 			w->tdir = w->udir.Cross(w->sdir);
 			w->tdir.SetMag(1.0); // This isn't really needed
+
+			w->stereo = w->udir.Angle(TVector3(0,0,1));
+			w->L = L/cos(stereo);
 		}
 	}
 
