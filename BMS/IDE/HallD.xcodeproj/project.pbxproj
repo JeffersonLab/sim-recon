@@ -7,6 +7,39 @@
 	objects = {
 
 /* Begin PBXAggregateTarget section */
+		75332D2B0EF857A60014DA2A /* plugins */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 75332D410EF857E50014DA2A /* Build configuration list for PBXAggregateTarget "plugins" */;
+			buildPhases = (
+			);
+			dependencies = (
+				75332D3F0EF857BD0014DA2A /* PBXTargetDependency */,
+				75332D3D0EF857BD0014DA2A /* PBXTargetDependency */,
+				75332D3B0EF857BD0014DA2A /* PBXTargetDependency */,
+				75332D390EF857BD0014DA2A /* PBXTargetDependency */,
+				75332D370EF857BD0014DA2A /* PBXTargetDependency */,
+				75332D350EF857BD0014DA2A /* PBXTargetDependency */,
+				75332D330EF857BD0014DA2A /* PBXTargetDependency */,
+				75332D310EF857BD0014DA2A /* PBXTargetDependency */,
+				75332D2F0EF857B50014DA2A /* PBXTargetDependency */,
+				75332D2D0EF857B10014DA2A /* PBXTargetDependency */,
+			);
+			name = plugins;
+			productName = plugins;
+		};
+		75332D4D0EF858DB0014DA2A /* ALL */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 75332D550EF859270014DA2A /* Build configuration list for PBXAggregateTarget "ALL" */;
+			buildPhases = (
+			);
+			dependencies = (
+				75332D4F0EF858EB0014DA2A /* PBXTargetDependency */,
+				75332D510EF858F00014DA2A /* PBXTargetDependency */,
+				75332D530EF858F90014DA2A /* PBXTargetDependency */,
+			);
+			name = ALL;
+			productName = ALL;
+		};
 		75F45B240ED4456A000ABA27 /* libraries */ = {
 			isa = PBXAggregateTarget;
 			buildConfigurationList = 75F45B3D0ED445AE000ABA27 /* Build configuration list for PBXAggregateTarget "libraries" */;
@@ -25,6 +58,7 @@
 				75F45B280ED44574000ABA27 /* PBXTargetDependency */,
 				75F45B260ED44574000ABA27 /* PBXTargetDependency */,
 				75F45B320ED44574000ABA27 /* PBXTargetDependency */,
+				75332CEC0EF8520B0014DA2A /* PBXTargetDependency */,
 			);
 			name = libraries;
 			productName = libraries2;
@@ -36,6 +70,8 @@
 			);
 			dependencies = (
 				75F45B5C0ED44AB1000ABA27 /* PBXTargetDependency */,
+				75332CF20EF852A30014DA2A /* PBXTargetDependency */,
+				75332CF80EF852CD0014DA2A /* PBXTargetDependency */,
 			);
 			name = programs;
 			productName = programs;
@@ -43,6 +79,118 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXContainerItemProxy section */
+		75332CEB0EF8520B0014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75332CDC0EF851BD0014DA2A /* include */;
+			remoteInfo = include;
+		};
+		75332CF10EF852A30014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75F45B780ED44C3C000ABA27 /* hdview2 */;
+			remoteInfo = hdview2;
+		};
+		75332CF70EF852CD0014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75332CF30EF852B20014DA2A /* hd_root */;
+			remoteInfo = hd_root;
+		};
+		75332D2C0EF857B10014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75332D270EF8578B0014DA2A /* trackeff_hists2 */;
+			remoteInfo = trackeff_hists2;
+		};
+		75332D2E0EF857B50014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75332D230EF8577A0014DA2A /* track_hists */;
+			remoteInfo = track_hists;
+		};
+		75332D300EF857BD0014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75332D1F0EF8576D0014DA2A /* radlen_hists */;
+			remoteInfo = radlen_hists;
+		};
+		75332D320EF857BD0014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75332D1B0EF857610014DA2A /* mcthrown_hists */;
+			remoteInfo = mcthrown_hists;
+		};
+		75332D340EF857BD0014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75332D170EF857500014DA2A /* invariant_mass_hists */;
+			remoteInfo = invariant_mass_hists;
+		};
+		75332D360EF857BD0014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75332D130EF857440014DA2A /* fdc_hists */;
+			remoteInfo = fdc_hists;
+		};
+		75332D380EF857BD0014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75332D0F0EF857380014DA2A /* fcal_hists */;
+			remoteInfo = fcal_hists;
+		};
+		75332D3A0EF857BD0014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75332D0B0EF8572B0014DA2A /* cdc_hists */;
+			remoteInfo = cdc_hists;
+		};
+		75332D3C0EF857BD0014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75332D060EF857000014DA2A /* bcal_hists */;
+			remoteInfo = bcal_hists;
+		};
+		75332D3E0EF857BD0014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75332CFA0EF853180014DA2A /* acceptance_hists */;
+			remoteInfo = acceptance_hists;
+		};
+		75332D4E0EF858EB0014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75F45B240ED4456A000ABA27 /* libraries */;
+			remoteInfo = libraries;
+		};
+		75332D500EF858F00014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75F45B530ED44A6D000ABA27 /* programs */;
+			remoteInfo = programs;
+		};
+		75332D520EF858F90014DA2A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 75332D2B0EF857A60014DA2A /* plugins */;
+			remoteInfo = plugins;
+		};
 		75F45B250ED44574000ABA27 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
@@ -2957,6 +3105,174 @@
 /* End PBXGroup section */
 
 /* Begin PBXLegacyTarget section */
+		75332CDC0EF851BD0014DA2A /* include */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "";
+			buildConfigurationList = 75332CE70EF851E10014DA2A /* Build configuration list for PBXLegacyTarget "include" */;
+			buildPhases = (
+			);
+			buildToolPath = ../../BMS/make_xcode;
+			buildWorkingDirectory = $SOURCE_ROOT/src/libraries/$TARGET_NAME;
+			dependencies = (
+			);
+			name = include;
+			passBuildSettingsInEnvironment = 1;
+			productName = include;
+		};
+		75332CF30EF852B20014DA2A /* hd_root */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "";
+			buildConfigurationList = 75332CF40EF852B20014DA2A /* Build configuration list for PBXLegacyTarget "hd_root" */;
+			buildPhases = (
+			);
+			buildToolPath = ../../../BMS/make_xcode;
+			buildWorkingDirectory = $SOURCE_ROOT/src/programs/Analysis/$TARGET_NAME;
+			dependencies = (
+			);
+			name = hd_root;
+			passBuildSettingsInEnvironment = 1;
+			productName = hd_dump;
+		};
+		75332CFA0EF853180014DA2A /* acceptance_hists */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "";
+			buildConfigurationList = 75332CFB0EF853180014DA2A /* Build configuration list for PBXLegacyTarget "acceptance_hists" */;
+			buildPhases = (
+			);
+			buildToolPath = ../../../../BMS/make_xcode;
+			buildWorkingDirectory = $SOURCE_ROOT/src/programs/Analysis/plugins/$TARGET_NAME;
+			dependencies = (
+			);
+			name = acceptance_hists;
+			passBuildSettingsInEnvironment = 1;
+			productName = hd_dump;
+		};
+		75332D060EF857000014DA2A /* bcal_hists */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "";
+			buildConfigurationList = 75332D070EF857000014DA2A /* Build configuration list for PBXLegacyTarget "bcal_hists" */;
+			buildPhases = (
+			);
+			buildToolPath = ../../../../BMS/make_xcode;
+			buildWorkingDirectory = $SOURCE_ROOT/src/programs/Analysis/plugins/$TARGET_NAME;
+			dependencies = (
+			);
+			name = bcal_hists;
+			passBuildSettingsInEnvironment = 1;
+			productName = hd_dump;
+		};
+		75332D0B0EF8572B0014DA2A /* cdc_hists */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "";
+			buildConfigurationList = 75332D0C0EF8572B0014DA2A /* Build configuration list for PBXLegacyTarget "cdc_hists" */;
+			buildPhases = (
+			);
+			buildToolPath = ../../../../BMS/make_xcode;
+			buildWorkingDirectory = $SOURCE_ROOT/src/programs/Analysis/plugins/$TARGET_NAME;
+			dependencies = (
+			);
+			name = cdc_hists;
+			passBuildSettingsInEnvironment = 1;
+			productName = hd_dump;
+		};
+		75332D0F0EF857380014DA2A /* fcal_hists */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "";
+			buildConfigurationList = 75332D100EF857380014DA2A /* Build configuration list for PBXLegacyTarget "fcal_hists" */;
+			buildPhases = (
+			);
+			buildToolPath = ../../../../BMS/make_xcode;
+			buildWorkingDirectory = $SOURCE_ROOT/src/programs/Analysis/plugins/$TARGET_NAME;
+			dependencies = (
+			);
+			name = fcal_hists;
+			passBuildSettingsInEnvironment = 1;
+			productName = hd_dump;
+		};
+		75332D130EF857440014DA2A /* fdc_hists */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "";
+			buildConfigurationList = 75332D140EF857440014DA2A /* Build configuration list for PBXLegacyTarget "fdc_hists" */;
+			buildPhases = (
+			);
+			buildToolPath = ../../../../BMS/make_xcode;
+			buildWorkingDirectory = $SOURCE_ROOT/src/programs/Analysis/plugins/$TARGET_NAME;
+			dependencies = (
+			);
+			name = fdc_hists;
+			passBuildSettingsInEnvironment = 1;
+			productName = hd_dump;
+		};
+		75332D170EF857500014DA2A /* invariant_mass_hists */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "";
+			buildConfigurationList = 75332D180EF857500014DA2A /* Build configuration list for PBXLegacyTarget "invariant_mass_hists" */;
+			buildPhases = (
+			);
+			buildToolPath = ../../../../BMS/make_xcode;
+			buildWorkingDirectory = $SOURCE_ROOT/src/programs/Analysis/plugins/$TARGET_NAME;
+			dependencies = (
+			);
+			name = invariant_mass_hists;
+			passBuildSettingsInEnvironment = 1;
+			productName = hd_dump;
+		};
+		75332D1B0EF857610014DA2A /* mcthrown_hists */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "";
+			buildConfigurationList = 75332D1C0EF857610014DA2A /* Build configuration list for PBXLegacyTarget "mcthrown_hists" */;
+			buildPhases = (
+			);
+			buildToolPath = ../../../../BMS/make_xcode;
+			buildWorkingDirectory = $SOURCE_ROOT/src/programs/Analysis/plugins/$TARGET_NAME;
+			dependencies = (
+			);
+			name = mcthrown_hists;
+			passBuildSettingsInEnvironment = 1;
+			productName = hd_dump;
+		};
+		75332D1F0EF8576D0014DA2A /* radlen_hists */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "";
+			buildConfigurationList = 75332D200EF8576D0014DA2A /* Build configuration list for PBXLegacyTarget "radlen_hists" */;
+			buildPhases = (
+			);
+			buildToolPath = ../../../../BMS/make_xcode;
+			buildWorkingDirectory = $SOURCE_ROOT/src/programs/Analysis/plugins/$TARGET_NAME;
+			dependencies = (
+			);
+			name = radlen_hists;
+			passBuildSettingsInEnvironment = 1;
+			productName = hd_dump;
+		};
+		75332D230EF8577A0014DA2A /* track_hists */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "";
+			buildConfigurationList = 75332D240EF8577A0014DA2A /* Build configuration list for PBXLegacyTarget "track_hists" */;
+			buildPhases = (
+			);
+			buildToolPath = ../../../../BMS/make_xcode;
+			buildWorkingDirectory = $SOURCE_ROOT/src/programs/Analysis/plugins/$TARGET_NAME;
+			dependencies = (
+			);
+			name = track_hists;
+			passBuildSettingsInEnvironment = 1;
+			productName = hd_dump;
+		};
+		75332D270EF8578B0014DA2A /* trackeff_hists2 */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "";
+			buildConfigurationList = 75332D280EF8578B0014DA2A /* Build configuration list for PBXLegacyTarget "trackeff_hists2" */;
+			buildPhases = (
+			);
+			buildToolPath = ../../../../BMS/make_xcode;
+			buildWorkingDirectory = $SOURCE_ROOT/src/programs/Analysis/plugins/$TARGET_NAME;
+			dependencies = (
+			);
+			name = trackeff_hists2;
+			passBuildSettingsInEnvironment = 1;
+			productName = hd_dump;
+		};
 		75F45A900ED3C617000ABA27 /* libraries_tlm */ = {
 			isa = PBXLegacyTarget;
 			buildArgumentsString = "";
@@ -3177,6 +3493,8 @@
 			mainGroup = 75F4563E0ED3C543000ABA27;
 			projectDirPath = "";
 			targets = (
+				75332D4D0EF858DB0014DA2A /* ALL */,
+				75332CDC0EF851BD0014DA2A /* include */,
 				75F45A900ED3C617000ABA27 /* libraries_tlm */,
 				75F45AB60ED437B0000ABA27 /* BCAL */,
 				75F45ABD0ED43B54000ABA27 /* CDC */,
@@ -3194,11 +3512,103 @@
 				75F45B530ED44A6D000ABA27 /* programs */,
 				75F45B5A0ED44AAB000ABA27 /* hd_dump */,
 				75F45B780ED44C3C000ABA27 /* hdview2 */,
+				75332CF30EF852B20014DA2A /* hd_root */,
+				75332CFA0EF853180014DA2A /* acceptance_hists */,
+				75332D060EF857000014DA2A /* bcal_hists */,
+				75332D0B0EF8572B0014DA2A /* cdc_hists */,
+				75332D0F0EF857380014DA2A /* fcal_hists */,
+				75332D130EF857440014DA2A /* fdc_hists */,
+				75332D170EF857500014DA2A /* invariant_mass_hists */,
+				75332D1B0EF857610014DA2A /* mcthrown_hists */,
+				75332D1F0EF8576D0014DA2A /* radlen_hists */,
+				75332D230EF8577A0014DA2A /* track_hists */,
+				75332D270EF8578B0014DA2A /* trackeff_hists2 */,
+				75332D2B0EF857A60014DA2A /* plugins */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXTargetDependency section */
+		75332CEC0EF8520B0014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75332CDC0EF851BD0014DA2A /* include */;
+			targetProxy = 75332CEB0EF8520B0014DA2A /* PBXContainerItemProxy */;
+		};
+		75332CF20EF852A30014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75F45B780ED44C3C000ABA27 /* hdview2 */;
+			targetProxy = 75332CF10EF852A30014DA2A /* PBXContainerItemProxy */;
+		};
+		75332CF80EF852CD0014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75332CF30EF852B20014DA2A /* hd_root */;
+			targetProxy = 75332CF70EF852CD0014DA2A /* PBXContainerItemProxy */;
+		};
+		75332D2D0EF857B10014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75332D270EF8578B0014DA2A /* trackeff_hists2 */;
+			targetProxy = 75332D2C0EF857B10014DA2A /* PBXContainerItemProxy */;
+		};
+		75332D2F0EF857B50014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75332D230EF8577A0014DA2A /* track_hists */;
+			targetProxy = 75332D2E0EF857B50014DA2A /* PBXContainerItemProxy */;
+		};
+		75332D310EF857BD0014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75332D1F0EF8576D0014DA2A /* radlen_hists */;
+			targetProxy = 75332D300EF857BD0014DA2A /* PBXContainerItemProxy */;
+		};
+		75332D330EF857BD0014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75332D1B0EF857610014DA2A /* mcthrown_hists */;
+			targetProxy = 75332D320EF857BD0014DA2A /* PBXContainerItemProxy */;
+		};
+		75332D350EF857BD0014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75332D170EF857500014DA2A /* invariant_mass_hists */;
+			targetProxy = 75332D340EF857BD0014DA2A /* PBXContainerItemProxy */;
+		};
+		75332D370EF857BD0014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75332D130EF857440014DA2A /* fdc_hists */;
+			targetProxy = 75332D360EF857BD0014DA2A /* PBXContainerItemProxy */;
+		};
+		75332D390EF857BD0014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75332D0F0EF857380014DA2A /* fcal_hists */;
+			targetProxy = 75332D380EF857BD0014DA2A /* PBXContainerItemProxy */;
+		};
+		75332D3B0EF857BD0014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75332D0B0EF8572B0014DA2A /* cdc_hists */;
+			targetProxy = 75332D3A0EF857BD0014DA2A /* PBXContainerItemProxy */;
+		};
+		75332D3D0EF857BD0014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75332D060EF857000014DA2A /* bcal_hists */;
+			targetProxy = 75332D3C0EF857BD0014DA2A /* PBXContainerItemProxy */;
+		};
+		75332D3F0EF857BD0014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75332CFA0EF853180014DA2A /* acceptance_hists */;
+			targetProxy = 75332D3E0EF857BD0014DA2A /* PBXContainerItemProxy */;
+		};
+		75332D4F0EF858EB0014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75F45B240ED4456A000ABA27 /* libraries */;
+			targetProxy = 75332D4E0EF858EB0014DA2A /* PBXContainerItemProxy */;
+		};
+		75332D510EF858F00014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75F45B530ED44A6D000ABA27 /* programs */;
+			targetProxy = 75332D500EF858F00014DA2A /* PBXContainerItemProxy */;
+		};
+		75332D530EF858F90014DA2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 75332D2B0EF857A60014DA2A /* plugins */;
+			targetProxy = 75332D520EF858F90014DA2A /* PBXContainerItemProxy */;
+		};
 		75F45B260ED44574000ABA27 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 75F45B200ED4453E000ABA27 /* TRACKING */;
@@ -3267,6 +3677,314 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		75332CE80EF851E10014DA2A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = include;
+			};
+			name = Debug;
+		};
+		75332CE90EF851E10014DA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		75332CF50EF852B20014DA2A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = $TARGET_NAME;
+			};
+			name = Debug;
+		};
+		75332CF60EF852B20014DA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		75332CFC0EF853180014DA2A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = $TARGET_NAME;
+			};
+			name = Debug;
+		};
+		75332CFD0EF853180014DA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		75332D080EF857000014DA2A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = $TARGET_NAME;
+			};
+			name = Debug;
+		};
+		75332D090EF857000014DA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		75332D0D0EF8572B0014DA2A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = $TARGET_NAME;
+			};
+			name = Debug;
+		};
+		75332D0E0EF8572B0014DA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		75332D110EF857380014DA2A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = $TARGET_NAME;
+			};
+			name = Debug;
+		};
+		75332D120EF857380014DA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		75332D150EF857440014DA2A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = $TARGET_NAME;
+			};
+			name = Debug;
+		};
+		75332D160EF857440014DA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		75332D190EF857500014DA2A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = $TARGET_NAME;
+			};
+			name = Debug;
+		};
+		75332D1A0EF857500014DA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		75332D1D0EF857610014DA2A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = $TARGET_NAME;
+			};
+			name = Debug;
+		};
+		75332D1E0EF857610014DA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		75332D210EF8576D0014DA2A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = $TARGET_NAME;
+			};
+			name = Debug;
+		};
+		75332D220EF8576D0014DA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		75332D250EF8577A0014DA2A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = $TARGET_NAME;
+			};
+			name = Debug;
+		};
+		75332D260EF8577A0014DA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		75332D290EF8578B0014DA2A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = $TARGET_NAME;
+			};
+			name = Debug;
+		};
+		75332D2A0EF8578B0014DA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		75332D420EF857E50014DA2A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = plugins;
+			};
+			name = Debug;
+		};
+		75332D430EF857E50014DA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = plugins;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		75332D560EF859270014DA2A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = ALL;
+			};
+			name = Debug;
+		};
+		75332D570EF859270014DA2A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = ALL;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
 		75F456420ED3C543000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3658,6 +4376,132 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		75332CE70EF851E10014DA2A /* Build configuration list for PBXLegacyTarget "include" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75332CE80EF851E10014DA2A /* Debug */,
+				75332CE90EF851E10014DA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75332CF40EF852B20014DA2A /* Build configuration list for PBXLegacyTarget "hd_root" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75332CF50EF852B20014DA2A /* Debug */,
+				75332CF60EF852B20014DA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75332CFB0EF853180014DA2A /* Build configuration list for PBXLegacyTarget "acceptance_hists" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75332CFC0EF853180014DA2A /* Debug */,
+				75332CFD0EF853180014DA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75332D070EF857000014DA2A /* Build configuration list for PBXLegacyTarget "bcal_hists" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75332D080EF857000014DA2A /* Debug */,
+				75332D090EF857000014DA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75332D0C0EF8572B0014DA2A /* Build configuration list for PBXLegacyTarget "cdc_hists" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75332D0D0EF8572B0014DA2A /* Debug */,
+				75332D0E0EF8572B0014DA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75332D100EF857380014DA2A /* Build configuration list for PBXLegacyTarget "fcal_hists" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75332D110EF857380014DA2A /* Debug */,
+				75332D120EF857380014DA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75332D140EF857440014DA2A /* Build configuration list for PBXLegacyTarget "fdc_hists" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75332D150EF857440014DA2A /* Debug */,
+				75332D160EF857440014DA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75332D180EF857500014DA2A /* Build configuration list for PBXLegacyTarget "invariant_mass_hists" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75332D190EF857500014DA2A /* Debug */,
+				75332D1A0EF857500014DA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75332D1C0EF857610014DA2A /* Build configuration list for PBXLegacyTarget "mcthrown_hists" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75332D1D0EF857610014DA2A /* Debug */,
+				75332D1E0EF857610014DA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75332D200EF8576D0014DA2A /* Build configuration list for PBXLegacyTarget "radlen_hists" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75332D210EF8576D0014DA2A /* Debug */,
+				75332D220EF8576D0014DA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75332D240EF8577A0014DA2A /* Build configuration list for PBXLegacyTarget "track_hists" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75332D250EF8577A0014DA2A /* Debug */,
+				75332D260EF8577A0014DA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75332D280EF8578B0014DA2A /* Build configuration list for PBXLegacyTarget "trackeff_hists2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75332D290EF8578B0014DA2A /* Debug */,
+				75332D2A0EF8578B0014DA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75332D410EF857E50014DA2A /* Build configuration list for PBXAggregateTarget "plugins" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75332D420EF857E50014DA2A /* Debug */,
+				75332D430EF857E50014DA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75332D550EF859270014DA2A /* Build configuration list for PBXAggregateTarget "ALL" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				75332D560EF859270014DA2A /* Debug */,
+				75332D570EF859270014DA2A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		75F456410ED3C543000ABA27 /* Build configuration list for PBXProject "HallD" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
