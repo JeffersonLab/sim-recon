@@ -2,6 +2,15 @@
 * $Id: gustep.F 4225 2008-09-17 22:27:02Z jonesrt $
 *
 * $Log$
+* Revision 1.23  2008/12/16 19:36:04  somov
+* gustep.F_review2008
+*  - Stop beam photons which are initially generated 
+*    outside the 12.4 cm radius beam pipe at the entrance 
+*    to the collimator cave.
+*  - The primary collimator volume COL1 was replaced by
+*    volumes PCTT, PCTB, and PCSD (these volumes are used
+*    if one wants to stop showers in the 1st collimator).
+*
 * Revision 1.22  2005/12/27 01:14:28  jonesrt
 * gustep.F
 *    - removed FDC cathode strips from the list of sensitive volumes where
