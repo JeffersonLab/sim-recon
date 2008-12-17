@@ -20,6 +20,11 @@
 # we can't easily control it in the environment when running Xcode
 setenv HALLD_HOME $SOURCE_ROOT
 
+# Xcode likes to set OS to "MACOS" but the BMS make system uses "Darwin"
+# Change OS to "Darwin" if it is "MACOS" (in reality, this will only be used
+# by Xcode so this change will always be made).
+[ $OS = MACOS ] && setenv OS Darwin
+
 # Run "make" and pipe the output through awk. The awk script will prepend the
 # current working directory to each output line containing "error:" or "warning:".
 # The effect is to replace filenames with ones including the full path in lines
