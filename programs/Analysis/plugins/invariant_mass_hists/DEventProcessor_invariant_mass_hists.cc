@@ -109,7 +109,7 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 		
 		for(unsigned int j=i+1;j<v.size();j++){
 			TLorentzVector v2 = v1 + v[j];
-			if(tracks[i]->q*tracks[j]->q<0.0){
+			if(tracks[i]->charge()*tracks[j]->charge()<0.0){
 				// Only fill for opposite charge tracks	
 				mass_2part->Fill(v2.M());
 				mass2_2part->Fill(v2.M2());
@@ -144,7 +144,7 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 
 		for(unsigned int j=i+1;j<v.size();j++){
 			TLorentzVector v2 = v1 + v[j];		
-			if(tracks[i]->q*tracks[j]->q<0.0){
+			if(tracks[i]->charge()*tracks[j]->charge()<0.0){
 				// Only fill for opposite charge tracks	
 				thrown_mass_2part->Fill(v2.M());
 				thrown_mass2_2part->Fill(v2.M2());
@@ -169,10 +169,10 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 //------------------
 void DEventProcessor_invariant_mass_hists::MakeTLorentz(const DTrack *track, TLorentzVector &v)
 {
-	double px = track->p*sin(track->theta)*cos(track->phi);
-	double py = track->p*sin(track->theta)*sin(track->phi);
-	double pz = track->p*cos(track->theta);
-	double E = sqrt(pow((double)0.13957,(double)2.0)+pow((double)track->p, (double)2.0));
+	double px = track->momentum().Mag()*sin(track->momentum().Theta())*cos(track->momentum().Phi());
+	double py = track->momentum().Mag()*sin(track->momentum().Theta())*sin(track->momentum().Phi());
+	double pz = track->momentum().Mag()*cos(track->momentum().Theta());
+	double E = sqrt(pow((double)0.13957,(double)2.0)+pow((double)track->momentum().Mag(), (double)2.0));
 	
 	v.SetXYZT(px,py,pz,E);
 }
