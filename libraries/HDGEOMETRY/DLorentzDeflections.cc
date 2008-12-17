@@ -65,17 +65,14 @@ void polint(const double *xa, const double *ya,int n,double x, double *y,
   free(d);
 }
 
-
-// Obtain deflection along the wire by interpolating on the Lorentz deflection
-// table
-double DLorentzDeflections::GetLorentzCorrection(double x,double y,double z,
-						 double alpha,double dx) const
-{
+// Obtain slope parameters describing Lorentz deflection by interpolating 
+// on the Lorentz deflection table
+jerror_t DLorentzDeflections::GetLorentzCorrection(double x,double y,double z,
+						  double &tanz, double &tanr){
   int imin,ind,ind2;
   double r=sqrt(x*x+y*y);
-  double phi=atan2(y,x);
-
-  // Locate positions in x and z arrays given r and z
+ 
+   // Locate positions in x and z arrays given r and z
   locate(lorentz_x,LORENTZ_X_POINTS,r,&ind);
   locate(lorentz_z,LORENTZ_Z_POINTS,z,&ind2);
   
@@ -89,14 +86,24 @@ double DLorentzDeflections::GetLorentzCorrection(double x,double y,double z,
 	   &ytemp2[j],&dy);
   }
   // Then do final interpolation in x direction 
-  double tanr,tanz; 
   if (ind>0){
     imin=((ind+3)>LORENTZ_X_POINTS)?(LORENTZ_X_POINTS-4):(ind-1);
   }
   else imin=0;
   polint(&lorentz_x[imin],ytemp,4,r,&tanr,&dy);
   polint(&lorentz_x[imin],ytemp2,4,r,&tanz,&dy);
+  
+  return NOERROR;
+}
+
+// Obtain deflection of avalanche along wire due to Lorentz force
+double DLorentzDeflections::GetLorentzCorrection(double x,double y,double z,
+						 double alpha,double dx) const
+{
+  double tanz=0.,tanr=0.;
+  GetLorentzCorrection(x,y,z,tanz,tanr);
 
   // Deflection along wire	
+  double phi=atan2(y,x);
   return (-tanz*dx*sin(alpha)*cos(phi)+tanr*dx*cos(alpha));
 }
