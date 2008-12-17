@@ -3,42 +3,6 @@
 	75332CDC0EF851BD0014DA2A /* include */ = {
 		activeExec = 0;
 	};
-	75332CE10EF851E10014DA2A /* PBXTargetBookmark */ = {
-		isa = PBXTargetBookmark;
-		trg = 75332CDC0EF851BD0014DA2A /* include */;
-	};
-	75332CE20EF851E10014DA2A /* PBXTargetBookmark */ = {
-		isa = PBXTargetBookmark;
-		trg = 75332CDC0EF851BD0014DA2A /* include */;
-		uiCtxt = {
-			TOCViewDetailVisibleRect = "{{0, 0}, {554, 498}}";
-			TOCViewExpandedItems = (
-				"com.apple.target-editor-pane.settings",
-			);
-			TOCViewMasterVisibleRect = "{{0, 0}, {220, 710}}";
-			TOCViewSelectedItems = (
-				"com.apple.target-editor-pane.settings",
-			);
-		};
-	};
-	75332CE50EF851E10014DA2A /* PBXTargetBookmark */ = {
-		isa = PBXTargetBookmark;
-		trg = 75F45AE90ED43DCF000ABA27 /* PID */;
-	};
-	75332CE60EF851E10014DA2A /* PBXTargetBookmark */ = {
-		isa = PBXTargetBookmark;
-		trg = 75F45AE90ED43DCF000ABA27 /* PID */;
-		uiCtxt = {
-			TOCViewDetailVisibleRect = "{{0, 0}, {554, 498}}";
-			TOCViewExpandedItems = (
-				"com.apple.target-editor-pane.settings",
-			);
-			TOCViewMasterVisibleRect = "{{0, 0}, {220, 710}}";
-			TOCViewSelectedItems = (
-				"com.apple.target-editor-pane.settings",
-			);
-		};
-	};
 	75332CF30EF852B20014DA2A /* hd_root */ = {
 		activeExec = 0;
 	};
@@ -78,33 +42,17 @@
 	75332D4D0EF858DB0014DA2A /* ALL */ = {
 		activeExec = 0;
 	};
-	754A57D30EF84C1D0000BC9B /* PBXTextBookmark */ = {
-		isa = PBXTextBookmark;
-		fRef = 754A57D40EF84C1D0000BC9B /* README.xcode */;
-		name = "(null): 37";
-		rLen = 0;
-		rLoc = 1755;
-		rType = 0;
-		vrLen = 1758;
-		vrLoc = 0;
+	75332DAF0EF93B280014DA2A /* HDGeant */ = {
+		activeExec = 0;
 	};
-	754A57D40EF84C1D0000BC9B /* README.xcode */ = {
-		isa = PBXFileReference;
-		lastKnownFileType = text;
-		name = README.xcode;
-		path = /Users/davidl/HallD/builds/latest/src/BMS/IDE/README.xcode;
-		sourceTree = "<absolute>";
-		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {768, 756}}";
-			sepNavSelRange = "{1755, 0}";
-			sepNavVisRect = "{{0, 0}, {768, 756}}";
-			sepNavWindowFrame = "{{280, 143}, {813, 885}}";
-		};
+	75332DB80EF93C0C0014DA2A /* hddm_cull_events */ = {
+		activeExec = 0;
 	};
 	75F456400ED3C543000ABA27 /* Project object */ = {
 		activeBuildConfigurationName = Release;
-		activeTarget = 75332D4D0EF858DB0014DA2A /* ALL */;
+		activeTarget = 75332DB80EF93C0C0014DA2A /* hddm_cull_events */;
 		addToTargets = (
+			75332D4D0EF858DB0014DA2A /* ALL */,
 		);
 		breakpointsGroup = 75F45A990ED3C71A000ABA27 /* XCBreakpointsBucket */;
 		codeSenseManager = 75F456450ED3C543000ABA27 /* Code sense */;
@@ -195,14 +143,6 @@
 			};
 			PBXPerProjectTemplateStateSaveDate = 251153834;
 			PBXWorkspaceStateSaveDate = 251153834;
-		};
-		perUserProjectItems = {
-			75332CE10EF851E10014DA2A /* PBXTargetBookmark */ = 75332CE10EF851E10014DA2A /* PBXTargetBookmark */;
-			75332CE20EF851E10014DA2A /* PBXTargetBookmark */ = 75332CE20EF851E10014DA2A /* PBXTargetBookmark */;
-			75332CE50EF851E10014DA2A /* PBXTargetBookmark */ = 75332CE50EF851E10014DA2A /* PBXTargetBookmark */;
-			75332CE60EF851E10014DA2A /* PBXTargetBookmark */ = 75332CE60EF851E10014DA2A /* PBXTargetBookmark */;
-			754A57D30EF84C1D0000BC9B = 754A57D30EF84C1D0000BC9B /* PBXTextBookmark */;
-			75F594C40EF84D9F00578B90 = 75F594C40EF84D9F00578B90 /* PBXTextBookmark */;
 		};
 		sourceControlManager = 75F456440ED3C543000ABA27 /* Source Control */;
 		userBuildSettings = {
@@ -420,22 +360,5 @@
 	};
 	75F45B780ED44C3C000ABA27 /* hdview2 */ = {
 		activeExec = 0;
-	};
-	75F594C40EF84D9F00578B90 /* PBXTextBookmark */ = {
-		isa = PBXTextBookmark;
-		fRef = 75F594C50EF84D9F00578B90 /* README.xcode */;
-		name = "(null): 37";
-		rLen = 0;
-		rLoc = 1755;
-		rType = 0;
-		vrLen = 1768;
-		vrLoc = 0;
-	};
-	75F594C50EF84D9F00578B90 /* README.xcode */ = {
-		isa = PBXFileReference;
-		lastKnownFileType = text;
-		name = README.xcode;
-		path = /Users/davidl/HallD/builds/latest/src/BMS/IDE/README.xcode;
-		sourceTree = "<absolute>";
 	};
 }
