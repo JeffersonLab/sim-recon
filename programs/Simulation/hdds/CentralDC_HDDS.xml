@@ -52,30 +52,20 @@
 
   <composition name="centralDC_option-1" envelope="CDC">
     <posXYZ volume="CDClayer_1_option-1" />
-    <posXYZ volume="CDClayer_2_option-1" />
     <posXYZ volume="CDClayer_3_option-1" />
-    <posXYZ volume="CDClayer_4-7_option-1" />
-    <posXYZ volume="CDClayer_8_option-1" />
-    <posXYZ volume="CDClayer_9_option-1" />
-    <posXYZ volume="CDClayer_10_option-1" />
-    <posXYZ volume="CDClayer_11_option-1" />
-    <posXYZ volume="CDClayer_12_option-1" />
-    <posXYZ volume="CDClayer_13-16_option-1" />
-    <posXYZ volume="CDClayer_17_option-1" />
-    <posXYZ volume="CDClayer_18_option-1" />
-    <posXYZ volume="CDClayer_19_option-1" />
-    <posXYZ volume="CDClayer_20_option-1" />
-    <posXYZ volume="CDClayer_21_option-1" />
-    <posXYZ volume="CDClayer_22_option-1" />
-    <posXYZ volume="CDClayer_23_option-1" />
-    <posXYZ volume="CDClayer_24_option-1" />
-    <!-- remove layer 25: B.Z. Wed Jul  9 15:20:54 EDT 2008
-    <posXYZ volume="CDClayer_25_option-1" /> -->
+    <posXYZ volume="CDClayer_5-12_option-1" />
+    <posXYZ volume="CDClayer_13_option-1" />
+    <posXYZ volume="CDClayer_15_option-1" />
+    <posXYZ volume="CDClayer_17-24_option-1" />
+    <posXYZ volume="CDClayer_25_option-1" />
+    <posXYZ volume="CDClayer_27_option-1" />
     <posXYZ volume="CDCI" />
     <posXYZ volume="CDCO" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
     <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
   </composition>
+
+
   <composition name="centralDC_option-2" envelope="CDC">
     <posXYZ volume="CDClayer_1_option-2" />
     <posXYZ volume="CDClayer_2_option-2" />
@@ -95,8 +85,7 @@
     <posXYZ volume="CDClayer_20-22_option-2" />
     <posXYZ volume="CDClayer_23_option-2" />
     <posXYZ volume="CDClayer_24_option-2" />
-    <!-- remove layer 25: B.Z. Wed Jul  9 15:20:54 EDT 2008
-    <posXYZ volume="CDClayer_25_option-2" / -->
+    <!--posXYZ volume="CDClayer_25_option-2" /-->
     <posXYZ volume="CDCI" />
     <posXYZ volume="CDCO" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
@@ -104,138 +93,99 @@
   </composition>
 
   <composition name="CDClayer_1_option-1" envelope="DC1">
-    <mposPhi volume="CDCsector_1_option-1" ncopy="43">
+    <mposPhi volume="CDCstrawShort" ncopy="43" Phi0="0.0" R_Z="10.96 0.0" dPhi="8.37209">
+    <!-- mposPhi volume="CDCsector_1_option-1" ncopy="43" -->
       <ring value="1" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_1_option-1" envelope="DS1">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="10.984 0.0 0.0" />
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-  </composition>
-  <composition name="CDClayer_2_option-1" envelope="DC2">
-    <mposPhi volume="CDCsector_2_option-1" ncopy="50" R_Z="0.0 0.0" Phi0="3.6">
+    <mposPhi volume="CDCstrawShort" ncopy="43" Phi0="4.18605" R_Z="12.341 0.0" dPhi="8.37209">
       <ring value="2" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_2_option-1" envelope="DS2">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="12.769 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
     <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
   </composition>
+
   <composition name="CDClayer_3_option-1" envelope="DC3">
-    <mposPhi volume="CDCsector_3_option-1" ncopy="57" R_Z="0.0 0.0" Phi0="-2.105">
+    <mposPhi volume="CDCstrawShort" ncopy="55" Phi0="2.0" R_Z="14.029 0.0" dPhi="6.5454545454">
       <ring value="3" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_3_option-1" envelope="DS3">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="14.555 0.0 0.0" />
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-  </composition>
-
-  <composition name="CDClayer_4-7_option-1" envelope="DC4">
-    <mposPhi volume="CDCstrawLong" ncopy="63" R_Z="16.174 0.0"
-                        unit_length="cm" rot="-6.000 0 0" unit_angle="deg">
+    <mposPhi volume="CDCstrawShort" ncopy="55" Phi0="5.27272727272" R_Z="15.41 0.0" dPhi="6.5454545454">
       <ring value="4" />
       <sector value="1" step="1" />
     </mposPhi>
-    <mposPhi volume="CDCstrawLong" ncopy="70" R_Z="17.969 0.0"
-                         unit_length="cm" rot="-6.000 0 0" unit_angle="deg">
+    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
+  </composition>
+
+
+<!-- FIRST AND SECOND STEREO SUPER LAYERS 4- and 4+ -->
+
+  <composition name="CDClayer_5-12_option-1" envelope="DC5">
+    <mposPhi volume="CDCstrawLong" ncopy="66" R_Z="17.085 0.0" Phi0="0.33333"
+                        unit_length="cm" rot="-6.000 0 0" unit_angle="deg">
       <ring value="5" />
       <sector value="1" step="1" />
     </mposPhi>
-    <mposPhi volume="CDCstrawLong" ncopy="77" R_Z="19.765 0.0"
-                         unit_length="cm" rot="+6.000 0 0" unit_angle="deg">
+    <mposPhi volume="CDCstrawLongB12" ncopy="66" R_Z="0.0 0.0" Phi0="0.33333"
+                         unit_length="cm" rot="0 0 0" unit_angle="deg">
       <ring value="6" />
       <sector value="1" step="1" />
     </mposPhi>
-    <mposPhi volume="CDCstrawLong" ncopy="84" R_Z="21.561 0.0"
-                         unit_length="cm" rot="+6.000 0 0" unit_angle="deg">
+    <mposPhi volume="CDCstrawLong" ncopy="80" R_Z="20.581 0.0" Phi0="-0.5"
+                         unit_length="cm" rot="-6.000 0 0" unit_angle="deg">
       <ring value="7" />
       <sector value="1" step="1" />
     </mposPhi>
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-  </composition>
-
-  <composition name="CDClayer_8_option-1" envelope="DC8">
-    <mposPhi volume="CDCsector_8_option-1" ncopy="98" R_Z="0.0 0.0" Phi0="0.216">
+    <mposPhi volume="CDCstrawLongB14" ncopy="80" R_Z="0.0 0.0" Phi0="-0.5"
+                         unit_length="cm" rot="0 0 0" unit_angle="deg">
       <ring value="8" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_8_option-1" envelope="DS8">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="25.015 0.0 0.0" />
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-  </composition>
-  <composition name="CDClayer_9_option-1" envelope="DC9">
-    <mposPhi volume="CDCsector_9_option-1" ncopy="105">
+    <mposPhi volume="CDCstrawLong" ncopy="93" R_Z="23.980 0.0" Phi0="1.1"
+                         unit_length="cm" rot="+6.000 0 0" unit_angle="deg">
       <ring value="9" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_9_option-1" envelope="DS9">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="26.801 0.0 0.0" />
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-   </composition>
-  <composition name="CDClayer_10_option-1" envelope="DC10">
-    <mposPhi volume="CDCsector_10_option-1" ncopy="112" R_Z="0.0 0.0" Phi0="1.607">
+    <mposPhi volume="CDCstrawLongB16" ncopy="93" R_Z="0.0 0.0" Phi0="1.1"
+                         unit_length="cm" rot="0 0 0" unit_angle="deg">
       <ring value="10" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_10_option-1" envelope="DS10">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="28.588 0.0 0.0" />
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-   </composition>
-  <composition name="CDClayer_11_option-1" envelope="DC11">
-    <mposPhi volume="CDCsector_11_option-1" ncopy="119" R_Z="0.0 0.0" Phi0="-1.008">
+    <mposPhi volume="CDCstrawLong" ncopy="106" R_Z="27.380 0.0" Phi0="-1.4"
+                         unit_length="cm" rot="+6.000 0 0" unit_angle="deg">
       <ring value="11" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_11_option-1" envelope="DS11">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="30.374 0.0 0.0" />
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-  </composition>
-  <composition name="CDClayer_12_option-1" envelope="DC12">
-    <mposPhi volume="CDCsector_12_option-1" ncopy="126" R_Z="0.0 0.0" Phi0="0.571">
+    <mposPhi volume="CDCstrawLongB18" ncopy="106" R_Z="0.0 0.0" Phi0="-1.4"
+                         unit_length="cm" rot="0 0 0" unit_angle="deg">
       <ring value="12" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_12_option-1" envelope="DS12">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="32.160 0.0 0.0" />
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
     <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
   </composition>
 
-  <composition name="CDClayer_13-16_option-1" envelope="DC13">
-    <mposPhi volume="CDCstrawLong" ncopy="132" R_Z="33.877 0.0"
-                         unit_length="cm" rot="-6.000 0 0" unit_angle="deg">
+  <composition name="CDClayer_13_option-1" envelope="DC13">
+    <mposPhi volume="CDCstrawShort" ncopy="124" Phi0="0.5" R_Z="31.65 0.0" dPhi="2.9032258">
       <ring value="13" />
       <sector value="1" step="1" />
     </mposPhi>
-    <mposPhi volume="CDCstrawLong" ncopy="139" R_Z="35.673 0.0"
-                         unit_length="cm" rot="-6.000 0 0" unit_angle="deg">
+    <mposPhi volume="CDCstrawShort" ncopy="124" Phi0="1.9516" R_Z="33.05 0.0" dPhi="2.9032258">
       <ring value="14" />
       <sector value="1" step="1" />
     </mposPhi>
-    <mposPhi volume="CDCstrawLong" ncopy="146" R_Z="37.469 0.0"
-                         unit_length="cm" rot="+6.000 0 0" unit_angle="deg">
+    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
+  </composition>
+
+  <composition name="CDClayer_15_option-1" envelope="DC15">
+    <mposPhi volume="CDCstrawShort" ncopy="133" Phi0="1." R_Z="34.7 0.0" dPhi="2.7067669">
       <ring value="15" />
       <sector value="1" step="1" />
     </mposPhi>
-    <mposPhi volume="CDCstrawLong" ncopy="153" R_Z="39.265 0.0"
-                         unit_length="cm" rot="+6.000 0 0" unit_angle="deg">
+    <mposPhi volume="CDCstrawShort" ncopy="133" Phi0="2.3533834" R_Z="36.1 0.0" dPhi="2.7067669">
       <ring value="16" />
       <sector value="1" step="1" />
     </mposPhi>
@@ -243,105 +193,87 @@
     <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
   </composition>
 
-  <composition name="CDClayer_17_option-1" envelope="DC17">
-    <mposPhi volume="CDCsector_17_option-1" ncopy="165">
+
+<!-- THIRD AND FOURTH STEREO LAYER -->
+
+  <composition name="CDClayer_17-24_option-1" envelope="DC17">  
+    <mposPhi volume="CDCstrawLong" ncopy="145" R_Z="37.720 0.0" Phi0="0.2"
+                         unit_length="cm" rot="-6.000 0 0" unit_angle="deg">
       <ring value="17" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_17_option-1" envelope="DS17">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="42.113 0.0 0.0" />
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-  </composition>
-  <composition name="CDClayer_18_option-1" envelope="DC18">
-    <mposPhi volume="CDCsector_18_option-1" ncopy="172" R_Z="0.0 0.0" Phi0="1.047">
+    <mposPhi volume="CDCstrawLongB22" ncopy="145" R_Z="0.0 0.0" Phi0="0.2"
+                         unit_length="cm" rot="0 0 0" unit_angle="deg">
       <ring value="18" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_18_option-1" envelope="DS18">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="43.899 0.0 0.0" />
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-  </composition>
-  <composition name="CDClayer_19_option-1" envelope="DC19">
-    <mposPhi volume="CDCsector_19_option-1" ncopy="179" R_Z="0.0 0.0" Phi0="-0.670">
+
+    <mposPhi volume="CDCstrawLong" ncopy="158" R_Z="40.89 0.0" Phi0="0.7"
+                         unit_length="cm" rot="-6.000 0 0" unit_angle="deg">
       <ring value="19" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_19_option-1" envelope="DS19">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="45.686 0.0 0.0" />
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-  </composition>
-  <composition name="CDClayer_20_option-1" envelope="DC20">
-    <mposPhi volume="CDCsector_20_option-1" ncopy="186" R_Z="0.0 0.0" Phi0="0.387">
+    <mposPhi volume="CDCstrawLongB24" ncopy="158" R_Z="0.0 0.0" Phi0="0.7"
+                         unit_length="cm" rot="0 0 0" unit_angle="deg">
       <ring value="20" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_20_option-1" envelope="DS20">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="47.472 0.0 0.0" />
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-  </composition>
-  <composition name="CDClayer_21_option-1" envelope="DC21">
-    <mposPhi volume="CDCsector_21_option-1" ncopy="193" R_Z="0.0 0.0" Phi0="-0.266">
+
+    <mposPhi volume="CDCstrawLong" ncopy="171" R_Z="44.05 0.0" Phi0="1.1"
+                         unit_length="cm" rot="+6.000 0 0" unit_angle="deg">
       <ring value="21" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_21_option-1" envelope="DS21">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="49.258 0.0 0.0" />
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-  </composition>
-  <composition name="CDClayer_22_option-1" envelope="DC22">
-    <mposPhi volume="CDCsector_22_option-1" ncopy="200" R_Z="0.0 0.0" Phi0="0.164">
+    <mposPhi volume="CDCstrawLongB26" ncopy="171" R_Z="0.0 0.0" Phi0="1.1"
+                         unit_length="cm" rot="0 0 0" unit_angle="deg">
       <ring value="22" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_22_option-1" envelope="DS22">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="51.045 0.0 0.0" />
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-  </composition>
-  <composition name="CDClayer_23_option-1" envelope="DC23">
-    <mposPhi volume="CDCsector_23_option-1" ncopy="207" R_Z="0.0 0.0" Phi0="-0.134">
+ 
+    <mposPhi volume="CDCstrawLong" ncopy="184" R_Z="47.20 0.0" Phi0="1.4"
+                         unit_length="cm" rot="+6.000 0 0" unit_angle="deg">
       <ring value="23" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_23_option-1" envelope="DS23">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="52.831 0.0 0.0" />
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
-    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-  </composition>
-  <composition name="CDClayer_24_option-1" envelope="DC24">
-    <mposPhi volume="CDCsector_24_option-1" ncopy="214" R_Z="0.0 0.0" Phi0="0.099">
+    <mposPhi volume="CDCstrawLongB28" ncopy="184" R_Z="0.0 0.0" Phi0="1.4"
+                         unit_length="cm" rot="0 0 0" unit_angle="deg">
       <ring value="24" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_24_option-1" envelope="DS24">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="54.618 0.0 0.0" />
-    <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
+
+   <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
     <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
   </composition>
-  <!--composition name="CDClayer_25_option-1" envelope="DC25">
-    <mposPhi volume="CDCsector_25_option-1" ncopy="222">
+
+<!-- LAST FOUR AXIAL LAYERS -->
+
+  <composition name="CDClayer_25_option-1" envelope="DC25">
+    <mposPhi volume="CDCstrawShort" ncopy="197" Phi0="0.2" R_Z="51.0 0.0" dPhi="1.827411168">
       <ring value="25" />
       <sector value="1" step="1" />
     </mposPhi>
-  </composition>
-  <composition name="CDCsector_25_option-1" envelope="DS25">
-    <posXYZ volume="CDCstrawShort" X_Y_Z="56.534 0.0 0.0" />
+    <mposPhi volume="CDCstrawShort" ncopy="197" Phi0="1.113705" R_Z="52.4 0.0" dPhi="1.827411168">
+      <ring value="26" />
+      <sector value="1" step="1" />
+    </mposPhi>
     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
     <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
-  </composition-->
+  </composition>
+
+  <composition name="CDClayer_27_option-1" envelope="DC27">
+    <mposPhi volume="CDCstrawShort" ncopy="210" Phi0="0.8" R_Z="54.05 0.0" dPhi="1.7142857">
+      <ring value="27" />
+      <sector value="1" step="1" />
+    </mposPhi>
+    <mposPhi volume="CDCstrawShort" ncopy="210" Phi0="1.657142857" R_Z="55.45 0.0" dPhi="1.7142857">
+      <ring value="28" />
+      <sector value="1" step="1" />
+    </mposPhi>
+     <posXYZ volume="CDPU" X_Y_Z="0.0 0.0 -75.45" />
+    <posXYZ volume="CDPD" X_Y_Z="0.0 0.0 +75.20" />
+ </composition>
+
+<!-- end of option 1 definitions -->
 
   <!-- alternative geometry (option 2)
        the naming scheme replaces DC with DK -->
@@ -598,29 +530,60 @@
     <posXYZ volume="UPLG" X_Y_Z="0. 0. -75.92"> </posXYZ>
     <posXYZ volume="DPLG" X_Y_Z="0. 0. +75.92"> </posXYZ>
   </composition>
+  <composition name="CDCstrawLongB" envelope="STLB">
+    <posXYZ volume="STLX" X_Y_Z="0. 0. 0."> </posXYZ>
+    <posXYZ volume="WILE" X_Y_Z="0. 0. 0."> </posXYZ>
+    <posXYZ volume="UPLG" X_Y_Z="0. 0. -75.92"> </posXYZ>
+    <posXYZ volume="DPLG" X_Y_Z="0. 0. +75.92"> </posXYZ>
+  </composition>
 
-  <!-- reduce the outer radius down by one tube diameter from 59.0 down to 57.4 -->
-  <!-- changed all numbers 59.0 to 57.4 -->
-  <!-- Wed Jul  9 15:14:12 EDT 2008 B.Z. -->
-  <tubs name="CDC" Rio_Z="9.0   57.4   174.0" material="Air"
+ <composition name="CDCstrawLongB12">
+    <posXYZ volume="CDCstrawLongB" X_Y_Z="18.45 0.886027 0.0" rot="-6.5 -0.3 0.0" />
+  </composition>
+  <composition name="CDCstrawLongB14">
+    <posXYZ volume="CDCstrawLongB" X_Y_Z="21.95 0.87224 0.0" rot="-6.475 -0.27 0.0" />
+  </composition>
+  <composition name="CDCstrawLongB16">
+    <posXYZ volume="CDCstrawLongB" X_Y_Z="25.35 0.857573 0.0" rot="+6.35 +0.24 0.0" />
+  </composition>
+  <composition name="CDCstrawLongB18">
+    <posXYZ volume="CDCstrawLongB" X_Y_Z="28.80 0.835 0.0" rot="+6.3 +0.21 0.0" />
+  </composition>
+
+  <composition name="CDCstrawLongB22">
+    <posXYZ volume="CDCstrawLongB" X_Y_Z="39.12 0.8321106 0.0" rot="-6.25 -0.16 0.0" />
+  </composition>
+  <composition name="CDCstrawLongB24">
+    <posXYZ volume="CDCstrawLongB" X_Y_Z="42.29 0.8391063 0.0" rot="-6.25 -0.13 0.0" />
+  </composition>
+  <composition name="CDCstrawLongB26">
+    <posXYZ volume="CDCstrawLongB" X_Y_Z="45.46 0.8349124 0.0" rot="+6.20 +0.11 0.0" />
+  </composition>
+  <composition name="CDCstrawLongB28">
+    <posXYZ volume="CDCstrawLongB" X_Y_Z="48.63 0.8303831 0.0" rot="+6.18 +0.10 0.0" />
+  </composition>
+
+  <!-- set outer diameter of CDC to 57.0 cm (was 57.6cm)-->
+  <!-- Sat Sep 27 15:00:14 EDT 2008 B.Z. -->
+  <tubs name="CDC" Rio_Z="9.0   57.0   174.0" material="Air"
 	                           comment="CDC mother volume"      />
   <tubs name="CDCI" Rio_Z="9.0000  9.0026 172.0" material="AluminizedMylar"
 	                           comment="CDC inner cylinder"     />
-  <tubs name="CDCO" Rio_Z="57.2000  57.4000 172.0" material="Aluminum"
+  <tubs name="CDCO" Rio_Z="56.8000  57.0000 172.0" material="Aluminum"
 	                           comment="CDC outer cylinder"     />
-  <tubs name="CDPU" Rio_Z="9.0   57.4    0.9" material="Aluminum"
+  <tubs name="CDPU" Rio_Z="9.0   57.0    0.9" material="Aluminum"
 	                           comment="CDC upstream endplate"   />
-  <tubs name="CDPD" Rio_Z="9.0   57.4    0.4" material="CarbonFiberEpoxy"
+  <tubs name="CDPD" Rio_Z="9.0   57.0    0.4" material="CarbonFiberEpoxy"
 	                           comment="CDC downstream endplate" />
-  <tubs name="CDBU" Rio_Z="9.0   57.4    0.2" material="FR-4"
+  <tubs name="CDBU" Rio_Z="9.0   57.0    0.2" material="FR-4"
 	                           comment="CDC upstream circuit board" />
-  <tubs name="CDBD" Rio_Z="9.0   57.4    0.1" material="FR-4"
+  <tubs name="CDBD" Rio_Z="9.0   57.0    0.1" material="FR-4"
 	                           comment="CDC downstream circuit board" />
-  <tubs name="CDGU" Rio_Z="9.0   57.4    0.3" material="Plexiglas"
+  <tubs name="CDGU" Rio_Z="9.0   57.0    0.3" material="Plexiglas"
 	                           comment="CDC upstream gas plenum" />
-  <tubs name="CDGD" Rio_Z="9.0   57.4    0.3" material="Plexiglas"
+  <tubs name="CDGD" Rio_Z="9.0   57.0    0.3" material="Plexiglas"
 	                           comment="CDC downstream gas plenum" />
-  <tubs name="CDCA" Rio_Z="9.0   57.4    0.5" material="SignalCables"
+  <tubs name="CDCA" Rio_Z="9.0   57.0    0.5" material="SignalCables"
 	                           comment="CDC upstream cables" />
   <pcon name="CDCB" material="SignalCables" comment="CDC readout cables">
     <polyplane Rio_Z="74.0 120. -65.2" />
@@ -628,9 +591,9 @@
     <polyplane Rio_Z="71.0 75.2 -62.2" />
     <polyplane Rio_Z="65.0 69.2 -56.2" />
     <polyplane Rio_Z="65.0 68.0 -55.0" />
-    <polyplane Rio_Z="54.8 57.4 -3.31" />
-    <polyplane Rio_Z="23.0 57.4 -0.53" />
-    <polyplane Rio_Z="9.0 57.4 0.0" />
+    <polyplane Rio_Z="56.4 57.0 -3.31" />
+    <polyplane Rio_Z="23.0 57.0 -0.53" />
+    <polyplane Rio_Z="9.0 57.0 0.0" />
   </pcon>
 
   <tubs name="STRA" Rio_Z="0.000  0.800  152.0" material="CDchamberGas"
@@ -642,28 +605,23 @@
 
   <tubs name="STLA" Rio_Z="0.000  0.800  152.84" material="CDchamberGas"
 						sensitive="true" />
+  <tubs name="STLB" Rio_Z="0.000  0.800  152.84" material="CDchamberGas"
+						sensitive="true" />
   <tubs name="STLW" Rio_Z="0.7895  0.8000  150.83" material="AluminizedKapton" />
+  <tubs name="STLX" Rio_Z="0.7895  0.8000  150.83" material="AluminizedKapton" />
+
   <tubs name="WILE" Rio_Z="0.000  0.0015  152.83" material="Tungsten" />
 
-  <tubs name="DC1"  Rio_Z="10.14 11.84 152.5" material="Air" />
-  <tubs name="DC2"  Rio_Z="11.94 13.64 152.5" material="Air" />
-  <tubs name="DC3"  Rio_Z="13.72 15.42 152.5" material="Air" />
-  <tubs name="DC4"  Rio_Z="15.464 23.880 152.5" material="Air" />
-  <tubs name="DC8"  Rio_Z="24.16 25.86 152.5" material="Air" />
-  <tubs name="DC9"  Rio_Z="25.95 27.63 152.5" material="Air" />
-  <tubs name="DC10"  Rio_Z="27.73 29.43 152.5" material="Air" />
-  <tubs name="DC11"  Rio_Z="29.45 31.23 152.5" material="Air" />
-  <tubs name="DC12"  Rio_Z="31.30 32.98 152.5" material="Air" />
-  <tubs name="DC13"  Rio_Z="33.08 41.09 152.5" material="Air" />
-  <tubs name="DC17"  Rio_Z="41.25 42.98 152.5" material="Air" />
-  <tubs name="DC18"  Rio_Z="43.01 44.75 152.5" material="Air" />
-  <tubs name="DC19"  Rio_Z="44.80 46.52 152.5" material="Air" />
-  <tubs name="DC20"  Rio_Z="46.56 48.28 152.5" material="Air" />
-  <tubs name="DC21"  Rio_Z="48.32 50.04 152.5" material="Air" />
-  <tubs name="DC22"  Rio_Z="50.08 51.90 152.5" material="Air" />
-  <tubs name="DC23"  Rio_Z="51.94 53.70 152.5" material="Air" />
-  <tubs name="DC24"  Rio_Z="53.74 55.44 152.5" material="Air" />
-  <tubs name="DC25"  Rio_Z="55.69 57.37 152.5" material="Air" />
+  <tubs name="DC1"  Rio_Z="10.120 13.161 152.5" material="Air" />
+  <tubs name="DC3"  Rio_Z="13.172 16.224 152.5" material="Air" />
+  <tubs name="DC5"  Rio_Z="16.242 30.700 152.5" material="Air" />
+
+  <tubs name="DC13"  Rio_Z="30.720 33.850 152.5" material="Air" />
+  <tubs name="DC15"  Rio_Z="33.860 36.850 152.5" material="Air" />
+  <tubs name="DC17"  Rio_Z="36.900 50.100 152.5" material="Air" />
+
+  <tubs name="DC25"  Rio_Z="50.150 53.200 152.5" material="Air" />
+  <tubs name="DC27"  Rio_Z="53.220 56.300 152.5" material="Air" />
 
   <!-- alternative geometry (option 2)
        the naming scheme replaces DC with DK -->
@@ -688,39 +646,39 @@
   <tubs name="DK25"  Rio_Z="55.694 57.374 152.5" material="Air" />
   <!-- end of option 2 geometry section -->
 
-  <tubs name="DS1"  Rio_Z="10.142 11.838 152.5" material="Air"
+  <tubs name="DS1"  Rio_Z="10.12 11.80 152.5" material="Air"
                                               profile="-4.186 8.372" />
-  <tubs name="DS2"  Rio_Z="11.942 13.638 152.5" material="Air"
+  <tubs name="DS2"  Rio_Z="11.90 13.58 152.5" material="Air"
                                               profile="-3.600 7.200" />
-  <tubs name="DS3"  Rio_Z="13.722 15.418 152.5" material="Air"
+  <tubs name="DS3"  Rio_Z="13.68 15.36 152.5" material="Air"
                                               profile="-3.158 6.316" />
-  <tubs name="DS8"  Rio_Z="24.162 25.858 152.5" material="Air"
-                                              profile="-1.8367 3.673" />
-  <tubs name="DS9"  Rio_Z="25.952 27.628 152.5" material="Air"
-                                              profile="-1.7143 3.4285" />
-  <tubs name="DS10"  Rio_Z="27.732 29.428 152.5" material="Air"
-                                              profile="-1.6071 3.2143" />
-  <tubs name="DS11"  Rio_Z="29.452 31.228 152.5" material="Air"
-                                              profile="-1.5126 3.0252" />
-  <tubs name="DS12"  Rio_Z="31.302 32.978 152.5" material="Air"
-                                              profile="-1.4285 2.8571" />
-  <tubs name="DS17"  Rio_Z="41.252 42.978 152.5" material="Air"
-                                              profile="-1.0909 2.181818" />
-  <tubs name="DS18"  Rio_Z="43.012 44.748 152.5" material="Air"
-                                              profile="-1.0465 2.093" />
-  <tubs name="DS19"  Rio_Z="44.802 46.518 152.5" material="Air"
-                                              profile="-1.0055 2.0111" />
-  <tubs name="DS20"  Rio_Z="46.562 48.278 152.5" material="Air"
-                                              profile="-0.9677 1.9354" />
-  <tubs name="DS21"  Rio_Z="48.322 50.038 152.5" material="Air"
-                                              profile="-0.9326 1.8652" />
-  <tubs name="DS22"  Rio_Z="50.082 51.898 152.5" material="Air"
-                                              profile="-0.9000 1.8000" />
-  <tubs name="DS23"  Rio_Z="51.942 53.698 152.5" material="Air"
-                                              profile="-0.8695 1.7391" />
-  <tubs name="DS24"  Rio_Z="53.742 55.438 152.5" material="Air"
-                                              profile="-0.8411 1.6822" />
-  <tubs name="DS25"  Rio_Z="55.692 57.368 152.5" material="Air"
+  <tubs name="DS8"  Rio_Z="24.37 26.05 152.5" material="Air"
+                                              profile="-1.818 3.636" />
+  <tubs name="DS9"  Rio_Z="26.15 27.83 152.5" material="Air"
+                                              profile="-1.698 3.396" />
+  <tubs name="DS10"  Rio_Z="27.94 29.62 152.5" material="Air"
+                                              profile="-1.593 3.186" />
+  <tubs name="DS11"  Rio_Z="29.72 31.40 152.5" material="Air"
+                                              profile="-1.500 3.000" />
+  <tubs name="DS12"  Rio_Z="31.50 33.18 152.5" material="Air"
+                                              profile="-1.417 2.835" />
+  <tubs name="DS17"  Rio_Z="41.43 43.11 152.5" material="Air"
+                                              profile="-1.084 2.169" />
+  <tubs name="DS18"  Rio_Z="43.22 44.90 152.5" material="Air"
+                                              profile="-1.040 2.081" />
+  <tubs name="DS19"  Rio_Z="45.00 46.68 152.5" material="Air"
+                                              profile="-1.000 2.000" />
+  <tubs name="DS20"  Rio_Z="46.78 48.46 152.5" material="Air"
+                                              profile="-0.963 1.925" />
+  <tubs name="DS21"  Rio_Z="48.56 50.24 152.5" material="Air"
+                                              profile="-0.928 1.856" />
+  <tubs name="DS22"  Rio_Z="50.35 52.03 152.5" material="Air"
+                                              profile="-0.896 1.791" />
+  <tubs name="DS23"  Rio_Z="52.13 53.81 152.5" material="Air"
+                                              profile="-0.865 1.731" />
+  <tubs name="DS24"  Rio_Z="53.91 55.59 152.5" material="Air"
+                                              profile="-0.837 1.674" />
+  <tubs name="DS25"  Rio_Z="55.69 57.37 152.5" material="Air"
                                               profile="-0.811 1.622" />
 
   <!-- alternative geometry (option 2)
