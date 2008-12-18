@@ -90,7 +90,8 @@
      >          IPART)
         endif
       elseif ((cnames(NLEVEL).eq.'STRA').or.		! CDC straight straw
-     +        (cnames(NLEVEL).eq.'STLA')) then	! CDC stereo straw
+     +        (cnames(NLEVEL).eq.'STLA').or.		! CDC stereo straw
+     +        (cnames(NLEVEL).eq.'STLB')) then	! CDC close-packed stereo straw
 #ifdef MAKE_HITS_WHEN_ILOSS_0
         if ((ILOSS.eq.0).and.(CHARGE.ne.0)) then
           dEsum = 1e-5   ! 10 KeV in gas
