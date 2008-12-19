@@ -14,6 +14,7 @@ using namespace jana;
 
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "HDGEOMETRY/DGeometry.h"
+#include "HDGEOMETRY/DLorentzDeflections.h"
 #include "DTrack.h"
 #include "DReferenceTrajectory.h"
 #include "DCoordinateSystem.h"
@@ -60,6 +61,7 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
   int eventnumber;
   const DMagneticFieldMap *bfield;
   const DGeometry *dgeom;
+  const DLorentzDeflections *lorentz_def;  // pointer to lorentz correction map
 
   bool DEBUG_HISTS;
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
