@@ -18,6 +18,7 @@ using namespace jana;
 #include "FDC/DFDCSegment.h"
 #include "DKalmanFilter.h"
 #include "DReferenceTrajectory.h"
+#include "HDGEOMETRY/DLorentzMapCalibDB.h"
 
 #define CDC_OUTER_RADIUS 57.0
 
@@ -56,6 +57,9 @@ jerror_t DTrack_factory_ALT3::brun(JEventLoop *loop, int runnumber)
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
   // Get the half-length of the CDC 
   dgeom->Get("//posXYZ[@volume='centralDC_option-1']/@X_Y_Z",cdc_half_length);
+
+  // table of parameters for correcting for lorentz effect
+  lorentz_def=dapp->GetLorentzDeflections();
 
   dapp->Lock();
   cdc_residuals=(TH2F*)gROOT->FindObject("cdc_residuals");
@@ -143,7 +147,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
     unsigned int num_matched_hits=0;
     
     // Initialize Kalman filter with B-field
-    DKalmanFilter fit(bfield,dgeom);
+    DKalmanFilter fit(bfield,dgeom,lorentz_def);
 
     for (unsigned int k=0;k<cdchits.size();k++){
       fit.AddCDCHit(cdchits[k]);

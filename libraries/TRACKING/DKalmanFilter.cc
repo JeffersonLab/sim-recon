@@ -4,9 +4,8 @@
 
 #include "DKalmanFilter.h"
 #include "CDC/DCDCTrackHit.h"
+#include "HDGEOMETRY/DLorentzDeflections.h"
 #include "DANA/DApplication.h"
-#include "HDGEOMETRY/DMagneticFieldMap.h"
-#include "HDGEOMETRY/DGeometry.h"
 #include <TDecompLU.h>
 
 #include <TH2F.h>
@@ -44,9 +43,11 @@ bool DKalmanCDCHit_cmp(DKalmanCDCHit_t *a, DKalmanCDCHit_t *b){
 }
 
 DKalmanFilter::DKalmanFilter(const DMagneticFieldMap *bfield,
-			     const DGeometry *dgeom){
+			     const DGeometry *dgeom,
+			     const DLorentzDeflections *lorentz_def){
   this->bfield=bfield;
   this->geom=dgeom;
+  this->lorentz_def=lorentz_def;
   hits.clear();
 
   // Get the position of the exit of the CDC endplate from DGeometry
@@ -284,6 +285,7 @@ jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S){
       newz=z+STEP_SIZE;
   
       // Get dEdx for the upcoming step
+      dEdx=GetdEdx(0.14,S(state_q_over_p,0),18.,39.,0.00166); //Ar
 
       // Step through field
       ds=Step(z,newz,dEdx,S);
@@ -654,6 +656,7 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
     
     if (newz-z>0.){
       // Get dEdx for the upcoming step
+      dEdx=GetdEdx(0.14,S(state_q_over_p,0),7.,14.,0.00121); //air
 
       // Step through field
       ds=Step(z,newz,dEdx,S);
@@ -661,7 +664,7 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
       
       // Get the contribution to the covariance matrix due to multiple 
       // scattering
-      GetProcessNoise(0.14,ds,10029.,S,Q);
+      GetProcessNoise(0.14,ds,30420.,S,Q); //air
       
       // Compute the Jacobian matrix
       StepJacobian(newz,z,S,dEdx,J);
@@ -703,6 +706,13 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
       //update z
       z=newz;
     }
+    double tanr=0.,tanz=0.;
+    lorentz_def->GetLorentzCorrectionParameters(temp.pos.x(),temp.pos.y(),
+						temp.pos.z(),
+						tanz,tanr);
+    fdchits[m]->nr=tanr;
+    fdchits[m]->nz=tanz;
+
     // flag this as an active layer
     forward_traj[0].h_id=m+1;
   }
@@ -1089,7 +1099,7 @@ jerror_t DKalmanFilter::GetProcessNoiseCentral(double mass_hyp,double ds,
   double sig2_ms= 0.0136*0.0136*(1.+mass_hyp*mass_hyp/p2)
     *my_ds/X0/p2*(1.+0.038*log(my_ds/X0))*(1.+0.038*log(my_ds/X0));
 
-  sig2_ms=0.;
+  //sig2_ms=0.;
 
   Q=sig2_ms*Q1;
 
@@ -1113,7 +1123,7 @@ jerror_t DKalmanFilter::GetProcessNoise(double mass_hyp,double ds,
   double sig2_ms= 0.0136*0.0136*(1.+one_over_p_sq*mass_hyp*mass_hyp)
     *one_over_p_sq*my_ds/X0*(1.+0.038*log(my_ds/X0))*(1.+0.038*log(my_ds/X0));
 
-  sig2_ms=0.;
+  //sig2_ms=0.;
 
   Q=sig2_ms*Q1;
 
@@ -1909,10 +1919,15 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
       double u=fdchits[id]->uwire;
       double v=fdchits[id]->vstrip;
       drift*=(S(state_x,0)*cosa-S(state_y,0)*sina-u)>0?1.:-1.;
-
+      
+      // Angles of incidence to the measurement plane
+      double phi=atan2(S(state_y,0),S(state_x,0));
+      double alpha=M_PI_2-atan(1./sqrt(S(state_tx,0)*S(state_tx,0)
+				       +S(state_ty,0)*S(state_ty,0)));
       // The next measurement 
       M(0,0)=u+drift;
-      M(1,0)=v;
+      M(1,0)=v+fdchits[id]->nz*drift*sin(alpha)*cos(phi)
+	-fdchits[id]->nr*drift*cos(alpha);// with correction for Lorentz effect
       
       // ... and its covariance matrix 
       V(0,0)=fdchits[id]->covu;

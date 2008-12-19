@@ -8,6 +8,7 @@
 #include <DVector3.h>
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "HDGEOMETRY/DGeometry.h"
+#include "HDGEOMETRY/DLorentzDeflections.h"
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
 
@@ -48,7 +49,8 @@ typedef struct{
 
 class DKalmanFilter{
  public:
-  DKalmanFilter(const DMagneticFieldMap *bfield,const DGeometry *dgeom);
+  DKalmanFilter(const DMagneticFieldMap *bfield,const DGeometry *dgeom,
+		const DLorentzDeflections *lorentz_def);
   ~DKalmanFilter(){
     for (unsigned int i=0;i<hits.size();i++)
       delete hits[i];
@@ -164,7 +166,8 @@ class DKalmanFilter{
 
   const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   const DGeometry *geom;
-
+  const DLorentzDeflections *lorentz_def;  // pointer to lorentz correction map
+ 
   // list of hits on track
   vector<DKalmanHit_t*>hits;
   vector<DKalmanCDCHit_t *>cdchits;
