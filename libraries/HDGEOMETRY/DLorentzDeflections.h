@@ -13,8 +13,8 @@ class DLorentzDeflections{
   
   DLorentzDeflections(){};
   ~DLorentzDeflections(){};
-  jerror_t GetLorentzCorrection(double x,double y,double z,
-				double &tanz, double &tanr);
+  jerror_t GetLorentzCorrectionParameters(double x,double y,double z,
+				double &tanz, double &tanr) const;
   double GetLorentzCorrection(double x,double y,double z,double alpha,
 			      double dx) const;
   

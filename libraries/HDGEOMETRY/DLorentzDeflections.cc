@@ -67,8 +67,10 @@ void polint(const double *xa, const double *ya,int n,double x, double *y,
 
 // Obtain slope parameters describing Lorentz deflection by interpolating 
 // on the Lorentz deflection table
-jerror_t DLorentzDeflections::GetLorentzCorrection(double x,double y,double z,
-						  double &tanz, double &tanr){
+jerror_t DLorentzDeflections::GetLorentzCorrectionParameters(double x,
+							     double y,double z,
+							     double &tanz, 
+							     double &tanr) const{
   int imin,ind,ind2;
   double r=sqrt(x*x+y*y);
  
@@ -101,7 +103,7 @@ double DLorentzDeflections::GetLorentzCorrection(double x,double y,double z,
 						 double alpha,double dx) const
 {
   double tanz=0.,tanr=0.;
-  GetLorentzCorrection(x,y,z,tanz,tanr);
+  GetLorentzCorrectionParameters(x,y,z,tanz,tanr);
 
   // Deflection along wire	
   double phi=atan2(y,x);
