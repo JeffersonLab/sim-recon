@@ -176,8 +176,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	// of zero, we get a probability of 1.0.
 	double p = finite(resi) ? exp(-resi*resi/2./variance):0.0;
 	if(p>=MIN_FDC_HIT_PROB){
-	  fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
-		     hit->covyy,hit->covxy,hit->dE);
+	  fit.AddFDCHit(hit);
 	  num_matched_hits++;
 	  dEsum+=hit->dE;
 	}
@@ -189,8 +188,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	segment=segments[m];
 	for (unsigned n=0;n<segment->hits.size();n++){
 	  const DFDCPseudo *hit=segment->hits[n];
-	  fit.AddHit(hit->x,hit->y,hit->wire->origin(2),hit->covxx,
-		     hit->covyy,hit->covxy,hit->dE);
+	  fit.AddFDCHit(hit);  
 	  num_matched_hits++;
 	  dEsum+=hit->dE;
 	}
