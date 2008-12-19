@@ -9,6 +9,7 @@
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "HDGEOMETRY/DGeometry.h"
 #include "CDC/DCDCTrackHit.h"
+#include "FDC/DFDCPseudo.h"
 
 using namespace std;
 
@@ -23,6 +24,13 @@ typedef struct{
   DVector3 origin;
   DVector3 dir;
 }DKalmanCDCHit_t;
+
+typedef struct{
+  double t,cosa,sina;
+  double uwire,vstrip,z;
+  double covu,covv;
+  double nr,nz;
+}DKalmanFDCHit_t;
 
 typedef struct{
   unsigned int h_id;
@@ -46,11 +54,19 @@ class DKalmanFilter{
       delete hits[i];
     for (unsigned int i=0;i<cdchits.size();i++){
       delete cdchits[i];
+    } 
+    for (unsigned int i=0;i<fdchits.size();i++){
+      delete fdchits[i];
     }
     for (unsigned int i=0;i<forward_traj.size();i++){
       delete forward_traj[i].Q;
       delete forward_traj[i].S;
       delete forward_traj[i].J;
+    } 
+    for (unsigned int i=0;i<forward_traj_cdc.size();i++){
+      delete forward_traj_cdc[i].Q;
+      delete forward_traj_cdc[i].S;
+      delete forward_traj_cdc[i].J;
     }
 
     for (unsigned int i=0;i<central_traj.size();i++){
@@ -63,20 +79,24 @@ class DKalmanFilter{
   };
 
   jerror_t AddCDCHit(const DCDCTrackHit *cdchit);
+  jerror_t AddFDCHit(const DFDCPseudo *fdchit);
   jerror_t AddVertex(DVector3 vertex);
   jerror_t AddHit(double x,double y, double z,double covx,
 		  double covy, double covxy,double dE);
   jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
   jerror_t KalmanLoop(double mass_hyp);
   jerror_t KalmanForward(double mass_hyp,DMatrix &S,DMatrix &C,double &chisq);
+  jerror_t KalmanForwardCDC(double mass_hyp, double anneal,DMatrix &S, 
+			    DMatrix &C,double &chisq);
   jerror_t KalmanCentral(double mass_hyp,double anneal_factor,DMatrix &S, 
 			 DMatrix &C,DVector3 &pos,
 			 double &chisq);
   jerror_t ExtrapolateToVertex(double mass_hyp,DVector3 pos,DMatrix Sc,
 			       DMatrix Cc);
   jerror_t ExtrapolateToVertex(double mass_hyp,DMatrix S, DMatrix C);
-  jerror_t SetReferenceTrajectory(DMatrix S);
-  jerror_t SetCDCReferenceTrajectory(DMatrix Sc);
+  jerror_t SetReferenceTrajectory(DMatrix &S);
+  jerror_t SetCDCForwardReferenceTrajectory(DMatrix &S);
+  jerror_t SetCDCReferenceTrajectory(DMatrix &Sc);
   void GetMomentum(DVector3 &mom);
   void GetPosition(DVector3 &pos);
   double GetChiSq(void){return chisq_;}
@@ -130,14 +150,17 @@ class DKalmanFilter{
 				  double X0,DMatrix Sc,
 				  DMatrix &Q);
   jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S,DMatrix &C);
+  jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S);
   jerror_t SwimToRadius(DVector3 &pos, double Rf,DMatrix &Sc,DMatrix &Cc);
   
   jerror_t GoldenSection(double &ds,double doca,double dedx,DVector3 &pos,
 		       DVector3 origin,DVector3 dir,  
 		       DMatrix &Sc,DMatrix &Jc); 
-  double GoldenSection(double ds1,double ds2,double doca,double dedx,
+  double GoldenSection(double ds1,double ds2,double dedx,
 		     DVector3 pos,DVector3 origin,DVector3 dir,  
 		     DMatrix Sc);
+  jerror_t GoldenSection(double &z,double dz,double dEdx,
+			 DVector3 origin, DVector3 dir,DMatrix &S);
 
   const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   const DGeometry *geom;
@@ -145,6 +168,7 @@ class DKalmanFilter{
   // list of hits on track
   vector<DKalmanHit_t*>hits;
   vector<DKalmanCDCHit_t *>cdchits;
+  vector<DKalmanFDCHit_t *>fdchits;
 
   // Track parameters for forward region
   double x_,y_,tx_,ty_,q_over_p_;
@@ -158,6 +182,7 @@ class DKalmanFilter{
   // Lists containing state, covariance, and jacobian at each step
   deque<DKalmanState_t>central_traj;
   deque<DKalmanState_t>forward_traj;
+  deque<DKalmanState_t>forward_traj_cdc;
 
   vector<double>cdc_resid;
   vector<double>cdc_pulls;
