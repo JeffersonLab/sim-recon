@@ -414,7 +414,9 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
       if (INWVOL.eq.1) then
         z = VECT(3)
         r = sqrt(VECT(1)**2 + VECT(2)**2)
-        if (cnames(NLEVEL).eq.'COL1') then
+        if ((cnames(NLEVEL).eq.'PCTT').or.
+     +    (cnames(NLEVEL).eq.'PCTB').or.
+     +    (cnames(NLEVEL).eq.'PCSD')) then
           ISTOP = 1
           return
         elseif ((cnames(NLEVEL).eq.'UWIT' .and. abs(z-0.02).lt.0.1)
