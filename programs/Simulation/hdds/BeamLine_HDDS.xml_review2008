@@ -101,6 +101,10 @@
              Added passage to the collimator cave.
          22. Decreased thickness of the lead wall to 5.08 cm (size of the lead brick).
               
+     Revision 2.2  12/22/2008
+       Modified the composition 'beamPipe'. Now 'beamPipe' extends the vacuum from the 
+       pair spectrometer to the position of the target.
+
 
 
 <HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds">
@@ -768,54 +772,48 @@
   <tubs name="BPI2" Rio_Z="0.0  2.38   127.72" material="Vacuum" />
 
 
-
-
-
-  <tubs name="DET1" Rio_Z="0.    50.  2." material="Air" />
-
-  <box name="DET2" X_Y_Z="450.  270.  0.1" material="Vacuum" />
-
-  <box name="DET3" X_Y_Z="450.  2.  1200." material="Air" />
+  <tubs name="DET1" Rio_Z="0.   50.  2." material="Air" />
+  <box name="DET2" X_Y_Z=" 450. 270. 0.1" material="Vacuum" />
+  <box name="DET3" X_Y_Z=" 450. 2. 1200." material="Air" />
 
   
   <tubs name="CONV" Rio_Z="0.0  2.0  0.0240"  material="Vacuum"
         comment="set to Carbon for 0.1% converter, vacuum to remove" />
 
 
-  
-
-<!-- Inside the above collimatorPackage is embedded a series of sections
-     of a single vacuum pipe that starts inside the second sweeping
-     magnet.  The beamPipe composition extends the vacuum all the way
-     to the position of the target.
+<!-- The composition 'beamPipe' extends the vacuum from the pair 
+     spectrometer to the position of the target.
 
      Origin of beamPipe is center of the hall.
 -->
 
-  <box name="DET4" X_Y_Z="1700.0  1200.0  2.0" material="Vacuum" /> 
+  <composition name="beamPipe">
+<!--    <posXYZ volume="DET4"     X_Y_Z="  0.0     0.0 -1400.0"/> -->
+    <posXYZ volume="DET5"     X_Y_Z="  0.0     0.0  1400.0"/> 
+    <posXYZ volume="DET6"     X_Y_Z="  0.0   600.0     0.0"/>
+    <posXYZ volume="DET7"     X_Y_Z="  0.0     0.0  -591.0"/> 
+    <posXYZ volume="HallPipe" X_Y_Z="150.0  -350.0  -817.0"/>
+  </composition>
+
+<!--  <box name="DET4" X_Y_Z="1700.0  1200.0  2.0" material="Vacuum" /> -->
   <box name="DET5" X_Y_Z="1700.0  1200.0  2.0" material="Air" />
   <box name="DET6" X_Y_Z="1700.0  2.0  3000.0" material="Air" />
   <box name="DET7" X_Y_Z="1700.0  1200.0  2.0" material="Air" />
   
-  <tubs name="IHPI" Rio_Z="0.0  2.38  908.0" material="Vacuum" />
-  <tubs name="OHPI" Rio_Z="0.0  2.54  908.0" material="Iron" />
-  <tubs name="CAP2" Rio_Z="0.0  2.38   0.05" material="Mylar" />
-    
-  <composition name="InnerHallPipe" envelope="IHPI" >
-    <posXYZ volume="CAP2" X_Y_Z="0.0  0.0  453.975" />
-  </composition>
 
+<!-- Hall Pipe -->
   <composition name="HallPipe" envelope="OHPI" >
     <posXYZ volume="InnerHallPipe" X_Y_Z="0.0 0.0 0.0"/> 
   </composition>
 
-  <composition name="beamPipe">
-    <posXYZ volume="DET4"     X_Y_Z="  0.0     0.0 -1400.0"/> 
-    <posXYZ volume="DET5"     X_Y_Z="  0.0     0.0  1400.0"/> 
-    <posXYZ volume="DET6"     X_Y_Z="  0.0   600.0     0.0"/>
-    <posXYZ volume="DET7"     X_Y_Z="  0.0     0.0  -591.0"/> 
-    <posXYZ volume="HallPipe" X_Y_Z="150.0  -350.0 -1046.0"/>  
+  <composition name="InnerHallPipe" envelope="IHPI" >
+    <posXYZ volume="CAP2" X_Y_Z="0.0  0.0  224.975" />
   </composition>
+
+  <tubs name="OHPI" Rio_Z="0.0  2.54  450.0" material="Iron" />
+  <tubs name="IHPI" Rio_Z="0.0  2.38  450.0" material="Vacuum" />
+  <tubs name="CAP2" Rio_Z="0.0  2.38   0.05" material="Mylar" />
+
 
 <!-- Following is the definition of the active collimator.  It sits
      on the upstream end of the primary collimator and acts as an
