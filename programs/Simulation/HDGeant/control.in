@@ -232,5 +232,27 @@ c same option on the command line to the reconstruction program like this:
 c hd_root -PBFIELD_TYPE=Const file.hddm
 c BFIELD 'Const'
 
+c The following cards allow one to switch on/off some physics processes in GEANT:
+c MULS 0 no multiple scattering
+c      1 Moliere or Coulomb scattering (default)  
+c 
+c BREM 0 no bremsstrahlung 
+c      1 bremsstrahlung (default)
+c
+c COMP 0 no Compton
+c      1 Compton scattering (default)
+c 
+c PAIR 0 no pair production
+c      1 pair production (default)
+c 
+c LOSS 0 (controls energy losses) no energy loss
+c      1  delta-rays are produced above the threshold. Reduced fluctuations from 
+c         delta-rays below the threshold are added to the energy losses. The threshold
+c         energies for delta-ray production can be set using the CUTS card (see above). 
+c         The fields 'dcute' and 'dcutm' in the CUTS card correspond to energy thresholds 
+c         for electron and muon delta-rays, respectively. The default energy threshold 
+c         value is 100 keV. 
+c      2  no delta-rays are produced. Complete fluctuations are calculated (default).
+
 
 END
