@@ -3,7 +3,7 @@
 FFLAGS += -I$(CERN)/$(CERN_LEVEL)/include
 CFLAGS += -I$(CERN)/$(CERN_LEVEL)/include
 CXXFLAGS += -I$(CERN)/$(CERN_LEVEL)/include
-CERNLIBS = $(shell cernlib geant321 pawlib graflib grafX11 packlib mathlib kernlib)
+CERNLIBS = -L$(CERN)/$(CERN_LEVEL)/lib $(shell cernlib geant321 pawlib graflib grafX11 packlib mathlib kernlib)
 
 FFLAGS += -I/usr/include/cernlib/$(CERN_LEVEL)
 CFLAGS += -I/usr/include/cernlib/$(CERN_LEVEL)
