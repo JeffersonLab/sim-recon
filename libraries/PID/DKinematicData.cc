@@ -342,7 +342,7 @@ DKinematicData::smearMCThrownMomentum( double smearPct )
   double errMatValueY = smearPct*smearPct*m_momentum.Y()*m_momentum.Y();
   double errMatValueZ = smearPct*smearPct*m_momentum.Z()*m_momentum.Z();
 
-  rnd.SetSeed((uint)(1000*m_momentum.X()));
+  rnd.SetSeed((unsigned int)(1000*m_momentum.X()));
 
   DMatrixDSym sigmas(7);
   sigmas(0,0) = errMatValueX;

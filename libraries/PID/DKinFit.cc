@@ -726,7 +726,7 @@ void DKinFit::Fit()
   _chi2 = (epsT * bT * gb * b * eps)(0,0); // the (0,0)...only...element 
 
   DRandom rnd;
-  rnd.SetSeed((uint)(10000*_chi2));
+  rnd.SetSeed((unsigned int)(10000*_chi2));
 
 
   if(_verbose>0) cerr << "Prob: " << TMath::Prob(_chi2, _ndf) << " " << _chi2 << " " << _ndf << endl;
