@@ -13,7 +13,7 @@ using namespace std;
 #include <TLorentzVector.h>
 
 double PI_CHARGED_MASS = 0.139568;
-uint MAX_EVENTS=10000;
+unsigned int MAX_EVENTS=10000;
 double P_MIN=0.100;
 double P_MAX=6.000;
 double PHI_MIN = 0.0;
@@ -72,7 +72,7 @@ int main(int narg, char* argv[])
 	
 
 	// Loop over events
-	uint nevents;
+	unsigned int nevents;
 	for(nevents=1; nevents<=MAX_EVENTS; nevents++){
 	
 		vector<piX> piXs;
@@ -90,11 +90,11 @@ int main(int narg, char* argv[])
 		piXs.push_back(p);
 			
 		// Write event to file
-		uint type = PI_PLUS_TYPE;
+		unsigned int type = PI_PLUS_TYPE;
 		of<<RUN_NUMBER<<" "<<nevents<<" "<<piXs.size()<<endl;
-		for(uint j=0; j<piXs.size(); j++){
+		for(unsigned int j=0; j<piXs.size(); j++){
 			piX &p = piXs[j];
-			uint index = j+1;
+			unsigned int index = j+1;
 			
 			of<<index<<" "<<type<<" "<<0<<endl;
 			of<<"   "<<0<<" "<<p.px<<" "<<p.py<<" "<<p.pz<<" "<<p.E<<endl;

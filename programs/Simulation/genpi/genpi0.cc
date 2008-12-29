@@ -10,7 +10,7 @@
 using namespace std;
 
 double PI_ZERO_MASS = 0.13497;
-uint MAX_EVENTS=10000;
+unsigned int MAX_EVENTS=10000;
 int NUM_TO_GEN=1;
 double E_BEAM_MIN=PI_ZERO_MASS;
 double E_BEAM_MAX=1.0;
@@ -57,7 +57,7 @@ int main(int narg, char* argv[])
 	srandom(time(NULL));
 
 	// Loop over events
-	uint nevents;
+	unsigned int nevents;
 	for(nevents=1; nevents<=MAX_EVENTS; nevents++){
 	
 		// Determine inicident photon energy. (This is just
@@ -136,9 +136,9 @@ int main(int narg, char* argv[])
 		
 		// Write event to file
 		of<<RUN_NUMBER<<" "<<nevents<<" "<<pi0s.size()*2<<endl;
-		for(uint j=0; j<pi0s.size(); j++){
+		for(unsigned int j=0; j<pi0s.size(); j++){
 			pi0 &p = pi0s[j];
-			uint index = 2*j+1;
+			unsigned int index = 2*j+1;
 			
 			of<<index<<" "<<GAMMA_TYPE<<" "<<0<<endl;
 			of<<"   "<<0<<" "<<p.px1<<" "<<p.py1<<" "<<p.pz1<<" "<<p.E1<<endl;
