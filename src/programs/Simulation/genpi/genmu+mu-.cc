@@ -10,7 +10,7 @@
 using namespace std;
 
 double MUON_CHARGED_MASS = 0.10566;
-uint MAX_EVENTS=10000;
+unsigned int MAX_EVENTS=10000;
 int NUM_TO_GEN=2;
 double E_BEAM_MIN=4.0*MUON_CHARGED_MASS;
 double E_BEAM_MAX=1.0;
@@ -54,7 +54,7 @@ int main(int narg, char* argv[])
 	double pmin = sqrt(E_BEAM_MIN*E_BEAM_MIN - MUON_CHARGED_MASS*MUON_CHARGED_MASS);
 
 	// Loop over events
-	uint nevents;
+	unsigned int nevents;
 	for(nevents=1; nevents<=MAX_EVENTS; nevents++){
 	
 		// Determine inicident photon energy. (This is just
@@ -105,11 +105,11 @@ int main(int narg, char* argv[])
 		}
 		
 		// Write event to file
-		uint type = MUON_PLUS_TYPE;
+		unsigned int type = MUON_PLUS_TYPE;
 		of<<RUN_NUMBER<<" "<<nevents<<" "<<muXs.size()<<endl;
-		for(uint j=0; j<muXs.size(); j++){
+		for(unsigned int j=0; j<muXs.size(); j++){
 			muX &p = muXs[j];
-			uint index = j+1;
+			unsigned int index = j+1;
 			
 			of<<index<<" "<<type<<" "<<0<<endl;
 			of<<"   "<<0<<" "<<p.px<<" "<<p.py<<" "<<p.pz<<" "<<p.E<<endl;
