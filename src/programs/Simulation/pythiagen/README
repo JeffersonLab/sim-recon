@@ -1,0 +1,27 @@
+   E.Chudakov       Aug 10, 2007  
+
+   This directory contains the code for PYTHIA and tools to run it
+   The main program: run_pyth.f
+
+   a) Compile PYTHIA:
+      > make
+      makes run_pyth.exe
+
+   b) PYTHIA input files:
+      run.input - one line to define the number of events to simulate and the beam energy
+      pythia-geant.map - mapping GEANT<->PYTHIA particle codes
+      pythia.dat - redefinitions of PYTHIA flags (do not change unless you know what you are doing)
+
+   c) Running PYTHIA:
+      > ./run_pyth.exe
+      An output binary file pytout.dat is written. It contains
+      all relevant info for each event - the PYTHIA record and the GEANT code
+
+   d) read_pout.f - a code to read the PYTHIA output file and print several events
+      >./read_pout.exe
+      Note, that the 7-th column contains the GEANT particle code for the entry.
+      For the non-zero entries: call GSKINE
+     the code can be compiled: g77 -o read_pout.exe read_pout.f
+
+
+
