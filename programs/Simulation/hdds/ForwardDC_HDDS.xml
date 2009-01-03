@@ -284,7 +284,7 @@
   <tubs name="FDCW" Rio_Z=" 0.0 50.25 0.0100" material="FDCwirePlaneComposite"
 	                     comment="fdc chamber anode wire plane" />
   <tubs name="FDAW" Rio_Z=" 2.3 50.25 0.0100" material="FDCwirePlaneComposite"
-	    sensitive="true" comment="fdc chamber anode wire plane" />
+	    sensitive="false" comment="fdc chamber anode wire plane" />
   <tubs name="FDK1" Rio_Z=" 2.3 50.25 0.0052" material="CopperKaptonEpoxy"
                              comment="cathode strip plane for chamber 1" />
   <tubs name="FDK2" Rio_Z=" 3.2 50.25 0.0052" material="CopperKaptonEpoxy"
