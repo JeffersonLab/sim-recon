@@ -234,7 +234,11 @@ int storeInput (int runNo, int eventNo, int ntracks)
    vs->mult = 0;
    for (itra = 1; itra <= ntracks; itra++)
    {
+      char chnpar[99];
+      int itrtyp;
+      float amass,charge,tlife;
       gfkine_(&itra,vert,plab,&kind,&nvtx,ubuf,&nubuf);
+      gfpart_(&kind,chnpar,&itrtyp,&amass,&charge,&tlife,ubuf,&nubuf);
       if (nvtx < 1)
       {
          return 1;
@@ -262,15 +266,16 @@ int storeInput (int runNo, int eventNo, int ntracks)
          ps->mult = 0;
       }
       ps->in[ps->mult].type = kind;
-		ps->in[ps->mult].pdgtype = 0;		/* don't bother with the PDG type here */
-		ps->in[ps->mult].id = itra;		/* unique value for this particle within the event */
-		ps->in[ps->mult].parentid = 0;	/* All internally generated particles have no parent */
-		ps->in[ps->mult].mech = 0;			/* maybe this should be set to something? */
+      ps->in[ps->mult].pdgtype = 0;	/* don't bother with the PDG type here */
+      ps->in[ps->mult].id = itra;	/* unique value for this particle within the event */
+      ps->in[ps->mult].parentid = 0;	/* All internally generated particles have no parent */
+      ps->in[ps->mult].mech = 0;	/* maybe this should be set to something? */
       ps->in[ps->mult].momentum = make_s_Momentum();
       ps->in[ps->mult].momentum->px = plab[0];
       ps->in[ps->mult].momentum->py = plab[1];
       ps->in[ps->mult].momentum->pz = plab[2];
-      ps->in[ps->mult].momentum->E  = plab[3];
+      ps->in[ps->mult].momentum->E  = sqrt(plab[0]*plab[0]+plab[1]*plab[1]
+                                          +plab[2]*plab[2]+amass*amass);
       ps->mult++;
    }
    pes->in[0].runNo = runNo;
