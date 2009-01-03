@@ -612,7 +612,7 @@ int FortranWriter::createRotation(Refsys& ref)
                        + ref.fRmatrix[1][i] * ref.fRmatrix[1][i]);
          theta = atan2(r, ref.fRmatrix[2][i]) * 180/M_PI;
          phi = atan2(ref.fRmatrix[1][i], ref.fRmatrix[0][i]) * 180/M_PI;
-         std::cout
+         std::cout << std::setprecision(8)
               << "      theta" << i + 1 << " = " << theta << std::endl
               << "      phi" << i + 1 << " = " << phi << std::endl;
       }
