@@ -363,7 +363,18 @@ void hitForwardDC (float xin[4], float xout[4],
  	avalanche_y+=-tanz*dist_to_wire*sin(alpha)*cos(phi)
 	  +tanr*dist_to_wire*cos(alpha);
 
-	rnorml_(rndno,&two);
+	// Only and always use the built-in Geant random generator,
+        // otherwise debugging is a problem because sequences are not
+        // reproducible from a given pair of random seeds. [rtj]
+
+        /* rnorml_(rndno,&two); */ {
+           float rho,phi;
+           grndm_(rndno,&two);
+           rho = sqrt(-2*log(rndno[0]));
+           phi = rndno[1]*2*M_PI;
+           rndno[0] = rho*cos(phi);
+           rndno[1] = rho*sin(phi);
+        }
 	// Angular dependence from PHENIX data
 	avalanche_y+=0.16*ANODE_CATHODE_SPACING*tan(alpha)*rndno[0];
 	// Crude approximation for transverse diffusion
