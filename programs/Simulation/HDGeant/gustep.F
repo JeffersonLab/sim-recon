@@ -218,6 +218,20 @@
       save iorder
 #endif
 
+#ifdef ACTIVE_COLLIMATOR_SIMS
+      integer evno
+      real vertx1(3),tofgx1
+      integer ntbeamx1,nttargx1,nubuf1
+      real qsum(8),qsumb(8),qsump(8),ubuf1(99)
+      common /hdacol/evno,Egam,qsum,qsumb,qsump,ubuf1
+      save /hdacol/
+      character*100 ntacoldef
+      parameter (ntacoldef='ev:I,Egam:R,qsum(8):R,qsumb(8):R,'
+     +                   //'qsump(8):R,ppol:R,offset(2):R')
+      integer ntacol
+      parameter (ntacol=25)
+#endif
+
 #if defined WERNERS_VTX_NTUPLE
       integer evno,part,vid
       real xvtx(3),xdet(3),pdet(3)
@@ -292,13 +306,15 @@
         det = 7
       elseif (cnames(nlevel).eq.'CONV') then
         det = 8
+      elseif (cnames(nlevel).eq.'LIH2') then
+        det = 9
       else
         det = 0
       endif
 
 **********************      Defintion of ntuple ****************************
       
-      if (inwvol.eq.1.and.det.gt.1
+      if (inwvol.eq.1.and.det.ge.1
 c    +    .and.((ipart.eq.2).or.(ipart.eq.3))
 c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
      +   ) then
@@ -309,6 +325,7 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
           call hbname(9+det,'hits',gekin,'totE:r')
           call hbname(9+det,'hits',vect,'x(7):r')
           call hbname(9+det,'hits',ubuf,'ppol:r')
+          call hbname(9+det,'hits',ubuf(2),'xspot(2):r')
           call hbname(9+det,'hits',ipart,'ptype:i')
           call hbname(9+det,'hits',det,'det:i')
           call hbname(9+det,'hits',mint,'mint[0,999]:i')
@@ -340,7 +357,7 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
 
 * Register hits in sensitive detectors here
 
-      if (ISVOL.ne.0) then
+      if (ISVOL.ne.0.or.ISTOP.ne.0.or.INWVOL.ge.2) then
         call savehits
       endif
 
@@ -377,6 +394,94 @@ c    +    .and.(vect(1)**2+vect(2)**2).gt.25.0) then
         DESTEP = GEKIN
         ISTOP = 1
       endif
+
+#ifdef ACTIVE_COLLIMATOR_SIMS
+      if (IDEVT.ne.evno) then
+        if (IDEVT.eq.1) then
+          call hbnt(ntacol,'active collimator ntuple, all events',' ')
+          call hbname(ntacol,'charge',evno,ntacoldef)
+          call hbnt(ntacol+1,'active collimator ntuple, charged events',
+     +                                                            ' ')
+          call hbname(ntacol+1,'charge',evno,ntacoldef)
+        else
+          call hfnt(ntacol)
+          if (qsum(1).ne.0 .or. qsum(2).ne.0 .or.
+     +        qsum(3).ne.0 .or. qsum(4).ne.0 .or.
+     +        qsum(5).ne.0 .or. qsum(6).ne.0 .or.
+     +        qsum(7).ne.0 .or. qsum(8).ne.0 .or.
+     +        qsumb(1).ne.0 .or. qsumb(2).ne.0 .or.
+     +        qsumb(3).ne.0 .or. qsumb(4).ne.0 .or.
+     +        qsumb(5).ne.0 .or. qsumb(6).ne.0 .or.
+     +        qsumb(7).ne.0 .or. qsumb(8).ne.0 .or.
+     +        qsump(1).ne.0 .or. qsump(2).ne.0 .or.
+     +        qsump(3).ne.0 .or. qsump(4).ne.0 .or.
+     +        qsump(5).ne.0 .or. qsump(6).ne.0 .or.
+     +        qsump(7).ne.0 .or. qsump(8).ne.0) then
+            call hfnt(ntacol+1)
+          endif
+        endif
+        evno = IDEVT
+        Egam = GETOT
+        do i=1,8
+          qsum(i) = 0
+          qsumb(i) = 0
+          qsump(i) = 0
+        enddo
+        call gfvert(1,vertx1,ntbeamx1,nttargx1,tofgx1,ubuf1,nubuf1)
+      endif
+      if (cnames(NLEVEL).eq.'COL1') then
+        ISTOP = 1
+        return
+      elseif (NLEVEL.ge.7.and.cnames(7).eq.'ACWI') then
+        if (INWVOL.eq.2) then
+          qsum(NUMBER(7)) = qsum(NUMBER(7))-CHARGE
+          if (cnames(NLEVEL).eq.'ACBI') then
+c           print *, '*-* leaving ACBI'
+            qsumb(NUMBER(7)) = qsumb(NUMBER(7))-CHARGE
+          elseif (cnames(NLEVEL).eq.'PIN1') then
+c           print *, '*-* leaving ACWI/PIN1'
+            qsump(NUMBER(7)) = qsump(NUMBER(7))-CHARGE
+          else
+c           print *, '*-* leaving ACWI'
+          endif
+        elseif ((INWVOL.eq.1).and.(NSTEP.gt.0)) then
+          qsum(NUMBER(7)) = qsum(NUMBER(7))+CHARGE
+          if (cnames(NLEVEL).eq.'ACBI') then
+c           print *, '*-* entering ACBI'
+            qsumb(NUMBER(7)) = qsumb(NUMBER(7))+CHARGE
+          elseif (cnames(NLEVEL).eq.'PIN1') then
+c           print *, '*-* entering ACWI/PIN1'
+            qsump(NUMBER(7)) = qsump(NUMBER(7))+CHARGE
+          else
+c           print *, '*-* entering ACWI'
+          endif
+        endif
+      elseif (NLEVEL.ge.7.and.cnames(7).eq.'ACWO') then
+        if (INWVOL.eq.2) then
+          qsum(NUMBER(7)+4) = qsum(NUMBER(7)+4)-CHARGE
+          if (cnames(NLEVEL).eq.'ACBO') then
+c           print *, '*-* leaving ACBO'
+            qsumb(NUMBER(7)+4) = qsumb(NUMBER(7)+4)-CHARGE
+          elseif (cnames(NLEVEL).eq.'PIN1') then
+c           print *, '*-* leaving ACWO/PIN1'
+            qsump(NUMBER(7)+4) = qsump(NUMBER(7)+4)-CHARGE
+          else
+c           print *, '*-* leaving ACWO'
+          endif
+        elseif ((INWVOL.eq.1).and.(NSTEP.gt.0)) then
+          qsum(NUMBER(7)+4) = qsum(NUMBER(7)+4)+CHARGE
+          if (cnames(NLEVEL).eq.'ACBO') then
+c           print *, '*-* entering ACBO'
+            qsumb(NUMBER(7)+4) = qsumb(NUMBER(7)+4)+CHARGE
+          elseif (cnames(NLEVEL).eq.'PIN1') then
+c           print *, '*-* entering ACWO/PIN1'
+            qsump(NUMBER(7)+4) = qsump(NUMBER(7)+4)+CHARGE
+          else
+c           print *, '*-* entering ACWO'
+          endif
+        endif
+      endif
+#endif
 
 #ifdef BACKGROUND_STUDIES
       if (.not.HEXIST(bgnt)) then

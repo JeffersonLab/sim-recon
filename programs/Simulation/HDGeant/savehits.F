@@ -22,34 +22,41 @@
       character*4 cnames(15)
       equivalence (NAMES(1),cnames(1))
 
+      integer nlevellast,nameslast,numberlast
+      common /gcvolulast/nlevellast,nameslast(15),numberlast(15)
+      save /gcvolulast/
+      data nlevellast/0/
+
+      logical hitopen
+      save hitopen
+      data hitopen/.false./
+
       real xin(4),xout(4),pin(5),pout(5),dEsum
       save xin,xout,pin,pout,dEsum
 
-      integer nlevel_in,inwvol_in
-      nlevel_in = NLEVEL
-      inwvol_in = INWVOL
+      integer isame
+      integer level,nlevel_in
 
-* At this point we hide any inner volumes that should not interrupt the
-* formation of a single hit by pretending that we are still in the mother;
-* the true geometry information is restored before we exit.
+* Initialize a new hit when a particle enters a sensitive volume, unless
+* it was here before and never left, in which case the existing hit should
+* be allowed to continue to collect statistics without being disturbed.
 
-      if (cnames(NLEVEL).eq.'FDAW') then ! discard energy lost in wires
-        goto 9
-      elseif (cnames(NLEVEL)(1:3).eq.'FDA') then ! do not split hits around wire plane
-        if (INWVOL.eq.2.and.INFROM.eq.0) then
-          INWVOL = 0 ! continue, do not finalize hit
-        elseif (INWVOL.eq.1.and.INFROM.eq.1) then
-          INWVOL = 0 ! append to previous hit segment
+      if (INWVOL.eq.1) then
+        if (NLEVEL.eq.nlevellast) then
+          do level=NLEVEL,1,-1
+            if (NAMES(level).ne.nameslast(level).or.
+     +          NUMBER(level).ne.numberlast(level)) then
+              goto 3
+            endif
+          enddo
+          return
         endif
-      endif
-
-* Accumulate hit information and save it when particle exits the volume
-
-      if (ISTOP.ne.0) then		! particle stops
-        continue
-      elseif (INWVOL.eq.2) then		! particle exits current volume
-        continue
-      elseif (INWVOL.eq.1) then		! particle enters new volume
+    3   continue
+        do level=1,NLEVEL
+          nameslast(level) = NAMES(level)
+          numberlast(level) = NUMBER(level)
+        enddo
+        nlevellast = NLEVEL
         xin(1) = VECT(1)
         xin(2) = VECT(2)
         xin(3) = VECT(3)
@@ -60,24 +67,87 @@
         pin(4) = GETOT
         pin(5) = VECT(7)
         dEsum = 0
-        goto 9
-      else
+        hitopen = .true.
+        return
+      elseif (INWVOL.eq.0) then
         dEsum = dEsum + DESTEP
-        goto 9
+        if (ISTOP.eq.0) then
+          return
+        endif
+        xout(1) = VECT(1)
+        xout(2) = VECT(2)
+        xout(3) = VECT(3)
+        xout(4) = TOFG
+        pout(1) = VECT(4)
+        pout(2) = VECT(5)
+        pout(3) = VECT(6)
+        pout(4) = GETOT
+        pout(5) = VECT(7)
+      elseif (ISVOL.eq.1) then
+        dEsum = dEsum + DESTEP
+        xout(1) = VECT(1)
+        xout(2) = VECT(2)
+        xout(3) = VECT(3)
+        xout(4) = TOFG
+        pout(1) = VECT(4)
+        pout(2) = VECT(5)
+        pout(3) = VECT(6)
+        pout(4) = GETOT
+        pout(5) = VECT(7)
       endif
+
+* At this point, we know that the particle is leaving the current volume
+* for some reason.  If no hit is being accumulated then ignore it, and
+* clear the block on the last hit volume if not the current one.
+
+      if (.not.hitopen) then
+        if (NLEVEL.ne.nlevellast) then
+          nlevellast = 0
+        else
+          do level=NLEVEL,1,-1
+            if (NAMES(level).ne.nameslast(level).or.
+     +          NUMBER(level).ne.numberlast(level)) then
+              nlevellast = 0
+              return
+            endif
+          enddo
+        endif
+        return
+      endif
+
+* A hit is being accumulated, but we may be about to enter a daughter
+* volume inside the current one.  If so, we ignore the transition.
+
+      if (INWVOL.eq.2.and.INGOTO.ne.0) then
+        return
+      endif
+
+* Otherwise, we may be exiting a sensitive region or one of its contents;
+* if a content then we have no way of knowing whether we are at the same
+* time leaving the outer sensitive volume or merely passing through one
+* of its interior interfaces.  At this point there is no way to find out
+* except to do the rather expensive call to GINVOL for the current point.
+* To do that we will need to save and restore the geometry state info.
+
+      if (INWVOL.eq.2.and.NLEVEL.gt.nlevellast) then
+        call GSCVOL
+        NLEVEL = nlevellast
+        call GINVOL(VECT,isame)
+        call GFCVOL
+        if (isame.ne.0) then
+          return
+        endif
+      endif
+
+* At this point we hide any inner volumes that should not interrupt the
+* formation of a single hit by pretending that we are still in the mother;
+* the true geometry information is restored before we exit.
+
+      nlevel_in = NLEVEL
+      NLEVEL = nlevellast
 
 * At end of track segment in sensitive medium: register hit
 
-      dEsum = dEsum + DESTEP
-      xout(1) = VECT(1)
-      xout(2) = VECT(2)
-      xout(3) = VECT(3)
-      xout(4) = TOFG
-      pout(1) = VECT(4)
-      pout(2) = VECT(5)
-      pout(3) = VECT(6)
-      pout(4) = GETOT
-      pout(5) = VECT(7)
       if ((cnames(NLEVEL).eq.'STRC').or.		! vertex cylinder
      +    (cnames(NLEVEL).eq.'STRP')) then		! vertex endcap
 #ifdef MAKE_HITS_WHEN_ILOSS_0
@@ -181,8 +251,17 @@
         endif
       endif
 
-* Restore the true geometry flags and return
+* Mark this hit as closed, so that it does not get registered twice
 
-    9 NLEVEL = nlevel_in
-      INWVOL = inwvol_in
+      hitopen = .false.
+
+* If this is the end of tracking for this particle, reset the saved state
+
+      if (ISTOP.ne.0) then
+        nlevellast = 0
+      endif
+
+* Restore the true geometry state and return
+
+      NLEVEL = nlevel_in
       END
