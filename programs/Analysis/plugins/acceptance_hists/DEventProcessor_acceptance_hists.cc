@@ -68,7 +68,7 @@ jerror_t DEventProcessor_acceptance_hists::init(void)
 	//if(ROOTfile != NULL) ROOTfile->cd();
 
 	// Create ACCEPTANCE directory
-	TDirectory *dir = new TDirectory("ACCEPTANCE","ACCEPTANCE");
+	TDirectory *dir = new TDirectoryFile("ACCEPTANCE","ACCEPTANCE");
 	dir->cd();
 
 	// Create histograms

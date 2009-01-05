@@ -63,7 +63,7 @@ jerror_t DEventProcessor_cdc_hists::init(void)
 	//if(ROOTfile != NULL) ROOTfile->cd();
 	
 	// Create THROWN directory
-	TDirectory *dir = new TDirectory("CDC","CDC");
+	TDirectory *dir = new TDirectoryFile("CDC","CDC");
 	dir->cd();
 
 	// Create Tree

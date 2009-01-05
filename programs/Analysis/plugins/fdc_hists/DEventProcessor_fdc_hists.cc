@@ -62,7 +62,7 @@ DEventProcessor_fdc_hists::~DEventProcessor_fdc_hists()
 jerror_t DEventProcessor_fdc_hists::init(void)
 {
 	// Create TRACKING directory
-	TDirectory *dir = new TDirectory("FDC","FDC");
+	TDirectory *dir = new TDirectoryFile("FDC","FDC");
 	dir->cd();
 
 	// Create Tree

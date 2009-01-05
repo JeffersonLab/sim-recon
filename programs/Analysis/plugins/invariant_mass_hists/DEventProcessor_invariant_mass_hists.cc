@@ -52,7 +52,7 @@ jerror_t DEventProcessor_invariant_mass_hists::init(void)
 	//if(ROOTfile != NULL) ROOTfile->cd();
 
 	// Create THROWN directory
-	TDirectory *dir = new TDirectory("INV_MASS","INV_MASS");
+	TDirectory *dir = new TDirectoryFile("INV_MASS","INV_MASS");
 	dir->cd();
 
 	// Create histograms

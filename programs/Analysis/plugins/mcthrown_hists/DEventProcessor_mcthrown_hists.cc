@@ -53,7 +53,7 @@ jerror_t DEventProcessor_mcthrown_hists::init(void)
 	//if(ROOTfile != NULL) ROOTfile->cd();
 
 	// Create THROWN directory
-	TDirectory *dir = new TDirectory("THROWN","THROWN");
+	TDirectory *dir = new TDirectoryFile("THROWN","THROWN");
 	dir->cd();
 
 	// Create histograms

@@ -69,7 +69,7 @@ jerror_t DEventProcessor_trackeff_hists::init(void)
 {
 	// Create TRACKING directory
 	TDirectory *dir = (TDirectory*)gROOT->FindObject("TRACKING");
-	if(!dir)dir = new TDirectory("TRACKING","TRACKING");
+	if(!dir)dir = new TDirectoryFile("TRACKING","TRACKING");
 	dir->cd();
 
 	// Create Trees

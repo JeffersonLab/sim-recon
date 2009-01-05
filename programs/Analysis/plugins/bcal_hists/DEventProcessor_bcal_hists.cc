@@ -37,7 +37,7 @@ void InitPlugin(JApplication *app){
 jerror_t DEventProcessor_bcal_hists::init(void)
 {
 	// Create THROWN directory
-	TDirectory *dir = new TDirectory("BCAL","BCAL");
+	TDirectory *dir = new TDirectoryFile("BCAL","BCAL");
 	dir->cd();
 	
 	two_gamma_mass = new TH1F("two_gamma_mass","two_gamma_mass",100, 0.0, 0.300);

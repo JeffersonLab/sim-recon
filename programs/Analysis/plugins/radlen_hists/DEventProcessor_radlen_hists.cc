@@ -54,7 +54,7 @@ jerror_t DEventProcessor_radlen_hists::init(void)
 	//if(ROOTfile != NULL) ROOTfile->cd();
 
 	// Create THROWN directory
-	TDirectory *dir = new TDirectory("RADLEN","RADLEN");
+	TDirectory *dir = new TDirectoryFile("RADLEN","RADLEN");
 	dir->cd();
 
 	// Create histograms
