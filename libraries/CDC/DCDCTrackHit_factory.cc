@@ -198,6 +198,7 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 			w->tdir.SetMag(1.0); // This isn't really needed
 
 			w->stereo = w->udir.Angle(TVector3(0,0,1));
+			if(rotX>0.0)w->stereo = -w->stereo;
 			w->L = L/cos(stereo);
 		}
 	}
