@@ -149,7 +149,7 @@ trk_mainframe::trk_mainframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt_t w, 
 				
 				slock = new TGCheckButton(panzoomresetframe,"lock s-axis");
 				panzoomresetframe->AddFrame(slock, xhints);
-				slock->Connect("Clicked","trk_mainframe", this, "DoMyRedraw()");
+				slock->Connect("Clicked()","trk_mainframe", this, "DoMyRedraw()");
 				
 			//-------- Event, Info frame
 			TGVerticalFrame *eventinfoframe = new TGVerticalFrame(controlsframe);
@@ -163,10 +163,10 @@ trk_mainframe::trk_mainframe(hdv_mainframe *hdvmf, const TGWindow *p, UInt_t w, 
 					prevnextframe->AddFrame(prev, lhints);
 					prevnextframe->AddFrame(next, lhints);
 				
-					next->Connect("Clicked","hdv_mainframe", hdvmf, "DoNext()");
-					prev->Connect("Clicked","hdv_mainframe", hdvmf, "DoPrev()");
-					next->Connect("Clicked","trk_mainframe", this, "DoNewEvent()");
-					prev->Connect("Clicked","trk_mainframe", this, "DoNewEvent()");
+					next->Connect("Clicked()","hdv_mainframe", hdvmf, "DoNext()");
+					prev->Connect("Clicked()","hdv_mainframe", hdvmf, "DoPrev()");
+					next->Connect("Clicked()","trk_mainframe", this, "DoNewEvent()");
+					prev->Connect("Clicked()","trk_mainframe", this, "DoNewEvent()");
 					
 			//-------- Info
 				TGGroupFrame *infoframe = new TGGroupFrame(eventinfoframe, "Info", kVerticalFrame);
@@ -704,7 +704,8 @@ void trk_mainframe::DrawHitsForOneTrack(
 		const DCDCWire *cdcwire = dynamic_cast<const DCDCWire*>(wire);
 		if(cdcwire!=NULL && cdcwire->stereo!=0.0){
 			ellipse_width = 3.0;
-			ellipse_color += cdcwire->stereo>0.0 ? 100:150;
+			//ellipse_color = cdcwire->stereo>0.0 ? TColor::GetColorDark(ellipse_color):TColor::GetColorBright(ellipse_color);
+			ellipse_color += cdcwire->stereo>0.0 ? 4:-2;
 			marker_style = 5;
 		}
 		
@@ -723,17 +724,19 @@ void trk_mainframe::DrawHitsForOneTrack(
 			}
 		}
 
+		// Create ellipse for distance from wire
+		TEllipse *e = new TEllipse(sdist, s, dist, dist);
+		e->SetLineWidth(ellipse_width);
+		e->SetLineColor(ellipse_color);
+		e->SetFillColor(19);
+		graphics.push_back(e);
+
 		// Create marker for wire
 		TMarker *m = new TMarker(sdist, s, marker_style);
 		m->SetMarkerSize(1.5);
 		m->SetMarkerColor(colors[index%ncolors]);
 		graphics.push_back(m);
 		
-		// Create ellipse for distance from wire
-		TEllipse *e = new TEllipse(sdist, s, dist, dist);
-		e->SetLineWidth(ellipse_width);
-		e->SetLineColor(ellipse_color);
-		graphics.push_back(e);
 	}
 }
 

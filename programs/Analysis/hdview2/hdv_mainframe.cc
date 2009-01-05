@@ -31,6 +31,7 @@ using namespace std;
 #include <TGTextEntry.h>
 #include <TArrow.h>
 #include <TLatex.h>
+#include <TColor.h>
 
 extern JApplication *japp;
 //TGeoVolume *MOTHER = NULL;
@@ -82,6 +83,9 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 
 	// First, define all of the of the graphics objects. Below that, make all
 	// of the connections to the methods so these things will work!
+
+	// Use the "color wheel" rather than the classic palette.
+	TColor::CreateColorWheel();
 
 	// The main GUI window is divided into three sections, top, middle, and bottom.
 	// Create those frames here.
@@ -402,43 +406,43 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	zoom_factor = 1.0;
 
 	//&&&&&&&&&&&&&&&& Connections
-	zoomin->Connect("Clicked","hdv_mainframe", this, "DoZoomIn()");
-	zoomout->Connect("Clicked","hdv_mainframe", this, "DoZoomOut()");
-	reset->Connect("Clicked","hdv_mainframe", this, "DoReset()");
+	zoomin->Connect("Clicked()","hdv_mainframe", this, "DoZoomIn()");
+	zoomout->Connect("Clicked()","hdv_mainframe", this, "DoZoomOut()");
+	reset->Connect("Clicked()","hdv_mainframe", this, "DoReset()");
 
 	coordinates->Connect("Clicked(Int_t)","hdv_mainframe", this, "DoSetCoordinates(Int_t)");
 	coordinates->Connect("Clicked(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
 
-	quit->Connect("Clicked","hdv_mainframe", this, "DoQuit()");
-	next->Connect("Clicked","hdv_mainframe", this, "DoNext()");
-	prev->Connect("Clicked","hdv_mainframe", this, "DoPrev()");
-	checkbuttons["continuous"]->Connect("Clicked","hdv_mainframe", this, "DoCont()");
+	quit->Connect("Clicked()","hdv_mainframe", this, "DoQuit()");
+	next->Connect("Clicked()","hdv_mainframe", this, "DoNext()");
+	prev->Connect("Clicked()","hdv_mainframe", this, "DoPrev()");
+	checkbuttons["continuous"]->Connect("Clicked()","hdv_mainframe", this, "DoCont()");
 	delay->Connect("Selected(Int_t)","hdv_mainframe", this, "DoSetDelay(Int_t)");
 	
-	trackinspector->Connect("Clicked","hdv_mainframe", this, "DoOpenTrackInspector()");
-	tofinspector->Connect("Clicked","hdv_mainframe", this, "DoOpenTOFInspector()");
-	fcalinspector->Connect("Clicked","hdv_mainframe", this, "DoOpenFCALInspector()");
-	bcalinspector->Connect("Clicked","hdv_mainframe", this, "DoOpenBCALInspector()");
+	trackinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenTrackInspector()");
+	tofinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenTOFInspector()");
+	fcalinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenFCALInspector()");
+	bcalinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenBCALInspector()");
 	
-	checkbuttons["candidates"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["tracks"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["particles"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["thrown"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["candidates"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["tracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["particles"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["thrown"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 
-	checkbuttons["cdc"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["cdcdrift"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["cdctruth"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["fdcwire"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["fdcpseudo"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["fdcintersection"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["fdctruth"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["tof"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["toftruth"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["bcal"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["bcaltruth"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["fcal"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["fcaltruth"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["trajectories"]->Connect("Clicked","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["cdc"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["cdcdrift"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["cdctruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["fdcwire"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["fdcpseudo"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["fdcintersection"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["fdctruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["tof"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["toftruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["bcal"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["bcaltruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["fcal"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["fcaltruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["trajectories"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 	candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
 	tracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
 	particlesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
@@ -714,8 +718,8 @@ void hdv_mainframe::DoOpenTrackInspector(void)
 	if(trkmf==NULL){
 		trkmf = new trk_mainframe(this, NULL, 100, 100);
 		if(trkmf){
-			next->Connect("Clicked","trk_mainframe", trkmf, "DoNewEvent()");
-			prev->Connect("Clicked","trk_mainframe", trkmf, "DoNewEvent()");
+			next->Connect("Clicked()","trk_mainframe", trkmf, "DoNewEvent()");
+			prev->Connect("Clicked()","trk_mainframe", trkmf, "DoNewEvent()");
 		}
 	}else{
 		trkmf->RaiseWindow();
