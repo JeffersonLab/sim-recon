@@ -338,6 +338,9 @@ int main(int argC, char* argV[])
 	 << "#include <strings.h>"				<< std::endl
 	 << "#include <particleType.h>"				<< std::endl
 								<< std::endl
+         << "typedef char* string_t;	"
+         << "// use this alias for string-valued attributes"	<< std::endl
+								<< std::endl
 	 << "/* Note to users: The option MALLOC_FREE_WITH_MEMCHECK" << std::endl
 	 << " * was created for debugging this hddm library, but it" << std::endl
 	 << " * is also useful for finding memory leaks in user" << std::endl
@@ -662,11 +665,11 @@ void CodeBuilder::writeHeader(DOMElement* el)
       }
       else if (typeS == "string")
       {
-         hFile << "   char*                " << nameS << ";" << std::endl;
+         hFile << "   string_t             " << nameS << ";" << std::endl;
       }
       else if (typeS == "anyURI")
       {
-         hFile << "   char*                " << nameS << ";" << std::endl;
+         hFile << "   string_t             " << nameS << ";" << std::endl;
       }
       else if (typeS == "Particle_t")
       {
@@ -803,8 +806,7 @@ void CodeBuilder::constructConstructors()
                 typeS == "anyURI")
             {
                cFile << "      pp->" << nameS
-                     << " = (" << typeS
-                     << "*)&hddm_nullTarget;"			<< std::endl;
+                     << " = (string_t)&hddm_nullTarget;"	<< std::endl;
             }
             else if (typeS == "int" ||
 	             typeS == "long" ||
@@ -869,8 +871,7 @@ void CodeBuilder::constructConstructors()
                 typeS == "anyURI")
             {
                cFile << "   p->" << nameS
-                     << " = (" << typeS
-                     << "*)&hddm_nullTarget;"			<< std::endl;
+                     << " = (string_t)&hddm_nullTarget;"	<< std::endl;
             }
             else if (typeS == "int" ||
 	             typeS == "long" ||
@@ -1053,12 +1054,14 @@ void CodeBuilder::constructUnpackers()
          }
          else if (typeS == "string")
          {
-            cFile << "         xdr_string(xdrs,&this1->"
+            cFile << "         this1->" << nameStr << " = 0;"	 << std::endl
+                  << "         xdr_string(xdrs, &this1->"
 	          << nameStr << ", 1000000);"			 << std::endl;
          }
          else if (typeS == "anyURI")
          {
-            cFile << "         xdr_string(xdrs,&this1->"
+            cFile << "         this1->" << nameStr << " = 0;"	 << std::endl
+                  << "         xdr_string(xdrs, &this1->"
 	          << nameStr << ", 1000000);"			 << std::endl;
          }
          else
@@ -1072,14 +1075,14 @@ void CodeBuilder::constructUnpackers()
          cFile << "         for (p = 0; p < pop->popListLength; p++)"	<< std::endl
                << "         {"						<< std::endl
                << "            popNode* pnode = pop->popList[p];"	<< std::endl
-               << "            if (pnode)"				<< std::endl
-               << "            {"					<< std::endl
-               << "               int kid = pnode->inParent;"		<< std::endl
+               << "            if (pnode)"                              << std::endl
+               << "            {"                                       << std::endl
+               << "               int kid = pnode->inParent;"           << std::endl
                << "               ptr[kid] = pnode->unpacker(xdrs,pnode);"
-	       								<< std::endl
-               << "            }"					<< std::endl
-               << "            else"					<< std::endl
-               << "            {"					<< std::endl
+                                                                        << std::endl
+               << "            }"                                       << std::endl
+               << "            else"                                    << std::endl
+               << "            {"                                       << std::endl
                << "               unsigned int skip;"			<< std::endl
 	       << "               xdr_u_int(xdrs,&skip);"		<< std::endl
                << "               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);"
@@ -1288,11 +1291,13 @@ void CodeBuilder::constructPackers()
          {
             cFile << "      xdr_string(xdrs,&this1->" 
                   << nameStr << ", 1000000);"			 << std::endl;
+            cFile << "      FREE(this1->" << nameStr << ");"	 << std::endl;
          }
          else if (typeS == "anyURI")
          {
             cFile << "      xdr_string(xdrs,&this1->" 
                   << nameStr << ", 1000000);" 			 << std::endl;
+            cFile << "      FREE(this1->" << nameStr << ");"	 << std::endl;
          }
          else
          {
