@@ -17,6 +17,7 @@ using namespace std;
 
 #include <TFile.h>
 #include <TTree.h>
+#include <TVector3.h>
 
 int Nr = 81;
 int Nphi = 1;
@@ -75,7 +76,8 @@ int main(int narg, char *argv[])
 				double Bx, By, Bz;
 				bfield->GetField(x, y, z-Z0, Bx, By, Bz);
 				
-				double Br = sqrt(Bx*Bx + By*By);
+				TVector3 B(Bx, By, Bz);
+				double Br = B.Dot(TVector3(x, y, 0.0))/sqrt(x*x + y*y);
 				double Bphi = atan2(By, Bx);
 				
 				val[0] = x;
@@ -129,7 +131,7 @@ void Usage(void)
 	cout<<"based program, it accepts the same same arguments to manipulate the field as"<<endl;
 	cout<<"other DANA programs. Namely, -PBFIELD_MAP=XXX and -PBFIELD_TYPE=YYY ."<<endl;
 	cout<<endl;
-	cout<<"For example:  -PBFIELD=Magnets/Solenoid/solenoid_1500"<<endl;
+	cout<<"For example:  -PBFIELD_MAP=Magnets/Solenoid/solenoid_1500"<<endl;
 	cout<<endl;
 	cout<<"The entries in the TTree are evaluated on a grid in cylindrical coordinates"<<endl;
 	cout<<"that likely does not reflect the points in the underlying map. As such, the"<<endl;
