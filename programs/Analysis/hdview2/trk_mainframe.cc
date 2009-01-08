@@ -13,6 +13,7 @@ using namespace std;
 #include "MyProcessor.h"
 
 #include <CDC/DCDCWire.h>
+#include <CDC/DCDCTrackHit.h>
 
 #include <TGButtonGroup.h>
 #include <TGTextEntry.h>
@@ -577,7 +578,8 @@ void trk_mainframe::DrawHits(vector<TObject*> &graphics)
 	
 	// Get the reference trajectory for the prime track
 	DReferenceTrajectory *rt=NULL;
-	gMYPROC->GetDReferenceTrajectory(dataname, tag, index, rt);
+	vector<const DCDCTrackHit*> cdctrackhits;
+	gMYPROC->GetDReferenceTrajectory(dataname, tag, index, rt, cdctrackhits);
 	if(rt==NULL){
 		_DBG_<<"Reference trajectory unavailable for "<<dataname<<":"<<tag<<" #"<<index<<endl;
 		return;
@@ -590,7 +592,7 @@ void trk_mainframe::DrawHits(vector<TObject*> &graphics)
 	gMYPROC->GetAllWireHits(allhits);
 	
 	// Draw prime track
-	DrawHitsForOneTrack(graphics, allhits, rt, 0);
+	DrawHitsForOneTrack(graphics, allhits, rt, 0, cdctrackhits);
 	
 	// Draw other tracks
 	for(unsigned int i=1; i<datatype.size(); i++){
@@ -607,10 +609,10 @@ void trk_mainframe::DrawHits(vector<TObject*> &graphics)
 		
 		// Get reference trajectory for this track
 		DReferenceTrajectory *myrt=NULL;
-		gMYPROC->GetDReferenceTrajectory(dataname, tag, index, myrt);
+		gMYPROC->GetDReferenceTrajectory(dataname, tag, index, myrt, cdctrackhits);
 		if(myrt){
 			REFTRAJ.push_back(myrt);
-			DrawHitsForOneTrack(graphics, allhits, myrt, i);
+			DrawHitsForOneTrack(graphics, allhits, myrt, i, cdctrackhits);
 		}
 	}
 }
@@ -622,7 +624,8 @@ void trk_mainframe::DrawHitsForOneTrack(
 	vector<TObject*> &graphics,
 	vector<pair<const DCoordinateSystem*,double> > &allhits,
 	DReferenceTrajectory *rt,
-	int index)
+	int index,
+	vector<const DCDCTrackHit*> &cdctrackhits)
 {
 	// Clear current hits list
 	if(index==0){
@@ -704,9 +707,15 @@ void trk_mainframe::DrawHitsForOneTrack(
 		const DCDCWire *cdcwire = dynamic_cast<const DCDCWire*>(wire);
 		if(cdcwire!=NULL && cdcwire->stereo!=0.0){
 			ellipse_width = 3.0;
-			//ellipse_color = cdcwire->stereo>0.0 ? TColor::GetColorDark(ellipse_color):TColor::GetColorBright(ellipse_color);
 			ellipse_color += cdcwire->stereo>0.0 ? 4:-2;
 			marker_style = 5;
+		}
+		
+		// Check if this is wire is in the list of wires associated with this track
+		int ellipse_style = 1;
+		if(!WireInList(wire, cdctrackhits)){
+			ellipse_style=2;
+			ellipse_width=2.0;
 		}
 		
 		// If the lock_s_coordinate flag is set and this is not the prime track
@@ -728,6 +737,7 @@ void trk_mainframe::DrawHitsForOneTrack(
 		TEllipse *e = new TEllipse(sdist, s, dist, dist);
 		e->SetLineWidth(ellipse_width);
 		e->SetLineColor(ellipse_color);
+		e->SetLineStyle(ellipse_style);
 		e->SetFillColor(19);
 		graphics.push_back(e);
 
@@ -738,6 +748,18 @@ void trk_mainframe::DrawHitsForOneTrack(
 		graphics.push_back(m);
 		
 	}
+}
+
+//-------------------
+// WireInList
+//-------------------
+bool trk_mainframe::WireInList(const DCoordinateSystem *wire, vector<const DCDCTrackHit*> &cdctrackhits)
+{
+	for(unsigned int i=0; i<cdctrackhits.size(); i++){
+		if(cdctrackhits[i]->wire == wire)return true;
+	}
+
+	return false;
 }
 
 

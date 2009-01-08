@@ -45,6 +45,7 @@ class hdv_mainframe;
 
 class DCoordinateSystem;
 class DReferenceTrajectory;
+class DCDCTrackHit;
 
 class trk_mainframe:public TGMainFrame{
 	public:
@@ -88,8 +89,10 @@ class trk_mainframe:public TGMainFrame{
 		void DrawHitsForOneTrack(vector<TObject*> &graphics,
 										vector<pair<const DCoordinateSystem*,double> > &allhits,
 										DReferenceTrajectory *rt,
-										int index);
+										int index,
+										vector<const DCDCTrackHit*> &cdctrackhits);
 
+		bool WireInList(const DCoordinateSystem *wire, vector<const DCDCTrackHit*> &cdctrackhits);
 
 	ClassDef(trk_mainframe,1)
 };

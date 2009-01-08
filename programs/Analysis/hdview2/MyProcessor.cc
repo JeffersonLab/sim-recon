@@ -608,10 +608,11 @@ unsigned int MyProcessor::GetNrows(const string &factory, string tag)
 //------------------------------------------------------------------
 // GetDReferenceTrajectory 
 //------------------------------------------------------------------
-void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned int index, DReferenceTrajectory* &rt)
+void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned int index, DReferenceTrajectory* &rt, vector<const DCDCTrackHit*> &cdchits)
 {
 	// initialize rt to NULL in case we don't find the one requested
 	rt = NULL;
+	cdchits.clear();
 
 	// Get pointer to the JEventLoop so we can get at the data
 	vector<JEventLoop*> loops = app->GetJEventLoops();
@@ -630,6 +631,7 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 		q = particles[index]->charge();
 		pos = particles[index]->position();
 		mom = particles[index]->momentum();
+		particles[index]->Get(cdchits);
 	}
 
 	if(dataname=="DTrack"){
@@ -639,6 +641,7 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 		q = tracks[index]->charge();
 		pos = tracks[index]->position();
 		mom = tracks[index]->momentum();
+		tracks[index]->Get(cdchits);
 	}
 
 	if(dataname=="DTrackCandidate"){
@@ -648,6 +651,7 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 		q = tracks[index]->charge();
 		pos = tracks[index]->position();
 		mom = tracks[index]->momentum();
+		tracks[index]->Get(cdchits);
 	}
 
 	if(dataname=="DMCThrown"){
@@ -658,6 +662,7 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 		q = t->charge();
 		pos = t->position();
 		mom = t->momentum();
+		tracks[index]->Get(cdchits);
 	}
 
 	// Make sure we found a charged particle we can track
