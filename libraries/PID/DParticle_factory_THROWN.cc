@@ -71,7 +71,7 @@ jerror_t DParticle_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DFDCPseudo*> fdcpseudos;
 	loop->Get(mcthrowns);
 	loop->Get(cdctrackhits);
-	loop->Get(fdcpseudos);
+	loop->Get(fdcpseudos, "CORRECTED");
 
 	for(unsigned int i=0; i< mcthrowns.size(); i++){
 		const DMCThrown *thrown = mcthrowns[i];
@@ -150,7 +150,7 @@ jerror_t DParticle_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 
 
 //==============================================================
-// NOTE: The following routines were copied from DParticle_factory
+// NOTE: The following routines were copied from DTrack_factory
 //==============================================================
 
 
@@ -252,20 +252,16 @@ void DParticle_factory_THROWN::AddFDCPseudoHits(DReferenceTrajectory *rt, vector
 		double tof = s/(beta*3E10*1E-9);
 		double dist = (hit->time - tof)*55E-4;
 		
-		// Residual
+		// Anode Residual
 		double resi = dist - doca;		
 
-		// Use chi-sq probaility function with Ndof=1 to calculate probability
-		double probability = TMath::Prob(resi/sigma_anode, 1);
-
-		// Cathode
+		// Cathode Residual
 		double u=rt->GetLastDistAlongWire();
 		double resic = u - hit->s;
 
-		// Same as for the anode. We multiply the
-		// probabilities to get a total probability
-		// based on both the anode and cathode hits.
-		probability *= TMath::Prob(resic/sigma_cathode, 1);
+		// Probability of this hit being on the track
+		double chisq = pow(resi/sigma_anode, 2.0) + pow(resic/sigma_cathode, 2.0);
+		double probability = TMath::Prob(chisq/2.0, 2);
 
 		if(probability>=MIN_HIT_PROB)fdchits.push_back(hit);
 
@@ -275,7 +271,7 @@ void DParticle_factory_THROWN::AddFDCPseudoHits(DReferenceTrajectory *rt, vector
 
 
 //==============================================================
-// NOTE: The following routines were copied from DParticle_factory_THROWN.cc
+// NOTE: The following routines were copied from DTrackFitterAlt1.cc
 //==============================================================
 
 
