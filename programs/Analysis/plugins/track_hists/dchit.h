@@ -22,6 +22,7 @@ class dchit:public TObject{
 		float tof;
 		float doca;
 		float resi;
+		float resic;
 		float trk_chisq;
 		float trk_Ndof;
 		int LRthrown;

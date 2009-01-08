@@ -184,6 +184,7 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 		cdchit.tof = tof;
 		cdchit.doca = doca;
 		cdchit.resi = dist - doca;
+		cdchit.resic = 0.0;
 		cdchit.trk_chisq = recon->chisq;
 		cdchit.trk_Ndof = recon->Ndof;
 		cdchit.LRthrown = LRthrown[i];
@@ -192,6 +193,47 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 		cdchit.pos_wire = pos_wire;
 		
 		cdchits->Fill();
+
+	}
+	
+	// Get the left-right signs for all FDC hits used on this track. 
+	for(unsigned int k=0; k<fdcpseudohits.size(); k++)wires.push_back(fdcpseudohits[k]->wire);
+	FindLR(wires, rt_thrown, LRthrown);
+	FindLR(wires, rt, LRfit);
+
+	// Loop over FDC hits
+	for(unsigned int i=0; i<fdcpseudohits.size(); i++){
+		const DFDCPseudo *fdcpseudohit = fdcpseudohits[i];
+		
+		// Get DOCA point for this wire
+		double s;
+		double doca = rt->DistToRT(fdcpseudohit->wire, &s);
+		DVector3 pos_doca = rt->GetLastDOCAPoint();
+		double u = rt->GetLastDistAlongWire();
+		DVector3 pos_wire = fdcpseudohit->wire->origin + u*fdcpseudohit->wire->udir;
+		
+		// Estimate TOF assuming pion
+		double mass = 0.13957;
+		double beta = 1.0/sqrt(1.0 + pow(mass/thrown->momentum().Mag(), 2.0))*2.998E10;
+		double tof = s/beta/1.0E-9; // in ns
+		double dist = (fdcpseudohit->time - tof)*55E-4;
+		
+		fdchit.eventnumber = eventnumber;
+		fdchit.wire = fdcpseudohit->wire->wire;
+		fdchit.layer = fdcpseudohit->wire->layer;
+		fdchit.t = fdcpseudohit->time;
+		fdchit.tof = tof;
+		fdchit.doca = doca;
+		fdchit.resi = dist - doca;
+		fdchit.resic = u - fdcpseudohit->s;
+		fdchit.trk_chisq = recon->chisq;
+		fdchit.trk_Ndof = recon->Ndof;
+		fdchit.LRthrown = LRthrown[i];
+		fdchit.LRfit = LRfit[i];
+		fdchit.pos_doca = pos_doca;
+		fdchit.pos_wire = pos_wire;
+		
+		fdchits->Fill();
 
 	}
 	
