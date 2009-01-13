@@ -12,7 +12,7 @@ class DLorentzDeflections{
  public:
   
   DLorentzDeflections(){};
-  ~DLorentzDeflections(){};
+  virtual ~DLorentzDeflections(){};
   jerror_t GetLorentzCorrectionParameters(double x,double y,double z,
 				double &tanz, double &tanr) const;
   double GetLorentzCorrection(double x,double y,double z,double alpha,
