@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 // Locate a position in array xx given x
-void locate(const double *xx,int n,double x,int *j){
+static void locate(const double *xx,int n,double x,int *j){
   int ju,jm,jl;
   int ascnd;
   
@@ -24,7 +24,7 @@ void locate(const double *xx,int n,double x,int *j){
 
 // Polynomial interpolation on a grid.
 // Adapted from Numerical Recipes in C (2nd Edition), pp. 121-122.
-void polint(const double *xa, const double *ya,int n,double x, double *y,
+static void polint(const double *xa, const double *ya,int n,double x, double *y,
 	    double *dy){
   int i,m,ns=0;
   double den,dif,dift,ho,hp,w;
@@ -92,8 +92,8 @@ jerror_t DLorentzDeflections::GetLorentzCorrectionParameters(double x,
     imin=((ind+3)>LORENTZ_X_POINTS)?(LORENTZ_X_POINTS-4):(ind-1);
   }
   else imin=0;
-  polint(&lorentz_x[imin],ytemp,4,r,&tanr,&dy);
-  polint(&lorentz_x[imin],ytemp2,4,r,&tanz,&dy);
+  polint(&lorentz_x[imin],&ytemp[imin],4,r,&tanr,&dy);
+  polint(&lorentz_x[imin],&ytemp2[imin],4,r,&tanz,&dy);
   
   return NOERROR;
 }
