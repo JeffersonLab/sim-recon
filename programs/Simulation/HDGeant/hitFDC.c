@@ -356,8 +356,8 @@ void hitForwardDC (float xin[4], float xout[4],
 	  imin=((ind+3)>LORENTZ_X_POINTS)?(LORENTZ_X_POINTS-4):(ind-1);
 	}
 	else imin=0;
-	polint(&lorentz_x[imin],ytemp,4,r,&tanr,&dy);
-	polint(&lorentz_x[imin],ytemp2,4,r,&tanz,&dy);
+	polint(&lorentz_x[imin],&ytemp[imin],4,r,&tanr,&dy);
+	polint(&lorentz_x[imin],&ytemp2[imin],4,r,&tanz,&dy);
 
 	// Correct avalanche position with deflection along wire	
  	avalanche_y+=-tanz*dist_to_wire*sin(alpha)*cos(phi)
