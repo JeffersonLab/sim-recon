@@ -3,6 +3,7 @@
 
 #include <CLHEP/Matrix/Vector.h>
 #include <CLHEP/Vector/LorentzVector.h>
+using namespace CLHEP;
 
 class FDCHitDetails {
   static int instanceCount;

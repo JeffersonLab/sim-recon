@@ -15,10 +15,11 @@
 #define DTRACKLSFITTER_EXCEPTION_THROWN 1
 
 #include <JANA/JEventProcessor.h>
-#include "HDGEOMETRY/DMagneticFieldMap.h"
-#include "FDC/DFDCSegment_factory.h"
-#include "CDC/DCDCTrackHit.h"
-#include "TRACKING/DMCThrown.h"
+#include <HDGEOMETRY/DMagneticFieldMap.h>
+#include <FDC/DFDCSegment_factory.h>
+#include <CDC/DCDCTrackHit.h>
+#include <TRACKING/DMCThrown.h>
+#include <TRACKING/DTrackFitter.h>
 #include <TH1F.h>
 #include <TFile.h>
 #include <TNtuple.h>
@@ -26,14 +27,13 @@
 #include <CLHEP/Matrix/Vector.h>
 #include "chisqMin.h"
 #include "hitDetails.h"
-#include "hddm_fitter.h"
 #include "combinedResidFunc.h"
 #include "MyTrajectoryGrkuta.h"
 
-class DTrackLSFitter:public JEventProcessor
+class DTrackLSFitter:public DTrackFitter
 {
  public:
-  DTrackLSFitter();
+  DTrackLSFitter(JEventLoop *loop);
   ~DTrackLSFitter();
   jerror_t init(void);						///< Called once at program start.
   jerror_t brun(JEventLoop *eventLoop, int runnumber);			///< Called everytime a new run number is detected.
@@ -47,35 +47,39 @@ class DTrackLSFitter:public JEventProcessor
   int getSizeFDC();
   int getSizeCDC();
   int getStatus();
-  void writeFDCHitsHddm(fitter_Event_t &eventHddm);
+  //void writeFDCHitsHddm(fitter_Event_t &eventHddm);
+
+		// Virtual methods from TrackFitter base class
+		string Name(void) const {return string("MMI");}
+		fit_status_t FitTrack(void);
 
  private:
   
-  const DMagneticFieldMap *bfield;
+  //const DMagneticFieldMap *bfield; // supplied by DTrackFitter base class
   const DLorentzDeflections *lorentz_def;
   
   DFDCSegment_factory *segment_factory;
-  ofstream *signatureFile; 
-  ifstream *configFile; 
+  //ofstream *signatureFile; 
+  //ifstream *configFile; 
   HepVector ppEnd;
   chisqMin *fitPtr;
   int size_fdc, size_cdc;
-  vector<const DFDCPseudo*>pseudopoints;
-  vector<const DCDCTrackHit*>trackhits;
-  vector<const DMCThrown*>thrown;
+  //vector<const DFDCPseudo*>pseudopoints;
+  //vector<const DCDCTrackHit*>trackhits;
+  //vector<const DMCThrown*>thrown;
   double xpInitial, zInitial, thetaInitial, phiInitial, ptinvInitial;
   void setFitterStartParams();
-  fitter_iostream_t* ios;
-  void writeTrajectoryHddm(MyTrajectoryBfield &traj, int tag, fitter_Trajectorys_t *trajsHddm);
-  void writeCDCDetailsHddm(vector<CDCHitDetails*> *CDCDetailsPtr, fitter_Trajectorys_t *trajsHddm);
-  void writeCDCHitsHddm(fitter_Event_t &event);
+  //fitter_iostream_t* ios;
+  //void writeTrajectoryHddm(MyTrajectoryBfield &traj, int tag, fitter_Trajectorys_t *trajsHddm);
+  //void writeCDCDetailsHddm(vector<CDCHitDetails*> *CDCDetailsPtr, fitter_Trajectorys_t *trajsHddm);
+  //void writeCDCHitsHddm(fitter_Event_t &event);
   int status; // status code
-  void writeResidsHddm(const HepVector &params,
-			vector<CDCHitDetails*>* &CDCDetailsPtr,
-			fitter_Trajectorys_t *trajsHddm,
-			combinedResidFunc &prf,
-			MyTrajectoryBfield &trajectory);
-  void writeFitHddm(fitter_Trajectorys_t* trajsHddm);
+  //void writeResidsHddm(const HepVector &params,
+	//		vector<CDCHitDetails*>* &CDCDetailsPtr,
+	//		fitter_Trajectorys_t *trajsHddm,
+	//		combinedResidFunc &prf,
+	///		MyTrajectoryBfield &trajectory);
+  //void writeFitHddm(fitter_Trajectorys_t* trajsHddm);
 };
 
 #endif // _DTRACKLSFITTER_H_

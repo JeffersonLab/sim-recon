@@ -1,6 +1,8 @@
 #ifndef _RESIDFUNC_H_
 #define _RESIDFUNC_H_
 
+using namespace CLHEP;
+
 class residFunc {
  public:
   virtual ~residFunc();

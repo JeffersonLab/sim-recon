@@ -16,11 +16,11 @@ Distinquish actions between Monte Carlo and real data.
 #include <CLHEP/Matrix/Matrix.h>
 #include <CLHEP/Matrix/Vector.h>
 
-#include "FDC/DFDCHit.h"
-#include "FDC/DFDCPseudo_factory.h"
-#include "TRACKING/DTrack.h"
-#include "TRACKING/DMCTrackHit.h"
-#include "DANA/DApplication.h"
+#include <FDC/DFDCHit.h>
+#include <FDC/DFDCPseudo_factory.h>
+#include <TRACKING/DTrack.h>
+#include <TRACKING/DMCTrackHit.h>
+#include <DANA/DApplication.h>
 
 #include "MyTrajectory.h"
 #include "MyTrajectoryBfield.h"
@@ -28,6 +28,7 @@ Distinquish actions between Monte Carlo and real data.
 #include "combinedResidFunc.h"
 #include "globalGslFuncs.h"
 #include "DTrackLSFitter.h"
+#include "DFactoryGeneratorLSLM.h"
 
 #define TARGET_POSITION 65.0
 #define THETA_FORWARD_CUT 1.178097
@@ -54,24 +55,31 @@ public:
   {return radialDist2(hit1) < radialDist2(hit2);}
 };
 
+// Routine used If we're a plugin
+extern "C"{
+void InitPlugin(JApplication *app){
+	InitJANAPlugin(app);
+	app->AddFactoryGenerator(new DFactoryGeneratorLSLM());
+}
+} // "C"
+
 //------------------------------------------------------------------
 // DTrackLSFitter 
 //------------------------------------------------------------------
-DTrackLSFitter::DTrackLSFitter():debug_level(1), ppEnd(5)
+DTrackLSFitter::DTrackLSFitter(JEventLoop *loop):DTrackFitter(loop),debug_level(1), ppEnd(5)
 {
-  ifstream configFile("config.txt");
-  if (!configFile) {
-    cout << "error: config file not found, terminating" << endl;
-    exit(1);
-  }
-  char hddmFileName[128] = "fitter.hddm";
-  ios = init_fitter_HDDM(hddmFileName);
-  int debug_level_in;
-  configFile >> debug_level_in;
-  cout << "debug_level_in = " << debug_level_in << endl;
-  if (debug_level_in >= -10 && debug_level_in <= 10) {
-    debug_level = debug_level_in;
-  }
+	// Get the DApplication pointer so we can get pointers to the Lorentz deflections
+	// table for the FDC and the DFDCSegment factory pointer.
+	// NOTE: The bfield member is supplied by the DTrackFitter base class and
+	// set in the DTrackFitter(loop) constructor.
+	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	if(!dapp){
+		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
+		return;
+	}
+  lorentz_def = dapp->GetLorentzDeflections();
+  JFactory_base *base = loop->GetFactory("DFDCSegment");
+  segment_factory = dynamic_cast<DFDCSegment_factory*>(base);
 }
 
 //------------------------------------------------------------------
@@ -83,121 +91,23 @@ DTrackLSFitter::~DTrackLSFitter()
 }
 
 //------------------------------------------------------------------
-// init 
+// FitTrack 
 //------------------------------------------------------------------
-jerror_t DTrackLSFitter::init(void)
+DTrackFitter::fit_status_t DTrackLSFitter::FitTrack(void)
 {
-  signatureFile = new ofstream("fitter_signature.txt");
-  return NOERROR;
-}
 
-//------------------------------------------------------------------
-// fini
-//------------------------------------------------------------------
-jerror_t DTrackLSFitter::fini(void)
-{
-  signatureFile->close();
-  delete signatureFile;
-  close_fitter_HDDM(ios);
-  return NOERROR;
-}
-
-//------------------------------------------------------------------
-// brun 
-//------------------------------------------------------------------
-jerror_t DTrackLSFitter::brun(JEventLoop *eventLoop, int runnumber)
-{
-  DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
-  bfield = dapp->GetBfield();
-  lorentz_def = dapp->GetLorentzDeflections();
-  JFactory_base *base = eventLoop->GetFactory("DFDCSegment");
-  segment_factory = dynamic_cast<DFDCSegment_factory*>(base);
-  return NOERROR;
-}
-
-//------------------------------------------------------------------
-// erun 
-//------------------------------------------------------------------
-jerror_t DTrackLSFitter::erun()
-{
- return NOERROR;
-}
-
-//------------------------------------------------------------------
-// evnt 
-//------------------------------------------------------------------
-
-jerror_t DTrackLSFitter::evnt(JEventLoop *eventLoop, int eventnumber)
-{
+	// Initialize result to indicate fit in progress
+	this->fit_status = kFitNotDone;
 
   status = DTRACKLSFITTER_UNDEFINED; // mark status as undefined
 
-  if (debug_level > 1) cout << "----------- New Event "
-			     << eventnumber << " -------------" << endl;
-
   fitPtr = NULL;
-  //
-  // set up hddm stuff
-  //
-  fitter_HDDM_t* hddm;
-  hddm = make_fitter_HDDM();
-  fitter_Events_t* eventsHddm;
-  eventsHddm = make_fitter_Events(1);
-  hddm->events = eventsHddm;
-  eventsHddm->mult = 1;
-  fitter_Event_t eventHddm;
-  eventHddm.run = -1;
-  eventHddm.number = eventnumber;
-  fitter_Tracks_t* tracksHddm = make_fitter_Tracks(MAX_TRACKS);
-  eventHddm.tracks = tracksHddm;
-  tracksHddm->mult = 1;
-  fitter_Track_t* trackHddm = tracksHddm->in;
-  trackHddm->chisq = -1.0;
-  fitter_Trajectorys_t* trajsHddm = make_fitter_Trajectorys(MAX_TRAJS);
-  trackHddm->trajectorys = trajsHddm;
-  //
-  // get vectors from factories
-  //
-  vector<const DTrack*>tracks;
-  eventLoop->Get(tracks, "THROWN");
-  if (debug_level > 1) cout << "number of tracks = " << tracks.size() << endl;
 
-  vector<const DMCTrackHit*> mctrackhits;
-  eventLoop->Get(mctrackhits);
-  if (debug_level > 1) cout << "number of mctrackhits = " << mctrackhits.size() << endl;
+	// The CDC and FDC hits are already filled out by the DTrackFitter base class
+	// This code used different names though so we just set a couple of aliases.
+	vector<const DCDCTrackHit*> &trackhits = cdchits;
+	vector<const DFDCPseudo*> &pseudopoints = fdchits;
 
-  pseudopoints.clear();
-  //eventLoop->Get(pseudopoints);  
-  tracks[0]->Get(pseudopoints);  
-
-  trackhits.clear();
-  //eventLoop->Get(trackhits);  
-  tracks[0]->Get(trackhits);  
-  
-  thrown.clear();
-  eventLoop->Get(thrown);
-
-  size_fdc =  pseudopoints.size();
-  if (debug_level > 1) cout << "number of pseudopoints = " << size_fdc << endl;
-  trackHddm->nFDC = size_fdc;
-
-  size_cdc = trackhits.size();
-  if (debug_level > 1) cout << "number of trackhits = " << size_cdc << endl;
-  trackHddm->nCDC = size_cdc;
-  stable_sort(trackhits.begin(), trackhits.end(), compareTrackHits());
-  //
-  // write raw hit info to hddm file
-  //
-  writeFDCHitsHddm(eventHddm);
-  writeCDCHitsHddm(eventHddm);
-  //
-  // check for minimum hits to attempt fit
-  //
-  if (size_fdc + size_cdc < 10) {
-    trackHddm->fitStatus = DTRACKLSFITTER_FIT_NOT_ATTEMPTED;
-    flush_fitter_HDDM(hddm, ios);
-    return NOERROR;
-  }
   //
   // find the starting parameters
   //
@@ -219,28 +129,27 @@ jerror_t DTrackLSFitter::evnt(JEventLoop *eventLoop, int eventnumber)
   //
   // swim using MC truth points
   //
-  trajectory.swimMC(mctrackhits);
-  int tag_mc = 3;
-  writeTrajectoryHddm(trajectory, tag_mc, trajsHddm);
-  trajectory.clear();
+
+//  trajectory.swimMC(mctrackhits);
+   trajectory.clear();
+
 
   try {
     //
     // swim with MC parameters
     //
-    paramTrue(1) = 0.0;
-    paramTrue(2) = TARGET_POSITION;
-    paramTrue(3) = thrown[0]->momentum().Theta();
-    paramTrue(4) = thrown[0]->momentum().Phi();
-    paramTrue(5) = 1.0/thrown[0]->momentum().Pt();
-    trajectory.swim(paramTrue);
-    int tag_true = 2;
-    writeTrajectoryHddm(trajectory, tag_true, trajsHddm);
-    trajectory.clear();
-    vector<CDCHitDetails*> *CDCDetailsPtr;
-    writeResidsHddm(paramTrue, CDCDetailsPtr, trajsHddm, prf, trajectory);
+//    paramTrue(1) = 0.0;
+//    paramTrue(2) = TARGET_POSITION;
+//    paramTrue(3) = thrown[0]->momentum().Theta();
+//    paramTrue(4) = thrown[0]->momentum().Phi();
+//    paramTrue(5) = 1.0/thrown[0]->momentum().Pt();
+//    trajectory.swim(paramTrue);
+
+//    trajectory.clear();
+ 
     prf.clearDetails();
-    //
+ 
+	//
     // swim with initial parameters
     //
     ppStart(1) = xpInitial;
@@ -249,9 +158,9 @@ jerror_t DTrackLSFitter::evnt(JEventLoop *eventLoop, int eventnumber)
     ppStart(4) = phiInitial;
     ppStart(5) = ptinvInitial;
     trajectory.swim(ppStart); // swim with initial parameters
-    int tag_initial = 0;
-    writeTrajectoryHddm(trajectory, tag_initial, trajsHddm);
+
     trajectory.clear();
+
     //
     // do the fit
     //
@@ -266,11 +175,9 @@ jerror_t DTrackLSFitter::evnt(JEventLoop *eventLoop, int eventnumber)
     //
     // store the results
     //
-    trackHddm->chisq = fitPtr->getChi2();
     trajectory.swim(ppEnd); // swim with final parameters
-    int tag_final = 1;
-    writeTrajectoryHddm(trajectory, tag_final, trajsHddm);
-    writeFitHddm(trajsHddm);
+ 
+	 /*
     *signatureFile << eventnumber << ' '
 		   << size_fdc << ' '
 		   << size_cdc << ' '
@@ -282,19 +189,21 @@ jerror_t DTrackLSFitter::evnt(JEventLoop *eventLoop, int eventnumber)
 		   << ppEnd(4) << ' '
 		   << ppEnd(5) << ' '
 		   << fitPtr->getChi2() << endl;
+		*/
+		
     // get details of hits on track
-    writeResidsHddm(ppEnd, CDCDetailsPtr, trajsHddm, prf, trajectory);
 
     status = DTRACKLSFITTER_NOMINAL;
   } catch (int code) {
 
     cout << "==========fit error = " << code << "===========" << endl;
     status = DTRACKLSFITTER_EXCEPTION_THROWN;
-    cout << "= at event " << eventnumber << endl;
+    cout << "= at event " << loop->GetJEvent().GetEventNumber() << endl;
     if (debug_level >= 3) {
       cout << "= trajectory" << endl;
       trajectory.print();
     }
+	 this->fit_status = kFitFailed;
 
   }
 
@@ -308,19 +217,35 @@ jerror_t DTrackLSFitter::evnt(JEventLoop *eventLoop, int eventnumber)
     cout << "CDCHitDetails: " << CDCHitDetails::getInstanceCount() << endl;
   }
 
-  trackHddm->fitStatus = status;
-  //
-  // load hddm event into buffer
-  //
-  eventsHddm->in[0] = eventHddm;
-  flush_fitter_HDDM(hddm, ios);
+
+	// Copy results into DTrackFitter data members
+	double r0 = ppEnd(1);
+	double z0 = ppEnd(2);
+	double theta = ppEnd(3);
+	double phi = ppEnd(4);
+	double ptot = fabs(1.0/ppEnd(5)/sin(theta));
+	
+	double x0 = r0*cos(phi);
+	double y0 = r0*sin(phi);
+	DVector3 pos(x0, y0, z0);
+	DVector3 mom;
+	mom.SetMagThetaPhi(ptot, theta, phi);
+	fit_params.setMomentum(mom);
+	fit_params.setPosition(pos);
+	fit_params.setCharge(ppEnd(5)>=0.0 ? 1.0:-1.0);
+	
+	this->chisq = fitPtr->getChi2();
+	this->Ndof = fitPtr->getN() - fitPtr->getP();
+	if(this->fit_status==kFitNotDone)this->fit_status = kFitSuccess; // honor it if fit_status has already been set (e.g. to kFitFailed)
+	this->cdchits_used_in_fit = cdchits;
+	this->fdchits_used_in_fit = fdchits;
 
   if (fitPtr != NULL) {
     delete fitPtr;
     fitPtr = NULL;
   }
 
-  return NOERROR;
+  return this->fit_status;
  
 }
 
@@ -343,6 +268,13 @@ int DTrackLSFitter::getSizeCDC() {
 }
 
 void DTrackLSFitter::setFitterStartParams() {
+	xpInitial = input_params.position().Perp(); // distance from beam line at point of closest approach
+	zInitial = input_params.position().Z();
+	thetaInitial = input_params.momentum().Theta();
+	phiInitial = input_params.momentum().Phi();
+	ptinvInitial = 1.0/input_params.momentum().Perp();
+
+#if 0
   zInitial = TARGET_POSITION;
   ptinvInitial = 0.0;
   if (size_fdc > 1) {
@@ -382,182 +314,11 @@ void DTrackLSFitter::setFitterStartParams() {
     int code = 32;
     throw code;
   }
+#endif
 }
 
-void DTrackLSFitter::writeTrajectoryHddm
-(MyTrajectoryBfield &trajectory, int tag, fitter_Trajectorys_t *trajsHddm) {
-  // get the next trajectory pointer
-  fitter_Trajectory_t* trajHddm = &(trajsHddm->in[trajsHddm->mult++]);
-  // set the tag
-  trajHddm->index = tag;
-  // create the parameters structure
-  unsigned int nparams = trajectory.getNumberOfParams();
-  fitter_Parameters_t* parametersHddm = make_fitter_Parameters(nparams);
-  parametersHddm->mult = nparams; // set the number of parameters for output
-  // put parameters structure in the trajectory
-  trajHddm->parameters = parametersHddm;
-  // get the parameters and put them in the parameters structure
-  HepVector params = trajectory.getParams();
-  fitter_Parameter_t* thisParamHddmPtr;
-  for (int i = 0; i < (int)nparams; i++) {
-    thisParamHddmPtr = parametersHddm->in + i;
-    thisParamHddmPtr->label = i;
-    thisParamHddmPtr->value = params(i+1);
-  }
-  // do the points
-  fitter_Points_t* pointsHddm = make_fitter_Points(MAX_POINTS);
-  trajHddm->points = pointsHddm;
-  vector<HepLorentzVector*> *traj;
-  traj = trajectory.getTrajectory();
-  HepLorentzVector trajPoint;
-  fitter_Point_t* pointHddm;
-  for (unsigned int i = 0; i < traj->size(); i++) {
-    trajPoint = *((*traj)[i]);
-    pointHddm = &(pointsHddm->in[pointsHddm->mult++]);
-    pointHddm->x = trajPoint.getX();;
-    pointHddm->y = trajPoint.getY();
-    pointHddm->z = trajPoint.getZ();
-    pointHddm->t = trajPoint.getT();
-  }
-}
-
-void DTrackLSFitter::writeCDCDetailsHddm(vector<CDCHitDetails*> *CDCDetailsPtr, fitter_Trajectorys_t *trajsHddm) {
-  int nCDC = CDCDetailsPtr->size();
-  fitter_Trajectory_t* trajHddm = &(trajsHddm->in[trajsHddm->mult - 1]);
-  fitter_Residuals_t* residsHddm = make_fitter_Residuals(nCDC);
-  trajHddm->residuals = residsHddm;
-  double dist, doca, resid;
-  fitter_Residual_t* thisResidPtr;
-  fitter_ResidInfoCdc_t* infoCdcPtr;
-  for (int i = 0; i < nCDC; i++) {
-    dist = ((*CDCDetailsPtr)[i])->dist;
-    doca = ((*CDCDetailsPtr)[i])->doca;
-    resid = doca - dist;
-    thisResidPtr = residsHddm->in + i;
-    thisResidPtr->detector_index = i;
-    thisResidPtr->value = resid;
-    infoCdcPtr = make_fitter_ResidInfoCdc();
-    thisResidPtr->residInfoCdc = infoCdcPtr;
-    infoCdcPtr->id = i;
-    infoCdcPtr->dist = dist;
-    infoCdcPtr->doca = doca;
-    infoCdcPtr->xWire = ((*CDCDetailsPtr)[i])->posWire(1);
-    infoCdcPtr->yWire = ((*CDCDetailsPtr)[i])->posWire(2);
-    infoCdcPtr->zWire = ((*CDCDetailsPtr)[i])->posWire(3);
-    infoCdcPtr->xTraj = ((*CDCDetailsPtr)[i])->poca.getX();
-    infoCdcPtr->yTraj = ((*CDCDetailsPtr)[i])->poca.getY();
-    infoCdcPtr->zTraj = ((*CDCDetailsPtr)[i])->poca.getZ();
-    infoCdcPtr->tTraj = ((*CDCDetailsPtr)[i])->poca.getT();
-  }
-  residsHddm->mult = nCDC;
-}
 
 int DTrackLSFitter::getStatus(void) {
   return status;
 }
 
-void DTrackLSFitter::writeFDCHitsHddm(fitter_Event_t &event) {
-  fitter_Fdcdata_t* fdcdataPtr = make_fitter_Fdcdata();
-  event.fdcdata = fdcdataPtr;
-  fitter_Fdchits_t* fdchitsPtr = make_fitter_Fdchits(size_fdc);
-  fdcdataPtr->fdchits = fdchitsPtr;
-  fdchitsPtr->mult = size_fdc;
-  for (int i = 0; i < size_fdc; i++) {
-    cout << i << ' ' << (pseudopoints[i])->x << ' ' << (pseudopoints[i])->y << ' ' << (pseudopoints[i])->wire->origin(2) << endl;
-    fdchitsPtr->in[i].id = i;
-    fdchitsPtr->in[i].x = (pseudopoints[i])->x;
-    fdchitsPtr->in[i].y = (pseudopoints[i])->y;
-    fdchitsPtr->in[i].z = (pseudopoints[i])->wire->origin(2);
-  }
-}
-
-void DTrackLSFitter::writeCDCHitsHddm(fitter_Event_t &event) {
-  fitter_Cdcdata_t* cdcdataPtr = make_fitter_Cdcdata();
-  event.cdcdata = cdcdataPtr;
-  fitter_Cdchits_t* cdchitsPtr = make_fitter_Cdchits(size_cdc);
-  cdcdataPtr->cdchits = cdchitsPtr;
-  cdchitsPtr->mult = size_cdc;
-  //double x, y, phi_wire;
-  double phi, theta;
-  for (int i = 0; i < size_cdc; i++) {
-    const DCDCTrackHit *trkhit = trackhits[i];
-    const DCDCWire *wire = trkhit->wire;
-    //x = wire->origin.X();
-    //y = wire->origin.Y();
-    //phi_wire = atan2(y, x);
-    //phi = phi_wire + PIOVER2;
-    phi = atan2(wire->udir.y(), wire->udir.x());
-    //theta = wire->stereo;
-    theta = acos(wire->udir.z());
-    cdchitsPtr->in[i].id = i;
-    cdchitsPtr->in[i].x = wire->origin.x();
-    cdchitsPtr->in[i].y = wire->origin.y();
-    cdchitsPtr->in[i].z= wire->origin.z();
-    cdchitsPtr->in[i].L = wire->L;
-    cdchitsPtr->in[i].theta = theta;
-    cdchitsPtr->in[i].phi = phi;
-    cdchitsPtr->in[i].tdrift = trkhit->tdrift;
-    cdchitsPtr->in[i].ring = wire->ring;
-    cdchitsPtr->in[i].straw = wire->straw;
-  }
-}
-
-void DTrackLSFitter::writeResidsHddm(const HepVector &params,
-				      vector<CDCHitDetails*>* &CDCDetailsPtr,
-				      fitter_Trajectorys_t *trajsHddm,
-				      combinedResidFunc &prf,
-				      MyTrajectoryBfield &trajectory) {
-  trajectory.clear();
-  prf.setStoreDetails(true);
-  int dummy_data;
-  HepVector dummy_vector(size_fdc + size_cdc);
-  prf.resid(&params, &dummy_data, &dummy_vector);
-  trajsHddm->in[trajsHddm->mult - 1].chisq = prf.getChiSquared();
-  CDCDetailsPtr = prf.getCDCDetails();
-  writeCDCDetailsHddm(CDCDetailsPtr, trajsHddm);
-  prf.setStoreDetails(false);
-  trajectory.clear();
-}
-
-void DTrackLSFitter::writeFitHddm(fitter_Trajectorys_t* trajsHddm) {
-  int nparams = fitPtr->getP();
-  HepMatrix covar(nparams, nparams);
-  covar = fitPtr->getCovar();
-  // get the pointer to the current trajectory
-  fitter_Trajectory_t* trajHddmPtr = trajsHddm->in + trajsHddm->mult - 1;
-  // create the fit structure
-  fitter_Fit_t* fitHddmPtr = make_fitter_Fit();
-  // store it in the current trajectory
-  trajHddmPtr->fit = fitHddmPtr;
-  // store attributes for fit
-  fitHddmPtr->type = 1;
-  fitHddmPtr->iterations = fitPtr->getIter();
-  // create the matrix structure
-  fitter_CovarianceMatrix_t* matrixHddmPtr = make_fitter_CovarianceMatrix();
-  // store it in the fit
-  fitHddmPtr->covarianceMatrix = matrixHddmPtr;
-  // store the number of parameters
-  matrixHddmPtr->params = nparams;
-  // create the elements array
-  fitter_CovarianceElements_t* elementsHddmPtr = make_fitter_CovarianceElements(100);
-  // store it in the matrix
-  matrixHddmPtr->covarianceElements = elementsHddmPtr;
-  // loop over all matrix elements
-  int ielement = 0;
-  for (int i = 1; i <= nparams; i++) {
-    for (int j = i; j <= nparams; j++) {
-      // get the point to this element
-      fitter_CovarianceElement_t* elementHddmPtr = elementsHddmPtr->in + ielement;
-      // fill the element with info
-      elementHddmPtr->row = i;
-      elementHddmPtr->column = j;
-      elementHddmPtr->value = covar(i, j);
-      // store the complete element in the matrix
-      elementsHddmPtr->in[ielement] = *elementHddmPtr;
-      // increment the element counter
-      ielement++;
-    }
-  }
-  // store the element count in the matrix
-  elementsHddmPtr->mult = ielement;
-}

@@ -3,6 +3,7 @@
 
 #include <CLHEP/Matrix/Vector.h>
 #include <CLHEP/Vector/ThreeVector.h>
+using namespace CLHEP;
 
 class DLine {
  public:

@@ -5,6 +5,8 @@ using namespace std;
 
 #include "chisqMin.h"
 
+#define _DBG__ cerr<<__FILE__<<":"<<__LINE__<<endl;
+
 void print_state (size_t iter, gsl_multifit_fdfsolver * s)
 {
   printf ("print_state: iter: %3u "
