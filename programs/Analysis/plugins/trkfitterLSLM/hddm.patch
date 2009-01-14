@@ -1,0 +1,27 @@
+*** hddm_fitter.c	2008-10-20 15:06:51.000000000 -0400
+--- /u/scratch/marki/home/05:57/marki/halld/fitter/hddm_fitter.c	2008-10-17 10:12:24.000000000 -0400
+***************
+*** 15,25 ****
+   * http://zeus.phys.uconn.edu/halld/datamodel/doc
+   */
+  
+! int hddm_nullTarget=0;
+! #define HDDM_NULL (void*)&hddm_nullTarget
+! 
+  #include "hddm_fitter.h"
+  
+  
+  fitter_HDDM_t* make_fitter_HDDM()
+  {
+--- 15,25 ----
+   * http://zeus.phys.uconn.edu/halld/datamodel/doc
+   */
+  
+! /*int hddm_nullTarget=0;*/
+  #include "hddm_fitter.h"
+  
++ #define HDDM_NULL (void*)&hddm_nullTarget
++ 
+  
+  fitter_HDDM_t* make_fitter_HDDM()
+  {

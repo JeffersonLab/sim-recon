@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<HDDM class="fitter" version="1.0" xmlns="http://www.gluex.org/hddm">
+<event run="int" number="int" maxOccurs="unbounded">
+  <fdcdata minOccurs="0" maxOccurs="1">
+    <fdchit id="int" x="double" y="double" z="double" minOccurs="1"
+	    maxOccurs="unbounded" />
+  </fdcdata>
+  <cdcdata minOccurs="0" maxOccurs="1">
+    <cdchit id="int" x="double" y="double" z="double" L="double" theta="double"
+	    phi="double" tdrift="double" ring="int" straw="int" minOccurs="0"
+	    maxOccurs="unbounded" />
+  </cdcdata>
+  <track index="int" fitStatus="int" nFDC="int" nCDC="int" chisq="double"
+	 minOccurs="0" maxOccurs="unbounded">
+    <trajectory index="int" chisq="double" minOccurs="0" maxOccurs="unbounded">
+      <parameter label="int" value="double" minOccurs="0"
+		 maxOccurs="unbounded"/>
+      <fit iterations="int" type="int" minOccurs="0" maxOccurs="1">
+	<covarianceMatrix params="int" minOccurs="1" maxOccurs="1">
+	  <covarianceElement row="int" column="int" value="double" minOccurs="1"
+			     maxOccurs="unbounded"/>
+	</covarianceMatrix>
+      </fit>
+      <point x="double" y="double" z="double" t="double" minOccurs="1"
+	     maxOccurs="unbounded" />
+      <residual value="double" detector_index="int" minOccurs="0"
+		maxOccurs="unbounded">
+	<residInfoCdc id="int" xTraj="double" yTraj="double" zTraj="double"
+		      tTraj="double" xWire="double" yWire="double"
+		      zWire="double" dist="double" doca="double" minOccurs="0"
+		      maxOccurs="1"/>
+	<residInfoFdc id="int" x="double" y="double" z="double" minOccurs="0"
+		      maxOccurs="1"/>
+      </residual>
+    </trajectory>
+  </track>
+</event>
+</HDDM>
