@@ -127,7 +127,7 @@ class DHelicalFit{
   inline void SetMagneticFieldMap(const DMagneticFieldMap *map){bfield=map;}
   // for Riemann plane
   void GetPlaneParameters(double &c,DVector3 &n){
-    c=dist_to_origin;
+    c=c_origin;
     n(0)=N[0];
     n(1)=N[1];
     n(2)=N[2];
@@ -149,7 +149,7 @@ class DHelicalFit{
   ChiSqSourceType_t chisq_source;
  
   DVector3 normal;
-  double c_origin;
+  double c_origin;  // distance to "origin" for Riemann circle fit
   
  protected:
   vector<DHFHit_t*> hits;
@@ -166,7 +166,6 @@ class DHelicalFit{
 
   // Riemann circle fit parameters
   double N[3]; 
-  double dist_to_origin;
   double xavg[3],var_avg;
 
   // projections

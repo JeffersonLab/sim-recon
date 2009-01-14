@@ -361,7 +361,11 @@ jerror_t DHelicalFit::FitCircleRiemann(float BeamRMS)
 	phi=atan2(-x0,y0);  
 	if(phi<0)phi+=2.0*M_PI;
         if(phi>=2.0*M_PI)phi-=2.0*M_PI;
-
+	
+	// Normal vector for plane intersecting Riemann surface 
+	normal(0)=N[0];
+	normal(1)=N[1];
+	normal(2)=N[2];
 
 	return NOERROR;
 }
@@ -492,12 +496,12 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   }
  
   // Distance to origin
-  dist_to_origin=-(N[0]*Xavg(0,0)+N[1]*Xavg(0,1)+N[2]*Xavg(0,2));
+  c_origin=-(N[0]*Xavg(0,0)+N[1]*Xavg(0,1)+N[2]*Xavg(0,2));
 
   // Center and radius of the circle
   x0=-N[0]/2./N[2];
   y0=-N[1]/2./N[2];
-  r0=sqrt(1.-N[2]*N[2]-4.*dist_to_origin*N[2])/2./fabs(N[2]);
+  r0=sqrt(1.-N[2]*N[2]-4.*c_origin*N[2])/2./fabs(N[2]);
  
   // Calculate the chisq
   ChisqCircle();
@@ -732,7 +736,7 @@ jerror_t DHelicalFit::FitLineRiemann(){
   projections.clear();
   for (unsigned int m=0;m<hits.size();m++){
     double r2=hits[m]->x*hits[m]->x+hits[m]->y*hits[m]->y;
-    numer=dist_to_origin+r2*N[2];
+    numer=c_origin+r2*N[2];
     DHFHit_t *temphit = new DHFHit_t;
     temphit->z=hits[m]->z;
 
