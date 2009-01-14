@@ -1,5 +1,5 @@
 
-SOLIB_NAME = fitterLSLM.so
+SOLIB_NAME = trkfitterLSLM.so
 
 MISC_LIBS += -L$(CLHEP_LIB) -lCLHEP -lgsl -lgslcblas
 CXXFLAGS += -I$(CLHEP_INCLUDE) -DGRKUTA
