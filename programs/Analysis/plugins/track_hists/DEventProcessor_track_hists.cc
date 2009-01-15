@@ -128,7 +128,7 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 	loop->Get(mcthrowns);
 	
 	// Only look at events with one thrown and one reconstructed particle
-	if(particles.size() !=1 || mcthrowns.size() !=1)return NOERROR;
+	if(particles.size() !=1 || mcthrowns.size() !=1 || candidates.size()<1)return NOERROR;
 	const DParticle* recon = particles[0];
 	const DTrackCandidate *candidate = candidates[0]; // technically, this could have more than 1 candidate!
 	const DMCThrown *thrown = mcthrowns[0];
