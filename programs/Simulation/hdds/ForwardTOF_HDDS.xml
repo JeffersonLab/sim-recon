@@ -21,6 +21,10 @@
 <!-- upstream plane has vertical oriented bars -->
 <!-- downstream plane has horizontal oriented bars -->
 
+<!-- Fri Jan 16 08:14:30 EST 2009                                                 -->
+<!-- changed order of paddle counting: 1-40 bottom to top and south to north      -->
+<!-- the half paddles are counted separately 41,43 north halfs, 42,44 south halfs -->
+
   <composition name="ForwardTOF">
     <posXYZ volume="forwardTOF" X_Y_Z="0.0  0.0 1.27" rot="0 0 -90">
       <plane value="0" />
@@ -40,25 +44,25 @@
 <!-- the attribute 'row' is synonymous with 'bar' -->
   <composition name="forwardTOF_top" envelope="FTOT">
     <mposY volume="FTOC" ncopy="20" Z_X="0.0 0.0" Y0="-57.0" dY="6.00">
-      <row value="20" step="-1" />
+      <row value="21" step="1" />
       <column value="0" />
     </mposY>
   </composition>
   <composition name="forwardTOF_bottom" envelope="FTOB">
     <mposY volume="FTOC" ncopy="20" Z_X="0.0 0.0" Y0="-57.00" dY="6.00">
-      <row value="40" step="-1" />
+      <row value="1" step="1" />
       <column value="0" />
     </mposY>
   </composition>
   <composition name="forwardTOF_north" envelope="FTON">
     <mposY volume="FTOH" ncopy="2" Z_X = "0.0 0.0" Y0="-3.0" dY="6.0">
-      <row value="43" step="-2" />
+      <row value="41" step="2" />
       <column value="1" />
     </mposY>
   </composition>
   <composition name="forwardTOF_south" envelope="FTOS">
     <mposY volume="FTOH" ncopy="2" Z_X="0.0 0.0" Y0="-3.0" dY="6.0">
-      <row value="44" step="-2" />
+      <row value="42" step="2" />
       <column value="2" />
     </mposY>
   </composition>
