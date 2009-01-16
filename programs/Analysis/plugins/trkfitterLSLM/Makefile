@@ -6,7 +6,7 @@ CXXFLAGS += -I$(CLHEP_INCLUDE) -DGRKUTA
 
 PACKAGES = ROOT:DANA:CERNLIB
 
-ifndef $(LSLM_MAKE_LIB)
+ifndef LSLM_MAKE_LIB
 include $(HALLD_HOME)/src/BMS/Makefile.shlib
 else
 include $(HALLD_HOME)/src/BMS/Makefile.lib
