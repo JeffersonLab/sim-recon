@@ -56,13 +56,13 @@
   </composition>
   <composition name="forwardTOF_north" envelope="FTON">
     <mposY volume="FTOH" ncopy="2" Z_X = "0.0 0.0" Y0="-3.0" dY="6.0">
-      <row value="41" step="2" />
+      <row value="42" step="2" />
       <column value="1" />
     </mposY>
   </composition>
   <composition name="forwardTOF_south" envelope="FTOS">
     <mposY volume="FTOH" ncopy="2" Z_X="0.0 0.0" Y0="-3.0" dY="6.0">
-      <row value="42" step="2" />
+      <row value="41" step="2" />
       <column value="2" />
     </mposY>
   </composition>
