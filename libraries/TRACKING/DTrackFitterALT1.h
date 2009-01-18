@@ -48,21 +48,25 @@ class DTrackFitterALT1:public DTrackFitter{
 			state_x,			///< x-coordinate in RT coordinate system in cm
 			state_v,			///< position-coordinate in RT coordinate system in cm perpendicular to x both and momentum direction
 		};
+		
+		class hitInfo{
+			public:
+				vector<const DCoordinateSystem*> wires;	// Wire definitions
+				vector<DVector3> shifts;						// Effective wire shifts due to drift time
+				vector<double> errs;								// Errors on drift time (or wire position) measurement
+				vector<double> u_dists;							// Distances along the wire (for FDC cathodes)
+				vector<double> u_errs;							// Errors on distance along the wire (for FDC cathodes)
+				vector<double> all_errs;						// Merging of errs and u_errs so elements correspond to those in chisqv
 
-		//void FindHitCandidateProbabilities(void);
-		//DTrack* FitTrack(DReferenceTrajectory* rt, int candidateid);
-		//DTrack* FitTrackWithOppositeCharge(DReferenceTrajectory* rt, int candidateid, DTrack* &track);
-		//void GetCDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob);
-		//void GetFDCTrackHitProbabilities(DReferenceTrajectory *rt, vector<double> &prob);
+				void PrintDebug(void){_DBG_<<"sizes: wires="<<wires.size()<<" shifts="<<shifts.size()<<" errs="<<errs.size()<<" u_dists="<<u_dists.size()<<" u_errs="<<u_errs.size()<<" all_errs="<<all_errs.size()<<endl;}
+		};
+
 		double GetDistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double &s);
-		//double ChiSq(double q, DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt=NULL);
-		//double ChiSq(double q, const DVector3 &pos, const DVector3 &mom, DReferenceTrajectory *rt=NULL);
 		double ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr=NULL, int *dof_ptr=NULL);
-		double ChiSq(DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv, double *chisq_ptr=NULL, int *dof_ptr=NULL);
-		double ChiSq(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv, double *chisq_ptr=NULL, int *dof_ptr=NULL);
-		void GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs);
+		double ChiSq(DReferenceTrajectory *rt, hitInfo &hinfo, vector<double> &chisqv, double *chisq_ptr=NULL, int *dof_ptr=NULL);
+		double ChiSq(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, hitInfo &hinfo, vector<double> &chisqv, double *chisq_ptr=NULL, int *dof_ptr=NULL);
+		void GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, hitInfo &hinfo);
 		fit_status_t LeastSquaresB(fit_type_t fit_type, DReferenceTrajectory *rt);
-		//fit_status_t LeastSquares(DVector3 &pos, DVector3 &mom, DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom, double &chisq);
 		void FillDebugHists(DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom);
 
 		std::vector<double> chisqv;
