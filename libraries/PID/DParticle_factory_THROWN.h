@@ -27,6 +27,18 @@ class DParticle_factory_THROWN:public jana::JFactory<DParticle>{
 			kTimeBased
 		};
 		
+		class hitInfo{
+			public:
+				vector<const DCoordinateSystem*> wires;	// Wire definitions
+				vector<DVector3> shifts;						// Effective wire shifts due to drift time
+				vector<double> errs;								// Errors on drift time (or wire position) measurement
+				vector<double> u_dists;							// Distances along the wire (for FDC cathodes)
+				vector<double> u_errs;							// Errors on distance along the wire (for FDC cathodes)
+				vector<double> all_errs;						// Merging of errs and u_errs so elements correspond to those in chisqv
+
+				void PrintDebug(void){_DBG_<<"sizes: wires="<<wires.size()<<" shifts="<<shifts.size()<<" errs="<<errs.size()<<" u_dists="<<u_dists.size()<<" u_errs="<<u_errs.size()<<" all_errs="<<all_errs.size()<<endl;}
+		};
+
 		DCoordinateSystem *target;
 		
 		int DEBUG_LEVEL;
@@ -48,8 +60,8 @@ class DParticle_factory_THROWN:public jana::JFactory<DParticle>{
 		void AddCDCTrackHits(DReferenceTrajectory *rt, vector<const DCDCTrackHit*> &cdctrackhits);
 		void AddFDCPseudoHits(DReferenceTrajectory *rt, vector<const DFDCPseudo*> &fdcpseudos);
 
-		double ChiSq(DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv, double *chisq_ptr, int *dof_ptr);
-		void GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs);
+		double ChiSq(DReferenceTrajectory *rt, hitInfo &hinfo, vector<double> &chisqv, double *chisq_ptr, int *dof_ptr);
+		void GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, hitInfo &hinfo);
 
 };
 

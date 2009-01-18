@@ -132,14 +132,12 @@ jerror_t DParticle_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		for(unsigned int i=0; i<fdchits.size(); i++)particle->AddAssociatedObject(fdchits[i]);
 		
 		// Calculate chisq and Ndof
-		vector<const DCoordinateSystem*> wires;
-		vector<DVector3> shifts;
-		vector<double> errs;
-		GetWiresShiftsErrs(kTimeBased, rt, wires, shifts, errs);
+		hitInfo hinfo;
+		GetWiresShiftsErrs(kTimeBased, rt, hinfo);
 		
 		vector<double> chisqv;
 		double chisq;
-		ChiSq(rt, wires, shifts, errs, chisqv, &chisq, &particle->Ndof);
+		ChiSq(rt, hinfo, chisqv, &chisq, &particle->Ndof);
 		particle->chisq = chisq;
 		
 		_data.push_back(particle);
@@ -278,7 +276,7 @@ void DParticle_factory_THROWN::AddFDCPseudoHits(DReferenceTrajectory *rt, vector
 //------------------
 // ChiSq
 //------------------
-double DParticle_factory_THROWN::ChiSq(DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv, double *chisq_ptr, int *dof_ptr)
+double DParticle_factory_THROWN::ChiSq(DReferenceTrajectory *rt, hitInfo &hinfo, vector<double> &chisqv, double *chisq_ptr, int *dof_ptr)
 {
 	/// Calculate the chisq for a track represented by the given reference
 	/// trajectory with the given list of wires. The values in the "shifts"
@@ -298,18 +296,26 @@ double DParticle_factory_THROWN::ChiSq(DReferenceTrajectory *rt, vector<const DC
 
 	// Make sure input vectors match
 	chisqv.clear();
-	bool use_shifts = shifts.size()==wires.size();
-	if(wires.size()!=errs.size() || (shifts.size()!=0 && !use_shifts)){
+	bool use_shifts = hinfo.shifts.size()==hinfo.wires.size();
+	if(hinfo.wires.size()<hinfo.errs.size() || (hinfo.errs.size()>2*hinfo.wires.size()) || (hinfo.shifts.size()!=0 && !use_shifts)){
 		_DBG_<<"Error! the wires, errs, and shifts vectors are out of alignment."<<endl;
-		_DBG_<<"wires.size()="<<wires.size()<<" errs.size()="<<errs.size()<<" shifts.size()="<<shifts.size()<<endl;
-		for(unsigned int i=0; i<wires.size(); i++)chisqv.push_back(1.0E6);
+		_DBG_<<"wires.size()="<<hinfo.wires.size()<<" errs.size()="<<hinfo.errs.size()<<" shifts.size()="<<hinfo.shifts.size()<<endl;
+		for(unsigned int i=0; i<hinfo.wires.size(); i++){
+			chisqv.push_back(1.0E6); // CDC and FDC wires
+			if(hinfo.u_errs[i]!=0.0)chisqv.push_back(1.0E6); // FDC cathodes
+		}
+
 		return 1.0E6;
 	}
 	
 	// Sometimes, we end up with a zero step rt due to bad parameters.
 	// Avoid all the warning messages by detecting this now and bailing early.
 	if(rt->Nswim_steps<1){
-		for(unsigned int i=0; i<wires.size(); i++)chisqv.push_back(1.0E6);
+		for(unsigned int i=0; i<hinfo.wires.size(); i++){
+			chisqv.push_back(1.0E6); // CDC and FDC wires
+			if(hinfo.u_errs[i]!=0.0)chisqv.push_back(1.0E6); // FDC cathodes
+		}
+
 		return 1.0E6;
 	}
 	
@@ -323,19 +329,19 @@ double DParticle_factory_THROWN::ChiSq(DReferenceTrajectory *rt, vector<const DC
 	// Loop over wires
 	double chisq = 0.0;
 	int dof=0;
-	for(unsigned int i=0; i<wires.size(); i++){
+	for(unsigned int i=0; i<hinfo.wires.size(); i++){
 		
 		if(DEBUG_LEVEL>10){
-			fdcwire = dynamic_cast<const DFDCWire*>(wires[i]);
-			cdcwire = dynamic_cast<const DCDCWire*>(wires[i]);
+			fdcwire = dynamic_cast<const DFDCWire*>(hinfo.wires[i]);
+			cdcwire = dynamic_cast<const DCDCWire*>(hinfo.wires[i]);
 		}
 	
-		DCoordinateSystem wire = *wires[i];
+		DCoordinateSystem wire = *hinfo.wires[i];
 		if(use_shifts){
-			wire.origin += shifts[i];
+			wire.origin += hinfo.shifts[i];
 			
 			if(DEBUG_LEVEL>10){
-				double a = (shifts[i].Cross(wires[i]->origin)).Z();
+				double a = (hinfo.shifts[i].Cross(hinfo.wires[i]->origin)).Z();
 				if(a==0.0)Nzero_shifts++;
 				else if(a<0.0)Nneg_shifts++;
 				else Npos_shifts++;
@@ -362,20 +368,37 @@ double DParticle_factory_THROWN::ChiSq(DReferenceTrajectory *rt, vector<const DC
 		// values meaning the doca is larger than the dist and negative values
 		// meaning the doca is smaller than the dist (doca from track, dist
 		// from drift time). 
-		double c = d/errs[i];
+		double c = d/hinfo.errs[i];
 		chisqv.push_back(c);
 
 		if(finite(c)){
 			chisq += c*c;
 			dof++;
 			if(DEBUG_LEVEL>10){
-				_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  Rwire="<<wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s;
+				_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  Rwire="<<hinfo.wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s;
 				if(fdcwire)cerr<<" FDC: layer="<<fdcwire->layer<<" wire="<<fdcwire->wire<<" angle="<<fdcwire->angle;
 				if(cdcwire)cerr<<" CDC: ring="<<cdcwire->ring<<" straw="<<cdcwire->straw<<" stereo="<<cdcwire->stereo;
 				cerr<<endl;
 			}
 		}else{
-			if(DEBUG_LEVEL>10)_DBG_<<"  chisqv[unused] = "<<c<<"  d="<<d<<"  Rwire="<<wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s<<endl;
+			if(DEBUG_LEVEL>10)_DBG_<<"  chisqv[unused] = "<<c<<"  d="<<d<<"  Rwire="<<hinfo.wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s<<endl;
+		}
+		
+		// Add FDC cathode (if appropriate)
+		if(hinfo.u_errs[i]!=0.0){
+			double u = rt->GetLastDistAlongWire();
+			c = (u-hinfo.u_dists[i])/hinfo.u_errs[i];
+			chisqv.push_back(c);
+			if(finite(c)){
+				chisq += c*c;
+				dof++;
+				if(DEBUG_LEVEL>10){
+					_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  Rwire="<<hinfo.wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s<<" FDC: layer="<<fdcwire->layer<<" wire="<<fdcwire->wire<<" angle="<<fdcwire->angle;
+					cerr<<endl;
+				}
+			}else{
+				if(DEBUG_LEVEL>10)_DBG_<<"  chisqv[unused] = "<<c<<"  d="<<d<<"  Rwire="<<hinfo.wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s<<endl;
+			}
 		}
 	}
 
@@ -395,29 +418,13 @@ double DParticle_factory_THROWN::ChiSq(DReferenceTrajectory *rt, vector<const DC
 //------------------
 // GetWiresShiftsErrs
 //------------------
-void DParticle_factory_THROWN::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs)
+void DParticle_factory_THROWN::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, hitInfo &hinfo)
 {
-	swim_step_t &start_step = rt->swim_steps[0];
-	DVector3 &pos = start_step.origin;
-
-#if 1
-	// --- Target ---
-	// Define the target as though it were a wire so it is included
-	// in the chi-sq
-	target->L = 3.0;
-//target->L = 0.0;
-	target->origin.SetXYZ(0.0, 0.0, pos.Z());
-	wires.push_back(target);
-	errs.push_back(fit_type==kWireBased ? 0.1:0.1);
-//errs.push_back(fit_type==kWireBased ? 0.0001:0.0001);
-	if(fit_type!=kWireBased)shifts.push_back(DVector3(0.0, 0.0, 0.0));
-#endif
-
 	// --- CDC ---
 	for(unsigned int i=0; i<cdchits.size(); i++){
 		const DCDCTrackHit *hit = cdchits[i];
 		const DCoordinateSystem *wire = hit->wire;
-		wires.push_back(wire);
+		hinfo.wires.push_back(wire);
 
 		// Fill in shifts and errs vectors based on whether we're doing
 		// hit-based or time-based tracking
@@ -426,7 +433,9 @@ void DParticle_factory_THROWN::GetWiresShiftsErrs(fit_type_t fit_type, DReferenc
 			// are used and the drift time info is ignored. Thus, we don't
 			// have to calculate the shift vectors
 			//errs.push_back(0.261694); // empirically from single pi+ events
-			errs.push_back(0.8/sqrt(12.0)); // variance for evenly illuminated straw
+			hinfo.errs.push_back(0.8/sqrt(12.0)); // variance for evenly illuminated straw
+			hinfo.u_dists.push_back(0.0); // placeholder
+			hinfo.u_errs.push_back(0.0); // placeholder indicating no measurement along wire
 		}else{
 			// Find the DOCA point for the RT and use the momentum direction
 			// there and the wire direction to determine the "shift".
@@ -472,8 +481,10 @@ void DParticle_factory_THROWN::GetWiresShiftsErrs(fit_type_t fit_type, DReferenc
 			DVector3 pos_diff = pos_doca-pos_wire;
 			if(shift.Dot(pos_diff)<0.0)shift = -shift;
 			
-			shifts.push_back(shift);
-			errs.push_back(SIGMA_CDC);
+			hinfo.shifts.push_back(shift);
+			hinfo.errs.push_back(SIGMA_CDC);
+			hinfo.u_dists.push_back(0.0); // placeholder
+			hinfo.u_errs.push_back(0.0); // placeholder indicating no measurement along wire
 		}
 	}
 
@@ -481,7 +492,7 @@ void DParticle_factory_THROWN::GetWiresShiftsErrs(fit_type_t fit_type, DReferenc
 	for(unsigned int i=0; i<fdchits.size(); i++){
 		const DFDCPseudo *hit = fdchits[i];
 		const DCoordinateSystem *wire = hit->wire;
-		wires.push_back(wire);
+		hinfo.wires.push_back(wire);
 
 		// Fill in shifts and errs vectors based on whether we're doing
 		// hit-based or time-based tracking
@@ -490,7 +501,9 @@ void DParticle_factory_THROWN::GetWiresShiftsErrs(fit_type_t fit_type, DReferenc
 			// are used and the drift time info is ignored. Thus, we don't
 			// have to calculate the shift vectors
 			//errs.push_back(0.261694); // empirically from single pi+ events
-			errs.push_back(0.5/sqrt(12.0)); // variance for evenly illuminated cell
+			hinfo.errs.push_back(0.5/sqrt(12.0)); // variance for evenly illuminated cell - anode
+			hinfo.u_errs.push_back(0.0); // variance for evenly illuminated cell - cathode
+			hinfo.u_dists.push_back(0.0);
 		}else{
 			// Find the DOCA point for the RT and use the momentum direction
 			// there and the wire direction to determine the "shift".
@@ -536,8 +549,19 @@ void DParticle_factory_THROWN::GetWiresShiftsErrs(fit_type_t fit_type, DReferenc
 			DVector3 pos_diff = pos_doca-pos_wire;
 			if(shift.Dot(pos_diff)<0.0)shift = -shift;
 			
-			shifts.push_back(shift);
-			errs.push_back(SIGMA_FDC_ANODE);
+			hinfo.shifts.push_back(shift);
+			hinfo.errs.push_back(SIGMA_FDC_ANODE);
+			hinfo.u_dists.push_back(u);
+			hinfo.u_errs.push_back(SIGMA_FDC_CATHODE);
+			//hinfo.u_errs.push_back(0.0);
 		}
 	}
+	
+	// Copy the errors in errs and u_errs into all_errs. This is needed so we have an easy-to-access
+	// list of the errors corresponding to each element in the chisqv vector.
+	for(unsigned int i=0; i<hinfo.wires.size(); i++){
+		hinfo.all_errs.push_back(hinfo.errs[i]);
+		if(hinfo.u_errs[i]!=0.0)hinfo.all_errs.push_back(hinfo.u_errs[i]);
+	}
 }
+
