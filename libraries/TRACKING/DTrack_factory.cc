@@ -73,6 +73,8 @@ jerror_t DTrack_factory::brun(jana::JEventLoop *loop, int runnumber)
 		return RESOURCE_UNAVAILABLE;
 	}
 
+	//debug_level = 11;
+
 	return NOERROR;
 }
 
@@ -118,7 +120,7 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 		AddCDCTrackHits(rt, cdctrackhits);
 		AddFDCPseudoHits(rt, fdcpseudos);
 		fitter->SetFitType(DTrackFitter::kWireBased);
-		
+
 		// Do the fit
 		DTrackFitter::fit_status_t status = fitter->FitTrack(*candidate);
 		switch(status){
@@ -238,9 +240,11 @@ void DTrack_factory::AddFDCPseudoHits(DReferenceTrajectory *rt, vector<const DFD
 	//double sigma_cathode = sqrt(pow(SIGMA_FDC_CATHODE,2.0) + pow(1.000,2.0));
 	double sigma_anode = 0.5/sqrt(12.0);
 	double sigma_cathode = 0.5/sqrt(12.0);
-	
+sigma_anode=0.8/2.35;	// From FWHM of residuals from track candidates
+sigma_cathode=1.2/2.35;	// From FWHM of residuals from track candidates
+
 	// Minimum probability of hit belonging to wire and still be accepted
-	double MIN_HIT_PROB = 0.2;
+	double MIN_HIT_PROB = 0.1;
 
 	for(unsigned int j=0; j<fdcpseudos.size(); j++){
 		const DFDCPseudo *hit = fdcpseudos[j];
@@ -264,11 +268,10 @@ void DTrack_factory::AddFDCPseudoHits(DReferenceTrajectory *rt, vector<const DFD
 
 		// Probability of this hit being on the track
 		double chisq = pow(resi/sigma_anode, 2.0) + pow(resic/sigma_cathode, 2.0);
-		double probability = TMath::Prob(chisq/2.0, 2);
+		double probability = TMath::Prob(chisq/4.0, 2);
+		if(probability>=MIN_HIT_PROB)fitter->AddHit(hit);
 
-		if(probability<=MIN_HIT_PROB)fitter->AddHit(hit);
-
-		if(debug_level>10)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" tof="<<tof<<" prob="<<probability<<endl;
+		if(debug_level>10)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" resic="<<resic<<" tof="<<tof<<" chisq="<<chisq<<" prob="<<probability<<endl;
 	}
 }
 
