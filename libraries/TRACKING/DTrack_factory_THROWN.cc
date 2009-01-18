@@ -109,10 +109,10 @@ jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 void DTrack_factory_THROWN::AddCDCTrackHits(DReferenceTrajectory *rt, vector<const DCDCTrackHit*> &cdctrackhits)
 {
-	/// Determine the probability that for each CDC hit that it came from the track with the given trajectory.
+	/// Determine the probability that for each CDC hit that it came from the particle with the given trajectory.
 	///
 	/// This will calculate a probability for each CDC hit that
-	/// it came from the track represented by the given
+	/// it came from the particle represented by the given
 	/// DReference trajectory. The probability is based on
 	/// the residual between the distance of closest approach
 	/// of the trajectory to the wire and the drift time.
@@ -124,7 +124,7 @@ void DTrack_factory_THROWN::AddCDCTrackHits(DReferenceTrajectory *rt, vector<con
 	double beta = 1.0/sqrt(1.0+TOF_MASS*TOF_MASS/rt->swim_steps[0].mom.Mag2());
 	
 	// The error on the residual. This should include the
-	// error from measurement,track parameters, and multiple 
+	// error from measurement,particle parameters, and multiple 
 	// scattering.
 	//double sigma = sqrt(pow(SIGMA_CDC,2.0) + pow(0.4000,2.0));
 	double sigma = 0.8/sqrt(12.0);
@@ -163,10 +163,10 @@ void DTrack_factory_THROWN::AddCDCTrackHits(DReferenceTrajectory *rt, vector<con
 //------------------
 void DTrack_factory_THROWN::AddFDCPseudoHits(DReferenceTrajectory *rt, vector<const DFDCPseudo*> &fdcpseudos)
 {
-	/// Determine the probability that for each FDC hit that it came from the track with the given trajectory.
+	/// Determine the probability that for each FDC hit that it came from the particle with the given trajectory.
 	///
 	/// This will calculate a probability for each FDC hit that
-	/// it came from the track represented by the given
+	/// it came from the particle represented by the given
 	/// DReference trajectory. The probability is based on
 	/// the residual between the distance of closest approach
 	/// of the trajectory to the wire and the drift time
@@ -179,7 +179,7 @@ void DTrack_factory_THROWN::AddFDCPseudoHits(DReferenceTrajectory *rt, vector<co
 	double beta = 1.0/sqrt(1.0+TOF_MASS*TOF_MASS/rt->swim_steps[0].mom.Mag2());
 	
 	// The error on the residual. This should include the
-	// error from measurement,track parameters, and multiple 
+	// error from measurement,particle parameters, and multiple 
 	// scattering.
 	//double sigma_anode = sqrt(pow(SIGMA_FDC_ANODE,2.0) + pow(1.000,2.0));
 	//double sigma_cathode = sqrt(pow(SIGMA_FDC_CATHODE,2.0) + pow(1.000,2.0));
@@ -202,20 +202,16 @@ void DTrack_factory_THROWN::AddFDCPseudoHits(DReferenceTrajectory *rt, vector<co
 		double tof = s/(beta*3E10*1E-9);
 		double dist = (hit->time - tof)*55E-4;
 		
-		// Residual
+		// Anode Residual
 		double resi = dist - doca;		
 
-		// Use chi-sq probaility function with Ndof=1 to calculate probability
-		double probability = TMath::Prob(resi/sigma_anode, 1);
-
-		// Cathode
+		// Cathode Residual
 		double u=rt->GetLastDistAlongWire();
 		double resic = u - hit->s;
 
-		// Same as for the anode. We multiply the
-		// probabilities to get a total probability
-		// based on both the anode and cathode hits.
-		probability *= TMath::Prob(resic/sigma_cathode, 1);
+		// Probability of this hit being on the track
+		double chisq = pow(resi/sigma_anode, 2.0) + pow(resic/sigma_cathode, 2.0);
+		double probability = TMath::Prob(chisq/2.0, 2);
 
 		if(probability>=MIN_HIT_PROB)fdchits.push_back(hit);
 
