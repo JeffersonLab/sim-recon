@@ -8,19 +8,16 @@
 using namespace std;
 
 #include "MyProcessor.h"
-#include "DEvent.h"
-#include "hddm_s.h"
 
-#include "DMCTrackEfficiency.h"
-#include "DEventSourceHDDM.h"
-#include "DMCTrackEfficiency.h"
-#include "DMCThrown.h"
-#include "DMCReconstructed.h"
+#include <JANA/JEvent.h>
+
+#include <HDDM/DEventSourceHDDM.h>
+#include <TRACKING/DMCThrown.h>
 
 //------------------------------------------------------------------
 // init   -Open output file here (e.g. a ROOT file)
 //------------------------------------------------------------------
-derror_t MyProcessor::init(void)
+jerror_t MyProcessor::init(void)
 {
 	// open HDDM file
 	filename = "filtered.hddm";
@@ -33,7 +30,7 @@ derror_t MyProcessor::init(void)
 //------------------------------------------------------------------
 // evnt   -Fill histograms here
 //------------------------------------------------------------------
-derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
+jerror_t MyProcessor::evnt(JEventLoop *loop, int eventnumber)
 {
 	// This is a little complicated. We need to get a hold of the s_HDDM_t
 	// structure pointer for this event so we can pass it to flush_s_HDDM()
@@ -45,8 +42,8 @@ derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 	// downcast to a DEventSourceHDDM structure. It a little strange setting
 	// this for every event, but we have no way of knowing when the event
 	// source changes and this at least guarantees it for all event sources.
-	DEvent& event = loop->GetDEvent();
-	DEventSource *source = event.GetDEventSource();
+	JEvent& event = loop->GetJEvent();
+	JEventSource *source = event.GetJEventSource();
 	DEventSourceHDDM *hddm_source = dynamic_cast<DEventSourceHDDM*>(source);
 	if(!hddm_source){
 		cerr<<" This program MUST be used with an HDDM file as input!"<<endl;
@@ -55,26 +52,32 @@ derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 	s_HDDM_t *hddm = (s_HDDM_t*)event.GetRef();
 	if(!hddm)return NOERROR;
 	
+	
+	// Initialize write_out flag. We set this to true to write the event
+	// out and false to ignore it. Initialize it to false so that we can
+	// pick the conditions needed to keep it.
+	bool write_out=false;
+
+	// Here we do whatever calculations are needed to determine if we keep
+	// the event. Since this is basically a skeleton meant as an example
+	// we do a trivial check on the momentum of the thrown particles.
+	// In practice, one could request objects that require full reconstruction
+	// as well so that filters could be built on those quantities as well.
+
+	//---------------------- Filter Code Start ----------------------
 	// Get data
-	vector<const DMCTrackEfficiency*> mctrackefficiencies;
-	loop->Get(mctrackefficiencies);
+	vector<const DMCThrown*> mcthrowns;
+	loop->Get(mcthrowns);
 
 	// Loop over thrown tracks
-	bool write_out=false;
-	for(unsigned int i=0;i<mctrackefficiencies.size();i++){
-		const DMCTrackEfficiency *trkeff = mctrackefficiencies[i];
+	for(unsigned int i=0;i<mcthrowns.size();i++){
+		const DMCThrown *mcthrown = mcthrowns[i];
 		
-		if(trkeff->fittable){
-			if(trkeff->Nhits_found){
-				float fraction_from_thrown = (float)trkeff->Nhits_thrown_and_found/(float)trkeff->Nhits_found;
-				if(fraction_from_thrown <0.70){
-					write_out=true;
-				}
-			}else{
-				write_out=true;
-			}
-		}
+		// keep tracks with at least 1 thrown particle greater than 1GeV/c
+		if(mcthrown->momentum().Mag()>1.0)write_out = true;
+
 	}
+	//----------------------- Filter Code End -----------------------
 	
 	// If write_out flag is set, write this event to our output file
 	if(write_out){
@@ -91,7 +94,7 @@ derror_t MyProcessor::evnt(DEventLoop *loop, int eventnumber)
 //------------------------------------------------------------------
 // fini   -Close output file here
 //------------------------------------------------------------------
-derror_t MyProcessor::fini(void)
+jerror_t MyProcessor::fini(void)
 {
 	if(file){
 		close_s_HDDM(file);

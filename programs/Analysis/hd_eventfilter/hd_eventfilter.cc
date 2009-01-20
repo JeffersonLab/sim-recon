@@ -5,7 +5,7 @@
 //
 
 #include "MyProcessor.h"
-#include "DApplication.h"
+#include <DANA/DApplication.h>
 
 //-----------
 // main

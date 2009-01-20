@@ -6,25 +6,26 @@
 /// Example program for a Hall-D analyzer which uses DANA
 ///
 
-#include "DEventProcessor.h"
-#include "DEventLoop.h"
-#include "hddm_s.h"
+#include <string>
 
-#include <TFile.h>
-#include <TH1.h>
-#include <TH2.h>
+#include <JANA/JEventProcessor.h>
+#include <JANA/JEventLoop.h>
+using namespace jana;
+
+#include <HDDM/hddm_s.h>
 
 
-class MyProcessor:public DEventProcessor
+
+class MyProcessor:public JEventProcessor
 {
 	public:
-		derror_t init(void);										///< Called once at program start.
-		derror_t brun(DEventLoop *eventLoop, int runnumber){return NOERROR;}	///< Called everytime a new run number is detected.
-		derror_t evnt(DEventLoop *eventLoop, int eventnumber);						///< Called every event.
-		derror_t erun(void){return NOERROR;}				///< Called everytime run number changes, provided brun has been called.
-		derror_t fini(void);										///< Called after last event of last event source has been processed.
+		jerror_t init(void);										///< Called once at program start.
+		jerror_t brun(JEventLoop *loop, int runnumber){return NOERROR;}	///< Called everytime a new run number is detected.
+		jerror_t evnt(JEventLoop *loop, int eventnumber);						///< Called every event.
+		jerror_t erun(void){return NOERROR;}				///< Called everytime run number changes, provided brun has been called.
+		jerror_t fini(void);										///< Called after last event of last event source has been processed.
 
-		string filename;
+		std::string filename;
 		s_iostream_t *file;
 		unsigned long Nevents_written;
 };
