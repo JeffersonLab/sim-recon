@@ -6,6 +6,9 @@
 #include "TRACKING/DMCTrackHit.h"
 #include "DLine.h"
 
+#define DIST_BIG 10000.0
+#define MAX_ITERATIONS 100000
+
 using namespace std;
 
 class MyTrajectory {
@@ -47,20 +50,31 @@ template<class C> double MyTrajectory::doca(C& spaceObject, HepLorentzVector &po
   double distlo, disthi, distmid, distdown, distup;
   distlo = dist(spaceObject, ilo);
   disthi = dist(spaceObject, ihi);
+  if (distlo > DIST_BIG || disthi > DIST_BIG) {
+    cout << "MyTrajectory::doca: end point of trajectory too far away " << distlo << " " << disthi << endl;
+    int ierror = 3;
+    throw ierror;
+  }
   if (distlo < disthi) {
     imid = ilo + 1;
   } else {
     imid = ihi - 1;
   }
   distmid = dist(spaceObject, imid);
-  if (debug_level >= 4) cout << "MyTrajectory::doca, initialize: " << ilo << " " << imid << " " << ihi << " " << distlo << " " << distmid << " " << disthi << endl;
+  if (debug_level >= 4) cout << "MyTrajectory::doca: initialize " << ilo << " " << imid << " " << ihi << " " << distlo << " " << distmid << " " << disthi << endl;
+  if (isnan(distmid)) {
+    cout << "MyTrajectory::doca: distmid is not a number: " << ilo << " " << imid << " " << ihi << " " << distlo << " " << distmid << " " << disthi << endl;
+    int ierror = 2;
+    throw ierror;
+  }
   if (distmid >= distlo || distmid >= disthi) {
-    cout << "MyTrajectory:doca, bad initialization of doca search: " << ilo << " " << imid << " " << ihi << " " << distlo << " " << distmid << " " << disthi << endl;
+    cout << "MyTrajectory::doca: bad initialization of doca search: " << ilo << " " << imid << " " << ihi << " " << distlo << " " << distmid << " " << disthi << endl;
     int ierror = 1;
     throw ierror;
   }
   double x1, x2, y1, y2, xnew, distnew = 0;
   unsigned int inew;
+  int iterations = 0;
   while (imid - ilo > 1 || ihi - imid > 1) {
     x1 = (double)(imid - ilo);
     x2 = -(double)(ihi - imid); // unsigned int's cannot be negative
@@ -125,6 +139,12 @@ template<class C> double MyTrajectory::doca(C& spaceObject, HepLorentzVector &po
 
     }
     if (debug_level >= 4) cout << "MyTrajectory::doca, after housekeeping: " << ilo << " " << imid << " " << ihi << " " << distlo << " " << distmid << " " << disthi << endl;
+    iterations++;
+    if (iterations > MAX_ITERATIONS) {
+    cout << "MyTrajectory::doca: too many iterations " << ilo << " " << imid << " " << ihi << " " << distlo << " " << distmid << " " << disthi << endl;
+    int ierror = 4;
+    throw ierror;
+    }
   }
   double dlon, dmidn, dhin, dinterp;
   dlon = dist(spaceObject, ilo);
