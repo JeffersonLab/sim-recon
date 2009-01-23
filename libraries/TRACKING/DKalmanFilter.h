@@ -9,6 +9,7 @@
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "HDGEOMETRY/DGeometry.h"
 #include "HDGEOMETRY/DLorentzDeflections.h"
+#include "HDGEOMETRY/DMaterialMap.h"
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
 
@@ -50,7 +51,8 @@ typedef struct{
 class DKalmanFilter{
  public:
   DKalmanFilter(const DMagneticFieldMap *bfield,const DGeometry *dgeom,
-		const DLorentzDeflections *lorentz_def);
+		const DLorentzDeflections *lorentz_def,
+		const DMaterialMap *material);
   ~DKalmanFilter(){
     for (unsigned int i=0;i<hits.size();i++)
       delete hits[i];
@@ -93,7 +95,7 @@ class DKalmanFilter{
   jerror_t KalmanCentral(double mass_hyp,double anneal_factor,DMatrix &S, 
 			 DMatrix &C,DVector3 &pos,
 			 double &chisq);
-  jerror_t ExtrapolateToVertex(double mass_hyp,DVector3 pos,DMatrix Sc,
+  jerror_t ExtrapolateToVertex(double mass_hyp,DVector3 pos,DMatrix &Sc,
 			       DMatrix Cc);
   jerror_t ExtrapolateToVertex(double mass_hyp,DMatrix S, DMatrix C);
   jerror_t SetReferenceTrajectory(DMatrix &S);
@@ -127,6 +129,8 @@ class DKalmanFilter{
 
   jerror_t GetProcessNoise(double mass_hyp,double ds,
 			   double X0,DMatrix S,DMatrix &Q);
+  jerror_t GetProcessNoise(double mass_hyp,double ds,DVector3 pos,
+			   DMatrix S,DMatrix &Q);
   double Step(double oldz,double newz, double dEdx,DMatrix &S);
   jerror_t StepJacobian(double oldz,double newz,DMatrix S,double dEdx,
 		      DMatrix &J);
@@ -154,7 +158,8 @@ class DKalmanFilter{
   jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S,DMatrix &C);
   jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S);
   jerror_t SwimToRadius(DVector3 &pos, double Rf,DMatrix &Sc,DMatrix &Cc);
-  
+  jerror_t SwimToRadius(DVector3 &pos, double Rf, DMatrix &Sc);
+
   jerror_t GoldenSection(double &ds,double doca,double dedx,DVector3 &pos,
 		       DVector3 origin,DVector3 dir,  
 		       DMatrix &Sc,DMatrix &Jc); 
@@ -163,10 +168,16 @@ class DKalmanFilter{
 		     DMatrix Sc);
   jerror_t GoldenSection(double &z,double dz,double dEdx,
 			 DVector3 origin, DVector3 dir,DMatrix &S);
+  double BrentsAlgorithm(double ds1,double ds2,
+			 double dedx,DVector3 pos,DVector3 origin,
+			 DVector3 dir,  
+			 DMatrix Sc);
+  
 
   const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   const DGeometry *geom;
   const DLorentzDeflections *lorentz_def;  // pointer to lorentz correction map
+  const DMaterialMap *material; // pointer to material map
  
   // list of hits on track
   vector<DKalmanHit_t*>hits;

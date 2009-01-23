@@ -52,6 +52,8 @@ jerror_t DTrack_factory_ALT3::brun(JEventLoop *loop, int runnumber)
   // Get pointer to DMagneticFieldMap field object
   DApplication* dapp=dynamic_cast<DApplication*>(eventLoop->GetJApplication());
   bfield = dapp->GetBfield();
+
+  // Geometry
   dgeom  = dapp->GetDGeometry(runnumber);
   // Get the position of the exit of the CDC endplate from DGeometry
   dgeom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
@@ -60,7 +62,10 @@ jerror_t DTrack_factory_ALT3::brun(JEventLoop *loop, int runnumber)
 
   // table of parameters for correcting for lorentz effect
   lorentz_def=dapp->GetLorentzDeflections();
-
+  
+  // table of material properties as a function of position
+  material= dapp->GetMaterialMap();
+  
   dapp->Lock();
   cdc_residuals=(TH2F*)gROOT->FindObject("cdc_residuals");
   if (!cdc_residuals){
@@ -147,7 +152,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
     unsigned int num_matched_hits=0;
     
     // Initialize Kalman filter with B-field
-    DKalmanFilter fit(bfield,dgeom,lorentz_def);
+    DKalmanFilter fit(bfield,dgeom,lorentz_def,material);
 
     for (unsigned int k=0;k<cdchits.size();k++){
       fit.AddCDCHit(cdchits[k]);
