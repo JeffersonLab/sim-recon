@@ -174,8 +174,8 @@ s_ForwardEMcal_t* pickForwardEMcal ()
       {
          int row = blocks->in[block].row;
          int column = blocks->in[block].column;
-         float x0 = (row - CENTRAL_ROW)*WIDTH_OF_BLOCK;
-         float y0 = (column - CENTRAL_COLUMN)*WIDTH_OF_BLOCK;
+         float y0 = (row - CENTRAL_ROW)*WIDTH_OF_BLOCK;
+         float x0 = (column - CENTRAL_COLUMN)*WIDTH_OF_BLOCK;
          float dist = sqrt(x0*x0+y0*y0);
 
          s_FcalHits_t* hits = blocks->in[block].fcalHits;
