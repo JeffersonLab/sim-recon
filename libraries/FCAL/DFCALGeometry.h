@@ -38,6 +38,9 @@ class DFCALGeometry : public JObject {
 #define kBlocksWide 59
 #define kBlocksTall 59
 #define kMaxChannels kBlocksWide * kBlocksTall
+// Do not forget to adjust below formula if number of blocks chage in any direction:
+//   this is now used to convert from row/col to coordiantes y/x and back - MK
+#define kMidBlock (kBlocksWide-1)/2 			
 #define kBeamHoleSize 3
 
 public:

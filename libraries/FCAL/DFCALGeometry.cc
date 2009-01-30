@@ -28,8 +28,8 @@ m_numActiveBlocks( 0 )
 			
 			// transform to beam axis
 			m_positionOnFace[row][col] = 
-			   TVector2( - ( col + .5 - kBlocksWide / 2.0 ) * blockSize(),
-					     ( row + .5 - kBlocksTall / 2.0 ) * blockSize() );
+			   TVector2(  ( col - kMidBlock ) * blockSize(),
+					     ( row - kMidBlock ) * blockSize() );
 			
 			double thisRadius = m_positionOnFace[row][col].Mod();
 			
@@ -76,13 +76,13 @@ DFCALGeometry::isBlockActive( int row, int column ) const
 int
 DFCALGeometry::row( float y ) const 
 {	
-	return static_cast<int>( y / blockSize() + ( kBlocksTall - 1 ) / 2 );
+	return static_cast<int>( y / blockSize() + kMidBlock );
 }
 
 int
 DFCALGeometry::column( float x ) const 
 {	
-	return static_cast<int>( x / blockSize() + ( kBlocksWide - 1 ) / 2 );
+	return static_cast<int>( x / blockSize() + kMidBlock );
 }
 
 TVector2

@@ -18,6 +18,9 @@
 
 <!-- Origin of ForwardEMcal is center of upstream face of LGD -->
 
+<!-- Thr Jan 29 08:14:30 EST 2009                                  -->
+<!-- changed order of counting columns: 0-58 from south to north   -->
+
   <composition name="ForwardEMcal">
     <apply region="nullBfield"/>
     <posXYZ volume="forwardEMcal" X_Y_Z="0.0  0.0  22.5" />
@@ -55,19 +58,19 @@
   </composition>
   <composition name="LGDfullRow">
     <mposX volume="LGBL" ncopy="59" Y_Z="0.0 0.0" X0="-116.0" dX="4.0">
-      <column value="58" step="-1" />
+      <column value="0" step="1" />
     </mposX>
   </composition>
 
   <composition name="LGDhalfRowNorth">
     <mposX volume="LGBL" ncopy="28" Y_Z="0.0 0.0" X0="-54.0" dX="4.0">
-      <column value="27" step="-1" />
+      <column value="31" step="1" />
     </mposX>
   </composition>
 
   <composition name="LGDhalfRowSouth">
     <mposX volume="LGBL" ncopy="28" Y_Z="0.0 0.0" X0="-54.0" dX="4.0">
-      <column value="58" step="-1" />
+      <column value="0" step="1" />
     </mposX>
   </composition>
 
