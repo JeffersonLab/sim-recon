@@ -12,6 +12,7 @@
 #include "HDGEOMETRY/DMagneticFieldMapCalibDB.h"
 #include "HDGEOMETRY/DMagneticFieldMapConst.h"
 #include "HDGEOMETRY/DLorentzMapCalibDB.h"
+#include "HDGEOMETRY/DMaterialMapCalibDB.h"
 #include "DFactoryGenerator.h"
 
 //---------------------------------
@@ -55,6 +56,9 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 
 	// Create Lorentz deflection object
 	lorentz_def= new DLorentzMapCalibDB(this);
+	
+	// Create map of material properties
+	material = new DMaterialMapCalibDB(this);
 }
 
 //---------------------------------
