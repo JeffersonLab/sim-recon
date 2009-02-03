@@ -9,31 +9,46 @@
 #include "BCAL/DBCALPhoton_factory.h"
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALGeometry.h"
+//#include <iostream>
+//using namespace std;
 
 DBCALPhoton_factory::DBCALPhoton_factory()
 {
 
-  //scaling parameter set for nCell < 5
-   
-    m_scaleZ_p0LT =  7.038E-01;
-    m_scaleZ_p1LT =  1.251E-03;
-    m_scaleZ_p2LT = -2.539E-06;
      
-    m_nonlinZ_p0LT =  1.181E-01;
-    m_nonlinZ_p1LT = -9.330E-04;
-    m_nonlinZ_p2LT =  4.334E-06;    
-    m_nonlinZ_p3LT = -5.486E-09;
+    m_scaleZ_p0GE =  8.25618e-01;
+    m_scaleZ_p1GE =  9.22446e-02;
+    m_scaleZ_p2GE =  1.27379e02;
+    m_scaleZ_p3GE = -1.21171e02;
+     
+    m_nonlinZ_p0GE =  5.0833e-02;
+    m_nonlinZ_p1GE = -2.66106e-02;
+    m_nonlinZ_p2GE =  5.22213e01;    
+    m_nonlinZ_p3GE =  6.88344e01;
+    
+    m_linZ_p0GE = -5.26475e-03;
+    m_linZ_p1GE = -2.47419e-02;
+    m_linZ_p2GE =  4.19082e01;    
+    m_linZ_p3GE =  6.69810e01;
+    
+   
+   //scaling parameter set for Z>370 (end of module)
 
-   //scaling parameter set for nCell >= 5
-   
-    m_scaleZ_p0GE =  8.483E-01;
-    m_scaleZ_p1GE =  5.840E-04;
-    m_scaleZ_p2GE = -1.690E-06;
+    m_scaleZ_p0 =  0.8284;
+    m_scaleZ_p1 =  3.3;
+    m_scaleZ_p2 =  422.5;
+    m_scaleZ_p3 =  12.04;
+    m_scaleZ_p4 = 0.0;
      
-    m_nonlinZ_p0GE =  2.489E-02;
-    m_nonlinZ_p1GE =  4.504E-04;
-    m_nonlinZ_p2GE = -1.980E-06;    
-    m_nonlinZ_p3GE =  2.428E-09;
+    m_nonlinZ_p0 =  0.05136;
+    m_nonlinZ_p1 = 1000.0;
+    m_nonlinZ_p2 =  453.6;    
+    m_nonlinZ_p3 = 17.21;
+
+    m_linZ_p0 = -7.166e-03;
+    m_linZ_p1 = -1000.0;
+    m_linZ_p2 = 482.0;
+    m_linZ_p3 = 24.19;
 
 }
 
@@ -69,7 +84,7 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
         double xSh = (**showItr).x;
         double ySh = (**showItr).y;
         double zSh = (**showItr).z;
-        int nCell = (**showItr).N_cell;        
+	//     int nCell = (**showItr).N_cell;        
 
         // get z where shower enters BCAL (this corresponds to generated z
         // in tuning MC)
@@ -81,35 +96,43 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
         // calibration comes from fitting E_rec / E_gen to scale * E_gen^nonlin
         // for slices of z.  These fit parameters (scale and nonlin) are then plotted 
         // as a function of z and fit.
-        
-	if( nCell < 5 ) { 
-            nonlin = m_nonlinZ_p0LT +
-            m_nonlinZ_p1LT * zEntry +
-            m_nonlinZ_p2LT * zEntry * zEntry +
-	    m_nonlinZ_p3LT * zEntry * zEntry * zEntry;}
-	else if( nCell >= 5 ) {
-            nonlin = m_nonlinZ_p0GE +
-            m_nonlinZ_p1GE * zEntry +
-            m_nonlinZ_p2GE * zEntry * zEntry +
-	    m_nonlinZ_p3GE * zEntry * zEntry * zEntry;}
-	//	nonlin = 0.0; // fixed value for debug
-
-        // for the scale, we extend the scale factor at the target as a constant behind
-        // the target
-        if( zEntry < m_zTarget ) zEntry = m_zTarget;
     
-        if( nCell < 5 ) {
-            scale = m_scaleZ_p0LT +
-            m_scaleZ_p1LT * zEntry +
-	    m_scaleZ_p2LT * zEntry * zEntry;}
-	else if ( nCell >= 5 ) {
-            scale = m_scaleZ_p0GE +
-            m_scaleZ_p1GE * zEntry +
-	    m_scaleZ_p2GE * zEntry * zEntry;}
-	//     scale = 1.0; // fixed value for debug
+  if( zEntry < 370.0 ) {
+ scale = m_scaleZ_p0GE * (1 + m_scaleZ_p1GE *(exp( -0.5 *(zEntry - m_scaleZ_p2GE )* (zEntry - m_scaleZ_p2GE ) / (m_scaleZ_p3GE * m_scaleZ_p3GE)   ) ) ) ;
+
+
+  nonlin =( m_nonlinZ_p0GE  + m_nonlinZ_p1GE *(exp( -0.5 *(zEntry - m_nonlinZ_p2GE )* (zEntry - m_nonlinZ_p2GE ) / (m_nonlinZ_p3GE * m_nonlinZ_p3GE)   ) ) ) ;
+
+
+  lin = ( m_linZ_p0GE  + m_linZ_p1GE *(exp( -0.5 *(zEntry - m_linZ_p2GE )* (zEntry - m_linZ_p2GE ) / (m_linZ_p3GE * m_linZ_p3GE)   ) ) ) ;
+
+	//	nonlin = 0.0; // fixed value for debug
+	//	   lin = 0.0; // fixed value for debug
+   	//       scale = 1.0; // fixed value for debug
+  }
+  
+        if( zEntry >= 370.0 ) {
+            scale = m_scaleZ_p0 * (1 - m_scaleZ_p1 *(exp( -0.5 *(zEntry - m_scaleZ_p2 )* (zEntry - m_scaleZ_p2 ) / (m_scaleZ_p3 * m_scaleZ_p3)   ) ) ) ;
+
+  nonlin = m_nonlinZ_p0 * (1 - m_nonlinZ_p1 *(exp( -0.5 *(zEntry - m_nonlinZ_p2 )* (zEntry - m_nonlinZ_p2 ) / (m_nonlinZ_p3 * m_nonlinZ_p3)   ) ) ) ;
+
+
+  lin = m_linZ_p0 * (1 - m_linZ_p1 *(exp( -0.5 *(zEntry - m_linZ_p2 )* (zEntry - m_linZ_p2 ) / (m_linZ_p3 * m_linZ_p3)   ) ) ) ;
+
+
+ //  cout << scale << ' ' << nonlin << ' ' << lin << endl;    
+	}
+
+
+	// if( zEntry < m_zTarget ) zEntry = m_zTarget;
+
+        //end of BCAL calibration        
+
+
         
         // now turn E_rec into E_gen -->> E_gen = ( E_rec / scale ) ^ ( 1 / ( 1 + nonlin ) )
-        double energy = pow( (**showItr).E / scale, 1 / ( 1 + nonlin ) );
+        double energy = pow( ((**showItr).E - lin ) / scale, 1 / ( 1 + nonlin ) );
+        
         
         double pScale = energy / 
             sqrt( xSh * xSh + ySh * ySh + ( zSh - m_zTarget ) * ( zSh - m_zTarget ) );

@@ -20,9 +20,9 @@ m_randomGen()
     
     // setup response parameters
     
-    // 41 MHz DR, 8 pe thresh, 4.6 pe/MeV fibre, 15% mip sampfrac
-    m_cellThreshold = 4.8 * k_MeV;
-
+    // 41 MHz DR, 8 pe thresh, 4.6 pe/MeV fibre, 15% mip sampfrac, 3% crosstalk per pe(24% larger threshold)
+  m_cellThreshold = 6.0 * k_MeV; //nominal 6.0 MeV
+ 
     // set the sampling smearing coefficients:
     // (from GlueX-doc 827 v3 Figure 13 )
     m_samplingCoefA = 0.042;

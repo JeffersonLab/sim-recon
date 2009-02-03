@@ -29,6 +29,7 @@ jerror_t DBCALGeometry_factory::evnt(JEventLoop *loop, int eventnumber)
    bcalGeom->GLOBAL_CENTER = 212;
    
    bcalGeom->ATTEN_LENGTH = 300.;
+   
    bcalGeom->C_EFFECTIVE  = 16.75;
    
   _data.push_back(bcalGeom);
