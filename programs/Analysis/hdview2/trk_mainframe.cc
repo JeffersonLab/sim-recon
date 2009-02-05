@@ -292,6 +292,7 @@ void trk_mainframe::DoMyRedraw(void)
 	shi+=smargin;
 	slo-=smargin;
 	resihi = (shi-slo)/5.0/4.0;
+	resihi = 2.0;
 	resilo = -resihi;
 	canvas->GetCanvas()->cd();
 	canvas->GetCanvas()->Range(resilo, slo, resihi, shi);

@@ -1644,7 +1644,9 @@ const char* hdv_mainframe::GetFactoryTag(string who)
 	if(who=="DTrackCandidate"){
 		tag = candidatesfactory->GetSelectedEntry()->GetTitle();
 	}
-	
+	if(who=="DParticle"){
+		tag = particlesfactory->GetSelectedEntry()->GetTitle();
+	}
 	if(string(tag) == "<default>")tag = "";
 	
 	return tag;
