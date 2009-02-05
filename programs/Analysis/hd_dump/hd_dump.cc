@@ -138,6 +138,8 @@ void ParseCommandLineArguments(int &narg, char *argv[])
 //-----------
 void Usage(void)
 {
+	DApplication dapp(0,NULL);
+
 	cout<<"Usage:"<<endl;
 	cout<<"       hd_dump [options] source1 source2 ..."<<endl;
 	cout<<endl;
@@ -154,6 +156,8 @@ void Usage(void)
 	cout<<"   -s        Skip events which don't have any of the specified data types"<<endl;
 	cout<<"   -a        List types and number of associated objects"<<endl;
 	cout<<endl;
+
+	dapp.Usage();
 
 	exit(0);
 }
