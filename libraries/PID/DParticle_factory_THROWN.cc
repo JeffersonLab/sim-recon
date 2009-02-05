@@ -83,6 +83,9 @@ jerror_t DParticle_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		DParticle *particle = new DParticle;
 		DKinematicData *kd_particle = particle;
 		*kd_particle = *kd_thrown;
+		
+		// Add DMCThrown as associated object
+		particle->AddAssociatedObject(thrown);
 
 		// Create and fill the covariance matrix for the particle.
 		// We need to fill this using errors estimated from the thrown
