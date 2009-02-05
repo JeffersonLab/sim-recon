@@ -28,7 +28,8 @@ XML_SOURCE = BarrelEMcal_HDDS.xml BeamLine_HDDS.xml CentralDC_HDDS.xml\
 all: hddsGeant3.F hddsroot.C
 
 install: hdds-geant hdds-root hdds-mcfast
-	cp $^ $(HALLD_HOME)/bin/$(OSNAME)
+	cp $^ $(HALLD_HOME)/bin/$(BMS_OSNAME)
+	if [ -e ../HDGeant ] ; then cp hddsGeant3.F ../HDGeant/hddsGeant3.F ; fi
 
 hddsMCfast.db: hdds-mcfast $(XML_SOURCE)
 	ln -sf $(MCFAST_DIR)/db db
