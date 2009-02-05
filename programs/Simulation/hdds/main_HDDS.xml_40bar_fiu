@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE HDDS [
+
+  <!ENTITY Regions_s SYSTEM "Regions_HDDS.xml">
+  <!ENTITY Material_s SYSTEM "Material_HDDS.xml">
+  <!ENTITY BeamLine_s SYSTEM "BeamLine_HDDS.xml">
+  <!ENTITY Target_s SYSTEM "Target_HDDS.xml"  >
+  <!ENTITY Solenoid_s SYSTEM "Solenoid_HDDS.xml">
+  <!ENTITY CentralDC_s SYSTEM "CentralDC_HDDS.xml">
+  <!ENTITY ForwardDC_s SYSTEM "ForwardDC_HDDS.xml">
+  <!ENTITY StartCntr_s SYSTEM "StartCntr_HDDS.xml">
+  <!ENTITY ForwardTOF_s SYSTEM "ForwardTOF_HDDS.xml">
+  <!ENTITY BarrelEMcal_s SYSTEM "BarrelEMcal_HDDS.xml">
+  <!ENTITY GapEMcal_s SYSTEM "GapEMcal_HDDS.xml">
+  <!ENTITY ForwardEMcal_s SYSTEM "ForwardEMcal_HDDS.xml">
+  <!ENTITY CerenkovCntr_s SYSTEM "CerenkovCntr_HDDS.xml">
+  <!ENTITY UpstreamEMveto_s SYSTEM "UpstreamEMveto_HDDS.xml">
+
+]>
+
+<HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.gluex.org/hdds HDDS-1_0.xsd">
+
+<!-- Include materials -->
+     &Material_s;
+
+<!-- Include magnetic fields -->
+     &Regions_s;
+
+<!-- Include spec files -->
+     &ForwardEMcal_s;
+     &BarrelEMcal_s;
+     &GapEMcal_s;
+     &ForwardTOF_s;
+     &CerenkovCntr_s;
+     &ForwardDC_s;
+     &CentralDC_s;
+     &StartCntr_s;
+     &Target_s;
+     &Solenoid_s;
+     &BeamLine_s;
+     &UpstreamEMveto_s;
+<!-- End of include    -->
+
+
+<!-- Hall D Detector Specification : top volume
+     ******************************************
+-->
+<section name        = "HallD"
+         version     = "3.0"
+         date        = "2007-12-07"
+         author      = "R.T. Jones"
+         top_volume  = "SITE"
+         specification = "v1.0">
+
+  <box name="SITE" X_Y_Z="5000. 5000. 5000." material="Air"
+       				comment="master volume for description" />
+  <box name="HALL" X_Y_Z="1700. 1500. 3000." material="Air"
+       				comment="master volume for description">
+    <apply region="solenoidBfield" origin="150.0 -350.0 -500.0" />
+  </box>
+
+  <composition name="barrelPackage" envelope="LASS">
+    <posXYZ volume="Solenoid" />
+<!--    <posXYZ volume="StartCntr" X_Y_Z="0.0 0.0 37.5" /> -->
+    <posXYZ volume="StartCntr" X_Y_Z="0.0 0.0 38.75" />
+    <posXYZ volume="CentralDC" X_Y_Z="0.0 0.0 17.0" />
+    <posXYZ volume="ForwardDC" X_Y_Z="0.0 0.0 190.0" />
+    <posXYZ volume="BarrelEMcal" X_Y_Z="0.0 0.0 17.0" />
+  </composition>
+
+  <composition name="forwardPackage">
+    <posXYZ volume="CerenkovCntr" X_Y_Z="0.0 0.0 466.0" />
+    <!--posXYZ volume="GapEMcal" X_Y_Z="0.0 0.0 460.0" /-->
+    <posXYZ volume="ForwardTOF" X_Y_Z="0.0 0.0 616.25" />
+    <posXYZ volume="ForwardEMcal" X_Y_Z="0.0 0.0 625.3" />
+  </composition>
+
+  <composition name="backwardPackage">
+    <posXYZ volume="UpstreamEMveto" X_Y_Z="0.0 0.0 -86.8" />
+  </composition> 
+
+  <composition name="GlueXdetector">
+    <posXYZ volume="Target" X_Y_Z="0.0 0.0 50.0" />
+    <posXYZ volume="barrelPackage" />
+    <posXYZ volume="forwardPackage" />
+<!-- removed from standard geometry 12/11/2007 -rtj
+    <posXYZ volume="backwardPackage" />
+-->
+  </composition>
+
+  <composition name="experimentalHall" envelope="HALL">
+    <posXYZ volume="GlueXdetector" X_Y_Z="150.0 -350.0 -500.0" />
+    <posXYZ volume="beamPipe" X_Y_Z="0.0 0.0 0.0" />
+  </composition>
+
+  <composition name="LASSfieldVolume">
+    <posXYZ volume="experimentalHall" X_Y_Z="-150.0 350.0 500.0" />
+  </composition>
+
+  <composition name="everything" envelope="SITE">
+    <posXYZ volume="collimatorPackage" X_Y_Z="0.0 0.0 -2050." />
+    <posXYZ volume="LASSfieldVolume" X_Y_Z="0. 0. 0." />
+  </composition>
+
+  <!-- The following elements describe an early rendition of the GlueX
+       detector simulated using a fast Monte Carlo program MCFast.  They
+       are retained for future reference, do not rely on their values. -->
+
+  <mcfast model="detector" template="db/detector.db">
+    <string name="name" value="GLUEX" />
+    <string name="geom_id" value="CENTRAL" />
+  </mcfast>
+
+</section>
+
+</HDDS>
