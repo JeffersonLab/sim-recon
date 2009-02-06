@@ -26,6 +26,7 @@ class combinedResidFunc:public residFunc {
   void setStoreDetails(bool storeDetailsValue);
   void clearDetails();
   inline vector<CDCHitDetails*> *getCDCDetails(){return &CDCDetails;};
+  inline vector<FDCHitDetails*> *getFDCDetails(){return &FDCDetails;};
   void setInnerResidFrac(double innerResidFracIn);
  private:
   unsigned int n_fdc, n_cdc;
