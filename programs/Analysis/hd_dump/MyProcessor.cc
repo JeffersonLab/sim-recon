@@ -200,7 +200,6 @@ void MyProcessor::PrintAssociatedObjects(JEventLoop *loop, const factory_info_t 
 		// First, get a list of all associated objects
 		vector<const JObject*> aobjs;
 		objs[i]->GetT(aobjs);
-		
 		// If no associated objects, just go on to the next object
 		if(aobjs.size()==0)continue;
 		
@@ -217,15 +216,14 @@ void MyProcessor::PrintAssociatedObjects(JEventLoop *loop, const factory_info_t 
 				vector<const JObject*> tmp;
 				aofacs[aofac] = tmp;
 			}
-
 			// Record this object as belonging to this factory
 			aofacs[aofac].push_back(aobjs[j]);
 		}
-		
 		// Figure out number of spaces to indent objects based on factory name length
 		map<JFactory_base*, vector<const JObject*> >::iterator iter;
 		unsigned int indent=4; // some minimal string length
 		for(iter=aofacs.begin(); iter!=aofacs.end(); iter++){
+			JFactory_base *fac = iter->first;
 			string name = fac->GetDataClassName();
 			if(strlen(fac->Tag())!=0)name += string(":") + fac->Tag();
 			if(name.length()>indent)indent=name.length();
