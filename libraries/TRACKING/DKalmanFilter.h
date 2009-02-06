@@ -41,6 +41,7 @@ typedef struct{
   DMatrix *S;
   DMatrix *J,*Q;
   double s;
+  double dedx;
 }DKalmanState_t;
 
 typedef struct{
@@ -153,7 +154,7 @@ class DKalmanFilter{
 			      DMatrix S,DMatrix C,DMatrix &Sc,
 			      DMatrix &Cc);
   jerror_t GetProcessNoiseCentral(double mass_hyp,double ds,
-				  double X0,DMatrix Sc,
+				  DVector3 pos,DMatrix Sc,
 				  DMatrix &Q);
   jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S,DMatrix &C);
   jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S);
@@ -172,6 +173,9 @@ class DKalmanFilter{
 			 double dedx,DVector3 pos,DVector3 origin,
 			 DVector3 dir,  
 			 DMatrix Sc);
+  double BrentsAlgorithm(double z,double dz,
+			 double dedx,DVector3 origin,
+			 DVector3 dir,DMatrix S);
   
 
   const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
@@ -217,6 +221,7 @@ class DKalmanFilter{
 
   bool last_iter;
   bool DEBUG_HISTS;
+  int DEBUG_LEVEL;
 };
 
 
