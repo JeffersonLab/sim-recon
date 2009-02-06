@@ -21,10 +21,7 @@ class DTrack:public DKinematicData{
 		oid_t candidateid;	///< id of DTrackCandidate this came from
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit
-		//float dE;				///< Total energy deposited in straws
-		//float ds;				///< Total pathlength through straws contributing to dE
-		//float err_dE;			///< Error on value of dE
-		//float err_ds;			///< Error on value of ds
+
 		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
 
 		void toStrings(vector<pair<string,string> > &items)const{

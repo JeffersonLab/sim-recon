@@ -12,6 +12,7 @@
 #include <JANA/JObject.h>
 
 #include <TRACKING/DTrackFitter.h>
+#include <TRACKING/DTrackHitSelector.h>
 
 class DTrackCandidate;
 
@@ -53,10 +54,9 @@ class DTrack_factory:public jana::JFactory<DTrack>{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		DTrackFitter *fitter;
+		const DTrackHitSelector *hitselector;
 		vector<DReferenceTrajectory*> rtv;
 
-		void AddCDCTrackHits(DReferenceTrajectory *rt, vector<const DCDCTrackHit*> &cdctrackhits);
-		void AddFDCPseudoHits(DReferenceTrajectory *rt, vector<const DFDCPseudo*> &fdcpseudos);
 		void MakeDTrack(const DTrackCandidate *candidate);
 		
 };

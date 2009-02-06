@@ -20,6 +20,7 @@ Distinquish actions between Monte Carlo and real data.
 #include <FDC/DFDCPseudo_factory.h>
 #include <TRACKING/DTrack.h>
 #include <TRACKING/DMCTrackHit.h>
+#include <TRACKING/DReferenceTrajectory.h>
 #include <DANA/DApplication.h>
 
 #include "MyTrajectory.h"
@@ -63,6 +64,7 @@ void InitPlugin(JApplication *app){
 }
 } // "C"
 
+
 //------------------------------------------------------------------
 // DTrackLSFitter 
 //------------------------------------------------------------------
@@ -88,6 +90,17 @@ DTrackLSFitter::DTrackLSFitter(JEventLoop *loop):DTrackFitter(loop),debug_level(
 DTrackLSFitter::~DTrackLSFitter()
 {
   cout << "DTrackLSFitter destructor called\n";
+}
+
+//------------------------------------------------------------------
+// ChiSq 
+//------------------------------------------------------------------
+double DTrackLSFitter::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr, int *dof_ptr)
+{
+	// This will need to be filled in by Mark
+	if(chisq_ptr)*chisq_ptr=0.0;
+	if(dof_ptr)*dof_ptr=0.0;
+	return 0.0; // return the chisq/Ndof
 }
 
 //------------------------------------------------------------------

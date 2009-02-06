@@ -103,8 +103,7 @@ DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DVector3 &pos, const DVe
 //-------------------
 DTrackFitter::fit_status_t DTrackFitter::FitTrack(const DKinematicData &starting_params)
 {
-	//this->input_params.setErrorMatrix(this->input_params.nullMatrix());
-	this->input_params = starting_params;
+	SetInputParameters(starting_params);
 	
 	return FitTrack();
 }

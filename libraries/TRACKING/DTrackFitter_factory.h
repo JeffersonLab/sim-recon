@@ -22,7 +22,7 @@ class DTrackFitter_factory:public jana::JFactory<DTrackFitter>{
 			// This is a trivial class that simply implements the
 			// ALT1 tagged factory as the default. It is here so 
 			// that the default can be changed easily by simply
-			// changing the tag here.
+			// changing the tag here or on the command line.
 			vector<const DTrackFitter*> fitters;
 			loop->Get(fitters, "ALT1");
 			for(unsigned int i=0; i< fitters.size(); i++){

@@ -18,6 +18,8 @@
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
 
+class DReferenceTrajectory;
+
 //////////////////////////////////////////////////////////////////////////////////
 /// The DTrackFitter class is a base class for different charged track
 /// fitting algorithms. It does not actually fit the track itself, but
@@ -83,8 +85,10 @@ class DTrackFitter:public jana::JObject{
 		double GetChisq(void) const {return chisq;}
 		int GetNdof(void) const {return Ndof;}
 		fit_type_t GetFitType(void) const {return fit_type;}
-		void SetFitType(fit_type_t type){fit_type=type;}
 		const DMagneticFieldMap* GetDMagneticFieldMap(void) const {return bfield;}
+
+		void SetFitType(fit_type_t type){fit_type=type;}
+		void SetInputParameters(const DKinematicData &starting_params){input_params=starting_params;}
 		
 		// Wrappers
 		fit_status_t FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass);
@@ -93,6 +97,7 @@ class DTrackFitter:public jana::JObject{
 		//---- The following need to be supplied by the subclass ----
 		virtual string Name(void) const =0;
 		virtual fit_status_t FitTrack(void)=0;
+		virtual double ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr=NULL, int *dof_ptr=NULL)=0;
 
 	protected:
 

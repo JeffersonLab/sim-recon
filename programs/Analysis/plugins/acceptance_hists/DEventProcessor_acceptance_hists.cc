@@ -16,13 +16,12 @@ using namespace std;
 
 #include "DEventProcessor_acceptance_hists.h"
 
-#include "DANA/DApplication.h"
-#include "TRACKING/DMCThrown.h"
-#include "TRACKING/DTrackHit.h"
-#include "TRACKING/DTrackHit_factory_MC.h"
-#include "FDC/DFDCHit.h"
-#include "FDC/DFDCGeometry.h"
-#include "CDC/DCDCTrackHit.h"
+#include <DANA/DApplication.h>
+#include <TRACKING/DMCThrown.h>
+#include <TRACKING/DMCTrackHit.h>
+#include <FDC/DFDCHit.h>
+#include <FDC/DFDCGeometry.h>
+#include <CDC/DCDCTrackHit.h>
 
 #define MIN_CDC_HITS 8
 #define MIN_FDC_HITS 8
@@ -107,36 +106,29 @@ jerror_t DEventProcessor_acceptance_hists::init(void)
 jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DMCThrown*> mcthrowns;
-	vector<const DTrackHit*> trackhits;
+	vector<const DMCTrackHit*> mctrackhits;
 	loop->Get(mcthrowns);
-	JFactory_base *fac = loop->Get(trackhits, "MC");
-	DTrackHit_factory_MC *factory = dynamic_cast<DTrackHit_factory_MC*>(fac);
-	
+	loop->Get(mctrackhits);	
 	
 	// Count FDC anode hits
 	double Nfdc_anode = 0.0;
-	{
-		vector<const DFDCHit*> fdchits;
-		loop->Get(fdchits);
-		
-		for(unsigned int i=0; i<fdchits.size(); i++){
-			if(fdchits[i]->type==0){
-				Nfdc_anode+=1.0;
-				
-				FDC_anode_hits_per_layer->Fill(DFDCGeometry::gLayer(fdchits[i]));
-				FDC_anode_hits_per_wire->Fill(fdchits[i]->element);
-			}
+	vector<const DFDCHit*> fdchits;
+	loop->Get(fdchits);
+	for(unsigned int i=0; i<fdchits.size(); i++){
+		if(fdchits[i]->type==0){
+			Nfdc_anode+=1.0;
+			
+			FDC_anode_hits_per_layer->Fill(DFDCGeometry::gLayer(fdchits[i]));
+			FDC_anode_hits_per_wire->Fill(fdchits[i]->element);
 		}
-		FDC_anode_hits_per_event->Fill(Nfdc_anode);
 	}
+	FDC_anode_hits_per_event->Fill(Nfdc_anode);
 	
 	// Count CDC hits
 	double Ncdc_anode = 0.0;
-	{
-		vector<const DCDCTrackHit*> cdctrackhits;
-		loop->Get(cdctrackhits);
-		Ncdc_anode = (double)cdctrackhits.size();
-	}
+	vector<const DCDCTrackHit*> cdctrackhits;
+	loop->Get(cdctrackhits);
+	Ncdc_anode = (double)cdctrackhits.size();
 	
 	
 	// Loop over thrown tracks
@@ -150,35 +142,22 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumbe
 		}
 	}
 	
-	// Make sure we got a valid pointer to the trackhits MC factory.
-	if(!factory){
-		static int warnings=0;
-		if(warnings<10){
-			cout<<__FILE__<<":"<<__LINE__<<" Unable to get point to DFactory_DTrackHit_MC object!"<<endl;	
-			warnings++;
-		}
-		if(warnings == 10)cout<<__FILE__<<":"<<__LINE__<<" LAST WARNING!!"<<endl;
-		return NOERROR;
-	}
-
 	// Loop over track hits
 	map<int,int> cdchits;
-	map<int,int> fdchits;
+	map<int,int> fdchitmap;
 	map<int,int> bcalhits;
-	const vector<int>& tracknumber = factory->GetTrackNumbers();
-	const vector<bool>& primaryflag = factory->GetPrimaryFlags();
-	for(unsigned int i=0;i<trackhits.size();i++){
-		const DTrackHit *trackhit = trackhits[i];
+	for(unsigned int i=0;i<mctrackhits.size();i++){
+		const DMCTrackHit *mctrackhit = mctrackhits[i];
 
-		switch(trackhit->system){
+		switch(mctrackhit->system){
 			case SYS_CDC:
-				if(primaryflag[i])cdchits[tracknumber[i]]++;
+				if(mctrackhit->primary)cdchits[mctrackhit->track]++;
 				break;
 			case SYS_FDC:
-				if(primaryflag[i])fdchits[tracknumber[i]]++;
+				if(mctrackhit->primary)fdchitmap[mctrackhit->track]++;
 				break;
 			case SYS_BCAL:
-				bcalhits[tracknumber[i]]++;
+				bcalhits[mctrackhit->track]++;
 				break;
 			default:
 				break;
@@ -212,7 +191,7 @@ jerror_t DEventProcessor_acceptance_hists::evnt(JEventLoop *loop, int eventnumbe
 	}
 
 	// Loop over tracks in the FDC
-	for(iter=fdchits.begin(); iter!=fdchits.end(); iter++){
+	for(iter=fdchitmap.begin(); iter!=fdchitmap.end(); iter++){
 
 		// Find thrown parameters for this track (if any)
 		if(iter->first<=0 || iter->first>(int)mcthrowns.size())continue;

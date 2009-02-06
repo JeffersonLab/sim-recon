@@ -8,27 +8,24 @@
 #include "DTrackCandidate_factory_FDC.h"
 #include "DTrackCandidate_factory_FDCCathodes.h"
 #include "DTrackCandidate_factory_FDCpseudo.h"
-#include "DTrackHit_factory_MC.h"
 #include "DTrack_factory_THROWN.h"
-#include "DTrack_factory_ALT1.h"
 #include "DTrack_factory_ALT2.h"
 #include "DTrack_factory_ALT3.h"
 #include "DTrackFitter_factory.h"
 #include "DTrackFitter_factory_ALT1.h"
+#include "DTrackHitSelector_factory.h"
+#include "DTrackHitSelector_factory_ALT1.h"
 
 #include "DMCThrown.h"
 #include "DMCTrackHit.h"
 #include "DMCTrajectoryPoint.h"
-#include "DTrackHit.h"
 typedef JFactory<DMCThrown> DMCThrown_factory;
 typedef JFactory<DMCTrackHit> DMCTrackHit_factory;
 typedef JFactory<DMCTrajectoryPoint> DMCTrajectoryPoint_factory;
-typedef JFactory<DTrackHit> DTrackHit_factory;
 
 jerror_t TRACKING_init(JEventLoop *loop)
 {
 	/// Create and register TRACKING data factories
-	//loop->AddFactory(new DTrack_factory_ALT1());
 	loop->AddFactory(new DTrack_factory_ALT2());
 	loop->AddFactory(new DTrack_factory_ALT3());
 	loop->AddFactory(new DTrack_factory());
@@ -38,14 +35,14 @@ jerror_t TRACKING_init(JEventLoop *loop)
 	loop->AddFactory(new DTrackCandidate_factory_FDCCathodes());
 	loop->AddFactory(new DTrackCandidate_factory_FDCpseudo());
 	loop->AddFactory(new DTrackCandidate_factory_THROWN());
-	loop->AddFactory(new DTrackHit_factory());
-	loop->AddFactory(new DTrackHit_factory_MC());
 	loop->AddFactory(new DMCTrackHit_factory());
 	loop->AddFactory(new DMCThrown_factory());
 	loop->AddFactory(new DMCTrajectoryPoint_factory());
 	loop->AddFactory(new DTrack_factory_THROWN());
 	loop->AddFactory(new DTrackFitter_factory());
 	loop->AddFactory(new DTrackFitter_factory_ALT1());
+	loop->AddFactory(new DTrackHitSelector_factory());
+	loop->AddFactory(new DTrackHitSelector_factory_ALT1());
 
 	return NOERROR;
 }
