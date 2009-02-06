@@ -58,6 +58,9 @@ unsigned int DMaterialMapCalibDB::GetMaterialMap(unsigned int runno){
     material_x[rindex] = row["x"];
     material_z[zindex] = row["z"];
     radlen[zindex][rindex] = row["radlen"];// radiation lengths of the material
+    atomic_Z[zindex][rindex]=row["Z"]; // atomic number
+    atomic_A[zindex][rindex]=row["A"]; // atomic weight
+    density[zindex][rindex]=row["dens"];
   }
   return tvals.size();
 

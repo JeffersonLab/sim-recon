@@ -57,14 +57,81 @@ static void polint(const double *xa, const double *ya,int n,double x, double *y,
       den=w/den;
       d[i-1]=hp*den;
       c[i-1]=ho*den;
-      
-    }
-    
+    }  
     *y+=(*dy=(2*ns<(n-m) ?c[ns+1]:d[ns--]));
   }
   free(c);
   free(d);
 }
+
+
+// routine to obtain material properties (A,Z, density, radiation length) 
+// from the material map
+jerror_t DMaterialMap::GetMaterialProperties(double x,double y, double z,
+					     double &Z, double &A, 
+					     double &rho, double &X0) const
+{
+  double r=sqrt(x*x+y*y);
+  int ind,ind2,imin1,imin2;
+  //initialization
+  rho=0.;
+  X0=1e8;
+  Z=0.;
+  A=1.;
+ 
+  // locate positions in r and z arrays
+  locate(material_z,NUM_Z_POINTS,z,&ind);
+  locate(material_x,NUM_X_POINTS,r,&ind2);
+  // create a temporary array and find starting positions in r- and z- arrays
+  double temp[NUM_X_POINTS],err;
+  if (ind>0){
+    imin1=((ind+3)>NUM_Z_POINTS)?NUM_Z_POINTS-4:(ind-1);
+  }
+  else imin1=0; 
+  if (ind2>0){
+    imin2=((ind2+3)>NUM_X_POINTS)?NUM_X_POINTS-4:(ind2-1);
+  }
+  else imin2=0;
+
+  //---- density ----
+  // First do the interpolation in the z direction
+  for (int j=imin2;j<imin2+4;j++){
+    polint(&material_z[imin1],&density[imin1][j],4,z,&temp[j],&err);
+  }
+  // next do interpolation in r direction
+  polint(&material_x[imin2],&temp[imin2],4,r,&rho,&err); 
+  if (rho<=0.) return VALUE_OUT_OF_RANGE;
+
+  // ---- Radiation length ----
+  // First do the interpolation in the z direction
+  for (int j=imin2;j<imin2+4;j++){
+    polint(&material_z[imin1],&radlen[imin1][j],4,z,&temp[j],&err);
+  }
+  // next do interpolation in r direction 
+  double fX0;
+  polint(&material_x[imin2],&temp[imin2],4,r,&fX0,&err);
+  X0=1.e5/fX0;
+
+  //---- atomic number ----
+  // First do the interpolation in the z direction
+  for (int j=imin2;j<imin2+4;j++){
+    polint(&material_z[imin1],&atomic_Z[imin1][j],4,z,&temp[j],&err);
+  }
+  // next do interpolation in r direction
+  polint(&material_x[imin2],&temp[imin2],4,r,&Z,&err);
+
+  //---- atomic weight ----
+  // First do the interpolation in the z direction
+  for (int j=imin2;j<imin2+4;j++){
+    polint(&material_z[imin1],&atomic_A[imin1][j],4,z,&temp[j],&err);
+  }
+  // next do interpolation in r direction
+  polint(&material_x[imin2],&temp[imin2],4,r,&A,&err);
+
+  return NOERROR;
+}
+
+
 
 // Routine to obtain the average radiation length of the material at the 
 // position pos from a map of material obtained from the simulation
