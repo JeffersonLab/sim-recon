@@ -10,56 +10,77 @@
 using namespace std;
 
 #include <particleType.h>
+#include <DANA/DApplication.h>
 
 #include "DTrackingResolutionGEANT.h"
+#include "DEventProcessor_HDParSim.h"
+
+string OUTPUT_FILENAME = "hdparsim.root";
+
+void Usage(DApplication &app);
+void ParseCommandLineArguments(int &narg, char *argv[], DApplication &app);
 
 //------------
 // main
 //------------
 int main(int narg, char *argv[])
 {
-	// Create a DTrackingResolution object. Specifically,
-	// we create a DTrackingResolutionGEANT object so as
-	// to use the resolutions derived from the GEANT-based
-	// simulations.
-	DTrackingResolution *res = new DTrackingResolutionGEANT();
+	// Instantiate an event loop object
+	DApplication app(narg, argv);
 
-	// Open a root file to hold our output histogram(s)
-	TFile *f = new TFile("hdparsim.root","RECREATE");
-	if(!f->IsOpen()){
-		cerr<<"Unable to open ROOT output file!"<<endl;
-		return -1;
-	}
-	
-	// Create a histogram of dp over p vs. p
-	TH2D *dp_over_p_vs_p = new TH2D("dp_over_p_vs_p","#deltap/p vs. p", 100, 0.0, 7.0, 100, -0.2, 0.2);
-	
-	// Randomly pick 1E6, points in p and smear the momentum
-	// so we can calculate dp/p. Randomly pick phi also, but
-	// throw everything at theta=30 degrees.
-	TRandom3 rnd;
-	double theta = 30.0/57.3;
-	for(int i=0; i<1E6; i++){
-		
-		// Randomly pick momentum and phi angle.
-		// These are our "true" thrown values.
-		double ptot = 0.2 + rnd.Rndm()*6.8; // pick a momentum between 0.2 and 7
-		double phi = rnd.Rndm()*2.0*M_PI; // pick a phi between 0 and 2pi
-		TVector3 mom;
-		mom.SetMagThetaPhi(ptot, theta, phi);
-		
-		// Smear momentum. On input, "mom" has the true values and on
-		// output, it contains the smeared values.
-		res->Smear(PiPlus, mom);
-		
-		// Fill histogram
-		dp_over_p_vs_p->Fill(ptot, (ptot-mom.Mag())/mom.Mag());
-	}
+	ParseCommandLineArguments(narg, argv, app);
+	if(narg<=1)Usage(app);
 
-	// Close ROOT output file
-	f->Write();
-	delete f;
+	// Run though all events, calling our event processor's methods
+	app.Run(new DEventProcessor_HDParSim(OUTPUT_FILENAME.c_str()), 1);
 
 	return 0;
 }
 
+//-----------
+// ParseCommandLineArguments
+//-----------
+void ParseCommandLineArguments(int &narg, char *argv[], DApplication &app)
+{
+	for(int i=1;i<narg;i++){
+		if(argv[i][0] != '-')continue;
+		switch(argv[i][1]){
+			case 'h':
+				Usage(app);
+				break;
+			case 'o':
+				if(i>=narg-1){
+					cerr<<"\"-o\" requires a filename!"<<endl;
+					exit(-1);
+				}
+				OUTPUT_FILENAME = argv[i+1];
+				break;
+		}
+	}
+}
+
+//-----------
+// Usage
+//-----------
+void Usage(DApplication &app)
+{
+	cout<<"Usage:"<<endl;
+	cout<<"       hdparsim [options] source1 source2 ..."<<endl;
+	cout<<endl;
+	cout<<"Parmetric simulation of Hall-D GlueX detector."<<endl;
+	cout<<"Read generated events from an HDDM file and apply resolutions"<<endl;
+	cout<<"and acceptances to "<<endl;
+	cout<<"can write into."<<endl;
+	cout<<endl;
+	cout<<"Options:"<<endl;
+	cout<<endl;
+	cout<<"   -h        Print this message"<<endl;
+	cout<<"   -o fname  Set output filename (default is \"hdparsim.root\")"<<endl;
+	cout<<endl;
+	
+	cout<<"JANA options:"<<endl;
+	app.Usage();
+	cout<<endl;
+
+	exit(0);
+}
