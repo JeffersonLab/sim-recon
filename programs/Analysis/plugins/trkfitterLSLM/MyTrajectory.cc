@@ -105,6 +105,7 @@ vector<HepLorentzVector*>* MyTrajectory::getTrajectory() {
 double MyTrajectory::dist(HepVector& point, int trajIndex) {
   Hep3Vector delta, point3(point(1), point(2), point(3));
   delta = point3 - traj[trajIndex]->getV();
+  if (debug_level >= 4) cout << "point3 = " << point3 << "traj point = " << traj[trajIndex]->getV() << "delta = " << delta << "delta.mag = " << delta.mag() << endl;
   return delta.mag();
 }
 
