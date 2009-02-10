@@ -191,8 +191,9 @@ HepVector combinedResidFunc::pseudo2HepVector(const DFDCPseudo &ppoint) {
   double z = ppoint.wire->origin(2);
   trajPtr->get_xy(z, x, y); // on trajectory
   bool ispos = get_correction_sign(ppoint, x, y, z);
-  double delta_x, delta_y;
-  get_correction_value(ppoint, x, y, z, delta_x, delta_y);
+  double delta_x = 0.0, delta_y = 0.0;
+  // comment out lorentz correction
+  // get_correction_value(ppoint, x, y, z, delta_x, delta_y);
   HepVector point(3);
   if (ispos) {
     point(1) = ppoint.x + delta_x;
