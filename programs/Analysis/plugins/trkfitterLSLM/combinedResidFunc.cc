@@ -42,7 +42,7 @@ void combinedResidFunc::resid(const HepVector *x, void *data, HepVector *f){
   FDCHitDetails *FDCHitDetailsPtr;
   for (unsigned int i = 0; i < n_fdc; i++) {
     point = pseudo2HepVector(*((*ppPtr)[i]));
-    (*f)(i + 1) = trajPtr->doca(point, poca);
+    (*f)(i + 1) = trajPtr->doca(point, poca)/ERROR_FDC;
     if (storeDetails) {
       FDCHitDetailsPtr = new FDCHitDetails();
       *FDCHitDetailsPtr = getDetails((*ppPtr)[i], point);
@@ -64,9 +64,9 @@ void combinedResidFunc::resid(const HepVector *x, void *data, HepVector *f){
       thisResid = 0.0;
     } else {
       if (doca > dist) {
-	thisResid = dist - doca;
+	thisResid = (dist - doca)/ERROR_CDC;
       } else {
-	thisResid = innerResidFrac*(dist - doca);
+	thisResid = innerResidFrac*(dist - doca)/ERROR_CDC;
       }
     }
     (*f)(n_fdc + j + 1) = thisResid;
@@ -112,7 +112,7 @@ void combinedResidFunc::deriv(const HepVector *x, void *data, HepMatrix *J){
   HepVector residBase(n_fdc + n_cdc);
   // base resids for FDC
   for (unsigned int i = 0; i < n_fdc; i++) {
-    residBase(i + 1) = trajPtr->doca(*(pPoints[i]), poca);
+    residBase(i + 1) = trajPtr->doca(*(pPoints[i]), poca)/ERROR_FDC;
   }
   // base resids for CDC
   double docaThis, distThis;
@@ -120,9 +120,9 @@ void combinedResidFunc::deriv(const HepVector *x, void *data, HepMatrix *J){
     distThis = velDrift*((*trkhitPtr)[j]->tdrift - poca.getT()/c);
     docaThis = trajPtr->doca(*(linePtrs[j]), poca);
     if (docaThis > distThis) {
-      residBase(n_fdc + j + 1) = distThis - docaThis;
+      residBase(n_fdc + j + 1) = (distThis - docaThis)/ERROR_CDC;
     } else {
-      residBase(n_fdc + j + 1) = innerResidFrac*(distThis - docaThis);
+      residBase(n_fdc + j + 1) = innerResidFrac*(distThis - docaThis)/ERROR_CDC;
     }
   }
   if (debug_level > 2) cout << "base resids:" << residBase;
@@ -141,7 +141,7 @@ void combinedResidFunc::deriv(const HepVector *x, void *data, HepMatrix *J){
     // calculate derivatives for FDC points
     for (unsigned int j = 0; j < n_fdc; j++) {
       jHep = j + 1;
-      docaThis = trajPtr->doca(*(pPoints[j]), poca);
+      docaThis = trajPtr->doca(*(pPoints[j]), poca)/ERROR_FDC;
       if (debug_level > 2) cout << "resid " << j << " = " << docaThis << endl;
       (*J)(jHep, iHep) = (docaThis - residBase(jHep))/delta[i];
     }
@@ -155,9 +155,9 @@ void combinedResidFunc::deriv(const HepVector *x, void *data, HepMatrix *J){
 	(*J)(jHep, iHep) = 0;
       } else {
 	if (docaThis > distThis) {
-	  (*J)(jHep, iHep) = (distThis - docaThis - residBase(jHep))/delta[i];
+	  (*J)(jHep, iHep) = ((distThis - docaThis)/ERROR_CDC - residBase(jHep))/delta[i];
 	} else {
-	  (*J)(jHep, iHep) = (innerResidFrac*(distThis - docaThis) - residBase(jHep))/delta[i];
+	  (*J)(jHep, iHep) = (innerResidFrac*(distThis - docaThis)/ERROR_CDC - residBase(jHep))/delta[i];
 	}
       }
     }

@@ -10,6 +10,8 @@
 
 #define BIG_DOUBLE 1.0e12
 #define DRIFT_VELOCITY 55e-4
+#define ERROR_FDC 0.0150
+#define ERROR_CDC 0.0200
 
 class combinedResidFunc:public residFunc {
  public:
