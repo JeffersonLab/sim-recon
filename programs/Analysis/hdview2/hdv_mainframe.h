@@ -106,6 +106,7 @@ class hdv_mainframe:public TGMainFrame {
 		void GetReconFactory(string &name, string &tag);
 		TPolyLine* GetFCALPolyLine(int channel);
 		TPolyLine* GetFCALPolyLine(float x, float y);
+		TPolyLine* GetBCALPolyLine(int mod, int layer, int sector);
 		
 		void AddGraphicsSideA(vector<TObject*> &v);
 		void AddGraphicsSideB(vector<TObject*> &v);
@@ -154,6 +155,7 @@ class hdv_mainframe:public TGMainFrame {
 		map<string, vector<TGLabel*> > reconlabs;
 		map<string, TGCheckButton*> checkbuttons;
 		map<int, TPolyLine*> fcalblocks;
+		map<int, TPolyLine*> bcalblocks;
 		
 		TTimer *timer;
 		long sleep_time; // in milliseconds

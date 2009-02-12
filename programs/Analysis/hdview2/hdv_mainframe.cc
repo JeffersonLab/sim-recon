@@ -16,6 +16,7 @@ using namespace std;
 #include "FCAL/DFCALGeometry.h"
 #include "DVector2.h"
 #include "HDGEOMETRY/DGeometry.h"
+#include "PID/DPhoton.h"
 
 #include <TPolyMarker.h>
 #include <TLine.h>
@@ -43,9 +44,15 @@ extern int GO;
 // These should be replaced by a database lookup or something similar
 // at some point.
 static float BCAL_Rmin=65.0;
-static float BCAL_Rmax = 90.0;
+static float BCAL_Rmax = 87.46;
+static float BCAL_MIDRAD = 77.0;
 static float BCAL_Zlen = 390.0;
-static float BCAL_Zmin = 17.0;
+static float BCAL_Zmin = 212.0 - BCAL_Zlen/2.0;
+static float BCAL_MODS  = 48;
+static float BCAL_LAYS1 =  6;
+static float BCAL_LAYS2 =  2; 
+static float BCAL_SECS1 =  4; 
+static float BCAL_SECS2 =  2;
 static float FCAL_Zlen = 45.0;
 static float FCAL_Zmin = 622.8;
 static float FCAL_Rmin = 6.0;
@@ -962,7 +969,14 @@ void hdv_mainframe::DoMyRedraw(void)
 
 	// Draw everything
 	endviewA->GetCanvas()->cd(0);
-	for(unsigned int i=0; i<graphics_endA.size(); i++)graphics_endA[i]->Draw();
+	for(unsigned int i=0; i<graphics_endA.size(); i++){
+		TPolyLine *l = dynamic_cast<TPolyLine*>(graphics_endA[i]);
+		if(l && l->GetFillStyle()!=1001){
+			graphics_endA[i]->Draw("f");
+		}else{
+			graphics_endA[i]->Draw("");
+		}
+	}
 	endviewA->GetCanvas()->Update();
 	endviewB->GetCanvas()->cd(0);
 	for(unsigned int i=0; i<graphics_endB.size(); i++)graphics_endB[i]->Draw("f");
@@ -1098,6 +1112,95 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		bcal2->SetFillColor(10);
 		graphics_endA.push_back(bcal1);
 		graphics_endA.push_back(bcal2);
+		
+		double dlayer1 = (BCAL_MIDRAD-BCAL_Rmin)/(double)BCAL_LAYS1;
+		double dlayer2 = (BCAL_Rmax-BCAL_MIDRAD)/(double)BCAL_LAYS2;
+		double dmodule = (double)TMath::TwoPi()/(double)BCAL_MODS;
+		double dsector1 = dmodule/(double)BCAL_SECS1;
+		double dsector2 = dmodule/(double)BCAL_SECS2;
+
+		// Create polygon for each readout segment for use in coloring hits
+		for(int imod=0; imod<BCAL_MODS; imod++){
+			double mod_phi = (double)imod*dmodule;
+			for(int ilay=0; ilay<BCAL_LAYS1; ilay++){
+				double r_min = BCAL_Rmin + (double)ilay*dlayer1;
+				double r_max = r_min+dlayer1;
+				for(int isec=0; isec<BCAL_SECS1; isec++){
+					double phimin = mod_phi + (double)isec*dsector1;
+					double phimax = phimin + dsector1;
+					
+					double x[4], y[4];
+					x[0] = r_min*cos(phimin);		y[0] = r_min*sin(phimin);
+					x[1] = r_max*cos(phimin);		y[1] = r_max*sin(phimin);
+					x[2] = r_max*cos(phimax);		y[2] = r_max*sin(phimax);
+					x[3] = r_min*cos(phimax);		y[3] = r_min*sin(phimax);
+					TPolyLine *poly = new TPolyLine(4, x, y);
+					poly->SetLineColor(12);
+					poly->SetLineWidth(1);
+					poly->SetFillColor(28);
+					poly->SetFillStyle(0);
+					int chan = (imod+1)*1000 + (ilay+1)*100 + (isec+1)*10;
+					graphics_endA.push_back(poly);
+					bcalblocks[chan] = poly; // record so we can set the color later
+				}
+			}
+
+			for(int ilay=0; ilay<BCAL_LAYS2; ilay++){
+				double r_min = BCAL_MIDRAD + (double)ilay*dlayer2;
+				double r_max = r_min+dlayer2;
+				for(int isec=0; isec<BCAL_SECS2; isec++){
+					double phimin = mod_phi + (double)isec*dsector2;
+					double phimax = phimin + dsector2;
+					
+					double x[5], y[5];
+					x[0] = r_min*cos(phimin);		y[0] = r_min*sin(phimin);
+					x[1] = r_max*cos(phimin);		y[1] = r_max*sin(phimin);
+					x[2] = r_max*cos(phimax);		y[2] = r_max*sin(phimax);
+					x[3] = r_min*cos(phimax);		y[3] = r_min*sin(phimax);
+					x[4] = x[0];						y[4] = y[0];
+					TPolyLine *poly = new TPolyLine(5, x, y);
+					poly->SetLineColor(12);
+					poly->SetLineWidth(1);
+					poly->SetFillColor(28);
+					poly->SetFillStyle(0);
+					int chan = (imod+1)*1000 + (ilay+1+BCAL_LAYS1)*100 + (isec+1)*10;
+					graphics_endA.push_back(poly);
+					bcalblocks[chan] = poly; // record so we can set the color later
+				}
+			}
+		}
+
+		// Draw lines to identify boundaries of readout segments
+		for(int imod=0; imod<BCAL_MODS; imod++){
+			// Vertical(sector) boundaries
+			double mod_phi = (double)imod*dmodule;
+			for(int isec=0; isec<BCAL_SECS1; isec++){
+				double rmin = BCAL_Rmin;
+				double rmax = (isec%2)==1 ? BCAL_MIDRAD:BCAL_Rmax;
+				double phi = mod_phi + (double)isec*dsector1;
+
+				TLine *l = new TLine(rmin*cos(phi), rmin*sin(phi), rmax*cos(phi), rmax*sin(phi));
+				l->SetLineColor(isec==0 ? kBlack:12);
+				l->SetLineWidth(isec==0 ? 1.5:1.0);
+				graphics_endA.push_back(l);
+			}
+			
+			// Horizontal(layer) boundaries
+			for(int ilay=0; ilay<BCAL_LAYS1; ilay++){
+				double r = BCAL_Rmin + (double)ilay*dlayer1;
+				TLine *l = new TLine(r*cos(mod_phi), r*sin(mod_phi), r*cos(mod_phi+dmodule), r*sin(mod_phi+dmodule));
+				l->SetLineColor(ilay==0 ? kBlack:12);
+				l->SetLineWidth(ilay==0 ? 1.0:1.0);
+				graphics_endA.push_back(l);
+			}
+			for(int ilay=0; ilay<=BCAL_LAYS2; ilay++){
+				double r = BCAL_MIDRAD + (double)ilay*dlayer2;
+				TLine *l = new TLine(r*cos(mod_phi), r*sin(mod_phi), r*cos(mod_phi+dmodule), r*sin(mod_phi+dmodule));
+				l->SetLineColor(ilay==BCAL_LAYS2 ? kBlack:12);
+				l->SetLineWidth(ilay==BCAL_LAYS2 ? 1.0:1.0);
+				graphics_endA.push_back(l);
+			}
+		}
 
 		// ----- CDC ------
 		TEllipse *cdc1 = new TEllipse(0.0, 0.0, CDC_Rmax, CDC_Rmax);
@@ -1145,7 +1248,7 @@ void hdv_mainframe::DrawDetectorsXY(void)
 		shift[2].Set(+blocksize/2, +blocksize/2);  // ensures the r/phi cooridinates also
 		shift[3].Set(+blocksize/2, -blocksize/2);  // define a single enclosed space
 		fcalblocks.clear();
-#if 0
+#if 1
 		for(int chan=0; chan<kMaxChannels; chan++){
 			int row = fcalgeom->row(chan);
 			int col = fcalgeom->column(chan);
@@ -1617,6 +1720,20 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 			reconfactory->GetTextEntry()->SetText(facnames[i].c_str());
 		}
 	}
+	
+	// Add DPhoton factories
+	reconfactory->AddEntry("DPhoton:", id++);
+	for(unsigned int i=0; i< facnames.size(); i++){
+		string name = "DPhoton:";
+		string::size_type pos = facnames[i].find(name);
+		if(pos==string::npos)continue;
+		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
+		reconfactory->AddEntry(facnames[i].c_str(), id++);
+		if(facnames[i]==default_reconstructed){
+			reconfactory->Select(id-1, kTRUE);
+			reconfactory->GetTextEntry()->SetText(facnames[i].c_str());
+		}
+	}
 
 }
 
@@ -1682,6 +1799,20 @@ TPolyLine* hdv_mainframe::GetFCALPolyLine(float x, float y)
 	int row = fcalgeom->row(y);
 	int column = fcalgeom->column(x);
 	return GetFCALPolyLine(fcalgeom->channel(row, column));
+}
+
+//-------------------
+// GetBCALPolyLine
+//-------------------
+TPolyLine* hdv_mainframe::GetBCALPolyLine(int module, int layer, int sector)
+{
+	int chan = module*1000 + layer*100 + sector*10;
+	map<int, TPolyLine*>::iterator iter = bcalblocks.find(chan);
+	if(iter==bcalblocks.end()){
+		_DBG_<<"ERROR: No BCAL readout segment display poly for module="<<module<<" layer="<<layer<<" sector="<<sector<<endl;
+		return NULL;
+	}
+	return iter->second;
 }
 
 //-------------------

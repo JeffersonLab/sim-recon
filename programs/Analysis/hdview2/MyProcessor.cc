@@ -40,8 +40,15 @@ using namespace std;
 #include "FDC/DFDCPseudo.h"
 #include "FDC/DFDCIntersection.h"
 #include "HDGEOMETRY/DGeometry.h"
+#include "FCAL/DFCALGeometry.h"
+#include "FCAL/DMCFCALHit.h"
+#include "PID/DPhoton.h"
+#include "BCAL/DHDDMBCALHit.h"
 
 extern hdv_mainframe *hdvmf;
+
+// This is declared in hdv_mainframe.cc, but as static so we need to do it here as well (yechh!)
+static float FCAL_Zmin = 622.8;
 
 
 static vector<vector <DFDCWire *> >fdcwires;
@@ -152,6 +159,32 @@ void MyProcessor::FillGraphics(void)
 	
 	if(!loop)return;
 	
+	// BCAL hits
+	if(hdvmf->GetCheckButton("bcal")){
+		vector<const DHDDMBCALHit*> bcalhits;
+		loop->Get(bcalhits);
+		
+		for(unsigned int i=0; i<bcalhits.size(); i++){
+			const DHDDMBCALHit *hit = bcalhits[i];
+			TPolyLine *poly = hdvmf->GetBCALPolyLine(hit->module, hit->layer, hit->sector);
+			if(!poly)continue;
+
+			double a = hit->E/0.02;
+			double f = sqrt(a>1.0 ? 1.0:a<0.0 ? 0.0:a);
+			double grey = 0.8;
+			double s = 1.0 - f;
+
+			float r = s*grey;
+			float g = s*grey;
+			float b = f*(1.0-grey) + grey;
+
+			poly->SetFillColor(TColor::GetColor(r,g,b));
+			//poly->SetLineColor(TColor::GetColor(r,g,b));
+			//poly->SetLineWidth(3.0);
+			poly->SetFillStyle(3001);
+		}
+	}	
+
 	// FCAL hits
 	if(hdvmf->GetCheckButton("fcal")){
 		vector<const DFCALHit*> fcalhits;
@@ -350,18 +383,24 @@ void MyProcessor::FillGraphics(void)
 	}
 
 	// FCAL Truth points
-	if(hdvmf->GetCheckButton("fcaltruth")){	
-		vector<const DMCTrackHit*> mctrackhits;
-		loop->Get(mctrackhits);
-		DGraphicSet gset(kBlack, kMarker, 1.0);
-		for(unsigned int i=0; i<mctrackhits.size(); i++){
-			const DMCTrackHit *hit = mctrackhits[i];
-			if(hit->system != SYS_FCAL)continue;
+	if(hdvmf->GetCheckButton("fcaltruth")){
+		vector<const DFCALGeometry*> fcalgeometries;
+		vector<const DMCFCALHit*> mcfcalhits;
+		loop->Get(fcalgeometries);
+		loop->Get(mcfcalhits);
+		if(fcalgeometries.size()>0){
+			const DFCALGeometry *fgeom = fcalgeometries[0];
 
-			TVector3 pos(hit->r*cos(hit->phi), hit->r*sin(hit->phi), hit->z);
-			gset.points.push_back(pos);
+			DGraphicSet gset(kBlack, kMarker, 0.25);
+			for(unsigned int i=0; i<mcfcalhits.size(); i++){
+				const DMCFCALHit *hit = mcfcalhits[i];
+
+				TVector2 pos_face = fgeom->positionOnFace(hit->row, hit->column);
+				TVector3 pos(pos_face.X(), pos_face.Y(), FCAL_Zmin);
+				gset.points.push_back(pos);
+			}
+			graphics.push_back(gset);
 		}
-		graphics.push_back(gset);
 	}
 
 	// DMCTrajectoryPoints
@@ -457,6 +496,11 @@ void MyProcessor::UpdateTrackLabels(void)
 		if(loop)loop->Get(candidates, tag.c_str());
 		for(unsigned int i=0; i<candidates.size(); i++)trks.push_back(candidates[i]);
 	}
+	if(name=="DPhoton"){
+		vector<const DPhoton*> photons;
+		if(loop)loop->Get(photons, tag.c_str());
+		for(unsigned int i=0; i<photons.size(); i++)trks.push_back(photons[i]);
+	}
 	
 	// Clear all labels (i.e. draw ---- in them)
 	map<string, vector<TGLabel*> >::iterator iter;
@@ -490,7 +534,7 @@ void MyProcessor::UpdateTrackLabels(void)
 		p<<setprecision(4)<<trk->momentum().Mag();
 		thrownlabs["p"][row]->SetText(p.str().c_str());
 
-		theta<<setprecision(4)<<trk->momentum().Theta();
+		theta<<setprecision(4)<<trk->momentum().Theta()*TMath::RadToDeg();
 		thrownlabs["theta"][row]->SetText(theta.str().c_str());
 
 		double myphi = trk->momentum().Phi();
@@ -518,7 +562,7 @@ void MyProcessor::UpdateTrackLabels(void)
 		p<<setprecision(4)<<trk->momentum().Mag();
 		reconlabs["p"][row]->SetText(p.str().c_str());
 
-		theta<<setprecision(4)<<trk->momentum().Theta();
+		theta<<setprecision(4)<<trk->momentum().Theta()*TMath::RadToDeg();
 		reconlabs["theta"][row]->SetText(theta.str().c_str());
 
 		double myphi = trk->momentum().Phi();
