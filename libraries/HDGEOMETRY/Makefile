@@ -1,5 +1,6 @@
 
 PACKAGES = JANA:ROOT
+CXXFLAGS += -I$(ROOTSYS)/include 
 
 
 ifdef HALLD_SHARED
