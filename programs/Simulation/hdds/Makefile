@@ -25,11 +25,12 @@ XML_SOURCE = BarrelEMcal_HDDS.xml BeamLine_HDDS.xml CentralDC_HDDS.xml\
              StartCntr_HDDS.xml Target_HDDS.xml UpstreamEMveto_HDDS.xml \
 	     Regions_HDDS.xml main_HDDS.xml
 
-all: hddsGeant3.F hddsroot.C
+all: hddsGeant3.F hddsroot.C hddsroot.h
 
-install: hdds-geant hdds-root hdds-mcfast
+install: hdds-geant hdds-root hdds-mcfast hdds-root_h hddsGeant3.F hddsroot.h
 	cp $^ $(HALLD_HOME)/bin/$(BMS_OSNAME)
 	if [ -e ../HDGeant ] ; then cp hddsGeant3.F ../HDGeant/hddsGeant3.F ; fi
+	if [ -e ../../../libraries/HDGEOMETRY ] ; then cp hddsroot.h ../../../libraries/HDGEOMETRY/hddsroot.h ; fi
 
 hddsMCfast.db: hdds-mcfast $(XML_SOURCE)
 	ln -sf $(MCFAST_DIR)/db db
@@ -42,6 +43,9 @@ hddsGeant3.F: hdds-geant $(XML_SOURCE)
 hddsroot.C: hdds-root $(XML_SOURCE)
 	./hdds-root main_HDDS.xml >$@
 
+hddsroot.h: hdds-root_h $(XML_SOURCE)
+	./hdds-root_h main_HDDS.xml >$@
+
 hdds-geant: hdds-geant.cpp XParsers.cpp XParsers.hpp \
             XString.cpp XString.hpp hddsCommon.cpp hddsCommon.hpp
 	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ $< \
@@ -49,6 +53,12 @@ hdds-geant: hdds-geant.cpp XParsers.cpp XParsers.hpp \
 	-L$(XERCESCROOT)/lib -lxerces-c
 
 hdds-root: hdds-root.cpp hdds-root.hpp XParsers.cpp XParsers.hpp \
+           XString.cpp XString.hpp hddsCommon.cpp hddsCommon.hpp
+	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ $< \
+	hddsCommon.cpp XParsers.cpp XString.cpp \
+	-L$(XERCESCROOT)/lib -lxerces-c
+
+hdds-root_h: hdds-root_h.cpp hdds-root.hpp XParsers.cpp XParsers.hpp \
            XString.cpp XString.hpp hddsCommon.cpp hddsCommon.hpp
 	$(CC) $(COPTS) -I$(XERCESCROOT)/include -o $@ $< \
 	hddsCommon.cpp XParsers.cpp XString.cpp \
@@ -71,7 +81,9 @@ xpath-example: xpath-example.cpp
 	-L$(XALANCROOT)/lib -lxalan-c -L$(XERCESCROOT)/lib -lxerces-c
 
 clean:
-	rm -f *.o core *.depend hdds-geant hdds-root hdds-mcfast
+	rm -f *.o core *.depend hdds-geant hdds-root hdds-mcfast hdds-root_h
 
 pristine: clean
-	
+
+
+
