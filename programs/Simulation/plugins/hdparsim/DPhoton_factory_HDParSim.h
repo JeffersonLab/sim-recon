@@ -11,9 +11,11 @@
 #include <JANA/JFactory.h>
 #include "PID/DPhoton.h"
 
+#include "DTrackingResolution.h"
+
 class DPhoton_factory_HDParSim:public jana::JFactory<DPhoton>{
 	public:
-		DPhoton_factory_HDParSim(){};
+		DPhoton_factory_HDParSim();
 		~DPhoton_factory_HDParSim(){};
 		const char* Tag(void){return "HDParSim";}
 
@@ -23,6 +25,8 @@ class DPhoton_factory_HDParSim:public jana::JFactory<DPhoton>{
 		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+		DTrackingResolution *res;
 };
 
 #endif // _DPhoton_factory_HDParSim_

@@ -9,32 +9,34 @@
 #include <TApplication.h>
 
 #include <iostream>
+#include <cmath>
 using namespace std;
 
-#include "DTrackingResolutionGEANT.h"
+#include "DTrackingResolutionGEANTphoton.h"
 #include "getwebfile.h"
 
+#define rad2deg (180.0/M_PI)
 
 //---------------------------------
 // DTrackingResolutionGEANT    (Constructor)
 //---------------------------------
-DTrackingResolutionGEANT::DTrackingResolutionGEANT()
+DTrackingResolutionGEANTphoton::DTrackingResolutionGEANTphoton()
 {
 	//int argc=0;
 	//TApplication *app = new TApplication("myapp", &argc, NULL);
 
 	// Get ROOT file from web if it is not already here
-	const char *url = "http://www.jlab.org/Hall-D/datatables/hd_res_charged.root";
+	const char *url = "http://www.jlab.org/Hall-D/datatables/hd_res_photon.root";
 	getwebfile(url);
 	
 	TDirectory *savedir = gDirectory;
 
-	//---------------- hd_res_charged ------------------
+	//---------------- hd_res_photon ------------------
 	// Open ROOT file
-	file = new TFile("hd_res_charged.root");
+	file = new TFile("hd_res_photon.root");
 	if(!file->IsOpen()){
 		cout<<endl;
-		cout<<"Couldn't open resolution file \"hd_res_charged.root\"!"<<endl;
+		cout<<"Couldn't open resolution file \"hd_res_photon.root\"!"<<endl;
 		cout<<"Make sure it exists in the current directory and is readable,"<<endl;
 		cout<<endl;
 		exit(0);
@@ -42,8 +44,8 @@ DTrackingResolutionGEANT::DTrackingResolutionGEANT()
 	cout<<"Opened \""<<file->GetName()<<"\""<<endl;
 
 	// Read pt resolution histogram
-	file->GetObject("dpt_over_pt_vs_p_vs_theta", pt_res_hist);
-	if(!pt_res_hist){
+	file->GetObject("dE_over_E_vs_p_vs_theta", E_res_hist);
+	if(!E_res_hist){
 		cout<<endl;
 		cout<<"Couldn't find resolution histogram \"dpt_over_pt_vs_p_vs_theta\""<<endl;
 		cout<<"in ROOT file!"<<endl;
@@ -80,7 +82,6 @@ DTrackingResolutionGEANT::DTrackingResolutionGEANT()
 		cout<<endl;
 		exit(0);
 	}
-
 	
 	if(savedir)savedir->cd();
 }
@@ -88,17 +89,18 @@ DTrackingResolutionGEANT::DTrackingResolutionGEANT()
 //---------------------------------
 // ~DTrackingResolutionGEANT    (Destructor)
 //---------------------------------
-DTrackingResolutionGEANT::~DTrackingResolutionGEANT()
+DTrackingResolutionGEANTphoton::~DTrackingResolutionGEANTphoton()
 {
 	if(file)delete file;
 }
 
+
 //----------------
 // GetResolution
 //----------------
-void DTrackingResolutionGEANT::GetResolution(int geanttype, const TVector3 &mom, double &pt_res, double &theta_res, double &phi_res)
+void DTrackingResolutionGEANTphoton::GetResolution(int geanttype, const TVector3 &mom, double &E_res, double &theta_res, double &phi_res)
 {
-	/// Return the momentum and angular resolutions for a charged
+	/// Return the energy and angular resolutions for a charged
 	/// particle based on results from GEANT-based Monte Carlo studies.
 
 	// Find bins for this momentum.
@@ -106,17 +108,17 @@ void DTrackingResolutionGEANT::GetResolution(int geanttype, const TVector3 &mom,
 	// Namely, number of bins and range so we only need to calculate
 	// the theta and p bins once.
 	double p = mom.Mag();
-	double theta = mom.Theta()*57.3;
-	int pbin = pt_res_hist->GetYaxis()->FindBin(p);
-	int thetabin = pt_res_hist->GetXaxis()->FindBin(theta);
+	double theta = mom.Theta()*rad2deg;
+	int pbin = E_res_hist->GetYaxis()->FindBin(p);
+	int thetabin = E_res_hist->GetXaxis()->FindBin(theta);
 	
-	if(pbin<1 || pbin>pt_res_hist->GetNbinsY()){pt_res=theta_res=phi_res=0.0; return;}
-	if(thetabin<1 || thetabin>pt_res_hist->GetNbinsX()){pt_res=theta_res=phi_res=0.0; return;}
+	if(pbin<1 || pbin>E_res_hist->GetNbinsY()){E_res=theta_res=phi_res=0.0; return;}
+	if(thetabin<1 || thetabin>E_res_hist->GetNbinsX()){E_res=theta_res=phi_res=0.0; return;}
 	
 	// Here we should do an interpolation from the surrounding bins.
 	// We have fairly small bins though so I can afford to be
 	// lazy :)
-	pt_res = pt_res_hist->GetBinContent(thetabin, pbin); // return as fraction
+	E_res = E_res_hist->GetBinContent(thetabin, pbin); // return as fraction
 	theta_res = theta_res_hist->GetBinContent(thetabin, pbin); // return in milliradians
 	phi_res = phi_res_hist->GetBinContent(thetabin, pbin); // return in milliradians
 }
@@ -124,14 +126,14 @@ void DTrackingResolutionGEANT::GetResolution(int geanttype, const TVector3 &mom,
 //----------------
 // GetEfficiency
 //----------------
-double DTrackingResolutionGEANT::GetEfficiency(int geanttype, const TVector3 &mom)
+double DTrackingResolutionGEANTphoton::GetEfficiency(int geanttype, const TVector3 &mom)
 {
 	/// Return the reconstruction efficiency for a charged
 	/// particle based on results from GEANT-based Monte Carlo studies.
 
 	// Find bins for this momentum.
 	double p = mom.Mag();
-	double theta = mom.Theta()*57.3;
+	double theta = mom.Theta()*rad2deg;
 	int pbin = efficiency_hist->GetYaxis()->FindBin(p);
 	int thetabin = efficiency_hist->GetXaxis()->FindBin(theta);
 	
@@ -143,6 +145,5 @@ double DTrackingResolutionGEANT::GetEfficiency(int geanttype, const TVector3 &mo
 	// lazy :)
 	return efficiency_hist->GetBinContent(thetabin, pbin);
 }
-
 
 
