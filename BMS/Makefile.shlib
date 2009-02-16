@@ -70,7 +70,7 @@ mkdirs:
 	@mkdir -p $(DEP_DIR)
 
 install: all
-	mkdir -p $(INSTALL_DIR)/bin/$(BMS_OSNAME)
+	mkdir -p $(INSTALL_DIR)/lib/$(BMS_OSNAME)
 	mkdir -p $(INSTALL_DIR)/include/$(MODULE_NAME)
 	install -p $(LIB_DIR)/$(SOLIB_NAME) $(INSTALL_DIR)/lib/$(BMS_OSNAME)
 	$(HEADER_CP_CMD)
