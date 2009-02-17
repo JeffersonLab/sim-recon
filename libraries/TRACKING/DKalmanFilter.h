@@ -41,7 +41,7 @@ typedef struct{
   DMatrix *S;
   DMatrix *J,*Q;
   double s;
-  double dedx;
+  double A,Z,density,X0;
 }DKalmanState_t;
 
 typedef struct{
@@ -127,11 +127,9 @@ class DKalmanFilter{
     state_D,
     state_z,
   };
-
-  jerror_t GetProcessNoise(double mass_hyp,double ds,
+  
+  jerror_t GetProcessNoise(double mass_hyp,double ds,double z,
 			   double X0,DMatrix S,DMatrix &Q);
-  jerror_t GetProcessNoise(double mass_hyp,double ds,DVector3 pos,
-			   DMatrix S,DMatrix &Q);
   double Step(double oldz,double newz, double dEdx,DMatrix &S);
   jerror_t StepJacobian(double oldz,double newz,DMatrix S,double dEdx,
 		      DMatrix &J);
@@ -154,8 +152,9 @@ class DKalmanFilter{
 			      DMatrix S,DMatrix C,DMatrix &Sc,
 			      DMatrix &Cc);
   jerror_t GetProcessNoiseCentral(double mass_hyp,double ds,
-				  DVector3 pos,DMatrix Sc,
+				  DVector3 pos,double X0,DMatrix Sc,
 				  DMatrix &Q);
+  jerror_t SwimToPlane(DMatrix &S);
   jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S,DMatrix &C);
   jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S);
   jerror_t SwimToRadius(DVector3 &pos, double Rf,DMatrix &Sc,DMatrix &Cc);
