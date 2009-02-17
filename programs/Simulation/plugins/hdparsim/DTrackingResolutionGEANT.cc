@@ -110,6 +110,10 @@ void DTrackingResolutionGEANT::GetResolution(int geanttype, const TVector3 &mom,
 	int pbin = pt_res_hist->GetYaxis()->FindBin(p);
 	int thetabin = pt_res_hist->GetXaxis()->FindBin(theta);
 	
+	// For tracks with momentum out of the range of our table, use the
+	// resolutions for the largest momentum we have
+	if(pbin>pt_res_hist->GetNbinsY())pbin=pt_res_hist->GetNbinsY();
+	
 	if(pbin<1 || pbin>pt_res_hist->GetNbinsY()){pt_res=theta_res=phi_res=0.0; return;}
 	if(thetabin<1 || thetabin>pt_res_hist->GetNbinsX()){pt_res=theta_res=phi_res=0.0; return;}
 	
@@ -134,6 +138,10 @@ double DTrackingResolutionGEANT::GetEfficiency(int geanttype, const TVector3 &mo
 	double theta = mom.Theta()*57.3;
 	int pbin = efficiency_hist->GetYaxis()->FindBin(p);
 	int thetabin = efficiency_hist->GetXaxis()->FindBin(theta);
+	
+	// For tracks with momentum out of the range of our table, use the
+	// resolutions for the largest momentum we have
+	if(pbin>efficiency_hist->GetNbinsY())pbin=efficiency_hist->GetNbinsY();
 	
 	if(pbin<1 || pbin>efficiency_hist->GetNbinsY())return 0.0;
 	if(thetabin<1 || thetabin>efficiency_hist->GetNbinsX())return 0.0;
