@@ -11,6 +11,8 @@
 #include <JANA/jerror.h>
 #include <DANA/DApplication.h>
 
+#include <DVector3.h>
+
 // the root part
 #include <TGeoManager.h>
 #include <TGeoVolume.h>
@@ -46,6 +48,9 @@ class DRootGeom{
   TGeoNode* FindNode(double *x);
   TGeoVolume* FindVolume(double *x);
   struct VolMat FindMat(double *x);
+
+  void FindMat(DVector3 pos,double &density, double &A, double &Z,
+	       double &RadLen) const;
 
  private:
   

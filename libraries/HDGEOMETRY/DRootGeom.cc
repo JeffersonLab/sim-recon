@@ -47,6 +47,30 @@ TGeoVolume* DRootGeom::FindVolume(double *x)
   return cvol;  
 
 }
+
+void DRootGeom::FindMat(DVector3 pos,double &density, double &A, double &Z,
+			double &RadLen) const{
+  density=RadLen=A=Z=0.;
+
+  TGeoNode *cnode = DRGeom->FindNode(pos.X(),pos.Y(),pos.Z());
+  if (cnode==NULL){
+    _DBG_<<"Missing cnode" << endl;
+    return;
+  }
+  TGeoVolume *cvol = cnode->GetVolume();
+  if (cvol==NULL){
+    _DBG_<<"Missing cvol" <<endl;
+    return;
+  }
+  TGeoMaterial *cmat = cvol->GetMedium()->GetMaterial();
+
+  density=cmat->GetDensity();
+  RadLen=cmat->GetRadLen();
+  A=cmat->GetA();
+  Z=cmat->GetZ();
+}
+
+
 struct VolMat DRootGeom::FindMat(double *x)
 {
 
