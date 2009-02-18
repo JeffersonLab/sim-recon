@@ -6,6 +6,7 @@
 //
 
 #include <cassert>
+#include <iostream>
 
 #include "BCAL/DBCALMCResponse_factory.h"
 #include "BCAL/DBCALGeometry.h"
@@ -14,33 +15,135 @@
 #include "DRandom.h"
 #include "units.h"
 
+using namespace std;
+
 DBCALMCResponse_factory::DBCALMCResponse_factory() : 
 m_randomGen()
 {
     
-    // setup response parameters
-    
-    // 41 MHz DR, 8 pe thresh, 4.6 pe/MeV fibre, 15% mip sampfrac, 3% crosstalk per pe(24% larger threshold)
-  m_cellThreshold = 6.0 * k_MeV; //nominal 6.0 MeV
- 
-    // set the sampling smearing coefficients:
-    // (from GlueX-doc 827 v3 Figure 13 )
-    m_samplingCoefA = 0.042;
-    m_samplingCoefB = 0.013;
+  // setup response parameters
+  m_darkRate_GHz         = 0.041;
+  m_xTalk_fract          = 0.03;
+  m_intWindow_ns         = 100;
+  m_devicePDE            = 0.12;
+  m_sampling_fract       = 0.15;
+  m_maxOccupancy_fract   = 0.05;
 
-    // time smearing comes from beam test time difference resolution with
-    // beam incident on the center of the module
-    m_timediffCoefA = 0.07 * sqrt( 2 );
-    // no floor term, but leave the option here:
-    m_timediffCoefB = 0.0 * sqrt( 2 );
+  // GX-doc 1069, Table 1 -- try to extract back to
+  // photons per side per MeV in fiber
+  // 4.6 / PDE / attentuation  (meaurements performed in center)
+  // 75 = 4.6  / 0.12 / exp( -200 / 300 )
+  m_photonsPerSidePerMeVInFiber = 75;
+
+  // set the sampling smearing coefficients:
+  // (from GlueX-doc 827 v3 Figure 13 )
+  m_samplingCoefA = 0.042;
+  m_samplingCoefB = 0.013;
+
+  // time smearing comes from beam test time difference resolution with
+  // beam incident on the center of the module
+  m_timediffCoefA = 0.07 * sqrt( 2 );
+  // no floor term, but leave the option here:
+  m_timediffCoefB = 0.0 * sqrt( 2 );
     
-    gPARMS->SetDefaultParameter( "BCALRESPONSE:CELL_THRESHOLD",  m_cellThreshold );
-    gPARMS->SetDefaultParameter( "BCALRESPONSE:SAMPLING_COEF_A", m_samplingCoefA );
-    gPARMS->SetDefaultParameter( "BCALRESPONSE:SAMPLING_COEF_B", m_samplingCoefB );
-    gPARMS->SetDefaultParameter( "BCALRESPONSE:TIMESMEAR_COEF_A", m_timediffCoefA );
-    gPARMS->SetDefaultParameter( "BCALRESPONSE:TIMESMEAR_COEF_B", m_timediffCoefB );
+  // set this low for now -- needs more thought later
+  m_cellThresholdOuter = 1 * k_MeV;
+  
+  gPARMS->SetDefaultParameter( "BCALRESPONSE:CELL_THRESHOLD_OUTER",  m_cellThresholdOuter );
+
+  gPARMS->SetDefaultParameter( "BCALRESPONSE:DARK_RATE_GHZ", m_darkRate_GHz );
+  gPARMS->SetDefaultParameter( "BCALRESPONSE:CROSS_TALK_PROB", m_xTalk_fract );
+  gPARMS->SetDefaultParameter( "BCALRESPONSE:FADC_WINDOW_NS", m_intWindow_ns );
+  gPARMS->SetDefaultParameter( "BCALRESPONSE:DEVICE_PDE", m_devicePDE );
+  gPARMS->SetDefaultParameter( "BCALRESPONSE:SAMPLING_FRACTION", m_sampling_fract );
+  gPARMS->SetDefaultParameter( "BCALRESPONSE:OCCUPANCY_FRACTION_LIMIT", 
+			       m_maxOccupancy_fract );
+  gPARMS->SetDefaultParameter( "BCALRESPONSE:PHOTONS_PER_SIDE_PER_MEV_IN_FIBER", 
+			       m_photonsPerSidePerMeVInFiber );
+
+  gPARMS->SetDefaultParameter( "BCALRESPONSE:SAMPLING_COEF_A", m_samplingCoefA );
+  gPARMS->SetDefaultParameter( "BCALRESPONSE:SAMPLING_COEF_B", m_samplingCoefB );
+  gPARMS->SetDefaultParameter( "BCALRESPONSE:TIMESMEAR_COEF_A", m_timediffCoefA );
+  gPARMS->SetDefaultParameter( "BCALRESPONSE:TIMESMEAR_COEF_B", m_timediffCoefB );
 
 }
+
+jerror_t
+DBCALMCResponse_factory::init( void )
+{
+
+  // this the average number of (assumed single PE) 
+  // dark pulses in a window
+
+  double nAvg = m_darkRate_GHz * m_intWindow_ns;
+
+  // now we need to find n such that 
+  // sum_i=1^n P(n) > ( 1 - maxOccupancy )
+  // P(n) is the probability to have n pulses
+  //
+  // P(n) is really a convolution since we have:
+  // P(n) = P( n_d + n_x ) = 
+  //    P( n_d; nAvg ) * P( n_x; n_d * x )
+  // 
+  // n_d number of dark pulses
+  // x is the cross talk rate
+
+  // numerically build int_0^n P(n)
+
+  // in practice the cutoff is going to be < 100 PE
+  // we can build an accurate pdf up to that
+  double pdf[100];
+  for( int i = 0; i < 100; ++i ){ pdf[i] = 0; }
+
+  // probability for zero is easy:
+  double darkTerm = exp( -nAvg );
+  pdf[0] = darkTerm;
+
+  for( int n_d = 1; n_d < 100; ++n_d ){
+
+    darkTerm *= ( nAvg / n_d );
+
+    double xTalkAvg = n_d * m_xTalk_fract;
+
+    // probability for zero x-talk pulses
+    double xTerm = exp( -xTalkAvg );
+    pdf[n_d] += ( xTerm * darkTerm );
+
+    // now include probability for additional
+    // cross talk pulses
+    for( int n_x = 1; n_x + n_d < 100; ++n_x ){
+
+      xTerm *= ( xTalkAvg / n_x );
+
+      pdf[n_d+n_x] += ( xTerm * darkTerm );
+    }
+  }
+
+  double integral = 0;
+  int nPEThresh = 0;
+  while( integral < ( 1 - m_maxOccupancy_fract ) ){
+
+    // post increment includes zero and requires
+    // one more PE than what breaks the loop
+    integral += pdf[nPEThresh];
+    ++nPEThresh;
+  }
+
+  // now get the photon theshold
+  double photonThresh = nPEThresh / m_devicePDE;
+
+  // now convert this into a energy threshold
+  m_cellThresholdInner = 
+    ( photonThresh / m_photonsPerSidePerMeVInFiber ) / 
+    m_sampling_fract * k_MeV; 
+
+  cout << "BCAL inner cell threshold:  " 
+       << m_cellThresholdInner << " GeV, "  
+       << nPEThresh << " P.E." << endl;
+
+  return NOERROR;
+}
+
 
 //------------------
 // evnt
@@ -87,7 +190,11 @@ jerror_t DBCALMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
 	float upTime = smearedtUp + upDist / bcalGeom.C_EFFECTIVE;
 	float downTime = smearedtDown + downDist / bcalGeom.C_EFFECTIVE;
 	
-        if( upEnergy > m_cellThreshold ){
+	// hdgeat numbers layers starting with 1
+	float cellThreshold = ( hddmhit->layer <= bcalGeom.NBCALLAYS1 ?
+				m_cellThresholdInner : m_cellThresholdOuter );
+
+        if( upEnergy > cellThreshold ){
         
             DBCALMCResponse *response = new DBCALMCResponse;
         
@@ -104,7 +211,7 @@ jerror_t DBCALMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
             _data.push_back(response);
         }
         
-        if( downEnergy > m_cellThreshold ){
+        if( downEnergy > cellThreshold ){
             
             DBCALMCResponse *response = new DBCALMCResponse;
             
@@ -122,7 +229,7 @@ jerror_t DBCALMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
         }
     }
     
-	return NOERROR;
+    return NOERROR;
 }
 
 float
@@ -141,3 +248,4 @@ DBCALMCResponse_factory::timeSmear( float t, float E )
 
   return( t + m_randomGen.Gaus( 0., sigmaT ) );
 }
+

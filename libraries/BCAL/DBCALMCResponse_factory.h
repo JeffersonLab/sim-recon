@@ -28,17 +28,27 @@ private:
 
     jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 
+      jerror_t init( void );
+
     // mock up the sampling fraction smearing
     float samplingSmear( float E );
     float timeSmear( float t, float E );
 
-    float m_cellThreshold;
+    float m_cellThresholdOuter;
+    float m_cellThresholdInner;
     
     float m_samplingCoefA;
     float m_samplingCoefB;
     float m_timediffCoefA;
     float m_timediffCoefB;
- 
+
+    float m_darkRate_GHz;
+    float m_xTalk_fract;
+    float m_intWindow_ns;
+    float m_devicePDE;
+    float m_photonsPerSidePerMeVInFiber;
+    float m_sampling_fract;
+    float m_maxOccupancy_fract;
     
     DRandom m_randomGen;
 };
