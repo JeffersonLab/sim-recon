@@ -264,6 +264,47 @@
       parameter (ntfspl=10)
       integer getrow,getcolumn
       external getrow,getcolumn
+#elif defined FCAL_SHOWER_PROFILE_NTUPLE
+c
+c   NTUPLE CONTENTS:
+c     evno:        event number
+c     part:        initial particle type
+c     xinit(3):    initial particle location
+c     pinit(3):    initial particle momentum
+c     xstop(3):    location where initial particle stops
+c     ndiv:        number of fcal divisions in the following arrays...
+c     xdiv(ndiv):  array of x positions
+c     ydiv(ndiv):  array of y positions
+c     zdiv(ndiv):  array of z positions
+c     ediv(ndiv):  array of energy depositions at the above positions
+c
+#define NXDIVISIONS 400
+#define NYDIVISIONS 400
+#define NZDIVISIONS 60
+#define XDIVISIONSIZE 1.0
+#define YDIVISIONSIZE 1.0
+#define ZDIVISIONSIZE 1.0
+#define XDIVISIONSTART -200.0
+#define YDIVISIONSTART -200.0
+#define ZDIVISIONSTART 620.0
+#define MINIMUMENERGYPERDIVISION 1.0e-3
+c
+      real edivisions(NXDIVISIONS,NYDIVISIONS,NZDIVISIONS)
+      integer ixdivision, iydivision, izdivision
+      integer evno,part
+      real xstop(3),xinit(3),pinit(3)
+      integer ndiv
+      real xdiv(10000),ydiv(10000),zdiv(10000),ediv(10000)
+      common /fspNtuple/evno,part,xinit,pinit,xstop,
+     +                   ndiv,xdiv,ydiv,zdiv,ediv
+      save /fspNtuple/
+      character*160 ntfspdef
+      parameter (ntfspdef='evno:I,part:I,xinit(3):R,pinit(3):R,'
+     +   //'xstop(3):R,ndiv[0,10000]:I,xdiv(ndiv):R,ydiv(ndiv):R,'
+     +   //'zdiv(ndiv):R,ediv(ndiv):R')
+      integer ntfsp
+      parameter (ntfsp=10)
+c
 #elif defined BCAL_RESOLUTION_NTUPLE
       integer evno
       real pphot(4),dE,xdep(3)
@@ -602,6 +643,82 @@ c           print *, '*-* entering ACWO'
       if (ISTOP.ne.0.and.IQ(JSTAK+1).eq.0) then
         call HFNT(ntfspl)
       endif
+#elif defined FCAL_SHOWER_PROFILE_NTUPLE
+c
+c       create ntuple
+c
+      if (.not.HEXIST(ntfsp)) then
+        call HBNT(ntfsp,'FCal shower profile','')
+        call HBNAME(ntfsp,'hits',evno,ntfspdef)
+      endif
+c
+c       get information about primary and
+c       reset division variables
+c
+      if (ISTAK.eq.0.and.NSTEP.eq.0) then
+        evno = IDEVT
+        part = IPART
+        ndiv = 0
+        do ix = 1, NXDIVISIONS
+          do iy = 1, NYDIVISIONS
+            do iz = 1, NZDIVISIONS
+              edivisions(ix,iy,iz) = 0.0
+            enddo
+          enddo
+        enddo
+        xinit(1) = vect(1)
+        xinit(2) = vect(2)
+        xinit(3) = vect(3)
+        pinit(1) = vect(4)*vect(7)
+        pinit(2) = vect(5)*vect(7)
+        pinit(3) = vect(6)*vect(7)
+c
+c       find the location where the primary stops
+c
+      elseif (ISTAK.eq.0.and.ISTOP.ne.0) then
+        xstop(1) = vect(1)
+        xstop(2) = vect(2)
+        xstop(3) = vect(3)
+c
+c       record energy depositions in fcal divisions
+c
+      elseif (cnames(NLEVEL).eq.'LGBL'.and.DESTEP.gt.0.0) then
+        ixdivision = int((vect(1)-XDIVISIONSTART)/XDIVISIONSIZE) + 1
+        iydivision = int((vect(2)-YDIVISIONSTART)/YDIVISIONSIZE) + 1
+        izdivision = int((vect(3)-ZDIVISIONSTART)/ZDIVISIONSIZE) + 1
+        if ((ixdivision.ge.1).and.(ixdivision.le.NXDIVISIONS).and.
+     +      (iydivision.ge.1).and.(iydivision.le.NYDIVISIONS).and.
+     +      (izdivision.ge.1).and.(izdivision.le.NZDIVISIONS)) then
+          edivisions(ixdivision,iydivision,izdivision) =
+     +      edivisions(ixdivision,iydivision,izdivision) + DESTEP
+        endif
+      endif
+c
+c       rearrange division information and record ntuples
+c
+      if (ISTOP.ne.0.and.IQ(JSTAK+1).eq.0) then
+        do ix = 1, NXDIVISIONS
+          do iy = 1, NYDIVISIONS
+            do iz = 1, NZDIVISIONS
+              if (edivisions(ix,iy,iz).ge.MINIMUMENERGYPERDIVISION) then
+                if (ndiv.lt.10000) then
+                  ndiv = ndiv + 1
+                  xdiv(ndiv) = ix*XDIVISIONSIZE + XDIVISIONSTART 
+     +                          - XDIVISIONSIZE/2.0
+                  ydiv(ndiv) = iy*YDIVISIONSIZE + YDIVISIONSTART 
+     +                          - YDIVISIONSIZE/2.0
+                  zdiv(ndiv) = iz*ZDIVISIONSIZE + ZDIVISIONSTART 
+     +                          - ZDIVISIONSIZE/2.0
+                  ediv(ndiv) = edivisions(ix,iy,iz)
+                endif
+              endif
+            enddo
+          enddo
+        enddo
+        call HFNT(ntfsp)
+      endif
+c
+c
 #elif defined BCAL_RESOLUTION_NTUPLE
       if (.not.HEXIST(ntbcal)) then
         call HBNT(ntbcal,'BCal shower energy deposition','')
