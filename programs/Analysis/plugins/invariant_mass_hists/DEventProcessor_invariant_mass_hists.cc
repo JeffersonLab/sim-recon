@@ -16,10 +16,23 @@ using namespace std;
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
-#include "DEventProcessor_invariant_mass_hists.h"
-#include "TRACKING/DTrack.h"
-#include "TRACKING/DMCThrown.h"
+#include <TRACKING/DMCThrown.h>
+#include <PID/DKinematicData.h>
+#include <PID/DParticle.h>
+#include <PID/DPhoton.h>
+#include <PID/DBeamPhoton.h>
 
+#include "DEventProcessor_invariant_mass_hists.h"
+
+//==========================================================================
+// This file contains code for a plugin that will create a few histograms
+// based on the reconstructed data. It can mainly serve as an example
+// of how one could access the reconstructed data in their own analysis
+// program.
+//
+// Histograms are created in the init() method and they are filled in
+// the evnt() method.
+//==========================================================================
 
 // Routine used to create our JEventProcessor
 extern "C"{
@@ -29,19 +42,6 @@ void InitPlugin(JApplication *app){
 }
 }
 
-//------------------
-// DEventProcessor_invariant_mass_hists
-//------------------
-DEventProcessor_invariant_mass_hists::DEventProcessor_invariant_mass_hists()
-{	
-}
-
-//------------------
-// ~DEventProcessor_invariant_mass_hists
-//------------------
-DEventProcessor_invariant_mass_hists::~DEventProcessor_invariant_mass_hists()
-{
-}
 
 //------------------
 // init
@@ -56,24 +56,19 @@ jerror_t DEventProcessor_invariant_mass_hists::init(void)
 	dir->cd();
 
 	// Create histograms
-	mass_1part = new TH1F("mass_1part","Invariant mass of 1 particle GeV/c^{2}",4100, -0.1, 4.0);
-	mass_2part = new TH1F("mass_2part","Invariant mass of 2 particles GeV/c^{2}",4100, -0.1, 4.0);
-	mass_3part = new TH1F("mass_3part","Invariant mass of 3 particles GeV/c^{2}",4100, -0.1, 4.0);
-	mass2_1part = new TH1F("mass2_1part","Invariant mass^{2} of 1 particle GeV/c^{2}",4100, -0.1, 16.0);
-	mass2_2part = new TH1F("mass2_2part","Invariant mass^{2} of 2 particles GeV/c^{2}",4100, -0.1, 16.0);
-	mass2_3part = new TH1F("mass2_3part","Invariant mass^{2} of 3 particles GeV/c^{2}",4100, -0.1, 16.0);
+	mm_gp_to_pX = new TH1D("mm_gp_to_pX","Missing mass from #gamma p -> p X",4001, 0.0, 4.0);
+	mm_gp_to_pX->SetXTitle("Missing mass (GeV)");
 
-	thrown_mass_1part = new TH1F("thrown_mass_1part","Invariant mass of 1 thrown particle GeV/c^{2}",4100, -0.1, 4.0);
-	thrown_mass_2part = new TH1F("thrown_mass_2part","Invariant mass of 2 thrown particles GeV/c^{2}",4100, -0.1, 4.0);
-	thrown_mass_3part = new TH1F("thrown_mass_3part","Invariant mass of 3 thrown particles GeV/c^{2}",4100, -0.1, 4.0);
-	thrown_mass2_1part = new TH1F("thrown_mass2_1part","Invariant mass^{2} of 1 thrown particle GeV/c^{2}",4100, -0.1, 16.0);
-	thrown_mass2_2part = new TH1F("thrown_mass2_2part","Invariant mass^{2} of 2 thrown particles GeV/c^{2}",4100, -0.1, 16.0);
-	thrown_mass2_3part = new TH1F("thrown_mass2_3part","Invariant mass^{2} of 3 thrown particles GeV/c^{2}",4100, -0.1, 16.0);
+	mass_2gamma = new TH1D("mass_2gamma","2 #gamma invariant mass",4001, 0.0, 4.0);
+	mass_2gamma->SetXTitle("Invariant Mass (GeV/c^{2})");
+
+	mass_pip_pim = new TH1D("mass_pip_pim","invariant mass of #pi^{+} and #pi^{-}",4001, 0.0, 4.0);
+	mass_pip_pim->SetXTitle("Invariant Mass (GeV/c^{2})");
+
+	sqrt_s = new TH1D("sqrt_s","Center of mass energy #sqrt{s}",2001, 0.0, 6.0);
+	sqrt_s->SetXTitle("#sqrt{s}  C.M. energy (GeV)");
 	
-	missing_mass = new TH1F("missing_mass", "Missing mass squared", 200, -1.0, 3.0);
-	thrown_missing_mass = new TH1F("thrown_missing_mass", "Missing mass squared from throwns", 200, -1.0, 3.0);
-	
-	// Go back up to the parent directory
+	// Go back up to the (ROOT) parent directory
 	dir->cd("../");
 	
 	return NOERROR;
@@ -84,82 +79,97 @@ jerror_t DEventProcessor_invariant_mass_hists::init(void)
 //------------------
 jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventnumber)
 {
-	vector<const DTrack*> tracks;
-	vector<const DMCThrown*> mcthrowns;
-	loop->Get(tracks);
-	loop->Get(mcthrowns);
+	// Get reconstructed objects and make TLorentz vectors out of each of them
+	vector<const DBeamPhoton*> beam_photons;
+	vector<const DPhoton*> photons;
+	vector<const DParticle*> particles;
 
-	double Egamma = 9.0;
-	TLorentzVector incident(0.0, 0.0, Egamma, Egamma+0.938);
+	loop->Get(beam_photons);
+	loop->Get(photons);
+	loop->Get(particles);
 
-	// Loop over reconstructed tracks
-	vector<TLorentzVector> v;
-	for(unsigned int i=0;i<tracks.size();i++){
-		TLorentzVector myv;
-		if(tracks[i]->chisq>1.0)continue;
-		MakeTLorentz(tracks[i], myv);
-		v.push_back(myv);
-	}
+	// Target is proton at rest in lab frame
+	TLorentzVector target(0.0, 0.0, 0.0, 0.93827);
+	
+	// Create TLorentzVectors for reconstructed photons
+	vector<TLorentzVector> rec_photons;
+	for(unsigned int j=0; j<photons.size(); j++)rec_photons.push_back(MakeTLorentz(photons[j], 0.0));	
 
-	// Loop over reconstructed tracks
-	for(unsigned int i=0;i<v.size();i++){
-		TLorentzVector v1 = v[i];
-		mass_1part->Fill(v1.M());
-		mass2_1part->Fill(v1.M2());
-		
-		for(unsigned int j=i+1;j<v.size();j++){
-			TLorentzVector v2 = v1 + v[j];
-			if(tracks[i]->charge()*tracks[j]->charge()<0.0){
-				// Only fill for opposite charge tracks	
-				mass_2part->Fill(v2.M());
-				mass2_2part->Fill(v2.M2());
-			}
+	// Create TLorentzVectors for reconstructed charged particles
+	vector<TLorentzVector> rec_piplus;
+	vector<TLorentzVector> rec_piminus;
+	vector<TLorentzVector> rec_protons;
 
-			TLorentzVector mm = incident - v2;
-			missing_mass->Fill(mm.M2());
+	// Loop over charged particles turning them into TLorentzVector objects
+	// and sorting them into various containers declared just above.
+	for(unsigned int j=0; j<particles.size(); j++){
+		const DParticle *part = particles[j];
+
+		// If this came from the HDParSim factory it will have a DMCThrown object
+		// associated with it that we can use to get the particle type since
+		// we currently don't have that info in reconstruction. If it is not there,
+		// then assume it's a pion.
+		int type = part->charge()<0.0 ? 9:8; // initialize to pi-(=9) or pi+(=8)
+
+		// Here we try and get the "truth" object DMCThrown. The access mechanism
+		// forces us to get it as a list, but there should be at most 1.
+		vector<const DMCThrown*> throwns;
+		part->Get(throwns);
+		// if DMCThrown was found, overwrite pion with actual particle type
+		if(throwns.size()>0)type = throwns[0]->type;			
+
+		// Add TLorentzVector to appropriate container based on charged particle type
+		switch(type){
+			case 8:	rec_piplus.push_back(MakeTLorentz(part, 0.13957));		break;
+			case 9:	rec_piminus.push_back(MakeTLorentz(part, 0.13957));	break;
+			case 14:	rec_protons.push_back(MakeTLorentz(part, 0.93827));	break;
+		}
+	} // particles
+
+	
+	//--------------------------------------------------------------------
+	// Fill histograms below here using values in the rec_XXX constainers.
+
+
+	// Loop over beam photons and fill histos for each "tagged" photon for this event
+	for(unsigned int i=0; i<beam_photons.size(); i++){
+
+		// Make TLorentzVector for beam photon
+		TLorentzVector beam_photon = MakeTLorentz(beam_photons[i], 0.0);
+
+		// Center of mass energy
+		sqrt_s->Fill((beam_photon+target).M()); // Fill Center of Mass energy histo
+				
+		// Missing mass from gamma + p -> p + X
+		if(rec_protons.size()==1){
+			TLorentzVector missing = beam_photon + target - rec_protons[0];
+			mm_gp_to_pX->Fill(missing.M());
+		}
+
+	} // beam_photons
+
+
+	//-------------------------------------------------------------------
+	// Below here are the histos that do not depend on the tagged photon
+	// energy and so should be filled outside of the above loop.
+
+	// 2gamma invariant mass. Loop over all possible combinations
+	for(unsigned int j=1; j<rec_photons.size(); j++){
+		TLorentzVector &ph1 = rec_photons[j];
+		for(unsigned int k=0; k<j; k++){
+			TLorentzVector &ph2 = rec_photons[k];
 			
-			for(unsigned int k=j+1;k<v.size();k++){
-				TLorentzVector v3 = v2 + v[k];		
-				mass_3part->Fill(v3.M());
-				mass2_3part->Fill(v3.M2());
-			}
+			TLorentzVector sum = ph1 + ph2;
+			mass_2gamma->Fill(sum.M());
 		}
 	}
 
-	// Repeat for thrown tracks
-	v.clear();
-	for(unsigned int i=0;i<mcthrowns.size();i++){
-		int type=mcthrowns[i]->type;
-		if(type!=8 && type!=9)continue;
-		TLorentzVector myv;
-		MakeTLorentz(mcthrowns[i], myv);
-		v.push_back(myv);
-	}
-
-	// Loop over thrown tracks
-	for(unsigned int i=0;i<v.size();i++){
-		TLorentzVector v1 = v[i];
-		thrown_mass_1part->Fill(v1.M());
-		thrown_mass2_1part->Fill(v1.M2());
-
-		for(unsigned int j=i+1;j<v.size();j++){
-			TLorentzVector v2 = v1 + v[j];		
-			if(tracks[i]->charge()*tracks[j]->charge()<0.0){
-				// Only fill for opposite charge tracks	
-				thrown_mass_2part->Fill(v2.M());
-				thrown_mass2_2part->Fill(v2.M2());
-			}
-			
-			TLorentzVector mm = incident - v2;
-			thrown_missing_mass->Fill(mm.M2());
-			
-			for(unsigned int k=j+1;k<v.size();k++){
-				TLorentzVector v3 = v2 + v[k];		
-				thrown_mass_3part->Fill(v3.M());
-				thrown_mass2_3part->Fill(v3.M2());
-			}
+	// pi+, pi- invariant mass. Loop over all possible combinations
+	for(unsigned int j=0; j<rec_piplus.size(); j++){
+		for(unsigned int k=0; k<rec_piminus.size(); k++){
+			mass_pip_pim->Fill( (rec_piplus[j] + rec_piminus[k]).M() ); // (a more compact way than the 2 gamma example above)
 		}
-	}
+	}		
 
 	return NOERROR;
 }
@@ -167,68 +177,29 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 //------------------
 // MakeTLorentz
 //------------------
-void DEventProcessor_invariant_mass_hists::MakeTLorentz(const DTrack *track, TLorentzVector &v)
+TLorentzVector DEventProcessor_invariant_mass_hists::MakeTLorentz(const DKinematicData *kd, double mass)
 {
-	double px = track->momentum().Mag()*sin(track->momentum().Theta())*cos(track->momentum().Phi());
-	double py = track->momentum().Mag()*sin(track->momentum().Theta())*sin(track->momentum().Phi());
-	double pz = track->momentum().Mag()*cos(track->momentum().Theta());
-	double E = sqrt(pow((double)0.13957,(double)2.0)+pow((double)track->momentum().Mag(), (double)2.0));
-	
-	v.SetXYZT(px,py,pz,E);
-}
+	// Create a ROOT TLorentzVector object out of a Hall-D DKinematic Data object.
+	// Here, we have the mass passed in explicitly rather than use the mass contained in
+	// the DKinematicData object itself. This is because right now (Feb. 2009) the
+	// PID code is not mature enough to give reasonable guesses. See above code.
 
-//------------------
-// MakeTLorentz
-//------------------
-void DEventProcessor_invariant_mass_hists::MakeTLorentz(const DMCThrown *thrown, TLorentzVector &v)
-{
-	double p = thrown->momentum().Mag();
-	double theta = thrown->momentum().Theta();
-	double phi = thrown->momentum().Phi();
-
-#if 0	
-	// smear values
-	p *= (1.0 + SampleGaussian(0.02));
-	phi += SampleGaussian(0.1);
-	if(phi<0.0)phi+=2.0*M_PI;
-	if(phi>=2.0*M_PI)phi-=2.0*M_PI;
-	theta += SampleGaussian(0.0325);
-	if(theta<0.0)theta=-theta;
-	if(theta>=M_PI)theta=2.0*M_PI-theta;
-#endif
-
+	double p = kd->momentum().Mag();
+	double theta = kd->momentum().Theta();
+	double phi = kd->momentum().Phi();
 	double px = p*sin(theta)*cos(phi);
 	double py = p*sin(theta)*sin(phi);
 	double pz = p*cos(theta);
-	double E = sqrt(pow(0.13957,2.0)+pow(p,2.0));
+	double E = sqrt(mass*mass + p*p);
 	
-	v.SetXYZT(px,py,pz,E);
+	return TLorentzVector(px,py,pz,E);
 }
-
-//------------------
-// SampleGaussian
-//------------------
-double DEventProcessor_invariant_mass_hists::SampleGaussian(double sigma)
-{
-	// We loop to ensure not to return values greater than 3sigma away
-	double val;
-	do{
-		double epsilon = 1.0E-10;
-		double r1 = epsilon+((double)random()/(double)RAND_MAX);
-		double r2 = (double)random()/(double)RAND_MAX;
-		val = sigma*sqrt(-2.0*log(r1))*cos(2.0*M_PI*r2);
-	}while(fabs(val/sigma) > 3.0);
-
-	return val;
-}
-
 
 //------------------
 // erun
 //------------------
 jerror_t DEventProcessor_invariant_mass_hists::erun(void)
 {
-
 	return NOERROR;
 }
 
@@ -237,5 +208,8 @@ jerror_t DEventProcessor_invariant_mass_hists::erun(void)
 //------------------
 jerror_t DEventProcessor_invariant_mass_hists::fini(void)
 {
+	// Histograms are automatically written to file by hd_root program (or equivalent)
+	// so we don't need to do anything here.
+
 	return NOERROR;
 }

@@ -24,16 +24,13 @@ class DMCThrown;
 class DEventProcessor_invariant_mass_hists:public JEventProcessor{
 
 	public:
-		DEventProcessor_invariant_mass_hists();
-		~DEventProcessor_invariant_mass_hists();
+		DEventProcessor_invariant_mass_hists(){};
+		~DEventProcessor_invariant_mass_hists(){};
 		
-		TH1F *mass_1part, *mass_2part, *mass_3part;
-		TH1F *mass2_1part, *mass2_2part, *mass2_3part;
-
-		TH1F *thrown_mass_1part, *thrown_mass_2part, *thrown_mass_3part;
-		TH1F *thrown_mass2_1part, *thrown_mass2_2part, *thrown_mass2_3part;
-		
-		TH1F *missing_mass, *thrown_missing_mass;
+		TH1D *sqrt_s;			// center of mass energy for all events (shows coherent brem. peaks)
+		TH1D *mm_gp_to_pX;	// missing mass of gamma p -> p + X reaction
+		TH1D *mass_2gamma;	// invariant mass of 2 photons
+		TH1D *mass_pip_pim;	// invariant mass of pi+ and pi-
 
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
@@ -41,9 +38,7 @@ class DEventProcessor_invariant_mass_hists:public JEventProcessor{
 		jerror_t erun(void);					///< Invoked via DEventProcessor virtual method
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
 
-		void MakeTLorentz(const DTrack *track, TLorentzVector &v);
-		void MakeTLorentz(const DMCThrown *thrown, TLorentzVector &v);
-		double SampleGaussian(double sigma);
+		TLorentzVector MakeTLorentz(const DKinematicData *track, double mass);
 
 };
 
