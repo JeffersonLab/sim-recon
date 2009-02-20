@@ -290,6 +290,7 @@ c
 #define MINIMUMENERGYPERDIVISION 1.0e-3
 c
       real edivisions(NXDIVISIONS,NYDIVISIONS,NZDIVISIONS)
+      save edivisions
       integer ixdivision, iydivision, izdivision
       integer evno,part
       real xstop(3),xinit(3),pinit(3)
