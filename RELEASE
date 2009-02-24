@@ -1,0 +1,1026 @@
+
+Release Notes for Hall-D source code
+------------------------------------
+
+   URL: https://halldsvn.jlab.org/repos/tags/release-2009-02-24
+  Date: February 24, 2009
+Author: David Lawrence davidl@jlab.org
+
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Mac OS X 10.5.6 (Darwin Kernel Version 9.6.0)
+------------
+  Xerces 2.7.0
+  JANA 0.4.9
+  ROOT 5.22/00
+  cernlib 2006 (compiled on 10.5 with liblapack3 and libblas)
+  gcc/g++  : gcc version 4.0.1 (Apple Inc. build 5490)
+  gfortran : gcc version 4.2.3
+
+Fedora release 8 (Werewolf) on i686  32-bit
+------------
+  Xerces 2.7.0
+  JANA 0.4.9
+  ROOT 5.18/00
+  cernlib 2005 (/apps/cernlib/i386_fc8 on JLab CUE)
+  lesstif-devel 0.95.0-20.fc8
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+
+Red Hat Enterprise Linux 5.2 on i686  32-bit
+------------
+  Xerces 2.7.0
+  JANA 0.4.9
+  ROOT 5.18/00
+  cernlib 2005 (/apps/cernlib/i386_rhel5 on JLab CUE)
+  gcc/g++/gfortran :  4.1.2 20071124 (Red Hat 4.1.2-42)
+
+
+
+Summary of changes since last release
+=====================================================
+This is a summary list made from visually scanning the svn log messages
+for the main trunk since the last release. It may be incomplete. See the
+entire list of logs below for the complete list of changes.
+
+o  "string" type variables fixed in HDDM
+
+o  TRACKING
+   - Re-tooled DParticle, DTrack, and DTrackCandidate factories with
+	  THROWN tags to make consistent and easier to use for debugging.
+
+   - Added DTrackHitSelector virtual class and corresponding 
+	  DTrackHitSelectorALT1 for hit selection (only used by
+	  ALT1 fitter at present)
+	
+	- General tools added for accessing material map. Two methods
+	  were implmented. One uses tabulated values read through calibration
+	  system and the other uses ROOT to in code generated directly
+	  from XML (see hddsroot.h).
+	
+	- Continued development on Kalman filter including better e-loss
+	  and MULS
+	
+	- Copied Mark's LSLM least-squares track fitter to main trunk as
+	  plugin in src/programs/Analysis/plugins/trkfitterLSLM.
+
+o  Numbering schemes updated for both TOF and FCAL to reflect newly adopted
+   convention of having id numbers increase as the coordinate value
+	increases.
+
+o  HDParSim program made into hdparsim plugin in:
+   src/programs/Simulation/plugins/hdparsim. Protons, pions and photons
+	are now smeared using independant tables.
+
+o  Added hddm_cull_events, hddm_merge_events, and hddm_merge_files
+   to standard build.
+
+o  Removed hddsGeant3.F from repository. Generation of it is now required
+   from the XML source which is in the repository.
+
+o  Fixed/enhanced hd_dump (text viewer) and hdview2 (graphical event viewer).
+   Most notably, hdview2 now draws BCAL and FCAL hits.
+
+
+=====================================================
+
+
+Relevant repository log of changes:
+
+command: svn log -r 4659:4892 --verbose https://halldsvn.jlab.org/repos/trunk/src
+
+------------------------------------------------------------------------
+r4673 | jonesrt | 2009-01-07 02:21:15 -0500 (Wed, 07 Jan 2009) | 5 lines
+Changed paths:
+   A /trunk/src/programs/Utilities/hddm/exam2.c
+   A /trunk/src/programs/Utilities/hddm/exam2.xml
+
+exam2.xml, exam2.c [rtj]
+   - a very simple example hddm template that includes string variables,
+     together with an example program that fills in the structure and
+     writes it out to a file containing a single record.
+
+------------------------------------------------------------------------
+r4674 | jonesrt | 2009-01-07 02:23:17 -0500 (Wed, 07 Jan 2009) | 6 lines
+Changed paths:
+   M /trunk/src/programs/Utilities/hddm/hddm-c.cpp
+
+hddp-c.cpp [rtj]
+   - miscellaneous fixes to make string variables work.  Before this the
+     code indicated that they were supported, but there were major bugs.
+     The exam2.xml hddm template and exam2.c program demonstrating the
+     use of string variables in hddm now work.
+
+------------------------------------------------------------------------
+r4675 | davidl | 2009-01-08 10:02:40 -0500 (Thu, 08 Jan 2009) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Utilities/bfield2root/bfield2root.cc
+
+-Fixed bug in calculation of Br that made it always positive (thanks to Elton for catching this)
+
+-Fixed typo in usage statement that used -PBFIELD in example instead of -PBFIELD_MAP
+
+------------------------------------------------------------------------
+r4676 | davidl | 2009-01-08 16:22:23 -0500 (Thu, 08 Jan 2009) | 4 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrack_factory.cc
+
+Fixed bug in hit selection of FDC hits introduced some time ago. 
+
+Note that it also appears that the cathode hits are not currently included in the Chisq calculation and so the fitter only looks at the drift time information for the FDC.
+
+------------------------------------------------------------------------
+r4677 | davidl | 2009-01-08 16:24:31 -0500 (Thu, 08 Jan 2009) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/track_hists/DEventProcessor_track_hists.cc
+   M /trunk/src/programs/Analysis/plugins/track_hists/dchit.h
+
+- Added FDC hits to fdchit tree
+
+- Added residual of distance along wire for cathodes in FDC.
+
+------------------------------------------------------------------------
+r4678 | davidl | 2009-01-08 16:27:03 -0500 (Thu, 08 Jan 2009) | 2 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.h
+   M /trunk/src/programs/Analysis/hdview2/trk_mainframe.cc
+   M /trunk/src/programs/Analysis/hdview2/trk_mainframe.h
+
+Added ability to draw CDC doca ellipses as dotted lines if they correspond to hits NOT used in the fit.
+
+------------------------------------------------------------------------
+r4679 | davidl | 2009-01-08 16:31:35 -0500 (Thu, 08 Jan 2009) | 2 lines
+Changed paths:
+   M /trunk/src/libraries/PID/DParticle_factory_THROWN.cc
+
+Copied over changes from DTrack_factory.cc on FDC hit selection to fix the same bug.
+
+------------------------------------------------------------------------
+r4681 | staylor | 2009-01-13 09:55:40 -0500 (Tue, 13 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DLorentzDeflections.h
+
+Make destructor virtual.
+------------------------------------------------------------------------
+r4682 | staylor | 2009-01-13 10:01:33 -0500 (Tue, 13 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DLorentzDeflections.cc
+
+fix minor bug in interpolation in r-- the old version used 4 values starting at the beamline, instead of around the actual r value.  Also made the locate and polint routines static.
+------------------------------------------------------------------------
+r4683 | staylor | 2009-01-13 10:11:44 -0500 (Tue, 13 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/hitFDC.c
+
+fix indexing problem in final iterpolations for the lorentz correction parameters.
+------------------------------------------------------------------------
+r4688 | staylor | 2009-01-13 14:28:27 -0500 (Tue, 13 Jan 2009) | 1 line
+Changed paths:
+   A /trunk/src/libraries/HDGEOMETRY/DMaterialMap.cc
+   A /trunk/src/libraries/HDGEOMETRY/DMaterialMap.h
+   A /trunk/src/libraries/HDGEOMETRY/DMaterialMapCalibDB.cc
+   A /trunk/src/libraries/HDGEOMETRY/DMaterialMapCalibDB.h
+
+Classes for obtaining a map of material properties -- right now just radiation lengths -- from the CalibDB calib/Material/radlen file
+------------------------------------------------------------------------
+r4689 | staylor | 2009-01-14 10:03:45 -0500 (Wed, 14 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DHelicalFit.cc
+   M /trunk/src/libraries/TRACKING/DHelicalFit.h
+
+Remove redundant variable dist_to_origin and make sure that the DVector3 normal is set before returning from the Riemann circle fit.  This oversight caused the CDC track candidate code to fall back to the histogramming method for find z_vertex, which tends to put the vertex at the center of the target.
+------------------------------------------------------------------------
+r4691 | davidl | 2009-01-14 16:40:50 -0500 (Wed, 14 Jan 2009) | 2 lines
+Changed paths:
+   A /trunk/src/programs/Analysis/plugins/trkfitterLSLM
+
+Directory to hold Mark's least squares Levenberg-Marquardt track fitter. It requires CLHEP and GSL.
+
+------------------------------------------------------------------------
+r4692 | davidl | 2009-01-14 16:43:46 -0500 (Wed, 14 Jan 2009) | 2 lines
+Changed paths:
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM
+
+On second thought, let me do this another way ...
+
+------------------------------------------------------------------------
+r4693 | davidl | 2009-01-14 16:44:23 -0500 (Wed, 14 Jan 2009) | 2 lines
+Changed paths:
+   A /trunk/src/programs/Analysis/plugins/trkfitterLSLM (from /trunk/home/marki/gluex/fitter:4692)
+
+Copying Mark's track fitter code into plugins directory.
+
+------------------------------------------------------------------------
+r4694 | davidl | 2009-01-14 16:51:16 -0500 (Wed, 14 Jan 2009) | 2 lines
+Changed paths:
+   A /trunk/src/programs/Analysis/plugins/trkfitterLSLM/DFactoryGeneratorLSLM.h
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/DLine.h
+   A /trunk/src/programs/Analysis/plugins/trkfitterLSLM/DTrackFitter_factory_LSLM.h
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/DTrackLSFitter.cc
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/DTrackLSFitter.h
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/Makefile
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/MyProcessor.cc
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/MyProcessor.h
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/bad.C
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/chisqMin.cc
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/config.txt
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/ed.C
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/fitter.C
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/fitter.cc
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/fitter_signature.txt.ref
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/fitter_signature.txt.ref2
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/fitter_template.hddm
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/flat.pl
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/hddm.patch
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/hitDetails.h
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/line_test.cc
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/para_min.tex
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/parabolaResidFunc.cc
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/parabolaResidFunc.h
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/prob.C
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/pseudoResidFunc.cc
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/pseudoResidFunc.h
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/residFunc.h
+   D /trunk/src/programs/Analysis/plugins/trkfitterLSLM/swim_test.cc
+
+Modified Mark's least squares Levenberg-Marquardt fitter to be a DTrackFitter object and be produced by a factory. It is made as a plugin since it is currently "optional" code.
+
+------------------------------------------------------------------------
+r4695 | davidl | 2009-01-14 16:57:11 -0500 (Wed, 14 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/Makefile
+
+Fixed name of trkfitterLSLM plugin to match name of source directory.
+------------------------------------------------------------------------
+r4696 | davidl | 2009-01-15 12:30:59 -0500 (Thu, 15 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/track_hists/DEventProcessor_track_hists.cc
+
+Fixed bug in track_hists plugin where it did not check that at least one track candidate exists before accessing the vector.
+------------------------------------------------------------------------
+r4697 | zihlmann | 2009-01-16 08:23:09 -0500 (Fri, 16 Jan 2009) | 6 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/ForwardTOF_HDDS.xml
+
+changed paddle counting: 1-40 from bottom to top as plane 1 (vertically segmented)
+                         1-40 from south to north (horizongally segmented)
+                         41,43 the two half paddles north
+                         42,44 the two half paddles south
+
+
+------------------------------------------------------------------------
+r4698 | zihlmann | 2009-01-16 08:26:50 -0500 (Fri, 16 Jan 2009) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/ForwardTOF_HDDS.xml
+
+change orderting of half paddle couting to be in line with our convetions
+the two half paddles south/below the beam hole are number 41 and 43
+the two half paddles north/above the beam hole are number 42 and 44
+
+------------------------------------------------------------------------
+r4700 | marki | 2009-01-16 10:55:46 -0500 (Fri, 16 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/Makefile
+
+Use variable to select plug-in or static library
+------------------------------------------------------------------------
+r4701 | marki | 2009-01-16 10:57:50 -0500 (Fri, 16 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM
+
+modify ignore list
+------------------------------------------------------------------------
+r4702 | marki | 2009-01-16 12:15:20 -0500 (Fri, 16 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/Makefile
+
+whoops, wrong syntax for variable in if statement
+------------------------------------------------------------------------
+r4707 | davidl | 2009-01-17 23:32:19 -0500 (Sat, 17 Jan 2009) | 6 lines
+Changed paths:
+   M /trunk/src/libraries/PID/DParticle_factory_THROWN.cc
+   M /trunk/src/libraries/PID/DParticle_factory_THROWN.h
+
+Switched DParticle_factory_THROWN to use the hinfo class to pass information around
+to do track selection.
+
+Note that this is still a copy of the track selection routines in DTrack_factory.
+They *should* be moved to a common place...just not today.
+
+------------------------------------------------------------------------
+r4708 | davidl | 2009-01-17 23:34:55 -0500 (Sat, 17 Jan 2009) | 2 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrack_factory_THROWN.cc
+
+Fixed probability calculation used for hit selection in the DTrack_factory_THROWN class.
+
+------------------------------------------------------------------------
+r4709 | davidl | 2009-01-17 23:36:14 -0500 (Sat, 17 Jan 2009) | 2 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrack_factory.cc
+
+Fixed FDC hit selection. Multiple bugs fixed.
+
+------------------------------------------------------------------------
+r4710 | davidl | 2009-01-17 23:39:45 -0500 (Sat, 17 Jan 2009) | 6 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.h
+
+- Switched over to hinfo class method for passing wires, shifts, errs, etc around
+in DTrackFitterALT1. 
+
+- Changed fitting algorithm to calculate traditional residual as opposed to shifting
+the the wire position and finding the DOCA to the shifted wire.
+
+------------------------------------------------------------------------
+r4711 | davidl | 2009-01-18 06:59:28 -0500 (Sun, 18 Jan 2009) | 5 lines
+Changed paths:
+   M /trunk/src/libraries/FDC/DFDCGeometry.cc
+
+Changed how numbers are represented for z positions of FDC wire planes to 
+reflect numbers in the XML geometry file. This change has no functional
+effect, it only serves to make it easier to compare the C++ code to the
+XML.
+
+------------------------------------------------------------------------
+r4730 | davidl | 2009-01-20 08:08:59 -0500 (Tue, 20 Jan 2009) | 2 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/hd_eventfilter/MyProcessor.cc
+   M /trunk/src/programs/Analysis/hd_eventfilter/MyProcessor.h
+   M /trunk/src/programs/Analysis/hd_eventfilter/hd_eventfilter.cc
+
+Updated hd_eventfilter skeleton program for writing out a filtered subset of HDDM events to an HDDM file.
+
+------------------------------------------------------------------------
+r4751 | marki | 2009-01-21 16:57:19 -0500 (Wed, 21 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/MyTrajectory.h
+
+add some more sanity checks, throw an exception if found insane
+------------------------------------------------------------------------
+r4758 | staylor | 2009-01-23 18:45:41 -0500 (Fri, 23 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+   M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.cc
+
+(1) Changed DKalmanFilter construction to use the new material map. (2) Changed process noise routine for forward tracks to use the material map. (3) Added new algorithm -- Brent's algorith, which uses inverse parabolic interpolation to find the doca to a wire. At least for axial wires this generally works better than the GoldenSection routine, which tended to bounce back and forth between steps without converging to the best answer. (4) reenabled fit for central tracks with no hits in the FDC.  Create a reference trajectory, but it needs to be regenerated for each iteration. My suspicion is that part of the reason why the central fit did not work very well in the past is that the doca was not being computed properly.  There is still a problem with Brent's algorithm for stereo wires.
+------------------------------------------------------------------------
+r4759 | staylor | 2009-01-23 18:46:23 -0500 (Fri, 23 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.h
+
+need pointer to material map
+------------------------------------------------------------------------
+r4773 | jonesrt | 2009-01-28 18:26:56 -0500 (Wed, 28 Jan 2009) | 5 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/hitFCal.c
+
+hitFCal.c [rtj]
+   - switched local variables x0 and y0 so that they contain horizontal (x0)
+     and vertical (y0) coordinates, instead of vice versa -- was confusing,
+     but does not change algorithm.
+
+------------------------------------------------------------------------
+r4777 | kornicer | 2009-01-30 13:13:39 -0500 (Fri, 30 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/FCAL/DFCALGeometry.cc
+   M /trunk/src/libraries/FCAL/DFCALGeometry.h
+   M /trunk/src/programs/Simulation/hdds/ForwardEMcal_HDDS.xml
+
+ForwardEMcal_HDDS, FCALGeometry: adjusted to count FCAL modules from south to north.
+------------------------------------------------------------------------
+r4778 | staylor | 2009-01-31 08:36:27 -0500 (Sat, 31 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/DANA/DApplication.cc
+   M /trunk/src/libraries/DANA/DApplication.h
+
+Get new material map from CalibDB
+------------------------------------------------------------------------
+r4783 | leverinb | 2009-02-03 14:56:48 -0500 (Tue, 03 Feb 2009) | 170 lines
+Changed paths:
+   M /trunk/src/libraries/BCAL/DBCALGeometry_factory.cc
+   M /trunk/src/libraries/BCAL/DBCALMCResponse_factory.cc
+   M /trunk/src/libraries/BCAL/DBCALPhoton_factory.cc
+   M /trunk/src/libraries/BCAL/DBCALPhoton_factory.h
+
+/*
+ *  DBCALPhoton_factory.cc
+ *  Hall D
+ *
+ *  Created by Matthew Shepherd on 7/23/07.
+ *
+ */
+
+#include "BCAL/DBCALPhoton_factory.h"
+#include "BCAL/DBCALShower.h"
+#include "BCAL/DBCALGeometry.h"
+//#include <iostream>
+//using namespace std;
+
+DBCALPhoton_factory::DBCALPhoton_factory()
+{
+
+     
+    m_scaleZ_p0GE =  8.25618e-01;
+    m_scaleZ_p1GE =  9.22446e-02;
+    m_scaleZ_p2GE =  1.27379e02;
+    m_scaleZ_p3GE = -1.21171e02;
+     
+    m_nonlinZ_p0GE =  5.0833e-02;
+    m_nonlinZ_p1GE = -2.66106e-02;
+    m_nonlinZ_p2GE =  5.22213e01;    
+    m_nonlinZ_p3GE =  6.88344e01;
+    
+    m_linZ_p0GE = -5.26475e-03;
+    m_linZ_p1GE = -2.47419e-02;
+    m_linZ_p2GE =  4.19082e01;    
+    m_linZ_p3GE =  6.69810e01;
+    
+   
+   //scaling parameter set for Z>370 (end of module)
+
+    m_scaleZ_p0 =  0.8284;
+    m_scaleZ_p1 =  3.3;
+    m_scaleZ_p2 =  422.5;
+    m_scaleZ_p3 =  12.04;
+    m_scaleZ_p4 = 0.0;
+     
+    m_nonlinZ_p0 =  0.05136;
+    m_nonlinZ_p1 = 1000.0;
+    m_nonlinZ_p2 =  453.6;    
+    m_nonlinZ_p3 = 17.21;
+
+    m_linZ_p0 = -7.166e-03;
+    m_linZ_p1 = -1000.0;
+    m_linZ_p2 = 482.0;
+    m_linZ_p3 = 24.19;
+
+}
+
+//------------------
+// brun
+//------------------
+jerror_t DBCALPhoton_factory::brun(JEventLoop *loop, int runnumber)
+{
+    
+    vector<const DBCALGeometry*> bcalGeomVect;
+    eventLoop->Get( bcalGeomVect );
+    const DBCALGeometry& bcalGeom = *(bcalGeomVect[0]);
+
+    m_bcalIR = bcalGeom.BCALINNERRAD;
+    m_zTarget = 65;                    // global target position -- should come from database!
+    
+    return NOERROR;
+}
+
+//------------------
+// evnt
+//------------------
+jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
+{
+    
+    vector< const DBCALShower* > showerVect;
+    loop->Get( showerVect );
+    
+    for( vector< const DBCALShower* >::iterator showItr = showerVect.begin();
+         showItr != showerVect.end();
+         ++showItr ){
+                
+        double xSh = (**showItr).x;
+        double ySh = (**showItr).y;
+        double zSh = (**showItr).z;
+	//     int nCell = (**showItr).N_cell;        
+
+        // get z where shower enters BCAL (this corresponds to generated z
+        // in tuning MC)
+        double zEntry = zSh - ( ( zSh - m_zTarget ) * 
+                                ( 1 - m_bcalIR / ( sqrt( xSh * xSh + ySh * ySh ) ) ) ); 
+        
+        // calibrate energy:
+        // Energy calibration has a z dependence -- the
+        // calibration comes from fitting E_rec / E_gen to scale * E_gen^nonlin
+        // for slices of z.  These fit parameters (scale and nonlin) are then plotted 
+        // as a function of z and fit.
+    
+  if( zEntry < 370.0 ) {
+ scale = m_scaleZ_p0GE * (1 + m_scaleZ_p1GE *(exp( -0.5 *(zEntry - m_scaleZ_p2GE )* (zEntry - m_scaleZ_p2GE ) / (m_scaleZ_p3GE * m_scaleZ_p3GE)   ) ) ) ;
+
+
+  nonlin =( m_nonlinZ_p0GE  + m_nonlinZ_p1GE *(exp( -0.5 *(zEntry - m_nonlinZ_p2GE )* (zEntry - m_nonlinZ_p2GE ) / (m_nonlinZ_p3GE * m_nonlinZ_p3GE)   ) ) ) ;
+
+
+  lin = ( m_linZ_p0GE  + m_linZ_p1GE *(exp( -0.5 *(zEntry - m_linZ_p2GE )* (zEntry - m_linZ_p2GE ) / (m_linZ_p3GE * m_linZ_p3GE)   ) ) ) ;
+
+	//	nonlin = 0.0; // fixed value for debug
+	//	   lin = 0.0; // fixed value for debug
+   	//       scale = 1.0; // fixed value for debug
+  }
+  
+        if( zEntry >= 370.0 ) {
+            scale = m_scaleZ_p0 * (1 - m_scaleZ_p1 *(exp( -0.5 *(zEntry - m_scaleZ_p2 )* (zEntry - m_scaleZ_p2 ) / (m_scaleZ_p3 * m_scaleZ_p3)   ) ) ) ;
+
+  nonlin = m_nonlinZ_p0 * (1 - m_nonlinZ_p1 *(exp( -0.5 *(zEntry - m_nonlinZ_p2 )* (zEntry - m_nonlinZ_p2 ) / (m_nonlinZ_p3 * m_nonlinZ_p3)   ) ) ) ;
+
+
+  lin = m_linZ_p0 * (1 - m_linZ_p1 *(exp( -0.5 *(zEntry - m_linZ_p2 )* (zEntry - m_linZ_p2 ) / (m_linZ_p3 * m_linZ_p3)   ) ) ) ;
+
+
+ //  cout << scale << ' ' << nonlin << ' ' << lin << endl;    
+	}
+
+
+	// if( zEntry < m_zTarget ) zEntry = m_zTarget;
+
+        //end of BCAL calibration        
+
+
+        
+        // now turn E_rec into E_gen -->> E_gen = ( E_rec / scale ) ^ ( 1 / ( 1 + nonlin ) )
+        double energy = pow( ((**showItr).E - lin ) / scale, 1 / ( 1 + nonlin ) );
+        
+        
+        double pScale = energy / 
+            sqrt( xSh * xSh + ySh * ySh + ( zSh - m_zTarget ) * ( zSh - m_zTarget ) );
+        
+        DBCALPhoton* photon = new DBCALPhoton( (**showItr).id );
+        
+        photon->setLorentzMomentum( DLorentzVector( xSh * pScale, 
+                                                    ySh * pScale, 
+                                                    ( zSh - m_zTarget ) * pScale, 
+                                                    energy ) );
+        
+        photon->setShowerPosition( DVector3( xSh, ySh, zSh ) );
+        
+        photon->setFitLayPoint( DVector3( (**showItr).Apx_x,
+                                          (**showItr).Apx_y,
+                                          (**showItr).Apx_z ) );
+        
+        photon->setFitLayPointErr( DVector3( (**showItr).error_Apx_x,
+                                             (**showItr).error_Apx_y,
+                                             (**showItr).error_Apx_z ) );
+
+        photon->setFitLaySlope( DVector3( (**showItr).Cx,
+                                          (**showItr).Cy,
+                                          (**showItr).Cz ) );
+        
+        photon->setFitLaySlopeErr( DVector3( (**showItr).error_Cx,
+                                             (**showItr).error_Cy,
+                                             (**showItr).error_Cz ) );
+        
+        _data.push_back( photon );
+    }
+    
+    return NOERROR;
+}
+
+------------------------------------------------------------------------
+r4784 | davidl | 2009-02-03 16:19:03 -0500 (Tue, 03 Feb 2009) | 11 lines
+Changed paths:
+   A /trunk/src/programs/Simulation/plugins
+   A /trunk/src/programs/Simulation/plugins/hdparsim
+   A /trunk/src/programs/Simulation/plugins/hdparsim/DFactoryGeneratorHDParSim.h
+   A /trunk/src/programs/Simulation/plugins/hdparsim/DParticle_factory_HDParSim.cc
+   A /trunk/src/programs/Simulation/plugins/hdparsim/DParticle_factory_HDParSim.h
+   A /trunk/src/programs/Simulation/plugins/hdparsim/DPhoton_factory_HDParSim.cc
+   A /trunk/src/programs/Simulation/plugins/hdparsim/DPhoton_factory_HDParSim.h
+   A /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolution.cc
+   A /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolution.h
+   A /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolutionGEANT.cc
+   A /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolutionGEANT.h
+   A /trunk/src/programs/Simulation/plugins/hdparsim/Makefile
+   A /trunk/src/programs/Simulation/plugins/hdparsim/getwebfile.c
+   A /trunk/src/programs/Simulation/plugins/hdparsim/getwebfile.h
+
+Added plugins directory to Simulations.
+
+Added hdparsim plugin to Simulations/plugins.
+
+This plugin re-implements the HDParSim program as a plugin
+that produces DParticle objects and DPhoton objects both
+with the HDParSim tag. This will allow the same tree/hist
+maker programs to be used with parametrically simulated data
+using a DANA program and the output of a physics generator
+(HDDM format).
+
+------------------------------------------------------------------------
+r4785 | shepherd | 2009-02-03 21:02:00 -0500 (Tue, 03 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/BMS/osrelease.pl
+
+added CentOS to avoid annoyoing messages
+------------------------------------------------------------------------
+r4786 | shepherd | 2009-02-03 21:02:36 -0500 (Tue, 03 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/BMS/Makefile.DANA
+
+changed order to resolve linking problem
+------------------------------------------------------------------------
+r4787 | davidl | 2009-02-05 09:04:13 -0500 (Thu, 05 Feb 2009) | 5 lines
+Changed paths:
+   M /trunk/src/programs/Utilities/Makefile
+
+Added the following programs to standard build of Utilities directory:
+- hddm hddm_cull_events
+- hddm_merge_events
+- hddm_merge_files
+
+------------------------------------------------------------------------
+r4788 | somov | 2009-02-05 09:26:50 -0500 (Thu, 05 Feb 2009) | 6 lines
+Changed paths:
+   A /trunk/src/programs/Simulation/hdds/StartCntr_HDDS.xml_40bar_fiu
+
+A new start counter geometry with 40 scintillator
+bars prepared by Werner. The minimum distance between
+the beamline and bent scintillators is about 1 cm.
+
+ 
+
+------------------------------------------------------------------------
+r4789 | somov | 2009-02-05 09:27:02 -0500 (Thu, 05 Feb 2009) | 6 lines
+Changed paths:
+   A /trunk/src/programs/Simulation/hdds/main_HDDS.xml_40bar_fiu
+
+A new start counter geometry with 40 scintillator
+bars prepared by Werner. The minimum distance between
+the beamline and bent scintillators is about 1 cm.
+
+ 
+
+------------------------------------------------------------------------
+r4791 | davidl | 2009-02-05 13:05:23 -0500 (Thu, 05 Feb 2009) | 10 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant
+   D /trunk/src/programs/Simulation/HDGeant/hddsGeant3.F
+   M /trunk/src/programs/Simulation/hdds/Makefile
+
+Modified Makefile in hdds directory to attempt installation
+of hddsGeant3.F into ../HDGeant on make install if the ../HDGeant
+directory exists.
+
+Removed hddsGeant3.F file from HDGeant directory to force
+regeneration when code is first checked out.
+
+Added hddsGeant3.F file to svn:ignore property of HDGeant
+directory so it is ignored by most svn commands.
+
+------------------------------------------------------------------------
+r4792 | davidl | 2009-02-05 13:24:15 -0500 (Thu, 05 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/hd_dump/hd_dump.cc
+
+Add standard JANA options to Usage statement for hd_dump
+------------------------------------------------------------------------
+r4793 | davidl | 2009-02-05 13:28:30 -0500 (Thu, 05 Feb 2009) | 7 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.cc
+   M /trunk/src/programs/Analysis/hdview2/trk_mainframe.cc
+
+
+- Set large s limit for track inspector to always be 2.0
+  (this should probably be thought about more)
+
+- Fixed bug where DParticle tag was not being honored
+  when drawing DParticle tracks
+
+------------------------------------------------------------------------
+r4794 | davidl | 2009-02-05 13:32:12 -0500 (Thu, 05 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/PID/DParticle_factory_THROWN.cc
+
+Add DMCThrown object as an associated object to DParticle objects created by the THROWN tag factory.
+------------------------------------------------------------------------
+r4796 | davidl | 2009-02-06 12:01:11 -0500 (Fri, 06 Feb 2009) | 2 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/hd_dump/MyProcessor.cc
+
+Fixed bug in how hd_dump printed associated objects. 
+
+------------------------------------------------------------------------
+r4799 | marki | 2009-02-06 14:05:33 -0500 (Fri, 06 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/combinedResidFunc.h
+
+add get function for FDC details
+------------------------------------------------------------------------
+r4800 | davidl | 2009-02-06 15:35:30 -0500 (Fri, 06 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/Makefile
+
+Have the default target that 'make' invokes in the subdirectories explicitly be 'install' when doing a top-level build.
+------------------------------------------------------------------------
+r4801 | davidl | 2009-02-06 15:57:29 -0500 (Fri, 06 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/doc/THTML/gendoc.cc
+   M /trunk/src/doc/THTML/generate_root_doc.csh
+
+Tweaking some to try and get ROOT THTML package to at least documentJANA classes. Not everything is working and this still depends on changes not yet committed to the JANA repository. Nevertheless, I commit these now so that I don't lose the changes and can become re-aligned with the repository.
+------------------------------------------------------------------------
+r4802 | davidl | 2009-02-06 16:00:45 -0500 (Fri, 06 Feb 2009) | 4 lines
+Changed paths:
+   A /trunk/src/programs/Simulation/HDParSim/DEventProcessor_HDParSim.cc
+   A /trunk/src/programs/Simulation/HDParSim/DEventProcessor_HDParSim.h
+   M /trunk/src/programs/Simulation/HDParSim/Makefile
+   M /trunk/src/programs/Simulation/HDParSim/hdparsim.cc
+
+This change represents some work that was started and not quite finished
+on the HDParSim program for doing parameteric simulations. It is likely 
+to be superseded by the Simulations/plugins/hdparsim plugin.
+
+------------------------------------------------------------------------
+r4803 | davidl | 2009-02-06 16:27:09 -0500 (Fri, 06 Feb 2009) | 40 lines
+Changed paths:
+   M /trunk/src/libraries/PID/DParticle_factory_THROWN.cc
+   M /trunk/src/libraries/PID/DParticle_factory_THROWN.h
+   D /trunk/src/libraries/TRACKING/DSeed.h
+   M /trunk/src/libraries/TRACKING/DTrack.h
+   M /trunk/src/libraries/TRACKING/DTrackCandidate.h
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_THROWN.cc
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_THROWN.h
+   M /trunk/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitter.h
+   M /trunk/src/libraries/TRACKING/DTrackFitter_factory.h
+   A /trunk/src/libraries/TRACKING/DTrackHitSelector.cc
+   A /trunk/src/libraries/TRACKING/DTrackHitSelector.h
+   A /trunk/src/libraries/TRACKING/DTrackHitSelectorALT1.cc
+   A /trunk/src/libraries/TRACKING/DTrackHitSelectorALT1.h
+   A /trunk/src/libraries/TRACKING/DTrackHitSelector_factory.h
+   A /trunk/src/libraries/TRACKING/DTrackHitSelector_factory_ALT1.h
+   D /trunk/src/libraries/TRACKING/DTrackHit_factory_MC.cc
+   D /trunk/src/libraries/TRACKING/DTrackHit_factory_MC.h
+   M /trunk/src/libraries/TRACKING/DTrack_factory.cc
+   M /trunk/src/libraries/TRACKING/DTrack_factory.h
+   D /trunk/src/libraries/TRACKING/DTrack_factory_ALT1.cc
+   D /trunk/src/libraries/TRACKING/DTrack_factory_ALT1.h
+   M /trunk/src/libraries/TRACKING/DTrack_factory_THROWN.cc
+   M /trunk/src/libraries/TRACKING/DTrack_factory_THROWN.h
+   D /trunk/src/libraries/TRACKING/Dmctrk_hit.cc
+   D /trunk/src/libraries/TRACKING/Dmctrk_hit.h
+   D /trunk/src/libraries/TRACKING/Dtrk_hit.h
+   M /trunk/src/libraries/TRACKING/TRACKING_init.cc
+   M /trunk/src/programs/Analysis/plugins/acceptance_hists/DEventProcessor_acceptance_hists.cc
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/DTrackLSFitter.cc
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/DTrackLSFitter.h
+
+
+This commit includes a medium-sized reorganization of some of the tracking code.
+Included are the following:
+
+- Added DTrackHitSelector class and associated factory classes to make
+  the hit selection algorithm central and separate from the track fitting
+  algorithms in the DTrackFitter classes.
+
+- Added ChiSq() pure virtual method to DTrackFitter class. This allows 
+  other classes to more easily calculate a chisq/Ndof in the same way
+  the fitter does without actually invoking the fitter.
+
+- Updated the LSLM fitter plugin to include a ChiSq method as described
+  above. The routine only returns zeros at the moment and will need
+  to be updated.
+
+- Re-tooled the DTrackCandidate:THROWN, DTrack:THROWN, and
+  DParticle:THROWN factories to all work almost exactly the same
+  and use the DTrackHitSelector and DTrackFitter classes to get the
+  hits an chisq/Ndof values in a consistent way. This allows one to
+  easily insert the thrown values at any of the 3 tracking stages for
+  testing of the later stages.
+
+- Added chisq and Ndof fields to DTrackCandidate class
+
+- Removed the following files which were old and apparently no longer
+  used:
+	libraries/TRACKING/DTrack_factory_ALT1.h
+	libraries/TRACKING/DTrack_factory_ALT1.cc
+	libraries/TRACKING/Dmctrk_hit.h
+	libraries/TRACKING/Dtrk_hit.h
+	libraries/TRACKING/DTrackHit_factory_MC.cc
+	libraries/TRACKING/DTrackHit_factory_MC.h
+	libraries/TRACKING/DSeed.h
+	libraries/TRACKING/Dmctrk_hit.cc
+
+- Updated acceptance_hists plugin to use DMCTrackHit rather than the
+  deprecated DTrackHit objects
+
+
+------------------------------------------------------------------------
+r4804 | staylor | 2009-02-06 18:48:06 -0500 (Fri, 06 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DMaterialMap.cc
+   M /trunk/src/libraries/HDGEOMETRY/DMaterialMap.h
+   M /trunk/src/libraries/HDGEOMETRY/DMaterialMapCalibDB.cc
+
+Changed routines to get Z,A, and density from the increasingly poorly named radlen file and do the interpolations over these additions to the table.  Fixed an inefficiency in the interpolation routines that resulted in many unnecessary calculations.
+------------------------------------------------------------------------
+r4805 | staylor | 2009-02-06 18:51:23 -0500 (Fri, 06 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+Add another version of Brent's algorithm for stepping in z.   Get material properties from the DMaterialMap::GetMaterialProperties routine when calculating dEdx.
+------------------------------------------------------------------------
+r4810 | marki | 2009-02-09 16:46:31 -0500 (Mon, 09 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/MyTrajectory.cc
+
+add more debugging print-out
+------------------------------------------------------------------------
+r4812 | marki | 2009-02-10 15:01:31 -0500 (Tue, 10 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/combinedResidFunc.cc
+
+comment out lorentz correction
+------------------------------------------------------------------------
+r4815 | marki | 2009-02-10 15:20:01 -0500 (Tue, 10 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/combinedResidFunc.cc
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/combinedResidFunc.h
+
+add errors; scale the residuals
+------------------------------------------------------------------------
+r4830 | davidl | 2009-02-12 09:22:14 -0500 (Thu, 12 Feb 2009) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.cc
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.h
+
+- Turned back on drawing of FCAL hits
+
+-Added drawing of BCAL readout segments with truth hits.
+
+------------------------------------------------------------------------
+r4831 | davidl | 2009-02-12 10:47:01 -0500 (Thu, 12 Feb 2009) | 3 lines
+Changed paths:
+   A /trunk/src/programs/Analysis/plugins/photoneff_hists
+   A /trunk/src/programs/Analysis/plugins/photoneff_hists/DEventProcessor_photoneff_hists.cc
+   A /trunk/src/programs/Analysis/plugins/photoneff_hists/DEventProcessor_photoneff_hists.h
+   A /trunk/src/programs/Analysis/plugins/photoneff_hists/Makefile
+   A /trunk/src/programs/Analysis/plugins/photoneff_hists/photon.h
+
+A plugin for making a ROOT tree that can be used to measure photon
+reconstruction efficiency and resolution.
+
+------------------------------------------------------------------------
+r4859 | davidl | 2009-02-15 13:08:57 -0500 (Sun, 15 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/genphoton/genphoton.cc
+
+replaced uint with unsigned int in genphoton
+------------------------------------------------------------------------
+r4860 | davidl | 2009-02-15 13:12:03 -0500 (Sun, 15 Feb 2009) | 2 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DPhoton_factory_HDParSim.cc
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DPhoton_factory_HDParSim.h
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolutionGEANT.cc
+   A /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolutionGEANTphoton.cc
+   A /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolutionGEANTphoton.h
+
+Updated hdparsim plugin to parametric simulated photon reconstruction using resolutions and efficiencies obtained from a full GEANT simulation/reconstruction.
+
+------------------------------------------------------------------------
+r4861 | davidl | 2009-02-15 13:15:32 -0500 (Sun, 15 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.cc
+
+Only create/draw BCAL/FCAL polygons if the BCAL/FCAL checkbutton is on.
+------------------------------------------------------------------------
+r4866 | zihlmann | 2009-02-15 14:35:31 -0500 (Sun, 15 Feb 2009) | 5 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/Makefile
+
+change make file to properly copy hddsGeant3.F to the geant directory
+and hddsroot.h to the geometry library directory
+hddsroot.h get generated by a new code hdds-root_h.cpp derived from 
+hdds-root.cpp
+
+------------------------------------------------------------------------
+r4867 | zihlmann | 2009-02-15 14:36:48 -0500 (Sun, 15 Feb 2009) | 2 lines
+Changed paths:
+   A /trunk/src/programs/Simulation/hdds/hdds-root_h.cpp
+
+code to generate hddsroot.h file for the root geometry
+
+------------------------------------------------------------------------
+r4868 | zihlmann | 2009-02-15 14:40:31 -0500 (Sun, 15 Feb 2009) | 6 lines
+Changed paths:
+   A /trunk/src/libraries/HDGEOMETRY/DRootGeom.cc
+   A /trunk/src/libraries/HDGEOMETRY/DRootGeom.h
+   M /trunk/src/libraries/HDGEOMETRY/Makefile
+
+new class DRootGeom that takes advantage of the root geomtry build
+of the GlueX detector. The method DRootGeom::FindMat(double *x) returns
+a structure VolMat containing the material properties of the volume
+at the location given by the pointer x. The properties are A, Z, Density
+and Radiation Length
+
+------------------------------------------------------------------------
+r4869 | davidl | 2009-02-16 09:50:03 -0500 (Mon, 16 Feb 2009) | 4 lines
+Changed paths:
+   M /trunk/src/Makefile
+
+Only add the "install" target to MAKECMDGOALS if the variable
+is empty indicating that the user did not specify a target.
+
+
+------------------------------------------------------------------------
+r4870 | davidl | 2009-02-16 14:07:19 -0500 (Mon, 16 Feb 2009) | 2 lines
+Changed paths:
+   M /trunk/src/BMS/Makefile.shlib
+
+Fixed bug in Makefile.shlib where bin directory was being made rather than the lib directory. 
+
+------------------------------------------------------------------------
+r4871 | staylor | 2009-02-17 08:12:07 -0500 (Tue, 17 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+Added new SwimToPlane method that uses the forward and central trajectory information.  Added dependence on angle of incidence to track projection matrices for FDC hits.  Make radiation length an argument to GetProcessNoise routines.
+------------------------------------------------------------------------
+r4872 | davidl | 2009-02-17 09:54:55 -0500 (Tue, 17 Feb 2009) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolutionGEANT.cc
+
+Changed it so that when resolutions or efficiency are request with momentum
+outside of the range of the table, the values from the highest momentum
+edge are returned instead of just zero.
+
+------------------------------------------------------------------------
+r4875 | staylor | 2009-02-17 13:06:54 -0500 (Tue, 17 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DRootGeom.cc
+   M /trunk/src/libraries/HDGEOMETRY/DRootGeom.h
+
+Added alternate method FindMat that preserves const-ness for obtaining Z,A,density,radiation length given a position DVector3 pos.
+------------------------------------------------------------------------
+r4876 | shepherd | 2009-02-17 22:35:28 -0500 (Tue, 17 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/BCAL/DBCALMCResponse_factory.cc
+   M /trunk/src/libraries/BCAL/DBCALMCResponse_factory.h
+
+rework BCAL reponse to parametrize the threshold in terms of characteristics of the readout device
+------------------------------------------------------------------------
+r4877 | davidl | 2009-02-18 13:45:55 -0500 (Wed, 18 Feb 2009) | 3 lines
+Changed paths:
+   M /trunk/src/Makefile
+
+Add the hdds directory to the DIRS list ahead of the libraries directory so that the hddsroot.h file will be made and installed into the libraries/HDGEOMETRY directory before make is actually run there.
+
+
+------------------------------------------------------------------------
+r4879 | davidl | 2009-02-19 08:50:27 -0500 (Thu, 19 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/bggen/code/Makefile
+
+Supress linker warnings on Mac OS X 10.5 for bggen.
+------------------------------------------------------------------------
+r4881 | remitche | 2009-02-20 10:58:54 -0500 (Fri, 20 Feb 2009) | 2 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/gustep.F
+
+Added an ntuple (FCAL_SHOWER_PROFILE_NTUPLE) that divides the FCAL into 1x1x1cm cubes and records energy deposition in each cube.  This will give us more detailed information about FCAL shower shapes. 
+
+------------------------------------------------------------------------
+r4882 | davidl | 2009-02-20 11:43:20 -0500 (Fri, 20 Feb 2009) | 7 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/invariant_mass_hists/DEventProcessor_invariant_mass_hists.cc
+   M /trunk/src/programs/Analysis/plugins/invariant_mass_hists/DEventProcessor_invariant_mass_hists.h
+
+Updated invariant_mass_hists plugin to work with DPhoton and DParticle objects now. It makes a few example histos including:
+
+invariant mass of 2 gammas
+inavariant mass of pi+ pi-
+missing mass from beam photon and recoil proton
+center of mass energy sqrt(s)
+
+------------------------------------------------------------------------
+r4883 | remitche | 2009-02-20 12:28:36 -0500 (Fri, 20 Feb 2009) | 2 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/gustep.F
+
+Minor change to last commit:  Forgot to "save" the energy deposition sum between gustep calls (for some reason it worked anyway). 
+
+------------------------------------------------------------------------
+r4884 | davidl | 2009-02-20 13:30:32 -0500 (Fri, 20 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolutionGEANT.cc
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolutionGEANT.h
+
+Use separate resolution/efficiency maps for protons and pions
+------------------------------------------------------------------------
+r4890 | davidl | 2009-02-24 08:23:41 -0500 (Tue, 24 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolution.cc
+
+Fixed bug where photon total energy resolution was being used as transverse momentum resolution for smearing.
+------------------------------------------------------------------------
+r4891 | davidl | 2009-02-24 08:43:40 -0500 (Tue, 24 Feb 2009) | 3 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/Makefile
+
+Have Makefile in hdds make the platform specific bin directory before trying
+to install into it.
+
+------------------------------------------------------------------------
