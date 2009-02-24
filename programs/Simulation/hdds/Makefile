@@ -28,6 +28,7 @@ XML_SOURCE = BarrelEMcal_HDDS.xml BeamLine_HDDS.xml CentralDC_HDDS.xml\
 all: hddsGeant3.F hddsroot.C hddsroot.h
 
 install: hdds-geant hdds-root hdds-mcfast hdds-root_h hddsGeant3.F hddsroot.h
+	mkdir -p $(HALLD_HOME)/bin/$(BMS_OSNAME)
 	cp $^ $(HALLD_HOME)/bin/$(BMS_OSNAME)
 	if [ -e ../HDGeant ] ; then cp hddsGeant3.F ../HDGeant/hddsGeant3.F ; fi
 	if [ -e ../../../libraries/HDGEOMETRY ] ; then cp hddsroot.h ../../../libraries/HDGEOMETRY/hddsroot.h ; fi
