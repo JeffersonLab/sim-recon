@@ -20,6 +20,11 @@ using namespace jana;
 #include "DReferenceTrajectory.h"
 #include "HDGEOMETRY/DLorentzMapCalibDB.h"
 
+#include "PID/DParticle_factory.h"
+
+#include "TRACKING/DMCThrown.h"
+
+
 #define CDC_OUTER_RADIUS 57.0
 
 //------------------
@@ -64,7 +69,11 @@ jerror_t DTrack_factory_ALT3::brun(JEventLoop *loop, int runnumber)
   lorentz_def=dapp->GetLorentzDeflections();
   
   // table of material properties as a function of position
-  material= dapp->GetMaterialMap();
+  //material= dapp->GetMaterialMap();
+
+  // Root Geometry
+  RootGeom=dapp->GetRootGeom();
+
   
   dapp->Lock();
   cdc_residuals=(TH2F*)gROOT->FindObject("cdc_residuals");
@@ -130,16 +139,23 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
   loop->Get(cdctrackhits);
   loop->Get(fdctrackhits,"CORRECTED");	
 
+  //vector<const DMCThrown*>tracks;
+  //vector<const DTrack*>tracks;
+  //vector<const DParticle*>tracks;
+  //loop->Get(tracks);
+ 
   // Loop over track candidates
-  for(unsigned int i=0; i<trackcandidates.size(); i++){ 
-    const DTrackCandidate *tc = trackcandidates[i];    
-    DVector3 pos = tc->position();
-    DVector3 mom = tc->momentum(); 	
-
-    if (isnan(pos.Mag()) || isnan(mom.Mag()) || mom.Mag()==0. 
-	|| pos.Mag()==0.){
-      _DBG_<< "Invalid seed data ! " <<endl;
-      continue;
+  //if (tracks.size()==1)//temporary for debugging
+    {
+    for(unsigned int i=0; i<trackcandidates.size(); i++){ 
+      const DTrackCandidate *tc = trackcandidates[i];    
+      DVector3 pos = tc->position();
+      DVector3 mom = tc->momentum(); 	
+      
+      if (isnan(pos.Mag()) || isnan(mom.Mag()) || mom.Mag()==0. 
+	  || pos.Mag()==0.){
+	_DBG_<< "Invalid seed data ! " <<endl;
+	continue;
     }
 
     vector<const DFDCSegment *>segments;
@@ -152,7 +168,9 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
     unsigned int num_matched_hits=0;
     
     // Initialize Kalman filter with B-field
-    DKalmanFilter fit(bfield,dgeom,lorentz_def,material);
+    DKalmanFilter fit(bfield,dgeom,lorentz_def,
+		      //material,
+		      RootGeom);
 
     for (unsigned int k=0;k<cdchits.size();k++){
       fit.AddCDCHit(cdchits[k]);
@@ -207,6 +225,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 
     if (num_matched_hits>=MIN_HITS){
     // Set the initial parameters from the track candidate
+      //fit.SetSeed(tc->charge(),tracks[0]->position(),tracks[0]->momentum());
       fit.SetSeed(tc->charge(),tc->position(),tc->momentum());
 
       // Kalman filter 
@@ -250,6 +269,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	_data.push_back(track);
       }
     }
+  }
   }
   
 

@@ -16,6 +16,7 @@ using namespace jana;
 #include "HDGEOMETRY/DGeometry.h"
 #include "HDGEOMETRY/DLorentzDeflections.h"
 #include "HDGEOMETRY/DMaterialMap.h"
+#include "HDGEOMETRY/DRootGeom.h"
 #include "DTrack.h"
 #include "DReferenceTrajectory.h"
 #include "DCoordinateSystem.h"
@@ -52,6 +53,7 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
   jerror_t erun(void);
 
   vector<const DTrackCandidate*>     trackcandidates;
+  //vector<const DTrack*> trackcandidates;
   vector<const DCDCTrackHit* >       cdctrackhits;
   vector<const DFDCPseudo* >         fdctrackhits;
   vector<const DCDCTrackHit* >       cdchits_on_track;
@@ -64,6 +66,7 @@ class DTrack_factory_ALT3:public JFactory<DTrack>{
   const DGeometry *dgeom;
   const DLorentzDeflections *lorentz_def;  // pointer to lorentz correction map
   const DMaterialMap *material;
+  const DRootGeom *RootGeom;
 
   bool DEBUG_HISTS;
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
