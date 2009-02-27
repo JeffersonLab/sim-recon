@@ -40,7 +40,7 @@ typedef struct{
   DVector3 pos;
   DMatrix *S;
   DMatrix *J,*Q;
-  double s;
+  double s,t;
   double A,Z,density,X0;
 }DKalmanState_t;
 
@@ -53,7 +53,8 @@ class DKalmanFilter{
  public:
   DKalmanFilter(const DMagneticFieldMap *bfield,const DGeometry *dgeom,
 		const DLorentzDeflections *lorentz_def,
-		const DMaterialMap *material);
+		//const DMaterialMap *material, 
+		const DRootGeom *RootGeom);
   ~DKalmanFilter(){
     for (unsigned int i=0;i<hits.size();i++)
       delete hits[i];
@@ -133,16 +134,19 @@ class DKalmanFilter{
   double Step(double oldz,double newz, double dEdx,DMatrix &S);
   jerror_t StepJacobian(double oldz,double newz,DMatrix S,double dEdx,
 		      DMatrix &J);
-  jerror_t CalcDerivAndJacobian(double z,DMatrix S,double dEdx,
+  jerror_t CalcDerivAndJacobian(double z,double dz,DMatrix S,double dEdx,
 				DMatrix &J,DMatrix &D);
-  jerror_t CalcDeriv(double z,DMatrix S, double dEdx, DMatrix &D);
+  jerror_t CalcDeriv(double z,double dz,DMatrix S, double dEdx, DMatrix &D);
   jerror_t CalcDeriv(double ds,DVector3 pos,DVector3 &dpos,DVector3 wire_orig,
 		     DVector3 wiredir,DMatrix S,double dEdx,DMatrix &D1);
 
   jerror_t StepJacobian(DVector3 pos,DVector3 wire_pos,DVector3 wiredir,
 			double ds,DMatrix S, double dEdx,DMatrix &J);
-  jerror_t Step(DVector3 &pos,DVector3 wire_pos,DVector3 wiredir,double ds,
+  double Step(DVector3 &pos,DVector3 wire_pos,DVector3 wiredir,double ds,
 		DMatrix &S, double dEdx);
+  jerror_t FixedStep(DVector3 &pos,DVector3 wire_pos,DVector3 wiredir,double ds,
+		     DMatrix &S, double dEdx);
+
   jerror_t CalcDerivAndJacobian(double ds,DVector3 pos,DVector3 &dpos,
 				DVector3 wire_pos,
 				DVector3 wiredir,
@@ -169,9 +173,9 @@ class DKalmanFilter{
   jerror_t GoldenSection(double &z,double dz,double dEdx,
 			 DVector3 origin, DVector3 dir,DMatrix &S);
   double BrentsAlgorithm(double ds1,double ds2,
-			 double dedx,DVector3 pos,DVector3 origin,
+			 double dedx,DVector3 &pos,DVector3 origin,
 			 DVector3 dir,  
-			 DMatrix Sc);
+			 DMatrix &Sc);
   double BrentsAlgorithm(double z,double dz,
 			 double dedx,DVector3 origin,
 			 DVector3 dir,DMatrix S);
@@ -180,7 +184,8 @@ class DKalmanFilter{
   const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   const DGeometry *geom;
   const DLorentzDeflections *lorentz_def;  // pointer to lorentz correction map
-  const DMaterialMap *material; // pointer to material map
+  //const DMaterialMap *material; // pointer to material map
+  const DRootGeom *RootGeom;
  
   // list of hits on track
   vector<DKalmanHit_t*>hits;
