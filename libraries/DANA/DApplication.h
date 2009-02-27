@@ -17,7 +17,8 @@ using namespace jana;
 class DMagneticFieldMap;
 class DLorentzDeflections;
 class DGeometry;
-class DMaterialMap;
+//class DMaterialMap;
+class DRootGeom;
 
 class DApplication:public JApplication{
 
@@ -33,15 +34,16 @@ class DApplication:public JApplication{
 		
 		DMagneticFieldMap* GetBfield(void){return bfield;}
 		DLorentzDeflections *GetLorentzDeflections(void){return lorentz_def;}
-		DMaterialMap *GetMaterialMap(void){return material;}
+		//DMaterialMap *GetMaterialMap(void){return material;}
 		DGeometry* GetDGeometry(unsigned int run_number);
+		DRootGeom *GetRootGeom(){return RootGeom;}
 
 	protected:
 	
 		DMagneticFieldMap *bfield;
 		DLorentzDeflections *lorentz_def;
-		DMaterialMap *material;
-		
+  		//DMaterialMap *material;
+	 	DRootGeom *RootGeom;	
 		vector<DGeometry*> geometries;
 		
 	private:
