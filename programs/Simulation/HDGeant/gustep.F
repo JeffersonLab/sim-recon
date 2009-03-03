@@ -720,6 +720,25 @@ c
       endif
 c
 c
+#elif defined FCAL_RADIATION_HISTOGRAMS
+c
+c       book histograms
+c
+      if (.not.HEXIST(1000)) then
+        call HBOOK2(1000,'rad',240,-120.,120.,240,-120.,120.,0)
+        do iz = 1, 60
+          call HBOOK2(1620+iz-1,'rad',240,-120.,120.,240,-120.,120.,0)
+        enddo
+      endif
+c
+c       record energy depositions
+c
+      if (cnames(NLEVEL).eq.'LGBL'.and.DESTEP.gt.0.0) then
+        call HFILL(1000,             vect(1),vect(2),DESTEP)
+        call HFILL(1000+int(vect(3)),vect(1),vect(2),DESTEP)
+      endif
+c
+c
 #elif defined BCAL_RESOLUTION_NTUPLE
       if (.not.HEXIST(ntbcal)) then
         call HBNT(ntbcal,'BCal shower energy deposition','')
