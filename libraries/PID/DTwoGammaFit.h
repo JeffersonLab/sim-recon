@@ -20,33 +20,48 @@ class DTwoGammaFit:public DKinematicData {
                 DTwoGammaFit();
                 DTwoGammaFit(const JObject::oid_t id);
 		~DTwoGammaFit();
-
+// Getters: 
                inline double getChi2() const { return fChi2; }
+
                inline double getProb() const { return fProb; }
-               inline double getPull(const int i) const { return fPulls[i]; }
+
+// Puls of px1, ... ,pz2
+               inline double getPull(const int i) const { return fPulls[i]; } 
+
+// mass before the fit
+               inline double getUMass() const { return fUMass; }  
+
 // the origin of the  photon (FCAL, BCAL, charged)
-               inline int getChildTag(int child) const { return fTags[child]; }
+               inline DPhoton::PhotonTag getChildTag(int child) const { return fTags[child]; }
+
+// look-up children
                inline oid_t getChildID(int child)  const { return fIDs[child]; }
 
+// photon after the fit
                const DKinematicData* getChildFit(const int i) const ;
-               const DLorentzVector* getChildMom(const int i) const ;
 
+// Get momenta before the fit
+               const DLorentzVector* getChildMom(const int i) const ; 
+
+// Setters:
                void setChi2(double const aChi2);  
                void setProb(double const aProb);  
                void setPulls(double const aPull, const int i);  
-               void setChildTag(const int aTag, const int i ); 
+               void setUMass(double const uMass);  
+               void setChildTag(const DPhoton::PhotonTag aTag, const int i ); 
                void setChildID(const JObject::oid_t aID, const int i ); 
                void setChildFit(const DKinematicData& aChildFit, const int i);  
-               void setChildMom(const DLorentzVector& aChildFit, const int i);  
+               void setChildMom(const DLorentzVector& aChildMom, const int i);  
 
 	private:
 
                JObject::oid_t fIDs[2];  
-               int fTags[2]; // tag children origin (FCAL/BCAL/charged)
+               DPhoton::PhotonTag fTags[2]; // tag children origin (FCAL/BCAL/charged)
                double fProb;  
                double fChi2;  
                double fMass;  
-               double fPulls[6]; // needs specification
+               double fUMass;  // unconstrained mass
+               double fPulls[6]; 
                DKinematicData fChildFits[2];
                DLorentzVector fChildMoms[2];
 
@@ -72,9 +87,9 @@ inline void DTwoGammaFit::setChildFit(const DKinematicData& aChildFit, const int
      fChildFits[i] = aChildFit;
 }
 // Set data of fitted children
-inline void DTwoGammaFit::setChildMom(const DLorentzVector& aChildFit, const int i)
+inline void DTwoGammaFit::setChildMom(const DLorentzVector& aChildMom, const int i)
 {
-     fChildMoms[i] = aChildFit;
+     fChildMoms[i] = aChildMom;
 }
 
 // Set pulls from DKinFit
@@ -95,8 +110,14 @@ inline void DTwoGammaFit::setProb(const double aProb)
      fProb = aProb;
 }
 
-// set Pi0 bits with respect to the photon detection 
-inline void DTwoGammaFit::setChildTag(const int aTag, const int i )
+// Set unconstrained mass 
+inline void DTwoGammaFit::setUMass(const double uMass)
+{
+     fUMass = uMass;
+}
+
+// set bits with respect to the photon detection 
+inline void DTwoGammaFit::setChildTag(const DPhoton::PhotonTag aTag, const int i )
 {
    fTags[i] = aTag;
 }

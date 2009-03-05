@@ -34,7 +34,6 @@ class DPhoton_factory:public JFactory<DPhoton>{
 
                 DPhoton* makeFCalPhoton(const DFCALPhoton* gamma, const JObject::oid_t id); 
                 DPhoton* makeBCalPhoton(const DBCALPhoton* gamma, const JObject::oid_t id); 
-                DPhoton* makeBCalPhoton(const DBCALShower* shower); // obsolite! 
 
 		double MinDistToRT(const DPhoton* photon, vector<const DTrack*> tracks);
 		double dThetaToChargeMC(const DPhoton* photon, vector<const DMCThrown*> thrown);

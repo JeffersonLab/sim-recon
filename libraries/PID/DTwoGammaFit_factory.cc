@@ -47,9 +47,9 @@ jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
         JObject::oid_t nPairs=0;
 	// Loop over all fit candidates.
         for (unsigned int i = 0; i < photons.size() ; i++) {
-            if ( photons[i]->getTag() == 3  ) continue;
+            if ( photons[i]->getTag() == DPhoton::kCharge  ) continue;
             for (unsigned int j = i+1; j < photons.size() ; j++) {
-                if ( photons[j]->getTag() == 3  ) continue;
+                if ( photons[j]->getTag() == DPhoton::kCharge  ) continue;
 
                 nPairs++;
                 DKinFit *kfit = new DKinFit(); 
@@ -69,26 +69,29 @@ jerror_t DTwoGammaFit_factory::evnt(JEventLoop *eventLoop, int eventnumber)
                 DTwoGammaFit* fit2g = new DTwoGammaFit( nPairs );
 
 // set two gamma kinematics
-                TLorentzVector P4 = photons[i]->lorentzMomentum() + photons[j]->lorentzMomentum(); 
+                TLorentzVector P4U = photons[i]->lorentzMomentum() + photons[j]->lorentzMomentum(); 
+                TLorentzVector P4 = kinout[0].lorentzMomentum() + kinout[1].lorentzMomentum(); 
 		DVector3 vertex = 0.5*(photons[i]->position() + photons[j]->position());
 
+                fit2g->setUMass( P4U.M() );
                 fit2g->setMass( P4.M() );
                 fit2g->setMomentum( P4.Vect() );
                 fit2g->setPosition( vertex );
                 fit2g->setProb( kfit->Prob());
-               fit2g->setChi2( kfit->Chi2());
-               for (int k=0; k < 6; k++) {
+                fit2g->setChi2( kfit->Chi2());
+                for (int k=0; k < 6; k++) {
                    fit2g->setPulls( kfit->GetPull(k),  k);
                 }
-                fit2g->setChildTag( (int) photons[i]->getTag(), 0);
-                fit2g->setChildTag( (int) photons[j]->getTag(), 1);
+                fit2g->setChildTag( photons[i]->getTag(), 0);
+                fit2g->setChildTag( photons[j]->getTag(), 1);
                 fit2g->setChildID( photons[i]->id, 0);
                 fit2g->setChildID( photons[j]->id, 1);
-                //fit2g->setChildFit(  *kinout[0] , 0);
-                //fit2g->setChildFit(  *kinout[1] , 1);
+                fit2g->setChildMom(  photons[i]->lorentzMomentum() , 0);
+                fit2g->setChildMom(  photons[j]->lorentzMomentum() , 1);
+
+                fit2g->setChildFit(  kinout[0] , 0);
+                fit2g->setChildFit(  kinout[1] , 1);
  
-                fit2g->setChildMom(  kinout[0].lorentzMomentum() , 0);
-                fit2g->setChildMom(  kinout[1].lorentzMomentum() , 1);
 
 		_data.push_back( fit2g );
  

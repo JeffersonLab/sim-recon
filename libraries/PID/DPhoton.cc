@@ -33,7 +33,7 @@ void DPhoton::setPositionCal(const DVector3& aPosition)
 }
 
 // Tag photon origin: 1/2/3 for FCAL/BCAL/Charge? 
-void DPhoton::setTag(unsigned int aTag)
+void DPhoton::setTag(PhotonTag aTag)
 {
    fTag = aTag;
 }
