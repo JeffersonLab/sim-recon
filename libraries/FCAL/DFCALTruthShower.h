@@ -46,9 +46,6 @@ class DFCALTruthShower:public JObject{
 		int track() const { return m_track; }
 		int type() const { return m_type; }
 
-		void Serialize(JILStream&) const;
-		void Deserialize(JILStream&);
-
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "x(cm)", "%3.1f", x());
 			AddString(items, "y(cm)", "%3.1f", y());
