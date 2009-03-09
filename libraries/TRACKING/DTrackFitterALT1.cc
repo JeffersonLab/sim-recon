@@ -595,6 +595,15 @@ double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, hitInfo &hinfo, vector<
 //------------------
 void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, hitInfo &hinfo)
 {
+#if 0
+	// -- Target --
+	hinfo.wires.push_back(target);
+	hinfo.errs.push_back(0.1); // 1mm beam width
+	hinfo.u_dists.push_back(0.0); // placeholder
+	hinfo.u_errs.push_back(0.0); // placeholder indicating no measurement along wire
+	if(fit_type==kTimeBased)hinfo.shifts.push_back(0.0);
+#endif
+
 	// --- CDC ---
 	for(unsigned int i=0; i<cdchits.size(); i++){
 		const DCDCTrackHit *hit = cdchits[i];
