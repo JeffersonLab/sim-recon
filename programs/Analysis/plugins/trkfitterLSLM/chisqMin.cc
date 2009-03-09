@@ -20,6 +20,11 @@ chisqMin::chisqMin(residFunc *resid, int level)
 {
   unsigned int p = residFuncPtr->getP();
   unsigned int n = residFuncPtr->getN();
+  if (n <= p) {
+    cout << "number of points less than or equal to number of parameters\n";
+    int error = 5;
+    throw error;
+  }
   covar = gsl_matrix_alloc(p, p); /* allocate the covariance matrix */
   T = gsl_multifit_fdfsolver_lmsder; /* choose the solver */
   s = gsl_multifit_fdfsolver_alloc (T, (size_t)n, (size_t)p); /* allocate work space,
