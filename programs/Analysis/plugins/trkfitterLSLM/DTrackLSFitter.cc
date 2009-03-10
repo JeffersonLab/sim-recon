@@ -137,17 +137,18 @@ DTrackFitter::fit_status_t DTrackLSFitter::FitTrack(void)
 			debug_level);
 
   residFuncPtr = &prf; // set the global residual point to refer to this class
-  fitPtr = new chisqMin(&prf, debug_level);
-  HepVector ppStart(5), paramTrue(5);
+  try {
+
+    fitPtr = new chisqMin(&prf, debug_level);
+    HepVector ppStart(5), paramTrue(5);
   //
   // swim using MC truth points
   //
 
 //  trajectory.swimMC(mctrackhits);
-   trajectory.clear();
+    trajectory.clear();
 
 
-  try {
     //
     // swim with MC parameters
     //
@@ -230,6 +231,7 @@ DTrackFitter::fit_status_t DTrackLSFitter::FitTrack(void)
     cout << "CDCHitDetails: " << CDCHitDetails::getInstanceCount() << endl;
   }
 
+  if (status == DTRACKLSFITTER_NOMINAL) {
 
 	// Copy results into DTrackFitter data members
 	double r0 = ppEnd(1);
@@ -252,6 +254,7 @@ DTrackFitter::fit_status_t DTrackLSFitter::FitTrack(void)
 	if(this->fit_status==kFitNotDone)this->fit_status = kFitSuccess; // honor it if fit_status has already been set (e.g. to kFitFailed)
 	this->cdchits_used_in_fit = cdchits;
 	this->fdchits_used_in_fit = fdchits;
+  }
 
   if (fitPtr != NULL) {
     delete fitPtr;
