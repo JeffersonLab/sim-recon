@@ -489,34 +489,53 @@ void InitCDCGeometry(void)
 		int myNstraws=0;
 		float radius = 0.0;
 		float stereo=0.0;
+		float phi_shift=0.0;
+		float deltaX=0.0, deltaY=0.0;
+		float rotX=0.0, rotY=0.0;
 		switch(ring){
-			case  1:	myNstraws=  43;	radius= 10.960;	stereo=  degrees0; break;
-			case  2:	myNstraws=  50;	radius= 12.741;	stereo=  degrees0; break;
-			case  3:	myNstraws=  57;	radius= 14.522;	stereo=  degrees0; break;
-			case  4:	myNstraws=  64;	radius= 16.304;	stereo= -degrees6; break;
-			case  5:	myNstraws=  71;	radius= 18.086;	stereo= -degrees6; break;
-			case  6:	myNstraws=  78;	radius= 19.868;	stereo= +degrees6; break;
-			case  7:	myNstraws=  85;	radius= 21.65 ;	stereo= +degrees6; break;
-			case  8:	myNstraws=  99;	radius= 25.214;	stereo=  degrees0; break;
-			case  9:	myNstraws= 106;	radius= 26.997;	stereo=  degrees0; break;
-			case 10:	myNstraws= 113;	radius= 28.779;	stereo=  degrees0; break;
-			case 11:	myNstraws= 120;	radius= 30.561;	stereo=  degrees0; break;
-			case 12:	myNstraws= 127;	radius= 32.344;	stereo=  degrees0; break;
-			case 13:	myNstraws= 134;	radius= 34.126;	stereo= -degrees6; break;
-			case 14:	myNstraws= 141;	radius= 35.908;	stereo= -degrees6; break;
-			case 15:	myNstraws= 148;	radius= 37.691;	stereo= +degrees6; break;
-			case 16:	myNstraws= 155;	radius= 39.473;	stereo= +degrees6; break;
-			case 17:	myNstraws= 166;	radius= 42.274;	stereo=  degrees0; break;
-			case 18:	myNstraws= 173;	radius= 44.057;	stereo=  degrees0; break;
-			case 19:	myNstraws= 180;	radius= 45.839;	stereo=  degrees0; break;
-			case 20:	myNstraws= 187;	radius= 47.621;	stereo=  degrees0; break;
-			case 21:	myNstraws= 194;	radius= 49.404;	stereo=  degrees0; break;
-			case 22:	myNstraws= 201;	radius= 51.186;	stereo=  degrees0; break;
-			case 23:	myNstraws= 208;	radius= 52.969;	stereo=  degrees0; break;
-			case 24:	myNstraws= 215;	radius= 54.751;	stereo=  degrees0; break;
-			case 25:	myNstraws= 222;	radius= 56.534;	stereo=  degrees0; break;
+			// axial
+			case  1:	myNstraws=  43;	radius= 10.984;	stereo=  degrees0; phi_shift= 0.00000;	break;
+			case  2:	myNstraws=  43;	radius= 12.341;	stereo=  degrees0; phi_shift= 4.18605;	break;
+			case  3:	myNstraws=  55;	radius= 14.029;	stereo=  degrees0; phi_shift= 2.00000;	break;
+			case  4:	myNstraws=  55;	radius= 15.410;	stereo=  degrees0; phi_shift= 5.27272727272;	break;
+
+			// -stereo
+			case  5:	myNstraws=  66;	radius= 17.085;	stereo= -degrees6; phi_shift= 0.33333;	break;
+			case  6:	myNstraws=  66;	phi_shift= 0.33333;	deltaX= 18.450;	deltaY= 0.886027;	rotX=-6.500;	rotY=-0.30;	break;
+			case  7:	myNstraws=  80;	radius= 20.581;	stereo= -degrees6; phi_shift= -0.5000;	break;
+			case  8:	myNstraws=  80;	phi_shift= -0.5000;	deltaX= 21.950;	deltaY= 0.87224;	rotX=-6.475;	rotY=-0.27;	break;
+
+			// +stereo
+			case  9:	myNstraws=  93;	radius= 23.980;	stereo= +degrees6; phi_shift= 1.1000;	break;
+			case 10:	myNstraws=  93;	phi_shift= 1.1000;	deltaX= 25.35;	deltaY= 0.857573;	rotX=+6.35;	rotY=+0.24;	break;
+			case 11:	myNstraws= 106;	radius= 27.380;	stereo= +degrees6; phi_shift= -1.40;	break;
+			case 12:	myNstraws= 106;	phi_shift= -1.400;	deltaX= 28.800;	deltaY= 0.835;	rotX=+6.3;	rotY=+0.21;	break;
+
+			// axial
+			case 13:	myNstraws= 124;	radius= 31.65;	stereo=  degrees0; phi_shift= 0.5000000;	break;
+			case 14:	myNstraws= 124;	radius= 33.05;	stereo=  degrees0; phi_shift= 1.9516000;	break;
+			case 15:	myNstraws= 133;	radius= 34.7;	stereo=  degrees0; phi_shift= 1.0000000;	break;
+			case 16:	myNstraws= 133;	radius= 36.1;	stereo=  degrees0; phi_shift= 2.3533834;	break;
+
+			// -stereo
+			case 17:	myNstraws= 145;	radius= 37.720;	stereo= -degrees6; phi_shift= 0.2;	break;
+			case 18:	myNstraws= 145;	phi_shift= 0.2;	deltaX= 39.12;	deltaY= 0.8321106;	rotX=-6.25;	rotY=-0.16;	break;
+			case 19:	myNstraws= 158;	radius= 40.89;	stereo= -degrees6; phi_shift= 0.7;	break;
+			case 20:	myNstraws= 158;	phi_shift= 0.7;	deltaX=42.29 ;	deltaY= 0.8391063;	rotX=-6.25;	rotY=-0.13;	break;
+
+			// +stereo
+			case 21:	myNstraws= 171;	radius= 44.05;	stereo= +degrees6; phi_shift= 1.1000;	break;
+			case 22:	myNstraws= 171;	phi_shift= 1.1000;	deltaX=45.46 ;	deltaY= 0.8349124;	rotX=+6.20;	rotY=+0.11;	break;
+			case 23:	myNstraws= 184;	radius= 47.20;	stereo= +degrees6; phi_shift= 1.40;	break;
+			case 24:	myNstraws= 184;	phi_shift= 1.400;	deltaX= 48.63;	deltaY= 0.8303831;	rotX=+6.18;	rotY=+0.10;	break;
+
+			// axial
+			case 25:	myNstraws= 197;	radius= 51.0;	stereo=  degrees0; phi_shift= 0.200000000;	break;
+			case 26:	myNstraws= 197;	radius= 52.4;	stereo=  degrees0; phi_shift= 1.113705000;	break;
+			case 27:	myNstraws= 210;	radius= 54.05;	stereo=  degrees0; phi_shift= 0.800000000;	break;
+			case 28:	myNstraws= 210;	radius= 55.45;	stereo=  degrees0; phi_shift= 1.657142857;	break;
 			default:
-				cerr<<__FILE__<<":"<<__LINE__<<" Invalid value for CDC ring ("<<ring<<") should be 1-23 inclusive!"<<endl;
+				cerr<<__FILE__<<":"<<__LINE__<<" Invalid value for CDC ring ("<<ring<<") should be 1-28 inclusive!"<<endl;
 		}
 		NCDC_STRAWS.push_back(myNstraws);
 		CDC_RING_RADIUS.push_back(radius);
