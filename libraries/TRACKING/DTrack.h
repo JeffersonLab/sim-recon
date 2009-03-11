@@ -22,6 +22,9 @@ class DTrack:public DKinematicData{
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit
 
+		vector<vector<double> > cov;	
+		vector<vector<double> > fcov;
+
 		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
 
 		void toStrings(vector<pair<string,string> > &items)const{
