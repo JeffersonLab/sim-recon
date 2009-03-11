@@ -233,7 +233,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	    can->setCharge(srccan->charge());
 	    
 	    for (unsigned int m=0;m<segments.size();m++)
-	      can->AddAssociatedObject(segments[m]);
+	      for (unsigned int n=0;n<segments[m]->hits.size();n++)
+		can->AddAssociatedObject(segments[m]->hits[n]);
 	    for (unsigned int n=0;n<cdchits.size();n++)
 	      can->AddAssociatedObject(cdchits[n]); 
 	    
@@ -253,7 +254,8 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       can->setCharge(srccan->charge());
       
       for (unsigned int m=0;m<segments.size();m++)
-	 can->AddAssociatedObject(segments[m]); 
+	for (unsigned int n=0;n<segments[m]->hits.size();n++)
+	  can->AddAssociatedObject(segments[m]->hits[n]);
       
       // Try to gather up stray CDC hits from candidates that were not 
       // matched with the previous algorithm.  Use axial wires for now.
