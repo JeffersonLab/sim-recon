@@ -102,9 +102,17 @@ class DKalmanFilter{
   jerror_t ExtrapolateToVertex(double mass_hyp,DMatrix S, DMatrix C);
   jerror_t SetReferenceTrajectory(DMatrix &S);
   jerror_t SetCDCForwardReferenceTrajectory(DMatrix &S);
-  jerror_t SetCDCReferenceTrajectory(DMatrix &Sc);
+  jerror_t SetCDCReferenceTrajectory(DMatrix &Sc,DMatrix &Cc);
   void GetMomentum(DVector3 &mom);
-  void GetPosition(DVector3 &pos);
+  void GetPosition(DVector3 &pos);		
+  void GetCovarianceMatrix(vector< vector<double> >&mycov){
+    mycov.assign(cov.begin(),cov.end());
+  };
+  void GetForwardCovarianceMatrix(vector< vector<double> >&mycov){
+    mycov.assign(fcov.begin(),fcov.end());
+  };
+
+
   double GetChiSq(void){return chisq_;}
   unsigned int GetNDF(void){return ndf;};
   double GetActivePathLength(void){ return path_length;}
@@ -146,7 +154,8 @@ class DKalmanFilter{
 		DMatrix &S, double dEdx);
   jerror_t FixedStep(DVector3 &pos,DVector3 wire_pos,DVector3 wiredir,double ds,
 		     DMatrix &S, double dEdx);
-
+  jerror_t CalcDirMom(double ds,double dEdx,double q,DVector3 mom,
+		      DVector3 pos,DVector3 &dmom,DVector3 &dpos);
   jerror_t CalcDerivAndJacobian(double ds,DVector3 pos,DVector3 &dpos,
 				DVector3 wire_pos,
 				DVector3 wiredir,
@@ -200,6 +209,9 @@ class DKalmanFilter{
   double chisq_;
   // number of degrees of freedom
   unsigned int ndf;
+  // Covariance matrix
+  vector< vector <double> > cov;
+  vector< vector <double> > fcov;
   
   // Lists containing state, covariance, and jacobian at each step
   deque<DKalmanState_t>central_traj;
