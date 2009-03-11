@@ -137,33 +137,27 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
   fdctrackhits.clear();
   loop->Get(trackcandidates);
   loop->Get(cdctrackhits);
-  loop->Get(fdctrackhits,"CORRECTED");	
-
-  //vector<const DMCThrown*>tracks;
-  //vector<const DTrack*>tracks;
-  //vector<const DParticle*>tracks;
-  //loop->Get(tracks);
+  //loop->Get(fdctrackhits,"CORRECTED");
+  loop->Get(fdctrackhits);	
  
   // Loop over track candidates
-  //if (tracks.size()==1)//temporary for debugging
-    {
-    for(unsigned int i=0; i<trackcandidates.size(); i++){ 
-      const DTrackCandidate *tc = trackcandidates[i];    
-      DVector3 pos = tc->position();
-      DVector3 mom = tc->momentum(); 	
-      
-      if (isnan(pos.Mag()) || isnan(mom.Mag()) || mom.Mag()==0. 
-	  || pos.Mag()==0.){
-	_DBG_<< "Invalid seed data ! " <<endl;
-	continue;
-    }
+  for(unsigned int i=0; i<trackcandidates.size(); i++){ 
+    const DTrackCandidate *tc = trackcandidates[i];    
+    DVector3 pos = tc->position();
+    DVector3 mom = tc->momentum(); 	
 
-    vector<const DFDCSegment *>segments;
+    if (isnan(pos.Mag()) || isnan(mom.Mag()) || mom.Mag()==0. 
+	  || pos.Mag()==0.){
+      _DBG_<< "Invalid seed data ! " <<endl;
+      continue;
+    }
+    
+    vector<const DFDCPseudo *>fdchits;
     vector<const DCDCTrackHit *>cdchits;
-    tc->GetT(segments);
+    tc->GetT(fdchits);
     tc->GetT(cdchits);
 
-     // Initialize energy loss sum
+    // Initialize energy loss sum
     double dEsum=0.;
     unsigned int num_matched_hits=0;
     
@@ -172,6 +166,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 		      //material,
 		      RootGeom);
 
+    // Add cdc hits
     for (unsigned int k=0;k<cdchits.size();k++){
       fit.AddCDCHit(cdchits[k]);
     }
@@ -181,11 +176,11 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
     DMagneticFieldStepper stepper(bfield,tc->charge());
     
     // Gather hits to pass to the kalman filter
-    if (segments.size()==0){      
+    if (fdchits.size()==0){
       if (cdchits.size()>0){
        	stepper.SwimToRadius(pos,mom,CDC_OUTER_RADIUS,NULL);
       }
-      
+
       // Look for stray FDC hits
       for(unsigned int j=0; j<fdctrackhits.size(); j++){
 	const DFDCPseudo *hit = fdctrackhits[j];
@@ -202,24 +197,20 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	// Use an un-normalized gaussian so that for a residual
 	// of zero, we get a probability of 1.0.
 	double p = finite(resi) ? exp(-resi*resi/2./variance):0.0;
-	if(p>=MIN_FDC_HIT_PROB){
+	if(p>=MIN_FDC_HIT_PROB)
+	  {
 	  fit.AddFDCHit(hit);
 	  num_matched_hits++;
 	  dEsum+=hit->dE;
 	}
       } 
-    } // if (segments.size()==0)
+    } // if (fdchits.size()==0) from associated objects
     else{	
-      const DFDCSegment *segment=NULL;
-      for (unsigned m=0;m<segments.size();m++){
-	segment=segments[m];
-	for (unsigned n=0;n<segment->hits.size();n++){
-	  const DFDCPseudo *hit=segment->hits[n];
-	  fit.AddFDCHit(hit);  
-	  num_matched_hits++;
-	  dEsum+=hit->dE;
-	}
-
+      for (unsigned m=0;m<fdchits.size();m++){
+	const DFDCPseudo *hit=fdchits[m];
+	fit.AddFDCHit(hit);  
+	num_matched_hits++;
+	dEsum+=hit->dE;
       }
     }
 
@@ -239,7 +230,9 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	DVector3 mom,pos;
 	fit.GetMomentum(mom);
 	fit.GetPosition(pos);
-	
+	fit.GetCovarianceMatrix(track->cov);
+	fit.GetForwardCovarianceMatrix(track->fcov);
+
 	//track->x=pos(0);
 	//track->y=pos(1);
 	//track->z=pos(2);
@@ -270,8 +263,6 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
       }
     }
   }
-  }
-  
 
   return NOERROR;
 }
