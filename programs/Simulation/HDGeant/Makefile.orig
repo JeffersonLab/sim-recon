@@ -6,13 +6,13 @@ BINDIR = ../bin.$(OStype)
 # The symbol SWITCHES is used to active any of the following switches
 # to enable custom versions of the simulation program.
 #NTUPLE_OPTIONS = -DBACKGROUND_STUDIES
-NTUPLE_OPTIONS = -DBACKGROUND_PROFILING
+NTUPLE_OPTIONS = -DBACKGROUND_PROFILING -DTRACK_SHOWERS_IN_COLLIMATOR
 #NTUPLE_OPTIONS = -DHISTOGRAM_MATERIAL_SEEN_BY_FIRST_TRACK
 #NTUPLE_OPTIONS = -DWERNERS_VTX_NTUPLE
 #NTUPLE_OPTIONS = -DCERENKOV_PID_NTUPLE
 #NTUPLE_OPTIONS = -DFCAL_SPLASH_NTUPLE
 #NTUPLE_OPTIONS = -DTESTING_CAL_CONTAINMENT
-SIM_OPTIONS = -DTRACK_SHOWERS_IN_COLLIMATOR
+#SIM_OPTIONS = -DTRACK_SHOWERS_IN_COLLIMATOR -DACTIVE_COLLIMATOR_SIMS
 #--------------------------------------------------------------------
 
 SWITCHES = -DCERNLIB_TYPE $(SIM_OPTIONS) $(NTUPLE_OPTIONS)
@@ -83,9 +83,9 @@ HDDS = $(HALLD_HOME)/src/programs/Simulation/hdds
 HDDM = $(HALLD_HOME)/src/libraries/HDDM
 
 ifeq ($(OStype),OSF1)
- 	MISC_FIXES := vunit.o gsrotm.o fint.o gthion.o
+ 	MISC_FIXES := vunit.o gsrotm.o fint.o gthion.o gtrack.o
 else
-	MISC_FIXES :=
+	MISC_FIXES := gtrack.o
 endif
 
 AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o gsstak.o gltrac.o \
@@ -114,7 +114,7 @@ hdgeant++: hdgeant++.o gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXF
 
 hdgeant: hdgeant.o hdgeant_f.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(MISC_FIXES)
 	$(CPP) -mtune=generic $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(STATIC) $(FOPTS) \
-	   hdgeant.o hdgeant_f.o uginit.o uglast.o $(AUXF) $(AUXC) \
+	   hdgeant.o hdgeant_f.o uginit.o uglast.o $(AUXF) $(AUXC) $(MISC_FIXES) \
 	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
 	   -L$(HALLD_HOME)/lib/$(OSNAME) -lHDGEOMETRY \
 	   -L$(JANA_HOME)/lib/$(OSNAME) -lJANA \
@@ -159,6 +159,11 @@ hddm_s.o: $(HDDM)/hddm_s.c
 	-I$(HALLD_HOME)/src/libraries -c -o $@ $<
 
 cdcdump: cdcdump.c hddm_s.o
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
+	-I$(HALLD_HOME)/src/libraries/include \
+	-I$(HALLD_HOME)/src/libraries -o $@ $^
+
+cdccount: cdccount.c hddm_s.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -o $@ $^
