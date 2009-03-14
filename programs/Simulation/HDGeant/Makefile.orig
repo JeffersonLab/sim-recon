@@ -85,7 +85,7 @@ HDDM = $(HALLD_HOME)/src/libraries/HDDM
 ifeq ($(OStype),OSF1)
  	MISC_FIXES := vunit.o gsrotm.o fint.o gthion.o gtrack.o
 else
-	MISC_FIXES := gtrack.o
+	MISC_FIXES := gthion.o gtrack.o
 endif
 
 AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o gsstak.o gltrac.o \
