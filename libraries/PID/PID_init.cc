@@ -4,7 +4,6 @@
 using namespace jana;
 
 #include "DPhoton_factory.h"
-#include "DPi0_factory.h"
 #include "DTwoGammaFit_factory.h"
 #include "DTwoGammaFit_factory_PI0.h"
 #include "DTwoGammaFit_factory_ETA.h"
