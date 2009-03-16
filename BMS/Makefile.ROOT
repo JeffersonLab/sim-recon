@@ -8,9 +8,9 @@ CFLAGS		+= -D_ROOT_ $(ROOTCFLAGS) -I$(ROOTINC)
 CXXFLAGS		+= -D_ROOT_ $(ROOTCFLAGS) -I$(ROOTINC)
 
 ifeq ($(OS),SunOS)
-MISC_LIBS 	+= $(ROOTGLIBS) -lMinuit
+MISC_LIBS 	+= $(ROOTGLIBS) -lMinuit -lGeom
 else
-MISC_LIBS 	+= $(ROOTGLIBS) -lThread -lMinuit
+MISC_LIBS 	+= $(ROOTGLIBS) -lThread -lMinuit -lGeom
 endif
 
 # Create ROOT dictionaries from C++ files containing ClassDef
