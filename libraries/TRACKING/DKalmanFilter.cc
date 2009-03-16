@@ -26,7 +26,7 @@
 #define BEAM_RADIUS  0.1 
 #define MAX_ITER 25
 #define STEP_SIZE 0.5
-#define CDC_STEP_SIZE 0.25
+#define CDC_STEP_SIZE 0.2
 #define NUM_ITER 5
 #define Z_MIN 0.
 #define Z_MAX 160.
@@ -91,7 +91,7 @@ DKalmanFilter::DKalmanFilter(const DMagneticFieldMap *bfield,
   DEBUG_HISTS=true;
   // DEBUG_HISTS=false;
   DEBUG_LEVEL=0;
-  //DEBUG_LEVEL=1;
+  //  DEBUG_LEVEL=1;
 }
 
 // Initialize the state vector
@@ -444,6 +444,23 @@ jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S){
   return NOERROR;
 }
 
+
+// Swim the state vector through the field from the start of the reference
+// trajectory to the end
+jerror_t DKalmanFilter::SwimCentral(DVector3 &pos,DMatrix &Sc){  
+  double ds=CDC_STEP_SIZE;
+  for (int m=central_traj.size()-1;m>0;m--){
+  double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
+  double dedx=GetdEdx(0.14,q_over_p,central_traj[m].Z,
+		      central_traj[m].A,central_traj[m].density);
+  
+  // Propagate the state through the field
+  FixedStep(pos,ds,Sc,dedx);
+}
+
+  return NOERROR;
+}
+
 // Reference trajectory for central tracks
 jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DMatrix &Sc,DMatrix &Cc){
   DKalmanState_t temp;
@@ -451,7 +468,7 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DMatrix &Sc,DMatrix &Cc){
   DMatrix Q(5,5);  // Process noise covariance matrix
 
   // Position, step, radius, etc. variables
-  DVector3 pos(x_,y_,z_),wirepos; 
+  DVector3 pos(x_,y_,z_),oldpos; 
   double dedx=0;
   double ds=CDC_STEP_SIZE;
   len=0.; 
@@ -490,7 +507,7 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DMatrix &Sc,DMatrix &Cc){
 		   central_traj[m].A,central_traj[m].density);
       
       // Propagate the state through the field
-      FixedStep(pos,origin,dir,ds,Sc,dedx);
+      FixedStep(pos,ds,Sc,dedx);
 
     }
     central_traj[0].s=len;
@@ -500,6 +517,9 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DMatrix &Sc,DMatrix &Cc){
   // Swim out
   double r=pos.Perp();
   while (r<endplate_rmax && pos.z()<endplate_z && pos.z()>Z_MIN){
+    // store old position
+    oldpos=pos;
+
     // update path length
     len+=ds;
 
@@ -519,8 +539,10 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DMatrix &Sc,DMatrix &Cc){
     StepJacobian(pos,origin,dir,ds,Sc,dedx,J);
     
     // Propagate the state through the field
-    FixedStep(pos,origin,dir,ds,Sc,dedx);
-   
+    FixedStep(pos,ds,Sc,dedx);
+    // Make sure D is identically zero for the reference trajectory
+    Sc(state_D,0)=0.;
+    
     // update the radius relative to the beam line
     r=pos.Perp();
 
@@ -772,9 +794,7 @@ jerror_t DKalmanFilter::StepJacobian(double oldz,double newz,DMatrix S,
 // Calculate the derivative for the alternate set of parameters {q/pT, phi, 
 // tan(lambda),D,z}
 jerror_t DKalmanFilter::CalcDeriv(double ds,DVector3 pos,DVector3 &dpos,
-				  DVector3 wire_orig,
-				  DVector3 wiredir,
-				  DMatrix S,double dEdx,
+				  DVector3 B,DMatrix S,double dEdx,
 				  DMatrix &D1){
    //Direction at current point
   double tanl=S(state_tanl,0);
@@ -787,22 +807,16 @@ jerror_t DKalmanFilter::CalcDeriv(double ds,DVector3 pos,DVector3 &dpos,
   // Other parameters
   double q_over_pt=S(state_q_over_pt,0);
   double pt=fabs(1./q_over_pt);
-  double z=S(state_z,0);
   double p=pt/cosl;
   double mass=0.14; //pion for now
-  DVector3 wire_pos=wire_orig+(z-wire_orig.z())*wiredir;
   double E=sqrt(p*p+mass*mass);
-  //  double sign=(ds>0)?1.:-1.;
-
-  //B-field and field gradient at (x,y,z)
-  double Bx,By,Bz;
-  bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
 
   // Derivative of S with respect to s
-  double temp1=By*cosphi-Bx*sinphi;
+  double temp1=B.y()*cosphi-B.x()*sinphi;
   D1(state_q_over_pt,0)
     =qBr2p*q_over_pt*q_over_pt*sinl*temp1-q_over_pt*E/p/p*dEdx;
-  D1(state_phi,0)=qBr2p*q_over_pt*(Bx*cosphi*sinl+By*sinphi*sinl-Bz*cosl);
+  D1(state_phi,0)
+    =qBr2p*q_over_pt*(B.x()*cosphi*sinl+B.y()*sinphi*sinl-B.z()*cosl);
   D1(state_tanl,0)=qBr2p*q_over_pt*temp1/cosl;
   D1(state_z,0)=sinl;
   // Second order correction
@@ -812,8 +826,8 @@ jerror_t DKalmanFilter::CalcDeriv(double ds,DVector3 pos,DVector3 &dpos,
   dpos.SetXYZ(cosl*cosphi,cosl*sinphi,sinl);
 
   // second order correction
-  //dpos(0)+=sign*qBr2p*q_over_pt*cosl*ds/2.*(Bz*cosl*sinphi-By*sinl);
-  //dpos(1)+=sign*qBr2p*q_over_pt*cosl*ds/2.*(Bx*sinl-Bz*cosl*cosphi);
+  //dpos(0)+=sign*qBr2p*q_over_pt*cosl*ds/2.*(B.z()*cosl*sinphi-B.y()*sinl);
+  //dpos(1)+=sign*qBr2p*q_over_pt*cosl*ds/2.*(B.x()*sinl-B.z()*cosl*cosphi);
   //dpos(2)+=sign*qBr2p*q_over_pt*ds/2.*cosl*cosl*temp1;
 
   return NOERROR;
@@ -823,8 +837,7 @@ jerror_t DKalmanFilter::CalcDeriv(double ds,DVector3 pos,DVector3 &dpos,
 // parameters {q/pT, phi, tan(lambda),D,z}
 jerror_t DKalmanFilter::CalcDerivAndJacobian(double ds,DVector3 pos,
 					     DVector3 &dpos,
-					     DVector3 wire_orig,
-					     DVector3 wiredir,
+					     DVector3 B,
 					     DMatrix S,double dEdx,
 					     DMatrix &J1,DMatrix &D1){  
   //Direction at current point
@@ -838,58 +851,54 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double ds,DVector3 pos,
   // Other parameters
   double q_over_pt=S(state_q_over_pt,0);
   double pt=fabs(1./q_over_pt);
-  double z=S(state_z,0);
   double p=pt/cosl;
   double q=pt*q_over_pt;
   double mass=0.14; //pion for now
-  DVector3 wire_pos=wire_orig+(z-wire_orig.z())*wiredir;
   double E=sqrt(p*p+mass*mass);
-  //double sign=(ds>0)?1.:-1.;
  
-  //B-field and field gradient at (x,y,z)
-  double Bx,By,Bz,dBxdx,dBxdy,dBxdz,dBydx,dBydy,dBydz,dBzdx,dBzdy,dBzdz;
-  bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
+  //field gradient at (x,y,z)
+  double dBxdx,dBxdy,dBxdz,dBydx,dBydy,dBydz,dBzdx,dBzdy,dBzdz;
   bfield->GetFieldGradient(pos.x(),pos.y(),pos.z(),dBxdx,dBxdy,dBxdz,dBydx,
 			   dBydy,dBydz,dBzdx,dBzdy,dBzdz);
   // Derivative of S with respect to s
-  double temp1=By*cosphi-Bx*sinphi;
+  double temp1=B.y()*cosphi-B.x()*sinphi;
   D1(state_q_over_pt,0)
     =qBr2p*q_over_pt*q_over_pt*sinl*temp1-q_over_pt*E/p/p*dEdx;
-  D1(state_phi,0)=qBr2p*q_over_pt*(Bx*cosphi*sinl+By*sinphi*sinl-Bz*cosl);
+  D1(state_phi,0)=qBr2p*q_over_pt*(B.x()*cosphi*sinl+B.y()*sinphi*sinl-B.z()*cosl);
   D1(state_tanl,0)=qBr2p*q_over_pt*temp1/cosl;
   D1(state_z,0)=sinl; //+sign*q_over_pt*qBr2p*ds/2.*cosl*cosl*temp1;
 
   // New direction
   dpos.SetXYZ(cosl*cosphi,
-	      //+sign*q_over_pt*cosl*qBr2p*ds/2.*(Bz*cosl*sinphi-By*sinl),
+	      //+sign*q_over_pt*cosl*qBr2p*ds/2.*(B.z()*cosl*sinphi-B.y()*sinl),
 	      cosl*sinphi,
-	      //+sign*q_over_pt*cosl*qBr2p*ds/2.*(Bx*sinl-Bz*cosl*cosphi),
+	      //+sign*q_over_pt*cosl*qBr2p*ds/2.*(B.x()*sinl-B.z()*cosl*cosphi),
 	      D1(state_z,0));
  
   // Jacobian matrix elements
-  J1(state_phi,state_phi)=qBr2p*q_over_pt*sinl*(By*cosphi-Bx*sinphi);
-  J1(state_phi,state_q_over_pt)=qBr2p*(Bx*cosphi*sinl+By*sinphi*sinl
-				       -Bz*cosl);
-  J1(state_phi,state_tanl)=qBr2p*q_over_pt*(Bx*cosphi*cosl+By*sinphi*cosl
-					    +Bz*sinl)/(1.+tanl*tanl);
+  J1(state_phi,state_phi)=qBr2p*q_over_pt*sinl*(B.y()*cosphi-B.x()*sinphi);
+  J1(state_phi,state_q_over_pt)=qBr2p*(B.x()*cosphi*sinl+B.y()*sinphi*sinl
+				       -B.z()*cosl);
+  J1(state_phi,state_tanl)=qBr2p*q_over_pt*(B.x()*cosphi*cosl+B.y()*sinphi*cosl
+					    +B.z()*sinl)/(1.+tanl*tanl);
   J1(state_phi,state_z)
     =qBr2p*q_over_pt*(dBxdz*cosphi*sinl+dBydz*sinphi*sinl-dBzdz*cosl);
 
-  J1(state_tanl,state_phi)=-qBr2p*q_over_pt*(By*sinphi+Bx*cosphi)/cosl;
-  J1(state_tanl,state_q_over_pt)=qBr2p*(By*cosphi-Bx*sinphi)/cosl;
-  J1(state_tanl,state_tanl)=qBr2p*q_over_pt*sinl*(By*cosphi-Bx*sinphi);
+  J1(state_tanl,state_phi)=-qBr2p*q_over_pt*(B.y()*sinphi+B.x()*cosphi)/cosl;
+  J1(state_tanl,state_q_over_pt)=qBr2p*(B.y()*cosphi-B.x()*sinphi)/cosl;
+  J1(state_tanl,state_tanl)=qBr2p*q_over_pt*sinl*(B.y()*cosphi-B.x()*sinphi);
   J1(state_tanl,state_z)=qBr2p*q_over_pt*(dBydz*cosphi-dBxdz*sinphi)/cosl;
   
   J1(state_q_over_pt,state_phi)
-    =-qBr2p*q_over_pt*q_over_pt*sinl*(By*sinphi+Bx*cosphi);
+    =-qBr2p*q_over_pt*q_over_pt*sinl*(B.y()*sinphi+B.x()*cosphi);
 
   double temp=sqrt(1.+cosl*cosl*q_over_pt*q_over_pt*mass*mass);
   J1(state_q_over_pt,state_q_over_pt)
-    =2.*qBr2p*q_over_pt*sinl*(By*cosphi-Bx*sinphi)
+    =2.*qBr2p*q_over_pt*sinl*(B.y()*cosphi-B.x()*sinphi)
     -q*dEdx*cosl*q_over_pt*(2.+3.*cosl*cosl*q_over_pt*q_over_pt*mass*mass)
     /temp;
   J1(state_q_over_pt,state_tanl)
-    =qBr2p*q_over_pt*q_over_pt*cosl*cosl*cosl*(By*cosphi-Bx*sinphi)
+    =qBr2p*q_over_pt*q_over_pt*cosl*cosl*cosl*(B.y()*cosphi-B.x()*sinphi)
     +q*dEdx*sinl*cosl*cosl/temp*q_over_pt*q_over_pt
     *(1.+2.*cosl*cosl*mass*mass*q_over_pt*q_over_pt);
   J1(state_q_over_pt,state_z)
@@ -939,49 +948,64 @@ jerror_t DKalmanFilter::ConvertStateVector(double z,double wire_x,
 }
 
 // Runga-Kutte for alternate parameter set {q/pT,phi,tanl(lambda),D,z}
-jerror_t DKalmanFilter::FixedStep(DVector3 &pos, DVector3 wire_orig,DVector3 wiredir,
-				     double ds,DMatrix &S,double dEdx){
+jerror_t DKalmanFilter::FixedStep(DVector3 &pos,double ds,DMatrix &S,
+				  double dEdx){
   // Matrices for intermediate steps
   DMatrix D1(5,1),D2(5,1),D3(5,1),D4(5,1);
   DMatrix S1(5,1),S2(5,1),S3(5,1),S4(5,1);
   DVector3 dpos1,dpos2,dpos3,dpos4;
 
-  CalcDeriv(0.,pos,dpos1,wire_orig,wiredir,S,dEdx,D1);
+  // charge
+  double q=(S(state_q_over_pt,0)>0)?1.:-1.;
+  // Magnetic field
+  DVector3 B;
+  bfield->GetField(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
+  double Bz_=fabs(B.z());
+  double qpt=1./S(state_q_over_pt,0);
+  double sinphi=sin(S(state_phi,0));
+  double cosphi=cos(S(state_phi,0));
+  double D=S(state_D,0);
+
+  CalcDeriv(0.,pos,dpos1,B,S,dEdx,D1);
 
   DVector3 mypos=pos+(ds/2.)*dpos1;
+  bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
   S1=S+(0.5*ds)*D1; 
 
-  CalcDeriv(ds/2.,mypos,dpos2,wire_orig,wiredir,S1,dEdx,D2);
+  CalcDeriv(ds/2.,mypos,dpos2,B,S1,dEdx,D2);
 
   mypos=pos+(ds/2.)*dpos2;
+  bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
   S2=S+(0.5*ds)*D2; 
 
-  CalcDeriv(ds/2.,mypos,dpos3,wire_orig,wiredir,S2,dEdx,D3);
+  CalcDeriv(ds/2.,mypos,dpos3,B,S2,dEdx,D3);
 
   mypos=pos+ds*dpos3;
+  bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
   S3=S+ds*D3;
 
-  CalcDeriv(ds,mypos,dpos4,wire_orig,wiredir,S3,dEdx,D4);
+  CalcDeriv(ds,mypos,dpos4,B,S3,dEdx,D4);
    
   // New state vector
   S+=ds*(ONE_SIXTH*D1+ONE_THIRD*D2+ONE_THIRD*D3+ONE_SIXTH*D4);
  
   // New position
-  pos+=ds*(ONE_SIXTH*dpos1+ONE_THIRD*dpos2+ONE_THIRD*dpos3+ONE_SIXTH*dpos4);
-  
+  pos+=
+    (dpos1=ds*(ONE_SIXTH*dpos1+ONE_THIRD*dpos2+ONE_THIRD*dpos3+ONE_SIXTH*dpos4));
+
+  double rc=sqrt(dpos1.Perp2()
+		 +2.*(D+qpt/qBr2p/Bz_)*(dpos1.x()*sinphi-dpos1.y()*cosphi)
+		 +(D+qpt/qBr2p/Bz_)*(D+qpt/qBr2p/Bz_));
+  S(state_D,0)=q*rc-qpt/qBr2p/Bz_;
+
   return NOERROR;
 }
 
 
 jerror_t DKalmanFilter::CalcDirMom(double ds,double dEdx,double q,DVector3 mom,
 				   DVector3 pos,DVector3 &dmom,DVector3 &dpos){
-  // Momentum
-  double p=mom.Mag();
   DVector3 pdir=mom.Unit();
-  // Energy
-  double mass=0.14;
-  double E=sqrt(p*p+mass*mass);
-  
+
   //B-field and field gradient at (x,y,z)
   double Bx,By,Bz;
   bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
@@ -1070,35 +1094,60 @@ jerror_t DKalmanFilter::StepJacobian(DVector3 pos, DVector3 wire_orig,
   DVector3 dpos1,dpos2,dpos3,dpos4;
   double sign=(S(state_D,0)>0)?1.:-1.;
 
-  CalcDerivAndJacobian(0.,pos,dpos1,wire_orig,wiredir,S,dEdx,J1,D1);
+   // charge
+  double q=(S(state_q_over_pt,0)>0)?1.:-1.;
+  // Magnetic field
+  DVector3 B;
+  bfield->GetField(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
+  double Bz_=fabs(B.z());
+  double qpt=1./S(state_q_over_pt,0);
+  double sinphi=sin(S(state_phi,0));
+  double cosphi=cos(S(state_phi,0));
+  double D=S(state_D,0);
+
+  CalcDerivAndJacobian(0.,pos,dpos1,B,S,dEdx,J1,D1);
 
   DVector3 mypos=pos+(ds/2.)*dpos1;
+  bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
   S1=S+(0.5*ds)*D1; 
   DVector3 wirepos=wire_orig+(mypos.z()-wire_orig.z())*wiredir;
   S1(state_D,0)=sign*(mypos-wirepos).Mag();
 
-  CalcDerivAndJacobian(ds/2.,mypos,dpos2,wire_orig,wiredir,S1,dEdx,J2,D2);
+  CalcDerivAndJacobian(ds/2.,mypos,dpos2,B,S1,dEdx,J2,D2);
   J2=J2+0.5*(J2*J1);
 
   mypos=pos+(ds/2.)*dpos2;
+  bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
   S2=S+(0.5*ds)*D2;
   wirepos=wire_orig+(mypos.z()-wire_orig.z())*wiredir;
   S2(state_D,0)=sign*(mypos-wirepos).Mag();
 
-  CalcDerivAndJacobian(ds/2.,mypos,dpos3,wire_orig,wiredir,S2,dEdx,J3,D3);
+  CalcDerivAndJacobian(ds/2.,mypos,dpos3,B,S2,dEdx,J3,D3);
   J3=J3+0.5*(J3*J2);  
 
   mypos=pos+ds*dpos3;
+  bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
   S3=S+ds*D3;
   wirepos=wire_orig+(mypos.z()-wire_orig.z())*wiredir;
   S3(state_D,0)=sign*(mypos-wirepos).Mag();
 
-  CalcDerivAndJacobian(ds,mypos,dpos4,wire_orig,wiredir,S3,dEdx,J4,D4);
+  CalcDerivAndJacobian(ds,mypos,dpos4,B,S3,dEdx,J4,D4);
   J4=J4+J4*J3;
 
   // New Jacobian matrix
   J+=ds*(ONE_SIXTH*J1+ONE_THIRD*J2+ONE_THIRD*J3+ONE_SIXTH*J4);
 
+  // change in position
+  DVector3 dpos
+    =ds*(ONE_SIXTH*dpos1+ONE_THIRD*dpos2+ONE_THIRD*dpos3+ONE_SIXTH*dpos4);
+  double rc=sqrt(dpos.Perp2()
+		 +2.*(D+qpt/qBr2p/Bz_)*(dpos.x()*sinphi-dpos.y()*cosphi)
+		 +(D+qpt/qBr2p/Bz_)*(D+qpt/qBr2p/Bz_));
+    
+  J(state_D,state_D)=q*(dpos.x()*sinphi-dpos.y()*cosphi+D+qpt/qBr2p/Bz_)/rc;
+  J(state_D,state_q_over_pt)=qpt*qpt/qBr2p/Bz_*(J(state_D,state_D)-1.);
+  J(state_D,state_phi)=q*(D+qpt/qBr2p/Bz_)*(dpos.x()*cosphi+dpos.y()*sinphi)/rc;
+  
   return NOERROR;
 }
 
@@ -1124,6 +1173,7 @@ jerror_t DKalmanFilter::GetProcessNoiseCentral(double mass_hyp,double ds,
   if (isfinite(X0) && X0<1e8 && X0>0.)
     sig2_ms= 0.0136*0.0136*(1.+mass_hyp*mass_hyp/p2)*my_ds/X0/p2;
   //*(1.+0.038*log(my_ds/X0))*(1.+0.038*log(my_ds/X0));
+  //sig2_ms=0.;
 
   Q=sig2_ms*Q1;
 
@@ -1153,6 +1203,7 @@ jerror_t DKalmanFilter::GetProcessNoise(double mass_hyp,double ds,double z,
     sig2_ms= 0.0136*0.0136*(1.+one_over_p_sq*mass_hyp*mass_hyp)
       *one_over_p_sq*my_ds/X0;
   //*(1.+0.038*log(my_ds/X0))*(1.+0.038*log(my_ds/X0));
+  //sig2_ms=0.;
 
   Q=sig2_ms*Q1;
 
@@ -1284,7 +1335,7 @@ jerror_t DKalmanFilter::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc,
     StepJacobian(pos,cdchits[m]->origin,cdchits[m]->dir,ds,Sc,dedx,Jc);
     Cc=Jc*(Cc*DMatrix(DMatrix::kTransposed,Jc));
 
-    FixedStep(pos,cdchits[m]->origin,cdchits[m]->dir,ds,Sc,dedx);
+    FixedStep(pos,ds,Sc,dedx);
 
     // New radius
     R=pos.Perp();
@@ -1302,7 +1353,7 @@ jerror_t DKalmanFilter::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc,
       ds1/=2.;
       if (R>Rf) ds=-ds1;
       else ds=ds1;
-      FixedStep(newpos,cdchits[m]->origin,cdchits[m]->dir,ds,S0,dedx);
+      FixedStep(newpos,ds,S0,dedx);
       R=newpos.Perp();
       s1+=ds;
       num_iter++;
@@ -1311,7 +1362,7 @@ jerror_t DKalmanFilter::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc,
     StepJacobian(pos,cdchits[m]->origin,cdchits[m]->dir,s1,Sc,dedx,Jc);
     Cc=Jc*(Cc*DMatrix(DMatrix::kTransposed,Jc));
 
-    FixedStep(pos,cdchits[m]->origin,cdchits[m]->dir,s1,Sc,dedx);
+    FixedStep(pos,s1,Sc,dedx);
   }
 
   // Wire position for wire#0
@@ -1365,7 +1416,7 @@ jerror_t DKalmanFilter::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc){
     //dedx=GetdEdx(0.14,q_over_p,18.,39.9,0.00166);
 
     // Step the position, state vecto
-    FixedStep(pos,origin,dir,ds,Sc,dedx);
+    FixedStep(pos,ds,Sc,dedx);
 
     // New radius
     R=pos.Perp();
@@ -1449,7 +1500,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
       if (cdchits.size()>0){
 	double f=2.5;
 	double anneal=1.;
-	anneal=99./pow(f,iter)+1.;
+	//anneal=19./pow(f,iter)+1.;
 
 	//anneal=1.;
 	// Proceed into CDC
@@ -1471,7 +1522,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
     return NOERROR;
   }
   
-  return UNKNOWN_ERROR;
+  //return UNKNOWN_ERROR;
   // Fit in Central region:  deal with hits in the CDC 
   if (cdchits.size()>0){  
     // Order the CDC hits by radius
@@ -1483,32 +1534,39 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
     Sc(state_tanl,0)=tanl_;
     Sc(state_z,0)=z_;  
 
-    C0(state_z,state_z)=1.;
+    C0(state_z,state_z)=12.;
     C0(state_q_over_pt,state_q_over_pt)=0.01*q_over_pt_*q_over_pt_;
     C0(state_phi,state_phi)=0.025*0.025;
     C0(state_D,state_D)=0.01;
     double theta=90.-180./M_PI*atan(tanl_);
     double dlambda=2.1e-3-3.4e-4*theta+3.5e-5*theta*theta;
-    dlambda=0.04;
-    C0(state_tanl,state_tanl)=(1.+tanl_*tanl_)*(1.+tanl_*tanl_)
-      *dlambda*dlambda;
+    //dlambda=0.04;
+    //   C0(state_tanl,state_tanl)=(1.+tanl_*tanl_)*(1.+tanl_*tanl_)
+    //  *dlambda*dlambda;
+    C0(state_tanl,state_tanl)=0.01;
+    C0(state_tanl,state_z)=C0(state_z,state_tanl)=-0.3;
 
     // Initialization
     Cc=C0;
     DMatrix Scbest(Sc);
     DMatrix Ccbest(Cc);
 
+    // Initialize trajectory deque
+    SetCDCReferenceTrajectory(Sc,Cc);
+
     DVector3 pos0=pos;  
     // iteration 
     // value needed for anneal factor seems to be correlated to value of 
     // covariance matrix for D... if one is made smaller, so must the other?
-    double anneal_factor=1.;
+    double anneal_factor=100.;
     for (int iter2=0;iter2<1;iter2++){     
       // Calculate a scale factor for the measurement errors that depends 
       // on the iteration,so that we approach the "true' measurement errors
       // by the last iteration.
       double f=2.5;
       double scale_factor=anneal_factor-1.;
+      anneal_factor=scale_factor/pow(f,iter2)+1.;
+
       /*
       switch(iter2){
       case 1:
@@ -1528,16 +1586,14 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
       // scale_factor=0.;
       chisq=1.e8;
       double fom=1.e8,old_fom=fom;
-      for (int iter=0;iter<20;iter++){ 
-	//anneal_factor=scale_factor/pow(f,iter)+1.;
+      for (int iter=0;iter<2;iter++){
+	if (iter+iter2>0){
+	  SwimCentral(pos,Sc);
+	  //anneal_factor=scale_factor/pow(f,iter)+1.;
+	}
 	//anneal_factor=1.;
-
-	//printf("iter \n");
-
-	// Initialize trajectory deque
-	SetCDCReferenceTrajectory(Sc,Cc);
 		
-	//Cc=C0;
+	Cc=C0;
 	jerror_t error=NOERROR;
 	error=KalmanCentral(mass_hyp,anneal_factor,Sc,Cc,pos,chisq_central);
 	//if (error!=NOERROR) break;
@@ -1545,7 +1601,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
 	fom=anneal_factor*chisq_central;
 	if (chisq_central>=1e8 ){
 	  _DBG_ << "-- central fit failed --" <<endl;
-	return VALUE_OUT_OF_RANGE;
+	  return VALUE_OUT_OF_RANGE;
 	}
 	
 	// Find track parameters where track crosses beam line
@@ -1561,9 +1617,9 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
 		<< " vertex " << x_ << " " << y_ << " " << z_ <<endl;
 	
 	if (fabs(chisq_central-chisq)<0.1 
-	    //|| (chisq_central>chisq )
+	    || (chisq_central>chisq )
 	    //|| (fom>old_fom)
-	    ); // break;
+	    ) break;
 	Ccbest=Cc;
 	Scbest=Sc;
 	pos0=pos;
@@ -1607,7 +1663,7 @@ double DKalmanFilter::BrentsAlgorithm(double ds1,double ds2,
   x=w=v=bx;
   
   // Step to intermediate point
-  FixedStep(pos,origin,dir,x,Sc,dedx);
+  FixedStep(pos,x,Sc,dedx);
   DVector3 wirepos=origin+(pos.z()-origin.z())*dir;
   double u_old=x;
 
@@ -1647,7 +1703,7 @@ double DKalmanFilter::BrentsAlgorithm(double ds1,double ds2,
     u=(fabs(d)>=tol1 ? x+d: x+SIGN(tol1,d));
     
     // Function evaluation
-    FixedStep(pos,origin,dir,u_old-u,Sc,dedx);
+    FixedStep(pos,u_old-u,Sc,dedx);
     u_old=u;
 
     wirepos=origin+(pos.z()-origin.z())*dir;
@@ -1796,14 +1852,14 @@ double DKalmanFilter::GoldenSection(double ds1,double ds2,
   S0=Sc;
 
   // Step to one of the intermediate points
-  FixedStep(pos,origin,dir,s1,S0,dedx);
+  FixedStep(pos,s1,S0,dedx);
   DVector3 wirepos=origin+(pos.z()-origin.z())*dir;
   d1=(pos-wirepos).Mag();
 
   // Step to the other intermediate point
   S0=Sc; 
   pos=oldpos;
-  FixedStep(pos,origin,dir,s2,S0,dedx);
+  FixedStep(pos,s2,S0,dedx);
   wirepos=origin+(pos.z()-origin.z())*dir;
   d2=(pos-wirepos).Mag(); 
 
@@ -1819,7 +1875,7 @@ double DKalmanFilter::GoldenSection(double ds1,double ds2,
       s1=s2; 
       s2=stemp;
       d1=d2;
-      FixedStep(pos,origin,dir,s2,S0,dedx);
+      FixedStep(pos,s2,S0,dedx);
       wirepos=origin+(pos.z()-origin.z())*dir;
       d2=(pos-wirepos).Mag();
     }
@@ -1829,7 +1885,7 @@ double DKalmanFilter::GoldenSection(double ds1,double ds2,
       s2=s1;
       s1=stemp;
       d2=d1;
-      FixedStep(pos,origin,dir,s1,S0,dedx);
+      FixedStep(pos,s1,S0,dedx);
       wirepos=origin+(pos.z()-origin.z())*dir;
       d1=(pos-wirepos).Mag();
     }
@@ -1936,7 +1992,7 @@ jerror_t DKalmanFilter::GoldenSection(double &ds,double doca,double dedx,
   S0=Sc;
 
   // Step to one of the intermediate points
-  FixedStep(pos,origin,dir,s1,S0,dedx);
+  FixedStep(pos,s1,S0,dedx);
   double d1=S0(state_D,0);
   while (fabs(s3-s0)>EPS*(fabs(s1)+fabs(s2))){
     // Check for exit condition near zero
@@ -1950,7 +2006,7 @@ jerror_t DKalmanFilter::GoldenSection(double &ds,double doca,double dedx,
       s1=s2; 
       s2=stemp;
       d1=d2;
-      FixedStep(pos,origin,dir,s2,S0,dedx);
+      FixedStep(pos,s2,S0,dedx);
       d2=S0(state_D,0);
     }
     else{
@@ -1959,7 +2015,7 @@ jerror_t DKalmanFilter::GoldenSection(double &ds,double doca,double dedx,
       s2=s1;
       s1=stemp;
       d2=d1;
-      FixedStep(pos,origin,dir,s1,S0,dedx);
+      FixedStep(pos,s1,S0,dedx);
       d1=S0(state_D,0);
     }
   }
@@ -1994,14 +2050,10 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
   DMatrix S0(5,1),S0_(5,1); // state vector
   DMatrix M(1,1);
 
-  V=anneal_factor*0.000225;
-
-  V=0.01;
-
-  // printf("V %f\n",V);
   // Initialize the chi2 for this part of the track
   chisq=0.;
 
+  // path length
   double s=central_traj[0].s;
   // path length increment
   double ds=-CDC_STEP_SIZE;
@@ -2014,7 +2066,6 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
   DVector3 origin=cdchits[cdc_index]->origin;
   DVector3 dir=cdchits[cdc_index]->dir;
   DVector3 wirepos=origin+(pos.z()-origin.z())*dir;
-  DVector3 old_wirepos=wirepos;
 
   // doca variables
   double doca,old_doca=(pos-wirepos).Mag();
@@ -2045,6 +2096,7 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     Sc=S0+J*dS;
     Cc=J*(Cc*DMatrix(DMatrix::kTransposed,J))+Q;   
 
+    // update position based on new doca to reference trajectory
     pos(2)=Sc(state_z,0);
     pos(0)=central_traj[k].pos.x()-Sc(state_D,0)*sin(Sc(state_phi,0));
     pos(1)=central_traj[k].pos.y()+Sc(state_D,0)*cos(Sc(state_phi,0));
@@ -2099,9 +2151,8 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
       // Measurement error
       V=anneal_factor*0.000225
        +DRIFT_SPEED*DRIFT_SPEED
-	*(1.0*one_over_beta*one_over_beta/SPEED_OF_LIGHT/SPEED_OF_LIGHT 
-	  +mass_hyp*mass_hyp*mass_hyp*mass_hyp
-	  *central_traj[k].s*central_traj[k].s
+	*(VAR_S*one_over_beta*one_over_beta/SPEED_OF_LIGHT/SPEED_OF_LIGHT 
+	  +mass_hyp*mass_hyp*mass_hyp*mass_hyp*s*s
 	  /one_over_beta/one_over_beta/SPEED_OF_LIGHT/SPEED_OF_LIGHT
 	  *q_over_p*q_over_p
 	  *(Cc(state_q_over_pt,state_q_over_pt)
@@ -2114,7 +2165,7 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
       DVector3 mdir(-sin(Sc(state_phi,0)),cos(Sc(state_phi,0)),0.);
       double prediction=cosa*((pos-wirepos).Dot(mdir));
       double sign=(prediction>0)?1.:-1.;
-      
+
       // Projection matrix  
       double psi=atan2(pos.y()-wirepos.y(),pos.x()-wirepos.x());
       H(0,state_D)=H_T(state_D,0)
@@ -2129,16 +2180,13 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
       // Difference and variance
       double var=(V+H*(Cc*H_T))(0,0);
       double dm=measurement-sign*prediction;
-      printf("m %f pred %f dm %f\n",measurement,prediction,dm);
-      
        
       // probability
       double p=exp(-0.5*dm*dm/var)/sqrt(2.*M_PI*var);
       p=1.;
       
       if (DEBUG_LEVEL>0)
-	//_DBG_ 
-	cout
+	_DBG_ 
 	  << "cos(stereo) " << cosa << " Dm-Dpred " << dm << " sigma " 
 	      << sqrt(var) << " p " 
 	      << 1./(Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)))) << endl;
@@ -2152,7 +2200,7 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
       // Update the state vector 
       dS=p*dm*K;
       Sc=Sc+dS;
-      Sc(state_D,0)=doca=sign*doca+dS(state_D,0);
+      //Sc(state_D,0)=doca=sign*doca+dS(state_D,0);
 
       phi=Sc(state_phi,0);
       q_over_pt=Sc(state_q_over_pt,0);
@@ -2161,20 +2209,11 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
       dS.Print();
       pos.Print();
       */
-      // Update the position on the track based on the doca
-      old_wirepos.SetXYZ(origin.x()+(pos.z()-origin.z())*dir.x(),
-			 origin.y()+(pos.z()-origin.z())*dir.y(),
-			 Sc(state_z,0));
-      
-
-      DVector3 newpos;
-      newpos(0)=old_wirepos.x()-doca*sin(Sc(state_phi,0));
-      newpos(1)=old_wirepos.y()+doca*cos(Sc(state_phi,0));
-      newpos(2)=Sc(state_z,0);
-      //pos.Print();
-      //newpos.Print();
-      pos=newpos;
-
+      // update position based on corrected doca to reference trajectory
+      pos(0)+=-dS(state_D,0)*sin(Sc(state_phi,0));
+      pos(1)+= dS(state_D,0)*cos(Sc(state_phi,0));
+      pos(2)=Sc(state_z,0);
+    
       // Path length in active volume
       //path_length+=?
     
@@ -2226,7 +2265,7 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
       Cc=J*(Cc*JT);
 
       // Step to the next point on the trajectory
-      FixedStep(pos,origin,dir,-ds2,Sc,dedx);
+      FixedStep(pos,-ds2,Sc,dedx);
 
       // Update the wire position
       wirepos=origin+(pos.z()-origin.z())*dir;
@@ -2239,9 +2278,9 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
   }
 
   // update internal variables
-  phi_=Sc(1,0);
-  q_over_pt_=Sc(0,0);
-  tanl_=Sc(2,0);
+  phi_=Sc(state_phi,0);
+  q_over_pt_=Sc(state_q_over_pt,0);
+  tanl_=Sc(state_tanl,0);
 
   x_=pos.x();
   y_=pos.y();
@@ -2326,6 +2365,8 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
       
       // Angles of incidence to the measurement plane
       double phi=atan2(S(state_y,0),S(state_x,0));
+      double cosphi=cos(phi);
+      double sinphi=sin(phi);
       /*
       double alpha=M_PI_2-atan(1./sqrt(S(state_tx,0)*S(state_tx,0)
       +S(state_ty,0)*S(state_ty,0)));
@@ -2333,13 +2374,17 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
       double tu=tx*cosa-ty*sina;
       double alpha=atan(tu);
       double cosalpha=cos(alpha);
+      double sinalpha=sin(alpha);
 
       // The next measurement 
       //M(0,0)=u+drift;
       M(0,0)=drift;
       //M(0,0)=dmeas;
-      M(1,0)=v+fdchits[id]->nz*drift*sin(alpha)*cos(phi)
-	-fdchits[id]->nr*drift*cosalpha;// with correction for Lorentz effect
+      // Correction for lorentz effect
+      double nz=fdchits[id]->nz;
+      double nr=fdchits[id]->nr;
+      double dv=nz*drift*sinalpha*cosphi-nr*drift*cosalpha;
+      M(1,0)=v+dv;// with correction for Lorentz effect
       
       // ... and its covariance matrix 
       V(0,0)=fdchits[id]->covu;
@@ -2355,7 +2400,18 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
 	  *S(state_q_over_p,0)*S(state_q_over_p,0)
 	  *C(state_q_over_p,state_q_over_p));
 	  //*0.0004*S(state_q_over_p,0)*S(state_q_over_p,0));
+
+      double var_alpha
+	=(C(state_tx,state_tx)*cosa*cosa+C(state_ty,state_ty)*sina*sina
+	  -2.*sina*cosa*C(state_tx,state_ty))/(1.+tu*tu)/(1.+tu*tu);
+      double var_phi=(y*y*C(state_x,state_x)+x*x*C(state_y,state_y)
+		      -2*x*y*C(state_x,state_y))/(x*x+y*y)/(x*x+y*y);
       
+      V(1,1)+=dv*dv*V(0,0)/drift/drift
+	+drift*drift*(nz*cosalpha*cosphi+nr*sinalpha)
+	*(nz*cosalpha*cosphi+nr*sinalpha)*var_alpha
+	+drift*drift*nz*nz*sinalpha*sinalpha*sinphi*sinphi*var_phi;
+
       // To transform from (x,y) to (u,v), need to do a rotation:
       //   u = x*cosa-y*sina
       //   v = y*cosa+x*sina
@@ -2401,8 +2457,6 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
       (M-Mpred)(0,0),(M-Mpred)(1,0));
       */
       S=S+K*(M-Mpred); 
-
-   
 
       // Path length in active volume
       path_length+=STEP_SIZE*sqrt(1.+S(state_tx,0)*S(state_tx,0)
@@ -2733,7 +2787,7 @@ jerror_t DKalmanFilter::ExtrapolateToVertex(double mass_hyp,DVector3 pos,
     DMatrix S0(5,1);
     S0=Sc; 
     DVector3 pos0=pos;
-    FixedStep(pos0,origin,dir,ds,S0,dedx);
+    FixedStep(pos0,ds,S0,dedx);
     r=pos0.Perp();
     if (r>r_old) ds*=-1.;
     
@@ -2758,7 +2812,7 @@ jerror_t DKalmanFilter::ExtrapolateToVertex(double mass_hyp,DVector3 pos,
       Cc=Jc*(Cc*JcT)+Q;
       
       // Propagate the state through the field
-      FixedStep(pos,origin,dir,ds,Sc,dedx);
+      FixedStep(pos,ds,Sc,dedx);
       
       r=pos.Perp();
       if (r>r_old) {
@@ -2790,6 +2844,7 @@ jerror_t DKalmanFilter::ExtrapolateToVertex(double mass_hyp,DVector3 pos,
   // Covariance matrix at vertex
   vector<double>dummy;
   for (unsigned int i=0;i<5;i++){
+    dummy.clear();
     for(unsigned int j=0;j<5;j++){
       dummy.push_back(Cc(i,j));
     }
