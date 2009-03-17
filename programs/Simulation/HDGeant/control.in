@@ -58,6 +58,13 @@ c  - delta_momentum = spread in initial track momentum, full width (GeV/c)
 c  - delta_theta = spread in initial track polar angle, full width (degrees)
 c  - delta_phi = spread in initial track azimuthal angle, full width (degrees)
 c
+c If you do explicitly specify the momentum/angle (by adding 100 as
+c described above, you may also choose to distibute tracks evenly in
+c log(P) or log(theta) by setting the appropriate PLOG and TLOG flags
+c to a non-zero value.
+c PLOG 1
+c TLOG 1
+c
 c   particle  momentum  theta  phi  delta_momentum delta_theta delta_phi
 KINE   101      9.0       10.   0.      0.              3.        360.
 
@@ -253,6 +260,13 @@ c         The fields 'dcute' and 'dcutm' in the CUTS card correspond to energy t
 c         for electron and muon delta-rays, respectively. The default energy threshold 
 c         value is 100 keV. 
 c      2  no delta-rays are produced. Complete fluctuations are calculated (default).
-
+c
+c DCAY 0 no decay in flight
+c      1 decay in flight with generation of secondaries (default)
+c      2 decay in flight without generation of secondaries
+c
+c DRAY 0 no delta ray production
+c      1 delta ray production with generation of secondaries (default)
+c      2 delta ray production without generation of secondaries
 
 END

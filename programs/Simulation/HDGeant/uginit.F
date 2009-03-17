@@ -154,6 +154,8 @@
 c The following parameters are declared in hdtrackparams.inc above.
       data nosecondaries/0/
       data storetraj/0/
+      data plog_particle_gun/0/
+      data tlog_particle_gun/0/
 
 
 C  Use this parameter to set up a minimum photon energy 
@@ -213,6 +215,8 @@ C..geant..
       call ffkey('bfield', bfield_type,20,'MIXED')
       call ffkey('nosecondaries', nosecondaries,1,'INTEGER')
       call ffkey('trajectories', storetraj,1,'INTEGER')
+      call ffkey('plog', plog_particle_gun,1,'INTEGER')
+      call ffkey('tlog', tlog_particle_gun,1,'INTEGER')
       CALL FFKEY('bgrate',bgrate,1,'REAL')
       CALL FFKEY('bggate',bggate,2,'REAL')
       call gtgamaff()

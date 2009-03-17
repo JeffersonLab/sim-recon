@@ -121,6 +121,7 @@
       character*20 pname
       integer nubuf
       real ubuf(99)
+      real pmin, pmax, thetamin, thetamax
 
 *
 *     -----------------------------------------------------------------
@@ -208,8 +209,27 @@ c         print *, ngen,' background photons generated this event'
          IF (IKINE.GT.100) THEN
             IK=IKINE-100
             CALL GRNDM(RNDM,3)
-            PABS=PKINE(1)+PKINE(4)*(RNDM(1)-0.5)
-            THETA=(PKINE(2)+PKINE(5)*(RNDM(2)-0.5))*DEGRAD
+*           
+*           If the PLOG(TLOG) card is non-zero in control.in, then
+*           distribute evenly in the log of total momentum(theta).
+*           Otherwise, distribute evenly in total momentum(theta).
+*           3/17/2009  DL
+				IF (plog_particle_gun.EQ.0) THEN
+               PABS=PKINE(1)+PKINE(4)*(RNDM(1)-0.5)
+				ELSE
+               pmin=PKINE(1)-0.5*PKINE(4)
+               pmax=PKINE(1)+0.5*PKINE(4)
+               IF (pmin.LE.0) pmin=0.100
+               PABS=pmin*(pmax/pmin)**RNDM(1)
+				ENDIF
+				IF (tlog_particle_gun.EQ.0) THEN
+               THETA=(PKINE(2)+PKINE(5)*(RNDM(2)-0.5))*DEGRAD
+				ELSE
+               thetamin=PKINE(2)-0.5*PKINE(5)
+               thetamax=PKINE(2)+0.5*PKINE(5)
+               IF (thetamin.LE.0) thetamin=0.9
+               THETA=(thetamin*(thetamax/thetamin)**RNDM(2))*DEGRAD
+				ENDIF
             PHI=(PKINE(3)+PKINE(6)*(RNDM(3)-0.5))*DEGRAD
          ELSE
             IK=IKINE
