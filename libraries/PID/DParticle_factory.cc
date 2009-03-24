@@ -13,6 +13,8 @@ using namespace std;
 #include "DParticle_factory.h"
 #include <TRACKING/DTrack.h>
 #include <TRACKING/DReferenceTrajectory.h>
+#include <TRACKING/DTrackFitter.h>
+#include <TRACKING/DTrackHitSelector.h>
 using namespace jana;
 
 //------------------
@@ -81,7 +83,7 @@ jerror_t DParticle_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Setup fitter to do fit
 		fitter->Reset();
 		fitter->SetFitType(DTrackFitter::kTimeBased);
-		hitselector->GetAllHits(DTrackHitSelector::kWireBased, track->rt, cdctrackhits, fdcpseudos, fitter);
+		hitselector->GetAllHits(DTrackHitSelector::kWireBased, (DReferenceTrajectory*)track->rt, cdctrackhits, fdcpseudos, fitter);
 		
 		// We need to create our own DKinematicData object so we can set the mass
 		DKinematicData input_params(*track);

@@ -12,6 +12,7 @@
 #include <TRACKING/DTrackFitter.h>
 
 class DTrack;
+class DTrackHitSelector;
 
 #include "DParticle.h"
 
@@ -31,7 +32,7 @@ class DParticle_factory:public jana::JFactory<DParticle>{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		DTrackFitter *fitter;
-		DTrackHitSelector *hitselector;
+		const DTrackHitSelector *hitselector;
 		vector<DReferenceTrajectory*> rtv;
 
 		void MakeDParticle(const DTrack *track);

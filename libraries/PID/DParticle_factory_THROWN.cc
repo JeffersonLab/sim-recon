@@ -22,6 +22,8 @@ using namespace std;
 #include <DRandom.h>
 #include <DMatrix.h>
 
+using namespace jana;
+
 //------------------
 // Constructor
 //------------------
@@ -110,8 +112,8 @@ jerror_t DParticle_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		// Find hits that should be on this track and add them as associated objects
 		vector<const DCDCTrackHit*> cdchits;
 		vector<const DFDCPseudo*> fdchits;
-		if(hitselector)hitselector->GetCDCHits(DTrackHitSelector::kTimeBased, rt, cdctrackhits, cdchits);
-		if(hitselector)hitselector->GetFDCHits(DTrackHitSelector::kTimeBased, rt, fdcpseudos, fdchits);
+		if(hitselector)hitselector->GetCDCHits(DTrackHitSelector::kWireBased, rt, cdctrackhits, cdchits);
+		if(hitselector)hitselector->GetFDCHits(DTrackHitSelector::kWireBased, rt, fdcpseudos, fdchits);
 		for(unsigned int i=0; i<cdchits.size(); i++)particle->AddAssociatedObject(cdchits[i]);
 		for(unsigned int i=0; i<fdchits.size(); i++)particle->AddAssociatedObject(fdchits[i]);
 
