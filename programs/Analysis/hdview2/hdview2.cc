@@ -45,7 +45,6 @@ int main(int narg, char *argv[])
 	// Create the JEventLoop object explicitly.
 	eventloop = new JEventLoop(japp);
 	eventloop->SetAutoFree(0); // prevent auto-freeing of event after OneEvent is called
-	eventloop->RefreshProcessorListFromJApplication();
 
 	// We need to re-call myproc->init here (it was already called from the japp->Init()
 	// call above). This is because the previous call was done before the JEventLoop
@@ -62,6 +61,7 @@ int main(int narg, char *argv[])
 	eventloop->OneEvent();
 
 	// Hand control to the ROOT "event" loop
+	japp->GetJParameterManager()->PrintParameters();
 	app.SetReturnFromRun(true);
 	app.Run();
 	
