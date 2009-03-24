@@ -165,7 +165,7 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
 			double tof = s/(beta*3E10*1E-9);
 			dist = (hit->time - tof)*55E-4;
 		}else{
-			dist = 0.8/2.0; // half cell-size
+			dist = 0.5/2.0; // half cell-size
 		}
 		
 		// Anode Residual

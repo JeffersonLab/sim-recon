@@ -47,6 +47,15 @@ jerror_t DParticle_factory::brun(jana::JEventLoop *loop, int runnumber)
 		return RESOURCE_UNAVAILABLE;
 	}
 
+	// Get pointer to DTrackHitSelector object
+	vector<const DTrackHitSelector *> hitselectors;
+	loop->Get(hitselectors);
+	if(hitselectors.size()<1){
+		_DBG_<<"Unable to get a DTrackHitSelector object! NO Charged track fitting will be done!"<<endl;
+		return RESOURCE_UNAVAILABLE;
+	}
+	hitselector = hitselectors[0];
+
 	return NOERROR;
 }
 
@@ -59,23 +68,20 @@ jerror_t DParticle_factory::evnt(JEventLoop *loop, int eventnumber)
 	
 	// Get wire-based tracks
 	vector<const DTrack*> tracks;
+	vector<const DCDCTrackHit*> cdctrackhits;
+	vector<const DFDCPseudo*> fdcpseudos;
 	loop->Get(tracks);
+	loop->Get(cdctrackhits);
+	loop->Get(fdcpseudos);
 	
-	// Loop over candidates
+	// Loop over wire-based fits
 	for(unsigned int i=0; i<tracks.size(); i++){
 		const DTrack *track = tracks[i];
 		
-		// Get CDC and FDC hits from candidate
-		vector<const DCDCTrackHit *> cdchits;
-		vector<const DFDCPseudo *> fdchits;
-		track->Get(cdchits);
-		track->Get(fdchits);
-		
 		// Setup fitter to do fit
 		fitter->Reset();
-		fitter->AddHits(cdchits);
-		fitter->AddHits(fdchits);
 		fitter->SetFitType(DTrackFitter::kTimeBased);
+		hitselector->GetAllHits(DTrackHitSelector::kWireBased, track->rt, cdctrackhits, fdcpseudos, fitter);
 		
 		// We need to create our own DKinematicData object so we can set the mass
 		DKinematicData input_params(*track);

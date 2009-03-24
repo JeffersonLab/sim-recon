@@ -118,7 +118,7 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 		// Setup fitter to do fit
 		fitter->Reset();
 		fitter->SetFitType(DTrackFitter::kWireBased);
-		hitselector->GetAllHits(DTrackHitSelector::kWireBased, rt, cdctrackhits, fdcpseudos, fitter);
+		hitselector->GetAllHits(DTrackHitSelector::kHelical, rt, cdctrackhits, fdcpseudos, fitter);
 	
 		// Do the fit
 		DTrackFitter::fit_status_t status = fitter->FitTrack(*candidate);

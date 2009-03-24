@@ -105,6 +105,7 @@ class DTrackFitterALT1:public DTrackFitter{
 		double MIN_FDC_HIT_PROB;
 		double MAX_FDC_DOUBLE_HIT_PROB;
 		double TOF_MASS;
+		bool TARGET_CONSTRAINT;
 		
 		TH3F *cdcdoca_vs_dist_vs_ring;
 		TH2F *cdcdoca_vs_dist;

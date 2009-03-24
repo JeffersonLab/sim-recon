@@ -47,7 +47,7 @@ class DTrackHitSelector:public jana::JObject{
 		void GetFDCHits(fit_type_t fit_type, DReferenceTrajectory *rt, const vector<const DFDCPseudo*> &fdchits_in, DTrackFitter *fitter) const;
 		void GetAllHits(fit_type_t fit_type, DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, const vector<const DFDCPseudo*> &fdchits_in, DTrackFitter *fitter) const;
 
-	private:
+	protected:
 	
 		JEventLoop *loop;
 };

@@ -80,31 +80,32 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	MIN_FDC_HIT_PROB = 0.2;
 	MAX_FDC_DOUBLE_HIT_PROB = 0.1;
 	TOF_MASS = 0.13957018;
+	TARGET_CONSTRAINT = false;
 	
-	gPARMS->SetDefaultParameter("TRKFIT:MAX_HIT_DIST",				MAX_HIT_DIST);
-	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",				DEBUG_HISTS);
-	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",				DEBUG_LEVEL);
-	gPARMS->SetDefaultParameter("TRKFIT:USE_CDC",					USE_CDC);
-	gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_ANODE",			USE_FDC_ANODE);
-	gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_CATHODE",			USE_FDC_CATHODE);
-	gPARMS->SetDefaultParameter("TRKFIT:MAX_CHISQ_DIFF",			MAX_CHISQ_DIFF);
-	gPARMS->SetDefaultParameter("TRKFIT:MAX_FIT_ITERATIONS",		MAX_FIT_ITERATIONS);
-	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_CDC",					SIGMA_CDC);
-	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_ANODE",			SIGMA_FDC_ANODE);
-	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_CATHODE",		SIGMA_FDC_CATHODE);
-	gPARMS->SetDefaultParameter("TRKFIT:CHISQ_MAX_RESI_SIGMAS",	CHISQ_MAX_RESI_SIGMAS);
-	gPARMS->SetDefaultParameter("TRKFIT:CHISQ_GOOD_LIMIT",		CHISQ_GOOD_LIMIT);
-	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_DP",		LEAST_SQUARES_DP);
-	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_DX",		LEAST_SQUARES_DX);
-	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MIN_HITS",LEAST_SQUARES_MIN_HITS);
-	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MAX_E2NORM",LEAST_SQUARES_MAX_E2NORM);		
-	gPARMS->SetDefaultParameter("TRKFIT:DEFAULT_STEP_SIZE",		DEFAULT_STEP_SIZE);
+	gPARMS->SetDefaultParameter("TRKFIT:MAX_HIT_DIST",					MAX_HIT_DIST);
+	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",					DEBUG_HISTS);
+	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",					DEBUG_LEVEL);
+	gPARMS->SetDefaultParameter("TRKFIT:USE_CDC",						USE_CDC);
+	gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_ANODE",				USE_FDC_ANODE);
+	gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_CATHODE",				USE_FDC_CATHODE);
+	gPARMS->SetDefaultParameter("TRKFIT:MAX_CHISQ_DIFF",				MAX_CHISQ_DIFF);
+	gPARMS->SetDefaultParameter("TRKFIT:MAX_FIT_ITERATIONS",			MAX_FIT_ITERATIONS);
+	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_CDC",						SIGMA_CDC);
+	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_ANODE",				SIGMA_FDC_ANODE);
+	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_CATHODE",			SIGMA_FDC_CATHODE);
+	gPARMS->SetDefaultParameter("TRKFIT:CHISQ_MAX_RESI_SIGMAS",		CHISQ_MAX_RESI_SIGMAS);
+	gPARMS->SetDefaultParameter("TRKFIT:CHISQ_GOOD_LIMIT",			CHISQ_GOOD_LIMIT);
+	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_DP",			LEAST_SQUARES_DP);
+	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_DX",			LEAST_SQUARES_DX);
+	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MIN_HITS",	LEAST_SQUARES_MIN_HITS);
+	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MAX_E2NORM",	LEAST_SQUARES_MAX_E2NORM);		
+	gPARMS->SetDefaultParameter("TRKFIT:DEFAULT_STEP_SIZE",			DEFAULT_STEP_SIZE);
 	gPARMS->SetDefaultParameter("TRKFIT:MIN_CDC_HIT_PROB",			MIN_CDC_HIT_PROB);
 	gPARMS->SetDefaultParameter("TRKFIT:MAX_CDC_DOUBLE_HIT_PROB",	MAX_CDC_DOUBLE_HIT_PROB);
 	gPARMS->SetDefaultParameter("TRKFIT:MIN_FDC_HIT_PROB",			MIN_FDC_HIT_PROB);
 	gPARMS->SetDefaultParameter("TRKFIT:MAX_FDC_DOUBLE_HIT_PROB",	MAX_FDC_DOUBLE_HIT_PROB);
-	gPARMS->SetDefaultParameter("TRKFIT:TOF_MASS",					TOF_MASS);
-
+	gPARMS->SetDefaultParameter("TRKFIT:TOF_MASS",						TOF_MASS);
+	gPARMS->SetDefaultParameter("TRKFIT:TARGET_CONSTRAINT",			TARGET_CONSTRAINT);
 	
 	// DReferenceTrajectory objects
 	rt = new DReferenceTrajectory(bfield);
@@ -595,14 +596,14 @@ double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, hitInfo &hinfo, vector<
 //------------------
 void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, hitInfo &hinfo)
 {
-#if 0
 	// -- Target --
-	hinfo.wires.push_back(target);
-	hinfo.errs.push_back(0.1); // 1mm beam width
-	hinfo.u_dists.push_back(0.0); // placeholder
-	hinfo.u_errs.push_back(0.0); // placeholder indicating no measurement along wire
-	if(fit_type==kTimeBased)hinfo.shifts.push_back(0.0);
-#endif
+	if(TARGET_CONSTRAINT){
+		hinfo.wires.push_back(target);
+		hinfo.errs.push_back(0.1); // 1mm beam width
+		hinfo.u_dists.push_back(0.0); // placeholder
+		hinfo.u_errs.push_back(0.0); // placeholder indicating no measurement along wire
+		if(fit_type==kTimeBased)hinfo.shifts.push_back(0.0);
+	}
 
 	// --- CDC ---
 	for(unsigned int i=0; i<cdchits.size(); i++){
