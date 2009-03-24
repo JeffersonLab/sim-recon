@@ -30,6 +30,7 @@ class DEventProcessor_invariant_mass_hists:public JEventProcessor{
 		TH1D *sqrt_s;			// center of mass energy for all events (shows coherent brem. peaks)
 		TH1D *mm_gp_to_pX;	// missing mass of gamma p -> p + X reaction
 		TH1D *mass_2gamma;	// invariant mass of 2 photons
+		TH1D *mass_4gamma;	// invariant mass of 4 photons
 		TH1D *mass_pip_pim;	// invariant mass of pi+ and pi-
 
 	private:

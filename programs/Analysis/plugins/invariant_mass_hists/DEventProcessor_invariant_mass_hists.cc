@@ -10,6 +10,7 @@
 using namespace std;
 
 #include <TThread.h>
+#include <TDirectoryFile.h>
 #include <TLorentzVector.h>
 
 #include <JANA/JApplication.h>
@@ -61,6 +62,9 @@ jerror_t DEventProcessor_invariant_mass_hists::init(void)
 
 	mass_2gamma = new TH1D("mass_2gamma","2 #gamma invariant mass",4001, 0.0, 4.0);
 	mass_2gamma->SetXTitle("Invariant Mass (GeV/c^{2})");
+
+	mass_4gamma = new TH1D("mass_4gamma","4 #gamma invariant mass",4001, 0.0, 4.0);
+	mass_4gamma->SetXTitle("Invariant Mass (GeV/c^{2})");
 
 	mass_pip_pim = new TH1D("mass_pip_pim","invariant mass of #pi^{+} and #pi^{-}",4001, 0.0, 4.0);
 	mass_pip_pim->SetXTitle("Invariant Mass (GeV/c^{2})");
@@ -161,6 +165,18 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 			
 			TLorentzVector sum = ph1 + ph2;
 			mass_2gamma->Fill(sum.M());
+		}
+	}
+
+	// 4gamma invariant mass. Loop over all possible combinations
+	for(unsigned int j=3; j<rec_photons.size(); j++){
+		for(unsigned int k=2; k<j; k++){
+			for(unsigned int l=1; l<k; l++){
+				for(unsigned int m=0; m<l; m++){
+					TLorentzVector sum = rec_photons[j] + rec_photons[k] + rec_photons[l] + rec_photons[m];
+					mass_4gamma->Fill(sum.M());
+				}
+			}
 		}
 	}
 
