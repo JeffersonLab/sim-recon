@@ -155,7 +155,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		
 		// If there aren't enough DMCTrajectoryPoint objects then we will need to
 		// get the LR information by swimming the thrown value ourself.
-		bool use_rt_thrown = mctrajpoints.size()<20;
+		bool use_rt_thrown = true; //mctrajpoints.size()<20;
 		if(use_rt_thrown)rt_thrown->Swim(mcthrown->position(), mcthrown->momentum(), mcthrown->charge());
 
 		// if this isn't a charged track, then skip it
