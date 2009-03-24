@@ -25,7 +25,7 @@ class dchit:public TObject{
 		float resic;
 		float trk_chisq;
 		float trk_Ndof;
-		int LRthrown;
+		int LRis_correct;
 		int LRfit;
 		TVector3 pos_doca;
 		TVector3 pos_wire;

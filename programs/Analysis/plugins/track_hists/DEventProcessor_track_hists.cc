@@ -6,6 +6,7 @@
 //
 
 #include <iostream>
+#include <iomanip>
 #include <cmath>
 using namespace std;
 
@@ -18,7 +19,9 @@ using namespace std;
 
 #include <DANA/DApplication.h>
 #include <TRACKING/DMCThrown.h>
+#include <TRACKING/DMCTrackHit.h>
 #include <TRACKING/DTrackCandidate.h>
+#include <TRACKING/DTrackHitSelectorTHROWN.h>
 #include <PID/DParticle.h>
 #include <FDC/DFDCGeometry.h>
 #include <CDC/DCDCTrackHit.h>
@@ -54,7 +57,10 @@ DEventProcessor_track_hists::DEventProcessor_track_hists()
 	
 	pthread_mutex_init(&mutex, NULL);
 	
-	rt_thrown=NULL;
+	NLRgood = 0;
+	NLRbad = 0;
+	NLRfit_unknown = 0;
+	Nevents = 0;
 }
 
 //------------------
@@ -62,7 +68,7 @@ DEventProcessor_track_hists::DEventProcessor_track_hists()
 //------------------
 DEventProcessor_track_hists::~DEventProcessor_track_hists()
 {
-	if(rt_thrown)delete rt_thrown;
+
 }
 
 //------------------
@@ -111,6 +117,17 @@ jerror_t DEventProcessor_track_hists::erun(void)
 //------------------
 jerror_t DEventProcessor_track_hists::fini(void)
 {
+	char str[256];
+	sprintf(str,"%3.4f%%", 100.0*(double)NLRbad/(double)(NLRbad+NLRgood));
+	
+	cout<<endl<<setprecision(4);
+	cout<<"       NLRgood: "<<NLRgood<<endl;
+	cout<<"        NLRbad: "<<NLRbad<<endl;
+	cout<<"     NLRfit==0: "<<NLRfit_unknown<<endl;
+	cout<<"Percentage bad: "<<str<<endl;
+	cout<<"       Nevents: "<<Nevents<<endl;
+	cout<<endl;
+
 	return NOERROR;
 }
 
@@ -122,16 +139,48 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DParticle*> particles;
 	vector<const DTrackCandidate*> candidates;
 	vector<const DMCThrown*> mcthrowns;
+	vector<const DMCTrackHit*> mctrackhits;
 	
 	loop->Get(particles);
 	loop->Get(candidates);
 	loop->Get(mcthrowns);
+	loop->Get(mctrackhits);
+	
+	Nevents++;
 	
 	// Only look at events with one thrown and one reconstructed particle
-	if(particles.size() !=1 || mcthrowns.size() !=1 || candidates.size()<1)return NOERROR;
-	const DParticle* recon = particles[0];
+	if(particles.size() <1 || mcthrowns.size() !=1 || candidates.size()<1){
+		_DBG_<<"particles.size()="<<particles.size()<<" mcthrowns.size()="<<mcthrowns.size()<<" candidates.size()="<<candidates.size()<<endl;
+		return NOERROR;
+	}
 	const DTrackCandidate *candidate = candidates[0]; // technically, this could have more than 1 candidate!
 	const DMCThrown *thrown = mcthrowns[0];
+	const DParticle* recon = particles[0];
+	
+	// Loop over found reconstructed particles looking for best match to thrown
+	int min_chisq=1.0E8;
+	DVector3 mc_mom = thrown->momentum();
+	for(unsigned int i=0; i<particles.size(); i++){
+		DVector3 mom = particles[i]->momentum();
+
+		if(mom.Mag()<1.0E-9)continue; // Thrown momentum should be > 1eV/c
+		
+		// Round-off errors can cause cos_phi to be outside the allowed range of -1 to +1
+		// Force it to be inside that range in necessary.
+		double cos_phi = mom.Dot(mc_mom)/mom.Mag()/mc_mom.Mag();
+		if(cos_phi>1.)cos_phi=1.0;
+		if(cos_phi<-1.)cos_phi=-1.0;
+		
+		double delta_pt = (mom.Pt()-mc_mom.Pt())/mc_mom.Pt();
+		double delta_theta = (mom.Theta() - mc_mom.Theta())*1000.0; // in milliradians
+		double delta_phi = acos(cos_phi)*1000.0; // in milliradians
+		double chisq = pow(delta_pt/0.04, 2.0) + pow(delta_theta/20.0, 2.0) + pow(delta_phi/20.0, 2.0);
+
+		if(chisq<min_chisq){
+			min_chisq = chisq;
+			recon = particles[i];
+		}
+	}
 	
 	// Get CDC and FDC hits for reconstructed particle
 	vector<const DCDCTrackHit *> cdctrackhits;
@@ -148,95 +197,93 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 	// the rt_thrown reference trajectory
 	pthread_mutex_lock(&mutex);
 
-	// Swim reference trajectory for thrown
-	if(rt_thrown==NULL)rt_thrown = new DReferenceTrajectory(*rt);
-	rt_thrown->Swim(thrown->position(), thrown->momentum(), thrown->charge());
-	
-	// Get the left-right signs for all CDC hits used on this track. 
-	vector<int> LRthrown;
-	vector<int> LRfit;
-	vector<const DCoordinateSystem*> wires;
-	for(unsigned int k=0; k<cdctrackhits.size(); k++)wires.push_back(cdctrackhits[k]->wire);
-	FindLR(wires, rt_thrown, LRthrown);
-	FindLR(wires, rt, LRfit);
-
 	// Loop over CDC hits
+	int NLRcorrect_this_track = 0;
+	int NLRincorrect_this_track = 0;
 	for(unsigned int i=0; i<cdctrackhits.size(); i++){
 		const DCDCTrackHit *cdctrackhit = cdctrackhits[i];
-		
-		// Get DOCA point for this wire
-		double s;
-		double doca = rt->DistToRT(cdctrackhit->wire, &s);
-		DVector3 pos_doca = rt->GetLastDOCAPoint();
-		double u = rt->GetLastDistAlongWire();
-		DVector3 pos_wire = cdctrackhit->wire->origin + u*cdctrackhit->wire->udir;
-		
-		// Estimate TOF assuming pion
-		double mass = 0.13957;
-		double beta = 1.0/sqrt(1.0 + pow(mass/thrown->momentum().Mag(), 2.0))*2.998E10;
-		double tof = s/beta/1.0E-9; // in ns
-		double dist = (cdctrackhit->tdrift - tof)*55E-4;
-		
+
+		// The hit info structure is used to pass info both in and out of FindLR()
+		hit_info_t hit_info;
+		hit_info.rt = (DReferenceTrajectory*)rt;
+		hit_info.wire = cdctrackhit->wire;
+		hit_info.tdrift = cdctrackhit->tdrift;
+		hit_info.FindLR(mctrackhits);
+				
 		cdchit.eventnumber = eventnumber;
 		cdchit.wire = cdctrackhit->wire->straw;
 		cdchit.layer = cdctrackhit->wire->ring;
 		cdchit.t = cdctrackhit->tdrift;
-		cdchit.tof = tof;
-		cdchit.doca = doca;
-		cdchit.resi = dist - doca;
+		cdchit.tof = hit_info.tof;
+		cdchit.doca = hit_info.doca;
+		cdchit.resi = hit_info.dist - hit_info.doca;
 		cdchit.resic = 0.0;
 		cdchit.trk_chisq = recon->chisq;
 		cdchit.trk_Ndof = recon->Ndof;
-		cdchit.LRthrown = LRthrown[i];
-		cdchit.LRfit = LRfit[i];
-		cdchit.pos_doca = pos_doca;
-		cdchit.pos_wire = pos_wire;
+		cdchit.LRis_correct = hit_info.LRis_correct;
+		cdchit.LRfit = hit_info.LRfit;
+		cdchit.pos_doca = hit_info.pos_doca;
+		cdchit.pos_wire = hit_info.pos_wire;
 		
 		cdchits->Fill();
 
-	}
-	
-	// Get the left-right signs for all FDC hits used on this track. 
-	for(unsigned int k=0; k<fdcpseudohits.size(); k++)wires.push_back(fdcpseudohits[k]->wire);
-	FindLR(wires, rt_thrown, LRthrown);
-	FindLR(wires, rt, LRfit);
+		if(cdchit.LRfit!=0){
+			if(cdchit.LRis_correct){
+				NLRcorrect_this_track++;
+				NLRgood++;
+			}else{
+				NLRincorrect_this_track++;
+				NLRbad++;
+			}
+		}else{
+			NLRfit_unknown++;
+		}
 
+	}
+
+#if 0
 	// Loop over FDC hits
 	for(unsigned int i=0; i<fdcpseudohits.size(); i++){
 		const DFDCPseudo *fdcpseudohit = fdcpseudohits[i];
 		
-		// Get DOCA point for this wire
-		double s;
-		double doca = rt->DistToRT(fdcpseudohit->wire, &s);
-		DVector3 pos_doca = rt->GetLastDOCAPoint();
-		double u = rt->GetLastDistAlongWire();
-		DVector3 pos_wire = fdcpseudohit->wire->origin + u*fdcpseudohit->wire->udir;
-		
-		// Estimate TOF assuming pion
-		double mass = 0.13957;
-		double beta = 1.0/sqrt(1.0 + pow(mass/thrown->momentum().Mag(), 2.0))*2.998E10;
-		double tof = s/beta/1.0E-9; // in ns
-		double dist = (fdcpseudohit->time - tof)*55E-4;
+		// The hit info structure is used to pass info both in and out of FindLR()
+		hit_info_t hit_info;
+		hit_info.rt = (DReferenceTrajectory*)rt;
+		hit_info.wire = fdcpseudohit->wire;
+		hit_info.tdrift = fdcpseudohit->time;
+		hit_info.FindLR(mctrackhits);
 		
 		fdchit.eventnumber = eventnumber;
 		fdchit.wire = fdcpseudohit->wire->wire;
 		fdchit.layer = fdcpseudohit->wire->layer;
 		fdchit.t = fdcpseudohit->time;
-		fdchit.tof = tof;
-		fdchit.doca = doca;
-		fdchit.resi = dist - doca;
-		fdchit.resic = u - fdcpseudohit->s;
+		fdchit.tof = hit_info.tof;
+		fdchit.doca = hit_info.doca;
+		fdchit.resi = hit_info.dist - hit_info.doca;
+		fdchit.resic = hit_info.u - fdcpseudohit->s;
 		fdchit.trk_chisq = recon->chisq;
 		fdchit.trk_Ndof = recon->Ndof;
-		fdchit.LRthrown = LRthrown[i];
-		fdchit.LRfit = LRfit[i];
-		fdchit.pos_doca = pos_doca;
-		fdchit.pos_wire = pos_wire;
+		fdchit.LRis_correct = hit_info.LRis_correct;
+		fdchit.LRfit = hit_info.LRfit;
+		fdchit.pos_doca = hit_info.pos_doca;
+		fdchit.pos_wire = hit_info.pos_wire;
 		
 		fdchits->Fill();
 
+		if(fdchit.LRfit!=0){
+			if(fdchit.LRis_correct){
+				NLRcorrect_this_track++;
+				NLRgood++;
+			}else{
+				NLRincorrect_this_track++;
+				NLRbad++;
+			}
+		}else{
+			NLRfit_unknown++;
+		}
 	}
-	
+#endif
+
 	// Unlock mutex
 	pthread_mutex_unlock(&mutex);
 
@@ -255,6 +302,8 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 	trk.z_fit = tgt_doca.Z();
 	trk.z_can = candidate->position().Z();
 	trk.r_fit = doca_tgt;
+	trk.NLRcorrect = NLRcorrect_this_track;
+	trk.NLRincorrect = NLRincorrect_this_track;
 	
 	ttrack->Fill();
 
@@ -267,28 +316,47 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 // FindLR
 //------------------
-void DEventProcessor_track_hists::FindLR(vector<const DCoordinateSystem*> &wires, const DReferenceTrajectory *crt, vector<int> &LRhits)
+void DEventProcessor_track_hists::hit_info_t::FindLR(vector<const DMCTrackHit*> &mctrackhits)
 {
-	/// Fill the vector LRhits with +1 or -1 values indicating the side of each wire in the "wires"
-	/// vector the given reference trajectory passed on.
+	/// Decided on whether or not the reference trajectory is on the correct side of the wire
+	/// based on truth information.
+	///
+	/// Upon entry, the rt, wire, and rdrift members should be set. The remaining fields are
+	/// filled in on return from this method.
+	///
+	/// Essentially, this will look through the DMCTrackHit objects via the
+	/// DTrackHitSelectorTHROWN::GetMCTrackHit method to find the truth point corresponding
+	/// to this hit (if any). It then compares the vector pointing from the point of
+	/// closest approach on the wire to the DOCA point so a similar vector pointing
+	/// from the same place on the wire to the truth point. If the 2 vectors are within
+	/// +/- 90 degrees, then the trajectory is said to be on the correct side of the wire.
 	
-	LRhits.clear();
-	
-	// This first bit is shameful. In order to use the DistToRT methods of the reference trajectory,
-	// we have to cast away the const qualifier since those methods must modify the object
-	DReferenceTrajectory *rt = const_cast<DReferenceTrajectory*>(crt);
-	for(unsigned int i=0; i<wires.size(); i++){
-		const DCoordinateSystem *wire = wires[i];
+	double s;
+	doca = rt->DistToRT(wire, &s);
+	rt->GetLastDOCAPoint(pos_doca, mom_doca);
+	DVector3 shift = wire->udir.Cross(mom_doca);
+	u = rt->GetLastDistAlongWire();
+	pos_wire = wire->origin + u*wire->udir;
 
-		DVector3 pos_doca, mom_doca;
-		rt->DistToRT(wire);
-		rt->GetLastDOCAPoint(pos_doca, mom_doca);
-		DVector3 shift = wire->udir.Cross(mom_doca);
-		double u = rt->GetLastDistAlongWire();
-		DVector3 pos_wire = wire->origin + u*wire->udir;
-		DVector3 pos_diff = pos_doca-pos_wire;
+	// Estimate TOF assuming pion
+	double mass = 0.13957;
+	double beta = 1.0/sqrt(1.0 + pow(mass/mom_doca.Mag(), 2.0))*2.998E10;
+	tof = s/beta/1.0E-9; // in ns
+	dist = (tdrift - tof)*55E-4;
+	
+	// Look for a truth hit corresponding to this wire. If none is found, mark the hit as 
+	// 0 (i.e. neither left nor right) and continue to the next hit.
+	const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(wire, dist, mctrackhits);
+	if(!mctrackhit){
+		LRfit = 0;
+		LRis_correct = false; // can't really tell what to set this to
+	}else{
+		DVector3 pos_truth(mctrackhit->r*cos(mctrackhit->phi), mctrackhit->r*sin(mctrackhit->phi), mctrackhit->z);
+		DVector3 pos_diff_truth = pos_truth-pos_wire;
+		DVector3 pos_diff_traj  = pos_doca-pos_wire;
 		
-		LRhits.push_back(shift.Dot(pos_diff)<0.0 ? -1:1);
+		LRfit = shift.Dot(pos_diff_traj)<0.0 ? -1:1;
+		LRis_correct = pos_diff_truth.Dot(pos_diff_traj)>0.0;
 	}
 }
 

@@ -45,10 +45,29 @@ class DEventProcessor_track_hists:public JEventProcessor{
 		trackpar trk;
 		trackpar *trk_ptr;
 		
-		DReferenceTrajectory *rt_thrown;
 		DCoordinateSystem target;
 
-		void FindLR(vector<const DCoordinateSystem*> &wires, const DReferenceTrajectory *crt, vector<int> &LRhits);
+		class hit_info_t{
+			public:
+				// Inputs
+				DReferenceTrajectory *rt;
+				const DCoordinateSystem *wire;
+				double tdrift;
+				double u;
+				
+				// Outputs
+				double doca;
+				double dist;
+				double tof;
+				int LRfit;
+				bool LRis_correct;
+				DVector3 pos_doca;
+				DVector3 mom_doca;
+				DVector3 pos_wire;
+
+				void FindLR(vector<const DMCTrackHit*> &mctrackhits);
+		};
+		
 		
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
@@ -58,6 +77,9 @@ class DEventProcessor_track_hists:public JEventProcessor{
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
 			
 		pthread_mutex_t mutex;
+		
+		int NLRbad, NLRgood, NLRfit_unknown;
+		int Nevents;
 };
 
 #endif // _DEventProcessor_track_hists_

@@ -23,6 +23,8 @@ class trackpar:public TObject{
 		float z_fit;
 		float z_can;
 		float r_fit;
+		int NLRcorrect;
+		int NLRincorrect;
 
 	private:
 		ClassDef(trackpar,1);
