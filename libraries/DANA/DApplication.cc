@@ -41,6 +41,15 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 		AddPluginPath(string(ptr) + "/lib/" + sbms);
 	}
 	
+}
+
+//---------------------------------
+// Init
+//---------------------------------
+jerror_t DApplication::Init(void)
+{
+	this->JApplication::Init();
+
 	// Create magnetic field object for use by everyone
 	// Allow a trivial homogeneous map to be used if 
 	// specified on the command line
@@ -60,7 +69,9 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 	
 	// Create map of material properties
 	//material = new DMaterialMapCalibDB(this);
-        RootGeom= new DRootGeom();
+	RootGeom= new DRootGeom();
+	
+	return NOERROR;
 }
 
 //---------------------------------

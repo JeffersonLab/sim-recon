@@ -32,6 +32,8 @@ class DApplication:public JApplication{
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DApplication";}
 		
+		jerror_t Init(void);
+		
 		DMagneticFieldMap* GetBfield(void){return bfield;}
 		DLorentzDeflections *GetLorentzDeflections(void){return lorentz_def;}
 		//DMaterialMap *GetMaterialMap(void){return material;}
