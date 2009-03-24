@@ -1761,10 +1761,12 @@ const char* hdv_mainframe::GetFactoryTag(string who)
 		//tag = tracksfactory->GetSelectedEntry()->GetTitle();
 	}
 	if(who=="DTrackCandidate"){
-		tag = candidatesfactory->GetSelectedEntry()->GetTitle();
+		tag = candidatesfactory->GetTextEntry()->GetTitle();
+		//tag = candidatesfactory->GetSelectedEntry()->GetTitle();
 	}
 	if(who=="DParticle"){
-		tag = particlesfactory->GetSelectedEntry()->GetTitle();
+		tag = particlesfactory->GetTextEntry()->GetTitle();
+		//tag = particlesfactory->GetSelectedEntry()->GetTitle();
 	}
 	if(string(tag) == "<default>")tag = "";
 	
