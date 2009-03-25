@@ -13,8 +13,11 @@ char *OUTPUT_FILE = "output.hddm";
 void ParseCommandLineArguments(int narg,char *argv[]);
 int Str2GeantParticleID(char *str);
 void Usage(void);
+double randm(double, double);
 
-float vertex[3]={0.0, 0.0, 65.0};
+float vertex[4]={0.0, 0.0, 65.0, 65.0};
+
+time_t now;
 
 //-------------------------------
 // main
@@ -26,7 +29,11 @@ int main(int narg, char *argv[])
 	if(!INPUT_FILE){
 		cerr<<"No input file!"<<endl;
 	}
-	
+
+	// Seed the random generator
+	now=time(NULL);
+	srand48(now);
+
 	// Open input file
 	ifstream *file = new ifstream(INPUT_FILE);
 	if(!file->is_open()){
@@ -70,8 +77,13 @@ int main(int narg, char *argv[])
 		origin->t = 0.0;
 		origin->vx = vertex[0];
 		origin->vy = vertex[1];
-		origin->vz = vertex[2];
-		
+
+		if(vertex[2]<vertex[3]){
+		  origin->vz = randm(vertex[2],vertex[3]);
+		}  else {
+		  origin->vz = vertex[2];
+		}
+
 		for(int i=0;i<nParticles;i++, ps->mult++){
 			int N, charge, type;
 			char typestr[256];
@@ -128,9 +140,13 @@ void ParseCommandLineArguments(int narg,char *argv[])
 			char *ptr = &argv[i][1];
 			switch(*ptr){
 				case 'V':
-					sscanf(&ptr[1], "%f %f %f", &vertex[0], &vertex[1], &vertex[2]);
-					break;
-				default:
+				  sscanf(&ptr[1], "%f %f %f %f", &vertex[0], &vertex[1], &vertex[2], &vertex[3]);
+				  if(vertex[2] > vertex[3]){
+				    cerr<<"Invalid parameter: z_min > z_max"<< endl;
+				    exit(-1);
+				  }
+				  break;
+			        default:
 					cerr<<"Unknown option \""<<argv[i]<<"\""<<endl;
 					Usage();
 					exit(-1);
@@ -155,8 +171,8 @@ void Usage(void)
 	cout<<endl;
 	cout<<" options:"<<endl;
 	cout<<endl;
-	cout<<"  -V\"x y z\"    set the vertex for the interaction.";
-	cout<<"(default: x="<<vertex[0]<<" y="<<vertex[1]<<" z="<<vertex[2]<<")"<<endl;
+	cout<<"  -V\"x  y  z_min  z_max\"    set the vertex for the interaction.";
+	cout<<"(default: x="<<vertex[0]<<" y="<<vertex[1]<<" z_min="<<vertex[2]<<" z_max="<<vertex[3]<<")"<<endl;
 	cout<<"  -h           print this usage statement."<<endl;
 	cout<<endl;
 }
@@ -209,4 +225,10 @@ int Str2GeantParticleID(char *str)
 	return -1;
 }
 
-
+/**************************/
+/*  Random generator      */
+/*------------------------*/
+double randm(double low, double high)
+{
+  return ((high - low) * drand48() + low);
+}
