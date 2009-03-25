@@ -46,7 +46,6 @@ int main(int narg, char *argv[])
 	ParseCommandLineArgs(narg, argv);
 	DApplication *dapp = new DApplication(narg, argv);
 	dapp->Init();
-return 0;
 
 	// open ROOT file
 	float val[10];
