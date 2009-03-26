@@ -223,9 +223,11 @@ void combinedResidFunc::get_correction_value(const DFDCPseudo &ppoint, double x,
   double cosangle = ppoint.wire->udir(1);
   double sinangle= ppoint.wire->udir(0);
   double alpha = 0.0; // for now
+  if (debug_level > 3) cout << "x, y, z " << x << ' ' << y << ' ' << z << endl;
   double lorentzShift = lorentz_def->GetLorentzCorrection(x, y, z, alpha, driftDist);
   double ds = -lorentzShift;
   double dw = driftDist;
+  if (debug_level > 3) cout << "ds, dw" << ds << " " << dw << endl;
   delta_x = dw*cosangle + ds*sinangle;
   delta_y = -dw*sinangle + ds*cosangle;
   return;
@@ -252,6 +254,7 @@ DLine combinedResidFunc::trackhit2line(const DCDCTrackHit &trkhit) {
 FDCHitDetails combinedResidFunc::getDetails(const DFDCPseudo *ppoint, HepVector point) {
   FDCHitDetails details;
   details.doca = trajPtr->doca(point, details.poca);
+  details.rCorr = point;
   return details;
 }
 
