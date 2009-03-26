@@ -3,7 +3,7 @@
 int FDCHitDetails::instanceCount = 0;
 int CDCHitDetails::instanceCount = 0;
 
-FDCHitDetails::FDCHitDetails() {
+FDCHitDetails::FDCHitDetails(): rCorr(3) {
   instanceCount++;
   return;
 }
