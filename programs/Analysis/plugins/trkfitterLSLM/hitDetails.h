@@ -11,6 +11,7 @@ class FDCHitDetails {
   FDCHitDetails();
   ~FDCHitDetails();
   double doca;
+  HepVector rCorr;
   HepLorentzVector poca;
   static int getInstanceCount();
 }; 
