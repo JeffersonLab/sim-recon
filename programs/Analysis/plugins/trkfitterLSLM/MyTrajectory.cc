@@ -123,12 +123,12 @@ int MyTrajectory::get_xy(double z, double &x, double &y) {
   }
   while (iAfter - iBefore > 1) {
     iTry = iBefore + (int)((double)(iAfter - iBefore)*(z - zBefore)/(zAfter - zBefore) + 0.5);
-    // cout << iBefore << ' ' << iTry << ' ' << iAfter << endl;
+    if (debug_level > 3) cout << iBefore << ' ' << iTry << ' ' << iAfter << endl;
     if (iBefore == iTry) iTry++;
     if (iAfter == iTry) iTry--;
-    // cout << iBefore << ' ' << iTry << ' ' << iAfter << endl;
+    if (debug_level > 3) cout << iBefore << ' ' << iTry << ' ' << iAfter << endl;
     zTry = (*traj[iTry])(3);
-    // cout << "zTry = " << zTry << endl;
+    if (debug_level > 3) cout << "zTry = " << zTry << endl;
     if (z < zTry) {
       iAfter = iTry;
       zAfter = (*traj[iAfter])(3);
@@ -136,19 +136,19 @@ int MyTrajectory::get_xy(double z, double &x, double &y) {
       iBefore = iTry;
       zBefore = (*traj[iBefore])(3);
     } else {
-      x = (*traj[iTry])(1);
-      y = (*traj[iTry])(2);
+      x = traj[iTry]->x();
+      y = traj[iTry]->y();
     }
-    // cout << z << ' ' << zBefore << ' ' << zTry << ' ' << zAfter << endl;
+    if (debug_level > 3) cout << z << ' ' << zBefore << ' ' << zTry << ' ' << zAfter << endl;
   }
   double frac, otherfrac;
   frac = (z - zBefore)/(zAfter - zBefore);
   otherfrac = 1.0 - frac;
-  // cout << frac << ' ' << otherfrac << endl;
-  // cout << "x before, after " << (*traj[iBefore])(1) << ' '<< (*traj[iAfter])(1) << endl;
-  // cout << "y before, after " << (*traj[iBefore])(2) << ' '<< (*traj[iAfter])(2) << endl;
-  x = frac*(*traj[iAfter])(1) + otherfrac*(*traj[iBefore])(1);
-  y = frac*(*traj[iAfter])(2) + otherfrac*(*traj[iBefore])(2);
+  if (debug_level > 3) cout << frac << ' ' << otherfrac << endl;
+  if (debug_level > 3) cout << "x before, after " << traj[iBefore]->x() << ' '<< traj[iAfter]->x() << endl;
+  if (debug_level > 3) cout << "y before, after " << traj[iBefore]->y() << ' '<< traj[iAfter]->y() << endl;
+  x = frac*traj[iAfter]->x() + otherfrac*traj[iBefore]->x();
+  y = frac*traj[iAfter]->y() + otherfrac*traj[iBefore]->y();
   return 0;
 }
 
