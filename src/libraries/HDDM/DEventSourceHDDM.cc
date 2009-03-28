@@ -426,17 +426,12 @@ jerror_t DEventSourceHDDM::GetSCTruthHits(s_HDDM_t *hddm_s,  vector<DMCTrackHit*
 	for(unsigned int i=0; i<PE->mult; i++){
 		s_HitView_t *hits = PE->in[i].hitView;
 		
-		cout << " hits->startCntr " << hits->startCntr << " hits->startCntr->stcTruthPoints" <<
-		  hits->startCntr->stcTruthPoints << endl;
-
 		if (hits == HDDM_NULL ||
 			hits->startCntr == HDDM_NULL ||
 			hits->startCntr->stcTruthPoints == HDDM_NULL)continue;
 		
 		s_StcTruthPoints_t *stctruthpoints = hits->startCntr->stcTruthPoints;
 		s_StcTruthPoint_t *stctruthpoint   = stctruthpoints->in;
-
-		cout << " stctruthpoints->mult " << stctruthpoints->mult << endl;
 
 		for(unsigned int j=0; j<stctruthpoints->mult; j++, stctruthpoint++){
 			DMCTrackHit *mctrackhit = new DMCTrackHit;
@@ -453,11 +448,6 @@ jerror_t DEventSourceHDDM::GetSCTruthHits(s_HDDM_t *hddm_s,  vector<DMCTrackHit*
 		
 	return NOERROR;
 }
-
-
-
-
-
 
 
 //------------------
