@@ -200,6 +200,7 @@ jerror_t DEventSourceHDDM::Extract_DMCTrackHit(s_HDDM_t *hddm_s, JFactory<DMCTra
 	GetTOFTruthHits(hddm_s, data);
 	GetCherenkovTruthHits(hddm_s, data);
 	GetFCALTruthHits(hddm_s, data);
+	GetSCTruthHits(hddm_s, data);
 
 	// It has happened that some CDC hits have "nan" for the drift time
 	// in a peculiar event Alex Somov came across. This ultimately caused
@@ -411,6 +412,54 @@ jerror_t DEventSourceHDDM::GetFCALTruthHits(s_HDDM_t *hddm_s, vector<DMCTrackHit
 	return NOERROR;
 }
 
+
+
+//-------------------
+// GetSCTruthHits
+//-------------------
+jerror_t DEventSourceHDDM::GetSCTruthHits(s_HDDM_t *hddm_s,  vector<DMCTrackHit*>& data)
+{
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+	
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		
+		cout << " hits->startCntr " << hits->startCntr << " hits->startCntr->stcTruthPoints" <<
+		  hits->startCntr->stcTruthPoints << endl;
+
+		if (hits == HDDM_NULL ||
+			hits->startCntr == HDDM_NULL ||
+			hits->startCntr->stcTruthPoints == HDDM_NULL)continue;
+		
+		s_StcTruthPoints_t *stctruthpoints = hits->startCntr->stcTruthPoints;
+		s_StcTruthPoint_t *stctruthpoint   = stctruthpoints->in;
+
+		cout << " stctruthpoints->mult " << stctruthpoints->mult << endl;
+
+		for(unsigned int j=0; j<stctruthpoints->mult; j++, stctruthpoint++){
+			DMCTrackHit *mctrackhit = new DMCTrackHit;
+			mctrackhit->r			=   stctruthpoint->r;
+			mctrackhit->phi		        =   stctruthpoint->phi;
+			mctrackhit->z			=   stctruthpoint->z;
+			mctrackhit->track		=   stctruthpoint->track;
+			mctrackhit->primary	        =   stctruthpoint->primary;
+			mctrackhit->ptype               =   stctruthpoint->ptype;    // save GEANT particle type 
+			mctrackhit->system 	        =   SYS_START;
+			data.push_back(mctrackhit);
+		}
+	}
+		
+	return NOERROR;
+}
+
+
+
+
+
+
+
 //------------------
 // Extract_DBCALHit
 //------------------
@@ -508,6 +557,7 @@ jerror_t DEventSourceHDDM::Extract_DBeamPhoton(s_HDDM_t *hddm_s,  JFactory<DBeam
 
 	return NOERROR;
 }
+
 
 //------------------
 // Extract_DMCThrown
