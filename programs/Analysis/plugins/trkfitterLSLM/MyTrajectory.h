@@ -31,7 +31,7 @@ class MyTrajectory {
   virtual vector<double> getDelta() {
     return delta;
   }
-  int get_xy(double z, double &x, double &y); //
+  int getXYT(double z, double &x, double &y, double &t); //
   void dump_ascii(ostream *trajFile, int tag);
 
  protected:

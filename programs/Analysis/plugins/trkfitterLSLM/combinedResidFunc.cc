@@ -188,11 +188,12 @@ void combinedResidFunc::residAndDeriv(const HepVector *x, void *data, HepVector 
 HepVector combinedResidFunc::pseudo2HepVector(const DFDCPseudo &ppoint) {
   double x;
   double y;
+  double t;
   double z = ppoint.wire->origin(2);
-  trajPtr->get_xy(z, x, y); // on trajectory
-  bool ispos = get_correction_sign(ppoint, x, y, z);
+  trajPtr->getXYT(z, x, y, t); // on trajectory
+  bool ispos = getCorrectionSign(ppoint, x, y, z);
   double delta_x = 0.0, delta_y = 0.0;
-  get_correction_value(ppoint, x, y, z, delta_x, delta_y);
+  getCorrectionValue(ppoint, x, y, z, t, delta_x, delta_y);
   HepVector point(3);
   if (ispos) {
     point(1) = ppoint.x + delta_x;
@@ -205,7 +206,7 @@ HepVector combinedResidFunc::pseudo2HepVector(const DFDCPseudo &ppoint) {
   return point;
 }
 
-bool combinedResidFunc::get_correction_sign(const DFDCPseudo &ppoint, double x, double y, double z) {
+bool combinedResidFunc::getCorrectionSign(const DFDCPseudo &ppoint, double x, double y, double z) {
   double cosangle = ppoint.wire->udir(1);
   double sinangle = ppoint.wire->udir(0);
   double delta_w = x*cosangle - y*sinangle - ppoint.w;
@@ -215,10 +216,15 @@ bool combinedResidFunc::get_correction_sign(const DFDCPseudo &ppoint, double x, 
   } else {
     ispos = false;
   }
+  if (debug_level > 3) cout << "cosangle = " << cosangle
+			    << " sinangle = " << sinangle
+       << " x = " << x << " y = " << y << " w = " << ppoint.w
+       << " delta_w = " << delta_w << " ispos = " << ispos << endl;
   return ispos;
 }
 
-void combinedResidFunc::get_correction_value(const DFDCPseudo &ppoint, double x, double y, double z, double &delta_x, double &delta_y) {
+void combinedResidFunc::getCorrectionValue(const DFDCPseudo &ppoint, double x, double y, double z, double t, double &delta_x, double &delta_y) {
+  //double driftDist = (ppoint.time - t)*DRIFT_VELOCITY;
   double driftDist = ppoint.time*DRIFT_VELOCITY;
   double cosangle = ppoint.wire->udir(1);
   double sinangle= ppoint.wire->udir(0);

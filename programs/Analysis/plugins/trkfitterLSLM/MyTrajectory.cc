@@ -113,7 +113,7 @@ double MyTrajectory::dist(DLine& line, int trajIndex) {
   return line.doca(*traj[trajIndex]);
 }
 
-int MyTrajectory::get_xy(double z, double &x, double &y) {
+int MyTrajectory::getXYT(double z, double &x, double &y, double &t) {
   int iBefore = 0, iAfter = traj.size() - 1, iTry;
   double zBefore = (*traj[iBefore])(3);
   double zAfter = (*traj[iAfter])(3);
@@ -149,6 +149,7 @@ int MyTrajectory::get_xy(double z, double &x, double &y) {
   if (debug_level > 3) cout << "y before, after " << traj[iBefore]->y() << ' '<< traj[iAfter]->y() << endl;
   x = frac*traj[iAfter]->x() + otherfrac*traj[iBefore]->x();
   y = frac*traj[iAfter]->y() + otherfrac*traj[iBefore]->y();
+  t = frac*traj[iAfter]->t() + otherfrac*traj[iBefore]->t();
   return 0;
 }
 
