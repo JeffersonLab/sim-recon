@@ -39,7 +39,7 @@ class combinedResidFunc:public residFunc {
   DLine trackhit2line(const DCDCTrackHit &trackhit);
   vector<double> delta;
   int debug_level;
-  bool getCorrectionSign(const DFDCPseudo &pseudopoint, double x, double y, double z);
+  bool getCorrectionSign(const DFDCPseudo &pseudopoint, double x, double y, double deltaX, double deltaY);
   void getCorrectionValue(const DFDCPseudo &pseudopoint, double x, double y, double z, double t, double &delta_x, double &delta_y);
   const DLorentzDeflections *lorentz_def;
   bool storeDetails;

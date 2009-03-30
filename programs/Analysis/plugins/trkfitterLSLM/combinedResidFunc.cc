@@ -191,9 +191,9 @@ HepVector combinedResidFunc::pseudo2HepVector(const DFDCPseudo &ppoint) {
   double t;
   double z = ppoint.wire->origin(2);
   trajPtr->getXYT(z, x, y, t); // on trajectory
-  bool ispos = getCorrectionSign(ppoint, x, y, z);
   double delta_x = 0.0, delta_y = 0.0;
   getCorrectionValue(ppoint, x, y, z, t, delta_x, delta_y);
+  bool ispos = getCorrectionSign(ppoint, x, y, delta_x, delta_y);
   HepVector point(3);
   if (ispos) {
     point(1) = ppoint.x + delta_x;
@@ -206,20 +206,28 @@ HepVector combinedResidFunc::pseudo2HepVector(const DFDCPseudo &ppoint) {
   return point;
 }
 
-bool combinedResidFunc::getCorrectionSign(const DFDCPseudo &ppoint, double x, double y, double z) {
-  double cosangle = ppoint.wire->udir(1);
-  double sinangle = ppoint.wire->udir(0);
-  double delta_w = x*cosangle - y*sinangle - ppoint.w;
-  bool ispos;
-  if (delta_w > 0.0) {
-    ispos = true;
-  } else {
-    ispos = false;
-  }
-  if (debug_level > 3) cout << "cosangle = " << cosangle
-			    << " sinangle = " << sinangle
-       << " x = " << x << " y = " << y << " w = " << ppoint.w
-       << " delta_w = " << delta_w << " ispos = " << ispos << endl;
+bool combinedResidFunc::getCorrectionSign(const DFDCPseudo &ppoint, double x, double y, double delta_x, double delta_y) {
+  double xWire = ppoint.wire->udir(0);
+  double yWire = ppoint.wire->udir(1);
+  double wireCrossTraj = xWire*(y - ppoint.y) - yWire*(x - ppoint.x);
+  double wireCrossDelta = xWire*delta_y - yWire*delta_x;
+  bool isposTraj = wireCrossTraj > 0?true:false;
+  bool isposDelta = wireCrossDelta > 0?true:false;
+  bool ispos = !(isposTraj ^ isposDelta);
+  if (debug_level > 3) cout << " ppx = " << ppoint.x
+			    << " ppy = " << ppoint.y
+			    << " dx = " << x - ppoint.x
+			    << " dy = " << y - ppoint.y
+			    << " delta_x = " << delta_x
+			    << " delta_y = " << delta_y
+			    << " xWire = " << xWire
+			    << " yWire = " << yWire
+			    << " wireCrossTraj = " << wireCrossTraj
+			    << " wireCrossDelta = " << wireCrossDelta
+			    << " isposTraj = " << isposTraj
+			    << " isposDelta = " << isposDelta
+			    << " ispos = " << ispos
+			    << endl;
   return ispos;
 }
 
