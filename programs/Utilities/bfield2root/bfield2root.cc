@@ -61,15 +61,15 @@ int main(int narg, char *argv[])
 	tree->Branch("B",val,"x/F:y:z:r:phi:Bx:By:Bz:Br:Bphi");
 	
 	// Loop over cylindrical grid and fill tree
+	double r = Rmin;
 	for(int ir=0; ir<Nr; ir++){
-		double r = Rmin;
-		if(Nr>1) r += (double)ir*(Rmax-Rmin)/(double)(Nr-1);
+		if(Nr>1) r = Rmin + (double)ir*(Rmax-Rmin)/(double)(Nr-1);
+		double phi = Phimin;
 		for(int iphi=0; iphi<Nphi; iphi++){
-			double phi = Phimin;
-			if(Nphi>1) phi += (double)iphi*(Phimax-Phimin)/(double)(Nphi-1);
+			if(Nphi>1) phi = Phimin + (double)iphi*(Phimax-Phimin)/(double)(Nphi-1);
+			double z = Zmin;
 			for(int iz=0; iz<Nz; iz++){
-				double z = Zmin;
-				if(Nz>1) z += (double)iz*(Zmax-Zmin)/(double)(Nz-1);
+				if(Nz>1) z = Zmin + (double)iz*(Zmax-Zmin)/(double)(Nz-1);
 				
 				double x = r*cos(phi);
 				double y = r*sin(phi);
@@ -118,12 +118,12 @@ void Usage(void)
 	cout<<"    -Nr     #    Set the number of grid points in R"<<endl;
 	cout<<"    -Nphi   #    Set the number of grid points in Phi"<<endl;
 	cout<<"    -Nz     #    Set the number of grid points in Z"<<endl;
-	cout<<"    -Rmin   #    Set the minimum value for R"<<endl;
-	cout<<"    -Rmax   #    Set the maximum value for R"<<endl;
-	cout<<"    -Phimin #    Set the minimum value for Phi"<<endl;
-	cout<<"    -Phimax #    Set the maximum value for Phi"<<endl;
-	cout<<"    -Zmin   #    Set the minimum value for Z"<<endl;
-	cout<<"    -Zmax   #    Set the maximum value for Z"<<endl;
+	cout<<"    -Rmin   #    Set the minimum value for R (cm)"<<endl;
+	cout<<"    -Rmax   #    Set the maximum value for R (cm)"<<endl;
+	cout<<"    -Phimin #    Set the minimum value for Phi (radians)"<<endl;
+	cout<<"    -Phimax #    Set the maximum value for Phi (radians)"<<endl;
+	cout<<"    -Zmin   #    Set the minimum value for Z (cm)"<<endl;
+	cout<<"    -Zmax   #    Set the maximum value for Z (cm)"<<endl;
 	cout<<"    -Z0     #    Shift the map's z-coordinate"<<endl;
 	cout<<endl;
 	cout<<" The bfield to root program can be used to generate a ROOT TTree of the"<<endl;
@@ -179,6 +179,5 @@ void ParseCommandLineArgs(int narg, char* argv[])
 			}
 		}
 	}
-
 }
 
