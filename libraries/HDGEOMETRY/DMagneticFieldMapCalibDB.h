@@ -10,7 +10,7 @@
 
 #include <JANA/jerror.h>
 
-#include "DMagneticFieldMap.h"
+#include <HDGEOMETRY/DMagneticFieldMap.h>
 
 #include <vector>
 #include <string>

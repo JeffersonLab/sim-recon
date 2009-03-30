@@ -5,12 +5,15 @@
 // Creator: davidl (on Darwin Harriet.local 8.6.0 powerpc)
 //
 
+#include <string>
+using std::string;
+#include <JANA/JVersion.h>
+
 #include "DApplication.h"
 #include "HDDM/DEventSourceHDDMGenerator.h"
-#include "HDGEOMETRY/DMagneticFieldMapGlueX.h"
-#include "HDGEOMETRY/DMagneticFieldMapHDGEANT.h"
 #include "HDGEOMETRY/DMagneticFieldMapCalibDB.h"
 #include "HDGEOMETRY/DMagneticFieldMapConst.h"
+#include "HDGEOMETRY/DMagneticFieldMapSpoiled.h"
 #include "HDGEOMETRY/DLorentzMapCalibDB.h"
 //#include "HDGEOMETRY/DMaterialMapCalibDB.h"
 #include "HDGEOMETRY/DRootGeom.h"
@@ -41,6 +44,7 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 		AddPluginPath(string(ptr) + "/lib/" + sbms);
 	}
 	
+	if(JVersion::minor<5)Init();
 }
 
 //---------------------------------
@@ -59,6 +63,8 @@ jerror_t DApplication::Init(void)
 		bfield = new DMagneticFieldMapCalibDB(this);
 	}else if(bfield_type=="Const"){
 		bfield = new DMagneticFieldMapConst(this);
+	}else if(bfield_type=="Spoiled"){
+		bfield = new DMagneticFieldMapSpoiled(this);
 	}else{
 		_DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type<<"\" !!"<<endl;
 		exit(-1);
