@@ -115,8 +115,8 @@ double MyTrajectory::dist(DLine& line, int trajIndex) {
 
 int MyTrajectory::getXYT(double z, double &x, double &y, double &t) {
   int iBefore = 0, iAfter = traj.size() - 1, iTry;
-  double zBefore = (*traj[iBefore])(3);
-  double zAfter = (*traj[iAfter])(3);
+  double zBefore = traj[iBefore]->z();
+  double zAfter = traj[iAfter]->z();
   double zTry;
   if (z < zBefore || z > zAfter) {
     return 1;
@@ -127,14 +127,14 @@ int MyTrajectory::getXYT(double z, double &x, double &y, double &t) {
     if (iBefore == iTry) iTry++;
     if (iAfter == iTry) iTry--;
     if (debug_level > 3) cout << iBefore << ' ' << iTry << ' ' << iAfter << endl;
-    zTry = (*traj[iTry])(3);
+    zTry = traj[iTry]->z();
     if (debug_level > 3) cout << "zTry = " << zTry << endl;
     if (z < zTry) {
       iAfter = iTry;
-      zAfter = (*traj[iAfter])(3);
+      zAfter = traj[iAfter]->z();
     } else if (z > zTry) {
       iBefore = iTry;
-      zBefore = (*traj[iBefore])(3);
+      zBefore = traj[iBefore]->z();
     } else {
       x = traj[iTry]->x();
       y = traj[iTry]->y();
@@ -150,6 +150,7 @@ int MyTrajectory::getXYT(double z, double &x, double &y, double &t) {
   x = frac*traj[iAfter]->x() + otherfrac*traj[iBefore]->x();
   y = frac*traj[iAfter]->y() + otherfrac*traj[iBefore]->y();
   t = frac*traj[iAfter]->t() + otherfrac*traj[iBefore]->t();
+  if (debug_level > 3) cout << "x, y, t = " << x << " " << y << " " << t << endl;
   return 0;
 }
 
