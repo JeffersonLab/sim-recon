@@ -5,7 +5,8 @@ using namespace std;
 
 #include "MyTrajectory.h"
 
-MyTrajectory::MyTrajectory(int level) : nparams(4), delta(4, 0.001), debug_level(level) {
+MyTrajectory::MyTrajectory(int level) : nparams(4), delta(4, 0.001),
+					debug_level(level) {
   // explicit default constructor, set number of params for straight line
   //  cout << "MyTrajectory constructor called\n";
   //  cout << "nparams = " << nparams << endl;
@@ -26,7 +27,6 @@ void MyTrajectory::clear() {
     for (vector<HepLorentzVector*>::iterator iVector = traj.begin();
 	 iVector != traj.end();
 	 iVector++) {
-      // cout << "traj x = " << (**iVector)(1) << ", traj y = " << (**iVector)(2) << ", traj z = " << (**iVector)(3) << endl;
       delete *iVector;
     }
   }
@@ -38,7 +38,6 @@ void MyTrajectory::swim(HepVector startingPoint, double theta,
 			double phi)
 // default swim, straight line
 {
-  //  cout << "straight line swim with start point = "<< startingPoint << "theta = " << theta << " phi = " << phi << endl;
   checkClear();
   double stepLength = 1.0;
   HepLorentzVector step;
@@ -46,13 +45,13 @@ void MyTrajectory::swim(HepVector startingPoint, double theta,
   step.setY(stepLength*sin(theta)*sin(phi));
   step.setZ(stepLength*cos(theta));
   HepLorentzVector* thisVector;
-  thisVector = new HepLorentzVector(startingPoint(1), startingPoint(2), startingPoint(3));
+  thisVector = new HepLorentzVector(startingPoint(1), startingPoint(2),
+				    startingPoint(3));
   traj.push_back(thisVector);
   HepLorentzVector lastVector(*thisVector);
   for (int i = 0; i < 600; i++) {
     thisVector = new HepLorentzVector();
     *thisVector = lastVector + step;
-    //    if (i == 100) cout << "point on traj " << i << " " << *thisVector;
     traj.push_back(thisVector);
     lastVector = *thisVector;
   }
@@ -105,7 +104,10 @@ vector<HepLorentzVector*>* MyTrajectory::getTrajectory() {
 double MyTrajectory::dist(HepVector& point, int trajIndex) {
   Hep3Vector delta, point3(point(1), point(2), point(3));
   delta = point3 - traj[trajIndex]->getV();
-  if (debug_level >= 4) cout << "point3 = " << point3 << "traj point = " << traj[trajIndex]->getV() << "delta = " << delta << "delta.mag = " << delta.mag() << endl;
+  if (debug_level >= 4) cout << "point3 = " << point3
+			     << "traj point = " << traj[trajIndex]->getV()
+			     << "delta = " << delta
+			     << "delta.mag = " << delta.mag() << endl;
   return delta.mag();
 }
 
@@ -122,11 +124,15 @@ int MyTrajectory::getXYT(double z, double &x, double &y, double &t) {
     return 1;
   }
   while (iAfter - iBefore > 1) {
-    iTry = iBefore + (int)((double)(iAfter - iBefore)*(z - zBefore)/(zAfter - zBefore) + 0.5);
-    if (debug_level > 3) cout << iBefore << ' ' << iTry << ' ' << iAfter << endl;
+    iTry = iBefore
+      + (int)((double)(iAfter - iBefore)*(z - zBefore)/(zAfter - zBefore)
+	      + 0.5);
+    if (debug_level > 3) cout << iBefore << ' ' << iTry
+			      << ' ' << iAfter << endl;
     if (iBefore == iTry) iTry++;
     if (iAfter == iTry) iTry--;
-    if (debug_level > 3) cout << iBefore << ' ' << iTry << ' ' << iAfter << endl;
+    if (debug_level > 3) cout << iBefore << ' ' << iTry
+			      << ' ' << iAfter << endl;
     zTry = traj[iTry]->z();
     if (debug_level > 3) cout << "zTry = " << zTry << endl;
     if (z < zTry) {
@@ -141,18 +147,22 @@ int MyTrajectory::getXYT(double z, double &x, double &y, double &t) {
       iAfter = iTry + 1;
       zAfter = traj[iAfter]->z();
     }
-    if (debug_level > 3) cout << z << ' ' << zBefore << ' ' << zTry << ' ' << zAfter << endl;
+    if (debug_level > 3) cout << z << ' ' << zBefore << ' ' << zTry
+			      << ' ' << zAfter << endl;
   }
   double frac, otherfrac;
   frac = (z - zBefore)/(zAfter - zBefore);
   otherfrac = 1.0 - frac;
   if (debug_level > 3) cout << frac << ' ' << otherfrac << endl;
-  if (debug_level > 3) cout << "x before, after " << traj[iBefore]->x() << ' '<< traj[iAfter]->x() << endl;
-  if (debug_level > 3) cout << "y before, after " << traj[iBefore]->y() << ' '<< traj[iAfter]->y() << endl;
+  if (debug_level > 3) cout << "x before, after " << traj[iBefore]->x()
+			    << ' '<< traj[iAfter]->x() << endl;
+  if (debug_level > 3) cout << "y before, after " << traj[iBefore]->y()
+			    << ' '<< traj[iAfter]->y() << endl;
   x = frac*traj[iAfter]->x() + otherfrac*traj[iBefore]->x();
   y = frac*traj[iAfter]->y() + otherfrac*traj[iBefore]->y();
   t = frac*traj[iAfter]->t() + otherfrac*traj[iBefore]->t();
-  if (debug_level > 3) cout << "x, y, t = " << x << " " << y << " " << t << endl;
+  if (debug_level > 3) cout << "x, y, t = " << x << " " << y
+			    << " " << t << endl;
   return 0;
 }
 
