@@ -136,8 +136,10 @@ int MyTrajectory::getXYT(double z, double &x, double &y, double &t) {
       iBefore = iTry;
       zBefore = traj[iBefore]->z();
     } else {
-      x = traj[iTry]->x();
-      y = traj[iTry]->y();
+      iBefore = iTry;
+      zBefore = traj[iBefore]->z();
+      iAfter = iTry + 1;
+      zAfter = traj[iAfter]->z();
     }
     if (debug_level > 3) cout << z << ' ' << zBefore << ' ' << zTry << ' ' << zAfter << endl;
   }
