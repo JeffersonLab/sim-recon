@@ -33,7 +33,9 @@ private:
     // mock up the sampling fraction smearing
     float samplingSmear( float E );
     float timeSmear( float t, float E );
-
+    
+    int getDarkHits();
+    
     float m_cellThresholdOuter;
     float m_cellThresholdInner;
     

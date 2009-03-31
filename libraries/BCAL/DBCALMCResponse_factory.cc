@@ -138,7 +138,7 @@ DBCALMCResponse_factory::init( void )
     m_sampling_fract * k_MeV; 
 
   cout << "BCAL inner cell threshold:  " 
-       << m_cellThresholdInner << " GeV, "  
+       << m_cellThresholdInner * 1000 << " MeV, "  
        << nPEThresh << " P.E." << endl;
 
   return NOERROR;
@@ -150,11 +150,29 @@ DBCALMCResponse_factory::init( void )
 //------------------
 jerror_t DBCALMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
 {
-
+ 
     vector<const DBCALGeometry*> bcalGeomVec;
     eventLoop->Get(bcalGeomVec);
     const DBCALGeometry& bcalGeom = *(bcalGeomVec.at( 0 ));
     
+    map< int, pair< int, int > > darkHits;
+    map< int, pair< int, int > >::iterator darkHitItr;
+
+    for( int m = 1; m <= bcalGeom.NBCALMODS; ++m ){
+      for( int l = 1; l <= bcalGeom.NBCALLAYS1; ++l ){
+	for( int s = 1; s <= bcalGeom.NBCALSECS1; ++s ){
+
+	  pair< int, int > nHits( getDarkHits(), getDarkHits() );
+
+	  darkHits[DBCALGeometry::cellId( m, l, s )] = nHits;
+	}
+      }
+    }
+
+    double mevPerPE = 1 / 
+      ( m_photonsPerSidePerMeVInFiber * m_devicePDE *
+	m_sampling_fract );
+
     vector<const DHDDMBCALHit*> hddmhits;
     eventLoop->Get(hddmhits);
     
@@ -194,6 +212,21 @@ jerror_t DBCALMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
 	float cellThreshold = ( hddmhit->layer <= bcalGeom.NBCALLAYS1 ?
 				m_cellThresholdInner : m_cellThresholdOuter );
 
+	int cell = DBCALGeometry::cellId( hddmhit->module, hddmhit->layer, 
+					  hddmhit->sector );
+
+	darkHitItr = darkHits.find( cell );
+	if( darkHitItr != darkHits.end() ){
+
+	  upEnergy += ( darkHitItr->second.first * mevPerPE * k_MeV );
+	  downEnergy += ( darkHitItr->second.second * mevPerPE * k_MeV );
+
+	  // now delete this from the map so we don't create
+	  // additional hits later
+
+	  darkHits.erase( darkHitItr );
+	}
+	
         if( upEnergy > cellThreshold ){
         
             DBCALMCResponse *response = new DBCALMCResponse;
@@ -205,8 +238,7 @@ jerror_t DBCALMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
             response->t = upTime;
             response->end = DBCALGeometry::kUpstream;
 
-            response->cellId = 
-                DBCALGeometry::cellId( hddmhit->module, hddmhit->layer, hddmhit->sector );
+            response->cellId = cell;
 
             _data.push_back(response);
         }
@@ -221,12 +253,54 @@ jerror_t DBCALMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
             response->E = downEnergy;
             response->t = downTime;
             response->end = DBCALGeometry::kDownstream;
-            
-            response->cellId = 
-                DBCALGeometry::cellId( hddmhit->module, hddmhit->layer, hddmhit->sector );
+	    response->cellId = cell;
             
             _data.push_back(response);
         }
+    }
+
+    
+    // make hits for remainig dark pulses...
+    for( darkHitItr = darkHits.begin();
+	 darkHitItr != darkHits.end();
+	 ++darkHitItr ){
+      
+      int cell = darkHitItr->first;
+      double upEnergy = darkHitItr->second.first * mevPerPE * k_MeV;
+      double downEnergy = darkHitItr->second.second * mevPerPE * k_MeV;
+      
+      if( upEnergy > m_cellThresholdInner ){
+        
+	DBCALMCResponse *response = new DBCALMCResponse;
+        
+	response->module = DBCALGeometry::module( cell );
+	response->layer = DBCALGeometry::layer( cell );
+	response->sector = DBCALGeometry::sector( cell );
+	response->E = upEnergy;
+	response->t = m_randomGen.Uniform( -0.25 * m_intWindow_ns,
+					    0.75 * m_intWindow_ns ) * k_nsec;
+	response->end = DBCALGeometry::kUpstream;
+	    
+	response->cellId = cell;
+
+	_data.push_back(response);
+      }
+        
+      if( downEnergy > m_cellThresholdInner ){
+            
+	DBCALMCResponse *response = new DBCALMCResponse;
+        
+	response->module = DBCALGeometry::module( cell );
+	response->layer = DBCALGeometry::layer( cell );
+	response->sector = DBCALGeometry::sector( cell );
+	response->E = downEnergy;
+	response->t = m_randomGen.Uniform( -0.25 * m_intWindow_ns,
+					    0.75 * m_intWindow_ns ) * k_nsec;
+	response->end = DBCALGeometry::kDownstream;
+	response->cellId = cell;
+        
+	_data.push_back(response);
+      }
     }
     
     return NOERROR;
@@ -249,3 +323,14 @@ DBCALMCResponse_factory::timeSmear( float t, float E )
   return( t + m_randomGen.Gaus( 0., sigmaT ) );
 }
 
+int
+DBCALMCResponse_factory::getDarkHits()
+{
+
+  int darkPulse = 
+    m_randomGen.Poisson( m_darkRate_GHz * m_intWindow_ns );
+
+  int xTalk = m_randomGen.Poisson( darkPulse * m_xTalk_fract );
+
+  return( xTalk + darkPulse );
+}
