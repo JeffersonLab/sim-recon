@@ -28,14 +28,14 @@ public:
 		
     int cellId;
 	 
-		void toStrings(vector<pair<string,string> > &items)const{
-			AddString(items, "module", "%d", module);
-			AddString(items, "layer", "%d", layer);
-			AddString(items, "sector", "%d", sector);
-			AddString(items, "end", "%s", end==0? "upstream":"downstream");
-			AddString(items, "E(GeV)", "%d", E);
-			AddString(items, "t(ns)", "%d", t);
-		}
+    void toStrings(vector<pair<string,string> > &items)const{
+      AddString(items, "module", "%d", module);
+      AddString(items, "layer", "%d", layer);
+      AddString(items, "sector", "%d", sector);
+      AddString(items, "end", "%s", end==0 ? "upstream":"downstream" );
+      AddString(items, "E(MeV)", "%3.1f", E * 1000 );
+      AddString(items, "t(ns)", "%2.1f", t);
+    }
 };
 
 #endif // _DBCALMCResponse_
