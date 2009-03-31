@@ -49,7 +49,7 @@ void initcalibdb_(char *bfield_type)
 	}else if(bfield_type_str=="Const"){
 		Bmap = new DMagneticFieldMapConst(jcalib);
 	}else if(bfield_type=="Spoiled"){
-		bfield = new DMagneticFieldMapSpoiled(this);
+		Bmap = new DMagneticFieldMapSpoiled(jcalib);
 	}else{
 		_DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type_str<<"\" !!"<<endl;
 		exit(-1);

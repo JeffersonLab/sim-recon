@@ -23,15 +23,19 @@ using namespace jana;
 //---------------------------------
 DMagneticFieldMapSpoiled::DMagneticFieldMapSpoiled(JApplication *japp, string namepath)
 {
-	initialized = false;
 	bfield = new DMagneticFieldMapCalibDB(japp, namepath);
 	
-	phi_amp = 0.0;
-	phi_omega = M_PI/(2.0*M_PI);
-	r_amp = 0.0;
-	r_omega = M_PI/65.0;
-	z_amp = 0.0;
-	z_omega = M_PI/(20.0);
+	initialized = false;
+}
+
+//---------------------------------
+// DMagneticFieldMapSpoiled    (Constructor)
+//---------------------------------
+DMagneticFieldMapSpoiled::DMagneticFieldMapSpoiled(JCalibration *jcalib, string namepath)
+{
+	bfield = new DMagneticFieldMapCalibDB(jcalib, namepath);
+	
+	initialized = false;
 }
 
 //---------------------------------
@@ -47,6 +51,13 @@ DMagneticFieldMapSpoiled::~DMagneticFieldMapSpoiled()
 //---------------------------------
 void DMagneticFieldMapSpoiled::Init(void)
 {
+	phi_amp = 0.0;
+	phi_omega = M_PI/(2.0*M_PI);
+	r_amp = 0.0;
+	r_omega = M_PI/65.0;
+	z_amp = 0.0;
+	z_omega = M_PI/(20.0);
+
 	if(!gPARMS){
 		_DBG_<<"gPARMS==NULL!"<<endl;
 		return;

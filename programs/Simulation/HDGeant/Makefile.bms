@@ -1,5 +1,5 @@
 
-PACKAGES := CERNLIB:JANA
+PACKAGES := CERNLIB:JANA:ROOT
 MISC_LIBS = -L/sw/lib -lXm -L/usr/X11R6/lib -lXt -lgelhad -lhitutil
 #FFLAGS = -Wno-globals
 CFLAGS += -I$(HALLD_MY)/src/libraries/HDDM -I$(HALLD_HOME)/src/libraries/HDDM
