@@ -8,6 +8,7 @@ using namespace std;
 #include <JANA/JCalibrationFile.h>
 #include <HDGEOMETRY/DMagneticFieldMapCalibDB.h>
 #include <HDGEOMETRY/DMagneticFieldMapConst.h>
+#include "HDGEOMETRY/DMagneticFieldMapSpoiled.h"
 
 extern "C" {
 #include "calibDB.h"
@@ -47,6 +48,8 @@ void initcalibdb_(char *bfield_type)
 		Bmap = new DMagneticFieldMapCalibDB(jcalib);
 	}else if(bfield_type_str=="Const"){
 		Bmap = new DMagneticFieldMapConst(jcalib);
+	}else if(bfield_type=="Spoiled"){
+		bfield = new DMagneticFieldMapSpoiled(this);
 	}else{
 		_DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type_str<<"\" !!"<<endl;
 		exit(-1);
