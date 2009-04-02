@@ -191,7 +191,50 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 			w->udir.RotateY(-rotY*deg2rad);
 			w->udir.RotateZ(phi);
 			
+			// With the addition of close-packed stereo wires, the vector connecting
+			// the center of the wire to the beamline ("s" direction) is not necessarily
+			// perpendicular to the beamline. By definition, we want the "s" direction
+			// to be perpendicular to the wire direction "u" and pointing at the beamline.
+			// 
+			// NOTE: This extensive comment is here because the result, when implmented
+			// below caused a WORSE residual distribution in the close-packed stereo
+			// layers. Owing to lack of time currently to track the issue down (most
+			// likely in DReferenceTrajectory) I'm commenting out the "correct" calculation
+			// of s, but leaving this comment so the issue can be revisited later. This
+			// error leads to around 100 micron errors in the C.P.S. wires, but they
+			// are completely washed out when the position smearing of 150 microns is applied
+			// making the error unnoticable except when position smearing is not applied.
+			//
+			// April 2, 2009  D.L.
+			//
+			// Here is how this is calculated -- We define a vector equation with 2 unknowns
+			// Z and S:
+			//
+			//    Zz + Ss = W
+			//
+			// where:  z = unit vector in z direction
+			//         s = unit vector in "s" direction
+			//         W = vector pointing to center of wire in lab coordinates
+			//
+			//  Rearranging, we get:
+			//
+			//     s = (W - Zz)/S
+			//
+			//  Since s must be perpendicular to u, we take a dot product of s and u
+			// and set it equal to zero to determine Z:
+			//
+			//    u.s = 0 = u.(W - Zz)/S  =>  u.W = Zu.z
+			//
+			//   or
+			//
+			//     Z = u.W/u.z
+			//
+			//  Thus, the s direction is just given by (W - (u.W/u.z)z)
+			//
+			
+			
 			w->sdir=w->origin-TVector3(0,0,w->origin.Z());
+			//w->sdir = w->origin - TVector3(0.0, 0.0, w->udir.Dot(w->origin)/w->udir.Z());  // see above comments
 			w->sdir.SetMag(1.0);
 
 			w->tdir = w->udir.Cross(w->sdir);
@@ -199,7 +242,7 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 
 			w->stereo = w->udir.Angle(TVector3(0,0,1));
 			if(rotX>0.0)w->stereo = -w->stereo;
-			w->L = L/cos(stereo);
+			w->L = L/cos(w->stereo);
 		}
 	}
 
