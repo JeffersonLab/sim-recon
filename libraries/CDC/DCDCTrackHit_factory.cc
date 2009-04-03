@@ -145,35 +145,31 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 		Nstraws[ring-1] = myNstraws;
 		
 		// I'm not sure why this is needed, but empirically, it just is.
-		stereo = -stereo;
-		rotX = -rotX;
-		rotY = -rotY;
-		
-		// For close-packed stereo layers, rotX is set. For normal stereo layers, stereo is set.
-		// In the case of normal stereo wires, copy the rotation to the rotX field
-		if(stereo!=0.0)rotX = stereo/deg2rad;
-		
+		//stereo = -stereo;
+		//rotX = -rotX;
+		//rotY = -rotY;
+			
 		// Convert phi_shift to radians
 		phi_shift *= M_PI/180.0;
-		
-		// Close-packed stereos have and additional, initial phi shift in order to be close packed
-		phi_shift += atan2(deltaY, deltaX);
-		
-		// If radius is 0 then it means this is a close-packed stereo whose position is set
-		// by deltaX and deltaY. Calculate the initial radius from these
-		if(radius==0.0)radius=sqrt(deltaX*deltaX + deltaY*deltaY);
 		
 		float dphi = 2.0*M_PI/(float)myNstraws; // phi angle difference between straws
 		for(int straw=1; straw<=myNstraws; straw++){
 			DCDCWire *w = &wire[ring-1][straw-1];
 
 			float phi = phi_shift + (float)(straw-1)*dphi;
-			
+		
 			// Define position of midpoint of wire, phi of midpoint, and m_x, m_y
 			w->ring = ring;
 			w->straw = straw;
-			w->origin.SetX(radius*cos(phi));
-			w->origin.SetY(radius*sin(phi));
+			if (rotY==0.){
+			  w->origin.SetX(radius*cos(phi));
+			  w->origin.SetY(radius*sin(phi));
+			}
+			else{
+			  w->origin.SetX(deltaX);
+			  w->origin.SetY(deltaY);
+			  w->origin.RotateZ(phi);
+			}
 			w->origin.SetZ((Z_MAX + Z_MIN)/2.0);
 			w->phi = phi;
 			//w->L = L/cos(stereo);
@@ -185,11 +181,17 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 			// the wire running in the "u" direction. The "s" direction
 			// will be defined by the direction pointing from the beamline
 			// to the midpoint of the wire.
-			
-			w->udir.SetXYZ(0.0, 0.0, 1.0);
-			w->udir.RotateX(-rotX*deg2rad);
-			w->udir.RotateY(-rotY*deg2rad);
-			w->udir.RotateZ(phi);
+			w->udir.SetXYZ(0.0, 0.0,1.0);
+			if (rotY==0.){
+			  w->udir.RotateX(stereo);	
+			  w->udir.RotateZ(phi);
+			}
+			else{
+			  w->udir.SetXYZ(0.0, 0.0,1.0);
+			  w->udir.RotateY(rotY*deg2rad);	
+			  w->udir.RotateX(rotX*deg2rad);
+			  w->udir.RotateZ(phi);
+			}
 			
 			// With the addition of close-packed stereo wires, the vector connecting
 			// the center of the wire to the beamline ("s" direction) is not necessarily
@@ -231,17 +233,16 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 			//
 			//  Thus, the s direction is just given by (W - (u.W/u.z)z)
 			//
-			
-			
-			w->sdir=w->origin-TVector3(0,0,w->origin.Z());
-			//w->sdir = w->origin - TVector3(0.0, 0.0, w->udir.Dot(w->origin)/w->udir.Z());  // see above comments
+						
+			//w->sdir=w->origin-TVector3(0,0,w->origin.Z());
+			w->sdir = w->origin - TVector3(0.0, 0.0, w->udir.Dot(w->origin)/w->udir.Z());  // see above comments
 			w->sdir.SetMag(1.0);
 
 			w->tdir = w->udir.Cross(w->sdir);
 			w->tdir.SetMag(1.0); // This isn't really needed
 
 			w->stereo = w->udir.Angle(TVector3(0,0,1));
-			if(rotX>0.0)w->stereo = -w->stereo;
+			//if(rotX>0.0)w->stereo = -w->stereo;
 			w->L = L/cos(w->stereo);
 		}
 	}
