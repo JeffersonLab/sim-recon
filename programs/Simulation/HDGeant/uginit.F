@@ -211,6 +211,7 @@ C..geant..
 *
       OPEN(UNIT=4,FILE='control.in',STATUS='UNKNOWN')
       CALL FFSET('LINP',4)
+      CALL FFSET('SIZE',16)
       call ffkey('infile',infile,20,'MIXED')
       call ffkey('skip',iskip,1,'INTEGER')
       call ffkey('outfile',outfile,20,'MIXED')
@@ -223,7 +224,7 @@ C..geant..
       CALL FFKEY('bgrate',bgrate,1,'REAL')
       CALL FFKEY('bggate',bggate,2,'REAL')
       CALL FFKEY('savehits',writenohits,1,'INTEGER')
-      CALL FFKEY('showers_in_col',showersincol,1,'INTEGER')
+      CALL FFKEY('showersincol',showersincol,1,'INTEGER')
       call gtgamaff()
       CALL GFFGO
 *

@@ -247,7 +247,7 @@ c hits in the detector to the hddm output file. Default value is 0.
 c This card is used to enable/disable ( SHOWERS_IN_COL 1/0 ) simulation of 
 c showers in the primary and secondary collimators placed in the collimator cave. 
 c The default value is set to 0.
-  SHOWERS_IN_COL 0
+  SHOWERSINCOL 0
 
 
 c The following cards allow one to switch on/off some physics processes in GEANT:
