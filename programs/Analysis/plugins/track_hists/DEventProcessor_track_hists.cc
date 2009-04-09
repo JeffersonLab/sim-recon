@@ -241,7 +241,7 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 
 	}
 
-#if 0
+#if 1
 	// Loop over FDC hits
 	for(unsigned int i=0; i<fdcpseudohits.size(); i++){
 		const DFDCPseudo *fdcpseudohit = fdcpseudohits[i];
