@@ -135,6 +135,7 @@
 #include "geant321/gcscan.inc"
 #include "hdtrackparams.inc"
 #include "backgrounds.inc"
+#include "controlparams.inc"
 *
       integer iskip
       integer infile(20)
@@ -156,6 +157,8 @@ c The following parameters are declared in hdtrackparams.inc above.
       data storetraj/0/
       data plog_particle_gun/0/
       data tlog_particle_gun/0/
+      data writenohits/0/
+      data showersincol/0/
 
 
 C  Use this parameter to set up a minimum photon energy 
@@ -219,6 +222,8 @@ C..geant..
       call ffkey('tlog', tlog_particle_gun,1,'INTEGER')
       CALL FFKEY('bgrate',bgrate,1,'REAL')
       CALL FFKEY('bggate',bggate,2,'REAL')
+      CALL FFKEY('savehits',writenohits,1,'INTEGER')
+      CALL FFKEY('showers_in_col',showersincol,1,'INTEGER')
       call gtgamaff()
       CALL GFFGO
 *
@@ -274,6 +279,16 @@ C..geant..
      +        ' cannot continue.'
          stop
       endif
+
+      if(showersincol.ne.0) then
+         print *,'uginit.F: Enable showers in the primary collimator'
+      endif
+
+      if(writenohits.ne.0) then
+         print *, 'uginit.F: Enable writing events with no hits in the', 
+     +        ' detector to the hddm output file'
+      endif
+
             
 *     Scale BG rate according to the threshold set on energy of bremsstrahlung
 *     photons. bgrate corresponds to  Rate(E_brem = 0.12 GeV).

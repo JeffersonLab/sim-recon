@@ -188,6 +188,7 @@
 #include "geant321/gcbank.inc"
 #include "geant321/gcmate.inc"
 #include "hdtrackparams.inc"
+#include "controlparams.inc"
 *
 *     -----------------------------------------------------------------
 *
@@ -765,13 +766,17 @@ c
         call addtrajectorypoint(VECT,TOFG,DESTEP,GETOT,ITRA,ISTAK
      +         ,IPART, RADL, STEP, NMEC, LMEC, storetraj)
       endif
+     
 
-#ifndef TRACK_SHOWERS_IN_COLLIMATOR
-      if ((cnames(NLEVEL).eq.'INSU').or.
-     +    (cnames(NLEVEL).eq.'COL1')) then
-        ISTOP=1
+c     #ifndef TRACK_SHOWERS_IN_COLLIMATOR
+      if(showersincol.ne.0) then
+         if ((cnames(NLEVEL).eq.'INSU').or.
+     +        (cnames(NLEVEL).eq.'COL1')) then
+            ISTOP=1
+         endif
       endif
-#endif
+*     #endif
+
 
 #ifdef HISTOGRAM_MATERIAL_SEEN_BY_FIRST_TRACK
       if (ITRA.eq.1.and.ISTAK.eq.0) then

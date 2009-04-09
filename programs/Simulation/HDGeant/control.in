@@ -19,8 +19,8 @@ c process the following 100 input events and stop.  If the end of the file is
 c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
 cINFILE 'rhop.hddm'
-TRIG 100000
-RUNG 9999
+TRIG 10
+
 
 c The BEAM card configures the built-in coherent bremsstralung photon
 c beam generator in HDGeant.  If the INFILE card is not present and BEAM
@@ -238,6 +238,17 @@ c To maintain compatibility with the reconstruction, one must specify the
 c same option on the command line to the reconstruction program like this:
 c hd_root -PBFIELD_TYPE=Const file.hddm
 c BFIELD 'Const'
+
+c Use this card to enable/disable ( SAVEHITS  1/0 ) writing events with no 
+c hits in the detector to the hddm output file. Default value is 0.
+  SAVEHITS  0
+
+
+c This card is used to enable/disable ( SHOWERS_IN_COL 1/0 ) simulation of 
+c showers in the primary and secondary collimators placed in the collimator cave. 
+c The default value is set to 0.
+  SHOWERS_IN_COL 0
+
 
 c The following cards allow one to switch on/off some physics processes in GEANT:
 c MULS 0 no multiple scattering

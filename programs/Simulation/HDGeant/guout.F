@@ -64,21 +64,31 @@ C.
 C.
 #include "geant321/gcomis.inc"
 #include "geant321/gcphys.inc"
+#include "controlparams.inc"
 C.    ------------------------------------------------------------------
 C.
       integer iskip
       integer iseen
       call gelh_outp(iskip)
       iseen = loadOutput()
-#define WRITE_ONLY_IF_SOMETHING_WAS_SEEN 1
-#if WRITE_ONLY_IF_SOMETHING_WAS_SEEN
-      if (iseen.gt.0) then
-#else
-      if (iseen.ge.0) then
-#endif
-        call flushOutput()
-      endif
 
-C		FDPREE() should only be called if FLUKA is being used
-		if (IHADR.ge.3) call fdpree()
+C     #define WRITE_ONLY_IF_SOMETHING_WAS_SEEN 1
+C     #if WRITE_ONLY_IF_SOMETHING_WAS_SEEN
+C     if (iseen.gt.0) then
+C     #else
+C     if (iseen.ge.0) then
+C     #endif
+C     call flushOutput()
+C     endif
+      
+
+      if(writenohits.ne.0) then
+         if (iseen.ge.0)  call flushOutput()
+      else 
+         if (iseen.gt.0)  call flushOutput()
+      endif
+      
+C     FDPREE() should only be called if FLUKA is being used
+      if (IHADR.ge.3) call fdpree()
+
       END
