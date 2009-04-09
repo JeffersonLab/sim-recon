@@ -66,8 +66,6 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	SIGMA_CDC = 0.0150;
 	SIGMA_FDC_ANODE = 0.0200;
 	SIGMA_FDC_CATHODE = 0.0200;
-//SIGMA_FDC_ANODE = 100.0;
-//SIGMA_FDC_CATHODE = 100.0;
 	CHISQ_MAX_RESI_SIGMAS = 100.0;
 	CHISQ_GOOD_LIMIT = 2.0;
 	LEAST_SQUARES_DP = 0.0001;
@@ -734,9 +732,15 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 			DVector3 pos_diff = pos_doca-pos_wire;
 			if(shift.Dot(pos_diff)<0.0)shift = -shift;
 			
+			// Lorentz corrected poisition along the wire is contained in x,y
+			// values.
+			DVector3 wpos(hit->x, hit->y, wire->origin.Z());
+			DVector3 wdiff = wpos - wire->origin;
+			double u_corr = wire->udir.Dot(wdiff);
+
 			hinfo.shifts.push_back(shift);
 			hinfo.errs.push_back(SIGMA_FDC_ANODE);
-			hinfo.u_dists.push_back(hit->s);
+			hinfo.u_dists.push_back(u_corr);
 			hinfo.u_errs.push_back(SIGMA_FDC_CATHODE);
 			//hinfo.u_errs.push_back(0.0);
 		}
