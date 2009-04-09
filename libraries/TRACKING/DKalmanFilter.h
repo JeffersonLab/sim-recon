@@ -25,6 +25,7 @@ typedef struct{
   double t,d,stereo;
   DVector3 origin;
   DVector3 dir;
+  int ring;
 }DKalmanCDCHit_t;
 
 typedef struct{
