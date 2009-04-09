@@ -245,7 +245,12 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 	// Loop over FDC hits
 	for(unsigned int i=0; i<fdcpseudohits.size(); i++){
 		const DFDCPseudo *fdcpseudohit = fdcpseudohits[i];
-		
+
+		// Lorentz corrected poisition along the wire is contained in x,y values.
+		DVector3 wpos(fdcpseudohit->x, fdcpseudohit->y, fdcpseudohit->wire->origin.Z());
+		DVector3 wdiff = wpos - fdcpseudohit->wire->origin;
+		double u_corr = fdcpseudohit->wire->udir.Dot(wdiff);
+
 		// The hit info structure is used to pass info both in and out of FindLR()
 		hit_info_t hit_info;
 		hit_info.rt = (DReferenceTrajectory*)rt;
@@ -260,7 +265,7 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 		fdchit.tof = hit_info.tof;
 		fdchit.doca = hit_info.doca;
 		fdchit.resi = hit_info.dist - hit_info.doca;
-		fdchit.resic = hit_info.u - fdcpseudohit->s;
+		fdchit.resic = hit_info.u - u_corr;
 		fdchit.trk_chisq = recon->chisq;
 		fdchit.trk_Ndof = recon->Ndof;
 		fdchit.LRis_correct = hit_info.LRis_correct;
