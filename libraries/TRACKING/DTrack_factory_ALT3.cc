@@ -78,8 +78,8 @@ jerror_t DTrack_factory_ALT3::brun(JEventLoop *loop, int runnumber)
   dapp->Lock();
   cdc_residuals=(TH2F*)gROOT->FindObject("cdc_residuals");
   if (!cdc_residuals){
-    cdc_residuals=new TH2F("cdc_residuals","residuals vs R",
-			60,0.,60.,100,-1,1.);
+    cdc_residuals=new TH2F("cdc_residuals","residuals vs ring",
+			30,0.5,30.5,1000,-0.1,0.1);
     cdc_residuals->SetXTitle("R (cm)");
     cdc_residuals->SetYTitle("#Deltad (cm)");
   }  
