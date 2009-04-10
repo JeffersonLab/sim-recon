@@ -224,7 +224,11 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	double last_chisq = 1.0E6;
 	int Niterations;
 	for(Niterations=0; Niterations<MAX_FIT_ITERATIONS; Niterations++){
-		switch(fit_status = LeastSquaresB(fit_type, rt)){
+	
+		hitsInfo hinfo;	
+		GetWiresShiftsErrs(fit_type, rt, hinfo);
+	
+		switch(fit_status = LeastSquaresB(hinfo, rt)){
 			case kFitSuccess:
 				if(DEBUG_LEVEL>2)_DBG_<<"Fit succeeded ----- "<<endl;
 				break;
@@ -277,18 +281,18 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	if(DEBUG_LEVEL>10){
 		_DBG_<<"-------- Final Chisq for track = "<<chisq<<endl;
 		double chisq = ChiSq(fit_type, rt);
-		_DBG_<<"-------- Check chisq = "<<chisq<<endl;
+		_DBG_<<"-------- Check chisq = "<<chisq<<" Ndof="<<Ndof<<endl;
 	}
-	
+
+	// Calculate final chi-squared for this track
+	ChiSq(fit_type, rt, &this->chisq, &this->Ndof);
+
 	// Find point of closest approach to target and use parameters
 	// there for vertex position and momentum
+	//DVector3 vertex_mom, vertex_pos;
 	//double s;
 	//rt->DistToRT(target, &s);
 	//rt->GetLastDOCAPoint(vertex_pos, vertex_mom);
-	//_DBG_<<"final chi-sq:"<<chisq<<"   DOF="<<chisqv.size()<<"   Niterations="<<Niterations<<" dp_over_p="<<dp_over_p<<endl;
-
-ChiSq(fit_type, rt, &this->chisq, &this->Ndof);
-
 	DVector3 &vertex_mom = rt->swim_steps[0].mom;
 	DVector3 &vertex_pos = rt->swim_steps[0].origin;
 
@@ -314,76 +318,12 @@ ChiSq(fit_type, rt, &this->chisq, &this->Ndof);
 	return fit_status;
 }
 
-#if 0
-//------------------
-// FitTrackWithOppositeCharge
-//------------------
-DTrack* DTrackFitterALT1::FitTrackWithOppositeCharge(DReferenceTrajectory* rt, int candidateid, DTrack* &track)
-{
-	if(DEBUG_LEVEL>2)_DBG_<<"Fitting track with opposite charge (original:"<<(rt->q>0 ? "+":"-")<<" now:"<<(rt->q>0 ? "-":"+")<<")"<<endl;
-
-	// Create a new reference trajectory with flipped charge using the
-	// original track candidate parameters
-	const DTrackCandidate *tc = eventLoop->FindByID<DTrackCandidate>(candidateid);
-	if(tc==NULL){
-		_DBG_<<"Unable to find track candidate with id="<<candidateid<<endl;
-		return NULL;
-	}
-	const DVector3 &pos = tc->position();
-	const DVector3 &mom = tc->momentum();
-	DReferenceTrajectory *myrt = new DReferenceTrajectory(bfield);
-	myrt->Swim(pos, mom, -tc->charge());
-	if(myrt->Nswim_steps==0){
-		if(DEBUG_LEVEL>2)_DBG_<<"No swim steps when swimming opposite charged track!"<<endl;
-		delete myrt;
-		return track;
-	}
-
-	// Try fitting track
-	DTrack *track_bar = FitTrack(myrt, candidateid);
-	
-	// Decide which (if any) track to keep
-	if((track==NULL) && (track_bar==NULL)){
-		if(DEBUG_LEVEL>3)_DBG_<<"Track fits failed both q and q_bar"<<endl;
-		delete myrt;
-		return NULL;
-	}
-	if((track==NULL) && (track_bar!=NULL)){
-		if(DEBUG_LEVEL>3)_DBG_<<"Track fit failed q but succeeded for q_bar"<<endl;
-		return track = track_bar;
-	}
-	if((track!=NULL) && (track_bar==NULL)){
-		if(DEBUG_LEVEL>3)_DBG_<<"Track fit failed q_bar but succeeded for q"<<endl;
-		delete myrt;
-		return track;
-	}
-	
-	// At this point, we have successful ( or at least not-failed) fits
-	// for both charge choices. Decided which to keep via the lower
-	// chisq. Delete the loser and return the winner.
-	if(track_bar->chisq < track->chisq){
-		if(DEBUG_LEVEL>3)_DBG_<<"Keeping opposite charged track"<<endl;
-		delete track;
-		*rt = *myrt;
-		track = track_bar;
-	}else{
-		if(DEBUG_LEVEL>3)_DBG_<<"Keeping original charge track"<<endl;
-		delete track_bar;
-		rt->Swim(pos, mom, -rt->q); // re-swim with original charge
-	}
-	
-	delete myrt;
-	
-	return track;
-}
-#endif
-
 //------------------
 // ChiSq
 //------------------
 double DTrackFitterALT1::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr, int *dof_ptr)
 {
-	hitInfo hinfo;
+	hitsInfo hinfo;
 	
 	GetWiresShiftsErrs(fit_type, rt, hinfo);
 	
@@ -393,7 +333,7 @@ double DTrackFitterALT1::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, do
 //------------------
 // ChiSq
 //------------------
-double DTrackFitterALT1::ChiSq(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, hitInfo &hinfo, vector<double> &chisqv, double *chisq_ptr, int *dof_ptr)
+double DTrackFitterALT1::ChiSq(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, hitsInfo &hinfo, vector<double> &chisqv, double *chisq_ptr, int *dof_ptr)
 {
 	/// Calculate the chi-squared for a track specified by state relative to the
 	/// given reference trajectory. This is just a wrapper for 
@@ -415,9 +355,9 @@ double DTrackFitterALT1::ChiSq(DMatrix &state, const swim_step_t *start_step, DR
 	if(!rt){
 		_DBG_<<"NULL pointer passed for DReferenceTrajectory object!"<<endl;
 		chisqv.clear();
-		for(unsigned int i=0; i<hinfo.wires.size(); i++){
+		for(unsigned int i=0; i<hinfo.size(); i++){
 			chisqv.push_back(1.0E6); // CDC and FDC wires
-			if(hinfo.u_errs[i]!=0.0)chisqv.push_back(1.0E6); // FDC cathodes
+			if(hinfo[i].u_err!=0.0)chisqv.push_back(1.0E6); // FDC cathodes
 		}
 		return 1.0E6;
 	}
@@ -430,9 +370,9 @@ double DTrackFitterALT1::ChiSq(DMatrix &state, const swim_step_t *start_step, DR
 			_DBG_<<"state[state_x ][0]="<<state[state_x ][0]<<"  state[state_v ][0]="<<state[state_x ][0]<<endl;
 		}
 		chisqv.clear();
-		for(unsigned int i=0; i<hinfo.wires.size(); i++){
+		for(unsigned int i=0; i<hinfo.size(); i++){
 			chisqv.push_back(1.0E6); // CDC and FDC wires
-			if(hinfo.u_errs[i]!=0.0)chisqv.push_back(1.0E6); // FDC cathodes
+			if(hinfo[i].u_err!=0.0)chisqv.push_back(1.0E6); // FDC cathodes
 		}
 
 		return 1.0E6;
@@ -446,7 +386,7 @@ double DTrackFitterALT1::ChiSq(DMatrix &state, const swim_step_t *start_step, DR
 //------------------
 // ChiSq
 //------------------
-double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, hitInfo &hinfo, vector<double> &chisqv, double *chisq_ptr, int *dof_ptr)
+double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, hitsInfo &hinfo, vector<double> &chisqv, double *chisq_ptr, int *dof_ptr)
 {
 	/// Calculate the chisq for a track represented by the given reference
 	/// trajectory with the given list of wires. The values in the "shifts"
@@ -466,24 +406,13 @@ double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, hitInfo &hinfo, vector<
 
 	// Make sure input vectors match
 	chisqv.clear();
-	bool use_shifts = hinfo.shifts.size()==hinfo.wires.size();
-	if(hinfo.wires.size()<hinfo.errs.size() || (hinfo.errs.size()>2*hinfo.wires.size()) || (hinfo.shifts.size()!=0 && !use_shifts)){
-		_DBG_<<"Error! the wires, errs, and shifts vectors are out of alignment."<<endl;
-		_DBG_<<"wires.size()="<<hinfo.wires.size()<<" errs.size()="<<hinfo.errs.size()<<" shifts.size()="<<hinfo.shifts.size()<<endl;
-		for(unsigned int i=0; i<hinfo.wires.size(); i++){
-			chisqv.push_back(1.0E6); // CDC and FDC wires
-			if(hinfo.u_errs[i]!=0.0)chisqv.push_back(1.0E6); // FDC cathodes
-		}
-
-		return 1.0E6;
-	}
 	
 	// Sometimes, we end up with a zero step rt due to bad parameters.
 	// Avoid all the warning messages by detecting this now and bailing early.
 	if(rt->Nswim_steps<1){
-		for(unsigned int i=0; i<hinfo.wires.size(); i++){
+		for(unsigned int i=0; i<hinfo.size(); i++){
 			chisqv.push_back(1.0E6); // CDC and FDC wires
-			if(hinfo.u_errs[i]!=0.0)chisqv.push_back(1.0E6); // FDC cathodes
+			if(hinfo[i].u_err!=0.0)chisqv.push_back(1.0E6); // FDC cathodes
 		}
 
 		return 1.0E6;
@@ -492,46 +421,36 @@ double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, hitInfo &hinfo, vector<
 	// These are for debugging
 	const DFDCWire *fdcwire=NULL;
 	const DCDCWire *cdcwire=NULL;
-	int Npos_shifts=0;
-	int Nneg_shifts=0;
-	int Nzero_shifts=0;
 	
 	// Loop over wires
 	double chisq = 0.0;
 	int dof=0;
-	for(unsigned int i=0; i<hinfo.wires.size(); i++){
+	for(unsigned int i=0; i<hinfo.size(); i++){
+		hitInfo &hi = hinfo[i];
+		const DCoordinateSystem *wire = hi.wire;
 		
 		if(DEBUG_LEVEL>10){
-			fdcwire = dynamic_cast<const DFDCWire*>(hinfo.wires[i]);
-			cdcwire = dynamic_cast<const DCDCWire*>(hinfo.wires[i]);
+			fdcwire = dynamic_cast<const DFDCWire*>(wire);
+			cdcwire = dynamic_cast<const DCDCWire*>(wire);
 		}
 	
-		DCoordinateSystem wire = *hinfo.wires[i];
-		if(use_shifts){
-			//wire.origin += hinfo.shifts[i];
-			
-			if(DEBUG_LEVEL>10){
-				double a = (hinfo.shifts[i].Cross(hinfo.wires[i]->origin)).Z();
-				if(a==0.0)Nzero_shifts++;
-				else if(a<0.0)Nneg_shifts++;
-				else Npos_shifts++;
-			}
-		}
-		
 		// Get distance of the (shifted) wire from the reference trajectory
 		double s;
-		double d = rt->DistToRT(&wire, &s);
+		double d = rt->DistToRT(wire, &s);
 		
 		// It can happen that a track looks enough like a helix that
 		// a momentum pointing in the opposite direction of the real track
 		// can have a small value of d, even when using a swim step close
 		// to the target. In these cases, s will be negative and large.
 		// When this happens, set d to R to force a bad chisq.
-		if(s<-5.0)d = wire.origin.Perp();
+		if(s<-5.0)d = wire->origin.Perp();
 		
-		// Get distance from TOF using shift
-		double dist = use_shifts ? hinfo.shifts[i].Mag():0.0;
-		double resi = dist - d;
+		// Residual. If we're on the correct side of the wire, then this is
+		// dist-doca. If we're on the incorrect side of the wire, then this
+		// is -dist-doca. Prior to calling us, the value of hi.dist will have
+		// a sign that already assigned to indicate the side of the wire
+		// the track is believed to be on.
+		double resi = hi.dist - d;
 
 		// Add this to the chisq. It may turn out that d is NAN in which case we
 		// don't want to include it in the total tally. We still must add it
@@ -542,44 +461,40 @@ double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, hitInfo &hinfo, vector<
 		// values meaning the doca is larger than the dist and negative values
 		// meaning the doca is smaller than the dist (doca from track, dist
 		// from drift time). 
-		double c = resi/hinfo.errs[i];
+		double c = resi/hi.err;
 		chisqv.push_back(c);
 
 		if(finite(c)){
 			chisq += c*c;
 			dof++;
 			if(DEBUG_LEVEL>10){
-				_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  Rwire="<<hinfo.wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s;
+				_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  Rwire="<<wire->origin.Perp()<<"  Rshifted="<<wire->origin.Perp()<<" s="<<s;
 				if(fdcwire)cerr<<" FDC: layer="<<fdcwire->layer<<" wire="<<fdcwire->wire<<" angle="<<fdcwire->angle;
 				if(cdcwire)cerr<<" CDC: ring="<<cdcwire->ring<<" straw="<<cdcwire->straw<<" stereo="<<cdcwire->stereo;
 				cerr<<endl;
 			}
 		}else{
-			if(DEBUG_LEVEL>10)_DBG_<<"  chisqv[unused] = "<<c<<"  d="<<d<<"  Rwire="<<hinfo.wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s<<endl;
+			if(DEBUG_LEVEL>10)_DBG_<<"  chisqv[unused] = "<<c<<"  d="<<d<<"  Rwire="<<wire->origin.Perp()<<"  Rshifted="<<wire->origin.Perp()<<" s="<<s<<endl;
 		}
 		
 		// Add FDC cathode (if appropriate)
-		if(hinfo.u_errs[i]!=0.0){
+		if(hi.u_err!=0.0){
 			double u = rt->GetLastDistAlongWire();
-			c = (u-hinfo.u_dists[i])/hinfo.u_errs[i];
+			c = (u - hi.u_dist)/hi.u_err;
 			chisqv.push_back(c);
 			if(finite(c)){
 				chisq += c*c;
 				dof++;
 				if(DEBUG_LEVEL>10){
-					_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  Rwire="<<hinfo.wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s<<" FDC: layer="<<fdcwire->layer<<" wire="<<fdcwire->wire<<" angle="<<fdcwire->angle;
+					_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  Rwire="<<wire->origin.Perp()<<"  Rshifted="<<wire->origin.Perp()<<" s="<<s<<" FDC: layer="<<fdcwire->layer<<" wire="<<fdcwire->wire<<" angle="<<fdcwire->angle;
 					cerr<<endl;
 				}
 			}else{
-				if(DEBUG_LEVEL>10)_DBG_<<"  chisqv[unused] = "<<c<<"  d="<<d<<"  Rwire="<<hinfo.wires[i]->origin.Perp()<<"  Rshifted="<<wire.origin.Perp()<<" s="<<s<<endl;
+				if(DEBUG_LEVEL>10)_DBG_<<"  chisqv[unused] = "<<c<<"  d="<<d<<"  Rwire="<<wire->origin.Perp()<<"  Rshifted="<<wire->origin.Perp()<<" s="<<s<<endl;
 			}
 		}
 	}
 
-	if(DEBUG_LEVEL>10){
-		_DBG_<<" Nshifts(+,-,0)=("<<Npos_shifts<<","<<Nneg_shifts<<","<<Nzero_shifts<<")"<<endl;
-	}
-	
 	// If the caller supplied pointers to chisq and dof variables, copy the values into them
 	if(chisq_ptr)*chisq_ptr = chisq;
 	if(dof_ptr)*dof_ptr = dof - 5; // assume 5 fit parameters
@@ -592,33 +507,37 @@ double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, hitInfo &hinfo, vector<
 //------------------
 // GetWiresShiftsErrs
 //------------------
-void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, hitInfo &hinfo)
+void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, hitsInfo &hinfo)
 {
+
 	// -- Target --
 	if(TARGET_CONSTRAINT){
-		hinfo.wires.push_back(target);
-		hinfo.errs.push_back(0.1); // 1mm beam width
-		hinfo.u_dists.push_back(0.0); // placeholder
-		hinfo.u_errs.push_back(0.0); // placeholder indicating no measurement along wire
-		if(fit_type==kTimeBased)hinfo.shifts.push_back(0.0);
+		hitInfo hi;
+		hi.wire = target;
+		hi.dist = 0.0;
+		hi.err = 0.1; // 1mm beam width
+		hi.u_dist = 0.0;
+		hi.u_err = 0.0;
+		hinfo.push_back(hi);
 	}
 
 	// --- CDC ---
 	for(unsigned int i=0; i<cdchits.size(); i++){
 		const DCDCTrackHit *hit = cdchits[i];
 		const DCoordinateSystem *wire = hit->wire;
-		hinfo.wires.push_back(wire);
+		hitInfo hi;
+
+		hi.wire = wire;
+		hi.u_dist = 0.0;
+		hi.u_err = 0.0;
 
 		// Fill in shifts and errs vectors based on whether we're doing
 		// hit-based or time-based tracking
 		if(fit_type==kWireBased){
 			// If we're doing hit-based tracking then only the wire positions
-			// are used and the drift time info is ignored. Thus, we don't
-			// have to calculate the shift vectors
-			//errs.push_back(0.261694); // empirically from single pi+ events
-			hinfo.errs.push_back(0.8/sqrt(12.0)); // variance for evenly illuminated straw
-			hinfo.u_dists.push_back(0.0); // placeholder
-			hinfo.u_errs.push_back(0.0); // placeholder indicating no measurement along wire
+			// are used and the drift time info is ignored. 
+			hi.dist = 0.0;
+			hi.err = 0.8/sqrt(12.0); // variance for evenly illuminated straw
 		}else{
 			// Find the DOCA point for the RT and use the momentum direction
 			// there and the wire direction to determine the "shift".
@@ -629,7 +548,6 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 			double s;
 			rt->DistToRT(wire, &s);
 			rt->GetLastDOCAPoint(pos_doca, mom_doca);
-			DVector3 shift = wire->udir.Cross(mom_doca);
 			
 			// The magnitude of the shift is based on the drift time. The
 			// value of the dist member of the DCDCTrackHit object does not
@@ -639,43 +557,19 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 			double mass = 0.13957;
 			double beta = 1.0/sqrt(1.0 + pow(mass/mom_doca.Mag(), 2.0))*2.998E10;
 			double tof = s/beta/1.0E-9; // in ns
-			double dist = hit->dist*((hit->tdrift-tof)/hit->tdrift);
-			shift.SetMag(dist);
-
-			// If we're doing time-based tracking then there is a sign ambiguity
-			// to each of the "shifts". It is not realistic to check every possible
-			// solution so we have to make a guess as to what the sign is for each
-			// based on the current reference trajectory. Presumably, if, we're
-			// doing time-based track fitting then we have already gone through a pass
-			// of hit-based track fitting so the initial reference trajectory should be
-			// a pretty good indicator as to what side of the wire the track went
-			// on. We use this in the assignments for now. In the future, we should
-			// try multiple cases for hits close to the wire where the ambiguity 
-			// is not clearly resolved.
-			
-			// shift needs to be in the direction pointing from the avalanche
-			// position on the wire to the DOCA point on the rt. We find this
-			// by first finding this vector for the rt and then seeing if
-			// the "shift" vector is generally pointing in the same direction
-			// as it or not by checking if thier dot product is positive or
-			// negative.
-			double u = rt->GetLastDistAlongWire();
-			DVector3 pos_wire = wire->origin + u*wire->udir;
-			DVector3 pos_diff = pos_doca-pos_wire;
-			if(shift.Dot(pos_diff)<0.0)shift = -shift;
-			
-			hinfo.shifts.push_back(shift);
-			hinfo.errs.push_back(SIGMA_CDC);
-			hinfo.u_dists.push_back(0.0); // placeholder
-			hinfo.u_errs.push_back(0.0); // placeholder indicating no measurement along wire
+			hi.dist = hit->dist*((hit->tdrift-tof)/hit->tdrift);
+			hi.err = SIGMA_CDC;
 		}
+		hinfo.push_back(hi);
 	}
 
 	// --- FDC ---
 	for(unsigned int i=0; i<fdchits.size(); i++){
 		const DFDCPseudo *hit = fdchits[i];
 		const DCoordinateSystem *wire = hit->wire;
-		hinfo.wires.push_back(wire);
+		hitInfo hi;
+
+		hi.wire = wire;
 
 		// Fill in shifts and errs vectors based on whether we're doing
 		// hit-based or time-based tracking
@@ -684,9 +578,9 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 			// are used and the drift time info is ignored. Thus, we don't
 			// have to calculate the shift vectors
 			//errs.push_back(0.261694); // empirically from single pi+ events
-			hinfo.errs.push_back(0.5/sqrt(12.0)); // variance for evenly illuminated cell - anode
-			hinfo.u_errs.push_back(0.0); // variance for evenly illuminated cell - cathode
-			hinfo.u_dists.push_back(0.0);
+			hi.err = 0.5/sqrt(12.0); // variance for evenly illuminated cell - anode
+			hi.u_err = 0.0; // variance for evenly illuminated cell - cathode
+			hi.u_dist = 0.0;
 		}else{
 			// Find the DOCA point for the RT and use the momentum direction
 			// there and the wire direction to determine the "shift".
@@ -697,7 +591,6 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 			double s;
 			rt->DistToRT(wire, &s);
 			rt->GetLastDOCAPoint(pos_doca, mom_doca);
-			DVector3 shift = wire->udir.Cross(mom_doca);
 			
 			// The magnitude of the shift is based on the drift time. The
 			// value of the dist member of the DCDCTrackHit object does not
@@ -707,57 +600,39 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 			double mass = 0.13957;
 			double beta = 1.0/sqrt(1.0 + pow(mass/mom_doca.Mag(), 2.0))*2.998E10;
 			double tof = s/beta/1.0E-9; // in ns
-			double dist = hit->dist*((hit->time-tof)/hit->time);
-			shift.SetMag(dist);
-
-			// If we're doing time-based tracking then there is a sign ambiguity
-			// to each of the "shifts". It is not realistic to check every possible
-			// solution so we have to make a guess as to what the sign is for each
-			// based on the current reference trajectory. Presumably, if, we're
-			// doing time-based track fitting then we have already gone through a pass
-			// of hit-based track fitting so the initial reference trajectory should be
-			// a pretty good indicator as to what side of the wire the track went
-			// on. We use this in the assignments for now. In the future, we should
-			// try multiple cases for hits close to the wire where the ambiguity 
-			// is not clearly resolved.
+			hi.dist = hit->dist*((hit->time-tof)/hit->time);
+			hi.err = SIGMA_FDC_ANODE;
 			
-			// shift needs to be in the direction pointing from the avalanche
-			// position on the wire to the DOCA point on the rt. We find this
-			// by first finding this vector for the rt and then seeing if
-			// the "shift" vector is generally pointing in the same direction
-			// as it or not by checking if thier dot product is positive or
-			// negative.
+			// Find whether the track is on the "left" or "right" of the wire
+			DVector3 shift = wire->udir.Cross(mom_doca);
+			shift.SetMag(1.0);
 			double u = rt->GetLastDistAlongWire();
 			DVector3 pos_wire = wire->origin + u*wire->udir;
-			DVector3 pos_diff = pos_doca-pos_wire;
-			if(shift.Dot(pos_diff)<0.0)shift = -shift;
-			
-			// Lorentz corrected poisition along the wire is contained in x,y
-			// values.
-			DVector3 wpos(hit->x, hit->y, wire->origin.Z());
-			DVector3 wdiff = wpos - wire->origin;
-			double u_corr = wire->udir.Dot(wdiff);
+			double LRsign = shift.Dot(pos_doca-pos_wire)<0.0 ? +1.0:-1.0;
 
-			hinfo.shifts.push_back(shift);
-			hinfo.errs.push_back(SIGMA_FDC_ANODE);
-			hinfo.u_dists.push_back(u_corr);
-			hinfo.u_errs.push_back(SIGMA_FDC_CATHODE);
-			//hinfo.u_errs.push_back(0.0);
+			// Lorentz corrected poisition along the wire is contained in x,y
+			// values, BUT, it is based on a left-right decision of the track
+			// segment. This may or may not be the same as the global track. 
+			// As such, we have to determine the correction for our track.
+			//DVector3 wpos(hit->x, hit->y, wire->origin.Z());
+			//DVector3 wdiff = wpos - wire->origin;
+			//double u_corr = wire->udir.Dot(wdiff);
+			double alpha = mom_doca.Angle(DVector3(0,0,1));
+			double u_lorentz = LRsign*lorentz_def->GetLorentzCorrection(pos_doca.X(), pos_doca.Y(), pos_doca.Z(), alpha, hi.dist);
+//_DBG_<<"u_corr-hit->s="<<u_corr-hit->s<<"  u_lorentz="<<u_lorentz<<" \tratio="<<u_lorentz/(u_corr-hit->s)<<endl;
+			double u_corr = hit->s + u_lorentz;
+			hi.u_dist = u_corr;
+			hi.u_err = SIGMA_FDC_CATHODE;
 		}
+		hinfo.push_back(hi);
 	}
 	
-	// Copy the errors in errs and u_errs into all_errs. This is needed so we have an easy-to-access
-	// list of the errors corresponding to each element in the chisqv vector.
-	for(unsigned int i=0; i<hinfo.wires.size(); i++){
-		hinfo.all_errs.push_back(hinfo.errs[i]);
-		if(hinfo.u_errs[i]!=0.0)hinfo.all_errs.push_back(hinfo.u_errs[i]);
-	}
 }
 
 //------------------
 // LeastSquaresB
 //------------------
-DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_type, DReferenceTrajectory *rt)
+DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, DReferenceTrajectory *rt)
 {
 	/// Fit the track with starting parameters given in the first step
 	/// of the reference trajectory rt. On return, the reference
@@ -787,10 +662,14 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_ty
 	swim_step_t &start_step = rt->swim_steps[0];
 	DVector3 pos = start_step.origin;
 	DVector3 mom = start_step.mom;
-	
-	// Make list of wires
-	hitInfo hinfo;	
-	GetWiresShiftsErrs(fit_type, rt, hinfo);
+
+	// Copy the errors in errs and u_errs into all_errs. This is needed so we have an easy-to-access
+	// list of the errors corresponding to each element in the chisqv vector.
+	vector<double> all_errs;
+	for(unsigned int i=0; i<hinfo.size(); i++){
+		all_errs.push_back(hinfo[i].err);
+		if(hinfo[i].u_err!=0.0)all_errs.push_back(hinfo[i].u_err);
+	}
 
 	// Get the chi-squared vector for the initial reference trajectory
 	vector<double> chisqv_initial;
@@ -916,6 +795,12 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_ty
 		if(DEBUG_LEVEL>2)_DBG_<<" Bad number of good distance calculations!(Ngood="<<Ngood<<" LEAST_SQUARES_MIN_HITS="<<LEAST_SQUARES_MIN_HITS<<")"<<endl;
 		return kFitFailed;
 	}
+	
+	// Verify that the sizes of the all_errs and chisqv vectors match
+	if(Nhits != all_errs.size()){
+		_DBG_<<"Nhits != all_errs.size() !!! This indicates a bug in the program!"<<endl;
+		return kFitFailed;
+	}
 
 	// Build "F" matrix of derivatives
 	DMatrix F(Ngood,Nparameters);
@@ -923,11 +808,11 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_ty
 		if(!good[j])continue; // skip bad hits
 		switch(Nparameters){
 			// Note: This is a funny way to use a switch!
-			case 5: F[i][state_v ] = pow(hinfo.all_errs[j],1.0)*(chisqv_dv_hi[j]-chisqv_dv_lo[j])/deltas[state_v];
-			case 4: F[i][state_x ] = pow(hinfo.all_errs[j],1.0)*(chisqv_dx_hi[j]-chisqv_dx_lo[j])/deltas[state_x];
-			case 3: F[i][state_pz] = pow(hinfo.all_errs[j],1.0)*(chisqv_dpz_hi[j]-chisqv_dpz_lo[j])/deltas[state_pz];
-			case 2: F[i][state_py] = pow(hinfo.all_errs[j],1.0)*(chisqv_dpy_hi[j]-chisqv_dpy_lo[j])/deltas[state_py];
-			case 1: F[i][state_px] = pow(hinfo.all_errs[j],1.0)*(chisqv_dpx_hi[j]-chisqv_dpx_lo[j])/deltas[state_px];
+			case 5: F[i][state_v ] = pow(all_errs[j],1.0)*(chisqv_dv_hi[j]-chisqv_dv_lo[j])/deltas[state_v];
+			case 4: F[i][state_x ] = pow(all_errs[j],1.0)*(chisqv_dx_hi[j]-chisqv_dx_lo[j])/deltas[state_x];
+			case 3: F[i][state_pz] = pow(all_errs[j],1.0)*(chisqv_dpz_hi[j]-chisqv_dpz_lo[j])/deltas[state_pz];
+			case 2: F[i][state_py] = pow(all_errs[j],1.0)*(chisqv_dpy_hi[j]-chisqv_dpy_lo[j])/deltas[state_py];
+			case 1: F[i][state_px] = pow(all_errs[j],1.0)*(chisqv_dpx_hi[j]-chisqv_dpx_lo[j])/deltas[state_px];
 		}
 		i++;
 	}
@@ -967,8 +852,8 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(fit_type_t fit_ty
 		// sigmas and make the V matrix the identity matrix, but we leave
 		// it this way for now to make it easier to include covariance
 		// later.
-		m[i][0] = -chisqv_initial[j]*hinfo.all_errs[j];
-		V[i][i] = pow(hinfo.all_errs[j], 2.0);
+		m[i][0] = -chisqv_initial[j]*all_errs[j];
+		V[i][i] = pow(all_errs[j], 2.0);
 		i++;
 	}
 	DMatrix Vinv(DMatrix::kInverted, V);

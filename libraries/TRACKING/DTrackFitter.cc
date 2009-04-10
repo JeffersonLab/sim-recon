@@ -25,6 +25,7 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 		return;
 	}
 	bfield = dapp->GetBfield(); // this should be run number based!
+	lorentz_def=dapp->GetLorentzDeflections();
 }
 
 //-------------------

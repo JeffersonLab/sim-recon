@@ -15,6 +15,7 @@
 #include <DANA/DApplication.h>
 #include <PID/DKinematicData.h>
 #include <HDGEOMETRY/DMagneticFieldMap.h>
+#include "HDGEOMETRY/DLorentzMapCalibDB.h"
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
 
@@ -107,6 +108,7 @@ class DTrackFitter:public jana::JObject{
 		DKinematicData input_params;				//< Starting parameters for the fit
 		fit_type_t fit_type;							//< kWireBased or kTimeBased
 		const DMagneticFieldMap *bfield;			//< Magnetic field map for current event (acquired through loop)
+		const DLorentzDeflections *lorentz_def;//< Correction to FDC cathodes due to Lorentz force
 		JEventLoop *loop;								//< Pointer to JEventLoop object handling the current event
 
 		// The following should be set as outputs by FitTrack(void)
