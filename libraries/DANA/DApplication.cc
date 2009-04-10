@@ -61,10 +61,13 @@ jerror_t DApplication::Init(void)
 	GetJParameterManager()->SetDefaultParameter("BFIELD_TYPE", bfield_type);
 	if(bfield_type=="CalibDB"){
 		bfield = new DMagneticFieldMapCalibDB(this);
+		cout<<"Created Magnetic field map of type DMagneticFieldMapCalibDB."<<endl;
 	}else if(bfield_type=="Const"){
 		bfield = new DMagneticFieldMapConst(this);
+		cout<<"Created Magnetic field map of type DMagneticFieldMapConst."<<endl;
 	}else if(bfield_type=="Spoiled"){
 		bfield = new DMagneticFieldMapSpoiled(this);
+		cout<<"Created Magnetic field map of type DMagneticFieldMapSpoiled."<<endl;
 	}else{
 		_DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type<<"\" !!"<<endl;
 		exit(-1);
