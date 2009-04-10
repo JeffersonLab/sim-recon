@@ -229,7 +229,7 @@ class DKalmanFilter{
 
   // endplate dimensions and location
   double endplate_z, endplate_dz, endplate_rmin, endplate_rmax;
-  // downstream cdc start position
+  // upstream cdc start position
   vector<double>cdc_origin;
 
   // target wall cylinder
