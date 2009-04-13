@@ -564,14 +564,19 @@
 	<real name="density"	value="1.4"	unit="g/cm^3"	/>
   </composite>
 
- <composite name="Nomex">
+  <composite name="Nomex">
  	<addmaterial material="Hydrogen"> <natoms n="14" /> </addmaterial>
  	<addmaterial material="Oxygen"> <natoms n="4" /> </addmaterial>
  	<addmaterial material="Carbon"> <natoms n="14" /> </addmaterial>
  	<addmaterial material="Nitrogen"> <natoms n="2" /> </addmaterial>
  	<real name="density" value="0.029" unit="g/cm^3" />
-</composite>
+  </composite>
 
+  <composite name="Polypropylene">	
+        <addmaterial material="Hydrogen"> <natoms n="6" /> </addmaterial>
+  	<addmaterial material="Carbon"> <natoms n="3" /> </addmaterial>
+  	<real name="density" value="0.9" unit="g/cm^3" />
+  </composite>
 
   <composite name="Nylon">
 	<addmaterial material="Nitrogen"> <natoms n="1"	/> </addmaterial>
