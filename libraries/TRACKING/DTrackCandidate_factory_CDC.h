@@ -94,6 +94,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		void LinkSubSeeds(vector<DCDCSeed*> &parent, ringiter ring, ringiter ringend, vector<DCDCSeed> &seeds);
 		void LinkSeeds(vector<DCDCSeed> &in_seeds1, vector<DCDCSeed> &in_seeds2, vector<DCDCSeed> &seeds, unsigned int max_linked_hits);
 		bool FitCircle(DCDCSeed &seed);
+		void PickupUnmatched(vector<DCDCSeed> &seeds);
 		void FilterCloneSeeds(vector<DCDCSeed> &seeds);
 		void AddStereoHits(vector<DCDCTrkHit*> &stereo_hits, DCDCSeed &seed);
 		void FindThetaZ(DCDCSeed &seed);
@@ -102,6 +103,8 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		void FindTheta(DCDCSeed &seed, double target_z_min, double target_z_max);
 		void FindZ(DCDCSeed &seed, double theta_min, double theta_max);
 		int NumEligibleSeedHits(vector<DCDCTrkHit*> &hits);
+
+		vector<int> superlayer_boundaries;
 
 		unsigned int MAX_SUBSEED_STRAW_DIFF;
 		unsigned int MIN_SUBSEED_HITS;
@@ -116,6 +119,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		double MAX_STEREO_PHI_DELTA; // rad
 		double TARGET_Z_MIN;
 		double TARGET_Z_MAX;
+		int DEBUG_LEVEL;
 };
 
 #endif // _DTrackCandidate_factory_CDC_
