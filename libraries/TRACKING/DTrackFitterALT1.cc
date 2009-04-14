@@ -25,6 +25,8 @@ using namespace jana;
 #include "FDC/DFDCPseudo.h"
 #include "DReferenceTrajectory.h"
 #include "DMCThrown.h"
+#include "DMCTrackHit.h"
+#include "DTrackHitSelectorTHROWN.h"
 
 #define NaN std::numeric_limits<double>::quiet_NaN()
 
@@ -79,6 +81,7 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	MAX_FDC_DOUBLE_HIT_PROB = 0.1;
 	TOF_MASS = 0.13957018;
 	TARGET_CONSTRAINT = false;
+	LR_FORCE_TRUTH = false;
 	
 	gPARMS->SetDefaultParameter("TRKFIT:MAX_HIT_DIST",					MAX_HIT_DIST);
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",					DEBUG_HISTS);
@@ -104,6 +107,7 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	gPARMS->SetDefaultParameter("TRKFIT:MAX_FDC_DOUBLE_HIT_PROB",	MAX_FDC_DOUBLE_HIT_PROB);
 	gPARMS->SetDefaultParameter("TRKFIT:TOF_MASS",						TOF_MASS);
 	gPARMS->SetDefaultParameter("TRKFIT:TARGET_CONSTRAINT",			TARGET_CONSTRAINT);
+	gPARMS->SetDefaultParameter("TRKFIT:LR_FORCE_TRUTH",				LR_FORCE_TRUTH);
 	
 	// DReferenceTrajectory objects
 	rt = new DReferenceTrajectory(bfield);
@@ -227,6 +231,11 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	
 		hitsInfo hinfo;	
 		GetWiresShiftsErrs(fit_type, rt, hinfo);
+		
+		// Optionally use the truth information from the Monte Carlo
+		// to force the correct LR choice for each hit. This is
+		// for debugging (obviously).
+		if(LR_FORCE_TRUTH && fit_type==kTimeBased)ForceLRTruth(loop, rt, hinfo);
 	
 		switch(fit_status = LeastSquaresB(hinfo, rt)){
 			case kFitSuccess:
@@ -260,7 +269,10 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 		}
 		
 		// Check if we converged
-		if(fabs(last_chisq-chisq) < MAX_CHISQ_DIFF)break;
+		if(fabs(last_chisq-chisq) < MAX_CHISQ_DIFF){
+			if(DEBUG_LEVEL>3)_DBG_<<"Fit chisq change below threshold fabs("<<last_chisq<<" - "<<chisq<<")<"<<MAX_CHISQ_DIFF<<endl;
+			break;
+		}
 		last_chisq = chisq;
 	}
 
@@ -279,8 +291,10 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	if(!fit_succeeded)return fit_status=kFitFailed;
 	
 	if(DEBUG_LEVEL>10){
-		_DBG_<<"-------- Final Chisq for track = "<<chisq<<endl;
-		double chisq = ChiSq(fit_type, rt);
+		_DBG_<<"-------- Final Chisq for track = "<<this->chisq<<" Ndof="<<this->Ndof<<endl;
+		double chisq;
+		int Ndof;
+		ChiSq(fit_type, rt, &chisq, &Ndof);
 		_DBG_<<"-------- Check chisq = "<<chisq<<" Ndof="<<Ndof<<endl;
 	}
 
@@ -326,6 +340,7 @@ double DTrackFitterALT1::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, do
 	hitsInfo hinfo;
 	
 	GetWiresShiftsErrs(fit_type, rt, hinfo);
+	if(LR_FORCE_TRUTH && fit_type==kTimeBased)ForceLRTruth(loop, rt, hinfo);
 	
 	return ChiSq(rt, hinfo, chisqv, chisq_ptr, dof_ptr);
 }
@@ -468,7 +483,7 @@ double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, hitsInfo &hinfo, vector
 			chisq += c*c;
 			dof++;
 			if(DEBUG_LEVEL>10){
-				_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  Rwire="<<wire->origin.Perp()<<"  Rshifted="<<wire->origin.Perp()<<" s="<<s;
+				_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<" hi.dist="<<hi.dist<<"  err="<<hi.err<<" s="<<s;
 				if(fdcwire)cerr<<" FDC: layer="<<fdcwire->layer<<" wire="<<fdcwire->wire<<" angle="<<fdcwire->angle;
 				if(cdcwire)cerr<<" CDC: ring="<<cdcwire->ring<<" straw="<<cdcwire->straw<<" stereo="<<cdcwire->stereo;
 				cerr<<endl;
@@ -479,14 +494,23 @@ double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, hitsInfo &hinfo, vector
 		
 		// Add FDC cathode (if appropriate)
 		if(hi.u_err!=0.0){
+			// The sign of hi.dist indicates whether we want to treat this hit as
+			// being on the same side of the wire as the track(+) or the opposite
+			// side (-). In the latter case, we need to apply the Lorentz correction
+			// to the position along the wire in the opposite direction than we
+			// would otherwise. Set the sign of the Lorentz deflection based on the
+			// sign of hi.dist.
+			double LRsign = hi.dist<0.0 ? -1.0:1.0;
+		
 			double u = rt->GetLastDistAlongWire();
-			c = (u - hi.u_dist)/hi.u_err;
+			double u_cathodes = hi.u_dist + LRsign*hi.u_lorentz;
+			c = (u - u_cathodes)/hi.u_err;
 			chisqv.push_back(c);
 			if(finite(c)){
 				chisq += c*c;
 				dof++;
 				if(DEBUG_LEVEL>10){
-					_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  Rwire="<<wire->origin.Perp()<<"  Rshifted="<<wire->origin.Perp()<<" s="<<s<<" FDC: layer="<<fdcwire->layer<<" wire="<<fdcwire->wire<<" angle="<<fdcwire->angle;
+					_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  u_err="<<hi.u_err<<" s="<<s<<" FDC: layer="<<fdcwire->layer<<" wire="<<fdcwire->wire<<" angle="<<fdcwire->angle;
 					cerr<<endl;
 				}
 			}else{
@@ -535,9 +559,15 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 		// hit-based or time-based tracking
 		if(fit_type==kWireBased){
 			// If we're doing hit-based tracking then only the wire positions
-			// are used and the drift time info is ignored. 
+			// are used and the drift time info is ignored.
+			// NOTE: The track quality itself goes into the residual resoultion
+			// and so we use something larger than the variance over an evenly 
+			// illuminated cell size (commented out). The value of 0.31 is
+			// empirical from forward (2-40 degree) pi+ tracks when MULS was
+			// off. This will likely need to be higher when MULS is on...
 			hi.dist = 0.0;
-			hi.err = 0.8/sqrt(12.0); // variance for evenly illuminated straw
+			hi.err = 0.45; // empirical. (see note above)
+			//hi.err = 0.8/sqrt(12.0); // variance for evenly illuminated straw
 		}else{
 			// Find the DOCA point for the RT and use the momentum direction
 			// there and the wire direction to determine the "shift".
@@ -575,12 +605,16 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 		// hit-based or time-based tracking
 		if(fit_type==kWireBased){
 			// If we're doing hit-based tracking then only the wire positions
-			// are used and the drift time info is ignored. Thus, we don't
-			// have to calculate the shift vectors
-			//errs.push_back(0.261694); // empirically from single pi+ events
-			hi.err = 0.5/sqrt(12.0); // variance for evenly illuminated cell - anode
-			hi.u_err = 0.0; // variance for evenly illuminated cell - cathode
+			// are used and the drift time info is ignored.
+			// NOTE: The track quality itself goes into the residual resoultion
+			// and so we use something larger than the variance over an evenly 
+			// illuminated cell size (commented out). The value of 0.30 is
+			// empirical from forward (2-40 degree) pi+ tracks when MULS was
+			hi.dist = 0.0;
+			hi.err = 0.30; // emprical. (see note above)
+			//hi.err = 0.5/sqrt(12.0); // variance for evenly illuminated cell - anode
 			hi.u_dist = 0.0;
+			hi.u_err = 0.0; // variance for evenly illuminated cell - cathode
 		}else{
 			// Find the DOCA point for the RT and use the momentum direction
 			// there and the wire direction to determine the "shift".
@@ -618,10 +652,8 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 			//DVector3 wdiff = wpos - wire->origin;
 			//double u_corr = wire->udir.Dot(wdiff);
 			double alpha = mom_doca.Angle(DVector3(0,0,1));
-			double u_lorentz = LRsign*lorentz_def->GetLorentzCorrection(pos_doca.X(), pos_doca.Y(), pos_doca.Z(), alpha, hi.dist);
-//_DBG_<<"u_corr-hit->s="<<u_corr-hit->s<<"  u_lorentz="<<u_lorentz<<" \tratio="<<u_lorentz/(u_corr-hit->s)<<endl;
-			double u_corr = hit->s + u_lorentz;
-			hi.u_dist = u_corr;
+			hi.u_lorentz = LRsign*lorentz_def->GetLorentzCorrection(pos_doca.X(), pos_doca.Y(), pos_doca.Z(), alpha, hi.dist);
+			hi.u_dist = hit->s;
 			hi.u_err = SIGMA_FDC_CATHODE;
 		}
 		hinfo.push_back(hi);
@@ -979,6 +1011,93 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 	}
 
 	return kFitSuccess;
+}
+
+//------------------
+// ForceLRTruth
+//------------------
+void DTrackFitterALT1::ForceLRTruth(JEventLoop *loop, DReferenceTrajectory *rt, hitsInfo &hinfo)
+{
+	/// This routine is called when the TRKFIT:LR_FORCE_TRUTH parameters is
+	/// set to a non-zero value (e.g. -PTRKFIT:LR_FORCE_TRUTH=1 is passed
+	/// on the command line). This is used only for debugging and only with
+	/// Monte Carlo data.
+	///
+	/// This routine will adjust the left-right choice of each hit based
+	/// on the current fit track (represented by rt), and the truth information
+	/// contained in the the DMCTruthPoint objects. It assumes the hits in
+	/// hinfo correspond to the track represented by rt.
+	
+	// Get Truth hits
+	vector<const DMCTrackHit*> mctrackhits;
+	loop->Get(mctrackhits);
+	
+	// Loop over hits
+	for(unsigned int i=0; i<hinfo.size(); i++){
+		hitInfo &hi = hinfo[i];
+		const DCoordinateSystem *wire = hi.wire;
+		
+		// Find the truth hit corresponding to this real hit
+		const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(hi.wire, fabs(hi.dist), mctrackhits, 0);
+		
+		// If no truth hit was found, then this may be a noise hit. Set
+		// the error to something large so it is ignored and warn the
+		// user.
+		if(!mctrackhit){
+			_DBG_<<"No DMCTrackHit found corresponding to hit "<<i<<" in hinfo! Are there noise hits?"<<endl;
+			hi.err = 100.0;
+			hi.u_err = 0.0;
+			continue;
+		}
+		
+		// We do this by looking at the direction of the vector pointing from the
+		// DOCA point on the wire to that of the fit track and comparing it to
+		// a similar vector pointing to the truth point. If they both are generally
+		// in the same direction (small angle) then the fit track is considered
+		// as being on the correct side of the wire. If they have an angle somewhere
+		// in the 180 degree range, the fit is considered to be on the wrong side
+		// of the wire and it is "flipped".
+		//
+		// It can also be that the truth vector and the fit vector are at nearly
+		// a right angle with respect to one another. This really only happens in
+		// the CDC for tracks going in roughly the same direction as the wire.
+		// In these cases, the truth point can't help us solve the LR so we set
+		// the drift distance to zero and give it a larger error so this hit will
+		// still be included, but appropriately weighted.
+						
+		// Vector pointing from wire to the fit track
+		DVector3 pos_doca, mom_doca;
+		rt->DistToRT(wire);
+		rt->GetLastDOCAPoint(pos_doca, mom_doca);
+		DVector3 shift = wire->udir.Cross(mom_doca);
+		double u = rt->GetLastDistAlongWire();
+		DVector3 pos_wire = wire->origin + u*wire->udir;
+
+		// Vector pointing from wire to the truth point
+		DVector3 pos_truth(mctrackhit->r*cos(mctrackhit->phi), mctrackhit->r*sin(mctrackhit->phi), mctrackhit->z);
+		DVector3 pos_wire_truth = wire->origin + (pos_truth - wire->origin).Dot(wire->udir)*wire->udir;
+
+		if(DEBUG_LEVEL>8)_DBG_<<" "<<i+1<<": (pos_doca-pos_wire).Angle(pos_truth-pos_wire_truth)="<<(pos_doca-pos_wire).Angle(pos_truth-pos_wire_truth)*57.3<<endl;
+//_DBG_<<"  fit:" ; (pos_doca-pos_wire).Print();
+//_DBG_<<"truth:" ; (pos_truth-pos_wire_truth).Print();
+
+		// Decide what to do based on angle between fit and truth vectors
+		double angle_fit_truth = (pos_doca-pos_wire).Angle(pos_truth-pos_wire_truth);
+		if(fabs( fabs(angle_fit_truth)-M_PI/2.0) < M_PI/3.0){
+			// Fit and truth vector are nearly at 90 degrees. Fit this hit
+			// only to wire position
+			if(DEBUG_LEVEL>5)_DBG_<<"Downgrading "<<i+1<<"th hit to wire-based (hi.u_err was:"<<hi.u_err<<")"<<endl;
+			hi.dist = 0.0;
+			hi.err = 0.35;
+			hi.u_err = 0.0;
+		}else{
+			// Fit and truth vector are nearly (anti)parallel. Decide whether to "flip" hit
+			if(fabs(angle_fit_truth) > M_PI/2.0){
+				if(DEBUG_LEVEL>5)_DBG_<<"Flipping side "<<i+1<<"th hit "<<endl;
+				hi.dist = -hi.dist;
+			}
+		}
+	}
 }
 
 //------------------

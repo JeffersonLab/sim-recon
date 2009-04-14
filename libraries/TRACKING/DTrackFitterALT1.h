@@ -55,6 +55,7 @@ class DTrackFitterALT1:public DTrackFitter{
 				double dist;							// Effective wire shifts due to drift time
 				double err;								// Errors on drift time (or wire position) measurement
 				double u_dist;							// Distances along the wire (for FDC cathodes)
+				double u_lorentz;						// Lorentz correction  to u_dist ( u = u_dist + u_lorentz )
 				double u_err;							// Errors on distance along the wire (for FDC cathodes)
 		};
 		
@@ -66,6 +67,7 @@ class DTrackFitterALT1:public DTrackFitter{
 		double ChiSq(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, hitsInfo &hinfo, vector<double> &chisqv, double *chisq_ptr=NULL, int *dof_ptr=NULL);
 		void GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, hitsInfo &hinfo);
 		fit_status_t LeastSquaresB(hitsInfo &hinfo, DReferenceTrajectory *rt);
+		void ForceLRTruth(JEventLoop *loop, DReferenceTrajectory *rt, hitsInfo &hinfo);
 		void FillDebugHists(DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom);
 
 		std::vector<double> chisqv;
@@ -105,6 +107,7 @@ class DTrackFitterALT1:public DTrackFitter{
 		double MAX_FDC_DOUBLE_HIT_PROB;
 		double TOF_MASS;
 		bool TARGET_CONSTRAINT;
+		bool LR_FORCE_TRUTH;
 		
 		TH3F *cdcdoca_vs_dist_vs_ring;
 		TH2F *cdcdoca_vs_dist;
