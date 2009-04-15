@@ -74,7 +74,7 @@ jerror_t DParticle_factory::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DFDCPseudo*> fdcpseudos;
 	loop->Get(tracks);
 	loop->Get(cdctrackhits);
-	loop->Get(fdcpseudos);
+	loop->Get(fdcpseudos, "CORRECTED");
 	
 	// Loop over wire-based fits
 	for(unsigned int i=0; i<tracks.size(); i++){
