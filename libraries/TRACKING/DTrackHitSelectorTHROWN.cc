@@ -159,70 +159,13 @@ const DMCTrackHit* DTrackHitSelectorTHROWN::GetMCTrackHit(const DCoordinateSyste
 		if((trackno_filter>0) && (mchit->track!=trackno_filter)) continue;
 		if((trackno_filter>0) && (!mchit->primary)) continue;
 		
-		// Find the distance from the truth point to the wire. We do this
-		// by defining the following 3-vectors:
-		//
-		// w = hit->wire->origin
-		// s = hit->wire->sdir
-		// t = hit->wire->tdir
-		// u = hit->wire->udir
-		//
-		// p = mchit truth point (lab coordinates)
-		//
-		// pw = p - w
-		//
-		// The matrix "A" is defined from the direction vectors
-		// of the wire:
-		//
-		//       sx  sy  sz
-		//  A =  tx  ty  tz
-		//       ux  uy  uz
-		//
-		// The vector abc is defined from the coefficients of each of
-		// the wire's direction vectors (s,t,u) such that:
-		//
-		//  abc*A = pw
-		//
-		// This lets us solve for abc by inverting A:
-		//
-		//            -1
-		//  abc = pw A
-		//
-		// Since the "t" direction is along the wire, the "a" and "b"
-		// coefficients give the components perpendicular to the wire
-		// so adding them in quadrature gives the distance of the
-		// point (truth hit) from the wire.
-		//
-		//  r = a^2 + b^2
-		//
-		
-		DVector3 p(mchit->r*cos(mchit->phi), mchit->r*sin(mchit->phi), mchit->z);
-		
-		DVector3 w = wire->origin;
-		DVector3 sdir = wire->sdir;
-		DVector3 tdir = wire->tdir;
-		DVector3 udir = wire->udir;
-		
-		DMatrix pw(3,1);
-		pw[0][0] = p.X() - w.X();
-		pw[1][0] = p.Y() - w.Y();
-		pw[2][0] = p.Z() - w.Z();
-		
-		DMatrix A(3,3);
-		A[0][0]=sdir.X();	A[0][1]=sdir.Y();	A[0][2]=sdir.Z();
-		A[1][0]=tdir.X();	A[1][1]=tdir.Y();	A[1][2]=tdir.Z();
-		A[2][0]=udir.X();	A[2][1]=udir.Y();	A[2][2]=udir.Z();
-		
-		DMatrix At(DMatrix::kTransposed, A);
-		DMatrix Ainv(DMatrix::kInverted, At);
-		DMatrix abc = Ainv*pw;
-		
-		// Distance of truth hit to wire
-		double r = sqrt(pow(abc[0][0], 2.0) + pow(abc[1][0], 2.0));
-		
-		// Distance of truth hit along the wire
-		double u = abc[2][0];
-		
+		// Find the vector pointing from the wire to the truth point
+		DVector3 pos_truth(mchit->r*cos(mchit->phi), mchit->r*sin(mchit->phi), mchit->z);
+		double u = (pos_truth - wire->origin).Dot(wire->udir);
+		DVector3 pos_wire_truth = wire->origin + u*wire->udir;
+		DVector3 pos_diff = pos_truth - pos_wire_truth;
+		double r = pos_diff.Mag();
+
 		// Now, we need to convert the drift time to a distance and compare it
 		// to the distance of the truth hit. Since that includes time-of-flight,
 		// the comparison needs to be loose enough to accomodate that.
@@ -248,10 +191,6 @@ const DMCTrackHit* DTrackHitSelectorTHROWN::GetMCTrackHit(const DCoordinateSyste
 			}
 		}
 	}
-
-if(!best_mchit){
-//_DBG_<<"resi_min="<<fabs(resi_min)<<"  resiu_min="<<resiu_min<<endl;
-}
 
 	return best_mchit;
 }
