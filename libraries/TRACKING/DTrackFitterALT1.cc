@@ -1036,6 +1036,7 @@ void DTrackFitterALT1::ForceLRTruth(JEventLoop *loop, DReferenceTrajectory *rt, 
 	for(unsigned int i=0; i<hinfo.size(); i++){
 		hitInfo &hi = hinfo[i];
 		const DCoordinateSystem *wire = hi.wire;
+		if(wire==target)continue; // ignore target
 		
 		// Find the truth hit corresponding to this real hit
 		const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(hi.wire, fabs(hi.dist), mctrackhits, 0);
