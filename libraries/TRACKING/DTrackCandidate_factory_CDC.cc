@@ -13,6 +13,7 @@ using namespace std;
 #include "DHelicalFit.h"
 #include <HDGEOMETRY/DGeometry.h>
 #include <HDGEOMETRY/DMagneticFieldMap.h>
+#include <FDC/DFDCPseudo.h>
 #define BeamRMS 0.1
 
 
@@ -578,6 +579,12 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 		//seed.fit.AddHitXYZ(pos.X(), pos.Y(), pos.Z(),cov,cov,0.);
 		seed.fit.AddHitXYZ(pos.X(), pos.Y(),pos.Z());
 	}
+	
+	// Add in any FDC hits
+	for(unsigned int j=0; j<seed.fdchits.size(); j++){
+		const DFDCPseudo *hit = seed.fdchits[j];
+		seed.fit.AddHitXYZ(hit->x, hit->y, hit->wire->origin.Z());
+	}
 
 	// Try and fit the circle using a Riemann fit. If 
 	// it fails, try a basic fit with QuickFit.
@@ -609,6 +616,14 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 		}
 		double dx = seed.hits[i]->hit->wire->origin.X() - x0;
 		double dy = seed.hits[i]->hit->wire->origin.Y() - y0;
+		double d = sqrt(dx*dx + dy*dy);
+		if(DEBUG_LEVEL>10)_DBG_<<"dist="<<d-r0<<endl;
+		if(fabs(d-r0)<=MAX_HIT_DIST)N++;
+	}
+	for(unsigned int i=0; i<seed.fdchits.size(); i++){
+		const DFDCPseudo *hit = seed.fdchits[i];
+		double dx = hit->x - x0;
+		double dy = hit->y - y0;
 		double d = sqrt(dx*dx + dy*dy);
 		if(DEBUG_LEVEL>10)_DBG_<<"dist="<<d-r0<<endl;
 		if(fabs(d-r0)<=MAX_HIT_DIST)N++;
@@ -656,6 +671,7 @@ void DTrackCandidate_factory_CDC::PickupUnmatched(vector<DCDCSeed> &seeds)
 		
 		// This seed must have only SL1 hits, look for unused SL3 hits
 		// at a phi angle consistent with the outermost hit.
+		bool added_hit = false;
 		const DCDCWire *sl1_wire = hits[0]->hit->wire;
 		for(unsigned int j=0; j<cdctrkhits.size(); j++){
 			DCDCTrkHit *sl3_hit = cdctrkhits[j];
@@ -666,8 +682,50 @@ void DTrackCandidate_factory_CDC::PickupUnmatched(vector<DCDCSeed> &seeds)
 			if(fabs(a)<20.0/57.3){
 				sl3_hit->flags |= USED;
 				hits.push_back(sl3_hit);
+				added_hit = true;
 				if(DEBUG_LEVEL>1)_DBG_<<"Adding stray SL3 hit to SL1 seed a="<<a*57.3<<"  flags="<<sl3_hit->flags<<"  ring="<<sl3_hit->hit->wire->ring<<endl;
 			}
+		}
+		if(added_hit)continue; // We found at least one SL3 hit that was added to the seed
+		
+		// Tracks at around 17 degrees can miss SL3 (or at least
+		// inefficiency can cause the 1 or 2 hits we would get there
+		// to be lost). In principle, the first package of the FDC
+		// can get enough hits to form a candidate that is then matched
+		// either matched with the CDC candidate in DTrackCandidate_factory.cc
+		// or extends close enough to the real track in the CDC to be
+		// used outright.
+		//
+		// There are a few tracks though that will not have enough hits in
+		// package 1 of the FDC to form a candidate. For these, we need to
+		// pick up any lone hits in the FDC and try and add them to 
+		// our SL1 seed in order to get a better candiate.
+		//
+		// Note that this is being done while looking at single track
+		// events with no noise. In the presence of noice hits, using
+		// single hits like this can be a problem.
+		vector<const DFDCPseudo*> fdchits;
+		eventLoop->Get(fdchits);
+		vector<const DFDCPseudo*> fdc1_hits_matched;
+		for(unsigned int j=0; j<fdchits.size(); j++){
+			const DFDCPseudo *fdchit = fdchits[j];
+			if(fdchit->wire->layer>6)continue; // only interested in 1st package
+			DVector2 sl1(sl1_wire->origin.X(), sl1_wire->origin.Y());
+			DVector2 fdc1(fdchit->x, fdchit->y);
+			double a = sl1.DeltaPhi(fdc1);
+			if(fabs(a)<20.0/57.3){
+				fdc1_hits_matched.push_back(fdchit);
+				if(DEBUG_LEVEL>3)_DBG_<<"Potential match of FDC to CDC candidate delta phi="<<a*57.3<<endl;
+			}
+		}
+		
+		// If any matches were found, add them to the seed.
+		// Note: We may want to put a limit here so this is only done if
+		// too few hits are found for the FDC segment factory
+		// to form a segment. That will be left as a future optimization.
+		if(fdc1_hits_matched.size()>0){
+			if(DEBUG_LEVEL>1)_DBG_<<"Matched "<<fdc1_hits_matched.size()<<" hits from FDC package 1"<<endl;
+			seeds[i].fdchits = fdchits;
 		}
 	}
 }
@@ -942,7 +1000,14 @@ void DTrackCandidate_factory_CDC::FindThetaZStraightTrack(DCDCSeed &seed)
 		r.push_back(R);
 		z.push_back(trkhit->z_stereo);
 	}
-	
+
+	for(unsigned int i=0; i<seed.fdchits.size(); i++){
+		const DFDCPseudo *fdchit = seed.fdchits[i];
+		double R = sqrt(pow((double)fdchit->x,2.0) + pow((double)fdchit->y,2.0));
+		r.push_back(R);
+		z.push_back(fdchit->wire->origin.Z());
+	}
+
 	// Add center of target as a point to constrain the fit a little more
 	double z_target = (TARGET_Z_MIN+TARGET_Z_MAX)/2.0;
 	r.push_back(0.0);

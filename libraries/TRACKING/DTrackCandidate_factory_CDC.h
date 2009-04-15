@@ -15,6 +15,7 @@ using namespace jana;
 #include "DHelicalFit.h"
 #include "CDC/DCDCTrackHit.h"
 
+class DFDCPseudo;
 
 class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 	public:
@@ -61,6 +62,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 			public:
 				vector<DCDCTrkHit*> hits;
 				vector<DCDCTrkHit*> stereo_hits;
+				vector<const DFDCPseudo*> fdchits;
 				double phi_avg;
 				double tdrift_avg;
 				bool linked;
