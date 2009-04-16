@@ -61,6 +61,8 @@ DEventProcessor_track_hists::DEventProcessor_track_hists()
 	NLRbad = 0;
 	NLRfit_unknown = 0;
 	Nevents = 0;
+	
+
 }
 
 //------------------
@@ -100,6 +102,13 @@ jerror_t DEventProcessor_track_hists::init(void)
 //------------------
 jerror_t DEventProcessor_track_hists::brun(JEventLoop *loop, int runnumber)
 {	
+	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	if(!dapp){
+		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program perhaps?)"<<endl;
+		return RESOURCE_UNAVAILABLE;
+	}
+	lorentz_def=dapp->GetLorentzDeflections();
+
 	return NOERROR;
 }
 
@@ -247,16 +256,16 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 		const DFDCPseudo *fdcpseudohit = fdcpseudohits[i];
 
 		// Lorentz corrected poisition along the wire is contained in x,y values.
-		DVector3 wpos(fdcpseudohit->x, fdcpseudohit->y, fdcpseudohit->wire->origin.Z());
-		DVector3 wdiff = wpos - fdcpseudohit->wire->origin;
-		double u_corr = fdcpseudohit->wire->udir.Dot(wdiff);
+		//DVector3 wpos(fdcpseudohit->x, fdcpseudohit->y, fdcpseudohit->wire->origin.Z());
+		//DVector3 wdiff = wpos - fdcpseudohit->wire->origin;
+		//double u_corr = fdcpseudohit->wire->udir.Dot(wdiff);
 
 		// The hit info structure is used to pass info both in and out of FindLR()
 		hit_info_t hit_info;
 		hit_info.rt = (DReferenceTrajectory*)rt;
 		hit_info.wire = fdcpseudohit->wire;
 		hit_info.tdrift = fdcpseudohit->time;
-		hit_info.FindLR(mctrackhits);
+		hit_info.FindLR(mctrackhits, lorentz_def);
 		
 		fdchit.eventnumber = eventnumber;
 		fdchit.wire = fdcpseudohit->wire->wire;
@@ -265,7 +274,7 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 		fdchit.tof = hit_info.tof;
 		fdchit.doca = hit_info.doca;
 		fdchit.resi = hit_info.dist - hit_info.doca;
-		fdchit.resic = hit_info.u - u_corr;
+		fdchit.resic = hit_info.u - (fdcpseudohit->s + hit_info.u_lorentz) ;
 		fdchit.trk_chisq = recon->chisq;
 		fdchit.trk_Ndof = recon->Ndof;
 		fdchit.LRis_correct = hit_info.LRis_correct;
@@ -321,7 +330,7 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 // FindLR
 //------------------
-void DEventProcessor_track_hists::hit_info_t::FindLR(vector<const DMCTrackHit*> &mctrackhits)
+void DEventProcessor_track_hists::hit_info_t::FindLR(vector<const DMCTrackHit*> &mctrackhits, const DLorentzDeflections *lorentz_def)
 {
 	/// Decided on whether or not the reference trajectory is on the correct side of the wire
 	/// based on truth information.
@@ -348,6 +357,17 @@ void DEventProcessor_track_hists::hit_info_t::FindLR(vector<const DMCTrackHit*> 
 	double beta = 1.0/sqrt(1.0 + pow(mass/mom_doca.Mag(), 2.0))*2.998E10;
 	tof = s/beta/1.0E-9; // in ns
 	dist = (tdrift - tof)*55E-4;
+	
+	// Find the Lorentz correction based on current track (if applicable)
+	if(lorentz_def){
+		DVector3 shift = wire->udir.Cross(mom_doca);
+		shift.SetMag(1.0);
+		double LRsign = shift.Dot(pos_doca-pos_wire)<0.0 ? +1.0:-1.0;
+		double alpha = mom_doca.Angle(DVector3(0,0,1));
+		u_lorentz = LRsign*lorentz_def->GetLorentzCorrection(pos_doca.X(), pos_doca.Y(), pos_doca.Z(), alpha, dist);
+	}else{
+		u_lorentz = 0.0;
+	}
 	
 	// Look for a truth hit corresponding to this wire. If none is found, mark the hit as 
 	// 0 (i.e. neither left nor right) and continue to the next hit.

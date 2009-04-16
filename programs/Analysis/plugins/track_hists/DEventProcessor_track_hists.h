@@ -29,6 +29,7 @@ using std::map;
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCHit.h>
 #include <FDC/DFDCWire.h>
+#include <HDGEOMETRY/DLorentzDeflections.h>
 
 #include "dchit.h"
 #include "trackpar.h"
@@ -46,6 +47,7 @@ class DEventProcessor_track_hists:public JEventProcessor{
 		trackpar *trk_ptr;
 		
 		DCoordinateSystem target;
+		const DLorentzDeflections *lorentz_def;//< Correction to FDC cathodes due to Lorentz force
 
 		class hit_info_t{
 			public:
@@ -53,19 +55,20 @@ class DEventProcessor_track_hists:public JEventProcessor{
 				DReferenceTrajectory *rt;
 				const DCoordinateSystem *wire;
 				double tdrift;
-				double u;
 				
 				// Outputs
 				double doca;
 				double dist;
 				double tof;
+				double u;
+				double u_lorentz;
 				int LRfit;
 				bool LRis_correct;
 				DVector3 pos_doca;
 				DVector3 mom_doca;
 				DVector3 pos_wire;
 
-				void FindLR(vector<const DMCTrackHit*> &mctrackhits);
+				void FindLR(vector<const DMCTrackHit*> &mctrackhits, const DLorentzDeflections *lorentz_def=NULL);
 		};
 		
 		

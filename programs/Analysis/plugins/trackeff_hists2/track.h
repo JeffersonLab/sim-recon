@@ -22,6 +22,8 @@ class track:public TObject{
 		TVector3 pcan;
 		double trk_chisq;
 		int trk_Ndof;
+		double trk_chisq_wb;
+		int trk_Ndof_wb;
 		double delta_pt_over_pt;
 		double delta_theta;	// mrad
 		double delta_phi;		// mrad

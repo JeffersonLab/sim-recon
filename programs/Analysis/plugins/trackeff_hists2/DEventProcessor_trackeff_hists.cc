@@ -217,10 +217,11 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 				trk.pcan = pcan;
 				trk.trk_chisq = particle->chisq;
 				trk.trk_Ndof = particle->Ndof;
+				trk.trk_chisq_wb = track!=NULL ? track->chisq:1.0E6;
+				trk.trk_Ndof_wb = track!=NULL ? track->Ndof:0;
 				trk.delta_pt_over_pt = delta_pt_over_pt;
 				trk.delta_theta = delta_theta;
 				trk.delta_phi = delta_phi;
-//_DBG_<<"trk.trk_chisq="<<trk.trk_chisq<<endl;
 				
 				// Get Nstereo, Ncdc, and Nfdc
 				vector<const DCDCTrackHit*> cdchits;
