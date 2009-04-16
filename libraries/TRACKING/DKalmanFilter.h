@@ -237,6 +237,9 @@ class DKalmanFilter{
   // target material
   vector<double>target;
 
+  // Mass hypothesis
+  double MASS;
+	
   bool last_iter;
   bool DEBUG_HISTS;
   int DEBUG_LEVEL;
