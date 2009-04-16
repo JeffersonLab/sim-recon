@@ -290,7 +290,7 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	if(MAX_FIT_ITERATIONS==0){fit_succeeded = true; fit_status=kFitSuccess;}
 	if(!fit_succeeded)return fit_status=kFitFailed;
 	
-	if(DEBUG_LEVEL>10){
+	if(DEBUG_LEVEL>9){
 		_DBG_<<"-------- Final Chisq for track = "<<this->chisq<<" Ndof="<<this->Ndof<<endl;
 		double chisq;
 		int Ndof;
