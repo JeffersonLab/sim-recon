@@ -80,14 +80,14 @@ jerror_t DTrack_factory_ALT3::brun(JEventLoop *loop, int runnumber)
   if (!cdc_residuals){
     cdc_residuals=new TH2F("cdc_residuals","residuals vs ring",
 			30,0.5,30.5,1000,-0.1,0.1);
-    cdc_residuals->SetXTitle("R (cm)");
+    cdc_residuals->SetXTitle("ring number");
     cdc_residuals->SetYTitle("#Deltad (cm)");
   }  
   cdc_pulls_histo=(TH2F*)gROOT->FindObject("cdc_pulls");
   if (!cdc_pulls_histo){
-    cdc_pulls_histo=new TH2F("cdc_pulls","pulls vs R",
-			60,0.,60.,100,-5,5.);
-    cdc_pulls_histo->SetXTitle("R (cm)");
+    cdc_pulls_histo=new TH2F("cdc_pulls","pulls vs ring",
+			30,0.5,30.5,100,-5,5.);
+    cdc_pulls_histo->SetXTitle("ring number");
     cdc_pulls_histo->SetYTitle("#Deltad/#sigmad");
   } 
   fdc_xresiduals=(TH2F*)gROOT->FindObject("fdc_xresiduals");
