@@ -22,7 +22,7 @@
 #define BEAM_RADIUS  0.1 
 #define MAX_ITER 25
 #define STEP_SIZE 0.5
-#define CDC_STEP_SIZE 0.5
+#define CDC_STEP_SIZE 0.35
 #define NUM_ITER 5
 #define Z_MIN 0.
 #define Z_MAX 160.
@@ -45,9 +45,12 @@ bool DKalmanCDCHit_cmp(DKalmanCDCHit_t *a, DKalmanCDCHit_t *b){
     _DBG_ << "Null pointer in CDC hit list??" << endl;
     return false;
   }
+  /*
   double ra=a->origin.Perp();
   double rb=b->origin.Perp();
   return (rb>ra);
+  */
+  return (b->ring>a->ring);
 }
 int grkuta_(double *CHARGE, double *STEP, double *VECT, double *VOUT,const DMagneticFieldMap *bfield);
 
@@ -74,20 +77,13 @@ DKalmanFilter::DKalmanFilter(const DMagneticFieldMap *bfield,
   this->RootGeom=RootGeom;
   hits.clear();
 
-  // Get the position of the exit of the CDC endplate from DGeometry
+  // Get the position of the exit of the CDC downstream endplate from DGeometry
   geom->GetCDCEndplate(endplate_z,endplate_dz,endplate_rmin,endplate_rmax);
+
   // Beginning of the cdc
   geom->Get("//posXYZ[@volume='CentralDC']/@X_Y_Z",cdc_origin);
 
-   // Get dimensions of target wall
-  vector<double>target_center;
-  geom->Get("//posXYZ[@volume='Target']/@X_Y_Z",target_center);
-  geom->Get("//tubs[@name='CYLW']/@Rio_Z",targ_wall);
-  targ_wall[2]+=target_center[2];
-  // Target material
-  geom->Get("//tubs[@name='LIH2']/@Rio_Z",target);
-  target[2]+=target_center[2];
-
+  // Number degrees of freedom
   ndf=0;
 
   // Mass hypothesis
@@ -300,6 +296,7 @@ jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S){
   double dEdx=0.;
   double z=z_,newz,ds=0.;
   double M=0.14; // pion for now
+  double my_endz=endplate_z+STEP_SIZE;
 
   // doca variables
   double doca,old_doca;
@@ -314,7 +311,7 @@ jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S){
     old_doca=sqrt((S(state_x,0)-wirepos.x())*(S(state_x,0)-wirepos.x())
 		  +(S(state_y,0)-wirepos.y())*(S(state_y,0)-wirepos.y()));
  
-    while(z<endplate_z){
+    while(z<my_endz){
       newz=z+STEP_SIZE;
 
       // State at current position 
@@ -374,7 +371,49 @@ jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S){
       old_doca=doca;
     }
   }
-
+  // Continue adding to the trajectory until we have passed the endplate
+   while(z<my_endz){
+     newz=z+STEP_SIZE;
+     
+     // State at current position 
+     temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
+     temp.s= len;
+     temp.S= new DMatrix(S);
+     
+     // get material properties from the Root Geometry
+     RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0);
+     
+     // Get dEdx for the upcoming step
+     dEdx=GetdEdx(M,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
+     
+     // Step through field
+     ds=Step(z,newz,dEdx,S);
+     len+=ds;
+     
+     // Get the contribution to the covariance matrix due to multiple 
+     // scattering
+      GetProcessNoise(M,ds,z,temp.X0,S,Q);
+      
+      // Energy loss straggling in the approximation of thick absorbers
+      double beta2=1./(1.+MASS*MASS*S(state_q_over_p,0)*S(state_q_over_p,0));
+      if (temp.density>0.)
+	Q(state_q_over_p,state_q_over_p)=
+	  0.1569e-6*S(state_q_over_p,0)*S(state_q_over_p,0)*temp.density
+	  *temp.Z/temp.A*fabs(ds)
+	  *(1.-beta2/2.)/MASS/MASS/beta2/beta2;
+      
+      // Compute the Jacobian matrix
+      StepJacobian(newz,z,S,dEdx,J);
+      
+      // update the trajectory
+      //temp.S= new DMatrix(S);	
+      temp.Q= new DMatrix(Q);
+      temp.J= new DMatrix(J);
+      forward_traj_cdc.push_front(temp);    
+      
+      z=newz;
+   }
+      
   /*
     for (unsigned int m=0;m<forward_traj_cdc.size();m++){
     printf("id %d x %f y %f z %f s %f \n",
@@ -1228,7 +1267,7 @@ jerror_t DKalmanFilter::SwimToPlane(DMatrix &S){
   }
   // Follow track into FDC
   max=forward_traj.size()-1;
-  z=forward_traj[max].pos.Z();
+  z=forward_traj[max].pos.Z(); 
   for (unsigned int m=max;m>0;m--){
     newz=z+STEP_SIZE;  
     dedx=GetdEdx(M,S(state_q_over_p,0),forward_traj[m].Z,
@@ -1505,8 +1544,8 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp){
     Sc(state_z,0)=z_;  
 
     //C0(state_z,state_z)=1.;
-    C0(state_z,state_z)=0.1*(1.+tanl_*tanl_);
-    C0(state_q_over_pt,state_q_over_pt)=0.1*0.1*q_over_pt_*q_over_pt_*(1.+tanl_*tanl_);;
+    C0(state_z,state_z)=0.1;
+    C0(state_q_over_pt,state_q_over_pt)=0.05*0.05*q_over_pt_*q_over_pt_;
     C0(state_phi,state_phi)=0.02*0.02;
     C0(state_D,state_D)=0.04;
     //double theta=90.-180./M_PI*atan(tanl_);
@@ -1654,14 +1693,13 @@ double DKalmanFilter::BrentsAlgorithm(double ds1,double ds2,
   x=w=v=bx;
 
   // Save the starting position 
-  DVector3 pos0=pos;
-  DMatrix S0(Sc);
+  // DVector3 pos0=pos;
+  // DMatrix S0(Sc);
   
   // Step to intermediate point
   FixedStep(pos,x,Sc,dedx);
   DVector3 wirepos=origin+(pos.z()-origin.z())*dir;
   double u_old=x;
-  double sum=x;
 
   // initialization
   fw=fv=fx=(pos-wirepos).Mag();
@@ -1671,6 +1709,31 @@ double DKalmanFilter::BrentsAlgorithm(double ds1,double ds2,
     xm=0.5*(a+b);
     tol2=2.0*(tol1=EPS*fabs(x)+ZEPS);
     if (fabs(x-xm)<=(tol2-0.5*(b-a))){
+      if (pos.z()>=endplate_z-endplate_dz){
+	double my_endz=endplate_z-endplate_dz;
+	// Check if the minimum doca would occur outside the straw and if so, bring the state 
+	// vector back to the end of the straw
+	int iter=0;
+	while (fabs(pos.z()-my_endz)>EPS && iter<20){
+	  u=x-(my_endz-pos.z())*sin(atan(Sc(state_tanl,0)));
+	  x=u;
+	  // Function evaluation
+	  FixedStep(pos,u_old-u,Sc,dedx);
+	  u_old=u;
+	  iter++;
+	}
+      }
+      if (pos.z()<=cdc_origin[2]){
+	int iter=0;
+	while (fabs(pos.z()-cdc_origin[2])>EPS && iter<20){
+	  u=x-(cdc_origin[2]-pos.z())*sin(atan(Sc(state_tanl,0)));
+	  x=u;
+	  // Function evaluation
+	  FixedStep(pos,u_old-u,Sc,dedx);
+	  u_old=u;
+	  iter++;
+	}
+      }	
       return cx-x;
     }
     // trial parabolic fit
@@ -1700,7 +1763,6 @@ double DKalmanFilter::BrentsAlgorithm(double ds1,double ds2,
     
     // Function evaluation
     FixedStep(pos,u_old-u,Sc,dedx);
-    sum+=u_old-u;
     u_old=u;
 
     wirepos=origin+(pos.z()-origin.z())*dir;
@@ -2118,7 +2180,7 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     doca=(pos-wirepos).Mag();
 
     // Check if the doca is no longer decreasing
-    if (doca>old_doca && more_measurements){
+    if ((doca>old_doca || pos.z()>=endplate_z-endplate_dz || pos.z()<=cdc_origin[2]) && more_measurements){
       // Save values at end of current step
       DVector3 pos0=central_traj[k].pos;
 
@@ -2287,6 +2349,22 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
       pos(0)+=-Sc(state_D,0)*sin(Sc(state_phi,0));
       pos(1)+= Sc(state_D,0)*cos(Sc(state_phi,0));
       pos(2)=Sc(state_z,0);
+      
+      /*
+      if (fabs(Sc(state_D,0))>5.) {
+	printf("Large D\n");
+	Sc.Print();    
+	printf("dS\n");
+	dS.Print();
+      }
+
+      if (pos.z()>endplate_z+10. || pos.z()<0. || pos.Perp()>65.){
+	cout << "Position is nonsense: z=" << pos.z() << ", r=" << pos.Perp() <<endl;
+	cout << "  D=" << Sc(state_D,0) << " dm=" << dm/ (1.-(H*K)(0,0))<< endl;
+	return VALUE_OUT_OF_RANGE;
+      }
+      */
+
 
       // Update the wire position
       wirepos=origin+(pos.z()-origin.z())*dir;
@@ -2627,13 +2705,15 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
       double d2down=(x-xw)*(x-xw)+(y-yw)*(y-yw);
       double zsave=z;
 
+      double dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj_cdc[k].Z,
+			 forward_traj_cdc[k].A,forward_traj_cdc[k].density);
       // Check if the two trial steps led as to bracket the minimum doca
       if (d2up>d2old && d2old<d2down){
 	// We have bracketed the minimum doca 
 	z+=STEP_SIZE;
-	double dz=BrentsAlgorithm(z,STEP_SIZE,0.,cdchits[id]->origin,
+	double dz=BrentsAlgorithm(z,STEP_SIZE,dedx,cdchits[id]->origin,
 			cdchits[id]->dir,Stemp);
-	ds=Step(z,z+dz,0.,Stemp);
+	ds=Step(z,z+dz,dedx,Stemp);
 	s+=ds+ds1;
 	z=z+dz;
 
@@ -2641,9 +2721,10 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
       }
       else if (d2up<d2old && d2old<d2down){	
 	// We have not yet bracketed the minimum doca 
+	double newz=0.;
 	while (d2up<d2down){
-	  double newz=z+STEP_SIZE;
-	  ds=Step(z,newz,0,Stemp);
+	  newz=z+STEP_SIZE;
+	  ds=Step(z,newz,dedx,Stemp);
 	  s+=ds;
 	  wirepos=cdchits[id]->origin
 	    +(newz-cdchits[id]->origin.z())*cdchits[id]->dir;
@@ -2653,12 +2734,14 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
 	  d2down=d2up;
 	  d2up=(x-xw)*(x-xw)+(y-yw)*(y-yw);
 	  z=newz;
-	};
-	double dz=BrentsAlgorithm(z,STEP_SIZE,0.,cdchits[id]->origin,
+	}
+	double dz=BrentsAlgorithm(z,STEP_SIZE,dedx,cdchits[id]->origin,
 				  cdchits[id]->dir,Stemp);
-	ds=Step(z,z+dz,0.,Stemp);
+
+	newz=z+dz;
+	ds=Step(z,newz,dedx,Stemp);
 	s+=ds+ds1;
-	z=z+dz;
+	z=newz;
 
 	S=Stemp;
       }
@@ -2666,7 +2749,7 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
 	// We have not yet bracketed the minimum doca 
 	while (d2up>d2down){
 	  double newz=z-STEP_SIZE;
-	  ds=Step(z,newz,0,Stemp2);\
+	  ds=Step(z,newz,dedx,Stemp2);
 	  s+=ds;
 	  wirepos=cdchits[id]->origin
 	    +(newz-cdchits[id]->origin.z())*cdchits[id]->dir;
@@ -2677,14 +2760,31 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
 	  d2down=(x-xw)*(x-xw)+(y-yw)*(y-yw);
 	  z=newz;
 	}	
-	double dz=BrentsAlgorithm(z,-STEP_SIZE,0.,cdchits[id]->origin,
+	double dz=BrentsAlgorithm(z,-STEP_SIZE,dedx,cdchits[id]->origin,
 				  cdchits[id]->dir,Stemp2);
-	ds=Step(z,z+dz,0.,Stemp2);
+	ds=Step(z,z+dz,dedx,Stemp2);
 	s+=ds+ds2;
 	z=z+dz;
 
 	S=Stemp2;	
-      }     
+      } 
+      // If the minimum doca occurs beyond the extent of the straw, move the state vector
+      // to the exit of the straw
+      double my_endz=endplate_z-endplate_dz;
+      if (z>my_endz){	
+	int numstep=(int)fabs((z-my_endz)/STEP_SIZE);
+	for (int istep=0;istep<numstep;istep++){
+	  double newz=z-STEP_SIZE;
+	  ds=Step(z,newz,dedx,S);
+	  s+=ds;
+	  z=newz;
+	}
+	ds=Step(z,my_endz,dedx,S);
+	s+=ds;
+	z=my_endz;
+      }
+      int numstep=(int)fabs((z-zsave)/STEP_SIZE);
+
 
       // direction variables
       double tx=S(state_tx,0),ty=S(state_ty,0);
@@ -2748,8 +2848,15 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
       S=S+(dm-d)*K;
 
       // Step S back to the z-position on the reference trajectory
-      s+=Step(z,zsave,0.,S);
- 
+      numstep=(int)fabs((z-zsave)/STEP_SIZE);
+      double dz=STEP_SIZE;
+      if (z>zsave) dz=-STEP_SIZE;
+      for (int istep=0;istep<numstep;istep++){
+	s+=Step(z,z+dz,dedx,S);
+	z=z+dz;
+      }
+      s+=Step(z,zsave,dedx,S);
+
       // Path length in active volume
       // path_length+=?
       
