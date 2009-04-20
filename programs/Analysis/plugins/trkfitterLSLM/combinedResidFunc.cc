@@ -119,8 +119,8 @@ void combinedResidFunc::deriv(const HepVector *x, void *data, HepMatrix *J){
   // base resids for CDC
   double docaThis, distThis;
   for (unsigned int j = 0; j < n_cdc; j++) {
-    distThis = velDrift*((*trkhitPtr)[j]->tdrift - poca.getT()/c);
     docaThis = trajPtr->doca(*(linePtrs[j]), poca);
+    distThis = velDrift*((*trkhitPtr)[j]->tdrift - poca.getT()/c);
     if (docaThis > distThis) {
       residBase(n_fdc + j + 1) = (distThis - docaThis)/ERROR_CDC;
     } else {
@@ -150,8 +150,8 @@ void combinedResidFunc::deriv(const HepVector *x, void *data, HepMatrix *J){
     // calculate derivatives for CDC points
     for (unsigned int j = 0; j < n_cdc; j++) {
       jHep = n_fdc + j + 1;
-      distThis = velDrift*((*trkhitPtr)[j]->tdrift - poca.getT()/c);
       docaThis = trajPtr->doca(*(linePtrs[j]), poca);
+      distThis = velDrift*((*trkhitPtr)[j]->tdrift - poca.getT()/c);
       if (debug_level > 2) cout << j << " dist = " << distThis << " doca = " << docaThis << " resid  = " << distThis - docaThis << endl;
       if (isnan(distThis)) {
 	(*J)(jHep, iHep) = 0;
