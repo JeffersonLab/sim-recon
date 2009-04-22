@@ -552,7 +552,7 @@ void MyProcessor::UpdateTrackLabels(void)
 		int row = reconlabs["trk"].size()-i-1;
 		if(row<1)break;
 		
-		stringstream trkno, type, p, theta, phi, z;
+		stringstream trkno, type, p, theta, phi, z, chisq_per_dof, Ndof;
 		trkno<<setprecision(4)<<i+1;
 		reconlabs["trk"][row]->SetText(trkno.str().c_str());
 		
@@ -572,6 +572,22 @@ void MyProcessor::UpdateTrackLabels(void)
 
 		z<<setprecision(4)<<trk->position().Z();
 		reconlabs["z"][row]->SetText(z.str().c_str());
+
+		// Get chisq and Ndof for DParticle or DTrack objects
+		const DParticle *part=dynamic_cast<const DParticle*>(trk);
+		const DTrack *track=dynamic_cast<const DTrack*>(trk);
+		if(part){
+			chisq_per_dof<<setprecision(4)<<part->chisq/part->Ndof;
+			Ndof<<part->Ndof;
+		}else if(track){
+			chisq_per_dof<<setprecision(4)<<track->chisq/track->Ndof;
+			Ndof<<track->Ndof;
+		}else{
+			chisq_per_dof<<"N/A";
+			Ndof<<"N/A";
+		}
+		reconlabs["chisq/Ndof"][row]->SetText(chisq_per_dof.str().c_str());
+		reconlabs["Ndof"][row]->SetText(Ndof.str().c_str());
 	}
 }
 

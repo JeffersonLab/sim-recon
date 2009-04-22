@@ -354,6 +354,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 			colnames.push_back("theta");
 			colnames.push_back("phi");
 			colnames.push_back("z");
+			colnames.push_back("chisq/Ndof");
+			colnames.push_back("Ndof");
 			
 			// Create a vertical frame for each column and insert the label as the first item
 			for(unsigned int i=0; i<colnames.size(); i++){
@@ -367,7 +369,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 				string lab = colnames[i]+":";
 				TGLabel *tl = new TGLabel(tf, lab.c_str());
 				TGLabel *rl = new TGLabel(rf, lab.c_str());
-				tf->AddFrame(tl, chints);
+				if(i<6)tf->AddFrame(tl, chints);
 				rf->AddFrame(rl, chints);
 				vector<TGLabel*> tv;
 				vector<TGLabel*> rv;
@@ -380,9 +382,9 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 				for(int j=0; j<6; j++){
 					stringstream ss;
 					ss<<(5-j);
-					tl = new TGLabel(tf, i==0 ? ss.str().c_str():"--------");
+					if(i<6)tl = new TGLabel(tf, i==0 ? ss.str().c_str():"--------");
 					rl = new TGLabel(rf, i==0 ? ss.str().c_str():"--------");
-					tf->AddFrame(tl, bhints);
+					if(i<6)tf->AddFrame(tl, bhints);
 					rf->AddFrame(rl, bhints);
 					tv.push_back(tl);
 					rv.push_back(rl);
