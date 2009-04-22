@@ -220,7 +220,7 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
       fit.SetSeed(tc->charge(),tc->position(),tc->momentum());
 
       // Kalman filter 
-      jerror_t error=fit.KalmanLoop(TOF_MASS);
+      jerror_t error=fit.KalmanLoop(TOF_MASS,DKalmanFilter::kTimeBased);
 
       if (error==NOERROR){
 	// Create a new track object

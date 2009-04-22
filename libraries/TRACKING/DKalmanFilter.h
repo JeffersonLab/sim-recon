@@ -52,6 +52,10 @@ typedef struct{
 
 class DKalmanFilter{
  public:
+  enum tracking_level{
+   kWireBased,
+   kTimeBased,
+  };
   DKalmanFilter(const DMagneticFieldMap *bfield,const DGeometry *dgeom,
 		const DLorentzDeflections *lorentz_def,
 		//const DMaterialMap *material, 
@@ -91,7 +95,7 @@ class DKalmanFilter{
   jerror_t AddHit(double x,double y, double z,double covx,
 		  double covy, double covxy,double dE);
   jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
-  jerror_t KalmanLoop(double mass_hyp);
+  jerror_t KalmanLoop(double mass_hyp,int pass);
   jerror_t KalmanForward(double mass_hyp,DMatrix &S,DMatrix &C,double &chisq);
   jerror_t KalmanForwardCDC(double mass_hyp, double anneal,DMatrix &S, 
 			    DMatrix &C,double &chisq);
@@ -137,7 +141,12 @@ class DKalmanFilter{
     state_D,
     state_z,
   };
-  
+  /*
+  enum tracking_level{
+   kWireBased,
+   kTimeBased,
+  };
+  */
   jerror_t GetProcessNoise(double mass_hyp,double ds,double z,
 			   double X0,DMatrix S,DMatrix &Q);
   double Step(double oldz,double newz, double dEdx,DMatrix &S);
@@ -240,6 +249,7 @@ class DKalmanFilter{
   // Mass hypothesis
   double MASS;
 	
+  int pass;
   bool last_iter;
   bool DEBUG_HISTS;
   int DEBUG_LEVEL;
