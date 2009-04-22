@@ -170,6 +170,9 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		trk.pfit_wire.SetXYZ(0,0,0);
 		trk.pcan.SetXYZ(0,0,0);
 		trk.trk_chisq=1.0E20;
+		trk.trk_Ndof=1;
+		trk.trk_chisq_wb=1.0E20;
+		trk.trk_Ndof_wb=1;
 		trk.delta_pt_over_pt=1.0E20;
 		trk.delta_theta=1.0E20;
 		trk.delta_phi=1.0E20;
