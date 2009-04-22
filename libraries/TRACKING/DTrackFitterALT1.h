@@ -49,65 +49,82 @@ class DTrackFitterALT1:public DTrackFitter{
 			state_v,			///< position-coordinate in RT coordinate system in cm perpendicular to x both and momentum direction
 		};
 		
+		enum resi_types{
+			resi_type_cdc_anode,
+			resi_type_fdc_anode,
+			resi_type_fdc_cathode,
+			resi_type_other
+		};
+		
 		class hitInfo{
 			public:
-				const DCoordinateSystem* wire;	// Wire definitions
-				double dist;							// Effective wire shifts due to drift time
-				double err;								// Errors on drift time (or wire position) measurement
-				double u_dist;							// Distances along the wire (for FDC cathodes)
-				double u_lorentz;						// Lorentz correction  to u_dist ( u = u_dist + u_lorentz )
-				double u_err;							// Errors on distance along the wire (for FDC cathodes)
+				const DCoordinateSystem* wire;	///< Wire definitions
+				double dist;							///< Effective wire shifts due to drift time
+				double err;								///< Errors on drift time (or wire position) measurement
+				double u_dist;							///< Distances along the wire (for FDC cathodes)
+				double u_lorentz;						///< Lorentz correction  to u_dist ( u = u_dist + u_lorentz )
+				double u_err;							///< Errors on distance along the wire (for FDC cathodes)
+				bool   good;							///< Set by GetResiInfo if dist is used
+				bool   good_u;							///< Set by GetResiInfo if u_dist is used
 		};
 		
 		typedef vector<hitInfo> hitsInfo;
+		
+		class resiInfo{
+			public:
+				hitInfo *hit;
+				int layer;
+				int resi_type;
+				double resi;
+				double err;
+		};
 
-		double GetDistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double &s);
 		double ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr=NULL, int *dof_ptr=NULL);
-		double ChiSq(DReferenceTrajectory *rt, hitsInfo &hinfo, vector<double> &chisqv, double *chisq_ptr=NULL, int *dof_ptr=NULL);
-		double ChiSq(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, hitsInfo &hinfo, vector<double> &chisqv, double *chisq_ptr=NULL, int *dof_ptr=NULL);
-		void GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, hitsInfo &hinfo);
+		double ChiSq(vector<resiInfo> &residuals, double *chisq_ptr=NULL, int *dof_ptr=NULL);
+		void GetHits(fit_type_t fit_type, DReferenceTrajectory *rt, hitsInfo &hinfo);
+		vector<bool> GetResiInfo(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, hitsInfo &hinfo, vector<resiInfo> &residuals);
+		vector<bool> GetResiInfo(DReferenceTrajectory *rt, hitsInfo &hinfo, vector<resiInfo> &residuals);
 		fit_status_t LeastSquaresB(hitsInfo &hinfo, DReferenceTrajectory *rt);
+		void FilterGood(DMatrix &my_resiv, vector<bool> &my_good, vector<bool> &good_all);
+		void GetCovariance(DMatrix &Vmuls, vector<bool> &good, hitsInfo &hinfo);
 		void ForceLRTruth(JEventLoop *loop, DReferenceTrajectory *rt, hitsInfo &hinfo);
 		void FillDebugHists(DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom);
 
-		std::vector<double> chisqv;
-		std::vector<double> sigmav;
-		double Ngood_chisq_hits;
+		// The following are filled by the last call to one of the
+		// ChiSq(...) methods
+		DMatrix resiv;		///< residuals vector (Nmeasurements x 1)
+		DMatrix cov_meas;	///< Measurement errors of hits (diagonal Nmeasurements x Nmeasurements)
+		DMatrix cov_muls;	///< Covariance of hits due to multiple scattering (Nmeasurements x Nmeasurements)
+		DMatrix weights;	///< Inverse of cov_meas + cov_muls
+
+		// The following are filled by the last call to LeastSquaresB(...)
+		DMatrix cov_parm;	///< Covariance of fit parameters (Nparms x Nparms (where Nparms=5))
+
+		// Other data members
 		DCoordinateSystem *target;
-		DMatrix last_covariance;
 		
 		int eventnumber;
 		const JGeometry *dgeom;
-		double MAX_HIT_DIST;
-		double CDC_Z_MIN;
-		double CDC_Z_MAX;
 		vector<DReferenceTrajectory*>rtv;
 		DReferenceTrajectory *rt, *tmprt;
 		bool hit_based;
 		bool DEBUG_HISTS;
 		int  DEBUG_LEVEL;
 		bool USE_CDC;
-		bool USE_FDC_ANODE;
-		bool USE_FDC_CATHODE;
 		double MAX_CHISQ_DIFF;
 		int MAX_FIT_ITERATIONS;
 		double SIGMA_CDC;
 		double SIGMA_FDC_ANODE;
 		double SIGMA_FDC_CATHODE;
-		double CHISQ_MAX_RESI_SIGMAS;
 		double CHISQ_GOOD_LIMIT;
 		double LEAST_SQUARES_DP;
 		double LEAST_SQUARES_DX;
 		unsigned int LEAST_SQUARES_MIN_HITS;
 		double LEAST_SQUARES_MAX_E2NORM;
-		double DEFAULT_STEP_SIZE;
-		double MIN_CDC_HIT_PROB;
-		double MAX_CDC_DOUBLE_HIT_PROB;
-		double MIN_FDC_HIT_PROB;
-		double MAX_FDC_DOUBLE_HIT_PROB;
 		double TOF_MASS;
 		bool TARGET_CONSTRAINT;
 		bool LR_FORCE_TRUTH;
+		bool USE_MULS_COVARIANCE;
 		
 		TH3F *cdcdoca_vs_dist_vs_ring;
 		TH2F *cdcdoca_vs_dist;

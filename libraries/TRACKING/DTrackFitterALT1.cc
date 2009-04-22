@@ -28,6 +28,10 @@ using namespace jana;
 #include "DMCTrackHit.h"
 #include "DTrackHitSelectorTHROWN.h"
 
+extern double GetFDCCovariance(int layer1, int layer2);
+extern double GetFDCCathodeCovariance(int layer1, int layer2);
+
+
 #define NaN std::numeric_limits<double>::quiet_NaN()
 
 // The GNU implementation of STL includes definitions of "greater" and "less"
@@ -57,67 +61,44 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	target->udir.SetXYZ(0.0, 0.0, 1.0);
 	target->L = 30.0;
 
-	MAX_HIT_DIST = 2.0; // cm
 	DEBUG_HISTS = false;
 	DEBUG_LEVEL = 0;
-	USE_CDC = true;
-	USE_FDC_ANODE = true;
-	USE_FDC_CATHODE = true;
 	MAX_CHISQ_DIFF = 1.0E-2;
 	MAX_FIT_ITERATIONS = 50;
 	SIGMA_CDC = 0.0150;
 	SIGMA_FDC_ANODE = 0.0200;
 	SIGMA_FDC_CATHODE = 0.0200;
-	CHISQ_MAX_RESI_SIGMAS = 100.0;
 	CHISQ_GOOD_LIMIT = 2.0;
 	LEAST_SQUARES_DP = 0.0001;
 	LEAST_SQUARES_DX = 0.010;
 	LEAST_SQUARES_MIN_HITS = 3;
 	LEAST_SQUARES_MAX_E2NORM = 1.0E8;
-	DEFAULT_STEP_SIZE = 0.5;
-	MIN_CDC_HIT_PROB = 0.2;
-	MAX_CDC_DOUBLE_HIT_PROB = 0.1;
-	MIN_FDC_HIT_PROB = 0.2;
-	MAX_FDC_DOUBLE_HIT_PROB = 0.1;
 	TOF_MASS = 0.13957018;
 	TARGET_CONSTRAINT = false;
 	LR_FORCE_TRUTH = false;
+	USE_MULS_COVARIANCE = true;
 	
-	gPARMS->SetDefaultParameter("TRKFIT:MAX_HIT_DIST",					MAX_HIT_DIST);
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",					DEBUG_HISTS);
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",					DEBUG_LEVEL);
-	gPARMS->SetDefaultParameter("TRKFIT:USE_CDC",						USE_CDC);
-	gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_ANODE",				USE_FDC_ANODE);
-	gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_CATHODE",				USE_FDC_CATHODE);
 	gPARMS->SetDefaultParameter("TRKFIT:MAX_CHISQ_DIFF",				MAX_CHISQ_DIFF);
 	gPARMS->SetDefaultParameter("TRKFIT:MAX_FIT_ITERATIONS",			MAX_FIT_ITERATIONS);
 	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_CDC",						SIGMA_CDC);
 	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_ANODE",				SIGMA_FDC_ANODE);
 	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_CATHODE",			SIGMA_FDC_CATHODE);
-	gPARMS->SetDefaultParameter("TRKFIT:CHISQ_MAX_RESI_SIGMAS",		CHISQ_MAX_RESI_SIGMAS);
 	gPARMS->SetDefaultParameter("TRKFIT:CHISQ_GOOD_LIMIT",			CHISQ_GOOD_LIMIT);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_DP",			LEAST_SQUARES_DP);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_DX",			LEAST_SQUARES_DX);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MIN_HITS",	LEAST_SQUARES_MIN_HITS);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MAX_E2NORM",	LEAST_SQUARES_MAX_E2NORM);		
-	gPARMS->SetDefaultParameter("TRKFIT:DEFAULT_STEP_SIZE",			DEFAULT_STEP_SIZE);
-	gPARMS->SetDefaultParameter("TRKFIT:MIN_CDC_HIT_PROB",			MIN_CDC_HIT_PROB);
-	gPARMS->SetDefaultParameter("TRKFIT:MAX_CDC_DOUBLE_HIT_PROB",	MAX_CDC_DOUBLE_HIT_PROB);
-	gPARMS->SetDefaultParameter("TRKFIT:MIN_FDC_HIT_PROB",			MIN_FDC_HIT_PROB);
-	gPARMS->SetDefaultParameter("TRKFIT:MAX_FDC_DOUBLE_HIT_PROB",	MAX_FDC_DOUBLE_HIT_PROB);
 	gPARMS->SetDefaultParameter("TRKFIT:TOF_MASS",						TOF_MASS);
 	gPARMS->SetDefaultParameter("TRKFIT:TARGET_CONSTRAINT",			TARGET_CONSTRAINT);
 	gPARMS->SetDefaultParameter("TRKFIT:LR_FORCE_TRUTH",				LR_FORCE_TRUTH);
+	gPARMS->SetDefaultParameter("TRKFIT:USE_MULS_COVARIANCE",		USE_MULS_COVARIANCE);
 	
 	// DReferenceTrajectory objects
 	rt = new DReferenceTrajectory(bfield);
 	tmprt = new DReferenceTrajectory(bfield);
 	
-	// Set limits on CDC. (This should eventually come from HDDS)
-	CDC_Z_MIN = 17.0;
-	CDC_Z_MAX = CDC_Z_MIN + 150.0;
-	hit_based = false;
-	//cout<<__FILE__<<":"<<__LINE__<<"-------------- Helical Fitter TRACKING --------------"<<endl;
 	cout<<__FILE__<<":"<<__LINE__<<"-------------- Least Squares TRACKING --------------"<<endl;
 
 	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -216,7 +197,7 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 		_DBG__;
 		_DBG_<<"cdchits.size="<<cdchits.size()<<"  fdchits.size="<<fdchits.size()<<endl;
 		if(fit_type==kTimeBased)_DBG_<<"============= Time-based ==============="<<endl;
-		if(fit_type==kWireBased)_DBG_<<"============== Hit-based ==============="<<endl;
+		if(fit_type==kWireBased)_DBG_<<"============= Wire-based ==============="<<endl;
 	}
 	
 	// Swim reference trajectory
@@ -226,11 +207,12 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	// Iterate over fitter until it converges or we reach the 
 	// maximum number of iterations
 	double last_chisq = 1.0E6;
+	int last_Ndof=1;
 	int Niterations;
 	for(Niterations=0; Niterations<MAX_FIT_ITERATIONS; Niterations++){
 	
-		hitsInfo hinfo;	
-		GetWiresShiftsErrs(fit_type, rt, hinfo);
+		hitsInfo hinfo;
+		GetHits(fit_type, rt, hinfo);
 		
 		// Optionally use the truth information from the Monte Carlo
 		// to force the correct LR choice for each hit. This is
@@ -258,25 +240,26 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 
 		// Fill debug histos
 		if(DEBUG_HISTS){
-			chisq_vs_pass->Fill(Niterations+1, chisq);
-			dchisq_vs_pass->Fill(Niterations+1, last_chisq-chisq);			
+			chisq_vs_pass->Fill(Niterations+1, chisq/Ndof);
+			dchisq_vs_pass->Fill(Niterations+1, last_chisq/last_Ndof - chisq/Ndof);			
 		}
 
 		// If the chisq is too large, then consider it a hopeless cause
-		if(chisq>1.0E4){
+		if(chisq/Ndof>1.0E4 || !finite(chisq/Ndof)){
 			if(DEBUG_LEVEL>3)_DBG_<<"Fit chisq too large on iteration "<<Niterations<<endl;
 			return fit_status=kFitFailed;
 		}
 		
 		// Check if we converged
-		if(fabs(last_chisq-chisq) < MAX_CHISQ_DIFF){
-			if(DEBUG_LEVEL>3)_DBG_<<"Fit chisq change below threshold fabs("<<last_chisq<<" - "<<chisq<<")<"<<MAX_CHISQ_DIFF<<endl;
+		if(fabs(last_chisq/last_Ndof-chisq/Ndof) < MAX_CHISQ_DIFF){
+			if(DEBUG_LEVEL>3)_DBG_<<"Fit chisq change below threshold fabs("<<last_chisq/last_Ndof<<" - "<<chisq/Ndof<<")<"<<MAX_CHISQ_DIFF<<endl;
 			break;
 		}
 		last_chisq = chisq;
+		last_Ndof = Ndof;
 	}
 
-	if(DEBUG_LEVEL>1)_DBG_<<" Niterations="<<Niterations<<"  chisq="<<chisq<<" p="<<rt->swim_steps[0].mom.Mag()<<endl;
+	if(DEBUG_LEVEL>1)_DBG_<<" Niterations="<<Niterations<<"  chisq="<<chisq<<" Ndof="<<Ndof<<" p="<<rt->swim_steps[0].mom.Mag()<<endl;
 	
 	// At this point we must decide whether the fit succeeded or not.
 	// We'll consider the fit a success if any of the following is true:
@@ -337,201 +320,100 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 //------------------
 double DTrackFitterALT1::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr, int *dof_ptr)
 {
+	/// Calculate the chisq for the given reference trajectory based on the hits
+	/// currently registered through the DTrackFitter base class into the cdchits
+	/// and fdchits vectors. This does not get called by the core part of the
+	/// fitter, but is used, rather, to give an "independent" value of the
+	/// chisq based only on a reference trajectory and the input hits. It is
+	/// called after the fit to calculate the final chisq.
+
 	hitsInfo hinfo;
-	
-	GetWiresShiftsErrs(fit_type, rt, hinfo);
+	GetHits(fit_type, rt, hinfo);
 	if(LR_FORCE_TRUTH && fit_type==kTimeBased)ForceLRTruth(loop, rt, hinfo);
+
+	vector<resiInfo> residuals;
+	GetResiInfo(rt, hinfo, residuals);
 	
-	return ChiSq(rt, hinfo, chisqv, chisq_ptr, dof_ptr);
+	return ChiSq(residuals, chisq_ptr, dof_ptr);
 }
 
 //------------------
 // ChiSq
 //------------------
-double DTrackFitterALT1::ChiSq(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, hitsInfo &hinfo, vector<double> &chisqv, double *chisq_ptr, int *dof_ptr)
+double DTrackFitterALT1::ChiSq(vector<resiInfo> &residuals, double *chisq_ptr, int *dof_ptr)
 {
-	/// Calculate the chi-squared for a track specified by state relative to the
-	/// given reference trajectory. This is just a wrapper for 
-	/// ChiSq(DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv)
-	/// that accepts the state vector and re-swims the trajectory.
+	// The residuals vector contains a list of only good hits, both
+	// anode and cathode, along with their measurment errors. Use these to fill
+	// the resiv and cov_meas matrices now. Fill in the cov_muls below.
+	int Nmeasurements = (int)residuals.size();
+	resiv.ResizeTo(Nmeasurements, 1);
+	cov_meas.ResizeTo(Nmeasurements, Nmeasurements);
+	cov_muls.ResizeTo(Nmeasurements, Nmeasurements);
 	
-	// "v" direction is perpendicular to both the rt direction and the
-	// x-direction. See LeastSquares() for more.
-	DVector3 vdir = start_step->sdir.Cross(start_step->mom);
-	vdir.SetMag(1.0);
-
-	DVector3 pos =   start_step->origin
-						+ state[state_x ][0]*start_step->sdir
-						+ state[state_v ][0]*vdir;
-	DVector3 mom =   state[state_px][0]*start_step->sdir
-						+ state[state_py][0]*start_step->tdir
-						+ state[state_pz][0]*start_step->udir;
-
-	if(!rt){
-		_DBG_<<"NULL pointer passed for DReferenceTrajectory object!"<<endl;
-		chisqv.clear();
-		for(unsigned int i=0; i<hinfo.size(); i++){
-			chisqv.push_back(1.0E6); // CDC and FDC wires
-			if(hinfo[i].u_err!=0.0)chisqv.push_back(1.0E6); // FDC cathodes
-		}
+	// Return "infinite" chisq if an empty residuals vector was passed.
+	if(Nmeasurements<1){
+		if(chisq_ptr)*chisq_ptr=1.0E6;
+		if(dof_ptr)*dof_ptr=1;
 		return 1.0E6;
 	}
 	
-	if(pos.Mag()>200.0 || fabs(state[state_x ][0])>100.0 || fabs(state[state_v ][0])>100.0){
-		if(DEBUG_LEVEL>3)_DBG_<<"state values out of range"<<endl;
-		if(DEBUG_LEVEL>6){
-			pos.Print();
-			mom.Print();
-			_DBG_<<"state[state_x ][0]="<<state[state_x ][0]<<"  state[state_v ][0]="<<state[state_x ][0]<<endl;
-		}
-		chisqv.clear();
-		for(unsigned int i=0; i<hinfo.size(); i++){
-			chisqv.push_back(1.0E6); // CDC and FDC wires
-			if(hinfo[i].u_err!=0.0)chisqv.push_back(1.0E6); // FDC cathodes
-		}
-
-		return 1.0E6;
+	for(unsigned int i=0; i<residuals.size(); i++){
+		resiInfo &ri = residuals[i];
+		
+		resiv[i][0] = ri.resi;
+		cov_meas[i][i] = pow(ri.err, 2.0);
 	}
 	
-	rt->Swim(pos,mom);
-
-	return ChiSq(rt, hinfo, chisqv, chisq_ptr, dof_ptr);
-}
-
-//------------------
-// ChiSq
-//------------------
-double DTrackFitterALT1::ChiSq(DReferenceTrajectory *rt, hitsInfo &hinfo, vector<double> &chisqv, double *chisq_ptr, int *dof_ptr)
-{
-	/// Calculate the chisq for a track represented by the given reference
-	/// trajectory with the given list of wires. The values in the "shifts"
-	/// vector are used to shift the wire positions and can therefore be used
-	/// to implement the drift time information. If no shifts are required, then
-	/// the shifts vector should be empty. The values in the errs vector
-	/// should be the errs for each of the wire measurements.
-	///
-	/// The return value is the chi-squared per dof. Upon return, the chisqv
-	/// vector will be filled with the individual chisq contributions from
-	/// each wire hit.
-	///
-	/// Upon entry, the lengths of the vectors "wires", "errs", and "shifts"
-	/// (if non-zero) are checked to make sure they all match. If not, an error
-	/// message is printed and a value of 1.0E6 is returned and chisqv
-	/// will be empty
-
-	// Make sure input vectors match
-	chisqv.clear();
-	
-	// Sometimes, we end up with a zero step rt due to bad parameters.
-	// Avoid all the warning messages by detecting this now and bailing early.
-	if(rt->Nswim_steps<1){
-		for(unsigned int i=0; i<hinfo.size(); i++){
-			chisqv.push_back(1.0E6); // CDC and FDC wires
-			if(hinfo[i].u_err!=0.0)chisqv.push_back(1.0E6); // FDC cathodes
-		}
-
-		return 1.0E6;
-	}
-	
-	// These are for debugging
-	const DFDCWire *fdcwire=NULL;
-	const DCDCWire *cdcwire=NULL;
-	
-	// Loop over wires
-	double chisq = 0.0;
-	int dof=0;
-	for(unsigned int i=0; i<hinfo.size(); i++){
-		hitInfo &hi = hinfo[i];
-		const DCoordinateSystem *wire = hi.wire;
-		
-		if(DEBUG_LEVEL>10){
-			fdcwire = dynamic_cast<const DFDCWire*>(wire);
-			cdcwire = dynamic_cast<const DCDCWire*>(wire);
-		}
-	
-		// Get distance of the (shifted) wire from the reference trajectory
-		double s;
-		double d = rt->DistToRT(wire, &s);
-		
-		// It can happen that a track looks enough like a helix that
-		// a momentum pointing in the opposite direction of the real track
-		// can have a small value of d, even when using a swim step close
-		// to the target. In these cases, s will be negative and large.
-		// When this happens, set d to R to force a bad chisq.
-		if(s<-5.0)d = wire->origin.Perp();
-		
-		// Residual. If we're on the correct side of the wire, then this is
-		// dist-doca. If we're on the incorrect side of the wire, then this
-		// is -dist-doca. Prior to calling us, the value of hi.dist will have
-		// a sign that already assigned to indicate the side of the wire
-		// the track is believed to be on.
-		double resi = hi.dist - d;
-
-		// Add this to the chisq. It may turn out that d is NAN in which case we
-		// don't want to include it in the total tally. We still must add it
-		// however to the chisqv since that must have an entry for every entry
-		// in the wires vector.
-		//
-		// The value going into chisqv needs to be a signed quantity with positive
-		// values meaning the doca is larger than the dist and negative values
-		// meaning the doca is smaller than the dist (doca from track, dist
-		// from drift time). 
-		double c = resi/hi.err;
-		chisqv.push_back(c);
-
-		if(finite(c)){
-			chisq += c*c;
-			dof++;
-			if(DEBUG_LEVEL>10){
-				_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<" hi.dist="<<hi.dist<<"  err="<<hi.err<<" s="<<s;
-				if(fdcwire)cerr<<" FDC: layer="<<fdcwire->layer<<" wire="<<fdcwire->wire<<" angle="<<fdcwire->angle;
-				if(cdcwire)cerr<<" CDC: ring="<<cdcwire->ring<<" straw="<<cdcwire->straw<<" stereo="<<cdcwire->stereo;
-				cerr<<endl;
-			}
-		}else{
-			if(DEBUG_LEVEL>10)_DBG_<<"  chisqv[unused] = "<<c<<"  d="<<d<<"  Rwire="<<wire->origin.Perp()<<"  Rshifted="<<wire->origin.Perp()<<" s="<<s<<endl;
-		}
-		
-		// Add FDC cathode (if appropriate)
-		if(hi.u_err!=0.0){
-			// The sign of hi.dist indicates whether we want to treat this hit as
-			// being on the same side of the wire as the track(+) or the opposite
-			// side (-). In the latter case, we need to apply the Lorentz correction
-			// to the position along the wire in the opposite direction than we
-			// would otherwise. Set the sign of the Lorentz deflection based on the
-			// sign of hi.dist.
-			double LRsign = hi.dist<0.0 ? -1.0:1.0;
-		
-			double u = rt->GetLastDistAlongWire();
-			double u_cathodes = hi.u_dist + LRsign*hi.u_lorentz;
-			c = (u - u_cathodes)/hi.u_err;
-			chisqv.push_back(c);
-			if(finite(c)){
-				chisq += c*c;
-				dof++;
-				if(DEBUG_LEVEL>10){
-					_DBG_<<"  chisqv["<<dof<<"] = "<<c<<"  d="<<d<<"  u_err="<<hi.u_err<<" s="<<s<<" FDC: layer="<<fdcwire->layer<<" wire="<<fdcwire->wire<<" angle="<<fdcwire->angle;
-					cerr<<endl;
+	// Fill in the cov_muls matrix.
+	cov_muls.Zero();
+	if(USE_MULS_COVARIANCE){
+		for(unsigned int i=0; i<residuals.size(); i++){
+			resiInfo &ri = residuals[i];
+			
+			// Only FDC correlations handled right now
+			if(!(ri.resi_type==resi_type_fdc_anode || ri.resi_type==resi_type_fdc_cathode))continue;
+			
+			// Loop over all residuals
+			for(unsigned int j=0; j<residuals.size(); j++){
+				resiInfo &ri2 = residuals[j];
+				
+				// FDC anode-anode correlations
+				if(ri2.resi_type==resi_type_fdc_anode && ri.resi_type==resi_type_fdc_anode){
+					cov_muls[i][j] = cov_muls[j][i] = GetFDCCovariance(ri.layer, ri2.layer);
+					continue;
 				}
-			}else{
-				if(DEBUG_LEVEL>10)_DBG_<<"  chisqv[unused] = "<<c<<"  d="<<d<<"  Rwire="<<wire->origin.Perp()<<"  Rshifted="<<wire->origin.Perp()<<" s="<<s<<endl;
+
+				// FDC cathode-cathode correlations
+				if(ri2.resi_type==resi_type_fdc_cathode && ri.resi_type==resi_type_fdc_cathode){
+					cov_muls[i][j] = cov_muls[j][i] = GetFDCCovariance(ri.layer, ri2.layer);
+					continue;
+				}
 			}
 		}
 	}
+
+	// Multiply resiv with inverse of total error matrix to get chisq = r^T (cov_meas+cov_muls)^-1 r)
+	DMatrix resiv_t(DMatrix::kTransposed, resiv);
+	DMatrix W(DMatrix::kInverted, cov_meas+cov_muls);
+	DMatrix chisqM(resiv_t*W*resiv);
+	double chisq = chisqM[0][0];
+	int Ndof = (int)residuals.size() - 5; // assume 5 fit parameters
+	weights.ResizeTo(W);
+	weights = W;
 
 	// If the caller supplied pointers to chisq and dof variables, copy the values into them
 	if(chisq_ptr)*chisq_ptr = chisq;
-	if(dof_ptr)*dof_ptr = dof - 5; // assume 5 fit parameters
+	if(dof_ptr)*dof_ptr = Ndof; // assume 5 fit parameters
 
 	// If it turns out the dof is zero, return 1.0E6. Otherwise, return
 	// the chisq/dof
-	return dof<2 ? 1.0E6:chisq/(double)dof;
+	return Ndof<2 ? 1.0E6:chisq/(double)Ndof;
 }
 
 //------------------
-// GetWiresShiftsErrs
+// GetHits
 //------------------
-void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTrajectory *rt, hitsInfo &hinfo)
+void DTrackFitterALT1::GetHits(fit_type_t fit_type, DReferenceTrajectory *rt, hitsInfo &hinfo)
 {
 
 	// -- Target --
@@ -542,6 +424,7 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 		hi.err = 0.1; // 1mm beam width
 		hi.u_dist = 0.0;
 		hi.u_err = 0.0;
+		hi.good = hi.good_u = false;
 		hinfo.push_back(hi);
 	}
 
@@ -554,6 +437,7 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 		hi.wire = wire;
 		hi.u_dist = 0.0;
 		hi.u_err = 0.0;
+		hi.good = hi.good_u = false;
 
 		// Fill in shifts and errs vectors based on whether we're doing
 		// hit-based or time-based tracking
@@ -600,6 +484,7 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 		hitInfo hi;
 
 		hi.wire = wire;
+		hi.good = hi.good_u = false;
 
 		// Fill in shifts and errs vectors based on whether we're doing
 		// hit-based or time-based tracking
@@ -658,7 +543,142 @@ void DTrackFitterALT1::GetWiresShiftsErrs(fit_type_t fit_type, DReferenceTraject
 		}
 		hinfo.push_back(hi);
 	}
+}
+
+
+//------------------
+// GetResiInfo
+//------------------
+vector<bool> DTrackFitterALT1::GetResiInfo(DMatrix &state, const swim_step_t *start_step, DReferenceTrajectory *rt, hitsInfo &hinfo, vector<resiInfo> &residuals)
+{
+	/// Calculate the chi-squared for a track specified by state relative to the
+	/// given reference trajectory. This is just a wrapper for 
+	/// ChiSq(DReferenceTrajectory *rt, vector<const DCoordinateSystem*> &wires, vector<DVector3> &shifts, vector<double> &errs, vector<double> &chisqv)
+	/// that accepts the state vector and re-swims the trajectory.
 	
+	// In case we need to return early
+	int Nhits=0;
+	for(unsigned int i=0; i<hinfo.size(); i++){Nhits++; if(hinfo[i].u_err!=0.0)Nhits++;}
+	vector<bool> good_none(Nhits, false);
+	
+	// "v" direction is perpendicular to both the rt direction and the
+	// x-direction. See LeastSquares() for more.
+	DVector3 vdir = start_step->sdir.Cross(start_step->mom);
+	vdir.SetMag(1.0);
+
+	DVector3 pos =   start_step->origin
+						+ state[state_x ][0]*start_step->sdir
+						+ state[state_v ][0]*vdir;
+	DVector3 mom =   state[state_px][0]*start_step->sdir
+						+ state[state_py][0]*start_step->tdir
+						+ state[state_pz][0]*start_step->udir;
+
+	if(!rt){
+		_DBG_<<"NULL pointer passed for DReferenceTrajectory object!"<<endl;
+		return good_none;
+	}
+	
+	if(pos.Mag()>200.0 || fabs(state[state_x ][0])>100.0 || fabs(state[state_v ][0])>100.0){
+		if(DEBUG_LEVEL>3)_DBG_<<"state values out of range"<<endl;
+		if(DEBUG_LEVEL>6){
+			pos.Print();
+			mom.Print();
+			_DBG_<<"state[state_x ][0]="<<state[state_x ][0]<<"  state[state_v ][0]="<<state[state_x ][0]<<endl;
+		}
+		return good_none;
+	}
+	
+	// Swim the trajectory with the specified state
+	rt->Swim(pos,mom);
+	
+	// Sometimes, a bad state vector is passed that leads to referance trajectory with no steps.
+	if(rt->Nswim_steps<1){
+		residuals.clear();
+		return good_none;
+	}
+
+	return GetResiInfo(rt, hinfo, residuals);
+}
+
+//------------------
+// GetResiInfo
+//------------------
+vector<bool> DTrackFitterALT1::GetResiInfo(DReferenceTrajectory *rt, hitsInfo &hinfo, vector<resiInfo> &residuals)
+{
+	// Make a serialized list of "good" hits as we sparsely fill the residuals
+	// container with only the good ones.
+	vector<bool> good;
+
+	// Loop over wires hit. Make lists of finite residuals with layer numbers
+	// from which to build the actual matrices used to calculate chisq below.
+	residuals.clear();
+	for(unsigned int i=0; i<hinfo.size(); i++){
+		hitInfo &hi = hinfo[i];
+		hi.good = hi.good_u = false;
+
+		const DCoordinateSystem *wire = hi.wire;
+		
+		// Figure out whether this is a CDC or FDC wire. Note that
+		// it could be neither if the target constraint is used.
+		const DFDCWire *fdcwire = dynamic_cast<const DFDCWire*>(wire);
+		const DCDCWire *cdcwire = dynamic_cast<const DCDCWire*>(wire);
+	
+		// Get distance of the wire from the reference trajectory and the
+		// distance s along the track to the point of closest approach.
+		double s;
+		double d = rt->DistToRT(wire, &s);
+		
+		// Residual. If we're on the correct side of the wire, then this is
+		// dist-doca. If we're on the incorrect side of the wire, then this
+		// is -dist-doca. Prior to calling us, the value of hi.dist will have
+		// a sign that has already been assigned to indicate the side of the wire
+		// the track is believed to be on.
+		double resi = hi.dist - d;
+		if(finite(resi)){
+			resiInfo ri;
+			ri.hit = &hi;
+			ri.layer = cdcwire ? cdcwire->ring:(fdcwire ? fdcwire->layer:0);
+			ri.resi_type = cdcwire ? resi_type_cdc_anode:(fdcwire ? resi_type_fdc_anode:resi_type_other);
+			ri.resi = resi;
+			ri.err = hi.err;
+			hi.good = true;
+			residuals.push_back(ri);
+			good.push_back(true);
+		}else{
+			good.push_back(false);
+		}
+		
+		// Also add residual along the wire. If the value of u_err is zero
+		// that indicates no measurement was made along the wire for this hit.
+		if(hi.u_err!=0.0){
+			// The sign of hi.dist indicates whether we want to treat this hit as
+			// being on the same side of the wire as the track(+) or the opposite
+			// side (-). In the latter case, we need to apply the Lorentz correction
+			// to the position along the wire in the opposite direction than we
+			// would otherwise. Set the sign of the Lorentz deflection based on the
+			// sign of hi.dist.
+			double LRsign = hi.dist<0.0 ? -1.0:1.0;
+		
+			double u = rt->GetLastDistAlongWire();
+			double u_corrected = hi.u_dist + LRsign*hi.u_lorentz;
+			double resic = u - u_corrected;
+			if(finite(resic)){
+				resiInfo ri;
+				ri.hit = &hi;
+				ri.layer = fdcwire ? fdcwire->layer:0;
+				ri.resi_type =fdcwire ? resi_type_fdc_cathode:resi_type_other;
+				ri.resi = resic;
+				ri.err = hi.u_err;
+				hi.good_u = true;
+				residuals.push_back(ri);
+				good.push_back(true);
+			}else{
+				good.push_back(false);
+			}
+		}
+	}
+	
+	return good;
 }
 
 //------------------
@@ -669,7 +689,8 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 	/// Fit the track with starting parameters given in the first step
 	/// of the reference trajectory rt. On return, the reference
 	/// trajectory rt will represent the final fit parameters and
-	/// chisq will contain the chisq/dof of the track.
+	/// chisq, Ndof, resiv, cov_meas, cov_muls, and cov_parm will be
+	/// filled based on the fit results.
 	///
 	/// This determines the best fit of the track using the least squares method
 	/// described by R. Mankel Rep. Prog. Phys. 67 (2004) 553-622 pg 565.
@@ -695,21 +716,24 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 	DVector3 pos = start_step.origin;
 	DVector3 mom = start_step.mom;
 
-	// Copy the errors in errs and u_errs into all_errs. This is needed so we have an easy-to-access
-	// list of the errors corresponding to each element in the chisqv vector.
-	vector<double> all_errs;
-	for(unsigned int i=0; i<hinfo.size(); i++){
-		all_errs.push_back(hinfo[i].err);
-		if(hinfo[i].u_err!=0.0)all_errs.push_back(hinfo[i].u_err);
-	}
-
 	// Get the chi-squared vector for the initial reference trajectory
-	vector<double> chisqv_initial;
 	double initial_chisq;
 	int initial_Ndof;
-	double initial_chisq_per_dof = ChiSq(rt, hinfo, chisqv_initial, &initial_chisq, &initial_Ndof);
+	vector<resiInfo> tmpresiduals;
+	vector<bool> good_initial = GetResiInfo(rt, hinfo, tmpresiduals);
+	double initial_chisq_per_dof = ChiSq(tmpresiduals, &initial_chisq, &initial_Ndof);
+	DMatrix resiv_initial(resiv);
+	DMatrix cov_meas_initial(cov_meas);
+	DMatrix cov_muls_initial(cov_muls);
+	DMatrix weights_initial(weights);
+	
+	// Check that the initial chisq is reasonable before continuing
+	if(initial_Ndof<1){
+		if(DEBUG_LEVEL>0)_DBG_<<"Initial Ndof<1. Aborting fit."<<endl;
+		return kFitFailed;
+	}
 
-	// Because we have a non-linear system, we must take the derivatives
+	// Because we have a complicated non-linear system, we take the derivatives
 	// numerically.
 	//
 	// Note that in the calculations of the deltas below,
@@ -728,52 +752,122 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 	}
 	
 	// For the swimming below, we use a second reference trajectory so as
-	// to preserve the original. Set the charge here. The reset of the
+	// to preserve the original. Set the charge here. The rest of the
 	// parameters (starting position and momentum) will be set using
 	// values from the state vector.
 	tmprt->q = rt->q;
 	
-	// dpx : tweak by +/- 0.01
+	// dpx : tweak by 0.0001
 	DMatrix state_dpx = state;
 	state_dpx[state_px][0] += LEAST_SQUARES_DP;
 	deltas[state_px] = state_dpx[state_px][0] - state[state_px][0];
-	vector<double> &chisqv_dpx_lo = chisqv_initial;
-	vector<double> chisqv_dpx_hi;
-	double chisq_dpx = ChiSq(state_dpx, &start_step, tmprt, hinfo, chisqv_dpx_hi);
+	vector<bool> good_px = GetResiInfo(state_dpx, &start_step, tmprt, hinfo, tmpresiduals);
+	double chisq_dpx = ChiSq(tmpresiduals);
+	DMatrix resiv_dpx_hi(resiv);
+	DMatrix &resiv_dpx_lo = resiv_initial;
 
-	// dpy : tweak by +/- 0.01
+	// dpy : tweak by 0.0001
 	DMatrix state_dpy = state;
 	state_dpy[state_py][0] += LEAST_SQUARES_DP;
 	deltas[state_py] = state_dpy[state_py][0] - state[state_py][0];
-	vector<double> &chisqv_dpy_lo = chisqv_initial;
-	vector<double> chisqv_dpy_hi;
-	double chisq_dpy = ChiSq(state_dpy, &start_step, tmprt, hinfo, chisqv_dpy_hi);
+	vector<bool> good_py = GetResiInfo(state_dpy, &start_step, tmprt, hinfo, tmpresiduals);
+	double chisq_dpy = ChiSq(tmpresiduals);
+	DMatrix resiv_dpy_hi(resiv);
+	DMatrix &resiv_dpy_lo = resiv_initial;
 
-	// dpz : tweak by +/- 0.01
+	// dpz : tweak by 0.0001
 	DMatrix state_dpz = state;
 	state_dpz[state_pz][0] += LEAST_SQUARES_DP;
 	deltas[state_pz] = state_dpz[state_pz][0] - state[state_pz][0];
-	vector<double> &chisqv_dpz_lo = chisqv_initial;
-	vector<double> chisqv_dpz_hi;
-	double chisq_dpz = ChiSq(state_dpz, &start_step, tmprt, hinfo, chisqv_dpz_hi);
+	vector<bool> good_pz = GetResiInfo(state_dpz, &start_step, tmprt, hinfo, tmpresiduals);
+	double chisq_dpz = ChiSq(tmpresiduals);
+	DMatrix resiv_dpz_hi(resiv);
+	DMatrix &resiv_dpz_lo = resiv_initial;
 
-	// dv : tweak by +/- 0.01
+	// dv : tweak by 0.01
 	DMatrix state_dv = state;
 	state_dv[state_v][0] += LEAST_SQUARES_DX;
 	deltas[state_v] = state_dv[state_v][0] - state[state_v][0];
-	vector<double> &chisqv_dv_lo = chisqv_initial;
-	vector<double> chisqv_dv_hi;
-	double chisq_dv = ChiSq(state_dv, &start_step, tmprt, hinfo, chisqv_dv_hi);
+	vector<bool> good_v = GetResiInfo(state_dv, &start_step, tmprt, hinfo, tmpresiduals);
+	double chisq_dv = ChiSq(tmpresiduals);
+	DMatrix resiv_dv_hi(resiv);
+	DMatrix &resiv_dv_lo = resiv_initial;
 
-	// dx : tweak by +/- 0.01
+	// dx : tweak by 0.01
 	DMatrix state_dx = state;
 	state_dx[state_x][0] += LEAST_SQUARES_DX;
 	deltas[state_x] = state_dx[state_x][0] - state[state_x][0];
-	vector<double> &chisqv_dx_lo = chisqv_initial;
-	vector<double> chisqv_dx_hi;
-	double chisq_dx = ChiSq(state_dx, &start_step, tmprt, hinfo, chisqv_dx_hi);
+	vector<bool> good_x = GetResiInfo(state_dx, &start_step, tmprt, hinfo, tmpresiduals);
+	double chisq_dx = ChiSq(tmpresiduals);
+	DMatrix resiv_dx_hi(resiv);
+	DMatrix &resiv_dx_lo = resiv_initial;
+
+	// Verify all of the "good" vectors are of the same length
+	unsigned int size_good = good_initial.size();
+	if(   (good_px.size() != size_good)
+		|| (good_py.size() != size_good)
+		|| (good_pz.size() != size_good)
+		|| (good_v.size()  != size_good)
+		|| (good_x.size()  != size_good)){
+			_DBG_<<"Size of \"good\" vectors don't match!  size_good="<<size_good<<endl;
+			_DBG_<<"good_px.size()="<<good_px.size()<<endl;
+			_DBG_<<"good_py.size()="<<good_py.size()<<endl;
+			_DBG_<<"good_pz.size()="<<good_pz.size()<<endl;
+			_DBG_<<" good_v.size()="<<good_v.size()<<endl;
+			_DBG_<<" good_x.size()="<<good_x.size()<<endl;
+			return kFitFailed;
+	}
 	
-	// This line just avoids a compiler warning
+	// We need to get a list of hits that are good for all of the tweaked
+	// tracks as well as the initial track.
+	unsigned int Ngood = 0;
+	vector<bool> good_all;
+	for(unsigned int i=0; i<size_good; i++){
+		bool isgood = true;
+		isgood &= good_px[i];
+		isgood &= good_py[i];
+		isgood &= good_pz[i];
+		isgood &= good_v[i];
+		isgood &= good_x[i];
+		good_all.push_back(isgood);
+		if(isgood)Ngood++;
+	}
+	
+	// Make sure there is a minimum number of hits before attempting a fit
+	if(Ngood<LEAST_SQUARES_MIN_HITS){
+		if(DEBUG_LEVEL>0)_DBG_<<"Not enough good hits to do fit. Aborting..."<<endl;
+		return kFitFailed;
+	}
+	
+	// Use the good_all map to filter out hits for each residual vector
+	// for which somebody else did not have a good hit.
+	FilterGood(resiv_initial, good_initial, good_all);
+	FilterGood(resiv_dpx_hi , good_px, good_all);
+	FilterGood(resiv_dpy_hi , good_py, good_all);
+	FilterGood(resiv_dpz_hi , good_pz, good_all);
+	FilterGood(resiv_dv_hi  , good_v , good_all);
+	FilterGood(resiv_dx_hi  , good_x , good_all);
+	FilterGood(weights_initial  , good_x , good_all);
+	
+	// Here, we check that the the residual vectors are of the same
+	// dimension for all tweaked tracks and the initial track so that we
+	// can proceed with building the fit matrices below.
+	int Nhits = resiv_initial.GetNrows();
+	if(   (resiv_dpx_hi.GetNrows() != Nhits)
+		|| (resiv_dpy_hi.GetNrows() != Nhits)
+		|| (resiv_dpz_hi.GetNrows() != Nhits)
+		|| (resiv_dx_hi.GetNrows()  != Nhits)
+		|| (resiv_dv_hi.GetNrows()  != Nhits)){
+			_DBG_<<"Size of residual vectors don't match!  Nhits="<<Nhits<<endl;
+			_DBG_<<"resiv_dpx_hi.GetNrows()="<<resiv_dpx_hi.GetNrows()<<endl;
+			_DBG_<<"resiv_dpy_hi.GetNrows()="<<resiv_dpy_hi.GetNrows()<<endl;
+			_DBG_<<"resiv_dpz_hi.GetNrows()="<<resiv_dpz_hi.GetNrows()<<endl;
+			_DBG_<<" resiv_dx_hi.GetNrows()="<<resiv_dx_hi.GetNrows()<<endl;
+			_DBG_<<" resiv_dv_hi.GetNrows()="<<resiv_dv_hi.GetNrows()<<endl;
+			return kFitFailed;
+	}
+
+	// Print some debug messages
 	if(DEBUG_LEVEL>4){
 		_DBG_<<"initial_chisq_per_dof="<<initial_chisq_per_dof<<endl;
 		_DBG_<<"chisq_dpx="<<chisq_dpx<<endl;
@@ -781,72 +875,31 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 		_DBG_<<"chisq_dpz="<<chisq_dpz<<endl;
 		_DBG_<<"chisq_dv="<<chisq_dv<<endl;
 		_DBG_<<"chisq_dx="<<chisq_dx<<endl;
-	}
-	if(DEBUG_LEVEL>10){
-		_DBG_<<"hit\tinitial\tpx   \tpy   \tpz   \tx   \tv"<<endl;
-		for(unsigned int j=0; j<chisqv_initial.size(); j++){
-			cout<<j<<"\t";
-			cout<<chisqv_initial[j]<<"\t";
-			cout<<chisqv_dpx_hi[j]<<"\t";
-			cout<<chisqv_dpy_hi[j]<<"\t";
-			cout<<chisqv_dpz_hi[j]<<"\t";
-			cout<<chisqv_dv_hi[j]<<"\t";
-			cout<<chisqv_dx_hi[j]<<endl;
+		if(DEBUG_LEVEL>10){
+			_DBG_<<"hit\tinitial\tpx   \tpy   \tpz   \tx   \tv"<<endl;
+			for(int j=0; j<resiv_initial.GetNrows(); j++){
+				cout<<j<<"\t";
+				cout<<resiv_initial[j][0]/sqrt(cov_meas[j][j])<<"\t";
+				cout<<resiv_dpx_hi[j][0]/sqrt(cov_meas[j][j])<<"\t";
+				cout<<resiv_dpy_hi[j][0]/sqrt(cov_meas[j][j])<<"\t";
+				cout<<resiv_dpz_hi[j][0]/sqrt(cov_meas[j][j])<<"\t";
+				cout<<resiv_dv_hi[j][0]/sqrt(cov_meas[j][j])<<"\t";
+				cout<<resiv_dx_hi[j][0]/sqrt(cov_meas[j][j])<<endl;
+			}
 		}
-	}
-
-	// Make a list of "clean" hits. Ones that are less than 4 sigma and
-	// are not "nan" for the initial as well as the tweaked  cases.
-	vector<bool> good;
-	unsigned int Ngood=0;
-	unsigned int Nhits = chisqv_initial.size();
-	for(unsigned int i=0; i<Nhits; i++){
-		// Here, we cut hits based on the difference between the track and the 
-		// drift time in units of sigmas. However, on the first pass, the fit won't
-		// be good and the sigmas which represent the best-fit track to drift
-		// time conditions underestimate the quantity. Subsequent passes should
-		// have better and better parameters and so the sigmas should be more
-		// and more appropriate.
-		//
-		// To accomodate this, we scale the CHISQ_MAX_RESI_SIGMAS value based
-		// on the initial_chisq_per_dof value since that gives us a handle on how
-		// go these hits match to the track overall.
-		double max=CHISQ_MAX_RESI_SIGMAS*(initial_chisq_per_dof>1.0 ? initial_chisq_per_dof:1.0);
-		double sigma;
-		sigma = chisqv_initial[i]; if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
-		sigma = chisqv_dpx_hi[i];  if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
-		sigma = chisqv_dpy_hi[i];  if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
-		sigma = chisqv_dpz_hi[i];  if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
-		sigma = chisqv_dx_hi[i];   if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
-		sigma = chisqv_dv_hi[i];   if(!finite(sigma) || fabs(sigma)>max){good.push_back(false); continue;}
-
-		good.push_back(true);
-		Ngood++;
-	}
-	if(Ngood<LEAST_SQUARES_MIN_HITS){
-		if(DEBUG_LEVEL>2)_DBG_<<" Bad number of good distance calculations!(Ngood="<<Ngood<<" LEAST_SQUARES_MIN_HITS="<<LEAST_SQUARES_MIN_HITS<<")"<<endl;
-		return kFitFailed;
-	}
-	
-	// Verify that the sizes of the all_errs and chisqv vectors match
-	if(Nhits != all_errs.size()){
-		_DBG_<<"Nhits != all_errs.size() !!! This indicates a bug in the program!"<<endl;
-		return kFitFailed;
 	}
 
 	// Build "F" matrix of derivatives
-	DMatrix F(Ngood,Nparameters);
-	for(unsigned int i=0,j=0; j<Nhits; j++){
-		if(!good[j])continue; // skip bad hits
+	DMatrix F(Nhits,Nparameters);
+	for(int i=0; i<Nhits; i++){
 		switch(Nparameters){
 			// Note: This is a funny way to use a switch!
-			case 5: F[i][state_v ] = pow(all_errs[j],1.0)*(chisqv_dv_hi[j]-chisqv_dv_lo[j])/deltas[state_v];
-			case 4: F[i][state_x ] = pow(all_errs[j],1.0)*(chisqv_dx_hi[j]-chisqv_dx_lo[j])/deltas[state_x];
-			case 3: F[i][state_pz] = pow(all_errs[j],1.0)*(chisqv_dpz_hi[j]-chisqv_dpz_lo[j])/deltas[state_pz];
-			case 2: F[i][state_py] = pow(all_errs[j],1.0)*(chisqv_dpy_hi[j]-chisqv_dpy_lo[j])/deltas[state_py];
-			case 1: F[i][state_px] = pow(all_errs[j],1.0)*(chisqv_dpx_hi[j]-chisqv_dpx_lo[j])/deltas[state_px];
+			case 5: F[i][state_v ] = (resiv_dv_hi[i][0]-resiv_dv_lo[i][0])/deltas[state_v];
+			case 4: F[i][state_x ] = (resiv_dx_hi[i][0]-resiv_dx_lo[i][0])/deltas[state_x];
+			case 3: F[i][state_pz] = (resiv_dpz_hi[i][0]-resiv_dpz_lo[i][0])/deltas[state_pz];
+			case 2: F[i][state_py] = (resiv_dpy_hi[i][0]-resiv_dpy_lo[i][0])/deltas[state_py];
+			case 1: F[i][state_px] = (resiv_dpx_hi[i][0]-resiv_dpx_lo[i][0])/deltas[state_px];
 		}
-		i++;
 	}
 	
 	// Sometimes, "F" has lots of values like 1.44E+09 indicating a problem (I think comming
@@ -860,35 +913,11 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 		return kFitFailed;
 	} 
 	
+	// Transpose of "F" matrix
 	DMatrix Ft(DMatrix::kTransposed, F);
 
-	// V is a diagonal matrix of the measurement errors. In
-	// principle, we could fold in the multiple scattering
-	// here, but for now, we don't. This is filled in the
-	// loop below.
-	DMatrix V(Ngood,Ngood);
-	V.Zero();
-	
-	// Measurement vector. This contains the residuals.
-	DMatrix m(Ngood,1);
-	for(unsigned int i=0,j=0; j<Nhits; j++){
-		if(!good[j])continue; // skip bad hits
-		// The "measurement" here is the distance of the track from the 
-		// shifted wire position where the shift is based on the drift time
-		// and a choice of the left-right ambiguity. These are in the 
-		// chisqv_XXX vectors in units of sigmas and and are all
-		// positive definite. We multiply back in the errors to convert
-		// the units back to cm since the errors are handled in the 
-		// V matrix. I *think* since we're using a diagonal error matrix
-		// we could actually just leave the measurments in units of
-		// sigmas and make the V matrix the identity matrix, but we leave
-		// it this way for now to make it easier to include covariance
-		// later.
-		m[i][0] = -chisqv_initial[j]*all_errs[j];
-		V[i][i] = pow(all_errs[j], 2.0);
-		i++;
-	}
-	DMatrix Vinv(DMatrix::kInverted, V);
+	// Calculate the "B" matrix using the weights from the initial chisq
+	DMatrix &Vinv = weights_initial; // Stick with Mankel naming convention
 	DMatrix B(DMatrix::kInverted, Ft*Vinv*F);
 	
 	// If the inversion failed altogether then the invalid flag
@@ -917,12 +946,12 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 		return kFitFailed;
 	}
 	
-	// Copy the B matrix into last_covariance to later copy into DTrack
-	last_covariance.ResizeTo(B);
-	last_covariance = B;
+	// Copy the B matrix into cov_parm to later copy into DTrack
+	cov_parm.ResizeTo(B);
+	cov_parm = B;
 
 	// Calculate step direction and magnitude	
-	DMatrix delta_state = B*Ft*Vinv*m;
+	DMatrix delta_state = B*Ft*Vinv*resiv_initial;
 
 	// The following is based on Numerical Recipes in C 2nd Ed.
 	// ppg. 384-385.
@@ -937,16 +966,17 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 	// we see the chi-sq improve.
 	double min_chisq_per_dof = initial_chisq_per_dof;
 	double min_lambda = 0.0;
-	double lambda = 1.0;
+	double lambda = -1.0;
 	int Ntrys = 0;
 	int max_trys = 8;
 	DMatrix new_state(5,1);
 	for(; Ntrys<max_trys; Ntrys++){
 
+		// Scale the delta by lambda to take a partial step (except the 1st iteration where lambda is 1)
 		for(int i=0; i<Nparameters; i++)new_state[i][0] = state[i][0] + delta_state[i][0]*lambda;
 
-		vector<double> new_chisqv;
-		double chisq_per_dof = ChiSq(new_state, &start_step, tmprt, hinfo, new_chisqv);
+		GetResiInfo(new_state, &start_step, tmprt, hinfo, tmpresiduals);
+		double chisq_per_dof = ChiSq(tmpresiduals);
 		
 		if(chisq_per_dof<min_chisq_per_dof){
 			min_chisq_per_dof = chisq_per_dof;
@@ -954,7 +984,7 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 		}
 		
 		// If we're at a lower chi-sq then we're done
-		if(DEBUG_LEVEL>4)_DBG_<<" -- initial_chisq_per_dof="<<initial_chisq_per_dof<<"  new chisq_per_dof="<<chisq_per_dof<<" nhits="<<new_chisqv.size()<<" p="<<tmprt->swim_steps[0].mom.Mag()<<"  lambda="<<lambda<<endl;
+		if(DEBUG_LEVEL>4)_DBG_<<" -- initial_chisq_per_dof="<<initial_chisq_per_dof<<"  new chisq_per_dof="<<chisq_per_dof<<" nhits="<<resiv.GetNrows()<<" p="<<tmprt->swim_steps[0].mom.Mag()<<"  lambda="<<lambda<<endl;
 		if(chisq_per_dof-initial_chisq_per_dof < 0.1 && chisq_per_dof<2.0)break;
 		
 		// Chi-sq was increased, try a smaller step on the next iteration
@@ -963,14 +993,16 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 	
 	// If we failed to find a better Chi-Sq above, maybe we were looking 
 	// in the wrong direction(??) Try looking in the opposite direction.
+	//if(Ntrys>=max_trys && (min_chisq_per_dof>=initial_chisq_per_dof || min_chisq_per_dof>1.0)){
 	if(Ntrys>=max_trys){
-		lambda = -1.0;
+		lambda = 1.0;
 		for(; Ntrys<2*max_trys; Ntrys++){
 
+			// Scale the delta by lambda to take a partial step (except the 1st iteration where lambda is 1)
 			for(int i=0; i<Nparameters; i++)new_state[i][0] = state[i][0] + delta_state[i][0]*lambda;
 
-			vector<double> new_chisqv;
-			double chisq_per_dof = ChiSq(new_state, &start_step, tmprt, hinfo, new_chisqv);
+			GetResiInfo(new_state, &start_step, tmprt, hinfo, tmpresiduals);
+			double chisq_per_dof = ChiSq(tmpresiduals);
 		
 			if(chisq_per_dof<min_chisq_per_dof){
 				min_chisq_per_dof = chisq_per_dof;
@@ -978,7 +1010,7 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 			}
 			
 			// If we're at a lower chi-sq then we're done
-			if(DEBUG_LEVEL>4)_DBG_<<" -- initial_chisq_per_dof="<<initial_chisq_per_dof<<"  new chisq="<<chisq<<" nhits="<<new_chisqv.size()<<"  lambda="<<lambda<<endl;
+			if(DEBUG_LEVEL>4)_DBG_<<" -- initial_chisq_per_dof="<<initial_chisq_per_dof<<"  new chisq_per_dof="<<chisq_per_dof<<" nhits="<<resiv.GetNrows()<<" p="<<tmprt->swim_steps[0].mom.Mag()<<"  lambda="<<lambda<<endl;
 			if(chisq_per_dof-initial_chisq_per_dof < 0.1 && chisq_per_dof<2.0)break;
 			
 			// Chi-sq was increased, try a smaller step on the next iteration
@@ -990,8 +1022,8 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 	// that we were unable to make any improvement.
 	if(min_lambda==0.0){
 		if(DEBUG_LEVEL>1)_DBG_<<"Chisq only increased (both directions searched!)"<<endl;
-		this->chisq = initial_chisq;
-		this->Ndof = initial_Ndof;
+		GetResiInfo(rt, hinfo, tmpresiduals);
+		ChiSq(tmpresiduals, &this->chisq, &this->Ndof); // refill resiv, cov_meas, ...
 		return kFitNoImprovement;
 	}
 	
@@ -1000,7 +1032,8 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 
 	// Re-swim reference trajectory using these parameters and re-calc chisq.
 	// Note that here we have the chisq and Ndof members set.
-	ChiSq(new_state, &start_step, rt, hinfo, chisqv, &this->chisq, &this->Ndof);
+	GetResiInfo(new_state, &start_step, rt, hinfo, tmpresiduals);
+	ChiSq(tmpresiduals, &this->chisq, &this->Ndof);
 	
 	if(DEBUG_LEVEL>3){
 		DVector3 pos = start_step.origin;
@@ -1011,6 +1044,44 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 	}
 
 	return kFitSuccess;
+}
+
+//------------------
+// FilterGood
+//------------------
+void DTrackFitterALT1::FilterGood(DMatrix &my_resiv, vector<bool> &my_good, vector<bool> &good_all)
+{
+	/// Remove elements from my_resiv that are not "good" according to the good_all list.
+	/// The my_good and good_all vectors should be the same size. The number of "true"
+	/// entries in my_good should be the size of the my_resiv vector. For entries in the
+	/// my_good vector that are true, but have an entry in good_all that is false, the
+	/// corresponding entry in my_resiv will be removed. The my_resiv matrix (which should be
+	/// N x 1) will be resized upon exit. The my_good vector will be set equal to good_all
+	/// upon exit also so that my_resiv and my_good stay in sync.
+	
+	// Make list of rows (and columns) we should keep
+	vector<int> rows_to_keep;
+	for(unsigned int i=0, n=0; i<my_good.size(); i++){
+		if(my_good[i] && good_all[i])rows_to_keep.push_back(n);
+		if(my_good[i])n++;
+	}
+	
+	// Copy my_resiv to a temporary matrix and resize my_resiv to the new size
+	int Nrows = (int)rows_to_keep.size();
+	int Ncols = my_resiv.GetNcols()>1 ? Nrows:1;
+	DMatrix tmp(my_resiv);
+	my_resiv.ResizeTo(Nrows, Ncols);
+	
+	// Loop over rows and columns copying in the elements we're keeping
+	for(int i=0; i<Nrows; i++){
+		int irow = rows_to_keep[i];
+		for(int j=0; j<Ncols; j++){
+			int icol = Ncols>1 ? rows_to_keep[j]:0;
+			my_resiv[i][j] = tmp[irow][icol];
+		}
+	}
+
+	my_good = good_all;
 }
 
 //------------------
@@ -1038,6 +1109,13 @@ void DTrackFitterALT1::ForceLRTruth(JEventLoop *loop, DReferenceTrajectory *rt, 
 		const DCoordinateSystem *wire = hi.wire;
 		if(wire==target)continue; // ignore target
 		
+		// Sometimes dist is NaN
+		if(!finite(hi.dist)){
+			hi.err = 100.0;
+			hi.u_err = 0.0;
+			continue;
+		}
+		
 		// Find the truth hit corresponding to this real hit
 		const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(hi.wire, fabs(hi.dist), mctrackhits, 0);
 		
@@ -1045,7 +1123,7 @@ void DTrackFitterALT1::ForceLRTruth(JEventLoop *loop, DReferenceTrajectory *rt, 
 		// the error to something large so it is ignored and warn the
 		// user.
 		if(!mctrackhit){
-			_DBG_<<"No DMCTrackHit found corresponding to hit "<<i<<" in hinfo! Are there noise hits?"<<endl;
+			if(DEBUG_LEVEL>1)_DBG_<<"No DMCTrackHit found corresponding to hit "<<i<<" in hinfo! (noise hit?)"<<endl;
 			hi.err = 100.0;
 			hi.u_err = 0.0;
 			continue;
@@ -1079,8 +1157,6 @@ void DTrackFitterALT1::ForceLRTruth(JEventLoop *loop, DReferenceTrajectory *rt, 
 		DVector3 pos_wire_truth = wire->origin + (pos_truth - wire->origin).Dot(wire->udir)*wire->udir;
 
 		if(DEBUG_LEVEL>8)_DBG_<<" "<<i+1<<": (pos_doca-pos_wire).Angle(pos_truth-pos_wire_truth)="<<(pos_doca-pos_wire).Angle(pos_truth-pos_wire_truth)*57.3<<endl;
-//_DBG_<<"  fit:" ; (pos_doca-pos_wire).Print();
-//_DBG_<<"truth:" ; (pos_truth-pos_wire_truth).Print();
 
 		// Decide what to do based on angle between fit and truth vectors
 		double angle_fit_truth = (pos_doca-pos_wire).Angle(pos_truth-pos_wire_truth);
