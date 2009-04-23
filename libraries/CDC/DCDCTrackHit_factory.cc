@@ -98,7 +98,7 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
 			// Geometry "C" from http://www.jlab.org/Hall-D/software/wiki/index.php/CDC_Future_MC_Studies_Discussion%2C_September_29%2C_2008
 
 			// axial
-			case  1:	myNstraws=  43;	radius= 10.984;	stereo=  degrees0; phi_shift= 0.00000;	break;
+			case  1:	myNstraws=  43;	radius= 10.960;	stereo=  degrees0; phi_shift= 0.00000;	break;
 			case  2:	myNstraws=  43;	radius= 12.341;	stereo=  degrees0; phi_shift= 4.18605;	break;
 			case  3:	myNstraws=  55;	radius= 14.029;	stereo=  degrees0; phi_shift= 2.00000;	break;
 			case  4:	myNstraws=  55;	radius= 15.410;	stereo=  degrees0; phi_shift= 5.27272727272;	break;
