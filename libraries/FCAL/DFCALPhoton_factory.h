@@ -24,10 +24,19 @@ class DFCALPhoton_factory:public JFactory<DFCALPhoton>{
 
                 DFCALPhoton* makePhoton(const DFCALCluster* cluster); 
 
-		double NON_LIN_COEF_A;
-		double NON_LIN_COEF_B;
-		double NON_LIN_COEF_C;
-		double NON_LIN_COEF_alfa;
+		double NON_LIN_COEF_A1;
+		double NON_LIN_COEF_B1;
+		double NON_LIN_COEF_C1;
+		double NON_LIN_COEF_alfa1;
+
+		
+		double NON_LIN_COEF_A2;
+		double NON_LIN_COEF_B2;
+		double NON_LIN_COEF_C2;
+		double NON_LIN_COEF_alfa2;
+
+		double BUFFER_RADIUS;
+		double RHG_RADIUS;
 
 		double FCAL_RADIATION_LENGTH;
 		double FCAL_CRITICAL_ENERGY;
