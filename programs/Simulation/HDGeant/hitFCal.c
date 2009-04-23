@@ -14,11 +14,14 @@
 #include <stdio.h>
 #include <math.h>
 
+
 #include <hddm_s.h>
 #include <geant3.h>
 #include <bintree.h>
 
-#define ATTEN_LENGTH	100.
+#define ATTEN_LENGTH1	100.  //Outer Glass
+#define ATTEN_LENGTH2   73.1  //Inner Glass
+#define RHG_RADIUS      30.   //Radius of inner glass
 #define C_EFFECTIVE	15.
 #define WIDTH_OF_BLOCK  4.
 #define LENGTH_OF_BLOCK 45.
@@ -86,8 +89,27 @@ void hitForwardEMcal (float xin[4], float xout[4],
       s_FcalHits_t* hits;
       int row = getrow_();
       int column = getcolumn_();
+      
       float dist = 0.5*LENGTH_OF_BLOCK-xfcal[2];
-      float dEcorr = dEsum * exp(-dist/ATTEN_LENGTH);
+      float dEcorr;
+      float y0 = (row - CENTRAL_ROW)*WIDTH_OF_BLOCK;
+      float x0 = (column - CENTRAL_COLUMN)*WIDTH_OF_BLOCK;
+      float rad = sqrt(x0*x0+y0*y0);
+    
+
+      
+      if(rad>RHG_RADIUS){
+
+	dEcorr = dEsum * exp(-dist/ATTEN_LENGTH1);
+
+      }
+      
+      else{
+	
+	dEcorr = dEsum * exp(-dist/ATTEN_LENGTH2);
+      
+      }
+
       float tcorr = t + dist/C_EFFECTIVE;
       int mark = ((row+1)<<16) + (column+1);
       void** twig = getTwig(&forwardEMcalTree, mark);
