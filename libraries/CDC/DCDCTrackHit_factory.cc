@@ -288,3 +288,13 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	return NOERROR;
 }
 
+//------------------
+// GetCDCWire
+//------------------
+const DCDCWire* DCDCTrackHit_factory::GetCDCWire(int ring, int straw)
+{
+	if(ring<1 || ring>CDC_MAX_RINGS || straw<1 || straw>CDC_MAX_STRAWS)return NULL;
+	
+	return &wire[ring-1][straw-1];
+}
+

@@ -19,6 +19,8 @@ class DCDCTrackHit_factory:public JFactory<DCDCTrackHit>{
 	public:
 		DCDCTrackHit_factory(){};
 		~DCDCTrackHit_factory(){};
+		
+		static const DCDCWire* GetCDCWire(int ring, int straw);
 
 	private:
 		jerror_t init(void);
