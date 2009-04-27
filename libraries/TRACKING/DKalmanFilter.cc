@@ -45,11 +45,6 @@ bool DKalmanCDCHit_cmp(DKalmanCDCHit_t *a, DKalmanCDCHit_t *b){
     _DBG_ << "Null pointer in CDC hit list??" << endl;
     return false;
   }
-  /*
-  double ra=a->origin.Perp();
-  double rb=b->origin.Perp();
-  return (rb>ra);
-  */
   return (b->ring>a->ring);
 }
 int grkuta_(double *CHARGE, double *STEP, double *VECT, double *VOUT,const DMagneticFieldMap *bfield);
@@ -464,6 +459,7 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DMatrix &Sc,DMatrix &Cc){
   DKalmanState_t temp;
   DMatrix J(5,5),JT(5,5);  // State vector Jacobian matrix and its transpose
   DMatrix Q(5,5);  // Process noise covariance matrix
+  DMatrix C(5,5);  // covariance matrix 
   double M=0.14; //pion for now
 
   // Position, step, radius, etc. variables
@@ -567,13 +563,11 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DMatrix &Sc,DMatrix &Cc){
     // update the radius relative to the beam line
     r=pos.Perp();
 
-     // Update the trajectory
-    //temp.pos=pos;	
-    //temp.s=len;
-    //temp.S= new DMatrix(Sc);	
+     // Update the trajectory info
     temp.Q= new DMatrix(Q);
     temp.J= new DMatrix(J);
-    
+    temp.C= new DMatrix(C);
+
     central_traj.push_front(temp);    
   }
 
@@ -1493,7 +1487,6 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
  
     unsigned int num_iter=NUM_ITER;
     //num_iter=1;
-    last_iter=false;
     if (cdchits.size()==0) num_iter=3;
     for (unsigned int iter=0;iter<num_iter;iter++) {      
       // perform the kalman filter 
@@ -1503,8 +1496,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	// values of S and C as the seed data to the Kalman filter 
 	SwimToPlane(S);
       } 
-  
-      if (iter==num_iter-1) last_iter=true;
+
       C=C0;
       KalmanForward(mass_hyp,S,C,chisq);
     
@@ -1531,6 +1523,31 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     // total chisq and ndf
     chisq_=chisq_forward;
     ndf=2*fdchits.size()+cdchits.size()-5;
+
+    
+    if (DEBUG_HISTS){
+      TH2F *fdc_xresiduals=(TH2F*)gROOT->FindObject("fdc_xresiduals");
+      if (fdc_xresiduals){
+	for (unsigned int i=0;i<fdchits.size();i++){
+	  fdc_xresiduals->Fill(fdchits[i]->z,fdchits[i]->xres);
+	}
+      }
+      TH2F *fdc_yresiduals=(TH2F*)gROOT->FindObject("fdc_yresiduals");
+      if (fdc_yresiduals){
+	for (unsigned int i=0;i<fdchits.size();i++){
+	  fdc_yresiduals->Fill(fdchits[i]->z,fdchits[i]->yres);
+	}
+      }
+      /*
+      TH2F *fdc_ypulls=(TH2F*)gROOT->FindObject("fdc_ypulls");
+      if (fdc_ypulls) fdc_ypulls->Fill(fdchits[id]->z,R(state_y,0)/sqrt(RC(1,1)));
+      
+      TH2F *fdc_xpulls=(TH2F*)gROOT->FindObject("fdc_xpulls");
+      if (fdc_xpulls) fdc_xpulls->Fill(fdchits[id]->z,R(state_y,0)/sqrt(RC(0,0)));
+      */
+    }
+
+    
 
     return NOERROR;
   }
@@ -1669,6 +1686,21 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     // total chisq and ndf
     chisq_=chisq;
     ndf=cdchits.size()-5;
+  }
+
+  
+  if (DEBUG_HISTS){ 
+    TH2F *cdc_residuals=(TH2F*)gROOT->FindObject("cdc_residuals");
+    if (cdc_residuals){
+      for (unsigned int i=0;i<cdchits.size();i++)
+	   cdc_residuals->Fill(cdchits[i]->ring,cdchits[i]->residual);
+    }
+    /*
+    TH2F *cdc_pulls=(TH2F*)gROOT->FindObject("cdc_pulls");
+    if (cdc_pulls){
+	 //cdc_pulls->Fill(cdchits[cdc_index]->ring,dm/sqrt(var));
+    }
+    */
   }
 
   return NOERROR;
@@ -2327,21 +2359,11 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
       
       // calculate the residual
       dm*=(1.-(H*K)(0,0));
+      cdchits[cdc_index]->residual=dm;
 
       // Update chi2 for this hit
       var=V*(1.-(H*K)(0,0));
       chisq+=dm*dm/var;      
-
-      if (DEBUG_HISTS){ 
-	TH2F *cdc_residuals=(TH2F*)gROOT->FindObject("cdc_residuals");
-	if (cdc_residuals){
-	  cdc_residuals->Fill(cdchits[cdc_index]->ring,dm);
-	}
-	TH2F *cdc_pulls=(TH2F*)gROOT->FindObject("cdc_pulls");
-	if (cdc_pulls){
-	  cdc_pulls->Fill(cdchits[cdc_index]->ring,dm/sqrt(var));
-	}
-      }
 
       // new wire origin and direction
       if (cdc_index>0){
@@ -2606,20 +2628,9 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
       R_T=DMatrix(DMatrix::kTransposed,R);
       RC=V-H*(C*H_T);
 
-      if (DEBUG_HISTS && last_iter){
-	TH2F *fdc_xresiduals=(TH2F*)gROOT->FindObject("fdc_xresiduals");
-	if (fdc_xresiduals) fdc_xresiduals->Fill(fdchits[id]->z,R(state_x,0));
-	
-	TH2F *fdc_yresiduals=(TH2F*)gROOT->FindObject("fdc_yresiduals");
-	if (fdc_yresiduals) fdc_yresiduals->Fill(fdchits[id]->z,R(state_y,0));  
-	
-	TH2F *fdc_ypulls=(TH2F*)gROOT->FindObject("fdc_ypulls");
-	if (fdc_ypulls) fdc_ypulls->Fill(fdchits[id]->z,R(state_y,0)/sqrt(RC(1,1)));
-	
-	TH2F *fdc_xpulls=(TH2F*)gROOT->FindObject("fdc_xpulls");
-	if (fdc_xpulls) fdc_xpulls->Fill(fdchits[id]->z,R(state_y,0)/sqrt(RC(0,0)));
-      }
-      
+      fdchits[id]->xres=R(0,0);
+      fdchits[id]->yres=R(1,0);
+
       // Calculate the inverse of RC
       det=RC(0,0)*RC(1,1)-RC(0,1)*RC(1,0);
       if (det!=0){

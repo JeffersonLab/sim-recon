@@ -25,6 +25,7 @@ typedef struct{
   double t,d,stereo;
   DVector3 origin;
   DVector3 dir;
+  double residual;
   int ring;
 }DKalmanCDCHit_t;
 
@@ -32,6 +33,7 @@ typedef struct{
   double t,cosa,sina;
   double uwire,vstrip,z;
   double covu,covv;
+  double xres,yres;
   double nr,nz;
 }DKalmanFDCHit_t;
 
@@ -40,7 +42,7 @@ typedef struct{
   unsigned int num_hits;
   DVector3 pos;
   DMatrix *S;
-  DMatrix *J,*Q;
+  DMatrix *J,*Q,*C;
   double s,t;
   double A,Z,density,X0;
 }DKalmanState_t;
@@ -84,6 +86,7 @@ class DKalmanFilter{
       delete central_traj[i].Q;
       delete central_traj[i].S;
       delete central_traj[i].J;
+      delete central_traj[i].C;
     }
     hits.clear();
     cdchits.clear();
@@ -141,12 +144,6 @@ class DKalmanFilter{
     state_D,
     state_z,
   };
-  /*
-  enum tracking_level{
-   kWireBased,
-   kTimeBased,
-  };
-  */
   jerror_t GetProcessNoise(double mass_hyp,double ds,double z,
 			   double X0,DMatrix S,DMatrix &Q);
   double Step(double oldz,double newz, double dEdx,DMatrix &S);
@@ -213,7 +210,7 @@ class DKalmanFilter{
   // Track parameters for forward region
   double x_,y_,tx_,ty_,q_over_p_;
   // Alternate track parameters for central region
-  double z_,phi_,R_,tanl_,q_over_pt_;
+  double z_,phi_,tanl_,q_over_pt_;
   // chi2 of fit
   double chisq_;
   // number of degrees of freedom
@@ -241,16 +238,10 @@ class DKalmanFilter{
   // upstream cdc start position
   vector<double>cdc_origin;
 
-  // target wall cylinder
-  vector<double>targ_wall;
-  // target material
-  vector<double>target;
-
   // Mass hypothesis
   double MASS;
 	
   int pass;
-  bool last_iter;
   bool DEBUG_HISTS;
   int DEBUG_LEVEL;
 };
