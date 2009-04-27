@@ -12,25 +12,13 @@
 //#include "userhits.h"
 #include <DVector3.h>
 //#include "DFCALHit.h"
+using namespace std;
 
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
 using namespace jana;
 
 #define FCAL_USER_HITS_MAX 2800
-
-// hits structures taken from radphi
-	typedef struct {
-	   float x;
-	   float y;
-	   float E;
-	   float t;
-	} userhit_t;
-
-	typedef struct {
-	   int nhits;
-	   userhit_t hit[1];
-	} userhits_t;
 
 
 /* Define FCAL mid plane for the cluster angle determination 
@@ -50,6 +38,20 @@ class DFCALCluster:public JObject{
                 DFCALCluster();
 		~DFCALCluster();
 
+// hits structures taken from radphi
+	typedef struct {
+           oid_t id;
+	   float x;
+	   float y;
+	   float E;
+	   float t;
+	} userhit_t;
+
+	typedef struct {
+	   int nhits;
+	   userhit_t hit[1];
+	} userhits_t;
+
 		static void setHitlist(const userhits_t* const hits);
 
 		double getEexpected(const int ihit) const;
@@ -63,7 +65,10 @@ class DFCALCluster:public JObject{
 		double getRMS_u() const;
 		double getRMS_v() const;
 		int getHits() const;
-		int getHits(int hitlist[], int nhits) const;
+		int getHits(int hitlist[], const int nhits) const;
+		int getHitsID(oid_t idlist[], const int nhits) const;
+		int getHitsEf(double efracs[], const int nhits) const;
+		int getHitsPos(DVector3 positions[], const int nhits) const;
 		static int getUsed(const int ihit);
 		int addHit(const int ihit, const double frac);
 		void resetHits();
@@ -95,6 +100,7 @@ class DFCALCluster:public JObject{
 					     // or -1 if it is a cluster seed
 		double *fEexpected;          // expected energy of hit by cluster (GeV)
 		double *fEallowed;           // allowed energy of hit by cluster (GeV)
+                oid_t fID0;                  // first block ID
 
 };
 
@@ -166,6 +172,36 @@ inline int DFCALCluster::getHits(int hitlist[], const int nhits) const
    int ih;
    for (ih = 0; (ih < fNhits) && (ih < nhits); ih++) {
       hitlist[ih] = fHit[ih];
+   }
+   return ih;
+}
+
+inline int DFCALCluster::getHitsID(oid_t idlist[], const int nhits) const
+{
+   int ih;
+   for ( ih = 0; (ih < fNhits) && (ih < nhits); ih++) {
+      idlist[ih] = fHitlist->hit[fHit[ih]].id;
+      if ( ih == 0 ) {
+         idlist[ih] = fID0;
+      }
+   }
+   return ih;
+}
+
+inline int DFCALCluster::getHitsEf(double efracs[], const int nhits) const
+{
+   int ih;
+   for (ih = 0; (ih < fNhits) && (ih < nhits); ih++) {
+      efracs[ih] = fHitf[ih] * fHitlist->hit[fHit[ih]].E;
+   }
+   return ih;
+}
+
+inline int DFCALCluster::getHitsPos(DVector3 pos[], const int nhits) const
+{
+   int ih;
+   for (ih = 0; (ih < fNhits) && (ih < nhits); ih++) {
+      pos[ih].SetXYZ( fHitlist->hit[fHit[ih]].x, fHitlist->hit[fHit[ih]].y, 625.8) ;
    }
    return ih;
 }

@@ -20,7 +20,7 @@ using namespace jana;
 # define SQR(x) (x)*(x)
 #endif
 
-userhits_t* hits = NULL;
+DFCALCluster::userhits_t* hits = NULL;
 
 /* Do not use the following switch unless you KNOW what you are doing!!!
    The log-weighting method for cluster centroid  was imported from IU clusterizer, 
@@ -65,12 +65,12 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	// fill user's hit list
         int nhits = 0;
         if (hits == 0) {
-           hits = (userhits_t*) malloc(sizeof(userhits_t)*FCAL_USER_HITS_MAX);
+           hits = (DFCALCluster::userhits_t*) malloc(sizeof(DFCALCluster::userhits_t)*FCAL_USER_HITS_MAX);
         }
-
 // Fill the structure that used to be used by clusterizers in Radphi 
 	for (vector<const DFCALHit*>::const_iterator hit  = fcalhits.begin(); 
                                                      hit != fcalhits.end(); hit++ ) {
+           hits->hit[nhits].id = (**hit).id;
            hits->hit[nhits].x = (**hit).x;
            hits->hit[nhits].y = (**hit).y;
            hits->hit[nhits].E = (**hit).E; // adjust a hit energy either in the hit or photon factory
@@ -78,13 +78,13 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
            nhits++;
            
            if (nhits >= (int) FCAL_USER_HITS_MAX)  { 
-              cout << "nhits gt nhmax" << endl;
+              cout << "ERROR: FCALCluster_factory: number of hits " << nhits << " larger than " << FCAL_USER_HITS_MAX << endl;
               break;
            }
 
         }
         hits->nhits = nhits;
-        
+
         const unsigned int max = 999;
 	DFCALCluster::setHitlist(hits);
 	DFCALCluster* clusterList[max];
@@ -167,6 +167,7 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	   ++ambiguous_events;
 	}
 
+//        int nclust = 0;
         for ( unsigned int c = 0; c < clusterCount; c++) {
            int hitlist[FCAL_USER_HITS_MAX];
            unsigned int blockCount = clusterList[c]->getHits(hitlist,hits->nhits);
@@ -175,7 +176,10 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	      continue;
 	   }
 	   else {
+//              clusterList[c]->id = nclust;
+//              nclust++;  
               _data.push_back( clusterList[c] );
+
 	   }
         }
   
@@ -190,7 +194,7 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 }
 
 
-const userhits_t* DFCALCluster::fHitlist = 0;
+const DFCALCluster::userhits_t* DFCALCluster::fHitlist = 0;
 int* DFCALCluster::fHitused = 0;
 
 DFCALCluster::DFCALCluster()
@@ -251,6 +255,7 @@ int DFCALCluster::addHit(const int ihit, const double frac)
       fHitf[fNhits] = frac;
       if (fNhits == 0) {
         fHitused[ihit] = -1;    // special used code for cluster seeds
+        fID0 = fHitlist->hit[ihit].id; // preserve the ID of the first block 
       }
       else {
         ++fHitused[ihit];       // otherwise, just count owning clusters
