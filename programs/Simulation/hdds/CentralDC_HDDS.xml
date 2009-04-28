@@ -52,6 +52,15 @@
   </composition>
 
   <composition name="centralDC_option-1" envelope="CDC">
+    <posXYZ volume="CDCSupport_tube_layer"   X_Y_Z="0.0 0.0 3.29" />    <!-- Aluminum support rods -->
+    <posXYZ volume="centralDC_gasvol"        X_Y_Z="0.0 0.0 0.00" />    <!-- Chamber Gas volume -->
+    <posXYZ volume="CDCA"                    X_Y_Z="0.0 0.0 -81.7" />   <!-- upstream cable plug -->
+    <posXYZ volume="CDCB"                    X_Y_Z="0.0 0.0 -81.8" />   <!-- upstream cables  -->
+    <posXYZ volume="CDPU"                    X_Y_Z="0.0 0.0 -72.335" /> <!-- upstream end plate -->
+    <posXYZ volume="CDPD"                    X_Y_Z="0.0 0.0 +78.59" />  <!-- downstream end plate -->
+ </composition>
+
+  <composition name="centralDC_gasvol" envelope="CDCG">
     <posXYZ volume="CDClayer_1_option-1"     X_Y_Z="0.0 0.0 3.29" />
     <posXYZ volume="CDClayer_3_option-1"     X_Y_Z="0.0 0.0 3.29" />
     <posXYZ volume="CDClayer_5-12_option-1"  X_Y_Z="0.0 0.0 3.29" />
@@ -60,21 +69,16 @@
     <posXYZ volume="CDClayer_17-24_option-1" X_Y_Z="0.0 0.0 3.29" />
     <posXYZ volume="CDClayer_25_option-1"    X_Y_Z="0.0 0.0 3.29" />
     <posXYZ volume="CDClayer_27_option-1"    X_Y_Z="0.0 0.0 3.29" />
-    <posXYZ volume="CDCSupport_tube_layer"   X_Y_Z="0.0 0.0 3.29" />    <!-- Aluminum support rods -->
     <posXYZ volume="CDCI"                    X_Y_Z="0.0 0.0 3.29" />    <!-- Inner shell -->
     <posXYZ volume="CDCO"                    X_Y_Z="0.0 0.0 3.29" />    <!-- Outer shell -->
-    <posXYZ volume="CDCG"                    X_Y_Z="0.0 0.0 0.00" />    <!-- Chamber Gas volume -->
-    <posXYZ volume="CDPU"                    X_Y_Z="0.0 0.0 -72.335" /> <!-- upstream end plate -->
-    <posXYZ volume="CDPD"                    X_Y_Z="0.0 0.0 +78.59" />  <!-- downstream end plate -->
     <posXYZ volume="CDGD"                    X_Y_Z="0.0 0.0 +80.16" />  <!-- downstream rhoacell outer ring -->
     <posXYZ volume="CDGI"                    X_Y_Z="0.0 0.0 +80.16" />  <!-- downstream rhoacell innter ring -->
+    <posXYZ volume="CDPU"                    X_Y_Z="0.0 0.0 -72.335" /> <!-- upstream end plate -->
+    <posXYZ volume="CDPD"                    X_Y_Z="0.0 0.0 +78.59" />  <!-- downstream end plate -->
     <posXYZ volume="CDGW"                    X_Y_Z="0.0 0.0 +81.435" /> <!-- downstream mylar gas window -->
     <posXYZ volume="CDGU"                    X_Y_Z="0.0 0.0 -80.7" />   <!-- upstream plexiglass gas plate -->
     <posXYZ volume="CDGS"                    X_Y_Z="0.0 0.0 -76.455" /> <!-- upstream gas plenum shell -->
-    <posXYZ volume="CDCA"                    X_Y_Z="0.0 0.0 -81.7" />   <!-- upstream cable plug -->
-    <posXYZ volume="CDCB"                    X_Y_Z="0.0 0.0 -81.8" />   <!-- upstream cables  -->
-  </composition>
-
+   </composition>
 
   <composition name="CDClayer_1_option-1" envelope="DC1">
     <mposPhi volume="CDCstrawShort" ncopy="42" Phi0="0.0" R_Z="10.7219 0.0" dPhi="8.571429">
@@ -303,8 +307,8 @@
     <posXYZ volume="CDCstrawLongB" X_Y_Z="48.0733 0.829899 0.0" rot="+6.1763 +0.101315 0.0" />
   </composition>
 
-  <composition name="CDCSupportRod" envelope="CDTF">
-     <posXYZ volume="CDTI" />
+  <composition name="CDCSupportRod" envelope="CDTI">
+     <posXYZ volume="CDTF" />
      <posXYZ volume="CDTP" X_Y_Z="0.0 0.0 73.73" />
      <posXYZ volume="CDTP" X_Y_Z="0.0 0.0 -73.73" />
   </composition>
@@ -315,7 +319,7 @@
 
   <tubs name="CDC" Rio_Z="9.0   59.741   162.9" material="Air"
 	                           comment="CDC mother volume"      />
-  <tubs name="CDCG" Rio_Z="9.0   56.007   162.9" material="CDchamberGas"
+  <tubs name="CDCG" Rio_Z="9.0   56.207   162.9" material="CDchamberGas"
 	                           comment="CDC Ar C02 gas volume"      />
   <tubs name="CDCI" Rio_Z="9.0000  9.0026 151.65" material="AluminizedMylar"
 	                           comment="CDC inner cylinder"     />
@@ -327,7 +331,7 @@
 	                           comment="CDC downstream endplate" />
   <tubs name="CDGU" Rio_Z="9.0   57.404    1.5" material="Plexiglas"
 	                           comment="CDC upstream gas plenum" />
-  <tubs name="CDGS" Rio_Z="56.5   55.9    6.99" material="Aluminum"
+  <tubs name="CDGS" Rio_Z="55.8   56.5    6.99" material="Aluminum"
 	                           comment="CDC upstream gas plenum shell" />
   <tubs name="CDGD" Rio_Z="54.46  57.7276    2.54" material="MediumDensityROHACELL"
 	                           comment="CDC downstream gas plenum ring" />
@@ -337,7 +341,7 @@
 	                           comment="CDC downstream gas plenum window" />
   <tubs name="CDTF" Rio_Z="0.6289 0.794 150.0" material="Aluminum"
                                    comment="Aluminum tubes for chamber support"/>
-  <tubs name="CDTI" Rio_Z="0.0 0.6289 150.0" material="Air"
+  <tubs name="CDTI" Rio_Z="0.0 0.794 150.0" material="Air"
                                    comment="Aluminum tube center for chamber support"/>
   <tubs name="CDTP" Rio_Z="0.25 0.6289 2.54" material="Aluminum"
                                    comment="Aluminum plug in chamber support tube"/>
@@ -354,34 +358,34 @@
     <polyplane Rio_Z="9.0 57.0 0.0" />
   </pcon>
 
-  <tubs name="STRA" Rio_Z="0.000  0.800  151.85" material="CDchamberGas"
+  <tubs name="STRA" Rio_Z="0.000  0.800  150." material="CDchamberGas"
 						sensitive="true" />
   <tubs name="STRW" Rio_Z="0.7895  0.8000  150.0" material="AluminizedKapton" />
-  <tubs name="WIRE" Rio_Z="0.000  0.0015  151.85" material="Tungsten" />
+  <tubs name="WIRE" Rio_Z="0.000  0.0015  150." material="Tungsten" />
   <tubs name="UPLG" Rio_Z="0.000  0.800  1.0" material="Aluminum" />
   <tubs name="DPLG" Rio_Z="0.000  0.800  1.0" material="Delrin" />
 
-  <tubs name="STLA" Rio_Z="0.000  0.800  152.68" material="CDchamberGas"
+  <tubs name="STLA" Rio_Z="0.000  0.800  150.83" material="CDchamberGas"
 						sensitive="true" />
-  <tubs name="STLB" Rio_Z="0.000  0.800  152.68" material="CDchamberGas"
+  <tubs name="STLB" Rio_Z="0.000  0.800  150.83" material="CDchamberGas"
 						sensitive="true" />
   <tubs name="STLW" Rio_Z="0.7895  0.8000  150.83" material="AluminizedKapton" />
   <tubs name="STLX" Rio_Z="0.7895  0.8000  150.83" material="AluminizedKapton" />
 
-  <tubs name="WILE" Rio_Z="0.000  0.0015  152.68" material="Tungsten" />
+  <tubs name="WILE" Rio_Z="0.000  0.0015  150.83" material="Tungsten" />
 
-  <tubs name="DC1"  Rio_Z="9.20 12.9769 151.85" material="CDchamberGas" />
-  <tubs name="DC3"  Rio_Z="12.977 16.1307 151.85" material="CDchamberGas" />
-  <tubs name="DC5"  Rio_Z="16.1308 30.5785 151.85" material="CDchamberGas" />
+  <tubs name="DC1"  Rio_Z="9.02 12.9769 150.00" material="CDchamberGas" />
+  <tubs name="DC3"  Rio_Z="12.977 16.1307 150.00" material="CDchamberGas" />
+  <tubs name="DC5"  Rio_Z="16.1308 30.5785 150.83" material="CDchamberGas" />
 
-  <tubs name="DC13"  Rio_Z="30.5786 33.632 151.85" material="CDchamberGas" />
-  <tubs name="DC15"  Rio_Z="33.633 36.6432 151.85" material="CDchamberGas" />
-  <tubs name="DC17"  Rio_Z="36.6433 49.572 151.85" material="CDchamberGas" />
+  <tubs name="DC13"  Rio_Z="30.5786 33.632 150.0" material="CDchamberGas" />
+  <tubs name="DC15"  Rio_Z="33.633 36.6432 150.0" material="CDchamberGas" />
+  <tubs name="DC17"  Rio_Z="36.6433 49.572 150.83" material="CDchamberGas" />
 
-  <tubs name="DC25"  Rio_Z="49.573 52.560 151.85" material="CDchamberGas" />
-  <tubs name="DC27"  Rio_Z="52.561 55.548 151.85" material="CDchamberGas" />
+  <tubs name="DC25"  Rio_Z="49.573 52.560 150.83" material="CDchamberGas" />
+  <tubs name="DC27"  Rio_Z="52.561 55.548 150.83" material="CDchamberGas" />
 
-  <tubs name="DCST"  Rio_Z="57.4 59.7 151.85" material="Air" />
+  <tubs name="DCST"  Rio_Z="57.4 59.7 150.0" material="Air" />
 
 
   <!-- The following elements describe an early rendition of the GlueX
