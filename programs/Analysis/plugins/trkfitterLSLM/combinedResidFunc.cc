@@ -143,7 +143,8 @@ void combinedResidFunc::deriv(const HepVector *x, void *data, HepMatrix *J){
     // calculate derivatives for FDC points
     for (unsigned int j = 0; j < n_fdc; j++) {
       jHep = j + 1;
-      docaThis = trajPtr->doca(*(pPoints[j]), poca)/ERROR_FDC;
+      HepVector pPointThis = pseudo2HepVector(*((*ppPtr)[j]));
+      docaThis = trajPtr->doca(pPointThis, poca)/ERROR_FDC;
       if (debug_level > 2) cout << "resid " << j << " = " << docaThis << endl;
       (*J)(jHep, iHep) = (docaThis - residBase(jHep))/delta[i];
     }
