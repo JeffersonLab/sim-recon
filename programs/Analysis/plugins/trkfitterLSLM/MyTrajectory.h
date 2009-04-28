@@ -2,6 +2,7 @@
 #define _MYTRAJECTORY_H_
 
 #include <iostream>
+#include <iomanip>
 #include <CLHEP/Vector/LorentzVector.h>
 #include "TRACKING/DMCTrackHit.h"
 #include "DLine.h"
@@ -61,7 +62,7 @@ template<class C> double MyTrajectory::doca(C& spaceObject, HepLorentzVector &po
     imid = ihi - 1;
   }
   distmid = dist(spaceObject, imid);
-  if (debug_level >= 4) cout << "MyTrajectory::doca: initialize " << ilo << " " << imid << " " << ihi << " " << distlo << " " << distmid << " " << disthi << endl;
+  if (debug_level >= 4) cout << setprecision(14) << "MyTrajectory::doca: initialize " << ilo << " " << imid << " " << ihi << " " << distlo << " " << distmid << " " << disthi << endl;
   if (isnan(distmid)) {
     cout << "MyTrajectory::doca: distmid is not a number: " << ilo << " " << imid << " " << ihi << " " << distlo << " " << distmid << " " << disthi << endl;
     int ierror = 2;
