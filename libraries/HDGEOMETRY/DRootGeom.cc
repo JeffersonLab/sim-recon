@@ -48,19 +48,20 @@ TGeoVolume* DRootGeom::FindVolume(double *x)
 
 }
 
-void DRootGeom::FindMat(DVector3 pos,double &density, double &A, double &Z,
+jerror_t DRootGeom::FindMat(DVector3 pos,double &density, double &A, double &Z,
 			double &RadLen) const{
   density=RadLen=A=Z=0.;
 
   TGeoNode *cnode = DRGeom->FindNode(pos.X(),pos.Y(),pos.Z());
   if (cnode==NULL){
-    _DBG_<<"Missing cnode" << endl;
-    return;
+    _DBG_<<"Missing cnode at position (" <<pos.X()<<","<<pos.Y()<<","
+	 <<pos.Z()<<")"<<endl;
+    return RESOURCE_UNAVAILABLE;
   }
   TGeoVolume *cvol = cnode->GetVolume();
   if (cvol==NULL){
     _DBG_<<"Missing cvol" <<endl;
-    return;
+    return RESOURCE_UNAVAILABLE;
   }
   TGeoMaterial *cmat = cvol->GetMedium()->GetMaterial();
 
@@ -68,6 +69,10 @@ void DRootGeom::FindMat(DVector3 pos,double &density, double &A, double &Z,
   RadLen=cmat->GetRadLen();
   A=cmat->GetA();
   Z=cmat->GetZ();
+  if (A<1.){ // try to prevent division by zero problems
+    A=1.;
+  } 
+  return NOERROR;
 }
 
 
