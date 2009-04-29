@@ -722,7 +722,7 @@ void RootMacroWriter::createTrailer()
    CodeWriter::createTrailer();
    std::cout
        << "gGeoManager->CloseGeometry();" << std::endl
-       << "gGeoManager->SetTopVolume(\"SITE\");" << std::endl
+       << "gGeoManager->SetTopVolume(SITE);" << std::endl
        << "return gGeoManager;" << std::endl
        << "}" << std::endl;
 }
