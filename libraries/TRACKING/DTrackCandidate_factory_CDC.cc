@@ -55,11 +55,13 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 	MIN_SEED_HITS  = 2;
 	MAX_SUBSEED_LINKED_HITS = 12;
 	MIN_SEED_DIST = 4.0; // cm
-	MAX_HIT_DIST = 3.0; // cm
+	MAX_HIT_DIST = 4.0; // cm
 	MAX_HIT_CIRCLE_DIST = 0.8; // cm
 	MAX_SEED_TIME_DIFF = 450.0; // ns
 	MAX_CIRCLE_CLONE_FILTER_FRAC = 0.2;
 	MAX_STEREO_PHI_DELTA = 0.35; // rad
+	MAX_CDC_MATCH_ANGLE = 20.0; // degrees
+	MAX_FDC_MATCH_ANGLE = 40.0; // degrees
 	TARGET_Z_MIN = 50.0;
 	TARGET_Z_MAX = 80.0;
 	DEBUG_LEVEL = 0;
@@ -92,6 +94,8 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *eventLoop, int runnumber)
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_SEED_TIME_DIFF", MAX_SEED_TIME_DIFF);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_CIRCLE_CLONE_FILTER_FRAC", MAX_CIRCLE_CLONE_FILTER_FRAC);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_STEREO_PHI_DELTA", MAX_STEREO_PHI_DELTA);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_CDC_MATCH_ANGLE", MAX_FDC_MATCH_ANGLE);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_FDC_MATCH_ANGLE", MAX_FDC_MATCH_ANGLE);
 	gPARMS->SetDefaultParameter("TRKFIND:DEBUG_LEVEL", DEBUG_LEVEL);
 	
 	MAX_HIT_DIST2 = MAX_HIT_DIST*MAX_HIT_DIST;
@@ -141,6 +145,9 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 	
 	// Check to add lone hits in SL3 to seeds with only SL1 hits
 	PickupUnmatched(seeds);
+	
+	// Drop seeds containing hits from only a single axial superlayer besides SL1
+	DropIncompleteSeeds(seeds);
 	
 	// Fit linked seeds to circles
 	for(unsigned int i=0; i<seeds.size(); i++){
@@ -360,6 +367,11 @@ void DTrackCandidate_factory_CDC::FindSeeds(vector<DCDCTrkHit*> &hits, vector<DC
 			LinkSubSeeds(parent, next_ring, rings.end(), seeds);
 		}
 	}
+	
+	// Mark all seeds as valid
+	for(unsigned int i=0; i<seeds.size(); i++){
+		seeds[i].valid = true;
+	}
 }
 
 //------------------
@@ -449,10 +461,12 @@ void DTrackCandidate_factory_CDC::LinkSeeds(vector<DCDCSeed> &in_seeds1, vector<
 
 	for(unsigned int i=0; i< in_seeds1.size(); i++){
 		vector<DCDCTrkHit*> &hits1 = in_seeds1[i].hits;
+		if(DEBUG_LEVEL>5)_DBG_<<"hits1.size()="<<hits1.size()<<endl;
 		if(hits1.size()<1)continue;
 		
 		for(unsigned int j=0; j< in_seeds2.size(); j++){
 			vector<DCDCTrkHit*> &hits2 = in_seeds2[j].hits;
+			if(DEBUG_LEVEL>5)_DBG_<<" hits2.size()="<<hits2.size()<<endl;
 			if(hits2.size()<1)continue;
 			
 			// Find the hits from the seeds that are closest in R
@@ -512,6 +526,8 @@ void DTrackCandidate_factory_CDC::LinkSeeds(vector<DCDCSeed> &in_seeds1, vector<
 					// often due to crossing tracks.
 					if(hits1.size()<=max_linked_hits)in_seeds2[j].linked = true;
 					if(hits2.size()<=max_linked_hits)in_seeds1[i].linked = true;
+				}else{
+					if(DEBUG_LEVEL>3)_DBG_<<"   not marking seeds as linked (dist_phi="<<sqrt(dist_phi2)<<" cm > "<<sqrt(9.0*MAX_HIT_DIST2)<<" cm)"<<endl;
 				}
 				if(DEBUG_LEVEL>3)_DBG_<<"  linked seeds "<<i<<" ("<<hits1.size()<<" hits) and "<<j<<" ("<<hits2.size()<<" hits)  dist_phi="<<sqrt(dist_phi2)<<endl;
 			}else{
@@ -575,8 +591,6 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 	for(unsigned int j=0; j<seed.hits.size(); j++){
 		if(seed.hits[j]->flags&OUT_OF_TIME)continue;
 		const DVector3 &pos = seed.hits[j]->hit->wire->origin;
-		//double cov=seed.hits[j]->hit->dist*seed.hits[j]->hit->dist;
-		//seed.fit.AddHitXYZ(pos.X(), pos.Y(), pos.Z(),cov,cov,0.);
 		seed.fit.AddHitXYZ(pos.X(), pos.Y(),pos.Z());
 	}
 	
@@ -588,10 +602,9 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 
 	// Try and fit the circle using a Riemann fit. If 
 	// it fails, try a basic fit with QuickFit.
-	if(seed.fit.FitCircleRiemann(BeamRMS)!=NOERROR){
-	  if(DEBUG_LEVEL>3)
-	    _DBG_<<"Riemann fit failed. Attempting regression fit..."<<endl;
-	  if(seed.fit.FitCircle()!=NOERROR){
+	if(seed.fit.FitCircleRiemann(BeamRMS)!=NOERROR || seed.fit.chisq>20){
+	  if(DEBUG_LEVEL>3)_DBG_<<"Riemann fit failed. Attempting regression fit..."<<endl;
+	  if(seed.fit.FitCircle()!=NOERROR || seed.fit.chisq>20){
 	    if(DEBUG_LEVEL>3)_DBG_<<"Regression circle fit failed. Trying straight line."<<endl;
 	    if(seed.fit.FitCircleStraightTrack()!=NOERROR){
 	      if(DEBUG_LEVEL>3)_DBG_<<"Trying straight line fit failed. Giving up."<<endl;
@@ -655,9 +668,10 @@ void DTrackCandidate_factory_CDC::PickupUnmatched(vector<DCDCSeed> &seeds)
 	/// don't enough information to form a good candidate so we try
 	/// and pick up these single hits in order to get a good handle
 	/// on the candidate.
-	
+
 	// Loop through seeds, looking for ones with only SL1 hits
 	for(unsigned int i=0; i<seeds.size(); i++){
+		if(!seeds[i].valid)continue;
 		vector<DCDCTrkHit*> &hits = seeds[i].hits;
 		if(hits.size()<1)continue;
 		bool has_non_SL1_hit = false;
@@ -668,26 +682,33 @@ void DTrackCandidate_factory_CDC::PickupUnmatched(vector<DCDCSeed> &seeds)
 			}
 		}
 		if(has_non_SL1_hit)continue;
+		if(DEBUG_LEVEL>1)_DBG_<<"seed "<<i<<" has only SL1 hits. Looking for stray hits to match it with ..."<<endl;
 		
 		// This seed must have only SL1 hits, look for unused SL3 hits
 		// at a phi angle consistent with the outermost hit.
 		bool added_hit = false;
-		const DCDCWire *sl1_wire = hits[0]->hit->wire;
+		const DCDCWire *sl1_wire = hits[hits.size()-1]->hit->wire;
 		for(unsigned int j=0; j<cdctrkhits.size(); j++){
 			DCDCTrkHit *sl3_hit = cdctrkhits[j];
 			if(sl3_hit->flags&USED)continue;
 			if(sl3_hit->hit->wire->ring<=superlayer_boundaries[1])continue;
 			if(sl3_hit->hit->wire->ring>superlayer_boundaries[2])continue;
 			double a = sl1_wire->origin.Angle(sl3_hit->hit->wire->origin);
-			if(fabs(a)<20.0/57.3){
+			if(fabs(a)<MAX_CDC_MATCH_ANGLE/57.3){
 				sl3_hit->flags |= USED;
 				hits.push_back(sl3_hit);
 				added_hit = true;
 				if(DEBUG_LEVEL>1)_DBG_<<"Adding stray SL3 hit to SL1 seed a="<<a*57.3<<"  flags="<<sl3_hit->flags<<"  ring="<<sl3_hit->hit->wire->ring<<endl;
 			}
 		}
-		if(added_hit)continue; // We found at least one SL3 hit that was added to the seed
+
+		if(added_hit){
+			if(DEBUG_LEVEL>1)_DBG_<<"  found SL3 CDC hit to add to seed "<<i<<endl;
+			continue; // We found at least one SL3 hit that was added to the seed
+		}
 		
+		if(DEBUG_LEVEL>1)_DBG_<<"  looking for DFDCPseudo hit to add to seed "<<i<<endl;
+
 		// Tracks at around 17 degrees can miss SL3 (or at least
 		// inefficiency can cause the 1 or 2 hits we would get there
 		// to be lost). In principle, the first package of the FDC
@@ -713,7 +734,8 @@ void DTrackCandidate_factory_CDC::PickupUnmatched(vector<DCDCSeed> &seeds)
 			DVector2 sl1(sl1_wire->origin.X(), sl1_wire->origin.Y());
 			DVector2 fdc1(fdchit->x, fdchit->y);
 			double a = sl1.DeltaPhi(fdc1);
-			if(fabs(a)<20.0/57.3){
+
+			if(fabs(a)<MAX_FDC_MATCH_ANGLE/57.3){
 				fdc1_hits_matched.push_back(fdchit);
 				if(DEBUG_LEVEL>3)_DBG_<<"Potential match of FDC to CDC candidate delta phi="<<a*57.3<<endl;
 			}
@@ -726,7 +748,48 @@ void DTrackCandidate_factory_CDC::PickupUnmatched(vector<DCDCSeed> &seeds)
 		if(fdc1_hits_matched.size()>0){
 			if(DEBUG_LEVEL>1)_DBG_<<"Matched "<<fdc1_hits_matched.size()<<" hits from FDC package 1"<<endl;
 			seeds[i].fdchits = fdchits;
+		}else{
+			if(DEBUG_LEVEL>1)_DBG_<<"  no matching stray hits found to add to seed "<<i<<endl;
 		}
+	}
+}
+
+//------------------
+// DropIncompleteSeeds
+//------------------
+void DTrackCandidate_factory_CDC::DropIncompleteSeeds(vector<DCDCSeed> &seeds)
+{
+	/// Look for seeds that have hits only in SL3 or only in SL5 and drop them.
+
+	int iSL1_lo = 1;
+	int iSL1_hi = superlayer_boundaries[0];
+	int iSL3_lo = superlayer_boundaries[1]+1;
+	int iSL3_hi = superlayer_boundaries[2];
+	int iSL5_lo = superlayer_boundaries[3]+1;
+	int iSL5_hi = superlayer_boundaries[3];
+
+	// Loop through seeds, looking for ones with only SL1 hits
+	for(unsigned int i=0; i<seeds.size(); i++){
+		if(!seeds[i].valid)continue;
+		vector<DCDCTrkHit*> &hits = seeds[i].hits;
+		if(hits.size()<1)continue;
+		bool has_SL1_hit = false;
+		bool has_SL3_hit = false;
+		bool has_SL5_hit = false;
+		for(unsigned int j=0; j<hits.size(); j++){
+			int ring = hits[j]->hit->wire->ring;
+			if(ring<iSL1_lo || ring>iSL1_hi)has_SL1_hit = true;
+			if(ring<iSL3_lo || ring>iSL3_hi)has_SL3_hit = true;
+			if(ring<iSL5_lo || ring>iSL5_hi)has_SL5_hit = true;
+			if(has_SL1_hit)break;
+		}
+		if(has_SL1_hit)continue;
+		if(has_SL3_hit && has_SL5_hit)continue;
+		
+		// Seed contains hits only from superlayer 3 or only from superlayer 5
+		// Flag the seed as invalid so it is ignored later
+		seeds[i].valid = false;
+		if(DEBUG_LEVEL>1)_DBG_<<"Dropping seed "<<i<<": hits in oly SL3 or only SL5 (has_SL3_hit="<<has_SL3_hit<<", has_SL5_hit="<<has_SL5_hit<<")"<<endl;
 	}
 }
 

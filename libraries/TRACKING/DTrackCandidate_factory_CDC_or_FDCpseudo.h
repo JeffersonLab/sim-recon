@@ -23,6 +23,8 @@ class DTrackCandidate_factory_CDC_or_FDCpseudo:public jana::JFactory<DTrackCandi
 		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+		
+		int DEBUG_LEVEL;
 };
 
 #endif // _DTrackCandidate_factory_CDC_or_FDCpseudo_
