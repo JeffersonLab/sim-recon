@@ -575,7 +575,25 @@
   <composite name="Polypropylene">	
         <addmaterial material="Hydrogen"> <natoms n="6" /> </addmaterial>
   	<addmaterial material="Carbon"> <natoms n="3" /> </addmaterial>
-  	<real name="density" value="0.9" unit="g/cm^3" />
+  	<real name="density" value="0.945" unit="g/cm^3" />
+  </composite>
+
+  <composite name="Polyetherimide">
+ 	<addmaterial material="Hydrogen"> <natoms n="24" /> </addmaterial>
+ 	<addmaterial material="Oxygen"> <natoms n="6" /> </addmaterial>
+ 	<addmaterial material="Carbon"> <natoms n="37" /> </addmaterial>
+ 	<addmaterial material="Nitrogen"> <natoms n="2" /> </addmaterial>
+ 	<real name="density" value="1.27" unit="g/cm^3" />
+  </composite>
+
+  <composite name="Ultem2300">
+     <addmaterial material="Polyetherimide">
+         <fractionmass fraction="0.70"/>
+     </addmaterial>
+     <addmaterial material="BorosilicateGlass">
+         <fractionmass fraction="0.30"/>
+     </addmaterial>
+     <real name="density" value="1.51" unit="g/cm^3" />
   </composite>
 
   <composite name="Nylon">
@@ -588,6 +606,14 @@
 	<real name="collen"	value="58.5"	unit="g/cm^2"	/>
 	<real name="abslen"	value="81.5"	unit="g/cm^2"	/>
 	<real name="dedx"	value="1.974"	unit="MeV/g/cm^2"	/>
+  </composite>
+
+  <composite name="PolyphenyleneOxide">
+	<addmaterial material="Nitrogen"> <natoms n="1"	/> </addmaterial>
+	<addmaterial material="Carbon">   <natoms n="15"/> </addmaterial>
+	<addmaterial material="Hydrogen"> <natoms n="11" /></addmaterial>
+	<addmaterial material="Oxygen">   <natoms n="1"	/> </addmaterial>
+        <real name="density" value="1.06" unit="g/cm^3"/>
   </composite>
 
   <composite name="Lexan">
@@ -740,6 +766,16 @@
 		<fractionmass	fraction="0.41"	/>
  	</addmaterial>
   </composite>
+
+  <composite name="CopperKapton">
+	<addmaterial material="Copper">
+		<fractionmass	fraction="0.335"	/>
+ 	</addmaterial>
+	<addmaterial material="Kapton">
+		<fractionmass	fraction="0.665"	/>
+ 	</addmaterial>
+  </composite>
+  
 
   <composite name="AluminizedKapton">
 	<addmaterial material="Aluminum">
@@ -984,6 +1020,19 @@
         <addmaterial material="CarbonFiber">
 		<fractionmass	fraction="0.60" />
 	</addmaterial>
+  </composite>
+
+  <composite name="Noryl">
+     <addmaterial material="Polystyrene">
+         <fractionmass fraction="0.35"/>
+     </addmaterial>
+     <addmaterial material="PolyphenyleneOxide">
+         <fractionmass fraction="0.35"/>
+     </addmaterial>
+     <addmaterial material="BorosilicateGlass">
+         <fractionmass fraction="0.30"/>
+     </addmaterial>
+     <real name="density" value="1.36" unit="g/cm^3" />
   </composite>
 
   <composite name="CerenkovGas">
