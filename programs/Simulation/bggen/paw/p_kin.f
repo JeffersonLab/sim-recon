@@ -22,7 +22,7 @@ C
          kf1=1
          qq=0.
          DO j=1,3
-            p1(j)=PTRA(j,K1)
+            p1(j)=POUT(j,K1)
             qq=qq+p1(j)**2
          ENDDO
          p1(4)=SQRT(qq+AM(K1)**2)
@@ -32,7 +32,7 @@ C
          kf2=1
          qq=0.
          DO j=1,3
-            p2(j)=PTRA(j,K2)
+            p2(j)=POUT(j,K2)
             qq=qq+p2(j)**2
          ENDDO
          p2(4)=SQRT(qq+AM(K2)**2)
@@ -61,9 +61,9 @@ C
             pp1=0.
             pp2=0.
             DO j=1,3
-               p2(j)=PTRA(j,1)+PTRA(j,2)
-               pp1=pp1+PTRA(j,1)**2
-               pp2=pp2+PTRA(j,2)**2
+               p2(j)=POUT(j,1)+POUT(j,2)
+               pp1=pp1+POUT(j,1)**2
+               pp2=pp2+POUT(j,2)**2
             ENDDO
             p2(5)=SQRT(p2(1)**2+p2(2)**2+p2(3)**2)
             p2(4)=SQRT(pp1+AM(1)**2)+SQRT(pp2+AM(2)**2)

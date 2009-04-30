@@ -8,7 +8,7 @@ C
       INCLUDE ?
 C
       INTEGER nm,im(4),i,j,k
-      REAL bm(4),pm(4,4),pout(4),ef
+      REAL bm(4),pm(4,4),pouta(4),ef
 C
       EFM=0.
       nm=0
@@ -21,13 +21,13 @@ C
             nm=nm+1
             bm(nm)=AM(k)
             DO j=1,4
-               pm(j,nm)=PTRA(j,k)
+               pm(j,nm)=POUT(j,k)
             ENDDO
          ENDIF
       ENDDO
 C
       IF(nm.GE.2) THEN
-         CALL EFMASS(nm,bm(1),pm(1,1),ef,pout)
+         CALL EFMASS(nm,bm(1),pm(1,1),ef,pouta)
          EFM=ef
       ENDIF
 C
