@@ -769,7 +769,7 @@ c
      
 
 c     #ifndef TRACK_SHOWERS_IN_COLLIMATOR
-      if(showersincol.ne.0) then
+      if(showersincol.eq.0) then
          if ((cnames(NLEVEL).eq.'INSU').or.
      +        (cnames(NLEVEL).eq.'COL1')) then
             ISTOP=1
