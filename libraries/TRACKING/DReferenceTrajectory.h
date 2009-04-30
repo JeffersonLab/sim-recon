@@ -19,6 +19,7 @@ using std::vector;
 
 class DMagneticFieldMap;
 class DTrackCandidate;
+class DRootGeom;
 
 class DReferenceTrajectory{
 	
@@ -40,6 +41,11 @@ class DReferenceTrajectory{
 				DVector3 mom;
 				double Ro;
 				double s; // distance along RT
+				
+				// The following are used to calculate the covariance matrix for MULS
+				double itheta02;		// running sum of MULS angle theta_0 squared
+				double itheta02s;		// ditto but times s
+				double itheta02s2;	// ditto but times s^2
 		};
 
 		DReferenceTrajectory(const DMagneticFieldMap *
@@ -60,12 +66,15 @@ class DReferenceTrajectory{
 		double DistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
 		double DistToRTBruteForce(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
 		double Straw_dx(const DCoordinateSystem *wire, double radius);
-		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire);
-		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0);
+		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire, int *istep_ptr=NULL);
+		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0, double smax=2000.0);
+		int InsertSteps(const swim_step_t *start_step, double delta_s, double step_size=0.02); 
 		DVector3 GetLastDOCAPoint(void);
 		void GetLastDOCAPoint(DVector3 &pos, DVector3 &mom);
 		double GetLastDistAlongWire(void){return last_dist_along_wire;}
 		void SetStepSize(double step_size){this->step_size=step_size;}
+		void SetDRootGeom(const DRootGeom *RootGeom){this->RootGeom = RootGeom;}
+		const DRootGeom* GetDRootGeom(void){return RootGeom;}
 
 		const swim_step_t *GetLastSwimStep(void){return last_swim_step;}
 		swim_step_t *swim_steps;
@@ -76,8 +85,10 @@ class DReferenceTrajectory{
 	
 		int max_swim_steps;
 		bool own_swim_steps;
+		int dist_to_rt_depth;
 		double step_size;
 		const DMagneticFieldMap *bfield;
+		const DRootGeom *RootGeom;
 		
 		double last_phi;							///< last phi found in DistToRT
 		const swim_step_t* last_swim_step;	///< last swim step used in DistToRT

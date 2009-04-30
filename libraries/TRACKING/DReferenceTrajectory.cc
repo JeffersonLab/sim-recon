@@ -11,6 +11,9 @@ using namespace std;
 #include "DReferenceTrajectory.h"
 #include "DTrackCandidate.h"
 #include "DMagneticFieldStepper.h"
+#include "HDGEOMETRY/DRootGeom.h"
+
+struct StepStruct {DReferenceTrajectory::swim_step_t steps[256];};
 
 //---------------------------------
 // DReferenceTrajectory    (Constructor)
@@ -41,6 +44,9 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	this->step_size = step_size;
 	this->bfield = bfield;
 	this->Nswim_steps = 0;
+	this->dist_to_rt_depth = 0;
+
+	this->RootGeom=NULL;
 }
 
 //---------------------------------
@@ -62,6 +68,8 @@ DReferenceTrajectory::DReferenceTrajectory(const DReferenceTrajectory& rt)
 	this->last_swim_step = rt.last_swim_step;
 	this->last_dist_along_wire = rt.last_dist_along_wire;
 	this->last_dz_dphi = rt.last_dz_dphi;
+	this->RootGeom = rt.RootGeom;
+	this->dist_to_rt_depth = 0;
 
 	this->swim_steps = new swim_step_t[this->max_swim_steps];
 	for(int i=0; i<Nswim_steps; i++)swim_steps[i] = rt.swim_steps[i];
@@ -103,6 +111,8 @@ DReferenceTrajectory& DReferenceTrajectory::operator=(const DReferenceTrajectory
 	this->last_swim_step = rt.last_swim_step;
 	this->last_dist_along_wire = rt.last_dist_along_wire;
 	this->last_dz_dphi = rt.last_dz_dphi;
+	this->RootGeom = rt.RootGeom;
+	this->dist_to_rt_depth = rt.dist_to_rt_depth;
 
 	// Allocate memory if needed
 	if(swim_steps==NULL)this->swim_steps = new swim_step_t[this->max_swim_steps];
@@ -126,7 +136,7 @@ DReferenceTrajectory::~DReferenceTrajectory()
 //---------------------------------
 // Swim
 //---------------------------------
-void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q)
+void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, double smax)
 {
 	/// (Re)Swim the trajectory starting from pos with momentum mom.
 	/// This will use the charge and step size (if given) passed to
@@ -139,11 +149,15 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 
 	DMagneticFieldStepper stepper(bfield, q, &pos, &mom);
 	if(step_size>0.0)stepper.SetStepSize(step_size);
-		
+
 	// Step until we hit a boundary (don't track more than 20 meters)
 	swim_step_t *swim_step = this->swim_steps;
 	Nswim_steps = 0;
-	for(double s=0; fabs(s)<2000.0; Nswim_steps++, swim_step++){
+	double itheta02 = 0.0;
+	double itheta02s = 0.0;
+	double itheta02s2 = 0.0;
+	swim_step_t *last_step=NULL;
+	for(double s=0; fabs(s)<smax; Nswim_steps++, swim_step++){
 
 		if(Nswim_steps>=this->max_swim_steps){
 			cerr<<__FILE__<<":"<<__LINE__<<" Too many steps in trajectory. Truncating..."<<endl;
@@ -156,6 +170,31 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		swim_step->Ro = stepper.GetRo();
 		swim_step->s = s;
 
+		// Add material if RootGeom is not NULL
+		if(RootGeom){
+			double density, A, Z, X0;
+			RootGeom->FindMat(swim_step->origin,density,A,Z,X0);
+			if(X0>0.0){
+				double delta_s = s;
+				if(last_step)delta_s -= last_step->s;
+				double radlen = delta_s/X0;
+				if(radlen>1.0E-5){ // PDG 2008 pg 271, second to last paragraph
+					double p = swim_step->mom.Mag();
+					double beta = p/sqrt(p*p + 0.136*0.136); // assume pion mass
+					double theta0 = 0.0136/(p*beta)*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
+					double theta02 = theta0*theta0;
+					itheta02 += theta02;
+					itheta02s += s*theta02;
+					itheta02s2 += s*s*theta02;
+				}
+			}
+			last_step = swim_step;
+		}
+		swim_step->itheta02 = itheta02;
+		swim_step->itheta02s = itheta02s;
+		swim_step->itheta02s2 = itheta02s2;
+		
+
 		// Exit loop if we leave the tracking volume
 		if(swim_step->origin.Perp()>65.0){break;} // ran into BCAL
 		if(swim_step->origin.Z()>650.0){break;} // ran into FCAL
@@ -164,16 +203,107 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		// Swim to next
 		s += stepper.Step(NULL);
 	}
-if(Nswim_steps<2){
-//_DBG_<<"Too few swim steps."<<endl;
-//_DBG_; pos.Print();
-//_DBG_; mom.Print();
-}
 
 	// OK. At this point the positions of the trajectory in the lab
 	// frame have been recorded along with the momentum of the
 	// particle and the directions of reference trajectory
 	// coordinate system at each point.
+}
+
+
+//---------------------------------
+// InsertSteps
+//---------------------------------
+int DReferenceTrajectory::InsertSteps(const swim_step_t *start_step, double delta_s, double step_size)
+{
+	/// Insert additional steps into the reference trajectory starting
+	/// at start_step and swimming for at least delta_s by step_size
+	/// sized steps. Both delta_s and step_size are in centimeters.
+	/// If the value of delta_s is negative then the particle's momentum
+	/// and charge are reversed before swimming. This could be a problem
+	/// if energy loss is implemented.
+	
+	if(!start_step)return -1;
+
+	// We do this by creating another, temporary DReferenceTrajectory object
+	// on the stack and swimming it.
+	DVector3 pos = start_step->origin;
+	DVector3 mom = start_step->mom;
+	double my_q = q;
+	int direction = +1;
+	if(delta_s<0.0){
+		mom *= -1.0;
+		my_q = -q;
+		direction = -1;
+	}
+	
+	// Here I allocate the steps using an auto_ptr so I don't have to mess with
+	// deleting them at all of the possible exists. The problem with auto_ptr
+	// is it can't handle arrays so it has to be wrapped in a struct.
+	auto_ptr<StepStruct> steps_aptr(new StepStruct);
+	DReferenceTrajectory::swim_step_t *steps = steps_aptr->steps;
+	DReferenceTrajectory rt(bfield , my_q , steps , 256);
+	rt.SetStepSize(step_size);
+	rt.Swim(pos, mom, my_q, fabs(delta_s));
+	if(rt.Nswim_steps==0)return 1;
+
+	// Check that there is enough space to add these points
+	if((Nswim_steps+rt.Nswim_steps)>max_swim_steps){
+		//_DBG_<<"Not enough swim steps available to add new ones! Max="<<max_swim_steps<<" had="<<Nswim_steps<<" new="<<rt.Nswim_steps<<endl;
+		return 2;
+	}
+	
+	// At this point, we may have swum forward or backwards so the points
+	// will need to be added either before start_step or after it. We also
+	// may want to replace an old step that overlaps our high density steps
+	// since they are presumably more accurate. Find the indexes of the
+	// existing steps that the new steps will be inserted between.
+	double sdiff = rt.swim_steps[rt.Nswim_steps-1].s;
+	double s1 = start_step->s;
+	double s2 = start_step->s + (double)direction*sdiff;
+	double smin = s1<s2 ? s1:s2;
+	double smax = s1<s2 ? s2:s1;
+	int istep_start = 0;
+	int istep_end = 0;
+	for(int i=0; i<Nswim_steps; i++){
+		if(swim_steps[i].s <  smin)istep_start = i;
+		if(swim_steps[i].s <= smax)istep_end = i+1;
+	}
+	
+	// istep_start and istep_end now point to the steps we want to keep.
+	// All steps between them (exclusive) will be overwritten. Note that 
+	// the original start_step should be in the "overwrite" range since 
+	// it is included already in the new trajectory.
+	int steps_to_overwrite = istep_end - istep_start - 1;
+	int steps_to_shift = rt.Nswim_steps - steps_to_overwrite;
+	
+	// Shift the steps down (or is it up?) starting with istep_end.
+	for(int i=Nswim_steps-1; i>=istep_end; i--)swim_steps[i+steps_to_shift] = swim_steps[i];
+	
+	// Copy the new steps into this object
+	double s_0 = start_step->s;
+	double itheta02_0 = start_step->itheta02;
+	double itheta02s_0 = start_step->itheta02s;
+	double itheta02s2_0 = start_step->itheta02s2;
+	for(int i=0; i<rt.Nswim_steps; i++){
+		int index = direction>0 ? (istep_start+1+i):(istep_start+1+rt.Nswim_steps-1-i);
+		swim_steps[index] = rt.swim_steps[i];
+		swim_steps[index].s = s_0 + (double)direction*swim_steps[index].s;
+		swim_steps[index].itheta02 = itheta02_0 + (double)direction*swim_steps[index].itheta02;
+		swim_steps[index].itheta02s = itheta02s_0 + (double)direction*swim_steps[index].itheta02s;
+		swim_steps[index].itheta02s2 = itheta02s2_0 + (double)direction*swim_steps[index].itheta02s2;
+		if(direction<0.0){
+			swim_steps[index].sdir *= -1.0;
+			swim_steps[index].tdir *= -1.0;
+		}
+	}
+	Nswim_steps += rt.Nswim_steps-steps_to_overwrite;
+
+	// Note that the above procedure may leave us with "kinks" in the itheta0 
+	// variables. It may be that we need to recalculate those for all of the 
+	// new points and the ones after them by making one more pass. I'm hoping
+	// it is a realitively small correction though so we can skip it here.
+	return 0;
 }
 
 //---------------------------------
@@ -290,12 +420,14 @@ if(Nswim_steps<1)_DBG__;
 //---------------------------------
 // FindClosestSwimStep
 //---------------------------------
-DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(const DCoordinateSystem *wire)
+DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(const DCoordinateSystem *wire, int *istep_ptr)
 {
 	/// Find the closest swim step to the given wire. The value of
 	/// "L" should be the active wire length. The coordinate system
 	/// defined by "wire" should have its origin at the center of
 	/// the wire with the wire running in the direction of udir.
+	
+	if(istep_ptr)*istep_ptr=-1;
 	
 	if(Nswim_steps<1){
 		_DBG_<<"No swim steps! You must \"Swim\" the track before calling FindClosestSwimStep(...)"<<endl;
@@ -333,6 +465,8 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 		}
 	}
 
+	if(istep_ptr)*istep_ptr=istep;
+
 	return step;	
 }
 
@@ -365,7 +499,7 @@ double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, d
 }
 
 //------------------
-// GetDistToRT
+// DistToRT
 //------------------
 double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double *s)
 {
@@ -586,6 +720,46 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 		double b = 2.0*S;
 		double c = 1.0*T;
 		phi = (-b + sqrt(b*b - 4.0*a*c))/(2.0*a); 
+	}
+	
+	// The accuracy of this method is limited by how close the step is to the
+	// actual minimum. If the value of phi is large then the step size is
+	// not too close and we should add another couple of steps in the right
+	// place in order to get a more accurate value. Note that while this will
+	// increase the time it takes this round, presumably the fitter will be
+	// calling this often for each wire and having a high density of points
+	// near the wires will just make subsequent calls go quicker. This also
+	// allows larger initial step sizes with the high density regions getting
+	// filled in as needed leading to overall faster tracking.
+	if(finite(phi) && fabs(phi)>2.0E-4){
+		if(dist_to_rt_depth>=3){
+			_DBG_<<"3 or more recursive calls to DistToRT(). Something is wrong! bailing ..."<<endl;
+			//for(int k=0; k<Nswim_steps; k++){
+			//	DVector3 &v = swim_steps[k].origin;
+			//	_DBG_<<"  "<<k<<": "<<v.X()<<", "<<v.Y()<<", "<<v.Z()<<endl;
+			//}
+			//exit(-1);
+			return std::numeric_limits<double>::quiet_NaN();
+		}
+		double scale_step = 1.0;
+		double s_range = 1.0*scale_step;
+		double step_size = 0.02*scale_step;
+		int err = InsertSteps(step, phi>0.0 ? +s_range:-s_range, step_size);			// Add new steps near this step by swimming in the direction of phi
+		if(!err){
+			step=FindClosestSwimStep(wire);									// Find the new closest step
+			if(!step)return std::numeric_limits<double>::quiet_NaN();
+			dist_to_rt_depth++;
+			double doca = DistToRT(wire, step, s);								// re-call ourself with the new step
+			dist_to_rt_depth--;
+			return doca;
+		}else{
+			if(err<0)return std::numeric_limits<double>::quiet_NaN();
+			
+			// If InsertSteps() returns an error > 0 then it indicates that it
+			// was unable to add additional steps (perhaps because there
+			// aren't enough spaces available). In that case, we just go ahead
+			// and use the phi we have and make the best estimate possible.
+		}
 	}
 	
 	// It is possible at this point that the value of phi corresponds to
