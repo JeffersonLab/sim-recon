@@ -96,6 +96,12 @@ jerror_t DEventProcessor_radlen_hists::init(void)
 	inXo_vs_r->SetStats(0);
 	inXo_vs_r->SetFillStyle(3000);
 	inXo_vs_r->SetFillColor(kMagenta);
+	
+	// Tree
+	rstep_ptr = &rstep;
+	tradstep = new TTree("radstep","Radlen steps");
+	tradstep->Branch("R","radstep",&rstep_ptr);
+
 
 	// Go back up to the parent directory
 	dir->cd("../");
@@ -123,6 +129,9 @@ jerror_t DEventProcessor_radlen_hists::evnt(JEventLoop *loop, int eventnumber)
 	theta_nevents->Fill(theta);
 	
 	// Loop over trajectory points
+	rstep.stot = 0.0;
+	rstep.ix_over_Xo = 0.0;
+	rstep.pthrown = throwns[0]->momentum();
 	for(unsigned int i=0;i<trajpoints.size();i++){
 		const DMCTrajectoryPoint *traj = trajpoints[i];
 		
@@ -136,6 +145,14 @@ jerror_t DEventProcessor_radlen_hists::evnt(JEventLoop *loop, int eventnumber)
 		nXo_vs_z_vs_theta->Fill(traj->z, theta, dnXo);
 		nXo_vs_r->Fill(r, dnXo);
 		nXo_vs_z->Fill(traj->z, dnXo);
+
+		rstep.pos.SetXYZ(traj->x, traj->y, traj->z);
+		rstep.s = traj->step;
+		rstep.stot += (double)traj->step;
+		rstep.Xo = traj->radlen;
+		rstep.ix_over_Xo += dnXo;
+		
+		tradstep->Fill();
 	}
 
 	return NOERROR;

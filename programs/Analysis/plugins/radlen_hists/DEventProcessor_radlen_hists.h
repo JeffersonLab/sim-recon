@@ -9,6 +9,7 @@
 #define _DEventProcessor_radlen_hists_
 
 #include <TFile.h>
+#include <TTree.h>
 #include <TH1.h>
 #include <TH2.h>
 #include <TH3.h>
@@ -17,6 +18,8 @@
 #include <JANA/JEventProcessor.h>
 #include <JANA/JEventLoop.h>
 using namespace jana;
+
+#include "radstep.h"
 
 class DEventProcessor_radlen_hists:public JEventProcessor{
 
@@ -36,6 +39,10 @@ class DEventProcessor_radlen_hists:public JEventProcessor{
 		TH1F *inXo_vs_z;
 		
 		TH2F *dE_vs_r, *dE_vs_z;
+		
+		TTree *tradstep;
+		radstep rstep;
+		radstep *rstep_ptr;
 
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
