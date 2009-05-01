@@ -218,7 +218,6 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 		hit_info.wire = cdctrackhit->wire;
 		hit_info.tdrift = cdctrackhit->tdrift;
 		hit_info.FindLR(mctrackhits);
-				
 		cdchit.eventnumber = eventnumber;
 		cdchit.wire = cdctrackhit->wire->straw;
 		cdchit.layer = cdctrackhit->wire->ring;
@@ -226,6 +225,9 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 		cdchit.tof = hit_info.tof;
 		cdchit.doca = hit_info.doca;
 		cdchit.resi = hit_info.dist - hit_info.doca;
+		cdchit.u = 0.0;
+		cdchit.u_pseudo = 0.0;
+		cdchit.u_lorentz = 0.0;
 		cdchit.resic = 0.0;
 		cdchit.trk_chisq = recon->chisq;
 		cdchit.trk_Ndof = recon->Ndof;
@@ -274,6 +276,9 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 		fdchit.tof = hit_info.tof;
 		fdchit.doca = hit_info.doca;
 		fdchit.resi = hit_info.dist - hit_info.doca;
+		fdchit.u = hit_info.u;
+		fdchit.u_pseudo = fdcpseudohit->s;
+		fdchit.u_lorentz = hit_info.u_lorentz;
 		fdchit.resic = hit_info.u - (fdcpseudohit->s + hit_info.u_lorentz) ;
 		fdchit.trk_chisq = recon->chisq;
 		fdchit.trk_Ndof = recon->Ndof;

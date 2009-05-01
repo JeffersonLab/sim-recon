@@ -22,6 +22,9 @@ class dchit:public TObject{
 		float tof;
 		float doca;
 		float resi;
+		float u;
+		float u_pseudo;
+		float u_lorentz;
 		float resic;
 		float trk_chisq;
 		float trk_Ndof;
