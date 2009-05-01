@@ -28,6 +28,7 @@ using namespace jana;
 #include "DMCTrackHit.h"
 #include "DTrackHitSelectorTHROWN.h"
 
+extern double GetCDCCovariance(int layer1, int layer2);
 extern double GetFDCCovariance(int layer1, int layer2);
 extern double GetFDCCathodeCovariance(int layer1, int layer2);
 
@@ -77,6 +78,8 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	TARGET_CONSTRAINT = false;
 	LR_FORCE_TRUTH = false;
 	USE_MULS_COVARIANCE = true;
+	USE_FDC = true;
+	USE_CDC = true;
 	
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",					DEBUG_HISTS);
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",					DEBUG_LEVEL);
@@ -94,10 +97,14 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	gPARMS->SetDefaultParameter("TRKFIT:TARGET_CONSTRAINT",			TARGET_CONSTRAINT);
 	gPARMS->SetDefaultParameter("TRKFIT:LR_FORCE_TRUTH",				LR_FORCE_TRUTH);
 	gPARMS->SetDefaultParameter("TRKFIT:USE_MULS_COVARIANCE",		USE_MULS_COVARIANCE);
+	gPARMS->SetDefaultParameter("TRKFIT:USE_FDC",						USE_FDC);
+	gPARMS->SetDefaultParameter("TRKFIT:USE_CDC",						USE_CDC);
 	
 	// DReferenceTrajectory objects
 	rt = new DReferenceTrajectory(bfield);
 	tmprt = new DReferenceTrajectory(bfield);
+	rt->SetDRootGeom(RootGeom);
+	tmprt->SetDRootGeom(RootGeom);
 	
 	cout<<__FILE__<<":"<<__LINE__<<"-------------- Least Squares TRACKING --------------"<<endl;
 
@@ -367,26 +374,75 @@ double DTrackFitterALT1::ChiSq(vector<resiInfo> &residuals, double *chisq_ptr, i
 	// Fill in the cov_muls matrix.
 	cov_muls.Zero();
 	if(USE_MULS_COVARIANCE){
+		// Find the first sensitive detector hit. Ignore
+		// the target point if present by checking layer!=0
+		const swim_step_t *step0 = NULL;
 		for(unsigned int i=0; i<residuals.size(); i++){
 			resiInfo &ri = residuals[i];
-			
-			// Only FDC correlations handled right now
-			if(!(ri.resi_type==resi_type_fdc_anode || ri.resi_type==resi_type_fdc_cathode))continue;
-			
-			// Loop over all residuals
-			for(unsigned int j=0; j<residuals.size(); j++){
-				resiInfo &ri2 = residuals[j];
-				
-				// FDC anode-anode correlations
-				if(ri2.resi_type==resi_type_fdc_anode && ri.resi_type==resi_type_fdc_anode){
-					cov_muls[i][j] = cov_muls[j][i] = GetFDCCovariance(ri.layer, ri2.layer);
-					continue;
-				}
+			if(ri.layer<1)continue;
+			if(!ri.step)continue;
+			if( (step0==NULL) || (ri.step->s < step0->s) ){
+				step0 = ri.step;
+			}
+		}
 
-				// FDC cathode-cathode correlations
-				if(ri2.resi_type==resi_type_fdc_cathode && ri.resi_type==resi_type_fdc_cathode){
-					cov_muls[i][j] = cov_muls[j][i] = GetFDCCovariance(ri.layer, ri2.layer);
-					continue;
+		if(step0){
+			// Loop over all residuals
+			for(unsigned int i=0; i<residuals.size(); i++){
+				const swim_step_t *stepA = residuals[i].step;
+				if(!stepA)continue;
+				resiInfo &riA = residuals[i];
+				
+				// Loop over all residuals
+				for(unsigned int j=i; j<residuals.size(); j++){
+					const swim_step_t *stepB = residuals[j].step;
+					if(!stepB)continue;
+					resiInfo &riB = residuals[j];
+					
+					// Correlations are very hard to get correct given the left-right
+					// ambiguity which determines the sign of the correlation. 
+					// Because of this, only include the diagonal elements of the
+					// covariance matrix. Attempts were made to do otherwise, but they
+					// failed. The code is left here in case we need to try it again
+					// at a later time.
+					if(i!=j)continue;
+					
+					// Correlations between A and B are due only to material between
+					// the first detector and the most upstream of A or B.
+					double sA = stepA->s;
+					double sB = stepB->s;
+					const swim_step_t *step_end = sA<sB ? stepA:stepB;
+
+					if(step0->s>step_end->s)continue; // Bullet proof
+					
+					// Need a comment here to explain this ... 
+					double itheta02 = step_end->itheta02 - step0->itheta02;
+					double itheta02s = step_end->itheta02s - step0->itheta02s;
+					double itheta02s2 = step_end->itheta02s2 - step0->itheta02s2;
+					double sigmaAB = sA*sB*itheta02 - (sA+sB)*itheta02s + itheta02s2;
+					
+					// sigmaAB represents the magnitude of the covariance, but not the
+					// sign.
+					//
+					// For wires generally in the same direction, the sign
+					// should be positive if they are on the same side of the wire
+					// but negative if they are on opposite sides.
+					//
+					// For wires that are orhogonal (like a CDC is to an FDC wire), the
+					// the procedure is not so clear.
+					
+					// Find LR of this hit.
+					// Vector pointing from origin of wire to step position crossed into
+					// wire direction gives a vector that will either be pointing
+					// generally in the direction of the momentum or opposite to it.
+					// Take dot product of above described vectors  for each hit 
+					// use it to determine L or R.
+					DVector3 crossA = (stepA->origin - riA.hit->wire->origin).Cross(riA.hit->wire->udir);
+					DVector3 crossB = (stepB->origin - riB.hit->wire->origin).Cross(riB.hit->wire->udir);
+					double sides_angle = crossA.Angle(crossB)*57.3;
+					double sign = fabs(sides_angle) < 90.0 ? +1.0:-1.0;
+					
+					cov_muls[i][j] = cov_muls[j][i] = sign*sigmaAB;
 				}
 			}
 		}
@@ -400,6 +456,8 @@ double DTrackFitterALT1::ChiSq(vector<resiInfo> &residuals, double *chisq_ptr, i
 	int Ndof = (int)residuals.size() - 5; // assume 5 fit parameters
 	weights.ResizeTo(W);
 	weights = W;
+	
+	if(DEBUG_LEVEL>10)PrintChisqElements(resiv, cov_meas, cov_muls, weights);
 
 	// If the caller supplied pointers to chisq and dof variables, copy the values into them
 	if(chisq_ptr)*chisq_ptr = chisq;
@@ -429,120 +487,124 @@ void DTrackFitterALT1::GetHits(fit_type_t fit_type, DReferenceTrajectory *rt, hi
 	}
 
 	// --- CDC ---
-	for(unsigned int i=0; i<cdchits.size(); i++){
-		const DCDCTrackHit *hit = cdchits[i];
-		const DCoordinateSystem *wire = hit->wire;
-		hitInfo hi;
+	if(USE_CDC){
+		for(unsigned int i=0; i<cdchits.size(); i++){
+			const DCDCTrackHit *hit = cdchits[i];
+			const DCoordinateSystem *wire = hit->wire;
+			hitInfo hi;
 
-		hi.wire = wire;
-		hi.u_dist = 0.0;
-		hi.u_err = 0.0;
-		hi.good = hi.good_u = false;
+			hi.wire = wire;
+			hi.u_dist = 0.0;
+			hi.u_err = 0.0;
+			hi.good = hi.good_u = false;
 
-		// Fill in shifts and errs vectors based on whether we're doing
-		// hit-based or time-based tracking
-		if(fit_type==kWireBased){
-			// If we're doing hit-based tracking then only the wire positions
-			// are used and the drift time info is ignored.
-			// NOTE: The track quality itself goes into the residual resoultion
-			// and so we use something larger than the variance over an evenly 
-			// illuminated cell size (commented out). The value of 0.31 is
-			// empirical from forward (2-40 degree) pi+ tracks when MULS was
-			// off. This will likely need to be higher when MULS is on...
-			hi.dist = 0.0;
-			hi.err = 0.45; // empirical. (see note above)
-			//hi.err = 0.8/sqrt(12.0); // variance for evenly illuminated straw
-		}else{
-			// Find the DOCA point for the RT and use the momentum direction
-			// there and the wire direction to determine the "shift".
-			// Note that whether the shift is to the left or to the right
-			// is not decided here. That ambiguity is left to be resolved later
-			// by applying a minus sign (or not) to the shift.
-			DVector3 pos_doca, mom_doca;
-			double s;
-			rt->DistToRT(wire, &s);
-			rt->GetLastDOCAPoint(pos_doca, mom_doca);
-			
-			// The magnitude of the shift is based on the drift time. The
-			// value of the dist member of the DCDCTrackHit object does not
-			// subtract out the TOF. This can add 50-100 microns to the
-			// resolution in the CDC. Here, we actually can calculate the TOF
-			// (for a given mass hypothesis).
-			double mass = 0.13957;
-			double beta = 1.0/sqrt(1.0 + pow(mass/mom_doca.Mag(), 2.0))*2.998E10;
-			double tof = s/beta/1.0E-9; // in ns
-			hi.dist = hit->dist*((hit->tdrift-tof)/hit->tdrift);
-			hi.err = SIGMA_CDC;
+			// Fill in shifts and errs vectors based on whether we're doing
+			// hit-based or time-based tracking
+			if(fit_type==kWireBased){
+				// If we're doing hit-based tracking then only the wire positions
+				// are used and the drift time info is ignored.
+				// NOTE: The track quality itself goes into the residual resoultion
+				// and so we use something larger than the variance over an evenly 
+				// illuminated cell size (commented out). The value of 0.31 is
+				// empirical from forward (2-40 degree) pi+ tracks when MULS was
+				// off. This will likely need to be higher when MULS is on...
+				hi.dist = 0.0;
+				hi.err = 0.45; // empirical. (see note above)
+				//hi.err = 0.8/sqrt(12.0); // variance for evenly illuminated straw
+			}else{
+				// Find the DOCA point for the RT and use the momentum direction
+				// there and the wire direction to determine the "shift".
+				// Note that whether the shift is to the left or to the right
+				// is not decided here. That ambiguity is left to be resolved later
+				// by applying a minus sign (or not) to the shift.
+				DVector3 pos_doca, mom_doca;
+				double s;
+				rt->DistToRT(wire, &s);
+				rt->GetLastDOCAPoint(pos_doca, mom_doca);
+				
+				// The magnitude of the shift is based on the drift time. The
+				// value of the dist member of the DCDCTrackHit object does not
+				// subtract out the TOF. This can add 50-100 microns to the
+				// resolution in the CDC. Here, we actually can calculate the TOF
+				// (for a given mass hypothesis).
+				double mass = 0.13957;
+				double beta = 1.0/sqrt(1.0 + pow(mass/mom_doca.Mag(), 2.0))*2.998E10;
+				double tof = s/beta/1.0E-9; // in ns
+				hi.dist = hit->dist*((hit->tdrift-tof)/hit->tdrift);
+				hi.err = SIGMA_CDC;
+			}
+			hinfo.push_back(hi);
 		}
-		hinfo.push_back(hi);
-	}
+	} // USE_CDC
 
 	// --- FDC ---
-	for(unsigned int i=0; i<fdchits.size(); i++){
-		const DFDCPseudo *hit = fdchits[i];
-		const DCoordinateSystem *wire = hit->wire;
-		hitInfo hi;
+	if(USE_FDC){
+		for(unsigned int i=0; i<fdchits.size(); i++){
+			const DFDCPseudo *hit = fdchits[i];
+			const DCoordinateSystem *wire = hit->wire;
+			hitInfo hi;
 
-		hi.wire = wire;
-		hi.good = hi.good_u = false;
+			hi.wire = wire;
+			hi.good = hi.good_u = false;
 
-		// Fill in shifts and errs vectors based on whether we're doing
-		// hit-based or time-based tracking
-		if(fit_type==kWireBased){
-			// If we're doing hit-based tracking then only the wire positions
-			// are used and the drift time info is ignored.
-			// NOTE: The track quality itself goes into the residual resoultion
-			// and so we use something larger than the variance over an evenly 
-			// illuminated cell size (commented out). The value of 0.30 is
-			// empirical from forward (2-40 degree) pi+ tracks when MULS was
-			hi.dist = 0.0;
-			hi.err = 0.30; // emprical. (see note above)
-			//hi.err = 0.5/sqrt(12.0); // variance for evenly illuminated cell - anode
-			hi.u_dist = 0.0;
-			hi.u_err = 0.0; // variance for evenly illuminated cell - cathode
-		}else{
-			// Find the DOCA point for the RT and use the momentum direction
-			// there and the wire direction to determine the "shift".
-			// Note that whether the shift is to the left or to the right
-			// is not decided here. That ambiguity is left to be resolved later
-			// by applying a minus sign (or not) to the shift.
-			DVector3 pos_doca, mom_doca;
-			double s;
-			rt->DistToRT(wire, &s);
-			rt->GetLastDOCAPoint(pos_doca, mom_doca);
-			
-			// The magnitude of the shift is based on the drift time. The
-			// value of the dist member of the DCDCTrackHit object does not
-			// subtract out the TOF. This can add 50-100 microns to the
-			// resolution in the CDC. Here, we actually can calculate the TOF
-			// (for a given mass hypothesis).
-			double mass = 0.13957;
-			double beta = 1.0/sqrt(1.0 + pow(mass/mom_doca.Mag(), 2.0))*2.998E10;
-			double tof = s/beta/1.0E-9; // in ns
-			hi.dist = hit->dist*((hit->time-tof)/hit->time);
-			hi.err = SIGMA_FDC_ANODE;
-			
-			// Find whether the track is on the "left" or "right" of the wire
-			DVector3 shift = wire->udir.Cross(mom_doca);
-			shift.SetMag(1.0);
-			double u = rt->GetLastDistAlongWire();
-			DVector3 pos_wire = wire->origin + u*wire->udir;
-			double LRsign = shift.Dot(pos_doca-pos_wire)<0.0 ? +1.0:-1.0;
+			// Fill in shifts and errs vectors based on whether we're doing
+			// hit-based or time-based tracking
+			if(fit_type==kWireBased){
+				// If we're doing hit-based tracking then only the wire positions
+				// are used and the drift time info is ignored.
+				// NOTE: The track quality itself goes into the residual resoultion
+				// and so we use something larger than the variance over an evenly 
+				// illuminated cell size (commented out). The value of 0.30 is
+				// empirical from forward (2-40 degree) pi+ tracks when MULS was
+				hi.dist = 0.0;
+				hi.err = 0.30; // emprical. (see note above)
+				//hi.err = 0.5/sqrt(12.0); // variance for evenly illuminated cell - anode
+				hi.u_dist = 0.0;
+				hi.u_err = 0.0; // variance for evenly illuminated cell - cathode
+			}else{
+				// Find the DOCA point for the RT and use the momentum direction
+				// there and the wire direction to determine the "shift".
+				// Note that whether the shift is to the left or to the right
+				// is not decided here. That ambiguity is left to be resolved later
+				// by applying a minus sign (or not) to the shift.
+				DVector3 pos_doca, mom_doca;
+				double s;
+				rt->DistToRT(wire, &s);
+				rt->GetLastDOCAPoint(pos_doca, mom_doca);
+				
+				// The magnitude of the shift is based on the drift time. The
+				// value of the dist member of the DCDCTrackHit object does not
+				// subtract out the TOF. This can add 50-100 microns to the
+				// resolution in the CDC. Here, we actually can calculate the TOF
+				// (for a given mass hypothesis).
+				double mass = 0.13957;
+				double beta = 1.0/sqrt(1.0 + pow(mass/mom_doca.Mag(), 2.0))*2.998E10;
+				double tof = s/beta/1.0E-9; // in ns
+				hi.dist = hit->dist*((hit->time-tof)/hit->time);
+				hi.err = SIGMA_FDC_ANODE;
+				
+				// Find whether the track is on the "left" or "right" of the wire
+				DVector3 shift = wire->udir.Cross(mom_doca);
+				shift.SetMag(1.0);
+				double u = rt->GetLastDistAlongWire();
+				DVector3 pos_wire = wire->origin + u*wire->udir;
+				double LRsign = shift.Dot(pos_doca-pos_wire)<0.0 ? +1.0:-1.0;
 
-			// Lorentz corrected poisition along the wire is contained in x,y
-			// values, BUT, it is based on a left-right decision of the track
-			// segment. This may or may not be the same as the global track. 
-			// As such, we have to determine the correction for our track.
-			//DVector3 wpos(hit->x, hit->y, wire->origin.Z());
-			//DVector3 wdiff = wpos - wire->origin;
-			//double u_corr = wire->udir.Dot(wdiff);
-			double alpha = mom_doca.Angle(DVector3(0,0,1));
-			hi.u_lorentz = LRsign*lorentz_def->GetLorentzCorrection(pos_doca.X(), pos_doca.Y(), pos_doca.Z(), alpha, hi.dist);
-			hi.u_dist = hit->s;
-			hi.u_err = SIGMA_FDC_CATHODE;
+				// Lorentz corrected poisition along the wire is contained in x,y
+				// values, BUT, it is based on a left-right decision of the track
+				// segment. This may or may not be the same as the global track. 
+				// As such, we have to determine the correction for our track.
+				//DVector3 wpos(hit->x, hit->y, wire->origin.Z());
+				//DVector3 wdiff = wpos - wire->origin;
+				//double u_corr = wire->udir.Dot(wdiff);
+				double alpha = mom_doca.Angle(DVector3(0,0,1));
+				hi.u_lorentz = LRsign*lorentz_def->GetLorentzCorrection(pos_doca.X(), pos_doca.Y(), pos_doca.Z(), alpha, hi.dist);
+				hi.u_dist = hit->s;
+				hi.u_err = SIGMA_FDC_CATHODE;
+			}
+			hinfo.push_back(hi);
 		}
-		hinfo.push_back(hi);
-	}
+	} // USE_FDC
 }
 
 
@@ -641,6 +703,7 @@ vector<bool> DTrackFitterALT1::GetResiInfo(DReferenceTrajectory *rt, hitsInfo &h
 			ri.resi_type = cdcwire ? resi_type_cdc_anode:(fdcwire ? resi_type_fdc_anode:resi_type_other);
 			ri.resi = resi;
 			ri.err = hi.err;
+			ri.step = rt->GetLastSwimStep();
 			hi.good = true;
 			residuals.push_back(ri);
 			good.push_back(true);
@@ -669,6 +732,7 @@ vector<bool> DTrackFitterALT1::GetResiInfo(DReferenceTrajectory *rt, hitsInfo &h
 				ri.resi_type =fdcwire ? resi_type_fdc_cathode:resi_type_other;
 				ri.resi = resic;
 				ri.err = hi.u_err;
+				ri.step = rt->GetLastSwimStep();
 				hi.good_u = true;
 				residuals.push_back(ri);
 				good.push_back(true);
@@ -1082,6 +1146,30 @@ void DTrackFitterALT1::FilterGood(DMatrix &my_resiv, vector<bool> &my_good, vect
 	}
 
 	my_good = good_all;
+}
+
+//------------------
+// PrintChisqElements
+//------------------
+void DTrackFitterALT1::PrintChisqElements(DMatrix &resiv, DMatrix &cov_meas, DMatrix &cov_muls, DMatrix &weights)
+{
+	/// This is for debugging only.
+	int Nhits = resiv.GetNrows();
+	double chisq_diagonal = 0.0;
+	for(int i=0; i<Nhits; i++){
+		_DBG_<<" r/sigma "<<i<<": "<<resiv[i][0]*sqrt(weights[i][i])
+				<<"  resi="<<resiv[i][0]
+				<<" sigma="<<1.0/sqrt(weights[i][i])
+				<<" cov_meas="<<cov_meas[i][i]
+				<<" cov_muls="<<cov_muls[i][i]
+				<<endl;
+		chisq_diagonal += pow(resiv[i][0], 2.0)*weights[i][i];
+	}
+	DMatrix resiv_t(DMatrix::kTransposed, resiv);
+	DMatrix chisqM(resiv_t*weights*resiv);
+	int Ndof = Nhits - 5; // assume 5 fit parameters
+	
+	_DBG_<<" chisq/Ndof: "<<chisqM[0][0]/(double)Ndof<<"  chisq/Ndof diagonal elements only:"<<chisq_diagonal/(double)Ndof<<endl;
 }
 
 //------------------

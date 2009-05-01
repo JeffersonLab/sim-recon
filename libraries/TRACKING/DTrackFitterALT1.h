@@ -77,6 +77,7 @@ class DTrackFitterALT1:public DTrackFitter{
 				int resi_type;
 				double resi;
 				double err;
+				const swim_step_t *step;
 		};
 
 		double ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr=NULL, int *dof_ptr=NULL);
@@ -86,7 +87,7 @@ class DTrackFitterALT1:public DTrackFitter{
 		vector<bool> GetResiInfo(DReferenceTrajectory *rt, hitsInfo &hinfo, vector<resiInfo> &residuals);
 		fit_status_t LeastSquaresB(hitsInfo &hinfo, DReferenceTrajectory *rt);
 		void FilterGood(DMatrix &my_resiv, vector<bool> &my_good, vector<bool> &good_all);
-		void GetCovariance(DMatrix &Vmuls, vector<bool> &good, hitsInfo &hinfo);
+		void PrintChisqElements(DMatrix &resiv, DMatrix &cov_meas, DMatrix &cov_muls, DMatrix &weights);
 		void ForceLRTruth(JEventLoop *loop, DReferenceTrajectory *rt, hitsInfo &hinfo);
 		void FillDebugHists(DReferenceTrajectory *rt, DVector3 &vertex_pos, DVector3 &vertex_mom);
 
@@ -110,7 +111,6 @@ class DTrackFitterALT1:public DTrackFitter{
 		bool hit_based;
 		bool DEBUG_HISTS;
 		int  DEBUG_LEVEL;
-		bool USE_CDC;
 		double MAX_CHISQ_DIFF;
 		int MAX_FIT_ITERATIONS;
 		double SIGMA_CDC;
@@ -125,6 +125,8 @@ class DTrackFitterALT1:public DTrackFitter{
 		bool TARGET_CONSTRAINT;
 		bool LR_FORCE_TRUTH;
 		bool USE_MULS_COVARIANCE;
+		bool USE_FDC;
+		bool USE_CDC;
 		
 		TH3F *cdcdoca_vs_dist_vs_ring;
 		TH2F *cdcdoca_vs_dist;
