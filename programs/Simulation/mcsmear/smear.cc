@@ -73,6 +73,13 @@ double FDC_CATHODE_SIGMA = 150.0; // in microns
 // specified by FDC_CATHODE_SIGMA.
 double FDC_PED_NOISE; //pC (calculated from FDC_CATHODE_SIGMA in SmearFDC)
 
+// If energy loss was turned off in the FDC then the pedestal
+// noise will not be scaled properly to give the nominal 200 micron
+// resolution along the wires. This flag is used to indicated
+// the magic scale factor should be applied to FDC_PED_NOISE
+// when it is calculated below to get the correct resolution.
+bool FDC_ELOSS_OFF = true;
+
 // Time window for acceptance of FDC hits
 double FDC_TIME_WINDOW = 1000.0E-9; // in seconds
 
@@ -239,6 +246,7 @@ void SmearFDC(s_HDDM_t *hddm_s)
 {
 	// Calculate ped noise level based on position resolution
 	FDC_PED_NOISE=-0.004594+0.008711*FDC_CATHODE_SIGMA+0.000010*FDC_CATHODE_SIGMA*FDC_CATHODE_SIGMA; //pC
+	if(FDC_ELOSS_OFF)FDC_PED_NOISE*=7.0; // empirical  4/29/2009 DL
 
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;

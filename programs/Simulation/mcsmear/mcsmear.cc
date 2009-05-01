@@ -27,6 +27,7 @@ extern double CDC_TIME_WINDOW;
 extern double FDC_TDRIFT_SIGMA;
 extern double FDC_CATHODE_SIGMA;
 extern double FDC_PED_NOISE;
+extern bool FDC_ELOSS_OFF;
 extern double FDC_TIME_WINDOW;
 
 //-----------
@@ -105,6 +106,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
 				case 'U': FDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
 				case 'C': FDC_CATHODE_SIGMA=atof(&ptr[2])*1.0E-6;			break;
 				case 'T': FDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;				break;
+				case 'e': FDC_ELOSS_OFF = true;									break;
 			}
 		}else{
 			INFILENAME = argv[i];
@@ -146,11 +148,12 @@ void Usage(void)
 	cout<<"  options:"<<endl;
 	cout<<"    -n       Don't add background hits to CDC and FDC (default is to add)"<<endl;
 	cout<<"    -s       Don't smear real hits (default is to smear)"<<endl;
-	cout<<"    -u       Sigma CDC anode drift time in ns (def:"<<CDC_TDRIFT_SIGMA*1.0E9<<"ns)"<<endl;
-	cout<<"    -t       CDC time window for background hits in ns (def:"<<CDC_TIME_WINDOW*1.0E9<<"ns)"<<endl;
-	cout<<"    -U       Sigma FDC anode drift time in ns (def:"<<FDC_TDRIFT_SIGMA*1.0E9<<"ns)"<<endl;
-	cout<<"    -C       Sigma FDC cathode strips in microns (def:"<<FDC_TDRIFT_SIGMA<<"ns)"<<endl;
-	cout<<"    -t       FDC time window for background hits in ns (def:"<<FDC_TIME_WINDOW*1.0E9<<"ns)"<<endl;
+	cout<<"    -u#      Sigma CDC anode drift time in ns (def:"<<CDC_TDRIFT_SIGMA*1.0E9<<"ns)"<<endl;
+	cout<<"    -t#      CDC time window for background hits in ns (def:"<<CDC_TIME_WINDOW*1.0E9<<"ns)"<<endl;
+	cout<<"    -U#      Sigma FDC anode drift time in ns (def:"<<FDC_TDRIFT_SIGMA*1.0E9<<"ns)"<<endl;
+	cout<<"    -C#      Sigma FDC cathode strips in microns (def:"<<FDC_TDRIFT_SIGMA<<"ns)"<<endl;
+	cout<<"    -t#      FDC time window for background hits in ns (def:"<<FDC_TIME_WINDOW*1.0E9<<"ns)"<<endl;
+	cout<<"    -e       hdgeant was run with LOSS=0 so scale the FDC cathode ped. noise (def:false)"<<endl;
 	cout<<"    -h       Print this usage statement."<<endl;
 	cout<<endl;
 	cout<<" Example:"<<endl;
