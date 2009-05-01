@@ -39,8 +39,8 @@ class DFDCHit : public JObject{
 			AddString(items, "plane", "%s", plane==1 ? "V":(plane==2 ? "X":"U"));
 			AddString(items, "gPlane", "%d", gPlane);
 			AddString(items, "gLayer", "%d", gLayer);
-			AddString(items, "q", "%d", q);
-			AddString(items, "t", "%d", t);
+			AddString(items, "q", "%f", q);
+			AddString(items, "t", "%f", t);
 			AddString(items, "r", "%f", r);
 			AddString(items, "type", "%d", type);
 		}
