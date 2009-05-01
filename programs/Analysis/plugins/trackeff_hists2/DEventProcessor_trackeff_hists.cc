@@ -213,7 +213,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 			// dpt/pt=2%, dtheta=20mrad and dphi=20mrad for now.
 			double fom = pow(delta_pt_over_pt/0.02, 2.0) + pow(delta_theta/20.0, 2.0) + pow(delta_phi/20.0, 2.0);
 			if(fom<fom_best){
-				fom = fom_best;
+				fom_best = fom;
 				
 				trk.pfit = pfit;
 				trk.pfit_wire = pfit_wire;
@@ -225,7 +225,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 				trk.delta_pt_over_pt = delta_pt_over_pt;
 				trk.delta_theta = delta_theta;
 				trk.delta_phi = delta_phi;
-				
+
 				// Get Nstereo, Ncdc, and Nfdc
 				vector<const DCDCTrackHit*> cdchits;
 				particle->Get(cdchits);
