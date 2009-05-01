@@ -5,6 +5,8 @@
 // Creator: davidl (on Darwin swire-b241.jlab.org 8.7.0 powerpc)
 //
 
+#include <memory>
+
 #include <DVector3.h>
 using namespace std;
 
