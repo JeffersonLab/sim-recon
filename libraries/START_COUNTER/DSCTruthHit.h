@@ -23,6 +23,7 @@ class DSCTruthHit:public JObject{
 		float phi;
 		float z;
 		float t;
+		int sector;
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "track", "%d", track);
@@ -33,6 +34,7 @@ class DSCTruthHit:public JObject{
 			AddString(items, "r", "%3.1f", r);
 			AddString(items, "phi", "%1.3f", phi);
 			AddString(items, "z", "%3.1f", z);
+                        AddString(items, "sector", "%d", sector);
 		}
 };
 
