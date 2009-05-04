@@ -300,6 +300,7 @@
       <xs:attribute name="pz" type="hddm:float" use="required"/>
       <xs:attribute name="E" type="hddm:float" use="required"/>
       <xs:attribute name="ptype" type="hddm:int" use="required"/>
+      <xs:attribute name="sector" type="hddm:int" use="required"/>    
     </xs:complexType>
   </xs:element>
 

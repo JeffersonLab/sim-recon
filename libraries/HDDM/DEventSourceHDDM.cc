@@ -1164,6 +1164,7 @@ jerror_t DEventSourceHDDM::Extract_DSCTruthHit( s_HDDM_t *hddm_s,  JFactory<DSCT
 			hit->t = stcTruthPoint->t;
 			hit->z = stcTruthPoint->z;
 			hit->track = stcTruthPoint->track;
+			hit->sector = stcTruthPoint->sector;
 			data.push_back(hit);
 		}
 	}

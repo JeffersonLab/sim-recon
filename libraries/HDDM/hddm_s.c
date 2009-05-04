@@ -404,6 +404,7 @@ s_StcTruthPoints_t* make_s_StcTruthPoints(int n)
       pp->py = 0;
       pp->pz = 0;
       pp->r = 0;
+      pp->sector = 0;
       pp->t = 0;
       pp->track = 0;
       pp->z = 0;
@@ -961,7 +962,7 @@ char HDDM_s_DocumentString[] =
 "        <stcPaddle maxOccurs=\"unbounded\" minOccurs=\"0\" sector=\"int\">\n"
 "          <stcHit dE=\"float\" maxOccurs=\"unbounded\" t=\"float\" />\n"
 "        </stcPaddle>\n"
-"        <stcTruthPoint E=\"float\" dEdx=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" r=\"float\" t=\"float\" track=\"int\" z=\"float\" />\n"
+"        <stcTruthPoint E=\"float\" dEdx=\"float\" maxOccurs=\"unbounded\" minOccurs=\"0\" phi=\"float\" primary=\"boolean\" ptype=\"int\" px=\"float\" py=\"float\" pz=\"float\" r=\"float\" sector=\"int\" t=\"float\" track=\"int\" z=\"float\" />\n"
 "      </startCntr>\n"
 "      <barrelEMcal minOccurs=\"0\">\n"
 "        <bcalCell layer=\"int\" maxOccurs=\"4\" minOccurs=\"0\" module=\"int\" sector=\"int\">\n"
@@ -1927,6 +1928,7 @@ static s_StcTruthPoints_t* unpack_s_StcTruthPoints(XDR* xdrs, popNode* pop)
          xdr_float(xdrs,&this1->in[m].py);
          xdr_float(xdrs,&this1->in[m].pz);
          xdr_float(xdrs,&this1->in[m].r);
+         xdr_int(xdrs,&this1->in[m].sector);
          xdr_float(xdrs,&this1->in[m].t);
          xdr_int(xdrs,&this1->in[m].track);
          xdr_float(xdrs,&this1->in[m].z);
@@ -4065,6 +4067,7 @@ static int pack_s_StcTruthPoints(XDR* xdrs, s_StcTruthPoints_t* this1)
       xdr_float(xdrs,&this1->in[m].py);
       xdr_float(xdrs,&this1->in[m].pz);
       xdr_float(xdrs,&this1->in[m].r);
+      xdr_int(xdrs,&this1->in[m].sector);
       xdr_float(xdrs,&this1->in[m].t);
       xdr_int(xdrs,&this1->in[m].track);
       xdr_float(xdrs,&this1->in[m].z);

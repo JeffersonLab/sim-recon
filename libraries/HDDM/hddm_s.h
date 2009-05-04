@@ -356,6 +356,7 @@ typedef struct {
    float                px;
    float                py;
    float                pz;
+   int32_t              sector;
    float                r;
    float                t;
    int32_t              track;
