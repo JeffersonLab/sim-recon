@@ -36,6 +36,12 @@
 #define MAX_HITS 	100
 #define THRESH_MEV      0.150
 
+#define LIGHT_GUIDE     140.
+#define ANGLE_COR       1.17
+#define BENT_REGION     50.
+
+
+
 binTree_t* startCntrTree = 0;
 static int paddleCount = 0;
 static int pointCount = 0;
@@ -71,6 +77,26 @@ void hitStartCntr (float xin[4], float xout[4],
       dEdx = 0;
    }
 
+   float dbent  = 0.0;
+   float dpath  = 0.0;
+   if(xlocal[2] >= BENT_REGION){
+     dbent = ( xlocal[2] - BENT_REGION )*ANGLE_COR;
+     dpath = LIGHT_GUIDE + BENT_REGION + dbent;
+   } else {
+     dpath  = LIGHT_GUIDE + xlocal[2];
+   }
+
+   float dEcorr = dEsum * exp(-dpath/ATTEN_LENGTH);
+   float tcorr  = t + dpath/C_EFFECTIVE;
+
+
+   //   printf("x_gl, z_gl, x_l, z_l %f %f %f\n",
+   //  	  xin[0],xin[1],xin[2]);
+
+   //   printf("x_gl, z_gl, x_l, z_l %f %f %f %f %f %f %f\n",
+   //  	  x[0],x[1],x[2], xlocal[0],xlocal[1],xlocal[2],dpath);
+
+
    /* post the hit to the truth tree */
 
    if (history == 0)
@@ -92,14 +118,23 @@ void hitStartCntr (float xin[4], float xout[4],
          points->in[0].py = pin[1]*pin[4];
          points->in[0].pz = pin[2]*pin[4];
          points->in[0].E = pin[3];
-         points->in[0].dEdx = dEdx;
+         points->in[0].dEdx = dEcorr;
          points->in[0].ptype = ipart;
+         points->in[0].sector = getsector_();
          points->mult = 1;
          pointCount++;
+
+
       }
    }
 
    /* post the hit to the hits tree, mark sector as hit */
+
+   //   if( (ipart==8) && (x[2]<90.)){
+   //     printf("x_gl, z_gl, x_l, z_l %f %f %f %f %f %f\n",
+   //	    x[0],x[1],x[2], xlocal[0],xlocal[1],xlocal[2]);
+   //   }
+
 
    if (dEsum > 0)
    {
@@ -107,9 +142,17 @@ void hitStartCntr (float xin[4], float xout[4],
       s_StcHits_t* hits;
       int sector = getsector_();
       float phim = atan2(xvrtx[1],xvrtx[0]);
-      float dpath = xlocal[2]+(10.2-xlocal[0])*0.4;
-      float tcorr = t + dpath/C_EFFECTIVE;
-      float dEcorr = dEsum * exp(-dpath/ATTEN_LENGTH);
+
+
+      
+      //      printf("x_gl, z_gl, x_l, z_l %f %f %f %f %f %f\n",
+      //  x[0],x[1],x[2], xlocal[0],xlocal[1],xlocal[2]);
+
+
+
+      //      float dpath = xlocal[2]+(10.2-xlocal[0])*0.4;
+      //      float tcorr = t + dpath/C_EFFECTIVE;
+      //      float dEcorr = dEsum * exp(-dpath/ATTEN_LENGTH);
       int mark = sector;
       void** twig = getTwig(&startCntrTree, mark);
       if (*twig == 0)
