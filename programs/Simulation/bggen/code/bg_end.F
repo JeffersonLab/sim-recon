@@ -19,7 +19,7 @@ C
 C
       IF(IWROUT(3).NE.0) THEN
         icycle=0
-        idnt=1
+        idnt=9
         CALL HCDIR('//bgkin',' ')
         CALL HROUT(idnt,icycle,' ')
         CALL HREND('bgkin')

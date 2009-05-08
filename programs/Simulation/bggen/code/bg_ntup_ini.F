@@ -22,17 +22,20 @@ C
          WRITE(6,*)'*** ERROR opening NTUPLE, iost=',iost
          GO TO 999
       ENDIF
-      idnt=1
-      CALL HBNT(idnt,'Kinematics',' ')
-      CALL HBNAME(idnt,'run',IEVPROC,'iproc')
-      CALL HBNAME(idnt,'run',ITPIN(1,1) ,'itypin(2,2)')
-      CALL HBNAME(idnt,'run',AMIN(1) ,'amin(2)')
-      CALL HBNAME(idnt,'run',PIN(1,1),'pin(3,2)')
+      idnt=9
+      CALL HBNT(idnt,'BGkinem',' ')
+      CALL HBNAME(idnt,'run',IEVENT,'ieve')
+      CALL HBNAME(idnt,'run',INDUM(1),'irun')
+      CALL HBNAME(idnt,'run',INDUM(2),'iend[-120,120]')
+      CALL HBNAME(idnt,'bgki',IEVPROC,'iproc')
+      CALL HBNAME(idnt,'bgki',ITPIN(1,1) ,'itypin(2,2)')
+      CALL HBNAME(idnt,'bgki',AMIN(1) ,'amin(2)')
+      CALL HBNAME(idnt,'bgki',PIN(1,1),'pin(3,2)')
       WRITE(cpar,FMT='(I3)') MXTRA
-      CALL HBNAME(idnt,'run',NTRA,'np[0,'//cpar//']')
-      CALL HBNAME(idnt,'run',ITPTRA(1,1) ,'ityp(6,np)')
-      CALL HBNAME(idnt,'run',AMTRA(1) ,'am(np)')
-      CALL HBNAME(idnt,'run',PTRA(1,1),'ptra(3,np)')
+      CALL HBNAME(idnt,'bgki',NTRA,'np[0,'//cpar//']')
+      CALL HBNAME(idnt,'bgki',ITPTRA(1,1) ,'ityp(6,np)')
+      CALL HBNAME(idnt,'bgki',AMTRA(1) ,'am(np)')
+      CALL HBNAME(idnt,'bgki',PTRA(1,1),'pout(3,np)')
 C
       IERR=0
  999  RETURN

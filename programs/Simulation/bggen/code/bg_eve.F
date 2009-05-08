@@ -25,6 +25,8 @@ C     ------------------------------------------------------------------
 C
       lout=6
       IEVPROC=-1
+      INDUM(1)=0
+      INDUM(2)=0
       cent(1)='beam  '
       cent(2)='target'
 C
@@ -132,7 +134,7 @@ C
 C---   NTUPLE
 C
       IF(IWROUT(3).NE.0) THEN
-         idnt=1
+         idnt=9
          CALL HFNT(idnt)
       ENDIF
 C
