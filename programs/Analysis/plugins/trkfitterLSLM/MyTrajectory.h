@@ -19,20 +19,21 @@ class MyTrajectory {
   void clear();
   virtual void swim(HepVector startingPoint, double theta, double phi);
   virtual void swim(const HepVector &startingVector);
+  void swim(const vector<double> &startingStdVector);
   void swimMC(vector<const DMCTrackHit*> &mctrackhits);
   void print();
   vector<HepLorentzVector*>* getTrajectory();
-  template<class C> double doca(C& spaceObject, HepLorentzVector &poca);
+  template<class C> double doca(C& spaceObject, HepLorentzVector &poca) const;
   void checkClear();
   virtual unsigned int getNumberOfParams();
-  double dist(HepVector& point, int trajIndex);
-  double dist(DLine& line, int trajIndex);
+  double dist(HepVector& point, int trajIndex) const;
+  double dist(DLine& line, int trajIndex) const;
   void para_min(double yMinus, double yZero, double yPlus, double &xMinFrac,
-		double &yMin);
+		double &yMin) const;
   virtual vector<double> getDelta() {
     return delta;
   }
-  int getXYT(double z, double &x, double &y, double &ct); //
+  int getXYT(double z, double &x, double &y, double &ct) const;
   void dump_ascii(ostream *trajFile, int tag);
 
  protected:
@@ -44,7 +45,7 @@ class MyTrajectory {
   int debug_level;
 };
 
-template<class C> double MyTrajectory::doca(C& spaceObject, HepLorentzVector &poca) {
+template<class C> double MyTrajectory::doca(C& spaceObject, HepLorentzVector &poca) const {
   unsigned int ilo, ihi, imid;
   ilo = 0;
   ihi = traj.size() - 1;

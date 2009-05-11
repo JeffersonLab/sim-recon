@@ -7,11 +7,11 @@
 #include "CDC/DCDCTrackHit.h"
 #include "hitDetails.h"
 #include "MyTrajectory.h"
+#include "residCDC.h"
+#include "residFDC.h"
 
 #define BIG_DOUBLE 1.0e12
 #define DRIFT_VELOCITY 55e-4
-#define ERROR_FDC 0.0250
-#define ERROR_CDC 0.0180
 
 class combinedResidFunc:public residFunc {
  public:
@@ -30,6 +30,8 @@ class combinedResidFunc:public residFunc {
   inline vector<CDCHitDetails*> *getCDCDetails(){return &CDCDetails;};
   inline vector<FDCHitDetails*> *getFDCDetails(){return &FDCDetails;};
   void setInnerResidFrac(double innerResidFracIn);
+  void getResidsBoth(vector<double> &residsBoth);
+  //  void deriv2(const HepVector *params, HepMatrix &Jacobian);
  private:
   unsigned int n_fdc, n_cdc;
   vector<const DFDCPseudo*> *ppPtr;
@@ -48,6 +50,9 @@ class combinedResidFunc:public residFunc {
   CDCHitDetails getDetails(const DCDCTrackHit *trackhit, DLine line);
   vector<CDCHitDetails*> CDCDetails;
   double innerResidFrac;
+  residCDC rCDC;
+  residFDC rFDC;
+  double ERROR_FDC, ERROR_CDC;
 };
 
 #endif // _COMBINEDRESIDFUNC_H_

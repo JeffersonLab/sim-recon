@@ -8,8 +8,8 @@ using namespace CLHEP;
 class DLine {
  public:
   DLine(); // default constructor
-  DLine(double x, double y, double z, double theta, double phi); // constructor with explicit point and direction
-  DLine(Hep3Vector r0_in, Hep3Vector r1_in); // constructor with 3-vector positions of two points
+  DLine(double x, double y, double z, double theta, double phi, int level = 0); // constructor with explicit point and direction
+  DLine(Hep3Vector r0_in, Hep3Vector r1_in, int level = 0); // constructor with 3-vector positions of two points
   double doca(HepVector point);
   double doca(Hep3Vector point);
   HepVector poca(HepVector point);

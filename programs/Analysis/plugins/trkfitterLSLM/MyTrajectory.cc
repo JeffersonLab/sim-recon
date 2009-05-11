@@ -69,6 +69,16 @@ void MyTrajectory::swim(const HepVector& startingVector) {
   return;
 }
 
+void MyTrajectory::swim(const vector<double> &params) {
+  int size = params.size();
+  HepVector hepParams(size);
+  for (int i = 0; i < size; i++) {
+    hepParams(i + 1) = params[i];
+  }
+  swim(hepParams);
+  return;
+}
+
 void MyTrajectory::swimMC(vector<const DMCTrackHit*> &mctrackhits) {
   checkClear();
   const DMCTrackHit* mchit;
@@ -101,21 +111,22 @@ vector<HepLorentzVector*>* MyTrajectory::getTrajectory() {
   return &traj;
 }
 
-double MyTrajectory::dist(HepVector& point, int trajIndex) {
-  Hep3Vector delta, point3(point(1), point(2), point(3));
-  delta = point3 - traj[trajIndex]->getV();
+double MyTrajectory::dist(HepVector& point, int trajIndex) const {
+  Hep3Vector delta, point3(point(1), point(2), point(3)), trajPoint;
+  trajPoint = traj[trajIndex]->getV();
+  delta = point3 - trajPoint;
   if (debug_level >= 4) cout << "point3 = " << point3
-			     << "traj point = " << traj[trajIndex]->getV()
+			     << "traj point = " << trajPoint
 			     << "delta = " << delta
 			     << "delta.mag = " << delta.mag() << endl;
   return delta.mag();
 }
 
-double MyTrajectory::dist(DLine& line, int trajIndex) {
+double MyTrajectory::dist(DLine& line, int trajIndex) const {
   return line.doca(*traj[trajIndex]);
 }
 
-int MyTrajectory::getXYT(double z, double &x, double &y, double &t) {
+int MyTrajectory::getXYT(double z, double &x, double &y, double &t) const {
   int iBefore = 0, iAfter = traj.size() - 1, iTry;
   double zBefore = traj[iBefore]->z();
   double zAfter = traj[iAfter]->z();
@@ -161,13 +172,13 @@ int MyTrajectory::getXYT(double z, double &x, double &y, double &t) {
   x = frac*traj[iAfter]->x() + otherfrac*traj[iBefore]->x();
   y = frac*traj[iAfter]->y() + otherfrac*traj[iBefore]->y();
   t = frac*traj[iAfter]->t() + otherfrac*traj[iBefore]->t();
-  if (debug_level > 3) cout << "x, y, t = " << x << " " << y
+  if (debug_level > 3) cout << "MyTrajectory::getXYT, x, y, t = " << x << " " << y
 			    << " " << t << endl;
   return 0;
 }
 
 void MyTrajectory::para_min(double yMinus, double yZero, double yPlus,
-			    double &xMinFrac, double &yMin) {
+			    double &xMinFrac, double &yMin) const {
   double a, b, c;
   a = 0.5*(yPlus - 2.0*yZero + yMinus);
   b = 0.5*(yPlus - yMinus);

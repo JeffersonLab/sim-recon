@@ -6,9 +6,9 @@ using namespace std;
 // default constructor line along z-axis
 DLine::DLine() : r0(0.0, 0.0, 0.0), r1(0.0, 0.0, 1.0), debug_level(0) {}
 
-DLine::DLine(Hep3Vector r0_in, Hep3Vector r1_in): r0(r0_in), r1(r1_in), debug_level(0) {};
+DLine::DLine(Hep3Vector r0_in, Hep3Vector r1_in, int level): r0(r0_in), r1(r1_in), debug_level(level) {};
 
-DLine::DLine(double x, double y, double z, double theta, double phi) : debug_level(0) {
+DLine::DLine(double x, double y, double z, double theta, double phi, int level) : debug_level(level) {
   r0(0) = x;
   r0(1) = y;
   r0(2) = z;
@@ -30,7 +30,7 @@ double DLine::doca(Hep3Vector point) {
   diff = r1 - r0;
   num = diff.cross(r0 - point);
   double doca = num.mag()/diff.mag();
-  if (debug_level > 2) cout << "DLine:doca: doca = " << doca << endl;
+  if (debug_level >= 4) cout << "DLine:doca: num = " << num.mag() << " diff = " << diff.mag() << " doca = " << doca << endl;
   return doca;
 };
 

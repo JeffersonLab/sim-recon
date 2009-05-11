@@ -18,11 +18,15 @@ const double c = 29.9792548; // speed of light, cm/ns
 // to a trajectory
 combinedResidFunc::combinedResidFunc(vector<const DFDCPseudo*> *pseudopoints,
 				     vector<const DCDCTrackHit*> *trackHits,
-				     MyTrajectory *trajectory, const DLorentzDeflections *lorentz_def_in, int level) : 
+				     MyTrajectory *trajectory,
+				     const DLorentzDeflections *lorentz_def_in,
+				     int level) : 
   n_fdc(pseudopoints->size()), n_cdc(trackHits->size()), ppPtr(pseudopoints),
   trkhitPtr(trackHits), trajPtr(trajectory), delta(trajPtr->getDelta()),
   debug_level(level), lorentz_def(lorentz_def_in), storeDetails(false),
-  innerResidFrac(1.0)
+  innerResidFrac(1.0), rCDC(trackHits, trajectory, level),
+  rFDC(pseudopoints, trajectory, lorentz_def_in, level),
+  ERROR_FDC(0.025), ERROR_CDC(0.018)
 {}
 
 void combinedResidFunc::resid(const HepVector *x, void *data, HepVector *f){
@@ -31,7 +35,6 @@ void combinedResidFunc::resid(const HepVector *x, void *data, HepVector *f){
 //   data: ???
 // output parameters
 //   f: pointer to vector of residuals
-  double doca;
   if (debug_level > 2) {
     cout << "combinedResidFunc::resid: resid called\n";
     cout << "                          params: " << *x;
@@ -39,150 +42,61 @@ void combinedResidFunc::resid(const HepVector *x, void *data, HepVector *f){
   // do a swim with the input parameters
   trajPtr->swim(*x);
   // populate f vector with residuals
-  HepVector point(3);
-  HepLorentzVector poca;
+
+  // get info from residFDC class
+
+  rFDC.calcResids();
+  vector<double> residsF;
+  rFDC.getResids(residsF);
   FDCHitDetails *FDCHitDetailsPtr;
-  for (unsigned int i = 0; i < n_fdc; i++) {
-    point = pseudo2HepVector(*((*ppPtr)[i]));
-    (*f)(i + 1) = trajPtr->doca(point, poca)/ERROR_FDC;
+  vector<HepVector> pointF;
+  vector<double> docasF, errorsF;
+  vector<HepLorentzVector> pocasF;
+  rFDC.getDetails(pointF, docasF, errorsF, pocasF);
+  for (unsigned int ir = 0; ir < n_fdc; ir++) {
+    (*f)(ir + 1) = residsF[ir];
     if (storeDetails) {
       FDCHitDetailsPtr = new FDCHitDetails();
-      *FDCHitDetailsPtr = getDetails((*ppPtr)[i], point);
+      FDCHitDetailsPtr->doca = docasF[ir];
+      FDCHitDetailsPtr->poca = pocasF[ir];
+      FDCHitDetailsPtr->rCorr = pointF[ir];
       FDCDetails.push_back(FDCHitDetailsPtr);
     }
   }
-  DLine line;
-  double dist;
+
+  // get info from CDC residual class
+
+  rCDC.setInnerResidFrac(innerResidFrac);
+  rCDC.calcResids();
+  vector<double> residsC;
+  rCDC.getResids(residsC);
   CDCHitDetails *CDCHitDetailsPtr;
   double thisChiSquared = 0.0;
   double thisResid;
-  for (unsigned int j = 0; j < n_cdc; j++) {
-    if (debug_level > 2) cout << "working on cdc hit " << j << endl;
-    line = trackhit2line(*((*trkhitPtr)[j]));
-    doca = trajPtr->doca(line, poca);
-    dist = velDrift*((*trkhitPtr)[j]->tdrift - poca.getT()/c);
-    if (debug_level > 2) cout << "resid, cdc: j = " << j << " dist = " << dist << " doca = " << doca << " poca xyzt = " << poca.getX() << ' ' << poca.getY() << ' ' << poca.getZ() << ' ' << poca.getT()/c << " resid = " << dist - doca << endl;
-    if (isnan(dist)) {
-      thisResid = 0.0;
-    } else {
-      if (doca > dist) {
-	thisResid = (dist - doca)/ERROR_CDC;
-      } else {
-	thisResid = innerResidFrac*(dist - doca)/ERROR_CDC;
-      }
-    }
-    (*f)(n_fdc + j + 1) = thisResid;
+  vector<double> docasC, distsC, errorsC;
+  vector<HepLorentzVector> pocasC;
+  vector<HepVector> posWiresC;
+  rCDC.getDetails(docasC, distsC, errorsC, pocasC, posWiresC);
+  for (unsigned int ir = 0; ir < n_cdc; ir++) {
+    thisResid = residsC[ir];
+    (*f)(n_fdc + ir + 1) = thisResid;
     if (storeDetails) {
       thisChiSquared += thisResid*thisResid;
       CDCHitDetailsPtr = new CDCHitDetails();
-      *CDCHitDetailsPtr = getDetails((*trkhitPtr)[j], line);
+      CDCHitDetailsPtr->doca = docasC[ir];
+      CDCHitDetailsPtr->poca = pocasC[ir];
+      CDCHitDetailsPtr->dist = distsC[ir];
+      CDCHitDetailsPtr->posWire = posWiresC[ir];
       CDCDetails.push_back(CDCHitDetailsPtr);
     }
   }
+
   if (debug_level > 2) cout << "combinedResidFunc::resid: resids:" << *f;
   if (storeDetails) chiSquared = thisChiSquared;
-  trajPtr->clear();
-};
 
-void combinedResidFunc::deriv(const HepVector *x, void *data, HepMatrix *J){
-  if (debug_level > 2) {
-    cout << "combinedResidFunc::deriv: deriv called\n";
-    cout << "                          params: " << *x << endl;
-  }
-  HepLorentzVector poca(3);
-  // save base parameters
-  HepVector xBase = *x;
-  // do central swim
-  trajPtr->swim(xBase);
-  // store pseudo points as three vectors
-  vector<HepVector *>pPoints;
-  HepVector *thisPointPtr;
-  for (unsigned int i = 0; i < n_fdc; i++) {
-    thisPointPtr = new HepVector(3);
-    *thisPointPtr = pseudo2HepVector(*((*ppPtr)[i]));
-    pPoints.push_back(thisPointPtr);
-  }
-  // store track hits as lines
-  vector<DLine *> linePtrs;
-  DLine *thisLinePtr;
-  for (unsigned int j = 0; j < n_cdc; j++) {
-    thisLinePtr = new DLine();
-    *thisLinePtr = trackhit2line(*((*trkhitPtr)[j]));
-    linePtrs.push_back(thisLinePtr);
-  }
-  // store base residuals
-  HepVector residBase(n_fdc + n_cdc);
-  // base resids for FDC
-  for (unsigned int i = 0; i < n_fdc; i++) {
-    residBase(i + 1) = trajPtr->doca(*(pPoints[i]), poca)/ERROR_FDC;
-  }
-  // base resids for CDC
-  double docaThis, distThis;
-  for (unsigned int j = 0; j < n_cdc; j++) {
-    docaThis = trajPtr->doca(*(linePtrs[j]), poca);
-    distThis = velDrift*((*trkhitPtr)[j]->tdrift - poca.getT()/c);
-    if (docaThis > distThis) {
-      residBase(n_fdc + j + 1) = (distThis - docaThis)/ERROR_CDC;
-    } else {
-      residBase(n_fdc + j + 1) = innerResidFrac*(distThis - docaThis)/ERROR_CDC;
-    }
-  }
-  if (debug_level > 2) cout << "base resids:" << residBase;
+  // clear the trajectory
   trajPtr->clear();
-  // calculate Jacobian
-  unsigned int p = trajPtr->getNumberOfParams();
-  HepVector xThis(p);
-  int iHep, jHep; // index for HepVector () notation
-  for (unsigned int i = 0; i < p; i++) {
-    iHep = i + 1;
-    xThis = xBase; // set params back to base
-    xThis(iHep) = xBase(iHep) + delta[i];
-    if (debug_level > 2) cout << "perturbed params: iHep = " << iHep << ", values:" << xThis << endl;
-    // do the perturbed swim
-    trajPtr->swim(xThis);
-    // calculate derivatives for FDC points
-    for (unsigned int j = 0; j < n_fdc; j++) {
-      jHep = j + 1;
-      HepVector pPointThis = pseudo2HepVector(*((*ppPtr)[j]));
-      docaThis = trajPtr->doca(pPointThis, poca)/ERROR_FDC;
-      if (debug_level > 2) cout << "resid " << j << " = " << docaThis << endl;
-      (*J)(jHep, iHep) = (docaThis - residBase(jHep))/delta[i];
-    }
-    // calculate derivatives for CDC points
-    for (unsigned int j = 0; j < n_cdc; j++) {
-      jHep = n_fdc + j + 1;
-      docaThis = trajPtr->doca(*(linePtrs[j]), poca);
-      distThis = velDrift*((*trkhitPtr)[j]->tdrift - poca.getT()/c);
-      if (debug_level > 2) cout << j << " dist = " << distThis << " doca = " << docaThis << " resid  = " << distThis - docaThis << endl;
-      if (isnan(distThis)) {
-	(*J)(jHep, iHep) = 0;
-      } else {
-	if (docaThis > distThis) {
-	  (*J)(jHep, iHep) = ((distThis - docaThis)/ERROR_CDC - residBase(jHep))/delta[i];
-	} else {
-	  (*J)(jHep, iHep) = (innerResidFrac*(distThis - docaThis)/ERROR_CDC - residBase(jHep))/delta[i];
-	}
-      }
-    }
-    trajPtr->clear();
-  }
-  if (debug_level >= 3) {
-    for (unsigned int i = 0; i < p; i++) {
-      iHep = i + 1;
-      cout << iHep;
-      for (unsigned int j = 0; j < n_fdc + n_cdc; j++) {
-	jHep = j + 1;
-	cout << ' ' << (*J)(jHep, iHep);
-      }
-      cout << endl;
-    }
-  }
-  for (unsigned int i = 0; i < n_fdc; i++) {
-    delete pPoints[i];
-  }
-  for (unsigned int j = 0; j < n_cdc; j++) {
-    delete linePtrs[j];
-  }
+
 };
 
 void combinedResidFunc::residAndDeriv(const HepVector *x, void *data, HepVector *f,
@@ -206,6 +120,9 @@ HepVector combinedResidFunc::pseudo2HepVector(const DFDCPseudo &ppoint) {
     point(2) = ppoint.y - delta_y;
   }
   point(3) = z;
+  if (debug_level >= 4) {
+    cout << "combinedResidFunc::pseudo2HepVector, x = " << x << " y = " << y << " z = " << z << " ct = " << ct << " delta_x = " << delta_x << " delta_y = " << delta_y << " ispos = " << ispos << " point = " << point << endl;
+  }
   return point;
 }
 
@@ -217,7 +134,11 @@ bool combinedResidFunc::getCorrectionSign(const DFDCPseudo &ppoint, double x, do
   bool isposTraj = wireCrossTraj > 0?true:false;
   bool isposDelta = wireCrossDelta > 0?true:false;
   bool ispos = !(isposTraj ^ isposDelta);
-  if (debug_level > 3) cout << " ppx = " << ppoint.x
+  if (debug_level > 3) cout << setprecision(14)
+			    << "combinedResidFunc::getCorrectionSign,"
+			    << " x = " << x
+			    << " y = " << y
+			    << " ppx = " << ppoint.x
 			    << " ppy = " << ppoint.y
 			    << " dx = " << x - ppoint.x
 			    << " dy = " << y - ppoint.y
@@ -298,4 +219,81 @@ void combinedResidFunc::clearDetails() {
 
 void combinedResidFunc::setInnerResidFrac(double innerResidFracIn) {
   innerResidFrac = innerResidFracIn;
+}
+
+void combinedResidFunc::getResidsBoth(vector<double> &residsBoth) {
+
+  rCDC.setInnerResidFrac(innerResidFrac);
+  rCDC.calcResids();
+  vector<double> residsC;
+  rCDC.getResids(residsC);
+
+  rFDC.calcResids();
+  vector<double> residsF;
+  rFDC.getResids(residsF);
+
+  residsBoth.reserve(n_fdc + n_cdc); // reserve slots for FDC and CDC residuals
+
+  for (unsigned int i = 0; i < n_fdc; i++) {
+    residsBoth[i] = residsF[i];
+  }
+
+  for (unsigned int i = 0; i < n_cdc; i++) {
+    residsBoth[n_fdc + i] = residsC[i];
+  }
+
+  return;
+
+}
+
+void combinedResidFunc::deriv(const HepVector *params, void *data, HepMatrix *Jacobian) {
+  HepVector paramsCentral = *params, paramsThis;
+  int nResids = n_fdc + n_cdc;
+  unsigned int nParams = trajPtr->getNumberOfParams();
+  int iHep = 0, jHep = 0;
+  if (debug_level > 2){
+    for (unsigned int j = 0; j < nParams; j++) {
+      jHep = j + 1;
+      cout << "central params: jHep = " << jHep << ", values:" << paramsCentral(jHep) << endl;
+    }
+  }
+  // do central swim
+  trajPtr->swim(paramsCentral);
+  // save central residuals
+  vector<double> residsCentral, residsThis;
+  getResidsBoth(residsCentral);
+  if (debug_level >=3) {
+    cout << "combinedResidFunc::deriv2: central resids, ";
+    for (int k = 0; k < nResids; k++) {
+      cout << k << "=" << residsCentral[k] << " ";
+    }
+    cout << endl;
+  }
+  trajPtr->clear();
+  // calculate the Jacobian matrix
+  for (unsigned int j = 0; j < nParams; j++) {
+    jHep = j + 1;
+    // prepare perturbed parameters
+    paramsThis = paramsCentral;
+    paramsThis(jHep) = paramsCentral(jHep) + delta[j];
+    if (debug_level > 2) cout << "perturbed params: jHep = " << jHep << ", values:" << paramsThis << endl;
+    // do the perturbed swim
+    trajPtr->swim(paramsThis);
+    // get the perturbed residuals
+    getResidsBoth(residsThis);
+    if (debug_level >=3) {
+      cout << "combinedResidFunc::deriv2: resids, ";
+      for (int k = 0; k < nResids; k++) {
+	cout << k << "=" << residsThis[k] << " ";
+      }
+      cout << endl;
+    }
+    // calculate the derivatives
+    for (int i = 0; i < nResids; i++) {
+      iHep = i + 1;
+      (*Jacobian)(iHep, jHep) = (residsThis[i] - residsCentral[i])/delta[j];
+    } 
+    trajPtr->clear();
+  }
+  return;
 }
