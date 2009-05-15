@@ -65,7 +65,7 @@
     <posXYZ volume="Solenoid" />
     <posXYZ volume="StartCntr" X_Y_Z="0.0 0.0 37.5" />
     <posXYZ volume="CentralDC" X_Y_Z="0.0 0.0 17.0" />
-    <posXYZ volume="ForwardDC" X_Y_Z="0.0 0.0 190.0" />
+    <posXYZ volume="ForwardDC" X_Y_Z="0.0 0.0 184.5" />
     <posXYZ volume="BarrelEMcal" X_Y_Z="0.0 0.0 17.0" />
   </composition>
 
