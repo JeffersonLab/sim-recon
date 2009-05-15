@@ -28,156 +28,213 @@
   </composition>
 
   <composition name="forwardDC" envelope="FDC">
-    <posXYZ volume="forwardDC_package_1" X_Y_Z="0.0  0.0  -76.00">
+    <posXYZ volume="FDCS" X_Y_Z="0.0 0.0 -96.42"/>
+    <posXYZ volume="FDGS" X_Y_Z="0.0 0.0 0.0"/>
+    <mposPhi volume="FDRU" ncopy="24" R_Z="52.25 -93.29" />
+    <mposPhi volume="FDAN" ncopy="24" R_Z="52.25 -93.29" /> 
+    <posXYZ volume="FDCR" X_Y_Z="0.0 0.0 -92.94"/>
+    <posXYZ volume="FDGU" X_Y_Z="0.0 0.0 -93.89"/>
+    <mposPhi volume="FDRU" ncopy="24" R_Z="52.25 +93.29" />
+    <mposPhi volume="FDAN" ncopy="24" R_Z="52.25 +93.29" />   
+    <posXYZ volume="FDCR" X_Y_Z="0.0 0.0 +92.94"/>
+    <posXYZ volume="FDGU" X_Y_Z="0.0 0.0 +93.89"/>
+    <posXYZ volume="forwardDC_package_1" X_Y_Z="0.0  0.0  -86.34">
       <identifier field="package" value="1" />
     </posXYZ>
-    <posXYZ volume="forwardDC_package_2" X_Y_Z="0.0  0.0  -25.33">
+    <posXYZ volume="forwardDC_package_2" X_Y_Z="0.0  0.0  -28.78">
       <identifier field="package" value="2" />
     </posXYZ>
-    <posXYZ volume="forwardDC_package_3" X_Y_Z="0.0  0.0  +25.33">
+    <posXYZ volume="forwardDC_package_3" X_Y_Z="0.0  0.0  +28.78">
       <identifier field="package" value="3" />
     </posXYZ>
-    <posXYZ volume="forwardDC_package_4" X_Y_Z="0.0  0.0  +76.00">
+    <posXYZ volume="forwardDC_package_4" X_Y_Z="0.0  0.0  +86.34">
       <identifier field="package" value="4" />
-    </posXYZ>
-    <mposPhi volume="FDRL" ncopy="4" R_Z="52.25 0.0" />
-    <mposZ volume="FDAM" ncopy="3" Z0="-50.67" dZ="50.67" />
+    </posXYZ>  
+    <mposZ volume="forwardDC_inter_package" ncopy="3" Z0="-57.56" dZ="57.56" />
   </composition>
 
   <composition name="forwardDC_package_1" envelope="FDP1">
-    <mposZ volume="forwardDC_module_1" ncopy="2" Z0="-4.5" dZ="9.0">
-      <module value="1" step="1" />
-    </mposZ>
+    <posXYZ volume="forwardDC_module_1" X_Y_Z="0.0 0.0 0.0"/> 
     <posXYZ volume="forwardDC_frame" />
   </composition>
   <composition name="forwardDC_package_2" envelope="FDP2">
-    <mposZ volume="forwardDC_module_2" ncopy="2" Z0="-4.5" dZ="9.0">
-      <module value="3" step="1" />
-    </mposZ>
+    <posXYZ volume="forwardDC_module_2" X_Y_Z="0.0 0.0 0.0"/> 
     <posXYZ volume="forwardDC_frame" />
   </composition>
-  <composition name="forwardDC_package_3" envelope="FDP3">
-    <mposZ volume="forwardDC_module_3" ncopy="2" Z0="-4.5" dZ="9.0">
-      <module value="5" step="1" />
-    </mposZ>
+  <composition name="forwardDC_package_3" envelope="FDP3"> 
+    <posXYZ volume="forwardDC_module_3" X_Y_Z="0.0 0.0 0.0"/>
     <posXYZ volume="forwardDC_frame" />
   </composition>
-  <composition name="forwardDC_package_4" envelope="FDP4">
-    <mposZ volume="forwardDC_module_4" ncopy="2" Z0="-4.5" dZ="9.0">
-      <module value="7" step="1"/>
-    </mposZ>
+  <composition name="forwardDC_package_4" envelope="FDP4"> 
+    <posXYZ volume="forwardDC_module_4" X_Y_Z="0.0 0.0 0.0"/>
     <posXYZ volume="forwardDC_frame" X_Y_Z="0.0 0.0 0.0" />
   </composition>
 
   <composition name="forwardDC_module_1" envelope="FDM1">
-    <posXYZ volume="forwardDC_chamber_1" X_Y_Z="0.0 0.0 -3.0" rot="0   0    0">
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 -6.49935" />
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +6.49935" />
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +6.00065" />
+    <posXYZ volume="forwardDC_chamber_1" X_Y_Z="0.0 0.0 -5.0" rot="0   0    0">
       <layer value="1" />
     </posXYZ>
-    <posXYZ volume="forwardDC_chamber_1" X_Y_Z="0.0 0.0 +0.0" rot="0   0   60">
+    <posXYZ volume="forwardDC_chamber_1" X_Y_Z="0.0 0.0 -3.0" rot="0   0  +60">
       <layer value="2" />
     </posXYZ>
-    <posXYZ volume="forwardDC_chamber_1" X_Y_Z="0.0 0.0 +3.0" rot="0   0  -60">
+    <posXYZ volume="forwardDC_chamber_1" X_Y_Z="0.0 0.0 -1.0" rot="0   0  -60">
       <layer value="3" />
     </posXYZ>
-  </composition>
+    <posXYZ volume="forwardDC_chamber_1" X_Y_Z="0.0 0.0 +1.0" rot="0   0    0">
+      <layer value="4" />
+    </posXYZ>
+    <posXYZ volume="forwardDC_chamber_1" X_Y_Z="0.0 0.0 +3.0" rot="0   0  +60">
+      <layer value="5" />
+    </posXYZ>
+    <posXYZ volume="forwardDC_chamber_1" X_Y_Z="0.0 0.0 +5.0" rot="0   0  -60">
+      <layer value="6" />
+    </posXYZ>
+  </composition>  
+
   <composition name="forwardDC_module_2" envelope="FDM2">
-    <posXYZ volume="forwardDC_chamber_2" X_Y_Z="0.0 0.0 -3.0" rot="0   0    0">
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 -6.49935" />
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +6.49935" />
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +6.00065" />
+    <posXYZ volume="forwardDC_chamber_2" X_Y_Z="0.0 0.0 -5.0" rot="0   0    0">
       <layer value="1" />
     </posXYZ>
-    <posXYZ volume="forwardDC_chamber_2" X_Y_Z="0.0 0.0 +0.0" rot="0   0   60">
+    <posXYZ volume="forwardDC_chamber_2" X_Y_Z="0.0 0.0 -3.0" rot="0   0  +60">
       <layer value="2" />
     </posXYZ>
-    <posXYZ volume="forwardDC_chamber_2" X_Y_Z="0.0 0.0 +3.0" rot="0   0  -60">
+    <posXYZ volume="forwardDC_chamber_2" X_Y_Z="0.0 0.0 -1.0" rot="0   0  -60">
       <layer value="3" />
     </posXYZ>
-  </composition>
+    <posXYZ volume="forwardDC_chamber_2" X_Y_Z="0.0 0.0 +1.0" rot="0   0    0">
+      <layer value="4" />
+    </posXYZ>
+    <posXYZ volume="forwardDC_chamber_2" X_Y_Z="0.0 0.0 +3.0" rot="0   0  +60">
+      <layer value="5" />
+    </posXYZ>
+    <posXYZ volume="forwardDC_chamber_2" X_Y_Z="0.0 0.0 +5.0" rot="0   0  -60">
+      <layer value="6" />
+    </posXYZ>
+  </composition>  
+
   <composition name="forwardDC_module_3" envelope="FDM3">
-    <posXYZ volume="forwardDC_chamber_3" X_Y_Z="0.0 0.0 -3.0" rot="0   0    0">
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 -6.49935" />
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +6.49935" />
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +6.00065" />
+    <posXYZ volume="forwardDC_chamber_3" X_Y_Z="0.0 0.0 -5.0" rot="0   0    0">
       <layer value="1" />
     </posXYZ>
-    <posXYZ volume="forwardDC_chamber_3" X_Y_Z="0.0 0.0 +0.0" rot="0   0   60">
+    <posXYZ volume="forwardDC_chamber_3" X_Y_Z="0.0 0.0 -3.0" rot="0   0  +60">
       <layer value="2" />
     </posXYZ>
-    <posXYZ volume="forwardDC_chamber_3" X_Y_Z="0.0 0.0 +3.0" rot="0   0  -60">
+    <posXYZ volume="forwardDC_chamber_3" X_Y_Z="0.0 0.0 -1.0" rot="0   0  -60">
       <layer value="3" />
     </posXYZ>
-  </composition>
+    <posXYZ volume="forwardDC_chamber_3" X_Y_Z="0.0 0.0 +1.0" rot="0   0    0">
+      <layer value="4" />
+    </posXYZ>
+    <posXYZ volume="forwardDC_chamber_3" X_Y_Z="0.0 0.0 +3.0" rot="0   0  +60">
+      <layer value="5" />
+    </posXYZ>
+    <posXYZ volume="forwardDC_chamber_3" X_Y_Z="0.0 0.0 +5.0" rot="0   0  -60">
+      <layer value="6" />
+    </posXYZ>
+  </composition>  
+ 
   <composition name="forwardDC_module_4" envelope="FDM4">
-    <posXYZ volume="forwardDC_chamber_4" X_Y_Z="0.0 0.0 -3.0" rot="0   0    0">
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 -6.49935" />
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +6.49935" />
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +6.00065" />
+    <posXYZ volume="forwardDC_chamber_4" X_Y_Z="0.0 0.0 -5.0" rot="0   0    0">
       <layer value="1" />
     </posXYZ>
-    <posXYZ volume="forwardDC_chamber_4" X_Y_Z="0.0 0.0 +0.0" rot="0   0   60">
+    <posXYZ volume="forwardDC_chamber_4" X_Y_Z="0.0 0.0 -3.0" rot="0   0  +60">
       <layer value="2" />
     </posXYZ>
-    <posXYZ volume="forwardDC_chamber_4" X_Y_Z="0.0 0.0 +3.0" rot="0   0  -60">
+    <posXYZ volume="forwardDC_chamber_4" X_Y_Z="0.0 0.0 -1.0" rot="0   0  -60">
       <layer value="3" />
+    </posXYZ>
+    <posXYZ volume="forwardDC_chamber_4" X_Y_Z="0.0 0.0 +1.0" rot="0   0    0">
+      <layer value="4" />
+    </posXYZ>
+    <posXYZ volume="forwardDC_chamber_4" X_Y_Z="0.0 0.0 +3.0" rot="0   0  +60">
+      <layer value="5" />
+    </posXYZ>
+    <posXYZ volume="forwardDC_chamber_4" X_Y_Z="0.0 0.0 +5.0" rot="0   0  -60">
+      <layer value="6" />
     </posXYZ>
   </composition>
 
+  <composition name="forwardDC_inter_package" envelope="FDIS">
+    <posXYZ volume="FDAM" X_Y_Z="0.0 0.0 0.0" />   
+    <posXYZ volume="FDCR" X_Y_Z="0.0 0.0 -22.18"/>
+    <posXYZ volume="FDGU" X_Y_Z="0.0 0.0 -21.33"/>
+    <posXYZ volume="FDCR" X_Y_Z="0.0 0.0 +22.18"/> 
+    <posXYZ volume="FDGU" X_Y_Z="0.0 0.0 +21.33"/>
+    <mposPhi volume="FDRL" ncopy="4" R_Z="52.25 0.0" />
+    <mposPhi volume="FDAN" ncopy="24" R_Z="52.25 -21.83" />
+    <mposPhi volume="FDRU" ncopy="24" R_Z="52.25 -21.83" />
+    <mposPhi volume="FDAN" ncopy="24" R_Z="52.25 +21.83" />
+    <mposPhi volume="FDRU" ncopy="24" R_Z="52.25 +21.83" />
+   </composition>
+
   <composition name="forwardDC_chamber_1" envelope="FDC1">
-    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 -0.9987" />
-    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +0.9987" />
-    <posXYZ volume="FDRO" X_Y_Z="0.0 0.0 -0.6052" />
-    <posXYZ volume="FDRO" X_Y_Z="0.0 0.0 +0.6052" />
-    <posXYZ volume="FDK1" X_Y_Z="0.0 0.0 -0.5026" />
-    <posXYZ volume="FDK1" X_Y_Z="0.0 0.0 +0.5026" />
-    <posXYZ volume="FDJ1" X_Y_Z="0.0 0.0 -0.5027" />
-    <posXYZ volume="FDJ1" X_Y_Z="0.0 0.0 +0.5027" />
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 -0.99935" />
+    <posXYZ volume="FDK1" X_Y_Z="0.0 0.0 -0.5014" />
+    <posXYZ volume="FDK1" X_Y_Z="0.0 0.0 +0.5014" />
+    <posXYZ volume="FDJ1" X_Y_Z="0.0 0.0 -0.5013" />
+    <posXYZ volume="FDJ1" X_Y_Z="0.0 0.0 +0.5013" />
     <posXYZ volume="forwardDC_gasVolume_1" />
   </composition>
   <composition name="forwardDC_chamber_2" envelope="FDC2">
-    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 -0.9987" />
-    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +0.9987" />
-    <posXYZ volume="FDRO" X_Y_Z="0.0 0.0 -0.6052" />
-    <posXYZ volume="FDRO" X_Y_Z="0.0 0.0 +0.6052" />
-    <posXYZ volume="FDK2" X_Y_Z="0.0 0.0 -0.5026" />
-    <posXYZ volume="FDK2" X_Y_Z="0.0 0.0 +0.5026" />
-    <posXYZ volume="FDJ2" X_Y_Z="0.0 0.0 -0.5027" />
-    <posXYZ volume="FDJ2" X_Y_Z="0.0 0.0 +0.5027" />
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 -0.99935" />
+    <posXYZ volume="FDK2" X_Y_Z="0.0 0.0 -0.5014" />
+    <posXYZ volume="FDK2" X_Y_Z="0.0 0.0 +0.5014" />
+    <posXYZ volume="FDJ2" X_Y_Z="0.0 0.0 -0.5013" />
+    <posXYZ volume="FDJ2" X_Y_Z="0.0 0.0 +0.5013" />
     <posXYZ volume="forwardDC_gasVolume_2" />
   </composition>
   <composition name="forwardDC_chamber_3" envelope="FDC3">
-    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 -0.9987" />
-    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +0.9987" />
-    <posXYZ volume="FDRO" X_Y_Z="0.0 0.0 -0.6052" />
-    <posXYZ volume="FDRO" X_Y_Z="0.0 0.0 +0.6052" />
-    <posXYZ volume="FDK3" X_Y_Z="0.0 0.0 -0.5026" />
-    <posXYZ volume="FDK3" X_Y_Z="0.0 0.0 +0.5026" />
-    <posXYZ volume="FDJ3" X_Y_Z="0.0 0.0 -0.5027" />
-    <posXYZ volume="FDJ3" X_Y_Z="0.0 0.0 +0.5027" />
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 -0.99935" />
+    <posXYZ volume="FDK3" X_Y_Z="0.0 0.0 -0.5014" />
+    <posXYZ volume="FDK3" X_Y_Z="0.0 0.0 +0.5014" />
+    <posXYZ volume="FDJ3" X_Y_Z="0.0 0.0 -0.5013" />
+    <posXYZ volume="FDJ3" X_Y_Z="0.0 0.0 +0.5013" />
     <posXYZ volume="forwardDC_gasVolume_3" />
   </composition>
   <composition name="forwardDC_chamber_4" envelope="FDC4">
-    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 -0.9987" />
-    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 +0.9987" />
-    <posXYZ volume="FDRO" X_Y_Z="0.0 0.0 -0.6052" />
-    <posXYZ volume="FDRO" X_Y_Z="0.0 0.0 +0.6052" />
-    <posXYZ volume="FDK4" X_Y_Z="0.0 0.0 -0.5026" />
-    <posXYZ volume="FDK4" X_Y_Z="0.0 0.0 +0.5026" />
-    <posXYZ volume="FDJ4" X_Y_Z="0.0 0.0 -0.5027" />
-    <posXYZ volume="FDJ4" X_Y_Z="0.0 0.0 +0.5027" />
+    <posXYZ volume="FDCG" X_Y_Z="0.0 0.0 -0.99935" />
+    <posXYZ volume="FDK4" X_Y_Z="0.0 0.0 -0.5014" />
+    <posXYZ volume="FDK4" X_Y_Z="0.0 0.0 +0.5014" />
+    <posXYZ volume="FDJ4" X_Y_Z="0.0 0.0 -0.5013" />
+    <posXYZ volume="FDJ4" X_Y_Z="0.0 0.0 +0.5013" />
     <posXYZ volume="forwardDC_gasVolume_4" />
   </composition>
 
-  <composition name="forwardDC_frame" envelope="FDSF">
+  <composition name="forwardDC_frame" envelope="FDSF"> 
+    <posXYZ volume="forwardDC_narrow_spacer" X_Y_Z="0.0 0.0 -6.25"/> 
+    <posXYZ volume="forwardDC_narrow_spacer" X_Y_Z="0.0 0.0 +6.25"/>
     <mposZ volume="forwardDC_frame_periodic_struct" ncopy="6" 
-                                                    Z0="-7.5" dZ="3.0" />
-    <mposPhi volume="FDRS" ncopy="24" R_Z="52.25 0.0" />
+                                                    Z0="-5" dZ="2.0" />
+    <mposPhi volume="FDRS" ncopy="24" R_Z="52.25 0.0" />    
     <posXYZ volume="FDCM" />
   </composition>
 
   <composition name="forwardDC_frame_periodic_struct" envelope="FDFP">
-    <posXYZ volume="forwardDC_narrow_spacer_halfup" X_Y_Z="0.0 0.0 -1.25" />
-    <posXYZ volume="forwardDC_wide_spacer" X_Y_Z="0.0 0.0 -0.75" />
-    <posXYZ volume="forwardDC_narrow_spacer" X_Y_Z="0.0 0.0 -0.25" />
-    <posXYZ volume="forwardDC_wide_spacer" X_Y_Z="0.0 0.0 +0.25" />
-    <posXYZ volume="forwardDC_wide_spacer" X_Y_Z="0.0 0.0 +0.75" />
-    <posXYZ volume="forwardDC_narrow_spacer_halfdown" X_Y_Z="0.0 0.0 +1.25" />
-    <posXYZ volume="FDCP" X_Y_Z="0.0 0.0 -1.40" />
-    <posXYZ volume="FDCP" X_Y_Z="0.0 0.0 -1.20" />
+    <posXYZ volume="forwardDC_narrow_spacer" X_Y_Z="0.0 0.0 -0.75" />
+    <posXYZ volume="FDW1" X_Y_Z="0.0 0.0 -0.54"/>
+    <posXYZ volume="forwardDC_plastic_spacer" X_Y_Z="0.0 0.0 -0.25" />
+    <posXYZ volume="forwardDC_wide_spacer" X_Y_Z="0.0 0.0 +0.25" /> 
+    <posXYZ volume="FDW1" X_Y_Z="0.0 0.0 0.54"/>
+    <posXYZ volume="forwardDC_narrow_spacer" X_Y_Z="0.0 0.0 +0.75" />
+    <posXYZ volume="FDCP" X_Y_Z="0.0 0.0 -0.75" />
     <posXYZ volume="FDCP" X_Y_Z="0.0 0.0 -0.25" />
-    <posXYZ volume="FDCP" X_Y_Z="0.0 0.0 +1.20" />
-    <posXYZ volume="FDCP" X_Y_Z="0.0 0.0 +1.40" />
+    <posXYZ volume="FDCP" X_Y_Z="0.0 0.0 +0.75" />
+  </composition>
+
+  <composition name="forwardDC_plastic_spacer" envelope="FDPP">
+    <mposPhi volume="FDRU" ncopy="24" R_Z="52.25 0.0" />
   </composition>
   <composition name="forwardDC_wide_spacer" envelope="FDWS">
     <posXYZ volume="forwardDC_wide_spacer_cover" X_Y_Z="0.0 0.0 -0.21" />
@@ -239,39 +296,39 @@
     <posXYZ volume="FDAW" />
   </composition>
 
-  <tubs name="FDC" Rio_Z="0.0 60.8 172.0" material="Air"
+  <tubs name="FDC" Rio_Z="0.0 60.8 195.0" material="Air"
                                  comment="forward drift chambers" />
-  <tubs name="FDP1" Rio_Z="0.0 60.8 19.0" material="Air"
+  <tubs name="FDP1" Rio_Z="0.0 60.8 13.0" material="Air"
                                  comment="forward drift chamber package 1" />
-  <tubs name="FDP2" Rio_Z="0.0 60.8 19.0" material="Air"
+  <tubs name="FDP2" Rio_Z="0.0 60.8 13.0" material="Air"
                                  comment="forward drift chamber package 2" />
-  <tubs name="FDP3" Rio_Z="0.0 60.8 19.0" material="Air"
+  <tubs name="FDP3" Rio_Z="0.0 60.8 13.0" material="Air"
                                  comment="forward drift chamber package 3" />
-  <tubs name="FDP4" Rio_Z="0.0 60.8 19.0" material="Air"
+  <tubs name="FDP4" Rio_Z="0.0 60.8 13.0" material="Air"
                                  comment="forward drift chamber package 4" />
-  <tubs name="FDM1" Rio_Z="0.0 50.25 9.0" material="Air" 
+  <tubs name="FDM1" Rio_Z="0.0 49.80 13.0" material="FDchamberGas" 
                                  comment="fdc module 1 container" />
-  <tubs name="FDM2" Rio_Z="0.0 50.25 9.0" material="Air" 
+  <tubs name="FDM2" Rio_Z="0.0 49.80 13.0" material="FDchamberGas" 
                                  comment="fdc module 2 container" />
-  <tubs name="FDM3" Rio_Z="0.0 50.25 9.0" material="Air" 
+  <tubs name="FDM3" Rio_Z="0.0 49.80 13.0" material="FDchamberGas" 
                                  comment="fdc module 3 container" />
-  <tubs name="FDM4" Rio_Z="0.0 50.25 9.0" material="Air" 
+  <tubs name="FDM4" Rio_Z="0.0 49.80 13.0" material="FDchamberGas" 
                                  comment="fdc module 4 container" />
-  <tubs name="FDC1" Rio_Z=" 0.0 50.25 2.00" material="Air"
+  <tubs name="FDC1" Rio_Z=" 0.0 49.80 2.00" material="FDchamberGas"
                                  comment="fdc chamber 1 container" />
-  <tubs name="FDC2" Rio_Z=" 0.0 50.25 2.00" material="Air"
+  <tubs name="FDC2" Rio_Z=" 0.0 49.80 2.00" material="FDchamberGas"
                                  comment="fdc chamber 2 container" />
-  <tubs name="FDC3" Rio_Z=" 0.0 50.25 2.00" material="Air"
+  <tubs name="FDC3" Rio_Z=" 0.0 49.80 2.00" material="FDchamberGas"
                                  comment="fdc chamber 3 container" />
-  <tubs name="FDC4" Rio_Z=" 0.0 50.25 2.00" material="Air"
+  <tubs name="FDC4" Rio_Z=" 0.0 49.80 2.00" material="FDchamberGas"
                                  comment="fdc chamber 4 container" />
-  <tubs name="FDG1" Rio_Z=" 0.0 50.25 1.00" material="FDchamberGas"
+  <tubs name="FDG1" Rio_Z=" 0.0 49.80 1.00" material="FDchamberGas"
 	                     comment="fdc chamber gas volume, package 1" />
-  <tubs name="FDG2" Rio_Z=" 0.0 50.25 1.00" material="FDchamberGas"
+  <tubs name="FDG2" Rio_Z=" 0.0 49.80 1.00" material="FDchamberGas"
 	                     comment="fdc chamber gas volume, package 2" />
-  <tubs name="FDG3" Rio_Z=" 0.0 50.25 1.00" material="FDchamberGas"
+  <tubs name="FDG3" Rio_Z=" 0.0 49.80 1.00" material="FDchamberGas"
 	                     comment="fdc chamber gas volume, package 3" />
-  <tubs name="FDG4" Rio_Z=" 0.0 50.25 1.00" material="FDchamberGas"
+  <tubs name="FDG4" Rio_Z=" 0.0 49.80 1.00" material="FDchamberGas"
 	                     comment="fdc chamber gas volume, package 4" />
   <tubs name="FDA1" Rio_Z=" 2.3 48.50 1.00" material="FDchamberGas"
 	    sensitive="true" comment="fdc chamber 1 active region" />
@@ -281,17 +338,17 @@
 	    sensitive="true" comment="fdc chamber 3 active region" />
   <tubs name="FDA4" Rio_Z=" 4.6 48.50 1.00" material="FDchamberGas"
 	    sensitive="true" comment="fdc chamber 4 active region" />
-  <tubs name="FDCW" Rio_Z=" 0.0 50.25 0.0100" material="FDCwirePlaneComposite"
+  <tubs name="FDCW" Rio_Z=" 0.0 49.80 0.0100" material="FDCwirePlaneComposite"
 	                     comment="fdc chamber anode wire plane" />
-  <tubs name="FDAW" Rio_Z=" 2.3 50.25 0.0100" material="FDCwirePlaneComposite"
+  <tubs name="FDAW" Rio_Z=" 2.3 49.80 0.0100" material="FDCwirePlaneComposite"
 	    sensitive="false" comment="fdc chamber anode wire plane" />
-  <tubs name="FDK1" Rio_Z=" 2.3 50.25 0.0052" material="CopperKaptonEpoxy"
+  <tubs name="FDK1" Rio_Z=" 2.3 49.80 0.0027" material="CopperKapton"
                              comment="cathode strip plane for chamber 1" />
-  <tubs name="FDK2" Rio_Z=" 3.2 50.25 0.0052" material="CopperKaptonEpoxy"
+  <tubs name="FDK2" Rio_Z=" 3.2 49.80 0.0027" material="CopperKapton"
                              comment="cathode strip plane for chamber 2" />
-  <tubs name="FDK3" Rio_Z=" 3.9 50.25 0.0052" material="CopperKaptonEpoxy"
+  <tubs name="FDK3" Rio_Z=" 3.9 49.80 0.0027" material="CopperKapton"
                              comment="cathode strip plane for chamber 3" />
-  <tubs name="FDK4" Rio_Z=" 4.6 50.25 0.0052" material="CopperKaptonEpoxy"
+  <tubs name="FDK4" Rio_Z=" 4.6 49.80 0.0027" material="CopperKapton"
                              comment="cathode strip plane for chamber 4" />
   <tubs name="FDJ1" Rio_Z=" 0.0 2.3 0.0025" material="Kapton"
                       comment="copper-free cathode plane for chamber 1" />
@@ -301,44 +358,61 @@
                       comment="copper-free cathode plane for chamber 3" />
   <tubs name="FDJ4" Rio_Z=" 0.0 4.6 0.0025" material="Kapton"
                       comment="copper-free cathode plane for chamber 4" />
-  <tubs name="FDCG" Rio_Z=" 0.0 50.25 0.0026" material="AluminizedMylarFilm"
+  <tubs name="FDCG" Rio_Z=" 0.0 49.80 0.0013" material="AluminizedMylarFilm"
                                        comment="fdc ground plane" />
-  <tubs name="FDRO" Rio_Z=" 5.0 50.25 0.200" material="LowDensityROHACELL"
-                                       comment="fdc cathode plane backing" />
-  <tubs name="FDAP" Rio_Z=" 48.5 60.0 0.080" material="FR-4"
+  <tubs name="FDAP" Rio_Z=" 48.5 58.9 0.080" material="FR-4"
                                    comment="fdc anode wire circuit boards" />
   <tubs name="FDCP" Rio_Z=" 54.7 60.0 0.0270" material="CircuitBoards"
                                    comment="fdc readout preamp boards" />
-  <tubs name="FDBC" Rio_Z=" 50.16 50.25 0.124" material="HVcapacitorSolder"
+  <tubs name="FDBC" Rio_Z=" 48.80 49.80 0.124" material="HVcapacitorSolder"
                                    comment="fdc blocking capacitors" />
-  <tubs name="FDFP" Rio_Z=" 50.25 60.00 3.00" material="Air"
-                                   comment="fdc frame period container" />
-  <tubs name="FDRL" Rio_Z="0.0 0.240 172.0" material="CarbonFiber"
+  <tubs name="FDFP" Rio_Z=" 49.80 60.00 3.00" material="Air"
+                                   comment="fdc frame periodic container" />
+  <tubs name="FDRL" Rio_Z="0.7838 0.8890 44.16" material="FR-4"
                                    comment="fdc long support rods" />
-  <tubs name="FDRS" Rio_Z="0.0 0.240 19.0" material="CarbonFiber"
+  <tubs name="FDRS" Rio_Z="0.0 0.240 13.0" material="Ultem2300"
                                    comment="fdc package compression rods" />
-  <tubs name="FDRU" Rio_Z="0.0 0.240 0.50" material="CarbonFiber"
+  <tubs name="FDRU" Rio_Z="0.0 0.240 0.50" material="Ultem2300"
                                 comment="fdc package compression rod stubs" />
-  <tubs name="FDRV" Rio_Z="0.0 0.240 0.08" material="CarbonFiber"
+  <tubs name="FDRV" Rio_Z="0.0 0.240 0.08" material="Ultem2300"
                                 comment="fdc package compression rod stubs" />
-  <tubs name="FDSF" Rio_Z="50.25 60.80 19.0" material="Air"
+  <tubs name="FDSF" Rio_Z="49.80 60.80 13.0" material="Air"
                                    comment="fdc support frame" />
-  <tubs name="FDWS" Rio_Z="50.25 60.00 0.50" material="MediumDensityROHACELL"
+  <tubs name="FDWS" Rio_Z="49.80 58.90 0.50" material="MediumDensityROHACELL"
                                        comment="fdc frame wide spacer ring" />
-  <tubs name="FDWC" Rio_Z="50.25 60.00 0.08" material="FR-4"
+  <tubs name="FDWC" Rio_Z="49.80 58.90 0.08" material="FR-4"
                  comment="pcb covering for fdc frame wide spacer ring" />
-  <tubs name="FDNS" Rio_Z="50.25 52.79 0.50" material="MediumDensityROHACELL"
+  <tubs name="FDW1" Rio_Z="53.00 58.90 0.08" material="FR-4"
+                 comment="pcb skin for fdc cathodes" />  
+  <tubs name="FDNS" Rio_Z="49.80 53.00 0.34" material="MediumDensityROHACELL"
                                        comment="fdc frame narrow spacer ring" />
-  <tubs name="FDUS" Rio_Z="50.25 52.79 0.50" material="MediumDensityROHACELL"
+  <tubs name="FDUS" Rio_Z="49.80 53.00 0.50" material="MediumDensityROHACELL"
                  comment="fdc frame narrow spacer ring, upstream half" />
-  <tubs name="FDDS" Rio_Z="50.25 52.79 0.50" material="MediumDensityROHACELL"
+  <tubs name="FDDS" Rio_Z="49.80 53.00 0.50" material="MediumDensityROHACELL"
                  comment="fdc frame narrow spacer ring, downstream half" />
-  <tubs name="FDNC" Rio_Z="50.25 52.79 0.08" material="MediumDensityROHACELL"
+  <tubs name="FDNC" Rio_Z="49.80 53.00 0.08" material="FR-4"
                  comment="pcb covering for fdc frame narrow spacer ring" />
-  <tubs name="FDCM" Rio_Z="60.00 60.05 19.00" material="Copper"
+  <tubs name="FDCM" Rio_Z="60.00 60.05 13.00" material="Copper"
                  comment="fdc frame copper mesh wrapping for cooling" />
-  <tubs name="FDAM" Rio_Z="60.00 60.07 32.00" material="Aluminum"
-                 comment="aluminum mesh between fdc packages for cooling" />
+  <tubs name="FDAM" Rio_Z="51.25 51.35 44.16" material="FR-4"
+                 comment="support exoskeleton between fdc packages" />
+  <tubs name="FDPP" Rio_Z="49.80 53.00 0.50" material="Polypropylene"
+                 comment="spacer ring for half-gap between cathode and wires"/>
+  <tubs name="FDCR" Rio_Z="51.05 53.00 0.20" material="Noryl"
+                 comment="O-ring compression ring" />
+  <tubs name="FDGU" Rio_Z="51.05 51.25 1.6" material="Noryl"
+                 comment="Gusset ring ledge" />
+  <tubs name="FDAN" Rio_Z="0.25 0.7938 0.50" material="Aluminum"
+                 comment="O-ring compression nut" />
+  <tubs name="FDCS" Rio_Z="59.8 60.1 2.0" material="Noryl"
+                 comment="Cable support ring" />
+  <tubs name="FDIS" Rio_Z="0.0 60.8 44.56" material="Air"
+                 comment="Inter-package spacer mother volume"/>
+  <pcon name="FDGS" material="Noryl" comment="cable support gusset" >
+    <polyplane Rio_Z="59.8 60.1 -95.42" />
+    <polyplane Rio_Z="52.7 53.0 -93.04" />
+  </pcon>
+
 
  <!-- In the following the FDC cables are routed upstream over the CDCs instead
       of going downstream as previously done 
