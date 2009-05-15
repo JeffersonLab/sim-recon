@@ -141,14 +141,24 @@ void hitForwardDC (float xin[4], float xout[4],
   float dradius;
   float alpha;
   int i,j;
+  float u_of_wire0=U_OF_WIRE_ZERO;
 
-  /* Get chamber information */
-  int module = getmodule_();
-  int layer = getlayer_();
-  int chamber = (module*10)+layer;
-  int PackNo = (chamber-11)/20;
+  /* Get chamber information */ 
+  int layer = getlayer_();  
+  //int module = getmodule_();
+  //int chamber = (module*10)+layer;
+  //int PackNo = (chamber-11)/20;
+  int PackNo = getpackage_()-1;
+  int module = 2*(PackNo)+(layer-1)/3+1;
+  int chamber = (module*10)+(layer-1)%3+1;
   int wire1,wire2;
   int wire,dwire;
+
+  // For offset wire planes
+  //if (layer%2) u_of_wire0+=WIRE_SPACING/2.;
+
+  // transform layer number into Richard's scheme
+  layer=(layer-1)%3+1;
 
   // Initialize arrays of deflection data from the Lorentz effect
   if (!initialized){
@@ -196,9 +206,10 @@ void hitForwardDC (float xin[4], float xout[4],
   }  
 
   transformCoord(xin,"global",xinlocal,"local");
-  wire1 = ceil((xinlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
+
+  wire1 = ceil((xinlocal[0] - u_of_wire0)/WIRE_SPACING +0.5);
   transformCoord(xout,"global",xoutlocal,"local");
-  wire2 = ceil((xoutlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
+  wire2 = ceil((xoutlocal[0] - u_of_wire0)/WIRE_SPACING +0.5);
   // Check that wire numbers are not out of range
   if ((wire1>WIRES_PER_PLANE && wire2==WIRES_PER_PLANE) ||
       (wire2>WIRES_PER_PLANE && wire1==WIRES_PER_PLANE)) 
@@ -214,7 +225,7 @@ void hitForwardDC (float xin[4], float xout[4],
   xlocal[0] = (xinlocal[0] + xoutlocal[0])/2;
   xlocal[1] = (xinlocal[1] + xoutlocal[1])/2;
   xlocal[2] = (xinlocal[2] + xoutlocal[2])/2;
-  wire = ceil((xlocal[0] - U_OF_WIRE_ZERO)/WIRE_SPACING +0.5);
+  wire = ceil((xlocal[0] - u_of_wire0)/WIRE_SPACING +0.5);
   x[0] = (xin[0] + xout[0])/2;
   x[1] = (xin[1] + xout[1])/2;
   x[2] = (xin[2] + xout[2])/2;
@@ -252,7 +263,7 @@ void hitForwardDC (float xin[4], float xout[4],
       s_ForwardDC_t* fdc = *twig = make_s_ForwardDC();
       s_FdcChambers_t* chambers = make_s_FdcChambers(1);
       s_FdcTruthPoints_t* points = make_s_FdcTruthPoints(1);
-      float xwire = U_OF_WIRE_ZERO + (wire-1)*WIRE_SPACING;
+      float xwire = u_of_wire0 + (wire-1)*WIRE_SPACING;
       float u[2];
       u[0] = xinlocal[2];
       u[1] = xinlocal[0]-xwire;
@@ -296,7 +307,8 @@ void hitForwardDC (float xin[4], float xout[4],
       float u[2];
       float x0[3],x1[3];
       float avalanche_y;
-      float xwire = U_OF_WIRE_ZERO + (wire-1)*WIRE_SPACING;
+      float xwire = u_of_wire0 + (wire-1)*WIRE_SPACING;
+         
       x0[0] = xwire-0.5*dwire*WIRE_SPACING;
       x0[1] = xinlocal[1] + (x0[0]-xinlocal[0]+1e-20)*
              (xoutlocal[1]-xinlocal[1])/(xoutlocal[0]-xinlocal[0]+1e-20);
@@ -375,11 +387,12 @@ void hitForwardDC (float xin[4], float xout[4],
            rndno[0] = rho*cos(phi);
            rndno[1] = rho*sin(phi);
         }
+
 	// Angular dependence from PHENIX data
 	avalanche_y+=0.16*ANODE_CATHODE_SPACING*tan(alpha)*rndno[0];
 	// Crude approximation for transverse diffusion
 	avalanche_y+=sqrt(2.*DIFFUSION_COEFF*(tdrift-t))*rndno[1];
-	
+
 	/* If the Lorentz effect would deflect the avalanche out of the active 
 	   region, mark as invalid hit */
 	r=sqrt(avalanche_y*avalanche_y+xwire*xwire);
@@ -404,7 +417,7 @@ void hitForwardDC (float xin[4], float xout[4],
           wires->in[0].wire = wire;
           wires->in[0].fdcAnodeHits = ahits = make_s_FdcAnodeHits(MAX_HITS);
           chambers->mult = 1;
-          chambers->in[0].module = module;
+	  chambers->in[0].module = module;
           chambers->in[0].layer = layer;
           chambers->in[0].fdcAnodeWires = wires;
           fdc->fdcChambers = chambers;
