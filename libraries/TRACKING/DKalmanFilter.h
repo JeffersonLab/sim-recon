@@ -125,6 +125,8 @@ class DKalmanFilter{
   unsigned int GetNDF(void){return ndf;};
   double GetActivePathLength(void){ return path_length;}
   double GetdEdx(double M,double q_over_p,double Z,double A, double rho);
+  double GetEnergyVariance(double ds,double q_over_p,double Z,double A, 
+			   double rho);
 
  protected:
 
@@ -237,10 +239,14 @@ class DKalmanFilter{
   double endplate_z, endplate_dz, endplate_rmin, endplate_rmax;
   // upstream cdc start position
   vector<double>cdc_origin;
+  // upstream fdc start position 
+  vector<double>fdc_origin;
 
   // Mass hypothesis
   double MASS;
 	
+  bool do_multiple_scattering;
+  bool do_energy_loss;
   int pass;
   bool DEBUG_HISTS;
   int DEBUG_LEVEL;

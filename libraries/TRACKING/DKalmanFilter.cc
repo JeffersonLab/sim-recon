@@ -21,11 +21,11 @@
 #define EPS2 1.e-3
 #define BEAM_RADIUS  0.1 
 #define MAX_ITER 25
-#define STEP_SIZE 0.25
-#define CDC_STEP_SIZE 0.25
+#define STEP_SIZE 0.25  // 0.25
+#define CDC_STEP_SIZE 0.25 // 0.25
 #define NUM_ITER 10
 #define Z_MIN 0.
-#define Z_MAX 180.
+#define Z_MAX 175.
 #define R_MAX 64.5
 #define SPEED_OF_LIGHT 29.98
 #define CDC_DRIFT_SPEED 55e-4
@@ -43,7 +43,7 @@ bool DKalmanFDCHit_cmp(DKalmanFDCHit_t *a, DKalmanFDCHit_t *b){
 }
 bool DKalmanCDCHit_cmp(DKalmanCDCHit_t *a, DKalmanCDCHit_t *b){
   if (a==NULL || b==NULL){
-    _DBG_ << "Null pointer in CDC hit list??" << endl;
+    cout << "Null pointer in CDC hit list??" << endl;
     return false;
   }
   return (b->ring>a->ring);
@@ -79,6 +79,16 @@ DKalmanFilter::DKalmanFilter(const DMagneticFieldMap *bfield,
   // Beginning of the cdc
   geom->Get("//posXYZ[@volume='CentralDC']/@X_Y_Z",cdc_origin);
   
+  // Beginning of the FDC
+  geom->Get("//posXYZ[@volume='ForwardDC']/@X_Y_Z",fdc_origin);
+  vector<double>fdc_z1;
+  geom->Get("//composition[@name='ForwardDC']/posXYZ[@volume='forwardDC']/@X_Y_Z", fdc_z1);
+  fdc_origin[2]+=fdc_z1[2];
+  geom->Get("//posXYZ[@volume='forwardDC_package_1']/@X_Y_Z",fdc_z1);
+  fdc_origin[2]+=fdc_z1[2]; 
+  geom->Get("//posXYZ[@volume='forwardDC_chamber_1']/@X_Y_Z/layer[@value='1']", fdc_z1);
+  fdc_origin[2]+=fdc_z1[2]-1.; 
+
   // Number degrees of freedom
   ndf=0;
   
@@ -88,7 +98,7 @@ DKalmanFilter::DKalmanFilter(const DMagneticFieldMap *bfield,
   DEBUG_HISTS=true;
   // DEBUG_HISTS=false;
   DEBUG_LEVEL=0;
-  //DEBUG_LEVEL=2;
+  //DEBUG_LEVEL=1;
 }
 
 // Initialize the state vector
@@ -197,21 +207,22 @@ jerror_t DKalmanFilter::CalcDeriv(double z,double dz,DMatrix S, double dEdx,
   double x=S(state_x,0), y=S(state_y,0),tx=S(state_tx,0),ty=S(state_ty,0);
   double q_over_p=S(state_q_over_p,0);
   double factor=sqrt(1.+tx*tx+ty*ty);
-  double E=sqrt(1./q_over_p/q_over_p+MASS*MASS); 
-  double sign=(dz>0)?1.:-1.;
-  
+
   //B-field at (x,y,z)
   double Bx,By,Bz;
   bfield->GetField(x,y,z, Bx, By, Bz);
   
   D(state_x,0)=tx
-    +0.5*sign*dz*qBr2p*q_over_p*factor*(ty*Bz+tx*ty*Bx-(1.+tx*tx)*By);
+    +0.5*dz*qBr2p*q_over_p*factor*(ty*Bz+tx*ty*Bx-(1.+tx*tx)*By);
   D(state_y,0)=ty
-    +0.5*sign*dz*qBr2p*q_over_p*factor*(Bx*(1.+ty*ty)-tx*ty*By-tx*Bz);
+    +0.5*dz*qBr2p*q_over_p*factor*(Bx*(1.+ty*ty)-tx*ty*By-tx*Bz);
   D(state_tx,0)=qBr2p*q_over_p*factor*(tx*ty*Bx-(1.+tx*tx)*By+ty*Bz);
   D(state_ty,0)=qBr2p*q_over_p*factor*((1.+ty*ty)*Bx-tx*ty*By-tx*Bz);
-  D(state_q_over_p,0)=-q_over_p*q_over_p*q_over_p*E*dEdx*factor;
   
+  if (fabs(dEdx)>0.){
+    double E=sqrt(1./q_over_p/q_over_p+MASS*MASS); 
+    D(state_q_over_p,0)=-q_over_p*q_over_p*q_over_p*E*dEdx*factor;  
+  }
   return NOERROR;
 }
 
@@ -224,9 +235,7 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double z,double dz,DMatrix S,
   double x=S(state_x,0), y=S(state_y,0),tx=S(state_tx,0),ty=S(state_ty,0);
   double q_over_p=S(state_q_over_p,0);
   double factor=sqrt(1.+tx*tx+ty*ty);
-  double E=sqrt(1./q_over_p/q_over_p+MASS*MASS); 
-  double sign=(dz>0)?1.:-1.;
-  
+
   //B-field and field gradient at (x,y,z)
   double Bx,By,Bz,dBxdx,dBxdy,dBxdz,dBydx,dBydy,dBydz,dBzdx,dBzdy,dBzdz;
   bfield->GetField(x,y,z, Bx, By, Bz);
@@ -235,12 +244,11 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double z,double dz,DMatrix S,
 
   // Derivative of S with respect to z
   D(state_x,0)=tx
-    +0.5*sign*dz*qBr2p*q_over_p*factor*(ty*Bz+tx*ty*Bx-(1.+tx*tx)*By);
+    +0.5*dz*qBr2p*q_over_p*factor*(ty*Bz+tx*ty*Bx-(1.+tx*tx)*By);
   D(state_y,0)=ty
-    +0.5*sign*dz*qBr2p*q_over_p*factor*(Bx*(1.+ty*ty)-tx*ty*By-tx*Bz);
+    +0.5*dz*qBr2p*q_over_p*factor*(Bx*(1.+ty*ty)-tx*ty*By-tx*Bz);
   D(state_tx,0)=qBr2p*q_over_p*factor*(tx*ty*Bx-(1.+tx*tx)*By+ty*Bz);
   D(state_ty,0)=qBr2p*q_over_p*factor*((1.+ty*ty)*Bx-tx*ty*By-tx*Bz);
-  D(state_q_over_p,0)=-q_over_p*q_over_p*q_over_p*E*dEdx*factor;
 
   // Jacobian
   J(state_x,state_tx)=J(state_y,state_ty)=1.;
@@ -266,9 +274,14 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double z,double dz,DMatrix S,
 					     -tx*dBzdx);
   J(state_q_over_p,state_tx)=D(state_q_over_p,0)*tx/factor/factor;
   J(state_q_over_p,state_ty)=D(state_q_over_p,0)*ty/factor/factor;
-  J(state_q_over_p,state_q_over_p)=-dEdx*factor/E
-    *(2.+3.*MASS*MASS*q_over_p*q_over_p);
-  
+
+  if (fabs(dEdx)>0.){
+    double E=sqrt(1./q_over_p/q_over_p+MASS*MASS); 
+    D(state_q_over_p,0)=-q_over_p*q_over_p*q_over_p*E*dEdx*factor;
+    J(state_q_over_p,state_q_over_p)=-dEdx*factor/E
+      *(2.+3.*MASS*MASS*q_over_p*q_over_p);
+  }
+   
   return NOERROR;
 }
 
@@ -287,8 +300,8 @@ jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix &C){
   double dEdx=0.;
   double z=z_,newz,ds=0.;
   //double my_endz=endplate_z+STEP_SIZE;
-  double my_endz=Z_MAX-STEP_SIZE;
-  double beta2=1.;
+  double my_endz=fdc_origin[2];
+  double beta2=1.,q_over_p=1.,varE=0.;
 
   // doca variables
   double doca,old_doca;
@@ -335,15 +348,18 @@ jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix &C){
 
       // Get the contribution to the covariance matrix due to multiple 
       // scattering
-      GetProcessNoise(MASS,ds,z,temp.X0,S,Q);
+      if (do_multiple_scattering)
+	GetProcessNoise(MASS,ds,z,temp.X0,S,Q);
 
       // Energy loss straggling in the approximation of thick absorbers
-      beta2=1./(1.+MASS*MASS*S(state_q_over_p,0)*S(state_q_over_p,0));
-      if (temp.density>0.)
-	Q(state_q_over_p,state_q_over_p)=
-	  0.1569e-6*S(state_q_over_p,0)*S(state_q_over_p,0)*temp.density
-	  *temp.Z/temp.A*fabs(ds)
-	  *(1.-beta2/2.)/MASS/MASS/beta2/beta2;
+      if (temp.density>0. && do_energy_loss){
+	q_over_p=S(state_q_over_p,0);
+	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
+	
+	Q(state_q_over_p,state_q_over_p)
+	  =varE*q_over_p*q_over_p*q_over_p*q_over_p/beta2;
+      }	
       
       // Compute the Jacobian matrix for swimming away from target
       StepJacobian(z,newz,S,dEdx,J);
@@ -357,15 +373,18 @@ jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix &C){
       
       // Get the contribution to the covariance matrix due to multiple 
       // scattering
-      GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
+      if (do_multiple_scattering)
+	GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
 
       // Energy loss straggling in the approximation of thick absorbers
-      beta2=1./(1.+MASS*MASS*S(state_q_over_p,0)*S(state_q_over_p,0));
-      if (temp.density>0.)
-	Q(state_q_over_p,state_q_over_p)=
-	  0.1569e-6*S(state_q_over_p,0)*S(state_q_over_p,0)*temp.density
-	  *temp.Z/temp.A*fabs(ds)
-	  *(1.-beta2/2.)/MASS/MASS/beta2/beta2;
+      if (temp.density>0. && do_energy_loss){
+	q_over_p=S(state_q_over_p,0);
+	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
+	
+	Q(state_q_over_p,state_q_over_p)
+	  =varE*q_over_p*q_over_p*q_over_p*q_over_p/beta2;
+      }	
       
       // Compute the Jacobian matrix
       StepJacobian(newz,z,S,dEdx,J);
@@ -440,16 +459,19 @@ jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix &C){
 
      // Get the contribution to the covariance matrix due to multiple 
      // scattering
-     GetProcessNoise(MASS,ds,z,temp.X0,S,Q);
+     if (do_multiple_scattering)
+       GetProcessNoise(MASS,ds,z,temp.X0,S,Q);
 
      // Energy loss straggling in the approximation of thick absorbers
-     beta2=1./(1.+MASS*MASS*S(state_q_over_p,0)*S(state_q_over_p,0));
-     if (temp.density>0.)
-       Q(state_q_over_p,state_q_over_p)=
-	 0.1569e-6*S(state_q_over_p,0)*S(state_q_over_p,0)*temp.density
-	 *temp.Z/temp.A*fabs(ds)
-	  *(1.-beta2/2.)/MASS/MASS/beta2/beta2;
-      
+     if (temp.density>0. && do_energy_loss){
+	q_over_p=S(state_q_over_p,0);
+	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
+	
+	Q(state_q_over_p,state_q_over_p)
+	  =varE*q_over_p*q_over_p*q_over_p*q_over_p/beta2;
+     }	
+         
      // Compute the Jacobian matrix for swimming away from target
      StepJacobian(z,newz,S,dEdx,J);
      
@@ -462,16 +484,19 @@ jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix &C){
      
      // Get the contribution to the covariance matrix due to multiple 
      // scattering
-     GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
-     
+     if (do_multiple_scattering)
+       GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
+      
      // Energy loss straggling in the approximation of thick absorbers
-     beta2=1./(1.+MASS*MASS*S(state_q_over_p,0)*S(state_q_over_p,0));
-     if (temp.density>0.)
-       Q(state_q_over_p,state_q_over_p)=
-	  0.1569e-6*S(state_q_over_p,0)*S(state_q_over_p,0)*temp.density
-	 *temp.Z/temp.A*fabs(ds)
-	 *(1.-beta2/2.)/MASS/MASS/beta2/beta2;
-     
+     if (temp.density>0. && do_energy_loss){
+	q_over_p=S(state_q_over_p,0);
+	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
+	
+	Q(state_q_over_p,state_q_over_p)
+	  =varE*q_over_p*q_over_p*q_over_p*q_over_p/beta2;
+     }	
+    
      // Compute the Jacobian matrix
      StepJacobian(newz,z,S,dEdx,J);
      
@@ -545,7 +570,7 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DMatrix &Sc,DMatrix &Cc){
   DVector3 pos(x_,y_,z_),oldpos; 
   double dedx=0;
   double ds=CDC_STEP_SIZE;
-  double beta2=1.;
+  double beta2=1.,varE=0.; 
   len=0.; 
   
   // Coordinates for outermost cdc hit
@@ -568,45 +593,79 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DMatrix &Sc,DMatrix &Cc){
       
       // get material properties from the Root Geometry
       if(RootGeom->FindMat(pos,central_traj[m].density,central_traj[m].A,central_traj[m].Z,central_traj[m].X0)
-	 !=NOERROR) break;
-      
-      // Energy loss
-      double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
-      dedx=GetdEdx(MASS,q_over_p,central_traj[m].Z,
-		   central_traj[m].A,central_traj[m].density);
-      
-      // Multiple scattering    
-      GetProcessNoiseCentral(MASS,ds,pos,central_traj[m].X0,Sc,Q);
-      
-      // Energy loss straggling in the approximation of thick absorbers
-      beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
-      if (central_traj[m].density>0.)
-	Q(state_q_over_pt,state_q_over_pt)=
-	  0.1569e-6*Sc(state_q_over_pt,0)*Sc(state_q_over_pt,0)*central_traj[m].density
-	  *central_traj[m].Z/central_traj[m].A*fabs(ds)
-	  *(1.-beta2/2.)/MASS/MASS/beta2/beta2;
+	 !=NOERROR){
+	for (unsigned int m=0;m<central_traj.size();m++){
+	  DMatrix S=*(central_traj[m].S);
+	  double cosphi=cos(S(state_phi,0));
+	  double sinphi=sin(S(state_phi,0));
+	  double pt=fabs(1./S(state_q_over_pt,0));
+	  double tanl=S(state_tanl,0);
 	  
+	  cout
+	    << setiosflags(ios::fixed)<< "pos: " << setprecision(4) 
+	    << central_traj[m].pos.x() << ", "
+	    << central_traj[m].pos.y() << ", "
+	    << central_traj[m].pos.z() << "  mom: "
+	    << pt*cosphi << ", " << pt*sinphi << ", " 
+	<< pt*tanl << " -> " << pt/cos(atan(tanl))
+	    <<"  s: " << setprecision(3) 	   
+	    << central_traj[m].s << endl;
+	}
+	
+	break;
+      }
+
+      // Energy loss	
+      double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
+      if (Sc(state_z,0)>cdc_origin[2] && Sc(state_z,0)<endplate_z-endplate_dz){
+	if (do_energy_loss){
+	  dedx=GetdEdx(MASS,q_over_p,central_traj[m].Z,
+		       central_traj[m].A,central_traj[m].density);
+	}
+	
+	// Multiple scattering    
+	if (do_multiple_scattering && Sc(state_z,0)>cdc_origin[2])
+	  GetProcessNoiseCentral(MASS,ds,pos,central_traj[m].X0,Sc,Q);
+      
+	// Energy loss straggling in the approximation of thick absorbers
+	if (central_traj[m].density>0. && do_energy_loss){
+	  beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	  varE=GetEnergyVariance(ds,q_over_p,central_traj[m].Z,
+				 central_traj[m].A,central_traj[m].density);
+
+	  Q(state_q_over_pt,state_q_over_pt)
+	    =varE*Sc(state_q_over_pt,0)*Sc(state_q_over_pt,0)/beta2
+	    *q_over_p*q_over_p;
+	}
+      }
+
       // Compute the Jacobian matrix for forward-tracking away from target
       StepJacobian(pos,origin,dir,ds,Sc,dedx,J);
       // Propagate the coviarance matrix
       Cc=J*(Cc*DMatrix(DMatrix::kTransposed,J))+Q;
-      
+
       // Propagate the state through the field
       FixedStep(pos,ds,Sc,dedx);
-     
-      // Energy loss straggling in the approximation of thick absorbers
-      q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
-      beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
-      if (central_traj[m].density>0.)
-	Q(state_q_over_pt,state_q_over_pt)=
-	  0.1569e-6*Sc(state_q_over_pt,0)*Sc(state_q_over_pt,0)*central_traj[m].density
-	  *central_traj[m].Z/central_traj[m].A*fabs(ds)
-	  *(1.-beta2/2.)/MASS/MASS/beta2/beta2;
-      
-      // Multiple scattering    
-      GetProcessNoiseCentral(MASS,ds,pos,central_traj[m].X0,Sc,Q);
-      
-      // Compute the Jacobian matrix for back-tracking towards target
+
+      if (Sc(state_z,0)>cdc_origin[2] && Sc(state_z,0)<endplate_z-endplate_dz){
+	// Energy loss straggling in the approximation of thick absorbers
+	if (central_traj[m].density>0. && do_energy_loss){
+	  q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
+	  beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	  varE=GetEnergyVariance(ds,q_over_p,central_traj[m].Z,
+				 central_traj[m].A,central_traj[m].density);
+
+	  Q(state_q_over_pt,state_q_over_pt)
+	    =varE*Sc(state_q_over_pt,0)*Sc(state_q_over_pt,0)/beta2
+	    *q_over_p*q_over_p;
+	}
+
+	// Multiple scattering    
+	if (do_multiple_scattering)
+	  GetProcessNoiseCentral(MASS,ds,pos,central_traj[m].X0,Sc,Q);
+      }
+
+	// Compute the Jacobian matrix for back-tracking towards target
       StepJacobian(pos,origin,dir,-ds,Sc,dedx,J);
       
       //central_traj[m].s=len;
@@ -630,28 +689,36 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DMatrix &Sc,DMatrix &Cc){
     temp.pos=pos;	
     temp.s=len;
     temp.S= new DMatrix(Sc);	
-    
+ 
     // update path length
     len+=ds;
     
     // get material properties from the Root Geometry
-    if (RootGeom->FindMat(pos,temp.density,temp.A,temp.Z,temp.X0)!=NOERROR) break;
+    if (RootGeom->FindMat(pos,temp.density,temp.A,temp.Z,temp.X0)!=NOERROR) 
+      break;
     
-    // Get dEdx for the upcoming step
+    // Get dEdx for the upcoming step 
     double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
-    dedx=GetdEdx(MASS,q_over_p,temp.Z,temp.A,temp.density);
+    if (Sc(state_z,0)>cdc_origin[2] && Sc(state_z,0)<endplate_z-endplate_dz){
+      if (do_energy_loss){
+	dedx=GetdEdx(MASS,q_over_p,temp.Z,temp.A,temp.density);
+      }
+      
+      // Multiple scattering    
+      if (do_multiple_scattering)
+	GetProcessNoiseCentral(MASS,ds,pos,temp.X0,Sc,Q);
+    
+      // Energy loss straggling in the approximation of thick absorbers  
+      if (temp.density>0. && do_energy_loss){
+	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
 
-    // Multiple scattering    
-    GetProcessNoiseCentral(MASS,ds,pos,temp.X0,Sc,Q);
-    
-    // Energy loss straggling in the approximation of thick absorbers  
-    beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
-    if (temp.density>0.)
-      Q(state_q_over_pt,state_q_over_pt)=
-	0.1569e-6*Sc(state_q_over_pt,0)*Sc(state_q_over_pt,0)*temp.density
-	*temp.Z/temp.A*fabs(ds)
-	*(1.-beta2/2.)/MASS/MASS/beta2/beta2;
-    
+	Q(state_q_over_pt,state_q_over_pt)
+	  =varE*Sc(state_q_over_pt,0)*Sc(state_q_over_pt,0)/beta2
+	  *q_over_p*q_over_p;
+      }
+    }
+
     // Compute the Jacobian matrix for forward-tracking away from target
     StepJacobian(pos,origin,dir,ds,Sc,dedx,J);
     // Propagate the coviarance matrix
@@ -659,19 +726,23 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DMatrix &Sc,DMatrix &Cc){
     
     // Propagate the state through the field
     FixedStep(pos,ds,Sc,dedx);
-    
-    // Multiple scattering    
-    GetProcessNoiseCentral(MASS,ds,pos,temp.X0,Sc,Q);
-    
-    // Energy loss straggling in the approximation of thick absorbers
-    q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
-    beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
-    if (temp.density>0.)
-      Q(state_q_over_pt,state_q_over_pt)=
-	0.1569e-6*Sc(state_q_over_pt,0)*Sc(state_q_over_pt,0)*temp.density
-	*temp.Z/temp.A*fabs(ds)
-	*(1.-beta2/2.)/MASS/MASS/beta2/beta2;
-    
+
+    if (Sc(state_z,0)>cdc_origin[2] && Sc(state_z,0)<endplate_z-endplate_dz){
+      // Multiple scattering    
+      if (do_multiple_scattering)
+	GetProcessNoiseCentral(MASS,ds,pos,temp.X0,Sc,Q);
+      
+      // Energy loss straggling in the approximation of thick absorbers
+      if (temp.density>0. && do_energy_loss){ 
+	q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
+	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
+
+	Q(state_q_over_pt,state_q_over_pt)
+	  =varE*Sc(state_q_over_pt,0)*Sc(state_q_over_pt,0)/beta2
+	  *q_over_p*q_over_p;
+      }
+    }
     // Compute the Jacobian matrix
     StepJacobian(pos,origin,dir,-ds,Sc,dedx,J);
     
@@ -694,7 +765,7 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DMatrix &Sc,DMatrix &Cc){
       double pt=fabs(1./S(state_q_over_pt,0));
       double tanl=S(state_tanl,0);
       
-      _DBG_
+      cout
 	<< setiosflags(ios::fixed)<< "pos: " << setprecision(4) 
 	<< central_traj[m].pos.x() << ", "
 	<< central_traj[m].pos.y() << ", "
@@ -726,7 +797,7 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
   temp.h_id=0;
   temp.num_hits=0;
   double dEdx=0.;
-  double beta2=1.;
+  double beta2=1.,q_over_p=1.,varE=0.;
 
    // progress in z from hit to hit
   double z=z_;
@@ -759,18 +830,23 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
       if (RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)!=NOERROR) break;
       
       // Get dEdx for the upcoming step
-      dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
-      
+      if (do_energy_loss){
+	dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
+      }
+
       // scattering
-      GetProcessNoise(MASS,ds,z,temp.X0,S,Q);
+      if (do_multiple_scattering)
+	GetProcessNoise(MASS,ds,z,temp.X0,S,Q);
       
       // Energy loss straggling in the approximation of thick absorbers
-      beta2=1./(1.+MASS*MASS*S(state_q_over_p,0)*S(state_q_over_p,0));
-      if (temp.density>0.)
-	Q(state_q_over_p,state_q_over_p)=
-	  0.1569e-6*S(state_q_over_p,0)*S(state_q_over_p,0)*temp.density
-	  *temp.Z/temp.A*fabs(ds)
-	  *(1.-beta2/2.)/MASS/MASS/beta2/beta2;
+      if (temp.density>0. && do_energy_loss){	
+	q_over_p=S(state_q_over_p,0);
+	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
+	
+	Q(state_q_over_p,state_q_over_p)
+	  =varE*q_over_p*q_over_p*q_over_p*q_over_p/beta2;
+      }
       
       // Compute the Jacobian matrix for swimming away from target
       StepJacobian(z,newz,S,dEdx,J);
@@ -784,16 +860,18 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
    
       // Get the contribution to the covariance matrix due to multiple 
       // scattering
-      GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
+      if (do_multiple_scattering)
+	GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
       
       // Energy loss straggling in the approximation of thick absorbers
-      beta2=1./(1.+MASS*MASS*S(state_q_over_p,0)*S(state_q_over_p,0));
-      
-      if (temp.density>0.)
-	Q(state_q_over_p,state_q_over_p)=
-	  0.1569e-6*S(state_q_over_p,0)*S(state_q_over_p,0)*temp.density
-	  *temp.Z/temp.A*fabs(ds)
-	  *(1.-beta2/2.)/MASS/MASS/beta2/beta2;
+      if (temp.density>0. && do_energy_loss){
+	q_over_p=S(state_q_over_p,0);
+	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
+	
+	Q(state_q_over_p,state_q_over_p)
+	  =varE*q_over_p*q_over_p*q_over_p*q_over_p/beta2;
+      }			      
       
       // Compute the Jacobian matrix
       StepJacobian(newz,z,S,dEdx,J);
@@ -839,18 +917,23 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
       if(RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)!=NOERROR) break;
       
       // Get dEdx for the upcoming step
-      dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
-      
+      if (do_energy_loss){
+	dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
+      }
+ 
       // scattering
-      GetProcessNoise(MASS,ds,z,temp.X0,S,Q);
+      if (do_multiple_scattering)
+	GetProcessNoise(MASS,ds,z,temp.X0,S,Q);
       
       // Energy loss straggling in the approximation of thick absorbers
-      beta2=1./(1.+MASS*MASS*S(state_q_over_p,0)*S(state_q_over_p,0));
-      if (temp.density>0.)
-	Q(state_q_over_p,state_q_over_p)=
-	  0.1569e-6*S(state_q_over_p,0)*S(state_q_over_p,0)*temp.density
-	  *temp.Z/temp.A*fabs(ds)
-	  *(1.-beta2/2.)/MASS/MASS/beta2/beta2;
+      if (temp.density>0. && do_energy_loss){	
+	q_over_p=S(state_q_over_p,0);
+	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
+	
+	Q(state_q_over_p,state_q_over_p)
+	  =varE*q_over_p*q_over_p*q_over_p*q_over_p/beta2;
+      }
       
       // Compute the Jacobian matrix for swimming away from target
       StepJacobian(z,newz,S,dEdx,J);
@@ -864,17 +947,18 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
       
       // Get the contribution to the covariance matrix due to multiple 
       // scattering
-      GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
-      
+      if (do_multiple_scattering)
+	GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
+
       // Energy loss straggling in the approximation of thick absorbers
-      beta2=1./(1.+MASS*MASS*S(state_q_over_p,0)*S(state_q_over_p,0));
-      
-      if (temp.density>0.)
-	Q(state_q_over_p,state_q_over_p)=
-	  0.1569e-6*S(state_q_over_p,0)*S(state_q_over_p,0)*temp.density
-	  *temp.Z/temp.A*fabs(ds)
-	  *(1.-beta2/2.)/MASS/MASS/beta2/beta2;
-      
+      if (temp.density>0. && do_energy_loss){	
+	q_over_p=S(state_q_over_p,0);
+	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
+	
+	Q(state_q_over_p,state_q_over_p)
+	  =varE*q_over_p*q_over_p*q_over_p*q_over_p/beta2;
+      }
       
       // Compute the Jacobian matrix
       StepJacobian(newz,z,S,dEdx,J);
@@ -929,19 +1013,24 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
   // get material properties from the Root Geometry
   if(RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)==NOERROR){;  
     // Get dEdx for the upcoming step
-    dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
-  
-    // scattering
-    GetProcessNoise(MASS,ds,z,temp.X0,S,Q);
-    
+    if (do_energy_loss){
+      dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
+    }
+
+    // multiple scattering
+    if (do_multiple_scattering)
+      GetProcessNoise(MASS,ds,z,temp.X0,S,Q);
+
     // Energy loss straggling in the approximation of thick absorbers
-    beta2=1./(1.+MASS*MASS*S(state_q_over_p,0)*S(state_q_over_p,0));
-    if (temp.density>0.)
-      Q(state_q_over_p,state_q_over_p)=
-	0.1569e-6*S(state_q_over_p,0)*S(state_q_over_p,0)*temp.density
-	*temp.Z/temp.A*fabs(ds)
-	*(1.-beta2/2.)/MASS/MASS/beta2/beta2;
-    
+    if (temp.density>0. && do_energy_loss){	
+      q_over_p=S(state_q_over_p,0);
+      beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+      varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
+      
+      Q(state_q_over_p,state_q_over_p)
+	=varE*q_over_p*q_over_p*q_over_p*q_over_p/beta2;
+    }
+      
     // Compute the Jacobian matrix for swimming away from target
     StepJacobian(z,newz,S,dEdx,J);
     
@@ -955,15 +1044,18 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
     
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
-    GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
-    
+    if (do_multiple_scattering)
+      GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
+ 
     // Energy loss straggling in the approximation of thick absorbers
-    beta2=1./(1.+MASS*MASS*S(state_q_over_p,0)*S(state_q_over_p,0));
-    if (temp.density>0.)
-      Q(state_q_over_p,state_q_over_p)=
-	0.1569e-6*S(state_q_over_p,0)*S(state_q_over_p,0)*temp.density
-	*temp.Z/temp.A*fabs(ds)
-	*(1.-beta2/2.)/MASS/MASS/beta2/beta2;
+    if (temp.density>0. && do_energy_loss){	
+      q_over_p=S(state_q_over_p,0);
+      beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+      varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
+      
+      Q(state_q_over_p,state_q_over_p)
+	=varE*q_over_p*q_over_p*q_over_p*q_over_p/beta2;
+    }
     
     // Compute the Jacobian matrix
     StepJacobian(newz,z,S,dEdx,J);
@@ -1061,28 +1153,30 @@ jerror_t DKalmanFilter::CalcDeriv(double ds,DVector3 pos,DVector3 &dpos,
   // Other parameters
   double q_over_pt=S(state_q_over_pt,0);
   double pt=fabs(1./q_over_pt);
-  double p=pt/cosl;
-  double E=sqrt(p*p+MASS*MASS);
-  double sign=(ds>0)?1.:-1.;
 
   // Derivative of S with respect to s
   double temp1=B.y()*cosphi-B.x()*sinphi;
   D1(state_q_over_pt,0)
-    =qBr2p*q_over_pt*q_over_pt*sinl*temp1-q_over_pt*E/p/p*dEdx;
+    =qBr2p*q_over_pt*q_over_pt*sinl*temp1;
+  if (fabs(dEdx)>0){    
+    double p=pt/cosl;
+    double E=sqrt(p*p+MASS*MASS);
+    D1(state_q_over_pt,0)+=-q_over_pt*E/p/p*dEdx;
+  }
   D1(state_phi,0)
     =qBr2p*q_over_pt*(B.x()*cosphi*sinl+B.y()*sinphi*sinl-B.z()*cosl);
   D1(state_tanl,0)=qBr2p*q_over_pt*temp1/cosl;
   D1(state_z,0)=sinl;
   // Second order correction
-  D1(state_z,0)+=sign*qBr2p*q_over_pt*ds/2.*cosl*cosl*temp1;
+  D1(state_z,0)+=qBr2p*q_over_pt*ds/2.*cosl*cosl*temp1;
  
   // New direction
   dpos.SetXYZ(cosl*cosphi,cosl*sinphi,sinl);
 
   // second order correction
-  dpos(0)+=sign*qBr2p*q_over_pt*cosl*ds/2.*(B.z()*cosl*sinphi-B.y()*sinl);
-  dpos(1)+=sign*qBr2p*q_over_pt*cosl*ds/2.*(B.x()*sinl-B.z()*cosl*cosphi);
-  dpos(2)+=sign*qBr2p*q_over_pt*ds/2.*cosl*cosl*temp1;
+  dpos(0)+=qBr2p*q_over_pt*cosl*ds/2.*(B.z()*cosl*sinphi-B.y()*sinl);
+  dpos(1)+=qBr2p*q_over_pt*cosl*ds/2.*(B.x()*sinl-B.z()*cosl*cosphi);
+  dpos(2)+=qBr2p*q_over_pt*ds/2.*cosl*cosl*temp1;
 
   return NOERROR;
 }
@@ -1105,10 +1199,7 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double ds,DVector3 pos,
   // Other parameters
   double q_over_pt=S(state_q_over_pt,0);
   double pt=fabs(1./q_over_pt);
-  double p=pt/cosl;
   double q=pt*q_over_pt;
-  double E=sqrt(p*p+MASS*MASS);
-  double sign=(ds>0)?1.:-1.;
  
   //field gradient at (x,y,z)
   double dBxdx,dBxdy,dBxdz,dBydx,dBydy,dBydz,dBzdx,dBzdy,dBzdz;
@@ -1116,17 +1207,16 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double ds,DVector3 pos,
 			   dBydy,dBydz,dBzdx,dBzdy,dBzdz);
   // Derivative of S with respect to s
   double temp1=B.y()*cosphi-B.x()*sinphi;
-  D1(state_q_over_pt,0)
-    =qBr2p*q_over_pt*q_over_pt*sinl*temp1-q_over_pt*E/p/p*dEdx;
+  D1(state_q_over_pt,0)=qBr2p*q_over_pt*q_over_pt*sinl*temp1;
   D1(state_phi,0)=qBr2p*q_over_pt*(B.x()*cosphi*sinl+B.y()*sinphi*sinl-B.z()*cosl);
   D1(state_tanl,0)=qBr2p*q_over_pt*temp1/cosl;
-  D1(state_z,0)=sinl+sign*q_over_pt*qBr2p*ds/2.*cosl*cosl*temp1;
+  D1(state_z,0)=sinl+q_over_pt*qBr2p*ds/2.*cosl*cosl*temp1;
 
   // New direction
   dpos.SetXYZ(cosl*cosphi
-	      +sign*q_over_pt*cosl*qBr2p*ds/2.*(B.z()*cosl*sinphi-B.y()*sinl),
+	      +q_over_pt*cosl*qBr2p*ds/2.*(B.z()*cosl*sinphi-B.y()*sinl),
 	      cosl*sinphi
-	      +sign*q_over_pt*cosl*qBr2p*ds/2.*(B.x()*sinl-B.z()*cosl*cosphi),
+	      +q_over_pt*cosl*qBr2p*ds/2.*(B.x()*sinl-B.z()*cosl*cosphi),
 	      D1(state_z,0));
  
   // Jacobian matrix elements
@@ -1148,9 +1238,15 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double ds,DVector3 pos,
 
   double temp=sqrt(1.+cosl*cosl*q_over_pt*q_over_pt*MASS*MASS);
   J1(state_q_over_pt,state_q_over_pt)
-    =2.*qBr2p*q_over_pt*sinl*(B.y()*cosphi-B.x()*sinphi)
-    -q*dEdx*cosl*q_over_pt*(2.+3.*cosl*cosl*q_over_pt*q_over_pt*MASS*MASS)
-    /temp;
+    =2.*qBr2p*q_over_pt*sinl*(B.y()*cosphi-B.x()*sinphi);
+
+  if (fabs(dEdx)>0){  
+    double p=pt/cosl;
+    double E=sqrt(p*p+MASS*MASS);
+    D1(state_q_over_pt,0)+=-q_over_pt*E/p/p*dEdx;
+    J1(state_q_over_pt,state_q_over_pt)+=-q*dEdx*cosl*q_over_pt*(2.+3.*cosl*cosl*q_over_pt*q_over_pt*MASS*MASS)
+      /temp;
+  }
   J1(state_q_over_pt,state_tanl)
     =qBr2p*q_over_pt*q_over_pt*cosl*cosl*cosl*(B.y()*cosphi-B.x()*sinphi)
     +q*dEdx*sinl*cosl*cosl/temp*q_over_pt*q_over_pt
@@ -1390,28 +1486,35 @@ jerror_t DKalmanFilter::StepJacobian(DVector3 pos, DVector3 wire_orig,
 jerror_t DKalmanFilter::GetProcessNoiseCentral(double mass_hyp,double ds,
 					       DVector3 pos,double X0,
 					       DMatrix Sc,DMatrix &Q){
-  DMatrix Q1(5,5);
-  double tanl=Sc(state_tanl,0);
-  double q_over_pt=Sc(state_q_over_pt,0); 
-  //  double X0=material->GetRadLen(pos.x(),pos.y(),pos.z());
+  Q.Zero();
+  if (isfinite(X0) && X0<1e8 && X0>0.){
+    DMatrix Q1(5,5);
+    double tanl=Sc(state_tanl,0);
+    double q_over_pt=Sc(state_q_over_pt,0); 
+    //  double X0=material->GetRadLen(pos.x(),pos.y(),pos.z());
+    double my_ds=fabs(ds);
+    
+    Q1(state_phi,state_phi)=1.+tanl*tanl;
+    Q1(state_tanl,state_tanl)=(1.+tanl*tanl)*(1.+tanl*tanl);
+    Q1(state_q_over_pt,state_q_over_pt)=q_over_pt*q_over_pt*tanl*tanl;
+    Q1(state_q_over_pt,state_tanl)=Q1(state_tanl,state_q_over_pt)
+      =q_over_pt*tanl*(1.+tanl*tanl);
+    Q1(state_D,state_D)=ds*ds/3.;
+    Q1(state_D,state_tanl)=Q1(state_tanl,state_D)
+      =-my_ds/2.*cos(Sc(state_phi,0))*(1.+tanl*tanl);
+    Q1(state_D,state_phi)=Q1(state_phi,state_D)=
+      my_ds/2.*sin(Sc(state_phi,0))*sqrt(1.+tanl*tanl);
+    Q1(state_D,state_q_over_pt)=Q1(state_q_over_pt,state_D)=
+      -my_ds/2.*cos(Sc(state_phi,0))*tanl;
 
-  Q1(state_phi,state_phi)=1.+tanl*tanl;
-  Q1(state_tanl,state_tanl)=(1.+tanl*tanl)*(1.+tanl*tanl);
-  Q1(state_q_over_pt,state_q_over_pt)=q_over_pt*q_over_pt*tanl*tanl;
-  Q1(state_q_over_pt,state_tanl)=Q1(state_tanl,state_q_over_pt)
-    =q_over_pt*tanl*(1.+tanl*tanl);
+    double p2=(1.+tanl*tanl)/q_over_pt/q_over_pt;
+    double sig2_ms=0.0136*0.0136*(1.+mass_hyp*mass_hyp/p2)*my_ds/X0/p2
+      *(1.+0.038*log(my_ds/X0*(1.+mass_hyp*mass_hyp/p2)))
+      *(1.+0.038*log(my_ds/X0*(1.+mass_hyp*mass_hyp/p2)));
+    //sig2_ms=0.;
 
-  double my_ds=fabs(ds);
-  double p2=(1.+tanl*tanl)/q_over_pt/q_over_pt;
-  double sig2_ms=0.;
-   
-  if (isfinite(X0) && X0<1e8 && X0>0.)
-    sig2_ms= 0.0136*0.0136*(1.+mass_hyp*mass_hyp/p2)*my_ds/X0/p2;
-  //*(1.+0.038*log(my_ds/X0))*(1.+0.038*log(my_ds/X0));
-  //sig2_ms=0.;
-
-  Q=sig2_ms*Q1;
-
+    Q=sig2_ms*Q1;
+  }
   //Q.Print();
 
   return NOERROR;
@@ -1422,26 +1525,31 @@ jerror_t DKalmanFilter::GetProcessNoiseCentral(double mass_hyp,double ds,
 // Compute contributions to the covariance matrix due to multiple scattering
 jerror_t DKalmanFilter::GetProcessNoise(double mass_hyp,double ds,double z,
 					double X0,DMatrix S,DMatrix &Q){
-  DMatrix Q1(5,5);
-  double tx=S(state_tx,0),ty=S(state_ty,0);
-  double one_over_p_sq=S(state_q_over_p,0)*S(state_q_over_p,0);
-  double my_ds=fabs(ds);
-  // double X0=material->GetRadLen(S(state_x,0),S(state_y,0),z);
-
-  Q1(state_tx,state_tx)=(1.+tx*tx)*(1.+tx*tx+ty*ty);
-  Q1(state_ty,state_ty)=(1.+ty*ty)*(1.+tx*tx+ty*ty);
-  Q1(state_tx,state_ty)=Q1(state_ty,state_tx)=tx*ty*(1.+tx*tx+ty*ty);
-
-  double sig2_ms=0.;
-
-  if (isfinite(X0) && X0<1e8 && X0>0.)
-    sig2_ms= 0.0136*0.0136*(1.+one_over_p_sq*mass_hyp*mass_hyp)
-      *one_over_p_sq*my_ds/X0;
-  //*(1.+0.038*log(my_ds/X0))*(1.+0.038*log(my_ds/X0));
-  //sig2_ms=0.;
-
-  Q=sig2_ms*Q1;
-
+  Q.Zero();
+  if (isfinite(X0) && X0<1e8 && X0>0.){
+    DMatrix Q1(5,5);
+    double tx=S(state_tx,0),ty=S(state_ty,0);
+    double one_over_p_sq=S(state_q_over_p,0)*S(state_q_over_p,0);
+    double my_ds=fabs(ds);
+    // double X0=material->GetRadLen(S(state_x,0),S(state_y,0),z);
+    
+    Q1(state_tx,state_tx)=(1.+tx*tx)*(1.+tx*tx+ty*ty);
+    Q1(state_ty,state_ty)=(1.+ty*ty)*(1.+tx*tx+ty*ty);
+    Q1(state_tx,state_ty)=Q1(state_ty,state_tx)=tx*ty*(1.+tx*tx+ty*ty);
+    Q1(state_x,state_x)=ds*ds/3.;
+    Q1(state_y,state_y)=ds*ds/3.;
+    Q1(state_y,state_ty)=Q1(state_ty,state_y)
+      =my_ds/2.*tx*(1.+tx*tx+ty*ty)/sqrt(tx*tx+ty*ty);
+    Q1(state_x,state_tx)=Q1(state_tx,state_x)
+      =my_ds/2.*ty*sqrt((1.+tx*tx+ty*ty)/(tx*tx+ty*ty));
+    
+    double sig2_ms= 0.0136*0.0136*(1.+one_over_p_sq*mass_hyp*mass_hyp)
+      *one_over_p_sq*my_ds/X0
+      *(1.+0.038*log(my_ds/X0*(1.+one_over_p_sq*mass_hyp*mass_hyp)))
+      *(1.+0.038*log(my_ds/X0*(1.+one_over_p_sq*mass_hyp*mass_hyp)));
+	//  sig2_ms=0.;   
+    Q=sig2_ms*Q1;
+  }
   return NOERROR;
 }
 
@@ -1460,14 +1568,72 @@ double DKalmanFilter::GetdEdx(double M,double q_over_p,double Z,
   double Tmax
     =2.*Me*betagamma*betagamma/(1.+2.*sqrt(1.+betagamma*betagamma)*m_ratio
 				+m_ratio*m_ratio);
-  double I0=(12.*Z+7.)*1e-9; //eV
+  double I0=12.*Z+7.; //eV
+  if (Z>12) I0=9.76*Z+58.8*pow(Z,-0.19);
 
-  // return 0.;
+  // The next block of code approximates the "density effect" using the 
+  // prescription employed by GEANT 3.21.
+  double delta=0.;  //density effect  
+  double X=log10(betagamma);
+  double X0,X1;
+  double C=-2.*log(I0/28.816/sqrt(rho*Z/A))-1.;
+  double Cbar=-C;
+  if (rho>0.01){ // not a gas
+    if (I0<100){
+      if (Cbar<=3.681) X0=0.2;
+      else X0=-0.326*C-1.;
+      X1=2.;
+    }
+    else{
+      if (Cbar<=5.215) X0=0.2;
+      else X0=0.326*Cbar-1.5;
+      X1=3.;
+    }
+  }
+  else{ // gases
+    X1=4.;
+    if (Cbar<=9.5) X0=1.6;
+    else if (Cbar>9.5 && Cbar<=10.) X0=1.7;
+    else if (Cbar>10 && Cbar<=10.5) X0=1.8;    
+    else if (Cbar>10.5 && Cbar<=11.) X0=1.9;
+    else if (Cbar>11.0 && Cbar<=12.25) X0=2.;
+    else if (Cbar>12.25 && Cbar<=13.804){
+      X0=2.;
+      X1=5.;
+    }
+    else {
+      X0=0.326*Cbar-2.5;
+      X1=5.;
+    }    
+  }
+  if (X>=X0 && X<X1)
+    delta=4.606*X+C+(Cbar-4.606*X0)*pow(X1-X,3.)/pow(X1-X0,3.);
+  else if (X>=X1)
+    delta=4.606*X+C;
 
-  if (Z>12) I0=(9.76*Z+58.8*pow(Z,-0.19))*1e-9;
+  I0*=1e-9; // convert to GeV
   return -0.0001535*Z/A*rho/beta2*(log(2.*Me*betagamma*betagamma*Tmax/I0/I0)
-			       -2.*beta2);
+				   -2.*beta2-delta);
 }
+
+// Calculate the variance in the energy loss in a Gaussian approximation
+double DKalmanFilter::GetEnergyVariance(double ds,double q_over_p,double Z,
+			      double A, double rho){
+  if (rho<=0.) return 0.;
+  //return 0;
+  double betagamma=1./MASS/fabs(q_over_p);
+  double beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+  if (beta2<EPS) return 0.;
+
+  double Me=0.000511; //GeV
+  double m_ratio=Me/MASS;
+  double Tmax
+    =2.*Me*betagamma*betagamma/(1.+2.*sqrt(1.+betagamma*betagamma)*m_ratio
+				+m_ratio*m_ratio);
+
+  return 0.0001535*fabs(ds)*(rho*Z/A)*Tmax/beta2;
+}
+
 
 // Swim the state vector through the field from the start of the reference
 // trajectory to the end
@@ -1481,13 +1647,17 @@ jerror_t DKalmanFilter::SwimToPlane(DMatrix &S){
     z=forward_traj_cdc[max].pos.Z();
     for (unsigned int m=max-1;m>0;m--){
       newz=forward_traj_cdc[m].pos.Z();  
-      dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj_cdc[m].Z,
-			  forward_traj_cdc[m].A,forward_traj_cdc[m].density);
+      if (do_energy_loss){
+	dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj_cdc[m].Z,
+		     forward_traj_cdc[m].A,forward_traj_cdc[m].density);
+      }
       Step(z,newz,dedx,S);  
       z=newz;
     }
-    dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj_cdc[1].Z,
-			 forward_traj_cdc[1].A,forward_traj_cdc[1].density);
+    if (do_energy_loss){
+      dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj_cdc[1].Z,
+		   forward_traj_cdc[1].A,forward_traj_cdc[1].density);
+    }
     newz=forward_traj_cdc[0].pos.Z(); 
     Step(z,newz,dedx,S);  
   }
@@ -1496,8 +1666,10 @@ jerror_t DKalmanFilter::SwimToPlane(DMatrix &S){
   z=forward_traj[max].pos.Z(); 
   for (unsigned int m=max;m>0;m--){
     newz=z+STEP_SIZE;  
-    dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj[m].Z,
-			forward_traj[m].A,forward_traj[m].density);
+    if (do_energy_loss){
+      dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj[m].Z,
+		   forward_traj[m].A,forward_traj[m].density);
+    }
     Step(z,newz,dedx,S); 
     z=newz;
   }
@@ -1674,10 +1846,18 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
   DMatrix S(5,1),C(5,5),Sc(5,1),Cc(5,5);
   DMatrix C0(5,5);
   DMatrix Sbest(5,1),Cbest(5,5),Scbest(5,1),Ccbest(5,5);
-  double chisq=0.,chisq_forward=1.e16,chisq_central=0.;
+  double chisq=1.e16,chisq_forward=1.e16,chisq_central=1.e16;
   chisq_=1.e16;
   // position along track. 
   DVector3 pos(x_,y_,z_); 
+
+  // energy loss flag
+  //do_energy_loss=false;
+  do_energy_loss=true;
+
+  // multiple scattering flag
+  //do_multiple_scattering=false;
+  do_multiple_scattering=true;
 
   // Initialize path length variable
   //  len=0;
@@ -1705,7 +1885,10 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     C0(state_ty,state_ty)=0.010*0.010;
     C0(state_q_over_p,state_q_over_p)=0.04*q_over_p_*q_over_p_;
 
-    for (int iter2=0;iter2<3;iter2++){    
+    for (int iter2=0;iter2<5;iter2++){   
+      //if (iter2>0) do_energy_loss=true;
+      //if (iter2>0) do_multiple_scattering=true;
+      
        // Initialize path length variable
       len=0;
 
@@ -1718,6 +1901,8 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
       // Swim once through the field out to the most upstream FDC hit
       SetReferenceTrajectory(S,C0);
       C0=C;
+
+      //printf("forward iteration %d cdc size %d\n",iter2,forward_traj_cdc.size());
       
       if (forward_traj.size()> 0){
 	unsigned int num_iter=NUM_ITER;
@@ -1801,10 +1986,10 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     Sc(state_z,0)=z_;  
 
     //C0(state_z,state_z)=1.;
-    C0(state_z,state_z)=0.1;
-    C0(state_q_over_pt,state_q_over_pt)=0.05*0.05*q_over_pt_*q_over_pt_;
-    C0(state_phi,state_phi)=0.02*0.02;
-    C0(state_D,state_D)=0.04;
+    C0(state_z,state_z)=1.0;
+    C0(state_q_over_pt,state_q_over_pt)=0.10*0.10*q_over_pt_*q_over_pt_;
+    C0(state_phi,state_phi)=0.01*0.01;
+    C0(state_D,state_D)=0.01;
     //double theta=90.-180./M_PI*atan(tanl_);
     //double dlambda=2.1e-3-3.4e-4*theta+3.5e-5*theta*theta;
     //double dlambda=0.04;
@@ -1814,20 +1999,30 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     C0(state_tanl,state_tanl)=(1.+tanl_*tanl_)*(1.+tanl_*tanl_)
       *dlambda*dlambda;
       
-    //C0(state_tanl,state_tanl)=0.1;
-    //C0(state_tanl,state_z)=C0(state_z,state_tanl)=-0.3;
+    //C0(state_tanl,state_tanl)=0.001;
+    //    C0(state_tanl,state_z)=C0(state_z,state_tanl)=-0.3*dlambda*(1.+tanl_*tanl_)*1.0*(1.+tanl_*tanl_);
  
     // Initialization
     Cc=C0;
     DMatrix Scbest(Sc);
     DMatrix Ccbest(Cc);
     DVector3 pos0=pos;
+    DVector3 best_pos=pos;
   
     // iteration 
     double anneal_factor=1.;
-    for (int iter2=0;iter2<4;iter2++){     
+    double chisq_best=chisq;
+    for (int iter2=0;iter2<5;iter2++){     
+      //if (iter2>0) do_energy_loss=true;
+      //if (iter2>0) do_multiple_scattering=true;
+
       // Initialize path length variable
       len=0;
+      
+      // Abort if the chisq for the previous iteration is junk
+      if (chisq_central==0.) break;
+
+      //printf("-------------central iteration %d cdc size %d\n",iter2,central_traj.size());
 
       // Calculate a scale factor for the measurement errors that depends 
       // on the iteration,so that we approach the "true' measurement errors
@@ -1841,7 +2036,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
       C0=Cc;
            
       if (central_traj.size()==0){
-	_DBG_ << "No CDC reference trajectory????" <<endl;
+	cout << "No CDC reference trajectory????" <<endl;
 	return RESOURCE_UNAVAILABLE;
       }
     
@@ -1875,43 +2070,43 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	jerror_t error=NOERROR;
 	error=KalmanCentral(mass_hyp,anneal_factor,Sc,Cc,pos,chisq_central);
 	if (error!=NOERROR) break;
+	if (chisq_central==0.) break;
       	
 	fom=anneal_factor*chisq_central;
 	if (chisq_central>=1e16 ){
-	  _DBG_ 
+	  cout 
 	    << "-- central fit failed --" <<endl;
 	  return VALUE_OUT_OF_RANGE;
 	}
 	
 	if (DEBUG_LEVEL>0)
-	  _DBG_ 
+	  cout 
 	    << "iteration " << iter+1  << " factor " << anneal_factor 
 	    << " chi2 " 
 	    << chisq_central << " fom " << fom 
 	    << " p " 
 	    <<   1./Sc(state_q_over_pt,0)/cos(atan(Sc(state_tanl,0)))
-	    << " theta "  << M_PI/2.-atan(Sc(state_tanl,0)) 
+	    << " theta "  << 90.-180./M_PI*atan(Sc(state_tanl,0)) 
 	    << " vertex " << x_ << " " << y_ << " " << z_ <<endl;
 	
 	if (fabs(chisq_central-chisq)<0.1 
 	    //|| (chisq_central>chisq )
 	    || (fom>old_fom)
 	    ) break; 
-	// Save the current state vector and covariance matrix
+	// Save the current "best" state vector and covariance matrix
 	Ccbest=Cc;
 	Scbest=Sc;
-
 	pos0=pos;
 	old_fom=fom;
 	chisq=chisq_central;
       }
       // Find track parameters where track crosses beam line
-      ExtrapolateToVertex(mass_hyp,pos0,Scbest,Ccbest); 
-      Sc=Scbest;
       Cc=Ccbest;
+      Sc=Scbest;
+      ExtrapolateToVertex(mass_hyp,pos0,Sc,Cc); 
     }
     
-    // Find track parameters where track crosses beam line
+    // Find track parameters where track crosses beam line for the best chisq
     //ExtrapolateToVertex(mass_hyp,pos0,Scbest,Ccbest); 
 
     // total chisq and ndf
@@ -1989,6 +2184,7 @@ double DKalmanFilter::BrentsAlgorithm(double ds1,double ds2,
 	  u_old=u;
 	  iter++;
 	}
+	//	printf("new z %f ds %f \n",pos.z(),x);
       }
       if (pos.z()<=cdc_origin[2]){
 	int iter=0;
@@ -2000,6 +2196,7 @@ double DKalmanFilter::BrentsAlgorithm(double ds1,double ds2,
 	  u_old=u;
 	  iter++;
 	}
+	//printf("new z %f ds %f \n",pos.z(),x);
       }	
       return cx-x;
     }
@@ -2031,10 +2228,12 @@ double DKalmanFilter::BrentsAlgorithm(double ds1,double ds2,
     // Function evaluation
     FixedStep(pos,u_old-u,Sc,dedx);
     u_old=u;
-
+    
     wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
     fu=(pos-wirepos).Mag();
 
+    //printf("Brent: z %f d %f\n",pos.z(),fu);
+    
     if (fu<=fx){
       if (u>=x) a=x; else b=x;
       SHFT(v,w,x,u);
@@ -2375,7 +2574,6 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
   double InvV; // inverse of variance
   DMatrix dS(5,1);  // perturbation in state vector
   DMatrix S0(5,1),S0_(5,1); // state vector
-  DMatrix M(1,1);
 
   // Initialize the chi2 for this part of the track
   chisq=0.;
@@ -2383,7 +2581,7 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
   // path length
   double s=central_traj[0].s;
   // path length increment
-  double ds=-CDC_STEP_SIZE;
+  double ds=-CDC_STEP_SIZE,ds2=0.;
 
   // beginning position
   pos(0)=central_traj[0].pos.x()-Sc(state_D,0)*sin(Sc(state_phi,0));
@@ -2445,175 +2643,236 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     // new doca
     doca=(pos-wirepos).Mag();
 
+    //printf("doca %f\n",doca);
+
     // Check if the doca is no longer decreasing
     if ((doca>old_doca) && more_measurements){
       //printf("----------------------------------------\n");
-      
-      // Save values at end of current step
-      DVector3 pos0=central_traj[k].pos;
-
-      // dEdx for current position along trajectory
-      double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
-      dedx=GetdEdx(MASS,q_over_p,central_traj[k].Z,
-		   central_traj[k].A,central_traj[k].density);
-
-      // Variables for the computation of D at the doca to the wire
-      double D=Sc(state_D,0);
-      double Bx,By,Bz;
-      double q=(Sc(state_q_over_pt,0)>0)?1.:-1.;
-      double qpt=1./Sc(state_q_over_pt,0);
-      double sinphi=sin(Sc(state_phi,0));
-      double cosphi=cos(Sc(state_phi,0));
-      bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
-      double Bz_=fabs(Bz);
- 
-      // We've passed the true minimum; now use Brent's  algorithm
-      // to find the best doca.  See Numerical Recipes in C, pp 404-405
-      double ds2=BrentsAlgorithm(ds,ds,dedx,pos,origin,dir,Sc);
-      //double ds2=0.;
-    
-      int numstep=(int)(ds2/CDC_STEP_SIZE);
-      double myds=CDC_STEP_SIZE;
-      if (ds2<0) myds*=-1.;
-      double ds3=ds2-CDC_STEP_SIZE*numstep;
-      // propagate covariance matrix along the reference trajectory
-      for (int j=0;j<abs(numstep);j++){
+      if (pos.z()<endplate_z && pos.z()>cdc_origin[2]){
+	// Save values at end of current step
+	DVector3 pos0=central_traj[k].pos;
+	
+	// dEdx for current position along trajectory
+	double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
+	if (do_energy_loss){
+	  dedx=GetdEdx(MASS,q_over_p,central_traj[k].Z,
+		       central_traj[k].A,central_traj[k].density);
+	}
+	
+	// Variables for the computation of D at the doca to the wire
+	double D=Sc(state_D,0);
+	double q=(Sc(state_q_over_pt,0)>0)?1.:-1.;
+	double qpt=1./Sc(state_q_over_pt,0);
+	double sinphi=sin(Sc(state_phi,0));
+	double cosphi=cos(Sc(state_phi,0));
+	double Bx,By,Bz;
+	bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
+	double Bz_=fabs(Bz);
+	
+	// We've passed the true minimum; now use Brent's algorithm
+	// to find the best doca.  See Numerical Recipes in C, pp 404-405
+	ds2=BrentsAlgorithm(ds,ds,dedx,pos,origin,dir,Sc);
+	
+	int numstep=(int)(ds2/CDC_STEP_SIZE);
+	double myds=CDC_STEP_SIZE;
+	if (ds2<0) myds*=-1.;
+	double ds3=ds2-CDC_STEP_SIZE*numstep;
+	// propagate covariance matrix along the reference trajectory
+	for (int j=0;j<abs(numstep);j++){
+	  // Compute the Jacobian matrix
+	  StepJacobian(pos0,origin,dir,myds,S0,dedx,J);
+	  
+	  // Update covariance matrix
+	  JT=DMatrix(DMatrix::kTransposed,J);
+	  Cc=J*(Cc*JT);
+	  
+	  // Step along reference trajectory 
+	  FixedStep(pos0,myds,S0,dedx);	
+	}
 	// Compute the Jacobian matrix
-	StepJacobian(pos0,origin,dir,myds,S0,dedx,J);
+	StepJacobian(pos0,origin,dir,ds3,S0,dedx,J);
+	
+	// Step along reference trajectory 
+	FixedStep(pos0,ds3,S0,dedx);
+	
+	// Compute the value of D (signed distance to the reference trajectory) 
+	// at the doca to the wire
+	DVector3 dpos1=pos0-central_traj[k].pos;
+	double rc=sqrt(dpos1.Perp2()
+		       +2.*(D+qpt/qBr2p/Bz_)*(dpos1.x()*sinphi-dpos1.y()*cosphi)
+		       +(D+qpt/qBr2p/Bz_)*(D+qpt/qBr2p/Bz_));
+	Sc(state_D,0)=q*rc-qpt/qBr2p/Bz_;
 	
 	// Update covariance matrix
 	JT=DMatrix(DMatrix::kTransposed,J);
 	Cc=J*(Cc*JT);
-
-	// Step along reference trajectory 
-	FixedStep(pos0,myds,S0,dedx);	
-      }
-      // Compute the Jacobian matrix
-      StepJacobian(pos0,origin,dir,ds3,S0,dedx,J);
-  
-      // Step along reference trajectory 
-      FixedStep(pos0,ds3,S0,dedx);
-   
-      // Compute the value of D (signed distance to the reference trajectory) 
-      // at the doca to the wire
-      DVector3 dpos1=pos0-central_traj[k].pos;
-      double rc=sqrt(dpos1.Perp2()
-		     +2.*(D+qpt/qBr2p/Bz_)*(dpos1.x()*sinphi-dpos1.y()*cosphi)
-		     +(D+qpt/qBr2p/Bz_)*(D+qpt/qBr2p/Bz_));
-      Sc(state_D,0)=q*rc-qpt/qBr2p/Bz_;
-   
-      // Update covariance matrix
-      JT=DMatrix(DMatrix::kTransposed,J);
-      Cc=J*(Cc*JT);
-      
-      // wire position
-      wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
-      
-      //doca 
-      doca=(pos-wirepos).Perp();
-
-      // Measurement
-      double lambda=atan(Sc(state_tanl,0));
-      q_over_p=Sc(state_q_over_pt,0)*cos(lambda);
-      double sinl=sin(lambda);
-      double one_over_beta=sqrt(1.+mass_hyp*mass_hyp*q_over_p*q_over_p);
-      double s=central_traj[k].s+ds2;
-      double measurement=0.;
-      if (pass==kTimeBased){
-	measurement=CDC_DRIFT_SPEED*(cdchits[cdc_index]->t
-				     -s*one_over_beta/SPEED_OF_LIGHT);
 	
-	// Measurement error
-	V=anneal_factor*0.000225
-	  +DRIFT_SPEED*DRIFT_SPEED
-	  *(VAR_S*one_over_beta*one_over_beta/SPEED_OF_LIGHT/SPEED_OF_LIGHT 
-	    +mass_hyp*mass_hyp*mass_hyp*mass_hyp*s*s
-	    /one_over_beta/one_over_beta/SPEED_OF_LIGHT/SPEED_OF_LIGHT
-	    *q_over_p*q_over_p
-	    *(Cc(state_q_over_pt,state_q_over_pt)
-	      +q_over_p*q_over_p*sinl*sinl*Cc(state_tanl,state_tanl)
-	      -2.*q_over_p*sinl*Cc(state_tanl,state_q_over_pt)
-	      ));
-      }
-
-      // prediction for measurement  
-      DVector3 diff=pos-wirepos;
-      DVector3 mdir=pos-wirepos-(diff.Dot(dir))*dir;
-      mdir.SetMag(1.0);
-      double prediction=diff.Dot(mdir);
-
-      // Projection matrix        
-      sinphi=sin(Sc(state_phi,0));
-      cosphi=cos(Sc(state_phi,0));
-      double ux=dir.x();
-      double uy=dir.y();
-      double uxuy=ux*uy;
-      double ux2=ux*ux;
-      double uy2=uy*uy;
-      double dx=diff.x();
-      double dy=diff.y();
-      if (prediction>0.){
-	H(0,state_D)=H_T(state_D,0)
-	  =(dy*(uxuy*sinphi+(1.-uy2)*cosphi)-dx*((1.-ux2)*sinphi+uxuy*cosphi))/prediction;
-	H(0,state_phi)=H_T(state_phi,0)
-	  =-Sc(state_D,0)*(dx*((1.-ux2)*cosphi-uxuy*sinphi)+dy*((1.-uy2)*sinphi-uxuy*cosphi))/prediction;
-	H(0,state_z)=H_T(state_z,0)
-	  =-dir.z()*(dx*ux+dy*uy)/prediction;
-      }
-
-      // Difference and variance
-      double var=V,var_pred=0.;
-      if (prediction>0.){
-	var_pred=(H*(Cc*H_T))(0,0);
-	var+=var_pred;
-      }
-      double dm=measurement-prediction;
-
-      if (var<0.){
-	//_DBG_ << "Negative variance???" << endl;
-	return VALUE_OUT_OF_RANGE;
-      }
-
-      // probability
-      double p=exp(-0.5*dm*dm/var)/sqrt(2.*M_PI*var);
-      p=1.;
-       
-      if (DEBUG_LEVEL>0) 
-	_DBG_ 
-	  << "ring " << cdchits[cdc_index]->ring << 
-	  " Dm " << measurement << 
-	  " Dm-Dpred " << dm << " sigma " 
-	  << sqrt(var) << " " << sqrt(V)<< " p " 
-	  << 1./(Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)))) 
-	  << " theta " << 90.-180./M_PI*atan(Sc(state_tanl,0)) 
-	  << " t " << s*one_over_beta/SPEED_OF_LIGHT
-	  << endl;
+	// wire position
+	wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
+	
+	//doca 
+	doca=(pos-wirepos).Perp();
       
-      // Inverse of variance
-      InvV=1./(p*V+var_pred);
+	// Measurement
+	double lambda=atan(Sc(state_tanl,0));
+	q_over_p=Sc(state_q_over_pt,0)*cos(lambda);
+	double sinl=sin(lambda);
+	double cosl=cos(lambda);
+	double one_over_beta=sqrt(1.+mass_hyp*mass_hyp*q_over_p*q_over_p);
+	double s=central_traj[k].s+ds2;
+	double measurement=0.;
+	if (pass==kTimeBased){
+	  measurement=CDC_DRIFT_SPEED*(cdchits[cdc_index]->t
+				       -s*one_over_beta/SPEED_OF_LIGHT);
 
-      // Compute Kalman gain matrix
-      K=InvV*(Cc*H_T);
+	  //printf("t %f \n",s*one_over_beta/SPEED_OF_LIGHT);
+	  
+	  // Measurement error
+	  V=anneal_factor*0.000225;
+	  /*
+	    +DRIFT_SPEED*DRIFT_SPEED
+	    *(VAR_S*one_over_beta*one_over_beta/SPEED_OF_LIGHT/SPEED_OF_LIGHT 
+	      +mass_hyp*mass_hyp*mass_hyp*mass_hyp*s*s
+	      /one_over_beta/one_over_beta/SPEED_OF_LIGHT/SPEED_OF_LIGHT
+	      *q_over_p*q_over_p*cosl*cosl
+	      *(Cc(state_q_over_pt,state_q_over_pt)
+		+q_over_p*q_over_p*sinl*sinl*Cc(state_tanl,state_tanl)
+		-2.*q_over_p*sinl*Cc(state_tanl,state_q_over_pt)
+		));
+	  */
+	}
+	
+	// prediction for measurement  
+	DVector3 diff=pos-wirepos;
+	DVector3 mdir=pos-wirepos-(diff.Dot(dir))*dir;
+	mdir.SetMag(1.0);
+	double prediction=diff.Dot(mdir);
+	
+	// Projection matrix        
+	sinphi=sin(Sc(state_phi,0));
+	cosphi=cos(Sc(state_phi,0));
+	double ux=dir.x();
+	double uy=dir.y();
+	double uxuy=ux*uy;
+	double ux2=ux*ux;
+	double uy2=uy*uy;
+	double dx=diff.x();
+	double dy=diff.y();
+	if (prediction>0.){
+	  H(0,state_D)=H_T(state_D,0)
+	    =(dy*(uxuy*sinphi+(1.-uy2)*cosphi)-dx*((1.-ux2)*sinphi+uxuy*cosphi))/prediction;
+	  H(0,state_phi)=H_T(state_phi,0)
+	    =-Sc(state_D,0)*(dx*((1.-ux2)*cosphi-uxuy*sinphi)+dy*((1.-uy2)*sinphi-uxuy*cosphi))/prediction;
+	  H(0,state_z)=H_T(state_z,0)
+	    =-dir.z()*(dx*ux+dy*uy)/prediction;
+	}
+	
+	// Difference and variance
+	double var=V,var_pred=0.;
+	if (prediction>0.){
+	  var_pred=(H*(Cc*H_T))(0,0);
+	  var+=var_pred;
+	}
+	double dm=measurement-prediction;
+	
+	if (var<0.){
+	  //cout << "Negative variance???" << endl;
+	  return VALUE_OUT_OF_RANGE;
+	}
+	
+	// probability
+	double p=exp(-0.5*dm*dm/var)/sqrt(2.*M_PI*var);
+	p=1.;
+	//if (fabs(dm)/sqrt(var)>3.) dm=3.*sqrt(var)*(dm>0?1.:-1.);
 
-      // Update the state vector 
-      dS=p*dm*K;
-      //dS.Zero();
-      Sc=Sc+dS;
+	if (DEBUG_LEVEL>0) 
+	  cout 
+	    << "ring " << cdchits[cdc_index]->ring << 
+	    " Dm " << measurement << 
+	    " Dm-Dpred " << dm << " sigma " 
+	    << sqrt(var) << " " << sqrt(V)<< " p " 
+	    << 1./(Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)))) 
+	    << " theta " << 90.-180./M_PI*atan(Sc(state_tanl,0)) 
+	    << " t " << s*one_over_beta/SPEED_OF_LIGHT
+	    << " x " << pos.x() << " y " << pos.y() << " z " << pos.z()
+	    << endl;
+	
+	// Inverse of variance
+	InvV=1./(p*V+var_pred);
+	
+	// Compute Kalman gain matrix
+	K=InvV*(Cc*H_T);
+	
+	// Update the state vector 
+	dS=p*dm*K;
+	//dS.Zero();
+	Sc=Sc+dS;
+	
+	// Path length in active volume
+	//path_length+=?
+	
+	// Update state vector covariance matrix
+	Cc=Cc-(K*(H*Cc));  
+	
+	// calculate the residual
+	dm*=(1.-(H*K)(0,0));
+	cdchits[cdc_index]->residual=dm;
+	
+	// Update chi2 for this hit
+	var=V*(1.-(H*K)(0,0));
+	chisq+=dm*dm/var;      
 
-      // Path length in active volume
-      //path_length+=?
-    
-      // Update state vector covariance matrix
-      Cc=Cc-(K*(H*Cc));  
+	// propagate the covariance matrix to the next point on the trajectory
+	for (int j=0;j<abs(numstep);j++){
+	  DMatrix Stemp(S0);
+	
+	  // Compute the Jacobian matrix
+	  StepJacobian(pos0,origin,dir,-myds,S0,dedx,J);
+	  
+	  // Update covariance matrix
+	  JT=DMatrix(DMatrix::kTransposed,J);
+	  Cc=J*(Cc*JT);
+	  
+	  if (myds>0 && do_multiple_scattering){
+	    // Multiple scattering  	    
+	    GetProcessNoiseCentral(MASS,myds,pos0,central_traj[k].X0,S0,Q);
+	    Cc=Cc+Q;
+	  }
+	
+	  // Step along reference trajectory 
+	  FixedStep(pos0,-myds,S0,dedx);	
+	  
+	  // Step to the next point on the trajectory
+	  Sc=S0+J*(Sc-Stemp); 
+	}
+	// Compute the Jacobian matrix
+	StepJacobian(pos0,origin,dir,-ds3,S0,dedx,J);
+	
+	// Update covariance matrix
+	JT=DMatrix(DMatrix::kTransposed,J);
+	Cc=J*(Cc*JT);
+	if (ds3>0 && do_multiple_scattering){
+	  // Multiple scattering    
+	  GetProcessNoiseCentral(MASS,ds3,pos0,central_traj[k].X0,S0,Q);
+	  Cc=Cc+Q;
+	}
+	for (unsigned int i=0;i<5;i++){
+	  for (unsigned int j=0;j<5;j++){
+	    central_traj[k].C->operator()(i,j)=Cc(i,j);
+	  }
+	}
+	
+	// Step to the next point on the trajectory
+	Sc=S0_+J*(Sc-S0); 
+	
+	// update position on currrent trajectory based on corrected doca to 
+	// reference trajectory
+	pos=central_traj[k].pos;
+	pos(0)+=-Sc(state_D,0)*sin(Sc(state_phi,0));
+	pos(1)+= Sc(state_D,0)*cos(Sc(state_phi,0));
+	pos(2)=Sc(state_z,0);   
+      }
       
-      // calculate the residual
-      dm*=(1.-(H*K)(0,0));
-      cdchits[cdc_index]->residual=dm;
-
-      // Update chi2 for this hit
-      var=V*(1.-(H*K)(0,0));
-      chisq+=dm*dm/var;      
-
       // new wire origin and direction
       if (cdc_index>0){
 	cdc_index--;
@@ -2626,68 +2885,19 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
 	more_measurements=false;
       }
       
-      // propagate the covariance matrix to the next point on the trajectory
-      for (int j=0;j<abs(numstep);j++){
-	DMatrix Stemp(S0);
-
-	// Compute the Jacobian matrix
-	StepJacobian(pos0,origin,dir,-myds,S0,dedx,J);
-  
-	// Update covariance matrix
-	JT=DMatrix(DMatrix::kTransposed,J);
-	Cc=J*(Cc*JT);
-
-	if (myds>0){
-	  // Multiple scattering    
-	  GetProcessNoiseCentral(MASS,myds,pos0,central_traj[k].X0,S0,Q);
-	  Cc=Cc+Q;
-	}
-
-	// Step along reference trajectory 
-	FixedStep(pos0,-myds,S0,dedx);	
-	
-	// Step to the next point on the trajectory
-	Sc=S0+J*(Sc-Stemp); 
-      }
-      // Compute the Jacobian matrix
-      StepJacobian(pos0,origin,dir,-ds3,S0,dedx,J);
-  
-      // Update covariance matrix
-      JT=DMatrix(DMatrix::kTransposed,J);
-      Cc=J*(Cc*JT);
-      if (ds3>0){
-	// Multiple scattering    
-	GetProcessNoiseCentral(MASS,ds3,pos0,central_traj[k].X0,S0,Q);
-	Cc=Cc+Q;
-      }
-      for (unsigned int i=0;i<5;i++){
-	for (unsigned int j=0;j<5;j++){
-	  central_traj[k].C->operator()(i,j)=Cc(i,j);
-	}
-      }
-
-      // Step to the next point on the trajectory
-      Sc=S0_+J*(Sc-S0); 
- 
-      // update position on currrent trajectory based on corrected doca to 
-      // reference trajectory
-      pos=central_traj[k].pos;
-      pos(0)+=-Sc(state_D,0)*sin(Sc(state_phi,0));
-      pos(1)+= Sc(state_D,0)*cos(Sc(state_phi,0));
-      pos(2)=Sc(state_z,0);
-
       // Update the wire position
       wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
-
+      
       //s+=ds2;
       // new doca
       doca=(pos-wirepos).Mag();
     }
+
     old_doca=doca;
   }
 
   if (DEBUG_LEVEL>0)
-    _DBG_ 
+    cout 
       << " p " 
       << 1./(Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)))) 
       << " theta " << 90.-180./M_PI*atan(Sc(state_tanl,0)) 
@@ -2858,7 +3068,7 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
 	InvV(1,1)=V1(0,0)/det;
       }
       else{
-	_DBG_ 
+	cout 
 	  << "Kalman filter:  Singular matrix..." << endl;
 	return UNRECOVERABLE_ERROR;
       }
@@ -2904,7 +3114,7 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
 	InvRC(1,1)=RC(0,0)/det;
       }
       else{ 
-	_DBG_ 
+	cout 
 	  << "Kalman filter:  Singular matrix RC..." << endl;
 	return UNRECOVERABLE_ERROR;
       }
@@ -3005,8 +3215,12 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
       double d2down=(x-xw)*(x-xw)+(y-yw)*(y-yw);
       double zsave=z;
 
-      double dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj_cdc[k].Z,
-			 forward_traj_cdc[k].A,forward_traj_cdc[k].density);
+      double dedx=0.;
+      if (do_energy_loss){
+	dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj_cdc[k].Z,
+		     forward_traj_cdc[k].A,forward_traj_cdc[k].density);
+      }
+
       // Check if the two trial steps led as to bracket the minimum doca
       if (d2up>d2old && d2old<d2down){
 	// We have bracketed the minimum doca 
@@ -3088,7 +3302,7 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
 	double newz=myz+mydz;
 	StepJacobian(myz,newz,S0,dedx,J);
 	C=J*(C*DMatrix(DMatrix::kTransposed,J));
-	if (mydz<0){
+	if (mydz<0 && do_multiple_scattering){
 	  GetProcessNoise(MASS,ds,myz,forward_traj_cdc[k].X0,S0,Q);
 	  C=C+Q;
 	}
@@ -3097,7 +3311,7 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
       }
       StepJacobian(myz,z,S0,dedx,J);
       C=J*(C*DMatrix(DMatrix::kTransposed,J));	
-      if (mydz<0){
+      if (mydz<0 && do_multiple_scattering){
 	GetProcessNoise(MASS,ds,myz,forward_traj_cdc[k].X0,S0,Q);
 	C=C+Q;
       }
@@ -3139,7 +3353,8 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
       //H.Print();
 
        // variance
-      V=0.000225*anneal		
+      V=0.000225*anneal;
+      /*
 	+DRIFT_SPEED*DRIFT_SPEED*VAR_S*one_over_beta*one_over_beta
 	/SPEED_OF_LIGHT/SPEED_OF_LIGHT 
 	+mass_hyp*mass_hyp*mass_hyp*mass_hyp
@@ -3147,6 +3362,7 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
 	/one_over_beta/one_over_beta/SPEED_OF_LIGHT/SPEED_OF_LIGHT
 	*S(state_q_over_p,0)*S(state_q_over_p,0)
 	*C(state_q_over_p,state_q_over_p);
+	*/
       //*0.0004*S(state_q_over_p,0)*S(state_q_over_p,0);
       double var=V,var_pred=0.;
       if (d>0.){
@@ -3154,13 +3370,14 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
 	var+=var_pred;
       }
       if (var<0.){
-	_DBG_ << "Negative variance???" << endl;
+	cout << "Negative variance???" << endl;
 	return VALUE_OUT_OF_RANGE;
       }
 
        // probability
       double p=exp(-0.5*(dm-d)*(dm-d)/var);
       p=1.;
+      //if (fabs(dm-d)/sqrt(var)>3.) dm=d+3.*sqrt(var)*(dm-d>0?1.:-1.);
 
       // Inverse of covariance matrix 
       InvV=p/(p*V+var_pred);
@@ -3204,7 +3421,7 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
 	s+=Step(z,newz,dedx,S);
 	StepJacobian(z,newz,S0,dedx,J);
 	C=J*(C*DMatrix(DMatrix::kTransposed,J));
-	if (mydz<0){
+	if (mydz<0 && do_multiple_scattering){
 	  GetProcessNoise(MASS,ds,z,forward_traj_cdc[k].X0,S0,Q);
 	  C=C+Q;
 	}
@@ -3213,7 +3430,7 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
       } 
       StepJacobian(z,zsave,S0,dedx,J);
       C=J*(C*DMatrix(DMatrix::kTransposed,J));
-      if (mydz<0){
+      if (mydz<0 && do_multiple_scattering){
 	GetProcessNoise(MASS,ds,z,forward_traj_cdc[k].X0,S0,Q);
 	C=C+Q;
       }
@@ -3267,11 +3484,14 @@ jerror_t DKalmanFilter::ExtrapolateToVertex(double mass_hyp,DMatrix S,
     if (RootGeom->FindMat(pos,density,A,Z,X0)!=NOERROR) break;
 
     // Get dEdx for the upcoming step
-    dEdx=GetdEdx(MASS,S(state_q_over_p,0),Z,A,density); 
-    
+    if (do_energy_loss){
+      dEdx=GetdEdx(MASS,S(state_q_over_p,0),Z,A,density); 
+    }
+ 
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
-    GetProcessNoise(MASS,ds,z,X0,S,Q);
+    if (do_multiple_scattering)
+      GetProcessNoise(MASS,ds,z,X0,S,Q);
 
     newz=z+dz;
     // Compute the Jacobian matrix
@@ -3310,10 +3530,10 @@ jerror_t DKalmanFilter::ExtrapolateToVertex(double mass_hyp,DMatrix S,
   y_=S(state_y,0);
   z_=newz;
   if (DEBUG_LEVEL>0)
-    _DBG_
+    cout
       << "Vertex:  p " 
       <<   1./q_over_pt_/cos(atan(tanl_))
-      << " theta "  << M_PI/2.-atan(tanl_)
+      << " theta "  << 90.0-180./M_PI*atan(tanl_)
       << " vertex " << x_ << " " << y_ << " " << z_ <<endl;
 
   // Central parameterization
@@ -3378,13 +3598,16 @@ jerror_t DKalmanFilter::ExtrapolateToVertex(double mass_hyp,DVector3 pos,
       
       // Get dEdx for the upcoming step
       double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
-      dedx=GetdEdx(MASS,q_over_p,Z,A,density); 
+      if (do_energy_loss){
+	dedx=GetdEdx(MASS,q_over_p,Z,A,density); 
+      }
       
       // Compute the Jacobian matrix
       StepJacobian(pos,origin,dir,ds,Sc,dedx,Jc);
       
       // Multiple scattering
-      GetProcessNoiseCentral(MASS,ds,pos,X0,Sc,Q);
+      if (do_multiple_scattering)
+	GetProcessNoiseCentral(MASS,ds,pos,X0,Sc,Q);
       // Propagate the covariance matrix
       JcT=DMatrix(DMatrix::kTransposed,Jc);
       Cc=Jc*(Cc*JcT)+Q;
@@ -3406,10 +3629,10 @@ jerror_t DKalmanFilter::ExtrapolateToVertex(double mass_hyp,DVector3 pos,
  
 
   if (DEBUG_LEVEL>0)
-    _DBG_
+    cout
       << "Vertex:  p " 
       <<   1./Sc(state_q_over_pt,0)/cos(atan(Sc(state_tanl,0)))
-      << " theta "  << M_PI/2.-atan(Sc(state_tanl,0)) 
+      << " theta "  << 90.-180./M_PI*atan(Sc(state_tanl,0)) 
       << " vertex " << pos.x()<< " " << pos.y()<< " " << pos.z() <<endl;
   
   
