@@ -2,9 +2,13 @@
 Release Notes for Hall-D source code
 ------------------------------------
 
-    URL: https://halldsvn.jlab.org/repos/tags/release-2008-04-27
+    URL: https://halldsvn.jlab.org/repos/tags/release-2009-04-27
    Date: May 18, 2009
 Builder: Mark Ito marki@jlab.org
+
+This release is based on revision 5120 of trunk/src. This is the last
+revision before corrections to the CDC geometry made by Beni Zihlmann
+on April 27.
 
 
 This release has been compiled on the following systems
@@ -34,10 +38,19 @@ Changed paths:
    M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
    M /trunk/src/libraries/TRACKING/DKalmanFilter.h
 
-(1) Fixed bug in third step of 4-step Runge-Kutta for the central parameter set. (2) Added second order terms when stepping the position along the trajectory through the field.  (3) copied the old version of Step for the central parameter to FixedStep and (4) added a new routine Step for playing around with adaptive step size algorithms. (5) Get the material properties through DRootGeom and commented out old DMaterialMap interface. (6) Modifed BrentsAlgorithm to step from one position to the next instead of always stepping from the end position used to initially bracket the minimum.  This reduces the number of steps needed by at least one.
+(1) Fixed bug in third step of 4-step Runge-Kutta for the central
+parameter set. (2) Added second order terms when stepping the position
+along the trajectory through the field.  (3) copied the old version of
+Step for the central parameter to FixedStep and (4) added a new
+routine Step for playing around with adaptive step size
+algorithms. (5) Get the material properties through DRootGeom and
+commented out old DMaterialMap interface. (6) Modifed BrentsAlgorithm
+to step from one position to the next instead of always stepping from
+the end position used to initially bracket the minimum.  This reduces
+the number of steps needed by at least one.
 ------------------------------------------------------------------------
-r4908 | staylor | 2009-02-27 17:43:23 -0500 (Fri, 27 Feb 2009) | 1 line
-Changed paths:
+r4908 | staylor | 2009-02-27 17:43:23 -0500 (Fri, 27 Feb 2009) | 1
+line Changed paths:
    M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.cc
    M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.h
 
@@ -54,7 +67,9 @@ r4910 | remitche | 2009-03-03 14:50:19 -0500 (Tue, 03 Mar 2009) | 2 lines
 Changed paths:
    M /trunk/src/programs/Simulation/HDGeant/gustep.F
 
-Added histograms to record total energy deposition in the FCAL, useful for radiation dose calculations.  Histograms are created using the environment variable FCAL_RADIATION_HISTOGRAMS.
+Added histograms to record total energy deposition in the FCAL, useful
+for radiation dose calculations.  Histograms are created using the
+environment variable FCAL_RADIATION_HISTOGRAMS.
 
 ------------------------------------------------------------------------
 r4914 | kornicer | 2009-03-05 15:18:28 -0500 (Thu, 05 Mar 2009) | 9 lines
@@ -86,26 +101,36 @@ r4917 | davidl | 2009-03-09 08:56:31 -0400 (Mon, 09 Mar 2009) | 2 lines
 Changed paths:
    M /trunk/src/libraries/TRACKING/DTrackFitterALT1.cc
 
-Added a disabled target constraint. This is because there is evidence that constraining to the beamline (large z-extent) can have a significant effect on the momentum of forward going tracks. To enable the contstraint, one needs to set the #if 0 to a #if 1 at the top of GetWiresShiftsErrs() and recompile.
+Added a disabled target constraint. This is because there is evidence
+that constraining to the beamline (large z-extent) can have a
+significant effect on the momentum of forward going tracks. To enable
+the contstraint, one needs to set the #if 0 to a #if 1 at the top of
+GetWiresShiftsErrs() and recompile.
 
 ------------------------------------------------------------------------
 r4918 | davidl | 2009-03-09 08:58:19 -0400 (Mon, 09 Mar 2009) | 1 line
 Changed paths:
    M /trunk/src/libraries/FCAL/DFCALTruthShower.h
 
-Remove obsolete Serialize() and Deserialize() methods from DFCALTruthShower class definition.
+Remove obsolete Serialize() and Deserialize() methods from
+DFCALTruthShower class definition.
 ------------------------------------------------------------------------
 r4920 | marki | 2009-03-09 10:42:13 -0400 (Mon, 09 Mar 2009) | 1 line
 Changed paths:
    M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/chisqMin.cc
 
-if number of points less than or equal to number of parameters, throw exception in constructor
+if number of points less than or equal to number of parameters, throw
+exception in constructor
 ------------------------------------------------------------------------
-r4924 | davidl | 2009-03-09 15:29:06 -0400 (Mon, 09 Mar 2009) | 2 lines
-Changed paths:
+r4924 | davidl | 2009-03-09 15:29:06 -0400 (Mon, 09 Mar 2009) | 2
+lines Changed paths:
    M /trunk/src/programs/Analysis/hdview2/hdview2.cc
 
-Add call to RefreshProcessorListFromJApplication from main(). This is because a call to it was removed in JANA 0.5.0 since it was seen as redundant. Apparently, the place that it was removed from was needed to get the MyProcessor registered with the JEventLoop in hdview2. Hence, the additional call now in hdview2 itself.
+Add call to RefreshProcessorListFromJApplication from main(). This is
+because a call to it was removed in JANA 0.5.0 since it was seen as
+redundant. Apparently, the place that it was removed from was needed
+to get the MyProcessor registered with the JEventLoop in
+hdview2. Hence, the additional call now in hdview2 itself.
 
 ------------------------------------------------------------------------
 r4925 | marki | 2009-03-10 11:36:06 -0400 (Tue, 10 Mar 2009) | 4 lines
@@ -127,22 +152,29 @@ r4927 | staylor | 2009-03-11 09:20:33 -0400 (Wed, 11 Mar 2009) | 1 line
 Changed paths:
    M /trunk/src/libraries/TRACKING/DTrack.h
 
-Add 5x5 covariance matrices for central paramerization -- cov -- and forward parameterization -- fcov -- to store results of kalman filter as vectors of vectors.  Will switch over to using TrackingErrorMatrix from DKinematicData at a later date.
+Add 5x5 covariance matrices for central paramerization -- cov -- and
+forward parameterization -- fcov -- to store results of kalman filter
+as vectors of vectors.  Will switch over to using TrackingErrorMatrix
+from DKinematicData at a later date.
 ------------------------------------------------------------------------
-r4928 | staylor | 2009-03-11 09:25:30 -0400 (Wed, 11 Mar 2009) | 1 line
-Changed paths:
+r4928 | staylor | 2009-03-11 09:25:30 -0400 (Wed, 11 Mar 2009) | 1
+line Changed paths:
    M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.cc
 
-Get covariance matrices from result of fit and store them in DTrack.  Change how to get list of FDC hits from associated objects -- do not use the segments -- to be consistent with thrown candidate facotory (used for debug purposes).
+Get covariance matrices from result of fit and store them in DTrack.
+Change how to get list of FDC hits from associated objects -- do not
+use the segments -- to be consistent with thrown candidate facotory
+(used for debug purposes).
 ------------------------------------------------------------------------
-r4929 | staylor | 2009-03-11 09:26:36 -0400 (Wed, 11 Mar 2009) | 1 line
-Changed paths:
+r4929 | staylor | 2009-03-11 09:26:36 -0400 (Wed, 11 Mar 2009) | 1
+line Changed paths:
    M /trunk/src/libraries/TRACKING/DTrackCandidate_factory.cc
 
-Store FDC hits as associated objects instead of storing segments as associated objects
+Store FDC hits as associated objects instead of storing segments as
+associated objects
 ------------------------------------------------------------------------
-r4930 | staylor | 2009-03-11 09:28:22 -0400 (Wed, 11 Mar 2009) | 1 line
-Changed paths:
+r4930 | staylor | 2009-03-11 09:28:22 -0400 (Wed, 11 Mar 2009) | 1
+line Changed paths:
    M /trunk/src/libraries/TRACKING/DKalmanFilter.h
 
 Added covariance matrices and Get routines to class.
@@ -151,10 +183,15 @@ r4931 | staylor | 2009-03-11 09:35:38 -0400 (Wed, 11 Mar 2009) | 1 line
 Changed paths:
    M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
 
-(1) added grkuta to help debug problems with swimming (2) output covariance matrices (3) added path length and beta contributions to variance in drift time measurement (4) account for angular dependence and dispersion in variance for position along wire to be consistent with MC (5) remove logarithmic factors from multiple scattering variance.
+(1) added grkuta to help debug problems with swimming (2) output
+covariance matrices (3) added path length and beta contributions to
+variance in drift time measurement (4) account for angular dependence
+and dispersion in variance for position along wire to be consistent
+with MC (5) remove logarithmic factors from multiple scattering
+variance.
 ------------------------------------------------------------------------
-r4937 | jonesrt | 2009-03-13 21:55:42 -0400 (Fri, 13 Mar 2009) | 10 lines
-Changed paths:
+r4937 | jonesrt | 2009-03-13 21:55:42 -0400 (Fri, 13 Mar 2009) | 10
+lines Changed paths:
    M /trunk/src/programs/Simulation/HDGeant/Makefile.orig
    A /trunk/src/programs/Simulation/HDGeant/gtrack.F
 
@@ -196,10 +233,17 @@ Changed paths:
    M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
    M /trunk/src/libraries/TRACKING/DKalmanFilter.h
 
-(1) Added error propagation for lorentz correction (2) Removed wire origin and direction arguments from FixedStep and CalcDeriv... for central tracks (3) Added magnetic field vector B as an argument for CalcDeriv.. for central tracks. (4) Resurrected perturbative approach for central tracks and redefined D to be the signed distance from the actual trajectory to to the reference trajectory.  Propagation of D and the Jacobian matrix elements for D are done assuming a helical segment.
+(1) Added error propagation for lorentz correction (2) Removed wire
+origin and direction arguments from FixedStep and CalcDeriv... for
+central tracks (3) Added magnetic field vector B as an argument for
+CalcDeriv.. for central tracks. (4) Resurrected perturbative approach
+for central tracks and redefined D to be the signed distance from the
+actual trajectory to to the reference trajectory.  Propagation of D
+and the Jacobian matrix elements for D are done assuming a helical
+segment.
 ------------------------------------------------------------------------
-r4952 | davidl | 2009-03-17 09:39:43 -0400 (Tue, 17 Mar 2009) | 9 lines
-Changed paths:
+r4952 | davidl | 2009-03-17 09:39:43 -0400 (Tue, 17 Mar 2009) | 9
+lines Changed paths:
    M /trunk/src/programs/Simulation/HDGeant/control.in
    M /trunk/src/programs/Simulation/HDGeant/gukine.F
    M /trunk/src/programs/Simulation/HDGeant/hdtrackparams.inc
@@ -220,10 +264,13 @@ Changed paths:
    M /trunk/src/libraries/DANA/DApplication.cc
    M /trunk/src/libraries/DANA/DApplication.h
 
-Create an Init() method for DApplication and move some things previously done in the constructor to it. This is to delay things that may be influenced by plugins that are not attached at the time the constructor is called.
+Create an Init() method for DApplication and move some things
+previously done in the constructor to it. This is to delay things that
+may be influenced by plugins that are not attached at the time the
+constructor is called.
 ------------------------------------------------------------------------
-r4978 | davidl | 2009-03-24 08:58:10 -0400 (Tue, 24 Mar 2009) | 14 lines
-Changed paths:
+r4978 | davidl | 2009-03-24 08:58:10 -0400 (Tue, 24 Mar 2009) | 14
+lines Changed paths:
    M /trunk/src/libraries/PID/DParticle_factory.cc
    M /trunk/src/libraries/PID/DParticle_factory.h
    M /trunk/src/libraries/TRACKING/DTrackFitterALT1.cc
@@ -287,7 +334,8 @@ r4983 | davidl | 2009-03-24 09:16:10 -0400 (Tue, 24 Mar 2009) | 1 line
 Changed paths:
    M /trunk/src/programs/Analysis/hdview2/hdview2.cc
 
-Explicitly print the parameters since this is not done automatically by the framework when run in GUI mode.
+Explicitly print the parameters since this is not done automatically
+by the framework when run in GUI mode.
 ------------------------------------------------------------------------
 r4984 | davidl | 2009-03-24 09:16:58 -0400 (Tue, 24 Mar 2009) | 1 line
 Changed paths:
@@ -308,20 +356,26 @@ Changed paths:
    M /trunk/src/libraries/PID/DParticle_factory_THROWN.cc
    M /trunk/src/libraries/TRACKING/DTrack_factory_THROWN.cc
 
-- Fixed bugs with DParticle_factory related to using the DTrackHitSelector class that were apparently not caught before the last commit.
+- Fixed bugs with DParticle_factory related to using the
+DTrackHitSelector class that were apparently not caught before the
+last commit.
 
-- Changed the fit type passed to DTrackHitSelector::GetXDCHits() so that it is helical for DTrack and wire-based for DParticle. This makes it more consistent with the real reconstruction factories who use the associated objects to record the hits used in the fit and therefore the hits selected from the track used
-as *inputs* to the fit.
+- Changed the fit type passed to DTrackHitSelector::GetXDCHits() so
+that it is helical for DTrack and wire-based for DParticle. This makes
+it more consistent with the real reconstruction factories who use the
+associated objects to record the hits used in the fit and therefore
+the hits selected from the track used as *inputs* to the fit.
 
 ------------------------------------------------------------------------
 r4989 | davidl | 2009-03-25 03:40:45 -0400 (Wed, 25 Mar 2009) | 1 line
 Changed paths:
    M /trunk/src/programs/Utilities/bfield2root/bfield2root.cc
 
-Accidentally committed this with an early return statement yesterday apparently left over from a debugging session.
+Accidentally committed this with an early return statement yesterday
+apparently left over from a debugging session.
 ------------------------------------------------------------------------
-r4990 | davidl | 2009-03-25 03:45:04 -0400 (Wed, 25 Mar 2009) | 5 lines
-Changed paths:
+r4990 | davidl | 2009-03-25 03:45:04 -0400 (Wed, 25 Mar 2009) | 5
+lines Changed paths:
    D /trunk/src/programs/Utilities/geantbfield2root
 
 Removed obsolete geantbfield2root utility. This was used to help ensure
@@ -419,7 +473,8 @@ r5015 | marki | 2009-03-30 17:32:19 -0400 (Mon, 30 Mar 2009) | 1 line
 Changed paths:
    M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/MyTrajectory.cc
 
-corrected bug in z of trajectory in getXYT; HepVector to LorentzVector conversion again.
+corrected bug in z of trajectory in getXYT; HepVector to LorentzVector
+conversion again.
 ------------------------------------------------------------------------
 r5016 | davidl | 2009-03-31 09:11:49 -0400 (Tue, 31 Mar 2009) | 1 line
 Changed paths:
@@ -467,7 +522,8 @@ Changed paths:
    M /trunk/src/libraries/BCAL/DBCALMCResponse_factory.cc
    M /trunk/src/libraries/BCAL/DBCALMCResponse_factory.h
 
-added code to the BCAL response factory that generates dark hits on the sensors in the inner BCAL layers
+added code to the BCAL response factory that generates dark hits on
+the sensors in the inner BCAL layers
 ------------------------------------------------------------------------
 r5028 | marki | 2009-04-01 16:01:16 -0400 (Wed, 01 Apr 2009) | 1 line
 Changed paths:
@@ -491,7 +547,16 @@ r5036 | staylor | 2009-04-03 19:50:11 -0400 (Fri, 03 Apr 2009) | 1 line
 Changed paths:
    M /trunk/src/libraries/CDC/DCDCTrackHit_factory.cc
 
-Fixed bug in the determination of the origin of a close-packed stereo wire.  The old version of the code converted the deltax and deltay values into a radius and then rotated by phi, but a close inspection of the hddsGeant.F file and the c++ code generating this file shows that one needs to rotate the (deltax,deltay,0) vector by phi around z instead.  This led to some small discrepancies between the wire origins in the simulation file and the reconstruction.  Also put in a preliminary fix for the wire direction vectors for the close-packed stereo wires.  These vectors are still not quite correct relative to the simulation -- perhaps there are some roundoff problems?
+Fixed bug in the determination of the origin of a close-packed stereo
+wire.  The old version of the code converted the deltax and deltay
+values into a radius and then rotated by phi, but a close inspection
+of the hddsGeant.F file and the c++ code generating this file shows
+that one needs to rotate the (deltax,deltay,0) vector by phi around z
+instead.  This led to some small discrepancies between the wire
+origins in the simulation file and the reconstruction.  Also put in a
+preliminary fix for the wire direction vectors for the close-packed
+stereo wires.  These vectors are still not quite correct relative to
+the simulation -- perhaps there are some roundoff problems?
 ------------------------------------------------------------------------
 r5051 | davidl | 2009-04-09 11:16:55 -0400 (Thu, 09 Apr 2009) | 1 line
 Changed paths:
@@ -519,7 +584,11 @@ Changed paths:
    A /trunk/src/programs/Analysis/plugins/trkres_tree/Makefile
    A /trunk/src/programs/Analysis/plugins/trkres_tree/trackres.h
 
-This is the start of a plugin to create a tree with charged track resolutions calculated based on DMCTrajectoryPoint information. It currently calculates the reolutions for pt, theta, and p (from pt and theta resolutions). It does not yet calculate phi resolutions. This is based in large part on techniques described in GlueX note 1015-v2.
+This is the start of a plugin to create a tree with charged track
+resolutions calculated based on DMCTrajectoryPoint information. It
+currently calculates the reolutions for pt, theta, and p (from pt and
+theta resolutions). It does not yet calculate phi resolutions. This is
+based in large part on techniques described in GlueX note 1015-v2.
 
 ------------------------------------------------------------------------
 r5055 | davidl | 2009-04-09 13:48:30 -0400 (Thu, 09 Apr 2009) | 1 line
@@ -534,7 +603,11 @@ Changed paths:
 
 Calculate resic for FDC using Lorentz corrected position along wire.
 
-Note that this uses the correction as applied to the DFDCPseudo hit. That was based on a LR decision resulting from a segment fit to a single FDC package. This should really access the correction tables to make the correction based on the final fit track.   ... Another day perhaps...
+Note that this uses the correction as applied to the DFDCPseudo
+hit. That was based on a LR decision resulting from a segment fit to a
+single FDC package. This should really access the correction tables to
+make the correction based on the final fit track.  ... Another day
+perhaps...
 
 ------------------------------------------------------------------------
 r5057 | somov | 2009-04-09 14:49:49 -0400 (Thu, 09 Apr 2009) | 8 lines
@@ -558,7 +631,10 @@ r5058 | staylor | 2009-04-09 15:11:45 -0400 (Thu, 09 Apr 2009) | 1 line
 Changed paths:
    M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
 
-Numerous bug fixes and reorginization throughout. In particular a reordering of the calculation of the Jacobian matrix relative to the step in the routine that finds the reference trajectory for the CDC-alone tracks alleviated the convergence problem seen in the past.
+Numerous bug fixes and reorginization throughout. In particular a
+reordering of the calculation of the Jacobian matrix relative to the
+step in the routine that finds the reference trajectory for the
+CDC-alone tracks alleviated the convergence problem seen in the past.
 ------------------------------------------------------------------------
 r5059 | somov | 2009-04-09 16:34:27 -0400 (Thu, 09 Apr 2009) | 4 lines
 Changed paths:
@@ -616,10 +692,15 @@ r5065 | staylor | 2009-04-10 18:06:18 -0400 (Fri, 10 Apr 2009) | 1 line
 Changed paths:
    M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
 
-Removed unused #DEFINES.  Cleaned up old junk code that had been commented out.  Tweaked initial covariance numbers for central tracks.  Get the position of the upstream end of the CDC from the XML.  Added check that the cdc reference trajectory actually has entries in it.  Not sure why it would not, but this avoids crashing on certain peculiar events.
+Removed unused #DEFINES.  Cleaned up old junk code that had been
+commented out.  Tweaked initial covariance numbers for central tracks.
+Get the position of the upstream end of the CDC from the XML.  Added
+check that the cdc reference trajectory actually has entries in it.
+Not sure why it would not, but this avoids crashing on certain
+peculiar events.
 ------------------------------------------------------------------------
-r5066 | staylor | 2009-04-13 15:26:23 -0400 (Mon, 13 Apr 2009) | 1 line
-Changed paths:
+r5066 | staylor | 2009-04-13 15:26:23 -0400 (Mon, 13 Apr 2009) | 1
+line Changed paths:
    M /trunk/src/programs/Simulation/hdds/Material_HDDS.xml
 
 Added polypropylene
@@ -728,16 +809,24 @@ r5079 | staylor | 2009-04-16 08:31:20 -0400 (Thu, 16 Apr 2009) | 1 line
 Changed paths:
    M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
 
-(1) Added crude energy-loss straggling variance with the assumption that the absorbers are thick enough that the central limit theorem can be used. (2) Simplified the generation of trajectory points for CDC hits in forward-going tracks.  The call to BrentsAlgorithm was not needed because this is done in the filter portion of the code.  (3) Attempted to tune the initial guess for the covariance matrix for central tracks by putting in some angular dependence for the errors in q/pt and z. (4) Added another diagnostic histogram.
+(1) Added crude energy-loss straggling variance with the assumption
+that the absorbers are thick enough that the central limit theorem can
+be used. (2) Simplified the generation of trajectory points for CDC
+hits in forward-going tracks.  The call to BrentsAlgorithm was not
+needed because this is done in the filter portion of the code.  (3)
+Attempted to tune the initial guess for the covariance matrix for
+central tracks by putting in some angular dependence for the errors in
+q/pt and z. (4) Added another diagnostic histogram.
 ------------------------------------------------------------------------
-r5080 | staylor | 2009-04-16 08:33:07 -0400 (Thu, 16 Apr 2009) | 1 line
-Changed paths:
+r5080 | staylor | 2009-04-16 08:33:07 -0400 (Thu, 16 Apr 2009) | 1
+line Changed paths:
    M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.cc
 
-Added another diagnostic histogram for cdc hits and fixed title of x-axis for the cdc_residuals histogram.
+Added another diagnostic histogram for cdc hits and fixed title of
+x-axis for the cdc_residuals histogram.
 ------------------------------------------------------------------------
-r5081 | davidl | 2009-04-16 13:25:48 -0400 (Thu, 16 Apr 2009) | 13 lines
-Changed paths:
+r5081 | davidl | 2009-04-16 13:25:48 -0400 (Thu, 16 Apr 2009) | 13
+lines Changed paths:
    A /trunk/src/libraries/TRACKING/DTrackCandidate_factory_CDC_or_FDCpseudo.cc
    A /trunk/src/libraries/TRACKING/DTrackCandidate_factory_CDC_or_FDCpseudo.h
    M /trunk/src/libraries/TRACKING/DTrackFitterALT1.cc
@@ -770,7 +859,12 @@ r5093 | staylor | 2009-04-17 16:08:22 -0400 (Fri, 17 Apr 2009) | 1 line
 Changed paths:
    M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
 
-(1) Use ring number to sort CDC hits instead of radius. (2) If the minimum doca to a cdc wire would occur at a z position beyond the length of the wire, track back to the end of the upstream or downstream endplates for comparision of the projection to the drift distance. (3) Played around with the covariance values for the initial guess for CDC-alone tracks.  Not sure yet what the optimum is.
+(1) Use ring number to sort CDC hits instead of radius. (2) If the
+minimum doca to a cdc wire would occur at a z position beyond the
+length of the wire, track back to the end of the upstream or
+downstream endplates for comparision of the projection to the drift
+distance. (3) Played around with the covariance values for the initial
+guess for CDC-alone tracks.  Not sure yet what the optimum is.
 ------------------------------------------------------------------------
 r5095 | marki | 2009-04-20 15:20:30 -0400 (Mon, 20 Apr 2009) | 1 line
 Changed paths:
@@ -801,18 +895,23 @@ r5100 | davidl | 2009-04-22 13:15:48 -0400 (Wed, 22 Apr 2009) | 1 line
 Changed paths:
    M /trunk/src/programs/Analysis/plugins/trackeff_hists2/DEventProcessor_trackeff_hists.cc
 
-Set default values for Ndof and chisq_wb in case there are events with no reconstructed tracks.
+Set default values for Ndof and chisq_wb in case there are events with
+no reconstructed tracks.
 ------------------------------------------------------------------------
-r5101 | staylor | 2009-04-22 13:34:06 -0400 (Wed, 22 Apr 2009) | 1 line
-Changed paths:
+r5101 | staylor | 2009-04-22 13:34:06 -0400 (Wed, 22 Apr 2009) | 1
+line Changed paths:
    M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
    M /trunk/src/libraries/TRACKING/DKalmanFilter.h
    M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.cc
 
-(1) Added flag for switching between wire-based and time-based fits; currently set for time-based fits. (2) changed method for computing the predicted docas to cdc wires; now using vector algebra instead of naively scaling by cos(stereo angle) for stereo wires.  This also entails changes to the projection matrix elements.
+(1) Added flag for switching between wire-based and time-based fits;
+currently set for time-based fits. (2) changed method for computing
+the predicted docas to cdc wires; now using vector algebra instead of
+naively scaling by cos(stereo angle) for stereo wires.  This also
+entails changes to the projection matrix elements.
 ------------------------------------------------------------------------
-r5102 | davidl | 2009-04-22 13:57:19 -0400 (Wed, 22 Apr 2009) | 25 lines
-Changed paths:
+r5102 | davidl | 2009-04-22 13:57:19 -0400 (Wed, 22 Apr 2009) | 25
+lines Changed paths:
    M /trunk/src/libraries/TRACKING/DTrackFitterALT1.cc
    M /trunk/src/libraries/TRACKING/DTrackFitterALT1.h
    A /trunk/src/libraries/TRACKING/fdc_covariance.cc
@@ -854,22 +953,25 @@ r5104 | staylor | 2009-04-23 09:12:19 -0400 (Thu, 23 Apr 2009) | 1 line
 Changed paths:
    M /trunk/src/libraries/CDC/DCDCTrackHit_factory.cc
 
-Radius for ring 1 was off compared to the XML file in svn rev 5103 -- it was 10.960 in the XML file and 10.984 in the CDC code.
+Radius for ring 1 was off compared to the XML file in svn rev 5103 --
+it was 10.960 in the XML file and 10.984 in the CDC code.
 ------------------------------------------------------------------------
-r5108 | remitche | 2009-04-23 16:30:04 -0400 (Thu, 23 Apr 2009) | 2 lines
-Changed paths:
+r5108 | remitche | 2009-04-23 16:30:04 -0400 (Thu, 23 Apr 2009) | 2
+lines Changed paths:
    M /trunk/src/libraries/FCAL/DFCALPhoton_factory.cc
    M /trunk/src/libraries/FCAL/DFCALPhoton_factory.h
 
-Replaced the center of the FCAL with radiation hard glass and updated the non-linear corrections to the shower energy.
+Replaced the center of the FCAL with radiation hard glass and updated
+the non-linear corrections to the shower energy.
 
 ------------------------------------------------------------------------
 r5109 | remitche | 2009-04-23 16:32:51 -0400 (Thu, 23 Apr 2009) | 3 lines
 Changed paths:
    M /trunk/src/programs/Simulation/HDGeant/hitFCal.c
 
-Replaced the center of the FCAL with radiation hard glass and updated the non-linear corrections to the shower energy.
-(Changes made by Brad Schaefer).
+Replaced the center of the FCAL with radiation hard glass and updated
+the non-linear corrections to the shower energy.  (Changes made by
+Brad Schaefer).
 
 ------------------------------------------------------------------------
 r5110 | davidl | 2009-04-24 11:06:10 -0400 (Fri, 24 Apr 2009) | 1 line
@@ -898,7 +1000,9 @@ Changed paths:
    M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
    M /trunk/src/libraries/TRACKING/DKalmanFilter.h
 
-Add residuals to internal data types for cdc and fdc hits and move routines for filling debug residual histograms to avoid unnecessary filling.
+Add residuals to internal data types for cdc and fdc hits and move
+routines for filling debug residual histograms to avoid unnecessary
+filling.
 ------------------------------------------------------------------------
 r5118 | davidl | 2009-04-27 09:01:01 -0400 (Mon, 27 Apr 2009) | 1 line
 Changed paths:
@@ -911,10 +1015,14 @@ r5119 | staylor | 2009-04-27 13:27:38 -0400 (Mon, 27 Apr 2009) | 1 line
 Changed paths:
    M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
 
-(1) Extend the range of the cdc reference trajectory out to z=0 and z=180. (1) For central tracks, turn on 2nd level of iteration whereby the result of the first iteration is used to generate a new reference trajectory. (3) Propagate covariance matrix for central tracks out from target and use it as guess for the second iteration.
+(1) Extend the range of the cdc reference trajectory out to z=0 and
+z=180. (1) For central tracks, turn on 2nd level of iteration whereby
+the result of the first iteration is used to generate a new reference
+trajectory. (3) Propagate covariance matrix for central tracks out
+from target and use it as guess for the second iteration.
 ------------------------------------------------------------------------
-r5120 | kornicer | 2009-04-27 14:14:15 -0400 (Mon, 27 Apr 2009) | 4 lines
-Changed paths:
+r5120 | kornicer | 2009-04-27 14:14:15 -0400 (Mon, 27 Apr 2009) | 4
+lines Changed paths:
    M /trunk/src/libraries/FCAL/DFCALCluster.h
    M /trunk/src/libraries/FCAL/DFCALCluster_factory.cc
 
