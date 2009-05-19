@@ -43,6 +43,9 @@ void combinedResidFunc::resid(const HepVector *x, void *data, HepVector *f){
   trajPtr->swim(*x);
   // populate f vector with residuals
 
+  double thisChiSquared = 0.0;
+  double thisResid;
+
   // get info from residFDC class
 
   rFDC.calcResids();
@@ -54,8 +57,10 @@ void combinedResidFunc::resid(const HepVector *x, void *data, HepVector *f){
   vector<HepLorentzVector> pocasF;
   rFDC.getDetails(pointF, docasF, errorsF, pocasF);
   for (unsigned int ir = 0; ir < n_fdc; ir++) {
-    (*f)(ir + 1) = residsF[ir];
+    thisResid = residsF[ir];
+    (*f)(ir + 1) = thisResid;
     if (storeDetails) {
+      thisChiSquared += thisResid*thisResid;
       FDCHitDetailsPtr = new FDCHitDetails();
       FDCHitDetailsPtr->doca = docasF[ir];
       FDCHitDetailsPtr->poca = pocasF[ir];
@@ -71,8 +76,6 @@ void combinedResidFunc::resid(const HepVector *x, void *data, HepVector *f){
   vector<double> residsC;
   rCDC.getResids(residsC);
   CDCHitDetails *CDCHitDetailsPtr;
-  double thisChiSquared = 0.0;
-  double thisResid;
   vector<double> docasC, distsC, errorsC;
   vector<HepLorentzVector> pocasC;
   vector<HepVector> posWiresC;
