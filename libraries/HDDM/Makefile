@@ -2,7 +2,7 @@ all: hddm_s.h hddm_s.c
 	make -f Makefile.static
 #	make -C shlib
 
-install:
+install: all
 	make -f Makefile.static install
 
 clean:
