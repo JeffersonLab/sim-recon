@@ -69,6 +69,9 @@ jerror_t DEventProcessor_invariant_mass_hists::init(void)
 	mass_pip_pim = new TH1D("mass_pip_pim","invariant mass of #pi^{+} and #pi^{-}",4001, 0.0, 4.0);
 	mass_pip_pim->SetXTitle("Invariant Mass (GeV/c^{2})");
 
+	t_pX = new TH1D("t_pX","-t for #gammap->pX",20, 0.0, 6.0);
+	t_pX->SetXTitle("-t (GeV)");
+
 	sqrt_s = new TH1D("sqrt_s","Center of mass energy #sqrt{s}",2001, 0.0, 6.0);
 	sqrt_s->SetXTitle("#sqrt{s}  C.M. energy (GeV)");
 	
@@ -185,7 +188,17 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 		for(unsigned int k=0; k<rec_piminus.size(); k++){
 			mass_pip_pim->Fill( (rec_piplus[j] + rec_piminus[k]).M() ); // (a more compact way than the 2 gamma example above)
 		}
-	}		
+	}
+	
+	// Calculate Mandelstam t=(p1-p3)^2
+	if(rec_protons.size()==1){
+		TLorentzVector beam_photon = beam_photons.size()>0 ? MakeTLorentz(beam_photons[0], 0.0):TLorentzVector(0.0, 0.0, 0.0, 9.0);
+		TLorentzVector &proton = rec_protons[0];
+		TLorentzVector p3 = beam_photon + target - proton;
+		double t = (beam_photon - p3).Mag2();
+		t_pX->Fill(-t);
+//		_DBG_<<t<<endl;
+	}
 
 	return NOERROR;
 }

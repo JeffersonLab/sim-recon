@@ -32,6 +32,8 @@ class DEventProcessor_invariant_mass_hists:public JEventProcessor{
 		TH1D *mass_2gamma;	// invariant mass of 2 photons
 		TH1D *mass_4gamma;	// invariant mass of 4 photons
 		TH1D *mass_pip_pim;	// invariant mass of pi+ and pi-
+		
+		TH1D *t_pX;				// -t distribution for gamma p -> p X
 
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
