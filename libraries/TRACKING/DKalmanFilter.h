@@ -108,9 +108,12 @@ class DKalmanFilter{
   jerror_t ExtrapolateToVertex(double mass_hyp,DVector3 pos,DMatrix &Sc,
 			       DMatrix Cc);
   jerror_t ExtrapolateToVertex(double mass_hyp,DMatrix S, DMatrix C);
-  jerror_t SetReferenceTrajectory(DMatrix &S,DMatrix &C);
+  jerror_t SetReferenceTrajectory(DMatrix &S,DMatrix &C);  
+  jerror_t SetReferenceTrajectory(DMatrix &S);
   jerror_t SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix &C);
-  jerror_t SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc,DMatrix &Cc);
+  jerror_t SetCDCForwardReferenceTrajectory(DMatrix &S);
+  jerror_t SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc,DMatrix &Cc);  
+  jerror_t SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc);
   void GetMomentum(DVector3 &mom);
   void GetPosition(DVector3 &pos);		
   void GetCovarianceMatrix(vector< vector<double> >&mycov){
