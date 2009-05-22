@@ -1967,7 +1967,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	  Cbest=C;
 	} //iteration
       }  
-      printf("forward iter %d chi2 %f\n",iter2, chisq);
+
       // Abort loop if the chisq is not changing much or increasing too much
       if (fabs(chisq_forward-chisq_iter)<0.1 || chisq_forward-chisq_iter>10.) 
 	break;
@@ -2136,7 +2136,6 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	chisq=chisq_central;
       }
           
-      printf("iter %d chi2 %f\n",iter2, chisq);
       // Abort loop if the chisq is not changing much or increasing too much
       if (fabs(chisq-chisq_iter)<0.1 || chisq-chisq_iter>10.) break;
       chisq_iter=chisq;
