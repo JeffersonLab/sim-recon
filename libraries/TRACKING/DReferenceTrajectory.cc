@@ -733,6 +733,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	// near the wires will just make subsequent calls go quicker. This also
 	// allows larger initial step sizes with the high density regions getting
 	// filled in as needed leading to overall faster tracking.
+#if 0
 	if(finite(phi) && fabs(phi)>2.0E-4){
 		if(dist_to_rt_depth>=3){
 			_DBG_<<"3 or more recursive calls to DistToRT(). Something is wrong! bailing ..."<<endl;
@@ -763,6 +764,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 			// and use the phi we have and make the best estimate possible.
 		}
 	}
+#endif
 	
 	// It is possible at this point that the value of phi corresponds to
 	// a point past the end of the wire. We should check for this here and
