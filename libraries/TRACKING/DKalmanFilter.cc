@@ -559,121 +559,6 @@ jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S){
   double my_endz=fdc_origin[2];
   double beta2=1.,q_over_p=1.,varE=0.;
 
-  // doca variables
-  double doca,old_doca;
-
-  // Loop over CDC hits
-  for (unsigned int m=0;m<cdchits.size();m++){
-    // wire origin, direction
-    DVector3 origin=cdchits[m]->origin;
-    DVector3 dir=cdchits[m]->dir;
-
-    // Position along wire
-    DVector3 wirepos=origin+((z-origin.z())/dir.z())*dir;
-    
-    // doca
-    old_doca=sqrt((S(state_x,0)-wirepos.x())*(S(state_x,0)-wirepos.x())
-		  +(S(state_y,0)-wirepos.y())*(S(state_y,0)-wirepos.y()));
- 
-    while(z<my_endz){
-      newz=z+STEP_SIZE;
-
-      // State at current position 
-      temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
-      temp.s= len;
-      
-      // get material properties from the Root Geometry
-      if (RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
-	  !=NOERROR){
-	_DBG_<<"Material error!"<<endl; 
-	break;
-      }
-      
-      i++;
-      my_i=forward_traj_cdc_length-i;
-      if (i<=forward_traj_cdc_length){
-	forward_traj_cdc[my_i].s=temp.s;
-	forward_traj_cdc[my_i].h_id=temp.h_id;
-	forward_traj_cdc[my_i].pos=temp.pos;
-	forward_traj_cdc[my_i].X0=temp.X0;
-	forward_traj_cdc[my_i].A=temp.A;
-	forward_traj_cdc[my_i].Z=temp.Z;
-	forward_traj_cdc[my_i].density=temp.density;
-	for (unsigned int j=0;j<5;j++){
-	  forward_traj_cdc[my_i].S->operator()(j,0)=S(j,0);
-	}
-      } 
-      else{
-	temp.S= new DMatrix(S);
-      }  
-       
-      // Get dEdx for the upcoming step
-      dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
-
-      // Step through field
-      ds=Step(z,newz,dEdx,S);
-      len+=ds;
-      
-      // Get the contribution to the covariance matrix due to multiple 
-      // scattering
-      if (do_multiple_scattering)
-	GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
-
-      // Energy loss straggling in the approximation of thick absorbers
-      if (temp.density>0. && do_energy_loss){
-	q_over_p=S(state_q_over_p,0);
-	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
-	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
-	
-	Q(state_q_over_p,state_q_over_p)
-	  =varE*q_over_p*q_over_p*q_over_p*q_over_p/beta2;
-      }	
-      
-      // Compute the Jacobian matrix
-      StepJacobian(newz,z,S,dEdx,J);
-      
-      // update the trajectory data
-      if (i<=forward_traj_cdc_length){
-	for (unsigned int j=0;j<5;j++){
-	  for (unsigned int k=0;k<5;k++){
-	    forward_traj_cdc[my_i].Q->operator()(j,k)=Q(j,k);
-	    forward_traj_cdc[my_i].J->operator()(j,k)=J(j,k);
-	  }
-	}
-      }
-      else{	
-	temp.Q= new DMatrix(Q);
-	temp.J= new DMatrix(J);
-	forward_traj_cdc.push_front(temp);    
-      }
-   
-      z=newz;
-      
-      // update position along wire
-      wirepos=origin+((z-cdchits[m]->origin.z())/dir.z())*dir;
-    
-      // new doca 
-      doca=sqrt((S(state_x,0)-wirepos.x())*(S(state_x,0)-wirepos.x())
-		+(S(state_y,0)-wirepos.y())*(S(state_y,0)-wirepos.y()));
-      
-      // Check if we've passed the true minimum doca...
-      if (doca>old_doca){	
-	// if the doca is increasing, mark the previous point as being close 
-	// to the true minumum doca.
-	// I am using this tag to indicate where the start the search in the 
-	// kalman routine.
-	if (i<=forward_traj_cdc_length){
-	  forward_traj_cdc[my_i].h_id=m+1;
-	}
-	else{
-	  forward_traj_cdc[0].h_id=m+1;
-	}
-
-	break;
-      }
-      old_doca=doca;
-    }
-  }
   // Continue adding to the trajectory until we have passed the endplate
   while(z<my_endz){
      newz=z+STEP_SIZE;
@@ -2612,7 +2497,12 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     C0(state_ty,state_ty)=0.010*0.010;
     C0(state_q_over_p,state_q_over_p)=0.04*q_over_p_*q_over_p_;
 
+    DMatrix Slast(S);
+    DMatrix Clast(C0);
+    
     double chisq_iter=chisq;
+    double chisq_min=chisq;
+    double zvertex=65.;
     for (int iter2=0;iter2<10;iter2++){   
       //if (iter2>0) do_energy_loss=true;
       //if (iter2>0) do_multiple_scattering=true;
@@ -2661,8 +2551,8 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	  
 	  if (fabs(chisq-chisq_forward)<0.1 || chisq>chisq_forward) break;
 	  chisq_forward=chisq;
-	  Sbest=S;
-	  Cbest=C;
+	  Slast=S;
+	  Clast=C;
 	} //iteration
       }  
 
@@ -2672,16 +2562,59 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
       chisq_iter=chisq_forward;
       
       // Find the state at the so-called "vertex" position
-      ExtrapolateToVertex(mass_hyp,Sbest,Cbest);
-      C=Cbest;
-      S=Sbest;
+      ExtrapolateToVertex(Slast,Clast);
+      C=Clast;
+      S=Slast;
+      
+      if (chisq_iter<chisq_min){
+	chisq_min=chisq_iter;
+	Cbest=C;
+	Sbest=S;
+	zvertex=z_;
+      }
     }
+
+    // Convert from forward rep. to central rep.
+    ConvertStateVector(zvertex,0.,0.,Sbest,Cbest,Sc,Cc);
+
+    // Track Parameters at "vertex"
+    phi_=Sc(state_phi,0);
+    q_over_pt_=Sc(state_q_over_pt,0);
+    tanl_=Sc(state_tanl,0);
+    x_=S(state_x,0);
+    y_=S(state_y,0);
+    z_=zvertex;
+
+    if (DEBUG_LEVEL>0)
+      cout
+	<< "Vertex:  p " 
+	<<   1./q_over_pt_/cos(atan(tanl_))
+	<< " theta "  << 90.0-180./M_PI*atan(tanl_)
+	<< " vertex " << x_ << " " << y_ << " " << z_ <<endl;
     
+    // Covariance matrices...
+    // ... central parameterization
+    vector<double>dummy;
+    for (unsigned int i=0;i<5;i++){
+      dummy.clear();
+      for(unsigned int j=0;j<5;j++){
+	dummy.push_back(Cc(i,j));
+      }
+      cov.push_back(dummy);
+    }
+    // ... forward parameterization
+    for (unsigned int i=0;i<5;i++){
+      dummy.clear();
+      for(unsigned int j=0;j<5;j++){
+      dummy.push_back(C(i,j));
+      }
+      fcov.push_back(dummy);
+    }
+
     // total chisq and ndf
     chisq_=chisq_iter;
     ndf=2*fdchits.size()+cdchits.size()-5;
-    
-    
+        
     if (DEBUG_HISTS){
       TH2F *fdc_xresiduals=(TH2F*)gROOT->FindObject("fdc_xresiduals");
       if (fdc_xresiduals){
@@ -2737,14 +2670,15 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
  
     // Initialization
     Cc=C0;
-    DMatrix Scbest(Sc);
-    DMatrix Ccbest(Cc);
+    DMatrix Scbest(Sc),Sclast(Sc);
+    DMatrix Ccbest(Cc),Cclast(Cc);
     DVector3 pos0=pos;
     DVector3 best_pos=pos;
   
     // iteration 
     double anneal_factor=1.;
     double chisq_iter=chisq;
+    double chisq_min=chisq;
     for (int iter2=0;iter2<10;iter2++){     
       //if (iter2>0) do_energy_loss=true;
       //if (iter2>0) do_multiple_scattering=true;
@@ -2804,7 +2738,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	if (error!=NOERROR) break;
 	if (chisq_central==0.) break;
       	
-	fom=anneal_factor*chisq_central;
+	//fom=anneal_factor*chisq_central;
 	if (chisq_central>=1e16 ){
 	  cout 
 	    << "-- central fit failed --" <<endl;
@@ -2822,14 +2756,13 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	    << " vertex " << x_ << " " << y_ << " " << z_ <<endl;
 	
 	if (fabs(chisq_central-chisq)<0.1 
-	    //|| (chisq_central>chisq )
-	    || (fom>old_fom)
+	    || (chisq_central>chisq )
 	    ) break; 
 	// Save the current "best" state vector and covariance matrix
-	Ccbest=Cc;
-	Scbest=Sc;
+	Cclast=Cc;
+	Sclast=Sc;
 	pos0=pos;
-	old_fom=fom;
+	//old_fom=fom;
 	chisq=chisq_central;
       }
           
@@ -2838,18 +2771,52 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
       chisq_iter=chisq;
 
       // Find track parameters where track crosses beam line
-      Cc=Ccbest;
-      Sc=Scbest;
-      ExtrapolateToVertex(mass_hyp,pos0,Sc,Cc); 
+      Cc=Cclast;
+      Sc=Sclast;
+      ExtrapolateToVertex(pos0,Sc,Cc); 
+      
+      // Save the best parameters so far
+      if (chisq_iter<chisq_min){
+	chisq_min=chisq_iter;
+	Ccbest=Cc;
+	Scbest=Sc;
+	best_pos=pos0;
+      }
+
     }
 
     if (chisq_iter==1.e16) {
       _DBG_ << "Central fit failed!" <<endl;
       return VALUE_OUT_OF_RANGE;
     }
+   
+    // Track Parameters at "vertex"
+    phi_=Scbest(state_phi,0);
+    q_over_pt_=Scbest(state_q_over_pt,0);
+    tanl_=Scbest(state_tanl,0);
+    x_=best_pos.x();
+    y_=best_pos.y();
+    z_=best_pos.z();
 
+    if (DEBUG_LEVEL>0)
+      cout
+      << "Vertex:  p " 
+      <<   1./Scbest(state_q_over_pt,0)/cos(atan(Scbest(state_tanl,0)))
+      << " theta "  << 90.-180./M_PI*atan(Scbest(state_tanl,0)) 
+      << " vertex " << x_<< " " << y_<< " " << z_<<endl;
+
+    // Covariance matrix at vertex
+    vector<double>dummy;
+    for (unsigned int i=0;i<5;i++){
+      dummy.clear();
+      for(unsigned int j=0;j<5;j++){
+	dummy.push_back(Ccbest(i,j));
+      }
+      cov.push_back(dummy);
+    }
+    
     // total chisq and ndf
-    chisq_=chisq_iter;
+    chisq_=chisq_min;
     ndf=cdchits.size()-5;
   }
 
@@ -2910,6 +2877,7 @@ double DKalmanFilter::BrentsAlgorithm(double ds1,double ds2,
     xm=0.5*(a+b);
     tol2=2.0*(tol1=EPS*fabs(x)+ZEPS);
     if (fabs(x-xm)<=(tol2-0.5*(b-a))){
+      /*
       if (pos.z()>=endplate_z-endplate_dz){
 	double my_endz=endplate_z-endplate_dz;
 	// Check if the minimum doca would occur outside the straw and if so, bring the state 
@@ -2923,7 +2891,7 @@ double DKalmanFilter::BrentsAlgorithm(double ds1,double ds2,
 	  u_old=u;
 	  iter++;
 	}
-	//	printf("new z %f ds %f \n",pos.z(),x);
+		printf("new z %f ds %f \n",pos.z(),x);
       }
       if (pos.z()<=cdc_origin[2]){
 	int iter=0;
@@ -2935,9 +2903,9 @@ double DKalmanFilter::BrentsAlgorithm(double ds1,double ds2,
 	  u_old=u;
 	  iter++;
 	}
-	//printf("new z %f ds %f \n",pos.z(),x);
+	printf("new z %f ds %f \n",pos.z(),x);
       }	
-      
+      */
       return cx-x;
     }
     // trial parabolic fit
@@ -3384,7 +3352,8 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     doca=(pos-wirepos).Mag();
 
     // Check if the doca is no longer decreasing
-    if ((doca>old_doca) && more_measurements){
+    if ((doca>old_doca) // && (pos.z()<endplate_z && pos.z()>cdc_origin[2])
+	&& more_measurements){
       //printf("----------------------------------------\n");
       //if (pos.z()<endplate_z && pos.z()>cdc_origin[2])
       {
@@ -4090,8 +4059,7 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
 // Extrapolate to the point along z of closest approach to the beam line using 
 // the forward track state vector parameterization.  Converts to the central
 // track representation at the end.
-jerror_t DKalmanFilter::ExtrapolateToVertex(double mass_hyp,DMatrix S, 
-					    DMatrix C){
+jerror_t DKalmanFilter::ExtrapolateToVertex(DMatrix &S,DMatrix &C){
   DMatrix J(5,5);  //.Jacobian matrix
   DMatrix JT(5,5); // and its transpose
   DMatrix Q(5,5); // multiple scattering matrix
@@ -4160,49 +4128,18 @@ jerror_t DKalmanFilter::ExtrapolateToVertex(double mass_hyp,DMatrix S,
     r2_old=r2;
     z=newz;
   }
-
-  // Convert from forward rep. to central rep.
-  ConvertStateVector(newz,0.,0.,S,C,Sc,Cc);
-
-  // Track Parameters at "vertex"
-  phi_=Sc(state_phi,0);
-  q_over_pt_=Sc(state_q_over_pt,0);
-  tanl_=Sc(state_tanl,0);
+  // update internal variables
   x_=S(state_x,0);
   y_=S(state_y,0);
   z_=newz;
-  if (DEBUG_LEVEL>0)
-    cout
-      << "Vertex:  p " 
-      <<   1./q_over_pt_/cos(atan(tanl_))
-      << " theta "  << 90.0-180./M_PI*atan(tanl_)
-      << " vertex " << x_ << " " << y_ << " " << z_ <<endl;
-
-  // Central parameterization
-  vector<double>dummy;
-  for (unsigned int i=0;i<5;i++){
-    dummy.clear();
-    for(unsigned int j=0;j<5;j++){
-      dummy.push_back(Cc(i,j));
-    }
-    cov.push_back(dummy);
-  }
-  // forward parameterization
-  for (unsigned int i=0;i<5;i++){
-    dummy.clear();
-    for(unsigned int j=0;j<5;j++){
-      dummy.push_back(C(i,j));
-    }
-    fcov.push_back(dummy);
-  }
 
   return NOERROR;
 }
 
 
 // Propagate track to point of distance of closest approach to origin
-jerror_t DKalmanFilter::ExtrapolateToVertex(double mass_hyp,DVector3 pos,
-					    DMatrix &Sc,DMatrix Cc){
+jerror_t DKalmanFilter::ExtrapolateToVertex(DVector3 &pos,
+					    DMatrix &Sc,DMatrix &Cc){
   DMatrix Jc(5,5);  //.Jacobian matrix
   DMatrix JcT(5,5); // and its transpose
   DMatrix Q(5,5); // multiple scattering matrix
@@ -4271,33 +4208,6 @@ jerror_t DKalmanFilter::ExtrapolateToVertex(double mass_hyp,DVector3 pos,
       r_old=r;
     }   
   } // if (r>BEAM_RADIUS)
- 
-
-  if (DEBUG_LEVEL>0)
-    cout
-      << "Vertex:  p " 
-      <<   1./Sc(state_q_over_pt,0)/cos(atan(Sc(state_tanl,0)))
-      << " theta "  << 90.-180./M_PI*atan(Sc(state_tanl,0)) 
-      << " vertex " << pos.x()<< " " << pos.y()<< " " << pos.z() <<endl;
-  
-  
-  // Track Parameters at "vertex"
-  phi_=Sc(state_phi,0);
-  q_over_pt_=Sc(state_q_over_pt,0);
-  tanl_=Sc(state_tanl,0);
-  x_=pos.x();
-  y_=pos.y();
-  z_=pos.z();
-
-  // Covariance matrix at vertex
-  vector<double>dummy;
-  for (unsigned int i=0;i<5;i++){
-    dummy.clear();
-    for(unsigned int j=0;j<5;j++){
-      dummy.push_back(Cc(i,j));
-    }
-    cov.push_back(dummy);
-  }
   
   return NOERROR;
 }
