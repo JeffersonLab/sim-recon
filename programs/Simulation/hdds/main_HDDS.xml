@@ -63,14 +63,14 @@
 
   <composition name="barrelPackage" envelope="LASS">
     <posXYZ volume="Solenoid" />
-    <posXYZ volume="StartCntr" X_Y_Z="0.0 0.0 37.5" />
+    <posXYZ volume="StartCntr" X_Y_Z="0.0 0.0 38.75" />
     <posXYZ volume="CentralDC" X_Y_Z="0.0 0.0 17.0" />
     <posXYZ volume="ForwardDC" X_Y_Z="0.0 0.0 184.5" />
     <posXYZ volume="BarrelEMcal" X_Y_Z="0.0 0.0 17.0" />
   </composition>
 
   <composition name="forwardPackage">
-    <posXYZ volume="CerenkovCntr" X_Y_Z="0.0 0.0 466.0" />
+    <!--<posXYZ volume="CerenkovCntr" X_Y_Z="0.0 0.0 466.0" /> -->
     <!--posXYZ volume="GapEMcal" X_Y_Z="0.0 0.0 460.0" /-->
     <posXYZ volume="ForwardTOF" X_Y_Z="0.0 0.0 616.25" />
     <posXYZ volume="ForwardEMcal" X_Y_Z="0.0 0.0 625.3" />
