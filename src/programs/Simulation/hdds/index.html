@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>Geometry specification for Hall D</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+&nbsp;<br>
+&nbsp;<br>
+<table align=center width=90%><tr><td>
+
+<p align=center>
+<font size=+1>
+<u>Hall D Internal Note</u>
+</font>
+</p>
+
+<h1 align=center>HDDS - Hall D Detector Specification </h1>
+
+<P ALIGN=CENTER>
+<FONT SIZE=+1>
+Version 1.1 (draft) <BR>
+April 16, 2001 <BR>
+updated, September 4, 2003<BR>
+Richard T. Jones <BR>
+</FONT>
+</P>
+
+<UL>
+<P><LI>What it does:<BR>
+The goal of this project is to develop a proposal for a XML-based
+geometry specification for the Hall D detector and beam line.  The
+immediate need for a specification is to have a single reference for
+geometrical parameters used in Monte Carlo simulations.  Eventually
+one can imagine a longer list of clients who may need geometrical
+information.
+<OL>
+<LI>simulation - HDFast, HDGeant, ...</LI>
+<LI>visualization - interactive event display</LI>
+<LI>analysis - track, photon reconstruction</LI>
+</OL>
+</LI></P>
+
+<P><LI>What goes in:<BR>
+The objective is to group together all of the static properties of
+the detector and encapsulate them all under one document.  These
+<I>static properties</I> are any features of the detector that are
+specified or measured apart from the physics data themselves.  Features
+that are extracted from the data themselves are generically known as
+<I>calibration constants</I>; these are set apart from the
+geometry because they are of interest to a smaller set of client
+applications, and are generally more volatile by nature than something
+that can be specified in a design.  Properties like the thickness of the
+exit window to the target, or the magnetic field map inside the solenoid
+are examples of what goes into HDDS.  Properties like the average light
+output by a pion in the Cerenkov detector or dE/dx of a MIP in the
+central tracking chamber are examples of calibration constants that
+do not go into HDDS.
+</LI></P>
+
+<P><LI>What inspired it:<BR>
+All modern experiments employ some kind of database for storing geometrical
+constants.  The idea of using XML was inspired by the example of the ATLAS
+experiment at CERN, and the availability of open-source parsing tools for
+constructing interfaces to the above-listed client applications that we
+need to write.  The
+<A HREF="http://atlasinfo.cern.ch/Atlas/GROUPS/GRAPHICS/Texts/Documentation/XMLScene/XMLinAtlas.html">
+ALTAS AGGD</A> web page is a great help in getting started with this project.
+A CERN workshop on the general problem of detector geometry specification
+was held April 14, 2000.  The transparencies and video recording
+of the talks is found on CERN's web site at the
+<A HREF="http://documents.cern.ch/AGE/current/fullAgenda.php?ida=a00116">
+XML Detector Description Workshop</A>.
+<BR>
+
+<P><LI>Where it is now:<BR>
+A first draft of the geometry specification for Hall D is now in place.
+The document is spread across everal files, one for each subsystem.  All
+of the files have been checked for well-formedness and validated against
+the schema.  The following are available for browsing, but are
+still very much under development.  The best way to look at these files
+is with a XML-enabled browser like IE6, Mozilla or Netscape 6.
+<P>
+<UL>
+ <LI><A HREF="HDDS_1.0.dtd">HDDS_1.0.dtd</A>
+   - xml document type definition (dtd) file</LI>
+ <LI><A HREF="HDDS-1_0.xsd">HDDS-1_0.xsd</A>
+   - xml hdds schema, supersedes HDDS_1.0.dtd</LI>
+ <LI><A HREF="main_HDDS.xml">main_HDDS.xml</A>
+   - top-level detector spec file
+ <LI><A HREF="Material_HDDS.xml">Material_HDDS.xml</A>
+   - materials spec file
+ <LI><A HREF="BeamLine_HDDS.xml">Beamline_HDDS.xml</A>
+   - beam line spec file
+ <LI><A HREF="Solenoid_HDDS.xml">Solenoid_HDDS.xml</A>
+   - solenoid magnet spec file
+ <LI><A HREF="Target_HDDS.xml">Target_HDDS.xml</A>
+   - target spec file
+ <LI><A HREF="StartCntr_HDDS.xml">StartCntr_HDDS.xml</A>
+   - start counter spec file
+ <LI><A HREF="BarrelEMcal_HDDS.xml">BarrelEMcal_HDDS.xml</A>
+   - barrel EM calorimeter spec file
+ <LI><A HREF="ForwardEMcal_HDDS.xml">ForwardEMcal_HDDS.xml</A>
+   - forward calorimeter spec file
+ <LI><A HREF="CentralDC_HDDS.xml">CentralDC_HDDS.xml</A>
+   - central drift chamber spec file
+ <LI><A HREF="ForwardDC_HDDS.xml">ForwardDC_HDDS.xml</A>
+   - forward drift chambers spec file
+ <LI><A HREF="CerenkovCntr_HDDS.xml">CerenkovCntr_HDDS.xml</A>
+   - Cerenkov counter spec file
+ <LI><A HREF="ForwardTOF_HDDS.xml">ForwardTOF_HDDS.xml</A>
+   - forward time-of-flight spec file
+</UL>
+</UL>
+</P>
+
+<br>
+<center>
+This material is based upon work supported by the National Science Foundation under Grant No. 0072416.
+</center>
+<!--hr>
+<i><font size=-1>
+This page is maintained by
+<a href="mailto:richard.t.jones@uconn.edu">richard.t.jones@uconn.edu"</a>
+</font></i-->
+
+</td></tr></table>
+</BODY>
+</HTML>

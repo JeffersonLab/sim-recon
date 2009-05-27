@@ -1,0 +1,19 @@
+
+README  HDParSim
+Feb. 21, 2008  David Lawrence
+
+This directory contains files that can be used to include GEANT-derived
+tracking resolutions and efficiencies in parametric simulations
+of the GlueX detector.
+
+The values are kept as histograms in the ROOT file hd_res_charged.root
+which must be present in whatever directory the program is run in.
+
+The ROOT Macro PlotRes.C is included to make a set of plots from the
+histograms in the ROOT file.
+
+The macro MargeResFiles.C can be used to splice together 2 different
+hd_res_charged.root files taking the lower theta range from 1 and the
+upper theta range from the other. This is useful for combining the
+results from 2 different simulation runs.
+
