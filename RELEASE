@@ -1,0 +1,534 @@
+
+Release Notes for Hall-D source code
+------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/release-2009-05-27
+   Date: May 28, 2009
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 5225 of trunk/src.
+
+Major changes:
+o updated CDC geometry from Beni
+o updated FDC geometry from Simon
+o updated start counter geometry from Sascha
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Fedora release 8 (Werewolf) on i686  32-bit
+------------
+  Xerces 2.7.0
+  JANA 0.5.2
+  ROOT 5.18-00
+  cernlib 2005 (/apps/cernlib/i386_fc8 on JLab CUE)
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+
+Red Hat Enterprise Linux 5.3
+-----------
+  Xerces 2.7.0
+  JANA 0.5.2
+  ROOT 5.18-00
+  cernlib 2005 (/apps/cernlib/i386_fc8 on JLab CUE)
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r5121 | zihlmann | 2009-04-27 17:56:28 -0400 (Mon, 27 Apr 2009) | 10 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/CentralDC_HDDS.xml
+
+Major change of the CDC geometry.
+This reflects the current understanding of how the CDC will be build
+with 28 layers of straws and an outer ring of support rods made from Aluminum.
+Option-2 has been removed. The gas plenum as well as the gas withing the CDC
+shell is Ar/CO2. Downstream gas plenum is 1 inch thick with a mylar windown
+and a rohacell shell.
+-This line, and those below, will be ignored--
+
+M    CentralDC_HDDS.xml
+
+------------------------------------------------------------------------
+r5122 | zihlmann | 2009-04-28 11:16:00 -0400 (Tue, 28 Apr 2009) | 3 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/CentralDC_HDDS.xml
+
+Fix many bugs with overlapping volumes not beeing visible anymore in geant.
+
+
+------------------------------------------------------------------------
+r5123 | marki | 2009-04-28 11:21:56 -0400 (Tue, 28 Apr 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/combinedResidFunc.cc
+
+use local variable for pseudopoint
+------------------------------------------------------------------------
+r5124 | marki | 2009-04-28 13:24:15 -0400 (Tue, 28 Apr 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/MyTrajectory.h
+
+go for more precision
+------------------------------------------------------------------------
+r5126 | staylor | 2009-04-28 13:36:13 -0400 (Tue, 28 Apr 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+Added 2nd level of iteration for forward tracks in which the reference trajectory is regenerated based the result of the previous pass.  Added propagation of error matrix for these tracks in the generation of the reference trajectory. Increased the number of these iterations for central tracks to 4. Tweaked the code for the propagation of the covariance matrix in the kalmancentral routine. Still trying to get the fitting in the transition region and for very backward tracks to work properly...
+------------------------------------------------------------------------
+r5127 | staylor | 2009-04-29 08:17:52 -0400 (Wed, 29 Apr 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DRootGeom.cc
+   M /trunk/src/libraries/HDGEOMETRY/DRootGeom.h
+
+The second FindMat method now returns an error code.
+------------------------------------------------------------------------
+r5128 | zihlmann | 2009-04-29 08:39:21 -0400 (Wed, 29 Apr 2009) | 2 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/hdds-root_h.cpp
+
+fix minor but: put the string SITE into double quotes.
+
+------------------------------------------------------------------------
+r5129 | somov | 2009-04-29 12:47:12 -0400 (Wed, 29 Apr 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/include/GlueX.h
+
+Committed by mistake to release-2009-01-06. Copy to the trunk/GlueX.h
+------------------------------------------------------------------------
+r5130 | somov | 2009-04-29 12:50:10 -0400 (Wed, 29 Apr 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/src/libraries/HDDM/DEventSourceHDDM.h
+
+Committed by mistake to release-2009-01-06. Copy to the trunk/
+------------------------------------------------------------------------
+r5135 | zihlmann | 2009-04-29 18:25:14 -0400 (Wed, 29 Apr 2009) | 3 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/hdds-root_h.cpp
+
+Ok the earlier bug fix today was actually a bug introduction.
+fixed now again ;-)
+
+------------------------------------------------------------------------
+r5136 | staylor | 2009-04-29 19:40:15 -0400 (Wed, 29 Apr 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+
+Added more error checking on boundaries and denominators.  Trap errors reported by DRootGeom.  Reuse existing deque for reswum forward reference trajectories.  Added second order terms in taylor series for positions.
+------------------------------------------------------------------------
+r5137 | staylor | 2009-04-30 11:37:41 -0400 (Thu, 30 Apr 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/Material_HDDS.xml
+
+Added noryl, polyphenylene oxide, polyetherimide, CopperKapton for the cathode boards (no epoxy layer in active region), and ultem2300 (a fiber-reiniforced version of polyetherimide).
+------------------------------------------------------------------------
+r5142 | davidl | 2009-04-30 16:32:21 -0400 (Thu, 30 Apr 2009) | 15 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_CDC.h
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_CDC_or_FDCpseudo.cc
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_CDC_or_FDCpseudo.h
+
+- Drop incomplete seeds from CDC candidates so time isn't wasted 
+  trying to fit extremely poorly defined candidates
+- Look for duplicate candidates found in both the CDC and FDCpseudo
+  candidate factories and only copy one to the list in the
+  CDC_or_FDCpsuedo factory.
+- Make the matching of CDC SL1 only seeds with stray hits in the
+  the CDC SL3 or the FDC command-line configurable via the
+  TRKFIND:MAX_CDC_MATCH_ANGLE and TRKFIND:MAX_FDC_MATCH_ANGLE
+  configuration parameters.
+- Add a check on the chisq of the circle fit resulting from the
+  Riemann method. If it is too big (>20) then the QuickFit
+  method is invoked.
+- Added several debugging statements to the CDC_or_FDCpsuedo
+  factory triggered by the TRKFIND:DEBUG_LEVEL config. param.
+
+------------------------------------------------------------------------
+r5143 | davidl | 2009-04-30 16:49:15 -0400 (Thu, 30 Apr 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitter.h
+
+Added pointer to DRootGeom class to DTrackFitter base class. It is set automatically making it available to all subclasses.
+------------------------------------------------------------------------
+r5144 | davidl | 2009-04-30 16:54:26 -0400 (Thu, 30 Apr 2009) | 8 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DMagneticFieldStepper.cc
+
+Reduce default step size in DMagneticFieldStepper from 1.0cm to
+0.5cm. This is needed to get agreement between hdgeant and the
+reconstruction to better than 2 microns. Without it, a systematic,
+layer-dependent descrepancy occurs at the outer edges of the
+straw on the level of 20-40 microns. Since this descrepancy is
+much smaller than the CDC position resolution (150 microns) it
+may be that we ultimately want to change this back.
+
+------------------------------------------------------------------------
+r5145 | somov | 2009-04-30 17:02:19 -0400 (Thu, 30 Apr 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/gustep.F
+
+Fix a bug with the showersincol card
+------------------------------------------------------------------------
+r5146 | davidl | 2009-04-30 17:04:42 -0400 (Thu, 30 Apr 2009) | 11 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.h
+
+- Added tracking of material and inclusion of multiple
+  scattering to covariance matrix. Only the diagonal
+  elements are used currently since the sign of the off
+  diagonals can't be reliably calculated.
+- Added optional smax argument to Swim method to allow
+  short swims as will be needed by GetDOCA in HDGeant.
+- Added InsertSteps method to allow insertion of higher
+  density swim steps into an existing trajectory.
+- Check value of "phi" when calculating DOCA and insert
+  additional higher density points if it is too large.
+
+------------------------------------------------------------------------
+r5147 | gen | 2009-04-30 18:12:25 -0400 (Thu, 30 Apr 2009) | 1 line
+Changed paths:
+   A /trunk/src/programs/Simulation/bggen/paw/bgg_pri.f
+   M /trunk/src/programs/Simulation/bggen/paw/efm.f
+   M /trunk/src/programs/Simulation/bggen/paw/ev_stat.f
+   M /trunk/src/programs/Simulation/bggen/paw/example_1.kumac
+   M /trunk/src/programs/Simulation/bggen/paw/last.kumac
+   M /trunk/src/programs/Simulation/bggen/paw/p_kin.f
+   A /trunk/src/programs/Simulation/bggen/paw/p_kin_auto.f
+   A /trunk/src/programs/Simulation/bggen/paw/part_kin.f
+
+More tools to analyze the bggen ntuple
+------------------------------------------------------------------------
+r5148 | davidl | 2009-04-30 23:48:43 -0400 (Thu, 30 Apr 2009) | 11 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.h
+
+- Added USE_CDC and USE_FDC flags to allow turning off tracking in one
+  detector or another via config. param.
+
+- Added integration of material and inclusion of multiple scattering
+  in tracking chisq. Only diagonal elements are filled since sign
+  ambiguity for the off-diagonal elements is nearly impossible to resolve.
+--This line, and those below, will be ignored-
+
+M    TRACKING/DTrackFitterALT1.cc
+M    TRACKING/DTrackFitterALT1.h
+
+------------------------------------------------------------------------
+r5149 | davidl | 2009-05-01 08:06:41 -0400 (Fri, 01 May 2009) | 3 lines
+Changed paths:
+   A /trunk/src/programs/Simulation/HDGeant/GetDOCA.cc
+   M /trunk/src/programs/Simulation/HDGeant/Makefile.bms
+   M /trunk/src/programs/Simulation/HDGeant/hitCDC.c
+
+Modified hdgeant to do a more accurate calculation of the DOCA value
+for CDC tracks. This slows the simulation down a little.
+
+------------------------------------------------------------------------
+r5150 | staylor | 2009-05-01 09:41:39 -0400 (Fri, 01 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/Makefile.bms
+
+Changed order of TRACKING and HDGEOMETRY libraries in ADDITIONAL_MODULES for linking on Linux.
+------------------------------------------------------------------------
+r5151 | davidl | 2009-05-01 09:43:47 -0400 (Fri, 01 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/radlen_hists/DEventProcessor_radlen_hists.cc
+   M /trunk/src/programs/Analysis/plugins/radlen_hists/DEventProcessor_radlen_hists.h
+   A /trunk/src/programs/Analysis/plugins/radlen_hists/radstep.h
+
+Add a tree to hold steps with radlength etc. in the radlen_hists plugin.
+------------------------------------------------------------------------
+r5152 | davidl | 2009-05-01 09:45:37 -0400 (Fri, 01 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/track_hists/DEventProcessor_track_hists.cc
+   M /trunk/src/programs/Analysis/plugins/track_hists/dchit.h
+
+Add distance along the wire for both fit trajectory and reconstructed from cathodes and the Lorentz correction to it to the hit tree.
+------------------------------------------------------------------------
+r5153 | davidl | 2009-05-01 09:48:53 -0400 (Fri, 01 May 2009) | 6 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trackeff_hists2/DEventProcessor_trackeff_hists.cc
+   M /trunk/src/programs/Analysis/plugins/trackeff_hists2/Makefile
+
+- Changed DANA to JANA in packages included through Makefile. Having
+  DANA caused all of the Hall-D reconstruction to be linked in to
+  the plugin.
+
+- Fixed bug in choosing the best match tracks between thrown and fit.
+
+------------------------------------------------------------------------
+r5154 | davidl | 2009-05-01 09:54:08 -0400 (Fri, 01 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/src/programs/Simulation/mcsmear/smear.cc
+
+Added -e command line switch to increase the FDC cathode's pedestal noise by a factor of 7 for datasets where the energy loss is turned off. For those datasets, the position resolution along the wire tends to be much better than it should be and the 7 fold increase gives 200 microns for 10 degree tracks.
+------------------------------------------------------------------------
+r5155 | davidl | 2009-05-01 09:56:54 -0400 (Fri, 01 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/FDC/DFDCHit.h
+
+Fixed typo in conversion type used to display DFDCHit objects q and t data members.
+------------------------------------------------------------------------
+r5157 | davidl | 2009-05-01 12:43:21 -0400 (Fri, 01 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Added include of <memory> since that is apparantly needed for auto_ptr on Fedora10.
+------------------------------------------------------------------------
+r5161 | somov | 2009-05-04 12:45:10 -0400 (Mon, 04 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/START_COUNTER/DSCTruthHit.h
+
+Add Sector to the SCTruthHit factory
+------------------------------------------------------------------------
+r5162 | somov | 2009-05-04 12:45:57 -0400 (Mon, 04 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/src/libraries/HDDM/event.xsd
+   M /trunk/src/libraries/HDDM/hddm_s.c
+   M /trunk/src/libraries/HDDM/hddm_s.h
+
+Add Sector to the SCTruthHit factory
+------------------------------------------------------------------------
+r5163 | somov | 2009-05-04 12:47:20 -0400 (Mon, 04 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/hitStart.c
+
+Add Sector to the SCTruthHit factory
+------------------------------------------------------------------------
+r5164 | leverinb | 2009-05-05 10:54:37 -0400 (Tue, 05 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/BCAL/DBCALPhoton_factory.cc
+
+updated the calibration of the BCAL with default dark noise included
+------------------------------------------------------------------------
+r5174 | staylor | 2009-05-08 11:09:10 -0400 (Fri, 08 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/CDC/DCDCTrackHit_factory.cc
+
+Make wire positions and directions consistent with current (5/8/09) version of CDC geometry in CentralDC_HDDS.xml.
+------------------------------------------------------------------------
+r5177 | gen | 2009-05-08 19:29:07 -0400 (Fri, 08 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/bggen/code/bg_end.F
+   M /trunk/src/programs/Simulation/bggen/code/bg_eve.F
+   M /trunk/src/programs/Simulation/bggen/code/bg_evec.inc
+   M /trunk/src/programs/Simulation/bggen/code/bg_ntup_ini.F
+
+Changes to the output ntuple
+------------------------------------------------------------------------
+r5178 | marki | 2009-05-11 14:04:49 -0400 (Mon, 11 May 2009) | 17 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/DLine.cc
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/DLine.h
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/MyTrajectory.cc
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/MyTrajectory.h
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/MyTrajectoryGrkuta.cc
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/combinedResidFunc.cc
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/combinedResidFunc.h
+   A /trunk/src/programs/Analysis/plugins/trkfitterLSLM/residCDC.cc (from /branches/src/programs/Analysis/plugins/trkfitterLSLM_separate_combined/residCDC.cc:5156)
+   A /trunk/src/programs/Analysis/plugins/trkfitterLSLM/residCDC.h (from /branches/src/programs/Analysis/plugins/trkfitterLSLM_separate_combined/residCDC.h:5156)
+   A /trunk/src/programs/Analysis/plugins/trkfitterLSLM/residFDC.cc (from /branches/src/programs/Analysis/plugins/trkfitterLSLM_separate_combined/residFDC.cc:5156)
+   A /trunk/src/programs/Analysis/plugins/trkfitterLSLM/residFDC.h (from /branches/src/programs/Analysis/plugins/trkfitterLSLM_separate_combined/residFDC.h:5156)
+
+Merge from branch onto trunk. Had to resolve conflicts with
+combinedResidFunc.cc by hand. Command was
+
+svn merge -r5034:5156 $HDSVN/branches/src/programs/Analysis/plugins/trkfitterLSLM_separate_combined
+
+M    DLine.cc
+M    MyTrajectory.cc
+M    DLine.h
+M    MyTrajectory.h
+M    MyTrajectoryGrkuta.cc
+A  + residCDC.cc
+A  + residCDC.h
+M    combinedResidFunc.cc
+A  + residFDC.cc
+M    combinedResidFunc.h
+A  + residFDC.h
+
+------------------------------------------------------------------------
+r5182 | staylor | 2009-05-15 14:53:32 -0400 (Fri, 15 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/hitFDC.c
+
+In order to facilitate possible future half-cell offsets between adjacent wire layers, the basic unit for grouping and placing FDC chambers in the XML will be changed from modules of 3 to single chambers, so some small changes in the code are needed to be consistent with this. The indexing into the FDC tree is still the same.  The half-cell offset code is currently commented out.  This code is now inconsistent with the Geom4 FDC geometry definition in the XML.
+------------------------------------------------------------------------
+r5183 | staylor | 2009-05-15 15:08:42 -0400 (Fri, 15 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/ForwardDC_HDDS.xml
+
+First version of new geometry for the FDC.  The chambers are no longer grouped in modules of three; the new unit is a single chamber, so in principle all of the rotation angles of the chambers for a package can be different or a chamber could be removed from a package.  The wire plane-to-wire plane separation within a packages was reduced from 3cm to 2cm.  The 2mm foam in the active area has been removed and the thickness of the ground plane has been reduced.  The package-to-package support shell has been changed from aluminum to FR-4 and the support rods are now also FR4.  The compression rods are now Ultem-2300 and gusset rings for the compression of the o-rings have been added.  A ring for supporting the cables on the upstream side of the FDC has been added.  The spacer ring between the wire plane and one of the cathode planes in a chamber is now polypropylene instead of a composite.  The other support structures are now more consistent with the current engineering design.  The chamber gas now fills the entire interior package volume instead of just the 1 cm active region of each chamber.  The epoxy in the cathode material has been removed from the active region.
+------------------------------------------------------------------------
+r5184 | staylor | 2009-05-15 15:09:36 -0400 (Fri, 15 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/main_HDDS.xml
+
+Move FDC closer to the CDC.
+------------------------------------------------------------------------
+r5188 | staylor | 2009-05-18 13:55:03 -0400 (Mon, 18 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+(1) Added flags for turning on or off multiple scattering and/or energy loss. (2) Get position of most upstream FDC plane from the XML.  (3) added dewnsity effect to energy loss routine based on the prescription used by GEANT 3.21. (4) added method for getting energy loss variance. (5) added displacement terms to multiple scattering matrices.  I am not sure that the off-diagonal elements involving displacements and angles are correct.
+------------------------------------------------------------------------
+r5191 | marki | 2009-05-19 11:14:42 -0400 (Tue, 19 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/combinedResidFunc.cc
+
+add chisq terms from FDC to trajectory chisq; now agrees with gsl chisq
+------------------------------------------------------------------------
+r5196 | marki | 2009-05-20 11:20:45 -0400 (Wed, 20 May 2009) | 4 lines
+Changed paths:
+   M /trunk/src/libraries/HDDM/Makefile
+   M /trunk/src/libraries/HDDM/Makefile.static
+
+merge in changes from branches/src/libraries/HDDM_template_authority
+this makes event.xml the authority
+event.xsd is not built at present
+
+------------------------------------------------------------------------
+r5197 | somov | 2009-05-20 13:29:00 -0400 (Wed, 20 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDDM/event.xml
+
+add sector to stcTruthPoint
+------------------------------------------------------------------------
+r5198 | marki | 2009-05-21 13:14:36 -0400 (Thu, 21 May 2009) | 1 line
+Changed paths:
+   D /trunk/src/libraries/HDDM/event.xsd
+   D /trunk/src/libraries/HDDM/hddm_s.c
+   D /trunk/src/libraries/HDDM/hddm_s.h
+
+remove derived files: event.xsd hddm_s.c hddm_s.h
+------------------------------------------------------------------------
+r5199 | marki | 2009-05-21 15:49:10 -0400 (Thu, 21 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDDM/Makefile
+
+fix the install target
+------------------------------------------------------------------------
+r5200 | marki | 2009-05-21 15:49:37 -0400 (Thu, 21 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDDM
+
+ignore made files
+------------------------------------------------------------------------
+r5201 | marki | 2009-05-21 15:50:49 -0400 (Thu, 21 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY
+
+ignore made file hddsroot.h
+------------------------------------------------------------------------
+r5202 | marki | 2009-05-21 15:52:50 -0400 (Thu, 21 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds
+   M /trunk/src/programs/Simulation/hdds/Makefile
+
+ignore more made files
+------------------------------------------------------------------------
+r5203 | marki | 2009-05-21 15:54:43 -0400 (Thu, 21 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/hddm_cull_events
+
+ignore made directories
+------------------------------------------------------------------------
+r5204 | marki | 2009-05-21 15:55:23 -0400 (Thu, 21 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/hddm_merge_events
+
+ignore made directories
+------------------------------------------------------------------------
+r5205 | marki | 2009-05-21 15:57:31 -0400 (Thu, 21 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/hddm
+
+ignore hddmcat
+------------------------------------------------------------------------
+r5206 | marki | 2009-05-21 15:58:16 -0400 (Thu, 21 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/hddm_merge_files
+
+ignore made directories
+------------------------------------------------------------------------
+r5207 | marki | 2009-05-21 16:06:04 -0400 (Thu, 21 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trackeff_hists2
+
+ignore made directories
+------------------------------------------------------------------------
+r5208 | staylor | 2009-05-22 07:54:04 -0400 (Fri, 22 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+(1) Propagate D in swimcentral, the swim from the target to the outermost step needed for each pass in the central fit. (2) Increased the maximum number of passes in the outer loop over refined reference trajectories to 10 and added chi2 criteria for aborting earlier than at the 10th iteration.
+------------------------------------------------------------------------
+r5209 | staylor | 2009-05-22 08:06:12 -0400 (Fri, 22 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+
+Whoops! forgot to get rid of debug printout
+------------------------------------------------------------------------
+r5210 | davidl | 2009-05-22 08:54:29 -0400 (Fri, 22 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DGeometry.cc
+
+Updated GetFDCStereo and GetFDCZ to match new FDC XML definition.
+------------------------------------------------------------------------
+r5212 | davidl | 2009-05-22 15:18:24 -0400 (Fri, 22 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/invariant_mass_hists/DEventProcessor_invariant_mass_hists.cc
+   M /trunk/src/programs/Analysis/plugins/invariant_mass_hists/DEventProcessor_invariant_mass_hists.h
+
+Added histogram for t-distribution
+------------------------------------------------------------------------
+r5213 | davidl | 2009-05-22 15:29:44 -0400 (Fri, 22 May 2009) | 9 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Comment out the code that refines the reference trajectory by adding
+high density points. With the code enabled, one gets agreement with
+hdgeant to within about 1 micron, but at a cost of taking 8-10 times
+longer to swim a track. With the code disabled, the agreement is to
+within about 10 microns.
+
+The comment is done with a #if 0 ... #endif block so that it can be
+turned back on, but only with a recompile.
+
+------------------------------------------------------------------------
+r5220 | staylor | 2009-05-22 18:15:33 -0400 (Fri, 22 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+(1) Reinstate old reference trajectory routines that do not propagate the covariance matrix outward and use these routines instead of the other (slower and more complicated) versions.  Turns out I did not get much benefit from these additional complications. (2) Simplify filter code fore cdc hits belonging to forward tracks.
+------------------------------------------------------------------------
+r5221 | somov | 2009-05-26 10:57:02 -0400 (Tue, 26 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/main_HDDS.xml
+
+Cherenkov detector is excluded from the default geometry. New position of the Start Counter, z = 38.75
+------------------------------------------------------------------------
+r5222 | somov | 2009-05-26 11:04:29 -0400 (Tue, 26 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/StartCntr_HDDS.xml
+
+New Start Counter geometry. SC consists of 40 bars with the downstream hole radius of 2 cm
+------------------------------------------------------------------------
+r5224 | staylor | 2009-05-26 13:23:44 -0400 (Tue, 26 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+(1) Move the code that fills the cov and fcov vectors out of the ExtrapolateToVertex routines and make the sure that that the covariance matrix and state vector are returned with the vertex values to the calling routine.  (2) Remove unnecessary loop over cdchits from SetCDCForwardReferenceTrajectory, since the hit tag is no longer used in the filter code. (3) output the track parameters corresponding to the minimum chi2 from the iteration over the reference trajectories. (4) remove mass_hyp as an explicit input variable to ExtrapolateToVertex.
+------------------------------------------------------------------------
