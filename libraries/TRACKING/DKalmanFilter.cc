@@ -21,8 +21,8 @@
 #define EPS2 1.e-4
 #define BEAM_RADIUS  0.1 
 #define MAX_ITER 25
-#define STEP_SIZE 0.5  // 0.25
-#define CDC_STEP_SIZE 0.5 // 0.25
+#define STEP_SIZE 0.25  // 0.25
+#define CDC_STEP_SIZE 0.25 // 0.25
 #define NUM_ITER 10
 #define Z_MIN 0.
 #define Z_MAX 175.
@@ -2581,8 +2581,8 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     phi_=Sc(state_phi,0);
     q_over_pt_=Sc(state_q_over_pt,0);
     tanl_=Sc(state_tanl,0);
-    x_=S(state_x,0);
-    y_=S(state_y,0);
+    x_=Sbest(state_x,0);
+    y_=Sbest(state_y,0);
     z_=zvertex;
 
     if (DEBUG_LEVEL>0)
@@ -2612,7 +2612,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     }
 
     // total chisq and ndf
-    chisq_=chisq_iter;
+    chisq_=chisq_min;
     ndf=2*fdchits.size()+cdchits.size()-5;
         
     if (DEBUG_HISTS){
@@ -2639,7 +2639,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
        
     return NOERROR;
   }
-  
+
   // Fit in Central region:  deal with hits in the CDC 
   if (cdchits.size()>0){  
     // Order the CDC hits by radius
@@ -2652,22 +2652,15 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     Sc(state_z,0)=z_;  
 
     //C0(state_z,state_z)=1.;
-    C0(state_z,state_z)=1.0;
-    C0(state_q_over_pt,state_q_over_pt)=0.10*0.10*q_over_pt_*q_over_pt_;
+    C0(state_z,state_z)=2.0;
+    C0(state_q_over_pt,state_q_over_pt)=0.20*0.20*q_over_pt_*q_over_pt_;
     C0(state_phi,state_phi)=0.01*0.01;
     C0(state_D,state_D)=1.0;
-    //double theta=90.-180./M_PI*atan(tanl_);
-    //double dlambda=2.1e-3-3.4e-4*theta+3.5e-5*theta*theta;
-    //double dlambda=0.04;
-   
-    double dlambda=0.01;
+    double dlambda=0.05;
     //dlambda=0.1;
     C0(state_tanl,state_tanl)=(1.+tanl_*tanl_)*(1.+tanl_*tanl_)
       *dlambda*dlambda;
-      
-    //C0(state_tanl,state_tanl)=0.001;
-    //    C0(state_tanl,state_z)=C0(state_z,state_tanl)=-0.3*dlambda*(1.+tanl_*tanl_)*1.0*(1.+tanl_*tanl_);
- 
+
     // Initialization
     Cc=C0;
     DMatrix Scbest(Sc),Sclast(Sc);
@@ -2676,10 +2669,10 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     DVector3 best_pos=pos;
   
     // iteration 
-    double anneal_factor=1.;
+    double scale_factor=100., anneal_factor=1.;
     double chisq_iter=chisq;
     double chisq_min=chisq;
-    for (int iter2=0;iter2<10;iter2++){     
+    for (int iter2=0;iter2<20;iter2++){     
       //if (iter2>0) do_energy_loss=true;
       //if (iter2>0) do_multiple_scattering=true;
 
@@ -2691,12 +2684,12 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 
       //      printf("-------------central iteration %d cdc size %d\n",iter2,central_traj.size());
 
-      // Calculate a scale factor for the measurement errors that depends 
+      // Calculate an annealing factor for the measurement errors that depends 
       // on the iteration,so that we approach the "true' measurement errors
       // by the last iteration.
       double f=2.5;
-      double scale_factor=anneal_factor-1.;
-      anneal_factor=scale_factor/pow(f,iter2)+1.;
+      if (pass==kTimeBased)
+	anneal_factor=scale_factor/pow(f,iter2)+1.;
 
       // Initialize trajectory deque and position
       SetCDCReferenceTrajectory(pos0,Sc);
@@ -2705,27 +2698,10 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	cout << "No CDC reference trajectory????" <<endl;
 	return RESOURCE_UNAVAILABLE;
       }
-    
-      /*
-      switch(iter2){
-      case 1:
-	f=1.5;
-	break;
-      case 2:
-	f=1.25;
-	break;
-      case 3:
-	f=1.5;
-	break;
-      default:
-	break;
-      }
-      */
 
-      // scale_factor=0.;
+      // Iteration for given reference trajectory 
       chisq=1.e16;
-      double fom=1.e16,old_fom=fom;
-      for (int iter=0;iter<NUM_ITER;iter++){
+      for (int iter=0;iter<20;iter++){
 	Cc=C0;
 	if (iter>0){
 	  SwimCentral(pos,Sc);
@@ -2749,8 +2725,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	  cout 
 	    << "iteration " << iter+1  << " factor " << anneal_factor 
 	    << " chi2 " 
-	    << chisq_central << " fom " << fom 
-	    << " p " 
+	    << chisq_central << " p " 
 	    <<   1./Sc(state_q_over_pt,0)/cos(atan(Sc(state_tanl,0)))
 	    << " theta "  << 90.-180./M_PI*atan(Sc(state_tanl,0)) 
 	    << " vertex " << x_ << " " << y_ << " " << z_ <<endl;
@@ -2877,7 +2852,6 @@ double DKalmanFilter::BrentsAlgorithm(double ds1,double ds2,
     xm=0.5*(a+b);
     tol2=2.0*(tol1=EPS*fabs(x)+ZEPS);
     if (fabs(x-xm)<=(tol2-0.5*(b-a))){
-      /*
       if (pos.z()>=endplate_z-endplate_dz){
 	double my_endz=endplate_z-endplate_dz;
 	// Check if the minimum doca would occur outside the straw and if so, bring the state 
@@ -2891,7 +2865,7 @@ double DKalmanFilter::BrentsAlgorithm(double ds1,double ds2,
 	  u_old=u;
 	  iter++;
 	}
-		printf("new z %f ds %f \n",pos.z(),x);
+	//printf("new z %f ds %f \n",pos.z(),x);
       }
       if (pos.z()<=cdc_origin[2]){
 	int iter=0;
@@ -2903,9 +2877,9 @@ double DKalmanFilter::BrentsAlgorithm(double ds1,double ds2,
 	  u_old=u;
 	  iter++;
 	}
-	printf("new z %f ds %f \n",pos.z(),x);
+	//printf("new z %f ds %f \n",pos.z(),x);
       }	
-      */
+     
       return cx-x;
     }
     // trial parabolic fit
@@ -3352,7 +3326,7 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     doca=(pos-wirepos).Mag();
 
     // Check if the doca is no longer decreasing
-    if ((doca>old_doca) // && (pos.z()<endplate_z && pos.z()>cdc_origin[2])
+    if ((doca>old_doca) && (pos.z()<endplate_z && pos.z()>cdc_origin[2])
 	&& more_measurements){
       //printf("----------------------------------------\n");
       //if (pos.z()<endplate_z && pos.z()>cdc_origin[2])
@@ -3486,7 +3460,7 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
 	  var+=var_pred;
 	}
 	double dm=measurement-prediction;
-	
+
 	if (var_pred<0.){
 	  /*
 	  Cc.Print();
@@ -3530,8 +3504,27 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
 	// Update state vector covariance matrix
 	Cc=Cc-(K*(H*Cc));  
 	
+	/* This is more accurate, but is it worth it??
+	// update position on current trajectory based on corrected doca to 
+	// reference trajectory
+	pos=pos0;
+	pos(0)+=-Sc(state_D,0)*sin(Sc(state_phi,0));
+	pos(1)+= Sc(state_D,0)*cos(Sc(state_phi,0));
+	pos(2)=Sc(state_z,0);   
+      
+	// wire position
+	wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
+
+	// revised prediction
+	diff=pos-wirepos;
+	mdir=pos-wirepos-(diff.Dot(dir))*dir;
+	mdir.SetMag(1.0);
+	prediction=diff.Dot(mdir);
+	*/
+
 	// calculate the residual
 	dm*=(1.-(H*K)(0,0));
+	//dm=measurement-prediction;
 	cdchits[cdc_index]->residual=dm;
 	
 	// Update chi2 for this hit
@@ -3573,7 +3566,7 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
 	// Step to the next point on the trajectory
 	Sc=S0_+J*(Sc-S0); 
 	
-	// update position on currrent trajectory based on corrected doca to 
+	// update position on current trajectory based on corrected doca to 
 	// reference trajectory
 	pos=central_traj[k].pos;
 	pos(0)+=-Sc(state_D,0)*sin(Sc(state_phi,0));
@@ -3619,6 +3612,8 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
   x_=pos.x();
   y_=pos.y();
   z_=Sc(state_z,0);
+  
+  chisq*=anneal_factor;
   
   return NOERROR;
 }
@@ -3837,7 +3832,10 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
   x_=S(state_x,0);
   y_=S(state_y,0);
   z_=forward_traj[forward_traj.size()-1].pos.Z();
-  
+
+  if (DEBUG_LEVEL>0)
+    cout << "Position after forward filter: " << x_ << ", " << y_ << ", " << z_ <<endl;
+
   return NOERROR;
 }
 // Kalman engine for forward tracks -- this routine adds CDC hits
@@ -3909,7 +3907,7 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
 	      +(y-wirepos.y())*(y-wirepos.y()));
 
     // Check if the doca is no longer decreasing
-    if ((doca>old_doca) && more_measurements){
+    if ((doca>old_doca) && z<endplate_z && more_measurements){
       // Get energy loss 
       double dedx=0.;
       if (do_energy_loss){
@@ -4052,6 +4050,9 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
   x_=S(state_x,0);
   y_=S(state_y,0);
   z_=forward_traj_cdc[forward_traj_cdc.size()-1].pos.Z();
+  
+  if (DEBUG_LEVEL>0)
+    cout << "Position after forward cdc filter: " << x_ << ", " << y_ << ", " << z_ <<endl;
   
   return NOERROR;
 }
