@@ -99,7 +99,7 @@ class DKalmanFilter{
 		  double covy, double covxy,double dE);
   jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
   jerror_t KalmanLoop(double mass_hyp,int pass);
-  jerror_t KalmanForward(double mass_hyp,DMatrix &S,DMatrix &C,double &chisq);
+  jerror_t KalmanForward(double anneal,DMatrix &S,DMatrix &C,double &chisq);
   jerror_t KalmanForwardCDC(double mass_hyp, double anneal,DMatrix &S, 
 			    DMatrix &C,double &chisq);
   jerror_t KalmanCentral(double mass_hyp,double anneal_factor,DMatrix &S, 
@@ -249,6 +249,7 @@ class DKalmanFilter{
 	
   bool do_multiple_scattering;
   bool do_energy_loss;
+  bool switch_LR;
   int pass;
   bool DEBUG_HISTS;
   int DEBUG_LEVEL;

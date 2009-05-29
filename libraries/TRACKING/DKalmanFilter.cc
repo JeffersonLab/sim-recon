@@ -2113,11 +2113,14 @@ jerror_t DKalmanFilter::GetProcessNoiseCentral(double mass_hyp,double ds,
       =q_over_pt*tanl*(1.+tanl*tanl);
     Q1(state_D,state_D)=ds*ds/3.;
     Q1(state_D,state_tanl)=Q1(state_tanl,state_D)
-      =-my_ds/2.*cos(Sc(state_phi,0))*(1.+tanl*tanl);
-    Q1(state_D,state_phi)=Q1(state_phi,state_D)=
-      my_ds/2.*sin(Sc(state_phi,0))*sqrt(1.+tanl*tanl);
-    Q1(state_D,state_q_over_pt)=Q1(state_q_over_pt,state_D)=
-      -my_ds/2.*cos(Sc(state_phi,0))*tanl;
+      //=-my_ds/2.*cos(Sc(state_phi,0))*(1.+tanl*tanl);
+      =my_ds/2.*(1.+tanl*tanl);
+    Q1(state_D,state_phi)=Q1(state_phi,state_D)
+      //my_ds/2.*sin(Sc(state_phi,0))*sqrt(1.+tanl*tanl);
+      =my_ds/2.*sqrt(1.+tanl*tanl);
+    Q1(state_D,state_q_over_pt)=Q1(state_q_over_pt,state_D)
+      //      -my_ds/2.*cos(Sc(state_phi,0))*tanl;
+      =my_ds/2.*q_over_pt*tanl;
 
     double p2=(1.+tanl*tanl)/q_over_pt/q_over_pt;
     double sig2_ms=0.0136*0.0136*(1.+mass_hyp*mass_hyp/p2)*my_ds/X0/p2
@@ -2151,9 +2154,11 @@ jerror_t DKalmanFilter::GetProcessNoise(double mass_hyp,double ds,double z,
     Q1(state_x,state_x)=ds*ds/3.;
     Q1(state_y,state_y)=ds*ds/3.;
     Q1(state_y,state_ty)=Q1(state_ty,state_y)
-      =my_ds/2.*tx*(1.+tx*tx+ty*ty)/sqrt(tx*tx+ty*ty);
+      //      =my_ds/2.*tx*(1.+tx*tx+ty*ty)/sqrt(tx*tx+ty*ty);
+      = my_ds/2.*sqrt((1.+tx*tx+ty*ty)*(1.+ty*ty));
     Q1(state_x,state_tx)=Q1(state_tx,state_x)
-      =my_ds/2.*ty*sqrt((1.+tx*tx+ty*ty)/(tx*tx+ty*ty));
+      // =my_ds/2.*ty*sqrt((1.+tx*tx+ty*ty)/(tx*tx+ty*ty));
+      = my_ds/2.*sqrt((1.+tx*tx+ty*ty)*(1.+tx*tx));
     
     double sig2_ms= 0.0136*0.0136*(1.+one_over_p_sq*mass_hyp*mass_hyp)
       *one_over_p_sq*my_ds/X0
@@ -2503,10 +2508,16 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     double chisq_iter=chisq;
     double chisq_min=chisq;
     double zvertex=65.;
-    for (int iter2=0;iter2<10;iter2++){   
+    double scale_factor=1000.,anneal_factor=1.;
+    // Iterate over reference trajectories
+    for (int iter2=0;iter2<20;iter2++){   
       //if (iter2>0) do_energy_loss=true;
       //if (iter2>0) do_multiple_scattering=true;
       
+      double f=3.5;
+      if (pass==kTimeBased)
+	anneal_factor=scale_factor/pow(f,iter2)+1.;
+
        // Initialize path length variable
       len=0;
 
@@ -2526,7 +2537,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	unsigned int num_iter=NUM_ITER;
 	//num_iter=1;
 	//if (cdchits.size()==0) num_iter=3;
-	for (unsigned int iter=0;iter<num_iter;iter++) {      
+	for (unsigned int iter=0;iter<20;iter++) {      
 	  // perform the kalman filter 
 	  
 	  if (iter>0){
@@ -2536,17 +2547,14 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	  } 
 	  
 	  C=C0;
-	  KalmanForward(mass_hyp,S,C,chisq);
+	  KalmanForward(anneal_factor,S,C,chisq);
 	  
 	  // include any hits from the CDC on the trajectory
 	  if (cdchits.size()>0 && forward_traj_cdc.size()>0){
-	    double f=2.5;
-	    double anneal=1.;
-	    //anneal=19./pow(f,iter)+1.;
-	    
-	    //anneal=1.;
+	    // anneal_factor*=10.;
+
 	    // Proceed into CDC
-	    KalmanForwardCDC(mass_hyp,anneal,S,C,chisq);
+	    KalmanForwardCDC(mass_hyp,anneal_factor,S,C,chisq);
 	  }
 	  
 	  if (fabs(chisq-chisq_forward)<0.1 || chisq>chisq_forward) break;
@@ -2669,7 +2677,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     DVector3 best_pos=pos;
   
     // iteration 
-    double scale_factor=100., anneal_factor=1.;
+    double scale_factor=1000., anneal_factor=1.;
     double chisq_iter=chisq;
     double chisq_min=chisq;
     for (int iter2=0;iter2<20;iter2++){     
@@ -2687,7 +2695,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
       // Calculate an annealing factor for the measurement errors that depends 
       // on the iteration,so that we approach the "true' measurement errors
       // by the last iteration.
-      double f=2.5;
+      double f=3.5;
       if (pass==kTimeBased)
 	anneal_factor=scale_factor/pow(f,iter2)+1.;
 
@@ -3620,7 +3628,8 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
 
 
 // Kalman engine for forward tracks
-jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
+jerror_t DKalmanFilter::KalmanForward(double anneal_factor, DMatrix &S, 
+				      DMatrix &C,
 				      double &chisq){
   DMatrix M(2,1);  // measurement vector
   DMatrix Mpred(2,1); // prediction 
@@ -3645,7 +3654,6 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
 
   // overall path length
   double s=forward_traj[0].s;
-
 
   // Initialize chi squared
   chisq=0;
@@ -3678,7 +3686,7 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
 
       // Compute drift distance
       double one_over_beta
-	=sqrt(1.+S(state_q_over_p,0)*S(state_q_over_p,0)*mass_hyp*mass_hyp);
+	=sqrt(1.+S(state_q_over_p,0)*S(state_q_over_p,0)*MASS*MASS);
       double tflight=forward_traj[k].s*one_over_beta/SPEED_OF_LIGHT;
       double drift=DRIFT_SPEED*(fdchits[id]->t-tflight);  
       double cosa=fdchits[id]->cosa;
@@ -3716,19 +3724,21 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
       M(1,0)=v+dv;// with correction for Lorentz effect
       
       // ... and its covariance matrix 
-      V(0,0)=fdchits[id]->covu;
+      V(0,0)=anneal_factor*fdchits[id]->covu;
       //V(1,1)=2.*fdchits[id]->covv;
       V(1,1)=fdc_y_variance(alpha,drift);
 
+      /*
       V(0,0)+=	// not sure this is the right place for this...
-	DRIFT_SPEED*DRIFT_SPEED
-	*(VAR_S*one_over_beta*one_over_beta/SPEED_OF_LIGHT/SPEED_OF_LIGHT 
-	  +mass_hyp*mass_hyp*mass_hyp*mass_hyp
-	  *forward_traj[k].s*forward_traj[k].s
-	  /one_over_beta/one_over_beta/SPEED_OF_LIGHT/SPEED_OF_LIGHT
-	  *S(state_q_over_p,0)*S(state_q_over_p,0)
-	  *C(state_q_over_p,state_q_over_p));
-	  //*0.0004*S(state_q_over_p,0)*S(state_q_over_p,0));
+      DRIFT_SPEED*DRIFT_SPEED
+      *(VAR_S*one_over_beta*one_over_beta/SPEED_OF_LIGHT/SPEED_OF_LIGHT 
+      +MASS*MASS*MASS*MASS
+      *forward_traj[k].s*forward_traj[k].s
+      /one_over_beta/one_over_beta/SPEED_OF_LIGHT/SPEED_OF_LIGHT
+      *S(state_q_over_p,0)*S(state_q_over_p,0)
+      *C(state_q_over_p,state_q_over_p));
+      *0.0004*S(state_q_over_p,0)*S(state_q_over_p,0));
+      */
 
       double var_alpha
 	=(C(state_tx,state_tx)*cosa*cosa+C(state_ty,state_ty)*sina*sina
@@ -3740,6 +3750,8 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
 	+drift*drift*(nz*cosalpha*cosphi+nr*sinalpha)
 	*(nz*cosalpha*cosphi+nr*sinalpha)*var_alpha
 	+drift*drift*nz*nz*sinalpha*sinalpha*sinphi*sinphi*var_phi;
+
+      V(1,1)*=anneal_factor;
 
       // To transform from (x,y) to (u,v), need to do a rotation:
       //   u = x*cosa-y*sina
@@ -3755,7 +3767,7 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
 	=-du*cosa*temp/sqrt(1.+temp*temp)/(1.+temp*temp);
       /*
       H(0,state_q_over_p)=H_T(state_q_over_p,0)
-	=mass_hyp*mass_hyp*DRIFT_SPEED*s*S(state_q_over_p,0)
+	=MASS*MASS*DRIFT_SPEED*s*S(state_q_over_p,0)
 	/SPEED_OF_LIGHT/one_over_beta;
       */
 
@@ -3798,7 +3810,7 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
       ty=S(state_ty,0);
       du=x*cosa-y*sina-u;
       one_over_beta
-	=sqrt(1.+S(state_q_over_p,0)*S(state_q_over_p,0)*mass_hyp*mass_hyp);
+	=sqrt(1.+S(state_q_over_p,0)*S(state_q_over_p,0)*MASS*MASS);
       R(0,0)=M(0,0)-du*cos(atan(tx*cosa-ty*sina));
       //	-DRIFT_SPEED*s/SPEED_OF_LIGHT*one_over_beta;
       R(1,0)=M(1,0)-(y*cosa+x*sina);
@@ -3827,6 +3839,7 @@ jerror_t DKalmanFilter::KalmanForward(double mass_hyp, DMatrix &S, DMatrix &C,
     }
 
   }
+  chisq*=anneal_factor;
 
   // Final position for this leg
   x_=S(state_x,0);
@@ -4008,7 +4021,7 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
       double res=dm-d;
 
       // Update chi2 for this segment
-      chisq+=res*res/(V-(H*(C*H_T))(0,0));
+      chisq+=anneal*res*res/(V-(H*(C*H_T))(0,0));
 
       // multiple scattering
       if (do_multiple_scattering){
