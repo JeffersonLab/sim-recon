@@ -37,19 +37,19 @@ all:	xml-hddm hddm-xml hddm-c hddm-cpp
 install: hddm-c xml-hddm hddm-xml hddm-c xml-xml hddm-schema schema-hddm hddmcat hddm-cpp
 	mkdir -p $(HALLD_HOME)/bin
 	cp hddm-schema schema-hddm xml-xml $(HALLD_HOME)/bin
-	mkdir -p $(HALLD_HOME)/bin/$(OSNAME)
-	cp hddm-c hddm-cpp hddm-xml xml-hddm hddmcat $(HALLD_HOME)/bin/$(OSNAME)
+	mkdir -p $(HALLD_HOME)/bin/$(BMS_OSNAME)
+	cp hddm-c hddm-cpp hddm-xml xml-hddm hddmcat $(HALLD_HOME)/bin/$(BMS_OSNAME)
 
 xml-hddm: xml-hddm.cpp XString.o XParsers.o
 	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
 	-I$(HALLD_HOME)/include -o $@ $^ \
-	-L$(HALLD_HOME)/lib/$(OSNAME) -L$(HALLD_HOME)/src/external/xstream/src -lxstream \
+	-L$(HALLD_HOME)/lib/$(BMS_OSNAME) -L$(HALLD_HOME)/src/external/xstream/src -lxstream \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 hddm-xml: hddm-xml.cpp XString.o XParsers.o
 	$(CPP) -I$(HALLD_HOME)/src/include -I$(XERCESCROOT)/include \
 	-I$(HALLD_HOME)/include -o $@ $^ \
-	-L$(HALLD_HOME)/lib/$(OSNAME) -L$(HALLD_HOME)/src/external/xstream/src -lxstream \
+	-L$(HALLD_HOME)/lib/$(BMS_OSNAME) -L$(HALLD_HOME)/src/external/xstream/src -lxstream \
 	-L$(XERCESCROOT)/lib -lxerces-c $(LIBXDR)
 
 hddm-c: hddm-c.cpp XString.o XParsers.o
