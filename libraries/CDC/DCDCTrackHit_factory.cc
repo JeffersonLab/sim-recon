@@ -11,7 +11,9 @@ using namespace std;
 
 #include "DCDCTrackHit_factory.h"
 #include "DCDCHit.h"
-#include "HDGEOMETRY/DGeometry.h"
+#include <HDGEOMETRY/DGeometry.h>
+#include <TRACKING/DTrackHitSelectorTHROWN.h>
+#include <TRACKING/DMCTrackHit.h>
 
 // Static globals used by all instances of DCDCTrackHit_factory
 static pthread_mutex_t wire_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -266,6 +268,14 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DCDCHit*> cdchits;
 	loop->Get(cdchits);
 	
+	// If this is simulated data then we want to match up the truth hit
+	// with this "real" hit. Ideally, this would be done at the
+	// DCDCHit object level, but the organization of the data in HDDM
+	// makes that difficult. Here we have the full wire definition so
+	// we make the connection here.
+	vector<const DMCTrackHit*> mctrackhits;
+	loop->Get(mctrackhits);
+	
 	for(unsigned int i=0; i<cdchits.size(); i++){
 		const DCDCHit* cdchit = cdchits[i];
 
@@ -281,6 +291,12 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		hit->wire = &wire[cdchit->ring-1][cdchit->straw-1];
 		hit->tdrift = cdchit->t;
 		hit->dist = hit->tdrift*55.0E-4; // Use number hardwired in simulation for now
+		
+		// Try matching truth hit with this "real" hit.
+		const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(hit->wire, hit->dist, mctrackhits);
+		
+		hit->AddAssociatedObject(cdchit);
+		if(mctrackhit)hit->AddAssociatedObject(mctrackhit);
 		
 		_data.push_back(hit);
 	}

@@ -18,6 +18,7 @@ using namespace jana;
 #include "DFDCHit.h"
 #include "DFDCGeometry.h"
 #include "HDGEOMETRY/DGeometry.h"
+#include <TRACKING/DMCTrackHit.h>
 
 #include <DMatrix.h>
 #include <TDecompLU.h>
@@ -66,7 +67,8 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		void makePseudo( vector<const DFDCHit*>& x,
 				 vector<const DFDCCathodeCluster*>& u,
 				 vector<const DFDCCathodeCluster*>& v,
-				 int layer);
+				 int layer,
+				 vector<const DMCTrackHit*> &mctrackhits);
 		
 		///
 		/// DFDCPseudo_factory::CalcMeanTime()

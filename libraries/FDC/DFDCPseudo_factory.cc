@@ -9,6 +9,7 @@
 #include "DFDCPseudo_factory.h"
 #include "HDGEOMETRY/DGeometry.h"
 #include "DFDCGeometry.h"
+#include <TRACKING/DTrackHitSelectorTHROWN.h>
 
 #define HALF_CELL 0.5
 #define MAX_DEFLECTION 0.15
@@ -122,6 +123,14 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 		else
 			uClus.push_back(cathClus[i]);
 	}
+	
+	// If this is simulated data then we want to match up the truth hit
+	// with this "real" hit. Ideally, this would be done at the
+	// DFDCHit object level, but the organization of the data in HDDM
+	// makes that difficult. Here we have the full wire definition so
+	// we make the connection here.
+	vector<const DMCTrackHit*> mctrackhits;
+	eventLoop->Get(mctrackhits);
 
 	vector<const DFDCCathodeCluster*>::iterator uIt = uClus.begin();
 	vector<const DFDCCathodeCluster*>::iterator vIt = vClus.begin();
@@ -137,7 +146,7 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	  for (; ((xIt != xHits.end() && (*xIt)->gLayer == iLayer)); xIt++)
 	    oneLayerX.push_back(*xIt);
 	  if (oneLayerU.size()>0 && oneLayerV.size()>0 && oneLayerX.size()>0)
-	    makePseudo(oneLayerX, oneLayerU, oneLayerV,iLayer);
+	    makePseudo(oneLayerX, oneLayerU, oneLayerV,iLayer, mctrackhits);
 	  oneLayerU.clear();
 	  oneLayerV.clear();
 	  oneLayerX.clear();
@@ -153,7 +162,8 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 				    vector<const DFDCCathodeCluster*>& u,
 				    vector<const DFDCCathodeCluster*>& v,
-				    int layer)
+				    int layer,
+					 vector<const DMCTrackHit*> &mctrackhits)
 {
   vector<const DFDCHit*>::iterator xIt;
   vector<const DFDCCathodeCluster*>::iterator uIt;
@@ -290,6 +300,10 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->covxx=sigx2*cosangle*cosangle+sigy2*sinangle*sinangle;
 	      newPseu->covyy=sigx2*sinangle*sinangle+sigy2*cosangle*cosangle;
 	      newPseu->covxy=(sigy2-sigx2)*sinangle*cosangle;
+
+			// Try matching truth hit with this "real" hit.
+			const DMCTrackHit *mctrackhit = DTrackHitSelectorTHROWN::GetMCTrackHit(newPseu->wire, newPseu->dist, mctrackhits);
+			if(mctrackhit)newPseu->AddAssociatedObject(mctrackhit);
 
 	      _data.push_back(newPseu);
 	    } // match in x
