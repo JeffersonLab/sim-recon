@@ -14,4 +14,4 @@ pristine:
 	make -f Makefile.static pristine
 
 hddm_s.h hddm_s.c: event.xml
-	hddm-c $<
+	$(HALLD_HOME)/bin/$(BMS_OSNAME)/hddm-c $<

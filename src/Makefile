@@ -1,4 +1,9 @@
-DIRS += external programs/Simulation/hdds libraries programs
+DIRS += external
+DIRS += programs/Simulation/hdds
+DIRS += libraries/include
+DIRS += programs/Utilities/hddm
+DIRS += libraries
+DIRS += programs
 
 ifndef MAKECMDGOALS
 MAKECMDGOALS += install
