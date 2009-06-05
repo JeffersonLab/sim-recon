@@ -5,6 +5,7 @@
 #---------------------------------------------------
 #
 
+CFLAGS = -D_FILE_OFFSET_BITS=64
 
 INCLUDE := -I. -I$(HALLD_HOME)/src/include -I$(HALLD_HOME)/src/libraries/include
 CC = cc
@@ -16,34 +17,17 @@ endif
 PROGRAM= genr8
 
 genr8: genr8.o genkin.o
-	$(CC) -o $@  $^  -lm
+	$(CC) $(CFLAGS) -o $@  $^  -lm
 
 genr8.o: genr8.c
-	$(CC) -c -o genr8.o   genr8.c $(INCLUDE)
+	$(CC) $(CFLAGS) -c -o genr8.o   genr8.c $(INCLUDE)
 
 genkin.o: genkin.c
-	$(CC) -c -o genkin.o   genkin.c $(INCLUDE)
-
+	$(CC) $(CFLAGS) -c -o genkin.o   genkin.c $(INCLUDE)
 
 clean:
 	@rm  *.o 
 
-
 install: genr8
 	mv genr8 $(HALLD_HOME)/bin/$(UNAME)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
