@@ -1,7 +1,7 @@
 #--------------------------------------------------------------------
 # The symbol SWITCHES is used to active any of the following switches
 # to enable custom versions of the simulation program.
-STD_OPTIONS = -DCERNLIB_TYPE 
+STD_OPTIONS = -DCERNLIB_TYPE -D_FILE_OFFSET_BITS=64
 #CASCADE_OPTIONS = -DUSE_UPWGHT_AS_REPEAT_COUNT -DTUNL_BACKSTREAMING_CASCADE_FACTOR=1000 -DEDHS_BACKSTREAMING_CASCADE_FACTOR=1000
 # Enable the following line to turn off writing out hddm data 
 #IO_OPTIONS = -DDISABLE_OUTPUT
