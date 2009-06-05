@@ -51,7 +51,7 @@ c       if (getcell().gt.0)   print 1002, 'cell',getcell()
           print 1030, 0,0,fieldm
         endif
       enddo
- 1000 format(' point',i3,':',3g12.5,1x,a20,99('/',a4,i3))
+ 1000 format(' point',i3,':',3g15.8,1x,a20,99('/',a4,i3))
  1002 format(' ',a12,'=',i3)
  1010 format(10x,'strongly inhomogeneous field (',2(g12.5,','),
      +       g12.5,') kG')
