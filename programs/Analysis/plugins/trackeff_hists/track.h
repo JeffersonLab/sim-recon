@@ -11,35 +11,24 @@
 #include <TObject.h>
 #include <TVector3.h>
 
+#include "track_info.h"
 
 class track:public TObject{
 
 	public:
 
 		TVector3 pthrown;
-		TVector3 pcan;
-		TVector3 pfit;
-		float z_thrown;
-		float z_can;
-		float z_fit;
-		int ncdc_hits_thrown;
-		int ncdc_hits_can;
-		int ncdc_hits_fit;
-		int ncdc_hits_thrown_and_can;
-		int ncdc_hits_thrown_and_fit;
-		int nfdc_hits_thrown;
-		int nfdc_hits_can;
-		int nfdc_hits_fit;
-		int nfdc_hits_thrown_and_can;
-		int nfdc_hits_thrown_and_fit;
-		int ncdc_hits;
-		int nfdc_hits;
-		float cdc_chisq_can;
-		float fdc_chisq_can;
-		float cdc_chisq_fit;
-		float fdc_chisq_fit;
-		int status_can;
-		int status_fit;
+		int event;
+		int track;
+		int Ncdc;
+		int Nfdc;
+		int mech; // largest value of mech from DMCTrajectoryPoint with R<60.0
+		double dtheta_mech;	// angle change due to mech (radians)
+		double dp_mech;		// momentum change due to mech (GeV/c)
+		
+		track_info can;	// Track candidate
+		track_info trk;	// wire-based fit
+		track_info part;	// time-based fit
 
 	private:
 		ClassDef(track,1);

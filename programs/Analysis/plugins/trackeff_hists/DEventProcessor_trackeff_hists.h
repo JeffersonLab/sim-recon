@@ -22,16 +22,15 @@ using std::map;
 #include <JANA/JEventLoop.h>
 
 #include <PID/DKinematicData.h>
-#include <TRACKING/DReferenceTrajectory.h>
 #include <TRACKING/DMCTrackHit.h>
+#include <TRACKING/DTrackCandidate.h>
 #include <TRACKING/DTrack.h>
+#include <PID/DParticle.h>
 #include <TRACKING/DMCThrown.h>
 #include <CDC/DCDCTrackHit.h>
-#include <FDC/DFDCHit.h>
-#include <FDC/DFDCWire.h>
+#include <FDC/DFDCPseudo.h>
 
 #include "track.h"
-#include "dchit.h"
 
 class DEventProcessor_trackeff_hists:public JEventProcessor{
 
@@ -43,12 +42,6 @@ class DEventProcessor_trackeff_hists:public JEventProcessor{
 		track trk;
 		track *trk_ptr;
 
-		TTree *fdchits, *cdchits;
-		dchit cdchit, fdchit;
-		dchit *cdchit_ptr, *fdchit_ptr;
-		
-		typedef vector<const DCDCTrackHit*> CDChitv;
-		typedef vector<const DFDCHit*> FDChitv;
 
 	private:
 		jerror_t init(void);	///< Invoked via DEventProcessor virtual method
@@ -57,29 +50,13 @@ class DEventProcessor_trackeff_hists:public JEventProcessor{
 		jerror_t erun(void);					///< Invoked via DEventProcessor virtual method
 		jerror_t fini(void);					///< Invoked via DEventProcessor virtual method
 
-		void GetCDCHits(const DKinematicData *p, CDChitv &inhits, CDChitv &outhits);
-		void GetFDCHits(const DKinematicData *p, FDChitv &inhits, FDChitv &outhits);
-		void GetFDCHitsFromTruth(int trackno, FDChitv &outhits);
-		void GetCDCHitsFromTruth(int trackno, CDChitv &outhits);
-		unsigned int FindMatch(CDChitv &thrownhits, vector<CDChitv> &candidate_hits, CDChitv &matched_hits);
-		unsigned int FindMatch(FDChitv &thrownhits, vector<FDChitv> &candidate_hits, FDChitv &matched_hits);
-		unsigned int GetNFDCWireHits(FDChitv &inhits);
-		void FindFDCTrackNumbers(JEventLoop *loop);
-		void FindCDCTrackNumbers(JEventLoop *loop);
+		void FillTrackInfo(const DKinematicData *kd, vector<track_info> &vti);
+		void GetTrackInfo(const DKinematicData *kd, track_info &ti, int &track_no);
+		void GetNhits(const DKinematicData *kd, int &Ncdc, int &Nfdc, int &track);
 
-		DMagneticFieldMap *bfield;
-		DReferenceTrajectory *ref;
-		double MAX_HIT_DIST_CDC;
-		double MAX_HIT_DIST_FDC;
-		
-		map<const DFDCHit*, const DMCTrackHit*> fdclink;
-		map<const DCDCTrackHit*, const DMCTrackHit*> cdclink;
-		map<const DMCThrown*, const DTrack*> trklink;
-		
-		vector<vector<DFDCWire*> >fdcwires;
-			
 		pthread_mutex_t mutex;
 		pthread_mutex_t rt_mutex;
+		int MAX_TRACKS;
 };
 
 #endif // _DEventProcessor_trackeff_hists_
