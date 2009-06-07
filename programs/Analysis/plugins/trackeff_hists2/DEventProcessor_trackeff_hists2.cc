@@ -1,6 +1,6 @@
-// $Id: DEventProcessor_trackeff_hists.cc 2774 2007-07-19 15:59:02Z davidl $
+// $Id: DEventProcessor_trackeff_hists2.cc 2774 2007-07-19 15:59:02Z davidl $
 //
-//    File: DEventProcessor_trackeff_hists.cc
+//    File: DEventProcessor_trackeff_hists2.cc
 // Created: Sun Apr 24 06:45:21 EDT 2005
 // Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
 //
@@ -13,7 +13,7 @@ using namespace std;
 
 #include <TROOT.h>
 
-#include "DEventProcessor_trackeff_hists.h"
+#include "DEventProcessor_trackeff_hists2.h"
 #include "DTrackingResolutionGEANT.h"
 
 #include <JANA/JApplication.h>
@@ -36,15 +36,15 @@ using namespace std;
 extern "C"{
 void InitPlugin(JApplication *app){
 	InitJANAPlugin(app);
-	app->AddProcessor(new DEventProcessor_trackeff_hists());
+	app->AddProcessor(new DEventProcessor_trackeff_hists2());
 }
 } // "C"
 
 
 //------------------
-// DEventProcessor_trackeff_hists
+// DEventProcessor_trackeff_hists2
 //------------------
-DEventProcessor_trackeff_hists::DEventProcessor_trackeff_hists()
+DEventProcessor_trackeff_hists2::DEventProcessor_trackeff_hists2()
 {
 	trk_ptr = &trk;
 
@@ -55,9 +55,9 @@ DEventProcessor_trackeff_hists::DEventProcessor_trackeff_hists()
 }
 
 //------------------
-// ~DEventProcessor_trackeff_hists
+// ~DEventProcessor_trackeff_hists2
 //------------------
-DEventProcessor_trackeff_hists::~DEventProcessor_trackeff_hists()
+DEventProcessor_trackeff_hists2::~DEventProcessor_trackeff_hists2()
 {
 
 }
@@ -65,7 +65,7 @@ DEventProcessor_trackeff_hists::~DEventProcessor_trackeff_hists()
 //------------------
 // init
 //------------------
-jerror_t DEventProcessor_trackeff_hists::init(void)
+jerror_t DEventProcessor_trackeff_hists2::init(void)
 {
 	// Create TRACKING directory
 	TDirectory *dir = (TDirectory*)gROOT->FindObject("TRACKING");
@@ -73,8 +73,8 @@ jerror_t DEventProcessor_trackeff_hists::init(void)
 	dir->cd();
 
 	// Create Trees
-	trkeff = new TTree("trkeff","Tracking Efficiency");
-	trkeff->Branch("E","track",&trk_ptr);
+	trkeff = new TTree("trkeff2","Tracking Efficiency");
+	trkeff->Branch("E","track2",&trk_ptr);
 
 	dir->cd("../");
 	
@@ -90,7 +90,7 @@ jerror_t DEventProcessor_trackeff_hists::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DEventProcessor_trackeff_hists::brun(JEventLoop *loop, int runnumber)
+jerror_t DEventProcessor_trackeff_hists2::brun(JEventLoop *loop, int runnumber)
 {
 	DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	const DGeometry *dgeom = dapp->GetDGeometry(runnumber);
@@ -110,7 +110,7 @@ jerror_t DEventProcessor_trackeff_hists::brun(JEventLoop *loop, int runnumber)
 //------------------
 // erun
 //------------------
-jerror_t DEventProcessor_trackeff_hists::erun(void)
+jerror_t DEventProcessor_trackeff_hists2::erun(void)
 {
 	return NOERROR;
 }
@@ -118,7 +118,7 @@ jerror_t DEventProcessor_trackeff_hists::erun(void)
 //------------------
 // fini
 //------------------
-jerror_t DEventProcessor_trackeff_hists::fini(void)
+jerror_t DEventProcessor_trackeff_hists2::fini(void)
 {
 	return NOERROR;
 }
@@ -126,7 +126,7 @@ jerror_t DEventProcessor_trackeff_hists::fini(void)
 //------------------
 // evnt
 //------------------
-jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DCDCTrackHit*> cdctrackhits;
 	vector<const DFDCHit*> fdchits;
@@ -280,7 +280,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 // isReconstructable
 //------------------
-bool DEventProcessor_trackeff_hists::isReconstructable(const DMCThrown *mcthrown, vector<const DMCTrajectoryPoint*> &mctrajpoints)
+bool DEventProcessor_trackeff_hists2::isReconstructable(const DMCThrown *mcthrown, vector<const DMCTrajectoryPoint*> &mctrajpoints)
 {
 	/// In order to test the efficiency of the finder/fitter, we must first
 	/// determine whether a track is "reconstructible" or not. (See
@@ -323,7 +323,7 @@ bool DEventProcessor_trackeff_hists::isReconstructable(const DMCThrown *mcthrown
 //------------------
 // FindLR
 //------------------
-void DEventProcessor_trackeff_hists::FindLR(vector<const DCoordinateSystem*> &wires, const DReferenceTrajectory *crt, vector<int> &LRhits)
+void DEventProcessor_trackeff_hists2::FindLR(vector<const DCoordinateSystem*> &wires, const DReferenceTrajectory *crt, vector<int> &LRhits)
 {
 	/// Fill the vector LRhits with +1 or -1 values indicating the side of each wire in the "wires"
 	/// vector the given reference trajectory passed on.
@@ -351,7 +351,7 @@ void DEventProcessor_trackeff_hists::FindLR(vector<const DCoordinateSystem*> &wi
 //------------------
 // FindLR
 //------------------
-void DEventProcessor_trackeff_hists::FindLR(vector<const DCoordinateSystem*> &wires, vector<const DMCTrajectoryPoint*> &trajpoints, vector<int> &LRhits)
+void DEventProcessor_trackeff_hists2::FindLR(vector<const DCoordinateSystem*> &wires, vector<const DMCTrajectoryPoint*> &trajpoints, vector<int> &LRhits)
 {		
 	/// Fill the vector LRhits with +1 or -1 values indicating the side of each wire in the "wires"
 	/// vector the particle swum by GEANT passed on according to the closest DMCTrajectoryPoint.

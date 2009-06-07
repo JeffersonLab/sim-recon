@@ -1,12 +1,12 @@
 // $Id$
 //
-//    File: DEventProcessor_trackeff_hists.h
+//    File: DEventProcessor_trackeff_hists2.h
 // Created: Wed Oct 10 13:30:37 EDT 2007
 // Creator: davidl (on Darwin fwing-dhcp95.jlab.org 8.10.1 i386)
 //
 
-#ifndef _DEventProcessor_trackeff_hists_
-#define _DEventProcessor_trackeff_hists_
+#ifndef _DEventProcessor_trackeff_hists2_
+#define _DEventProcessor_trackeff_hists2_
 
 #include <pthread.h>
 #include <map>
@@ -26,21 +26,21 @@ using std::map;
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DMCTrajectoryPoint.h>
 
-#include "track.h"
+#include "track2.h"
 #include "DTrackingResolution.h"
 
 class DReferenceTrajectory;
 class DCoordinateSystem;
 
-class DEventProcessor_trackeff_hists:public JEventProcessor{
+class DEventProcessor_trackeff_hists2:public JEventProcessor{
 
 	public:
-		DEventProcessor_trackeff_hists();
-		~DEventProcessor_trackeff_hists();
+		DEventProcessor_trackeff_hists2();
+		~DEventProcessor_trackeff_hists2();
 
 		TTree *trkeff;
-		track trk;
-		track *trk_ptr;
+		track2 trk;
+		track2 *trk_ptr;
 
 
 	private:
@@ -64,5 +64,5 @@ class DEventProcessor_trackeff_hists:public JEventProcessor{
 		void FindLR(vector<const DCoordinateSystem*> &wires, vector<const DMCTrajectoryPoint*> &trajpoints, vector<int> &LRhits);
 };
 
-#endif // _DEventProcessor_trackeff_hists_
+#endif // _DEventProcessor_trackeff_hists2_
 

@@ -1,18 +1,18 @@
 // $Id$
 //
-//    File: DEventProcessor_trackeff_hists.h
+//    File: track2.h
 // Created: Wed Oct 10 13:30:37 EDT 2007
 // Creator: davidl (on Darwin fwing-dhcp95.jlab.org 8.10.1 i386)
 //
 
-#ifndef _track_
-#define _track_
+#ifndef _track2_
+#define _track2_
 
 #include <TObject.h>
 #include <TVector3.h>
 
 
-class track:public TObject{
+class track2:public TObject{
 
 	public:
 
@@ -36,9 +36,9 @@ class track:public TObject{
 		unsigned long event;
 
 	private:
-		ClassDef(track,1);
+		ClassDef(track2,1);
 
 };
 
-#endif // _track_
+#endif // _track2_
 
