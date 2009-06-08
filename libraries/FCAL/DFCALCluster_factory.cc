@@ -5,6 +5,8 @@
 // Creator: remitche (on Linux mantrid00 2.4.20-18.8smp i686)
 //
 
+#include <iostream>
+#include <fstream>
 #include <math.h>
 #include <DVector3.h>
 using namespace std;
@@ -20,7 +22,7 @@ using namespace jana;
 # define SQR(x) (x)*(x)
 #endif
 
-DFCALCluster::userhits_t* hits = NULL;
+ofstream myout;
 
 /* Do not use the following switch unless you KNOW what you are doing!!!
    The log-weighting method for cluster centroid  was imported from IU clusterizer, 
@@ -46,6 +48,7 @@ DFCALCluster_factory::DFCALCluster_factory()
 
 	gPARMS->SetDefaultParameter("FCAL:MIN_CLUSTER_BLOCK_COUNT", MIN_CLUSTER_BLOCK_COUNT);
 	gPARMS->SetDefaultParameter("FCAL:MIN_CLUSTER_SEED_ENERGY", MIN_CLUSTER_SEED_ENERGY);
+        myout.open("out.txt");
 
 }
 
@@ -56,6 +59,7 @@ DFCALCluster_factory::DFCALCluster_factory()
 //------------------
 jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 {
+
 	vector<const DFCALHit*> fcalhits;
 	eventLoop->Get(fcalhits);
 	
@@ -64,9 +68,10 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 	// fill user's hit list
         int nhits = 0;
-        if (hits == 0) {
+        DFCALCluster::userhits_t*  // hits = NULL;
+        //if (hits == 0) {
            hits = (DFCALCluster::userhits_t*) malloc(sizeof(DFCALCluster::userhits_t)*FCAL_USER_HITS_MAX);
-        }
+        //}
 // Fill the structure that used to be used by clusterizers in Radphi 
 	for (vector<const DFCALHit*>::const_iterator hit  = fcalhits.begin(); 
                                                      hit != fcalhits.end(); hit++ ) {
@@ -167,17 +172,17 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 	   ++ambiguous_events;
 	}
 
-//        int nclust = 0;
         for ( unsigned int c = 0; c < clusterCount; c++) {
-           int hitlist[FCAL_USER_HITS_MAX];
-           unsigned int blockCount = clusterList[c]->getHits(hitlist,hits->nhits);
+           //int hitlist[FCAL_USER_HITS_MAX];
+           unsigned int blockCount = clusterList[c]->getHits();
 	   if (blockCount < MIN_CLUSTER_BLOCK_COUNT) {
               delete clusterList[c];
 	      continue;
 	   }
 	   else {
-//              clusterList[c]->id = nclust;
-//              nclust++;  
+
+              clusterList[c]->saveHits();
+
               _data.push_back( clusterList[c] );
 
 	   }
@@ -247,6 +252,26 @@ DFCALCluster::~DFCALCluster()
       }
    }
 }
+
+void DFCALCluster::saveHits()
+{
+   
+   for ( int i=0; i < fNhits; i++) {
+      DFCALClusterHit_t h;
+      int id = getHitID( i ) ;
+      if ( id >= 0 ) {  
+         h.id = (JObject::oid_t) id;
+         h.E = getHitE( i ) ;
+         h.x = getHitX( i ) ;
+         h.y = getHitY( i ) ;
+         my_hits.push_back(h);
+      }
+      else {
+         cout << "Warning: DFCALCluster : corrupted cluster hit " << i << endl;
+      }
+   }
+}
+
 
 int DFCALCluster::addHit(const int ihit, const double frac)
 {

@@ -16,8 +16,6 @@ using namespace std;
 #include <JANA/JEvent.h>
 using namespace jana;
 
-
-
 //----------------
 // Constructor
 //----------------
@@ -37,7 +35,6 @@ DFCALPhoton_factory::DFCALPhoton_factory()
   NON_LIN_COEF_B2 = 2.4628; 
   NON_LIN_COEF_C2 = 2.39377;
   NON_LIN_COEF_alfa2 = 1+0.03614;
-
 
   
   BUFFER_RADIUS = 8.0;   //transition region buffer
@@ -77,12 +74,22 @@ jerror_t DFCALPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 {
 	vector<const DFCALCluster*> fcalClusters;
 	eventLoop->Get(fcalClusters);
-	
-       for ( unsigned int i = 0; i < fcalClusters.size(); i++ ) {
+
+        for ( unsigned int i = 0; i < fcalClusters.size(); i++ ) {
 
                 DFCALPhoton* fcalPhoton = makePhoton( fcalClusters[i] );
 
-		_data.push_back(fcalPhoton);
+                if ( fcalPhoton->getEnergy() <= 0  ) {
+                    cout << "Deleting fcalPhoton " << endl;
+                    delete fcalPhoton; 
+                    continue;
+                }
+                else {
+
+                	_data.push_back(fcalPhoton);
+
+                }
+                  
 
        } 
 
@@ -94,7 +101,6 @@ jerror_t DFCALPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 DFCALPhoton* DFCALPhoton_factory::makePhoton(const DFCALCluster* cluster) 
 {
 
-        DFCALPhoton* photon = new DFCALPhoton;
        
 // Non-linar energy correction are done here
        int MAXITER = 1000;
@@ -104,18 +110,18 @@ DFCALPhoton* DFCALPhoton_factory::makePhoton(const DFCALCluster* cluster)
        float hrad = sqrt(x0*x0+y0*y0);
        float x;
        float y;
+       float ef;
    
        
-       double A;
-       double B;
-       double C;
-       double alfa;
+       double A=0.;
+       double B=0.;
+       double C=0.;
+       double alfa=0.;
        
-      
-
-       int blocks = cluster->getHits();
-       DVector3 Ipos[blocks];
-       double efrac[blocks];
+       const vector<DFCALCluster::DFCALClusterHit_t> clust_hits = cluster->GetHits();
+       int blocks = clust_hits.size();
+       
+       double Eclust = cluster->getEnergy();
        float Ein=0;
        float Eout=0;
        float Etot=0;
@@ -123,30 +129,38 @@ DFCALPhoton* DFCALPhoton_factory::makePhoton(const DFCALCluster* cluster)
        
        //transition region
        if(fabs(RHG_RADIUS-hrad) < BUFFER_RADIUS ){
-	 cluster->getHitsEf(efrac,blocks);
-	 cluster->getHitsPos(Ipos,blocks);
 	 for (int h=0;h<blocks;h++){
-	   x=Ipos[h].Px();
-	   y=Ipos[h].Py();
+	   ef= clust_hits[h].E;
+	   x = clust_hits[h].x;
+	   y = clust_hits[h].y;
 	   erad = sqrt(x*x+y*y);
 	   if(erad<RHG_RADIUS){
 	     
-	     Ein=Ein+efrac[h];
+	     Ein=Ein+ef;
    
 	   }
 	   else{
 	     
-	     Eout = Eout+efrac[h];
+	     Eout = Eout+ef;
 
 	   }
 	 }
 	 
-	 Etot=Eout+Ein;
-	 A  = Eout/Etot*NON_LIN_COEF_A1+Ein/Etot*NON_LIN_COEF_A2;
-	 B  = Eout/Etot*NON_LIN_COEF_B1+Ein/Etot*NON_LIN_COEF_B2;
-	 C  = Eout/Etot*NON_LIN_COEF_C1+Ein/Etot*NON_LIN_COEF_C2;
-	 alfa  = Eout/Etot*NON_LIN_COEF_alfa1+Ein/Etot*NON_LIN_COEF_alfa2;
-	 
+   	 Etot=Eout+Ein;
+         if ( Etot > 0  ) { 
+
+	    A  = Eout/Etot*NON_LIN_COEF_A1+Ein/Etot*NON_LIN_COEF_A2;
+	    B  = Eout/Etot*NON_LIN_COEF_B1+Ein/Etot*NON_LIN_COEF_B2;
+	    C  = Eout/Etot*NON_LIN_COEF_C1+Ein/Etot*NON_LIN_COEF_C2;
+	    alfa  = Eout/Etot*NON_LIN_COEF_alfa1+Ein/Etot*NON_LIN_COEF_alfa2;
+
+	 }
+         else {
+
+            cout << "Warning: invalid cluster_hits energy " << Etot <<endl;
+
+         }
+
        }
        
        //Inner region
@@ -169,66 +183,77 @@ DFCALPhoton* DFCALPhoton_factory::makePhoton(const DFCALCluster* cluster)
 	 
        }
 
-       double Eclust = cluster->getEnergy();
-       double Egamma = Eclust/A;
+       double Egamma = 0.;
 
-       for (int niter=0; 1; niter++) {
+       if ( A > 0 ) { 
+ 
+  	  Egamma = Eclust/A;
 
-           double energy = Egamma;
-           double non_lin_part = pow(Egamma,1+alfa)/(B+C*Egamma);
-           Egamma = Eclust/A - non_lin_part;
-           if ( fabs( (Egamma-energy)/energy ) < 0.001 ) {
+          for ( int niter=0; 1; niter++) {
 
-               break;
+              double energy = Egamma;
+              double non_lin_part = pow(Egamma,1+alfa)/(B+C*Egamma);
+              Egamma = Eclust/A - non_lin_part;
+              if ( fabs( (Egamma-energy)/energy ) < 0.001 ) {
 
-           }
-           else if ( niter > MAXITER ) {
+                 break;
 
-               Egamma  = 0;
-               cout << " Iteration failed for cluster energy " << Eclust << endl;
-               break;
+              }
+              else if ( niter > MAXITER ) {
 
-           }
+                 cout << " Iteration failed for cluster energy " << Eclust << endl;
+                 Egamma  = 0;
+               
+                 break;
+
+              }
           
+          }
+
+       } 
+       else {
+
+          cout << "Warning: DFCALPhoton : parameter A" << A << " is not valid" << endl; 
        }
 
-	photon->setEnergy( Egamma );
+       DFCALPhoton* photon = new DFCALPhoton;
+       photon->setEnergy( Egamma );
 
-// than depth corrections 
+// then depth corrections 
+
+       if ( Egamma > 0 ) { 
 
      
-        double z0 = FCAL_Zmin - Shower_Vertex_Z;
-        double zMax = (FCAL_RADIATION_LENGTH*(
+           double z0 = FCAL_Zmin - Shower_Vertex_Z;
+           double zMax = (FCAL_RADIATION_LENGTH*(
                        FCAL_SHOWER_OFFSET + log(Egamma/FCAL_CRITICAL_ENERGY)));
-        double zed = z0;
-        double zed1 = z0 + zMax;
+           double zed = z0;
+           double zed1 = z0 + zMax;
 
-        if ( Egamma > 0 ) { 
+           double r0 = sqrt( pos.X()*pos.X() + pos.Y()*pos.Y() );
 
-            double r0 = sqrt( pos.X()*pos.X() + pos.Y()*pos.Y() );
+           int niter;
+           for ( niter=0; niter<100; niter++) {
 
-            int niter;
-            for ( niter=0; niter<100; niter++) {
+               double tt = r0/zed1;
+               zed = z0 + zMax/sqrt( 1 + tt*tt );
+               if ( fabs( (zed-zed1) ) < 0.001) {
+                  break;
+               }
+               zed1 = zed;
+           }
+    
+           pos.SetZ( zed );
 
-                double tt = r0/zed1;
-                zed = z0 + zMax/sqrt( 1 + tt*tt );
-                if ( fabs( (zed-zed1) ) < 0.001) {
-                   break;
-                }
-                zed1 = zed;
-            }
+	   photon->setPosition( pos );   
+
+           photon->setPosError(cluster->getRMS_x(), cluster->getRMS_y(), fabs( zed-zed1 ) );
+
+// Set momentum, in GeV.
+	   photon->setMom3( Egamma, photon->getPosition() );   
+           photon->setMom4();
 
         }
-    
-        pos.SetZ( zed );
-
-	photon->setPosition( pos );   
-
-        photon->setPosError(cluster->getRMS_x(), cluster->getRMS_y(), fabs( zed-zed1 ) );
-
-// Than set momentum to GeV units.
-	photon->setMom3( Egamma, photon->getPosition() );   
-        photon->setMom4();
 
         return photon;
 

@@ -39,7 +39,8 @@ class DFCALCluster:public JObject{
 		~DFCALCluster();
 
 // hits structures taken from radphi
-	typedef struct {
+
+typedef struct {
            oid_t id;
 	   float x;
 	   float y;
@@ -47,12 +48,22 @@ class DFCALCluster:public JObject{
 	   float t;
 	} userhit_t;
 
-	typedef struct {
+typedef struct {
 	   int nhits;
 	   userhit_t hit[1];
 	} userhits_t;
 
+// to replace c-like array pointers with C++ vectors 
+	typedef struct {
+           oid_t id;
+	   float x;
+	   float y;
+	   float E;
+	   float t;
+	} DFCALClusterHit_t;
+
 		static void setHitlist(const userhits_t* const hits);
+		void saveHits();
 
 		double getEexpected(const int ihit) const;
 		double getEallowed(const int ihit) const;
@@ -64,15 +75,14 @@ class DFCALCluster:public JObject{
 		double getRMS_y() const;
 		double getRMS_u() const;
 		double getRMS_v() const;
-		int getHits() const;
-		int getHits(int hitlist[], const int nhits) const;
-		int getHitsID(oid_t idlist[], const int nhits) const;
-		int getHitsEf(double efracs[], const int nhits) const;
-		int getHitsPos(DVector3 positions[], const int nhits) const;
+		int getHits() const; // get number of hits owned by a cluster
+		int getHits(int hitlist[], const int nhits) const; //obsolite
 		static int getUsed(const int ihit);
 		int addHit(const int ihit, const double frac);
 		void resetHits();
 		bool update();
+// get hits that form a cluster after clustering is finished
+                inline const vector<DFCALClusterHit_t> GetHits() const { return my_hits; }
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "x(cm)", "%3.1f", getCentroid().x());
@@ -84,6 +94,13 @@ class DFCALCluster:public JObject{
 
 		void shower_profile(const int ihit,
 		                    double& Eallowed, double& Eexpected) const ;
+// internal parsers of properties for a hit belonging to a cluster 
+		int getHitID( const int ihit) const;   
+	        double getHitX( const int ihit) const;
+	        double getHitY( const int ihit) const;
+		double getHitE( const int ihit) const;  // hit energy owned by cluster
+		double getHitEh( const int ihit) const; // energy in a FCAL block
+
 		double fEnergy;              // total cluster energy (GeV) or 0 if stale
 		double fEmax;                // energy in the first block of the cluster
 		DVector3 fCentroid;         // cluster centroid position (cm)
@@ -101,6 +118,8 @@ class DFCALCluster:public JObject{
 		double *fEexpected;          // expected energy of hit by cluster (GeV)
 		double *fEallowed;           // allowed energy of hit by cluster (GeV)
                 oid_t fID0;                  // first block ID
+                vector<DFCALClusterHit_t> my_hits; // container for hits that form a cluster
+						   // to be used after clustering is done
 
 };
 
@@ -167,6 +186,55 @@ inline int DFCALCluster::getHits() const
    return fNhits;
 }
 
+inline int DFCALCluster::getHitID(const int ihit ) const
+{
+   if ( ihit >= 0  && ihit < fNhits && fHitlist && ihit < fHitlist->nhits ) { 
+     return (int) fHitlist->hit[fHit[ihit]].id;
+   }
+   else {
+     return -1;
+   }
+}
+
+inline double DFCALCluster::getHitX(const int ihit ) const
+{
+   if ( ihit >= 0  && ihit < fNhits && fHitlist && ihit < fHitlist->nhits ) { 
+     return  fHitlist->hit[fHit[ihit]].x;
+   }
+   else {
+     return 0.;
+   }
+}
+inline double DFCALCluster::getHitY(const int ihit ) const
+{
+   if ( ihit >= 0  && ihit < fNhits && fHitlist && ihit < fHitlist->nhits ) { 
+     return  fHitlist->hit[fHit[ihit]].y;
+   }
+   else {
+     return 0.;
+   }
+}
+
+inline double DFCALCluster::getHitE(const int ihit ) const
+{
+   if ( ihit >= 0  && ihit < fNhits && fHitlist && ihit < fHitlist->nhits ) { 
+     return fHitf[ihit] * fHitlist->hit[fHit[ihit]].E ;
+   }
+   else {
+     return -1.;
+   }
+}
+inline double DFCALCluster::getHitEh(const int ihit ) const
+{
+   if ( ihit >= 0  && ihit < fNhits && fHitlist && ihit < fHitlist->nhits ) { 
+     return fHitlist->hit[fHit[ihit]].E ;
+   }
+   else {
+     return -1.;
+   }
+}
+
+
 inline int DFCALCluster::getHits(int hitlist[], const int nhits) const
 {
    int ih;
@@ -176,35 +244,6 @@ inline int DFCALCluster::getHits(int hitlist[], const int nhits) const
    return ih;
 }
 
-inline int DFCALCluster::getHitsID(oid_t idlist[], const int nhits) const
-{
-   int ih;
-   for ( ih = 0; (ih < fNhits) && (ih < nhits); ih++) {
-      idlist[ih] = fHitlist->hit[fHit[ih]].id;
-      if ( ih == 0 ) {
-         idlist[ih] = fID0;
-      }
-   }
-   return ih;
-}
-
-inline int DFCALCluster::getHitsEf(double efracs[], const int nhits) const
-{
-   int ih;
-   for (ih = 0; (ih < fNhits) && (ih < nhits); ih++) {
-      efracs[ih] = fHitf[ih] * fHitlist->hit[fHit[ih]].E;
-   }
-   return ih;
-}
-
-inline int DFCALCluster::getHitsPos(DVector3 pos[], const int nhits) const
-{
-   int ih;
-   for (ih = 0; (ih < fNhits) && (ih < nhits); ih++) {
-      pos[ih].SetXYZ( fHitlist->hit[fHit[ih]].x, fHitlist->hit[fHit[ih]].y, 625.8) ;
-   }
-   return ih;
-}
 
 inline int DFCALCluster::getUsed(const int ihit)
 {
