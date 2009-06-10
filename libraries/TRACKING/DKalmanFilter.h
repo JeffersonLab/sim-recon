@@ -110,6 +110,7 @@ class DKalmanFilter{
   jerror_t SetReferenceTrajectory(DMatrix &S,DMatrix &C);  
   jerror_t SetReferenceTrajectory(DMatrix &S);
   jerror_t SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix &C);
+  jerror_t SetCDCBackwardReferenceTrajectory(DMatrix &S);
   jerror_t SetCDCForwardReferenceTrajectory(DMatrix &S);
   jerror_t SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc,DMatrix &Cc);  
   jerror_t SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc);
