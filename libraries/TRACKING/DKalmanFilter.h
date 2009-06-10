@@ -199,6 +199,8 @@ class DKalmanFilter{
 			 double dedx,DVector3 origin,
 			 DVector3 dir,DMatrix S);
   
+  jerror_t PropagateForwardCDC(int length,int &index,double z,
+					    double step,DMatrix &S);
 
   const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   const DGeometry *geom;
