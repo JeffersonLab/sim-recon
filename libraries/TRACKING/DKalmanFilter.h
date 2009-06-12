@@ -86,7 +86,7 @@ class DKalmanFilter{
       delete central_traj[i].Q;
       delete central_traj[i].S;
       delete central_traj[i].J;
-      delete central_traj[i].C;
+  //      delete central_traj[i].C;
     }
     hits.clear();
     cdchits.clear();

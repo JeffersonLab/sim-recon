@@ -32,6 +32,7 @@
 #define SPEED_OF_LIGHT 29.98
 #define CDC_DRIFT_SPEED 55e-4
 #define VAR_S 0.09
+#define Q_OVER_P_MAX 1000.
 
 #define ONE_THIRD 0.33333333333333333
 #define ONE_SIXTH 0.16666666666666667
@@ -106,6 +107,11 @@ DKalmanFilter::DKalmanFilter(const DMagneticFieldMap *bfield,
 
 // Initialize the state vector
 jerror_t DKalmanFilter::SetSeed(double q,DVector3 pos, DVector3 mom){
+  if (!isfinite(pos.Mag()) || !isfinite(mom.Mag())){
+    _DBG_ << "Invalid seed data." <<endl;
+    return UNRECOVERABLE_ERROR;
+  }
+
   // Forward parameterization 
   x_=pos(0);
   y_=pos(1);
@@ -222,7 +228,10 @@ jerror_t DKalmanFilter::CalcDeriv(double z,double dz,DMatrix S, double dEdx,
   
   if (fabs(dEdx)>0.){
     double E=sqrt(1./q_over_p/q_over_p+MASS*MASS); 
-    D(state_q_over_p,0)=-q_over_p*q_over_p*q_over_p*E*dEdx*factor;  
+    if (fabs(q_over_p)<Q_OVER_P_MAX)
+      D(state_q_over_p,0)=-q_over_p*q_over_p*q_over_p*E*dEdx*factor;
+    else
+      D(state_q_over_p,0)=0.;
   }
   return NOERROR;
 }
@@ -431,6 +440,7 @@ jerror_t DKalmanFilter::PropagateForwardCDC(int length,int &index,double z,
   // get material properties from the Root Geometry
   if (RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
       !=NOERROR){
+    _DBG_<< " q/p " << S(state_q_over_p,0) << endl;
     _DBG_<<"Material error!"<<endl; 
     return UNRECOVERABLE_ERROR;
   }
@@ -454,8 +464,15 @@ jerror_t DKalmanFilter::PropagateForwardCDC(int length,int &index,double z,
   }
   
   // Get dEdx for the upcoming step
-  dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
-  
+  double r=temp.pos.Perp();
+  if (fdchits.size()==0 && temp.pos.z()>endplate_z) dEdx=0.;
+  else
+  if (temp.density>0. && do_energy_loss
+      // && (pass==kTimeBased || r<9.0)
+      ){
+    dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
+  }
+
      // Step through field
   ds=Step(z,newz,dEdx,S);
   len+=fabs(ds);
@@ -466,7 +483,9 @@ jerror_t DKalmanFilter::PropagateForwardCDC(int length,int &index,double z,
     GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
   
   // Energy loss straggling in the approximation of thick absorbers
-  if (temp.density>0. && do_energy_loss){
+  if (temp.density>0. && do_energy_loss && dEdx!=0.
+      // && (pass==kTimeBased || r<9.0)
+      ){
     q_over_p=S(state_q_over_p,0);
     beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
     varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
@@ -502,8 +521,18 @@ jerror_t DKalmanFilter::SwimCentral(DVector3 &pos,DMatrix &Sc){
   double ds=CDC_STEP_SIZE;
   for (int m=central_traj.size()-1;m>0;m--){
     double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
-    double dedx=GetdEdx(MASS,q_over_p,central_traj[m].Z,
-			central_traj[m].A,central_traj[m].density);
+    double dedx=0.;
+
+    // Compute the energy loss for this step
+    double r=pos.Perp();  
+    if (do_energy_loss 	
+	//&& (pass==kTimeBased || r<9.0)
+	){
+      dedx=GetdEdx(MASS,q_over_p,central_traj[m].Z,
+		   central_traj[m].A,central_traj[m].density);
+    }
+
+    
     // Variables for the computation of D at the doca to the wire
     double D=Sc(state_D,0);
     double q=(Sc(state_q_over_pt,0)>0)?1.:-1.;
@@ -541,8 +570,7 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc){
   DKalmanState_t temp;
   DMatrix J(5,5);  // State vector Jacobian matrix 
   DMatrix Q(5,5);  // Process noise covariance matrix
-  DMatrix C(5,5);  // covariance matrix 
-  
+   
   // Position, step, radius, etc. variables
   DVector3 oldpos; 
   double dedx=0;
@@ -563,12 +591,17 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc){
       i++;
       central_traj[m].s=len;
       central_traj[m].pos=pos;
-      for (unsigned int i=0;i<5;i++){
-	central_traj[m].S->operator()(i,0)=Sc(i,0);
+      for (unsigned int j=0;j<5;j++){
+	central_traj[m].S->operator()(j,0)=Sc(j,0);
       }
       // Make sure D is zero
       central_traj[m].S->operator()(state_D,0)=0.;
-      
+
+      // Check if we are within start counter outer radius
+      double r=pos.Perp();
+      if (r<9.0) ds=0.1;
+      else ds=CDC_STEP_SIZE;
+          
       // update path length
       len+=ds;
 
@@ -585,7 +618,9 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc){
       //if (Sc(state_z,0)>cdc_origin[2] && Sc(state_z,0)<endplate_z-endplate_dz)
       {
       	// Energy loss	
-	if (do_energy_loss){	
+	if (do_energy_loss 
+	    //&& (pass==kTimeBased || r<9.0)
+	    ){	
 	  q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
 	  dedx=GetdEdx(MASS,q_over_p,temp.Z,temp.A,temp.density);
 	}
@@ -597,7 +632,9 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc){
       //if (Sc(state_z,0)>cdc_origin[2] && Sc(state_z,0)<endplate_z-endplate_dz)
 	{
 	// Energy loss straggling in the approximation of thick absorbers
-	if (central_traj[m].density>0. && do_energy_loss){
+	if (central_traj[m].density>0. && do_energy_loss
+	    // && (pass==kTimeBased || r<9.0)
+	    ){
 	  q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
 	  beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
 	  varE=GetEnergyVariance(ds,q_over_p,central_traj[m].Z,
@@ -617,10 +654,10 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc){
       StepJacobian(pos,origin,dir,-ds,Sc,dedx,J);
     
       // Fill the deque with the Jacobian and Process Noise matrices
-      for (unsigned int i=0;i<5;i++){
+      for (unsigned int k=0;k<5;k++){
 	for (unsigned int j=0;j<5;j++){
-	  central_traj[m].J->operator()(i,j)=J(i,j);
-	  central_traj[m].Q->operator()(i,j)=Q(i,j);	  
+	  central_traj[m].J->operator()(k,j)=J(k,j);
+	  central_traj[m].Q->operator()(k,j)=Q(k,j);	  
 	}
       }
     }
@@ -640,6 +677,10 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc){
     temp.pos=pos;	
     temp.s=len;
     temp.S= new DMatrix(Sc);	
+    
+    // Check if we are within start counter outer radius
+    if (pos.Perp()<9.0) ds=0.1;
+    else ds=CDC_STEP_SIZE;
  
     // update path length
     len+=ds;
@@ -656,7 +697,9 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc){
     //if (Sc(state_z,0)>cdc_origin[2] && Sc(state_z,0)<endplate_z-endplate_dz)
     {
       // Energy loss	
-      if (do_energy_loss){
+      if (do_energy_loss 
+	  //&& (pass==kTimeBased || r<9.0)
+	  ){
 	q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
 	dedx=GetdEdx(MASS,q_over_p,temp.Z,temp.A,temp.density);
       }
@@ -672,7 +715,9 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc){
 	GetProcessNoiseCentral(MASS,ds,pos,temp.X0,Sc,Q);
       
       // Energy loss straggling in the approximation of thick absorbers
-      if (temp.density>0. && do_energy_loss){ 
+      if (temp.density>0. && do_energy_loss 
+	  // && (pass==kTimeBased || r<9.0)
+	  ){ 
 	q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
 	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
@@ -691,7 +736,6 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc){
     // Update the trajectory info
     temp.Q= new DMatrix(Q);
     temp.J= new DMatrix(J);
-    temp.C= new DMatrix(C);
 
     central_traj.push_front(temp);    
   }
@@ -716,6 +760,7 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc){
 	<< central_traj[m].s << endl;
     }
   }
+
   // State at end of swim
   Sc=*(central_traj[0].S);
 
@@ -744,6 +789,7 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
    // progress in z from hit to hit
   double z=z_;
   double newz=z;
+  double r=0.;
   int i=0,my_i=0;
   int forward_traj_length=forward_traj.size();
   for (unsigned int m=0;m<fdchits.size();m++){
@@ -781,7 +827,10 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
       }
       
       // Get dEdx for the upcoming step
-      if (do_energy_loss){
+      r=temp.pos.Perp();
+      if (do_energy_loss
+	  //&& (pass==kTimeBased || r<9.0)
+	  ){
 	dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
       }
 
@@ -795,7 +844,9 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
 	GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
       
       // Energy loss straggling in the approximation of thick absorbers
-      if (temp.density>0. && do_energy_loss){
+      if (temp.density>0. && do_energy_loss
+	  //&& (pass==kTimeBased || r<9.0)
+	  ){
 	q_over_p=S(state_q_over_p,0);
 	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
@@ -832,6 +883,7 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
       
       temp.s=len;
       temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
+      double r=temp.pos.Perp();
 
       // get material properties from the Root Geometry
       if(RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
@@ -857,7 +909,9 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
       }    
       
       // Get dEdx for the upcoming step
-      if (do_energy_loss){
+      if (do_energy_loss
+	  //&& (pass==kTimeBased || r<9.0)
+	  ){
 	dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
       }
       
@@ -871,7 +925,9 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
 	GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
 
       // Energy loss straggling in the approximation of thick absorbers
-      if (temp.density>0. && do_energy_loss){	
+      if (temp.density>0. && do_energy_loss
+	  //&& (pass==kTimeBased || r<9.0)
+	  ){	
 	q_over_p=S(state_q_over_p,0);
 	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
@@ -922,8 +978,11 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
   // get material properties from the Root Geometry
   if(RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)==NOERROR){
     
-    // Get dEdx for the upcoming step
-    if (do_energy_loss){
+    // Get dEdx for the upcoming step  
+    r=temp.pos.Perp();
+    if (do_energy_loss
+	//&& (pass==kTimeBased || r<9.0)
+	){
       dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
     }
     
@@ -955,7 +1014,9 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
       GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
     
     // Energy loss straggling in the approximation of thick absorbers
-    if (temp.density>0. && do_energy_loss){	
+    if (temp.density>0. && do_energy_loss
+	//&& (pass==kTimeBased || r<9.0)
+	){	
       q_over_p=S(state_q_over_p,0);
       beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
       varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
@@ -989,12 +1050,15 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
   temp.s=len;
   temp.pos.SetXYZ(S(state_x,0),S(state_y,0),newz); 
   temp.h_id=0;
-  
+
   // get material properties from the Root Geometry
   if(RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)==NOERROR){
     
     // Get dEdx for the upcoming step
-    if (do_energy_loss){
+    r=temp.pos.Perp();
+    if (do_energy_loss
+	//&& (pass==kTimeBased || r<9.0)
+	){
       dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
     }
     
@@ -1026,7 +1090,9 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
       GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
   
     // Energy loss straggling in the approximation of thick absorbers
-    if (temp.density>0. && do_energy_loss){	
+    if (temp.density>0. && do_energy_loss
+	//&& (pass==kTimeBased || r<9.0)
+	){	
       q_over_p=S(state_q_over_p,0);
       beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
     varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
@@ -1153,7 +1219,8 @@ jerror_t DKalmanFilter::CalcDeriv(double ds,DVector3 pos,DVector3 &dpos,
   if (fabs(dEdx)>0){    
     double p=pt/cosl;
     double E=sqrt(p*p+MASS*MASS);
-    D1(state_q_over_pt,0)+=-q_over_pt*E/p/p*dEdx;
+    if (1./p<Q_OVER_P_MAX)
+      D1(state_q_over_pt,0)+=-q_over_pt*E/p/p*dEdx;
   }
   D1(state_phi,0)
     =qBr2p*q_over_pt*(B.x()*cosphi*sinl+B.y()*sinphi*sinl-B.z()*cosl);
@@ -1559,21 +1626,27 @@ double DKalmanFilter::GetEnergyVariance(double ds,double q_over_p,double Z,
 jerror_t DKalmanFilter::SwimToPlane(DMatrix &S){
   int max=forward_traj_cdc.size();
   double z,newz=0.,dedx=0.;
+  double r=0.;
   
   // If we have trajectory entries for the CDC, start there
   if (max>0){
     max--;
     z=forward_traj_cdc[max].pos.Z();
     for (unsigned int m=max-1;m>0;m--){
-      newz=forward_traj_cdc[m].pos.Z();  
-      if (do_energy_loss){
+      newz=forward_traj_cdc[m].pos.Z();
+      r=forward_traj_cdc[m].pos.Perp();
+      if (do_energy_loss 
+	  //  && (pass==kTimeBased || r<9.0)
+	  ){
 	dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj_cdc[m].Z,
 		     forward_traj_cdc[m].A,forward_traj_cdc[m].density);
       }
       Step(z,newz,dedx,S);  
       z=newz;
     }
-    if (do_energy_loss){
+    if (do_energy_loss
+	//&& (pass==kTimeBased || r<9.0)
+	){
       dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj_cdc[1].Z,
 		   forward_traj_cdc[1].A,forward_traj_cdc[1].density);
     }
@@ -1587,14 +1660,19 @@ jerror_t DKalmanFilter::SwimToPlane(DMatrix &S){
     for (unsigned int m=max-1;m>0;m--){
       // newz=z+STEP_SIZE;  
     newz=forward_traj[m].pos.z();
-    if (do_energy_loss){
+    r=forward_traj[m].pos.Perp();
+    if (do_energy_loss
+	//&& (pass==kTimeBased || r<9.0)
+	){
       dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj[m].Z,
 		   forward_traj[m].A,forward_traj[m].density);
     }
     Step(z,newz,dedx,S); 
     z=newz;
     } 
-    if (do_energy_loss){
+    if (do_energy_loss
+	//&& (pass==kTimeBased || r<9.0)
+	){
       dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj[1].Z,
 		   forward_traj[1].A,forward_traj[1].density);
     }
@@ -1664,7 +1742,9 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
       //for (int iter2=0;iter2<1;iter2++){   
       //if (iter2>0) do_energy_loss=true;
       //if (iter2>0) do_multiple_scattering=true;
-      
+      // Abort if momentum is too low
+      if (fabs(S(state_q_over_p,0))>Q_OVER_P_MAX) break;
+
       double f=2.5;
       if (pass==kTimeBased)
 	anneal_factor=scale_factor/pow(f,iter2)+1.;
@@ -1689,16 +1769,15 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	//num_iter=1;
 	//if (cdchits.size()==0) num_iter=3;
 	chisq_forward=1.e16;
-	for (unsigned int iter=0;iter<20;iter++) {      
-	  // perform the kalman filter 
-	  
+	for (unsigned int iter=0;iter<20;iter++) {      	  
 	  if (iter>0){
 	    // Swim back to the first (most downstream) plane and use the new 
 	    // values of S and C as the seed data to the Kalman filter 
 	    SwimToPlane(S);
 	  } 
 	  
-	  C=C0;
+	  C=C0;	  
+	  // perform the kalman filter 
 	  KalmanForward(anneal_factor,S,C,chisq);
 	  // KalmanForward(1.,S,C,chisq);
 	  
@@ -1711,8 +1790,9 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	  }
 
 	  //printf("iter %d chi2 %f %f\n",iter2,chisq,chisq_forward);
-	  if (isnan(chisq) || 
-	      (fabs(chisq-chisq_forward)<0.1 || chisq>chisq_forward))
+	  if (!isfinite(chisq)) return VALUE_OUT_OF_RANGE;
+	  
+	  if (fabs(chisq-chisq_forward)<0.1 || chisq>chisq_forward)
 	    break;
 	  chisq_forward=chisq;
 	  Slast=S;
@@ -1723,9 +1803,10 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
       //printf("iter2: %d chi2 %f %f\n",iter2,chisq_forward,chisq_iter);
       
       // Abort loop if the chisq is not changing much or increasing too much
-      if ( isnan(chisq_forward) || (//iter2>7 && 
+      
+      if (//iter2>7 && 
 	  (fabs(chisq_forward-chisq_iter)<0.1 
-	   || chisq_forward-chisq_iter>10.))) 
+	   || chisq_forward-chisq_iter>10.)) 
 	break;
       chisq_iter=chisq_forward;
       
@@ -1754,30 +1835,31 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	<< " theta "  << 90.0-180./M_PI*atan(tanl_)
 	<< " vertex " << x_ << " " << y_ << " " << z_ <<endl;
     
-    // Covariance matrices...
-    // ... central parameterization
-    vector<double>dummy;
-    for (unsigned int i=0;i<5;i++){
-      dummy.clear();
-      for(unsigned int j=0;j<5;j++){
-	dummy.push_back(Cc(i,j));
+    if (pass==kTimeBased){
+      // Covariance matrices...
+      // ... central parameterization
+      vector<double>dummy;
+      for (unsigned int i=0;i<5;i++){
+	dummy.clear();
+	for(unsigned int j=0;j<5;j++){
+	  dummy.push_back(Cc(i,j));
+	}
+	cov.push_back(dummy);
       }
-      cov.push_back(dummy);
-    }
-    // ... forward parameterization
-    for (unsigned int i=0;i<5;i++){
-      dummy.clear();
-      for(unsigned int j=0;j<5;j++){
-      dummy.push_back(Clast(i,j));
+      // ... forward parameterization
+      for (unsigned int i=0;i<5;i++){
+	dummy.clear();
+	for(unsigned int j=0;j<5;j++){
+	  dummy.push_back(Clast(i,j));
+	}
+	fcov.push_back(dummy);
       }
-      fcov.push_back(dummy);
     }
-
     // total chisq and ndf
     chisq_=chisq_iter;
     ndf=2*fdchits.size()+cdchits.size()-5;
         
-    if (DEBUG_HISTS){
+    if (DEBUG_HISTS && pass==kTimeBased){
       TH2F *fdc_xresiduals=(TH2F*)gROOT->FindObject("fdc_xresiduals");
       if (fdc_xresiduals){
 	for (unsigned int i=0;i<fdchits.size();i++){
@@ -1827,12 +1909,14 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     
     double chisq_iter=chisq;
     double zvertex=65.;
-    double scale_factor=200.,anneal_factor=1.;
+    double scale_factor=100.,anneal_factor=1.;
     // Iterate over reference trajectories
     for (int iter2=0;iter2<20;iter2++){   
     //for (int iter2=0;iter2<1;iter2++){   
       //if (iter2>0) do_energy_loss=true;
       //if (iter2>0) do_multiple_scattering=true;
+      // Abort if momentum is too low
+      if (fabs(S(state_q_over_p,0))>Q_OVER_P_MAX) break;
       
       if (pass==kTimeBased){
 	double f=1.75;
@@ -1863,8 +1947,8 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	  KalmanForwardCDC(mass_hyp,anneal_factor,S,C,chisq);
 	  
 	  //printf("iter %d chi2 %f %f\n",iter,chisq,chisq_forward);
-	  if (isnan(chisq) || 
-	      (fabs(chisq-chisq_forward)<0.1 || chisq>chisq_forward))
+	  if (!isfinite(chisq)) return VALUE_OUT_OF_RANGE;
+	  if (fabs(chisq-chisq_forward)<0.1 || chisq>chisq_forward)
 	    break;
 	  chisq_forward=chisq;
 	  Slast=S;
@@ -1875,9 +1959,9 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
       //      printf("iter2: %d factor %f chi2 %f %f\n",iter2,anneal_factor,chisq_forward,chisq_iter);
       
       // Abort loop if the chisq is not changing much or increasing too much
-      if ( isnan(chisq_forward) || (//iter2>12 && 
-				    (fabs(chisq_forward-chisq_iter)<0.1 
-	   || chisq_forward-chisq_iter>10.))) 
+      if (//iter2>12 && 
+	  (fabs(chisq_forward-chisq_iter)<0.1 
+	   || chisq_forward-chisq_iter>10.)) 
 	break;
       chisq_iter=chisq_forward;
       
@@ -1905,24 +1989,26 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	<<   1./q_over_pt_/cos(atan(tanl_))
 	<< " theta "  << 90.0-180./M_PI*atan(tanl_)
 	<< " vertex " << x_ << " " << y_ << " " << z_ <<endl;
-    
-    // Covariance matrices...  
-    vector<double>dummy;
-    // ... forward parameterization
-    for (unsigned int i=0;i<5;i++){
-      dummy.clear();
-      for(unsigned int j=0;j<5;j++){
-      dummy.push_back(Clast(i,j));
+
+    if (pass==kTimeBased){
+      // Covariance matrices...  
+      vector<double>dummy;
+      // ... forward parameterization
+      for (unsigned int i=0;i<5;i++){
+	dummy.clear();
+	for(unsigned int j=0;j<5;j++){
+	  dummy.push_back(Clast(i,j));
+	}
+	fcov.push_back(dummy);
+      }  
+      // ... central parameterization
+      for (unsigned int i=0;i<5;i++){
+	dummy.clear();
+	for(unsigned int j=0;j<5;j++){
+	  dummy.push_back(Cc(i,j));
+	}
+	cov.push_back(dummy);
       }
-      fcov.push_back(dummy);
-    }  
-    // ... central parameterization
-    for (unsigned int i=0;i<5;i++){
-      dummy.clear();
-      for(unsigned int j=0;j<5;j++){
-	dummy.push_back(Cc(i,j));
-      }
-      cov.push_back(dummy);
     }
 
     // total chisq and ndf
@@ -2092,13 +2178,17 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     DVector3 best_pos=pos;
   
     // iteration 
-    double scale_factor=1., anneal_factor=1.;
+    double scale_factor=100., anneal_factor=1.;
     double chisq_iter=chisq;
     for (int iter2=0;iter2<20;iter2++){  
     //for (int iter2=0;iter2<1;iter2++){  
       //if (iter2>0) do_energy_loss=true;
       //if (iter2>0) do_multiple_scattering=true;
-
+      
+      // Break out of loop if p is too small
+      double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
+      if (fabs(q_over_p)>Q_OVER_P_MAX) break;
+      
       // Initialize path length variable
       len=0;
       
@@ -2153,8 +2243,8 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	    << " theta "  << 90.-180./M_PI*atan(Sc(state_tanl,0)) 
 	    << " vertex " << x_ << " " << y_ << " " << z_ <<endl;
 	
-	if (isnan(chisq_central) || (fabs(chisq_central-chisq)<0.1 
-				     || (chisq_central>chisq )))
+	if (!isfinite(chisq_central)) return VALUE_OUT_OF_RANGE;
+	if (fabs(chisq_central-chisq)<0.1 || (chisq_central>chisq ))
 	  break; 
 	// Save the current "best" state vector and covariance matrix
 	Cclast=Cc;
@@ -2164,9 +2254,9 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
       }
           
       // Abort loop if the chisq is not changing much or increasing too much
-      if (isnan(chisq) || (iter2>10 && 
-			   (fabs(chisq-chisq_iter)<0.1 
-			    || chisq-chisq_iter>10.)))
+      if (iter2>10 && 
+	  (fabs(chisq-chisq_iter)<0.1 
+	   || chisq-chisq_iter>10.))
 	break;
       chisq_iter=chisq;
 
@@ -2189,31 +2279,39 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     x_=best_pos.x();
     y_=best_pos.y();
     z_=best_pos.z();
+   
+    if (!isfinite(x_) || !isfinite(y_) || !isfinite(z_) || !isfinite(phi_) 
+	|| !isfinite(q_over_pt_) || !isfinite(tanl_)){
+      _DBG_ << "At least one parameter is NaN or +-inf!!" <<endl;
+      return VALUE_OUT_OF_RANGE;	       
+    }
+    
 
     if (DEBUG_LEVEL>0)
       cout
-      << "Vertex:  p " 
-      <<   1./Sclast(state_q_over_pt,0)/cos(atan(Sclast(state_tanl,0)))
-      << " theta "  << 90.-180./M_PI*atan(Sclast(state_tanl,0)) 
-      << " vertex " << x_<< " " << y_<< " " << z_<<endl;
+	<< "Vertex:  p " 
+	<<   1./Sclast(state_q_over_pt,0)/cos(atan(Sclast(state_tanl,0)))
+	<< " theta "  << 90.-180./M_PI*atan(Sclast(state_tanl,0)) 
+	<< " vertex " << x_<< " " << y_<< " " << z_<<endl;
 
-    // Covariance matrix at vertex
-    vector<double>dummy;
-    for (unsigned int i=0;i<5;i++){
-      dummy.clear();
-      for(unsigned int j=0;j<5;j++){
-	dummy.push_back(Cclast(i,j));
+    if (pass==kTimeBased){
+      // Covariance matrix at vertex
+      vector<double>dummy;
+      for (unsigned int i=0;i<5;i++){
+	dummy.clear();
+	for(unsigned int j=0;j<5;j++){
+	  dummy.push_back(Cclast(i,j));
+	}
+	cov.push_back(dummy);
       }
-      cov.push_back(dummy);
     }
-    
     // total chisq and ndf
     chisq_=chisq_iter;
     ndf=cdchits.size()-5;
   }
 
   
-  if (DEBUG_HISTS){ 
+  if (DEBUG_HISTS && pass==kTimeBased){ 
     TH2F *cdc_residuals=(TH2F*)gROOT->FindObject("cdc_residuals");
     if (cdc_residuals){
       for (unsigned int i=0;i<cdchits.size();i++)
@@ -2721,12 +2819,14 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
     JT=DMatrix(DMatrix::kTransposed,J);
     Cc=J*(Cc*JT)+Q;   
 
+    /*
     // Copy covariance to the trajectory vector
     for (unsigned int i=0;i<5;i++){
       for (unsigned int j=0;j<5;j++){
 	central_traj[k].C->operator()(i,j)=Cc(i,j);
       }
     }
+    */
 
     // update position based on new doca to reference trajectory
     pos(0)=central_traj[k].pos.x()-Sc(state_D,0)*sin(Sc(state_phi,0));
@@ -2963,11 +3063,13 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
 	  Cc=J*(Cc*JT);
 	}
 
+	/*
 	for (unsigned int i=0;i<5;i++){
 	  for (unsigned int j=0;j<5;j++){
 	    central_traj[k].C->operator()(i,j)=Cc(i,j);
 	  }
 	}
+	*/
 	
 	// Step to the next point on the trajectory
 	Sc=S0_+J*(Sc-S0); 
