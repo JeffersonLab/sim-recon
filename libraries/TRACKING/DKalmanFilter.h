@@ -123,7 +123,7 @@ class DKalmanFilter{
     mycov.assign(fcov.begin(),fcov.end());
   };
 
-
+  double GetCharge(void){return q_over_pt_>0?1.:-1.;};
   double GetChiSq(void){return chisq_;}
   unsigned int GetNDF(void){return ndf;};
   double GetActivePathLength(void){ return path_length;}
