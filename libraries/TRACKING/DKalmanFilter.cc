@@ -301,25 +301,33 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double z,double dz,DMatrix S,
 jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S){
   int i=0,forward_traj_cdc_length=forward_traj_cdc.size();
   double z=z_;
+  double r=0.;
 
   // Continue adding to the trajectory until we have reached the endplate
-  while(z<endplate_z-CDC_FORWARD_STEP_SIZE){
+  // or the maximum radius
+  while(z<endplate_z-CDC_FORWARD_STEP_SIZE && r<R_MAX){
     double step_size=CDC_FORWARD_STEP_SIZE;
-    double r2=S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0);
-    if (r2<81.) step_size=CDC_FORWARD_STEP_SIZE/2.;
+    r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
+    if (r<9.) step_size=CDC_FORWARD_STEP_SIZE/2.;
     if (PropagateForwardCDC(forward_traj_cdc_length,i,z,step_size,S)!=NOERROR)
       return UNRECOVERABLE_ERROR;   
     z+=step_size;
   }  
-  if (PropagateForwardCDC(forward_traj_cdc_length,i,z,endplate_z-z,S)!=NOERROR)
-    return UNRECOVERABLE_ERROR;
-  z=endplate_z;
+  r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
+  if (r<R_MAX){
+    if (PropagateForwardCDC(forward_traj_cdc_length,i,z,endplate_z-z,S)
+	!=NOERROR)
+      return UNRECOVERABLE_ERROR;
+    z=endplate_z;
+  }
 
-  // Propagate through endplate with smaller steps
-  while(z<endplate_z+2.*endplate_dz){
+  // Propagate through endplate with smaller steps 
+  r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
+  while(z<endplate_z+2.*endplate_dz && r<R_MAX){
     if (PropagateForwardCDC(forward_traj_cdc_length,i,z,0.1,S)!=NOERROR)
       return UNRECOVERABLE_ERROR;
     z+=0.1;
+    r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
   }
 
   // If the current length of the trajectory deque is less than the previous 
@@ -336,17 +344,20 @@ jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S){
     }
   }
   
+  // return an error if there are still no entries in the trajectory
+  if (forward_traj_cdc.size()==0) return RESOURCE_UNAVAILABLE;
 
-
-  /*
-   printf("================== %d %d\n",forward_traj_cdc_length,forward_traj_cdc.size());
-   for (unsigned int m=0;m<forward_traj_cdc.size();m++){
-     printf("id %d x %f y %f z %f s %f p %f\n",
-     forward_traj_cdc[m].h_id,forward_traj_cdc[m].pos.x(),
-     forward_traj_cdc[m].pos.y(),forward_traj_cdc[m].pos.z(),
-	    forward_traj_cdc[m].s,fabs(1./forward_traj_cdc[m].S->operator()(state_q_over_p,0)));
-     }    	   
-  */
+  if (DEBUG_LEVEL>1)
+    {      
+      for (unsigned int m=0;m<forward_traj_cdc.size();m++){
+	printf("id %d x %f y %f z %f s %f p %f\n",
+	       forward_traj_cdc[m].h_id,forward_traj_cdc[m].pos.x(),
+	       forward_traj_cdc[m].pos.y(),forward_traj_cdc[m].pos.z(),
+	       forward_traj_cdc[m].s,
+	       fabs(1./forward_traj_cdc[m].S->operator()(state_q_over_p,0)));
+      }    	   
+      
+    }
    
    // Current state vector
    S=*(forward_traj_cdc[0].S);
@@ -587,6 +598,7 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc){
   if (central_traj.size()>0){  // reuse existing deque
     // Reset D to zero
     Sc(state_D,0)=0.;
+
     for (int m=central_traj.size()-1;m>=0;m--){    
       i++;
       central_traj[m].s=len;
@@ -740,8 +752,11 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc){
     central_traj.push_front(temp);    
   }
 
+  // return an error if there are still no entries in the trajectory
+  if (central_traj.size()==0) return RESOURCE_UNAVAILABLE;
+
   if (DEBUG_LEVEL>1)
-  {
+    {
     for (unsigned int m=0;m<central_traj.size();m++){
       DMatrix S=*(central_traj[m].S);
       double cosphi=cos(S(state_phi,0));
@@ -760,7 +775,7 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc){
 	<< central_traj[m].s << endl;
     }
   }
-
+ 
   // State at end of swim
   Sc=*(central_traj[0].S);
 
@@ -1629,7 +1644,7 @@ jerror_t DKalmanFilter::SwimToPlane(DMatrix &S){
   double r=0.;
   
   // If we have trajectory entries for the CDC, start there
-  if (max>0){
+  if (max>1){
     max--;
     z=forward_traj_cdc[max].pos.Z();
     for (unsigned int m=max-1;m>0;m--){
@@ -1655,7 +1670,7 @@ jerror_t DKalmanFilter::SwimToPlane(DMatrix &S){
   }
   // Follow track into FDC
   max=forward_traj.size()-1;
-  if (max>0){
+  if (max>1){
     z=forward_traj[max].pos.Z(); 
     for (unsigned int m=max-1;m>0;m--){
       // newz=z+STEP_SIZE;  
@@ -1764,7 +1779,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 
       //printf("forward iteration %d cdc size %d\n",iter2,forward_traj_cdc.size());
       
-      if (forward_traj.size()> 0){
+      if (forward_traj.size()> 1){
 	unsigned int num_iter=NUM_ITER;
 	//num_iter=1;
 	//if (cdchits.size()==0) num_iter=3;
@@ -1928,7 +1943,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
             
       SetCDCForwardReferenceTrajectory(S);
       
-      if (forward_traj_cdc.size()> 0){
+      if (forward_traj_cdc.size()> 1){
 	unsigned int num_iter=NUM_ITER;
 	//num_iter=1;
 	//if (cdchits.size()==0) num_iter=3;
@@ -1954,7 +1969,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	  Slast=S;
 	  Clast=C;
 	} //iteration
-      }  
+      }
       
       //      printf("iter2: %d factor %f chi2 %f %f\n",iter2,anneal_factor,chisq_forward,chisq_iter);
       
@@ -2195,8 +2210,6 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
       // Abort if the chisq for the previous iteration is junk
       if (chisq_central==0.) break;
 
-      //      printf("-------------central iteration %d cdc size %d\n",iter2,central_traj.size());
-
       // Calculate an annealing factor for the measurement errors that depends 
       // on the iteration,so that we approach the "true' measurement errors
       // by the last iteration.
@@ -2207,50 +2220,47 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
       // Initialize trajectory deque and position
       SetCDCReferenceTrajectory(pos0,Sc);
               
-      if (central_traj.size()==0){
-	cout << "No CDC reference trajectory????" <<endl;
-	return RESOURCE_UNAVAILABLE;
-      }
-
-      // Iteration for given reference trajectory 
-      chisq=1.e16;
-      for (int iter=0;iter<20;iter++){
-	Cc=C0;
-	if (iter>0){
-	  SwimCentral(pos,Sc);
-	  //anneal_factor=scale_factor/pow(f,iter)+1.;
-	}
-	//anneal_factor=1.;
-
-	jerror_t error=NOERROR;
-	error=KalmanCentral(mass_hyp,anneal_factor,Sc,Cc,pos,chisq_central);
-	if (error!=NOERROR) break;
-	if (chisq_central==0.) break;
-      	
-	//fom=anneal_factor*chisq_central;
-	if (chisq_central>=1e16 ){
-	  cout 
+      if (central_traj.size()>1){
+	// Iteration for given reference trajectory 
+	chisq=1.e16;
+	for (int iter=0;iter<20;iter++){
+	  Cc=C0;
+	  if (iter>0){
+	    SwimCentral(pos,Sc);
+	    //anneal_factor=scale_factor/pow(f,iter)+1.;
+	  }
+	  //anneal_factor=1.;
+	  
+	  jerror_t error=NOERROR;
+	  error=KalmanCentral(mass_hyp,anneal_factor,Sc,Cc,pos,chisq_central);
+	  if (error!=NOERROR) break;
+	  if (chisq_central==0.) break;
+	  
+	  //fom=anneal_factor*chisq_central;
+	  if (chisq_central>=1e16 ){
+	    cout 
 	    << "-- central fit failed --" <<endl;
-	  return VALUE_OUT_OF_RANGE;
-	}
-	
-	if (DEBUG_LEVEL>0)
-	  cout 
-	    << "iteration " << iter+1  << " factor " << anneal_factor 
-	    << " chi2 " 
-	    << chisq_central << " p " 
-	    <<   1./Sc(state_q_over_pt,0)/cos(atan(Sc(state_tanl,0)))
-	    << " theta "  << 90.-180./M_PI*atan(Sc(state_tanl,0)) 
-	    << " vertex " << x_ << " " << y_ << " " << z_ <<endl;
-	
-	if (!isfinite(chisq_central)) return VALUE_OUT_OF_RANGE;
-	if (fabs(chisq_central-chisq)<0.1 || (chisq_central>chisq ))
-	  break; 
-	// Save the current "best" state vector and covariance matrix
-	Cclast=Cc;
-	Sclast=Sc;
-	pos0=pos;
-	chisq=chisq_central;
+	    return VALUE_OUT_OF_RANGE;
+	  }
+	  
+	  if (DEBUG_LEVEL>0)
+	    cout 
+	      << "iteration " << iter+1  << " factor " << anneal_factor 
+	      << " chi2 " 
+	      << chisq_central << " p " 
+	      <<   1./Sc(state_q_over_pt,0)/cos(atan(Sc(state_tanl,0)))
+	      << " theta "  << 90.-180./M_PI*atan(Sc(state_tanl,0)) 
+	      << " vertex " << x_ << " " << y_ << " " << z_ <<endl;
+	  
+	  if (!isfinite(chisq_central)) return VALUE_OUT_OF_RANGE;
+	  if (fabs(chisq_central-chisq)<0.1 || (chisq_central>chisq ))
+	    break; 
+	  // Save the current "best" state vector and covariance matrix
+	  Cclast=Cc;
+	  Sclast=Sc;
+	  pos0=pos;
+	  chisq=chisq_central;
+	} //iteration
       }
           
       // Abort loop if the chisq is not changing much or increasing too much
