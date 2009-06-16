@@ -142,7 +142,8 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
  
   // Loop over track candidates
   for(unsigned int i=0; i<trackcandidates.size(); i++){ 
-    const DTrackCandidate *tc = trackcandidates[i];    
+    const DTrackCandidate *tc = trackcandidates[i];  
+    // const DTrack *tc = trackcandidates[i];
     DVector3 pos = tc->position();
     DVector3 mom = tc->momentum(); 	
 
@@ -216,41 +217,40 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 
     if (num_matched_hits>=MIN_HITS){
     // Set the initial parameters from the track candidate
-      //fit.SetSeed(tc->charge(),tracks[0]->position(),tracks[0]->momentum());
-      fit.SetSeed(tc->charge(),tc->position(),tc->momentum());
-
+      jerror_t error=fit.SetSeed(tc->charge(),tc->position(),tc->momentum());
+      if (error!=NOERROR) break;
+      
       // Kalman filter 
-      jerror_t error=fit.KalmanLoop(TOF_MASS,DKalmanFilter::kTimeBased);
-
+      error=fit.KalmanLoop(TOF_MASS,DKalmanFilter::kWireBased);	
       if (error==NOERROR){
-	// Create a new track object
-	DTrack *track = new DTrack;
-	//track->q=tc->charge();
-	
-	DVector3 mom,pos;
+	double charge=fit.GetCharge();
 	fit.GetMomentum(mom);
 	fit.GetPosition(pos);
-	fit.GetCovarianceMatrix(track->cov);
-	fit.GetForwardCovarianceMatrix(track->fcov);
+	if (fit.SetSeed(charge,pos,mom)!=NOERROR) break;
 
-	//track->x=pos(0);
-	//track->y=pos(1);
-	//track->z=pos(2);
-	//track->p=mom.Mag();
-	//track->phi=mom.Phi();
-	//if(track->phi<0.0)track->phi+=2.0*M_PI;
-	//track->theta=mom.Theta();
-	track->chisq=fit.GetChiSq();
-	track->Ndof=fit.GetNDF();
-	track->candidateid=tc->id;
-	//track->rt=rt;
+	error=fit.KalmanLoop(TOF_MASS,DKalmanFilter::kTimeBased);     
+	if (error==NOERROR){
+	  // Create a new track object
+	  DTrack *track = new DTrack;
+	  
+	  DVector3 mom,pos;
+	  charge=fit.GetCharge();
+	  fit.GetMomentum(mom);
+	  fit.GetPosition(pos);
+	  fit.GetCovarianceMatrix(track->cov);
+	  fit.GetForwardCovarianceMatrix(track->fcov);
 
-	// Fill in DKinematicData part
-	track->setMass(0.0);
-	track->setMomentum(mom);
-	track->setPosition(pos);
-	track->setCharge(tc->charge());
-	/*
+	  track->chisq=fit.GetChiSq();
+	  track->Ndof=fit.GetNDF();
+	  track->candidateid=tc->id;
+	  //track->rt=rt;
+
+	  // Fill in DKinematicData part
+	  track->setMass(0.0);
+	  track->setMomentum(mom);
+	  track->setPosition(pos);
+	  track->setCharge(charge);
+	  /*
 	printf("p %f theta %f phi %f z %f doca %f\n",track->momentum().Mag(),track->momentum().Theta(),
 	       (track->momentum().Phi()<0?track->momentum().Phi()+2.*M_PI:track->momentum().Phi()),
 	       track->position().z(),pos.Perp());
@@ -258,8 +258,9 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
 	// dEdx
 	//track->dE=dEsum;
 	//track->ds=fit.GetActivePathLength();
-
-	_data.push_back(track);
+	  
+	  _data.push_back(track);
+	}
       }
     }
   }
