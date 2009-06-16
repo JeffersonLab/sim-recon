@@ -83,9 +83,9 @@ HDDS = $(HALLD_HOME)/src/programs/Simulation/hdds
 HDDM = $(HALLD_HOME)/src/libraries/HDDM
 
 ifeq ($(OStype),OSF1)
- 	MISC_FIXES := vunit.o gsrotm.o fint.o gthion.o gtrack.o gdrawp.o
+ 	MISC_FIXES := vunit.o gsrotm.o fint.o gthion.o gtnext.o gdrawp.o
 else
-	MISC_FIXES := gthion.o gtrack.o gdrawp.o
+	MISC_FIXES := gthion.o gtnext.o gdrawp.o
 endif
 
 AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o gsstak.o gltrac.o \
@@ -95,20 +95,20 @@ AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o gsstak.o gltrac.o \
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
        hitFCal.o hitUPV.o bintree.o memcheck.o timel.o trapfpe.o \
-       calibDB.o hitTag.o storeTrajectory.o hitGCal.o
+       GetDOCA.o calibDB.o hitTag.o storeTrajectory.o hitGCal.o
 
 GXFIXED = gxcs.o gxphys.o
 GELHAD = gelhad/libgelhad.a
 
 CERNLIB = $(CERN_ROOT)/bin/cernlib
 
-hdgeant++: hdgeant++.o gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXFIXED) \
-           $(MISC_FIXES)
+hdgeant++: hdgeant++.o gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXFIXED) $(MISC_FIXES)
 	$(CPP) -mtune=generic -o $@ hdgeant++.o gxint.o uginit.o uglast.o \
 	   $(FOPTS) $(AUXF) $(AUXC) $(GXFIXED) $(MISC_FIXES) \
 	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
-	   -L$(HALLD_HOME)/lib/$(OSNAME) -lHDGEOMETRY \
-	   -L$(JANA_HOME)/lib/$(OSNAME) -lJANA \
+	   -L$(HALLD_HOME)/lib/$(OSNAME) -lTRACKING -lHDGEOMETRY \
+	   -L$(JANA_HOME)/lib -lJANA \
+	   -L$(ROOTSYS)/lib -lPhysics -lMatrix -lGeom -lCore -lRIO -lCint \
 	   `cernlib -v $(CERN_LEVEL) geant321 pawlib graflib/Motif packlib mathlib` \
 	   $(EXPORTDYNAMIC) $(GLIBS)
 
@@ -116,8 +116,9 @@ hdgeant: hdgeant.o hdgeant_f.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(MIS
 	$(CPP) -mtune=generic $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(STATIC) $(FOPTS) \
 	   hdgeant.o hdgeant_f.o uginit.o uglast.o $(AUXF) $(AUXC) $(MISC_FIXES) \
 	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
-	   -L$(HALLD_HOME)/lib/$(OSNAME) -lHDGEOMETRY \
-	   -L$(JANA_HOME)/lib/$(OSNAME) -lJANA \
+	   -L$(HALLD_HOME)/lib/$(OSNAME) -lTRACKING -lHDGEOMETRY \
+	   -L$(JANA_HOME)/lib -lJANA \
+	   -L$(ROOTSYS)/lib -lPhysics -lMatrix -lGeom -lCore -lRIO -lCint \
 	  `$(CERNLIB) geant321 mathlib graflib grafX11` \
 	   $(NETLIB) $(XLIBS) $(GLIBS)
 
@@ -138,8 +139,6 @@ install: hdgeant hdgeant++
 	-I$(CERN_ROOT)/include \
 	-c -o $@ $<
 
-$(AUXC): $(HDDM)/hddm_s.h bintree.h geant3.h hddmOutput.h 
-
 .cpp.o:
 	$(CPP) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(JANA_HOME)/src \
@@ -150,7 +149,8 @@ $(AUXC): $(HDDM)/hddm_s.h bintree.h geant3.h hddmOutput.h
 	$(CPP) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(JANA_HOME)/src \
 	-I$(HALLD_HOME)/src/libraries/include \
-	-I$(HALLD_HOME)/src/libraries -c -o $@ $<
+	-I$(HALLD_HOME)/src/libraries \
+	-I$(ROOTSYS)/include -c -o $@ $<
 
 hddm_s.o: $(HDDM)/hddm_s.c
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
@@ -177,6 +177,8 @@ cdccount: cdccount.c hddm_s.o
 
 $(GELHAD):
 	$(MAKE) -C gelhad
+
+$(AUXC): $(HDDM)/hddm_s.h bintree.h geant3.h hddmOutput.h 
 
 clean:
 	rm -f *.o core last.kumac* paw.metafile
