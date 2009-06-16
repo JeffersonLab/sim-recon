@@ -424,6 +424,29 @@ int main(int argC, char* argV[])
 								<< std::endl
 	 << "#endif /* HDDM_STREAM_INPUT */"			<< std::endl;
 
+   builder.cFile						<< std::endl
+         << "#ifndef _FILE_OFFSET_BITS"				<< std::endl
+         << "# define _FILE_OFFSET_BITS 64"			<< std::endl
+         << "#endif"						<< std::endl
+								<< std::endl
+         << "static off_t xdr_getpos64(XDR *xdrs)"		<< std::endl
+         << "{"							<< std::endl
+         << "   if (xdrs->x_base == 0) {"			<< std::endl
+         << "      return ftello((FILE *)xdrs->x_private);"	<< std::endl
+         << "   }"						<< std::endl
+         << "   off_t pos = xdr_getpos(xdrs);"			<< std::endl
+         << "   return pos;"					<< std::endl
+         << "}"							<< std::endl
+         							<< std::endl
+         << "static bool_t xdr_setpos64(XDR *xdrs, off_t pos) "	<< std::endl
+         << "{ "						<< std::endl
+         << "   if (xdrs->x_base == 0) {"			<< std::endl
+         << "      return ((fseeko((FILE *)xdrs->x_private, pos, 0) < 0)? FALSE : TRUE);"
+								<< std::endl
+         << "   }"						<< std::endl
+         << "   return xdr_setpos(xdrs,pos);"			<< std::endl
+         << "}"							<< std::endl;
+
    builder.constructUnpackers();
 
    builder.hFile						<< std::endl
@@ -954,7 +977,7 @@ void CodeBuilder::constructUnpackers()
             << "   }"						<< std::endl
             << "   else if (size > 0)"				<< std::endl
             << "   {"						<< std::endl
-            << "      int start = xdr_getpos(xdrs);"		<< std::endl;
+            << "      off_t start = xdr_getpos64(xdrs);"	<< std::endl;
 
       if (rep > 1)
       {
@@ -1085,13 +1108,13 @@ void CodeBuilder::constructUnpackers()
                << "            {"                                       << std::endl
                << "               unsigned int skip;"			<< std::endl
 	       << "               xdr_u_int(xdrs,&skip);"		<< std::endl
-               << "               xdr_setpos(xdrs,xdr_getpos(xdrs)+skip);"
+               << "               xdr_setpos64(xdrs,xdr_getpos64(xdrs)+skip);"
 	       								<< std::endl
                << "            }"					<< std::endl
                << "         }"						<< std::endl;
       }
       cFile << "      }"						<< std::endl
-            << "      xdr_setpos(xdrs,start+size);"			<< std::endl
+            << "      xdr_setpos64(xdrs,start+size);"			<< std::endl
             << "   }"							<< std::endl
             << "   return this1;"					<< std::endl
             << "}"							<< std::endl;
@@ -1142,8 +1165,8 @@ void CodeBuilder::constructSkipFunc()
          << "      }"							<< std::endl
          << "      else if (size > 0)"					<< std::endl
          << "      {"							<< std::endl
-         << "         int start = xdr_getpos(fp->xdrs);"		<< std::endl
-         << "         xdr_setpos(fp->xdrs,start+size);"			<< std::endl
+         << "         off_t start = xdr_getpos64(fp->xdrs);"		<< std::endl
+         << "         xdr_setpos64(fp->xdrs,start+size);"			<< std::endl
          << "      }"							<< std::endl
          << "   }"							<< std::endl
          << "   return skipped;"					<< std::endl
@@ -1211,10 +1234,10 @@ void CodeBuilder::constructPackers()
             << "{"						<< std::endl
             << "   int m;"					<< std::endl
             << "   unsigned int size=0;"			<< std::endl
-            << "   int base,start,end;"				<< std::endl
-            << "   base = xdr_getpos(xdrs);"			<< std::endl
+            << "   off_t base,start,end;"			<< std::endl
+            << "   base = xdr_getpos64(xdrs);"			<< std::endl
             << "   xdr_u_int(xdrs,&size);"			<< std::endl
-            << "   start = xdr_getpos(xdrs);"			<< std::endl
+            << "   start = xdr_getpos64(xdrs);"			<< std::endl
     								<< std::endl;
       if (rep > 1)
       {
@@ -1346,11 +1369,11 @@ void CodeBuilder::constructPackers()
 
       cFile << "   }"							<< std::endl
             << "   FREE(this1);"					<< std::endl
-            << "   end = xdr_getpos(xdrs);"				<< std::endl
-            << "   xdr_setpos(xdrs,base);"				<< std::endl
+            << "   end = xdr_getpos64(xdrs);"				<< std::endl
+            << "   xdr_setpos64(xdrs,base);"				<< std::endl
 	    << "   size = end-start;"					<< std::endl
             << "   xdr_u_int(xdrs,&size);"				<< std::endl
-            << "   xdr_setpos(xdrs,end);"				<< std::endl
+            << "   xdr_setpos64(xdrs,end);"				<< std::endl
             << "   return size;"					<< std::endl
             << "}"							<< std::endl;
    }
