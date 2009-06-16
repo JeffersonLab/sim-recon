@@ -425,7 +425,9 @@ int main(int argC, char* argV[])
 	 << "#endif /* HDDM_STREAM_INPUT */"			<< std::endl;
 
    builder.cFile						<< std::endl
-         << "#define _FILE_OFFSET_BITS=64"			<< std::endl
+         << "#ifndef _FILE_OFFSET_BITS"				<< std::endl
+         << "# define _FILE_OFFSET_BITS 64"			<< std::endl
+         << "#endif"						<< std::endl
 								<< std::endl
          << "static off_t xdr_getpos64(XDR *xdrs)"		<< std::endl
          << "{"							<< std::endl
