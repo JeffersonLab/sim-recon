@@ -52,6 +52,12 @@ class DRootGeom{
   jerror_t FindMat(DVector3 pos,double &density, double &A, double &Z,
 	       double &RadLen) const;
 
+  jerror_t FindMatLL(DVector3 pos,double &density, double &A, double &Z,
+	       double &RadLen) const;
+
+  jerror_t FindMatTable(DVector3 pos,double &density, double &A, double &Z,
+	       double &RadLen) const;
+
  private:
   
   TGeoManager *DRGeom;
@@ -60,6 +66,14 @@ class DRootGeom{
   TGeoMaterial *Current_Material ;
   Int_t Mat_Index ;
   struct VolMat Mat; // material property : A, Z, Density, RadLen   
+	pthread_mutex_t mutex;
+	pthread_mutexattr_t mutex_attr;
+	
+	VolMat **MatTable; // MatTable[R][Z];
+	VolMat *buff;
+	int Nr, Nz;		// Number of points in R and Z
+	double dr, dz; // Distance between points in R and Z
+	double r0, z0;	// Location of first point in R and Z
 
 };
 
