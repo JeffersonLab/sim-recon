@@ -90,6 +90,9 @@ FFLAGS   += -I$(HALLD_HOME)/include
 CFLAGS   += -I$(HALLD_HOME)/include
 CXXFLAGS += -I$(HALLD_HOME)/include
 
+# This is to allow files of size>2GB (specifically for HDDM) 6/19/2009 DL
+CXXFLAGS += -D_FILE_OFFSET_BITS=64
+CFLAGS += -D_FILE_OFFSET_BITS=64
 
 # Include user specified package makefiles
 PACKAGE_MAKEFILES = $(foreach name,$(subst :, ,$(PACKAGES)),$(HALLD_HOME)/src/BMS/Makefile.$(name))
