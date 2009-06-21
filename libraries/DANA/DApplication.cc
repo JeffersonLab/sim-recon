@@ -78,7 +78,7 @@ jerror_t DApplication::Init(void)
 	
 	// Create map of material properties
 	//material = new DMaterialMapCalibDB(this);
-	RootGeom= new DRootGeom();
+	RootGeom= new DRootGeom(this);
 	
 	return NOERROR;
 }

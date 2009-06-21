@@ -35,11 +35,14 @@ class DRootGeom{
 
  public:
 
-  DRootGeom();
+  DRootGeom(JApplication *japp);
   virtual ~DRootGeom();
   
   virtual const char* className(void){return static_className();}
   static const char* static_className(void){return "DRootGeom";}  
+
+	int ReadMap(string namepath, int runnumber);
+	void InitTable(void);
 
   TGeoNode* GetCurrentNode(){return Current_Node;};
   TGeoVolume* GetCurrentVolume(){return Current_Volume;};
@@ -63,12 +66,14 @@ class DRootGeom{
   TGeoManager *DRGeom;
   TGeoNode *Current_Node ;
   TGeoVolume *Current_Volume ;
-  TGeoMaterial *Current_Material ;
+  TGeoMaterial *Current_Material;
+  JCalibration *jcalib;
   Int_t Mat_Index ;
   struct VolMat Mat; // material property : A, Z, Density, RadLen   
 	pthread_mutex_t mutex;
 	pthread_mutexattr_t mutex_attr;
 	
+	bool table_initialized;
 	VolMat **MatTable; // MatTable[R][Z];
 	VolMat *buff;
 	int Nr, Nz;		// Number of points in R and Z

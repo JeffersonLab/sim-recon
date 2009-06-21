@@ -14,7 +14,7 @@ using namespace std;
 //---------------------------------
 // DRootGeom    (Constructor)
 //---------------------------------
-DRootGeom::DRootGeom()
+DRootGeom::DRootGeom(JApplication *japp)
 {
 	pthread_mutexattr_init(&mutex_attr);
 	pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE);
@@ -22,8 +22,132 @@ DRootGeom::DRootGeom()
 
 	DRGeom = hddsroot();
 
+	table_initialized = false;
+
+	int runnumber = 1;
+	jcalib = japp->GetJCalibration(runnumber);
+	if(!jcalib){
+		_DBG_<<"Unable to get JCalibration object!"<<endl;
+		exit(-1);
+	}
+
+	JParameterManager *jparms = japp->GetJParameterManager();
+	if(!jparms){
+		_DBG_<<"Unable to get JParameterManager object!"<<endl;
+		exit(-1);
+	}
+
+	string namepath="Material/material_map";
+	jparms->SetDefaultParameter("MATERIAL_MAP", namepath);
+	int Npoints = ReadMap(namepath, runnumber); 
+	if(Npoints==0){
+		_DBG_<<"Error getting JCalibration object for material map!"<<endl;
+	}else{
+		table_initialized = true;
+	}
+}
+
+//---------------------------------
+// ReadMap
+//---------------------------------
+int DRootGeom::ReadMap(string namepath, int runnumber)
+{
+	/// Read the magnetic field map in from the calibration database.
+	/// This will read in the map and figure out the number of grid
+	/// points in each direction (x,y, and z) and the range in each.
+	/// The gradiant of the field is calculated for all but the most
+	/// exterior points and saved to use in later calls to GetField(...).
+
+	// Read in map from calibration database. This should really be
+	// built into a run-dependent geometry framework, but for now
+	// we do it this way. 
+	if(!jcalib)return 0;
+	
+	cout<<"Reading Material map from "<<namepath<<" ..."<<endl;
+	vector< vector<float> > Mmap;
+	jcalib->Get(namepath, Mmap);
+	cout<<Mmap.size()<<" entries found (";
+	if(Mmap.size()<1){
+		cout<<")"<<endl;
+		return Mmap.size();
+	}
+	
+	// The map should be on a grid with equal spacing in r, and z.
+	// Here we want to determine the number of points in each of these
+	// dimensions and the range. 
+	// The easiest way to do this is to use a map<float, int> to make a
+	// histogram of the entries by using the key to hold the extent
+	// so that the number of entries will be equal to the number of
+	// different values.
+	map<float, int> rvals;
+	map<float, int> zvals;
+	double rmin, zmin, rmax, zmax;
+	rmin = zmin = 1.0E6;
+	rmax = zmax = -1.0E6;
+	for(unsigned int i=0; i<Mmap.size(); i++){
+		vector<float> &a = Mmap[i];
+		float &r = a[0];
+		float &z = a[1];
+		
+		rvals[r] = 1;
+		zvals[z] = 1;
+		if(r<rmin)rmin=r;
+		if(z<zmin)zmin=z;
+		if(r>rmax)rmax=r;
+		if(z>zmax)zmax=z;
+	}
+	Nr = rvals.size();
+	Nz = zvals.size();
+	r0 = rmin;
+	z0 = zmin;
+	dr = (rmax-rmin)/(double)(Nr-1);
+	dz = (zmax-zmin)/(double)(Nz-1);
+	cout<<" Nr="<<Nr;
+	cout<<" Nz="<<Nz;
+	cout<<" )  at 0x"<<hex<<(unsigned long)this<<dec<<endl;
+	
+	// Create 2D array to hold table in class
+	MatTable = new VolMat*[Nr];
+	buff = new VolMat[Nr*Nz];
+	for(int ir=0; ir<Nr; ir++){
+		MatTable[ir]=&buff[ir*Nz];
+	}
+	
+	// Fill table
+	for(unsigned int i=0; i<Mmap.size(); i++){
+		vector<float> &a = Mmap[i];
+		float &r = a[0];
+		float &z = a[1];
+		int ir = floor((r - r0)/dr);
+		int iz = floor((z - z0)/dz);
+		if(ir<0 || ir>=Nr){_DBG_<<"ir out of range: ir="<<ir<<"  Nr="<<Nr<<endl; continue;}
+		if(iz<0 || iz>=Nz){_DBG_<<"iz out of range: iz="<<iz<<"  Nz="<<Nz<<endl; continue;}
+		VolMat &mat = MatTable[ir][iz];
+		mat.A = a[2];
+		mat.Z = a[3];
+		mat.Density = a[4];
+		mat.RadLen = a[5];
+	}
+	
+	
+	return Mmap.size();
+}
+
+//---------------------------------
+// InitTable
+//---------------------------------
+void DRootGeom::InitTable(void)
+{
+	pthread_mutex_lock(&mutex);
+	
+	if(table_initialized){
+		// Don't initialize table twice!
+		pthread_mutex_unlock(&mutex);
+		return;
+	}
+	
 	// Fill average materials table
-	cout<<"Filling material table ..."; cout.flush();
+	cout<<"Filling material table"; cout.flush();
 	Nr = 125;
 	Nz = 750;
 	double rmin = 0.0;
@@ -43,13 +167,14 @@ DRootGeom::DRootGeom()
 			double z = z0 + (double)iz*dz;
 			
 			// Loop over points in phi, r, and z and add up material
-			int n_r = 2;
+			int n_r = 3;
 			int n_z = 2;
 			int n_phi = 20;
 			double d_r = dr/(double)n_r;
 			double d_z = dz/(double)n_z;
 			double d_phi = 2.0*M_PI/(double)n_phi;
 			VolMat avg_mat={0.0, 0.0, 0.0, 0.0};
+
 			for(int i_r=0; i_r<n_r; i_r++){
 				double my_r = r - dr/2.0 + (double)i_r*d_r;
 				for(int i_z=0; i_z<n_z; i_z++){
@@ -59,7 +184,9 @@ DRootGeom::DRootGeom()
 
 						DVector3 pos(my_r*cos(my_phi), my_r*sin(my_phi), my_z);
 						double A, Z, density, radlen;
-						FindMat(pos, density, A, Z, radlen);
+
+						FindMatLL(pos, density, A, Z, radlen);
+
 						avg_mat.A += A;
 						avg_mat.Z += Z;
 						avg_mat.Density += density;
@@ -79,6 +206,9 @@ DRootGeom::DRootGeom()
 		cout<<"\r Filling Material table ... "<<100.0*(double)ir/(double)Nr<<"%       ";cout.flush();
 	}
 	cout <<"Done"<<endl;
+	
+	table_initialized=true;
+	pthread_mutex_unlock(&mutex);
 }
 
 //---------------------------------
@@ -89,6 +219,9 @@ DRootGeom::~DRootGeom()
   delete DRGeom;
 }
 
+//---------------------------------
+// FindNode
+//---------------------------------
 TGeoNode* DRootGeom::FindNode(double *x)
 {
 	pthread_mutex_lock(&mutex);
@@ -121,7 +254,7 @@ TGeoVolume* DRootGeom::FindVolume(double *x)
 //---------------------------------
 jerror_t DRootGeom::FindMat(DVector3 pos,double &density, double &A, double &Z, double &RadLen) const
 {
-	return FindMatLL(pos, density, A, Z, RadLen);
+	return FindMatTable(pos, density, A, Z, RadLen);
 }
 
 //---------------------------------
@@ -129,6 +262,8 @@ jerror_t DRootGeom::FindMat(DVector3 pos,double &density, double &A, double &Z, 
 //---------------------------------
 jerror_t DRootGeom::FindMatTable(DVector3 pos,double &density, double &A, double &Z, double &RadLen) const
 {
+	if(!table_initialized)((DRootGeom*)this)->InitTable();
+
 	// For now, this just finds the bin in the material map the given position is in
 	// (i.e. no interpolation )
 	double r = pos.Perp();
