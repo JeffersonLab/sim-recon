@@ -447,9 +447,12 @@ jerror_t DKalmanFilter::PropagateForwardCDC(int length,int &index,double z,
   // State at current position 
   temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
   temp.s=len;  
-  
+   
   // get material properties from the Root Geometry
-  if (RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
+  if (fdchits.size()==0 && temp.pos.z()>endplate_z){
+    temp.density=temp.A=temp.Z=temp.X0=0.;
+  }
+  else if (RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
       !=NOERROR){
     _DBG_<< " q/p " << S(state_q_over_p,0) << endl;
     _DBG_<<"Material error!"<<endl; 
@@ -475,7 +478,6 @@ jerror_t DKalmanFilter::PropagateForwardCDC(int length,int &index,double z,
   }
   
   // Get dEdx for the upcoming step
-  double r=temp.pos.Perp();
   if (fdchits.size()==0 && temp.pos.z()>endplate_z) dEdx=0.;
   else
   if (temp.density>0. && do_energy_loss
@@ -535,7 +537,7 @@ jerror_t DKalmanFilter::SwimCentral(DVector3 &pos,DMatrix &Sc){
     double dedx=0.;
 
     // Compute the energy loss for this step
-    double r=pos.Perp();  
+    //double r=pos.Perp();  
     if (do_energy_loss 	
 	//&& (pass==kTimeBased || r<9.0)
 	){
@@ -898,7 +900,7 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
       
       temp.s=len;
       temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
-      double r=temp.pos.Perp();
+      //double r=temp.pos.Perp();
 
       // get material properties from the Root Geometry
       if(RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
@@ -985,13 +987,15 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
   }
 
   // Final point 
-  i++;
-  my_i=forward_traj_length-i;
+  //i++;
+  //my_i=forward_traj_length-i;
   temp.s=len;
   temp.pos.SetXYZ(S(state_x,0),S(state_y,0),newz); 
 
   // get material properties from the Root Geometry
   if(RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)==NOERROR){
+    i++;
+    my_i=forward_traj_length-i;
     
     // Get dEdx for the upcoming step  
     r=temp.pos.Perp();
@@ -1057,82 +1061,89 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
       temp.J=new DMatrix(J);
       forward_traj.push_front(temp);
     }
-  }
+ 
+    // Make sure the ref trajectory goes one step beyond the most downstream 
+    //hit
+    //i++;
+    //my_i=forward_traj_length-i;
+    temp.s=len;
+    temp.pos.SetXYZ(S(state_x,0),S(state_y,0),newz); 
+    temp.h_id=0;
 
-  // Make sure the ref trajectory goes one step beyond the most downstream hit
-  i++;
-  my_i=forward_traj_length-i;
-  temp.s=len;
-  temp.pos.SetXYZ(S(state_x,0),S(state_y,0),newz); 
-  temp.h_id=0;
-
-  // get material properties from the Root Geometry
-  if(RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)==NOERROR){
+    // get material properties from the Root Geometry
+    if(RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
+       ==NOERROR){
+      i++;
+      my_i=forward_traj_length-i;
     
-    // Get dEdx for the upcoming step
-    r=temp.pos.Perp();
-    if (do_energy_loss
-	//&& (pass==kTimeBased || r<9.0)
-	){
-      dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
-    }
+      // Get dEdx for the upcoming step
+      r=temp.pos.Perp();
+      if (do_energy_loss
+	  //&& (pass==kTimeBased || r<9.0)
+	  ){
+	dEdx=GetdEdx(MASS,S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
+      }
+      
+      // Store final point
+      if (i<=forward_traj_length){
+	forward_traj[my_i].s=temp.s;
+	forward_traj[my_i].h_id=temp.h_id;
+	forward_traj[my_i].pos=temp.pos;
+	forward_traj[my_i].A=temp.A;
+	forward_traj[my_i].Z=temp.Z;
+	forward_traj[my_i].density=temp.density;
+	forward_traj[my_i].X0=temp.X0;
+	for (unsigned int j=0;j<5;j++){
+	  forward_traj[my_i].S->operator()(j,0)=S(j,0);
+	}
+      }
+      else{
+	temp.S=new DMatrix(S);
+      }
+      
+      // One more step after last hit point
+      newz=z+STEP_SIZE;
+      ds=Step(z,newz,dEdx,S);
+      len+=ds;
     
-    // Store final point
-    if (i<=forward_traj_length){
-      forward_traj[my_i].s=temp.s;
-      forward_traj[my_i].h_id=temp.h_id;
-      forward_traj[my_i].pos=temp.pos;
-      forward_traj[my_i].A=temp.A;
-      forward_traj[my_i].Z=temp.Z;
-      forward_traj[my_i].density=temp.density;
-      forward_traj[my_i].X0=temp.X0;
-      for (unsigned int j=0;j<5;j++){
-	forward_traj[my_i].S->operator()(j,0)=S(j,0);
+      // Get the contribution to the covariance matrix due to multiple 
+      // scattering
+      if (do_multiple_scattering)
+	GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
+      
+      // Energy loss straggling in the approximation of thick absorbers
+      if (temp.density>0. && do_energy_loss
+	  //&& (pass==kTimeBased || r<9.0)
+	  ){	
+	q_over_p=S(state_q_over_p,0);
+	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
+	
+	Q(state_q_over_p,state_q_over_p)
+	  =varE*q_over_p*q_over_p*q_over_p*q_over_p/beta2;
+      }
+      
+      // Compute the Jacobian matrix
+      StepJacobian(newz,z,S,dEdx,J);
+      
+      // update the trajectory data
+      if (i<=forward_traj_length){
+	for (unsigned int j=0;j<5;j++){
+	  for (unsigned int k=0;k<5;k++){
+	    forward_traj[my_i].Q->operator()(j,k)=Q(j,k);
+	    forward_traj[my_i].J->operator()(j,k)=J(j,k);
+	  }
+	}
+      }
+      else{
+	temp.Q=new DMatrix(Q);
+	temp.J=new DMatrix(J);
+	forward_traj.push_front(temp);
       }
     }
-    else{
-      temp.S=new DMatrix(S);
-    }
-    
-    // One more step after last hit point
-    newz=z+STEP_SIZE;
-    ds=Step(z,newz,dEdx,S);
-    len+=ds;
-    
-    // Get the contribution to the covariance matrix due to multiple 
-    // scattering
-    if (do_multiple_scattering)
-      GetProcessNoise(MASS,ds,newz,temp.X0,S,Q);
-  
-    // Energy loss straggling in the approximation of thick absorbers
-    if (temp.density>0. && do_energy_loss
-	//&& (pass==kTimeBased || r<9.0)
-	){	
-      q_over_p=S(state_q_over_p,0);
-      beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
-    varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
-    
-    Q(state_q_over_p,state_q_over_p)
-      =varE*q_over_p*q_over_p*q_over_p*q_over_p/beta2;
-    }
-    
-    // Compute the Jacobian matrix
-    StepJacobian(newz,z,S,dEdx,J);
-    
-    // update the trajectory data
-    if (i<=forward_traj_length){
-      for (unsigned int j=0;j<5;j++){
-	for (unsigned int k=0;k<5;k++){
-	  forward_traj[my_i].Q->operator()(j,k)=Q(j,k);
-	  forward_traj[my_i].J->operator()(j,k)=J(j,k);
-	}
-    }
-    }
-    else{
-      temp.Q=new DMatrix(Q);
-      temp.J=new DMatrix(J);
-      forward_traj.push_front(temp);
-    }
+  }
+  else{
+    _DBG_ << "Material error!" <<endl;
   }
   
   // Shrink the deque if the new trajectory has less points in it than the 
@@ -1751,7 +1762,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     
     double chisq_iter=chisq;
     double zvertex=65.;
-    double scale_factor=200.,anneal_factor=1.;
+    double scale_factor=50.,anneal_factor=1.;
     // Iterate over reference trajectories
     for (int iter2=0;iter2<20;iter2++){   
       //for (int iter2=0;iter2<1;iter2++){   
@@ -1780,9 +1791,6 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
       //printf("forward iteration %d cdc size %d\n",iter2,forward_traj_cdc.size());
       
       if (forward_traj.size()> 1){
-	unsigned int num_iter=NUM_ITER;
-	//num_iter=1;
-	//if (cdchits.size()==0) num_iter=3;
 	chisq_forward=1.e16;
 	for (unsigned int iter=0;iter<20;iter++) {      	  
 	  if (iter>0){
@@ -1794,7 +1802,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 	  C=C0;	  
 	  // perform the kalman filter 
 	  KalmanForward(anneal_factor,S,C,chisq);
-	  // KalmanForward(1.,S,C,chisq);
+	  //KalmanForward(1.,S,C,chisq);
 	  
 	  //printf("forward chi2 %f p %f \n",chisq,1./S(state_q_over_p,0));
 	  // include any hits from the CDC on the trajectory
@@ -1924,7 +1932,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     
     double chisq_iter=chisq;
     double zvertex=65.;
-    double scale_factor=100.,anneal_factor=1.;
+    double scale_factor=50.,anneal_factor=1.;
     // Iterate over reference trajectories
     for (int iter2=0;iter2<20;iter2++){   
     //for (int iter2=0;iter2<1;iter2++){   
@@ -1944,9 +1952,6 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
       SetCDCForwardReferenceTrajectory(S);
       
       if (forward_traj_cdc.size()> 1){
-	unsigned int num_iter=NUM_ITER;
-	//num_iter=1;
-	//if (cdchits.size()==0) num_iter=3;
 	chisq_forward=1.e16;
 	for (unsigned int iter=0;iter<20;iter++) {      
 	  // perform the kalman filter 
@@ -2193,7 +2198,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     DVector3 best_pos=pos;
   
     // iteration 
-    double scale_factor=100., anneal_factor=1.;
+    double scale_factor=50., anneal_factor=1.;
     double chisq_iter=chisq;
     for (int iter2=0;iter2<20;iter2++){  
     //for (int iter2=0;iter2<1;iter2++){  
@@ -2785,8 +2790,6 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
   // Initialize the chi2 for this part of the track
   chisq=0.;
 
-  // path length
-  double s=central_traj[0].s;
   // path length increment
   double ds=-CDC_STEP_SIZE,ds2=0.;
 
@@ -2929,8 +2932,8 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
 	// Measurement
 	double lambda=atan(Sc(state_tanl,0));
 	q_over_p=Sc(state_q_over_pt,0)*cos(lambda);
-	double sinl=sin(lambda);
-	double cosl=cos(lambda);
+	//double sinl=sin(lambda);
+	//double cosl=cos(lambda);
 	double one_over_beta=sqrt(1.+mass_hyp*mass_hyp*q_over_p*q_over_p);
 	double s=central_traj[k].s+ds2;
 	double measurement=0.;
