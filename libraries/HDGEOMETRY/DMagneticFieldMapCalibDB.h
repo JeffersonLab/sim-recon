@@ -23,8 +23,8 @@ using namespace jana;
 
 class DMagneticFieldMapCalibDB:public DMagneticFieldMap{
 	public:
-		DMagneticFieldMapCalibDB(JApplication *japp, string namepath = "Magnets/Solenoid/solenoid_1500");
-		DMagneticFieldMapCalibDB(JCalibration *jcalib, string namepath = "Magnets/Solenoid/solenoid_1500");
+		DMagneticFieldMapCalibDB(JApplication *japp, string namepath = "Magnets/Solenoid/solenoid_1500_20090312-2");
+		DMagneticFieldMapCalibDB(JCalibration *jcalib, string namepath = "Magnets/Solenoid/solenoid_1500_20090312-2");
 		virtual ~DMagneticFieldMapCalibDB();
 		
 		int ReadMap(string namepath, int runnumber=1, string context="");

@@ -94,7 +94,7 @@ int DMagneticFieldMapCalibDB::ReadMap(string namepath, int runnumber, string con
 		// the origin with the GEANT defined one.
 		x *= 2.54;
 		y *= 2.54;
-		z = (z-26.0)*2.54;
+		z = (z-0.0)*2.54; // Removed 26" offset 6/22/2009 DL
 		
 		xvals[x] = 1;
 		yvals[y] = 1;

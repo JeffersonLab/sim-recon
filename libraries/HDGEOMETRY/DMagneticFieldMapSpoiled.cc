@@ -66,7 +66,7 @@ void DMagneticFieldMapSpoiled::Init(void)
 	gPARMS->SetDefaultParameter("BFIELD:PHI_AMP",   phi_amp);
 	gPARMS->SetDefaultParameter("BFIELD:PHI_OMEGA", phi_omega);
 	gPARMS->SetDefaultParameter("BFIELD:R_AMP",     r_amp);
-	gPARMS->SetDefaultParameter("BFIELD:R_OMEAGA",  r_omega);
+	gPARMS->SetDefaultParameter("BFIELD:R_OMEGA",   r_omega);
 	gPARMS->SetDefaultParameter("BFIELD:Z_AMP",     z_amp);
 	gPARMS->SetDefaultParameter("BFIELD:Z_OMEGA",   z_omega);
 	
