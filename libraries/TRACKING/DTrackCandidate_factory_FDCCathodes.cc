@@ -750,7 +750,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,double 
         origin(2)=segment->hits[0]->wire->origin(2);
         if (stepper.SwimToPlane(pos,mom,origin,norm,&s)==false){
           double x2=segment->hits[0]->x;
-          double y2=segment2->hits[0]->y;
+          double y2=segment->hits[0]->y;
           diff=sqrt((pos(0)-x2)*(pos(0)-x2)+(pos(1)-y2)*(pos(1)-y2));
           if (diff<diff_min&&diff<MATCH_RADIUS(mom.Mag())){
 	    diff_min=diff;
