@@ -16,6 +16,7 @@
 #define Z_TARGET 65.0
 #define Z_VERTEX_CUT 25.0
 #define MATCH_RADIUS 5.0
+#define ADJACENT_MATCH_RADIUS 1.0
 #define SIGN_CHANGE_CHISQ_CUT 10.0
 #define BEAM_VARIANCE 0.1 // cm^2
 #define FDC_X_RESOLUTION 0.028
@@ -735,15 +736,15 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	  delta_min=1000.;
 	  match=0;
 	  for (unsigned int m=x_list[k];m<x_list[k+1];m++){
-	  xtemp=points[m]->x;
-	  ytemp=points[m]->y;
-	  delta=sqrt((x-xtemp)*(x-xtemp)+(y-ytemp)*(y-ytemp));
-	  if (delta<delta_min && delta<MATCH_RADIUS){
-	    delta_min=delta;
-	    match=m;
-	  }
+	    xtemp=points[m]->x;
+	    ytemp=points[m]->y;
+	    delta=sqrt((x-xtemp)*(x-xtemp)+(y-ytemp)*(y-ytemp));
+	    if (delta<delta_min && delta<MATCH_RADIUS){
+	      delta_min=delta;
+	      match=m;
+	    }
 	  }	
-	  if (match!=0){
+	  if (match!=0 && (points[match]->status&USED_IN_SEGMENT)==0 ){
 	    x=points[match]->x;
 	    y=points[match]->y;
 	    points[match]->status|=USED_IN_SEGMENT;
@@ -760,7 +761,13 @@ jerror_t DFDCSegment_factory::FindSegments(vector<DFDCPseudo*>points){
 	// Look for hits adjacent to the ones we have in our segment candidate
 	for (unsigned int k=0;k<points.size();k++){
 	  for (unsigned int j=0;j<num_neighbors;j++){
-	    if (abs(neighbors[j]->wire->wire-points[k]->wire->wire)==1
+	    xtemp=points[k]->x;
+	    ytemp=points[k]->y;
+	    x=neighbors[j]->x;
+	    y=neighbors[j]->y;
+	    delta=sqrt((x-xtemp)*(x-xtemp)+(y-ytemp)*(y-ytemp));
+	    if (delta<ADJACENT_MATCH_RADIUS && 
+		abs(neighbors[j]->wire->wire-points[k]->wire->wire)==1
 		&& neighbors[j]->wire->origin(2)==points[k]->wire->origin(2)){
 	      points[k]->status|=USED_IN_SEGMENT;
 	      neighbors.push_back(points[k]);
