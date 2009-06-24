@@ -106,7 +106,7 @@ hdgeant++: hdgeant++.o gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXF
 	$(CPP) -mtune=generic -o $@ hdgeant++.o gxint.o uginit.o uglast.o \
 	   $(FOPTS) $(AUXF) $(AUXC) $(GXFIXED) $(MISC_FIXES) \
 	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
-	   -L$(HALLD_HOME)/lib/$(OSNAME) -lTRACKING -lHDGEOMETRY \
+	   -L$(HALLD_HOME)/lib/$(OSNAME) -lHDGEOMETRY \
 	   -L$(JANA_HOME)/lib -lJANA \
 	   -L$(ROOTSYS)/lib -lPhysics -lMatrix -lGeom -lCore -lRIO -lCint \
 	   `cernlib -v $(CERN_LEVEL) geant321 pawlib graflib/Motif packlib mathlib` \
@@ -116,7 +116,7 @@ hdgeant: hdgeant.o hdgeant_f.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(MIS
 	$(CPP) -mtune=generic $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(STATIC) $(FOPTS) \
 	   hdgeant.o hdgeant_f.o uginit.o uglast.o $(AUXF) $(AUXC) $(MISC_FIXES) \
 	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
-	   -L$(HALLD_HOME)/lib/$(OSNAME) -lTRACKING -lHDGEOMETRY \
+	   -L$(HALLD_HOME)/lib/$(OSNAME) -lHDGEOMETRY \
 	   -L$(JANA_HOME)/lib -lJANA \
 	   -L$(ROOTSYS)/lib -lPhysics -lMatrix -lGeom -lCore -lRIO -lCint \
 	  `$(CERNLIB) geant321 mathlib graflib grafX11` \

@@ -30,7 +30,7 @@ static int strawCount = 0;
 static int pointCount = 0;
 static int stripCount = 0;
 
-void GetDOCA(int ipart, float x[3], float p[5], float doca[3]);
+/* void GetDOCA(int ipart, float x[3], float p[5], float doca[3]);  disabled 6/24/2009 */
 
 /* register hits during tracking (from gustep) */
 
@@ -63,13 +63,16 @@ void hitCentralDC (float xin[4], float xout[4],
    drin = sqrt(xinlocal[0]*xinlocal[0] + xinlocal[1]*xinlocal[1]);
    drout = sqrt(xoutlocal[0]*xoutlocal[0] + xoutlocal[1]*xoutlocal[1]);
 	
-	/* Project the input position/momentum to the DOCA point.
-	 * 4/27/2009  DL
+	/* Project the input position/momentum to the DOCA point. 4/27/2009  DL
+	 *
+	 * Commented out 6/24/2009 DL
 	 */
+	/*
 	GetDOCA(ipart, xin, pin, doca);
    xlocal[0] = doca[0];
    xlocal[1] = doca[1];
    xlocal[2] = doca[2];
+	*/
 	
 	/* This will get called when the particle actually passes through
 	 * the wire volume itself. For these cases, we should set the 

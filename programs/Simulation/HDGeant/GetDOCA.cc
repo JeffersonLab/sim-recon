@@ -1,4 +1,27 @@
 
+
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// WARNING!!
+//
+// This file is DISABLED by the #if 0 block below. It was used
+// to enforce more consistency between the simulation and reconstuction
+// but that is no longer needed (for the moment). I am commenting
+// out the centents rather than removing the whole file so that it
+// can be more easily accessed if we need it again. The price of 
+// having this ability is that it requires a strong connection
+// between the reconstruction and simulation that is undesirable
+// with all else being equal.
+//
+// To re-enable this functionality, you'll need to not only un-comment
+// this file, but also uncomment lines in the hitCDC.c and Makefile.bms
+// (Makefile.orig) files.
+//
+// 6/24/2009 DL
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+#if 0
+
 #include <string.h>
 
 #include <particleType.h>
@@ -77,3 +100,5 @@ void GetDOCA(int ipart, float x[3], float p[5], float doca[3])
 	doca[2] = pos.Dot(wire.udir);
 }
 
+
+#endif
