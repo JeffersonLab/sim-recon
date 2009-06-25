@@ -19,7 +19,7 @@
 class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 	public:
 		DTrackCandidate_factory_FDCCathodes(){
-		  DEBUG_HISTS = false;
+		  DEBUG_HISTS = true;
 		};
 		~DTrackCandidate_factory_FDCCathodes(){};
 		const char* Tag(void){return "FDCCathodes";}
@@ -41,7 +41,7 @@ class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
                                            vector<DFDCSegment*>package,
                                            unsigned int &match_id);
 	bool DEBUG_HISTS;
-	TH2F *match_dist;
+	TH2F *match_dist_fdc;
 	vector<double>z_wires;
 
 };
