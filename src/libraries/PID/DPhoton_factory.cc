@@ -79,7 +79,7 @@ vector<const DParticle*> chargedswum;
 		vector<double> dSwum;
                 dSwum = dFromSwumChargeMC(photon,chargedswum);
 
-		if (dSwum[0] <DELTA_PHI_SWUMCHARGE  && dSwum[1] <DELTA_Z_SWUMCHARGE && dSwum[2] <DELTA_R_SWUMCHARGE  ) photon->setTag(4);
+		if (dSwum[0] <DELTA_PHI_SWUMCHARGE  && dSwum[1] <DELTA_Z_SWUMCHARGE && dSwum[2] <DELTA_R_SWUMCHARGE  ) photon->setTag(3);
 
 		_data.push_back(photon);
 
@@ -105,7 +105,7 @@ vector<const DParticle*> chargedswum;
 		vector<double> dSwum;
                 dSwum = dFromSwumChargeMC(photon,chargedswum);
 
-		if (dSwum[0] <DELTA_PHI_SWUMCHARGE  && dSwum[1] <DELTA_Z_SWUMCHARGE && dSwum[2] <DELTA_R_SWUMCHARGE ) photon->setTag(4);
+		if (dSwum[0] <DELTA_PHI_SWUMCHARGE  && dSwum[1] <DELTA_Z_SWUMCHARGE && dSwum[2] <DELTA_R_SWUMCHARGE ) photon->setTag(3);
 
 
 
