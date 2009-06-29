@@ -20,12 +20,23 @@ DPhoton_factory::DPhoton_factory()
 	// Set defaults
         DELTA_THETA_CHARGE = 0.05; // Polar angle separation between photon and charged particle 
                                    // in radians
+	DELTA_PHI_SWUMCHARGE = 0.15;// Azimuthal angle separation between photon and swumcharged particle 
+                                   // in radians
+	DELTA_Z_SWUMCHARGE = 40;//Position separation between photon and swumcharged particle 
+                                   // in cm
+	DELTA_R_SWUMCHARGE = 25;//Position separation between photon and swumcharged particle 
+                                   // in cm
+
 	USE_BCAL_ONLY = 0;
 	USE_FCAL_ONLY = 0;
 	
 	gPARMS->SetDefaultParameter( "PID:DELTA_THETA_CHARGE", DELTA_THETA_CHARGE);
 	gPARMS->SetDefaultParameter( "PID:USE_BCAL_ONLY", USE_BCAL_ONLY );
 	gPARMS->SetDefaultParameter( "PID:USE_FCAL_ONLY", USE_FCAL_ONLY );
+	gPARMS->SetDefaultParameter( "PID:DELTA_PHI_SWUMCHARGE", DELTA_PHI_SWUMCHARGE );
+	gPARMS->SetDefaultParameter( "PID:DELTA_Z_SWUMCHARGE", DELTA_Z_SWUMCHARGE );
+
+	gPARMS->SetDefaultParameter( "PID:DELTA_R_SWUMCHARGE", DELTA_R_SWUMCHARGE );
 }
 
 
@@ -45,6 +56,8 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 // and use thrown info within DPi0 to identify photons from charged particles
         vector<const DMCThrown*> thrown;
 	eventLoop->Get(thrown);
+vector<const DParticle*> chargedswum;
+	eventLoop->Get(chargedswum);
 
 // loop over FCAL photons    
 	vector<const DFCALPhoton*> fcalPhotons;
@@ -57,10 +70,16 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
                 
 //                double mdtrt = MinDistToRT(photon,tracks); 
 //                photon->setDtRT(mdtrt); 
-                double dTheta = dThetaToChargeMC(photon,thrown);
-                
-                photon->setdThetaCharge( dTheta ); 
-                if (dTheta < DELTA_THETA_CHARGE ) photon->setTag(3);
+//               double dTheta = dThetaToChargeMC(photon,thrown);
+               
+	       //               photon->setdThetaCharge( dTheta ); 
+		//		photon->setdSwumCharge ( dSwum );
+		//                if (dTheta < DELTA_THETA_CHARGE ) photon->setTag(3);
+
+		vector<double> dSwum;
+                dSwum = dFromSwumChargeMC(photon,chargedswum);
+
+		if (dSwum[0] <DELTA_PHI_SWUMCHARGE  && dSwum[1] <DELTA_Z_SWUMCHARGE && dSwum[2] <DELTA_R_SWUMCHARGE  ) photon->setTag(4);
 
 		_data.push_back(photon);
 
@@ -78,10 +97,17 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 //                double mdtrt = MinDistToRT(photon,tracks); 
 //	        photon->setDtRT(mdtrt); 
-                double dTheta = dThetaToChargeMC(photon,thrown);
-                photon->setdThetaCharge( dTheta ); 
+//                double dTheta = dThetaToChargeMC(photon,thrown);
+//                photon->setdThetaCharge( dTheta ); 
 
-                if (dTheta < DELTA_THETA_CHARGE ) photon->setTag(3);
+//                if (dTheta < DELTA_THETA_CHARGE ) photon->setTag(3);
+		
+		vector<double> dSwum;
+                dSwum = dFromSwumChargeMC(photon,chargedswum);
+
+		if (dSwum[0] <DELTA_PHI_SWUMCHARGE  && dSwum[1] <DELTA_Z_SWUMCHARGE && dSwum[2] <DELTA_R_SWUMCHARGE ) photon->setTag(4);
+
+
 
 		_data.push_back(photon);
 
@@ -276,6 +302,91 @@ double DPhoton_factory::dThetaToChargeMC(const DPhoton* photon, vector<const DMC
   }
 
   return dmin;
+
+}
+
+
+// Return the distance in azimuthal anlge and position Z from the closest charged track.
+vector<double>  DPhoton_factory::dFromSwumChargeMC(const DPhoton* photon, vector<const DParticle*>  chargedswum) 
+{
+
+ DVector3 photonPoint =photon->getPositionCal();
+ DVector3 diffVect,diffVectbcal,diffVectfcal;
+ double dPhi = 10.0;
+ double dPhiMin = 10.0;
+ double dZ = 1000.0;
+ double dZMin = 1000.0;
+ double dR = 1000.0;
+ double dRMin = 1000.0;
+ vector<double> diffSwum(3);
+
+ DApplication* dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+   if(!dapp){
+     _DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
+     //   return 0;
+   }
+   DMagneticFieldMap *bfield = dapp->GetBfield();
+
+
+ for( vector<const DParticle*>::const_iterator swum = chargedswum.begin();
+	     swum != chargedswum.end(); ++swum ){
+   if ( (**swum).charge() == 0 ) continue;
+
+ 
+
+   bool hitbcal,hitfcal = false;
+   double q = (**swum).charge(); 
+   DVector3 pos = (**swum).position();
+   DVector3 mom = (**swum).momentum();
+   DMagneticFieldStepper *stepper1 = new DMagneticFieldStepper(bfield, q, &pos, &mom);
+   DMagneticFieldStepper *stepper2 = new DMagneticFieldStepper(bfield, q, &pos, &mom);
+
+   DVector3 pos_bcal = pos; 
+   DVector3 mom_bcal = mom; 
+   DVector3 pos_fcal = pos;
+   DVector3 mom_fcal = mom;
+   DVector3 origin(0.0, 0.0, 643.2);
+   DVector3 norm(0.0, 0.0, 1.0);
+
+
+   bool swimrad = stepper1->SwimToRadius(pos_bcal, mom_bcal, 65.0);
+
+   if( swimrad || (pos_bcal.Z()>400 && !swimrad) ){
+     bool swimplane = stepper2->SwimToPlane(pos_fcal, mom_fcal, origin, norm );//save a little time and do this here
+     hitbcal = false;
+   if( swimplane ){
+     hitfcal = false;
+   }else{
+     hitfcal = true;
+     diffVectfcal = photonPoint - pos_fcal;
+   }
+   }else{
+     hitbcal = true;
+     diffVectbcal = photonPoint - pos_bcal;
+   }
+
+   if( hitbcal && !hitfcal ){
+     dPhi = photonPoint.Phi() - pos_bcal.Phi();
+     dZ = photonPoint.Z() - pos_bcal.Z();
+     dR = photonPoint.Perp() - pos_bcal.Perp();
+
+    }else if(!hitbcal && hitfcal){
+     dPhi = fabs(photonPoint.Phi() - pos_fcal.Phi());
+     dZ = fabs(photonPoint.Z() - pos_fcal.Z());
+     dR = photonPoint.Perp() - pos_fcal.Perp();
+
+  }
+   //assigns the minimum distance
+ dPhiMin = dPhi < dPhiMin ? dPhi : dPhiMin; 
+ dZMin = dZ < dZMin ? dZ : dZMin;  
+ dRMin = dR < dRMin ? dR : dRMin; 
+ }
+
+ diffSwum[0] = dPhiMin;
+ diffSwum[1] = dZMin; 
+ diffSwum[2] = dRMin;
+
+  return diffSwum;
 
 }
 
