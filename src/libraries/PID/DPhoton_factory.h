@@ -16,7 +16,10 @@
 #include "TRACKING/DMCThrown.h"
 #include "TRACKING/DTrack.h"
 #include "TRACKING/DReferenceTrajectory.h"
-
+#include "PID/DParticle.h"
+#include "TRACKING/DMagneticFieldStepper.h"
+#include "HDGEOMETRY/DMagneticFieldMap.h"
+#include "DANA/DApplication.h"
 
 class DPhoton_factory:public JFactory<DPhoton>{
 	public:
@@ -26,6 +29,9 @@ class DPhoton_factory:public JFactory<DPhoton>{
 	private:
 		float DELTA_THETA_CHARGE; // The largest expected polar angle separation (in radians)
 					  // between photon and charged particle
+		float DELTA_PHI_SWUMCHARGE;
+		float DELTA_Z_SWUMCHARGE;
+		float DELTA_R_SWUMCHARGE;
 
 		int USE_BCAL_ONLY;
 		int USE_FCAL_ONLY;
@@ -38,6 +44,8 @@ class DPhoton_factory:public JFactory<DPhoton>{
 
 		double MinDistToRT(const DPhoton* photon, vector<const DTrack*> tracks);
 		double dThetaToChargeMC(const DPhoton* photon, vector<const DMCThrown*> thrown);
+		vector<double> dFromSwumChargeMC(const DPhoton* photon, vector<const DParticle*> chargedswum);
+
 
 };
 
