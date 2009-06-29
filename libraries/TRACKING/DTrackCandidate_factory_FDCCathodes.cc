@@ -22,7 +22,7 @@
 #define MAX_SEGMENTS 20
 #define HALF_PACKAGE 6.0
 #define FDC_OUTER_RADIUS 50.0 
-#define BEAM_VAR 0.01 // cm^2
+#define BEAM_VAR 0.1 // cm^2
 #define HIT_CHI2_CUT 10.0
 #define Z_VERTEX 65.0
 
@@ -270,6 +270,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  if (match2==NULL && package[1].size()>0 &&
 	      (match2=GetTrackMatch(q,zpackage[1],mysegments[1],package[1],
 				    match_id))!=NULL){ 
+	    // Insert the segment from package 2 into the track
+	    mysegments.push_back(match2);
+
 	    // remove the segment from the list 
 	    package[1].erase(package[1].begin()+match_id);
 
@@ -327,6 +330,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	      if (match4==NULL && package[3].size()>0 && 
 		  (match4=GetTrackMatch(q,zpackage[3],mysegments[2],package[3],
 					match_id))!=NULL){
+		// Insert the segment from package 4 into the track
+		mysegments.push_back(match4);
+
 		// remove the segment from the list 
 		package[3].erase(package[3].begin()+match_id); 
 	      }
@@ -335,6 +341,10 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	    if (match4==NULL && package[3].size()>0 &&
 		(match4=GetTrackMatch(q,zpackage[3],mysegments[1],package[3],
 				      match_id))!=NULL){ 
+	      
+	      // Insert the segment from package 4 into the track
+	      mysegments.push_back(match4);
+
 	      // remove the segment from the list
 	      package[3].erase(package[3].begin()+match_id);
 	    }
@@ -506,6 +516,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  if (match4==NULL && package[3].size()>0 &&
 	      (match4=GetTrackMatch(q,zpackage[3],mysegments[1],package[3],match_id))
 	      !=NULL){
+	    // Insert the segment from package 4 into the track
+	    mysegments.push_back(match4);
+
 	    // remove the segment from the list 
 	    package[3].erase(package[3].begin()+match_id);
 	  }
@@ -525,6 +538,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       double pt=0.003*Bz_avg*rc;
       double theta=M_PI_2-atan(tanl);
       double d=yc-q*rc*cos(phi0);
+
+      // Try to make a sensible vertex coming from the target
+      if (z_vertex>zpackage[1]) z_vertex=Z_VERTEX;
 
       mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
       pos.SetXYZ(-d*sin(phi0),d*cos(phi0),z_vertex);
@@ -615,12 +631,57 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	  // remaining tracking parameters
 	  tanl=fit.tanl;
 	  z_vertex=fit.z_vertex;
-	  xc=fit.x0;
-	  yc=fit.y0;
-	  rc=fit.r0;
+
+	  mysegments[0]->S(3,0)=tanl;
+	  mysegments[0]->S(4,0)=z_vertex;
+	  xc=mysegments[0]->xc=fit.x0;
+	  yc=mysegments[0]->yc=fit.y0;
+	  rc=mysegments[0]->rc=fit.r0;
+	}
+      
+	// Try to match to package 2 again.
+	if (package[1].size()>0 &&
+	    (match2=GetTrackMatch(q,zpackage[1],mysegments[0],package[1],
+				  match_id))!=NULL){
+	  // Insert the segment from package 2 into the track 
+	  mysegments.push_back(match2);
+	  
+	  // remove the segment from the list 
+	  package[1].erase(package[1].begin()+match_id);
+	  
+	  // Redo the fit with the additional hits from package 2
+	  for (unsigned int n=0;n<match2->hits.size();n++){
+	    double covxx=match2->hits[n]->covxx;
+	    double covyy=match2->hits[n]->covyy;
+	    double covxy=match2->hits[n]->covxy;
+	    double x=match2->hits[n]->x;
+	    double y=match2->hits[n]->y;
+	    double z=match2->hits[n]->wire->origin(2);
+	    fit.AddHitXYZ(x,y,z,covxx,covyy,covxy);
+	  }
+	  if (fit.FitTrackRiemann(mysegments[0]->rc)==NOERROR){     
+	    // Charge
+	    //if (q==0) 
+	    q=fit.q;
+	    // Curvature
+	    mysegments[2]->S(0,0)=q/2./fit.r0;
+	    // Estimate for azimuthal angle
+	    phi0=atan2(-fit.x0,fit.y0); 
+	    if (q<0) phi0+=M_PI;
+	    mysegments[2]->S(1,0)=phi0;
+	    // remaining tracking parameters
+	    tanl=fit.tanl;
+	    z_vertex=fit.z_vertex;
+	    
+	    mysegments[2]->S(3,0)=tanl;
+	    mysegments[2]->S(4,0)=z_vertex;
+	    xc=mysegments[2]->xc=fit.x0;
+	    yc=mysegments[2]->yc=fit.y0;
+	    rc=mysegments[2]->rc=fit.r0;
+	  }
 	}
       }
-            
+	
       DVector3 mom,pos;
       double Bz_avg=0.;
       // Compute the average magnetic field for the segment
@@ -634,6 +695,9 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       double pt=0.003*Bz_avg*rc;
       double theta=M_PI_2-atan(tanl);
       double d=yc-q*rc*cos(phi0);
+
+      // Try to make a sensible vertex coming from the target
+      if (z_vertex>zpackage[2]) z_vertex=Z_VERTEX;
 
       mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
       pos.SetXYZ(-d*sin(phi0),d*cos(phi0),z_vertex);
@@ -680,9 +744,13 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     double pt=0.003*Bz_avg*rc;
     double theta=M_PI_2-atan(tanl);
     double d=yc-q*rc*cos(phi0);
+
+    // Try to make a sensible vertex coming from the target
+    double z_vertex=segment->S(4,0);
+    if (z_vertex>zpackage[3]) z_vertex=Z_VERTEX;
     
     mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
-    pos.SetXYZ(-d*sin(phi0),d*cos(phi0),segment->S(4,0));
+    pos.SetXYZ(-d*sin(phi0),d*cos(phi0),z_vertex);
     
     // Create new track, starting with the current segment
     DTrackCandidate *track = new DTrackCandidate;
@@ -715,6 +783,7 @@ DFDCSegment *DTrackCandidate_factory_FDCCathodes::GetTrackMatch(double q,double 
   // current segment
   DVector3 pos,mom,origin(0.,0.,z);
   if (GetPositionAndMomentum(segment,pos,mom)!=NOERROR) return NULL;
+  if (z<pos.z()) mom=-1.0*mom;
 
   // Match to the next package by swimming the track through the field
   double diff_min=1000.,diff;
