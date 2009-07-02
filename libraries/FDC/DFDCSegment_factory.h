@@ -100,7 +100,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
                 const DMagneticFieldMap *bfield;
 		const DLorentzDeflections *lorentz_def;
 		double ref_time;
-		bool use_tof;
+		bool use_tof,use_sc;
 
 		int myeventno;
 };
