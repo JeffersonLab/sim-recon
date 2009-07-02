@@ -29,6 +29,15 @@
 #define R_START 7.6
 #define SC_V_EFF 15.
 #define Z_TOF 617.4
+// Sloppy target range in z
+#define Z_MIN 45.
+#define Z_MAX 85.
+// Start counter dimensions
+#define SC_LIGHT_GUIDE     140.
+#define SC_CENTER          38.75     
+// TOF dimensions
+#define TOF_BAR_LENGTH      252.0 
+#define TOF_V_EFF 15.
 
 // Variance for position along wire using PHENIX angle dependence, transverse
 // diffusion, and an intrinsic resolution of 127 microns.
@@ -101,23 +110,32 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 
     ref_time=0;
     use_tof=false;
+    use_sc=false;
     if (sc_hits.size()>0){
       double sc_min=1000.;
       for (unsigned int i=0;i<sc_hits.size();i++){
 	if (sc_hits[i]->t<sc_min) sc_min=sc_hits[i]->t;
       }
-      ref_time=sc_min;
+      use_sc=true;
+      ref_time=sc_min-(SC_CENTER+SC_LIGHT_GUIDE)/SC_V_EFF;
     }
     else if (tof_hits.size()>0){
       double tof_min=1000.;
       for (unsigned int i=0;i<tof_hits.size();i++){
-	if (tof_hits[i]->meantime<tof_min) tof_min=tof_hits[i]->meantime;
+	double t_north=tof_hits[i]->t_north;
+	double t_south=tof_hits[i]->t_south;
+	double t_mean=0.;
+	if (t_north==0.) t_mean=t_south-TOF_BAR_LENGTH/TOF_V_EFF/2.;
+	else if (t_south==0.) t_mean=t_north-TOF_BAR_LENGTH/TOF_V_EFF/2.;
+	else t_mean=(t_north+t_south-TOF_BAR_LENGTH/TOF_V_EFF)/2.;
+	if (t_mean<tof_min) tof_min=t_mean;
       }
       ref_time=tof_min;
       use_tof=true;
     }
-     
+      
     //if (ref_time>0)
+    if (use_sc || use_tof)
       {
       // Group pseudopoints by package
       vector<DFDCPseudo*>package[4];
@@ -230,8 +248,12 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
   // Linear regression to find z0, tanl   
   double sumv=0.,sumx=0.;
   double sumy=0.,sumxx=0.,sumxy=0.;
-  double sperp=0.,chord,ratio,Delta;
-  for (unsigned int k=start;k<n-1;k++){
+  double sperp=0.,sperp_old=0.,chord,ratio,Delta;
+  double z=0,zlast=0;
+  //for (unsigned int k=start;k<n-1;k++){
+  for (unsigned int k=start;k<n;k++){
+    zlast=z;
+    sperp_old=sperp;
     if (!bad[k]){
       double diffx=XYZ(k,0)-XYZ(start,0);
       double diffy=XYZ(k,1)-XYZ(start,1);
@@ -242,6 +264,7 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
 	sperp=2.*rc*(M_PI/2.);
       else
 	sperp=2.*rc*asin(ratio);
+      z=XYZ(k,2);
       // Assume errors in s dominated by errors in R 
       sumv+=1./CR(k,k);
       sumy+=sperp/CR(k,k);
@@ -256,26 +279,13 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
   //z0=(sumxx*sumy-sumx*sumxy)/Delta*tanl;
   // Error in tanl 
   var_tanl=sumv/Delta*(tanl*tanl*tanl*tanl);
- 
-  // Path length to (0,0)
-  chord=sqrt(XYZ(0,0)*XYZ(0,0)+XYZ(0,1)*XYZ(0,1));
-  ratio=chord/2./rc; 
-  // Make sure the argument for the arcsin does not go out of range...
-  if (ratio>1.) 
-    sperp=2.*rc*(M_PI/2.);
-  else
-    sperp=2.*rc*asin(ratio);
-
-  // Vertex position
-  zvertex=XYZ(start,2)-sperp*tanl;
-  // Compute the "vertex" position using the other possible choice for the path 
-  // length to the target point
-  double zvertex_temp=XYZ(start,2)-(2.*rc*M_PI-sperp)*tanl;
-  // Choose best zvertex based on proximity of projected z-vertex to the center 
-  // of the target
-  if (fabs(zvertex-Z_TARGET)>fabs(zvertex_temp-Z_TARGET)){
-    zvertex=zvertex_temp;
+  
+  if (tanl<0){ // a negative tanl makes no sense for FDC segments if we 
+    // assume that the particle came from the target
+    tanl*=-1.;
   }
+  sperp-=sperp_old; 
+  zvertex=zlast-tanl*sperp;
 
   return NOERROR;
 }
@@ -882,7 +892,10 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
   double my_start_time=0.;
   if (use_tof){
     //my_start_time=ref_time-(Z_TOF-Z_TARGET)/sin(lambda)/beta/29.98;
-    my_start_time=0;
+    // If we need to use the tof, the angle relative to the beam line is 
+    // small enough that sin(lambda) ~ 1.
+    my_start_time=ref_time-(Z_TOF-Z_TARGET)/beta/29.98;
+    //my_start_time=0;
   }
   else{
     double ratio=R_START/2./rc;
@@ -892,9 +905,9 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
     else
       my_start_time=ref_time
 	-rc*M_PI*(1./cos(lambda)/beta/29.98);
+    
   }
-
-  my_start_time=0.;
+  //my_start_time=0.;
 
   for (unsigned int m=0;m<points.size();m++){
     DFDCPseudo *point=points[m];
