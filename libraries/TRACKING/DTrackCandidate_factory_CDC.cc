@@ -15,7 +15,7 @@ using namespace std;
 #include <HDGEOMETRY/DMagneticFieldMap.h>
 #include <FDC/DFDCPseudo.h>
 #define BeamRMS 0.1
-
+#define Z_TARGET 65.0
 
 #include "DTrackCandidate_factory_CDC.h"
 
@@ -1426,23 +1426,34 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
     arclengths[m]=s;
     var_z[m]=varz;
   }
-  var_z[0]=30.*30./12.;  // Use length of the target
-  
-  // Linear regression to find z0, tanl   
-  double sumv=0.,sumx=0.;
-  double sumy=0.,sumxx=0.,sumxy=0.;
-  for (unsigned int m=0;m<intersections.size();m++){
-    sumv+=1./var_z[m];
-    sumx+=arclengths[m]/var_z[m];
-    sumy+=intersections[m](2)/var_z[m];
-    sumxx+=arclengths[m]*arclengths[m]/var_z[m];
-    sumxy+=arclengths[m]*intersections[m](2)/var_z[m];
+
+  //Linear regression to find z0, tanl
+  double tanl=0.,z0=0.;
+  if (arclengths.size()>2){ // Do fit only if have more than one measurement
+    var_z[0]=30.*30./12.;  // Use length of the target
+    double sumv=0.,sumx=0.;
+    double sumy=0.,sumxx=0.,sumxy=0.;
+    for (unsigned int m=0;m<intersections.size();m++){
+      sumv+=1./var_z[m];
+      sumx+=arclengths[m]/var_z[m];
+      sumy+=intersections[m](2)/var_z[m];
+      sumxx+=arclengths[m]*arclengths[m]/var_z[m];
+      sumxy+=arclengths[m]*intersections[m](2)/var_z[m];
+    }
+    double Delta=sumv*sumxx-sumx*sumx;
+    if (Delta==0.) return VALUE_OUT_OF_RANGE;
+    
+    tanl=(sumv*sumxy-sumx*sumy)/Delta;
+    z0=(sumxx*sumy-sumx*sumxy)/Delta;
   }
-  double Delta=sumv*sumxx-sumx*sumx;
-  if (Delta==0.) return VALUE_OUT_OF_RANGE;
+  else{
+    z0=Z_TARGET;
+    tanl=(intersections[1](2)-z0)/arclengths[1];
+  }
   
-  double tanl=(sumv*sumxy-sumx*sumy)/Delta;
-  double z0=(sumxx*sumy-sumx*sumxy)/Delta;
+  if (z0>TARGET_Z_MAX || z0<TARGET_Z_MIN){
+    return VALUE_OUT_OF_RANGE;
+  }
 
   seed.theta=M_PI/2-atan(tanl);
   seed.z_vertex=z0;
