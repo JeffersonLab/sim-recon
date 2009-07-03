@@ -34,21 +34,21 @@ DBCALPhoton_factory::DBCALPhoton_factory()
    
    //scaling parameter set for Z>370 (end of module)
 
-    m_scaleZ_p0 =  0.8284;
-    m_scaleZ_p1 =  3.3;
-    m_scaleZ_p2 =  422.5;
-    m_scaleZ_p3 =  12.04;
-    m_scaleZ_p4 = 0.0;
+    m_scaleZ_p0 =  0.8793;
+    //    m_scaleZ_p1 =  3.3;
+    m_scaleZ_p2 =  411.9;
+    m_scaleZ_p3 =  10.04;
+    //   m_scaleZ_p4 = 0.0;
      
-    m_nonlinZ_p0 =  0.05136;
-    m_nonlinZ_p1 = 1000.0;
-    m_nonlinZ_p2 =  453.6;    
-    m_nonlinZ_p3 = 17.21;
+    m_nonlinZ_p0 =  0.02611;
+    //    m_nonlinZ_p1 = 1000.0;
+    m_nonlinZ_p2 =  414.2;    
+    m_nonlinZ_p3 = 10.24;
 
-    m_linZ_p0 = -7.166e-03;
-    m_linZ_p1 = -1000.0;
-    m_linZ_p2 = 482.0;
-    m_linZ_p3 = 24.19;
+    m_linZ_p0 = -2.71e-03;
+    m_linZ_p1 = -10.0;
+    m_linZ_p2 = 473.6;
+    m_linZ_p3 = 22.68;
 
 }
 
@@ -112,9 +112,9 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
   }
   
         if( zEntry >= 370.0 ) {
-            scale = m_scaleZ_p0 * (1 - m_scaleZ_p1 *(exp( -0.5 *(zEntry - m_scaleZ_p2 )* (zEntry - m_scaleZ_p2 ) / (m_scaleZ_p3 * m_scaleZ_p3)   ) ) ) ;
+            scale = m_scaleZ_p0 * (1 - (exp( -0.5 *(zEntry - m_scaleZ_p2 )* (zEntry - m_scaleZ_p2 ) / (m_scaleZ_p3 * m_scaleZ_p3)   ) ) ) ;
 
-  nonlin = m_nonlinZ_p0 * (1 - m_nonlinZ_p1 *(exp( -0.5 *(zEntry - m_nonlinZ_p2 )* (zEntry - m_nonlinZ_p2 ) / (m_nonlinZ_p3 * m_nonlinZ_p3)   ) ) ) ;
+  nonlin = m_nonlinZ_p0 - exp( -0.5 *(zEntry - m_nonlinZ_p2 )* (zEntry - m_nonlinZ_p2 ) / (m_nonlinZ_p3 * m_nonlinZ_p3)   )  ;
 
 
   lin = m_linZ_p0 * (1 - m_linZ_p1 *(exp( -0.5 *(zEntry - m_linZ_p2 )* (zEntry - m_linZ_p2 ) / (m_linZ_p3 * m_linZ_p3)   ) ) ) ;
