@@ -12,6 +12,8 @@ using namespace std;
 #include "DHelicalFit.h"
 #define qBr2p 0.003  // conversion for converting q*B*r to GeV/c
 #define Z_VERTEX 65.0
+#define Z_MIN 45.0
+#define Z_MAX 85.0
 
 // The following is for sorting hits by z
 class DHFHitLessThanZ{
@@ -789,12 +791,15 @@ jerror_t DHelicalFit::FitLineRiemann(){
   // Linear regression to find z0, tanl   
   unsigned int n=projections.size();
   double sumv=0.,sumx=0.,sumy=0.,sumxx=0.,sumxy=0.;
-  double sperp=0., chord=0,ratio=0, Delta;
+  double sperp=0.,sperp_old=0., chord=0,ratio=0, Delta;
+  double z_last=0.,z=0.;
   for (unsigned int k=start;k<n;k++){
+    sperp_old=sperp;
+    z_last=z;
     if (!bad[k])
       {
       double diffx=projections[k]->x-projections[start]->x;
-      double diffy=projections[k]->y-projections[start]->y;
+      double diffy=projections[k]->y-projections[start]->y;   
       chord=sqrt(diffx*diffx+diffy*diffy);
       ratio=chord/2./r0; 
       // Make sure the argument for the arcsin does not go out of range...
@@ -802,6 +807,11 @@ jerror_t DHelicalFit::FitLineRiemann(){
 	sperp=2.*r0*(M_PI/2.);
       else
 	sperp=2.*r0*asin(ratio);
+      if (sperp-sperp_old<-1.){
+	if (k==n-1) sperp=2.*r0*M_PI-sperp;
+      }
+      z=projections[k]->z;
+
       // Assume errors in s dominated by errors in R 
       sumv+=1./CR(k,k);
       sumy+=sperp/CR(k,k);
@@ -810,26 +820,22 @@ jerror_t DHelicalFit::FitLineRiemann(){
       sumxy+=sperp*projections[k]->z/CR(k,k);
     }
   }
-  chord=sqrt(projections[start]->x*projections[start]->x
-	     +projections[start]->y*projections[start]->y);
-  ratio=chord/2./r0; 
-  // Make sure the argument for the arcsin does not go out of range...
-  if (ratio>1.) 
-    sperp=2.*r0*(M_PI/2.);
-  else
-    sperp=2.*r0*asin(ratio);
   Delta=sumv*sumxx-sumx*sumx;
   // Track parameter tan(lambda)
   tanl=-Delta/(sumv*sumxy-sumy*sumx); 
-  theta=M_PI_2-atan(tanl);
 
-  // Vertex position
-  z_vertex=projections[start]->z-sperp*tanl;
-  double zvertex_temp=projections[start]->z-(2.*r0*M_PI-sperp)*tanl;
-  // Choose vertex z based on proximity of projected z-vertex to the center 
-  // of the target
-  if (fabs(z_vertex-Z_VERTEX)>fabs(zvertex_temp-Z_VERTEX)) 
-    z_vertex=zvertex_temp;
+   // Vertex position
+  sperp-=sperp_old;
+  z_vertex=z_last-sperp*tanl;
+
+  // if the zvertex is far beyond the extent of the target, do a simple
+  // linear calculation assuming the particle came from the center of the 
+  // target
+  if (z_vertex<Z_MIN || z_vertex>Z_MAX){
+    z_vertex=Z_VERTEX;
+    tanl=(z_last-Z_VERTEX)/sperp;
+  } 
+  theta=M_PI_2-atan(tanl);
 
   return NOERROR;
 }
