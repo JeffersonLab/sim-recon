@@ -115,6 +115,8 @@ jerror_t MyProcessor::brun(JEventLoop *eventloop, int runnumber)
 	const DGeometry *dgeom  = dapp->GetDGeometry(runnumber);
 	dgeom->GetFDCWires(fdcwires);
 
+	RootGeom = dapp->GetRootGeom();
+
 	return NOERROR;
 }
 
@@ -599,6 +601,7 @@ void MyProcessor::AddKinematicDataTrack(const DKinematicData* kd, int color, dou
 	// Create a reference trajectory with the given kinematic data and swim
 	// it through the detector.
 	DReferenceTrajectory rt(Bfield);
+	rt.SetDRootGeom(RootGeom);
 	rt.Swim(kd->position(), kd->momentum(), kd->charge());
 
 	// Create a new graphics set and fill it with all of the trajectory points
@@ -731,6 +734,7 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 	// Create a new DReference trajectory object. The caller takes
 	// ownership of this and so they are responsible for deleting it.
 	rt = new DReferenceTrajectory(Bfield);
+	rt->SetDRootGeom(RootGeom);
 	rt->Swim(pos, mom, q);
 }
 

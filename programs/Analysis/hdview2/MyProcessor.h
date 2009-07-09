@@ -14,6 +14,7 @@
 #include <JANA/JEvent.h>
 
 #include <HDGEOMETRY/DMagneticFieldMap.h>
+#include <HDGEOMETRY/DRootGeom.h>
 #include <PID/DKinematicData.h>
 #include <DCoordinateSystem.h>
 #include <TRACKING/DReferenceTrajectory.h>
@@ -94,6 +95,7 @@ class MyProcessor:public JEventProcessor
 		hdv_mainframe *hdvmf;
 		JEventLoop *loop;
 		JEvent last_jevent;
+		DRootGeom *RootGeom;
 		
 		void AddKinematicDataTrack(const DKinematicData* kd, int color, double size);
 		

@@ -1680,37 +1680,10 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 	// "<default>".
 	int id =0;
 	reconfactory->RemoveAll();
-	reconfactory->AddEntry("DTrackCandidate:", id++);
+	reconfactory->AddEntry("DParticle:", id++);
 	reconfactory->Select(0, kFALSE);
-	reconfactory->GetTextEntry()->SetText("DTrackCandidate:");
-	
-	// Add DTrackCandidate factories
-	for(unsigned int i=0; i< facnames.size(); i++){
-		string name = "DTrackCandidate:";
-		string::size_type pos = facnames[i].find(name);
-		if(pos==string::npos)continue;
-		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
-		reconfactory->AddEntry(facnames[i].c_str(), id++);
-		if(facnames[i]==default_reconstructed){
-			reconfactory->Select(id-1, kTRUE);
-			reconfactory->GetTextEntry()->SetText(facnames[i].c_str());
-		}
-	}
-	
-	// Add DTrack factories
-	reconfactory->AddEntry("DTrack:", id++);
-	for(unsigned int i=0; i< facnames.size(); i++){
-		string name = "DTrack:";
-		string::size_type pos = facnames[i].find(name);
-		if(pos==string::npos)continue;
-		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
-		reconfactory->AddEntry(facnames[i].c_str(), id++);
-		if(facnames[i]==default_reconstructed){
-			reconfactory->Select(id-1, kTRUE);
-			reconfactory->GetTextEntry()->SetText(facnames[i].c_str());
-		}
-	}
-	
+	reconfactory->GetTextEntry()->SetText("DParticle:");
+		
 	// Add DParticle factories
 	reconfactory->AddEntry("DParticle:", id++);
 	for(unsigned int i=0; i< facnames.size(); i++){
@@ -1724,6 +1697,34 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 			reconfactory->GetTextEntry()->SetText(facnames[i].c_str());
 		}
 	}
+
+	// Add DTrack factories
+	reconfactory->AddEntry("DTrack:", id++);
+	for(unsigned int i=0; i< facnames.size(); i++){
+		string name = "DTrack:";
+		string::size_type pos = facnames[i].find(name);
+		if(pos==string::npos)continue;
+		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
+		reconfactory->AddEntry(facnames[i].c_str(), id++);
+		if(facnames[i]==default_reconstructed){
+			reconfactory->Select(id-1, kTRUE);
+			reconfactory->GetTextEntry()->SetText(facnames[i].c_str());
+		}
+	}
+
+	// Add DTrackCandidate factories
+	for(unsigned int i=0; i< facnames.size(); i++){
+		string name = "DTrackCandidate:";
+		string::size_type pos = facnames[i].find(name);
+		if(pos==string::npos)continue;
+		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
+		reconfactory->AddEntry(facnames[i].c_str(), id++);
+		if(facnames[i]==default_reconstructed){
+			reconfactory->Select(id-1, kTRUE);
+			reconfactory->GetTextEntry()->SetText(facnames[i].c_str());
+		}
+	}
+	
 	
 	// Add DPhoton factories
 	reconfactory->AddEntry("DPhoton:", id++);
