@@ -7,12 +7,16 @@
 #include <vector>
 using namespace std;
 
+#include <FCAL/DFCALGeometry.h>
+
 #include <math.h>
 #include "HDDM/hddm_s.h"
 
 float RANDOM_MAX = (float)(0x7FFFFFFF);
+#ifndef _DBG_
 #define _DBG_ cout<<__FILE__<<":"<<__LINE__<<" "
 #define _DBG__ cout<<__FILE__<<":"<<__LINE__<<endl
+#endif
 
 void SmearCDC(s_HDDM_t *hddm_s);
 void AddNoiseHitsCDC(s_HDDM_t *hddm_s);
@@ -31,6 +35,7 @@ int CDC_MAX_RINGS=0;
 vector<unsigned int> NCDC_STRAWS;
 vector<double> CDC_RING_RADIUS;
 
+DFCALGeometry *fcalGeom = NULL;
 bool FDC_GEOMETRY_INITIALIZED = false;
 unsigned int NFDC_WIRES_PER_PLANE;
 vector<double> FDC_LAYER_Z;
@@ -83,6 +88,12 @@ bool FDC_ELOSS_OFF = true;
 // Time window for acceptance of FDC hits
 double FDC_TIME_WINDOW = 1000.0E-9; // in seconds
 
+// Photon-statistics factor for smearing hit energy (from Criss's MC)
+// (copied from DFCALMCResponse_factory.cc 7/2/2009 DL)
+double FCAL_PHOT_STAT_COEF = 0.035;
+
+// Single block energy threshold (applied after smearing)
+double FCAL_BLOCK_THRESHOLD = 20.0*k_MeV;
 
 //-----------
 // Smear
@@ -435,8 +446,72 @@ void AddNoiseHitsFDC(s_HDDM_t *hddm_s)
 //-----------
 void SmearFCAL(s_HDDM_t *hddm_s)
 {
+	/// Smear the FCAL hits using the nominal resolution of the individual blocks.
+	/// The way this works is a little funny and warrants a little explanation.
+	/// The information coming from hdgeant is truth information indexed by 
+	/// row and column, but containing energy deposited and time. The mcsmear
+	/// program will overwrite the energy and time values with smeared ones.
+	/// In order to keep the original truth information available in the same
+	/// file, HDDM was modified to contain a mirror branch called FcalTruthBlock.
+	/// This branch is filled out only here in mcsmear (not in hdgeant) since
+	/// only when this program is run do we actually have 2 different values
+	/// to keep.
+	///
+	/// To access the "truth" values in DANA, get the DFCALHit objects using the
+	/// "TRUTH" tag.
+	
+	// The code below is perhaps slightly odd in that it simultaneously creates
+	// and fills the mirror (truth) branch while smearing the values in the
+	// nominal hit branch.
 
 
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return;
+	
+	if(!fcalGeom)fcalGeom = new DFCALGeometry();
+
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			 hits->forwardEMcal == HDDM_NULL ||
+			 hits->forwardEMcal->fcalBlocks == HDDM_NULL)continue;
+		
+		s_FcalBlocks_t *blocks = hits->forwardEMcal->fcalBlocks;
+		for(unsigned int j=0; j<blocks->mult; j++){
+			s_FcalBlock_t *block = &blocks->in[j];
+
+			// Create FCAL truth hits to keep un-smeared info available.
+			if(block->fcalTruthHits!=HDDM_NULL)free(block->fcalTruthHits);
+			block->fcalTruthHits = make_s_FcalTruthHits(block->fcalHits->mult);
+			block->fcalTruthHits->mult = block->fcalHits->mult;
+
+			for(unsigned int k=0; k<block->fcalHits->mult; k++){
+				s_FcalHit_t *fcalhit = &block->fcalHits->in[k];
+				s_FcalTruthHit_t *fcaltruthhit = &block->fcalTruthHits->in[k];
+
+				// Copy info into truth stream before doing anything else
+				fcaltruthhit->E = fcalhit->E;
+				fcaltruthhit->t = fcalhit->t;
+
+				// Simulation simulates a grid of blocks for simplicity. 
+				// Do not bother smearing inactive blocks. They will be
+				// discarded in DEventSourceHDDM.cc while being read in
+				// anyway.
+				if(!fcalGeom->isBlockActive( block->row, block->column ))continue;
+
+				// Smear the energy and timing of the hit
+				double sigma = FCAL_PHOT_STAT_COEF/sqrt(fcalhit->E) ;
+				fcalhit->E *= 1.0 + SampleGaussian(sigma);
+				fcalhit->t += SampleGaussian(200.0E-3); // smear by 200 ps fixed for now 7/2/2009 DL
+				
+				// Apply a single block threshold. If the (smeared) energy is below this,
+				// then set the energy and time to zero. 
+				if(fcalhit->E < FCAL_BLOCK_THRESHOLD){fcalhit->E = fcalhit->t = 0.0;}
+
+			} // k  (fcalhits)
+		} // j  (blocks)
+	} // i  (physicsEvents)
 
 }
 //-----------

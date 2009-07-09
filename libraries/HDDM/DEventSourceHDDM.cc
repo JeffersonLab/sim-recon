@@ -17,9 +17,11 @@ using namespace std;
 #include <JANA/JEventLoop.h>
 #include <JANA/JEvent.h>
 
+#include "TVector2.h"
 #include "DEventSourceHDDM.h"
 #include "FDC/DFDCGeometry.h"
 #include "FCAL/DFCALGeometry.h"
+#include "FCAL/DFCALHit.h"
 
 //------------------------------------------------------------------
 // Binary predicate used to sort hits
@@ -123,9 +125,9 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	// We must have a factory to hold the data
 	if(!factory)throw RESOURCE_UNAVAILABLE;
 	
-	// HDDM doesn't support tagged factories
-	const char* tag = factory->Tag()==NULL ? "":factory->Tag();
-	if(strlen(tag)!=0)return OBJECT_NOT_AVAILABLE;
+	// HDDM doesn't exactly support tagged factories, but the tag
+	// can be used to direct filling of the correct factory.
+	string tag = factory->Tag()==NULL ? "":factory->Tag();
 	
 	// The ref field of the JEvent is just the s_HDDM_t pointer.
 	s_HDDM_t *my_hddm_s = (s_HDDM_t*)event.GetRef();
@@ -134,46 +136,46 @@ jerror_t DEventSourceHDDM::GetObjects(JEvent &event, JFactory_base *factory)
 	// Get name of data class we're trying to extract
 	string dataClassName = factory->GetDataClassName();
 	
-	if(dataClassName =="DMCTrackHit")
+	if(dataClassName =="DMCTrackHit" && tag=="")
 		return Extract_DMCTrackHit(my_hddm_s, dynamic_cast<JFactory<DMCTrackHit>*>(factory));
 
-	if(dataClassName =="DBeamPhoton")
+	if(dataClassName =="DBeamPhoton" && tag=="")
 		return Extract_DBeamPhoton(my_hddm_s, dynamic_cast<JFactory<DBeamPhoton>*>(factory));
 
-	if(dataClassName =="DMCThrown")
+	if(dataClassName =="DMCThrown" && tag=="")
 		return Extract_DMCThrown(my_hddm_s, dynamic_cast<JFactory<DMCThrown>*>(factory));
 
-	if(dataClassName == "DBCALTruthShower" )
+	if(dataClassName == "DBCALTruthShower" && tag=="")
 	  return Extract_DBCALTruthShower(my_hddm_s, dynamic_cast<JFactory<DBCALTruthShower>*>(factory));
 
-	if(dataClassName =="DHDDMBCALHit")
+	if(dataClassName =="DHDDMBCALHit" && tag=="")
 		return Extract_DHDDMBCALHit(my_hddm_s, dynamic_cast<JFactory<DHDDMBCALHit>*>(factory));
 
-	if(dataClassName =="DCDCHit")
+	if(dataClassName =="DCDCHit" && tag=="")
 		return Extract_DCDCHit(my_hddm_s, dynamic_cast<JFactory<DCDCHit>*>(factory));
 
-	if(dataClassName =="DFDCHit")
+	if(dataClassName =="DFDCHit" && tag=="")
 		return Extract_DFDCHit(my_hddm_s, dynamic_cast<JFactory<DFDCHit>*>(factory));
 
-	if(dataClassName == "DFCALTruthShower" )
+	if(dataClassName == "DFCALTruthShower" && tag=="")
 	  return Extract_DFCALTruthShower(my_hddm_s, dynamic_cast<JFactory<DFCALTruthShower>*>(factory));
 
-	if(dataClassName == "DMCFCALHit" )
-	  return Extract_DMCFCALHit(my_hddm_s, dynamic_cast<JFactory<DMCFCALHit>*>(factory), event.GetJEventLoop() );
+	if(dataClassName == "DFCALHit" && (tag=="" || tag=="TRUTH"))
+	  return Extract_DFCALHit(my_hddm_s, dynamic_cast<JFactory<DFCALHit>*>(factory), event.GetJEventLoop(), tag);
 
-	if(dataClassName =="DMCTrajectoryPoint")
+	if(dataClassName =="DMCTrajectoryPoint" && tag=="")
 		return Extract_DMCTrajectoryPoint(my_hddm_s, dynamic_cast<JFactory<DMCTrajectoryPoint>*>(factory));
 
-	if(dataClassName =="DTOFTruth")
+	if(dataClassName =="DTOFTruth" && tag=="")
 	  return Extract_DTOFTruth(my_hddm_s, dynamic_cast<JFactory<DTOFTruth>*>(factory));
 
-	if(dataClassName =="DHDDMTOFHit")
+	if(dataClassName =="DHDDMTOFHit" && tag=="")
 	  return Extract_DHDDMTOFHit(my_hddm_s, dynamic_cast<JFactory<DHDDMTOFHit>*>(factory));
 
-	if(dataClassName =="DSCHit")
+	if(dataClassName =="DSCHit" && tag=="")
 	  return Extract_DSCHit(my_hddm_s, dynamic_cast<JFactory<DSCHit>*>(factory));
 
-	if(dataClassName =="DSCTruthHit")
+	if(dataClassName =="DSCTruthHit" && tag=="")
 	  return Extract_DSCTruthHit(my_hddm_s, dynamic_cast<JFactory<DSCTruthHit>*>(factory));
 
 	return OBJECT_NOT_AVAILABLE;
@@ -856,9 +858,9 @@ jerror_t DEventSourceHDDM::Extract_DFCALTruthShower(s_HDDM_t *hddm_s,  JFactory<
 }
 
 //------------------
-// Extract_DMCFCALHit
+// Extract_DFCALHit
 //------------------
-jerror_t DEventSourceHDDM::Extract_DMCFCALHit(s_HDDM_t *hddm_s,  JFactory<DMCFCALHit> *factory, JEventLoop* eventLoop )
+jerror_t DEventSourceHDDM::Extract_DFCALHit(s_HDDM_t *hddm_s,  JFactory<DFCALHit> *factory, JEventLoop* eventLoop, string tag)
 {
   /// Copies the data from the given hddm_s structure. This is called
   /// from JEventSourceHDDM::GetObjects. If factory is NULL, this
@@ -866,37 +868,72 @@ jerror_t DEventSourceHDDM::Extract_DMCFCALHit(s_HDDM_t *hddm_s,  JFactory<DMCFCA
 	
   if(factory==NULL)return OBJECT_NOT_AVAILABLE;
 
-  vector<DMCFCALHit*> data;
-  
-  // Loop over Physics Events
-  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
-  if(!PE) return NOERROR;
-	
-  int hitId = 0;
-  for(unsigned int i=0; i<PE->mult; i++){
-      s_HitView_t *hits = PE->in[i].hitView;
-      if (hits == HDDM_NULL ||
-          hits->forwardEMcal == HDDM_NULL ||
-          hits->forwardEMcal->fcalBlocks == HDDM_NULL)continue;
-      
-      s_FcalBlocks_t *blocks = hits->forwardEMcal->fcalBlocks;
-      for(unsigned int j=0; j<blocks->mult; j++){
-          s_FcalBlock_t *block = &blocks->in[j];
-          for(unsigned int k=0; k<block->fcalHits->mult; k++){
-              s_FcalHit_t *fcalhit = &block->fcalHits->in[k];
-              
-              DMCFCALHit *mchit = new DMCFCALHit();
-              mchit->column = block->column;
-              mchit->row = block->row;
-              mchit->E = fcalhit->E;
-              mchit->t = fcalhit->t;
-              mchit->id = hitId++;
-              
-              data.push_back(mchit);
-              
-          } // k  (fcalhits)
-      } // j  (blocks)
-  } // i  (physicsEvents)
+	// extract the FCAL Geometry (for isBlockActive() and positionOnFace())
+	vector<const DFCALGeometry*> fcalGeomVect;
+	eventLoop->Get( fcalGeomVect );
+	if(fcalGeomVect.size()<1)return OBJECT_NOT_AVAILABLE;
+	const DFCALGeometry& fcalGeom = *(fcalGeomVect[0]);
+
+	vector<DFCALHit*> data;
+
+	// Loop over Physics Events
+	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+	if(!PE) return NOERROR;
+
+	int hitId = 0;
+	for(unsigned int i=0; i<PE->mult; i++){
+		s_HitView_t *hits = PE->in[i].hitView;
+		if (hits == HDDM_NULL ||
+			 hits->forwardEMcal == HDDM_NULL ||
+			 hits->forwardEMcal->fcalBlocks == HDDM_NULL)continue;
+		
+		s_FcalBlocks_t *blocks = hits->forwardEMcal->fcalBlocks;		
+		for(unsigned int j=0; j<blocks->mult; j++){
+			 s_FcalBlock_t *block = &blocks->in[j];
+			 
+			 // Filter out non-physical blocks here
+			 if(!fcalGeom.isBlockActive(block->row, block->column))continue;
+			 
+			 // Get position of blocks on front face. (This should really come from
+			 // hdgeant directly so the poisitions can be shifted in mcsmear.)
+			 TVector2 pos = fcalGeom.positionOnFace(block->row, block->column);
+			 
+			 // Real hits
+			 if(tag==""){
+				 for(unsigned int k=0; k<block->fcalHits->mult; k++){
+					  s_FcalHit_t *fcalhit = &block->fcalHits->in[k];
+					  
+					  DFCALHit *mchit = new DFCALHit();
+					  mchit->row = block->row;
+					  mchit->column = block->column;
+					  mchit->x = pos.X();
+					  mchit->y = pos.Y();
+					  mchit->E = fcalhit->E;
+					  mchit->t = fcalhit->t;
+					  mchit->id = hitId++;
+					  
+					  data.push_back(mchit);
+					  
+				 } // k  (fcalhits)
+			}else if(tag=="TRUTH"){
+				 for(unsigned int k=0; k<block->fcalTruthHits->mult; k++){
+					  s_FcalTruthHit_t *fcalhit = &block->fcalTruthHits->in[k];
+					  
+					  DFCALHit *mchit = new DFCALHit();
+					  mchit->row = block->row;
+					  mchit->column = block->column;
+					  mchit->x = pos.X();
+					  mchit->y = pos.Y();
+					  mchit->E = fcalhit->E;
+					  mchit->t = fcalhit->t;
+					  mchit->id = hitId++;
+					  
+					  data.push_back(mchit);
+					  
+				 } // k  (fcalhits)
+			} // tag
+		} // j  (blocks)
+	} // i  (physicsEvents)
   
   // Copy into factory
   factory->CopyTo(data);

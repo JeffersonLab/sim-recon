@@ -17,6 +17,7 @@ using namespace jana;
 #include "DFCALCluster_factory.h"
 #include "DFCALCluster.h"
 #include "DFCALHit.h"
+#include "DFCALGeometry.h"
 
 #ifndef SQR
 # define SQR(x) (x)*(x)
@@ -52,6 +53,22 @@ DFCALCluster_factory::DFCALCluster_factory()
 
 }
 
+//------------------
+// brun
+//------------------
+jerror_t DFCALCluster_factory::brun(JEventLoop *eventLoop, int runnumber)
+{
+	
+	vector<const DFCALGeometry*> fcalGeoms;
+	eventLoop->Get(fcalGeoms);
+	if(fcalGeoms.size()<1){
+		_DBG_<<"fcalGeoms.size()<1 !!!"<<endl;
+		throw JException("fcalGeoms.size()<1 !!!");
+	}
+	fcalGeom = fcalGeoms[0];
+
+	return NOERROR;
+}
 
 //------------------
 // evnt
@@ -62,6 +79,7 @@ jerror_t DFCALCluster_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 	vector<const DFCALHit*> fcalhits;
 	eventLoop->Get(fcalhits);
+	
 	
 	// Sort hits by energy
 	sort(fcalhits.begin(), fcalhits.end(), FCALHitsSort_C);

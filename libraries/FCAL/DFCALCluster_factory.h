@@ -12,7 +12,8 @@
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
-#include "DFCALCluster.h"
+#include <FCAL/DFCALCluster.h>
+#include <FCAL/DFCALGeometry.h>
 
 class DFCALCluster_factory:public JFactory<DFCALCluster>{
 	public:
@@ -22,12 +23,14 @@ class DFCALCluster_factory:public JFactory<DFCALCluster>{
 //	        userhits_t* hits;
 	
 	private:
+		jerror_t brun(JEventLoop *eventLoop, int runnumber);	
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	
 		//< Invoked via JEventProcessor virtual method
 
 		unsigned int MIN_CLUSTER_BLOCK_COUNT;
 		float MIN_CLUSTER_SEED_ENERGY;
 
+		const DFCALGeometry *fcalGeom;
 };
 
 #endif // _DFCALCluster_factory_

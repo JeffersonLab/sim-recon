@@ -28,14 +28,7 @@ class DEventProcessor_fcal_hists:public JEventProcessor{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 		
-		TH1F* two_gamma_mass, *two_gamma_mass_cut;
-		TH1F* pi0_zdiff;
-		TH2F* xy_shower;
-		TH1F* z_shower;
-		TH1F* E_shower;
-		TH2F* E_over_Erec_vs_E;
-		TH2F* E_over_Erec_vs_R;
-		TH2F* E_over_Ereccorr_vs_z;
+		TH2D *dE_over_E_vs_E;
 };
 
 #endif // _DEventProcessor_fcal_hists_

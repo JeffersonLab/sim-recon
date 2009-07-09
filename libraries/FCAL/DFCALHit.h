@@ -20,12 +20,16 @@ public:
 	
 	DFCALHit(){}
     
+	 int row;
+	 int column;
     float x;
     float y;
     float E;
     float t;
 
 		void toStrings(vector<pair<string,string> > &items)const{
+			AddString(items, "row", "%4d", row);
+			AddString(items, "column", "%4d", column);
 			AddString(items, "x(cm)", "%3.1f", x);
 			AddString(items, "y(cm)", "%3.1f", y);
 			AddString(items, "E(MeV)", "%2.3f", E*1000.0);
