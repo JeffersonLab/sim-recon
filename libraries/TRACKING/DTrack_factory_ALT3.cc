@@ -218,17 +218,18 @@ jerror_t DTrack_factory_ALT3::evnt(JEventLoop *loop, int eventnumber)
     if (num_matched_hits>=MIN_HITS){
     // Set the initial parameters from the track candidate
       jerror_t error=fit.SetSeed(tc->charge(),tc->position(),tc->momentum());
-      if (error!=NOERROR) break;
+      if (error!=NOERROR) continue;
       
       // Kalman filter 
       error=fit.KalmanLoop(TOF_MASS,DKalmanFilter::kWireBased);	
+
       if (error==NOERROR){
 	double charge=fit.GetCharge();
 	fit.GetMomentum(mom);
 	fit.GetPosition(pos);
-	if (fit.SetSeed(charge,pos,mom)!=NOERROR) break;
-
-	error=fit.KalmanLoop(TOF_MASS,DKalmanFilter::kTimeBased);     
+	if (fit.SetSeed(charge,pos,mom)!=NOERROR) continue;
+	error=fit.KalmanLoop(TOF_MASS,DKalmanFilter::kTimeBased);
+     
 	if (error==NOERROR){
 	  // Create a new track object
 	  DTrack *track = new DTrack;
