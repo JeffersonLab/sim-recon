@@ -505,6 +505,11 @@ jerror_t DHelicalFit::FitCircleRiemann(void){
   y0=-N[1]/2./N[2];
   r0=sqrt(1.-N[2]*N[2]-4.*c_origin*N[2])/2./fabs(N[2]);
  
+  // Phi value at "vertex"
+  phi=atan2(-x0,y0);  
+  if(phi<0)phi+=2.0*M_PI;
+  if(phi>=2.0*M_PI)phi-=2.0*M_PI;
+
   // Calculate the chisq
   ChisqCircle();
   chisq_source = CIRCLE;
@@ -727,7 +732,7 @@ jerror_t DHelicalFit::FitLineRiemann(){
   for (unsigned int i=0;i<hits.size();i++)
     for (unsigned int j=0;j<hits.size();j++)
       CR(i,j)=CovR_->operator()(i, j);
-
+ 
   // Fill vector of intersection points 
   double x_int0,temp,y_int0;
   double denom= N[0]*N[0]+N[1]*N[1];
@@ -794,10 +799,10 @@ jerror_t DHelicalFit::FitLineRiemann(){
   double sperp=0.,sperp_old=0., chord=0,ratio=0, Delta;
   double z_last=0.,z=0.;
   for (unsigned int k=start;k<n;k++){
-    sperp_old=sperp;
-    z_last=z;
-    if (!bad[k])
-      {
+    if (!bad[k]){
+      sperp_old=sperp;
+      z_last=z;
+
       double diffx=projections[k]->x-projections[start]->x;
       double diffy=projections[k]->y-projections[start]->y;   
       chord=sqrt(diffx*diffx+diffy*diffy);
@@ -807,7 +812,7 @@ jerror_t DHelicalFit::FitLineRiemann(){
 	sperp=2.*r0*(M_PI/2.);
       else
 	sperp=2.*r0*asin(ratio);
-      if (sperp-sperp_old<-1.){
+      if (sperp-sperp_old<0.){
 	if (k==n-1) sperp=2.*r0*M_PI-sperp;
       }
       z=projections[k]->z;
@@ -821,19 +826,21 @@ jerror_t DHelicalFit::FitLineRiemann(){
     }
   }
   Delta=sumv*sumxx-sumx*sumx;
-  // Track parameter tan(lambda)
+  // Track parameters tan(lambda) and z-vertex
   tanl=-Delta/(sumv*sumxy-sumy*sumx); 
+  z_vertex=(sumxx*sumy-sumx*sumxy)/Delta;
 
-   // Vertex position
-  sperp-=sperp_old;
-  z_vertex=z_last-sperp*tanl;
+  // Use the last z and s values to estimate the vertex position if the first
+  // method gave a result beyond the extent of the target
+  if (z_vertex<Z_MIN || z_vertex>Z_MAX){
+    sperp-=sperp_old;
+    z_vertex=z_last-sperp*tanl;
+  }
 
-  // if the zvertex is far beyond the extent of the target, do a simple
-  // linear calculation assuming the particle came from the center of the 
-  // target
+  // if the zvertex is still beyond the extent of the target, assume the 
+  // particle came from the center of the target
   if (z_vertex<Z_MIN || z_vertex>Z_MAX){
     z_vertex=Z_VERTEX;
-    tanl=(z_last-Z_VERTEX)/sperp;
   } 
   theta=M_PI_2-atan(tanl);
 
