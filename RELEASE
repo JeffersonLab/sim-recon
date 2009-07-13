@@ -1,0 +1,550 @@
+Release Notes for Hall-D source code
+------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/release-2009-07-07
+   Date: July 13, 2009
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 5339 of trunk/src.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Fedora release 8 (Werewolf) on i686  32-bit
+------------
+  Xerces 2.7.0
+  JANA 0.5.2
+  ROOT 5.18-00
+  cernlib 2005 (/apps/cernlib/i386_fc8 on JLab CUE)
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+
+Red Hat Enterprise Linux 5.3
+-----------
+  Xerces 2.7.0
+  JANA 0.5.2
+  ROOT 5.18-00
+  cernlib 2005 (/apps/cernlib/i386_fc8 on JLab CUE)
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+
+Relevant repository log of changes:
+
+------------------------------------------------------------------------
+r5243 | staylor | 2009-05-29 17:52:52 -0400 (Fri, 29 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+Implemented simulated annealing by scaling the measurement errors in an iteration-dependent manner for forward-going tracks in addition to central tracks.
+------------------------------------------------------------------------
+r5244 | davidl | 2009-05-30 12:29:11 -0400 (Sat, 30 May 2009) | 1 line
+Changed paths:
+   M /trunk/src/Makefile
+   M /trunk/src/libraries/HDDM/Makefile
+   M /trunk/src/programs/Utilities/hddm/Makefile
+
+Fix Makefiles to allow clean compilation from fresh checkout.
+------------------------------------------------------------------------
+r5245 | davidl | 2009-06-03 10:21:53 -0400 (Wed, 03 Jun 2009) | 3 lines
+Changed paths:
+   M /trunk/src/libraries/CDC/DCDCTrackHit_factory.cc
+   M /trunk/src/libraries/FDC/DFDCPseudo_factory.cc
+   M /trunk/src/libraries/FDC/DFDCPseudo_factory.h
+
+If truth information is available, add the truth object corresponding
+to the DCDCTrackHit or DFDCPseudo object as an associated object.
+
+------------------------------------------------------------------------
+r5273 | jonesrt | 2009-06-05 12:06:10 -0400 (Fri, 05 Jun 2009) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/genr8/Makefile.orig
+
+Makefile.orig [rtj]
+   - added compilation switch _FILE_OFFSET_BITS=64 to prevent 2GB limitation
+     on output file sizes.
+
+------------------------------------------------------------------------
+r5274 | jonesrt | 2009-06-05 12:21:22 -0400 (Fri, 05 Jun 2009) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/gxtwist/Makefile.orig
+
+Makefile.orig [rtj]
+   - added compile-time switch _FILE_OFFSET_BITS=64 so that output files
+     are not truncated at 2GB.
+
+------------------------------------------------------------------------
+r5275 | jonesrt | 2009-06-05 12:28:09 -0400 (Fri, 05 Jun 2009) | 3 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/wc.f
+
+wc.f [rtj]
+   - enhancements to the interactive geant graphics macros in wc.kumac
+
+------------------------------------------------------------------------
+r5276 | jonesrt | 2009-06-05 12:43:06 -0400 (Fri, 05 Jun 2009) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/Makefile.orig
+
+Makefile.orig [rtj]
+   - added compile-time switch -D_FILE_OFFSET_BITS=64 to prevent truncation
+     of output files at 2GB.
+
+------------------------------------------------------------------------
+r5277 | davidl | 2009-06-06 22:54:46 -0400 (Sat, 06 Jun 2009) | 1 line
+Changed paths:
+   D /trunk/src/programs/Analysis/plugins/trackeff_hists2/DEventProcessor_trackeff_hists.cc
+   D /trunk/src/programs/Analysis/plugins/trackeff_hists2/DEventProcessor_trackeff_hists.h
+   A /trunk/src/programs/Analysis/plugins/trackeff_hists2/DEventProcessor_trackeff_hists2.cc (from /trunk/src/programs/Analysis/plugins/trackeff_hists2/DEventProcessor_trackeff_hists.cc:5209)
+   A /trunk/src/programs/Analysis/plugins/trackeff_hists2/DEventProcessor_trackeff_hists2.h (from /trunk/src/programs/Analysis/plugins/trackeff_hists2/DEventProcessor_trackeff_hists.h:5209)
+   D /trunk/src/programs/Analysis/plugins/trackeff_hists2/track.h
+   A /trunk/src/programs/Analysis/plugins/trackeff_hists2/track2.h (from /trunk/src/programs/Analysis/plugins/trackeff_hists2/track.h:5209)
+
+Rename class to DEventProcessor_trackeff_hists2 since using this with the trackeff_hists plugin also defines DEventProcessor_trackeff_hists as a ROOT dictionary causing conflicts.
+------------------------------------------------------------------------
+r5278 | davidl | 2009-06-06 22:57:34 -0400 (Sat, 06 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trackeff_hists/DEventProcessor_trackeff_hists.cc
+   M /trunk/src/programs/Analysis/plugins/trackeff_hists/DEventProcessor_trackeff_hists.h
+   M /trunk/src/programs/Analysis/plugins/trackeff_hists/Makefile
+   D /trunk/src/programs/Analysis/plugins/trackeff_hists/dchit.h
+   M /trunk/src/programs/Analysis/plugins/trackeff_hists/track.h
+
+Updated trackeff_hists to make it more usefuland take advantage of truth matching that is now being done automatically in the lower factories.
+------------------------------------------------------------------------
+r5282 | davidl | 2009-06-06 23:52:55 -0400 (Sat, 06 Jun 2009) | 1 line
+Changed paths:
+   A /trunk/src/programs/Analysis/plugins/trackeff_hists/track_info.h
+
+Forgot to add track_info.h
+------------------------------------------------------------------------
+r5287 | kornicer | 2009-06-08 10:38:08 -0400 (Mon, 08 Jun 2009) | 4 lines
+Changed paths:
+   M /trunk/src/libraries/FCAL/DFCALCluster.h
+   M /trunk/src/libraries/FCAL/DFCALCluster_factory.cc
+   M /trunk/src/libraries/FCAL/DFCALPhoton_factory.cc
+
+DFCALCLuster.h: defined a new container for hits associated with a cluster, getHits functions that 
+                were returning arrays of hits properties are replaced by one method 
+                to obtain vector of cluster-hits.
+
+------------------------------------------------------------------------
+r5288 | marki | 2009-06-08 14:24:49 -0400 (Mon, 08 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/src/Makefile
+
+Add LOCAL_HALLD_HOME variable, if defined, overide user's environment and use local version of halld stuff.
+------------------------------------------------------------------------
+r5289 | staylor | 2009-06-10 08:10:47 -0400 (Wed, 10 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+(1) Created method for propagating the state vector and jacobian and multiple-scattering matrices for the portion of forward going tracks that have cdc hits.  This cleans up the code so that different regions in z can have different step sizes depending on the material.  (2) Use forward parameterization for CDC-only tracks with theta<50 degrees.
+------------------------------------------------------------------------
+r5291 | staylor | 2009-06-10 18:05:41 -0400 (Wed, 10 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+(0) Move currently unused routines to the end of the file. (1) Add routine to use the forward parameterization for very backward-going CDC tracks.  Commented out because it does not work yet... (2) Allow the forward trajectory deques to shrink if the new trajectory is smaller in length than the previous one.  Every so often some junk was left over from the previous iteration... This happened fairly rarely so it was hard to track down.
+------------------------------------------------------------------------
+r5297 | staylor | 2009-06-12 18:11:41 -0400 (Fri, 12 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+Put in checks for NaNs and infs and add code to try to avoid division-by-zero-like problems when the magnitude of the momentum gets too small.  comment out covariance matrix C in the central trajectory deque.
+------------------------------------------------------------------------
+r5298 | staylor | 2009-06-15 14:27:22 -0400 (Mon, 15 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+Added method for getting the charge forthe fitted track.
+------------------------------------------------------------------------
+r5299 | staylor | 2009-06-15 15:40:31 -0400 (Mon, 15 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+
+Added more checks on the size of the trajectory deques and (for forward-going tracks) the radial positions of the trajectory points.
+------------------------------------------------------------------------
+r5300 | jonesrt | 2009-06-16 09:15:00 -0400 (Tue, 16 Jun 2009) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Utilities/hddm/hddm-c.cpp
+
+hddm-c.cpp [rtj]
+   - changes to the hddm io library to support large hddm files (>2GB),
+     required because of a 32-bit file offset limitation in the xdr library.
+
+------------------------------------------------------------------------
+r5301 | jonesrt | 2009-06-16 09:29:50 -0400 (Tue, 16 Jun 2009) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Utilities/hddm/hddm-c.cpp
+
+hddm-c.cpp [rtj]
+   - wrap the definition of _FILE_OFFSET_BITS in hddm_X.c in #ifndef/#endif
+     to prevent a conflict if the user already has defined it.
+
+------------------------------------------------------------------------
+r5304 | jonesrt | 2009-06-16 10:02:32 -0400 (Tue, 16 Jun 2009) | 29 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/Makefile.orig
+   A /trunk/src/programs/Simulation/HDGeant/gdrawp.F
+   A /trunk/src/programs/Simulation/HDGeant/gtnext.F
+   D /trunk/src/programs/Simulation/HDGeant/gtrack.F
+
+gtrack.F [deleted,rtj]
+   - this core geant tracking routine was previously modified by me as
+     as workaround for a problem where certain tracks produced no hits.
+     The fix just moved the problem elsewhere and did not solve it.  I
+     am rolling it back here, and installing a real fix in gtnext (see below).
+gtnext.F [added,rtj]
+   - this core geant tracking routine looks ahead along a track to see
+     how far the track goes before it intersects the next volume.  Geant
+     uses slightly different ways of computing boundary coordinates in
+     gtnext and gtmedi, statement re-orderings that are mathematically
+     equivalent, but subject to different floating-point rounding errors.
+     Because of this, if a starting point for a step begins very close to
+     a boundary crossing, sometimes gtmedi reports the current point to be
+     just outside a boundary, whereas gtnext sees the boundary to lie just
+     behind the current point and reports a very large distance to the next
+     crossing.  As a result, some tracks seem to pass right through daughter
+     volumes without seeing them, and producing no hits.  A check has been
+     added to gtnext to prevent this situation from occurring.
+gdrawp.F [added,rtj]
+   - the core geant drawing function seems not to be aware that X11
+     graphics primitives draw on a surface with pixel coordinates in the
+     range [-32768,32767].  For drawings with a large zoom factor, this
+     causes wrap-around of distant geometry features and results in a
+     very confusing image.  This fix is not perfect, but it eliminates
+     most of the scribble.
+Makefile.orig [rtj]
+   - maintenance fix to the standalone makefile, bringing it up to date with
+     other changes to the simulation library (GetDOCA, new calibdb, etc.).
+
+------------------------------------------------------------------------
+r5305 | staylor | 2009-06-16 11:08:31 -0400 (Tue, 16 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.cc
+
+Perform a wire-based pass before the time-based final fit
+------------------------------------------------------------------------
+r5310 | davidl | 2009-06-19 09:27:41 -0400 (Fri, 19 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/src/BMS/Makefile.common
+
+Add -D_FILE_OFFSET_BITS=64 to every C/C++ file compiled. This does NOT add it to the link command which I believe is not needed.
+------------------------------------------------------------------------
+r5311 | davidl | 2009-06-19 17:21:26 -0400 (Fri, 19 Jun 2009) | 11 lines
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DRootGeom.cc
+   M /trunk/src/libraries/HDGEOMETRY/DRootGeom.h
+
+-Add lookup table option to DRootGeom::FindMat in order to avoid 
+ multi-threading option. This also may give better results since
+ it averages material from 80 points for every table entry
+
+-Added mutex protection to low-level material access so that it
+ can be used with multiple threads, albeit with significant slow-
+ down.
+
+The default option is to use the original routine (with mutex)
+and not the table for now until further testing is done.
+
+------------------------------------------------------------------------
+r5312 | davidl | 2009-06-21 09:42:36 -0400 (Sun, 21 Jun 2009) | 14 lines
+Changed paths:
+   M /trunk/src/libraries/DANA/DApplication.cc
+   M /trunk/src/libraries/HDGEOMETRY/DRootGeom.cc
+   M /trunk/src/libraries/HDGEOMETRY/DRootGeom.h
+   A /trunk/src/programs/Utilities/mkMaterialMap
+   A /trunk/src/programs/Utilities/mkMaterialMap/Makefile
+   A /trunk/src/programs/Utilities/mkMaterialMap/mkMaterialMap.cc
+   A /trunk/src/programs/Utilities/mkMaterialMap/radlen_vs_r_vs_z.C
+
+Improvements to the material map system for accessing material information needed for tracking.
+
+- Added mkMaterialMap utility to generate a material_map file suitable
+  for reading through the current file-based calibration system
+
+- Modified DRootGeom to attempt reading of material map from calibration
+  system first and only generate it dynamically if that fails.
+
+- Default function for FindMat(...) is now to access from table. One
+  needs to call FindMatLL to use the original routine.
+
+Preliminary tests indicate greater than 25% speedup in overall tracking rate
+and the system now works with multiple threads without crashing.
+
+------------------------------------------------------------------------
+r5313 | davidl | 2009-06-21 10:25:00 -0400 (Sun, 21 Jun 2009) | 1 line
+Changed paths:
+   A /trunk/src/programs/Utilities/mkMaterialMap/density_vs_r_vs_z.C
+   A /trunk/src/programs/Utilities/mkMaterialMap/material2root.cc
+   M /trunk/src/programs/Utilities/mkMaterialMap/radlen_vs_r_vs_z.C
+
+Added material2root utility for making ROOT file with 2D histos of density, radlen, ... Added macro to plot density maps.
+------------------------------------------------------------------------
+r5315 | staylor | 2009-06-22 09:05:27 -0400 (Mon, 22 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+
+Clean up unused variables.  Try a different schedule for the annealing. Some other minor edits.
+------------------------------------------------------------------------
+r5316 | davidl | 2009-06-22 10:13:43 -0400 (Mon, 22 Jun 2009) | 8 lines
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.cc
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.h
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMapSpoiled.cc
+
+Modifications related to solenoidal field maps:
+
+- Changed default field map to solenoid_1500_20090312-2
+
+- Modified z-offset to no longer subtract off 26" as was need for TOSCA maps, but not the ANSYS maps
+
+- Fixed typo in configuration parameter BFIELD:R_OMEGA which is used for spoiled b-field studies.
+
+------------------------------------------------------------------------
+r5318 | staylor | 2009-06-23 10:32:25 -0400 (Tue, 23 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/FDC/DFDCSegment_factory.cc
+
+Check for duplicate entries in the segment and refine code for including hits on wires in a given layer adjacent to wires already in the segment.  In a multi-track environment merely checking for a hit in a wire +-1 unit from a wire already in a segment is not sufficient.
+------------------------------------------------------------------------
+r5319 | staylor | 2009-06-23 18:36:48 -0400 (Tue, 23 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+
+Fixed typo in backward matching part of GetTrackMatch.
+------------------------------------------------------------------------
+r5320 | davidl | 2009-06-24 09:35:24 -0400 (Wed, 24 Jun 2009) | 6 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/GetDOCA.cc
+   M /trunk/src/programs/Simulation/HDGeant/Makefile.bms
+   M /trunk/src/programs/Simulation/HDGeant/Makefile.orig
+   M /trunk/src/programs/Simulation/HDGeant/hitCDC.c
+
+Back out modification to allow calculation of CDC DOCA values
+with higher precision using the reconstruction TRACKING library.
+
+This is commented out for now to make retrieval of the functionality
+a little easier in case it's needed in the near future.
+
+------------------------------------------------------------------------
+r5321 | staylor | 2009-06-25 18:13:45 -0400 (Thu, 25 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
+
+(1) Changed the formula setting the matching cut for linking segments together so that the cut distance is reasonable for low momentum tracks -- for multi-track events having the cut be too wide is counter-productive (2) Fixed bug in associating segments to track candidates that only have hits in package 4. (3) remamed diagnostic histogram so as not to be conflict with another similar histogram in DTrackCandidate_factory.
+------------------------------------------------------------------------
+r5322 | staylor | 2009-06-29 08:35:43 -0400 (Mon, 29 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+
+Try to plug holes in segment matching and adding of associated objects to the track candidates.
+------------------------------------------------------------------------
+r5328 | staylor | 2009-07-02 14:55:06 -0400 (Thu, 02 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/FDC/DFDCSegment_factory.h
+
+Add flag indicating that there is a valid hit in the start counter for determining a crude start time.
+------------------------------------------------------------------------
+r5329 | staylor | 2009-07-02 14:58:54 -0400 (Thu, 02 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/FDC/DFDCSegment_factory.cc
+
+(1) Reinstate code for determining a crude start time for drift data using the start counter.  If the start counter does not fire, fall back on the TOF. (2) Cleanup and simplification of the code determining the dip angle and z-vertex position for each segment.
+------------------------------------------------------------------------
+r5331 | staylor | 2009-07-03 13:46:43 -0400 (Fri, 03 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+If there is only one cdc intersection point with z information from real cdc data -- not the fake point at the target, bypass the linear regression to find tanl and do a simple straight line calculation assuming that the particle came from the center of the target.  The previous version was doing a bunch of unnecessary calculations.  Otherwise, if the linear regression fit produced a z-vertex position beyond the extent of the target, fall back on the histogramming method.
+------------------------------------------------------------------------
+r5332 | staylor | 2009-07-03 13:58:08 -0400 (Fri, 03 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+
+Made several changes to try to improve the matching efficiency.  Added code to try to match stray segments in package 1 if segments in more downstream packages were matched together such that a helical fit to the combined set of hits may have produced sufficiently good track parameters to enable matching where it failed before.  In the matching routine itself, allow for the possibility that the particle underwent a full rotation before it hit the particular package we are trying to match to, in which case, if the particle came from near the center of the target, the initial guess for the dip angle would be wrong.
+------------------------------------------------------------------------
+r5333 | staylor | 2009-07-03 14:06:43 -0400 (Fri, 03 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DHelicalFit.cc
+
+In the Riemann fit, simplify calcuation of vertex position and allow for the possibility that to get to the target (0,0) position from the last measurement in the list, one might have to take the long path around the circle instead of the short path determined from the chord.  If the z vertex is beyond the extent of the target, do a simple calculation assuming the particle came from the center of the target.  I am not sure this last change is optimum.
+------------------------------------------------------------------------
+r5335 | leverinb | 2009-07-06 15:23:21 -0400 (Mon, 06 Jul 2009) | 170 lines
+Changed paths:
+   M /trunk/src/libraries/BCAL/DBCALPhoton_factory.cc
+
+/*
+ *  DBCALPhoton_factory.cc
+ *  Hall D
+ *
+ *  Created by Matthew Shepherd on 7/23/07.
+ *
+ */
+
+#include "BCAL/DBCALPhoton_factory.h"
+#include "BCAL/DBCALShower.h"
+#include "BCAL/DBCALGeometry.h"
+//#include <iostream>
+//using namespace std;
+
+DBCALPhoton_factory::DBCALPhoton_factory()
+{
+
+     
+    m_scaleZ_p0GE =  8.25618e-01;
+    m_scaleZ_p1GE =  9.22446e-02;
+    m_scaleZ_p2GE =  1.27379e02;
+    m_scaleZ_p3GE = -1.21171e02;
+     
+    m_nonlinZ_p0GE =  5.0833e-02;
+    m_nonlinZ_p1GE = -2.66106e-02;
+    m_nonlinZ_p2GE =  5.22213e01;    
+    m_nonlinZ_p3GE =  6.88344e01;
+    
+    m_linZ_p0GE = -5.26475e-03;
+    m_linZ_p1GE = -2.47419e-02;
+    m_linZ_p2GE =  4.19082e01;    
+    m_linZ_p3GE =  6.69810e01;
+    
+   
+   //scaling parameter set for Z>370 (end of module)
+
+    m_scaleZ_p0 =  0.8793;
+    //    m_scaleZ_p1 =  3.3;
+    m_scaleZ_p2 =  411.9;
+    m_scaleZ_p3 =  10.04;
+    //   m_scaleZ_p4 = 0.0;
+     
+    m_nonlinZ_p0 =  0.02611;
+    //    m_nonlinZ_p1 = 1000.0;
+    m_nonlinZ_p2 =  414.2;    
+    m_nonlinZ_p3 = 10.24;
+
+    m_linZ_p0 = -2.71e-03;
+    m_linZ_p1 = -10.0;
+    m_linZ_p2 = 473.6;
+    m_linZ_p3 = 22.68;
+
+}
+
+//------------------
+// brun
+//------------------
+jerror_t DBCALPhoton_factory::brun(JEventLoop *loop, int runnumber)
+{
+    
+    vector<const DBCALGeometry*> bcalGeomVect;
+    eventLoop->Get( bcalGeomVect );
+    const DBCALGeometry& bcalGeom = *(bcalGeomVect[0]);
+
+    m_bcalIR = bcalGeom.BCALINNERRAD;
+    m_zTarget = 65;                    // global target position -- should come from database!
+    
+    return NOERROR;
+}
+
+//------------------
+// evnt
+//------------------
+jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
+{
+    
+    vector< const DBCALShower* > showerVect;
+    loop->Get( showerVect );
+    
+    for( vector< const DBCALShower* >::iterator showItr = showerVect.begin();
+         showItr != showerVect.end();
+         ++showItr ){
+                
+        double xSh = (**showItr).x;
+        double ySh = (**showItr).y;
+        double zSh = (**showItr).z;
+	//     int nCell = (**showItr).N_cell;        
+
+        // get z where shower enters BCAL (this corresponds to generated z
+        // in tuning MC)
+        double zEntry = zSh - ( ( zSh - m_zTarget ) * 
+                                ( 1 - m_bcalIR / ( sqrt( xSh * xSh + ySh * ySh ) ) ) ); 
+        
+        // calibrate energy:
+        // Energy calibration has a z dependence -- the
+        // calibration comes from fitting E_rec / E_gen to scale * E_gen^nonlin
+        // for slices of z.  These fit parameters (scale and nonlin) are then plotted 
+        // as a function of z and fit.
+    
+  if( zEntry < 370.0 ) {
+ scale = m_scaleZ_p0GE * (1 + m_scaleZ_p1GE *(exp( -0.5 *(zEntry - m_scaleZ_p2GE )* (zEntry - m_scaleZ_p2GE ) / (m_scaleZ_p3GE * m_scaleZ_p3GE)   ) ) ) ;
+
+
+  nonlin =( m_nonlinZ_p0GE  + m_nonlinZ_p1GE *(exp( -0.5 *(zEntry - m_nonlinZ_p2GE )* (zEntry - m_nonlinZ_p2GE ) / (m_nonlinZ_p3GE * m_nonlinZ_p3GE)   ) ) ) ;
+
+
+  lin = ( m_linZ_p0GE  + m_linZ_p1GE *(exp( -0.5 *(zEntry - m_linZ_p2GE )* (zEntry - m_linZ_p2GE ) / (m_linZ_p3GE * m_linZ_p3GE)   ) ) ) ;
+
+	//	nonlin = 0.0; // fixed value for debug
+	//	   lin = 0.0; // fixed value for debug
+   	//       scale = 1.0; // fixed value for debug
+  }
+  
+        if( zEntry >= 370.0 ) {
+            scale = m_scaleZ_p0 * (1 - (exp( -0.5 *(zEntry - m_scaleZ_p2 )* (zEntry - m_scaleZ_p2 ) / (m_scaleZ_p3 * m_scaleZ_p3)   ) ) ) ;
+
+  nonlin = m_nonlinZ_p0 - exp( -0.5 *(zEntry - m_nonlinZ_p2 )* (zEntry - m_nonlinZ_p2 ) / (m_nonlinZ_p3 * m_nonlinZ_p3)   )  ;
+
+
+  lin = m_linZ_p0 * (1 - m_linZ_p1 *(exp( -0.5 *(zEntry - m_linZ_p2 )* (zEntry - m_linZ_p2 ) / (m_linZ_p3 * m_linZ_p3)   ) ) ) ;
+
+
+ //  cout << scale << ' ' << nonlin << ' ' << lin << endl;    
+	}
+
+
+	// if( zEntry < m_zTarget ) zEntry = m_zTarget;
+
+        //end of BCAL calibration        
+
+
+        
+        // now turn E_rec into E_gen -->> E_gen = ( E_rec / scale ) ^ ( 1 / ( 1 + nonlin ) )
+        double energy = pow( ((**showItr).E - lin ) / scale, 1 / ( 1 + nonlin ) );
+        
+        
+        double pScale = energy / 
+            sqrt( xSh * xSh + ySh * ySh + ( zSh - m_zTarget ) * ( zSh - m_zTarget ) );
+        
+        DBCALPhoton* photon = new DBCALPhoton( (**showItr).id );
+        
+        photon->setLorentzMomentum( DLorentzVector( xSh * pScale, 
+                                                    ySh * pScale, 
+                                                    ( zSh - m_zTarget ) * pScale, 
+                                                    energy ) );
+        
+        photon->setShowerPosition( DVector3( xSh, ySh, zSh ) );
+        
+        photon->setFitLayPoint( DVector3( (**showItr).Apx_x,
+                                          (**showItr).Apx_y,
+                                          (**showItr).Apx_z ) );
+        
+        photon->setFitLayPointErr( DVector3( (**showItr).error_Apx_x,
+                                             (**showItr).error_Apx_y,
+                                             (**showItr).error_Apx_z ) );
+
+        photon->setFitLaySlope( DVector3( (**showItr).Cx,
+                                          (**showItr).Cy,
+                                          (**showItr).Cz ) );
+        
+        photon->setFitLaySlopeErr( DVector3( (**showItr).error_Cx,
+                                             (**showItr).error_Cy,
+                                             (**showItr).error_Cz ) );
+        
+        _data.push_back( photon );
+    }
+    
+    return NOERROR;
+}
+
+------------------------------------------------------------------------
