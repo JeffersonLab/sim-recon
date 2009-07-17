@@ -21,7 +21,7 @@ using namespace jana;
 //------------------
 DPhoton_factory_HDParSim::DPhoton_factory_HDParSim(void)
 {
-	res = NULL;
+	res = new DTrackingResolutionGEANTphoton();
 }
 
 //------------------
@@ -29,7 +29,6 @@ DPhoton_factory_HDParSim::DPhoton_factory_HDParSim(void)
 //------------------
 jerror_t DPhoton_factory_HDParSim::init(void)
 {
-	res = new DTrackingResolutionGEANTphoton();
 
 	return NOERROR;
 }

@@ -15,7 +15,7 @@
 
 class DParticle_factory_HDParSim:public jana::JFactory<DParticle>{
 	public:
-		DParticle_factory_HDParSim(){};
+		DParticle_factory_HDParSim();
 		~DParticle_factory_HDParSim(){};
 		const char* Tag(void){return "HDParSim";}
 

@@ -12,6 +12,8 @@
 #include <cmath>
 using namespace std;
 
+#include <JANA/jerror.h>
+
 #include "DTrackingResolutionGEANTphoton.h"
 #include "getwebfile.h"
 
@@ -44,7 +46,8 @@ DTrackingResolutionGEANTphoton::DTrackingResolutionGEANTphoton()
 	cout<<"Opened \""<<file->GetName()<<"\""<<endl;
 
 	// Read pt resolution histogram
-	file->GetObject("dE_over_E_vs_p_vs_theta", E_res_hist);
+	E_res_hist = (TH2D*)gROOT->FindObject("dE_over_E_vs_p_vs_theta");
+	if(!E_res_hist)file->GetObject("dE_over_E_vs_p_vs_theta", E_res_hist);
 	if(!E_res_hist){
 		cout<<endl;
 		cout<<"Couldn't find resolution histogram \"dpt_over_pt_vs_p_vs_theta\""<<endl;
@@ -54,7 +57,8 @@ DTrackingResolutionGEANTphoton::DTrackingResolutionGEANTphoton()
 	}
 
 	// Read theta resolution histogram
-	file->GetObject("dtheta_vs_p_vs_theta", theta_res_hist);
+	theta_res_hist = (TH2D*)gROOT->FindObject("dtheta_vs_p_vs_theta");
+	if(!theta_res_hist)file->GetObject("dtheta_vs_p_vs_theta", theta_res_hist);
 	if(!theta_res_hist){
 		cout<<endl;
 		cout<<"Couldn't find resolution histogram \"dtheta_vs_p_vs_theta\""<<endl;
@@ -64,7 +68,8 @@ DTrackingResolutionGEANTphoton::DTrackingResolutionGEANTphoton()
 	}
 
 	// Read phi resolution histogram
-	file->GetObject("dphi_vs_p_vs_theta", phi_res_hist);
+	phi_res_hist = (TH2D*)gROOT->FindObject("dphi_vs_p_vs_theta");
+	if(!phi_res_hist)file->GetObject("dphi_vs_p_vs_theta", phi_res_hist);
 	if(!phi_res_hist){
 		cout<<endl;
 		cout<<"Couldn't find resolution histogram \"dphi_vs_p_vs_theta\""<<endl;
@@ -74,7 +79,8 @@ DTrackingResolutionGEANTphoton::DTrackingResolutionGEANTphoton()
 	}
 
 	// Read in efficiency histogram
-	file->GetObject("eff_vs_p_vs_theta", efficiency_hist);
+	efficiency_hist = (TH2D*)gROOT->FindObject("eff_vs_p_vs_theta");
+	if(!efficiency_hist)file->GetObject("eff_vs_p_vs_theta", efficiency_hist);
 	if(!efficiency_hist){
 		cout<<endl;
 		cout<<"Couldn't find efficiency histogram \"eff_vs_p_vs_theta\""<<endl;

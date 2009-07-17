@@ -28,13 +28,19 @@ void InitPlugin(JApplication *app){
 }
 } // "C"
 
+//------------------
+// DParticle_factory_HDParSim (Constructor)
+//------------------
+DParticle_factory_HDParSim::DParticle_factory_HDParSim()
+{
+	res = new DTrackingResolutionGEANT();
+}
 
 //------------------
 // init
 //------------------
 jerror_t DParticle_factory_HDParSim::init(void)
 {
-	res = new DTrackingResolutionGEANT();
 
 	return NOERROR;
 }

@@ -55,7 +55,8 @@ void DTrackingResolutionGEANT::ReadTableInfo(const char *fname, TableInfo &ti)
 	cout<<"Opened \""<<ti.file->GetName()<<"\""<<endl;
 
 	// Read pt resolution histogram
-	ti.file->GetObject("dpt_over_pt_vs_p_vs_theta", ti.pt_res_hist);
+	ti.pt_res_hist = (TH2D*)gROOT->FindObject("dpt_over_pt_vs_p_vs_theta");
+	if(!ti.pt_res_hist)ti.file->GetObject("dpt_over_pt_vs_p_vs_theta", ti.pt_res_hist);
 	if(!ti.pt_res_hist){
 		cout<<endl;
 		cout<<"Couldn't find resolution histogram \"dpt_over_pt_vs_p_vs_theta\""<<endl;
@@ -65,7 +66,8 @@ void DTrackingResolutionGEANT::ReadTableInfo(const char *fname, TableInfo &ti)
 	}
 
 	// Read theta resolution histogram
-	ti.file->GetObject("dtheta_vs_p_vs_theta", ti.theta_res_hist);
+	ti.theta_res_hist = (TH2D*)gROOT->FindObject("dtheta_vs_p_vs_theta");
+	if(!ti.theta_res_hist)ti.file->GetObject("dtheta_vs_p_vs_theta", ti.theta_res_hist);
 	if(!ti.theta_res_hist){
 		cout<<endl;
 		cout<<"Couldn't find resolution histogram \"dtheta_vs_p_vs_theta\""<<endl;
@@ -75,7 +77,8 @@ void DTrackingResolutionGEANT::ReadTableInfo(const char *fname, TableInfo &ti)
 	}
 
 	// Read phi resolution histogram
-	ti.file->GetObject("dphi_vs_p_vs_theta", ti.phi_res_hist);
+	ti.phi_res_hist = (TH2D*)gROOT->FindObject("dphi_vs_p_vs_theta");
+	if(!ti.phi_res_hist)ti.file->GetObject("dphi_vs_p_vs_theta", ti.phi_res_hist);
 	if(!ti.phi_res_hist){
 		cout<<endl;
 		cout<<"Couldn't find resolution histogram \"dphi_vs_p_vs_theta\""<<endl;
@@ -85,7 +88,8 @@ void DTrackingResolutionGEANT::ReadTableInfo(const char *fname, TableInfo &ti)
 	}
 
 	// Read in efficiency histogram
-	ti.file->GetObject("eff_vs_p_vs_theta", ti.efficiency_hist);
+	ti.efficiency_hist = (TH2D*)gROOT->FindObject("eff_vs_p_vs_theta");
+	if(!ti.efficiency_hist)ti.file->GetObject("eff_vs_p_vs_theta", ti.efficiency_hist);
 	if(!ti.efficiency_hist){
 		cout<<endl;
 		cout<<"Couldn't find efficiency histogram \"eff_vs_p_vs_theta\""<<endl;
