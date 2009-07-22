@@ -9,6 +9,7 @@ using namespace std;
 
 #include <DVector3.h>
 #include <HDGEOMETRY/DRootGeom.h>
+#include <HDGEOMETRY/DGeometry.h>
 
 #include <TROOT.h>
 #include <TFile.h>
@@ -28,6 +29,7 @@ int main(int narg, char *argv[])
 
 	DApplication *dapp = new DApplication(narg, argv);
 	DRootGeom *rg = new DRootGeom(dapp);
+	DGeometry *geom = dapp->GetDGeometry(9999);
 
 	TH2D *radlen_LL = new TH2D("radlen_LL", "Radiation Length", 1500, -100.0, 650.0, 500, 0.0, 125.0);
 	TH2D *radlen_table = (TH2D*)radlen_LL->Clone("radlen_table");
@@ -39,7 +41,7 @@ int main(int narg, char *argv[])
 	TH2D *Z_table = (TH2D*)radlen_LL->Clone("Z_table");
 	TH2D *density_LL = (TH2D*)radlen_LL->Clone("density_LL");
 	TH2D *density_table = (TH2D*)radlen_LL->Clone("density_table");
-	
+
 	for(int ir = 1; ir<=radlen_LL->GetNbinsY(); ir++){
 		double r = radlen_LL->GetYaxis()->GetBinCenter(ir);
 		for(int iz = 1; iz<=radlen_LL->GetNbinsX(); iz++){
@@ -54,7 +56,8 @@ int main(int narg, char *argv[])
 			Z_LL->Fill(z, r, Z);
 			density_LL->Fill(z, r, density);
 
-			rg->FindMatTable(pos, density, A, Z, RadLen);
+			//rg->FindMatTable(pos, density, A, Z, RadLen);
+			geom->FindMat(pos, density, A, Z, RadLen);
 			radlen_table->Fill(z, r, RadLen);
 			A_table->Fill(z, r, A);
 			Z_table->Fill(z, r, Z);
@@ -73,7 +76,8 @@ int main(int narg, char *argv[])
 			rg->FindMatLL(pos, density, A, Z, RadLen);
 			radlen_LL_xy->Fill(x, y, RadLen);
 
-			rg->FindMatTable(pos, density, A, Z, RadLen);
+			//rg->FindMatTable(pos, density, A, Z, RadLen);
+			geom->FindMat(pos, density, A, Z, RadLen);
 			radlen_table_xy->Fill(x, y, RadLen);
 		}
 	}

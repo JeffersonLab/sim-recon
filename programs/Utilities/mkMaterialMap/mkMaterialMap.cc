@@ -59,15 +59,15 @@ int main(int narg, char *argv[])
 
 	double r0 = rmin;
 	double z0 = zmin;
-	double dr = (rmax-rmin)/(double)Nr;
-	double dz = (zmax-zmin)/(double)Nz;
+	double dr = (rmax-rmin)/(double)(Nr);
+	double dz = (zmax-zmin)/(double)(Nz);
 	Material **MatTable = new Material*[Nr];
 	Material *buff = new Material[Nr*Nz];
 	for(int ir=0; ir<Nr; ir++){
-		double r = r0 + (double)ir*dr;
+		double r = r0 + dr/2.0 + (double)ir*dr;
 		MatTable[ir]=&buff[ir*Nz];
 		for(int iz=0; iz<Nz; iz++){
-			double z = z0 + (double)iz*dz;
+			double z = z0 + dz/2.0 + (double)iz*dz;
 			
 			// Loop over points in phi, r, and z and add up material
 			double d_r = dr/(double)n_r;
@@ -136,9 +136,9 @@ int main(int narg, char *argv[])
 
 	of<<"#  r	z	A	Z	density radlen rhoZ_overA rhoZ_overA_logI"<<endl;
 	for(int ir=0; ir<Nr; ir++){
-		double r = r0 + (double)ir*dr;
+		double r = r0 + dr/2.0 + (double)ir*dr;
 		for(int iz=0; iz<Nz; iz++){
-			double z = z0 + (double)iz*dz;
+			double z = z0 + dz/2.0 + (double)iz*dz;
 			
 			Material &mat = MatTable[ir][iz];
 			
