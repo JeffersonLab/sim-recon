@@ -216,7 +216,7 @@ jerror_t DKalmanFilter::CalcDeriv(double z,double dz,DMatrix S, double dEdx,
   double factor=sqrt(1.+tx*tx+ty*ty);
 
   //B-field at (x,y,z)
-  double Bx,By,Bz;
+  double Bx=0.,By=0.,Bz=-2.;
   bfield->GetField(x,y,z, Bx, By, Bz);
   
   D(state_x,0)=tx
@@ -247,7 +247,9 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double z,double dz,DMatrix S,
   double factor=sqrt(1.+tx*tx+ty*ty);
 
   //B-field and field gradient at (x,y,z)
-  double Bx,By,Bz,dBxdx,dBxdy,dBxdz,dBydx,dBydy,dBydz,dBzdx,dBzdy,dBzdz;
+  double Bx=0.,By=0.,Bz=-2.;
+  double dBxdx=0.,dBxdy=0.,dBxdz=0.,dBydx=0.,dBydy=0.;
+  double dBydz=0.,dBzdx=0.,dBzdy=0.,dBzdz=0.;
   bfield->GetField(x,y,z, Bx, By, Bz);
   bfield->GetFieldGradient(x,y,z,dBxdx,dBxdy,dBxdz,dBydx,dBydy,dBydz,dBzdx,
 			   dBzdy,dBzdz);
@@ -447,7 +449,8 @@ jerror_t DKalmanFilter::PropagateForwardCDC(int length,int &index,double z,
   // State at current position 
   temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
   temp.s=len;  
-   
+  temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
+
   // get material properties from the Root Geometry
   if (fdchits.size()==0 && temp.pos.z()>endplate_z){
     temp.density=temp.A=temp.Z=temp.X0=0.;
@@ -554,12 +557,13 @@ jerror_t DKalmanFilter::SwimCentral(DVector3 &pos,DMatrix &Sc){
     double cosphi=cos(Sc(state_phi,0));
     
     // Magnetic field
-    DVector3 B;
+    DVector3 B(0.,0.,-2.);
     bfield->GetField(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
     double Bz_=fabs(B(2));
     DVector3 dpos1=central_traj[m-1].pos-central_traj[m].pos;
 
     // Propagate the state through the field
+    ds=central_traj[m-1].s-central_traj[m].s;
     FixedStep(pos,ds,Sc,dedx);
 
     // update D
@@ -691,6 +695,7 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc){
     temp.pos=pos;	
     temp.s=len;
     temp.S= new DMatrix(Sc);	
+    temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
     
     // Check if we are within start counter outer radius
     if (pos.Perp()<9.0) ds=0.1;
@@ -817,7 +822,8 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
       temp.s=len;
       temp.h_id=0;
       temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
-      
+      temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
+
       // get material properties from the Root Geometry
       if (RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
 	  !=NOERROR){
@@ -900,6 +906,7 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
       
       temp.s=len;
       temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
+      temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
       //double r=temp.pos.Perp();
 
       // get material properties from the Root Geometry
@@ -991,6 +998,7 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
   //my_i=forward_traj_length-i;
   temp.s=len;
   temp.pos.SetXYZ(S(state_x,0),S(state_y,0),newz); 
+  temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
 
   // get material properties from the Root Geometry
   if(RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)==NOERROR){
@@ -1069,6 +1077,7 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S){
     temp.s=len;
     temp.pos.SetXYZ(S(state_x,0),S(state_y,0),newz); 
     temp.h_id=0;
+    temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
 
     // get material properties from the Root Geometry
     if(RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
@@ -1287,7 +1296,8 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double ds,DVector3 pos,
   double q=pt*q_over_pt;
  
   //field gradient at (x,y,z)
-  double dBxdx,dBxdy,dBxdz,dBydx,dBydy,dBydz,dBzdx,dBzdy,dBzdz;
+  double dBxdx=0.,dBxdy=0.,dBxdz=0.,dBydx=0.,dBydy=0.,dBydz=0.;
+  double dBzdx=0.,dBzdy=0.,dBzdz=0.;
   bfield->GetFieldGradient(pos.x(),pos.y(),pos.z(),dBxdx,dBxdy,dBxdz,dBydx,
 			   dBydy,dBydz,dBzdx,dBzdy,dBzdz);
   // Derivative of S with respect to s
@@ -1391,7 +1401,7 @@ jerror_t DKalmanFilter::FixedStep(DVector3 &pos,double ds,DMatrix &S,
   DVector3 dpos1,dpos2,dpos3,dpos4;
   
   // Magnetic field
-  DVector3 B;
+  DVector3 B(0.,0.,-2.);
   bfield->GetField(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
 
   CalcDeriv(0.,pos,dpos1,B,S,dEdx,D1);
@@ -1441,7 +1451,7 @@ jerror_t DKalmanFilter::StepJacobian(DVector3 pos, DVector3 wire_orig,
    // charge
   double q=(S(state_q_over_pt,0)>0)?1.:-1.;
   // Magnetic field
-  DVector3 B;
+  DVector3 B(0.,0.,-2.);
   bfield->GetField(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
   double Bz_=fabs(B.z());
   double qpt=1./S(state_q_over_pt,0);
@@ -2179,6 +2189,7 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     Sc(state_phi,0)=phi_;
     Sc(state_tanl,0)=tanl_;
     Sc(state_z,0)=z_;  
+    Sc(state_D,0)=0.;
 
     //C0(state_z,state_z)=1.;
     C0(state_z,state_z)=2.0;
@@ -2192,8 +2203,8 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
 
     // Initialization
     Cc=C0;
-    DMatrix Scbest(Sc),Sclast(Sc);
-    DMatrix Ccbest(Cc),Cclast(Cc);
+    DMatrix Sclast(Sc);
+    DMatrix Cclast(Cc);
     DVector3 pos0=pos;
     DVector3 best_pos=pos;
   
@@ -2877,7 +2888,7 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
 	double qpt=1./Sc(state_q_over_pt,0);
 	double sinphi=sin(Sc(state_phi,0));
 	double cosphi=cos(Sc(state_phi,0));
-	double Bx,By,Bz;
+	double Bx=0.,By=0.,Bz=-2.;
 	bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
 	double Bz_=fabs(Bz);
 	
@@ -3624,7 +3635,7 @@ jerror_t DKalmanFilter::ExtrapolateToVertex(DMatrix &S,DMatrix &C){
   if (r2>r2_old) dz*=-1.;
 
   // material properties
-  double Z,A,density,X0;
+  double Z=0.,A=0.,density=0.,X0=0.;
   DVector3 pos;  // current position along trajectory
 
   while (z>Z_MIN && sqrt(r2_old)<65. && z<Z_MAX){
@@ -3714,7 +3725,7 @@ jerror_t DKalmanFilter::ExtrapolateToVertex(DVector3 &pos,
     while (Sc(state_z,0)>Z_MIN && Sc(state_z,0)<Z_MAX  
 	   && r<R_MAX){ 
       // get material properties from the Root Geometry
-      double density,A,Z,X0;
+      double density=0.,A=0.,Z=0.,X0=0.;
       if (RootGeom->FindMat(pos,density,A,Z,X0)!=NOERROR){
 	_DBG_ << "Material error in ExtrapolateToVertex! " << endl;
 	break;
@@ -3798,6 +3809,7 @@ jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix &C){
       // State at current position 
       temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
       temp.s= len;
+      temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
       i++;
       my_i=forward_traj_cdc_length-i;
       if (i<=forward_traj_cdc_length){
@@ -3912,6 +3924,7 @@ jerror_t DKalmanFilter::SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix &C){
      // State at current position 
      temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
      temp.s= len;  
+     temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
      i++;
      my_i=forward_traj_cdc_length-i;
      if (i<=forward_traj_cdc_length){
@@ -4157,7 +4170,8 @@ jerror_t DKalmanFilter::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc,
     temp.pos=pos;	
     temp.s=len;
     temp.S= new DMatrix(Sc);	
- 
+    temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
+    
     // update path length
     len+=ds;
     
@@ -4284,6 +4298,7 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
       temp.s=len;
       temp.h_id=0;
       temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
+      temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
       i++;
       my_i=forward_traj_length-i;
       if (i<=forward_traj_length){
@@ -4377,6 +4392,7 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
       
       temp.s=len;
       temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
+      temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
       if (i<=forward_traj_length){
 	forward_traj[my_i].s=temp.s;
 	forward_traj[my_i].h_id=temp.h_id;
@@ -4477,7 +4493,8 @@ jerror_t DKalmanFilter::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
   i++;
   my_i=forward_traj_length-i;
   temp.s=len;
-  temp.pos.SetXYZ(S(state_x,0),S(state_y,0),newz); 
+  temp.pos.SetXYZ(S(state_x,0),S(state_y,0),newz);
+  temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
   if (i<=forward_traj_length){
     forward_traj[my_i].s=temp.s;
     forward_traj[my_i].h_id=temp.h_id;
