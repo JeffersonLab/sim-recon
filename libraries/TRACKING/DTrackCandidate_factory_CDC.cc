@@ -1352,10 +1352,8 @@ double DTrackCandidate_factory_CDC::DCDCSeed::FindAverageBz(JEventLoop *loop)
 	if(!loop)return 0.0;
 	DApplication *dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	if(!dapp)return 0.0;
-	const DGeometry *dgeom = dapp->GetDGeometry(100);
 
-	if(!dgeom)return 0.0;
-	DMagneticFieldMap *bfield = dgeom->GetBfield();
+	DMagneticFieldMap *bfield = dapp->GetBfield();
 	if(!bfield)return 0.0;
 
 	double Bz_sum=0.0;
