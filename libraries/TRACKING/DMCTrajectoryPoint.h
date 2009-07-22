@@ -11,7 +11,7 @@
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
 
-class DMCTrajectoryPoint:public JObject{
+class DMCTrajectoryPoint:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DMCTrajectoryPoint);
 		
@@ -34,7 +34,7 @@ class DMCTrajectoryPoint:public JObject{
 			AddString(items, "py", "%1.3f", py);
 			AddString(items, "pz", "%1.3f", pz);
 			AddString(items, "E", "%1.3f", E);
-			AddString(items, "dE", "%1.3f", dE);
+			AddString(items, "dE(MeV)", "%1.3f", 1000.0*dE);
 			AddString(items, "primary", "%d", primary_track);
 			AddString(items, "track", "%d", track);
 			AddString(items, "part", "%d", part);
