@@ -47,8 +47,10 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	this->bfield = bfield;
 	this->Nswim_steps = 0;
 	this->dist_to_rt_depth = 0;
-
+	this->mass = 0.13957; // assume pion mass until otherwise specified
+	//this->mass = 0.938;
 	this->RootGeom=NULL;
+	this->geom = NULL;
 }
 
 //---------------------------------
@@ -72,6 +74,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DReferenceTrajectory& rt)
 	this->last_dz_dphi = rt.last_dz_dphi;
 	this->RootGeom = rt.RootGeom;
 	this->dist_to_rt_depth = 0;
+	this->mass = rt.GetMass();
 
 	this->swim_steps = new swim_step_t[this->max_swim_steps];
 	for(int i=0; i<Nswim_steps; i++)swim_steps[i] = rt.swim_steps[i];
@@ -115,6 +118,7 @@ DReferenceTrajectory& DReferenceTrajectory::operator=(const DReferenceTrajectory
 	this->last_dz_dphi = rt.last_dz_dphi;
 	this->RootGeom = rt.RootGeom;
 	this->dist_to_rt_depth = rt.dist_to_rt_depth;
+	this->mass = rt.GetMass();
 
 	// Allocate memory if needed
 	if(swim_steps==NULL)this->swim_steps = new swim_step_t[this->max_swim_steps];
@@ -172,30 +176,40 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		swim_step->Ro = stepper.GetRo();
 		swim_step->s = s;
 
-		// Add material if RootGeom is not NULL
-		if(RootGeom){
-			double density, A, Z, X0;
-			RootGeom->FindMat(swim_step->origin,density,A,Z,X0);
+		// Add material if geom or RootGeom is not NULL
+		// If both are non-NULL, then use RootGeom
+		double dP = 0.0;
+		if(RootGeom || geom){
+			//double density, A, Z, X0;
+			double rhoZ_overA, rhoZ_overA_logI, X0;
+			if(RootGeom){
+				RootGeom->FindMatLL(swim_step->origin, rhoZ_overA, rhoZ_overA_logI, X0);
+			}else{
+				geom->FindMat(swim_step->origin, rhoZ_overA, rhoZ_overA_logI, X0);
+			}
+
 			if(X0>0.0){
 				double delta_s = s;
 				if(last_step)delta_s -= last_step->s;
 				double radlen = delta_s/X0;
 				if(radlen>1.0E-5){ // PDG 2008 pg 271, second to last paragraph
 					double p = swim_step->mom.Mag();
-					double beta = p/sqrt(p*p + 0.136*0.136); // assume pion mass
+					double beta = p/sqrt(p*p + mass*mass); // assume pion mass
 					double theta0 = 0.0136/(p*beta)*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
 					double theta02 = theta0*theta0;
 					itheta02 += theta02;
 					itheta02s += s*theta02;
 					itheta02s2 += s*s*theta02;
 				}
+
+				// Calculate momentum loss due to ionization
+				dP = delta_s*dPdx(swim_step->mom.Mag(), rhoZ_overA, rhoZ_overA_logI);
 			}
 			last_step = swim_step;
 		}
 		swim_step->itheta02 = itheta02;
 		swim_step->itheta02s = itheta02s;
 		swim_step->itheta02s2 = itheta02s2;
-		
 
 		// Exit loop if we leave the tracking volume
 		if(swim_step->origin.Perp()>65.0){break;} // ran into BCAL
@@ -203,6 +217,12 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		if(swim_step->origin.Z()<-50.0){break;} // ran into UPV
 
 		// Swim to next
+		if(dP!=0.0){
+			double ptot = swim_step->mom.Mag() - dP; // correct for energy loss
+			if(ptot<0.0)break;
+			swim_step->mom.SetMag(ptot);
+			stepper.SetStartingParams(q, &swim_step->origin, &swim_step->mom);
+		}
 		s += stepper.Step(NULL);
 	}
 
@@ -996,3 +1016,43 @@ DVector3 DReferenceTrajectory::GetLastDOCAPoint(void)
 
 	return last_swim_step->origin + x*xdir + y*ydir + z*zdir;
 }
+
+//------------------
+// dPdx
+//------------------
+double DReferenceTrajectory::dPdx(double ptot, double A, double Z, double density)
+{
+	double I = (Z*12.0 + 7.0)*1.0E-9; // From Leo 2nd ed. pg 25.
+	double rhoZ_overA = density*Z/A;
+	double rhoZ_overA_logI = rhoZ_overA*log(I);
+
+	return dPdx(mass, ptot, rhoZ_overA, rhoZ_overA_logI);
+}
+
+//------------------
+// dPdx
+//------------------
+double DReferenceTrajectory::dPdx(double ptot, double rhoZ_overA, double rhoZ_overA_logI)
+{
+	/// Calculate the momentum loss per unit distance traversed of the material with
+	/// the given A, Z, and density. Value returned is in GeV/c per cm
+	/// This follows the July 2008 PDG section 27.2 ppg 268-270.
+	/// The density effect term is ignored.
+	if(mass==0.0)return 0.0; // no ionization losses for neutrals
+	
+	double gammabeta = ptot/mass;
+	double gamma = sqrt(ptot*ptot + mass*mass)/mass;
+	double beta = gammabeta/gamma;
+	double me = 0.511E-3;
+
+	double Tmax = 2.0*me*pow(gammabeta,2.0)/(1.0+2.0*gamma*me/mass+pow(me/mass,2.0));
+	double K = 0.307075E-3; // GeV gm^-1 cm^2
+	double dEdx = K*rhoZ_overA/pow(beta,2.0)*(0.5*log(2.0*me*pow(gammabeta,2.0)*Tmax) - pow(beta,2.0)) - K*rhoZ_overA_logI/pow(beta,2.0);
+
+	// dE = beta*dP
+	return dEdx/beta;
+}
+
+
+
+

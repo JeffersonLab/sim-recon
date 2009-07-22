@@ -11,6 +11,7 @@
 #include <vector>
 using std::vector;
 
+#include <HDGEOMETRY/DGeometry.h>
 #include <DVector3.h>
 
 #include <JANA/jerror.h>
@@ -74,7 +75,13 @@ class DReferenceTrajectory{
 		double GetLastDistAlongWire(void){return last_dist_along_wire;}
 		void SetStepSize(double step_size){this->step_size=step_size;}
 		void SetDRootGeom(const DRootGeom *RootGeom){this->RootGeom = RootGeom;}
+		void SetDGeometry(const DGeometry *geom){this->geom = geom;}
 		const DRootGeom* GetDRootGeom(void){return RootGeom;}
+		const DGeometry* GetDGeometry(void){return geom;}
+		double GetMass(void) const {return mass;}
+		void SetMass(double mass){this->mass = mass;}
+		inline double dPdx(double ptot, double A, double Z, double density);
+		inline double dPdx(double ptot, double rhoZ_overA, double rhoZ_overA_logI);
 
 		const swim_step_t *GetLastSwimStep(void){return last_swim_step;}
 		swim_step_t *swim_steps;
@@ -89,11 +96,14 @@ class DReferenceTrajectory{
 		double step_size;
 		const DMagneticFieldMap *bfield;
 		const DRootGeom *RootGeom;
+		const DGeometry *geom;
 		
 		double last_phi;							///< last phi found in DistToRT
 		const swim_step_t* last_swim_step;	///< last swim step used in DistToRT
 		double last_dist_along_wire;
 		double last_dz_dphi;
+		
+		double mass;
 	
 	private:
 		DReferenceTrajectory(){} // force use of constructor with arguments.
