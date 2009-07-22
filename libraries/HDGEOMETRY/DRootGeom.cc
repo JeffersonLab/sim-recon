@@ -20,9 +20,8 @@ DRootGeom::DRootGeom(JApplication *japp)
 	pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE);
 	pthread_mutex_init(&mutex, &mutex_attr);
 
-	DRGeom = hddsroot();
-
 	table_initialized = false;
+	DRGeom = NULL;
 
 	int runnumber = 1;
 	jcalib = japp->GetJCalibration(runnumber);
@@ -41,10 +40,19 @@ DRootGeom::DRootGeom(JApplication *japp)
 	jparms->SetDefaultParameter("MATERIAL_MAP", namepath);
 	int Npoints = ReadMap(namepath, runnumber); 
 	if(Npoints==0){
-		_DBG_<<"Error getting JCalibration object for material map!"<<endl;
+		_DBG_<<"Error getting JCalibration object for material map! (will generate table dynamically)"<<endl;
+		DRGeom = hddsroot();
 	}else{
 		table_initialized = true;
 	}
+}
+
+//---------------------------------
+// DRootGeom    (Destructor)
+//---------------------------------
+DRootGeom::~DRootGeom()
+{
+  delete DRGeom;
 }
 
 //---------------------------------
@@ -127,6 +135,8 @@ int DRootGeom::ReadMap(string namepath, int runnumber)
 		mat.Z = a[3];
 		mat.Density = a[4];
 		mat.RadLen = a[5];
+		mat.rhoZ_overA = a[6];
+		mat.rhoZ_overA_logI = a[7];
 	}
 	
 	
@@ -173,7 +183,7 @@ void DRootGeom::InitTable(void)
 			double d_r = dr/(double)n_r;
 			double d_z = dz/(double)n_z;
 			double d_phi = 2.0*M_PI/(double)n_phi;
-			VolMat avg_mat={0.0, 0.0, 0.0, 0.0};
+			VolMat avg_mat={0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
 			for(int i_r=0; i_r<n_r; i_r++){
 				double my_r = r - dr/2.0 + (double)i_r*d_r;
@@ -187,10 +197,16 @@ void DRootGeom::InitTable(void)
 
 						FindMatLL(pos, density, A, Z, radlen);
 
+						double rhoZ_overA = density*Z/A;
+						double I = (Z*12.0 + 7.0)*1.0E-9; // From Leo 2nd ed. pg 25.
+						double rhoZ_overA_logI = rhoZ_overA*log(I);
+
 						avg_mat.A += A;
 						avg_mat.Z += Z;
 						avg_mat.Density += density;
 						avg_mat.RadLen += radlen;
+						avg_mat.rhoZ_overA += rhoZ_overA;
+						avg_mat.rhoZ_overA_logI += rhoZ_overA_logI;
 					}
 				}
 			}
@@ -200,6 +216,8 @@ void DRootGeom::InitTable(void)
 			avg_mat.Z /= (double)(n_r*n_z*n_phi);
 			avg_mat.Density /= (double)(n_r*n_z*n_phi);
 			avg_mat.RadLen /= (double)(n_r*n_z*n_phi);
+			avg_mat.rhoZ_overA /= (double)(n_r*n_z*n_phi);
+			avg_mat.rhoZ_overA_logI /= (double)(n_r*n_z*n_phi);
 			
 			MatTable[ir][iz] = avg_mat;
 		}
@@ -212,11 +230,11 @@ void DRootGeom::InitTable(void)
 }
 
 //---------------------------------
-// DRootGeom    (Destructor)
+// InitDRGeom
 //---------------------------------
-DRootGeom::~DRootGeom()
+void DRootGeom::InitDRGeom(void)
 {
-  delete DRGeom;
+	DRGeom = hddsroot();
 }
 
 //---------------------------------
@@ -252,9 +270,17 @@ TGeoVolume* DRootGeom::FindVolume(double *x)
 //---------------------------------
 // FindMat
 //---------------------------------
-jerror_t DRootGeom::FindMat(DVector3 pos,double &density, double &A, double &Z, double &RadLen) const
+jerror_t DRootGeom::FindMat(DVector3 pos, double &density, double &A, double &Z, double &RadLen) const
 {
 	return FindMatTable(pos, density, A, Z, RadLen);
+}
+
+//---------------------------------
+// FindMat
+//---------------------------------
+jerror_t DRootGeom::FindMat(DVector3 pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const
+{
+	return FindMatTable(pos, rhoZ_overA, rhoZ_overA_logI, RadLen);
 }
 
 //---------------------------------
@@ -284,6 +310,50 @@ jerror_t DRootGeom::FindMatTable(DVector3 pos,double &density, double &A, double
 	return NOERROR;
 }
 
+
+//---------------------------------
+// FindMatTable
+//---------------------------------
+jerror_t DRootGeom::FindMatTable(DVector3 pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const
+{
+	if(!table_initialized)((DRootGeom*)this)->InitTable();
+
+	// For now, this just finds the bin in the material map the given position is in
+	// (i.e. no interpolation )
+	double r = pos.Perp();
+	double z = pos.Z();
+	int ir = floor((r-r0)/dr);
+	int iz = floor((z-z0)/dz);
+	if(ir<0 || ir>=Nr || iz<0 || iz>=Nz){
+		rhoZ_overA = rhoZ_overA_logI = RadLen = 0.0;
+		return RESOURCE_UNAVAILABLE;
+	}
+	
+	const VolMat &mat = MatTable[ir][iz];
+	rhoZ_overA = mat.rhoZ_overA;
+	rhoZ_overA_logI = mat.rhoZ_overA_logI;
+	RadLen = mat.RadLen;
+
+	return NOERROR;
+}
+
+//---------------------------------
+// FindMatLL
+//---------------------------------
+jerror_t DRootGeom::FindMatLL(DVector3 pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const
+{
+	/// This is a wrapper for the other FindMatLL method that returns density, A, and Z.
+	/// It is here to make easy comparisons between the LL and table methods.
+
+	double density, A, Z;
+	FindMatLL(pos, density, A, Z, RadLen);
+	double I = (Z*12.0 + 7.0)*1.0E-9; // From Leo 2nd ed. pg 25.
+	rhoZ_overA = density*Z/A;
+	rhoZ_overA_logI = rhoZ_overA*log(I);
+
+	return NOERROR;
+}
+
 //---------------------------------
 // FindMatLL
 //---------------------------------
@@ -292,6 +362,8 @@ jerror_t DRootGeom::FindMatLL(DVector3 pos,double &density, double &A, double &Z
   density=RadLen=A=Z=0.;
 
 	pthread_mutex_lock(const_cast<pthread_mutex_t*>(&mutex));
+	
+	if(!DRGeom)((DRootGeom*)this)->InitDRGeom(); // cast away constness to ensure DRGeom is set
 
   TGeoNode *cnode = DRGeom->FindNode(pos.X(),pos.Y(),pos.Z());
   if (cnode==NULL){

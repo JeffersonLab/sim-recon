@@ -1,165 +1,161 @@
+
+
+#include <iostream>
+using namespace std;
+
+#include <DANA/DApplication.h>
+
 #include "DMaterialMap.h"
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-
-// Locate a position in array xx given x
-static void locate(const double *xx,int n,double x,int *j){
-  int ju,jm,jl;
-  int ascnd;
-  
-  jl=-1;
-  ju=n;
-  ascnd=(xx[n-1]>=xx[0]);
-  while(ju-jl>1){
-    jm=(ju+jl)>>1;
-    if (x>=xx[jm]==ascnd)
-      jl=jm;
-    else
-      ju=jm;
-  }
-  if (x==xx[0]) *j=0;
-  else if (x==xx[n-1]) *j=n-2;
-  else *j=jl; 
-}
-
-// Polynomial interpolation on a grid.
-// Adapted from Numerical Recipes in C (2nd Edition), pp. 121-122.
-static void polint(const double *xa, const double *ya,int n,double x, double *y,
-            double *dy){
-  int i,m,ns=0;
-  double den,dif,dift,ho,hp,w;
-
-  double *c=(double *)calloc(n,sizeof(double));
-  double *d=(double *)calloc(n,sizeof(double));
-
-  dif=fabs(x-xa[0]);
-  for (i=0;i<n;i++){
-    if ((dift=fabs(x-xa[i]))<dif){
-      ns=i;
-      dif=dift;
-    }
-    c[i]=ya[i];
-    d[i]=ya[i];
-  }
-  *y=ya[ns--];
-
-  for (m=1;m<n;m++){
-    for (i=1;i<=n-m;i++){
-      ho=xa[i-1]-x;
-      hp=xa[i+m-1]-x;
-      w=c[i+1-1]-d[i-1];
-      if ((den=ho-hp)==0.0){
-        free(c);
-        free(d);
-        return;
-      }
-      den=w/den;
-      d[i-1]=hp*den;
-      c[i-1]=ho*den;
-    }  
-    *y+=(*dy=(2*ns<(n-m) ?c[ns+1]:d[ns--]));
-  }
-  free(c);
-  free(d);
-}
 
 
-// routine to obtain material properties (A,Z, density, radiation length) 
-// from the material map
-jerror_t DMaterialMap::GetMaterialProperties(double x,double y, double z,
-					     double &Z, double &A, 
-					     double &rho, double &X0) const
+//-----------------
+// DMaterialMap  (Constructor)
+//-----------------
+DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib)
 {
-  double r=sqrt(x*x+y*y);
-  int ind,ind2,imin1,imin2;
-  //initialization
-  rho=0.;
-  X0=1e8;
-  Z=0.;
-  A=1.;
- 
-  // locate positions in r and z arrays
-  locate(material_z,NUM_Z_POINTS,z,&ind);
-  locate(material_x,NUM_X_POINTS,r,&ind2);
-  // create a temporary array and find starting positions in r- and z- arrays
-  double temp[NUM_X_POINTS],err;
-  if (ind>0){
-    imin1=((ind+3)>NUM_Z_POINTS)?NUM_Z_POINTS-4:(ind-1);
-  }
-  else imin1=0; 
-  if (ind2>0){
-    imin2=((ind2+3)>NUM_X_POINTS)?NUM_X_POINTS-4:(ind2-1);
-  }
-  else imin2=0;
+	/// Read the specified material map in from the calibration database.
+	/// This will read in the map and figure out the number of grid
+	/// points in each direction (r, and z) and the range in each.
 
-  //---- density ----
-  // First do the interpolation in the z direction
-  for (int j=imin2;j<imin2+4;j++){
-    polint(&material_z[imin1],&density[imin1][j],4,z,&temp[j],&err);
-  }
-  // next do interpolation in r direction
-  polint(&material_x[imin2],&temp[imin2],4,r,&rho,&err); 
-  if (rho<=0.) return VALUE_OUT_OF_RANGE;
+	this->namepath = namepath;
 
-  // ---- Radiation length ----
-  // First do the interpolation in the z direction
-  for (int j=imin2;j<imin2+4;j++){
-    polint(&material_z[imin1],&radlen[imin1][j],4,z,&temp[j],&err);
-  }
-  // next do interpolation in r direction 
-  double fX0;
-  polint(&material_x[imin2],&temp[imin2],4,r,&fX0,&err);
-  X0=1.e5/fX0;
-
-  //---- atomic number ----
-  // First do the interpolation in the z direction
-  for (int j=imin2;j<imin2+4;j++){
-    polint(&material_z[imin1],&atomic_Z[imin1][j],4,z,&temp[j],&err);
-  }
-  // next do interpolation in r direction
-  polint(&material_x[imin2],&temp[imin2],4,r,&Z,&err);
-
-  //---- atomic weight ----
-  // First do the interpolation in the z direction
-  for (int j=imin2;j<imin2+4;j++){
-    polint(&material_z[imin1],&atomic_A[imin1][j],4,z,&temp[j],&err);
-  }
-  // next do interpolation in r direction
-  polint(&material_x[imin2],&temp[imin2],4,r,&A,&err);
-
-  return NOERROR;
+	// Read in map from calibration database. This should really be
+	// built into a run-dependent geometry framework, but for now
+	// we do it this way.
+	this->jcalib = jcalib;
+	if(!jcalib)return;
+	
+	cout<<"Reading "<<namepath<<" ... "; cout.flush();
+	vector< vector<float> > Mmap;
+	jcalib->Get(namepath, Mmap);
+	cout<<(int)Mmap.size()<<" entries (";
+	if(Mmap.size()<1){
+		cout<<")"<<endl;
+		return;
+	}
+	
+	// The map should be on a grid with equal spacing in r, and z.
+	// Here we want to determine the number of points in each of these
+	// dimensions and the range. 
+	// The easiest way to do this is to use a map<float, int> to make a
+	// histogram of the entries by using the key to hold the extent
+	// so that the number of entries will be equal to the number of
+	// different values.
+	map<float, int> rvals;
+	map<float, int> zvals;
+	double rmin, zmin, rmax, zmax;
+	rmin = zmin = 1.0E6;
+	rmax = zmax = -1.0E6;
+	for(unsigned int i=0; i<Mmap.size(); i++){
+		vector<float> &a = Mmap[i];
+		float &r = a[0];
+		float &z = a[1];
+		
+		rvals[r] = 1;
+		zvals[z] = 1;
+		if(r<rmin)rmin=r;
+		if(z<zmin)zmin=z;
+		if(r>rmax)rmax=r;
+		if(z>zmax)zmax=z;
+	}
+	Nr = rvals.size();
+	Nz = zvals.size();
+	r0 = rmin;
+	z0 = zmin;
+	dr = (rmax-rmin)/(double)(Nr-1);
+	dz = (zmax-zmin)/(double)(Nz-1);
+	cout<<"Nr="<<Nr;
+	cout<<" Nz="<<Nz;
+	cout<<")"<<endl;
+	
+	// The values in the table are stored with r,z at the center of the node.
+	// This means the actual map extends half a bin further out than the current
+	// (local varfiable) rmin,rmax and zmin,zmax values. Set the class data
+	// members to be the actual map limits
+	this->rmin = rmin-dr/2.0;
+	this->rmax = rmax+dr/2.0;
+	this->zmin = zmin-dz/2.0;
+	this->zmax = zmax+dz/2.0;
+	
+	// Set sizes of nested vectors to hold node data
+	nodes.resize(Nr);
+	for(int ir=0; ir<Nr; ir++){
+		nodes[ir].resize(Nz);
+	}
+	
+	// Fill table
+	for(unsigned int i=0; i<Mmap.size(); i++){
+		vector<float> &a = Mmap[i];
+		float &r = a[0];
+		float &z = a[1];
+		int ir = floor((r-this->rmin)/dr);
+		int iz = floor((z-this->zmin)/dz);
+		if(ir<0 || ir>=Nr){_DBG_<<"ir out of range: ir="<<ir<<"  Nr="<<Nr<<endl; continue;}
+		if(iz<0 || iz>=Nz){_DBG_<<"iz out of range: iz="<<iz<<"  Nz="<<Nz<<endl; continue;}
+		MaterialNode &node = nodes[ir][iz];
+		node.A = a[2];
+		node.Z = a[3];
+		node.Density = a[4];
+		node.RadLen = a[5];
+		node.rhoZ_overA = a[6];
+		node.rhoZ_overA_logI = a[7];
+	}
 }
 
 
+//-----------------
+// FindNode
+//-----------------
+const DMaterialMap::MaterialNode* DMaterialMap::FindNode(DVector3 &pos) const
+{
+	// For now, this just finds the bin in the material map the given position is in
+	// (i.e. no interpolation )
+	double r = pos.Perp();
+	double z = pos.Z();
+	int ir = floor((r-rmin)/dr);
+	int iz = floor((z-zmin)/dz);
+	if(ir<0 || ir>=Nr || iz<0 || iz>=Nz)return NULL;
+	
+	return &nodes[ir][iz];
+}
 
-// Routine to obtain the average radiation length of the material at the 
-// position pos from a map of material obtained from the simulation
-double DMaterialMap::GetRadLen(double x, double y, double z) const{
-  double r=sqrt(x*x+y*y);
-  int ind,ind2,imin;
-  
-  // locate positions in r and z arrays
-  locate(material_z,NUM_Z_POINTS,z,&ind);
-  locate(material_x,NUM_X_POINTS,r,&ind2);
+//-----------------
+// FindMat
+//-----------------
+jerror_t DMaterialMap::FindMat(DVector3 &pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const
+{
+	const MaterialNode *node = FindNode(pos);
+	if(!node)return RESOURCE_UNAVAILABLE;
+	
+	     rhoZ_overA = node->rhoZ_overA;
+	rhoZ_overA_logI = node->rhoZ_overA_logI;
+	         RadLen = node->RadLen;
 
-  // First do the interpolation in the z direction
-  double temp[NUM_X_POINTS],err;
-  if (ind>0){
-    imin=((ind+3)>NUM_Z_POINTS)?NUM_Z_POINTS-4:(ind-1);
-  }
-  else imin=0;
-  for (int j=0;j<NUM_X_POINTS;j++){
-    polint(&material_z[imin],&radlen[imin][j],4,z,&temp[j],&err);
-  }
-  // next do interpolation in r direction
-  if (ind2>0){
-    imin=((ind2+3)>NUM_X_POINTS)?NUM_X_POINTS-4:(ind2-1);
-  }
-  else imin=0;
-  double fX0;
-  polint(&material_x[imin],&temp[imin],4,r,&fX0,&err);
+	return NOERROR;
+}
 
-  return 1.e5/fX0;
+//-----------------
+// FindMat
+//-----------------
+jerror_t DMaterialMap::FindMat(DVector3 &pos, double &density, double &A, double &Z, double &RadLen) const
+{
+	const MaterialNode *node = FindNode(pos);
+	if(!node)return RESOURCE_UNAVAILABLE;
+	
+	density = node->Density;
+			A = node->A;
+			Z = node->Z;
+	 RadLen = node->RadLen;
 
+	return NOERROR;
+}
+
+//-----------------
+// IsInMap
+//-----------------
+bool DMaterialMap::IsInMap(DVector3 &pos) const
+{
+	double r = pos.Perp();
+	double z = pos.Z();
+	return (r>=rmin) && (r<=rmax) && (z>=zmin) && (z<=zmax);
 }

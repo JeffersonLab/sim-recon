@@ -19,6 +19,7 @@ using namespace jana;
 #include <particleType.h>
 #include <DVector3.h>
 #include "DMaterial.h"
+#include "DMaterialMap.h"
 using namespace jana;
 
 class DApplication;
@@ -28,7 +29,7 @@ class DLorentzDeflections;
 
 class DGeometry{
 	public:
-		DGeometry(JGeometry *jgeom, DApplication *dapp);
+		DGeometry(JGeometry *jgeom, DApplication *dapp, unsigned int runnumber);
 		virtual ~DGeometry();
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DGeometry";}
@@ -59,10 +60,15 @@ class DGeometry{
 		typedef vector<node_t> xpathparsed_t;
 		
 		void FindNodes(string xpath, vector<xpathparsed_t> &matched_xpaths) const;
+
+		// Methods for accessing material map tables obtained from calibDB
+		jerror_t FindMat(DVector3 &pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const;
+		jerror_t FindMat(DVector3 &pos, double &density, double &A, double &Z, double &RadLen) const;
+		const DMaterialMap::MaterialNode* FindMatNode(DVector3 &pos) const;
+		const DMaterialMap* FindDMaterialMap(DVector3 &pos) const;
 		
 		// Convenience methods
 		const DMaterial* GetDMaterial(string name);
-		//void GetTraversedMaterialsZ(double q, const DVector3 &pos, const DVector3 &mom, double z_end, vector<DMaterialStep> &materialsteps);
 
 		bool GetFDCWires(vector<vector<DFDCWire *> >&fdcwires) const;
 		bool GetFDCZ(vector<double> &z_wires) const; ///< z-locations for each of the FDC wire planes in cm
@@ -97,7 +103,8 @@ class DGeometry{
 	private:
 		JGeometry *jgeom;
 		DApplication *dapp;
-		vector<DMaterial*> materials;
+		vector<DMaterial*> materials;			/// Older implementation to keep track of material specs without ranges
+		vector<DMaterialMap*> materialmaps;	/// Material maps generated automatically(indirectly) from XML with ranges and specs
 };
 
 #endif // _DGeometry_

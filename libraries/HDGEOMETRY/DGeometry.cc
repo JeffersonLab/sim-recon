@@ -5,8 +5,10 @@
 // Creator: davidl (on Darwin swire-d95.jlab.org 8.11.1 i386)
 //
 
+#include <algorithm>
+using namespace std;
+
 #include "DGeometry.h"
-#include "DMaterialStepper.h"
 #include <JANA/JGeometryXML.h>
 #include "FDC/DFDCWire.h"
 #include "FDC/DFDCGeometry.h"
@@ -17,11 +19,52 @@ using namespace std;
 //---------------------------------
 // DGeometry    (Constructor)
 //---------------------------------
-DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp)
+DGeometry::DGeometry(JGeometry *jgeom, DApplication *dapp, unsigned int runnumber)
 {
 	this->jgeom = jgeom;
 	this->dapp = dapp;
 
+	JCalibration *jcalib = dapp->GetJCalibration(runnumber);
+	if(!jcalib){
+		_DBG_<<"ERROR:  Unable to get JCalibration object!"<<endl;
+		return;
+	}
+	
+	// Get a list of all namepaths so we can find all of the material maps.
+	// We want to read in all material maps with a standard naming scheme
+	// so the number and coverage of the piece-wise maps can be changed
+	// without requiring recompilation.
+	//vector<DMaterialMap*> material_maps;
+	vector<string> namepaths;
+	jcalib->GetListOfNamepaths(namepaths);
+	vector<string> material_namepaths;
+	for(unsigned int i=0; i<namepaths.size(); i++){
+		if(namepaths[i].find("Material/material_map")==0)material_namepaths.push_back(namepaths[i]);
+	}
+	
+	// Sort alphabetically so user controls search sequence by map name
+	sort(material_namepaths.begin(), material_namepaths.end());
+	
+	// Inform user what's happening
+	if(material_namepaths.size()==0){
+		cout<<"No material maps found in calibration DB!!"<<endl;
+		return;
+	}
+	cout<<"Found "<<material_namepaths.size()<<" material maps in calib. DB for run "<<runnumber<<endl;
+	
+	if(false){ // save this to work off configuration parameter
+		cout<<"Will read in the following:"<<endl;
+		for(unsigned int i=0; i<material_namepaths.size(); i++){
+			cout<<"  "<<material_namepaths[i]<<endl;
+		}
+	}
+
+	// Actually read in the maps
+	//cout<<" Reading:"<<endl;
+	for(unsigned int i=0; i<material_namepaths.size(); i++){
+		//cout<<"      "<<material_namepaths[i]<<" ..."<<endl;
+		materialmaps.push_back(new DMaterialMap(material_namepaths[i], jcalib));
+	}
 }
 
 //---------------------------------
@@ -92,6 +135,50 @@ void DGeometry::FindNodes(string xpath, vector<xpathparsed_t> &matched_xpaths) c
 	
 	// Loop over xpaths
 	for(unsigned int i=0; i<allxpaths.size(); i++);
+}
+
+//---------------------------------
+// FindMat
+//---------------------------------
+jerror_t DGeometry::FindMat(DVector3 &pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const
+{
+	for(unsigned int i=0; i<materialmaps.size(); i++){
+		jerror_t err = materialmaps[i]->FindMat(pos, rhoZ_overA, rhoZ_overA_logI, RadLen);
+		if(err==NOERROR)return NOERROR;
+	}
+	return RESOURCE_UNAVAILABLE;
+}
+
+//---------------------------------
+// FindMat
+//---------------------------------
+jerror_t DGeometry::FindMat(DVector3 &pos, double &density, double &A, double &Z, double &RadLen) const
+{
+	for(unsigned int i=0; i<materialmaps.size(); i++){
+		jerror_t err = materialmaps[i]->FindMat(pos, density, A, Z, RadLen);
+		if(err==NOERROR)return NOERROR;
+	}
+	return RESOURCE_UNAVAILABLE;
+}
+
+//---------------------------------
+// FindMatNode
+//---------------------------------
+//const DMaterialMap::MaterialNode* DGeometry::FindMatNode(DVector3 &pos) const
+//{
+//
+//}
+
+//---------------------------------
+// FindDMaterialMap
+//---------------------------------
+const DMaterialMap* DGeometry::FindDMaterialMap(DVector3 &pos) const
+{
+	for(unsigned int i=0; i<materialmaps.size(); i++){
+		const DMaterialMap* map = materialmaps[i];
+		if(map->IsInMap(pos))return map;
+	}
+	return NULL;
 }
 
 //====================================================================

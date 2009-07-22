@@ -29,6 +29,8 @@ struct VolMat
   double Z ;
   double Density ;
   double RadLen ;
+  double rhoZ_overA;			// density*Z/A
+  double rhoZ_overA_logI;	// density*Z/A * log(mean excitation energy)
 };
 
 class DRootGeom{
@@ -52,16 +54,18 @@ class DRootGeom{
   TGeoVolume* FindVolume(double *x);
   struct VolMat FindMat(double *x);
 
-  jerror_t FindMat(DVector3 pos,double &density, double &A, double &Z,
-	       double &RadLen) const;
+  jerror_t FindMat(DVector3 pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const;
+  jerror_t FindMat(DVector3 pos,double &density, double &A, double &Z, double &RadLen) const;
 
-  jerror_t FindMatLL(DVector3 pos,double &density, double &A, double &Z,
-	       double &RadLen) const;
+  jerror_t FindMatLL(DVector3 pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const;
+  jerror_t FindMatLL(DVector3 pos,double &density, double &A, double &Z, double &RadLen) const;
 
-  jerror_t FindMatTable(DVector3 pos,double &density, double &A, double &Z,
-	       double &RadLen) const;
+  jerror_t FindMatTable(DVector3 pos, double &rhoZ_overA, double &rhoZ_overA_logI, double &RadLen) const;
+  jerror_t FindMatTable(DVector3 pos,double &density, double &A, double &Z, double &RadLen) const;
 
  private:
+  
+  void InitDRGeom(void);
   
   TGeoManager *DRGeom;
   TGeoNode *Current_Node ;
