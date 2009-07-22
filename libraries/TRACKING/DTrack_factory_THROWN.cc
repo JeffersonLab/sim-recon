@@ -124,7 +124,7 @@ jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 			fitter->AddHits(fdchits);
 			double chisq;
 			int Ndof;
-			fitter->ChiSq(DTrackFitter::kTimeBased, rt, &chisq, &Ndof);
+			fitter->ChiSq(DTrackFitter::kWireBased, rt, &chisq, &Ndof);
 			track->chisq = chisq;
 			track->Ndof = Ndof;
 		}else{
