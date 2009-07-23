@@ -24,7 +24,23 @@ class DMagneticFieldMap{
                                       double &dBydx, double &dBydy,
                                       double &dBydz,
                                       double &dBzdx, double &dBzdy,
-                                      double &dBzdz) const = 0;
+				      double &dBzdz) const = 0;
+		virtual	void GetFieldBicubic(double x,double y,double z,
+				     double &Bx,double &By,double &Bz) const=0;
+
+		virtual void GetFieldAndGradient(double x,double y,double z,
+						 double &Bx,double &By,
+						 double &Bz,
+					         double &dBxdx, 
+						 double &dBxdy,
+						 double &dBxdz,
+						 double &dBydx, 
+						 double &dBydy,
+						 double &dBydz,
+						 double &dBzdx, 
+						 double &dBzdy,
+						 double &dBzdz) const = 0;
+
 
 };
 

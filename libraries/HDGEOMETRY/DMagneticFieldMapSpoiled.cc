@@ -124,3 +124,33 @@ void DMagneticFieldMapSpoiled::GetFieldGradient(double x, double y, double z,
 	if(!initialized)return;
 	bfield->GetFieldGradient(x, y, z, dBxdx, dBxdy, dBxdz, dBydx, dBydy, dBydz, dBzdx, dBzdy, dBzdz);
 }
+
+
+void DMagneticFieldMapSpoiled::GetFieldBicubic(double x,double y,double z,
+					      double &Bx,double &By,double &Bz) const{
+  	if(!initialized){
+		DMagneticFieldMapSpoiled *mythis = const_cast<DMagneticFieldMapSpoiled*>(this);
+		mythis->Init();
+	}
+	if(!initialized)return;
+	bfield->GetFieldBicubic(x,y,z,Bx,By,Bz);
+}
+
+
+void DMagneticFieldMapSpoiled::GetFieldAndGradient(double x,double y,double z,
+						  double &Bx,double &By,
+						  double &Bz,
+						  double &dBxdx, double &dBxdy,
+						  double &dBxdz,
+						  double &dBydx, double &dBydy,
+						  double &dBydz,
+						  double &dBzdx, double &dBzdy,
+						  double &dBzdz) const{
+  	if(!initialized){
+		DMagneticFieldMapSpoiled *mythis = const_cast<DMagneticFieldMapSpoiled*>(this);
+		mythis->Init();
+	}
+	if(!initialized)return;
+	bfield->GetFieldAndGradient(x,y,z,Bx,By,Bz,dBxdx,dBxdy,dBxdz,
+				    dBydx,dBydy,dBydz,dBzdx,dBzdy,dBzdz);  
+}

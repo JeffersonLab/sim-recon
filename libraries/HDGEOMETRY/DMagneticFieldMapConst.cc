@@ -120,3 +120,32 @@ void DMagneticFieldMapConst::GetField(double x, double y, double z, double &Bx, 
 }
 
 
+
+void DMagneticFieldMapConst::GetFieldBicubic(double x,double y,double z,
+					     double &Bx,double &By,double &Bz) 
+  const{
+  GetField(x,y,z,Bx,By,Bz);
+}
+
+
+void DMagneticFieldMapConst::GetFieldAndGradient(double x,double y,double z,
+						  double &Bx,double &By,
+						  double &Bz,
+						  double &dBxdx, double &dBxdy,
+						  double &dBxdz,
+						  double &dBydx, double &dBydy,
+						  double &dBydz,
+						  double &dBzdx, double &dBzdy,
+						  double &dBzdz) const{
+  GetField(x,y,z,Bx,By,Bz);
+  // Constant field has zero gradient
+  dBxdx = 0.0;
+  dBxdy = 0.0;
+  dBxdz = 0.0;
+  dBydx = 0.0;
+  dBydy = 0.0;
+  dBydz = 0.0;
+  dBzdx = 0.0;
+  dBzdy = 0.0;
+  dBzdz = 0.0;
+}

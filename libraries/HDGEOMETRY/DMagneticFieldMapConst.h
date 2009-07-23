@@ -38,6 +38,18 @@ class DMagneticFieldMapConst:public DMagneticFieldMap{
 				      double &dBydz,		
 				      double &dBzdx, double &dBzdy,
 				      double &dBzdz) const;
+		
+		void GetFieldBicubic(double x,double y,double z,
+				     double &Bx,double &By,double &Bz) const;
+		void GetFieldAndGradient(double x,double y,double z,
+					 double &Bx,double &By,
+					 double &Bz,
+					 double &dBxdx, double &dBxdy,
+					 double &dBxdz,
+					 double &dBydx, double &dBydy,
+					 double &dBydz,
+					 double &dBzdx, double &dBzdy,
+					 double &dBzdz) const;
 
 	protected:
 		

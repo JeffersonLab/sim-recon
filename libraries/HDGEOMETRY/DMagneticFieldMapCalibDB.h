@@ -38,12 +38,26 @@ class DMagneticFieldMapCalibDB:public DMagneticFieldMap{
 				      double &dBydz,		
 				      double &dBzdx, double &dBzdy,
 				      double &dBzdz) const;
+		void GetFieldBicubic(double x,double y,double z,
+				     double &Bx,double &By,double &Bz) const;
+		void GetFieldAndGradient(double x,double y,double z,
+					 double &Bx,double &By,
+					 double &Bz,
+					 double &dBxdx, double &dBxdy,
+					 double &dBxdz,
+					 double &dBydx, double &dBydy,
+					 double &dBydz,
+					 double &dBzdx, double &dBzdy,
+					 double &dBzdz) const;
 
 		typedef struct{
 			float x,y,z,Bx,By,Bz;
 			double dBxdx, dBxdy, dBxdz;
 			double dBydx, dBydy, dBydz;
 			double dBzdx, dBzdy, dBzdz;
+		  double dBxdxdy,dBxdxdz,dBxdydz;
+		  double dBydxdy,dBydxdz,dBydydz;
+		  double dBzdxdy,dBzdxdz,dBzdydz;
 		}DBfieldPoint_t;
 
 	protected:
