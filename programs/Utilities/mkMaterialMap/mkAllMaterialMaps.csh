@@ -9,16 +9,16 @@ mkMaterialMap -Nr 30 -Nz 2 -rmin 7.0 -rmax 9.75 -zmin 0 -zmax 90 -n_r 3 -n_z 3 -
 mv material_map material_map01_startcounter_barrel
 
 # Start Counter nose
-mkMaterialMap -Nr 20 -Nz 20 -rmin 1.0 -rmax 9.0 -zmin 90 -zmax 100 -n_r 3 -n_z 3 -n_phi 100
+mkMaterialMap -Nr 100 -Nz 100 -rmin 1.0 -rmax 9.0 -zmin 90 -zmax 100 -n_r 3 -n_z 3 -n_phi 100
 mv material_map material_map02_startcounter_nose
-
-# CDC
-mkMaterialMap -Nr 50 -Nz 5 -rmin 9.75 -rmax 65.0 -zmin 15 -zmax 165 -n_r 10 -n_z 5 -n_phi 200
-mv material_map material_map10_CDC
 
 # CDC endplate
 mkMaterialMap -Nr 10 -Nz 60 -rmin 9.0 -rmax 60.0 -zmin 165 -zmax 171 -n_r 3 -n_z 3 -n_phi 60
-mv material_map material_map11_CDC_endplate
+mv material_map material_map10_CDC_endplate
+
+# CDC
+mkMaterialMap -Nr 50 -Nz 5 -rmin 9.75 -rmax 65.0 -zmin 15 -zmax 165 -n_r 10 -n_z 5 -n_phi 200
+mv material_map material_map11_CDC
 
 # FDC package 1
 mkMaterialMap -Nr 58 -Nz 6 -rmin 2.0 -rmax 60.0 -zmin 175 -zmax 189 -n_r 5 -n_z 5 -n_phi 100
