@@ -144,8 +144,13 @@ DGeometry* DApplication::GetDGeometry(unsigned int run_number)
 	
 	// Couldn't find a DGeometry object that uses this JGeometry object.
 	// Create one and add it to the list.
-	DGeometry *dgeom = new DGeometry(jgeom, this);
+	DGeometry *dgeom = new DGeometry(jgeom, this, run_number);
 	geometries.push_back(dgeom);
+	
+	cout<<"Geometry created:"<<endl;
+	cout<<"  Run requested:"<<jgeom->GetRunRequested()<<"  found:"<<jgeom->GetRunFound()<<endl;
+	cout<<"  Run validity range: "<<jgeom->GetRunMin()<<"-"<<jgeom->GetRunMax()<<endl;
+	cout<<"  URL=\""<<jgeom->GetURL()<<"\""<<"  context=\""<<jgeom->GetContext()<<"\""<<endl;
 	
 	Unlock();
 	
