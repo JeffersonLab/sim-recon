@@ -30,9 +30,16 @@ bool cdc_fdc_match(double p, double dist){
 }
 
 bool cdchit_cmp(const DCDCTrackHit *a, const DCDCTrackHit *b){
+  /*
   double ra=a->wire->origin.Perp();
   double rb=b->wire->origin.Perp();
-  return (rb>ra);
+  return (rb>ra);  
+  */
+  if (a->wire==NULL || b->wire==NULL){
+    cout << "Null pointer in CDC hit list??" << endl;
+    return false;
+  }
+  return (b->wire->ring>a->wire->ring);
 }
 
 
@@ -401,24 +408,28 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	// Try to match unmatched fdc candidates
 	int num_match=0;
-	for (unsigned int i=0;i<segments[0]->hits.size();i++){
-	  unsigned int ind=segments[0]->hits.size()-1-i;
-	  if (stepper.SwimToPlane(pos,mom,
-				  segments[0]->hits[ind]->wire->origin,
-				  norm,NULL)
-	      ==false){
-	    double dx=segments[0]->hits[ind]->x-pos.x();
-	    double dy=segments[0]->hits[ind]->y-pos.y();
-	    double dr=sqrt(dx*dx+dy*dy);
-	    
-	    // Use an un-normalized gaussian so that for a residual
-	    // of zero, we get a probability of 1.0.
-	    double variance=1.0;
-	    double prob = finite(dr) ? exp(-dr*dr/2./variance):0.0;
-	    if (prob>0.1) num_match++;
+	int num_hits=0;
+	for (unsigned int m=0;m<segments.size();m++){
+	  for (unsigned int n=0;n<segments[m]->hits.size();n++){
+	    unsigned int ind=segments[m]->hits.size()-1-n;
+	    if (stepper.SwimToPlane(pos,mom,
+				    segments[m]->hits[ind]->wire->origin,
+				    norm,NULL)
+		==false){
+	      double dx=segments[m]->hits[ind]->x-pos.x();
+	      double dy=segments[m]->hits[ind]->y-pos.y();
+	      double dr=sqrt(dx*dx+dy*dy);
+	      
+	      // Use an un-normalized gaussian so that for a residual
+	      // of zero, we get a probability of 1.0.
+	      double variance=1.0;
+	      double prob = finite(dr) ? exp(-dr*dr/2./variance):0.0;
+	      if (prob>0.1) num_match++;
+	      num_hits++;
+	    }
 	  }
 	}
-	if (num_match>0){
+	if (double(num_match)/double(num_hits)>0.5){
 	  DTrackCandidate *can = new DTrackCandidate;
 
 	  can->setMass(srccan->mass());
@@ -512,24 +523,28 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 		  
 	  // Try to match unmatched fdc candidates
 	  int num_match=0;
-	  for (unsigned int i=0;i<segments[0]->hits.size();i++){
-	    unsigned int ind=segments[0]->hits.size()-1-i;
-	    if (stepper.SwimToPlane(pos,mom,
-				    segments[0]->hits[ind]->wire->origin,
-				    norm,NULL)
+	  int num_hits=0;
+	  for (unsigned int m=0;m<segments.size();m++){
+	    for (unsigned int i=0;i<segments[m]->hits.size();i++){
+	      unsigned int ind=segments[m]->hits.size()-1-i;
+	      if (stepper.SwimToPlane(pos,mom,
+				      segments[m]->hits[ind]->wire->origin,
+				      norm,NULL)
 		==false){
-	      double dx=segments[0]->hits[ind]->x-pos.x();
-	      double dy=segments[0]->hits[ind]->y-pos.y();
-	      double dr=sqrt(dx*dx+dy*dy);
-	      
-	      // Use an un-normalized gaussian so that for a residual
+		double dx=segments[m]->hits[ind]->x-pos.x();
+		double dy=segments[m]->hits[ind]->y-pos.y();
+		double dr=sqrt(dx*dx+dy*dy);
+		
+		// Use an un-normalized gaussian so that for a residual
 	      // of zero, we get a probability of 1.0.
-	      double variance=1.0;
-	      double prob = finite(dr) ? exp(-dr*dr/2./variance):0.0;
+		double variance=1.0;
+		double prob = finite(dr) ? exp(-dr*dr/2./variance):0.0;
 	      if (prob>0.1) num_match++;
+	      num_hits++;
+	      }
 	    }
-	  }
-	  if (num_match>0){
+	  }   
+	  if (double(num_match)/double(num_hits)>0.5){
 	    forward_matches[k]=1; 
 	    
 	    // variables for calculating average Bz
