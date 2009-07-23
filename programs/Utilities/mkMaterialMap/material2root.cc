@@ -50,12 +50,16 @@ int main(int narg, char *argv[])
 			DVector3 pos(r, 0.0, z);
 			double density, A, Z, RadLen;
 
+			density = A = Z = RadLen = 0.0;
+
 			rg->FindMatLL(pos, density, A, Z, RadLen);
 			radlen_LL->Fill(z, r, RadLen);
 			A_LL->Fill(z, r, A);
 			Z_LL->Fill(z, r, Z);
 			density_LL->Fill(z, r, density);
 
+			density = A = Z = RadLen = 0.0;
+			
 			//rg->FindMatTable(pos, density, A, Z, RadLen);
 			geom->FindMat(pos, density, A, Z, RadLen);
 			radlen_table->Fill(z, r, RadLen);

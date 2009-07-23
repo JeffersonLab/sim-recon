@@ -13,12 +13,12 @@ void radlen_vs_r_vs_z(void)
 	
 	c1->cd(1);
 	radlen_LL->SetStats(0);
-	radlen_LL->SetTitle("Material Map from FindMatLL(...)");
+	radlen_LL->SetTitle("Material Map from DRootGeom::FindMatLL(...)");
 	radlen_LL->Draw("colz");
 
 	c1->cd(2);
 	radlen_table->SetStats(0);
-	radlen_table->SetTitle("Material Map from FindMatTable(...)");
+	radlen_table->SetTitle("Material Map from DGeometry::FindMat(...)");
 	radlen_table->Draw("colz");
 	
 	c1->SaveAs("radlen_vs_r_vs_z.gif");
