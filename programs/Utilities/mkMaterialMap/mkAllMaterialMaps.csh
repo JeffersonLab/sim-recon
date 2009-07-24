@@ -13,11 +13,11 @@ mkMaterialMap -Nr 100 -Nz 100 -rmin 1.0 -rmax 9.0 -zmin 90 -zmax 100 -n_r 3 -n_z
 mv material_map material_map02_startcounter_nose
 
 # CDC endplate
-mkMaterialMap -Nr 10 -Nz 60 -rmin 9.0 -rmax 60.0 -zmin 165 -zmax 171 -n_r 3 -n_z 3 -n_phi 60
+mkMaterialMap -Nr 60 -Nz 60 -rmin 9.0 -rmax 60.0 -zmin 165 -zmax 171 -n_r 3 -n_z 3 -n_phi 60
 mv material_map material_map10_CDC_endplate
 
 # CDC
-mkMaterialMap -Nr 50 -Nz 5 -rmin 9.75 -rmax 65.0 -zmin 15 -zmax 165 -n_r 10 -n_z 5 -n_phi 200
+mkMaterialMap -Nr 50 -Nz 5 -rmin 9.75 -rmax 65.0 -zmin 15 -zmax 165 -n_r 10 -n_z 50 -n_phi 200
 mv material_map material_map11_CDC
 
 # FDC package 1
@@ -37,6 +37,14 @@ mkMaterialMap -Nr 58 -Nz 6 -rmin 2.0 -rmax 60.0 -zmin 347 -zmax 361 -n_r 5 -n_z 
 mv material_map material_map23_FDC4
 
 # Everything else
-mkMaterialMap -Nr 120 -Nz 700 -rmin 0.0 -rmax 120.0 -zmin -50 -zmax 650 -n_r 3 -n_z 3 -n_phi 100
-mv material_map material_map99_course_default
+#mkMaterialMap -Nr 120 -Nz 700 -rmin 0.0 -rmax 120.0 -zmin -50 -zmax 650 -n_r 3 -n_z 3 -n_phi 100
+#mv material_map material_map99_course_default
 
+# Make simple map with air everywhere as default
+touch material_map
+echo "#  r	z	A	Z	density radlen rhoZ_overA rhoZ_overA_logI" >> material_map
+echo "0.5	-49.5	14.803	7.374	0.001214	30035	0.000604743	-0.00977523" >> material_map
+echo "119.5	-49.5	14.803	7.374	0.001214	30035	0.000604743	-0.00977523" >> material_map
+echo "0.5	649.5	14.803	7.374	0.001214	30035	0.000604743	-0.00977523" >> material_map
+echo "119.5	649.5	14.803	7.374	0.001214	30035	0.000604743	-0.00977523" >> material_map
+mv material_map material_map99_course_default
