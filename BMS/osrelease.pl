@@ -53,8 +53,10 @@ if ($uname eq 'Linux') {
 	    $release = '_RHEL4';
 	} elsif ($release_string =~ /^Red Hat Enterprise Linux Client release 5.*/) {
 	    $release = '_RHEL5';
-	} elsif ($release_string =~ /^CentOS release 4.2/ ){
-            $release = '_RHEL4';
+	} elsif ($release_string =~ /^CentOS release 4.*/ ){
+	    $release = '_CentOS4';
+	} elsif ($release_string =~ /^CentOS release 5.*/ ){
+	    $release = '_CentOS5';
 	} else {
 	    print STDERR "unrecognized Red Hat release\n";
 	    $release = '_RH';
