@@ -116,6 +116,10 @@ jerror_t MyProcessor::brun(JEventLoop *eventloop, int runnumber)
 	dgeom->GetFDCWires(fdcwires);
 
 	RootGeom = dapp->GetRootGeom();
+	geom = dapp->GetDGeometry(runnumber);
+	
+	MATERIAL_MAP_MODEL="DGeometry";
+	gPARMS->SetDefaultParameter("TRKFIT:MATERIAL_MAP_MODEL",			MATERIAL_MAP_MODEL);
 
 	return NOERROR;
 }
@@ -601,7 +605,17 @@ void MyProcessor::AddKinematicDataTrack(const DKinematicData* kd, int color, dou
 	// Create a reference trajectory with the given kinematic data and swim
 	// it through the detector.
 	DReferenceTrajectory rt(Bfield);
-	rt.SetDRootGeom(RootGeom);
+
+	if(MATERIAL_MAP_MODEL=="DRootGeom"){
+		rt.SetDRootGeom(RootGeom);
+		rt.SetDGeometry(NULL);
+	}else if(MATERIAL_MAP_MODEL=="DGeometry"){
+		rt.SetDRootGeom(NULL);
+		rt.SetDGeometry(geom);
+	}else if(MATERIAL_MAP_MODEL!="NONE"){
+		_DBG_<<"WARNING: Invalid value for TRKFIT:MATERIAL_MAP_MODEL (=\""<<MATERIAL_MAP_MODEL<<"\")"<<endl;
+	}
+
 	rt.Swim(kd->position(), kd->momentum(), kd->charge());
 
 	// Create a new graphics set and fill it with all of the trajectory points
@@ -734,7 +748,15 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 	// Create a new DReference trajectory object. The caller takes
 	// ownership of this and so they are responsible for deleting it.
 	rt = new DReferenceTrajectory(Bfield);
-	rt->SetDRootGeom(RootGeom);
+	if(MATERIAL_MAP_MODEL=="DRootGeom"){
+		rt->SetDRootGeom(RootGeom);
+		rt->SetDGeometry(NULL);
+	}else if(MATERIAL_MAP_MODEL=="DGeometry"){
+		rt->SetDRootGeom(NULL);
+		rt->SetDGeometry(geom);
+	}else if(MATERIAL_MAP_MODEL!="NONE"){
+		_DBG_<<"WARNING: Invalid value for TRKFIT:MATERIAL_MAP_MODEL (=\""<<MATERIAL_MAP_MODEL<<"\")"<<endl;
+	}
 	rt->Swim(pos, mom, q);
 }
 

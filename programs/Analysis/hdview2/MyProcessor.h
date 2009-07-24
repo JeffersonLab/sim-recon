@@ -15,6 +15,7 @@
 
 #include <HDGEOMETRY/DMagneticFieldMap.h>
 #include <HDGEOMETRY/DRootGeom.h>
+#include <HDGEOMETRY/DGeometry.h>
 #include <PID/DKinematicData.h>
 #include <DCoordinateSystem.h>
 #include <TRACKING/DReferenceTrajectory.h>
@@ -96,6 +97,8 @@ class MyProcessor:public JEventProcessor
 		JEventLoop *loop;
 		JEvent last_jevent;
 		DRootGeom *RootGeom;
+		DGeometry *geom;
+		string MATERIAL_MAP_MODEL;
 		
 		void AddKinematicDataTrack(const DKinematicData* kd, int color, double size);
 		
