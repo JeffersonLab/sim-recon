@@ -49,6 +49,10 @@ jerror_t DTrack_factory::init(void)
 	fitter = NULL;
 	hitselector = NULL;
 
+	DReferenceTrajectory rt(NULL); // temporary just to get default mass
+	DEFAULT_MASS = rt.GetMass(); // Get default mass from DReferenceTrajectory class itself
+	gPARMS->SetDefaultParameter("TRKFIT:DEFAULT_MASS",					DEFAULT_MASS);
+
 	return NOERROR;
 }
 
@@ -112,6 +116,7 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 		DReferenceTrajectory *rt = rtv[_data.size()];
 		
 		// Swim a reference trajectory with this candidate's parameters
+		rt->SetMass(DEFAULT_MASS);
 		rt->Swim(candidate->position(), candidate->momentum(), candidate->charge());
 		if(rt->Nswim_steps<1)continue;
 
