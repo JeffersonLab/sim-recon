@@ -82,16 +82,20 @@ int main(int narg, char *argv[])
 						double my_phi = (double)i_phi*d_phi;
 
 						DVector3 pos(my_r*cos(my_phi), my_r*sin(my_phi), my_z);
-						double A, Z, density, radlen;
-						g->FindMatLL(pos, density, A, Z, radlen);
-						double rhoZ_overA = density*Z/A;
-						double I = (Z*12.0 + 7.0)*1.0E-9; // From Leo 2nd ed. pg 25.
-						double rhoZ_overA_logI = rhoZ_overA*log(I);
-						
+						double A, Z, density, radlen, rhoZ_overA, rhoZ_overA_logI;
+						jerror_t err = g->FindMatLL(pos, density, A, Z, radlen);
+						if(err==NOERROR){
+							rhoZ_overA = density*Z/A;
+							double I = (Z*12.0 + 7.0)*1.0E-9; // From Leo 2nd ed. pg 25.
+							rhoZ_overA_logI = rhoZ_overA*log(I);
+						}else{
+							A = Z = density = radlen = rhoZ_overA = rhoZ_overA_logI = 0.0;
+						}
+
 						avg_mat.A += A;
 						avg_mat.Z += Z;
 						avg_mat.Density += density;
-						avg_mat.RadLen += radlen;
+						avg_mat.RadLen += 1.0/radlen; // use this to keep proper sum (will be flipped and normalized below)
 						avg_mat.rhoZ_overA += rhoZ_overA;
 						avg_mat.rhoZ_overA_logI += rhoZ_overA_logI;
 					}
@@ -99,12 +103,15 @@ int main(int narg, char *argv[])
 			}
 
 			// Divide by number of points to get averages
-			avg_mat.A /= (double)(n_r*n_z*n_phi);
-			avg_mat.Z /= (double)(n_r*n_z*n_phi);
-			avg_mat.Density /= (double)(n_r*n_z*n_phi);
-			avg_mat.RadLen /= (double)(n_r*n_z*n_phi);
-			avg_mat.rhoZ_overA /= (double)(n_r*n_z*n_phi);
-			avg_mat.rhoZ_overA_logI /= (double)(n_r*n_z*n_phi);
+			double N = (double)(n_r*n_z*n_phi);
+			avg_mat.A /= N;
+			avg_mat.Z /= N;
+			avg_mat.RadLen = N/avg_mat.RadLen; // see eq. 27.23 pg 273 of 2008 PDG (note: we implicitly converted to g cm^-2 and back)
+			avg_mat.Density /= N;
+			avg_mat.rhoZ_overA /= N;
+			avg_mat.rhoZ_overA_logI /= N;
+			
+			if(!finite(avg_mat.RadLen))avg_mat.RadLen = 0.0;
 			
 			MatTable[ir][iz] = avg_mat;
 		}
