@@ -83,7 +83,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 {
   //Get pointer to DGeometry object
   DApplication* dapp=dynamic_cast<DApplication*>(japp);
-  const DGeometry *dgeom  = dapp->GetDGeometry(0);
+  const DGeometry *dgeom  = dapp->GetDGeometry(9999);
   
   dgeom->GetFDCWires(fdcwires);
 
