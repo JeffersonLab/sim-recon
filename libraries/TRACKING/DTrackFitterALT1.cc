@@ -310,17 +310,18 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 		_DBG_<<"-------- Check chisq = "<<chisq<<" Ndof="<<Ndof<<endl;
 	}
 
-	// Calculate final chi-squared for this track
-	ChiSq(fit_type, rt, &this->chisq, &this->Ndof);
-
 	// Find point of closest approach to target and use parameters
 	// there for vertex position and momentum
-	//DVector3 vertex_mom, vertex_pos;
-	//double s;
-	//rt->DistToRT(target, &s);
-	//rt->GetLastDOCAPoint(vertex_pos, vertex_mom);
-	DVector3 &vertex_mom = rt->swim_steps[0].mom;
-	DVector3 &vertex_pos = rt->swim_steps[0].origin;
+	DVector3 vertex_mom, vertex_pos;
+	double s;
+	rt->DistToRT(target, &s);
+	rt->GetLastDOCAPoint(vertex_pos, vertex_mom);
+	rt->Swim(vertex_pos, vertex_mom);
+	//DVector3 &vertex_mom = rt->swim_steps[0].mom;
+	//DVector3 &vertex_pos = rt->swim_steps[0].origin;
+
+	// Calculate final chi-squared for this track
+	ChiSq(fit_type, rt, &this->chisq, &this->Ndof);
 
 	// Copy final fit parameters into TrackFitter classes data members. Note that the chisq and Ndof
 	// members are copied in during the ChiSq() method call in LeastSquaresB().
