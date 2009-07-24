@@ -10,6 +10,8 @@
 
 #include <JANA/JFactory.h>
 #include <TRACKING/DReferenceTrajectory.h>
+#include <HDGEOMETRY/DRootGeom.h>
+#include <HDGEOMETRY/DGeometry.h>
 #include "DParticle.h"
 
 class DTrackFitter;
@@ -33,7 +35,10 @@ class DParticle_factory_THROWN:public jana::JFactory<DParticle>{
 		DTrackFitter *fitter;
 		const DTrackHitSelector *hitselector;
 		vector<DReferenceTrajectory*> rt_pool;
-
+		
+		DRootGeom *RootGeom;
+		DGeometry *geom;
+		string MATERIAL_MAP_MODEL;
 };
 
 #endif // _DParticle_factory_THROWN_

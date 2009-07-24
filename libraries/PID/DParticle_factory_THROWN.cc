@@ -63,6 +63,13 @@ jerror_t DParticle_factory_THROWN::brun(jana::JEventLoop *loop, int runnumber)
 		return RESOURCE_UNAVAILABLE;
 	}
 	hitselector = hitselectors[0];
+	
+	// Get pointers to material maps
+	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	RootGeom = dapp->GetRootGeom();
+	geom = dapp->GetDGeometry(runnumber);
+
+	gPARMS->GetParameter("TRKFIT:MATERIAL_MAP_MODEL",			MATERIAL_MAP_MODEL);
 
 	return NOERROR;
 }
@@ -105,6 +112,20 @@ jerror_t DParticle_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		}
 		DReferenceTrajectory *rt = rt_pool[_data.size()];
 		particle->rt = rt;
+
+		// Set the geometry object pointers based on the material map
+		// specified via configuration parameter.
+		if(MATERIAL_MAP_MODEL=="DRootGeom"){
+			rt->SetDRootGeom(RootGeom);
+			rt->SetDGeometry(NULL);
+		}else if(MATERIAL_MAP_MODEL=="DGeometry"){
+			rt->SetDRootGeom(NULL);
+			rt->SetDGeometry(geom);
+		}else if(MATERIAL_MAP_MODEL=="NONE"){
+			rt->SetDRootGeom(NULL);
+			rt->SetDGeometry(NULL);
+		}
+
 		DVector3 pos = particle->position();
 		DVector3 mom = particle->momentum();
 		rt->Swim(pos, mom, particle->charge());
