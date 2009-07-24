@@ -44,8 +44,7 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
 	// Calculate beta of particle assuming its a pion for now. If the
 	// particles is really a proton or an electron, the residual
 	// calculated below will only be off by a little.
-	double TOF_MASS = 0.13957018;
-	double beta = 1.0/sqrt(1.0+TOF_MASS*TOF_MASS/rt->swim_steps[0].mom.Mag2());
+	double beta = 1.0/sqrt(1.0+pow(rt->GetMass(),2.0)/rt->swim_steps[0].mom.Mag2());
 	
 	// The error on the residual. This will be different based on the
 	// quality of the track and whether MULS is on or not etc.
@@ -118,8 +117,7 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
 	// Calculate beta of particle assuming its a pion for now. If the
 	// particles is really a proton or an electron, the residual
 	// calculated below will only be off by a little.
-	double TOF_MASS = 0.13957018;
-	double beta = 1.0/sqrt(1.0+TOF_MASS*TOF_MASS/rt->swim_steps[0].mom.Mag2());
+	double beta = 1.0/sqrt(1.0+pow(rt->GetMass(),2.0)/rt->swim_steps[0].mom.Mag2());
 	
 	// The error on the residual. This will be different based on the
 	// quality of the track and whether MULS is on or not etc.
@@ -141,6 +139,22 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
 			sigma_anode = 10.0*0.5/sqrt(12.0);
 			sigma_cathode = 10.0*0.5/sqrt(12.0);
 	}
+	
+	// Scale the errors up by 1/p for p<1GeV/c. This accounts for the poorer knowledge
+	// of the track parameters contained in the candidate for low momentum tracks
+	double ptot = rt->swim_steps[0].mom.Mag();
+	if(ptot<1.0){
+		sigma_anode /= ptot;
+		sigma_cathode /= ptot;
+	}
+	
+	// Higher mass particles (protons) lose energy quicker and therefore have even
+	// less helical shapes for candidates and larger errors due to eloss straggling.
+	// These next 2 lines are here mainly to improve the situation for protons so
+	// we take a stab at scaling up the errors by the number of pion masses since
+	// this worked reasonably well for pions before.
+	sigma_anode *= rt->GetMass()/0.13957;
+	sigma_cathode *= rt->GetMass()/0.13957;
 
 	// Minimum probability of hit belonging to wire and still be accepted
 	double MIN_HIT_PROB = 0.01;
