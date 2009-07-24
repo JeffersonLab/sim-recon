@@ -1036,7 +1036,7 @@ double DReferenceTrajectory::dPdx(double ptot, double A, double Z, double densit
 	double rhoZ_overA = density*Z/A;
 	double rhoZ_overA_logI = rhoZ_overA*log(I);
 
-	return dPdx(mass, ptot, rhoZ_overA, rhoZ_overA_logI);
+	return dPdx(ptot, rhoZ_overA, rhoZ_overA_logI);
 }
 
 //------------------
