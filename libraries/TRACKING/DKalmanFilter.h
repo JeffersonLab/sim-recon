@@ -26,7 +26,7 @@ typedef struct{
   DVector3 origin;
   DVector3 dir;
   double residual;
-  int ring;
+  int ring,straw;
 }DKalmanCDCHit_t;
 
 typedef struct{
@@ -88,8 +88,11 @@ class DKalmanFilter{
       delete central_traj[i].J;
   //      delete central_traj[i].C;
     }
-    hits.clear();
+    fdchits.clear();
     cdchits.clear();
+    central_traj.clear();
+    forward_traj.clear();
+    forward_traj_cdc.clear();
   };
 
   jerror_t AddCDCHit(const DCDCTrackHit *cdchit);
@@ -252,7 +255,6 @@ class DKalmanFilter{
 	
   bool do_multiple_scattering;
   bool do_energy_loss;
-  bool switch_LR;
   int pass;
   bool DEBUG_HISTS;
   int DEBUG_LEVEL;
