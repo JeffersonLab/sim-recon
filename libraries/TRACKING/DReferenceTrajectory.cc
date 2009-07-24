@@ -44,6 +44,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	// Copy some values into data members
 	this->q = q;
 	this->step_size = step_size;
+//this->step_size = 0.05;
 	this->bfield = bfield;
 	this->Nswim_steps = 0;
 	this->dist_to_rt_depth = 0;
@@ -73,6 +74,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DReferenceTrajectory& rt)
 	this->last_dist_along_wire = rt.last_dist_along_wire;
 	this->last_dz_dphi = rt.last_dz_dphi;
 	this->RootGeom = rt.RootGeom;
+	this->geom = rt.geom;
 	this->dist_to_rt_depth = 0;
 	this->mass = rt.GetMass();
 
@@ -117,6 +119,7 @@ DReferenceTrajectory& DReferenceTrajectory::operator=(const DReferenceTrajectory
 	this->last_dist_along_wire = rt.last_dist_along_wire;
 	this->last_dz_dphi = rt.last_dz_dphi;
 	this->RootGeom = rt.RootGeom;
+	this->geom = rt.geom;
 	this->dist_to_rt_depth = rt.dist_to_rt_depth;
 	this->mass = rt.GetMass();
 
@@ -163,6 +166,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	double itheta02s = 0.0;
 	double itheta02s2 = 0.0;
 	swim_step_t *last_step=NULL;
+
 	for(double s=0; fabs(s)<smax; Nswim_steps++, swim_step++){
 
 		if(Nswim_steps>=this->max_swim_steps){
@@ -182,28 +186,32 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		if(RootGeom || geom){
 			//double density, A, Z, X0;
 			double rhoZ_overA, rhoZ_overA_logI, X0;
+			jerror_t err;
 			if(RootGeom){
-				RootGeom->FindMatLL(swim_step->origin, rhoZ_overA, rhoZ_overA_logI, X0);
+				err = RootGeom->FindMatLL(swim_step->origin, rhoZ_overA, rhoZ_overA_logI, X0);
 			}else{
-				geom->FindMat(swim_step->origin, rhoZ_overA, rhoZ_overA_logI, X0);
+				err = geom->FindMat(swim_step->origin, rhoZ_overA, rhoZ_overA_logI, X0);
 			}
 
-			if(X0>0.0){
-				double delta_s = s;
-				if(last_step)delta_s -= last_step->s;
-				double radlen = delta_s/X0;
-				if(radlen>1.0E-5){ // PDG 2008 pg 271, second to last paragraph
-					double p = swim_step->mom.Mag();
-					double beta = p/sqrt(p*p + mass*mass); // assume pion mass
-					double theta0 = 0.0136/(p*beta)*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
-					double theta02 = theta0*theta0;
-					itheta02 += theta02;
-					itheta02s += s*theta02;
-					itheta02s2 += s*s*theta02;
-				}
+			if(err == NOERROR){
+				if(X0>0.0){
+					double delta_s = s;
+					if(last_step)delta_s -= last_step->s;
+					double radlen = delta_s/X0;
 
-				// Calculate momentum loss due to ionization
-				dP = delta_s*dPdx(swim_step->mom.Mag(), rhoZ_overA, rhoZ_overA_logI);
+					if(radlen>1.0E-5){ // PDG 2008 pg 271, second to last paragraph
+						double p = swim_step->mom.Mag();
+						double beta = p/sqrt(p*p + mass*mass); // assume pion mass
+						double theta0 = 0.0136/(p*beta)*sqrt(radlen)*(1.0+0.038*log(radlen)); // From PDG 2008 eq 27.12
+						double theta02 = theta0*theta0;
+						itheta02 += theta02;
+						itheta02s += s*theta02;
+						itheta02s2 += s*s*theta02;
+					}
+
+					// Calculate momentum loss due to ionization
+					dP = delta_s*dPdx(swim_step->mom.Mag(), rhoZ_overA, rhoZ_overA_logI);
+				}
 			}
 			last_step = swim_step;
 		}
@@ -516,7 +524,7 @@ double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, d
 	/// defined by "wire" should have its origin at the center of
 	/// the wire with the wire running in the direction of udir.
 	swim_step_t *step=FindClosestSwimStep(wire);
-	
+
 	return step ? DistToRTBruteForce(wire, step, s):std::numeric_limits<double>::quiet_NaN();
 }
 
@@ -737,7 +745,9 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 
 		double w0 = q - p;
 		phi = w0 - a2/3.0;
-	}else{
+	}
+	
+	if(fabs(Q)<=1.0E-6 || !finite(phi)){
 		double a = 3.0*R;
 		double b = 2.0*S;
 		double c = 1.0*T;
@@ -824,7 +834,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 	// Use phi to calculate DOCA
 	double d2 = U + phi*(T + phi*(S + phi*(R + phi*Q)));
 	double d = sqrt(d2);
-	
+
 	// Calculate distance along track ("s")
 	double dz = dz_dphi*phi;
 	double Rodphi = Ro*phi;

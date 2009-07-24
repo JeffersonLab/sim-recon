@@ -121,12 +121,13 @@ class DTrackFitterALT1:public DTrackFitter{
 		double LEAST_SQUARES_DX;
 		unsigned int LEAST_SQUARES_MIN_HITS;
 		double LEAST_SQUARES_MAX_E2NORM;
-		double TOF_MASS;
+		double DEFAULT_MASS;
 		bool TARGET_CONSTRAINT;
 		bool LR_FORCE_TRUTH;
 		bool USE_MULS_COVARIANCE;
 		bool USE_FDC;
 		bool USE_CDC;
+		string MATERIAL_MAP_MODEL;
 		
 		TH3F *cdcdoca_vs_dist_vs_ring;
 		TH2F *cdcdoca_vs_dist;

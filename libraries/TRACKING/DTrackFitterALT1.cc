@@ -62,6 +62,10 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	target->udir.SetXYZ(0.0, 0.0, 1.0);
 	target->L = 30.0;
 
+	// DReferenceTrajectory objects
+	rt = new DReferenceTrajectory(bfield);
+	tmprt = new DReferenceTrajectory(bfield);
+	
 	DEBUG_HISTS = false;
 	DEBUG_LEVEL = 0;
 	MAX_CHISQ_DIFF = 1.0E-2;
@@ -74,12 +78,13 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	LEAST_SQUARES_DX = 0.010;
 	LEAST_SQUARES_MIN_HITS = 3;
 	LEAST_SQUARES_MAX_E2NORM = 1.0E8;
-	TOF_MASS = 0.13957018;
+	DEFAULT_MASS = rt->GetMass(); // Get default mass from DReferenceTrajectory class itself
 	TARGET_CONSTRAINT = false;
 	LR_FORCE_TRUTH = false;
 	USE_MULS_COVARIANCE = true;
 	USE_FDC = true;
 	USE_CDC = true;
+	MATERIAL_MAP_MODEL = "DGeometry";
 	
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",					DEBUG_HISTS);
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",					DEBUG_LEVEL);
@@ -93,19 +98,36 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_DX",			LEAST_SQUARES_DX);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MIN_HITS",	LEAST_SQUARES_MIN_HITS);
 	gPARMS->SetDefaultParameter("TRKFIT:LEAST_SQUARES_MAX_E2NORM",	LEAST_SQUARES_MAX_E2NORM);		
-	gPARMS->SetDefaultParameter("TRKFIT:TOF_MASS",						TOF_MASS);
+	gPARMS->SetDefaultParameter("TRKFIT:DEFAULT_MASS",					DEFAULT_MASS);
 	gPARMS->SetDefaultParameter("TRKFIT:TARGET_CONSTRAINT",			TARGET_CONSTRAINT);
 	gPARMS->SetDefaultParameter("TRKFIT:LR_FORCE_TRUTH",				LR_FORCE_TRUTH);
 	gPARMS->SetDefaultParameter("TRKFIT:USE_MULS_COVARIANCE",		USE_MULS_COVARIANCE);
 	gPARMS->SetDefaultParameter("TRKFIT:USE_FDC",						USE_FDC);
 	gPARMS->SetDefaultParameter("TRKFIT:USE_CDC",						USE_CDC);
+	gPARMS->SetDefaultParameter("TRKFIT:MATERIAL_MAP_MODEL",			MATERIAL_MAP_MODEL);
 	
-	// DReferenceTrajectory objects
-	rt = new DReferenceTrajectory(bfield);
-	tmprt = new DReferenceTrajectory(bfield);
-	rt->SetDRootGeom(RootGeom);
-	tmprt->SetDRootGeom(RootGeom);
+	// Set default mass based on configuration parameter
+	rt->SetMass(DEFAULT_MASS);
+	tmprt->SetMass(DEFAULT_MASS);
 	
+	// Set the geometry object pointers based on the material map
+	// specified via configuration parameter.
+	if(MATERIAL_MAP_MODEL=="DRootGeom"){
+		rt->SetDRootGeom(RootGeom);
+		tmprt->SetDRootGeom(RootGeom);
+	}else if(MATERIAL_MAP_MODEL=="DGeometry"){
+		rt->SetDGeometry(geom);
+		tmprt->SetDGeometry(geom);
+	}else if(MATERIAL_MAP_MODEL=="NONE"){
+		rt->SetDRootGeom(NULL);
+		tmprt->SetDRootGeom(NULL);
+		rt->SetDGeometry(NULL);
+		tmprt->SetDGeometry(NULL);
+	}else{
+		_DBG_<<"ERROR: Invalid value for TRKFIT:MATERIAL_MAP_MODEL (=\""<<MATERIAL_MAP_MODEL<<"\")"<<endl;
+		exit(-1);
+	}
+
 	cout<<__FILE__<<":"<<__LINE__<<"-------------- Least Squares TRACKING --------------"<<endl;
 
 	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -1276,7 +1298,7 @@ void DTrackFitterALT1::FillDebugHists(DReferenceTrajectory *rt, DVector3 &vertex
 	ptotal->Fill(vertex_mom.Mag());
 
 	// Calculate particle beta
-	double beta = 1.0/sqrt(1.0+TOF_MASS*TOF_MASS/vertex_mom.Mag2()); // assume this is a pion for now. This should eventually come from outer detectors
+	double beta = 1.0/sqrt(1.0+pow(rt->GetMass(), 2.0)/vertex_mom.Mag2()); // assume this is a pion for now. This should eventually come from outer detectors
 
 	for(unsigned int j=0; j<cdchits.size(); j++){
 		const DCDCTrackHit *hit = cdchits[j];

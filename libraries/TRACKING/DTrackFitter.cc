@@ -26,6 +26,7 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	}
 	bfield = dapp->GetBfield(); // this should be run number based!
 	lorentz_def=dapp->GetLorentzDeflections();
+	geom = dapp->GetDGeometry((loop->GetJEvent()).GetRunNumber());
 	RootGeom = dapp->GetRootGeom();
 }
 

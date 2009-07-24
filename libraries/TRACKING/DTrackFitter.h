@@ -20,6 +20,7 @@
 #include <FDC/DFDCPseudo.h>
 
 class DReferenceTrajectory;
+class DGeometry;
 
 //////////////////////////////////////////////////////////////////////////////////
 /// The DTrackFitter class is a base class for different charged track
@@ -109,6 +110,7 @@ class DTrackFitter:public jana::JObject{
 		fit_type_t fit_type;							//< kWireBased or kTimeBased
 		const DMagneticFieldMap *bfield;			//< Magnetic field map for current event (acquired through loop)
 		const DLorentzDeflections *lorentz_def;//< Correction to FDC cathodes due to Lorentz force
+		const DGeometry *geom;						//< DGeometry pointer used to access materials through calibDB maps for eloss
 		const DRootGeom *RootGeom;					//< ROOT geometry used for accessing material for MULS, energy loss
 		JEventLoop *loop;								//< Pointer to JEventLoop object handling the current event
 
