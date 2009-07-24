@@ -49,6 +49,10 @@ bool DKalmanCDCHit_cmp(DKalmanCDCHit_t *a, DKalmanCDCHit_t *b){
     cout << "Null pointer in CDC hit list??" << endl;
     return false;
   }
+  if(b->ring == a->ring){
+    return b->straw < a->straw;
+  }
+  
   return (b->ring>a->ring);
 }
 int grkuta_(double *CHARGE, double *STEP, double *VECT, double *VOUT,const DMagneticFieldMap *bfield);
@@ -188,6 +192,7 @@ jerror_t DKalmanFilter::AddCDCHit (const DCDCTrackHit *cdchit){
   //hit->dir=(1./cdchit->wire->udir.z())*cdchit->wire->udir;
   hit->dir=cdchit->wire->udir;
   hit->ring=cdchit->wire->ring;
+  hit->straw=cdchit->wire->straw;
   
   cdchits.push_back(hit);
   
@@ -217,21 +222,21 @@ jerror_t DKalmanFilter::CalcDeriv(double z,double dz,DMatrix S, double dEdx,
 
   //B-field at (x,y,z)
   double Bx=0.,By=0.,Bz=-2.;
-  bfield->GetField(x,y,z, Bx, By, Bz);
-  
+  //bfield->GetField(x,y,z, Bx, By, Bz);
+  bfield->GetFieldBicubic(x,y,z, Bx, By, Bz);
+
   D(state_x,0)=tx
     +0.5*dz*qBr2p*q_over_p*factor*(ty*Bz+tx*ty*Bx-(1.+tx*tx)*By);
   D(state_y,0)=ty
     +0.5*dz*qBr2p*q_over_p*factor*(Bx*(1.+ty*ty)-tx*ty*By-tx*Bz);
   D(state_tx,0)=qBr2p*q_over_p*factor*(tx*ty*Bx-(1.+tx*tx)*By+ty*Bz);
   D(state_ty,0)=qBr2p*q_over_p*factor*((1.+ty*ty)*Bx-tx*ty*By-tx*Bz);
-  
+
+  D(state_q_over_p,0)=0.;
   if (fabs(dEdx)>0.){
     double E=sqrt(1./q_over_p/q_over_p+MASS*MASS); 
     if (fabs(q_over_p)<Q_OVER_P_MAX)
       D(state_q_over_p,0)=-q_over_p*q_over_p*q_over_p*E*dEdx*factor;
-    else
-      D(state_q_over_p,0)=0.;
   }
   return NOERROR;
 }
@@ -250,9 +255,13 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double z,double dz,DMatrix S,
   double Bx=0.,By=0.,Bz=-2.;
   double dBxdx=0.,dBxdy=0.,dBxdz=0.,dBydx=0.,dBydy=0.;
   double dBydz=0.,dBzdx=0.,dBzdy=0.,dBzdz=0.;
+  /*
   bfield->GetField(x,y,z, Bx, By, Bz);
   bfield->GetFieldGradient(x,y,z,dBxdx,dBxdy,dBxdz,dBydx,dBydy,dBydz,dBzdx,
 			   dBzdy,dBzdz);
+  */
+  bfield->GetFieldAndGradient(x,y,z,Bx,By,Bz,dBxdx,dBxdy,dBxdz,dBydx,dBydy,
+			      dBydz,dBzdx,dBzdy,dBzdz);
 
   // Derivative of S with respect to z
   D(state_x,0)=tx
@@ -287,6 +296,8 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double z,double dz,DMatrix S,
   J(state_q_over_p,state_tx)=D(state_q_over_p,0)*tx/factor/factor;
   J(state_q_over_p,state_ty)=D(state_q_over_p,0)*ty/factor/factor;
 
+  D(state_q_over_p,0)=0.;
+  J(state_q_over_p,state_q_over_p)=0.;
   if (fabs(dEdx)>0.){
     double E=sqrt(1./q_over_p/q_over_p+MASS*MASS); 
     D(state_q_over_p,0)=-q_over_p*q_over_p*q_over_p*E*dEdx*factor;
@@ -558,7 +569,8 @@ jerror_t DKalmanFilter::SwimCentral(DVector3 &pos,DMatrix &Sc){
     
     // Magnetic field
     DVector3 B(0.,0.,-2.);
-    bfield->GetField(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
+    //bfield->GetField(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
+    bfield->GetFieldBicubic(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));    
     double Bz_=fabs(B(2));
     DVector3 dpos1=central_traj[m-1].pos-central_traj[m].pos;
 
@@ -1298,8 +1310,14 @@ jerror_t DKalmanFilter::CalcDerivAndJacobian(double ds,DVector3 pos,
   //field gradient at (x,y,z)
   double dBxdx=0.,dBxdy=0.,dBxdz=0.,dBydx=0.,dBydy=0.,dBydz=0.;
   double dBzdx=0.,dBzdy=0.,dBzdz=0.;
+  /*
   bfield->GetFieldGradient(pos.x(),pos.y(),pos.z(),dBxdx,dBxdy,dBxdz,dBydx,
 			   dBydy,dBydz,dBzdx,dBzdy,dBzdz);
+  */
+  bfield->GetFieldAndGradient(pos.x(),pos.y(),pos.z(),B(0),B(1),B(2),
+			      dBxdx,dBxdy,dBxdz,dBydx,
+			      dBydy,dBydz,dBzdx,dBzdy,dBzdz);
+
   // Derivative of S with respect to s
   double temp1=B.y()*cosphi-B.x()*sinphi;
   D1(state_q_over_pt,0)=qBr2p*q_over_pt*q_over_pt*sinl*temp1;
@@ -1452,7 +1470,8 @@ jerror_t DKalmanFilter::StepJacobian(DVector3 pos, DVector3 wire_orig,
   double q=(S(state_q_over_pt,0)>0)?1.:-1.;
   // Magnetic field
   DVector3 B(0.,0.,-2.);
-  bfield->GetField(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
+  //bfield->GetField(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
+  bfield->GetFieldBicubic(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
   double Bz_=fabs(B.z());
   double qpt=1./S(state_q_over_pt,0);
   double sinphi=sin(S(state_phi,0));
@@ -1751,6 +1770,25 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     if (cdchits.size()>0){
       // Order the CDC hits by ring number
       sort(cdchits.begin(),cdchits.end(),DKalmanCDCHit_cmp);
+
+      // For 2 adjacent hits in a single ring, swap hits from the default
+      // ordering according to the phi values relative to the phi of the
+      // innermost hit.
+      if (cdchits.size()>1){
+	double phi0=cdchits[0]->origin.Phi();
+	for (unsigned int i=0;i<cdchits.size()-1;i++){
+	  if (cdchits[i]->ring==cdchits[i+1]->ring){
+	    double phi1=cdchits[i]->origin.Phi();
+	    double phi2=cdchits[i+1]->origin.Phi();
+	    if (fabs(phi1-phi0)>fabs(phi2-phi0)){
+	      DKalmanCDCHit_t a=*cdchits[i];
+	      DKalmanCDCHit_t b=*cdchits[i+1];
+	      *cdchits[i]=b;
+	      *cdchits[i+1]=a;
+	    }
+	  }
+	}
+      }      
     }
 
     // Initialize the state vector and covariance matrix
@@ -1922,6 +1960,25 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
   if (cdchits.size()>0 && tanl_>0.84){
     // Order the CDC hits by ring number
     sort(cdchits.begin(),cdchits.end(),DKalmanCDCHit_cmp);
+
+    // For 2 adjacent hits in a single ring, swap hits from the default
+    // ordering according to the phi values relative to the phi of the
+    // innermost hit.
+    if (cdchits.size()>1){
+      double phi0=cdchits[0]->origin.Phi();
+      for (unsigned int i=0;i<cdchits.size()-1;i++){
+	if (cdchits[i]->ring==cdchits[i+1]->ring){
+	  double phi1=cdchits[i]->origin.Phi();
+	  double phi2=cdchits[i+1]->origin.Phi();
+	  if (fabs(phi1-phi0)>fabs(phi2-phi0)){
+	    DKalmanCDCHit_t a=*cdchits[i];
+	    DKalmanCDCHit_t b=*cdchits[i+1];
+	    *cdchits[i]=b;
+	    *cdchits[i+1]=a;
+	  }
+	}
+      }
+    }
    
     // Initialize the state vector and covariance matrix
     S(state_x,0)=x_;
@@ -2184,6 +2241,25 @@ jerror_t DKalmanFilter::KalmanLoop(double mass_hyp,int pass){
     // Order the CDC hits by radius
     sort(cdchits.begin(),cdchits.end(),DKalmanCDCHit_cmp);
 
+    // For 2 adjacent hits in a single ring, swap hits from the default
+    // ordering according to the phi values relative to the phi of the
+    // innermost hit.
+    if (cdchits.size()>1){
+      double phi0=cdchits[0]->origin.Phi();
+      for (unsigned int i=0;i<cdchits.size()-1;i++){
+	if (cdchits[i]->ring==cdchits[i+1]->ring){
+	  double phi1=cdchits[i]->origin.Phi();
+	  double phi2=cdchits[i+1]->origin.Phi();
+	  if (fabs(phi1-phi0)>fabs(phi2-phi0)){
+	    DKalmanCDCHit_t a=*cdchits[i];
+	    DKalmanCDCHit_t b=*cdchits[i+1];
+	    *cdchits[i]=b;
+	    *cdchits[i+1]=a;
+	  }
+	}
+      }
+    }      
+    
     // Initialize the state vector and covariance matrix
     Sc(state_q_over_pt,0)=q_over_pt_;
     Sc(state_phi,0)=phi_;
@@ -2889,7 +2965,8 @@ jerror_t DKalmanFilter::KalmanCentral(double mass_hyp,double anneal_factor,
 	double sinphi=sin(Sc(state_phi,0));
 	double cosphi=cos(Sc(state_phi,0));
 	double Bx=0.,By=0.,Bz=-2.;
-	bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
+	//bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
+	bfield->GetFieldBicubic(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
 	double Bz_=fabs(Bz);
 	
 	// We've passed the true minimum; now use Brent's algorithm
@@ -3394,7 +3471,7 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
   bool more_measurements=true;
 
   // doca variables
-  double doca,old_doca=sqrt((x-wirepos.x())*(x-wirepos.x())
+  double doca=0.,old_doca=sqrt((x-wirepos.x())*(x-wirepos.x())
 			    +(y-wirepos.y())*(y-wirepos.y()));
   /*
   printf("p %f theta %f\n",1./S(state_q_over_p,0),
@@ -3416,7 +3493,10 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
 
     // State S is perturbation about a seed S0
     dS=S-S0_;
-
+    /*
+    dS.Print();
+    J.Print();
+    */
     // Update the actual state vector and covariance matrix
     S=S0+J*dS;
     C=J*(C*DMatrix(DMatrix::kTransposed,J))+Q;   
@@ -3441,8 +3521,12 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
 	      +(y-wirepos.y())*(y-wirepos.y()));
 
     // Check if the doca is no longer decreasing
-    //    printf("x %f xw %f y %f yw %f doca %f old_doca %f\n",x,wirepos.x(),
-    //	   y,wirepos.y(),doca,old_doca);
+    if (DEBUG_LEVEL==2){
+      printf("Ring %d straw %d\n",cdchits[cdc_index]->ring,
+	     cdchits[cdc_index]->straw);
+      printf("z %f x %f xw %f y %f yw %f doca %f old_doca %f\n",z,x,wirepos.x(),
+	     y,wirepos.y(),doca,old_doca);
+    }
     if ((doca>old_doca) && z<endplate_z && more_measurements){
       // Get energy loss 
       double dedx=0.;
@@ -3511,8 +3595,9 @@ jerror_t DKalmanFilter::KalmanForwardCDC(double mass_hyp,double anneal,
 	cout << "Negative variance???" << endl;
 	return VALUE_OUT_OF_RANGE;
       }
-      
-      //printf("prediction %f measurement %f V %f %f sig %f\n",d,dm,V,var,sqrt(var));
+
+      if (DEBUG_LEVEL==2)
+	printf("prediction %f measurement %f V %f %f sig %f\n",d,dm,V,var,sqrt(var));
 
        // probability
       double p=exp(-0.5*(dm-d)*(dm-d)/var);   
@@ -4746,7 +4831,8 @@ jerror_t DKalmanFilter::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc,
 
   //B-field at (x,y,z)
   double Bx,By,Bz;
-  bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
+  //bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
+  bfield->GetFieldBicubic(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
   double B=sqrt(Bx*Bx+By*By+Bz*Bz);
   double Rc=1./qBr2p/B/Sc(state_q_over_pt,0);
   double cosphi=cos(Sc(state_phi,0));
