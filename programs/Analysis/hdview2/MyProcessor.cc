@@ -41,7 +41,7 @@ using namespace std;
 #include "FDC/DFDCIntersection.h"
 #include "HDGEOMETRY/DGeometry.h"
 #include "FCAL/DFCALGeometry.h"
-#include "FCAL/DMCFCALHit.h"
+#include "FCAL/DFCALHit.h"
 #include "PID/DPhoton.h"
 #include "BCAL/DHDDMBCALHit.h"
 
@@ -391,7 +391,7 @@ void MyProcessor::FillGraphics(void)
 	// FCAL Truth points
 	if(hdvmf->GetCheckButton("fcaltruth")){
 		vector<const DFCALGeometry*> fcalgeometries;
-		vector<const DMCFCALHit*> mcfcalhits;
+		vector<const DFCALHit*> mcfcalhits;
 		loop->Get(fcalgeometries);
 		loop->Get(mcfcalhits);
 		if(fcalgeometries.size()>0){
@@ -399,7 +399,7 @@ void MyProcessor::FillGraphics(void)
 
 			DGraphicSet gset(kBlack, kMarker, 0.25);
 			for(unsigned int i=0; i<mcfcalhits.size(); i++){
-				const DMCFCALHit *hit = mcfcalhits[i];
+				const DFCALHit *hit = mcfcalhits[i];
 
 				TVector2 pos_face = fgeom->positionOnFace(hit->row, hit->column);
 				TVector3 pos(pos_face.X(), pos_face.Y(), FCAL_Zmin);
