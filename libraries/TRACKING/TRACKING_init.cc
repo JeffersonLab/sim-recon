@@ -12,8 +12,10 @@
 #include "DTrack_factory_THROWN.h"
 #include "DTrack_factory_ALT2.h"
 #include "DTrack_factory_ALT3.h"
+#include "DTrack_factory_Kalman.h"
 #include "DTrackFitter_factory.h"
 #include "DTrackFitter_factory_ALT1.h"
+#include "DTrackFitter_factory_Kalman.h"
 #include "DTrackHitSelector_factory.h"
 #include "DTrackHitSelector_factory_ALT1.h"
 #include "DTrackHitSelector_factory_THROWN.h"
@@ -31,6 +33,7 @@ jerror_t TRACKING_init(JEventLoop *loop)
 	loop->AddFactory(new DTrack_factory_ALT2());
 	loop->AddFactory(new DTrack_factory_ALT3());
 	loop->AddFactory(new DTrack_factory());
+	loop->AddFactory(new DTrack_factory_Kalman());
 	loop->AddFactory(new DTrackCandidate_factory());
 	loop->AddFactory(new DTrackCandidate_factory_CDC());
 	loop->AddFactory(new DTrackCandidate_factory_FDC());
@@ -44,6 +47,7 @@ jerror_t TRACKING_init(JEventLoop *loop)
 	loop->AddFactory(new DTrack_factory_THROWN());
 	loop->AddFactory(new DTrackFitter_factory());
 	loop->AddFactory(new DTrackFitter_factory_ALT1());
+	loop->AddFactory(new DTrackFitter_factory_Kalman());
 	loop->AddFactory(new DTrackHitSelector_factory());
 	loop->AddFactory(new DTrackHitSelector_factory_ALT1());
 	loop->AddFactory(new DTrackHitSelector_factory_THROWN());
