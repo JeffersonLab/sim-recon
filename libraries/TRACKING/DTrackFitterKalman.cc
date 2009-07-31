@@ -104,13 +104,65 @@ DTrackFitterKalman::DTrackFitterKalman(JEventLoop *loop):DTrackFitter(loop){
 }
 
 //-----------------
+// ResetKalman
+//-----------------
+void DTrackFitterKalman::ResetKalman(void)
+{
+    for (unsigned int i=0;i<hits.size();i++)
+      delete hits[i];
+    for (unsigned int i=0;i<my_cdchits.size();i++){
+      delete my_cdchits[i];
+    } 
+    for (unsigned int i=0;i<my_fdchits.size();i++){
+      delete my_fdchits[i];
+    }
+    for (unsigned int i=0;i<forward_traj.size();i++){
+      delete forward_traj[i].Q;
+      delete forward_traj[i].S;
+      delete forward_traj[i].J;
+    } 
+    for (unsigned int i=0;i<forward_traj_cdc.size();i++){
+      delete forward_traj_cdc[i].Q;
+      delete forward_traj_cdc[i].S;
+      delete forward_traj_cdc[i].J;
+    }
+
+    for (unsigned int i=0;i<central_traj.size();i++){
+      delete central_traj[i].Q;
+      delete central_traj[i].S;
+      delete central_traj[i].J;
+  //      delete central_traj[i].C;
+    }
+
+	 hits.clear();
+    my_fdchits.clear();
+    my_cdchits.clear();
+    central_traj.clear();
+    forward_traj.clear();
+    forward_traj_cdc.clear();
+	 cdc_resid.clear();
+	 cdc_pulls.clear();
+	 cov.clear();
+	 fcov.clear();
+	 
+	 len = 0.0;
+	 path_length = 0.0;
+	 x_=y_=tx_=ty_=q_over_p_ = 0.0;
+	 z_=phi_=tanl_=q_over_pt_ = 0.0;
+	 chisq_ = 0.0;
+	 ndf = 0;
+}
+
+//-----------------
 // FitTrack
 //-----------------
 DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
 {
+	// Reset member data and free an memory associated with the last fit,
+	// but only for wire-based fits
+	if(fit_type==kWireBased)ResetKalman();
+
 	// Copy hits from base class into structures specific to DTrackFitterKalman
-	my_cdchits.clear();
-	my_fdchits.clear();
 	for(unsigned int i=0; i<cdchits.size(); i++)AddCDCHit(cdchits[i]);
 	for(unsigned int i=0; i<fdchits.size(); i++)AddFDCHit(fdchits[i]);
 

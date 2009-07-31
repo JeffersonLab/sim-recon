@@ -60,38 +60,7 @@ class DTrackFitterKalman: public DTrackFitter{
 //   kTimeBased,
 //  };
   DTrackFitterKalman(JEventLoop *loop);
-  ~DTrackFitterKalman(){
-    for (unsigned int i=0;i<hits.size();i++)
-      delete hits[i];
-    for (unsigned int i=0;i<my_cdchits.size();i++){
-      delete my_cdchits[i];
-    } 
-    for (unsigned int i=0;i<my_fdchits.size();i++){
-      delete my_fdchits[i];
-    }
-    for (unsigned int i=0;i<forward_traj.size();i++){
-      delete forward_traj[i].Q;
-      delete forward_traj[i].S;
-      delete forward_traj[i].J;
-    } 
-    for (unsigned int i=0;i<forward_traj_cdc.size();i++){
-      delete forward_traj_cdc[i].Q;
-      delete forward_traj_cdc[i].S;
-      delete forward_traj_cdc[i].J;
-    }
-
-    for (unsigned int i=0;i<central_traj.size();i++){
-      delete central_traj[i].Q;
-      delete central_traj[i].S;
-      delete central_traj[i].J;
-  //      delete central_traj[i].C;
-    }
-    my_fdchits.clear();
-    my_cdchits.clear();
-    central_traj.clear();
-    forward_traj.clear();
-    forward_traj_cdc.clear();
-  };
+  ~DTrackFitterKalman(){ResetKalman();}
 
 	// Virtual methods from TrackFitter base class
 	string Name(void) const {return string("Kalman");}
@@ -155,6 +124,7 @@ class DTrackFitterKalman: public DTrackFitter{
     state_D,
     state_z,
   };
+  void ResetKalman(void);
   jerror_t GetProcessNoise(double mass_hyp,double ds,double z,
 			   double X0,DMatrix S,DMatrix &Q);
   double Step(double oldz,double newz, double dEdx,DMatrix &S);
