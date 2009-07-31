@@ -272,7 +272,7 @@ TGeoVolume* DRootGeom::FindVolume(double *x)
 //---------------------------------
 jerror_t DRootGeom::FindMat(DVector3 pos, double &density, double &A, double &Z, double &RadLen) const
 {
-	return FindMatTable(pos, density, A, Z, RadLen);
+	return FindMatLL(pos, density, A, Z, RadLen);
 }
 
 //---------------------------------
