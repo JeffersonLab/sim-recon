@@ -141,10 +141,12 @@ class DTrackFitterKalman: public DTrackFitter{
   double Step(DVector3 &pos,DVector3 wire_pos,DVector3 wiredir,double ds,
 		DMatrix &S, double dEdx);
   jerror_t FixedStep(DVector3 &pos,double ds,DMatrix &S, double dEdx);
+  jerror_t FixedStep(DVector3 &pos,double ds,DMatrix &S, double dEdx,
+		     double &Bz);
   jerror_t CalcDirMom(double ds,double dEdx,double q,DVector3 mom,
 		      DVector3 pos,DVector3 &dmom,DVector3 &dpos);
   jerror_t CalcDerivAndJacobian(double ds,DVector3 pos,DVector3 &dpos,
-				DVector3 B,DMatrix S,double dEdx,
+				DVector3 &B,DMatrix S,double dEdx,
 				DMatrix &J1,DMatrix &D1);
   jerror_t ConvertStateVector(double z,double wire_x,double wire_y,
 			      DMatrix S,DMatrix C,DMatrix &Sc,

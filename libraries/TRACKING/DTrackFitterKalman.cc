@@ -97,8 +97,8 @@ DTrackFitterKalman::DTrackFitterKalman(JEventLoop *loop):DTrackFitter(loop){
   // Mass hypothesis
   MASS=0.13957; //charged pion
 
-  DEBUG_HISTS=true;
-  // DEBUG_HISTS=false;
+  //DEBUG_HISTS=true;
+  DEBUG_HISTS=false;
   DEBUG_LEVEL=0;
   //DEBUG_LEVEL=2;
 }
@@ -163,8 +163,10 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
 	if(fit_type==kWireBased)ResetKalman();
 
 	// Copy hits from base class into structures specific to DTrackFitterKalman
-	for(unsigned int i=0; i<cdchits.size(); i++)AddCDCHit(cdchits[i]);
-	for(unsigned int i=0; i<fdchits.size(); i++)AddFDCHit(fdchits[i]);
+	if (my_cdchits.size()==0 && my_fdchits.size()==0){
+	  for(unsigned int i=0; i<cdchits.size(); i++)AddCDCHit(cdchits[i]);
+	  for(unsigned int i=0; i<fdchits.size(); i++)AddFDCHit(fdchits[i]);
+	}
 
 	// Set starting parameters
 	jerror_t error = SetSeed(input_params.charge(), input_params.position(), input_params.momentum());
@@ -669,22 +671,21 @@ jerror_t DTrackFitterKalman::SwimCentral(DVector3 &pos,DMatrix &Sc){
     double cosphi=cos(Sc(state_phi,0));
     
     // Magnetic field
-    DVector3 B(0.,0.,-2.);
+    //DVector3 B(0.,0.,-2.);
     //bfield->GetField(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
-    bfield->GetFieldBicubic(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));    
-    double Bz_=fabs(B(2));
+    //bfield->GetFieldBicubic(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));    
+    double Bz_=-2.;
     DVector3 dpos1=central_traj[m-1].pos-central_traj[m].pos;
 
     // Propagate the state through the field
     ds=central_traj[m-1].s-central_traj[m].s;
-    FixedStep(pos,ds,Sc,dedx);
+    FixedStep(pos,ds,Sc,dedx,Bz_);
 
     // update D
     double rc=sqrt(dpos1.Perp2()
 		   +2.*(D+qpt/qBr2p/Bz_)*(dpos1.x()*sinphi-dpos1.y()*cosphi)
 		   +(D+qpt/qBr2p/Bz_)*(D+qpt/qBr2p/Bz_));
-    Sc(state_D,0)=q*rc-qpt/qBr2p/Bz_;
-  
+    Sc(state_D,0)=q*rc-qpt/qBr2p/Bz_;  
   }
 
   return NOERROR;
@@ -1392,7 +1393,7 @@ jerror_t DTrackFitterKalman::CalcDeriv(double ds,DVector3 pos,DVector3 &dpos,
 // parameters {q/pT, phi, tan(lambda),D,z}
 jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double ds,DVector3 pos,
 					     DVector3 &dpos,
-					     DVector3 B,
+					     DVector3 &B,
 					     DMatrix S,double dEdx,
 					     DMatrix &J1,DMatrix &D1){  
   //Direction at current point
@@ -1407,7 +1408,7 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double ds,DVector3 pos,
   double q_over_pt=S(state_q_over_pt,0);
   double pt=fabs(1./q_over_pt);
   double q=pt*q_over_pt;
- 
+
   //field gradient at (x,y,z)
   double dBxdx=0.,dBxdy=0.,dBxdz=0.,dBydx=0.,dBydy=0.,dBydz=0.;
   double dBzdx=0.,dBzdy=0.,dBzdz=0.;
@@ -1513,7 +1514,15 @@ jerror_t DTrackFitterKalman::ConvertStateVector(double z,double wire_x,
 
 // Runga-Kutte for alternate parameter set {q/pT,phi,tanl(lambda),D,z}
 jerror_t DTrackFitterKalman::FixedStep(DVector3 &pos,double ds,DMatrix &S,
-				  double dEdx){
+				       double dEdx){
+  double Bz=0.;
+  FixedStep(pos,ds,S,dEdx,Bz);
+  return NOERROR;
+}
+
+// Runga-Kutte for alternate parameter set {q/pT,phi,tanl(lambda),D,z}
+jerror_t DTrackFitterKalman::FixedStep(DVector3 &pos,double ds,DMatrix &S,
+				       double dEdx,double &Bz){
   // Matrices for intermediate steps
   DMatrix D1(5,1),D2(5,1),D3(5,1),D4(5,1);
   DMatrix S1(5,1),S2(5,1),S3(5,1),S4(5,1);
@@ -1521,24 +1530,24 @@ jerror_t DTrackFitterKalman::FixedStep(DVector3 &pos,double ds,DMatrix &S,
   
   // Magnetic field
   DVector3 B(0.,0.,-2.);
-  bfield->GetField(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
-
+  bfield->GetFieldBicubic(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
+  Bz=fabs(B(2));
   CalcDeriv(0.,pos,dpos1,B,S,dEdx,D1);
 
   DVector3 mypos=pos+(ds/2.)*dpos1;
-  bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
+  bfield->GetFieldBicubic(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
   S1=S+(0.5*ds)*D1; 
 
   CalcDeriv(ds/2.,mypos,dpos2,B,S1,dEdx,D2);
 
   mypos=pos+(ds/2.)*dpos2;
-  bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
+  bfield->GetFieldBicubic(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
   S2=S+(0.5*ds)*D2; 
 
   CalcDeriv(ds/2.,mypos,dpos3,B,S2,dEdx,D3);
 
   mypos=pos+ds*dpos3;
-  bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
+  bfield->GetFieldBicubic(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
   S3=S+ds*D3;
 
   CalcDeriv(ds,mypos,dpos4,B,S3,dEdx,D4);
@@ -1572,31 +1581,31 @@ jerror_t DTrackFitterKalman::StepJacobian(DVector3 pos, DVector3 wire_orig,
   // Magnetic field
   DVector3 B(0.,0.,-2.);
   //bfield->GetField(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
-  bfield->GetFieldBicubic(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
-  double Bz_=fabs(B.z());
+  //bfield->GetFieldBicubic(pos.x(),pos.y(),pos.z(), B(0), B(1), B(2));
+ 
   double qpt=1./S(state_q_over_pt,0);
   double sinphi=sin(S(state_phi,0));
   double cosphi=cos(S(state_phi,0));
   double D=S(state_D,0);
 
   CalcDerivAndJacobian(0.,pos,dpos1,B,S,dEdx,J1,D1);
-
+  double Bz_=fabs(B.z()); // needed for computing D
   DVector3 mypos=pos+(ds/2.)*dpos1;
-  bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
+  //bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
   S1=S+(0.5*ds)*D1; 
 
   CalcDerivAndJacobian(ds/2.,mypos,dpos2,B,S1,dEdx,J2,D2);
   J2=J2+0.5*(J2*J1);
 
   mypos=pos+(ds/2.)*dpos2;
-  bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
+  //bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
   S2=S+(0.5*ds)*D2;
 
   CalcDerivAndJacobian(ds/2.,mypos,dpos3,B,S2,dEdx,J3,D3);
   J3=J3+0.5*(J3*J2);  
 
   mypos=pos+ds*dpos3;
-  bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
+  //bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
   S3=S+ds*D3;
 
   CalcDerivAndJacobian(ds,mypos,dpos4,B,S3,dEdx,J4,D4);
