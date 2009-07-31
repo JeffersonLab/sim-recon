@@ -209,7 +209,7 @@ void DMagneticFieldMapCalibDB::GetFieldBicubic(double x,double y,double z,
 						   double &Bx_,double &By_,
 						   double &Bz_) const{
   // table of weight factors for bicubic interpolation
-  int wt[16][16]=
+  static const int wt[16][16]=
     { {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
       {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
       {-3, 0, 0, 3, 0, 0, 0, 0,-2, 0, 0,-1, 0, 0, 0, 0},
@@ -363,7 +363,7 @@ void DMagneticFieldMapCalibDB::GetFieldAndGradient(double x,double y,double z,
 						   double &dBzdy_,
 						   double &dBzdz_) const{
   // table of weight factors for bicubic interpolation
-  int wt[16][16]=
+  static const int wt[16][16]=
     { {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
       {0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
       {-3, 0, 0, 3, 0, 0, 0, 0,-2, 0, 0,-1, 0, 0, 0, 0},
