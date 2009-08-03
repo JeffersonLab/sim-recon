@@ -163,10 +163,11 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
 	if(fit_type==kWireBased)ResetKalman();
 
 	// Copy hits from base class into structures specific to DTrackFitterKalman
-	if (my_cdchits.size()==0 && my_fdchits.size()==0){
+	if (my_cdchits.size()==0)
 	  for(unsigned int i=0; i<cdchits.size(); i++)AddCDCHit(cdchits[i]);
+	if (my_fdchits.size()==0)
 	  for(unsigned int i=0; i<fdchits.size(); i++)AddFDCHit(fdchits[i]);
-	}
+	if (my_fdchits.size()+my_cdchits.size()<6) return kFitFailed;
 
 	// Set starting parameters
 	jerror_t error = SetSeed(input_params.charge(), input_params.position(), input_params.momentum());
@@ -174,6 +175,7 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
       
 	// Do fit
 	double TOF_MASS = 0.13957; // assume pion mass for now
+	//TOF_MASS=0.93827;
 	error = KalmanLoop(TOF_MASS,fit_type);
 	if (error!=NOERROR) return kFitFailed;
 
@@ -1853,6 +1855,7 @@ jerror_t DTrackFitterKalman::SwimToPlane(DMatrix &S){
 jerror_t DTrackFitterKalman::KalmanLoop(double mass_hyp,int pass){
   if (z_<0) return VALUE_OUT_OF_RANGE;
   this->pass=pass;
+  this->MASS=mass_hyp;
   
   DMatrix S(5,1),C(5,5),Sc(5,1),Cc(5,5);
   DMatrix C0(5,5);
