@@ -52,6 +52,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	//this->mass = 0.938;
 	this->RootGeom=NULL;
 	this->geom = NULL;
+	this->ploss_direction = kForward;
 }
 
 //---------------------------------
@@ -77,6 +78,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DReferenceTrajectory& rt)
 	this->geom = rt.geom;
 	this->dist_to_rt_depth = 0;
 	this->mass = rt.GetMass();
+	this->ploss_direction = rt.ploss_direction;
 
 	this->swim_steps = new swim_step_t[this->max_swim_steps];
 	for(int i=0; i<Nswim_steps; i++)swim_steps[i] = rt.swim_steps[i];
@@ -122,6 +124,7 @@ DReferenceTrajectory& DReferenceTrajectory::operator=(const DReferenceTrajectory
 	this->geom = rt.geom;
 	this->dist_to_rt_depth = rt.dist_to_rt_depth;
 	this->mass = rt.GetMass();
+	this->ploss_direction = rt.ploss_direction;
 
 	// Allocate memory if needed
 	if(swim_steps==NULL)this->swim_steps = new swim_step_t[this->max_swim_steps];
@@ -145,7 +148,7 @@ DReferenceTrajectory::~DReferenceTrajectory()
 //---------------------------------
 // Swim
 //---------------------------------
-void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, double smax)
+void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double q, double smax, const DCoordinateSystem *wire)
 {
 	/// (Re)Swim the trajectory starting from pos with momentum mom.
 	/// This will use the charge and step size (if given) passed to
@@ -215,23 +218,30 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			}
 			last_step = swim_step;
 		}
+		swim_step->dP = dP;
 		swim_step->itheta02 = itheta02;
 		swim_step->itheta02s = itheta02s;
 		swim_step->itheta02s2 = itheta02s2;
-
-		// Exit loop if we leave the tracking volume
-		if(swim_step->origin.Perp()>65.0){break;} // ran into BCAL
-		if(swim_step->origin.Z()>650.0){break;} // ran into FCAL
-		if(swim_step->origin.Z()<-50.0){break;} // ran into UPV
 
 		// Swim to next
 		if(dP!=0.0){
 			double ptot = swim_step->mom.Mag() - dP; // correct for energy loss
 			if(ptot<0.0)break;
+			if(dP<0.0 && ploss_direction==kForward)break;
+			if(dP>0.0 && ploss_direction==kBackward)break;
 			swim_step->mom.SetMag(ptot);
 			stepper.SetStartingParams(q, &swim_step->origin, &swim_step->mom);
 		}
 		s += stepper.Step(NULL);
+
+		// Exit loop if we leave the tracking volume
+		if(swim_step->origin.Perp()>65.0){Nswim_steps++; break;} // ran into BCAL
+		if(swim_step->origin.Z()>650.0){Nswim_steps++; break;} // ran into FCAL
+		if(swim_step->origin.Z()<-50.0){Nswim_steps++; break;} // ran into UPV
+		if(wire && Nswim_steps>0){ // optionally check if we passed a wire we're supposed to be swimming to
+			swim_step_t *closest_step = FindClosestSwimStep(wire);
+			if(++closest_step!=swim_step){Nswim_steps++; break;}
+		}
 	}
 
 	// OK. At this point the positions of the trajectory in the lab
@@ -1059,8 +1069,14 @@ double DReferenceTrajectory::dPdx(double ptot, double rhoZ_overA, double rhoZ_ov
 	double K = 0.307075E-3; // GeV gm^-1 cm^2
 	double dEdx = K*rhoZ_overA/pow(beta,2.0)*(0.5*log(2.0*me*pow(gammabeta,2.0)*Tmax) - pow(beta,2.0)) - K*rhoZ_overA_logI/pow(beta,2.0);
 
-	// dE = beta*dP
-	return dEdx/beta;
+	double dP_dx = dEdx/beta;
+	
+	double g = 0.350/sqrt(-log(0.06));
+	dP_dx *= 1.0 + exp(-pow(ptot/g,2.0)); // empirical for really low momentum particles
+	
+	if(ploss_direction==kBackward)dP_dx = -dP_dx;
+
+	return dP_dx;
 }
 
 

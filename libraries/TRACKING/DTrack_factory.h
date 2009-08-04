@@ -57,7 +57,9 @@ class DTrack_factory:public jana::JFactory<DTrack>{
 		DTrackFitter *fitter;
 		const DTrackHitSelector *hitselector;
 		vector<DReferenceTrajectory*> rtv;
+		DCoordinateSystem *target;
 
+		jerror_t CorrectCandidateForELoss(const DTrackCandidate *candidate, DReferenceTrajectory *rt, DVector3 &pos, DVector3 &mom);
 		void MakeDTrack(const DTrackCandidate *candidate);
 		
 };

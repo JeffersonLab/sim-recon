@@ -36,12 +36,17 @@ class DReferenceTrajectory{
 
 	public:
 
+		enum direction_t{
+			kForward,
+			kBackward
+		};
 
 		class swim_step_t:public DCoordinateSystem{
 			public:
 				DVector3 mom;
 				double Ro;
 				double s; // distance along RT
+				double dP;
 				
 				// The following are used to calculate the covariance matrix for MULS
 				double itheta02;		// running sum of MULS angle theta_0 squared
@@ -68,7 +73,7 @@ class DReferenceTrajectory{
 		double DistToRTBruteForce(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
 		double Straw_dx(const DCoordinateSystem *wire, double radius);
 		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire, int *istep_ptr=NULL);
-		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0, double smax=2000.0);
+		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0, double smax=2000.0, const DCoordinateSystem *wire=NULL);
 		int InsertSteps(const swim_step_t *start_step, double delta_s, double step_size=0.02); 
 		DVector3 GetLastDOCAPoint(void);
 		void GetLastDOCAPoint(DVector3 &pos, DVector3 &mom);
@@ -80,6 +85,8 @@ class DReferenceTrajectory{
 		const DGeometry* GetDGeometry(void){return geom;}
 		double GetMass(void) const {return mass;}
 		void SetMass(double mass){this->mass = mass;}
+		void SetPLossDirection(direction_t direction){ploss_direction=direction;}
+		direction_t GetPLossDirection(void){return ploss_direction;}
 		inline double dPdx(double ptot, double A, double Z, double density);
 		inline double dPdx(double ptot, double rhoZ_overA, double rhoZ_overA_logI);
 
@@ -97,6 +104,7 @@ class DReferenceTrajectory{
 		const DMagneticFieldMap *bfield;
 		const DRootGeom *RootGeom;
 		const DGeometry *geom;
+		direction_t ploss_direction;
 		
 		double last_phi;							///< last phi found in DistToRT
 		const swim_step_t* last_swim_step;	///< last swim step used in DistToRT

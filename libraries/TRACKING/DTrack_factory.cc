@@ -87,6 +87,14 @@ jerror_t DTrack_factory::brun(jana::JEventLoop *loop, int runnumber)
 	}
 	hitselector = hitselectors[0];
 
+	// Define target center
+	target = new DCoordinateSystem();
+	target->origin.SetXYZ(0.0, 0.0, 65.0);
+	target->sdir.SetXYZ(1.0, 0.0, 0.0);
+	target->tdir.SetXYZ(0.0, 1.0, 0.0);
+	target->udir.SetXYZ(0.0, 0.0, 1.0);
+	target->L = 30.0;
+
 	//debug_level = 11;
 
 	return NOERROR;
@@ -115,9 +123,13 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 		while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
 		DReferenceTrajectory *rt = rtv[_data.size()];
 		
-		// Swim a reference trajectory with this candidate's parameters
+		// Correct for energy loss in target etc.
+		DVector3 pos, mom;
 		rt->SetMass(DEFAULT_MASS);
-		rt->Swim(candidate->position(), candidate->momentum(), candidate->charge());
+		CorrectCandidateForELoss(candidate, rt, pos, mom);
+		
+		// Swim a reference trajectory with this candidate's parameters
+		rt->Swim(pos, mom, candidate->charge());
 		if(rt->Nswim_steps<1)continue;
 
 		// Setup fitter to do fit
@@ -140,6 +152,47 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 		}
 
 	}
+
+	return NOERROR;
+}
+
+//------------------
+// CorrectCandidateForELoss
+//------------------
+jerror_t DTrack_factory::CorrectCandidateForELoss(const DTrackCandidate *candidate, DReferenceTrajectory *rt, DVector3 &pos, DVector3 &mom)
+{
+	// Find first wire hit by this track
+	const DCoordinateSystem *first_wire = NULL;
+	vector<const DCDCTrackHit*> cdchits;
+	candidate->Get(cdchits);
+	if(cdchits.size()>0){
+		first_wire = cdchits[0]->wire;
+	}else{
+		vector<const DFDCPseudo*> fdchits;
+		candidate->Get(fdchits);
+		if(fdchits.size()!=0){
+			first_wire = fdchits[0]->wire;
+		}
+	}
+	if(!first_wire){
+		//_DBG_<<"NO WIRES IN CANDIDATE!! (event "<<eventnumber<<")"<<endl;
+		return RESOURCE_UNAVAILABLE;
+	}
+
+	// Swim from vertex to first wire hit. Disable momentum loss.
+	double save_mass = rt->GetMass();
+	rt->SetMass(0.0);
+	rt->Swim(candidate->position(), candidate->momentum(), candidate->charge(), 1000.0, first_wire);
+	rt->DistToRT(first_wire);
+	rt->GetLastDOCAPoint(pos, mom);
+
+	// Swim backwards to target, setting momentum to increase due to material
+	rt->SetMass(save_mass);
+	rt->SetPLossDirection(DReferenceTrajectory::kBackward);
+	rt->Swim(pos, -mom, -candidate->charge(), 1000.0, target);
+	rt->SetPLossDirection(DReferenceTrajectory::kForward);
+	rt->DistToRT(target);
+	rt->GetLastDOCAPoint(pos, mom);
 
 	return NOERROR;
 }
