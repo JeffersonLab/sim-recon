@@ -156,7 +156,7 @@ class DTrackFitterKalman: public DTrackFitter{
 				  DMatrix &Q);
   jerror_t SwimToPlane(DMatrix &S);
   jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S,DMatrix &C);
-  jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S);
+  jerror_t SwimToPlane(double z_end, DMatrix &S);
   jerror_t SwimToRadius(DVector3 &pos, double Rf,DMatrix &Sc,DMatrix &Cc);
   jerror_t SwimToRadius(DVector3 &pos, double Rf, DMatrix &Sc);
   
@@ -214,6 +214,8 @@ class DTrackFitterKalman: public DTrackFitter{
 
   // path length
   double len;
+  // flight time
+  double ftime;
 
   // For dEdx measurements
   double path_length;  // path length in active volume
