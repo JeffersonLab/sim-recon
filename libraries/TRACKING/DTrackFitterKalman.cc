@@ -117,30 +117,34 @@ void DTrackFitterKalman::ResetKalman(void)
     for (unsigned int i=0;i<my_fdchits.size();i++){
       delete my_fdchits[i];
     }
-    for (unsigned int i=0;i<forward_traj.size();i++){
-      delete forward_traj[i].Q;
-      delete forward_traj[i].S;
-      delete forward_traj[i].J;
-    } 
-    for (unsigned int i=0;i<forward_traj_cdc.size();i++){
-      delete forward_traj_cdc[i].Q;
-      delete forward_traj_cdc[i].S;
-      delete forward_traj_cdc[i].J;
-    }
+    if (fit_type==kWireBased){
+      for (unsigned int i=0;i<forward_traj.size();i++){
+	delete forward_traj[i].Q;
+	delete forward_traj[i].S;
+	delete forward_traj[i].J;
+      } 
+      for (unsigned int i=0;i<forward_traj_cdc.size();i++){
+	delete forward_traj_cdc[i].Q;
+	delete forward_traj_cdc[i].S;
+	delete forward_traj_cdc[i].J;
+      }
 
-    for (unsigned int i=0;i<central_traj.size();i++){
-      delete central_traj[i].Q;
+      for (unsigned int i=0;i<central_traj.size();i++){
+	delete central_traj[i].Q;
       delete central_traj[i].S;
       delete central_traj[i].J;
-  //      delete central_traj[i].C;
+      //      delete central_traj[i].C;
+      }
     }
 
 	 hits.clear();
     my_fdchits.clear();
     my_cdchits.clear();
-    central_traj.clear();
-    forward_traj.clear();
-    forward_traj_cdc.clear();
+    if (fit_type==kWireBased){
+      central_traj.clear();
+      forward_traj.clear();
+      forward_traj_cdc.clear();
+    }
 	 cdc_resid.clear();
 	 cdc_pulls.clear();
 	 cov.clear();
@@ -160,43 +164,43 @@ void DTrackFitterKalman::ResetKalman(void)
 //-----------------
 DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
 {
-	// Reset member data and free an memory associated with the last fit,
-	// but only for wire-based fits
-	if(fit_type==kWireBased)ResetKalman();
-
-	// Copy hits from base class into structures specific to DTrackFitterKalman
-	if (my_cdchits.size()==0)
-	  for(unsigned int i=0; i<cdchits.size(); i++)AddCDCHit(cdchits[i]);
-	if (my_fdchits.size()==0)
-	  for(unsigned int i=0; i<fdchits.size(); i++)AddFDCHit(fdchits[i]);
-	if (my_fdchits.size()+my_cdchits.size()<6) return kFitFailed;
-
-	// Set starting parameters
-	jerror_t error = SetSeed(input_params.charge(), input_params.position(), input_params.momentum());
-	if (error!=NOERROR) return kFitFailed;
-      
-	// Do fit
-	double TOF_MASS = 0.13957; // assume pion mass for now
-	//TOF_MASS=0.93827;
-	error = KalmanLoop(TOF_MASS,fit_type);
-	if (error!=NOERROR) return kFitFailed;
-
-	// Copy fit results into DTrackFitter base-class data members
-	DVector3 mom,pos;
-	GetPosition(pos);
-	GetMomentum(mom);
-	double charge = GetCharge();
-	fit_params.setMass(TOF_MASS);
-	fit_params.setPosition(pos);
-	fit_params.setMomentum(mom);
-	fit_params.setCharge(charge);
-	this->chisq = GetChiSq();
-	this->Ndof = GetNDF();
-	fit_status = kFitSuccess;
-	cdchits_used_in_fit = cdchits; // this should be changed to reflect hits dropped by the filter
-	fdchits_used_in_fit = fdchits; // this should be changed to reflect hits dropped by the filter
-
-	return fit_status;
+  // Reset member data and free an memory associated with the last fit,
+  // but some of which only for wire-based fits 
+  ResetKalman();
+  
+  // Copy hits from base class into structures specific to DTrackFitterKalman
+  
+  for(unsigned int i=0; i<cdchits.size(); i++)AddCDCHit(cdchits[i]);
+  for(unsigned int i=0; i<fdchits.size(); i++)AddFDCHit(fdchits[i]);
+  if (my_fdchits.size()+my_cdchits.size()<6) return kFitFailed;
+  
+  // Set starting parameters
+  jerror_t error = SetSeed(input_params.charge(), input_params.position(), 
+			   input_params.momentum());
+  if (error!=NOERROR) return kFitFailed;
+  
+  // Do fit
+  double TOF_MASS = 0.13957; // assume pion mass for now
+  //TOF_MASS=0.93827;
+  error = KalmanLoop(TOF_MASS,fit_type);
+  if (error!=NOERROR) return kFitFailed;
+  
+  // Copy fit results into DTrackFitter base-class data members
+  DVector3 mom,pos;
+  GetPosition(pos);
+  GetMomentum(mom);
+  double charge = GetCharge();
+  fit_params.setMass(TOF_MASS);
+  fit_params.setPosition(pos);
+  fit_params.setMomentum(mom);
+  fit_params.setCharge(charge);
+  this->chisq = GetChiSq();
+  this->Ndof = GetNDF();
+  fit_status = kFitSuccess;
+  cdchits_used_in_fit = cdchits; // this should be changed to reflect hits dropped by the filter
+  fdchits_used_in_fit = fdchits; // this should be changed to reflect hits dropped by the filter
+  
+  return fit_status;
 }
 
 //-----------------
@@ -641,7 +645,6 @@ jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,double z,
   len+=fabs(ds);
   q_over_p=S(state_q_over_p,0);
   ftime+=ds*sqrt(1.+MASS*MASS*q_over_p*q_over_p)/SPEED_OF_LIGHT;
-
   
   // Get the contribution to the covariance matrix due to multiple 
   // scattering
@@ -686,6 +689,11 @@ jerror_t DTrackFitterKalman::SwimCentral(DVector3 &pos,DMatrix &Sc){
   for (int m=central_traj.size()-1;m>0;m--){
     double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
     double dedx=0.;
+    
+    // Turn off energy loss correction if the trajectory passes throught the
+    // cdc end plate but there are no more measurements
+    if (my_fdchits.size()==0 
+	&& (pos.z()>endplate_z || pos.z()<cdc_origin[2])) do_energy_loss=false;
 
     // Compute the energy loss for this step
     if (do_energy_loss && pos.Perp()<r_outer_hit){
@@ -717,6 +725,8 @@ jerror_t DTrackFitterKalman::SwimCentral(DVector3 &pos,DMatrix &Sc){
 		   +(D+qpt/qBr2p/Bz_)*(D+qpt/qBr2p/Bz_));
     Sc(state_D,0)=q*rc-qpt/qBr2p/Bz_;  
   }
+  // Turn energy loss back on 
+  do_energy_loss=true;
 
   return NOERROR;
 }
@@ -1853,6 +1863,11 @@ jerror_t DTrackFitterKalman::SwimToPlane(DMatrix &S){
     for (unsigned int m=max-1;m>0;m--){
       newz=forward_traj_cdc[m].pos.Z();
       r=forward_traj_cdc[m].pos.Perp();
+            
+      // Turn off energy loss correction if the trajectory passes throught the
+      // cdc end plate but there are no more measurements
+      if (my_fdchits.size()==0 && newz>endplate_z) do_energy_loss=false;
+
       if (do_energy_loss && r<r_outer_hit){
 	dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj_cdc[m].Z,
 		     forward_traj_cdc[m].A,forward_traj_cdc[m].density);
@@ -1871,22 +1886,17 @@ jerror_t DTrackFitterKalman::SwimToPlane(DMatrix &S){
   max=forward_traj.size()-1;
   if (max>1){
     z=forward_traj[max].pos.Z(); 
-    for (unsigned int m=max-1;m>0;m--){
-      // newz=z+STEP_SIZE;  
-    newz=forward_traj[m].pos.z();
-    r=forward_traj[m].pos.Perp();
-    if (do_energy_loss
-	//&& (pass==kTimeBased || r<9.0)
-	){
-      dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj[m].Z,
-		   forward_traj[m].A,forward_traj[m].density);
-    }
-    Step(z,newz,dedx,S); 
-    z=newz;
+    for (unsigned int m=max-1;m>0;m--){  
+      newz=forward_traj[m].pos.z();
+      r=forward_traj[m].pos.Perp();
+      if (do_energy_loss){
+	dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj[m].Z,
+		     forward_traj[m].A,forward_traj[m].density);
+      }
+      Step(z,newz,dedx,S); 
+      z=newz;
     } 
-    if (do_energy_loss
-	//&& (pass==kTimeBased || r<9.0)
-	){
+    if (do_energy_loss){
       dedx=GetdEdx(MASS,S(state_q_over_p,0),forward_traj[1].Z,
 		   forward_traj[1].A,forward_traj[1].density);
     }
@@ -1894,6 +1904,9 @@ jerror_t DTrackFitterKalman::SwimToPlane(DMatrix &S){
     Step(z,newz,dedx,S);  
   }
   z_=newz;
+  
+  // turn energy loss back on
+  do_energy_loss=true;
   
   return NOERROR;
 }
@@ -2193,9 +2206,6 @@ jerror_t DTrackFitterKalman::KalmanLoop(double mass_hyp,int pass){
     double scale_factor=50.,anneal_factor=1.;
     // Iterate over reference trajectories
     for (int iter2=0;iter2<(pass==kTimeBased?20:5);iter2++){   
-    //for (int iter2=0;iter2<1;iter2++){   
-      //if (iter2>0) do_energy_loss=true;
-      //if (iter2>0) do_multiple_scattering=true;
       // Abort if momentum is too low
       if (fabs(S(state_q_over_p,0))>Q_OVER_P_MAX) break;
       
@@ -3468,9 +3478,6 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
   // Path length in active volume
   path_length=0;
 
-  // overall path length
-  double s=forward_traj[0].s;
-
   // Initialize chi squared
   chisq=0;
 
@@ -3480,10 +3487,6 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
 
   S0_=DMatrix(*forward_traj[0].S);
   for (unsigned int k=1;k<forward_traj.size()-1;k++){
-    //path length
-    s-=STEP_SIZE*sqrt(1.+S(state_tx,0)*S(state_tx,0)
-		      +S(state_ty,0)*S(state_ty,0));
-
     // Get the state vector, jacobian matrix, and multiple scattering matrix 
     // from reference trajectory
     S0=DMatrix(*forward_traj[k].S);
@@ -3527,7 +3530,6 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
 	double one_over_beta
 	  =sqrt(1.+S(state_q_over_p,0)*S(state_q_over_p,0)*MASS*MASS);
 	double tflight=forward_traj[k].t;
-	//double tflight=forward_traj[k].s*one_over_beta/SPEED_OF_LIGHT;
 	double drift=DRIFT_SPEED*(my_fdchits[id]->t-tflight);  
 	drift*=(du>0?1.:-1.);
 	
@@ -3620,7 +3622,8 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
       du=x*cosa-y*sina-u;
       R(0,0)=M(0,0)-du*cos(atan(tx*cosa-ty*sina));
       R(1,0)=M(1,0)-(y*cosa+x*sina);
-      R_T=DMatrix(DMatrix::kTransposed,R);
+      R_T(0,0)=R(0,0);
+      R_T(0,1)=R(1,0);
       RC=V-H*(C*H_T);
 
       my_fdchits[id]->xres=R(0,0);
@@ -3737,12 +3740,6 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double mass_hyp,double anneal,
 	      +(y-wirepos.y())*(y-wirepos.y()));
 
     // Check if the doca is no longer decreasing
-    if (DEBUG_LEVEL==2){
-      printf("Ring %d straw %d\n",my_cdchits[cdc_index]->ring,
-	     my_cdchits[cdc_index]->straw);
-      printf("z %f x %f xw %f y %f yw %f doca %f old_doca %f\n",z,x,wirepos.x(),
-	     y,wirepos.y(),doca,old_doca);
-    }
     if ((doca>old_doca) && z<endplate_z && more_measurements){
       // Get energy loss 
       double dedx=0.;
@@ -3818,7 +3815,9 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double mass_hyp,double anneal,
       }
 
       if (DEBUG_LEVEL==2)
-	printf("prediction %f measurement %f V %f %f sig %f\n",d,dm,V,var,sqrt(var));
+	printf("Ring %d straw %d pred %f meas %f V %f %f sig %f\n",
+	       my_cdchits[cdc_index]->ring,my_cdchits[cdc_index]->straw,
+	       d,dm,V,var,sqrt(var));
 
        // probability
       double p=exp(-0.5*(dm-d)*(dm-d)/var);   
@@ -4070,6 +4069,104 @@ jerror_t DTrackFitterKalman::ExtrapolateToVertex(DVector3 &pos,
   
   return NOERROR;
 }
+// Swim the state vector from current position (x_,y_,z_) to z_end 
+// through the field
+jerror_t DTrackFitterKalman::SwimToPlane(double z_end, DMatrix &S){
+  int num_inc=abs((z_end-z_)/STEP_SIZE);
+  double z=z_;
+  double dz=(z_end>z_)?STEP_SIZE:-STEP_SIZE;
+  double dedx=0.;
+  double A=0.,Z=0.,density=0.,X0=0.;
+  DVector3 pos(x_,y_,z_);
+  for (int i=0;i<num_inc;i++){
+    pos.SetXYZ(S(state_x,0),S(state_y,0),z);
+    z_=z+dz;
+    if (do_energy_loss 
+	&& (RootGeom->FindMat(pos,density,A,Z,X0)==NOERROR)){
+      dedx=GetdEdx(MASS,S(state_q_over_p,0),Z,A,density);
+    }
+    Step(z,z_,dedx,S);  
+    z=z_;
+  }
+ 
+  // Final step 
+  if (do_energy_loss 
+	&& (RootGeom->FindMat(pos,density,A,Z,X0)==NOERROR)){
+      dedx=GetdEdx(MASS,S(state_q_over_p,0),Z,A,density);
+    }
+  Step(z_,z_end,dedx,S);
+
+  // Update internal variables
+  z_=z_end;
+  x_=S(state_x,0);
+  y_=S(state_y,0);
+  return NOERROR;
+}
+
+// Swim the state vector and the covariance matrix from the current position 
+// to the position corresponding to the radius R
+jerror_t DTrackFitterKalman::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc)
+{
+  double R=pos.Perp();
+  double ds=CDC_STEP_SIZE*((Rf>R)?1.0:-1.0);
+  double dEdx=0.;
+
+  if (ds>0){
+    while (R<Rf){ 
+      // Get dEdx for this step
+      double A=0.,Z=0.,density=0.,X0=0.;
+      if (do_energy_loss && 
+	  (RootGeom->FindMat(pos,density,A,Z,X0)==NOERROR)){
+      double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
+      dEdx=GetdEdx(MASS,q_over_p,Z,A,density); 
+      }
+      // Propagate through field
+      FixedStep(pos,ds,Sc,dEdx);
+      
+      // New radius
+      R=pos.Perp();
+    }
+  }
+  else{
+    double R_old=R;
+    DMatrix Sc_old(Sc);
+    DVector3 pos_old=pos;
+    while (R>Rf && R_old>=R){ 
+      R_old=R;
+      Sc_old=Sc;
+      pos_old=pos;
+      // Get dEdx for this step
+      double A=0.,Z=0.,density=0.,X0=0.;
+      if (do_energy_loss && 
+	  (RootGeom->FindMat(pos,density,A,Z,X0)==NOERROR)){
+	double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
+	dEdx=GetdEdx(MASS,q_over_p,Z,A,density); 
+      }
+      // Propagate through field
+      FixedStep(pos,ds,Sc,dEdx);
+      
+      // New radius
+      R=pos.Perp();
+    }
+    Sc=Sc_old;
+    pos=pos_old;
+  }
+
+  // Update the internal variables
+  x_=pos.x();
+  y_=pos.y();
+  z_=pos.z();
+  q_over_pt_=Sc(state_q_over_pt,0);
+  phi_=Sc(state_phi,0);
+  tanl_=Sc(state_tanl,0);
+  tx_=cos(phi_)/tanl_;
+  ty_=sin(phi_)/tanl_;
+  q_over_p_=q_over_pt_*cos(atan(tanl_));
+
+  return NOERROR;
+}
+
+
 
 
 /*----------------------------------------------------------------------------
@@ -4970,39 +5067,7 @@ double DTrackFitterKalman::Step(DVector3 &pos, DVector3 wire_orig,DVector3 wired
   return ds;
 }
 
-// Swim the state vector from current position (x_,y_,z_) to z_end 
-// through the field
-jerror_t DTrackFitterKalman::SwimToPlane(double z_end, DMatrix &S){
-  int num_inc=abs((z_end-z_)/STEP_SIZE);
-  double z=z_;
-  double dz=(z_end>z_)?STEP_SIZE:-STEP_SIZE;
-  double dedx=0.;
-  double A=0.,Z=0.,density=0.,X0=0.;
-  DVector3 pos(x_,y_,z_);
-  for (int i=0;i<num_inc;i++){
-    pos.SetXYZ(S(state_x,0),S(state_y,0),z);
-    z_=z+dz;
-    if (do_energy_loss 
-	&& (RootGeom->FindMat(pos,density,A,Z,X0)==NOERROR)){
-      dedx=GetdEdx(MASS,S(state_q_over_p,0),Z,A,density);
-    }
-    Step(z,z_,dedx,S);  
-    z=z_;
-  }
- 
-  // Final step 
-  if (do_energy_loss 
-	&& (RootGeom->FindMat(pos,density,A,Z,X0)==NOERROR)){
-      dedx=GetdEdx(MASS,S(state_q_over_p,0),Z,A,density);
-    }
-  Step(z_,z_end,dedx,S);
 
-  // Update internal variables
-  z_=z_end;
-  x_=S(state_x,0);
-  y_=S(state_y,0);
-  return NOERROR;
-}
 // Swim the state vector and the covariance matrix from the current position 
 // to the position corresponding to the radius R
 jerror_t DTrackFitterKalman::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc,
@@ -5084,69 +5149,6 @@ jerror_t DTrackFitterKalman::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc,
   x_=pos.x();
   y_=pos.y();
   z_=pos.z();
-
-  return NOERROR;
-}
-
-// Swim the state vector and the covariance matrix from the current position 
-// to the position corresponding to the radius R
-jerror_t DTrackFitterKalman::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc)
-{
-  double R=pos.Perp();
-  double ds=CDC_STEP_SIZE*((Rf>R)?1.0:-1.0);
-  double dEdx=0.;
-
-  if (ds>0){
-    while (R<Rf){ 
-      // Get dEdx for this step
-      double A=0.,Z=0.,density=0.,X0=0.;
-      if (do_energy_loss && 
-	  (RootGeom->FindMat(pos,density,A,Z,X0)==NOERROR)){
-      double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
-      dEdx=GetdEdx(MASS,q_over_p,Z,A,density); 
-      }
-      // Propagate through field
-      FixedStep(pos,ds,Sc,dEdx);
-      
-      // New radius
-      R=pos.Perp();
-    }
-  }
-  else{
-    double R_old=R;
-    DMatrix Sc_old(Sc);
-    DVector3 pos_old=pos;
-    while (R>Rf && R_old>=R){ 
-      R_old=R;
-      Sc_old=Sc;
-      pos_old=pos;
-      // Get dEdx for this step
-      double A=0.,Z=0.,density=0.,X0=0.;
-      if (do_energy_loss && 
-	  (RootGeom->FindMat(pos,density,A,Z,X0)==NOERROR)){
-	double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
-	dEdx=GetdEdx(MASS,q_over_p,Z,A,density); 
-      }
-      // Propagate through field
-      FixedStep(pos,ds,Sc,dEdx);
-      
-      // New radius
-      R=pos.Perp();
-    }
-    Sc=Sc_old;
-    pos=pos_old;
-  }
-
-  // Update the internal variables
-  x_=pos.x();
-  y_=pos.y();
-  z_=pos.z();
-  q_over_pt_=Sc(state_q_over_pt,0);
-  phi_=Sc(state_phi,0);
-  tanl_=Sc(state_tanl,0);
-  tx_=cos(phi_)/tanl_;
-  ty_=sin(phi_)/tanl_;
-  q_over_p_=q_over_pt_*cos(atan(tanl_));
 
   return NOERROR;
 }
