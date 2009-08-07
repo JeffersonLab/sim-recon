@@ -1,8 +1,8 @@
 // $Id$
 //
 //    File: DParticle_factory_Kalman.h
-// Created: Thu Jul 30 08:20:31 EDT 2009
-// Creator: davidl (on Darwin harriet.jlab.org 9.7.0 i386)
+// Created: Thu Sep  4 14:02:44 EDT 2008
+// Creator: davidl (on Darwin harriet.jlab.org 8.11.1 i386)
 //
 
 #ifndef _DParticle_factory_Kalman_
@@ -24,6 +24,7 @@ class DParticle_factory_Kalman:public jana::JFactory<DParticle>{
 		~DParticle_factory_Kalman(){};
 		const char* Tag(void){return "Kalman";}
 
+
 	private:
 		jerror_t init(void);						///< Called once at program start.
 		jerror_t brun(jana::JEventLoop *loop, int runnumber);	///< Called everytime a new run number is detected.
@@ -31,11 +32,14 @@ class DParticle_factory_Kalman:public jana::JFactory<DParticle>{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		int DEBUG_LEVEL;
 		DTrackFitter *fitter;
-		const DTrackHitSelector *hitselector;
 		vector<DReferenceTrajectory*> rtv;
+		vector<double> mass_hypotheses;
 
-		void MakeDParticle(const DTrack *track);
+		DParticle* MakeDParticle(const DTrack *track);
+		double GetFOM(DParticle *dparticle);
+		double GetRangeOutFOM(DParticle *dparticle);
 };
 
 #endif // _DParticle_factory_Kalman_
