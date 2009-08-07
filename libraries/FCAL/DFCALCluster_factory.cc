@@ -23,7 +23,6 @@ using namespace jana;
 # define SQR(x) (x)*(x)
 #endif
 
-ofstream myout;
 
 /* Do not use the following switch unless you KNOW what you are doing!!!
    The log-weighting method for cluster centroid  was imported from IU clusterizer, 
@@ -49,7 +48,6 @@ DFCALCluster_factory::DFCALCluster_factory()
 
 	gPARMS->SetDefaultParameter("FCAL:MIN_CLUSTER_BLOCK_COUNT", MIN_CLUSTER_BLOCK_COUNT);
 	gPARMS->SetDefaultParameter("FCAL:MIN_CLUSTER_SEED_ENERGY", MIN_CLUSTER_SEED_ENERGY);
-        myout.open("out.txt");
 
 }
 
