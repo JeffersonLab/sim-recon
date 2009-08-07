@@ -1685,7 +1685,6 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 	reconfactory->GetTextEntry()->SetText("DParticle:");
 		
 	// Add DParticle factories
-	reconfactory->AddEntry("DParticle:", id++);
 	for(unsigned int i=0; i< facnames.size(); i++){
 		string name = "DParticle:";
 		string::size_type pos = facnames[i].find(name);
@@ -1713,6 +1712,7 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 	}
 
 	// Add DTrackCandidate factories
+	reconfactory->AddEntry("DTrackCandidate:", id++);
 	for(unsigned int i=0; i< facnames.size(); i++){
 		string name = "DTrackCandidate:";
 		string::size_type pos = facnames[i].find(name);

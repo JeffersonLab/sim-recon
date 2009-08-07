@@ -562,7 +562,13 @@ void MyProcessor::UpdateTrackLabels(void)
 		trkno<<setprecision(4)<<i+1;
 		reconlabs["trk"][row]->SetText(trkno.str().c_str());
 		
-		type<<"q="<<(trk->charge()>0 ? "+":"")<<trk->charge();
+		double mass = trk->mass();
+		if(fabs(mass-0.13957)<1.0E-4)type<<"pi";
+		else if(fabs(mass-0.938)<1.0E-4)type<<"proton";
+		else if(fabs(mass-0.493677)<1.0E-4)type<<"K";
+		else if(fabs(mass-0.000511)<1.0E-4)type<<"e";
+		else type<<"q=";
+		type<<(trk->charge()>0 ? "+":"-");
 		reconlabs["type"][row]->SetText(type.str().c_str());
 
 		p<<setprecision(4)<<trk->momentum().Mag();
@@ -616,6 +622,7 @@ void MyProcessor::AddKinematicDataTrack(const DKinematicData* kd, int color, dou
 		_DBG_<<"WARNING: Invalid value for TRKFIT:MATERIAL_MAP_MODEL (=\""<<MATERIAL_MAP_MODEL<<"\")"<<endl;
 	}
 
+	rt.SetMass(kd->mass());
 	rt.Swim(kd->position(), kd->momentum(), kd->charge());
 
 	// Create a new graphics set and fill it with all of the trajectory points
@@ -687,6 +694,7 @@ unsigned int MyProcessor::GetNrows(const string &factory, string tag)
 //------------------------------------------------------------------
 void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned int index, DReferenceTrajectory* &rt, vector<const DCDCTrackHit*> &cdchits)
 {
+_DBG__;
 	// initialize rt to NULL in case we don't find the one requested
 	rt = NULL;
 	cdchits.clear();
@@ -699,6 +707,7 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 	// Variables to hold track parameters
 	DVector3 pos, mom(0,0,0);
 	double q=0.0;
+	double mass;
 
 	// Find the specified track
 	if(dataname=="DParticle"){
@@ -709,6 +718,7 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 		pos = particles[index]->position();
 		mom = particles[index]->momentum();
 		particles[index]->Get(cdchits);
+		mass = particles[index]->mass();
 	}
 
 	if(dataname=="DTrack"){
@@ -719,6 +729,7 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 		pos = tracks[index]->position();
 		mom = tracks[index]->momentum();
 		tracks[index]->Get(cdchits);
+		mass = tracks[index]->mass();
 	}
 
 	if(dataname=="DTrackCandidate"){
@@ -729,6 +740,7 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 		pos = tracks[index]->position();
 		mom = tracks[index]->momentum();
 		tracks[index]->Get(cdchits);
+		mass = tracks[index]->mass();
 	}
 
 	if(dataname=="DMCThrown"){
@@ -740,6 +752,8 @@ void MyProcessor::GetDReferenceTrajectory(string dataname, string tag, unsigned 
 		pos = t->position();
 		mom = t->momentum();
 		tracks[index]->Get(cdchits);
+		mass = tracks[index]->mass();
+_DBG_<<"mass="<<mass<<endl;
 	}
 
 	// Make sure we found a charged particle we can track
