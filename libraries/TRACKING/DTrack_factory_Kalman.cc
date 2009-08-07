@@ -53,11 +53,11 @@ bool static FDCSortByZincreasing(const DFDCPseudo* const &hit1, const DFDCPseudo
 jerror_t DTrack_factory_Kalman::init(void)
 {
 	fitter = NULL;
-	hitselector = NULL;
 
-	DReferenceTrajectory rt(NULL); // temporary just to get default mass
-	DEFAULT_MASS = rt.GetMass(); // Get default mass from DReferenceTrajectory class itself
-	gPARMS->SetDefaultParameter("TRKFIT:DEFAULT_MASS",					DEFAULT_MASS);
+        DEBUG_LEVEL = 0;
+
+        gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",
+                DEBUG_LEVEL);
 
 	return NOERROR;
 }
@@ -83,17 +83,22 @@ jerror_t DTrack_factory_Kalman::brun(jana::JEventLoop *loop, int runnumber)
 		_DBG_<<"Unable to get a DTrackFitter object! NO Charged track fitting will be done!"<<endl;
 		return RESOURCE_UNAVAILABLE;
 	}
+	
+	string MASS_HYPOTHESES = "0.13957, 0.938";
+	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES", MASS_HYPOTHESES);
 
-	// Get pointer to DTrackHitSelector object
-	vector<const DTrackHitSelector *> hitselectors;
-	loop->Get(hitselectors);
-	if(hitselectors.size()<1){
-		_DBG_<<"Unable to get a DTrackHitSelector object! NO Charged track fitting will be done!"<<endl;
-		return RESOURCE_UNAVAILABLE;
+	// Parse MASS_HYPOTHESES string to make list of masses to try
+	if(MASS_HYPOTHESES.length()>0){
+		string &str = MASS_HYPOTHESES;
+		unsigned int cutAt;
+		while( (cutAt = str.find(",")) != (unsigned int)str.npos ){
+			if(cutAt > 0)mass_hypotheses.push_back(atof(str.substr(0,cutAt).c_str()));
+			str = str.substr(cutAt+1);
+		}
+		if(str.length() > 0)mass_hypotheses.push_back(atof(str.c_str()));
+	}else{
+		mass_hypotheses.push_back(0.0); // If empty string is specified, assume they want massless particle
 	}
-	hitselector = hitselectors[0];
-
-	//debug_level = 11;
 
 	return NOERROR;
 }
@@ -103,49 +108,90 @@ jerror_t DTrack_factory_Kalman::brun(jana::JEventLoop *loop, int runnumber)
 //------------------
 jerror_t DTrack_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
 {
-	if(!fitter || !hitselector)return NOERROR;
+	if(!fitter)return NOERROR;
 	
 	// Get candidates and hits
 	vector<const DTrackCandidate*> candidates;
-	vector<const DCDCTrackHit*> cdctrackhits;
-	vector<const DFDCPseudo*> fdcpseudos;
 	loop->Get(candidates);
-	loop->Get(cdctrackhits);
-	loop->Get(fdcpseudos);
 	
 	// Loop over candidates
 	for(unsigned int i=0; i<candidates.size(); i++){
 		const DTrackCandidate *candidate = candidates[i];
-
-		// Make sure there are enough DReferenceTrajectory objects
+	// Make sure there are enough DReferenceTrajectory objects
 		while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
 		DReferenceTrajectory *rt = rtv[_data.size()];
-		
-		// Swim a reference trajectory with this candidate's parameters
-		rt->SetMass(DEFAULT_MASS);
-		rt->Swim(candidate->position(), candidate->momentum(), candidate->charge());
-		if(rt->Nswim_steps<1)continue;
 
-		// Setup fitter to do fit
-		fitter->Reset();
-		fitter->SetFitType(DTrackFitter::kWireBased);
-		hitselector->GetAllHits(DTrackHitSelector::kHelical, rt, cdctrackhits, fdcpseudos, fitter);
-	
-		// Do the fit
-		DTrackFitter::fit_status_t status = fitter->FitTrack(*candidate);
-		switch(status){
-			case DTrackFitter::kFitNotDone:
-				_DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
-				break;
-			case DTrackFitter::kFitSuccess:
-			case DTrackFitter::kFitNoImprovement:
-				MakeDTrack(candidate);
-				break;
-			case DTrackFitter::kFitFailed:
-				break;
+		// Loop over potential particle masses until one is found that gives a chisq/Ndof<3.0
+		// If none does, then use the one with the smallest chisq
+		DTrack *best_track = NULL;
+		double best_fom = 0.0;
+		for(unsigned int j=0; j<mass_hypotheses.size(); j++){
+
+			if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting wire based fit for candidate "<<i<<" with mass: "<<mass_hypotheses[j]<<endl;}
+			
+			// Do the fit
+			fitter->SetFitType(DTrackFitter::kWireBased);
+			DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*candidate, rt, loop, mass_hypotheses[j]);
+			DTrack *dtrack = NULL;
+			switch(status){
+				case DTrackFitter::kFitNotDone:
+					_DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
+				case DTrackFitter::kFitFailed:
+					continue;
+					break;
+				case DTrackFitter::kFitSuccess:
+				case DTrackFitter::kFitNoImprovement:
+					dtrack = MakeDTrack(candidate);
+					break;
+			}
+			
+			// Avoid division by zero below
+			if(dtrack->Ndof < 1){
+				if(DEBUG_LEVEL>1)_DBG_<<"-- new track with mass "<<mass_hypotheses[j]<<" has Ndof="<<dtrack->Ndof<<". Dropping ..."<<endl;
+				delete dtrack;
+				continue;
+			}
+			
+			// If best_track hasn't been set, then this is the best track!
+			if(!best_track){
+				best_track = dtrack;
+				best_fom = GetFOM(best_track);
+				if(DEBUG_LEVEL>1)_DBG_<<"-- first successful fit this candidate with mass: "<<mass_hypotheses[j]<<" (chisq/Ndof="<<(best_track->chisq/best_track->Ndof)<<") fom="<<best_fom<<endl;
+				continue;
+			}
+			
+			// If the fit wasn't sucessful, try next mass
+			if(!dtrack){
+				if(DEBUG_LEVEL>1)_DBG_<<"-- no DTrack made for track with mass "<<mass_hypotheses[j]<<endl;
+				continue;
+			}
+			
+			// OK, now we have to make a choice as to which track to keep. The chisq/Ndof is a good,
+			// but not sufficient indicator of which hypothesis is best.  For the most part, we 
+			// are trying to distinguish between pions and protons, of which the protons may range
+			// out if their momentum is low enough. We want to use the track range to help decide.
+			// Form a figure of merit based on the chisq/Ndof and the probability of ranging out.
+			double fom = GetFOM(dtrack);
+			
+			// There can be only one! (Highlander)
+			if(fom > best_fom){
+				if(DEBUG_LEVEL>1)_DBG_<<"-- new best track with mass "<<mass_hypotheses[j]<<" (old chisq/Ndof="<<(best_track->chisq/best_track->Ndof)<<" , new chisq/Ndof="<<(dtrack->chisq/dtrack->Ndof)<<") (old fom="<<best_fom<<" , new fom="<<fom<<")"<<endl;
+				delete best_track;
+				best_track = dtrack;
+				best_fom = fom;
+			}else{
+				if(DEBUG_LEVEL>1)_DBG_<<"-- keeping best track with mass "<<best_track->mass()<<" (old chisq/Ndof="<<(best_track->chisq/best_track->Ndof)<<" , new chisq/Ndof="<<(dtrack->chisq/dtrack->Ndof)<<") (old fom="<<best_fom<<" , new fom="<<fom<<")"<<endl;
+				delete dtrack;
+			}
 		}
 
+		// If a track fit was successful, then keep it
+		if(best_track){
+			_data.push_back(best_track);
+			if(DEBUG_LEVEL>2)_DBG_<<"adding wire-based track for candidate "<<i<<" (p="<<best_track->momentum().Mag()<<", "<<_data.size()<<" tracks total now)"<<endl;
+		}
 	}
+	
 
 	return NOERROR;
 }
@@ -172,7 +218,7 @@ jerror_t DTrack_factory_Kalman::fini(void)
 //------------------
 // MakeDTrack
 //------------------
-void DTrack_factory_Kalman::MakeDTrack(const DTrackCandidate *candidate)
+DTrack* DTrack_factory_Kalman::MakeDTrack(const DTrackCandidate *candidate)
 {
 	// Allocate a DReferenceTrajectory object if needed.
 	// These each have a large enough memory footprint that
@@ -188,6 +234,7 @@ void DTrack_factory_Kalman::MakeDTrack(const DTrackCandidate *candidate)
 	// Copy over DKinematicData part
 	DKinematicData *track_kd = track;
 	*track_kd = fitter->GetFitParameters();
+	rt->SetMass(track_kd->mass());
 	rt->Swim(track->position(), track->momentum(), track->charge());
 	
 	track->rt = rt;
@@ -203,9 +250,25 @@ void DTrack_factory_Kalman::MakeDTrack(const DTrackCandidate *candidate)
 	for(unsigned int i=0; i<cdchits.size(); i++)track->AddAssociatedObject(cdchits[i]);
 	for(unsigned int i=0; i<fdchits.size(); i++)track->AddAssociatedObject(fdchits[i]);
 
-	// Add DTrackCandidate as associated object (yes, this is redundant with the candidateid member)
+	// Add DTrackCandidate as associated object
 	track->AddAssociatedObject(candidate);
 	
-	_data.push_back(track);
+	return track;
 }
 
+
+
+//------------------
+// GetFOM
+//------------------
+double DTrack_factory_Kalman::GetFOM(DTrack *dtrack)
+{
+	//double range_out_fom = GetRangeOutFOM(dtrack);
+	double chisq_per_dof = dtrack->chisq/(double)dtrack->Ndof;
+	
+	return chisq_per_dof;
+	
+	//double total_fom = exp(-pow(range_out_fom/0.5, 2.0))*exp(-pow(chisq_per_dof/2.0, 2.0));
+	
+	//return total_fom;
+}
