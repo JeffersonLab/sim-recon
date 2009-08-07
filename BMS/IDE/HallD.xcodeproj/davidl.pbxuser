@@ -49,16 +49,31 @@
 		activeExec = 0;
 	};
 	75F456400ED3C543000ABA27 /* Project object */ = {
-		activeBuildConfigurationName = Release;
-		activeTarget = 75332DB80EF93C0C0014DA2A /* hddm_cull_events */;
+		activeBuildConfigurationName = install;
+		activeTarget = 75F45AE90ED43DCF000ABA27 /* PID */;
 		addToTargets = (
 			75332D4D0EF858DB0014DA2A /* ALL */,
 		);
-		breakpointsGroup = 75F45A990ED3C71A000ABA27 /* XCBreakpointsBucket */;
+		breakpoints = (
+		);
 		codeSenseManager = 75F456450ED3C543000ABA27 /* Code sense */;
 		ignoreBreakpointsInProjectsDict = {
 		};
 		perUserDictionary = {
+			PBXConfiguration.PBXFileTableDataSource3.PBXBookmarksDataSource = {
+				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
+				PBXFileTableDataSourceColumnSortingKey = PBXBookmarksDataSource_NameID;
+				PBXFileTableDataSourceColumnWidthsKey = (
+					200,
+					200,
+					57.58349609375,
+				);
+				PBXFileTableDataSourceColumnsKey = (
+					PBXBookmarksDataSource_LocationID,
+					PBXBookmarksDataSource_NameID,
+					PBXBookmarksDataSource_CommentsID,
+				);
+			};
 			PBXConfiguration.PBXFileTableDataSource3.PBXExecutablesDataSource = {
 				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
 				PBXFileTableDataSourceColumnSortingKey = PBXExecutablesDataSource_NameID;
@@ -78,7 +93,7 @@
 				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
 				PBXFileTableDataSourceColumnWidthsKey = (
 					20,
-					225,
+					44,
 					20,
 					48,
 					43,
@@ -101,7 +116,7 @@
 				PBXFileTableDataSourceColumnWidthsKey = (
 					20,
 					20,
-					201,
+					20,
 					20,
 					48,
 					43,
@@ -124,8 +139,8 @@
 				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
 				PBXFileTableDataSourceColumnWidthsKey = (
 					20,
-					200,
-					45,
+					10,
+					60,
 					20,
 					48,
 					43,
@@ -141,8 +156,8 @@
 					PBXFileDataSource_Warnings_ColumnID,
 				);
 			};
-			PBXPerProjectTemplateStateSaveDate = 251153834;
-			PBXWorkspaceStateSaveDate = 251153834;
+			PBXPerProjectTemplateStateSaveDate = 271253968;
+			PBXWorkspaceStateSaveDate = 271253968;
 		};
 		sourceControlManager = 75F456440ED3C543000ABA27 /* Source Control */;
 		userBuildSettings = {
@@ -153,6 +168,7 @@
 		fallbackIsa = XCSourceControlManager;
 		isSCMEnabled = 1;
 		scmConfiguration = {
+			repositoryName = "Hall-D";
 		};
 		scmType = scm.subversion;
 	};
@@ -200,6 +216,14 @@
 			sepNavWindowFrame = "{{15, 163}, {793, 860}}";
 		};
 	};
+	75F456FF0ED3C5FD000ABA27 /* DFCALCluster_factory.cc */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {766, 7000}}";
+			sepNavSelRange = "{516, 0}";
+			sepNavVisRange = "{0, 1564}";
+			sepNavWindowFrame = "{{-1207, 477}, {825, 1003}}";
+		};
+	};
 	75F4571E0ED3C5FD000ABA27 /* DFDCPseudo_factory.cc */ = {
 		uiCtxt = {
 			sepNavIntBoundsRect = "{{0, 0}, {848, 7280}}";
@@ -232,6 +256,46 @@
 			sepNavWindowFrame = "{{38, 117}, {813, 885}}";
 		};
 	};
+	75F4575F0ED3C5FD000ABA27 /* DKinematicData.cc */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {762, 10248}}";
+			sepNavSelRange = "{101, 20}";
+			sepNavVisRange = "{0, 1416}";
+			sepNavWindowFrame = "{{-1562, 462}, {821, 992}}";
+		};
+	};
+	75F457600ED3C5FD000ABA27 /* DKinematicData.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {804, 4200}}";
+			sepNavSelRange = "{7654, 4}";
+			sepNavVisRange = "{5810, 2368}";
+			sepNavWindowFrame = "{{-1585, 483}, {821, 992}}";
+		};
+	};
+	75F457640ED3C5FD000ABA27 /* DParticle_factory.cc */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1596, 4438}}";
+			sepNavSelRange = "{7923, 0}";
+			sepNavVisRange = "{7113, 2205}";
+			sepNavWindowFrame = "{{-1225, 468}, {821, 992}}";
+		};
+	};
+	75F457650ED3C5FD000ABA27 /* DParticle_factory.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {762, 864}}";
+			sepNavSelRange = "{1186, 0}";
+			sepNavVisRange = "{0, 1224}";
+			sepNavWindowFrame = "{{49, 9}, {821, 992}}";
+		};
+	};
+	75F4578D0ED3C5FD000ABA27 /* DTOFMCResponse_factory.cc */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {852, 2212}}";
+			sepNavSelRange = "{4267, 0}";
+			sepNavVisRange = "{2822, 2214}";
+			sepNavWindowFrame = "{{15, 20}, {825, 1003}}";
+		};
+	};
 	75F457980ED3C5FD000ABA27 /* DKalmanFilter.cc */ = {
 		uiCtxt = {
 			sepNavIntBoundsRect = "{{0, 0}, {812, 27622}}";
@@ -250,18 +314,84 @@
 	};
 	75F457A30ED3C5FE000ABA27 /* DReferenceTrajectory.cc */ = {
 		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {748, 11494}}";
-			sepNavSelRange = "{2889, 0}";
+			sepNavIntBoundsRect = "{{0, 0}, {774, 15540}}";
+			sepNavSelRange = "{7948, 0}";
+			sepNavVisRange = "{6909, 1932}";
 			sepNavVisRect = "{{0, 811}, {748, 731}}";
-			sepNavWindowFrame = "{{434, 17}, {793, 860}}";
+			sepNavWindowFrame = "{{575, 9}, {793, 860}}";
+		};
+	};
+	75F457A40ED3C5FE000ABA27 /* DReferenceTrajectory.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {804, 1652}}";
+			sepNavSelRange = "{2491, 11}";
+			sepNavVisRange = "{1234, 2864}";
+			sepNavWindowFrame = "{{440, 34}, {821, 992}}";
+		};
+	};
+	75F457A90ED3C5FE000ABA27 /* DTrack_factory.cc */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1560, 5754}}";
+			sepNavSelRange = "{8860, 251}";
+			sepNavVisRange = "{7349, 2213}";
+			sepNavWindowFrame = "{{-891, 477}, {821, 992}}";
+		};
+	};
+	75F457AA0ED3C5FE000ABA27 /* DTrack_factory.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {762, 980}}";
+			sepNavSelRange = "{2411, 27}";
+			sepNavVisRange = "{197, 2278}";
+			sepNavWindowFrame = "{{787, 29}, {821, 992}}";
+		};
+	};
+	75F457C00ED3C5FE000ABA27 /* DTrackFitter.cc */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {948, 3206}}";
+			sepNavSelRange = "{3511, 0}";
+			sepNavVisRange = "{2383, 2332}";
+			sepNavWindowFrame = "{{180, 36}, {821, 992}}";
+		};
+	};
+	75F457C10ED3C5FE000ABA27 /* DTrackFitter.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1128, 2016}}";
+			sepNavSelRange = "{2429, 12}";
+			sepNavVisRange = "{2156, 2448}";
+			sepNavWindowFrame = "{{122, 15}, {821, 992}}";
 		};
 	};
 	75F457C40ED3C5FE000ABA27 /* DTrackFitterALT1.cc */ = {
 		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {1514, 15806}}";
-			sepNavSelRange = "{23870, 36}";
+			sepNavIntBoundsRect = "{{0, 0}, {754, 20286}}";
+			sepNavSelRange = "{45475, 24}";
+			sepNavVisRange = "{43692, 2072}";
 			sepNavVisRect = "{{0, 7539}, {768, 756}}";
-			sepNavWindowFrame = "{{153, 12}, {813, 885}}";
+			sepNavWindowFrame = "{{-1452, 548}, {813, 885}}";
+		};
+	};
+	75F457F80ED3C5FE000ABA27 /* hdv_mainframe.cc */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {762, 28448}}";
+			sepNavSelRange = "{56083, 0}";
+			sepNavVisRange = "{54405, 2140}";
+			sepNavWindowFrame = "{{-1382, 488}, {821, 992}}";
+		};
+	};
+	75F457FD0ED3C5FE000ABA27 /* MyProcessor.cc */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {942, 11452}}";
+			sepNavSelRange = "{12970, 0}";
+			sepNavVisRange = "{1365, 1715}";
+			sepNavWindowFrame = "{{-1585, 483}, {821, 992}}";
+		};
+	};
+	75F457FF0ED3C5FE000ABA27 /* trk_mainframe.cc */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {792, 10598}}";
+			sepNavSelRange = "{0, 0}";
+			sepNavVisRange = "{18734, 1867}";
+			sepNavWindowFrame = "{{597, 36}, {821, 992}}";
 		};
 	};
 	75F4580A0ED3C5FE000ABA27 /* DEventProcessor_acceptance_hists.cc */ = {
@@ -282,10 +412,19 @@
 	};
 	75F458220ED3C5FE000ABA27 /* DEventProcessor_invariant_mass_hists.cc */ = {
 		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {770, 3388}}";
-			sepNavSelRange = "{5541, 0}";
+			sepNavIntBoundsRect = "{{0, 0}, {786, 3374}}";
+			sepNavSelRange = "{6859, 0}";
+			sepNavVisRange = "{2760, 2163}";
 			sepNavVisRect = "{{0, 2023}, {768, 756}}";
-			sepNavWindowFrame = "{{614, -14}, {813, 885}}";
+			sepNavWindowFrame = "{{-1412, 593}, {813, 885}}";
+		};
+	};
+	75F458230ED3C5FE000ABA27 /* DEventProcessor_invariant_mass_hists.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {766, 875}}";
+			sepNavSelRange = "{932, 0}";
+			sepNavVisRange = "{0, 1598}";
+			sepNavWindowFrame = "{{-1308, 457}, {825, 1003}}";
 		};
 	};
 	75F458310ED3C5FE000ABA27 /* DEventProcessor_track_hists.cc */ = {
@@ -306,12 +445,6 @@
 	};
 	75F45A900ED3C617000ABA27 /* libraries_tlm */ = {
 		activeExec = 0;
-	};
-	75F45A990ED3C71A000ABA27 /* XCBreakpointsBucket */ = {
-		isa = XCBreakpointsBucket;
-		name = "Project Breakpoints";
-		objects = (
-		);
 	};
 	75F45AB60ED437B0000ABA27 /* BCAL */ = {
 		activeExec = 0;

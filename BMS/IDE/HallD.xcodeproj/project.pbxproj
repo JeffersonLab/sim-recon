@@ -84,119 +84,119 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75332CDC0EF851BD0014DA2A /* include */;
+			remoteGlobalIDString = 75332CDC0EF851BD0014DA2A;
 			remoteInfo = include;
 		};
 		75332CF10EF852A30014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75F45B780ED44C3C000ABA27 /* hdview2 */;
+			remoteGlobalIDString = 75F45B780ED44C3C000ABA27;
 			remoteInfo = hdview2;
 		};
 		75332CF70EF852CD0014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75332CF30EF852B20014DA2A /* hd_root */;
+			remoteGlobalIDString = 75332CF30EF852B20014DA2A;
 			remoteInfo = hd_root;
 		};
 		75332D2C0EF857B10014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75332D270EF8578B0014DA2A /* trackeff_hists2 */;
+			remoteGlobalIDString = 75332D270EF8578B0014DA2A;
 			remoteInfo = trackeff_hists2;
 		};
 		75332D2E0EF857B50014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75332D230EF8577A0014DA2A /* track_hists */;
+			remoteGlobalIDString = 75332D230EF8577A0014DA2A;
 			remoteInfo = track_hists;
 		};
 		75332D300EF857BD0014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75332D1F0EF8576D0014DA2A /* radlen_hists */;
+			remoteGlobalIDString = 75332D1F0EF8576D0014DA2A;
 			remoteInfo = radlen_hists;
 		};
 		75332D320EF857BD0014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75332D1B0EF857610014DA2A /* mcthrown_hists */;
+			remoteGlobalIDString = 75332D1B0EF857610014DA2A;
 			remoteInfo = mcthrown_hists;
 		};
 		75332D340EF857BD0014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75332D170EF857500014DA2A /* invariant_mass_hists */;
+			remoteGlobalIDString = 75332D170EF857500014DA2A;
 			remoteInfo = invariant_mass_hists;
 		};
 		75332D360EF857BD0014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75332D130EF857440014DA2A /* fdc_hists */;
+			remoteGlobalIDString = 75332D130EF857440014DA2A;
 			remoteInfo = fdc_hists;
 		};
 		75332D380EF857BD0014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75332D0F0EF857380014DA2A /* fcal_hists */;
+			remoteGlobalIDString = 75332D0F0EF857380014DA2A;
 			remoteInfo = fcal_hists;
 		};
 		75332D3A0EF857BD0014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75332D0B0EF8572B0014DA2A /* cdc_hists */;
+			remoteGlobalIDString = 75332D0B0EF8572B0014DA2A;
 			remoteInfo = cdc_hists;
 		};
 		75332D3C0EF857BD0014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75332D060EF857000014DA2A /* bcal_hists */;
+			remoteGlobalIDString = 75332D060EF857000014DA2A;
 			remoteInfo = bcal_hists;
 		};
 		75332D3E0EF857BD0014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75332CFA0EF853180014DA2A /* acceptance_hists */;
+			remoteGlobalIDString = 75332CFA0EF853180014DA2A;
 			remoteInfo = acceptance_hists;
 		};
 		75332D4E0EF858EB0014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75F45B240ED4456A000ABA27 /* libraries */;
+			remoteGlobalIDString = 75F45B240ED4456A000ABA27;
 			remoteInfo = libraries;
 		};
 		75332D500EF858F00014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75F45B530ED44A6D000ABA27 /* programs */;
+			remoteGlobalIDString = 75F45B530ED44A6D000ABA27;
 			remoteInfo = programs;
 		};
 		75332D520EF858F90014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75332D2B0EF857A60014DA2A /* plugins */;
+			remoteGlobalIDString = 75332D2B0EF857A60014DA2A;
 			remoteInfo = plugins;
 		};
 		75332DB40EF93BCB0014DA2A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75F456400ED3C543000ABA27 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 75332DAF0EF93B280014DA2A /* HDGeant */;
+			remoteGlobalIDString = 75332DAF0EF93B280014DA2A;
 			remoteInfo = HDGeant;
 		};
 		75F45B250ED44574000ABA27 /* PBXContainerItemProxy */ = {
@@ -3525,9 +3525,11 @@
 		75F456400ED3C543000ABA27 /* Project object */ = {
 			isa = PBXProject;
 			buildConfigurationList = 75F456410ED3C543000ABA27 /* Build configuration list for PBXProject "HallD" */;
+			compatibilityVersion = "Xcode 2.4";
 			hasScannedForEncodings = 0;
 			mainGroup = 75F4563E0ED3C543000ABA27;
 			projectDirPath = "";
+			projectRoot = "";
 			targets = (
 				75332D4D0EF858DB0014DA2A /* ALL */,
 				75F45B240ED4456A000ABA27 /* libraries */,
@@ -3731,7 +3733,7 @@
 			};
 			name = Debug;
 		};
-		75332CE90EF851E10014DA2A /* Release */ = {
+		75332CE90EF851E10014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -3740,7 +3742,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332CF50EF852B20014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3753,7 +3755,7 @@
 			};
 			name = Debug;
 		};
-		75332CF60EF852B20014DA2A /* Release */ = {
+		75332CF60EF852B20014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -3762,7 +3764,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332CFC0EF853180014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3775,7 +3777,7 @@
 			};
 			name = Debug;
 		};
-		75332CFD0EF853180014DA2A /* Release */ = {
+		75332CFD0EF853180014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -3784,7 +3786,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332D080EF857000014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3797,7 +3799,7 @@
 			};
 			name = Debug;
 		};
-		75332D090EF857000014DA2A /* Release */ = {
+		75332D090EF857000014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -3806,7 +3808,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332D0D0EF8572B0014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3819,7 +3821,7 @@
 			};
 			name = Debug;
 		};
-		75332D0E0EF8572B0014DA2A /* Release */ = {
+		75332D0E0EF8572B0014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -3828,7 +3830,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332D110EF857380014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3841,7 +3843,7 @@
 			};
 			name = Debug;
 		};
-		75332D120EF857380014DA2A /* Release */ = {
+		75332D120EF857380014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -3850,7 +3852,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332D150EF857440014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3863,7 +3865,7 @@
 			};
 			name = Debug;
 		};
-		75332D160EF857440014DA2A /* Release */ = {
+		75332D160EF857440014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -3872,7 +3874,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332D190EF857500014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3885,7 +3887,7 @@
 			};
 			name = Debug;
 		};
-		75332D1A0EF857500014DA2A /* Release */ = {
+		75332D1A0EF857500014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -3894,7 +3896,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332D1D0EF857610014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3907,7 +3909,7 @@
 			};
 			name = Debug;
 		};
-		75332D1E0EF857610014DA2A /* Release */ = {
+		75332D1E0EF857610014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -3916,7 +3918,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332D210EF8576D0014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3929,7 +3931,7 @@
 			};
 			name = Debug;
 		};
-		75332D220EF8576D0014DA2A /* Release */ = {
+		75332D220EF8576D0014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -3938,7 +3940,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332D250EF8577A0014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3951,7 +3953,7 @@
 			};
 			name = Debug;
 		};
-		75332D260EF8577A0014DA2A /* Release */ = {
+		75332D260EF8577A0014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -3960,7 +3962,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332D290EF8578B0014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3973,7 +3975,7 @@
 			};
 			name = Debug;
 		};
-		75332D2A0EF8578B0014DA2A /* Release */ = {
+		75332D2A0EF8578B0014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -3982,7 +3984,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332D420EF857E50014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3995,7 +3997,7 @@
 			};
 			name = Debug;
 		};
-		75332D430EF857E50014DA2A /* Release */ = {
+		75332D430EF857E50014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4004,7 +4006,7 @@
 				PRODUCT_NAME = plugins;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332D560EF859270014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4017,7 +4019,7 @@
 			};
 			name = Debug;
 		};
-		75332D570EF859270014DA2A /* Release */ = {
+		75332D570EF859270014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4026,7 +4028,7 @@
 				PRODUCT_NAME = ALL;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332DB10EF93B280014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4039,7 +4041,7 @@
 			};
 			name = Debug;
 		};
-		75332DB20EF93B280014DA2A /* Release */ = {
+		75332DB20EF93B280014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4048,7 +4050,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75332DBA0EF93C320014DA2A /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4061,7 +4063,7 @@
 			};
 			name = Debug;
 		};
-		75332DBB0EF93C320014DA2A /* Release */ = {
+		75332DBB0EF93C320014DA2A /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4070,7 +4072,377 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
+		};
+		75CE12561028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+			};
+			name = relink;
+		};
+		75CE12571028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = ALL;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12581028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = libraries2;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12591028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = libraries;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE125A1028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = programs;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE125B1028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE125C1028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE125D1028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE125E1028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE125F1028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12601028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12611028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12621028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12631028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12641028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12651028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12661028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12671028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12681028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12691028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE126A1028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE126B1028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE126C1028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE126D1028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE126E1028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE126F1028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12701028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12711028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12721028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12731028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12741028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12751028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12761028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = plugins;
+				ZERO_LINK = NO;
+			};
+			name = relink;
+		};
+		75CE12771028BE1A0058FFA3 /* relink */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = $TARGET_NAME;
+				ZERO_LINK = NO;
+			};
+			name = relink;
 		};
 		75F456420ED3C543000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4079,12 +4451,12 @@
 			};
 			name = Debug;
 		};
-		75F456430ED3C543000ABA27 /* Release */ = {
+		75F456430ED3C543000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45A920ED3C61A000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4097,7 +4469,7 @@
 			};
 			name = Debug;
 		};
-		75F45A930ED3C61A000ABA27 /* Release */ = {
+		75F45A930ED3C61A000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4106,7 +4478,7 @@
 				PRODUCT_NAME = libraries;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45AB80ED43826000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4119,7 +4491,7 @@
 			};
 			name = Debug;
 		};
-		75F45AB90ED43826000ABA27 /* Release */ = {
+		75F45AB90ED43826000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4128,7 +4500,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45ABF0ED43B54000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4141,7 +4513,7 @@
 			};
 			name = Debug;
 		};
-		75F45AC00ED43B54000ABA27 /* Release */ = {
+		75F45AC00ED43B54000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4150,7 +4522,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45AC70ED43D63000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4163,7 +4535,7 @@
 			};
 			name = Debug;
 		};
-		75F45AC80ED43D63000ABA27 /* Release */ = {
+		75F45AC80ED43D63000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4172,7 +4544,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45AD30ED43D7C000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4185,7 +4557,7 @@
 			};
 			name = Debug;
 		};
-		75F45AD40ED43D7C000ABA27 /* Release */ = {
+		75F45AD40ED43D7C000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4194,7 +4566,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45AD70ED43D7F000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4207,7 +4579,7 @@
 			};
 			name = Debug;
 		};
-		75F45AD80ED43D7F000ABA27 /* Release */ = {
+		75F45AD80ED43D7F000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4216,7 +4588,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45ADB0ED43D82000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4229,7 +4601,7 @@
 			};
 			name = Debug;
 		};
-		75F45ADC0ED43D82000ABA27 /* Release */ = {
+		75F45ADC0ED43D82000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4238,7 +4610,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45AE70ED43DCA000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4251,7 +4623,7 @@
 			};
 			name = Debug;
 		};
-		75F45AE80ED43DCA000ABA27 /* Release */ = {
+		75F45AE80ED43DCA000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4260,7 +4632,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45AEB0ED43DCF000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4273,7 +4645,7 @@
 			};
 			name = Debug;
 		};
-		75F45AEC0ED43DCF000ABA27 /* Release */ = {
+		75F45AEC0ED43DCF000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4282,7 +4654,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45B0B0ED43EC7000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4295,7 +4667,7 @@
 			};
 			name = Debug;
 		};
-		75F45B0C0ED43EC7000ABA27 /* Release */ = {
+		75F45B0C0ED43EC7000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4304,7 +4676,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45B140ED444F9000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4317,7 +4689,7 @@
 			};
 			name = Debug;
 		};
-		75F45B150ED444F9000ABA27 /* Release */ = {
+		75F45B150ED444F9000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4326,7 +4698,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45B180ED44503000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4339,7 +4711,7 @@
 			};
 			name = Debug;
 		};
-		75F45B190ED44503000ABA27 /* Release */ = {
+		75F45B190ED44503000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4348,7 +4720,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45B220ED4453E000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4361,7 +4733,7 @@
 			};
 			name = Debug;
 		};
-		75F45B230ED4453E000ABA27 /* Release */ = {
+		75F45B230ED4453E000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4370,7 +4742,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45B3E0ED445AE000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4383,7 +4755,7 @@
 			};
 			name = Debug;
 		};
-		75F45B3F0ED445AE000ABA27 /* Release */ = {
+		75F45B3F0ED445AE000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4392,7 +4764,7 @@
 				PRODUCT_NAME = libraries2;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45B600ED44AE4000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4405,7 +4777,7 @@
 			};
 			name = Debug;
 		};
-		75F45B610ED44AE4000ABA27 /* Release */ = {
+		75F45B610ED44AE4000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4414,7 +4786,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45B630ED44AE4000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4427,7 +4799,7 @@
 			};
 			name = Debug;
 		};
-		75F45B640ED44AE4000ABA27 /* Release */ = {
+		75F45B640ED44AE4000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4436,7 +4808,7 @@
 				PRODUCT_NAME = programs;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 		75F45B7A0ED44C3C000ABA27 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -4449,7 +4821,7 @@
 			};
 			name = Debug;
 		};
-		75F45B7B0ED44C3C000ABA27 /* Release */ = {
+		75F45B7B0ED44C3C000ABA27 /* install */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
@@ -4458,7 +4830,7 @@
 				PRODUCT_NAME = $TARGET_NAME;
 				ZERO_LINK = NO;
 			};
-			name = Release;
+			name = install;
 		};
 /* End XCBuildConfiguration section */
 
@@ -4467,307 +4839,341 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332CE80EF851E10014DA2A /* Debug */,
-				75332CE90EF851E10014DA2A /* Release */,
+				75332CE90EF851E10014DA2A /* install */,
+				75CE125B1028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332CF40EF852B20014DA2A /* Build configuration list for PBXLegacyTarget "hd_root" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332CF50EF852B20014DA2A /* Debug */,
-				75332CF60EF852B20014DA2A /* Release */,
+				75332CF60EF852B20014DA2A /* install */,
+				75CE126A1028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332CFB0EF853180014DA2A /* Build configuration list for PBXLegacyTarget "acceptance_hists" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332CFC0EF853180014DA2A /* Debug */,
-				75332CFD0EF853180014DA2A /* Release */,
+				75332CFD0EF853180014DA2A /* install */,
+				75CE126C1028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332D070EF857000014DA2A /* Build configuration list for PBXLegacyTarget "bcal_hists" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332D080EF857000014DA2A /* Debug */,
-				75332D090EF857000014DA2A /* Release */,
+				75332D090EF857000014DA2A /* install */,
+				75CE126D1028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332D0C0EF8572B0014DA2A /* Build configuration list for PBXLegacyTarget "cdc_hists" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332D0D0EF8572B0014DA2A /* Debug */,
-				75332D0E0EF8572B0014DA2A /* Release */,
+				75332D0E0EF8572B0014DA2A /* install */,
+				75CE126E1028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332D100EF857380014DA2A /* Build configuration list for PBXLegacyTarget "fcal_hists" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332D110EF857380014DA2A /* Debug */,
-				75332D120EF857380014DA2A /* Release */,
+				75332D120EF857380014DA2A /* install */,
+				75CE126F1028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332D140EF857440014DA2A /* Build configuration list for PBXLegacyTarget "fdc_hists" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332D150EF857440014DA2A /* Debug */,
-				75332D160EF857440014DA2A /* Release */,
+				75332D160EF857440014DA2A /* install */,
+				75CE12701028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332D180EF857500014DA2A /* Build configuration list for PBXLegacyTarget "invariant_mass_hists" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332D190EF857500014DA2A /* Debug */,
-				75332D1A0EF857500014DA2A /* Release */,
+				75332D1A0EF857500014DA2A /* install */,
+				75CE12711028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332D1C0EF857610014DA2A /* Build configuration list for PBXLegacyTarget "mcthrown_hists" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332D1D0EF857610014DA2A /* Debug */,
-				75332D1E0EF857610014DA2A /* Release */,
+				75332D1E0EF857610014DA2A /* install */,
+				75CE12721028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332D200EF8576D0014DA2A /* Build configuration list for PBXLegacyTarget "radlen_hists" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332D210EF8576D0014DA2A /* Debug */,
-				75332D220EF8576D0014DA2A /* Release */,
+				75332D220EF8576D0014DA2A /* install */,
+				75CE12731028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332D240EF8577A0014DA2A /* Build configuration list for PBXLegacyTarget "track_hists" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332D250EF8577A0014DA2A /* Debug */,
-				75332D260EF8577A0014DA2A /* Release */,
+				75332D260EF8577A0014DA2A /* install */,
+				75CE12741028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332D280EF8578B0014DA2A /* Build configuration list for PBXLegacyTarget "trackeff_hists2" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332D290EF8578B0014DA2A /* Debug */,
-				75332D2A0EF8578B0014DA2A /* Release */,
+				75332D2A0EF8578B0014DA2A /* install */,
+				75CE12751028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332D410EF857E50014DA2A /* Build configuration list for PBXAggregateTarget "plugins" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332D420EF857E50014DA2A /* Debug */,
-				75332D430EF857E50014DA2A /* Release */,
+				75332D430EF857E50014DA2A /* install */,
+				75CE12761028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332D550EF859270014DA2A /* Build configuration list for PBXAggregateTarget "ALL" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332D560EF859270014DA2A /* Debug */,
-				75332D570EF859270014DA2A /* Release */,
+				75332D570EF859270014DA2A /* install */,
+				75CE12571028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332DB00EF93B280014DA2A /* Build configuration list for PBXLegacyTarget "HDGeant" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332DB10EF93B280014DA2A /* Debug */,
-				75332DB20EF93B280014DA2A /* Release */,
+				75332DB20EF93B280014DA2A /* install */,
+				75CE126B1028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75332DB90EF93C320014DA2A /* Build configuration list for PBXLegacyTarget "hddm_cull_events" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75332DBA0EF93C320014DA2A /* Debug */,
-				75332DBB0EF93C320014DA2A /* Release */,
+				75332DBB0EF93C320014DA2A /* install */,
+				75CE12771028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F456410ED3C543000ABA27 /* Build configuration list for PBXProject "HallD" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F456420ED3C543000ABA27 /* Debug */,
-				75F456430ED3C543000ABA27 /* Release */,
+				75F456430ED3C543000ABA27 /* install */,
+				75CE12561028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45A910ED3C61A000ABA27 /* Build configuration list for PBXLegacyTarget "libraries_tlm" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45A920ED3C61A000ABA27 /* Debug */,
-				75F45A930ED3C61A000ABA27 /* Release */,
+				75F45A930ED3C61A000ABA27 /* install */,
+				75CE12591028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45AB70ED43826000ABA27 /* Build configuration list for PBXLegacyTarget "BCAL" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45AB80ED43826000ABA27 /* Debug */,
-				75F45AB90ED43826000ABA27 /* Release */,
+				75F45AB90ED43826000ABA27 /* install */,
+				75CE125C1028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45ABE0ED43B54000ABA27 /* Build configuration list for PBXLegacyTarget "CDC" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45ABF0ED43B54000ABA27 /* Debug */,
-				75F45AC00ED43B54000ABA27 /* Release */,
+				75F45AC00ED43B54000ABA27 /* install */,
+				75CE125D1028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45AC60ED43D63000ABA27 /* Build configuration list for PBXLegacyTarget "DANA" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45AC70ED43D63000ABA27 /* Debug */,
-				75F45AC80ED43D63000ABA27 /* Release */,
+				75F45AC80ED43D63000ABA27 /* install */,
+				75CE125E1028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45AD20ED43D7C000ABA27 /* Build configuration list for PBXLegacyTarget "FCAL" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45AD30ED43D7C000ABA27 /* Debug */,
-				75F45AD40ED43D7C000ABA27 /* Release */,
+				75F45AD40ED43D7C000ABA27 /* install */,
+				75CE125F1028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45AD60ED43D7F000ABA27 /* Build configuration list for PBXLegacyTarget "FDC" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45AD70ED43D7F000ABA27 /* Debug */,
-				75F45AD80ED43D7F000ABA27 /* Release */,
+				75F45AD80ED43D7F000ABA27 /* install */,
+				75CE12601028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45ADA0ED43D82000ABA27 /* Build configuration list for PBXLegacyTarget "HDDM" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45ADB0ED43D82000ABA27 /* Debug */,
-				75F45ADC0ED43D82000ABA27 /* Release */,
+				75F45ADC0ED43D82000ABA27 /* install */,
+				75CE12611028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45AE60ED43DCA000ABA27 /* Build configuration list for PBXLegacyTarget "HDGEOMETRY" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45AE70ED43DCA000ABA27 /* Debug */,
-				75F45AE80ED43DCA000ABA27 /* Release */,
+				75F45AE80ED43DCA000ABA27 /* install */,
+				75CE12621028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45AEA0ED43DCF000ABA27 /* Build configuration list for PBXLegacyTarget "PID" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45AEB0ED43DCF000ABA27 /* Debug */,
-				75F45AEC0ED43DCF000ABA27 /* Release */,
+				75F45AEC0ED43DCF000ABA27 /* install */,
+				75CE12631028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45B0A0ED43EC7000ABA27 /* Build configuration list for PBXLegacyTarget "START_COUNTER" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45B0B0ED43EC7000ABA27 /* Debug */,
-				75F45B0C0ED43EC7000ABA27 /* Release */,
+				75F45B0C0ED43EC7000ABA27 /* install */,
+				75CE12641028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45B130ED444F9000ABA27 /* Build configuration list for PBXLegacyTarget "TAGGER" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45B140ED444F9000ABA27 /* Debug */,
-				75F45B150ED444F9000ABA27 /* Release */,
+				75F45B150ED444F9000ABA27 /* install */,
+				75CE12651028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45B170ED44503000ABA27 /* Build configuration list for PBXLegacyTarget "TOF" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45B180ED44503000ABA27 /* Debug */,
-				75F45B190ED44503000ABA27 /* Release */,
+				75F45B190ED44503000ABA27 /* install */,
+				75CE12661028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45B210ED4453E000ABA27 /* Build configuration list for PBXLegacyTarget "TRACKING" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45B220ED4453E000ABA27 /* Debug */,
-				75F45B230ED4453E000ABA27 /* Release */,
+				75F45B230ED4453E000ABA27 /* install */,
+				75CE12671028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45B3D0ED445AE000ABA27 /* Build configuration list for PBXAggregateTarget "libraries" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45B3E0ED445AE000ABA27 /* Debug */,
-				75F45B3F0ED445AE000ABA27 /* Release */,
+				75F45B3F0ED445AE000ABA27 /* install */,
+				75CE12581028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45B5F0ED44AE4000ABA27 /* Build configuration list for PBXLegacyTarget "hd_dump" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45B600ED44AE4000ABA27 /* Debug */,
-				75F45B610ED44AE4000ABA27 /* Release */,
+				75F45B610ED44AE4000ABA27 /* install */,
+				75CE12681028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45B620ED44AE4000ABA27 /* Build configuration list for PBXAggregateTarget "programs" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45B630ED44AE4000ABA27 /* Debug */,
-				75F45B640ED44AE4000ABA27 /* Release */,
+				75F45B640ED44AE4000ABA27 /* install */,
+				75CE125A1028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 		75F45B790ED44C3C000ABA27 /* Build configuration list for PBXLegacyTarget "hdview2" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				75F45B7A0ED44C3C000ABA27 /* Debug */,
-				75F45B7B0ED44C3C000ABA27 /* Release */,
+				75F45B7B0ED44C3C000ABA27 /* install */,
+				75CE12691028BE1A0058FFA3 /* relink */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = install;
 		};
 /* End XCConfigurationList section */
 	};
