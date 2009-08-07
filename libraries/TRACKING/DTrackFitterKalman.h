@@ -27,7 +27,7 @@ typedef struct{
   DVector3 origin;
   DVector3 dir;
   double residual;
-  int ring,straw;
+  int ring,straw,status;
 }DKalmanCDCHit_t;
 
 typedef struct{
@@ -73,13 +73,11 @@ class DTrackFitterKalman: public DTrackFitter{
   jerror_t AddHit(double x,double y, double z,double covx,
 		  double covy, double covxy,double dE);
   jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
-  jerror_t KalmanLoop(double mass_hyp,int pass);
+  jerror_t KalmanLoop(void);
   jerror_t KalmanForward(double anneal,DMatrix &S,DMatrix &C,double &chisq);
-  jerror_t KalmanForwardCDC(double mass_hyp, double anneal,DMatrix &S, 
-			    DMatrix &C,double &chisq);
-  jerror_t KalmanCentral(double mass_hyp,double anneal_factor,DMatrix &S, 
-			 DMatrix &C,DVector3 &pos,
-			 double &chisq);
+  jerror_t KalmanForwardCDC(double anneal,DMatrix &S,DMatrix &C,double &chisq);
+  jerror_t KalmanCentral(double anneal_factor,DMatrix &S,DMatrix &C,
+			 DVector3 &pos,double &chisq);
   jerror_t ExtrapolateToVertex(DVector3 &pos,DMatrix &Sc,DMatrix &Cc);
   jerror_t ExtrapolateToVertex(DMatrix &S, DMatrix &C);
   jerror_t SetReferenceTrajectory(DMatrix &S,DMatrix &C);  
@@ -102,7 +100,7 @@ class DTrackFitterKalman: public DTrackFitter{
   double GetChiSq(void){return chisq_;}
   unsigned int GetNDF(void){return ndf;};
   double GetActivePathLength(void){ return path_length;}
-  double GetdEdx(double M,double q_over_p,double Z,double A, double rho);
+  double GetdEdx(double q_over_p,double Z,double A, double rho);
   double GetEnergyVariance(double ds,double q_over_p,double Z,double A, 
 			   double rho);
 
@@ -125,7 +123,7 @@ class DTrackFitterKalman: public DTrackFitter{
     state_z,
   };
   void ResetKalman(void);
-  jerror_t GetProcessNoise(double mass_hyp,double ds,double z,
+  jerror_t GetProcessNoise(double ds,double z,
 			   double X0,DMatrix S,DMatrix &Q);
   double Step(double oldz,double newz, double dEdx,DMatrix &S);
   jerror_t StepJacobian(double oldz,double newz,DMatrix S,double dEdx,
@@ -151,7 +149,7 @@ class DTrackFitterKalman: public DTrackFitter{
   jerror_t ConvertStateVector(double z,double wire_x,double wire_y,
 			      DMatrix S,DMatrix C,DMatrix &Sc,
 			      DMatrix &Cc);
-  jerror_t GetProcessNoiseCentral(double mass_hyp,double ds,
+  jerror_t GetProcessNoiseCentral(double ds,
 				  DVector3 pos,double X0,DMatrix Sc,
 				  DMatrix &Q);
   jerror_t SwimToPlane(DMatrix &S);
