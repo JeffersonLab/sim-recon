@@ -8,6 +8,8 @@
 #ifndef _DEventProcessor_invariant_mass_hists_
 #define _DEventProcessor_invariant_mass_hists_
 
+#include <pthread.h>
+
 #include <TFile.h>
 #include <TH1.h>
 #include <TH2.h>
@@ -43,6 +45,7 @@ class DEventProcessor_invariant_mass_hists:public JEventProcessor{
 
 		TLorentzVector MakeTLorentz(const DKinematicData *track, double mass);
 
+		pthread_mutex_t mutex;
 };
 
 #endif // _DEventProcessor_invariant_mass_hists_

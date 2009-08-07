@@ -78,6 +78,8 @@ jerror_t DEventProcessor_invariant_mass_hists::init(void)
 	// Go back up to the (ROOT) parent directory
 	dir->cd("../");
 	
+	pthread_mutex_init(&mutex, NULL);
+	
 	return NOERROR;
 }
 
@@ -137,6 +139,7 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 	//--------------------------------------------------------------------
 	// Fill histograms below here using values in the rec_XXX constainers.
 
+	pthread_mutex_lock(&mutex);
 
 	// Loop over beam photons and fill histos for each "tagged" photon for this event
 	for(unsigned int i=0; i<beam_photons.size(); i++){
@@ -199,6 +202,8 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 		t_pX->Fill(-t);
 //		_DBG_<<t<<endl;
 	}
+
+	pthread_mutex_unlock(&mutex);
 
 	return NOERROR;
 }
