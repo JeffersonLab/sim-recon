@@ -223,15 +223,25 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	
 	// Debug message
 	if(DEBUG_LEVEL>2){
-		_DBG__;
 		_DBG_<<"cdchits.size="<<cdchits.size()<<"  fdchits.size="<<fdchits.size()<<endl;
 		if(fit_type==kTimeBased)_DBG_<<"============= Time-based ==============="<<endl;
 		if(fit_type==kWireBased)_DBG_<<"============= Wire-based ==============="<<endl;
 	}
 	
+	// Set mass for our DReferenceTrajectory objects
+	rt->SetMass(input_params.mass());
+	tmprt->SetMass(input_params.mass());
+	
 	// Swim reference trajectory
 	fit_status = kFitNotDone; // initialize to a safe default
 	rt->Swim(input_params.position(), input_params.momentum(), input_params.charge());
+
+	if(DEBUG_LEVEL>1){
+		double chisq;
+		int Ndof;
+		ChiSq(fit_type, rt, &chisq, &Ndof);
+		_DBG_<<"starting parameters for fit: chisq="<<chisq<<" Ndof="<<Ndof<<" (chisq/Ndof="<<chisq/(double)Ndof<<") p="<<rt->swim_steps[0].mom.Mag()<<endl;
+	}
 
 	// Iterate over fitter until it converges or we reach the 
 	// maximum number of iterations
@@ -288,7 +298,7 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 		last_Ndof = Ndof;
 	}
 
-	if(DEBUG_LEVEL>1)_DBG_<<" Niterations="<<Niterations<<"  chisq="<<chisq<<" Ndof="<<Ndof<<" p="<<rt->swim_steps[0].mom.Mag()<<endl;
+	if(DEBUG_LEVEL>1)_DBG_<<" Niterations="<<Niterations<<"  chisq="<<chisq<<" Ndof="<<Ndof<<" (chisq/Ndof="<<chisq/(double)Ndof<<") p="<<rt->swim_steps[0].mom.Mag()<<endl;
 	
 	// At this point we must decide whether the fit succeeded or not.
 	// We'll consider the fit a success if any of the following is true:
@@ -309,19 +319,80 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 		ChiSq(fit_type, rt, &chisq, &Ndof);
 		_DBG_<<"-------- Check chisq = "<<chisq<<" Ndof="<<Ndof<<endl;
 	}
+	
+	if(DEBUG_LEVEL>2){
+		_DBG_<<"start POCA pos: "; rt->swim_steps->origin.Print();
+		_DBG_<<"start POCA mom: "; rt->swim_steps->mom.Print();
+		ChiSq(fit_type, rt, &chisq, &Ndof);
+		_DBG_<<"start POCA chisq="<<chisq<<" Ndof="<<Ndof<<" (chisq/Ndof="<<chisq/(double)Ndof<<") p="<<rt->swim_steps[0].mom.Mag()<<endl;
+	}
 
-	// Find point of closest approach to target and use parameters
-	// there for vertex position and momentum
-	DVector3 vertex_mom, vertex_pos;
+	// At this point, the first point on the rt is likely not the POCA to the
+	// beamline. To find that, we swim the particle in, towards the target from
+	// the swim step closest to the first wire hit. We make sure to set the tmprt to
+	// energy *gain* for the backwards swim.
+	DVector3 vertex_pos = rt->swim_steps->origin;
+	DVector3 vertex_mom = rt->swim_steps->mom;
+	const DCoordinateSystem *first_wire = NULL;
+	if(cdchits.size()>0) first_wire=cdchits[0]->wire;
+	else if(fdchits.size()>0) first_wire=fdchits[0]->wire;
+	if(first_wire){
+		DReferenceTrajectory::swim_step_t *step = rt->FindClosestSwimStep(first_wire);
+		if(step){
+#if 0
+			tmprt->SetPLossDirection(DReferenceTrajectory::kBackward);
+			tmprt->Swim(step->origin, -step->mom, -rt->q, 100.0, target);
+			tmprt->DistToRT(target);
+			tmprt->GetLastDOCAPoint(vertex_pos, vertex_mom);
+			vertex_mom = -vertex_mom;
+			tmprt->SetPLossDirection(DReferenceTrajectory::kForward);
+#endif
+			// Swim back towards target (note: we may already be past it!)
+			tmprt->SetPLossDirection(DReferenceTrajectory::kBackward);
+			tmprt->Swim(rt->swim_steps->origin, -rt->swim_steps->mom, -rt->q, 100.0, target);
+
+			// Swim swim in farward direction to target (another short swim!)
+			tmprt->SetPLossDirection(DReferenceTrajectory::kForward);
+			vertex_pos = tmprt->swim_steps[tmprt->Nswim_steps-1].origin;
+			vertex_mom = tmprt->swim_steps[tmprt->Nswim_steps-1].mom;
+			tmprt->Swim(vertex_pos, -vertex_mom, rt->q, 100.0, target);
+			tmprt->DistToRT(target);
+			tmprt->GetLastDOCAPoint(vertex_pos, vertex_mom);
+
+			// Now, swim out the rt one last time such that it starts at the POCA to
+			// the beamline. We need to do this so that we can calculate the
+			// chisq/Ndof based on the vertex parameters
+			rt->Swim(vertex_pos, vertex_mom);
+			ChiSq(fit_type, rt, &this->chisq, &this->Ndof);
+		}
+	}else{
+		_DBG_<<"NO WIRES IN CANDIDATE!! (event "<<eventnumber<<")"<<endl;
+	}
+
+	if(DEBUG_LEVEL>2){
+		_DBG_<<"end POCA pos: "; rt->swim_steps->origin.Print();
+		_DBG_<<"end POCA mom: "; rt->swim_steps->mom.Print();
+		ChiSq(fit_type, rt, &chisq, &Ndof);
+		_DBG_<<"end POCA chisq="<<chisq<<" Ndof="<<Ndof<<" (chisq/Ndof="<<chisq/(double)Ndof<<") p="<<rt->swim_steps[0].mom.Mag()<<endl;
+	}
+
+
+#if 0	
+	// At this point, the first point on the rt is likely not the POCA to the
+	// beamline. To find that, we swim the particle in, towards the target from
+	// about 10 cm out along the trajectory. We make sure to set the tmprt to
+	// energy gain for the backwards swim.
+	DReferenceTrajectory::swim_step_t *step = rt->swim_steps;
+	for(int i=0; i<rt->Nswim_steps-1; i++, step++){if(step->s>10.0)break;}
+	tmprt->SetPLossDirection(DReferenceTrajectory::kBackward);
+	tmprt->Swim(step->origin, -step->mom, -rt->q, 100.0, target);
+	tmprt->SetPLossDirection(DReferenceTrajectory::kForward);
 	double s;
-	rt->DistToRT(target, &s);
-	rt->GetLastDOCAPoint(vertex_pos, vertex_mom);
-	rt->Swim(vertex_pos, vertex_mom);
-	//DVector3 &vertex_mom = rt->swim_steps[0].mom;
-	//DVector3 &vertex_pos = rt->swim_steps[0].origin;
-
-	// Calculate final chi-squared for this track
-	ChiSq(fit_type, rt, &this->chisq, &this->Ndof);
+	tmprt->DistToRT(target, &s);
+	DVector3 vertex_mom, vertex_pos;
+	tmprt->GetLastDOCAPoint(vertex_pos, vertex_mom);
+	vertex_mom = -vertex_mom;
+#endif
 
 	// Copy final fit parameters into TrackFitter classes data members. Note that the chisq and Ndof
 	// members are copied in during the ChiSq() method call in LeastSquaresB().
@@ -340,7 +411,7 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	}
 	
 	// Debugging messages
-	if(DEBUG_LEVEL>2)_DBG_<<" -- Fit succeeded: q="<<rt->q<<" p="<<vertex_mom.Mag()<<" theta="<<vertex_mom.Theta()*57.3<<" phi="<<vertex_mom.Phi()*57.3<<endl;
+	if(DEBUG_LEVEL>1)_DBG_<<" -- Fit succeeded: Final params after vertex adjustment: q="<<rt->q<<" p="<<vertex_mom.Mag()<<" theta="<<vertex_mom.Theta()*57.3<<" phi="<<vertex_mom.Phi()*57.3<<"  chisq="<<chisq<<" Ndof="<<Ndof<<" (chisq/Ndof="<<chisq/(double)Ndof<<")"<<endl;
 
 	return fit_status;
 }

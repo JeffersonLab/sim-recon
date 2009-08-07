@@ -31,11 +31,14 @@ class DParticle_factory:public jana::JFactory<DParticle>{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		int DEBUG_LEVEL;
 		DTrackFitter *fitter;
-		const DTrackHitSelector *hitselector;
 		vector<DReferenceTrajectory*> rtv;
+		vector<double> mass_hypotheses;
 
-		void MakeDParticle(const DTrack *track);
+		DParticle* MakeDParticle(const DTrack *track);
+		double GetFOM(DParticle *dparticle);
+		double GetRangeOutFOM(DParticle *dparticle);
 };
 
 #endif // _DParticle_factory_

@@ -9,6 +9,14 @@
 
 #include "DTrackHitSelectorALT1.h"
 
+#ifndef ansi_escape
+#define ansi_escape			((char)0x1b)
+#define ansi_bold 			ansi_escape<<"[1m"
+#define ansi_normal			ansi_escape<<"[0m"
+#define ansi_red				ansi_escape<<"[31m"
+#define ansi_green			ansi_escape<<"[32m"
+#define ansi_blue				ansi_escape<<"[34m"
+#endif // ansi_escape
 
 //---------------------------------
 // DTrackHitSelectorALT1    (Constructor)
@@ -39,11 +47,11 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
 	/// it came from the track represented by the given
 	/// DReference trajectory. The probability is based on
 	/// the residual between the distance of closest approach
-	/// of the trajectory to the wire and the drift time.
+	/// of the trajectory to the wire and the drift time for
+	/// time-based tracks and the distance to the wire for
+	/// wire-based tracks.
 
-	// Calculate beta of particle assuming its a pion for now. If the
-	// particles is really a proton or an electron, the residual
-	// calculated below will only be off by a little.
+	// Calculate beta of particle.
 	double beta = 1.0/sqrt(1.0+pow(rt->GetMass(),2.0)/rt->swim_steps[0].mom.Mag2());
 	
 	// The error on the residual. This will be different based on the
@@ -62,9 +70,14 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
 		default:
 			sigma = 10.0*0.8/sqrt(12.0);
 	}
+
+	// Low-momentum tracks are more poorly defined than high-momentum tracks.
+	// We account for that here by increasing the error as a function of momentum
+	double g = 0.350/sqrt(log(2.0)); // total guess
+	sigma *= 1.0 + exp(-pow(rt->swim_steps[0].mom.Mag()/g,2.0));
 	
 	// Minimum probability of hit belonging to wire and still be accepted
-	double MIN_HIT_PROB = 0.01;
+	double MIN_HIT_PROB = 0.05;
 
 	vector<const DCDCTrackHit*>::const_iterator iter;
 	for(iter=cdchits_in.begin(); iter!=cdchits_in.end(); iter++){
@@ -78,7 +91,7 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
 		// this is calculated from the drift time. For all other
 		// tracks, this is assumed to be half a cell size
 		double dist;
-		if(kTimeBased){
+		if(fit_type == kTimeBased){
 			// Distance using drift time
 			// NOTE: Right now we assume pions for the TOF
 			// and a constant drift velocity of 55um/ns
@@ -88,15 +101,30 @@ void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory
 			dist = 0.8/2.0; // half cell-size
 		}
 		
+		// For time-based and wire-based tracks, the fit was
+		// weighted for multiple scattering by material times 
+		// angle giving preference to the begining of the 
+		// track. Take this into account here by enhancing the
+		// error for hits further from the vertex
+		double sigma_total = sigma;
+		if(fit_type == kTimeBased || fit_type == kWireBased){
+			sigma_total *= 1.0 + s/50.0; // double error at 50cm out (guess for now)
+		}
+		
 		// Residual
 		double resi = dist - doca;
-		double chisq = pow(resi/sigma, 2.0);
+		double chisq = pow(resi/sigma_total, 2.0);
 
 		// Use chi-sq probaility function with Ndof=1 to calculate probability
 		double probability = TMath::Prob(chisq, 1);
 		if(probability>=MIN_HIT_PROB)cdchits_out.push_back(hit);
 
-		if(HS_DEBUG_LEVEL>10)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" prob="<<probability<<endl;
+		if(HS_DEBUG_LEVEL>10){
+			_DBG_;
+			if(probability>=MIN_HIT_PROB)cerr<<ansi_bold<<ansi_green;
+			cerr<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" sigma="<<sigma_total<<" prob="<<probability<<endl;
+			cerr<<ansi_normal;
+		}
 	}
 }
 
@@ -194,6 +222,11 @@ void DTrackHitSelectorALT1::GetFDCHits(fit_type_t fit_type, DReferenceTrajectory
 		double probability = TMath::Prob(chisq, 2);
 		if(probability>=MIN_HIT_PROB)fdchits_out.push_back(hit);
 
-		if(HS_DEBUG_LEVEL>10)_DBG_<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" resic="<<resic<<" chisq="<<chisq<<" prob="<<probability<<endl;
+		if(HS_DEBUG_LEVEL>10){
+			_DBG_;
+			if(probability>=MIN_HIT_PROB)cerr<<ansi_bold<<ansi_blue;
+			cerr<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" resic="<<resic<<" chisq="<<chisq<<" prob="<<probability<<endl;
+			cerr<<ansi_normal;
+		}
 	}
 }

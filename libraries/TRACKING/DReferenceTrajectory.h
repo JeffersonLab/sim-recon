@@ -84,6 +84,7 @@ class DReferenceTrajectory{
 		const DRootGeom* GetDRootGeom(void){return RootGeom;}
 		const DGeometry* GetDGeometry(void){return geom;}
 		double GetMass(void) const {return mass;}
+		double GetStepSize(void){return step_size;}
 		void SetMass(double mass){this->mass = mass;}
 		void SetPLossDirection(direction_t direction){ploss_direction=direction;}
 		direction_t GetPLossDirection(void){return ploss_direction;}

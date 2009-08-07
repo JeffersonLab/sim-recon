@@ -96,6 +96,11 @@ class DTrackFitter:public jana::JObject{
 		fit_status_t FitTrack(const DVector3 &pos, const DVector3 &mom, double q, double mass);
 		fit_status_t FitTrack(const DKinematicData &starting_params);
 		
+		// Methods that actually do something
+		fit_status_t FindHitsAndFitTrack(const DKinematicData &starting_params, DReferenceTrajectory *rt, JEventLoop *loop, double mass=-1.0); ///< mass<0 means get it from starting_params
+		jerror_t CorrectForELoss(const DKinematicData &starting_params, DReferenceTrajectory *rt, DVector3 &pos, DVector3 &mom, double mass);
+
+
 		//---- The following need to be supplied by the subclass ----
 		virtual string Name(void) const =0;
 		virtual fit_status_t FitTrack(void)=0;

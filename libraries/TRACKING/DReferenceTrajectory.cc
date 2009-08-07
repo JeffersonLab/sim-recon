@@ -49,7 +49,6 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	this->Nswim_steps = 0;
 	this->dist_to_rt_depth = 0;
 	this->mass = 0.13957; // assume pion mass until otherwise specified
-	//this->mass = 0.938;
 	this->RootGeom=NULL;
 	this->geom = NULL;
 	this->ploss_direction = kForward;
@@ -160,7 +159,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		this->q = q;
 
 	DMagneticFieldStepper stepper(bfield, q, &pos, &mom);
-	if(step_size>0.0)stepper.SetStepSize(step_size);
+	if(step_size>0.0)stepper.SetStepSize(0.5);
 
 	// Step until we hit a boundary (don't track more than 20 meters)
 	swim_step_t *swim_step = this->swim_steps;
@@ -186,6 +185,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		// Add material if geom or RootGeom is not NULL
 		// If both are non-NULL, then use RootGeom
 		double dP = 0.0;
+		double dP_dx=0.0;
 		if(RootGeom || geom){
 			//double density, A, Z, X0;
 			double rhoZ_overA, rhoZ_overA_logI, X0;
@@ -213,7 +213,8 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 					}
 
 					// Calculate momentum loss due to ionization
-					dP = delta_s*dPdx(swim_step->mom.Mag(), rhoZ_overA, rhoZ_overA_logI);
+					dP_dx = dPdx(swim_step->mom.Mag(), rhoZ_overA, rhoZ_overA_logI);
+					dP = delta_s*dP_dx;
 				}
 			}
 			last_step = swim_step;
@@ -223,7 +224,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		swim_step->itheta02s = itheta02s;
 		swim_step->itheta02s2 = itheta02s2;
 
-		// Swim to next
+		// Adjust momentum due to ionization losses
 		if(dP!=0.0){
 			double ptot = swim_step->mom.Mag() - dP; // correct for energy loss
 			if(ptot<0.0)break;
@@ -232,10 +233,21 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			swim_step->mom.SetMag(ptot);
 			stepper.SetStartingParams(q, &swim_step->origin, &swim_step->mom);
 		}
+		
+		// Adjust step size to take smaller steps in regions of high momentum loss
+		if(step_size<0.0){ // step_size<0 indicates auto-calculated step size
+			// Take step so as to change momentum by no more than 1%
+			double my_step_size=swim_step->mom.Mag()/fabs(dP_dx)*0.01;
+			if(my_step_size>2.0)my_step_size=2.0; // maximum step size is 2 cm
+			if(my_step_size<0.1)my_step_size=0.1; // minimum step size is 1 mm
+			stepper.SetStepSize(my_step_size);
+		}
+
+		// Swim to next
 		s += stepper.Step(NULL);
 
 		// Exit loop if we leave the tracking volume
-		if(swim_step->origin.Perp()>65.0){Nswim_steps++; break;} // ran into BCAL
+		if(swim_step->origin.Perp()>70.0){Nswim_steps++; break;} // ran into BCAL
 		if(swim_step->origin.Z()>650.0){Nswim_steps++; break;} // ran into FCAL
 		if(swim_step->origin.Z()<-50.0){Nswim_steps++; break;} // ran into UPV
 		if(wire && Nswim_steps>0){ // optionally check if we passed a wire we're supposed to be swimming to

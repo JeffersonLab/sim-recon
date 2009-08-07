@@ -53,14 +53,15 @@ class DTrack_factory:public jana::JFactory<DTrack>{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
-		double DEFAULT_MASS;
+		int DEBUG_LEVEL;
 		DTrackFitter *fitter;
-		const DTrackHitSelector *hitselector;
 		vector<DReferenceTrajectory*> rtv;
-		DCoordinateSystem *target;
+		vector<double> mass_hypotheses;
 
-		jerror_t CorrectCandidateForELoss(const DTrackCandidate *candidate, DReferenceTrajectory *rt, DVector3 &pos, DVector3 &mom);
-		void MakeDTrack(const DTrackCandidate *candidate);
+		DTrack* MakeDTrack(const DTrackCandidate *candidate);
+		double GetFOM(DTrack *dtrack);
+		double GetRangeOutFOM(DTrack *dtrack);
+		void FilterDuplicates(void);
 		
 };
 
