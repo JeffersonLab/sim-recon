@@ -134,7 +134,7 @@ jerror_t DTOFMCResponse_factory::brun(JEventLoop *loop, int runnumber)
   map<string, double> tofparms;
  
   if ( !loop->GetCalib("TOF/tof_parms", tofparms)){
-    cout<<"DTOFMCResponse_factory: loding values from TOF data base"<<endl;
+    cout<<"DTOFMCResponse_factory: loading values from TOF data base"<<endl;
   } else {
     cout << "DTOFMCResponse_factory: Error loading values from TOF data base" <<endl;
   }
