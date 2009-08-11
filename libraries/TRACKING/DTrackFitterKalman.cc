@@ -98,10 +98,42 @@ DTrackFitterKalman::DTrackFitterKalman(JEventLoop *loop):DTrackFitter(loop){
   // Mass hypothesis
   MASS=0.13957; //charged pion
 
-  //DEBUG_HISTS=true;
-  DEBUG_HISTS=false;
+  DEBUG_HISTS=true;
+  //DEBUG_HISTS=false;
   DEBUG_LEVEL=0;
   //  DEBUG_LEVEL=2;
+
+  if(DEBUG_HISTS){
+    DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+
+    dapp->Lock();
+    
+    cdc_residuals=(TH2F*)gROOT->FindObject("cdc_residuals");
+    if (!cdc_residuals){
+      cdc_residuals=new TH2F("cdc_residuals","residuals vs ring",
+			     30,0.5,30.5,1000,-0.1,0.1);
+    cdc_residuals->SetXTitle("ring number");
+    cdc_residuals->SetYTitle("#Deltad (cm)");
+    }  
+
+    fdc_xresiduals=(TH2F*)gROOT->FindObject("fdc_xresiduals");
+    if (!fdc_xresiduals){
+      fdc_xresiduals=new TH2F("fdc_xresiduals","x residuals vs z",
+			      200,170.,370.,100,-1,1.);
+      fdc_xresiduals->SetXTitle("z (cm)");
+      fdc_xresiduals->SetYTitle("#Deltax (cm)");
+    }  
+    fdc_yresiduals=(TH2F*)gROOT->FindObject("fdc_yresiduals");
+    if (!fdc_yresiduals){
+      fdc_yresiduals=new TH2F("fdc_yresiduals","y residuals vs z",
+			      200,170.,370.,100,-1,1.);
+      fdc_yresiduals->SetXTitle("z (cm)");
+      fdc_yresiduals->SetYTitle("#Deltay (cm)");
+    }
+    
+    dapp->Unlock();
+  }
+
 }
 
 //-----------------
@@ -2060,9 +2092,8 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 
       //printf("iter2: %d chi2 %f %f\n",iter2,chisq_forward,chisq_iter);
       
-      // Abort loop if the chisq is not changing much or increasing too much
-      if (fit_type==kWireBased && 
-	  (fabs(chisq_forward-chisq_iter)<0.1 || chisq_forward-chisq_iter>10.))
+      // Abort loop if the chisq is increasing
+      if (fit_type==kWireBased && chisq_forward-chisq_iter>0.)
 	break;
 
       if (iter2>7 && 
@@ -2255,9 +2286,8 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
       
       //      printf("iter2: %d factor %f chi2 %f %f\n",iter2,anneal_factor,chisq_forward,chisq_iter);
       
-      // Abort loop if the chisq is not changing much or increasing too much
-      if (fit_type==kWireBased &&
-	  (fabs(chisq_forward-chisq_iter)<0.1 || chisq_forward-chisq_iter>10.))
+      // Abort loop if the chisq is increasing 
+      if (fit_type==kWireBased && chisq_forward-chisq_iter>0.)
 	break;
 
       if (iter2>12 && 
@@ -2590,9 +2620,8 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	} //iteration
       }
           
-      // Abort loop if the chisq is not changing much or increasing too much
-      if (fit_type==kWireBased && 
-	  (fabs(chisq-chisq_iter)<0.1 || chisq-chisq_iter>10.))
+      // Abort loop if the chisq is increasing
+      if (fit_type==kWireBased && chisq-chisq_iter>0.)
 	break;
 
       if (!isfinite(chisq_central)) break;
@@ -3471,7 +3500,7 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
 				      DMatrix &C,
 				      double &chisq){
   DMatrix M(2,1);  // measurement vector
-  DMatrix Mpred(2,1); // prediction 
+  DMatrix Mdiff(2,1); // difference between measurement and prediction 
   DMatrix H(2,5);  // Track projection matrix
   DMatrix H_T(5,2); // Transpose of track projection matrix
   DMatrix J(5,5);  // State vector Jacobian matrix
@@ -3611,13 +3640,15 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
       K=C*(H_T*InvV);
      
       // Update the state vector 
-      Mpred(0,0)=du*cos(alpha);
-      Mpred(1,0)= y*cosa+x*sina;
-      S=S+K*(M-Mpred); 
-
+      //Mpred(0,0)=du*cos(alpha);
+      //Mpred(1,0)= y*cosa+x*sina;
+      Mdiff(0,0)=M(0,0)-du*cos(alpha);
+      Mdiff(1,0)=M(1,0)-(y*cosa+x*sina);
+      //S=S+K*(M-Mpred); 
+      S=S+K*Mdiff;
 
       //.      printf("z %f Diff\n",forward_traj[k].pos.z());
-      //(M-Mpred).Print();
+      //Mdiff.Print();
       // Path length in active volume
       path_length+=STEP_SIZE*sqrt(1.+S(state_tx,0)*S(state_tx,0)
 			    +S(state_ty,0)*S(state_ty,0));
@@ -3626,6 +3657,7 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
       C=C-K*(H*C);    
       
       // Residuals
+      /*
       x=S(state_x,0);
       y=S(state_y,0);
       tx=S(state_tx,0);
@@ -3633,6 +3665,8 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
       du=x*cosa-y*sina-u;
       R(0,0)=M(0,0)-du*cos(atan(tx*cosa-ty*sina));
       R(1,0)=M(1,0)-(y*cosa+x*sina);
+      */
+      R=Mdiff-(H*K)*Mdiff;   
       R_T(0,0)=R(0,0);
       R_T(0,1)=R(1,0);
       RC=V-H*(C*H_T);
@@ -3792,7 +3826,7 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 	// Track projection
 	if (d>0.){
 	  H(0,state_x)=H_T(state_x,0)=(dx*(1.-ux2)-dy*uxuy)/d;
-	H(0,state_y)=H_T(state_y,0)=(dy*(1.-uy2)-dx*uxuy)/d;
+	  H(0,state_y)=H_T(state_y,0)=(dy*(1.-uy2)-dx*uxuy)/d;
 	}
 	
 	//H.Print();
@@ -3857,13 +3891,15 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 	C=C-K*(H*C);    
 	
 	// doca after correction
-	dy=S(state_y,0)-yw;
-	dx=S(state_x,0)-xw;      
-	d=sqrt(dx*dx*(1.-ux2)+dy*dy*(1.-uy2)-2.*dx*dy*uxuy);
+	//dy=S(state_y,0)-yw;
+	//dx=S(state_x,0)-xw;      
+	//d=sqrt(dx*dx*(1.-ux2)+dy*dy*(1.-uy2)-2.*dx*dy*uxuy);
 	
 	// Residual
-	double res=dm-d;
-	
+	//double res=dm-d;
+	double res=(dm-d)*(1.-(H*K)(0,0));
+	my_cdchits[cdc_index]->residual=res;
+
 	// Update chi2 for this segment
 	chisq+=anneal*res*res/(V-(H*(C*H_T))(0,0));
 	/*
