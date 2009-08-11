@@ -53,35 +53,45 @@ void DTrackingResolutionGEANT::ReadTableInfo(const char *fname, TableInfo &ti)
 		exit(0);
 	}
 	cout<<"Opened \""<<ti.file->GetName()<<"\""<<endl;
+	
+	// An earlier version used a slightly different naming scheme. We check for the
+	// new name first, but if that fails, then look for the old name in case they 
+	// are using an older version of the data tables.  Aug. 11, 2009  DL
 
 	// Read pt resolution histogram
+	ti.pt_res_hist = (TH2D*)gROOT->FindObject("dpt_over_pt_sigma");
+	if(!ti.pt_res_hist)ti.file->GetObject("dpt_over_pt_sigma", ti.pt_res_hist);
 	ti.pt_res_hist = (TH2D*)gROOT->FindObject("dpt_over_pt_vs_p_vs_theta");
 	if(!ti.pt_res_hist)ti.file->GetObject("dpt_over_pt_vs_p_vs_theta", ti.pt_res_hist);
 	if(!ti.pt_res_hist){
 		cout<<endl;
-		cout<<"Couldn't find resolution histogram \"dpt_over_pt_vs_p_vs_theta\""<<endl;
+		cout<<"Couldn't find resolution histogram \"dpt_over_pt_sigma\""<<endl;
 		cout<<"in ROOT file!"<<endl;
 		cout<<endl;
 		exit(0);
 	}
 
 	// Read theta resolution histogram
+	ti.theta_res_hist = (TH2D*)gROOT->FindObject("dtheta_sigma");
+	if(!ti.theta_res_hist)ti.file->GetObject("dtheta_sigma", ti.theta_res_hist);
 	ti.theta_res_hist = (TH2D*)gROOT->FindObject("dtheta_vs_p_vs_theta");
 	if(!ti.theta_res_hist)ti.file->GetObject("dtheta_vs_p_vs_theta", ti.theta_res_hist);
 	if(!ti.theta_res_hist){
 		cout<<endl;
-		cout<<"Couldn't find resolution histogram \"dtheta_vs_p_vs_theta\""<<endl;
+		cout<<"Couldn't find resolution histogram \"dtheta_sigma\""<<endl;
 		cout<<"in ROOT file!"<<endl;
 		cout<<endl;
 		exit(0);
 	}
 
 	// Read phi resolution histogram
+	ti.phi_res_hist = (TH2D*)gROOT->FindObject("dphi_sigma");
+	if(!ti.phi_res_hist)ti.file->GetObject("dphi_sigma", ti.phi_res_hist);
 	ti.phi_res_hist = (TH2D*)gROOT->FindObject("dphi_vs_p_vs_theta");
 	if(!ti.phi_res_hist)ti.file->GetObject("dphi_vs_p_vs_theta", ti.phi_res_hist);
 	if(!ti.phi_res_hist){
 		cout<<endl;
-		cout<<"Couldn't find resolution histogram \"dphi_vs_p_vs_theta\""<<endl;
+		cout<<"Couldn't find resolution histogram \"dphi_sigma\""<<endl;
 		cout<<"in ROOT file!"<<endl;
 		cout<<endl;
 		exit(0);
