@@ -13,6 +13,8 @@
 #include "HDGEOMETRY/DMaterialMap.h"
 #include "CDC/DCDCTrackHit.h"
 #include "FDC/DFDCPseudo.h"
+#include <TH2.h>
+
 
 using namespace std;
 
@@ -233,6 +235,8 @@ class DTrackFitterKalman: public DTrackFitter{
   int pass;
   bool DEBUG_HISTS;
   int DEBUG_LEVEL;
+
+  TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
 };
 
 
