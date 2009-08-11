@@ -61,7 +61,7 @@ void DTrackingResolutionGEANT::ReadTableInfo(const char *fname, TableInfo &ti)
 	// Read pt resolution histogram
 	ti.pt_res_hist = (TH2D*)gROOT->FindObject("dpt_over_pt_sigma");
 	if(!ti.pt_res_hist)ti.file->GetObject("dpt_over_pt_sigma", ti.pt_res_hist);
-	ti.pt_res_hist = (TH2D*)gROOT->FindObject("dpt_over_pt_vs_p_vs_theta");
+	if(!ti.pt_res_hist)ti.pt_res_hist = (TH2D*)gROOT->FindObject("dpt_over_pt_vs_p_vs_theta");
 	if(!ti.pt_res_hist)ti.file->GetObject("dpt_over_pt_vs_p_vs_theta", ti.pt_res_hist);
 	if(!ti.pt_res_hist){
 		cout<<endl;
@@ -74,7 +74,7 @@ void DTrackingResolutionGEANT::ReadTableInfo(const char *fname, TableInfo &ti)
 	// Read theta resolution histogram
 	ti.theta_res_hist = (TH2D*)gROOT->FindObject("dtheta_sigma");
 	if(!ti.theta_res_hist)ti.file->GetObject("dtheta_sigma", ti.theta_res_hist);
-	ti.theta_res_hist = (TH2D*)gROOT->FindObject("dtheta_vs_p_vs_theta");
+	if(!ti.theta_res_hist)ti.theta_res_hist = (TH2D*)gROOT->FindObject("dtheta_vs_p_vs_theta");
 	if(!ti.theta_res_hist)ti.file->GetObject("dtheta_vs_p_vs_theta", ti.theta_res_hist);
 	if(!ti.theta_res_hist){
 		cout<<endl;
@@ -87,7 +87,7 @@ void DTrackingResolutionGEANT::ReadTableInfo(const char *fname, TableInfo &ti)
 	// Read phi resolution histogram
 	ti.phi_res_hist = (TH2D*)gROOT->FindObject("dphi_sigma");
 	if(!ti.phi_res_hist)ti.file->GetObject("dphi_sigma", ti.phi_res_hist);
-	ti.phi_res_hist = (TH2D*)gROOT->FindObject("dphi_vs_p_vs_theta");
+	if(!ti.phi_res_hist)ti.phi_res_hist = (TH2D*)gROOT->FindObject("dphi_vs_p_vs_theta");
 	if(!ti.phi_res_hist)ti.file->GetObject("dphi_vs_p_vs_theta", ti.phi_res_hist);
 	if(!ti.phi_res_hist){
 		cout<<endl;
