@@ -11,6 +11,8 @@
 #include "DTrackFitter.h"
 using namespace jana;
 
+extern bool FDCSortByZincreasing(const DFDCPseudo* const &hit1, const DFDCPseudo* const &hit2);
+extern bool CDCSortByRincreasing(const DCDCTrackHit* const &hit1, const DCDCTrackHit* const &hit2);
 
 //-------------------
 // DTrackFitter  (Constructor)
@@ -184,11 +186,13 @@ jerror_t DTrackFitter::CorrectForELoss(const DKinematicData &starting_params, DR
 	vector<const DCDCTrackHit*> cdchits;
 	starting_params.Get(cdchits);
 	if(cdchits.size()>0){
+		sort(cdchits.begin(), cdchits.end(), CDCSortByRincreasing);
 		first_wire = cdchits[0]->wire;
 	}else{
 		vector<const DFDCPseudo*> fdchits;
 		starting_params.Get(fdchits);
 		if(fdchits.size()!=0){
+			sort(fdchits.begin(), fdchits.end(), FDCSortByZincreasing);
 			first_wire = fdchits[0]->wire;
 		}
 	}
