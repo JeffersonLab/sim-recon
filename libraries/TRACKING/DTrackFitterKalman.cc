@@ -217,7 +217,7 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
 
   //Set the mass
   this->MASS=input_params.mass();
-   
+
   // Do fit
   error = KalmanLoop();
   if (error!=NOERROR) return kFitFailed;
@@ -505,17 +505,15 @@ jerror_t DTrackFitterKalman::SetCDCForwardReferenceTrajectory(DMatrix &S){
     z=endplate_z;
   }
 
-  // Propagate through endplate with smaller steps 
-  r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
-  while(z<endplate_z+2.*endplate_dz && r<R_MAX){
-    // Do not do energy loss for material in endplate if there are no hits 
-    // beyond the endplate.
-    if (my_fdchits.size()==0) do_energy_loss=false;
-
-    if (PropagateForwardCDC(forward_traj_cdc_length,i,z,0.1,S)!=NOERROR)
-      return UNRECOVERABLE_ERROR;
-    z+=0.1;
+  if (my_fdchits.size()>0){
+    // Propagate through endplate with smaller steps 
     r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
+    while(z<endplate_z+2.*endplate_dz && r<R_MAX){
+      if (PropagateForwardCDC(forward_traj_cdc_length,i,z,0.1,S)!=NOERROR)
+	return UNRECOVERABLE_ERROR;
+      z+=0.1;
+      r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
+    }
   }
 
   // If the current length of the trajectory deque is less than the previous 
@@ -704,7 +702,7 @@ jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,double z,
     GetProcessNoise(ds,newz,temp.X0,S,Q);
   
   // Energy loss straggling in the approximation of thick absorbers
-  if (temp.density>0. && do_energy_loss){
+  if (temp.density>0. /* && do_energy_loss */){
     beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
     varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
     
@@ -747,6 +745,7 @@ jerror_t DTrackFitterKalman::SwimCentral(DVector3 &pos,DMatrix &Sc){
     if (my_fdchits.size()==0 
 	&& (pos.z()>endplate_z || pos.z()<cdc_origin[2])) do_energy_loss=false;
 
+	
     // Compute the energy loss for this step
     if (do_energy_loss && pos.Perp()<r_outer_hit){
       dedx=GetdEdx(q_over_p,central_traj[m].Z,
@@ -838,7 +837,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc)
       t+=ds*sqrt(1.+MASS*MASS*q_over_p*q_over_p)/SPEED_OF_LIGHT;
 
       // Check for minimum momentum
-      if(q_over_p>Q_OVER_P_MAX) do_energy_loss=false;
+      //if(q_over_p>Q_OVER_P_MAX) do_energy_loss=false;
 
       // Initialize energy loss 
       dedx=0.;
@@ -918,7 +917,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc)
     t+=ds*sqrt(1.+MASS*MASS*q_over_p*q_over_p)/SPEED_OF_LIGHT;
 
      // Check for minimum momentum
-    if(q_over_p>Q_OVER_P_MAX) do_energy_loss=false;
+    //if(q_over_p>Q_OVER_P_MAX) do_energy_loss=false;
     
     // Initialize energy loss 
     dedx=0.; 
@@ -1476,6 +1475,9 @@ jerror_t DTrackFitterKalman::CalcDeriv(double ds,DVector3 pos,DVector3 &dpos,
 				  DMatrix &D1){
    //Direction at current point
   double tanl=S(state_tanl,0);
+  // Don't let tanl exceed some maximum
+  if (fabs(tanl)>TAN_MAX) tanl=TAN_MAX*(tanl>0?1.:-1.);  
+
   double phi=S(state_phi,0);
   double cosphi=cos(phi);
   double sinphi=sin(phi);
@@ -1528,6 +1530,9 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double ds,DVector3 pos,
 					     DMatrix &J1,DMatrix &D1){  
   //Direction at current point
   double tanl=S(state_tanl,0);
+  // Don't let tanl exceed some maximum
+  if (fabs(tanl)>TAN_MAX) tanl=TAN_MAX*(tanl>0?1.:-1.);  
+
   double phi=S(state_phi,0);
   double cosphi=cos(phi);
   double sinphi=sin(phi);
@@ -1691,6 +1696,14 @@ jerror_t DTrackFitterKalman::FixedStep(DVector3 &pos,double ds,DMatrix &S,
   // New state vector
   S+=ds*(ONE_SIXTH*D1+ONE_THIRD*D2+ONE_THIRD*D3+ONE_SIXTH*D4);
 
+  // Don't let the pt drop below some minimum
+  if (fabs(1./S(state_q_over_pt,0))<PT_MIN) {
+    S(state_q_over_pt,0)=(1./PT_MIN)*(S(state_q_over_pt,0)>0?1.:-1.);
+  }
+  // Don't let tanl exceed some maximum
+  if (fabs(S(state_tanl,0))>TAN_MAX){
+    S(state_tanl,0)=TAN_MAX*(S(state_tanl,0)>0?1.:-1.);
+  }
   // New position
   pos+=
     (dpos1=ds*(ONE_SIXTH*dpos1+ONE_THIRD*dpos2+ONE_THIRD*dpos3+ONE_SIXTH*dpos4));
@@ -1908,6 +1921,7 @@ double DTrackFitterKalman::GetEnergyVariance(double ds,double q_over_p,double Z,
 			      double A, double rho){
   if (rho<=0.) return 0.;
   //return 0;
+ 
   double betagamma=1./MASS/fabs(q_over_p);
   double beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
   if (beta2<EPS) return 0.;
@@ -2045,23 +2059,6 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
     S(state_ty,0)=ty_;
     S(state_q_over_p,0)=q_over_p_; 
 
-    // Try to take into account the energy loss of the candidate before 
-    // the momentum is determined by swimming out to some z-position from the 
-    // target without energy loss and swimming back in with dEdx turned back 
-    // on.  This should only be important for low momentum protons. 
-    /*
-    if (fit_type==kWireBased){
-      double z_start=z_;
-      double z_end=my_fdchits[my_fdchits.size()/2]->z;
-
-      do_energy_loss=false;
-      SwimToPlane(z_end,S);
-      do_energy_loss=true;
-      SwimToPlane(z_start,S);
-    }
-    if (fabs(S(state_q_over_p,0))>Q_OVER_P_MAX) return VALUE_OUT_OF_RANGE;
-    */
-
     // Initial guess for forward representation covariance matrix
     C0(state_x,state_x)=1.;
     C0(state_y,state_y)=1.;
@@ -2144,6 +2141,7 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	  (fabs(chisq_forward-chisq_iter)<0.1 
 	   || chisq_forward-chisq_iter>0.)) break; 
       }
+      chisq_iter=chisq_forward;
       
       // Find the state at the so-called "vertex" position
       ExtrapolateToVertex(Slast,Clast);
@@ -2245,27 +2243,6 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	}
       }
     }
-    
-    // Try to take into account the energy loss of the candidate before 
-    // the momentum is determined by swimming out to some radius from the 
-    // target without energy loss and swimming back in with dEdx turned back 
-    // on.  This should only be important for low momentum protons. 
-    /*
-    if (fit_type==kWireBased && my_cdchits.size()>0){
-      DVector3 pos(x_,y_,z_);
-      double my_radius=my_cdchits[my_cdchits.size()/2]->origin.Perp();
-      Sc(state_q_over_pt,0)=q_over_pt_;
-      Sc(state_tanl,0)=tanl_;
-      Sc(state_phi,0)=phi_;
-      Sc(state_z,0)=z_;
-
-      do_energy_loss=false;
-      SwimToRadius(pos,my_radius,Sc);
-      do_energy_loss=true;
-      SwimToRadius(pos,0.0,Sc);
-    }
-    if (fabs(q_over_p_)>Q_OVER_P_MAX) return VALUE_OUT_OF_RANGE;
-    */
 
     // Initialize the state vector and covariance matrix
     S(state_x,0)=x_;
@@ -2562,23 +2539,6 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
     Sc(state_tanl,0)=tanl_;
     Sc(state_z,0)=z_;  
     Sc(state_D,0)=0.;
-
-    // Try to take into account the energy loss of the candidate before 
-    // the momentum is determined by swimming out to some radius from the 
-    // target without energy loss and swimming back in with dEdx turned back 
-    // on.  This should only be important for low momentum protons. 
-    /*
-    if (fit_type==kWireBased && my_cdchits.size()>0){
-      DVector3 pos(x_,y_,z_);
-      double my_radius=my_cdchits[my_cdchits.size()/2]->origin.Perp();
-      
-      do_energy_loss=false;
-      SwimToRadius(pos,my_radius,Sc);
-      do_energy_loss=true;
-      SwimToRadius(pos,0.0,Sc);
-    }
-    if (fabs(q_over_p_)>Q_OVER_P_MAX) return VALUE_OUT_OF_RANGE;
-    */
 
     //C0(state_z,state_z)=1.;
     C0(state_z,state_z)=2.0;
@@ -3276,13 +3236,11 @@ jerror_t DTrackFitterKalman::KalmanCentral(double anneal_factor,
 	DVector3 pos0=central_traj[k].pos;
 	
 	// dEdx for current position along trajectory
-	/*
-	  double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
-	  if (do_energy_loss){
+	double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
+	if (do_energy_loss){
 	  dedx=GetdEdx(q_over_p,central_traj[k].Z,
-	  central_traj[k].A,central_traj[k].density);
-	  }
-	*/
+		       central_traj[k].A,central_traj[k].density);
+	}
 	
 	// Variables for the computation of D at the doca to the wire
 	double D=Sc(state_D,0);
