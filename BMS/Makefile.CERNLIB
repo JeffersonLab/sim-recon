@@ -15,6 +15,12 @@ ifeq "$(OS)" "Darwin"
   MISC_LIBS += -L/usr/local/lib
 endif
 
+# This seems to be needed to get it to link without error 
+# on 64-bit CentOS 5.3 
+ifeq "$(ARCH)" "x86_64"
+  MISC_LIBS += -lmathlib -lblas
+endif
+
 # The tricky part here is choosing which program to link with. It seems
 # that more modern systems use gcc4 and gfortran in which case you
 # want to use g++ to link and add the -lgfortran library (which is
