@@ -1783,25 +1783,24 @@ jerror_t DTrackFitterKalman::GetProcessNoiseCentral(double ds,
 					       DMatrix Sc,DMatrix &Q){
   Q.Zero();
   if (isfinite(X0) && X0<1e8 && X0>0.){
-    DMatrix Q1(5,5);
     double tanl=Sc(state_tanl,0);
     double q_over_pt=Sc(state_q_over_pt,0); 
     //  double X0=material->GetRadLen(pos.x(),pos.y(),pos.z());
     double my_ds=fabs(ds);
     
-    Q1(state_phi,state_phi)=1.+tanl*tanl;
-    Q1(state_tanl,state_tanl)=(1.+tanl*tanl)*(1.+tanl*tanl);
-    Q1(state_q_over_pt,state_q_over_pt)=q_over_pt*q_over_pt*tanl*tanl;
-    Q1(state_q_over_pt,state_tanl)=Q1(state_tanl,state_q_over_pt)
+    Q(state_phi,state_phi)=1.+tanl*tanl;
+    Q(state_tanl,state_tanl)=(1.+tanl*tanl)*(1.+tanl*tanl);
+    Q(state_q_over_pt,state_q_over_pt)=q_over_pt*q_over_pt*tanl*tanl;
+    Q(state_q_over_pt,state_tanl)=Q(state_tanl,state_q_over_pt)
       =q_over_pt*tanl*(1.+tanl*tanl);
-    Q1(state_D,state_D)=ds*ds/3.;
-    Q1(state_D,state_tanl)=Q1(state_tanl,state_D)
+    Q(state_D,state_D)=ds*ds/3.;
+    Q(state_D,state_tanl)=Q(state_tanl,state_D)
       //=-my_ds/2.*cos(Sc(state_phi,0))*(1.+tanl*tanl);
       =my_ds/2.*(1.+tanl*tanl);
-    Q1(state_D,state_phi)=Q1(state_phi,state_D)
+    Q(state_D,state_phi)=Q(state_phi,state_D)
       //my_ds/2.*sin(Sc(state_phi,0))*sqrt(1.+tanl*tanl);
       =my_ds/2.*sqrt(1.+tanl*tanl);
-    Q1(state_D,state_q_over_pt)=Q1(state_q_over_pt,state_D)
+    Q(state_D,state_q_over_pt)=Q(state_q_over_pt,state_D)
       //      -my_ds/2.*cos(Sc(state_phi,0))*tanl;
       =my_ds/2.*q_over_pt*tanl;
 
@@ -1809,9 +1808,10 @@ jerror_t DTrackFitterKalman::GetProcessNoiseCentral(double ds,
     double sig2_ms=0.0136*0.0136*(1.+MASS*MASS/p2)*my_ds/X0/p2
       *(1.+0.038*log(my_ds/X0*(1.+MASS*MASS/p2)))
       *(1.+0.038*log(my_ds/X0*(1.+MASS*MASS/p2)));
+
     //sig2_ms=0.;
 
-    Q=sig2_ms*Q1;
+    Q=sig2_ms*Q;
   }
   //Q.Print();
 
@@ -1825,21 +1825,20 @@ jerror_t DTrackFitterKalman::GetProcessNoise(double ds,double z,
 					double X0,DMatrix S,DMatrix &Q){
   Q.Zero();
   if (isfinite(X0) && X0<1e8 && X0>0.){
-    DMatrix Q1(5,5);
     double tx=S(state_tx,0),ty=S(state_ty,0);
     double one_over_p_sq=S(state_q_over_p,0)*S(state_q_over_p,0);
     double my_ds=fabs(ds);
     // double X0=material->GetRadLen(S(state_x,0),S(state_y,0),z);
     
-    Q1(state_tx,state_tx)=(1.+tx*tx)*(1.+tx*tx+ty*ty);
-    Q1(state_ty,state_ty)=(1.+ty*ty)*(1.+tx*tx+ty*ty);
-    Q1(state_tx,state_ty)=Q1(state_ty,state_tx)=tx*ty*(1.+tx*tx+ty*ty);
-    Q1(state_x,state_x)=ds*ds/3.;
-    Q1(state_y,state_y)=ds*ds/3.;
-    Q1(state_y,state_ty)=Q1(state_ty,state_y)
+    Q(state_tx,state_tx)=(1.+tx*tx)*(1.+tx*tx+ty*ty);
+    Q(state_ty,state_ty)=(1.+ty*ty)*(1.+tx*tx+ty*ty);
+    Q(state_tx,state_ty)=Q(state_ty,state_tx)=tx*ty*(1.+tx*tx+ty*ty);
+    Q(state_x,state_x)=ds*ds/3.;
+    Q(state_y,state_y)=ds*ds/3.;
+    Q(state_y,state_ty)=Q(state_ty,state_y)
       //      =my_ds/2.*tx*(1.+tx*tx+ty*ty)/sqrt(tx*tx+ty*ty);
       = my_ds/2.*sqrt((1.+tx*tx+ty*ty)*(1.+ty*ty));
-    Q1(state_x,state_tx)=Q1(state_tx,state_x)
+    Q(state_x,state_tx)=Q(state_tx,state_x)
       // =my_ds/2.*ty*sqrt((1.+tx*tx+ty*ty)/(tx*tx+ty*ty));
       = my_ds/2.*sqrt((1.+tx*tx+ty*ty)*(1.+tx*tx));
     
@@ -1848,7 +1847,7 @@ jerror_t DTrackFitterKalman::GetProcessNoise(double ds,double z,
       *(1.+0.038*log(my_ds/X0*(1.+one_over_p_sq*MASS*MASS)))
       *(1.+0.038*log(my_ds/X0*(1.+one_over_p_sq*MASS*MASS)));
 	//  sig2_ms=0.;   
-    Q=sig2_ms*Q1;
+    Q=sig2_ms*Q;
   }
   return NOERROR;
 }
