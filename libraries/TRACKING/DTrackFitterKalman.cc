@@ -657,7 +657,7 @@ jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,double z,
   
   // get material properties from the Root Geometry
   if (do_energy_loss){
-    if (RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
+    if (geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
       !=NOERROR){
     _DBG_<< " q/p " << S(state_q_over_p,0) << endl;
     _DBG_<<"Material error!"<<endl; 
@@ -844,7 +844,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc)
 
       if (do_energy_loss){
 	// get material properties from the Root Geometry
-	if(RootGeom->FindMat(pos,central_traj[m].density,central_traj[m].A,
+	if(geom->FindMat(pos,central_traj[m].density,central_traj[m].A,
 			     central_traj[m].Z,central_traj[m].X0)!=NOERROR){
 	  _DBG_ << "Material error! " << endl;
 	  break;
@@ -924,7 +924,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc)
 
     if (do_energy_loss){
       // get material properties from the Root Geometry
-      if(RootGeom->FindMat(pos,temp.density,temp.A,temp.Z,temp.X0)!=NOERROR){
+      if(geom->FindMat(pos,temp.density,temp.A,temp.Z,temp.X0)!=NOERROR){
 	_DBG_ << "Material error! " << endl;
 	break;
       }
@@ -1034,7 +1034,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
 
       // get material properties from the Root Geometry
       if (do_energy_loss){
-	if (RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
+	if (geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
 	    !=NOERROR){
 	  _DBG_<<"Material error!"<<endl; 
 	  break;
@@ -1121,7 +1121,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
 
       // get material properties from the Root Geometry
       if (do_energy_loss){
-	if(RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
+	if(geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
 	   !=NOERROR){
 	  _DBG_<<"Material error!"<<endl;
 	  break;
@@ -1216,7 +1216,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
 
   // get material properties from the Root Geometry
   if(do_energy_loss 
-     && RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
+     && geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
      ==NOERROR){
     i++;
     my_i=forward_traj_length-i;
@@ -1295,7 +1295,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
 
     // get material properties from the Root Geometry
     if(do_energy_loss && 
-       RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
+       geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
        ==NOERROR){
       i++;
       my_i=forward_traj_length-i;
@@ -3996,7 +3996,7 @@ jerror_t DTrackFitterKalman::ExtrapolateToVertex(DMatrix &S,DMatrix &C){
   while (z>Z_MIN && sqrt(r2_old)<65. && z<Z_MAX){
     // get material properties from the Root Geometry
     pos.SetXYZ(S(state_x,0),S(state_y,0),z);
-    if (RootGeom->FindMat(pos,density,A,Z,X0)!=NOERROR){
+    if (geom->FindMat(pos,density,A,Z,X0)!=NOERROR){
       _DBG_ << "Material error in ExtrapolateToVertex! " << endl;
       break;
     }
@@ -4081,7 +4081,7 @@ jerror_t DTrackFitterKalman::ExtrapolateToVertex(DVector3 &pos,
 	   && r<R_MAX){ 
       // get material properties from the Root Geometry
       double density=0.,A=0.,Z=0.,X0=0.;
-      if (RootGeom->FindMat(pos,density,A,Z,X0)!=NOERROR){
+      if (geom->FindMat(pos,density,A,Z,X0)!=NOERROR){
 	_DBG_ << "Material error in ExtrapolateToVertex! " << endl;
 	break;
       }
@@ -4132,7 +4132,7 @@ jerror_t DTrackFitterKalman::SwimToPlane(double z_end, DMatrix &S){
     pos.SetXYZ(S(state_x,0),S(state_y,0),z);
     z_=z+dz;
     if (do_energy_loss 
-	&& (RootGeom->FindMat(pos,density,A,Z,X0)==NOERROR)){
+	&& (geom->FindMat(pos,density,A,Z,X0)==NOERROR)){
       dedx=GetdEdx(S(state_q_over_p,0),Z,A,density);
     }
     Step(z,z_,dedx,S);  
@@ -4141,7 +4141,7 @@ jerror_t DTrackFitterKalman::SwimToPlane(double z_end, DMatrix &S){
  
   // Final step 
   if (do_energy_loss 
-	&& (RootGeom->FindMat(pos,density,A,Z,X0)==NOERROR)){
+	&& (geom->FindMat(pos,density,A,Z,X0)==NOERROR)){
       dedx=GetdEdx(S(state_q_over_p,0),Z,A,density);
     }
   Step(z_,z_end,dedx,S);
@@ -4166,7 +4166,7 @@ jerror_t DTrackFitterKalman::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc)
       // Get dEdx for this step
       double A=0.,Z=0.,density=0.,X0=0.;
       if (do_energy_loss && 
-	  (RootGeom->FindMat(pos,density,A,Z,X0)==NOERROR)){
+	  (geom->FindMat(pos,density,A,Z,X0)==NOERROR)){
       double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
       dEdx=GetdEdx(q_over_p,Z,A,density); 
       }
@@ -4188,7 +4188,7 @@ jerror_t DTrackFitterKalman::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc)
       // Get dEdx for this step
       double A=0.,Z=0.,density=0.,X0=0.;
       if (do_energy_loss && 
-	  (RootGeom->FindMat(pos,density,A,Z,X0)==NOERROR)){
+	  (geom->FindMat(pos,density,A,Z,X0)==NOERROR)){
 	double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
 	dEdx=GetdEdx(q_over_p,Z,A,density); 
       }
@@ -4279,7 +4279,7 @@ jerror_t DTrackFitterKalman::SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix
       }
    
       // get material properties from the Root Geometry
-      if (RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
+      if (geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
 	  !=NOERROR){
 	_DBG_<< "Material error!"<<endl;
 	break;
@@ -4394,7 +4394,7 @@ jerror_t DTrackFitterKalman::SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix
      }
      
      // get material properties from the Root Geometry
-     if (RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
+     if (geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
 	 !=NOERROR){
        _DBG_<<"Material error!"<<endl;
        break;
@@ -4522,7 +4522,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc,
       len+=ds;
       
       // get material properties from the Root Geometry
-      if(RootGeom->FindMat(pos,central_traj[m].density,central_traj[m].A,central_traj[m].Z,central_traj[m].X0)
+      if(geom->FindMat(pos,central_traj[m].density,central_traj[m].A,central_traj[m].Z,central_traj[m].X0)
 	 !=NOERROR){
 	/*
 	for (unsigned int m=0;m<central_traj.size();m++){
@@ -4630,7 +4630,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc,
     len+=ds;
     
     // get material properties from the Root Geometry
-    if (RootGeom->FindMat(pos,temp.density,temp.A,temp.Z,temp.X0)!=NOERROR){
+    if (geom->FindMat(pos,temp.density,temp.A,temp.Z,temp.X0)!=NOERROR){
       _DBG_<<"Material error!"<<endl;
       break;
     }
@@ -4768,7 +4768,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
       }
 
       // get material properties from the Root Geometry
-      if (RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
+      if (geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
 	  !=NOERROR){
 	_DBG_ << "Material error! " << endl;
 	break;
@@ -4860,7 +4860,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
       }
       
       // get material properties from the Root Geometry
-      if(RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
+      if(geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
 	 !=NOERROR){
 	_DBG_<<"Material error!"<<endl; 
 	break;
@@ -4962,7 +4962,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
   }
 
   // get material properties from the Root Geometry
-  if(RootGeom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)==NOERROR){
+  if(geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)==NOERROR){
   
     // Get dEdx for the upcoming step
     if (do_energy_loss){
