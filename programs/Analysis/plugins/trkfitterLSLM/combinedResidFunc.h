@@ -52,7 +52,6 @@ class combinedResidFunc:public residFunc {
   double innerResidFrac;
   residCDC rCDC;
   residFDC rFDC;
-  double ERROR_FDC, ERROR_CDC;
 };
 
 #endif // _COMBINEDRESIDFUNC_H_

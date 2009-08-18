@@ -25,8 +25,7 @@ combinedResidFunc::combinedResidFunc(vector<const DFDCPseudo*> *pseudopoints,
   trkhitPtr(trackHits), trajPtr(trajectory), delta(trajPtr->getDelta()),
   debug_level(level), lorentz_def(lorentz_def_in), storeDetails(false),
   innerResidFrac(1.0), rCDC(trackHits, trajectory, level),
-  rFDC(pseudopoints, trajectory, lorentz_def_in, level),
-  ERROR_FDC(0.025), ERROR_CDC(0.018)
+  rFDC(pseudopoints, trajectory, lorentz_def_in, level)
 {}
 
 void combinedResidFunc::resid(const HepVector *x, void *data, HepVector *f){
