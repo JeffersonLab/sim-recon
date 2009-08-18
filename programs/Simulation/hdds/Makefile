@@ -82,7 +82,9 @@ xpath-example: xpath-example.cpp
 	-L$(XALANCROOT)/lib -lxalan-c -L$(XERCESCROOT)/lib -lxerces-c
 
 clean:
-	rm -f *.o core *.depend hdds-geant hdds-root hdds-mcfast hdds-root_h
+	rm -f *.o core *.depend hdds-geant hdds-root hdds-mcfast hdds-root_h \
+		hddsroot.h hddsroot.C hddsGeant3.F
+
 
 pristine: clean
 
