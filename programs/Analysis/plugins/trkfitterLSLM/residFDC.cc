@@ -17,7 +17,7 @@ residFDC::residFDC(vector<const DFDCPseudo*> *pseudopoints,
 		   const MyTrajectory *trajectory,
 		   const DLorentzDeflections *lorentz_def_in, int level) : 
   n_fdc(pseudopoints->size()), ppPtr(pseudopoints),
-  trajPtr(trajectory), debug_level(level), lorentz_def(lorentz_def_in), errorFDC(0.025) {}
+  trajPtr(trajectory), debug_level(level), lorentz_def(lorentz_def_in), errorFDC(0.046) {}
 
 void residFDC::calcResids() {
   double docaThis, errorThis, residThis;
