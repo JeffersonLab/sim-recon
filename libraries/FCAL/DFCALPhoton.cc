@@ -5,6 +5,7 @@
 DFCALPhoton::DFCALPhoton()
 {
    fEnergy = 0;
+   fTime = 0;
    fMom3.SetY(0) ;
    fMom3.SetX(0) ;
    fMom3.SetZ(0) ;
@@ -21,6 +22,13 @@ void DFCALPhoton::setEnergy(const double energy)
 {
 
         fEnergy = energy;
+
+}
+
+void DFCALPhoton::setTime(const double time) 
+{
+
+        fTime = time;
 
 }
 

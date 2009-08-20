@@ -145,6 +145,8 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
                                                     energy ) );
         
         photon->setShowerPosition( DVector3( xSh, ySh, zSh ) );
+
+        photon->setShowerTime( (**showItr).t );
         
         photon->setFitLayPoint( DVector3( (**showItr).Apx_x,
                                           (**showItr).Apx_y,

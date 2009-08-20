@@ -6,6 +6,7 @@
 
 DPhoton::DPhoton() : 
    fTag( kDefaultTag ),
+   fTime( 0.),
    fDtRT( kDefaultDistance ), 
    fdThetaCharge( kDefaultDistance ), 
    fPositionCal( DVector3(0.0, 0.0, 0.0) )
@@ -15,6 +16,7 @@ DPhoton::DPhoton() :
 
 DPhoton::DPhoton(const oid_t id) : DKinematicData(id),
    fTag( kDefaultTag ),
+   fTime( 0. ),
    fDtRT( kDefaultDistance ),
    fdThetaCharge( kDefaultDistance ),
    fPositionCal( DVector3(0.0, 0.0, 0.0) )
@@ -36,6 +38,11 @@ void DPhoton::setPositionCal(const DVector3& aPosition)
 void DPhoton::setTag(PhotonTag aTag)
 {
    fTag = aTag;
+}
+
+void DPhoton::setTime(double aTime)
+{
+   fTime = aTime;
 }
 
 // Distance to track's ReferenceTrajectory

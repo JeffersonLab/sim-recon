@@ -222,6 +222,7 @@ DFCALCluster::DFCALCluster()
 {
    fEnergy = 0;
    fEmax = 0;
+   fTime = 0;
    fCentroid.SetX(0);
    fCentroid.SetY(0);
    fCentroid.SetZ(0);
@@ -280,6 +281,7 @@ void DFCALCluster::saveHits()
          h.E = getHitE( i ) ;
          h.x = getHitX( i ) ;
          h.y = getHitY( i ) ;
+         h.t = getHitT( i ) ;
          my_hits.push_back(h);
       }
       else {
@@ -328,8 +330,11 @@ bool DFCALCluster::update()
       double frac = fHitf[h];
       energy += fHitlist->hit[ih].E*frac;
    }
-   double Emax=0;
-   if (fNhits > 0) Emax = fHitlist->hit[fHit[0]].E;
+   double Emax=0, Time=0;
+   if (fNhits > 0) { 
+       Emax = fHitlist->hit[fHit[0]].E;
+       Time = fHitlist->hit[fHit[0]].t;
+   }
 
    DVector3 centroid;
    centroid.SetX(0);
@@ -438,6 +443,7 @@ bool DFCALCluster::update()
    }
    if (fabs(Emax-fEmax) > 0.001) {
       fEmax = Emax;
+      fTime = Time;
       something_changed = true;
    }
    if (fabs(centroid.x()-fCentroid.x()) > 0.1 ||

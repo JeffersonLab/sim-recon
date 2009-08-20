@@ -69,6 +69,7 @@ typedef struct {
 		double getEallowed(const int ihit) const;
 		double getEnergy() const;
 		double getEmax() const;
+		double getTime() const;
 		DVector3 getCentroid() const;
 		double getRMS() const;
 		double getRMS_x() const;
@@ -88,6 +89,7 @@ typedef struct {
 			AddString(items, "x(cm)", "%3.1f", getCentroid().x());
 			AddString(items, "y(cm)", "%3.1f", getCentroid().y());
 			AddString(items, "E(GeV)", "%2.3f", getEnergy());
+			AddString(items, "t(ns)", "%2.3f", getTime());
 		}
 
 	private:
@@ -98,10 +100,12 @@ typedef struct {
 		int getHitID( const int ihit) const;   
 	        double getHitX( const int ihit) const;
 	        double getHitY( const int ihit) const;
+		double getHitT( const int ihit) const;  
 		double getHitE( const int ihit) const;  // hit energy owned by cluster
 		double getHitEh( const int ihit) const; // energy in a FCAL block
 
 		double fEnergy;              // total cluster energy (GeV) or 0 if stale
+		double fTime;                // cluster time(ns) set by first (max E) block, for now
 		double fEmax;                // energy in the first block of the cluster
 		DVector3 fCentroid;         // cluster centroid position (cm)
 		double fRMS;                 // cluster r.m.s. size (cm)
@@ -149,6 +153,10 @@ inline double DFCALCluster::getEnergy() const
 inline double DFCALCluster::getEmax() const
 {
    return fEmax;
+}
+inline double DFCALCluster::getTime() const
+{
+   return fTime;
 }
 
 inline DVector3 DFCALCluster::getCentroid() const
@@ -209,6 +217,15 @@ inline double DFCALCluster::getHitY(const int ihit ) const
 {
    if ( ihit >= 0  && ihit < fNhits && fHitlist && ihit < fHitlist->nhits ) { 
      return  fHitlist->hit[fHit[ihit]].y;
+   }
+   else {
+     return 0.;
+   }
+}
+inline double DFCALCluster::getHitT(const int ihit ) const
+{
+   if ( ihit >= 0  && ihit < fNhits && fHitlist && ihit < fHitlist->nhits ) { 
+     return  fHitlist->hit[fHit[ihit]].t;
    }
    else {
      return 0.;

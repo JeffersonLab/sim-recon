@@ -117,6 +117,7 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const JObject
         photon->setPositionCal( centroid );
         photon->setMass( 0. );
         photon->setTag( DPhoton::kFcal );
+        photon->setTime( gamma->getTime() );
 
 // create the simplest error matrix:
 // At this point, it is assumed that error matrix of measured quantities is diagonal,
@@ -152,6 +153,7 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject
 
         DVector3 vertex(0.,0.,65.);
         photon->setPosition( vertex );
+        photon->setTime( gamma->showerTime() );
 
         DLorentzVector p = gamma->lorentzMomentum();
         photon->setMomentum( DVector3( p.X(), p.Y(), p.Z() ) );

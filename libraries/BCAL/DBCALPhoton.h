@@ -30,6 +30,7 @@ public:
     ~DBCALPhoton(){}
         
     inline DVector3 showerPosition() const { return m_position; }
+    inline double showerTime() const { return m_time; }
     inline DLorentzVector lorentzMomentum() const { return m_p4; }
 
     inline DVector3 fitLayPoint()    const { return m_fitLayPoint;    }
@@ -38,6 +39,7 @@ public:
     inline DVector3 fitLaySlopeErr() const { return m_fitLaySlopeErr; }
     
     void setShowerPosition( const DVector3& vec3 ) { m_position = vec3; }
+    void setShowerTime( const double t ) { m_time = t; }
     void setLorentzMomentum( const DLorentzVector& p4 ) { m_p4 = p4; }
     
     void setFitLayPoint( const DVector3& vec3 )    { m_fitLayPoint = vec3;    }
@@ -53,11 +55,13 @@ public:
 			AddString(items, "py", "%5.2f", m_p4.Py());
 			AddString(items, "pz", "%5.2f", m_p4.Pz());
 			AddString(items, "E" , "%5.2f", m_p4.E());
+			AddString(items, "t" , "%5.2f", m_time);
 		}
 
 private:
       
     DVector3 m_position;
+    double m_time;
     DLorentzVector m_p4;
     
     DVector3 m_fitLayPoint;

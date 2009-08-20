@@ -40,9 +40,11 @@ class DPhoton: public DKinematicData {
     PhotonTag getTag() const; 
     double getDtRT() const; 
     double getdThetaCharge() const; 
+    double getTime() const; 
 
     // setters
     void setTag( PhotonTag aTag);  
+    void setTime( double aTime);  
     void setDtRT(double aDtRT);  
     void setdThetaCharge(double adTheta);  
     void setPositionCal( const DVector3& aPosition );
@@ -56,6 +58,7 @@ class DPhoton: public DKinematicData {
 			AddString(items, "X(cm)", "%7.2f", position().X());
 			AddString(items, "Y(cm)", "%7.2f", position().Y());
 			AddString(items, "Z(cm)", "%7.2f", position().Z());
+			AddString(items, "t(ns)", "%7.2f", getTime());
 			AddString(items, "Tag", "%5i", getTag());
 		}
 
@@ -63,6 +66,7 @@ class DPhoton: public DKinematicData {
 
     //unsigned int fTag; //Photon origin (FCAL/BCAL/charged 1/2/3))
     PhotonTag fTag; 
+    double fTime; 
     double fDtRT; //Distance to closest track's ReferenceTrajectory
     double fdThetaCharge; //Distance to closest generated charge in polar angle
     DVector3 fPositionCal; // position in calorimeter
@@ -79,6 +83,11 @@ inline DVector3 DPhoton::getPositionCal() const
 inline DPhoton::PhotonTag DPhoton::getTag() const
 {
   return fTag;
+}
+
+inline double DPhoton::getTime() const
+{
+  return fTime;
 }
 
 inline double DPhoton::getDtRT() const

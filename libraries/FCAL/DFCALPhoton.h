@@ -29,12 +29,14 @@ class DFCALPhoton:public JObject{
 			DVector3 getPosition() const; 
                         DVector3 getPositionError() const;
 			double getEnergy() const;  
+			double getTime() const;  
 			DVector3 getMom3() const; 
 			TLorentzVector getMom4() const;
 
 		// set photon energy and position 
 			void setPosition( const DVector3 aPosition );  
 			void setEnergy(const double energy);  
+			void setTime(const double time);  
 
                         void setPosError(const double aXerr, const double aYerr, const double aZerr);
 
@@ -50,11 +52,13 @@ class DFCALPhoton:public JObject{
 			AddString(items, "X(cm)", "%7.2f", getPosition().X());
 			AddString(items, "Y(cm)", "%7.2f", getPosition().Y());
 			AddString(items, "Z(cm)", "%7.2f", getPosition().Z());
+			AddString(items, "t(ns)", "%7.2f", getTime());
 		}
 
 	private:
 
 			double fEnergy; 
+			double fTime; 
 			DVector3 fPosition;  // Photon position in the FCAL
                         DVector3 fPositionError;  // Errors in X and Y are estimated from
 			DVector3 fMom3;  // Photon 3-momentum
@@ -80,6 +84,11 @@ inline DVector3 DFCALPhoton::getMom3() const
 inline double DFCALPhoton::getEnergy() const
 {
       return fEnergy;
+}
+
+inline double DFCALPhoton::getTime() const
+{
+      return fTime;
 }
 
 

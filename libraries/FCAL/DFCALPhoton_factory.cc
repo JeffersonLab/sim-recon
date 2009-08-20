@@ -101,6 +101,8 @@ jerror_t DFCALPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 DFCALPhoton* DFCALPhoton_factory::makePhoton(const DFCALCluster* cluster) 
 {
 
+// copy cluster time 
+       double cTime = cluster->getTime();
        
 // Non-linar energy correction are done here
        int MAXITER = 1000;
@@ -252,6 +254,8 @@ DFCALPhoton* DFCALPhoton_factory::makePhoton(const DFCALCluster* cluster)
 // Set momentum, in GeV.
 	   photon->setMom3( Egamma, photon->getPosition() );   
            photon->setMom4();
+
+           photon->setTime ( cTime );
 
         }
 
