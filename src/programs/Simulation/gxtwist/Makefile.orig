@@ -1,0 +1,186 @@
+#--------------------------------------------------------------------
+# The symbol SWITCHES is used to active any of the following switches
+# to enable custom versions of the simulation program.
+STD_OPTIONS = -DCERNLIB_TYPE -D_FILE_OFFSET_BITS=64
+#CASCADE_OPTIONS = -DUSE_UPWGHT_AS_REPEAT_COUNT -DTUNL_BACKSTREAMING_CASCADE_FACTOR=1000 -DEDHS_BACKSTREAMING_CASCADE_FACTOR=1000
+# Enable the following line to turn off writing out hddm data 
+#IO_OPTIONS = -DDISABLE_OUTPUT
+#--------------------------------------------------------------------
+
+.PHONY := gelhad
+
+SWITCHES = $(STD_OPTIONS) $(IO_OPTIONS) $(NTUPLE_OPTIONS) $(CASCADE_OPTIONS)
+
+OStype = $(shell uname)
+ARCHtype = $(shell uname -m)
+BINDIR = ../bin.$(OStype)
+
+ifndef CERN_ROOT
+  CERN_ROOT = $(CERN)/$(CERN_LEVEL)
+endif
+
+# The second path (/usr/include/...) is here specifically for Linux FC8 
+CERN_INC = -I$(CERN_ROOT)/include -I/usr/include/cernlib/$(CERN_LEVEL)
+
+ifeq ($(OStype),Linux)
+	ifeq ($(ARCHtype),alpha)
+		CC	:= gcc
+		CPP	:= g++
+		F77	:= g77
+		NETLIB := -lnsl
+		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
+		COPTS = -g $(SWITCHES)
+		FOPTS = -g -Wno-globals $(SWITCHES)
+		GLIBS 	:= -L/usr/lib/gcc-lib/alpha-redhat-linux/egcs-2.91.66/ -lg2c 
+	else
+		CC	:= gcc
+		CPP	:= g++
+		F77	:= g77
+		F77	:= gfortran
+		NETLIB := -lnsl
+		XLIBS  := -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
+		COPTS = -g $(SWITCHES) -I$(HALLD_HOME)/src/libraries/include
+		FOPTS = -g -Wno-globals $(SWITCHES)
+		FOPTS = -g $(SWITCHES)
+		GLIBS	:= -lXmu -lSM -lICE -lpthread
+		EXPORTDYNAMIC = -Wl,-export-dynamic
+		STATIC = 
+	endif
+endif
+ifeq ($(OStype),OSF1)
+	CC	:= cc
+	CPP	:= g++
+	F77	:= f77
+	NETLIB := 
+        EXPORTDYNAMIC :=
+	STATIC	:=
+	XLIBS  := -L/usr/lib -lXm -lSM -lICE -lXt -lX11 -lm -lPW -ldnet_stub
+	COPTS = -g -D_Tru64 $(SWITCHES)
+	FOPTS = -g -fpe4 $(SWITCHES)
+	LOPTS = -g -non_shared -fpe4
+	GLIBS 	:= -L/r5d1/applications/gcc3/lib/gcc-lib/alphaev5-dec-osf4.0f/ -lg2c -L/r5d1/applications/gcc3/lib/gcc-lib/alphaev5-dec-osf4.0f/3.3/ -lgcc
+endif
+ifeq ($(OStype),SunOS)
+	CC	:= cc
+	CPP	:= CC
+	F77	:= f77
+	NETLIB	:= 
+	EXPORTDYNAMIC :=
+	STATIC	:=
+	XLIBS	:= -L/usr/lib -lXm -lSM -lICE -lXt -lX11 -lm 
+	COPTS	:= -g $(SWITCHES)
+	FOPTS	:= -g $(SWITCHES)
+	LOPTS	:= -g
+	GLIBS	:=
+endif
+ifeq ($(OStype),Darwin)
+	# Modified 8/13/2008 by DL
+	# These settings work with Mac OS X 10.4 using gfortran 4.3
+	CC	:= gcc
+	CPP	:= g++
+	F77	:= gfortran
+	NETLIB 	:=
+	XLIBS  	:= -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
+	COPTS = -g $(SWITCHES)
+	FOPTS = -g $(SWITCHES)
+	GLIBS	:= -L$(CERN_ROOT)/lib
+	GLIBS += -L/sw/lib
+
+	# Modified 8/13/2008 by DL
+	# These settings look to have been valid for a Mac OS X 10.3 or earlier version
+	#CC	:= gcc
+	#CPP	:= g++
+	#F77	:= g77
+	#NETLIB 	:=
+	#XLIBS  	:= -L/usr/X11R6/lib -lXpm -lSM -lXm -lXt -lICE -lXext -lX11 -lXp -ldl
+	#COPTS = -g $(SWITCHES)
+	#FOPTS = -g -Wno-globals $(SWITCHES)
+	#GLIBS	:= -L$(CERN_ROOT)/lib -lcompat /usr/lib/libgcc.a
+endif
+
+HDDS = ../hdds
+HDDM = ../hddm
+
+ifeq ($(OStype),OSF1)
+ 	MISC_FIXES := vunit.o gsrotm.o fint.o gthion.o gltrac.o gsstak.o
+else
+	MISC_FIXES := gltrac.o gsstak.o
+endif
+
+AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o \
+       gelhad/gtgama.o gelhad/caspim.o gelhad/caspip.o gpairg.o \
+       hdds/hddsGeant3_tagger.F goptimize.o cobrems.o beamgen.o halo.o \
+       gelhad/bimsel.o
+AUXC = hddmInput.o hddmOutput.o hddm_s.o \
+       bintree.o memcheck.o trapfpe.o \
+       getwebfile.o
+
+GXFIXED = gxcs.o gxphys.o
+
+CERNLIB = $(CERN_ROOT)/bin/cernlib
+GELHAD = gelhad/libgelhad.a
+
+default: hdds gelhad $(GELHAD) gxtwist++
+
+hdds:	force
+	make -C hdds
+force: ;
+
+gxtwist++: gxtwist++.o gxint.o uginit.o uglast.o $(AUXF) $(AUXC) $(GXFIXED) \
+           $(MISC_FIXES)
+	$(F77) -g -o $@ gxtwist++.o gxint.o uginit.o uglast.o $(CERN_INC) \
+	   $(AUXF) $(AUXC) $(GXFIXED) $(MISC_FIXES) \
+           -Lgelhad -L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lgelhad -lcurl \
+	   `cernlib -v $(CERN_LEVEL) geant321 pawlib graflib/Motif packlib mathlib` \
+	   $(EXPORTDYNAMIC) $(GLIBS) -lstdc++
+
+gxtwist: gxtwist.o gxtwist_f.o uginit.o uglast.o $(AUXF) $(AUXC) $(MISC_FIXES)
+	$(F77) -g $(LOPTS) -o $@ $(CERN_INC) $(STATIC) \
+	   gxtwist.o gxtwist_f.o uginit.o uglast.o \
+	   $(AUXF) $(AUXC) $(MISC_FIXES) \
+	   -Lgelhad -lgelhad -lcurl \
+	  `$(CERNLIB) geant321 mathlib graflib grafX11` \
+	   $(NETLIB) $(XLIBS) $(GLIBS) -lstdc++
+
+install: gxtwist gxtwist++
+	cp $^ $(HALLD_HOME)/bin/$(OStype)
+
+.F.o:
+	$(F77) $(FOPTS) -I. $(CERN_INC) -DCERNLIB_MOTIF -c -o $@ $<
+
+.f.o:
+	$(F77) $(FOPTS) -I. $(CERN_INC) -c -o $@ $<
+
+.c.o:
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/libraries/include $(CERN_INC) -c -o $@ $<
+
+$(AUXC): hddm_s.h bintree.h geant3.h hddmOutput.h 
+
+.cpp.o:
+	$(CPP) $(COPTS) -I. -I$(HALLD_HOME)/src/libraries/include -c -o $@ $<
+
+hddm_s.h:
+	$(HDDM)/hddm-c $(HDDM)/event.xml
+
+hddm_s.c:
+	$(HDDM)/hddm-c $(HDDM)/event.xml
+
+hddm_s.o: 	hddm_s.c
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/libraries/include -c -o $@ $<
+
+cdcdump: cdcdump.c hddm_s.o
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/libraries/include -o $@ $^ 
+
+%2nt: %2nt.c hddm_s.o
+	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/libraries/include -o $@ $^ \
+	  -L$(CERN_ROOT)/lib -lpacklib -lkernlib -lg2c
+
+gelhad:
+	if test ! -d gelhad ; then ln -s $(HALLD_HOME)/src/programs/Simulation/HDGeant/gelhad . ; fi
+
+$(GELHAD):
+	$(MAKE) -C gelhad
+
+clean:
+	if test -d gelhad ; then $(MAKE) -C gelhad clean ; fi
+	rm -f *.o core last.kumac* paw.metafile

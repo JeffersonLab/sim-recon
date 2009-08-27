@@ -1,0 +1,33 @@
+#!/bin/tcsh
+
+# For JANA, the makefile system is designed with an "install" target to actually
+# copy the binaries (and headers in the case of the library) out of the source
+# tree. When building utilities, they use the installed headers and libraries so
+# we must make sure the "install" target is used for normal builds in xcode in
+# order to get the expected behavior. Therefore, the following line just sets the
+# value of BUILD_STYLE to "install" if it is an empty string. The other action we use
+# is "clean" in which case the value if BUILD_STYLE is unchanged since xcode already
+# sets it for us.
+[ -z $BUILD_STYLE ] && setenv BUILD_STYLE install
+
+# Here, we translate Xcode's "Debug" setting to the DEBUG=yes arument to make
+# that BMS expects in order to build a debug version. We do this by looking
+# at the value of GCC_GENERATE_DEBUGGING_SYMBOLS which, by default, Xcode sets
+# to YES for the Debug configuration and to NO for Release
+[ $GCC_GENERATE_DEBUGGING_SYMBOLS = YES ] && setenv BUILD_STYLE "$BUILD_STYLE DEBUG=yes"
+
+# Set the HALLD_HOME environment variable to the local directory since
+# we can't easily control it in the environment when running Xcode
+setenv HALLD_HOME $SOURCE_ROOT
+
+# Xcode likes to set OS to "MACOS" but the BMS make system uses "Darwin"
+# Change OS to "Darwin" if it is "MACOS" (in reality, this will only be used
+# by Xcode so this change will always be made).
+[ $OS = MACOS ] && setenv OS Darwin
+
+# Run "make" and pipe the output through awk. The awk script will prepend the
+# current working directory to each output line containing "error:" or "warning:".
+# The effect is to replace filenames with ones including the full path in lines
+# containing errors and warnings so that clicking them in the build results 
+# window of Xcode will open the appropriate file and highlight the appropriate line.
+make $BUILD_STYLE $1 $2 $3 |& awk '/(error:)|(warning:)/ {printf "'${PWD}'/"}; // {print}'
