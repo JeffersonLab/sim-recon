@@ -273,7 +273,7 @@ class DTrackFitterKalman: public DTrackFitter{
   vector<double>fdc_origin;
 
   // Mass hypothesis
-  double MASS;
+  double MASS,mass2;
 	
   bool do_multiple_scattering;
   bool do_energy_loss;

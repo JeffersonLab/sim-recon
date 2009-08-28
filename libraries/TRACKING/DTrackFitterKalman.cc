@@ -42,6 +42,8 @@
 #define ONE_THIRD 0.33333333333333333
 #define ONE_SIXTH 0.16666666666666667
 
+#define CHISQ_DIFF_CUT 20.
+
 // Local boolean routines for sorting
 //bool static DKalmanHit_cmp(DKalmanHit_t *a, DKalmanHit_t *b){
 //  return a->z<b->z;
@@ -99,6 +101,7 @@ DTrackFitterKalman::DTrackFitterKalman(JEventLoop *loop):DTrackFitter(loop){
   
   // Mass hypothesis
   MASS=0.13957; //charged pion
+  mass2=MASS*MASS;
 
   DEBUG_HISTS=true;
   //DEBUG_HISTS=false;
@@ -217,7 +220,8 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
 
   //Set the mass
   this->MASS=input_params.mass();
-
+  this->mass2=MASS*MASS;
+  
   // Do fit
   error = KalmanLoop();
   if (error!=NOERROR) return kFitFailed;
@@ -231,6 +235,17 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
   fit_params.setPosition(pos);
   fit_params.setMomentum(mom);
   fit_params.setCharge(charge);
+  
+  // Convert error matrix from internal representation to the type expected 
+  // by the DKinematicData class
+  DMatrixDSym errMatrix(5);
+  for (unsigned int i=0;i<5;i++){
+    for (unsigned int j=i;j<5;j++){
+      errMatrix(i,j)=cov[i][j];
+    }
+  }
+
+  fit_params.setTrackingErrorMatrix(errMatrix);
   this->chisq = GetChiSq();
   this->Ndof = GetNDF();
   fit_status = kFitSuccess;
@@ -394,7 +409,7 @@ jerror_t DTrackFitterKalman::CalcDeriv(double z,double dz,DMatrix S, double dEdx
 
   D(state_q_over_p,0)=0.;
   if (fabs(dEdx)>0. && fabs(q_over_p)<Q_OVER_P_MAX){
-    double E=sqrt(1./q_over_p/q_over_p+MASS*MASS); 
+    double E=sqrt(1./q_over_p/q_over_p+mass2); 
     D(state_q_over_p,0)=-q_over_p*q_over_p*q_over_p*E*dEdx*factor;
   }
   return NOERROR;
@@ -474,10 +489,10 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double z,double dz,DMatrix S,
   J(state_q_over_p,state_q_over_p)=0.;
   if (fabs(dEdx)>0.){
     double p2=1./q_over_p/q_over_p;
-    double E=sqrt(p2+MASS*MASS); 
+    double E=sqrt(p2+mass2); 
     D(state_q_over_p,0)=-q_over_p/p2*E*dEdx*factor;
     J(state_q_over_p,state_q_over_p)=-dEdx*factor/E
-      *(2.+3.*MASS*MASS/p2);
+      *(2.+3.*mass2/p2);
   }
    
   return NOERROR;
@@ -708,7 +723,7 @@ jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,double z,
  
   q_over_p=S(state_q_over_p,0);
   q_over_p_sq=q_over_p*q_over_p;
-  ftime+=ds*sqrt(1.+MASS*MASS*q_over_p_sq)/SPEED_OF_LIGHT;
+  ftime+=ds*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
   
   // Get the contribution to the covariance matrix due to multiple 
   // scattering
@@ -717,7 +732,7 @@ jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,double z,
   
   // Energy loss straggling in the approximation of thick absorbers
   if (temp.density>0. /* && do_energy_loss */){
-    beta2=1./(1.+MASS*MASS*q_over_p_sq);
+    beta2=1./(1.+mass2*q_over_p_sq);
     varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
     
     Q(state_q_over_p,state_q_over_p)
@@ -817,7 +832,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc)
   len=0.; 
   int i=0;
   double t=0.;
-  
+   
   // Coordinates for outermost cdc hit
   unsigned int id=my_cdchits.size()-1;
   DVector3 origin=my_cdchits[id]->origin;
@@ -851,7 +866,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc)
       len+=ds;
       q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
       q_over_p_sq=q_over_p*q_over_p;
-      t+=ds*sqrt(1.+MASS*MASS*q_over_p_sq)/SPEED_OF_LIGHT;
+      t+=ds*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
 
       // Check for minimum momentum
       //if(q_over_p>Q_OVER_P_MAX) do_energy_loss=false;
@@ -875,7 +890,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc)
       
       if (do_energy_loss && central_traj[m].density>0.){
 	// Energy loss straggling in the approximation of thick absorbers
-	beta2=1./(1.+MASS*MASS*q_over_p_sq);
+	beta2=1./(1.+mass2*q_over_p_sq);
 	varE=GetEnergyVariance(ds,q_over_p,central_traj[m].Z,
 			       central_traj[m].A,central_traj[m].density);
 	
@@ -931,7 +946,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc)
     len+=ds;
     q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
     q_over_p_sq=q_over_p*q_over_p;
-    t+=ds*sqrt(1.+MASS*MASS*q_over_p_sq)/SPEED_OF_LIGHT;
+    t+=ds*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
 
      // Check for minimum momentum
     //if(q_over_p>Q_OVER_P_MAX) do_energy_loss=false;
@@ -957,7 +972,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc)
     
     // Energy loss straggling in the approximation of thick absorbers
     if (temp.density>0. && do_energy_loss){ 
-      beta2=1./(1.+MASS*MASS*q_over_p_sq);
+      beta2=1./(1.+mass2*q_over_p_sq);
       varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
       
       Q(state_q_over_pt,state_q_over_pt)
@@ -1088,7 +1103,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
 
       q_over_p=S(state_q_over_p,0);
       q_over_p_sq=q_over_p*q_over_p;
-      ftime+=ds*sqrt(1.+MASS*MASS*q_over_p_sq)/SPEED_OF_LIGHT;
+      ftime+=ds*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
        
       // Get the contribution to the covariance matrix due to multiple 
       // scattering
@@ -1097,7 +1112,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
       
       // Energy loss straggling in the approximation of thick absorbers
       if (temp.density>0. && do_energy_loss){
-	beta2=1./(1.+MASS*MASS*q_over_p_sq);
+	beta2=1./(1.+mass2*q_over_p_sq);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
 	
 	Q(state_q_over_p,state_q_over_p)
@@ -1175,7 +1190,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
       
       q_over_p=S(state_q_over_p,0);
       q_over_p_sq=q_over_p*q_over_p;
-      ftime+=ds*sqrt(1.+MASS*MASS*q_over_p_sq)/SPEED_OF_LIGHT;
+      ftime+=ds*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
       
       // Get the contribution to the covariance matrix due to multiple 
       // scattering
@@ -1184,7 +1199,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
 
       // Energy loss straggling in the approximation of thick absorbers
       if (temp.density>0. && do_energy_loss){	
-	beta2=1./(1.+MASS*MASS*q_over_p_sq);
+	beta2=1./(1.+mass2*q_over_p_sq);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
 	
 	Q(state_q_over_p,state_q_over_p)
@@ -1268,7 +1283,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
 
     q_over_p=S(state_q_over_p,0);
     q_over_p_sq=q_over_p*q_over_p;
-    ftime+=ds*sqrt(1.+MASS*MASS*q_over_p_sq)/SPEED_OF_LIGHT;
+    ftime+=ds*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
 
     // Get the contribution to the covariance matrix due to multiple 
     // scattering
@@ -1277,7 +1292,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
     
     // Energy loss straggling in the approximation of thick absorbers
     if (temp.density>0. && do_energy_loss){	
-      beta2=1./(1.+MASS*MASS*q_over_p_sq);
+      beta2=1./(1.+mass2*q_over_p_sq);
       varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
       
       Q(state_q_over_p,state_q_over_p)
@@ -1355,7 +1370,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
       if (temp.density>0. && do_energy_loss){	
 	q_over_p=S(state_q_over_p,0);
 	q_over_p_sq=q_over_p*q_over_p;
-	beta2=1./(1.+MASS*MASS*q_over_p_sq);
+	beta2=1./(1.+mass2*q_over_p_sq);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
 	
 	Q(state_q_over_p,state_q_over_p)
@@ -1521,7 +1536,7 @@ jerror_t DTrackFitterKalman::CalcDeriv(double ds,DVector3 pos,DVector3 &dpos,
     =qpfactor*q_over_pt*sinl*temp1;
   if (fabs(dEdx)>0){    
     double p=pt/cosl;
-    double E=sqrt(p*p+MASS*MASS);
+    double E=sqrt(p*p+mass2);
     if (1./p<Q_OVER_P_MAX)
       D1(state_q_over_pt,0)+=-q_over_pt*E/p/p*dEdx;
   }
@@ -1630,21 +1645,21 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double ds,DVector3 pos,
   J1(state_q_over_pt,state_phi)
     =-qpfactor*q_over_pt*sinl*(B.y()*sinphi+B.x()*cosphi);
 
-  double temp=sqrt(1.+cosl*cosl*q_over_pt*q_over_pt*MASS*MASS);
+  double temp=sqrt(1.+cosl*cosl*q_over_pt*q_over_pt*mass2);
   J1(state_q_over_pt,state_q_over_pt)
     =2.*qpfactor*sinl*(B.y()*cosphi-B.x()*sinphi);
 
   if (fabs(dEdx)>0){  
     double p=pt/cosl;
-    double E=sqrt(p*p+MASS*MASS);
+    double E=sqrt(p*p+mass2);
     D1(state_q_over_pt,0)+=-q_over_pt*E/p/p*dEdx;
-    J1(state_q_over_pt,state_q_over_pt)+=-q*dEdx*cosl*q_over_pt*(2.+3.*cosl*cosl*q_over_pt*q_over_pt*MASS*MASS)
+    J1(state_q_over_pt,state_q_over_pt)+=-q*dEdx*cosl*q_over_pt*(2.+3.*cosl*cosl*q_over_pt*q_over_pt*mass2)
       /temp;
   }
   J1(state_q_over_pt,state_tanl)
     =qpfactor*q_over_pt*cosl*cosl*cosl*(B.y()*cosphi-B.x()*sinphi)
     +q*dEdx*sinl*cosl*cosl/temp*q_over_pt*q_over_pt
-    *(1.+2.*cosl*cosl*MASS*MASS*q_over_pt*q_over_pt);
+    *(1.+2.*cosl*cosl*mass2*q_over_pt*q_over_pt);
   J1(state_q_over_pt,state_z)
     =qpfactor*q_over_pt*sinl*(dBydz*cosphi-dBxdz*sinphi);
 
@@ -1851,8 +1866,8 @@ jerror_t DTrackFitterKalman::GetProcessNoiseCentral(double ds,
       =my_ds/2.*q_over_pt*tanl;
 
     double p2=one_plus_tanl2/q_over_pt/q_over_pt;
-    double log_correction=1.+0.038*log(my_ds/X0*(1.+MASS*MASS/p2));
-    double sig2_ms=0.0136*0.0136*(1.+MASS*MASS/p2)*my_ds/X0/p2
+    double log_correction=1.+0.038*log(my_ds/X0*(1.+mass2/p2));
+    double sig2_ms=0.0136*0.0136*(1.+mass2/p2)*my_ds/X0/p2
       *log_correction*log_correction;
     //sig2_ms=0.;
 
@@ -1893,8 +1908,8 @@ jerror_t DTrackFitterKalman::GetProcessNoise(double ds,double z,
       // =my_ds/2.*ty*sqrt((one_plus_tsquare)/(tsquare));
       = my_ds/2.*sqrt(one_plus_tsquare*one_plus_tx2);
     
-    double log_correction=1.+0.038*log(my_ds/X0*(1.+one_over_p_sq*MASS*MASS));
-    double sig2_ms= 0.0136*0.0136*(1.+one_over_p_sq*MASS*MASS)
+    double log_correction=1.+0.038*log(my_ds/X0*(1.+one_over_p_sq*mass2));
+    double sig2_ms= 0.0136*0.0136*(1.+one_over_p_sq*mass2)
       *one_over_p_sq*my_ds/X0*log_correction*log_correction;
 	//  sig2_ms=0.;   
     Q=sig2_ms*Q;
@@ -1910,7 +1925,7 @@ double DTrackFitterKalman::GetdEdx(double q_over_p,double Z,
   //return 0;
   double betagamma=1./MASS/fabs(q_over_p);
   double betagamma2=betagamma*betagamma;
-  double beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+  double beta2=1./(1.+mass2*q_over_p*q_over_p);
   if (beta2<EPS) return 0.;
 
   double Me=0.000511; //GeV
@@ -1973,7 +1988,7 @@ double DTrackFitterKalman::GetEnergyVariance(double ds,double q_over_p,double Z,
  
   double betagamma=1./MASS/fabs(q_over_p);
   double betagamma2=betagamma*betagamma;
-  double beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+  double beta2=1./(1.+mass2*q_over_p*q_over_p);
   if (beta2<EPS) return 0.;
 
   double Me=0.000511; //GeV
@@ -2185,7 +2200,7 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	break;
 
       if (fit_type==kTimeBased){
-	if (chisq_forward-chisq_iter>100.) break;
+	if (chisq_forward-chisq_iter>CHISQ_DIFF_CUT) break;
 	if (iter2>7 && 
 	  (fabs(chisq_forward-chisq_iter)<0.1 
 	   || chisq_forward-chisq_iter>0.)) break; 
@@ -2366,7 +2381,7 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	break;
       
       if (fit_type==kTimeBased){
-	if (chisq_forward-chisq_iter>100.) break;
+	if (chisq_forward-chisq_iter>CHISQ_DIFF_CUT) break;
 	if (iter2>7 && 
 	  (fabs(chisq_forward-chisq_iter)<0.1 
 	   || chisq_forward-chisq_iter>0.)) break; 
@@ -2688,7 +2703,7 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
       if (!isfinite(chisq_central)) break;
       
       if (fit_type==kTimeBased){
-	if (chisq-chisq_iter>100.) break;
+	if (chisq-chisq_iter>CHISQ_DIFF_CUT) break;
 	if (iter2>10 && 
 	  (fabs(chisq-chisq_iter)<0.1 
 	   || chisq-chisq_iter>0.)) break; 
@@ -4348,7 +4363,7 @@ jerror_t DTrackFitterKalman::SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix
       // Energy loss straggling in the approximation of thick absorbers
       if (temp.density>0. && do_energy_loss){
 	q_over_p=S(state_q_over_p,0);
-	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	beta2=1./(1.+mass2*q_over_p*q_over_p);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
 	
 	Q(state_q_over_p,state_q_over_p)
@@ -4373,7 +4388,7 @@ jerror_t DTrackFitterKalman::SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix
       // Energy loss straggling in the approximation of thick absorbers
       if (temp.density>0. && do_energy_loss){
 	q_over_p=S(state_q_over_p,0);
-	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	beta2=1./(1.+mass2*q_over_p*q_over_p);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
 	
 	Q(state_q_over_p,state_q_over_p)
@@ -4463,7 +4478,7 @@ jerror_t DTrackFitterKalman::SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix
      // Energy loss straggling in the approximation of thick absorbers
      if (temp.density>0. && do_energy_loss){
 	q_over_p=S(state_q_over_p,0);
-	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	beta2=1./(1.+mass2*q_over_p*q_over_p);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
 	
 	Q(state_q_over_p,state_q_over_p)
@@ -4488,7 +4503,7 @@ jerror_t DTrackFitterKalman::SetCDCForwardReferenceTrajectory(DMatrix &S,DMatrix
      // Energy loss straggling in the approximation of thick absorbers
      if (temp.density>0. && do_energy_loss){
 	q_over_p=S(state_q_over_p,0);
-	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	beta2=1./(1.+mass2*q_over_p*q_over_p);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
 	
 	Q(state_q_over_p,state_q_over_p)
@@ -4613,7 +4628,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc,
       
 	// Energy loss straggling in the approximation of thick absorbers
 	if (central_traj[m].density>0. && do_energy_loss){
-	  beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	  beta2=1./(1.+mass2*q_over_p*q_over_p);
 	  varE=GetEnergyVariance(ds,q_over_p,central_traj[m].Z,
 				 central_traj[m].A,central_traj[m].density);
 
@@ -4635,7 +4650,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc,
 	// Energy loss straggling in the approximation of thick absorbers
 	if (central_traj[m].density>0. && do_energy_loss){
 	  q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
-	  beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	  beta2=1./(1.+mass2*q_over_p*q_over_p);
 	  varE=GetEnergyVariance(ds,q_over_p,central_traj[m].Z,
 				 central_traj[m].A,central_traj[m].density);
 
@@ -4700,7 +4715,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc,
     
       // Energy loss straggling in the approximation of thick absorbers  
       if (temp.density>0. && do_energy_loss){
-	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	beta2=1./(1.+mass2*q_over_p*q_over_p);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
 
 	Q(state_q_over_pt,state_q_over_pt)
@@ -4725,7 +4740,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc,
       // Energy loss straggling in the approximation of thick absorbers
       if (temp.density>0. && do_energy_loss){ 
 	q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
-	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	beta2=1./(1.+mass2*q_over_p*q_over_p);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
 
 	Q(state_q_over_pt,state_q_over_pt)
@@ -4838,7 +4853,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
       // Energy loss straggling in the approximation of thick absorbers
       if (temp.density>0. && do_energy_loss){	
 	q_over_p=S(state_q_over_p,0);
-	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	beta2=1./(1.+mass2*q_over_p*q_over_p);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
 	
 	Q(state_q_over_p,state_q_over_p)
@@ -4863,7 +4878,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
       // Energy loss straggling in the approximation of thick absorbers
       if (temp.density>0. && do_energy_loss){
 	q_over_p=S(state_q_over_p,0);
-	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	beta2=1./(1.+mass2*q_over_p*q_over_p);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
 	
 	Q(state_q_over_p,state_q_over_p)
@@ -4930,7 +4945,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
       // Energy loss straggling in the approximation of thick absorbers
       if (temp.density>0. && do_energy_loss){	
 	q_over_p=S(state_q_over_p,0);
-	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	beta2=1./(1.+mass2*q_over_p*q_over_p);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
 	
 	Q(state_q_over_p,state_q_over_p)
@@ -4955,7 +4970,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
       // Energy loss straggling in the approximation of thick absorbers
       if (temp.density>0. && do_energy_loss){	
 	q_over_p=S(state_q_over_p,0);
-	beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+	beta2=1./(1.+mass2*q_over_p*q_over_p);
 	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
 	
 	Q(state_q_over_p,state_q_over_p)
@@ -5028,7 +5043,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
     // Energy loss straggling in the approximation of thick absorbers
     if (temp.density>0. && do_energy_loss){	
       q_over_p=S(state_q_over_p,0);
-      beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+      beta2=1./(1.+mass2*q_over_p*q_over_p);
       varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
       
       Q(state_q_over_p,state_q_over_p)
@@ -5054,7 +5069,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S,DMatrix &C){
     // Energy loss straggling in the approximation of thick absorbers
     if (temp.density>0. && do_energy_loss){	
       q_over_p=S(state_q_over_p,0);
-      beta2=1./(1.+MASS*MASS*q_over_p*q_over_p);
+      beta2=1./(1.+mass2*q_over_p*q_over_p);
       varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
       
       Q(state_q_over_p,state_q_over_p)
