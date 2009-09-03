@@ -226,6 +226,9 @@ class DTrackFitterKalman: public DTrackFitter{
   jerror_t PropagateForwardCDC(int length,int &index,double z,
 					    double step,DMatrix &S);
 
+  jerror_t CalcTrackdEdx();
+
+
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   //const DGeometry *geom;
   //const DLorentzDeflections *lorentz_def;  // pointer to lorentz correction map
@@ -263,6 +266,7 @@ class DTrackFitterKalman: public DTrackFitter{
   double ftime;
 
   // For dEdx measurements
+  double track_dedx;
   double path_length;  // path length in active volume
 
   // endplate dimensions and location

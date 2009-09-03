@@ -765,10 +765,13 @@ jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,double z,
 jerror_t DTrackFitterKalman::SwimCentral(DVector3 &pos,DMatrix &Sc){
   double ds=CDC_STEP_SIZE;
   double r_outer_hit=my_cdchits[0]->origin.Perp();
+  central_traj[0].h_id=0;
   for (int m=central_traj.size()-1;m>0;m--){
     double q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
     double dedx=0.;
-    
+    // Clear out cdc hit id tags
+    central_traj[m].h_id=0;
+
     // Turn off energy loss correction if the trajectory passes throught the
     // cdc end plate but there are no more measurements
     if (my_fdchits.size()==0 
@@ -848,6 +851,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc)
       central_traj[m].s=len;
       central_traj[m].t=t;
       central_traj[m].pos=pos;
+      central_traj[m].h_id=0;
       for (unsigned int j=0;j<5;j++){
 	central_traj[m].S->operator()(j,0)=Sc(j,0);
       }
@@ -932,6 +936,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,DMatrix &Sc)
     temp.pos=pos;	
     temp.s=len;
     temp.t=t;
+    temp.h_id=0;
     temp.S= new DMatrix(Sc);	
     temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
     
@@ -2231,27 +2236,26 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	<<   1./q_over_pt_/cos(atan(tanl_))
 	<< " theta "  << 90.0-180./M_PI*atan(tanl_)
 	<< " vertex " << x_ << " " << y_ << " " << z_ <<endl;
-    
-    if (fit_type==kTimeBased){
-      // Covariance matrices...
-      // ... central parameterization
-      vector<double>dummy;
-      for (unsigned int i=0;i<5;i++){
-	dummy.clear();
-	for(unsigned int j=0;j<5;j++){
+   
+    // Covariance matrices...
+    // ... central parameterization
+    vector<double>dummy;
+    for (unsigned int i=0;i<5;i++){
+      dummy.clear();
+      for(unsigned int j=0;j<5;j++){
 	  dummy.push_back(Cc(i,j));
-	}
-	cov.push_back(dummy);
       }
-      // ... forward parameterization
-      for (unsigned int i=0;i<5;i++){
-	dummy.clear();
-	for(unsigned int j=0;j<5;j++){
-	  dummy.push_back(Clast(i,j));
-	}
-	fcov.push_back(dummy);
-      }
+      cov.push_back(dummy);
     }
+    // ... forward parameterization
+    for (unsigned int i=0;i<5;i++){
+      dummy.clear();
+      for(unsigned int j=0;j<5;j++){
+	  dummy.push_back(Clast(i,j));
+      }
+      fcov.push_back(dummy);
+    }
+
     // total chisq and ndf
     chisq_=chisq_iter;
     ndf=2*my_fdchits.size()+my_cdchits.size()-5;
@@ -2413,26 +2417,24 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	<<   1./q_over_pt_/cos(atan(tanl_))
 	<< " theta "  << 90.0-180./M_PI*atan(tanl_)
 	<< " vertex " << x_ << " " << y_ << " " << z_ <<endl;
-
-    if (fit_type==kTimeBased){
-      // Covariance matrices...  
-      vector<double>dummy;
-      // ... forward parameterization
-      for (unsigned int i=0;i<5;i++){
-	dummy.clear();
-	for(unsigned int j=0;j<5;j++){
-	  dummy.push_back(Clast(i,j));
-	}
-	fcov.push_back(dummy);
-      }  
-      // ... central parameterization
-      for (unsigned int i=0;i<5;i++){
-	dummy.clear();
-	for(unsigned int j=0;j<5;j++){
-	  dummy.push_back(Cc(i,j));
-	}
-	cov.push_back(dummy);
+    
+    // Covariance matrices...  
+    vector<double>dummy;
+    // ... forward parameterization
+    for (unsigned int i=0;i<5;i++){
+      dummy.clear();
+      for(unsigned int j=0;j<5;j++){
+	dummy.push_back(Clast(i,j));
       }
+      fcov.push_back(dummy);
+    }  
+    // ... central parameterization
+    for (unsigned int i=0;i<5;i++){
+      dummy.clear();
+      for(unsigned int j=0;j<5;j++){
+	dummy.push_back(Cc(i,j));
+      }
+      cov.push_back(dummy);
     }
 
     // total chisq and ndf
@@ -2735,26 +2737,27 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
       _DBG_ << "At least one parameter is NaN or +-inf!!" <<endl;
       return VALUE_OUT_OF_RANGE;	       
     }
-    
 
+
+    CalcTrackdEdx();
+  
     if (DEBUG_LEVEL>0)
       cout
 	<< "Vertex:  p " 
 	<<   1./Sclast(state_q_over_pt,0)/cos(atan(Sclast(state_tanl,0)))
 	<< " theta "  << 90.-180./M_PI*atan(Sclast(state_tanl,0)) 
 	<< " vertex " << x_<< " " << y_<< " " << z_<<endl;
-
-    if (fit_type==kTimeBased){
-      // Covariance matrix at vertex
-      vector<double>dummy;
-      for (unsigned int i=0;i<5;i++){
-	dummy.clear();
-	for(unsigned int j=0;j<5;j++){
-	  dummy.push_back(Cclast(i,j));
-	}
-	cov.push_back(dummy);
+    
+    // Covariance matrix at vertex
+    vector<double>dummy;
+    for (unsigned int i=0;i<5;i++){
+      dummy.clear();
+      for(unsigned int j=0;j<5;j++){
+	dummy.push_back(Cclast(i,j));
       }
+      cov.push_back(dummy);
     }
+ 
     // total chisq and ndf
     chisq_=chisq_iter;
     ndf=my_cdchits.size()-5;
@@ -2994,6 +2997,16 @@ double DTrackFitterKalman::BrentsAlgorithm(double z,double dz,
   }
   return x;
 }
+
+jerror_t DTrackFitterKalman::CalcTrackdEdx(){
+  for (unsigned int m=0;m<central_traj.size();m++){
+    if (central_traj[m].h_id>0){
+      
+    }
+  }
+  return NOERROR;
+}
+
 
 
 // Routine for finding the minimum of a function bracketed between two values
@@ -3296,6 +3309,9 @@ jerror_t DTrackFitterKalman::KalmanCentral(double anneal_factor,
     if ((doca>old_doca) && (pos.z()<endplate_z && pos.z()>cdc_origin[2])
 	&& more_measurements){
       if (my_cdchits[cdc_index]->status==0){
+	// Mark previous point on ref trajectory with a hit id for the straw
+	central_traj[k-1].h_id=cdc_index+1;
+
 	// Save values at end of current step
 	DVector3 pos0=central_traj[k].pos;
 	
