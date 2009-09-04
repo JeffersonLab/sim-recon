@@ -170,11 +170,15 @@ c The following card can be used to turn off generation of secondary
 c particles in the simulation, ordinarily it should be 0 (or omitted).
 NOSECONDARIES 1
 
-c The following card tells the simulation to store particle trajectories
-c in the output file.  This output can be verbose, use with caution.
-TRAJECTORIES 1
+c TRAJECTORIES = 0  don't store trajectory info
+c TRAJECTORIES = 1  store birth and death points of primary tracks
+c TRAJECTORIES = 2  store birth and death points of all particles
+c TRAJECTORIES = 3  store full trajectory of primary tracks
+c TRAJECTORIES = 4  store full trajectory of primary tracks and birth/death points of secondaries
+c TRAJECTORIES = 5  store full trajectory for all particles
+c
+TRAJ 3
+AUTO 0
 
-LOSS 0
-MULS 0
 
 END

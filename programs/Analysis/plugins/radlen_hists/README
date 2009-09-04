@@ -1,6 +1,7 @@
 
 README radlen_hists
 April 15, 2007  D. Lawrence
+Sep. 3, 2009 Updated D. Lawrence
 
 
 This directory contins source code to make a plugin that
@@ -13,7 +14,7 @@ integrating the path lengths and keeping track of the
 radiation length of the materials for you.
 
 To use this, you must first generate some events using hdgeant
-with the TRAJECTORY card enabled. This card tells GEANT to
+with the TRAJECTORY card set to 3. This card tells GEANT to
 write out the step size and radiation length of the material
 for every step. It is usually also beneficial to "throw"
 non-interacting "geantino" particles. To make it easy, an
@@ -21,7 +22,11 @@ example control.in file already exists in this directory.
 Note that geantinos are not charged particles. To do this
 with charged particles, one should turn off energy loss and
 multiple scattering by the LOSS and MULS flags to 0 in
-control.in.
+control.in. You will also want to set the AUTO card to 0
+in order to turn off automatic step size calculation so
+that GEANT doesn't take huge steps through the gas making
+it appear as though all of their material is concentrated at
+a specific point.
 
 To use the plugin, attach it to any DANA executable. For
 example, hd_root:
@@ -33,13 +38,4 @@ the ROOT file. The histograms whose names start with "i"
 are integrals of their non-"i" counterparts. These are
 probably the ones you wish to look at. Projections on the
 x-axis for a givne theta are most useful (try SetShowProjectionX()).
-
-==== IMPORTANT ===
-
-At this point in time, the results from this package are 
-not in full agreement with pencil and paper calculations
-nor with the plots shown by Richard Jones at the April, 2007
-collaboration meeting. While this tends to show the same
-structure, it always seems to report more radiation lengths
-than the other methods.
 
