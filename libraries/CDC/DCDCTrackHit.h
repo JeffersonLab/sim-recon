@@ -21,6 +21,7 @@ class DCDCTrackHit:public JObject{
 		const DCDCWire *wire;	// DCDCWire structure for this hit
 		float tdrift;				// Drift time of hit in ns
 		float dist;					// Measured DOCA in cm
+		float dE; // Energy deposition in GeV
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "ring", "%d", wire->ring);

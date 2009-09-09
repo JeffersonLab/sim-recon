@@ -290,6 +290,7 @@ jerror_t DCDCTrackHit_factory::evnt(JEventLoop *loop, int eventnumber)
 		DCDCTrackHit *hit = new DCDCTrackHit;
 		hit->wire = &wire[cdchit->ring-1][cdchit->straw-1];
 		hit->tdrift = cdchit->t;
+		hit->dE=cdchit->dE;
 		hit->dist = hit->tdrift*55.0E-4; // Use number hardwired in simulation for now
 		
 		// Try matching truth hit with this "real" hit.
