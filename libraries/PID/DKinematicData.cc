@@ -28,6 +28,10 @@ DMatrixDSym* DKinematicData::nullMatrix()
   static DMatrixDSym* sNullMatrix = new DMatrixDSym(7);
   return sNullMatrix;
 }                         
+DMatrixDSym* DKinematicData::null5x5Matrix(){
+  static DMatrixDSym* sNullMatrix = new DMatrixDSym(5);
+  return sNullMatrix;
+}
 
 //
 // constructors and destructor
@@ -38,7 +42,8 @@ DKinematicData::DKinematicData() :
   m_charge( kDefaultCharge ) ,
   m_momentum( DVector3( 0.0 , 0.0 , 0.0 ) ) ,
   m_position( DVector3(  0.0 , 0.0 , 0.0 ) ) ,
-  m_errorMatrix( nullMatrix() )
+  m_errorMatrix( nullMatrix() ),
+  m_TrackingErrorMatrix( null5x5Matrix() )
 {
   m_t0 = -999.0;
   m_t0_err = -999.0;
@@ -48,6 +53,7 @@ DKinematicData::DKinematicData() :
   m_t1_detector = SYS_NULL; /// No detector
   m_pathLength = -999.0;
   m_pathLength_err = -999.0;
+  m_dedx=0.;
   return ;
 }
 
@@ -59,7 +65,8 @@ DKinematicData::DKinematicData(const oid_t id) :
   m_charge( kDefaultCharge ) ,
   m_momentum( DVector3( 0.0 , 0.0 , 0.0 ) ) ,
   m_position( DVector3(  0.0 , 0.0 , 0.0 ) ) ,
-  m_errorMatrix( nullMatrix() )
+  m_errorMatrix( nullMatrix() ),
+  m_TrackingErrorMatrix( null5x5Matrix() )
 {
   return ;
 }
@@ -72,12 +79,17 @@ DKinematicData::DKinematicData( const DKinematicData& aKinematicData) :
   m_charge( aKinematicData.m_charge ) ,
   m_momentum( aKinematicData.m_momentum ) ,
   m_position( aKinematicData.m_position ) ,
-  m_errorMatrix( nullMatrix() )
+  m_errorMatrix( nullMatrix() ),
+  m_TrackingErrorMatrix( null5x5Matrix() )
 {
   // Copy error matrix if it exists
   if(! aKinematicData.hasNullErrorMatrix() ){
     setErrorMatrix( *aKinematicData.m_errorMatrix ) ;
   }
+  if (! aKinematicData.hasNull5x5Matrix() ) {
+    setTrackingErrorMatrix(*aKinematicData.m_TrackingErrorMatrix);
+  }
+
   m_t0 = aKinematicData.m_t0;
   m_t0_err = aKinematicData.m_t0_err;
   m_t0_detector = aKinematicData.m_t0_detector;
@@ -86,6 +98,7 @@ DKinematicData::DKinematicData( const DKinematicData& aKinematicData) :
   m_t1_detector = aKinematicData.m_t1_detector;
   m_pathLength = aKinematicData.m_pathLength;
   m_pathLength_err = aKinematicData.m_pathLength_err;
+  m_dedx=aKinematicData.m_dedx;
   return ;
 }
 
@@ -99,12 +112,17 @@ DKinematicData::DKinematicData( const DKinematicData& aKinematicData,
   m_charge( aKinematicData.m_charge ) ,
   m_momentum( aKinematicData.m_momentum ) ,
   m_position( aKinematicData.m_position ) ,
-  m_errorMatrix( nullMatrix() )
+  m_errorMatrix( nullMatrix() ),
+  m_TrackingErrorMatrix(null5x5Matrix() )
 {
   // Copy error matrix if is requested and if it exists
   if(aCopyErrorMatrix && ! aKinematicData.hasNullErrorMatrix() ){
     setErrorMatrix( *aKinematicData.m_errorMatrix ) ;
   }
+  if(aCopyErrorMatrix && ! aKinematicData.hasNull5x5Matrix() ){
+    setTrackingErrorMatrix( *aKinematicData.m_TrackingErrorMatrix ) ;
+  }
+
   m_t0 = aKinematicData.m_t0;
   m_t0_err = aKinematicData.m_t0_err;
   m_t0_detector = aKinematicData.m_t0_detector;
@@ -113,6 +131,7 @@ DKinematicData::DKinematicData( const DKinematicData& aKinematicData,
   m_t1_detector = aKinematicData.m_t1_detector;
   m_pathLength = aKinematicData.m_pathLength;
   m_pathLength_err = aKinematicData.m_pathLength_err;
+  m_dedx=aKinematicData.m_dedx;
   return ;
 }
 
@@ -125,7 +144,8 @@ DKinematicData::DKinematicData(const DVector3& aMomentum ,
   m_charge( aCharge ) ,
   m_momentum( aMomentum ) ,
   m_position( aPosition ) ,
-  m_errorMatrix( nullMatrix() )
+  m_errorMatrix( nullMatrix() ),
+  m_TrackingErrorMatrix(null5x5Matrix() )
 
 {
   return ;
@@ -141,7 +161,8 @@ DKinematicData::DKinematicData(const DVector3& aMomentum ,
   m_charge( aCharge ) ,
   m_momentum( aMomentum ) ,
   m_position( aPosition ) ,
-  m_errorMatrix( nullMatrix() )
+  m_errorMatrix( nullMatrix()),
+  m_TrackingErrorMatrix(null5x5Matrix())
 {
   setErrorMatrix( aErrorMatrix);
   return ;
@@ -150,6 +171,7 @@ DKinematicData::DKinematicData(const DVector3& aMomentum ,
 DKinematicData::~DKinematicData()
 {
   clearErrorMatrix();
+  clearTrackingErrorMatrix();
   return ;
 }
 
@@ -170,6 +192,12 @@ DKinematicData::operator=( const DKinematicData& aOtherKinematicData )
     }
     else {
       clearErrorMatrix();
+    } 
+    if ( ! aOtherKinematicData.hasNull5x5Matrix() ) {
+      setTrackingErrorMatrix( *aOtherKinematicData.m_TrackingErrorMatrix ) ;
+    }
+    else {
+      clearTrackingErrorMatrix();
     }
     m_t0 = aOtherKinematicData.m_t0;
     m_t0_err = aOtherKinematicData.m_t0_err;
@@ -179,6 +207,7 @@ DKinematicData::operator=( const DKinematicData& aOtherKinematicData )
     m_t1_detector = aOtherKinematicData.m_t1_detector;
     m_pathLength = aOtherKinematicData.m_pathLength;
     m_pathLength_err = aOtherKinematicData.m_pathLength_err;
+    m_dedx=aOtherKinematicData.m_dedx;
   }
   return ( *this ) ;
 }
@@ -187,11 +216,13 @@ bool
 DKinematicData::operator==( const DKinematicData& rhs ) const
 {
   if( !( m_hasFixedMass == rhs.m_hasFixedMass &&
-        m_mass == rhs.m_mass &&
-        m_charge == rhs.m_charge &&
-        m_momentum == rhs.m_momentum &&
-        m_position == rhs.m_position &&
-        hasNullErrorMatrix() == rhs.hasNullErrorMatrix() ) )
+	 m_mass == rhs.m_mass &&
+	 m_charge == rhs.m_charge &&
+	 m_momentum == rhs.m_momentum &&
+	 m_position == rhs.m_position &&
+	 hasNullErrorMatrix() == rhs.hasNullErrorMatrix() &&
+	 hasNull5x5Matrix()==rhs.hasNull5x5Matrix()
+	 ) )
   {
     return false ;
   }
@@ -238,6 +269,10 @@ DKinematicData::setCharge( const ValueType aCharge )
   m_charge = aCharge ;
 }
 
+void DKinematicData::setdEdx(const ValueType adedx){
+  m_dedx=adedx;
+}
+
   void 
 DKinematicData::setMassFixed( void )
 {
@@ -258,6 +293,21 @@ DKinematicData::clearErrorMatrix( void )
     m_errorMatrix = nullMatrix() ;
   }
 }
+
+void DKinematicData::clearTrackingErrorMatrix(void){
+  if (!hasNull5x5Matrix()){
+    delete m_TrackingErrorMatrix;
+    m_TrackingErrorMatrix=null5x5Matrix();
+  }
+}
+
+void DKinematicData::setTrackingErrorMatrix(const DMatrixDSym& aMatrix){
+  const int kMatrixSize = 5;
+  assert( kMatrixSize == aMatrix.GetNrows() );
+
+  m_TrackingErrorMatrix = new DMatrixDSym(aMatrix);
+}
+
 
   void 
 DKinematicData::setErrorMatrix( const DMatrixDSym& aMatrix )
@@ -671,6 +721,11 @@ DKinematicData::errorMatrix( void ) const
   return ( *m_errorMatrix ) ;
 }
 
+const DMatrixDSym& DKinematicData::TrackingErrorMatrix(void) const
+{
+  return ( *m_TrackingErrorMatrix ) ;
+}
+
 /// Timing info
 DKinematicData::ValueType DKinematicData::t0( void ) const { return ( m_t0 ) ; }
 DKinematicData::ValueType DKinematicData::t0_err( void ) const { return ( m_t0_err ) ; }
@@ -683,6 +738,11 @@ DKinematicData::ValueType DKinematicData::pathLength_err( void ) const { return 
 
 DKinematicData::ValueType DKinematicData::TOF( void ) { return ( (m_t1 - m_t0) ) ; }
 DKinematicData::ValueType DKinematicData::TOF_err( void ) { return sqrt(m_t1_err*m_t1_err + m_t0_err*m_t0_err);}
+
+
+DKinematicData::ValueType DKinematicData::dEdx( void ) const
+{ return ( m_dedx); } 
+
 
 DKinematicData::ValueType DKinematicData::measuredBeta( void ) { return ( (m_pathLength/(m_t1 - m_t0) ))/SPEED_OF_LIGHT ; }
 DKinematicData::ValueType DKinematicData::measuredBeta_err( void )

@@ -194,12 +194,16 @@ public:
     void setMassFixed( void ) ;
     void setMassFloat( void ) ;
     void clearErrorMatrix( void ) ;
+    void clearTrackingErrorMatrix(void);
     void setErrorMatrix( const DMatrixDSym& aMatrix ) ;
+    void setTrackingErrorMatrix(const DMatrixDSym& aMatrix);
 
     void setT0(const ValueType at0, const ValueType at0_err, const DetectorSystem_t at0_detector);
     void setT1(const ValueType at1, const ValueType at1_err, const DetectorSystem_t at1_detector);
     void setPathLength(const ValueType apathLength, const ValueType apathLength_err);
+    void setdEdx(const ValueType adedx);
     
+
     // For debugging with MCThrown
     void smearMCThrownMomentum( double smearPct );
 
@@ -222,6 +226,7 @@ public:
     const DLorentzVector lorentzMomentum( void ) const ;
     bool hasFixedMass( void ) const ;
     virtual const DMatrixDSym& errorMatrix( void ) const ;
+    const DMatrixDSym &TrackingErrorMatrix(void) const;
 
     ValueType t0( void ) const;
     ValueType t0_err( void ) const;
@@ -233,6 +238,7 @@ public:
     ValueType pathLength_err( void ) const;
     ValueType TOF( void ) ;
     ValueType TOF_err( void ) ;
+    ValueType dEdx(void) const;
     
     ValueType deltaInvBeta( void ) ;
     ValueType measuredInvBeta_err( void ) ;
@@ -242,7 +248,10 @@ public:
 
     /// \return TRUE if errors are all zero
     bool hasNullErrorMatrix() const {
-        return (&errorMatrix() == nullMatrix());};
+        return (&errorMatrix() == nullMatrix());}; 
+    bool hasNull5x5Matrix() const {
+        return (&TrackingErrorMatrix() == null5x5Matrix());};
+
     
 		void toStrings(vector<pair<string,string> > &items)const{
 			AddString(items, "q", "%+1.0f", charge());
@@ -277,6 +286,7 @@ private:
     DVector3 m_momentum ;
     DVector3 m_position ;
     DMatrixDSym* m_errorMatrix ;   // Order is (px, py, pz, E, x, y, z)
+    DMatrixDSym *m_TrackingErrorMatrix;  // order is q/pt,phi,tanl,D,z
 
     // Time of flight information
     double m_t0; /// Start time (ns)
@@ -289,8 +299,12 @@ private:
     double m_pathLength; /// Flight path length (cm) 
     double m_pathLength_err; /// Flight path length err
     
+    // dEdx 
+    double m_dedx;
+    
     //All matricies without a set error matrix can share the same nullMatrix
     static DMatrixDSym* nullMatrix();
+    static DMatrixDSym* null5x5Matrix();
 };
 
 // inline function definitions
