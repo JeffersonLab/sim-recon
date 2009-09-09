@@ -25,10 +25,11 @@ typedef struct{
 }DKalmanHit_t;
 
 typedef struct{
-  double t,d,stereo;
+  double t,d,stereo,dE;
   DVector3 origin;
   DVector3 dir;
   double residual;
+  bool is_stereo;
   int ring,straw,status;
 }DKalmanCDCHit_t;
 
@@ -36,7 +37,7 @@ typedef struct{
   double t,cosa,sina;
   double uwire,vstrip,z;
   double covu,covv;
-  double xres,yres;
+  double xres,yres,dE;
   double nr,nz;
 }DKalmanFDCHit_t;
 
@@ -150,6 +151,7 @@ class DTrackFitterKalman: public DTrackFitter{
   double GetdEdx(double q_over_p,double Z,double A, double rho);
   double GetEnergyVariance(double ds,double q_over_p,double Z,double A, 
 			   double rho);
+  double GetTrackdEdx(void){return track_dedx;}
 
  protected:
 
@@ -196,6 +198,9 @@ class DTrackFitterKalman: public DTrackFitter{
   jerror_t ConvertStateVector(double z,double wire_x,double wire_y,
 			      DMatrix S,DMatrix C,DMatrix &Sc,
 			      DMatrix &Cc);
+  jerror_t ConvertStateVector(double z,double wire_x,double wire_y,
+			      DMatrix S,DMatrix &Sc);
+
   jerror_t GetProcessNoiseCentral(double ds,
 				  DVector3 pos,double X0,DMatrix Sc,
 				  DMatrix &Q);

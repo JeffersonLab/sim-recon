@@ -98,6 +98,9 @@ DTrackFitterKalman::DTrackFitterKalman(JEventLoop *loop):DTrackFitter(loop){
 
   // Number degrees of freedom
   ndf=0;
+
+  // Energy loss
+  track_dedx=0.;
   
   // Mass hypothesis
   MASS=0.13957; //charged pion
@@ -194,6 +197,7 @@ void DTrackFitterKalman::ResetKalman(void)
 	 z_=phi_=tanl_=q_over_pt_ = 0.0;
 	 chisq_ = 0.0;
 	 ndf = 0;
+	 track_dedx=0.;
 
 	 do_multiple_scattering=true;
 	 do_energy_loss=true;
@@ -235,7 +239,8 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
   fit_params.setPosition(pos);
   fit_params.setMomentum(mom);
   fit_params.setCharge(charge);
-  
+  fit_params.setdEdx(track_dedx);
+
   // Convert error matrix from internal representation to the type expected 
   // by the DKinematicData class
   DMatrixDSym errMatrix(5);
@@ -320,6 +325,7 @@ jerror_t DTrackFitterKalman::AddFDCHit(const DFDCPseudo *fdchit){
   hit->nr=0.;
   hit->nz=0.;
   hit->covu=hit->covv=0.0004;
+  hit->dE=fdchit->dE;
 
   my_fdchits.push_back(hit);
   
@@ -357,7 +363,11 @@ jerror_t DTrackFitterKalman::AddCDCHit (const DCDCTrackHit *cdchit){
   hit->ring=cdchit->wire->ring;
   hit->straw=cdchit->wire->straw;
   hit->status=0;
-  
+
+  hit->is_stereo=false;
+  if (fabs(hit->stereo)>0.0) hit->is_stereo=true;
+  hit->dE=cdchit->dE;
+
   my_cdchits.push_back(hit);
   
   return NOERROR;
@@ -1713,6 +1723,30 @@ jerror_t DTrackFitterKalman::ConvertStateVector(double z,double wire_x,
   return NOERROR;
 }
 
+// Convert between the forward parameter set {x,y,tx,ty,q/p} and the central
+// parameter set {q/pT,phi,tan(lambda),D,z}
+jerror_t DTrackFitterKalman::ConvertStateVector(double z,double wire_x, 
+                                           double wire_y,
+                                           DMatrix S,DMatrix &Sc){
+  double x=S(state_x,0),y=S(state_y,0);
+  double tx=S(state_tx,0),ty=S(state_ty,0),q_over_p=S(state_q_over_p,0);
+  double tsquare=tx*tx+ty*ty;
+  double factor=1./sqrt(1.+tsquare);
+  double tanl=1./sqrt(tsquare);
+  double cosl=cos(atan(tanl));
+  Sc(state_q_over_pt,0)=q_over_p/cosl;
+  Sc(state_phi,0)=atan2(ty,tx);
+  Sc(state_tanl,0)=tanl;
+  //  Sc(state_D,0)=sqrt((x-wire_x)*(x-wire_x)+(y-wire_y)*(y-wire_y));
+  Sc(state_D,0)=sqrt(x*x+y*y);
+  Sc(state_z,0)=z;
+
+  return NOERROR;
+}
+
+
+
+
 // Runga-Kutte for alternate parameter set {q/pT,phi,tanl(lambda),D,z}
 jerror_t DTrackFitterKalman::FixedStep(DVector3 &pos,double ds,DMatrix &S,
 				       double dEdx){
@@ -2018,8 +2052,10 @@ jerror_t DTrackFitterKalman::SwimToPlane(DMatrix &S){
   // If we have trajectory entries for the CDC, start there
   if (max>1){
     max--;
+    forward_traj_cdc[0].h_id=forward_traj_cdc[max].h_id=0;
     z=forward_traj_cdc[max].pos.Z();
     for (unsigned int m=max-1;m>0;m--){
+      forward_traj_cdc[m].h_id=0;
       newz=forward_traj_cdc[m].pos.Z();
       r=forward_traj_cdc[m].pos.Perp();
             
@@ -2230,6 +2266,9 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
     y_=Slast(state_y,0);
     z_=zvertex;
 
+    // Calculate the dEdx for the CDC and FDC hits
+    CalcTrackdEdx();
+
     if (DEBUG_LEVEL>0)
       cout
 	<< "Vertex:  p " 
@@ -2410,6 +2449,9 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
     x_=Slast(state_x,0);
     y_=Slast(state_y,0);
     z_=zvertex;
+
+    // Calculate the dEdx for the CDC hits
+    CalcTrackdEdx();
 
     if (DEBUG_LEVEL>0)
       cout
@@ -2738,7 +2780,7 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
       return VALUE_OUT_OF_RANGE;	       
     }
 
-
+    // Calculate the dEdx for the CDC hits
     CalcTrackdEdx();
   
     if (DEBUG_LEVEL>0)
@@ -2998,12 +3040,117 @@ double DTrackFitterKalman::BrentsAlgorithm(double z,double dz,
   return x;
 }
 
+// Routine for estimating the energy loss per unit path length within the 
+// active volume of the drift chambers
 jerror_t DTrackFitterKalman::CalcTrackdEdx(){
+  DMatrix S(5,1);
+  double sum_ds=0.;
+  double sum_dE=0.;
+
+  // Hits in central part of CDC
   for (unsigned int m=0;m<central_traj.size();m++){
     if (central_traj[m].h_id>0){
-      
+      unsigned int cdc_index=central_traj[m].h_id-1;
+      DVector3 origin=my_cdchits[cdc_index]->origin;
+      DVector3 pos=central_traj[m].pos;	
+      double Bx=0,By=0,Bz=-2.;
+      bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
+
+      // Get the track parameters from the reference trajectory
+      S=*central_traj[m].S;
+
+      // Assume that the path within the active volume of the straw is a 
+      // helical segment (constant field)
+      double rc=1./S(state_q_over_pt,0)/qBr2p/fabs(Bz);
+      double xc=pos.x()-rc*sin(S(state_phi,0));
+      double yc=pos.y()+rc*cos(S(state_phi,0));
+      double cosl=cos(atan(S(state_tanl,0)));
+      double rs2=0.8*0.8;
+
+      if (my_cdchits[cdc_index]->is_stereo==false){	
+	double x2=(origin.x()-xc)*(origin.x()-xc)
+	  +(origin.y()-yc)*(origin.y()-yc);
+	double rc2=rc*rc;
+	double temp=(4.*x2*rc2-(rc2-rs2+x2)*(rc2-rs2+x2))/(4.*rc2*x2);
+	if (temp>0){
+	  // arc length 
+	  double ds=2.*fabs(rc/cosl*asin(sqrt(temp)));
+	  sum_ds+=ds;
+	  sum_dE+=my_cdchits[cdc_index]->dE;
+	  //printf("cdc dE %f ds %f\n",my_cdchits[cdc_index]->dE,ds);
+	}
+      }
+
+      // Reset the h_id to zero.  Only do this because for tracks near 50
+      // degrees, the wire-based and time-based passes do not necessarily use
+      // the same parameterization, and the trajectory deques are currently not
+      // deleted between wire- and time-based passes.
+      central_traj[m].h_id=0;
     }
   }
+  
+  // Hits in CDC with theta<50 degrees
+  for (unsigned int m=0;m<forward_traj_cdc.size();m++){
+    if (forward_traj_cdc[m].h_id>0){
+      unsigned int cdc_index=forward_traj_cdc[m].h_id-1;
+      DVector3 origin=my_cdchits[cdc_index]->origin;
+      DVector3 pos=forward_traj_cdc[m].pos;	
+      double Bx=0,By=0,Bz=-2.;
+      bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
+
+      // Get the track parameters from the reference trajectory
+      S=*forward_traj_cdc[m].S;
+      DMatrix Sc(5,1);
+      ConvertStateVector(pos.z(),0.,0.,S,Sc);
+
+      // Assume that the path within the active volume of the straw is a 
+      // helical segment (constant field)
+      double rc=1./Sc(state_q_over_pt,0)/qBr2p/fabs(Bz);
+      double xc=pos.x()-rc*sin(Sc(state_phi,0));
+      double yc=pos.y()+rc*cos(Sc(state_phi,0));
+      double cosl=cos(atan(Sc(state_tanl,0)));
+      double rs2=0.8*0.8;
+
+      if (my_cdchits[cdc_index]->is_stereo==false){	
+	double x2=(origin.x()-xc)*(origin.x()-xc)
+	  +(origin.y()-yc)*(origin.y()-yc);
+	double rc2=rc*rc;
+	double temp=(4.*x2*rc2-(rc2-rs2+x2)*(rc2-rs2+x2))/(4.*rc2*x2);
+	if (temp>0){
+	  // arc length 
+	  double ds=2.*fabs(rc/cosl*asin(sqrt(temp)));
+	  sum_ds+=ds;
+	  sum_dE+=my_cdchits[cdc_index]->dE;
+	  //	  printf("sum %f forward cdc dE %f ds %f\n",sum_dE,my_cdchits[cdc_index]->dE,ds);
+	}
+      }
+      // Reset the h_id to zero.  Only do this because for tracks near 50
+      // degrees, the wire-based and time-based passes do not necessarily use
+      // the same parameterization, and the trajectory deques are currently not
+      // deleted between wire- and time-based passes.
+      forward_traj_cdc[m].h_id=0;
+    }
+  }
+  // Hits in FDC
+  for (unsigned int m=0;m<forward_traj.size();m++){
+    if (forward_traj[m].h_id>0){
+      // Get the track parameters from the reference trajectory
+      S=*forward_traj[m].S;
+      double tx=S(state_tx,0);
+      double ty=S(state_ty,0);
+      
+      // Straight line approximation for arc length
+      sum_ds+=1.0*sqrt(1.+tx*tx+ty*ty);
+      sum_dE+=my_fdchits[forward_traj[m].h_id-1]->dE;
+      //printf("sum %f forward dE %f ds %f\n",sum_dE,my_fdchits[forward_traj[m].h_id-1]->dE,1.0*sqrt(1.+tx*tx+ty*ty));
+    }
+  }
+
+  //printf("dEsum %f dssum %f\n",1.e6*sum_dE,sum_ds);
+  
+  // Compute the dEdx in the active volume for the track
+  if (sum_ds>0) track_dedx=sum_dE/sum_ds;
+
   return NOERROR;
 }
 
@@ -3264,14 +3411,14 @@ jerror_t DTrackFitterKalman::KalmanCentral(double anneal_factor,
   bool more_measurements=true;
 
   // Initialize S0_ and perform the loop over the trajectory
-  S0_=DMatrix(*central_traj[0].S);
+  S0_=(*central_traj[0].S);
 
   for (unsigned int k=1;k<central_traj.size();k++){
     // Get the state vector, jacobian matrix, and multiple scattering matrix 
     // from reference trajectory
-    S0=DMatrix(*central_traj[k].S);
-    J=DMatrix(*central_traj[k].J);
-    Q=DMatrix(*central_traj[k].Q);
+    S0=(*central_traj[k].S);
+    J=(*central_traj[k].J);
+    Q=(*central_traj[k].Q);
 
     // State S is perturbation about a seed S0
     dS=Sc-S0_;
@@ -3622,13 +3769,13 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
   V(0,0)=1.0*1.0/12;
   V(1,1)=0.32*0.32/12.;
 
-  S0_=DMatrix(*forward_traj[0].S);
+  S0_=(*forward_traj[0].S);
   for (unsigned int k=1;k<forward_traj.size()-1;k++){
     // Get the state vector, jacobian matrix, and multiple scattering matrix 
     // from reference trajectory
-    S0=DMatrix(*forward_traj[k].S);
-    J=DMatrix(*forward_traj[k].J);
-    Q=DMatrix(*forward_traj[k].Q);
+    S0=(*forward_traj[k].S);
+    J=(*forward_traj[k].J);
+    Q=(*forward_traj[k].Q);
 
     // State S is perturbation about a seed S0
     dS=S-S0_;
@@ -3839,15 +3986,15 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
   //C.Print();
   
   // loop over entries in the trajectory
-  S0_=DMatrix(*forward_traj_cdc[0].S);
+  S0_=(*forward_traj_cdc[0].S);
   for (unsigned int k=1;k<forward_traj_cdc.size()-1;k++){
     z=forward_traj_cdc[k].pos.z();
 
     // Get the state vector, jacobian matrix, and multiple scattering matrix 
     // from reference trajectory
-    S0=DMatrix(*forward_traj_cdc[k].S);
-    J=DMatrix(*forward_traj_cdc[k].J);
-    Q=DMatrix(*forward_traj_cdc[k].Q);
+    S0=(*forward_traj_cdc[k].S);
+    J=(*forward_traj_cdc[k].J);
+    Q=(*forward_traj_cdc[k].Q);
 
     // State S is perturbation about a seed S0
     dS=S-S0_;
@@ -3874,6 +4021,9 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
     // Check if the doca is no longer decreasing
     if ((doca>old_doca) && z<endplate_z && more_measurements){
       if (my_cdchits[cdc_index]->status==0){
+	// Mark previous point on ref trajectory with a hit id for the straw
+	forward_traj_cdc[k-1].h_id=cdc_index+1;
+
 	// Get energy loss 
 	double dedx=0.;
 	
