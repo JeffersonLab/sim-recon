@@ -21,7 +21,7 @@
 #define TOLF 1e-4
 #define A_OVER_H 0.4
 #define ALPHA 1e-4 // rate parameter for Newton step backtracking algorithm
-#define CHARGE_TO_ENERGY 4.*0.0076 //place holder 
+#define CHARGE_TO_ENERGY 5.9e-9 //place holder 
 
 ///
 /// DFDCCathodeCluster_gLayer_cmp(): 
