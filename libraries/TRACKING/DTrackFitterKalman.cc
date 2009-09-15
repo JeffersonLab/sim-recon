@@ -39,6 +39,9 @@
 #define MAX_PATH_LENGTH 500.
 #define TAN_MAX 10.
 
+#define CDC_GAS_DENSITY 0.001706
+#define FDC_GAS_DENSITY 0.001899 
+
 #define ONE_THIRD 0.33333333333333333
 #define ONE_SIXTH 0.16666666666666667
 
@@ -101,6 +104,7 @@ DTrackFitterKalman::DTrackFitterKalman(JEventLoop *loop):DTrackFitter(loop){
 
   // Energy loss
   track_dedx=0.;
+  num_dedx=0;
   
   // Mass hypothesis
   MASS=0.13957; //charged pion
@@ -198,6 +202,7 @@ void DTrackFitterKalman::ResetKalman(void)
 	 chisq_ = 0.0;
 	 ndf = 0;
 	 track_dedx=0.;
+	 num_dedx=0;
 
 	 do_multiple_scattering=true;
 	 do_energy_loss=true;
@@ -230,7 +235,7 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
   error = KalmanLoop();
   if (error!=NOERROR) return kFitFailed;
   
-  // Copy fit results into DTrackFitter base-class data members
+  // Copy fit results into DTrackFitter base-class data membe rs
   DVector3 mom,pos;
   GetPosition(pos);
   GetMomentum(mom);
@@ -240,6 +245,19 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
   fit_params.setMomentum(mom);
   fit_params.setCharge(charge);
   fit_params.setdEdx(track_dedx);
+
+  // Set the mass of the particle based on dEdx
+  if (track_dedx>0){
+    double one_over_p=1./mom.Mag();
+    double dedx_proton=GetdEdx(one_over_p,0.93827);
+    double dedx_pion=GetdEdx(one_over_p,0.13957);
+    double dedx_sigma=GetdEdxSigma();
+    double proton_ratio=(track_dedx/dedx_proton-1.)/dedx_sigma; 
+    double pion_ratio=(track_dedx/dedx_pion-1.)/dedx_sigma;
+
+    if (1./one_over_p<0.8 && proton_ratio>-3. && fabs(pion_ratio)>3.) 
+      fit_params.setMass(0.93827);
+  }
 
   // Convert error matrix from internal representation to the type expected 
   // by the DKinematicData class
@@ -2018,6 +2036,33 @@ double DTrackFitterKalman::GetdEdx(double q_over_p,double Z,
   return -0.0001535*Z/A*rho/beta2*(log(2.*Me*betagamma2*Tmax/I0/I0)
 				   -2.*beta2-delta);
 }
+// Calculate the energy loss per unit length in units of MeV cm^2/g in the FDC
+// or CDC gas for a particle of momentum p. Ignore density effect -- this 
+// code is intended for PID at low momentum where the density effect correction
+// is negligible.
+double DTrackFitterKalman::GetdEdx(double q_over_p,double mass_hyp){
+  double betagamma=1./mass_hyp/fabs(q_over_p);
+  double betagamma2=betagamma*betagamma;
+  double beta2=1./(1.+mass_hyp*mass_hyp*q_over_p*q_over_p);
+  if (beta2<EPS) return 0.;
+
+  double Z_over_A=0.85*0.45059+0.15*0.49989;
+  double I0=(0.85*188.+0.15*85.)*1e-9;
+
+  double Me=0.000511; //GeV
+  double m_ratio=Me/mass_hyp;
+  double Tmax
+    =2.*Me*betagamma2/(1.+2.*sqrt(1.+betagamma2)*m_ratio+m_ratio*m_ratio);
+
+  return 0.1535*Z_over_A/beta2*(log(2.*Me*betagamma2*Tmax/I0/I0)-2.*beta2);
+}
+
+// Empirical form for sigma/mean for gaseous detectors with num_dedx samples 
+// and sampling thickness path_length
+double DTrackFitterKalman::GetdEdxSigma(){
+  return 0.41*pow(double(num_dedx),-0.43)*pow(path_length,-0.32);
+}
+
 
 // Calculate the variance in the energy loss in a Gaussian approximation
 double DTrackFitterKalman::GetEnergyVariance(double ds,double q_over_p,double Z,
@@ -3076,7 +3121,8 @@ jerror_t DTrackFitterKalman::CalcTrackdEdx(){
 	  // arc length 
 	  double ds=2.*fabs(rc/cosl*asin(sqrt(temp)));
 	  sum_ds+=ds;
-	  sum_dE+=my_cdchits[cdc_index]->dE;
+	  sum_dE+=my_cdchits[cdc_index]->dE/CDC_GAS_DENSITY;
+	  num_dedx++;
 	  //printf("cdc dE %f ds %f\n",my_cdchits[cdc_index]->dE,ds);
 	}
       }
@@ -3120,8 +3166,9 @@ jerror_t DTrackFitterKalman::CalcTrackdEdx(){
 	  // arc length 
 	  double ds=2.*fabs(rc/cosl*asin(sqrt(temp)));
 	  sum_ds+=ds;
-	  sum_dE+=my_cdchits[cdc_index]->dE;
+	  sum_dE+=my_cdchits[cdc_index]->dE/CDC_GAS_DENSITY;
 	  //	  printf("sum %f forward cdc dE %f ds %f\n",sum_dE,my_cdchits[cdc_index]->dE,ds);
+	  num_dedx++;
 	}
       }
       // Reset the h_id to zero.  Only do this because for tracks near 50
@@ -3141,16 +3188,18 @@ jerror_t DTrackFitterKalman::CalcTrackdEdx(){
       
       // Straight line approximation for arc length
       sum_ds+=1.0*sqrt(1.+tx*tx+ty*ty);
-      sum_dE+=my_fdchits[forward_traj[m].h_id-1]->dE;
+      sum_dE+=my_fdchits[forward_traj[m].h_id-1]->dE/FDC_GAS_DENSITY;
       //printf("sum %f forward dE %f ds %f\n",sum_dE,my_fdchits[forward_traj[m].h_id-1]->dE,1.0*sqrt(1.+tx*tx+ty*ty));
+      num_dedx++;
     }
   }
-
   //printf("dEsum %f dssum %f\n",1.e6*sum_dE,sum_ds);
   
   // Compute the dEdx in the active volume for the track
-  if (sum_ds>0) track_dedx=sum_dE/sum_ds;
-
+  if (sum_ds>0){
+    path_length=sum_ds/double(num_dedx);
+    track_dedx=1000.*sum_dE/sum_ds; // MeV cm^2/g
+  }
   return NOERROR;
 }
 
@@ -3610,9 +3659,6 @@ jerror_t DTrackFitterKalman::KalmanCentral(double anneal_factor,
 	//dS.Zero();
 	Sc=Sc+dS;
 	
-	// Path length in active volume
-	//path_length+=?
-	
 	// Update state vector covariance matrix
 	Cc=Cc-(K*(H*Cc));  
 	
@@ -3759,9 +3805,6 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
   DMatrix dS(5,1);  // perturbation in state vector
   DMatrix InvV(2,2); // Inverse of error matrix
 
-  // Path length in active volume
-  path_length=0;
-
   // Initialize chi squared
   chisq=0;
 
@@ -3891,10 +3934,7 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
 
       //.      printf("z %f Diff\n",forward_traj[k].pos.z());
       //Mdiff.Print();
-      // Path length in active volume
-      path_length+=STEP_SIZE*sqrt(1.+S(state_tx,0)*S(state_tx,0)
-			    +S(state_ty,0)*S(state_ty,0));
-      
+       
       // Update state vector covariance matrix
       C=C-K*(H*C);    
       
@@ -3959,9 +3999,6 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
   DMatrix S0(5,1),S0_(5,1); //State vector
   DMatrix dS(5,1);  // perturbation in state vector
   double InvV;  // inverse of variance
-
-  // Path length in active volume
-  path_length=0;
 
   // position variables
   double x=S(state_x,0);
@@ -4115,10 +4152,7 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 	
 	//printf("State\n");
 	//S.Print();
-	
-	// Path length in active volume
-	// path_length+=?
-	
+		
 	//printf("correction to C\n");
 	//(K*(H*C)).Print();
 	

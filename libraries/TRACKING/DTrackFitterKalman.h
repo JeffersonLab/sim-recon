@@ -103,6 +103,8 @@ class DTrackFitterKalman: public DTrackFitter{
     len = 0.0;
     ftime=0.0;
     path_length = 0.0;
+    track_dedx=0.0;
+    num_dedx=0;
     x_=y_=tx_=ty_=q_over_p_ = 0.0;
     z_=phi_=tanl_=q_over_pt_ = 0.0;
     chisq_ = 0.0;
@@ -148,7 +150,8 @@ class DTrackFitterKalman: public DTrackFitter{
   double GetChiSq(void){return chisq_;}
   unsigned int GetNDF(void){return ndf;};
   double GetActivePathLength(void){ return path_length;}
-  double GetdEdx(double q_over_p,double Z,double A, double rho);
+  double GetdEdx(double q_over_p,double Z,double A, double rho); 
+  double GetdEdx(double q_over_p,double mass_hyp);
   double GetEnergyVariance(double ds,double q_over_p,double Z,double A, 
 			   double rho);
   double GetTrackdEdx(void){return track_dedx;}
@@ -232,6 +235,7 @@ class DTrackFitterKalman: public DTrackFitter{
 					    double step,DMatrix &S);
 
   jerror_t CalcTrackdEdx();
+  double GetdEdxSigma();
 
 
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
@@ -272,6 +276,7 @@ class DTrackFitterKalman: public DTrackFitter{
 
   // For dEdx measurements
   double track_dedx;
+  int num_dedx;
   double path_length;  // path length in active volume
 
   // endplate dimensions and location
