@@ -1749,7 +1749,7 @@ jerror_t DTrackFitterKalman::ConvertStateVector(double z,double wire_x,
   double x=S(state_x,0),y=S(state_y,0);
   double tx=S(state_tx,0),ty=S(state_ty,0),q_over_p=S(state_q_over_p,0);
   double tsquare=tx*tx+ty*ty;
-  double factor=1./sqrt(1.+tsquare);
+  //  double factor=1./sqrt(1.+tsquare);
   double tanl=1./sqrt(tsquare);
   double cosl=cos(atan(tanl));
   Sc(state_q_over_pt,0)=q_over_p/cosl;
@@ -3112,7 +3112,7 @@ jerror_t DTrackFitterKalman::CalcTrackdEdx(){
       double cosl=cos(atan(S(state_tanl,0)));
       double rs2=0.8*0.8;
 
-      if (my_cdchits[cdc_index]->is_stereo==false){	
+      if (my_cdchits[cdc_index]->is_stereo==false){ // axial wires	
 	double x2=(origin.x()-xc)*(origin.x()-xc)
 	  +(origin.y()-yc)*(origin.y()-yc);
 	double rc2=rc*rc;
@@ -3126,7 +3126,34 @@ jerror_t DTrackFitterKalman::CalcTrackdEdx(){
 	  //printf("cdc dE %f ds %f\n",my_cdchits[cdc_index]->dE,ds);
 	}
       }
-
+      else{ // Stereo wires
+	double cosphi=cos(S(state_phi,0));
+	double sinphi=sin(S(state_phi,0));
+	double tanl=S(state_tanl,0);
+	double dz=pos.z()-origin.z();
+	double dx=pos.x()-origin.x();
+	double dy=pos.y()-origin.y();
+	DVector3 dir=my_cdchits[cdc_index]->dir;
+	double A=1.-dir.x()*dir.x();
+	double B=-2.*dir.x()*dir.y();
+	double C=-2.*dir.x()*dir.z();
+	double D=-2.*dir.y()*dir.z();
+	double E=1.-dir.y()*dir.y();
+	double F=1.-dir.z()*dir.z();
+	double a=A*cosphi*cosphi+B*cosphi*sinphi+C*cosphi*tanl+D*sinphi*tanl
+	  +E*sinphi*sinphi+F*tanl*tanl;
+	double b=2.*A*dx*cosphi+B*dx*sinphi+B*dy*cosphi+C*dx*tanl+C*cosphi*dz
+	  +D*dy*tanl+D*sinphi*dz+2.*E*dy*sinphi+2.*F*dz*tanl;
+	double c=A*dx*dx+B*dx*dy+C*dx*dz+D*dy*dz+E*dy*dy+F*dz*dz-rs2;
+	double temp=b*b-4.*a*c;
+	if (temp>0){
+	  sum_ds+=sqrt(temp)/a/cosl;
+	  sum_dE+=my_cdchits[cdc_index]->dE/CDC_GAS_DENSITY; 
+	  num_dedx++;
+	  //printf("s %f\n",sqrt(temp)/a/cosl);
+	}
+      }
+      
       // Reset the h_id to zero.  Only do this because for tracks near 50
       // degrees, the wire-based and time-based passes do not necessarily use
       // the same parameterization, and the trajectory deques are currently not
