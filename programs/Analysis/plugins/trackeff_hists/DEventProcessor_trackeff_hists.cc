@@ -44,6 +44,8 @@ DEventProcessor_trackeff_hists::DEventProcessor_trackeff_hists()
 {
 	trk_ptr = &trk;
 	MAX_TRACKS = 10;
+	
+	trkeff = NULL;
 
 	pthread_mutex_init(&mutex, NULL);
 	pthread_mutex_init(&rt_mutex, NULL);
@@ -62,18 +64,23 @@ DEventProcessor_trackeff_hists::~DEventProcessor_trackeff_hists()
 //------------------
 jerror_t DEventProcessor_trackeff_hists::init(void)
 {
+	pthread_mutex_lock(&mutex);
+
 	// Create TRACKING directory
 	TDirectory *dir = (TDirectory*)gROOT->FindObject("TRACKING");
 	if(!dir)dir = new TDirectoryFile("TRACKING","TRACKING");
 	dir->cd();
 
-	// Create Trees
-	trkeff = new TTree("trkeff","Tracking Efficiency");
-	trkeff->Branch("F","track",&trk_ptr);
-
+	// Create Tree
+	if(!trkeff){
+		trkeff = new TTree("trkeff","Tracking Efficiency");
+		trkeff->Branch("F","track",&trk_ptr);
+	}
 
 	dir->cd("../");
-	
+
+	pthread_mutex_unlock(&mutex);
+		
 	return NOERROR;
 }
 
@@ -123,7 +130,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 	loop->Get(particles);
 	loop->Get(throwns, "THROWN");
 	loop->Get(mctraj);
-	
+
 	// 1. Get number of CDC/FDC wires for each primary track
 	// 2. Get number of CDC/FDC wires and track number for a given DKinematicData object
 	// 3. Get number of DKinematicData objects of same type associated with each track number
