@@ -18,6 +18,7 @@ using namespace std;
 #include <TFile.h>
 #include <TTree.h>
 #include <TVector3.h>
+#include <TH2.h>
 
 int Nr = 81;
 int Nphi = 1;
@@ -95,6 +96,26 @@ int main(int narg, char *argv[])
 				tree->Fill();
 			}
 		}	
+	}
+	
+	// Create 2D histos in R and Z
+	TH2D *Bz_vs_r_vs_z = new TH2D("Bz_vs_r_vs_z", "", 651, -25, 625.0, 200, 0.0, 100.0);
+	Bz_vs_r_vs_z->SetXTitle("z (cm)");
+	Bz_vs_r_vs_z->SetYTitle("r (cm)");
+	Bz_vs_r_vs_z->SetStats(0);
+	TH2D *Btot_vs_r_vs_z = (TH2D*)Bz_vs_r_vs_z->Clone("Btot_vs_r_vs_z");
+	for(int ibin=1; ibin<=Bz_vs_r_vs_z->GetNbinsX(); ibin++){
+		double z = Bz_vs_r_vs_z->GetXaxis()->GetBinCenter(ibin);
+		for(int jbin=1; jbin<=Bz_vs_r_vs_z->GetNbinsY(); jbin++){
+			double r = Bz_vs_r_vs_z->GetYaxis()->GetBinCenter(jbin);
+			
+			double Bx, By, Bz;
+			bfield->GetField(r, 0.0, z-Z0, Bx, By, Bz);
+			double Btot = sqrt(Bx*Bx + By*By + Bz*Bz);
+			
+			Bz_vs_r_vs_z->SetBinContent(ibin, jbin, Bz);
+			Btot_vs_r_vs_z->SetBinContent(ibin, jbin, Btot);
+		}
 	}
 
 	ROOTfile->Write();
