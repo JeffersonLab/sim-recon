@@ -236,6 +236,9 @@ class DTrackFitterKalman: public DTrackFitter{
 
   jerror_t CalcTrackdEdx();
   double GetdEdxSigma();
+  jerror_t CalcdEdxHit(const DMatrix &S,const DVector3 &pos,
+		       const unsigned int &cid,
+		       double &sum_dE,double &sum_ds);
 
 
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map

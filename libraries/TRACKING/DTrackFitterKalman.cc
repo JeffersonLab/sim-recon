@@ -46,6 +46,7 @@
 #define ONE_SIXTH 0.16666666666666667
 
 #define CHISQ_DIFF_CUT 20.
+#define MAX_DEDX 40.
 
 // Local boolean routines for sorting
 //bool static DKalmanHit_cmp(DKalmanHit_t *a, DKalmanHit_t *b){
@@ -240,7 +241,7 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
   GetPosition(pos);
   GetMomentum(mom);
   double charge = GetCharge();
-  fit_params.setMass(MASS);
+  fit_params.setMass(0.13957); // Assume pion to start
   fit_params.setPosition(pos);
   fit_params.setMomentum(mom);
   fit_params.setCharge(charge);
@@ -251,12 +252,18 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
     double one_over_p=1./mom.Mag();
     double dedx_proton=GetdEdx(one_over_p,0.93827);
     double dedx_pion=GetdEdx(one_over_p,0.13957);
+    double dedx_kaon=GetdEdx(one_over_p,0.493677);
     double dedx_sigma=GetdEdxSigma();
     double proton_ratio=(track_dedx/dedx_proton-1.)/dedx_sigma; 
     double pion_ratio=(track_dedx/dedx_pion-1.)/dedx_sigma;
+    double kaon_ratio=(track_dedx/dedx_kaon-1.)/dedx_sigma;
 
-    if (1./one_over_p<0.8 && proton_ratio>-3. && fabs(pion_ratio)>3.) 
-      fit_params.setMass(0.93827);
+    if (pion_ratio>3.){     
+      if (charge==+1. && 1./one_over_p<0.8 && proton_ratio>-3.) 
+	fit_params.setMass(0.93827);
+      else if (fabs(kaon_ratio)<3)
+	fit_params.setMass(0.493677);
+    }
   }
 
   // Convert error matrix from internal representation to the type expected 
@@ -3085,6 +3092,61 @@ double DTrackFitterKalman::BrentsAlgorithm(double z,double dz,
   return x;
 }
 
+ jerror_t DTrackFitterKalman::CalcdEdxHit(const DMatrix &S,const DVector3 &pos,
+					  const unsigned int &cid,
+					  double &sum_dE,double &sum_ds){
+      // Wire origin and direction
+   DVector3 origin=my_cdchits[cid]->origin;
+   DVector3 dir=my_cdchits[cid]->dir;
+
+   // Track direction parameters
+   double cosphi=cos(S(state_phi,0));
+   double sinphi=sin(S(state_phi,0));
+   double tanl=S(state_tanl,0);
+   double cosl=cos(atan(tanl));
+
+   //Position relative to wire origin
+   double dz=pos.z()-origin.z();
+   double dx=pos.x()-origin.x();
+   double dy=pos.y()-origin.y();
+
+   // square of straw radius
+   double rs2=0.8*0.8;
+
+   // Useful temporary variables related to the direction of the wire
+   double A=1.-dir.x()*dir.x();
+   double B=-2.*dir.x()*dir.y();
+   double C=-2.*dir.x()*dir.z();
+   double D=-2.*dir.y()*dir.z();
+   double E=1.-dir.y()*dir.y();
+   double F=1.-dir.z()*dir.z();
+
+   // The path length in the straw is given by  s=sqrt(b*b-4*a*c)/a/cosl.
+   // a, b, and c follow.
+   double a=A*cosphi*cosphi+B*cosphi*sinphi+C*cosphi*tanl+D*sinphi*tanl
+     +E*sinphi*sinphi+F*tanl*tanl;
+   double b=2.*A*dx*cosphi+B*dx*sinphi+B*dy*cosphi+C*dx*tanl+C*cosphi*dz
+     +D*dy*tanl+D*sinphi*dz+2.*E*dy*sinphi+2.*F*dz*tanl;
+   double c=A*dx*dx+B*dx*dy+C*dx*dz+D*dy*dz+E*dy*dy+F*dz*dz-rs2;
+
+   // Check for valid arc length and compute dEdx
+   double temp=b*b-4.*a*c;
+   if (temp>0){
+     // arc length
+     double ds=sqrt(temp)/a/cosl;
+     double dE_over_rho=my_cdchits[cid]->dE/CDC_GAS_DENSITY;
+     if (dE_over_rho/ds<MAX_DEDX){
+       sum_ds+=ds;
+       sum_dE+=dE_over_rho; 
+       num_dedx++;
+     }
+     //printf("s %f\n",sqrt(temp)/a/cosl);
+   }
+
+   return NOERROR;
+ }
+   
+
 // Routine for estimating the energy loss per unit path length within the 
 // active volume of the drift chambers
 jerror_t DTrackFitterKalman::CalcTrackdEdx(){
@@ -3096,63 +3158,9 @@ jerror_t DTrackFitterKalman::CalcTrackdEdx(){
   for (unsigned int m=0;m<central_traj.size();m++){
     if (central_traj[m].h_id>0){
       unsigned int cdc_index=central_traj[m].h_id-1;
-      DVector3 origin=my_cdchits[cdc_index]->origin;
-      DVector3 pos=central_traj[m].pos;	
-      double Bx=0,By=0,Bz=-2.;
-      bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
-
-      // Get the track parameters from the reference trajectory
+      // Get the state vector from the reference trajectory
       S=*central_traj[m].S;
-
-      // Assume that the path within the active volume of the straw is a 
-      // helical segment (constant field)
-      double rc=1./S(state_q_over_pt,0)/qBr2p/fabs(Bz);
-      double xc=pos.x()-rc*sin(S(state_phi,0));
-      double yc=pos.y()+rc*cos(S(state_phi,0));
-      double cosl=cos(atan(S(state_tanl,0)));
-      double rs2=0.8*0.8;
-
-      if (my_cdchits[cdc_index]->is_stereo==false){ // axial wires	
-	double x2=(origin.x()-xc)*(origin.x()-xc)
-	  +(origin.y()-yc)*(origin.y()-yc);
-	double rc2=rc*rc;
-	double temp=(4.*x2*rc2-(rc2-rs2+x2)*(rc2-rs2+x2))/(4.*rc2*x2);
-	if (temp>0){
-	  // arc length 
-	  double ds=2.*fabs(rc/cosl*asin(sqrt(temp)));
-	  sum_ds+=ds;
-	  sum_dE+=my_cdchits[cdc_index]->dE/CDC_GAS_DENSITY;
-	  num_dedx++;
-	  //printf("cdc dE %f ds %f\n",my_cdchits[cdc_index]->dE,ds);
-	}
-      }
-      else{ // Stereo wires
-	double cosphi=cos(S(state_phi,0));
-	double sinphi=sin(S(state_phi,0));
-	double tanl=S(state_tanl,0);
-	double dz=pos.z()-origin.z();
-	double dx=pos.x()-origin.x();
-	double dy=pos.y()-origin.y();
-	DVector3 dir=my_cdchits[cdc_index]->dir;
-	double A=1.-dir.x()*dir.x();
-	double B=-2.*dir.x()*dir.y();
-	double C=-2.*dir.x()*dir.z();
-	double D=-2.*dir.y()*dir.z();
-	double E=1.-dir.y()*dir.y();
-	double F=1.-dir.z()*dir.z();
-	double a=A*cosphi*cosphi+B*cosphi*sinphi+C*cosphi*tanl+D*sinphi*tanl
-	  +E*sinphi*sinphi+F*tanl*tanl;
-	double b=2.*A*dx*cosphi+B*dx*sinphi+B*dy*cosphi+C*dx*tanl+C*cosphi*dz
-	  +D*dy*tanl+D*sinphi*dz+2.*E*dy*sinphi+2.*F*dz*tanl;
-	double c=A*dx*dx+B*dx*dy+C*dx*dz+D*dy*dz+E*dy*dy+F*dz*dz-rs2;
-	double temp=b*b-4.*a*c;
-	if (temp>0){
-	  sum_ds+=sqrt(temp)/a/cosl;
-	  sum_dE+=my_cdchits[cdc_index]->dE/CDC_GAS_DENSITY; 
-	  num_dedx++;
-	  //printf("s %f\n",sqrt(temp)/a/cosl);
-	}
-      }
+      CalcdEdxHit(S,central_traj[m].pos,cdc_index,sum_dE,sum_ds);
       
       // Reset the h_id to zero.  Only do this because for tracks near 50
       // degrees, the wire-based and time-based passes do not necessarily use
@@ -3166,38 +3174,12 @@ jerror_t DTrackFitterKalman::CalcTrackdEdx(){
   for (unsigned int m=0;m<forward_traj_cdc.size();m++){
     if (forward_traj_cdc[m].h_id>0){
       unsigned int cdc_index=forward_traj_cdc[m].h_id-1;
-      DVector3 origin=my_cdchits[cdc_index]->origin;
-      DVector3 pos=forward_traj_cdc[m].pos;	
-      double Bx=0,By=0,Bz=-2.;
-      bfield->GetField(pos.x(),pos.y(),pos.z(), Bx, By, Bz);
-
       // Get the track parameters from the reference trajectory
       S=*forward_traj_cdc[m].S;
       DMatrix Sc(5,1);
-      ConvertStateVector(pos.z(),0.,0.,S,Sc);
+      ConvertStateVector(forward_traj_cdc[m].pos.z(),0.,0.,S,Sc);
+      CalcdEdxHit(Sc,forward_traj_cdc[m].pos,cdc_index,sum_dE,sum_ds);
 
-      // Assume that the path within the active volume of the straw is a 
-      // helical segment (constant field)
-      double rc=1./Sc(state_q_over_pt,0)/qBr2p/fabs(Bz);
-      double xc=pos.x()-rc*sin(Sc(state_phi,0));
-      double yc=pos.y()+rc*cos(Sc(state_phi,0));
-      double cosl=cos(atan(Sc(state_tanl,0)));
-      double rs2=0.8*0.8;
-
-      if (my_cdchits[cdc_index]->is_stereo==false){	
-	double x2=(origin.x()-xc)*(origin.x()-xc)
-	  +(origin.y()-yc)*(origin.y()-yc);
-	double rc2=rc*rc;
-	double temp=(4.*x2*rc2-(rc2-rs2+x2)*(rc2-rs2+x2))/(4.*rc2*x2);
-	if (temp>0){
-	  // arc length 
-	  double ds=2.*fabs(rc/cosl*asin(sqrt(temp)));
-	  sum_ds+=ds;
-	  sum_dE+=my_cdchits[cdc_index]->dE/CDC_GAS_DENSITY;
-	  //	  printf("sum %f forward cdc dE %f ds %f\n",sum_dE,my_cdchits[cdc_index]->dE,ds);
-	  num_dedx++;
-	}
-      }
       // Reset the h_id to zero.  Only do this because for tracks near 50
       // degrees, the wire-based and time-based passes do not necessarily use
       // the same parameterization, and the trajectory deques are currently not
@@ -3214,10 +3196,15 @@ jerror_t DTrackFitterKalman::CalcTrackdEdx(){
       double ty=S(state_ty,0);
       
       // Straight line approximation for arc length
-      sum_ds+=1.0*sqrt(1.+tx*tx+ty*ty);
-      sum_dE+=my_fdchits[forward_traj[m].h_id-1]->dE/FDC_GAS_DENSITY;
+      double ds=1.0*sqrt(1.+tx*tx+ty*ty);
+      double dE_over_rho=
+	my_fdchits[forward_traj[m].h_id-1]->dE/FDC_GAS_DENSITY;
+      if (dE_over_rho/ds<MAX_DEDX){
+	sum_ds+=ds;
+	sum_dE+=dE_over_rho;
       //printf("sum %f forward dE %f ds %f\n",sum_dE,my_fdchits[forward_traj[m].h_id-1]->dE,1.0*sqrt(1.+tx*tx+ty*ty));
-      num_dedx++;
+	num_dedx++;
+      }
     }
   }
   //printf("dEsum %f dssum %f\n",1.e6*sum_dE,sum_ds);
