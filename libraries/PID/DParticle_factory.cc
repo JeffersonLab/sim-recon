@@ -84,6 +84,12 @@ jerror_t DParticle_factory::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DTrack*> tracks;
 	loop->Get(tracks);
 	
+	// Deallocate some reference trajectories occasionally
+	unsigned int rts_to_keep = 5;
+	if(tracks.size()>rts_to_keep)rts_to_keep=tracks.size();
+	for(unsigned int i=rts_to_keep; i<rtv.size(); i++)delete rtv[i];
+	if(rts_to_keep<rtv.size())rtv.resize(rts_to_keep);
+	
 	// Loop over candidates
 	for(unsigned int i=0; i<tracks.size(); i++){
 		const DTrack *track = tracks[i];

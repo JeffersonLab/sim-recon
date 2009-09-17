@@ -113,15 +113,15 @@ void DMagneticFieldStepper::CalcDirs(void)
 	// cross product of p and B (natural x-direction)
 	xdir = mom.Cross(B);
 	if(xdir.Mag2()<1.0E-6)xdir = mom.Orthogonal();
-	xdir.SetMag(1.0);
+	if(xdir.Mag2()!=0.0)xdir.SetMag(1.0);
 	
 	// cross product of B and pxB (natural y-direction)
 	ydir = B.Cross(xdir);
-	ydir.SetMag(1.0);
+	if(ydir.Mag2()!=0.0)ydir.SetMag(1.0);
 	
 	// B-field is natural z-direction
 	zdir = B;
-	zdir.SetMag(1.0);
+	if(zdir.Mag2()!=0.0)zdir.SetMag(1.0);
 
 	// cosine of angle between p and B
 	double theta = B.Angle(mom);

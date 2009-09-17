@@ -212,6 +212,7 @@ DTrackFitterALT1::~DTrackFitterALT1()
 {
 	if(rt)delete rt;
 	if(tmprt)delete tmprt;
+	if(target)delete target;
 }
 
 //------------------
@@ -679,7 +680,7 @@ void DTrackFitterALT1::GetHits(fit_type_t fit_type, DReferenceTrajectory *rt, hi
 				
 				// Find whether the track is on the "left" or "right" of the wire
 				DVector3 shift = wire->udir.Cross(mom_doca);
-				shift.SetMag(1.0);
+				if(shift.Mag()!=0.0)shift.SetMag(1.0);
 				double u = rt->GetLastDistAlongWire();
 				DVector3 pos_wire = wire->origin + u*wire->udir;
 				double LRsign = shift.Dot(pos_doca-pos_wire)<0.0 ? +1.0:-1.0;
@@ -720,7 +721,7 @@ vector<bool> DTrackFitterALT1::GetResiInfo(DMatrix &state, const swim_step_t *st
 	// "v" direction is perpendicular to both the rt direction and the
 	// x-direction. See LeastSquares() for more.
 	DVector3 vdir = start_step->sdir.Cross(start_step->mom);
-	vdir.SetMag(1.0);
+	if(vdir.Mag()!=0.0)vdir.SetMag(1.0);
 
 	DVector3 pos =   start_step->origin
 						+ state[state_x ][0]*start_step->sdir

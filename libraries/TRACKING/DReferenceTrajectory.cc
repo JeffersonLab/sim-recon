@@ -33,7 +33,7 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	// though allows it to be allocated here if necessary.
 	if(!swim_steps){
 		own_swim_steps = true;
-		this->max_swim_steps = 50000;
+		this->max_swim_steps = 10000;
 		this->swim_steps = new swim_step_t[this->max_swim_steps];
 	}else{
 		own_swim_steps = false;
@@ -230,6 +230,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			if(ptot<0.0)break;
 			if(dP<0.0 && ploss_direction==kForward)break;
 			if(dP>0.0 && ploss_direction==kBackward)break;
+			if(swim_step->mom.Mag()==0.0)break;
 			swim_step->mom.SetMag(ptot);
 			stepper.SetStartingParams(q, &swim_step->origin, &swim_step->mom);
 		}
@@ -955,7 +956,7 @@ double DReferenceTrajectory::Straw_dx(const DCoordinateSystem *wire, double radi
 	// Get the location and momentum direction of the DOCA point
 	DVector3 pos, momdir;
 	GetLastDOCAPoint(pos, momdir);
-	momdir.SetMag(1.0);
+	if(momdir.Mag()!=0.0)momdir.SetMag(1.0);
 	
 	// Get wire direction
 	const DVector3 &udir = wire->udir;

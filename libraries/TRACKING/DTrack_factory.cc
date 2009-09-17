@@ -118,10 +118,16 @@ jerror_t DTrack_factory::brun(jana::JEventLoop *loop, int runnumber)
 jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 {
 	if(!fitter)return NOERROR;
-	
+
 	// Get candidates and hits
 	vector<const DTrackCandidate*> candidates;
 	loop->Get(candidates);
+
+	// Deallocate some reference trajectories occasionally
+	unsigned int rts_to_keep = 5;
+	if(candidates.size()>rts_to_keep)rts_to_keep=candidates.size();
+	for(unsigned int i=rts_to_keep; i<rtv.size(); i++)delete rtv[i];
+	if(rts_to_keep<rtv.size())rtv.resize(rts_to_keep);
 	
 	// Loop over candidates
 	for(unsigned int i=0; i<candidates.size(); i++){
