@@ -22,8 +22,8 @@ class DMagneticFieldMap;
 class DTrackCandidate_factory:public JFactory<DTrackCandidate>{
  public:
   DTrackCandidate_factory(){
-    //DEBUG_HISTS=false;
-    DEBUG_HISTS=true;
+    DEBUG_HISTS=false;
+    //DEBUG_HISTS=true;
   };
   ~DTrackCandidate_factory(){};
   

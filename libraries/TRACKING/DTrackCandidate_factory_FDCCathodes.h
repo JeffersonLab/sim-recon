@@ -19,7 +19,8 @@
 class DTrackCandidate_factory_FDCCathodes:public JFactory<DTrackCandidate>{
 	public:
 		DTrackCandidate_factory_FDCCathodes(){
-		  DEBUG_HISTS = true;
+		  DEBUG_HISTS = false;
+		  //DEBUG_HISTS = true;
 		};
 		~DTrackCandidate_factory_FDCCathodes(){};
 		const char* Tag(void){return "FDCCathodes";}
