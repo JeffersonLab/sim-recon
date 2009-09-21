@@ -51,6 +51,11 @@ bool ADD_NOISE = true;
 // Do we or do we not smear real hits
 bool SMEAR_HITS = true;
 
+// If the following flag is true, then include the drift-distance
+// dependency on the error in the CDC position. Otherwise, use a
+// flat distribution given by the CDC_TDRIFT_SIGMA below.
+bool CDC_USE_PARAMETERIZED_SIGMA = true;
+
 // The error on the drift time in the CDC. The drift times
 // for the actual CDC hits coming from the input file
 // are smeared by a gaussian with this sigma.
@@ -134,10 +139,24 @@ void SmearCDC(s_HDDM_t *hddm_s)
 			for(unsigned int j=0; j<cdcstraw->cdcStrawHits->mult; j++){
 				s_CdcStrawHit_t *strawhit = &cdcstraw->cdcStrawHits->in[j];
 
+				double sigma_t = CDC_TDRIFT_SIGMA;
+				if(CDC_USE_PARAMETERIZED_SIGMA){
+					// Convert drift time back to drift distance assuming standard 55 um/ns
+					double drift_d = strawhit->t*55.0E-3; // use mm since that's what the error function was paramaterized
+					
+					// The following is from a fit to Yves' numbers circa Aug 2009. The values fit were
+					// resolution (microns) vs. drift distance (mm).
+					// par[8] = {699.875, -559.056, 149.391, 25.6929, -22.0238, 4.75091, -0.452373, 0.0163858};
+					double x = drift_d;
+					double sigma_d = (699.875) + x*((-559.056) + x*((149.391) + x*((25.6929) + x*((-22.0238) + x*((4.75091) + x*((-0.452373) + x*((0.0163858))))))));
+					sigma_t = sigma_d/55.0; // remember that sigma_d is already in microns here!
+					sigma_t *= 1.0E-9; // convert sigma_t to seconds
+				}
+
 				// Smear out the CDC drift time using the specified sigma.
 				// This should include both timing resolution and ion trail
 				// density effects.
-				double delta_t = SampleGaussian(CDC_TDRIFT_SIGMA)*1.0E9; // delta_t is in ns
+				double delta_t = SampleGaussian(sigma_t)*1.0E9; // delta_t is in ns
 				strawhit->t += delta_t;
 				
 				// If the time is negative, reject this smear and try again

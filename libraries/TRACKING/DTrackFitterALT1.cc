@@ -71,6 +71,7 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	MAX_CHISQ_DIFF = 1.0E-2;
 	MAX_FIT_ITERATIONS = 50;
 	SIGMA_CDC = 0.0150;
+	CDC_USE_PARAMETERIZED_SIGMA = true;
 	SIGMA_FDC_ANODE = 0.0200;
 	SIGMA_FDC_CATHODE = 0.0200;
 	CHISQ_GOOD_LIMIT = 2.0;
@@ -91,6 +92,7 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	gPARMS->SetDefaultParameter("TRKFIT:MAX_CHISQ_DIFF",				MAX_CHISQ_DIFF);
 	gPARMS->SetDefaultParameter("TRKFIT:MAX_FIT_ITERATIONS",			MAX_FIT_ITERATIONS);
 	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_CDC",						SIGMA_CDC);
+	gPARMS->SetDefaultParameter("TRKFIT:CDC_USE_PARAMETERIZED_SIGMA",	CDC_USE_PARAMETERIZED_SIGMA);
 	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_ANODE",				SIGMA_FDC_ANODE);
 	gPARMS->SetDefaultParameter("TRKFIT:SIGMA_FDC_CATHODE",			SIGMA_FDC_CATHODE);
 	gPARMS->SetDefaultParameter("TRKFIT:CHISQ_GOOD_LIMIT",			CHISQ_GOOD_LIMIT);
@@ -627,6 +629,17 @@ void DTrackFitterALT1::GetHits(fit_type_t fit_type, DReferenceTrajectory *rt, hi
 				double tof = s/beta/1.0E-9; // in ns
 				hi.dist = hit->dist*((hit->tdrift-tof)/hit->tdrift);
 				hi.err = SIGMA_CDC;
+				
+				// Default is to use parameterized sigma, by allow user to specify
+				// using constant sigma.
+				if(CDC_USE_PARAMETERIZED_SIGMA){
+					// The following is from a fit to Yves' numbers circa Aug 2009. The values fit were
+					// resolution (microns) vs. drift distance (mm).
+					// par[8] = {699.875, -559.056, 149.391, 25.6929, -22.0238, 4.75091, -0.452373, 0.0163858};
+					double x = hi.dist;
+					double sigma_d = (699.875) + x*((-559.056) + x*((149.391) + x*((25.6929) + x*((-22.0238) + x*((4.75091) + x*((-0.452373) + x*((0.0163858))))))));
+					hi.err = sigma_d/10000.0;
+				}
 			}
 			hinfo.push_back(hi);
 		}

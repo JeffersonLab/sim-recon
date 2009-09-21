@@ -23,6 +23,7 @@ int QUIT = 0;
 
 extern bool ADD_NOISE;
 extern bool SMEAR_HITS;
+extern bool CDC_USE_PARAMETERIZED_SIGMA;
 extern double CDC_TDRIFT_SIGMA;
 extern double CDC_TIME_WINDOW;
 extern double FDC_TDRIFT_SIGMA;
@@ -105,6 +106,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
 				case 'n': ADD_NOISE=false;											break;
 				case 's': SMEAR_HITS=false;										break;
 				case 'u': CDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
+				case 'y': CDC_USE_PARAMETERIZED_SIGMA=false;					break;
 				case 't': CDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;				break;
 				case 'U': FDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
 				case 'C': FDC_CATHODE_SIGMA=atof(&ptr[2])*1.0E-6;			break;
@@ -154,6 +156,8 @@ void Usage(void)
 	cout<<"    -n       Don't add background hits to CDC and FDC (default is to add)"<<endl;
 	cout<<"    -s       Don't smear real hits (default is to smear)"<<endl;
 	cout<<"    -u#      Sigma CDC anode drift time in ns (def:"<<CDC_TDRIFT_SIGMA*1.0E9<<"ns)"<<endl;
+	cout<<"             (NOTE: this is only used if -y is also specified!)"<<endl;
+	cout<<"    -y       Do NOT apply drift distance dependence error to CDC (default is to apply)"<<endl;
 	cout<<"    -t#      CDC time window for background hits in ns (def:"<<CDC_TIME_WINDOW*1.0E9<<"ns)"<<endl;
 	cout<<"    -U#      Sigma FDC anode drift time in ns (def:"<<FDC_TDRIFT_SIGMA*1.0E9<<"ns)"<<endl;
 	cout<<"    -C#      Sigma FDC cathode strips in microns (def:"<<FDC_TDRIFT_SIGMA<<"ns)"<<endl;

@@ -114,6 +114,7 @@ class DTrackFitterALT1:public DTrackFitter{
 		double MAX_CHISQ_DIFF;
 		int MAX_FIT_ITERATIONS;
 		double SIGMA_CDC;
+		bool CDC_USE_PARAMETERIZED_SIGMA;
 		double SIGMA_FDC_ANODE;
 		double SIGMA_FDC_CATHODE;
 		double CHISQ_GOOD_LIMIT;
