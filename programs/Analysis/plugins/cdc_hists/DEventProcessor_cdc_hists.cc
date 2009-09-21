@@ -81,6 +81,15 @@ jerror_t DEventProcessor_cdc_hists::init(void)
 	// Go back up to the parent directory
 	dir->cd("../");
 	
+	
+	return NOERROR;
+}
+
+//------------------
+// brun
+//------------------
+jerror_t DEventProcessor_cdc_hists::brun(JEventLoop *eventLoop, int runnumber)
+{
 	DApplication *dapp = dynamic_cast<DApplication*>(app);
 	bfield = dapp->GetBfield();
 	rt = new DReferenceTrajectory(bfield);
