@@ -637,7 +637,8 @@ void DTrackFitterALT1::GetHits(fit_type_t fit_type, DReferenceTrajectory *rt, hi
 					// resolution (microns) vs. drift distance (mm).
 					// par[8] = {699.875, -559.056, 149.391, 25.6929, -22.0238, 4.75091, -0.452373, 0.0163858};
 					double x = hi.dist;
-					double sigma_d = (699.875) + x*((-559.056) + x*((149.391) + x*((25.6929) + x*((-22.0238) + x*((4.75091) + x*((-0.452373) + x*((0.0163858))))))));
+					//double sigma_d = (699.875) + x*((-559.056) + x*((149.391) + x*((25.6929) + x*((-22.0238) + x*((4.75091) + x*((-0.452373) + x*((0.0163858))))))));
+					double sigma_d = 108.55 + 7.62391*x + 556.176*exp(-(1.12566)*pow(x,1.29645));
 					hi.err = sigma_d/10000.0;
 				}
 			}
