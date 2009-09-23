@@ -132,12 +132,6 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 		}
 	} // particles
 
-	
-	//--------------------------------------------------------------------
-	// Fill histograms below here using values in the rec_XXX containers.
-
-	pthread_mutex_lock(&mutex);
-	
 	// Some generators don't supply information on the beam photon. If there
 	// are no DBeamPhoton objects, then create a 9GeV one here
 	if(beam_photons.size()==0){
@@ -150,7 +144,12 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 		beam.setCharge(0.0);
 		beam_photons.push_back(&beam);
 	}
+	
+	//--------------------------------------------------------------------
+	// Fill histograms below here using values in the rec_XXX containers.
 
+	pthread_mutex_lock(&mutex);
+	
 	// Loop over beam photons and fill histos for each "tagged" photon for this event
 	for(unsigned int i=0; i<beam_photons.size(); i++){
 
