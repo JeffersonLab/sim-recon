@@ -49,10 +49,7 @@ void InitPlugin(JApplication *app){
 //------------------
 jerror_t DEventProcessor_invariant_mass_hists::init(void)
 {
-	// open ROOT file (if needed)
-	//if(ROOTfile != NULL) ROOTfile->cd();
-
-	// Create THROWN directory
+	// Create INV_MASS directory
 	TDirectory *dir = new TDirectoryFile("INV_MASS","INV_MASS");
 	dir->cd();
 
@@ -88,14 +85,14 @@ jerror_t DEventProcessor_invariant_mass_hists::init(void)
 //------------------
 jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventnumber)
 {
-	// Get reconstructed objects and make TLorentz vectors out of each of them
+	// Get reconstructed objects
 	vector<const DBeamPhoton*> beam_photons;
 	vector<const DPhoton*> photons;
 	vector<const DParticle*> particles;
 
-	loop->Get(beam_photons);
-	loop->Get(photons);
-	loop->Get(particles);
+	loop->Get(beam_photons);	// from truth info
+	loop->Get(photons);			// all reconstructed photons (BCAL and FCAL)
+	loop->Get(particles);		// all reconstructed charged (CDC and FDC)
 
 	// Target is proton at rest in lab frame
 	TLorentzVector target(0.0, 0.0, 0.0, 0.93827);
@@ -137,9 +134,22 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 
 	
 	//--------------------------------------------------------------------
-	// Fill histograms below here using values in the rec_XXX constainers.
+	// Fill histograms below here using values in the rec_XXX containers.
 
 	pthread_mutex_lock(&mutex);
+	
+	// Some generators don't supply information on the beam photon. If there
+	// are no DBeamPhoton objects, then create a 9GeV one here
+	if(beam_photons.size()==0){
+		DBeamPhoton beam;
+		DVector3 mom(0.0, 0.0, 9.0);
+		DVector3 pos(0.0, 0.0, 65.0); // center of target
+		beam.setMomentum(mom);
+		beam.setPosition(pos);
+		beam.setMass(0.0);
+		beam.setCharge(0.0);
+		beam_photons.push_back(&beam);
+	}
 
 	// Loop over beam photons and fill histos for each "tagged" photon for this event
 	for(unsigned int i=0; i<beam_photons.size(); i++){
@@ -165,11 +175,8 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 
 	// 2gamma invariant mass. Loop over all possible combinations
 	for(unsigned int j=1; j<rec_photons.size(); j++){
-		TLorentzVector &ph1 = rec_photons[j];
 		for(unsigned int k=0; k<j; k++){
-			TLorentzVector &ph2 = rec_photons[k];
-			
-			TLorentzVector sum = ph1 + ph2;
+			TLorentzVector sum = rec_photons[j] + rec_photons[k];
 			mass_2gamma->Fill(sum.M());
 		}
 	}
@@ -189,7 +196,7 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 	// pi+, pi- invariant mass. Loop over all possible combinations
 	for(unsigned int j=0; j<rec_piplus.size(); j++){
 		for(unsigned int k=0; k<rec_piminus.size(); k++){
-			mass_pip_pim->Fill( (rec_piplus[j] + rec_piminus[k]).M() ); // (a more compact way than the 2 gamma example above)
+			mass_pip_pim->Fill( (rec_piplus[j] + rec_piminus[k]).M() );
 		}
 	}
 	
@@ -200,7 +207,6 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 		TLorentzVector p3 = beam_photon + target - proton;
 		double t = (beam_photon - p3).Mag2();
 		t_pX->Fill(-t);
-//		_DBG_<<t<<endl;
 	}
 
 	pthread_mutex_unlock(&mutex);
