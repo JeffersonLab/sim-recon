@@ -56,6 +56,10 @@ typedef struct{
   double q_over_pt,phi,tanl,D,z;
 }DKalmanCentral_t;
 
+typedef struct{
+  double dE,ds;
+}DKalman_dedx_t;
+
 class DTrackFitterKalman: public DTrackFitter{
  public:
 //  enum tracking_level{
@@ -237,9 +241,7 @@ class DTrackFitterKalman: public DTrackFitter{
   jerror_t CalcTrackdEdx();
   double GetdEdxSigma();
   jerror_t CalcdEdxHit(const DMatrix &S,const DVector3 &pos,
-		       const unsigned int &cid,
-		       double &sum_dE,double &sum_ds);
-
+		       const unsigned int &cid,double &dE,double &ds);
 
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   //const DGeometry *geom;
@@ -299,6 +301,7 @@ class DTrackFitterKalman: public DTrackFitter{
   int DEBUG_LEVEL;
 
   TH2F *cdc_residuals,*fdc_xresiduals,*fdc_yresiduals;
+  TH2F *thetay_vs_thetax;
 };
 
 
