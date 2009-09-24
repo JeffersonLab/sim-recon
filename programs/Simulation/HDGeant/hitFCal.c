@@ -86,7 +86,7 @@ void hitForwardEMcal (float xin[4], float xout[4],
    if (dEsum > 0)
    {
       int nhit;
-      s_FcalHits_t* hits;
+      s_FcalTruthHits_t* hits;
       int row = getrow_();
       int column = getcolumn_();
       
@@ -120,14 +120,14 @@ void hitForwardEMcal (float xin[4], float xout[4],
          blocks->mult = 1;
          blocks->in[0].row = row;
          blocks->in[0].column = column;
-         blocks->in[0].fcalHits = hits = make_s_FcalHits(MAX_HITS);
+         blocks->in[0].fcalTruthHits = hits = make_s_FcalTruthHits(MAX_HITS);
          cal->fcalBlocks = blocks;
          blockCount++;
       }
       else
       {
          s_ForwardEMcal_t* cal = *twig;
-         hits = cal->fcalBlocks->in[0].fcalHits;
+         hits = cal->fcalBlocks->in[0].fcalTruthHits;
       }
 
       for (nhit = 0; nhit < hits->mult; nhit++)
@@ -200,7 +200,7 @@ s_ForwardEMcal_t* pickForwardEMcal ()
          float x0 = (column - CENTRAL_COLUMN)*WIDTH_OF_BLOCK;
          float dist = sqrt(x0*x0+y0*y0);
 
-         s_FcalHits_t* hits = blocks->in[block].fcalHits;
+         s_FcalTruthHits_t* hits = blocks->in[block].fcalTruthHits;
 
          /* compress out the hits outside the active region */
          if (dist < ACTIVE_RADIUS)

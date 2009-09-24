@@ -470,12 +470,9 @@ void SmearFCAL(s_HDDM_t *hddm_s)
 	/// The way this works is a little funny and warrants a little explanation.
 	/// The information coming from hdgeant is truth information indexed by 
 	/// row and column, but containing energy deposited and time. The mcsmear
-	/// program will overwrite the energy and time values with smeared ones.
-	/// In order to keep the original truth information available in the same
-	/// file, HDDM was modified to contain a mirror branch called FcalTruthBlock.
-	/// This branch is filled out only here in mcsmear (not in hdgeant) since
-	/// only when this program is run do we actually have 2 different values
-	/// to keep.
+	/// program will copy the truth information from the FcalTruthBlock to the
+	/// FcalBlock branch, smearing the values with the appropriate detector
+	/// resolution.
 	///
 	/// To access the "truth" values in DANA, get the DFCALHit objects using the
 	/// "TRUTH" tag.
@@ -483,8 +480,7 @@ void SmearFCAL(s_HDDM_t *hddm_s)
 	// The code below is perhaps slightly odd in that it simultaneously creates
 	// and fills the mirror (truth) branch while smearing the values in the
 	// nominal hit branch.
-
-
+	
 	// Loop over Physics Events
 	s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
 	if(!PE) return;
@@ -501,18 +497,18 @@ void SmearFCAL(s_HDDM_t *hddm_s)
 		for(unsigned int j=0; j<blocks->mult; j++){
 			s_FcalBlock_t *block = &blocks->in[j];
 
-			// Create FCAL truth hits to keep un-smeared info available.
-			if(block->fcalTruthHits!=HDDM_NULL)free(block->fcalTruthHits);
-			block->fcalTruthHits = make_s_FcalTruthHits(block->fcalHits->mult);
-			block->fcalTruthHits->mult = block->fcalHits->mult;
+			// Create FCAL hits structures to put smeared data into
+			if(block->fcalHits!=HDDM_NULL)free(block->fcalHits);
+			block->fcalHits = make_s_FcalHits(block->fcalTruthHits->mult);
+			block->fcalHits->mult = block->fcalTruthHits->mult;
 
-			for(unsigned int k=0; k<block->fcalHits->mult; k++){
-				s_FcalHit_t *fcalhit = &block->fcalHits->in[k];
+			for(unsigned int k=0; k<block->fcalTruthHits->mult; k++){
 				s_FcalTruthHit_t *fcaltruthhit = &block->fcalTruthHits->in[k];
+				s_FcalHit_t *fcalhit = &block->fcalHits->in[k];
 
-				// Copy info into truth stream before doing anything else
-				fcaltruthhit->E = fcalhit->E;
-				fcaltruthhit->t = fcalhit->t;
+				// Copy info from truth stream before doing anything else
+				fcalhit->E = fcaltruthhit->E;
+				fcalhit->t = fcaltruthhit->t;
 
 				// Simulation simulates a grid of blocks for simplicity. 
 				// Do not bother smearing inactive blocks. They will be
