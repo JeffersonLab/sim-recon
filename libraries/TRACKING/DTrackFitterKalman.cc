@@ -52,6 +52,12 @@
 //bool static DKalmanHit_cmp(DKalmanHit_t *a, DKalmanHit_t *b){
 //  return a->z<b->z;
 //}
+bool static DKalman_dedx_cmp(DKalman_dedx_t a, DKalman_dedx_t b){
+  double dEdx1=a.dE/a.ds;
+  double dEdx2=b.dE/b.ds;
+  return dEdx1<dEdx2;  
+}
+
 bool static DKalmanFDCHit_cmp(DKalmanFDCHit_t *a, DKalmanFDCHit_t *b){
   return a->z<b->z;
 }
@@ -111,8 +117,8 @@ DTrackFitterKalman::DTrackFitterKalman(JEventLoop *loop):DTrackFitter(loop){
   MASS=0.13957; //charged pion
   mass2=MASS*MASS;
 
-  DEBUG_HISTS=true;
-  //DEBUG_HISTS=false;
+  //DEBUG_HISTS=true;
+  DEBUG_HISTS=false;
   DEBUG_LEVEL=0;
   //DEBUG_LEVEL=2;
 
@@ -142,6 +148,13 @@ DTrackFitterKalman::DTrackFitterKalman(JEventLoop *loop):DTrackFitter(loop){
 			      200,170.,370.,100,-1,1.);
       fdc_yresiduals->SetXTitle("z (cm)");
       fdc_yresiduals->SetYTitle("#Deltay (cm)");
+    } 
+    thetay_vs_thetax=(TH2F*)gROOT->FindObject("thetay_vs_thetax");
+    if (!thetay_vs_thetax){
+      thetay_vs_thetax=new TH2F("thetay_vs_thetax","#thetay vs. #thetax",
+			      360,-90.,90.,360,-90,90.);
+      thetay_vs_thetax->SetXTitle("z (cm)");
+      thetay_vs_thetax->SetYTitle("#Deltay (cm)");
     }
     
     dapp->Unlock();
@@ -247,8 +260,8 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
   fit_params.setCharge(charge);
   fit_params.setdEdx(track_dedx);
 
-  // Set the mass of the particle based on dEdx
-  if (track_dedx>0){
+  // Set the mass of the particle based on dEdx for low-momentum tracks
+  if (track_dedx>0 && mom.Mag()<0.6){
     double one_over_p=1./mom.Mag();
     double dedx_proton=GetdEdx(one_over_p,0.93827);
     double dedx_pion=GetdEdx(one_over_p,0.13957);
@@ -259,7 +272,7 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
     double kaon_ratio=(track_dedx/dedx_kaon-1.)/dedx_sigma;
 
     if (pion_ratio>3.){     
-      if (charge==+1. && 1./one_over_p<0.8 && proton_ratio>-3.) 
+      if (charge==+1. && proton_ratio>-3.) 
 	fit_params.setMass(0.93827);
       else if (fabs(kaon_ratio)<3)
 	fit_params.setMass(0.493677);
@@ -2043,25 +2056,53 @@ double DTrackFitterKalman::GetdEdx(double q_over_p,double Z,
   return -0.0001535*Z/A*rho/beta2*(log(2.*Me*betagamma2*Tmax/I0/I0)
 				   -2.*beta2-delta);
 }
-// Calculate the energy loss per unit length in units of MeV cm^2/g in the FDC
-// or CDC gas for a particle of momentum p. Ignore density effect -- this 
-// code is intended for PID at low momentum where the density effect correction
-// is negligible.
+
+// Calculate the most probable energy loss per unit length in units of 
+// MeV cm^2/g in the FDC or CDC gas for a particle of momentum p.
 double DTrackFitterKalman::GetdEdx(double q_over_p,double mass_hyp){
   double betagamma=1./mass_hyp/fabs(q_over_p);
-  double betagamma2=betagamma*betagamma;
   double beta2=1./(1.+mass_hyp*mass_hyp*q_over_p*q_over_p);
-  if (beta2<EPS) return 0.;
-
+  if (beta2<0.001) return 0.;
+  
+  // Electron mass 
+  double Me=0.000511; //GeV
+   
+  // Material properties for gas
   double Z_over_A=0.85*0.45059+0.15*0.49989;
   double I0=(0.85*188.+0.15*85.)*1e-9;
+  double rho=CDC_GAS_DENSITY;
 
-  double Me=0.000511; //GeV
-  double m_ratio=Me/mass_hyp;
-  double Tmax
-    =2.*Me*betagamma2/(1.+2.*sqrt(1.+betagamma2)*m_ratio+m_ratio*m_ratio);
-
-  return 0.1535*Z_over_A/beta2*(log(2.*Me*betagamma2*Tmax/I0/I0)-2.*beta2);
+  // First (non-logarithmic) term in Bethe-Block formula
+  double mean_dedx=0.1535*Z_over_A/beta2;
+ 
+  // Variables for calculating the density effect
+  double X=log10(betagamma);
+  double X0,X1;
+  double C=-2.*log(I0/28.816/sqrt(rho*Z_over_A))-1.;
+  double Cbar=-C; 
+  double delta=0.;
+  X1=4.;
+  if (Cbar<=9.5) X0=1.6;
+  else if (Cbar>9.5 && Cbar<=10.) X0=1.7;
+  else if (Cbar>10 && Cbar<=10.5) X0=1.8;    
+  else if (Cbar>10.5 && Cbar<=11.) X0=1.9;
+  else if (Cbar>11.0 && Cbar<=12.25) X0=2.;
+  else if (Cbar>12.25 && Cbar<=13.804){
+    X0=2.;
+    X1=5.;
+  }
+  else {
+    X0=0.326*Cbar-2.5;
+    X1=5.;
+  }    
+  if (X>=X0 && X<X1)
+    delta=4.606*X+C+(Cbar-4.606*X0)*pow(X1-X,3.)/pow(X1-X0,3.);
+  else if (X>=X1)
+    delta=4.606*X+C;
+  
+  // Most probable energy loss from Landau theory (see Leo, pp. 51-52)
+  return mean_dedx*(log(2.*Me*beta2*mean_dedx*rho*path_length*1e-3
+		    /(1.-beta2)/I0/I0)-beta2+0.198-delta);
 }
 
 // Empirical form for sigma/mean for gaseous detectors with num_dedx samples 
@@ -3092,67 +3133,68 @@ double DTrackFitterKalman::BrentsAlgorithm(double z,double dz,
   return x;
 }
 
- jerror_t DTrackFitterKalman::CalcdEdxHit(const DMatrix &S,const DVector3 &pos,
-					  const unsigned int &cid,
-					  double &sum_dE,double &sum_ds){
-      // Wire origin and direction
-   DVector3 origin=my_cdchits[cid]->origin;
-   DVector3 dir=my_cdchits[cid]->dir;
+// Calculate the path length for a single hit in a straw and return ds and the 
+// energy deposition in the straw.
+jerror_t DTrackFitterKalman::CalcdEdxHit(const DMatrix &S,const DVector3 &pos,
+					 const unsigned int &cid,
+					 double &dE,double &ds){
+  // Wire origin and direction
+  DVector3 origin=my_cdchits[cid]->origin;
+  DVector3 dir=my_cdchits[cid]->dir;
+  
+  // Track direction parameters
+  double cosphi=cos(S(state_phi,0));
+  double sinphi=sin(S(state_phi,0));
+  double tanl=S(state_tanl,0);
+  
+  //Position relative to wire origin
+  double dz=pos.z()-origin.z();
+  double dx=pos.x()-origin.x();
+  double dy=pos.y()-origin.y();
+  
+  // square of straw radius
+  double rs2=0.8*0.8;
+  
+  // Useful temporary variables related to the direction of the wire
+  double A=1.-dir.x()*dir.x();
+  double B=-2.*dir.x()*dir.y();
+  double C=-2.*dir.x()*dir.z();
+  double D=-2.*dir.y()*dir.z();
+  double E=1.-dir.y()*dir.y();
+  double F=1.-dir.z()*dir.z();
+  
+  // The path length in the straw is given by  s=sqrt(b*b-4*a*c)/a/cosl.
+  // a, b, and c follow.
+  double a=A*cosphi*cosphi+B*cosphi*sinphi+C*cosphi*tanl+D*sinphi*tanl
+    +E*sinphi*sinphi+F*tanl*tanl;
+  double b=2.*A*dx*cosphi+B*dx*sinphi+B*dy*cosphi+C*dx*tanl+C*cosphi*dz
+    +D*dy*tanl+D*sinphi*dz+2.*E*dy*sinphi+2.*F*dz*tanl;
+  double c=A*dx*dx+B*dx*dy+C*dx*dz+D*dy*dz+E*dy*dy+F*dz*dz-rs2;
+  
+  // Check for valid arc length and compute dEdx
+  double temp=b*b-4.*a*c;
+  if (temp>0){
+    double cosl=fabs(cos(atan(tanl)));
+    // arc length and energy deposition
+    ds=CDC_GAS_DENSITY*sqrt(temp)/a/cosl; // g/cm^2
+    dE=1000.*my_cdchits[cid]->dE; //MeV
 
-   // Track direction parameters
-   double cosphi=cos(S(state_phi,0));
-   double sinphi=sin(S(state_phi,0));
-   double tanl=S(state_tanl,0);
-   double cosl=cos(atan(tanl));
+    return NOERROR;
+  }
+  
+  return VALUE_OUT_OF_RANGE;
+}
 
-   //Position relative to wire origin
-   double dz=pos.z()-origin.z();
-   double dx=pos.x()-origin.x();
-   double dy=pos.y()-origin.y();
-
-   // square of straw radius
-   double rs2=0.8*0.8;
-
-   // Useful temporary variables related to the direction of the wire
-   double A=1.-dir.x()*dir.x();
-   double B=-2.*dir.x()*dir.y();
-   double C=-2.*dir.x()*dir.z();
-   double D=-2.*dir.y()*dir.z();
-   double E=1.-dir.y()*dir.y();
-   double F=1.-dir.z()*dir.z();
-
-   // The path length in the straw is given by  s=sqrt(b*b-4*a*c)/a/cosl.
-   // a, b, and c follow.
-   double a=A*cosphi*cosphi+B*cosphi*sinphi+C*cosphi*tanl+D*sinphi*tanl
-     +E*sinphi*sinphi+F*tanl*tanl;
-   double b=2.*A*dx*cosphi+B*dx*sinphi+B*dy*cosphi+C*dx*tanl+C*cosphi*dz
-     +D*dy*tanl+D*sinphi*dz+2.*E*dy*sinphi+2.*F*dz*tanl;
-   double c=A*dx*dx+B*dx*dy+C*dx*dz+D*dy*dz+E*dy*dy+F*dz*dz-rs2;
-
-   // Check for valid arc length and compute dEdx
-   double temp=b*b-4.*a*c;
-   if (temp>0){
-     // arc length
-     double ds=sqrt(temp)/a/cosl;
-     double dE_over_rho=my_cdchits[cid]->dE/CDC_GAS_DENSITY;
-     if (dE_over_rho/ds<MAX_DEDX){
-       sum_ds+=ds;
-       sum_dE+=dE_over_rho; 
-       num_dedx++;
-     }
-     //printf("s %f\n",sqrt(temp)/a/cosl);
-   }
-
-   return NOERROR;
- }
-   
 
 // Routine for estimating the energy loss per unit path length within the 
 // active volume of the drift chambers
 jerror_t DTrackFitterKalman::CalcTrackdEdx(){
   DMatrix S(5,1);
-  double sum_ds=0.;
-  double sum_dE=0.;
+  double ds=0.;
+  double dE=0.;
+
+  // Vectors of dE and ds measurements
+  vector<DKalman_dedx_t>dEdx_list;
 
   // Hits in central part of CDC
   for (unsigned int m=0;m<central_traj.size();m++){
@@ -3160,7 +3202,12 @@ jerror_t DTrackFitterKalman::CalcTrackdEdx(){
       unsigned int cdc_index=central_traj[m].h_id-1;
       // Get the state vector from the reference trajectory
       S=*central_traj[m].S;
-      CalcdEdxHit(S,central_traj[m].pos,cdc_index,sum_dE,sum_ds);
+      if (CalcdEdxHit(S,central_traj[m].pos,cdc_index,dE,ds)==NOERROR){
+	DKalman_dedx_t temp;
+	temp.dE=dE;
+	temp.ds=ds;
+	dEdx_list.push_back(temp);
+      }
       
       // Reset the h_id to zero.  Only do this because for tracks near 50
       // degrees, the wire-based and time-based passes do not necessarily use
@@ -3178,7 +3225,12 @@ jerror_t DTrackFitterKalman::CalcTrackdEdx(){
       S=*forward_traj_cdc[m].S;
       DMatrix Sc(5,1);
       ConvertStateVector(forward_traj_cdc[m].pos.z(),0.,0.,S,Sc);
-      CalcdEdxHit(Sc,forward_traj_cdc[m].pos,cdc_index,sum_dE,sum_ds);
+      if (CalcdEdxHit(Sc,forward_traj_cdc[m].pos,cdc_index,dE,ds)==NOERROR){
+	DKalman_dedx_t temp;
+	temp.dE=dE;
+	temp.ds=ds;
+	dEdx_list.push_back(temp);
+      }
 
       // Reset the h_id to zero.  Only do this because for tracks near 50
       // degrees, the wire-based and time-based passes do not necessarily use
@@ -3195,24 +3247,40 @@ jerror_t DTrackFitterKalman::CalcTrackdEdx(){
       double tx=S(state_tx,0);
       double ty=S(state_ty,0);
       
-      // Straight line approximation for arc length
-      double ds=1.0*sqrt(1.+tx*tx+ty*ty);
-      double dE_over_rho=
-	my_fdchits[forward_traj[m].h_id-1]->dE/FDC_GAS_DENSITY;
-      if (dE_over_rho/ds<MAX_DEDX){
-	sum_ds+=ds;
-	sum_dE+=dE_over_rho;
-      //printf("sum %f forward dE %f ds %f\n",sum_dE,my_fdchits[forward_traj[m].h_id-1]->dE,1.0*sqrt(1.+tx*tx+ty*ty));
-	num_dedx++;
+      if (DEBUG_HISTS && fit_type==kTimeBased){
+	TH2F *thetay_vs_thetax=(TH2F*)gROOT->FindObject("thetay_vs_thetax");
+	if (thetay_vs_thetax){
+	  for (unsigned int i=0;i<my_fdchits.size();i++){
+	    thetay_vs_thetax->Fill(180./M_PI*atan(tx),180./M_PI*atan(ty));
+	  }
+	}
       }
+      DKalman_dedx_t temp;
+      // Straight line approximation for arc length
+      temp.ds=FDC_GAS_DENSITY*1.0*sqrt(1.+tx*tx+ty*ty); // g/cm^2
+      temp.dE=1000.*my_fdchits[forward_traj[m].h_id-1]->dE; // MeV
+      dEdx_list.push_back(temp);    
     }
   }
   //printf("dEsum %f dssum %f\n",1.e6*sum_dE,sum_ds);
-  
-  // Compute the dEdx in the active volume for the track
-  if (sum_ds>0){
-    path_length=sum_ds/double(num_dedx);
-    track_dedx=1000.*sum_dE/sum_ds; // MeV cm^2/g
+
+  // Sort the dEdx entries from smallest to largest
+  sort(dEdx_list.begin(),dEdx_list.end(),DKalman_dedx_cmp);  
+
+  // Compute the dEdx in the active volume for the track using a truncated 
+  // mean to minimize the effect of the long Landau tail
+  unsigned int imax
+    =(dEdx_list.size()>5)?int(0.6*dEdx_list.size()):dEdx_list.size();
+  double sum_dE=0.;
+  double sum_ds=0.;
+  for (unsigned int i=0;i<imax;i++){
+    sum_ds+=dEdx_list[i].ds;
+    sum_dE+=dEdx_list[i].dE; 
+  }
+  if (imax>0){
+    num_dedx=imax;
+    path_length=sum_ds/double(imax);
+    track_dedx=sum_dE/sum_ds; // MeV cm^2/g
   }
   return NOERROR;
 }
