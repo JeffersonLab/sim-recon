@@ -564,7 +564,7 @@ void MyProcessor::UpdateTrackLabels(void)
 		
 		double mass = trk->mass();
 		if(fabs(mass-0.13957)<1.0E-4)type<<"pi";
-		else if(fabs(mass-0.938)<1.0E-4)type<<"proton";
+		else if(fabs(mass-0.93827)<1.0E-4)type<<"proton";
 		else if(fabs(mass-0.493677)<1.0E-4)type<<"K";
 		else if(fabs(mass-0.000511)<1.0E-4)type<<"e";
 		else type<<"q=";
