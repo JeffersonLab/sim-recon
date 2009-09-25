@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--DOCTYPE HDDS>
+
+  Hall D Geometry Data Base: Fields
+  *********************************
+
+     version 1.0: Initial version with constant fields
+                  and maps.	                  -rtj
+ 
+  Revision 1.1  16/12/2008
+    - Changed magnetic field for the sweeping magnets in the collimator cave. 
+      The field for both magnets in the gap is the same, 0.23 T.
+    - Added magnetic field for the pair spectrometer dipole magnet.
+
+
+<HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds">
+-->
+
+<regions version="1.0"
+	 date="2006-01-08"
+	 author="R.T. Jones"
+         specification="v1.0" >
+
+  <!-- The beam line dipole fields -->
+
+<!--  <region name="sweepDipoleBfield"
+          comment="photon beam collimator cleanup dipole field">
+    <uniformBfield Bx_By_Bz="0 0 2" unit="kG"/>
+  </region> -->
+ 
+  <region name="sweepDipoleBfield"
+          comment="photon beam collimator cleanup dipole field">
+    <uniformBfield Bx_By_Bz="0 2.3 0" unit="kG"/>
+  </region>
+
+
+  <!-- Pair Spectrometer dipole fields -->
+
+  <region name="PairBfield"
+          comment="photon beam collimator cleanup dipole field">
+    <uniformBfield Bx_By_Bz="0  16.4  0" unit="kG"/>
+  </region>
+
+
+
+  <!-- The tagger dipole field map -->
+
+  <region name="taggerBfield" comment="tagging spectrometer field map">
+    <mappedBfield map="file://taggermap.dat" encoding="utf-8"
+                  maxBfield="1.8" unit="kG">
+      <grid type="cartesian">
+        <samples axis="x" n="351" bounds="-340 10" unit_length="cm">
+          <samples axis="z" n="1611" bounds="-10 1600" unit_length="cm">
+            <samples axis="y" n="16" bounds="0 -1.5" unit_length="cm"/>
+          </samples>
+        </samples>
+      </grid>
+      <grid type="cartesian">
+        <samples axis="x" n="351" bounds="-340 10" unit_length="cm">
+          <samples axis="z" n="1611" bounds="-10 1600" unit_length="cm">
+            <samples axis="y" n="16" bounds="0 1.5" unit_length="cm"/>
+          </samples>
+        </samples>
+      </grid>
+    </mappedBfield>
+    <swim method="RungeKutta"/>
+  </region>
+
+  <!-- The main solenoid field map -->
+
+  <region name="solenoidBfield" comment="LASS spectrometer field map">
+    <mappedBfield map="file://solenoid.map" encoding="utf-8"
+                  maxBfield="2.24" unit="T">
+      <grid type="cylindrical">
+        <samples axis="phi" n="1" bounds="0 360" unit_angle="deg">
+          <samples axis="r" n="41" bounds="0 40" unit_length="in">
+            <samples axis="z" n="251" bounds="4 254" unit_length="in"/>
+          </samples>
+        </samples>
+      </grid>
+    </mappedBfield>
+    <swim method="helix"/>
+  </region>
+
+  <!-- This region can be used to force tracking in calorimeter
+       modules to ignore the magnetic field that they are imbedded in -->
+
+  <region name="nullBfield" comment="zero field regions for calorimeters">
+    <noBfield/>
+  </region>
+
+</regions>
