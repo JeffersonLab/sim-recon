@@ -25,12 +25,9 @@ typedef struct{
 }DKalmanHit_t;
 
 typedef struct{
-  double t,d,stereo,dE;
-  DVector3 origin;
-  DVector3 dir;
+  int status;
   double residual;
-  bool is_stereo;
-  int ring,straw,status;
+  const DCDCTrackHit *hit;
 }DKalmanCDCHit_t;
 
 typedef struct{
@@ -68,8 +65,6 @@ class DTrackFitterKalman: public DTrackFitter{
 //  };
   DTrackFitterKalman(JEventLoop *loop);
   ~DTrackFitterKalman(){
-    for (unsigned int i=0;i<hits.size();i++)
-	delete hits[i];
     for (unsigned int i=0;i<my_cdchits.size();i++){
       delete my_cdchits[i];
     } 
@@ -93,7 +88,6 @@ class DTrackFitterKalman: public DTrackFitter{
       //      delete central_traj[i].C;
     }
   
-    hits.clear();
     my_fdchits.clear();
     my_cdchits.clear();
     central_traj.clear();
@@ -123,9 +117,7 @@ class DTrackFitterKalman: public DTrackFitter{
 
   jerror_t AddCDCHit(const DCDCTrackHit *cdchit);
   jerror_t AddFDCHit(const DFDCPseudo *fdchit);
-  jerror_t AddVertex(DVector3 vertex);
-  jerror_t AddHit(double x,double y, double z,double covx,
-		  double covy, double covxy,double dE);
+
   jerror_t SetSeed(double q,DVector3 pos, DVector3 mom);
   jerror_t KalmanLoop(void);
   jerror_t KalmanForward(double anneal,DMatrix &S,DMatrix &C,double &chisq);
@@ -240,17 +232,14 @@ class DTrackFitterKalman: public DTrackFitter{
 
   jerror_t CalcTrackdEdx();
   double GetdEdxSigma();
-  jerror_t CalcdEdxHit(const DMatrix &S,const DVector3 &pos,
-		       const unsigned int &cid,double &dE,double &ds);
 
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   //const DGeometry *geom;
-  //const DLorentzDeflections *lorentz_def;  // pointer to lorentz correction map
+  //const DLorentzDeflections *lorentz_def;// pointer to lorentz correction map
   //const DMaterialMap *material; // pointer to material map
   //const DRootGeom *RootGeom;
  
   // list of hits on track
-  vector<DKalmanHit_t*>hits;
   vector<DKalmanCDCHit_t *>my_cdchits;
   vector<DKalmanFDCHit_t *>my_fdchits;
 
@@ -283,6 +272,7 @@ class DTrackFitterKalman: public DTrackFitter{
   double track_dedx;
   int num_dedx;
   double path_length;  // path length in active volume
+  double p_meas;  // Average measured momentum in active region
 
   // endplate dimensions and location
   double endplate_z, endplate_dz, endplate_rmin, endplate_rmax;
