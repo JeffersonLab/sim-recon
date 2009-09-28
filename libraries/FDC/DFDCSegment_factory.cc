@@ -102,61 +102,20 @@ jerror_t DFDCSegment_factory::evnt(JEventLoop* eventLoop, int eventNo) {
   // Skip segment finding if there aren't enough points to form a sensible 
   // segment 
   if (pseudopoints.size()>=3){
-    // get start counter hits
-    vector<const DSCHit*>sc_hits;
-    eventLoop->Get(sc_hits);
-    vector<const DTOFHit*>tof_hits;
-    eventLoop->Get(tof_hits);
-
-    ref_time=0;
-    use_tof=false;
-    use_sc=false;
-    if (sc_hits.size()>0){
-      double sc_min=1000.;
-      for (unsigned int i=0;i<sc_hits.size();i++){
-	if (sc_hits[i]->t<sc_min) sc_min=sc_hits[i]->t;
-      }
-      use_sc=true;
-      ref_time=sc_min-(SC_CENTER+SC_LIGHT_GUIDE)/SC_V_EFF;
+    // Group pseudopoints by package
+    vector<DFDCPseudo*>package[4];
+    for (vector<DFDCPseudo*>::iterator i=points.begin();i!=points.end();i++){
+      package[((*i)->wire->layer-1)/6].push_back(*i);
     }
-    else if (tof_hits.size()>0){
-      double tof_min=1000.;
-      for (unsigned int i=0;i<tof_hits.size();i++){
-	double t_north=tof_hits[i]->t_north;
-	double t_south=tof_hits[i]->t_south;
-	double t_mean=0.;
-	if (t_north==0.) t_mean=t_south-TOF_BAR_LENGTH/TOF_V_EFF/2.;
-	else if (t_south==0.) t_mean=t_north-TOF_BAR_LENGTH/TOF_V_EFF/2.;
-	else t_mean=(t_north+t_south-TOF_BAR_LENGTH/TOF_V_EFF)/2.;
-	if (t_mean<tof_min) tof_min=t_mean;
-      }
-      ref_time=tof_min;
-      use_tof=true;
-    }
-      
-    //if (ref_time>0)
-    if (use_sc || use_tof)
-      {
-      // Group pseudopoints by package
-      vector<DFDCPseudo*>package[4];
-      for (vector<DFDCPseudo*>::iterator i=points.begin();i!=points.end();i++){
-	package[((*i)->wire->layer-1)/6].push_back(*i);
-      }
     
-      // Find the segments in each package
-      for (int j=0;j<4;j++){
-	std::sort(package[j].begin(),package[j].end(),DFDCSegment_package_cmp);
-	// We need at least 3 points to define a circle, so skip if we don't 
-	// have enough points.
-	if (package[j].size()>2) FindSegments(package[j]);
-      } 
-    } // sc_hits>0
+    // Find the segments in each package
+    for (int j=0;j<4;j++){
+      std::sort(package[j].begin(),package[j].end(),DFDCSegment_package_cmp);
+      // We need at least 3 points to define a circle, so skip if we don't 
+      // have enough points.
+      if (package[j].size()>2) FindSegments(package[j]);
+    } 
   } // pseudopoints>2
-
-  // Copy corrected pseudopoints to the "CORRECTED" pseudopoint factory
-  JFactory_base *facbase=eventLoop->GetFactory("DFDCPseudo","CORRECTED");
-  JFactory<DFDCPseudo>*fac=dynamic_cast<JFactory<DFDCPseudo>*>(facbase);
-  fac->CopyTo(points);
   
   return NOERROR;
 }
@@ -634,10 +593,7 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   double r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)
     +XYZ(ref_plane,1)*XYZ(ref_plane,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
-
-  // Correct points for Lorentz effect
-  CorrectPoints(points,XYZ);
-
+  
   // Preliminary circle fit 
   error=RiemannCircleFit(points,CRPhi); 
   if (error!=NOERROR) return error;
@@ -651,9 +607,6 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   
   r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)+XYZ(ref_plane,1)*XYZ(ref_plane,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
-
-  // Correct points for Lorentz effect
-  CorrectPoints(points,XYZ);
   
   // Final circle fit 
   error=RiemannCircleFit(points,CRPhi); 
@@ -670,9 +623,6 @@ jerror_t DFDCSegment_factory::RiemannHelicalFit(vector<DFDCPseudo*>points,
   ref_plane=0;
   r1sq=XYZ(ref_plane,0)*XYZ(ref_plane,0)+XYZ(ref_plane,1)*XYZ(ref_plane,1);
   UpdatePositionsAndCovariance(num_points,r1sq,XYZ,CRPhi,CR);
-
-  // Final correction for Lorentz effect
-  CorrectPoints(points,XYZ);
 
   // Store residuals and path length for each measurement
   chisq=0.;
@@ -887,6 +837,9 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
   // Momentum and beta
   double p=0.002998*B*rc/cos(lambda);
   double beta=p/sqrt(p*p+0.140*0.140);
+
+  printf("Flight time %f\n",
+	 2.*rc*asin(R_START/2./rc)*(1./cos(lambda)/beta/29.));
 
   // Correct start time for propagation from (0,0)
   double my_start_time=0.;
