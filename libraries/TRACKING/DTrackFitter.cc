@@ -141,7 +141,7 @@ DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicDat
 
 	// Correct for energy loss in target etc. based on particle mass in starting_params
 	DVector3 pos, mom; // (holds parameters at vertex after correction)
-	if(fit_type==kWireBased){
+	if(fit_type==kTimeBased){
 		CorrectForELoss(starting_params, rt, pos, mom, mass);
 	}else{
 		pos = starting_params.position();
@@ -230,4 +230,56 @@ jerror_t DTrackFitter::CorrectForELoss(const DKinematicData &starting_params, DR
 	return NOERROR;
 }
 
+// Calculate the path length for a single hit in a straw and return ds and the 
+// energy deposition in the straw.  It returns dE as the first element in the 
+// dedx pair and ds as the second element in the dedx pair.
+jerror_t DTrackFitter::CalcdEdxHit(const DVector3 &mom,
+				   const DVector3 &pos,
+				   const DCDCTrackHit *hit,
+				   pair <double,double> &dedx){
+  // Track direction parameters
+  double phi=mom.Phi();
+  double lambda=M_PI_2-mom.Theta();
+  double cosphi=cos(phi);
+  double sinphi=sin(phi);
+  double tanl=tan(lambda);
+  
+  //Position relative to wire origin
+  double dz=pos.z()-hit->wire->origin.z();
+  double dx=pos.x()-hit->wire->origin.x();
+  double dy=pos.y()-hit->wire->origin.y();
+  
+  // square of straw radius
+  double rs2=0.8*0.8;
+  
+  // Useful temporary variables related to the direction of the wire
+  double A=1.-hit->wire->udir.x()*hit->wire->udir.x();
+  double B=-2.*hit->wire->udir.x()*hit->wire->udir.y();
+  double C=-2.*hit->wire->udir.x()*hit->wire->udir.z();
+  double D=-2.*hit->wire->udir.y()*hit->wire->udir.z();
+  double E=1.-hit->wire->udir.y()*hit->wire->udir.y();
+  double F=1.-hit->wire->udir.z()*hit->wire->udir.z();
+  
+  // The path length in the straw is given by  s=sqrt(b*b-4*a*c)/a/cosl.
+  // a, b, and c follow.
+  double a=A*cosphi*cosphi+B*cosphi*sinphi+C*cosphi*tanl+D*sinphi*tanl
+    +E*sinphi*sinphi+F*tanl*tanl;
+  double b=2.*A*dx*cosphi+B*dx*sinphi+B*dy*cosphi+C*dx*tanl+C*cosphi*dz
+    +D*dy*tanl+D*sinphi*dz+2.*E*dy*sinphi+2.*F*dz*tanl;
+  double c=A*dx*dx+B*dx*dy+C*dx*dz+D*dy*dz+E*dy*dy+F*dz*dz-rs2;
+  
+  // Check for valid arc length and compute dEdx
+  double temp=b*b-4.*a*c;
+  if (temp>0){
+    double cosl=fabs(cos(lambda));
+    double gas_density=0.0018;
 
+    // arc length and energy deposition
+    dedx.second=gas_density*sqrt(temp)/a/cosl; // g/cm^2
+    dedx.first=1000.*hit->dE; //MeV
+
+    return NOERROR;
+  }
+  
+  return VALUE_OUT_OF_RANGE;
+}

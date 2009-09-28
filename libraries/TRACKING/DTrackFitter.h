@@ -18,6 +18,7 @@
 #include "HDGEOMETRY/DLorentzMapCalibDB.h"
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
+using namespace std;
 
 class DReferenceTrajectory;
 class DGeometry;
@@ -100,13 +101,16 @@ class DTrackFitter:public jana::JObject{
 		fit_status_t FindHitsAndFitTrack(const DKinematicData &starting_params, DReferenceTrajectory *rt, JEventLoop *loop, double mass=-1.0); ///< mass<0 means get it from starting_params
 		jerror_t CorrectForELoss(const DKinematicData &starting_params, DReferenceTrajectory *rt, DVector3 &pos, DVector3 &mom, double mass);
 
-
 		//---- The following need to be supplied by the subclass ----
 		virtual string Name(void) const =0;
 		virtual fit_status_t FitTrack(void)=0;
 		virtual double ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr=NULL, int *dof_ptr=NULL)=0;
 
 	protected:
+		jerror_t CalcdEdxHit(const DVector3 &mom,
+				     const DVector3 &pos,
+				     const DCDCTrackHit *hit,
+				     pair <double,double> &dedx);
 
 		// The following should be used as inputs by FitTrack(void)
 		vector<const DCDCTrackHit*> cdchits;	//< Hits in the CDC
