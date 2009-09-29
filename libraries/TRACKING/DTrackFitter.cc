@@ -237,6 +237,8 @@ jerror_t DTrackFitter::CalcdEdxHit(const DVector3 &mom,
 				   const DVector3 &pos,
 				   const DCDCTrackHit *hit,
 				   pair <double,double> &dedx){
+  if (hit==NULL || hit->wire==NULL) return RESOURCE_UNAVAILABLE;
+
   // Track direction parameters
   double phi=mom.Phi();
   double lambda=M_PI_2-mom.Theta();
@@ -259,7 +261,7 @@ jerror_t DTrackFitter::CalcdEdxHit(const DVector3 &mom,
   double D=-2.*hit->wire->udir.y()*hit->wire->udir.z();
   double E=1.-hit->wire->udir.y()*hit->wire->udir.y();
   double F=1.-hit->wire->udir.z()*hit->wire->udir.z();
-  
+
   // The path length in the straw is given by  s=sqrt(b*b-4*a*c)/a/cosl.
   // a, b, and c follow.
   double a=A*cosphi*cosphi+B*cosphi*sinphi+C*cosphi*tanl+D*sinphi*tanl
