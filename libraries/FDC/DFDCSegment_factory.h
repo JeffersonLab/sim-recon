@@ -47,7 +47,7 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 		~DFDCSegment_factory();	
 
 		jerror_t FindSegments(vector<DFDCPseudo*>points);
-		jerror_t CorrectPoints(vector<DFDCPseudo*>point, DMatrix XYZ);
+//		jerror_t CorrectPoints(vector<DFDCPseudo*>point, DMatrix XYZ);
 		jerror_t GetHelicalTrackPosition(double z,
 						 const DFDCSegment *segment,
 						 double &xpos,
@@ -99,8 +99,8 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 
                 const DMagneticFieldMap *bfield;
 		const DLorentzDeflections *lorentz_def;
-		double ref_time;
-		bool use_tof,use_sc;
+//		double ref_time;
+//		bool use_tof,use_sc;
 
 		int myeventno;
 };

@@ -4,9 +4,7 @@
 
 #include "DFDCSegment_factory.h"
 #include "DANA/DApplication.h"
-#include "START_COUNTER/DSCHit.h"
-#include "TOF/DTOFHit.h"
-#include "HDGEOMETRY/DLorentzMapCalibDB.h"
+//#include "HDGEOMETRY/DLorentzMapCalibDB.h"
 #include <math.h>
 
 #define HALF_CELL 0.5
@@ -19,25 +17,11 @@
 #define ADJACENT_MATCH_RADIUS 1.0
 #define SIGN_CHANGE_CHISQ_CUT 10.0
 #define BEAM_VARIANCE 0.1 // cm^2
-#define FDC_X_RESOLUTION 0.028
-#define FDC_Y_RESOLUTION 0.02 //cm
 #define USED_IN_SEGMENT 0x8
 #define CORRECTED 0x10
 #define MAX_ITER 10
 #define TARGET_LENGTH 30.0 //cm
 #define MIN_TANL 2.0
-#define R_START 7.6
-#define SC_V_EFF 15.
-#define Z_TOF 617.4
-// Sloppy target range in z
-#define Z_MIN 45.
-#define Z_MAX 85.
-// Start counter dimensions
-#define SC_LIGHT_GUIDE     140.
-#define SC_CENTER          38.75     
-// TOF dimensions
-#define TOF_BAR_LENGTH      252.0 
-#define TOF_V_EFF 15.
 
 // Variance for position along wire using PHENIX angle dependence, transverse
 // diffusion, and an intrinsic resolution of 127 microns.
@@ -142,30 +126,7 @@ jerror_t DFDCSegment_factory::RiemannLineFit(vector<DFDCPseudo *>points,
       bad[m]=1;
       XYZ(m,0)=x_int0;
       XYZ(m,1)=y_int0;
-      // I am not sure the following is really useful...
-      if (m==ref_plane && ref_plane==0){
-	// Try the other solution for the LR ambiguity resolution
-	double cosangle=points[m]->wire->udir(1);
-	double sinangle=points[m]->wire->udir(0);
-	double tempx=(points[m]->w-points[m]->dw)*cosangle
-	  +(points[m]->s-points[m]->ds)*sinangle;
-	double tempy=-(points[m]->w-points[m]->dw)*sinangle
-	  +(points[m]->s-points[m]->ds)*cosangle;
-	r2=tempx*tempx+tempy*tempy;
-	numer=dist_to_origin+r2*N[2];
-	temp=denom*r2-numer*numer;
-        // If we still get a negative number for temp, bail...
-	if (temp<0) continue;
-	// Otherwise use the new x and y values
-	x_int0=-N[0]*numer/denom;
-	y_int0=-N[1]*numer/denom;
-	points[m]->x=tempx;
-	points[m]->y=tempy;
-	points[m]->ds*=-1.;
-	points[m]->dw*=-1.;
-	bad[m]=0;
-      }
-      else continue; 
+      continue; 
     }
     temp=sqrt(temp)/denom;
     
@@ -814,9 +775,57 @@ jerror_t DFDCSegment_factory::GetHelicalTrackPosition(double z,
   return NOERROR;
 }
 
+// Linear regression to find charge
+double DFDCSegment_factory::GetCharge(unsigned int n,DMatrix XYZ, DMatrix CR, 
+				      DMatrix CRPhi){
+  double var=0.; 
+  double sumv=0.;
+  double sumy=0.;
+  double sumx=0.;
+  double sumxx=0.,sumxy=0,Delta;
+  double slope,r2;
+  double phi_old=atan2(XYZ(0,1),XYZ(0,0));
+  for (unsigned int k=0;k<n;k++){   
+    double tempz=XYZ(k,2);
+    double phi_z=atan2(XYZ(k,1),XYZ(k,0));
+    // Check for problem regions near +pi and -pi
+    if (fabs(phi_z-phi_old)>M_PI){  
+      if (phi_old<0) phi_z-=2.*M_PI;
+      else phi_z+=2.*M_PI;
+    }
+    r2=XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1);
+    var=(CRPhi(k,k)+phi_z*phi_z*CR(k,k))/r2;
+    sumv+=1./var;
+    sumy+=phi_z/var;
+    sumx+=tempz/var;
+    sumxx+=tempz*tempz/var;
+    sumxy+=phi_z*tempz/var;
+    phi_old=phi_z;
+  }
+  Delta=sumv*sumxx-sumx*sumx;
+  slope=(sumv*sumxy-sumy*sumx)/Delta; 
+  
+  // Guess particle charge (+/-1);
+  if (slope<0.) return -1.;
+  return 1.;
+}
+
+//----------------------------------------------------------------------------
+// The following routine is no longer in use: 
 // Correct avalanche position along wire and incorporate drift data for 
 // coordinate away from the wire using results of preliminary hit-based fit
 //
+//#define R_START 7.6
+//#define Z_TOF 617.4
+//#include "HDGEOMETRY/DLorentzMapCalibDB.h
+//#define SC_V_EFF 15.
+//#define SC_LIGHT_GUIDE     140.
+//#define SC_CENTER          38.75   
+//#define TOF_BAR_LENGTH      252.0 
+//#define TOF_V_EFF 15.
+//#define FDC_X_RESOLUTION 0.028
+//#define FDC_Y_RESOLUTION 0.02 //cm
+/*
 jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
 					    DMatrix XYZ){
   // dip angle
@@ -837,9 +846,6 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
   // Momentum and beta
   double p=0.002998*B*rc/cos(lambda);
   double beta=p/sqrt(p*p+0.140*0.140);
-
-  printf("Flight time %f\n",
-	 2.*rc*asin(R_START/2./rc)*(1./cos(lambda)/beta/29.));
 
   // Correct start time for propagation from (0,0)
   double my_start_time=0.;
@@ -902,39 +908,4 @@ jerror_t DFDCSegment_factory::CorrectPoints(vector<DFDCPseudo*>points,
   }
   return NOERROR;
 }
-  
-// Linear regression to find charge
-double DFDCSegment_factory::GetCharge(unsigned int n,DMatrix XYZ, DMatrix CR, 
-				      DMatrix CRPhi){
-  double var=0.; 
-  double sumv=0.;
-  double sumy=0.;
-  double sumx=0.;
-  double sumxx=0.,sumxy=0,Delta;
-  double slope,r2;
-  double phi_old=atan2(XYZ(0,1),XYZ(0,0));
-  for (unsigned int k=0;k<n;k++){   
-    double tempz=XYZ(k,2);
-    double phi_z=atan2(XYZ(k,1),XYZ(k,0));
-    // Check for problem regions near +pi and -pi
-    if (fabs(phi_z-phi_old)>M_PI){  
-      if (phi_old<0) phi_z-=2.*M_PI;
-      else phi_z+=2.*M_PI;
-    }
-    r2=XYZ(k,0)*XYZ(k,0)+XYZ(k,1)*XYZ(k,1);
-    var=(CRPhi(k,k)+phi_z*phi_z*CR(k,k))/r2;
-    sumv+=1./var;
-    sumy+=phi_z/var;
-    sumx+=tempz/var;
-    sumxx+=tempz*tempz/var;
-    sumxy+=phi_z*tempz/var;
-    phi_old=phi_z;
-  }
-  Delta=sumv*sumxx-sumx*sumx;
-  slope=(sumv*sumxy-sumy*sumx)/Delta; 
-  
-  // Guess particle charge (+/-1);
-  if (slope<0.) return -1.;
-  return 1.;
-}
-
+*/
