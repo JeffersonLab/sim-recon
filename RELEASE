@@ -1,0 +1,1992 @@
+Release Notes for Hall-D source code
+------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/release-2009-09-25
+   Date: September 25, 2009
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 5540 of trunk/src.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Fedora release 8 (Werewolf) on i686  32-bit
+------------
+  Xerces 2.7.0
+  JANA 0.5.2
+  ROOT 5.18-00
+  cernlib 2005 (/apps/cernlib/i386_fc8 on JLab CUE)
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+
+Red Hat Enterprise Linux 5.3
+-----------
+  Xerces 2.7.0
+  JANA 0.5.2
+  ROOT 5.18-00
+  cernlib 2005 (/apps/cernlib/i386_fc8 on JLab CUE)
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+
+Relevant repository log of changes:
+------------------------------------------------------------------------
+r5341 | davidl | 2009-07-09 11:38:31 -0400 (Thu, 09 Jul 2009) | 6 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.h
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.cc
+
+- Add DRootGeom to reference trajectories so energy loss
+  can be included in the swimming
+
+- Make DParticle the default displayed in the  reconstructed
+  pane instead of DTrackCandidate
+
+------------------------------------------------------------------------
+r5342 | davidl | 2009-07-09 11:46:12 -0400 (Thu, 09 Jul 2009) | 5 lines
+Changed paths:
+   M /trunk/src/libraries/FCAL/DFCALCluster_factory.cc
+   M /trunk/src/libraries/FCAL/DFCALCluster_factory.h
+   M /trunk/src/libraries/FCAL/DFCALHit.h
+   D /trunk/src/libraries/FCAL/DFCALHit_factory.cc
+   D /trunk/src/libraries/FCAL/DFCALHit_factory.h
+   D /trunk/src/libraries/FCAL/DFCALMCResponse.h
+   D /trunk/src/libraries/FCAL/DFCALMCResponse_factory.cc
+   D /trunk/src/libraries/FCAL/DFCALMCResponse_factory.h
+   D /trunk/src/libraries/FCAL/DMCFCALHit.h
+   M /trunk/src/libraries/FCAL/FCAL_init.cc
+   M /trunk/src/libraries/HDDM/DEventSourceHDDM.cc
+   M /trunk/src/libraries/HDDM/DEventSourceHDDM.h
+   M /trunk/src/libraries/HDDM/event.xml
+   M /trunk/src/programs/Analysis/plugins/fcal_hists/DEventProcessor_fcal_hists.cc
+   M /trunk/src/programs/Analysis/plugins/fcal_hists/DEventProcessor_fcal_hists.h
+   M /trunk/src/programs/Simulation/mcsmear/Makefile
+   M /trunk/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/src/programs/Simulation/mcsmear/smear.cc
+
+Move the functionality of the DFCALMCResponse factory into the mcsmear program.
+
+This includes several changes to the FCAL package. Nothing really regarding
+actual reconstruction, but rather in the data flow. The DMCFCALHit, DFCALMCResponse_factory, and DFCALHit_factory classes have all been removed. Now the DFCALHit class contains the MC hit info in a format that the real data will be supplied in (after calibration). The DFCALHit::TRUTH objects contain the unsmeared values iff the un-tagged DFCALHit objects have been smeared by mcsmear.
+
+------------------------------------------------------------------------
+r5348 | staylor | 2009-07-10 17:54:44 -0400 (Fri, 10 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+(1) if an fdc/cdc match is found, average Bz over all the hits in the matched segments to find pt. (2) for the second method of matching fdc candidatdates with cdc candidates, move the assignment of pos and mom into the loop over cdc_forward_ids so that these quantities get reinitialized for each element in cdc_forward_ids.  The previous version would sometimes fail to find the appropriate matches in a multi-track event.  (3) for matching method 1, move check for consistent charges between fdc and cdc candidates into the loop over cdc_forward_ids in order to clean up the code a bit.
+------------------------------------------------------------------------
+r5349 | staylor | 2009-07-10 18:03:21 -0400 (Fri, 10 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DHelicalFit.cc
+
+Get zvertex from line fit unless this gives a result beyond the extent of the target, in which case use a simple linear calculation using the last z position (before the target) and the path length to the target.  If this also gives something beyond the extent of the target, set the z vertex position to the center of the target and do not try to adjust tanl.
+------------------------------------------------------------------------
+r5350 | staylor | 2009-07-10 18:05:36 -0400 (Fri, 10 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.cc
+
+Use all the hits in the matched segments to find the average Bz needed for computing pt.
+------------------------------------------------------------------------
+r5351 | staylor | 2009-07-10 18:08:51 -0400 (Fri, 10 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrack_factory_ALT3.cc
+
+Replace breaks with continues so that code does not abort prematurely when it encounters a track that is problematic to fit.
+------------------------------------------------------------------------
+r5354 | leverinb | 2009-07-13 16:26:56 -0400 (Mon, 13 Jul 2009) | 393 lines
+Changed paths:
+   M /trunk/src/libraries/PID/DPhoton_factory.h
+
+//
+//    File: DPhoton_factory.cc
+// Created: Tue Aprl 17 11:57:50 EST 2007
+// Creator: kornicer (on Linux stan)
+//
+
+#include <math.h>
+#include <TLorentzVector.h>
+
+#include "DPhoton.h"
+#include "DPhoton_factory.h"
+#include "JANA/JEvent.h"
+
+
+//----------------
+// Constructor
+//----------------
+DPhoton_factory::DPhoton_factory()
+{
+	// Set defaults
+        DELTA_THETA_CHARGE = 0.05; // Polar angle separation between photon and charged particle 
+                                   // in radians
+	DELTA_PHI_SWUMCHARGE = 0.15;// Azimuthal angle separation between photon and swumcharged particle 
+                                   // in radians
+	DELTA_Z_SWUMCHARGE = 40;//Position separation between photon and swumcharged particle 
+                                   // in cm
+	DELTA_R_SWUMCHARGE = 25;//Position separation between photon and swumcharged particle 
+                                   // in cm
+
+	USE_BCAL_ONLY = 0;
+	USE_FCAL_ONLY = 0;
+	
+	gPARMS->SetDefaultParameter( "PID:DELTA_THETA_CHARGE", DELTA_THETA_CHARGE);
+	gPARMS->SetDefaultParameter( "PID:USE_BCAL_ONLY", USE_BCAL_ONLY );
+	gPARMS->SetDefaultParameter( "PID:USE_FCAL_ONLY", USE_FCAL_ONLY );
+	gPARMS->SetDefaultParameter( "PID:DELTA_PHI_SWUMCHARGE", DELTA_PHI_SWUMCHARGE );
+	gPARMS->SetDefaultParameter( "PID:DELTA_Z_SWUMCHARGE", DELTA_Z_SWUMCHARGE );
+
+	gPARMS->SetDefaultParameter( "PID:DELTA_R_SWUMCHARGE", DELTA_R_SWUMCHARGE );
+}
+
+
+//------------------
+// evnt
+// PID Photons: FCAL photons are copied with 'tag' attribute set to zero.
+//		BCAL photons are made from BCAL showers after applying
+//              x-dependent energy corrections (right now based on 10 MeV
+//		hit threshold in HDGent. (MK)
+//------------------
+jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
+{
+
+// Disable this info until tracking is fixed
+//        vector<const DTrack*> tracks;
+//	eventLoop->Get(tracks);
+// and use thrown info within DPi0 to identify photons from charged particles
+        vector<const DMCThrown*> thrown;
+	eventLoop->Get(thrown);
+vector<const DParticle*> chargedswum;
+	eventLoop->Get(chargedswum);
+
+// loop over FCAL photons    
+	vector<const DFCALPhoton*> fcalPhotons;
+	if( ! USE_BCAL_ONLY ) eventLoop->Get(fcalPhotons);
+  
+        JObject::oid_t nPhotons=0;
+        for ( unsigned int i=0; i < fcalPhotons.size(); i++ ) {
+
+		DPhoton *photon =  makeFCalPhoton(fcalPhotons[i], ++nPhotons);
+                
+//                double mdtrt = MinDistToRT(photon,tracks); 
+//                photon->setDtRT(mdtrt); 
+//               double dTheta = dThetaToChargeMC(photon,thrown);
+               
+	       //               photon->setdThetaCharge( dTheta ); 
+		//		photon->setdSwumCharge ( dSwum );
+		//                if (dTheta < DELTA_THETA_CHARGE ) photon->setTag(3);
+
+		vector<double> dSwum;
+                dSwum = dFromSwumChargeMC(photon,chargedswum);
+
+		if (dSwum[0] <DELTA_PHI_SWUMCHARGE  && dSwum[1] <DELTA_Z_SWUMCHARGE && dSwum[2] <DELTA_R_SWUMCHARGE  ) photon->setTag(3);
+
+		_data.push_back(photon);
+
+        } 
+
+
+// loop over BCAL photons and
+// correct shower energy and position in makeBCalPhoton
+	vector<const DBCALPhoton*> bcalPhotons;
+	if( ! USE_FCAL_ONLY ) eventLoop->Get(bcalPhotons);
+	
+       for (unsigned int i=0; i< bcalPhotons.size(); i++) {
+
+		DPhoton *photon =  makeBCalPhoton(bcalPhotons[i], ++nPhotons);
+
+//                double mdtrt = MinDistToRT(photon,tracks); 
+//	        photon->setDtRT(mdtrt); 
+//                double dTheta = dThetaToChargeMC(photon,thrown);
+//                photon->setdThetaCharge( dTheta ); 
+
+//                if (dTheta < DELTA_THETA_CHARGE ) photon->setTag(3);
+		
+		vector<double> dSwum;
+                dSwum = dFromSwumChargeMC(photon,chargedswum);
+
+		if (dSwum[0] <DELTA_PHI_SWUMCHARGE  && dSwum[1] <DELTA_Z_SWUMCHARGE && dSwum[2] <DELTA_R_SWUMCHARGE ) photon->setTag(3);
+
+
+
+		_data.push_back(photon);
+
+       } 
+
+	return NOERROR;
+}
+
+
+// at this time just copy data from DFCALPhoton and set 'tag' to zero
+// final non-linear and depth corrections can be applied here
+#define FCAL_BLOCK_WIDTH 4
+#define TARGET_RADIUS 1.5
+#define TARGET_LENGTH 30.
+DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const JObject::oid_t id) 
+{
+
+        DPhoton* photon = new DPhoton( id );
+        
+        double energy = gamma->getEnergy();
+// default vertex is (0,0,65) and this has been taken into account in FCAL libraries
+// during MC calibration, make sure FCALPhoton returns centroid position in 
+// GlueX coordinates in the future..., in case we need it
+        DVector3 centroid = gamma->getPosition();  
+        centroid.SetZ(centroid.Z()+65.);
+
+        DVector3 momentum = gamma->getMom3();
+        DVector3 vertex(0., 0., 65.);
+
+        photon->setPosition( vertex );
+        photon->setMomentum( momentum );
+        photon->setPositionCal( centroid );
+        photon->setMass( 0. );
+        photon->setTag(1);
+
+// create the simplest error matrix:
+// At this point, it is assumed that error matrix of measured quantities is diagonal,
+// with elements like: sigma_Z_t = L/sqrt(12) sigma_X_t = sigma_Y_t = r0/2 
+// L=target length, r0 = target radius...
+// This means that energy-depth-polar angle relation  is neglected.
+// the order of sigmas is:  x_c, y_c, z_c, E, x_t, y_t, z_t
+        DMatrixDSym sigmas(7);
+
+//        sigmas[0][0] = pow( FCAL_BLOCK_WIDTH/sqrt(12.0), 2.0 ); // x_c, y_c
+//        sigmas[1][1] = pow( FCAL_BLOCK_WIDTH/sqrt(12.0), 2.0 ); // x_c, y_c
+        sigmas[0][0] = pow( 0.7 , 2.0 ); // x_c, y_c
+        sigmas[1][1] = pow( 0.7 , 2.0 ); // x_c, y_c
+
+//        sigmas[2][2] = pow( 2.54, 2.0); //  z_c = rms of average depth for photons from 0-5 GeV
+        sigmas[2][2] = pow( gamma->getPositionError().Z() , 2.0); 
+
+        sigmas[3][3] =  (energy >= 0)  ? pow( 0.042*sqrt(energy) + 0.0001, 2.0 ) : 1e-6 ;
+
+        sigmas[4][4] = pow( 0.5*TARGET_RADIUS, 2.0) ; // x_t, y_t
+        sigmas[5][5] = pow( 0.5*TARGET_RADIUS, 2.0) ; // x_t, y_t
+        sigmas[6][6] = pow( TARGET_LENGTH/sqrt(12.0), 2.0) ; // z_t
+
+        photon->makeErrorMatrix( sigmas );
+        return photon;
+}
+
+// Copy data from BCALPhoton
+DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject::oid_t id) {
+
+        DPhoton* photon = new DPhoton( id );
+
+
+        DVector3 vertex(0.,0.,65.);
+        photon->setPosition( vertex );
+
+        DLorentzVector p = gamma->lorentzMomentum();
+        photon->setMomentum( DVector3( p.X(), p.Y(), p.Z() ) );
+
+        photon->setPositionCal( gamma->showerPosition() );
+        photon->setMass( p.M() );
+        photon->setTag(2);
+        DMatrixDSym sigmas(7);
+
+        sigmas(0,0) = pow( gamma->fitLayPointErr().X(), 2.0); // 
+        sigmas(1,1) = pow( gamma->fitLayPointErr().Y(), 2.0); // 
+        sigmas(2,2) = pow( gamma->fitLayPointErr().Z(), 2.0); // 
+
+        sigmas[3][3] = 1.; // From Blake's simulation
+        if (p.T()>=0) sigmas[3][3] = pow( 0.0445*sqrt(p.T()) + 0.009*p.T(), 2.0);
+
+        sigmas[4][4] = pow( 0.5*TARGET_RADIUS, 2.0); // x_t, y_t
+        sigmas[5][5] = pow( 0.5*TARGET_RADIUS, 2.0); // x_t, y_t
+        sigmas[6][6] = pow( TARGET_LENGTH/sqrt(12.0), 2.0); // z_t
+
+        photon->makeErrorMatrix( sigmas );
+        return photon;
+}
+
+
+// OLD CODE KEEP FOR THE MOMENT
+// for BCAL photons do energy correction here:
+// The following definition is to chose normalization (A) and non-linear factor (B) extracted 
+// from 10MeV hit-threshold simulation to implement z-dependent correction of shower energy.
+// Disable to use shower Ecorr, which is shower energy multiplied 
+// by just one calibration constant.
+// #define ECORR_Z
+DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALShower* shower) 
+{
+
+        DPhoton* photon = new DPhoton;
+
+        DVector3 vertex(0.,0.,65.);
+        DVector3 showerCentroid(shower->x, shower->y, shower->z);        
+        DVector3 r = showerCentroid - vertex;
+#ifdef ECORR_Z
+        double Z =  r.Z();
+           float A0 = 0.87971;
+           float A1 = 134.52;
+           float A2 = 1.822E-6;
+           float B0 = 0.0585;
+           float B1 = 199.9;
+           float B2 = 7.784E-7;
+           float A = A0 - A2*(Z-A1)*(Z-A1);
+           float B = B0 + B2*(Z-B1)*(Z-B1);
+        float E = pow((double)(shower->E/A),(double)(1/(1+B))); 
+#else
+        float E = shower->E; 
+#endif
+        float f = E/sqrt(pow(r.X(),2) + pow(r.Y(),2) + pow(r.Z(),2));        
+           
+        photon->setMomentum( f*r );
+        photon->setPosition( vertex );
+        photon->setPositionCal( showerCentroid );
+        photon->setMass( 0 );
+        photon->setTag(1);
+
+// make errorMatrix here ....
+// BCAL shower factory performs linear fits of cell position (x,y,z)
+// across all layers within a shower (x_i = a_x + c_x * r_i, i=layer index)
+// to obtain coefficients (Ax, Ay, Az) and (Cx, Cy, Cz) and their respective errors.
+// Thus, A is the impact point of the photon at the inner BCAL layer and 
+// C gives the photon direction (C_x = P_x/|P|). 
+// At this time, only impact point errors will be used to init errors on shower position in the BCAL.
+        DMatrixDSym sigmas(7);
+        sigmas(0,0) = shower->error_Apx_x; // 
+        sigmas(1,1) = shower->error_Apx_y; // 
+        sigmas(2,2) = shower->error_Apx_z; // 
+
+        sigmas[3][3] = 1.; // From Blake's simulation
+        if (E>=0) sigmas[3][3] = 0.0445*sqrt(E) + 0.009*E;
+
+        sigmas[4][4] = 0.5*TARGET_RADIUS; // x_t, y_t
+        sigmas[5][5] = 0.5*TARGET_RADIUS; // x_t, y_t
+        sigmas[6][6]  = TARGET_LENGTH/sqrt(12.0); // z_t
+
+        photon->makeErrorMatrix( sigmas );
+        return photon;
+}
+
+// Loop over tracks and look up its reference trajectory, which has a method to 
+// calculate the distance from its point to any given 3-vector.
+// Return the distance from the closest track.
+double DPhoton_factory::MinDistToRT(const DPhoton* photon, vector<const DTrack*> tracks) 
+{
+
+   double dmin = 10000.; // cm
+   DVector3 photonPoint( photon->getPositionCal().X(), photon->getPositionCal().Y(), photon->getPositionCal().Z() );
+
+   for (vector<const DTrack*>::const_iterator track  = tracks.begin(); 
+    					      track != tracks.end(); 
+					 			track++) {
+	DReferenceTrajectory* rt = const_cast<DReferenceTrajectory*>((**track).rt);
+        double dtrt = rt->DistToRT(photonPoint); 
+        if (dtrt < dmin ) {
+            dmin = dtrt;
+        }
+  }
+  return dmin;
+}
+
+// Return the distance in polar anlge from the closest charged track.
+double DPhoton_factory::dThetaToChargeMC(const DPhoton* photon, vector<const DMCThrown*> thrown) 
+{
+
+   double dmin = 1000.; 
+
+   double theta = atan2( sqrt( pow(photon->momentum().X(),2) + pow(photon->momentum().Y(),2) ), photon->momentum().Z() );
+
+   for (vector<const DMCThrown*>::const_iterator mc  = thrown.begin(); 
+					      mc != thrown.end(); 
+								mc++) {
+
+        if ( (**mc).charge() == 0 ) continue;
+	double deltaT = fabs( (**mc).momentum().Theta() - theta); 
+        dmin = deltaT < dmin ? deltaT : dmin; 
+
+  }
+
+  return dmin;
+
+}
+
+
+// Return the distance in azimuthal anlge and position Z from the closest charged track.
+vector<double>  DPhoton_factory::dFromSwumChargeMC(const DPhoton* photon, vector<const DParticle*>  chargedswum) 
+{
+
+ DVector3 photonPoint =photon->getPositionCal();
+ DVector3 diffVect,diffVectbcal,diffVectfcal;
+ double dPhi = 10.0;
+ double dPhiMin = 10.0;
+ double dZ = 1000.0;
+ double dZMin = 1000.0;
+ double dR = 1000.0;
+ double dRMin = 1000.0;
+ vector<double> diffSwum(3);
+
+ DApplication* dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+   if(!dapp){
+     _DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
+     //   return 0;
+   }
+   DMagneticFieldMap *bfield = dapp->GetBfield();
+
+
+ for( vector<const DParticle*>::const_iterator swum = chargedswum.begin();
+	     swum != chargedswum.end(); ++swum ){
+   if ( (**swum).charge() == 0 ) continue;
+
+ 
+
+   bool hitbcal,hitfcal = false;
+   double q = (**swum).charge(); 
+   DVector3 pos = (**swum).position();
+   DVector3 mom = (**swum).momentum();
+   DMagneticFieldStepper *stepper1 = new DMagneticFieldStepper(bfield, q, &pos, &mom);
+   DMagneticFieldStepper *stepper2 = new DMagneticFieldStepper(bfield, q, &pos, &mom);
+
+   DVector3 pos_bcal = pos; 
+   DVector3 mom_bcal = mom; 
+   DVector3 pos_fcal = pos;
+   DVector3 mom_fcal = mom;
+   DVector3 origin(0.0, 0.0, 643.2);
+   DVector3 norm(0.0, 0.0, 1.0);
+
+
+   bool swimrad = stepper1->SwimToRadius(pos_bcal, mom_bcal, 65.0);
+
+   if( swimrad || (pos_bcal.Z()>400 && !swimrad) ){
+     bool swimplane = stepper2->SwimToPlane(pos_fcal, mom_fcal, origin, norm );//save a little time and do this here
+     hitbcal = false;
+   if( swimplane ){
+     hitfcal = false;
+   }else{
+     hitfcal = true;
+     diffVectfcal = photonPoint - pos_fcal;
+   }
+   }else{
+     hitbcal = true;
+     diffVectbcal = photonPoint - pos_bcal;
+   }
+
+   if( hitbcal && !hitfcal ){
+     dPhi = photonPoint.Phi() - pos_bcal.Phi();
+     dZ = photonPoint.Z() - pos_bcal.Z();
+     dR = photonPoint.Perp() - pos_bcal.Perp();
+
+    }else if(!hitbcal && hitfcal){
+     dPhi = fabs(photonPoint.Phi() - pos_fcal.Phi());
+     dZ = fabs(photonPoint.Z() - pos_fcal.Z());
+     dR = photonPoint.Perp() - pos_fcal.Perp();
+
+  }
+   //assigns the minimum distance
+ dPhiMin = dPhi < dPhiMin ? dPhi : dPhiMin; 
+ dZMin = dZ < dZMin ? dZ : dZMin;  
+ dRMin = dR < dRMin ? dR : dRMin; 
+ }
+
+ diffSwum[0] = dPhiMin;
+ diffSwum[1] = dZMin; 
+ diffSwum[2] = dRMin;
+
+  return diffSwum;
+
+}
+
+
+------------------------------------------------------------------------
+r5355 | leverinb | 2009-07-13 16:27:10 -0400 (Mon, 13 Jul 2009) | 393 lines
+Changed paths:
+   M /trunk/src/libraries/PID/DPhoton_factory.cc
+
+//
+//    File: DPhoton_factory.cc
+// Created: Tue Aprl 17 11:57:50 EST 2007
+// Creator: kornicer (on Linux stan)
+//
+
+#include <math.h>
+#include <TLorentzVector.h>
+
+#include "DPhoton.h"
+#include "DPhoton_factory.h"
+#include "JANA/JEvent.h"
+
+
+//----------------
+// Constructor
+//----------------
+DPhoton_factory::DPhoton_factory()
+{
+	// Set defaults
+        DELTA_THETA_CHARGE = 0.05; // Polar angle separation between photon and charged particle 
+                                   // in radians
+	DELTA_PHI_SWUMCHARGE = 0.15;// Azimuthal angle separation between photon and swumcharged particle 
+                                   // in radians
+	DELTA_Z_SWUMCHARGE = 40;//Position separation between photon and swumcharged particle 
+                                   // in cm
+	DELTA_R_SWUMCHARGE = 25;//Position separation between photon and swumcharged particle 
+                                   // in cm
+
+	USE_BCAL_ONLY = 0;
+	USE_FCAL_ONLY = 0;
+	
+	gPARMS->SetDefaultParameter( "PID:DELTA_THETA_CHARGE", DELTA_THETA_CHARGE);
+	gPARMS->SetDefaultParameter( "PID:USE_BCAL_ONLY", USE_BCAL_ONLY );
+	gPARMS->SetDefaultParameter( "PID:USE_FCAL_ONLY", USE_FCAL_ONLY );
+	gPARMS->SetDefaultParameter( "PID:DELTA_PHI_SWUMCHARGE", DELTA_PHI_SWUMCHARGE );
+	gPARMS->SetDefaultParameter( "PID:DELTA_Z_SWUMCHARGE", DELTA_Z_SWUMCHARGE );
+
+	gPARMS->SetDefaultParameter( "PID:DELTA_R_SWUMCHARGE", DELTA_R_SWUMCHARGE );
+}
+
+
+//------------------
+// evnt
+// PID Photons: FCAL photons are copied with 'tag' attribute set to zero.
+//		BCAL photons are made from BCAL showers after applying
+//              x-dependent energy corrections (right now based on 10 MeV
+//		hit threshold in HDGent. (MK)
+//------------------
+jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
+{
+
+// Disable this info until tracking is fixed
+//        vector<const DTrack*> tracks;
+//	eventLoop->Get(tracks);
+// and use thrown info within DPi0 to identify photons from charged particles
+        vector<const DMCThrown*> thrown;
+	eventLoop->Get(thrown);
+vector<const DParticle*> chargedswum;
+	eventLoop->Get(chargedswum);
+
+// loop over FCAL photons    
+	vector<const DFCALPhoton*> fcalPhotons;
+	if( ! USE_BCAL_ONLY ) eventLoop->Get(fcalPhotons);
+  
+        JObject::oid_t nPhotons=0;
+        for ( unsigned int i=0; i < fcalPhotons.size(); i++ ) {
+
+		DPhoton *photon =  makeFCalPhoton(fcalPhotons[i], ++nPhotons);
+                
+//                double mdtrt = MinDistToRT(photon,tracks); 
+//                photon->setDtRT(mdtrt); 
+//               double dTheta = dThetaToChargeMC(photon,thrown);
+               
+	       //               photon->setdThetaCharge( dTheta ); 
+		//		photon->setdSwumCharge ( dSwum );
+		//                if (dTheta < DELTA_THETA_CHARGE ) photon->setTag(3);
+
+		vector<double> dSwum;
+                dSwum = dFromSwumChargeMC(photon,chargedswum);
+
+		if (dSwum[0] <DELTA_PHI_SWUMCHARGE  && dSwum[1] <DELTA_Z_SWUMCHARGE && dSwum[2] <DELTA_R_SWUMCHARGE  ) photon->setTag(3);
+
+		_data.push_back(photon);
+
+        } 
+
+
+// loop over BCAL photons and
+// correct shower energy and position in makeBCalPhoton
+	vector<const DBCALPhoton*> bcalPhotons;
+	if( ! USE_FCAL_ONLY ) eventLoop->Get(bcalPhotons);
+	
+       for (unsigned int i=0; i< bcalPhotons.size(); i++) {
+
+		DPhoton *photon =  makeBCalPhoton(bcalPhotons[i], ++nPhotons);
+
+//                double mdtrt = MinDistToRT(photon,tracks); 
+//	        photon->setDtRT(mdtrt); 
+//                double dTheta = dThetaToChargeMC(photon,thrown);
+//                photon->setdThetaCharge( dTheta ); 
+
+//                if (dTheta < DELTA_THETA_CHARGE ) photon->setTag(3);
+		
+		vector<double> dSwum;
+                dSwum = dFromSwumChargeMC(photon,chargedswum);
+
+		if (dSwum[0] <DELTA_PHI_SWUMCHARGE  && dSwum[1] <DELTA_Z_SWUMCHARGE && dSwum[2] <DELTA_R_SWUMCHARGE ) photon->setTag(3);
+
+
+
+		_data.push_back(photon);
+
+       } 
+
+	return NOERROR;
+}
+
+
+// at this time just copy data from DFCALPhoton and set 'tag' to zero
+// final non-linear and depth corrections can be applied here
+#define FCAL_BLOCK_WIDTH 4
+#define TARGET_RADIUS 1.5
+#define TARGET_LENGTH 30.
+DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const JObject::oid_t id) 
+{
+
+        DPhoton* photon = new DPhoton( id );
+        
+        double energy = gamma->getEnergy();
+// default vertex is (0,0,65) and this has been taken into account in FCAL libraries
+// during MC calibration, make sure FCALPhoton returns centroid position in 
+// GlueX coordinates in the future..., in case we need it
+        DVector3 centroid = gamma->getPosition();  
+        centroid.SetZ(centroid.Z()+65.);
+
+        DVector3 momentum = gamma->getMom3();
+        DVector3 vertex(0., 0., 65.);
+
+        photon->setPosition( vertex );
+        photon->setMomentum( momentum );
+        photon->setPositionCal( centroid );
+        photon->setMass( 0. );
+        photon->setTag(1);
+
+// create the simplest error matrix:
+// At this point, it is assumed that error matrix of measured quantities is diagonal,
+// with elements like: sigma_Z_t = L/sqrt(12) sigma_X_t = sigma_Y_t = r0/2 
+// L=target length, r0 = target radius...
+// This means that energy-depth-polar angle relation  is neglected.
+// the order of sigmas is:  x_c, y_c, z_c, E, x_t, y_t, z_t
+        DMatrixDSym sigmas(7);
+
+//        sigmas[0][0] = pow( FCAL_BLOCK_WIDTH/sqrt(12.0), 2.0 ); // x_c, y_c
+//        sigmas[1][1] = pow( FCAL_BLOCK_WIDTH/sqrt(12.0), 2.0 ); // x_c, y_c
+        sigmas[0][0] = pow( 0.7 , 2.0 ); // x_c, y_c
+        sigmas[1][1] = pow( 0.7 , 2.0 ); // x_c, y_c
+
+//        sigmas[2][2] = pow( 2.54, 2.0); //  z_c = rms of average depth for photons from 0-5 GeV
+        sigmas[2][2] = pow( gamma->getPositionError().Z() , 2.0); 
+
+        sigmas[3][3] =  (energy >= 0)  ? pow( 0.042*sqrt(energy) + 0.0001, 2.0 ) : 1e-6 ;
+
+        sigmas[4][4] = pow( 0.5*TARGET_RADIUS, 2.0) ; // x_t, y_t
+        sigmas[5][5] = pow( 0.5*TARGET_RADIUS, 2.0) ; // x_t, y_t
+        sigmas[6][6] = pow( TARGET_LENGTH/sqrt(12.0), 2.0) ; // z_t
+
+        photon->makeErrorMatrix( sigmas );
+        return photon;
+}
+
+// Copy data from BCALPhoton
+DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject::oid_t id) {
+
+        DPhoton* photon = new DPhoton( id );
+
+
+        DVector3 vertex(0.,0.,65.);
+        photon->setPosition( vertex );
+
+        DLorentzVector p = gamma->lorentzMomentum();
+        photon->setMomentum( DVector3( p.X(), p.Y(), p.Z() ) );
+
+        photon->setPositionCal( gamma->showerPosition() );
+        photon->setMass( p.M() );
+        photon->setTag(2);
+        DMatrixDSym sigmas(7);
+
+        sigmas(0,0) = pow( gamma->fitLayPointErr().X(), 2.0); // 
+        sigmas(1,1) = pow( gamma->fitLayPointErr().Y(), 2.0); // 
+        sigmas(2,2) = pow( gamma->fitLayPointErr().Z(), 2.0); // 
+
+        sigmas[3][3] = 1.; // From Blake's simulation
+        if (p.T()>=0) sigmas[3][3] = pow( 0.0445*sqrt(p.T()) + 0.009*p.T(), 2.0);
+
+        sigmas[4][4] = pow( 0.5*TARGET_RADIUS, 2.0); // x_t, y_t
+        sigmas[5][5] = pow( 0.5*TARGET_RADIUS, 2.0); // x_t, y_t
+        sigmas[6][6] = pow( TARGET_LENGTH/sqrt(12.0), 2.0); // z_t
+
+        photon->makeErrorMatrix( sigmas );
+        return photon;
+}
+
+
+// OLD CODE KEEP FOR THE MOMENT
+// for BCAL photons do energy correction here:
+// The following definition is to chose normalization (A) and non-linear factor (B) extracted 
+// from 10MeV hit-threshold simulation to implement z-dependent correction of shower energy.
+// Disable to use shower Ecorr, which is shower energy multiplied 
+// by just one calibration constant.
+// #define ECORR_Z
+DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALShower* shower) 
+{
+
+        DPhoton* photon = new DPhoton;
+
+        DVector3 vertex(0.,0.,65.);
+        DVector3 showerCentroid(shower->x, shower->y, shower->z);        
+        DVector3 r = showerCentroid - vertex;
+#ifdef ECORR_Z
+        double Z =  r.Z();
+           float A0 = 0.87971;
+           float A1 = 134.52;
+           float A2 = 1.822E-6;
+           float B0 = 0.0585;
+           float B1 = 199.9;
+           float B2 = 7.784E-7;
+           float A = A0 - A2*(Z-A1)*(Z-A1);
+           float B = B0 + B2*(Z-B1)*(Z-B1);
+        float E = pow((double)(shower->E/A),(double)(1/(1+B))); 
+#else
+        float E = shower->E; 
+#endif
+        float f = E/sqrt(pow(r.X(),2) + pow(r.Y(),2) + pow(r.Z(),2));        
+           
+        photon->setMomentum( f*r );
+        photon->setPosition( vertex );
+        photon->setPositionCal( showerCentroid );
+        photon->setMass( 0 );
+        photon->setTag(1);
+
+// make errorMatrix here ....
+// BCAL shower factory performs linear fits of cell position (x,y,z)
+// across all layers within a shower (x_i = a_x + c_x * r_i, i=layer index)
+// to obtain coefficients (Ax, Ay, Az) and (Cx, Cy, Cz) and their respective errors.
+// Thus, A is the impact point of the photon at the inner BCAL layer and 
+// C gives the photon direction (C_x = P_x/|P|). 
+// At this time, only impact point errors will be used to init errors on shower position in the BCAL.
+        DMatrixDSym sigmas(7);
+        sigmas(0,0) = shower->error_Apx_x; // 
+        sigmas(1,1) = shower->error_Apx_y; // 
+        sigmas(2,2) = shower->error_Apx_z; // 
+
+        sigmas[3][3] = 1.; // From Blake's simulation
+        if (E>=0) sigmas[3][3] = 0.0445*sqrt(E) + 0.009*E;
+
+        sigmas[4][4] = 0.5*TARGET_RADIUS; // x_t, y_t
+        sigmas[5][5] = 0.5*TARGET_RADIUS; // x_t, y_t
+        sigmas[6][6]  = TARGET_LENGTH/sqrt(12.0); // z_t
+
+        photon->makeErrorMatrix( sigmas );
+        return photon;
+}
+
+// Loop over tracks and look up its reference trajectory, which has a method to 
+// calculate the distance from its point to any given 3-vector.
+// Return the distance from the closest track.
+double DPhoton_factory::MinDistToRT(const DPhoton* photon, vector<const DTrack*> tracks) 
+{
+
+   double dmin = 10000.; // cm
+   DVector3 photonPoint( photon->getPositionCal().X(), photon->getPositionCal().Y(), photon->getPositionCal().Z() );
+
+   for (vector<const DTrack*>::const_iterator track  = tracks.begin(); 
+    					      track != tracks.end(); 
+					 			track++) {
+	DReferenceTrajectory* rt = const_cast<DReferenceTrajectory*>((**track).rt);
+        double dtrt = rt->DistToRT(photonPoint); 
+        if (dtrt < dmin ) {
+            dmin = dtrt;
+        }
+  }
+  return dmin;
+}
+
+// Return the distance in polar anlge from the closest charged track.
+double DPhoton_factory::dThetaToChargeMC(const DPhoton* photon, vector<const DMCThrown*> thrown) 
+{
+
+   double dmin = 1000.; 
+
+   double theta = atan2( sqrt( pow(photon->momentum().X(),2) + pow(photon->momentum().Y(),2) ), photon->momentum().Z() );
+
+   for (vector<const DMCThrown*>::const_iterator mc  = thrown.begin(); 
+					      mc != thrown.end(); 
+								mc++) {
+
+        if ( (**mc).charge() == 0 ) continue;
+	double deltaT = fabs( (**mc).momentum().Theta() - theta); 
+        dmin = deltaT < dmin ? deltaT : dmin; 
+
+  }
+
+  return dmin;
+
+}
+
+
+// Return the distance in azimuthal anlge and position Z from the closest charged track.
+vector<double>  DPhoton_factory::dFromSwumChargeMC(const DPhoton* photon, vector<const DParticle*>  chargedswum) 
+{
+
+ DVector3 photonPoint =photon->getPositionCal();
+ DVector3 diffVect,diffVectbcal,diffVectfcal;
+ double dPhi = 10.0;
+ double dPhiMin = 10.0;
+ double dZ = 1000.0;
+ double dZMin = 1000.0;
+ double dR = 1000.0;
+ double dRMin = 1000.0;
+ vector<double> diffSwum(3);
+
+ DApplication* dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
+   if(!dapp){
+     _DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
+     //   return 0;
+   }
+   DMagneticFieldMap *bfield = dapp->GetBfield();
+
+
+ for( vector<const DParticle*>::const_iterator swum = chargedswum.begin();
+	     swum != chargedswum.end(); ++swum ){
+   if ( (**swum).charge() == 0 ) continue;
+
+ 
+
+   bool hitbcal,hitfcal = false;
+   double q = (**swum).charge(); 
+   DVector3 pos = (**swum).position();
+   DVector3 mom = (**swum).momentum();
+   DMagneticFieldStepper *stepper1 = new DMagneticFieldStepper(bfield, q, &pos, &mom);
+   DMagneticFieldStepper *stepper2 = new DMagneticFieldStepper(bfield, q, &pos, &mom);
+
+   DVector3 pos_bcal = pos; 
+   DVector3 mom_bcal = mom; 
+   DVector3 pos_fcal = pos;
+   DVector3 mom_fcal = mom;
+   DVector3 origin(0.0, 0.0, 643.2);
+   DVector3 norm(0.0, 0.0, 1.0);
+
+
+   bool swimrad = stepper1->SwimToRadius(pos_bcal, mom_bcal, 65.0);
+
+   if( swimrad || (pos_bcal.Z()>400 && !swimrad) ){
+     bool swimplane = stepper2->SwimToPlane(pos_fcal, mom_fcal, origin, norm );//save a little time and do this here
+     hitbcal = false;
+   if( swimplane ){
+     hitfcal = false;
+   }else{
+     hitfcal = true;
+     diffVectfcal = photonPoint - pos_fcal;
+   }
+   }else{
+     hitbcal = true;
+     diffVectbcal = photonPoint - pos_bcal;
+   }
+
+   if( hitbcal && !hitfcal ){
+     dPhi = photonPoint.Phi() - pos_bcal.Phi();
+     dZ = photonPoint.Z() - pos_bcal.Z();
+     dR = photonPoint.Perp() - pos_bcal.Perp();
+
+    }else if(!hitbcal && hitfcal){
+     dPhi = fabs(photonPoint.Phi() - pos_fcal.Phi());
+     dZ = fabs(photonPoint.Z() - pos_fcal.Z());
+     dR = photonPoint.Perp() - pos_fcal.Perp();
+
+  }
+   //assigns the minimum distance
+ dPhiMin = dPhi < dPhiMin ? dPhi : dPhiMin; 
+ dZMin = dZ < dZMin ? dZ : dZMin;  
+ dRMin = dR < dRMin ? dR : dRMin; 
+ }
+
+ diffSwum[0] = dPhiMin;
+ diffSwum[1] = dZMin; 
+ diffSwum[2] = dRMin;
+
+  return diffSwum;
+
+}
+
+
+------------------------------------------------------------------------
+r5356 | leverinb | 2009-07-13 17:15:22 -0400 (Mon, 13 Jul 2009) | 223 lines
+Changed paths:
+   M /trunk/src/libraries/PID/DPhoton_factory.cc
+   M /trunk/src/libraries/PID/DPhoton_factory.h
+
+//
+//    File: DPhoton_factory.cc
+// Created: Tue Aprl 17 11:57:50 EST 2007
+// Creator: kornicer (on Linux stan)
+//
+
+#include <math.h>
+#include <TLorentzVector.h>
+
+#include "DPhoton.h"
+#include "DPhoton_factory.h"
+#include "JANA/JEvent.h"
+
+
+//----------------
+// Constructor
+//----------------
+DPhoton_factory::DPhoton_factory()
+{
+	// Set defaults
+        DELTA_THETA_CHARGE = 0.05; // Polar angle separation between photon and charged particle 
+                                   // in radians
+	USE_BCAL_ONLY = 0;
+	USE_FCAL_ONLY = 0;
+	
+	gPARMS->SetDefaultParameter( "PID:DELTA_THETA_CHARGE", DELTA_THETA_CHARGE);
+	gPARMS->SetDefaultParameter( "PID:USE_BCAL_ONLY", USE_BCAL_ONLY );
+	gPARMS->SetDefaultParameter( "PID:USE_FCAL_ONLY", USE_FCAL_ONLY );
+}
+
+
+//------------------
+// evnt
+// PID Photons: FCAL photons are copied with 'tag' attribute set to zero.
+//		BCAL photons are made from BCAL showers after applying
+//              x-dependent energy corrections (right now based on 10 MeV
+//		hit threshold in HDGent. (MK)
+//------------------
+jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
+{
+
+// Disable this info until tracking is fixed
+//        vector<const DTrack*> tracks;
+//	eventLoop->Get(tracks);
+// and use thrown info to identify photons from charged particles
+        vector<const DMCThrown*> thrown;
+	eventLoop->Get(thrown);
+
+// loop over FCAL photons    
+	vector<const DFCALPhoton*> fcalPhotons;
+	if( ! USE_BCAL_ONLY ) eventLoop->Get(fcalPhotons);
+  
+        JObject::oid_t nPhotons=0;
+        for ( unsigned int i=0; i < fcalPhotons.size(); i++ ) {
+
+		DPhoton *photon =  makeFCalPhoton(fcalPhotons[i], ++nPhotons);
+                
+//                double mdtrt = MinDistToRT(photon,tracks); 
+//                photon->setDtRT(mdtrt); 
+                double dTheta = dThetaToChargeMC(photon,thrown);
+                
+                photon->setdThetaCharge( dTheta ); 
+                if (dTheta < DELTA_THETA_CHARGE ) photon->setTag( DPhoton::kCharge );
+
+		_data.push_back(photon);
+
+        } 
+
+
+// loop over BCAL photons and
+// correct shower energy and position in makeBCalPhoton
+	vector<const DBCALPhoton*> bcalPhotons;
+	if( ! USE_FCAL_ONLY ) eventLoop->Get(bcalPhotons);
+	
+       for (unsigned int i=0; i< bcalPhotons.size(); i++) {
+
+		DPhoton *photon =  makeBCalPhoton(bcalPhotons[i], ++nPhotons);
+
+//                double mdtrt = MinDistToRT(photon,tracks); 
+//	        photon->setDtRT(mdtrt); 
+                double dTheta = dThetaToChargeMC(photon,thrown);
+                photon->setdThetaCharge( dTheta ); 
+
+                if (dTheta < DELTA_THETA_CHARGE ) photon->setTag( DPhoton::kCharge );
+
+		_data.push_back(photon);
+
+       } 
+
+	return NOERROR;
+}
+
+
+// at this time just copy data from DFCALPhoton and set 'tag' to zero
+// final non-linear and depth corrections can be applied here
+#define FCAL_BLOCK_WIDTH 4
+#define TARGET_RADIUS 1.5
+#define TARGET_LENGTH 30.
+DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const JObject::oid_t id) 
+{
+
+        DPhoton* photon = new DPhoton( id );
+        
+        double energy = gamma->getEnergy();
+
+// default vertex is (0,0,65) and this has been taken into account in FCAL libraries
+// during MC calibration, make sure FCALPhoton returns centroid position in 
+// GlueX coordinates in the future..., in case we need it
+        DVector3 centroid = gamma->getPosition();  
+        centroid.SetZ(centroid.Z()+65.);
+
+        DVector3 momentum = gamma->getMom3();
+        DVector3 vertex(0., 0., 65.);
+
+        photon->setPosition( vertex );
+        photon->setMomentum( momentum );
+        photon->setPositionCal( centroid );
+        photon->setMass( 0. );
+        photon->setTag( DPhoton::kFcal );
+
+// create the simplest error matrix:
+// At this point, it is assumed that error matrix of measured quantities is diagonal,
+// with elements like: sigma_Z_t = L/sqrt(12) sigma_X_t = sigma_Y_t = r0/2 
+// L=target length, r0 = target radius...
+// This means that energy-depth-polar angle relation  is neglected.
+// the order of sigmas is:  x_c, y_c, z_c, E, x_t, y_t, z_t
+        DMatrixDSym sigmas(7);
+
+//        sigmas[0][0] = pow( FCAL_BLOCK_WIDTH/sqrt(12.0), 2.0 ); // x_c, y_c
+//        sigmas[1][1] = pow( FCAL_BLOCK_WIDTH/sqrt(12.0), 2.0 ); // x_c, y_c
+        sigmas[0][0] = pow( 0.7 , 2.0 ); // x_c, y_c
+        sigmas[1][1] = pow( 0.7 , 2.0 ); // x_c, y_c
+
+//        sigmas[2][2] = pow( 2.54, 2.0); //  z_c = rms of average depth for photons from 0-5 GeV
+        sigmas[2][2] = pow( gamma->getPositionError().Z() , 2.0); 
+
+        sigmas[3][3] =  (energy >= 0)  ? pow( 0.042*sqrt(energy) + 0.0001, 2.0 ) : 1e-6 ;
+
+        sigmas[4][4] = pow( 0.5*TARGET_RADIUS, 2.0) ; // x_t, y_t
+        sigmas[5][5] = pow( 0.5*TARGET_RADIUS, 2.0) ; // x_t, y_t
+        sigmas[6][6] = pow( TARGET_LENGTH/sqrt(12.0), 2.0) ; // z_t
+
+        photon->makeErrorMatrix( sigmas );
+        return photon;
+}
+
+// Copy data from BCALPhoton
+DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject::oid_t id) {
+
+        DPhoton* photon = new DPhoton( id );
+
+
+        DVector3 vertex(0.,0.,65.);
+        photon->setPosition( vertex );
+
+        DLorentzVector p = gamma->lorentzMomentum();
+        photon->setMomentum( DVector3( p.X(), p.Y(), p.Z() ) );
+
+        photon->setPositionCal( gamma->showerPosition() );
+        photon->setMass( p.M() );
+        photon->setTag( DPhoton::kBcal );
+        DMatrixDSym sigmas(7);
+
+        sigmas(0,0) = pow( gamma->fitLayPointErr().X(), 2.0); // 
+        sigmas(1,1) = pow( gamma->fitLayPointErr().Y(), 2.0); // 
+        sigmas(2,2) = pow( gamma->fitLayPointErr().Z(), 2.0); // 
+
+        sigmas[3][3] = 1.; // From Blake's simulation
+        if (p.T()>=0) sigmas[3][3] = pow( 0.0445*sqrt(p.T()) + 0.009*p.T(), 2.0);
+
+        sigmas[4][4] = pow( 0.5*TARGET_RADIUS, 2.0); // x_t, y_t
+        sigmas[5][5] = pow( 0.5*TARGET_RADIUS, 2.0); // x_t, y_t
+        sigmas[6][6] = pow( TARGET_LENGTH/sqrt(12.0), 2.0); // z_t
+
+        photon->makeErrorMatrix( sigmas );
+        return photon;
+}
+
+
+// Loop over tracks and look up its reference trajectory, which has a method to 
+// calculate the distance from its point to any given 3-vector.
+// Return the distance from the closest track.
+double DPhoton_factory::MinDistToRT(const DPhoton* photon, vector<const DTrack*> tracks) 
+{
+
+   double dmin = 10000.; // cm
+   DVector3 photonPoint( photon->getPositionCal().X(), photon->getPositionCal().Y(), photon->getPositionCal().Z() );
+
+   for (vector<const DTrack*>::const_iterator track  = tracks.begin(); 
+    					      track != tracks.end(); 
+					 			track++) {
+	DReferenceTrajectory* rt = const_cast<DReferenceTrajectory*>((**track).rt);
+        double dtrt = rt->DistToRT(photonPoint); 
+        if (dtrt < dmin ) {
+            dmin = dtrt;
+        }
+  }
+  return dmin;
+}
+
+// Return the anlge between this photon and the closest charged track.
+double DPhoton_factory::dThetaToChargeMC(const DPhoton* photon, vector<const DMCThrown*> thrown) 
+{
+
+   double dmin = DPhoton::kDefaultDistance; 
+
+   double theta = atan2( sqrt( pow(photon->momentum().X(),2) + pow(photon->momentum().Y(),2) ), photon->momentum().Z() );
+
+   for (vector<const DMCThrown*>::const_iterator mc  = thrown.begin(); 
+					      mc != thrown.end(); 
+								mc++) {
+
+        if ( (**mc).charge() == 0 ) continue;
+	double deltaT = fabs( (**mc).momentum().Theta() - theta); 
+        dmin = deltaT < dmin ? deltaT : dmin; 
+
+  }
+
+  return dmin;
+
+}
+
+
+------------------------------------------------------------------------
+r5357 | staylor | 2009-07-14 10:04:14 -0400 (Tue, 14 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.cc
+
+Since the new ANSYS magnetic field maps start at x=1 in, the previous version of the code returned B=(0,0,0) for points near the center of the target.  I fixed the code such that if r<1in, the code uses index_x=0 to determine the magnetic field.
+------------------------------------------------------------------------
+r5358 | davidl | 2009-07-14 11:38:23 -0400 (Tue, 14 Jul 2009) | 9 lines
+Changed paths:
+   M /trunk/src/programs/Utilities/mkMaterialMap/material2root.cc
+   A /trunk/src/programs/Utilities/mkMaterialMap/mkAllMaterialMaps.csh
+   M /trunk/src/programs/Utilities/mkMaterialMap/mkMaterialMap.cc
+
+- Added command line options to mkMaterialMap to allow grid
+  density and sampling density to be set from command line
+
+- Added generation of X/Y histogram od radiation length
+  to material2root
+
+- Added script to run mkMaterialMap multiple times to
+  produce maps for different regions of detector
+
+------------------------------------------------------------------------
+r5359 | staylor | 2009-07-15 14:57:20 -0400 (Wed, 15 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.cc
+
+Added the same indexing fix to GetFieldGradient that was needed for GetField.
+------------------------------------------------------------------------
+r5360 | davidl | 2009-07-17 00:17:37 -0400 (Fri, 17 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DFactoryGeneratorHDParSim.h
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DParticle_factory_HDParSim.cc
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DParticle_factory_HDParSim.h
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DPhoton_factory_HDParSim.cc
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolutionGEANT.cc
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolutionGEANTphoton.cc
+
+Accomodate ROOT's lack of thread safety to allow hdparsim to run with multiple threads.
+------------------------------------------------------------------------
+r5361 | davidl | 2009-07-22 09:19:18 -0400 (Wed, 22 Jul 2009) | 17 lines
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DGeometry.cc
+   M /trunk/src/libraries/HDGEOMETRY/DGeometry.h
+   D /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMap.cc
+   M /trunk/src/libraries/HDGEOMETRY/DMaterialMap.cc
+   M /trunk/src/libraries/HDGEOMETRY/DMaterialMap.h
+   D /trunk/src/libraries/HDGEOMETRY/DMaterialMapCalibDB.cc
+   D /trunk/src/libraries/HDGEOMETRY/DMaterialMapCalibDB.h
+   D /trunk/src/libraries/HDGEOMETRY/DMaterialStep.h
+   D /trunk/src/libraries/HDGEOMETRY/DMaterialStepper.cc
+   D /trunk/src/libraries/HDGEOMETRY/DMaterialStepper.h
+   M /trunk/src/libraries/HDGEOMETRY/DRootGeom.cc
+   M /trunk/src/libraries/HDGEOMETRY/DRootGeom.h
+
+Revising material maps.
+
+- Added tabulation and use of rhoZ_overA and rhoZ_overA_logI
+  in DRootGeom.
+
+- Recycled DMaterialMap class name but replaced contents
+  completely.
+
+- Added reading of all material maps with namepath starting
+  with "Material/material_map". This allows a full map
+  to be built up piece-wise. This is done in the DGeometry
+  class.
+
+- Removed some obsolete files:DMagneticFieldMap.cc DMaterialStep.h
+  DMaterialMapCalibDB.cc DMaterialMapCalibDB.h DMaterialStepper.cc
+  DMaterialStepper.h
+
+------------------------------------------------------------------------
+r5362 | davidl | 2009-07-22 09:22:30 -0400 (Wed, 22 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/src/programs/Utilities/mkMaterialMap/material2root.cc
+   M /trunk/src/programs/Utilities/mkMaterialMap/mkAllMaterialMaps.csh
+   M /trunk/src/programs/Utilities/mkMaterialMap/mkMaterialMap.cc
+
+Updated utilities used to create and check material maps.
+
+------------------------------------------------------------------------
+r5363 | davidl | 2009-07-22 09:25:09 -0400 (Wed, 22 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrack_factory_THROWN.cc
+
+Calculate chisq using wire-based errors when generating wire-based tracks from THROWN values. Previously, it was using time-based errors.
+------------------------------------------------------------------------
+r5364 | davidl | 2009-07-22 09:27:17 -0400 (Wed, 22 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+
+Replace getting B-field map through DGeometry with getting it through DApplication like other places in the code.
+------------------------------------------------------------------------
+r5365 | davidl | 2009-07-22 09:28:51 -0400 (Wed, 22 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DMCTrajectoryPoint.h
+
+Write dE in units of MeV rather than GeV in toString method for DMCTrajectoryPoint.
+------------------------------------------------------------------------
+r5366 | davidl | 2009-07-22 09:48:20 -0400 (Wed, 22 Jul 2009) | 12 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.h
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.cc
+
+Update on energy loss for ALT1 fitter. 
+
+- Added mass data member to DReferenceTrajectory class
+
+- Added dPdx methods to DReferenceTrajectory
+
+- Added DGeometry pointer data member to DReferenceTrajectory.
+  Swimming now uses the DRootGeom::FindMatLL method if the
+  RootGeom(DRootGeom) pointer is set. If not, it will use
+  DGeometry::FindMat if the geom(DGeometry) pointer is set.
+  No energy loss will be included if neither is set.
+
+------------------------------------------------------------------------
+r5368 | staylor | 2009-07-22 12:35:25 -0400 (Wed, 22 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+
+(1) make sure that the components of the B field and the B-field gradient are initialized to sensible values before calling GetField; tried to clean up other places in the code where uninitialized variables could cause unpredictable results. (2) For central track reswimming, get path length increment from reference trajectory.
+------------------------------------------------------------------------
+r5369 | davidl | 2009-07-22 17:32:38 -0400 (Wed, 22 Jul 2009) | 1 line
+Changed paths:
+   A /trunk/src/programs/Simulation/genp_pi0
+   A /trunk/src/programs/Simulation/genp_pi0/Makefile
+   A /trunk/src/programs/Simulation/genp_pi0/bg_hddm.cc
+   A /trunk/src/programs/Simulation/genp_pi0/bg_hddm.h
+   A /trunk/src/programs/Simulation/genp_pi0/cern.h
+   A /trunk/src/programs/Simulation/genp_pi0/genp_pi0.cc
+   A /trunk/src/programs/Simulation/genp_pi0/genp_pi0.hddm
+   A /trunk/src/programs/Simulation/genp_pi0/kinematics.c
+   A /trunk/src/programs/Simulation/genp_pi0/kinematics.h
+
+Generator for single pi0 photoproduction off the proton adapted from PrimEx for GlueX
+------------------------------------------------------------------------
+r5370 | staylor | 2009-07-22 18:02:53 -0400 (Wed, 22 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+Attempted to refine the algorithm(s) for matching candidates between the FDC and the CDC. The existing code started with FDC candidates and tried to match to cdc candidates by swimming those candidates out to the cdc endplate and the fdc candidates from the first package with hits back to the cdc endplate.  One problem with this technique is that the quality of the track candidates from the FDC is not always very good, especially for low momentum tracks where the individual segments in the packages are difficult to link together or lead to momenta wildly different from the true particle momenta.   The new code attempts to address this by starting with those cdc track candidates pointing toward the FDC that were not previously matched to FDC track candidates via the first method and swimming out to the FDC packages associated with these FDC track candidates looking for matches based on some probability that at least one FDC hit is on the trajectory -- the assumption being that there is a class of events (especially low momentum tracks at intermediate forward-going angles) where the track parameters for forward-going tracks are actually fairly well determined by the CDC alone but could be improved by including the relevant FDC hits.  Then the number of candidates with few hits and bad parameters can be reduced.  If additional hits are considered to belong to the track, the circle fit is redone and the pt value is refined.  If there are still FDC candidates remaining that have not been matched to forward-going cdc candidates, the code does a final matching pass using the improved parameters from the earlier stages.
+------------------------------------------------------------------------
+r5371 | davidl | 2009-07-22 23:09:46 -0400 (Wed, 22 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/mkMaterialMap/mkAllMaterialMaps.csh
+
+Optimization of order and node density of material maps.
+------------------------------------------------------------------------
+r5372 | davidl | 2009-07-22 23:11:23 -0400 (Wed, 22 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/mkMaterialMap/material2root.cc
+   M /trunk/src/programs/Utilities/mkMaterialMap/radlen_vs_r_vs_z.C
+
+Modified material2root to generate histograms using DGeometry and DRootGeom instead of two different methods of DRootGeom.
+------------------------------------------------------------------------
+r5374 | davidl | 2009-07-23 08:11:32 -0400 (Thu, 23 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/DANA/DApplication.cc
+
+Call correct constructor for DGeometry from DApplication.
+------------------------------------------------------------------------
+r5375 | staylor | 2009-07-23 18:39:42 -0400 (Thu, 23 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+For matching between cdc and fdc candidates, when starting with cdc candidates, loop over all the hits in each of the segments in the fdc candidates and require that at least 50 percent satisfy the probabilty cut. 
+------------------------------------------------------------------------
+r5376 | staylor | 2009-07-23 18:48:44 -0400 (Thu, 23 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMap.h
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.cc
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.h
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMapConst.cc
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMapConst.h
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMapSpoiled.cc
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMapSpoiled.h
+
+Added routines to do a bicubic interpolation over the B field grid points.  This ensures that both the field and the field gradient is continous as the interpolation passes from one grid point to the next.  For this I needed to added the cross gradients (dBxdxdz, etc.) to the DBfieldPoint_t structure.  The current GetField and GetFieldGradient methods still use the old interpolation technique.  Also fixed a bug in the calculation of the gradient -- it failed to take into account the size of the separation between grid points in units of cm.
+------------------------------------------------------------------------
+r5377 | davidl | 2009-07-23 21:23:54 -0400 (Thu, 23 Jul 2009) | 13 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitter.h
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.h
+
+
+- Copy DGeometry pointer (geom) in copy constructor and equals operator for DReferenceTrajectory
+
+- Check for error return code from material map call before using values
+
+-  Check for finite value of phi in DistToRT when calculating distance between wire and trajectory by solving 3rd order poly. If value is not finite (e.g. nan) then fall back to solving 2nd order problem.
+
+- Remove TRKFIT:TOF_MASS and add TRKFIT:DEFAULT_MASS config. parameters. The DEFAULT_MASS is used as the default hypothesis for now for purposes of TOF and energy loss calculations.
+
+- Add TRKFIT:MATERIAL_MAP_MODEL to allow easy switching between DRootGeom and DGeometry for accessing material information.
+
+- Add DGeometry *geom to DTrackFitter base class.
+
+------------------------------------------------------------------------
+r5378 | davidl | 2009-07-23 21:25:58 -0400 (Thu, 23 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/PID/DParticle_factory_THROWN.cc
+   M /trunk/src/libraries/PID/DParticle_factory_THROWN.h
+
+Honor the TRKFIT:MATERIAL_MAP_MODEL param when setting the material map model for the ref. traj.
+------------------------------------------------------------------------
+r5379 | davidl | 2009-07-23 21:32:05 -0400 (Thu, 23 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.cc
+
+Changed default run number used when requesting DGeometry for drawing in hdview2 from 0 to 9999. This at least lines it up with the run number hdgeant uses when the particle gun is specified. This is a band-aid instead of re-working hdview2 to read in the first event and get the run number from that before getting the DGeometry pointer.
+------------------------------------------------------------------------
+r5380 | davidl | 2009-07-23 21:32:54 -0400 (Thu, 23 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.h
+
+Have hdview2 honor the value of TRKFIT:MATERIAL_MAP_MODEL
+------------------------------------------------------------------------
+r5381 | davidl | 2009-07-23 21:38:45 -0400 (Thu, 23 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/mkMaterialMap/mkMaterialMap.cc
+
+Calculate average radiation lengths by summing them in parallel after converting to units of g/cm^-2 rather than just averaging rad lengths in cm
+------------------------------------------------------------------------
+r5382 | davidl | 2009-07-23 21:40:54 -0400 (Thu, 23 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/mkMaterialMap/mkAllMaterialMaps.csh
+
+Tweaked default parameters for generating material maps. Replaced large, but course default map with a trivial, hardwired map, 4-element map of air.
+------------------------------------------------------------------------
+r5384 | davidl | 2009-07-24 10:36:07 -0400 (Fri, 24 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrack_factory.cc
+   M /trunk/src/libraries/TRACKING/DTrack_factory.h
+
+Set the default mass based on config parameters.
+------------------------------------------------------------------------
+r5385 | davidl | 2009-07-24 10:38:07 -0400 (Fri, 24 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.cc
+
+Find point of closest approach to beamline clipped to target region and use for vertex of track.
+------------------------------------------------------------------------
+r5386 | davidl | 2009-07-24 10:39:06 -0400 (Fri, 24 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Fixed a typo in dPdx method that is not currently in use. (Noticed it by accident.)
+------------------------------------------------------------------------
+r5387 | davidl | 2009-07-24 10:41:04 -0400 (Fri, 24 Jul 2009) | 6 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackHitSelectorALT1.cc
+
+- Make hit selector use mass from reference trajectory rather
+  than hard-wired pion mass
+
+- Increase errors used in determining probability of hit being
+  on track for low-momentum and also high mass tracks
+
+------------------------------------------------------------------------
+r5388 | davidl | 2009-07-24 13:26:58 -0400 (Fri, 24 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/src/BMS/osrelease.pl
+
+Add CentOS5 to list of platforms. Also, changed the platform name from RHEL to CentOS.
+
+------------------------------------------------------------------------
+r5392 | staylor | 2009-07-24 17:41:33 -0400 (Fri, 24 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.h
+
+Add straw number to DKalmanCDCHit_t.  Removed unused boolean variable switch_LR.
+------------------------------------------------------------------------
+r5393 | staylor | 2009-07-24 17:51:03 -0400 (Fri, 24 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DKalmanFilter.cc
+
+(1) Use the bicubic interpolation routines to obtain the B-field and B-field gradient. (2) Add sorting on straw number if there are two adjacent cdc hits in a single layer.  Also sort these according to phi relative to the phi of the innermost cdc hit.
+------------------------------------------------------------------------
+r5399 | davidl | 2009-07-30 08:53:53 -0400 (Thu, 30 Jul 2009) | 6 lines
+Changed paths:
+   A /trunk/src/libraries/PID/DParticle_factory_Kalman.cc (from /trunk/src/libraries/PID/DParticle_factory.cc:5383)
+   A /trunk/src/libraries/PID/DParticle_factory_Kalman.h (from /trunk/src/libraries/PID/DParticle_factory.h:5383)
+   M /trunk/src/libraries/PID/PID_init.cc
+   A /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc (from /trunk/src/libraries/TRACKING/DKalmanFilter.cc:5398)
+   A /trunk/src/libraries/TRACKING/DTrackFitterKalman.h (from /trunk/src/libraries/TRACKING/DKalmanFilter.h:5398)
+   A /trunk/src/libraries/TRACKING/DTrackFitter_factory_Kalman.h
+   A /trunk/src/libraries/TRACKING/DTrack_factory_Kalman.cc (from /trunk/src/libraries/TRACKING/DTrack_factory.cc:5398)
+   A /trunk/src/libraries/TRACKING/DTrack_factory_Kalman.h (from /trunk/src/libraries/TRACKING/DTrack_factory.h:5398)
+   M /trunk/src/libraries/TRACKING/TRACKING_init.cc
+
+Added classes that impliment the DKalman class as a DTrackFitter class.
+Also, classes that allow one to get DTrack and DParticle objects using
+the DTrackFitterKalman fitter without setting it as the default fitter.
+This allows simultaneous access to ALT1 and Kalman fits for the same
+candidate in the same program.
+
+------------------------------------------------------------------------
+r5400 | davidl | 2009-07-30 11:35:13 -0400 (Thu, 30 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.cc
+
+Fixed bug in hdview that had references to old DMCFCAL Hitclass which has since been replaced with DFCALHit.
+------------------------------------------------------------------------
+r5401 | davidl | 2009-07-31 08:23:35 -0400 (Fri, 31 Jul 2009) | 8 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+Moved contents of destructor to new method ResetKalman(). This is to
+free up memory allocated during the last fit. The ResetKalman method
+is now called by the destructor as well as at the begining of
+a wire-based track fit in FitTrack(). The name ResetKalman is intended
+to reflect that this only touches values that are part of the
+DTrackFitterKalman class and not ones inherited from the DTrackFitter
+base class.
+
+------------------------------------------------------------------------
+r5402 | davidl | 2009-07-31 09:25:35 -0400 (Fri, 31 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DRootGeom.cc
+
+Change default method used by FindMat call to redirect to FindMatLL instead of FindMatTable which is now deprecated.
+------------------------------------------------------------------------
+r5406 | staylor | 2009-07-31 15:11:21 -0400 (Fri, 31 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+(1) Fill the internal hit lists for fdc and cdc hits only if the my_cdchits and my_fdchits deques are empty. (2) change a few more calls of GetField to GetFieldBicubic and reduce the number of calls to the bicubic interpolation.
+------------------------------------------------------------------------
+r5407 | staylor | 2009-07-31 15:18:39 -0400 (Fri, 31 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DMagneticFieldMapCalibDB.cc
+
+Make the weight array for the bicubic interpolation static const.
+------------------------------------------------------------------------
+r5409 | staylor | 2009-08-03 19:05:38 -0400 (Mon, 03 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+(1) assign the input value of the mass hypothesis to the local variable MASS when KalmanLoop is called. (2) Separately check whether or not the my_fdchits and my_cdchits lists should be filled. (3) Bail if the sum of the fdc and cdc hits is less than 6.
+------------------------------------------------------------------------
+r5411 | davidl | 2009-08-04 11:31:27 -0400 (Tue, 04 Aug 2009) | 20 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.h
+   M /trunk/src/libraries/TRACKING/DTrack_factory.cc
+   M /trunk/src/libraries/TRACKING/DTrack_factory.h
+
+Merged changes from https://halldsvn.jlab.org/repos/trunk/Studies/2009.07.24.proton_efficiency/src
+Relevant comment from revision 5410 is:
+
+- Increase magnitude of eloss for really low momentum particles by an
+  empirical factor in order to be more consistent with GEANT.
+
+- Add option for energy gain to DReferenceTrajectory so one can swim backwards
+
+- Add optional "wire" argument to DReferenceTrajectory::Swim() method to
+  allow one to swim only until they pass a specific wire. Here, the
+  "wire" is a DCoordinateSystem and so one can use it to swim to the
+  DOCA with the target center as well.
+
+- Record momentum loss with every step in a DReferenceTrajectory.
+
+- Added CorrectCandidateForELoss method to DTrack_factory to correct
+  candidate momentum/position before starting wire-based fit.
+
+
+
+------------------------------------------------------------------------
+r5416 | staylor | 2009-08-05 18:11:34 -0400 (Wed, 05 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+Implemented various changes to make the code work better for low momentum proton tracks.  Set the maximum path length  to 500 cm.  Set the maximum value of 1/p to 20.  For these tracks the helical fit produces a systematically low estimate for the momentum due to the energy loss in the material before the first measurements.  The code now tries to take this into account by swimming the candidate out from the target to the middle of the set of measurements without energy loss and back in toward the target with dEdx turned on.  Also fixed a bug related to the energy loss in one of the reference trajectory routines. The code also now fills the time entry in the trajectory data structure.
+------------------------------------------------------------------------
+r5418 | staylor | 2009-08-06 18:21:14 -0400 (Thu, 06 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+Changed how the ResetKalman routine works.  Parameters such as q_over_pt_, len, etc are set to zero and the list of cdc and fdc hits are cleared for both the wire-based and time-based passes, but the trajectory deques are only cleared for the wire-based pass. The code in various other places has been cleaned up a bit -- the flight time is obtained from the reference trajectory, for example.  There are also more small changes to make sure that the energy loss for protons does not produce zero momentum particles before we're done with measurements...
+------------------------------------------------------------------------
+r5419 | davidl | 2009-08-07 14:18:07 -0400 (Fri, 07 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/invariant_mass_hists/DEventProcessor_invariant_mass_hists.cc
+   M /trunk/src/programs/Analysis/plugins/invariant_mass_hists/DEventProcessor_invariant_mass_hists.h
+
+Add mutex lock so plugin can be used with multiple threads.
+------------------------------------------------------------------------
+r5420 | davidl | 2009-08-07 14:22:21 -0400 (Fri, 07 Aug 2009) | 7 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.cc
+
+- Fixed bug where DParticle was showing up twice in reconstructed track objects
+  menu and DTrackCandidate wasn't showing up at all.
+
+- Look at value of "mass" in DKinematicData objects when displaying labels
+  for reconstructed objects so that particle types can be displayed
+  (if its clear) rather than just the charge.
+
+------------------------------------------------------------------------
+r5421 | davidl | 2009-08-07 14:23:55 -0400 (Fri, 07 Aug 2009) | 3 lines
+Changed paths:
+   M /trunk/src/libraries/FCAL/DFCALCluster_factory.cc
+
+Removed creation of empty out.txt file which is apparently
+not used for anything and was probably committed by mistake.
+
+------------------------------------------------------------------------
+r5422 | davidl | 2009-08-07 14:25:10 -0400 (Fri, 07 Aug 2009) | 2 lines
+Changed paths:
+   M /trunk/src/libraries/TOF/DTOFMCResponse_factory.cc
+
+Changed the annoying "... loding..." message to "...loading..."
+
+------------------------------------------------------------------------
+r5423 | davidl | 2009-08-07 15:05:54 -0400 (Fri, 07 Aug 2009) | 31 lines
+Changed paths:
+   M /trunk/src/libraries/PID/DParticle_factory.cc
+   M /trunk/src/libraries/PID/DParticle_factory.h
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.h
+   M /trunk/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitter.h
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.cc
+   M /trunk/src/libraries/TRACKING/DTrackHitSelectorALT1.cc
+   M /trunk/src/libraries/TRACKING/DTrack_factory.cc
+   M /trunk/src/libraries/TRACKING/DTrack_factory.h
+
+Numerous changes to ALT1 fitter as well as "generic" DTrackFitter class.
+
+- Replaced TRKFIT:DEFAULT_MASS config parameter with TRKFIT:MASS_HYPOTHESES
+  which is a comma-separated list of masses to attempt to fit and choose one
+  from at the wire-based and possibly time-based levels
+
+- Moved calling of DTrackHitSelector utility class from 
+  DTrack/DParticle_factory into DTrackFitter class
+
+- Correct candidate track's momentum for energy loss due to material
+  encountered prior to first wire before starting wire-based fit
+
+- Added adaptive step size to DReferenceTrajectory. Step size is calculated
+  to correspond to 1% change in momentum with hardwired limits
+  of 1mm<= step_size <= 2cm
+
+- Extend hard-coded radial limit from 65cm to 70cm in DReferenceTrajectory.
+
+- Enhance error used in hit selection probability calculation for low
+  momentum tracks (~350MeV/c)
+
+- Raised minimum CDC hit probability from 0.01 to 0.05 int ALT1
+  hit selector
+
+- Additional optimizations to ALT1 hit selector.
+
+- Added some debug messages to ALT1 fitter
+
+- Improved vertex calculation for single tracks.
+
+
+------------------------------------------------------------------------
+r5424 | davidl | 2009-08-07 15:06:59 -0400 (Fri, 07 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/BMS/IDE/HallD.xcodeproj/davidl.pbxuser
+   M /trunk/src/BMS/IDE/HallD.xcodeproj/project.pbxproj
+   M /trunk/src/BMS/make_xcode
+
+Updated files used for Mac OS X IDE 'Xcode'
+------------------------------------------------------------------------
+r5425 | staylor | 2009-08-07 18:48:49 -0400 (Fri, 07 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/PID/DParticle_factory_Kalman.cc
+   M /trunk/src/libraries/PID/DParticle_factory_Kalman.h
+
+Make DParticle_factory_Kalman.cc consistent with recent changes to DParticle_factory
+------------------------------------------------------------------------
+r5426 | staylor | 2009-08-07 18:50:07 -0400 (Fri, 07 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrack_factory_Kalman.cc
+   M /trunk/src/libraries/TRACKING/DTrack_factory_Kalman.h
+
+Make DTrack_factory_Kalman.cc consistent with recent changes to DTrack_factory
+------------------------------------------------------------------------
+r5427 | staylor | 2009-08-07 18:52:27 -0400 (Fri, 07 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+Various changes to bring the code in line with the current scheme for fitting tracks with various mass hypotheses.  Correction for energy loss is commented out since it takes place at an earlier stage now.
+------------------------------------------------------------------------
+r5428 | staylor | 2009-08-07 18:52:41 -0400 (Fri, 07 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+Various changes to bring the code in line with the current scheme for fitting tracks with various mass hypotheses.  Correction for energy loss is commented out since it takes place at an earlier stage now.
+------------------------------------------------------------------------
+r5437 | staylor | 2009-08-11 10:21:37 -0400 (Tue, 11 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+Reinstated some debug histograms.  Changed how the chi2 contribution for each point in the forward filters is computed.
+------------------------------------------------------------------------
+r5439 | staylor | 2009-08-11 13:13:48 -0400 (Tue, 11 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+add a few histograms.
+------------------------------------------------------------------------
+r5441 | davidl | 2009-08-11 14:20:25 -0400 (Tue, 11 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolutionGEANT.cc
+
+Updated to look for tables with new names as used in the data tables installed Aug. 11, 2009
+------------------------------------------------------------------------
+r5442 | davidl | 2009-08-11 14:38:15 -0400 (Tue, 11 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DTrackingResolutionGEANT.cc
+
+Fixed bug in last commit that caused pointers to be overwritten with NULLs.
+------------------------------------------------------------------------
+r5443 | staylor | 2009-08-12 19:20:44 -0400 (Wed, 12 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+Explicitly delete the trajectory entries and clear the trajectory deques and the hit vectors in the destructor, instead of calling ResetKalman, which was changed recently to better accommodate the two-pass structure of the code.
+------------------------------------------------------------------------
+r5444 | davidl | 2009-08-13 09:56:10 -0400 (Thu, 13 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitter.cc
+
+Sort wire hits before picking off first wire in DTrackFitter::CorrectForELoss
+------------------------------------------------------------------------
+r5445 | staylor | 2009-08-14 08:12:45 -0400 (Fri, 14 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+Implemented various changes to make the code work better for low momentum tracks, including setting minimum pt and maximum values for tanx and tany.
+------------------------------------------------------------------------
+r5446 | davidl | 2009-08-14 12:09:06 -0400 (Fri, 14 Aug 2009) | 4 lines
+Changed paths:
+   A /trunk/src/programs/Utilities/bfield_poisson
+   A /trunk/src/programs/Utilities/bfield_poisson/README
+   A /trunk/src/programs/Utilities/bfield_poisson/gluex_sol_04.am
+   A /trunk/src/programs/Utilities/bfield_poisson/gluex_sol_04.in7
+   A /trunk/src/programs/Utilities/bfield_poisson/poisson2calibDB.pl
+   A /trunk/src/programs/Utilities/bfield_poisson/run_all.bat
+   A /trunk/src/programs/Utilities/bfield_poisson/run_automesh.bat
+   A /trunk/src/programs/Utilities/bfield_poisson/run_poisson.bat
+   A /trunk/src/programs/Utilities/bfield_poisson/run_sf7.bat
+   A /trunk/src/programs/Utilities/bfield_poisson/run_wsfplot.bat
+
+Configuration files used to generate magnetic field maps using the Poisson/Superfish program suite.
+
+Also included is a script poisson2calibDB.pl to convert the output file to a format compatible with our Calibration DB system and a README file with instructions on how to use the programs.
+
+------------------------------------------------------------------------
+r5447 | staylor | 2009-08-14 15:03:01 -0400 (Fri, 14 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+More changes for low momentum tracks plus make sure that chisq_iter for forward tracks is assigned properly.
+------------------------------------------------------------------------
+r5448 | davidl | 2009-08-15 15:59:23 -0400 (Sat, 15 Aug 2009) | 5 lines
+Changed paths:
+   M /trunk/src/BMS/Makefile.CERNLIB
+
+Add a second instance of -lmathlib and a first instance of -lblas to the link
+command when the ARCH is x86_64. This is needed on CentOS5.3 on a 64bit
+machine with the 64bit cernlib distribution installed in /group/halld/Software/ExternalPackages/cernlib.
+Hopefully, it will not break other 64bit builds.
+
+------------------------------------------------------------------------
+r5457 | staylor | 2009-08-17 13:44:04 -0400 (Mon, 17 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+Removed unnecessary matrices in process noise routines.
+------------------------------------------------------------------------
+r5458 | staylor | 2009-08-18 09:47:26 -0400 (Tue, 18 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+Switch over to geom instead of RootGeom to get material properties.
+------------------------------------------------------------------------
+r5459 | marki | 2009-08-18 11:00:11 -0400 (Tue, 18 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/residFDC.cc
+
+change error from 250 microns to 460 microns
+------------------------------------------------------------------------
+r5460 | marki | 2009-08-18 11:00:59 -0400 (Tue, 18 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/Makefile
+
+search GSL include directory
+------------------------------------------------------------------------
+r5461 | marki | 2009-08-18 11:01:48 -0400 (Tue, 18 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/combinedResidFunc.cc
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/combinedResidFunc.h
+
+Remove ERROR_FDC, ERROR_CDC from the combined class, no longer used
+------------------------------------------------------------------------
+r5462 | marki | 2009-08-18 14:39:32 -0400 (Tue, 18 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/hdds/Makefile
+
+Augment the clean target to get rid of made source files.
+------------------------------------------------------------------------
+r5467 | kornicer | 2009-08-20 17:09:17 -0400 (Thu, 20 Aug 2009) | 4 lines
+Changed paths:
+   M /trunk/src/libraries/BCAL/DBCALPhoton.h
+   M /trunk/src/libraries/BCAL/DBCALPhoton_factory.cc
+   M /trunk/src/libraries/FCAL/DFCALCluster.h
+   M /trunk/src/libraries/FCAL/DFCALCluster_factory.cc
+   M /trunk/src/libraries/FCAL/DFCALPhoton.cc
+   M /trunk/src/libraries/FCAL/DFCALPhoton.h
+   M /trunk/src/libraries/FCAL/DFCALPhoton_factory.cc
+   M /trunk/src/libraries/PID/DPhoton.cc
+   M /trunk/src/libraries/PID/DPhoton.h
+   M /trunk/src/libraries/PID/DPhoton_factory.cc
+
+BCAL,FCAL,PID - photon time info provided: 
+ - BCAL photon time is determined from bcal shower time
+ - FCAl photon time is set by the most energetic hit in the cluster
+
+------------------------------------------------------------------------
+r5479 | staylor | 2009-08-21 17:50:52 -0400 (Fri, 21 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+Numerous changes in an attempt to make the code run faster.
+------------------------------------------------------------------------
+r5486 | zihlmann | 2009-08-26 15:14:42 -0400 (Wed, 26 Aug 2009) | 2 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/hitFDC.c
+
+Add warning message when layer evaluates to zero and quit subroutine.
+
+------------------------------------------------------------------------
+r5499 | staylor | 2009-08-28 17:25:34 -0400 (Fri, 28 Aug 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+Output covariance matrix in form expected by the DKinematicData class.  Also added a few more tweaks to reduce the number of unnecessary duplicate calculations.
+------------------------------------------------------------------------
+r5501 | davidl | 2009-09-02 22:34:55 -0400 (Wed, 02 Sep 2009) | 1 line
+Changed paths:
+   A /trunk/src/programs/Analysis/plugins/phys_tree
+   A /trunk/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.cc
+   A /trunk/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.h
+   A /trunk/src/programs/Analysis/plugins/phys_tree/Makefile
+   A /trunk/src/programs/Analysis/plugins/phys_tree/event.h
+
+Plugin to make tree of Lorentz vectors related to total event reconstruction.
+------------------------------------------------------------------------
+r5502 | staylor | 2009-09-03 10:35:35 -0400 (Thu, 03 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+(1) Fill error matrix for wire-based fits as well as time-based fits. (2) Introduce stub for routine to estimate dEdx for CDC-based tracks. Routine does not do anything yet.
+------------------------------------------------------------------------
+r5504 | davidl | 2009-09-04 14:15:47 -0400 (Fri, 04 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/radlen_hists/README
+   M /trunk/src/programs/Analysis/plugins/radlen_hists/control.in
+
+Updated to work (in principle) with the current code.
+------------------------------------------------------------------------
+r5511 | staylor | 2009-09-09 11:09:10 -0400 (Wed, 09 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/CDC/DCDCTrackHit.h
+   M /trunk/src/libraries/CDC/DCDCTrackHit_factory.cc
+
+Add energy deposition for the cdc hit to the DCDCTrackHit class.
+------------------------------------------------------------------------
+r5512 | staylor | 2009-09-09 11:12:54 -0400 (Wed, 09 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/PID/DKinematicData.cc
+   M /trunk/src/libraries/PID/DKinematicData.h
+
+Add dedx in the active region of the chambers to the class.
+------------------------------------------------------------------------
+r5513 | staylor | 2009-09-09 12:10:37 -0400 (Wed, 09 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+More progress toward dEdx for tracks.  Include FDC hits as well.
+------------------------------------------------------------------------
+r5515 | staylor | 2009-09-14 18:20:28 -0400 (Mon, 14 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/FDC/DFDCPseudo_factory.cc
+
+Make CHARGE_TO_ENERGY conversion more consitent with hitFDC.c.
+------------------------------------------------------------------------
+r5516 | staylor | 2009-09-15 11:36:50 -0400 (Tue, 15 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+Added routine to estimate sigma of dEdx measurement.  Added code to compare measured dEdx to expected mean dEdx for a set of mass hypotheses.  Set mass according to result of comparison.  Only doing pion/proton separation at the moment.
+------------------------------------------------------------------------
+r5517 | staylor | 2009-09-16 08:44:41 -0400 (Wed, 16 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/hitFDC.c
+
+Added another band-aid to prevent prematature exits due to bintree errors, this time checking that the package number is valid.
+------------------------------------------------------------------------
+r5520 | staylor | 2009-09-16 18:05:07 -0400 (Wed, 16 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+Include stereo wires in dEdx calculation
+------------------------------------------------------------------------
+r5521 | davidl | 2009-09-17 13:39:33 -0400 (Thu, 17 Sep 2009) | 8 lines
+Changed paths:
+   M /trunk/src/BMS/Makefile.CERNLIB
+
+Merged from revision 5456 in special branch. Original log was:
+
+Added -fno-automatic to FFLAGS when compiling for x86_64 ARCH. This
+is needed to avoid a run-time error with hdgeant. Actually, hdgeant
+existed cleanly with an error message about something being outside
+of the 32-bit address space.
+
+
+------------------------------------------------------------------------
+r5522 | davidl | 2009-09-17 13:40:50 -0400 (Thu, 17 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/BMS/make_xcode
+
+Updated to work with current Xcode version (3.1.2)
+------------------------------------------------------------------------
+r5523 | davidl | 2009-09-17 13:46:16 -0400 (Thu, 17 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/BMS/Makefile.cMsg
+
+Updated Makefile.cMsg from what's in JANA now.
+------------------------------------------------------------------------
+r5524 | davidl | 2009-09-17 13:59:41 -0400 (Thu, 17 Sep 2009) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trackeff_hists/DEventProcessor_trackeff_hists.cc
+
+Merging in changes from special branch. Original message is:
+
+Create TDirectory and TTree inside of mutex lock. This may or may not have been a problem, depending on whether multiple threads were able to call the init method multiple times.
+
+------------------------------------------------------------------------
+r5525 | davidl | 2009-09-17 14:00:57 -0400 (Thu, 17 Sep 2009) | 9 lines
+Changed paths:
+   M /trunk/src/libraries/PID/DParticle_factory.cc
+   M /trunk/src/libraries/TRACKING/DMagneticFieldStepper.cc
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.cc
+   M /trunk/src/libraries/TRACKING/DTrack_factory.cc
+
+Mergining in changes from special branch. Original message was:
+
+- Add code to release DReferenceTrajectory objects in DTrack_factory and DParticle_factory if more than 5 have been allocated.
+
+- Reduce the number of swim_step_t objects allocated for a DReferenceTrajectory from 50k to 10k
+
+- Add checks on magnitude of DVector3 objects before calling SetMag() in order to avoid lots of annoying warning messages about being unable to stretch a zero length vector.
+
+
+------------------------------------------------------------------------
+r5526 | davidl | 2009-09-17 14:01:50 -0400 (Thu, 17 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/bfield2root/bfield2root.cc
+
+Added a couple of 2D histos to bfield2root
+------------------------------------------------------------------------
+r5527 | staylor | 2009-09-17 17:29:41 -0400 (Thu, 17 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+Create method for computing dEdx in a sngle straw -- this code needs to be used for both central-parameterization tracks and forward-parameterization tracks in the CDC.  Add cut for maximum dEdx in a single layer -- basically this cuts off hits far off in the Landau tail.  Do the dEdx calculation for Kaon candidates as well as protons and pions.
+------------------------------------------------------------------------
+r5531 | staylor | 2009-09-18 10:00:21 -0400 (Fri, 18 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory.h
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_FDCCathodes.h
+
+Turn off DEBUG hists by default.
+------------------------------------------------------------------------
+r5532 | davidl | 2009-09-21 12:48:15 -0400 (Mon, 21 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/cdc_hists/DEventProcessor_cdc_hists.cc
+   M /trunk/src/programs/Analysis/plugins/cdc_hists/DEventProcessor_cdc_hists.h
+
+Get pointer to B-field map in brun rather than init since it only seems to exist at the time brun is called.
+------------------------------------------------------------------------
+r5533 | davidl | 2009-09-21 12:51:36 -0400 (Mon, 21 Sep 2009) | 7 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.h
+   M /trunk/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/src/programs/Simulation/mcsmear/smear.cc
+
+Implemented CDC smearing based on drift distance. This it based
+on Yves' work for thr 50/50 Ar/CO2 gas mixture. Resolution is
+implemented in both simulation (mcsmear) and reconstruction
+(libTRACKING.a). The old behavior is still available through the
+-y and -PTRKFIT:CDC_USE_PARAMETERIZED_SIGMA=0 flags in mscmear
+and a DANA program repectively.
+
+------------------------------------------------------------------------
+r5534 | davidl | 2009-09-22 11:38:48 -0400 (Tue, 22 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.cc
+   M /trunk/src/programs/Simulation/mcsmear/smear.cc
+
+Replaced CDC position resolution function based on 7th order polynomial with one based on a line plus exponential.
+------------------------------------------------------------------------
+r5535 | davidl | 2009-09-23 17:05:39 -0400 (Wed, 23 Sep 2009) | 7 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/invariant_mass_hists/DEventProcessor_invariant_mass_hists.cc
+
+Changes to invariant_mass_hists plugin
+
+- Add a default beam photon of 9GeV if no DBeamPhoton objects exist
+  (as is the case for events generated by genr8 at the moment)
+
+- Cleaned up comments and streamlined a bit of the code.
+
+------------------------------------------------------------------------
+r5536 | davidl | 2009-09-23 17:07:39 -0400 (Wed, 23 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/invariant_mass_hists/DEventProcessor_invariant_mass_hists.cc
+
+Move small block of code outside of a mutex lock where it did not need to be.
+------------------------------------------------------------------------
+r5537 | staylor | 2009-09-24 08:59:26 -0400 (Thu, 24 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.cc
+
+Add a couple of digits to the proton mass to fix the display.
+------------------------------------------------------------------------
+r5538 | staylor | 2009-09-24 09:06:17 -0400 (Thu, 24 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+(1) Use a truncated mean to compute the dEdx for each track by using a fraction (to be determined) of the total number of hits available.  This is intended to minimize the effects of hits whose energy losses are very far out in the Landau tail.  (2) Use the most probable energy loss instead of the mean energy loss to calculate the expected dEdx for each particle type. (3) For the wire-based pass, only try to use dEdx for PID for measured momenta below 0.6 GeV/c.  Otherwise assume the particle is a pion.
+------------------------------------------------------------------------
+r5539 | staylor | 2009-09-24 09:06:31 -0400 (Thu, 24 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+(1) Use a truncated mean to compute the dEdx for each track by using a fraction (to be determined) of the total number of hits available.  This is intended to minimize the effects of hits whose energy losses are very far out in the Landau tail.  (2) Use the most probable energy loss instead of the mean energy loss to calculate the expected dEdx for each particle type. (3) For the wire-based pass, only try to use dEdx for PID for measured momenta below 0.6 GeV/c.  Otherwise assume the particle is a pion.
+------------------------------------------------------------------------
+r5540 | davidl | 2009-09-24 14:23:46 -0400 (Thu, 24 Sep 2009) | 6 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/hitFCal.c
+   M /trunk/src/programs/Simulation/mcsmear/smear.cc
+
+Modify how FCAL smearing data is transported from hdgeant through the reconstruction.
+
+hdgeant now fills the FcalTruthHit structures (instead of the FcalHit structures). The mcsmear program copies the values from FcalTruthHits to FcalHits simultaneously smearing the energy and time of indivdual hits and applying a threshold cut on the energy.
+
+This corrects a poor design choice made earlier in which the truth information was carried from hdgeant in FcalHits and then mcsmear copied it into FcalTruthHits by mcsmear. Now, the truth info always exists only in the branch with "truth" in the name.
+
+------------------------------------------------------------------------
