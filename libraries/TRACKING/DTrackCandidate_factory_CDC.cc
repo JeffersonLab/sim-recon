@@ -489,6 +489,12 @@ void DTrackCandidate_factory_CDC::LinkSeeds(vector<DCDCSeed> &in_seeds1, vector<
 				seed.Merge(in_seeds2[j]);
 				seeds.push_back(seed);
 				
+				// Mark all of the hits in the new, merged seed as USED. Some will
+				// already have the flag set by having been previously merged. The
+				// USED flag is used later when matching SL1 only seeds with stray
+				// hits in either SL3 or the FDC.
+				for(unsigned int k=0; k<seed.hits.size(); k++)seed.hits[k]->flags |= USED;
+				
 				// OK, at this point we have linked the seeds and we *may* want to
 				// to set thier "linked" flags. The linked flags are really used
 				// to decide later if the partial seed should be promoted to
@@ -525,7 +531,7 @@ void DTrackCandidate_factory_CDC::LinkSeeds(vector<DCDCSeed> &in_seeds1, vector<
 				}
 				if(DEBUG_LEVEL>3)_DBG_<<"  linked seeds "<<i<<" ("<<hits1.size()<<" hits) and "<<j<<" ("<<hits2.size()<<" hits)  dist_phi="<<sqrt(dist_phi2)<<endl;
 			}else{
-				if(DEBUG_LEVEL>3)_DBG_<<"  rejected link between "<<i<<" and "<<j<<" due to avg. phi (fabs("<<in_seeds1[i].phi_avg<<" - "<<in_seeds2[j].phi_avg<<")>="<<M_PI/6.0<<")"<<endl;
+				if(DEBUG_LEVEL>3)_DBG_<<"  rejected link between "<<i<<" and "<<j<<" due to avg. phi (fabs("<<in_seeds1[i].phi_avg*57.3<<" - "<<in_seeds2[j].phi_avg*57.3<<")>="<<MAX_SEED_LINK_ANGLE<<")"<<endl;
 			}
 		}
 	}
