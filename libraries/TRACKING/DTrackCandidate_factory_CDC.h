@@ -110,18 +110,14 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		vector<int> superlayer_boundaries;
 
 		unsigned int MAX_SUBSEED_STRAW_DIFF;
-		unsigned int MIN_SUBSEED_HITS;
 		unsigned int MIN_SEED_HITS;
 		unsigned int MAX_SUBSEED_LINKED_HITS;
-		double MIN_SEED_DIST; // cm
-		double MAX_HIT_CIRCLE_DIST; // cm
 		double MAX_HIT_DIST; // cm
 		double MAX_HIT_DIST2; // cm
 		double MAX_SEED_TIME_DIFF; // ns
-		double MAX_CIRCLE_CLONE_FILTER_FRAC;
-		double MAX_STEREO_PHI_DELTA; // rad
 		double MAX_CDC_MATCH_ANGLE; // degrees
 		double MAX_FDC_MATCH_ANGLE; // degrees
+		double MAX_SEED_LINK_ANGLE;
 		double TARGET_Z_MIN;
 		double TARGET_Z_MAX;
 		int DEBUG_LEVEL;

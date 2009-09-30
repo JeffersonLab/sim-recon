@@ -54,14 +54,11 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 	MAX_SUBSEED_STRAW_DIFF = 1;
 	MIN_SEED_HITS  = 2;
 	MAX_SUBSEED_LINKED_HITS = 12;
-	MIN_SEED_DIST = 4.0; // cm
 	MAX_HIT_DIST = 4.0; // cm
-	MAX_HIT_CIRCLE_DIST = 0.8; // cm
 	MAX_SEED_TIME_DIFF = 450.0; // ns
-	MAX_CIRCLE_CLONE_FILTER_FRAC = 0.2;
-	MAX_STEREO_PHI_DELTA = 0.35; // rad
 	MAX_CDC_MATCH_ANGLE = 20.0; // degrees
 	MAX_FDC_MATCH_ANGLE = 40.0; // degrees
+	MAX_SEED_LINK_ANGLE = M_PI/6.0*57.3; // degrees
 	TARGET_Z_MIN = 50.0;
 	TARGET_Z_MAX = 80.0;
 	DEBUG_LEVEL = 0;
@@ -88,14 +85,11 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *eventLoop, int runnumber)
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_SUBSEED_STRAW_DIFF", MAX_SUBSEED_STRAW_DIFF);
 	gPARMS->SetDefaultParameter("TRKFIND:MIN_SEED_HITS", MIN_SEED_HITS);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_SUBSEED_LINKED_HITS", MAX_SUBSEED_LINKED_HITS);
-	gPARMS->SetDefaultParameter("TRKFIND:MIN_SEED_DIST", MIN_SEED_DIST);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_HIT_DIST", MAX_HIT_DIST);
-	gPARMS->SetDefaultParameter("TRKFIND:MAX_HIT_CIRCLE_DIST", MAX_HIT_CIRCLE_DIST);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_SEED_TIME_DIFF", MAX_SEED_TIME_DIFF);
-	gPARMS->SetDefaultParameter("TRKFIND:MAX_CIRCLE_CLONE_FILTER_FRAC", MAX_CIRCLE_CLONE_FILTER_FRAC);
-	gPARMS->SetDefaultParameter("TRKFIND:MAX_STEREO_PHI_DELTA", MAX_STEREO_PHI_DELTA);
-	gPARMS->SetDefaultParameter("TRKFIND:MAX_CDC_MATCH_ANGLE", MAX_FDC_MATCH_ANGLE);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_CDC_MATCH_ANGLE", MAX_CDC_MATCH_ANGLE);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_FDC_MATCH_ANGLE", MAX_FDC_MATCH_ANGLE);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_SEED_LINK_ANGLE", MAX_SEED_LINK_ANGLE);
 	gPARMS->SetDefaultParameter("TRKFIND:DEBUG_LEVEL", DEBUG_LEVEL);
 	
 	MAX_HIT_DIST2 = MAX_HIT_DIST*MAX_HIT_DIST;
@@ -489,7 +483,7 @@ void DTrackCandidate_factory_CDC::LinkSeeds(vector<DCDCSeed> &in_seeds1, vector<
 			// to see if they are close enough to link.
 			double dphi = fabs(pos1->Phi() - pos2->Phi());
 			while(dphi>M_PI)dphi-=2.0*M_PI;
-			if(fabs(dphi)<M_PI/6.0){
+			if(fabs(dphi*57.3)<MAX_SEED_LINK_ANGLE){
 
 				DCDCSeed seed = in_seeds1[i];
 				seed.Merge(in_seeds2[j]);
@@ -747,7 +741,7 @@ void DTrackCandidate_factory_CDC::PickupUnmatched(vector<DCDCSeed> &seeds)
 		// to form a segment. That will be left as a future optimization.
 		if(fdc1_hits_matched.size()>0){
 			if(DEBUG_LEVEL>1)_DBG_<<"Matched "<<fdc1_hits_matched.size()<<" hits from FDC package 1"<<endl;
-			seeds[i].fdchits = fdchits;
+			seeds[i].fdchits = fdc1_hits_matched;
 		}else{
 			if(DEBUG_LEVEL>1)_DBG_<<"  no matching stray hits found to add to seed "<<i<<endl;
 		}
