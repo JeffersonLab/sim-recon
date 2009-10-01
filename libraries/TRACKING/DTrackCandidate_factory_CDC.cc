@@ -54,6 +54,7 @@ jerror_t DTrackCandidate_factory_CDC::init(void)
 	MAX_SUBSEED_STRAW_DIFF = 1;
 	MIN_SEED_HITS  = 2;
 	MAX_SUBSEED_LINKED_HITS = 12;
+	MAX_RING_SUBSEED_HITS = 4;
 	MAX_HIT_DIST = 4.0; // cm
 	MAX_SEED_TIME_DIFF = 450.0; // ns
 	MAX_CDC_MATCH_ANGLE = 20.0; // degrees
@@ -85,6 +86,7 @@ jerror_t DTrackCandidate_factory_CDC::brun(JEventLoop *eventLoop, int runnumber)
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_SUBSEED_STRAW_DIFF", MAX_SUBSEED_STRAW_DIFF);
 	gPARMS->SetDefaultParameter("TRKFIND:MIN_SEED_HITS", MIN_SEED_HITS);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_SUBSEED_LINKED_HITS", MAX_SUBSEED_LINKED_HITS);
+	gPARMS->SetDefaultParameter("TRKFIND:MAX_RING_SUBSEED_HITS", MAX_RING_SUBSEED_HITS);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_HIT_DIST", MAX_HIT_DIST);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_SEED_TIME_DIFF", MAX_SEED_TIME_DIFF);
 	gPARMS->SetDefaultParameter("TRKFIND:MAX_CDC_MATCH_ANGLE", MAX_CDC_MATCH_ANGLE);
@@ -145,6 +147,7 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 	
 	// Fit linked seeds to circles
 	for(unsigned int i=0; i<seeds.size(); i++){
+		if(DEBUG_LEVEL>5)_DBG_<<"-- Starting fit for seed "<<i<<" Nhits="<<seeds[i].hits.size()<<" phi_avg="<<seeds[i].phi_avg<<endl;
 		seeds[i].valid = FitCircle(seeds[i]);
 	}
 	
@@ -162,9 +165,9 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 		AddStereoHits(cdchits_by_superlayer[2-1], seed);
 		AddStereoHits(cdchits_by_superlayer[4-1], seed);
 		
-		// If no stereo hits were found for this seed, then
+		// If no stereo or FDC hits were found for this seed, then
 		// we can't fit it.
-		if(seed.stereo_hits.size()==0)continue;
+		if(seed.stereo_hits.size()==0 && seed.fdchits.size()==0)continue;
 
 		if (FindThetaZRegression(seed)!=NOERROR){
 		  // If the linear regression doesn't work try the histogramming method
@@ -200,7 +203,7 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 		  can->AddAssociatedObject(cdchit);
 		}
 		for (unsigned int n=0;n<seed.stereo_hits.size();n++){
-		  const DCDCTrackHit *cdchit=(seed.stereo_hits[n])->hit;
+		  const DCDCTrackHit *cdchit=(seed.stereo_hits[n]).hit;
 		  can->AddAssociatedObject(cdchit);
 		}
 
@@ -354,7 +357,11 @@ void DTrackCandidate_factory_CDC::FindSeeds(vector<DCDCTrkHit*> &hits, vector<DC
 		// Loop over subseeds of this ring
 		for(unsigned int j=0; j<subseeds.size(); j++){
 			if(subseeds[j].linked)continue;
-			
+			if(subseeds[j].hits.size()>MAX_RING_SUBSEED_HITS){
+				if(DEBUG_LEVEL>4)_DBG_<<"rejecting subseed for having too many hits in a single layer ("<<subseeds[j].hits.size()<<" max="<<MAX_RING_SUBSEED_HITS<<")"<<endl;
+				continue;
+			}
+
 			// This subseed was never used. Start a new seed
 			vector<DCDCSeed*> parent;
 			parent.push_back(&subseeds[j]);
@@ -630,7 +637,7 @@ bool DTrackCandidate_factory_CDC::FitCircle(DCDCSeed &seed)
 		double dx = seed.hits[i]->hit->wire->origin.X() - x0;
 		double dy = seed.hits[i]->hit->wire->origin.Y() - y0;
 		double d = sqrt(dx*dx + dy*dy);
-		if(DEBUG_LEVEL>10)_DBG_<<"dist="<<d-r0<<endl;
+		if(DEBUG_LEVEL>15)_DBG_<<"dist="<<d-r0<<endl;
 		if(fabs(d-r0)<=MAX_HIT_DIST)N++;
 	}
 	for(unsigned int i=0; i<seed.fdchits.size(); i++){
@@ -924,7 +931,7 @@ void DTrackCandidate_factory_CDC::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits
 		double alpha1 = (-b - B)/(2.0*a);
 		double alpha2 = (-b + B)/(2.0*a);
 
-		if(DEBUG_LEVEL>3)_DBG_<<"alpha1="<<alpha1<<" alpha2="<<alpha2<<endl;
+		if(DEBUG_LEVEL>15)_DBG_<<"alpha1="<<alpha1<<" alpha2="<<alpha2<<endl;
 		
 		// At this point we must decide which value of alpha to use. The
 		// proper way would likely involve either trying both possibilities
@@ -957,53 +964,48 @@ void DTrackCandidate_factory_CDC::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits
 	        double s=(fabs(alpha1)<fabs(alpha2) ? alpha1:alpha2);
 
 		//if(DEBUG_LEVEL>3)_DBG_<<"alpha="<<alpha<<" s="<<s<<" ring="<<wire->ring<<" straw="<<wire->straw<<" stereo="<<wire->stereo<<endl;
-		if(DEBUG_LEVEL>3)_DBG_<<"s="<<s<<" ring="<<wire->ring<<" straw="<<wire->straw<<" stereo="<<wire->stereo<<endl;
+		if(DEBUG_LEVEL>15)_DBG_<<"s="<<s<<" ring="<<wire->ring<<" straw="<<wire->straw<<" stereo="<<wire->stereo<<endl;
 		if(fabs(s) > wire->L/2.0)continue; // if wire doesn't cross circle, skip hit
 		
 	
-		// Add this hit to the stereo hit list
+		// Determine 3d space point for this hit
+		DCDCTrkHit mytrkhit = *trkhit; // we need to make a copy since x_stereo,... are unique based on the cadidate
 		DVector3 pos = wire->origin + s*wire->udir;
-		trkhit->x_stereo = pos.X();
-		trkhit->y_stereo = pos.Y();
-		trkhit->z_stereo = pos.Z();	
+		mytrkhit.x_stereo = pos.X();
+		mytrkhit.y_stereo = pos.Y();
+		mytrkhit.z_stereo = pos.Z();
+		
+		// Verify that this hit is reasonably close to the axial hits in X and Y
+		// If not, then drop this hit for this seed.
+		double phi_diff = fabs(pos.Phi() - seed.phi_avg);
+		if(phi_diff>M_PI)phi_diff = 2.0*M_PI - phi_diff;
+		phi_diff*=57.3; // convert to degrees
+		if(fabs(phi_diff)>MAX_SEED_LINK_ANGLE){ // yes, the fabs is needed ...
+			if(DEBUG_LEVEL>4)_DBG_<<"rejecting stereo hit at phi="<<pos.Phi()<<" for being too far away from axial hits(phi_diff="<<phi_diff<<")"<<endl;
+			continue;
+		}
 
 		trkhit->phi_stereo = atan2(trkhit->y_stereo-R.Y(), trkhit->x_stereo-R.X());
 		R*=-1.0; // make R point from center of circle to beamline instead of other way around
-		if(DEBUG_LEVEL>3){
+		if(DEBUG_LEVEL>15){
 			_DBG_<<" --- wire->udir X, Y, Z = "<<wire->udir.X()<<", "<<wire->udir.Y()<<", "<<wire->udir.Z()<<endl;
 			_DBG_<<" -- ring="<<wire->ring<<" trkhit->z_stereo="<<trkhit->z_stereo<<" trkhit->y_stereo="<<trkhit->y_stereo<<" trkhit->x_stereo="<<trkhit->x_stereo<<endl;
 			_DBG_<<" -- phi_stereo="<<trkhit->phi_stereo<<"  R.Phi()="<<R.Phi()<<"  (X,Y)=("<<R.X()<<", "<<R.Y()<<")"<<endl;
 			_DBG__;
 		}
-		trkhit->phi_stereo -= R.Phi(); // make angle relative to beamline
+		mytrkhit.phi_stereo -= R.Phi(); // make angle relative to beamline
 		
 		// We want this to go either from 0 to +2pi for positive charge, or
 		// 0 to -2pi for negative.
 		double phi_hi = seed.fit.q>0.0 ? +2.0*M_PI:0.0;
 		double phi_lo = seed.fit.q>0.0 ? 0.0:-2.0*M_PI;
-		while(trkhit->phi_stereo<phi_lo)trkhit->phi_stereo+=2.0*M_PI;
-		while(trkhit->phi_stereo>phi_hi)trkhit->phi_stereo-=2.0*M_PI;
-		trkhit->flags |= VALID_STEREO;
-		seed.stereo_hits.push_back(trkhit);
+		while(mytrkhit.phi_stereo<phi_lo)mytrkhit.phi_stereo+=2.0*M_PI;
+		while(mytrkhit.phi_stereo>phi_hi)mytrkhit.phi_stereo-=2.0*M_PI;
+		mytrkhit.flags |= VALID_STEREO;
+		seed.stereo_hits.push_back(mytrkhit);
+		if(DEBUG_LEVEL>10)_DBG_<<"Adding CDC stereo hit: ring="<<mytrkhit.hit->wire->ring<<" straw="<<mytrkhit.hit->wire->straw<<endl;
 	}
-	
-	// It can happen that stereo wires from nearby tracks can intersect
-	// with the current track which, of course, screws up the parameters
-	// later. Here, we identify some of these by looking for stereo 
-	// wire hits from the same layer ("ring") that are far enough apart
-	// that it's unlikely they came from the same track.
-	vector<DCDCTrkHit*>::iterator iter1 = stereo_hits.begin();
-	for(; iter1!=stereo_hits.end(); iter1++){
-		vector<DCDCTrkHit*>::iterator iter2 = iter1+1;
-		const DCDCWire *wire1 = (*iter1)->hit->wire;
-		for(; iter2!=stereo_hits.end(); iter2++){
-			const DCDCWire *wire2 = (*iter2)->hit->wire;
-			
-			if(wire1->ring == wire2->ring){
-			
-			}
-		}
-	}
+	if(DEBUG_LEVEL>5)_DBG_<<"Num stereo hits: "<<seed.stereo_hits.size()<<endl;
 }
 
 //------------------
@@ -1056,7 +1058,7 @@ void DTrackCandidate_factory_CDC::FindThetaZStraightTrack(DCDCSeed &seed)
 	vector<double> r;
 	vector<double> z;
 	for(unsigned int i=0; i<seed.stereo_hits.size(); i++){
-		DCDCTrkHit *trkhit = seed.stereo_hits[i];
+		DCDCTrkHit *trkhit = &seed.stereo_hits[i];
 		if(!trkhit->flags&VALID_STEREO)continue;
 		
 		double R = sqrt(pow(trkhit->x_stereo,2.0) + pow(trkhit->y_stereo,2.0));
@@ -1143,10 +1145,10 @@ void DTrackCandidate_factory_CDC::FindTheta(DCDCSeed &seed, double target_z_min,
 	double bin_width = 2.0*M_PI/(double)Nbins;
 	double hist_low_limit = -M_PI; // lower edge of histogram limits
 	
-	// Loop over valid hits, filling the histogram
+	// Loop over CDC hits, filling the histogram
 	double r0 = seed.fit.r0;
 	for(unsigned int i=0; i<seed.stereo_hits.size(); i++){
-		DCDCTrkHit *trkhit = seed.stereo_hits[i];
+		DCDCTrkHit *trkhit = &seed.stereo_hits[i];
 		if(!trkhit->flags&VALID_STEREO)continue;
 		
 		// Calculate upper and lower limits in theta
@@ -1160,6 +1162,43 @@ void DTrackCandidate_factory_CDC::FindTheta(DCDCSeed &seed, double target_z_min,
 			tmax=tmp;
 		}
 		if(DEBUG_LEVEL>3)_DBG_<<" -- phi_stereo="<<trkhit->phi_stereo<<" z_stereo="<<trkhit->z_stereo<<"  alpha="<<alpha<<endl;
+		if(DEBUG_LEVEL>3)_DBG_<<" -- tmin="<<tmin<<"  tmax="<<tmax<<endl;
+		
+		// Find index of bins corresponding to tmin and tmax
+		unsigned int imin = (unsigned int)floor((tmin-hist_low_limit)/bin_width);
+		unsigned int imax = (unsigned int)floor((tmax-hist_low_limit)/bin_width);
+		
+		// If entire range of this hit is outside of the histogram limit
+		// then discard this hit.
+		if(imax<0 || imin>=Nbins)continue;
+		
+		// Clip limits of bin range to our histogram limits
+		if(imin<0)imin=0;
+		if(imin>=Nbins)imin=Nbins-1;
+		if(imax<0)imax=0;
+		if(imax>=Nbins)imax=Nbins-1;
+		
+		// Increment all bins between imin and imax
+		for(unsigned int j=imin; j<=imax; j++)hist[j]++;
+	}
+	
+	// Loop over FDC hits, filling the histogram
+	for(unsigned int i=0; i<seed.fdchits.size(); i++){
+		const DFDCPseudo *fdchit = seed.fdchits[i];
+		
+		// Calculate upper and lower limits in theta
+		DVector2 R(seed.fit.x0, seed.fit.y0);
+		double phi_stereo = atan2(fdchit->y-R.Y(), fdchit->x-R.X());
+		double alpha = -r0*phi_stereo;
+		if(seed.fit.q<0.0)alpha = -alpha;
+		double tmin = atan2(alpha, fdchit->wire->origin.Z() - target_z_min);
+		double tmax = atan2(alpha, fdchit->wire->origin.Z() - target_z_max);
+		if(tmin>tmax){
+			double tmp = tmin;
+			tmin=tmax;
+			tmax=tmp;
+		}
+		if(DEBUG_LEVEL>3)_DBG_<<" -- phi_stereo="<<phi_stereo<<" z_stereo="<<fdchit->wire->origin.Z()<<"  alpha="<<alpha<<endl;
 		if(DEBUG_LEVEL>3)_DBG_<<" -- tmin="<<tmin<<"  tmax="<<tmax<<endl;
 		
 		// Find index of bins corresponding to tmin and tmax
@@ -1224,12 +1263,12 @@ void DTrackCandidate_factory_CDC::FindZ(DCDCSeed &seed, double theta_min, double
 	double bin_width = 0.5; // bins are 5mm
 	double hist_low_limit = 0.0; // lower edge of histogram limits
 	
-	// Loop over valid hits, filling the histogram
+	// Loop over CDC hits, filling the histogram
 	double r0 = seed.fit.r0;
 	double tan_alpha_min = tan(theta_min)/r0;
 	double tan_alpha_max = tan(theta_max)/r0;
 	for(unsigned int i=0; i<seed.stereo_hits.size(); i++){
-		DCDCTrkHit *trkhit = seed.stereo_hits[i];
+		DCDCTrkHit *trkhit = &seed.stereo_hits[i];
 		if(!trkhit->flags&VALID_STEREO)continue;
 		
 		// Calculate upper and lower limits in z
@@ -1242,6 +1281,43 @@ void DTrackCandidate_factory_CDC::FindZ(DCDCSeed &seed, double theta_min, double
 			zmax=tmp;
 		}
 		if(DEBUG_LEVEL>3)_DBG_<<" -- phi_stereo="<<trkhit->phi_stereo<<" z_stereo="<<trkhit->z_stereo<<endl;
+		if(DEBUG_LEVEL>3)_DBG_<<" -- zmin="<<zmin<<"  zmax="<<zmax<<endl;
+		
+		// Find index of bins corresponding to tmin and tmax
+		unsigned int imin = (unsigned int)floor((zmin-hist_low_limit)/bin_width);
+		unsigned int imax = (unsigned int)floor((zmax-hist_low_limit)/bin_width);
+		
+		// If entire range of this hit is outside of the histogram limit
+		// then discard this hit.
+		if(imax<=0 || imin>=Nbins)continue;
+		
+		// Clip limits of bin range to our histogram limits
+		if(imin<0)imin=0;
+		if(imin>=Nbins)imin=Nbins-1;
+		if(imax<0)imax=0;
+		if(imax>=Nbins)imax=Nbins-1;
+		
+		// Increment all bins between imin and imax
+		for(unsigned int j=imin; j<=imax; j++)hist[j]++;
+	}
+
+	// Loop over FDC hits, filling the histogram
+	for(unsigned int i=0; i<seed.fdchits.size(); i++){
+		const DFDCPseudo *fdchit = seed.fdchits[i];
+		
+		// Calculate upper and lower limits in z
+		DVector2 R(seed.fit.x0, seed.fit.y0);
+		double phi_stereo = atan2(fdchit->y-R.Y(), fdchit->x-R.X());
+		double z = fdchit->wire->origin.Z();
+		double q_sign = seed.fit.q>0.0 ? +1.0:-1.0;
+		double zmin = z - q_sign*phi_stereo/tan_alpha_min;
+		double zmax = z - q_sign*phi_stereo/tan_alpha_max;
+		if(zmin>zmax){
+			double tmp = zmin;
+			zmin=zmax;
+			zmax=tmp;
+		}
+		if(DEBUG_LEVEL>3)_DBG_<<" -- phi_stereo="<<phi_stereo<<" z_stereo="<<z<<endl;
 		if(DEBUG_LEVEL>3)_DBG_<<" -- zmin="<<zmin<<"  zmax="<<zmax<<endl;
 		
 		// Find index of bins corresponding to tmin and tmax
@@ -1358,7 +1434,7 @@ double DTrackCandidate_factory_CDC::DCDCSeed::FindAverageBz(JEventLoop *loop)
 
 	double Bz_sum=0.0;
 	for(unsigned int i=0; i<stereo_hits.size(); i++){
-		DCDCTrkHit *hit = stereo_hits[i];
+		DCDCTrkHit *hit = &stereo_hits[i];
 		double Bx, By, Bz;
 		bfield->GetField(hit->x_stereo, hit->y_stereo, hit->z_stereo, Bx, By, Bz);
 		Bz_sum += Bz;
@@ -1368,15 +1444,23 @@ double DTrackCandidate_factory_CDC::DCDCSeed::FindAverageBz(JEventLoop *loop)
 }
 
 
+//------------------
+// FindThetaZRegression
+//------------------
 // Linear regression to find tan(lambda) and z_vertex
 jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
+
+	if(DEBUG_LEVEL>3)_DBG_<<"Finding theta and z via linear regression method."<<endl;
+
   if (seed.fit.normal.Mag()==0.) return VALUE_OUT_OF_RANGE;
   // Vector of intersections between the circles of the measurements and the plane intersecting the Riemann surface
   vector<DVector3>intersections;
   DVector3 beam(0,0,65.);
   intersections.push_back(beam);
+  
+  // CDC stereo hits
   for (unsigned int m=0;m<seed.stereo_hits.size();m++){
-    DCDCTrkHit *trkhit=seed.stereo_hits[m];
+    DCDCTrkHit *trkhit=&seed.stereo_hits[m];
     double R2=trkhit->x_stereo*trkhit->x_stereo+trkhit->y_stereo*trkhit->y_stereo;
 
     DVector3 intersection;
@@ -1403,10 +1487,46 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
       intersection(2)=trkhit->z_stereo;
       
       intersections.push_back(intersection);
+		if(DEBUG_LEVEL>5)_DBG_<<"Adding CDC hit "<<m<<" z="<<intersection(2)<<endl;      
       
     }
 
   }
+
+  // FDC pseudo hits
+  for (unsigned int m=0;m<seed.fdchits.size();m++){
+    const DFDCPseudo *trkhit=seed.fdchits[m];
+    double R2=trkhit->x*trkhit->x+trkhit->y*trkhit->y;
+
+    DVector3 intersection;
+    DVector3 N=seed.fit.normal;
+    double c0=seed.fit.c_origin;
+    double A=c0+R2*N(2);
+    double B=N(0)*N(0)+N(1)*N(1);
+    double C=B*R2-A*A;
+    
+    if (C>=0) {
+      double x1=(-N(0)*A+N(1)*sqrt(C))/B;
+      double y1=(-N(1)*A-N(0)*sqrt(C))/B;   
+      double x2=(-N(0)*A-N(1)*sqrt(C))/B;
+      double y2=(-N(1)*A+N(0)*sqrt(C))/B;
+      
+      if (fabs(trkhit->y-y1)<fabs(trkhit->y-y2)){
+	intersection(0)=x1;
+	intersection(1)=y1;
+      }
+      else{
+	intersection(0)=x2;
+	intersection(1)=y2;
+		    }
+      intersection(2)=trkhit->wire->origin.Z();
+      
+      intersections.push_back(intersection);
+		if(DEBUG_LEVEL>5)_DBG_<<"Adding FDC hit "<<m<<" z="<<intersection(2)<<endl;      
+    }
+
+  }
+  
   sort(intersections.begin(),intersections.end(),SortIntersections);
 
   // Compute the arc lengths between (0,0) and (xi,yi)
@@ -1450,6 +1570,7 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
   }
   
   if (z0>TARGET_Z_MAX || z0<TARGET_Z_MIN){
+	if(DEBUG_LEVEL>5)_DBG_<<"Fit failed for theta-z via regressionz value out of target range (z="<<z0<<")"<<endl;
     return VALUE_OUT_OF_RANGE;
   }
 

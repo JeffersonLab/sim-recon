@@ -61,7 +61,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		class DCDCSeed{
 			public:
 				vector<DCDCTrkHit*> hits;
-				vector<DCDCTrkHit*> stereo_hits;
+				vector<DCDCTrkHit> stereo_hits;
 				vector<const DFDCPseudo*> fdchits;
 				double phi_avg;
 				double tdrift_avg;
@@ -112,6 +112,7 @@ class DTrackCandidate_factory_CDC:public JFactory<DTrackCandidate>{
 		unsigned int MAX_SUBSEED_STRAW_DIFF;
 		unsigned int MIN_SEED_HITS;
 		unsigned int MAX_SUBSEED_LINKED_HITS;
+		unsigned int MAX_RING_SUBSEED_HITS;
 		double MAX_HIT_DIST; // cm
 		double MAX_HIT_DIST2; // cm
 		double MAX_SEED_TIME_DIFF; // ns
