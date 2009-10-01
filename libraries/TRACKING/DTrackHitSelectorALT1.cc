@@ -18,6 +18,13 @@
 #define ansi_blue				ansi_escape<<"[34m"
 #endif // ansi_escape
 
+bool static DTrackHitSelector_cdchit_cmp(pair<double,const DCDCTrackHit *>a,
+				      pair<double,const DCDCTrackHit *>b){
+  if (a.second->wire->ring!=b.second->wire->ring) 
+    return (a.second->wire->ring>b.second->wire->ring);
+  return (a.first>b.first);
+}
+
 //---------------------------------
 // DTrackHitSelectorALT1    (Constructor)
 //---------------------------------
@@ -41,91 +48,116 @@ DTrackHitSelectorALT1::~DTrackHitSelectorALT1()
 //---------------------------------
 void DTrackHitSelectorALT1::GetCDCHits(fit_type_t fit_type, DReferenceTrajectory *rt, const vector<const DCDCTrackHit*> &cdchits_in, vector<const DCDCTrackHit*> &cdchits_out) const
 {
-	/// Determine the probability that for each CDC hit that it came from the track with the given trajectory.
-	///
-	/// This will calculate a probability for each CDC hit that
-	/// it came from the track represented by the given
-	/// DReference trajectory. The probability is based on
-	/// the residual between the distance of closest approach
-	/// of the trajectory to the wire and the drift time for
-	/// time-based tracks and the distance to the wire for
-	/// wire-based tracks.
+  // Vector of pairs storing the hit with the probability it is on the track
+  vector<pair<double,const DCDCTrackHit*> >cdchits_tmp;
 
-	// Calculate beta of particle.
-	double beta = 1.0/sqrt(1.0+pow(rt->GetMass(),2.0)/rt->swim_steps[0].mom.Mag2());
-	
-	// The error on the residual. This will be different based on the
-	// quality of the track and whether MULS is on or not etc.
-	// In principle, this could also depend on the momentum parameters
-	// of the track.
-	double sigma;
-	switch(fit_type){
-		case kTimeBased:
-			sigma = 0.8/sqrt(12.0);
-			break;
-		case kWireBased:
-			sigma = 2.0*0.8/sqrt(12.0);
-			break;
-		case kHelical:
-		default:
-			sigma = 10.0*0.8/sqrt(12.0);
-	}
+  /// Determine the probability that for each CDC hit that it came from the 
+  /// track with the given trajectory.
+  ///
+  /// This will calculate a probability for each CDC hit that
+  /// it came from the track represented by the given
+  /// DReference trajectory. The probability is based on
+  /// the residual between the distance of closest approach
+  /// of the trajectory to the wire and the drift time for
+  /// time-based tracks and the distance to the wire for
+  /// wire-based tracks.
+  
+  // Calculate beta of particle.
+  double beta = 1.0/sqrt(1.0+pow(rt->GetMass(),2.0)/rt->swim_steps[0].mom.Mag2());
+  
+  // The error on the residual. This will be different based on the
+  // quality of the track and whether MULS is on or not etc.
+  // In principle, this could also depend on the momentum parameters
+  // of the track.
+  double sigma;
+  switch(fit_type){
+  case kTimeBased:
+    sigma = 0.8/sqrt(12.0);
+    break;
+  case kWireBased:
+    sigma = 2.0*0.8/sqrt(12.0);
+    break;
+  case kHelical:
+  default:
+    sigma = 10.0*0.8/sqrt(12.0);
+  }
+  
+  // Low-momentum tracks are more poorly defined than high-momentum tracks.
+  // We account for that here by increasing the error as a function of momentum
+  double g = 0.350/sqrt(log(2.0)); // total guess
+  sigma *= 1.0 + exp(-pow(rt->swim_steps[0].mom.Mag()/g,2.0));
+  
+  // Minimum probability of hit belonging to wire and still be accepted
+  double MIN_HIT_PROB = 0.05;
+  vector<const DCDCTrackHit*>::const_iterator iter;
+  for(iter=cdchits_in.begin(); iter!=cdchits_in.end(); iter++){
+    const DCDCTrackHit *hit = *iter;
+    
+    // Find the DOCA to this wire
+    double s;
+    double doca = rt->DistToRT(hit->wire, &s);
+    
+    // Get "measured" distance to wire. For time-based tracks
+    // this is calculated from the drift time. For all other
+    // tracks, this is assumed to be half a cell size
+    double dist;
+    if(fit_type == kTimeBased){
+      // Distance using drift time
+      // NOTE: Right now we assume pions for the TOF
+      // and a constant drift velocity of 55um/ns
+      double tof = s/(beta*3E10*1E-9);
+      dist = (hit->tdrift - tof)*55E-4;
+    }else{
+      dist = 0.8/2.0; // half cell-size
+    }
+    
+    // For time-based and wire-based tracks, the fit was
+    // weighted for multiple scattering by material times 
+    // angle giving preference to the begining of the 
+    // track. Take this into account here by enhancing the
+    // error for hits further from the vertex
+    double sigma_total = sigma;
+    if(fit_type == kTimeBased || fit_type == kWireBased){
+      sigma_total *= 1.0 + s/50.0; // double error at 50cm out (guess for now)
+    }
+    
+    // Residual
+    double resi = dist - doca;
+    double chisq = pow(resi/sigma_total, 2.0);
+    
+    // Use chi-sq probaility function with Ndof=1 to calculate probability
+    double probability = TMath::Prob(chisq, 1);
+    if(probability>=MIN_HIT_PROB){
+      pair<double,const DCDCTrackHit*>myhit;
+      myhit.first=probability;
+      myhit.second=hit;
+      cdchits_tmp.push_back(myhit);
+    }
+    
+    if(HS_DEBUG_LEVEL>10){
+      _DBG_;
+      if(probability>=MIN_HIT_PROB)cerr<<ansi_bold<<ansi_green;
+      cerr<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" sigma="<<sigma_total<<" prob="<<probability<<endl;
+      cerr<<ansi_normal;
+    }
+  }
 
-	// Low-momentum tracks are more poorly defined than high-momentum tracks.
-	// We account for that here by increasing the error as a function of momentum
-	double g = 0.350/sqrt(log(2.0)); // total guess
-	sigma *= 1.0 + exp(-pow(rt->swim_steps[0].mom.Mag()/g,2.0));
-	
-	// Minimum probability of hit belonging to wire and still be accepted
-	double MIN_HIT_PROB = 0.05;
-
-	vector<const DCDCTrackHit*>::const_iterator iter;
-	for(iter=cdchits_in.begin(); iter!=cdchits_in.end(); iter++){
-		const DCDCTrackHit *hit = *iter;
-		
-		// Find the DOCA to this wire
-		double s;
-		double doca = rt->DistToRT(hit->wire, &s);
-
-		// Get "measured" distance to wire. For time-based tracks
-		// this is calculated from the drift time. For all other
-		// tracks, this is assumed to be half a cell size
-		double dist;
-		if(fit_type == kTimeBased){
-			// Distance using drift time
-			// NOTE: Right now we assume pions for the TOF
-			// and a constant drift velocity of 55um/ns
-			double tof = s/(beta*3E10*1E-9);
-			dist = (hit->tdrift - tof)*55E-4;
-		}else{
-			dist = 0.8/2.0; // half cell-size
-		}
-		
-		// For time-based and wire-based tracks, the fit was
-		// weighted for multiple scattering by material times 
-		// angle giving preference to the begining of the 
-		// track. Take this into account here by enhancing the
-		// error for hits further from the vertex
-		double sigma_total = sigma;
-		if(fit_type == kTimeBased || fit_type == kWireBased){
-			sigma_total *= 1.0 + s/50.0; // double error at 50cm out (guess for now)
-		}
-		
-		// Residual
-		double resi = dist - doca;
-		double chisq = pow(resi/sigma_total, 2.0);
-
-		// Use chi-sq probaility function with Ndof=1 to calculate probability
-		double probability = TMath::Prob(chisq, 1);
-		if(probability>=MIN_HIT_PROB)cdchits_out.push_back(hit);
-
-		if(HS_DEBUG_LEVEL>10){
-			_DBG_;
-			if(probability>=MIN_HIT_PROB)cerr<<ansi_bold<<ansi_green;
-			cerr<<"s="<<s<<" doca="<<doca<<" dist="<<dist<<" resi="<<resi<<" sigma="<<sigma_total<<" prob="<<probability<<endl;
-			cerr<<ansi_normal;
-		}
-	}
+  // Order according to ring number and probability, then put the hits in the 
+  // output list with the following algorithm:  hits with the highest 
+  // probability in a given ring are automatically put in the output list, 
+  // but if there is more than one hit in a given ring, only those hits 
+  // that are within +/-1 of the straw # of the most probable hit are added 
+  // to the list.
+  sort(cdchits_tmp.begin(),cdchits_tmp.end(),DTrackHitSelector_cdchit_cmp);
+  int old_straw=1000,old_ring=1000;
+  for (unsigned int i=0;i<cdchits_tmp.size();i++){
+    if (cdchits_tmp[i].second->wire->ring!=old_ring || 
+	abs(cdchits_tmp[i].second->wire->straw-old_straw)==1){
+      cdchits_out.push_back(cdchits_tmp[i].second);   
+    }
+    old_straw=cdchits_tmp[i].second->wire->straw;
+    old_ring=cdchits_tmp[i].second->wire->ring;
+  }
 }
 
 //---------------------------------
