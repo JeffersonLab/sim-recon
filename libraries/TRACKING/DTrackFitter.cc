@@ -141,11 +141,12 @@ DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicDat
 
 	// Correct for energy loss in target etc. based on particle mass in starting_params
 	DVector3 pos, mom; // (holds parameters at vertex after correction)
-	if(fit_type==kTimeBased){
-		CorrectForELoss(starting_params, rt, pos, mom, mass);
-	}else{
-		pos = starting_params.position();
-		mom = starting_params.momentum();
+	if(fit_type==kWireBased){
+	  CorrectForELoss(starting_params, rt, pos, mom, mass);
+	}else
+	{
+	  pos = starting_params.position();
+	  mom = starting_params.momentum();
 	}
 
 	// Swim a reference trajectory with this candidate's parameters
@@ -170,7 +171,8 @@ DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicDat
 	hitselector->GetAllHits(input_type, rt, cdctrackhits, fdcpseudos, this);
 
 	// In case the subclass doesn't actually set the mass ....
-	fit_params.setMass(starting_params.mass());
+	//fit_params.setMass(starting_params.mass());
+	fit_params.setMass(mass);
 
 	// Do the fit
 	return fit_status = FitTrack(pos, mom, starting_params.charge(), mass);	
@@ -284,4 +286,59 @@ jerror_t DTrackFitter::CalcdEdxHit(const DVector3 &mom,
   }
   
   return VALUE_OUT_OF_RANGE;
+}
+
+
+// Calculate the most probable energy loss per unit length in units of 
+// MeV cm^2/g in the FDC or CDC gas for a particle of momentum p and mass mass_hyp
+double DTrackFitter::GetdEdx(double p,double mass_hyp,double mean_path_length){
+  if (p<0.001) return 0.;  // try to avoid division by zero errors
+  double betagamma=p/mass_hyp;  
+  double beta2=1./(1.+mass_hyp*mass_hyp/p/p);
+  
+  // Electron mass 
+  double Me=0.000511; //GeV
+   
+  // Material properties for gas
+  double Z_over_A=0.85*0.45059+0.15*0.49989;
+  double I0=(0.85*188.+0.15*85.)*1e-9;
+  double gas_density=0.0018;
+
+  // First (non-logarithmic) term in Bethe-Block formula
+  double mean_dedx=0.1535*Z_over_A/beta2;
+ 
+  // Variables for calculating the density effect
+  double X=log10(betagamma);
+  double X0,X1;
+  double C=-2.*log(I0/28.816/sqrt(gas_density*Z_over_A))-1.;
+  double Cbar=-C; 
+  double delta=0.;
+  X1=4.;
+  if (Cbar<=9.5) X0=1.6;
+  else if (Cbar>9.5 && Cbar<=10.) X0=1.7;
+  else if (Cbar>10 && Cbar<=10.5) X0=1.8;    
+  else if (Cbar>10.5 && Cbar<=11.) X0=1.9;
+  else if (Cbar>11.0 && Cbar<=12.25) X0=2.;
+  else if (Cbar>12.25 && Cbar<=13.804){
+    X0=2.;
+    X1=5.;
+  }
+  else {
+    X0=0.326*Cbar-2.5;
+    X1=5.;
+  }    
+  if (X>=X0 && X<X1)
+    delta=4.606*X+C+(Cbar-4.606*X0)*pow(X1-X,3.)/pow(X1-X0,3.);
+  else if (X>=X1)
+    delta=4.606*X+C;
+  
+  // Most probable energy loss from Landau theory (see Leo, pp. 51-52)
+  return mean_dedx*(log(2.*Me*beta2*mean_dedx*gas_density*mean_path_length*1e-3
+		    /(1.-beta2)/I0/I0)-beta2+0.198-delta);
+}
+
+// Empirical form for sigma/mean for gaseous detectors with num_dedx samples 
+// and sampling thickness path_length
+double DTrackFitter::GetdEdxSigma(unsigned int num_hits,double mean_path_length){
+  return 0.41*pow(double(num_hits),-0.43)*pow(mean_path_length,-0.32);
 }

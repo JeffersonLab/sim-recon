@@ -100,6 +100,12 @@ class DTrackFitter:public jana::JObject{
 		// Methods that actually do something
 		fit_status_t FindHitsAndFitTrack(const DKinematicData &starting_params, DReferenceTrajectory *rt, JEventLoop *loop, double mass=-1.0); ///< mass<0 means get it from starting_params
 		jerror_t CorrectForELoss(const DKinematicData &starting_params, DReferenceTrajectory *rt, DVector3 &pos, DVector3 &mom, double mass);
+		jerror_t CalcdEdxHit(const DVector3 &mom,
+				     const DVector3 &pos,
+				     const DCDCTrackHit *hit,
+				     pair <double,double> &dedx);
+		double GetdEdxSigma(unsigned int num_hits,double mean_path_length);
+		double GetdEdx(double p,double mass_hyp,double mean_path_length);
 
 		//---- The following need to be supplied by the subclass ----
 		virtual string Name(void) const =0;
@@ -107,10 +113,7 @@ class DTrackFitter:public jana::JObject{
 		virtual double ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr=NULL, int *dof_ptr=NULL)=0;
 
 	protected:
-		jerror_t CalcdEdxHit(const DVector3 &mom,
-				     const DVector3 &pos,
-				     const DCDCTrackHit *hit,
-				     pair <double,double> &dedx);
+	
 
 		// The following should be used as inputs by FitTrack(void)
 		vector<const DCDCTrackHit*> cdchits;	//< Hits in the CDC
