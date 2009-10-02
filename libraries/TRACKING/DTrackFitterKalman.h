@@ -147,10 +147,8 @@ class DTrackFitterKalman: public DTrackFitter{
   unsigned int GetNDF(void){return ndf;};
   double GetActivePathLength(void){ return path_length;}
   double GetdEdx(double q_over_p,double Z,double A, double rho); 
-  double GetdEdx(double q_over_p,double mass_hyp);
   double GetEnergyVariance(double ds,double q_over_p,double Z,double A, 
 			   double rho);
-  double GetTrackdEdx(void){return track_dedx;}
 
  protected:
 
@@ -172,36 +170,37 @@ class DTrackFitterKalman: public DTrackFitter{
   };
   void ResetKalman(void);
   jerror_t GetProcessNoise(double ds,double z,
-			   double X0,DMatrix S,DMatrix &Q);
+			   double X0,const DMatrix &S,DMatrix &Q);
   double Step(double oldz,double newz, double dEdx,DMatrix &S);
-  jerror_t StepJacobian(double oldz,double newz,DMatrix S,double dEdx,
+  jerror_t StepJacobian(double oldz,double newz,const DMatrix &S,double dEdx,
 		      DMatrix &J);
-  jerror_t CalcDerivAndJacobian(double z,double dz,DMatrix S,double dEdx,
+  jerror_t CalcDerivAndJacobian(double z,double dz,const DMatrix &S,
+				double dEdx,
 				DMatrix &J,DMatrix &D);
-  jerror_t CalcDeriv(double z,double dz,DMatrix S, double dEdx, DMatrix &D);
-  jerror_t CalcDeriv(double ds,DVector3 pos,DVector3 &dpos,DVector3 B,
-		     DMatrix S,double dEdx,DMatrix &D1);
+  jerror_t CalcDeriv(double z,double dz,const DMatrix &S, double dEdx, 
+		     DMatrix &D);
+  jerror_t CalcDeriv(double ds,const DVector3 &pos,DVector3 &dpos,
+		     const DVector3 &B,
+		     const DMatrix &S,double dEdx,DMatrix &D1);
 
-  jerror_t StepJacobian(DVector3 pos,DVector3 wire_pos,DVector3 wiredir,
-			double ds,DMatrix S, double dEdx,DMatrix &J);
-  double Step(DVector3 &pos,DVector3 wire_pos,DVector3 wiredir,double ds,
-		DMatrix &S, double dEdx);
+  jerror_t StepJacobian(const DVector3 &pos,const DVector3 &wire_pos,
+			const DVector3 &wiredir,
+			double ds,const DMatrix &S, double dEdx,DMatrix &J);
   jerror_t FixedStep(DVector3 &pos,double ds,DMatrix &S, double dEdx);
   jerror_t FixedStep(DVector3 &pos,double ds,DMatrix &S, double dEdx,
 		     double &Bz);
-  jerror_t CalcDirMom(double ds,double dEdx,double q,DVector3 mom,
-		      DVector3 pos,DVector3 &dmom,DVector3 &dpos);
-  jerror_t CalcDerivAndJacobian(double ds,DVector3 pos,DVector3 &dpos,
-				DVector3 &B,DMatrix S,double dEdx,
+
+  jerror_t CalcDerivAndJacobian(double ds,const DVector3 &pos,DVector3 &dpos,
+				DVector3 &B,const DMatrix &S,double dEdx,
 				DMatrix &J1,DMatrix &D1);
   jerror_t ConvertStateVector(double z,double wire_x,double wire_y,
-			      DMatrix S,DMatrix C,DMatrix &Sc,
+			      const DMatrix &S,const DMatrix &C,DMatrix &Sc,
 			      DMatrix &Cc);
   jerror_t ConvertStateVector(double z,double wire_x,double wire_y,
-			      DMatrix S,DMatrix &Sc);
+			      const DMatrix &S,DMatrix &Sc);
 
-  jerror_t GetProcessNoiseCentral(double ds,
-				  DVector3 pos,double X0,DMatrix Sc,
+  jerror_t GetProcessNoiseCentral(double ds,const DVector3 &pos,double X0,
+				  const DMatrix &Sc,
 				  DMatrix &Q);
   jerror_t SwimToPlane(DMatrix &S);
   jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S,DMatrix &C);
@@ -220,18 +219,15 @@ class DTrackFitterKalman: public DTrackFitter{
   jerror_t GoldenSection(double &z,double dz,double dEdx,
 			 DVector3 origin, DVector3 dir,DMatrix &S);
   double BrentsAlgorithm(double ds1,double ds2,
-			 double dedx,DVector3 &pos,DVector3 origin,
-			 DVector3 dir,  
+			 double dedx,DVector3 &pos,const DVector3 &origin,
+			 const DVector3 &dir,  
 			 DMatrix &Sc);
   double BrentsAlgorithm(double z,double dz,
-			 double dedx,DVector3 origin,
-			 DVector3 dir,DMatrix S);
+			 double dedx,const DVector3 &origin,
+			 const DVector3 &dir,const DMatrix &S);
   
   jerror_t PropagateForwardCDC(int length,int &index,double z,
 					    double step,DMatrix &S);
-
-  jerror_t CalcTrackdEdx();
-  double GetdEdxSigma();
 
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   //const DGeometry *geom;
