@@ -984,8 +984,7 @@ void DTrackCandidate_factory_CDC::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits
 			if(DEBUG_LEVEL>4)_DBG_<<"rejecting stereo hit at phi="<<pos.Phi()<<" for being too far away from axial hits(phi_diff="<<phi_diff<<")"<<endl;
 			continue;
 		}
-
-		trkhit->phi_stereo = atan2(trkhit->y_stereo-R.Y(), trkhit->x_stereo-R.X());
+		mytrkhit.phi_stereo = atan2(trkhit->y_stereo-R.Y(), trkhit->x_stereo-R.X());
 		R*=-1.0; // make R point from center of circle to beamline instead of other way around
 		if(DEBUG_LEVEL>15){
 			_DBG_<<" --- wire->udir X, Y, Z = "<<wire->udir.X()<<", "<<wire->udir.Y()<<", "<<wire->udir.Z()<<endl;
@@ -999,8 +998,12 @@ void DTrackCandidate_factory_CDC::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits
 		// 0 to -2pi for negative.
 		double phi_hi = seed.fit.q>0.0 ? +2.0*M_PI:0.0;
 		double phi_lo = seed.fit.q>0.0 ? 0.0:-2.0*M_PI;
-		while(mytrkhit.phi_stereo<phi_lo)mytrkhit.phi_stereo+=2.0*M_PI;
-		while(mytrkhit.phi_stereo>phi_hi)mytrkhit.phi_stereo-=2.0*M_PI;
+		while(mytrkhit.phi_stereo<phi_lo){
+		  mytrkhit.phi_stereo+=2.0*M_PI;
+		}
+		while(mytrkhit.phi_stereo>phi_hi){
+		  mytrkhit.phi_stereo-=2.0*M_PI;
+		}
 		mytrkhit.flags |= VALID_STEREO;
 		seed.stereo_hits.push_back(mytrkhit);
 		if(DEBUG_LEVEL>10)_DBG_<<"Adding CDC stereo hit: ring="<<mytrkhit.hit->wire->ring<<" straw="<<mytrkhit.hit->wire->straw<<endl;
