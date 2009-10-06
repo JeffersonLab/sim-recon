@@ -207,6 +207,7 @@ jerror_t DTrackFitter::CorrectForELoss(const DKinematicData &starting_params, DR
 	rt->SetDGeometry(geom);
 	rt->SetMass(0.0);
 	rt->Swim(starting_params.position(), starting_params.momentum(), starting_params.charge(), 1000.0, first_wire);
+	if(rt->Nswim_steps<2)return NOERROR; // no enough swim steps to make this correction worthwile
 	rt->DistToRT(first_wire);
 	rt->GetLastDOCAPoint(pos, mom);
 
@@ -222,6 +223,7 @@ jerror_t DTrackFitter::CorrectForELoss(const DKinematicData &starting_params, DR
 	rt->SetMass(mass);
 	rt->SetPLossDirection(DReferenceTrajectory::kBackward);
 	rt->Swim(pos, -mom, -starting_params.charge(), 1000.0, &target);
+	if(rt->Nswim_steps<2)return NOERROR; // no enough swim steps to make this correction worthwile
 	rt->SetPLossDirection(DReferenceTrajectory::kForward);
 	rt->DistToRT(&target);
 	rt->GetLastDOCAPoint(pos, mom);
