@@ -666,9 +666,11 @@ jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,double z,
   if (do_energy_loss){
     if (geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
       !=NOERROR){
-    _DBG_<< " q/p " << S(state_q_over_p,0) << endl;
-    _DBG_<<"Material error!"<<endl; 
-    return UNRECOVERABLE_ERROR;
+      if (DEBUG_LEVEL>0){
+	_DBG_<< " q/p " << S(state_q_over_p,0) << endl;
+	_DBG_<<"Material error!"<<endl; 
+      }
+      return UNRECOVERABLE_ERROR;
     }
   }
   
@@ -862,8 +864,9 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
 	// get material properties from the Root Geometry
 	if(geom->FindMat(pos,central_traj[m].density,central_traj[m].A,
 			     central_traj[m].Z,central_traj[m].X0)!=NOERROR){
-	  _DBG_ << "Material error! " << endl;
-	  break;
+	  if (DEBUG_LEVEL>0)
+	    _DBG_ << "Material error! " << endl;
+	  return UNRECOVERABLE_ERROR;
 	}
 	dedx=GetdEdx(q_over_p,central_traj[m].Z,central_traj[m].A,
 		     central_traj[m].density);
@@ -942,8 +945,9 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
     if (do_energy_loss){
       // get material properties from the Root Geometry
       if(geom->FindMat(pos,temp.density,temp.A,temp.Z,temp.X0)!=NOERROR){
-	_DBG_ << "Material error! " << endl;
-	break;
+	if (DEBUG_LEVEL>0)
+	  _DBG_ << "Material error! " << endl;
+	return UNRECOVERABLE_ERROR;
       }
       dedx=GetdEdx(q_over_p,temp.Z,temp.A,temp.density);
     }
@@ -1052,8 +1056,9 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
       if (do_energy_loss){
 	if (geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
 	    !=NOERROR){
-	  _DBG_<<"Material error!"<<endl; 
-	  break;
+	  if (DEBUG_LEVEL>0)
+	    _DBG_<<"Material error!"<<endl; 
+	  return UNRECOVERABLE_ERROR;
 	}
       }
 
@@ -1140,8 +1145,9 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
       if (do_energy_loss){
 	if(geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
 	   !=NOERROR){
-	  _DBG_<<"Material error!"<<endl;
-	  break;
+	  if (DEBUG_LEVEL>0)
+	    _DBG_<<"Material error!"<<endl;
+	  return UNRECOVERABLE_ERROR;
 	}
       }
 
@@ -1382,7 +1388,8 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
     }
   }
   else{
-    _DBG_ << "Material error!" <<endl;
+    if (DEBUG_LEVEL>0)
+      _DBG_ << "Material error!" <<endl;
   }
   
   // Shrink the deque if the new trajectory has less points in it than the 
@@ -2168,17 +2175,19 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 
       // If we have cdc hits, swim through the field past these measurements
       // first
+      jerror_t error=NOERROR;
       if (my_cdchits.size()>0){
-	SetCDCForwardReferenceTrajectory(S);
+	error=SetCDCForwardReferenceTrajectory(S);
+	if (error!=NOERROR) break;
       }
       
       // Swim once through the field out to the most upstream FDC hit
-      SetReferenceTrajectory(S);
+      error=SetReferenceTrajectory(S);
       //C0=C;
 
       //printf("forward iteration %d cdc size %d\n",iter2,forward_traj_cdc.size());
       
-      if (forward_traj.size()> 1){
+      if (error==NOERROR && forward_traj.size()> 1){
 	chisq_forward=1.e16;
 	for (unsigned int iter=0;iter<20;iter++) {      	  
 	  if (iter>0){
@@ -2189,19 +2198,20 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	  
 	  C=C0;	  
 	  // perform the kalman filter 
-	  KalmanForward(anneal_factor,S,C,chisq);
-	  //KalmanForward(1.,S,C,chisq);
-	  
-	  //printf("forward chi2 %f p %f \n",chisq,1./S(state_q_over_p,0));
+	  error=KalmanForward(anneal_factor,S,C,chisq);
+	  if (error!=NOERROR) break;
+
 	  // include any hits from the CDC on the trajectory
 	  if (my_cdchits.size()>0 && forward_traj_cdc.size()>0){
 	    // Proceed into CDC
-	    KalmanForwardCDC(anneal_factor,S,C,chisq);
+	    error=KalmanForwardCDC(anneal_factor,S,C,chisq);
+	    if (error!=NOERROR) break;
 	  }
 
 	  // printf("iter %d chi2 %f %f\n",iter2,chisq,chisq_forward);
 	  if (!isfinite(chisq)){
-	    cout << "iter " << iter2 << " chi2 " << chisq << endl;
+	    if (DEBUG_LEVEL>0)
+	      cout << "iter " << iter2 << " chi2 " << chisq << endl;
 	    if (iter2>0) break;
 	    return VALUE_OUT_OF_RANGE;
 	  }
@@ -2212,7 +2222,11 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	  Slast=S;
 	  Clast=C;
 	} //iteration
-      }  
+      }
+      else{
+	if (iter2==0) return UNRECOVERABLE_ERROR;	
+	break;
+      }
 
       //printf("iter2: %d chi2 %f %f\n",iter2,chisq_forward,chisq_iter);
       
@@ -2363,9 +2377,9 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
       len=0;
       ftime=0.;
             
-      SetCDCForwardReferenceTrajectory(S);
+      jerror_t error=SetCDCForwardReferenceTrajectory(S);
       
-      if (forward_traj_cdc.size()> 1){
+      if (error==NOERROR && forward_traj_cdc.size()> 1){
 	chisq_forward=1.e16;
 	for (unsigned int iter=0;iter<20;iter++) {      
 	  // perform the kalman filter 
@@ -2378,7 +2392,8 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	  
 	  C=C0;
 	  chisq=0.;
-	  KalmanForwardCDC(anneal_factor,S,C,chisq);
+	  error=KalmanForwardCDC(anneal_factor,S,C,chisq);
+	  if (error!=NOERROR) break;
 	  if (chisq==0.){
 	    chisq=1.e16;
 	    break;
@@ -2394,6 +2409,11 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	  Clast=C;
 	} //iteration
       }
+      else{
+	if (iter2==0) return UNRECOVERABLE_ERROR;
+	break;
+      }
+       
       
       //printf("iter2: %d factor %f chi2 %f %f\n",iter2,anneal_factor,chisq_forward,chisq_iter);
       
@@ -2490,12 +2510,8 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
     double scale_factor=200.,anneal_factor=1.;
     // Iterate over reference trajectories
     for (int iter2=0;iter2<20;iter2++){   
-    //for (int iter2=0;iter2<1;iter2++){   
-      //if (iter2>0) do_energy_loss=true;
-      //if (iter2>0) do_multiple_scattering=true;
-      
       if (fit_type==kTimeBased){
-	double f=1.75;
+      double f=1.75;
 	anneal_factor=scale_factor/pow(f,iter2)+1.;
       }
   
@@ -2669,9 +2685,9 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	anneal_factor=scale_factor/pow(f,iter2)+1.;
 
       // Initialize trajectory deque and position
-      SetCDCReferenceTrajectory(pos0,Sc);
+      jerror_t error=SetCDCReferenceTrajectory(pos0,Sc);
               
-      if (central_traj.size()>1){
+      if (error==NOERROR && central_traj.size()>1){
 	// Iteration for given reference trajectory 
 	chisq=1.e16;
 	for (int iter=0;iter<20;iter++){
@@ -2715,6 +2731,10 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	  pos0=pos;
 	  chisq=chisq_central;
 	} //iteration
+      }
+      else{
+	if (iter2==0) return UNRECOVERABLE_ERROR;
+	break;
       }
           
       // Abort loop if the chisq is increasing
