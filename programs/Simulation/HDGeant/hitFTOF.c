@@ -171,14 +171,14 @@ void hitForwardTOF (float xin[4], float xout[4],
     // point vertically up as z is the beam axis.
     // plane==0 horizontal plane, plane==1 vertical plane
     //    float dist = xlocal[0];
-    float dist = x[0]; // do not use local coordinate for x and y
-    if (plane==1) dist = x[1];
+    float dist = x[1]; // do not use local coordinate for x and y
+    if (plane==1) dist = x[0];
     float dxnorth = BAR_LENGTH/2.-dist;
     float dxsouth = BAR_LENGTH/2.+dist;
     
     // calculate time at the PMT "normalized" to the center, so a hit in the 
     // center will have time "t" at both PMTs
-    // the speed of singnal travel is C_EFFECTTIVE
+    // the speed of signal travel is C_EFFECTIVE
     // propagte time to the end of the bar
     float tnorth  = (column == 2) ? 0 : t + dxnorth/C_EFFECTIVE;
     float tsouth = (column == 1) ? 0 : t + dxsouth/C_EFFECTIVE;
@@ -190,7 +190,6 @@ void hitForwardTOF (float xin[4], float xout[4],
     float dEnorth  = (column == 2) ? 0 : dEsum ;
     float dEsouth = (column == 1) ? 0 : dEsum ;
     
-    float ycenter = (fabs(xftof[1]) < 1e-4) ? 0 : xftof[1];
     int mark = (plane<<20) + (row<<10) + column;
     void** twig = getTwig(&forwardTOFTree, mark);
     
