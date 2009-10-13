@@ -13,7 +13,7 @@ using namespace std;
 
 #define MAXTOFHITS 50
 #define VELOCITY 15.0
-#define LONGBARLENGTH 258.0
+#define LONGBARLENGTH 252.0
 #define BARWIDTH 6.0
 
 
@@ -40,7 +40,8 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
   // the time difference between two ends, where available.
   for (unsigned int i=0;i<uhits.size();i++){
     double ux=VELOCITY*(uhits[i]->t_south-uhits[i]->t_north)/2.;
-    double utof=(uhits[i]->t_north+uhits[i]->t_south)/2.;
+    double utof=(uhits[i]->t_north+uhits[i]->t_south)/2.
+      -LONGBARLENGTH/2./VELOCITY;
     double dy=uhits[i]->bar>20?BARWIDTH:-BARWIDTH;
     double uy=BARWIDTH*(uhits[i]->bar-20.5)+dy;
     double x_cut=BARWIDTH/2.;
@@ -54,22 +55,22 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
       case 41:
 	uy=-3.;
 	ux=-72.;
-	utof=uhits[i]->t_south;
+	utof=uhits[i]->t_south-LONGBARLENGTH/2./VELOCITY;
 	break;
       case 43:
 	uy=3.;
 	ux=-72.;
-	utof=uhits[i]->t_south;
+	utof=uhits[i]->t_south-LONGBARLENGTH/2./VELOCITY;
 	break;
       case 42:
 	uy=-3.;	
 	ux=+72.;
-	utof=uhits[i]->t_north;
+	utof=uhits[i]->t_north-LONGBARLENGTH/2./VELOCITY;
 	break;
       case 44:
 	uy=+3.;
 	ux=+72.;
-	utof=uhits[i]->t_north;
+	utof=uhits[i]->t_north-LONGBARLENGTH/2./VELOCITY;
 	break;
       default:
 	break;
@@ -79,7 +80,8 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 
     for (unsigned int j=0;j<vhits.size();j++){
       double vy=VELOCITY*(vhits[j]->t_south-vhits[j]->t_north)/2.;
-      double vtof=(vhits[j]->t_north+vhits[j]->t_south)/2.;
+      double vtof=(vhits[j]->t_north+vhits[j]->t_south)/2.
+	-LONGBARLENGTH/2./VELOCITY;
       double dx=vhits[j]->bar>20?BARWIDTH:-BARWIDTH;
       double vx=BARWIDTH*(vhits[j]->bar-20.5)+dx;
       double y_cut=BARWIDTH/2.;
@@ -92,22 +94,22 @@ jerror_t DTOFPoint_factory::evnt(JEventLoop *loop, int eventnumber)
 	case 41:
 	  vx=-3.;
 	  vy=72.;
-	  vtof=vhits[j]->t_south;
+	  vtof=vhits[j]->t_south-LONGBARLENGTH/2./VELOCITY;
 	  break;
 	case 43:
 	  vx=3.;
 	  vy=72.;
-	  vtof=vhits[j]->t_south;
+	  vtof=vhits[j]->t_south-LONGBARLENGTH/2./VELOCITY;
 	  break;
 	case 42:
 	  vx=-3.;
 	  vy=-72.;
-	  vtof=vhits[j]->t_north;
+	  vtof=vhits[j]->t_north-LONGBARLENGTH/2./VELOCITY;
 	  break;
 	case 44:
 	  vx=3.;
 	  vy=-72;
-	  vtof=vhits[j]->t_north;
+	  vtof=vhits[j]->t_north-LONGBARLENGTH/2./VELOCITY;
 	  break;
 	default:
 	  break;
