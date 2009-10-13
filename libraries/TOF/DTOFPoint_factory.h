@@ -10,15 +10,17 @@
 
 #include "JANA/JFactory.h"
 #include "DTOFPoint.h"
+#include "DHDDMTOFHit.h"
 
 class DTOFPoint_factory:public JFactory<DTOFPoint>{
-	public:
-		DTOFPoint_factory(){};
-		~DTOFPoint_factory(){};
+ public:
+  DTOFPoint_factory(){};
+  ~DTOFPoint_factory(){};
+  
+  private:
+  jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
+ 
 
-
-	private:
-		jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 };
 
 #endif // _DTOFPoint_factory_
