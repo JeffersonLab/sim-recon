@@ -270,8 +270,11 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 				break;
 			case kFitFailed:
 				if(DEBUG_LEVEL>2)_DBG_<<"Fit failed on iteration "<<Niterations<<endl;
-				if(Niterations>4){
+				if(Niterations>0){
 					if(DEBUG_LEVEL>2)_DBG_<<"Number of iterations >4. Trying to keep fit from last iteration... "<<endl;
+					chisq=last_chisq;
+					Ndof = last_Ndof;
+					fit_status = kFitNoImprovement;
 					break;
 				}
 				return fit_status;
@@ -458,6 +461,7 @@ double DTrackFitterALT1::ChiSq(vector<resiInfo> &residuals, double *chisq_ptr, i
 	if(Nmeasurements<1){
 		if(chisq_ptr)*chisq_ptr=1.0E6;
 		if(dof_ptr)*dof_ptr=1;
+		if(DEBUG_LEVEL>3)_DBG_<<"Chisq called with empty residuals vector!"<<endl;
 		return 1.0E6;
 	}
 	
@@ -554,7 +558,7 @@ double DTrackFitterALT1::ChiSq(vector<resiInfo> &residuals, double *chisq_ptr, i
 	weights.ResizeTo(W);
 	weights = W;
 	
-	if(DEBUG_LEVEL>10)PrintChisqElements(resiv, cov_meas, cov_muls, weights);
+	if(DEBUG_LEVEL>100 || (DEBUG_LEVEL>10 && !finite(chisq)))PrintChisqElements(resiv, cov_meas, cov_muls, weights);
 
 	// If the caller supplied pointers to chisq and dof variables, copy the values into them
 	if(chisq_ptr)*chisq_ptr = chisq;
@@ -637,6 +641,7 @@ void DTrackFitterALT1::GetHits(fit_type_t fit_type, DReferenceTrajectory *rt, hi
 					// resolution (microns) vs. drift distance (mm).
 					// par[8] = {699.875, -559.056, 149.391, 25.6929, -22.0238, 4.75091, -0.452373, 0.0163858};
 					double x = hi.dist;
+					if(x<0.0)x=0.0; // this can be negative due to tof subtraction above.
 					//double sigma_d = (699.875) + x*((-559.056) + x*((149.391) + x*((25.6929) + x*((-22.0238) + x*((4.75091) + x*((-0.452373) + x*((0.0163858))))))));
 					double sigma_d = 108.55 + 7.62391*x + 556.176*exp(-(1.12566)*pow(x,1.29645));
 					hi.err = sigma_d/10000.0;
