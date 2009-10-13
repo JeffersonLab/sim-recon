@@ -114,6 +114,22 @@ DGeometry* DApplication::GetDGeometry(unsigned int run_number)
 	/// method for every event. The pointer should be obtained
 	/// in a brun() method and kept in a local variable if
 	/// needed outside of brun().
+
+	// At this point in time, only simulation exists with geometry coming
+	// from a JGeometryXML object. The run range for these objects is 
+	// always set to include only the run number requested so if multiple
+	// places in the code ask for different run numbers (as happens) a
+	// second DGeometry object is created unecessarily. Here, we look to
+	// see if a sole DGeometry object already exists and if so, if it is
+	// built on a JGeometryFile object. If so, simply return it under the
+	// assumption we are still doing development with simulated data and
+	// a single set of geometry files.
+	Lock();
+	if(geometries.size()==1 && string("JGeometryXML")==geometries[0]->GetJGeometry()->className()){
+		Unlock();
+		return geometries[0];
+	}
+	Unlock();
 	
 	// First, get the JGeometry object using our JApplication
 	// base class. Then, use that to find the correct DGeometry
@@ -131,6 +147,7 @@ DGeometry* DApplication::GetDGeometry(unsigned int run_number)
 		exit(-1);
 		return NULL;
 	}
+	
 
 	Lock();
 	
@@ -141,16 +158,18 @@ DGeometry* DApplication::GetDGeometry(unsigned int run_number)
 			return dgeom;
 		}
 	}
+
+	cout<<"Creating DGeometry:"<<endl;
+	cout<<"  Run requested:"<<jgeom->GetRunRequested()<<"  found:"<<jgeom->GetRunFound()<<endl;
+	cout<<"  Run validity range: "<<jgeom->GetRunMin()<<"-"<<jgeom->GetRunMax()<<endl;
+	cout<<"  URL=\""<<jgeom->GetURL()<<"\""<<"  context=\""<<jgeom->GetContext()<<"\""<<endl;
+	cout<<"  Type=\""<<jgeom->className()<<"\""<<endl;
 	
 	// Couldn't find a DGeometry object that uses this JGeometry object.
 	// Create one and add it to the list.
 	DGeometry *dgeom = new DGeometry(jgeom, this, run_number);
 	geometries.push_back(dgeom);
 	
-	cout<<"Geometry created:"<<endl;
-	cout<<"  Run requested:"<<jgeom->GetRunRequested()<<"  found:"<<jgeom->GetRunFound()<<endl;
-	cout<<"  Run validity range: "<<jgeom->GetRunMin()<<"-"<<jgeom->GetRunMax()<<endl;
-	cout<<"  URL=\""<<jgeom->GetURL()<<"\""<<"  context=\""<<jgeom->GetContext()<<"\""<<endl;
 	
 	Unlock();
 	
