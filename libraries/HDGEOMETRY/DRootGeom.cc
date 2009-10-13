@@ -36,15 +36,6 @@ DRootGeom::DRootGeom(JApplication *japp)
 		exit(-1);
 	}
 
-	string namepath="Material/material_map";
-	jparms->SetDefaultParameter("MATERIAL_MAP", namepath);
-	int Npoints = ReadMap(namepath, runnumber); 
-	if(Npoints==0){
-		_DBG_<<"Error getting JCalibration object for material map! (will generate table dynamically)"<<endl;
-		DRGeom = hddsroot();
-	}else{
-		table_initialized = true;
-	}
 }
 
 //---------------------------------
@@ -243,6 +234,8 @@ void DRootGeom::InitDRGeom(void)
 TGeoNode* DRootGeom::FindNode(double *x)
 {
 	pthread_mutex_lock(&mutex);
+	
+	if(!DRGeom)InitDRGeom();
 
   TGeoNode *cnode = DRGeom->FindNode(x[0],x[1],x[2]);
   
@@ -259,6 +252,7 @@ TGeoVolume* DRootGeom::FindVolume(double *x)
 {
 
 	pthread_mutex_lock(&mutex);
+	if(!DRGeom)InitDRGeom();
   TGeoNode *cnode = DRGeom->FindNode(x[0],x[1],x[2]);
   TGeoVolume *cvol = cnode->GetVolume();
 	pthread_mutex_unlock(&mutex);
@@ -399,6 +393,7 @@ struct VolMat DRootGeom::FindMat(double *x)
 {
 
 	pthread_mutex_lock(&mutex);
+	if(!DRGeom)InitDRGeom();
   TGeoNode *cnode = DRGeom->FindNode(x[0],x[1],x[2]);
   TGeoVolume *cvol = cnode->GetVolume();
   TGeoMaterial *cmat = cvol->GetMedium()->GetMaterial();
