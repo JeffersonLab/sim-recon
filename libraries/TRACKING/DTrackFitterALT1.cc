@@ -78,7 +78,7 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	LEAST_SQUARES_DP = 0.0001;
 	LEAST_SQUARES_DX = 0.010;
 	LEAST_SQUARES_MIN_HITS = 3;
-	LEAST_SQUARES_MAX_E2NORM = 1.0E8;
+	LEAST_SQUARES_MAX_E2NORM = 1.0E20;
 	DEFAULT_MASS = rt->GetMass(); // Get default mass from DReferenceTrajectory class itself
 	TARGET_CONSTRAINT = false;
 	LR_FORCE_TRUTH = false;
@@ -237,7 +237,9 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	
 	// Swim reference trajectory
 	fit_status = kFitNotDone; // initialize to a safe default
-	rt->Swim(input_params.position(), input_params.momentum(), input_params.charge());
+	DVector3 mom = input_params.momentum();
+	if(mom.Mag()>12.0)mom.SetMag(8.0);	// limit crazy big momenta from candidates
+	rt->Swim(input_params.position(), mom, input_params.charge());
 
 	if(DEBUG_LEVEL>1){
 		double chisq;
@@ -1118,12 +1120,12 @@ DTrackFitterALT1::fit_status_t DTrackFitterALT1::LeastSquaresB(hitsInfo &hinfo, 
 	if(B.E2Norm() > LEAST_SQUARES_MAX_E2NORM){
 		if(DEBUG_LEVEL>1){
 			_DBG_<<" -- B matrix E2Norm out of range(E2Norm="<<B.E2Norm()<<" max="<<LEAST_SQUARES_MAX_E2NORM<<")"<<endl;
-			F.Print();
+			cout<<"--- B ---"<<endl;
 			B.Print();
 		}
 		return kFitFailed;
 	}
-	
+
 	// Copy the B matrix into cov_parm to later copy into DTrack
 	cov_parm.ResizeTo(B);
 	cov_parm = B;
