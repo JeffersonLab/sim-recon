@@ -53,7 +53,7 @@ jerror_t DParticle_factory::brun(jana::JEventLoop *loop, int runnumber)
 		return RESOURCE_UNAVAILABLE;
 	}
 
-	string MASS_HYPOTHESES = "0.13957, 0.938";
+	string MASS_HYPOTHESES = "0.13957, 0.93827";
 	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES", MASS_HYPOTHESES);
 	
 	// Reserve the first mass hypothesis slot for the one decided on by the wire-base fit
