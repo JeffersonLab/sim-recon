@@ -18,6 +18,7 @@
 #include "HDGEOMETRY/DLorentzMapCalibDB.h"
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
+#include <TRACKING/DReferenceTrajectory.h>
 using namespace std;
 
 class DReferenceTrajectory;
@@ -106,6 +107,9 @@ class DTrackFitter:public jana::JObject{
 				     pair <double,double> &dedx);
 		double GetdEdxSigma(unsigned int num_hits,double mean_path_length);
 		double GetdEdx(double p,double mass_hyp,double mean_path_length);
+		jerror_t GetdEdx(const DReferenceTrajectory *rt, double &dedx,
+				 double &mean_path_length, double &p_avg,
+				 unsigned int &num_hits);
 
 		//---- The following need to be supplied by the subclass ----
 		virtual string Name(void) const =0;

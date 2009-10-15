@@ -19,14 +19,6 @@ using namespace std;
 
 using namespace jana;
 
-// Routine for sorting dEdx data
-bool static DTrack_dedx_cmp(pair<double,double>a,pair<double,double>b){
-  double dEdx1=a.first/a.second;
-  double dEdx2=b.first/b.second;
-  return dEdx1<dEdx2;  
-}
-
-
 //------------------
 // CDCSortByRincreasing
 //------------------
@@ -297,92 +289,21 @@ DTrack* DTrack_factory::MakeDTrack(const DTrackCandidate *candidate)
 // hypothesis
 double DTrack_factory::GetFOM(DTrack *dtrack)
 {
-  DVector3 pos,mom;
-  //Get the list of cdc hits used in the fit
-  vector<const DCDCTrackHit*>cdchits;
-  dtrack->Get(cdchits);
-
-  //Vector of dE and dx pairs
-  vector<pair<double,double> >dEdx_list;
-  pair<double,double>dedx;
-
-  // Average measured momentum
-  double p_avg=0.;
-
-  // We cast away the const-ness of the reference trajectory so that we can use the DisToRT method
-  DReferenceTrajectory *rt=const_cast<DReferenceTrajectory*>(dtrack->rt);
-
-  // Loop over cdc hits
-  for (unsigned int i=0;i<cdchits.size();i++){
-    rt->DistToRT(cdchits[i]->wire);
-    rt->GetLastDOCAPoint(pos, mom);
-
-    // Create the dE,dx pair from the position and momentum using a helical approximation for the path 
-    // in the straw and keep track of the momentum in the active region of the detector
-    if (fitter->CalcdEdxHit(mom,pos,cdchits[i],dedx)==NOERROR){
-      dEdx_list.push_back(dedx);
-      
-      p_avg+=mom.Mag();
-    }
-  }
-  
-  //Get the list of fdc hits used in the fit
-  vector<const DFDCPseudo*>fdchits;
-  dtrack->Get(fdchits);
-
-  // loop over fdc hits
-  for (unsigned int i=0;i<fdchits.size();i++){
-    rt->DistToRT(fdchits[i]->wire);
-    rt->GetLastDOCAPoint(pos, mom);
-   
-    pair<double,double>dedx;
-    dedx.first=1000.*fdchits[i]->dE; // MeV
-    double gas_density=0.0018; // g/cm^3
-    double gas_thickness=1.0; // cm
-    dedx.second=gas_density*gas_thickness/cos(mom.Theta());  // g/cm^2  
-  }
-    
-  // Sort the dEdx entries from smallest to largest
-  sort(dEdx_list.begin(),dEdx_list.end(),DTrack_dedx_cmp);  
-
-  // Compute the dEdx in the active volume for the track using a truncated 
-  // mean to minimize the effect of the long Landau tail
-  unsigned int imax
-    =(dEdx_list.size()>5)?int(0.6*dEdx_list.size()):dEdx_list.size();
-  if (imax>0){    
-    double sum_dE=0.;
-    double sum_ds=0.;
-    for (unsigned int i=0;i<imax;i++){
-      sum_ds+=dEdx_list[i].second;
-      sum_dE+=dEdx_list[i].first; 
-    }
-    double dedx=sum_dE/sum_ds;// MeV cm^2/g
+  double dedx,mean_path_length,p_avg;
+  unsigned int num_hits=0;
+  if (fitter->GetdEdx(dtrack->rt,dedx,mean_path_length,p_avg,num_hits)
+      ==NOERROR){
     dtrack->setdEdx(dedx);
-    
-    // Calculate figure-of-merit based on how close the measured dEdx is 
-    // to the most probable dEdx for a particle of mass according to the 
-    // current hypothesis
-    p_avg/=double(dEdx_list.size());
-    double mean_path_length=sum_ds/double(imax);
-    double dedx_sigma=fitter->GetdEdxSigma(imax,mean_path_length);
+    double dedx_sigma=fitter->GetdEdxSigma(num_hits,mean_path_length);
     double dedx_most_probable=fitter->GetdEdx(p_avg,dtrack->rt->GetMass(),mean_path_length);
     
     //figure of merit
     return ( dedx_sigma/fabs(dedx/dedx_most_probable-1.) );
   }
-  else dtrack->setdEdx(0.);
- 
+  
+  // If we got here, GetdEdx failed for this track
+  dtrack->setdEdx(0.);
   return 0.;
-
-
-  //double range_out_fom = GetRangeOutFOM(dtrack);
-  //double chisq_per_dof = dtrack->chisq/(double)dtrack->Ndof;
-  
-  //return chisq_per_dof;
-  
-  //double total_fom = exp(-pow(range_out_fom/0.5, 2.0))*exp(-pow(chisq_per_dof/2.0, 2.0));
-  
-  //return total_fom;
 }
 
 //------------------

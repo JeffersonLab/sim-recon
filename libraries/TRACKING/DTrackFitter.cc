@@ -14,6 +14,13 @@ using namespace jana;
 extern bool FDCSortByZincreasing(const DFDCPseudo* const &hit1, const DFDCPseudo* const &hit2);
 extern bool CDCSortByRincreasing(const DCDCTrackHit* const &hit1, const DCDCTrackHit* const &hit2);
 
+// Routine for sorting dEdx data
+bool static DTrackFitter_dedx_cmp(pair<double,double>a,pair<double,double>b){
+  double dEdx1=a.first/a.second;
+  double dEdx2=b.first/b.second;
+  return dEdx1<dEdx2;  
+}
+
 //-------------------
 // DTrackFitter  (Constructor)
 //-------------------
@@ -343,4 +350,83 @@ double DTrackFitter::GetdEdx(double p,double mass_hyp,double mean_path_length){
 // and sampling thickness path_length
 double DTrackFitter::GetdEdxSigma(unsigned int num_hits,double mean_path_length){
   return 0.41*pow(double(num_hits),-0.43)*pow(mean_path_length,-0.32);
+}
+
+
+// Compute the dEdx for a track described by the reference trajectory rt using
+// a subset of all the FDC and CDC hits on the track. Also returns the mean
+// path length per hit in the active volume of the detector and the average
+// measured momentum within the active region.
+jerror_t DTrackFitter::GetdEdx(const DReferenceTrajectory *rt, double &dedx,
+			       double &mean_path_length, double &p_avg,
+			       unsigned int &num_hits){
+  DVector3 pos,mom;
+  //Get the list of cdc hits used in the fit
+  vector<const DCDCTrackHit*>cdchits;
+  cdchits=GetCDCFitHits();
+
+  //Vector of dE and dx pairs
+  vector<pair<double,double> >dEdx_list;
+  pair<double,double>de_and_dx;
+
+  // Average measured momentum
+  p_avg=0.;
+  // Initialize other output variables
+  dedx=mean_path_length=0.;
+  num_hits=0;
+
+  // We cast away the const-ness of the reference trajectory so that we can use the DisToRT method
+  DReferenceTrajectory *my_rt=const_cast<DReferenceTrajectory*>(rt);
+
+  // Loop over cdc hits
+  for (unsigned int i=0;i<cdchits.size();i++){
+    my_rt->DistToRT(cdchits[i]->wire);
+    my_rt->GetLastDOCAPoint(pos, mom);
+
+    // Create the dE,dx pair from the position and momentum using a helical approximation for the path 
+    // in the straw and keep track of the momentum in the active region of the detector
+    if (CalcdEdxHit(mom,pos,cdchits[i],de_and_dx)==NOERROR){
+      dEdx_list.push_back(de_and_dx);
+      
+      p_avg+=mom.Mag();
+    }
+  }
+  
+  //Get the list of fdc hits used in the fit
+  vector<const DFDCPseudo*>fdchits;
+  fdchits=GetFDCFitHits();
+
+  // loop over fdc hits
+  for (unsigned int i=0;i<fdchits.size();i++){
+    my_rt->DistToRT(fdchits[i]->wire);
+    my_rt->GetLastDOCAPoint(pos, mom);
+   
+    pair<double,double>de_and_dx;
+    de_and_dx.first=1000.*fdchits[i]->dE; // MeV
+    double gas_density=0.0018; // g/cm^3
+    double gas_thickness=1.0; // cm
+    de_and_dx.second=gas_density*gas_thickness/cos(mom.Theta());  // g/cm^2  
+  }
+    
+  // Sort the dEdx entries from smallest to largest
+  sort(dEdx_list.begin(),dEdx_list.end(),DTrackFitter_dedx_cmp);  
+
+  // Compute the dEdx in the active volume for the track using a truncated 
+  // mean to minimize the effect of the long Landau tail
+  num_hits=(dEdx_list.size()>5)?int(0.6*dEdx_list.size()):dEdx_list.size();
+  if (num_hits>0){    
+    double sum_dE=0.;
+    double sum_ds=0.;
+    for (unsigned int i=0;i<num_hits;i++){
+      sum_ds+=dEdx_list[i].second;
+      sum_dE+=dEdx_list[i].first; 
+    }
+    dedx=sum_dE/sum_ds;// MeV cm^2/g
+    mean_path_length=sum_ds/double(num_hits);    
+    p_avg/=double(dEdx_list.size());
+
+    return NOERROR;
+  }
+ 
+  return RESOURCE_UNAVAILABLE;
 }
