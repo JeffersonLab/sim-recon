@@ -149,9 +149,18 @@ jerror_t DEventProcessor_rho_p_hists::evnt(JEventLoop *loop, int eventnumber)
 	// Below here are the histos that do not depend on the tagged photon
 	// energy and so should be filled outside of the above loop.
 
-	// Determine whether all thrown pions are fiducial
-	for(unsigned int j=0; j<thrown_piplus.size(); j++)evt->isfiducial_thrown &= IsFiducial(thrown_piplus[j]);
-	for(unsigned int j=0; j<thrown_piminus.size(); j++)evt->isfiducial_thrown &= IsFiducial(thrown_piminus[j]);
+	// We are only interested in single rho events so return now if there
+	// are not exactly one thrown pi+ and one thrown pi-
+	if(thrown_piplus.size()!=1)return NOERROR;
+	if(thrown_piminus.size()!=1)return NOERROR;
+
+	// Determine whether both thrown pions are fiducial
+	evt->rho_thrown.isfiducial = IsFiducial(thrown_piplus[0]) && IsFiducial(thrown_piminus[0]);
+	
+	// Thrown pion parameters
+	evt->rho_thrown.pip = thrown_piplus[0];
+	evt->rho_thrown.pim = thrown_piminus[0];
+	evt->rho_thrown.m = (evt->rho_thrown.pip+evt->rho_thrown.pim).M();
 
 	// pi+, pi- invariant mass. Loop over all possible combinations
 	for(unsigned int j=0; j<rec_piplus.size(); j++){

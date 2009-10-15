@@ -18,7 +18,10 @@ void Event::Clear(void)
 	proton_thrown.SetXYZT(0.0, 0.0, 0.0, 0.0);
 	beam.SetXYZT(0.0, 0.0, 0.0, 0.0);
 	vertex.SetXYZ(0.0, 0.0, 65.0);
-	isfiducial_thrown = true;
+	rho_thrown.m = 0.0;
+	rho_thrown.pip.SetXYZT(0.0, 0.0, 0.0, 0.0);
+	rho_thrown.pim.SetXYZT(0.0, 0.0, 0.0, 0.0);
+	rho_thrown.isfiducial = false;
 	rho->Clear(); // delete entries in TClonesArray (without freeing memory)
 	Nrho = 0;
 }

@@ -26,7 +26,7 @@ class Event:public TObject{
 		TLorentzVector proton_thrown;	// Thrown proton parameters
 		TLorentzVector beam;				// Thrown beam photon parameters
 		TVector3 vertex;					// Thrown vertex position
-		Bool_t isfiducial_thrown;		// True if both thrown pi+ and pi- are in fiducial phasespace
+		rho_t rho_thrown;					// Thrown pip, pim, inv. mass etc.
 		UInt_t Nrho;						// Number of elements in rho
 		TClonesArray *rho;				//-> Array of all combos of p+/pi- sorted by inv. mass closest to 770MeV/c^2
 
