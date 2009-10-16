@@ -62,7 +62,7 @@ pristine: clean
 %.d : %.c
 	@$(DCC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CFLAGS) $< > $(DEP_DIR)/$@
 %.d : %.F
-	@$(DFC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(FFLAGS) $< > $(DEP_DIR)/$@
+	@$(CPP) -MM -MT "$(LIBNAME)($(basename $@).o)" $(FFLAGS) $< > $(DEP_DIR)/$@
 
 
 env:

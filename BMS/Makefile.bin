@@ -87,7 +87,7 @@ exec_clean:
 %.d : %.c
 	@$(DCC) -MM -MT "$(basename $@).o" $(CFLAGS) $< > $(DEP_DIR)/$(basename $@).d
 %.d : %.F
-	@$(DFC) -MM -MT "$(basename $@).o" -c $(FFLAGS) $< > $(DEP_DIR)/$(basename $@).d
+	@$(CPP) -MM -MT "$(basename $@).o" -c $(FFLAGS) $< > $(DEP_DIR)/$(basename $@).d
 
 # Rules to make DEBUG objects from source. Note for programs, we give the
 # objects funny names while for libraries only the library has a funny name.
