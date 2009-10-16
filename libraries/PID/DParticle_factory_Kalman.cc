@@ -104,7 +104,7 @@ jerror_t DParticle_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
 		DParticle *best_track = NULL;
 		double best_fom = 0.0;
 		for(unsigned int j=0; j<mass_hypotheses.size(); j++){
-		
+
 			// If best_track is set then check if the fom is large enough
 			// that we can skip additional hypotheses
 			//if(best_fom>1.0E-5)break;
@@ -141,6 +141,7 @@ jerror_t DParticle_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
 			if(!best_track){
 				best_track = dparticle;
 				best_fom = GetFOM(best_track);
+
 				if(DEBUG_LEVEL>1)_DBG_<<"-- first successful fit this candidate with mass: "<<mass_hypotheses[j]<<" (chisq/Ndof="<<(best_track->chisq/best_track->Ndof)<<") fom="<<best_fom<<endl;
 				continue;
 			}
@@ -157,7 +158,7 @@ jerror_t DParticle_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
 			// out if their momentum is low enough. We want to use the track range to help decide.
 			// Form a figure of merit based on the chisq/Ndof and the probability of ranging out.
 			double fom = GetFOM(dparticle);
-			
+				
 			// There can be only one! (Highlander)
 			if(fom > best_fom){
 				if(DEBUG_LEVEL>1)_DBG_<<"-- new best track with mass "<<mass_hypotheses[j]<<" (old chisq/Ndof="<<(best_track->chisq/best_track->Ndof)<<" , new chisq/Ndof="<<(dparticle->chisq/dparticle->Ndof)<<") (old fom="<<best_fom<<" , new fom="<<fom<<")"<<endl;
@@ -240,13 +241,20 @@ DParticle* DParticle_factory_Kalman::MakeDParticle(const DTrack *track)
 //------------------
 double DParticle_factory_Kalman::GetFOM(DParticle *dparticle)
 {
-	//double range_out_fom = GetRangeOutFOM(dtrack);
-	double chisq_per_dof = dparticle->chisq/(double)dparticle->Ndof;
-	
-	return chisq_per_dof;
-	
-	//double total_fom = exp(-pow(range_out_fom/0.5, 2.0))*exp(-pow(chisq_per_dof/2.0, 2.0));
-	
-	//return total_fom;
+  double dedx,mean_path_length,p_avg;
+  unsigned int num_hits=0;
+  if (fitter->GetdEdx(dparticle->rt,dedx,mean_path_length,p_avg,num_hits)
+      ==NOERROR){
+    dparticle->setdEdx(dedx);
+    double dedx_sigma=fitter->GetdEdxSigma(num_hits,mean_path_length);
+    double dedx_most_probable=fitter->GetdEdx(p_avg,dparticle->rt->GetMass(),mean_path_length);
+    
+    //figure of merit
+    return ( dedx_sigma/fabs(dedx/dedx_most_probable-1.) );
+  }
+  
+  // If we got here, GetdEdx failed for this track
+  dparticle->setdEdx(0.);
+  return 0.;
 }
 

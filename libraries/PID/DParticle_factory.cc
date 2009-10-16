@@ -242,14 +242,21 @@ DParticle* DParticle_factory::MakeDParticle(const DTrack *track)
 //------------------
 double DParticle_factory::GetFOM(DParticle *dparticle)
 {
-	//double range_out_fom = GetRangeOutFOM(dtrack);
-	double chisq_per_dof = dparticle->chisq/(double)dparticle->Ndof;
-	
-	return chisq_per_dof;
-	
-	//double total_fom = exp(-pow(range_out_fom/0.5, 2.0))*exp(-pow(chisq_per_dof/2.0, 2.0));
-	
-	//return total_fom;
+  double dedx,mean_path_length,p_avg;
+  unsigned int num_hits=0;
+  if (fitter->GetdEdx(dparticle->rt,dedx,mean_path_length,p_avg,num_hits)
+      ==NOERROR){
+    dparticle->setdEdx(dedx);
+    double dedx_sigma=fitter->GetdEdxSigma(num_hits,mean_path_length);
+    double dedx_most_probable=fitter->GetdEdx(p_avg,dparticle->rt->GetMass(),mean_path_length);
+    
+    //figure of merit
+    return ( dedx_sigma/fabs(dedx/dedx_most_probable-1.) );
+  }
+  
+  // If we got here, GetdEdx failed for this track
+  dparticle->setdEdx(0.);
+  return 0.;
 }
 
 //------------------
