@@ -295,6 +295,9 @@ jerror_t DTrackFitterKalman::SetSeed(double q,DVector3 pos, DVector3 mom){
     _DBG_ << "Invalid seed data." <<endl;
     return UNRECOVERABLE_ERROR;
   }
+  if (mom.Mag()>12.){
+    mom.SetMag(8.0);
+  }
 
   // Forward parameterization 
   x_=pos(0);
