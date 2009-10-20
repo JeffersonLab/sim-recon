@@ -166,7 +166,9 @@ int DMagneticFieldMapCalibDB::ReadMap(string namepath, int runnumber, string con
 	int index_y0, index_y1;
 	index_y=index_y0=index_y1=0;
 	*/
-		
+	double d_index_x=double(index_x1-index_x0);
+	double d_index_z=double(index_z1-index_z0); 
+
 	DBfieldPoint_t *Bx0 = &Btable[index_x0][index_y][index_z];
 	DBfieldPoint_t *Bx1 = &Btable[index_x1][index_y][index_z];
 	//DBfieldPoint_t *By0 = &Btable[index_x][index_y0][index_z];
@@ -175,27 +177,25 @@ int DMagneticFieldMapCalibDB::ReadMap(string namepath, int runnumber, string con
 	DBfieldPoint_t *Bz1 = &Btable[index_x][index_y][index_z1];
 	
 	DBfieldPoint_t *g = &Btable[index_x][index_y][index_z];
-	g->dBxdx = (Bx1->Bx - Bx0->Bx)/(double)(index_x1-index_x0);
+	g->dBxdx = (Bx1->Bx - Bx0->Bx)/d_index_x;
 	//g->dBxdy = (By1->Bx - By0->Bx)/(double)(index_y1-index_y0);
-	g->dBxdz = (Bz1->Bx - Bz0->Bx)/(double)(index_z1-index_z0);
+	g->dBxdz = (Bz1->Bx - Bz0->Bx)/d_index_z;
 	
-	g->dBydx = (Bx1->By - Bx0->By)/(double)(index_x1-index_x0);
+	g->dBydx = (Bx1->By - Bx0->By)/d_index_x;
 	//g->dBydy = (By1->By - By0->By)/(double)(index_y1-index_y0);
-	g->dBydz = (Bz1->By - Bz0->By)/(double)(index_z1-index_z0);
+	g->dBydz = (Bz1->By - Bz0->By)/d_index_z;
        	
-	g->dBzdx = (Bx1->Bz - Bx0->Bz)/(double)(index_x1-index_x0);
+	g->dBzdx = (Bx1->Bz - Bx0->Bz)/d_index_x;
 	//g->dBzdy = (By1->Bz - By0->Bz)/(double)(index_y1-index_y0);
-	g->dBzdz = (Bz1->Bz - Bz0->Bz)/(double)(index_z1-index_z0);
+	g->dBzdz = (Bz1->Bz - Bz0->Bz)/d_index_z;
 
 	DBfieldPoint_t *B11 = &Btable[index_x1][index_y][index_z1];
 	DBfieldPoint_t *B01 = &Btable[index_x0][index_y][index_z1];	
 	DBfieldPoint_t *B10 = &Btable[index_x1][index_y][index_z0];
 	DBfieldPoint_t *B00 = &Btable[index_x0][index_y][index_z0];
 	
-	g->dBxdxdz=(B11->Bx - B01->Bx - B10->Bx + B00->Bx)/
-	  double((index_x1-index_x0)*(index_z1-index_z0));	
-	g->dBzdxdz=(B11->Bz - B01->Bz - B10->Bz + B00->Bz)/
-	  double((index_x1-index_x0)*(index_z1-index_z0));
+	g->dBxdxdz=(B11->Bx - B01->Bx - B10->Bx + B00->Bx)/d_index_x/d_index_z;
+	g->dBzdxdz=(B11->Bz - B01->Bz - B10->Bz + B00->Bz)/d_index_x/d_index_z;
       }
     }
   }
@@ -226,8 +226,7 @@ void DMagneticFieldMapCalibDB::GetFieldBicubic(double x,double y,double z,
       {0, 0, 0, 0, 0, 0, 0, 0, 2,-2, 0, 0, 1, 1, 0, 0},
       {-6, 6,-6,6,-3,-3, 3, 3,-4, 4, 2,-2,-2,-2,-1,-1},
       {4,-4, 4,-4, 2, 2,-2,-2, 2,-2,-2, 2, 1, 1, 1, 1}};
-  double temp[16],Br[4],Bz[4],dBrdx[4],dBrdz[4],dBrdxdz[4];
-  double dBzdx[4],dBzdz[4],dBzdxdz[4];
+  double temp[16];
   double cl[16],coeff[4][4];
 
   // Get closest indices for this point
@@ -252,32 +251,26 @@ void DMagneticFieldMapCalibDB::GetFieldBicubic(double x,double y,double z,
   const DBfieldPoint_t *B10 = &Btable[index_x1][index_y][index_z];
   
   // First compute the interpolation for Br
-  Br[0]=B00->Bx;
-  Br[1]=B01->Bx;
-  Br[2]=B11->Bx;
-  Br[3]=B10->Bx;
+  temp[0]=B00->Bx;
+  temp[1]=B01->Bx;
+  temp[2]=B11->Bx;
+  temp[3]=B10->Bx;
 
-  dBrdx[0]=B00->dBxdx;
-  dBrdx[1]=B01->dBxdx;
-  dBrdx[2]=B11->dBxdx;
-  dBrdx[3]=B10->dBxdx;
+  temp[8]=B00->dBxdx;
+  temp[9]=B01->dBxdx;
+  temp[10]=B11->dBxdx;
+  temp[11]=B10->dBxdx;
 
-  dBrdz[0]=B00->dBxdz;
-  dBrdz[1]=B01->dBxdz;
-  dBrdz[2]=B11->dBxdz;
-  dBrdz[3]=B10->dBxdz;
+  temp[4]=B00->dBxdz;
+  temp[5]=B01->dBxdz;
+  temp[6]=B11->dBxdz;
+  temp[7]=B10->dBxdz;
    
-  dBrdxdz[0]=B00->dBxdxdz;
-  dBrdxdz[1]=B01->dBxdxdz;
-  dBrdxdz[2]=B11->dBxdxdz;
-  dBrdxdz[3]=B10->dBxdxdz;
+  temp[12]=B00->dBxdxdz;
+  temp[13]=B01->dBxdxdz;
+  temp[14]=B11->dBxdxdz;
+  temp[15]=B10->dBxdxdz;
 
-  for (i=0;i<4;i++){
-    temp[i]=Br[i];
-    temp[i+4]=dBrdz[i];
-    temp[i+8]=dBrdx[i];
-    temp[i+12]=dBrdxdz[i];
-  }
   for (i=0;i<16;i++){
     double tmp2=0.0;
     for (k=0;k<16;k++) tmp2+=wt[i][k]*temp[k];
@@ -294,32 +287,26 @@ void DMagneticFieldMapCalibDB::GetFieldBicubic(double x,double y,double z,
   }
   
   // Next compute the interpolation for Bz
-  Bz[0]=B00->Bz;
-  Bz[1]=B01->Bz;
-  Bz[2]=B11->Bz;
-  Bz[3]=B10->Bz;
+  temp[0]=B00->Bz;
+  temp[1]=B01->Bz;
+  temp[2]=B11->Bz;
+  temp[3]=B10->Bz;
 
-  dBzdx[0]=B00->dBzdx;
-  dBzdx[1]=B01->dBzdx;
-  dBzdx[2]=B11->dBzdx;
-  dBzdx[3]=B10->dBzdx;
+  temp[8]=B00->dBzdx;
+  temp[9]=B01->dBzdx;
+  temp[10]=B11->dBzdx;
+  temp[11]=B10->dBzdx;
 
-  dBzdz[0]=B00->dBzdz;
-  dBzdz[1]=B01->dBzdz;
-  dBzdz[2]=B11->dBzdz;
-  dBzdz[3]=B10->dBzdz;
+  temp[4]=B00->dBzdz;
+  temp[5]=B01->dBzdz;
+  temp[6]=B11->dBzdz;
+  temp[7]=B10->dBzdz;
    
-  dBzdxdz[0]=B00->dBzdxdz;
-  dBzdxdz[1]=B01->dBzdxdz;
-  dBzdxdz[2]=B11->dBzdxdz;
-  dBzdxdz[3]=B10->dBzdxdz;
+  temp[12]=B00->dBzdxdz;
+  temp[13]=B01->dBzdxdz;
+  temp[14]=B11->dBzdxdz;
+  temp[15]=B10->dBzdxdz;
 
-  for (i=0;i<4;i++){
-    temp[i]=Bz[i];
-    temp[i+4]=dBzdz[i];
-    temp[i+8]=dBzdx[i];
-    temp[i+12]=dBzdxdz[i];
-  }
   for (i=0;i<16;i++){
     double tmp2=0.0;
     for (k=0;k<16;k++) tmp2+=wt[i][k]*temp[k];
@@ -380,8 +367,7 @@ void DMagneticFieldMapCalibDB::GetFieldAndGradient(double x,double y,double z,
       {0, 0, 0, 0, 0, 0, 0, 0, 2,-2, 0, 0, 1, 1, 0, 0},
       {-6, 6,-6,6,-3,-3, 3, 3,-4, 4, 2,-2,-2,-2,-1,-1},
       {4,-4, 4,-4, 2, 2,-2,-2, 2,-2,-2, 2, 1, 1, 1, 1}};
-  double temp[16],Br[4],Bz[4],dBrdx[4],dBrdz[4],dBrdxdz[4];
-  double dBzdx[4],dBzdz[4],dBzdxdz[4];
+  double temp[16];
   double cl[16],coeff[4][4];
 
   // Get closest indices for this point
@@ -406,32 +392,26 @@ void DMagneticFieldMapCalibDB::GetFieldAndGradient(double x,double y,double z,
   const DBfieldPoint_t *B10 = &Btable[index_x1][index_y][index_z];
   
   // First compute the interpolation for Br
-  Br[0]=B00->Bx;
-  Br[1]=B01->Bx;
-  Br[2]=B11->Bx;
-  Br[3]=B10->Bx;
+  temp[0]=B00->Bx;
+  temp[1]=B01->Bx;
+  temp[2]=B11->Bx;
+  temp[3]=B10->Bx;
 
-  dBrdx[0]=B00->dBxdx;
-  dBrdx[1]=B01->dBxdx;
-  dBrdx[2]=B11->dBxdx;
-  dBrdx[3]=B10->dBxdx;
+  temp[8]=B00->dBxdx;
+  temp[9]=B01->dBxdx;
+  temp[10]=B11->dBxdx;
+  temp[11]=B10->dBxdx;
 
-  dBrdz[0]=B00->dBxdz;
-  dBrdz[1]=B01->dBxdz;
-  dBrdz[2]=B11->dBxdz;
-  dBrdz[3]=B10->dBxdz;
+  temp[4]=B00->dBxdz;
+  temp[5]=B01->dBxdz;
+  temp[6]=B11->dBxdz;
+  temp[7]=B10->dBxdz;
    
-  dBrdxdz[0]=B00->dBxdxdz;
-  dBrdxdz[1]=B01->dBxdxdz;
-  dBrdxdz[2]=B11->dBxdxdz;
-  dBrdxdz[3]=B10->dBxdxdz;
+  temp[12]=B00->dBxdxdz;
+  temp[13]=B01->dBxdxdz;
+  temp[14]=B11->dBxdxdz;
+  temp[15]=B10->dBxdxdz;
 
-  for (i=0;i<4;i++){
-    temp[i]=Br[i];
-    temp[i+4]=dBrdz[i];
-    temp[i+8]=dBrdx[i];
-    temp[i+12]=dBrdxdz[i];
-  }
   for (i=0;i<16;i++){
     double tmp2=0.0;
     for (k=0;k<16;k++) tmp2+=wt[i][k]*temp[k];
@@ -452,32 +432,26 @@ void DMagneticFieldMapCalibDB::GetFieldAndGradient(double x,double y,double z,
   dBrdz_/=dz;
 
   // Next compute the interpolation for Bz
-  Bz[0]=B00->Bz;
-  Bz[1]=B01->Bz;
-  Bz[2]=B11->Bz;
-  Bz[3]=B10->Bz;
+  temp[0]=B00->Bz;
+  temp[1]=B01->Bz;
+  temp[2]=B11->Bz;
+  temp[3]=B10->Bz;
 
-  dBzdx[0]=B00->dBzdx;
-  dBzdx[1]=B01->dBzdx;
-  dBzdx[2]=B11->dBzdx;
-  dBzdx[3]=B10->dBzdx;
+  temp[8]=B00->dBzdx;
+  temp[9]=B01->dBzdx;
+  temp[10]=B11->dBzdx;
+  temp[11]=B10->dBzdx;
 
-  dBzdz[0]=B00->dBzdz;
-  dBzdz[1]=B01->dBzdz;
-  dBzdz[2]=B11->dBzdz;
-  dBzdz[3]=B10->dBzdz;
+  temp[4]=B00->dBzdz;
+  temp[5]=B01->dBzdz;
+  temp[6]=B11->dBzdz;
+  temp[7]=B10->dBzdz;
    
-  dBzdxdz[0]=B00->dBzdxdz;
-  dBzdxdz[1]=B01->dBzdxdz;
-  dBzdxdz[2]=B11->dBzdxdz;
-  dBzdxdz[3]=B10->dBzdxdz;
+  temp[12]=B00->dBzdxdz;
+  temp[13]=B01->dBzdxdz;
+  temp[14]=B11->dBzdxdz;
+  temp[15]=B10->dBzdxdz;
 
-  for (i=0;i<4;i++){
-    temp[i]=Bz[i];
-    temp[i+4]=dBzdz[i];
-    temp[i+8]=dBzdx[i];
-    temp[i+12]=dBzdxdz[i];
-  }
   for (i=0;i<16;i++){
     double tmp2=0.0;
     for (k=0;k<16;k++) tmp2+=wt[i][k]*temp[k];
