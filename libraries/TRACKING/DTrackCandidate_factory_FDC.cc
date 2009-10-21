@@ -15,7 +15,6 @@ using namespace std;
 
 #include "DTrackCandidate_factory_FDC.h"
 #include "DANA/DApplication.h"
-#include "DTrack.h"
 #include "DQuickFit.h"
 #include "JANA/JGeometry.h"
 #include "HDGEOMETRY/DMagneticFieldMap.h"

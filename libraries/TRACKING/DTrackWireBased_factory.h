@@ -1,12 +1,12 @@
-// $Id$
+// $Id: DTrackWireBased_factory.h 5569 2009-10-02 22:27:08Z staylor $
 //
-//    File: DTrack_factory.h
+//    File: DTrackWireBased_factory.h
 // Created: Wed Sep  3 09:33:40 EDT 2008
 // Creator: davidl (on Darwin harriet.jlab.org 8.11.1 i386)
 //
 
-#ifndef _DTrack_factory_
-#define _DTrack_factory_
+#ifndef _DTrackWireBased_factory_
+#define _DTrackWireBased_factory_
 
 #include <JANA/JFactory.h>
 #include <JANA/JObject.h>
@@ -16,10 +16,10 @@
 
 class DTrackCandidate;
 
-#include "DTrack.h"
+#include "DTrackWireBased.h"
 
 ///////////////////////////////////////////////////////////////////////
-/// The DTrack_factory class coordinates the fitting of wire-based
+/// The DTrackWireBased_factory class coordinates the fitting of wire-based
 /// tracks. While the hit selection is done here, the actual heavy
 /// lifting of the fit is done by the DTrackFitter class (or, more
 /// specifically, a class that inherits from DTrackFitter).
@@ -28,9 +28,9 @@ class DTrackCandidate;
 /// and uses it to fit the DTrackCandidate objects which it grabs
 /// also using the default Tag.
 /// 
-/// The DTrack objects are wire-based tracks (no drift time information
-/// is used). As such, this is hardwired to set the fit type for the
-/// DTrackFitter to kWireBased. See the DParticle classes for the
+/// The DTrackWireBased objects are wire-based tracks (no drift time 
+/// information is used). As such, this is hardwired to set the fit type for 
+/// the DTrackFitter to kWireBased. See the DTrackTimeBased classes for the
 /// time-based counterpart.
 ///
 /// This may appear uneccessarily complex, but it provides for using the
@@ -40,10 +40,10 @@ class DTrackCandidate;
 /// stages using the same DEFTAG mechanism used by the rest of JANA.
 ///////////////////////////////////////////////////////////////////////
 
-class DTrack_factory:public jana::JFactory<DTrack>{
+class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 	public:
-		DTrack_factory(){};
-		~DTrack_factory(){};
+		DTrackWireBased_factory(){};
+		~DTrackWireBased_factory(){};
 
 
 	private:
@@ -59,12 +59,12 @@ class DTrack_factory:public jana::JFactory<DTrack>{
 		vector<DReferenceTrajectory*> rtv;
 		vector<double> mass_hypotheses;
 
-		DTrack* MakeDTrack(const DTrackCandidate *candidate);
-		double GetFOM(DTrack *dtrack);
-		double GetRangeOutFOM(DTrack *dtrack);
+		DTrackWireBased* MakeDTrackWireBased(const DTrackCandidate *candidate);
+		double GetFOM(DTrackWireBased *dtrack);
+		double GetRangeOutFOM(DTrackWireBased *dtrack);
 		void FilterDuplicates(void);
 		
 };
 
-#endif // _DTrack_factory_
+#endif // _DTrackWireBased_factory_
 

@@ -1,12 +1,12 @@
-// $Id$
+// $Id: DTrackWireBased_factory_Kalman.h 5569 2009-10-02 22:27:08Z staylor $
 //
-//    File: DTrack_factory_Kalman.h
+//    File: DTrackWireBased_factory_Kalman.h
 // Created: Thu Jul 30 08:42:32 EDT 2009
 // Creator: davidl (on Darwin harriet.jlab.org 9.7.0 i386)
 //
 
-#ifndef _DTrack_factory_Kalman_
-#define _DTrack_factory_Kalman_
+#ifndef _DTrackWireBased_factory_Kalman_
+#define _DTrackWireBased_factory_Kalman_
 
 #include <JANA/JFactory.h>
 #include <JANA/JObject.h>
@@ -16,10 +16,10 @@
 
 class DTrackCandidate;
 
-#include "DTrack.h"
+#include "DTrackWireBased.h"
 
 ///////////////////////////////////////////////////////////////////////
-/// The DTrack_factory_Kalman class coordinates the fitting of wire-based
+/// The DTrackWireBased_factory_Kalman class coordinates the fitting of wire-based
 /// tracks. While the hit selection is done here, the actual heavy
 /// lifting of the fit is done by the DTrackFitter class (or, more
 /// specifically, a class that inherits from DTrackFitter).
@@ -28,7 +28,7 @@ class DTrackCandidate;
 /// and uses it to fit the DTrackCandidate objects which it grabs
 /// also using the default Tag.
 /// 
-/// The DTrack objects are wire-based tracks (no drift time information
+/// The DTrackWireBased objects are wire-based tracks (no drift time information
 /// is used). As such, this is hardwired to set the fit type for the
 /// DTrackFitter to kWireBased. See the DParticle classes for the
 /// time-based counterpart.
@@ -40,10 +40,10 @@ class DTrackCandidate;
 /// stages using the same DEFTAG mechanism used by the rest of JANA.
 ///////////////////////////////////////////////////////////////////////
 
-class DTrack_factory_Kalman:public jana::JFactory<DTrack>{
+class DTrackWireBased_factory_Kalman:public jana::JFactory<DTrackWireBased>{
 	public:
-		DTrack_factory_Kalman(){};
-		~DTrack_factory_Kalman(){};
+		DTrackWireBased_factory_Kalman(){};
+		~DTrackWireBased_factory_Kalman(){};
 		const char* Tag(void){return "Kalman";}
 
 	private:
@@ -60,10 +60,10 @@ class DTrack_factory_Kalman:public jana::JFactory<DTrack>{
 		vector<DReferenceTrajectory*> rtv;
 		vector<double> mass_hypotheses;
 
-		DTrack *MakeDTrack(const DTrackCandidate *candidate);
-		double GetFOM(DTrack *dtrack);
+		DTrackWireBased *MakeDTrackWireBased(const DTrackCandidate *candidate);
+		double GetFOM(DTrackWireBased *dtrack);
 		 
 };
 
-#endif // _DTrack_factory_Kalman_
+#endif // _DTrackWireBased_factory_Kalman_
 

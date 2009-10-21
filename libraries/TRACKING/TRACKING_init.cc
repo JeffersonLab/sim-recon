@@ -1,7 +1,8 @@
 // $Id$
 
 #include "JANA/JEventLoop.h"
-#include "DTrack_factory.h"
+#include "DTrackWireBased_factory.h"
+#include "DTrackTimeBased_factory.h"
 #include "DTrackCandidate_factory.h"
 #include "DTrackCandidate_factory_THROWN.h"
 #include "DTrackCandidate_factory_CDC.h"
@@ -9,8 +10,9 @@
 #include "DTrackCandidate_factory_FDCCathodes.h"
 #include "DTrackCandidate_factory_FDCpseudo.h"
 #include "DTrackCandidate_factory_CDC_or_FDCpseudo.h"
-#include "DTrack_factory_THROWN.h"
-#include "DTrack_factory_Kalman.h"
+#include "DTrackWireBased_factory_THROWN.h"
+#include "DTrackWireBased_factory_Kalman.h"
+#include "DTrackTimeBased_factory_Kalman.h"
 #include "DTrackFitter_factory.h"
 #include "DTrackFitter_factory_ALT1.h"
 #include "DTrackFitter_factory_Kalman.h"
@@ -28,8 +30,10 @@ typedef JFactory<DMCTrajectoryPoint> DMCTrajectoryPoint_factory;
 jerror_t TRACKING_init(JEventLoop *loop)
 {
 	/// Create and register TRACKING data factories
-	loop->AddFactory(new DTrack_factory());
-	loop->AddFactory(new DTrack_factory_Kalman());
+	loop->AddFactory(new DTrackWireBased_factory());
+	loop->AddFactory(new DTrackWireBased_factory_Kalman());
+	loop->AddFactory(new DTrackTimeBased_factory());
+	loop->AddFactory(new DTrackTimeBased_factory_Kalman());
 	loop->AddFactory(new DTrackCandidate_factory());
 	loop->AddFactory(new DTrackCandidate_factory_CDC());
 	loop->AddFactory(new DTrackCandidate_factory_FDC());
@@ -40,7 +44,7 @@ jerror_t TRACKING_init(JEventLoop *loop)
 	loop->AddFactory(new DMCTrackHit_factory());
 	loop->AddFactory(new DMCThrown_factory());
 	loop->AddFactory(new DMCTrajectoryPoint_factory());
-	loop->AddFactory(new DTrack_factory_THROWN());
+	loop->AddFactory(new DTrackWireBased_factory_THROWN());
 	loop->AddFactory(new DTrackFitter_factory());
 	loop->AddFactory(new DTrackFitter_factory_ALT1());
 	loop->AddFactory(new DTrackFitter_factory_Kalman());

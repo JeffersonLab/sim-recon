@@ -1,6 +1,6 @@
 // $Id$
 //
-//    File: DTrack_factory_THROWN.cc
+//    File: DTrackWireBased_factory_THROWN.cc
 // Created: Mon Sep  3 19:57:11 EDT 2007
 // Creator: davidl (on Darwin Amelia.local 8.10.1 i386)
 //
@@ -13,7 +13,7 @@ using namespace std;
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
 
-#include "DTrack_factory_THROWN.h"
+#include "DTrackWireBased_factory_THROWN.h"
 #include "DMCThrown.h"
 #include "DReferenceTrajectory.h"
 #include "DRandom.h"
@@ -22,9 +22,9 @@ using namespace std;
 
 
 //------------------
-// DTrack_factory_THROWN
+// DTrackWireBased_factory_THROWN
 //------------------
-DTrack_factory_THROWN::DTrack_factory_THROWN()
+DTrackWireBased_factory_THROWN::DTrackWireBased_factory_THROWN()
 {
 	fitter = NULL;
 	hitselector=NULL;
@@ -33,7 +33,7 @@ DTrack_factory_THROWN::DTrack_factory_THROWN()
 //------------------
 // brun
 //------------------
-jerror_t DTrack_factory_THROWN::brun(jana::JEventLoop *loop, int runnumber)
+jerror_t DTrackWireBased_factory_THROWN::brun(jana::JEventLoop *loop, int runnumber)
 {
 	// Get pointer to DTrackFitter object that actually fits a track
 	vector<const DTrackFitter *> fitters;
@@ -48,7 +48,7 @@ jerror_t DTrack_factory_THROWN::brun(jana::JEventLoop *loop, int runnumber)
 
 	// Warn user if something happened that caused us NOT to get a fitter object pointer
 	if(!fitter){
-		_DBG_<<"ERROR: Unable to get a DTrackFitter object! Chisq for DTrack:THROWN will NOT be calculated!"<<endl;
+		_DBG_<<"ERROR: Unable to get a DTrackFitter object! Chisq for DTrackWireBased:THROWN will NOT be calculated!"<<endl;
 		return RESOURCE_UNAVAILABLE;
 	}
 
@@ -56,7 +56,7 @@ jerror_t DTrack_factory_THROWN::brun(jana::JEventLoop *loop, int runnumber)
 	vector<const DTrackHitSelector *> hitselectors;
 	loop->Get(hitselectors);
 	if(hitselectors.size()<1){
-		_DBG_<<"ERROR: Unable to get a DTrackHitSelector object! NO DTrack:THROWN objects will be created!"<<endl;
+		_DBG_<<"ERROR: Unable to get a DTrackHitSelector object! NO DTrackWireBased:THROWN objects will be created!"<<endl;
 		return RESOURCE_UNAVAILABLE;
 	}
 	hitselector = hitselectors[0];
@@ -67,7 +67,7 @@ jerror_t DTrack_factory_THROWN::brun(jana::JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackWireBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 {
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DCDCTrackHit*> cdctrackhits;
@@ -83,7 +83,7 @@ jerror_t DTrack_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		if(fabs(thrown->charge())<1)continue;
 
 		// First, copy over the DKinematicData part
-		DTrack *track = new DTrack;
+		DTrackWireBased *track = new DTrackWireBased;
 		DKinematicData *kd_track = track;
 		*kd_track = *kd_thrown;
 		

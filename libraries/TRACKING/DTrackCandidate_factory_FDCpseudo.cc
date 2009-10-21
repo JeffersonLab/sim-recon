@@ -18,7 +18,6 @@ using namespace jana;
 
 #include "DTrackCandidate_factory_FDCpseudo.h"
 #include "DANA/DApplication.h"
-#include "DTrack.h"
 #include "DQuickFit.h"
 #include "HDGEOMETRY/DMagneticFieldMap.h"
 #include "DVector2.h"

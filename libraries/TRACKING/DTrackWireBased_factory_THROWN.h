@@ -1,24 +1,24 @@
 // $Id$
 //
-//    File: DTrack_factory_THROWN.h
+//    File: DTrackWireBased_factory_THROWN.h
 // Created: Mon Sep  3 19:57:11 EDT 2007
 // Creator: davidl (on Darwin Amelia.local 8.10.1 i386)
 //
 
-#ifndef _DTrack_factory_THROWN_
-#define _DTrack_factory_THROWN_
+#ifndef _DTrackWireBased_factory_THROWN_
+#define _DTrackWireBased_factory_THROWN_
 
 #include <JANA/JFactory.h>
 #include <TRACKING/DReferenceTrajectory.h>
-#include "DTrack.h"
+#include "DTrackWireBased.h"
 
 class DTrackFitter;
 class DTrackHitSelector;
 
-class DTrack_factory_THROWN:public JFactory<DTrack>{
+class DTrackWireBased_factory_THROWN:public JFactory<DTrackWireBased>{
 	public:
-		DTrack_factory_THROWN();
-		~DTrack_factory_THROWN(){};
+		DTrackWireBased_factory_THROWN();
+		~DTrackWireBased_factory_THROWN(){};
 		const char* Tag(void){return "THROWN";}
 
 	private:
@@ -34,5 +34,5 @@ class DTrack_factory_THROWN:public JFactory<DTrack>{
 
 };
 
-#endif // _DTrack_factory_THROWN_
+#endif // _DTrackWireBased_factory_THROWN_
 

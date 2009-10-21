@@ -1,17 +1,22 @@
-// $Id$
+// $Id: DTrackWireBased_factory_Kalman.cc 5612 2009-10-15 20:51:25Z staylor $
 //
-//    File: DTrack_factory.cc
+//    File: DTrackWireBased_factory_Kalman.cc
 // Created: Wed Sep  3 09:33:40 EDT 2008
 // Creator: davidl (on Darwin harriet.jlab.org 8.11.1 i386)
 //
 
+// This is an exact copy of the DTrackWireBased_factory.cc file except
+// it is hardwired to use the "Kalman" tagged track fitting
+// algorithm. This is so one can get tracks fit by the Kalman
+// and ALT1 methods simultaneously in the same program for the
+// same event.
+
 
 #include <iostream>
 #include <iomanip>
-#include <set>
 using namespace std;
 
-#include "DTrack_factory.h"
+#include "DTrackWireBased_factory_Kalman.h"
 #include <TRACKING/DTrackCandidate.h>
 #include <TRACKING/DReferenceTrajectory.h>
 #include <CDC/DCDCTrackHit.h>
@@ -22,7 +27,7 @@ using namespace jana;
 //------------------
 // CDCSortByRincreasing
 //------------------
-bool CDCSortByRincreasing(const DCDCTrackHit* const &hit1, const DCDCTrackHit* const &hit2) {
+bool static CDCSortByRincreasing(const DCDCTrackHit* const &hit1, const DCDCTrackHit* const &hit2) {
 	// use the ring number to sort by R(decreasing) and then straw(increasing)
 	if(hit1->wire->ring == hit2->wire->ring){
 		return hit1->wire->straw < hit2->wire->straw;
@@ -33,7 +38,7 @@ bool CDCSortByRincreasing(const DCDCTrackHit* const &hit1, const DCDCTrackHit* c
 //------------------
 // FDCSortByZincreasing
 //------------------
-bool FDCSortByZincreasing(const DFDCPseudo* const &hit1, const DFDCPseudo* const &hit2) {
+bool static FDCSortByZincreasing(const DFDCPseudo* const &hit1, const DFDCPseudo* const &hit2) {
 	// use the layer number to sort by Z(decreasing) and then wire(increasing)
 	if(hit1->wire->layer == hit2->wire->layer){
 		return hit1->wire->wire < hit2->wire->wire;
@@ -60,7 +65,7 @@ static unsigned int count_common_members(vector<T> &a, vector<T> &b)
 //------------------
 // init
 //------------------
-jerror_t DTrack_factory::init(void)
+jerror_t DTrackWireBased_factory_Kalman::init(void)
 {
 	fitter = NULL;
 
@@ -76,7 +81,7 @@ jerror_t DTrack_factory::init(void)
 //------------------
 // brun
 //------------------
-jerror_t DTrack_factory::brun(jana::JEventLoop *loop, int runnumber)
+jerror_t DTrackWireBased_factory_Kalman::brun(jana::JEventLoop *loop, int runnumber)
 {
 	// Get pointer to DTrackFitter object that actually fits a track
 	vector<const DTrackFitter *> fitters;
@@ -117,7 +122,7 @@ jerror_t DTrack_factory::brun(jana::JEventLoop *loop, int runnumber)
 //------------------
 // evnt
 //------------------
-jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
+jerror_t DTrackWireBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
 {
 	if(!fitter)return NOERROR;
 
@@ -141,7 +146,7 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 
 		// Loop over potential particle masses until one is found that gives a chisq/Ndof<3.0
 		// If none does, then use the one with the smallest chisq
-		DTrack *best_track = NULL;
+		DTrackWireBased *best_track = NULL;
 		double best_fom = 0.0;
 
 		for(unsigned int j=0; j<mass_hypotheses.size(); j++){
@@ -150,7 +155,7 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 			// Do the fit
 			fitter->SetFitType(DTrackFitter::kWireBased);
 			DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*candidate, rt, loop, mass_hypotheses[j]);
-			DTrack *dtrack = NULL;
+			DTrackWireBased *dtrack = NULL;
 			switch(status){
 				case DTrackFitter::kFitNotDone:
 					_DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
@@ -159,7 +164,7 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 					break;
 				case DTrackFitter::kFitSuccess:
 				case DTrackFitter::kFitNoImprovement:
-					dtrack = MakeDTrack(candidate);
+					dtrack = MakeDTrackWireBased(candidate);
 					break;
 			}
 
@@ -186,7 +191,7 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 
 			// If the fit wasn't sucessful, try next mass
 			if(!dtrack){
-				if(DEBUG_LEVEL>1)_DBG_<<"-- no DTrack made for track with mass "<<mass_hypotheses[j]<<endl;
+				if(DEBUG_LEVEL>1)_DBG_<<"-- no DTrackWireBased made for track with mass "<<mass_hypotheses[j]<<endl;
 				continue;
 			}
 			
@@ -214,9 +219,6 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 			if(DEBUG_LEVEL>2)_DBG_<<"adding wire-based track for candidate "<<i<<" (p="<<best_track->momentum().Mag()<<", "<<_data.size()<<" tracks total now)"<<endl;
 		}
 	}
-	
-	// Filter out duplicate tracks
-	FilterDuplicates();
 
 	return NOERROR;
 }
@@ -225,7 +227,7 @@ jerror_t DTrack_factory::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 // erun
 //------------------
-jerror_t DTrack_factory::erun(void)
+jerror_t DTrackWireBased_factory_Kalman::erun(void)
 {
 	return NOERROR;
 }
@@ -233,7 +235,7 @@ jerror_t DTrack_factory::erun(void)
 //------------------
 // fini
 //------------------
-jerror_t DTrack_factory::fini(void)
+jerror_t DTrackWireBased_factory_Kalman::fini(void)
 {
 	for(unsigned int i=0; i<rtv.size(); i++)delete rtv[i];
 	rtv.clear();
@@ -242,9 +244,9 @@ jerror_t DTrack_factory::fini(void)
 }
 
 //------------------
-// MakeDTrack
+// MakeDTrackWireBased
 //------------------
-DTrack* DTrack_factory::MakeDTrack(const DTrackCandidate *candidate)
+DTrackWireBased* DTrackWireBased_factory_Kalman::MakeDTrackWireBased(const DTrackCandidate *candidate)
 {
 	// Allocate a DReferenceTrajectory object if needed.
 	// These each have a large enough memory footprint that
@@ -255,7 +257,7 @@ DTrack* DTrack_factory::MakeDTrack(const DTrackCandidate *candidate)
 	while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
 	DReferenceTrajectory *rt = rtv[_data.size()];
 
-	DTrack *track = new DTrack;
+	DTrackWireBased *track = new DTrackWireBased;
 	
 	// Copy over DKinematicData part
 	DKinematicData *track_kd = track;
@@ -287,7 +289,7 @@ DTrack* DTrack_factory::MakeDTrack(const DTrackCandidate *candidate)
 //------------------
 // Uses dEdx from the track to provide a measure of the figure of merit for a track for a given mass 
 // hypothesis
-double DTrack_factory::GetFOM(DTrack *dtrack)
+double DTrackWireBased_factory_Kalman::GetFOM(DTrackWireBased *dtrack)
 {
   double dedx,mean_path_length,p_avg;
   unsigned int num_hits=0;
@@ -304,146 +306,5 @@ double DTrack_factory::GetFOM(DTrack *dtrack)
   // If we got here, GetdEdx failed for this track
   dtrack->setdEdx(0.);
   return 0.;
-}
-
-//------------------
-// GetRangeOutFOM
-//------------------
-double DTrack_factory::GetRangeOutFOM(DTrack *dtrack)
-{
-	/// Calculate a figure of merit for the track ranging out within the
-	/// detector. If the particle does range out (lose all of its energy)
-	/// then the value returned would be essentially zero. If it does not,
-	/// then the value will be greater than zero.
-	///
-	/// The FOM is ratio of the total pathlength of the track to the 
-	/// pathlength to the outermost wire associated with the track.
-	/// Therefore, FOM=1 corresponds to a track that goes just
-	/// as far after it hit the last wire as before, before finally
-	/// hitting the BCAL, FCAL, etc...
-
-	// We want the pathlength to the last wire that is on this track
-	// (as determined by the DTrackHitSelector??? class). Since the
-	// tracks can curl back in toward the beamline, we have to check every
-	// wire to see what the pathlength to it is
-	
-	// Need the reference trajectory to find pathlengths
-_DBG__;
-	DReferenceTrajectory *rt = const_cast<DReferenceTrajectory*>(dtrack->rt);
-	
-	// Look first at FDC hits
-_DBG__;
-	vector<const DFDCPseudo*> fdchits;
-	dtrack->Get(fdchits);
-	const DCoordinateSystem *outermost_wire = NULL;
-	double s_to_outermost_wire=-1.0;
-_DBG__;
-	for(unsigned int i=0; i<fdchits.size(); i++){
-		DReferenceTrajectory::swim_step_t *step = rt->FindClosestSwimStep(fdchits[i]->wire);
-		if(step->s > s_to_outermost_wire){
-			s_to_outermost_wire = step->s;
-			outermost_wire = fdchits[i]->wire;
-		}
-	}
-	
-	// Check CDC if no FDC wire was found
-_DBG__;
-	if(!outermost_wire){
-		vector<const DCDCTrackHit*> cdchits;
-		dtrack->Get(cdchits);
-
-		for(unsigned int i=0; i<cdchits.size(); i++){
-			DReferenceTrajectory::swim_step_t *step = rt->FindClosestSwimStep(cdchits[i]->wire);
-			if(step->s > s_to_outermost_wire){
-				s_to_outermost_wire = step->s;
-				outermost_wire = cdchits[i]->wire;
-			}
-		}
-	}
-	
-	// Make sure *a* wire was found. (This is just a dummy check)
-_DBG__;
-	if(!outermost_wire){
-		_DBG_<<"ERROR: No outermost wire found for track!"<<endl;
-		return 0.0;
-	}
-	
-	// Get total pathlength from last swim step
-	double total_s = dtrack->rt->swim_steps[dtrack->rt->Nswim_steps-1].s;
-	
-	// Calculate figure of merit
-	double fom = (total_s - s_to_outermost_wire)/s_to_outermost_wire;
-_DBG__;
-	
-	return fom;
-}
-
-//------------------
-// FilterDuplicates
-//------------------
-void DTrack_factory::FilterDuplicates(void)
-{
-	/// Look through all current DTrack objects and remove any
-	/// that have all of their hits in common with another track
-	
-	if(_data.size()==0)return;
-
-	if(DEBUG_LEVEL>2)_DBG_<<"Looking for clones of wire-based tracks ..."<<endl;
-
-	set<unsigned int> indexes_to_delete;
-	for(unsigned int i=0; i<_data.size()-1; i++){
-		DTrack *dtrack1 = _data[i];
-
-		vector<const DCDCTrackHit*> cdchits1;
-		vector<const DFDCPseudo*> fdchits1;
-		dtrack1->Get(cdchits1);
-		dtrack1->Get(fdchits1);
-
-		for(unsigned int j=i+1; j<_data.size(); j++){
-			DTrack *dtrack2 = _data[j];
-
-
-			vector<const DCDCTrackHit*> cdchits2;
-			vector<const DFDCPseudo*> fdchits2;
-			dtrack2->Get(cdchits2);
-			dtrack2->Get(fdchits2);
-			
-			// Count number of cdc and fdc hits in common
-			unsigned int Ncdc = count_common_members(cdchits1, cdchits2);
-			unsigned int Nfdc = count_common_members(fdchits1, fdchits2);
-
-			if(Ncdc!=cdchits1.size() && Ncdc!=cdchits2.size())continue;
-			if(Nfdc!=fdchits1.size() && Nfdc!=fdchits2.size())continue;
-			
-			unsigned int total = Ncdc + Nfdc;
-			unsigned int total1 = cdchits1.size()+fdchits1.size();
-			unsigned int total2 = cdchits2.size()+fdchits2.size();
-			if(total!=total1 && total!=total2)continue;
-
-			if(total1<total2){
-				indexes_to_delete.insert(i);
-			}else{
-				indexes_to_delete.insert(j);
-			}
-		}
-	}
-	
-	if(DEBUG_LEVEL>2)_DBG_<<"Found "<<indexes_to_delete.size()<<" wire-based clones"<<endl;
-
-	// Return now if we're keeping everyone
-	if(indexes_to_delete.size()==0)return;
-
-	// Copy pointers that we want to keep to a new container and delete
-	// the clone objects
-	vector<DTrack*> new_data;
-	for(unsigned int i=0; i<_data.size(); i++){
-		if(indexes_to_delete.find(i)==indexes_to_delete.end()){
-			new_data.push_back(_data[i]);
-		}else{
-			delete _data[i];
-			if(DEBUG_LEVEL>1)_DBG_<<"Deleting clone wire-based track "<<i<<endl;
-		}
-	}	
-	_data = new_data;
 }
 

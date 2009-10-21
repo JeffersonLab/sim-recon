@@ -18,13 +18,13 @@
 #include <JANA/JFactory.h>
 #include <JANA/JGeometry.h>
 #include "HDGEOMETRY/DMagneticFieldMap.h"
-#include "DTrack.h"
+#include "DTrackWireBased.h"
 #include "DReferenceTrajectory.h"
 #include "DCoordinateSystem.h"
 #include "DTrackFitter.h"
 
 class DTrackCandidate;
-class DTrack;
+class DTrackWireBased;
 class DCDCTrackHit;
 class DFDCPseudo;
 class DMCThrown;

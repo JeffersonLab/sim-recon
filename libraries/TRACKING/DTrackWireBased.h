@@ -1,12 +1,12 @@
-// $Id$
+// $Id: DTrackWireBased.h 4927 2009-03-11 13:20:33Z staylor $
 //
-//    File: DTrack.h
+//    File: DTrackWireBased.h
 // Created: Sun Apr  3 12:28:45 EDT 2005
 // Creator: davidl (on Darwin Harriet.local 7.8.0 powerpc)
 //
 
-#ifndef _DTrack_
-#define _DTrack_
+#ifndef _DTrackWireBased_
+#define _DTrackWireBased_
 
 #include "JANA/JObject.h"
 #include "JANA/JFactory.h"
@@ -14,9 +14,9 @@
 
 class DReferenceTrajectory;
 
-class DTrack:public DKinematicData{
+class DTrackWireBased:public DKinematicData{
 	public:
-		JOBJECT_PUBLIC(DTrack);
+		JOBJECT_PUBLIC(DTrackWireBased);
 		
 		oid_t candidateid;	///< id of DTrackCandidate this came from
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
@@ -35,5 +35,5 @@ class DTrack:public DKinematicData{
 		}
 };
 
-#endif // _DTrack_
+#endif // _DTrackWireBased_
 
