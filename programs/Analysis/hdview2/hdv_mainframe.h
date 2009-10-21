@@ -97,8 +97,8 @@ class hdv_mainframe:public TGMainFrame {
 		map<string, vector<TGLabel*> >& GetReconstructedLabels(void){return reconlabs;}
 		
 		void SetCandidateFactories(vector<string> &facnames);
-		void SetTrackFactories(vector<string> &facnames);
-		void SetParticleFactories(vector<string> &facnames);
+		void SetWireBasedTrackFactories(vector<string> &facnames);
+		void SetTimeBasedTrackFactories(vector<string> &facnames);
 		void SetReconstructedFactories(vector<string> &facnames);
 		
 		bool GetCheckButton(string who);
@@ -124,8 +124,8 @@ class hdv_mainframe:public TGMainFrame {
 		
 		TGLabel *event, *run, *source;
 		
-		TGComboBox *particlesfactory;
-		TGComboBox *tracksfactory;
+		TGComboBox *timetracksfactory;
+		TGComboBox *wiretracksfactory;
 		TGComboBox *candidatesfactory;
 		TGComboBox *reconfactory;
 		TGComboBox *delay;

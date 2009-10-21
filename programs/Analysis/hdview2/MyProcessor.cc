@@ -29,7 +29,8 @@ using namespace std;
 #include "TRACKING/DTrackCandidate_factory.h"
 #include "TRACKING/DMCTrackHit.h"
 #include "TRACKING/DMCThrown.h"
-#include "TRACKING/DTrack.h"
+#include "TRACKING/DTrackWireBased.h"
+#include "TRACKING/DTrackTimeBased.h"
 #include "PID/DParticle.h"
 #include "TRACKING/DReferenceTrajectory.h"
 #include "JANA/JGeometry.h"
@@ -95,8 +96,8 @@ jerror_t MyProcessor::init(void)
 
 		hdvmf = new hdv_mainframe(gClient->GetRoot(), 1000, 600);
 		hdvmf->SetCandidateFactories(facnames);
-		hdvmf->SetTrackFactories(facnames);
-		hdvmf->SetParticleFactories(facnames);
+		hdvmf->SetWireBasedTrackFactories(facnames);
+		hdvmf->SetTimeBasedTrackFactories(facnames);
 		hdvmf->SetReconstructedFactories(facnames);
 	}
 	
@@ -451,21 +452,21 @@ void MyProcessor::FillGraphics(void)
 		}
 	}
 
-	// DTrack
-	if(hdvmf->GetCheckButton("tracks")){
-		vector<const DTrack*> tracks;
-		loop->Get(tracks, hdvmf->GetFactoryTag("DTrack"));
-		for(unsigned int i=0; i<tracks.size(); i++){
-			AddKinematicDataTrack(tracks[i], 28, 1.25);
+	// DTrackWireBased
+	if(hdvmf->GetCheckButton("wiretracks")){
+		vector<const DTrackWireBased*> wiretracks;
+		loop->Get(wiretracks, hdvmf->GetFactoryTag("DTrackWireBased"));
+		for(unsigned int i=0; i<wiretracks.size(); i++){
+			AddKinematicDataTrack(wiretracks[i], 28, 1.25);
 		}
 	}
 
-	// DParticle
-	if(hdvmf->GetCheckButton("particles")){
-		vector<const DParticle*> particles;
-		loop->Get(particles, hdvmf->GetFactoryTag("DParticle"));
-		for(unsigned int i=0; i<particles.size(); i++){
-			AddKinematicDataTrack(particles[i], 46, 1.00);
+	// DTrackTimeBased
+	if(hdvmf->GetCheckButton("timetracks")){
+		vector<const DTrackTimeBased*> timetracks;
+		loop->Get(timetracks, hdvmf->GetFactoryTag("DTrackTimeBased"));
+		for(unsigned int i=0; i<timetracks.size(); i++){
+			AddKinematicDataTrack(timetracks[i], 46, 1.00);
 		}
 	}
 }
@@ -487,15 +488,15 @@ void MyProcessor::UpdateTrackLabels(void)
 	
 	// Get the track info as DKinematicData objects
 	vector<const DKinematicData*> trks;
-	if(name=="DParticle"){
-		vector<const DParticle*> particles;
-		if(loop)loop->Get(particles, tag.c_str());
-		for(unsigned int i=0; i<particles.size(); i++)trks.push_back(particles[i]);
+	if(name=="DTrackTimeBased"){
+		vector<const DTrackTimeBased*> timetracks;
+		if(loop)loop->Get(timetracks, tag.c_str());
+		for(unsigned int i=0; i<timetracks.size(); i++)trks.push_back(timetracks[i]);
 	}
-	if(name=="DTrack"){
-		vector<const DTrack*> tracks;
-		if(loop)loop->Get(tracks, tag.c_str());
-		for(unsigned int i=0; i<tracks.size(); i++)trks.push_back(tracks[i]);
+	if(name=="DTrackWireBased"){
+		vector<const DTrackWireBased*> wiretracks;
+		if(loop)loop->Get(wiretracks, tag.c_str());
+		for(unsigned int i=0; i<wiretracks.size(); i++)trks.push_back(wiretracks[i]);
 	}
 	if(name=="DTrackCandidate"){
 		vector<const DTrackCandidate*> candidates;
@@ -585,9 +586,9 @@ void MyProcessor::UpdateTrackLabels(void)
 		z<<setprecision(4)<<trk->position().Z();
 		reconlabs["z"][row]->SetText(z.str().c_str());
 
-		// Get chisq and Ndof for DParticle or DTrack objects
-		const DParticle *part=dynamic_cast<const DParticle*>(trk);
-		const DTrack *track=dynamic_cast<const DTrack*>(trk);
+		// Get chisq and Ndof for DTrackTimeBased or DTrackWireBased objects
+		const DTrackTimeBased *part=dynamic_cast<const DTrackTimeBased*>(trk);
+		const DTrackWireBased *track=dynamic_cast<const DTrackWireBased*>(trk);
 		if(part){
 			chisq_per_dof<<setprecision(4)<<part->chisq/part->Ndof;
 			Ndof<<part->Ndof;
@@ -710,26 +711,26 @@ _DBG__;
 	double mass;
 
 	// Find the specified track
-	if(dataname=="DParticle"){
-		vector<const DParticle*> particles;
-		loop->Get(particles, tag.c_str());
-		if(index>=particles.size())return;
-		q = particles[index]->charge();
-		pos = particles[index]->position();
-		mom = particles[index]->momentum();
-		particles[index]->Get(cdchits);
-		mass = particles[index]->mass();
+	if(dataname=="DTrackTimeBased"){
+		vector<const DTrackTimeBased*> timetracks;
+		loop->Get(timetracks, tag.c_str());
+		if(index>=timetracks.size())return;
+		q = timetracks[index]->charge();
+		pos = timetracks[index]->position();
+		mom = timetracks[index]->momentum();
+		timetracks[index]->Get(cdchits);
+		mass = timetracks[index]->mass();
 	}
 
-	if(dataname=="DTrack"){
-		vector<const DTrack*> tracks;
-		loop->Get(tracks, tag.c_str());
-		if(index>=tracks.size())return;
-		q = tracks[index]->charge();
-		pos = tracks[index]->position();
-		mom = tracks[index]->momentum();
-		tracks[index]->Get(cdchits);
-		mass = tracks[index]->mass();
+	if(dataname=="DTrackWireBased"){
+		vector<const DTrackWireBased*> wiretracks;
+		loop->Get(wiretracks, tag.c_str());
+		if(index>=wiretracks.size())return;
+		q = wiretracks[index]->charge();
+		pos = wiretracks[index]->position();
+		mom = wiretracks[index]->momentum();
+		wiretracks[index]->Get(cdchits);
+		mass = wiretracks[index]->mass();
 	}
 
 	if(dataname=="DTrackCandidate"){

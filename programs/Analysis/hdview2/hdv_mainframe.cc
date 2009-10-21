@@ -284,23 +284,23 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 					candidatesf->AddFrame(candidatesfactory, lhints);
 				trkdrawopts->AddFrame(candidatesf, lhints);
 					
-				TGHorizontalFrame *tracksf		= new TGHorizontalFrame(trkdrawopts);
-					checkbuttons["tracks"]		= new TGCheckButton(tracksf,	"DTrack:");
-					tracksfactory	= new TGComboBox(tracksf, "<default>", 0);
-					tracksfactory->Resize(80,20);
-					tracksf->AddFrame(checkbuttons["tracks"], lhints);
-					for(int i=0; i<100; i++)tracksfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
-					tracksf->AddFrame(tracksfactory, lhints);
-				trkdrawopts->AddFrame(tracksf, lhints);
+				TGHorizontalFrame *wiretracksf		= new TGHorizontalFrame(trkdrawopts);
+					checkbuttons["wiretracks"]		= new TGCheckButton(wiretracksf,	"DTrackWireBased:");
+					wiretracksfactory	= new TGComboBox(wiretracksf, "<default>", 0);
+					wiretracksfactory->Resize(80,20);
+					wiretracksf->AddFrame(checkbuttons["wiretracks"], lhints);
+					for(int i=0; i<100; i++)wiretracksfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
+					wiretracksf->AddFrame(wiretracksfactory, lhints);
+				trkdrawopts->AddFrame(wiretracksf, lhints);
 					
-				TGHorizontalFrame *particlesf		= new TGHorizontalFrame(trkdrawopts);
-					checkbuttons["particles"]		= new TGCheckButton(particlesf,	"DParticle:");
-					particlesfactory	= new TGComboBox(particlesf, "<default>", 0);
-					particlesfactory->Resize(80,20);
-					particlesf->AddFrame(checkbuttons["particles"], lhints);
-					for(int i=0; i<100; i++)particlesfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
-					particlesf->AddFrame(particlesfactory, lhints);
-				trkdrawopts->AddFrame(particlesf, lhints);
+				TGHorizontalFrame *timetracksf		= new TGHorizontalFrame(trkdrawopts);
+					checkbuttons["timetracks"]		= new TGCheckButton(timetracksf,	"DTrackTimeBased:");
+					timetracksfactory	= new TGComboBox(timetracksf, "<default>", 0);
+					timetracksfactory->Resize(80,20);
+					timetracksf->AddFrame(checkbuttons["timetracks"], lhints);
+					for(int i=0; i<100; i++)timetracksfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
+					timetracksf->AddFrame(timetracksfactory, lhints);
+				trkdrawopts->AddFrame(timetracksf, lhints);
 
 				checkbuttons["thrown"]			= new TGCheckButton(trkdrawopts,	"DMCThrown");
 				checkbuttons["trajectories"]	= new TGCheckButton(trkdrawopts,	"DMCTrajectoryPoint");
@@ -434,8 +434,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	bcalinspector->Connect("Clicked()","hdv_mainframe", this, "DoOpenBCALInspector()");
 	
 	checkbuttons["candidates"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["tracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["particles"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["wiretracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["timetracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 	checkbuttons["thrown"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 
 	checkbuttons["cdc"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
@@ -453,8 +453,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	checkbuttons["fcaltruth"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 	checkbuttons["trajectories"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 	candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
-	tracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
-	particlesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
+	wiretracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
+	timetracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
 	reconfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoUpdateTrackLabels()");
 
 	// Pointers to optional daughter windows
@@ -519,13 +519,13 @@ void hdv_mainframe::ReadPreferences(void)
 			default_candidate = tokens[2];
 		}
 
-		if(tokens[0] == "DTrack"){
-			if(tokens.size()!=3)continue; // should be of form "DTrack = tag" with white space on either side of the "="
+		if(tokens[0] == "DTrackWireBased"){
+			if(tokens.size()!=3)continue; // should be of form "DTrackWireBased = tag" with white space on either side of the "="
 			default_track = tokens[2];
 		}
 
-		if(tokens[0] == "DParticle"){
-			if(tokens.size()!=3)continue; // should be of form "DParticle = tag" with white space on either side of the "="
+		if(tokens[0] == "DTrackTimeBased"){
+			if(tokens.size()!=3)continue; // should be of form "DTrackTimeBased = tag" with white space on either side of the "="
 			default_track = tokens[2];
 		}
 
@@ -575,8 +575,8 @@ void hdv_mainframe::SavePreferences(void)
 	ofs<<endl;
 
 	ofs<<"DTrackCandidate = "<<(candidatesfactory->GetTextEntry()->GetText())<<endl;
-	ofs<<"DTrack = "<<(tracksfactory->GetTextEntry()->GetText())<<endl;
-	ofs<<"DParticle = "<<(particlesfactory->GetTextEntry()->GetText())<<endl;
+	ofs<<"DTrackWireBased = "<<(wiretracksfactory->GetTextEntry()->GetText())<<endl;
+	ofs<<"DTrackTimeBased = "<<(timetracksfactory->GetTextEntry()->GetText())<<endl;
 	ofs<<"Reconstructed = "<<(reconfactory->GetTextEntry()->GetText())<<endl;
 	
 	ofs<<endl;
@@ -1611,59 +1611,59 @@ void hdv_mainframe::SetCandidateFactories(vector<string> &facnames)
 }
 
 //-------------------
-// SetTrackFactories
+// SetWireBasedTrackFactories
 //-------------------
-void hdv_mainframe::SetTrackFactories(vector<string> &facnames)
+void hdv_mainframe::SetWireBasedTrackFactories(vector<string> &facnames)
 {
-	/// Filter out the factories that provide "DTrack" objects
+	/// Filter out the factories that provide "DTrackWireBased" objects
 	/// and add their tags to the tracksfactory combobox.
 	
 	// Erase all current entries in the combobox and add back in
 	// "<default>".
-	tracksfactory->RemoveAll();
-	tracksfactory->AddEntry("<default>", 0);
-	tracksfactory->GetTextEntry()->SetText("<default>");
-	tracksfactory->Select(0, kFALSE);
+	wiretracksfactory->RemoveAll();
+	wiretracksfactory->AddEntry("<default>", 0);
+	wiretracksfactory->GetTextEntry()->SetText("<default>");
+	wiretracksfactory->Select(0, kFALSE);
 	
 	for(unsigned int i=0; i< facnames.size(); i++){
-		string name = "DTrack:";
+		string name = "DTrackWireBased:";
 		string::size_type pos = facnames[i].find(name);
 		if(pos==string::npos)continue;
 		string tag = facnames[i];
 		tag.erase(0, name.size());
-		tracksfactory->AddEntry(tag.c_str(), i+1);
+		wiretracksfactory->AddEntry(tag.c_str(), i+1);
 		if(tag==default_track){
-			tracksfactory->Select(i, kTRUE);
-			tracksfactory->GetTextEntry()->SetText(tag.c_str());
+			wiretracksfactory->Select(i, kTRUE);
+			wiretracksfactory->GetTextEntry()->SetText(tag.c_str());
 		}
 	}
 }
 
 //-------------------
-// SetParticleFactories
+// SetTimeBasedTrackFactories
 //-------------------
-void hdv_mainframe::SetParticleFactories(vector<string> &facnames)
+void hdv_mainframe::SetTimeBasedTrackFactories(vector<string> &facnames)
 {
-	/// Filter out the factories that provide "DParticle" objects
-	/// and add their tags to the particlesfactory combobox.
+	/// Filter out the factories that provide "DTrackTimeBased" objects
+	/// and add their tags to the timetracksfactory combobox.
 	
 	// Erase all current entries in the combobox and add back in
 	// "<default>".
-	particlesfactory->RemoveAll();
-	particlesfactory->AddEntry("<default>", 0);
-	particlesfactory->GetTextEntry()->SetText("<default>");
-	particlesfactory->Select(0, kFALSE);
+	timetracksfactory->RemoveAll();
+	timetracksfactory->AddEntry("<default>", 0);
+	timetracksfactory->GetTextEntry()->SetText("<default>");
+	timetracksfactory->Select(0, kFALSE);
 	
 	for(unsigned int i=0; i< facnames.size(); i++){
-		string name = "DParticle:";
+		string name = "DTrackTimeBased:";
 		string::size_type pos = facnames[i].find(name);
 		if(pos==string::npos)continue;
 		string tag = facnames[i];
 		tag.erase(0, name.size());
-		particlesfactory->AddEntry(tag.c_str(), i+1);
+		timetracksfactory->AddEntry(tag.c_str(), i+1);
 		if(tag==default_track){
-			particlesfactory->Select(i, kTRUE);
-			particlesfactory->GetTextEntry()->SetText(tag.c_str());
+			timetracksfactory->Select(i, kTRUE);
+			timetracksfactory->GetTextEntry()->SetText(tag.c_str());
 		}
 	}
 }
@@ -1680,13 +1680,13 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 	// "<default>".
 	int id =0;
 	reconfactory->RemoveAll();
-	reconfactory->AddEntry("DParticle:", id++);
+	reconfactory->AddEntry("DTrackTimeBased:", id++);
 	reconfactory->Select(0, kFALSE);
-	reconfactory->GetTextEntry()->SetText("DParticle:");
+	reconfactory->GetTextEntry()->SetText("DTrackTimeBased:");
 		
-	// Add DParticle factories
+	// Add DTrackTimeBased factories
 	for(unsigned int i=0; i< facnames.size(); i++){
-		string name = "DParticle:";
+		string name = "DTrackTimeBased:";
 		string::size_type pos = facnames[i].find(name);
 		if(pos==string::npos)continue;
 		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
@@ -1697,10 +1697,10 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 		}
 	}
 
-	// Add DTrack factories
-	reconfactory->AddEntry("DTrack:", id++);
+	// Add DTrackWireBased factories
+	reconfactory->AddEntry("DTrackWireBased:", id++);
 	for(unsigned int i=0; i< facnames.size(); i++){
-		string name = "DTrack:";
+		string name = "DTrackWireBased:";
 		string::size_type pos = facnames[i].find(name);
 		if(pos==string::npos)continue;
 		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
@@ -1759,17 +1759,17 @@ const char* hdv_mainframe::GetFactoryTag(string who)
 {
 	const char *tag = "";
 
-	if(who=="DTrack"){
-		tag = tracksfactory->GetTextEntry()->GetTitle();
-		//tag = tracksfactory->GetSelectedEntry()->GetTitle();
+	if(who=="DTrackWireBased"){
+		tag = wiretracksfactory->GetTextEntry()->GetTitle();
+		//tag = wiretracksfactory->GetSelectedEntry()->GetTitle();
 	}
 	if(who=="DTrackCandidate"){
 		tag = candidatesfactory->GetTextEntry()->GetTitle();
 		//tag = candidatesfactory->GetSelectedEntry()->GetTitle();
 	}
-	if(who=="DParticle"){
-		tag = particlesfactory->GetTextEntry()->GetTitle();
-		//tag = particlesfactory->GetSelectedEntry()->GetTitle();
+	if(who=="DTrackTimeBased"){
+		tag = timetracksfactory->GetTextEntry()->GetTitle();
+		//tag = timetracksfactory->GetSelectedEntry()->GetTitle();
 	}
 	if(string(tag) == "<default>")tag = "";
 	
