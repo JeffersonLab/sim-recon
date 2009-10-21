@@ -14,7 +14,7 @@
 #include "BCAL/DBCALPhoton.h"
 #include "BCAL/DBCALShower.h"
 #include "TRACKING/DMCThrown.h"
-#include "TRACKING/DTrack.h"
+#include "TRACKING/DTrackTimeBased.h"
 #include "TRACKING/DReferenceTrajectory.h"
 
 
@@ -35,7 +35,7 @@ class DPhoton_factory:public JFactory<DPhoton>{
                 DPhoton* makeFCalPhoton(const DFCALPhoton* gamma, const JObject::oid_t id); 
                 DPhoton* makeBCalPhoton(const DBCALPhoton* gamma, const JObject::oid_t id); 
 
-		double MinDistToRT(const DPhoton* photon, vector<const DTrack*> tracks);
+		double MinDistToRT(const DPhoton* photon, vector<const DTrackTimeBased*> tracks);
 		double dThetaToChargeMC(const DPhoton* photon, vector<const DMCThrown*> thrown);
 
 };

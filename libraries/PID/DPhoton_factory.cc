@@ -40,7 +40,7 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 {
 
 // Disable this info until tracking is fixed
-//        vector<const DTrack*> tracks;
+//        vector<const DTrackTimeBased*> tracks;
 //	eventLoop->Get(tracks);
 // and use thrown info to identify photons from charged particles
         vector<const DMCThrown*> thrown;
@@ -182,13 +182,13 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject
 // Loop over tracks and look up its reference trajectory, which has a method to 
 // calculate the distance from its point to any given 3-vector.
 // Return the distance from the closest track.
-double DPhoton_factory::MinDistToRT(const DPhoton* photon, vector<const DTrack*> tracks) 
+double DPhoton_factory::MinDistToRT(const DPhoton* photon, vector<const DTrackTimeBased*> tracks) 
 {
 
    double dmin = 10000.; // cm
    DVector3 photonPoint( photon->getPositionCal().X(), photon->getPositionCal().Y(), photon->getPositionCal().Z() );
 
-   for (vector<const DTrack*>::const_iterator track  = tracks.begin(); 
+   for (vector<const DTrackTimeBased*>::const_iterator track  = tracks.begin(); 
     					      track != tracks.end(); 
 					 			track++) {
 	DReferenceTrajectory* rt = const_cast<DReferenceTrajectory*>((**track).rt);

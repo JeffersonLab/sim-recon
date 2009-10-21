@@ -11,7 +11,7 @@
 #include <JANA/JFactory.h>
 #include <TRACKING/DTrackFitter.h>
 
-class DTrack;
+class DTrackTimeBased;
 class DTrackHitSelector;
 
 #include "DParticle.h"
@@ -36,10 +36,6 @@ class DParticle_factory_Kalman:public jana::JFactory<DParticle>{
 		DTrackFitter *fitter;
 		vector<DReferenceTrajectory*> rtv;
 		vector<double> mass_hypotheses;
-
-		DParticle* MakeDParticle(const DTrack *track);
-		double GetFOM(DParticle *dparticle);
-		double GetRangeOutFOM(DParticle *dparticle);
 };
 
 #endif // _DParticle_factory_Kalman_
