@@ -25,14 +25,18 @@ using namespace jana;
 
 #include "DEventProcessor_eta_ntuple.h"
 
+#include "cern_c.h"
+#define MEMH 8000000
+#define LREC 1024		/* record length of hbook direct access file in WORDS */
+#define LUN 3			/* logical unit number of hbook file */
+extern "C" {
+	float pawc_[MEMH];
+	int quest_[100];
+};
+
 //==========================================================================
-// This file contains code for a plugin that will create a few histograms
-// based on the reconstructed data. It can mainly serve as an example
-// of how one could access the reconstructed data in their own analysis
-// program.
-//
-// Histograms are created in the init() method and they are filled in
-// the evnt() method.
+// This file contains code for a plugin that will create a ROOT tree and/or
+// and HBOOK Ntuple for eta primakoff events.
 //==========================================================================
 
 // Routine used to create our JEventProcessor
@@ -49,10 +53,45 @@ void InitPlugin(JApplication *app){
 //------------------
 jerror_t DEventProcessor_eta_ntuple::init(void)
 {
-	// Create tree
+	make_hbook = true;
+	make_root = true;
+
 	evt = new Event();
-	tree = new TTree("t", "#eta Primakoff events");
-	tree->Branch("E",&evt);
+
+	// Create tree
+	if(make_root){
+		tree = new TTree("t", "#eta Primakoff events");
+		tree->Branch("E",&evt);
+	}
+	
+	// Create Ntuple
+	if(make_hbook){
+		// Initialize cernlib (monkey shines!)
+		quest_[9] = 65000;
+		int memh = MEMH;
+		hlimit(memh);
+
+		// Open HBOOK file for writing
+		string hbook_fname = "eta_ntuple.hbook";
+		hropen(LUN, "lun", hbook_fname.c_str() , "N", LREC, 0);
+		cout<<"Opened "<<hbook_fname<<" for writing..."<<endl;
+
+		// Create Ntuple
+		hbnt(10,"myeta","");
+		stringstream ntp;
+		ntp<<"event:I";
+		ntp<<",E_beam:R,px_beam,py_beam,pz_beam";
+		ntp<<",E_proton_thrown,px_proton_thrown,py_proton_thrown,pz_proton_thrown";
+		ntp<<",E_eta_thrown,px_eta_thrown,py_eta_thrown,pz_eta_thrown";
+		ntp<<",x,y,z";
+		ntp<<",prod_mech:I,decay_mode:I";
+		ntp<<",Nfcal[0,"<<MAX_PARTS<<"]";
+		ntp<<",E_fcal(Nfcal):R,px_fcal(Nfcal),py_fcal(Nfcal),pz_fcal(Nfcal)";
+		ntp<<",x_fcal(Nfcal),y_fcal(Nfcal),z_fcal(Nfcal)";
+		ntp<<",E_eta_best,px_eta_best,py_eta_best,pz_eta_best";
+		ntp<<",M_eta_best:R";
+		hbname(10,"ETANT", &evt_ntuple, ntp.str().c_str());
+	}
 	
 	pthread_mutex_init(&mutex, NULL);
 	
@@ -137,8 +176,9 @@ jerror_t DEventProcessor_eta_ntuple::evnt(JEventLoop *loop, int eventnumber)
 
 	// Fill tree
 	evt->fcal->Sort(); // sort by cluster energy (uses fcal_t::Compare );
-	tree->Fill();
-
+	if(make_root)tree->Fill();
+	if(make_hbook)FillNtuple();
+	
 	pthread_mutex_unlock(&mutex);
 
 	return NOERROR;
@@ -166,6 +206,60 @@ TLorentzVector DEventProcessor_eta_ntuple::MakeTLorentz(const DKinematicData *kd
 }
 
 //------------------
+// FillNtuple
+//------------------
+void DEventProcessor_eta_ntuple::FillNtuple(void)
+{
+	// Use values in the member "evt" to fill values
+	// in the member "evt_ntuple".
+	evt_ntuple.event = evt->event;
+	evt_ntuple.E_beam = evt->beam.E();
+	evt_ntuple.px_beam = evt->beam.Px();
+	evt_ntuple.py_beam = evt->beam.Py();
+	evt_ntuple.pz_beam = evt->beam.Pz();
+	evt_ntuple.E_proton_thrown = evt->proton_thrown.E();
+	evt_ntuple.px_proton_thrown = evt->proton_thrown.Px();
+	evt_ntuple.py_proton_thrown = evt->proton_thrown.Py();
+	evt_ntuple.pz_proton_thrown = evt->proton_thrown.Pz();
+	evt_ntuple.E_eta_thrown = evt->eta_thrown.E();
+	evt_ntuple.px_eta_thrown = evt->eta_thrown.Px();
+	evt_ntuple.py_eta_thrown = evt->eta_thrown.Py();
+	evt_ntuple.pz_eta_thrown = evt->eta_thrown.Pz();
+	evt_ntuple.x = evt->vertex.X();
+	evt_ntuple.y = evt->vertex.Y();
+	evt_ntuple.z = evt->vertex.Z();
+	evt_ntuple.prod_mech = evt->prod_mech;
+	evt_ntuple.decay_mode = evt->decay_mode;
+	evt_ntuple.Nfcal = evt->Nfcal;
+	evt_ntuple.E_eta_best = evt->eta_best.E();
+	evt_ntuple.px_eta_best = evt->eta_best.Px();
+	evt_ntuple.py_eta_best = evt->eta_best.Py();
+	evt_ntuple.pz_eta_best = evt->eta_best.Pz();
+	evt_ntuple.M_eta_best = evt->eta_best.M();
+	
+	if(evt_ntuple.Nfcal>=MAX_PARTS)evt_ntuple.Nfcal=MAX_PARTS-1;
+	for(UInt_t i=0; i<(UInt_t)evt_ntuple.Nfcal; i++){
+		fcal_t *fcal = dynamic_cast<fcal_t*>((*evt->fcal)[i]);
+		if(!fcal){
+			_DBG_<<"dynamic cast of TClonesArray element "<<i<<" failed!!"<<endl;
+			return;
+		}
+		
+		evt_ntuple.E_fcal[i] = fcal->p.E();
+		evt_ntuple.px_fcal[i] = fcal->p.Px();
+		evt_ntuple.py_fcal[i] = fcal->p.Py();
+		evt_ntuple.pz_fcal[i] = fcal->p.Pz();
+
+		evt_ntuple.x_fcal[i] = fcal->x.X();
+		evt_ntuple.y_fcal[i] = fcal->x.Y();
+		evt_ntuple.z_fcal[i] = fcal->x.Z();
+	}
+
+	// Add event to Ntuple
+	hfnt(10);
+}
+
+//------------------
 // erun
 //------------------
 jerror_t DEventProcessor_eta_ntuple::erun(void)
@@ -178,8 +272,12 @@ jerror_t DEventProcessor_eta_ntuple::erun(void)
 //------------------
 jerror_t DEventProcessor_eta_ntuple::fini(void)
 {
-	// Histograms are automatically written to file by hd_root program (or equivalent)
-	// so we don't need to do anything here.
+	if(make_hbook){
+		// Close hbook file
+		int icycle=0;
+		hrout(0,icycle,"T");
+		hrend("lun");
+	}
 
 	return NOERROR;
 }
