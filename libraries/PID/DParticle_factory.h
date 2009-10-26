@@ -10,13 +10,13 @@
 
 #include <JANA/JFactory.h>
 #include <TRACKING/DTrackFitter.h>
+#include <BCAL/DBCALPhoton.h>
+#include <FCAL/DFCALPhoton.h>
+#include <TOF/DTOFPoint.h>
 
 class DTrackTimeBased;
 class DTrackHitSelector;
-
 #include "DParticle.h"
-
-/// Time based tracks
 
 class DParticle_factory:public jana::JFactory<DParticle>{
 	public:
@@ -31,11 +31,29 @@ class DParticle_factory:public jana::JFactory<DParticle>{
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
+		DParticle* MakeDParticle(const DTrackTimeBased *track,
+					 double mass);
+
+		jerror_t MatchToBCAL(const DTrackTimeBased *track,
+				     DReferenceTrajectory *rt, 
+				     vector<const DBCALPhoton*>bcal_clusters,
+				     vector<bool>&bcal_matches,
+				     double &mass);
+		jerror_t MatchToFCAL(const DTrackTimeBased *track,
+				     DReferenceTrajectory *rt,
+				     vector<const DFCALPhoton*>fcal_clusters,
+				     vector<bool>&fcal_matches,
+				     double &mass); 
+		jerror_t MatchToTOF(const DTrackTimeBased *track,
+				    DReferenceTrajectory *rt,	
+				    vector<const DTOFPoint*>tof_points,
+				    double &mass); 
+		  
 		int DEBUG_LEVEL;
 		DTrackFitter *fitter;
 		vector<DReferenceTrajectory*> rtv;
-		vector<double> mass_hypotheses;
-
+		double mPathLength,mEndTime,mStartTime;
+		DetectorSystem_t mDetector, mStartDetector;
 };
 
 #endif // _DParticle_factory_
