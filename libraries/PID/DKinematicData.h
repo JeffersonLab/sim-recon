@@ -236,15 +236,15 @@ public:
     DetectorSystem_t t1_detector( void ) const;
     ValueType pathLength( void ) const;
     ValueType pathLength_err( void ) const;
-    ValueType TOF( void ) ;
-    ValueType TOF_err( void ) ;
+    ValueType TOF( void ) const;
+    ValueType TOF_err( void ) const;
     ValueType dEdx(void) const;
     
-    ValueType deltaInvBeta( void ) ;
-    ValueType measuredInvBeta_err( void ) ;
-    ValueType deltaBeta( void ) ;
-    ValueType measuredBeta( void ) ;
-    ValueType measuredBeta_err( void ) ;
+    ValueType deltaInvBeta( void ) const;
+    ValueType measuredInvBeta_err( void ) const;
+    ValueType deltaBeta( void ) const;
+    ValueType measuredBeta( void ) const;
+    ValueType measuredBeta_err( void ) const;
 
     /// \return TRUE if errors are all zero
     bool hasNullErrorMatrix() const {

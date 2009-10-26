@@ -736,16 +736,16 @@ DetectorSystem_t DKinematicData::t1_detector( void ) const { return ( m_t1_detec
 DKinematicData::ValueType DKinematicData::pathLength( void ) const { return ( m_pathLength ) ; }
 DKinematicData::ValueType DKinematicData::pathLength_err( void ) const { return ( m_pathLength_err ) ; }
 
-DKinematicData::ValueType DKinematicData::TOF( void ) { return ( (m_t1 - m_t0) ) ; }
-DKinematicData::ValueType DKinematicData::TOF_err( void ) { return sqrt(m_t1_err*m_t1_err + m_t0_err*m_t0_err);}
+DKinematicData::ValueType DKinematicData::TOF( void ) const { return ( (m_t1 - m_t0) ) ; }
+DKinematicData::ValueType DKinematicData::TOF_err( void ) const { return sqrt(m_t1_err*m_t1_err + m_t0_err*m_t0_err);}
 
 
 DKinematicData::ValueType DKinematicData::dEdx( void ) const
 { return ( m_dedx); } 
 
 
-DKinematicData::ValueType DKinematicData::measuredBeta( void ) { return ( (m_pathLength/(m_t1 - m_t0) ))/SPEED_OF_LIGHT ; }
-DKinematicData::ValueType DKinematicData::measuredBeta_err( void )
+DKinematicData::ValueType DKinematicData::measuredBeta( void ) const { return ( (m_pathLength/(m_t1 - m_t0) ))/SPEED_OF_LIGHT ; }
+DKinematicData::ValueType DKinematicData::measuredBeta_err( void ) const
 {
   double a = pow(m_pathLength_err/m_pathLength, 2);
   double b = (pow(m_t1_err,2) + pow(m_t0_err,2))/pow(m_t1 - m_t0,2);
@@ -755,9 +755,9 @@ DKinematicData::ValueType DKinematicData::measuredBeta_err( void )
   return err;
 }
 
-DKinematicData::ValueType DKinematicData::deltaBeta( void ) { return ( lorentzMomentum().Beta() - measuredBeta() ) ; }
-DKinematicData::ValueType DKinematicData::deltaInvBeta( void ) { return ( 1.0/lorentzMomentum().Beta() - 1.0/measuredBeta() ) ; }
-DKinematicData::ValueType DKinematicData::measuredInvBeta_err( void )
+DKinematicData::ValueType DKinematicData::deltaBeta( void ) const { return ( lorentzMomentum().Beta() - measuredBeta() ) ; }
+DKinematicData::ValueType DKinematicData::deltaInvBeta( void ) const { return ( 1.0/lorentzMomentum().Beta() - 1.0/measuredBeta() ) ; }
+DKinematicData::ValueType DKinematicData::measuredInvBeta_err( void ) const
 {
   double a = (m_t1_err*m_t1_err + m_t0_err*m_t0_err)/pow(m_t1 - m_t0,2);
   double b = pow(m_pathLength_err/m_pathLength,2);
