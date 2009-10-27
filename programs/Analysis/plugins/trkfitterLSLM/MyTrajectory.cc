@@ -101,7 +101,7 @@ void MyTrajectory::print()
   for (vector<HepLorentzVector*>::iterator iVector = traj.begin();
        iVector != traj.end();
        iVector++) {
-    cout << (**iVector).x() << " " << (**iVector).y() << " " << (**iVector).z()
+    cout << (**iVector).x() << " " << (**iVector).y() << " " << (**iVector).z() << " " << (**iVector).t()
     	 << endl;
   }
   cout << "### MyTrajectory print out end ###" << endl;
