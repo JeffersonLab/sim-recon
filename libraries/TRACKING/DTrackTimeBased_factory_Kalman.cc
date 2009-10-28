@@ -29,9 +29,10 @@ jerror_t DTrackTimeBased_factory_Kalman::init(void)
 	fitter = NULL;
 
 	DEBUG_LEVEL = 0;
+	MOMENTUM_CUT_FOR_DEDX=0.5;
 
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",					DEBUG_LEVEL);
-
+	gPARMS->SetDefaultParameter("TRKFIT:MOMENTUM_CUT_FOR_DEDX",MOMENTUM_CUT_FOR_DEDX);
 	return NOERROR;
 }
 
@@ -86,7 +87,7 @@ jerror_t DTrackTimeBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
 	
 	// Get candidates and hits
 	vector<const DTrackWireBased*> tracks;
-	loop->Get(tracks);
+	loop->Get(tracks,"Kalman");
 	
 	// Loop over candidates
 	for(unsigned int i=0; i<tracks.size(); i++){
@@ -143,6 +144,14 @@ jerror_t DTrackTimeBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
 				best_fom = GetFOM(best_track);
 
 				if(DEBUG_LEVEL>1)_DBG_<<"-- first successful fit this candidate with mass: "<<mass_hypotheses[j]<<" (chisq/Ndof="<<(best_track->chisq/best_track->Ndof)<<") fom="<<best_fom<<endl;
+
+				// Break if the momentum is sufficiently high for dEdx to have no 
+				// discriminating power between particle types. Also break if the charge 
+				// is negative -- we assume that we don't need to worry about anti-protons
+
+				if (best_track->charge()<0 || best_track->momentum().Mag()>MOMENTUM_CUT_FOR_DEDX) break;
+				// Otherwise go on to the next guess.
+
 				continue;
 			}
 			
@@ -152,11 +161,10 @@ jerror_t DTrackTimeBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
 				continue;
 			}
 			
-			// OK, now we have to make a choice as to which track to keep. The chisq/Ndof is a good,
-			// but not sufficient indicator of which hypothesis is best.  For the most part, we 
-			// are trying to distinguish between pions and protons, of which the protons may range
-			// out if their momentum is low enough. We want to use the track range to help decide.
-			// Form a figure of merit based on the chisq/Ndof and the probability of ranging out.
+			// OK, now we have to make a choice as to which track to keep. 
+			// For low momentum tracks, dEdx in the chambers can be used to distinguish protons
+			// from pions.
+			// Form a figure of merit based on the expected dEdx for the current hypothesis.
 			double fom = GetFOM(dtrack);
 				
 			// There can be only one! (Highlander)
