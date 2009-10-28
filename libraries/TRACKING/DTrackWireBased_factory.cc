@@ -65,7 +65,7 @@ jerror_t DTrackWireBased_factory::init(void)
 	fitter = NULL;
 
 	DEBUG_LEVEL = 0;
-	MOMENTUM_CUT_FOR_DEDX=0.7;
+	MOMENTUM_CUT_FOR_DEDX=0.5;
 	
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",DEBUG_LEVEL);
 	gPARMS->SetDefaultParameter("TRKFIT:MOMENTUM_CUT_FOR_DEDX",MOMENTUM_CUT_FOR_DEDX);

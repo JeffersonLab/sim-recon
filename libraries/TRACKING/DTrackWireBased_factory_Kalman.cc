@@ -70,7 +70,7 @@ jerror_t DTrackWireBased_factory_Kalman::init(void)
 	fitter = NULL;
 
 	DEBUG_LEVEL = 0;
-	MOMENTUM_CUT_FOR_DEDX=0.7;
+	MOMENTUM_CUT_FOR_DEDX=0.5;
 	
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_LEVEL",DEBUG_LEVEL);
 	gPARMS->SetDefaultParameter("TRKFIT:MOMENTUM_CUT_FOR_DEDX",MOMENTUM_CUT_FOR_DEDX);
@@ -85,7 +85,7 @@ jerror_t DTrackWireBased_factory_Kalman::brun(jana::JEventLoop *loop, int runnum
 {
 	// Get pointer to DTrackFitter object that actually fits a track
 	vector<const DTrackFitter *> fitters;
-	loop->Get(fitters);
+	loop->Get(fitters,"Kalman");
 	if(fitters.size()<1){
 		_DBG_<<"Unable to get a DTrackFitter object! NO Charged track fitting will be done!"<<endl;
 		return RESOURCE_UNAVAILABLE;
