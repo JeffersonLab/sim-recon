@@ -232,6 +232,16 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  }	
 	  // Fake point at origin
 	  fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+
+	  // if the cdc and fdc candidates do not agree as to the particle's
+	  // charge, set the charge according to which detector has more hits
+	  if (srccan->charge()!=cdctrackcandidates[cdc_index]->charge() 
+	      && cdchits.size()>num_fdc_hits){
+	    can->setCharge(cdctrackcandidates[cdc_index]->charge());
+	  }
+	  else
+	    can->setCharge(srccan->charge());
+
 	  // Fit the points to a circle
 	  if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){	  
 	    // Compute new transverse momentum
@@ -245,13 +255,13 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 
 	    // Determine the azimuthal angle
 	    double phi=atan2(-fit.x0,fit.y0);
-	    if (srccan->charge()<0) phi+=M_PI;
+	    if (can->charge()<0) phi+=M_PI;
 
 	    // Set the momentum
 	    mom.SetMagThetaPhi(pt/sin(theta),theta,phi);
 	  }
 
-	  can->setCharge(srccan->charge());
+	  // Set the mass and momentum
 	  can->setMass(srccan->mass());
 	  can->setMomentum(mom);
 
@@ -358,6 +368,18 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  }	
 	  // Fake point at origin
 	  fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
+
+	  // if the cdc and fdc candidates do not agree as to the particle's
+	  // charge, set the charge according to which detector has more hits
+	  unsigned int cdc_index=cdc_forward_ids[j];
+	  if (srccan->charge()!=cdctrackcandidates[cdc_index]->charge() 
+	      && cdchits.size()>num_fdc_hits){
+	    can->setCharge(cdctrackcandidates[cdc_index]->charge());
+	  }
+	  else
+	    can->setCharge(srccan->charge());
+
+
 	  // Fit the points to a circle
 	  if (fit.FitCircleRiemannCorrected(segments[0]->rc)==NOERROR){
 	    // Compute new transverse momentum
@@ -591,6 +613,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	      }
 	      num_hits+=segments[m]->hits.size();
 	    }	
+
 	    // Fake point at origin
 	    fit.AddHitXYZ(0.,0.,Z_VERTEX,BEAM_VAR,BEAM_VAR,0.);
 	    // Fit the points to a circle
