@@ -32,6 +32,7 @@ class DTrackTimeBased_factory:public jana::JFactory<DTrackTimeBased>{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		int DEBUG_LEVEL;
+		double MOMENTUM_CUT_FOR_DEDX;
 		DTrackFitter *fitter;
 		vector<DReferenceTrajectory*> rtv;
 		vector<double> mass_hypotheses;
