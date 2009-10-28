@@ -922,7 +922,17 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
     // Try to make a sensible vertex coming from the target
     double z_vertex=segment->S(4,0);
-    if (z_vertex>Z_MAX) z_vertex=Z_VERTEX;
+    if (z_vertex>Z_MAX){
+      double x=segment->hits[0]->x;
+      double y=segment->hits[0]->y;
+      double ratio=sqrt(x*x+y*y)/2./rc;
+      if (ratio<1.){
+	double tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)
+	  /(2.*rc*asin(ratio));
+	theta=M_PI_2-atan(tanl);
+      }
+      z_vertex=Z_VERTEX;
+    }
     
     mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
     pos.SetXYZ(-d*sin(phi0),d*cos(phi0),z_vertex);
