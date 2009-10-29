@@ -28,7 +28,7 @@ using namespace std;
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCHit.h>
 
-#include "event.h"
+#include "Event.h"
 
 class DMCTrajectoryPoint;
 class DCoordinateSystem;
@@ -39,8 +39,9 @@ class DEventProcessor_phys_tree:public JEventProcessor{
 		~DEventProcessor_phys_tree();
 		const char* className(void){return "DEventProcessor_trackres_tree";}
 
-		event *event_ptr, evt;
-		TTree *tevent;
+		Event *evt_recon;
+		Event *evt_thrown;
+		TTree *tree;
 
 		pthread_mutex_t mutex;
 		
@@ -52,7 +53,8 @@ class DEventProcessor_phys_tree:public JEventProcessor{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 		
 		TLorentzVector MakeTLorentz(const DKinematicData *kd, double mass);
-		
+		bool IsFiducial(const DKinematicData *kd);
+		void FillEvent(Event *evt, vector<TLorentzVector> &photon, vector<TLorentzVector> &pip, vector<TLorentzVector> &pim, vector<TLorentzVector> &proton);
 };
 
 #endif // _DEventProcessor_trackres_tree_

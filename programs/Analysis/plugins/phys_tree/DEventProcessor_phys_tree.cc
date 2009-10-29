@@ -30,6 +30,7 @@ using namespace jana;
 #include <PID/DBeamPhoton.h>
 #include <TRACKING/DMCThrown.h>
 
+#include "Particle.h"
 
 // Routine used to create our DEventProcessor
 extern "C"{
@@ -45,8 +46,6 @@ void InitPlugin(JApplication *app){
 //------------------
 DEventProcessor_phys_tree::DEventProcessor_phys_tree()
 {
-	event_ptr = &evt;
-
 	pthread_mutex_init(&mutex, NULL);
 }
 
@@ -63,13 +62,22 @@ DEventProcessor_phys_tree::~DEventProcessor_phys_tree()
 //------------------
 jerror_t DEventProcessor_phys_tree::init(void)
 {
-	// Create TRACKING directory
+	// Create PHYSICS directory
 	TDirectory *dir = (TDirectory*)gROOT->FindObject("PHYSICS");
 	if(!dir)dir = new TDirectoryFile("PHYSICS","PHYSICS");
 	dir->cd();
 
-	tevent = new TTree("event","Event");
-	tevent->Branch("E","event",&event_ptr);
+	// Here we define a tree with two identical branches based on the Event class.
+	// One to hold the thrown values and the other to hold the recon(structed) ones.
+
+	// Create "tree
+	tree = new TTree("e","Thrown and Reconstructed Event parameters");
+
+	// Create branches for thrown and reconstructed values
+	evt_thrown = new Event();
+	evt_recon = new Event();
+	tree->Branch("T",&evt_thrown);
+	tree->Branch("R",&evt_recon);
 
 	dir->cd("../");
 
@@ -81,9 +89,6 @@ jerror_t DEventProcessor_phys_tree::init(void)
 //------------------
 jerror_t DEventProcessor_phys_tree::brun(JEventLoop *loop, int runnumber)
 {
-	pthread_mutex_lock(&mutex);
-
-	pthread_mutex_unlock(&mutex);
 
 	return NOERROR;
 }
@@ -95,14 +100,14 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 {
 	// Get reconstructed objects and make TLorentz vectors out of each of them
 	vector<const DBeamPhoton*> beam_photons;
+	vector<const DMCThrown*> mcthrowns;
 	vector<const DPhoton*> photons;
 	vector<const DParticle*> particles;
-	vector<const DMCThrown*> mcthrowns;
 
 	loop->Get(beam_photons);
+	loop->Get(mcthrowns);
 	loop->Get(photons);
 	loop->Get(particles);
-	loop->Get(mcthrowns);
 
 	// Make TLorentzVector for beam photon
 	TLorentzVector beam_photon = TLorentzVector(0.0, 0.0, 9.0, 9.0);
@@ -110,9 +115,6 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 		
 	// Target is proton at rest in lab frame
 	TLorentzVector target(0.0, 0.0, 0.0, 0.93827);
-
-	// Center of mass energy
-	double sqrt_s = (beam_photon+target).M();
 
 	// Create TLorentzVectors for reconstructed photons
 	vector<TLorentzVector> rec_photons;
@@ -154,68 +156,34 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 			case 14:	rec_protons.push_back(MakeTLorentz(part, 0.93827));	break;
 		}
 	} // particles
-	
-	// Total, reconstructed momentum
-	TLorentzVector pfinal_recon;
-	for(unsigned int i=0; i<rec_piplus.size(); i++)pfinal_recon += rec_piplus[i];
-	for(unsigned int i=0; i<rec_piminus.size(); i++)pfinal_recon += rec_piminus[i];
-	for(unsigned int i=0; i<rec_protons.size(); i++)pfinal_recon += rec_protons[i];
-	
-	// Calculate missing momentum
-	TLorentzVector missing = beam_photon + target - pfinal_recon;
-	
-	// If we reconstructed a proton, consider that our proton. Otherwise, assume
-	// that's the only thing we missed and use the missing momentum as the proton
-	TLorentzVector *proton = rec_protons.size()>0 ? &rec_protons[0]:&missing;
-	
-	// Mandelstam t
-	double t = (*proton - target).Mag2();
-	
-	// Count the number of thrown charged and neutral particles
-	int Nthrown_charged = 0;
-	int Nthrown_neutral = 0;
-	int Nthrown_charged_fiducial = 0;
-	int Nthrown_neutral_fiducial = 0;
-	TLorentzVector pthrown_fiducial;
+
+	// Create TLorentzVectors for thrown particles
+	vector<TLorentzVector> thr_photons;
+	vector<TLorentzVector> thr_piplus;
+	vector<TLorentzVector> thr_piminus;
+	vector<TLorentzVector> thr_protons;
 	for(unsigned int k=0; k<mcthrowns.size(); k++){
-		TVector3 mom = mcthrowns[k]->momentum();
-		if(mcthrowns[k]->charge()==0){
-			Nthrown_neutral++;
-			if(mom.Mag()<0.100)continue;
-			if(mom.Theta()*57.3 < 2.0)continue; // beam hole
-			if(mom.Theta()*57.3 > 120)continue; // upstream fiducial limit
-			if(fabs(mom.Theta()*57.3-11.0) < 1.0)continue; // BCAL-FCAL gap
-			Nthrown_neutral_fiducial++;
-			pthrown_fiducial += MakeTLorentz(mcthrowns[k], 0.0);
-		}else{
-			Nthrown_charged++;
-			if(mom.Mag()<0.500)continue;
-			if(mom.Theta()*57.3 < 2.0)continue; // beam hole
-			if(mom.Theta()*57.3 > 120)continue; // upstream fiducial limit
-			Nthrown_charged_fiducial++;
-			pthrown_fiducial += MakeTLorentz(mcthrowns[k], mcthrowns[k]->type==14 ? 0.93827:0.13957);
+		switch(mcthrowns[k]->type){
+			case  1: thr_photons.push_back(MakeTLorentz(mcthrowns[k], 0.0));		break;
+			case  8: thr_piplus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));	break;
+			case  9: thr_piminus.push_back(MakeTLorentz(mcthrowns[k], 0.13957));	break;
+			case 14: thr_protons.push_back(MakeTLorentz(mcthrowns[k], 0.93827));	break;
 		}
 	}
 	
 	// Lock mutex
 	pthread_mutex_lock(&mutex);
 	
-	evt.event = eventnumber;
-	evt.is_fiducial = ((Nthrown_charged+Nthrown_neutral) - (Nthrown_charged_fiducial+Nthrown_neutral_fiducial))<=1;
-	evt.Nthrown_charged = Nthrown_charged;
-	evt.Nthrown_neutral = Nthrown_neutral;
-	evt.Nthrown_charged_fiducial = Nthrown_charged_fiducial;
-	evt.Nthrown_neutral_fiducial = Nthrown_neutral_fiducial;
-	evt.pthrown_fiducial = pthrown_fiducial;
-	evt.pfinal = pfinal_recon;
-	evt.pmissing = missing;
-	evt.pinitial = beam_photon + target;
-	evt.pW = evt.pinitial - *proton;
-	evt.W = evt.pW.Mag();
-	evt.minus_t = -t;
-	evt.sqrt_s = sqrt_s;
-
-	tevent->Fill();
+	// Fill in Event objects for both thrown and reconstructed
+	evt_recon->Clear();
+	evt_thrown->Clear();
+	FillEvent(evt_recon, rec_photons, rec_piplus, rec_piminus, rec_protons);
+	FillEvent(evt_thrown, thr_photons, thr_piplus, thr_piminus, thr_protons);
+	
+	// Copy event number to both trees and add this event to them
+	evt_recon->event = eventnumber;
+	evt_thrown->event = eventnumber;
+	tree->Fill();
 
 	// Unlock mutex
 	pthread_mutex_unlock(&mutex);
@@ -243,6 +211,55 @@ TLorentzVector DEventProcessor_phys_tree::MakeTLorentz(const DKinematicData *kd,
 	double E = sqrt(mass*mass + p*p);
 	
 	return TLorentzVector(px,py,pz,E);
+}
+
+//------------------
+// FillEvent
+//------------------
+void DEventProcessor_phys_tree::FillEvent(Event *evt, vector<TLorentzVector> &photon, vector<TLorentzVector> &pip, vector<TLorentzVector> &pim, vector<TLorentzVector> &proton)
+{
+	// Add photons
+	for(unsigned int i=0; i<photon.size(); i++){
+		TClonesArray &prts = *(evt->photon);
+		Particle *prt = new(prts[evt->Nphoton++]) Particle();
+		prt->p = photon[i];
+		prt->x.SetXYZ(0,0,65); // FIXME!!!
+	}
+
+	// Add piplus
+	for(unsigned int i=0; i<pip.size(); i++){
+		TClonesArray &prts = *(evt->pip);
+		Particle *prt = new(prts[evt->Npip++]) Particle();
+		prt->p = pip[i];
+		prt->x.SetXYZ(0,0,65); // FIXME!!!
+	}
+
+	// Add piminus
+	for(unsigned int i=0; i<pim.size(); i++){
+		TClonesArray &prts = *(evt->pim);
+		Particle *prt = new(prts[evt->Npim++]) Particle();
+		prt->p = pim[i];
+		prt->x.SetXYZ(0,0,65); // FIXME!!!
+	}
+
+	// Add proton
+	for(unsigned int i=0; i<proton.size(); i++){
+		TClonesArray &prts = *(evt->proton);
+		Particle *prt = new(prts[evt->Nproton++]) Particle();
+		prt->p = proton[i];
+		prt->x.SetXYZ(0,0,65); // FIXME!!!
+	}
+	
+	// Sort particle arrays by energy
+	evt->photon->Sort();
+	evt->pip->Sort();
+	evt->pim->Sort();
+	evt->proton->Sort();
+
+	// Calculate W of reconstructed particles
+	for(unsigned int i=0; i<photon.size(); i++)evt->W += photon[i];
+	for(unsigned int i=0; i<pip.size(); i++)evt->W += pip[i];
+	for(unsigned int i=0; i<pim.size(); i++)evt->W += pim[i];
 }
 
 //------------------
