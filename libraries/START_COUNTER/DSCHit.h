@@ -11,7 +11,7 @@
 #include <JANA/JObject.h>
 #include <JANA/JFactory.h>
 
-class DSCHit:public JObject{
+class DSCHit:public jana::JObject{
 	public:
 		JOBJECT_PUBLIC(DSCHit);
 		
