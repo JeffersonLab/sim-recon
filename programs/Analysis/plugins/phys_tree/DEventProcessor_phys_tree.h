@@ -41,7 +41,8 @@ class DEventProcessor_phys_tree:public JEventProcessor{
 
 		Event *evt_recon;
 		Event *evt_thrown;
-		TTree *tree;
+		TTree *tree_recon;
+		TTree *tree_thrwn;
 
 		pthread_mutex_t mutex;
 		

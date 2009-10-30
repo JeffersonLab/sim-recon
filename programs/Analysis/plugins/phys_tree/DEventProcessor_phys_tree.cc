@@ -71,13 +71,19 @@ jerror_t DEventProcessor_phys_tree::init(void)
 	// One to hold the thrown values and the other to hold the recon(structed) ones.
 
 	// Create "tree
-	tree = new TTree("e","Thrown and Reconstructed Event parameters");
+	tree_thrwn = new TTree("thrown","Thrown Event parameters");
+	tree_recon = new TTree("recon","Reconstructed Event parameters");
 
 	// Create branches for thrown and reconstructed values
 	evt_thrown = new Event();
 	evt_recon = new Event();
-	tree->Branch("T",&evt_thrown);
-	tree->Branch("R",&evt_recon);
+	tree_thrwn->Branch("T",&evt_thrown);
+	tree_recon->Branch("R",&evt_recon);
+	
+	// Empty tree with thrown and recon values as friends
+	TTree *evt = new TTree("evt","Thrown and Reconstructed Event parameters");
+	evt->AddFriend("tree_thrwn");
+	evt->AddFriend("tree_recon");
 
 	dir->cd("../");
 
@@ -183,7 +189,8 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	// Copy event number to both trees and add this event to them
 	evt_recon->event = eventnumber;
 	evt_thrown->event = eventnumber;
-	tree->Fill();
+	tree_thrwn->Fill();
+	tree_recon->Fill();
 
 	// Unlock mutex
 	pthread_mutex_unlock(&mutex);
