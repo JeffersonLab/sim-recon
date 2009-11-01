@@ -1379,13 +1379,20 @@ int DTrackCandidate_factory_CDC::NumEligibleSeedHits(vector<DCDCTrkHit*> &hits)
 // DCDCSeed::Merge
 //------------------
 void DTrackCandidate_factory_CDC::DCDCSeed::Merge(DCDCSeed& seed)
-{
-	phi_avg *= (double)hits.size();
+{	
+	// Need avg. phi based on hits from both seeds
+	double x = (double)hits.size()*cos(phi_avg);
+	double y = (double)hits.size()*sin(phi_avg);
+
 	for(unsigned int i=0; i<seed.hits.size(); i++){
 		hits.push_back(seed.hits[i]);
-		phi_avg += seed.hits[i]->hit->wire->phi;
+		
+		x += cos(seed.hits[i]->hit->wire->phi);
+		y += sin(seed.hits[i]->hit->wire->phi);
 	}
-	phi_avg/=(double)hits.size();
+
+	phi_avg = atan2(y,x);
+	if(phi_avg<0.0)phi_avg += 2.0*M_PI;
 }
 
 //------------------
