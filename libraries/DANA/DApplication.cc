@@ -14,6 +14,7 @@ using std::string;
 #include "HDGEOMETRY/DMagneticFieldMapCalibDB.h"
 #include "HDGEOMETRY/DMagneticFieldMapConst.h"
 #include "HDGEOMETRY/DMagneticFieldMapSpoiled.h"
+#include "HDGEOMETRY/DMagneticFieldMapParameterized.h"
 #include "HDGEOMETRY/DLorentzMapCalibDB.h"
 //#include "HDGEOMETRY/DMaterialMapCalibDB.h"
 #include "HDGEOMETRY/DRootGeom.h"
@@ -68,6 +69,9 @@ jerror_t DApplication::Init(void)
 	}else if(bfield_type=="Spoiled"){
 		bfield = new DMagneticFieldMapSpoiled(this);
 		cout<<"Created Magnetic field map of type DMagneticFieldMapSpoiled."<<endl;
+	}else if(bfield_type=="Parameterized"){
+		bfield = new DMagneticFieldMapParameterized(this);
+		cout<<"Created Magnetic field map of type DMagneticFieldMapParameterized."<<endl;
 	}else{
 		_DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type<<"\" !!"<<endl;
 		exit(-1);
