@@ -173,7 +173,26 @@ jerror_t DTrackCandidate_factory_CDC::evnt(JEventLoop *loop, int eventnumber)
 		  // If the linear regression doesn't work try the histogramming method
 		  // Fit stereo hits to get theta and vertex z position
 		  FindThetaZ(seed);
-		  if(!seed.valid)continue;
+		  if(!seed.valid){
+		    continue;
+
+		    // Assume that the track came from one end or the other 
+		    // of the target and use a point in one of the stereo 
+		    // layers to estimate tanl
+		    if (seed.z_vertex>TARGET_Z_MAX)
+		      seed.z_vertex=TARGET_Z_MAX;
+		    else
+		      seed.z_vertex=TARGET_Z_MIN;
+		    double x=seed.stereo_hits[0].x_stereo;
+		    double y=seed.stereo_hits[0].y_stereo;
+		    double ratio=sqrt(x*x+y*y)/2./seed.fit.r0;
+		    if (ratio<1.){
+		      double tanl=(seed.stereo_hits[0].z_stereo-seed.z_vertex)/
+			(2.*seed.fit.r0*asin(ratio));
+		      seed.theta=M_PI_2-atan(tanl);
+		    }
+		    
+		  }
 		}
 	
 		// The following is from a fit of ratio of thrown to reconstructed
@@ -1449,8 +1468,15 @@ double DTrackCandidate_factory_CDC::DCDCSeed::FindAverageBz(JEventLoop *loop)
 		bfield->GetField(hit->x_stereo, hit->y_stereo, hit->z_stereo, Bx, By, Bz);
 		Bz_sum += Bz;
 	}
+	// If there are no stereo hits, fall back on available FDC hits
+	for (unsigned int i=0; i<fdchits.size();i++){
+	  const DFDCPseudo *hit= fdchits[i];
+	  double Bx, By, Bz;
+	  bfield->GetField(hit->x, hit->y, hit->wire->origin(2), Bx, By, Bz);
+	  Bz_sum += Bz;	  
+	}
 	
-	return Bz_sum/(double)stereo_hits.size();
+	return Bz_sum/(double)(stereo_hits.size()+fdchits.size());
 }
 
 
@@ -1581,7 +1607,7 @@ jerror_t DTrackCandidate_factory_CDC::FindThetaZRegression(DCDCSeed &seed){
   
   if (z0>TARGET_Z_MAX || z0<TARGET_Z_MIN){
 	if(DEBUG_LEVEL>5)_DBG_<<"Fit failed for theta-z via regressionz value out of target range (z="<<z0<<")"<<endl;
-    return VALUE_OUT_OF_RANGE;
+	return VALUE_OUT_OF_RANGE;
   }
 
   seed.theta=M_PI/2-atan(tanl);
