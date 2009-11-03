@@ -26,6 +26,7 @@
 #define HIT_CHI2_CUT 10.0
 #define Z_VERTEX 65.0
 #define Z_MAX 85.0
+#define Z_MIN 45.0
 
 ///
 /// DTrackCandidate_factory_FDCCathodes::brun():
@@ -922,7 +923,7 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
     // Try to make a sensible vertex coming from the target
     double z_vertex=segment->S(4,0);
-    if (z_vertex>Z_MAX){
+    if (z_vertex>Z_MAX || z_vertex<Z_MIN){
       double x=segment->hits[0]->x;
       double y=segment->hits[0]->y;
       double ratio=sqrt(x*x+y*y)/2./rc;
