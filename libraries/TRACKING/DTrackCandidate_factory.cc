@@ -107,7 +107,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
     double theta=mom.Theta();
     
     // Propagate track to CDC endplate
-    if (theta<M_PI/4. && fdctrackcandidates.size()>0){      
+    if (theta<M_PI/4. && fdctrackcandidates.size()>0){
       DMagneticFieldStepper stepper(bfield,srccan->charge()); 
       if (stepper.SwimToPlane(pos,mom,cdc_endplate,norm,NULL)==false){
 	cdc_endplate_projections.push_back(pos);
@@ -151,13 +151,14 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  ==false){
 	unsigned int jmin=0;
 	double radius=0.;
+
 	for (unsigned int j=0;j<cdc_forward_ids.size();j++){
 	  unsigned int cdc_index=cdc_forward_ids[j];
 	  
 	  // Check that the charges match
 	  if (cdctrackcandidates[cdc_index]->charge()==srccan->charge()){
-	    double diff=(cdc_endplate_projections[cdc_index]-pos_back).Mag();
-		 
+	    double diff=(cdc_endplate_projections[i]-pos_back).Mag();
+ 
 	    if (diff<diff_min){
 	      diff_min=diff;
 	      jmin=j;
@@ -527,7 +528,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       _data[j]->GetT(cdchits);
       vector<const DFDCPseudo *>fdchits;
       _data[j]->GetT(fdchits);	 	 
-          
+
       for (unsigned int k=0;k<fdctrackcandidates.size();k++){
 	if (forward_matches[k]==0){
 	  const DTrackCandidate *fdccan = fdctrackcandidates[k];
@@ -669,7 +670,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       can->setMomentum(cdccan->momentum());
       can->setPosition(cdccan->position());
       can->setCharge(cdccan->charge());
-      
+
+      can->momentum().Print();
+
       for (unsigned int n=0;n<cdchits.size();n++)
 	can->AddAssociatedObject(cdchits[n]);
       
