@@ -1003,7 +1003,7 @@ void DTrackCandidate_factory_CDC::AddStereoHits(vector<DCDCTrkHit*> &stereo_hits
 			if(DEBUG_LEVEL>4)_DBG_<<"rejecting stereo hit at phi="<<pos.Phi()<<" for being too far away from axial hits(phi_diff="<<phi_diff<<")"<<endl;
 			continue;
 		}
-		mytrkhit.phi_stereo = atan2(trkhit->y_stereo-R.Y(), trkhit->x_stereo-R.X());
+		mytrkhit.phi_stereo = atan2(mytrkhit.y_stereo-R.Y(), mytrkhit.x_stereo-R.X());
 		R*=-1.0; // make R point from center of circle to beamline instead of other way around
 		if(DEBUG_LEVEL>15){
 			_DBG_<<" --- wire->udir X, Y, Z = "<<wire->udir.X()<<", "<<wire->udir.Y()<<", "<<wire->udir.Z()<<endl;
