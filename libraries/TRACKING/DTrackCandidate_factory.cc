@@ -671,8 +671,6 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
       can->setPosition(cdccan->position());
       can->setCharge(cdccan->charge());
 
-      can->momentum().Print();
-
       for (unsigned int n=0;n<cdchits.size();n++)
 	can->AddAssociatedObject(cdchits[n]);
       
