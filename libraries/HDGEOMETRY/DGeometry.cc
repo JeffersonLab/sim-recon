@@ -841,16 +841,20 @@ bool DGeometry::GetTOFZ(vector<double> &z_tof) const
 //---------------------------------
 bool DGeometry::GetTargetZ(double &z_target) const
 {
+  vector<double> TargetPos;
+  bool good = Get("//Target_s/section/parameters/real_array[@name='xyz']/@values", TargetPos);
+  z_target = TargetPos[2];
 
-	return false;
+  return good;
 }
 
 //---------------------------------
 // GetTargetLength
 //---------------------------------
 bool DGeometry::GetTargetLength(double &target_length) const
- {
-
-	return false;
+{
+  bool good = Get("//Target_s/section/parameters/real[@name='zlen']/@value", target_length);
+  
+  return good;
 }
 
