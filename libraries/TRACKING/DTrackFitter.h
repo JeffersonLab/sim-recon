@@ -139,7 +139,7 @@ class DTrackFitter:public jana::JObject{
 		vector<const DFDCPseudo*> fdchits_used_in_fit;		//< The FDC hits actually used in the fit
 
 	private:
-		
+		int DEBUG_LEVEL;		
 		// Prohibit default constructor
 		DTrackFitter();
 		
