@@ -29,7 +29,8 @@ DTrackFitter::DTrackFitter(JEventLoop *loop)
 	this->loop = loop;
 	bfield=NULL;
 	fit_status = kFitNotDone;
-	
+	DEBUG_LEVEL=0;
+
 	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 	if(!dapp){
 		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
@@ -155,9 +156,10 @@ DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicDat
 	  pos = starting_params.position();
 	  mom = starting_params.momentum();
 	}
+	double q=starting_params.charge();
 
 	// Swim a reference trajectory with this candidate's parameters
-	rt->Swim(pos, mom, starting_params.charge());
+	rt->Swim(pos, mom, q);
 	if(rt->Nswim_steps<1)return fit_status = kFitFailed;
 
 	// Get pointer to DTrackHitSelector object
@@ -177,12 +179,33 @@ DTrackFitter::fit_status_t DTrackFitter::FindHitsAndFitTrack(const DKinematicDat
 	DTrackHitSelector::fit_type_t input_type = fit_type==kTimeBased ? DTrackHitSelector::kWireBased:DTrackHitSelector::kHelical;
 	hitselector->GetAllHits(input_type, rt, cdctrackhits, fdcpseudos, this);
 
+	// If the hit selector found no hits at all on the track, the most
+	// likely explanation is that the charge of the candidate was wrong,
+	// especially for stiff forward-going tracks.  Try rotating phi by 
+	// 180 degrees, switching the charge, and trying the hit selector again.
+	if (fdchits.size()+cdchits.size()==0){
+	  // Swim a reference trajectory with this candidate's parameters
+	  mom.SetPhi(mom.Phi()+M_PI);
+	  q*=-1.;
+	  rt->Swim(pos, mom,q);
+	  if(rt->Nswim_steps<1)return fit_status = kFitFailed;
+	  hitselector->GetAllHits(input_type, rt, cdctrackhits, fdcpseudos, this);
+       	
+	  if (fdchits.size()+cdchits.size()!=0){
+	    if (DEBUG_LEVEL>0)
+	      _DBG_ << "Switching the charge and phi of the track..." <<endl;
+	  }
+	}
+	if (fdchits.size()+cdchits.size()==0) return fit_status=kFitFailed;
+	
+	
+
 	// In case the subclass doesn't actually set the mass ....
 	//fit_params.setMass(starting_params.mass());
 	fit_params.setMass(mass);
 
 	// Do the fit
-	return fit_status = FitTrack(pos, mom, starting_params.charge(), mass);	
+	return fit_status = FitTrack(pos, mom,q, mass);	
 }
 
 //------------------
