@@ -20,7 +20,7 @@
 #include <JANA/JEventLoop.h>
 using namespace jana;
 
-class DTrack;
+class DTrackWireBased;
 class DMCThrown;
 
 class DEventProcessor_invariant_mass_hists:public JEventProcessor{

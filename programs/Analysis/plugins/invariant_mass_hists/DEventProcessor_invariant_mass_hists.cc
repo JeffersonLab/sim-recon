@@ -91,7 +91,7 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 	vector<const DParticle*> particles;
 
 	loop->Get(beam_photons);	// from truth info
-	loop->Get(photons);			// all reconstructed photons (BCAL and FCAL)
+	//	loop->Get(photons);			// all reconstructed photons (BCAL and FCAL)
 	loop->Get(particles);		// all reconstructed charged (CDC and FDC)
 
 	// Target is proton at rest in lab frame
@@ -117,12 +117,16 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 		// then assume it's a pion.
 		int type = part->charge()<0.0 ? 9:8; // initialize to pi-(=9) or pi+(=8)
 
+		
+		//printf("mass %f\n",part->mass());
+		if (part->mass()>0.5) type=14;
+
 		// Here we try and get the "truth" object DMCThrown. The access mechanism
 		// forces us to get it as a list, but there should be at most 1.
 		vector<const DMCThrown*> throwns;
 		part->Get(throwns);
 		// if DMCThrown was found, overwrite pion with actual particle type
-		if(throwns.size()>0)type = throwns[0]->type;			
+		//if(throwns.size()>0)type = throwns[0]->type;			
 
 		// Add TLorentzVector to appropriate container based on charged particle type
 		switch(type){
