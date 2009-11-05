@@ -23,7 +23,7 @@ using namespace jana;
 
 #include <Event.h>
 
-class DTrack;
+class DTrackWireBased;
 class DMCThrown;
 
 #define MAX_PARTS 20
