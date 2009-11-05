@@ -22,7 +22,7 @@ using std::map;
 #include <JANA/JEventLoop.h>
 
 #include <PID/DKinematicData.h>
-#include <TRACKING/DTrack.h>
+#include <TRACKING/DTrackWireBased.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DMCTrajectoryPoint.h>
 

@@ -22,7 +22,7 @@ using namespace std;
 #include <DANA/DApplication.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DTrackCandidate.h>
-#include <TRACKING/DTrack.h>
+#include <TRACKING/DTrackWireBased.h>
 #include <TRACKING/DReferenceTrajectory.h>
 #include <PID/DParticle.h>
 #include <FDC/DFDCGeometry.h>
@@ -190,10 +190,10 @@ jerror_t DEventProcessor_trackeff_hists2::evnt(JEventLoop *loop, int eventnumber
 		for(unsigned int j=0; j<particles.size(); j++){
 			const DParticle *particle = particles[j];
 			
-			// Get DTrack and DTrackCandidate objects for this DParticle
-			vector<const DTrack*> tracks;
+			// Get DTrackWireBased and DTrackCandidate objects for this DParticle
+			vector<const DTrackWireBased*> tracks;
 			particle->Get(tracks);
-			const DTrack *track = tracks.size()==1 ? tracks[0]:NULL;
+			const DTrackWireBased *track = tracks.size()==1 ? tracks[0]:NULL;
 			vector<const DTrackCandidate*> trackcandidates;
 			if(track)track->Get(trackcandidates);
 			const DTrackCandidate *trackcandidate = trackcandidates.size()==1 ? trackcandidates[0]:NULL;
