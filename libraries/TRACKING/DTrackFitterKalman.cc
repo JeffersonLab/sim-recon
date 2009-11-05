@@ -51,11 +51,6 @@
 //bool static DKalmanHit_cmp(DKalmanHit_t *a, DKalmanHit_t *b){
 //  return a->z<b->z;
 //}
-bool static DKalman_dedx_cmp(pair<double,double>a,pair<double,double>b){
-  double dEdx1=a.first/a.second;
-  double dEdx2=b.first/b.second;
-  return dEdx1<dEdx2;  
-}
 
 bool static DKalmanFDCHit_cmp(DKalmanFDCHit_t *a, DKalmanFDCHit_t *b){
   return a->z<b->z;
@@ -209,6 +204,8 @@ void DTrackFitterKalman::ResetKalman(void)
 	 track_dedx=0.;
 	 num_dedx=0;
 	 p_meas=0.;
+	 //MASS=0.13957;
+	 //mass2=MASS*MASS;
 
 	 do_multiple_scattering=true;
 	 do_energy_loss=true;
@@ -243,7 +240,7 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
   error = KalmanLoop();
   if (error!=NOERROR) return kFitFailed;
   
-  // Copy fit results into DTrackFitter base-class data membe rs
+  // Copy fit results into DTrackFitter base-class data members
   DVector3 mom,pos;
   GetPosition(pos);
   GetMomentum(mom);
@@ -760,7 +757,6 @@ jerror_t DTrackFitterKalman::SwimCentral(DVector3 &pos,DMatrix &Sc){
     // cdc end plate but there are no more measurements
     if (my_fdchits.size()==0 
 	&& (pos.z()>endplate_z || pos.z()<cdc_origin[2])) do_energy_loss=false;
-
 	
     // Compute the energy loss for this step
     if (do_energy_loss && pos.Perp()<r_outer_hit){
@@ -1449,11 +1445,12 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
 // Uses the 4th-order Runga-Kutte algorithm.
 double DTrackFitterKalman::Step(double oldz,double newz, double dEdx,DMatrix &S){
   double delta_z=newz-oldz;
+  double delta_z_over_2=delta_z/2.;
   DMatrix D1(5,1),D2(5,1),D3(5,1),D4(5,1);
 
   CalcDeriv(oldz,delta_z,S,dEdx,D1);
-  CalcDeriv(oldz+delta_z/2.,delta_z/2.,S+0.5*delta_z*D1,dEdx,D2);
-  CalcDeriv(oldz+delta_z/2.,delta_z/2.,S+0.5*delta_z*D2,dEdx,D3);
+  CalcDeriv(oldz+delta_z_over_2,delta_z_over_2,S+delta_z_over_2*D1,dEdx,D2);
+  CalcDeriv(oldz+delta_z_over_2,delta_z_over_2,S+delta_z_over_2*D2,dEdx,D3);
   CalcDeriv(oldz+delta_z,delta_z,S+delta_z*D3,dEdx,D4);
 	
   S+=delta_z*(ONE_SIXTH*D1+ONE_THIRD*D2+ONE_THIRD*D3+ONE_SIXTH*D4);
@@ -1486,10 +1483,11 @@ jerror_t DTrackFitterKalman::StepJacobian(double oldz,double newz,
   DMatrix D1(5,1),D2(5,1),D3(5,1),D4(5,1);
   
   double delta_z=newz-oldz;
+  double delta_z_over_2=delta_z/2.;
   CalcDerivAndJacobian(oldz,delta_z,S,dEdx,J1,D1);
-  CalcDerivAndJacobian(oldz+delta_z/2.,delta_z/2.,S+0.5*delta_z*D1,dEdx,J2,D2);
+  CalcDerivAndJacobian(oldz+delta_z_over_2,delta_z_over_2,S+delta_z_over_2*D1,dEdx,J2,D2);
   J2=J2+0.5*(J2*J1);
-  CalcDerivAndJacobian(oldz+delta_z/2.,delta_z/2.,S+0.5*delta_z*D2,dEdx,J3,D3);
+  CalcDerivAndJacobian(oldz+delta_z_over_2,delta_z_over_2,S+delta_z_over_2*D2,dEdx,J3,D3);
   J3=J3+0.5*(J3*J2);
   CalcDerivAndJacobian(oldz+delta_z,delta_z,S+delta_z*D3,dEdx,J4,D4);
   J4=J4+J4*J3;
@@ -1744,6 +1742,7 @@ jerror_t DTrackFitterKalman::FixedStep(DVector3 &pos,double ds,DMatrix &S,
   DMatrix D1(5,1),D2(5,1),D3(5,1),D4(5,1);
   DMatrix S1(5,1),S2(5,1),S3(5,1),S4(5,1);
   DVector3 dpos1,dpos2,dpos3,dpos4;
+  double ds_2=ds/2.;
   
   // Magnetic field
   DVector3 B(0.,0.,-2.);
@@ -1751,17 +1750,17 @@ jerror_t DTrackFitterKalman::FixedStep(DVector3 &pos,double ds,DMatrix &S,
   Bz=fabs(B(2));
   CalcDeriv(0.,pos,dpos1,B,S,dEdx,D1);
 
-  DVector3 mypos=pos+(ds/2.)*dpos1;
+  DVector3 mypos=pos+ds_2*dpos1;
   bfield->GetFieldBicubic(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
-  S1=S+(0.5*ds)*D1; 
+  S1=S+ds_2*D1; 
 
-  CalcDeriv(ds/2.,mypos,dpos2,B,S1,dEdx,D2);
+  CalcDeriv(ds_2,mypos,dpos2,B,S1,dEdx,D2);
 
-  mypos=pos+(ds/2.)*dpos2;
+  mypos=pos+ds_2*dpos2;
   bfield->GetFieldBicubic(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
-  S2=S+(0.5*ds)*D2; 
+  S2=S+ds_2*D2; 
 
-  CalcDeriv(ds/2.,mypos,dpos3,B,S2,dEdx,D3);
+  CalcDeriv(ds_2,mypos,dpos3,B,S2,dEdx,D3);
 
   mypos=pos+ds*dpos3;
   bfield->GetFieldBicubic(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
@@ -1801,6 +1800,7 @@ jerror_t DTrackFitterKalman::StepJacobian(const DVector3 &pos,
   DMatrix D1(5,1),D2(5,1),D3(5,1),D4(5,1);
   DMatrix S1(5,1),S2(5,1),S3(5,1),S4(5,1);
   DVector3 dpos1,dpos2,dpos3,dpos4;
+  double ds_2=ds/2.;
 
    // charge
   double q=(S(state_q_over_pt,0)>0)?1.:-1.;
@@ -1816,18 +1816,18 @@ jerror_t DTrackFitterKalman::StepJacobian(const DVector3 &pos,
 
   CalcDerivAndJacobian(0.,pos,dpos1,B,S,dEdx,J1,D1);
   double Bz_=fabs(B.z()); // needed for computing D
-  DVector3 mypos=pos+(ds/2.)*dpos1;
+  DVector3 mypos=pos+(ds_2)*dpos1;
   //bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
-  S1=S+(0.5*ds)*D1; 
+  S1=S+ds_2*D1; 
 
-  CalcDerivAndJacobian(ds/2.,mypos,dpos2,B,S1,dEdx,J2,D2);
+  CalcDerivAndJacobian(ds_2,mypos,dpos2,B,S1,dEdx,J2,D2);
   J2=J2+0.5*(J2*J1);
 
-  mypos=pos+(ds/2.)*dpos2;
+  mypos=pos+(ds_2)*dpos2;
   //bfield->GetField(mypos.x(),mypos.y(),mypos.z(), B(0), B(1), B(2));
-  S2=S+(0.5*ds)*D2;
+  S2=S+ds_2*D2;
 
-  CalcDerivAndJacobian(ds/2.,mypos,dpos3,B,S2,dEdx,J3,D3);
+  CalcDerivAndJacobian(ds_2,mypos,dpos3,B,S2,dEdx,J3,D3);
   J3=J3+0.5*(J3*J2);  
 
   mypos=pos+ds*dpos3;
@@ -1847,13 +1847,15 @@ jerror_t DTrackFitterKalman::StepJacobian(const DVector3 &pos,
   // Deal with changes in D
   double qrc_old=qpt/qBr2p/Bz_;
   double qrc_plus_D=D+qrc_old;
+  double dx=dpos.x();
+  double dy=dpos.y();
   double rc=sqrt(dpos.Perp2()
-		 +2.*qrc_plus_D*(dpos.x()*sinphi-dpos.y()*cosphi)
+		 +2.*qrc_plus_D*(dx*sinphi-dy*cosphi)
 		 +qrc_plus_D*qrc_plus_D);
     
-  J(state_D,state_D)=q*(dpos.x()*sinphi-dpos.y()*cosphi+qrc_plus_D)/rc;
+  J(state_D,state_D)=q*(dx*sinphi-dy*cosphi+qrc_plus_D)/rc;
   J(state_D,state_q_over_pt)=qpt*qrc_old*(J(state_D,state_D)-1.);
-  J(state_D,state_phi)=q*qrc_plus_D*(dpos.x()*cosphi+dpos.y()*sinphi)/rc;
+  J(state_D,state_phi)=q*qrc_plus_D*(dx*cosphi+dy*sinphi)/rc;
   
   return NOERROR;
 }
@@ -1872,6 +1874,7 @@ jerror_t DTrackFitterKalman::GetProcessNoiseCentral(double ds,
     double q_over_pt=Sc(state_q_over_pt,0); 
     //  double X0=material->GetRadLen(pos.x(),pos.y(),pos.z());
     double my_ds=fabs(ds);
+    double my_ds_2=my_ds/2.;
     
     Q(state_phi,state_phi)=one_plus_tanl2;
     Q(state_tanl,state_tanl)=one_plus_tanl2*one_plus_tanl2;
@@ -1880,14 +1883,14 @@ jerror_t DTrackFitterKalman::GetProcessNoiseCentral(double ds,
       =q_over_pt*tanl*one_plus_tanl2;
     Q(state_D,state_D)=ds*ds/3.;
     Q(state_D,state_tanl)=Q(state_tanl,state_D)
-      //=-my_ds/2.*cos(Sc(state_phi,0))*(one_plus_tanl2);
-      =my_ds/2.*one_plus_tanl2;
+      //=-my_ds_2*cos(Sc(state_phi,0))*(one_plus_tanl2);
+      =my_ds_2*one_plus_tanl2;
     Q(state_D,state_phi)=Q(state_phi,state_D)
-      //my_ds/2.*sin(Sc(state_phi,0))*sqrt(one_plus_tanl2);
-      =my_ds/2.*sqrt(one_plus_tanl2);
+      //my_ds_2*sin(Sc(state_phi,0))*sqrt(one_plus_tanl2);
+      =my_ds_2*sqrt(one_plus_tanl2);
     Q(state_D,state_q_over_pt)=Q(state_q_over_pt,state_D)
-      //      -my_ds/2.*cos(Sc(state_phi,0))*tanl;
-      =my_ds/2.*q_over_pt*tanl;
+      //      -my_ds_2*cos(Sc(state_phi,0))*tanl;
+      =my_ds_2*q_over_pt*tanl;
 
     double p2=one_plus_tanl2/q_over_pt/q_over_pt;
     double log_correction=1.+0.038*log(my_ds/X0*(1.+mass2/p2));
@@ -1912,6 +1915,7 @@ jerror_t DTrackFitterKalman::GetProcessNoise(double ds,double z,double X0,
     double tx=S(state_tx,0),ty=S(state_ty,0);
     double one_over_p_sq=S(state_q_over_p,0)*S(state_q_over_p,0);
     double my_ds=fabs(ds);
+    double my_ds_2=my_ds/2.;
     double tx2=tx*tx;
     double ty2=ty*ty;
     double one_plus_tx2=1.+tx2;
@@ -1926,11 +1930,11 @@ jerror_t DTrackFitterKalman::GetProcessNoise(double ds,double z,double X0,
     Q(state_x,state_x)=ds*ds/3.;
     Q(state_y,state_y)=ds*ds/3.;
     Q(state_y,state_ty)=Q(state_ty,state_y)
-      //      =my_ds/2.*tx*(one_plus_tsquare)/sqrt(tsquare);
-      = my_ds/2.*sqrt(one_plus_tsquare*one_plus_ty2);
+      //      =my_ds_2*tx*(one_plus_tsquare)/sqrt(tsquare);
+      = my_ds_2*sqrt(one_plus_tsquare*one_plus_ty2);
     Q(state_x,state_tx)=Q(state_tx,state_x)
-      // =my_ds/2.*ty*sqrt((one_plus_tsquare)/(tsquare));
-      = my_ds/2.*sqrt(one_plus_tsquare*one_plus_tx2);
+      // =my_ds_2*ty*sqrt((one_plus_tsquare)/(tsquare));
+      = my_ds_2*sqrt(one_plus_tsquare*one_plus_tx2);
     
     double log_correction=1.+0.038*log(my_ds/X0*(1.+one_over_p_sq*mass2));
     double sig2_ms= 0.0136*0.0136*(1.+one_over_p_sq*mass2)
@@ -2708,8 +2712,8 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	  
 	  //fom=anneal_factor*chisq_central;
 	  if (chisq_central>=1e16 ){
-	    cout 
-	    << "-- central fit failed --" <<endl;
+	    if (iter2>0) break;
+	    if (DEBUG_LEVEL>0) _DBG_<< "-- central fit failed --" <<endl;
 	    return VALUE_OUT_OF_RANGE;
 	  }
 	  
@@ -2762,7 +2766,7 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
     }
 
     if (chisq_iter==1.e16) {
-      _DBG_ << "Central fit failed!" <<endl;
+      if (DEBUG_LEVEL>0) _DBG_ << "Central fit failed!" <<endl;
       return VALUE_OUT_OF_RANGE;
     }
    
@@ -2776,7 +2780,11 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
    
     if (!isfinite(x_) || !isfinite(y_) || !isfinite(z_) || !isfinite(phi_) 
 	|| !isfinite(q_over_pt_) || !isfinite(tanl_)){
-      _DBG_ << "At least one parameter is NaN or +-inf!!" <<endl;
+      if (DEBUG_LEVEL>0){
+	_DBG_ << "At least one parameter is NaN or +-inf!!" <<endl;
+	_DBG_ << "x " << x_ << " y " << y_ << " z " << z_ << " phi " << phi_
+	      << " q/pt " << q_over_pt_ << " tanl " << tanl_ << endl;
+      }
       return VALUE_OUT_OF_RANGE;	       
     }
   
@@ -3744,8 +3752,7 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
 	InvV(1,1)=V1(0,0)/det;
       }
       else{
-	cout 
-	  << "Kalman filter:  Singular matrix..." << endl;
+	if (DEBUG_LEVEL>0) _DBG_<< "Singular matrix..." << endl;
 	return UNRECOVERABLE_ERROR;
       }
       
@@ -3793,8 +3800,7 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
 	InvRC(1,1)=RC(0,0)/det;
       }
       else{ 
-	cout 
-	  << "Kalman filter:  Singular matrix RC..." << endl;
+	if (DEBUG_LEVEL>0) _DBG_<< "Singular matrix RC..." << endl;
 	return UNRECOVERABLE_ERROR;
       }
       
