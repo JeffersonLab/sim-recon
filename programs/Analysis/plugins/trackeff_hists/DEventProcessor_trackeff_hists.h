@@ -24,7 +24,7 @@ using std::map;
 #include <PID/DKinematicData.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <TRACKING/DTrackCandidate.h>
-#include <TRACKING/DTrack.h>
+#include <TRACKING/DTrackWireBased.h>
 #include <PID/DParticle.h>
 #include <TRACKING/DMCThrown.h>
 #include <CDC/DCDCTrackHit.h>

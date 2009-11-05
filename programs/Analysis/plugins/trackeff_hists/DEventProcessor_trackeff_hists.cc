@@ -21,7 +21,7 @@ using namespace std;
 #include <DANA/DApplication.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DTrackCandidate.h>
-#include <TRACKING/DTrack.h>
+#include <TRACKING/DTrackWireBased.h>
 #include <TRACKING/DMCTrajectoryPoint.h>
 #include <PID/DParticle.h>
 #include <DVector2.h>
@@ -118,7 +118,7 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DCDCTrackHit*> cdctrackhits;
 	vector<const DFDCPseudo*> fdcpseudos;
 	vector<const DTrackCandidate*> trackcandidates;
-	vector<const DTrack*> tracks;
+	vector<const DTrackWireBased*> tracks;
 	vector<const DParticle*> particles;
 	vector<const DParticle*> throwns;
 	vector<const DMCTrajectoryPoint*> mctraj;
@@ -226,7 +226,7 @@ void DEventProcessor_trackeff_hists::GetTrackInfo(const DKinematicData *kd, trac
 	// Try dynamic casting DKinematicData into something that can be used to get
 	// at the chisq and Ndof.
 	const DTrackCandidate *can = dynamic_cast<const DTrackCandidate*>(kd);
-	const DTrack *track = dynamic_cast<const DTrack*>(kd);
+	const DTrackWireBased *track = dynamic_cast<const DTrackWireBased*>(kd);
 	const DParticle *part = dynamic_cast<const DParticle*>(kd);
 	if(can!=NULL){
 		ti.trk_chisq = can->chisq;
@@ -251,7 +251,7 @@ void DEventProcessor_trackeff_hists::GetNhits(const DKinematicData *kd, int &Ncd
 	vector<const DCDCTrackHit*> cdctrackhits;
 	vector<const DFDCPseudo*> fdcpseudos;
 	
-	// The DKinematicData object should be a DTrackCandidate, DTrack, or DParticle which
+	// The DKinematicData object should be a DTrackCandidate, DTrackWireBased, or DParticle which
 	// has associated objects for the hits
 	kd->Get(cdctrackhits);
 	kd->Get(fdcpseudos);
