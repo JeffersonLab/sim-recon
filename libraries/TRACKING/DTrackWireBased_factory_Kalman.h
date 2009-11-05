@@ -61,6 +61,7 @@ class DTrackWireBased_factory_Kalman:public jana::JFactory<DTrackWireBased>{
 		vector<double> mass_hypotheses;
 
 		DTrackWireBased *MakeDTrackWireBased(const DTrackCandidate *candidate);
+		void FilterDuplicates(void);	
 		double GetFOM(DTrackWireBased *dtrack);
 		 
 };

@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <set>
 using namespace std;
 
 #include "DTrackWireBased_factory_Kalman.h"
@@ -220,6 +221,9 @@ jerror_t DTrackWireBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
 		}
 	}
 
+	// Filter out duplicate tracks
+	FilterDuplicates();
+
 	return NOERROR;
 }
 
@@ -306,5 +310,75 @@ double DTrackWireBased_factory_Kalman::GetFOM(DTrackWireBased *dtrack)
   // If we got here, GetdEdx failed for this track
   dtrack->setdEdx(0.);
   return 0.;
+}
+
+
+//------------------
+// FilterDuplicates
+//------------------
+void DTrackWireBased_factory_Kalman::FilterDuplicates(void)
+{
+	/// Look through all current DTrackWireBased objects and remove any
+	/// that have all of their hits in common with another track
+	
+	if(_data.size()==0)return;
+
+	if(DEBUG_LEVEL>2)_DBG_<<"Looking for clones of wire-based tracks ..."<<endl;
+
+	set<unsigned int> indexes_to_delete;
+	for(unsigned int i=0; i<_data.size()-1; i++){
+		DTrackWireBased *dtrack1 = _data[i];
+
+		vector<const DCDCTrackHit*> cdchits1;
+		vector<const DFDCPseudo*> fdchits1;
+		dtrack1->Get(cdchits1);
+		dtrack1->Get(fdchits1);
+
+		for(unsigned int j=i+1; j<_data.size(); j++){
+			DTrackWireBased *dtrack2 = _data[j];
+
+
+			vector<const DCDCTrackHit*> cdchits2;
+			vector<const DFDCPseudo*> fdchits2;
+			dtrack2->Get(cdchits2);
+			dtrack2->Get(fdchits2);
+			
+			// Count number of cdc and fdc hits in common
+			unsigned int Ncdc = count_common_members(cdchits1, cdchits2);
+			unsigned int Nfdc = count_common_members(fdchits1, fdchits2);
+
+			if(Ncdc!=cdchits1.size() && Ncdc!=cdchits2.size())continue;
+			if(Nfdc!=fdchits1.size() && Nfdc!=fdchits2.size())continue;
+			
+			unsigned int total = Ncdc + Nfdc;
+			unsigned int total1 = cdchits1.size()+fdchits1.size();
+			unsigned int total2 = cdchits2.size()+fdchits2.size();
+			if(total!=total1 && total!=total2)continue;
+
+			if(total1<total2){
+				indexes_to_delete.insert(i);
+			}else{
+				indexes_to_delete.insert(j);
+			}
+		}
+	}
+	
+	if(DEBUG_LEVEL>2)_DBG_<<"Found "<<indexes_to_delete.size()<<" wire-based clones"<<endl;
+
+	// Return now if we're keeping everyone
+	if(indexes_to_delete.size()==0)return;
+
+	// Copy pointers that we want to keep to a new container and delete
+	// the clone objects
+	vector<DTrackWireBased*> new_data;
+	for(unsigned int i=0; i<_data.size(); i++){
+		if(indexes_to_delete.find(i)==indexes_to_delete.end()){
+			new_data.push_back(_data[i]);
+		}else{
+			delete _data[i];
+			if(DEBUG_LEVEL>1)_DBG_<<"Deleting clone wire-based track "<<i<<endl;
+		}
+	}	
+	_data = new_data;
 }
 
