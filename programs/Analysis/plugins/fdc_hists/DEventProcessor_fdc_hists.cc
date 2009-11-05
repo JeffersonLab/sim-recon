@@ -18,8 +18,6 @@ using namespace std;
 
 #include <DANA/DApplication.h>
 #include <TRACKING/DMCThrown.h>
-#include <TRACKING/DTrackCandidate.h>
-#include <TRACKING/DTrack.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <FDC/DFDCGeometry.h>
 #include <FDC/DFDCHit.h>
