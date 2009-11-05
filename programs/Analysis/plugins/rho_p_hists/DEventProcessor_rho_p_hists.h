@@ -23,7 +23,7 @@ using namespace jana;
 
 #include <Event.h>
 
-class DTrack;
+class DTrackWireBased;
 class DMCThrown;
 
 class DEventProcessor_rho_p_hists:public JEventProcessor{
