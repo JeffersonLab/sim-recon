@@ -16,8 +16,6 @@ using namespace jana;
 
 #include <DANA/DApplication.h>
 #include <TRACKING/DMCThrown.h>
-#include <TRACKING/DTrackCandidate.h>
-#include <TRACKING/DTrack.h>
 #include <TRACKING/DMCTrackHit.h>
 #include <TRACKING/DMCThrown.h>
 #include <TRACKING/DReferenceTrajectory.h>
