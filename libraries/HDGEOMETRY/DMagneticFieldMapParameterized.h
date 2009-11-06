@@ -16,6 +16,7 @@ using std::string;
 #include <JANA/JApplication.h>
 #include <JANA/JCalibration.h>
 
+#include <DMatrix.h>
 #include <HDGEOMETRY/DMagneticFieldMap.h>
 
 class DMagneticFieldMapParameterized:public DMagneticFieldMap{
@@ -62,7 +63,9 @@ class DMagneticFieldMapParameterized:public DMagneticFieldMap{
 				double rnorm;
 				unsigned int order1;
 				unsigned int order2;
-				vector<vector<double> > pp;
+				vector<vector<double> > pp;	// parameters from calibDB
+				DMatrix Q;							// parameters matrix transformed by Chebyshev matrix
+				vector<vector<double> > cc;	// parameters matrix transformed by Chebyshev matrix
 				
 				bool IsInRange(double &z) const {return z>=zmin && z<=zmax;}
 				double Eval(double &r, double &z) const;
