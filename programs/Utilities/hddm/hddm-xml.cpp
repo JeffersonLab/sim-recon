@@ -38,6 +38,8 @@
  *    -o option.
  */
 
+//#define VERBOSE_HDDM_LOGGING 1
+
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/dom/DOMNamedNodeMap.hpp>
 
@@ -242,9 +244,15 @@ int main(int argC, char* argV[])
    {
       DOMNodeList* contList = rootEl->getChildNodes();
       int contLength = contList->getLength();
-      int size;
-      ifx >> size;
-      if (size < 0)
+      int tsize;
+      ifx >> tsize;
+#ifdef VERBOSE_HDDM_LOGGING
+      XString tnameS(rootEl->getTagName());
+      std::cerr << "hddm-xml : tag " << S(tnameS)
+                << " found with size " << tsize
+                << std::endl;
+#endif
+      if (tsize <= 0)
       {
          break;
       }
@@ -255,10 +263,29 @@ int main(int argC, char* argV[])
          if (type == DOMNode::ELEMENT_NODE)
          {
             DOMElement* contEl = (DOMElement*) cont;
+            int size;
             ifx >> size;
+#ifdef VERBOSE_HDDM_LOGGING
+            XString cnameS(contEl->getTagName());
+            std::cerr << "hddm-xml : tag " << S(cnameS)
+                      << " found with size " << size
+                      << std::endl;
+#endif
             if (size > 0)
             {
                builder.constructXML(ifx,contEl,1);
+            }
+            else {
+               XString repS(contEl->getAttribute(X("minOccurs")));
+               int rep = (repS == "")? 1 : atoi(S(repS));
+               if (size != 0) {
+                  std::cerr << "hddm-xml : weird size, continue? [y/n] ";
+                  std::string ans;
+                  std::cin >> ans;
+                  if (ans[0] != 'y' && ans[0] != 'Y') {
+                     exit(5);
+                  }
+               }
             }
          }
       }
@@ -393,8 +420,26 @@ void XMLmaker::constructXML(xstream::xdr::istream& ifx,
             DOMElement* contEl = (DOMElement*) cont;
             int size;
             ifx >> size;
+#ifdef VERBOSE_HDDM_LOGGING
+            XString cnameS(contEl->getTagName());
+            std::cerr << "hddm-xml : tag " << S(cnameS)
+                      << " found with size " << size
+                      << std::endl;
+#endif
             if (size > 0) {
                constructXML(ifx,contEl,depth +1);
+            }
+            else {
+               XString irepS(contEl->getAttribute(X("minOccurs")));
+               int irep = (irepS == "")? 1 : atoi(S(irepS));
+               if (size != 0) {
+                  std::cerr << "hddm-xml : weird size, continue? [y/n] ";
+                  std::string ans;
+                  std::cin >> ans;
+                  if (ans[0] != 'y' && ans[0] != 'Y') {
+                     exit(5);
+                  }
+               }
             }
          }
       }
