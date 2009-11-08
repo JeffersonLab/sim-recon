@@ -36,7 +36,11 @@ int flushOutput ()
 {
    if (thisOutputEvent != 0)
    {
-      flush_s_HDDM(thisOutputEvent, thisOutputStream);
+      if (flush_s_HDDM(thisOutputEvent, thisOutputStream) != 0) {
+         fprintf(stderr,"Fatal error in flushOutput:");
+         fprintf(stderr," write failed to hddm output file.\n");
+         exit(7);
+      }
       thisOutputEvent = 0;
    }
    checkpoint();

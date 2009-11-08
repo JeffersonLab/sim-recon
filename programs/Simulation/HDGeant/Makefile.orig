@@ -95,7 +95,7 @@ AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o gsstak.o gltrac.o \
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
        hitFCal.o hitUPV.o bintree.o memcheck.o timel.o trapfpe.o \
-       GetDOCA.o calibDB.o hitTag.o storeTrajectory.o hitGCal.o
+       calibDB.o hitTag.o storeTrajectory.o hitGCal.o
 
 GXFIXED = gxcs.o gxphys.o
 GELHAD = gelhad/libgelhad.a
@@ -106,7 +106,7 @@ hdgeant++: hdgeant++.o gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXF
 	$(CPP) -mtune=generic -o $@ hdgeant++.o gxint.o uginit.o uglast.o \
 	   $(FOPTS) $(AUXF) $(AUXC) $(GXFIXED) $(MISC_FIXES) \
 	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
-	   -L$(HALLD_HOME)/lib/$(OSNAME) -lHDGEOMETRY \
+	   -L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lHDGEOMETRY \
 	   -L$(JANA_HOME)/lib -lJANA \
 	   -L$(ROOTSYS)/lib -lPhysics -lMatrix -lGeom -lCore -lRIO -lCint \
 	   `cernlib -v $(CERN_LEVEL) geant321 pawlib graflib/Motif packlib mathlib` \
@@ -116,7 +116,7 @@ hdgeant: hdgeant.o hdgeant_f.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(MIS
 	$(CPP) -mtune=generic $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(STATIC) $(FOPTS) \
 	   hdgeant.o hdgeant_f.o uginit.o uglast.o $(AUXF) $(AUXC) $(MISC_FIXES) \
 	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
-	   -L$(HALLD_HOME)/lib/$(OSNAME) -lHDGEOMETRY \
+	   -L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lHDGEOMETRY \
 	   -L$(JANA_HOME)/lib -lJANA \
 	   -L$(ROOTSYS)/lib -lPhysics -lMatrix -lGeom -lCore -lRIO -lCint \
 	  `$(CERNLIB) geant321 mathlib graflib grafX11` \
@@ -158,17 +158,17 @@ hddm_s.o: $(HDDM)/hddm_s.c
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -c -o $@ $<
 
-cdcdump: cdcdump.c hddm_s.o
+cdcdump: cdcdump.c hddm_s.o memcheck.o bintree.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -o $@ $^
 
-cdccount: cdccount.c hddm_s.o
+%count: %count.c hddm_s.o memcheck.o bintree.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(HALLD_HOME)/src/libraries/include \
 	-I$(HALLD_HOME)/src/libraries -o $@ $^
 
-%2nt: %2nt.c hddm_s.o
+%2nt: %2nt.c hddm_s.o memcheck.o bintree.o
 	$(CC) $(COPTS) -I. -I$(HALLD_HOME)/src/include -I$(HDDM) \
 	-I$(JANA_HOME)/src \
 	-I$(HALLD_HOME)/src/libraries/include \
