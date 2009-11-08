@@ -333,6 +333,7 @@ int main(int argC, char* argV[])
    builder.hFile
 	 << "#include <stdlib.h>"				<< std::endl
 	 << "#include <stdio.h>" 				<< std::endl
+	 << "#include <errno.h>" 				<< std::endl
 	 << "#include <rpc/rpc.h>" 				<< std::endl
 	 << "#include <string.h>"				<< std::endl
 	 << "#include <strings.h>"				<< std::endl
@@ -417,6 +418,7 @@ int main(int argC, char* argV[])
 	 << "typedef struct {"					<< std::endl
 	 << "   FILE* fd;"					<< std::endl
 	 << "   int iomode;"					<< std::endl
+	 << "   int lerrno;"					<< std::endl
 	 << "   char* filename;"				<< std::endl
          << "   XDR* xdrs;"					<< std::endl
 	 << "   popNode* popTop;"				<< std::endl
@@ -1161,12 +1163,15 @@ void CodeBuilder::constructSkipFunc()
          << "      unsigned int size;"					<< std::endl
          << "      if (! xdr_u_int(fp->xdrs,&size))"			<< std::endl
          << "      {"							<< std::endl
-         << "          return skipped;"					<< std::endl
+         << "         return skipped;"					<< std::endl
          << "      }"							<< std::endl
          << "      else if (size > 0)"					<< std::endl
          << "      {"							<< std::endl
          << "         off_t start = xdr_getpos64(fp->xdrs);"		<< std::endl
-         << "         xdr_setpos64(fp->xdrs,start+size);"			<< std::endl
+         << "         if (xdr_setpos64(fp->xdrs,start+size) != 0) {"	<< std::endl
+         << "            fp->lerrno = errno;"				<< std::endl
+         << "            return skipped;"				<< std::endl
+         << "         }"							<< std::endl
          << "      }"							<< std::endl
          << "   }"							<< std::endl
          << "   return skipped;"					<< std::endl
@@ -1232,7 +1237,7 @@ void CodeBuilder::constructPackers()
       cFile << "int pack_" << tagT << "(XDR* xdrs, "
             << tagType << "* this1)"				<< std::endl
             << "{"						<< std::endl
-            << "   int m;"					<< std::endl
+            << "   int m=0;"					<< std::endl
             << "   unsigned int size=0;"			<< std::endl
             << "   off_t base,start,end;"			<< std::endl
             << "   base = xdr_getpos64(xdrs);"			<< std::endl
@@ -1247,8 +1252,7 @@ void CodeBuilder::constructPackers()
       }
       else
       {
-	 cFile << "   m = 0; /* avoid warnings from -Wall */"	<< std::endl
-               << "   {"					<< std::endl;
+	 cFile << "   {"					<< std::endl;
       }
 
       DOMNamedNodeMap* attList = tagEl->getAttributes();
@@ -1355,9 +1359,12 @@ void CodeBuilder::constructPackers()
                   << ((re > 1)? nameS.plural(): nameS) << " != ("
                   << contType << "*)&hddm_nullTarget)"			<< std::endl
                   << "      {"						<< std::endl
-                  << "         pack_" << contT << "(xdrs,this1->"
+
+                  << "         if (pack_" << contT << "(xdrs,this1->"
                   << ((rep > 1)? "in[m]." : "")
-                  << ((re > 1)? nameS.plural() : nameS) << ");"			<< std::endl
+                  << ((re > 1)? nameS.plural() : nameS) << ") < 0) {"	<< std::endl
+                  << "            return -1;"				<< std::endl
+                  << "         }"					<< std::endl
                   << "      }"						<< std::endl
                   << "      else"					<< std::endl
                   << "      {"						<< std::endl
@@ -1414,14 +1421,16 @@ void CodeBuilder::constructFlushFunc(DOMElement* el)
 	 << "      xdr_destroy(xdrs);"				<< std::endl
 	 << "      free(xdrs);"					<< std::endl
 	 << "      free(dump);"					<< std::endl
-	 << "      return 0;"					<< std::endl
          << "   }"						<< std::endl
          << "   else if (fp->iomode == HDDM_STREAM_OUTPUT)"	<< std::endl
 	 << "   {"						<< std::endl
-	 << "      pack_" << topT << "(fp->xdrs,this1);"		<< std::endl
-	 << "      return 0;"					<< std::endl
+	 << "      if (pack_" << topT << "(fp->xdrs,this1) < 0) {"
+								<< std::endl
+	 << "         fp->lerrno = errno;"			<< std::endl
+	 << "         return -1;"				<< std::endl
+	 << "      }"						<< std::endl
 	 << "   }"						<< std::endl
-	 << "   return 0;"			<< std::endl
+	 << "   return 0;"					<< std::endl
 	 << "}"							<< std::endl;
 }
 
