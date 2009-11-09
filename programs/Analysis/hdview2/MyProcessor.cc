@@ -99,6 +99,7 @@ jerror_t MyProcessor::init(void)
 		hdvmf->SetWireBasedTrackFactories(facnames);
 		hdvmf->SetTimeBasedTrackFactories(facnames);
 		hdvmf->SetReconstructedFactories(facnames);
+		hdvmf->SetParticleFactories(facnames);
 	}
 	
 	return NOERROR;
@@ -469,6 +470,18 @@ void MyProcessor::FillGraphics(void)
 			AddKinematicDataTrack(timetracks[i], 46, 1.00);
 		}
 	}
+	// DParticle
+	if(hdvmf->GetCheckButton("particles")){
+		vector<const DParticle*> particles;
+		loop->Get(particles, hdvmf->GetFactoryTag("DParticle"));
+		for(unsigned int i=0; i<particles.size(); i++){
+		  int color=kViolet;
+		  double size=1.25;
+		  if (particles[i]->charge()>0) color=kMagenta;
+		  if (particles[i]->mass()>0.9) size=3.0;
+		  AddKinematicDataTrack(particles[i],color,size);
+		}
+	}
 }
 
 //------------------------------------------------------------------
@@ -488,6 +501,11 @@ void MyProcessor::UpdateTrackLabels(void)
 	
 	// Get the track info as DKinematicData objects
 	vector<const DKinematicData*> trks;
+	if(name=="DParticle"){
+		vector<const DParticle*> particles;
+		if(loop)loop->Get(particles, tag.c_str());
+		for(unsigned int i=0; i<particles.size(); i++)trks.push_back(particles[i]);
+	}	
 	if(name=="DTrackTimeBased"){
 		vector<const DTrackTimeBased*> timetracks;
 		if(loop)loop->Get(timetracks, tag.c_str());
@@ -587,15 +605,20 @@ void MyProcessor::UpdateTrackLabels(void)
 		reconlabs["z"][row]->SetText(z.str().c_str());
 
 		// Get chisq and Ndof for DTrackTimeBased or DTrackWireBased objects
-		const DTrackTimeBased *part=dynamic_cast<const DTrackTimeBased*>(trk);
-		const DTrackWireBased *track=dynamic_cast<const DTrackWireBased*>(trk);
-		if(part){
-			chisq_per_dof<<setprecision(4)<<part->chisq/part->Ndof;
-			Ndof<<part->Ndof;
+		const DTrackTimeBased *timetrack=dynamic_cast<const DTrackTimeBased*>(trk);
+		const DTrackWireBased *track=dynamic_cast<const DTrackWireBased*>(trk);	
+		const DParticle *part=dynamic_cast<const DParticle*>(trk);
+		if(timetrack){
+			chisq_per_dof<<setprecision(4)<<timetrack->chisq/timetrack->Ndof;
+			Ndof<<timetrack->Ndof;
 		}else if(track){
 			chisq_per_dof<<setprecision(4)<<track->chisq/track->Ndof;
 			Ndof<<track->Ndof;
-		}else{
+		}else if (part){
+		  chisq_per_dof<<setprecision(4)<<part->chisq/part->Ndof;
+		  Ndof<<part->Ndof;
+		}
+		else{
 			chisq_per_dof<<"N/A";
 			Ndof<<"N/A";
 		}
@@ -710,7 +733,18 @@ _DBG__;
 	double q=0.0;
 	double mass;
 
-	// Find the specified track
+	// Find the specified track	
+	if(dataname=="DParticle"){
+		vector<const DParticle*> particles;
+		loop->Get(particles, tag.c_str());
+		if(index>=particles.size())return;
+		q = particles[index]->charge();
+		pos = particles[index]->position();
+		mom = particles[index]->momentum();
+		particles[index]->Get(cdchits);
+		mass = particles[index]->mass();
+	}
+
 	if(dataname=="DTrackTimeBased"){
 		vector<const DTrackTimeBased*> timetracks;
 		loop->Get(timetracks, tag.c_str());

@@ -301,6 +301,16 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 					for(int i=0; i<100; i++)timetracksfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
 					timetracksf->AddFrame(timetracksfactory, lhints);
 				trkdrawopts->AddFrame(timetracksf, lhints);
+	TGHorizontalFrame *particlesf		= new TGHorizontalFrame(trkdrawopts);
+					checkbuttons["particles"]		= new TGCheckButton(particlesf,	"DParticle:");
+					particlesfactory	= new TGComboBox(particlesf, "<default>", 0);
+					particlesfactory->Resize(80,20);
+					particlesf->AddFrame(checkbuttons["particles"], lhints);
+					for(int i=0; i<100; i++)particlesfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
+					particlesf->AddFrame(particlesfactory, lhints);
+				trkdrawopts->AddFrame(particlesf, lhints);
+				
+
 
 				checkbuttons["thrown"]			= new TGCheckButton(trkdrawopts,	"DMCThrown");
 				checkbuttons["trajectories"]	= new TGCheckButton(trkdrawopts,	"DMCTrajectoryPoint");
@@ -435,7 +445,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	
 	checkbuttons["candidates"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 	checkbuttons["wiretracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
-	checkbuttons["timetracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["timetracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");	
+	checkbuttons["particles"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 	checkbuttons["thrown"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 
 	checkbuttons["cdc"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
@@ -454,7 +465,8 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	checkbuttons["trajectories"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 	candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
 	wiretracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
-	timetracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
+	timetracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");	
+	particlesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
 	reconfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoUpdateTrackLabels()");
 
 	// Pointers to optional daughter windows
@@ -1669,6 +1681,37 @@ void hdv_mainframe::SetTimeBasedTrackFactories(vector<string> &facnames)
 }
 
 //-------------------
+// SetParticleFactories
+//-------------------
+void hdv_mainframe::SetParticleFactories(vector<string> &facnames)
+{
+	/// Filter out the factories that provide "DParticle" objects
+	/// and add their tags to the particlesfactory combobox.
+	
+	// Erase all current entries in the combobox and add back in
+	// "<default>".
+	particlesfactory->RemoveAll();
+	particlesfactory->AddEntry("<default>", 0);
+	particlesfactory->GetTextEntry()->SetText("<default>");
+	particlesfactory->Select(0, kFALSE);
+	
+	for(unsigned int i=0; i< facnames.size(); i++){
+		string name = "DParticle:";
+		string::size_type pos = facnames[i].find(name);
+		if(pos==string::npos)continue;
+		string tag = facnames[i];
+		tag.erase(0, name.size());
+		particlesfactory->AddEntry(tag.c_str(), i+1);
+		if(tag==default_track){
+			particlesfactory->Select(i, kTRUE);
+			particlesfactory->GetTextEntry()->SetText(tag.c_str());
+		}
+	}
+}
+
+
+
+//-------------------
 // SetReconstructedFactories
 //-------------------
 void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
@@ -1740,6 +1783,20 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 		}
 	}
 
+	// Add DParticle factories
+	for(unsigned int i=0; i< facnames.size(); i++){
+		string name = "DParticle:";
+		string::size_type pos = facnames[i].find(name);
+		if(pos==string::npos)continue;
+		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
+		reconfactory->AddEntry(facnames[i].c_str(), id++);
+		if(facnames[i]==default_reconstructed){
+			reconfactory->Select(id-1, kTRUE);
+			reconfactory->GetTextEntry()->SetText(facnames[i].c_str());
+		}
+	}
+
+
 }
 
 //-------------------
@@ -1770,6 +1827,9 @@ const char* hdv_mainframe::GetFactoryTag(string who)
 	if(who=="DTrackTimeBased"){
 		tag = timetracksfactory->GetTextEntry()->GetTitle();
 		//tag = timetracksfactory->GetSelectedEntry()->GetTitle();
+	}
+	if (who=="DParticle"){
+	  tag=particlesfactory->GetTextEntry()->GetTitle();
 	}
 	if(string(tag) == "<default>")tag = "";
 	

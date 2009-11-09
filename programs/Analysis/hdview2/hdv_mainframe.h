@@ -100,6 +100,7 @@ class hdv_mainframe:public TGMainFrame {
 		void SetWireBasedTrackFactories(vector<string> &facnames);
 		void SetTimeBasedTrackFactories(vector<string> &facnames);
 		void SetReconstructedFactories(vector<string> &facnames);
+		void SetParticleFactories(vector<string> &facnames);
 		
 		bool GetCheckButton(string who);
 		const char* GetFactoryTag(string who);
@@ -127,6 +128,7 @@ class hdv_mainframe:public TGMainFrame {
 		TGComboBox *timetracksfactory;
 		TGComboBox *wiretracksfactory;
 		TGComboBox *candidatesfactory;
+		TGComboBox *particlesfactory;
 		TGComboBox *reconfactory;
 		TGComboBox *delay;
 		
