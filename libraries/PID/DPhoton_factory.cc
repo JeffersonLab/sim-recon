@@ -191,8 +191,8 @@ double DPhoton_factory::MinDistToRT(const DPhoton* photon, vector<const DTrackTi
    for (vector<const DTrackTimeBased*>::const_iterator track  = tracks.begin(); 
     					      track != tracks.end(); 
 					 			track++) {
-	DReferenceTrajectory* rt = const_cast<DReferenceTrajectory*>((**track).rt);
-        double dtrt = rt->DistToRT(photonPoint); 
+
+     double dtrt = (**track).rt->DistToRT(photonPoint); 
         if (dtrt < dmin ) {
             dmin = dtrt;
         }
