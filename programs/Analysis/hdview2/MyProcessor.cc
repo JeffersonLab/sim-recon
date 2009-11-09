@@ -587,7 +587,7 @@ void MyProcessor::UpdateTrackLabels(void)
 		else if(fabs(mass-0.93827)<1.0E-4)type<<"proton";
 		else if(fabs(mass-0.493677)<1.0E-4)type<<"K";
 		else if(fabs(mass-0.000511)<1.0E-4)type<<"e";
-		else if (fabs(mass)<1.e-4) type << "gamma";
+		else if (fabs(mass)<1.e-4 && fabs(trk->charge())<1.e-4) type << "gamma";
 		else type<<"q=";
 		if (fabs(trk->charge())>1.e-4){
 		  type<<(trk->charge()>0 ? "+":"-");
