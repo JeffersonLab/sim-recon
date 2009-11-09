@@ -475,10 +475,11 @@ void MyProcessor::FillGraphics(void)
 		vector<const DParticle*> particles;
 		loop->Get(particles, hdvmf->GetFactoryTag("DParticle"));
 		for(unsigned int i=0; i<particles.size(); i++){
-		  int color=kViolet;
+		  int color=kViolet-3;
 		  double size=1.25;
 		  if (particles[i]->charge()>0) color=kMagenta;
-		  if (particles[i]->mass()>0.9) size=3.0;
+		  if (fabs(particles[i]->charge())<1.e-3) color=kGreen+2;
+		  if (particles[i]->mass()>0.9) size=2.5;
 		  AddKinematicDataTrack(particles[i],color,size);
 		}
 	}
@@ -586,8 +587,11 @@ void MyProcessor::UpdateTrackLabels(void)
 		else if(fabs(mass-0.93827)<1.0E-4)type<<"proton";
 		else if(fabs(mass-0.493677)<1.0E-4)type<<"K";
 		else if(fabs(mass-0.000511)<1.0E-4)type<<"e";
+		else if (fabs(mass)<1.e-4) type << "gamma";
 		else type<<"q=";
-		type<<(trk->charge()>0 ? "+":"-");
+		if (fabs(trk->charge())>1.e-4){
+		  type<<(trk->charge()>0 ? "+":"-");
+		}
 		reconlabs["type"][row]->SetText(type.str().c_str());
 
 		p<<setprecision(4)<<trk->momentum().Mag();
@@ -614,7 +618,7 @@ void MyProcessor::UpdateTrackLabels(void)
 		}else if(track){
 			chisq_per_dof<<setprecision(4)<<track->chisq/track->Ndof;
 			Ndof<<track->Ndof;
-		}else if (part){
+		}else if (part && fabs(part->charge())>0.1){
 		  chisq_per_dof<<setprecision(4)<<part->chisq/part->Ndof;
 		  Ndof<<part->Ndof;
 		}
