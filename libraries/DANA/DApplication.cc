@@ -10,15 +10,18 @@ using std::string;
 #include <JANA/JVersion.h>
 
 #include "DApplication.h"
-#include "HDDM/DEventSourceHDDMGenerator.h"
-#include "HDGEOMETRY/DMagneticFieldMapCalibDB.h"
-#include "HDGEOMETRY/DMagneticFieldMapConst.h"
-#include "HDGEOMETRY/DMagneticFieldMapSpoiled.h"
-#include "HDGEOMETRY/DMagneticFieldMapParameterized.h"
-#include "HDGEOMETRY/DLorentzMapCalibDB.h"
+#include <HDDM/DEventSourceHDDMGenerator.h>
+#include <HDGEOMETRY/DMagneticFieldMapCalibDB.h>
+#include <HDGEOMETRY/DMagneticFieldMapConst.h>
+#include <HDGEOMETRY/DMagneticFieldMapSpoiled.h>
+#include <HDGEOMETRY/DMagneticFieldMapParameterized.h>
+#include <HDGEOMETRY/DLorentzMapCalibDB.h>
 //#include "HDGEOMETRY/DMaterialMapCalibDB.h"
-#include "HDGEOMETRY/DRootGeom.h"
+#include <HDGEOMETRY/DRootGeom.h>
 #include "DFactoryGenerator.h"
+
+#include "DANARootErrorHandler.h"
+
 
 //---------------------------------
 // DApplication    (Constructor)
@@ -83,6 +86,11 @@ jerror_t DApplication::Init(void)
 	// Create map of material properties
 	//material = new DMaterialMapCalibDB(this);
 	RootGeom= new DRootGeom(this);
+	
+	// Install our own error handler for ROOT message
+	int ROOT_ERROR_LEVEL_SUPRESS = 10000;
+	GetJParameterManager()->SetDefaultParameter("ROOT_ERROR_LEVEL_SUPRESS", ROOT_ERROR_LEVEL_SUPRESS);
+	InitDANARootErrorHandler(ROOT_ERROR_LEVEL_SUPRESS);
 	
 	return NOERROR;
 }
