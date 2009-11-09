@@ -263,6 +263,132 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	// coordinate system at each point.
 }
 
+//---------------------------------
+// GetIntersectionWithPlane
+//---------------------------------
+void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s) const
+{
+	/// Get the intersection point of this trajectory with a plane.
+	/// The plane is specified by <i>origin</i> and <i>norm</i>. The
+	/// <i>origin</i> vector should give the coordinates of any point
+	/// on the plane and <i>norm</i> should give a vector normal to
+	/// the plane. The <i>norm</i> vector will be copied and normalized
+	/// so it can be of any magnitude upon entry.
+	///
+	/// The coordinates of the intersection point will copied into
+	/// the supplied <i>pos</i> vector. If a non-NULL pointer for <i>s</i>
+	/// is passed in, the pathlength of the trajectory from its begining
+	/// to the intersection point is copied into location pointed to.
+	
+	// Set reasonable defaults
+	pos.SetXYZ(0,0,0);
+	if(s)*s=0.0;
+	
+	// Find the closest swim step to the plane
+	swim_step_t *step = FindClosestSwimStep(origin,norm);
+	if(!step){
+		_DBG_<<"Could not find closest swim step!"<<endl;
+		return;
+	}
+
+	// Here we follow a scheme described in more detail in the 
+	// DistToRT(DVector3 hit) method below. The basic idea is to
+	// express a point on the helix in terms of a single variable
+	// and then solve for that variable by setting the distance 
+	// to zero.
+	//
+	//   x = Ro*(cos(phi) - 1)
+	//   y = Ro*sin(phi)
+	//   z = phi*(dz/dphi)
+	//
+	// As is done below, we work in the RT coordinate system. Well,
+	// sort of. The distance to the plane is given by:
+	//
+	//   d = ( x - c ).n
+	//
+	// where x is a point on the helix, c is the "origin" point
+	// which lies somewhere in the plane and n is the "norm"
+	// vector. Since we want a point in the plane, we set d=0
+	// and solve for phi (with the components of x expressed in
+	// terms of phi as given in the DistToRT method below).
+	//
+	// Thus, the equation we need to solve is:
+	//
+	// x.n - c.n = 0
+	//
+	// notice that "c" only gets dotted into "n" so that
+	// dot product can occur in any coordinate system. Therefore,
+	// we do that in the lab coordinate system to avoid the
+	// overhead of transforming "c" to the RT system. The "n"
+	// vector, however, still must be transformed.
+	//
+	// Expanding the trig functions to 2nd order in phi, performing
+	// the x.n dot product, and gathering equal powers of phi
+	// leads us to he following:
+	//
+	//  (-Ro*nx/2)*phi^2 + (Ro*ny+dz_dphi*nz)*phi - c.n = 0
+	//
+	// which is quadratic in phi. We solve for both roots, but use
+	// the one with the smller absolute value (if both are finite).
+
+	double &Ro = step->Ro;
+
+	// OK, having said all of that, it turns out that the above 
+	// mechanism will tend to fail in regions of low or no
+	// field because the value of Ro is very large. Thus, we need to
+	// use a straight line projection in such cases. We also
+	// want to use a straight line projection if the helical intersection
+	// fails for some other reason.
+	//
+	// The algorthim is then to only try the helical calculation
+	// for small (<10m) values of Ro and then do the straight line
+	// if R is larger than that OR the helical calculation fails.
+
+	// Try helical calculation
+	if(Ro<1000.0){
+		double nx = norm.Dot(step->sdir);
+		double ny = norm.Dot(step->tdir);
+		double nz = norm.Dot(step->udir);
+	
+		double delta_z = step->mom.Dot(step->udir);
+		double delta_phi = step->mom.Dot(step->tdir)/Ro;
+		double dz_dphi = delta_z/delta_phi;
+		
+		double A = -Ro*nx/2.0;
+		double B = Ro*ny + dz_dphi*nz;
+		double C = norm.Dot(step->origin-origin);
+
+		double phi_1 = (-B + sqrt(B*B - 4.0*A*C))/(2.0*A);
+		double phi_2 = (-B - sqrt(B*B - 4.0*A*C))/(2.0*A);
+		
+		double phi = fabs(phi_1)<fabs(phi_2) ? phi_1:phi_2;
+		if(!finite(phi_1))phi = phi_2;
+		if(!finite(phi_2))phi = phi_1;
+		if(finite(phi)){
+		
+			double my_s = -Ro/2.0 * phi*phi;
+			double my_t = Ro * phi;
+			double my_u = dz_dphi * phi;
+			
+			pos = step->origin + my_s*step->sdir + my_t*step->tdir + my_u*step->udir;
+			if(s){
+				double delta_s = sqrt(my_t*my_t + my_u*my_u);
+				*s = step->s + (phi>0 ? +delta_s:-delta_s);
+			}
+			
+			// Success. Go ahead and return
+			return;
+		}
+	}
+	
+	// If we got here then we need to try a straight line calculation
+	double alpha = norm.Dot(origin)/norm.Dot(step->mom);
+	pos = alpha*step->mom;
+	if(s){
+		double delta_s = alpha*step->mom.Mag();
+		*s = step->s + delta_s;
+	}
+}
 
 //---------------------------------
 // InsertSteps
@@ -291,7 +417,7 @@ int DReferenceTrajectory::InsertSteps(const swim_step_t *start_step, double delt
 	}
 	
 	// Here I allocate the steps using an auto_ptr so I don't have to mess with
-	// deleting them at all of the possible exists. The problem with auto_ptr
+	// deleting them at all of the possible exits. The problem with auto_ptr
 	// is it can't handle arrays so it has to be wrapped in a struct.
 	auto_ptr<StepStruct> steps_aptr(new StepStruct);
 	DReferenceTrajectory::swim_step_t *steps = steps_aptr->steps;
@@ -362,7 +488,7 @@ int DReferenceTrajectory::InsertSteps(const swim_step_t *start_step, double delt
 //---------------------------------
 // DistToRT
 //---------------------------------
-double DReferenceTrajectory::DistToRT(DVector3 hit)
+double DReferenceTrajectory::DistToRT(DVector3 hit) const
 {
 if(Nswim_steps<1)_DBG__;
 	// First, find closest step to point
@@ -473,7 +599,7 @@ if(Nswim_steps<1)_DBG__;
 //---------------------------------
 // FindClosestSwimStep
 //---------------------------------
-DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(const DCoordinateSystem *wire, int *istep_ptr)
+DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(const DCoordinateSystem *wire, int *istep_ptr) const
 {
 	/// Find the closest swim step to the given wire. The value of
 	/// "L" should be the active wire length. The coordinate system
@@ -523,10 +649,57 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 	return step;	
 }
 
+
+//---------------------------------
+// FindClosestSwimStep
+//---------------------------------
+DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(const DVector3 &origin, DVector3 norm, int *istep_ptr) const
+{
+	/// Find the closest swim step to the plane specified by origin
+	/// and norm. origin should indicate any point in the plane and
+	/// norm a vector normal to the plane.
+	if(istep_ptr)*istep_ptr=-1;
+	
+	if(Nswim_steps<1){
+		_DBG_<<"No swim steps! You must \"Swim\" the track before calling FindClosestSwimStep(...)"<<endl;
+	}
+
+	// Make sure normal vector is unit lenght
+	norm.SetMag(1.0);
+
+	// Loop over swim steps and find the one closest to the plane
+	swim_step_t *swim_step = swim_steps;
+	swim_step_t *step=NULL;
+	double min_dist = 1.0E6;
+	int istep=-1;
+
+	for(int i=0; i<Nswim_steps; i++, swim_step++){
+	
+		// Distance to plane is dot product of normal vector with any
+		// vector pointing from the current step to a point in the plane
+		double dist = fabs(norm.Dot(swim_step->origin-origin));
+
+		// Check if we're the closest step
+		if(dist < min_dist){
+			min_dist = dist;
+			step = swim_step;
+			istep=i;
+		}
+		
+		// We should probably have a break condition here so we don't
+		// waste time looking all the way to the end of the track after
+		// we've passed the plane.
+	}
+
+	if(istep_ptr)*istep_ptr=istep;
+
+	return step;	
+}
+
 //---------------------------------
 // DistToRT
 //---------------------------------
-double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, double *s)
+double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, double *s) const
 {
 	/// Find the closest distance to the given wire in cm. The value of
 	/// "L" should be the active wire length (in cm). The coordinate system
@@ -540,7 +713,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, double *s)
 //---------------------------------
 // DistToRTBruteForce
 //---------------------------------
-double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, double *s)
+double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, double *s) const
 {
 	/// Find the closest distance to the given wire in cm. The value of
 	/// "L" should be the active wire length (in cm). The coordinate system
@@ -554,7 +727,7 @@ double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, d
 //------------------
 // DistToRT
 //------------------
-double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double *s)
+double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double *s) const
 {
 	/// Calculate the distance of the given wire(in the lab
 	/// reference frame) to the Reference Trajectory which the
@@ -875,7 +1048,7 @@ double DReferenceTrajectory::DistToRT(const DCoordinateSystem *wire, const swim_
 //------------------
 // DistToRTBruteForce
 //------------------
-double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, const swim_step_t *step, double *s)
+double DReferenceTrajectory::DistToRTBruteForce(const DCoordinateSystem *wire, const swim_step_t *step, double *s) const
 {
 	/// Calculate the distance of the given wire(in the lab
 	/// reference frame) to the Reference Trajectory which the
@@ -1009,7 +1182,7 @@ double DReferenceTrajectory::Straw_dx(const DCoordinateSystem *wire, double radi
 //------------------
 // GetLastDOCAPoint
 //------------------
-void DReferenceTrajectory::GetLastDOCAPoint(DVector3 &pos, DVector3 &mom)
+void DReferenceTrajectory::GetLastDOCAPoint(DVector3 &pos, DVector3 &mom) const
 {
 	/// Use values saved by the last call to one of the DistToRT functions
 	/// to calculate the 3-D DOCA position in lab coordinates and momentum
@@ -1030,7 +1203,7 @@ void DReferenceTrajectory::GetLastDOCAPoint(DVector3 &pos, DVector3 &mom)
 //------------------
 // GetLastDOCAPoint
 //------------------
-DVector3 DReferenceTrajectory::GetLastDOCAPoint(void)
+DVector3 DReferenceTrajectory::GetLastDOCAPoint(void) const
 {
 	/// Use values saved by the last call to one of the DistToRT functions
 	/// to calculate the 3-D DOCA position in lab coordinates. This is
@@ -1053,7 +1226,7 @@ DVector3 DReferenceTrajectory::GetLastDOCAPoint(void)
 //------------------
 // dPdx
 //------------------
-double DReferenceTrajectory::dPdx(double ptot, double A, double Z, double density)
+double DReferenceTrajectory::dPdx(double ptot, double A, double Z, double density) const
 {
 	double I = (Z*12.0 + 7.0)*1.0E-9; // From Leo 2nd ed. pg 25.
 	double rhoZ_overA = density*Z/A;
@@ -1065,7 +1238,7 @@ double DReferenceTrajectory::dPdx(double ptot, double A, double Z, double densit
 //------------------
 // dPdx
 //------------------
-double DReferenceTrajectory::dPdx(double ptot, double rhoZ_overA, double rhoZ_overA_logI)
+double DReferenceTrajectory::dPdx(double ptot, double rhoZ_overA, double rhoZ_overA_logI) const
 {
 	/// Calculate the momentum loss per unit distance traversed of the material with
 	/// the given A, Z, and density. Value returned is in GeV/c per cm

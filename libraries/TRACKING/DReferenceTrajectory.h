@@ -65,33 +65,35 @@ class DReferenceTrajectory{
 		virtual const char* className(void){return static_className();}
 		static const char* static_className(void){return "DReferenceTrajectory";}
 		
-		double DistToRT(double x, double y, double z){return DistToRT(DVector3(x,y,z));}
-		double DistToRT(DVector3 hit);
-		double DistToRT(const DCoordinateSystem *wire, double *s=NULL);
-		double DistToRTBruteForce(const DCoordinateSystem *wire, double *s=NULL);
-		double DistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
-		double DistToRTBruteForce(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL);
+		double DistToRT(double x, double y, double z) const {return DistToRT(DVector3(x,y,z));}
+		double DistToRT(DVector3 hit) const;
+		double DistToRT(const DCoordinateSystem *wire, double *s=NULL) const;
+		double DistToRTBruteForce(const DCoordinateSystem *wire, double *s=NULL) const;
+		double DistToRT(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL) const;
+		double DistToRTBruteForce(const DCoordinateSystem *wire, const swim_step_t *step, double *s=NULL) const;
 		double Straw_dx(const DCoordinateSystem *wire, double radius);
-		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire, int *istep_ptr=NULL);
+		swim_step_t* FindClosestSwimStep(const DCoordinateSystem *wire, int *istep_ptr=NULL) const;
+		swim_step_t* FindClosestSwimStep(const DVector3 &origin, DVector3 norm, int *istep_ptr=NULL) const;
 		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0, double smax=2000.0, const DCoordinateSystem *wire=NULL);
 		int InsertSteps(const swim_step_t *start_step, double delta_s, double step_size=0.02); 
-		DVector3 GetLastDOCAPoint(void);
-		void GetLastDOCAPoint(DVector3 &pos, DVector3 &mom);
-		double GetLastDistAlongWire(void){return last_dist_along_wire;}
+		void GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s=NULL) const;
+		DVector3 GetLastDOCAPoint(void) const;
+		void GetLastDOCAPoint(DVector3 &pos, DVector3 &mom) const;
+		double GetLastDistAlongWire(void) const {return last_dist_along_wire;}
 		void SetStepSize(double step_size){this->step_size=step_size;}
 		void SetDRootGeom(const DRootGeom *RootGeom){this->RootGeom = RootGeom;}
 		void SetDGeometry(const DGeometry *geom){this->geom = geom;}
-		const DRootGeom* GetDRootGeom(void){return RootGeom;}
-		const DGeometry* GetDGeometry(void){return geom;}
+		const DRootGeom* GetDRootGeom(void) const {return RootGeom;}
+		const DGeometry* GetDGeometry(void) const {return geom;}
 		double GetMass(void) const {return mass;}
-		double GetStepSize(void){return step_size;}
+		double GetStepSize(void) const {return step_size;}
 		void SetMass(double mass){this->mass = mass;}
 		void SetPLossDirection(direction_t direction){ploss_direction=direction;}
-		direction_t GetPLossDirection(void){return ploss_direction;}
-		inline double dPdx(double ptot, double A, double Z, double density);
-		inline double dPdx(double ptot, double rhoZ_overA, double rhoZ_overA_logI);
+		direction_t GetPLossDirection(void) const {return ploss_direction;}
+		inline double dPdx(double ptot, double A, double Z, double density) const;
+		inline double dPdx(double ptot, double rhoZ_overA, double rhoZ_overA_logI) const;
 
-		const swim_step_t *GetLastSwimStep(void){return last_swim_step;}
+		const swim_step_t *GetLastSwimStep(void) const {return last_swim_step;}
 		swim_step_t *swim_steps;
 		int Nswim_steps;
 		float q;
@@ -107,10 +109,10 @@ class DReferenceTrajectory{
 		const DGeometry *geom;
 		direction_t ploss_direction;
 		
-		double last_phi;							///< last phi found in DistToRT
-		const swim_step_t* last_swim_step;	///< last swim step used in DistToRT
-		double last_dist_along_wire;
-		double last_dz_dphi;
+		mutable double last_phi;							///< last phi found in DistToRT
+		mutable const swim_step_t* last_swim_step;	///< last swim step used in DistToRT
+		mutable double last_dist_along_wire;
+		mutable double last_dz_dphi;
 		
 		double mass;
 	
