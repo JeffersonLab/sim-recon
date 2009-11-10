@@ -278,12 +278,12 @@ double DTrackFitterKalman::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, 
 	// Using a DReferenceTrajectory is not really appropriate here so the base class'
 	// requirement of it should be reviewed.
 	double chisq = GetChiSq();
-	double ndf = GetNDF();
+	unsigned int ndf = GetNDF();
 	
 	if(chisq_ptr)*chisq_ptr = chisq;
-	if(dof_ptr)*dof_ptr = ndf;
+	if(dof_ptr)*dof_ptr = int(ndf);
 	
-	return chisq/ndf;
+	return chisq/double(ndf);
 }
 
 // Initialize the state vector
@@ -2834,16 +2834,15 @@ double DTrackFitterKalman::BrentsAlgorithm(double ds1,double ds2,
 					   const DVector3 &origin,
 					   const DVector3 &dir,  
 					   DMatrix &Sc){
-  int iter;
-  double a,b,d=0.,etemp,fu,fv,fw,fx,p,q,r,tol1,tol2,u,v,w,x,xm;
+  double d=0.;
   double e=0.0; // will be distance moved on step before last 
   double ax=0.;
   double bx=-ds1;
   double cx=-ds1-ds2;
   
-  a=(ax<cx?ax:cx);
-  b=(ax>cx?ax:cx);
-  x=w=v=bx;
+  double a=(ax<cx?ax:cx);
+  double b=(ax>cx?ax:cx);
+  double x=bx,w=bx,v=bx;
 
   // Save the starting position 
   // DVector3 pos0=pos;
@@ -2853,39 +2852,42 @@ double DTrackFitterKalman::BrentsAlgorithm(double ds1,double ds2,
   FixedStep(pos,x,Sc,dedx);
   DVector3 wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
   double u_old=x;
+  double u=0.;
 
   // initialization
-  fw=fv=fx=(pos-wirepos).Mag();
+  double fw=(pos-wirepos).Mag();
+  double fv=fw,fx=fw;
 
   // main loop
-  for (iter=1;iter<=ITMAX;iter++){
-    xm=0.5*(a+b);
-    tol2=2.0*(tol1=EPS*fabs(x)+ZEPS);
+  for (unsigned int iter=1;iter<=ITMAX;iter++){
+    double xm=0.5*(a+b);
+    double tol1=EPS*fabs(x)+ZEPS;
+    double tol2=2.0*tol1;
     if (fabs(x-xm)<=(tol2-0.5*(b-a))){
       if (pos.z()>=endplate_z-endplate_dz){
 	double my_endz=endplate_z-endplate_dz;
 	// Check if the minimum doca would occur outside the straw and if so, bring the state 
 	// vector back to the end of the straw
-	int iter=0;
-	while (fabs(pos.z()-my_endz)>EPS && iter<20){
+	unsigned int iter2=0;
+	while (fabs(pos.z()-my_endz)>EPS && iter2<20){
 	  u=x-(my_endz-pos.z())*sin(atan(Sc(state_tanl,0)));
 	  x=u;
 	  // Function evaluation
 	  FixedStep(pos,u_old-u,Sc,dedx);
 	  u_old=u;
-	  iter++;
+	  iter2++;
 	}
 	//printf("new z %f ds %f \n",pos.z(),x);
       }
       if (pos.z()<=cdc_origin[2]){
-	int iter=0;
-	while (fabs(pos.z()-cdc_origin[2])>EPS && iter<20){
+	unsigned int iter2=0;
+	while (fabs(pos.z()-cdc_origin[2])>EPS && iter2<20){
 	  u=x-(cdc_origin[2]-pos.z())*sin(atan(Sc(state_tanl,0)));
 	  x=u;
 	  // Function evaluation
 	  FixedStep(pos,u_old-u,Sc,dedx);
 	  u_old=u;
-	  iter++;
+	  iter2++;
 	}
 	//printf("new z %f ds %f \n",pos.z(),x);
       }	
@@ -2894,13 +2896,13 @@ double DTrackFitterKalman::BrentsAlgorithm(double ds1,double ds2,
     }
     // trial parabolic fit
     if (fabs(e)>tol1){
-      r=(x-w)*(fx-fv);
-      q=(x-v)*(fx-fw);
-      p=(x-v)*q-(x-w)*r;
+      double r=(x-w)*(fx-fv);
+      double q=(x-v)*(fx-fw);
+      double p=(x-v)*q-(x-w)*r;
       q=2.0*(q-r);
       if (q>0.0) p=-p;
       q=fabs(q);
-      etemp=e;
+      double etemp=e;
       e=d;
       if (fabs(p)>=fabs(0.5*q*etemp) || p<=q*(a-x) || p>=q*(b-x))
 	// fall back on the Golden Section technique
@@ -2922,7 +2924,7 @@ double DTrackFitterKalman::BrentsAlgorithm(double ds1,double ds2,
     u_old=u;
     
     wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
-    fu=(pos-wirepos).Mag();
+    double fu=(pos-wirepos).Mag();
 
     //printf("Brent: z %f d %f\n",pos.z(),fu);
     
@@ -2955,16 +2957,15 @@ double DTrackFitterKalman::BrentsAlgorithm(double z,double dz,
 					   double dedx,const DVector3 &origin,
 					   const DVector3 &dir,
 					   const DMatrix &S){
-  int iter;
-  double a,b,d=0.,etemp,fu,fv,fw,fx,p,q,r,tol1,tol2,u,v,w,x,xm;
+  double d=0.,u=0.;
   double e=0.0; // will be distance moved on step before last 
   double ax=0.;
   double bx=-dz;
   double cx=-2.*dz;
   
-  a=(ax<cx?ax:cx);
-  b=(ax>cx?ax:cx);
-  x=w=v=bx;
+  double a=(ax<cx?ax:cx);
+  double b=(ax>cx?ax:cx);
+  double x=bx,w=bx,v=bx;
   
   // Save the state vector after the last step
   DMatrix S0(5,1);
@@ -2977,24 +2978,27 @@ double DTrackFitterKalman::BrentsAlgorithm(double z,double dz,
   DVector3 pos(S0(state_x,0),S0(state_y,0),z+x);
 
   // initialization
-  fw=fv=fx=(pos-wirepos).Mag();
+  double fw=(pos-wirepos).Mag();
+  double fv=fw;
+  double fx=fw;
 
   // main loop
-  for (iter=1;iter<=ITMAX;iter++){
-    xm=0.5*(a+b);
-    tol2=2.0*(tol1=EPS*fabs(x)+ZEPS);
+  for (unsigned int iter=1;iter<=ITMAX;iter++){
+    double xm=0.5*(a+b);
+    double tol1=EPS*fabs(x)+ZEPS;
+    double tol2=2.0*tol1;
     if (fabs(x-xm)<=(tol2-0.5*(b-a))){
       return x;
     }
     // trial parabolic fit
     if (fabs(e)>tol1){
-      r=(x-w)*(fx-fv);
-      q=(x-v)*(fx-fw);
-      p=(x-v)*q-(x-w)*r;
+      double r=(x-w)*(fx-fv);
+      double q=(x-v)*(fx-fw);
+      double p=(x-v)*q-(x-w)*r;
       q=2.0*(q-r);
       if (q>0.0) p=-p;
       q=fabs(q);
-      etemp=e;
+      double etemp=e;
       e=d;
       if (fabs(p)>=fabs(0.5*q*etemp) || p<=q*(a-x) || p>=q*(b-x))
 	// fall back on the Golden Section technique
@@ -3017,7 +3021,7 @@ double DTrackFitterKalman::BrentsAlgorithm(double z,double dz,
     
     wirepos=origin+((z+u-origin.z())/dir.z())*dir;
     pos.SetXYZ(S0(state_x,0),S0(state_y,0),z+u);
-    fu=(pos-wirepos).Mag();
+    double fu=(pos-wirepos).Mag();
 
     if (fu<=fx){
       if (u>=x) a=x; else b=x;
@@ -3438,15 +3442,15 @@ jerror_t DTrackFitterKalman::KalmanCentral(double anneal_factor,
 	double ux=dir.x();
 	double uy=dir.y();
 	double uxuy=ux*uy;
-	double ux2=ux*ux;
-	double uy2=uy*uy;
 	double dx=diff.x();
 	double dy=diff.y();
+	double one_minus_ux2=1.-ux*ux;
+	double one_minus_uy2=1.-uy*uy;
 	if (prediction>0.){
 	  H(0,state_D)=H_T(state_D,0)
-	    =(dy*(uxuy*sinphi+(1.-uy2)*cosphi)-dx*((1.-ux2)*sinphi+uxuy*cosphi))/prediction;
+	    =(dy*(uxuy*sinphi+one_minus_uy2*cosphi)-dx*(one_minus_ux2*sinphi+uxuy*cosphi))/prediction;
 	  H(0,state_phi)=H_T(state_phi,0)
-	    =-Sc(state_D,0)*(dx*((1.-ux2)*cosphi-uxuy*sinphi)+dy*((1.-uy2)*sinphi-uxuy*cosphi))/prediction;
+	    =-Sc(state_D,0)*(dx*(one_minus_ux2*cosphi-uxuy*sinphi)+dy*(one_minus_uy2*sinphi-uxuy*cosphi))/prediction;
 	  H(0,state_z)=H_T(state_z,0)
 	    =-dir.z()*(dx*ux+dy*uy)/prediction;
 	}
@@ -3735,10 +3739,11 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
       H(0,state_y)=H_T(state_y,0)=-sina*cosalpha;
       H(1,state_y)=H_T(state_y,1)=cosa;
       double temp=tx*cosa-ty*sina;
+      double one_plus_temp2=1.+temp*temp;
       H(0,state_ty)=H_T(state_ty,0)
-	=du*sina*temp/sqrt(1.+temp*temp)/(1.+temp*temp);
+	=du*sina*temp/sqrt(one_plus_temp2)/one_plus_temp2;
       H(0,state_tx)=H_T(state_tx,0)
-	=-du*cosa*temp/sqrt(1.+temp*temp)/(1.+temp*temp);
+	=-du*cosa*temp/sqrt(one_plus_temp2)/one_plus_temp2;
 
       // Updated error matrix
       V1=V+H*(C*H_T);
@@ -3926,16 +3931,16 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 	double ux=dir.x();
 	double uy=dir.y();
 	double uxuy=ux*uy;
-	double ux2=ux*ux;
-	double uy2=uy*uy;
 	double dy=S(state_y,0)-yw;
 	double dx=S(state_x,0)-xw;      
-	double d=sqrt(dx*dx*(1.-ux2)+dy*dy*(1.-uy2)-2.*dx*dy*uxuy);
+	double one_minus_ux2=1.-ux*ux;
+	double one_minus_uy2=1.-uy*uy;
+	double d=sqrt(dx*dx*one_minus_ux2+dy*dy*one_minus_uy2-2.*dx*dy*uxuy);
 	
 	// Track projection
 	if (d>0.){
-	  H(0,state_x)=H_T(state_x,0)=(dx*(1.-ux2)-dy*uxuy)/d;
-	  H(0,state_y)=H_T(state_y,0)=(dy*(1.-uy2)-dx*uxuy)/d;
+	  H(0,state_x)=H_T(state_x,0)=(dx*one_minus_ux2-dy*uxuy)/d;
+	  H(0,state_y)=H_T(state_y,0)=(dy*one_minus_uy2-dx*uxuy)/d;
 	}
 	
 	//H.Print();
@@ -3999,7 +4004,7 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 	// doca after correction
 	//dy=S(state_y,0)-yw;
 	//dx=S(state_x,0)-xw;      
-	//d=sqrt(dx*dx*(1.-ux2)+dy*dy*(1.-uy2)-2.*dx*dy*uxuy);
+	//d=sqrt(dx*dx*one_minus_ux2+dy*dy*one_minus_uy2-2.*dx*dy*uxuy);
 	
 	// Residual
 	//double res=dm-d;
