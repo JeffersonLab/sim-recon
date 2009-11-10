@@ -50,7 +50,7 @@ jerror_t DParticle_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
 {
  // Get tracks
   vector<const DTrackTimeBased*> tracks;
-  loop->Get(tracks);
+  loop->Get(tracks,"Kalman");
   
   // Get TOF points
   vector<const DTOFPoint*> tof_points;
@@ -76,16 +76,11 @@ jerror_t DParticle_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
     const DTrackTimeBased *track = tracks[i];
     double mass=track->mass();
   
-    // Reference trajectory for this track.  
-    // We have to cast away the const-ness to be able to use some of the 
-    // methods...
-    DReferenceTrajectory *rt=const_cast<DReferenceTrajectory *>(track->rt);
-    
     // Pointer to new DParticle object
     DParticle *particle = NULL;
    
     //Loop over bcal clusters, looking for matches to tracks
-    if (MatchToBCAL(track,rt,bcal_clusters,bcal_matches,mass)==NOERROR){
+    if (MatchToBCAL(track,bcal_clusters,bcal_matches,mass)==NOERROR){
       particle=MakeDParticle(track,mass); 
       _data.push_back(particle);
     
@@ -93,16 +88,19 @@ jerror_t DParticle_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
     }	
 
     //Loop over fcal clusters, looking for matches to tracks
-    //MatchToFCAL(track,rt,fcal_clusters,fcal_matches,mass);
+    //MatchToFCAL(track,fcal_clusters,fcal_matches,mass);
     
     //Loop over tof points, looking for matches to tracks
-    MatchToTOF(track,rt,tof_points,mass);
+    if (MatchToTOF(track,tof_points,mass)!=NOERROR){
+
+    }
    
     particle=MakeDParticle(track,mass); 
     _data.push_back(particle);
   }
 
-    // Add unmatched clusters to the list of particles as photons 
+    // Add unmatched clusters to the list of particles as photons
+  DVector3 vertex(0,0,65.);
   for (unsigned int i=0;i<bcal_matches.size();i++){
     if (bcal_matches[i]==false){
       const DBCALPhoton *bcal=bcal_clusters[i];
@@ -110,7 +108,7 @@ jerror_t DParticle_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
       DParticle *particle = new DParticle;
       particle->setMomentum(bcal->lorentzMomentum().Vect());
       particle->setMass(0.);
-      particle->setPosition(bcal->showerPosition());
+      particle->setPosition(vertex);
       particle->setCharge(0.);
       particle->rt=NULL;  
       particle->setT1(bcal->showerTime(),0.,SYS_BCAL);
@@ -166,7 +164,6 @@ DParticle* DParticle_factory_Kalman::MakeDParticle(const DTrackTimeBased *track,
 // of track to a cluster and using this to check for a match.  Assign the mass
 // based on beta.
 jerror_t DParticle_factory_Kalman::MatchToBCAL(const DTrackTimeBased *track,
-					DReferenceTrajectory *rt,
 					vector<const DBCALPhoton*>bcal_clusters,
 					vector<bool>&bcal_matches,
 					double &mass){ 
@@ -176,21 +173,17 @@ jerror_t DParticle_factory_Kalman::MatchToBCAL(const DTrackTimeBased *track,
   double dmin=10000.;
   unsigned int bcal_match_id=0;
   for (unsigned int k=0;k<bcal_clusters.size();k++){
-    // Get the BCAL cluster position and fill the DCoordinateSystem object
-    // needed for the DistToRT method of DReferenceTrajectory
-    DVector3 bcal_pos=bcal_clusters[k]->showerPosition();
-    DCoordinateSystem bcal_plane;
-    bcal_plane.origin=bcal_pos;
-    bcal_plane.L=390.;
+    // Get the BCAL cluster position and normal
+    DVector3 bcal_pos=bcal_clusters[k]->showerPosition(); 
     double phi=atan2(bcal_pos.y(),bcal_pos.x());
-    bcal_plane.sdir.SetXYZ(cos(phi),sin(phi),0.);
-    bcal_plane.tdir.SetXYZ(-sin(phi),cos(phi),0.);
-    bcal_plane.udir.SetXYZ(0.,0.,1.);
+    DVector3 norm(cos(phi),sin(phi),0.);
+    DVector3 proj_pos;
     
     // Find the distance of closest approach between the track trajectory
     // and the bcal cluster position, looking for the minimum
     double my_s=0.;
-    double d=rt->DistToRT(&bcal_plane,&my_s);
+    track->rt->GetIntersectionWithPlane(bcal_pos,norm,proj_pos,&my_s);
+    double d=(bcal_pos-proj_pos).Mag();
     if (d<dmin){
       dmin=d;
       mPathLength=my_s;
@@ -200,7 +193,7 @@ jerror_t DParticle_factory_Kalman::MatchToBCAL(const DTrackTimeBased *track,
   
   // Check for a match 
   double p=track->momentum().Mag();
-  double match_sigma=1.+1./p/p;
+  double match_sigma=4.;
   double prob=exp(-dmin*dmin/match_sigma/match_sigma/2.)/sqrt(2.*M_PI)
     /match_sigma;
   if (prob>0.05){
@@ -238,7 +231,6 @@ jerror_t DParticle_factory_Kalman::MatchToBCAL(const DTrackTimeBased *track,
 // of track to a cluster and using this to check for a match.  Assign the mass
 // based on beta.
 jerror_t DParticle_factory_Kalman::MatchToFCAL(const DTrackTimeBased *track,
-					DReferenceTrajectory *rt,
 					vector<const DFCALPhoton*>fcal_clusters,
 					vector<bool>&fcal_matches,
 					double &mass){ 
@@ -247,21 +239,17 @@ jerror_t DParticle_factory_Kalman::MatchToFCAL(const DTrackTimeBased *track,
   double dmin=10000.;
   unsigned int fcal_match_id=0;
   for (unsigned int k=0;k<fcal_clusters.size();k++){
-    // Get the FCAL cluster position and fill the DCoordinateSystem object
-    // needed for the DistToRT method of DReferenceTrajectory
+    // Get the FCAL cluster position and normal vector for the FCAL plane
     DVector3 fcal_pos=fcal_clusters[k]->getPosition();
-    DCoordinateSystem fcal_plane;
-    fcal_plane.origin=fcal_pos;
-    fcal_plane.L=390.;
-    fcal_plane.sdir.SetXYZ(0.,0.,1.);
-    fcal_plane.tdir.SetXYZ(0.,1.,0.);
-    fcal_plane.udir.SetXYZ(1.,0.,0.);
+    DVector3 norm(0,0,1);
+    DVector3 proj_pos;
     
     // Find the distance of closest approach between the track trajectory
     // and the fcal cluster position, looking for the minimum
-    double my_s=0.;
-    double d=rt->DistToRT(&fcal_plane,&my_s);
-    if (d<dmin){
+    double my_s=0.;   
+    track->rt->GetIntersectionWithPlane(fcal_pos,norm,proj_pos,&my_s);
+    double d=(fcal_pos-proj_pos).Mag();
+     if (d<dmin){
       dmin=d;
       mPathLength=my_s;
       fcal_match_id=k;
@@ -309,7 +297,6 @@ jerror_t DParticle_factory_Kalman::MatchToFCAL(const DTrackTimeBased *track,
 // of track to a point in the TOF and using this to check for a match.  
 // Assign the mass based on beta.
 jerror_t DParticle_factory_Kalman::MatchToTOF(const DTrackTimeBased *track,
-				       DReferenceTrajectory *rt,	
 				       vector<const DTOFPoint*>tof_points,
 				       double &mass){
   if (tof_points.size()==0) return RESOURCE_UNAVAILABLE;
@@ -317,20 +304,16 @@ jerror_t DParticle_factory_Kalman::MatchToTOF(const DTrackTimeBased *track,
   unsigned int tof_match_id=0;
   // loop over tof points
   for (unsigned int k=0;k<tof_points.size();k++){
-    // Get the TOF cluster position and fill the DCoordinateSystem object
-    // needed for the DistToRT method of DReferenceTrajectory
+    // Get the TOF cluster position and normal vector for the TOF plane
     DVector3 tof_pos=tof_points[k]->pos;
-    DCoordinateSystem tof_plane;
-    tof_plane.origin=tof_pos;
-    tof_plane.L=258.;
-    tof_plane.sdir.SetXYZ(0.,0.,1.);
-    tof_plane.tdir.SetXYZ(0.,1.,0.);
-    tof_plane.udir.SetXYZ(1.,0.,0.);
+    DVector3 norm(0,0,1);
+    DVector3 proj_pos;
     
     // Find the distance of closest approach between the track trajectory
     // and the tof cluster position, looking for the minimum
     double my_s=0.;
-    double d=rt->DistToRT(&tof_plane,&my_s);
+    track->rt->GetIntersectionWithPlane(tof_pos,norm,proj_pos,&my_s);
+    double d=(tof_pos-proj_pos).Mag();
     if (d<dmin){
       dmin=d;
       mPathLength=my_s;
@@ -340,7 +323,7 @@ jerror_t DParticle_factory_Kalman::MatchToTOF(const DTrackTimeBased *track,
   
   // Check for a match 
   double p=track->momentum().Mag();
-  double match_sigma=1.+1./p/p;
+  double match_sigma=4.;
   double prob=exp(-dmin*dmin/match_sigma/match_sigma/2.)/sqrt(2.*M_PI)
     /match_sigma;
   if (prob>0.05){
