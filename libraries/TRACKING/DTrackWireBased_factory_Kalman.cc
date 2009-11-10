@@ -125,106 +125,90 @@ jerror_t DTrackWireBased_factory_Kalman::brun(jana::JEventLoop *loop, int runnum
 //------------------
 jerror_t DTrackWireBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
 {
-	if(!fitter)return NOERROR;
+  if(!fitter)return NOERROR;
+  
+  // Get candidates and hits
+  vector<const DTrackCandidate*> candidates;
+  loop->Get(candidates);
+  
+  // Deallocate some reference trajectories occasionally
+  unsigned int rts_to_keep = 5;
+  if(candidates.size()>rts_to_keep)rts_to_keep=candidates.size();
+  for(unsigned int i=rts_to_keep; i<rtv.size(); i++)delete rtv[i];
+  if(rts_to_keep<rtv.size())rtv.resize(rts_to_keep);
+  
+  // Loop over candidates
+  for(unsigned int i=0; i<candidates.size(); i++){
+    const DTrackCandidate *candidate = candidates[i];
+    
+    // Make sure there are enough DReferenceTrajectory objects
+    while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+    DReferenceTrajectory *rt = rtv[_data.size()];
+    
+    // Loop over potential particle masses until one is found that gives a chisq/Ndof<3.0
+	  // If none does, then use the one with the smallest chisq
+    DTrackWireBased *best_track = NULL;
+    double best_fom = 0.0;
+    
+    // Do the fit
+    fitter->SetFitType(DTrackFitter::kWireBased);
+    DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*candidate, rt, loop, 0.13957);
+    DTrackWireBased *dtrack = NULL;
+    if (status==DTrackFitter::kFitSuccess){
+      dtrack = MakeDTrackWireBased(candidate);
+    }
+ 
+    if (dtrack!=NULL){
+      // Save the previous track
+      best_track = dtrack;
+      // Get the FOM for this track
+      best_fom=GetFOM(best_track);
+      
+      // If the charge is positive and the momentum is low, we can also try 
+      // the proton hypothesis...
+      if (dtrack->charge()>0
+	  && dtrack->momentum().Mag()<MOMENTUM_CUT_FOR_DEDX){
 
-	// Get candidates and hits
-	vector<const DTrackCandidate*> candidates;
-	loop->Get(candidates);
-
-	// Deallocate some reference trajectories occasionally
-	unsigned int rts_to_keep = 5;
-	if(candidates.size()>rts_to_keep)rts_to_keep=candidates.size();
-	for(unsigned int i=rts_to_keep; i<rtv.size(); i++)delete rtv[i];
-	if(rts_to_keep<rtv.size())rtv.resize(rts_to_keep);
+	// Try the proton hypothesis
+	status = fitter->FindHitsAndFitTrack(*candidate, rt, loop,0.93827);
 	
-	// Loop over candidates
-	for(unsigned int i=0; i<candidates.size(); i++){
-		const DTrackCandidate *candidate = candidates[i];
-
-		// Make sure there are enough DReferenceTrajectory objects
-		while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-		DReferenceTrajectory *rt = rtv[_data.size()];
-
-		// Loop over potential particle masses until one is found that gives a chisq/Ndof<3.0
-		// If none does, then use the one with the smallest chisq
-		DTrackWireBased *best_track = NULL;
-		double best_fom = 0.0;
-
-		for(unsigned int j=0; j<mass_hypotheses.size(); j++){
-			if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting wire based fit for candidate "<<i<<" with mass: "<<mass_hypotheses[j]<<endl;}
-			
-			// Do the fit
-			fitter->SetFitType(DTrackFitter::kWireBased);
-			DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*candidate, rt, loop, mass_hypotheses[j]);
-			DTrackWireBased *dtrack = NULL;
-			switch(status){
-				case DTrackFitter::kFitNotDone:
-					_DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
-				case DTrackFitter::kFitFailed:
-					continue;
-					break;
-				case DTrackFitter::kFitSuccess:
-				case DTrackFitter::kFitNoImprovement:
-					dtrack = MakeDTrackWireBased(candidate);
-					break;
-			}
-
-			// Avoid division by zero below
-			if(dtrack->Ndof < 1){
-				if(DEBUG_LEVEL>1)_DBG_<<"-- new track with mass "<<mass_hypotheses[j]<<" has Ndof="<<dtrack->Ndof<<". Dropping ..."<<endl;
-				delete dtrack;
-				continue;
-			}
-			
-			// If best_track hasn't been set, then this is the best track!
-			if(!best_track){
-				best_track = dtrack;
-				best_fom = GetFOM(best_track);
-				if(DEBUG_LEVEL>1)_DBG_<<"-- first successful fit this candidate with mass: "<<mass_hypotheses[j]<<" (chisq/Ndof="<<(best_track->chisq/best_track->Ndof)<<") fom="<<best_fom<<endl;
-
-				// Break if the momentum is sufficiently high for dEdx to have no 
-				// discriminating power between particle types. Also break if the charge 
-				// is negative -- we assume that we don't need to worry about anti-protons
-				if (best_track->charge()<0 || best_track->momentum().Mag()>MOMENTUM_CUT_FOR_DEDX) break;
-				// Otherwise go on to the next guess.
-				continue;
-			}
-
-			// If the fit wasn't sucessful, try next mass
-			if(!dtrack){
-				if(DEBUG_LEVEL>1)_DBG_<<"-- no DTrackWireBased made for track with mass "<<mass_hypotheses[j]<<endl;
-				continue;
-			}
-			
-			// OK, now we have to make a choice as to which track to keep. 
-			// For low momentum tracks, dEdx in the chambers can be used to distinguish protons
-			// from pions.
-			// Form a figure of merit based on the expected dEdx for the current hypothesis.
-			double fom = GetFOM(dtrack);
-
-			// There can be only one! (Highlander)
-			if(fom > best_fom){
-				if(DEBUG_LEVEL>1)_DBG_<<"-- new best track with mass "<<mass_hypotheses[j]<<" (old chisq/Ndof="<<(best_track->chisq/best_track->Ndof)<<" , new chisq/Ndof="<<(dtrack->chisq/dtrack->Ndof)<<") (old fom="<<best_fom<<" , new fom="<<fom<<")"<<endl;
-				delete best_track;
-				best_track = dtrack;
-				best_fom = fom;
-			}else{
-				if(DEBUG_LEVEL>1)_DBG_<<"-- keeping best track with mass "<<best_track->mass()<<" (old chisq/Ndof="<<(best_track->chisq/best_track->Ndof)<<" , new chisq/Ndof="<<(dtrack->chisq/dtrack->Ndof)<<") (old fom="<<best_fom<<" , new fom="<<fom<<")"<<endl;
-				delete dtrack;
-			}
-		}
-
-		// If a track fit was successful, then keep it
-		if(best_track){
-			_data.push_back(best_track);
-			if(DEBUG_LEVEL>2)_DBG_<<"adding wire-based track for candidate "<<i<<" (p="<<best_track->momentum().Mag()<<", "<<_data.size()<<" tracks total now)"<<endl;
-		}
+	if (status==DTrackFitter::kFitSuccess){
+	  dtrack = MakeDTrackWireBased(candidate);
+	  
+	  // For low momentum tracks, dEdx in the chambers can be 
+	  // used to distinguish protons from pions.
+	  // Form a figure of merit based on the expected dEdx for 
+	  // the current hypothesis.
+	  double fom = GetFOM(dtrack);
+	  
+	  // There can be only one! (Highlander)
+	  if(fom > best_fom){
+	    if(DEBUG_LEVEL>1)
+	      _DBG_<<"-- new best track with mass 0.93827 (old chisq/Ndof="<<(best_track->chisq/best_track->Ndof)<<" , new chisq/Ndof="<<(dtrack->chisq/dtrack->Ndof)<<") (old fom="<<best_fom<<" , new fom="<<fom<<")"<<endl;
+	    delete best_track;
+	    best_track = dtrack;
+	    best_fom = fom;
+	  }else{
+	    if(DEBUG_LEVEL>1)
+	      _DBG_<<"-- keeping best track with mass 0.13957 (old chisq/Ndof="<<(best_track->chisq/best_track->Ndof)<<" , new chisq/Ndof="<<(dtrack->chisq/dtrack->Ndof)<<") (old fom="<<best_fom<<" , new fom="<<fom<<")"<<endl;
+	    delete dtrack;
+	  }
 	}
+      }
+    }
+    
+    // If a track fit was successful, then keep it
+    if(best_track){
+      _data.push_back(best_track);
+      if(DEBUG_LEVEL>2)
+	_DBG_<<"adding wire-based track for candidate "<<i<<" (p="<<best_track->momentum().Mag()<<", "<<_data.size()<<" tracks total now)"<<endl;
+    }
+  }
 
-	// Filter out duplicate tracks
-	FilterDuplicates();
-
-	return NOERROR;
+  // Filter out duplicate tracks
+  FilterDuplicates();
+  
+  return NOERROR;
 }
 
 
@@ -304,7 +288,8 @@ double DTrackWireBased_factory_Kalman::GetFOM(DTrackWireBased *dtrack)
     double dedx_most_probable=fitter->GetdEdx(p_avg,dtrack->rt->GetMass(),mean_path_length);
     
     //figure of merit
-    return ( dedx_sigma/fabs(dedx/dedx_most_probable-1.) );
+    double prob=TMath::Prob(fitter->GetChisq(),fitter->GetNdof());
+    return ( prob*dedx_sigma/fabs(dedx/dedx_most_probable-1.) );
   }
   
   // If we got here, GetdEdx failed for this track
