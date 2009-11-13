@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <math.h>
 using namespace std;
 
 #include "DParticle_factory_Kalman.h"
@@ -88,7 +89,7 @@ jerror_t DParticle_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
     }	
 
     //Loop over fcal clusters, looking for matches to tracks
-    //MatchToFCAL(track,fcal_clusters,fcal_matches,mass);
+    MatchToFCAL(track,fcal_clusters,fcal_matches,mass);
     
     //Loop over tof points, looking for matches to tracks
     if (MatchToTOF(track,tof_points,mass)!=NOERROR){
@@ -113,7 +114,9 @@ jerror_t DParticle_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
       particle->rt=NULL;  
       particle->setT1(bcal->showerTime(),0.,SYS_BCAL);
       particle->setT0(mStartTime,0,mStartDetector);
-      
+      particle->Ndof=0;
+      particle->chisq=0.;
+
       _data.push_back(particle);
     }
 
@@ -193,9 +196,8 @@ jerror_t DParticle_factory_Kalman::MatchToBCAL(const DTrackTimeBased *track,
   
   // Check for a match 
   double p=track->momentum().Mag();
-  double match_sigma=4.;
-  double prob=exp(-dmin*dmin/match_sigma/match_sigma/2.)/sqrt(2.*M_PI)
-    /match_sigma;
+  double match_sigma=2.+1./(p+0.1)/(p+0.1); //empirical
+  double prob=erfc(dmin/match_sigma/sqrt(2.));
   if (prob>0.05){
     mDetector=SYS_BCAL;
     
@@ -210,13 +212,9 @@ jerror_t DParticle_factory_Kalman::MatchToBCAL(const DTrackTimeBased *track,
     double beta_pion=1./sqrt(1.+0.13957*0.13957/p/p);
     // probability
     double sigma_beta=0.06;
-    double prob_proton=exp(-(beta-beta_prot)*(beta-beta_prot)
-			   /2./sigma_beta/sigma_beta)
-      /sqrt(2.*M_PI)/sigma_beta;	
-    double prob_pion=exp(-(beta-beta_pion)*(beta-beta_pion)
-			 /2./sigma_beta/sigma_beta)
-      /sqrt(2.*M_PI)/sigma_beta;
-    
+    double prob_proton=erfc(fabs(beta-beta_prot)/sqrt(2.)/sigma_beta);
+    double prob_pion=erfc(fabs(beta-beta_pion)/sqrt(2.)/sigma_beta);
+
     mass=0.13957;
     if (track->charge()>0 && prob_proton>0.05 && prob_pion<0.05)
       mass=0.93827;
@@ -243,13 +241,14 @@ jerror_t DParticle_factory_Kalman::MatchToFCAL(const DTrackTimeBased *track,
     DVector3 fcal_pos=fcal_clusters[k]->getPosition();
     DVector3 norm(0,0,1);
     DVector3 proj_pos;
+    fcal_pos(2)+=65.;  // not sure why FCAL code subtracts this off...
     
     // Find the distance of closest approach between the track trajectory
     // and the fcal cluster position, looking for the minimum
     double my_s=0.;   
     track->rt->GetIntersectionWithPlane(fcal_pos,norm,proj_pos,&my_s);
     double d=(fcal_pos-proj_pos).Mag();
-     if (d<dmin){
+    if (d<dmin){
       dmin=d;
       mPathLength=my_s;
       fcal_match_id=k;
@@ -259,8 +258,7 @@ jerror_t DParticle_factory_Kalman::MatchToFCAL(const DTrackTimeBased *track,
   // Check for a match 
   double p=track->momentum().Mag();
   double match_sigma=1.+1./p/p;
-  double prob=exp(-dmin*dmin/match_sigma/match_sigma/2.)/sqrt(2.*M_PI)
-    /match_sigma;
+  double prob=erfc(dmin/match_sigma/sqrt(2.));
   if (prob>0.05){
     mDetector=SYS_FCAL;
 
@@ -275,13 +273,9 @@ jerror_t DParticle_factory_Kalman::MatchToFCAL(const DTrackTimeBased *track,
     double beta_pion=1./sqrt(1.+0.13957*0.13957/p/p);
     // probability
     double sigma_beta=0.06;
-    double prob_proton=exp(-(beta-beta_prot)*(beta-beta_prot)
-			   /2./sigma_beta/sigma_beta)
-      /sqrt(2.*M_PI)/sigma_beta;	
-    double prob_pion=exp(-(beta-beta_pion)*(beta-beta_pion)
-			 /2./sigma_beta/sigma_beta)
-      /sqrt(2.*M_PI)/sigma_beta;
-    
+    double prob_proton=erfc(fabs(beta-beta_prot)/sqrt(2.)/sigma_beta);
+    double prob_pion=erfc(fabs(beta-beta_pion)/sqrt(2.)/sigma_beta);
+     
     mass=0.13957;
     if (track->charge()>0 && prob_proton>0.05 && prob_pion<0.05)
       mass=0.93827;
@@ -323,9 +317,8 @@ jerror_t DParticle_factory_Kalman::MatchToTOF(const DTrackTimeBased *track,
   
   // Check for a match 
   double p=track->momentum().Mag();
-  double match_sigma=4.;
-  double prob=exp(-dmin*dmin/match_sigma/match_sigma/2.)/sqrt(2.*M_PI)
-    /match_sigma;
+  double match_sigma=0.75+1./p/p;
+  double prob=erfc(dmin/match_sigma/sqrt(2.));
   if (prob>0.05){
     mDetector=SYS_TOF;
 
@@ -338,15 +331,9 @@ jerror_t DParticle_factory_Kalman::MatchToTOF(const DTrackTimeBased *track,
     double beta_kaon=1./sqrt(1.+0.49368*0.49368/p/p);
     // probability
     double sigma_beta=0.06;
-    double prob_proton=exp(-(beta-beta_prot)*(beta-beta_prot)
-			   /2./sigma_beta/sigma_beta)
-      /sqrt(2.*M_PI)/sigma_beta;	
-    double prob_pion=exp(-(beta-beta_pion)*(beta-beta_pion)
-			 /2./sigma_beta/sigma_beta)
-      /sqrt(2.*M_PI)/sigma_beta;
-    double prob_kaon=exp(-(beta-beta_kaon)*(beta-beta_kaon)
-			 /2./sigma_beta/sigma_beta)
-      /sqrt(2.*M_PI)/sigma_beta;
+    double prob_proton=erfc(fabs(beta-beta_prot)/sqrt(2.)/sigma_beta);
+    double prob_pion=erfc(fabs(beta-beta_pion)/sqrt(2.)/sigma_beta);
+    double prob_kaon=erfc(fabs(beta-beta_kaon)/sqrt(2.)/sigma_beta);
     
     mass=0.13957;
     if (track->charge()<0){
