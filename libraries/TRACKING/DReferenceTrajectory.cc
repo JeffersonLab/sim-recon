@@ -248,7 +248,10 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		s += stepper.Step(NULL);
 
 		// Exit loop if we leave the tracking volume
-		if(swim_step->origin.Perp()>70.0){Nswim_steps++; break;} // ran into BCAL
+		if(swim_step->origin.Perp()>70.0 
+		   && swim_step->origin.Z()<407.0){Nswim_steps++; break;} // ran into BCAL
+		if (swim_step->origin.X()>129.  || swim_step->origin.Y()>129.)
+		  {Nswim_steps++; break;} // left extent of TOF 
 		if(swim_step->origin.Z()>650.0){Nswim_steps++; break;} // ran into FCAL
 		if(swim_step->origin.Z()<-50.0){Nswim_steps++; break;} // ran into UPV
 		if(wire && Nswim_steps>0){ // optionally check if we passed a wire we're supposed to be swimming to
@@ -286,6 +289,21 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 	
 	// Find the closest swim step to the plane
 	swim_step_t *step = FindClosestSwimStep(origin,norm);
+	// Kludge for tracking to forward detectors assuming that the planes 
+	// are perpendicular to the beam line 
+	if (step && step->origin.Z()>600.
+	    ){
+	  double p=step->mom.Mag();
+	  double ds=(origin.z()-step->origin.z())*p/step->mom.z();
+	  pos(2)=origin.z();
+	  pos(0)=step->origin.x()+ds*step->mom.x()/p;
+	  pos(1)=step->origin.y()+ds*step->mom.y()/p;
+	  if (s){
+	    *s=step->s+ds;
+	  }
+	  return;
+	}
+
 	if(!step){
 		_DBG_<<"Could not find closest swim step!"<<endl;
 		return;
