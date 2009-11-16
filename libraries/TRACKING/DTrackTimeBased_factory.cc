@@ -258,7 +258,8 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack)
     double dedx_most_probable=fitter->GetdEdx(p_avg,dtrack->rt->GetMass(),mean_path_length);
     
     //figure of merit
-    return ( dedx_sigma/fabs(dedx/dedx_most_probable-1.) );
+    double prob=TMath::Prob(fitter->GetChisq(),fitter->GetNdof());
+    return ( prob*dedx_sigma/fabs(dedx/dedx_most_probable-1.) );
   }
   
   // If we got here, GetdEdx failed for this track
