@@ -35,17 +35,14 @@ class DParticle_factory:public jana::JFactory<DParticle>{
 					 double mass);
 
 		jerror_t MatchToBCAL(const DTrackTimeBased *track,
-				     DReferenceTrajectory *rt, 
 				     vector<const DBCALPhoton*>bcal_clusters,
 				     vector<bool>&bcal_matches,
 				     double &mass);
 		jerror_t MatchToFCAL(const DTrackTimeBased *track,
-				     DReferenceTrajectory *rt,
 				     vector<const DFCALPhoton*>fcal_clusters,
 				     vector<bool>&fcal_matches,
 				     double &mass); 
 		jerror_t MatchToTOF(const DTrackTimeBased *track,
-				    DReferenceTrajectory *rt,	
 				    vector<const DTOFPoint*>tof_points,
 				    double &mass); 
 		  
