@@ -17,7 +17,7 @@
 
 #define CUT 10.
 #define RADIUS_CUT 50.0
-#define BEAM_VAR 0.01 // cm^2
+#define BEAM_VAR 1.0 // cm^2
 #define Z_VERTEX 65.0
 #define Z_MIN 45.
 #define Z_MAX 85.
@@ -30,11 +30,6 @@ bool cdc_fdc_match(double p, double dist){
 }
 
 bool cdchit_cmp(const DCDCTrackHit *a, const DCDCTrackHit *b){
-  /*
-  double ra=a->wire->origin.Perp();
-  double rb=b->wire->origin.Perp();
-  return (rb>ra);  
-  */
   if (a->wire==NULL || b->wire==NULL){
     cout << "Null pointer in CDC hit list??" << endl;
     return false;
@@ -456,7 +451,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  DTrackCandidate *can = new DTrackCandidate;
 
 	  can->setMass(srccan->mass());
-	  can->setPosition(pos);
+	  can->setPosition(srccan->position());
 	  can->setCharge(srccan->charge());
 	  can->setMomentum(srccan->momentum());
 	  
