@@ -17,7 +17,9 @@ using namespace std;
 //---------------------------------
 DTrackingResolution::DTrackingResolution()
 {
-
+	scale_err_pt = 1.0;
+	scale_err_theta = 1.0;
+	scale_err_phi = 1.0;
 }
 
 //---------------------------------
@@ -26,6 +28,26 @@ DTrackingResolution::DTrackingResolution()
 DTrackingResolution::~DTrackingResolution()
 {
 
+}
+
+//----------------
+// SetErrorScaleFactors
+//----------------
+void DTrackingResolution::SetErrorScaleFactors(double scale_err_pt, double scale_err_theta, double scale_err_phi)
+{
+	this->scale_err_pt = scale_err_pt;
+	this->scale_err_theta =scale_err_theta;
+	this->scale_err_phi = scale_err_phi;
+}
+
+//----------------
+// GetErrorScaleFactors
+//----------------
+void DTrackingResolution::GetErrorScaleFactors(double &scale_err_pt, double &scale_err_theta, double &scale_err_phi)
+{
+	scale_err_pt = this->scale_err_pt;
+	scale_err_theta = this->scale_err_theta;
+	scale_err_phi = this->scale_err_phi;
 }
 
 //----------------
@@ -49,6 +71,11 @@ bool DTrackingResolution::Smear(int geanttype, TVector3 &mom)
 	// Get resolutions
 	double pt_res, theta_res, phi_res;
 	GetResolution(geanttype, mom, pt_res, theta_res, phi_res);
+	
+	// Scale resolutions (default scale factors are all 1.0)
+	pt_res *= scale_err_pt;
+	theta_res *= scale_err_theta;
+	phi_res *= scale_err_phi;
 	
 	// Calculate new values. For each, we make a check that it is
 	// still in a valid range (e.g. theta is not less than 0).

@@ -27,9 +27,17 @@ class DTrackingResolution{
 		// Methods implemented in this class
 		bool Smear(int geanttype, TVector3 &mom);
 		bool Efficiency(int geanttype, const TVector3 &mom);
+		
+		void SetErrorScaleFactors(double  scale_err_pt, double  scale_err_theta, double  scale_err_phi);
+		void GetErrorScaleFactors(double &scale_err_pt, double &scale_err_theta, double &scale_err_phi);
 	
 	private:
 		TRandom3 rnd;
+		
+		double scale_err_pt;
+		double scale_err_theta;
+		double scale_err_phi;
+		
 };
 
 #endif // _DTrackingResolution_

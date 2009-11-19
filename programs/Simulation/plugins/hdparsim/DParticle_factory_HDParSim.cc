@@ -41,6 +41,24 @@ DParticle_factory_HDParSim::DParticle_factory_HDParSim()
 //------------------
 jerror_t DParticle_factory_HDParSim::init(void)
 {
+	// Here, we allow the user to set scale factors for each of the 
+	// resolutions so that 1/2 err and double error type simulations
+	// can be done. The default scale factors should be 1, but we go
+	// ahead and get them from the DTrackingResolution object since
+	// a deafult is set there and presuming we know it here can only
+	// lead to confusion later, should it change.
+	double scale_err_pt;
+	double scale_err_theta;
+	double scale_err_phi;
+	res->GetErrorScaleFactors(scale_err_pt, scale_err_theta, scale_err_phi);
+	
+	// Set the default or get the overiding values for hte error scale factors.
+	gPARMS->SetDefaultParameter("HDPARSIM:SCALE_ERR_PT", scale_err_pt);
+	gPARMS->SetDefaultParameter("HDPARSIM:SCALE_ERR_THETA", scale_err_theta);
+	gPARMS->SetDefaultParameter("HDPARSIM:SCALE_ERR_PHI", scale_err_phi);
+	
+	// Copy config parameter values back into DTrackingResolution object
+	res->SetErrorScaleFactors(scale_err_pt, scale_err_theta, scale_err_phi);
 
 	return NOERROR;
 }
