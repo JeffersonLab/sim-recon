@@ -24,8 +24,7 @@
 #define EPS 0.001
 
 bool cdc_fdc_match(double p, double dist){
-  if (p<=0.25) return true;
-  if (dist < 1.+7.6/(p-0.25)) return true;
+  if (dist<10. && dist < 1.5+1.5/p) return true;
   return false;
 }
 
@@ -152,7 +151,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  
 	  // Check that the charges match
 	  if (cdctrackcandidates[cdc_index]->charge()==srccan->charge()){
-	    double diff=(cdc_endplate_projections[i]-pos_back).Mag();
+	    double diff=(cdc_endplate_projections[j]-pos_back).Mag();
  
 	    if (diff<diff_min){
 	      diff_min=diff;
@@ -327,7 +326,7 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  // Remove the CDC candidate from the list
 	  cdc_forward_ids.erase(cdc_forward_ids.begin()+j); 
 	  num_forward_cdc_cands_remaining--;
-
+	 
 	  // Mark the FDC candidate as matched
 	  forward_matches[i]=1;
 	  num_fdc_cands_remaining--;
@@ -458,6 +457,9 @@ jerror_t DTrackCandidate_factory::evnt(JEventLoop *loop, int eventnumber)
 	  // mark the fdc track candidate as matched
 	  forward_matches[k]=1; 
 	  num_fdc_cands_remaining--;
+
+	  //Mark the cdc track candidate as matched
+	  cdc_forward_matches[i]=1;
 	  
 	  // variables for calculating average Bz
 	  double Bz_avg=0.,Bx,By,Bz;
