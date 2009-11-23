@@ -55,7 +55,7 @@ jerror_t DBCALShower_factory::brun(JEventLoop *loop, int runnumber)
 {
     
     vector<const DBCALGeometry*> bcalGeomVect;
-    eventLoop->Get( bcalGeomVect );
+    loop->Get( bcalGeomVect );
     const DBCALGeometry& bcalGeom = *(bcalGeomVect[0]);
     
     //////////////////////////////////////////////////////////////////
@@ -150,9 +150,9 @@ jerror_t DBCALShower_factory::brun(JEventLoop *loop, int runnumber)
 //------------------
 jerror_t DBCALShower_factory::evnt(JEventLoop *loop, int eventnumber)
 {
-    CellRecon(eventLoop);
+    CellRecon(loop);
     CeleToArray();   
-    PreCluster(eventLoop); 
+    PreCluster(loop); 
     ClusNorm();
     ClusAnalysis();
     Trakfit();
@@ -202,7 +202,7 @@ jerror_t DBCALShower_factory::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 // CellRecon()
 //------------------
-void DBCALShower_factory::CellRecon(JEventLoop *eventLoop)
+void DBCALShower_factory::CellRecon(JEventLoop *loop)
 {
     //======================================================================
     // This code is used to reconstruct cell information cell by cell.
@@ -235,7 +235,7 @@ void DBCALShower_factory::CellRecon(JEventLoop *eventLoop)
     // extract the BCAL hits
     
     vector<const DBCALMCResponse*> hits;
-    eventLoop->Get(hits);
+    loop->Get(hits);
     if(hits.size() <= 0) return;
     
         
@@ -448,13 +448,13 @@ void DBCALShower_factory::CeleToArray(void)
 //------------------
 // PreCluster()
 //------------------        
-void DBCALShower_factory::PreCluster(JEventLoop *eventLoop)
+void DBCALShower_factory::PreCluster(JEventLoop *loop)
 {
     int k=1;     // NUMBER OF NEARBY ROWS &/OR TO LOOK FOR MAX E CELL
     
     // extract the BCAL Geometry
     vector<const DBCALGeometry*> bcalGeomVect;
-    eventLoop->Get( bcalGeomVect );
+    loop->Get( bcalGeomVect );
     const DBCALGeometry& bcalGeom = *(bcalGeomVect[0]);
     
     // calculate cell position

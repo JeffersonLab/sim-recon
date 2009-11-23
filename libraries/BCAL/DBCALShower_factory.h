@@ -31,9 +31,9 @@ public:
 private:
         jerror_t brun(JEventLoop *loop, int runnumber);
     jerror_t evnt(JEventLoop *loop, int eventnumber);	///< Invoked via JEventProcessor virtual method
-    void CellRecon(JEventLoop *eventLoop);
+    void CellRecon(JEventLoop *loop);
     void CeleToArray(void);            
-    void PreCluster(JEventLoop *eventLoop);
+    void PreCluster(JEventLoop *loop);
     void Connect(int,int);
     void ClusNorm(void);
     void ClusAnalysis();

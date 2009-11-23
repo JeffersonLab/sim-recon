@@ -59,7 +59,7 @@ jerror_t DBCALPhoton_factory::brun(JEventLoop *loop, int runnumber)
 {
     
     vector<const DBCALGeometry*> bcalGeomVect;
-    eventLoop->Get( bcalGeomVect );
+    loop->Get( bcalGeomVect );
     const DBCALGeometry& bcalGeom = *(bcalGeomVect[0]);
 
     m_bcalIR = bcalGeom.BCALINNERRAD;

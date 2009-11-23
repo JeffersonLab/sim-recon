@@ -152,7 +152,7 @@ jerror_t DBCALMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
 {
  
     vector<const DBCALGeometry*> bcalGeomVec;
-    eventLoop->Get(bcalGeomVec);
+    loop->Get(bcalGeomVec);
     const DBCALGeometry& bcalGeom = *(bcalGeomVec.at( 0 ));
     
     map< int, pair< int, int > > darkHits;
@@ -174,7 +174,7 @@ jerror_t DBCALMCResponse_factory::evnt(JEventLoop *loop, int eventnumber)
 	m_sampling_fract );
 
     vector<const DHDDMBCALHit*> hddmhits;
-    eventLoop->Get(hddmhits);
+    loop->Get(hddmhits);
     
     for (unsigned int i = 0; i < hddmhits.size(); i++) {
 
