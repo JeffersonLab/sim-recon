@@ -2,7 +2,7 @@
 //    File: DPhoton_factory.cc
 // Created: Tue Aprl 17 11:57:50 EST 2007
 // Creator: kornicer (on Linux stan)
-//
+// Last modified: Blake Leverington Mon Nov 23
 
 #include <math.h>
 #include <TLorentzVector.h>
