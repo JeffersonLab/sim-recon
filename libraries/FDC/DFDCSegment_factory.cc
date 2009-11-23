@@ -16,7 +16,7 @@
 #define MATCH_RADIUS 5.0
 #define ADJACENT_MATCH_RADIUS 1.0
 #define SIGN_CHANGE_CHISQ_CUT 10.0
-#define BEAM_VARIANCE 0.1 // cm^2
+#define BEAM_VARIANCE 1.0 // cm^2
 #define USED_IN_SEGMENT 0x8
 #define CORRECTED 0x10
 #define MAX_ITER 10

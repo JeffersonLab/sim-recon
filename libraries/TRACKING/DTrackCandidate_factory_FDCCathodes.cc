@@ -22,7 +22,7 @@
 #define MAX_SEGMENTS 20
 #define HALF_PACKAGE 6.0
 #define FDC_OUTER_RADIUS 50.0 
-#define BEAM_VAR 0.1 // cm^2
+#define BEAM_VAR 1.0 // cm^2
 #define HIT_CHI2_CUT 10.0
 #define Z_VERTEX 65.0
 #define Z_MAX 85.0
@@ -431,12 +431,39 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
       
 	DVector3 mom,pos;
 	Bz_avg/=double(num_hits);
+
+	// Try to fix tracks that appear to point upstream
+	if (tanl<0){ 
+	  double x=segment->hits[0]->x;
+	  double y=segment->hits[0]->y;
+	  double ratio=sqrt(x*x+y+y)/2./rc;
+	  if (ratio<1.){
+	    double sperp=2.*rc*asin(ratio);
+	    tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)/sperp;
+	    z_vertex=Z_VERTEX;
+	  }
+	}	
 	double pt=0.003*Bz_avg*rc;
 	double theta=M_PI_2-atan(tanl);
 	double d=yc-q*rc*cos(phi0);
 	
-	mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
+	mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);	  
 	pos.SetXYZ(-d*sin(phi0),d*cos(phi0),z_vertex);
+	
+	if (z_vertex<0)
+	  {
+	  double sperp=(Z_VERTEX-z_vertex)/tanl;
+	  double kappa=q/2./rc;
+	  double sin2ks=sin(2.*kappa*sperp);
+	  double cos2ks=cos(2.*kappa*sperp);
+	  pos(0)=pos.x()+cos(phi0)*sin2ks/2./kappa
+	    -sin(phi0)*(1.-cos2ks)/2./kappa;
+	  pos(1)=pos.y()+sin(phi0)*sin2ks/2./kappa
+	    +cos(phi0)*(1.-cos2ks)/2./kappa;
+	  pos(2)=Z_VERTEX;
+	  mom(0)=pt*(cos(phi0)*cos2ks-sin(phi0)*sin2ks);
+	  mom(1)=pt*(sin(phi0)*cos2ks+cos(phi0)*sin2ks);
+	}
 		
 	// Create new track, starting with the current segment
 	DTrackCandidate *track = new DTrackCandidate;
@@ -660,12 +687,38 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 
       DVector3 mom,pos;
       Bz_avg/=double(num_hits);
+      
+      // Try to fix tracks that appear to point upstream
+      if (tanl<0){
+	double x=segment->hits[0]->x;
+	double y=segment->hits[0]->y;
+	double ratio=sqrt(x*x+y+y)/2./rc;
+	if (ratio<1.){
+	  double sperp=2.*rc*asin(ratio);
+	  tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)/sperp;
+	  z_vertex=Z_VERTEX;
+	}
+      }	
       double pt=0.003*Bz_avg*rc;
       double theta=M_PI_2-atan(tanl);
       double d=yc-q*rc*cos(phi0);
 
       mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
       pos.SetXYZ(-d*sin(phi0),d*cos(phi0),z_vertex);
+
+      if (z_vertex<0){
+	double sperp=(Z_VERTEX-z_vertex)/tanl;
+	double kappa=q/2./rc;
+	double sin2ks=sin(2.*kappa*sperp);
+	double cos2ks=cos(2.*kappa*sperp);
+	pos(0)=pos.x()+cos(phi0)*sin2ks/2./kappa
+	  -sin(phi0)*(1.-cos2ks)/2./kappa;
+	pos(1)=pos.y()+sin(phi0)*sin2ks/2./kappa
+	  +cos(phi0)*(1.-cos2ks)/2./kappa;
+	pos(2)=Z_VERTEX;
+	mom(0)=pt*(cos(phi0)*cos2ks-sin(phi0)*sin2ks);
+	mom(1)=pt*(sin(phi0)*cos2ks+cos(phi0)*sin2ks);
+      }
 
       // Create new track, starting with the current segment
       DTrackCandidate *track = new DTrackCandidate;
@@ -831,13 +884,39 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
 	
       DVector3 mom,pos;
       Bz_avg/=double(num_hits);
+
+      // Try to fix tracks that appear to point downstream
+      if (tanl<0){ 
+	double x=segment->hits[0]->x;
+	double y=segment->hits[0]->y;
+	double ratio=sqrt(x*x+y+y)/2./rc;
+	if (ratio<1.){
+	  double sperp=2.*rc*asin(ratio);
+	  tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)/sperp;
+	  z_vertex=Z_VERTEX;
+	}
+      }	
       double pt=0.003*Bz_avg*rc;
       double theta=M_PI_2-atan(tanl);
       double d=yc-q*rc*cos(phi0);
 
       mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
       pos.SetXYZ(-d*sin(phi0),d*cos(phi0),z_vertex);
-   
+
+      if (z_vertex<0){
+	double sperp=(Z_VERTEX-z_vertex)/tanl;
+	double kappa=q/2./rc;
+	double sin2ks=sin(2.*kappa*sperp);
+	double cos2ks=cos(2.*kappa*sperp);
+	pos(0)=pos.x()+cos(phi0)*sin2ks/2./kappa
+	  -sin(phi0)*(1.-cos2ks)/2./kappa;
+	pos(1)=pos.y()+sin(phi0)*sin2ks/2./kappa
+	  +cos(phi0)*(1.-cos2ks)/2./kappa;
+	pos(2)=Z_VERTEX;
+	mom(0)=pt*(cos(phi0)*cos2ks-sin(phi0)*sin2ks);
+	mom(1)=pt*(sin(phi0)*cos2ks+cos(phi0)*sin2ks);
+      }
+      
       // Create new track, starting with the current segment
       DTrackCandidate *track = new DTrackCandidate;
       track->setPosition(pos);
@@ -881,6 +960,21 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     
     mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
     pos.SetXYZ(-d*sin(phi0),d*cos(phi0),z_vertex);
+
+    if (z_vertex<0){
+      double sperp=(Z_VERTEX-z_vertex)/tanl;
+      double kappa=q/2./rc;
+      double sin2ks=sin(2.*kappa*sperp);
+      double cos2ks=cos(2.*kappa*sperp);
+      pos(0)=pos.x()+cos(phi0)*sin2ks/2./kappa
+	-sin(phi0)*(1.-cos2ks)/2./kappa;
+      pos(1)=pos.y()+sin(phi0)*sin2ks/2./kappa
+	+cos(phi0)*(1.-cos2ks)/2./kappa;
+      pos(2)=Z_VERTEX;
+      mom(0)=pt*(cos(phi0)*cos2ks-sin(phi0)*sin2ks);
+      mom(1)=pt*(sin(phi0)*cos2ks+cos(phi0)*sin2ks);
+    }
+
     
     // Create new track, starting with the current segment
     DTrackCandidate *track = new DTrackCandidate;
@@ -920,23 +1014,25 @@ jerror_t DTrackCandidate_factory_FDCCathodes::evnt(JEventLoop *loop, int eventnu
     double pt=0.003*Bz_avg*rc;
     double theta=M_PI_2-atan(tanl);
     double d=yc-q*rc*cos(phi0);
+    double z_vertex=segment->S(4,0); 
 
-    // Try to make a sensible vertex coming from the target
-    double z_vertex=segment->S(4,0);
-    if (z_vertex>Z_MAX || z_vertex<Z_MIN){
-      double x=segment->hits[0]->x;
-      double y=segment->hits[0]->y;
-      double ratio=sqrt(x*x+y*y)/2./rc;
-      if (ratio<1.){
-	double tanl=(segment->hits[0]->wire->origin.z()-Z_VERTEX)
-	  /(2.*rc*asin(ratio));
-	theta=M_PI_2-atan(tanl);
-      }
-      z_vertex=Z_VERTEX;
-    }
-    
+    // Momentum and "vertex" position
     mom.SetMagThetaPhi(pt/sin(theta),theta,phi0);
     pos.SetXYZ(-d*sin(phi0),d*cos(phi0),z_vertex);
+
+    if (z_vertex<0){
+      double sperp=(Z_VERTEX-z_vertex)/tanl;
+      double kappa=q/2./rc;
+      double sin2ks=sin(2.*kappa*sperp);
+      double cos2ks=cos(2.*kappa*sperp);
+      pos(0)=pos.x()+cos(phi0)*sin2ks/2./kappa
+	-sin(phi0)*(1.-cos2ks)/2./kappa;
+      pos(1)=pos.y()+sin(phi0)*sin2ks/2./kappa
+	+cos(phi0)*(1.-cos2ks)/2./kappa;
+      pos(2)=Z_VERTEX;
+      mom(0)=pt*(cos(phi0)*cos2ks-sin(phi0)*sin2ks);
+      mom(1)=pt*(sin(phi0)*cos2ks+cos(phi0)*sin2ks);
+    }
     
     // Create new track, starting with the current segment
     DTrackCandidate *track = new DTrackCandidate;

@@ -834,14 +834,9 @@ jerror_t DHelicalFit::FitLineRiemann(){
   // method gave a result beyond the extent of the target
   if (z_vertex<Z_MIN || z_vertex>Z_MAX){
     sperp-=sperp_old;
-    z_vertex=z_last-sperp*tanl;
+    double myz_vertex=z_last-sperp*tanl;
+    if (fabs(myz_vertex-Z_VERTEX)<fabs(z_vertex-Z_VERTEX)) z_vertex=myz_vertex;
   }
-
-  // if the zvertex is still beyond the extent of the target, assume the 
-  // particle came from the center of the target
-  if (z_vertex<Z_MIN || z_vertex>Z_MAX){
-    z_vertex=Z_VERTEX;
-  } 
   theta=M_PI_2-atan(tanl);
 
   return NOERROR;
