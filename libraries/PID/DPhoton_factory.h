@@ -27,8 +27,7 @@ class DPhoton_factory:public JFactory<DPhoton>{
 		~DPhoton_factory(){};
 	
 	private:
-		float DELTA_THETA_CHARGE; // The largest expected polar angle separation (in radians)
-					  // between photon and charged particle
+
 		float DELTA_PHI_SWUMCHARGE;
 		float DELTA_Z_SWUMCHARGE;
 		float DELTA_R_SWUMCHARGE;
@@ -40,9 +39,6 @@ class DPhoton_factory:public JFactory<DPhoton>{
 
                 DPhoton* makeFCalPhoton(const DFCALPhoton* gamma, const JObject::oid_t id); 
                 DPhoton* makeBCalPhoton(const DBCALPhoton* gamma, const JObject::oid_t id); 
-
-		double MinDistToRT(const DPhoton* photon, vector<const DTrackTimeBased*> tracks);
-		double dThetaToChargeMC(const DPhoton* photon, vector<const DMCThrown*> thrown);
 
 		vector<double> dFromSwumChargeMC(const DPhoton* photon, vector<const DParticle*> chargedswum);
 };

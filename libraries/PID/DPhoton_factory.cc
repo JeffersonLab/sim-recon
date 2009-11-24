@@ -18,8 +18,7 @@
 DPhoton_factory::DPhoton_factory()
 {
 	// Set defaults
-        DELTA_THETA_CHARGE = 0.05; // Polar angle separation between photon and charged particle 
-	 // in radians
+
 	DELTA_PHI_SWUMCHARGE = 0.15;// Azimuthal angle separation between photon and swumcharged particle 
                                    // in radians
 	DELTA_Z_SWUMCHARGE = 40;//Position separation between photon and swumcharged particle 
@@ -30,7 +29,6 @@ DPhoton_factory::DPhoton_factory()
 	USE_BCAL_ONLY = 0;
 	USE_FCAL_ONLY = 0;
 	
-	gPARMS->SetDefaultParameter( "PID:DELTA_THETA_CHARGE", DELTA_THETA_CHARGE);
 	gPARMS->SetDefaultParameter( "PID:USE_BCAL_ONLY", USE_BCAL_ONLY );
 	gPARMS->SetDefaultParameter( "PID:USE_FCAL_ONLY", USE_FCAL_ONLY );
 	gPARMS->SetDefaultParameter( "PID:DELTA_PHI_SWUMCHARGE", DELTA_PHI_SWUMCHARGE );
@@ -67,13 +65,6 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
 		DPhoton *photon =  makeFCalPhoton(fcalPhotons[i], ++nPhotons);
                 
-//                double mdtrt = MinDistToRT(photon,tracks); 
-//                photon->setDtRT(mdtrt); 
-
-		//  double dTheta = dThetaToChargeMC(photon,thrown);
-                		//    photon->setdThetaCharge( dTheta ); 
-		//  if (dTheta < DELTA_THETA_CHARGE ) photon->setTag( DPhoton::kCharge );
-
 		vector<double> dSwum;
                 dSwum = dFromSwumChargeMC(photon,chargedswum);
 
@@ -83,7 +74,6 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 
         } 
 
-
 // loop over BCAL photons and
 // correct shower energy and position in makeBCalPhoton
 	vector<const DBCALPhoton*> bcalPhotons;
@@ -92,13 +82,6 @@ jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
        for (unsigned int i=0; i< bcalPhotons.size(); i++) {
 
 		DPhoton *photon =  makeBCalPhoton(bcalPhotons[i], ++nPhotons);
-
-//                double mdtrt = MinDistToRT(photon,tracks); 
-//	        photon->setDtRT(mdtrt); 
-
-		// double dTheta = dThetaToChargeMC(photon,thrown);
-		// photon->setdThetaCharge( dTheta ); 
-		//   if (dTheta < DELTA_THETA_CHARGE ) photon->setTag( DPhoton::kCharge );
 
 		vector<double> dSwum;
                 dSwum = dFromSwumChargeMC(photon,chargedswum);
@@ -200,54 +183,9 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject
         return photon;
 }
 
-
-// Loop over tracks and look up its reference trajectory, which has a method to */
-// calculate the distance from its point to any given 3-vector.
-// Return the distance from the closest track.
-//double DPhoton_factory::MinDistToRT(const DPhoton* photon, vector<const DTrack*> tracks) 
-  //{
-
-  // double dmin = 10000.; // cm
-   // DVector3 photonPoint( photon->getPositionCal().X(), photon->getPositionCal().Y(), photon->getPositionCal().Z() );
-
-   //for (vector<const DTrack*>::const_iterator track  = tracks.begin(); 
-	//			      track != tracks.end(); 
-	//				 			track++) {
-
-     //      DReferenceTrajectory* rt = const_cast<DReferenceTrajectory*>((**track).rt);                                                      
-      // double dtrt = rt->DistToRT(photonPoint); 
-     // if (dtrt < dmin ) {
-	  // dmin = dtrt;
-	    //  }
-	// }
-   // return dmin;
-  //}
-
-
-// Return the angle between this photon and the closest charged track.
-double DPhoton_factory::dThetaToChargeMC(const DPhoton* photon, vector<const DMCThrown*> thrown) 
-{
-
-   double dmin = DPhoton::kDefaultDistance; 
-
-   double theta = atan2( sqrt( pow(photon->momentum().X(),2) + pow(photon->momentum().Y(),2) ), photon->momentum().Z() );
-
-   for (vector<const DMCThrown*>::const_iterator mc  = thrown.begin(); 
-					      mc != thrown.end(); 
-								mc++) {
-
-        if ( (**mc).charge() == 0 ) continue;
-	double deltaT = fabs( (**mc).momentum().Theta() - theta); 
-        dmin = deltaT < dmin ? deltaT : dmin; 
-
-  }
-
-  return dmin;
-
-}
-
 // Return the distance in azimuthal angle and position Z from the closest charged track.
-vector<double>  DPhoton_factory::dFromSwumChargeMC(const DPhoton* photon, vector<const DParticle*>  chargedswum) 
+vector<double>  
+DPhoton_factory::dFromSwumChargeMC(const DPhoton* photon, vector<const DParticle*>  chargedswum) 
 {
 
  DVector3 photonPoint =photon->getPositionCal();
