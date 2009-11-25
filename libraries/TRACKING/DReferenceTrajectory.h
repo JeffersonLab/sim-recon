@@ -13,7 +13,7 @@ using std::vector;
 
 #include <HDGEOMETRY/DGeometry.h>
 #include <DVector3.h>
-
+#include <DVector2.h>
 #include <JANA/jerror.h>
 
 #include <DCoordinateSystem.h>
@@ -77,6 +77,8 @@ class DReferenceTrajectory{
 		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0, double smax=2000.0, const DCoordinateSystem *wire=NULL);
 		int InsertSteps(const swim_step_t *start_step, double delta_s, double step_size=0.02); 
 		void GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s=NULL) const;
+		jerror_t GetIntersectionWithRadius(double R,DVector3 &mypos,
+					       double *s=NULL) const;
 		DVector3 GetLastDOCAPoint(void) const;
 		void GetLastDOCAPoint(DVector3 &pos, DVector3 &mom) const;
 		double GetLastDistAlongWire(void) const {return last_dist_along_wire;}

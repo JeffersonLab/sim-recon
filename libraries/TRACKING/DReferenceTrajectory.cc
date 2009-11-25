@@ -248,7 +248,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		s += stepper.Step(NULL);
 
 		// Exit loop if we leave the tracking volume
-		if(swim_step->origin.Perp()>70.0 
+		if(swim_step->origin.Perp()>88.0 
 		   && swim_step->origin.Z()<407.0){Nswim_steps++; break;} // ran into BCAL
 		if (swim_step->origin.X()>129.  || swim_step->origin.Y()>129.)
 		  {Nswim_steps++; break;} // left extent of TOF 
@@ -264,6 +264,60 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	// frame have been recorded along with the momentum of the
 	// particle and the directions of reference trajectory
 	// coordinate system at each point.
+}
+
+
+// Routine to find position on the trajectory where the track crosses a radial
+// position R.  Also returns the path length to this position.
+jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,DVector3 &mypos,
+						     double *s) const{
+  if(Nswim_steps<1){
+    _DBG_<<"No swim steps! You must \"Swim\" the track before calling GetIntersectionWithRadius(...)"<<endl;
+  }
+  // Loop over swim steps and find the one that crosses the radius
+  swim_step_t *swim_step = swim_steps;
+  swim_step_t *step=NULL;
+  swim_step_t *last_step=NULL;
+  for(int i=0; i<Nswim_steps; i++, swim_step++){
+    if (swim_step->origin.Perp()>R){
+      step=swim_step;
+      break;
+    }
+    if (swim_step->origin.Z()>407.0) return VALUE_OUT_OF_RANGE;
+    last_step=swim_step;
+  }
+  if (step==NULL||last_step==NULL) return VALUE_OUT_OF_RANGE;
+
+  // At this point, the location where the track intersects the cyclinder 
+  // is somewhere between last_step and step. For simplicity, we're going
+  // to just find the intersection of the cylinder with the line that joins
+  // the 2 positions. We do this by working in the X/Y plane only and
+  // finding the value of "alpha" which is the fractional distance the
+  // intersection point is between last_pos and mypos. We'll then apply
+  // the alpha found in the 2D X/Y space to the 3D x/y/Z space to find
+  // the actual intersection point.
+  DVector2 x1(last_step->origin.X(), last_step->origin.Y());
+  DVector2 x2(step->origin.X(), step->origin.Y());
+  DVector2 dx = x2-x1;
+  double A = dx.Mod2();
+  double B = 2.0*(x1.X()*dx.X() + x1.Y()*dx.Y());
+  double C = x1.Mod2() - R*R;
+  
+  double alpha1 = (-B + sqrt(B*B-4.0*A*C))/(2.0*A);
+  double alpha2 = (-B - sqrt(B*B-4.0*A*C))/(2.0*A);
+  double alpha = alpha1;
+  if(alpha1<0.0 || alpha1>1.0)alpha=alpha2;
+  if(!finite(alpha))return VALUE_OUT_OF_RANGE;
+	
+  DVector3 delta = step->origin - last_step->origin;
+  mypos = last_step->origin + alpha*delta;
+  
+  // The value of s actually represents the pathlength
+  // to the outside point. Adjust it back to the
+  // intersection point (approximately).
+  if (s) *s = step->s-(1.0-alpha)*delta.Mag();
+
+  return NOERROR;
 }
 
 //---------------------------------
@@ -666,7 +720,6 @@ DReferenceTrajectory::swim_step_t* DReferenceTrajectory::FindClosestSwimStep(con
 
 	return step;	
 }
-
 
 //---------------------------------
 // FindClosestSwimStep
