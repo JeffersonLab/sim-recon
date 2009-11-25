@@ -175,30 +175,36 @@ jerror_t DParticle_factory_Kalman::MatchToBCAL(const DTrackTimeBased *track,
   //Loop over bcal clusters
   double dmin=10000.;
   unsigned int bcal_match_id=0;
+  double dphi=1000.,dz=1000.;
   for (unsigned int k=0;k<bcal_clusters.size();k++){
     // Get the BCAL cluster position and normal
     DVector3 bcal_pos=bcal_clusters[k]->showerPosition(); 
-    double phi=atan2(bcal_pos.y(),bcal_pos.x());
-    DVector3 norm(cos(phi),sin(phi),0.);
     DVector3 proj_pos;
     
     // Find the distance of closest approach between the track trajectory
     // and the bcal cluster position, looking for the minimum
     double my_s=0.;
-    track->rt->GetIntersectionWithPlane(bcal_pos,norm,proj_pos,&my_s);
+    if (track->rt->GetIntersectionWithRadius(bcal_pos.Perp(),proj_pos,&my_s)
+	!=NOERROR) continue;
     double d=(bcal_pos-proj_pos).Mag();
     if (d<dmin){
       dmin=d;
       mPathLength=my_s;
-      bcal_match_id=k;
+      bcal_match_id=k; 
+      dz=proj_pos.z()-bcal_pos.z();
+      dphi=proj_pos.Phi()-bcal_pos.Phi();
     }
   }
   
   // Check for a match 
   double p=track->momentum().Mag();
-  double match_sigma=2.+1./(p+0.1)/(p+0.1); //empirical
-  double prob=erfc(dmin/match_sigma/sqrt(2.));
-  if (prob>0.05){
+  //double match_sigma=2.+1./(p+0.1)/(p+0.1); //empirical
+  //double prob=erfc(dmin/match_sigma/sqrt(2.));
+  //if (prob>0.05)
+  dphi+=0.002+8.314e-3/(p+0.3788)/(p+0.3788);
+  double phi_sigma=0.025+5.8e-4/p/p/p;
+  if (fabs(dz)<10. && fabs(dphi)<3.*phi_sigma)
+    {
     mDetector=SYS_BCAL;
     
     // Flag the appropriate bcal entry as matched to a track
@@ -216,7 +222,7 @@ jerror_t DParticle_factory_Kalman::MatchToBCAL(const DTrackTimeBased *track,
     double prob_pion=erfc(fabs(beta-beta_pion)/sqrt(2.)/sigma_beta);
 
     mass=0.13957;
-    if (track->charge()>0 && prob_proton>0.05 && prob_pion<0.05)
+    if (track->charge()>0 && prob_proton>0.05 && prob_pion<0.05 && p<1.5)
       mass=0.93827;
     
     return NOERROR;
@@ -343,7 +349,7 @@ jerror_t DParticle_factory_Kalman::MatchToTOF(const DTrackTimeBased *track,
     }else{
       if (prob_kaon>0.05 && prob_pion<0.05)
 	mass=0.49368;
-      if (prob_proton>0.05 && prob_pion<0.05)
+      if (prob_proton>0.05 && prob_pion<0.05 && p<1.5)
 	mass=0.93827;
   }
     
