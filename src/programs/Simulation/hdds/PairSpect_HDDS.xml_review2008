@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--DOCTYPE HDDS>
+
+  Hall D Geometry Data Base: Pair Spectrometer
+  ********************************************
+
+     version 1.0: Initial version
+
+ 
+<HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds">
+-->
+
+<section name        = "PairSpectrometer"
+         version     = "1.0"
+         date        = "2008-12-19"
+         author      = "A.Somov"
+         top_volume  = "HALL"
+         specification = "v1.0">
+
+
+<!-- Origin of PairSpectrometer is center of the hall.
+     The pair spectrometer is situdated in the detector hall 
+     after the collimator cave. The pair spectrometer converter
+     is defined in the BeamLine_HDDS.xml file, in the volume PTAR.
+-->
+
+
+  <composition name="PairSpectrometer">
+    <posXYZ volume="PairPipe1"     X_Y_Z="0.0   0.0  -101.0"/>
+    <posXYZ volume="PairMagnet"    X_Y_Z="0.0   0.0   0.0" />
+    <posXYZ volume="MagnetLead"    X_Y_Z="0.0   0.0   114.25" />
+    <posXYZ volume="PairVacChamb"  X_Y_Z="0.0   0.0   175.35" />
+    <posXYZ volume="PairHodoscope" X_Y_Z="0.0   0.0   242.45" />
+    <posXYZ volume="PairPipe2"     X_Y_Z="0.0   0.0   273.25"/> 
+    <posXYZ volume="PairShielding" X_Y_Z="0.0   0.0   309.45" />
+    <posXYZ volume="PairSEGblocks" X_Y_Z="0.0   0.0   330.95" />
+  </composition >
+	
+
+<!-- Vacuum Pipe 1 -->
+
+  <composition name="PairPipe1" envelope="HPO1" >
+    <posXYZ volume="HPI1" X_Y_Z="0.0 0.0 0.0"/> 
+  </composition>
+
+  <tubs name="HPO1" Rio_Z="0.0  2.54  19.1" material="Iron" /> 
+  <tubs name="HPI1" Rio_Z="0.0  2.38  19.1" material="Vacuum" />
+
+<!-- Pair Spectrometer Magnet -->
+
+  <composition name="PairMagnet">
+    <posXYZ volume="EffectRegion" X_Y_Z="0.0 0.0  0.0"/> 
+    <posXYZ volume="SidePlane"    X_Y_Z="0.0 0.0  100.35"/>
+  </composition>
+
+  <composition name="EffectRegion" envelope="MAG3">
+    <posXYZ volume="POL3" X_Y_Z="0.0 +35.0 0.0" />
+    <posXYZ volume="POL3" X_Y_Z="0.0 -35.0 0.0" />
+    <posXYZ volume="GAP3" X_Y_Z="+86.0 0.0 0.0" />
+    <posXYZ volume="GAP3" X_Y_Z="-86.0 0.0 0.0" />
+  </composition>
+
+  <box name="MAG3" X_Y_Z="272.0  137.0  182.9" material="Vacuum" >
+    <apply region="PairBfield" /> 
+  </box> 
+
+  <box name="POL3" X_Y_Z="272.0   67.0  182.9" material="Iron" />
+  <box name="GAP3" X_Y_Z="100.0   3.0   182.9" material="Iron" />
+
+  <composition name="SidePlane" envelope="PASP">
+    <posXYZ volume="SideGap" X_Y_Z="0.0  0.0  0.0"/>
+  </composition>
+
+  <composition name="SideGap" envelope="PSPH">
+    <posXYZ volume="TCL1" X_Y_Z=" 33.8  0.0  0.0"/>
+    <posXYZ volume="TCL2" X_Y_Z="-33.8  0.0  0.0"/>
+  </composition>
+
+  <box  name="PASP" X_Y_Z="272.0  137.0  17.8" material="Iron" />
+  <box  name="PSPH" X_Y_Z="72.0   3.0    17.8" material="Vacuum" />
+
+  <trd name="TCL1" Xmp_Ymp_Z="6.9  1. 3. 3. 17.8" inclination=" 9.410012 0"  material="Lead" />
+  <trd name="TCL2" Xmp_Ymp_Z="6.9  1. 3. 3. 17.8" inclination="-9.410012 0"  material="Lead" />
+
+<!-- MagnetLead -->
+
+  <composition name="MagnetLead">
+    <posXYZ volume="VCL1" X_Y_Z="+50.9 0.0 0.0" />
+    <posXYZ volume="VCL1" X_Y_Z="-50.9 0.0 0.0" />
+  </composition>
+
+  <box name="VCL1" X_Y_Z="20.0 10.0 10.0" material="Lead" />
+
+
+<!-- Pair Spectrometer Vacuum Chamber -->
+
+  <composition name="PairVacChamb">
+    <posXYZ volume="VacTRD" X_Y_Z="0.0 0.0 0.0" />
+    <posXYZ volume="VacSidePlane" X_Y_Z="0.0 0.0 66.4" /> 
+  </composition>
+
+  <composition name="VacTRD" envelope="PCO1">
+    <posXYZ volume="PCI1" X_Y_Z="0.0 0.0 0.0" />
+  </composition>
+
+  <trd name="PCO1" Xmp_Ymp_Z="73.2 181.2 8.8 8.8 132.2" material="Iron"/>
+  <trd name="PCI1" Xmp_Ymp_Z="72.0 180.0 8.8 8.8 132.2" material="Vacuum"/>
+
+  <composition name="VacSidePlane" envelope="VSPL">
+    <posXYZ volume="VHB1" X_Y_Z="+50.0 0.0 -0.0125" />
+    <posXYZ volume="VBW1" X_Y_Z="+50.0 0.0  0.2875" />
+    <posXYZ volume="VHB2" X_Y_Z="-50.0 0.0 -0.0125" />
+    <posXYZ volume="VBW2" X_Y_Z="-50.0 0.0  0.2875" />
+    <posXYZ volume="VVPH" X_Y_Z=" +0.0 0.0  0.0" />
+  </composition>
+
+  <box name="VSPL" X_Y_Z="181.2  8.8  0.6" material="Iron" />
+  <box name="VHB1" X_Y_Z="62.0   3.4  0.575" material="Vacuum" />
+  <box name="VBW1" X_Y_Z="62.0   3.4  0.025" material="Kapton" />
+
+  <box name="VHB2" X_Y_Z="62.0   3.4  0.575" material="Vacuum" />
+  <box name="VBW2" X_Y_Z="62.0   3.4  0.025" material="Kapton" />
+
+  <tubs name="VVPH" Rio_Z="0.0   2.5  0.6" material="Vacuum"/>
+
+<!-- Hodoscope Counters -->
+
+  <composition name="PairHodoscope">
+<!-- At the momenent we use 24 FSF counters (for positrons) and 
+ 6 WSF counters (for electrons). All FSF counters are tilted by 
+ the same angle -15 deg.  -->
+
+    <posXYZ volume="FF01"  X_Y_Z="-74.802  0.0  0.122"  rot="0  -15.  0"/>
+    <posXYZ volume="FF02"  X_Y_Z="-73.696  0.0  0.118"  rot="0  -15.  0"/> 
+    <posXYZ volume="FF03"  X_Y_Z="-72.624  0.0  0.113"  rot="0  -15.  0"/> 
+    <posXYZ volume="FF04"  X_Y_Z="-71.588  0.0  0.109"  rot="0  -15.  0"/>
+    <posXYZ volume="FF05"  X_Y_Z="-70.578  0.0  0.107"  rot="0  -15.  0"/> 
+    <posXYZ volume="FF06"  X_Y_Z="-69.592  0.0  0.103"  rot="0  -15.  0"/>
+    <posXYZ volume="FF07"  X_Y_Z="-68.636  0.0  0.099"  rot="0  -15.  0"/>
+    <posXYZ volume="FF08"  X_Y_Z="-67.705  0.0  0.097"  rot="0  -15.  0"/>
+    <posXYZ volume="FF09"  X_Y_Z="-66.799  0.0  0.093"  rot="0  -15.  0"/>
+    <posXYZ volume="FF0a"  X_Y_Z="-65.918  0.0  0.091"  rot="0  -15.  0"/>
+    <posXYZ volume="FF0b"  X_Y_Z="-65.062  0.0  0.087"  rot="0  -15.  0"/>
+    <posXYZ volume="FF0c"  X_Y_Z="-64.232  0.0  0.084"  rot="0  -15.  0"/>
+    <posXYZ volume="FF0d"  X_Y_Z="-63.421  0.0  0.082"  rot="0  -15.  0"/>
+    <posXYZ volume="FF0e"  X_Y_Z="-62.630  0.0  0.079"  rot="0  -15.  0"/>
+    <posXYZ volume="FF0f"  X_Y_Z="-61.860  0.0  0.077"  rot="0  -15.  0"/>
+    <posXYZ volume="FF10"  X_Y_Z="-61.109  0.0  0.074"  rot="0  -15.  0"/>
+    <posXYZ volume="FF11"  X_Y_Z="-60.374  0.0  0.073"  rot="0  -15.  0"/>
+    <posXYZ volume="FF12"  X_Y_Z="-59.653  0.0  0.071"  rot="0  -15.  0"/>
+    <posXYZ volume="FF13"  X_Y_Z="-58.952  0.0  0.068"  rot="0  -15.  0"/>
+    <posXYZ volume="FF14"  X_Y_Z="-58.267  0.0  0.067"  rot="0  -15.  0"/>
+    <posXYZ volume="FF15"  X_Y_Z="-57.596  0.0  0.064"  rot="0  -15.  0"/>
+    <posXYZ volume="FF16"  X_Y_Z="-56.941  0.0  0.063"  rot="0  -15.  0"/>
+    <posXYZ volume="FF17"  X_Y_Z="-56.300  0.0  0.061"  rot="0  -15.  0"/>
+    <posXYZ volume="FF18"  X_Y_Z="-55.675  0.0  0.059"  rot="0  -15.  0"/>
+
+    <posXYZ volume="WF19"    X_Y_Z="69.397  0.0  0.15" rot="0  16.  0"/>
+    <posXYZ volume="WF1a"    X_Y_Z="52.330  0.0  0.05" rot="0  12.  0"/>
+    <posXYZ volume="WF1b"    X_Y_Z="42.019  0.0  0.0"  rot="0  10.  0"/>
+    <posXYZ volume="WF1c"    X_Y_Z="35.207  0.0  0.0"  rot="0  8.   0"/>
+    <posXYZ volume="WF1d"    X_Y_Z="30.292  0.0  0.0"  rot="0  7.   0"/>
+    <posXYZ volume="WF1e"    X_Y_Z="26.581  0.0  0.0"  rot="0  6.   0"/>
+  </composition>
+
+  <box  name="FF01" X_Y_Z="1.072  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF02" X_Y_Z="1.043  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF03" X_Y_Z="1.005  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF04" X_Y_Z="0.976  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF05" X_Y_Z="0.956  3.0  0.5" material="Scintillator" sensitive="true" /> 
+  <box  name="FF06" X_Y_Z="0.927  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF07" X_Y_Z="0.898  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF08" X_Y_Z="0.879  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF09" X_Y_Z="0.850  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF0a" X_Y_Z="0.831  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF0b" X_Y_Z="0.802  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF0c" X_Y_Z="0.782  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF0d" X_Y_Z="0.763  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF0e" X_Y_Z="0.744  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF0f" X_Y_Z="0.724  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF10" X_Y_Z="0.705  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF11" X_Y_Z="0.696  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF12" X_Y_Z="0.676  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF13" X_Y_Z="0.657  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF14" X_Y_Z="0.647  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF15" X_Y_Z="0.628  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF16" X_Y_Z="0.618  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF17" X_Y_Z="0.599  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="FF18" X_Y_Z="0.589  3.0  0.5" material="Scintillator" sensitive="true" />
+
+  <box  name="WF19" X_Y_Z="1.31  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="WF1a" X_Y_Z="0.75  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="WF1b" X_Y_Z="0.54  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="WF1c" X_Y_Z="0.35  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="WF1d" X_Y_Z="0.25  3.0  0.5" material="Scintillator" sensitive="true" />
+  <box  name="WF1e" X_Y_Z="0.20  3.0  0.5" material="Scintillator" sensitive="true" /> 
+ 
+
+<!-- Vacuum Pipe 2 -->
+
+  <composition name="PairPipe2" envelope="HPO2" >
+    <posXYZ volume="HPI2" X_Y_Z="0.0 0.0 0.0"/> 
+  </composition>
+
+  <tubs name="HPO2" Rio_Z="0.0  2.54  62.4" material="Iron" /> 
+  <tubs name="HPI2" Rio_Z="0.0  2.38  62.4" material="Vacuum" />
+
+
+
+<!--Pair Lead Shielding -->
+
+  <composition name="PairShielding" envelope="PSHL">
+    <posXYZ volume="PairShieldHole" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+
+  <composition name="PairShieldHole" envelope="OPSH">
+    <posXYZ volume="IPSH" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+
+  <box  name="PSHL" X_Y_Z="220.0  30.0  10.0" material="Lead" />
+  <tubs name="OPSH" Rio_Z="0.0    2.54  10.0" material="Iron"/> 
+  <tubs name="IPSH" Rio_Z="0.0    2.38  10.0" material="Vacuum"/> 
+
+<!-- Pair spectrometer shielding SEG blocks. The properties of material of the SEG 
+                       block are very close to Iron.
+-->
+
+  <composition name="PairSEGblocks" envelope="PCON">
+    <posXYZ volume="PairSEGHole" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+
+  <composition name="PairSEGHole" envelope="OPCO">
+    <posXYZ volume="IPCO" X_Y_Z="0.0 0.0 0.0"/>
+  </composition>
+
+  <box  name="PCON" X_Y_Z="396.24  66.04  33.0" material="Iron" />
+  <tubs name="OPCO" Rio_Z="0.0     2.54   33.0" material="Iron"/> 
+  <tubs name="IPCO" Rio_Z="0.0     2.38   33.0" material="Vacuum"/> 
+
+
+</section>
+
+<!-- </HDDS> -->

@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--DOCTYPE HDDS>
+
+  Hall D Geometry Data Base: Cerenkov counter
+  ********************************************
+
+     version 1.0: Initial version	-rtj
+ 
+<HDDS specification="v1.0" xmlns="http://www.gluex.org/hdds">
+-->
+
+<section name        = "CerenkovCntr"
+         version     = "3.0"
+         date        = "2007-12-10"
+         author      = "R.T. Jones"
+         top_volume  = "CERE"
+         specification = "v1.0">
+
+<!-- Origin of CerenkovCntr is center of upstream end.  -->
+
+  <composition name="CerenkovCntr">
+    <posXYZ volume="cerenkovCntr" X_Y_Z="0.0  0.0  0.0" />
+  </composition>
+
+  <composition name="cerenkovCntr" envelope="CERE">
+     <posXYZ volume="CERW" X_Y_Z="0.0 0.0 0.0020" />
+     <posXYZ volume="CERI" X_Y_Z="0.0 0.0 2.5040" />
+     <posXYZ volume="cerenkovDrum" X_Y_Z="0.0 0.0 74.95" />
+  </composition>
+  <composition name="cerenkovDrum" envelope="CGAS">
+     <mposPhi volume="cerenkovInnerSector" ncopy="5" impliedRot="true" />
+     <mposPhi volume="cerenkovOuterSector" ncopy="15" impliedRot="true">
+         <sector value="1" step="1" />
+     </mposPhi>
+  </composition>
+
+  <pcon name="CERE" material="Aluminum" comment="Cerenkov counter">
+     <polyplane Rio_Z="5.0  80.0   0.0" />
+     <polyplane Rio_Z="5.0  80.0   4.9" />
+     <polyplane Rio_Z="5.0 220.0   4.9" />
+     <polyplane Rio_Z="5.0 220.0 145.0" />
+  </pcon>
+
+  <composition name="cerenkovInnerSector" envelope="CESI">
+     <posXYZ volume="cerenkovInnerMirror" X_Y_Z="114.39 0.0 14.09"
+                                          rot="0.0 11.6 0.0" />
+     <mposPhi volume="cerenkovMiddleMirror" ncopy="3" Phi0="-24" dPhi="24.0"
+              R_Z="114.39 14.09" rot="0.0 11.6 0.0" impliedRot="true"/>
+  </composition>
+  <composition name="cerenkovOuterSector" envelope="CESO">
+     <posXYZ volume="cerenkovOuterMirror" X_Y_Z="114.39 0.0 14.09"
+                                          rot="0.0 33.1 0.0" />
+     <posXYZ volume="cerenkovPMT" X_Y_Z="118.39 0.0 51.02" rot="0 138 0" />
+  </composition>
+  <composition name="cerenkovInnerMirror">
+    <posXYZ volume="CM01" />
+    <posXYZ volume="CM02" />
+    <posXYZ volume="CM03" />
+    <posXYZ volume="CM04" />
+    <posXYZ volume="CM05" />
+    <posXYZ volume="CM06" />
+    <posXYZ volume="CM07" />
+    <posXYZ volume="CM08" />
+    <posXYZ volume="CM09" />
+  </composition>
+  <composition name="cerenkovMiddleMirror">
+    <posXYZ volume="CM11" />
+    <posXYZ volume="CM12" />
+    <posXYZ volume="CM13" />
+    <posXYZ volume="CM14" />
+    <posXYZ volume="CM15" />
+    <posXYZ volume="CM16" />
+    <posXYZ volume="CM17" />
+    <posXYZ volume="CM18" />
+    <posXYZ volume="CM19" />
+    <posXYZ volume="CM1A" />
+    <posXYZ volume="CM1B" />
+    <posXYZ volume="CM1C" />
+    <posXYZ volume="CM1D" />
+    <posXYZ volume="CM1E" />
+    <posXYZ volume="CM1F" />
+  </composition>
+  <composition name="cerenkovOuterMirror">
+    <posXYZ volume="CM21" />
+    <posXYZ volume="CM22" />
+    <posXYZ volume="CM23" />
+    <posXYZ volume="CM24" />
+    <posXYZ volume="CM25" />
+    <posXYZ volume="CM26" />
+    <posXYZ volume="CM27" />
+    <posXYZ volume="CM28" />
+    <posXYZ volume="CM29" />
+    <posXYZ volume="CM2A" />
+    <posXYZ volume="CM2B" />
+    <posXYZ volume="CM2C" />
+    <posXYZ volume="CM2D" />
+    <posXYZ volume="CM2E" />
+    <posXYZ volume="CM2F" />
+    <posXYZ volume="CM2G" />
+    <posXYZ volume="CM2H" />
+    <posXYZ volume="CM2I" />
+    <posXYZ volume="CM2J" />
+    <posXYZ volume="CM2K" />
+    <posXYZ volume="CM2L" />
+  </composition>
+
+  <tubs name="CERW" material="Tedlar" Rio_Z="0.0  79.0  0.0040"
+                    sensitive="true"       comment="Cerenkov entrance window" />
+  <tubs name="CERI" material="CerenkovGas" Rio_Z="5.1  79.0  5.00"
+                                       	   comment="Cerenkov insert" />
+  <tubs name="CGAS" material="CerenkovGas" Rio_Z="5.1 219.9 139.90"
+		                    	   comment="Cerenkov gas volume" />
+  <tubs name="CESI" material="CerenkovGas" Rio_Z="5.1 100.0 139.90"
+		    profile="-36.0 72.0" comment="Cerenkov gas volume" />
+  <tubs name="CESO" material="CerenkovGas" Rio_Z="100.0 219.9 139.90"
+		    profile="-12.0 24.0" comment="Cerenkov gas volume" />
+
+  <pcon name="CM01" profile="176.14 7.72" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="106.14 112.00 -13.34" />
+    <polyplane Rio_Z="104.67 110.58 -11.34" />
+  </pcon>
+  <pcon name="CM02" profile="175.28 9.43" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="104.67 110.58 -11.34" />
+    <polyplane Rio_Z="103.17 109.12 -9.34" />
+  </pcon>
+  <pcon name="CM03" profile="174.37 11.26" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="103.17 109.12 -9.34" />
+    <polyplane Rio_Z="101.64 107.63 -7.34" />
+  </pcon>
+  <pcon name="CM04" profile="173.40 13.20" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="101.64 107.63 -7.34" />
+    <polyplane Rio_Z="100.07 106.12 -5.34" />
+  </pcon>
+  <pcon name="CM05" profile="172.36 15.27" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="100.07 106.12 -5.34" />
+    <polyplane Rio_Z="98.46 104.56 -3.34" />
+  </pcon>
+  <pcon name="CM06" profile="171.25 17.49" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="98.46 104.56 -3.34" />
+    <polyplane Rio_Z="96.82 102.98 -1.34" />
+  </pcon>
+  <pcon name="CM07" profile="170.05 19.89" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="96.82 102.98 -1.34" />
+    <polyplane Rio_Z="95.14 101.36 0.66" />
+  </pcon>
+  <pcon name="CM08" profile="168.76 22.48" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="95.14 101.36 0.66" />
+    <polyplane Rio_Z="93.41 99.70 2.66" />
+  </pcon>
+  <pcon name="CM09" profile="167.65 24.70" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="93.41 99.70 2.66" />
+    <polyplane Rio_Z="92.01 98.35 4.25" />
+  </pcon>
+
+  <pcon name="CM11" profile="176.23 7.55" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="92.01 98.35 4.25" />
+    <polyplane Rio_Z="89.82 96.25 6.66" />
+  </pcon>
+  <pcon name="CM12" profile="175.62 8.76" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="89.82 96.25 6.66" />
+    <polyplane Rio_Z="87.00 93.55 9.66" />
+  </pcon>
+  <pcon name="CM13" profile="174.95 10.10" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="87.00 93.55 9.66" />
+    <polyplane Rio_Z="84.05 90.75 12.66" />
+  </pcon>
+  <pcon name="CM14" profile="174.19 11.61" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="84.05 90.75 12.66" />
+    <polyplane Rio_Z="80.96 87.82 15.66" />
+  </pcon>
+  <pcon name="CM15" profile="173.34 13.32" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="80.96 87.82 15.66" />
+    <polyplane Rio_Z="77.71 84.76 18.66" />
+  </pcon>
+  <pcon name="CM16" profile="172.35 15.29" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="77.71 84.76 18.66" />
+    <polyplane Rio_Z="74.29 81.55 21.66" />
+  </pcon>
+  <pcon name="CM17" profile="171.21 17.58" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="74.29 81.55 21.66" />
+    <polyplane Rio_Z="70.67 78.18 24.66" />
+  </pcon>
+  <pcon name="CM18" profile="169.85 20.30" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="70.67 78.18 24.66" />
+    <polyplane Rio_Z="66.82 74.62 27.66" />
+  </pcon>
+  <pcon name="CM19" profile="168.19 23.61" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="66.82 74.62 27.66" />
+    <polyplane Rio_Z="62.68 70.85 30.66" />
+  </pcon>
+  <pcon name="CM1A" profile="166.12 27.75" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="62.68 70.85 30.66" />
+    <polyplane Rio_Z="58.21 66.82 33.66" />
+  </pcon>
+  <pcon name="CM1B" profile="163.42 33.16" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="58.21 66.82 33.66" />
+    <polyplane Rio_Z="53.32 62.49 36.66" />
+  </pcon>
+  <pcon name="CM1C" profile="159.67 40.66" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="53.32 62.49 36.66" />
+    <polyplane Rio_Z="47.88 57.80 39.66" />
+  </pcon>
+  <pcon name="CM1D" profile="153.92 52.16" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="47.88 57.80 39.66" />
+    <polyplane Rio_Z="41.67 52.63 42.66" />
+  </pcon>
+  <pcon name="CM1E" profile="143.24 73.53" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="41.67 52.63 42.66" />
+    <polyplane Rio_Z="34.29 46.85 45.66" />
+  </pcon>
+  <pcon name="CM1F" profile="125.99 108.02" material="ThinCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="34.29 46.85 45.66" />
+    <polyplane Rio_Z="28.26 42.52 47.66" />
+  </pcon>
+
+  <pcon name="CM21" profile="-25.12 50.24" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="70.61 76.99 -45.72" />
+    <polyplane Rio_Z="74.48 80.56 -40.72" />
+  </pcon>
+  <pcon name="CM22" profile="-24.89 49.78" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="74.48 80.56 -40.72" />
+    <polyplane Rio_Z="77.84 83.69 -35.72" />
+  </pcon>
+  <pcon name="CM23" profile="-24.76 49.53" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="77.84 83.69 -35.72" />
+    <polyplane Rio_Z="80.77 86.42 -30.72" />
+  </pcon>
+  <pcon name="CM24" profile="-24.71 49.43" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="80.77 86.42 -30.72" />
+    <polyplane Rio_Z="83.30 88.79 -25.72" />
+  </pcon>
+  <pcon name="CM25" profile="-24.73 49.46" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="83.30 88.79 -25.72" />
+    <polyplane Rio_Z="85.47 90.83 -20.72" />
+  </pcon>
+  <pcon name="CM26" profile="-24.80 49.61" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="85.47 90.83 -20.72" />
+    <polyplane Rio_Z="87.30 92.56 -15.72" />
+  </pcon>
+  <pcon name="CM27" profile="-24.93 49.85" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="87.30 92.56 -15.72" />
+    <polyplane Rio_Z="88.83 94.00 -10.72" />
+  </pcon>
+  <pcon name="CM28" profile="-25.10 50.19" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="88.83 94.00 -10.72" />
+    <polyplane Rio_Z="90.06 95.17 -5.72" />
+  </pcon>
+  <pcon name="CM29" profile="-25.31 50.62" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="90.06 95.17 -5.72" />
+    <polyplane Rio_Z="91.00 96.06 -0.72" />
+  </pcon>
+  <pcon name="CM2A" profile="-25.57 51.13" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="91.00 96.06 -0.72" />
+    <polyplane Rio_Z="91.67 96.70 +4.28" />
+  </pcon>
+  <pcon name="CM2B" profile="-25.87 51.73" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="91.67 96.70 +4.28" />
+    <polyplane Rio_Z="92.07 97.07 +9.28" />
+  </pcon>
+  <pcon name="CM2C" profile="-26.21 52.42" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="92.07 97.07 +9.28" />
+    <polyplane Rio_Z="92.20 97.20 +14.28" />
+  </pcon>
+  <pcon name="CM2D" profile="-26.61 53.21" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="92.20 97.20 +14.28" />
+    <polyplane Rio_Z="92.07 97.07 +19.28" />
+  </pcon>
+  <pcon name="CM2E" profile="-27.05 54.11" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="92.07 97.07 +19.28" />
+    <polyplane Rio_Z="91.67 96.70 +24.28" />
+  </pcon>
+  <pcon name="CM2F" profile="-27.56 55.12" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="91.67 96.70 +24.28" />
+    <polyplane Rio_Z="91.00 96.06 +29.28" />
+  </pcon>
+  <pcon name="CM2G" profile="-28.13 56.26" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="91.00 96.06 +29.28" />
+    <polyplane Rio_Z="90.06 95.17 +34.28" />
+  </pcon>
+  <pcon name="CM2H" profile="-28.78 57.55" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="90.06 95.17 +34.28" />
+    <polyplane Rio_Z="88.83 94.00 +39.28" />
+  </pcon>
+  <pcon name="CM2I" profile="-29.51 59.02" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="88.83 94.00 +39.28" />
+    <polyplane Rio_Z="87.30 92.56 +44.28" />
+  </pcon>
+  <pcon name="CM2J" profile="-30.35 60.71" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="87.30 92.56 +44.28" />
+    <polyplane Rio_Z="85.47 90.83 +49.28" />
+  </pcon>
+  <pcon name="CM2K" profile="-31.33 62.66" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="85.47 90.83 +49.28" />
+    <polyplane Rio_Z="83.30 88.79 +54.28" />
+  </pcon>
+  <pcon name="CM2L" profile="-32.46 64.93" material="ThickCerenkovMirror"
+        comment="inner Cerenkov mirror segment">
+    <polyplane Rio_Z="83.30 88.79 +54.28" />
+    <polyplane Rio_Z="80.77 86.42 +59.28" />
+  </pcon>
+
+  <composition name="cerenkovPMT" envelope="CPMT">
+    <posXYZ volume="CPPC" X_Y_Z="0.0 0.0 14.8" />
+  </composition>
+  <tubs name="CPPC" Rio_Z="0.0 9.0 0.10" sensitive="true"
+        material="CerenkovPhotocathode" comment="Cerenkov photocathode" />
+  <tubs name="CPMT" Rio_Z="0.0 10.0 30.0" material="fusedSilica"
+                                     comment="Cerenkov photomultiplier tube" />
+
+  <!-- The following elements describe an early rendition of the GlueX
+       detector simulated using a fast Monte Carlo program MCFast.  They
+       are retained for future reference, do not rely on their values. -->
+
+  <parameters name="cerenkovCntr_pars" type="mcfast">
+    <real 	name="Rmin"	value="5.0"
+				unit="cm"	/>
+    <real	name="Rmax"	value="58.0"
+				unit="cm"	/>
+    <real	name="zLength"	value="209.0"
+				unit="cm"	/>
+    <real	name="zCenter"	value="511.0"
+				unit="cm"	/>
+  </parameters>
+
+
+<!-- Currently the mcfast model of the Cerenkov is 1cm of scintillator -->
+
+  <mcfast model="AbsorberBox" template="db/absorberbox.db"
+			      parameters="cerenkovCntr_pars">
+    <string	name="name" 	value="Cerenkov" />
+    <string	name="shape" 	value="BOX" 	comment="BOX only" />
+    <int	name="type" 	value="2" 	comment="1=barrel, 2=forward" />
+    <real_array	name="xlimit"	values="-58.0  58.0" comment="x dimensions"
+				unit="cm"	/>
+    <real_array	name="ylimit"	values="-58.0  58.0" comment="y dimensions"
+				unit="cm"	/>
+    <real_array	name="xlimit_gap" values="-5.0  5.0" comment="beam hole x"
+				unit="cm"	/>
+    <real_array	name="ylimit_gap" values="-5.0  5.0" comment="beam hole y"
+				unit="cm"	/>
+    <real	name="z0"	value="511.5"	comment="z of midplane"
+				unit="cm"	/>
+    <real	name="zlen"	value="1.0"	comment="thickness"
+				unit="cm"	/>
+    <reference	name="material"	value="Scintillator"			    />
+  </mcfast>
+
+</section>
+
+<!-- </HDDS> -->
