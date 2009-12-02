@@ -17,7 +17,7 @@
 
 #define CUT 10.
 #define RADIUS_CUT 50.0
-#define BEAM_VAR 1.0 // cm^2
+#define BEAM_VAR 0.01 // cm^2
 #define Z_VERTEX 65.0
 #define Z_MIN 45.
 #define Z_MAX 85.
