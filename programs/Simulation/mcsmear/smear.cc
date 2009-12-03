@@ -100,6 +100,10 @@ double FCAL_PHOT_STAT_COEF = 0.035;
 // Single block energy threshold (applied after smearing)
 double FCAL_BLOCK_THRESHOLD = 20.0*k_MeV;
 
+// Forward TOF resolution
+double TOF_SIGMA = 100.*k_psec;
+
+
 //-----------
 // Smear
 //-----------
@@ -545,8 +549,39 @@ void SmearBCAL(s_HDDM_t *hddm_s)
 //-----------
 void SmearTOF(s_HDDM_t *hddm_s)
 {
+  // Loop over Physics Events
+  s_PhysicsEvents_t* PE = hddm_s->physicsEvents;
+  if(!PE) return;
+  
+  for(unsigned int i=0; i<PE->mult; i++){
+    s_HitView_t *hits = PE->in[i].hitView;
+    if (hits == HDDM_NULL ||
+	hits->forwardTOF == HDDM_NULL ||
+	hits->forwardTOF->ftofCounters == HDDM_NULL)continue;
+		
+    s_FtofCounters_t* ftofCounters = hits->forwardTOF->ftofCounters;
+		
+    // Loop over counters
+    s_FtofCounter_t *ftofCounter = ftofCounters->in;
+    for(unsigned int j=0;j<ftofCounters->mult; j++, ftofCounter++){
+			 
+      // Loop over north AND south hits
+      s_FtofNorthHits_t *ftofNorthHits = ftofCounter->ftofNorthHits;
+      s_FtofNorthHit_t *ftofNorthHit = ftofNorthHits->in;
+      s_FtofSouthHits_t *ftofSouthHits = ftofCounter->ftofSouthHits;
+      s_FtofSouthHit_t *ftofSouthHit = ftofSouthHits->in;
+      
+      for (unsigned int m=0;m<ftofNorthHits->mult;m++,ftofNorthHit++){
+	// Smear the time
+	ftofNorthHit->t +=SampleGaussian(TOF_SIGMA);
+      } 
+      for (unsigned int m=0;m<ftofSouthHits->mult;m++,ftofSouthHit++){
+	// Smear the time
+	ftofSouthHit->t +=SampleGaussian(TOF_SIGMA);
+      }
 
-
+    }
+  }
 
 }
 

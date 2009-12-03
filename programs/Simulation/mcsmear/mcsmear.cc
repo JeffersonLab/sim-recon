@@ -33,6 +33,7 @@ extern bool FDC_ELOSS_OFF;
 extern double FDC_TIME_WINDOW;
 extern double FCAL_PHOT_STAT_COEF;
 extern double FCAL_BLOCK_THRESHOLD;
+extern double TOF_SIGMA;
 
 //-----------
 // main
@@ -97,28 +98,29 @@ int main(int narg,char* argv[])
 void ParseCommandLineArguments(int narg, char* argv[])
 {
 
-	for(int i=1; i<narg; i++){
-		char *ptr = argv[i];
-		
-		if(ptr[0] == '-'){
-			switch(ptr[1]){
-				case 'h': Usage();													break;
-				case 'n': ADD_NOISE=false;											break;
-				case 's': SMEAR_HITS=false;										break;
-				case 'u': CDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
-				case 'y': CDC_USE_PARAMETERIZED_SIGMA=false;					break;
-				case 't': CDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;				break;
-				case 'U': FDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
-				case 'C': FDC_CATHODE_SIGMA=atof(&ptr[2])*1.0E-6;			break;
-				case 'T': FDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;				break;
-				case 'e': FDC_ELOSS_OFF = true;									break;
-				case 'p': FCAL_PHOT_STAT_COEF = atof(&ptr[2]);				break;
-				case 'b': FCAL_BLOCK_THRESHOLD = atof(&ptr[2])*k_MeV;		break;
-			}
-		}else{
-			INFILENAME = argv[i];
-		}
-	}
+  for(int i=1; i<narg; i++){
+    char *ptr = argv[i];
+    
+    if(ptr[0] == '-'){
+      switch(ptr[1]){
+      case 'h': Usage();													break;
+      case 'n': ADD_NOISE=false;											break;
+      case 's': SMEAR_HITS=false;										break;
+      case 'u': CDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
+      case 'y': CDC_USE_PARAMETERIZED_SIGMA=false;					break;
+      case 't': CDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;				break;
+      case 'U': FDC_TDRIFT_SIGMA=atof(&ptr[2])*1.0E-9;			break;
+      case 'C': FDC_CATHODE_SIGMA=atof(&ptr[2])*1.0E-6;			break;
+      case 'T': FDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;				break;
+      case 'e': FDC_ELOSS_OFF = true;									break;
+      case 'p': FCAL_PHOT_STAT_COEF = atof(&ptr[2]);				break;
+      case 'b': FCAL_BLOCK_THRESHOLD = atof(&ptr[2])*k_MeV;		break;
+      case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec; break;
+      }
+    }else{
+      INFILENAME = argv[i];
+    }
+  }
 
 	if(!INFILENAME){
 		cout<<endl<<"You must enter a filename!"<<endl<<endl;
@@ -165,6 +167,7 @@ void Usage(void)
 	cout<<"    -e       hdgeant was run with LOSS=0 so scale the FDC cathode ped. noise (def:false)"<<endl;
 	cout<<"    -p#      FCAL photo-statistics smearing factor in GeV^3/2 (def:"<<FCAL_PHOT_STAT_COEF<<")"<<endl;
 	cout<<"    -b#      FCAL single block threshold in MeV (def:"<<FCAL_BLOCK_THRESHOLD/k_MeV<<")"<<endl;
+	cout<<"    -f#      TOF sigma in psec (def: "<< TOF_SIGMA/k_psec<<")"<<endl;
 	cout<<"    -h       Print this usage statement."<<endl;
 	cout<<endl;
 	cout<<" Example:"<<endl;
