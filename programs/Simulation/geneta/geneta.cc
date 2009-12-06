@@ -6,7 +6,7 @@
 #include <iostream>
 using namespace std;
 
-unsigned int Nevents_to_gen = 100;
+unsigned int Nevents_to_gen = 10368; // this must be changed in eta_p_gen.dat as well
 bool use_interactive = false;
 string output_fname="eta_primakoff.hddm";
 

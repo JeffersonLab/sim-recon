@@ -1,6 +1,6 @@
 C           Imput data for the eta primakoff generator on proton 10/18/09
 C LIST
-TRIGGERS   100
+TRIGGERS   10368   ! represents 4 days of running
 C DEBUG     1   2    1
 DEBUG     0   0    0
 SWIT  1 1 1 1 0 1 1 1 10 30
