@@ -32,6 +32,7 @@ class Event:public TObject{
 		UInt_t Nfcal;						// Number of elements in fcal
 		TClonesArray *fcal;				//-> Array of all photons reconstructed in FCAL
 		TLorentzVector eta_best;
+		float t;
 
 		void Clear(void);
 		void AddFCAL(TLorentzVector &p, TVector3 &x);

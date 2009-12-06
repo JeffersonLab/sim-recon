@@ -64,6 +64,7 @@ class DEventProcessor_eta_ntuple:public JEventProcessor{
 			float py_eta_best;			// py  of reconstructed eta closest to eta mass
 			float pz_eta_best;			// pz  of reconstructed eta closest to eta mass
 			float M_eta_best;				// M   of reconstructed eta closest to eta mass
+			float t;
 		}Event_ntuple_t;
 	
 		DEventProcessor_eta_ntuple(){};

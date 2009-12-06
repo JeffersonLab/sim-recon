@@ -90,6 +90,7 @@ jerror_t DEventProcessor_eta_ntuple::init(void)
 		ntp<<",x_fcal(Nfcal),y_fcal(Nfcal),z_fcal(Nfcal)";
 		ntp<<",E_eta_best,px_eta_best,py_eta_best,pz_eta_best";
 		ntp<<",M_eta_best:R";
+		ntp<<",t:R";
 		hbname(10,"ETANT", &evt_ntuple, ntp.str().c_str());
 	}
 	
@@ -158,6 +159,7 @@ jerror_t DEventProcessor_eta_ntuple::evnt(JEventLoop *loop, int eventnumber)
 	evt->vertex = vertex;
 	evt->prod_mech = 0;
 	evt->decay_mode = 0;
+	evt->t = -(beam_photon-eta).M2();
 	
 	// Loop over reconstructed photons
 	for(unsigned int j=0; j<rec_photons.size(); j++){
@@ -236,6 +238,7 @@ void DEventProcessor_eta_ntuple::FillNtuple(void)
 	evt_ntuple.py_eta_best = evt->eta_best.Py();
 	evt_ntuple.pz_eta_best = evt->eta_best.Pz();
 	evt_ntuple.M_eta_best = evt->eta_best.M();
+	evt_ntuple.t = evt->t;
 	
 	if(evt_ntuple.Nfcal>=MAX_PARTS)evt_ntuple.Nfcal=MAX_PARTS-1;
 	for(UInt_t i=0; i<(UInt_t)evt_ntuple.Nfcal; i++){

@@ -24,10 +24,11 @@ void Event::Clear(void)
 	decay_mode = 0;
 	fcal->Clear(); // delete entries in TClonesArray (without freeing memory)
 	Nfcal = 0;
+	t = -1000000.0;
 }
 
 //------------------
-// AddRho
+// AddFCAL
 //------------------
 void Event::AddFCAL(TLorentzVector &p, TVector3 &x)
 {
