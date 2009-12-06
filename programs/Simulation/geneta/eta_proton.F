@@ -83,6 +83,8 @@ C
       COMMON/TMCAR3/YIELD
       COMMON/TMCAR9/totpht
 C
+      INTEGER t
+C
       DIMENSION PAR(8)
 C
 C             Open user files
@@ -107,7 +109,8 @@ C
 C
 C       rundom namber generater initialization
 C
-      CALL RLUXGO(4,2043787,0,0)
+      t = TIME()
+      CALL RLUXGO(4,t,0,0)
 C
 C
 C
