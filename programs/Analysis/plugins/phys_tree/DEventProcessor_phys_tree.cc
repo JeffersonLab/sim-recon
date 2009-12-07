@@ -122,9 +122,11 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	// Target is proton at rest in lab frame
 	TLorentzVector target(0.0, 0.0, 0.0, 0.93827);
 
-	// Create TLorentzVectors for reconstructed photons
+	// Create TLorentzVectors for reconstructed photons not matched to charged particles
 	vector<TLorentzVector> rec_photons;
-	for(unsigned int j=0; j<photons.size(); j++)rec_photons.push_back(MakeTLorentz(photons[j], 0.0));	
+	for(unsigned int j=0; j<photons.size(); j++){
+		if(photons[j]->getTag()!=DPhoton::kCharge) rec_photons.push_back(MakeTLorentz(photons[j], 0.0));
+	}
 
 	// Create TLorentzVectors for reconstructed charged particles
 	vector<TLorentzVector> rec_piplus;
