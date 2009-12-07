@@ -137,6 +137,8 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	// and sorting them into various containers declared just above.
 	for(unsigned int j=0; j<particles.size(); j++){
 		const DParticle *part = particles[j];
+		
+		if(part->charge()==0.0)continue; // ignore photons in DParticle list
 
 		// Initially assume it's a pion.
 		int type = part->charge()<0.0 ? 9:8; // initialize to pi-(=9) or pi+(=8)
