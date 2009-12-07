@@ -43,10 +43,10 @@ class DPhoton: public DKinematicData {
     double getTime() const; 
 
     // setters
-    void setTag( PhotonTag aTag);  
-    void setTime( double aTime);  
-    void setDtRT(double aDtRT);  
-    void setdThetaCharge(double adTheta);  
+    void setTag( PhotonTag aTag );  
+    void setTime( double aTime );  
+    void setDtRT( double aDtRT );  
+    void setdThetaCharge( double adTheta );  
     void setPositionCal( const DVector3& aPosition );
     void makeErrorMatrix( const DMatrixDSym& aSigmas );  
 

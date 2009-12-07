@@ -11,7 +11,8 @@
 using namespace std;
 
 #include "DFCALPhoton_factory.h"
-#include "DFCALCluster.h"
+#include "DFCALGeometry.h"
+//#include "DFCALCluster.h"
 #include "DFCALHit.h"
 #include <JANA/JEvent.h>
 using namespace jana;
@@ -23,6 +24,10 @@ DFCALPhoton_factory::DFCALPhoton_factory()
 {
 
 // Set of coefficients for non-linear energy corrections 
+
+  VERTEX_X = 0.;
+  VERTEX_Y = 0.;
+  VERTEX_Z = 65.;
   
   //Regular Lead Glass Fit values for 30cm RHG radius
   NON_LIN_COEF_A1 = 0.53109;
@@ -45,6 +50,10 @@ DFCALPhoton_factory::DFCALPhoton_factory()
         FCAL_RADIATION_LENGTH = 3.1;
         FCAL_CRITICAL_ENERGY = 0.035;
         FCAL_SHOWER_OFFSET = 1.0;
+
+        gPARMS->SetDefaultParameter("FCAL:VERTEX_X",VERTEX_X);
+        gPARMS->SetDefaultParameter("FCAL:VERTEX_Y",VERTEX_Y);
+        gPARMS->SetDefaultParameter("FCAL:VERTEX_Z",VERTEX_Z);
 
 	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_A1", NON_LIN_COEF_A1);
 	gPARMS->SetDefaultParameter("FCAL:NON_LIN_COEF_B1", NON_LIN_COEF_B1);
@@ -106,14 +115,15 @@ DFCALPhoton* DFCALPhoton_factory::makePhoton(const DFCALCluster* cluster)
        
 // Non-linar energy correction are done here
        int MAXITER = 1000;
-       DVector3  pos = cluster->getCentroid();
-       float x0 = pos.Px();
-       float y0 = pos.Py();
+
+       DVector3  vertex( VERTEX_X, VERTEX_Y, VERTEX_Z) ;
+       DVector3  posInCal = cluster->getCentroid();
+       float x0 = posInCal.Px();
+       float y0 = posInCal.Py();
        float hrad = sqrt(x0*x0+y0*y0);
        float x;
        float y;
        float ef;
-   
        
        double A=0.;
        double B=0.;
@@ -225,14 +235,16 @@ DFCALPhoton* DFCALPhoton_factory::makePhoton(const DFCALCluster* cluster)
 
        if ( Egamma > 0 ) { 
 
-     
-           double z0 = FCAL_Zmin - Shower_Vertex_Z;
+           float xV = vertex.X();
+           float yV = vertex.Y();
+           float zV = vertex.Z();
+           double z0 = DFCALGeometry::fcalFaceZ() - zV;
            double zMax = (FCAL_RADIATION_LENGTH*(
                        FCAL_SHOWER_OFFSET + log(Egamma/FCAL_CRITICAL_ENERGY)));
            double zed = z0;
            double zed1 = z0 + zMax;
 
-           double r0 = sqrt( pos.X()*pos.X() + pos.Y()*pos.Y() );
+           double r0 = sqrt( (x0-xV)*(x0-xV) + (y0-yV)*(y0-yV) );
 
            int niter;
            for ( niter=0; niter<100; niter++) {
@@ -245,15 +257,14 @@ DFCALPhoton* DFCALPhoton_factory::makePhoton(const DFCALCluster* cluster)
                zed1 = zed;
            }
     
-           pos.SetZ( zed );
-
-	   photon->setPosition( pos );   
-
-           photon->setPosError(cluster->getRMS_x(), cluster->getRMS_y(), fabs( zed-zed1 ) );
+           posInCal.SetZ( zed + zV );
 
 // Set momentum, in GeV.
-	   photon->setMom3( Egamma, photon->getPosition() );   
+           photon->setMom3( Egamma, posInCal - vertex );
            photon->setMom4();
+
+	   photon->setPosition( posInCal );   
+           photon->setPosError(cluster->getRMS_x(), cluster->getRMS_y(), fabs( zed-zed1 ) );
 
            photon->setTime ( cTime );
 

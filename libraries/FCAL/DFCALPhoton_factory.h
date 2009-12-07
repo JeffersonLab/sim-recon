@@ -24,6 +24,10 @@ class DFCALPhoton_factory:public JFactory<DFCALPhoton>{
 
                 DFCALPhoton* makePhoton(const DFCALCluster* cluster); 
 
+		double VERTEX_X;
+		double VERTEX_Y;
+		double VERTEX_Z;
+
 		double NON_LIN_COEF_A1;
 		double NON_LIN_COEF_B1;
 		double NON_LIN_COEF_C1;

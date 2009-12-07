@@ -28,6 +28,10 @@ class DPhoton_factory:public JFactory<DPhoton>{
 	
 	private:
 
+                double PHOTON_VERTEX_X;
+                double PHOTON_VERTEX_Y;
+                double PHOTON_VERTEX_Z;
+
 		float DELTA_PHI_SWUMCHARGE;
 		float DELTA_Z_SWUMCHARGE;
 		float DELTA_R_SWUMCHARGE;

@@ -19,6 +19,10 @@ DPhoton_factory::DPhoton_factory()
 {
 	// Set defaults
 
+        PHOTON_VERTEX_X =  0.0;
+        PHOTON_VERTEX_Y =  0.0;
+        PHOTON_VERTEX_Z = 65.0;  
+
 	DELTA_PHI_SWUMCHARGE = 0.15;// Azimuthal angle separation between photon and swumcharged particle 
                                    // in radians
 	DELTA_Z_SWUMCHARGE = 40;//Position separation between photon and swumcharged particle 
@@ -31,10 +35,15 @@ DPhoton_factory::DPhoton_factory()
 	
 	gPARMS->SetDefaultParameter( "PID:USE_BCAL_ONLY", USE_BCAL_ONLY );
 	gPARMS->SetDefaultParameter( "PID:USE_FCAL_ONLY", USE_FCAL_ONLY );
+
 	gPARMS->SetDefaultParameter( "PID:DELTA_PHI_SWUMCHARGE", DELTA_PHI_SWUMCHARGE );
 	gPARMS->SetDefaultParameter( "PID:DELTA_Z_SWUMCHARGE", DELTA_Z_SWUMCHARGE );
-
 	gPARMS->SetDefaultParameter( "PID:DELTA_R_SWUMCHARGE", DELTA_R_SWUMCHARGE );
+
+        gPARMS->SetDefaultParameter( "PID:PHOTON_VERTEX_X", PHOTON_VERTEX_X );
+        gPARMS->SetDefaultParameter( "PID:PHOTON_VERTEX_Y", PHOTON_VERTEX_Y );
+        gPARMS->SetDefaultParameter( "PID:PHOTON_VERTEX_Z", PHOTON_VERTEX_Z );
+
 }
 
 
@@ -48,12 +57,6 @@ DPhoton_factory::DPhoton_factory()
 jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 {
 
-// Disable this info until tracking is fixed
-//        vector<const DTrack*> tracks;
-//	eventLoop->Get(tracks);
-// and use thrown info to identify photons from charged particles
-        vector<const DMCThrown*> thrown;
-	eventLoop->Get(thrown);
 	vector<const DParticle*> chargedswum;
 	eventLoop->Get(chargedswum);
 // loop over FCAL photons    
@@ -112,13 +115,20 @@ DPhoton* DPhoton_factory::makeFCalPhoton(const DFCALPhoton* gamma, const JObject
 // during MC calibration, make sure FCALPhoton returns centroid position in 
 // GlueX coordinates in the future..., in case we need it
         DVector3 centroid = gamma->getPosition();  
-        centroid.SetZ(centroid.Z()+65.);
 
-        DVector3 momentum = gamma->getMom3();
-        DVector3 vertex(0., 0., 65.);
+        DVector3 vertex( PHOTON_VERTEX_X, PHOTON_VERTEX_Y, PHOTON_VERTEX_Z);
+        DVector3 photonVector = centroid - vertex;
+
+        double scale = energy
+                     / sqrt( photonVector.X()*photonVector.X() 
+                           + photonVector.Y()*photonVector.Y() 
+                           + photonVector.Z()*photonVector.Z() );
+
+        photon->setMomentum( DVector3( photonVector.X()*scale, 
+                                       photonVector.Y()*scale, 
+                                       photonVector.Z()*scale ) );
 
         photon->setPosition( vertex );
-        photon->setMomentum( momentum );
         photon->setPositionCal( centroid );
         photon->setMass( 0. );
         photon->setTag( DPhoton::kFcal );
@@ -155,8 +165,21 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject
 
         DPhoton* photon = new DPhoton( id );
 
+        double energy = gamma->lorentzMomentum().Energy();
+        DVector3 centroid = gamma->showerPosition();
+        DVector3 vertex(PHOTON_VERTEX_X, PHOTON_VERTEX_Y, PHOTON_VERTEX_Z);
 
-        DVector3 vertex(0.,0.,65.);
+        DVector3 photonVector = centroid - vertex;
+
+        double scale = energy
+                     / sqrt( photonVector.X()*photonVector.X() 
+                           + photonVector.Y()*photonVector.Y() 
+                           + photonVector.Z()*photonVector.Z() );
+
+        photon->setMomentum( DVector3( photonVector.X()*scale, 
+                                       photonVector.Y()*scale, 
+                                       photonVector.Z()*scale) ) ;
+
         photon->setPosition( vertex );
         photon->setTime( gamma->showerTime() );
 
@@ -164,7 +187,7 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject
         photon->setMomentum( DVector3( p.X(), p.Y(), p.Z() ) );
 
         photon->setPositionCal( gamma->showerPosition() );
-        photon->setMass( p.M() );
+        photon->setMass( 0. );
         photon->setTag( DPhoton::kBcal );
         DMatrixDSym sigmas(7);
 
@@ -173,7 +196,7 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject
         sigmas(2,2) = pow( gamma->fitLayPointErr().Z(), 2.0); // 
 
         sigmas[3][3] = 1.; // From Blake's simulation
-        if (p.T()>=0) sigmas[3][3] = pow( 0.0445*sqrt(p.T()) + 0.009*p.T(), 2.0);
+        if ( energy>=0 ) sigmas[3][3] = pow( 0.0445*sqrt( energy ) + 0.009*energy, 2.0);
 
         sigmas[4][4] = pow( 0.5*TARGET_RADIUS, 2.0); // x_t, y_t
         sigmas[5][5] = pow( 0.5*TARGET_RADIUS, 2.0); // x_t, y_t

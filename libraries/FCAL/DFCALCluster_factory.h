@@ -10,10 +10,12 @@
 
 #include <JANA/JFactory.h>
 #include <JANA/JEventLoop.h>
+
+#include "DFCALCluster.h"
+#include "DFCALGeometry.h"
+
 using namespace jana;
 
-#include <FCAL/DFCALCluster.h>
-#include <FCAL/DFCALGeometry.h>
 
 class DFCALCluster_factory:public JFactory<DFCALCluster>{
 	public:

@@ -29,30 +29,30 @@ DPhoton::~DPhoton()
 }
 
 // Set photon position
-void DPhoton::setPositionCal(const DVector3& aPosition)
+void DPhoton::setPositionCal( const DVector3& aPosition )
 {
      fPositionCal = aPosition;
 }
 
-// Tag photon origin: 1/2/3 for FCAL/BCAL/Charge? 
-void DPhoton::setTag(PhotonTag aTag)
+// Tag photon origin: 1/2/3 for FCAL/BCAL/Charge
+void DPhoton::setTag( PhotonTag aTag )
 {
    fTag = aTag;
 }
 
-void DPhoton::setTime(double aTime)
+void DPhoton::setTime( double aTime )
 {
    fTime = aTime;
 }
 
 // Distance to track's ReferenceTrajectory
-void DPhoton::setDtRT(double aDtRT)
+void DPhoton::setDtRT( double aDtRT )
 {
    fDtRT = aDtRT;
 }
 
 // Polar angle distance to closest generated charge
-void DPhoton::setdThetaCharge(double adTheta)
+void DPhoton::setdThetaCharge( double adTheta )
 {
    fdThetaCharge = adTheta;
 }

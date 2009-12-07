@@ -55,11 +55,16 @@ public:
 	DFCALGeometry();
 	~DFCALGeometry(){}
 
-	static double blockSize() { return 4*k_cm; }
-	static double radius() { return 1.2*k_m; }
+	static double blockSize()  { return 4*k_cm; }
+	static double radius()  { return 1.2*k_m; }
+	static double blockLength()  { return 45.0*k_cm; }
+	static double fcalFaceZ()  { return 625.3*k_cm; }
+
+        static double fcalMidplane() { return fcalFaceZ() + 0.5 * blockLength() ; } 
 	
 	bool isBlockActive( int row, int column ) const;
 	int  numActiveBlocks() const { return m_numActiveBlocks; }
+
 	
 	TVector2 positionOnFace( int row, int column ) const;
 	TVector2 positionOnFace( int channel ) const;
