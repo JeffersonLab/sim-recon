@@ -55,6 +55,9 @@ jerror_t DEventProcessor_eta_ntuple::init(void)
 {
 	make_hbook = true;
 	make_root = true;
+	
+	gPARMS->SetDefaultParameter("MAKE_HBOOK", make_hbook);
+	gPARMS->SetDefaultParameter("MAKE_ROOT", make_root);
 
 	evt = new Event();
 
