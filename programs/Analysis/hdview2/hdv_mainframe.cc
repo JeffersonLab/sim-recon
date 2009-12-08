@@ -301,14 +301,14 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 					for(int i=0; i<100; i++)timetracksfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
 					timetracksf->AddFrame(timetracksfactory, lhints);
 				trkdrawopts->AddFrame(timetracksf, lhints);
-	TGHorizontalFrame *particlesf		= new TGHorizontalFrame(trkdrawopts);
-					checkbuttons["particles"]		= new TGCheckButton(particlesf,	"DParticle:");
-					particlesfactory	= new TGComboBox(particlesf, "<default>", 0);
-					particlesfactory->Resize(80,20);
-					particlesf->AddFrame(checkbuttons["particles"], lhints);
-					for(int i=0; i<100; i++)particlesfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
-					particlesf->AddFrame(particlesfactory, lhints);
-				trkdrawopts->AddFrame(particlesf, lhints);
+	TGHorizontalFrame *chargedtracksf		= new TGHorizontalFrame(trkdrawopts);
+					checkbuttons["chargedtracks"]		= new TGCheckButton(chargedtracksf,	"DChargedTrack:");
+					chargedtracksfactory	= new TGComboBox(chargedtracksf, "<default>", 0);
+					chargedtracksfactory->Resize(80,20);
+					chargedtracksf->AddFrame(checkbuttons["chargedtracks"], lhints);
+					for(int i=0; i<100; i++)chargedtracksfactory->AddEntry("a",i); // For some reason, this is needed for ROOT >5.14 (??!!!) real entries are filled in later
+					chargedtracksf->AddFrame(chargedtracksfactory, lhints);
+				trkdrawopts->AddFrame(chargedtracksf, lhints);
 				
 
 
@@ -366,6 +366,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 			colnames.push_back("z");
 			colnames.push_back("chisq/Ndof");
 			colnames.push_back("Ndof");
+			colnames.push_back("FOM");
 			
 			// Create a vertical frame for each column and insert the label as the first item
 			for(unsigned int i=0; i<colnames.size(); i++){
@@ -446,7 +447,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	checkbuttons["candidates"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 	checkbuttons["wiretracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 	checkbuttons["timetracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");	
-	checkbuttons["particles"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
+	checkbuttons["chargedtracks"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 	checkbuttons["thrown"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
 
 	checkbuttons["cdc"]->Connect("Clicked()","hdv_mainframe", this, "DoMyRedraw()");
@@ -466,7 +467,7 @@ hdv_mainframe::hdv_mainframe(const TGWindow *p, UInt_t w, UInt_t h):TGMainFrame(
 	candidatesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
 	wiretracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
 	timetracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");	
-	particlesfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
+	chargedtracksfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoMyRedraw()");
 	reconfactory->Connect("Selected(Int_t)","hdv_mainframe", this, "DoUpdateTrackLabels()");
 
 	// Pointers to optional daughter windows
@@ -1681,30 +1682,30 @@ void hdv_mainframe::SetTimeBasedTrackFactories(vector<string> &facnames)
 }
 
 //-------------------
-// SetParticleFactories
+// SetChargedTrackFactories
 //-------------------
-void hdv_mainframe::SetParticleFactories(vector<string> &facnames)
+void hdv_mainframe::SetChargedTrackFactories(vector<string> &facnames)
 {
-	/// Filter out the factories that provide "DParticle" objects
-	/// and add their tags to the particlesfactory combobox.
+	/// Filter out the factories that provide "DChargedTrack" objects
+	/// and add their tags to the chargedtracksfactory combobox.
 	
 	// Erase all current entries in the combobox and add back in
 	// "<default>".
-	particlesfactory->RemoveAll();
-	particlesfactory->AddEntry("<default>", 0);
-	particlesfactory->GetTextEntry()->SetText("<default>");
-	particlesfactory->Select(0, kFALSE);
+	chargedtracksfactory->RemoveAll();
+	chargedtracksfactory->AddEntry("<default>", 0);
+	chargedtracksfactory->GetTextEntry()->SetText("<default>");
+	chargedtracksfactory->Select(0, kFALSE);
 	
 	for(unsigned int i=0; i< facnames.size(); i++){
-		string name = "DParticle:";
+		string name = "DChargedTrack:";
 		string::size_type pos = facnames[i].find(name);
 		if(pos==string::npos)continue;
 		string tag = facnames[i];
 		tag.erase(0, name.size());
-		particlesfactory->AddEntry(tag.c_str(), i+1);
+		chargedtracksfactory->AddEntry(tag.c_str(), i+1);
 		if(tag==default_track){
-			particlesfactory->Select(i, kTRUE);
-			particlesfactory->GetTextEntry()->SetText(tag.c_str());
+			chargedtracksfactory->Select(i, kTRUE);
+			chargedtracksfactory->GetTextEntry()->SetText(tag.c_str());
 		}
 	}
 }
@@ -1783,10 +1784,10 @@ void hdv_mainframe::SetReconstructedFactories(vector<string> &facnames)
 		}
 	}
 
-	// Add DParticle factories
-	reconfactory->AddEntry("DParticle:", id++);
+	// Add DChargedTrack factories
+	reconfactory->AddEntry("DChargedTrack:", id++);
 	for(unsigned int i=0; i< facnames.size(); i++){
-		string name = "DParticle:";
+		string name = "DChargedTrack:";
 		string::size_type pos = facnames[i].find(name);
 		if(pos==string::npos)continue;
 		string tag = facnames[i].substr(name.size(), facnames[i].size()-name.size());
@@ -1829,8 +1830,8 @@ const char* hdv_mainframe::GetFactoryTag(string who)
 		tag = timetracksfactory->GetTextEntry()->GetTitle();
 		//tag = timetracksfactory->GetSelectedEntry()->GetTitle();
 	}
-	if (who=="DParticle"){
-	  tag=particlesfactory->GetTextEntry()->GetTitle();
+	if (who=="DChargedTrack"){
+	  tag=chargedtracksfactory->GetTextEntry()->GetTitle();
 	}
 	if(string(tag) == "<default>")tag = "";
 	

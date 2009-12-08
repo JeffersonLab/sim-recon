@@ -32,6 +32,7 @@ using namespace std;
 #include "TRACKING/DTrackWireBased.h"
 #include "TRACKING/DTrackTimeBased.h"
 #include "PID/DParticle.h"
+#include "PID/DChargedTrack.h"
 #include "TRACKING/DReferenceTrajectory.h"
 #include "JANA/JGeometry.h"
 #include "TRACKING/DMCTrajectoryPoint.h"
@@ -99,7 +100,7 @@ jerror_t MyProcessor::init(void)
 		hdvmf->SetWireBasedTrackFactories(facnames);
 		hdvmf->SetTimeBasedTrackFactories(facnames);
 		hdvmf->SetReconstructedFactories(facnames);
-		hdvmf->SetParticleFactories(facnames);
+		hdvmf->SetChargedTrackFactories(facnames);
 	}
 	
 	return NOERROR;
@@ -470,17 +471,17 @@ void MyProcessor::FillGraphics(void)
 			AddKinematicDataTrack(timetracks[i], 46, 1.00);
 		}
 	}
-	// DParticle
-	if(hdvmf->GetCheckButton("particles")){
-		vector<const DParticle*> particles;
-		loop->Get(particles, hdvmf->GetFactoryTag("DParticle"));
-		for(unsigned int i=0; i<particles.size(); i++){
+	// DChargedTrack
+	if(hdvmf->GetCheckButton("chargedtracks")){
+	  vector<const DChargedTrack*> chargedtracks;
+		loop->Get(chargedtracks, hdvmf->GetFactoryTag("DChargedTrack"));
+		for(unsigned int i=0; i<chargedtracks.size(); i++){
 		  int color=kViolet-3;
 		  double size=1.25;
-		  if (particles[i]->charge()>0) color=kMagenta;
-		  if (fabs(particles[i]->charge())<1.e-3) color=kGreen+2;
-		  if (particles[i]->mass()>0.9) size=2.5;
-		  AddKinematicDataTrack(particles[i],color,size);
+		  if (chargedtracks[i]->hypotheses[0]->charge()>0) color=kMagenta;
+		
+		  if (chargedtracks[i]->hypotheses[0]->mass()>0.9) size=2.5;
+		  AddKinematicDataTrack(chargedtracks[i]->hypotheses[0],color,size);
 		}
 	}
 }
@@ -499,13 +500,15 @@ void MyProcessor::UpdateTrackLabels(void)
 	// Get Thrown particles
 	vector<const DMCThrown*> throwns;
 	if(loop)loop->Get(throwns);
-	
+
 	// Get the track info as DKinematicData objects
 	vector<const DKinematicData*> trks;
-	if(name=="DParticle"){
-		vector<const DParticle*> particles;
-		if(loop)loop->Get(particles, tag.c_str());
-		for(unsigned int i=0; i<particles.size(); i++)trks.push_back(particles[i]);
+	if(name=="DChargedTrack"){
+		vector<const DChargedTrack*> chargedtracks;
+		if(loop)loop->Get(chargedtracks, tag.c_str());
+		for(unsigned int i=0; i<chargedtracks.size(); i++){
+		  trks.push_back(chargedtracks[i]->hypotheses[0]);
+		}
 	}	
 	if(name=="DTrackTimeBased"){
 		vector<const DTrackTimeBased*> timetracks;
@@ -579,6 +582,7 @@ void MyProcessor::UpdateTrackLabels(void)
 		if(row<1)break;
 		
 		stringstream trkno, type, p, theta, phi, z, chisq_per_dof, Ndof;
+		stringstream fom;
 		trkno<<setprecision(4)<<i+1;
 		reconlabs["trk"][row]->SetText(trkno.str().c_str());
 		
@@ -611,23 +615,24 @@ void MyProcessor::UpdateTrackLabels(void)
 		// Get chisq and Ndof for DTrackTimeBased or DTrackWireBased objects
 		const DTrackTimeBased *timetrack=dynamic_cast<const DTrackTimeBased*>(trk);
 		const DTrackWireBased *track=dynamic_cast<const DTrackWireBased*>(trk);	
-		const DParticle *part=dynamic_cast<const DParticle*>(trk);
+	
 		if(timetrack){
 			chisq_per_dof<<setprecision(4)<<timetrack->chisq/timetrack->Ndof;
 			Ndof<<timetrack->Ndof;
+			fom << timetrack->FOM;
 		}else if(track){
 			chisq_per_dof<<setprecision(4)<<track->chisq/track->Ndof;
 			Ndof<<track->Ndof;
-		}else if (part && fabs(part->charge())>0.1){
-		  chisq_per_dof<<setprecision(4)<<part->chisq/part->Ndof;
-		  Ndof<<part->Ndof;
+			fom << "N/A";
 		}
 		else{
 			chisq_per_dof<<"N/A";
 			Ndof<<"N/A";
+			fom << "N/A";
 		}
 		reconlabs["chisq/Ndof"][row]->SetText(chisq_per_dof.str().c_str());
 		reconlabs["Ndof"][row]->SetText(Ndof.str().c_str());
+		reconlabs["FOM"][row]->SetText(fom.str().c_str());
 	}
 }
 
@@ -738,15 +743,15 @@ _DBG__;
 	double mass;
 
 	// Find the specified track	
-	if(dataname=="DParticle"){
-		vector<const DParticle*> particles;
-		loop->Get(particles, tag.c_str());
-		if(index>=particles.size())return;
-		q = particles[index]->charge();
-		pos = particles[index]->position();
-		mom = particles[index]->momentum();
-		particles[index]->Get(cdchits);
-		mass = particles[index]->mass();
+	if(dataname=="DChargedTrack"){
+		vector<const DChargedTrack*> chargedtracks;
+		loop->Get(chargedtracks, tag.c_str());
+		if(index>=chargedtracks.size())return;
+		q = chargedtracks[index]->hypotheses[0]->charge();
+		pos = chargedtracks[index]->hypotheses[0]->position();
+		mom = chargedtracks[index]->hypotheses[0]->momentum();
+		chargedtracks[index]->hypotheses[0]->Get(cdchits);
+		mass = chargedtracks[index]->hypotheses[0]->mass();
 	}
 
 	if(dataname=="DTrackTimeBased"){
