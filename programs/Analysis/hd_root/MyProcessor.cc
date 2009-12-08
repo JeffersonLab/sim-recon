@@ -42,8 +42,8 @@ jerror_t MyProcessor::init(void)
 
 	// Create tree
 
-	ROOTtree = new TTree("ROOTtree","HDGeant Hits Tree");
-	cout<<"Created Root Tree ..."<<endl;
+	//ROOTtree = new TTree("ROOTtree","HDGeant Hits Tree");
+	//cout<<"Created Root Tree ..."<<endl;
 
 	return NOERROR;
 }
