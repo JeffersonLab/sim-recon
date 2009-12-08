@@ -18,7 +18,7 @@ class DTrackWireBased:public DKinematicData{
 	public:
 		JOBJECT_PUBLIC(DTrackWireBased);
 		
-		oid_t candidateid;	///< id of DTrackCandidate this came from
+		oid_t candidateid;	///< which DTrackCandidate this came from
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit
 
@@ -29,7 +29,7 @@ class DTrackWireBased:public DKinematicData{
 
 		void toStrings(vector<pair<string,string> > &items)const{
 			DKinematicData::toStrings(items);
-			AddString(items, "candidateid", "0x%x", candidateid);
+			AddString(items, "candidate", "%d", candidateid);
 			AddString(items, "chisq", "%f", chisq);
 			AddString(items, "Ndof", "%d", Ndof);
 		}

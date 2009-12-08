@@ -54,14 +54,10 @@ class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
 
 		int DEBUG_LEVEL;
-		double MOMENTUM_CUT_FOR_DEDX;
 		DTrackFitter *fitter;
 		vector<DReferenceTrajectory*> rtv;
 		vector<double> mass_hypotheses;
 
-		DTrackWireBased* MakeDTrackWireBased(const DTrackCandidate *candidate);
-		double GetFOM(DTrackWireBased *dtrack);
-		double GetRangeOutFOM(DTrackWireBased *dtrack);
 		void FilterDuplicates(void);
 		
 };

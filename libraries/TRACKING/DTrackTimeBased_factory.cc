@@ -54,23 +54,6 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		return RESOURCE_UNAVAILABLE;
 	}
 
-	string MASS_HYPOTHESES = "0.13957, 0.93827";
-	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES", MASS_HYPOTHESES);
-	
-	// Reserve the first mass hypothesis slot for the one decided on by the wire-base fit
-	mass_hypotheses.push_back(0.0);
-	
-	// Parse MASS_HYPOTHESES string to make list of masses to try
-	if(MASS_HYPOTHESES.length()>0){
-		string &str = MASS_HYPOTHESES;
-		unsigned int cutAt;
-		while( (cutAt = str.find(",")) != (unsigned int)str.npos ){
-			if(cutAt > 0)mass_hypotheses.push_back(atof(str.substr(0,cutAt).c_str()));
-			str = str.substr(cutAt+1);
-		}
-		if(str.length() > 0)mass_hypotheses.push_back(atof(str.c_str()));
-	}
-
 	return NOERROR;
 }
 
@@ -79,135 +62,51 @@ jerror_t DTrackTimeBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 //------------------
 jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 {
-	if(!fitter)return NOERROR;
-	
-	// Get candidates and hits
-	vector<const DTrackWireBased*> tracks;
-	loop->Get(tracks);
-	
-	// Deallocate some reference trajectories occasionally
-	unsigned int rts_to_keep = 5;
-	if(tracks.size()>rts_to_keep)rts_to_keep=tracks.size();
-	for(unsigned int i=rts_to_keep; i<rtv.size(); i++)delete rtv[i];
-	if(rts_to_keep<rtv.size())rtv.resize(rts_to_keep);
-	
-	// Loop over candidates
-	for(unsigned int i=0; i<tracks.size(); i++){
-		const DTrackWireBased *track = tracks[i];
+  if(!fitter)return NOERROR;
+  
+  // Get candidates and hits
+  vector<const DTrackWireBased*> tracks;
+  loop->Get(tracks);
+  if (tracks.size()==0) return NOERROR;
+  
+  // Get TOF points
+  vector<const DTOFPoint*> tof_points;
+  eventLoop->Get(tof_points);
+  
+  // Get BCAL and FCAL clusters
+  vector<const DBCALPhoton*>bcal_clusters;
+  eventLoop->Get(bcal_clusters);
+  vector<const DFCALPhoton*>fcal_clusters;
+  //eventLoop->Get(fcal_clusters);
 
-		// Make sure there are enough DReferenceTrajectory objects
-		while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
-		DReferenceTrajectory *rt = rtv[_data.size()];
+  //Temporary
+  mStartTime=0.;
+  mStartDetector=SYS_NULL;
+  
+  // Loop over candidates
+  for(unsigned int i=0; i<tracks.size(); i++){
+    const DTrackWireBased *track = tracks[i];
+    
+    // Make sure there are enough DReferenceTrajectory objects
+    while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
+    DReferenceTrajectory *rt = rtv[_data.size()];
+    
+    if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting time based fit with mass: "<< track->mass()<<endl;}
+    
+    // Do the fit
+    fitter->SetFitType(DTrackFitter::kTimeBased);
+    DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*track, rt, loop, track->mass());
 
-		// Copy in the mass from the wire-based fit as the first one to try
-		mass_hypotheses[0] = track->mass();
-
-		// Loop over potential particle masses until one is found that gives a chisq/Ndof<3.0
-		// If none does, then use the one with the smallest chisq
-		DTrackTimeBased *best_track = NULL;
-		double best_fom = 0.0;
-		for(unsigned int j=0; j<mass_hypotheses.size(); j++){
-		
-			// If best_track is set then check if the fom is large enough
-			// that we can skip additional hypotheses
-			//if(best_fom>1.0E-5)break;
-		
-			// Don't try the same mass twice!
-			if(j!=0 && mass_hypotheses[j]==mass_hypotheses[0])continue;
-
-			if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting time based fit with mass: "<<mass_hypotheses[j]<<endl;}
-
-			// Do the fit
-			fitter->SetFitType(DTrackFitter::kTimeBased);
-			DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*track, rt, loop, mass_hypotheses[j]);
-			DTrackTimeBased *dtrack = NULL;
-			switch(status){
-				case DTrackFitter::kFitNotDone:
-					_DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
-				case DTrackFitter::kFitFailed:
-					continue;
-					break;
-				case DTrackFitter::kFitSuccess:
-				case DTrackFitter::kFitNoImprovement:
-					dtrack = MakeDTrackTimeBased(track);
-					break;
-			}
-			
-			// Avoid division by zero below
-			if(dtrack->Ndof < 1){
-				if(DEBUG_LEVEL>1)_DBG_<<"-- new track with mass "<<mass_hypotheses[j]<<" has Ndof="<<dtrack->Ndof<<". Dropping ..."<<endl;
-				delete dtrack;
-				continue;
-			}
-			
-			// If best_track hasn't been set, then this is the best track!
-			if(!best_track){
-				best_track = dtrack;
-				best_fom = GetFOM(best_track);
-				if(DEBUG_LEVEL>1)_DBG_<<"-- first successful fit this candidate with mass: "<<mass_hypotheses[j]<<" (chisq/Ndof="<<(best_track->chisq/best_track->Ndof)<<") fom="<<best_fom<<endl;
-				// Break if the momentum is sufficiently high for dEdx to have no 
-				// discriminating power between particle types. Also break if the charge 
-				// is negative -- we assume that we don't need to worry about anti-protons
-				if (best_track->charge()<0 || best_track->momentum().Mag()>MOMENTUM_CUT_FOR_DEDX) break;
-				// Otherwise go on to the next guess.
-
-				continue;
-			}
-			
-			// If the fit wasn't sucessful, try next mass
-			if(!dtrack){
-				if(DEBUG_LEVEL>1)_DBG_<<"-- no DTrack made for track with mass "<<mass_hypotheses[j]<<endl;
-				continue;
-			}
-			// OK, now we have to make a choice as to which track to keep. 
-			// For low momentum tracks, dEdx in the chambers can be used to distinguish protons
-			// from pions.
-			// Form a figure of merit based on the expected dEdx for the current hypothesis.
-			double fom = GetFOM(dtrack);
-			
-			// There can be only one! (Highlander)
-			if(fom > best_fom){
-				if(DEBUG_LEVEL>1)_DBG_<<"-- new best track with mass "<<mass_hypotheses[j]<<" (old chisq/Ndof="<<(best_track->chisq/best_track->Ndof)<<" , new chisq/Ndof="<<(dtrack->chisq/dtrack->Ndof)<<") (old fom="<<best_fom<<" , new fom="<<fom<<")"<<endl;
-				delete best_track;
-				best_track = dtrack;
-				best_fom = fom;
-			}else{
-				if(DEBUG_LEVEL>1)_DBG_<<"-- keeping best track with mass "<<best_track->mass()<<" (old chisq/Ndof="<<(best_track->chisq/best_track->Ndof)<<" , new chisq/Ndof="<<(dtrack->chisq/dtrack->Ndof)<<") (old fom="<<best_fom<<" , new fom="<<fom<<")"<<endl;
-				delete dtrack;
-			}
-		}
-
-		// If a track fit was successfull, then keep it
-		if(best_track)_data.push_back(best_track);
-	}
-
-	return NOERROR;
-}
-
-//------------------
-// erun
-//------------------
-jerror_t DTrackTimeBased_factory::erun(void)
-{
-	return NOERROR;
-}
-
-//------------------
-// fini
-//------------------
-jerror_t DTrackTimeBased_factory::fini(void)
-{
-	for(unsigned int i=0; i<rtv.size(); i++)delete rtv[i];
-	rtv.clear();
-
-	return NOERROR;
-}
-
-//------------------
-// MakeDTrackTimeBased
-//------------------
-DTrackTimeBased* DTrackTimeBased_factory::MakeDTrackTimeBased(const DTrackWireBased *track)
-{
+    // Check the status value from the fit
+    switch(status){
+    case DTrackFitter::kFitNotDone:
+      _DBG_<<"Fitter returned kFitNotDone. This should never happen!!"<<endl;
+    case DTrackFitter::kFitFailed:
+      continue;
+      break;
+    case DTrackFitter::kFitSuccess:
+    case DTrackFitter::kFitNoImprovement:
+      {
 	// Allocate a DReferenceTrajectory object if needed.
 	// These each have a large enough memory footprint that
 	// it causes noticable performance problems if we allocated
@@ -216,7 +115,8 @@ DTrackTimeBased* DTrackTimeBased_factory::MakeDTrackTimeBased(const DTrackWireBa
 	// They are deleted in the fini method.
 	while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
 	DReferenceTrajectory *rt = rtv[_data.size()];
-
+	
+	// Create a new time-based track object
 	DTrackTimeBased *timebased_track = new DTrackTimeBased;
 	
 	// Copy over DKinematicData part
@@ -240,35 +140,204 @@ DTrackTimeBased* DTrackTimeBased_factory::MakeDTrackTimeBased(const DTrackWireBa
 	
 	// Add DTrack object as associate object
 	timebased_track->AddAssociatedObject(track);
-	
-	return timebased_track;
+
+	// Add figure-of-merit based on chi2, dEdx and matching to outer 
+	// detectors
+	timebased_track->FOM=GetFOM(timebased_track,bcal_clusters,
+				    fcal_clusters,tof_points);
+
+	_data.push_back(timebased_track);
+	break;
+      }
+    default:
+      break;
+    }
+  }
+  
+  return NOERROR;
+}
+
+//------------------
+// erun
+//------------------
+jerror_t DTrackTimeBased_factory::erun(void)
+{
+	return NOERROR;
+}
+
+//------------------
+// fini
+//------------------
+jerror_t DTrackTimeBased_factory::fini(void)
+{
+	for(unsigned int i=0; i<rtv.size(); i++)delete rtv[i];
+	rtv.clear();
+
+	return NOERROR;
 }
 
 //------------------
 // GetFOM
 //------------------
-double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack)
+// Calculate a figure-of-merit indicating the probability that the track 
+// is a particle with the hypothesized mass based on the chi2 of the fit,
+// the dEdx in the chambers, and the time-of-flight to the outer detectors.
+double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
+			      vector<const DBCALPhoton*>bcal_clusters,
+			      vector<const DFCALPhoton*>fcal_clusters,
+			      vector<const DTOFPoint*>tof_points)
 {
+  // First ingredient in the figure-of-merit is the chi2 for the track fit
+  double fit_prob=TMath::Prob(dtrack->chisq,dtrack->Ndof);
+
+  // Next compute dEdx in the chambers for this track
   double dedx,mean_path_length,p_avg;
   unsigned int num_hits=0;
+  double dedx_prob=1.;
   if (fitter->GetdEdx(dtrack->rt,dedx,mean_path_length,p_avg,num_hits)
       ==NOERROR){
     dtrack->setdEdx(dedx);
     double dedx_sigma=fitter->GetdEdxSigma(num_hits,mean_path_length);
     double dedx_most_probable=fitter->GetdEdx(p_avg,dtrack->rt->GetMass(),mean_path_length);
+    double dedx_diff=dedx-dedx_most_probable;
     
-    //figure of merit
-    double prob=TMath::Prob(fitter->GetChisq(),fitter->GetNdof());
-    return ( prob*dedx_sigma/fabs(dedx/dedx_most_probable-1.) );
+    //figure of merit    
+    dedx_prob=exp(-dedx_diff*dedx_diff/2./dedx_sigma/dedx_sigma);
   }
   
-  // If we got here, GetdEdx failed for this track
-  dtrack->setdEdx(0.);
+  // Next match to outer detectors
+  double tof_prob=MatchToTOF(dtrack,tof_points);
+  double bcal_prob=MatchToBCAL(dtrack,bcal_clusters);
+  double match_prob=1.;
+  if (tof_prob>0) match_prob=tof_prob;
+  else if (bcal_prob>0.) match_prob=bcal_prob;
+
+  // Return a combined probability that includes the chi2 information, the 
+  // dEdx result and the tof result where available.
+  return fit_prob*dedx_prob*match_prob;
+}
+
+// Loop over TOF points, looking for minimum distance of closest approach
+// of track to a point in the TOF and using this to check for a match. 
+// If a match is found, return the probability that the mass hypothesis is 
+// correct based on the time-of-flight calculation.
+double DTrackTimeBased_factory::MatchToTOF(DTrackTimeBased *track,
+				       vector<const DTOFPoint*>tof_points){
+  if (tof_points.size()==0) return 0.;
+
+  double dmin=10000.;
+  unsigned int tof_match_id=0;
+  // loop over tof points
+  for (unsigned int k=0;k<tof_points.size();k++){
+    // Get the TOF cluster position and normal vector for the TOF plane
+    DVector3 tof_pos=tof_points[k]->pos;
+    DVector3 norm(0,0,1);
+    DVector3 proj_pos;
+    
+    // Find the distance of closest approach between the track trajectory
+    // and the tof cluster position, looking for the minimum
+    double my_s=0.;
+    track->rt->GetIntersectionWithPlane(tof_pos,norm,proj_pos,&my_s);
+    double d=(tof_pos-proj_pos).Mag();
+    if (d<dmin){
+      dmin=d;
+      mPathLength=my_s;
+      tof_match_id=k;
+    }
+  }
+  
+  // Check for a match 
+  double p=track->momentum().Mag();
+  double match_sigma=0.75+1./p/p;
+  double prob=erfc(dmin/match_sigma/sqrt(2.));
+  if (prob>0.05){
+    mDetector=SYS_TOF;
+
+    // Add DTOFPoint object as associate object
+    track->AddAssociatedObject(tof_points[tof_match_id]);
+
+    // Calculate beta and use it to guess PID
+    mEndTime=tof_points[tof_match_id]->t;
+    double beta=mPathLength/SPEED_OF_LIGHT/mEndTime;
+    double mass=track->mass();  
+    double sigma_beta=0.06;
+    double beta_hyp=1./sqrt(1.+mass*mass/p/p);
+    double beta_diff=beta-beta_hyp;
+
+    // probability
+    return exp(-beta_diff*beta_diff/2./sigma_beta/sigma_beta);   
+  }
+    
   return 0.;
 }
 
+
+// Loop over bcal clusters, looking for minimum distance of closest approach
+// of track to a cluster and using this to check for a match.  Return the 
+// probability that the particle is has the hypothesized mass if there is a 
+// match.
+double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
+					vector<const DBCALPhoton*>bcal_clusters){ 
+
+  if (bcal_clusters.size()==0) return 0.;
+
+  //Loop over bcal clusters
+  double dmin=10000.;
+  unsigned int bcal_match_id=0;
+  double dphi=1000.,dz=1000.;
+  for (unsigned int k=0;k<bcal_clusters.size();k++){
+    // Get the BCAL cluster position and normal
+    DVector3 bcal_pos=bcal_clusters[k]->showerPosition(); 
+    DVector3 proj_pos;
+    
+    // Find the distance of closest approach between the track trajectory
+    // and the bcal cluster position, looking for the minimum
+    double my_s=0.;
+    if (track->rt->GetIntersectionWithRadius(bcal_pos.Perp(),proj_pos,&my_s)
+	!=NOERROR) continue;
+    double d=(bcal_pos-proj_pos).Mag();
+    if (d<dmin){
+      dmin=d;
+      mPathLength=my_s;
+      bcal_match_id=k; 
+      dz=proj_pos.z()-bcal_pos.z();
+      dphi=proj_pos.Phi()-bcal_pos.Phi();
+    }
+  }
+  
+  // Check for a match 
+  double p=track->momentum().Mag();
+  //double match_sigma=2.+1./(p+0.1)/(p+0.1); //empirical
+  //double prob=erfc(dmin/match_sigma/sqrt(2.));
+  //if (prob>0.05)
+  dphi+=0.002+8.314e-3/(p+0.3788)/(p+0.3788);
+  double phi_sigma=0.025+5.8e-4/p/p/p;
+  if (fabs(dz)<10. && fabs(dphi)<3.*phi_sigma)
+    {
+    mDetector=SYS_BCAL;
+  
+    // Add DBCALPhoton object as associate object
+    track->AddAssociatedObject(bcal_clusters[bcal_match_id]);
+    
+    // Calculate beta and use it to guess PID
+    mEndTime=bcal_clusters[bcal_match_id]->showerTime();
+    double beta= mPathLength/SPEED_OF_LIGHT/mEndTime;   
+    double mass=track->mass();  
+    double sigma_beta=0.06;
+    double beta_hyp=1./sqrt(1.+mass*mass/p/p);
+    double beta_diff=beta-beta_hyp;
+    
+    // probability
+    return exp(-beta_diff*beta_diff/2./sigma_beta/sigma_beta);   
+    }
+
+  return 0.;
+}
+
+
+
 //------------------
-// GetRangeOutFOM
+// GetRangeOutFOM - this routine is not currently being used...
 //------------------
 double DTrackTimeBased_factory::GetRangeOutFOM(DTrackTimeBased *dtrack)
 {

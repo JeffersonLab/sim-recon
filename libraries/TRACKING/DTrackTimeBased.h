@@ -20,6 +20,7 @@ class DTrackTimeBased:public DKinematicData{
 		JOBJECT_PUBLIC(DTrackTimeBased);
 		
 		oid_t trackid;			///< id of DTrack this came from
+		oid_t candidateid;   /// < id of DTrackCandidate corresponding to this track
 		float chisq;			///< Chi-squared for the track (not chisq/dof!)
 		int Ndof;				///< Number of degrees of freedom in the fit
 		//float dE;				///< Total energy deposited in straws
@@ -28,11 +29,14 @@ class DTrackTimeBased:public DKinematicData{
 		//float err_ds;			///< Error on value of ds
 		const DReferenceTrajectory *rt; ///< pointer to reference trjectory representing this track
 
+		double FOM;
 		void toStrings(vector<pair<string,string> > &items)const{
 			DKinematicData::toStrings(items);
 			AddString(items, "trackid", "0x%x", trackid);
+			AddString(items, "candidateid","%d",candidateid);
 			AddString(items, "chisq", "%f", chisq);
 			AddString(items, "Ndof", "%d", Ndof);
+			AddString(items, "FOM", "%f",FOM);
 		}
 };
 
