@@ -25,11 +25,11 @@ using namespace std;
 using namespace jana;
 
 #include <PID/DKinematicData.h>
-#include <PID/DParticle.h>
+#include <PID/DChargedTrack.h>
 #include <PID/DPhoton.h>
 #include <PID/DBeamPhoton.h>
 #include <TRACKING/DMCThrown.h>
-
+#include <TRACKING/DTrackTimeBased.h>
 #include "Particle.h"
 
 // Routine used to create our DEventProcessor
@@ -108,12 +108,12 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DBeamPhoton*> beam_photons;
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DPhoton*> photons;
-	vector<const DParticle*> particles;
+	vector<const DChargedTrack*> chargedtracks;
 
 	loop->Get(beam_photons);
 	loop->Get(mcthrowns);
 	loop->Get(photons);
-	loop->Get(particles);
+	loop->Get(chargedtracks);
 
 	// Make TLorentzVector for beam photon
 	TLorentzVector beam_photon = TLorentzVector(0.0, 0.0, 9.0, 9.0);
@@ -135,35 +135,20 @@ jerror_t DEventProcessor_phys_tree::evnt(JEventLoop *loop, int eventnumber)
 
 	// Loop over charged particles turning them into TLorentzVector objects
 	// and sorting them into various containers declared just above.
-	for(unsigned int j=0; j<particles.size(); j++){
-		const DParticle *part = particles[j];
+	for(unsigned int j=0; j<chargedtracks.size(); j++){
+		if(chargedtracks[j]->hypotheses.size()==0)continue;
+		const DTrackTimeBased *track = chargedtracks[j]->hypotheses[0];
 		
-		if(part->charge()==0.0)continue; // ignore photons in DParticle list
-
-		// Initially assume it's a pion.
-		int type = part->charge()<0.0 ? 9:8; // initialize to pi-(=9) or pi+(=8)
-
-		// If this is a positively charged particle, loop over the thrown protons
-		// and see if this matches the momentum to within 10%. If so,
-		// set the type of this particle to be a proton
-		if(part->charge()>0){
-			const TVector3 recon = part->momentum();
-			for(unsigned int k=0; k<mcthrowns.size(); k++){
-				if(mcthrowns[k]->type!=14)continue; // only interested in thrown protons
-				const TVector3 thr = mcthrowns[k]->momentum();
-				double dp_over_p = (recon - thr).Mag()/thr.Mag();
-				if(fabs(dp_over_p)<0.1){
-					type = 14;
-					break;
-				}
-			}
-		} 
+		// Rely on the mass of the track to decide the type. Limit it to 
+		// pions and protons for now.
+		int type = track->charge()<0.0 ? 9:8; // initialize to pi-(=9) or pi+(=8)
+		if(fabs(track->mass() - 0.93827)<0.100)type=14;
 
 		// Add TLorentzVector to appropriate container based on charged particle type
 		switch(type){
-			case 8:	rec_piplus.push_back(MakeTLorentz(part, 0.13957));		break;
-			case 9:	rec_piminus.push_back(MakeTLorentz(part, 0.13957));	break;
-			case 14:	rec_protons.push_back(MakeTLorentz(part, 0.93827));	break;
+			case 8:	rec_piplus.push_back(MakeTLorentz(track, 0.13957));		break;
+			case 9:	rec_piminus.push_back(MakeTLorentz(track, 0.13957));	break;
+			case 14:	rec_protons.push_back(MakeTLorentz(track, 0.93827));	break;
 		}
 	} // particles
 
