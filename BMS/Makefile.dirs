@@ -1,6 +1,6 @@
 .PHONY: $(DIRS)
 
-all install clean pristine relink: $(DIRS)
+all install depclean clean pristine relink: $(DIRS)
 
 $(DIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)

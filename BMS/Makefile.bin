@@ -7,7 +7,7 @@
 # Things common to both library and executable builds live in Makefile.common
 include $(HALLD_HOME)/src/BMS/Makefile.common
 
-.PHONY: mkdirs clean env
+.PHONY: mkdirs depclean clean env
 
 ifeq ($(LD), ld)
  LD = $(CXX)
@@ -66,6 +66,9 @@ install: all
 	install -p $(EXE_PATHNAMES) $(INSTALL_DIR)/bin/$(BMS_OSNAME)
 
 relink: exec_clean install
+
+depclean:
+	rm -rf $(DEP_DIR) $(DICT_FILES) *.o *.bak *~ core last.kumac*  #*#
 
 clean:
 	set nonomatch; rm -rf $(BIN_DIR) $(OBJ_DIR) $(DEP_DIR) $(DICT_FILES) *.o *.bak *~ core last.kumac*  #*# 

@@ -4,11 +4,11 @@
 
 DIRS += gelhad hitutil
 
-.PHONY: all install clean pristine relink env current_dir
+.PHONY: all install depclean clean pristine relink env current_dir
 
 .PHONY: $(DIRS)
 
-all install clean pristine relink env: $(DIRS) current_dir
+all install depclean clean pristine relink env: $(DIRS) current_dir
 
 $(DIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)

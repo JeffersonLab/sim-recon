@@ -44,7 +44,9 @@ distclean-compile:
 	-rm -f *.tab.c
 
 pristine: clean
-	
+
+depclean:
+	@echo "Nothing to do for make depclean in xstream"
 
 clean:
 	rm -f *.o *.a $(HALLD_HOME)/lib/$(OSNAME)/$(lib_LIBRARIES)

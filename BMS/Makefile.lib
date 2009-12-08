@@ -6,7 +6,7 @@
 # Things common to both library and executable builds live in Makefile.common
 include $(HALLD_HOME)/src/BMS/Makefile.common
 
-.PHONY: all mkdirs clean env
+.PHONY: all mkdirs depclean clean env
 
 VPATH = $(DEP_DIR)
 
@@ -43,6 +43,9 @@ install: all
 uninstall: 
 	rm -f $(INSTALL_DIR)/lib/$(BMS_OSNAME)/$(shell basename $(LIBNAME))
 	rm -rf $(INSTALL_DIR)/include/$(MODULE_NAME)
+
+depclean:
+	rm -rf $(DEP_DIR) $(DICT_FILES) *.o *.bak *~ core last.kumac*  #*#
 
 clean:
 	rm -rf $(LIB_DIR) $(DEP_DIR) $(DICT_FILES) *.o *.bak *~ core last.kumac*  #*#

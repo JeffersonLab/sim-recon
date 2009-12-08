@@ -7,6 +7,6 @@ install:
 	mkdir -p $(INSTALL_DIR)/include
 	install -p *.h $(INSTALL_DIR)/include
 
-clean pristine:
-	@echo clean and pristine targets bypassed in include
+depclean clean pristine:
+	@echo depclean clean and pristine targets bypassed in include
 

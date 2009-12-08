@@ -5,6 +5,9 @@ all: hddm_s.h hddm_s.c
 install: all
 	make -f Makefile.static install
 
+depclean:
+	make -f Makefile.static depclean
+
 clean:
 
 	make -f Makefile.static clean

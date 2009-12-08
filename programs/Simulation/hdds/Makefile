@@ -85,6 +85,8 @@ clean:
 	rm -f *.o core *.depend hdds-geant hdds-root hdds-mcfast hdds-root_h \
 		hddsroot.h hddsroot.C hddsGeant3.F
 
+depclean:
+	@echo "Nothing to do for make depclean in hdds"
 
 pristine: clean
 

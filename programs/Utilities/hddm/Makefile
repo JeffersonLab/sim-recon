@@ -83,5 +83,8 @@ test: hddm-c hddm-xml test.xml
 clean:
 	/bin/rm -f *.o core *.depend
 
+depclean:
+	@echo "Nothing to do for make depclean in hddm"
+
 pristine: clean
 	
