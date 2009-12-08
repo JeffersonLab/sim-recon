@@ -141,6 +141,7 @@
       integer infile(20)
       integer outfile(20)
       integer bfield_type(20)
+      integer bfield_map(20)
       common /inputFile/ iskip,infile,outfile
       data iskip/0/
       data infile/20*0/
@@ -151,6 +152,7 @@
       common /beamPars/ beamE0,beamEpeak,beamEmin,radColDist
       data beamE0,beamEpeak,beamEmin,radColDist/0,0,0,76.0/
       data bfield_type/20*0/
+      data bfield_map/20*0/
 
 c The following parameters are declared in hdtrackparams.inc above.
       data nosecondaries/0/
@@ -216,7 +218,8 @@ C..geant..
       call ffkey('skip',iskip,1,'INTEGER')
       call ffkey('outfile',outfile,20,'MIXED')
       call ffkey('beam',beamE0,4,'REAL')
-      call ffkey('bfield', bfield_type,20,'MIXED')
+      call ffkey('bfieldmap', bfield_map,20,'MIXED')
+      call ffkey('bfieldtype', bfield_type,20,'MIXED')
       call ffkey('nosecondaries', nosecondaries,1,'INTEGER')
       call ffkey('trajectories', storetraj,1,'INTEGER')
       call ffkey('plog', plog_particle_gun,1,'INTEGER')
@@ -334,7 +337,7 @@ C..geant..
 *
       call HDDSgeant3
       call Goptimize
-		call initcalibdb(bfield_type)
+		call initcalibdb(bfield_type, bfield_map)
 *
 *             Open the HBOOK file for output
 *

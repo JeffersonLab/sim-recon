@@ -20,10 +20,10 @@ static JCalibration *jcalib=NULL;
 //----------------
 // initcalibdb_
 //----------------
-void initcalibdb_(char *bfield_type)
+void initcalibdb_(char *bfield_type, char *bfield_map)
 {
 	ios::sync_with_stdio(true);
-	
+
 	// Create a JCalibration object using the JANA_CALIB_URL environment variable
 	// Right now, we hardwire this to use JCalibrationFile.
 	const char *url = getenv("JANA_CALIB_URL");
@@ -40,16 +40,23 @@ void initcalibdb_(char *bfield_type)
 	// of the string. Here, we replace terminate the string with
 	// a null to eliminate that white space.
 	while(strlen(bfield_type)>0 && bfield_type[strlen(bfield_type)-1]==' ')bfield_type[strlen(bfield_type)-1] = 0;
+	while(strlen(bfield_map)>0 && bfield_map[strlen(bfield_map)-1]==' ')bfield_map[strlen(bfield_map)-1] = 0;
 	
 	// Read in the field map from the appropriate source
 	if(bfield_type[0] == 0)strcpy(bfield_type, "CalibDB");
 	string bfield_type_str(bfield_type);
 	if(bfield_type_str=="CalibDB"){
-		Bmap = new DMagneticFieldMapCalibDB(jcalib);
+		if(strlen(bfield_map))
+			Bmap = new DMagneticFieldMapCalibDB(jcalib, bfield_map);
+		else
+			Bmap = new DMagneticFieldMapCalibDB(jcalib);
 	}else if(bfield_type_str=="Const"){
 		Bmap = new DMagneticFieldMapConst(jcalib);
 	}else if(bfield_type=="Spoiled"){
-		Bmap = new DMagneticFieldMapSpoiled(jcalib);
+		if(strlen(bfield_map))
+			Bmap = new DMagneticFieldMapSpoiled(jcalib, bfield_map);
+		else
+			Bmap = new DMagneticFieldMapSpoiled(jcalib);
 	}else{
 		_DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type_str<<"\" !!"<<endl;
 		exit(-1);
