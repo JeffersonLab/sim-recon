@@ -176,7 +176,7 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	  track->rt = rt;
 	  track->chisq = fitter->GetChisq();
 	  track->Ndof = fitter->GetNdof();
-	  track->candidateid = candidate->id;
+	  track->candidateid = i+1;
 	
 	  // Add hits used as associated objects
 	  vector<const DCDCTrackHit*> cdchits = fitter->GetCDCFitHits();

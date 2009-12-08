@@ -129,6 +129,7 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	timebased_track->chisq = fitter->GetChisq();
 	timebased_track->Ndof = fitter->GetNdof();
 	timebased_track->trackid = track->id;
+	timebased_track->candidateid=track->candidateid;
 
 	// Add hits used as associated objects
 	const vector<const DCDCTrackHit*> &cdchits = fitter->GetCDCFitHits();
