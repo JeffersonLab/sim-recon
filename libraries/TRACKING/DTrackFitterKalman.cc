@@ -3601,6 +3601,9 @@ jerror_t DTrackFitterKalman::KalmanCentral(double anneal_factor,
     old_doca=doca;
   } 
 
+  // If chisq is still zero after the fit, something went wrong...
+  if (chisq<EPS) return UNRECOVERABLE_ERROR;
+
   if (DEBUG_LEVEL>0)
     cout 
       << " p " 
@@ -3814,6 +3817,10 @@ jerror_t DTrackFitterKalman::KalmanForward(double anneal_factor, DMatrix &S,
     }
 
   }
+  
+  // If chisq is still zero after the fit, something went wrong...
+  if (chisq<EPS) return UNRECOVERABLE_ERROR;
+
   chisq*=anneal_factor;
 
   // Final position for this leg
