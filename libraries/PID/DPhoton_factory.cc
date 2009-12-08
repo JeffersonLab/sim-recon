@@ -57,7 +57,7 @@ DPhoton_factory::DPhoton_factory()
 jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 {
 
-	vector<const DParticle*> chargedswum;
+	vector<const DTrackTimeBased*> chargedswum;
 	eventLoop->Get(chargedswum);
 // loop over FCAL photons    
 	vector<const DFCALPhoton*> fcalPhotons;
@@ -208,7 +208,7 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject
 
 // Return the distance in azimuthal angle and position Z from the closest charged track.
 vector<double>  
-DPhoton_factory::dFromSwumChargeMC(const DPhoton* photon, vector<const DParticle*>  chargedswum) 
+DPhoton_factory::dFromSwumChargeMC(const DPhoton* photon, vector<const DTrackTimeBased*>  chargedswum) 
 {
 
  DVector3 photonPoint =photon->getPositionCal();
@@ -229,7 +229,7 @@ DPhoton_factory::dFromSwumChargeMC(const DPhoton* photon, vector<const DParticle
    DMagneticFieldMap *bfield = dapp->GetBfield();
 
 
- for( vector<const DParticle*>::const_iterator swum = chargedswum.begin();
+ for( vector<const DTrackTimeBased*>::const_iterator swum = chargedswum.begin();
 	     swum != chargedswum.end(); ++swum ){
    if ( (**swum).charge() == 0 ) continue;
 

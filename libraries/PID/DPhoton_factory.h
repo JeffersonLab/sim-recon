@@ -44,7 +44,7 @@ class DPhoton_factory:public JFactory<DPhoton>{
                 DPhoton* makeFCalPhoton(const DFCALPhoton* gamma, const JObject::oid_t id); 
                 DPhoton* makeBCalPhoton(const DBCALPhoton* gamma, const JObject::oid_t id); 
 
-		vector<double> dFromSwumChargeMC(const DPhoton* photon, vector<const DParticle*> chargedswum);
+		vector<double> dFromSwumChargeMC(const DPhoton* photon, vector<const DTrackTimeBased*> chargedswum);
 };
 
 
