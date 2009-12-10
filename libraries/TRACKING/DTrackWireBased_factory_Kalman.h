@@ -57,7 +57,8 @@ class DTrackWireBased_factory_Kalman:public jana::JFactory<DTrackWireBased>{
 		DTrackFitter *fitter;
 		const DTrackHitSelector *hitselector;
 		vector<DReferenceTrajectory*> rtv;
-		vector<double> mass_hypotheses;
+		vector<double> mass_hypotheses_positive;
+		vector<double> mass_hypotheses_negative;
 
 		void FilterDuplicates(void);	
 		 

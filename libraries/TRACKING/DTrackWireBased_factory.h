@@ -56,7 +56,8 @@ class DTrackWireBased_factory:public jana::JFactory<DTrackWireBased>{
 		int DEBUG_LEVEL;
 		DTrackFitter *fitter;
 		vector<DReferenceTrajectory*> rtv;
-		vector<double> mass_hypotheses;
+		vector<double> mass_hypotheses_positive;
+		vector<double> mass_hypotheses_negative;
 
 		void FilterDuplicates(void);
 		

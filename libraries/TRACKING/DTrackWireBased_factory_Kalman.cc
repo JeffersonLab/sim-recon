@@ -22,6 +22,7 @@ using namespace std;
 #include <TRACKING/DReferenceTrajectory.h>
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
+#include <SplitString.h>
 
 using namespace jana;
 
@@ -99,21 +100,16 @@ jerror_t DTrackWireBased_factory_Kalman::brun(jana::JEventLoop *loop, int runnum
 		return RESOURCE_UNAVAILABLE;
 	}
 	
-	string MASS_HYPOTHESES = "0.13957, 0.93827";
-	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES", MASS_HYPOTHESES);
+	string MASS_HYPOTHESES_POSITIVE = "0.13957, 0.93827";
+	string MASS_HYPOTHESES_NEGATIVE = "0.13957";
+	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES_POSITIVE", MASS_HYPOTHESES_POSITIVE);
+	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES_NEGATIVE", MASS_HYPOTHESES_NEGATIVE);
 	
-	// Parse MASS_HYPOTHESES string to make list of masses to try
-	if(MASS_HYPOTHESES.length()>0){
-		string &str = MASS_HYPOTHESES;
-		unsigned int cutAt;
-		while( (cutAt = str.find(",")) != (unsigned int)str.npos ){
-			if(cutAt > 0)mass_hypotheses.push_back(atof(str.substr(0,cutAt).c_str()));
-			str = str.substr(cutAt+1);
-		}
-		if(str.length() > 0)mass_hypotheses.push_back(atof(str.c_str()));
-	}else{
-		mass_hypotheses.push_back(0.0); // If empty string is specified, assume they want massless particle
-	}
+	// Parse MASS_HYPOTHESES strings to make list of masses to try
+	SplitString(MASS_HYPOTHESES_POSITIVE, mass_hypotheses_positive, ",");
+	SplitString(MASS_HYPOTHESES_NEGATIVE, mass_hypotheses_negative, ",");
+	if(mass_hypotheses_positive.size()==0)mass_hypotheses_positive.push_back(0.0); // If empty string is specified, assume they want massless particle
+	if(mass_hypotheses_negative.size()==0)mass_hypotheses_negative.push_back(0.0); // If empty string is specified, assume they want massless particle
 
 	return NOERROR;
 }
@@ -142,6 +138,14 @@ jerror_t DTrackWireBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
     // Make sure there are enough DReferenceTrajectory objects
     while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
     DReferenceTrajectory *rt = rtv[_data.size()];
+    
+	 // Choose list of mass hypotheses based on charge of candidate
+    vector<double> mass_hypotheses;
+	 if(candidate->charge()<0.0){
+		mass_hypotheses = mass_hypotheses_negative;
+	 }else{
+		mass_hypotheses = mass_hypotheses_positive;
+	 }
     
     // Loop over potential particle masses
     for(unsigned int j=0; j<mass_hypotheses.size(); j++){
