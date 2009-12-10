@@ -94,11 +94,11 @@ jerror_t DTrackWireBased_factory::brun(jana::JEventLoop *loop, int runnumber)
 		return RESOURCE_UNAVAILABLE;
 	}
 	
-	string MASS_HYPOTHESES_POSITIVE = "0.13957, 0.93827";
+	string MASS_HYPOTHESES_POSITIVE = "0.13957,0.93827";
 	string MASS_HYPOTHESES_NEGATIVE = "0.13957";
 	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES_POSITIVE", MASS_HYPOTHESES_POSITIVE);
 	gPARMS->SetDefaultParameter("TRKFIT:MASS_HYPOTHESES_NEGATIVE", MASS_HYPOTHESES_NEGATIVE);
-	
+
 	// Parse MASS_HYPOTHESES strings to make list of masses to try
 	SplitString(MASS_HYPOTHESES_POSITIVE, mass_hypotheses_positive, ",");
 	SplitString(MASS_HYPOTHESES_NEGATIVE, mass_hypotheses_negative, ",");
