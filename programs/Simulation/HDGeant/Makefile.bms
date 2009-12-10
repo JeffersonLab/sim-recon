@@ -3,7 +3,8 @@ PACKAGES := CERNLIB:JANA:ROOT
 MISC_LIBS = -L/sw/lib -lXm -L/usr/X11R6/lib -lXt -lgelhad -lhitutil
 #FFLAGS = -Wno-globals
 CFLAGS += -I$(HALLD_MY)/src/libraries/HDDM -I$(HALLD_HOME)/src/libraries/HDDM
-ADDITIONAL_MODULES += HDDM HDGEOMETRY
+ADDITIONAL_MODULES += HDDM HDGEOMETRY hddsGeant3
+LIB_DIRS += $(HDDS_HOME)/lib/$(BMS_OSNAME)
 
 # The following line was used for the fine-grained DOCA calculations
 # These were disabled 6/24/2009 

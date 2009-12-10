@@ -1,5 +1,4 @@
 DIRS += external
-DIRS += programs/Simulation/hdds
 DIRS += libraries/include
 DIRS += programs/Utilities/hddm
 DIRS += libraries
