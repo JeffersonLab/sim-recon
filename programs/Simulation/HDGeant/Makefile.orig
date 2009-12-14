@@ -79,7 +79,6 @@ ifeq ($(OStype),Darwin)
 	GLIBS	:= -L$(CERN_ROOT)/lib -lcompat /usr/lib/libgcc.a
 endif
 
-HDDS = $(HALLD_HOME)/src/programs/Simulation/hdds
 HDDM = $(HALLD_HOME)/src/libraries/HDDM
 
 ifeq ($(OStype),OSF1)
@@ -90,8 +89,9 @@ endif
 
 AUXF = guhadr.o gukine.o guout.o guphad.o gustep.o guxcs.o gsstak.o gltrac.o \
        gelhad/gtgama.o gelhad/caspim.o gelhad/caspip.o gpairg.o savehits.o \
-       hddsGeant3.o goptimize.o cobrems.o beamgen.o settofg.o seteventid.o \
-       gelhad/bimsel.o
+       goptimize.o cobrems.o beamgen.o settofg.o seteventid.o \
+       gelhad/bimsel.o \
+       $(HDDS_HOME)/obj/$(BMS_OSNAME)/hddsGeant3.o
 AUXC = hddmInput.o hddmOutput.o hddm_s.o \
        hitStart.o hitCDC.o hitFDC.o hitBCal.o hitCerenkov.o hitFTOF.o \
        hitFCal.o hitUPV.o bintree.o memcheck.o timel.o trapfpe.o \
@@ -108,9 +108,12 @@ hdgeant++: hdgeant++.o gxint.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(GXF
 	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
 	   -L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lHDGEOMETRY \
 	   -L$(JANA_HOME)/lib -lJANA \
-	   -L$(ROOTSYS)/lib -lPhysics -lMatrix -lGeom -lCore -lRIO -lCint \
+	   -L$(XERCESCROOT)/lib -lxerces-c \
+	   -L$(ROOTSYS)/lib -lPhysics -lMatrix -lGeom -lMathCore -lCore -lRIO -lCint \
 	   `cernlib -v $(CERN_LEVEL) geant321 pawlib graflib/Motif packlib mathlib` \
 	   $(EXPORTDYNAMIC) $(GLIBS)
+
+suppressed:
 
 hdgeant: hdgeant.o hdgeant_f.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(MISC_FIXES)
 	$(CPP) -mtune=generic $(LOPTS) -o $@ -I$(CERN_ROOT)/include $(STATIC) $(FOPTS) \
@@ -118,7 +121,8 @@ hdgeant: hdgeant.o hdgeant_f.o uginit.o uglast.o $(GELHAD) $(AUXF) $(AUXC) $(MIS
 	   -Lgelhad -lgelhad -Lhitutil -lhitutil \
 	   -L$(HALLD_HOME)/lib/$(BMS_OSNAME) -lHDGEOMETRY \
 	   -L$(JANA_HOME)/lib -lJANA \
-	   -L$(ROOTSYS)/lib -lPhysics -lMatrix -lGeom -lCore -lRIO -lCint \
+	   -L$(XERCESCROOT)/lib -lxerces-c \
+	   -L$(ROOTSYS)/lib -lPhysics -lMatrix -lGeom -lMathCore -lCore -lRIO -lCint \
 	  `$(CERNLIB) geant321 mathlib graflib grafX11` \
 	   $(NETLIB) $(XLIBS) $(GLIBS)
 
