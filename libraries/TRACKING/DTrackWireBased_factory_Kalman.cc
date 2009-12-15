@@ -138,7 +138,7 @@ jerror_t DTrackWireBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
     // Make sure there are enough DReferenceTrajectory objects
     while(rtv.size()<=_data.size())rtv.push_back(new DReferenceTrajectory(fitter->GetDMagneticFieldMap()));
     DReferenceTrajectory *rt = rtv[_data.size()];
-    
+   
 	 // Choose list of mass hypotheses based on charge of candidate
     vector<double> mass_hypotheses;
 	 if(candidate->charge()<0.0){
@@ -150,7 +150,7 @@ jerror_t DTrackWireBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
     // Loop over potential particle masses
     for(unsigned int j=0; j<mass_hypotheses.size(); j++){
       if(DEBUG_LEVEL>1){_DBG__;_DBG_<<"---- Starting wire based fit with mass: "<<mass_hypotheses[j]<<endl;}
-      
+
       // Do the fit
       fitter->SetFitType(DTrackFitter::kWireBased);	
       DTrackFitter::fit_status_t status = fitter->FindHitsAndFitTrack(*candidate, rt, loop, mass_hypotheses[j]);
@@ -209,7 +209,7 @@ jerror_t DTrackWireBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
   }
 
   // Filter out duplicate tracks
-  //FilterDuplicates();
+  FilterDuplicates();
   
   return NOERROR;
 }
@@ -255,9 +255,10 @@ void DTrackWireBased_factory_Kalman::FilterDuplicates(void)
 		dtrack1->Get(cdchits1);
 		dtrack1->Get(fdchits1);
 
+		JObject::oid_t cand1=dtrack1->candidateid;
 		for(unsigned int j=i+1; j<_data.size(); j++){
 			DTrackWireBased *dtrack2 = _data[j];
-
+			if (dtrack2->candidateid==cand1) continue;
 
 			vector<const DCDCTrackHit*> cdchits2;
 			vector<const DFDCPseudo*> fdchits2;

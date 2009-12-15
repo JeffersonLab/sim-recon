@@ -203,7 +203,7 @@ jerror_t DTrackWireBased_factory::evnt(JEventLoop *loop, int eventnumber)
   }
 
   // Filter out duplicate tracks
-  //FilterDuplicates();
+  FilterDuplicates();
   
   return NOERROR;
 }
@@ -249,9 +249,10 @@ void DTrackWireBased_factory::FilterDuplicates(void)
 		dtrack1->Get(cdchits1);
 		dtrack1->Get(fdchits1);
 
+		JObject::oid_t cand1=dtrack1->candidateid;
 		for(unsigned int j=i+1; j<_data.size(); j++){
 			DTrackWireBased *dtrack2 = _data[j];
-
+			if (dtrack2->candidateid==cand1) continue;
 
 			vector<const DCDCTrackHit*> cdchits2;
 			vector<const DFDCPseudo*> fdchits2;
