@@ -80,6 +80,12 @@ int main(int narg, char *argv[])
 		gamma2.p.SetXYZT(p[0], p[1], p[2], kinem3_.EG2LF);
 		event.final.push_back(gamma2);
 		
+		Particle proton;
+		proton.type = Proton;
+		proton.parentid = 0;
+		proton.p = event.beam.p + event.target.p - eta.p; // elastic production is great!
+		event.final.push_back(proton);
+		
 		// Write event to file
 		write_hddm_event(event);
 
