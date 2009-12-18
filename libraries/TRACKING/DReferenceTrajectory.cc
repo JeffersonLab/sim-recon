@@ -323,7 +323,11 @@ jerror_t DReferenceTrajectory::GetIntersectionWithRadius(double R,DVector3 &mypo
 //---------------------------------
 // GetIntersectionWithPlane
 //---------------------------------
-void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s) const
+void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s) const{
+  DVector3 dir;
+  GetIntersectionWithPlane(origin,norm,pos,dir,s);
+}
+void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, DVector3 &dir, double *s) const
 {
 	/// Get the intersection point of this trajectory with a plane.
 	/// The plane is specified by <i>origin</i> and <i>norm</i>. The
@@ -352,6 +356,8 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 	  pos(2)=origin.z();
 	  pos(0)=step->origin.x()+ds*step->mom.x()/p;
 	  pos(1)=step->origin.y()+ds*step->mom.y()/p;
+	  dir=step->mom;
+	  dir.SetMag(1.0);
 	  if (s){
 	    *s=step->s+ds;
 	  }
@@ -443,6 +449,8 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 			double my_u = dz_dphi * phi;
 			
 			pos = step->origin + my_s*step->sdir + my_t*step->tdir + my_u*step->udir;
+			dir = step->mom;
+			dir.SetMag(1.0);
 			if(s){
 				double delta_s = sqrt(my_t*my_t + my_u*my_u);
 				*s = step->s + (phi>0 ? +delta_s:-delta_s);
@@ -456,6 +464,8 @@ void DReferenceTrajectory::GetIntersectionWithPlane(const DVector3 &origin, cons
 	// If we got here then we need to try a straight line calculation
 	double alpha = norm.Dot(origin)/norm.Dot(step->mom);
 	pos = alpha*step->mom;
+	dir = step->mom;
+	dir.SetMag(1.0);
 	if(s){
 		double delta_s = alpha*step->mom.Mag();
 		*s = step->s + delta_s;

@@ -76,7 +76,8 @@ class DReferenceTrajectory{
 		swim_step_t* FindClosestSwimStep(const DVector3 &origin, DVector3 norm, int *istep_ptr=NULL) const;
 		void Swim(const DVector3 &pos, const DVector3 &mom, double q=-1000.0, double smax=2000.0, const DCoordinateSystem *wire=NULL);
 		int InsertSteps(const swim_step_t *start_step, double delta_s, double step_size=0.02); 
-		void GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s=NULL) const;
+		void GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, double *s=NULL) const;	
+		void GetIntersectionWithPlane(const DVector3 &origin, const DVector3 &norm, DVector3 &pos, DVector3 &dir,double *s=NULL) const;
 		jerror_t GetIntersectionWithRadius(double R,DVector3 &mypos,
 					       double *s=NULL) const;
 		DVector3 GetLastDOCAPoint(void) const;
