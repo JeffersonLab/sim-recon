@@ -147,6 +147,6 @@ endif
 
 # Include all dependancy files
 ifneq ($(strip $(DEPS)),)
--include $(foreach s,$(DEPS),$(DEP_DIR)/$s)
+include $(foreach s,$(DEPS),$(DEP_DIR)/$s)
 endif
 

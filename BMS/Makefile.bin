@@ -46,7 +46,7 @@ LD_LIBS += $(addsuffix $(DEBUG_SUFFIX),$(addprefix -l,$(MODULES)))
 first: install
 
 
-all: mkdirs $(DEPS) $(EXE_NAMES)
+all: mkdirs $(EXE_NAMES)
 	@rm -f $(DICT_FILES)
 
 
@@ -81,16 +81,21 @@ exec_clean:
 
 # Rules to make DEPENDS files from source. Note that these are similar to the
 # rules in Makefile.lib, but uses the objects explicitly
-%.d : %.cpp
-	$(DCXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
-%.d : %.cc
-	$(DCXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
-%.d : %.cxx
-	$(DCXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $(DEP_DIR)/$(basename $@).d
-%.d : %.c
-	$(DCC) -MM -MT "$(basename $@).o" $(CFLAGS) $< > $(DEP_DIR)/$(basename $@).d
-%.d : %.F
-	$(DFC) -MM -MT "$(basename $@).o" $(FFLAGS) $< > $(DEP_DIR)/$(basename $@).d
+$(DEP_DIR)/%.d : %.cpp
+	mkdir -p $(DEP_DIR)
+	$(DCXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $@
+$(DEP_DIR)/%.d : %.cc
+	mkdir -p $(DEP_DIR)
+	$(DCXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > $@
+$(DEP_DIR)/%.d : %.cxx
+	mkdir -p $(DEP_DIR)
+	$(DCXX) -MM -MT "$(basename $@).o" $(CXXFLAGS) $< > @
+$(DEP_DIR)/%.d : %.c
+	mkdir -p $(DEP_DIR)
+	$(DCC) -MM -MT "$(basename $@).o" $(CFLAGS) $< > $@
+$(DEP_DIR)/%.d : %.F
+	mkdir -p $(DEP_DIR)
+	$(DFC) -MM -MT "$(basename $@).o" $(FFLAGS) $< > $@
 
 # Rules to make DEBUG objects from source. Note for programs, we give the
 # objects funny names while for libraries only the library has a funny name.
