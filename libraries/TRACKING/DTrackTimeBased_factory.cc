@@ -131,6 +131,9 @@ jerror_t DTrackTimeBased_factory::evnt(JEventLoop *loop, int eventnumber)
 	timebased_track->trackid = track->id;
 	timebased_track->candidateid=track->candidateid;
 
+	// Set the start time
+	timebased_track->setT0(mStartTime,0.,mStartDetector);
+
 	// Add hits used as associated objects
 	const vector<const DCDCTrackHit*> &cdchits = fitter->GetCDCFitHits();
 	const vector<const DFDCPseudo*> &fdchits = fitter->GetFDCFitHits();
@@ -188,6 +191,11 @@ double DTrackTimeBased_factory::GetFOM(DTrackTimeBased *dtrack,
 			      vector<const DFCALPhoton*>fcal_clusters,
 			      vector<const DTOFPoint*>tof_points)
 {
+  // For high momentum, the likelihood that the particle is a proton is small.
+  // For now, assign a figure-of-merit of zero for particles with the proton 
+  // mass hypothesis that exceed some momentum cut.
+  if (dtrack->mass()>0.9 && dtrack->momentum().Mag()>2.5) return 0.;
+
   // First ingredient in the figure-of-merit is the chi2 for the track fit
   double fit_prob=TMath::Prob(dtrack->chisq,dtrack->Ndof);
 
@@ -252,8 +260,10 @@ double DTrackTimeBased_factory::MatchToTOF(DTrackTimeBased *track,
   double match_sigma=0.75+1./p/p;
   double prob=erfc(dmin/match_sigma/sqrt(2.));
   if (prob>0.05){
-    mDetector=SYS_TOF;
-
+    // Add the time and path length to the outer detector to the track object
+    track->setT1(tof_points[tof_match_id]->t,0.,SYS_TOF);
+    track->setPathLength(mPathLength,0.);
+ 
     // Add DTOFPoint object as associate object
     track->AddAssociatedObject(tof_points[tof_match_id]);
 
@@ -313,9 +323,10 @@ double DTrackTimeBased_factory::MatchToBCAL(DTrackTimeBased *track,
   //if (prob>0.05)
   dphi+=0.002+8.314e-3/(p+0.3788)/(p+0.3788);
   double phi_sigma=0.025+5.8e-4/p/p/p;
-  if (fabs(dz)<10. && fabs(dphi)<3.*phi_sigma)
-    {
-    mDetector=SYS_BCAL;
+  if (fabs(dz)<10. && fabs(dphi)<3.*phi_sigma){
+    // Add the time and path length to the outer detector to the track object
+    track->setT1(bcal_clusters[bcal_match_id]->showerTime(),0.,SYS_BCAL);
+    track->setPathLength(mPathLength,0.);
   
     // Add DBCALPhoton object as associate object
     track->AddAssociatedObject(bcal_clusters[bcal_match_id]);
