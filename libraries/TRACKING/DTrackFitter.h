@@ -107,6 +107,8 @@ class DTrackFitter:public jana::JObject{
 				     pair <double,double> &dedx);
 		double GetdEdxSigma(unsigned int num_hits,double mean_path_length);
 		double GetdEdx(double p,double mass_hyp,double mean_path_length);
+		double GetdEdx(double p,double mass_hyp,double dx,DVector3 pos);
+
 		jerror_t GetdEdx(const DReferenceTrajectory *rt, double &dedx,
 				 double &mean_path_length, double &p_avg,
 				 unsigned int &num_hits);
