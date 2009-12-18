@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <set>
 using namespace std;
 
 #include "DTrackTimeBased_factory_Kalman.h"
@@ -20,6 +21,21 @@ using namespace std;
 #include <TRACKING/DTrackFitter.h>
 #include <TRACKING/DTrackHitSelector.h>
 using namespace jana;
+
+// count_common_members
+//------------------
+template<typename T>
+static unsigned int count_common_members(vector<T> &a, vector<T> &b)
+{
+	unsigned int n=0;
+	for(unsigned int i=0; i<a.size(); i++){
+		for(unsigned int j=0; j<b.size(); j++){
+			if(a[i]==b[j])n++;
+		}
+	}
+	
+	return n;
+}
 
 //------------------
 // init
@@ -72,6 +88,10 @@ jerror_t DTrackTimeBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
   vector<const DTrackWireBased*> tracks;
   loop->Get(tracks,"Kalman");
   if (tracks.size()==0) return NOERROR;
+
+  // Get Start Counter hits
+  vector<const DSCHit *>sc_hits;
+  eventLoop->Get(sc_hits);
   
   // Get TOF points
   vector<const DTOFPoint*> tof_points;
@@ -135,6 +155,9 @@ jerror_t DTrackTimeBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
 	timebased_track->trackid = track->id;
 	timebased_track->candidateid=track->candidateid;
 
+	// Set the start time
+	timebased_track->setT0(mStartTime,0.,mStartDetector);
+
 	// Add hits used as associated objects
 	const vector<const DCDCTrackHit*> &cdchits = fitter->GetCDCFitHits();
 	const vector<const DFDCPseudo*> &fdchits = fitter->GetFDCFitHits();
@@ -149,8 +172,8 @@ jerror_t DTrackTimeBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
 	// Add figure-of-merit based on chi2, dEdx and matching to outer 
 	// detectors
 	timebased_track->FOM=GetFOM(timebased_track,bcal_clusters,
-				    fcal_clusters,tof_points);
-
+				    fcal_clusters,tof_points,sc_hits);
+	
 	_data.push_back(timebased_track);
 	break;
       }
@@ -158,6 +181,9 @@ jerror_t DTrackTimeBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
       break;
     }
   }
+
+  // Filter out duplicate tracks
+  FilterDuplicates();
   
   return NOERROR;
 }
@@ -188,10 +214,17 @@ jerror_t DTrackTimeBased_factory_Kalman::fini(void)
 // is a particle with the hypothesized mass based on the chi2 of the fit,
 // the dEdx in the chambers, and the time-of-flight to the outer detectors.
 double DTrackTimeBased_factory_Kalman::GetFOM(DTrackTimeBased *dtrack,
-			      vector<const DBCALPhoton*>bcal_clusters,
-			      vector<const DFCALPhoton*>fcal_clusters,
-			      vector<const DTOFPoint*>tof_points)
+					      vector<const DBCALPhoton*>bcal_clusters,
+					      vector<const DFCALPhoton*>fcal_clusters,
+					      vector<const DTOFPoint*>tof_points,
+					      vector<const DSCHit*>sc_hits
+					      )
 {
+  // For high momentum, the likelihood that the particle is a proton is small.
+  // For now, assign a figure-of-merit of zero for particles with the proton 
+  // mass hypothesis that exceed some momentum cut.
+  if (dtrack->mass()>0.9 && dtrack->momentum().Mag()>2.5) return 0.;
+
   // First ingredient in the figure-of-merit is the chi2 for the track fit
   double fit_prob=TMath::Prob(dtrack->chisq,dtrack->Ndof);
 
@@ -213,14 +246,24 @@ double DTrackTimeBased_factory_Kalman::GetFOM(DTrackTimeBased *dtrack,
   // Next match to outer detectors
   double tof_prob=MatchToTOF(dtrack,tof_points);
   double bcal_prob=MatchToBCAL(dtrack,bcal_clusters);
+  //double sc_prob=MatchToSC(dtrack,sc_hits);
   double match_prob=1.;
   if (tof_prob>0) match_prob=tof_prob;
   else if (bcal_prob>0.) match_prob=bcal_prob;
-
+  
   // Return a combined probability that includes the chi2 information, the 
   // dEdx result and the tof result where available.
   return fit_prob*dedx_prob*match_prob;
 }
+
+double DTrackTimeBased_factory_Kalman::MatchToSC(DTrackTimeBased *track,
+						 vector<const DSCHit *>sc_hits){
+  if (sc_hits.size()==0) return 0.;
+
+
+  return 0.;
+}
+
 
 // Loop over TOF points, looking for minimum distance of closest approach
 // of track to a point in the TOF and using this to check for a match. 
@@ -237,12 +280,12 @@ double DTrackTimeBased_factory_Kalman::MatchToTOF(DTrackTimeBased *track,
     // Get the TOF cluster position and normal vector for the TOF plane
     DVector3 tof_pos=tof_points[k]->pos;
     DVector3 norm(0,0,1);
-    DVector3 proj_pos;
+    DVector3 proj_pos,dir;
     
     // Find the distance of closest approach between the track trajectory
     // and the tof cluster position, looking for the minimum
     double my_s=0.;
-    track->rt->GetIntersectionWithPlane(tof_pos,norm,proj_pos,&my_s);
+    track->rt->GetIntersectionWithPlane(tof_pos,norm,proj_pos,dir,&my_s);
     double d=(tof_pos-proj_pos).Mag();
     if (d<dmin){
       dmin=d;
@@ -256,7 +299,9 @@ double DTrackTimeBased_factory_Kalman::MatchToTOF(DTrackTimeBased *track,
   double match_sigma=0.75+1./p/p;
   double prob=erfc(dmin/match_sigma/sqrt(2.));
   if (prob>0.05){
-    mDetector=SYS_TOF;
+    // Add the time and path length to the outer detector to the track object
+    track->setT1(tof_points[tof_match_id]->t,0.,SYS_TOF);
+    track->setPathLength(mPathLength,0.);
 
     // Add DTOFPoint object as associate object
     track->AddAssociatedObject(tof_points[tof_match_id]);
@@ -268,6 +313,10 @@ double DTrackTimeBased_factory_Kalman::MatchToTOF(DTrackTimeBased *track,
     double sigma_beta=0.06;
     double beta_hyp=1./sqrt(1.+mass*mass/p/p);
     double beta_diff=beta-beta_hyp;
+    
+    DVector3 mypos=tof_points[tof_match_id]->pos;
+    mypos[2]=618.0;
+    fitter->GetdEdx(p,mass,2.5,mypos);
 
     // probability
     return exp(-beta_diff*beta_diff/2./sigma_beta/sigma_beta);   
@@ -317,9 +366,10 @@ double DTrackTimeBased_factory_Kalman::MatchToBCAL(DTrackTimeBased *track,
   //if (prob>0.05)
   dphi+=0.002+8.314e-3/(p+0.3788)/(p+0.3788);
   double phi_sigma=0.025+5.8e-4/p/p/p;
-  if (fabs(dz)<10. && fabs(dphi)<3.*phi_sigma)
-    {
-    mDetector=SYS_BCAL;
+  if (fabs(dz)<10. && fabs(dphi)<3.*phi_sigma){
+    // Add the time and path length to the outer detector to the track object
+    track->setT1(bcal_clusters[bcal_match_id]->showerTime(),0.,SYS_BCAL);
+    track->setPathLength(mPathLength,0.);
   
     // Add DBCALPhoton object as associate object
     track->AddAssociatedObject(bcal_clusters[bcal_match_id]);
@@ -338,3 +388,74 @@ double DTrackTimeBased_factory_Kalman::MatchToBCAL(DTrackTimeBased *track,
 
   return 0.;
 }
+
+//------------------
+// FilterDuplicates
+//------------------
+void DTrackTimeBased_factory_Kalman::FilterDuplicates(void)
+{
+	/// Look through all current DTrackTimeBased objects and remove any
+	/// that have all of their hits in common with another track
+	
+	if(_data.size()==0)return;
+
+	if(DEBUG_LEVEL>2)_DBG_<<"Looking for clones of time-based tracks ..."<<endl;
+
+	set<unsigned int> indexes_to_delete;
+	for(unsigned int i=0; i<_data.size()-1; i++){
+		DTrackTimeBased *dtrack1 = _data[i];
+
+		vector<const DCDCTrackHit*> cdchits1;
+		vector<const DFDCPseudo*> fdchits1;
+		dtrack1->Get(cdchits1);
+		dtrack1->Get(fdchits1);
+
+		JObject::oid_t cand1=dtrack1->candidateid;
+		for(unsigned int j=i+1; j<_data.size(); j++){
+			DTrackTimeBased *dtrack2 = _data[j];
+			if (dtrack2->candidateid==cand1) continue;
+
+			vector<const DCDCTrackHit*> cdchits2;
+			vector<const DFDCPseudo*> fdchits2;
+			dtrack2->Get(cdchits2);
+			dtrack2->Get(fdchits2);
+			
+			// Count number of cdc and fdc hits in common
+			unsigned int Ncdc = count_common_members(cdchits1, cdchits2);
+			unsigned int Nfdc = count_common_members(fdchits1, fdchits2);
+
+			if(Ncdc!=cdchits1.size() && Ncdc!=cdchits2.size())continue;
+			if(Nfdc!=fdchits1.size() && Nfdc!=fdchits2.size())continue;
+			
+			unsigned int total = Ncdc + Nfdc;
+			unsigned int total1 = cdchits1.size()+fdchits1.size();
+			unsigned int total2 = cdchits2.size()+fdchits2.size();
+			if(total!=total1 && total!=total2)continue;
+
+			if(total1<total2){
+				indexes_to_delete.insert(i);
+			}else{
+				indexes_to_delete.insert(j);
+			}
+		}
+	}
+	
+	if(DEBUG_LEVEL>2)_DBG_<<"Found "<<indexes_to_delete.size()<<" wire-based clones"<<endl;
+
+	// Return now if we're keeping everyone
+	if(indexes_to_delete.size()==0)return;
+
+	// Copy pointers that we want to keep to a new container and delete
+	// the clone objects
+	vector<DTrackTimeBased*> new_data;
+	for(unsigned int i=0; i<_data.size(); i++){
+		if(indexes_to_delete.find(i)==indexes_to_delete.end()){
+			new_data.push_back(_data[i]);
+		}else{
+			delete _data[i];
+			if(DEBUG_LEVEL>1)_DBG_<<"Deleting clone wire-based track "<<i<<endl;
+		}
+	}	
+	_data = new_data;
+}
+
