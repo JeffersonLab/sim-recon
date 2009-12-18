@@ -20,7 +20,7 @@
 #define EPS2 1.e-4
 #define BEAM_RADIUS  0.1 
 #define MAX_ITER 25
-#define STEP_SIZE 0.5  // 0.25
+#define STEP_SIZE 0.4 // 0.53135  // 0.25
 #define CDC_STEP_SIZE 0.4 // 0.25
 #define CDC_FORWARD_STEP_SIZE 0.4
 #define CDC_BACKWARD_STEP_SIZE 0.5
@@ -110,7 +110,7 @@ DTrackFitterKalman::DTrackFitterKalman(JEventLoop *loop):DTrackFitter(loop){
   //DEBUG_HISTS=true;
   DEBUG_HISTS=false;
   DEBUG_LEVEL=0;
-  //DEBUG_LEVEL=1;
+  //DEBUG_LEVEL=2;
 
   if(DEBUG_HISTS){
     DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
@@ -233,6 +233,8 @@ DTrackFitter::fit_status_t DTrackFitterKalman::FitTrack(void)
   //Set the mass
   this->MASS=input_params.mass();
   this->mass2=MASS*MASS;
+
+  //  printf("mass %f\n",MASS);
 
   // Do fit 
   if (DEBUG_LEVEL>0)
@@ -1047,7 +1049,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
     if (newz-z>0.){
       temp.s=len;
       temp.t=ftime;
-      temp.h_id=0;
+      //temp.h_id=0;
       temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
       temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
 
@@ -1127,6 +1129,8 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
       }
       // update z
       z=newz;
+      
+      if (temp.h_id>0) temp.h_id=0;
     }
     
     for (int k=0;k<num;k++){
@@ -1136,6 +1140,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
       
       temp.s=len;
       temp.t=ftime;
+      //temp.h_id=0;
       temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
       temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
       //double r=temp.pos.Perp();
@@ -1213,7 +1218,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
 	temp.J=new DMatrix(J);
 	forward_traj.push_front(temp);
       }
-      temp.h_id=0;
+      if (temp.h_id>0) temp.h_id=0;
       
       //update z
       z=newz;
@@ -1225,7 +1230,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
 						tanz,tanr);
     my_fdchits[m]->nr=tanr;
     my_fdchits[m]->nz=tanz;
-    
+      
     temp.h_id=m+1;
   }
 
@@ -1405,7 +1410,8 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
     }
   }
 
-  if (DEBUG_LEVEL==2){
+  if (DEBUG_LEVEL==2)
+    {
     cout << "--- Forward fdc trajectory ---" <<endl;
     for (unsigned int m=0;m<forward_traj.size();m++){
       DMatrix S=*(forward_traj[m].S);
@@ -1428,6 +1434,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
 	<< forward_traj[m].s 
 	<<"  t: " << setprecision(3) 	   
 	<< forward_traj[m].t 
+	<<"  id: " << forward_traj[m].h_id
 	<< endl;
     }
   }
@@ -2215,7 +2222,7 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	    if (error!=NOERROR) break;
 	  }
 
-	  // printf("iter %d chi2 %f %f\n",iter2,chisq,chisq_forward);
+	  //printf("iter %d chi2 %f %f\n",iter2,chisq,chisq_forward);
 	  if (!isfinite(chisq)){
 	    if (DEBUG_LEVEL>0)
 	      cout << "iter " << iter2 << " chi2 " << chisq << endl;
