@@ -13,6 +13,7 @@
 #include <BCAL/DBCALPhoton.h>
 #include <FCAL/DFCALPhoton.h>
 #include <TOF/DTOFPoint.h>
+#include <START_COUNTER/DSCHit.h>
 
 class DTrackWireBased;
 class DTrackHitSelector;
@@ -39,11 +40,15 @@ class DTrackTimeBased_factory_Kalman:public jana::JFactory<DTrackTimeBased>{
   double MOMENTUM_CUT_FOR_DEDX;
   DTrackFitter *fitter;
   vector<DReferenceTrajectory*> rtv;
-  
+
+  void FilterDuplicates(void);  
   double GetFOM(DTrackTimeBased *dtrack,
 		vector<const DBCALPhoton*>bcal_clusters,
 		vector<const DFCALPhoton*>fcal_clusters,
-		vector<const DTOFPoint*>tof_points);
+		vector<const DTOFPoint*>tof_points,
+		vector<const DSCHit *>sc_hits);
+  double MatchToSC(DTrackTimeBased *track,
+		   vector<const DSCHit *>sc_hits);
   double MatchToTOF(DTrackTimeBased *track,
 		    vector<const DTOFPoint*>tof_points);
   double MatchToBCAL(DTrackTimeBased *track,
