@@ -13,4 +13,9 @@ export HALLD_HOME := $(shell cd ../; pwd)
 export HALLD_MY := $(HALLD_HOME)
 endif
 
+ifdef HALLD_HOME
 include $(HALLD_HOME)/src/BMS/Makefile.dirs
+else
+all:
+	@echo error: HALLD_HOME not defined ; exit 1
+endif
