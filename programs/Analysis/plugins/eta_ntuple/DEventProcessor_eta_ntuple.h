@@ -27,6 +27,8 @@ class DTrackWireBased;
 class DMCThrown;
 
 #define MAX_PARTS 20
+#define MAX_START 5
+#define MAX_BCAL 10
 
 class DEventProcessor_eta_ntuple:public JEventProcessor{
 
@@ -65,6 +67,14 @@ class DEventProcessor_eta_ntuple:public JEventProcessor{
 			float pz_eta_best;			// pz  of reconstructed eta closest to eta mass
 			float M_eta_best;				// M   of reconstructed eta closest to eta mass
 			float t;
+			int Nstart;								// Number of start counter hits
+			float phi_start[MAX_START];		// phi of paddle center for hit sc
+			float phi_start_diff[MAX_START];	// diff of sc phi and eta_best phi
+			float E_bcal_tot;						// Total energy deposited in BCAL
+			int Nbcal;								// Number of reconstructed BCAL photons
+			float E_bcal[MAX_BCAL];				// E of Nbcal clusters
+			float phi_bcal[MAX_BCAL];			// phi of Nbcal clusters
+			float theta_bcal[MAX_BCAL];		// theta of Nbcal clusters
 		}Event_ntuple_t;
 	
 		DEventProcessor_eta_ntuple(){};

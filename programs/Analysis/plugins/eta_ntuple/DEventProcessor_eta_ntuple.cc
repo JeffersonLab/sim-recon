@@ -20,6 +20,8 @@ using namespace jana;
 #include <TRACKING/DMCThrown.h>
 #include <PID/DKinematicData.h>
 #include <FCAL/DFCALPhoton.h>
+#include <BCAL/DBCALPhoton.h>
+#include <START_COUNTER/DSCHit.h>
 #include <PID/DPhoton.h>
 #include <PID/DBeamPhoton.h>
 
@@ -94,6 +96,12 @@ jerror_t DEventProcessor_eta_ntuple::init(void)
 		ntp<<",E_eta_best,px_eta_best,py_eta_best,pz_eta_best";
 		ntp<<",M_eta_best:R";
 		ntp<<",t:R";
+		ntp<<",Nstart[0,"<<MAX_START<<"]:I";
+		ntp<<",phi_start(Nstart):R,phi_start_diff(Nstart)";
+		ntp<<",E_bcal_tot";
+		ntp<<",Nbcal[0,"<<MAX_BCAL<<"]:I";
+		ntp<<",E_bcal(Nbcal):R,phi_bcal(Nbcal),theta_bcal(Nbcal)";
+		
 		hbname(10,"ETANT", &evt_ntuple, ntp.str().c_str());
 	}
 	
@@ -110,21 +118,31 @@ jerror_t DEventProcessor_eta_ntuple::evnt(JEventLoop *loop, int eventnumber)
 	// Get reconstructed objects
 	vector<const DBeamPhoton*> beam_photons;
 	vector<const DFCALPhoton*> fcalphotons;
+	vector<const DBCALPhoton*> bcalphotons;
 	vector<const DMCThrown*> mcthrowns;
+	vector<const DSCHit*> schits;	
 
 	loop->Get(beam_photons);	// from truth info
 	loop->Get(fcalphotons);		// all reconstructed photons in FCAL
+	loop->Get(bcalphotons);		// all reconstructed photons in BCAL
 	loop->Get(mcthrowns);		// all thrown particles
+	loop->Get(schits);			// all start counter hits
 
 	// Target is proton at rest in lab frame
 	TLorentzVector target(0.0, 0.0, 0.0, 0.93827);
 	
-	// Create TLorentzVectors for reconstructed photons
+	// Create TLorentzVectors for reconstructed FCAL photons
 	vector<TLorentzVector> rec_photons;
 	vector<TVector3> rec_photons_pos;
 	for(unsigned int i=0; i<fcalphotons.size(); i++){
 		rec_photons.push_back(fcalphotons[i]->getMom4());
 		rec_photons_pos.push_back(fcalphotons[i]->getPosition());
+	}
+
+	// Create TLorentzVectors for reconstructed BCAL photons
+	vector<TLorentzVector> rec_bcal_photons;
+	for(unsigned int i=0; i<bcalphotons.size(); i++){
+		rec_bcal_photons.push_back(bcalphotons[i]->lorentzMomentum());
 	}
 
 	// Some generators don't supply information on the beam photon. If there
@@ -164,9 +182,14 @@ jerror_t DEventProcessor_eta_ntuple::evnt(JEventLoop *loop, int eventnumber)
 	evt->decay_mode = 0;
 	evt->t = -(beam_photon-eta).M2();
 	
-	// Loop over reconstructed photons
+	// Loop over reconstructed FCAL photons
 	for(unsigned int j=0; j<rec_photons.size(); j++){
 		evt->AddFCAL(rec_photons[j], rec_photons_pos[j]);
+	}
+
+	// Loop over reconstructed BCAL photons
+	for(unsigned int j=0; j<rec_bcal_photons.size(); j++){
+		evt->AddBCAL(rec_bcal_photons[j]);
 	}
 	
 	// Loop over all 2-gamma combinations keeping the one closes to the eta mass
@@ -178,9 +201,17 @@ jerror_t DEventProcessor_eta_ntuple::evnt(JEventLoop *loop, int eventnumber)
 			evt->eta_best = my_eta;
 		}
 	}
+_DBG_<<"eta_best.M()="<<evt->eta_best.M()<<endl;
+
+	// Loop over start counter hits
+	for(unsigned int j=0; j<schits.size(); j++){
+		evt->AddSC(schits[j]->sector);
+	}
 
 	// Fill tree
 	evt->fcal->Sort(); // sort by cluster energy (uses fcal_t::Compare );
+	evt->sc->Sort(); // sort by phi diff (uses sc_t::Compare );
+	evt->bcal->Sort(); // sort by cluster energy (uses bcal_t::Compare );
 	if(make_root)tree->Fill();
 	if(make_hbook)FillNtuple();
 	
@@ -242,7 +273,11 @@ void DEventProcessor_eta_ntuple::FillNtuple(void)
 	evt_ntuple.pz_eta_best = evt->eta_best.Pz();
 	evt_ntuple.M_eta_best = evt->eta_best.M();
 	evt_ntuple.t = evt->t;
-	
+	evt_ntuple.Nstart = evt->Nstart;
+	evt_ntuple.E_bcal_tot = evt->E_bcal_tot;
+	evt_ntuple.Nfcal = evt->Nfcal;
+
+	// FCAL
 	if(evt_ntuple.Nfcal>=MAX_PARTS)evt_ntuple.Nfcal=MAX_PARTS-1;
 	for(UInt_t i=0; i<(UInt_t)evt_ntuple.Nfcal; i++){
 		fcal_t *fcal = dynamic_cast<fcal_t*>((*evt->fcal)[i]);
@@ -260,6 +295,33 @@ void DEventProcessor_eta_ntuple::FillNtuple(void)
 		evt_ntuple.y_fcal[i] = fcal->x.Y();
 		evt_ntuple.z_fcal[i] = fcal->x.Z();
 	}
+	
+	// Start counter
+	if(evt_ntuple.Nstart>=MAX_START)evt_ntuple.Nstart=MAX_START-1;
+	for(UInt_t i=0; i<(UInt_t)evt_ntuple.Nstart; i++){
+		sc_t *sc = dynamic_cast<sc_t*>((*evt->sc)[i]);
+		if(!sc){
+			_DBG_<<"dynamic cast of TClonesArray element "<<i<<" failed!!"<<endl;
+			return;
+		}
+		
+		evt_ntuple.phi_start[i] = sc->phi_center;
+		evt_ntuple.phi_start_diff[i] = sc->phi_diff;
+	}
+
+	// BCAL
+	if(evt_ntuple.Nbcal>=MAX_BCAL)evt_ntuple.Nbcal=MAX_BCAL-1;
+	for(UInt_t i=0; i<(UInt_t)evt_ntuple.Nbcal; i++){
+		bcal_t *bcal = dynamic_cast<bcal_t*>((*evt->bcal)[i]);
+		if(!bcal){
+			_DBG_<<"dynamic cast of TClonesArray element "<<i<<" failed!!"<<endl;
+			return;
+		}
+		
+		evt_ntuple.E_bcal[i] = bcal->p.E();
+		evt_ntuple.phi_bcal[i] = bcal->p.Phi();
+		evt_ntuple.theta_bcal[i] = bcal->p.Theta();
+	}
 
 	// Add event to Ntuple
 	hfnt(10);
@@ -270,6 +332,7 @@ void DEventProcessor_eta_ntuple::FillNtuple(void)
 //------------------
 jerror_t DEventProcessor_eta_ntuple::erun(void)
 {
+
 	return NOERROR;
 }
 
@@ -278,12 +341,17 @@ jerror_t DEventProcessor_eta_ntuple::erun(void)
 //------------------
 jerror_t DEventProcessor_eta_ntuple::fini(void)
 {
+	cout<<"Writing class definitions to ROOT file ..."<<endl;
+	TClass *evt_class = (TClass*)evt->Class()->Clone("Event");
+	evt_class->Write();
+
 	if(make_hbook){
 		// Close hbook file
 		int icycle=0;
 		hrout(0,icycle,"T");
 		hrend("lun");
 	}
+	
 
 	return NOERROR;
 }

@@ -14,12 +14,14 @@
 #include <TLorentzVector.h>
 
 #include "fcal_t.h"
+#include "sc_t.h"
+#include "bcal_t.h"
 
 class Event:public TObject{
 
 	public:
 
-		Event(){fcal = new TClonesArray("fcal_t",100);}
+		Event();
 		~Event(){delete fcal;}
 
 		UInt_t event;						// event number
@@ -33,9 +35,16 @@ class Event:public TObject{
 		TClonesArray *fcal;				//-> Array of all photons reconstructed in FCAL
 		TLorentzVector eta_best;
 		float t;
+		UInt_t Nstart;						// Number of elements in sc
+		TClonesArray *sc;					//-> Array of all hits reconstructed in Start Counter
+		float E_bcal_tot;					// Total energy deposited in BCAL
+		UInt_t Nbcal;						// Number of elements in bcal
+		TClonesArray *bcal;				//-> Array of all photons reconstructed in BCAL
 
 		void Clear(void);
 		void AddFCAL(TLorentzVector &p, TVector3 &x);
+		void AddBCAL(TLorentzVector &p);
+		void AddSC(int sector);
 
 	private:
 		ClassDef(Event,1);
