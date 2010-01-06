@@ -201,7 +201,6 @@ jerror_t DEventProcessor_eta_ntuple::evnt(JEventLoop *loop, int eventnumber)
 			evt->eta_best = my_eta;
 		}
 	}
-_DBG_<<"eta_best.M()="<<evt->eta_best.M()<<endl;
 
 	// Loop over start counter hits
 	for(unsigned int j=0; j<schits.size(); j++){
