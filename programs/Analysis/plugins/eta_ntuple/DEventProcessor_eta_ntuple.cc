@@ -340,10 +340,6 @@ jerror_t DEventProcessor_eta_ntuple::erun(void)
 //------------------
 jerror_t DEventProcessor_eta_ntuple::fini(void)
 {
-	cout<<"Writing class definitions to ROOT file ..."<<endl;
-	TClass *evt_class = (TClass*)evt->Class()->Clone("Event");
-	evt_class->Write();
-
 	if(make_hbook){
 		// Close hbook file
 		int icycle=0;
