@@ -583,9 +583,12 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(s_HDDM_t *hddm_s,  JFactory<DMCThro
 						for(unsigned int m=0;m<products->mult;m++){
 							s_Product_t *product = &products->in[m];
 
+							double E  = product->momentum->E;
 							double px = product->momentum->px;
 							double py = product->momentum->py;
 							double pz = product->momentum->pz;
+							double mass = sqrt(E*E - (px*px + py*py + pz*pz));
+							if(!finite(mass))mass = 0.0;
 							
 							DMCThrown *mcthrown = new DMCThrown;
 							mcthrown->type = product->type;
@@ -593,7 +596,7 @@ jerror_t DEventSourceHDDM::Extract_DMCThrown(s_HDDM_t *hddm_s,  JFactory<DMCThro
 							mcthrown->parentid = product->parentid;
 							mcthrown->mech = product->mech;
 							mcthrown->pdgtype = product->pdgtype;
-							mcthrown->setMass(ParticleMass(product->type));
+							mcthrown->setMass(mass);
 							mcthrown->setMomentum(DVector3(px, py, pz));
 							mcthrown->setPosition(DVector3(origin->vx, origin->vy, origin->vz));
 							mcthrown->setCharge(ParticleCharge(product->type));
