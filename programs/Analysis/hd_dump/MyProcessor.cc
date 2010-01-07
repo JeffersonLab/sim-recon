@@ -17,6 +17,7 @@ int PAUSE_BETWEEN_EVENTS = 1;
 int SKIP_BORING_EVENTS = 0;
 int PRINT_ALL=0;
 bool LIST_ASSOCIATED_OBJECTS = false;
+bool PRINT_SUMMARY_HEADER = true;
 
 vector<string> toprint;
 
@@ -107,28 +108,27 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	// the types we're printing) we must find out first if the event is
 	// "boring".
 	int event_is_boring = 1;
-	if(SKIP_BORING_EVENTS){
-		for(unsigned int i=0;i<toprint.size();i++){
-			
-			string name =fac_info[i].dataClassName;
-			string tag = fac_info[i].tag;
-			JFactory_base *factory = eventLoop->GetFactory(name,tag.c_str());
-			if(!factory)factory = eventLoop->GetFactory("D" + name,tag.c_str());
-			if(factory){
-				try{
-					if(factory->GetNrows()>0){
-						event_is_boring=0;
-						break;
-					}
-				}catch(...){
-					// someone threw an exception
+
+	for(unsigned int i=0;i<toprint.size();i++){
+
+		string name =fac_info[i].dataClassName;
+		string tag = fac_info[i].tag;
+		JFactory_base *factory = eventLoop->GetFactory(name,tag.c_str());
+		if(!factory)factory = eventLoop->GetFactory("D" + name,tag.c_str());
+		if(factory){
+			try{
+				if(factory->GetNrows()>0){
+					event_is_boring=0;
+					break;
 				}
+			}catch(...){
+				// someone threw an exception
 			}
 		}
-		if(event_is_boring)return NOERROR;
-	}else{
-		event_is_boring = 0;
 	}
+	
+	if(SKIP_BORING_EVENTS && event_is_boring)return NOERROR;
+	if(!SKIP_BORING_EVENTS)event_is_boring= 0;
 	
 	// Print event separator
 	cout<<"================================================================"<<endl;
@@ -138,9 +138,11 @@ jerror_t MyProcessor::evnt(JEventLoop *eventLoop, int eventnumber)
 	// printing the actual data. To make sure the informational messages often
 	// printed during brun are printed first, call the GetNrows() method of all factories
 	// ourself first.
-	vector<JFactory_base*> myfacs = eventLoop->GetFactories();
-	for(unsigned int i=0; i<myfacs.size(); i++)myfacs[i]->GetNrows();
-	eventLoop->PrintFactories(1);
+	if(PRINT_SUMMARY_HEADER){
+		vector<JFactory_base*> myfacs = eventLoop->GetFactories();
+		for(unsigned int i=0; i<myfacs.size(); i++)myfacs[i]->GetNrows();
+		eventLoop->PrintFactories(1);
+	}
 	
 	// Print data for all specified factories
 	for(unsigned int i=0;i<fac_info.size();i++){

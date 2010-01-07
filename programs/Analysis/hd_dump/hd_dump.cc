@@ -129,6 +129,9 @@ void ParseCommandLineArguments(int &narg, char *argv[])
 			case 'a':
 				LIST_ASSOCIATED_OBJECTS = true;
 				break;
+			case 'f':
+				PRINT_SUMMARY_HEADER = false;
+				break;
 		}
 	}
 }
@@ -155,6 +158,8 @@ void Usage(void)
 	cout<<"   -p        Don't pause for keystroke between events (def. is to pause)"<<endl;
 	cout<<"   -s        Skip events which don't have any of the specified data types"<<endl;
 	cout<<"   -a        List types and number of associated objects"<<endl;
+	cout<<"   -f        Skip printing summary header lisiting all factories"<<endl;
+	cout<<"             (This disables auto-activating every single factory)"<<endl;
 	cout<<endl;
 
 	dapp.Usage();
