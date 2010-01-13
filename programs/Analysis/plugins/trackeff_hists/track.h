@@ -27,8 +27,8 @@ class track:public TObject{
 		double dp_mech;		// momentum change due to mech (GeV/c)
 		
 		track_info can;	// Track candidate
-		track_info trk;	// wire-based fit
-		track_info part;	// time-based fit
+		track_info trkwb;	// wire-based fit
+		track_info trktb;	// time-based fit
 
 	private:
 		ClassDef(track,1);

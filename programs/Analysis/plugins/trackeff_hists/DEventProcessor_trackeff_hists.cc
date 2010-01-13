@@ -19,11 +19,7 @@ using namespace std;
 #include <JANA/JEventLoop.h>
 
 #include <DANA/DApplication.h>
-#include <TRACKING/DMCThrown.h>
-#include <TRACKING/DTrackCandidate.h>
-#include <TRACKING/DTrackWireBased.h>
 #include <TRACKING/DMCTrajectoryPoint.h>
-#include <PID/DParticle.h>
 #include <DVector2.h>
 #include <particleType.h>
 
@@ -118,16 +114,16 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DCDCTrackHit*> cdctrackhits;
 	vector<const DFDCPseudo*> fdcpseudos;
 	vector<const DTrackCandidate*> trackcandidates;
-	vector<const DTrackWireBased*> tracks;
-	vector<const DParticle*> particles;
-	vector<const DParticle*> throwns;
+	vector<const DTrackWireBased*> trackWBs;
+	vector<const DTrackTimeBased*> trackTBs;
+	vector<const DTrackTimeBased*> throwns;
 	vector<const DMCTrajectoryPoint*> mctraj;
 	
 	loop->Get(cdctrackhits);
 	loop->Get(fdcpseudos);
 	loop->Get(trackcandidates);
-	loop->Get(tracks);
-	loop->Get(particles);
+	loop->Get(trackWBs);
+	loop->Get(trackTBs);
 	loop->Get(throwns, "THROWN");
 	loop->Get(mctraj);
 
@@ -137,11 +133,11 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 	
 	// Get track info and track number for each reconstructed track
 	vector<track_info> ti_can(MAX_TRACKS);
-	vector<track_info> ti_trk(MAX_TRACKS);
-	vector<track_info> ti_prt(MAX_TRACKS);
+	vector<track_info> ti_trkwb(MAX_TRACKS);
+	vector<track_info> ti_trktb(MAX_TRACKS);
 	for(unsigned int i=0; i<trackcandidates.size(); i++)FillTrackInfo(trackcandidates[i], ti_can);
-	for(unsigned int i=0; i<tracks.size(); i++)FillTrackInfo(tracks[i], ti_trk);
-	for(unsigned int i=0; i<particles.size(); i++)FillTrackInfo(particles[i], ti_prt);
+	for(unsigned int i=0; i<trackWBs.size(); i++)FillTrackInfo(trackWBs[i], ti_trkwb);
+	for(unsigned int i=0; i<trackTBs.size(); i++)FillTrackInfo(trackTBs[i], ti_trktb);
 
 	// The highest (and therefore, most interesting) GEANT mechansim for each track in the
 	// region before it gets to the BCAL.
@@ -178,9 +174,9 @@ jerror_t DEventProcessor_trackeff_hists::evnt(JEventLoop *loop, int eventnumber)
 		if(trk.track<=0 || trk.track>=MAX_TRACKS)continue;
 
 		// Copy best reconstructed track info
-		trk.can  = ti_can[trk.track];
-		trk.trk  = ti_trk[trk.track];
-		trk.part = ti_prt[trk.track];
+		trk.can   = ti_can[trk.track];
+		trk.trkwb = ti_trkwb[trk.track];
+		trk.trktb = ti_trktb[trk.track];
 
 		// Fill tree
 		trk.event = eventnumber;

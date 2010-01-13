@@ -25,7 +25,7 @@ using std::map;
 #include <TRACKING/DMCTrackHit.h>
 #include <TRACKING/DTrackCandidate.h>
 #include <TRACKING/DTrackWireBased.h>
-#include <PID/DParticle.h>
+#include <TRACKING/DTrackTimeBased.h>
 #include <TRACKING/DMCThrown.h>
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
