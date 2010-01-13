@@ -494,7 +494,7 @@ jerror_t DTrackFitterKalman::SetCDCForwardReferenceTrajectory(DMatrix &S){
   while(z<endplate_z-CDC_FORWARD_STEP_SIZE && r<R_MAX){
     double step_size=CDC_FORWARD_STEP_SIZE;
     r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
-    if (r<9.) step_size=0.1;
+    //if (r<9.) step_size=0.1;
 
     // do not do energy loss for steps beyond the outermost hit
     if (r>r_outer_hit) do_energy_loss=false;
@@ -517,10 +517,10 @@ jerror_t DTrackFitterKalman::SetCDCForwardReferenceTrajectory(DMatrix &S){
   if (my_fdchits.size()>0){
     // Propagate through endplate with smaller steps 
     r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
-    while(z<endplate_z+2.*endplate_dz && r<R_MAX){
+    while(z<endplate_z+endplate_dz && r<R_MAX){
       if (PropagateForwardCDC(forward_traj_cdc_length,i,z,0.1,S)!=NOERROR)
 	return UNRECOVERABLE_ERROR;
-      z+=0.1;
+      z+=endplate_dz/2.;
       r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
     }
   }
@@ -843,9 +843,9 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
 
       // Check if we are within start counter outer radius
       double r=pos.Perp();
-      if (r<9.0) ds=0.1;
-      else ds=CDC_STEP_SIZE;
-
+      //if (r<9.0) ds=0.1;
+      //else ds=CDC_STEP_SIZE;
+      
       // Check if we are outside the radius of the last measurement
       if (r>r_outer_hit || pos.z()<cdc_origin[2]) do_energy_loss=false;
           
@@ -875,7 +875,12 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
 
       // Propagate the state through the field
       FixedStep(pos,ds,Sc,dedx);
-      
+            
+      // Multiple scattering    
+      if (do_multiple_scattering)
+	GetProcessNoiseCentral(ds,pos,central_traj[m].X0,Sc,Q);
+
+      // Energy loss straggling
       if (do_energy_loss && central_traj[m].density>0.){
 	// Energy loss straggling in the approximation of thick absorbers
 	beta2=1./(1.+mass2*q_over_p_sq);
@@ -886,11 +891,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
 	  =varE*Sc(state_q_over_pt,0)*Sc(state_q_over_pt,0)/beta2
 	  *q_over_p_sq;
       }
-      
-	// Multiple scattering    
-      if (do_multiple_scattering)
-	GetProcessNoiseCentral(ds,pos,central_traj[m].X0,Sc,Q);
-    
+
 	// Compute the Jacobian matrix for back-tracking towards target
       StepJacobian(pos,origin,dir,-ds,Sc,dedx,J);
     
@@ -925,8 +926,8 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
     temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
     
     // Check if we are within start counter outer radius
-    if (r<9.0) ds=0.1;
-    else ds=CDC_STEP_SIZE;
+    //if (r<9.0) ds=0.1;
+    //else ds=CDC_STEP_SIZE;
 
     // Check if we are outside the radius of the last measurement
     if (r>r_outer_hit || pos.z()<cdc_origin[2]) do_energy_loss=false;
@@ -2031,7 +2032,7 @@ double DTrackFitterKalman::GetEnergyVariance(double ds,double q_over_p,double Z,
   double Tmax
     =2.*Me*betagamma2/(1.+2.*sqrt(1.+betagamma2)*m_ratio+m_ratio*m_ratio);
 
-  return 0.0001535*fabs(ds)*(rho*Z/A)*Tmax/beta2;
+  return 0.0001535*fabs(ds)*(rho*Z/A)*Tmax/beta2*(1.-beta2/2.);
 }
 
 
@@ -2868,24 +2869,9 @@ double DTrackFitterKalman::BrentsAlgorithm(double ds1,double ds2,
   // main loop
   for (unsigned int iter=1;iter<=ITMAX;iter++){
     double xm=0.5*(a+b);
-    double tol1=EPS*fabs(x)+ZEPS;
+    double tol1=EPS2*fabs(x)+ZEPS;
     double tol2=2.0*tol1;
     if (fabs(x-xm)<=(tol2-0.5*(b-a))){
-      if (pos.z()>=endplate_z-endplate_dz){
-	double my_endz=endplate_z-endplate_dz;
-	// Check if the minimum doca would occur outside the straw and if so, bring the state 
-	// vector back to the end of the straw
-	unsigned int iter2=0;
-	while (fabs(pos.z()-my_endz)>EPS && iter2<20){
-	  u=x-(my_endz-pos.z())*sin(atan(Sc(state_tanl,0)));
-	  x=u;
-	  // Function evaluation
-	  FixedStep(pos,u_old-u,Sc,dedx);
-	  u_old=u;
-	  iter2++;
-	}
-	//printf("new z %f ds %f \n",pos.z(),x);
-      }
       if (pos.z()<=cdc_origin[2]){
 	unsigned int iter2=0;
 	while (fabs(pos.z()-cdc_origin[2])>EPS && iter2<20){
@@ -2992,7 +2978,7 @@ double DTrackFitterKalman::BrentsAlgorithm(double z,double dz,
   // main loop
   for (unsigned int iter=1;iter<=ITMAX;iter++){
     double xm=0.5*(a+b);
-    double tol1=EPS*fabs(x)+ZEPS;
+    double tol1=EPS2*fabs(x)+ZEPS;
     double tol2=2.0*tol1;
     if (fabs(x-xm)<=(tol2-0.5*(b-a))){
       return x;
@@ -3407,7 +3393,7 @@ jerror_t DTrackFitterKalman::KalmanCentral(double anneal_factor,
 	  
 	  // Update covariance matrix
 	  JT=DMatrix(DMatrix::kTransposed,J);
-	Cc=J*(Cc*JT);
+	  Cc=J*(Cc*JT);
 	}
 	
 	// Compute the value of D (signed distance to the reference trajectory)
@@ -3909,7 +3895,7 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 	      +(y-wirepos.y())*(y-wirepos.y()));
 
     // Check if the doca is no longer decreasing
-    if ((doca>old_doca) && z<endplate_z && more_measurements){
+    if ((doca>old_doca)/* && z<endplate_z */&& more_measurements){
       if (my_cdchits[cdc_index]->status==0){
 	// Mark previous point on ref trajectory with a hit id for the straw
 	forward_traj_cdc[k-1].h_id=cdc_index+1;
