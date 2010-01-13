@@ -34,11 +34,11 @@ class DApplication:public JApplication{
 		
 		jerror_t Init(void);
 		
-		DMagneticFieldMap* GetBfield(void){return bfield;}
-		DLorentzDeflections *GetLorentzDeflections(void){return lorentz_def;}
+		DMagneticFieldMap* GetBfield(void);
+		DLorentzDeflections *GetLorentzDeflections(void);
 		//DMaterialMap *GetMaterialMap(void){return material;}
 		DGeometry* GetDGeometry(unsigned int run_number);
-		DRootGeom *GetRootGeom(){return RootGeom;}
+		DRootGeom *GetRootGeom();
 
 	protected:
 	
@@ -47,6 +47,8 @@ class DApplication:public JApplication{
   		//DMaterialMap *material;
 	 	DRootGeom *RootGeom;	
 		vector<DGeometry*> geometries;
+		
+		pthread_mutex_t mutex;
 		
 	private:
 

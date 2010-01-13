@@ -9,6 +9,8 @@
 using std::string;
 #include <JANA/JVersion.h>
 
+#include <pthread.h>
+
 #include "DApplication.h"
 #include <HDDM/DEventSourceHDDMGenerator.h>
 #include <HDGEOMETRY/DMagneticFieldMapCalibDB.h>
@@ -28,6 +30,8 @@ using std::string;
 //---------------------------------
 DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 {
+	pthread_mutex_init(&mutex, NULL);
+
 	/// Add DEventSourceHDDMGenerator and
 	/// DFactoryGenerator, which adds the default
 	/// list of Hall-D factories
@@ -48,6 +52,17 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 		AddPluginPath(string(ptr) + "/lib/" + sbms);
 	}
 	
+	// Initialize pointers to NULL. Objects will be instantiated as needed
+	bfield = NULL;
+	lorentz_def = NULL;
+	RootGeom = NULL;
+	
+	// Since we defer reading in some tables until they are requested
+	// (likely while processing the first event) that time gets counted
+	// against the thread as being non-reponsive. The default timeout
+	// of 8 seconds is therefore too small. Change it to 30 here.
+	GetJParameterManager()->SetParameter("THREAD_TIMEOUT", "30 seconds"); // when converted to a number, it via string stream, it will be 30
+	
 	if(JVersion::minor<5)Init();
 }
 
@@ -57,35 +72,6 @@ DApplication::DApplication(int narg, char* argv[]):JApplication(narg, argv)
 jerror_t DApplication::Init(void)
 {
 	this->JApplication::Init();
-
-	// Create magnetic field object for use by everyone
-	// Allow a trivial homogeneous map to be used if 
-	// specified on the command line
-	string bfield_type = "CalibDB";
-	GetJParameterManager()->SetDefaultParameter("BFIELD_TYPE", bfield_type);
-	if(bfield_type=="CalibDB"){
-		bfield = new DMagneticFieldMapCalibDB(this);
-		cout<<"Created Magnetic field map of type DMagneticFieldMapCalibDB."<<endl;
-	}else if(bfield_type=="Const"){
-		bfield = new DMagneticFieldMapConst(this);
-		cout<<"Created Magnetic field map of type DMagneticFieldMapConst."<<endl;
-	}else if(bfield_type=="Spoiled"){
-		bfield = new DMagneticFieldMapSpoiled(this);
-		cout<<"Created Magnetic field map of type DMagneticFieldMapSpoiled."<<endl;
-	}else if(bfield_type=="Parameterized"){
-		bfield = new DMagneticFieldMapParameterized(this);
-		cout<<"Created Magnetic field map of type DMagneticFieldMapParameterized."<<endl;
-	}else{
-		_DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type<<"\" !!"<<endl;
-		exit(-1);
-	}
-
-	// Create Lorentz deflection object
-	lorentz_def= new DLorentzMapCalibDB(this);
-	
-	// Create map of material properties
-	//material = new DMaterialMapCalibDB(this);
-	RootGeom= new DRootGeom(this);
 	
 	// Install our own error handler for ROOT message
 	int ROOT_ERROR_LEVEL_SUPRESS = 10000;
@@ -187,3 +173,88 @@ DGeometry* DApplication::GetDGeometry(unsigned int run_number)
 	
 	return dgeom;
 }
+
+
+//---------------------------------
+// GetBfield
+//---------------------------------
+DMagneticFieldMap* DApplication::GetBfield(void)
+{
+	pthread_mutex_lock(&mutex);
+
+	// If field map already exists, return it immediately
+	if(bfield){
+		pthread_mutex_unlock(&mutex);
+		return bfield;
+	}
+
+	// Create magnetic field object for use by everyone
+	// Allow a trivial homogeneous map to be used if 
+	// specified on the command line
+	string bfield_type = "CalibDB";
+	GetJParameterManager()->SetDefaultParameter("BFIELD_TYPE", bfield_type);
+	if(bfield_type=="CalibDB"){
+		bfield = new DMagneticFieldMapCalibDB(this);
+		cout<<"Created Magnetic field map of type DMagneticFieldMapCalibDB."<<endl;
+	}else if(bfield_type=="Const"){
+		bfield = new DMagneticFieldMapConst(this);
+		cout<<"Created Magnetic field map of type DMagneticFieldMapConst."<<endl;
+	}else if(bfield_type=="Spoiled"){
+		bfield = new DMagneticFieldMapSpoiled(this);
+		cout<<"Created Magnetic field map of type DMagneticFieldMapSpoiled."<<endl;
+	}else if(bfield_type=="Parameterized"){
+		bfield = new DMagneticFieldMapParameterized(this);
+		cout<<"Created Magnetic field map of type DMagneticFieldMapParameterized."<<endl;
+	}else{
+		_DBG_<<" Unknown DMagneticFieldMap subclass \"DMagneticFieldMap"<<bfield_type<<"\" !!"<<endl;
+		exit(-1);
+	}
+	
+	pthread_mutex_unlock(&mutex);
+	
+	return bfield;
+}
+
+//---------------------------------
+// GetLorentzDeflections
+//---------------------------------
+DLorentzDeflections* DApplication::GetLorentzDeflections(void)
+{
+	pthread_mutex_lock(&mutex);
+
+	// If field map already exists, return it immediately
+	if(lorentz_def){
+		pthread_mutex_unlock(&mutex);
+		return lorentz_def;
+	}
+
+	// Create Lorentz deflection object
+	lorentz_def= new DLorentzMapCalibDB(this);
+	
+	pthread_mutex_unlock(&mutex);
+	
+	return lorentz_def;
+}
+
+//---------------------------------
+// GetRootGeom
+//---------------------------------
+DRootGeom* DApplication::GetRootGeom()
+{
+	pthread_mutex_lock(&mutex);
+
+	// If field map already exists, return it immediately
+	if(RootGeom){
+		pthread_mutex_unlock(&mutex);
+		return RootGeom;
+	}
+	
+	// Create map of material properties
+	//material = new DMaterialMapCalibDB(this);
+	RootGeom = new DRootGeom(this);
+
+	pthread_mutex_unlock(&mutex);
+	
+	return RootGeom;
+}
+
