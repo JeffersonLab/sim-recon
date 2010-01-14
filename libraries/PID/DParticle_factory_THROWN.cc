@@ -84,7 +84,7 @@ jerror_t DParticle_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 	vector<const DFDCPseudo*> fdcpseudos;
 	loop->Get(mcthrowns);
 	loop->Get(cdctrackhits);
-	loop->Get(fdcpseudos, "CORRECTED");
+	loop->Get(fdcpseudos);
 
 	for(unsigned int i=0; i< mcthrowns.size(); i++){
 		const DMCThrown *thrown = mcthrowns[i];
