@@ -17,35 +17,70 @@
 //----------------
 DPhoton_factory::DPhoton_factory()
 {
-	// Set defaults
+	// Initialize data members
+	bfield = NULL;
+	stepper = NULL;
 
-        PHOTON_VERTEX_X =  0.0;
-        PHOTON_VERTEX_Y =  0.0;
-        PHOTON_VERTEX_Z = 65.0;  
-
-	DELTA_PHI_SWUMCHARGE = 0.15;// Azimuthal angle separation between photon and swumcharged particle 
-                                   // in radians
-	DELTA_Z_SWUMCHARGE = 40;//Position separation between photon and swumcharged particle 
-                                   // in cm
-	DELTA_R_SWUMCHARGE = 25;//Position separation between photon and swumcharged particle 
-                                   // in cm
-                                  
+	// Set defaults for configuration parameters
 	USE_BCAL_ONLY = 0;
 	USE_FCAL_ONLY = 0;
-	
+	PHOTON_VERTEX_X =  0.0;
+	PHOTON_VERTEX_Y =  0.0;
+	PHOTON_VERTEX_Z = 65.0;  
+
 	gPARMS->SetDefaultParameter( "PID:USE_BCAL_ONLY", USE_BCAL_ONLY );
 	gPARMS->SetDefaultParameter( "PID:USE_FCAL_ONLY", USE_FCAL_ONLY );
-
-	gPARMS->SetDefaultParameter( "PID:DELTA_PHI_SWUMCHARGE", DELTA_PHI_SWUMCHARGE );
-	gPARMS->SetDefaultParameter( "PID:DELTA_Z_SWUMCHARGE", DELTA_Z_SWUMCHARGE );
-	gPARMS->SetDefaultParameter( "PID:DELTA_R_SWUMCHARGE", DELTA_R_SWUMCHARGE );
-
-        gPARMS->SetDefaultParameter( "PID:PHOTON_VERTEX_X", PHOTON_VERTEX_X );
-        gPARMS->SetDefaultParameter( "PID:PHOTON_VERTEX_Y", PHOTON_VERTEX_Y );
-        gPARMS->SetDefaultParameter( "PID:PHOTON_VERTEX_Z", PHOTON_VERTEX_Z );
-
+	gPARMS->SetDefaultParameter( "PID:PHOTON_VERTEX_X", PHOTON_VERTEX_X );
+	gPARMS->SetDefaultParameter( "PID:PHOTON_VERTEX_Y", PHOTON_VERTEX_Y );
+	gPARMS->SetDefaultParameter( "PID:PHOTON_VERTEX_Z", PHOTON_VERTEX_Z );
 }
 
+//----------------
+// brun
+//----------------
+jerror_t DPhoton_factory::brun(JEventLoop *loop, int runnumber)
+{
+	// Get Magnetic field map so we can create magnetic field stepper
+	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	if(!dapp){
+		_DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
+		return RESOURCE_UNAVAILABLE;
+	}
+	bfield = dapp->GetBfield();
+	stepper = new DMagneticFieldStepper(bfield);
+	
+	// Get z-position of front face of FCAL from geometry
+	vector<double> fcal_pos;
+	loop->GetGeom("//posXYZ[@volume='ForwardEMcal']/@X_Y_Z", fcal_pos);
+	assert(fcal_pos.size()==3);
+	fcal_origin.SetXYZ(0.0, 0.0, fcal_pos[2]);
+	fcal_norm.SetXYZ(0.0, 0.0, 1.0);
+	
+	// Get calibration constants
+	map<string, double> photon_track_matching;
+	loop->GetCalib("PID/photon_track_matching", photon_track_matching);
+	DELTA_PHI_BCAL = photon_track_matching["DELTA_PHI_BCAL"];
+	  DELTA_Z_BCAL = photon_track_matching["DELTA_Z_BCAL"];
+	 MEAN_PHI_BCAL = photon_track_matching["MEAN_PHI_BCAL"];
+	   MEAN_Z_BCAL = photon_track_matching["MEAN_Z_BCAL"];
+	  DELTA_R_FCAL = photon_track_matching["DELTA_R_FCAL"];
+	   MEAN_R_FCAL = photon_track_matching["MEAN_R_FCAL"];
+
+	// Optionally notify user of values
+	if(debug_level>0){
+		cout<<"PID: Photon/Charged track matching parameters"<<endl;
+		cout<<"   DELTA_PHI_BCAL = "<<photon_track_matching["DELTA_PHI_BCAL"]<<endl;
+		cout<<"     DELTA_Z_BCAL = "<<photon_track_matching["DELTA_Z_BCAL"]<<endl;
+		cout<<"    MEAN_PHI_BCAL = "<<photon_track_matching["MEAN_PHI_BCAL"]<<endl;
+		cout<<"      MEAN_Z_BCAL = "<<photon_track_matching["MEAN_Z_BCAL"]<<endl;
+		cout<<"     DELTA_R_FCAL = "<<photon_track_matching["DELTA_R_FCAL"]<<endl;
+		cout<<"      MEAN_R_FCAL = "<<photon_track_matching["MEAN_R_FCAL"]<<endl;
+		cout<<endl;
+		cout<<"FCAL front face is at z="<<fcal_origin.Z()<<endl;
+	}
+
+	return NOERROR;
+}
 
 //------------------
 // evnt
@@ -56,44 +91,69 @@ DPhoton_factory::DPhoton_factory()
 //------------------
 jerror_t DPhoton_factory::evnt(JEventLoop *eventLoop, int eventnumber)
 {
-
-	vector<const DTrackTimeBased*> chargedswum;
-	eventLoop->Get(chargedswum);
-// loop over FCAL photons    
+	// Get reconstructed photons from both BCAL and FCAL    
 	vector<const DFCALPhoton*> fcalPhotons;
-	if( ! USE_BCAL_ONLY ) eventLoop->Get(fcalPhotons);
-  
-        JObject::oid_t nPhotons=0;
-        for ( unsigned int i=0; i < fcalPhotons.size(); i++ ) {
-
-		DPhoton *photon =  makeFCalPhoton(fcalPhotons[i], ++nPhotons);
-                
-		vector<double> dSwum;
-                dSwum = dFromSwumChargeMC(photon,chargedswum);
-
-		if (dSwum[0] <DELTA_PHI_SWUMCHARGE  && dSwum[1] <DELTA_Z_SWUMCHARGE && dSwum[2] <DELTA_R_SWUMCHARGE  ) photon->setTag( DPhoton::kCharge   );
-
-		_data.push_back(photon);
-
-        } 
-
-// loop over BCAL photons and
-// correct shower energy and position in makeBCalPhoton
 	vector<const DBCALPhoton*> bcalPhotons;
+	if( ! USE_BCAL_ONLY ) eventLoop->Get(fcalPhotons);
 	if( ! USE_FCAL_ONLY ) eventLoop->Get(bcalPhotons);
 	
-       for (unsigned int i=0; i< bcalPhotons.size(); i++) {
+	// If no reconstructed photons exist, we can return now
+	if(fcalPhotons.size()==0 && bcalPhotons.size()==0)return NOERROR;
 
-		DPhoton *photon =  makeBCalPhoton(bcalPhotons[i], ++nPhotons);
+	// Get charged tracks
+	vector<const DTrackTimeBased*> tracks;
+	eventLoop->Get(tracks);
+	
+	// Project charged tracks to FCAL and BCAL if needed
+	vector<DVector3> track_projection_fcal;
+	vector<DVector3> track_projection_bcal;
+	if(fcalPhotons.size()!=0)ProjectToFCAL(tracks, track_projection_fcal);
+	if(bcalPhotons.size()!=0)ProjectToBCAL(tracks, track_projection_bcal);
 
-		vector<double> dSwum;
-                dSwum = dFromSwumChargeMC(photon,chargedswum);
+	// Loop over reconstructed FCAL photons
+	for ( unsigned int i=0; i < fcalPhotons.size(); i++ ) {
+		DPhoton *photon =  makeFCalPhoton(fcalPhotons[i], (JObject::oid_t)i);
 
-		if (dSwum[0] <DELTA_PHI_SWUMCHARGE  && dSwum[1] <DELTA_Z_SWUMCHARGE && dSwum[2] <DELTA_R_SWUMCHARGE  ) photon->setTag( DPhoton::kCharge   );
+		// Loop over charged tracks to see if this matches any
+		DVector3 pos_phot = photon->getPositionCal();
+		for(unsigned int j=0; j<track_projection_fcal.size(); j++){
+			DVector3 &pos_trk = track_projection_fcal[j];
+			
+			// Set reconstructed photon z-position to same as track projection
+			// to make sure distance is in plane of FCAL face
+			pos_phot.SetZ(pos_trk.Z());
+			double delta_r = (pos_phot-pos_trk).Mag();
+			if(fabs(delta_r - MEAN_R_FCAL) < DELTA_R_FCAL){
+				photon->setTag( DPhoton::kCharge);
+				break;
+			}
+		}
 
+		// Add this FCAL photon to list of all reconstructed photons
 		_data.push_back(photon);
+	} 
 
-       } 
+	// Loop over reconstructed BCAL photons
+	for ( unsigned int i=0; i < bcalPhotons.size(); i++ ) {
+		DPhoton *photon =  makeBCalPhoton(bcalPhotons[i], (JObject::oid_t)i);
+
+		// Loop over charged tracks to see if this matches any
+		DVector3 pos_phot = photon->getPositionCal();
+		for(unsigned int j=0; j<track_projection_bcal.size(); j++){
+			DVector3 &pos_trk = track_projection_bcal[j];
+			double delta_phi = pos_trk.DeltaPhi(pos_phot);
+			if(fabs(delta_phi - MEAN_PHI_BCAL) < DELTA_PHI_BCAL){
+				double delta_z = pos_trk.Z() - pos_phot.Z();
+				if(fabs(delta_z - MEAN_Z_BCAL) < DELTA_Z_BCAL){
+					photon->setTag( DPhoton::kCharge);
+					break;
+				}
+			}
+		}
+
+		// Add this BCAL photon to list of all reconstructed photons
+		_data.push_back(photon);
+	} 
 
 	return NOERROR;
 }
@@ -206,87 +266,42 @@ DPhoton* DPhoton_factory::makeBCalPhoton(const DBCALPhoton* gamma, const JObject
         return photon;
 }
 
-// Return the distance in azimuthal angle and position Z from the closest charged track.
-vector<double>  
-DPhoton_factory::dFromSwumChargeMC(const DPhoton* photon, vector<const DTrackTimeBased*>  chargedswum) 
+//--------------------------
+// ProjectToFCAL
+//--------------------------
+void DPhoton_factory::ProjectToFCAL(vector<const DTrackTimeBased*> &tracks, vector<DVector3> &track_projection)
 {
-
- DVector3 photonPoint =photon->getPositionCal();
- DVector3 diffVect,diffVectbcal,diffVectfcal;
- double dPhi = 10.0;
- double dPhiMin = 10.0;
- double dZ = 1000.0;
- double dZMin = 1000.0;
- double dR = 1000.0;
- double dRMin = 1000.0;
- vector<double> diffSwum(3);
-
- DApplication* dapp = dynamic_cast<DApplication*>(eventLoop->GetJApplication());
-   if(!dapp){
-     _DBG_<<"Cannot get DApplication from JEventLoop! (are you using a JApplication based program?)"<<endl;
-     //   return 0;
-   }
-   DMagneticFieldMap *bfield = dapp->GetBfield();
-
-
- for( vector<const DTrackTimeBased*>::const_iterator swum = chargedswum.begin();
-	     swum != chargedswum.end(); ++swum ){
-   if ( (**swum).charge() == 0 ) continue;
-
- 
-
-   bool hitbcal,hitfcal = false;
-   double q = (**swum).charge(); 
-   DVector3 pos = (**swum).position();
-   DVector3 mom = (**swum).momentum();
-   DMagneticFieldStepper *stepper1 = new DMagneticFieldStepper(bfield, q, &pos, &mom);
-   DMagneticFieldStepper *stepper2 = new DMagneticFieldStepper(bfield, q, &pos, &mom);
-
-   DVector3 pos_bcal = pos; 
-   DVector3 mom_bcal = mom; 
-   DVector3 pos_fcal = pos;
-   DVector3 mom_fcal = mom;
-   DVector3 origin(0.0, 0.0, 643.2);
-   DVector3 norm(0.0, 0.0, 1.0);
-
-
-   bool swimrad = stepper1->SwimToRadius(pos_bcal, mom_bcal, 65.0);
-
-   if( swimrad || (pos_bcal.Z()>400 && !swimrad) ){
-     bool swimplane = stepper2->SwimToPlane(pos_fcal, mom_fcal, origin, norm );//save a little time and do this here
-     hitbcal = false;
-   if( swimplane ){
-     hitfcal = false;
-   }else{
-     hitfcal = true;
-     diffVectfcal = photonPoint - pos_fcal;
-   }
-   }else{
-     hitbcal = true;
-     diffVectbcal = photonPoint - pos_bcal;
-   }
-
-   if( hitbcal && !hitfcal ){
-     dPhi = photonPoint.Phi() - pos_bcal.Phi();
-     dZ = photonPoint.Z() - pos_bcal.Z();
-     dR = photonPoint.Perp() - pos_bcal.Perp();
-
-    }else if(!hitbcal && hitfcal){
-     dPhi = fabs(photonPoint.Phi() - pos_fcal.Phi());
-     dZ = fabs(photonPoint.Z() - pos_fcal.Z());
-     dR = photonPoint.Perp() - pos_fcal.Perp();
-
-  }
-   //assigns the minimum distance
- dPhiMin = dPhi < dPhiMin ? dPhi : dPhiMin; 
- dZMin = dZ < dZMin ? dZ : dZMin;  
- dRMin = dR < dRMin ? dR : dRMin; 
- }
-
- diffSwum[0] = dPhiMin;
- diffSwum[1] = dZMin; 
- diffSwum[2] = dRMin;
-
-  return diffSwum;
-
+	// Loop over charged tracks projecting each to the FCAL front surface
+	for(unsigned int i=0; i<tracks.size(); i++){
+		const DTrackTimeBased *track = tracks[i];
+		if(track->charge()==0)continue;
+		DVector3 pos = track->position();
+		DVector3 mom = track->momentum();
+		stepper->SetCharge(track->charge());
+		if(!stepper->SwimToPlane(pos, mom, fcal_origin, fcal_norm )){
+			// Stepper managed to swim to the FCAL! Record position at FCAL front face
+			track_projection.push_back(pos);
+		}
+	}
 }
+
+//--------------------------
+// ProjectToBCAL
+//--------------------------
+void DPhoton_factory::ProjectToBCAL(vector<const DTrackTimeBased*> &tracks, vector<DVector3> &track_projection)
+{
+	// Loop over charged tracks projecting each to the BCAL inner surface
+	for(unsigned int i=0; i<tracks.size(); i++){
+		const DTrackTimeBased *track = tracks[i];
+		if(track->charge()==0)continue;
+		DVector3 pos = track->position();
+		DVector3 mom = track->momentum();
+		stepper->SetCharge(track->charge());
+		if(!stepper->SwimToRadius(pos, mom, 65.0)){
+			// Stepper managed to swim to the BCAL! Record position at BCAL inner face
+			track_projection.push_back(pos);
+		}
+	}
+}
+
+
