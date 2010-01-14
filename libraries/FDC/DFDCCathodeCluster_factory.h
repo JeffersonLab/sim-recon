@@ -57,7 +57,6 @@ class DFDCCathodeCluster_factory : public JFactory<DFDCCathodeCluster> {
 		
 	private:
 		JStreamLog* _log;
-		ofstream* _logFile;
 };
 
 #endif // DFACTORY_DFDCCATHODECLUSTER_H

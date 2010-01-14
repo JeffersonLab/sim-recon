@@ -97,7 +97,6 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		vector<vector<DFDCWire*> >fdcwires;
 
 		JStreamLog* _log;
-		ofstream* logFile;
 };
 
 #endif // DFACTORY_DFDCPSEUDO_H

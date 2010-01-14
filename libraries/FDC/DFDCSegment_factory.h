@@ -81,7 +81,6 @@ class DFDCSegment_factory : public JFactory<DFDCSegment> {
 
 	private:
 		JStreamLog* _log;
-		ofstream* logFile;
 
 		double N[3];
 	        double varN[3][3];

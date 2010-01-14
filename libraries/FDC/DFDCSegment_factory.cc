@@ -34,8 +34,7 @@ bool DFDCSegment_package_cmp(const DFDCPseudo* a, const DFDCPseudo* b) {
 }
 
 DFDCSegment_factory::DFDCSegment_factory() {
-        logFile = new ofstream("DFDCSegment_factory.log");
-        _log = new JStreamLog(*logFile, "SEGMENT");
+        _log = new JStreamLog(std::cout, "FDCSEGMENT >>");
         *_log << "File initialized." << endMsg;
 }
 
@@ -45,8 +44,6 @@ DFDCSegment_factory::DFDCSegment_factory() {
 /// default destructor -- closes log file
 ///
 DFDCSegment_factory::~DFDCSegment_factory() {
-        logFile->close();
-        delete logFile;
         delete _log;
 }
 ///

@@ -47,8 +47,7 @@ bool DFDCAnode_gLayer_cmp(const DFDCHit* a, const DFDCHit* b) {
 /// default constructor -- initializes log file
 ///
 DFDCPseudo_factory::DFDCPseudo_factory() {
-	logFile = new ofstream("DFDCPseudo_factory.log");
-	_log = new JStreamLog(*logFile, "PSEUDO");
+	_log = new JStreamLog(std::cout, "FDC PSEUDO >>");
 	*_log << "File initialized." << endMsg;
 }
 
@@ -57,8 +56,6 @@ DFDCPseudo_factory::DFDCPseudo_factory() {
 /// default destructor -- closes log file
 ///
 DFDCPseudo_factory::~DFDCPseudo_factory() {
-	logFile->close();
-	delete logFile;
 	delete _log;
 }
 
