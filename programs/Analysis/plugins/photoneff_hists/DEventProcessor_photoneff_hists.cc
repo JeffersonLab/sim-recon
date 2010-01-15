@@ -23,7 +23,7 @@ using namespace std;
 #include <particleType.h>
 #include <FCAL/DFCALHit.h>
 #include <BCAL/DBCALMCResponse.h>
-#include <FCAL/DFCALMCResponse.h>
+//#include <FCAL/DFCALMCResponse.h>
 
 // Routine used to create our DEventProcessor
 extern "C"{
@@ -70,6 +70,9 @@ jerror_t DEventProcessor_photoneff_hists::init(void)
 
 	dir->cd("../");
 	
+        // Create ROOT file
+        RootFile = new TFile("photoneff.root","RECREATE");
+ 
 	JParameterManager *parms = app->GetJParameterManager();
 
 	DEBUG = 1;
@@ -101,7 +104,7 @@ jerror_t DEventProcessor_photoneff_hists::erun(void)
 //------------------
 jerror_t DEventProcessor_photoneff_hists::fini(void)
 {
-	return NOERROR;
+        return NOERROR;
 }
 
 //------------------
@@ -206,7 +209,7 @@ bool DEventProcessor_photoneff_hists::isReconstructable(const DMCThrown *mcthrow
 	/// calculation so maybe this is a good thing ....?
 	
 	vector<const DBCALMCResponse*> bcalhits;
-	vector<const DFCALMCResponse*> fcalhits;
+	vector<const DFCALHit*> fcalhits;
 	
 	loop->Get(bcalhits);
 	loop->Get(fcalhits);
@@ -216,7 +219,7 @@ bool DEventProcessor_photoneff_hists::isReconstructable(const DMCThrown *mcthrow
 	if(Ebcal>0.5*mcthrown->energy())return true;
 
 	double Efcal = 0.0;
-	for(unsigned int i=0; i<fcalhits.size(); i++)Efcal += (fcalhits[i])->E();
+	for(unsigned int i=0; i<fcalhits.size(); i++)Efcal += (fcalhits[i])->E;
 	if(Efcal>0.5*mcthrown->energy())return true;
 	
 	return false;
