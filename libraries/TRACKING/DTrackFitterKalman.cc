@@ -22,7 +22,7 @@
 #define MAX_ITER 25
 #define STEP_SIZE 0.4 // 0.53135  // 0.25
 #define CDC_STEP_SIZE 0.4 // 0.25
-#define CDC_FORWARD_STEP_SIZE 0.4
+#define CDC_FORWARD_STEP_SIZE 0.25
 #define CDC_BACKWARD_STEP_SIZE 0.5
 #define NUM_ITER 10
 #define Z_MIN 15.
@@ -424,7 +424,6 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double z,double dz,
   // Try to keep the direction tangents from heading towards 90 degrees
   if (fabs(tx)>TAN_MAX) tx=TAN_MAX*(tx>0?1.:-1.); 
   if (fabs(ty)>TAN_MAX) ty=TAN_MAX*(ty>0?1.:-1.);
-  
   // useful combinations of terms
   double qpfactor=qBr2p*q_over_p;
   double tx2=tx*tx;
@@ -435,37 +434,58 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double z,double dz,
   double factor=sqrt(1.+tx2+ty2);
   double qpfactor2=qpfactor*factor;
   double qpfactor_ds=0.5*dz*qpfactor2;
+  double dtx_Bdep=ty*Bz+txty*Bx-one_plus_tx2*By;
+  double dty_Bdep=Bx*one_plus_ty2-txty*By-tx*Bz;
+  double Bxty=Bx*ty;
+  double Bytx=By*tx;
+  double Bztxty=Bz*txty;
+  double Byty=By*ty;
+  double Bxtx=Bx*tx;
   
   // Derivative of S with respect to z
-  D(state_x,0)=tx + qpfactor_ds*(ty*Bz+txty*Bx-one_plus_tx2*By);
-  D(state_y,0)=ty + qpfactor_ds*(Bx*one_plus_ty2-txty*By-tx*Bz);
-  D(state_tx,0)=qpfactor2*(txty*Bx-one_plus_tx2*By+ty*Bz);
-  D(state_ty,0)=qpfactor2*(one_plus_ty2*Bx-txty*By-tx*Bz);
+  D(state_x,0)=tx + qpfactor_ds*dtx_Bdep;
+  D(state_y,0)=ty + qpfactor_ds*dty_Bdep;
+  D(state_tx,0)=qpfactor2*dtx_Bdep;
+  D(state_ty,0)=qpfactor2*dty_Bdep;
 
   // Jacobian
   J(state_x,state_tx)=J(state_y,state_ty)=1.;
-  J(state_tx,state_q_over_p)=qBr2p*factor*(Bx*txty-By*one_plus_tx2+Bz*ty);
-  J(state_ty,state_q_over_p)=qBr2p*factor*(Bx*one_plus_ty2-By*txty-Bz*tx);
-  J(state_tx,state_tx)=qpfactor*(Bx*ty*(1.+2.*tx2+ty2)
-				       -By*tx*(3.+3.*tx2+2.*ty2)
-				       +Bz*txty)/factor;
+  J(state_tx,state_q_over_p)=qBr2p*factor*dtx_Bdep;
+  J(state_ty,state_q_over_p)=qBr2p*factor*dty_Bdep;
+  J(state_tx,state_tx)=qpfactor*(Bxty*(1.+2.*tx2+ty2)
+				       -Bytx*(3.+3.*tx2+2.*ty2)
+				       +Bztxty)/factor;
   J(state_tx,state_x)=qpfactor2*(ty*dBzdx+txty*dBxdx
 					     -one_plus_tx2*dBydx);
-  J(state_ty,state_ty)=qpfactor*(Bx*ty*(3.+2.*tx2+3.*ty2)
-				       -By*tx*one_plus_tx2+2.*ty2
-				       -Bz*txty)/factor;
+  J(state_ty,state_ty)=qpfactor*(Bxty*(3.+2.*tx2+3.*ty2)
+				       -Bytx*one_plus_tx2+2.*ty2
+				       -Bztxty)/factor;
   J(state_ty,state_y)= qpfactor2*(one_plus_ty2*dBxdy
 					      -txty*dBydy-tx*dBzdy);
-  J(state_tx,state_ty)=qpfactor*((Bx*tx+Bz)*(one_plus_tx2+2.*ty2)
-				       -By*ty*one_plus_tx2)/factor;
+  J(state_tx,state_ty)=qpfactor*((Bxtx+Bz)*(one_plus_tx2+2.*ty2)
+				       -Byty*one_plus_tx2)/factor;
   J(state_tx,state_y)= qpfactor2*(tx*dBzdy+txty*dBxdy
 					      -one_plus_tx2*dBydy);
-  J(state_ty,state_tx)=-qpfactor*((By*ty+Bz)*(1.+2.*tx2+ty2)
-					-Bx*tx*one_plus_ty2)/factor;
+  J(state_ty,state_tx)=-qpfactor*((Byty+Bz)*(1.+2.*tx2+ty2)
+					-Bxtx*one_plus_ty2)/factor;
   J(state_ty,state_x)=qpfactor2*(one_plus_ty2*dBxdx-txty*dBydx
 					     -tx*dBzdx);
   J(state_q_over_p,state_tx)=D(state_q_over_p,0)*tx/factor/factor;
   J(state_q_over_p,state_ty)=D(state_q_over_p,0)*ty/factor/factor;
+
+  // Second order
+  
+  J(state_x,state_tx)+=qpfactor_ds*(dtx_Bdep*tx/factor/factor+Bxty-2.*Bytx);
+  J(state_x,state_ty)=qpfactor_ds*(dtx_Bdep*ty/factor/factor+Bz+Bxtx);
+  J(state_x,state_q_over_p)=J(state_tx,state_q_over_p)*0.5*dz;
+  J(state_x,state_x)=J(state_tx,state_x)*0.5*dz;
+  J(state_x,state_y)=J(state_tx,state_y)*0.5*dz;
+  J(state_y,state_tx)=qpfactor_ds*(dty_Bdep*tx/factor/factor-Byty-Bz);
+  J(state_y,state_ty)+=qpfactor_ds*(dty_Bdep*ty/factor/factor+2.*Bxty-Bytx);
+  J(state_y,state_q_over_p)=J(state_ty,state_q_over_p)*0.5*dz;
+  J(state_y,state_x)=J(state_ty,state_x)*0.5*dz;
+  J(state_y,state_y)=J(state_ty,state_y)*0.5*dz;
+
 
   D(state_q_over_p,0)=0.;
   J(state_q_over_p,state_q_over_p)=0.;
@@ -477,6 +497,7 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double z,double dz,
       *(2.+3.*mass2/p2);
   }
    
+    
   return NOERROR;
 }
 
@@ -487,42 +508,17 @@ jerror_t DTrackFitterKalman::SetCDCForwardReferenceTrajectory(DMatrix &S){
   int i=0,forward_traj_cdc_length=forward_traj_cdc.size();
   double z=z_;
   double r=0.;
-  double r_outer_hit=R_MAX;
    
   // Continue adding to the trajectory until we have reached the endplate
   // or the maximum radius
-  while(z<endplate_z-CDC_FORWARD_STEP_SIZE && r<R_MAX){
+  while(z<endplate_z && r<R_MAX){
     double step_size=CDC_FORWARD_STEP_SIZE;
     r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
-    //if (r<9.) step_size=0.1;
-
-    // do not do energy loss for steps beyond the outermost hit
-    if (r>r_outer_hit) do_energy_loss=false;
+    if (r<9.) step_size=0.1;
 
     if (PropagateForwardCDC(forward_traj_cdc_length,i,z,step_size,S)!=NOERROR)
       return UNRECOVERABLE_ERROR;   
     z+=step_size;
-  }  
-  r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
-  if (r<R_MAX){
-    // do not do energy loss for steps beyond the outermost hit
-    if (r>r_outer_hit) do_energy_loss=false;
-
-    if (PropagateForwardCDC(forward_traj_cdc_length,i,z,endplate_z-z,S)
-	!=NOERROR)
-      return UNRECOVERABLE_ERROR;
-    z=endplate_z;
-  }
-
-  if (my_fdchits.size()>0){
-    // Propagate through endplate with smaller steps 
-    r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
-    while(z<endplate_z+endplate_dz && r<R_MAX){
-      if (PropagateForwardCDC(forward_traj_cdc_length,i,z,0.1,S)!=NOERROR)
-	return UNRECOVERABLE_ERROR;
-      z+=endplate_dz/2.;
-      r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
-    }
   }
 
   // If the current length of the trajectory deque is less than the previous 
@@ -1023,206 +1019,143 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
   return NOERROR;
 }
 
+// Routine that extracts the state vector propagation part out of the reference
+// trajectory loop
+jerror_t DTrackFitterKalman::PropagateForward(int length,int my_id,int &i,
+					      double &z,
+					      double step,DMatrix &S){
+  DMatrix J(5,5),Q(5,5);    
+  DKalmanState_t temp;
+  double ds=0.; // path length increment
+  double newz=z+step; // new z position 
+  
+  // Initialize some variables
+  temp.h_id=my_id; // hit id
+  temp.num_hits=0;
+  double dEdx=0.;
+  double beta2=1.,q_over_p=1.,q_over_p_sq=1.,varE=0.;
+  int my_i=0;
+
+  temp.s=len;
+  temp.t=ftime;
+  temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
+  temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
+  
+  // get material properties from the Root Geometry
+  if (do_energy_loss){
+    if (geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
+	!=NOERROR){
+      if (DEBUG_LEVEL>0)
+	_DBG_<<"Material error!"<<endl; 
+      return UNRECOVERABLE_ERROR;
+    }
+  }
+
+  i++;
+  my_i=length-i;
+  if (i<=length){
+    forward_traj[my_i].s=temp.s;
+    forward_traj[my_i].t=temp.t;
+    forward_traj[my_i].h_id=temp.h_id;
+    forward_traj[my_i].pos=temp.pos;
+    forward_traj[my_i].A=temp.A;
+    forward_traj[my_i].Z=temp.Z;
+    forward_traj[my_i].density=temp.density;
+    forward_traj[my_i].X0=temp.X0;
+    for (unsigned int j=0;j<5;j++){
+      forward_traj[my_i].S->operator()(j,0)=S(j,0);
+    }
+  } 
+  else{
+    temp.S=new DMatrix(S);
+  }
+  
+  // Get dEdx for the upcoming step
+  //r=temp.pos.Perp();
+  if (do_energy_loss){
+    dEdx=GetdEdx(S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
+  }
+
+  // Step through field
+  ds=Step(z,newz,dEdx,S);
+  len+=ds;
+
+  q_over_p=S(state_q_over_p,0);
+  q_over_p_sq=q_over_p*q_over_p;
+  ftime+=ds*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
+       
+  // Get the contribution to the covariance matrix due to multiple 
+  // scattering
+  if (do_multiple_scattering)
+    GetProcessNoise(ds,newz,temp.X0,S,Q);
+      
+  // Energy loss straggling in the approximation of thick absorbers
+  if (temp.density>0. && do_energy_loss){
+    beta2=1./(1.+mass2*q_over_p_sq);
+    varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
+	
+    Q(state_q_over_p,state_q_over_p)
+      =varE*q_over_p_sq*q_over_p_sq/beta2;
+  }			      
+      
+  // Compute the Jacobian matrix
+  StepJacobian(newz,z,S,dEdx,J);
+      
+  // update the trajectory data
+  if (i<=length){
+    for (unsigned int j=0;j<5;j++){
+      for (unsigned int k=0;k<5;k++){
+	forward_traj[my_i].Q->operator()(j,k)=Q(j,k);
+	forward_traj[my_i].J->operator()(j,k)=J(j,k);
+      }
+    }
+  }
+  else{
+    temp.Q=new DMatrix(Q);
+    temp.J=new DMatrix(J);
+    forward_traj.push_front(temp);
+  }
+ 
+  // update z
+  z=newz;
+
+  return NOERROR;
+}
+
 // Reference trajectory for trajectories with hits in the forward direction
 // At each point we store the state vector and the Jacobian needed to get to this state 
 // along z from the previous state.
 jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){   
-  DMatrix J(5,5),Q(5,5);    
-  DKalmanState_t temp;
-  double ds=0.; // path length increment
-
-  // Initialize some variables
-  temp.h_id=0;
-  temp.num_hits=0;
-  double dEdx=0.;
-  double beta2=1.,q_over_p=1.,q_over_p_sq=1.,varE=0.;
-
+ 
    // progress in z from hit to hit
   double z=z_;
   double newz=z;
-  double r=0.;
-  int i=0,my_i=0;
+  int i=0,my_id=0;
   int forward_traj_length=forward_traj.size();
+
+  // Take small steps through the cdc endplate 
+  while (z<endplate_z+2.*endplate_dz){
+    if (PropagateForward(forward_traj_length,0,i,z,0.1,S)!=NOERROR)
+      return UNRECOVERABLE_ERROR;
+  }
+  
+  // loop over the fdc hits
   for (unsigned int m=0;m<my_fdchits.size();m++){
     int num=int((my_fdchits[m]->z-z)/STEP_SIZE);
     newz=my_fdchits[m]->z-STEP_SIZE*double(num);
 
     if (newz-z>0.){
-      temp.s=len;
-      temp.t=ftime;
-      //temp.h_id=0;
-      temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
-      temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
+      if (PropagateForward(forward_traj_length,my_id,i,z,newz-z,S)!=NOERROR)
+	return UNRECOVERABLE_ERROR;
 
-      // get material properties from the Root Geometry
-      if (do_energy_loss){
-	if (geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
-	    !=NOERROR){
-	  if (DEBUG_LEVEL>0)
-	    _DBG_<<"Material error!"<<endl; 
-	  return UNRECOVERABLE_ERROR;
-	}
-      }
-
-      i++;
-      my_i=forward_traj_length-i;
-      if (i<=forward_traj_length){
-	forward_traj[my_i].s=temp.s;
-	forward_traj[my_i].t=temp.t;
-	forward_traj[my_i].h_id=temp.h_id;
-	forward_traj[my_i].pos=temp.pos;
-	forward_traj[my_i].A=temp.A;
-	forward_traj[my_i].Z=temp.Z;
-	forward_traj[my_i].density=temp.density;
-	forward_traj[my_i].X0=temp.X0;
-	for (unsigned int j=0;j<5;j++){
-	  forward_traj[my_i].S->operator()(j,0)=S(j,0);
-	}
-      } 
-      else{
-	temp.S=new DMatrix(S);
-      }
-      
-      // Get dEdx for the upcoming step
-      r=temp.pos.Perp();
-      if (do_energy_loss){
-	dEdx=GetdEdx(S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
-      }
-
-      // Step through field
-      ds=Step(z,newz,dEdx,S);
-      len+=ds;
-
-      q_over_p=S(state_q_over_p,0);
-      q_over_p_sq=q_over_p*q_over_p;
-      ftime+=ds*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
-       
-      // Get the contribution to the covariance matrix due to multiple 
-      // scattering
-      if (do_multiple_scattering)
-	GetProcessNoise(ds,newz,temp.X0,S,Q);
-      
-      // Energy loss straggling in the approximation of thick absorbers
-      if (temp.density>0. && do_energy_loss){
-	beta2=1./(1.+mass2*q_over_p_sq);
-	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
-	
-	Q(state_q_over_p,state_q_over_p)
-	  =varE*q_over_p_sq*q_over_p_sq/beta2;
-      }			      
-      
-      // Compute the Jacobian matrix
-      StepJacobian(newz,z,S,dEdx,J);
-      
-      // update the trajectory data
-      if (i<=forward_traj_length){
-	for (unsigned int j=0;j<5;j++){
-	  for (unsigned int k=0;k<5;k++){
-	    forward_traj[my_i].Q->operator()(j,k)=Q(j,k);
-	    forward_traj[my_i].J->operator()(j,k)=J(j,k);
-	  }
-	}
-      }
-      else{
-	temp.Q=new DMatrix(Q);
-	temp.J=new DMatrix(J);
-	forward_traj.push_front(temp);
-      }
-      // update z
-      z=newz;
-      
-      if (temp.h_id>0) temp.h_id=0;
+      if (my_id>0) my_id=0;
     }
     
     for (int k=0;k<num;k++){
-      i++;
-      my_i=forward_traj_length-i;
-      newz=z+STEP_SIZE;
+      if (PropagateForward(forward_traj_length,my_id,i,z,STEP_SIZE,S)!=NOERROR)
+	return UNRECOVERABLE_ERROR;
       
-      temp.s=len;
-      temp.t=ftime;
-      //temp.h_id=0;
-      temp.pos.SetXYZ(S(state_x,0),S(state_y,0),z);
-      temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
-      //double r=temp.pos.Perp();
-
-      // get material properties from the Root Geometry
-      if (do_energy_loss){
-	if(geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
-	   !=NOERROR){
-	  if (DEBUG_LEVEL>0)
-	    _DBG_<<"Material error!"<<endl;
-	  return UNRECOVERABLE_ERROR;
-	}
-      }
-
-      if (i<=forward_traj_length){
-	forward_traj[my_i].s=temp.s;
-	forward_traj[my_i].t=temp.t;
-	forward_traj[my_i].h_id=temp.h_id;
-	forward_traj[my_i].pos=temp.pos;
-	forward_traj[my_i].A=temp.A;
-	forward_traj[my_i].Z=temp.Z;
-	forward_traj[my_i].density=temp.density;
-	forward_traj[my_i].X0=temp.X0;
-	for (unsigned int j=0;j<5;j++){
-	  forward_traj[my_i].S->operator()(j,0)=S(j,0);
-	}
-      } 
-      else{
-	temp.S=new DMatrix(S);
-      }    
-      
-      // Get dEdx for the upcoming step
-      if (do_energy_loss
-	  //&& (pass==kTimeBased || r<9.0)
-	  ){
-	dEdx=GetdEdx(S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
-      }
-      
-      // Step through field
-      ds=Step(z,newz,dEdx,S);
-      len+=ds;
-      
-      q_over_p=S(state_q_over_p,0);
-      q_over_p_sq=q_over_p*q_over_p;
-      ftime+=ds*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
-      
-      // Get the contribution to the covariance matrix due to multiple 
-      // scattering
-      if (do_multiple_scattering)
-	GetProcessNoise(ds,newz,temp.X0,S,Q);
-
-      // Energy loss straggling in the approximation of thick absorbers
-      if (temp.density>0. && do_energy_loss){	
-	beta2=1./(1.+mass2*q_over_p_sq);
-	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
-	
-	Q(state_q_over_p,state_q_over_p)
-	  =varE*q_over_p_sq*q_over_p_sq/beta2;
-      }
-      
-      // Compute the Jacobian matrix
-      StepJacobian(newz,z,S,dEdx,J);
-      
-      // update the trajectory data
-      if (i<=forward_traj_length){
-	for (unsigned int j=0;j<5;j++){
-	  for (unsigned int k=0;k<5;k++){
-	    forward_traj[my_i].Q->operator()(j,k)=Q(j,k);
-	    forward_traj[my_i].J->operator()(j,k)=J(j,k);
-	  }
-	}
-      }
-      else{
-	temp.Q=new DMatrix(Q);
-	temp.J=new DMatrix(J);
-	forward_traj.push_front(temp);
-      }
-      if (temp.h_id>0) temp.h_id=0;
-      
-      //update z
-      z=newz;
+      if (my_id>0) my_id=0;
     }
     
     // Lorentz correction slope parameters
@@ -1231,171 +1164,18 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
 						tanz,tanr);
     my_fdchits[m]->nr=tanr;
     my_fdchits[m]->nz=tanz;
-      
-    temp.h_id=m+1;
+
+    my_id=m+1;
   }
 
   // Final point 
-  //i++;
-  //my_i=forward_traj_length-i;
-  temp.s=len;
-  temp.t=ftime;
-  temp.pos.SetXYZ(S(state_x,0),S(state_y,0),newz); 
-  temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
+  if (PropagateForward(forward_traj_length,my_id,i,z,STEP_SIZE,S)!=NOERROR)
+    return UNRECOVERABLE_ERROR;
 
-  // get material properties from the Root Geometry
-  if(do_energy_loss 
-     && geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
-     ==NOERROR){
-    i++;
-    my_i=forward_traj_length-i;
-    
-    // Get dEdx for the upcoming step  
-    r=temp.pos.Perp();
-    dEdx=GetdEdx(S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
-    
-    // Store next-to-final point
-    if (i<=forward_traj_length){
-      forward_traj[my_i].s=temp.s;
-      forward_traj[my_i].t=temp.t;
-      forward_traj[my_i].h_id=temp.h_id;
-      forward_traj[my_i].pos=temp.pos;
-      forward_traj[my_i].A=temp.A;
-      forward_traj[my_i].Z=temp.Z;
-      forward_traj[my_i].density=temp.density;
-      forward_traj[my_i].X0=temp.X0;
-      for (unsigned int j=0;j<5;j++){
-	forward_traj[my_i].S->operator()(j,0)=S(j,0);
-      }
-    }
-    else{
-      temp.S=new DMatrix(S);
-    }
-  
-    // One more step to last hit point
-    newz=z+STEP_SIZE;
-    ds=Step(z,newz,dEdx,S);
-    len+=ds;
-
-    q_over_p=S(state_q_over_p,0);
-    q_over_p_sq=q_over_p*q_over_p;
-    ftime+=ds*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
-
-    // Get the contribution to the covariance matrix due to multiple 
-    // scattering
-    if (do_multiple_scattering)
-      GetProcessNoise(ds,newz,temp.X0,S,Q);
-    
-    // Energy loss straggling in the approximation of thick absorbers
-    if (temp.density>0. && do_energy_loss){	
-      beta2=1./(1.+mass2*q_over_p_sq);
-      varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
-      
-      Q(state_q_over_p,state_q_over_p)
-	=varE*q_over_p_sq*q_over_p_sq/beta2;
-    }
-    
-    // Compute the Jacobian matrix
-    StepJacobian(newz,z,S,dEdx,J);
-    
-    // update the trajectory data
-    if (i<=forward_traj_length){
-      for (unsigned int j=0;j<5;j++){
-	for (unsigned int k=0;k<5;k++){
-	  forward_traj[my_i].Q->operator()(j,k)=Q(j,k);
-	  forward_traj[my_i].J->operator()(j,k)=J(j,k);
-	}
-      }
-    }
-    else{
-      temp.Q=new DMatrix(Q);
-      temp.J=new DMatrix(J);
-      forward_traj.push_front(temp);
-    }
- 
-    // Make sure the ref trajectory goes one step beyond the most downstream 
-    //hit
-    //i++;
-    //my_i=forward_traj_length-i;
-    temp.s=len;
-    temp.t=ftime;
-    temp.pos.SetXYZ(S(state_x,0),S(state_y,0),newz); 
-    temp.h_id=0;
-    temp.density=temp.A=temp.Z=temp.X0=0.; //initialize
-
-    // get material properties from the Root Geometry
-    if(do_energy_loss && 
-       geom->FindMat(temp.pos,temp.density,temp.A,temp.Z,temp.X0)
-       ==NOERROR){
-      i++;
-      my_i=forward_traj_length-i;
-    
-      // Get dEdx for the upcoming step
-      r=temp.pos.Perp();
-      dEdx=GetdEdx(S(state_q_over_p,0),temp.Z,temp.A,temp.density); 
-      
-      // Store final point
-      if (i<=forward_traj_length){
-	forward_traj[my_i].s=temp.s;
-	forward_traj[my_i].t=temp.t;
-	forward_traj[my_i].h_id=temp.h_id;
-	forward_traj[my_i].pos=temp.pos;
-	forward_traj[my_i].A=temp.A;
-	forward_traj[my_i].Z=temp.Z;
-	forward_traj[my_i].density=temp.density;
-	forward_traj[my_i].X0=temp.X0;
-	for (unsigned int j=0;j<5;j++){
-	  forward_traj[my_i].S->operator()(j,0)=S(j,0);
-	}
-      }
-      else{
-	temp.S=new DMatrix(S);
-      }
-      
-      // One more step after last hit point
-      newz=z+STEP_SIZE;
-      ds=Step(z,newz,dEdx,S);
-      //len+=ds;
-      
-      // Get the contribution to the covariance matrix due to multiple 
-      // scattering
-      if (do_multiple_scattering)
-	GetProcessNoise(ds,newz,temp.X0,S,Q);
-      
-      // Energy loss straggling in the approximation of thick absorbers
-      if (temp.density>0. && do_energy_loss){	
-	q_over_p=S(state_q_over_p,0);
-	q_over_p_sq=q_over_p*q_over_p;
-	beta2=1./(1.+mass2*q_over_p_sq);
-	varE=GetEnergyVariance(ds,q_over_p,temp.Z,temp.A,temp.density);
-	
-	Q(state_q_over_p,state_q_over_p)
-	  =varE*q_over_p_sq*q_over_p_sq/beta2;
-      }
-      
-      // Compute the Jacobian matrix
-      StepJacobian(newz,z,S,dEdx,J);
-      
-      // update the trajectory data
-      if (i<=forward_traj_length){
-	for (unsigned int j=0;j<5;j++){
-	  for (unsigned int k=0;k<5;k++){
-	    forward_traj[my_i].Q->operator()(j,k)=Q(j,k);
-	    forward_traj[my_i].J->operator()(j,k)=J(j,k);
-	  }
-	}
-      }
-      else{
-	temp.Q=new DMatrix(Q);
-	temp.J=new DMatrix(J);
-	forward_traj.push_front(temp);
-      }
-    }
-  }
-  else{
-    if (DEBUG_LEVEL>0)
-      _DBG_ << "Material error!" <<endl;
-  }
+  // Make sure the ref trajectory goes one step beyond the most downstream 
+  // hit
+  if (PropagateForward(forward_traj_length,0,i,z,STEP_SIZE,S)!=NOERROR)
+    return UNRECOVERABLE_ERROR;
   
   // Shrink the deque if the new trajectory has less points in it than the 
   // old trajectory
@@ -1613,13 +1393,14 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double ds,
 			      dBydy,dBydz,dBzdx,dBzdy,dBzdz);
 
   // Derivative of S with respect to s
-  double temp1=B.y()*cosphi-B.x()*sinphi;
-  D1(state_q_over_pt,0)=qpfactor*q_over_pt*sinl*temp1;
-  D1(state_phi,0)=qpfactor*(B.x()*cosphi*sinl+B.y()*sinphi*sinl-B.z()*cosl);
-  D1(state_tanl,0)=qpfactor*temp1/cosl;
+  double By_cosphi_minus_Bx_sinphi=B.y()*cosphi-B.x()*sinphi;
+  double By_sinphi_plus_Bx_cosphi=B.y()*sinphi+B.x()*cosphi;
+  D1(state_q_over_pt,0)=qpfactor*q_over_pt*sinl*By_cosphi_minus_Bx_sinphi;
+  D1(state_phi,0)=qpfactor*(By_sinphi_plus_Bx_cosphi*sinl-B.z()*cosl);
+  D1(state_tanl,0)=qpfactor*By_cosphi_minus_Bx_sinphi/cosl;
   double factor=qpfactor*ds/2.*cosl;
-  //D1(state_z,0)=sinl+q_over_pt*qBr2p*ds/2.*cosl*cosl*temp1;
-  D1(state_z,0)=sinl+factor*cosl*temp1;
+  //D1(state_z,0)=sinl+q_over_pt*qBr2p*ds/2.*cosl*cosl*By_cosphi_minus_Bx_sinphi;
+  D1(state_z,0)=sinl+factor*cosl*By_cosphi_minus_Bx_sinphi;
 
   // New direction
   /*
@@ -1635,41 +1416,43 @@ jerror_t DTrackFitterKalman::CalcDerivAndJacobian(double ds,
 
  
   // Jacobian matrix elements
-  J1(state_phi,state_phi)=qpfactor*sinl*(B.y()*cosphi-B.x()*sinphi);
-  J1(state_phi,state_q_over_pt)=qBr2p*(B.x()*cosphi*sinl+B.y()*sinphi*sinl
-				       -B.z()*cosl);
-  J1(state_phi,state_tanl)=qpfactor*(B.x()*cosphi*cosl+B.y()*sinphi*cosl
-					    +B.z()*sinl)/(1.+tanl*tanl);
+  J1(state_phi,state_phi)=qpfactor*sinl*By_cosphi_minus_Bx_sinphi;
+  J1(state_phi,state_q_over_pt)
+    =qBr2p*(By_sinphi_plus_Bx_cosphi*sinl-B.z()*cosl);
+  J1(state_phi,state_tanl)=qpfactor*(By_sinphi_plus_Bx_cosphi*cosl
+				     +B.z()*sinl)/(1.+tanl*tanl);
   J1(state_phi,state_z)
     =qpfactor*(dBxdz*cosphi*sinl+dBydz*sinphi*sinl-dBzdz*cosl);
 
-  J1(state_tanl,state_phi)=-qpfactor*(B.y()*sinphi+B.x()*cosphi)/cosl;
-  J1(state_tanl,state_q_over_pt)=qBr2p*(B.y()*cosphi-B.x()*sinphi)/cosl;
-  J1(state_tanl,state_tanl)=qpfactor*sinl*(B.y()*cosphi-B.x()*sinphi);
-  J1(state_tanl,state_z)=qpfactor*(dBydz*cosphi-dBxdz*sinphi)/cosl;
-  
+  J1(state_tanl,state_phi)=-qpfactor*By_sinphi_plus_Bx_cosphi/cosl;
+  J1(state_tanl,state_q_over_pt)=qBr2p*By_cosphi_minus_Bx_sinphi/cosl;
+  J1(state_tanl,state_tanl)=qpfactor*sinl*By_cosphi_minus_Bx_sinphi;
+  J1(state_tanl,state_z)=qpfactor*(dBydz*cosphi-dBxdz*sinphi)/cosl;  
   J1(state_q_over_pt,state_phi)
-    =-qpfactor*q_over_pt*sinl*(B.y()*sinphi+B.x()*cosphi);
-
-  double temp=sqrt(1.+cosl*cosl*q_over_pt*q_over_pt*mass2);
+    =-qpfactor*q_over_pt*sinl*By_sinphi_plus_Bx_cosphi;  
   J1(state_q_over_pt,state_q_over_pt)
-    =2.*qpfactor*sinl*(B.y()*cosphi-B.x()*sinphi);
-
+    =2.*qpfactor*sinl*By_cosphi_minus_Bx_sinphi;
+  J1(state_q_over_pt,state_tanl)
+    =qpfactor*q_over_pt*cosl*cosl*cosl*By_cosphi_minus_Bx_sinphi;
   if (fabs(dEdx)>0){  
     double p=pt/cosl;
-    double E=sqrt(p*p+mass2);
-    D1(state_q_over_pt,0)+=-q_over_pt*E/p/p*dEdx;
-    J1(state_q_over_pt,state_q_over_pt)+=-q*dEdx*cosl*q_over_pt*(2.+3.*cosl*cosl*q_over_pt*q_over_pt*mass2)
-      /temp;
+    double p_sq=p*p;
+    double m2_over_p2=mass2/p_sq;
+    double E=sqrt(p_sq+mass2);
+
+    D1(state_q_over_pt,0)+=-q_over_pt*E/p_sq*dEdx;
+    J1(state_q_over_pt,state_q_over_pt)+=-dEdx*(2.+3.*m2_over_p2)/E;
+    J1(state_q_over_pt,state_tanl)+=q*dEdx*sinl*(1.+2.*m2_over_p2)/p/E;
   }
-  J1(state_q_over_pt,state_tanl)
-    =qpfactor*q_over_pt*cosl*cosl*cosl*(B.y()*cosphi-B.x()*sinphi)
-    +q*dEdx*sinl*cosl*cosl/temp*q_over_pt*q_over_pt
-    *(1.+2.*cosl*cosl*mass2*q_over_pt*q_over_pt);
   J1(state_q_over_pt,state_z)
     =qpfactor*q_over_pt*sinl*(dBydz*cosphi-dBxdz*sinphi);
 
-  J1(state_z,state_tanl)=cosl/(1.+tanl*tanl);
+  double one_plus_tanl2=1.+tanl*tanl;
+  // second order
+  J1(state_z,state_tanl)=cosl/one_plus_tanl2;
+  J1(state_z,state_tanl)+=-2.*factor*sinl*By_cosphi_minus_Bx_sinphi/one_plus_tanl2;
+  J1(state_z,state_phi)=-factor*cosl*By_sinphi_plus_Bx_cosphi;
+  J1(state_z,state_q_over_pt)=factor*cosl*By_cosphi_minus_Bx_sinphi/q_over_pt;
 
   return NOERROR;
 }
@@ -2250,7 +2033,7 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	break;
 
       if (fit_type==kTimeBased){
-	if (chisq_forward-chisq_iter>CHISQ_DIFF_CUT) break;
+	//if (chisq_forward-chisq_iter>CHISQ_DIFF_CUT) break;
 	if (iter2>7 && 
 	  (fabs(chisq_forward-chisq_iter)<0.1 
 	   || chisq_forward-chisq_iter>0.)) break; 
@@ -2437,7 +2220,7 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
 	break;
       
       if (fit_type==kTimeBased){
-	if (chisq_forward-chisq_iter>CHISQ_DIFF_CUT) break;
+	//if (chisq_forward-chisq_iter>CHISQ_DIFF_CUT) break;
 	if (iter2>7 && 
 	  (fabs(chisq_forward-chisq_iter)<0.1 
 	   || chisq_forward-chisq_iter>0.)) break; 
@@ -2759,7 +2542,7 @@ jerror_t DTrackFitterKalman::KalmanLoop(void){
       if (!isfinite(chisq_central)) break;
       
       if (fit_type==kTimeBased){
-	if (chisq-chisq_iter>CHISQ_DIFF_CUT) break;
+	//if (chisq-chisq_iter>CHISQ_DIFF_CUT) break;
 	if (iter2>10 && 
 	  (fabs(chisq-chisq_iter)<0.1 
 	   || chisq-chisq_iter>0.)) break; 
@@ -2874,15 +2657,18 @@ double DTrackFitterKalman::BrentsAlgorithm(double ds1,double ds2,
     if (fabs(x-xm)<=(tol2-0.5*(b-a))){
       if (pos.z()<=cdc_origin[2]){
 	unsigned int iter2=0;
-	while (fabs(pos.z()-cdc_origin[2])>EPS && iter2<20){
+	double ds_temp=0.;
+	while (fabs(pos.z()-cdc_origin[2])>EPS2 && iter2<20){
 	  u=x-(cdc_origin[2]-pos.z())*sin(atan(Sc(state_tanl,0)));
 	  x=u;
+	  ds_temp+=u_old-u;
 	  // Function evaluation
 	  FixedStep(pos,u_old-u,Sc,dedx);
 	  u_old=u;
 	  iter2++;
 	}
-	//printf("new z %f ds %f \n",pos.z(),x);
+	//printf("new z %f ds %f \n",pos.z(),x);	
+	return ds_temp;
       }	
      
       return cx-x;
@@ -2981,6 +2767,7 @@ double DTrackFitterKalman::BrentsAlgorithm(double z,double dz,
     double tol1=EPS2*fabs(x)+ZEPS;
     double tol2=2.0*tol1;
     if (fabs(x-xm)<=(tol2-0.5*(b-a))){
+      if (pos.z()>=endplate_z) return (endplate_z-z);
       return x;
     }
     // trial parabolic fit
@@ -3037,218 +2824,6 @@ double DTrackFitterKalman::BrentsAlgorithm(double z,double dz,
   }
   return x;
 }
-
-// Routine for finding the minimum of a function bracketed between two values
-double DTrackFitterKalman::GoldenSection(double ds1,double ds2,
-				    double dedx,DVector3 pos,DVector3 origin,
-				    DVector3 dir,  
-				    DMatrix Sc){
-  
-  double ds=ds1+ds2;
-  double s0=0.;
-  double s3=-ds; // need to backtrack
-  double golden_ratio1=0.61803399;
-  double golden_ratio2=1.-golden_ratio1;
-  unsigned int iter=0;
-  double d1,d2;
-  double s1,s2;
-
-  if (fabs(s3+ds1)<fabs(s0+ds1)){
-    s1=-ds1;
-    s2=-ds1+golden_ratio2*(s3+ds1);
-  }
-  else{
-    s2=-ds1;
-    s1=-ds1+golden_ratio2*(s0+ds1);
-  }
-
-  DMatrix S0(5,1);
-
-  // Save the state vector and position after the last step
-  DVector3 oldpos=pos;
-  S0=Sc;
-
-  // Step to one of the intermediate points
-  FixedStep(pos,s1,S0,dedx);
-  DVector3 wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
-  d1=(pos-wirepos).Mag();
-
-  // Step to the other intermediate point
-  S0=Sc; 
-  pos=oldpos;
-  FixedStep(pos,s2,S0,dedx);
-  wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
-  d2=(pos-wirepos).Mag(); 
-
-  // loop to find the minimum 
-  while (fabs(s3-s0)>EPS*(fabs(s1)+fabs(s2))&& iter<MAX_ITER){
-    iter++;
-    S0=Sc;
-    pos=oldpos;
-    double stemp;
-    if(d2<d1){
-      stemp=golden_ratio1*s1+golden_ratio2*s3;
-      s0=s1; 
-      s1=s2; 
-      s2=stemp;
-      d1=d2;
-      FixedStep(pos,s2,S0,dedx);
-      wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
-      d2=(pos-wirepos).Mag();
-    }
-    else{
-      stemp=golden_ratio1*s2+golden_ratio2*s0;
-      s3=s2;
-      s2=s1;
-      s1=stemp;
-      d2=d1;
-      FixedStep(pos,s1,S0,dedx);
-      wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
-      d1=(pos-wirepos).Mag();
-    }
-  }
-
-  if (d1<d2) {
-    return s1;
-  }
-  else{
-    return s2;
-  }
-}
-
-// Routine for finding the minimum of a function bracketed between two values
-jerror_t DTrackFitterKalman::GoldenSection(double &z,double dz,double dEdx,
-				      DVector3 origin, DVector3 dir, 
-				      DMatrix &S){
-  unsigned int iter=0;
-  double s0=0.;
-  double s3=-2.*dz;
-  double golden_ratio1=0.61803399;
-  double golden_ratio2=1.-golden_ratio1;
-  double s1=-dz;
-  double s2=-dz+golden_ratio2*(s3+dz);
-  DMatrix S0(5,1);
-  S0=S;
-
-  // Step to first intermediate point
-  Step(z,z+s1,dEdx,S0);
-  double x0=origin.x()+(z+s1-origin.z())*dir.x();
-  double y0=origin.y()+(z+s1-origin.z())*dir.y();
-  double d1=(S0(state_x,0)-x0)*(S0(state_x,0)-x0)
-    +(S0(state_y,0)-y0)*(S0(state_y,0)-y0);
-
-  // Step to second intermediate point
-  S0=S;
-  Step(z,z+s2,dEdx,S0);
-  x0=origin.x()+(z+s2-origin.z())*dir.x();
-  y0=origin.y()+(z+s2-origin.z())*dir.y();
-  double d2=(S0(state_x,0)-x0)*(S0(state_x,0)-x0)
-    +(S0(state_y,0)-y0)*(S0(state_y,0)-y0);
-
-  // main loop
-  while (fabs(s3-s0)>EPS*(fabs(s1)+fabs(s2))&& iter<MAX_ITER
-	 && fabs(d1-d2)>EPS2){
-    iter++;
-    S0=S;
-    double stemp;
-    if(d2<d1){
-      stemp=golden_ratio1*s1+golden_ratio2*s3;
-      s0=s1; 
-      s1=s2; 
-      s2=stemp;
-      d1=d2;
-      Step(z,z+s2,dEdx,S0);
-      x0=origin.x()+(z+s2-origin.z())*dir.x();
-      y0=origin.y()+(z+s2-origin.z())*dir.y();
-      d2=(S0(state_x,0)-x0)*(S0(state_x,0)-x0)
-	+(S0(state_y,0)-y0)*(S0(state_y,0)-y0);
-    }
-    else{
-      stemp=golden_ratio1*s2+golden_ratio2*s0;
-      s3=s2;
-      s2=s1;
-      s1=stemp;
-      d2=d1;
-      Step(z,z+s1,dEdx,S0);
-      x0=origin.x()+(z+s1-origin.z())*dir.x();
-      y0=origin.y()+(z+s1-origin.z())*dir.y();
-      d1=(S0(state_x,0)-x0)*(S0(state_x,0)-x0)
-	+(S0(state_y,0)-y0)*(S0(state_y,0)-y0);    
-    }
-  }
-  if (d1<d2) {
-    Step(z,z+s1,dEdx,S);
-    z=z+s1;
-  }
-  else{
-    Step(z,z+s2,dEdx,S);
-    z=z+s2;
-  }
-  return NOERROR;
-}
-
-
-
-
-// Routine for finding the minimum of a function bracketed between two values
-jerror_t DTrackFitterKalman::GoldenSection(double &ds,double doca,double dedx,
-				    DVector3 &pos,
-				    DVector3 origin,DVector3 dir,  
-				    DMatrix &Sc,DMatrix &Jc){
-  double s0=0.;
-  double s3=-2.*ds; // need to backtrack
-  double magic_ratio1=0.61803399;
-  double magic_ratio2=1.-magic_ratio1;
-  double s2=-ds;
-  double s1=-ds*(1.-magic_ratio2);
-  double d2=doca;
-  DMatrix S0(5,1);
-  
-  // Save the state vector and position after the last step
-  DVector3 oldpos=pos;
-  S0=Sc;
-
-  // Step to one of the intermediate points
-  FixedStep(pos,s1,S0,dedx);
-  double d1=S0(state_D,0);
-  while (fabs(s3-s0)>EPS*(fabs(s1)+fabs(s2))){
-    // Check for exit condition near zero
-    if (fabs(s3)<EPS && fabs(s0)<EPS && fabs(s1)<EPS && fabs(s2)<EPS) break;
-    S0=Sc;
-    pos=oldpos;
-    double stemp;
-    if(fabs(d2)<fabs(d1)){
-      stemp=magic_ratio1*s1+magic_ratio2*s3;
-      s0=s1; 
-      s1=s2; 
-      s2=stemp;
-      d1=d2;
-      FixedStep(pos,s2,S0,dedx);
-      d2=S0(state_D,0);
-    }
-    else{
-      stemp=magic_ratio1*s2+magic_ratio2*s0;
-      s3=s2;
-      s2=s1;
-      s1=stemp;
-      d2=d1;
-      FixedStep(pos,s1,S0,dedx);
-      d1=S0(state_D,0);
-    }
-  }
-  pos=oldpos;
-  if (fabs(d1)<fabs(d2)) {
-    StepJacobian(pos,origin,dir,s1,Sc,dedx,Jc);
-    ds=s1;
-  }  
-  else{
-    StepJacobian(pos,origin,dir,s2,Sc,dedx,Jc);
-    ds=s2;
-  }
-  return NOERROR;
-}
-
-
 
 // Kalman engine for Central tracks; updates the position on the trajectory
 // after the last hit (closest to the target) is added
@@ -3335,7 +2910,7 @@ jerror_t DTrackFitterKalman::KalmanCentral(double anneal_factor,
     doca=(pos-wirepos).Mag();
 
     // Check if the doca is no longer decreasing
-    if ((doca>old_doca) && (pos.z()<endplate_z && pos.z()>cdc_origin[2])
+    if ((doca>old_doca && pos.z()>=cdc_origin[2])
 	&& more_measurements){
       if (my_cdchits[cdc_index]->status==0){
 	// Mark previous point on ref trajectory with a hit id for the straw
@@ -3895,7 +3470,7 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 	      +(y-wirepos.y())*(y-wirepos.y()));
 
     // Check if the doca is no longer decreasing
-    if ((doca>old_doca)/* && z<endplate_z */&& more_measurements){
+    if ((doca>old_doca || z>endplate_z)&& more_measurements){
       if (my_cdchits[cdc_index]->status==0){
 	// Mark previous point on ref trajectory with a hit id for the straw
 	forward_traj_cdc[k-1].h_id=cdc_index+1;
@@ -4097,6 +3672,7 @@ jerror_t DTrackFitterKalman::ExtrapolateToVertex(DMatrix &S,DMatrix &C){
   Step(z,z+dz,dEdx,S0);
   double r2=S0(state_x,0)*S0(state_x,0)+S0(state_y,0)*S0(state_y,0);
   if (r2>r2_old) dz*=-1.;
+  // printf("vertex z %f r2 %f old %f %f\n",z+dz,r2,z,r2_old);
 
   // material properties
   double Z=0.,A=0.,density=0.,X0=0.;
@@ -4135,11 +3711,13 @@ jerror_t DTrackFitterKalman::ExtrapolateToVertex(DMatrix &S,DMatrix &C){
       DVector3 origin(0,0,65.);
       DVector3 dir(0,0,1.);
 
+      //printf("r2 %f z %f old r2 %f z %f\n",r2,newz,r2_old,z);
       // Find position of best doca to beam line
       //GoldenSection(newz,dz,dEdx,origin,dir,S);
       dz=BrentsAlgorithm(newz,dz,dEdx,origin,dir,S);
       Step(newz,newz+dz,dEdx,S);
       newz+=dz;
+      //printf("after brent z %f r2 %f\n",newz,S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
       break;
     }
     r2_old=r2;
@@ -4324,3 +3902,216 @@ jerror_t DTrackFitterKalman::SwimToRadius(DVector3 &pos,double Rf,DMatrix &Sc)
 
   return NOERROR;
 }
+
+//***************** These routines are no longer in use *********************
+/*
+// Routine for finding the minimum of a function bracketed between two values
+double DTrackFitterKalman::GoldenSection(double ds1,double ds2,
+				    double dedx,DVector3 pos,DVector3 origin,
+				    DVector3 dir,  
+				    DMatrix Sc){
+  
+  double ds=ds1+ds2;
+  double s0=0.;
+  double s3=-ds; // need to backtrack
+  double golden_ratio1=0.61803399;
+  double golden_ratio2=1.-golden_ratio1;
+  unsigned int iter=0;
+  double d1,d2;
+  double s1,s2;
+
+  if (fabs(s3+ds1)<fabs(s0+ds1)){
+    s1=-ds1;
+    s2=-ds1+golden_ratio2*(s3+ds1);
+  }
+  else{
+    s2=-ds1;
+    s1=-ds1+golden_ratio2*(s0+ds1);
+  }
+
+  DMatrix S0(5,1);
+
+  // Save the state vector and position after the last step
+  DVector3 oldpos=pos;
+  S0=Sc;
+
+  // Step to one of the intermediate points
+  FixedStep(pos,s1,S0,dedx);
+  DVector3 wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
+  d1=(pos-wirepos).Mag();
+
+  // Step to the other intermediate point
+  S0=Sc; 
+  pos=oldpos;
+  FixedStep(pos,s2,S0,dedx);
+  wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
+  d2=(pos-wirepos).Mag(); 
+
+  // loop to find the minimum 
+  while (fabs(s3-s0)>EPS*(fabs(s1)+fabs(s2))&& iter<MAX_ITER){
+    iter++;
+    S0=Sc;
+    pos=oldpos;
+    double stemp;
+    if(d2<d1){
+      stemp=golden_ratio1*s1+golden_ratio2*s3;
+      s0=s1; 
+      s1=s2; 
+      s2=stemp;
+      d1=d2;
+      FixedStep(pos,s2,S0,dedx);
+      wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
+      d2=(pos-wirepos).Mag();
+    }
+    else{
+      stemp=golden_ratio1*s2+golden_ratio2*s0;
+      s3=s2;
+      s2=s1;
+      s1=stemp;
+      d2=d1;
+      FixedStep(pos,s1,S0,dedx);
+      wirepos=origin+((pos.z()-origin.z())/dir.z())*dir;
+      d1=(pos-wirepos).Mag();
+    }
+  }
+
+  if (d1<d2) {
+    return s1;
+  }
+  else{
+    return s2;
+  }
+}
+
+// Routine for finding the minimum of a function bracketed between two values
+jerror_t DTrackFitterKalman::GoldenSection(double &z,double dz,double dEdx,
+				      DVector3 origin, DVector3 dir, 
+				      DMatrix &S){
+  unsigned int iter=0;
+  double s0=0.;
+  double s3=-2.*dz;
+  double golden_ratio1=0.61803399;
+  double golden_ratio2=1.-golden_ratio1;
+  double s1=-dz;
+  double s2=-dz+golden_ratio2*(s3+dz);
+  DMatrix S0(5,1);
+  S0=S;
+
+  // Step to first intermediate point
+  Step(z,z+s1,dEdx,S0);
+  double x0=origin.x()+(z+s1-origin.z())*dir.x();
+  double y0=origin.y()+(z+s1-origin.z())*dir.y();
+  double d1=(S0(state_x,0)-x0)*(S0(state_x,0)-x0)
+    +(S0(state_y,0)-y0)*(S0(state_y,0)-y0);
+
+  // Step to second intermediate point
+  S0=S;
+  Step(z,z+s2,dEdx,S0);
+  x0=origin.x()+(z+s2-origin.z())*dir.x();
+  y0=origin.y()+(z+s2-origin.z())*dir.y();
+  double d2=(S0(state_x,0)-x0)*(S0(state_x,0)-x0)
+    +(S0(state_y,0)-y0)*(S0(state_y,0)-y0);
+
+  // main loop
+  while (fabs(s3-s0)>EPS*(fabs(s1)+fabs(s2))&& iter<MAX_ITER
+	 && fabs(d1-d2)>EPS2){
+    iter++;
+    S0=S;
+    double stemp;
+    if(d2<d1){
+      stemp=golden_ratio1*s1+golden_ratio2*s3;
+      s0=s1; 
+      s1=s2; 
+      s2=stemp;
+      d1=d2;
+      Step(z,z+s2,dEdx,S0);
+      x0=origin.x()+(z+s2-origin.z())*dir.x();
+      y0=origin.y()+(z+s2-origin.z())*dir.y();
+      d2=(S0(state_x,0)-x0)*(S0(state_x,0)-x0)
+	+(S0(state_y,0)-y0)*(S0(state_y,0)-y0);
+    }
+    else{
+      stemp=golden_ratio1*s2+golden_ratio2*s0;
+      s3=s2;
+      s2=s1;
+      s1=stemp;
+      d2=d1;
+      Step(z,z+s1,dEdx,S0);
+      x0=origin.x()+(z+s1-origin.z())*dir.x();
+      y0=origin.y()+(z+s1-origin.z())*dir.y();
+      d1=(S0(state_x,0)-x0)*(S0(state_x,0)-x0)
+	+(S0(state_y,0)-y0)*(S0(state_y,0)-y0);    
+    }
+  }
+  if (d1<d2) {
+    Step(z,z+s1,dEdx,S);
+    z=z+s1;
+  }
+  else{
+    Step(z,z+s2,dEdx,S);
+    z=z+s2;
+  }
+  return NOERROR;
+}
+
+
+
+
+// Routine for finding the minimum of a function bracketed between two values
+jerror_t DTrackFitterKalman::GoldenSection(double &ds,double doca,double dedx,
+				    DVector3 &pos,
+				    DVector3 origin,DVector3 dir,  
+				    DMatrix &Sc,DMatrix &Jc){
+  double s0=0.;
+  double s3=-2.*ds; // need to backtrack
+  double magic_ratio1=0.61803399;
+  double magic_ratio2=1.-magic_ratio1;
+  double s2=-ds;
+  double s1=-ds*(1.-magic_ratio2);
+  double d2=doca;
+  DMatrix S0(5,1);
+  
+  // Save the state vector and position after the last step
+  DVector3 oldpos=pos;
+  S0=Sc;
+
+  // Step to one of the intermediate points
+  FixedStep(pos,s1,S0,dedx);
+  double d1=S0(state_D,0);
+  while (fabs(s3-s0)>EPS*(fabs(s1)+fabs(s2))){
+    // Check for exit condition near zero
+    if (fabs(s3)<EPS && fabs(s0)<EPS && fabs(s1)<EPS && fabs(s2)<EPS) break;
+    S0=Sc;
+    pos=oldpos;
+    double stemp;
+    if(fabs(d2)<fabs(d1)){
+      stemp=magic_ratio1*s1+magic_ratio2*s3;
+      s0=s1; 
+      s1=s2; 
+      s2=stemp;
+      d1=d2;
+      FixedStep(pos,s2,S0,dedx);
+      d2=S0(state_D,0);
+    }
+    else{
+      stemp=magic_ratio1*s2+magic_ratio2*s0;
+      s3=s2;
+      s2=s1;
+      s1=stemp;
+      d2=d1;
+      FixedStep(pos,s1,S0,dedx);
+      d1=S0(state_D,0);
+    }
+  }
+  pos=oldpos;
+  if (fabs(d1)<fabs(d2)) {
+    StepJacobian(pos,origin,dir,s1,Sc,dedx,Jc);
+    ds=s1;
+  }  
+  else{
+    StepJacobian(pos,origin,dir,s2,Sc,dedx,Jc);
+    ds=s2;
+  }
+  return NOERROR;
+}
+*/
