@@ -30,6 +30,7 @@ class DMagneticFieldStepper
 		jerror_t SetStartingParams(double q, const DVector3 *x, const DVector3 *p);
 		jerror_t SetMagneticFieldMap(const DMagneticFieldMap *map);
 		jerror_t SetStepSize(double step);
+		void SetCharge(double q){this->q = q;}
 		double Step(DVector3 *newpos=NULL, double stepsize=0.0);
 		void GetDirs(DVector3 &xdir, DVector3 &ydir, DVector3 &zdir);
 		void GetMomentum(DVector3 &mom){mom = this->mom;}
