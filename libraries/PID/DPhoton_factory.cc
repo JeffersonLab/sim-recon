@@ -51,7 +51,7 @@ jerror_t DPhoton_factory::brun(JEventLoop *loop, int runnumber)
 	
 	// Get z-position of front face of FCAL from geometry
 	vector<double> fcal_pos;
-	loop->GetGeom("//posXYZ[@volume='ForwardEMcal']/@X_Y_Z", fcal_pos);
+	loop->GetJGeometry()->Get("//posXYZ[@volume='ForwardEMcal']/@X_Y_Z", fcal_pos, " ");
 	assert(fcal_pos.size()==3);
 	fcal_origin.SetXYZ(0.0, 0.0, fcal_pos[2]);
 	fcal_norm.SetXYZ(0.0, 0.0, 1.0);
