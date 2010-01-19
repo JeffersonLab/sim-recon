@@ -55,7 +55,14 @@ class DGeometry{
 		bool Get(string xpath, vector<double> &vals, string delimiter=" ") const {return jgeom->Get(xpath, vals, delimiter);}
 		bool Get(string xpath, vector<int> &vals, string delimiter=" ") const {return jgeom->Get(xpath, vals, delimiter);}
 		bool Get(string xpath, vector<float> &vals, string delimiter=" ") const {return jgeom->Get(xpath, vals, delimiter);}
+
+		bool GetMultiple(string xpath,vector<vector<double> >&vals,
+				 string delimiter=" ") const
+		{return jgeom->GetMultiple(xpath,vals,delimiter);}
+	
+
 		
+
 		typedef pair<string, map<string,string> > node_t;
 		typedef vector<node_t> xpathparsed_t;
 		
