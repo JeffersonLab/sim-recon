@@ -40,7 +40,7 @@ C
 	par(2) = 1.0d0    ! magn. of hadr. amplitude
 	par(3) = phi      ! diff. of interf. phase angle
 C
-	ebeam = 11.0d0
+	ebeam = egama
 C
 C       do n=0,100
 C      theta=n*0.03d0
@@ -95,7 +95,7 @@ C    1 format(x,7(E10.4,x))
 C
 C      enddo
 C
-        sumall = SNGL(wdomeg)
+        sumall = SNGL(wdomeg/1000.0)
 C
       return
       end
