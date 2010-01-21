@@ -1,8 +1,0 @@
-
-CURL_CFLAGS = $(shell curl-config --cflags)
-CURL_LIBS = $(shell curl-config --libs)
-
-CFLAGS += $(CURL_CFLAGS)
-CXXFLAGS += $(CURL_CFLAGS)
-
-MISC_LIBS += $(CURL_LIBS)
