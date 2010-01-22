@@ -1,0 +1,652 @@
+Release Notes for Hall-D source code
+------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/release-2010-01-21
+   Date: January 21, 2010
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 5946 of trunk/src.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Fedora release 8 (Werewolf) on i686  32-bit
+------------
+  Xerces 2.7.0
+  JANA 0.5.2
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+
+Red Hat Enterprise Linux 5.3
+-----------
+  Xerces 2.7.0
+  JANA 0.5.2
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+
+CentOS release 5.3 (Final)
+------------
+  Xerces 2.7.0
+  JANA 0.5.2
+  ROOT 5.24
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+
+Relevant repository log of changes:
+------------------------------------------------------------------------
+r5780 | marki | 2009-11-25 15:45:01 -0500 (Wed, 25 Nov 2009) | 1 line
+Changed paths:
+   M /trunk/src/BMS/Makefile.bin
+
+expose making of dependencies, remove -c switch from fortran depenency making
+------------------------------------------------------------------------
+r5781 | marki | 2009-11-25 15:45:27 -0500 (Wed, 25 Nov 2009) | 1 line
+Changed paths:
+   M /trunk/src/BMS/Makefile.lib
+
+expose making of dependencies
+------------------------------------------------------------------------
+r5782 | marki | 2009-11-25 15:45:54 -0500 (Wed, 25 Nov 2009) | 2 lines
+Changed paths:
+   M /trunk/src/BMS/Makefile.Linux
+
+Use cpp for fortran dependency making.
+
+------------------------------------------------------------------------
+r5792 | staylor | 2009-12-02 16:18:57 -0500 (Wed, 02 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/FDC/DFDCSegment_factory.cc
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory.cc
+
+Tune beam variance, now set sigma to 1mm.
+------------------------------------------------------------------------
+r5803 | staylor | 2009-12-03 11:06:47 -0500 (Thu, 03 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/src/programs/Simulation/mcsmear/smear.cc
+
+Added code to smear the north and south times from the TOF.  The flag is -f for time-of-Flight; the value is in psec.
+------------------------------------------------------------------------
+r5817 | davidl | 2009-12-06 14:17:32 -0500 (Sun, 06 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/geneta/eta_proton.F
+
+Seed random number generator using current time so running separate instances (separated by at least 1 second) will result in different data sets. This provides a workaround for the mysterious slowdown that causes a had limit of ~30k events
+------------------------------------------------------------------------
+r5818 | davidl | 2009-12-06 14:18:41 -0500 (Sun, 06 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/geneta/eta_p_gen.dat
+   M /trunk/src/programs/Simulation/geneta/geneta.cc
+
+Set default number of events to 10368 which represents about 4 days or 1/10th of the beam time request for the curent proposal.
+------------------------------------------------------------------------
+r5819 | davidl | 2009-12-06 15:39:05 -0500 (Sun, 06 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/eta_ntuple/DEventProcessor_eta_ntuple.cc
+   M /trunk/src/programs/Analysis/plugins/eta_ntuple/DEventProcessor_eta_ntuple.h
+   M /trunk/src/programs/Analysis/plugins/eta_ntuple/Event.cc
+   M /trunk/src/programs/Analysis/plugins/eta_ntuple/Event.h
+
+Added mandelstam t to tree/ntuple.
+------------------------------------------------------------------------
+r5820 | davidl | 2009-12-07 09:03:35 -0500 (Mon, 07 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.cc
+
+Filter out reconstructed photons flagged as having been matched to a charged track.
+------------------------------------------------------------------------
+r5821 | davidl | 2009-12-07 09:38:33 -0500 (Mon, 07 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.cc
+
+Filter photons out of list of charged tracks that was leaked into pip list.
+------------------------------------------------------------------------
+r5824 | kornicer | 2009-12-07 12:17:23 -0500 (Mon, 07 Dec 2009) | 6 lines
+Changed paths:
+   A /trunk/src/libraries/FCAL/DFCALCluster.cc
+   M /trunk/src/libraries/FCAL/DFCALCluster.h
+   M /trunk/src/libraries/FCAL/DFCALCluster_factory.cc
+   M /trunk/src/libraries/FCAL/DFCALCluster_factory.h
+   M /trunk/src/libraries/FCAL/DFCALGeometry.h
+   M /trunk/src/libraries/FCAL/DFCALPhoton_factory.cc
+   M /trunk/src/libraries/FCAL/DFCALPhoton_factory.h
+   M /trunk/src/libraries/PID/DPhoton.cc
+   M /trunk/src/libraries/PID/DPhoton.h
+   M /trunk/src/libraries/PID/DPhoton_factory.cc
+   M /trunk/src/libraries/PID/DPhoton_factory.h
+
+FCALCluster - static functions from cluster class moved into the cluster factory, say it is now thread-safe.
+FCALPhoton - set photon position in calorimeter in global coordinates.
+FCAL Geometry - added fcalFaceZ and fcalMidplane methods.
+PID:DPhoton - introduced VERTEX_X,Y,Z parameters. 
+
+
+------------------------------------------------------------------------
+r5825 | davidl | 2009-12-07 14:02:33 -0500 (Mon, 07 Dec 2009) | 10 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/eta_ntuple/DEventProcessor_eta_ntuple.cc
+
+Add MAKE_HBOOK and MAKE_ROOT configuration parameters
+to control whether each is made. Note that this is 
+useful at the moment on 64bit machines where I am getting
+the error "LOCB/LOCF: address 0x2b2ff1a007a0 exceeds the 32 bit address space"
+when trying to make the ntuple. To get around it, I pass
+
+-PMAKE_HBOOK=0
+
+on the command line.
+
+------------------------------------------------------------------------
+r5828 | staylor | 2009-12-07 19:05:22 -0500 (Mon, 07 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased.h
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased_factory.h
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased_factory_Kalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased_factory_Kalman.h
+   M /trunk/src/libraries/TRACKING/DTrackWireBased.h
+   M /trunk/src/libraries/TRACKING/DTrackWireBased_factory.cc
+   M /trunk/src/libraries/TRACKING/DTrackWireBased_factory.h
+   M /trunk/src/libraries/TRACKING/DTrackWireBased_factory_Kalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackWireBased_factory_Kalman.h
+
+This commit represents a substatial reorganization of the tracking code.  The calculation of the dedx from the hits on the track has been moved out of DTrackWireBased into DTrackTimeBased and the loop over the mass hypotheses is restored.  However, unlike the old code instead of choosing the best track based on some figure of merit, all tracks that do not fail the fitting are put in the list of tracks that are passed on to TimeBased tracking.  The time-based code computes a figure-of-merit for whether or not the track has the hypothesized mass based on the chi2 from the fit, the dEdx in the chambers and any time-of-flight information.  All successful fitted results for each mass hypothesis are put in the DTrackTimeBased vector.  The end result is that there will be potentially many fitted tracks for each track candidate, depending on the list of mass hypotheses and whether or not the fit succeeded in the wire-based or time-based stages.  An id for the track candidate that corresponds to a given track has been added to the DTrackTimeBased object.
+------------------------------------------------------------------------
+r5829 | davidl | 2009-12-07 22:45:31 -0500 (Mon, 07 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/calibDB.cc
+   M /trunk/src/programs/Simulation/HDGeant/calibDB.h
+   M /trunk/src/programs/Simulation/HDGeant/control.in
+   M /trunk/src/programs/Simulation/HDGeant/uginit.F
+
+Implement BFIELDMAP card in control.in. Rename BFIELD to BFIELDTYPE.
+------------------------------------------------------------------------
+r5830 | davidl | 2009-12-07 23:02:12 -0500 (Mon, 07 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/hd_root/MyProcessor.cc
+
+Disable creation of empty ROOTtree tree in hd_root.
+------------------------------------------------------------------------
+r5831 | davidl | 2009-12-07 23:10:43 -0500 (Mon, 07 Dec 2009) | 1 line
+Changed paths:
+   D /trunk/src/libraries/FDC/DFDCPseudo_factory_CORRECTED.h
+   M /trunk/src/libraries/FDC/FDC_init.cc
+
+Remove deprecated DFDCPseudo_factory_CORRECTED class.
+------------------------------------------------------------------------
+r5837 | staylor | 2009-12-08 08:40:50 -0500 (Tue, 08 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+Trap for a rare condition where the chisq at the end of the filter is zero.
+------------------------------------------------------------------------
+r5838 | staylor | 2009-12-08 08:41:41 -0500 (Tue, 08 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Make sure that the candidate number is propagated through the wire-based pass to the time-based pass.
+------------------------------------------------------------------------
+r5839 | davidl | 2009-12-08 09:02:25 -0500 (Tue, 08 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/BMS/Makefile.bin
+   M /trunk/src/BMS/Makefile.dirs
+   M /trunk/src/BMS/Makefile.lib
+   M /trunk/src/BMS/Makefile.shlib
+   M /trunk/src/external/xstream/src/Makefile
+   M /trunk/src/libraries/HDDM/Makefile
+   M /trunk/src/libraries/include/Makefile
+   M /trunk/src/programs/Analysis/plugins/Makefile
+   M /trunk/src/programs/Simulation/HDGeant/Makefile
+   M /trunk/src/programs/Simulation/hdds/Makefile
+   M /trunk/src/programs/Utilities/hddm/Makefile
+
+Added depclean target to allow one to easily remove all dependency files without removing the object files. This is useful when files have been added/removed causing make errors, but one doesn't want (or need) to recompile everything as would be done with make clean.
+------------------------------------------------------------------------
+r5840 | staylor | 2009-12-08 09:10:53 -0500 (Tue, 08 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/PID/DPhoton_factory.cc
+   M /trunk/src/libraries/PID/DPhoton_factory.h
+
+Get track information from the DTrackTimeBased objects instead of the DParticle objects, which are now reserved for a higher level of the reconstruction chain.
+------------------------------------------------------------------------
+r5841 | staylor | 2009-12-08 09:16:18 -0500 (Tue, 08 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/PID/DParticle_factory.cc
+   M /trunk/src/libraries/PID/DParticle_factory.h
+   M /trunk/src/libraries/PID/DParticle_factory_Kalman.cc
+   M /trunk/src/libraries/PID/DParticle_factory_Kalman.h
+
+Clean out track matching code (now in DTrackTimeBased). The DParticle factory is now currently a shell to be filled in later.
+------------------------------------------------------------------------
+r5842 | staylor | 2009-12-08 09:20:36 -0500 (Tue, 08 Dec 2009) | 1 line
+Changed paths:
+   A /trunk/src/libraries/PID/DChargedTrack.h
+   A /trunk/src/libraries/PID/DChargedTrack_factory.cc
+   A /trunk/src/libraries/PID/DChargedTrack_factory.h
+   A /trunk/src/libraries/PID/DChargedTrack_factory_Kalman.cc
+   A /trunk/src/libraries/PID/DChargedTrack_factory_Kalman.h
+   M /trunk/src/libraries/PID/PID_init.cc
+
+Added new DChargedTrack factory.  These objects are intended to be the equivalent of DPhoton for charged tracks. Since there are now multiple fitted tracks per candidate, the data members of DChargedTrack are vectors of fitted tracks, one vector for each track candidate.  The list of fitted tracks for each candidate is ordered according to a figure-of-merit that attempts to capture the quality of the fit for a certain mass hypothesis based on dEdx and time-of-flight information.
+------------------------------------------------------------------------
+r5843 | staylor | 2009-12-08 09:22:42 -0500 (Tue, 08 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.cc
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.h
+
+Modified to use the new DChargedTrack factory for the equivalent level to DPhoton, instead of DParticle, which is now reserved for a higher level of the reconstruction chain.
+------------------------------------------------------------------------
+r5844 | davidl | 2009-12-08 12:25:07 -0500 (Tue, 08 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/phys_tree/DEventProcessor_phys_tree.cc
+
+Update to new DChargedTrack scheme
+------------------------------------------------------------------------
+r5848 | marki | 2009-12-10 11:35:32 -0500 (Thu, 10 Dec 2009) | 13 lines
+Changed paths:
+   M /trunk/src/Makefile
+   M /trunk/src/libraries/HDGEOMETRY/Makefile
+   M /trunk/src/programs/Simulation/HDGeant/Makefile.bms
+   M /trunk/src/programs/Simulation/Makefile
+   D /trunk/src/programs/Simulation/hdds
+
+Change to remove trunk/src/programs/Simulation/hdds in favor of the
+new directory trunk/hdds and have the src tree use this new location
+for all geometry information and services. See documentation of this
+change at:
+
+http://www.jlab.org/Hall-D/software/wiki/index.php/HOWTO_use_the_stand-alone_HDDS_system
+
+D    programs/Simulation/hdds
+M    programs/Simulation/HDGeant/Makefile.bms
+M    programs/Simulation/Makefile
+M    libraries/HDGEOMETRY/Makefile
+M    Makefile
+
+------------------------------------------------------------------------
+r5850 | davidl | 2009-12-10 15:02:24 -0500 (Thu, 10 Dec 2009) | 2 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackWireBased_factory.cc
+   M /trunk/src/libraries/TRACKING/DTrackWireBased_factory.h
+   M /trunk/src/libraries/TRACKING/DTrackWireBased_factory_Kalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackWireBased_factory_Kalman.h
+   A /trunk/src/libraries/include/SplitString.h
+
+Broke MASS_HYPOTHESES list into two name MASS_HYPOTHESES_POSITIVE and MASS_HYPOTHESES_NEGATIVE. This lets us avoid fitting anti-protons.
+
+------------------------------------------------------------------------
+r5851 | davidl | 2009-12-10 16:30:46 -0500 (Thu, 10 Dec 2009) | 4 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackWireBased_factory.cc
+   M /trunk/src/libraries/TRACKING/DTrackWireBased_factory_Kalman.cc
+
+Remove white space in default list of MASS_HYPOTHESES_POSITIVE. This was causing problems because
+when converting from a stringstream back into a string type (as is done in JParameterManager)
+the white space is taken to be a delimiter and only the substring up to it is copied as a result.
+
+------------------------------------------------------------------------
+r5855 | jonesrt | 2009-12-14 09:36:10 -0500 (Mon, 14 Dec 2009) | 5 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/Makefile.orig
+
+Makefile.orig [rtj]
+   - bring my custom makefile up to date with the latest changes to the
+     svn repository structure, and additional libraries needed to link
+     calibdb.cc to the JANA magfield/calibration database framework.
+
+------------------------------------------------------------------------
+r5861 | staylor | 2009-12-15 18:59:19 -0500 (Tue, 15 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackWireBased_factory.cc
+   M /trunk/src/libraries/TRACKING/DTrackWireBased_factory_Kalman.cc
+
+Turn on filtering of duplicate tracks.
+------------------------------------------------------------------------
+r5862 | davidl | 2009-12-17 09:12:58 -0500 (Thu, 17 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/geneta/geneta.cc
+
+Add final state proton to list of final state particles output by geneta.
+------------------------------------------------------------------------
+r5868 | marki | 2009-12-18 08:44:56 -0500 (Fri, 18 Dec 2009) | 16 lines
+Changed paths:
+   M /trunk/src/BMS/Makefile.bin
+   M /trunk/src/BMS/Makefile.common
+   M /trunk/src/BMS/Makefile.lib
+   M /trunk/src/BMS/Makefile.shlib
+
+This is a modification of the depends scheme which is triggered
+exclusively by the include of the dependency file(s). Fixes problem
+where dependency files was not remade after source file
+modification. Also allows dependency file generation when dependency
+directory exists, but dependency file does not.
+
+Merge branches/src/BMS-depends-by-include onto trunk.
+Command was:
+  svn merge $HDSVN/branches/src/BMS-depends-by-include@5856 $HDSVN/branches/src/BMS-depends-by-include
+from directory with current working version.
+
+M    Makefile.lib
+M    Makefile.bin
+M    Makefile.common
+M    Makefile.shlib
+
+------------------------------------------------------------------------
+r5869 | marki | 2009-12-18 11:11:08 -0500 (Fri, 18 Dec 2009) | 6 lines
+Changed paths:
+   M /trunk/src/BMS/Makefile.common
+
+ Add back the '-' before the include of depends. Failure of depends
+making will not stop make. Supresses spurious error message for
+non-existent dependencies. Allows make clean to work even before
+anything has been made.
+
+
+------------------------------------------------------------------------
+r5871 | marki | 2009-12-18 14:22:33 -0500 (Fri, 18 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/Makefile
+
+check for HALLD_HOME
+------------------------------------------------------------------------
+r5872 | marki | 2009-12-18 14:23:39 -0500 (Fri, 18 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/BMS/Makefile.dirs
+
+make various checks on the environment
+------------------------------------------------------------------------
+r5875 | staylor | 2009-12-18 17:41:31 -0500 (Fri, 18 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.h
+
+Added variation on GetIntersectionWithPlane that returns the direction of the particle's momentum at the point of intersection.
+------------------------------------------------------------------------
+r5876 | staylor | 2009-12-18 17:46:34 -0500 (Fri, 18 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+In the forward trajectory, make sure that the entries for the z-positions corresponding to hits in the FDC are appropriately tagged with the hit id, even for wire-plane spacings that are not convenient multiples of the step size.
+------------------------------------------------------------------------
+r5877 | staylor | 2009-12-18 18:28:28 -0500 (Fri, 18 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitter.h
+
+Add new version of GetdEdx that uses DVector3 pos as input
+------------------------------------------------------------------------
+r5878 | staylor | 2009-12-18 18:33:37 -0500 (Fri, 18 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+
+Save flight time and pathlength info for outer detectors matched to tracks. Also assign a fom of zero for high momentum protons (above 2.5 GeV/c for now)
+------------------------------------------------------------------------
+r5879 | staylor | 2009-12-18 18:36:09 -0500 (Fri, 18 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased_factory_Kalman.h
+
+Add MatchToSC routine for using start counter info, currently an empty routine.
+------------------------------------------------------------------------
+r5880 | staylor | 2009-12-18 18:38:01 -0500 (Fri, 18 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased_factory_Kalman.cc
+
+Save flight time and pathlength info for outer detectors matched to tracks. Also assign a fom of zero for high momentum protons (above 2.5 GeV/c for now).  Filter out duplicate tracks.
+------------------------------------------------------------------------
+r5889 | davidl | 2009-12-22 23:06:21 -0500 (Tue, 22 Dec 2009) | 58 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/geneta/cr_prt.F
+
+This change is from a file sent to me by Ashot on Dec. 22, 2009 called:
+
+cr_prt_Laget_var.f
+
+There was one modification to Ashot's file. I added a check on ao to make
+sure it wasn't negative before calling dgamma(). The subroutine simply returns
+with sumall set to 0 if this is detected.
+
+Below is Ashot's e-mail:
+
+  Hi Dave,
+
+ After several days of straggling on this Laget/Sergey code, eventually I
+ got it working and it is ready to use as a more realistic generator for
+ the g+p->eta=p elastic channel.
+
+ However the code has certain limitations which we have to follow:
+
+ 1) It can be used for the angular interval of [0 - 3.2] degrees
+ 2) The energy interval is safer when it is in  [10.4 - 11.6]  GeV
+    interval
+
+ The new code is (in a form of a Subroutine) and it is in the attachment
+ of this email.
+
+ I do not remember in which form we started the previous one, but if
+ before I sent to you my GEANT code,, then it simply suppose to be
+ replaced the existing  there "cr_prt_*.f" file with the subroutine name :
+
+ CRSEC6(egama,thpi0,sumall)
+
+ With a new file which is in the attachment:
+
+ cr_prt_Laget_var.f
+
+ which has the new code with the same name of the subroutine.
+
+ This new code has all three parameters in and they are currently fixed
+ to Laget's numbers. When we fit the MC data back we will keep those 3
+ parameters free in some intervals.
+
+ Please see if you can start your HDGeant code with this much information.
+
+ I will send to you the exact intervals of angle and incident energies for
+ final Ntuple run. Also, today I will send the number of days and number
+ of events you have to generate for the final proposal presentation.
+
+ There I see one more question to be solved: we do not have information
+ about the BCAL and start counters in the current Ntuple structure to use
+ for the cut process. We agreed that those cuts have to be the same for
+ signal and for the background processes.
+
+ See if you have a questions to me.
+
+ Thanks a lot,
+ Ashot 
+
+
+------------------------------------------------------------------------
+r5890 | davidl | 2010-01-04 08:35:00 -0500 (Mon, 04 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/eta_ntuple/DEventProcessor_eta_ntuple.cc
+   M /trunk/src/programs/Analysis/plugins/eta_ntuple/DEventProcessor_eta_ntuple.h
+   M /trunk/src/programs/Analysis/plugins/eta_ntuple/Event.cc
+   M /trunk/src/programs/Analysis/plugins/eta_ntuple/Event.h
+   A /trunk/src/programs/Analysis/plugins/eta_ntuple/bcal_t.h
+   A /trunk/src/programs/Analysis/plugins/eta_ntuple/sc_t.h
+
+Adding in start counter and BCAL info to eta_ntuple.
+------------------------------------------------------------------------
+r5891 | davidl | 2010-01-06 13:09:22 -0500 (Wed, 06 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/eta_ntuple/DEventProcessor_eta_ntuple.cc
+
+Remove debug statement from eta_nutple plugin.
+------------------------------------------------------------------------
+r5892 | davidl | 2010-01-06 13:22:17 -0500 (Wed, 06 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/eta_ntuple/DEventProcessor_eta_ntuple.cc
+
+Remove (failed) test of writing TClass to root file.
+------------------------------------------------------------------------
+r5893 | davidl | 2010-01-07 11:46:28 -0500 (Thu, 07 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/hd_dump/MyProcessor.cc
+   M /trunk/src/programs/Analysis/hd_dump/MyProcessor.h
+   M /trunk/src/programs/Analysis/hd_dump/hd_dump.cc
+
+Added -f option to allow one to disable auto activation of every factory in order to print the summary list of the number of rows at the begining of every event.
+------------------------------------------------------------------------
+r5894 | davidl | 2010-01-07 11:47:46 -0500 (Thu, 07 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDDM/DEventSourceHDDM.cc
+
+Calculate mass for DMCThrown from energy and momentum. Check that mass is finite and if not, set it to zero.
+------------------------------------------------------------------------
+r5895 | marki | 2010-01-11 10:25:23 -0500 (Mon, 11 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/control.in
+
+do 1000 events by default
+------------------------------------------------------------------------
+r5898 | davidl | 2010-01-12 16:50:41 -0500 (Tue, 12 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/BMS/Makefile.dirs
+
+Use DYLD_LIBRARY_PATH on Darwin systems.
+------------------------------------------------------------------------
+r5899 | davidl | 2010-01-13 11:10:26 -0500 (Wed, 13 Jan 2010) | 9 lines
+Changed paths:
+   M /trunk/src/libraries/DANA/DApplication.cc
+   M /trunk/src/libraries/DANA/DApplication.h
+
+Defer instantiation of magnetic field map, Lorentz deflection table, and geometry objects until requested. This avoids the costly reading-in of these tables when they are not needed.
+
+A consequence of this is that the time it takes to read in the map is 
+counted during the event processing time which may (and often did) 
+cause the JANA heartbeat monitor to kill the thread after 8 seconds
+believing it to be hung. Thus, we also set the timeout to 30 seconds
+to accomodate that. This will cause the THREAD_TIMEOUT config. parameter
+to now always be displayed for Hall-D programs.
+
+------------------------------------------------------------------------
+r5900 | davidl | 2010-01-13 11:17:18 -0500 (Wed, 13 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trackeff_hists/DEventProcessor_trackeff_hists.cc
+   M /trunk/src/programs/Analysis/plugins/trackeff_hists/DEventProcessor_trackeff_hists.h
+   M /trunk/src/programs/Analysis/plugins/trackeff_hists/track.h
+
+Updated to new charged particle class scheme.
+------------------------------------------------------------------------
+r5902 | davidl | 2010-01-13 11:30:22 -0500 (Wed, 13 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/Makefile
+
+Don't make trackeff_hists plugin by default but do make the phys_tree plugin.
+------------------------------------------------------------------------
+r5903 | staylor | 2010-01-13 18:24:52 -0500 (Wed, 13 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+(1) Fix ordering problem for including the energy loss straggling in the process noise matrix Q in one place. (2) Increase the tolerance for determining the covergance of Brent's algorithm to 1 micron from a ridiculously small number. (3) Add a missing factor to the calculation of the energy loss variance.
+------------------------------------------------------------------------
+r5908 | davidl | 2010-01-14 16:12:50 -0500 (Thu, 14 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/PID/DParticle_factory_THROWN.cc
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_THROWN.cc
+
+Remove CORRECTED tag when accessing DFDCPseudo from TRACKING/DTrackCandidate_factory_THROWN.cc and PID/DParticle_factory_THROWN.cc since the CORRECTED factory no longer exists
+------------------------------------------------------------------------
+r5909 | davidl | 2010-01-14 16:34:30 -0500 (Thu, 14 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/FDC/DFDCCathodeCluster_factory.cc
+   M /trunk/src/libraries/FDC/DFDCCathodeCluster_factory.h
+   M /trunk/src/libraries/FDC/DFDCPseudo_factory.cc
+   M /trunk/src/libraries/FDC/DFDCPseudo_factory.h
+   M /trunk/src/libraries/FDC/DFDCSegment_factory.cc
+   M /trunk/src/libraries/FDC/DFDCSegment_factory.h
+
+Have FDC factories write messages directly to cout rather than to the DFDCXXX.log files.
+------------------------------------------------------------------------
+r5911 | davidl | 2010-01-14 16:40:45 -0500 (Thu, 14 Jan 2010) | 10 lines
+Changed paths:
+   M /trunk/src/libraries/PID/DPhoton_factory.cc
+   M /trunk/src/libraries/PID/DPhoton_factory.h
+
+Re-worked DPhoton factory to use separate cuts for matching photons
+to charged tracks for BCAL and FCAL. Cut parameters were also changed
+to be calibration constants rather than configuration parameters.
+
+FCAL Z location is now obtained from XML geometry.
+
+Charged tracks are now swum only once to find intersection with
+calorimeter whereas previously they were swum once for every
+DPhoton object.
+
+------------------------------------------------------------------------
+r5920 | davidl | 2010-01-15 08:38:45 -0500 (Fri, 15 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DMagneticFieldStepper.h
+
+Add SetCharge method to DMagneticFieldStepper.
+------------------------------------------------------------------------
+r5925 | davidl | 2010-01-15 14:52:25 -0500 (Fri, 15 Jan 2010) | 1 line
+Changed paths:
+   A /trunk/src/programs/Simulation/filtereta
+   A /trunk/src/programs/Simulation/filtereta/Makefile
+   A /trunk/src/programs/Simulation/filtereta/filter.cc
+   A /trunk/src/programs/Simulation/filtereta/filtereta.cc
+
+Program to filter events from bggen produced hddm file that contain etas.
+------------------------------------------------------------------------
+r5926 | zihlmann | 2010-01-15 15:10:10 -0500 (Fri, 15 Jan 2010) | 3 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/photoneff_hists/DEventProcessor_photoneff_hists.cc
+
+Fix photoneff_hists plugin to be compatible with current version of JANA
+and code structure.
+
+------------------------------------------------------------------------
+r5928 | staylor | 2010-01-15 16:53:43 -0500 (Fri, 15 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+
+(1) Move unused GoldenSection routines to the bottom of the file and comment them out. (2) Extract part of code that actually does the propagation of track parameters for the forward reference trajectory into its own method. (3) Make Jacobian elements related to position consistent with the 2nd order expansion used for the position propagation.
+------------------------------------------------------------------------
+r5929 | staylor | 2010-01-15 16:54:47 -0500 (Fri, 15 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+change in header file corresponding to previous commit for DTrackFitterKalman.cc
+------------------------------------------------------------------------
+r5930 | davidl | 2010-01-17 09:12:42 -0500 (Sun, 17 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/PID/DPhoton_factory.cc
+
+Use a more explicit call to get the FCAL z-position from the geometry package in order to satisfy complaints from gcc 3.4.6 on RHEL4.
+------------------------------------------------------------------------
+r5934 | staylor | 2010-01-19 15:27:23 -0500 (Tue, 19 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DGeometry.h
+
+Implement GetMultiple method returning a vector of vectors, which merely calls the equivalent method in JGeometry
+------------------------------------------------------------------------
+r5935 | zihlmann | 2010-01-19 17:00:47 -0500 (Tue, 19 Jan 2010) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/mcsmear/smear.cc
+
+the CDC geometry is hard coded in InitCDCGeometry(void) and was not up to date
+with the latest geometry of the CDC used in hdds. this is fixed now.
+
+
+------------------------------------------------------------------------
+r5936 | davidl | 2010-01-19 23:21:13 -0500 (Tue, 19 Jan 2010) | 5 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/geneta/cr_prt.F
+
+-Use egama passed into subroutine rather than harcoded 11GeV for ebeam
+
+-Divide sumall by 1000 to be consistent with previous version of cr_prt.F. Without
+ this, it appears to always generate etas at theta=0.
+
+------------------------------------------------------------------------
+r5939 | marki | 2010-01-20 15:44:44 -0500 (Wed, 20 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/Makefile.bms
+
+turn on CERNLIB_MOTIF, make it a -D option in FFLAGS
+------------------------------------------------------------------------
