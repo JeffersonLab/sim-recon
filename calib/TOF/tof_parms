@@ -1,0 +1,52 @@
+#
+# TOF data base of constants used 
+#
+
+# effective light speed in the plastic scintillator paddles units [ns]
+TOF_C_EFFECTIVE     15.0
+
+# attenuation legth of paddle units [cm]
+TOF_ATTEN_LENGTH    150.
+
+# TOF position resolution in the transvers direction of the paddle [cm]
+TOF_POS_RES         3.0
+
+# conversion of ADC to energy
+TOF_ADC_TO_E        1.0
+
+# TDC resolution as in the MC units [ns]
+TOF_TDC_MC_RES      0.06     
+
+# scintillation photon generated per MeV energy
+TOF_PHOTONS_PERMEV  10000.
+
+# total internal reflection
+TOF_THETA_MAX       50.74
+
+# PMT surface in cm^2
+TOF_PMT_SURFACE     19.63
+
+# adc resolution pC/count in MC
+TOF_ADC_RES_MC      50.   
+
+#TDC resolution in ns
+TOF_TDC_RES_MC      0.06 
+
+# PMT gain factor in MC
+TOF_PMT_GAIN_MC     40000000.
+
+# PMT quantum efficiency
+TOF_PHE_EFF         0.2  
+
+# reflection efficiency of scintillation light
+TOF_REFLECT_EFF     0.5 
+
+# timing resolution in the center of the paddle log10(0.2ns)
+TOF_CENT_TRES      -0.698970004
+
+# ADC to energy conversion factor in MC
+TOF_ADC_TO_E        1.0
+
+# half the length of a TOF paddle in cm
+TOF_HALFPADDLE      126.
+

@@ -1,0 +1,14 @@
+#
+# Parameters used to match photons to charged tracks so
+# that DPhotons will have their tag set to DPhoton::kCharge
+#
+
+# BCAL is matched in both phi and z on BCAL surface
+DELTA_PHI_BCAL		0.0218	# radians
+DELTA_Z_BCAL		6.0		# cm
+MEAN_PHI_BCAL		-0.0218	# radians
+MEAN_Z_BCAL			-6.0		# cm
+
+# FCAL is matched in distance on FCAL surface
+DELTA_R_FCAL		3.85		# cm
+MEAN_R_FCAL			0.0		# cm
