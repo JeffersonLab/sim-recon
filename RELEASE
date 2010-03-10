@@ -1,0 +1,471 @@
+Release Notes for Hall-D source code
+------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/release-2010-03-10
+   Date: March 10, 2010
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 6124 of trunk/src.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Fedora release 8 (Werewolf) on i686  32-bit
+------------
+  Xerces 2.7.0
+  JANA 0.5.2
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+  HDDS 1.0
+
+Red Hat Enterprise Linux 5.3
+-----------
+  Xerces 2.7.0
+  JANA 0.5.2
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.0
+
+CentOS release 5.3 (Final)
+------------
+  Xerces 2.7.0
+  JANA 0.5.2
+  ROOT 5.24
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.0
+
+Relevant repository log of changes:
+------------------------------------------------------------------------
+r6023 | staylor | 2010-02-17 15:52:36 -0500 (Wed, 17 Feb 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.cc
+
+Added expression for I for Z>=13 from Leo.  Added some small tweaks elsewhere for a tiny bit of speed.
+------------------------------------------------------------------------
+r6024 | staylor | 2010-02-17 16:15:05 -0500 (Wed, 17 Feb 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitter.cc
+
+Include non-gases in the formulas for the density effect.
+------------------------------------------------------------------------
+r6025 | staylor | 2010-02-19 10:56:14 -0500 (Fri, 19 Feb 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DRootGeom.cc
+   M /trunk/src/libraries/HDGEOMETRY/DRootGeom.h
+
+(1) Added new FindMatLL that returns the logarithm of the mean excitation potential along with the other arguments.  For a mixture the code computes Ln(I) by summing over the elements in the mixture according to eq. 2.42 on p. 29 of Leo 2nd ed. (2) Added version of FindMat that accesses material properties by the name of the material.
+------------------------------------------------------------------------
+r6026 | staylor | 2010-02-19 11:20:44 -0500 (Fri, 19 Feb 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitter.h
+
+Get material properties for the chamber gas in the constructor using the new get-by-material-name method in DRootGeom.  Instead of computing the product rho*Z/A every time dEdx is needed, use the precomputed rhoZ_overA values instead.
+------------------------------------------------------------------------
+r6028 | davidl | 2010-02-19 15:19:42 -0500 (Fri, 19 Feb 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/calibDB.cc
+
+Allow one to specify Parameterized as the BFIELDTYPE value in control.in
+------------------------------------------------------------------------
+r6029 | staylor | 2010-02-19 16:41:11 -0500 (Fri, 19 Feb 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+Switch to new FindMatKalman method with parametrs better tuned to what actually gets calculated so that products like rho*Z/A do not get calculated repeatedly.
+------------------------------------------------------------------------
+r6030 | staylor | 2010-02-19 16:42:07 -0500 (Fri, 19 Feb 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DGeometry.cc
+   M /trunk/src/libraries/HDGEOMETRY/DGeometry.h
+   M /trunk/src/libraries/HDGEOMETRY/DMaterialMap.cc
+   M /trunk/src/libraries/HDGEOMETRY/DMaterialMap.h
+
+Create new FindMatKalman routine for getting material properties in a manner consistent with the Kalman Filter code
+------------------------------------------------------------------------
+r6031 | davidl | 2010-02-19 17:09:11 -0500 (Fri, 19 Feb 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DFactoryGeneratorHDParSim.h
+   A /trunk/src/programs/Simulation/plugins/hdparsim/DTrackTimeBased_factory_HDParSim.cc
+   A /trunk/src/programs/Simulation/plugins/hdparsim/DTrackTimeBased_factory_HDParSim.h
+
+Have HDParSim provide DTrackTimeBased objects.
+------------------------------------------------------------------------
+r6032 | davidl | 2010-02-22 15:16:56 -0500 (Mon, 22 Feb 2010) | 2 lines
+Changed paths:
+   M /trunk/src/programs/Utilities/hddm/Makefile
+
+Install hddm utilities into HALLD_HOME if HALLD_MY is not set.
+
+------------------------------------------------------------------------
+r6033 | davidl | 2010-02-22 15:19:04 -0500 (Mon, 22 Feb 2010) | 4 lines
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitter.h
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterALT1.h
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased.h
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/src/libraries/TRACKING/DTrackWireBased.h
+   M /trunk/src/libraries/TRACKING/DTrackWireBased_factory.cc
+
+Added container to hold pulls to DTrackFitter and implemented use of it
+in DTrackFitterALT1 and DTrackFitterKalman. Pulls are calculated and
+stored in track objects now.
+
+------------------------------------------------------------------------
+r6039 | davidl | 2010-02-22 16:44:33 -0500 (Mon, 22 Feb 2010) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/hd_dump/hd_dump.cc
+
+Set the jout prefix string to empty in order to get a simplified
+output from hd_dump. This requires JANA 0.6.0, (but there is already
+at least one other place in the code that requires it already).
+
+------------------------------------------------------------------------
+r6080 | wolin | 2010-03-01 11:25:00 -0500 (Mon, 01 Mar 2010) | 3 lines
+Changed paths:
+   A /trunk/src/programs/Utilities/plugins
+
+Holds miscellaneous plugins
+
+
+------------------------------------------------------------------------
+r6081 | wolin | 2010-03-01 11:31:06 -0500 (Mon, 01 Mar 2010) | 1 line
+Changed paths:
+   A /trunk/src/programs/Utilities/plugins/danaevio
+   A /trunk/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.cc
+   A /trunk/src/programs/Utilities/plugins/danaevio/Makefile
+   A /trunk/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Plugin writes DANA objects to EVIO file
+------------------------------------------------------------------------
+r6082 | wolin | 2010-03-01 11:37:25 -0500 (Mon, 01 Mar 2010) | 1 line
+Changed paths:
+   A /trunk/src/BMS/Makefile.evio
+
+EVIO is external package
+------------------------------------------------------------------------
+r6083 | wolin | 2010-03-01 11:48:30 -0500 (Mon, 01 Mar 2010) | 1 line
+Changed paths:
+   A /trunk/src/BMS/Makefile.EVIO (from /trunk/src/BMS/Makefile.evio:6082)
+   D /trunk/src/BMS/Makefile.evio
+
+Follow usual convention
+------------------------------------------------------------------------
+r6084 | wolin | 2010-03-01 12:09:14 -0500 (Mon, 01 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/BMS/Makefile.EVIO
+
+Removed BMS_OSNAME, not needed for external packages
+------------------------------------------------------------------------
+r6085 | wolin | 2010-03-01 12:38:10 -0500 (Mon, 01 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/plugins/danaevio/Makefile
+
+Cleanup
+------------------------------------------------------------------------
+r6086 | davidl | 2010-03-01 13:06:37 -0500 (Mon, 01 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/BMS/Makefile.CERNLIB
+   M /trunk/src/BMS/Makefile.Darwin
+
+Move adding /usr/local/lib to library search path from Makefile.CERNLIB to Makefile.Darwin. This may add it to builds of a few other programs, but should should be harmless. This is motivated by removing the conditional inclusion based on OS being Darwin in Makefile.CERNLIB where it probably shouldn't be.
+------------------------------------------------------------------------
+r6087 | davidl | 2010-03-01 13:12:47 -0500 (Mon, 01 Mar 2010) | 13 lines
+Changed paths:
+   M /trunk/src/BMS/osrelease.pl
+
+Rearranged osrelease.pl to have the processor type and
+compiler versions set first and then the uname and
+release strings. This is to allow changing of the
+first 2 based on a specific platform.
+
+The main motivation here is to set the processor type
+on Darwin systems to whatever MACHTYPE is set to. On
+Mac OS X 10.6, the compiler builds 64bit executables
+by default, but uname -p returns i386 (not x86_64).
+
+This should not change the resulting string on any
+other platform.
+
+------------------------------------------------------------------------
+r6088 | davidl | 2010-03-01 13:16:21 -0500 (Mon, 01 Mar 2010) | 4 lines
+Changed paths:
+   M /trunk/src/external/xstream/src/Makefile
+   M /trunk/src/programs/Utilities/hddm/Makefile
+
+Modified non-BMS files to honor CXXFLAGS, LD_FLAGS, ... etc. This
+allows one to explicitly set these variables to include things
+like -m32 or -m64 to force 32bit or 64bit builds globally.
+
+------------------------------------------------------------------------
+r6089 | davidl | 2010-03-01 13:18:09 -0500 (Mon, 01 Mar 2010) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/gelhad/Makefile
+   M /trunk/src/programs/Simulation/HDGeant/hitutil/Makefile
+
+Make hitutil/Makefile and gelhad/Makefile ADD to FFLAGS rather than simply
+overwrite it. This allows one to set the -m32 or -m64 flags and have these
+directories build for the correct architecture.
+
+------------------------------------------------------------------------
+r6090 | davidl | 2010-03-01 13:20:53 -0500 (Mon, 01 Mar 2010) | 4 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/Makefile.bms
+
+- Add to FFLAGS rather than overwrite it
+- Suppress warnings when linking 10.6 just like when doing
+  so for 10.5.
+
+------------------------------------------------------------------------
+r6091 | davidl | 2010-03-01 13:24:11 -0500 (Mon, 01 Mar 2010) | 11 lines
+Changed paths:
+   M /trunk/src/BMS/Makefile.dirs
+   M /trunk/src/programs/Simulation/HDGeant/Makefile
+
+Allow CERN to not be set and still build the Hall-D software.
+A warning message is printed from Makefile.dirs as soon as
+it is detected. The basic software only requires cernlib for
+hdgeant so this allows one to bypass building hdgeant if cernlib
+is not available.
+
+This is motivated by the inability to get a working hdgeant 
+version on Snow leopard (either 64bit or 32bit). At least one
+can still build and run all of the reconstruction software on
+Snow Leopard.
+
+------------------------------------------------------------------------
+r6092 | davidl | 2010-03-02 14:33:37 -0500 (Tue, 02 Mar 2010) | 2 lines
+Changed paths:
+   M /trunk/src/BMS/Makefile.dirs
+
+Removed indention from Makefile.dirs section inside ifndef CERN block. This was apparently not a problem on Snow Leopard but was on RHEL5 even though both are running GNU make 3.81 (???).
+
+------------------------------------------------------------------------
+r6093 | wolin | 2010-03-02 14:58:25 -0500 (Tue, 02 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Typo
+------------------------------------------------------------------------
+r6095 | davidl | 2010-03-04 11:05:22 -0500 (Thu, 04 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/PID/DPhoton.h
+
+Fixed typos in display names of Py and Pz.
+------------------------------------------------------------------------
+r6096 | marki | 2010-03-04 16:33:16 -0500 (Thu, 04 Mar 2010) | 3 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/MyTrajectory.h
+
+Check that new midpoint candidate has not jumped out of the minimum
+bracket. Throw an exception if it has.
+
+------------------------------------------------------------------------
+r6097 | marki | 2010-03-04 16:50:13 -0500 (Thu, 04 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/plugins/trkfitterLSLM/Makefile
+
+Use GSL_LIB environment variable
+------------------------------------------------------------------------
+r6098 | staylor | 2010-03-04 16:51:56 -0500 (Thu, 04 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+Calculate the tranposes of the Jacobian matrices in the routines that set the reference trajectories, thereby cutting out repeated calculations of the same thing over many iterations.
+------------------------------------------------------------------------
+r6099 | staylor | 2010-03-04 19:20:27 -0500 (Thu, 04 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+Minor tweaks, mostly for speed.
+------------------------------------------------------------------------
+r6100 | wolin | 2010-03-05 08:54:08 -0500 (Fri, 05 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.cc
+
+Missing DMCThrown px bank
+------------------------------------------------------------------------
+r6101 | davidl | 2010-03-05 12:32:00 -0500 (Fri, 05 Mar 2010) | 5 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.h
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.cc
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.h
+   A /trunk/src/programs/Analysis/hdview2/hdv_optionsframe.cc
+   A /trunk/src/programs/Analysis/hdview2/hdv_optionsframe.h
+   M /trunk/src/programs/Analysis/hdview2/trk_mainframe.cc
+
+Added "More Options" button that opens a small pop-up to
+allow several more specialized drawing options. Mainly,
+they are centered on photons and projected tracks on the
+calorimeter.
+
+------------------------------------------------------------------------
+r6103 | davidl | 2010-03-07 14:06:57 -0500 (Sun, 07 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.cc
+
+Move instantiation of hdv_optionsframe to before ReadPreferences is called so that the values read from preferences file for extra options window will be honored.
+------------------------------------------------------------------------
+r6104 | davidl | 2010-03-07 14:08:35 -0500 (Sun, 07 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DMagneticFieldStepper.cc
+
+If quadratic calculation of intersection fails (mainly due to zero dot product) then fall back to straight line estimation.
+------------------------------------------------------------------------
+r6105 | davidl | 2010-03-07 14:14:20 -0500 (Sun, 07 Mar 2010) | 2 lines
+Changed paths:
+   M /trunk/src/libraries/FCAL/DFCALPhoton_factory.cc
+   M /trunk/src/libraries/FCAL/DFCALPhoton_factory.h
+
+Added code to merge multiple DFCALPhoton clusters when forming DPhoton objects.
+
+------------------------------------------------------------------------
+r6108 | davidl | 2010-03-08 13:42:44 -0500 (Mon, 08 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.cc
+   M /trunk/src/programs/Analysis/hdview2/hdv_optionsframe.cc
+
+Add option for drawing DPhoton objects as trajectories. Move some less common draw options to hdv_optionsframe to make room on main window.
+------------------------------------------------------------------------
+r6109 | davidl | 2010-03-08 13:44:06 -0500 (Mon, 08 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_CDC.cc
+   M /trunk/src/libraries/TRACKING/DTrackCandidate_factory_CDC.h
+
+Make the maximum allowed CDC hits before bailing completely be a config. parameter. Currently still set to 200.
+------------------------------------------------------------------------
+r6111 | staylor | 2010-03-08 17:54:38 -0500 (Mon, 08 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DGeometry.cc
+   M /trunk/src/libraries/HDGEOMETRY/DGeometry.h
+   M /trunk/src/libraries/HDGEOMETRY/DMaterialMap.cc
+   M /trunk/src/libraries/HDGEOMETRY/DMaterialMap.h
+
+Add the product of K=0.1535e-3 and rho_Z_overA to each node so as to pre-compute more before the actual execution of the tracking code.
+------------------------------------------------------------------------
+r6112 | staylor | 2010-03-08 18:29:28 -0500 (Mon, 08 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.h
+
+Add flight time to quantities stored at each point on the reference trajectory
+------------------------------------------------------------------------
+r6113 | staylor | 2010-03-09 07:48:03 -0500 (Tue, 09 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+Use new method for obtaining material data that pre-computes KrhoZ/A.
+------------------------------------------------------------------------
+r6114 | staylor | 2010-03-09 07:51:14 -0500 (Tue, 09 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitter.h
+
+Added routine that computes both the most probable dedx and the sigma. Previously one had to call two separate routines. Also added cut-off energy for the mean dEdx -- still working on this...
+------------------------------------------------------------------------
+r6116 | davidl | 2010-03-09 09:38:13 -0500 (Tue, 09 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.h
+
+Draw projected charged track circles on FCAL with radius based on value used for track matching with photon clusters.
+------------------------------------------------------------------------
+r6117 | davidl | 2010-03-09 09:49:14 -0500 (Tue, 09 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/src/programs/Simulation/mcsmear/smear.cc
+
+Switch default behavior of mcsmear to NOT add random noise hits. If random noise is desired, use the -N switch.
+------------------------------------------------------------------------
+r6118 | davidl | 2010-03-09 11:24:31 -0500 (Tue, 09 Mar 2010) | 4 lines
+Changed paths:
+   M /trunk/src/libraries/HDDM/event.xml
+   M /trunk/src/programs/Simulation/HDGeant/hitCDC.c
+   M /trunk/src/programs/Simulation/HDGeant/hitFDC.c
+   M /trunk/src/programs/Simulation/mcsmear/smear.cc
+
+Modified the HDDM data model to include identical structures for the FDC and CDC hits, but to hold "truth" information (i.e. unsmeared). The truth structures are now filled out by hdgeant and the non-truth structures are filled by mcsmear using the values in the truth structures.
+
+This means that (like the FCAL) running mcsmear is now REQUIRED to do tracking of simulated data.
+
+------------------------------------------------------------------------
+r6119 | davidl | 2010-03-09 13:58:14 -0500 (Tue, 09 Mar 2010) | 2 lines
+Changed paths:
+   M /trunk/src/libraries/BCAL/DBCALPhoton_factory.cc
+   M /trunk/src/libraries/BCAL/DBCALPhoton_factory.h
+
+Added code to merge multiple DBCALShower objects into a single DBCALPhoton object.
+
+------------------------------------------------------------------------
+r6120 | davidl | 2010-03-09 16:31:27 -0500 (Tue, 09 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Analysis/hd_dump/MyProcessor.cc
+
+Fixed bug where only first factory specified had objects printed when -f flag is present.
+------------------------------------------------------------------------
+r6121 | davidl | 2010-03-10 09:08:14 -0500 (Wed, 10 Mar 2010) | 6 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DTrackTimeBased_factory_HDParSim.cc
+
+Set the candidateid, trackid, and FOM for DTrackTimeBased 
+objects created by the hdparsim plugin. This allows the
+DChargedTrack factory to "do the right thing" and promote
+every DTrackTimeBased object as a DChargedTrack object with
+a single hypothesis.
+
+------------------------------------------------------------------------
+r6122 | davidl | 2010-03-10 09:42:54 -0500 (Wed, 10 Mar 2010) | 13 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DParticle_factory_HDParSim.cc
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DParticle_factory_HDParSim.h
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DPhoton_factory_HDParSim.cc
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DPhoton_factory_HDParSim.h
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DTrackTimeBased_factory_HDParSim.cc
+   M /trunk/src/programs/Simulation/plugins/hdparsim/DTrackTimeBased_factory_HDParSim.h
+
+Added the following config parameters:
+
+HDPARSIM:APPLY_EFFICIENCY_CHARGED
+HDPARSIM:APPLY_EFFICIENCY_PHOTON
+
+These allow one to turn off the efficiency cut for charged
+or photon tracks. The efficiency typically includes the
+geometric acceptance so this will allow non-detectable
+particles to be passed on as though they were reconstructed.
+
+This is a feature that is only useful for debugging.
+
+
+------------------------------------------------------------------------
+r6123 | marki | 2010-03-10 14:23:49 -0500 (Wed, 10 Mar 2010) | 8 lines
+Changed paths:
+   M /trunk/src/BMS/Makefile.bin
+
+Adds a list of libraries to the dependencies of binary targets. This
+will cause the binary to be relinked when one of the libraries it
+depends on changes.
+
+Specifically, the libraries listed in LD_LIBS are now
+dependencies. These are found via VPATH and that variable has been
+extended to include the directories in LIB_DIRS.
+
+------------------------------------------------------------------------
+r6124 | wolin | 2010-03-10 14:35:47 -0500 (Wed, 10 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.cc
+   M /trunk/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Added track reconstruction banks
+------------------------------------------------------------------------
