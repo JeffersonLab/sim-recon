@@ -1,0 +1,4 @@
+C  #     write    Bremsstr.     Gamma       Collimator
+C events ntuple  E e-  Peak    Emin  Emax     L (cm)
+C   312000    1     12.    9.    0.15  3.00      7600.
+  10000    1     12.    9.    0.15  3.00      7600.

@@ -1,0 +1,192 @@
+<!-- DANA to evio dictionary -->
+
+
+
+<xmlDict>
+
+  <xmldumpDictEntry name="DanaEvent"            tag="10000"     num="0"/>
+
+
+ <!-- MC truth data -->
+
+  <xmldumpDictEntry name="DMCTrackHit"          tag="10100"    num="0"/>
+  <xmldumpDictEntry name="r"                    tag="10100"    num="1"/>
+  <xmldumpDictEntry name="phi"                  tag="10100"    num="2"/>
+  <xmldumpDictEntry name="z"                    tag="10100"    num="3"/>
+  <xmldumpDictEntry name="track"                tag="10100"    num="4"/>
+  <xmldumpDictEntry name="primary"              tag="10100"    num="5"/>
+  <xmldumpDictEntry name="ptype"                tag="10100"    num="6"/>
+  <xmldumpDictEntry name="system"               tag="10100"    num="7"/>
+
+  <xmldumpDictEntry name="DBeamPhoton"          tag="10200"    num="0"/>
+  <xmldumpDictEntry name="type"                 tag="10200"    num="1"/>
+
+  <xmldumpDictEntry name="DMCThrown"            tag="10300"    num="0"/>
+  <xmldumpDictEntry name="type"                 tag="10300"    num="1"/>
+  <xmldumpDictEntry name="pdgtype"              tag="10300"    num="2"/>
+  <xmldumpDictEntry name="myid"                 tag="10300"    num="3"/>
+  <xmldumpDictEntry name="parentid"             tag="10300"    num="4"/>
+  <xmldumpDictEntry name="mech"                 tag="10300"    num="5"/>
+  <xmldumpDictEntry name="x"                    tag="10300"    num="6"/>
+  <xmldumpDictEntry name="y"                    tag="10300"    num="7"/>
+  <xmldumpDictEntry name="z"                    tag="10300"    num="8"/>
+  <xmldumpDictEntry name="px"                   tag="10300"    num="9"/>
+  <xmldumpDictEntry name="py"                   tag="10300"    num="10"/>
+  <xmldumpDictEntry name="pz"                   tag="10300"    num="11"/>
+  <xmldumpDictEntry name="energy"               tag="10300"    num="12"/>
+
+  <xmldumpDictEntry name="DFCALTruthShower"     tag="10400"    num="0"/>
+  <xmldumpDictEntry name="x"                    tag="10400"    num="1"/>
+  <xmldumpDictEntry name="y"                    tag="10400"    num="2"/>
+  <xmldumpDictEntry name="z"                    tag="10400"    num="3"/>
+  <xmldumpDictEntry name="t"                    tag="10400"    num="4"/>
+  <xmldumpDictEntry name="px"                   tag="10400"    num="5"/>
+  <xmldumpDictEntry name="py"                   tag="10400"    num="6"/>
+  <xmldumpDictEntry name="pz"                   tag="10400"    num="7"/>
+  <xmldumpDictEntry name="E"                    tag="10400"    num="8"/>
+  <xmldumpDictEntry name="primary"              tag="10400"    num="9"/>
+  <xmldumpDictEntry name="track"                tag="10400"    num="10"/>
+  <xmldumpDictEntry name="type"                 tag="10400"    num="11"/>
+
+  <xmldumpDictEntry name="DBCALTruthShower"     tag="10500"    num="0"/>
+  <xmldumpDictEntry name="track"                tag="10500"    num="1"/>
+  <xmldumpDictEntry name="primary"              tag="10500"    num="2"/>
+  <xmldumpDictEntry name="phi"                  tag="10500"    num="3"/>
+  <xmldumpDictEntry name="r"                    tag="10500"    num="4"/>
+  <xmldumpDictEntry name="z"                    tag="10500"    num="5"/>
+  <xmldumpDictEntry name="t"                    tag="10500"    num="6"/>
+  <xmldumpDictEntry name="E"                    tag="10500"    num="7"/>
+
+  <xmldumpDictEntry name="DTOFTruth"            tag="10600"    num="0"/>
+  <xmldumpDictEntry name="track"                tag="10600"    num="1"/>
+  <xmldumpDictEntry name="primary"              tag="10600"    num="2"/>
+  <xmldumpDictEntry name="x"                    tag="10600"    num="3"/>
+  <xmldumpDictEntry name="y"                    tag="10600"    num="4"/>
+  <xmldumpDictEntry name="z"                    tag="10600"    num="5"/>
+  <xmldumpDictEntry name="px"                   tag="10600"    num="6"/>
+  <xmldumpDictEntry name="py"                   tag="10600"    num="7"/>
+  <xmldumpDictEntry name="pz"                   tag="10600"    num="8"/>
+  <xmldumpDictEntry name="t"                    tag="10600"    num="9"/>
+  <xmldumpDictEntry name="E"                    tag="10600"    num="10"/>
+  <xmldumpDictEntry name="ptype"                tag="10600"    num="11"/>
+
+  <xmldumpDictEntry name="DSCTruthHit"          tag="10700"    num="0"/>
+  <xmldumpDictEntry name="dEdx"                 tag="10700"    num="1"/>
+  <xmldumpDictEntry name="primary"              tag="10700"    num="2"/>
+  <xmldumpDictEntry name="track"                tag="10700"    num="3"/>
+  <xmldumpDictEntry name="ptype"                tag="10700"    num="4"/>
+  <xmldumpDictEntry name="r"                    tag="10700"    num="5"/>
+  <xmldumpDictEntry name="phi"                  tag="10700"    num="6"/>
+  <xmldumpDictEntry name="z"                    tag="10700"    num="7"/>
+  <xmldumpDictEntry name="t"                    tag="10700"    num="8"/>
+  <xmldumpDictEntry name="sector"               tag="10700"    num="9"/>
+
+  <xmldumpDictEntry name="DMCTrajectoryPoint"   tag="10800"    num="0"/>
+  <xmldumpDictEntry name="x"                    tag="10800"    num="1"/>
+  <xmldumpDictEntry name="y"                    tag="10800"    num="2"/>
+  <xmldumpDictEntry name="z"                    tag="10800"    num="3"/>
+  <xmldumpDictEntry name="px"                   tag="10800"    num="4"/>
+  <xmldumpDictEntry name="py"                   tag="10800"    num="5"/>
+  <xmldumpDictEntry name="pz"                   tag="10800"    num="6"/>
+  <xmldumpDictEntry name="E"                    tag="10800"    num="7"/>
+  <xmldumpDictEntry name="dE"                   tag="10800"    num="8"/>
+  <xmldumpDictEntry name="primary_track"        tag="10800"    num="9"/>
+  <xmldumpDictEntry name="track"                tag="10800"    num="10"/>
+  <xmldumpDictEntry name="part"                 tag="10800"    num="11"/>
+  <xmldumpDictEntry name="radlen"               tag="10800"    num="12"/>
+  <xmldumpDictEntry name="step"                 tag="10800"    num="13"/>
+  <xmldumpDictEntry name="mech"                 tag="10800"    num="14"/>
+
+
+
+  <!-- hit data -->
+
+  <xmldumpDictEntry name="DCDCHit"              tag="10900"    num="0"/>
+  <xmldumpDictEntry name="ring"                 tag="10900"    num="1"/>
+  <xmldumpDictEntry name="straw"                tag="10900"    num="2"/>
+  <xmldumpDictEntry name="dE"                   tag="10900"    num="3"/>
+  <xmldumpDictEntry name="t"                    tag="10900"    num="4"/>
+
+  <xmldumpDictEntry name="DFDCHit"              tag="11000"    num="0"/>
+  <xmldumpDictEntry name="layer"                tag="11000"    num="1"/>
+  <xmldumpDictEntry name="module"               tag="11000"    num="2"/>
+  <xmldumpDictEntry name="element"              tag="11000"    num="3"/>
+  <xmldumpDictEntry name="plane"                tag="11000"    num="4"/>
+  <xmldumpDictEntry name="gPlane"               tag="11000"    num="5"/>
+  <xmldumpDictEntry name="gLayer"               tag="11000"    num="6"/>
+  <xmldumpDictEntry name="q"                    tag="11000"    num="7"/>
+  <xmldumpDictEntry name="t"                    tag="11000"    num="8"/>
+  <xmldumpDictEntry name="r"                    tag="11000"    num="9"/>
+  <xmldumpDictEntry name="type"                 tag="11000"    num="10"/>
+
+  <xmldumpDictEntry name="DFCALHit"             tag="11100"    num="0"/>
+  <xmldumpDictEntry name="row"                  tag="11100"    num="1"/>
+  <xmldumpDictEntry name="column"               tag="11100"    num="2"/>
+  <xmldumpDictEntry name="x"                    tag="11100"    num="3"/>
+  <xmldumpDictEntry name="y"                    tag="11100"    num="4"/>
+  <xmldumpDictEntry name="E"                    tag="11100"    num="5"/>
+  <xmldumpDictEntry name="t"                    tag="11100"    num="6"/>
+
+  <xmldumpDictEntry name="DHDDMBCALHit"         tag="11200"    num="0"/>
+  <xmldumpDictEntry name="module"               tag="11200"    num="1"/>
+  <xmldumpDictEntry name="layer"                tag="11200"    num="2"/>
+  <xmldumpDictEntry name="sector"               tag="11200"    num="3"/>
+  <xmldumpDictEntry name="E"                    tag="11200"    num="4"/>
+  <xmldumpDictEntry name="t"                    tag="11200"    num="5"/>
+  <xmldumpDictEntry name="zLocal"               tag="11200"    num="6"/>
+
+  <xmldumpDictEntry name="DHDDMTOFHit"          tag="11300"    num="0"/>
+  <xmldumpDictEntry name="plane"                tag="11300"    num="1"/>
+  <xmldumpDictEntry name="bar"                  tag="11300"    num="2"/>
+  <xmldumpDictEntry name="ptype"                tag="11300"    num="3"/>
+  <xmldumpDictEntry name="t_north"              tag="11300"    num="4"/>
+  <xmldumpDictEntry name="dE_north"             tag="11300"    num="5"/>
+  <xmldumpDictEntry name="t_south"              tag="11300"    num="6"/>
+  <xmldumpDictEntry name="dE_south"             tag="11300"    num="7"/>
+  <xmldumpDictEntry name="x"                    tag="11300"    num="8"/>
+  <xmldumpDictEntry name="y"                    tag="11300"    num="9"/>
+  <xmldumpDictEntry name="z"                    tag="11300"    num="10"/>
+  <xmldumpDictEntry name="px"                   tag="11300"    num="11"/>
+  <xmldumpDictEntry name="py"                   tag="11300"    num="12"/>
+  <xmldumpDictEntry name="pz"                   tag="11300"    num="13"/>
+  <xmldumpDictEntry name="E"                    tag="11300"    num="14"/>
+
+  <xmldumpDictEntry name="DSCCHit"              tag="11400"    num="0"/>
+  <xmldumpDictEntry name="dE"                   tag="11400"    num="1"/>
+  <xmldumpDictEntry name="t"                    tag="11400"    num="2"/>
+  <xmldumpDictEntry name="sector"               tag="11400"    num="3"/>
+
+
+<!-- Tracking info -->
+  <xmldumpDictEntry name="DTrackTimeBased"      tag="11500"    num="0"/>
+  <xmldumpDictEntry name="chisq"                tag="11500"    num="1"/>
+  <xmldumpDictEntry name="Ndof"                 tag="11500"    num="2"/>
+  <xmldumpDictEntry name="FOM"                  tag="11500"    num="3"/>
+  <xmldumpDictEntry name="x"                    tag="11500"    num="4"/>
+  <xmldumpDictEntry name="y"                    tag="11500"    num="5"/>
+  <xmldumpDictEntry name="z"                    tag="11500"    num="6"/>
+  <xmldumpDictEntry name="px"                   tag="11500"    num="7"/>
+  <xmldumpDictEntry name="py"                   tag="11500"    num="8"/>
+  <xmldumpDictEntry name="pz"                   tag="11500"    num="9"/>
+  <xmldumpDictEntry name="q"                    tag="11500"    num="10"/>
+  <xmldumpDictEntry name="E"                    tag="11500"    num="11"/>
+  <xmldumpDictEntry name="mass"                 tag="11500"    num="12"/>
+  <xmldumpDictEntry name="t0"                   tag="11500"    num="13"/>
+
+  <xmldumpDictEntry name="DChargedTrack"        tag="11600"    num="0"/>
+  <xmldumpDictEntry name="hypotheses"           tag="11600"    num="1"/>
+
+  <xmldumpDictEntry name="DPhoton"              tag="11700"    num="0"/>
+  <xmldumpDictEntry name="E"                    tag="11700"    num="1"/>
+  <xmldumpDictEntry name="px"                   tag="11700"    num="2"/>
+  <xmldumpDictEntry name="py"                   tag="11700"    num="3"/>
+  <xmldumpDictEntry name="pz"                   tag="11700"    num="4"/>
+  <xmldumpDictEntry name="x"                    tag="11700"    num="5"/>
+  <xmldumpDictEntry name="y"                    tag="11700"    num="6"/>
+  <xmldumpDictEntry name="z"                    tag="11700"    num="7"/>
+  <xmldumpDictEntry name="t"                    tag="11700"    num="8"/>
+  <xmldumpDictEntry name="Tag"                  tag="11700"    num="9"/>
+
+
+
+</xmlDict>

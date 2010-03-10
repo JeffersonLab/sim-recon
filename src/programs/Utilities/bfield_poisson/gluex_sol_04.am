@@ -1,0 +1,232 @@
+GlueX (Hall D) solenoid - basic, 1500A
+
+&reg kprob=0,           ; Declares a POISSON problem
+icylin=1,               ; Cylindrical symmetry
+;dx=1.0,                  ; Mesh interval 0.3 originally
+dx=0.25,                ; Mesh interval 0.3 originally
+xreg1=  60., xreg2=  80., xreg3= 160., xreg4= 210., xreg5= 260.,             ; variable mesh 
+kreg1=  30,  kreg2=  50,  kreg3= 210,  kreg4= 260,  kreg5= 285,  kmax=320,   ; variable mesh 
+yreg1=-140., yreg2= -60., yreg3= 440., yreg4= 540.,                          ; variable mesh 
+lreg1=  40,  lreg2=  80,  lreg3= 580,  lreg4= 630,  lmax=710,                ; variable mesh 
+;hogam=0.0005,            ; relaxation parameter, default = 0.08
+;mode=-1                 ; Use fixed gamma for material 2
+mode=0                 ; Use variable gamma for material 2
+;xminf=0,xmaxf=300,      ; X range for field interpolation
+;yminf=0,ymaxf=0,        ; Y range 
+;; The next 6 terms refer to the harmonic analysis:
+;ktype=6,                ; H dipole symmetry
+;nterm=7,                ; Number of coefficients
+;nptc=11,                ; Number of arc points for interpolation
+;rint=1.5,               ; Radius of the arc
+;angle=90,               ; Angular extent of arc (default start = 0)
+;rnorm=1.5 &             ; Aperture radius
+
+nbsup=0,                ; Dirichlet boundary condition on upper edge
+nbslf=0,                ; Dirichlet boundary condition on left edge
+nbsrt=0,                ; Dirichlet boundary condition on right edge
+nbslo=0,                ; Dirichlet boundary condition on bottom
+ibound=0 &
+
+&po y= -300., x=  0. &         ; Start of the air-region points
+&po y=  700., x=  0. &
+&po y=  700., x=400. &
+&po y= -300., x=400. &
+&po y= -300., x=  0. &
+
+; Coils
+
+&reg mat=1, cur= 432000.0 & ; Coil 1A 
+&po y=  92.853, x= 101.881 &
+&po y= 104.548, x= 101.881 &
+&po y= 104.548, x= 116.952 &
+&po y=  92.853, x= 116.952 &
+&po y=  92.853, x= 101.881 &
+
+&reg mat=1, cur= 414000.0 & ; Coil 1B 
+&po y= 104.817, x= 101.881 &
+&po y= 116.511, x= 101.881 &
+&po y= 116.511, x= 116.320 &
+&po y= 104.817, x= 116.320 &
+&po y= 104.817, x= 101.881 &
+
+&reg mat=1, cur= 180000.0 & ; Coil 1C 
+&po y= 124.961, x= 101.881 &
+&po y= 132.679, x= 101.881 &
+&po y= 132.679, x= 111.263 &
+&po y= 124.961, x= 111.263 &
+&po y= 124.961, x= 101.881 &
+
+&reg mat=1, cur= 120000.0 & ; Coil 1D 
+&po y= 140.845, x= 101.881 &
+&po y= 148.563, x= 101.881 &
+&po y= 148.563, x= 108.607 &
+&po y= 140.845, x= 108.607 &
+&po y= 140.845, x= 101.881 &
+
+&reg mat=1, cur= 324000.0 & ; Coil 1E 
+&po y= 156.729, x= 101.881 &
+&po y= 168.423, x= 101.881 &
+&po y= 168.423, x= 113.159 &
+&po y= 156.729, x= 113.159 &
+&po y= 156.729, x= 101.881 &
+
+&reg mat=1, cur= 324000.0 & ; Coil 1F 
+&po y= 172.416, x= 101.881 &
+&po y= 180.134, x= 101.881 &
+&po y= 180.134, x= 118.849 &
+&po y= 172.416, x= 118.849 &
+&po y= 172.416, x= 101.881 &
+
+&reg mat=1, cur= 348000.0 & ; Coil 1G 
+&po y= 180.369, x= 101.881 &
+&po y= 188.087, x= 101.881 &
+&po y= 188.087, x= 120.113 &
+&po y= 180.369, x= 120.113 &
+&po y= 180.369, x= 101.881 &
+
+&reg mat=1, cur= 468000.0 & ; Coil 2A 
+&po y=   7.256, x= 101.881 &
+&po y=  18.950, x= 101.881 &
+&po y=  18.950, x= 118.217 &
+&po y=   7.256, x= 118.217 &
+&po y=   7.256, x= 101.881 &
+
+&reg mat=1, cur= 204000.0 & ; Coil 2B 
+&po y=  22.124, x= 101.881 &
+&po y=  30.077, x= 101.881 &
+&po y=  30.077, x= 112.527 &
+&po y=  22.124, x= 112.527 &
+&po y=  22.124, x= 101.881 &
+
+&reg mat=1, cur= 324000.0 & ; Coil 2C 
+&po y=  30.077, x= 101.881 &
+&po y=  42.007, x= 101.881 &
+&po y=  42.007, x= 113.159 &
+&po y=  30.077, x= 113.159 &
+&po y=  30.077, x= 101.881 &
+
+;&reg mat=1, cur= 396000.0 & ; Coil 2D orig
+;&po y=  42.007, x= 101.881 &
+;&po y=  53.702, x= 101.881 &
+;&po y=  53.702, x= 115.688 &
+;&po y=  42.007, x= 115.688 &
+;&po y=  42.007, x= 101.881 &
+
+&reg mat=1, cur= 323465.0 & ; Coil 2D inner 
+&po y=  42.007, x= 101.881 &
+&po y=  53.702, x= 101.881 &
+&po y=  53.702, x= 113.159 &
+&po y=  42.007, x= 113.159 &
+&po y=  42.007, x= 101.881 &
+
+&reg mat=1, cur=  72534.0 & ; Coil 2D outer
+&po y=  42.007, x= 113.159 &
+&po y=  53.702, x= 113.159 &
+&po y=  53.702, x= 115.688 &
+&po y=  42.007, x= 115.688 &
+&po y=  42.007, x= 113.159 &
+
+&reg mat=1, cur= 468000.0 & ; Coil 3A 
+&po y= 217.441, x= 101.881 &
+&po y= 229.135, x= 101.881 &
+&po y= 229.135, x= 118.217 &
+&po y= 217.441, x= 118.217 &
+&po y= 217.441, x= 101.881 &
+
+&reg mat=1, cur= 306000.0 & ; Coil 3B 
+&po y= 232.309, x= 101.881 &
+&po y= 244.003, x= 101.881 &
+&po y= 244.003, x= 112.527 &
+&po y= 232.309, x= 112.527 &
+&po y= 232.309, x= 101.881 &
+
+&reg mat=1, cur= 192000.0 & ; Coil 3C 
+&po y= 244.239, x= 101.881 &
+&po y= 251.957, x= 101.881 &
+&po y= 251.957, x= 111.895 &
+&po y= 244.239, x= 111.895 &
+&po y= 244.239, x= 101.881 &
+
+&reg mat=1, cur= 198000.0 & ; Coil 3D 
+&po y= 252.192, x= 101.881 &
+&po y= 263.887, x= 101.881 &
+&po y= 263.887, x= 108.734 &
+&po y= 252.192, x= 108.734 &
+&po y= 252.192, x= 101.881 &
+
+&reg mat=1, cur= 324000.0 & ; Coil 4A/B 
+&po y= 293.929, x= 101.881 &
+&po y= 305.623, x= 101.881 &
+&po y= 305.623, x= 113.159 &
+&po y= 293.929, x= 113.159 &
+&po y= 293.929, x= 101.881 &
+
+&reg mat=1, cur=1890000.0 & ; Coil 4C/D 
+&po y= 310.709, x= 101.881 &
+&po y= 340.299, x= 101.881 &
+&po y= 340.299, x= 128.331 &
+&po y= 310.709, x= 128.331 &
+&po y= 310.709, x= 101.881 &
+
+
+; Yoke
+&reg mat=2 &            ; yoke
+&po y=   0.000, x=  89.540 &
+&po y=   0.000, x= 147.320 &
+&po y=  53.820, x= 147.320 &
+&po y=  53.820, x= 150.500 &
+&po y=  56.200, x= 150.500 &
+&po y=  56.200, x= 154.940 &
+&po y=  60.960, x= 154.940 &
+&po y=  60.960, x= 147.320 &
+&po y= 187.800, x= 147.320 &
+&po y= 187.800, x= 150.500 &
+&po y= 190.180, x= 150.500 &
+&po y= 190.180, x= 154.940 &
+&po y= 194.950, x= 154.940 &
+&po y= 194.950, x= 147.320 &
+&po y= 264.000, x= 147.320 &
+&po y= 264.000, x= 150.500 &
+&po y= 266.380, x= 150.500 &
+&po y= 266.380, x= 154.940 &
+&po y= 271.150, x= 154.940 &
+&po y= 271.150, x= 147.320 &
+&po y= 340.200, x= 147.320 &
+&po y= 340.200, x= 150.500 &
+&po y= 342.580, x= 150.500 &
+&po y= 342.580, x= 154.940 &
+&po y= 347.350, x= 154.940 &
+&po y= 347.350, x= 147.320 &
+&po y= 354.970, x= 147.320 &
+&po y= 354.970, x=  92.710 &
+&po y= 428.630, x=  92.710 &
+&po y= 428.630, x= 187.960 &
+&po y= -50.800, x= 187.960 &
+&po y= -50.800, x=  89.540 &
+&po y=   0.000, x=  89.540 &
+
+; Baffles
+&reg mat=2 &            ; baffle 1
+&po y=  76.200, x= 147.320 &
+&po y=  76.200, x=  92.710 &
+&po y=  84.460, x=  92.710 &
+&po y=  84.460, x= 147.320 &
+&po y=  76.200, x= 147.320 &
+
+&reg mat=2 &            ; baffle 2
+&po y= 202.570, x= 147.320 &
+&po y= 202.570, x=  92.710 &
+&po y= 210.190, x=  92.710 &
+&po y= 210.190, x= 147.320 &
+&po y= 202.570, x= 147.320 &
+
+; Cladding
+&reg mat=2 &            ; Cladding
+&po y= 403.230, x= 187.960 &
+&po y= 403.230, x= 208.280 &
+&po y=  56.830, x= 208.280 &
+&po y=  56.830, x= 198.120 &
+&po y= -25.400, x= 198.120 &
+&po y= -25.400, x= 187.960 &
+&po y= 403.230, x= 187.960 &
+
