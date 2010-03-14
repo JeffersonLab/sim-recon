@@ -1,0 +1,8 @@
+#
+# This file contains the r, phi, and z components of the magnetic field for a const
+# field strength. It is used by the DMagneticFieldConst class. The values are all in 
+# Tesla
+#
+Br			0.0
+Bphi		0.0
+Bz			-2.0
