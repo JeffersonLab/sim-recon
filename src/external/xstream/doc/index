@@ -1,0 +1,155 @@
+/*! \mainpage XStream C++ flexible stream library
+* 
+* \section intro_sec Introduction
+* 
+*  This library is supposed to help the developer's work by making easy doing the following things using C++'s standard iostream/streambuf architecture:
+* 
+* 	\arg Compressing and decompressing data using \c zlib and \c bzlib
+* 	\arg Encode and decode \c base64 data
+* 	\arg Serialize and deserialize structures to \c XDR
+* 	\arg Calculate \c digests of data
+* 	\arg <i>Fork</i> data written to a stream to several others
+* 	\arg Use file descriptors using a iostream interface (where available)
+* 
+*  All this by just creating some new \c streambufs (and \c iostream like classes for the \c xdr operations) that can be coupled to any C++ standard \c iostream, like \c cin, \c ifstream, \c ofstream, \c stringstream, or any others defined by this library or the user.
+* 
+* \section prereq Pre-requisites
+* 
+*  \arg \c zlib for gzip deflate/inflate compression (gzip compression currently not supported, only decompression), \c adler32 and \c crc32 digests
+*  \arg \c bz2lib for bzip2 compression and decompressing
+*  \arg modern c++ compiler and a compliant io library (g++ >= 3.3 should be enough)
+*  \arg \c POSIX system for file descriptor classes
+* 
+* \section Usage
+*
+* \note unless written otherwise, all this section is supposed to be using the \c std namespace.
+* 
+*  If you're in a hurry you should check the examples directory.
+*  There you will find simple examples of almost all the library's functionalities.
+*  The test directory also contains some more examples on how to use the library.
+*    
+* 
+*  \subsection philosophy Philosophy
+* 
+*  \c C++ standard io facilites are \c istreams, \c ostreams and \c iostreams.
+*  \c cin is an \c istream (used for input) \c cout is an \c ostream (use for output) and an \c fstream openned for both reading and writting is an \c iostream (allows for both input and output)
+*
+*  \c iostreams by themselfs don't read or write any data to any files, or input/output "channels" (standard input/output/error), instead they delegate all these tasks to \c streambufs.
+*  These are responsible for buffering data that iostreams ask them to read/write and actually manage the "physical" reading/writting as well as seeking, flushing, closing and whatever low-level work necessary.
+*
+*  Every \c ios object has a \c streambuf member used for reading/writting, this can be reached via the rdbuf() method, so:
+*
+*  \code
+*		streambuf* buf = cin.rdbuf();
+*  \endcode
+* 
+* retireves the \c streambuf that \c cin uses to read data. It's also possible to change the \c streambuf of an \c ios object by using the same method with the new \c streambuf* as an argument. So,
+*
+* \code
+*		//buf is a streambuf* initialized before
+*		cin.rdbuf(buf);
+* \endcode
+* 
+* now makes \c cin use \c buf for reading data, so you can do a kind of standard input redirection from within C++. From now onward, when you write \code cin>>var; \endcode you read \c var from data suplied by \c buf and not standard input.
+*
+*
+* Understanding this is crucial to using this library and grasping it's goal.
+*
+* \subsection what What does XStream do?
+*
+* \c XStream gives you some new \c streambuf objects (they inherit from \c streambuf) that perform some kind of filtering operation or redirect data to another \c streambuf. In essence this allows to stack several filters and use \c iostreams to acess data after several transforms. For example, suppose  you want to read data from a file whose content is several lines of numbers \c base64 encoded, you could simply proceed like this:
+*
+* \code
+	#include <iostream>
+	//to open the file for reading
+	#include <fstream>
+	//xstream base64 classes
+	#include <xstream/base64.h>
+
+	using namespace std;
+	using namespace xstream;
+
+	int main(int argc, char* argv[]){
+		ifstream file("base64_encoded_file");
+		
+		//this creates a xstream base64 input streambuf b64sb
+		//this reads data from the streambuf of file
+		base64::istreambuf b64sb(file.rdbuf());
+
+		//now create a usual istream that reads data from the base64 streambuf
+		istream decoded(&b64sb);
+
+		//read decoded data
+		while(decoded.good()){
+			int i;
+			decoded>>i;
+			cout<<i<<endl;
+		}
+		return 0;
+	}
+* \endcode
+* 
+* This is one of the simplest examples on how to use the library, most other usages are variations of this example, common factors are:
+*
+*	\arg xstream streambufs are created by specifying another \c streambuf to read/write to
+*	\arg contruct an ordinary \c ios object (\c istream, \c ostream) with the xstream streambuf as argument
+*	\arg do usual input/output operations
+*
+*  Using this technique, supposing the file was a \c bz2 compressed version of the \c base64 data. All that needed to be done was to create a xstream::bz::istreambuf that read from \c b64sb and use the bz::streambuf to construct decoded.
+*
+*  \subsection errors Error handling
+*
+*  C++ io library was designed long before exceptions were a part of C++ so for this historical reason io operations don't throw exceptions, at least by default.
+*  IOstreams however have condition states. 
+*  The \code while(decoded.good()) \endcode line of code on the previous example means that data is read until stream has some kind of error, usually \c eof was reached but may be something more serious (corruption, OS error, etc).
+*
+*  \c std::iostate is a bitmask of error conditions a stream may have. These are:
+*
+*  \arg \c ios::badbit serious error, like reading beyond \c eof, low-level io error
+*  \arg \c ios::eofbit reached \c eof
+*  \arg \c ios::failbit high-level operation failed, like trying to read an int but getting nothing resembling a number
+*  \arg \c ios::goodbit nothing wrong, stream is ready to use
+*
+*  The error state mask can retrieved via the \c ios::rdstate() call and can be reset with the \c ios::clear().
+*
+* 
+*  XStream library tries it's best to determine when \c eof has been reached, so as to set the \c ios::eofbit without in the \c ios objec without throwing any exceptions.
+*  However under serious error conditions exceptions are thrown. This may happen for instance when trying to base64 decode data that has invalid characters, decompressing data with inconsistent \c crc and other situations.
+*  
+*  
+*  C++ IO library catches all of these exceptions and by default doesn't rethrow them, setting the \c ios::badbit instead.
+*  This may result in a read/write operation failing without the developer/user knowing the reason. Thankfully this default behaviour can be changed.
+*
+*
+*  \c ios objects have an \c exceptions method that given an error condition throws exceptions related to io, this allows XStream's exceptions to be caught by client code.
+*
+*  So to have exceptions beeing thrown in the base64 example you should add:
+*  \code
+*		decoded.exceptions(ios::badbit);
+*  \endcode
+*
+*  All XStream exceptions derive from \c ios::failure which derives from \c std::exception and thus can the caught by a generic top level \c catch block.
+*  Have a look at the Class Hierarchy to see what kind of exceptions can be thrown.
+*
+*
+* \section limit Limitations
+*   \arg can't write \c gzip streams. This support will eventually be added.
+*	\arg no \c seek support on any streambufs. This will probably not change, apart from file descriptors.
+*	\arg only support for writting \c char and not \c wchar or other types. This would imply making everything as templates and for now I don't see the need.
+*	\arg \c XDR iostreams don't derive from \c ios and can't be used as such. They don't write headers specified by the \c RFC so they are only good for you own protocols, no by using say in \c RPC calls. This may change in the future.
+*
+*	\section licence Licence
+*
+*	I am releasing this code under \c LGPL, so that you can use it on any project not only \c GPL projects. 
+*	I would appreciate to know of any use this library is given.
+*
+* 
+*	\section compiling Compiling
+*
+*	I have compiled this library with \c gcc 3.3.5 and cross-compiled it to win32 using \c mingw 3.3.1, on windows I only tested zlib support and no bzlib support and no file descriptor code is included in this case.
+*
+*	I think code is fairly portable but only testing with other compilers can I be sure.
+*	If you manage to compile it with another compiler or have trouble doing so please inform me.
+*
+*	For my email address see the AUTHORS file.
+*/

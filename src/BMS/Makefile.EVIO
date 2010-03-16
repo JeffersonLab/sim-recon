@@ -1,0 +1,4 @@
+
+CFLAGS		+= -I$(EVIOROOT)/include
+CXXFLAGS	+= -I$(EVIOROOT)/include
+MISC_LIBS 	+= -L$(EVIOROOT)/lib -levioxx -levio -lexpat
