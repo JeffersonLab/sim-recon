@@ -13,7 +13,7 @@ with the specified versions:
 Fedora release 8 (Werewolf) on i686  32-bit
 ------------
   Xerces 2.7.0
-  JANA 0.5.2
+  JANA 0.6.0
   ROOT 5.18-00
   cernlib 2005
   gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
@@ -22,7 +22,7 @@ Fedora release 8 (Werewolf) on i686  32-bit
 Red Hat Enterprise Linux 5.3
 -----------
   Xerces 2.7.0
-  JANA 0.5.2
+  JANA 0.6.0
   ROOT 5.18-00
   cernlib 2005
   gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
@@ -31,7 +31,7 @@ Red Hat Enterprise Linux 5.3
 CentOS release 5.3 (Final)
 ------------
   Xerces 2.7.0
-  JANA 0.5.2
+  JANA 0.6.0
   ROOT 5.24
   cernlib 2005
   gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
