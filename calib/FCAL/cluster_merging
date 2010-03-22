@@ -1,8 +1,0 @@
-#
-# Parameters used for deciding whether 2 FCAL clusters
-# should be merged or not when creating DFCALPhoton
-# objects out of DFCALCluster objects
-#
-
-# Minimum separation between 2 clusters for them NOT to be merged
-MIN_CLUSTER_SEPARATION		15.0  # centimeters
