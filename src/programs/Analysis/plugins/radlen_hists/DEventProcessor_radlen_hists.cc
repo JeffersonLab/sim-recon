@@ -35,7 +35,7 @@ void InitPlugin(JApplication *app){
 //------------------
 DEventProcessor_radlen_hists::DEventProcessor_radlen_hists()
 {
-
+	pthread_mutex_init(&mutex, NULL);
 }
 
 //------------------
@@ -52,6 +52,8 @@ jerror_t DEventProcessor_radlen_hists::init(void)
 {
 	// open ROOT file (if needed)
 	//if(ROOTfile != NULL) ROOTfile->cd();
+
+	pthread_mutex_lock(&mutex);
 
 	// Create THROWN directory
 	TDirectory *dir = new TDirectoryFile("RADLEN","RADLEN");
@@ -105,6 +107,8 @@ jerror_t DEventProcessor_radlen_hists::init(void)
 
 	// Go back up to the parent directory
 	dir->cd("../");
+
+	pthread_mutex_unlock(&mutex);
 	
 	return NOERROR;
 }
@@ -129,6 +133,7 @@ jerror_t DEventProcessor_radlen_hists::evnt(JEventLoop *loop, int eventnumber)
 	theta_nevents->Fill(theta);
 	
 	// Loop over trajectory points
+	pthread_mutex_lock(&mutex);
 	rstep.stot = 0.0;
 	rstep.ix_over_Xo = 0.0;
 	rstep.pthrown = throwns[0]->momentum();
@@ -154,6 +159,7 @@ jerror_t DEventProcessor_radlen_hists::evnt(JEventLoop *loop, int eventnumber)
 		
 		tradstep->Fill();
 	}
+	pthread_mutex_unlock(&mutex);
 
 	return NOERROR;
 }
@@ -163,6 +169,8 @@ jerror_t DEventProcessor_radlen_hists::evnt(JEventLoop *loop, int eventnumber)
 //------------------
 jerror_t DEventProcessor_radlen_hists::erun(void)
 {
+	pthread_mutex_lock(&mutex);
+
 	// Scale the nXo_vs_r_vs_theta and nXo_vs_z_vs_theta histos by the
 	// number of events for each theta bin. At the same time, integrate
 	// the number of radiation lengths and fill the
@@ -205,6 +213,8 @@ _DBG_<<"N="<<N<<endl;
 	for(int j=2; j<=nXo_vs_z->GetNbinsX(); j++){
 		inXo_vs_z->SetBinContent(j, nXo_vs_z->GetBinContent(j)+inXo_vs_z->GetBinContent(j-1));
 	}
+
+	pthread_mutex_unlock(&mutex);
 	
 	return NOERROR;
 }

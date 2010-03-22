@@ -52,6 +52,8 @@ class DEventProcessor_radlen_hists:public JEventProcessor{
 
 
 		void GapIntegration(TH1F *hin, TH1F *hout);
+		
+		pthread_mutex_t mutex;
 };
 
 #endif // _DEventProcessor_radlen_hists_
