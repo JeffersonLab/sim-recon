@@ -27,6 +27,8 @@ using namespace std;
 #include <CDC/DCDCTrackHit.h>
 #include <FDC/DFDCPseudo.h>
 #include <HDGEOMETRY/DGeometry.h>
+#include <PID/DChargedTrack.h>
+#include <TRACKING/DTrackTimeBased.h>
 #include <DVector2.h>
 #include <particleType.h>
 
@@ -145,12 +147,12 @@ jerror_t DEventProcessor_track_hists::fini(void)
 //------------------
 jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 {
-	vector<const DParticle*> particles;
+	vector<const DChargedTrack*> chargedtracks;
 	vector<const DTrackCandidate*> candidates;
 	vector<const DMCThrown*> mcthrowns;
 	vector<const DMCTrackHit*> mctrackhits;
 	
-	loop->Get(particles);
+	loop->Get(chargedtracks);
 	loop->Get(candidates);
 	loop->Get(mcthrowns);
 	loop->Get(mctrackhits);
@@ -158,19 +160,20 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 	Nevents++;
 	
 	// Only look at events with one thrown and one reconstructed particle
-	if(particles.size() <1 || mcthrowns.size() !=1 || candidates.size()<1){
-		_DBG_<<"particles.size()="<<particles.size()<<" mcthrowns.size()="<<mcthrowns.size()<<" candidates.size()="<<candidates.size()<<endl;
+	if(chargedtracks.size() <1 || mcthrowns.size() !=1 || candidates.size()<1 || chargedtracks[0]->hypotheses.size()<1){
+		_DBG_<<"chargedtracks.size()="<<chargedtracks.size()<<" mcthrowns.size()="<<mcthrowns.size()<<" candidates.size()="<<candidates.size()<<endl;
 		return NOERROR;
 	}
 	const DTrackCandidate *candidate = candidates[0]; // technically, this could have more than 1 candidate!
 	const DMCThrown *thrown = mcthrowns[0];
-	const DParticle* recon = particles[0];
+	const DTrackTimeBased* recon = chargedtracks[0]->hypotheses[0];;
 	
 	// Loop over found reconstructed particles looking for best match to thrown
 	int min_chisq=1.0E8;
 	DVector3 mc_mom = thrown->momentum();
-	for(unsigned int i=0; i<particles.size(); i++){
-		DVector3 mom = particles[i]->momentum();
+	for(unsigned int i=0; i<chargedtracks.size(); i++){
+		if(chargedtracks[i]->hypotheses.size()<1)continue;
+		DVector3 mom = chargedtracks[i]->hypotheses[0]->momentum();
 
 		if(mom.Mag()<1.0E-9)continue; // Thrown momentum should be > 1eV/c
 		
@@ -187,7 +190,7 @@ jerror_t DEventProcessor_track_hists::evnt(JEventLoop *loop, int eventnumber)
 
 		if(chisq<min_chisq){
 			min_chisq = chisq;
-			recon = particles[i];
+			recon = chargedtracks[i]->hypotheses[0];
 		}
 	}
 	
