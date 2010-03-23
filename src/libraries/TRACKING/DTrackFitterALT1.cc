@@ -85,6 +85,7 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	USE_MULS_COVARIANCE = true;
 	USE_FDC = true;
 	USE_CDC = true;
+	USE_FDC_CATHODE = true;
 	MATERIAL_MAP_MODEL = "DGeometry";
 	
 	gPARMS->SetDefaultParameter("TRKFIT:DEBUG_HISTS",					DEBUG_HISTS);
@@ -106,6 +107,7 @@ DTrackFitterALT1::DTrackFitterALT1(JEventLoop *loop):DTrackFitter(loop)
 	gPARMS->SetDefaultParameter("TRKFIT:USE_MULS_COVARIANCE",		USE_MULS_COVARIANCE);
 	gPARMS->SetDefaultParameter("TRKFIT:USE_FDC",						USE_FDC);
 	gPARMS->SetDefaultParameter("TRKFIT:USE_CDC",						USE_CDC);
+	gPARMS->SetDefaultParameter("TRKFIT:USE_FDC_CATHODE",				USE_FDC_CATHODE);
 	gPARMS->SetDefaultParameter("TRKFIT:MATERIAL_MAP_MODEL",			MATERIAL_MAP_MODEL);
 	
 	// Set default mass based on configuration parameter
@@ -709,24 +711,30 @@ void DTrackFitterALT1::GetHits(fit_type_t fit_type, DReferenceTrajectory *rt, hi
 				hi.dist = hit->dist*((hit->time-tof)/hit->time);
 				hi.err = SIGMA_FDC_ANODE;
 				
-				// Find whether the track is on the "left" or "right" of the wire
-				DVector3 shift = wire->udir.Cross(mom_doca);
-				if(shift.Mag()!=0.0)shift.SetMag(1.0);
-				double u = rt->GetLastDistAlongWire();
-				DVector3 pos_wire = wire->origin + u*wire->udir;
-				double LRsign = shift.Dot(pos_doca-pos_wire)<0.0 ? +1.0:-1.0;
+				if(USE_FDC_CATHODE){
+					// Find whether the track is on the "left" or "right" of the wire
+					DVector3 shift = wire->udir.Cross(mom_doca);
+					if(shift.Mag()!=0.0)shift.SetMag(1.0);
+					double u = rt->GetLastDistAlongWire();
+					DVector3 pos_wire = wire->origin + u*wire->udir;
+					double LRsign = shift.Dot(pos_doca-pos_wire)<0.0 ? +1.0:-1.0;
 
-				// Lorentz corrected poisition along the wire is contained in x,y
-				// values, BUT, it is based on a left-right decision of the track
-				// segment. This may or may not be the same as the global track. 
-				// As such, we have to determine the correction for our track.
-				//DVector3 wpos(hit->x, hit->y, wire->origin.Z());
-				//DVector3 wdiff = wpos - wire->origin;
-				//double u_corr = wire->udir.Dot(wdiff);
-				double alpha = mom_doca.Angle(DVector3(0,0,1));
-				hi.u_lorentz = LRsign*lorentz_def->GetLorentzCorrection(pos_doca.X(), pos_doca.Y(), pos_doca.Z(), alpha, hi.dist);
-				hi.u_dist = hit->s;
-				hi.u_err = SIGMA_FDC_CATHODE;
+					// Lorentz corrected poisition along the wire is contained in x,y
+					// values, BUT, it is based on a left-right decision of the track
+					// segment. This may or may not be the same as the global track. 
+					// As such, we have to determine the correction for our track.
+					//DVector3 wpos(hit->x, hit->y, wire->origin.Z());
+					//DVector3 wdiff = wpos - wire->origin;
+					//double u_corr = wire->udir.Dot(wdiff);
+					double alpha = mom_doca.Angle(DVector3(0,0,1));
+					hi.u_lorentz = LRsign*lorentz_def->GetLorentzCorrection(pos_doca.X(), pos_doca.Y(), pos_doca.Z(), alpha, hi.dist);
+					hi.u_dist = hit->s;
+					hi.u_err = SIGMA_FDC_CATHODE;
+				}else{
+					// User specified not to use FDC cathode information in the fit.
+					hi.u_dist = 0.0;
+					hi.u_err = 0.0; // setting u_err to zero means it's excluded from chi-sq
+				}
 			}
 			hinfo.push_back(hi);
 		}

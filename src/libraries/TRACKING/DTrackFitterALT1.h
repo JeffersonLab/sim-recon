@@ -127,6 +127,7 @@ class DTrackFitterALT1:public DTrackFitter{
 		bool LR_FORCE_TRUTH;
 		bool USE_MULS_COVARIANCE;
 		bool USE_FDC;
+		bool USE_FDC_CATHODE;
 		bool USE_CDC;
 		string MATERIAL_MAP_MODEL;
 		
