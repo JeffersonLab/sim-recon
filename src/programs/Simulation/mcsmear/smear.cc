@@ -93,6 +93,9 @@ bool FDC_ELOSS_OFF = false;
 // Time window for acceptance of FDC hits
 double FDC_TIME_WINDOW = 1000.0E-9; // in seconds
 
+// Fraction of FDC hits to randomly drop (0=drop nothing 1=drop everything)
+double FDC_HIT_DROP_FRACTION = 0.0;
+
 // Photon-statistics factor for smearing hit energy (from Criss's MC)
 // (copied from DFCALMCResponse_factory.cc 7/2/2009 DL)
 double FCAL_PHOT_STAT_COEF = 0.035;
@@ -337,8 +340,13 @@ void SmearFDC(s_HDDM_t *hddm_s)
 			    s_FdcCathodeHit_t *hit=hits->in;
 			    s_FdcCathodeTruthHit_t *truthhit=truthhits->in;
 			    for (unsigned int s=0;s<hits->mult;s++,hit++,truthhit++){
-			      hit->q = truthhit->q + SampleGaussian(FDC_PED_NOISE);
-					hit->t = truthhit->t;
+					if(SampleRange(0.0, 1.0)<=FDC_HIT_DROP_FRACTION){
+						hit->q = 0.0;
+						hit->t = 1.0E6;
+					}else{
+						hit->q = truthhit->q + SampleGaussian(FDC_PED_NOISE);
+						hit->t = truthhit->t;
+					}
 			    }
 			  }
 			}

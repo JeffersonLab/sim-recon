@@ -31,6 +31,7 @@ extern double FDC_CATHODE_SIGMA;
 extern double FDC_PED_NOISE;
 extern bool FDC_ELOSS_OFF;
 extern double FDC_TIME_WINDOW;
+extern double FDC_HIT_DROP_FRACTION;
 extern double FCAL_PHOT_STAT_COEF;
 extern double FCAL_BLOCK_THRESHOLD;
 extern double TOF_SIGMA;
@@ -115,6 +116,7 @@ void ParseCommandLineArguments(int narg, char* argv[])
       case 'C': FDC_CATHODE_SIGMA=atof(&ptr[2])*1.0E-6;			break;
       case 'T': FDC_TIME_WINDOW=atof(&ptr[2])*1.0E-9;				break;
       case 'e': FDC_ELOSS_OFF = true;									break;
+		case 'd': FDC_HIT_DROP_FRACTION=atof(&ptr[2]);				break;
       case 'p': FCAL_PHOT_STAT_COEF = atof(&ptr[2]);				break;
       case 'b': FCAL_BLOCK_THRESHOLD = atof(&ptr[2])*k_MeV;		break;
       case 'f': TOF_SIGMA= atof(&ptr[2])*k_psec; break;
@@ -177,6 +179,8 @@ void Usage(void)
 	cout<<"    -t#      FDC time window for background hits in ns (def:"<<FDC_TIME_WINDOW*1.0E9<<"ns)"<<endl;
 	cout<<"    -e       hdgeant was run with LOSS=0 so scale the FDC cathode"<<endl;
 	cout<<"             pedestal noise (def:false)"<<endl;
+	cout<<"    -d#      Randomly drop this fraction of FDC hits (0=drop none  1=drop all)"<<endl;
+	cout<<"             default is to drop none."<<endl;
 	cout<<"    -p#      FCAL photo-statistics smearing factor in GeV^3/2 (def:"<<FCAL_PHOT_STAT_COEF<<")"<<endl;
 	cout<<"    -b#      FCAL single block threshold in MeV (def:"<<FCAL_BLOCK_THRESHOLD/k_MeV<<")"<<endl;
 	cout<<"    -f#      TOF sigma in psec (def: "<< TOF_SIGMA/k_psec<<")"<<endl;
