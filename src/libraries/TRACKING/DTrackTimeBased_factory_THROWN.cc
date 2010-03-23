@@ -94,10 +94,10 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		// of allocating/deallocating them every event, we keep a pool and
 		// re-use them. If the pool is not big enough, then add one to the
 		// pool.
+		DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 		if(rt_pool.size()<=_data.size()){
 			// This is a little ugly, but only gets called a few times throughout the life of the process
-			// Note: these never get deleted, even at the end of process.
-			DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+			// Note: these never get deleted, even at the end of process.			
 			rt_pool.push_back(new DReferenceTrajectory(dapp->GetBfield()));
 		}
 		DReferenceTrajectory *rt = rt_pool[_data.size()];
@@ -105,6 +105,7 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		DVector3 pos = track->position();
 		DVector3 mom = track->momentum();
 		rt->SetMass(thrown->mass());
+		rt->SetDGeometry(dapp->GetDGeometry((loop->GetJEvent()).GetRunNumber()));
 		rt->Swim(pos, mom, track->charge());
 
 		// Find hits that should be on this track and add them as associated objects
