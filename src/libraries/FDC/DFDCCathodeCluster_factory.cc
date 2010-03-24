@@ -144,68 +144,43 @@ jerror_t DFDCCathodeCluster_factory::evnt(JEventLoop *eventLoop, int eventNo) {
 /// numbers.
 ///
 void DFDCCathodeCluster_factory::pique(vector<const DFDCHit*>& H) {
-	int width(1);
-	int beginStrip(0);
-	int maxStrip(0);
-	float q_tot(0.0);
-	float q_max(0.0);
-	
-	// Ensure the hits are in ascending strip number order
-	std::sort(H.begin(), H.end(), DFDCHit_element_cmp);
-	// separate clusters in time
-	std::stable_sort(H.begin(), H.end(), DFDCHit_time_cmp);
-	
-	beginStrip = (*(H.begin()))->element;
-
-	// For all hits in this layer, associate consecutively-numbered strips 
-        // into a DFDCCathodeCluster object. 
-	for (vector<const DFDCHit*>::iterator i = H.begin(); i != H.end(); i++) {
-	 
-	  // If we're not at the end of the array, and the strip number of the 
-	  // next hit is equal to the strip number + 1 of this hit, then we 
-	  // continue our cluster.
-	  if ((i+1 != H.end()) && ((*i)->element + 1 == (*(i+1))->element)
-	      ) {
-	    width++;
-	    q_tot += (*i)->q;
-	    if ((*i)->q > q_max) {
-	      q_max = (*i)->q;
-	      maxStrip = (*i)->element;
-	    }
-	  }
-		
-	  // If not, our cluster must have ended, so we record the information 
-	  // into a new DFDCCathodeCluster object and reset for the next 
-	  // cluster.
-	  else {
-	    DFDCCathodeCluster* newCluster = new DFDCCathodeCluster();
-	    if (width > 1) {
-	      newCluster->beginStrip  = beginStrip;
-	      newCluster->maxStrip 	= maxStrip;
-	      newCluster->q_tot 		= q_tot;
-	    }
-	    else {
-	      newCluster->beginStrip  = (*i)->element;
-	      newCluster->maxStrip	= (*i)->element;
-	      newCluster->q_tot		= (*i)->q;
-	    }
-	    newCluster->width 		= width;
-	    newCluster->endStrip	= (*i)->element;
-	    newCluster->gLayer		= (*i)->gLayer;
-	    newCluster->gPlane		= (*i)->gPlane;
-	    newCluster->plane		= (*i)->plane;
-	    for (vector<const DFDCHit*>::iterator j = i-width+1; 
-		 j <=i ; ++j){
-	      newCluster->members.push_back(*j);
-	    }
-	    _data.push_back(newCluster);
-	    width 		= 1;
-	    maxStrip 	= 0;
-	    q_tot 		= 0.0;
-	    q_max		= 0.0;
-	    if (i+1 != H.end())
-	      beginStrip  = (*(i+1))->element;
-	  }
-	}
+  int width(1);
+  float q_tot(0.0);
+  
+  // Ensure the hits are in ascending strip number order
+  std::sort(H.begin(), H.end(), DFDCHit_element_cmp);
+  // separate clusters in time
+  std::stable_sort(H.begin(), H.end(), DFDCHit_time_cmp);
+  
+  // For all hits in this layer, associate consecutively-numbered strips 
+  // into a DFDCCathodeCluster object. 
+  for (vector<const DFDCHit*>::iterator i = H.begin(); i != H.end(); i++) {
+    // If we're not at the end of the array, and the strip number of the 
+    // next hit is equal to the strip number + 1 of this hit, then we 
+    // continue our cluster.
+    if ((i+1 != H.end()) && ((*i)->element + 1 == (*(i+1))->element)
+	) {
+      width++;
+      q_tot += (*i)->q;
+    }
+    
+    // If not, our cluster must have ended, so we record the information 
+    // into a new DFDCCathodeCluster object and reset for the next 
+    // cluster.
+    else {
+      DFDCCathodeCluster* newCluster = new DFDCCathodeCluster();
+      newCluster->q_tot 		= q_tot;
+      newCluster->gLayer		= (*i)->gLayer;
+      newCluster->gPlane = (*i)->gPlane;
+      newCluster->plane		= (*i)->plane;
+      for (vector<const DFDCHit*>::iterator j = i-width+1; 
+	   j <=i ; ++j){
+	newCluster->members.push_back(*j);
+      }
+      _data.push_back(newCluster);
+      width 		= 1;
+      q_tot 		= 0.0;
+    }
+  }
 }
 
