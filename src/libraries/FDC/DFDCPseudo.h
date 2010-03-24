@@ -11,19 +11,9 @@
 #include <JANA/JObject.h>
 using namespace jana;
 
-#include "DFDCHit.h"
 #include "DFDCWire.h"
-#include <DMatrix.h>
-
 #include <sstream>
-
-typedef struct {
-  float pos;
-  float q;
-  int numstrips;
-  float t; // mean time of strips in peak
-  float t_rms; // rms of strips in peak
-}centroid_t;
+#include <DMatrix.h>
 
 ///
 /// class DFDCPseudo: definition for a reconstructed point in the FDC

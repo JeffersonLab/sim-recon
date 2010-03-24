@@ -9,6 +9,7 @@
 #define DFACTORY_DFDCPSEUDO_H
 
 #include <JANA/JFactory.h>
+#include <JANA/JObject.h>
 #include <JANA/JException.h>
 #include <JANA/JStreamLog.h>
 using namespace jana;
@@ -26,6 +27,15 @@ using namespace jana;
 #include <algorithm>
 #include <map>
 #include <cmath>
+
+typedef struct {
+  float pos;
+  float q;
+  int numstrips;
+  float t; // mean time of strips in peak
+  float t_rms; // rms of strips in peak
+  unsigned int cluster; // index for cluster from which this centroid was generated
+}centroid_t;
 
 ///
 /// class DFDCPseudo_factory: definition for a JFactory that
@@ -75,6 +85,7 @@ class DFDCPseudo_factory : public JFactory<DFDCPseudo> {
 		/// Calculates mean and RMS time for a cluster of cathode hits
 		///
 		void CalcMeanTime(const vector<const DFDCHit*>& H, float &t, float &t_rms);
+		void CalcMeanTime(vector<const DFDCHit *>::const_iterator peak, float &t, float &t_rms);
 		
 		///
 		/// DFDCPseudo_factory::FindCentroid()

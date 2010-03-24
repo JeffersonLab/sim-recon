@@ -24,16 +24,6 @@
 #define CHARGE_TO_ENERGY 5.9e-9 //place holder 
 
 ///
-/// DFDCCathodeCluster_gLayer_cmp(): 
-/// non-member function passed to std::sort() to sort DFDCCathodeCluster pointers 
-/// by their gLayer attributes.
-///
-bool DFDCCathodeCluster_gLayer_cmp(const DFDCCathodeCluster* a, 
-				   const DFDCCathodeCluster* b) {
-	return a->gLayer < b->gLayer;
-}
-
-///
 /// DFDCAnode_gLayer_cmp(): 
 /// non-member function passed to std::sort() to sort DFDCHit pointers 
 /// for the anode wires by their gLayer attributes.
@@ -73,8 +63,6 @@ jerror_t DFDCPseudo_factory::brun(JEventLoop *loop, int runnumber)
 }
 
 
-
-
 ///
 /// DFDCPseudo_factory::evnt():
 /// this is the place that anode hits and DFDCCathodeClusters are organized into pseudopoints.
@@ -96,15 +84,12 @@ jerror_t DFDCPseudo_factory::evnt(JEventLoop* eventLoop, int eventNo) {
 	// we can't reconstruct them so bail early
 	// Feb. 8, 2008  D.L.
 	if(fdcHits.size()>(5.0+5.0+1.0)*25.0*6.0){
-		_DBG_<<"Too many hits in FDC! Psuedopoint reconstruction in FDC bypassed for event "<<eventLoop->GetJEvent().GetEventNumber()<<endl;
+		_DBG_<<"Too many hits in FDC! Pseudopoint reconstruction in FDC bypassed for event "<<eventLoop->GetJEvent().GetEventNumber()<<endl;
 		return NOERROR;
 	}
 
 	// Get cathode clusters
 	eventLoop->Get(cathClus);
-	
-	// Ensure clusters are in order of ascending Z position.
-	std::sort(cathClus.begin(), cathClus.end(), DFDCCathodeCluster_gLayer_cmp);
 	
 	// Sift through hits and select out anode hits.
 	for (unsigned int i=0; i < fdcHits.size(); i++)
@@ -160,27 +145,28 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 				    vector<const DFDCCathodeCluster*>& u,
 				    vector<const DFDCCathodeCluster*>& v,
 				    int layer,
-					 vector<const DMCTrackHit*> &mctrackhits)
+				    vector<const DMCTrackHit*> &mctrackhits)
 {
   vector<const DFDCHit*>::iterator xIt;
-  vector<const DFDCCathodeCluster*>::iterator uIt;
-  vector<const DFDCCathodeCluster*>::iterator vIt;
   centroid_t temp;
   float E1,E2,pos1,pos2;
   
   // Loop over all U and V clusters looking for peaks
   upeaks.clear();
-  for (uIt = u.begin(); uIt != u.end(); uIt++){
-    vector<const DFDCHit*>::const_iterator strip=(*uIt)->members.begin();
-    switch((*uIt)->members.size()){
+  for (unsigned int i=0;i<u.size();i++){
+    vector<const DFDCHit*>::const_iterator strip=u[i]->members.begin();
+    unsigned int nmembers=u[i]->members.size();
+    switch(nmembers){
     case 0: // Make sure we have data!!
       break;
     case 1: // One isolated hit in the cluster:  use element number itself
       temp.pos=(*strip)->element;
       temp.q=2.*((*strip)->q);  // Each cathode view should see half the 
                                  // anode charge
-      temp.numstrips=1;
-		CalcMeanTime((*uIt)->members, temp.t, temp.t_rms);
+      temp.numstrips=1; 
+      temp.t=(*strip)->t;
+      temp.t_rms=0.;
+      temp.cluster=i;
       upeaks.push_back(temp);
       break;
     case 2: //Two adjacent hits: use average for the centroid
@@ -190,29 +176,78 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       E2=(*(strip+1))->q;      
       temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
       temp.q=2.*(E1+E2);
-      temp.numstrips=2;
-		CalcMeanTime((*uIt)->members, temp.t, temp.t_rms);
+      temp.numstrips=2; 
+      temp.t=0.5*((*strip)->t+(*(strip+1))->t);
+      temp.t_rms=
+	sqrt((temp.t-(*strip)->t)*(temp.t-(*strip)->t)
+	     +(temp.t-(*(strip+1))->t)*(temp.t-(*(strip+1))->t))/1.414;
+      temp.cluster=i;
       upeaks.push_back(temp);
       break;
-    default:      
-      for (strip=(*uIt)->members.begin();
-	   strip!=(*uIt)->members.end();strip++){
-	FindCentroid((*uIt)->members,strip,upeaks);
+    default:    
+      // Deal with case where the maximimum is at the beginning or end of the
+      // sequence of hits. Use average of the hit at the end and the hit right
+      // next to it.
+      bool do_find_centroid=true;
+      if ((*strip)->q>(*(strip+1))->q){
+	pos1=(*strip)->element;
+	pos2=(*(strip+1))->element;
+	E1=(*strip)->q;
+	E2=(*(strip+1))->q;      
+	temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
+	temp.q=2.*(E1+E2);
+	temp.numstrips=2;
+	temp.t=0.5*((*strip)->t+(*(strip+1))->t);
+	temp.t_rms=
+	  sqrt((temp.t-(*strip)->t)*(temp.t-(*strip)->t)
+	       +(temp.t-(*(strip+1))->t)*(temp.t-(*(strip+1))->t))/1.414;
+	temp.cluster=i;
+	upeaks.push_back(temp);  
+	if (nmembers==3) do_find_centroid=false;
+      }
+      const DFDCHit *h1=u[i]->members[nmembers-1];
+      const DFDCHit *h2=u[i]->members[nmembers-2];
+      if(h1->q>h2->q){
+	pos1=h1->element;
+	pos2=h2->element;
+	E1=h1->q;
+	E2=h2->q;      
+	temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
+	temp.q=2.*(E1+E2);
+	temp.numstrips=2;
+	temp.cluster=i;
+	temp.t=0.5*(h1->t+h2->t);
+	temp.t_rms=sqrt((h1->t-temp.t)*(h1->t-temp.t)
+			+(h2->t-temp.t)*(h2->t-temp.t))/1.414;
+	upeaks.push_back(temp);  
+	if (nmembers==3) do_find_centroid=false;
+      }
+      // Deal with peaks within the cluster
+      if (do_find_centroid){  
+	for (strip=u[i]->members.begin();
+	     strip!=u[i]->members.end();strip++){  
+	  if (FindCentroid(u[i]->members,strip,upeaks)==NOERROR){
+	    upeaks[upeaks.size()-1].cluster=i;
+	  }
+	}
       }
       break;
     }
   }	
   vpeaks.clear();
-  for (vIt = v.begin(); vIt != v.end(); vIt++){
-    vector<const DFDCHit*>::const_iterator strip=(*vIt)->members.begin();
-    switch((*vIt)->members.size()){
+  for (unsigned int i=0;i<v.size();i++){
+    vector<const DFDCHit*>::const_iterator strip=v[i]->members.begin();
+    unsigned int nmembers=v[i]->members.size();
+    switch(nmembers){
     case 0: // Make sure we have data!!
       break;
     case 1: // One isolated hit in the cluster:  use element number itself
       temp.pos=(*strip)->element;
       temp.q=2.*((*strip)->q);
       temp.numstrips=1;
-		CalcMeanTime((*vIt)->members, temp.t, temp.t_rms);
+      temp.t=(*strip)->t;
+      temp.t_rms=0.;
+      temp.cluster=i;
       vpeaks.push_back(temp);
       break;
     case 2: //Two adjacent hits: use average for the centroid
@@ -223,13 +258,59 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
       temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
       temp.q=2.*(E1+E2);
       temp.numstrips=2;
-		CalcMeanTime((*vIt)->members, temp.t, temp.t_rms);
+      temp.t=0.5*((*strip)->t+(*(strip+1))->t);
+      temp.t_rms=
+	sqrt((temp.t-(*strip)->t)*(temp.t-(*strip)->t)
+	     +(temp.t-(*(strip+1))->t)*(temp.t-(*(strip+1))->t))/1.414;
+      temp.cluster=i;
       vpeaks.push_back(temp);  
       break;
     default:      
-      for (strip=(*vIt)->members.begin();
-	   strip!=(*vIt)->members.end();strip++){	
-	FindCentroid((*vIt)->members,strip,vpeaks);
+      // Deal with case where the maximimum is at the beginning or end of the
+      // sequence of hits. Use average of the hit at the end and the hit right
+      // next to it.
+      bool do_find_centroid=true;
+      if ((*strip)->q>(*(strip+1))->q){
+	pos1=(*strip)->element;
+	pos2=(*(strip+1))->element;
+	E1=(*strip)->q;
+	E2=(*(strip+1))->q;      
+	temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
+	temp.q=2.*(E1+E2);
+	temp.numstrips=2;
+	temp.t=0.5*((*strip)->t+(*(strip+1))->t);
+	temp.t_rms=
+	  sqrt((temp.t-(*strip)->t)*(temp.t-(*strip)->t)
+	       +(temp.t-(*(strip+1))->t)*(temp.t-(*(strip+1))->t))/1.414;
+	temp.cluster=i;
+	vpeaks.push_back(temp);  
+	if (nmembers==3) do_find_centroid=false;
+      }
+      const DFDCHit *h1=v[i]->members[nmembers-1];
+      const DFDCHit *h2=v[i]->members[nmembers-2];
+      if(h1->q>h2->q){
+	pos1=h1->element;
+	pos2=h2->element;
+	E1=h1->q;
+	E2=h2->q;      
+	temp.pos=(pos1*E1+pos2*E2)/(E1+E2);
+	temp.q=2.*(E1+E2);
+	temp.numstrips=2;
+	temp.cluster=i;
+	temp.t=0.5*(h1->t+h2->t);
+	temp.t_rms=sqrt((h1->t-temp.t)*(h1->t-temp.t)
+			+(h2->t-temp.t)*(h2->t-temp.t))/1.414;
+	vpeaks.push_back(temp);  
+	if (nmembers==3) do_find_centroid=false;
+      }
+      // Deal with peaks within the cluster
+      if (do_find_centroid){
+	for (strip=v[i]->members.begin();
+	     strip!=v[i]->members.end();strip++){	
+	  if (FindCentroid(v[i]->members,strip,vpeaks)==NOERROR){
+	    vpeaks[vpeaks.size()-1].cluster=i;
+	  }
+	}
       }
       break;
     }
@@ -274,6 +355,9 @@ void DFDCPseudo_factory::makePseudo(vector<const DFDCHit*>& x,
 	      newPseu->time   = (*xIt)->t;
 	      newPseu->dist   = newPseu->time*DRIFT_SPEED;
 	      newPseu->status = status;
+
+	      newPseu->AddAssociatedObject(v[vpeaks[j].cluster]);
+	      newPseu->AddAssociatedObject(u[upeaks[i].cluster]);
 	      
 	      newPseu->dE = CHARGE_TO_ENERGY*(upeaks[i].q+vpeaks[j].q)/2.;
 	      
@@ -330,6 +414,27 @@ void DFDCPseudo_factory::CalcMeanTime(const vector<const DFDCHit*>& H, float &t,
 	if(H.size()>0)t_rms = sqrt(t_rms/(float)H.size());
 }
 
+// Find the mean time and rms for a group of 3 hits with a maximum in the 
+// center hit
+void DFDCPseudo_factory::CalcMeanTime(vector<const DFDCHit *>::const_iterator peak, float &t, float &t_rms)
+{
+  // Calculate mean
+  t=0.0;
+  for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
+    t+=(*j)->t;
+  }
+  t/=3.;
+  
+  // Calculate RMS
+  t_rms=0.0;
+  for (vector<const DFDCHit*>::const_iterator j=peak-1;j<=peak+1;j++){
+    t_rms+=((*j)->t-t)*((*j)->t);
+  }
+  t_rms=sqrt(t_rms/3.);
+}
+
+
+
 //
 /// DFDCPseudo_factory::FindCentroid()
 ///   Uses the Newton-Raphson method for solving the set of non-linear
@@ -346,8 +451,8 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
   if (peak>H.begin() && peak+1!=H.end()){
     float err_diff1=0.,err_diff2=0.;
 	 
-	 // Fill in time info in temp  1/2/2008 D.L.
-    CalcMeanTime(H, temp.t, temp.t_rms);
+    // Fill in time info in temp  1/2/2008 D.L.
+    //CalcMeanTime(H, temp.t, temp.t_rms);
 
     // Some code for checking for significance of fluctuations.
     // Currently disabled.
@@ -402,6 +507,7 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
 	  temp.pos=par(X0,0);
 	  temp.q=par(QA,0);
 	  temp.numstrips=3;
+	  CalcMeanTime(peak,temp.t,temp.t_rms);
 	  centroids.push_back(temp);
   
 	  return NOERROR;
@@ -411,7 +517,6 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
         TDecompLU lu(J);
         if (lu.Decompose()==false){
           *_log << ":FindCentroid: Singular matrix"<< endMsg;
-           
           return UNRECOVERABLE_ERROR; // error placeholder
         }
 
@@ -431,16 +536,18 @@ jerror_t DFDCPseudo_factory::FindCentroid(const vector<const DFDCHit*>& H,
           temp.pos=par(X0,0);
           temp.q=par(QA,0);
           temp.numstrips=3;
+	  CalcMeanTime(peak,temp.t,temp.t_rms);
           centroids.push_back(temp);
         
           return NOERROR;
         }
 	par=newpar;
-      }
+      } // iterations
     }
   }
-  else return VALUE_OUT_OF_RANGE;
-    
+  else{
+    return VALUE_OUT_OF_RANGE;
+  }
   return INFINITE_RECURSION; // error placeholder
 }
      
