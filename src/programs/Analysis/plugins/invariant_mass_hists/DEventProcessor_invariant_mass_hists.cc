@@ -91,7 +91,7 @@ jerror_t DEventProcessor_invariant_mass_hists::evnt(JEventLoop *loop, int eventn
 	vector<const DParticle*> particles;
 
 	loop->Get(beam_photons);	// from truth info
-	//	loop->Get(photons);			// all reconstructed photons (BCAL and FCAL)
+	loop->Get(photons);			// all reconstructed photons (BCAL and FCAL)
 	loop->Get(particles);		// all reconstructed charged (CDC and FDC)
 
 	// Target is proton at rest in lab frame
