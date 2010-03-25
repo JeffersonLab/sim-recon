@@ -10,6 +10,9 @@
 
 #include <JANA/JFactory.h>
 #include <TRACKING/DReferenceTrajectory.h>
+#include <HDGEOMETRY/DRootGeom.h>
+#include <HDGEOMETRY/DGeometry.h>
+#include <HDGEOMETRY/DMagneticFieldMap.h>
 #include "DTrackTimeBased.h"
 
 class DTrackFitter;
@@ -31,7 +34,10 @@ class DTrackTimeBased_factory_THROWN:public JFactory<DTrackTimeBased>{
 		DTrackFitter *fitter;
 		const DTrackHitSelector *hitselector;
 		vector<DReferenceTrajectory*> rt_pool;
-
+		
+		DRootGeom *RootGeom;
+		DGeometry *geom;
+		DMagneticFieldMap *bfield;
 };
 
 #endif // _DTrackTimeBased_factory_THROWN_

@@ -28,6 +28,9 @@ DTrackTimeBased_factory_THROWN::DTrackTimeBased_factory_THROWN()
 {
 	fitter = NULL;
 	hitselector=NULL;
+	
+	RootGeom = NULL;
+	geom = NULL;
 }
 
 //------------------
@@ -60,6 +63,26 @@ jerror_t DTrackTimeBased_factory_THROWN::brun(jana::JEventLoop *loop, int runnum
 		return RESOURCE_UNAVAILABLE;
 	}
 	hitselector = hitselectors[0];
+
+	// Set pointers for DRootGeom and DGeometry pointers so they could be used
+	// by the DReferenceTrajectory class
+	string MATERIAL_MAP_MODEL="";
+	try{
+		gPARMS->GetParameter("TRKFIT:MATERIAL_MAP_MODEL", MATERIAL_MAP_MODEL);
+	}catch(...){}
+	DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
+	if(MATERIAL_MAP_MODEL=="DRootGeom"){
+		RootGeom = dapp->GetRootGeom();
+	}else if(MATERIAL_MAP_MODEL=="DGeometry"){
+		geom = dapp->GetDGeometry(runnumber);
+	}else if(MATERIAL_MAP_MODEL=="NONE"){
+	}else{
+		_DBG_<<"ERROR: Invalid value for TRKFIT:MATERIAL_MAP_MODEL (=\""<<MATERIAL_MAP_MODEL<<"\")"<<endl;
+		exit(-1);
+	}
+	
+	// Set magnetic field pointer
+	bfield = dapp->GetBfield();
 
 	return NOERROR;
 }
@@ -94,18 +117,18 @@ jerror_t DTrackTimeBased_factory_THROWN::evnt(JEventLoop *loop, int eventnumber)
 		// of allocating/deallocating them every event, we keep a pool and
 		// re-use them. If the pool is not big enough, then add one to the
 		// pool.
-		DApplication* dapp = dynamic_cast<DApplication*>(loop->GetJApplication());
 		if(rt_pool.size()<=_data.size()){
 			// This is a little ugly, but only gets called a few times throughout the life of the process
 			// Note: these never get deleted, even at the end of process.			
-			rt_pool.push_back(new DReferenceTrajectory(dapp->GetBfield()));
+			rt_pool.push_back(new DReferenceTrajectory(bfield));
 		}
 		DReferenceTrajectory *rt = rt_pool[_data.size()];
 		track->rt = rt;
 		DVector3 pos = track->position();
 		DVector3 mom = track->momentum();
 		rt->SetMass(thrown->mass());
-		rt->SetDGeometry(dapp->GetDGeometry((loop->GetJEvent()).GetRunNumber()));
+		rt->SetDGeometry(geom);
+		rt->SetDRootGeom(RootGeom);
 		rt->Swim(pos, mom, track->charge());
 
 		// Find hits that should be on this track and add them as associated objects
