@@ -56,19 +56,20 @@ pristine: clean
 # rules in Makefile.bin, but use the implicit rules for archiving objects.
 $(DEP_DIR)/%.d : %.cpp
 	mkdir -p $(DEP_DIR)
-	$(DCXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $@
+	$(DCXX) -MM -MT "$(LIBNAME)($(basename $(notdir $@)).o)" $(CXXFLAGS) $< > $@
 $(DEP_DIR)/%.d : %.cc
 	mkdir -p $(DEP_DIR)
-	$(DCXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $@
+	echo basename = $(basename $(notdir $@))
+	$(DCXX) -MM -MT "$(LIBNAME)($(basename $(notdir $@)).o)" $(CXXFLAGS) $< > $@
 $(DEP_DIR)/%.d : %.cxx
 	mkdir -p $(DEP_DIR)
-	$(DCXX) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CXXFLAGS) $< > $@
+	$(DCXX) -MM -MT "$(LIBNAME)($(basename $(notdir $@)).o)" $(CXXFLAGS) $< > $@
 $(DEP_DIR)/%.d : %.c
 	mkdir -p $(DEP_DIR)
-	$(DCC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(CFLAGS) $< > $@
+	$(DCC) -MM -MT "$(LIBNAME)($(basename $(notdir $@)).o)" $(CFLAGS) $< > $@
 $(DEP_DIR)/%.d : %.F
 	mkdir -p $(DEP_DIR)
-	$(DFC) -MM -MT "$(LIBNAME)($(basename $@).o)" $(filter-out -fno-automatic,$(FFLAGS)) $< > $@
+	$(DFC) -MM -MT "$(LIBNAME)($(basename $(notdir $@)).o)" $(filter-out -fno-automatic,$(FFLAGS)) $< > $@
 
 
 env:
