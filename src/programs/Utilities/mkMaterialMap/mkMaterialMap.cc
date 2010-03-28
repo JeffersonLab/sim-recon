@@ -4,6 +4,7 @@
 // mkMaterialMap.cc
 //
 #include <fstream>
+#include <sstream>
 
 #include "DANA/DApplication.h"
 using namespace std;
@@ -40,6 +41,23 @@ double zmax = 100.0;
 int n_r = 3;
 int n_z = 3;
 int n_phi = 60;
+
+//-----------
+// mkstr
+//-----------
+template<class T>
+string mkstr(const T &val, unsigned int width)
+{
+	stringstream ssval;
+	ssval<<val;
+	string s = ssval.str();
+	stringstream ss;
+	int Nspaces = (int)width - (int)s.size();
+	if(Nspaces>0)ss<<string(Nspaces, ' ');
+	ss<<s;
+	
+	return ss.str();
+}
 
 
 //-----------
@@ -119,6 +137,50 @@ int main(int narg, char *argv[])
 	}
 	cout <<"Done"<<endl;
 	
+	// Column names
+	vector<string> cols;
+	cols.push_back("r");
+	cols.push_back("z");
+	cols.push_back("A");
+	cols.push_back("Z");
+	cols.push_back("density");
+	cols.push_back("radlen");
+	cols.push_back("rhoZ_overA");
+	cols.push_back("rhoZ_overA_logI");
+	
+	// Find max width of each column so we can print these in file with aligned columns
+	vector<unsigned int> max_width;
+	for(unsigned int i=0; i<cols.size(); i++)max_width.push_back(cols[i].size()+2);
+	for(int ir=0; ir<Nr; ir++){
+		double r = r0 + dr/2.0 + (double)ir*dr;
+		for(int iz=0; iz<Nz; iz++){
+			double z = z0 + dz/2.0 + (double)iz*dz;
+			
+			Material &mat = MatTable[ir][iz];
+			vector<string> strs;
+			stringstream ss;
+			ss.str(""); ss<<r;							strs.push_back(ss.str());
+			ss.str(""); ss<<z;							strs.push_back(ss.str());
+			ss.str(""); ss<<mat.A;						strs.push_back(ss.str());
+			ss.str(""); ss<<mat.Z;						strs.push_back(ss.str());
+			ss.str(""); ss<<mat.Density;				strs.push_back(ss.str());
+			ss.str(""); ss<<mat.RadLen;				strs.push_back(ss.str());
+			ss.str(""); ss<<mat.rhoZ_overA;			strs.push_back(ss.str());
+			ss.str(""); ss<<mat.rhoZ_overA_logI;	strs.push_back(ss.str());
+			
+			for(unsigned int i=0; i<strs.size(); i++){
+				if(strs[i].size()+2 > max_width[i])max_width[i] = strs[i].size()+2;
+			}
+		}
+	}
+	
+	// Make colheader string as a comment that can be placed at the top and then periodically
+	// in the file to make it easier to read
+	stringstream colheader;
+	colheader<<"#";
+	for(unsigned int i=0; i<cols.size(); i++)colheader<<mkstr(cols[i], max_width[i] + (i==0 ? -1:0));
+
+	
 	// Write table to file
 	cout<<"Writing material table to file ..."<<endl;
 	ofstream of("material_map");
@@ -140,8 +202,10 @@ int main(int narg, char *argv[])
 	of<<"#   n_z = "<<n_z<<endl;
 	of<<"# n_phi = "<<n_phi<<endl;
 	of<<"#"<<endl;
-
-	of<<"#  r	z	A	Z	density radlen rhoZ_overA rhoZ_overA_logI"<<endl;
+	//of<<colheader.str()<<endl;
+	
+	// Loop over all entries in table
+	unsigned int entries_written = 0;
 	for(int ir=0; ir<Nr; ir++){
 		double r = r0 + dr/2.0 + (double)ir*dr;
 		for(int iz=0; iz<Nz; iz++){
@@ -149,13 +213,27 @@ int main(int narg, char *argv[])
 			
 			Material &mat = MatTable[ir][iz];
 			
-			of<<r<<"\t"<<z<<"\t"<<mat.A<<"\t"<<mat.Z<<"\t"<<mat.Density<<"\t"<<mat.RadLen<<"\t"<<mat.rhoZ_overA<<"\t"<<mat.rhoZ_overA_logI<<endl;
+			if(entries_written%50 == 0)of<<colheader.str()<<endl;
+			
+			of<<mkstr(r, max_width[0]);
+			of<<mkstr(z, max_width[1]);
+			of<<mkstr(mat.A, max_width[2]);
+			of<<mkstr(mat.Z, max_width[3]);
+			of<<mkstr(mat.Density, max_width[4]);
+			of<<mkstr(mat.RadLen, max_width[5]);
+			of<<mkstr(mat.rhoZ_overA, max_width[6]);
+			of<<mkstr(mat.rhoZ_overA_logI, max_width[7]);
+			of<<endl;
+			
+			entries_written++;
+			//of<<r<<"\t"<<z<<"\t"<<mat.A<<"\t"<<mat.Z<<"\t"<<mat.Density<<"\t"<<mat.RadLen<<"\t"<<mat.rhoZ_overA<<"\t"<<mat.rhoZ_overA_logI<<endl;
 		}
 	}
 	of.close();
 	
 	return 0;
 }
+
 
 //-----------
 // ParseCommandLineArguments

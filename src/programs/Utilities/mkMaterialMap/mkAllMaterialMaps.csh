@@ -5,7 +5,7 @@ mkMaterialMap -Nr 60 -Nz 60 -rmin 0 -rmax 6.0 -zmin 30 -zmax 90 -n_r 5 -n_z 5 -n
 mv material_map material_map00_target
 
 # Start Counter barrel
-mkMaterialMap -Nr 30 -Nz 2 -rmin 7.0 -rmax 9.75 -zmin 0 -zmax 90 -n_r 3 -n_z 3 -n_phi 100
+mkMaterialMap -Nr 30 -Nz 2 -rmin 7.0 -rmax 9.0 -zmin 0 -zmax 90 -n_r 3 -n_z 3 -n_phi 100
 mv material_map material_map01_startcounter_barrel
 
 # Start Counter nose
@@ -16,24 +16,28 @@ mv material_map material_map02_startcounter_nose
 mkMaterialMap -Nr 60 -Nz 60 -rmin 9.0 -rmax 60.0 -zmin 165 -zmax 171 -n_r 3 -n_z 3 -n_phi 60
 mv material_map material_map10_CDC_endplate
 
+# CDC inner shell
+mkMaterialMap -Nr 50 -Nz 5 -rmin 9.0 -rmax 9.75 -zmin 17 -zmax 165 -n_r 1000 -n_z 50 -n_phi 10
+mv material_map material_map11_CDC_inner_shell
+
 # CDC
-mkMaterialMap -Nr 50 -Nz 5 -rmin 9.75 -rmax 65.0 -zmin 15 -zmax 165 -n_r 10 -n_z 50 -n_phi 200
-mv material_map material_map11_CDC
+mkMaterialMap -Nr 50 -Nz 5 -rmin 9.75 -rmax 65.0 -zmin 17 -zmax 165 -n_r 100 -n_z 50 -n_phi 200
+mv material_map material_map12_CDC
 
 # FDC package 1
-mkMaterialMap -Nr 58 -Nz 6 -rmin 2.0 -rmax 60.0 -zmin 175 -zmax 189 -n_r 5 -n_z 5 -n_phi 100
+mkMaterialMap -Nr 6 -Nz 2 -rmin 2.0 -rmax 60.0 -zmin 175 -zmax 189 -n_r 50 -n_z 20000 -n_phi 10
 mv material_map material_map21_FDC1
 
 # FDC package 2
-mkMaterialMap -Nr 58 -Nz 6 -rmin 2.0 -rmax 60.0 -zmin 232 -zmax 246 -n_r 5 -n_z 5 -n_phi 100
+mkMaterialMap -Nr 6 -Nz 2 -rmin 2.0 -rmax 60.0 -zmin 232 -zmax 246 -n_r 50 -n_z 20000 -n_phi 10
 mv material_map material_map22_FDC2
 
 # FDC package 3
-mkMaterialMap -Nr 58 -Nz 6 -rmin 2.0 -rmax 60.0 -zmin 290 -zmax 304 -n_r 5 -n_z 5 -n_phi 100
+mkMaterialMap -Nr 6 -Nz 2 -rmin 2.0 -rmax 60.0 -zmin 290 -zmax 304 -n_r 50 -n_z 20000 -n_phi 10
 mv material_map material_map23_FDC3
 
 # FDC package 4
-mkMaterialMap -Nr 58 -Nz 6 -rmin 2.0 -rmax 60.0 -zmin 347 -zmax 361 -n_r 5 -n_z 5 -n_phi 100
+mkMaterialMap -Nr 6 -Nz 2 -rmin 2.0 -rmax 60.0 -zmin 347 -zmax 361 -n_r 50 -n_z 20000 -n_phi 10
 mv material_map material_map23_FDC4
 
 # Everything else
