@@ -1,11 +1,11 @@
 Release Notes for Hall-D source code
 ------------------------------------
 
-    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2010-03-10
-   Date: March 10, 2010
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2010-03-29
+   Date: March 30, 2010
 Builder: Mark Ito <marki@jlab.org>
 
-This release is based on revision 6124 of trunk/src.
+This release is based on revision 6207 of trunk/sim-recon
 
 This release has been compiled on the following systems
 with the specified versions:
