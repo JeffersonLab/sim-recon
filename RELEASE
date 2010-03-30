@@ -1,0 +1,398 @@
+Release Notes for Hall-D source code
+------------------------------------
+
+    URL: https://halldsvn.jlab.org/repos/tags/sim-recon-2010-03-10
+   Date: March 10, 2010
+Builder: Mark Ito <marki@jlab.org>
+
+This release is based on revision 6124 of trunk/src.
+
+This release has been compiled on the following systems
+with the specified versions:
+
+Fedora release 8 (Werewolf) on i686  32-bit
+------------
+  Xerces 2.7.0
+  JANA 0.6.1
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20070925 (Red Hat 4.1.2-33)
+  HDDS 1.0
+
+Red Hat Enterprise Linux 5.3
+-----------
+  Xerces 2.7.0
+  JANA 0.6.1
+  ROOT 5.18-00
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-46)
+  HDDS 1.0
+
+CentOS release 5.3 (Final)
+------------
+  Xerces 2.7.0
+  JANA 0.6.1
+  ROOT 5.24
+  cernlib 2005
+  gcc/g++/gfortran :  4.1.2 20080704 (Red Hat 4.1.2-44)
+  HDDS 1.0
+
+Relevant repository log of changes:
+------------------------------------------------------------------------
+r6129 | davidl | 2010-03-11 08:44:58 -0500 (Thu, 11 Mar 2010) | 10 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.cc
+   A /trunk/src/programs/Analysis/hdview2/hdv_fulllistframe.cc
+   A /trunk/src/programs/Analysis/hdview2/hdv_fulllistframe.h
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.cc
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.h
+   M /trunk/src/programs/Analysis/hdview2/hdv_optionsframe.cc
+
+- Add DTwoGammaFit:PI0 and DTwoGammaFit:ETA to display options for 
+  reconstructed particle parameters
+
+- Added "Full List" button to reconstructed parameters group frame
+  to pop up window with full parameters list. Window is currently
+  empty.
+
+- Have group frames at top of window resize to reduce the real
+  estate that consume to the minimum.
+
+------------------------------------------------------------------------
+r6130 | wolin | 2010-03-11 13:18:19 -0500 (Thu, 11 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.cc
+
+Added map of id maps in preparation for adding associated objects
+------------------------------------------------------------------------
+r6131 | wolin | 2010-03-11 13:40:53 -0500 (Thu, 11 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.cc
+
+Switched to tag map, other minor mods
+------------------------------------------------------------------------
+r6138 | davidl | 2010-03-11 14:55:28 -0500 (Thu, 11 Mar 2010) | 1 line
+Changed paths:
+   A /trunk/src/programs/Analysis/hdview2/hdv_endviewBframe.cc
+   A /trunk/src/programs/Analysis/hdview2/hdv_endviewBframe.h
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.cc
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.h
+
+Click on FCAL frame and a window opens with a much larger canvas reducing the need for so much panning and zooming. Redraws are much slower though given the >2k objects in the FCAL pane.
+------------------------------------------------------------------------
+r6139 | wolin | 2010-03-12 09:31:06 -0500 (Fri, 12 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.cc
+   M /trunk/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Added wire based tracks, other minor mods
+------------------------------------------------------------------------
+r6143 | wolin | 2010-03-15 09:03:59 -0400 (Mon, 15 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.cc
+   M /trunk/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Does some associated objects, not thread safe yet
+------------------------------------------------------------------------
+r6144 | staylor | 2010-03-15 13:18:41 -0400 (Mon, 15 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/FDC/DFDCPseudo.h
+
+Remove unused vector of DFDCHit members.
+------------------------------------------------------------------------
+r6147 | davidl | 2010-03-16 08:57:05 -0400 (Tue, 16 Mar 2010) | 8 lines
+Changed paths:
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.cc
+   M /trunk/src/programs/Analysis/hdview2/MyProcessor.h
+   M /trunk/src/programs/Analysis/hdview2/hdv_fulllistframe.cc
+   M /trunk/src/programs/Analysis/hdview2/hdv_fulllistframe.h
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.cc
+   M /trunk/src/programs/Analysis/hdview2/hdv_mainframe.h
+   M /trunk/src/programs/Analysis/hdview2/hdv_optionsframe.cc
+
+- Added more options for drawing DMCTrajectoryPoint objects. 
+ Still some oddities about how they are drawn. Namely, turning
+ on drawing of some particle types will cause some lines to
+ disappear.
+
+- More work done on the full particle list frame. It is being switched
+  to a TGTextView object but is still not working.
+
+------------------------------------------------------------------------
+r6148 | wolin | 2010-03-16 10:21:37 -0400 (Tue, 16 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/programs/Utilities/plugins/danaevio/JEventProcessor_danaevio.cc
+   M /trunk/src/programs/Utilities/plugins/danaevio/dana_evio_dict.xml
+
+Removed Nmembers bank, obsolete
+------------------------------------------------------------------------
+r6154 | davidl | 2010-03-16 13:15:20 -0400 (Tue, 16 Mar 2010) | 4 lines
+Changed paths:
+   M /trunk/src/libraries/PID/DTwoGammaFit.h
+   M /trunk/src/libraries/PID/DTwoGammaFit_factory.cc
+
+- Added number of degrees of freedom to DTwoGammaFit
+
+- Sort DTwoGammaFit objects by probability returned by DKinFit
+
+------------------------------------------------------------------------
+r6156 | davidl | 2010-03-16 14:54:22 -0400 (Tue, 16 Mar 2010) | 1 line
+Changed paths:
+   A /trunk/src/libraries/PID/DChargedTruthMatch.h
+   A /trunk/src/libraries/PID/DChargedTruthMatch_factory.cc
+   A /trunk/src/libraries/PID/DChargedTruthMatch_factory.h
+   A /trunk/src/libraries/PID/DPhoton_factory_THROWN.cc
+   A /trunk/src/libraries/PID/DPhoton_factory_THROWN.h
+   M /trunk/src/libraries/PID/PID_init.cc
+
+Added DPhoton:THROWN and DChargedTruthMatch factories. The latter is non-functional at the moment.
+------------------------------------------------------------------------
+r6157 | davidl | 2010-03-16 14:55:24 -0400 (Tue, 16 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased_factory_THROWN.cc
+
+Fixed DTrackTimeBased_factory_THROWN to work with DChargedTrack.
+------------------------------------------------------------------------
+r6159 | davidl | 2010-03-16 14:56:29 -0400 (Tue, 16 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/BMS/IDE/HallD.xcodeproj/davidl.pbxuser
+
+Old and unknown changes to config files for Mac OS X's Xcode IDE.
+------------------------------------------------------------------------
+r6160 | staylor | 2010-03-16 14:57:16 -0400 (Tue, 16 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/HDGEOMETRY/DGeometry.cc
+   M /trunk/src/libraries/HDGEOMETRY/DGeometry.h
+   M /trunk/src/libraries/HDGEOMETRY/DMaterialMap.cc
+   M /trunk/src/libraries/HDGEOMETRY/DMaterialMap.h
+
+Precompute product of the constant K=0.1535e-3 MeV/(g/cm^2) with rho*Z/A in the routines called by DReferenceTrajectory.cc to save som etime in the computation of dP.  Implement other similar changes to precompute as much as possible before routines that compute energy loss, which get called many times per track per event.
+------------------------------------------------------------------------
+r6161 | staylor | 2010-03-16 15:00:47 -0400 (Tue, 16 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.cc
+   M /trunk/src/libraries/TRACKING/DReferenceTrajectory.h
+
+Use new method for getting material properties that precomputes some of the calculations.  Put in the density effect correction to dEdx based on the scheme in Geant 3.21.
+------------------------------------------------------------------------
+r6162 | staylor | 2010-03-16 15:06:50 -0400 (Tue, 16 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased_factory.cc
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased_factory.h
+
+Align DTrackTimeBased_factory.cc with latest developments in DTrackTimeBased_factory_Kalman.cc with regard to particle identification.  This is still a work in progress and is not guaranteed to be better than the old version of the code.
+------------------------------------------------------------------------
+r6163 | staylor | 2010-03-16 15:16:56 -0400 (Tue, 16 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased_factory_Kalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackTimeBased_factory_Kalman.h
+
+(1) make sure that geom is set for the reference trajectories (one for hit selection, one needed for dEdx and time-of-flight). (2) in the dEdx chi2 calculation, compute the difference between the measured dEdx and the most probable dEdx on a hit-by-hit basis, then average at the end. (3) added more diagnostic histograms for evalulating differences and errros for dEdx and time-of-flight. (4) use a position cut for tof-track matching and compute a chi^2 value based on the time difference between the tof and the projected track instead of reporting the probability from MatchToTOF. (5) Use the time difference instead of the difference in betas for the BCAL chi^2.
+------------------------------------------------------------------------
+r6164 | staylor | 2010-03-16 15:20:43 -0400 (Tue, 16 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitter.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitter.h
+
+Added a new method for computing the measured dEdx that uses a new dedx_t structure that stores the momentum for the hit as well as the dE and dx values.
+------------------------------------------------------------------------
+r6165 | davidl | 2010-03-16 15:33:01 -0400 (Tue, 16 Mar 2010) | 5 lines
+Changed paths:
+   M /trunk/src/programs/Simulation/HDGeant/storeTrajectory.c
+
+Increased maximum number of trajectory points hdgeant can store from
+10k to 100k. In principle, this should increase the memory footprint
+by about 6MB. Running top shows hdgeant already uses ~245MB so the
+change is relatively minor.
+
+------------------------------------------------------------------------
+r6166 | staylor | 2010-03-16 15:45:10 -0400 (Tue, 16 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.cc
+   M /trunk/src/libraries/TRACKING/DTrackFitterKalman.h
+
+If the step size is small relative to the radius of curvature, assume that the path is helical and that the arguments of the sin and cos in the helical equation of motion so that a linear approximation can be made, thereby allowing the swim to the doca to occur in one step instead of using the slower but more accurate Brent algorithm; otherwise default to the Brent algorithm.
+------------------------------------------------------------------------
+r6168 | marki | 2010-03-16 16:50:16 -0400 (Tue, 16 Mar 2010) | 2 lines
+Changed paths:
+   A /trunk/sim-recon
+
+New simulation and reconstruction directory, contains directory formerly known as src.
+
+------------------------------------------------------------------------
+r6169 | marki | 2010-03-16 17:01:07 -0400 (Tue, 16 Mar 2010) | 3 lines
+Changed paths:
+   A /trunk/sim-recon/src (from /trunk/src:6168)
+   D /trunk/src
+
+Moving src to sim-recon/src. See
+http://www.jlab.org/Hall-D/software/wiki/index.php/Building_a_roof_over_src
+
+------------------------------------------------------------------------
+r6171 | heddle | 2010-03-17 09:47:35 -0400 (Wed, 17 Mar 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay
+
+created folder to hold event display binaries and source
+------------------------------------------------------------------------
+r6172 | heddle | 2010-03-17 09:51:04 -0400 (Wed, 17 Mar 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/bin
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/bin/bCNU
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/bin/bCNU/bCNU.jar
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/bin/bCNU/bcnuimages.jar
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/bin/ded
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/bin/ded/ded.jar
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/bin/jevio
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/bin/jevio/jevio.jar
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/data
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/data/dana_smeared.evio
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/data/eviodict.xml
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/data/solenoid.dat
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/ded.bat
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/ded.sh
+
+initial import of binaries
+------------------------------------------------------------------------
+r6173 | heddle | 2010-03-17 09:52:02 -0400 (Wed, 17 Mar 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport
+
+
+------------------------------------------------------------------------
+r6174 | heddle | 2010-03-17 09:52:41 -0400 (Wed, 17 Mar 2010) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/bin
+
+wrong place deleting
+------------------------------------------------------------------------
+r6175 | heddle | 2010-03-17 09:52:59 -0400 (Wed, 17 Mar 2010) | 1 line
+Changed paths:
+   D /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/data
+   D /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/ded.bat
+   D /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/ded.sh
+
+wrong place deleting
+------------------------------------------------------------------------
+r6176 | heddle | 2010-03-17 09:54:09 -0400 (Wed, 17 Mar 2010) | 1 line
+Changed paths:
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/bin
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/bin/bCNU
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/bin/bCNU/bCNU.jar
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/bin/bCNU/bcnuimages.jar
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/bin/ded
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/bin/ded/ded.jar
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/bin/jevio
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/bin/jevio/jevio.jar
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/data
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/data/dana_smeared.evio
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/data/eviodict.xml
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/data/solenoid.dat
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/ded.bat
+   A /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/ded.sh
+
+
+------------------------------------------------------------------------
+r6177 | heddle | 2010-03-17 10:24:57 -0400 (Wed, 17 Mar 2010) | 2 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/hdEventDisplay/dedExport/ded.sh
+
+removed dos crap
+
+------------------------------------------------------------------------
+r6182 | marki | 2010-03-19 09:31:04 -0400 (Fri, 19 Mar 2010) | 2 lines
+Changed paths:
+   A /trunk/hdEventDisplay (from /trunk/sim-recon/src/programs/Analysis/hdEventDisplay:6181)
+   D /trunk/sim-recon/src/programs/Analysis/hdEventDisplay
+
+Move ded from sim-recon to stand-alone location.
+
+------------------------------------------------------------------------
+r6192 | davidl | 2010-03-22 15:43:51 -0400 (Mon, 22 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/radlen_hists/DEventProcessor_radlen_hists.cc
+   M /trunk/sim-recon/src/programs/Analysis/plugins/radlen_hists/DEventProcessor_radlen_hists.h
+
+Mutex protect radlen_hists plugin so it may be used with multiple threads.
+------------------------------------------------------------------------
+r6193 | davidl | 2010-03-23 09:17:10 -0400 (Tue, 23 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/track_hists/DEventProcessor_track_hists.cc
+
+Switched track_hists plugin to use DChargedTrack instead of DParticle.
+------------------------------------------------------------------------
+r6194 | davidl | 2010-03-23 09:33:35 -0400 (Tue, 23 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory_THROWN.cc
+
+Set geometry pointer in DReferenceTrajectory used to swim thrown track in DTrackTimeBased_factory_THROWN so that energy loss due to material is included.
+------------------------------------------------------------------------
+r6195 | davidl | 2010-03-23 09:34:50 -0400 (Tue, 23 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterALT1.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackFitterALT1.h
+
+Added TRKFIT:USE_FDC_CATHODE option to make it easier and cleaner to turn off use of FDC cathode information in tracking with ALT1.
+------------------------------------------------------------------------
+r6196 | davidl | 2010-03-23 09:43:39 -0400 (Tue, 23 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/mcsmear.cc
+   M /trunk/sim-recon/src/programs/Simulation/mcsmear/smear.cc
+
+Added -d# option to mcsmear to allow one to randomly drop a fraction of FDC hits
+------------------------------------------------------------------------
+r6197 | davidl | 2010-03-24 08:31:59 -0400 (Wed, 24 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/programs/Analysis/plugins/invariant_mass_hists/DEventProcessor_invariant_mass_hists.cc
+
+Uncomment the line that gets the DPhotons.
+------------------------------------------------------------------------
+r6198 | staylor | 2010-03-24 18:51:01 -0400 (Wed, 24 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCCathodeCluster.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCCathodeCluster_factory.cc
+
+Remove unused member data (beginStrip,maxStrip,endSttrip,width).
+------------------------------------------------------------------------
+r6199 | staylor | 2010-03-24 19:00:40 -0400 (Wed, 24 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo.h
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.cc
+   M /trunk/sim-recon/src/libraries/FDC/DFDCPseudo_factory.h
+
+Add pointers to cathode clusters that were used to create each pseudopoint. Fixed flaw in the peak-finding algorithm that threw away perfectly good clusters whose maxima happened to be at one end or the other of the ordered list of cathode hits within a cluster.  Removed redundant sort over cathode cluster z positions -- this is already done in the DFDCCathodeCluster_factory.  Added routine to average over three adjacent hits, with the second hit containing the maximum for the group of 3.
+------------------------------------------------------------------------
+r6200 | davidl | 2010-03-25 13:41:33 -0400 (Thu, 25 Mar 2010) | 1 line
+Changed paths:
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory_THROWN.cc
+   M /trunk/sim-recon/src/libraries/TRACKING/DTrackTimeBased_factory_THROWN.h
+
+Have DtrackTimeBased:THROWN honor the value of TRKFIT:MATERIAL_MAP_MODEL
+------------------------------------------------------------------------
+r6204 | marki | 2010-03-26 17:38:38 -0400 (Fri, 26 Mar 2010) | 8 lines
+Changed paths:
+   M /trunk/sim-recon/src/BMS/Makefile.bin
+   M /trunk/sim-recon/src/BMS/Makefile.lib
+   M /trunk/sim-recon/src/BMS/Makefile.shlib
+
+Fix depends generation error introduced way back in revision
+5868. Name of object file derived from depends file now needs have
+path stripped from it (depends file now contains the path).
+
+M    BMS/Makefile.lib
+M    BMS/Makefile.bin
+M    BMS/Makefile.shlib
+
+------------------------------------------------------------------------
+r6205 | davidl | 2010-03-27 22:56:09 -0400 (Sat, 27 Mar 2010) | 6 lines
+Changed paths:
+   M /trunk/sim-recon/src/programs/Utilities/mkMaterialMap/mkAllMaterialMaps.csh
+   M /trunk/sim-recon/src/programs/Utilities/mkMaterialMap/mkMaterialMap.cc
+
+- Tweak sampling and grid point spacing when generating material maps to more accurately average over thin material in the chambers.
+
+- Added map for CDC inner shell which was not being properly accounted for.
+
+- Make output of mkMaterialMap align columns and occasionaly reprint column names in comment line in order to make the ASCII files easier to scan for values.
+
+------------------------------------------------------------------------
