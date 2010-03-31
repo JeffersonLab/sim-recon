@@ -857,11 +857,16 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
   len=0.; 
   int i=0;
   double t=0.;
+  double step_size=0.1;
    
   // Coordinates for outermost cdc hit
   unsigned int id=my_cdchits.size()-1;
   DVector3 origin=my_cdchits[id]->hit->wire->origin;
   DVector3 dir=my_cdchits[id]->hit->wire->udir;
+
+  // Get the field at the start position
+  bfield->GetFieldBicubic(x_,y_,z_,Bx,By,Bz);
+  double Bz_old=Bz;
 
   if (central_traj.size()>0){  // reuse existing deque
     // Reset D to zero
@@ -880,10 +885,10 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
       central_traj[m].S->operator()(state_D,0)=0.;
 
       // update path length and flight time
-      len+=mStepSizeS;
+      len+=step_size;
       q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
       //q_over_p_sq=q_over_p*q_over_p;
-      //      t+=mStepSizeS*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
+      //      t+=step_size*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
 
       // Check for minimum momentum
       //if(q_over_p>Q_OVER_P_MAX) do_energy_loss=false;
@@ -906,7 +911,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
       }
 
       // Propagate the state through the field
-      FixedStep(pos,mStepSizeS,Sc,dedx);
+      FixedStep(pos,step_size,Sc,dedx);
       // Break out of the loop if we would swim out of the fiducial volume
       if (pos.Perp()>R_MAX || pos.z()<cdc_origin[2]) break;
       
@@ -915,16 +920,16 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
       q_over_p_sq=q_over_p*q_over_p;
       beta2=1./(1.+mass2*q_over_p_sq);
       if (beta2<EPS) beta2=EPS;
-      t+=mStepSizeS/sqrt(beta2)/SPEED_OF_LIGHT;
+      t+=step_size/sqrt(beta2)/SPEED_OF_LIGHT;
 
       // Multiple scattering    
       if (do_multiple_scattering)
-	GetProcessNoiseCentral(mStepSizeS,central_traj[m].Z,
+	GetProcessNoiseCentral(step_size,central_traj[m].Z,
 			       central_traj[m].rho_Z_over_A,Sc,Q);
 
       // Energy loss straggling
       if (do_energy_loss){	
-	varE=GetEnergyVariance(mStepSizeS,beta2,
+	varE=GetEnergyVariance(step_size,beta2,
 			       central_traj[m].K_rho_Z_over_A);	
 	Q(state_q_over_pt,state_q_over_pt)
 	  =varE*Sc(state_q_over_pt,0)*Sc(state_q_over_pt,0)/beta2
@@ -932,7 +937,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
       }
 
       // Compute the Jacobian matrix for back-tracking towards target
-      StepJacobian(pos,origin,dir,-mStepSizeS,Sc,dedx,J);
+      StepJacobian(pos,origin,dir,-step_size,Sc,dedx,J);
       // ... and its transpose 
       JT=DMatrix(DMatrix::kTransposed,J);
     
@@ -944,6 +949,23 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
 	  central_traj[m].JT->operator()(k,j)=JT(k,j);	  
 	}
       }
+      // Adjust the step size
+      if (fabs(dedx)>EPS){
+	double my_step_size_dE=0.0001/fabs(dedx);
+	//printf("r %f ds(dE) %f %f \n",pos.Perp(),my_step_size_dE,step_size);
+	step_size=my_step_size_dE;
+      }
+      /*
+	if (fabs(Bz-Bz_old)>EPS){
+	double my_step_size_B=0.01*step_size
+	*fabs(Bz/(Bz_old-Bz));
+	printf("Bz %f %f ds %f %f \n",Bz,Bz_old,step_size,my_step_size_B);
+	if (my_step_size_B<step_size) 
+	step_size=my_step_size_B;
+	}
+      */
+      if(step_size>mStepSizeS) step_size=mStepSizeS;
+      if(step_size<0.1)step_size=0.1;
     }
   }
   // reset energy loss flag
@@ -957,8 +979,9 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
     // Reset D to zero
     Sc(state_D,0)=0.;
 
-    // store old position
+    // store old position and Z-component of the magnetic field
     oldpos=pos;
+    Bz_old=Bz;
     
     temp.pos=pos;	
     temp.s=len;
@@ -971,10 +994,10 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
     //if (r>r_outer_hit || pos.z()<cdc_origin[2]) do_energy_loss=false;
     
     // update path length and flight time
-    len+=mStepSizeS;
+    len+=step_size;
     q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
     q_over_p_sq=q_over_p*q_over_p;
-    //t+=mStepSizeS*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
+    //t+=step_size*sqrt(1.+mass2*q_over_p_sq)/SPEED_OF_LIGHT;
 
      // Check for minimum momentum
     //if(q_over_p>Q_OVER_P_MAX) do_energy_loss=false;
@@ -994,28 +1017,28 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
     }
      
     // Propagate the state through the field
-    FixedStep(pos,mStepSizeS,Sc,dedx);
+    FixedStep(pos,step_size,Sc,dedx);
 
     // Update flight time
     q_over_p=Sc(state_q_over_pt,0)*cos(atan(Sc(state_tanl,0)));
     q_over_p_sq=q_over_p*q_over_p;
     beta2=1./(1.+mass2*q_over_p_sq);
     if (beta2<EPS) beta2=EPS;
-    t+=mStepSizeS/sqrt(beta2)/SPEED_OF_LIGHT;
+    t+=step_size/sqrt(beta2)/SPEED_OF_LIGHT;
 
     // Multiple scattering    
     if (do_multiple_scattering)
-      GetProcessNoiseCentral(mStepSizeS,temp.Z,temp.rho_Z_over_A,Sc,Q);
+      GetProcessNoiseCentral(step_size,temp.Z,temp.rho_Z_over_A,Sc,Q);
     
     // Energy loss straggling in the approximation of thick absorbers
     if (do_energy_loss){    
-      varE=GetEnergyVariance(mStepSizeS,beta2,temp.K_rho_Z_over_A);    
+      varE=GetEnergyVariance(step_size,beta2,temp.K_rho_Z_over_A);    
       Q(state_q_over_pt,state_q_over_pt)
 	=varE*Sc(state_q_over_pt,0)*Sc(state_q_over_pt,0)/beta2
 	*q_over_p_sq;
     }
     // Compute the Jacobian matrix and its transpose
-    StepJacobian(pos,origin,dir,-mStepSizeS,Sc,dedx,J);
+    StepJacobian(pos,origin,dir,-step_size,Sc,dedx,J);
     JT=DMatrix(DMatrix::kTransposed,J);
 
     // update the radius relative to the beam line
@@ -1027,6 +1050,26 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
     temp.JT= new DMatrix(JT);
 
     central_traj.push_front(temp);    
+
+
+    // Adjust the step size
+    if (fabs(dedx)>EPS){
+      double my_step_size_dE=0.0001/fabs(dedx);
+      //printf("ds(dE) %f %f \n",my_step_size_dE,step_size);
+      step_size=my_step_size_dE;
+    }
+    /*
+    if (fabs(Bz-Bz_old)>EPS){
+      double my_step_size_B=0.01*step_size
+	*fabs(Bz/(Bz_old-Bz));
+      printf("Bz %f %f ds %f %f \n",Bz,Bz_old,step_size,my_step_size_B);
+      if (my_step_size_B<step_size) 
+	step_size=my_step_size_B;
+    }
+    */
+    if(step_size>mStepSizeS) step_size=mStepSizeS;
+    if(step_size<0.1)step_size=0.1;
+
   }
   // reset energy loss flag
   do_energy_loss=true;
@@ -1098,7 +1141,7 @@ jerror_t DTrackFitterKalman::PropagateForward(int length,int &i,
   double dEdx=0.;
   int my_i=0;
   // Magnetic field 
-  double Bz_old=Bz;
+  //double Bz_old=Bz;
 
   temp.s=len;
   temp.t=ftime;
@@ -2994,12 +3037,21 @@ jerror_t DTrackFitterKalman::KalmanCentral(double anneal_factor,
 	// if the step size is small relative to the radius of curvature,
 	// use a linear approximation to find ds2
 	bool do_brent=false;
-	if (mStepSizeS*cosl/fabs(qrc_old)<0.01 && denom>EPS){
+	double step1=mStepSizeS;
+	double step2=mStepSizeS;
+	if (k>=2){
+	  step1=-central_traj[k].s+central_traj[k-1].s;
+	  step2=-central_traj[k-1].s+central_traj[k-2].s;
+	}
+	//printf("step1 %f step 2 %f \n",step1,step2);
+	double two_step=step1+step2;
+	if (two_step*cosl/fabs(qrc_old)<0.01 && denom>EPS){
 	  double dzw=(pos.z()-z0w)/uz;
 	  ds2=((pos.x()-origin.x()-ux*dzw)*my_ux
 	       +(pos.y()-origin.y()-uy*dzw)*my_uy)/denom;
 	 
-	  if (fabs(ds2)<2.*mStepSizeS){
+	  //if (fabs(ds2)<2.*mStepSizeS){
+	  if (fabs(ds2)<two_step){
 	    if(pos.z()+ds2*sinl<cdc_origin[2]){
 	      ds2=(cdc_origin[2]-pos.z())/sinl;
 	    }
@@ -3011,7 +3063,7 @@ jerror_t DTrackFitterKalman::KalmanCentral(double anneal_factor,
 	if (do_brent){ 
 	  // ... otherwise, use Brent's algorithm.
 	  // See Numerical Recipes in C, pp 404-405
-	  ds2=BrentsAlgorithm(-mStepSizeS,-mStepSizeS,dedx,pos,origin,dir,Sc);
+	  ds2=BrentsAlgorithm(-step1,-step2,dedx,pos,origin,dir,Sc);
 	}
 
 	int numstep=(int)(ds2/mStepSizeS);
