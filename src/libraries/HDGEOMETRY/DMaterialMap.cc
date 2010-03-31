@@ -4,8 +4,10 @@
 using namespace std;
 
 #include <DANA/DApplication.h>
+#include <DVector2.h>
 
 #include "DMaterialMap.h"
+#include "DMagneticFieldMap.h"
 
 
 //-----------------
@@ -16,6 +18,10 @@ DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib)
 	/// Read the specified material map in from the calibration database.
 	/// This will read in the map and figure out the number of grid
 	/// points in each direction (r, and z) and the range in each.
+
+	// Maximum number of steps (cells) to iterate when searching for a
+	// material boundary in EstimatedDistanceToBoundary() below.
+	MAX_BOUNDARY_SEARCH_STEPS = 30;
 
 	this->namepath = namepath;
 
@@ -70,7 +76,7 @@ DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib)
 	
 	// The values in the table are stored with r,z at the center of the node.
 	// This means the actual map extends half a bin further out than the current
-	// (local varfiable) rmin,rmax and zmin,zmax values. Set the class data
+	// (local variable) rmin,rmax and zmin,zmax values. Set the class data
 	// members to be the actual map limits
 	this->rmin = rmin-dr/2.0;
 	this->rmax = rmax+dr/2.0;
@@ -193,9 +199,166 @@ jerror_t DMaterialMap::FindMatKalman(DVector3 &pos,double &Z,
 //-----------------
 // IsInMap
 //-----------------
-bool DMaterialMap::IsInMap(DVector3 &pos) const
+bool DMaterialMap::IsInMap(const DVector3 &pos) const
 {
 	double r = pos.Perp();
 	double z = pos.Z();
 	return (r>=rmin) && (r<=rmax) && (z>=zmin) && (z<=zmax);
 }
+
+//-----------------
+// EstimatedDistanceToBoundary
+//-----------------
+double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVector3 &mom, const DMagneticFieldMap *bfield)
+{
+	/// Give a very rough estimate of the distance a track at this position/momentum
+	/// will travel before seeing either a significant change in the raditation
+	/// length of material, or the edge of this map. The primary purpose of
+	/// this is to help determine the appropriate step size when swimming 
+	/// charged tracks. As we approach a boundary of materials, we want to take
+	/// smaller steps to ensure the material is integrated properly.
+	///
+	/// This method can be called for points either inside or outside of this map.
+	/// It can be that this map overlaps another so for points outside, we look
+	/// for the point where the track would enter this map.
+	///
+	/// If a problem is encounter (e.g. point is outside of map and not pointing
+	/// toward it) we return a value of 1.0E6
+
+	// The method here is to use either dr/dz or dz/dr to project a straight line
+	// in r/z space and find bins along that line that can be be checked for
+	// increases in material density. This will clearly give a worse answer than
+	// projecting a helix, but should be pretty quick and robust. Speed is critical
+	// here since this is called for every step during swimming.
+
+	double s_to_boundary = 1.0E6;
+	
+	double r = pos.Perp();
+	double z = pos.Z();
+	double pr = mom.Perp();
+	double pz = mom.Z();
+	// The value of pr is positive definite, but should be signed since the 
+	// momentum could be pointing back towards the beamline. To determine
+	// the sign, take the dot product of the mopmentum with the position
+	// in the x-y plane.
+	if((pos.X()*mom.X() + pos.Y()*mom.Y()) < 0.0) pr = -pr;
+	
+	// Unit vector pointing in momentum direction in r-z space
+	double mod = sqrt(pr*pr + pz*pz);
+	if(mod<1.0E-6)return s_to_boundary; // for when momentum is purely in phi direction
+	DVector2 p_hat(pr/mod, pz/mod);
+
+	// Get shortest distance to boundary of entire map
+	s_to_boundary = DistanceToBox(DVector2(r, z), p_hat, rmin, rmax, zmin, zmax);
+
+	// If point is outside of map, then return now. s_to_boundary has valid answer
+	if(!IsInMap(pos))return s_to_boundary;
+
+	// If we got this far then the point is inside of this map. We need to check
+	// if there is a jump in the radiation length of a cell that is in the path
+	// of the trajectory so we can return that. Otherwise, we'll return the distance
+	// to the edge of the map.
+
+	// We want to form a vector pointing in the direction of momentum in r,z space
+	// but with a magnitude such that we are taking a step across a single grid
+	// point in either r or z, whichever is smallest.
+	double scale_r=fabs(dr/p_hat.X());
+	double scale_z=fabs(dz/p_hat.Y());
+	double scale=1000.0;
+	if(finite(scale_r) && scale_r<scale)scale = scale_r;
+	if(finite(scale_z) && scale_z<scale)scale = scale_z;
+	DVector2 delta_rz = p_hat*scale;
+
+	// Find radiation length of our starting cell
+	int ir_start = (int)floor((r-rmin)/dr);
+	int iz_start = (int)floor((z-zmin)/dz);
+	double RadLen_start = nodes[ir_start][iz_start].RadLen;
+	
+	// Loop until we find a change of radiation length within this map or
+	// until we hit the edge of our boundaries.
+	DVector2 rzpos_start(r, z);
+	DVector2 last_rzpos = rzpos_start;
+	int last_ir = ir_start;
+	int last_iz = iz_start;
+	for(int Nsteps=0; Nsteps<MAX_BOUNDARY_SEARCH_STEPS; Nsteps++){ // limit us to looking only 10 grid points away for speed
+		// Step to next cell
+		DVector2 rzpos = last_rzpos + delta_rz;
+
+		// Find indexes for this cell
+		int ir = (int)floor((rzpos.X()-rmin)/dr);
+		int iz = (int)floor((rzpos.Y()-zmin)/dz);
+
+		// Check if we hit the boundary of the map and if so, simply return
+		// the value found above for the distance to the map boundary.
+		if(ir<0 || ir>=Nr || iz<0 || iz>=Nz)return s_to_boundary;
+
+		// Check radiation length against start point's
+		double RadLen = nodes[ir][iz].RadLen;
+		if(RadLen <= 0.5*RadLen_start){
+			double rmin_cell = (double)last_ir*dr + rmin;
+			double rmax_cell = rmin_cell + dr;
+			double zmin_cell = (double)last_iz*dz + zmin;
+			double zmax_cell = zmin_cell + dz;
+			double s_to_cell = DistanceToBox(last_rzpos, p_hat, rmin_cell, rmax_cell, zmin_cell, zmax_cell);
+			if(s_to_cell==1.0E6)s_to_cell = 0.0;
+			double my_s_to_boundary = (last_rzpos-rzpos_start).Mod() + s_to_cell;
+			if(my_s_to_boundary < s_to_boundary)s_to_boundary = my_s_to_boundary;
+			
+			return s_to_boundary;
+		}
+		
+		// Need to take another step. Update "last" variables
+		last_iz = iz;
+		last_ir = ir;
+		last_rzpos = rzpos;
+	}
+	
+	return s_to_boundary;
+}
+
+//-----------------
+// DistanceToBox
+//-----------------
+double DMaterialMap::DistanceToBox(DVector2 pos, DVector2 dir, double xmin, double xmax, double ymin, double ymax)
+{
+	/// Given a point in 2-D space, a direction, and the limits of a box, find the
+	/// closest distance to box edge in the given direction.
+	
+	// Calculate intersection distances to all 4 boundaries of map
+	double dist_x1 = (xmin-pos.X())/dir.X();
+	double dist_x2 = (xmax-pos.X())/dir.X();
+	double dist_y1 = (ymin-pos.Y())/dir.Y();
+	double dist_y2 = (ymax-pos.Y())/dir.Y();
+	
+	// Make list of all positive, finite distances that are
+	// on border of box.
+	vector<double> dists;
+	if(finite(dist_x1) && dist_x1>=0.0){
+		double y = (pos + dist_x1*dir).Y();
+		if(y>=ymin && y<=ymax)dists.push_back(dist_x1);
+	}
+	if(finite(dist_x2) && dist_x2>=0.0){
+		double y = (pos + dist_x2*dir).Y();
+		if(y>=ymin && y<=ymax)dists.push_back(dist_x2);
+	}
+	if(finite(dist_y1) && dist_y1>=0.0){
+		double x = (pos + dist_y1*dir).X();
+		if(x>=xmin && x<=xmax)dists.push_back(dist_y1);
+	}
+	if(finite(dist_y2) && dist_y2>=0.0){
+		double x = (pos + dist_y2*dir).X();
+		if(x>=xmin && x<=xmax)dists.push_back(dist_y2);
+	}
+	
+	// If there are no entries in the dists vector then we must not have
+	// hit the box at all. Return a large number.
+	if(dists.size()<1)return 1.0E6;
+	
+	// Sort list of distances from smallest to biggest
+	sort(dists.begin(), dists.end());
+	
+	// Return shortest distance
+	return dists[0];
+}
+
+

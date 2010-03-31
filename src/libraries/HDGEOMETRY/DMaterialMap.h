@@ -6,6 +6,9 @@
 #include <JANA/jerror.h>
 
 #include <DVector3.h>
+#include <DVector2.h>
+
+class DMagneticFieldMap;
 
 class DMaterialMap{
 	public:
@@ -34,7 +37,9 @@ class DMaterialMap{
 		jerror_t FindMatKalman(DVector3 &pos,double &Z,
 				       double &K_rho_Z_over_A,
 				       double &rho_Z_over_A,double &LogI) const;
-		bool IsInMap(DVector3 &pos) const;
+		bool IsInMap(const DVector3 &pos) const;
+		double EstimatedDistanceToBoundary(const DVector3 &pos, const DVector3 &mom, const DMagneticFieldMap *bfield);
+		double DistanceToBox(DVector2 pos, DVector2 dir, double xmin, double xmax, double ymin, double ymax);
 
 		string GetNamepath(void) const {return namepath;}
 		double GetRmin(void) const {return rmin;}
@@ -57,6 +62,8 @@ class DMaterialMap{
 		
 		double rmin, rmax; // Range limits in R of this map
 		double zmin, zmax; // Range limits in Z of this map
+		
+		int MAX_BOUNDARY_SEARCH_STEPS;
 
 		JCalibration *jcalib;
 };

@@ -161,7 +161,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		this->q = q;
 
 	DMagneticFieldStepper stepper(bfield, q, &pos, &mom);
-	if(step_size>0.0)stepper.SetStepSize(0.5);
+	if(step_size>0.0)stepper.SetStepSize(step_size);
 
 	// Step until we hit a boundary (don't track more than 20 meters)
 	swim_step_t *swim_step = this->swim_steps;
@@ -203,9 +203,12 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		// If both are non-NULL, then use RootGeom
 		double dP = 0.0;
 		double dP_dx=0.0;
+		double s_to_boundary=1.0E6;
 		if(RootGeom || geom){
-			//double density, A, Z, X0;
-		  double KrhoZ_overA,rhoZ_overA,LogI, X0;
+			double KrhoZ_overA=0.0;
+			double rhoZ_overA=0.0;
+			double LogI=0.0;
+			double X0=0.0;
 			jerror_t err;
 			if(RootGeom){
 			  double rhoZ_overA,rhoZ_overA_logI;
@@ -216,7 +219,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			  KrhoZ_overA=0.1535e-3*rhoZ_overA;
 			  LogI=rhoZ_overA_logI/rhoZ_overA;
 			}else{
-			  err = geom->FindMatALT1(swim_step->origin, KrhoZ_overA, rhoZ_overA,LogI, X0);
+			  err = geom->FindMatALT1(swim_step->origin, swim_step->mom, KrhoZ_overA, rhoZ_overA,LogI, X0, s_to_boundary);
 			}
 
 			if(err == NOERROR){
@@ -236,35 +239,20 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 
 					// Calculate momentum loss due to ionization
 					dP_dx = dPdx(swim_step->mom.Mag(), KrhoZ_overA, rhoZ_overA,LogI);
-					dP = delta_s*dP_dx;
 				}
 			}
 			last_step = swim_step;
 		}
-		swim_step->dP = dP;
 		swim_step->itheta02 = itheta02;
 		swim_step->itheta02s = itheta02s;
 		swim_step->itheta02s2 = itheta02s2;
 
-		// Adjust momentum due to ionization losses
-		if(dP!=0.0){
-			double ptot = swim_step->mom.Mag() - dP; // correct for energy loss
-			if(ptot<0.0)break;
-			if(dP<0.0 && ploss_direction==kForward)break;
-			if(dP>0.0 && ploss_direction==kBackward)break;
-			if(swim_step->mom.Mag()==0.0)break;
-			swim_step->mom.SetMag(ptot);
-			stepper.SetStartingParams(q, &swim_step->origin, &swim_step->mom);
-		}
-		
 		// Adjust step size to take smaller steps in regions of high momentum loss or field gradient
 		if(step_size<0.0){ // step_size<0 indicates auto-calculated step size
 			// Take step so as to change momentum by no more than 1%
 			double my_step_size=swim_step->mom.Mag()/fabs(dP_dx)*0.01;
+			my_step_size = 0.0001/fabs(dP_dx);
 
-			if(my_step_size>2.0)my_step_size=2.0; // maximum step size is 2 cm
-		
-		      
 			// Now check the field gradient
 			if (fabs(Bz-Bz_old)>EPS){
 			  double my_step_size_B=0.01*my_step_size
@@ -272,15 +260,40 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			  if (my_step_size_B<my_step_size) 
 			    my_step_size=my_step_size_B;
 			}
+
+			// Use the estimated distance to the boundary to make sure we don't overstep
+			// into a high density region and miss some material. Use half the estimated
+			// distance since it's only an estimate. Note that even though this would lead
+			// to infinitely small steps, there is a minimum step size imposed below to
+			// ensure the step size is reasonable.
+			if(my_step_size > s_to_boundary/2.0)my_step_size = s_to_boundary/2.0;
 			
-			if(my_step_size<0.1)my_step_size=0.1; // minimum step size is 1 mm
-		       
+			if(my_step_size>3.0)my_step_size=3.0; // maximum step size is 3 cm
+			if(my_step_size<0.05)my_step_size=0.05; // minimum step size is 1/2 mm
+
 			stepper.SetStepSize(my_step_size);
 		}
 
 		// Swim to next
 		double ds=stepper.Step(NULL);
 
+		// Calculate momentum loss due to the step we're about to take
+		dP = ds*dP_dx;
+		swim_step->dP = dP; // n.b. stepper has been updated for next round but we're still on present step
+
+		// Adjust momentum due to ionization losses
+		if(dP!=0.0){
+			DVector3 pos, mom;
+			stepper.GetPosMom(pos, mom);
+			double ptot = mom.Mag() - dP; // correct for energy loss
+			if(ptot<0.0)break;
+			if(dP<0.0 && ploss_direction==kForward)break;
+			if(dP>0.0 && ploss_direction==kBackward)break;
+			if(mom.Mag()==0.0)break;
+			mom.SetMag(ptot);
+			stepper.SetStartingParams(q, &pos, &mom);
+		}
+		
 		// update flight time
 		t+=ds/beta/SPEED_OF_LIGHT;
 		s += ds;
@@ -1459,6 +1472,8 @@ double DReferenceTrajectory::dPdx(double ptot, double KrhoZ_overA,
 	dP_dx *= 1.0 + exp(-pow(ptot/g,2.0)); // empirical for really low momentum particles
 	
 	if(ploss_direction==kBackward)dP_dx = -dP_dx;
+
+dP_dx*=2.0;
 
 	return dP_dx;
 }
