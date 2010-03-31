@@ -1,13 +1,13 @@
 #ifndef _RESIDCDC_H_
 #define _RESIDCDC_H_
 
-#include "CDC/DCDCTrackHit.h"
+#include "FDC/DFDCPseudo.h"
 #include "MyTrajectory.h"
 #include "DLine.h"
 
 class residFDCAnode {
  public:
-  residFDCAnode(vector<const DCDCTrackHit*> *trackhits, const MyTrajectory *trajectory,
+  residFDCAnode(vector<const DFDCPseudo*> *pseudopoints, const MyTrajectory *trajectory,
 		    int level = 1);
   void calcResids();
   void setInnerResidFrac(double innerResidFracIn);
@@ -17,16 +17,16 @@ class residFDCAnode {
 		  vector<HepLorentzVector> &pocasRef,
 		  vector<HepVector> &posWiresRef);
  private:
-  unsigned int n_cdc;
-  vector<const DCDCTrackHit*> *trkhitVectorPtr;
+  unsigned int n_fdca;
+  vector<const DFDCPseudo*> *pseudopointVectorPtr;
   const MyTrajectory *trajPtr;
-  DLine trackhit2line(const DCDCTrackHit &trackhit);
+  DLine pseudopoint2line(const DFDCPseudo &pseudopoint);
   int debug_level;
   double innerResidFrac;
   vector<double> doca, dist, resid, error;
   vector<HepLorentzVector> poca;
   vector<HepVector> posWire;
-  double errorCDC;
+  double errorFDCA;
 };
 
 #endif // _RESIDCDC_H_
