@@ -233,9 +233,11 @@ void DTrackFitterKalman::ResetKalman(void)
 	 Bz=-2.;
 	 dBxdx=dBxdy=dBxdz=dBydx=dBydy=dBydy=dBzdx=dBzdy=dBzdz=0.;
 	 // Step sizes
-	 mStepSizeS=mStepSizeZ=0.35;
+	 mStepSizeS=0.4;
+	 mStepSizeZ=1.0;
 	 if (fit_type==kWireBased){
-	   mStepSizeS=mStepSizeZ=1.0;
+	   mStepSizeS=1.0;
+	   mStepSizeZ=1.0;
 	 }
 
 	 do_multiple_scattering=true;
@@ -1083,17 +1085,20 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
 
 // Routine that extracts the state vector propagation part out of the reference
 // trajectory loop
-jerror_t DTrackFitterKalman::PropagateForward(int length,int my_id,int &i,
-					      double &z,
-					      double step,DMatrix &S){
+jerror_t DTrackFitterKalman::PropagateForward(int length,int &i,
+					      double &z,double zhit,
+					      double &step,
+					      DMatrix &S, bool &done){
   DMatrix J(5,5),Q(5,5),JT(5,5);    
   DKalmanState_t temp;
   double newz=z+step; // new z position 
   
   // Initialize some variables
-  temp.h_id=my_id; // hit id
+  temp.h_id=0;
   double dEdx=0.;
   int my_i=0;
+  // Magnetic field 
+  double Bz_old=Bz;
 
   temp.s=len;
   temp.t=ftime;
@@ -1180,6 +1185,25 @@ jerror_t DTrackFitterKalman::PropagateForward(int length,int my_id,int &i,
   // update z
   z=newz;
 
+  // Adjust the step size
+  if (fabs(dEdx)>EPS){
+    double my_step_size_dE=0.0001/fabs(dEdx)
+      /sqrt(1.+S(state_tx,0)*S(state_tx,0)+S(state_ty,0)*S(state_ty,0));
+    // printf("r %f ds(dE) %f %f \n",
+    //	   sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0)),
+    //	   my_step_size_dE,step);
+    step=my_step_size_dE;
+  }
+  if(step>mStepSizeZ) step=mStepSizeZ;
+  if(step<0.1)step=0.1;
+
+  // Check if we are about to step to one of the wire planes
+  done=false;
+  if (z+step>zhit){ 
+    step=zhit-z;
+    done=true;
+  }
+
   return NOERROR;
 }
 
@@ -1188,50 +1212,47 @@ jerror_t DTrackFitterKalman::PropagateForward(int length,int my_id,int &i,
 // along z from the previous state.
 jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){   
  
+  // Magnetic field at beginning of trajectory
+  bfield->GetFieldBicubic(x_,y_,z_,Bx,By,Bz);
+
    // progress in z from hit to hit
   double z=z_;
-  double newz=z;
   int i=0,my_id=0;
   int forward_traj_length=forward_traj.size();
-  
-  // loop over the fdc hits
+  // loop over the fdc hits   
+  double step=0.1;
+  double zhit=0.;
   for (unsigned int m=0;m<my_fdchits.size();m++){
-    int num=int((my_fdchits[m]->z-z)/mStepSizeZ);
-    newz=my_fdchits[m]->z-mStepSizeZ*double(num);
-
-    if (newz-z>0.){
-      if (PropagateForward(forward_traj_length,my_id,i,z,newz-z,S)!=NOERROR)
+    zhit=my_fdchits[m]->z;
+    bool done=false; 
+    while (!done){
+      if (PropagateForward(forward_traj_length,i,z,zhit,step,S,done)
+	  !=NOERROR)
 	return UNRECOVERABLE_ERROR;
-
-      if (my_id>0) my_id=0;
     }
-    
-    for (int k=0;k<num;k++){
-      if (PropagateForward(forward_traj_length,my_id,i,z,mStepSizeZ,S)!=NOERROR)
-	return UNRECOVERABLE_ERROR;
-      
-      if (my_id>0) my_id=0;
-    }
-    
+    if (PropagateForward(forward_traj_length,i,z,zhit,step,S,done)
+	!=NOERROR)
+      return UNRECOVERABLE_ERROR;
+  
     // Lorentz correction slope parameters
     double tanr=0.,tanz=0.;
     lorentz_def->GetLorentzCorrectionParameters(S(state_x,0),S(state_y,0),z,
 						tanz,tanr);
     my_fdchits[m]->nr=tanr;
     my_fdchits[m]->nz=tanz;
-
-    my_id=m+1;
+    
+    step=0.5;
   }
-
-  // Final point 
-  if (PropagateForward(forward_traj_length,my_id,i,z,mStepSizeZ,S)!=NOERROR)
+  // Make sure the reference trajectory goes one step beyond the most 
+  // downstream hit plane
+  bool done=false;
+  if (PropagateForward(forward_traj_length,i,z,zhit,step,S,done)
+      !=NOERROR)
+    return UNRECOVERABLE_ERROR;
+  if (PropagateForward(forward_traj_length,i,z,zhit,step,S,done)
+      !=NOERROR)
     return UNRECOVERABLE_ERROR;
 
-  // Make sure the ref trajectory goes one step beyond the most downstream 
-  // hit
-  if (PropagateForward(forward_traj_length,0,i,z,mStepSizeZ,S)!=NOERROR)
-    return UNRECOVERABLE_ERROR;
-  
   // Shrink the deque if the new trajectory has less points in it than the 
   // old trajectory
   if (i<(int)forward_traj.size()){
@@ -1245,6 +1266,14 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
       forward_traj.pop_front();
     }
   }
+  my_id=my_fdchits.size();
+  for (unsigned int m=0;m<forward_traj.size();m++){
+    if (my_id>0 && fabs(forward_traj[m].pos.z()-my_fdchits[my_id-1]->z)<EPS){
+      forward_traj[m].h_id=my_id;
+      my_id--;
+    }
+  }
+
 
   if (DEBUG_LEVEL==2)
     {
@@ -3608,7 +3637,10 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 	if (fit_type==kTimeBased){
 	  dm=CDC_DRIFT_SPEED*(my_cdchits[cdc_index]->hit->tdrift
 			      -forward_traj_cdc[k].t);
-
+	  /*
+	  printf("cdc hit %d dm %f t %f %f\n",cdc_index,dm,
+		 my_cdchits[cdc_index]->hit->tdrift,forward_traj_cdc[k].t);
+	  */
 	  // variance
 	  //V=CDC_VARIANCE*anneal;
 	  V=cdc_variance(dm);

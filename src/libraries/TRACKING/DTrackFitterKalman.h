@@ -229,8 +229,8 @@ class DTrackFitterKalman: public DTrackFitter{
   
   jerror_t PropagateForwardCDC(int length,int &index,double z,
 			       double step,DMatrix &S); 
-  jerror_t PropagateForward(int length,int my_id,int &index,double &z,
-			    double step,DMatrix &S);
+  jerror_t PropagateForward(int length,int &index,double &z,double zhit,
+			    double &step,DMatrix &S,bool &done);
 
   //const DMagneticFieldMap *bfield; ///< pointer to magnetic field map
   //const DGeometry *geom;
