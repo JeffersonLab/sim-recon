@@ -54,8 +54,7 @@ class DTrackLSFitter:public DTrackFitter
 		// Virtual methods from TrackFitter base class
 		string Name(void) const {return string("MMI");}
 		fit_status_t FitTrack(void);
-		double ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr=NULL, int *dof_ptr=NULL);
-
+		double ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr=NULL, int *dof_ptr=NULL, vector<pull_t> *pulls_ptr=NULL);
  private:
   
   //const DMagneticFieldMap *bfield; // supplied by DTrackFitter base class

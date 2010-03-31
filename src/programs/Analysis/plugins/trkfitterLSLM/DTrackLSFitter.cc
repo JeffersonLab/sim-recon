@@ -95,7 +95,7 @@ DTrackLSFitter::~DTrackLSFitter()
 //------------------------------------------------------------------
 // ChiSq 
 //------------------------------------------------------------------
-double DTrackLSFitter::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr, int *dof_ptr)
+double DTrackLSFitter::ChiSq(fit_type_t fit_type, DReferenceTrajectory *rt, double *chisq_ptr, int *dof_ptr, vector<pull_t> *pulls_ptr)
 {
 	// This will need to be filled in by Mark
 	if(chisq_ptr)*chisq_ptr=0.0;
