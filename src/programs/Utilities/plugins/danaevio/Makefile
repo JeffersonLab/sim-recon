@@ -19,4 +19,4 @@ include $(HALLD_HOME)/src/BMS/Makefile.shlib
 
 # Rule to make header file containing string from dana evio dictionary
 %.h: %.xml
-	/u/home/wolin/DANA/plugins/danaevio/TextFile2String.py $<
+	$(HALLD_HOME)/src/BMS/TextFile2String.py $<
