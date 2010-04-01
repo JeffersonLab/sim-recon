@@ -204,21 +204,7 @@ class DTrackFitterKalman: public DTrackFitter{
 				  const DMatrix &S,DMatrix &Q);
 
   jerror_t SwimToPlane(DMatrix &S);
-  jerror_t SwimToPlane(double z_start,double z_end, DMatrix &S,DMatrix &C);
-  jerror_t SwimToPlane(double z_end, DMatrix &S);
-  jerror_t SwimToRadius(DVector3 &pos, double Rf,DMatrix &Sc,DMatrix &Cc);
-  jerror_t SwimToRadius(DVector3 &pos, double Rf, DMatrix &Sc);
-  
   jerror_t SwimCentral(DVector3 &pos,DMatrix &Sc);
-
-  jerror_t GoldenSection(double &ds,double doca,double dedx,DVector3 &pos,
-		       DVector3 origin,DVector3 dir,  
-		       DMatrix &Sc,DMatrix &Jc); 
-  double GoldenSection(double ds1,double ds2,double dedx,
-		     DVector3 pos,DVector3 origin,DVector3 dir,  
-		     DMatrix Sc);
-  jerror_t GoldenSection(double &z,double dz,double dEdx,
-			 DVector3 origin, DVector3 dir,DMatrix &S);
   double BrentsAlgorithm(double ds1,double ds2,
 			 double dedx,DVector3 &pos,const DVector3 &origin,
 			 const DVector3 &dir,  
