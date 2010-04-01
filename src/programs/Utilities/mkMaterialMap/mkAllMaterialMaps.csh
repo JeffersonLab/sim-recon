@@ -1,16 +1,24 @@
 #!/bin/tcsh -f
 
 # Target
-mkMaterialMap -Nr 60 -Nz 60 -rmin 0 -rmax 6.0 -zmin 30 -zmax 90 -n_r 5 -n_z 5 -n_phi 100
+mkMaterialMap -Nr 2 -Nz 2 -rmin 0 -rmax 1.5 -zmin 50 -zmax 80 -n_r 5 -n_z 5 -n_phi 10
 mv material_map material_map00_target
+
+# Target wall
+mkMaterialMap -Nr 20 -Nz 2 -rmin 1.50 -rmax 1.55 -zmin 50 -zmax 80 -n_r 100 -n_z 5 -n_phi 10
+mv material_map material_map01_target_wall
+
+# Scattering chamber
+mkMaterialMap -Nr 100 -Nz 400 -rmin 0.0 -rmax 4.0 -zmin 35 -zmax 90 -n_r 100 -n_z 5 -n_phi 10
+mv material_map material_map02_scattering_chamber
 
 # Start Counter barrel
 mkMaterialMap -Nr 30 -Nz 2 -rmin 7.0 -rmax 9.0 -zmin 0 -zmax 90 -n_r 3 -n_z 3 -n_phi 100
-mv material_map material_map01_startcounter_barrel
+mv material_map material_map03_startcounter_barrel
 
 # Start Counter nose
-mkMaterialMap -Nr 100 -Nz 100 -rmin 1.0 -rmax 9.0 -zmin 90 -zmax 100 -n_r 3 -n_z 3 -n_phi 100
-mv material_map material_map02_startcounter_nose
+mkMaterialMap>mkMaterialMap -Nr 100 -Nz 50 -rmin 1.0 -rmax 9.0 -zmin 90 -zmax 100 -n_r 30 -n_z 30 -n_phi 20
+mv material_map material_map04_startcounter_nose
 
 # CDC endplate
 mkMaterialMap -Nr 60 -Nz 60 -rmin 9.0 -rmax 60.0 -zmin 165 -zmax 171 -n_r 3 -n_z 3 -n_phi 60
