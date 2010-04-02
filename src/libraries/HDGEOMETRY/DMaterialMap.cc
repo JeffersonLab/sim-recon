@@ -19,9 +19,11 @@ DMaterialMap::DMaterialMap(string namepath, JCalibration *jcalib)
 	/// This will read in the map and figure out the number of grid
 	/// points in each direction (r, and z) and the range in each.
 
-	// Maximum number of steps (cells) to iterate when searching for a
-	// material boundary in EstimatedDistanceToBoundary() below.
 	MAX_BOUNDARY_SEARCH_STEPS = 30;
+	ENABLE_BOUNDARY_CHECK = true;
+	
+	gPARMS->SetDefaultParameter("GEOM:MAX_BOUNDARY_SEARCH_STEPS", MAX_BOUNDARY_SEARCH_STEPS, "Maximum number of steps (cells) to iterate when searching for a material boundary in DMaterialMap::EstimatedDistanceToBoundary(...)");
+	gPARMS->SetDefaultParameter("GEOM:ENABLE_BOUNDARY_CHECK", ENABLE_BOUNDARY_CHECK, "Enable boundary checking (superceeds any setting in DReferenceTrajectory). This is for debugging only.");
 
 	this->namepath = namepath;
 
@@ -232,6 +234,7 @@ double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVec
 	// here since this is called for every step during swimming.
 
 	double s_to_boundary = 1.0E6;
+	if(!ENABLE_BOUNDARY_CHECK)return s_to_boundary; // low-level, catch-all opportunity to NOT do this.
 	
 	double r = pos.Perp();
 	double z = pos.Z();

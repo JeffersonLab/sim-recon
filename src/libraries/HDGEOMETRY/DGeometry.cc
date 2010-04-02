@@ -142,20 +142,22 @@ void DGeometry::FindNodes(string xpath, vector<xpathparsed_t> &matched_xpaths) c
 //---------------------------------
 jerror_t DGeometry::FindMatALT1(DVector3 &pos, DVector3 &mom,double &KrhoZ_overA, 
 				double &rhoZ_overA,double &LnI,
-				double &X0, double &s_to_boundary) const
+				double &X0, double *s_to_boundary) const
 {
 	for(unsigned int i=0; i<materialmaps.size(); i++){
 		jerror_t err = materialmaps[i]->FindMatALT1(pos,KrhoZ_overA, rhoZ_overA,LnI,X0);
 		if(err==NOERROR){
-			// We found the material map containing this point. Search through all
+			// We found the material map containing this point. If a non-NULL 
+			// pointer was passed in for s_to_boundary, then search through all
 			// material maps above and including this one to find the estimated
 			// distance to the nearest boundary the swimmer should step to. Maps
 			// after this one would only be considered outside of this one so
 			// there is no need to check them.
-			s_to_boundary = 1.0E6;
+			if(s_to_boundary==NULL)return NOERROR;	// User doesn't want distance to boundary
+			*s_to_boundary = 1.0E6;
 			for(unsigned int j=0; j<=i; j++){
 				double s = materialmaps[j]->EstimatedDistanceToBoundary(pos, mom, GetBfield());
-				if(s<s_to_boundary)s_to_boundary = s;
+				if(s<*s_to_boundary)*s_to_boundary = s;
 			}
 			return NOERROR;
 		}

@@ -94,10 +94,14 @@ class DReferenceTrajectory{
 		double GetStepSize(void) const {return step_size;}
 		void SetMass(double mass){this->mass = mass;}
 		void SetPLossDirection(direction_t direction){ploss_direction=direction;}
+		void SetCheckMaterialBoundaries(bool check_material_boundaries){this->check_material_boundaries = check_material_boundaries;}
+		bool GetCheckMaterialBoundaries(void) const {return check_material_boundaries;}
 		direction_t GetPLossDirection(void) const {return ploss_direction;}
+		double GetBoundaryStepFraction(void) const {return BOUNDARY_STEP_FRACTION;}
+		double GetMinStepSize(void) const {return MIN_STEP_SIZE;}
+		double GetMaxStepSize(void) const {return MAX_STEP_SIZE;}
 		inline double dPdx_from_A_Z_rho(double ptot, double A, double Z, double density) const;
-		inline double dPdx(double ptot, double KrhoZ_overA,
-				   double rhoZ_overA,double LogI) const;
+		inline double dPdx(double ptot, double KrhoZ_overA, double rhoZ_overA,double LogI) const;
 
 		const swim_step_t *GetLastSwimStep(void) const {return last_swim_step;}
 		swim_step_t *swim_steps;
@@ -114,6 +118,7 @@ class DReferenceTrajectory{
 		const DRootGeom *RootGeom;
 		const DGeometry *geom;
 		direction_t ploss_direction;
+		bool check_material_boundaries;
 		
 		mutable double last_phi;							///< last phi found in DistToRT
 		mutable const swim_step_t* last_swim_step;	///< last swim step used in DistToRT
@@ -121,6 +126,10 @@ class DReferenceTrajectory{
 		mutable double last_dz_dphi;
 		
 		double mass;
+		
+		double BOUNDARY_STEP_FRACTION;
+		double MIN_STEP_SIZE;
+		double MAX_STEP_SIZE;
 	
 	private:
 		DReferenceTrajectory(){} // force use of constructor with arguments.

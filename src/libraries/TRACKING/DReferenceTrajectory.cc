@@ -46,7 +46,6 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	// Copy some values into data members
 	this->q = q;
 	this->step_size = step_size;
-//this->step_size = 0.05;
 	this->bfield = bfield;
 	this->Nswim_steps = 0;
 	this->dist_to_rt_depth = 0;
@@ -54,6 +53,16 @@ DReferenceTrajectory::DReferenceTrajectory(const DMagneticFieldMap *bfield
 	this->RootGeom=NULL;
 	this->geom = NULL;
 	this->ploss_direction = kForward;
+	this->check_material_boundaries = true;
+	
+	// Initialize some values from configuration parameters
+	BOUNDARY_STEP_FRACTION = 0.80;
+	MIN_STEP_SIZE = 0.05;	// cm
+	MAX_STEP_SIZE = 3.0;		// cm
+	
+	gPARMS->SetDefaultParameter("TRK:BOUNDARY_STEP_FRACTION" , BOUNDARY_STEP_FRACTION, "Fraction of estimated distance to boundary to use as step size");
+	gPARMS->SetDefaultParameter("TRK:MIN_STEP_SIZE" , MIN_STEP_SIZE, "Minimum step size in cm to take when swimming a track with adaptive step sizes");
+	gPARMS->SetDefaultParameter("TRK:MAX_STEP_SIZE" , MAX_STEP_SIZE, "Maximum step size in cm to take when swimming a track with adaptive step sizes");
 }
 
 //---------------------------------
@@ -80,6 +89,10 @@ DReferenceTrajectory::DReferenceTrajectory(const DReferenceTrajectory& rt)
 	this->dist_to_rt_depth = 0;
 	this->mass = rt.GetMass();
 	this->ploss_direction = rt.ploss_direction;
+	this->check_material_boundaries = rt.GetCheckMaterialBoundaries();
+	this->BOUNDARY_STEP_FRACTION = rt.GetBoundaryStepFraction();
+	this->MIN_STEP_SIZE = rt.GetMinStepSize();
+	this->MAX_STEP_SIZE = rt.GetMaxStepSize();
 
 	this->swim_steps = new swim_step_t[this->max_swim_steps];
 	for(int i=0; i<Nswim_steps; i++)swim_steps[i] = rt.swim_steps[i];
@@ -126,6 +139,10 @@ DReferenceTrajectory& DReferenceTrajectory::operator=(const DReferenceTrajectory
 	this->dist_to_rt_depth = rt.dist_to_rt_depth;
 	this->mass = rt.GetMass();
 	this->ploss_direction = rt.ploss_direction;
+	this->check_material_boundaries = rt.GetCheckMaterialBoundaries();
+	this->BOUNDARY_STEP_FRACTION = rt.GetBoundaryStepFraction();
+	this->MIN_STEP_SIZE = rt.GetMinStepSize();
+	this->MAX_STEP_SIZE = rt.GetMaxStepSize();
 
 	// Allocate memory if needed
 	if(swim_steps==NULL)this->swim_steps = new swim_step_t[this->max_swim_steps];
@@ -203,7 +220,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		// If both are non-NULL, then use RootGeom
 		double dP = 0.0;
 		double dP_dx=0.0;
-		double s_to_boundary=1.0E6;
+		double s_to_boundary=1.0E6; // initialize to "infinity" in case we don't set this below
 		if(RootGeom || geom){
 			double KrhoZ_overA=0.0;
 			double rhoZ_overA=0.0;
@@ -219,7 +236,11 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			  KrhoZ_overA=0.1535e-3*rhoZ_overA;
 			  LogI=rhoZ_overA_logI/rhoZ_overA;
 			}else{
-			  err = geom->FindMatALT1(swim_step->origin, swim_step->mom, KrhoZ_overA, rhoZ_overA,LogI, X0, s_to_boundary);
+				if(check_material_boundaries){
+					err = geom->FindMatALT1(swim_step->origin, swim_step->mom, KrhoZ_overA, rhoZ_overA,LogI, X0, &s_to_boundary);
+				}else{
+					err = geom->FindMatALT1(swim_step->origin, swim_step->mom, KrhoZ_overA, rhoZ_overA,LogI, X0);
+				}
 			}
 
 			if(err == NOERROR){
@@ -266,10 +287,11 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 			// distance since it's only an estimate. Note that even though this would lead
 			// to infinitely small steps, there is a minimum step size imposed below to
 			// ensure the step size is reasonable.
-			if(my_step_size > s_to_boundary/2.0)my_step_size = s_to_boundary/2.0;
+			double step_size_to_boundary = BOUNDARY_STEP_FRACTION*s_to_boundary;
+			if(step_size_to_boundary < my_step_size)my_step_size = step_size_to_boundary;
 			
-			if(my_step_size>3.0)my_step_size=3.0; // maximum step size is 3 cm
-			if(my_step_size<0.05)my_step_size=0.05; // minimum step size is 1/2 mm
+			if(my_step_size>MAX_STEP_SIZE)my_step_size=MAX_STEP_SIZE; // maximum step size in cm
+			if(my_step_size<MIN_STEP_SIZE)my_step_size=MIN_STEP_SIZE; // minimum step size in cm
 
 			stepper.SetStepSize(my_step_size);
 		}
@@ -1467,7 +1489,7 @@ double DReferenceTrajectory::dPdx(double ptot, double KrhoZ_overA,
 					 -2.*LogI - 2.0*beta2 -delta);
 
 	double dP_dx = dEdx/beta;
-	
+
 	double g = 0.350/sqrt(-log(0.06));
 	dP_dx *= 1.0 + exp(-pow(ptot/g,2.0)); // empirical for really low momentum particles
 	

@@ -237,6 +237,10 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	rt->SetMass(input_params.mass());
 	tmprt->SetMass(input_params.mass());
 	
+	// Do material boundary checking only for time-based tracking
+	rt->SetCheckMaterialBoundaries(fit_type==kTimeBased);
+	tmprt->SetCheckMaterialBoundaries(fit_type==kTimeBased);
+	
 	// Swim reference trajectory
 	fit_status = kFitNotDone; // initialize to a safe default
 	DVector3 mom = input_params.momentum();

@@ -73,7 +73,7 @@ class DGeometry{
 		jerror_t FindMat(DVector3 &pos, double &density, double &A, double &Z, double &RadLen) const;
 		jerror_t FindMatALT1(DVector3 &pos, DVector3 &mom, double &KrhoZ_overA, 
 				     double &rhoZ_overA,double &LnI,
-				     double &X0, double &s_to_boundary) const;
+				     double &X0, double *s_to_boundary=NULL) const;
 		jerror_t FindMatKalman(DVector3 &pos, DVector3 &mom,double &Z,
 				       double &KrhoZ_overA,
 				       double &rhoZ_overA,double &LnI,

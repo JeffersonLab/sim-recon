@@ -64,6 +64,7 @@ class DMaterialMap{
 		double zmin, zmax; // Range limits in Z of this map
 		
 		int MAX_BOUNDARY_SEARCH_STEPS;
+		bool ENABLE_BOUNDARY_CHECK;
 
 		JCalibration *jcalib;
 };
