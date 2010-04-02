@@ -559,9 +559,9 @@ jerror_t DTrackFitterKalman::SetCDCForwardReferenceTrajectory(DMatrix &S){
   // Continue adding to the trajectory until we have reached the endplate
   // or the maximum radius
   while(z<endplate_z && r<R_MAX){
-    if (PropagateForwardCDC(forward_traj_cdc_length,i,z,mStepSizeZ,S)!=NOERROR)
+    if (PropagateForwardCDC(forward_traj_cdc_length,i,z,S)!=NOERROR)
       return UNRECOVERABLE_ERROR;   
-    z+=mStepSizeZ;
+    r=sqrt(S(state_x,0)*S(state_x,0)+S(state_y,0)*S(state_y,0));
   }
 
   // If the current length of the trajectory deque is less than the previous 
@@ -628,6 +628,7 @@ jerror_t DTrackFitterKalman::SetCDCForwardReferenceTrajectory(DMatrix &S){
 // parameterization".
 // At each point we store the state vector and the Jacobian needed to get to 
 //this state along z from the previous state.
+/*
 jerror_t DTrackFitterKalman::SetCDCBackwardReferenceTrajectory(DMatrix &S){
   int i=0,forward_traj_cdc_length=forward_traj_cdc.size();
   double z=z_;
@@ -679,17 +680,16 @@ jerror_t DTrackFitterKalman::SetCDCBackwardReferenceTrajectory(DMatrix &S){
    
    return NOERROR;
 }
-
+*/
 
 // Routine that extracts the state vector propagation part out of the reference
 // trajectory loop
-jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,double z,
-					    double step,DMatrix &S){
+jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,
+						 double &z,DMatrix &S){
   DMatrix J(5,5),Q(5,5),JT(5,5);    
   DKalmanState_t temp;
   int my_i=0;
-  double newz=z+step;
-  double s_to_boundary=0.; // estimate of path length to nearest boundary
+  double dz_to_boundary=0.; // estimate of step in z to nearest boundary
 
   // Initialize some variables
   temp.h_id=0;
@@ -706,6 +706,7 @@ jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,double z,
   
   // get material properties from the Root Geometry
   if (do_energy_loss){
+    double s_to_boundary=0.;
     double ty=S(state_y,0);
     double tx=S(state_x,0);
     double phi=atan2(ty,tx); 
@@ -724,6 +725,7 @@ jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,double z,
       }
       return UNRECOVERABLE_ERROR;
     }
+    dz_to_boundary=s_to_boundary*sinl;
   }
   
   index++; 
@@ -750,6 +752,18 @@ jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,double z,
     dEdx=GetdEdx(S(state_q_over_p,0),temp.K_rho_Z_over_A,temp.rho_Z_over_A,
 		 temp.LnI); 
   }
+   // Determine the step size based on energy loss and the distance to the 
+  // nearest boundary in the material map
+  double step=mStepSizeZ;
+  if (fabs(dEdx)>EPS){
+    step=0.0001/fabs(dEdx)
+      /sqrt(1.+S(state_tx,0)*S(state_tx,0)+S(state_ty,0)*S(state_ty,0));
+  }
+  if(step>mStepSizeZ) step=mStepSizeZ;
+  if (step>dz_to_boundary) step=dz_to_boundary;
+  if(step<0.1)step=0.1;
+  //step=0.5;
+  double newz=z+step; // new z position  
 
   // Step through field
   double ds=Step(z,newz,dEdx,S); 
@@ -791,6 +805,9 @@ jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,double z,
     temp.JT=new DMatrix(JT);
     forward_traj_cdc.push_front(temp);    
   }
+
+  //update z
+  z=newz;
 
   return NOERROR;
 }
@@ -3660,14 +3677,22 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 	// if the path length increment is small relative to the radius 
 	// of curvature, use a linear approximation to find dz	
 	bool do_brent=false;
-	if (fabs(qBr2p*S(state_q_over_p,0)*Bz*mStepSizeZ/sinl)<0.01 
+	double step1=mStepSizeZ;
+	double step2=mStepSizeZ;
+	if (k>=2){
+	  step1=-forward_traj_cdc[k].pos.z()+forward_traj_cdc[k-1].pos.z();
+	  step2=-forward_traj_cdc[k-1].pos.z()+forward_traj_cdc[k-2].pos.z();
+	}
+	//printf("step1 %f step 2 %f \n",step1,step2);
+	double two_step=step1+step2;
+	if (fabs(qBr2p*S(state_q_over_p,0)*Bz*two_step/sinl)<0.01 
 	    && denom>EPS){
 	  double dzw=(z-z0w)/uz;
 	  dz=-((S(state_x,0)-origin.x()-ux*dzw)*my_ux
 		      +(S(state_y,0)-origin.y()-uy*dzw)*my_uy)
 	    /(my_ux*my_ux+my_uy*my_uy);
 	  
-	  if (fabs(dz)>2.*mStepSizeZ) do_brent=true;
+	  if (fabs(dz)>two_step) do_brent=true;
 	}
 	else do_brent=true;
 	if (do_brent){

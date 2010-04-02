@@ -213,8 +213,7 @@ class DTrackFitterKalman: public DTrackFitter{
 			 double dedx,const DVector3 &origin,
 			 const DVector3 &dir,const DMatrix &S);
   
-  jerror_t PropagateForwardCDC(int length,int &index,double z,
-			       double step,DMatrix &S); 
+  jerror_t PropagateForwardCDC(int length,int &index,double &z,DMatrix &S); 
   jerror_t PropagateForward(int length,int &index,double &z,double zhit,
 			    double &step,DMatrix &S,bool &done);
 
