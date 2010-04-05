@@ -759,10 +759,14 @@ jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,
     step=0.0001/fabs(dEdx)
       /sqrt(1.+S(state_tx,0)*S(state_tx,0)+S(state_ty,0)*S(state_ty,0));
   }
+  if (fabs(dBzdz)>EPS){
+    double my_step_size_B=0.01*fabs(Bz/dBzdz);
+    //printf("ds %f %f \n",step,my_step_size_B);
+    if (my_step_size_B<step) step=my_step_size_B;
+  }
   if(step>mStepSizeZ) step=mStepSizeZ;
   if (step>dz_to_boundary) step=dz_to_boundary;
   if(step<0.1)step=0.1;
-  //step=0.5;
   double newz=z+step; // new z position  
 
   // Step through field
@@ -943,18 +947,14 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
       if (fabs(dedx)>EPS){
 	step_size=0.0001/fabs(dedx);
       }
-      /*
-	if (fabs(Bz-Bz_old)>EPS){
-	double my_step_size_B=0.01*step_size
-	*fabs(Bz/(Bz_old-Bz));
-	printf("Bz %f %f ds %f %f \n",Bz,Bz_old,step_size,my_step_size_B);
-	if (my_step_size_B<step_size) 
-	step_size=my_step_size_B;
-	}
-      */
-      //      printf("s %f s to b %f\n",step_size,s_to_boundary);
-      if(step_size>mStepSizeS) step_size=mStepSizeS;
+      if (fabs(dBzdz)>EPS){	
+	double my_step_size_B=0.01*fabs(Bz/dBzdz/sin(atan(Sc(state_tanl,0))));
+	//printf("ds %f %f \n",step_size,my_step_size_B);
+	if (my_step_size_B<step_size) step_size=my_step_size_B;
+      }
+      //      printf("s %f s to b %f\n",step_size,s_to_boundary);  
       //if (step_size>s_to_boundary) step_size=s_to_boundary;
+      if(step_size>mStepSizeS) step_size=mStepSizeS;
       if(step_size<0.1)step_size=0.1;
       //printf("stob %f step %f\n",s_to_boundary,step_size);
 
@@ -1051,26 +1051,20 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
       dedx=GetdEdx(q_over_p,temp.K_rho_Z_over_A,temp.rho_Z_over_A,temp.LnI);
     }
     
-    
-
     // Adjust the step size
     if (fabs(dedx)>EPS){
       double my_step_size_dE=0.0001/fabs(dedx);
       //printf("ds(dE) %f %f \n",my_step_size_dE,step_size);
       step_size=my_step_size_dE;
-    }
-    /*
-    if (fabs(Bz-Bz_old)>EPS){
-      double my_step_size_B=0.01*step_size
-	*fabs(Bz/(Bz_old-Bz));
-      printf("Bz %f %f ds %f %f \n",Bz,Bz_old,step_size,my_step_size_B);
-      if (my_step_size_B<step_size) 
-	step_size=my_step_size_B;
-    }
-    */
+    }  
+    if (fabs(dBzdz)>EPS){	
+      double my_step_size_B=0.01*fabs(Bz/dBzdz/sin(atan(Sc(state_tanl,0))));
+      //printf("ds %f %f \n",step_size,my_step_size_B);
+      if (my_step_size_B<step_size) step_size=my_step_size_B;
+    }    
     //    printf("2nd s %f stob %f\n",step_size,s_to_boundary);
     if(step_size>mStepSizeS) step_size=mStepSizeS;
-    if (step_size>s_to_boundary) step_size=s_to_boundary;
+    //if (step_size>s_to_boundary) step_size=s_to_boundary;
     if(step_size<0.1)step_size=0.1;
 
     // Propagate the state through the field
@@ -1236,6 +1230,11 @@ jerror_t DTrackFitterKalman::PropagateForward(int length,int &i,
   if (fabs(dEdx)>EPS){
     step=0.0001/fabs(dEdx)
       /sqrt(1.+S(state_tx,0)*S(state_tx,0)+S(state_ty,0)*S(state_ty,0));
+  }
+  if (fabs(dBzdz)>EPS){
+    double my_step_size_B=0.01*fabs(Bz/dBzdz);
+    //printf("ds %f %f \n",step,my_step_size_B);
+    if (my_step_size_B<step) step=my_step_size_B;
   }
   if(step>mStepSizeZ) step=mStepSizeZ;
   if (step>dz_to_boundary) step=dz_to_boundary;
@@ -1940,11 +1939,7 @@ double DTrackFitterKalman::GetEnergyVariance(double ds,double beta2,
 jerror_t DTrackFitterKalman::SwimToPlane(DMatrix &S){
   int max=forward_traj_cdc.size();
   double z,newz=0.,dedx=0.;
-  double r=0.;
-  double r_outer_hit=65.;
-  if (my_cdchits.size()>0 && my_fdchits.size()==0)
-    r_outer_hit=my_cdchits[0]->hit->wire->origin.Perp();
-  
+
   // If we have trajectory entries for the CDC, start there
   if (max>1){
     max--;
@@ -1953,13 +1948,8 @@ jerror_t DTrackFitterKalman::SwimToPlane(DMatrix &S){
     for (unsigned int m=max-1;m>0;m--){
       forward_traj_cdc[m].h_id=0;
       newz=forward_traj_cdc[m].pos.Z();
-      r=forward_traj_cdc[m].pos.Perp();
-            
-      // Turn off energy loss correction if the trajectory passes throught the
-      // cdc end plate but there are no more measurements
-      //if (my_fdchits.size()==0 && newz>endplate_z) do_energy_loss=false;
 
-      if (do_energy_loss && r<r_outer_hit){
+      if (do_energy_loss){
 	dedx=GetdEdx(S(state_q_over_p,0),forward_traj_cdc[m].K_rho_Z_over_A,
 		     forward_traj_cdc[m].rho_Z_over_A,
 		     forward_traj_cdc[m].LnI);
@@ -1967,7 +1957,7 @@ jerror_t DTrackFitterKalman::SwimToPlane(DMatrix &S){
       Step(z,newz,dedx,S);  
       z=newz;
     }
-    if (do_energy_loss && r<r_outer_hit){
+    if (do_energy_loss){
       dedx=GetdEdx(S(state_q_over_p,0), forward_traj_cdc[1].K_rho_Z_over_A,
 		   forward_traj_cdc[1].rho_Z_over_A,
 		   forward_traj_cdc[1].LnI);
@@ -1981,7 +1971,6 @@ jerror_t DTrackFitterKalman::SwimToPlane(DMatrix &S){
     z=forward_traj[max].pos.Z(); 
     for (unsigned int m=max-1;m>0;m--){  
       newz=forward_traj[m].pos.z();
-      r=forward_traj[m].pos.Perp();
       if (do_energy_loss){
 	dedx=GetdEdx(S(state_q_over_p,0),forward_traj[m].K_rho_Z_over_A,
 		     forward_traj[m].rho_Z_over_A,
@@ -1999,9 +1988,6 @@ jerror_t DTrackFitterKalman::SwimToPlane(DMatrix &S){
     Step(z,newz,dedx,S);  
   }
   z_=newz;
-  
-  // turn energy loss back on
-  do_energy_loss=true;
   
   return NOERROR;
 }
@@ -3640,7 +3626,7 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 	      +(y-wirepos.y())*(y-wirepos.y()));
 
     // Check if the doca is no longer decreasing
-    if ((doca>old_doca || z>endplate_z)&& more_measurements){
+    if ((doca>old_doca /* || z>endplate_z */)&& more_measurements){
       if (my_cdchits[cdc_index]->status==0){
 	// Mark previous point on ref trajectory with a hit id for the straw
 	forward_traj_cdc[k-1].h_id=cdc_index+1;
@@ -3691,7 +3677,7 @@ jerror_t DTrackFitterKalman::KalmanForwardCDC(double anneal,DMatrix &S,
 	  dz=-((S(state_x,0)-origin.x()-ux*dzw)*my_ux
 		      +(S(state_y,0)-origin.y()-uy*dzw)*my_uy)
 	    /(my_ux*my_ux+my_uy*my_uy);
-	  
+
 	  if (fabs(dz)>two_step) do_brent=true;
 	}
 	else do_brent=true;
