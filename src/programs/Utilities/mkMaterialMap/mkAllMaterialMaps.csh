@@ -17,7 +17,7 @@ mkMaterialMap -Nr 30 -Nz 2 -rmin 7.0 -rmax 9.0 -zmin 0 -zmax 90 -n_r 3 -n_z 3 -n
 mv material_map material_map03_startcounter_barrel
 
 # Start Counter nose
-mkMaterialMap>mkMaterialMap -Nr 100 -Nz 50 -rmin 1.0 -rmax 9.0 -zmin 90 -zmax 100 -n_r 30 -n_z 30 -n_phi 20
+mkMaterialMap -Nr 100 -Nz 50 -rmin 1.0 -rmax 9.0 -zmin 90 -zmax 100 -n_r 30 -n_z 30 -n_phi 20
 mv material_map material_map04_startcounter_nose
 
 # CDC endplate
@@ -37,20 +37,36 @@ mkMaterialMap -Nr 50 -Nz 5 -rmin 56.0 -rmax 65.0 -zmin 17 -zmax 165 -n_r 1000 -n
 mv material_map material_map13_CDC_outer_shell
 
 # FDC package 1
-mkMaterialMap -Nr 6 -Nz 2 -rmin 2.0 -rmax 60.0 -zmin 175 -zmax 189 -n_r 50 -n_z 20000 -n_phi 10
+mkMaterialMap -Nr 30 -Nz 2 -rmin 0.0 -rmax 60.5 -zmin 174 -zmax 189 -n_r 1000 -n_z 1000 -n_phi 10
 mv material_map material_map21_FDC1
 
+# FDC1-2 interpackage spacer
+mkMaterialMap -Nr 10 -Nz 10 -rmin 50.0 -rmax 55.0 -zmin 189 -zmax 232.5 -n_r 1000 -n_z 1000 -n_phi 10
+mv material_map material_map41_FDC_inter1
+
 # FDC package 2
-mkMaterialMap -Nr 6 -Nz 2 -rmin 2.0 -rmax 60.0 -zmin 232 -zmax 246 -n_r 50 -n_z 20000 -n_phi 10
+mkMaterialMap -Nr 30 -Nz 2 -rmin 0.0 -rmax 60.5 -zmin 232.5 -zmax 247.5 -n_r 1000 -n_z 1000 -n_phi 10
 mv material_map material_map22_FDC2
 
+# FDC2-3 interpackage spacer
+mkMaterialMap -Nr 10 -Nz 10 -rmin 50.0 -rmax 55.0 -zmin 247.5 -zmax 291 -n_r 1000 -n_z 1000 -n_phi 10
+mv material_map material_map42_FDC_inter2
+
 # FDC package 3
-mkMaterialMap -Nr 6 -Nz 2 -rmin 2.0 -rmax 60.0 -zmin 290 -zmax 304 -n_r 50 -n_z 20000 -n_phi 10
+mkMaterialMap -Nr 30 -Nz 2 -rmin 0.0 -rmax 60.5 -zmin 291 -zmax 306 -n_r 1000 -n_z 1000 -n_phi 10
 mv material_map material_map23_FDC3
 
+# FDC3-4 interpackage spacer
+mkMaterialMap -Nr 10 -Nz 10 -rmin 50.0 -rmax 55.0 -zmin 306 -zmax 349.5 -n_r 1000 -n_z 1000 -n_phi 10
+mv material_map material_map43_FDC_inter3
+
 # FDC package 4
-mkMaterialMap -Nr 6 -Nz 2 -rmin 2.0 -rmax 60.0 -zmin 347 -zmax 361 -n_r 50 -n_z 20000 -n_phi 10
+mkMaterialMap -Nr 30 -Nz 2 -rmin 0.0 -rmax 60.5 -zmin 349.5 -zmax 364.5 -n_r 1000 -n_z 1000 -n_phi 10
 mv material_map material_map23_FDC4
+
+# FDC cables
+mkMaterialMap -Nr 30 -Nz 10 -rmin 61.0 -rmax 65.0 -zmin 165 -zmax 365 -n_r 1000 -n_z 1000 -n_phi 10
+mv material_map material_map31_cables
 
 # Everything else
 #mkMaterialMap -Nr 120 -Nz 700 -rmin 0.0 -rmax 120.0 -zmin -50 -zmax 650 -n_r 3 -n_z 3 -n_phi 100
