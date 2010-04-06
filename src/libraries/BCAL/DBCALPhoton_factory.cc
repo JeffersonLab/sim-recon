@@ -154,7 +154,7 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
 	// form a final DBCALPhoton object. Each list is initially just one element long
 	// but grows or shrinks as lists are merged. When two lists are merged, one list
 	// gets all of the elements and the other is cleared to have zero elements. Doing
-	// it this way means the final merging is independent on the order of the 
+	// it this way means the final merging is independent of the order of the 
 	// shower objects (one can imagine the centroid of 2 merged showers is now out of
 	// range for merging with a 3rd while one of the original 2 was within range.) 
 
@@ -211,7 +211,7 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
 	}while(photons_were_merged);
 	
 	// Now we loop over the lists of clusters to merge and make a
-	// DFCALPhoton from the list. Note that it may well be that each
+	// DBCALPhoton from the list. Note that it may well be that each
 	// list is still only 1 element long!
 	for ( unsigned int i = 0; i < merge_lists.size(); i++ ) {
 		vector<DBCALPhoton*> &merge_list = merge_lists[i];
