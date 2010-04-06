@@ -902,11 +902,17 @@ bool DGeometry::GetTOFZ(vector<double> &z_tof) const
 //---------------------------------
 bool DGeometry::GetTargetZ(double &z_target) const
 {
-  vector<double> TargetPos;
-  bool good = Get("//Target_s/section/parameters/real_array[@name='xyz']/@values", TargetPos);
-  z_target = TargetPos[2];
+	vector<double> xyz_vessel;
+	vector<double> xyz_target;
+	vector<double> xyz_detector;
+	bool good = true;
+	good |= Get("//composition[@name='targetVessel']/posXYZ[@volume='targetTube']/@X_Y_Z", xyz_vessel);
+	good |= Get("//composition[@name='Target']/posXYZ[@volume='targetVessel']/@X_Y_Z", xyz_target);
+	good |= Get("//composition[@name='GlueXdetector']/posXYZ[@volume='Target']/@X_Y_Z", xyz_detector);
+	
+	z_target = good ? (xyz_vessel[2] + xyz_target[2] + xyz_detector[2]):0.0;
 
-  return good;
+	return good;
 }
 
 //---------------------------------
@@ -914,8 +920,11 @@ bool DGeometry::GetTargetZ(double &z_target) const
 //---------------------------------
 bool DGeometry::GetTargetLength(double &target_length) const
 {
-  bool good = Get("//Target_s/section/parameters/real[@name='zlen']/@value", target_length);
-  
-  return good;
+ 	vector<double> Rio_Z;
+	bool good = Get("//section[@name='Target']/tubs[@name='LIH2']/@Rio_Z", Rio_Z);
+
+	target_length = good ? Rio_Z[2]:0.0;
+ 
+	return good;
 }
 
