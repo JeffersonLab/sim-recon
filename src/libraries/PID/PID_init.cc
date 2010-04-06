@@ -14,6 +14,7 @@ using namespace jana;
 #include "DChargedTrack_factory.h"
 #include "DChargedTrack_factory_Kalman.h"
 #include "DChargedTruthMatch_factory.h"
+#include "DVertex_factory.h"
 
 #include "DBeamPhoton.h"
 typedef JFactory<DBeamPhoton> DBeamPhoton_factory;
@@ -36,6 +37,7 @@ jerror_t PID_init(JEventLoop *loop)
 	loop->AddFactory(new DChargedTrack_factory_Kalman);
 	loop->AddFactory(new DChargedTruthMatch_factory);
 	loop->AddFactory(new DPhoton_factory_THROWN);
+	loop->AddFactory(new DVertex_factory);
 
 	return NOERROR;
 }
