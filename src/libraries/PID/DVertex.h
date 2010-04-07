@@ -23,14 +23,14 @@ class DVertex:public jana::JObject{
 		
 		// Objects used to calculate this added as Associated Objects
 		void toStrings(vector<pair<string,string> > &items)const{
-			vector<const DTrackTimeBased*> trks;
-			Get(trks);
+			vector<const DKinematicData*> trks;
+			GetT(trks);
 		
 			AddString(items, "x", "%3.2f", x.X());
 			AddString(items, "y", "%3.2f", x.Y());
 			AddString(items, "z", "%3.2f", x.Z());
 			AddString(items, "beamline_used", "%d", beamline_used);
-			AddString(items, "Ntracks", "%d", trks.size());
+			AddString(items, "Nparticles", "%d", trks.size());
 		}
 };
 
