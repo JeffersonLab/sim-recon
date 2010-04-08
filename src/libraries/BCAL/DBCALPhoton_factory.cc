@@ -14,7 +14,7 @@ using namespace std;
 #include "BCAL/DBCALPhoton_factory.h"
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALGeometry.h"
-#include <PID/DVertexWireBased.h>
+#include <PID/DVertex.h>
 //#include <iostream>
 //using namespace std;
 
@@ -164,7 +164,7 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
 	vector< const DBCALShower* > showerVect;
 	loop->Get( showerVect );
 
-	const DVertexWireBased *vertex;
+	const DVertex *vertex;
 	loop->GetSingle(vertex);
 
 	// Make a list with a single DBCALPhoton for each DBCALShower object

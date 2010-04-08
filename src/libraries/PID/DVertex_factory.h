@@ -1,21 +1,20 @@
 // $Id$
 //
-//    File: DVertexTimeBased_factory.h
-// Created: Wed Apr  7 10:54:41 EDT 2010
-// Creator: davidl (on Darwin harriet.jlab.org 9.8.0 i386)
+//    File: DVertex_factory.h
+// Created: Tue Apr  6 17:01:54 EDT 2010
+// Creator: davidl (on Darwin Amelia.local 9.8.0 i386)
 //
 
-#ifndef _DVertexTimeBased_factory_
-#define _DVertexTimeBased_factory_
+#ifndef _DVertex_factory_
+#define _DVertex_factory_
 
 #include <JANA/JFactory.h>
-#include <PID/DVertexTimeBased.h>
-#include <PID/DVertexCalculator.h>
+#include "DVertex.h"
 
-class DVertexTimeBased_factory:public jana::JFactory<DVertexTimeBased>, public DVertexCalculator{
+class DVertex_factory:public jana::JFactory<DVertex>{
 	public:
-		DVertexTimeBased_factory(){};
-		~DVertexTimeBased_factory(){};
+		DVertex_factory(){};
+		~DVertex_factory(){};
 
 
 	private:
@@ -24,7 +23,10 @@ class DVertexTimeBased_factory:public jana::JFactory<DVertexTimeBased>, public D
 		jerror_t evnt(jana::JEventLoop *eventLoop, int eventnumber);	///< Called every event.
 		jerror_t erun(void);						///< Called everytime run number changes, provided brun has been called.
 		jerror_t fini(void);						///< Called after last event of last event source has been processed.
+
+		double target_length;
+		double target_z;
 };
 
-#endif // _DVertexTimeBased_factory_
+#endif // _DVertex_factory_
 
