@@ -172,6 +172,9 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	/// This will use the charge and step size (if given) passed to
 	/// the constructor when the object was created. It will also
 	/// (re)use the sim_step buffer, replacing it's contents.
+	
+	// If the charged passed to us is greater that 10, it means use the charge
+	// already stored in the class. Otherwise, use what was passed to us.
 	if(fabs(q)>10)
 		q = this->q;
 	else
@@ -189,10 +192,12 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 	double itheta02s2 = 0.0;
 	swim_step_t *last_step=NULL;
 	// Magnetic field
-	double Bx=0,By=0,Bz=0.,Bz_old=0.;
-	bfield->GetField(swim_step->origin.x(),swim_step->origin.y(),
-			swim_step->origin.z(),Bx,By,Bz);
-	Bz_old=Bz;
+	double Bz_old=0;
+	
+	// Get Bfield from stepper to initialize Bz_old
+	DVector3 B;
+	stepper.GetBField(B);
+	Bz_old = B.z();
 	
 	for(double s=0; fabs(s)<smax; Nswim_steps++, swim_step++){
 
@@ -202,16 +207,11 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		}
 
 		stepper.GetDirs(swim_step->sdir, swim_step->tdir, swim_step->udir);
-		stepper.GetPosition(swim_step->origin);
-		stepper.GetMomentum(swim_step->mom);
+		stepper.GetPosMom(swim_step->origin, swim_step->mom);
 		swim_step->Ro = stepper.GetRo();
 		swim_step->s = s;
 		swim_step->t = t;
 		
-		// B-field
-		bfield->GetField(swim_step->origin.x(),swim_step->origin.y(),
-				swim_step->origin.z(),Bx,By,Bz);
-
 		//magnitude of momentum and beta
 		double p=swim_step->mom.Mag();
 		double beta=1./sqrt(1.+mass*mass/p/p);
@@ -259,7 +259,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 					}
 
 					// Calculate momentum loss due to ionization
-					dP_dx = dPdx(swim_step->mom.Mag(), KrhoZ_overA, rhoZ_overA,LogI);
+					dP_dx = dPdx(p, KrhoZ_overA, rhoZ_overA,LogI);
 				}
 			}
 			last_step = swim_step;
@@ -271,17 +271,21 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		// Adjust step size to take smaller steps in regions of high momentum loss or field gradient
 		if(step_size<0.0){ // step_size<0 indicates auto-calculated step size
 			// Take step so as to change momentum by 100keV
-			double my_step_size=swim_step->mom.Mag()/fabs(dP_dx)*0.01;
+			double my_step_size=p/fabs(dP_dx)*0.01;
 			my_step_size = 0.0001/fabs(dP_dx);
 
 			// Now check the field gradient
+#if 0
+			stepper.GetBField(B);
+			double Bz = B.z();
 			if (fabs(Bz-Bz_old)>EPS){
 			  double my_step_size_B=0.01*my_step_size
 			    *fabs(Bz/(Bz_old-Bz));
 			  if (my_step_size_B<my_step_size) 
 			    my_step_size=my_step_size_B;
 			}
-
+			Bz_old=Bz; // Save old z-component of B-field
+#endif
 			// Use the estimated distance to the boundary to make sure we don't overstep
 			// into a high density region and miss some material. Use half the estimated
 			// distance since it's only an estimate. Note that even though this would lead
@@ -320,8 +324,6 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 		t+=ds/beta/SPEED_OF_LIGHT;
 		s += ds;
 	
-		// Save old z-component of B-field
-		Bz_old=Bz;
 		
 		// Exit loop if we leave the tracking volume
 		if(swim_step->origin.Perp()>88.0 

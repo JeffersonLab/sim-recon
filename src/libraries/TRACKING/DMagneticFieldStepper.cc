@@ -83,7 +83,7 @@ jerror_t DMagneticFieldStepper::SetStepSize(double step)
 //-----------------------
 // CalcDirs
 //-----------------------
-void DMagneticFieldStepper::CalcDirs(void)
+void DMagneticFieldStepper::CalcDirs(double *Bvals)
 {
 	/// Calculate the directions of the "natural coordinates"
 	/// (aka reference trajectory coordinate system) in the
@@ -95,7 +95,15 @@ void DMagneticFieldStepper::CalcDirs(void)
 
 	// Get B-field
 	double Bx,By,Bz;
-	bfield->GetField(pos.x(), pos.y(), pos.z(), Bx, By, Bz);
+	if(Bvals){
+		// If B-field was already calculated for us then use it
+		Bx = Bvals[0];
+		By = Bvals[1];
+		Bz = Bvals[2];
+	}else{
+		// Have to find field ourselves
+		bfield->GetField(pos.x(), pos.y(), pos.z(), Bx, By, Bz);
+	}
 	B.SetXYZ(Bx, By, Bz);
 
 	// If the B-field is zero, then default to lab system
@@ -143,7 +151,7 @@ int grkuta_(double *CHARGE, double *STEP, double *VECT, double *VOUT,const DMagn
 //-----------------------
 double DMagneticFieldStepper::Step(DVector3 *newpos, double stepsize)
 {
-	double VECT[7], VOUT[7];
+	double VECT[7], VOUT[7+3]; // modified grkuta so VOUT has B-field returned as additional 3 elements of array
 	VECT[0] = pos.x();
 	VECT[1] = pos.y();
 	VECT[2] = pos.z();
@@ -162,7 +170,8 @@ double DMagneticFieldStepper::Step(DVector3 *newpos, double stepsize)
 	mom.SetXYZ(VOUT[3], VOUT[4], VOUT[5]);
 	mom.SetMag(VOUT[6]);
 
-	CalcDirs();
+	CalcDirs(&VOUT[7]); // Argument is pointer to array of doubles holding Bx, By, Bz
+	//CalcDirs();
 
 	if(newpos)*newpos = pos;
 

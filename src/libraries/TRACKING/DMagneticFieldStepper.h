@@ -33,6 +33,7 @@ class DMagneticFieldStepper
 		void SetCharge(double q){this->q = q;}
 		double Step(DVector3 *newpos=NULL, double stepsize=0.0);
 		void GetDirs(DVector3 &xdir, DVector3 &ydir, DVector3 &zdir);
+		void GetBField(DVector3 &B){B = this->B;}
 		void GetMomentum(DVector3 &mom){mom = this->mom;}
 		void GetPosition(DVector3 &pos){pos = this->pos;}
 		double GetCharge(void){return q;}
@@ -61,7 +62,7 @@ class DMagneticFieldStepper
 		
 		DVector3 xdir, ydir, zdir;
 		
-		void CalcDirs(void);
+		void CalcDirs(double *Bvals=NULL);
 };
 
 #endif // __DMAGNETICFIELDSTEPPER_H__

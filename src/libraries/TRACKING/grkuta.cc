@@ -276,7 +276,8 @@ extern "C" {double sqrt(double), sin(double);}
 
     /* Local variables */
     /*static*/ double a, b, c__;
-    /*static*/ double f[4];
+    /*static*/ /*double f[4];*/
+    /*static*/ double *f=&vout[7]; /* not that vout is decremented below so indexes start at 1 like FORTRAN */
     /*static*/ double h__;
     /*static*/ integer j;
 #define x (equiv_2)

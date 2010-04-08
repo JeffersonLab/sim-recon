@@ -238,8 +238,11 @@ DTrackFitter::fit_status_t DTrackFitterALT1::FitTrack(void)
 	tmprt->SetMass(input_params.mass());
 	
 	// Do material boundary checking only for time-based tracking
-	rt->SetCheckMaterialBoundaries(fit_type==kTimeBased);
-	tmprt->SetCheckMaterialBoundaries(fit_type==kTimeBased);
+	// and only if beta*gamma is less than 1.0
+	double betagamma = input_params.momentum().Mag()/input_params.mass();
+	bool check_material_boundaries = fit_type==kTimeBased && betagamma<=1.0;
+	rt->SetCheckMaterialBoundaries(check_material_boundaries);
+	tmprt->SetCheckMaterialBoundaries(check_material_boundaries);
 	
 	// Swim reference trajectory
 	fit_status = kFitNotDone; // initialize to a safe default
