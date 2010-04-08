@@ -17,6 +17,8 @@ using namespace jana;
 #include <BCAL/DBCALShower.h>
 #include <BCAL/DBCALPhoton.h>
 
+class DVertex;
+
 class DBCALPhoton_factory : public JFactory< DBCALPhoton > { 
     
 public:
@@ -29,7 +31,7 @@ private:
 
     jerror_t brun(JEventLoop *loop, int runnumber);
     jerror_t evnt( JEventLoop *loop, int eventnumber );
-	 DBCALPhoton* MakeDBCALPhoton(const DBCALShower* shower);
+	 DBCALPhoton* MakeDBCALPhoton(const DBCALShower* shower, const DVertex *vertex);
 	 DBCALPhoton* MergeDBCALPhotons(vector<DBCALPhoton*> &showers);
     
 	 double MIN_CLUSTER_SEPARATION_XY;

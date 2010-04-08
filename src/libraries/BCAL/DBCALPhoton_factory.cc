@@ -14,6 +14,7 @@ using namespace std;
 #include "BCAL/DBCALPhoton_factory.h"
 #include "BCAL/DBCALShower.h"
 #include "BCAL/DBCALGeometry.h"
+#include <PID/DVertexWireBased.h>
 //#include <iostream>
 //using namespace std;
 
@@ -163,11 +164,14 @@ jerror_t DBCALPhoton_factory::evnt(JEventLoop *loop, int eventnumber)
 	vector< const DBCALShower* > showerVect;
 	loop->Get( showerVect );
 
+	const DVertexWireBased *vertex;
+	loop->GetSingle(vertex);
+
 	// Make a list with a single DBCALPhoton for each DBCALShower object
 	vector<vector<DBCALPhoton*> > merge_lists;
 	for(unsigned int i=0; i<showerVect.size(); i++){
 		vector<DBCALPhoton*> merge_list;
-		merge_list.push_back(MakeDBCALPhoton(showerVect[i]));
+		merge_list.push_back(MakeDBCALPhoton(showerVect[i], vertex));
 		merge_lists.push_back(merge_list);
 	}
 	
@@ -324,7 +328,7 @@ DBCALPhoton* DBCALPhoton_factory::MergeDBCALPhotons(vector<DBCALPhoton*> &photon
 //------------------
 // MakeDBCALPhoton
 //------------------
-DBCALPhoton* DBCALPhoton_factory::MakeDBCALPhoton(const DBCALShower* shower)
+DBCALPhoton* DBCALPhoton_factory::MakeDBCALPhoton(const DBCALShower* shower, const DVertex *vertex)
 { 
                 
 	double xSh = shower->x;
@@ -332,10 +336,50 @@ DBCALPhoton* DBCALPhoton_factory::MakeDBCALPhoton(const DBCALShower* shower)
 	double zSh = shower->z;
 	//     int nCell = shower->N_cell;        
 
-	// get z where shower enters BCAL (this corresponds to generated z
-	// in tuning MC)
-	double zEntry = zSh - ( ( zSh - m_zTarget ) * 
-								  ( 1 - m_bcalIR / ( sqrt( xSh * xSh + ySh * ySh ) ) ) ); 
+	// Get vertex position as DVector3
+	DVector3 my_vertex(0.0, 0.0, m_zTarget);
+	if(vertex)my_vertex = vertex->x;
+	
+	// Momentum direction is vector pointing from vertex to shower center
+	DVector3 pdir = DVector3(xSh, ySh, zSh) - my_vertex;
+	pdir.SetMag(1.0);
+	
+	// We want to find the entry point of the photon into the BCAL. This is
+	// determined by writing the vector pointing from the vertex to the
+	// BCAL as:
+	//
+	//    v + alpha*pdir
+	//
+	// where v is the vertex position vector, pdir is the unit vector
+	// pointing in the momentum direction, and alpha is a scalar value
+	// to be solved for.
+	//
+	// The equation to solve is determined by setting the "R" value of the 
+	// above equation to the inner BCAL radius
+	//
+	//   (v_x + alpha*p_x)^2 + (v_y + alpha*p_y)^2 = R^2
+	//
+	// This is quadratic in alpha with the coefficients
+	//
+	//   a = p_x^2 + p_y^2           (which is just pdir.Perp2())
+	//   b = 2*(v_x*p_x + v_y*p_y)   
+	//   c = v_x^2 + v_y^2 - R^2     (which is v.Perp2() - R^2)
+	//
+	// Note that there are 2 roots of the quadratic equation which should
+	// correspond to a positive alpha solution and a negative alpha 
+	// solution (assuming the vertex is inside the BCAL inner radius R).
+	// We therefore just take the "+" solution of the Q.E. since that
+	// has to be the more positive of the 2.
+	double a = pdir.Perp2();
+	double b = 2.0*(my_vertex.X()*pdir.X() + my_vertex.Y()*pdir.Y());
+	double c = my_vertex.Perp2() - m_bcalIR*m_bcalIR;
+	double alpha = (-b + sqrt(b*b - 4.0*a*c))/2.0/a;
+	DVector3 x_surface = my_vertex + alpha*pdir;
+
+	// get z where shower enters BCAL (this corresponds to generated z in tuning MC)
+	//double zEntry = zSh - ( ( zSh - m_zTarget ) * 
+	//							  ( 1 - m_bcalIR / ( sqrt( xSh * xSh + ySh * ySh ) ) ) ); 
+	double zEntry = x_surface.Z();
 
 	// calibrate energy:
 	// Energy calibration has a z dependence -- the
@@ -372,15 +416,10 @@ DBCALPhoton* DBCALPhoton_factory::MakeDBCALPhoton(const DBCALShower* shower)
 	double energy = pow( (shower->E - lin ) / scale, 1 / ( 1 + nonlin ) );
 
 
-	double pScale = energy / 
-		sqrt( xSh * xSh + ySh * ySh + ( zSh - m_zTarget ) * ( zSh - m_zTarget ) );
+	DBCALPhoton* photon = new DBCALPhoton();
 
-	DBCALPhoton* photon = new DBCALPhoton( shower->id );
-
-	photon->setLorentzMomentum( DLorentzVector( xSh * pScale, 
-															 ySh * pScale, 
-															 ( zSh - m_zTarget ) * pScale, 
-															 energy ) );
+	DVector3 mom = energy*pdir;
+	photon->setLorentzMomentum( DLorentzVector( mom, energy ) );
 
 	photon->setShowerPosition( DVector3( xSh, ySh, zSh ) );
 
@@ -403,6 +442,7 @@ DBCALPhoton* DBCALPhoton_factory::MakeDBCALPhoton(const DBCALShower* shower)
 													shower->error_Cz ) );
 
 	photon->AddAssociatedObject(shower);
+	photon->AddAssociatedObject(vertex);
 
 	return photon;
 }
