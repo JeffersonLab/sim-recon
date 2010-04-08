@@ -70,15 +70,6 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 	// If there are no tracks assume center of target which is already set so just return
 	if(trks.size()==0)return NOERROR;
 	
-	// If there is only one track is found, use it's "position()" field which is the POCA to beamline
-	if(trks.size()==1){
-		vertex->x = trks[0]->position();
-		vertex->AddAssociatedObject(trks[0]);
-		return NOERROR;
-	}
-	
-	// If we get here then there must be more than one track.
-	
 	// Simply average POCA to beamline for all tracks
 	vertex->x.SetXYZ(0.0, 0.0, 0.0);
 	for(unsigned int i=0; i<trks.size(); i++){
@@ -87,6 +78,15 @@ jerror_t DVertex_factory::evnt(JEventLoop *loop, int eventnumber)
 		vertex->AddAssociatedObject(trk);
 	}
 	vertex->x *= (1.0/(double)trks.size());
+	
+	// Make sure the vertex is finite
+	if(!finite(vertex->x.Mag2())){
+		 vertex->x.SetXYZ(0.0, 0.0, target_z);
+		 // Remove any associated objects we added
+		 for(unsigned int i=0; i<trks.size(); i++){
+			vertex->RemoveAssociatedObject(trks[i]);
+		 }
+	}
 	
 	return NOERROR;
 }
