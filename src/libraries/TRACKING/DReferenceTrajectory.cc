@@ -270,7 +270,7 @@ void DReferenceTrajectory::Swim(const DVector3 &pos, const DVector3 &mom, double
 
 		// Adjust step size to take smaller steps in regions of high momentum loss or field gradient
 		if(step_size<0.0){ // step_size<0 indicates auto-calculated step size
-			// Take step so as to change momentum by no more than 1%
+			// Take step so as to change momentum by 100keV
 			double my_step_size=swim_step->mom.Mag()/fabs(dP_dx)*0.01;
 			my_step_size = 0.0001/fabs(dP_dx);
 
