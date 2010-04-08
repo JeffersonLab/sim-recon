@@ -8,10 +8,12 @@
 #ifndef _DFCALPhoton_factory_
 #define _DFCALPhoton_factory_
 
-#include "JANA/JFactory.h"
-#include "JANA/JEventLoop.h"
-#include "DFCALPhoton.h"
-#include "DFCALCluster.h"
+#include <JANA/JFactory.h>
+#include <JANA/JEventLoop.h>
+#include <FCAL/DFCALPhoton.h>
+#include <FCAL/DFCALCluster.h>
+#include <PID/DVertex.h>
+
 
 
 class DFCALPhoton_factory:public JFactory<DFCALPhoton>{
@@ -23,12 +25,8 @@ class DFCALPhoton_factory:public JFactory<DFCALPhoton>{
 		jerror_t evnt(JEventLoop *eventLoop, int eventnumber);	///< Invoked via JEventProcessor virtual method
 		jerror_t brun(JEventLoop *loop, int runnumber);
 
-		DFCALPhoton* makePhoton(vector<const DFCALCluster*> &clusters);
-		void GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected, DVector3 &pos_corrected, double &errZ);
-
-		double VERTEX_X;
-		double VERTEX_Y;
-		double VERTEX_Z;
+		DFCALPhoton* makePhoton(vector<const DFCALCluster*> &clusters, const DVertex *vertex);
+		void GetCorrectedEnergyAndPosition(const DFCALCluster* cluster, double &Ecorrected, DVector3 &pos_corrected, double &errZ, const DVertex *vertex);
 
 		double NON_LIN_COEF_A1;
 		double NON_LIN_COEF_B1;
