@@ -26,7 +26,7 @@ public:
 
     JOBJECT_PUBLIC( DBCALPhoton );
     
-    DBCALPhoton( int id ) : JObject( id ) {}
+    DBCALPhoton(){}
     ~DBCALPhoton(){}
         
     inline DVector3 showerPosition() const { return m_position; }
