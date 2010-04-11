@@ -1377,6 +1377,17 @@ void DReferenceTrajectory::GetLastDOCAPoint(DVector3 &pos, DVector3 &mom) const
 	/// Use values saved by the last call to one of the DistToRT functions
 	/// to calculate the 3-D DOCA position in lab coordinates and momentum
 	/// in GeV/c.
+	
+	if(last_swim_step==NULL){
+		if(Nswim_steps>0){
+			last_swim_step = &swim_steps[0];
+		}else{
+			pos.SetXYZ(0,0,0);
+			mom.SetXYZ(0,0,0);
+			return;
+		}
+	}
+	
 	const DVector3 &xdir = last_swim_step->sdir;
 	const DVector3 &ydir = last_swim_step->tdir;
 	const DVector3 &zdir = last_swim_step->udir;
