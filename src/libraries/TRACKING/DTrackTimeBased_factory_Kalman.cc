@@ -203,7 +203,7 @@ jerror_t DTrackTimeBased_factory_Kalman::evnt(JEventLoop *loop, int eventnumber)
   eventLoop->Get(tof_points);
   
   // Get BCAL and FCAL clusters
-  vector<const DBCALPhoton*>bcal_clusters;
+  vector<const DBCALShower*>bcal_clusters;
   eventLoop->Get(bcal_clusters);
   vector<const DFCALPhoton*>fcal_clusters;
   //eventLoop->Get(fcal_clusters);
@@ -321,7 +321,7 @@ jerror_t DTrackTimeBased_factory_Kalman::fini(void)
 // is a particle with the hypothesized mass based on the chi2 of the fit,
 // the dEdx in the chambers, and the time-of-flight to the outer detectors.
 double DTrackTimeBased_factory_Kalman::GetFOM(DTrackTimeBased *dtrack,
-					      vector<const DBCALPhoton*>bcal_clusters,
+					      vector<const DBCALShower*>bcal_clusters,
 					      vector<const DFCALPhoton*>fcal_clusters,
 					      vector<const DTOFPoint*>tof_points,
 					      vector<const DSCHit*>sc_hits
@@ -565,7 +565,7 @@ double DTrackTimeBased_factory_Kalman::MatchToTOF(DTrackTimeBased *track,
 // probability that the particle is has the hypothesized mass if there is a 
 // match.
 double DTrackTimeBased_factory_Kalman::MatchToBCAL(DTrackTimeBased *track,
-					vector<const DBCALPhoton*>bcal_clusters){ 
+					vector<const DBCALShower*>bcal_clusters){ 
 
   if (bcal_clusters.size()==0) return -1.;
 
@@ -575,7 +575,8 @@ double DTrackTimeBased_factory_Kalman::MatchToBCAL(DTrackTimeBased *track,
   double dphi=1000.,dz=1000.;
   for (unsigned int k=0;k<bcal_clusters.size();k++){
     // Get the BCAL cluster position and normal
-    DVector3 bcal_pos=bcal_clusters[k]->showerPosition(); 
+	 const DBCALShower *shower = bcal_clusters[k];
+    DVector3 bcal_pos(shower->x, shower->y, shower->z); 
     DVector3 proj_pos;
     
     // Find the distance of closest approach between the track trajectory
@@ -602,18 +603,18 @@ double DTrackTimeBased_factory_Kalman::MatchToBCAL(DTrackTimeBased *track,
   double phi_sigma=0.025+5.8e-4/p/p/p;
   if (fabs(dz)<10. && fabs(dphi)<3.*phi_sigma){
     // Add the time and path length to the outer detector to the track object
-    track->setT1(bcal_clusters[bcal_match_id]->showerTime(),0.,SYS_BCAL);
+    track->setT1(bcal_clusters[bcal_match_id]->t,0.,SYS_BCAL);
     track->setPathLength(mPathLength,0.);
   
-    // Add DBCALPhoton object as associate object
+    // Add DBCALShower object as associate object
     track->AddAssociatedObject(bcal_clusters[bcal_match_id]);
     
     // Calculate beta and use it to guess PID
-    mEndTime=bcal_clusters[bcal_match_id]->showerTime();
+    mEndTime=bcal_clusters[bcal_match_id]->t;
     double mass=track->mass();  
     double beta_hyp=1./sqrt(1.+mass*mass/p/p);
     double t_diff=mEndTime-mPathLength/SPEED_OF_LIGHT/beta_hyp;
-    double E=bcal_clusters[bcal_match_id]->lorentzMomentum().E();
+    double E=bcal_clusters[bcal_match_id]->E;
     double t_sigma=0.12154/sqrt(E)+0.17037*E-0.10843;
     if (mass>0.9) t_sigma=0.1473/sqrt(E)+0.3431*E-0.1872;
 

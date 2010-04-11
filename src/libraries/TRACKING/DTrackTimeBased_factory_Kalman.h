@@ -12,7 +12,7 @@
 
 #include <JANA/JFactory.h>
 #include <TRACKING/DTrackFitter.h>
-#include <BCAL/DBCALPhoton.h>
+#include <BCAL/DBCALShower.h>
 #include <FCAL/DFCALPhoton.h>
 #include <TOF/DTOFPoint.h>
 #include <START_COUNTER/DSCHit.h>
@@ -47,7 +47,7 @@ class DTrackTimeBased_factory_Kalman:public jana::JFactory<DTrackTimeBased>{
 
   void FilterDuplicates(void);  
   double GetFOM(DTrackTimeBased *dtrack,
-		vector<const DBCALPhoton*>bcal_clusters,
+		vector<const DBCALShower*>bcal_clusters,
 		vector<const DFCALPhoton*>fcal_clusters,
 		vector<const DTOFPoint*>tof_points,
 		vector<const DSCHit *>sc_hits);
@@ -56,7 +56,7 @@ class DTrackTimeBased_factory_Kalman:public jana::JFactory<DTrackTimeBased>{
   double MatchToTOF(DTrackTimeBased *track,
 		    vector<const DTOFPoint*>tof_points);
   double MatchToBCAL(DTrackTimeBased *track,
-		     vector<const DBCALPhoton*>bcal_clusters);
+		     vector<const DBCALShower*>bcal_clusters);
   
   double mPathLength,mEndTime,mStartTime,mFlightTime;
   DetectorSystem_t mDetector, mStartDetector;
