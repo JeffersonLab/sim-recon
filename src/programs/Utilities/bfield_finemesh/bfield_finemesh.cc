@@ -6,7 +6,6 @@
 // Program to create a fine-mesh map of the magnetic field (including 
 // gradients) in the form of an evio file using the coarse-mesh map computed
 // by TOSCA/Ansys/.. as input.
-// Currently the file name is fixed to be finemesh.evio
 
 #include "DANA/DApplication.h"
 using namespace std;
@@ -32,6 +31,7 @@ int main(int narg, char *argv[])
   double zmin=0.;
   double dr=0.1;
   double dz=0.1;
+  string evioFileName="finemesh.evio";
 
   // parse command line arguments
   for(int i=1; i<narg; i++){
@@ -45,6 +45,7 @@ int main(int narg, char *argv[])
     if(arg=="-rmax"){used_next=true; rmax = argf;}
     if(arg=="-dr"){used_next=true;dr=argf;}
     if(arg=="-dz"){used_next=true;dz=argf;}  
+    if(arg=="-file"){evioFileName=next;};
     if(used_next){
       // skip to next argument
       i++;
@@ -106,8 +107,8 @@ int main(int narg, char *argv[])
   }
 
   // Open the evio file channel
-  string evioFileName = "finemesh.evio";
-  evioFileChannel chan(evioFileName,"w",100000000);
+  unsigned long bufsize=Nr*Nz*6*sizeof(float)+6;
+  evioFileChannel chan(evioFileName,"w",bufsize);
   chan.open();
   
   // create an event tree, root node has (tag=1,num=0)
@@ -137,7 +138,7 @@ void Usage(void)
 {
 	cout<<endl;
 	cout<<"Usage:"<<endl;
-	cout<<"   bfield_finemesh -rmin [rmin] -rmax [rmax] -dr [dr] -zmin [zmin] -zmax [zmax] -dz [dz]"<<endl;
+	cout<<"   bfield_finemesh -rmin [rmin] -rmax [rmax] -dr [dr] -zmin [zmin] -zmax [zmax] -dz [dz] [-file filename]"<<endl;
 	cout<<endl;
 	
 	exit(0);
