@@ -224,7 +224,7 @@ double DMaterialMap::EstimatedDistanceToBoundary(const DVector3 &pos, const DVec
 	/// It can be that this map overlaps another so for points outside, we look
 	/// for the point where the track would enter this map.
 	///
-	/// If a problem is encounter (e.g. point is outside of map and not pointing
+	/// If a problem is encountered (e.g. point is outside of map and not pointing
 	/// toward it) we return a value of 1.0E6
 
 	// The method here is to use either dr/dz or dz/dr to project a straight line
