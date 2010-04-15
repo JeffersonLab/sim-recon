@@ -236,7 +236,7 @@ jerror_t DCDCTrackHit_factory::brun(JEventLoop *loop, int runnumber)
       //
       
       //w->sdir=w->origin-TVector3(0,0,w->origin.Z());
-      w->sdir = w->origin - TVector3(0.0, 0.0, w->udir.Dot(w->origin)/w->udir.Z());  // see above comments
+      w->sdir = w->origin - DVector3(0.0, 0.0, w->udir.Dot(w->origin)/w->udir.Z());  // see above comments
       w->sdir.SetMag(1.0);
       
       w->tdir = w->udir.Cross(w->sdir);
