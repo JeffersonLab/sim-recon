@@ -174,21 +174,23 @@ jerror_t DGeometry::FindMatALT1(DVector3 &pos, DVector3 &mom,double &KrhoZ_overA
 jerror_t DGeometry::FindMatKalman(DVector3 &pos, DVector3 &mom,double &Z,
 				  double &KrhoZ_overA, 
 				  double &rhoZ_overA, 
-				  double &LnI,double &s_to_boundary) const
+				  double &LnI,double *s_to_boundary) const
 {
   for(unsigned int i=0; i<materialmaps.size(); i++){
     jerror_t err = materialmaps[i]->FindMatKalman(pos,Z,KrhoZ_overA,
 						  rhoZ_overA,LnI);
     if(err==NOERROR){
+      	if(s_to_boundary==NULL)return NOERROR;	// User doesn't want distance to boundary
+
       // We found the material map containing this point. Search through all
       // material maps above and including this one to find the estimated
       // distance to the nearest boundary the swimmer should step to. Maps
       // after this one would only be considered outside of this one so
       // there is no need to check them.
-      s_to_boundary = 1.0E6;
+      *s_to_boundary = 1.0E6;
       for(unsigned int j=0; j<=i; j++){
 	double s = materialmaps[j]->EstimatedDistanceToBoundary(pos, mom, GetBfield());
-	if(s<s_to_boundary)s_to_boundary = s;
+	if(s<*s_to_boundary)*s_to_boundary = s;
       }
       return NOERROR;
     }
@@ -197,6 +199,22 @@ jerror_t DGeometry::FindMatKalman(DVector3 &pos, DVector3 &mom,double &Z,
 return RESOURCE_UNAVAILABLE;
 }
 
+//---------------------------------
+// FindMatKalman - Kalman filter needs slightly different set of parms.
+//---------------------------------
+jerror_t DGeometry::FindMatKalman(DVector3 &pos,double &Z,
+				  double &KrhoZ_overA, 
+				  double &rhoZ_overA, 
+				  double &LnI) const
+{
+  for(unsigned int i=0; i<materialmaps.size(); i++){
+    jerror_t err = materialmaps[i]->FindMatKalman(pos,Z,KrhoZ_overA,
+						  rhoZ_overA,LnI);
+    if(err==NOERROR) return err;
+  }
+       
+  return RESOURCE_UNAVAILABLE;
+}
 
 //---------------------------------
 // FindMat
