@@ -42,7 +42,7 @@ typedef struct{
   unsigned int h_id;
   DVector3 pos;
   DMatrix *S;
-  DMatrix *J,*JT,*Q,*C;
+  DMatrix *J,*JT,*Q,*Ckk,*Skk;
   double s,t;
   double Z,rho_Z_over_A,K_rho_Z_over_A,LnI;
 }DKalmanState_t;
@@ -75,19 +75,24 @@ class DTrackFitterKalman: public DTrackFitter{
       delete forward_traj[i].S;
       delete forward_traj[i].J; 
       delete forward_traj[i].JT;
+      delete forward_traj[i].Ckk;
+      delete forward_traj[i].Skk;
     } 
     for (unsigned int i=0;i<forward_traj_cdc.size();i++){
       delete forward_traj_cdc[i].Q;
       delete forward_traj_cdc[i].S;
       delete forward_traj_cdc[i].J; 
       delete forward_traj_cdc[i].JT;
+      delete forward_traj_cdc[i].Ckk; 
+      delete forward_traj_cdc[i].Skk;
     }
     for (unsigned int i=0;i<central_traj.size();i++){
       delete central_traj[i].Q;
       delete central_traj[i].S;
       delete central_traj[i].J;
       delete central_traj[i].JT;
-      //      delete central_traj[i].C;
+      delete central_traj[i].Ckk;
+      delete central_traj[i].Skk;
     }
   
     my_fdchits.clear();
@@ -143,6 +148,7 @@ class DTrackFitterKalman: public DTrackFitter{
   void GetForwardCovarianceMatrix(vector< vector<double> >&mycov){
     mycov.assign(fcov.begin(),fcov.end());
   };
+  
 
   double GetCharge(void){return q_over_pt_>0?1.:-1.;};
   double GetChiSq(void){return chisq_;}
@@ -202,7 +208,9 @@ class DTrackFitterKalman: public DTrackFitter{
 			      const DMatrix &S,DMatrix &Sc);
   jerror_t GetProcessNoiseCentral(double ds,double Z,double rho_Z_over_A, 
 				  const DMatrix &S,DMatrix &Q);
-
+  jerror_t SmoothForward(DMatrix &S);   
+  jerror_t SmoothForwardCDC(DMatrix &S);   
+  jerror_t SmoothCentral(DMatrix &S);  
   jerror_t SwimToPlane(DMatrix &S);
   jerror_t SwimCentral(DVector3 &pos,DMatrix &Sc);
   double BrentsAlgorithm(double ds1,double ds2,
