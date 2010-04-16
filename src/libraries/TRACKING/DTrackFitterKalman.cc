@@ -588,6 +588,7 @@ jerror_t DTrackFitterKalman::SetCDCForwardReferenceTrajectory(DMatrix &S){
       delete forward_traj_cdc[j].Q;
       delete forward_traj_cdc[j].S;
       delete forward_traj_cdc[j].J;
+      delete forward_traj_cdc[j].JT;
       delete forward_traj_cdc[j].Ckk;
       delete forward_traj_cdc[j].Skk;
     }
@@ -724,7 +725,7 @@ jerror_t DTrackFitterKalman::PropagateForwardCDC(int length,int &index,
   
   // get material properties from the Root Geometry
   if (do_energy_loss){    
-    if (true/*fit_type==kWireBased*/){
+    if (false/*fit_type==kWireBased*/){
       if (geom->FindMatKalman(temp.pos,temp.Z,temp.K_rho_Z_over_A,
 			      temp.rho_Z_over_A,temp.LnI)!=NOERROR){
 	return UNRECOVERABLE_ERROR;
@@ -954,7 +955,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
 
       if (do_energy_loss){
 	// get material properties from the Root Geometry
-	if (true/*fit_type==kWireBased*/){
+	if (false/*fit_type==kWireBased*/){
 	  if(geom->FindMatKalman(pos,central_traj[m].Z,
 				 central_traj[m].K_rho_Z_over_A,
 				 central_traj[m].rho_Z_over_A,
@@ -1078,7 +1079,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
 
     if (do_energy_loss){   
       // get material properties from the Root Geometry
-      if (true/*fit_type==kWireBased*/){
+      if (false/*fit_type==kWireBased*/){
 	if(geom->FindMatKalman(pos,temp.Z,temp.K_rho_Z_over_A,
 			       temp.rho_Z_over_A,temp.LnI)
 	   !=NOERROR){
@@ -1168,6 +1169,7 @@ jerror_t DTrackFitterKalman::SetCDCReferenceTrajectory(DVector3 pos,
       delete central_traj[j].Q;
       delete central_traj[j].S;
       delete central_traj[j].J;
+      delete central_traj[j].JT;
       delete central_traj[j].Ckk;
       delete central_traj[j].Skk;
     }
@@ -1236,7 +1238,7 @@ jerror_t DTrackFitterKalman::PropagateForward(int length,int &i,
   
   // get material properties from the Root Geometry
   if (do_energy_loss){
-    if (true/*fit_type==kWireBased*/){
+    if (false/*fit_type==kWireBased*/){
       if (geom->FindMatKalman(temp.pos,temp.Z,temp.K_rho_Z_over_A,
 			      temp.rho_Z_over_A,temp.LnI)
 	  !=NOERROR){
@@ -1409,6 +1411,7 @@ jerror_t DTrackFitterKalman::SetReferenceTrajectory(DMatrix &S){
       delete forward_traj[j].Q;
       delete forward_traj[j].S;
       delete forward_traj[j].J;
+      delete forward_traj[j].JT;
       delete forward_traj[j].Ckk;
       delete forward_traj[j].Skk;
     }
