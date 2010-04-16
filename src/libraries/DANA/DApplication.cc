@@ -14,6 +14,7 @@ using std::string;
 #include "DApplication.h"
 #include <HDDM/DEventSourceHDDMGenerator.h>
 #include <HDGEOMETRY/DMagneticFieldMapCalibDB.h>
+#include <HDGEOMETRY/DMagneticFieldMapFineMesh.h>
 #include <HDGEOMETRY/DMagneticFieldMapConst.h>
 #include <HDGEOMETRY/DMagneticFieldMapSpoiled.h>
 #include <HDGEOMETRY/DMagneticFieldMapParameterized.h>
@@ -196,7 +197,12 @@ DMagneticFieldMap* DApplication::GetBfield(void)
 	if(bfield_type=="CalibDB"){
 		bfield = new DMagneticFieldMapCalibDB(this);
 		cout<<"Created Magnetic field map of type DMagneticFieldMapCalibDB."<<endl;
-	}else if(bfield_type=="Const"){
+	}
+	else if(bfield_type=="FineMesh"){
+		bfield = new DMagneticFieldMapFineMesh(this);
+		cout<<"Created Magnetic field map of type DMagneticFieldMapFineMesh."<<endl;
+	}
+	else if(bfield_type=="Const"){
 		bfield = new DMagneticFieldMapConst(this);
 		cout<<"Created Magnetic field map of type DMagneticFieldMapConst."<<endl;
 	}else if(bfield_type=="Spoiled"){
