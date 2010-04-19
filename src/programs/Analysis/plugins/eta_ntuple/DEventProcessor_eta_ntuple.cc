@@ -29,7 +29,7 @@ using namespace jana;
 
 #include "cern_c.h"
 #define MEMH 8000000
-#define LREC 1024		/* record length of hbook direct access file in WORDS */
+#define LREC 8190		/* record length of hbook direct access file in WORDS */
 #define LUN 3			/* logical unit number of hbook file */
 extern "C" {
 	float pawc_[MEMH];
