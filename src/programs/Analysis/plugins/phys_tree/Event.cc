@@ -19,6 +19,11 @@ Event::Event()
 	pim = new TClonesArray("Particle", MAX_PART);
 	proton = new TClonesArray("Particle", MAX_PART);
 	photon = new TClonesArray("Particle", MAX_PART);
+
+	pip_match = new TClonesArray("Particle", MAX_PART);
+	pim_match = new TClonesArray("Particle", MAX_PART);
+	proton_match = new TClonesArray("Particle", MAX_PART);
+	photon_match = new TClonesArray("Particle", MAX_PART);
 }
 
 //------------------
@@ -30,6 +35,11 @@ Event::~Event()
 	delete pim;
 	delete proton;
 	delete photon;
+
+	delete pip_match;
+	delete pim_match;
+	delete proton_match;
+	delete photon_match;
 }
 
 //------------------
@@ -45,6 +55,11 @@ void Event::Clear(void)
 	pim->Clear();	// delete entries in TClonesArray (without freeing memory)
 	proton->Clear();	// delete entries in TClonesArray (without freeing memory)
 	photon->Clear();	// delete entries in TClonesArray (without freeing memory)
+
+	pip_match->Clear();
+	pim_match->Clear();
+	proton_match->Clear();
+	photon_match->Clear();
 	
 	target.SetXYZT(0.0, 0.0, 0.0, 0.0);
 	beam.SetXYZT(0.0, 0.0, 0.0, 0.0);
@@ -56,31 +71,4 @@ void Event::Clear(void)
 	all_protons_fiducial = false;
 }
 
-#if 0
-//------------------
-// AddRho
-//------------------
-void Event::AddRho(TLorentzVector &pip, TLorentzVector &pim)
-{
-	TClonesArray &rhos = *this->rho;
-   rho_t *rho = new(rhos[Nrho++]) rho_t();
 
-	rho->m = (pip+pim).M();
-	rho->pip = pip;
-	rho->pim = pim;
-	rho->isfiducial = IsFiducial(pip) && IsFiducial(pim);
-}
-
-//------------------
-// IsFiducial
-//------------------
-bool Event::IsFiducial(TLorentzVector &pion)
-{
-	double theta = pion.Theta()*TMath::RadToDeg();
-	if(theta<2.0 || theta>110.0)return false;
-	if(pion.P()<0.500)return false;
-	
-	return true;
-}
-
-#endif

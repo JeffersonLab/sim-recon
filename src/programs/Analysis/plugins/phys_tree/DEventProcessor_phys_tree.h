@@ -38,6 +38,14 @@ class DEventProcessor_phys_tree:public JEventProcessor{
 		DEventProcessor_phys_tree();
 		~DEventProcessor_phys_tree();
 		const char* className(void){return "DEventProcessor_trackres_tree";}
+		
+		class particle_set{
+			public:
+				vector<TLorentzVector> photons;
+				vector<TLorentzVector> piplus;
+				vector<TLorentzVector> piminus;
+				vector<TLorentzVector> protons;
+		};
 
 		Event *evt_recon;
 		Event *evt_thrown;
@@ -55,7 +63,9 @@ class DEventProcessor_phys_tree:public JEventProcessor{
 		
 		TLorentzVector MakeTLorentz(const DKinematicData *kd, double mass);
 		bool IsFiducial(const DKinematicData *kd);
-		void FillEvent(Event *evt, vector<TLorentzVector> &photon, vector<TLorentzVector> &pip, vector<TLorentzVector> &pim, vector<TLorentzVector> &proton);
+		void FillEvent(Event *evt, particle_set &pset, particle_set &pset_match);
+		TLorentzVector FindBestMatch(const TLorentzVector &primary, vector<TLorentzVector> &secondaries);
+		double GetFOM(const TLorentzVector &a, const TLorentzVector &b) const;
 };
 
 #endif // _DEventProcessor_trackres_tree_

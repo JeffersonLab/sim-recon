@@ -33,6 +33,11 @@ class Event:public TObject{
 		TClonesArray *proton;
 		TClonesArray *photon;
 
+		TClonesArray *pip_match;		///< Closest match pi+ (truth or recon, whatever is not in pip)
+		TClonesArray *pim_match;		///< Closest match pim (truth or recon, whatever is not in pim)
+		TClonesArray *proton_match;	///< Closest match proton (truth or recon, whatever is not in proton)
+		TClonesArray *photon_match;	///< Closest match photon (truth or recon, whatever is not in photon)
+
 		TLorentzVector target;	// Initial state target momentum
 		TLorentzVector beam;		// Initial state target beam photon momentum
 		TVector3 vertex;			// Vertex position
